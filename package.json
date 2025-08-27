@@ -1,0 +1,19 @@
+{
+  "name": "toke",
+  "private": true,
+  "workspaces": [
+    "packages/*"
+  ],
+  "scripts": {
+    "dev": "concurrently \"npm run dev:backend\" \"npm run dev:frontend\"",
+    "dev:frontend": "npm run dev --workspace=@toke/toke-web",
+    "dev:backend": "npm run dev --workspace=@toke/toke-api",
+    "build": "npm run build --workspace=@toke/shared && npm run build --workspace=@toke/toke-web && npm run build --workspace=@toke/toke-api",
+    "test": "npm run test --workspaces",
+    "type-check": "npm run type-check --workspaces"
+  },
+  "devDependencies": {
+    "concurrently": "^8.0.0",
+    "typescript": "^5.0.0"
+  }
+}

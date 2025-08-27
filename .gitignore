@@ -1,0 +1,14 @@
+# Ignore tous les node_modules dans le monorepo
+**/node_modules/
+
+# Ignore tous les fichiers package-lock.json
+**/package-lock.json
+
+# Optionnel : ignorer les fichiers temporaires de Vite
+**/dist/
+**/.vite/
+
+# Optionnel : macOS et IDE
+.DS_Store
+.idea/
+.vscode/

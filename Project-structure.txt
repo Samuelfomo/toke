@@ -1,0 +1,106 @@
+.
+├── Project-structure.txt
+└── packages
+    ├── shared
+    │   ├── README.md
+    │   ├── index.ts
+    │   └── src
+    │       ├── constants
+    │       │   ├── api.constant.ts
+    │       │   ├── country.constants.ts
+    │       │   └── index.ts
+    │       ├── schemas
+    │       │   ├── country.schema.ts
+    │       │   └── index.ts
+    │       ├── types
+    │       │   ├── common.types.ts
+    │       │   ├── country.types.ts
+    │       │   └── index.js.ts
+    │       └── utils
+    │           ├── formatting.utils.ts
+    │           ├── index.ts
+    │           └── validation.utils.ts
+    ├── toke-api
+    │   ├── README.md
+    │   ├── ecosystem.config.js
+    │   ├── eslint.config.cjs
+    │   └── src
+    │       ├── app.ts
+    │       ├── license
+    │       │   ├── class
+    │       │   │   ├── Country.ts
+    │       │   │   ├── Currency.ts
+    │       │   │   ├── ExchangeRate.ts
+    │       │   │   ├── Language.ts
+    │       │   │   ├── TaxRule.ts
+    │       │   │   └── Tenant.ts
+    │       │   ├── database
+    │       │   │   ├── data
+    │       │   │   │   ├── activity.monitoring.db.ts
+    │       │   │   │   ├── billing.cycle.db.ts
+    │       │   │   │   ├── country.db.ts
+    │       │   │   │   ├── currency.db.ts
+    │       │   │   │   ├── employee.license.db.ts
+    │       │   │   │   ├── exchange.rate.db.ts
+    │       │   │   │   ├── fraud.detection.log.db.ts
+    │       │   │   │   ├── global.license.db.ts
+    │       │   │   │   ├── language.db.ts
+    │       │   │   │   ├── license.adjustment.db.ts
+    │       │   │   │   ├── payment.method.db.ts
+    │       │   │   │   ├── payment.transaction.db.ts
+    │       │   │   │   ├── tax.rule.db.ts
+    │       │   │   │   └── tenant.db.ts
+    │       │   │   ├── db.base.ts
+    │       │   │   ├── db.config.ts
+    │       │   │   └── db.initializer.ts
+    │       │   ├── middle
+    │       │   │   └── ensured-routes.ts
+    │       │   ├── model
+    │       │   │   ├── CountryModel.ts
+    │       │   │   ├── CurrencyModel.ts
+    │       │   │   ├── ExchangeRateModel.ts
+    │       │   │   ├── GlobalLicenseModel.ts
+    │       │   │   ├── LanguageModel.ts
+    │       │   │   ├── TaxRuleModel.ts
+    │       │   │   └── TenantModel.ts
+    │       │   └── routes
+    │       │       ├── country.route.ts
+    │       │       ├── currency.route.ts
+    │       │       ├── exchange.rate.route.ts
+    │       │       ├── language.route.ts
+    │       │       ├── tax.rule.route.ts
+    │       │       └── tenant.route.ts
+    │       ├── server.ts
+    │       ├── tools
+    │       │   ├── glossary.ts
+    │       │   ├── http-status.ts
+    │       │   ├── response.ts
+    │       │   ├── revision.ts
+    │       │   └── watcher.ts
+    │       └── utils
+    │           ├── extract.query.params.ts
+    │           ├── regex.validator.ts
+    │           └── response.model.ts
+    └── toke-web
+        ├── README.md
+        ├── index.html
+        ├── postcss.config.js
+        ├── src
+        │   ├── App.vue
+        │   ├── assets
+        │   │   ├── images
+        │   │   │   └── toké-icon-01.svg
+        │   │   └── main.css
+        │   ├── components
+        │   │   └── home.vue
+        │   ├── composables
+        │   ├── env.d.ts
+        │   ├── main.ts
+        │   ├── router.ts
+        │   ├── services
+        │   ├── stores
+        │   └── views
+        ├── tailwind.config.js
+        └── vite.config.ts
+
+28 directories, 76 files

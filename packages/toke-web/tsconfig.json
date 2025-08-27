@@ -1,0 +1,33 @@
+//{
+//  "compilerOptions": {
+//    "target": "es2016",
+//    "module": "commonjs",
+//    "esModuleInterop": true,
+//    "forceConsistentCasingInFileNames": true,
+//    "strict": true,
+//    "skipLibCheck": true
+//  }
+//}
+
+{
+  "compilerOptions": {
+    "target": "ESNext",
+    "module": "NodeNext",
+    "moduleResolution": "NodeNext",
+    "strict": true,
+    "jsx": "preserve",
+    "sourceMap": true,
+    "resolveJsonModule": true,
+    "esModuleInterop": true,
+    "lib": ["ESNext", "DOM"],
+    "types": ["vite/client", "node"],
+//    "baseUrl": ".",
+    "paths": {
+      "@/*": ["src/*"]
+    }
+  },
+  "include": ["src/**/*.ts", "src/**/*.d.ts", "src/**/*.vue"]
+}
+
+
+
