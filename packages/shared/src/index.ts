@@ -5,6 +5,7 @@ export * from './types/common.types';
 
 // Export des constantes
 export * from './constants/country.constants';
+export * from './constants/http.status';
 export * from './constants/api.constant';
 
 // Export des schémas

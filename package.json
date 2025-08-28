@@ -8,12 +8,20 @@
     "dev": "concurrently \"npm run dev:backend\" \"npm run dev:frontend\"",
     "dev:cloud": "npm run dev --workspace=@toke/cloud",
     "dev:api": "npm run dev --workspace=@toke/api",
+    "start:api": "npm run startAuto --workspace=@toke/api",
+    "stop": "npm run stop --workspace=@toke/api",
     "build": "npm run build --workspace=@toke/shared && npm run build --workspace=@toke/cloud && npm run build --workspace=@toke/api",
     "test": "npm run test --workspaces",
     "type-check": "npm run type-check --workspaces"
   },
   "devDependencies": {
     "concurrently": "^8.0.0",
+    "tsx": "^4.20.5",
     "typescript": "^5.0.0"
+  },
+  "dependencies": {
+    "eslint": "^9.34.0",
+    "glob": "^11.0.3",
+    "rimraf": "^6.0.1"
   }
 }

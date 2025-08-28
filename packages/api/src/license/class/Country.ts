@@ -24,16 +24,6 @@ export default class Country extends CountryModel {
     if (allCountries) {
       data = allCountries.map(
         (country) => country.toJSON(),
-        //     ({
-        //     code: country.getCode(),
-        //     name_en: country.getNameEn(),
-        //     name_local: country.getNameLocal(),
-        //     default_currency_code: country.getDefaultCurrencyCode(),
-        //     default_language_code: country.getDefaultLanguageCode(),
-        //     active: country.isActive(),
-        //     timezone_default: country.getTimezoneDefault(),
-        //     phone_prefix: country.getPhonePrefix(),
-        // })
       );
     }
 

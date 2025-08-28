@@ -1,21 +1,47 @@
-import { createRouter, createWebHistory} from 'vue-router'
-import Home from "./views/home.vue";
-import Country from "./views/country.vue"
+// import { createRouter, createWebHistory} from 'vue-router'
+// import Home from "./views/home.vue";
+// import Country from "./views/country.vue"
+//
+// const routes = [
+//     {
+//         path: '/home',
+//         name: 'home',
+//         component: Home
+//     },
+//     {
+//         path: '/',
+//         name: 'country',
+//         component: Country
+//     },
+// ]
+// const router = createRouter({
+//     history: createWebHistory(),
+//     routes,
+// })
+// export default router
 
-const routes = [
-    {
-        path: '/home',
-        name: 'home',
-        component: Home
-    },
-    {
-        path: '/',
-        name: 'country',
-        component: Country
-    },
-]
-const router = createRouter({
-    history: createWebHistory(),
-    routes,
-})
-export default router
+import { createRouter, createWebHistory, RouteRecordRaw } from 'vue-router';
+
+import Home from './views/home.vue';
+import Country from './views/country.vue'; // Typage explicite des routes
+
+// Typage explicite des routes
+const routes: RouteRecordRaw[] = [
+  {
+    path: '/home',
+    name: 'home',
+    component: Home,
+  },
+  {
+    path: '/',
+    name: 'country',
+    component: Country,
+  },
+];
+
+export const router = createRouter({
+  history: createWebHistory(),
+  routes,
+});
+
+// export router;

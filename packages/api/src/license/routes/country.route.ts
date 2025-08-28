@@ -1,22 +1,19 @@
 // backend/src/routes/country.route.ts (version adaptée)
 import { Request, Response, Router } from 'express';
 import {
-    createCountrySchema,
-    updateCountrySchema,
-    paginationSchema,
-    countryFiltersSchema,
-    validateCountryCreation,
-    validateCountryUpdate,
-    COUNTRY_ERRORS,
-    HTTP_STATUS,
-    ERROR_CODES
+  COUNTRY_ERRORS,
+  countryFiltersSchema,
+  ERROR_CODES,
+  HTTP_STATUS,
+  HttpStatus,
+  paginationSchema,
+  validateCountryCreation,
+  validateCountryUpdate
 } from '@toke/shared';
 
 import Country from '../class/Country';
 import R from '../../tools/response';
-import G from '../../tools/glossary';
 import Ensure from '../middle/ensured-routes';
-import ExtractQueryParams from '../../utils/extract.query.params';
 import Revision from '../../tools/revision';
 import { tableStructure as TS } from '../../utils/response.model';
 
@@ -30,13 +27,13 @@ const router = Router();
 router.get('/', Ensure.get(), async (req: Request, res: Response) => {
     try {
         // Validation avec le schéma partagé
-        const paginationOptions = paginationSchema.parse(req.query);
+        // const paginationOptions = paginationSchema.parse(req.query);
 
-        const countries = await Country.exportable(paginationOptions);
+        const countries = await Country.exportable();
         R.handleSuccess(res, { countries });
     } catch (error: any) {
         console.error('❌ Erreur export pays:', error);
-        R.handleError(res, HTTP_STATUS.INTERNAL_ERROR, {
+        R.handleError(res, HttpStatus.INTERNAL_ERROR, {
             code: ERROR_CODES.EXPORT_FAILED,
             message: COUNTRY_ERRORS.EXPORT_FAILED,
         });
@@ -62,6 +59,136 @@ router.get('/revision', Ensure.get(), async (req: Request, res: Response) => {
         });
     }
 });
+
+
+/**
+ * GET /timezone/:timezone - Lister les pays par fuseau horaire
+ */
+router.get('/timezone/:timezone', Ensure.get(), async (req: Request, res: Response) => {
+  try {
+    const { timezone } = req.params;
+
+    // Décoder l'URL pour gérer les fuseaux comme "Europe/Paris"
+    const decodedTimezone = decodeURIComponent(timezone);
+
+    const paginationOptions = paginationSchema.parse(req.query);
+
+    const countriesData = await Country._listByTimezone(decodedTimezone, paginationOptions);
+    const countries = {
+      timezone: decodedTimezone,
+      pagination: {
+        offset: paginationOptions.offset || 0,
+        limit: paginationOptions.limit || countriesData?.length,
+        count: countriesData?.length || 0,
+      },
+      items: countriesData?.map((country) => country.toJSON()) || [],
+    };
+
+    R.handleSuccess(res, { countries });
+  } catch (error: any) {
+    console.error('⌐ Erreur recherche par timezone:', error);
+    R.handleError(res, HttpStatus.INTERNAL_ERROR, {
+      code: 'timezone_search_failed',
+      message: `Failed to search countries by timezone: ${req.params.timezone}`,
+    });
+  }
+});
+
+/**
+ * GET /currency/:currency_code - Lister les pays par code devise
+ */
+router.get('/currency/:currency_code', Ensure.get(), async (req: Request, res: Response) => {
+  try {
+    const { currency_code } = req.params;
+    const upperCurrencyCode = currency_code.toUpperCase();
+
+    const paginationOptions = paginationSchema.parse(req.query);
+
+    const countriesData = await Country._listByCurrencyCode(upperCurrencyCode, paginationOptions);
+    const countries = {
+      currency_code: upperCurrencyCode,
+      pagination: {
+        offset: paginationOptions.offset || 0,
+        limit: paginationOptions.limit || countriesData?.length,
+        count: countriesData?.length || 0,
+      },
+      items: countriesData?.map((country) => country.toJSON()) || [],
+    };
+
+    R.handleSuccess(res, { countries });
+  } catch (error: any) {
+    console.error('⌐ Erreur recherche par devise:', error);
+    R.handleError(res, HttpStatus.INTERNAL_ERROR, {
+      code: 'currency_search_failed',
+      message: `Failed to search countries by currency: ${req.params.currency_code}`,
+    });
+  }
+});
+
+
+/**
+ * GET /language/:language_code - Lister les pays par code de langue
+ */
+router.get('/language/:language_code', Ensure.get(), async (req: Request, res: Response) => {
+  try {
+    const { language_code } = req.params;
+    const lowerLanguageCode = language_code.toLowerCase();
+
+    const paginationOptions = paginationSchema.parse(req.query);
+
+    const countriesData = await Country._listByLanguageCode(lowerLanguageCode, paginationOptions);
+    const countries = {
+      language_code: lowerLanguageCode,
+      pagination: {
+        offset: paginationOptions.offset || 0,
+        limit: paginationOptions.limit || countriesData?.length,
+        count: countriesData?.length || 0,
+      },
+      items: countriesData?.map((country) => country.toJSON()) || [],
+    };
+
+    R.handleSuccess(res, { countries });
+  } catch (error: any) {
+    console.error('⌐ Erreur recherche par langue:', error);
+    R.handleError(res, HttpStatus.INTERNAL_ERROR, {
+      code: 'language_search_failed',
+      message: `Failed to search countries by language: ${req.params.language_code}`,
+    });
+  }
+});
+
+/**
+ * GET /active/:status - Lister les pays par statut actif/inactif
+ */
+router.get('/active/:status', Ensure.get(), async (req: Request, res: Response) => {
+  try {
+    const { status } = req.params;
+    const isActive = status.toLowerCase() === 'true' || status === '1';
+
+    const paginationOptions = paginationSchema.parse(req.query);
+
+    const countriesData = await Country._listByActiveStatus(isActive, paginationOptions);
+    const countries = {
+      active: isActive,
+      pagination: {
+        offset: paginationOptions.offset || 0,
+        limit: paginationOptions.limit || countriesData?.length,
+        count: countriesData?.length || 0,
+      },
+      items: countriesData?.map((country) => country.toJSON()) || [],
+    };
+
+    R.handleSuccess(res, { countries });
+  } catch (error: any) {
+    console.error('⌐ Erreur recherche par statut:', error);
+    R.handleError(res, HttpStatus.INTERNAL_ERROR, {
+      code: 'status_search_failed',
+      message: `Failed to search countries by status: ${req.params.status}`,
+    });
+  }
+});
+
+
 
 /**
  * POST / - Créer un nouveau pays
@@ -226,6 +353,82 @@ router.get('/list', Ensure.get(), async (req: Request, res: Response) => {
 
 // Les autres routes restent similaires mais utilisent les constantes partagées
 // pour les codes d'erreur et les validations...
+
+
+/**
+ * GET /search/code/:code - Rechercher par code ISO
+ */
+router.get('/search/code/:code', Ensure.get(), async (req: Request, res: Response) => {
+  try {
+    const { code } = req.params;
+
+    // Validation du format ISO
+    if (!/^[A-Z]{2}$/i.test(code)) {
+      return R.handleError(res, HttpStatus.BAD_REQUEST, {
+        code: 'invalid_code_format',
+        message: 'Country code must be exactly 2 letters',
+      });
+    }
+
+    const country = await Country._load(code.toUpperCase(), false, true);
+
+    if (!country) {
+      return R.handleError(res, HttpStatus.NOT_FOUND, {
+        code: 'country_not_found',
+        message: `Country with code '${code.toUpperCase()}' not found`,
+      });
+    }
+
+    R.handleSuccess(res, country.toJSON());
+  } catch (error: any) {
+    console.error('⌐ Erreur recherche par code:', error);
+    R.handleError(res, HttpStatus.INTERNAL_ERROR, {
+      code: 'search_failed',
+      message: 'Failed to search country by code',
+    });
+  }
+});
+
+/**
+ * GET /:identifier - Recherche intelligente par ID, GUID ou code ISO
+ */
+router.get('/:identifier', Ensure.get(), async (req: Request, res: Response) => {
+  try {
+    const { identifier } = req.params;
+    let country: Country | null = null;
+
+    // Essayer différentes méthodes de recherche selon le format
+    if (/^\d+$/.test(identifier)) {
+      const numericId = parseInt(identifier);
+
+      // Essayer par ID d'abord
+      country = await Country._load(numericId);
+
+      // Si pas trouvé, essayer par GUID
+      if (!country) {
+        country = await Country._load(numericId, true);
+      }
+    } else if (/^[A-Z]{2}$/i.test(identifier)) {
+      // Recherche par code ISO
+      country = await Country._load(identifier.toUpperCase(), false, true);
+    }
+
+    if (!country) {
+      return R.handleError(res, HttpStatus.NOT_FOUND, {
+        code: 'country_not_found',
+        message: `Country with identifier '${identifier}' not found`,
+      });
+    }
+
+    R.handleSuccess(res, country.toJSON());
+  } catch (error: any) {
+    console.error('⌐ Erreur recherche pays:', error);
+    R.handleError(res, HttpStatus.INTERNAL_ERROR, {
+      code: 'search_failed',
+      message: 'Failed to search country',
+    });
+  }
+});
 
 export default router;
 
