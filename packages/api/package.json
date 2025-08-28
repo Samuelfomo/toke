@@ -1,5 +1,5 @@
 {
-  "name": "@toke/toke-api",
+  "name": "@toke/api",
   "version": "1.0.0",
   "main": "index.js",
   "scripts": {
@@ -9,11 +9,11 @@
     "build": "npm run clean && tsc",
     "start": "node dist/server.js",
     "stop": "pkill -f \"node dist/server.js\"",
-    "startAuto": "npm run build && pm2 start dist/server.js --name toke-api",
-    "restartAuto": "npm run build && pm2 restart toke-api",
-    "reloadAuto": "pm2 reload toke-api",
-    "stopAuto": "pm2 stop toke-api",
-    "logsAuto": "pm2 logs toke-api",
+    "startAuto": "npm run build && pm2 start dist/server.js --name api",
+    "restartAuto": "npm run build && pm2 restart api",
+    "reloadAuto": "pm2 reload api",
+    "stopAuto": "pm2 stop api",
+    "logsAuto": "pm2 logs api",
     "verifyStartApp": "pm2 list",
     "format": "prettier --write .",
     "lint": "eslint . --ext .ts,.tsx",

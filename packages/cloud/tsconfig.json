@@ -1,14 +1,3 @@
-//{
-//  "compilerOptions": {
-//    "target": "es2016",
-//    "module": "commonjs",
-//    "esModuleInterop": true,
-//    "forceConsistentCasingInFileNames": true,
-//    "strict": true,
-//    "skipLibCheck": true
-//  }
-//}
-
 {
   "compilerOptions": {
     "target": "ESNext",
@@ -21,10 +10,11 @@
     "esModuleInterop": true,
     "lib": ["ESNext", "DOM"],
     "types": ["vite/client", "node"],
-//    "baseUrl": ".",
+    "baseUrl": ".",
     "paths": {
-      "@/*": ["src/*"]
+      "@/*": ["src/*"],
     }
+
   },
   "include": ["src/**/*.ts", "src/**/*.d.ts", "src/**/*.vue"]
 }

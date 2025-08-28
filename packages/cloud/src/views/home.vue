@@ -1,7 +1,7 @@
 <template>
   <div class="flex min-h-screen">
     <!-- Sidebar / Dashboard Navigation -->
-    <Dashboard />
+<!--    <Dashboard />-->
     <div class="flex flex-col w-full">
       <!-- Header -->
       <Header />
@@ -18,7 +18,13 @@
 
       <!-- Main Content Area -->
       <div class="flex-grow flex">
-        <main class="flex-grow bg-neutral-100 lg:pl-32 lg:p-16 py-6 w-full space-y-6">
+        <main class="flex-grow bg-neutral-100 lg:pl-32 lg:p-16 py-6 w-full space-y-6 justify-center items-start flex">
+          <button
+              @click="handleCreate"
+              class="bg-gradient-to-r from-indigo-500 to-purple-600 text-white font-bold py-3 px-6 rounded-xl shadow-lg hover:from-indigo-600 hover:to-purple-700 transition-all duration-300 transform hover:scale-105"
+          >
+            Créer
+          </button>
 
         </main>
       </div>
@@ -30,11 +36,23 @@
 </template>
 
 <script setup lang="ts">
-import { ref} from 'vue';
-import Header from "@/components/header.vue";
-import Footer from "@/components/footer.vue";
-import Dashboard from "@/components/dashboard.vue";
+import { ref, onMounted} from 'vue';
+import Header from "@/views/components/layouts/header.vue";
+import Footer from "@/views/components/layouts/footer.vue";
+// import Dashboard from "@/components/dashboard.vue";
 
+const handleCreate = () => {
+  alert('Création déclenchée ! 🎉')
+}
 const isLoading = ref(false);
+onMounted( ()=>{
+    isLoading.value = true;
+    console.log("onMounted");
+    setTimeout(() => {
+        isLoading.value = false;
+    }, 2000);
+}
+
+)
 
 </script>

@@ -1,26 +1,8 @@
 .
 ├── Project-structure.txt
+├── README.md
 └── packages
-    ├── shared
-    │   ├── README.md
-    │   ├── index.ts
-    │   └── src
-    │       ├── constants
-    │       │   ├── api.constant.ts
-    │       │   ├── country.constants.ts
-    │       │   └── index.ts
-    │       ├── schemas
-    │       │   ├── country.schema.ts
-    │       │   └── index.ts
-    │       ├── types
-    │       │   ├── common.types.ts
-    │       │   ├── country.types.ts
-    │       │   └── index.js.ts
-    │       └── utils
-    │           ├── formatting.utils.ts
-    │           ├── index.ts
-    │           └── validation.utils.ts
-    ├── toke-api
+    ├── api
     │   ├── README.md
     │   ├── ecosystem.config.js
     │   ├── eslint.config.cjs
@@ -81,26 +63,110 @@
     │           ├── extract.query.params.ts
     │           ├── regex.validator.ts
     │           └── response.model.ts
-    └── toke-web
+    ├── cloud
+    │   ├── README.md
+    │   ├── index.html
+    │   ├── postcss.config.js
+    │   ├── src
+    │   │   ├── App.vue
+    │   │   ├── assets
+    │   │   │   ├── images
+    │   │   │   │   └── toké-icon-01.svg
+    │   │   │   └── main.css
+    │   │   ├── composables
+    │   │   │   ├── useCountries.ts
+    │   │   │   └── useNotifications.ts
+    │   │   ├── env.d.ts
+    │   │   ├── main.ts
+    │   │   ├── router.ts
+    │   │   ├── services
+    │   │   │   ├── api.service.ts
+    │   │   │   └── countries.service.ts
+    │   │   ├── stores
+    │   │   └── views
+    │   │       ├── components
+    │   │       │   ├── country
+    │   │       │   │   ├── ConfirmDeleteModal.vue
+    │   │       │   │   └── countryFormModal.vue
+    │   │       │   └── layouts
+    │   │       │       ├── dashboard.vue
+    │   │       │       ├── footer.vue
+    │   │       │       └── header.vue
+    │   │       ├── country.vue
+    │   │       └── home.vue
+    │   ├── tailwind.config.js
+    │   └── vite.config.ts
+    └── shared
         ├── README.md
-        ├── index.html
-        ├── postcss.config.js
-        ├── src
-        │   ├── App.vue
-        │   ├── assets
-        │   │   ├── images
-        │   │   │   └── toké-icon-01.svg
-        │   │   └── main.css
-        │   ├── components
-        │   │   └── home.vue
-        │   ├── composables
-        │   ├── env.d.ts
-        │   ├── main.ts
-        │   ├── router.ts
-        │   ├── services
-        │   ├── stores
-        │   └── views
-        ├── tailwind.config.js
-        └── vite.config.ts
+        ├── dist
+        │   ├── constants
+        │   │   ├── api.constant.d.ts
+        │   │   ├── api.constant.d.ts.map
+        │   │   ├── api.constant.js
+        │   │   ├── api.constant.js.map
+        │   │   ├── country.constants.d.ts
+        │   │   ├── country.constants.d.ts.map
+        │   │   ├── country.constants.js
+        │   │   ├── country.constants.js.map
+        │   │   ├── index.d.ts
+        │   │   ├── index.d.ts.map
+        │   │   ├── index.js
+        │   │   └── index.js.map
+        │   ├── index.d.ts
+        │   ├── index.d.ts.map
+        │   ├── index.js
+        │   ├── index.js.map
+        │   ├── schemas
+        │   │   ├── country.schema.d.ts
+        │   │   ├── country.schema.d.ts.map
+        │   │   ├── country.schema.js
+        │   │   ├── country.schema.js.map
+        │   │   ├── index.d.ts
+        │   │   ├── index.d.ts.map
+        │   │   ├── index.js
+        │   │   └── index.js.map
+        │   ├── types
+        │   │   ├── common.types.d.ts
+        │   │   ├── common.types.d.ts.map
+        │   │   ├── common.types.js
+        │   │   ├── common.types.js.map
+        │   │   ├── country.types.d.ts
+        │   │   ├── country.types.d.ts.map
+        │   │   ├── country.types.js
+        │   │   ├── country.types.js.map
+        │   │   ├── index.js.d.ts
+        │   │   ├── index.js.d.ts.map
+        │   │   ├── index.js.js
+        │   │   └── index.js.js.map
+        │   └── utils
+        │       ├── formatting.utils.d.ts
+        │       ├── formatting.utils.d.ts.map
+        │       ├── formatting.utils.js
+        │       ├── formatting.utils.js.map
+        │       ├── index.d.ts
+        │       ├── index.d.ts.map
+        │       ├── index.js
+        │       ├── index.js.map
+        │       ├── validation.utils.d.ts
+        │       ├── validation.utils.d.ts.map
+        │       ├── validation.utils.js
+        │       └── validation.utils.js.map
+        └── src
+            ├── constants
+            │   ├── api.constant.ts
+            │   ├── country.constants.ts
+            │   └── index.ts
+            ├── index.ts
+            ├── schemas
+            │   ├── country.schema.ts
+            │   └── index.ts
+            ├── types
+            │   ├── common.types.ts
+            │   ├── country.types.ts
+            │   └── index.js.ts
+            └── utils
+                ├── formatting.utils.ts
+                ├── index.ts
+                └── validation.utils.ts
 
-28 directories, 76 files
+35 directories, 135 files

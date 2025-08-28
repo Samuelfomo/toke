@@ -8,7 +8,9 @@ export default defineConfig({
     plugins: [vue()],
     resolve: {
         alias: {
-            '@': fileURLToPath(new URL('./src', import.meta.url)),
+            // '@': fileURLToPath(new URL('./src', import.meta.url)),
+            '@': resolve(__dirname, 'src'),
+            '@toke/shared': resolve(__dirname, '../shared/dist')
        },
         },
     server: {
@@ -18,11 +20,12 @@ export default defineConfig({
                 resolve(__dirname, 'src'),
                 resolve(__dirname, 'public'),
                 resolve(__dirname, 'node_modules'),
+                // resolve(__dirname, '../../shared/src'), // <-- autoriser l'accès à shared
             ],
         },
         open: true, // Ouvre automatiquement le navigateur
         host: true, // Permet l'accès depuis le réseau local
-        port: 5173, // Port du serveur dev
+        // port: 5173, // Port du serveur dev
     },
     build: {
         rollupOptions: {

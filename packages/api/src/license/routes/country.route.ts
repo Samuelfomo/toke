@@ -44,6 +44,26 @@ router.get('/', Ensure.get(), async (req: Request, res: Response) => {
 });
 
 /**
+ * GET /revision - Récupérer uniquement la révision actuelle
+ */
+router.get('/revision', Ensure.get(), async (req: Request, res: Response) => {
+    try {
+        const revision = await Revision.getRevision(TS.COUNTRY);
+
+        R.handleSuccess(res, {
+            revision,
+            checked_at: new Date().toISOString(),
+        });
+    } catch (error: any) {
+        console.error('⌐ Erreur récupération révision:', error);
+        R.handleError(res, HTTP_STATUS.INTERNAL_ERROR, {
+            code: 'revision_check_failed',
+            message: 'Failed to get current revision',
+        });
+    }
+});
+
+/**
  * POST / - Créer un nouveau pays
  */
 router.post('/', Ensure.post(), async (req: Request, res: Response) => {
