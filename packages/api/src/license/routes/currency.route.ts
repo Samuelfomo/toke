@@ -1,15 +1,21 @@
 import { Request, Response, Router } from 'express';
+import { CURRENCY_ERRORS, currencySchemas, ERROR_CODES, HttpStatus, paginationSchema } from '@toke/shared';
 
 import Currency from '../class/Currency';
 import R from '../../tools/response';
-import HttpStatus from '../../tools/http-status';
 import G from '../../tools/glossary';
 import Ensure from '../middle/ensured-routes';
-import ExtractQueryParams from '../../utils/extract.query.params';
 import Revision from '../../tools/revision';
 import { tableStructure as TS } from '../../utils/response.model';
 
+
 const router = Router();
+// validateCurrencyCreation,
+// validateCurrencyUpdate
+// CURRENCY_ERRORS,
+// currencyFiltersSchema,
+// ERROR_CODES,
+// HTTP_STATUS,
 
 // region ROUTES D'EXPORT
 
@@ -18,7 +24,7 @@ const router = Router();
  */
 router.get('/', Ensure.get(), async (req: Request, res: Response) => {
   try {
-    const paginationOptions = await ExtractQueryParams.extractPaginationFromQuery(req.query);
+    const paginationOptions =  paginationSchema.parse(req.query);
 
     const currencies = await Currency.exportable(paginationOptions);
     R.handleSuccess(res, { currencies });
@@ -59,7 +65,7 @@ router.get('/active/:status', Ensure.get(), async (req: Request, res: Response) 
     const { status } = req.params;
     const isActive = status.toLowerCase() === 'true' || status === '1';
 
-    const paginationOptions = await ExtractQueryParams.extractPaginationFromQuery(req.query);
+    const paginationOptions = paginationSchema.parse(req.query);
 
     const currenciesData = await Currency._listByActiveStatus(isActive, paginationOptions);
     const currencies = {
@@ -91,48 +97,48 @@ router.get('/active/:status', Ensure.get(), async (req: Request, res: Response) 
  */
 router.post('/', Ensure.post(), async (req: Request, res: Response) => {
   try {
-    const { code, name, symbol, decimal_places, active } = req.body;
-
-    // Validation des champs requis
-    if (!code) {
-      return R.handleError(res, HttpStatus.BAD_REQUEST, {
-        code: 'code_required',
-        message: 'Currency code (ISO 4217) is required',
-      });
-    }
-
-    if (!name) {
-      return R.handleError(res, HttpStatus.BAD_REQUEST, {
-        code: 'name_required',
-        message: 'Currency name is required',
-      });
-    }
-
-    if (!symbol) {
-      return R.handleError(res, HttpStatus.BAD_REQUEST, {
-        code: 'symbol_required',
-        message: 'Currency symbol is required',
-      });
-    }
-
-    if (decimal_places === undefined || decimal_places === null) {
-      return R.handleError(res, HttpStatus.BAD_REQUEST, {
-        code: 'decimal_places_required',
-        message: 'Decimal places is required',
-      });
-    }
+    const validatedData = currencySchemas.validateCurrencyCreation(req.body);
+    // const { code, name, symbol, decimal_places, active } = req.body;
+    // // Validation des champs requis
+    // if (!code) {
+    //   return R.handleError(res, HttpStatus.BAD_REQUEST, {
+    //     code: 'code_required',
+    //     message: 'Currency code (ISO 4217) is required',
+    //   });
+    // }
+    //
+    // if (!name) {
+    //   return R.handleError(res, HttpStatus.BAD_REQUEST, {
+    //     code: 'name_required',
+    //     message: 'Currency name is required',
+    //   });
+    // }
+    //
+    // if (!symbol) {
+    //   return R.handleError(res, HttpStatus.BAD_REQUEST, {
+    //     code: 'symbol_required',
+    //     message: 'Currency symbol is required',
+    //   });
+    // }
+    //
+    // if (decimal_places === undefined || decimal_places === null) {
+    //   return R.handleError(res, HttpStatus.BAD_REQUEST, {
+    //     code: 'decimal_places_required',
+    //     message: 'Decimal places is required',
+    //   });
+    // }
 
     const currency = new Currency()
-      .setCode(code)
-      .setName(name)
-      .setSymbol(symbol)
-      .setDecimalPlaces(decimal_places);
+      .setCode(validatedData.code)
+      .setName(validatedData.name)
+      .setSymbol(validatedData.symbol)
+      .setDecimalPlaces(validatedData.decimal_places);
 
-    if (active !== undefined) currency.setActive(Boolean(active));
+    if (validatedData.active !== undefined) currency.setActive(Boolean(validatedData.active));
 
     await currency.save();
 
-    console.log(`✅ Devise créée: ${code} - ${name} (GUID: ${currency.getGuid()})`);
+    console.log(`✅ Devise créée: ${validatedData.code} - ${validatedData.name} (GUID: ${currency.getGuid()})`);
     R.handleCreated(res, currency.toJSON());
   } catch (error: any) {
     console.error('⌐ Erreur création devise:', error.message);
@@ -164,8 +170,8 @@ router.put('/:guid', Ensure.put(), async (req: Request, res: Response) => {
     // ✅ Validation manuelle du GUID
     if (!/^\d{6}$/.test(req.params.guid)) {
       return R.handleError(res, HttpStatus.BAD_REQUEST, {
-        code: 'invalid_guid',
-        message: 'GUID must be a 6-digit number',
+        code: ERROR_CODES.INVALID_GUID,
+        message: CURRENCY_ERRORS.GUID_INVALID,
       });
     }
 
@@ -280,7 +286,7 @@ router.get('/list', Ensure.get(), async (req: Request, res: Response) => {
       conditions.active = active === 'true' || active === '1';
     }
 
-    const paginationOptions = await ExtractQueryParams.extractPaginationFromQuery(req.query);
+    const paginationOptions = paginationSchema.parse(req.query);
 
     const currencyEntries = await Currency._list(conditions, paginationOptions);
     const currencies = {

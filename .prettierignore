@@ -35,4 +35,4 @@ CHANGELOG.md
 LICENSE
 
 # PM2
-ecosystem.config.js
+packages/api/ecosystem.config.cjs

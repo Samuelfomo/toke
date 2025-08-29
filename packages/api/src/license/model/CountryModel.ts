@@ -119,6 +119,8 @@ export default class CountryModel extends BaseModel {
   protected async create(): Promise<void> {
     await this.validate();
 
+    console.log('this', this);
+
     // Générer le GUID automatiquement
     const guid = await this.guidGenerator(this.db.tableName, 6);
     if (!guid) {

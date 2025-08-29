@@ -4,7 +4,6 @@ import {
   COUNTRY_ERRORS,
   countryFiltersSchema,
   ERROR_CODES,
-  HTTP_STATUS,
   HttpStatus,
   paginationSchema,
   validateCountryCreation,
@@ -27,9 +26,9 @@ const router = Router();
 router.get('/', Ensure.get(), async (req: Request, res: Response) => {
     try {
         // Validation avec le schéma partagé
-        // const paginationOptions = paginationSchema.parse(req.query);
+        const paginationOptions = paginationSchema.parse(req.query);
 
-        const countries = await Country.exportable();
+        const countries = await Country.exportable(paginationOptions);
         R.handleSuccess(res, { countries });
     } catch (error: any) {
         console.error('❌ Erreur export pays:', error);
@@ -53,7 +52,7 @@ router.get('/revision', Ensure.get(), async (req: Request, res: Response) => {
         });
     } catch (error: any) {
         console.error('⌐ Erreur récupération révision:', error);
-        R.handleError(res, HTTP_STATUS.INTERNAL_ERROR, {
+        R.handleError(res, HttpStatus.INTERNAL_ERROR, {
             code: 'revision_check_failed',
             message: 'Failed to get current revision',
         });
@@ -219,18 +218,18 @@ router.post('/', Ensure.post(), async (req: Request, res: Response) => {
 
         // Gestion d'erreur avec les constantes partagées
         if (error.message.includes('already exists')) {
-            R.handleError(res, HTTP_STATUS.CONFLICT, {
+            R.handleError(res, HttpStatus.CONFLICT, {
                 code: ERROR_CODES.COUNTRY_ALREADY_EXISTS,
                 message: error.message,
             });
         } else if (error.issues) { // Erreur Zod
-            R.handleError(res, HTTP_STATUS.BAD_REQUEST, {
+            R.handleError(res, HttpStatus.BAD_REQUEST, {
                 code: ERROR_CODES.VALIDATION_FAILED,
                 message: 'Validation failed',
                 details: error.issues,
             });
         } else {
-            R.handleError(res, HTTP_STATUS.BAD_REQUEST, {
+            R.handleError(res, HttpStatus.BAD_REQUEST, {
                 code: ERROR_CODES.CREATION_FAILED,
                 message: error.message,
             });
@@ -245,7 +244,7 @@ router.put('/:guid', Ensure.put(), async (req: Request, res: Response) => {
     try {
         // Validation du GUID avec le schéma partagé
         if (!/^\d{6}$/.test(req.params.guid)) {
-            return R.handleError(res, HTTP_STATUS.BAD_REQUEST, {
+            return R.handleError(res, HttpStatus.BAD_REQUEST, {
                 code: ERROR_CODES.INVALID_GUID,
                 message: COUNTRY_ERRORS.GUID_INVALID,
             });
@@ -258,7 +257,7 @@ router.put('/:guid', Ensure.put(), async (req: Request, res: Response) => {
 
         const country = await Country._load(guid, true);
         if (!country) {
-            return R.handleError(res, HTTP_STATUS.NOT_FOUND, {
+            return R.handleError(res, HttpStatus.NOT_FOUND, {
                 code: ERROR_CODES.COUNTRY_NOT_FOUND,
                 message: COUNTRY_ERRORS.NOT_FOUND,
             });
@@ -286,18 +285,18 @@ router.put('/:guid', Ensure.put(), async (req: Request, res: Response) => {
         console.error('❌ Erreur modification pays:', error);
 
         if (error.issues) { // Erreur Zod
-            R.handleError(res, HTTP_STATUS.BAD_REQUEST, {
+            R.handleError(res, HttpStatus.BAD_REQUEST, {
                 code: ERROR_CODES.VALIDATION_FAILED,
                 message: 'Validation failed',
                 details: error.issues,
             });
         } else if (error.message.includes('already exists')) {
-            R.handleError(res, HTTP_STATUS.CONFLICT, {
+            R.handleError(res, HttpStatus.CONFLICT, {
                 code: ERROR_CODES.COUNTRY_ALREADY_EXISTS,
                 message: error.message,
             });
         } else {
-            R.handleError(res, HTTP_STATUS.BAD_REQUEST, {
+            R.handleError(res, HttpStatus.BAD_REQUEST, {
                 code: ERROR_CODES.UPDATE_FAILED,
                 message: error.message,
             });
@@ -337,13 +336,13 @@ router.get('/list', Ensure.get(), async (req: Request, res: Response) => {
         console.error('❌ Erreur listing pays:', error);
 
         if (error.issues) { // Erreur Zod
-            R.handleError(res, HTTP_STATUS.BAD_REQUEST, {
+            R.handleError(res, HttpStatus.BAD_REQUEST, {
                 code: ERROR_CODES.VALIDATION_FAILED,
                 message: 'Invalid filters or pagination parameters',
                 details: error.issues,
             });
         } else {
-            R.handleError(res, HTTP_STATUS.INTERNAL_ERROR, {
+            R.handleError(res, HttpStatus.INTERNAL_ERROR, {
                 code: ERROR_CODES.LISTING_FAILED,
                 message: COUNTRY_ERRORS.EXPORT_FAILED,
             });

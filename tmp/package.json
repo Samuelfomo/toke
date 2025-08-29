@@ -11,10 +11,8 @@
     "autoStart:api": "npm run startAuto --workspace=@toke/api",
     "autoStop:api": "npm run stopAuto --workspace=@toke/api",
     "logsAuto:api": "npm run logsAuto --workspace=@toke/api",
-    "verifyStartApp:api": "npm run verifyStartApp --workspace=@toke/api",
-    "logs:error:api": "npm run logs:error --workspace=@toke/api",
     "stop": "npm run stop --workspace=@toke/api",
-    "build": "npm run build --workspace=@toke/shared && npm run build --workspace=@toke/api",
+    "build": "npm run build --workspace=@toke/shared && npm run build --workspace=@toke/cloud && npm run build --workspace=@toke/api",
     "test": "npm run test --workspaces",
     "type-check": "npm run type-check --workspaces"
   },

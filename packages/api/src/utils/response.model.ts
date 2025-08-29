@@ -18,6 +18,7 @@ export const responseStructure = {
   DEFAULT_CURRENCY_CODE: 'default_currency_code',
   DEFAULT_LANGUAGE_CODE: 'default_language_code',
   IS_ACTIVE: 'is_active',
+  ACTIVE: 'active',
   TIMEZONE_DEFAULT: 'timezone_default',
   PHONE_PREFIX: 'phone_prefix',
 

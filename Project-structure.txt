@@ -4,7 +4,7 @@
 └── packages
     ├── api
     │   ├── README.md
-    │   ├── ecosystem.config.js
+    │   ├── ecosystem.config.cjs
     │   ├── eslint.config.cjs
     │   └── src
     │       ├── app.ts
@@ -153,20 +153,20 @@
         │       └── validation.utils.js.map
         └── src
             ├── constants
-            │   ├── api.constant.ts
-            │   ├── country.constants.ts
+            │   ├── api.ts
+            │   ├── country.ts
             │   └── index.ts
             ├── index.ts
             ├── schemas
-            │   ├── country.schema.ts
+            │   ├── country.ts
             │   └── index.ts
             ├── types
-            │   ├── common.types.ts
-            │   ├── country.types.ts
+            │   ├── common.ts
+            │   ├── country.ts
             │   └── index.js.ts
             └── utils
-                ├── formatting.utils.ts
+                ├── formatting.ts
                 ├── index.ts
-                └── validation.utils.ts
+                └── validation.ts
 
 35 directories, 135 files
