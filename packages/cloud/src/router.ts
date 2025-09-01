@@ -23,7 +23,10 @@
 import { createRouter, createWebHistory, RouteRecordRaw } from 'vue-router';
 
 import Home from './views/home.vue';
-import Country from './views/country.vue'; // Typage explicite des routes
+import Country from './views/country.vue';
+import Auth from './views/auth.vue';
+import Otp from './views/otp.vue';
+// Typage explicite des routes
 
 // Typage explicite des routes
 const routes: RouteRecordRaw[] = [
@@ -33,9 +36,17 @@ const routes: RouteRecordRaw[] = [
     component: Home,
   },
   {
-    path: '/',
+    path: '/country',
     name: 'country',
     component: Country,
+  },{
+    path: '/',
+    name: 'auth',
+    component: Auth,
+  },{
+    path: '/otp',
+    name: 'otp',
+    component: Otp,
   },
 ];
 
