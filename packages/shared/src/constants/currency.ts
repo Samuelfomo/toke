@@ -31,8 +31,12 @@ export const CURRENCY_DEFAULTS = {
     MAX_LIMIT: 500,
   },
 } as const;
+
+const CURRENCY_LABEL = 'Currency';
 export const CURRENCY_ERRORS = {
-  CODE_REQUIRED: 'Currency code (ISO) is required',
+  CURRENCY: CURRENCY_LABEL,
+
+  CODE_REQUIRED: `${CURRENCY_LABEL} code (ISO) is required`,
   CODE_INVALID: 'Currency code must be exactly 3 uppercase letters (ISO 3166-1 alpha-3)',
   CODE_EXISTS: 'Currency code already exists',
 
@@ -41,6 +45,8 @@ export const CURRENCY_ERRORS = {
 
   SYMBOL_REQUIRED: 'Currency symbol is required',
   SYMBOL_INVALID: 'Currency symbol is invalid',
+
+  INVALID_BOOLEAN: 'Invalid boolean value',
 
   DECIMAL_PLACES_REQUIRED: 'Currency decimal places required',
   DECIMAL_PLACES_INVALID: 'Currency decimal places is invalid',

@@ -79,10 +79,12 @@ export const POPULAR_TIMEZONES = [
   'Africa/Lagos',
   'Africa/Johannesburg',
 ] as const;
+const COUNTRY_LABEL = 'Country';
 
 // Messages d'erreur standardisés
 export const COUNTRY_ERRORS = {
-  CODE_REQUIRED: 'Country code (ISO) is required',
+  COUNTRY: COUNTRY_LABEL,
+  CODE_REQUIRED: `${COUNTRY_LABEL} code (ISO) is required`,
   CODE_INVALID: 'Country code must be exactly 2 uppercase letters (ISO 3166-1 alpha-2)',
   CODE_EXISTS: 'Country code already exists',
 

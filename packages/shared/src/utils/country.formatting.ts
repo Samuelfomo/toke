@@ -1,4 +1,4 @@
-// shared/src/utils/formatting.ts
+// shared/src/utils/country.formatting.ts
 
 export class CountryFormattingUtils {
   /**

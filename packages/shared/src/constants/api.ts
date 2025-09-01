@@ -27,35 +27,79 @@ export const API_ROUTES = {
 } as const;
 
 export const ERROR_CODES = {
-  // Validation errors
+  // Erreurs générales de validation
   VALIDATION_FAILED: 'validation_failed',
-  REQUIRED_FIELD: 'required_field',
   INVALID_FORMAT: 'invalid_format',
+  INVALID_GUID: 'invalid_guid',
+  // REQUIRED_FIELD: 'required_field',
+  REQUIRED_FIELD_MISSING: 'required_field_missing',
 
-  // Country specific errors
+  // Erreurs CRUD génériques
+  CREATION_FAILED: 'creation_failed',
+  UPDATE_FAILED: 'update_failed',
+  DELETE_FAILED: 'delete_failed',
+  LISTING_FAILED: 'listing_failed',
+  EXPORT_FAILED: 'export_failed',
+  SEARCH_FAILED: 'search_failed',
+
+  // Erreurs de ressources non trouvées
+  NOT_FOUND: 'not_found',
   COUNTRY_NOT_FOUND: 'country_not_found',
+  CURRENCY_NOT_FOUND: 'currency_not_found',
+
+  // Erreurs de conflits/doublons
+  ALREADY_EXISTS: 'already_exists',
   COUNTRY_ALREADY_EXISTS: 'country_already_exists',
+  CURRENCY_ALREADY_EXISTS: 'currency_already_exists',
+
+  // Erreurs spécifiques aux pays
   INVALID_COUNTRY_CODE: 'invalid_country_code',
   INVALID_CURRENCY_CODE: 'invalid_currency_code',
   INVALID_LANGUAGE_CODE: 'invalid_language_code',
   INVALID_PHONE_PREFIX: 'invalid_phone_prefix',
   INVALID_TIMEZONE: 'invalid_timezone',
-  INVALID_GUID: 'invalid_guid',
 
-  // Operation errors
-  CREATION_FAILED: 'creation_failed',
-  UPDATE_FAILED: 'update_failed',
-  DELETE_FAILED: 'deletion_failed',
-  EXPORT_FAILED: 'export_failed',
-  SEARCH_FAILED: 'search_failed',
-  LISTING_FAILED: 'listing_failed',
+  // Erreurs spécifiques aux devises
+  CURRENCY_CODE_INVALID: 'currency_code_invalid',
+  CURRENCY_NAME_INVALID: 'currency_name_invalid',
+  CURRENCY_SYMBOL_INVALID: 'currency_symbol_invalid',
+  DECIMAL_PLACES_INVALID: 'decimal_places_invalid',
 
-  // Server errors
-  INTERNAL_ERROR: 'internal_error',
+  // Erreurs de pagination
+  PAGINATION_INVALID: 'pagination_invalid',
+  OFFSET_INVALID: 'offset_invalid',
+  LIMIT_INVALID: 'limit_invalid',
+  LIMIT_EXCEEDED: 'limit_exceeded',
+
+  // Erreurs de filtres
+  FILTER_INVALID: 'filter_invalid',
+  FILTER_VALUE_INVALID: 'filter_value_invalid',
+
+  // Erreurs système
   DATABASE_ERROR: 'database_error',
+  INTERNAL_ERROR: 'internal_error',
+  SERVICE_UNAVAILABLE: 'service_unavailable',
+  TIMEOUT: 'timeout',
   NETWORK_ERROR: 'network_error',
-  TIMEOUT_ERROR: 'timeout_error',
+
+  // Erreurs d'authentification/autorisation
+  UNAUTHORIZED: 'unauthorized',
+  FORBIDDEN: 'forbidden',
+  TOKEN_INVALID: 'token_invalid',
+  TOKEN_EXPIRED: 'token_expired',
+
+  // Erreurs de données corrompues
+  DATA_CORRUPTION: 'data_corruption',
+  REVISION_MISMATCH: 'revision_mismatch',
+  SYNC_ERROR: 'sync_error',
 } as const;
+
+export const ERROR_MESSAGES = {
+  ID_REQUIRED: 'ID is required',
+  GUID_GENERATOR_FAILED: 'Failed to generate GUID for',
+} as const;
+
+export type ErrorCode = (typeof ERROR_CODES)[keyof typeof ERROR_CODES];
 
 export const CONTENT_TYPES = {
   JSON: 'application/json',

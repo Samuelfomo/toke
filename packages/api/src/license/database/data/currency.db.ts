@@ -118,52 +118,53 @@ export const CurrencyDbStructure = {
     ],
   } as ModelOptions,
 
-  // Méthodes de validation
-  validation: {
-    validateCode: (iso: string): boolean => {
-      const trimmed = iso.trim().toUpperCase();
-      const isoRegex = /^[A-Z]{3}$/;
-      return isoRegex.test(trimmed);
-    },
-    validateName: (name: string): boolean => {
-      const trimmed = name.trim();
-      return trimmed.length >= 2 && trimmed.length <= 128;
-    },
-
-    validateSymbol: (symbol: string): boolean => {
-      const trimmed = symbol.trim();
-      return trimmed.length >= 1 && trimmed.length <= 10;
-    },
-
-    validateDecimalPlaces: (decimalPlaces: number): boolean => {
-      const trimmed = decimalPlaces.toString().trim();
-      const decimalPlacesRegex = /^[0-9]+$/;
-      return decimalPlacesRegex.test(trimmed);
-    },
-
-    isActive: (isActive: boolean): boolean => {
-      return typeof isActive === 'boolean';
-    },
-
-    /**
-     * Nettoie les données avant insertion/update
-     */
-    cleanData: (data: any): void => {
-      if (data.code) {
-        data.code = data.code.trim().toUpperCase();
-      }
-      if (data.name) {
-        data.name = data.name.trim();
-      }
-      if (data.symbol) {
-        data.symbol = data.symbol.trim();
-      }
-      if (data.decimal_places) {
-        data.decimal_places = data.decimal_places.trim();
-      }
-      if (data.active) {
-        data.active = data.active === 'true';
-      }
-    },
-  },
+  // // Méthodes de validation
+  // validation: {
+  //   validateCode: (code: string): boolean => {
+  //     const trimmed = code.trim().toUpperCase();
+  //     return CURRENCY_VALIDATION.CODE.PATTERN.test(trimmed);
+  //   },
+  //   validateName: (name: string): boolean => {
+  //     const trimmed = name.trim();
+  //     return trimmed.length >= CURRENCY_VALIDATION.NAME.MIN_LENGTH &&
+  //       trimmed.length <= CURRENCY_VALIDATION.NAME.MAX_LENGTH;
+  //   },
+  //
+  //   validateSymbol: (symbol: string): boolean => {
+  //     const trimmed = symbol.trim();
+  //     return trimmed.length >= CURRENCY_VALIDATION.SYMBOL.MIN_LENGTH &&
+  //       trimmed.length <= CURRENCY_VALIDATION.SYMBOL.MAX_LENGTH;
+  //   },
+  //
+  //   validateDecimalPlaces: (decimalPlaces: number): boolean => {
+  //     return Number.isInteger(decimalPlaces) &&
+  //       decimalPlaces >= CURRENCY_VALIDATION.DECIMAL_PLACES.MIN_VALUE &&
+  //       decimalPlaces <= CURRENCY_VALIDATION.DECIMAL_PLACES.MAX_VALUE;
+  //   },
+  //
+  //   isActive: (isActive: boolean): boolean => {
+  //     return typeof isActive === 'boolean';
+  //   },
+  //
+  //   /**
+  //    * Nettoie les données avant insertion/update
+  //    */
+  //   cleanData: (data: any): void => {
+  //     if (data.code) {
+  //       data.code = data.code.toString().trim().toUpperCase();
+  //     }
+  //     if (data.name) {
+  //       data.name = data.name.toString().trim();
+  //     }
+  //     if (data.symbol) {
+  //       data.symbol = data.symbol.toString().trim();
+  //     }
+  //     if (data.decimal_places !== undefined) {
+  //       data.decimal_places = parseInt(data.decimal_places);
+  //     }
+  //     if (data.active !== undefined) {
+  //       data.active = Boolean(data.active === 'true' || data.active === true || data.active === 1);
+  //     }
+  //   },
+  // },
 };

@@ -1,21 +1,27 @@
 import { Request, Response, Router } from 'express';
-import { CURRENCY_ERRORS, currencySchemas, ERROR_CODES, HttpStatus, paginationSchema } from '@toke/shared';
+import {
+  CURRENCY_ERRORS,
+  currencySchemas,
+  CurrencyValidationUtils,
+  ERROR_CODES,
+  HttpStatus,
+  paginationSchema
+} from '@toke/shared';
 
 import Currency from '../class/Currency';
 import R from '../../tools/response';
-import G from '../../tools/glossary';
 import Ensure from '../middle/ensured-routes';
 import Revision from '../../tools/revision';
 import { tableStructure as TS } from '../../utils/response.model';
 
 
 const router = Router();
-// validateCurrencyCreation,
-// validateCurrencyUpdate
-// CURRENCY_ERRORS,
-// currencyFiltersSchema,
-// ERROR_CODES,
-// HTTP_STATUS,
+  // validateCurrencyCreation,
+  // validateCurrencyUpdate
+  // CURRENCY_ERRORS,
+  // currencyFiltersSchema,
+  // ERROR_CODES,
+  // HTTP_STATUS,
 
 // region ROUTES D'EXPORT
 
@@ -30,10 +36,18 @@ router.get('/', Ensure.get(), async (req: Request, res: Response) => {
     R.handleSuccess(res, { currencies });
   } catch (error: any) {
     console.error('⌐ Erreur export devises:', error);
-    R.handleError(res, HttpStatus.INTERNAL_ERROR, {
-      code: 'export_failed',
-      message: 'Failed to export currencies',
-    });
+    if (error.issues) { // Erreur Zod
+      R.handleError(res, HttpStatus.BAD_REQUEST, {
+        code: ERROR_CODES.PAGINATION_INVALID,
+        message: 'Invalid pagination parameters',
+        details: error.issues,
+      });
+    } else {
+      R.handleError(res, HttpStatus.INTERNAL_ERROR, {
+        code: ERROR_CODES.EXPORT_FAILED,
+        message: CURRENCY_ERRORS.EXPORT_FAILED,
+      });
+    }
   }
 });
 
@@ -51,7 +65,7 @@ router.get('/revision', Ensure.get(), async (req: Request, res: Response) => {
   } catch (error: any) {
     console.error('⌐ Erreur récupération révision:', error);
     R.handleError(res, HttpStatus.INTERNAL_ERROR, {
-      code: 'revision_check_failed',
+      code: ERROR_CODES.INTERNAL_ERROR,
       message: 'Failed to get current revision',
     });
   }
@@ -81,10 +95,18 @@ router.get('/active/:status', Ensure.get(), async (req: Request, res: Response) 
     R.handleSuccess(res, { currencies });
   } catch (error: any) {
     console.error('⌐ Erreur recherche par statut:', error);
-    R.handleError(res, HttpStatus.INTERNAL_ERROR, {
-      code: 'status_search_failed',
-      message: `Failed to search currencies by status: ${req.params.status}`,
-    });
+    if (error.issues) {
+      R.handleError(res, HttpStatus.BAD_REQUEST, {
+        code: ERROR_CODES.PAGINATION_INVALID,
+        message: 'Invalid pagination parameters',
+        details: error.issues,
+      });
+    } else {
+      R.handleError(res, HttpStatus.INTERNAL_ERROR, {
+        code: ERROR_CODES.SEARCH_FAILED,
+        message: `Failed to search currencies by status: ${req.params.status}`,
+      });
+    }
   }
 });
 
@@ -98,65 +120,42 @@ router.get('/active/:status', Ensure.get(), async (req: Request, res: Response) 
 router.post('/', Ensure.post(), async (req: Request, res: Response) => {
   try {
     const validatedData = currencySchemas.validateCurrencyCreation(req.body);
-    // const { code, name, symbol, decimal_places, active } = req.body;
-    // // Validation des champs requis
-    // if (!code) {
-    //   return R.handleError(res, HttpStatus.BAD_REQUEST, {
-    //     code: 'code_required',
-    //     message: 'Currency code (ISO 4217) is required',
-    //   });
-    // }
-    //
-    // if (!name) {
-    //   return R.handleError(res, HttpStatus.BAD_REQUEST, {
-    //     code: 'name_required',
-    //     message: 'Currency name is required',
-    //   });
-    // }
-    //
-    // if (!symbol) {
-    //   return R.handleError(res, HttpStatus.BAD_REQUEST, {
-    //     code: 'symbol_required',
-    //     message: 'Currency symbol is required',
-    //   });
-    // }
-    //
-    // if (decimal_places === undefined || decimal_places === null) {
-    //   return R.handleError(res, HttpStatus.BAD_REQUEST, {
-    //     code: 'decimal_places_required',
-    //     message: 'Decimal places is required',
-    //   });
-    // }
-
     const currency = new Currency()
       .setCode(validatedData.code)
       .setName(validatedData.name)
       .setSymbol(validatedData.symbol)
       .setDecimalPlaces(validatedData.decimal_places);
 
-    if (validatedData.active !== undefined) currency.setActive(Boolean(validatedData.active));
+    if (validatedData.active !== undefined) currency.setActive(validatedData.active);
 
     await currency.save();
 
     console.log(`✅ Devise créée: ${validatedData.code} - ${validatedData.name} (GUID: ${currency.getGuid()})`);
     R.handleCreated(res, currency.toJSON());
   } catch (error: any) {
-    console.error('⌐ Erreur création devise:', error.message);
+    console.error('❌ Erreur création devise:', error.message);
 
-    if (error.message.includes('already exists')) {
-      R.handleError(res, HttpStatus.CONFLICT, {
-        code: 'currency_already_exists',
-        message: error.message,
-      });
-    } else if (error.message.includes('code')) {
+    // ✅ Gestion d'erreurs avec constantes shared
+    if (error.issues) { // Erreur Zod
       R.handleError(res, HttpStatus.BAD_REQUEST, {
-        code: 'invalid_code',
+        code: ERROR_CODES.VALIDATION_FAILED,
+        message: 'Validation failed',
+        details: error.issues,
+      });
+    } else if (error.message.includes('already exists')) {
+      R.handleError(res, HttpStatus.CONFLICT, {
+        code: ERROR_CODES.CURRENCY_ALREADY_EXISTS,
+        message: CURRENCY_ERRORS.CODE_EXISTS,
+      });
+    } else if (error.message.includes('Validation failed')) {
+      R.handleError(res, HttpStatus.BAD_REQUEST, {
+        code: ERROR_CODES.VALIDATION_FAILED,
         message: error.message,
       });
     } else {
       R.handleError(res, HttpStatus.BAD_REQUEST, {
-        code: 'creation_failed',
-        message: error.message,
+        code: ERROR_CODES.CREATION_FAILED,
+        message: CURRENCY_ERRORS.CREATION_FAILED,
       });
     }
   }
@@ -167,8 +166,73 @@ router.post('/', Ensure.post(), async (req: Request, res: Response) => {
  */
 router.put('/:guid', Ensure.put(), async (req: Request, res: Response) => {
   try {
-    // ✅ Validation manuelle du GUID
-    if (!/^\d{6}$/.test(req.params.guid)) {
+
+    // ✅ Validation du GUID avec schéma shared
+    const validatedGuid = currencySchemas.validateCurrencyGuid(req.params.guid);
+
+    // Charger par GUID
+    const currency = await Currency._load(validatedGuid, true);
+    if (!currency) {
+      return R.handleError(res, HttpStatus.NOT_FOUND, {
+        code: ERROR_CODES.CURRENCY_NOT_FOUND,
+        message: CURRENCY_ERRORS.NOT_FOUND,
+      });
+    }
+
+    // ✅ Validation des données avec schéma shared
+    const validatedData = currencySchemas.validateCurrencyUpdate(req.body);
+
+    // Mise à jour des champs fournis
+    if (validatedData.code !== undefined) currency.setCode(validatedData.code);
+    if (validatedData.name !== undefined) currency.setName(validatedData.name);
+    if (validatedData.symbol !== undefined) currency.setSymbol(validatedData.symbol);
+    if (validatedData.decimal_places !== undefined) currency.setDecimalPlaces(validatedData.decimal_places);
+    if (validatedData.active !== undefined) currency.setActive(validatedData.active);
+
+    await currency.save();
+
+    console.log(`✅ Devise modifiée: GUID ${validatedGuid}`);
+    R.handleSuccess(res, currency.toJSON());
+  } catch (error: any) {
+    console.error('❌ Erreur modification devise:', error);
+
+    if (error.issues) { // Erreur Zod
+      R.handleError(res, HttpStatus.BAD_REQUEST, {
+        code: ERROR_CODES.VALIDATION_FAILED,
+        message: 'Validation failed',
+        details: error.issues,
+      });
+    } else if (error.message.includes('Invalid GUID')) {
+      R.handleError(res, HttpStatus.BAD_REQUEST, {
+        code: ERROR_CODES.INVALID_GUID,
+        message: CURRENCY_ERRORS.GUID_INVALID,
+      });
+    } else if (error.message.includes('already exists')) {
+      R.handleError(res, HttpStatus.CONFLICT, {
+        code: ERROR_CODES.CURRENCY_ALREADY_EXISTS,
+        message: CURRENCY_ERRORS.CODE_EXISTS,
+      });
+    } else if (error.message.includes('Validation failed')) {
+      R.handleError(res, HttpStatus.BAD_REQUEST, {
+        code: ERROR_CODES.VALIDATION_FAILED,
+        message: error.message,
+      });
+    } else {
+      R.handleError(res, HttpStatus.BAD_REQUEST, {
+        code: ERROR_CODES.UPDATE_FAILED,
+        message: CURRENCY_ERRORS.UPDATE_FAILED,
+      });
+    }
+  }
+});
+
+/**
+ * DELETE /:guid - Supprimer une devise par GUID
+ */
+router.delete('/:guid', Ensure.delete(), async (req: Request, res: Response) => {
+  try {
+    // ✅ Validation du GUID avec utilitaire shared
+    if (!CurrencyValidationUtils.validateCurrencyGuid(req.params.guid)) {
       return R.handleError(res, HttpStatus.BAD_REQUEST, {
         code: ERROR_CODES.INVALID_GUID,
         message: CURRENCY_ERRORS.GUID_INVALID,
@@ -181,67 +245,8 @@ router.put('/:guid', Ensure.put(), async (req: Request, res: Response) => {
     const currency = await Currency._load(guid, true);
     if (!currency) {
       return R.handleError(res, HttpStatus.NOT_FOUND, {
-        code: 'currency_not_found',
-        message: 'Currency not found',
-      });
-    }
-
-    const { code, name, symbol, decimal_places, active } = req.body;
-
-    // Mise à jour des champs fournis
-    if (code !== undefined) currency.setCode(code);
-    if (name !== undefined) currency.setName(name);
-    if (symbol !== undefined) currency.setSymbol(symbol);
-    if (decimal_places !== undefined) currency.setDecimalPlaces(decimal_places);
-    if (active !== undefined) currency.setActive(Boolean(active));
-
-    await currency.save();
-
-    console.log(`✅ Devise modifiée: GUID ${guid}`);
-    R.handleSuccess(res, currency.toJSON());
-  } catch (error: any) {
-    console.error('⌐ Erreur modification devise:', error);
-
-    if (error.message.includes('already exists')) {
-      R.handleError(res, HttpStatus.CONFLICT, {
-        code: 'currency_already_exists',
-        message: error.message,
-      });
-    } else if (error.message.includes('code')) {
-      R.handleError(res, HttpStatus.BAD_REQUEST, {
-        code: 'invalid_code',
-        message: error.message,
-      });
-    } else {
-      R.handleError(res, HttpStatus.BAD_REQUEST, {
-        code: 'update_failed',
-        message: error.message,
-      });
-    }
-  }
-});
-
-/**
- * DELETE /:guid - Supprimer une devise par GUID
- */
-router.delete('/:guid', Ensure.delete(), async (req: Request, res: Response) => {
-  try {
-    // ✅ Validation manuelle du GUID
-    if (!/^\d+$/.test(req.params.guid)) {
-      return R.handleError(res, HttpStatus.BAD_REQUEST, {
-        code: 'invalid_guid',
-        message: 'GUID must be a positive integer',
-      });
-    }
-
-    const guid = parseInt(req.params.guid);
-
-    // Charger par GUID
-    const currency = await Currency._load(guid, true);
-    if (!currency) {
-      return R.handleError(res, HttpStatus.NOT_FOUND, {
-        code: 'currency_not_found',
-        message: 'Currency not found',
+        code: ERROR_CODES.CURRENCY_NOT_FOUND,
+        message: CURRENCY_ERRORS.NOT_FOUND,
       });
     }
 
@@ -258,13 +263,16 @@ router.delete('/:guid', Ensure.delete(), async (req: Request, res: Response) => 
         name: currency.getName(),
       });
     } else {
-      R.handleError(res, HttpStatus.INTERNAL_ERROR, G.savedError);
+      R.handleError(res, HttpStatus.INTERNAL_ERROR, {
+        code: ERROR_CODES.DELETE_FAILED,
+        message: CURRENCY_ERRORS.DELETE_FAILED,
+      });
     }
   } catch (error: any) {
     console.error('⌐ Erreur suppression devise:', error);
     R.handleError(res, HttpStatus.INTERNAL_ERROR, {
-      code: 'deletion_failed',
-      message: error.message,
+      code: ERROR_CODES.DELETE_FAILED,
+      message: CURRENCY_ERRORS.DELETE_FAILED,
     });
   }
 });
@@ -278,15 +286,16 @@ router.delete('/:guid', Ensure.delete(), async (req: Request, res: Response) => 
  */
 router.get('/list', Ensure.get(), async (req: Request, res: Response) => {
   try {
-    const { active } = req.query;
 
-    const conditions: Record<string, any> = {};
-
-    if (active !== undefined) {
-      conditions.active = active === 'true' || active === '1';
-    }
-
+    // ✅ Validation des filtres avec schéma shared
+    const filters = currencySchemas.validateCurrencyFilters(req.query);
     const paginationOptions = paginationSchema.parse(req.query);
+
+    // Conversion des filtres pour compatibilité
+    const conditions: Record<string, any> = {};
+    if (filters.is_active !== undefined) {
+      conditions.active = filters.is_active;
+    }
 
     const currencyEntries = await Currency._list(conditions, paginationOptions);
     const currencies = {
@@ -300,11 +309,25 @@ router.get('/list', Ensure.get(), async (req: Request, res: Response) => {
 
     R.handleSuccess(res, { currencies });
   } catch (error: any) {
-    console.error('⌐ Erreur listing devises:', error);
-    R.handleError(res, HttpStatus.INTERNAL_ERROR, {
-      code: 'listing_failed',
-      message: 'Failed to list currencies',
-    });
+    console.error('❌ Erreur listing devises:', error);
+
+    if (error.issues) { // Erreur Zod
+      R.handleError(res, HttpStatus.BAD_REQUEST, {
+        code: ERROR_CODES.VALIDATION_FAILED,
+        message: 'Invalid filters or pagination parameters',
+        details: error.issues,
+      });
+    } else if (error.message.includes('Invalid filters')) {
+      R.handleError(res, HttpStatus.BAD_REQUEST, {
+        code: ERROR_CODES.FILTER_INVALID,
+        message: error.message,
+      });
+    } else {
+      R.handleError(res, HttpStatus.INTERNAL_ERROR, {
+        code: ERROR_CODES.LISTING_FAILED,
+        message: CURRENCY_ERRORS.EXPORT_FAILED,
+      });
+    }
   }
 });
 
@@ -315,28 +338,27 @@ router.get('/search/code/:code', Ensure.get(), async (req: Request, res: Respons
   try {
     const { code } = req.params;
 
-    // Validation du format ISO 4217
-    if (!/^[A-Z]{3}$/i.test(code)) {
+    // ✅ Validation avec utilitaire shared
+    if (!CurrencyValidationUtils.validateCurrencyCode(code)) {
       return R.handleError(res, HttpStatus.BAD_REQUEST, {
-        code: 'invalid_code_format',
-        message: 'Currency code must be exactly 3 letters (ISO 4217)',
+        code: ERROR_CODES.CURRENCY_CODE_INVALID,
+        message: CURRENCY_ERRORS.CODE_INVALID,
       });
     }
 
     const currency = await Currency._load(code.toUpperCase(), false, true);
-
     if (!currency) {
       return R.handleError(res, HttpStatus.NOT_FOUND, {
-        code: 'currency_not_found',
+        code: ERROR_CODES.CURRENCY_NOT_FOUND,
         message: `Currency with code '${code.toUpperCase()}' not found`,
       });
     }
 
     R.handleSuccess(res, currency.toJSON());
   } catch (error: any) {
-    console.error('⌐ Erreur recherche par code:', error);
+    console.error('❌ Erreur recherche par code:', error);
     R.handleError(res, HttpStatus.INTERNAL_ERROR, {
-      code: 'search_failed',
+      code: ERROR_CODES.SEARCH_FAILED,
       message: 'Failed to search currency by code',
     });
   }
@@ -358,26 +380,26 @@ router.get('/:identifier', Ensure.get(), async (req: Request, res: Response) => 
       currency = await Currency._load(numericId);
 
       // Si pas trouvé, essayer par GUID
-      if (!currency) {
+      if (!currency && CurrencyValidationUtils.validateCurrencyGuid(numericId)) {
         currency = await Currency._load(numericId, true);
       }
-    } else if (/^[A-Z]{3}$/i.test(identifier)) {
+    } else if (CurrencyValidationUtils.validateCurrencyCode(identifier)) {
       // Recherche par code ISO 4217
       currency = await Currency._load(identifier.toUpperCase(), false, true);
     }
 
     if (!currency) {
       return R.handleError(res, HttpStatus.NOT_FOUND, {
-        code: 'currency_not_found',
+        code: ERROR_CODES.CURRENCY_NOT_FOUND,
         message: `Currency with identifier '${identifier}' not found`,
       });
     }
 
     R.handleSuccess(res, currency.toJSON());
   } catch (error: any) {
-    console.error('⌐ Erreur recherche devise:', error);
+    console.error('❌ Erreur recherche devise:', error);
     R.handleError(res, HttpStatus.INTERNAL_ERROR, {
-      code: 'search_failed',
+      code: ERROR_CODES.SEARCH_FAILED,
       message: 'Failed to search currency',
     });
   }
