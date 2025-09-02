@@ -1,43 +1,46 @@
 <template>
   <div class="verify-container">
-    <!-- Logo centré au-dessus -->
-    <div class="auth-container">
-      <div class="authlogo">
-        <img
-          :src="logoSrc"
-          :alt="logoAlt"
-        />
+    <div class="layout">
+      <!-- Image à gauche -->
+      <div class="side-image">
+        <img :src="Image" alt="Illustration" />
       </div>
-
-      <div class="verify-card">
-        <h1 class="verify-title">Verify</h1>
-        <p class="verify-subtitle">Your code was sent to you via email</p>
-
-        <div class="otp-inputs">
-          <input
-            v-for="(digit, index) in otpDigits"
-            :key="index"
-            :ref="el => setInputRef(el, index)"
-            v-model="otpDigits[index]"
-            type="text"
-            maxlength="1"
-            class="otp-input"
-            @input="handleInput(index, $event)"
-            @keydown="handleKeydown(index, $event)"
-            @paste="handlePaste($event)"
-          />
+      <!-- Formulaire à droite -->
+      <div class="auth-container">
+        <div class="authlogo">
+          <img :src="logoSrc" :alt="logoAlt" />
         </div>
 
-        <div class="action-buttons">
-          <button class="verify-button" @click="verifyCode">
-            Verify
-          </button>
-        </div>
+        <div class="verify-card">
+          <h1 class="verify-title">Verify</h1>
+          <p class="verify-subtitle">Votre code vous a ete envoyer par email</p>
 
-        <p class="request-again">
-          Didn't receive code?
-          <a href="#" class="request-link" @click.prevent="requestAgain">Request again</a>
-        </p>
+          <div class="otp-inputs">
+            <input
+              v-for="(digit, index) in otpDigits"
+              :key="index"
+              :ref="el => setInputRef(el, index)"
+              v-model="otpDigits[index]"
+              type="text"
+              maxlength="1"
+              class="otp-input"
+              @input="handleInput(index, $event)"
+              @keydown="handleKeydown(index, $event)"
+              @paste="handlePaste($event)"
+            />
+          </div>
+
+          <div class="action-buttons">
+            <button class="verify-button" @click="verifyCode">
+              Verify
+            </button>
+          </div>
+
+          <p class="request-again">
+            Vous n'avez pas recu de code?
+            <a href="/" class="request-link">Reenvoyer</a>
+          </p>
+        </div>
       </div>
     </div>
   </div>
@@ -48,7 +51,7 @@ import { onMounted, ref, nextTick } from "vue"
 import HeadBuilder from "../utils/HeadBuilder"
 import otpCss from "../assets/css/toke-otp-02.css?url"
 import defaultLogo from '/src/assets/images/toke-main-logo.svg'
-
+import Image from '../assets/images/pic5.png'
 
 // Quand le composant est monté, on met à jour <head>
 onMounted(() => {
@@ -185,11 +188,11 @@ const verifyCode = () => {
   alert(`Code saisi: ${code}`)
 }
 
-const requestAgain = () => {
-  console.log('Demande d\'un nouveau code')
-  // Ici vous pouvez ajouter la logique pour redemander un code
-  alert('Un nouveau code va être envoyé')
-}
+// const requestAgain = () => {
+//   console.log('Demande d\'un nouveau code')
+//   // Ici vous pouvez ajouter la logique pour redemander un code
+//   alert('Un nouveau code va être envoyé')
+// }
 </script>
 
 <style scoped>

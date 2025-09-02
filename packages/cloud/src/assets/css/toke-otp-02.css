@@ -12,18 +12,43 @@ body {
 /* Container principal */
 .verify-container {
     min-height: 100vh;
-    background: #F8F9FA;
+    background-image: linear-gradient(to top, #dfe9f3 0%, white 100%);
     display: flex;
     align-items: center;
     justify-content: center;
     padding: 20px;
 }
 
+.layout {
+    display: flex;
+    align-items: center;     /* centre verticalement */
+    justify-content: space-evenly; /* image bien à gauche */
+    width: 100%;       /* largeur max pour garder un bon centrage global */
+    margin: 0 auto;          /* centre le bloc entier dans la page */
+}
+
+.side-image {
+    flex-shrink: 0;          /* empêche l’image de rétrécir */
+    display: flex;
+    align-items: center;     /* centre l’image verticalement */
+    justify-content: center; /* centre horizontalement dans son bloc */
+}
+
+.side-image img {
+    width: 800px;            /* agrandit l’image */
+    max-width: 100%;
+    height: auto;
+    border-radius: 16px;     /* arrondi plus doux */
+    object-fit: contain;     /* garde le ratio sans déformation */
+}
+
+
+
 /* Logo container */
 .authlogo {
     display: flex;
     justify-content: center;
-    margin-bottom: 30%;
+    margin-bottom: 20%;
     position: relative;
     z-index: 1;
 }
@@ -102,7 +127,7 @@ body {
 
 /* Bouton de vérification */
 .verify-button {
-    background: #3182ce;
+    background: #004AAD;
     color: white;
     border: none;
     border-radius: 8px;
@@ -116,7 +141,7 @@ body {
 }
 
 .verify-button:hover {
-    background: #2c5aa0;
+    background: #0056b3;
     transfor/* Reset et styles de base */
 * {
   margin: 0;
@@ -128,15 +153,6 @@ body {
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', 'Cantarell', sans-serif;
 }
 
-/* Container principal */
-.verify-container {
-  min-height: 100vh;
-  background: linear-gradient(135deg, #c8a8e9 0%, #b794f6 100%);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 20px;
-}
 
 /* Card de vérification */
 .verify-card {
@@ -244,7 +260,7 @@ body {
   text-decoration: underline;
 }
 
-/* Responsive design */
+/*!* Responsive design *!*/
 @media (max-width: 640px) {
   .verify-card {
     padding: 32px 24px;
@@ -314,39 +330,7 @@ body {
     text-decoration: underline;
 }
 
-/* Responsive design */
-@media (max-width: 640px) {
-    .verify-card {
-        padding: 32px 24px;
-        margin: 16px;
-    }
-
-    .verify-title {
-        font-size: 28px;
-    }
-
-    .verify-subtitle {
-        font-size: 15px;
-        margin-bottom: 32px;
-    }
-
-    .otp-inputs {
-        gap: 8px;
-        margin-bottom: 28px;
-    }
-
-    .otp-input {
-        width: 48px;
-        height: 48px;
-        font-size: 18px;
-    }
-
-    .verify-button {
-        padding: 12px 28px;
-        font-size: 15px;
-    }
-}
-
+/*!* Responsive design *!*/
 @media (max-width: 480px) {
     .otp-input {
         width: 44px;
@@ -358,3 +342,35 @@ body {
         gap: 6px;
     }
 }
+    @media (max-width: 768px) {
+        .layout {
+            flex-direction: column; /* empile image + formulaire */
+            gap: 24px;              /* espace entre les deux */
+        }
+
+        .side-image img {
+            width: 100%;
+            max-width: 400px; /* limite pour éviter une image trop grande */
+        }
+
+        .authlogo {
+            margin-bottom: 40px; /* espace avant la card */
+        }
+    }
+    @media (max-width: 480px) {
+        .verify-card {
+            padding: 24px 16px;
+        }
+
+        .verify-title {
+            font-size: 24px;
+        }
+
+        .otp-input {
+            width: 40px;
+            height: 40px;
+            font-size: 16px;
+        }
+    }
+
+

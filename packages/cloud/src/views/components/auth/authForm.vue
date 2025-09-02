@@ -2,19 +2,19 @@
   <div class="auth-page">
     <!-- Logo centré au-dessus -->
     <div class="auth-container">
-      <div class="auth-logo">
-        <img
-          :src="logoSrc"
-          :alt="logoAlt"
-        />
-      </div>
-
+<!--      <div class="auth-logo">-->
+<!--        <img-->
+<!--          :src="logoSrc"-->
+<!--          :alt="logoAlt"-->
+<!--        />-->
+<!--      </div>-->
       <!-- Carte du formulaire -->
       <div class="auth-form-card">
-        <p class="auth-welcome-message">
-          {{ welcomeMessage }}
-        </p>
-
+        <slot name="welcome">
+          <p class="auth-welcome-message">
+            {{ welcomeMessage }}
+          </p>
+        </slot>
         <form @submit.prevent="handleSubmit">
           <div class="auth-field">
             <label class="auth-field-label" :for="emailFieldId">
@@ -32,7 +32,7 @@
 
           <!-- Lien OTP aligné à droite -->
           <div class="auth-otp-container">
-            <a href="#" class="auth-otp-link">
+            <a href="/otp" class="otp-link">
               J'ai un jeton valide
             </a>
           </div>

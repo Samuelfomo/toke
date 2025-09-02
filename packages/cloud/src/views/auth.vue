@@ -5,7 +5,11 @@
     welcome-message="Authentifiez-vous"
     :show-back-link="false"
     @submit="handleLogin"
-  />
+  >
+    <template #welcome>
+      <img src="/src/assets/images/toke-main-logo.svg" alt="Logo" class="auth-logo" />
+    </template>
+    </LoginForm>
 </template>
 
 <script setup lang="ts">
