@@ -51,7 +51,7 @@ import { onMounted, ref, nextTick } from "vue"
 import HeadBuilder from "../utils/HeadBuilder"
 import otpCss from "../assets/css/toke-otp-02.css?url"
 import defaultLogo from '/src/assets/images/toke-main-logo.svg'
-import Image from '../assets/images/pic5.png'
+import Image from '../assets/images/pic1.png'
 
 // Quand le composant est monté, on met à jour <head>
 onMounted(() => {
