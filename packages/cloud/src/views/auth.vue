@@ -1,37 +1,48 @@
 <template>
-  <LoginForm
-    :show-password="true"
+  <AuthForm
+    page-title="Connexion - Toké"
+    :css-file="authCss"
+    welcome-message="Authentification"
     submit-button-text="Envoyer"
-    welcome-message="Authentifiez-vous"
-    :show-back-link="false"
+    loading-text="Connexion..."
+    :secondary-action-link="{ url: '/otp', text: 'J\'ai un jeton valide' }"
+    redirect-to="/otp"
     @submit="handleLogin"
+    @field-change="onFieldChange"
   >
-    <template #welcome>
-      <img src="/src/assets/images/toke-main-logo.svg" alt="Logo" class="auth-logo" />
+    <!-- Champs personnalisés -->
+    <template #fields="{ formData, updateField }">
+      <div class="auth-field">
+        <input
+          :id="emailId"
+          :value="formData.email"
+          @input="updateField('email', $event.target.value)"
+          type="email"
+          placeholder="Renseigner votre email"
+          class="auth-input"
+          required
+        />
+      </div>
     </template>
-    </LoginForm>
+  </AuthForm>
 </template>
 
 <script setup lang="ts">
-import { onMounted } from "vue"
-import HeadBuilder from "../utils/HeadBuilder"
-import LoginForm from "./components/auth/authForm.vue"
-import authCss from "../assets/css/toke-auth-01.css?url"
+import { computed } from 'vue'
+import AuthForm from './components/auth/authForm.vue'
+import authCss from '../assets/css/toke-auth-01.css?url'
 
-// Quand le composant est monté, on met à jour <head>
-onMounted(() => {
-  HeadBuilder.apply({
-    title: "Connexion - Bienvenue",
-    css: [authCss],
-    meta: { viewport: "width=device-width, initial-scale=1.0" }
-  })
-})
+// ID unique pour l'email
+const emailId = computed(() => `email-${Math.random().toString(36).substr(2, 9)}`)
 
-
-// Gestion de la soumission du formulaire
-const handleLogin = async (formData: any) => {
+// Gestion de la soumission
+const handleLogin = (formData: any) => {
   console.log('Données de connexion:', formData)
-  // Ici, vous pouvez ajouter votre logique d'authentification
-  // Par exemple: appel API, redirection, etc.
+  // Ici vous pouvez ajouter votre logique d'authentification
+}
+
+// Gestion des changements de champs
+const onFieldChange = (fieldName: string, value: any) => {
+  console.log(`Champ ${fieldName} modifié:`, value)
 }
 </script>

@@ -1,200 +1,155 @@
 <template>
-  <div class="verify-container">
-    <div class="layout">
-      <!-- Image à gauche -->
-      <div class="side-image">
-        <img :src="Image" alt="Illustration" />
+  <AuthForm
+    page-title="Vérification OTP - Toké"
+    :css-file="otpCss"
+    welcome-message=""
+    welcome-subtitle="Saisir le code de vérification envoyé à votre adresse email"
+    submit-button-text="Vérifier"
+    loading-text="Vérification..."
+    :default-fields="[]"
+    :validation="validateOtp"
+    :back-link="{ url: '/', text: 'Renvoyer' }"
+    @submit="handleOtpVerification"
+  >
+    <!-- Champs OTP personnalisés -->
+    <template #fields="{ formData, updateField }">
+      <div class="otp-inputs">
+        <input
+          v-for="(digit, index) in otpDigits"
+          :key="index"
+          :ref="el => setInputRef(el, index)"
+          v-model="otpDigits[index]"
+          type="text"
+          inputmode="numeric"
+          pattern="[0-9]*"
+          maxlength="1"
+          class="otp-input"
+          :placeholder="'•'"
+          :class="{ 'filled': otpDigits[index] }"
+          @input="handleInput(index, $event, updateField)"
+          @keydown="handleKeydown(index, $event)"
+          @paste="handlePaste($event, updateField)"
+          @focus="handleFocus(index)"
+          autocomplete="one-time-code"
+        />
       </div>
-      <!-- Formulaire à droite -->
-      <div class="auth-container">
-        <div class="authlogo">
-          <img :src="logoSrc" :alt="logoAlt" />
-        </div>
+    </template>
 
-        <div class="verify-card">
-          <h1 class="verify-title">Verify</h1>
-          <p class="verify-subtitle">Votre code vous a ete envoyer par email</p>
-
-          <div class="otp-inputs">
-            <input
-              v-for="(digit, index) in otpDigits"
-              :key="index"
-              :ref="el => setInputRef(el, index)"
-              v-model="otpDigits[index]"
-              type="text"
-              maxlength="1"
-              class="otp-input"
-              @input="handleInput(index, $event)"
-              @keydown="handleKeydown(index, $event)"
-              @paste="handlePaste($event)"
-            />
-          </div>
-
-          <div class="action-buttons">
-            <button class="verify-button" @click="verifyCode">
-              Verify
-            </button>
-          </div>
-
-          <p class="request-again">
-            Vous n'avez pas recu de code?
-            <a href="/" class="request-link">Reenvoyer</a>
-          </p>
-        </div>
-      </div>
-    </div>
-  </div>
+    <!-- Actions personnalisées -->
+    <template #actions>
+      <p class="request-again">
+        Vous n'avez pas reçu de code ?
+        <a href="/" class="request-link">
+          Renvoyer
+        </a>
+      </p>
+    </template>
+  </AuthForm>
 </template>
 
-<script setup>
-import { onMounted, ref, nextTick } from "vue"
-import HeadBuilder from "../utils/HeadBuilder"
-import otpCss from "../assets/css/toke-otp-02.css?url"
-import defaultLogo from '/src/assets/images/toke-main-logo.svg'
-import Image from '../assets/images/pic1.png'
+<script setup lang="ts">
+import { ref, nextTick, computed, onMounted } from 'vue'
+import otpCss from '../assets/css/toke-otp-02.css?url'
+import AuthForm from './components/auth/authForm.vue';
 
-// Quand le composant est monté, on met à jour <head>
-onMounted(() => {
-  HeadBuilder.apply({
-    title: "Connexion - Bienvenue",
-    css: [otpCss],
-    meta: { viewport: "width=device-width, initial-scale=1.0" }
-  })
-})
-// Définition des props
-const props = defineProps({
-  // Logo
-  logoSrc: {
-    type: String,
-    default: defaultLogo,
-  },
-  logoAlt: {
-    type: String,
-    default: 'Logo'
-  },
- })
+// État des champs OTP
 const otpDigits = ref(['', '', '', '', '', ''])
 const inputRefs = ref([])
 
-const setInputRef = (el, index) => {
+// Validation OTP
+const validateOtp = computed(() => {
+  return otpDigits.value.every(digit => digit !== '')
+})
+
+// Gestion des références d'inputs
+const setInputRef = (el: HTMLElement | null, index: number) => {
   if (el) {
     inputRefs.value[index] = el
   }
 }
 
-const handleInput = async (index, event) => {
-  const value = event.target.value
+// Focus automatique sur le premier champ
+onMounted(() => {
+  nextTick(() => {
+    inputRefs.value[0]?.focus()
+  })
+})
+
+// Gestion du focus
+const handleFocus = (index: number) => {
+  nextTick(() => {
+    inputRefs.value[index]?.select()
+  })
+}
+
+// Gestion de la saisie
+const handleInput = async (index: number, event: Event, updateField: Function) => {
+  const target = event.target as HTMLInputElement
+  const value = target.value
+
   // Ne garder que les chiffres
   if (!/^\d*$/.test(value)) {
     otpDigits.value[index] = ''
     return
   }
+
   otpDigits.value[index] = value
-  // Passer au champ suivant si un chiffre est saisi
+
+  // Mettre à jour le formData du template
+  updateField('otp', otpDigits.value.join(''))
+
+  // Passer au champ suivant
   if (value && index < 5) {
     await nextTick()
     inputRefs.value[index + 1]?.focus()
   }
 }
 
-// Fonction pour effacer depuis une position donnée jusqu'à la fin
-const clearFromPosition = (startIndex) => {
-  for (let i = startIndex; i < otpDigits.value.length; i++) {
-    otpDigits.value[i] = ''
-  }
-}
-
-// Fonction pour effacer toutes les cases
-const clearAll = () => {
-  for (let i = 0; i < otpDigits.value.length; i++) {
-    otpDigits.value[i] = ''
-  }
-  // Focuser la première case après effacement
-  inputRefs.value[0]?.focus()
-}
-
-const handleKeydown = async (index, event) => {
-  // Ctrl+A : sélectionner tout et préparer la suppression
-  if (event.ctrlKey && event.key === 'a') {
-    event.preventDefault()
-    // Sélectionner visuellement tous les champs (on peut ajouter une classe CSS)
-    inputRefs.value.forEach(input => {
-      if (input) input.select()
-    })
-    return
-  }
-
-  // Suppr ou Delete : effacer depuis la position actuelle jusqu'à la fin
-  if (event.key === 'Delete') {
-    event.preventDefault()
-    clearFromPosition(index)
-    return
-  }
-
-  // Retour arrière : effacer le champ actuel et aller au précédent
+// Gestion des touches
+const handleKeydown = async (index: number, event: KeyboardEvent) => {
   if (event.key === 'Backspace') {
     event.preventDefault()
-
-    // Si le champ actuel contient quelque chose, l'effacer
     if (otpDigits.value[index]) {
       otpDigits.value[index] = ''
-    }
-    // Sinon, aller au champ précédent et l'effacer
-    else if (index > 0) {
+    } else if (index > 0) {
       otpDigits.value[index - 1] = ''
       await nextTick()
       inputRefs.value[index - 1]?.focus()
     }
-    return
-  }
-
-  // Ctrl+Backspace : effacer depuis le début jusqu'à la position actuelle
-  if (event.ctrlKey && event.key === 'Backspace') {
+  } else if (event.key === 'ArrowLeft' && index > 0) {
     event.preventDefault()
-    for (let i = 0; i <= index; i++) {
-      otpDigits.value[i] = ''
-    }
-    inputRefs.value[0]?.focus()
-    return
-  }
-
-  // Flèches gauche/droite pour naviguer
-  if (event.key === 'ArrowLeft' && index > 0) {
     inputRefs.value[index - 1]?.focus()
   } else if (event.key === 'ArrowRight' && index < 5) {
+    event.preventDefault()
     inputRefs.value[index + 1]?.focus()
   }
 }
 
-const handlePaste = async (event) => {
+// Gestion du collage
+const handlePaste = async (event: ClipboardEvent, updateField: Function) => {
   event.preventDefault()
-  const pastedData = event.clipboardData.getData('text').replace(/\D/g, '')
+  const pastedData = event.clipboardData?.getData('text').replace(/\D/g, '') || ''
+
   if (pastedData.length <= 6) {
-    // Remplir les champs avec les données collées
     for (let i = 0; i < 6; i++) {
       otpDigits.value[i] = pastedData[i] || ''
     }
-    // Focuser le dernier champ rempli ou le premier vide
+
+    updateField('otp', otpDigits.value.join(''))
+
     await nextTick()
     const nextEmptyIndex = pastedData.length < 6 ? pastedData.length : 5
     inputRefs.value[nextEmptyIndex]?.focus()
   }
 }
 
-const verifyCode = () => {
+// Gestion de la vérification
+const handleOtpVerification = async (formData: any) => {
   const code = otpDigits.value.join('')
-  console.log('Code de vérification:', code)
-  // Ici vous pouvez ajouter la logique de vérification
-  alert(`Code saisi: ${code}`)
+  console.log('Code OTP:', code)
+
+  // Simulation d'appel API
+  await new Promise(resolve => setTimeout(resolve, 2000))
+  console.log('Code vérifié avec succès')
 }
-
-// const requestAgain = () => {
-//   console.log('Demande d\'un nouveau code')
-//   // Ici vous pouvez ajouter la logique pour redemander un code
-//   alert('Un nouveau code va être envoyé')
-// }
 </script>
-
-<style scoped>
-
-</style>
