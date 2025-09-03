@@ -1,6 +1,6 @@
 import { DataTypes, ModelAttributes, ModelOptions } from 'sequelize';
 
-import G from '../../../tools/glossary';
+import G from '../../../tools/glossary.js';
 
 export enum Type {
   CLOUD_FLEX = 'CLOUD_FLEX',

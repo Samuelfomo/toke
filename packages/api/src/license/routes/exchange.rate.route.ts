@@ -1,13 +1,18 @@
 import { Request, Response, Router } from 'express';
+import {
+  ER,
+  ERROR_CODES,
+  EXCHANGE_RATE_ERRORS,
+  ExchangeRateValidationUtils,
+  HttpStatus,
+  paginationSchema
+} from '@toke/shared';
 
-import ExchangeRate from '../class/ExchangeRate';
-import R from '../../tools/response';
-import HttpStatus from '../../tools/http-status';
-import G from '../../tools/glossary';
-import Ensure from '../middle/ensured-routes';
-import ExtractQueryParams from '../../utils/extract.query.params';
-import Revision from '../../tools/revision';
-import { tableStructure as TS } from '../../utils/response.model';
+import ExchangeRate from '../class/ExchangeRate.js';
+import R from '../../tools/response.js';
+import Ensure from '../middle/ensured-routes.js';
+import Revision from '../../tools/revision.js';
+import { tableName as TS } from '../../utils/response.model.js';
 
 const router = Router();
 
@@ -18,23 +23,31 @@ const router = Router();
  */
 router.get('/', Ensure.get(), async (req: Request, res: Response) => {
   try {
-    const paginationOptions = await ExtractQueryParams.extractPaginationFromQuery(req.query);
+    const paginationOptions = paginationSchema.parse(req.query);
 
     const exchangeRates = await ExchangeRate.exportable(paginationOptions);
     R.handleSuccess(res, { exchange_rates: exchangeRates });
   } catch (error: any) {
-    console.error('⌐ Erreur export taux de change:', error);
-    R.handleError(res, HttpStatus.INTERNAL_ERROR, {
-      code: 'export_failed',
-      message: 'Failed to export exchange rates',
-    });
+    console.error('❌ Erreur export taux de change:', error);
+    if (error.issues) { // Erreur Zod
+      R.handleError(res, HttpStatus.BAD_REQUEST, {
+        code: ERROR_CODES.PAGINATION_INVALID,
+        message: 'Invalid pagination parameters',
+        details: error.issues,
+      });
+    } else {
+      R.handleError(res, HttpStatus.INTERNAL_ERROR, {
+        code: ERROR_CODES.EXPORT_FAILED,
+        message:  EXCHANGE_RATE_ERRORS.EXPORT_FAILED,
+      });
+    }
   }
 });
 
 /**
  * GET /revision - Récupérer uniquement la révision actuelle
  */
-router.get('/revision', Ensure.get(), async (req: Request, res: Response) => {
+router.get('/revision', Ensure.get(), async (_req: Request, res: Response) => {
   try {
     const revision = await Revision.getRevision(TS.EXCHANGE_RATE);
 
@@ -43,30 +56,10 @@ router.get('/revision', Ensure.get(), async (req: Request, res: Response) => {
       checked_at: new Date().toISOString(),
     });
   } catch (error: any) {
-    console.error('⌐ Erreur récupération révision:', error);
+    console.error('❌ Erreur récupération révision:', error);
     R.handleError(res, HttpStatus.INTERNAL_ERROR, {
-      code: 'revision_check_failed',
+      code: ERROR_CODES.INTERNAL_ERROR,
       message: 'Failed to get current revision',
-    });
-  }
-});
-
-/**
- * GET /last-modification - Récupérer la dernière modification
- */
-router.get('/last-modification', Ensure.get(), async (req: Request, res: Response) => {
-  try {
-    const lastModification = await ExchangeRate._getLastModificationTime();
-
-    R.handleSuccess(res, {
-      last_modification: lastModification,
-      checked_at: new Date().toISOString(),
-    });
-  } catch (error: any) {
-    console.error('⌐ Erreur récupération dernière modification:', error);
-    R.handleError(res, HttpStatus.INTERNAL_ERROR, {
-      code: 'last_modification_failed',
-      message: 'Failed to get last modification time',
     });
   }
 });
@@ -79,7 +72,7 @@ router.get('/current/:status', Ensure.get(), async (req: Request, res: Response)
     const { status } = req.params;
     const isCurrent = status.toLowerCase() === 'true' || status === '1';
 
-    const paginationOptions = await ExtractQueryParams.extractPaginationFromQuery(req.query);
+    const paginationOptions = paginationSchema.parse(req.query);
 
     const exchangeRatesData = await ExchangeRate._listByCurrentStatus(isCurrent, paginationOptions);
     const exchange_rates = {
@@ -94,11 +87,19 @@ router.get('/current/:status', Ensure.get(), async (req: Request, res: Response)
 
     R.handleSuccess(res, { exchange_rates });
   } catch (error: any) {
-    console.error('⌐ Erreur recherche par statut courant:', error);
-    R.handleError(res, HttpStatus.INTERNAL_ERROR, {
-      code: 'current_status_search_failed',
-      message: `Failed to search exchange rates by current status: ${req.params.status}`,
-    });
+    console.error('❌ Erreur recherche par statut courant:', error);
+    if (error.issues) {
+      R.handleError(res, HttpStatus.BAD_REQUEST, {
+        code: ERROR_CODES.PAGINATION_INVALID,
+        message: 'Invalid pagination parameters',
+        details: error.issues,
+      });
+    } else {
+      R.handleError(res, HttpStatus.INTERNAL_ERROR, {
+        code: ERROR_CODES.SEARCH_FAILED,
+        message: `Failed to search exchange rates by status: ${req.params.status}`,
+      });
+    }
   }
 });
 
@@ -111,25 +112,33 @@ router.get(
   async (req: Request, res: Response) => {
     try {
       const { from_currency, to_currency } = req.params;
+
+      // Validation avec utilitaires shared
+      if (!ExchangeRateValidationUtils.validateFromCurrencyCode(from_currency)) {
+        return R.handleError(res, HttpStatus.BAD_REQUEST, {
+          code: ERROR_CODES.CURRENCY_CODE_INVALID,
+          message: EXCHANGE_RATE_ERRORS.FROM_CURRENCY_CODE_INVALID,
+        });
+      }
+
+      if (!ExchangeRateValidationUtils.validateToCurrencyCode(to_currency)) {
+        return R.handleError(res, HttpStatus.BAD_REQUEST, {
+          code: ERROR_CODES.CURRENCY_CODE_INVALID,
+          message: EXCHANGE_RATE_ERRORS.TO_CURRENCY_CODE_INVALID,
+        });
+      }
+
       const fromCode = from_currency.toUpperCase();
       const toCode = to_currency.toUpperCase();
 
-      // Validation des codes de devise
-      if (!/^[A-Z]{3}$/.test(fromCode) || !/^[A-Z]{3}$/.test(toCode)) {
+      if (!ExchangeRateValidationUtils.validateCurrencyPair(fromCode, toCode)) {
         return R.handleError(res, HttpStatus.BAD_REQUEST, {
-          code: 'invalid_currency_code',
-          message: 'Currency codes must be exactly 3 letters (ISO 4217)',
+          code: ERROR_CODES.SAME_CURRENCY_PAIR,
+          message: EXCHANGE_RATE_ERRORS.SAME_CURRENCY_PAIR,
         });
       }
 
-      if (fromCode === toCode) {
-        return R.handleError(res, HttpStatus.BAD_REQUEST, {
-          code: 'same_currency_pair',
-          message: 'From and to currency cannot be the same',
-        });
-      }
-
-      const paginationOptions = await ExtractQueryParams.extractPaginationFromQuery(req.query);
+      const paginationOptions = paginationSchema.parse(req.query);
       const { current_only } = req.query;
       const isCurrentOnly = current_only === 'true' || current_only === '1';
 
@@ -156,17 +165,24 @@ router.get(
 
       R.handleSuccess(res, { exchange_rates });
     } catch (error: any) {
-      console.error('⌐ Erreur recherche par paire:', error);
-      R.handleError(res, HttpStatus.INTERNAL_ERROR, {
-        code: 'pair_search_failed',
-        message: `Failed to search exchange rates for pair: ${req.params.from_currency}/${req.params.to_currency}`,
-      });
+      console.error('❌ Erreur recherche par paire:', error);
+      if (error.issues) {
+        R.handleError(res, HttpStatus.BAD_REQUEST, {
+          code: ERROR_CODES.PAGINATION_INVALID,
+          message: 'Invalid pagination parameters',
+          details: error.issues,
+        });
+      } else {
+        R.handleError(res, HttpStatus.INTERNAL_ERROR, {
+          code: ERROR_CODES.SEARCH_FAILED,
+          message: `Failed to search exchange rates for pair: ${req.params.from_currency}/${req.params.to_currency}`,
+        });
+      }
     }
-  },
-);
+  });
 
 /**
- * GET /currency/:currency_code - Récupérer tous les taux impliquant une devise
+ * GET /currency/:currency_code - Récupérer tous les taux impliquant une devise ___
  */
 router.get('/currency/:currency_code', Ensure.get(), async (req: Request, res: Response) => {
   try {
@@ -181,7 +197,7 @@ router.get('/currency/:currency_code', Ensure.get(), async (req: Request, res: R
       });
     }
 
-    const paginationOptions = await ExtractQueryParams.extractPaginationFromQuery(req.query);
+    const paginationOptions = paginationSchema.parse(req.query);
     const { current_only } = req.query;
     const isCurrentOnly = current_only === 'true' || current_only === '1';
 
@@ -224,75 +240,45 @@ router.get('/currency/:currency_code', Ensure.get(), async (req: Request, res: R
  */
 router.post('/', Ensure.post(), async (req: Request, res: Response) => {
   try {
-    const { from_currency_code, to_currency_code, exchange_rate, current, created_by } = req.body;
-
-    // Validation des champs requis
-    if (!from_currency_code) {
-      return R.handleError(res, HttpStatus.BAD_REQUEST, {
-        code: 'from_currency_code_required',
-        message: 'From currency code is required',
-      });
-    }
-
-    if (!to_currency_code) {
-      return R.handleError(res, HttpStatus.BAD_REQUEST, {
-        code: 'to_currency_code_required',
-        message: 'To currency code is required',
-      });
-    }
-
-    if (!exchange_rate) {
-      return R.handleError(res, HttpStatus.BAD_REQUEST, {
-        code: 'exchange_rate_required',
-        message: 'Exchange rate is required',
-      });
-    }
-
-    if (!created_by) {
-      return R.handleError(res, HttpStatus.BAD_REQUEST, {
-        code: 'created_by_required',
-        message: 'Created by user ID is required',
-      });
-    }
-
-    if (from_currency_code.toUpperCase() === to_currency_code.toUpperCase()) {
-      return R.handleError(res, HttpStatus.BAD_REQUEST, {
-        code: 'same_currency_pair',
-        message: 'From and to currency cannot be the same',
-      });
-    }
+    const validatedData = ER.exchangeRateSchemas.validateExchangeRateCreation(req.body);
 
     const exchangeRateObj = new ExchangeRate()
-      .setFromCurrencyCode(from_currency_code)
-      .setToCurrencyCode(to_currency_code)
-      .setExchangeRate(exchange_rate)
-      .setCreatedBy(created_by);
+      .setFromCurrencyCode(validatedData.from_currency_code)
+      .setToCurrencyCode(validatedData.to_currency_code)
+      .setExchangeRate(validatedData.exchange_rate)
+      .setCreatedBy(validatedData.created_by);
 
-    if (current !== undefined) exchangeRateObj.setCurrent(Boolean(current));
+    if (validatedData.current !== undefined) exchangeRateObj.setCurrent(validatedData.current);
 
     await exchangeRateObj.save();
 
     console.log(
-      `✅ Taux de change créé: ${exchangeRateObj.getCurrencyPair()} - ${exchange_rate} (GUID: ${exchangeRateObj.getGuid()})`,
+      `✅ Taux de change créé: ${exchangeRateObj.getCurrencyPair()} - ${validatedData.exchange_rate} (GUID: ${exchangeRateObj.getGuid()})`
     );
     R.handleCreated(res, exchangeRateObj.toJSON());
   } catch (error: any) {
-    console.error('⌐ Erreur création taux de change:', error.message);
+    console.error('❌ Erreur création taux de change:', error.message);
 
-    if (error.message.includes('currency')) {
+    if (error.issues) { // Erreur Zod
       R.handleError(res, HttpStatus.BAD_REQUEST, {
-        code: 'invalid_currency',
-        message: error.message,
+        code: ERROR_CODES.VALIDATION_FAILED,
+        message: 'Validation failed',
+        details: error.issues,
       });
-    } else if (error.message.includes('exchange_rate')) {
+    } else if (error.message.includes('already exists')) {
+      R.handleError(res, HttpStatus.CONFLICT, {
+        code: ERROR_CODES.EXCHANGE_RATE_ALREADY_EXISTS,
+        message: EXCHANGE_RATE_ERRORS.CURRENCY_PAIR_EXISTS,
+      });
+    } else if (error.message.includes('Validation failed')) {
       R.handleError(res, HttpStatus.BAD_REQUEST, {
-        code: 'invalid_exchange_rate',
+        code: ERROR_CODES.VALIDATION_FAILED,
         message: error.message,
       });
     } else {
       R.handleError(res, HttpStatus.BAD_REQUEST, {
-        code: 'creation_failed',
-        message: error.message,
+        code: ERROR_CODES.CREATION_FAILED,
+        message: EXCHANGE_RATE_ERRORS.CREATION_FAILED,
       });
     }
   }
@@ -303,69 +289,69 @@ router.post('/', Ensure.post(), async (req: Request, res: Response) => {
  */
 router.put('/:guid', Ensure.put(), async (req: Request, res: Response) => {
   try {
-    // ✅ Validation manuelle du GUID
-    if (!/^\d{6}$/.test(req.params.guid)) {
-      return R.handleError(res, HttpStatus.BAD_REQUEST, {
-        code: 'invalid_guid',
-        message: 'GUID must be a 6-digit number',
-      });
-    }
-
-    const guid = parseInt(req.params.guid);
+    const validatedGuid = ER.exchangeRateSchemas.validateExchangeRateGuid(req.params.guid);
 
     // Charger par GUID
-    const exchangeRate = await ExchangeRate._load(guid, true);
+    const exchangeRate = await ExchangeRate._load(validatedGuid, true);
     if (!exchangeRate) {
       return R.handleError(res, HttpStatus.NOT_FOUND, {
-        code: 'exchange_rate_not_found',
-        message: 'Exchange rate not found',
+        code: ERROR_CODES.EXCHANGE_RATE_NOT_FOUND,
+        message: EXCHANGE_RATE_ERRORS.NOT_FOUND,
       });
     }
 
-    const {
-      from_currency_code,
-      to_currency_code,
-      exchange_rate: rate,
-      current,
-      created_by,
-    } = req.body;
+    // Validation des données avec schéma shared
+    const validatedData = ER.exchangeRateSchemas.validateExchangeRateUpdate(req.body);
 
     // Mise à jour des champs fournis
-    if (from_currency_code !== undefined) exchangeRate.setFromCurrencyCode(from_currency_code);
-    if (to_currency_code !== undefined) exchangeRate.setToCurrencyCode(to_currency_code);
-    if (rate !== undefined) exchangeRate.setExchangeRate(rate);
-    if (current !== undefined) exchangeRate.setCurrent(Boolean(current));
-    if (created_by !== undefined) exchangeRate.setCreatedBy(created_by);
-
-    // Validation que les devises ne sont pas identiques après modification
-    if (exchangeRate.getFromCurrencyCode() === exchangeRate.getToCurrencyCode()) {
-      return R.handleError(res, HttpStatus.BAD_REQUEST, {
-        code: 'same_currency_pair',
-        message: 'From and to currency cannot be the same',
-      });
+    if (validatedData.from_currency_code !== undefined) {
+      exchangeRate.setFromCurrencyCode(validatedData.from_currency_code);
+    }
+    if (validatedData.to_currency_code !== undefined) {
+      exchangeRate.setToCurrencyCode(validatedData.to_currency_code);
+    }
+    if (validatedData.exchange_rate !== undefined) {
+      exchangeRate.setExchangeRate(validatedData.exchange_rate);
+    }
+    if (validatedData.current !== undefined) {
+      exchangeRate.setCurrent(validatedData.current);
+    }
+    if (validatedData.created_by !== undefined) {
+      exchangeRate.setCreatedBy(validatedData.created_by);
     }
 
     await exchangeRate.save();
 
-    console.log(`✅ Taux de change modifié: GUID ${guid}`);
+    console.log(`✅ Taux de change modifié: GUID ${validatedGuid}`);
     R.handleSuccess(res, exchangeRate.toJSON());
   } catch (error: any) {
-    console.error('⌐ Erreur modification taux de change:', error);
+    console.error('❌ Erreur modification taux de change:', error);
 
-    if (error.message.includes('currency')) {
+    if (error.issues) { // Erreur Zod
       R.handleError(res, HttpStatus.BAD_REQUEST, {
-        code: 'invalid_currency',
-        message: error.message,
+        code: ERROR_CODES.VALIDATION_FAILED,
+        message: 'Validation failed',
+        details: error.issues,
       });
-    } else if (error.message.includes('exchange_rate')) {
+    } else if (error.message.includes('Invalid GUID')) {
       R.handleError(res, HttpStatus.BAD_REQUEST, {
-        code: 'invalid_exchange_rate',
+        code: ERROR_CODES.INVALID_GUID,
+        message: EXCHANGE_RATE_ERRORS.GUID_INVALID,
+      });
+    } else if (error.message.includes('already exists')) {
+      R.handleError(res, HttpStatus.CONFLICT, {
+        code: ERROR_CODES.EXCHANGE_RATE_ALREADY_EXISTS,
+        message: EXCHANGE_RATE_ERRORS.CURRENCY_PAIR_EXISTS,
+      });
+    } else if (error.message.includes('Validation failed')) {
+      R.handleError(res, HttpStatus.BAD_REQUEST, {
+        code: ERROR_CODES.VALIDATION_FAILED,
         message: error.message,
       });
     } else {
       R.handleError(res, HttpStatus.BAD_REQUEST, {
-        code: 'update_failed',
-        message: error.message,
+        code: ERROR_CODES.UPDATE_FAILED,
+        message: EXCHANGE_RATE_ERRORS.UPDATE_FAILED,
       });
     }
   }
@@ -376,22 +362,22 @@ router.put('/:guid', Ensure.put(), async (req: Request, res: Response) => {
  */
 router.delete('/:guid', Ensure.delete(), async (req: Request, res: Response) => {
   try {
-    // ✅ Validation manuelle du GUID
-    if (!/^\d+$/.test(req.params.guid)) {
+    // Validation du GUID avec utilitaire shared
+    if (!ExchangeRateValidationUtils.validateExchangeRateGuid(req.params.guid)) {
       return R.handleError(res, HttpStatus.BAD_REQUEST, {
-        code: 'invalid_guid',
-        message: 'GUID must be a positive integer',
+        code: ERROR_CODES.INVALID_GUID,
+        message: EXCHANGE_RATE_ERRORS.GUID_INVALID,
       });
     }
 
-    const guid = parseInt(req.params.guid);
+    const guid = parseInt(req.params.guid, 10);
 
     // Charger par GUID
     const exchangeRate = await ExchangeRate._load(guid, true);
     if (!exchangeRate) {
       return R.handleError(res, HttpStatus.NOT_FOUND, {
-        code: 'exchange_rate_not_found',
-        message: 'Exchange rate not found',
+        code: ERROR_CODES.EXCHANGE_RATE_NOT_FOUND,
+        message: EXCHANGE_RATE_ERRORS.NOT_FOUND,
       });
     }
 
@@ -406,13 +392,16 @@ router.delete('/:guid', Ensure.delete(), async (req: Request, res: Response) => 
         exchange_rate: exchangeRate.getExchangeRate(),
       });
     } else {
-      R.handleError(res, HttpStatus.INTERNAL_ERROR, G.savedError);
+      R.handleError(res, HttpStatus.INTERNAL_ERROR, {
+        code: ERROR_CODES.DELETE_FAILED,
+        message: EXCHANGE_RATE_ERRORS.DELETE_FAILED,
+      });
     }
   } catch (error: any) {
-    console.error('⌐ Erreur suppression taux de change:', error);
+    console.error('❌ Erreur suppression taux de change:', error);
     R.handleError(res, HttpStatus.INTERNAL_ERROR, {
-      code: 'deletion_failed',
-      message: error.message,
+      code: ERROR_CODES.DELETE_FAILED,
+      message: EXCHANGE_RATE_ERRORS.DELETE_FAILED,
     });
   }
 });
@@ -426,24 +415,16 @@ router.delete('/:guid', Ensure.delete(), async (req: Request, res: Response) => 
  */
 router.get('/list', Ensure.get(), async (req: Request, res: Response) => {
   try {
-    const { from_currency_code, to_currency_code, current, created_by } = req.query;
+    // Validation des filtres avec schéma shared
+    const filters = ER.exchangeRateSchemas.validateExchangeRateFilters(req.query);
+    const paginationOptions = paginationSchema.parse(req.query);
 
+    // Conversion des filtres pour compatibilité
     const conditions: Record<string, any> = {};
-
-    if (from_currency_code) {
-      conditions.from_currency_code = (from_currency_code as string).toUpperCase();
-    }
-    if (to_currency_code) {
-      conditions.to_currency_code = (to_currency_code as string).toUpperCase();
-    }
-    if (current !== undefined) {
-      conditions.current = current === 'true' || current === '1';
-    }
-    if (created_by) {
-      conditions.created_by = parseInt(created_by as string);
-    }
-
-    const paginationOptions = await ExtractQueryParams.extractPaginationFromQuery(req.query);
+    if (filters.from_currency_code) conditions.from_currency_code = filters.from_currency_code;
+    if (filters.to_currency_code) conditions.to_currency_code = filters.to_currency_code;
+    if (filters.current !== undefined) conditions.current = filters.current;
+    if (filters.created_by) conditions.created_by = filters.created_by;
 
     const exchangeRateEntries = await ExchangeRate._list(conditions, paginationOptions);
     const exchange_rates = {
@@ -457,11 +438,25 @@ router.get('/list', Ensure.get(), async (req: Request, res: Response) => {
 
     R.handleSuccess(res, { exchange_rates });
   } catch (error: any) {
-    console.error('⌐ Erreur listing taux de change:', error);
-    R.handleError(res, HttpStatus.INTERNAL_ERROR, {
-      code: 'listing_failed',
-      message: 'Failed to list exchange rates',
-    });
+    console.error('❌ Erreur listing taux de change:', error);
+
+    if (error.issues) { // Erreur Zod
+      R.handleError(res, HttpStatus.BAD_REQUEST, {
+        code: ERROR_CODES.VALIDATION_FAILED,
+        message: 'Invalid filters or pagination parameters',
+        details: error.issues,
+      });
+    } else if (error.message.includes('Invalid filters')) {
+      R.handleError(res, HttpStatus.BAD_REQUEST, {
+        code: ERROR_CODES.FILTER_INVALID,
+        message: error.message,
+      });
+    } else {
+      R.handleError(res, HttpStatus.INTERNAL_ERROR, {
+        code: ERROR_CODES.LISTING_FAILED,
+        message: EXCHANGE_RATE_ERRORS.EXPORT_FAILED,
+      });
+    }
   }
 });
 
@@ -470,35 +465,25 @@ router.get('/list', Ensure.get(), async (req: Request, res: Response) => {
  */
 router.get('/convert/:amount/:from/:to', Ensure.get(), async (req: Request, res: Response) => {
   try {
-    const { amount, from, to } = req.params;
-    const fromCode = from.toUpperCase();
-    const toCode = to.toUpperCase();
 
-    // Validation des paramètres
-    const amountNum = parseFloat(amount);
-    if (isNaN(amountNum) || amountNum <= 0) {
-      return R.handleError(res, HttpStatus.BAD_REQUEST, {
-        code: 'invalid_amount',
-        message: 'Amount must be a positive number',
-      });
-    }
+    const conversionData = ER.exchangeRateSchemas.validateCurrencyConversion({
+      amount: req.params.amount,
+      from_currency: req.params.from,
+      to_currency: req.params.to,
+    });
+    const { amount, from_currency: fromCode, to_currency: toCode } = conversionData;
 
-    if (!/^[A-Z]{3}$/.test(fromCode) || !/^[A-Z]{3}$/.test(toCode)) {
-      return R.handleError(res, HttpStatus.BAD_REQUEST, {
-        code: 'invalid_currency_code',
-        message: 'Currency codes must be exactly 3 letters (ISO 4217)',
-      });
-    }
-
+    // Cas spécial: même devise
     if (fromCode === toCode) {
       return R.handleSuccess(res, {
         from_currency: fromCode,
         to_currency: toCode,
-        original_amount: amountNum,
-        converted_amount: amountNum,
+        original_amount: amount,
+        converted_amount: amount,
         exchange_rate: 1,
         currency_pair: `${fromCode}/${toCode}`,
         conversion_note: 'Same currency conversion',
+        conversion_timestamp: new Date().toISOString(),
       });
     }
 
@@ -513,30 +498,45 @@ router.get('/convert/:amount/:from/:to', Ensure.get(), async (req: Request, res:
 
     if (!exchangeRates || exchangeRates.length === 0) {
       return R.handleError(res, HttpStatus.NOT_FOUND, {
-        code: 'exchange_rate_not_found',
-        message: `Current exchange rate not found for pair ${fromCode}/${toCode}`,
+        code: ERROR_CODES.EXCHANGE_RATE_NOT_FOUND,
+        message: `${EXCHANGE_RATE_ERRORS.RATE_NOT_AVAILABLE} ${fromCode}/${toCode}`,
       });
     }
 
     const rate = exchangeRates[0];
-    const convertedAmount = amountNum * (rate.getExchangeRate() || 0);
+    const rawConvertedAmount = amount * (rate.getExchangeRate() || 0);
+    const convertedAmount = ExchangeRateValidationUtils.roundConvertedAmount(rawConvertedAmount);
 
     R.handleSuccess(res, {
       from_currency: fromCode,
       to_currency: toCode,
-      original_amount: amountNum,
-      converted_amount: Math.round(convertedAmount * 10000) / 10000, // Arrondir à 4 décimales
+      original_amount: amount,
+      converted_amount: convertedAmount,
       exchange_rate: rate.getExchangeRate(),
       currency_pair: rate.getCurrencyPair(),
       rate_guid: rate.getGuid(),
       conversion_timestamp: new Date().toISOString(),
     });
   } catch (error: any) {
-    console.error('⌐ Erreur conversion:', error);
-    R.handleError(res, HttpStatus.INTERNAL_ERROR, {
-      code: 'conversion_failed',
-      message: 'Failed to convert amount',
-    });
+    console.error('❌ Erreur conversion:', error);
+
+    if (error.issues) { // Erreur Zod
+      R.handleError(res, HttpStatus.BAD_REQUEST, {
+        code: ERROR_CODES.VALIDATION_FAILED,
+        message: 'Invalid conversion parameters',
+        details: error.issues,
+      });
+    } else if (error.message.includes('Conversion validation failed')) {
+      R.handleError(res, HttpStatus.BAD_REQUEST, {
+        code: ERROR_CODES.VALIDATION_FAILED,
+        message: error.message,
+      });
+    } else {
+      R.handleError(res, HttpStatus.INTERNAL_ERROR, {
+        code: ERROR_CODES.CONVERSION_FAILED,
+        message: EXCHANGE_RATE_ERRORS.CONVERSION_FAILED,
+      });
+    }
   }
 });
 
@@ -555,24 +555,24 @@ router.get('/:identifier', Ensure.get(), async (req: Request, res: Response) => 
       // Essayer par ID d'abord
       exchangeRate = await ExchangeRate._load(numericId);
 
-      // Si pas trouvé, essayer par GUID
-      if (!exchangeRate) {
+      // Si pas trouvé, essayer par GUID si c'est un GUID valide
+      if (!exchangeRate && ExchangeRateValidationUtils.validateExchangeRateGuid(numericId)) {
         exchangeRate = await ExchangeRate._load(numericId, true);
       }
     }
 
     if (!exchangeRate) {
       return R.handleError(res, HttpStatus.NOT_FOUND, {
-        code: 'exchange_rate_not_found',
+        code: ERROR_CODES.EXCHANGE_RATE_NOT_FOUND,
         message: `Exchange rate with identifier '${identifier}' not found`,
       });
     }
 
     R.handleSuccess(res, exchangeRate.toJSON());
   } catch (error: any) {
-    console.error('⌐ Erreur recherche taux de change:', error);
+    console.error('❌ Erreur recherche taux de change:', error);
     R.handleError(res, HttpStatus.INTERNAL_ERROR, {
-      code: 'search_failed',
+      code: ERROR_CODES.SEARCH_FAILED,
       message: 'Failed to search exchange rate',
     });
   }

@@ -1,6 +1,6 @@
 import { QueryTypes, Sequelize } from 'sequelize';
 
-import { TableInitializer } from './db.initializer';
+import { TableInitializer } from './db.initializer.js';
 
 /**
  * Classe de base simple pour les modèles

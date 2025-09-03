@@ -1,0 +1,2060 @@
+{
+	"info": {
+		"_postman_id": "d305a49e-6806-4d3a-8c3a-7d6b1b3af8de",
+		"name": "toke API",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+		"_exporter_id": "34669602",
+		"_collection_link": "https://lively-desert-78957.postman.co/workspace/My-Workspace~6b51062a-90f9-4bf0-85b0-325db44d3738/collection/34669602-d305a49e-6806-4d3a-8c3a-7d6b1b3af8de?action=share&source=collection_link&creator=34669602"
+	},
+	"item": [
+		{
+			"name": "License",
+			"item": []
+		},
+		{
+			"name": "Admin",
+			"item": [
+				{
+					"name": "Country",
+					"item": [
+						{
+							"name": "📤 EXPORTS",
+							"item": [
+								{
+									"name": "Export Complet (Tous les pays)",
+									"event": [
+										{
+											"listen": "test",
+											"script": {
+												"exec": [
+													"pm.test('Status is 200', function () {",
+													"    pm.response.to.have.status(200);",
+													"});",
+													"",
+													"pm.test('Response has revision', function () {",
+													"    const jsonData = pm.response.json();",
+													"    pm.expect(jsonData.response).to.have.property('revision');",
+													"    pm.expect(jsonData.response).to.have.property('data');",
+													"    pm.expect(jsonData.response).to.have.property('exported_at');",
+													"});",
+													"",
+													"// Sauvegarder la révision pour les autres tests",
+													"const jsonData = pm.response.json();",
+													"if (jsonData.response && jsonData.response.revision) {",
+													"    pm.environment.set('current_revision', jsonData.response.revision);",
+													"}"
+												],
+												"type": "text/javascript",
+												"packages": {}
+											}
+										}
+									],
+									"request": {
+										"method": "GET",
+										"header": [
+											{
+												"key": "Content-Type",
+												"value": "application/json"
+											},
+											{
+												"key": "x-api-key",
+												"value": "{{x-api-token}}",
+												"type": "text"
+											},
+											{
+												"key": "x-api-signature",
+												"value": "{{x-api-signature}}",
+												"type": "text"
+											}
+										],
+										"url": {
+											"raw": "{{endpoint}}/{{master}}/country",
+											"host": [
+												"{{endpoint}}"
+											],
+											"path": [
+												"{{master}}",
+												"country"
+											]
+										}
+									},
+									"response": []
+								},
+								{
+									"name": "Révision Actuelle",
+									"event": [
+										{
+											"listen": "test",
+											"script": {
+												"exec": [
+													"pm.test('Status is 200', function () {",
+													"    pm.response.to.have.status(200);",
+													"});",
+													"",
+													"pm.test('Response has revision and timestamp', function () {",
+													"    const jsonData = pm.response.json();",
+													"    pm.expect(jsonData.response).to.have.property('revision');",
+													"    pm.expect(jsonData.response).to.have.property('checked_at');",
+													"});"
+												],
+												"type": "text/javascript",
+												"packages": {}
+											}
+										}
+									],
+									"request": {
+										"method": "GET",
+										"header": [
+											{
+												"key": "Content-Type",
+												"value": "application/json"
+											},
+											{
+												"key": "x-api-key",
+												"value": "{{x-api-token}}",
+												"type": "text"
+											},
+											{
+												"key": "x-api-signature",
+												"value": "{{x-api-signature}}",
+												"type": "text"
+											}
+										],
+										"url": {
+											"raw": "{{endpoint}}/{{master}}/country/revision",
+											"host": [
+												"{{endpoint}}"
+											],
+											"path": [
+												"{{master}}",
+												"country",
+												"revision"
+											]
+										}
+									},
+									"response": []
+								},
+								{
+									"name": "Export par Timezone",
+									"event": [
+										{
+											"listen": "test",
+											"script": {
+												"exec": [
+													"pm.test('Status is 200', function () {",
+													"    pm.response.to.have.status(200);",
+													"});",
+													"",
+													"pm.test('Response has timezone data', function () {",
+													"    const jsonData = pm.response.json();",
+													"    pm.expect(jsonData.response).to.have.property('timezone');",
+													"    pm.expect(jsonData.response).to.have.property('count');",
+													"    pm.expect(jsonData.response).to.have.property('countries');",
+													"});"
+												],
+												"type": "text/javascript",
+												"packages": {}
+											}
+										}
+									],
+									"request": {
+										"method": "GET",
+										"header": [
+											{
+												"key": "Content-Type",
+												"value": "application/json"
+											},
+											{
+												"key": "x-api-key",
+												"value": "{{x-api-token}}",
+												"type": "text"
+											},
+											{
+												"key": "x-api-signature",
+												"value": "{{x-api-signature}}",
+												"type": "text"
+											}
+										],
+										"url": {
+											"raw": "{{endpoint}}/{{master}}/country/timezone/Europe%2FParis",
+											"host": [
+												"{{endpoint}}"
+											],
+											"path": [
+												"{{master}}",
+												"country",
+												"timezone",
+												"Europe%2FParis"
+											]
+										}
+									},
+									"response": []
+								}
+							]
+						},
+						{
+							"name": "➕ CRUD - CREATE",
+							"item": [
+								{
+									"name": "Créer Pays",
+									"event": [
+										{
+											"listen": "test",
+											"script": {
+												"exec": [
+													"pm.test('Status is 201', function () {",
+													"    pm.response.to.have.status(201);",
+													"});",
+													"",
+													"pm.test('Country created successfully', function () {",
+													"    const jsonData = pm.response.json();",
+													"    pm.expect(jsonData.response).to.have.property('guid');",
+													"    pm.expect(jsonData.response).to.have.property('iso');",
+													"    pm.expect(jsonData.response.iso).to.eql('TE');",
+													"});",
+													"",
+													"// Sauvegarder le GUID pour les autres tests",
+													"const jsonData = pm.response.json();",
+													"if (jsonData.response && jsonData.response.guid) {",
+													"    pm.environment.set('created_country_guid', jsonData.response.guid);",
+													"}"
+												],
+												"type": "text/javascript",
+												"packages": {}
+											}
+										}
+									],
+									"request": {
+										"method": "POST",
+										"header": [
+											{
+												"key": "Content-Type",
+												"value": "application/json"
+											},
+											{
+												"key": "x-api-key",
+												"value": "{{x-api-token}}",
+												"type": "text"
+											},
+											{
+												"key": "x-api-signature",
+												"value": "{{x-api-signature}}",
+												"type": "text"
+											}
+										],
+										"body": {
+											"mode": "raw",
+											"raw": "{\n    \"code\":\"CM\",\n    \"name_en\":\"cameroon (🇨🇲)\",\n    \"name_local\":\"cameroun\",\n    \"default_currency_code\":\"CMR\",\n    \"default_language_code\":\"fr\",\n    \"timezone_default\":\"Africa/Douala\",\n    \"phone_prefix\":\"+237\"\n}"
+										},
+										"url": {
+											"raw": "{{endpoint}}/{{master}}/country/",
+											"host": [
+												"{{endpoint}}"
+											],
+											"path": [
+												"{{master}}",
+												"country",
+												""
+											]
+										}
+									},
+									"response": []
+								},
+								{
+									"name": "Créer Deuxième Pays",
+									"event": [
+										{
+											"listen": "test",
+											"script": {
+												"exec": [
+													"pm.test('Status is 201', function () {",
+													"    pm.response.to.have.status(201);",
+													"});",
+													"",
+													"const jsonData = pm.response.json();",
+													"if (jsonData.response && jsonData.response.guid) {",
+													"    pm.environment.set('second_country_guid', jsonData.response.guid);",
+													"}"
+												],
+												"type": "text/javascript",
+												"packages": {}
+											}
+										}
+									],
+									"request": {
+										"method": "POST",
+										"header": [
+											{
+												"key": "Content-Type",
+												"value": "application/json"
+											},
+											{
+												"key": "x-api-key",
+												"value": "{{x-api-token}}",
+												"type": "text"
+											},
+											{
+												"key": "x-api-signature",
+												"value": "{{x-api-signature}}",
+												"type": "text"
+											}
+										],
+										"body": {
+											"mode": "raw",
+											"raw": "{\n  \"code\": 998,\n  \"iso\": \"T2\",\n  \"name\": \"Test Country 2\",\n  \"timezone\": \"America/New_York\"\n}"
+										},
+										"url": {
+											"raw": "{{endpoint}}/{{master}}/country/",
+											"host": [
+												"{{endpoint}}"
+											],
+											"path": [
+												"{{master}}",
+												"country",
+												""
+											]
+										}
+									},
+									"response": []
+								},
+								{
+									"name": "❌ Erreur - Code requis",
+									"event": [
+										{
+											"listen": "test",
+											"script": {
+												"exec": [
+													"pm.test('Status is 400', function () {",
+													"    pm.response.to.have.status(400);",
+													"});",
+													"",
+													"pm.test('Error code is code_required', function () {",
+													"    const jsonData = pm.response.json();",
+													"    pm.expect(jsonData.error.code).to.eql('code_required');",
+													"});"
+												],
+												"type": "text/javascript",
+												"packages": {}
+											}
+										}
+									],
+									"request": {
+										"method": "POST",
+										"header": [
+											{
+												"key": "Content-Type",
+												"value": "application/json"
+											},
+											{
+												"key": "x-api-key",
+												"value": "{{x-api-token}}",
+												"type": "text"
+											},
+											{
+												"key": "x-api-signature",
+												"value": "{{x-api-signature}}",
+												"type": "text"
+											}
+										],
+										"body": {
+											"mode": "raw",
+											"raw": "{\n  \"iso\": \"XX\",\n  \"name\": \"Test sans code\"\n}"
+										},
+										"url": {
+											"raw": "{{endpoint}}/{{master}}/country/",
+											"host": [
+												"{{endpoint}}"
+											],
+											"path": [
+												"{{master}}",
+												"country",
+												""
+											]
+										}
+									},
+									"response": []
+								},
+								{
+									"name": "❌ Erreur - ISO requis",
+									"event": [
+										{
+											"listen": "test",
+											"script": {
+												"exec": [
+													"pm.test('Status is 400', function () {",
+													"    pm.response.to.have.status(400);",
+													"});",
+													"",
+													"pm.test('Error code is iso_required', function () {",
+													"    const jsonData = pm.response.json();",
+													"    pm.expect(jsonData.error.code).to.eql('iso_required');",
+													"});"
+												],
+												"type": "text/javascript",
+												"packages": {}
+											}
+										}
+									],
+									"request": {
+										"method": "POST",
+										"header": [
+											{
+												"key": "Content-Type",
+												"value": "application/json"
+											},
+											{
+												"key": "x-api-key",
+												"value": "{{x-api-token}}",
+												"type": "text"
+											},
+											{
+												"key": "x-api-signature",
+												"value": "{{x-api-signature}}",
+												"type": "text"
+											}
+										],
+										"body": {
+											"mode": "raw",
+											"raw": "{\n  \"code\": 997,\n  \"name\": \"Test sans ISO\"\n}"
+										},
+										"url": {
+											"raw": "{{endpoint}}/{{master}}/country/",
+											"host": [
+												"{{endpoint}}"
+											],
+											"path": [
+												"{{master}}",
+												"country",
+												""
+											]
+										}
+									},
+									"response": []
+								},
+								{
+									"name": "❌ Erreur - Pays déjà existant",
+									"event": [
+										{
+											"listen": "test",
+											"script": {
+												"exec": [
+													"pm.test('Status is 409 (Conflict)', function () {",
+													"    pm.response.to.have.status(409);",
+													"});",
+													"",
+													"pm.test('Error code is country_already_exists', function () {",
+													"    const jsonData = pm.response.json();",
+													"    pm.expect(jsonData.error.code).to.eql('country_already_exists');",
+													"});"
+												],
+												"type": "text/javascript",
+												"packages": {}
+											}
+										}
+									],
+									"request": {
+										"method": "POST",
+										"header": [
+											{
+												"key": "Content-Type",
+												"value": "application/json"
+											},
+											{
+												"key": "x-api-key",
+												"value": "{{x-api-token}}",
+												"type": "text"
+											},
+											{
+												"key": "x-api-signature",
+												"value": "{{x-api-signature}}",
+												"type": "text"
+											}
+										],
+										"body": {
+											"mode": "raw",
+											"raw": "{\n  \"code\": 999,\n  \"iso\": \"TE\",\n  \"name\": \"Test doublon\"\n}"
+										},
+										"url": {
+											"raw": "{{endpoint}}/{{master}}/country/",
+											"host": [
+												"{{endpoint}}"
+											],
+											"path": [
+												"{{master}}",
+												"country",
+												""
+											]
+										}
+									},
+									"response": []
+								}
+							]
+						},
+						{
+							"name": "📝 CRUD - READ",
+							"item": [
+								{
+									"name": "Liste Toutes Entrées",
+									"request": {
+										"method": "GET",
+										"header": [
+											{
+												"key": "Content-Type",
+												"value": "application/json"
+											},
+											{
+												"key": "x-api-key",
+												"value": "{{x-api-token}}",
+												"type": "text"
+											},
+											{
+												"key": "x-api-signature",
+												"value": "{{x-api-signature}}",
+												"type": "text"
+											}
+										],
+										"url": {
+											"raw": "{{endpoint}}/{{master}}/country/list",
+											"host": [
+												"{{endpoint}}"
+											],
+											"path": [
+												"{{master}}",
+												"country",
+												"list"
+											]
+										}
+									},
+									"response": []
+								},
+								{
+									"name": "Rechercher par code ISO",
+									"request": {
+										"method": "GET",
+										"header": [
+											{
+												"key": "Content-Type",
+												"value": "application/json"
+											},
+											{
+												"key": "x-api-key",
+												"value": "{{x-api-token}}",
+												"type": "text"
+											},
+											{
+												"key": "x-api-signature",
+												"value": "{{x-api-signature}}",
+												"type": "text"
+											}
+										],
+										"url": {
+											"raw": "{{endpoint}}/{{master}}/country/search/iso/{{iso_code: e.g: CM}}",
+											"host": [
+												"{{endpoint}}"
+											],
+											"path": [
+												"{{master}}",
+												"country",
+												"search",
+												"iso",
+												"{{iso_code: e.g: CM}}"
+											]
+										}
+									},
+									"response": []
+								},
+								{
+									"name": "Rechercher par code numérique",
+									"request": {
+										"method": "GET",
+										"header": [
+											{
+												"key": "Content-Type",
+												"value": "application/json"
+											},
+											{
+												"key": "x-api-key",
+												"value": "{{x-api-token}}",
+												"type": "text"
+											},
+											{
+												"key": "x-api-signature",
+												"value": "{{x-api-signature}}",
+												"type": "text"
+											}
+										],
+										"url": {
+											"raw": "{{endpoint}}/{{master}}/country/search/code/{{code: e.g: 237}}",
+											"host": [
+												"{{endpoint}}"
+											],
+											"path": [
+												"{{master}}",
+												"country",
+												"search",
+												"code",
+												"{{code: e.g: 237}}"
+											]
+										}
+									},
+									"response": []
+								},
+								{
+									"name": "Recherche intelligente par ID, GUID, ISO ou code",
+									"request": {
+										"method": "GET",
+										"header": [
+											{
+												"key": "Content-Type",
+												"value": "application/json"
+											},
+											{
+												"key": "x-api-key",
+												"value": "{{x-api-token}}",
+												"type": "text"
+											},
+											{
+												"key": "x-api-signature",
+												"value": "{{x-api-signature}}",
+												"type": "text"
+											}
+										],
+										"url": {
+											"raw": "{{endpoint}}/{{master}}/country/{{ID, GUID, ISO ou code}}",
+											"host": [
+												"{{endpoint}}"
+											],
+											"path": [
+												"{{master}}",
+												"country",
+												"{{ID, GUID, ISO ou code}}"
+											]
+										}
+									},
+									"response": []
+								}
+							]
+						},
+						{
+							"name": "✏️ CRUD - UPDATE",
+							"item": [
+								{
+									"name": "Modifier un pays par GUID",
+									"request": {
+										"method": "PUT",
+										"header": [
+											{
+												"key": "Content-Type",
+												"value": "application/json"
+											},
+											{
+												"key": "x-api-key",
+												"value": "{{x-api-token}}",
+												"type": "text"
+											},
+											{
+												"key": "x-api-signature",
+												"value": "{{x-api-signature}}",
+												"type": "text"
+											}
+										],
+										"body": {
+											"mode": "raw",
+											"raw": "{\n    \"code\": \"CM\"\n    // \"name_en\": \"cameroon (🇨🇲)\",\n    // \"name_local\": \"cameroun\",\n    // \"default_currency_code\": \"CMR\",\n    // \"default_language_code\": \"fr\",\n    // \"is_active\": true\n}",
+											"options": {
+												"raw": {
+													"language": "json"
+												}
+											}
+										},
+										"url": {
+											"raw": "{{endpoint}}/{{master}}/country/100001",
+											"host": [
+												"{{endpoint}}"
+											],
+											"path": [
+												"{{master}}",
+												"country",
+												"100001"
+											]
+										}
+									},
+									"response": []
+								}
+							]
+						},
+						{
+							"name": "🗑️ CRUD - DELETE",
+							"item": [
+								{
+									"name": "Supprimer un pays par GUID",
+									"request": {
+										"method": "DELETE",
+										"header": [
+											{
+												"key": "x-api-key",
+												"value": "{{x-api-token}}",
+												"type": "text"
+											},
+											{
+												"key": "x-api-signature",
+												"value": "{{x-api-signature}}",
+												"type": "text"
+											},
+											{
+												"key": "x-api-user",
+												"value": "{{x-api-user}}",
+												"type": "text"
+											}
+										],
+										"url": {
+											"raw": "{{endpoint}}/{{master}}/country/100004",
+											"host": [
+												"{{endpoint}}"
+											],
+											"path": [
+												"{{master}}",
+												"country",
+												"100004"
+											]
+										}
+									},
+									"response": []
+								}
+							]
+						}
+					]
+				},
+				{
+					"name": "Currency",
+					"item": [
+						{
+							"name": "📤 EXPORTS",
+							"item": [
+								{
+									"name": "Export Complet (Tous les devise)",
+									"event": [
+										{
+											"listen": "test",
+											"script": {
+												"exec": [
+													"pm.test('Status is 200', function () {",
+													"    pm.response.to.have.status(200);",
+													"});",
+													"",
+													"pm.test('Response has revision', function () {",
+													"    const jsonData = pm.response.json();",
+													"    pm.expect(jsonData.response).to.have.property('revision');",
+													"    pm.expect(jsonData.response).to.have.property('data');",
+													"    pm.expect(jsonData.response).to.have.property('exported_at');",
+													"});",
+													"",
+													"// Sauvegarder la révision pour les autres tests",
+													"const jsonData = pm.response.json();",
+													"if (jsonData.response && jsonData.response.revision) {",
+													"    pm.environment.set('current_revision', jsonData.response.revision);",
+													"}"
+												],
+												"type": "text/javascript",
+												"packages": {}
+											}
+										}
+									],
+									"request": {
+										"method": "GET",
+										"header": [
+											{
+												"key": "Content-Type",
+												"value": "application/json"
+											},
+											{
+												"key": "x-api-key",
+												"value": "{{x-api-token}}",
+												"type": "text"
+											},
+											{
+												"key": "x-api-signature",
+												"value": "{{x-api-signature}}",
+												"type": "text"
+											}
+										],
+										"url": {
+											"raw": "{{endpoint}}/{{master}}/currency",
+											"host": [
+												"{{endpoint}}"
+											],
+											"path": [
+												"{{master}}",
+												"currency"
+											]
+										}
+									},
+									"response": []
+								},
+								{
+									"name": "Révision Actuelle",
+									"event": [
+										{
+											"listen": "test",
+											"script": {
+												"exec": [
+													"pm.test('Status is 200', function () {",
+													"    pm.response.to.have.status(200);",
+													"});",
+													"",
+													"pm.test('Response has revision and timestamp', function () {",
+													"    const jsonData = pm.response.json();",
+													"    pm.expect(jsonData.response).to.have.property('revision');",
+													"    pm.expect(jsonData.response).to.have.property('checked_at');",
+													"});"
+												],
+												"type": "text/javascript",
+												"packages": {}
+											}
+										}
+									],
+									"request": {
+										"method": "GET",
+										"header": [
+											{
+												"key": "Content-Type",
+												"value": "application/json"
+											},
+											{
+												"key": "x-api-key",
+												"value": "{{x-api-token}}",
+												"type": "text"
+											},
+											{
+												"key": "x-api-signature",
+												"value": "{{x-api-signature}}",
+												"type": "text"
+											}
+										],
+										"url": {
+											"raw": "{{endpoint}}/{{master}}/currency/revision",
+											"host": [
+												"{{endpoint}}"
+											],
+											"path": [
+												"{{master}}",
+												"currency",
+												"revision"
+											]
+										}
+									},
+									"response": []
+								}
+							]
+						},
+						{
+							"name": "➕ CRUD - CREATE",
+							"item": [
+								{
+									"name": "Créer une devise",
+									"event": [
+										{
+											"listen": "test",
+											"script": {
+												"exec": [
+													"pm.test('Status is 201', function () {",
+													"    pm.response.to.have.status(201);",
+													"});",
+													"",
+													"pm.test('Country created successfully', function () {",
+													"    const jsonData = pm.response.json();",
+													"    pm.expect(jsonData.response).to.have.property('guid');",
+													"    pm.expect(jsonData.response).to.have.property('iso');",
+													"    pm.expect(jsonData.response.iso).to.eql('TE');",
+													"});",
+													"",
+													"// Sauvegarder le GUID pour les autres tests",
+													"const jsonData = pm.response.json();",
+													"if (jsonData.response && jsonData.response.guid) {",
+													"    pm.environment.set('created_country_guid', jsonData.response.guid);",
+													"}"
+												],
+												"type": "text/javascript",
+												"packages": {}
+											}
+										}
+									],
+									"request": {
+										"method": "POST",
+										"header": [
+											{
+												"key": "Content-Type",
+												"value": "application/json"
+											},
+											{
+												"key": "x-api-key",
+												"value": "{{x-api-token}}",
+												"type": "text"
+											},
+											{
+												"key": "x-api-signature",
+												"value": "{{x-api-signature}}",
+												"type": "text"
+											}
+										],
+										"body": {
+											"mode": "raw",
+											"raw": "{\n  \"code\": 234,\n  \"iso\": \"TE\",\n  \"name\": \"Test Country\",\n  \"timezone\": \"Europe/Paris\",\n  \"mobileRegex\": \"/^(\\\\+237|237)?6(2[0]\\\\d{6}|[5-9]\\\\d{7})$/\",\n  \"flag\": \"🏳️\"\n}"
+										},
+										"url": {
+											"raw": "{{endpoint}}/{{master}}/currency/",
+											"host": [
+												"{{endpoint}}"
+											],
+											"path": [
+												"{{master}}",
+												"currency",
+												""
+											]
+										}
+									},
+									"response": []
+								},
+								{
+									"name": "Créer Deuxième Pays",
+									"event": [
+										{
+											"listen": "test",
+											"script": {
+												"exec": [
+													"pm.test('Status is 201', function () {",
+													"    pm.response.to.have.status(201);",
+													"});",
+													"",
+													"const jsonData = pm.response.json();",
+													"if (jsonData.response && jsonData.response.guid) {",
+													"    pm.environment.set('second_country_guid', jsonData.response.guid);",
+													"}"
+												],
+												"type": "text/javascript",
+												"packages": {}
+											}
+										}
+									],
+									"request": {
+										"method": "POST",
+										"header": [
+											{
+												"key": "Content-Type",
+												"value": "application/json"
+											},
+											{
+												"key": "x-api-key",
+												"value": "{{x-api-token}}",
+												"type": "text"
+											},
+											{
+												"key": "x-api-signature",
+												"value": "{{x-api-signature}}",
+												"type": "text"
+											}
+										],
+										"body": {
+											"mode": "raw",
+											"raw": "{\n  \"code\": 998,\n  \"iso\": \"T2\",\n  \"name\": \"Test Country 2\",\n  \"timezone\": \"America/New_York\"\n}"
+										},
+										"url": {
+											"raw": "{{endpoint}}/{{master}}/country/",
+											"host": [
+												"{{endpoint}}"
+											],
+											"path": [
+												"{{master}}",
+												"country",
+												""
+											]
+										}
+									},
+									"response": []
+								},
+								{
+									"name": "❌ Erreur - Code requis",
+									"event": [
+										{
+											"listen": "test",
+											"script": {
+												"exec": [
+													"pm.test('Status is 400', function () {",
+													"    pm.response.to.have.status(400);",
+													"});",
+													"",
+													"pm.test('Error code is code_required', function () {",
+													"    const jsonData = pm.response.json();",
+													"    pm.expect(jsonData.error.code).to.eql('code_required');",
+													"});"
+												],
+												"type": "text/javascript",
+												"packages": {}
+											}
+										}
+									],
+									"request": {
+										"method": "POST",
+										"header": [
+											{
+												"key": "Content-Type",
+												"value": "application/json"
+											},
+											{
+												"key": "x-api-key",
+												"value": "{{x-api-token}}",
+												"type": "text"
+											},
+											{
+												"key": "x-api-signature",
+												"value": "{{x-api-signature}}",
+												"type": "text"
+											}
+										],
+										"body": {
+											"mode": "raw",
+											"raw": "{\n  \"iso\": \"XX\",\n  \"name\": \"Test sans code\"\n}"
+										},
+										"url": {
+											"raw": "{{endpoint}}/{{master}}/country/",
+											"host": [
+												"{{endpoint}}"
+											],
+											"path": [
+												"{{master}}",
+												"country",
+												""
+											]
+										}
+									},
+									"response": []
+								},
+								{
+									"name": "❌ Erreur - ISO requis",
+									"event": [
+										{
+											"listen": "test",
+											"script": {
+												"exec": [
+													"pm.test('Status is 400', function () {",
+													"    pm.response.to.have.status(400);",
+													"});",
+													"",
+													"pm.test('Error code is iso_required', function () {",
+													"    const jsonData = pm.response.json();",
+													"    pm.expect(jsonData.error.code).to.eql('iso_required');",
+													"});"
+												],
+												"type": "text/javascript",
+												"packages": {}
+											}
+										}
+									],
+									"request": {
+										"method": "POST",
+										"header": [
+											{
+												"key": "Content-Type",
+												"value": "application/json"
+											},
+											{
+												"key": "x-api-key",
+												"value": "{{x-api-token}}",
+												"type": "text"
+											},
+											{
+												"key": "x-api-signature",
+												"value": "{{x-api-signature}}",
+												"type": "text"
+											}
+										],
+										"body": {
+											"mode": "raw",
+											"raw": "{\n  \"code\": 997,\n  \"name\": \"Test sans ISO\"\n}"
+										},
+										"url": {
+											"raw": "{{endpoint}}/{{master}}/country/",
+											"host": [
+												"{{endpoint}}"
+											],
+											"path": [
+												"{{master}}",
+												"country",
+												""
+											]
+										}
+									},
+									"response": []
+								},
+								{
+									"name": "❌ Erreur - Pays déjà existant",
+									"event": [
+										{
+											"listen": "test",
+											"script": {
+												"exec": [
+													"pm.test('Status is 409 (Conflict)', function () {",
+													"    pm.response.to.have.status(409);",
+													"});",
+													"",
+													"pm.test('Error code is country_already_exists', function () {",
+													"    const jsonData = pm.response.json();",
+													"    pm.expect(jsonData.error.code).to.eql('country_already_exists');",
+													"});"
+												],
+												"type": "text/javascript",
+												"packages": {}
+											}
+										}
+									],
+									"request": {
+										"method": "POST",
+										"header": [
+											{
+												"key": "Content-Type",
+												"value": "application/json"
+											},
+											{
+												"key": "x-api-key",
+												"value": "{{x-api-token}}",
+												"type": "text"
+											},
+											{
+												"key": "x-api-signature",
+												"value": "{{x-api-signature}}",
+												"type": "text"
+											}
+										],
+										"body": {
+											"mode": "raw",
+											"raw": "{\n  \"code\": 999,\n  \"iso\": \"TE\",\n  \"name\": \"Test doublon\"\n}"
+										},
+										"url": {
+											"raw": "{{endpoint}}/{{master}}/country/",
+											"host": [
+												"{{endpoint}}"
+											],
+											"path": [
+												"{{master}}",
+												"country",
+												""
+											]
+										}
+									},
+									"response": []
+								}
+							]
+						},
+						{
+							"name": "📝 CRUD - READ",
+							"item": [
+								{
+									"name": "Liste Toutes Entrées",
+									"request": {
+										"method": "GET",
+										"header": [
+											{
+												"key": "Content-Type",
+												"value": "application/json"
+											},
+											{
+												"key": "x-api-key",
+												"value": "{{x-api-token}}",
+												"type": "text"
+											},
+											{
+												"key": "x-api-signature",
+												"value": "{{x-api-signature}}",
+												"type": "text"
+											}
+										],
+										"url": {
+											"raw": "{{endpoint}}/{{master}}/currency/list",
+											"host": [
+												"{{endpoint}}"
+											],
+											"path": [
+												"{{master}}",
+												"currency",
+												"list"
+											]
+										}
+									},
+									"response": []
+								},
+								{
+									"name": "Rechercher par code ISO",
+									"request": {
+										"method": "GET",
+										"header": [
+											{
+												"key": "Content-Type",
+												"value": "application/json"
+											},
+											{
+												"key": "x-api-key",
+												"value": "{{x-api-token}}",
+												"type": "text"
+											},
+											{
+												"key": "x-api-signature",
+												"value": "{{x-api-signature}}",
+												"type": "text"
+											}
+										],
+										"url": {
+											"raw": "{{endpoint}}/{{master}}/country/search/iso/{{iso_code: e.g: CM}}",
+											"host": [
+												"{{endpoint}}"
+											],
+											"path": [
+												"{{master}}",
+												"country",
+												"search",
+												"iso",
+												"{{iso_code: e.g: CM}}"
+											]
+										}
+									},
+									"response": []
+								},
+								{
+									"name": "Rechercher par code numérique",
+									"request": {
+										"method": "GET",
+										"header": [
+											{
+												"key": "Content-Type",
+												"value": "application/json"
+											},
+											{
+												"key": "x-api-key",
+												"value": "{{x-api-token}}",
+												"type": "text"
+											},
+											{
+												"key": "x-api-signature",
+												"value": "{{x-api-signature}}",
+												"type": "text"
+											}
+										],
+										"url": {
+											"raw": "{{endpoint}}/{{master}}/country/search/code/{{code: e.g: 237}}",
+											"host": [
+												"{{endpoint}}"
+											],
+											"path": [
+												"{{master}}",
+												"country",
+												"search",
+												"code",
+												"{{code: e.g: 237}}"
+											]
+										}
+									},
+									"response": []
+								},
+								{
+									"name": "Recherche intelligente par ID, GUID, ISO ou code",
+									"request": {
+										"method": "GET",
+										"header": [
+											{
+												"key": "Content-Type",
+												"value": "application/json"
+											},
+											{
+												"key": "x-api-key",
+												"value": "{{x-api-token}}",
+												"type": "text"
+											},
+											{
+												"key": "x-api-signature",
+												"value": "{{x-api-signature}}",
+												"type": "text"
+											}
+										],
+										"url": {
+											"raw": "{{endpoint}}/{{master}}/country/{{ID, GUID, ISO ou code}}",
+											"host": [
+												"{{endpoint}}"
+											],
+											"path": [
+												"{{master}}",
+												"country",
+												"{{ID, GUID, ISO ou code}}"
+											]
+										}
+									},
+									"response": []
+								}
+							]
+						},
+						{
+							"name": "✏️ CRUD - UPDATE",
+							"item": [
+								{
+									"name": "Modifier une devise par GUID",
+									"request": {
+										"method": "PUT",
+										"header": [
+											{
+												"key": "Content-Type",
+												"value": "application/json"
+											},
+											{
+												"key": "x-api-key",
+												"value": "{{x-api-token}}",
+												"type": "text"
+											},
+											{
+												"key": "x-api-signature",
+												"value": "{{x-api-signature}}",
+												"type": "text"
+											}
+										],
+										"body": {
+											"mode": "raw",
+											"raw": "{\n  \"code\": {{e.g(236)}},\n  \"iso\": {{e.g(ht)}},\n  \"name\": {{e.g(Test Country)}},\n  \"timezone\": {{e.g(Africa/Tchad)}},\n  \"mobileRegex\": {{e.g(EEEEEEE)}},\n  \"flag\": \"{{e.g(🏳️)}}\"\n}\n",
+											"options": {
+												"raw": {
+													"language": "json"
+												}
+											}
+										},
+										"url": {
+											"raw": "{{endpoint}}/{{master}}/currency/{{guid (e.g:100002)}}",
+											"host": [
+												"{{endpoint}}"
+											],
+											"path": [
+												"{{master}}",
+												"currency",
+												"{{guid (e.g:100002)}}"
+											]
+										}
+									},
+									"response": []
+								}
+							]
+						},
+						{
+							"name": "🗑️ CRUD - DELETE",
+							"item": [
+								{
+									"name": "Supprimer un pays par GUID",
+									"request": {
+										"method": "DELETE",
+										"header": [
+											{
+												"key": "x-api-key",
+												"value": "{{x-api-token}}",
+												"type": "text"
+											},
+											{
+												"key": "x-api-signature",
+												"value": "{{x-api-signature}}",
+												"type": "text"
+											},
+											{
+												"key": "x-api-user",
+												"value": "{{x-api-user}}",
+												"type": "text"
+											}
+										],
+										"url": {
+											"raw": "{{endpoint}}/{{master}}/country/100004",
+											"host": [
+												"{{endpoint}}"
+											],
+											"path": [
+												"{{master}}",
+												"country",
+												"100004"
+											]
+										}
+									},
+									"response": []
+								}
+							]
+						}
+					]
+				},
+				{
+					"name": "Tenant",
+					"item": [
+						{
+							"name": "📤 EXPORTS",
+							"item": [
+								{
+									"name": "Export Complet (Tous les tenants)",
+									"event": [
+										{
+											"listen": "test",
+											"script": {
+												"exec": [
+													"pm.test('Status is 200', function () {",
+													"    pm.response.to.have.status(200);",
+													"});",
+													"",
+													"pm.test('Response has revision', function () {",
+													"    const jsonData = pm.response.json();",
+													"    pm.expect(jsonData.response).to.have.property('revision');",
+													"    pm.expect(jsonData.response).to.have.property('data');",
+													"    pm.expect(jsonData.response).to.have.property('exported_at');",
+													"});",
+													"",
+													"// Sauvegarder la révision pour les autres tests",
+													"const jsonData = pm.response.json();",
+													"if (jsonData.response && jsonData.response.revision) {",
+													"    pm.environment.set('current_revision', jsonData.response.revision);",
+													"}"
+												],
+												"type": "text/javascript",
+												"packages": {}
+											}
+										}
+									],
+									"request": {
+										"method": "GET",
+										"header": [
+											{
+												"key": "Content-Type",
+												"value": "application/json"
+											},
+											{
+												"key": "x-api-key",
+												"value": "{{x-api-token}}",
+												"type": "text"
+											},
+											{
+												"key": "x-api-signature",
+												"value": "{{x-api-signature}}",
+												"type": "text"
+											}
+										],
+										"url": {
+											"raw": "{{endpoint}}/{{master}}/tenant",
+											"host": [
+												"{{endpoint}}"
+											],
+											"path": [
+												"{{master}}",
+												"tenant"
+											]
+										}
+									},
+									"response": []
+								},
+								{
+									"name": "Révision Actuelle",
+									"event": [
+										{
+											"listen": "test",
+											"script": {
+												"exec": [
+													"pm.test('Status is 200', function () {",
+													"    pm.response.to.have.status(200);",
+													"});",
+													"",
+													"pm.test('Response has revision and timestamp', function () {",
+													"    const jsonData = pm.response.json();",
+													"    pm.expect(jsonData.response).to.have.property('revision');",
+													"    pm.expect(jsonData.response).to.have.property('checked_at');",
+													"});"
+												],
+												"type": "text/javascript",
+												"packages": {}
+											}
+										}
+									],
+									"request": {
+										"method": "GET",
+										"header": [
+											{
+												"key": "Content-Type",
+												"value": "application/json"
+											},
+											{
+												"key": "x-api-key",
+												"value": "{{x-api-token}}",
+												"type": "text"
+											},
+											{
+												"key": "x-api-signature",
+												"value": "{{x-api-signature}}",
+												"type": "text"
+											}
+										],
+										"url": {
+											"raw": "{{endpoint}}/{{master}}/currency/revision",
+											"host": [
+												"{{endpoint}}"
+											],
+											"path": [
+												"{{master}}",
+												"currency",
+												"revision"
+											]
+										}
+									},
+									"response": []
+								}
+							]
+						},
+						{
+							"name": "➕ CRUD - CREATE",
+							"item": [
+								{
+									"name": "Créer un tenant",
+									"event": [
+										{
+											"listen": "test",
+											"script": {
+												"exec": [
+													"pm.test('Status is 201', function () {",
+													"    pm.response.to.have.status(201);",
+													"});",
+													"",
+													"pm.test('Country created successfully', function () {",
+													"    const jsonData = pm.response.json();",
+													"    pm.expect(jsonData.response).to.have.property('guid');",
+													"    pm.expect(jsonData.response).to.have.property('iso');",
+													"    pm.expect(jsonData.response.iso).to.eql('TE');",
+													"});",
+													"",
+													"// Sauvegarder le GUID pour les autres tests",
+													"const jsonData = pm.response.json();",
+													"if (jsonData.response && jsonData.response.guid) {",
+													"    pm.environment.set('created_country_guid', jsonData.response.guid);",
+													"}"
+												],
+												"type": "text/javascript",
+												"packages": {}
+											}
+										}
+									],
+									"request": {
+										"method": "POST",
+										"header": [
+											{
+												"key": "Content-Type",
+												"value": "application/json"
+											},
+											{
+												"key": "x-api-key",
+												"value": "{{x-api-token}}",
+												"type": "text"
+											},
+											{
+												"key": "x-api-signature",
+												"value": "{{x-api-signature}}",
+												"type": "text"
+											}
+										],
+										"body": {
+											"mode": "raw",
+											"raw": "{\n    \"name\": \"SAKE Sarl\",\n    \"country_code\": \"CM\",\n    \"primary_currency_code\": \"XAF\",\n    \"preferred_language_code\": \"en\",\n    \"timezone\": \"Africa/Douala\",\n    \"billing_email\": \"princefomo49@gmail.com\",\n    \"billing_address\": {\n        \"city\": \"\",\n        \"location\": \"\",\n        \"place_name\": \"\"\n    },\n    \"billing_phone\": \"695601145\",\n    \"registration_number\": \"na987263\" \n}"
+										},
+										"url": {
+											"raw": "{{endpoint}}/{{master}}/tenant/",
+											"host": [
+												"{{endpoint}}"
+											],
+											"path": [
+												"{{master}}",
+												"tenant",
+												""
+											]
+										}
+									},
+									"response": []
+								},
+								{
+									"name": "Créer Deuxième Pays",
+									"event": [
+										{
+											"listen": "test",
+											"script": {
+												"exec": [
+													"pm.test('Status is 201', function () {",
+													"    pm.response.to.have.status(201);",
+													"});",
+													"",
+													"const jsonData = pm.response.json();",
+													"if (jsonData.response && jsonData.response.guid) {",
+													"    pm.environment.set('second_country_guid', jsonData.response.guid);",
+													"}"
+												],
+												"type": "text/javascript",
+												"packages": {}
+											}
+										}
+									],
+									"request": {
+										"method": "POST",
+										"header": [
+											{
+												"key": "Content-Type",
+												"value": "application/json"
+											},
+											{
+												"key": "x-api-key",
+												"value": "{{x-api-token}}",
+												"type": "text"
+											},
+											{
+												"key": "x-api-signature",
+												"value": "{{x-api-signature}}",
+												"type": "text"
+											}
+										],
+										"body": {
+											"mode": "raw",
+											"raw": "{\n  \"code\": 998,\n  \"iso\": \"T2\",\n  \"name\": \"Test Country 2\",\n  \"timezone\": \"America/New_York\"\n}"
+										},
+										"url": {
+											"raw": "{{endpoint}}/{{master}}/country/",
+											"host": [
+												"{{endpoint}}"
+											],
+											"path": [
+												"{{master}}",
+												"country",
+												""
+											]
+										}
+									},
+									"response": []
+								},
+								{
+									"name": "❌ Erreur - Code requis",
+									"event": [
+										{
+											"listen": "test",
+											"script": {
+												"exec": [
+													"pm.test('Status is 400', function () {",
+													"    pm.response.to.have.status(400);",
+													"});",
+													"",
+													"pm.test('Error code is code_required', function () {",
+													"    const jsonData = pm.response.json();",
+													"    pm.expect(jsonData.error.code).to.eql('code_required');",
+													"});"
+												],
+												"type": "text/javascript",
+												"packages": {}
+											}
+										}
+									],
+									"request": {
+										"method": "POST",
+										"header": [
+											{
+												"key": "Content-Type",
+												"value": "application/json"
+											},
+											{
+												"key": "x-api-key",
+												"value": "{{x-api-token}}",
+												"type": "text"
+											},
+											{
+												"key": "x-api-signature",
+												"value": "{{x-api-signature}}",
+												"type": "text"
+											}
+										],
+										"body": {
+											"mode": "raw",
+											"raw": "{\n  \"iso\": \"XX\",\n  \"name\": \"Test sans code\"\n}"
+										},
+										"url": {
+											"raw": "{{endpoint}}/{{master}}/country/",
+											"host": [
+												"{{endpoint}}"
+											],
+											"path": [
+												"{{master}}",
+												"country",
+												""
+											]
+										}
+									},
+									"response": []
+								},
+								{
+									"name": "❌ Erreur - ISO requis",
+									"event": [
+										{
+											"listen": "test",
+											"script": {
+												"exec": [
+													"pm.test('Status is 400', function () {",
+													"    pm.response.to.have.status(400);",
+													"});",
+													"",
+													"pm.test('Error code is iso_required', function () {",
+													"    const jsonData = pm.response.json();",
+													"    pm.expect(jsonData.error.code).to.eql('iso_required');",
+													"});"
+												],
+												"type": "text/javascript",
+												"packages": {}
+											}
+										}
+									],
+									"request": {
+										"method": "POST",
+										"header": [
+											{
+												"key": "Content-Type",
+												"value": "application/json"
+											},
+											{
+												"key": "x-api-key",
+												"value": "{{x-api-token}}",
+												"type": "text"
+											},
+											{
+												"key": "x-api-signature",
+												"value": "{{x-api-signature}}",
+												"type": "text"
+											}
+										],
+										"body": {
+											"mode": "raw",
+											"raw": "{\n  \"code\": 997,\n  \"name\": \"Test sans ISO\"\n}"
+										},
+										"url": {
+											"raw": "{{endpoint}}/{{master}}/country/",
+											"host": [
+												"{{endpoint}}"
+											],
+											"path": [
+												"{{master}}",
+												"country",
+												""
+											]
+										}
+									},
+									"response": []
+								},
+								{
+									"name": "❌ Erreur - Pays déjà existant",
+									"event": [
+										{
+											"listen": "test",
+											"script": {
+												"exec": [
+													"pm.test('Status is 409 (Conflict)', function () {",
+													"    pm.response.to.have.status(409);",
+													"});",
+													"",
+													"pm.test('Error code is country_already_exists', function () {",
+													"    const jsonData = pm.response.json();",
+													"    pm.expect(jsonData.error.code).to.eql('country_already_exists');",
+													"});"
+												],
+												"type": "text/javascript",
+												"packages": {}
+											}
+										}
+									],
+									"request": {
+										"method": "POST",
+										"header": [
+											{
+												"key": "Content-Type",
+												"value": "application/json"
+											},
+											{
+												"key": "x-api-key",
+												"value": "{{x-api-token}}",
+												"type": "text"
+											},
+											{
+												"key": "x-api-signature",
+												"value": "{{x-api-signature}}",
+												"type": "text"
+											}
+										],
+										"body": {
+											"mode": "raw",
+											"raw": "{\n  \"code\": 999,\n  \"iso\": \"TE\",\n  \"name\": \"Test doublon\"\n}"
+										},
+										"url": {
+											"raw": "{{endpoint}}/{{master}}/country/",
+											"host": [
+												"{{endpoint}}"
+											],
+											"path": [
+												"{{master}}",
+												"country",
+												""
+											]
+										}
+									},
+									"response": []
+								}
+							]
+						},
+						{
+							"name": "📝 CRUD - READ",
+							"item": [
+								{
+									"name": "Liste Toutes tenants",
+									"request": {
+										"method": "GET",
+										"header": [
+											{
+												"key": "Content-Type",
+												"value": "application/json"
+											},
+											{
+												"key": "x-api-key",
+												"value": "{{x-api-token}}",
+												"type": "text"
+											},
+											{
+												"key": "x-api-signature",
+												"value": "{{x-api-signature}}",
+												"type": "text"
+											}
+										],
+										"url": {
+											"raw": "{{endpoint}}/{{master}}/tenant/list",
+											"host": [
+												"{{endpoint}}"
+											],
+											"path": [
+												"{{master}}",
+												"tenant",
+												"list"
+											]
+										}
+									},
+									"response": []
+								},
+								{
+									"name": "Rechercher par code ISO",
+									"request": {
+										"method": "GET",
+										"header": [
+											{
+												"key": "Content-Type",
+												"value": "application/json"
+											},
+											{
+												"key": "x-api-key",
+												"value": "{{x-api-token}}",
+												"type": "text"
+											},
+											{
+												"key": "x-api-signature",
+												"value": "{{x-api-signature}}",
+												"type": "text"
+											}
+										],
+										"url": {
+											"raw": "{{endpoint}}/{{master}}/country/search/iso/{{iso_code: e.g: CM}}",
+											"host": [
+												"{{endpoint}}"
+											],
+											"path": [
+												"{{master}}",
+												"country",
+												"search",
+												"iso",
+												"{{iso_code: e.g: CM}}"
+											]
+										}
+									},
+									"response": []
+								},
+								{
+									"name": "Rechercher par code numérique",
+									"request": {
+										"method": "GET",
+										"header": [
+											{
+												"key": "Content-Type",
+												"value": "application/json"
+											},
+											{
+												"key": "x-api-key",
+												"value": "{{x-api-token}}",
+												"type": "text"
+											},
+											{
+												"key": "x-api-signature",
+												"value": "{{x-api-signature}}",
+												"type": "text"
+											}
+										],
+										"url": {
+											"raw": "{{endpoint}}/{{master}}/country/search/code/{{code: e.g: 237}}",
+											"host": [
+												"{{endpoint}}"
+											],
+											"path": [
+												"{{master}}",
+												"country",
+												"search",
+												"code",
+												"{{code: e.g: 237}}"
+											]
+										}
+									},
+									"response": []
+								},
+								{
+									"name": "Recherche intelligente par ID, GUID, ISO ou code",
+									"request": {
+										"method": "GET",
+										"header": [
+											{
+												"key": "Content-Type",
+												"value": "application/json"
+											},
+											{
+												"key": "x-api-key",
+												"value": "{{x-api-token}}",
+												"type": "text"
+											},
+											{
+												"key": "x-api-signature",
+												"value": "{{x-api-signature}}",
+												"type": "text"
+											}
+										],
+										"url": {
+											"raw": "{{endpoint}}/{{master}}/country/{{ID, GUID, ISO ou code}}",
+											"host": [
+												"{{endpoint}}"
+											],
+											"path": [
+												"{{master}}",
+												"country",
+												"{{ID, GUID, ISO ou code}}"
+											]
+										}
+									},
+									"response": []
+								}
+							]
+						},
+						{
+							"name": "✏️ CRUD - UPDATE",
+							"item": [
+								{
+									"name": "Modifier un tanant par GUID",
+									"request": {
+										"method": "PUT",
+										"header": [
+											{
+												"key": "Content-Type",
+												"value": "application/json"
+											},
+											{
+												"key": "x-api-key",
+												"value": "{{x-api-token}}",
+												"type": "text"
+											},
+											{
+												"key": "x-api-signature",
+												"value": "{{x-api-signature}}",
+												"type": "text"
+											}
+										],
+										"body": {
+											"mode": "raw",
+											"raw": "{\n  \"code\": {{e.g(236)}},\n  \"iso\": {{e.g(ht)}},\n  \"name\": {{e.g(Test Country)}},\n  \"timezone\": {{e.g(Africa/Tchad)}},\n  \"mobileRegex\": {{e.g(EEEEEEE)}},\n  \"flag\": \"{{e.g(🏳️)}}\"\n}\n",
+											"options": {
+												"raw": {
+													"language": "json"
+												}
+											}
+										},
+										"url": {
+											"raw": "{{endpoint}}/{{master}}/tenant/{{guid (e.g:100002)}}",
+											"host": [
+												"{{endpoint}}"
+											],
+											"path": [
+												"{{master}}",
+												"tenant",
+												"{{guid (e.g:100002)}}"
+											]
+										}
+									},
+									"response": []
+								}
+							]
+						},
+						{
+							"name": "🗑️ CRUD - DELETE",
+							"item": [
+								{
+									"name": "Supprimer un tenant par GUID",
+									"request": {
+										"method": "DELETE",
+										"header": [
+											{
+												"key": "x-api-key",
+												"value": "{{x-api-token}}",
+												"type": "text"
+											},
+											{
+												"key": "x-api-signature",
+												"value": "{{x-api-signature}}",
+												"type": "text"
+											},
+											{
+												"key": "x-api-user",
+												"value": "{{x-api-user}}",
+												"type": "text"
+											}
+										],
+										"url": {
+											"raw": "{{endpoint}}/{{master}}/tenant/100001",
+											"host": [
+												"{{endpoint}}"
+											],
+											"path": [
+												"{{master}}",
+												"tenant",
+												"100001"
+											]
+										}
+									},
+									"response": []
+								}
+							]
+						}
+					]
+				}
+			]
+		},
+		{
+			"name": "Server Health",
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "http://localhost:3001/health",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "3001",
+					"path": [
+						"health"
+					]
+				}
+			},
+			"response": []
+		}
+	]
+}

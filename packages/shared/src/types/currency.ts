@@ -1,4 +1,4 @@
-import type { PaginatedResponse } from './common';
+import type { PaginatedResponse } from './common.js';
 
 export interface CurrencyBase {
   code: string;

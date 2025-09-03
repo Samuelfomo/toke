@@ -65,6 +65,12 @@ export const ERROR_CODES = {
   CURRENCY_SYMBOL_INVALID: 'currency_symbol_invalid',
   DECIMAL_PLACES_INVALID: 'decimal_places_invalid',
 
+  //
+  SAME_CURRENCY_PAIR: 'same_currency_pair',
+  EXCHANGE_RATE_ALREADY_EXISTS: 'exchange_rate_already_exists',
+  EXCHANGE_RATE_NOT_FOUND: 'exchange_rate_not_found',
+  CONVERSION_FAILED: 'conversion_failed',
+
   // Erreurs de pagination
   PAGINATION_INVALID: 'pagination_invalid',
   OFFSET_INVALID: 'offset_invalid',

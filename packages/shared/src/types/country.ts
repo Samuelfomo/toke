@@ -1,6 +1,6 @@
 // shared/src/types/country.ts
 
-import type { PaginatedResponse } from './common';
+import type { PaginatedResponse } from './common.js';
 
 export interface CountryBase {
   code: string; // ISO 3166-1 alpha-2 (e.g., "CM")

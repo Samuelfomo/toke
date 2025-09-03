@@ -1,9 +1,10 @@
-import TenantModel from '../model/TenantModel';
-import W from '../../tools/watcher';
-import G from '../../tools/glossary';
-import { responseStructure as RS, tableStructure as TS } from '../../utils/response.model';
-import Revision from '../../tools/revision';
-import { Status } from '../database/data/tenant.db';
+import { Status } from '@toke/shared';
+
+import TenantModel from '../model/TenantModel.js';
+import W from '../../tools/watcher.js';
+import G from '../../tools/glossary.js';
+import { responseStructure as RS, tableName } from '../../utils/response.model.js';
+import Revision from '../../tools/revision.js';
 
 export default class Tenant extends TenantModel {
   constructor() {
@@ -18,7 +19,7 @@ export default class Tenant extends TenantModel {
     pagination: { offset?: number; limit?: number; count?: number };
     items: any[];
   }> {
-    const revision = await Revision.getRevision(TS.TENANT);
+    const revision = await Revision.getRevision(tableName.TENANT);
     let data: any[] = [];
 
     const allTenants = await this._list({ ['status']: Status.ACTIVE }, paginationOptions);
@@ -132,6 +133,11 @@ export default class Tenant extends TenantModel {
     return this;
   }
 
+  setShortName(shortName: string): Tenant {
+    this.short_name = shortName;
+    return this;
+  }
+
   setKey(key: string): Tenant {
     this.key = key;
     return this;
@@ -172,13 +178,18 @@ export default class Tenant extends TenantModel {
     return this;
   }
 
-  setBillingAddress(billing_address: string): Tenant {
+  setBillingAddress(billing_address: object): Tenant {
     this.billing_address = billing_address;
     return this;
   }
 
   setBillingPhone(billing_phone: string): Tenant {
     this.billing_phone = billing_phone;
+    return this;
+  }
+
+  setRegistrationNumber(registration_number: string): Tenant {
+    this.registration_number = registration_number;
     return this;
   }
 
@@ -220,6 +231,10 @@ export default class Tenant extends TenantModel {
     return this.name;
   }
 
+  getShortName(): string | undefined {
+    return this.short_name;
+  }
+
   getKey(): string | undefined {
     return this.key;
   }
@@ -252,7 +267,7 @@ export default class Tenant extends TenantModel {
     return this.billing_email;
   }
 
-  getBillingAddress(): string | undefined {
+  getBillingAddress(): object | undefined {
     return this.billing_address;
   }
 
@@ -262,6 +277,10 @@ export default class Tenant extends TenantModel {
 
   getStatus(): Status | undefined {
     return this.status;
+  }
+
+  getRegistrationNumber(): string | undefined {
+    return this.registration_number;
   }
 
   getSubdomain(): string | undefined {
@@ -503,6 +522,8 @@ export default class Tenant extends TenantModel {
       [RS.SUBDOMAIN]: this.subdomain,
       [RS.DATABASE_NAME]: this.database_name,
       [RS.DATABASE_USERNAME]: this.database_username,
+      [RS.SHORT_NAME]: this.short_name,
+      [RS.REGISTRATION_NUMBER]: this.registration_number,
       // Note: Ne pas exposer le mot de passe dans le JSON
     };
   }
@@ -521,6 +542,7 @@ export default class Tenant extends TenantModel {
     this.id = data.id;
     this.guid = data.guid;
     this.name = data.name;
+    this.short_name = data.short_name;
     this.key = data.key;
     this.country_code = data.country_code;
     this.primary_currency_code = data.primary_currency_code;
@@ -532,6 +554,7 @@ export default class Tenant extends TenantModel {
     this.billing_address = data.billing_address;
     this.billing_phone = data.billing_phone;
     this.status = data.status;
+    this.registration_number = data.registration_number;
     this.subdomain = data.subdomain;
     this.database_name = data.database_name;
     this.database_username = data.database_username;

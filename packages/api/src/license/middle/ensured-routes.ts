@@ -1,7 +1,7 @@
 import { NextFunction, Request, Response } from 'express';
 
-import R from '../../tools/response';
-import HttpStatus from '../../tools/http-status';
+import R from '../../tools/response.js';
+import HttpStatus from '../../tools/http-status.js';
 
 /**
  * Middleware de validation des méthodes HTTP

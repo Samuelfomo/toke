@@ -1,8 +1,8 @@
-import CurrencyModel from '../model/CurrencyModel';
-import W from '../../tools/watcher';
-import G from '../../tools/glossary';
-import { responseStructure as RS, tableStructure as TS } from '../../utils/response.model';
-import Revision from '../../tools/revision';
+import CurrencyModel from '../model/CurrencyModel.js';
+import W from '../../tools/watcher.js';
+import G from '../../tools/glossary.js';
+import { responseStructure as RS, tableName as TS } from '../../utils/response.model.js';
+import Revision from '../../tools/revision.js';
 
 export default class Currency extends CurrencyModel {
   constructor() {

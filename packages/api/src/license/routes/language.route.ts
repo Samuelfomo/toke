@@ -1,13 +1,20 @@
 import { Request, Response, Router } from 'express';
+import {
+  HttpStatus,
+  LANGUAGE_CODES,
+  LANGUAGE_ERRORS,
+  LanguageValidationUtils,
+  LS,
+  paginationSchema
+} from '@toke/shared';
 
-import Language from '../class/Language';
-import R from '../../tools/response';
-import HttpStatus from '../../tools/http-status';
-import G from '../../tools/glossary';
-import Ensure from '../middle/ensured-routes';
-import ExtractQueryParams from '../../utils/extract.query.params';
-import Revision from '../../tools/revision';
-import { tableStructure as TS } from '../../utils/response.model';
+import Language from '../class/Language.js';
+import R from '../../tools/response.js';
+import G from '../../tools/glossary.js';
+import Ensure from '../middle/ensured-routes.js';
+import Revision from '../../tools/revision.js';
+import { tableName } from '../../utils/response.model.js';
+
 
 const router = Router();
 
@@ -18,16 +25,24 @@ const router = Router();
  */
 router.get('/', Ensure.get(), async (req: Request, res: Response) => {
   try {
-    const paginationOptions = await ExtractQueryParams.extractPaginationFromQuery(req.query);
+    const paginationOptions = paginationSchema.parse(req.query);
 
     const languages = await Language.exportable(paginationOptions);
-    R.handleSuccess(res, { languages });
+    return R.handleSuccess(res, { languages });
   } catch (error: any) {
     console.error('⚠️ Erreur export langues:', error);
-    R.handleError(res, HttpStatus.INTERNAL_ERROR, {
-      code: 'export_failed',
-      message: 'Failed to export languages',
-    });
+    if (error.issues) { // Erreur Zod
+      return R.handleError(res, HttpStatus.BAD_REQUEST, {
+        code: LANGUAGE_CODES.PAGINATION_INVALID,
+        message: 'Invalid pagination parameters',
+        details: error.issues,
+      });
+    } else {
+      return R.handleError(res, HttpStatus.INTERNAL_ERROR, {
+        code: LANGUAGE_CODES.EXPORT_FAILED,
+        message: LANGUAGE_ERRORS.EXPORT_FAILED,
+      });
+    }
   }
 });
 
@@ -36,16 +51,16 @@ router.get('/', Ensure.get(), async (req: Request, res: Response) => {
  */
 router.get('/revision', Ensure.get(), async (req: Request, res: Response) => {
   try {
-    const revision = await Revision.getRevision(TS.LANGUAGE);
+    const revision = await Revision.getRevision(tableName.LANGUAGE);
 
-    R.handleSuccess(res, {
+    return R.handleSuccess(res, {
       revision,
       checked_at: new Date().toISOString(),
     });
   } catch (error: any) {
     console.error('⚠️ Erreur récupération révision:', error);
-    R.handleError(res, HttpStatus.INTERNAL_ERROR, {
-      code: 'revision_check_failed',
+    return R.handleError(res, HttpStatus.INTERNAL_ERROR, {
+      code: LANGUAGE_CODES.SEARCH_FAILED,
       message: 'Failed to get current revision',
     });
   }
@@ -59,7 +74,7 @@ router.get('/active/:status', Ensure.get(), async (req: Request, res: Response) 
     const { status } = req.params;
     const isActive = status.toLowerCase() === 'true' || status === '1';
 
-    const paginationOptions = await ExtractQueryParams.extractPaginationFromQuery(req.query);
+    const paginationOptions = paginationSchema.parse(req.query);
 
     const languagesData = await Language._listByActiveStatus(isActive, paginationOptions);
     const languages = {
@@ -72,13 +87,21 @@ router.get('/active/:status', Ensure.get(), async (req: Request, res: Response) 
       items: languagesData?.map((language) => language.toJSON()) || [],
     };
 
-    R.handleSuccess(res, { languages });
+    return R.handleSuccess(res, { languages });
   } catch (error: any) {
     console.error('⚠️ Erreur recherche par statut:', error);
-    R.handleError(res, HttpStatus.INTERNAL_ERROR, {
-      code: 'status_search_failed',
-      message: `Failed to search languages by status: ${req.params.status}`,
-    });
+    if (error.issues) {
+      return R.handleError(res, HttpStatus.BAD_REQUEST, {
+        code: LANGUAGE_CODES.PAGINATION_INVALID,
+        message: 'Invalid pagination parameters',
+        details: error.issues,
+      });
+    } else {
+      return R.handleError(res, HttpStatus.INTERNAL_ERROR, {
+        code: LANGUAGE_CODES.STATUS_SEARCH_FAILED,
+        message: `Failed to search languages by status: ${req.params.status}`,
+      });
+    }
   }
 });
 
@@ -91,58 +114,45 @@ router.get('/active/:status', Ensure.get(), async (req: Request, res: Response) 
  */
 router.post('/', Ensure.post(), async (req: Request, res: Response) => {
   try {
-    const { code, name_en, name_local, active } = req.body;
 
-    // Validation des champs requis
-    if (!code) {
-      return R.handleError(res, HttpStatus.BAD_REQUEST, {
-        code: 'code_required',
-        message: 'Language code (ISO 639-1) is required',
-      });
-    }
+    const validatedData = LS.validateLanguageCreation(req.body);
 
-    if (!name_en) {
-      return R.handleError(res, HttpStatus.BAD_REQUEST, {
-        code: 'name_en_required',
-        message: 'English language name is required',
-      });
-    }
+    const languageObj = new Language()
+      .setCode(validatedData.code)
+      .setNameEn(validatedData.name_en)
+      .setLocalName(validatedData.name_local);
 
-    if (!name_local) {
-      return R.handleError(res, HttpStatus.BAD_REQUEST, {
-        code: 'name_local_required',
-        message: 'Local language name is required',
-      });
-    }
+    if (validatedData.active !== undefined) languageObj.setActive(validatedData.active);
 
-    const language = new Language()
-      .setCode(code)
-      .setNameEn(name_en)
-      .setLocalName(name_local);
+    await languageObj.save();
 
-    if (active !== undefined) language.setActive(Boolean(active));
-
-    await language.save();
-
-    console.log(`✅ Langue créée: ${code} - ${name_en} (GUID: ${language.getGuid()})`);
-    R.handleCreated(res, language.toJSON());
+    console.log(
+      `✅ Langue créée: ${validatedData.code} - ${validatedData.name_en} (GUID: ${languageObj.getGuid()})`
+    );
+    return R.handleCreated(res, languageObj.toJSON());
   } catch (error: any) {
     console.error('⚠️ Erreur création langue:', error.message);
 
-    if (error.message.includes('already exists')) {
-      R.handleError(res, HttpStatus.CONFLICT, {
-        code: 'language_already_exists',
-        message: error.message,
+    if (error.issues) { // Erreur Zod
+      return R.handleError(res, HttpStatus.BAD_REQUEST, {
+        code: LANGUAGE_CODES.VALIDATION_FAILED,
+        message: 'Validation failed',
+        details: error.issues,
       });
-    } else if (error.message.includes('code')) {
-      R.handleError(res, HttpStatus.BAD_REQUEST, {
-        code: 'invalid_code',
+    } else if (error.message.includes('already exists')) {
+      return R.handleError(res, HttpStatus.CONFLICT, {
+        code: LANGUAGE_CODES.LANGUAGE_ALREADY_EXISTS,
+        message: LANGUAGE_ERRORS.CODE_ALREADY_EXISTS,
+      });
+    } else if (error.message.includes('Validation failed')) {
+      return R.handleError(res, HttpStatus.BAD_REQUEST, {
+        code: LANGUAGE_CODES.VALIDATION_FAILED,
         message: error.message,
       });
     } else {
-      R.handleError(res, HttpStatus.BAD_REQUEST, {
-        code: 'creation_failed',
-        message: error.message,
+      return R.handleError(res, HttpStatus.BAD_REQUEST, {
+        code: LANGUAGE_CODES.CREATION_FAILED,
+        message: LANGUAGE_ERRORS.CREATION_FAILED,
       });
     }
   }
@@ -153,54 +163,66 @@ router.post('/', Ensure.post(), async (req: Request, res: Response) => {
  */
 router.put('/:guid', Ensure.put(), async (req: Request, res: Response) => {
   try {
-    // ✅ Validation manuelle du GUID
-    if (!/^\d{6}$/.test(req.params.guid)) {
-      return R.handleError(res, HttpStatus.BAD_REQUEST, {
-        code: 'invalid_guid',
-        message: 'GUID must be a 6-digit number',
-      });
-    }
-
-    const guid = parseInt(req.params.guid);
+    const validatedGuid = LS.validateLanguageGuid(req.params.guid);
 
     // Charger par GUID
-    const language = await Language._load(guid, true);
+    const language = await Language._load(validatedGuid, true);
     if (!language) {
       return R.handleError(res, HttpStatus.NOT_FOUND, {
-        code: 'language_not_found',
-        message: 'Language not found',
+        code: LANGUAGE_CODES.LANGUAGE_NOT_FOUND,
+        message: LANGUAGE_ERRORS.NOT_FOUND,
       });
     }
 
-    const { code, name_en, name_local, active } = req.body;
+    // Validation des données avec schéma shared
+    const validatedData = LS.validateLanguageUpdate(req.body);
 
     // Mise à jour des champs fournis
-    if (code !== undefined) language.setCode(code);
-    if (name_en !== undefined) language.setNameEn(name_en);
-    if (name_local !== undefined) language.setLocalName(name_local);
-    if (active !== undefined) language.setActive(Boolean(active));
+    if (validatedData.code !== undefined) {
+      language.setCode(validatedData.code);
+    }
+    if (validatedData.name_en !== undefined) {
+      language.setNameEn(validatedData.name_en);
+    }
+    if (validatedData.name_local !== undefined) {
+      language.setLocalName(validatedData.name_local);
+    }
+    if (validatedData.active !== undefined) {
+      language.setActive(validatedData.active);
+    }
 
     await language.save();
 
-    console.log(`✅ Langue modifiée: GUID ${guid}`);
-    R.handleSuccess(res, language.toJSON());
+    console.log(`✅ Langue modifiée: GUID ${validatedGuid}`);
+    return R.handleSuccess(res, language.toJSON());
   } catch (error: any) {
     console.error('⚠️ Erreur modification langue:', error);
 
-    if (error.message.includes('already exists')) {
-      R.handleError(res, HttpStatus.CONFLICT, {
-        code: 'language_already_exists',
-        message: error.message,
+    if (error.issues) { // Erreur Zod
+      return R.handleError(res, HttpStatus.BAD_REQUEST, {
+        code: LANGUAGE_CODES.VALIDATION_FAILED,
+        message: 'Validation failed',
+        details: error.issues,
       });
-    } else if (error.message.includes('code')) {
-      R.handleError(res, HttpStatus.BAD_REQUEST, {
-        code: 'invalid_code',
+    } else if (error.message.includes('Invalid GUID')) {
+      return R.handleError(res, HttpStatus.BAD_REQUEST, {
+        code: LANGUAGE_CODES.INVALID_GUID,
+        message: LANGUAGE_ERRORS.GUID_INVALID,
+      });
+    } else if (error.message.includes('already exists')) {
+      return R.handleError(res, HttpStatus.CONFLICT, {
+        code: LANGUAGE_CODES.LANGUAGE_ALREADY_EXISTS,
+        message: LANGUAGE_ERRORS.CODE_ALREADY_EXISTS,
+      });
+    } else if (error.message.includes('Validation failed')) {
+      return R.handleError(res, HttpStatus.BAD_REQUEST, {
+        code: LANGUAGE_CODES.VALIDATION_FAILED,
         message: error.message,
       });
     } else {
-      R.handleError(res, HttpStatus.BAD_REQUEST, {
-        code: 'update_failed',
-        message: error.message,
+      return R.handleError(res, HttpStatus.BAD_REQUEST, {
+        code: LANGUAGE_CODES.UPDATE_FAILED,
+        message: LANGUAGE_ERRORS.UPDATE_FAILED,
       });
     }
   }
@@ -211,22 +233,22 @@ router.put('/:guid', Ensure.put(), async (req: Request, res: Response) => {
  */
 router.delete('/:guid', Ensure.delete(), async (req: Request, res: Response) => {
   try {
-    // ✅ Validation manuelle du GUID
-    if (!/^\d+$/.test(req.params.guid)) {
+    // Validation du GUID avec utilitaire shared
+    if (!LanguageValidationUtils.validateLanguageGuid(req.params.guid)) {
       return R.handleError(res, HttpStatus.BAD_REQUEST, {
-        code: 'invalid_guid',
-        message: 'GUID must be a positive integer',
+        code: LANGUAGE_CODES.INVALID_GUID,
+        message: LANGUAGE_ERRORS.GUID_INVALID,
       });
     }
 
-    const guid = parseInt(req.params.guid);
+    const guid = parseInt(req.params.guid, 10);
 
     // Charger par GUID
     const language = await Language._load(guid, true);
     if (!language) {
       return R.handleError(res, HttpStatus.NOT_FOUND, {
-        code: 'language_not_found',
-        message: 'Language not found',
+        code: LANGUAGE_CODES.LANGUAGE_NOT_FOUND,
+        message: LANGUAGE_ERRORS.NOT_FOUND,
       });
     }
 
@@ -236,20 +258,20 @@ router.delete('/:guid', Ensure.delete(), async (req: Request, res: Response) => 
       console.log(
         `✅ Langue supprimée: GUID ${guid} (${language.getCode()} - ${language.getNameEn()})`,
       );
-      R.handleSuccess(res, {
+      return R.handleSuccess(res, {
         message: 'Language deleted successfully',
         guid: guid,
         code: language.getCode(),
         name_en: language.getNameEn(),
       });
     } else {
-      R.handleError(res, HttpStatus.INTERNAL_ERROR, G.savedError);
+      return R.handleError(res, HttpStatus.INTERNAL_ERROR, G.savedError);
     }
   } catch (error: any) {
     console.error('⚠️ Erreur suppression langue:', error);
-    R.handleError(res, HttpStatus.INTERNAL_ERROR, {
-      code: 'deletion_failed',
-      message: error.message,
+    return R.handleError(res, HttpStatus.INTERNAL_ERROR, {
+      code: LANGUAGE_CODES.DELETE_FAILED,
+      message: LANGUAGE_ERRORS.DELETE_FAILED,
     });
   }
 });
@@ -263,15 +285,13 @@ router.delete('/:guid', Ensure.delete(), async (req: Request, res: Response) => 
  */
 router.get('/list', Ensure.get(), async (req: Request, res: Response) => {
   try {
-    const { active } = req.query;
+
+    const filters = LS.validateLanguageFilters(req.query);
+    const paginationOptions = paginationSchema.parse(req.query);
 
     const conditions: Record<string, any> = {};
 
-    if (active !== undefined) {
-      conditions.active = active === 'true' || active === '1';
-    }
-
-    const paginationOptions = await ExtractQueryParams.extractPaginationFromQuery(req.query);
+    if (filters.active !== undefined) conditions.active = filters.active;
 
     const languageEntries = await Language._list(conditions, paginationOptions);
     const languages = {
@@ -283,13 +303,27 @@ router.get('/list', Ensure.get(), async (req: Request, res: Response) => {
       items: languageEntries?.map((language) => language.toJSON()) || [],
     };
 
-    R.handleSuccess(res, { languages });
+    return R.handleSuccess(res, { languages });
   } catch (error: any) {
     console.error('⚠️ Erreur listing langues:', error);
-    R.handleError(res, HttpStatus.INTERNAL_ERROR, {
-      code: 'listing_failed',
-      message: 'Failed to list languages',
-    });
+
+    if (error.issues) { // Erreur Zod
+      return R.handleError(res, HttpStatus.BAD_REQUEST, {
+        code: LANGUAGE_CODES.VALIDATION_FAILED,
+        message: 'Invalid filters or pagination parameters',
+        details: error.issues,
+      });
+    } else if (error.message.includes('Invalid filters')) {
+      return R.handleError(res, HttpStatus.BAD_REQUEST, {
+        code: LANGUAGE_CODES.FILTER_INVALID,
+        message: error.message,
+      });
+    } else {
+      return R.handleError(res, HttpStatus.INTERNAL_ERROR, {
+        code: LANGUAGE_CODES.LISTING_FAILED,
+        message: LANGUAGE_ERRORS.EXPORT_FAILED,
+      });
+    }
   }
 });
 
@@ -300,28 +334,28 @@ router.get('/search/code/:code', Ensure.get(), async (req: Request, res: Respons
   try {
     const { code } = req.params;
 
-    // Validation du format ISO 639-1 (2 lettres)
-    if (!/^[A-Z]{2}$/i.test(code)) {
+    // Validation avec utilitaire shared
+    if (!LanguageValidationUtils.validateCode(code)) {
       return R.handleError(res, HttpStatus.BAD_REQUEST, {
-        code: 'invalid_code_format',
-        message: 'Language code must be exactly 2 letters (ISO 639-1)',
+        code: LANGUAGE_CODES.CODE_INVALID,
+        message: LANGUAGE_ERRORS.CODE_INVALID,
       });
     }
-
-    const language = await Language._load(code.toUpperCase(), false, true);
+    const normalizedCode = LanguageValidationUtils.normalizeLanguageCode(code);
+    const language = await Language._load(normalizedCode, false, true);
 
     if (!language) {
       return R.handleError(res, HttpStatus.NOT_FOUND, {
-        code: 'language_not_found',
-        message: `Language with code '${code.toUpperCase()}' not found`,
+        code: LANGUAGE_CODES.LANGUAGE_NOT_FOUND,
+        message: `Language with code '${normalizedCode}' not found`,
       });
     }
 
-    R.handleSuccess(res, language.toJSON());
+    return R.handleSuccess(res, language.toJSON());
   } catch (error: any) {
     console.error('⚠️ Erreur recherche par code:', error);
-    R.handleError(res, HttpStatus.INTERNAL_ERROR, {
-      code: 'search_failed',
+    return R.handleError(res, HttpStatus.INTERNAL_ERROR, {
+      code: LANGUAGE_CODES.SEARCH_FAILED,
       message: 'Failed to search language by code',
     });
   }
@@ -335,34 +369,42 @@ router.get('/:identifier', Ensure.get(), async (req: Request, res: Response) => 
     const { identifier } = req.params;
     let language: Language | null = null;
 
-    // Essayer différentes méthodes de recherche selon le format
-    if (/^\d+$/.test(identifier)) {
-      const numericId = parseInt(identifier);
+    // Utiliser l'utilitaire pour identifier le type
+    try {
+      const { type, value } = LanguageValidationUtils.extractLanguageIdentifier(identifier);
 
-      // Essayer par ID d'abord
-      language = await Language._load(numericId);
-
-      // Si pas trouvé, essayer par GUID
-      if (!language) {
-        language = await Language._load(numericId, true);
+      if (type === 'numeric') {
+        const numericId = parseInt(value);
+        // Essayer par ID d'abord
+        language = await Language._load(numericId);
+        // Si pas trouvé, essayer par GUID si c'est un GUID valide
+        if (!language && LanguageValidationUtils.validateLanguageGuid(numericId)) {
+          language = await Language._load(numericId, true);
+        }
+      } else if (type === 'code') {
+        // Recherche par code ISO 639-1
+        language = await Language._load(value, false, true);
       }
-    } else if (/^[A-Z]{2}$/i.test(identifier)) {
-      // Recherche par code ISO 639-1
-      language = await Language._load(identifier.toUpperCase(), false, true);
+    } catch (identifierError: any) {
+      console.error('⚠️ Erreur recherche langue:', identifierError);
+      return R.handleError(res, HttpStatus.BAD_REQUEST, {
+        code: LANGUAGE_CODES.CODE_INVALID,
+        message: `Invalid identifier format: ${identifier}`,
+      });
     }
 
     if (!language) {
       return R.handleError(res, HttpStatus.NOT_FOUND, {
-        code: 'language_not_found',
+        code: LANGUAGE_CODES.LANGUAGE_NOT_FOUND,
         message: `Language with identifier '${identifier}' not found`,
       });
     }
 
-    R.handleSuccess(res, language.toJSON());
+    return R.handleSuccess(res, language.toJSON());
   } catch (error: any) {
     console.error('⚠️ Erreur recherche langue:', error);
-    R.handleError(res, HttpStatus.INTERNAL_ERROR, {
-      code: 'search_failed',
+   return R.handleError(res, HttpStatus.INTERNAL_ERROR, {
+      code: LANGUAGE_CODES.SEARCH_FAILED,
       message: 'Failed to search language',
     });
   }

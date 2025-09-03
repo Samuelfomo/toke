@@ -1,6 +1,6 @@
-import BaseModel from '../database/db.base';
-import G from '../../tools/glossary';
-import { CountryDbStructure } from '../database/data/country.db';
+import BaseModel from '../database/db.base.js';
+import G from '../../tools/glossary.js';
+import { CountryDbStructure } from '../database/data/country.db.js';
 
 export default class CountryModel extends BaseModel {
   public readonly db = {

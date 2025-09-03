@@ -1,6 +1,6 @@
 // À ajouter dans shared/src/utils/validation.ts
 
-import { CURRENCY_VALIDATION } from '../constants/currency';
+import { CURRENCY_VALIDATION } from '../constants/currency.js';
 
 export class CurrencyValidationUtils {
   /**

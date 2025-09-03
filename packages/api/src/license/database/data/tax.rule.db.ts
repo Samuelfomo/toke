@@ -1,9 +1,10 @@
 import { DataTypes, ModelAttributes, ModelOptions } from 'sequelize';
 
-import G from '../../../tools/glossary';
+import G from '../../../tools/glossary.js';
+import { tableName } from '../../../utils/response.model.js';
 
 export const TaxRuleDbStructure = {
-  tableName: `${G.tableConf}_tax_rule`,
+  tableName: tableName.TAX_RULE,
   attributes: {
     id: {
       type: DataTypes.SMALLINT,
@@ -12,6 +13,7 @@ export const TaxRuleDbStructure = {
       validate: {
         isInt: true,
         min: 1,
+        max: 65535,
       },
       comment: 'Tax rule',
     },
@@ -22,6 +24,7 @@ export const TaxRuleDbStructure = {
       validate: {
         isInt: true,
         min: 100000,
+        max: 999999,
       },
       comment: 'Unique, automatically generated digital GUID',
     },
@@ -44,6 +47,8 @@ export const TaxRuleDbStructure = {
       validate: {
         is: /^[a-zA-Z0-9_]{1,20}$/,
         len: [1, 20],
+        notEmpty: true,
+        notNull: true
       },
       comment: 'Tax type (e.g. TVA, TVA_Hors_Socio)',
     },
@@ -114,7 +119,7 @@ export const TaxRuleDbStructure = {
     },
   } as ModelAttributes,
   options: {
-    tableName: `${G.tableConf}_tax_rule`,
+    tableName: tableName.TAX_RULE,
     timestamps: true,
     createdAt: 'created_at',
     updatedAt: 'updated_at',
@@ -170,72 +175,72 @@ export const TaxRuleDbStructure = {
     ],
   } as ModelOptions,
 
-  validation: {
-    validateCountryCode: (iso: string): boolean => {
-      const trimmed = iso.trim().toUpperCase();
-      const isoRegex = /^[A-Z]{2}$/;
-      return isoRegex.test(trimmed);
-    },
-    validateTaxType: (taxType: string): boolean => {
-      const trimmed = taxType.trim();
-      const taxTypeRegex = /^[a-zA-Z0-9_]{1,20}$/;
-      return taxTypeRegex.test(trimmed);
-    },
-    validateTaxName: (taxName: string): boolean => {
-      const trimmed = taxName.trim();
-      return trimmed.length >= 2 && trimmed.length <= 50;
-    },
-    // validateTaxRate: (taxRate: string): boolean => {
-    //   const trimmed = taxRate.trim();
-    //   const taxRateRegex = /^[0-9]+(\.[0-9]{1,4})?$/;
-    //   return taxRateRegex.test(trimmed);
-    // },
-    validateTaxRate: (taxRate: number | string): boolean => {
-      const rate = typeof taxRate === 'string' ? parseFloat(taxRate) : taxRate;
-      return !isNaN(rate) && rate >= 0 && rate <= 1;
-    },
-    validateAppliesTo: (appliesTo: string): boolean => {
-      const trimmed = appliesTo.trim();
-      const appliesToRegex = /^[a-zA-Z0-9_]{1,20}$/;
-      return appliesToRegex.test(trimmed);
-    },
-    validateBoolean(value: boolean): boolean {
-      return typeof value === 'boolean';
-    },
-    validateDate: (date: Date | string): boolean => {
-      const d = new Date(date);
-      return d instanceof Date && !isNaN(d.getTime());
-    },
-
-    cleanData: (data: any): void => {
-      if (data.country_code) {
-        data.country_code = data.country_code.trim().toUpperCase();
-      }
-      if (data.tax_type) {
-        data.tax_type = data.tax_type.trim();
-      }
-      if (data.tax_name) {
-        data.tax_name = data.tax_name.trim();
-      }
-      if (data.tax_rate) {
-        data.tax_rate = data.tax_rate.trim();
-      }
-      if (data.applies_to) {
-        data.applies_to = data.applies_to.trim();
-      }
-      if (data.required_tax_number !== undefined) {
-        data.required_tax_number =
-          data.required_tax_number === true || data.required_tax_number === 'true';
-      }
-      if (data.effective_date) {
-        data.effective_date = new Date(data.effective_date);
-      }
-      if (data.expiry_date) {
-        data.expiry_date = new Date(data.expiry_date);
-      }
-      if (data.active) {
-        data.active = data.active === 'true';
-      }
-    },
-  },
+  // validation: {
+  //   validateCountryCode: (iso: string): boolean => {
+  //     const trimmed = iso.trim().toUpperCase();
+  //     const isoRegex = /^[A-Z]{2}$/;
+  //     return isoRegex.test(trimmed);
+  //   },
+  //   validateTaxType: (taxType: string): boolean => {
+  //     const trimmed = taxType.trim();
+  //     const taxTypeRegex = /^[a-zA-Z0-9_]{1,20}$/;
+  //     return taxTypeRegex.test(trimmed);
+  //   },
+  //   validateTaxName: (taxName: string): boolean => {
+  //     const trimmed = taxName.trim();
+  //     return trimmed.length >= 2 && trimmed.length <= 50;
+  //   },
+  //   // validateTaxRate: (taxRate: string): boolean => {
+  //   //   const trimmed = taxRate.trim();
+  //   //   const taxRateRegex = /^[0-9]+(\.[0-9]{1,4})?$/;
+  //   //   return taxRateRegex.test(trimmed);
+  //   // },
+  //   validateTaxRate: (taxRate: number | string): boolean => {
+  //     const rate = typeof taxRate === 'string' ? parseFloat(taxRate) : taxRate;
+  //     return !isNaN(rate) && rate >= 0 && rate <= 1;
+  //   },
+  //   validateAppliesTo: (appliesTo: string): boolean => {
+  //     const trimmed = appliesTo.trim();
+  //     const appliesToRegex = /^[a-zA-Z0-9_]{1,20}$/;
+  //     return appliesToRegex.test(trimmed);
+  //   },
+  //   validateBoolean(value: boolean): boolean {
+  //     return typeof value === 'boolean';
+  //   },
+  //   validateDate: (date: Date | string): boolean => {
+  //     const d = new Date(date);
+  //     return d instanceof Date && !isNaN(d.getTime());
+  //   },
+  //
+  //   cleanData: (data: any): void => {
+  //     if (data.country_code) {
+  //       data.country_code = data.country_code.trim().toUpperCase();
+  //     }
+  //     if (data.tax_type) {
+  //       data.tax_type = data.tax_type.trim();
+  //     }
+  //     if (data.tax_name) {
+  //       data.tax_name = data.tax_name.trim();
+  //     }
+  //     if (data.tax_rate) {
+  //       data.tax_rate = data.tax_rate.trim();
+  //     }
+  //     if (data.applies_to) {
+  //       data.applies_to = data.applies_to.trim();
+  //     }
+  //     if (data.required_tax_number !== undefined) {
+  //       data.required_tax_number =
+  //         data.required_tax_number === true || data.required_tax_number === 'true';
+  //     }
+  //     if (data.effective_date) {
+  //       data.effective_date = new Date(data.effective_date);
+  //     }
+  //     if (data.expiry_date) {
+  //       data.expiry_date = new Date(data.expiry_date);
+  //     }
+  //     if (data.active) {
+  //       data.active = data.active === 'true';
+  //     }
+  //   },
+  // },
 };

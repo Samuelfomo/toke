@@ -1,6 +1,6 @@
 import { z } from 'zod';
 
-import { CURRENCY_DEFAULTS, CURRENCY_ERRORS, CURRENCY_VALIDATION } from '../constants/currency';
+import { CURRENCY_DEFAULTS, CURRENCY_ERRORS, CURRENCY_VALIDATION } from '../constants/currency.js';
 
 // Schéma de base pour les validations communes
 const baseCurrencySchema = z.object({

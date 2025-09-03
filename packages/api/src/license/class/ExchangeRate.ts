@@ -1,8 +1,8 @@
-import ExchangeRateModel from '../model/ExchangeRateModel';
-import W from '../../tools/watcher';
-import G from '../../tools/glossary';
-import { responseStructure as RS, tableStructure as TS } from '../../utils/response.model';
-import Revision from '../../tools/revision';
+import ExchangeRateModel from '../model/ExchangeRateModel.js';
+import W from '../../tools/watcher.js';
+import G from '../../tools/glossary.js';
+import { responseStructure as RS, tableName as TS } from '../../utils/response.model.js';
+import Revision from '../../tools/revision.js';
 
 export default class ExchangeRate extends ExchangeRateModel {
   constructor() {
@@ -49,10 +49,6 @@ export default class ExchangeRate extends ExchangeRateModel {
     paginationOptions: { offset?: number; limit?: number } = {},
   ): Promise<ExchangeRate[] | null> {
     return new ExchangeRate().listByCurrentStatus(is_current, paginationOptions);
-  }
-
-  static async _getLastModificationTime(): Promise<Date | null> {
-    return await new ExchangeRate().getLastModification();
   }
 
   // Setters avec validation et formatage

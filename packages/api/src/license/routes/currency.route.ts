@@ -8,11 +8,11 @@ import {
   paginationSchema
 } from '@toke/shared';
 
-import Currency from '../class/Currency';
-import R from '../../tools/response';
-import Ensure from '../middle/ensured-routes';
-import Revision from '../../tools/revision';
-import { tableStructure as TS } from '../../utils/response.model';
+import Currency from '../class/Currency.js';
+import R from '../../tools/response.js';
+import Ensure from '../middle/ensured-routes.js';
+import Revision from '../../tools/revision.js';
+import { tableName as TS } from '../../utils/response.model.js';
 
 
 const router = Router();

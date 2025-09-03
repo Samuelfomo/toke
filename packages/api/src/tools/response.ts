@@ -1,6 +1,6 @@
 import { Response } from 'express';
 
-import HttpStatus from './http-status';
+import HttpStatus from './http-status.js';
 
 export default class R {
   /**

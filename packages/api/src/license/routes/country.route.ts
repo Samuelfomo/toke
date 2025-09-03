@@ -10,11 +10,11 @@ import {
   validateCountryUpdate
 } from '@toke/shared';
 
-import Country from '../class/Country';
-import R from '../../tools/response';
-import Ensure from '../middle/ensured-routes';
-import Revision from '../../tools/revision';
-import { tableStructure as TS } from '../../utils/response.model';
+import Country from '../class/Country.js';
+import R from '../../tools/response.js';
+import Ensure from '../middle/ensured-routes.js';
+import Revision from '../../tools/revision.js';
+import { tableName as TS } from '../../utils/response.model.js';
 
 const router = Router();
 
@@ -211,7 +211,7 @@ router.post('/', Ensure.post(), async (req: Request, res: Response) => {
         await country.save();
 
         console.log(`✅ Pays créé: ${validatedData.code} - ${validatedData.name_en} (GUID: ${country.getGuid()})`);
-        R.handleCreated(res, country.toJSON());
+       return R.handleCreated(res,country.toJSON());
 
     } catch (error: any) {
         console.error('❌ Erreur création pays:', error.message);
@@ -279,7 +279,7 @@ router.put('/:guid', Ensure.put(), async (req: Request, res: Response) => {
         await country.save();
 
         console.log(`✅ Pays modifié: GUID ${guid}`);
-        R.handleSuccess(res, country.toJSON());
+      return R.handleSuccess(res,{ country: country.toJSON(), test: true});
 
     } catch (error: any) {
         console.error('❌ Erreur modification pays:', error);
@@ -440,7 +440,7 @@ export default router;
 // import Ensure from '../middle/ensured-routes';
 // import ExtractQueryParams from '../../utils/extract.query.params';
 // import Revision from '../../tools/revision';
-// import { tableStructure as TS } from '../../utils/response.model';
+// import { tableName as TS } from '../../utils/response.model';
 //
 // const router = Router();
 //

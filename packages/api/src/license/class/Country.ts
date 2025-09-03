@@ -1,8 +1,8 @@
-import CountryModel from '../model/CountryModel';
-import W from '../../tools/watcher';
-import G from '../../tools/glossary';
-import { responseStructure as RS, tableStructure as TS } from '../../utils/response.model';
-import Revision from '../../tools/revision';
+import CountryModel from '../model/CountryModel.js';
+import W from '../../tools/watcher.js';
+import G from '../../tools/glossary.js';
+import { responseStructure as RS, tableName } from '../../utils/response.model.js';
+import Revision from '../../tools/revision.js';
 
 export default class Country extends CountryModel {
   constructor() {
@@ -17,7 +17,7 @@ export default class Country extends CountryModel {
     pagination: { offset?: number; limit?: number; count?: number };
     items: any[];
   }> {
-    const revision = await Revision.getRevision(TS.COUNTRY);
+    const revision = await Revision.getRevision(tableName.COUNTRY);
     let data: any[] = [];
 
     const allCountries = await this._list({ [`${RS.ACTIVE}`]: true}, paginationOptions);

@@ -1,7 +1,7 @@
 // shared/src/schemas/country.ts
 import { z } from 'zod';
 
-import { COUNTRY_DEFAULTS, COUNTRY_ERRORS, COUNTRY_VALIDATION } from '../constants/country';
+import { COUNTRY_DEFAULTS, COUNTRY_ERRORS, COUNTRY_VALIDATION } from '../constants/country.js';
 
 // Schéma de base pour les validations communes
 const baseCountrySchema = z.object({

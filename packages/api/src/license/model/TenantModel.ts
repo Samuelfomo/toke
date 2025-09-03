@@ -1,13 +1,15 @@
-import BaseModel from '../database/db.base';
-import G from '../../tools/glossary';
-import { Status, TenantDbStructure } from '../database/data/tenant.db';
+import { Status, TENANT_ERRORS, TenantValidationUtils } from '@toke/shared';
+
+import BaseModel from '../database/db.base.js';
+import { tableName } from '../../utils/response.model.js';
 
 export default class TenantModel extends BaseModel {
   public readonly db = {
-    tableName: `${G.tableAp}_tenant`,
+    tableName: tableName.TENANT,
     id: 'id',
     guid: 'guid',
     name: 'name',
+    short_name: 'short_name',
     key: 'key',
     country_code: 'country_code',
     primary_currency_code: 'primary_currency_code',
@@ -23,11 +25,13 @@ export default class TenantModel extends BaseModel {
     database_name: 'database_name',
     database_username: 'database_username',
     database_password: 'database_password',
+    registration_number: 'registration_number',
   } as const;
 
   protected id?: number;
   protected guid?: number;
   protected name?: string;
+  protected short_name?: string;
   protected key?: string;
   protected country_code?: string;
   protected primary_currency_code?: string;
@@ -36,13 +40,14 @@ export default class TenantModel extends BaseModel {
   protected tax_number?: string;
   protected tax_exempt?: boolean;
   protected billing_email?: string;
-  protected billing_address?: string;
+  protected billing_address?: object;
   protected billing_phone?: string;
   protected status?: Status;
   protected subdomain?: string;
   protected database_name?: string;
   protected database_username?: string;
   protected database_password?: string;
+  protected registration_number?: string;
 
   protected constructor() {
     super();
@@ -164,8 +169,15 @@ export default class TenantModel extends BaseModel {
     // Générer le GUID automatiquement
     const guid = await this.guidGenerator(this.db.tableName, 6);
     if (!guid) {
-      throw new Error('Failed to generate GUID for tenant entry');
+      throw new Error('Failed to generate GUID for tenant entry 4');
     }
+
+    const key = await this.guidGenerator(this.db.tableName, 6);
+    // const key = await this.uuidTokenGenerator(this.db.tableName);
+    if (!key){
+      throw new Error('Failed to generate KEY for tenant entry');
+    }
+    this.key = key.toString();
 
     // Vérifier l'unicité de la clé
     const existingKey = await this.findByKey(this.key!);
@@ -182,6 +194,7 @@ export default class TenantModel extends BaseModel {
     const lastID = await this.insertOne(this.db.tableName, {
       [this.db.guid]: guid,
       [this.db.name]: this.name,
+      [this.db.short_name]: this.short_name,
       [this.db.key]: this.key,
       [this.db.country_code]: this.country_code,
       [this.db.primary_currency_code]: this.primary_currency_code,
@@ -193,6 +206,7 @@ export default class TenantModel extends BaseModel {
       [this.db.billing_address]: this.billing_address,
       [this.db.billing_phone]: this.billing_phone,
       [this.db.status]: this.status || Status.ACTIVE,
+      [this.db.registration_number]: this.registration_number,
     });
 
     console.log(`🏢 Tenant créé - Nom: ${this.name} | Clé: ${this.key} | GUID: ${guid}`);
@@ -219,7 +233,8 @@ export default class TenantModel extends BaseModel {
 
     const updateData: Record<string, any> = {};
     if (this.name !== undefined) updateData[this.db.name] = this.name;
-    if (this.key !== undefined) updateData[this.db.key] = this.key;
+    if (this.short_name !== undefined) updateData[this.short_name] = this.short_name;
+    // if (this.key !== undefined) updateData[this.db.key] = this.key;
     if (this.country_code !== undefined) updateData[this.db.country_code] = this.country_code;
     if (this.primary_currency_code !== undefined)
       updateData[this.db.primary_currency_code] = this.primary_currency_code;
@@ -232,6 +247,7 @@ export default class TenantModel extends BaseModel {
     if (this.billing_address !== undefined)
       updateData[this.db.billing_address] = this.billing_address;
     if (this.billing_phone !== undefined) updateData[this.db.billing_phone] = this.billing_phone;
+    if (this.registration_number !== undefined) updateData[this.db.registration_number] = this.registration_number;
 
     const affected = await this.updateOne(this.db.tableName, updateData, { [this.db.id]: this.id });
     if (!affected) {
@@ -251,87 +267,85 @@ export default class TenantModel extends BaseModel {
    */
   private async validate(): Promise<void> {
     // Valider le nom (obligatoire)
-    if (!this.name || !TenantDbStructure.validation.validateName(this.name)) {
-      throw new Error('Tenant name is required and must be between 2 and 255 characters');
+    if (!this.name) throw new Error(TENANT_ERRORS.NAME_REQUIRED);
+    if (!TenantValidationUtils.validateName(this.name)) {
+      throw new Error(TENANT_ERRORS.NAME_INVALID);
     }
 
-    // Valider la clé (obligatoire)
-    if (!this.key || !TenantDbStructure.validation.validateKey(this.key)) {
-      throw new Error('Tenant key is required and must be between 2 and 100 characters');
+    if (this.short_name && !TenantValidationUtils.validateShortName(this.short_name)) {
+      throw new Error(TENANT_ERRORS.SHORT_NAME_INVALID);
     }
 
     // Valider le code pays (obligatoire)
-    if (
-      !this.country_code ||
-      !TenantDbStructure.validation.validateCountryCode(this.country_code)
-    ) {
-      throw new Error(
-        'Country code is required and must be exactly 2 uppercase letters (ISO 3166-1 alpha-2)',
-      );
+    if (!this.country_code){
+      throw new Error(TENANT_ERRORS.COUNTRY_CODE_REQUIRED);
+    }
+    if (!TenantValidationUtils.validateCountryCode(this.country_code)) {
+      throw new Error(TENANT_ERRORS.COUNTRY_CODE_INVALID);
     }
 
     // Valider le code devise primaire (obligatoire)
-    if (
-      !this.primary_currency_code ||
-      !TenantDbStructure.validation.validatePrimaryCurrencyCode(this.primary_currency_code)
-    ) {
-      throw new Error(
-        'Primary currency code is required and must be exactly 3 uppercase letters (ISO 4217)',
-      );
+    if (!this.primary_currency_code) {
+      throw new Error(TENANT_ERRORS.PRIMARY_CURRENCY_CODE_REQUIRED);
+    }
+    if (!TenantValidationUtils.validatePrimaryCurrencyCode(this.primary_currency_code)) {
+      throw new Error(TENANT_ERRORS.PRIMARY_CURRENCY_CODE_INVALID);
     }
 
     // Valider le code de langue préféré (optionnel avec valeur par défaut)
-    if (
-      this.preferred_language_code &&
-      !TenantDbStructure.validation.validatePreferredLanguageCode(this.preferred_language_code)
-    ) {
-      throw new Error('Preferred language code must be exactly 2 lowercase letters (ISO 639-1)');
+    if (this.preferred_language_code && !TenantValidationUtils.validatePreferredLanguageCode(this.preferred_language_code)) {
+      throw new Error(TENANT_ERRORS.PREFERRED_LANGUAGE_CODE_INVALID);
     }
 
     // Valider le fuseau horaire (optionnel avec valeur par défaut)
-    if (this.timezone && !TenantDbStructure.validation.validateTimezone(this.timezone)) {
-      throw new Error('Invalid timezone format. Use Continent/City or UTC±offset format');
+    if (this.timezone && !TenantValidationUtils.validateTimezone(this.timezone)) {
+      throw new Error(TENANT_ERRORS.TIMEZONE_INVALID);
     }
 
     // Valider le numéro de taxe (optionnel)
-    if (this.tax_number && !TenantDbStructure.validation.validateTaxNumber(this.tax_number)) {
-      throw new Error('Tax number must be alphanumeric with hyphens/underscores (2-50 characters)');
+    if (this.tax_number && !TenantValidationUtils.validateTaxNumber(this.tax_number)) {
+      throw new Error(TENANT_ERRORS.TAX_NUMBER_INVALID);
     }
 
     // Valider l'exemption de taxe (optionnel avec valeur par défaut)
-    if (
-      this.tax_exempt !== undefined &&
-      !TenantDbStructure.validation.validateIsTaxExcempt(this.tax_exempt)
-    ) {
-      throw new Error('Tax exempt must be a boolean value');
+    if (this.tax_exempt !== undefined && !TenantValidationUtils.validateBoolean(this.tax_exempt)) {
+      throw new Error(TENANT_ERRORS.INVALID_BOOLEAN);
     }
 
     // Valider l'email de facturation (obligatoire)
-    if (
-      !this.billing_email ||
-      !TenantDbStructure.validation.validateBillingEmail(this.billing_email)
-    ) {
-      throw new Error('Billing email is required and must be a valid email address');
+    if (!this.billing_email){
+      throw new Error(TENANT_ERRORS.BILLING_EMAIL_REQUIRED);
+    }
+    if (!TenantValidationUtils.validateBillingEmail(this.billing_email)) {
+      throw new Error(TENANT_ERRORS.BILLING_EMAIL_INVALID);
     }
 
     // Valider l'adresse de facturation (optionnel)
-    if (
-      this.billing_address &&
-      !TenantDbStructure.validation.validateAddress(this.billing_address)
-    ) {
-      throw new Error('Billing address must not exceed 65535 characters');
+    if (!this.billing_address){
+      throw new Error(TENANT_ERRORS.BILLING_ADDRESS_REQUIRED);
+    }
+    if (!TenantValidationUtils.validateBillingAddress(this.billing_address)) {
+      throw new Error(TENANT_ERRORS.BILLING_ADDRESS_INVALID);
     }
 
     // Valider le téléphone de facturation (optionnel)
-    if (this.billing_phone && !TenantDbStructure.validation.validatePhone(this.billing_phone)) {
-      throw new Error('Billing phone must contain a + sign and be between 2 and 20 characters');
+    if (this.billing_phone && !TenantValidationUtils.validateBillingPhone(this.billing_phone)) {
+      throw new Error(TENANT_ERRORS.BILLING_ADDRESS_INVALID);
     }
 
     // Valider le statut (optionnel avec valeur par défaut)
-    if (this.status && !TenantDbStructure.validation.validateStatus(this.status)) {
-      throw new Error('Status must be one of ACTIVE, SUSPENDED, TERMINATED');
+    if (this.status && !TenantValidationUtils.validateStatus(this.status)) {
+      throw new Error(TENANT_ERRORS.STATUS_INVALID);
+    }
+
+    if (!this.registration_number){
+      throw new Error(TENANT_ERRORS.REGISTRATION_NUMBER_REQUIRED);
+    }
+    if (!TenantValidationUtils.validateRegistrationNumber(this.registration_number)) {
+      throw new Error(TENANT_ERRORS.REGISTRATION_NUMBER_INVALID);
     }
     // Nettoyer les données
-    TenantDbStructure.validation.cleanData(this);
+    const cleaned = TenantValidationUtils.cleanTenantData(this);
+    Object.assign(this, cleaned);
   }
 }

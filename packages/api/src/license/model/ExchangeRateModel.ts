@@ -1,10 +1,11 @@
-import BaseModel from '../database/db.base';
-import G from '../../tools/glossary';
-import { ExchangeRateDbStructure } from '../database/data/exchange.rate.db';
+import { EXCHANGE_RATE_ERRORS, ExchangeRateValidationUtils } from '@toke/shared';
+
+import BaseModel from '../database/db.base.js';
+import { tableName } from '../../utils/response.model.js';
 
 export default class ExchangeRateModel extends BaseModel {
   public readonly db = {
-    tableName: `${G.tableConf}_exchange_rate`,
+    tableName: tableName.EXCHANGE_RATE,
     id: 'id',
     guid: 'guid',
     from_currency_code: 'from_currency_code',
@@ -101,43 +102,35 @@ export default class ExchangeRateModel extends BaseModel {
   protected async trash(id: number): Promise<boolean> {
     return await this.deleteOne(this.db.tableName, { [this.db.id]: id });
   }
-  protected async getLastModification(): Promise<Date | null> {
-    try {
-      return await this.findLastModification(this.db.tableName);
-    } catch (error: any) {
-      console.log(`Failed to get last modification time: ${error.message}`);
-      return null;
-    }
-  }
   private async validate(): Promise<void> {
-    if (
-      !this.from_currency_code ||
-      !ExchangeRateDbStructure.validation.validateFromCurrencyCode(this.from_currency_code)
-    ) {
-      throw new Error('from_currency_code must be exactly 3 uppercase letters (ISO 4217)');
+    if(!this.from_currency_code){
+      throw new Error(EXCHANGE_RATE_ERRORS.FROM_CURRENCY_CODE_REQUIRED);
     }
-    if (
-      !this.to_currency_code ||
-      !ExchangeRateDbStructure.validation.validateToCurrencyCode(this.to_currency_code)
-    ) {
-      throw new Error('to_currency_code must be exactly 3 uppercase letters (ISO 4217)');
+    if (!ExchangeRateValidationUtils.validateFromCurrencyCode(this.from_currency_code)) {
+      throw new Error(EXCHANGE_RATE_ERRORS.FROM_CURRENCY_CODE_INVALID);
     }
-    if (
-      !this.exchange_rate ||
-      !ExchangeRateDbStructure.validation.validateExchangeRate(this.exchange_rate)
-    ) {
-      throw new Error('exchange_rate must be a number');
+    if(!this.to_currency_code){
+      throw new Error(EXCHANGE_RATE_ERRORS.TO_CURRENCY_CODE_REQUIRED);
     }
-    if (this.current !== undefined && !ExchangeRateDbStructure.validation.isCurrent(this.current)) {
-      throw new Error('current must be a boolean value');
+    if (!ExchangeRateValidationUtils.validateToCurrencyCode(this.to_currency_code)) {
+      throw new Error(EXCHANGE_RATE_ERRORS.TO_CURRENCY_CODE_INVALID);
     }
-    if (
-      !this.created_by ||
-      !ExchangeRateDbStructure.validation.validateCreatedBy(this.created_by)
-    ) {
-      throw new Error('created_by must be a number');
+    if(!this.exchange_rate){
+      throw new Error(EXCHANGE_RATE_ERRORS.EXCHANGE_RATE_REQUIRED);
     }
-
-    ExchangeRateDbStructure.validation.cleanData(this);
+    if (!ExchangeRateValidationUtils.validateExchangeRate(this.exchange_rate)) {
+      throw new Error(EXCHANGE_RATE_ERRORS.EXCHANGE_RATE_INVALID);
+    }
+    if (this.current !== undefined && !ExchangeRateValidationUtils.validateCurrent(this.current)){
+      throw new Error(EXCHANGE_RATE_ERRORS.INVALID_BOOLEAN);
+    }
+    if(!this.created_by){
+      throw new Error(EXCHANGE_RATE_ERRORS.CREATED_BY_REQUIRED);
+    }
+    if (!ExchangeRateValidationUtils.validateCreatedBy(this.created_by)) {
+      throw new Error(EXCHANGE_RATE_ERRORS.CREATED_BY_INVALID);
+    }
+    const cleaned = ExchangeRateValidationUtils.cleanExchangeRateData(this);
+    Object.assign(this, cleaned);
   }
 }

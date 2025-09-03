@@ -1,119 +1,57 @@
-// module.exports = {
-//     apps: [{
-//         name: 'api',
-//         script: 'dist/server.js',
-//         instances: 'max',
-//         exec_mode: 'cluster',
-//         env: {
-//             NODE_ENV: 'development'
-//         },
-//         env_production: {
-//             NODE_ENV: 'production'
-//         },
-//         error_file: './logs/err.log',
-//         out_file: './logs/out.log',
-//         log_file: './logs/combined.log',
-//         time: true,
-//         max_memory_restart: '1G'
-//     }]
-// };
-
 module.exports = {
   apps: [{
     name: 'api',
     script: 'dist/server.js',
-    instances: 'max',
-    exec_mode: 'cluster',
 
-    // Environnements
+    // 🔧 RECOMMANDÉ POUR PRODUCTION: Une seule instance
+    instances: 1,
+    exec_mode: 'fork', // Plus stable que cluster pour votre cas
+
+    // 📁 Répertoire de travail
+    cwd: './',
+
+    // 🌍 Environnement par défaut (development)
     env: {
       NODE_ENV: 'development',
-      PORT: 3000
+      PORT: 3000,
+      LOG_LEVEL: 'debug'
     },
-    // env_production: {
-    //   NODE_ENV: 'production',
-    //   PORT: 3000
-    // },
 
-    // Configuration des logs
-    error_file: './logs/err.log',
-    out_file: './logs/out.log',
-    log_file: './logs/combined.log',
+    // 🚀 Environnement production
+    env_production: {
+      NODE_ENV: 'production',
+      PORT: 4891,           // ✅ Port correct pour prod
+      LOG_LEVEL: 'info',
+      LOG_FILE: './logs/app.log'
+    },
+
+    // 📋 Configuration des logs PM2
+    error_file: './logs/pm2-err.log',
+    out_file: './logs/pm2-out.log',
+    log_file: './logs/pm2-combined.log',
     time: true,
     log_date_format: 'YYYY-MM-DD HH:mm:ss Z',
     merge_logs: true,
 
-    // Gestion mémoire et redémarrage
-    max_memory_restart: '1G',
+    // 🔄 Gestion des redémarrages
     autorestart: true,
-    max_restarts: 10,
-    min_uptime: '10s',
+    max_restarts: 5,        // Réduit pour éviter les boucles
+    min_uptime: '30s',      // Plus conservateur
+    max_memory_restart: '512M', // Réduit pour votre serveur
 
-    // Autres options utiles
+    // ⚡ Optimisations
     watch: false,
-    ignore_watch: ['node_modules', 'logs'],
+    ignore_watch: ['node_modules', 'logs', 'tmp', '*.pid'],
 
-    // Variables d'environnement pour les logs dans votre app
-    env_production: {
-      NODE_ENV: 'production',
-      PORT: 4891,
-      LOG_LEVEL: 'info',
-      LOG_FILE: './logs/app.log'
-    },
-    env_development: {
-      NODE_ENV: 'development',
-      PORT: 3000,
-      LOG_LEVEL: 'debug'
-    }
-  }]
-};
+    // 🛡️ Gestion d'erreur
+    kill_timeout: 5000,
+    wait_ready: true,       // Attend que l'app soit prête
+    listen_timeout: 10000,  // Timeout pour le démarrage
 
-module.exports = {
-  apps: [{
-    name: 'api',
-    script: 'dist/server.js',
-    instances: 'max',
-    exec_mode: 'cluster',
+    // 📊 Monitoring
+    pmx: false,             // Désactive PMX si pas nécessaire
 
-    // Environnements
-    env: {
-      NODE_ENV: 'development',
-      PORT: 3000
-    },
-    // env_production: {
-    //   NODE_ENV: 'production',
-    //   PORT: 4891
-    // },
-
-    // Configuration des logs
-    error_file: './logs/err.log',
-    out_file: './logs/out.log',
-    log_file: './logs/combined.log',
-    time: true,
-    log_date_format: 'YYYY-MM-DD HH:mm:ss Z',
-    merge_logs: true,
-
-    // Gestion mémoire et redémarrage
-    max_memory_restart: '1G',
-    autorestart: true,
-    max_restarts: 10,
-    min_uptime: '10s',
-
-    // Autres options utiles
-    watch: false,
-    ignore_watch: ['node_modules', 'logs'],
-
-    // Variables d'environnement pour les logs dans votre app
-    env_production: {
-      NODE_ENV: 'production',
-      PORT: 4891,
-      LOG_LEVEL: 'info',
-      LOG_FILE: './logs/app.log'
-    },
-    env_development: {
-      NODE_ENV: 'development',
-      PORT: 3000,
-      LOG_LEVEL: 'debug'
-    }
+    // 🔧 Variables spécifiques à votre serveur
+    node_args: '--max-old-space-size=512' // Limite mémoire Node.js
   }]
 };

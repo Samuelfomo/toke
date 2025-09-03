@@ -8,7 +8,7 @@ const path_1 = require("path"); // https://vitejs.dev/config/
 const vite_1 = require("vite");
 const plugin_vue_1 = __importDefault(require("@vitejs/plugin-vue"));
 // https://vitejs.dev/config/
-exports.default = (0, vite_1.defineConfig)({
+module.exports = (0, vite_1.defineConfig)({
     plugins: [(0, plugin_vue_1.default)()],
     resolve: {
         alias: {

@@ -1,12 +1,12 @@
 import { DataTypes, ModelAttributes, ModelOptions } from 'sequelize';
 
-import G from '../../../tools/glossary';
+import { tableName } from '../../../utils/response.model.js';
 
 /**
  * Structure de la table countries
  */
 export const CountryDbStructure = {
-  tableName: `${G.tableConf}_country`,
+  tableName: tableName.COUNTRY,
   attributes: {
     id: {
       type: DataTypes.SMALLINT,
@@ -113,7 +113,7 @@ export const CountryDbStructure = {
   } as ModelAttributes,
 
   options: {
-    tableName: `${G.tableConf}_country`,
+    tableName: tableName.COUNTRY,
     timestamps: true,
     createdAt: 'created_at',
     updatedAt: 'updated_at',

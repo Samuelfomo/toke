@@ -1,8 +1,8 @@
-import TaxRuleModel from '../model/TaxRuleModel';
-import W from '../../tools/watcher';
-import G from '../../tools/glossary';
-import { responseStructure as RS, tableStructure as TS } from '../../utils/response.model';
-import Revision from '../../tools/revision';
+import TaxRuleModel from '../model/TaxRuleModel.js';
+import W from '../../tools/watcher.js';
+import G from '../../tools/glossary.js';
+import { responseStructure as RS, tableName } from '../../utils/response.model.js';
+import Revision from '../../tools/revision.js';
 
 export default class TaxRule extends TaxRuleModel {
   constructor() {
@@ -14,7 +14,7 @@ export default class TaxRule extends TaxRuleModel {
     pagination: { offset?: number; limit?: number; count?: number };
     items: any[];
   }> {
-    const revision = await Revision.getRevision(TS.TAX_RULE);
+    const revision = await Revision.getRevision(tableName.TAX_RULE);
     let items: any[] = [];
 
     const taxRules = await this._list({ ['active']: true }, paginationOptions);

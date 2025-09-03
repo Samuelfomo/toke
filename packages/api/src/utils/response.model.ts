@@ -1,4 +1,4 @@
-import G from '../tools/glossary';
+import G from '../tools/glossary.js';
 
 export const responseModel = ['min', 'full'] as const;
 
@@ -54,18 +54,21 @@ export const responseStructure = {
   SUBDOMAIN: 'subdomain',
   DATABASE_NAME: 'database_name',
   DATABASE_USERNAME: 'database_username',
+  SHORT_NAME: 'short_name',
+  REGISTRATION_NUMBER: 'registration_number',
 } as const;
 
-export const tableStructure = {
+export const tableName = {
   COUNTRY: `${G.tableConf}_country`,
   CURRENCY: `${G.tableConf}_currency`,
   EXCHANGE_RATE: `${G.tableConf}_exchange_rate`,
   LANGUAGE: `${G.tableConf}_language`,
   TAX_RULE: `${G.tableConf}_tax_rule`,
+
   TENANT: `${G.tableAp}_tenant`,
 } as const;
 
 export const EntityRoute = {
-  MASTER: 'master',
-  TENANT: 'tenant',
+  MASTER: 'l',
+  TENANT: 'p',
 } as const;

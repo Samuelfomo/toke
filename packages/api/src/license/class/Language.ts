@@ -1,8 +1,8 @@
-import LanguageModel from '../model/LanguageModel';
-import W from '../../tools/watcher';
-import G from '../../tools/glossary';
-import { responseStructure as RS, tableStructure as TS } from '../../utils/response.model';
-import Revision from '../../tools/revision';
+import LanguageModel from '../model/LanguageModel.js';
+import W from '../../tools/watcher.js';
+import G from '../../tools/glossary.js';
+import { responseStructure as RS, tableName as TS } from '../../utils/response.model.js';
+import Revision from '../../tools/revision.js';
 
 export default class Language extends LanguageModel {
   constructor() {

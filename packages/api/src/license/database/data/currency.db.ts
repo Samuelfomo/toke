@@ -1,12 +1,12 @@
 import { DataTypes, ModelAttributes, ModelOptions } from 'sequelize';
 
-import G from '../../../tools/glossary';
+import { tableName } from '../../../utils/response.model.js';
 
 /**
  * Structure de la table currency
  */
 export const CurrencyDbStructure = {
-  tableName: `${G.tableConf}_currency`,
+  tableName: tableName.CURRENCY,
   attributes: {
     id: {
       type: DataTypes.SMALLINT,
@@ -82,7 +82,7 @@ export const CurrencyDbStructure = {
   } as ModelAttributes,
 
   options: {
-    tableName: `${G.tableConf}_currency`,
+    tableName: tableName.CURRENCY,
     timestamps: true,
     createdAt: 'created_at',
     updatedAt: 'updated_at',

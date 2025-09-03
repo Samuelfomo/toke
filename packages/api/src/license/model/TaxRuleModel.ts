@@ -1,10 +1,11 @@
-import BaseModel from '../database/db.base';
-import G from '../../tools/glossary';
-import { TaxRuleDbStructure } from '../database/data/tax.rule.db';
+import { TAX_RULE_ERRORS, TaxRuleValidationUtils } from '@toke/shared';
+
+import BaseModel from '../database/db.base.js';
+import { tableName } from '../../utils/response.model.js';
 
 export default class TaxRuleModel extends BaseModel {
   public readonly db = {
-    tableName: `${G.tableConf}_tax_rule`,
+    tableName: tableName.TAX_RULE,
     id: 'id',
     guid: 'guid',
     country_code: 'country_code',
@@ -193,71 +194,54 @@ export default class TaxRuleModel extends BaseModel {
    * Valide les données avant création/mise à jour
    */
   private async validate(): Promise<void> {
+
     // Valider le code pays (obligatoire)
-    if (
-      !this.country_code ||
-      !TaxRuleDbStructure.validation.validateCountryCode(this.country_code)
-    ) {
-      throw new Error(
-        'Country code is required and must be exactly 2 uppercase letters (ISO 3166-1 alpha-2)',
-      );
-    }
+    if (!this.country_code) throw new Error(TAX_RULE_ERRORS.COUNTRY_CODE_REQUIRED);
+    if (!TaxRuleValidationUtils.validateCountryCode(this.country_code)) throw new Error(TAX_RULE_ERRORS.COUNTRY_CODE_INVALID);
 
     // Valider le type de taxe (obligatoire)
-    if (!this.tax_type || !TaxRuleDbStructure.validation.validateTaxType(this.tax_type)) {
-      throw new Error(
-        'Tax type is required and must be alphanumeric with underscores (1-20 characters)',
-      );
-    }
+    if (!this.tax_type) throw new Error(TAX_RULE_ERRORS.TAX_TYPE_REQUIRED);
+    if (!TaxRuleValidationUtils.validateTaxType(this.tax_type)) throw new Error(TAX_RULE_ERRORS.TAX_TYPE_INVALID);
 
     // Valider le nom de la taxe (obligatoire)
-    if (!this.tax_name || !TaxRuleDbStructure.validation.validateTaxName(this.tax_name)) {
-      throw new Error('Tax name is required and must be between 2 and 50 characters');
-    }
+    if (!this.tax_name) throw new Error(TAX_RULE_ERRORS.TAX_NAME_REQUIRED);
+    if (!TaxRuleValidationUtils.validateTaxName(this.tax_name)) throw new Error(TAX_RULE_ERRORS.TAX_NAME_INVALID);
 
     // Valider le taux de taxe (obligatoire)
-    if (
-      this.tax_rate === undefined ||
-      this.tax_rate === null ||
-      !TaxRuleDbStructure.validation.validateTaxRate(this.tax_rate.toString())
-    ) {
-      throw new Error('Tax rate is required and must be a valid decimal between 0 and 1');
-    }
+    if (!this.tax_rate) throw new Error(TAX_RULE_ERRORS.TAX_RATE_REQUIRED);
+    if (!TaxRuleValidationUtils.validateTaxRate(this.tax_rate.toString())) throw new Error(TAX_RULE_ERRORS.TAX_RATE_INVALID);
 
     // Valider "s'applique à" (optionnel)
-    if (this.applies_to && !TaxRuleDbStructure.validation.validateAppliesTo(this.applies_to)) {
-      throw new Error('Applies to must be alphanumeric with underscores (1-20 characters)');
+    if (this.applies_to && !TaxRuleValidationUtils.validateAppliesTo(this.applies_to)) {
+      throw new Error(TAX_RULE_ERRORS.APPLIES_TO_INVALID);
     }
 
     // Valider le numéro de taxe requis (optionnel avec valeur par défaut)
-    if (
-      this.required_tax_number !== undefined &&
-      !TaxRuleDbStructure.validation.validateBoolean(this.required_tax_number)
-    ) {
-      throw new Error('Required tax number must be a boolean value');
+    if (this.required_tax_number !== undefined && !TaxRuleValidationUtils.validateBoolean(this.required_tax_number)) {
+      throw new Error(TAX_RULE_ERRORS.INVALID_BOOLEAN);
     }
 
     // Valider la date effective (optionnel avec valeur par défaut)
-    if (this.effective_date && !TaxRuleDbStructure.validation.validateDate(this.effective_date)) {
-      throw new Error('Effective date must be a valid date');
+    if (this.effective_date && !TaxRuleValidationUtils.validateDate(this.effective_date)) {
+      throw new Error(TAX_RULE_ERRORS.EFFECTIVE_DATE_INVALID);
     }
-
     // Valider la date d'expiration (optionnel)
-    if (this.expiry_date && !TaxRuleDbStructure.validation.validateDate(this.expiry_date)) {
-      throw new Error('Expiry date must be a valid date');
+    if (this.expiry_date && !TaxRuleValidationUtils.validateDate(this.expiry_date)) {
+      throw new Error(TAX_RULE_ERRORS.EXPIRY_DATE_INVALID);
     }
 
     // Valider que la date d'expiration est après la date effective
     if (this.effective_date && this.expiry_date && this.expiry_date <= this.effective_date) {
-      throw new Error('Expiry date must be after effective date');
+      throw new Error(TAX_RULE_ERRORS.DATE_RANGE_INVALID);
     }
 
     // Valider le statut actif (optionnel avec valeur par défaut)
-    if (this.active !== undefined && !TaxRuleDbStructure.validation.validateBoolean(this.active)) {
-      throw new Error('Active must be a boolean value');
+    if (this.active !== undefined && !TaxRuleValidationUtils.validateBoolean(this.active)) {
+      throw new Error(TAX_RULE_ERRORS.INVALID_BOOLEAN);
     }
 
     // Nettoyer les données
-    TaxRuleDbStructure.validation.cleanData(this);
+    const cleaned = TaxRuleValidationUtils.cleanTaxRuleData(this);
+    Object.assign(this, cleaned);
   }
 }

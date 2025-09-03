@@ -1,5 +1,5 @@
 // shared/src/utils/country.validation.ts
-import { COUNTRY_VALIDATION } from '../constants/country';
+import { COUNTRY_VALIDATION } from '../constants/country.js';
 
 export class CountryValidationUtils {
   /**

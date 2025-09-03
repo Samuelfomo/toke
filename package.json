@@ -8,15 +8,22 @@
     "dev": "concurrently \"npm run dev:backend\" \"npm run dev:frontend\"",
     "dev:cloud": "npm run dev --workspace=@toke/cloud",
     "dev:api": "npm run dev --workspace=@toke/api",
+    "start:api": "npm run start --workspace=@toke/api",
     "autoStart:api": "npm run startAuto --workspace=@toke/api",
     "autoStop:api": "npm run stopAuto --workspace=@toke/api",
     "logsAuto:api": "npm run logsAuto --workspace=@toke/api",
     "verifyStartApp:api": "npm run verifyStartApp --workspace=@toke/api",
     "logs:error:api": "npm run logs:error --workspace=@toke/api",
+    "clean:api": "npm run clean --workspace=@toke/api",
     "stop": "npm run stop --workspace=@toke/api",
+    "kill": "npm run kill --workspace=@toke/api",
     "build": "npm run build --workspace=@toke/shared && npm run build --workspace=@toke/api",
     "test": "npm run test --workspaces",
-    "type-check": "npm run type-check --workspaces"
+    "type-check": "npm run type-check --workspaces",
+    "testCountry": "npm run testCountry --workspace=@toke/api",
+    "testCurrency": "npm run testCurrency --workspace=@toke/api",
+    "autoTestCountry": "npm run testCountryAuto --workspace=@toke/api",
+    "status:api": "npm run status --workspace=@toke/api"
   },
   "devDependencies": {
     "concurrently": "^8.0.0",

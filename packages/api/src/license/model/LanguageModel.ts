@@ -1,10 +1,11 @@
-import BaseModel from '../database/db.base';
-import G from '../../tools/glossary';
-import { LanguageDbStructure } from '../database/data/language.db';
+import { LANGUAGE_ERRORS, LanguageValidationUtils } from '@toke/shared';
+
+import { tableName } from '../../utils/response.model.js';
+import BaseModel from '../database/db.base.js';
 
 export default class LanguageModel extends BaseModel {
   public readonly db = {
-    tableName: `${G.tableConf}_language`,
+    tableName: tableName.LANGUAGE,
     id: 'id',
     guid: 'guid',
     code: 'code',
@@ -137,26 +138,20 @@ export default class LanguageModel extends BaseModel {
    */
   private async validate(): Promise<void> {
     // Valider le code ISO 639-1
-    if (!this.code || !LanguageDbStructure.validation.validateCode(this.code)) {
-      throw new Error('Language code must be exactly 2 lowercase letters (ISO 639-1)');
-    }
+    if (!this.code) throw new Error(LANGUAGE_ERRORS.CODE_REQUIRED);
+
+    if (!LanguageValidationUtils.validateCode(this.code)) throw new Error(LANGUAGE_ERRORS.CODE_INVALID);
 
     // Valider le nom anglais (obligatoire)
-    if (!this.name_en || !LanguageDbStructure.validation.validateName(this.name_en)) {
-      throw new Error('Language name (English) must be between 2 and 50 characters');
-    }
+    if (!this.name_en) throw new Error(LANGUAGE_ERRORS.NAME_EN_REQUIRED);
+    if (!LanguageValidationUtils.validateNameEn(this.name_en)) throw new Error(LANGUAGE_ERRORS.NAME_EN_INVALID);
 
-    // Valider le nom local (obligatoire)
-    if (!this.name_local || !LanguageDbStructure.validation.validateName(this.name_local)) {
-      throw new Error('Language local name must be between 2 and 50 characters');
-    }
+    if (!this.name_local) throw new Error(LANGUAGE_ERRORS.NAME_LOCAL_REQUIRED);
+    if (!LanguageValidationUtils.validateNameLocal(this.name_local)) throw new Error(LANGUAGE_ERRORS.NAME_LOCAL_INVALID);
 
-    // Valider le statut actif (optionnel avec valeur par défaut)
-    if (this.active !== undefined && !LanguageDbStructure.validation.isActive(this.active)) {
-      throw new Error('active must be a boolean value');
-    }
+    if (this.active !== undefined && !LanguageValidationUtils.validateActive(this.active)) throw new Error(LANGUAGE_ERRORS.INVALID_BOOLEAN);
 
-    // Nettoyer les données
-    LanguageDbStructure.validation.cleanData(this);
+   const cleaned = LanguageValidationUtils.cleanLanguageData(this);
+    Object.assign(this, cleaned);
   }
 }

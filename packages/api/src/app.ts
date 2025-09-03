@@ -7,14 +7,15 @@ import cors from 'cors';
 //
 // dotenv.config();
 // Importation des modules simplifiés
-import Db from './license/database/db.config';
-import { TableInitializer } from './license/database/db.initializer';
-import { EntityRoute } from './utils/response.model';
-import CountryRoute from './license/routes/country.route';
-import CurrencyRoute from './license/routes/currency.route';
-import ExchangeRateRoute from './license/routes/exchange.rate.route';
-import LanguageRoute from './license/routes/language.route';
-import TaxRuleRoute from './license/routes/tax.rule.route';
+import Db from './license/database/db.config.js';
+import { TableInitializer } from './license/database/db.initializer.js';
+import { EntityRoute } from './utils/response.model.js';
+import CountryRoute from './license/routes/country.route.js';
+import CurrencyRoute from './license/routes/currency.route.js';
+import ExchangeRateRoute from './license/routes/exchange.rate.route.js';
+import LanguageRoute from './license/routes/language.route.js';
+import TaxRuleRoute from './license/routes/tax.rule.route.js';
+import TenantRoute from './license/routes/tenant.route.js';
 
 interface AppConfig {
   port: number;
@@ -192,6 +193,7 @@ export default class App {
     this.app.use(`/${EntityRoute.MASTER}/exchange-rate`, ExchangeRateRoute);
     this.app.use(`/${EntityRoute.MASTER}/language`, LanguageRoute);
     this.app.use(`/${EntityRoute.MASTER}/tax-rule`, TaxRuleRoute);
+    this.app.use(`/${EntityRoute.MASTER}/tenant`, TenantRoute);
 
     // Route 404
     this.app.use((req, res) => {

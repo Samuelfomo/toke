@@ -1,11 +1,11 @@
 import { CURRENCY_ERRORS, CurrencyValidationUtils, ERROR_MESSAGES } from '@toke/shared';
 
-import BaseModel from '../database/db.base';
-import G from '../../tools/glossary';
+import BaseModel from '../database/db.base.js';
+import { tableName } from '../../utils/response.model.js';
 
 export default class CurrencyModel extends BaseModel {
   public readonly db = {
-    tableName: `${G.tableConf}_currency`,
+    tableName: tableName.CURRENCY,
     id: 'id',
     guid: 'guid',
     code: 'code',
@@ -72,7 +72,7 @@ export default class CurrencyModel extends BaseModel {
     await this.validate();
     const guid = await this.guidGenerator(this.db.tableName, 6);
     if (!guid) {
-      throw new Error(`${ERROR_MESSAGES.GUID_GENERATOR_FAILED} ``${CURRENCY_ERRORS.CURRENCY}`);
+      throw new Error(`${ERROR_MESSAGES.GUID_GENERATOR_FAILED} ${CURRENCY_ERRORS.CURRENCY}`);
     }
 
     const existingCode = await this.findByCode(this.code!);
@@ -97,7 +97,7 @@ export default class CurrencyModel extends BaseModel {
   protected async update(): Promise<void> {
     await this.validate();
     if (!this.id) {
-      throw new Error(`${CURRENCY_ERRORS.CURRENCY} ``${ERROR_MESSAGES.ID_REQUIRED}`);
+      throw new Error(`${CURRENCY_ERRORS.CURRENCY} ${ERROR_MESSAGES.ID_REQUIRED}`);
     }
     const updateData: Record<string, any> = {};
     if (this.code !== undefined) updateData[this.db.code] = this.code;

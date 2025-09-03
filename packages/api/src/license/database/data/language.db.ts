@@ -1,9 +1,9 @@
 import { DataTypes, ModelAttributes, ModelOptions } from 'sequelize';
 
-import G from '../../../tools/glossary';
+import { tableName } from '../../../utils/response.model.js';
 
 export const LanguageDbStructure = {
-  tableName: `${G.tableConf}_language`,
+  tableName: tableName.LANGUAGE,
   attributes: {
     id: {
       type: DataTypes.SMALLINT,
@@ -23,6 +23,7 @@ export const LanguageDbStructure = {
       validate: {
         isInt: true,
         min: 100000,
+        max: 999999,
       },
       comment: 'Unique, automatically generated digital GUID',
     },
@@ -33,6 +34,8 @@ export const LanguageDbStructure = {
       validate: {
         is: /^[a-z]{2}$/,
         len: [2, 2],
+        notEmpty: true,
+        notNull: true,
       },
       comment: 'ISO 639-1 language code (e.g. fr, en)',
     },
@@ -67,7 +70,7 @@ export const LanguageDbStructure = {
     },
   } as ModelAttributes,
   options: {
-    tableName: `${G.tableConf}_language`,
+    tableName: tableName.LANGUAGE,
     timestamps: true,
     createdAt: 'created_at',
     updatedAt: 'updated_at',
@@ -99,33 +102,33 @@ export const LanguageDbStructure = {
     ],
   } as ModelOptions,
 
-  validation: {
-    validateCode: (iso: string): boolean => {
-      const trimmed = iso.trim().toUpperCase();
-      const isoRegex = /^[a-z]{2}$/;
-      return isoRegex.test(trimmed);
-    },
-    validateName: (name: string): boolean => {
-      const trimmed = name.trim();
-      return trimmed.length >= 2 && trimmed.length <= 50;
-    },
-    isActive(isActive: boolean): boolean {
-      return typeof isActive === 'boolean';
-    },
-
-    cleanData: (data: any): void => {
-      if (data.code) {
-        data.code = data.code.trim().toUpperCase();
-      }
-      if (data.name_en) {
-        data.name_en = data.name_en.trim();
-      }
-      if (data.name_local) {
-        data.name_local = data.name_local.trim();
-      }
-      if (data.active) {
-        data.active = data.active === 'true';
-      }
-    },
-  },
+  // validation: {
+  //   validateCode: (iso: string): boolean => {
+  //     const trimmed = iso.trim().toUpperCase();
+  //     const isoRegex = /^[a-z]{2}$/;
+  //     return isoRegex.test(trimmed);
+  //   },
+  //   validateName: (name: string): boolean => {
+  //     const trimmed = name.trim();
+  //     return trimmed.length >= 2 && trimmed.length <= 50;
+  //   },
+  //   isActive(isActive: boolean): boolean {
+  //     return typeof isActive === 'boolean';
+  //   },
+  //
+  //   cleanData: (data: any): void => {
+  //     if (data.code) {
+  //       data.code = data.code.trim().toUpperCase();
+  //     }
+  //     if (data.name_en) {
+  //       data.name_en = data.name_en.trim();
+  //     }
+  //     if (data.name_local) {
+  //       data.name_local = data.name_local.trim();
+  //     }
+  //     if (data.active) {
+  //       data.active = data.active === 'true';
+  //     }
+  //   },
+  // },
 };
