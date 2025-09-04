@@ -55,7 +55,7 @@ export default class Language extends LanguageModel {
   }
 
   setCode(code: string): Language {
-    this.code = code.toUpperCase();
+    this.code = code.toLowerCase();
     return this;
   }
   setNameEn(name_en: string): Language {

@@ -2,7 +2,6 @@ import { DataTypes, ModelAttributes, ModelOptions } from 'sequelize';
 import bcrypt from 'bcrypt';
 import { Status } from '@toke/shared';
 
-import G from '../../../tools/glossary.js';
 import { tableName } from '../../../utils/response.model.js';
 
 export const TenantDbStructure = {
@@ -62,7 +61,7 @@ export const TenantDbStructure = {
       type: DataTypes.STRING(2),
       allowNull: false,
       references: {
-        model: `${G.tableConf}_country`,
+        model: tableName.COUNTRY,
         key: 'code',
       },
       validate: {
@@ -191,7 +190,7 @@ export const TenantDbStructure = {
       defaultValue: Status.ACTIVE,
       validate: {
         isIn: {
-          args: [[Object.values(Status)]],
+          args: [Object.values(Status)],
           msg: 'Status must be one of ACTIVE, SUSPENDED, TERMINATED',
         },
       },
@@ -338,14 +337,6 @@ export const TenantDbStructure = {
         fields: ['database_username'],
         name: 'idx_tenant_database_username',
       },
-      {
-        fields: ['created_at'],
-        name: 'idx_tenant_created_at',
-      },
-      // {
-      //   fields: ['updated_at'],
-      //   name: 'idx_tenant_updated_at',
-      // }
     ],
     // // Méthodes d'instance pour le modèle
     // instanceMethods: {

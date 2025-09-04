@@ -2,7 +2,7 @@ export const LANGUAGE_VALIDATION = {
   CODE: {
     MIN_LENGTH: 2,
     MAX_LENGTH: 2,
-    PATTERN: /^[A-Z]{2}$/,
+    PATTERN: /^[a-z]{2}$/,
   },
   NAME_EN: {
     MIN_LENGTH: 2,

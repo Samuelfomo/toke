@@ -1,7 +1,7 @@
 // schemas/tenant.ts
 import { z } from 'zod';
 
-import { TENANT_DEFAULTS, TENANT_ERRORS, TENANT_VALIDATION } from '../constants/tenant.js';
+import { Status, TENANT_DEFAULTS, TENANT_ERRORS, TENANT_VALIDATION } from '../constants/tenant.js';
 
 // Interface pour l'adresse de facturation
 const billingAddressSchema = z.object({
@@ -158,7 +158,8 @@ const baseTenantSchema = z.object({
     .optional(),
 
   status: z
-    .enum(['ACTIVE', 'SUSPENDED', 'TERMINATED'], {
+    .enum(Object.values(Status) as [string, ...string[]], {
+      // .enum(['ACTIVE', 'SUSPENDED', 'TERMINATED'], {
       invalid_type_error: TENANT_ERRORS.STATUS_INVALID,
     })
     .default(TENANT_DEFAULTS.STATUS)
@@ -239,7 +240,8 @@ export const tenantFiltersSchema = z
       .transform((val) => val.trim())
       .optional(),
     tax_exempt: z.coerce.boolean().optional(),
-    status: z.enum(['ACTIVE', 'SUSPENDED', 'TERMINATED']).optional(),
+    status: z.enum(Object.values(Status) as [string, ...string[]]).optional(),
+    // status: z.enum(['ACTIVE', 'SUSPENDED', 'TERMINATED']).optional(),
   })
   .strict();
 

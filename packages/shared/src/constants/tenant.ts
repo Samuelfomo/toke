@@ -78,11 +78,17 @@ export const TENANT_VALIDATION = {
   },
 } as const;
 
+export enum Status {
+  ACTIVE = 'ACTIVE',
+  SUSPENDED = 'SUSPENDED',
+  TERMINATED = 'TERMINATED',
+}
+
 export const TENANT_DEFAULTS = {
   PREFERRED_LANGUAGE_CODE: 'en',
   TIMEZONE: 'UTC',
   TAX_EXEMPT: false,
-  STATUS: 'ACTIVE' as const,
+  STATUS: Status.ACTIVE as const,
   PAGINATION: {
     OFFSET: 0,
     LIMIT: 50,
@@ -186,12 +192,6 @@ export const TENANT_ERRORS = {
 
   DUPLICATE_TENANT: 'Tenant with this key already exists',
 } as const;
-
-export enum Status {
-  ACTIVE = 'ACTIVE',
-  SUSPENDED = 'SUSPENDED',
-  TERMINATED = 'TERMINATED',
-}
 
 export type TenantError = (typeof TENANT_ERRORS)[keyof typeof TENANT_ERRORS];
 export type TenantCode = (typeof TENANT_CODES)[keyof typeof TENANT_CODES];

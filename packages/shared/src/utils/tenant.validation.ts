@@ -253,9 +253,9 @@ export class TenantValidationUtils {
       cleaned.short_name = cleaned.short_name.toString().trim();
     }
 
-    if (cleaned.key) {
-      cleaned.key = cleaned.key.toString().trim().toLowerCase();
-    }
+    // if (cleaned.key) {
+    //   cleaned.key = cleaned.key.toString().trim().toLowerCase();
+    // }
 
     if (cleaned.country_code) {
       cleaned.country_code = cleaned.country_code.toString().trim().toUpperCase();

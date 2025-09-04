@@ -1,22 +1,10 @@
 import { DataTypes, ModelAttributes, ModelOptions } from 'sequelize';
+import { BILLING_CYCLES, LicenseStatus, Type } from '@toke/shared';
 
-import G from '../../../tools/glossary.js';
-
-export enum Type {
-  CLOUD_FLEX = 'CLOUD_FLEX',
-}
-
-export enum LicenceStatus {
-  ACTIVE = 'ACTIVE',
-  EXPIRED = 'EXPIRED',
-  SUSPENDED = 'SUSPENDED',
-  PENDING_PAYMENT = 'PENDING_PAYMENT',
-}
-
-export const IN = [1, 3, 6, 12];
+import { tableName } from '../../../utils/response.model.js';
 
 export const GlobalLicenseDbStructure = {
-  tableName: `${G.tableAp}_global_license`,
+  tableName: tableName.GLOBAL_LICENSE,
   attributes: {
     id: {
       type: DataTypes.INTEGER,
@@ -35,14 +23,15 @@ export const GlobalLicenseDbStructure = {
       validate: {
         isInt: true,
         min: 100000,
+        max: 999999,
       },
-      comment: 'Unique, automatically generated digital GUID',
+      comment: 'Unique, automatically generated 6-digit GUID',
     },
     tenant: {
       type: DataTypes.INTEGER,
       allowNull: false,
       references: {
-        model: `${G.tableAp}_tenant`,
+        model: tableName.TENANT,
         key: 'id',
       },
       validate: {
@@ -51,7 +40,7 @@ export const GlobalLicenseDbStructure = {
       },
       comment: 'Tenant',
     },
-    licence_type: {
+    license_type: {
       type: DataTypes.ENUM(...Object.values(Type)),
       allowNull: false,
       defaultValue: Type.CLOUD_FLEX,
@@ -61,16 +50,19 @@ export const GlobalLicenseDbStructure = {
           msg: 'Invalid license type',
         },
       },
-      comment: 'Licence type',
+      comment: 'License type',
     },
     billing_cycle_months: {
       type: DataTypes.SMALLINT,
       allowNull: false,
       validate: {
         isInt: true,
-        isIn: [IN],
+        isIn: {
+          args: [BILLING_CYCLES],
+          msg: 'Billing cycle must be 1, 3, 6, or 12 months',
+        },
       },
-      comment: 'Billing cycle in months',
+      comment: 'Billing cycle in months (1, 3, 6, or 12)',
     },
     base_price_usd: {
       type: DataTypes.DECIMAL(10, 2),
@@ -78,10 +70,10 @@ export const GlobalLicenseDbStructure = {
       defaultValue: 3.0,
       validate: {
         isDecimal: true,
-        min: 0,
+        min: 0.01,
         max: 9999999999.99,
       },
-      comment: 'Base price in USD',
+      comment: 'Base price per seat in USD',
     },
     minimum_seats: {
       type: DataTypes.SMALLINT,
@@ -92,61 +84,114 @@ export const GlobalLicenseDbStructure = {
         min: 1,
         max: 65535,
       },
-      comment: 'Minimum number of seats',
+      comment: 'Minimum number of seats required',
     },
     current_period_start: {
       type: DataTypes.DATE,
       allowNull: false,
       validate: {
         isDate: true,
+        notNull: true,
+        isNotFuture(value: Date) {
+          if (new Date(value) > new Date()) {
+            throw new Error('Current period start cannot be in the future');
+          }
+        },
       },
-      comment: 'Current period start date',
+      comment: 'Current billing period start date',
     },
     current_period_end: {
       type: DataTypes.DATE,
       allowNull: false,
       validate: {
         isDate: true,
+        notNull: true,
+        isAfterStart(value: Date) {
+          const start: any = this.current_period_start;
+          if (start && new Date(value) <= new Date(start)) {
+            throw new Error('Current period end must be after start date');
+          }
+        },
       },
-      comment: 'Current period end date',
+      comment: 'Current billing period end date',
     },
     next_renewal_date: {
       type: DataTypes.DATE,
       allowNull: false,
       validate: {
         isDate: true,
+        notNull: true,
+        isAfterPeriodEnd(value: Date) {
+          const end: any = this.current_period_end;
+          if (end && new Date(value) < new Date(end)) {
+            throw new Error('Next renewal date must be on or after current period end');
+          }
+        },
       },
-      comment: 'Next renewal date',
+      comment: 'Next license renewal date',
     },
     total_seats_purchased: {
       type: DataTypes.INTEGER,
       allowNull: true,
-      // defaultValue: 0,
+      defaultValue: 0,
       validate: {
         isInt: true,
+        min: 0,
       },
-      comment: 'Total number of seats purchased',
+      comment: 'Total number of seats purchased (calculated field)',
     },
     license_status: {
-      type: DataTypes.ENUM(...Object.values(LicenceStatus)),
+      type: DataTypes.ENUM(...Object.values(LicenseStatus)),
       allowNull: false,
-      defaultValue: LicenceStatus.ACTIVE,
+      defaultValue: LicenseStatus.ACTIVE,
       validate: {
         isIn: {
-          args: [Object.values(LicenceStatus)],
+          args: [Object.values(LicenseStatus)],
           msg: 'Invalid license status',
         },
       },
-      comment: 'Licence status',
+      comment: 'Current license status',
     },
   } as ModelAttributes,
   options: {
-    tableName: `${G.tableAp}_global_license`,
+    tableName: tableName.GLOBAL_LICENSE,
     timestamps: true,
     createdAt: 'created_at',
     updatedAt: 'updated_at',
     underscored: true,
     freezeTableName: true,
+    comment: 'Global license management table',
+
+    // Model-level validations
+    validate: {
+      periodDatesValid() {
+        if (this.current_period_start && this.current_period_end) {
+          const start: any = this.current_period_start;
+          const end: any = this.current_period_end;
+          if (new Date(end) <= new Date(start)) {
+            throw new Error('Current period end must be after start date');
+          }
+        }
+      },
+      renewalDateValid() {
+        if (this.current_period_end && this.next_renewal_date) {
+          const end: any = this.next_renewal_date;
+          const next: any = this.current_period_end;
+          if (new Date(next) < new Date(end)) {
+            throw new Error('Next renewal date must be on or after current period end');
+          }
+        }
+      },
+      minimumSeatsRespected() {
+        if (this.total_seats_purchased && this.minimum_seats) {
+          const purchased: any = this.total_seats_purchased;
+          const seats: any = this.minimum_seats;
+          if (purchased > 0 && purchased < seats) {
+            throw new Error(`Total seats must meet minimum requirement of ${seats}`);
+          }
+        }
+      },
+    },
 
     indexes: [
       {
@@ -158,8 +203,8 @@ export const GlobalLicenseDbStructure = {
         name: 'idx_global_license_tenant',
       },
       {
-        fields: ['licence_type'],
-        name: 'idx_global_license_licence_type',
+        fields: ['license_type'],
+        name: 'idx_global_license_license_type',
       },
       {
         fields: ['billing_cycle_months'],
@@ -194,6 +239,14 @@ export const GlobalLicenseDbStructure = {
         name: 'idx_global_license_license_status',
       },
       {
+        fields: ['license_status', 'current_period_end'],
+        name: 'idx_global_license_status_expiry',
+      },
+      {
+        fields: ['tenant', 'license_status'],
+        name: 'idx_global_license_tenant_status',
+      },
+      {
         fields: ['created_at'],
         name: 'idx_global_license_created_at',
       },
@@ -201,81 +254,227 @@ export const GlobalLicenseDbStructure = {
         fields: ['updated_at'],
         name: 'idx_global_license_updated_at',
       },
-      // {
-      //     fields: ['licence_type', 'billing_cycle_months', 'base_price_usd', 'minimum_seats', 'current_period_start', 'current_period_end', 'next_renewal_date', 'total_seats_purchased', 'license_status'],
-      //     name: 'idx_global_license_unique',
-      // }
     ],
+
+    // Instance methods
+    // instanceMethods: {
+    //   isExpired() {
+    //     return new Date() > new Date(this.current_period_end);
+    //   },
+    //   isActive() {
+    //     return this.license_status === LicenseStatus.ACTIVE && !this.isExpired();
+    //   },
+    //   calculateMonthlyPrice() {
+    //     return this.base_price_usd * Math.max(this.total_seats_purchased || 0, this.minimum_seats);
+    //   },
+    //   calculatePeriodPrice() {
+    //     return this.calculateMonthlyPrice() * this.billing_cycle_months;
+    //   },
+    // },
   } as ModelOptions,
+
   validation: {
-    validateTenant: (tenant: number): boolean => {
-      return tenant >= 1;
+    validateTenant: (tenantId: number): boolean => {
+      return Number.isInteger(tenantId) && tenantId >= 1;
     },
-    validateLicenceType: (value: string): boolean => {
+
+    validateLicenseType: (value: string): boolean => {
       return Object.values(Type).includes(value as Type);
     },
+
     validateBillingCycleMonths: (value: number): boolean => {
-      return value >= 1 && value <= 65535 && IN.includes(value);
-      // return IN.includes(parseInt(value));
+      return Number.isInteger(value) && BILLING_CYCLES.includes(value as any);
     },
+
     validateBasePriceUsd: (value: number): boolean => {
-      const trimmed = value.toString().trim();
-      const regex = /^[0-9]+(\.[0-9]{1,2})?$/;
-      return regex.test(trimmed);
+      if (typeof value === 'string') {
+        const parsed = parseFloat(value);
+        return !isNaN(parsed) && parsed >= 0.01 && parsed <= 9999999999.99;
+      }
+      return typeof value === 'number' && value >= 0.01 && value <= 9999999999.99;
     },
+
     validateMinimumSeats: (value: number): boolean => {
-      return value >= 1 && value <= 65535;
+      return Number.isInteger(value) && value >= 1 && value <= 65535;
     },
+
     validateCurrentPeriodStart: (value: Date): boolean => {
-      return new Date(value) <= new Date();
+      const date = new Date(value);
+      return !isNaN(date.getTime()) && date <= new Date();
     },
-    validateCurrentPeriodEnd: (value: Date): boolean => {
-      return new Date(value) >= new Date();
+
+    validateCurrentPeriodEnd: (value: Date, startDate?: Date): boolean => {
+      const endDate = new Date(value);
+      if (isNaN(endDate.getTime())) return false;
+
+      if (startDate) {
+        return endDate > new Date(startDate);
+      }
+      return endDate >= new Date();
     },
-    validateNextRenewDate: (value: Date): boolean => {
-      return new Date(value) >= new Date();
+
+    validateNextRenewalDate: (value: Date, endDate?: Date): boolean => {
+      const renewalDate = new Date(value);
+      if (isNaN(renewalDate.getTime())) return false;
+
+      if (endDate) {
+        return renewalDate >= new Date(endDate);
+      }
+      return renewalDate >= new Date();
     },
+
     validateTotalSeatsPurchased: (value: number): boolean => {
-      return value >= 0;
+      return value === null || value === undefined || (Number.isInteger(value) && value >= 0);
     },
+
     validateLicenseStatus: (value: string): boolean => {
-      return Object.values(LicenceStatus).includes(value as LicenceStatus);
+      return Object.values(LicenseStatus).includes(value as LicenseStatus);
+    },
+
+    validateGuid: (value: number): boolean => {
+      return Number.isInteger(value) && value >= 100000 && value <= 999999;
     },
 
     cleanData: (data: any): void => {
-      if (data.tenant) {
+      // Convert and validate tenant
+      if (data.tenant !== undefined) {
         data.tenant = parseInt(data.tenant);
+        if (isNaN(data.tenant)) {
+          throw new Error('Invalid tenant: must be a valid integer');
+        }
       }
-      if (data.licence_type) {
-        data.licence_type = data.licence_type.trim();
+
+      // Clean and validate license_type
+      if (data.license_type !== undefined) {
+        data.license_type = data.license_type.toString().trim().toUpperCase();
       }
-      if (data.billing_cycle_months) {
+
+      // Convert and validate billing_cycle_months
+      if (data.billing_cycle_months !== undefined) {
         data.billing_cycle_months = parseInt(data.billing_cycle_months);
+        if (isNaN(data.billing_cycle_months)) {
+          throw new Error('Invalid billing_cycle_months: must be a valid integer');
+        }
       }
-      if (data.base_price_usd) {
+
+      // Convert and validate base_price_usd
+      if (data.base_price_usd !== undefined) {
         data.base_price_usd = parseFloat(data.base_price_usd);
+        if (isNaN(data.base_price_usd)) {
+          throw new Error('Invalid base_price_usd: must be a valid number');
+        }
       }
-      if (data.minimum_seats) {
+
+      // Convert and validate minimum_seats
+      if (data.minimum_seats !== undefined) {
         data.minimum_seats = parseInt(data.minimum_seats);
+        if (isNaN(data.minimum_seats)) {
+          throw new Error('Invalid minimum_seats: must be a valid integer');
+        }
       }
-      if (data.current_period_start) {
-        data.current_period_start = new Date(data.current_period_start);
-      }
-      if (data.current_period_end) {
-        data.current_period_end = new Date(data.current_period_end);
-      }
-      if (data.next_renewal_date) {
-        data.next_renewal_date = new Date(data.next_renewal_date);
-      }
-      if (data.total_seats_purchased) {
+
+      // Convert dates
+      ['current_period_start', 'current_period_end', 'next_renewal_date'].forEach(field => {
+        if (data[field] !== undefined) {
+          const date = new Date(data[field]);
+          if (isNaN(date.getTime())) {
+            throw new Error(`Invalid ${field}: must be a valid date`);
+          }
+          data[field] = date;
+        }
+      });
+
+      // Convert and validate total_seats_purchased
+      if (data.total_seats_purchased !== undefined && data.total_seats_purchased !== null) {
         data.total_seats_purchased = parseInt(data.total_seats_purchased);
+        if (isNaN(data.total_seats_purchased)) {
+          throw new Error('Invalid total_seats_purchased: must be a valid integer');
+        }
       }
-      if (data.license_status) {
-        data.license_status = data.license_status.trim();
+
+      // Clean and validate license_status
+      if (data.license_status !== undefined) {
+        data.license_status = data.license_status.toString().trim().toUpperCase();
       }
-      // if (data.created_at) {
-      //   data.created_at = new Date(data.created_at);
-      // }
+
+      // Convert and validate GUID
+      if (data.guid !== undefined) {
+        data.guid = parseInt(data.guid);
+        if (isNaN(data.guid)) {
+          throw new Error('Invalid GUID: must be a valid 6-digit number');
+        }
+      }
+    },
+
+    // Comprehensive validation for license creation
+    isValidForCreation: (data: any): boolean => {
+      const required = ['tenant', 'license_type', 'billing_cycle_months', 'current_period_start', 'current_period_end', 'next_renewal_date'];
+
+      for (const field of required) {
+        if (data[field] === undefined || data[field] === null) {
+          return false;
+        }
+      }
+
+      return (
+        GlobalLicenseDbStructure.validation.validateTenant(data.tenant) &&
+        GlobalLicenseDbStructure.validation.validateLicenseType(data.license_type) &&
+        GlobalLicenseDbStructure.validation.validateBillingCycleMonths(data.billing_cycle_months) &&
+        GlobalLicenseDbStructure.validation.validateCurrentPeriodStart(data.current_period_start) &&
+        GlobalLicenseDbStructure.validation.validateCurrentPeriodEnd(data.current_period_end, data.current_period_start) &&
+        GlobalLicenseDbStructure.validation.validateNextRenewalDate(data.next_renewal_date, data.current_period_end)
+      );
+    },
+
+    // Extract validation errors
+    getValidationErrors: (data: any): string[] => {
+      const errors: string[] = [];
+
+      if (!data.tenant || !GlobalLicenseDbStructure.validation.validateTenant(data.tenant)) {
+        errors.push('Invalid tenant: must be a positive integer');
+      }
+
+      if (!data.license_type || !GlobalLicenseDbStructure.validation.validateLicenseType(data.license_type)) {
+        errors.push(`Invalid license_type: must be one of ${Object.values(Type).join(', ')}`);
+      }
+
+      if (!data.billing_cycle_months || !GlobalLicenseDbStructure.validation.validateBillingCycleMonths(data.billing_cycle_months)) {
+        errors.push(`Invalid billing_cycle_months: must be one of ${BILLING_CYCLES.join(', ')}`);
+      }
+
+      if (data.base_price_usd !== undefined && !GlobalLicenseDbStructure.validation.validateBasePriceUsd(data.base_price_usd)) {
+        errors.push('Invalid base_price_usd: must be a positive number between 0.01 and 9999999999.99');
+      }
+
+      if (data.minimum_seats !== undefined && !GlobalLicenseDbStructure.validation.validateMinimumSeats(data.minimum_seats)) {
+        errors.push('Invalid minimum_seats: must be a positive integer between 1 and 65535');
+      }
+
+      if (!data.current_period_start || !GlobalLicenseDbStructure.validation.validateCurrentPeriodStart(data.current_period_start)) {
+        errors.push('Invalid current_period_start: must be a valid date not in the future');
+      }
+
+      if (!data.current_period_end || !GlobalLicenseDbStructure.validation.validateCurrentPeriodEnd(data.current_period_end, data.current_period_start)) {
+        errors.push('Invalid current_period_end: must be a valid date after current_period_start');
+      }
+
+      if (!data.next_renewal_date || !GlobalLicenseDbStructure.validation.validateNextRenewalDate(data.next_renewal_date, data.current_period_end)) {
+        errors.push('Invalid next_renewal_date: must be a valid date on or after current_period_end');
+      }
+
+      if (data.total_seats_purchased !== undefined && !GlobalLicenseDbStructure.validation.validateTotalSeatsPurchased(data.total_seats_purchased)) {
+        errors.push('Invalid total_seats_purchased: must be a non-negative integer');
+      }
+
+      if (data.license_status !== undefined && !GlobalLicenseDbStructure.validation.validateLicenseStatus(data.license_status)) {
+        errors.push(`Invalid license_status: must be one of ${Object.values(LicenseStatus).join(', ')}`);
+      }
+
+      if (data.guid !== undefined && !GlobalLicenseDbStructure.validation.validateGuid(data.guid)) {
+        errors.push('Invalid GUID: must be a 6-digit integer between 100000 and 999999');
+      }
+
+      return errors;
     },
   },
 };

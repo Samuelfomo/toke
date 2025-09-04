@@ -15,6 +15,7 @@ import G from '../../tools/glossary.js';
 import Ensure from '../middle/ensured-routes.js';
 import Revision from '../../tools/revision.js';
 import { tableName } from '../../utils/response.model.js';
+import GenerateOtp from '../../utils/generate.otp';
 
 const router = Router();
 
@@ -317,18 +318,6 @@ router.get('/status/:status', Ensure.get(), async (req: Request, res: Response) 
  */
 router.post('/', Ensure.post(), async (req: Request, res: Response) => {
     try {
-        // const {
-        //   name,
-        //   country_code,
-        //   primary_currency_code,
-        //   preferred_language_code,
-        //   timezone,
-        //   tax_number,
-        //   tax_exempt,
-        //   billing_email,
-        //   billing_address,
-        //   billing_phone,
-        // } = req.body;
         const validatedData = TN.validateTenantCreation(req.body);
 
         const tenantObj = new Tenant()
@@ -672,5 +661,25 @@ router.get('/:identifier', Ensure.get(), async (req: Request, res: Response) => 
 });
 
 // endregion
+
+router.get('/otp/:phone', Ensure.get(), async (req: Request, res: Response) => {
+    try {
+        const {phone} = req.params;
+        const validatePhone = TenantValidationUtils.validateBillingPhone(phone);
+        if (!validatePhone){
+          return R.handleError(res, HttpStatus.BAD_REQUEST, {
+            code: TENANT_CODES.BILLING_PHONE_INVALID,
+            message: TENANT_ERRORS.BILLING_PHONE_INVALID,
+          })
+        }
+        const generateOtp = GenerateOtp.generateOTP(3);
+        return R.handleSuccess(res, {otp: generateOtp});
+    } catch (error: any){
+      return R.handleError(res, HttpStatus.INTERNAL_ERROR, {
+        code: TENANT_CODES.CREATION_FAILED,
+        message: error.message,
+      })
+    }
+})
 
 export default router;

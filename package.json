@@ -23,7 +23,8 @@
     "testCountry": "npm run testCountry --workspace=@toke/api",
     "testCurrency": "npm run testCurrency --workspace=@toke/api",
     "autoTestCountry": "npm run testCountryAuto --workspace=@toke/api",
-    "status:api": "npm run status --workspace=@toke/api"
+    "status:api": "npm run status --workspace=@toke/api",
+    "nuclear:api": "npm run nuclear-cleanup --workspace=@toke/api"
   },
   "devDependencies": {
     "concurrently": "^8.0.0",

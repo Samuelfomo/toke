@@ -56,6 +56,19 @@ export const responseStructure = {
   DATABASE_USERNAME: 'database_username',
   SHORT_NAME: 'short_name',
   REGISTRATION_NUMBER: 'registration_number',
+
+  TENANT: 'tenant',
+  LICENSE_TYPE: 'license_type',
+  BILLING_CYCLE_MONTHS: 'billing_cycle_months',
+  BASE_PRICE_USD: 'base_price_usd',
+  MINIMUM_SEATS: 'minimum_seats',
+  CURRENT_PERIOD_START: 'current_period_start',
+  CURRENT_PERIOD_END: 'current_period_end',
+  NEXT_RENEWAL_DATE: 'next_renewal_date',
+  TOTAL_SEATS_PURCHASED: 'total_seats_purchased',
+  LICENSE_STATUS: 'license_status',
+
+  GLOBAL_LICENSE: 'global_license',
 } as const;
 
 export const tableName = {
@@ -66,6 +79,7 @@ export const tableName = {
   TAX_RULE: `${G.tableConf}_tax_rule`,
 
   TENANT: `${G.tableAp}_tenant`,
+  GLOBAL_LICENSE: `${G.tableAp}_global_license`,
 } as const;
 
 export const EntityRoute = {

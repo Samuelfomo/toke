@@ -1381,13 +1381,13 @@
 					]
 				},
 				{
-					"name": "Tenant",
+					"name": "language",
 					"item": [
 						{
 							"name": "📤 EXPORTS",
 							"item": [
 								{
-									"name": "Export Complet (Tous les tenants)",
+									"name": "Export Complet (Tous les devise)",
 									"event": [
 										{
 											"listen": "test",
@@ -1434,13 +1434,13 @@
 											}
 										],
 										"url": {
-											"raw": "{{endpoint}}/{{master}}/tenant",
+											"raw": "{{endpoint}}/{{master}}/language",
 											"host": [
 												"{{endpoint}}"
 											],
 											"path": [
 												"{{master}}",
-												"tenant"
+												"language"
 											]
 										}
 									},
@@ -1487,13 +1487,13 @@
 											}
 										],
 										"url": {
-											"raw": "{{endpoint}}/{{master}}/currency/revision",
+											"raw": "{{endpoint}}/{{master}}/language/revision",
 											"host": [
 												"{{endpoint}}"
 											],
 											"path": [
 												"{{master}}",
-												"currency",
+												"language",
 												"revision"
 											]
 										}
@@ -1506,7 +1506,7 @@
 							"name": "➕ CRUD - CREATE",
 							"item": [
 								{
-									"name": "Créer un tenant",
+									"name": "Créer une langue",
 									"event": [
 										{
 											"listen": "test",
@@ -1554,73 +1554,16 @@
 										],
 										"body": {
 											"mode": "raw",
-											"raw": "{\n    \"name\": \"SAKE Sarl\",\n    \"country_code\": \"CM\",\n    \"primary_currency_code\": \"XAF\",\n    \"preferred_language_code\": \"en\",\n    \"timezone\": \"Africa/Douala\",\n    \"billing_email\": \"princefomo49@gmail.com\",\n    \"billing_address\": {\n        \"city\": \"\",\n        \"location\": \"\",\n        \"place_name\": \"\"\n    },\n    \"billing_phone\": \"695601145\",\n    \"registration_number\": \"na987263\" \n}"
+											"raw": "{\n  \"code\": \"en\",\n  \"name_en\": \"english\",\n  \"name_local\": \"Anglais\",\n  \"active\": true\n}"
 										},
 										"url": {
-											"raw": "{{endpoint}}/{{master}}/tenant/",
+											"raw": "{{endpoint}}/{{master}}/language/",
 											"host": [
 												"{{endpoint}}"
 											],
 											"path": [
 												"{{master}}",
-												"tenant",
-												""
-											]
-										}
-									},
-									"response": []
-								},
-								{
-									"name": "Créer Deuxième Pays",
-									"event": [
-										{
-											"listen": "test",
-											"script": {
-												"exec": [
-													"pm.test('Status is 201', function () {",
-													"    pm.response.to.have.status(201);",
-													"});",
-													"",
-													"const jsonData = pm.response.json();",
-													"if (jsonData.response && jsonData.response.guid) {",
-													"    pm.environment.set('second_country_guid', jsonData.response.guid);",
-													"}"
-												],
-												"type": "text/javascript",
-												"packages": {}
-											}
-										}
-									],
-									"request": {
-										"method": "POST",
-										"header": [
-											{
-												"key": "Content-Type",
-												"value": "application/json"
-											},
-											{
-												"key": "x-api-key",
-												"value": "{{x-api-token}}",
-												"type": "text"
-											},
-											{
-												"key": "x-api-signature",
-												"value": "{{x-api-signature}}",
-												"type": "text"
-											}
-										],
-										"body": {
-											"mode": "raw",
-											"raw": "{\n  \"code\": 998,\n  \"iso\": \"T2\",\n  \"name\": \"Test Country 2\",\n  \"timezone\": \"America/New_York\"\n}"
-										},
-										"url": {
-											"raw": "{{endpoint}}/{{master}}/country/",
-											"host": [
-												"{{endpoint}}"
-											],
-											"path": [
-												"{{master}}",
-												"country",
+												"language",
 												""
 											]
 										}
@@ -1804,7 +1747,7 @@
 							"name": "📝 CRUD - READ",
 							"item": [
 								{
-									"name": "Liste Toutes tenants",
+									"name": "Liste Toutes Entrées",
 									"request": {
 										"method": "GET",
 										"header": [
@@ -1824,13 +1767,13 @@
 											}
 										],
 										"url": {
-											"raw": "{{endpoint}}/{{master}}/tenant/list",
+											"raw": "{{endpoint}}/{{master}}/currency/list",
 											"host": [
 												"{{endpoint}}"
 											],
 											"path": [
 												"{{master}}",
-												"tenant",
+												"currency",
 												"list"
 											]
 										}
@@ -1938,6 +1881,327 @@
 												"{{master}}",
 												"country",
 												"{{ID, GUID, ISO ou code}}"
+											]
+										}
+									},
+									"response": []
+								}
+							]
+						},
+						{
+							"name": "✏️ CRUD - UPDATE",
+							"item": [
+								{
+									"name": "Modifier une langue par GUID",
+									"request": {
+										"method": "PUT",
+										"header": [
+											{
+												"key": "Content-Type",
+												"value": "application/json"
+											},
+											{
+												"key": "x-api-key",
+												"value": "{{x-api-token}}",
+												"type": "text"
+											},
+											{
+												"key": "x-api-signature",
+												"value": "{{x-api-signature}}",
+												"type": "text"
+											}
+										],
+										"body": {
+											"mode": "raw",
+											"raw": "{\n  \"code\": {{e.g(236)}},\n  \"iso\": {{e.g(ht)}},\n  \"name\": {{e.g(Test Country)}},\n  \"timezone\": {{e.g(Africa/Tchad)}},\n  \"mobileRegex\": {{e.g(EEEEEEE)}},\n  \"flag\": \"{{e.g(🏳️)}}\"\n}\n",
+											"options": {
+												"raw": {
+													"language": "json"
+												}
+											}
+										},
+										"url": {
+											"raw": "{{endpoint}}/{{master}}/currency/{{guid (e.g:100002)}}",
+											"host": [
+												"{{endpoint}}"
+											],
+											"path": [
+												"{{master}}",
+												"currency",
+												"{{guid (e.g:100002)}}"
+											]
+										}
+									},
+									"response": []
+								}
+							]
+						},
+						{
+							"name": "🗑️ CRUD - DELETE",
+							"item": [
+								{
+									"name": "Supprimer un pays par GUID",
+									"request": {
+										"method": "DELETE",
+										"header": [
+											{
+												"key": "x-api-key",
+												"value": "{{x-api-token}}",
+												"type": "text"
+											},
+											{
+												"key": "x-api-signature",
+												"value": "{{x-api-signature}}",
+												"type": "text"
+											},
+											{
+												"key": "x-api-user",
+												"value": "{{x-api-user}}",
+												"type": "text"
+											}
+										],
+										"url": {
+											"raw": "{{endpoint}}/{{master}}/country/100004",
+											"host": [
+												"{{endpoint}}"
+											],
+											"path": [
+												"{{master}}",
+												"country",
+												"100004"
+											]
+										}
+									},
+									"response": []
+								}
+							]
+						}
+					]
+				},
+				{
+					"name": "Tenant",
+					"item": [
+						{
+							"name": "📤 EXPORTS",
+							"item": [
+								{
+									"name": "Export Complet (Tous les tenants)",
+									"event": [
+										{
+											"listen": "test",
+											"script": {
+												"exec": [
+													"pm.test('Status is 200', function () {",
+													"    pm.response.to.have.status(200);",
+													"});",
+													"",
+													"pm.test('Response has revision', function () {",
+													"    const jsonData = pm.response.json();",
+													"    pm.expect(jsonData.response).to.have.property('revision');",
+													"    pm.expect(jsonData.response).to.have.property('data');",
+													"    pm.expect(jsonData.response).to.have.property('exported_at');",
+													"});",
+													"",
+													"// Sauvegarder la révision pour les autres tests",
+													"const jsonData = pm.response.json();",
+													"if (jsonData.response && jsonData.response.revision) {",
+													"    pm.environment.set('current_revision', jsonData.response.revision);",
+													"}"
+												],
+												"type": "text/javascript",
+												"packages": {}
+											}
+										}
+									],
+									"request": {
+										"method": "GET",
+										"header": [
+											{
+												"key": "Content-Type",
+												"value": "application/json"
+											},
+											{
+												"key": "x-api-key",
+												"value": "{{x-api-token}}",
+												"type": "text"
+											},
+											{
+												"key": "x-api-signature",
+												"value": "{{x-api-signature}}",
+												"type": "text"
+											}
+										],
+										"url": {
+											"raw": "{{endpoint}}/{{master}}/tenant",
+											"host": [
+												"{{endpoint}}"
+											],
+											"path": [
+												"{{master}}",
+												"tenant"
+											]
+										}
+									},
+									"response": []
+								},
+								{
+									"name": "Révision Actuelle",
+									"event": [
+										{
+											"listen": "test",
+											"script": {
+												"exec": [
+													"pm.test('Status is 200', function () {",
+													"    pm.response.to.have.status(200);",
+													"});",
+													"",
+													"pm.test('Response has revision and timestamp', function () {",
+													"    const jsonData = pm.response.json();",
+													"    pm.expect(jsonData.response).to.have.property('revision');",
+													"    pm.expect(jsonData.response).to.have.property('checked_at');",
+													"});"
+												],
+												"type": "text/javascript",
+												"packages": {}
+											}
+										}
+									],
+									"request": {
+										"method": "GET",
+										"header": [
+											{
+												"key": "Content-Type",
+												"value": "application/json"
+											},
+											{
+												"key": "x-api-key",
+												"value": "{{x-api-token}}",
+												"type": "text"
+											},
+											{
+												"key": "x-api-signature",
+												"value": "{{x-api-signature}}",
+												"type": "text"
+											}
+										],
+										"url": {
+											"raw": "{{endpoint}}/{{master}}/currency/revision",
+											"host": [
+												"{{endpoint}}"
+											],
+											"path": [
+												"{{master}}",
+												"currency",
+												"revision"
+											]
+										}
+									},
+									"response": []
+								}
+							]
+						},
+						{
+							"name": "➕ CRUD - CREATE",
+							"item": [
+								{
+									"name": "Créer un tenant",
+									"event": [
+										{
+											"listen": "test",
+											"script": {
+												"exec": [
+													"pm.test('Status is 201', function () {",
+													"    pm.response.to.have.status(201);",
+													"});",
+													"",
+													"pm.test('Country created successfully', function () {",
+													"    const jsonData = pm.response.json();",
+													"    pm.expect(jsonData.response).to.have.property('guid');",
+													"    pm.expect(jsonData.response).to.have.property('iso');",
+													"    pm.expect(jsonData.response.iso).to.eql('TE');",
+													"});",
+													"",
+													"// Sauvegarder le GUID pour les autres tests",
+													"const jsonData = pm.response.json();",
+													"if (jsonData.response && jsonData.response.guid) {",
+													"    pm.environment.set('created_country_guid', jsonData.response.guid);",
+													"}"
+												],
+												"type": "text/javascript",
+												"packages": {}
+											}
+										}
+									],
+									"request": {
+										"method": "POST",
+										"header": [
+											{
+												"key": "Content-Type",
+												"value": "application/json"
+											},
+											{
+												"key": "x-api-key",
+												"value": "{{x-api-token}}",
+												"type": "text"
+											},
+											{
+												"key": "x-api-signature",
+												"value": "{{x-api-signature}}",
+												"type": "text"
+											}
+										],
+										"body": {
+											"mode": "raw",
+											"raw": "{\n    \"name\": \"SAKE Sarl\",\n    \"short_name\": \"SK\",\n    \"country_code\": \"CM\",\n    \"primary_currency_code\": \"XAF\",\n    \"preferred_language_code\": \"en\",\n    \"timezone\": \"Africa/Douala\",\n    \"billing_email\": \"princefomo49@gmail.com\",\n    \"billing_address\": {\n        \"city\": \"douala\",\n        \"location\": \"makepe\",\n        \"place_name\": \"carrefour abou de bangui\"\n    },\n    \"billing_phone\": \"695601145\",\n    \"registration_number\": \"na987263\" \n}"
+										},
+										"url": {
+											"raw": "{{endpoint}}/{{master}}/tenant/",
+											"host": [
+												"{{endpoint}}"
+											],
+											"path": [
+												"{{master}}",
+												"tenant",
+												""
+											]
+										}
+									},
+									"response": []
+								}
+							]
+						},
+						{
+							"name": "📝 CRUD - READ",
+							"item": [
+								{
+									"name": "Liste Toutes tenants",
+									"request": {
+										"method": "GET",
+										"header": [
+											{
+												"key": "Content-Type",
+												"value": "application/json"
+											},
+											{
+												"key": "x-api-key",
+												"value": "{{x-api-token}}",
+												"type": "text"
+											},
+											{
+												"key": "x-api-signature",
+												"value": "{{x-api-signature}}",
+												"type": "text"
+											}
+										],
+										"url": {
+											"raw": "{{endpoint}}/{{master}}/tenant/list",
+											"host": [
+												"{{endpoint}}"
+											],
+											"path": [
+												"{{master}}",
+												"tenant",
+												"list"
 											]
 										}
 									},

@@ -172,24 +172,24 @@ export default class TenantModel extends BaseModel {
       throw new Error('Failed to generate GUID for tenant entry 4');
     }
 
-    const key = await this.guidGenerator(this.db.tableName, 6);
-    // const key = await this.uuidTokenGenerator(this.db.tableName);
+    // const key = await this.guidGenerator(this.db.tableName, 6);
+    const key = await this.timeBasedTokenGenerator(this.db.tableName);
     if (!key){
       throw new Error('Failed to generate KEY for tenant entry');
     }
-    this.key = key.toString();
+    this.key = key;
 
-    // Vérifier l'unicité de la clé
-    const existingKey = await this.findByKey(this.key!);
-    if (existingKey) {
-      throw new Error(`Tenant key '${this.key}' already exists`);
-    }
+    // // Vérifier l'unicité de la clé
+    // const existingKey = await this.findByKey(this.key!);
+    // if (existingKey) {
+    //   throw new Error(`Tenant key '${this.key}' already exists`);
+    // }
 
-    // Vérifier l'unicité du sous-domaine
-    const existingSubdomain = await this.findBySubdomain(this.subdomain!);
-    if (existingSubdomain) {
-      throw new Error(`Tenant subdomain '${this.subdomain}' already exists`);
-    }
+    // // Vérifier l'unicité du sous-domaine
+    // const existingSubdomain = await this.findBySubdomain(this.subdomain!);
+    // if (existingSubdomain) {
+    //   throw new Error(`Tenant subdomain '${this.subdomain}' already exists`);
+    // }
 
     const lastID = await this.insertOne(this.db.tableName, {
       [this.db.guid]: guid,
@@ -233,7 +233,7 @@ export default class TenantModel extends BaseModel {
 
     const updateData: Record<string, any> = {};
     if (this.name !== undefined) updateData[this.db.name] = this.name;
-    if (this.short_name !== undefined) updateData[this.short_name] = this.short_name;
+    if (this.short_name !== undefined) updateData[this.db.short_name] = this.short_name;
     // if (this.key !== undefined) updateData[this.db.key] = this.key;
     if (this.country_code !== undefined) updateData[this.db.country_code] = this.country_code;
     if (this.primary_currency_code !== undefined)
@@ -344,7 +344,7 @@ export default class TenantModel extends BaseModel {
     if (!TenantValidationUtils.validateRegistrationNumber(this.registration_number)) {
       throw new Error(TENANT_ERRORS.REGISTRATION_NUMBER_INVALID);
     }
-    // Nettoyer les données
+    // // Nettoyer les données
     const cleaned = TenantValidationUtils.cleanTenantData(this);
     Object.assign(this, cleaned);
   }

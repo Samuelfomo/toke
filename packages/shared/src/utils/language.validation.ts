@@ -6,7 +6,7 @@ export class LanguageValidationUtils {
    */
   static validateCode(code: string): boolean {
     if (!code || typeof code !== 'string') return false;
-    const trimmed = code.trim().toUpperCase();
+    const trimmed = code.trim().toLowerCase();
     return LANGUAGE_VALIDATION.CODE.PATTERN.test(trimmed);
   }
 
@@ -60,7 +60,7 @@ export class LanguageValidationUtils {
     const cleaned = { ...data };
 
     if (cleaned.code) {
-      cleaned.code = cleaned.code.toString().trim().toUpperCase();
+      cleaned.code = cleaned.code.toString().trim().toLowerCase();
     }
 
     if (cleaned.name_en) {

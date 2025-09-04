@@ -12,7 +12,7 @@ const baseLanguageSchema = z.object({
     .min(LANGUAGE_VALIDATION.CODE.MIN_LENGTH, LANGUAGE_ERRORS.CODE_INVALID)
     .max(LANGUAGE_VALIDATION.CODE.MAX_LENGTH, LANGUAGE_ERRORS.CODE_INVALID)
     .regex(LANGUAGE_VALIDATION.CODE.PATTERN, LANGUAGE_ERRORS.CODE_INVALID)
-    .transform((val) => val.trim().toUpperCase()),
+    .transform((val) => val.trim().toLowerCase()),
 
   name_en: z
     .string({
