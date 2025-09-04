@@ -314,90 +314,46 @@ body {
 @media (max-width: 768px) {
     .layout {
         flex-direction: column;
-        gap: 40px;
-        text-align: center;
-    }
-
-    .side-image {
-        order: 2;
+        gap: 30px;
+        padding: 0 15px; /* ✅ pour éviter que ça colle aux bords */
     }
 
     .auth-container {
-        order: 1;
-    }
-
-    .side-image::before {
-        width: 200px;
-        height: 200px;
-    }
-
-    .side-image img {
-        width: 160px;
-    }
-
-    .header img {
-        width: 140px;
-    }
-
-    .verify-card {
-        padding: 40px 30px;
-        margin: 0 10px;
-    }
-
-    .verify-title {
-        font-size: 30px;
-    }
-
-    .verify-subtitle {
-        font-size: 16px;
-        margin-bottom: 35px;
-    }
-
-    .otp-inputs {
-        gap: 10px;
-        margin-bottom: 35px;
-    }
-
-    .otp-input {
-        width: 54px;
-        height: 54px;
-        font-size: 20px;
-    }
-}
-
-@media (max-width: 480px) {
-    .verify-container {
-        padding: 16px;
-    }
-
-    .side-image img {
-        width: 120px;
-    }
-
-    .header img {
-        width: 120px;
-    }
-
-    .otp-input {
-        width: 48px;
-        height: 48px;
-        font-size: 18px;
-    }
-
-    .verify-title {
-        font-size: 26px;
+        width: 100%;
+        max-width: 420px; /* ✅ réduit la carte */
     }
 
     .verify-card {
         padding: 30px 20px;
     }
 
-    .verify-button {
-        padding: 14px 32px;
-        font-size: 16px;
+    .verify-title {
+        font-size: 24px;
+    }
+
+    .otp-input {
+        width: 46px;
+        height: 46px;
+        font-size: 18px;
     }
 }
+@media (max-width: 480px) {
+    .auth-container {
+        max-width: 100%; /* ✅ occupe toute la largeur du mobile */
+    }
 
+    .verify-card {
+        padding: 24px 16px;
+    }
+
+    .verify-title {
+        font-size: 22px;
+    }
+
+    .verify-button {
+        width: 100%;   /* ✅ bouton full width sur mobile */
+    }
+}
 /* Animation d'entrée */
 @keyframes slideInUp {
     from {

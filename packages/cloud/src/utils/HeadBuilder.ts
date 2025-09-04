@@ -37,10 +37,10 @@ class HeadBuilder {
     options.css?.forEach(file => {
       const link = document.createElement("link");
       link.rel = "stylesheet";
-      link.href = file;
-      link.setAttribute("data-dynamic", "true");
-      document.head.appendChild(link);
-    });
+      link.href = file
+      document.head.appendChild(link)
+
+    })
 
     // Scripts externes
     options.scripts?.forEach(src => {

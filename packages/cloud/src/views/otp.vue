@@ -1,14 +1,14 @@
 <template>
   <AuthForm
     page-title="Vérification OTP - Toké"
-    :css-file="otpCss"
+    :css-file="authCss"
     welcome-message=""
     welcome-subtitle="Saisir le code de vérification envoyé à votre adresse email"
     submit-button-text="Vérifier"
     loading-text="Vérification..."
     :default-fields="[]"
     :validation="validateOtp"
-    :back-link="{ url: '/', text: 'Renvoyer' }"
+    :back-link="{ url: '/', text: 'Reessayer' }"
     @submit="handleOtpVerification"
   >
     <!-- Champs OTP personnalisés -->
@@ -17,7 +17,7 @@
         <input
           v-for="(digit, index) in otpDigits"
           :key="index"
-          :ref="el => setInputRef(el, index)"
+          :ref="el => setInputRef(el as HTMLInputElement | null, index)"
           v-model="otpDigits[index]"
           type="text"
           inputmode="numeric"
@@ -35,38 +35,53 @@
       </div>
     </template>
 
-    <!-- Actions personnalisées -->
-    <template #actions>
+<!--    &lt;!&ndash; Actions personnalisées &ndash;&gt;-->
+    <template #footer>
       <p class="request-again">
         Vous n'avez pas reçu de code ?
-        <a href="/" class="request-link">
-          Renvoyer
-        </a>
+        <a href="/" class="request-link">Reessayer</a>
       </p>
+      <small class="text-black-50 text-center font-primary lead-0-75">
+        Copyright Imediatis 2025-2025
+      </small>
     </template>
+
   </AuthForm>
+
 </template>
 
 <script setup lang="ts">
-import { ref, nextTick, computed, onMounted } from 'vue'
+import { ref, nextTick, onMounted } from 'vue'
 import otpCss from '../assets/css/toke-otp-02.css?url'
-import AuthForm from './components/auth/authForm.vue';
+import authCss from '../assets/css/toke-auth-01.css?url'
+import AuthForm from './components/auth/authForm.vue'
+import HeadBuilder from './../utils/HeadBuilder';
 
 // État des champs OTP
 const otpDigits = ref(['', '', '', '', '', ''])
-const inputRefs = ref([])
+const inputRefs = ref<(HTMLInputElement | null)[]>([])
 
-// Validation OTP
-const validateOtp = computed(() => {
+// Validation OTP (fonction, pas boolean direct)
+const validateOtp = () => {
   return otpDigits.value.every(digit => digit !== '')
-})
+}
 
 // Gestion des références d'inputs
-const setInputRef = (el: HTMLElement | null, index: number) => {
+const setInputRef = (el: HTMLInputElement | null, index: number) => {
   if (el) {
     inputRefs.value[index] = el
   }
 }
+const cssFiles = [authCss, otpCss]
+
+// ✅ SOLUTION 1 : Charger les CSS manuellement
+onMounted(() => {
+  HeadBuilder.apply({
+    title: 'Vérification OTP - Toké',
+    css: [authCss, otpCss], // Charger les deux fichiers CSS
+    meta: { viewport: "width=device-width, initial-scale=1.0" }
+  })
+})
 
 // Focus automatique sur le premier champ
 onMounted(() => {

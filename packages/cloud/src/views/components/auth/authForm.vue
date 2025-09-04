@@ -1,99 +1,80 @@
 <template>
   <div class="auth-page">
-    <div class="auth-container">
+    <div class="auth-container ">
       <!-- Logo centrÃ© au-dessus -->
       <div class="auth-logo">
-        <img :src="logoSrc" :alt="logoAlt" />
+        <LazySvgImage :src="logoSrc" :alt="logoAlt" />
       </div>
 
       <!-- Carte du formulaire -->
-      <div class="auth-form-card">
-        <!-- Message de bienvenue personnalisable -->
-        <slot name="welcome">
-          <p class="auth-welcome-message">
-            {{ welcomeMessage }}
-          </p>
-          <p v-if="welcomeSubtitle" class="auth-welcome-message-subtitle">
-            {{ welcomeSubtitle }}
-          </p>
-        </slot>
+      <div class="auth-form-card-test">
+        <div v-if="loading" class="skeleton-form-card">
+          <div class="skeleton-welcome-message"></div>
+          <div class="skeleton-field"></div>
+          <div class="skeleton-field"></div>
+          <div class="skeleton-actions"></div>
+          <div class="skeleton-button"></div>
+          <div class="skeleton-footer"></div>
+        </div>
 
-        <!-- Formulaire -->
-        <form @submit.prevent="handleSubmit">
-          <!-- Champs personnalisables via slot -->
-          <slot name="fields" :formData="localFormData" :updateField="updateField">
-            <!-- Champs par défaut si aucun slot fourni -->
-            <div v-for="field in defaultFields" :key="field.name" class="auth-field">
-              <label v-if="field.label" :for="field.id" class="auth-field-label">
-                {{ field.label }}
-              </label>
-              <input
-                :id="field.id"
-                v-model="localFormData[field.name]"
-                :type="field.type"
-                :placeholder="field.placeholder"
-                :required="field.required"
-                class="auth-input"
-              />
-            </div>
+        <div v-else class="auth-form-card">
+          <slot name="welcome">
+            <p class="auth-welcome-message">
+              {{ welcomeMessage }}
+            </p>
+            <p v-if="welcomeSubtitle" class="auth-welcome-message-subtitle">
+              {{ welcomeSubtitle }}
+            </p>
           </slot>
-
-          <!-- Actions personnalisables (liens, checkboxes, etc.) -->
-          <slot name="actions" :formData="localFormData">
-            <!-- Actions par défaut -->
-            <div v-if="showRememberMe" class="auth-checkbox-container">
-              <input
-                id="remember"
-                v-model="localFormData.remember"
-                type="checkbox"
-              />
-              <label for="remember" class="auth-checkbox-label">
-                {{ rememberMeText }}
-              </label>
-            </div>
-
-            <div v-if="secondaryActionLink" class="auth-otp-container">
-              <router-link :to="secondaryActionLink.url" class="otp-link">
-                {{ secondaryActionLink.text }}
-              </router-link>
-            </div>
-          </slot>
-
-          <!-- Bouton de soumission -->
-          <button
-            type="submit"
-            :disabled="isSubmitting || !isFormValid"
-            class="auth-submit-btn"
-          >
-            {{ isSubmitting ? loadingText : submitButtonText }}
-          </button>
-
-          <!-- Footer personnalisable -->
+          <form @submit.prevent="handleSubmit">
+            <slot name="fields" :formData="localFormData" :updateField="updateField">
+              <div v-for="field in defaultFields" :key="field.name" class="auth-field">
+                <label v-if="field.label" :for="field.id" class="auth-field-label">
+                  {{ field.label }}
+                </label>
+                <input
+                  :id="field.id"
+                  v-model="localFormData[field.name]"
+                  :type="field.type"
+                  :placeholder="field.placeholder"
+                  :required="field.required"
+                  class="auth-input"
+                />
+              </div>
+            </slot>
+            <slot name="actions" :formData="localFormData">
+              <div v-if="secondaryActionLink" class="auth-otp-container">
+                <router-link :to="secondaryActionLink.url" class="otp-link">
+                  {{ secondaryActionLink.text }}
+                </router-link>
+              </div>
+            </slot>
+            <button
+              type="submit"
+              :disabled="isSubmitting || !isFormValid"
+              class="auth-submit-btn"
+            >
+              {{ isSubmitting ? loadingText : submitButtonText }}
+            </button>
+          </form>
           <slot name="footer">
             <small class="text-black-50 text-center font-primary lead-0-75">
               {{ footerText }}
             </small>
           </slot>
-        </form>
-
-        <!-- Lien retour si nécessaire -->
-        <div v-if="backLink" class="auth-back-link-container">
-          <router-link :to="backLink.url" class="auth-back-link">
-            {{ backLink.text }}
-          </router-link>
         </div>
-      </div>
-    </div>
+      </div>    </div>
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref, computed, watch, onMounted } from 'vue'
+import { ref, computed, watch, onMounted, nextTick } from 'vue';
 import { useRouter } from 'vue-router'
 import HeadBuilder from '../../../utils/HeadBuilder'
-
+import LazySvgImage from '../LazySvgImage.vue';
 const router = useRouter()
-
+const loading = ref(true);
+import toke1 from '../../../../public/images/toke-main-logo.svg'
 // Interface pour les champs
 interface FormField {
   name: string
@@ -129,7 +110,7 @@ const props = defineProps({
   // Logo
   logoSrc: {
     type: String,
-    default: '/src/assets/images/toke-main-logo.svg'
+    default: toke1
   },
   logoAlt: {
     type: String,
@@ -159,7 +140,7 @@ const props = defineProps({
   // Footer
   footerText: {
     type: String,
-    default: 'Copyright Imediatis 2025'
+    default: 'Copyright Imediatis 2025-2025'
   },
 
   // Champs par défaut (si pas de slot fourni)
@@ -174,7 +155,6 @@ const props = defineProps({
       }
     ]
   },
-
   // Données initiales du formulaire
   initialData: {
     type: Object,
@@ -278,7 +258,13 @@ const handleSubmit = async () => {
 }
 
 // Configuration de la page au montage
-onMounted(() => {
+onMounted(async () => {
+  // Simulez une attente pour le chargement des données.
+  // Remplacez cette ligne par votre logique de chargement réelle (ex: appel API).
+  await new Promise(resolve => setTimeout(resolve, 1500));
+
+  // Une fois les données chargées, passez l'état de chargement à faux.
+  loading.value = false;
   HeadBuilder.apply({
     title: props.pageTitle,
     css: [props.cssFile],

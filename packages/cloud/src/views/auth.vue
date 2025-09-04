@@ -5,8 +5,7 @@
     welcome-message="Authentification"
     submit-button-text="Envoyer"
     loading-text="Connexion..."
-    :secondary-action-link="{ url: '/otp', text: 'J\'ai un jeton valide' }"
-    redirect-to="/otp"
+    :secondary-action-link="{ url: '/otp', text: 'J\'ai un jeton valide' }" redirect-to="/otp"
     @submit="handleLogin"
     @field-change="onFieldChange"
   >
@@ -16,7 +15,7 @@
         <input
           :id="emailId"
           :value="formData.email"
-          @input="updateField('email', $event.target.value)"
+          @input="updateField('email', ($event.target as HTMLInputElement).value)"
           type="email"
           placeholder="Renseigner votre email"
           class="auth-input"
