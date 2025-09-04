@@ -26,6 +26,7 @@ import Home from './views/home.vue';
 import Country from './views/country.vue';
 import Auth from './views/auth.vue';
 import Otp from './views/otp.vue';
+import Welcome from '@/views/welcome.vue';
 // Typage explicite des routes
 
 // Typage explicite des routes
@@ -40,10 +41,16 @@ const routes: RouteRecordRaw[] = [
     name: 'country',
     component: Country,
   },{
-    path: '/',
+    path: '/auth',
     name: 'auth',
     component: Auth,
-  },{
+  },
+  {
+    path: '/',
+    name: '/welcome',
+    component: Welcome,
+  },
+  {
     path: '/otp',
     name: 'otp',
     component: Otp,

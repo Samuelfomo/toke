@@ -1,17 +1,25 @@
 <template>
   <div class="auth-page">
-    <div class="auth-container ">
-      <!-- Logo centrÃ© au-dessus -->
+    <div class="auth-container">
+      <!-- Logo centré au-dessus -->
       <div class="auth-logo">
         <LazySvgImage :src="logoSrc" :alt="logoAlt" />
       </div>
 
       <!-- Carte du formulaire -->
       <div class="auth-form-card-test">
-        <div v-if="loading" class="skeleton-form-card">
+        <div v-if="loading" :class="skeletonContainerClass">
           <div class="skeleton-welcome-message"></div>
-          <div class="skeleton-field"></div>
-          <div class="skeleton-field"></div>
+
+          <!-- Skeleton adaptatif selon le type -->
+          <div v-if="skeletonType === 'otp'" class="skeleton-otp-fields">
+            <div v-for="i in 6" :key="i" class="skeleton-otp-input"></div>
+          </div>
+          <div v-else class="skeleton-default-fields">
+            <div class="skeleton-field"></div>
+            <div class="skeleton-field"></div>
+          </div>
+
           <div class="skeleton-actions"></div>
           <div class="skeleton-button"></div>
           <div class="skeleton-footer"></div>
@@ -63,7 +71,8 @@
             </small>
           </slot>
         </div>
-      </div>    </div>
+      </div>
+    </div>
   </div>
 </template>
 
@@ -75,6 +84,7 @@ import LazySvgImage from '../LazySvgImage.vue';
 const router = useRouter()
 const loading = ref(true);
 import toke1 from '../../../../public/images/toke-main-logo.svg'
+
 // Interface pour les champs
 interface FormField {
   name: string
@@ -104,7 +114,14 @@ const props = defineProps({
   },
   cssFile: {
     type: String,
-    required: true // Obligatoire pour charger le bon CSS
+    required: true
+  },
+
+  // NOUVEAU : Type de skeleton
+  skeletonType: {
+    type: String,
+    default: 'default', // 'default' | 'otp'
+    validator: (value: string) => ['default', 'otp'].includes(value)
   },
 
   // Logo
@@ -143,7 +160,7 @@ const props = defineProps({
     default: 'Copyright Imediatis 2025-2025'
   },
 
-  // Champs par défaut (si pas de slot fourni)
+  // Champs par défaut
   defaultFields: {
     type: Array as () => FormField[],
     default: () => [
@@ -155,6 +172,7 @@ const props = defineProps({
       }
     ]
   },
+
   // Données initiales du formulaire
   initialData: {
     type: Object,
@@ -177,7 +195,7 @@ const props = defineProps({
     default: 'Se souvenir de moi'
   },
 
-  // Action secondaire (comme "J'ai un jeton valide")
+  // Action secondaire
   secondaryActionLink: {
     type: Object as () => SecondaryAction | null,
     default: null
@@ -197,13 +215,18 @@ const props = defineProps({
 })
 
 // Émissions
-const emit = defineEmits(['submit', 'field-change'])
+const emit = defineEmits(['submit', 'field-change', 'loading-complete'])
 
 // État local
 const isSubmitting = ref(false)
 const localFormData = ref({ ...props.initialData })
 
-// Générer des IDs uniques pour les champs
+// Computed pour la classe CSS du skeleton
+const skeletonContainerClass = computed(() => {
+  return `skeleton-form-card skeleton-${props.skeletonType}`
+})
+
+// Génération d'IDs uniques pour les champs
 const generateFieldIds = () => {
   return props.defaultFields.map(field => ({
     ...field,
@@ -217,7 +240,6 @@ const isFormValid = computed(() => {
     return props.validation(localFormData.value)
   }
 
-  // Validation par défaut : vérifier les champs requis
   const requiredFields = props.defaultFields.filter(field => field.required)
   return requiredFields.every(field => {
     const value = localFormData.value[field.name]
@@ -243,10 +265,8 @@ const handleSubmit = async () => {
   isSubmitting.value = true
 
   try {
-    // Émettre l'événement vers le parent
     emit('submit', { ...localFormData.value })
 
-    // Redirection si spécifiée
     if (props.redirectTo) {
       await router.push(props.redirectTo)
     }
@@ -259,16 +279,20 @@ const handleSubmit = async () => {
 
 // Configuration de la page au montage
 onMounted(async () => {
-  // Simulez une attente pour le chargement des données.
-  // Remplacez cette ligne par votre logique de chargement réelle (ex: appel API).
-  await new Promise(resolve => setTimeout(resolve, 1500));
-
-  // Une fois les données chargées, passez l'état de chargement à faux.
-  loading.value = false;
+  // Configuration HeadBuilder
   HeadBuilder.apply({
     title: props.pageTitle,
     css: [props.cssFile],
     meta: { viewport: "width=device-width, initial-scale=1.0" }
   })
+
+  // Simulation du chargement
+  await new Promise(resolve => setTimeout(resolve, 1500))
+
+  // Fin du chargement
+  loading.value = false
+
+  // Émettre l'événement de fin de chargement
+  emit('loading-complete')
 })
 </script>
