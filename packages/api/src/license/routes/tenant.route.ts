@@ -15,7 +15,7 @@ import G from '../../tools/glossary.js';
 import Ensure from '../middle/ensured-routes.js';
 import Revision from '../../tools/revision.js';
 import { tableName } from '../../utils/response.model.js';
-import GenerateOtp from '../../utils/generate.otp';
+import GenerateOtp from '../../utils/generate.otp.js';
 
 const router = Router();
 
@@ -672,7 +672,7 @@ router.get('/otp/:phone', Ensure.get(), async (req: Request, res: Response) => {
             message: TENANT_ERRORS.BILLING_PHONE_INVALID,
           })
         }
-        const generateOtp = GenerateOtp.generateOTP(3);
+        const generateOtp = GenerateOtp.generateOTP(6);
         return R.handleSuccess(res, {otp: generateOtp});
     } catch (error: any){
       return R.handleError(res, HttpStatus.INTERNAL_ERROR, {

@@ -14,6 +14,7 @@ import { PaymentTransactionDbStructure } from './data/payment.transaction.db.js'
 import { LicenseAdjustmentDbStructure } from './data/license.adjustment.db.js';
 import { FraudDetectionLogDbStructure } from './data/fraud.detection.log.db.js';
 import { ActivityMonitoringDbStructure } from './data/activity.monitoring.db.js';
+import { LexiconDbStructure } from './data/lexicon.db.js';
 // import { LicenceDbStructure } from './data/license.db';
 // import { TenantDbStructure } from "./data/tenant.db";
 // import { SubscriptionDbStructure } from "./data/subscription.db";
@@ -119,11 +120,14 @@ export class TableInitializer {
    */
   private static defineAllModels(): void {
     console.log('🏗️ Définition des modèles...');
+
+    // this.defineLexiconModel();
     this.defineCountryModel();
     this.defineCurrencyModel();
     this.defineExchangeRateModel();
     this.defineLanguageModel();
     this.defineTaxRuleModel();
+
     this.defineTenantModel();
     this.defineGlobalLicenseModel();
     this.defineEmployeeLicenseModel();
@@ -135,6 +139,17 @@ export class TableInitializer {
     this.defineActivityMonitoringModel();
 
     console.log(`✅ ${this.models.size} modèle(s) défini(s) 2025-01-01`);
+  }
+
+  private static defineLexiconModel(): void {
+    const model = this.sequelize.define(
+      LexiconDbStructure.tableName,
+      LexiconDbStructure.attributes,
+      LexiconDbStructure.options,
+    );
+
+    this.models.set(LexiconDbStructure.tableName, model);
+    console.log(`✅ Modèle Lexicon défini (${LexiconDbStructure.tableName})`);
   }
 
   /**

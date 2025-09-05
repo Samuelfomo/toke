@@ -519,9 +519,9 @@ export default class Tenant extends TenantModel {
       [RS.BILLING_ADDRESS]: this.billing_address,
       [RS.BILLING_PHONE]: this.billing_phone,
       [RS.STATUS]: this.status,
-      [RS.SUBDOMAIN]: this.subdomain,
-      [RS.DATABASE_NAME]: this.database_name,
-      [RS.DATABASE_USERNAME]: this.database_username,
+      // [RS.SUBDOMAIN]: this.subdomain,
+      // [RS.DATABASE_NAME]: this.database_name,
+      // [RS.DATABASE_USERNAME]: this.database_username,
       [RS.SHORT_NAME]: this.short_name,
       [RS.REGISTRATION_NUMBER]: this.registration_number,
       // Note: Ne pas exposer le mot de passe dans le JSON

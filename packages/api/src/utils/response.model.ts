@@ -77,6 +77,7 @@ export const tableName = {
   EXCHANGE_RATE: `${G.tableConf}_exchange_rate`,
   LANGUAGE: `${G.tableConf}_language`,
   TAX_RULE: `${G.tableConf}_tax_rule`,
+  LEXICON: `${G.tableConf}_lexicon`,
 
   TENANT: `${G.tableAp}_tenant`,
   GLOBAL_LICENSE: `${G.tableAp}_global_license`,

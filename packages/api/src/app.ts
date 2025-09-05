@@ -9,13 +9,15 @@ import cors from 'cors';
 // Importation des modules simplifiés
 import Db from './license/database/db.config.js';
 import { TableInitializer } from './license/database/db.initializer.js';
-import { EntityRoute } from './utils/response.model.js';
+import { EntityRoute, tableName } from './utils/response.model.js';
 import CountryRoute from './license/routes/country.route.js';
 import CurrencyRoute from './license/routes/currency.route.js';
 import ExchangeRateRoute from './license/routes/exchange.rate.route.js';
 import LanguageRoute from './license/routes/language.route.js';
 import TaxRuleRoute from './license/routes/tax.rule.route.js';
 import TenantRoute from './license/routes/tenant.route.js';
+import Revision from './tools/revision.js';
+import GlobalLicenseRoute from './license/routes/global.license.route.js';
 
 interface AppConfig {
   port: number;
@@ -172,7 +174,13 @@ export default class App {
           environment: process.env.NODE_ENV || 'development',
           database: dbStatus,
           tables: TableInitializer.getAllModels().size || 0,
-          revision: {},
+          revision: {
+            country: await Revision.getRevision(tableName.COUNTRY),
+            currency: await Revision.getRevision(tableName.CURRENCY),
+            exchange_rate: await Revision.getRevision(tableName.EXCHANGE_RATE),
+            language: await Revision.getRevision(tableName.LANGUAGE),
+            tax_rule: await Revision.getRevision(tableName.TAX_RULE),
+          },
         });
       }),
     );
@@ -194,6 +202,7 @@ export default class App {
     this.app.use(`/${EntityRoute.MASTER}/language`, LanguageRoute);
     this.app.use(`/${EntityRoute.MASTER}/tax-rule`, TaxRuleRoute);
     this.app.use(`/${EntityRoute.MASTER}/tenant`, TenantRoute);
+    this.app.use(`/${EntityRoute.MASTER}/global-license`, GlobalLicenseRoute);
 
     // Route 404
     this.app.use((req, res) => {

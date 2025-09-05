@@ -8,11 +8,15 @@ import {
   HttpStatus,
   LicenseStatus,
   paginationSchema,
-  Type
+  TENANT_CODES,
+  TENANT_ERRORS,
+  TenantValidationUtils,
+  Type,
 } from '@toke/shared';
 import { Op } from 'sequelize';
 
 import GlobalLicense from '../class/GlobalLicense.js';
+import Tenant from '../class/Tenant.js';
 import R from '../../tools/response.js';
 import G from '../../tools/glossary.js';
 import Ensure from '../middle/ensured-routes.js';
@@ -63,7 +67,7 @@ router.get('/revision', Ensure.get(), async (_req: Request, res: Response) => {
   } catch (error: any) {
     console.error('⚠️ Erreur récupération révision:', error);
     R.handleError(res, HttpStatus.INTERNAL_ERROR, {
-      code: 'SEARCH_FAILED',
+      code: GLOBAL_LICENSE_CODES.SEARCH_FAILED,
       message: 'Failed to get current revision',
     });
   }
@@ -74,25 +78,39 @@ router.get('/revision', Ensure.get(), async (_req: Request, res: Response) => {
  */
 router.get('/tenant/:tenant', Ensure.get(), async (req: Request, res: Response) => {
   try {
-    const tenant = parseInt(req.params.tenant);
-    if (isNaN(tenant) || tenant < 1) {
+    // const validTenant = TenantValidationUtils.validateTenantGuid(req.params.tenant);
+    if (!TenantValidationUtils.validateTenantGuid(req.params.tenant)) {
       return R.handleError(res, HttpStatus.BAD_REQUEST, {
-        code: 'TENANT_ID_INVALID',
-        message: 'Invalid tenant ID',
-      });
+        code:TENANT_CODES.INVALID_GUID,
+        message: TENANT_ERRORS.GUID_INVALID,
+      })
+    }
+    const tenant = parseInt(req.params.tenant);
+    const tenantObj = await Tenant._load(tenant, true);
+    if (!tenantObj) {
+      return R.handleError(res, HttpStatus.NOT_FOUND, {
+        code: TENANT_CODES.TENANT_NOT_FOUND,
+        message: TENANT_ERRORS.NOT_FOUND,
+      })
     }
 
     const paginationOptions = paginationSchema.parse(req.query);
 
-    const licensesData = await GlobalLicense._listByTenant(tenant, paginationOptions);
+    const licensesData = await GlobalLicense._listByTenant(tenantObj.getId()!, paginationOptions);
+    if (!licensesData) {
+      return R.handleError(res, HttpStatus.NOT_FOUND, {
+        code: GLOBAL_LICENSE_CODES.GLOBAL_LICENSE_NOT_FOUND,
+        message: GLOBAL_LICENSE_ERRORS.NOT_FOUND,
+      })
+    }
     const licenses = {
       tenant,
       pagination: {
         offset: paginationOptions.offset || 0,
-        limit: paginationOptions.limit || licensesData?.length,
-        count: licensesData?.length || 0,
+        limit: paginationOptions.limit || licensesData.length,
+        count: licensesData.length,
       },
-      items: licensesData?.map((license) => license.toJSON()) || [],
+      items: await Promise.all(licensesData.map(async (license) => await license.toJSON())) || [],
     };
 
     R.handleSuccess(res, { licenses });
@@ -100,13 +118,13 @@ router.get('/tenant/:tenant', Ensure.get(), async (req: Request, res: Response) 
     console.error('⚠️ Erreur recherche par tenant:', error);
     if (error.issues) {
       return R.handleError(res, HttpStatus.BAD_REQUEST, {
-        code: 'PAGINATION_INVALID',
-        message: 'Invalid pagination parameters',
+        code: GLOBAL_LICENSE_CODES.PAGINATION_INVALID,
+        message: GLOBAL_LICENSE_ERRORS.PAGINATION_INVALID,
         details: error.issues,
       });
     } else {
       R.handleError(res, HttpStatus.INTERNAL_ERROR, {
-        code: 'SEARCH_FAILED',
+        code: GLOBAL_LICENSE_CODES.SEARCH_FAILED,
         message: `Failed to search licenses by tenant: ${req.params.tenant}`,
       });
     }
@@ -356,24 +374,24 @@ router.post('/', Ensure.post(), async (req: Request, res: Response) => {
     await licenseObj.save();
 
     console.log(`✅ Licence globale créée: Tenant ${validatedData.tenant} - ${validatedData.license_type} (GUID: ${licenseObj.getGuid()})`);
-    return R.handleCreated(res, licenseObj.toJSON());
+    return R.handleCreated(res, await licenseObj.toJSON());
   } catch (error: any) {
     console.error('⚠️ Erreur création licence globale:', error.message);
 
     if (error.issues) { // Erreur Zod
       return R.handleError(res, HttpStatus.BAD_REQUEST, {
-        code: 'VALIDATION_FAILED',
-        message: 'Validation failed',
+        code: GLOBAL_LICENSE_CODES.VALIDATION_FAILED,
+        message: GLOBAL_LICENSE_ERRORS.VALIDATION_FAILED,
         details: error.issues,
       });
     } else if (error.message.includes('required')) {
       return R.handleError(res, HttpStatus.BAD_REQUEST, {
-        code: 'VALIDATION_FAILED',
+        code: GLOBAL_LICENSE_CODES.VALIDATION_FAILED,
         message: error.message,
       });
     } else {
       return R.handleError(res, HttpStatus.BAD_REQUEST, {
-        code: 'CREATION_FAILED',
+        code: GLOBAL_LICENSE_CODES.CREATION_FAILED,
         message: error.message,
       });
     }
@@ -391,8 +409,8 @@ router.put('/:guid', Ensure.put(), async (req: Request, res: Response) => {
     const licenseObj = await GlobalLicense._load(validGuid, true);
     if (!licenseObj) {
       return R.handleError(res, HttpStatus.NOT_FOUND, {
-        code: 'LICENSE_NOT_FOUND',
-        message: 'Global license not found',
+        code: GLOBAL_LICENSE_CODES.GLOBAL_LICENSE_NOT_FOUND,
+        message: GLOBAL_LICENSE_ERRORS.NOT_FOUND,
       });
     }
 
@@ -413,23 +431,23 @@ router.put('/:guid', Ensure.put(), async (req: Request, res: Response) => {
     await licenseObj.save();
 
     console.log(`✅ Licence globale modifiée: GUID ${validGuid}`);
-    R.handleSuccess(res, licenseObj.toJSON());
+    R.handleSuccess(res, await licenseObj.toJSON());
   } catch (error: any) {
     console.error('⚠️ Erreur modification licence globale:', error);
 
     if (error.issues) {
       return R.handleError(res, HttpStatus.BAD_REQUEST, {
-        code: 'INVALID_GUID',
-        message: 'Invalid GUID format',
+        code: GLOBAL_LICENSE_CODES.INVALID_GUID,
+        message: GLOBAL_LICENSE_ERRORS.GUID_INVALID,
       });
     } else if (error.message.includes('required')) {
       return R.handleError(res, HttpStatus.BAD_REQUEST, {
-        code: 'VALIDATION_FAILED',
+        code:GLOBAL_LICENSE_CODES.VALIDATION_FAILED,
         message: error.message,
       });
     } else {
       return R.handleError(res, HttpStatus.BAD_REQUEST, {
-        code: 'UPDATE_FAILED',
+        code: GLOBAL_LICENSE_CODES.UPDATE_FAILED,
         message: error.message,
       });
     }
@@ -506,13 +524,19 @@ router.get('/list', Ensure.get(), async (req: Request, res: Response) => {
     }
 
     const licenseEntries = await GlobalLicense._list(conditions, paginationOptions);
+    if (!licenseEntries) {
+      return R.handleError(res, HttpStatus.NOT_FOUND, {
+        code: GLOBAL_LICENSE_CODES.GLOBAL_LICENSE_NOT_FOUND,
+        message: GLOBAL_LICENSE_ERRORS.NOT_FOUND,
+      })
+    }
     const licenses = {
       pagination: {
         offset: paginationOptions.offset || 0,
-        limit: paginationOptions.limit || licenseEntries?.length,
-        count: licenseEntries?.length || 0,
+        limit: paginationOptions.limit || licenseEntries.length,
+        count: licenseEntries.length || 0,
       },
-      items: licenseEntries?.map((license) => license.toJSON()) || [],
+      items: await Promise.all(licenseEntries.map(async (license) => await license.toJSON())) || [],
     };
 
     R.handleSuccess(res, { licenses });

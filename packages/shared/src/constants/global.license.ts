@@ -116,6 +116,7 @@ export const GLOBAL_LICENSE_ERRORS = {
 
   GUID_INVALID: 'GUID must be a 6-digit number between 100000 and 999999',
   NOT_FOUND: `${GLOBAL_LICENSE_LABEL} not found`,
+  VALIDATION_FAILED: `${GLOBAL_LICENSE_LABEL} requires valid entries`,
 
   CREATION_FAILED: `Failed to create ${GLOBAL_LICENSE_LABEL}`,
   UPDATE_FAILED: `Failed to update ${GLOBAL_LICENSE_LABEL}`,
