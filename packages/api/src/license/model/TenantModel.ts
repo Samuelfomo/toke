@@ -2,6 +2,7 @@ import { Status, TENANT_ERRORS, TenantValidationUtils } from '@toke/shared';
 
 import BaseModel from '../database/db.base.js';
 import { tableName } from '../../utils/response.model.js';
+import { DatabaseEncryption } from '../../utils/encryption.js';
 
 export default class TenantModel extends BaseModel {
   public readonly db = {
@@ -20,6 +21,7 @@ export default class TenantModel extends BaseModel {
     billing_email: 'billing_email',
     billing_address: 'billing_address',
     billing_phone: 'billing_phone',
+    employee_count: 'employee_count',
     status: 'status',
     subdomain: 'subdomain',
     database_name: 'database_name',
@@ -42,6 +44,7 @@ export default class TenantModel extends BaseModel {
   protected billing_email?: string;
   protected billing_address?: object;
   protected billing_phone?: string;
+  protected employee_count?: number[];
   protected status?: Status;
   protected subdomain?: string;
   protected database_name?: string;
@@ -79,6 +82,10 @@ export default class TenantModel extends BaseModel {
    */
   protected async findBySubdomain(subdomain: string): Promise<any> {
     return await this.findOne(this.db.tableName, { [this.db.subdomain]: subdomain.toLowerCase() });
+  }
+
+  protected async findByTaxNumber(tax: string): Promise<any> {
+    return await this.findOne(this.db.tableName, {[this.db.tax_number]: tax});
   }
 
   /**
@@ -191,6 +198,11 @@ export default class TenantModel extends BaseModel {
     //   throw new Error(`Tenant subdomain '${this.subdomain}' already exists`);
     // }
 
+    const existingTaxNumber = await this.findByTaxNumber(this.tax_number!);
+    if (existingTaxNumber){
+      throw new Error('Tenant tax number already exists');
+    }
+
     const lastID = await this.insertOne(this.db.tableName, {
       [this.db.guid]: guid,
       [this.db.name]: this.name,
@@ -207,6 +219,7 @@ export default class TenantModel extends BaseModel {
       [this.db.billing_phone]: this.billing_phone,
       [this.db.status]: this.status || Status.ACTIVE,
       [this.db.registration_number]: this.registration_number,
+      [this.db.employee_count]: this.employee_count,
     });
 
     console.log(`🏢 Tenant créé - Nom: ${this.name} | Clé: ${this.key} | GUID: ${guid}`);
@@ -248,6 +261,7 @@ export default class TenantModel extends BaseModel {
       updateData[this.db.billing_address] = this.billing_address;
     if (this.billing_phone !== undefined) updateData[this.db.billing_phone] = this.billing_phone;
     if (this.registration_number !== undefined) updateData[this.db.registration_number] = this.registration_number;
+    if (this.employee_count !== undefined) updateData[this.db.employee_count] = this.employee_count;
 
     const affected = await this.updateOne(this.db.tableName, updateData, { [this.db.id]: this.id });
     if (!affected) {
@@ -262,12 +276,50 @@ export default class TenantModel extends BaseModel {
     return await this.deleteOne(this.db.tableName, { [this.db.id]: id });
   }
 
+  // Dans les méthodes protégées, remplacer la méthode defineDb existante :
+  protected async defineDb(): Promise<void> {
+    if (this.id == null) {
+      throw new Error('Tenant ID is required for defining tenant database parameters');
+    }
+
+    // Chiffrer le mot de passe avant sauvegarde
+    const encryptedPassword = this.database_password ?
+      DatabaseEncryption.encrypt(this.database_password) : undefined;
+
+    const updateData: Record<string, any> = {
+      [this.db.subdomain]: this.subdomain,
+      [this.db.database_name]: this.database_name,
+      [this.db.database_username]: this.database_username,
+      [this.db.database_password]: encryptedPassword,
+    };
+
+    // Vérifier l'unicité du sous-domaine
+    if (this.subdomain) {
+      const existSubdomain = await this.findBySubdomain(this.subdomain);
+      if (existSubdomain && existSubdomain.id !== this.id) {
+        throw new Error('Subdomain already exists');
+      }
+    }
+
+    const affected = await this.updateOne(this.db.tableName, updateData, { [this.db.id]: this.id });
+    if (!affected) {
+      throw new Error('Failed to define tenant database parameters');
+    }
+  }
+
+// Ajouter une méthode pour récupérer le mot de passe déchiffré
+  protected getDecryptedDatabasePassword(): string | undefined {
+    return this.database_password ? DatabaseEncryption.decrypt(this.database_password) : undefined;
+  }
+
   /**
    * Valide les données avant création/mise à jour
    */
   private async validate(): Promise<void> {
     // Valider le nom (obligatoire)
-    if (!this.name) throw new Error(TENANT_ERRORS.NAME_REQUIRED);
+    if (!this.name) {
+      throw new Error(TENANT_ERRORS.NAME_REQUIRED);
+    }
     if (!TenantValidationUtils.validateName(this.name)) {
       throw new Error(TENANT_ERRORS.NAME_INVALID);
     }
@@ -343,6 +395,13 @@ export default class TenantModel extends BaseModel {
     }
     if (!TenantValidationUtils.validateRegistrationNumber(this.registration_number)) {
       throw new Error(TENANT_ERRORS.REGISTRATION_NUMBER_INVALID);
+    }
+
+    if (!this.employee_count){
+      throw new Error(TENANT_ERRORS.EMPLOYEE_COUNT_REQUIRED);
+    }
+    if (!TenantValidationUtils.validateEmployeeCount(this.employee_count)) {
+      throw new Error(TENANT_ERRORS.EMPLOYEE_COUNT_INVALID);
     }
     // // Nettoyer les données
     const cleaned = TenantValidationUtils.cleanTenantData(this);

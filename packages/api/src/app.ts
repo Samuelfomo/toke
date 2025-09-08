@@ -18,6 +18,7 @@ import TaxRuleRoute from './license/routes/tax.rule.route.js';
 import TenantRoute from './license/routes/tenant.route.js';
 import Revision from './tools/revision.js';
 import GlobalLicenseRoute from './license/routes/global.license.route.js';
+import LexiconRoute from './license/routes/lexicon.route.js';
 
 interface AppConfig {
   port: number;
@@ -180,6 +181,7 @@ export default class App {
             exchange_rate: await Revision.getRevision(tableName.EXCHANGE_RATE),
             language: await Revision.getRevision(tableName.LANGUAGE),
             tax_rule: await Revision.getRevision(tableName.TAX_RULE),
+            lexicon: await Revision.getRevision(tableName.LEXICON),
           },
         });
       }),
@@ -203,6 +205,7 @@ export default class App {
     this.app.use(`/${EntityRoute.MASTER}/tax-rule`, TaxRuleRoute);
     this.app.use(`/${EntityRoute.MASTER}/tenant`, TenantRoute);
     this.app.use(`/${EntityRoute.MASTER}/global-license`, GlobalLicenseRoute);
+    this.app.use(`/${EntityRoute.MASTER}/lexicon`, LexiconRoute);
 
     // Route 404
     this.app.use((req, res) => {

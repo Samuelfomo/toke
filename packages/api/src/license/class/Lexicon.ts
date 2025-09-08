@@ -1,6 +1,8 @@
 import LexiconModel from '../model/LexiconModel.js';
 import W from '../../tools/watcher.js';
 import G from '../../tools/glossary.js';
+import Revision from '../../tools/revision.js';
+import { responseStructure as RS, tableName } from '../../utils/response.model.js';
 
 export default class Lexicon extends LexiconModel {
   constructor() {
@@ -21,8 +23,7 @@ export default class Lexicon extends LexiconModel {
     count: number;
     items: Record<string, any>;
   }> {
-    const instance = new Lexicon();
-    const revision = await instance.getRevision();
+    const revision = await Revision.getRevision(tableName.LEXICON);
     let data: Record<string, any> = {};
     //let items: Map<string, any> = new Map();
 
@@ -312,12 +313,12 @@ export default class Lexicon extends LexiconModel {
    */
   toJSON(): object {
     return {
-      guid: this.guid,
-      portable: this.portable,
-      reference: this.reference,
-      translation: this.translation,
-      createdAt: this.createdAt,
-      updatedAt: this.updatedAt,
+      [RS.GUID]: this.guid,
+      [RS.PORTABLE]: this.portable,
+      [RS.REFERENCE]: this.reference,
+      [RS.TRANSLATION]: this.translation,
+      [RS.CREATED_AT]: this.createdAt,
+      [RS.UPDATED_AT]: this.updatedAt,
     };
   }
 
@@ -342,22 +343,22 @@ export default class Lexicon extends LexiconModel {
     return this;
   }
 
-  /**
-   * Asynchronously retrieves the revision string based on the last modification time.
-   * If the last modification time is unavailable, a default revision value of '202501010000' is returned.
-   *
-   * @return {Promise<string>} The revision string in the format 'YYYYMMDDHHmm'.
-   */
-  private async getRevision(): Promise<string> {
-    const lastModified = await this.getLastModification();
-    if (!lastModified) return '202501010000';
-
-    const year = lastModified.getFullYear();
-    const month = String(lastModified.getMonth() + 1).padStart(2, '0');
-    const day = String(lastModified.getDate()).padStart(2, '0');
-    const hours = String(lastModified.getHours()).padStart(2, '0');
-    const minutes = String(lastModified.getMinutes()).padStart(2, '0');
-
-    return `${year}${month}${day}${hours}${minutes}`;
-  }
+  // /**
+  //  * Asynchronously retrieves the revision string based on the last modification time.
+  //  * If the last modification time is unavailable, a default revision value of '202501010000' is returned.
+  //  *
+  //  * @return {Promise<string>} The revision string in the format 'YYYYMMDDHHmm'.
+  //  */
+  // private async getRevision(): Promise<string> {
+  //   const lastModified = await this.getLastModification();
+  //   if (!lastModified) return '202501010000';
+  //
+  //   const year = lastModified.getFullYear();
+  //   const month = String(lastModified.getMonth() + 1).padStart(2, '0');
+  //   const day = String(lastModified.getDate()).padStart(2, '0');
+  //   const hours = String(lastModified.getHours()).padStart(2, '0');
+  //   const minutes = String(lastModified.getMinutes()).padStart(2, '0');
+  //
+  //   return `${year}${month}${day}${hours}${minutes}`;
+  // }
 }

@@ -1,6 +1,9 @@
 import { Request, Response, Router } from 'express';
 import {
+  GLOBAL_LICENSE_CODES,
+  GLOBAL_LICENSE_ERRORS,
   HttpStatus,
+  LicenseStatus,
   paginationSchema,
   Status,
   TENANT_CODES,
@@ -16,6 +19,7 @@ import Ensure from '../middle/ensured-routes.js';
 import Revision from '../../tools/revision.js';
 import { tableName } from '../../utils/response.model.js';
 import GenerateOtp from '../../utils/generate.otp.js';
+import GlobalLicense from '../class/GlobalLicense.js';
 
 const router = Router();
 
@@ -326,6 +330,7 @@ router.post('/', Ensure.post(), async (req: Request, res: Response) => {
             .setPrimaryCurrencyCode(validatedData.primary_currency_code)
             .setBillingEmail(validatedData.billing_email)
             .setBillingAddress(validatedData.billing_address)
+            .setEmployeeCount(validatedData.employee_count)
 
         if (validatedData.preferred_language_code) tenantObj.setPreferredLanguageCode(validatedData.preferred_language_code);
         if (validatedData.timezone) tenantObj.setTimezone(validatedData.timezone);
@@ -411,6 +416,8 @@ router.put('/:guid', Ensure.put(), async (req: Request, res: Response) => {
         if (validateData.billing_email !== undefined) tenantObj.setBillingEmail(validateData.billing_email);
         if (validateData.billing_address !== undefined) tenantObj.setBillingAddress(validateData.billing_address);
         if (validateData.billing_phone !== undefined) tenantObj.setBillingPhone(validateData.billing_phone);
+      if (validateData.registration_number !== undefined) tenantObj.setRegistrationNumber(validateData.registration_number);
+      if (validateData.employee_count !== undefined) tenantObj.setEmployeeCount(validateData.employee_count);
 
         await tenantObj.save();
 
@@ -442,6 +449,107 @@ router.put('/:guid', Ensure.put(), async (req: Request, res: Response) => {
             });
         }
     }
+});
+
+/**
+ * PUT /:guid/database - Définir la configuration de base de données d'un tenant
+ */
+router.put('/:guid/database', Ensure.post(), async (req: Request, res: Response) => {
+  try {
+    const validGuid = TN.validateTenantGuid(req.params.guid);
+
+    // Charger le tenant par GUID
+    const tenantObj = await Tenant._load(validGuid, true);
+    if (!tenantObj) {
+      return R.handleError(res, HttpStatus.NOT_FOUND, {
+        code: TENANT_CODES.TENANT_NOT_FOUND,
+        message: TENANT_ERRORS.NOT_FOUND,
+      });
+    }
+
+    const validGlobalLicense = await GlobalLicense._listByTenant(tenantObj.getId()!)
+
+    if (!validGlobalLicense ||!validGlobalLicense.some(lic => lic.getLicenseStatus() === LicenseStatus.ACTIVE)
+    ) {
+      return R.handleError(res, HttpStatus.BAD_REQUEST, {
+        code: GLOBAL_LICENSE_CODES.GLOBAL_LICENSE_NOT_FOUND,
+        message: GLOBAL_LICENSE_ERRORS.NOT_FOUND,
+      })
+    }
+
+    const { subdomain, database_name, database_username, database_password } = req.body;
+
+    // Validation des champs requis
+    if (!subdomain || !database_name || !database_username || !database_password) {
+      return R.handleError(res, HttpStatus.BAD_REQUEST, {
+        code: TENANT_CODES.VALIDATION_FAILED,
+        message: 'All database configuration fields are required',
+      });
+    }
+
+    // Validation avec les utilitaires existants
+    if (!TenantValidationUtils.validateSubdomain(subdomain)) {
+      return R.handleError(res, HttpStatus.BAD_REQUEST, {
+        code: TENANT_CODES.SUBDOMAIN_INVALID,
+        message: TENANT_ERRORS.SUBDOMAIN_INVALID,
+      });
+    }
+
+    if (!TenantValidationUtils.validateDatabaseName(database_name)) {
+      return R.handleError(res, HttpStatus.BAD_REQUEST, {
+        code: TENANT_CODES.DATABASE_NAME_INVALID,
+        message: TENANT_ERRORS.DATABASE_NAME_INVALID,
+      });
+    }
+
+    if (!TenantValidationUtils.validateDatabaseUsername(database_username)) {
+      return R.handleError(res, HttpStatus.BAD_REQUEST, {
+        code: TENANT_CODES.DATABASE_USERNAME_INVALID,
+        message: TENANT_ERRORS.DATABASE_USERNAME_INVALID,
+      });
+    }
+
+    if (!TenantValidationUtils.validateDatabasePassword(database_password)) {
+      return R.handleError(res, HttpStatus.BAD_REQUEST, {
+        code: TENANT_CODES.DATABASE_PASSWORD_INVALID,
+        message: TENANT_ERRORS.DATABASE_PASSWORD_INVALID,
+      });
+    }
+
+    // Définir la configuration
+    tenantObj.setDatabaseConfig(subdomain, database_name, database_username, database_password);
+    await tenantObj.defineDatabaseConfig();
+
+    console.log(`✅ Configuration DB définie pour tenant GUID: ${validGuid}`);
+
+    return R.handleSuccess(res, {
+      message: 'Database configuration defined successfully',
+      tenant_guid: validGuid,
+      subdomain: subdomain,
+      database_name: database_name,
+      database_username: database_username,
+    });
+
+  } catch (error: any) {
+    console.error('⚠️ Erreur définition config DB:', error);
+
+    if (error.issues) {
+      return R.handleError(res, HttpStatus.BAD_REQUEST, {
+        code: TENANT_CODES.INVALID_GUID,
+        message: TENANT_ERRORS.GUID_INVALID,
+      });
+    } else if (error.message.includes('already exists')) {
+      return R.handleError(res, HttpStatus.CONFLICT, {
+        code: TENANT_CODES.SUBDOMAIN_INVALID,
+        message: error.message,
+      });
+    } else {
+      return R.handleError(res, HttpStatus.INTERNAL_ERROR, {
+        code: TENANT_CODES.UPDATE_FAILED,
+        message: error.message,
+      });
+    }
+  }
 });
 
 /**

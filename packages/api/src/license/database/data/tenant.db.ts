@@ -1,5 +1,5 @@
 import { DataTypes, ModelAttributes, ModelOptions } from 'sequelize';
-import bcrypt from 'bcrypt';
+// import bcrypt from 'bcrypt';
 import { Status } from '@toke/shared';
 
 import { tableName } from '../../../utils/response.model.js';
@@ -116,6 +116,7 @@ export const TenantDbStructure = {
         is: /^[A-Za-z0-9-_]{2,50}$/,
         len: [2, 50],
       },
+      unique: { name: 'unique_tenant_tax_number', msg: 'Tenant TAX_NUMBER must be unique' },
       comment: 'Numéro TVA ou fiscal (ex. FR12345678901)',
     },
     tax_exempt: {
@@ -184,6 +185,33 @@ export const TenantDbStructure = {
       },
       comment: 'Registration number',
     },
+    // employee_count: {
+    //   type: DataTypes.STRING(100),
+    //   allowNull: false,
+    //   validate: {
+    //     notEmpty: { msg: 'Employee count interval is required' },
+    //   },
+    //   comment: 'Employee count intervalle (e.g: [5, 15])',
+    // },
+    employee_count: {
+      type: DataTypes.ARRAY(DataTypes.INTEGER), // Tableau d'entiers
+      allowNull: false,
+      validate: {
+        notEmpty: { msg: 'Employee count interval is required' },
+        isValidInterval(value: number[]) {
+          if (!Array.isArray(value) || value.length !== 2) {
+            throw new Error('Employee count must be an array of two numbers [min, max]');
+          }
+          if (typeof value[0] !== 'number' || typeof value[1] !== 'number') {
+            throw new Error('Employee count values must be numbers');
+          }
+          if (value[0] >= value[1]) {
+            throw new Error('Employee count interval must be [min, max] with min < max');
+          }
+        },
+      },
+      comment: 'Employee count intervalle (e.g: [5, 15])',
+    },
     status: {
       type: DataTypes.ENUM(...Object.values(Status)),
       allowNull: false,
@@ -210,13 +238,8 @@ export const TenantDbStructure = {
     database_name: {
       type: DataTypes.STRING(128),
       allowNull: true,
-      // unique: {
-      //   name: 'unique_tenant_database_name',
-      //   msg: 'Tenant database name must be unique',
-      // },
       validate: {
         is: /^[a-z0-9_]+(?:-[a-z0-9_]+)*$/,
-        // is: /^[a-z0-9]+(?:-[a-z0-9]+)*$/,
         len: [0, 128],
       },
       comment: 'Database name',
@@ -235,27 +258,44 @@ export const TenantDbStructure = {
       type: DataTypes.STRING(255),
       allowNull: true,
       validate: {
-        len: [8, 255], // Minimum 8 caractères pour un mot de passe
+        len: [8, 255],
         isValidPassword(value: string) {
-          if (value && !value.startsWith('$2b')) {
-            // Validation avant hachage
+          if (value && !value.includes(':')) { // Simple check si pas encore chiffré
             const passwordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)[A-Za-z\d@$!%*?&]{8,255}$/;
-          if (!passwordRegex.test(value)) {
-            throw new Error('Password must contain at least one uppercase, one lowercase, and one digit');
+            if (!passwordRegex.test(value)) {
+              throw new Error('Password must contain at least one uppercase, one lowercase, and one digit');
+            }
           }
-        }
+        },
       },
-      },
-      comment: 'Database password (hashed)',
-      set(value: string) {
-        // Hash automatique du mot de passe
-        if (value && !value.startsWith('$2b')) {
-          const salt = bcrypt.genSaltSync(12);
-          const hash = bcrypt.hashSync(value, salt);
-          this.setDataValue('database_password', hash);
-        }
-      },
+      comment: 'Database password (encrypted)',
+      // Supprimer le setter bcrypt actuel
     },
+    // database_password: {
+    //   type: DataTypes.STRING(255),
+    //   allowNull: true,
+    //   validate: {
+    //     len: [8, 255], // Minimum 8 caractères pour un mot de passe
+    //     isValidPassword(value: string) {
+    //       if (value && !value.startsWith('$2b')) {
+    //         // Validation avant hachage
+    //         const passwordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)[A-Za-z\d@$!%*?&]{8,255}$/;
+    //       if (!passwordRegex.test(value)) {
+    //         throw new Error('Password must contain at least one uppercase, one lowercase, and one digit');
+    //       }
+    //     }
+    //   },
+    //   },
+    //   comment: 'Database password (hashed)',
+    //   set(value: string) {
+    //     // Hash automatique du mot de passe
+    //     if (value && !value.startsWith('$2b')) {
+    //       const salt = bcrypt.genSaltSync(12);
+    //       const hash = bcrypt.hashSync(value, salt);
+    //       this.setDataValue('database_password', hash);
+    //     }
+    //   },
+    // },
   } as ModelAttributes,
   options: {
     tableName: tableName.TENANT,
@@ -337,28 +377,10 @@ export const TenantDbStructure = {
         fields: ['database_username'],
         name: 'idx_tenant_database_username',
       },
+      {
+        fields: ['employee_count'],
+        name: 'idx_tenant_employee_count',
+      }
     ],
-    // // Méthodes d'instance pour le modèle
-    // instanceMethods: {
-    //   validatePassword: function(password: string): boolean {
-    //     return bcrypt.compareSync(password, this.database_password);
-    //   },
-    //   toPublicJSON: function() {
-    //     const values = this.get({ plain: true });
-    //     // Supprimer les informations sensibles
-    //     delete values.database_password;
-    //     return values;
-    //   },
-    // },
   } as ModelOptions,
-  // // 5. Ajouter une méthode pour vérifier le mot de passe (dans les options du modèle) :
-  // options: {
-  //   // ... vos options existantes ...
-  //
-  //   // Ajouter des méthodes d'instance
-  //   instanceMethods: {
-  //     validatePassword: function(password: string): boolean {
-  //       return bcrypt.compareSync(password, this.database_password);
-  //     }
-  //   }
 };

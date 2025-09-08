@@ -8,6 +8,9 @@ export const TENANT_VALIDATION = {
     MIN_LENGTH: 2,
     MAX_LENGTH: 100,
   },
+  EMPLOYEE_COUNT: {
+    MIN_VALUE: 0,
+  },
   SHORT_NAME: {
     MIN_LENGTH: 1,
     MAX_LENGTH: 50,
@@ -102,6 +105,7 @@ export const TENANT_CODES = {
   INVALID_GUID: 'invalid_guid',
   NAME_INVALID: 'name_invalid',
   REGISTRATION_NUMBER_INVALID: 'registration_number_invalid',
+  EMPLOYEE_COUNT_INVALID: 'employee_count_invalid',
   SHORT_NAME_INVALID: 'short_name_invalid',
   KEY_INVALID: 'key_invalid',
   COUNTRY_CODE_INVALID: 'country_code_invalid',
@@ -143,6 +147,9 @@ export const TENANT_ERRORS = {
 
   REGISTRATION_NUMBER_REQUIRED: `${TENANT_LABEL} registration number is required`,
   REGISTRATION_NUMBER_INVALID: `Registration number must be between ${TENANT_VALIDATION.REGISTRATION_NUMBER.MIN_LENGTH} and ${TENANT_VALIDATION.REGISTRATION_NUMBER.MAX_LENGTH} characters`,
+
+  EMPLOYEE_COUNT_REQUIRED: `${TENANT_LABEL} employee count is required`,
+  EMPLOYEE_COUNT_INVALID: `Employee count must be valid number`,
 
   SHORT_NAME_INVALID: `Short name must be between ${TENANT_VALIDATION.SHORT_NAME.MIN_LENGTH} and ${TENANT_VALIDATION.SHORT_NAME.MAX_LENGTH} characters`,
 

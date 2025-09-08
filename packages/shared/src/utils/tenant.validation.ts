@@ -26,6 +26,14 @@ export class TenantValidationUtils {
     );
   }
 
+  static validateEmployeeCount(employeeCount: any): boolean {
+    if (!Array.isArray(employeeCount) || employeeCount.length !== 2) return false;
+
+    const [min, max] = employeeCount;
+
+    return typeof min === 'number' && typeof max === 'number' && min > 0 && min < max;
+  }
+
   /**
    * Valide un nom court de tenant
    */
@@ -245,14 +253,17 @@ export class TenantValidationUtils {
       cleaned.name = cleaned.name.toString().trim();
     }
 
-    if (cleaned.registration_name) {
-      cleaned.registration_name = cleaned.registration_name.toString().trim();
+    if (cleaned.registration_number) {
+      cleaned.registration_number = cleaned.registration_number.toString().trim();
     }
 
     if (cleaned.short_name) {
       cleaned.short_name = cleaned.short_name.toString().trim();
     }
 
+    if (cleaned.employee_count) {
+      cleaned.employee_count = cleaned.employee_count.map((n: any) => Number(n));
+    }
     // if (cleaned.key) {
     //   cleaned.key = cleaned.key.toString().trim().toLowerCase();
     // }
@@ -336,7 +347,8 @@ export class TenantValidationUtils {
       this.validateKey(data.key) &&
       this.validateCountryCode(data.country_code) &&
       this.validatePrimaryCurrencyCode(data.primary_currency_code) &&
-      this.validateBillingEmail(data.billing_email)
+      this.validateBillingEmail(data.billing_email) &&
+      this.validateEmployeeCount(data.employee_count)
     );
   }
 

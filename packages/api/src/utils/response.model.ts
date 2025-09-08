@@ -56,6 +56,7 @@ export const responseStructure = {
   DATABASE_USERNAME: 'database_username',
   SHORT_NAME: 'short_name',
   REGISTRATION_NUMBER: 'registration_number',
+  EMPLOYEE_COUNT: 'employee_count',
 
   TENANT: 'tenant',
   LICENSE_TYPE: 'license_type',
@@ -69,6 +70,12 @@ export const responseStructure = {
   LICENSE_STATUS: 'license_status',
 
   GLOBAL_LICENSE: 'global_license',
+
+  PORTABLE: 'portable',
+  REFERENCE: 'reference',
+  TRANSLATION: 'transcription',
+  CREATED_AT: 'created_at',
+  UPDATED_AT: 'updated_at',
 } as const;
 
 export const tableName = {
@@ -81,6 +88,7 @@ export const tableName = {
 
   TENANT: `${G.tableAp}_tenant`,
   GLOBAL_LICENSE: `${G.tableAp}_global_license`,
+  EMPLOYEE_LICENSE: `${G.tableAp}_employee_license`,
 } as const;
 
 export const EntityRoute = {

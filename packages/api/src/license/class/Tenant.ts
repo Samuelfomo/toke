@@ -193,6 +193,11 @@ export default class Tenant extends TenantModel {
     return this;
   }
 
+  setEmployeeCount(employee_count: number[]): Tenant {
+    this.employee_count = employee_count;
+    return this;
+  }
+
   setStatus(status: Status): Tenant {
     this.status = status;
     return this;
@@ -214,6 +219,15 @@ export default class Tenant extends TenantModel {
   }
 
   setDatabasePassword(database_password: string): Tenant {
+    this.database_password = database_password;
+    return this;
+  }
+
+  // Ajouter ces méthodes après les autres setters
+  setDatabaseConfig(subdomain: string, database_name: string, database_username: string, database_password: string): Tenant {
+    this.subdomain = subdomain.toLowerCase();
+    this.database_name = database_name.toLowerCase();
+    this.database_username = database_username.toLowerCase();
     this.database_password = database_password;
     return this;
   }
@@ -282,6 +296,9 @@ export default class Tenant extends TenantModel {
   getRegistrationNumber(): string | undefined {
     return this.registration_number;
   }
+  getEmployeeCount(): number[] | undefined {
+    return this.employee_count;
+  }
 
   getSubdomain(): string | undefined {
     return this.subdomain;
@@ -296,7 +313,7 @@ export default class Tenant extends TenantModel {
   }
 
   getDatabasePassword(): string | undefined {
-    return this.database_password;
+    return this.getDecryptedDatabasePassword();
   }
 
   /**
@@ -353,6 +370,17 @@ export default class Tenant extends TenantModel {
    */
   isEuroZone(): boolean {
     return this.primary_currency_code === 'EUR';
+  }
+
+
+// Méthode publique pour définir la configuration DB
+  async defineDatabaseConfig(): Promise<void> {
+    try {
+      await this.defineDb();
+    } catch (error: any) {
+      console.error('⚠️ Erreur définition config DB tenant:', error.message);
+      throw new Error(error);
+    }
   }
 
   /**
@@ -524,6 +552,7 @@ export default class Tenant extends TenantModel {
       // [RS.DATABASE_USERNAME]: this.database_username,
       [RS.SHORT_NAME]: this.short_name,
       [RS.REGISTRATION_NUMBER]: this.registration_number,
+      [RS.EMPLOYEE_COUNT]: this.employee_count,
       // Note: Ne pas exposer le mot de passe dans le JSON
     };
   }
@@ -555,6 +584,7 @@ export default class Tenant extends TenantModel {
     this.billing_phone = data.billing_phone;
     this.status = data.status;
     this.registration_number = data.registration_number;
+    this.employee_count = data.employee_count;
     this.subdomain = data.subdomain;
     this.database_name = data.database_name;
     this.database_username = data.database_username;

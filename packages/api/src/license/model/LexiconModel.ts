@@ -1,6 +1,8 @@
+import { LEXICON_ERRORS, LexiconValidationUtils } from '@toke/shared';
+
 import BaseModel from '../database/db.base.js';
-import { LexiconDbStructure } from '../database/data/lexicon.db.js';
 import { tableName } from '../../utils/response.model.js';
+
 
 export default class LexiconModel extends BaseModel {
   public readonly db = {
@@ -168,41 +170,46 @@ export default class LexiconModel extends BaseModel {
     }
   }
 
-  /**
-   * Retrieves the last modification time from the database.
-   *
-   * Executes a query to fetch the most recent update timestamp
-   * from the specified database table.
-   *
-   * @return {Promise<Date | null>} A promise that resolves to the last modification date
-   * or null if no date is available or if an error occurs.
-   */
-  protected async getLastModification(): Promise<Date | null> {
-    try {
-      return await this.findLastModification(this.db.tableName);
-    } catch (error: any) {
-      console.log(`Failed to get last modification time: ${error.message}`);
-      return null;
-    }
-  }
+  // /**
+  //  * Retrieves the last modification time from the database.
+  //  *
+  //  * Executes a query to fetch the most recent update timestamp
+  //  * from the specified database table.
+  //  *
+  //  * @return {Promise<Date | null>} A promise that resolves to the last modification date
+  //  * or null if no date is available or if an error occurs.
+  //  */
+  // protected async getLastModification(): Promise<Date | null> {
+  //   try {
+  //     return await this.findLastModification(this.db.tableName);
+  //   } catch (error: any) {
+  //     console.log(`Failed to get last modification time: ${error.message}`);
+  //     return null;
+  //   }
+  // }
 
   /**
    * Valide les données avant création/mise à jour
    */
   private async validate(): Promise<void> {
     // Valider la référence
-    if (!this.reference || !LexiconDbStructure.validation.validateReference(this.reference)) {
-      throw new Error('Reference must be in camelCase format and between 1-50 characters');
+    if (!this.reference){
+      throw new Error(LEXICON_ERRORS.REFERENCE_REQUIRED);
+    }
+    if(!LexiconValidationUtils.validateReference(this.reference)){
+      throw new Error(LEXICON_ERRORS.REFERENCE_INVALID);
     }
 
     // Valider les traductions
-    if (!this.translation || !LexiconDbStructure.validation.validateTranslation(this.translation)) {
-      throw new Error(
-        'Translation must be an object with at least French (fr) and valid ISO 639-1 language codes'
-      );
+    if (!this.translation){
+      throw new Error(LEXICON_ERRORS.TRANSLATION_REQUIRED);
+    }
+    if (!(await LexiconValidationUtils.validateTranslation(this.translation))){
+      throw new Error(LEXICON_ERRORS.TRANSLATION_INVALID);
     }
 
     // Nettoyer les données
-    LexiconDbStructure.validation.cleanData(this);
+    const cleaned = LexiconValidationUtils.cleanLexiconData(this);
+    Object.assign(this, cleaned);
   }
 }

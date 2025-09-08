@@ -39,7 +39,8 @@
     "stop": "node scripts/stop.js",
     "kill": "node scripts/kill.js",
     "status": "node scripts/status.js",
-    "nuclear-cleanup": "node scripts/nuclear-cleanup.js"
+    "nuclear-cleanup": "node scripts/nuclear-cleanup.js",
+    "genkey": "node -e \"console.log(require('crypto').randomBytes(32).toString('hex'))\""
   },
   "keywords": [],
   "author": "",

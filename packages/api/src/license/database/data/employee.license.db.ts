@@ -1,6 +1,6 @@
 import { DataTypes, ModelAttributes, ModelOptions } from 'sequelize';
 
-import G from '../../../tools/glossary.js';
+import { tableName } from '../../../utils/response.model.js';
 
 export enum ContractualStatus {
   ACTIVE = 'ACTIVE',
@@ -24,7 +24,7 @@ export enum BillingStatusComputed {
 }
 
 export const EmployeeLicenseDbStructure = {
-  tableName: `${G.tableAp}_employee_license`,
+  tableName: tableName.EMPLOYEE_LICENSE,
   attributes: {
     id: {
       type: DataTypes.INTEGER,
@@ -43,6 +43,7 @@ export const EmployeeLicenseDbStructure = {
       validate: {
         isInt: true,
         min: 100000,
+        max: 999999,
       },
       comment: 'Unique, automatically generated digital GUID',
     },
@@ -50,7 +51,7 @@ export const EmployeeLicenseDbStructure = {
       type: DataTypes.INTEGER,
       allowNull: false,
       references: {
-        model: `${G.tableAp}_global_license`,
+        model: tableName.GLOBAL_LICENSE,
         key: 'id',
       },
       validate: {
@@ -189,7 +190,7 @@ export const EmployeeLicenseDbStructure = {
     },
   } as ModelAttributes,
   options: {
-    tableName: `${G.tableAp}_employee_license`,
+    tableName: tableName.EMPLOYEE_LICENSE,
     timestamps: true,
     createdAt: 'created_at',
     updatedAt: 'updated_at',
@@ -262,6 +263,38 @@ export const EmployeeLicenseDbStructure = {
         name: 'idx_employee_license_grace_period_end',
       },
     ],
+    // Validation au niveau du modèle pour reproduire les contraintes PostgreSQL
+    validate: {
+      // Contrainte anti-fraude : pas de congé déclaré avec activité récente
+      noLongLeaveWithRecentActivity() {
+        if (this.declared_long_leave && this.last_activity_date) {
+          const sevenDaysAgo = new Date();
+          sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
+
+          if (this.last_activity_date >= sevenDaysAgo) {
+            throw new Error('Cannot declare long leave with recent activity (within 7 days)');
+          }
+        }
+      },
+
+      // Contrainte : données de congé valides
+      validLongLeaveData() {
+        if (this.declared_long_leave) {
+          if (!this.long_leave_declared_by || !this.long_leave_declared_at) {
+            throw new Error('Long leave requires declared_by and declared_at fields');
+          }
+        }
+      },
+
+      // Contrainte : date de désactivation valide
+      validDeactivationDate() {
+        if (this.deactivation_date && this.activation_date) {
+          if (this.deactivation_date < this.activation_date) {
+            throw new Error('Deactivation date must be after activation date');
+          }
+        }
+      }
+    }
   } as ModelOptions,
   validation: {
     validateGlobalLicense: (globalLicense: number): boolean => {

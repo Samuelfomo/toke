@@ -18,6 +18,7 @@ export * from './constants/language.js';
 export * from './constants/tax.rule.js';
 export * from './constants/tenant.js';
 export * from './constants/global.license.js';
+export * from './constants/lexicon.js';
 
 // Export des schémas
 export * from './schemas/country.js';
@@ -27,6 +28,7 @@ export * as LS from './schemas/language.js';
 export * as TR from './schemas/tax.rule.js';
 export * as TN from './schemas/tenant.js';
 export * as GL from './schemas/global.license.js';
+export * as LX from './schemas/lexicon.js';
 
 // Export des utilitaires
 export * from './utils/country.validation.js';
@@ -37,3 +39,4 @@ export * from './utils/language.validation.js';
 export * from './utils/tax.rule.validation.js';
 export * from './utils/tenant.validation.js';
 export * from './utils/global.license.validation.js';
+export * from './utils/lexicon.validation.js';

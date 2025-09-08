@@ -1,11 +1,11 @@
 import { Request, Response, Router } from 'express';
-import { HttpStatus, } from '@toke/shared';
+import { HttpStatus, LEXICON_CODES, LEXICON_ERRORS, LexiconValidationUtils, LX } from '@toke/shared';
 
 import Lexicon from '../class/Lexicon.js';
 import R from '../../tools/response.js';
-import G from '../../tools/glossary.js';
 import Ensure from '../middle/ensured-routes.js';
-import { iso639Codes } from '../database/data/lexicon.db.js';
+import Revision from '../../tools/revision.js';
+import { tableName } from '../../utils/response.model.js';
 
 const router = Router();
 
@@ -18,15 +18,15 @@ router.get(
   '/',
   Ensure.get(),
   // UserAuth.authenticate,
-  async (req: Request, res: Response) => {
+  async (_req: Request, res: Response) => {
     try {
       const exportData = await Lexicon.exportable();
-      R.handleSuccess(res, { available_language: iso639Codes, lexicons: exportData });
+      R.handleSuccess(res,  exportData);
     } catch (error: any) {
       console.error('❌ Erreur export complet:', error);
       R.handleError(res, HttpStatus.INTERNAL_ERROR, {
-        code: 'export_failed',
-        message: 'Failed to export lexicon',
+        code: LEXICON_CODES.EXPORT_FAILED,
+        message: LEXICON_ERRORS.EXPORT_FAILED,
       });
     }
   }
@@ -37,9 +37,9 @@ router.get(
  */
 router.get('/revision', Ensure.get(), async (req: Request, res: Response) => {
   try {
-    const instance = new Lexicon();
-    const revision = await (instance as any).getRevision(); // Accès à la méthode private
-
+    // const instance = new Lexicon();
+    // const revision = await (instance as any).getRevision(); // Accès à la méthode private
+    const revision = await Revision.getRevision(tableName.LEXICON);
     R.handleSuccess(res, {
       revision,
       checked_at: new Date().toISOString(),
@@ -47,7 +47,7 @@ router.get('/revision', Ensure.get(), async (req: Request, res: Response) => {
   } catch (error: any) {
     console.error('❌ Erreur récupération révision:', error);
     R.handleError(res, HttpStatus.INTERNAL_ERROR, {
-      code: 'revision_check_failed',
+      code: LEXICON_CODES.SEARCH_FAILED,
       message: 'Failed to get current revision',
     });
   }
@@ -76,14 +76,13 @@ router.get(
       };
 
       R.handleSuccess(res, {
-        available_language: iso639Codes,
         lexicons,
       });
     } catch (error: any) {
       console.error('❌ Erreur listing lexique:', error);
       R.handleError(res, HttpStatus.INTERNAL_ERROR, {
-        code: 'listing_failed',
-        message: 'Failed to list lexicon entries',
+        code: LEXICON_CODES.LISTING_FAILED,
+        message: LEXICON_ERRORS.NOT_FOUND,
       });
     }
   }
@@ -95,13 +94,11 @@ router.get(
 router.get('/:lang', Ensure.get(), async (req: Request, res: Response) => {
   try {
     const { lang } = req.params;
-
-    // ✅ Validation manuelle du code langue
-    if (!/^[a-z]{2}$/i.test(lang)) {
+    if (!(await LexiconValidationUtils.validateLanguageCode(lang))){
       return R.handleError(res, HttpStatus.BAD_REQUEST, {
-        code: 'invalid_language_code',
-        message: 'Language code must be 2 letters (e.g., fr, en)',
-      });
+        code: LEXICON_CODES.LANGUAGE_CODE_INVALID,
+        message: LEXICON_ERRORS.LANGUAGE_CODE_INVALID,
+      })
     }
 
     const exportData = await Lexicon.exportable(lang);
@@ -110,11 +107,11 @@ router.get('/:lang', Ensure.get(), async (req: Request, res: Response) => {
     res.setHeader('X-Lexicon-Revision', exportData.revision);
     res.setHeader('X-Language', lang);
 
-    R.handleSuccess(res, { available_language: iso639Codes, lexicons: exportData });
+    R.handleSuccess(res, exportData );
   } catch (error: any) {
     console.error('❌ Erreur export langue:', error);
     R.handleError(res, HttpStatus.INTERNAL_ERROR, {
-      code: 'export_language_failed',
+      code: LEXICON_CODES.EXPORT_FAILED,
       message: `Failed to export lexicon for language: ${req.params.lang}`,
     });
   }
@@ -133,38 +130,44 @@ router.post(
   // UserAuth.authenticate,
   async (req: Request, res: Response) => {
     try {
-      const { reference, translation, portable = true } = req.body;
 
-      // Validation des champs requis
-      if (!reference) {
-        return R.handleError(res, HttpStatus.BAD_REQUEST, G.referenceRequired);
-      }
-
-      if (!translation) {
-        return R.handleError(res, HttpStatus.BAD_REQUEST, G.translationRequired);
-      }
-
+      const validatedData = LX.validateLexiconCreation(req.body);
       const lexicon = new Lexicon()
-        .setReference(reference)
-        .setTranslation(translation)
-        .setPortable(portable);
+        .setReference(validatedData.reference)
+        .setTranslation(validatedData.translation)
+        .setPortable(validatedData.portable);
 
       await lexicon.save();
 
-      console.log(`✅ Lexique créé: ${reference} (GUID: ${lexicon.getGuid()})`);
+      console.log(`✅ Lexique créé: ${validatedData.reference} (GUID: ${lexicon.getGuid()})`);
       R.handleCreated(res, lexicon.toJSON());
     } catch (error: any) {
       console.error('❌ Erreur création lexique:', error);
 
-      if (error.message.includes('already exists')) {
-        R.handleError(res, HttpStatus.CONFLICT, G.referenceExists);
+      if (error.issues) { // Erreur Zod
+        return R.handleError(res, HttpStatus.BAD_REQUEST, {
+          code: LEXICON_CODES.VALIDATION_FAILED,
+          message: 'Validation failed',
+          details: error.issues,
+        });
+      } else if (error.message.includes('already exists')) {
+        R.handleError(res, HttpStatus.CONFLICT, {
+          code: LEXICON_CODES.LEXICON_ALREADY_EXISTS,
+          message: LEXICON_ERRORS.REFERENCE_ALREADY_EXISTS,
+        });
       } else if (error.message.includes('camelCase')) {
-        R.handleError(res, HttpStatus.BAD_REQUEST, G.referenceRequired);
+        R.handleError(res, HttpStatus.BAD_REQUEST, {
+          code: LEXICON_CODES.VALIDATION_FAILED,
+          message: LEXICON_ERRORS.REFERENCE_REQUIRED
+        });
       } else if (error.message.includes('French')) {
-        R.handleError(res, HttpStatus.BAD_REQUEST, G.frenchTranslationRequired);
+        R.handleError(res, HttpStatus.BAD_REQUEST, {
+          code: LEXICON_CODES.DEFAULT_LANGUAGE_MISSING,
+          message: LEXICON_ERRORS.DEFAULT_LANGUAGE_REQUIRED
+        });
       } else {
         R.handleError(res, HttpStatus.BAD_REQUEST, {
-          code: 'creation_failed',
+          code: LEXICON_CODES.CREATION_FAILED,
           message: error.message,
         });
       }
@@ -181,25 +184,31 @@ router.put(
   // UserAuth.authenticate,
   async (req: Request, res: Response) => {
     try {
-      // ✅ Validation manuelle du GUID
-      if (!/^\d+$/.test(req.params.guid)) {
-        return R.handleError(res, HttpStatus.BAD_REQUEST, G.invalidGuid);
+
+     const valideGuid = LexiconValidationUtils.validateLexiconGuid(req.params.guid);
+      if (!valideGuid){
+        return R.handleError(res, HttpStatus.BAD_REQUEST, {
+          code: LEXICON_CODES.INVALID_GUID,
+          message: LEXICON_ERRORS.GUID_INVALID,
+        })
       }
 
-      const guid = parseInt(req.params.guid);
+      const guid = parseInt(req.params.guid, 10);
 
       // Charger par GUID
       const lexicon = await Lexicon._load(guid, true);
       if (!lexicon) {
-        return R.handleError(res, HttpStatus.NOT_FOUND, G.lexiconNotFound);
+        return R.handleError(res, HttpStatus.NOT_FOUND, {
+          code: LEXICON_CODES.LEXICON_NOT_FOUND,
+          message: LEXICON_ERRORS.NOT_FOUND,
+        });
       }
 
-      const { reference, translation, portable } = req.body;
-
+      const validatedData = LX.validateLexiconUpdate(req.body);
       // Mise à jour des champs fournis
-      if (reference !== undefined) lexicon.setReference(reference);
-      if (translation !== undefined) lexicon.setTranslation(translation);
-      if (portable !== undefined) lexicon.setPortable(portable);
+      if (validatedData.reference !== undefined) lexicon.setReference(validatedData.reference);
+      if (validatedData.translation !== undefined) lexicon.setTranslation(validatedData.translation);
+      if (validatedData.portable !== undefined) lexicon.setPortable(validatedData.portable);
 
       await lexicon.save();
 
@@ -209,14 +218,23 @@ router.put(
       console.error('❌ Erreur modification lexique:', error);
 
       if (error.message.includes('already exists')) {
-        R.handleError(res, HttpStatus.CONFLICT, G.referenceExists);
+        R.handleError(res, HttpStatus.CONFLICT, {
+          code: LEXICON_CODES.LEXICON_ALREADY_EXISTS,
+          message: LEXICON_ERRORS.REFERENCE_ALREADY_EXISTS,
+        });
       } else if (error.message.includes('camelCase')) {
-        R.handleError(res, HttpStatus.BAD_REQUEST, G.referenceRequired);
+        R.handleError(res, HttpStatus.BAD_REQUEST, {
+          code: LEXICON_CODES.VALIDATION_FAILED,
+          message: LEXICON_ERRORS.REFERENCE_REQUIRED
+        });
       } else if (error.message.includes('French')) {
-        R.handleError(res, HttpStatus.BAD_REQUEST, G.frenchTranslationRequired);
+        R.handleError(res, HttpStatus.BAD_REQUEST, {
+          code: LEXICON_CODES.DEFAULT_LANGUAGE_MISSING,
+          message: LEXICON_ERRORS.DEFAULT_LANGUAGE_REQUIRED
+        });
       } else {
         R.handleError(res, HttpStatus.BAD_REQUEST, {
-          code: 'update_failed',
+          code: LEXICON_CODES.UPDATE_FAILED,
           message: error.message,
         });
       }
@@ -233,17 +251,23 @@ router.delete(
   // UserAuth.authenticate,
   async (req: Request, res: Response) => {
     try {
-      // ✅ Validation manuelle du GUID
-      if (!/^\d+$/.test(req.params.guid)) {
-        return R.handleError(res, HttpStatus.BAD_REQUEST, G.invalidGuid);
+      const validateGuid = LexiconValidationUtils.validateLexiconGuid(req.params.guid);
+      if (!validateGuid){
+        return R.handleError(res, HttpStatus.BAD_REQUEST, {
+          code: LEXICON_CODES.INVALID_GUID,
+          message: LEXICON_ERRORS.GUID_INVALID,
+        })
       }
 
-      const guid = parseInt(req.params.guid);
+      const guid = parseInt(req.params.guid, 10);
 
       // Charger par GUID
       const lexicon = await Lexicon._load(guid, true);
       if (!lexicon) {
-        return R.handleError(res, HttpStatus.NOT_FOUND, G.lexiconNotFound);
+        return R.handleError(res, HttpStatus.NOT_FOUND, {
+          code: LEXICON_CODES.LEXICON_NOT_FOUND,
+          message: LEXICON_ERRORS.NOT_FOUND,
+        });
       }
 
       const deleted = await lexicon.delete();
@@ -255,12 +279,15 @@ router.delete(
           guid: guid,
         });
       } else {
-        R.handleError(res, HttpStatus.INTERNAL_ERROR, G.savedError);
+        R.handleError(res, HttpStatus.INTERNAL_ERROR, {
+          code: LEXICON_CODES.DELETE_FAILED,
+          message: LEXICON_ERRORS.DELETE_FAILED,
+        });
       }
     } catch (error: any) {
       console.error('❌ Erreur suppression lexique:', error);
       R.handleError(res, HttpStatus.INTERNAL_ERROR, {
-        code: 'deletion_failed',
+        code: LEXICON_CODES.DELETE_FAILED,
         message: error.message,
       });
     }
@@ -280,18 +307,28 @@ router.get(
   // ServerAuth.requirePermission(E.postLexicon),
   async (req: Request, res: Response) => {
     try {
-      const { reference } = req.params;
+      const validateRef = LexiconValidationUtils.validateReference(req.params.reference);
+      if (!validateRef) {
+        return R.handleError(res, HttpStatus.BAD_REQUEST, {
+          code: LEXICON_CODES.REFERENCE_INVALID,
+          message: LEXICON_ERRORS.REFERENCE_INVALID,
+        })
+      }
+      const reference = req.params.reference;
       const lexicon = await Lexicon._load(reference, false, true);
 
       if (!lexicon) {
-        return R.handleError(res, HttpStatus.NOT_FOUND, G.lexiconNotFound);
+        return R.handleError(res, HttpStatus.NOT_FOUND, {
+          code: LEXICON_CODES.LEXICON_NOT_FOUND,
+          message: LEXICON_ERRORS.NOT_FOUND,
+        });
       }
 
       R.handleSuccess(res, lexicon.toJSON());
     } catch (error: any) {
       console.error('❌ Erreur recherche lexique:', error.message);
       R.handleError(res, HttpStatus.INTERNAL_ERROR, {
-        code: 'search_failed',
+        code: LEXICON_CODES.SEARCH_FAILED,
         message: `Failed to search lexicon entry ${error.message}`,
       });
     }
@@ -307,24 +344,31 @@ router.patch(
   // UserAuth.authenticate,
   async (req: Request, res: Response) => {
     try {
-      // ✅ Validation manuelle du GUID
-      if (!/^\d+$/.test(req.params.guid)) {
-        return R.handleError(res, HttpStatus.BAD_REQUEST, G.invalidGuid);
+
+      const validateGuid = LexiconValidationUtils.validateLexiconGuid(req.params.guid);
+      if (!validateGuid) {
+        return R.handleError(res, HttpStatus.BAD_REQUEST, {
+          code: LEXICON_CODES.INVALID_GUID,
+          message: LEXICON_ERRORS.REFERENCE_INVALID,
+        })
       }
 
-      const guid = parseInt(req.params.guid);
+      const guid = parseInt(req.params.guid, 10);
 
       const lexicon = await Lexicon._load(guid, true);
       if (!lexicon) {
-        return R.handleError(res, HttpStatus.NOT_FOUND, G.lexiconNotFound);
+        return R.handleError(res, HttpStatus.NOT_FOUND, {
+          code: LEXICON_CODES.LEXICON_NOT_FOUND,
+          message: LEXICON_ERRORS.NOT_FOUND,
+        });
       }
 
-      // Valider que req.body contient des traductions
-      if (!req.body || typeof req.body !== 'object') {
+      const validateTranslation = LexiconValidationUtils.validateTranslation(req.body);
+      if (!validateTranslation) {
         return R.handleError(res, HttpStatus.BAD_REQUEST, {
-          code: 'invalid_translations',
-          message: 'Translations object is required',
-        });
+          code: LEXICON_CODES.TRANSLATION_INVALID,
+          message: LEXICON_ERRORS.TRANSLATION_INVALID,
+        })
       }
 
       await lexicon.updatePartialTranslations(req.body);
@@ -335,10 +379,13 @@ router.patch(
       console.error('❌ Erreur mise à jour traductions:', error);
 
       if (error.message.includes('French')) {
-        R.handleError(res, HttpStatus.BAD_REQUEST, G.frenchTranslationRequired);
+        R.handleError(res, HttpStatus.BAD_REQUEST, {
+          code: LEXICON_CODES.DEFAULT_LANGUAGE_MISSING,
+          message: LEXICON_ERRORS.DEFAULT_LANGUAGE_REQUIRED
+        });
       } else {
         R.handleError(res, HttpStatus.BAD_REQUEST, {
-          code: 'translation_update_failed',
+          code: LEXICON_CODES.TRANSLATION_UPDATE_FAILED,
           message: error.message,
         });
       }

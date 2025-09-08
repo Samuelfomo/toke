@@ -36,6 +36,13 @@ const baseTenantSchema = z.object({
     )
     .transform((val) => val.trim()),
 
+  employee_count: z
+    .array(z.number())
+    .length(2, TENANT_ERRORS.EMPLOYEE_COUNT_INVALID)
+    .refine(([min, max]) => min! < max!, {
+      message: TENANT_ERRORS.EMPLOYEE_COUNT_INVALID,
+    }),
+
   short_name: z
     .string({
       invalid_type_error: TENANT_ERRORS.SHORT_NAME_INVALID,
