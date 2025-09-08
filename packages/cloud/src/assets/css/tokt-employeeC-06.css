@@ -1,0 +1,181 @@
+/* src/assets/css/tokt-employeeC-06.css */
+.employee-card {
+    display: flex;
+    align-items: center;
+    gap: var(--space-md);
+    padding: var(--space-md);
+    border: 1px solid var(--border-light);
+    border-radius: 8px;
+    background: var(--bg-primary);
+    margin-bottom: var(--space-sm);
+    transition: all 0.2s;
+}
+
+.employee-card:hover {
+    border-color: var( --color-primary);
+    box-shadow: 0 2px 8px rgba(0, 74, 173, 0.1);
+}
+
+.employee-card.has-issue {
+    border-left: 4px solid var(--color-secondary);
+}
+
+.employee-main {
+    display: flex;
+    align-items: center;
+    gap: var(--space-md);
+    flex: 1;
+    min-width: 0;
+}
+
+.employee-avatar {
+    position: relative;
+    flex-shrink: 0;
+}
+
+.avatar-employee {
+    width: 48px;
+    height: 48px;
+    border-radius: 50%;
+    background: var(--color-primary);
+    color: white;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 600;
+    font-size: 16px;
+}
+
+.status-indicator {
+    position: absolute;
+    bottom: 0;
+    right: 0;
+    width: 14px;
+    height: 14px;
+    border-radius: 50%;
+    border: 2px solid var(--bg-primary);
+}
+
+/* UTILITAIRES */
+.hidden {
+    display: none;
+}
+
+.icon {
+    width: 20px;
+    height: 20px;
+}
+
+.icon-sm {
+    width: 16px;
+    height: 16px;
+}
+
+.icon-xs {
+    width: 14px;
+    height: 14px;
+}
+
+.indicator-present { background: var(--color-success); }
+.indicator-late { background: var(--color-warning); }
+.indicator-absent { background: var(--color-error); }
+.indicator-leave { background: var(--color-primary); }
+
+.employee-info {
+    flex: 1;
+    min-width: 0;
+}
+
+.employee-name {
+    font-size: 16px;
+    font-weight: 600;
+    color: var(--text-primary);
+    margin-bottom: var(--space-xs);
+}
+
+.employee-status {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    margin-bottom: var(--space-xs);
+}
+
+.status-text {
+    font-size: 14px;
+    font-weight: 500;
+    color: var(--text-primary);
+}
+
+.time-info {
+    font-size: 13px;
+    color: var(--text-secondary);
+}
+
+.context-info {
+    font-size: 13px;
+    color: var(--text-secondary);
+}
+
+.employee-issue {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    background: rgba(220, 53, 69, 0.1);
+    padding: 6px var(--space-sm);
+    border-radius: 6px;
+    margin-top: var(--space-xs);
+}
+
+.issue-text {
+    font-size: 12px;
+    color: var(--color-error);
+    font-weight: 500;
+}
+
+.employee-actions {
+    display: flex;
+    gap: var(--space-sm);
+    flex-shrink: 0;
+}
+
+.action-btn-small {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: var(--space-sm) 12px;
+    background: var(--bg-primary);
+    border: 1px solid var(--border-light);
+    border-radius: 6px;
+    color: var(--text-primary);
+    font-size: 13px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s;
+    white-space: nowrap;
+    text-decoration: none;
+}
+
+.action-btn-small:hover {
+    border-color: var(--color-primary);
+    color: var(--color-primary);
+}
+
+/* RESPONSIVE */
+@media (max-width: 768px) {
+    .employee-card {
+        padding: 12px;
+        gap: 12px;
+    }
+}
+@media (max-width: 480px) {
+    .employee-card {
+        flex-direction: column;
+        text-align: center;
+        gap: 12px;
+    }
+    .employee-main {
+        flex-direction: column;
+        text-align: center;
+        gap: 12px;
+    }
+}

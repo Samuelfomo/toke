@@ -8,7 +8,7 @@
     loading-text="Vérification..."
     :default-fields="[]"
     :validation="validateOtp"
-    :back-link="{ url: '/', text: 'Reessayer' }"
+    :back-link="{ url: '/auth', text: 'Reessayer' }"
     @submit="handleOtpVerification"
   >
     <!-- Champs OTP personnalisés -->
@@ -39,7 +39,7 @@
     <template #footer>
       <p class="request-again">
         Vous n'avez pas reçu de code ?
-        <a href="/" class="request-link">Reessayer</a>
+        <a href="/auth" class="request-link">Reessayer</a>
       </p>
       <small class="text-black-50 text-center font-primary lead-0-75">
         Copyright Imediatis 2025-2025

@@ -39,7 +39,7 @@
 import { ref, onMounted} from 'vue';
 import Header from "@/views/components/layouts/header.vue";
 import Footer from "@/views/components/layouts/footer.vue";
-// import Dashboard from "@/components/dashboard.vue";
+// import Dashboard from "@/components/dashboardMain.vue";
 
 const handleCreate = () => {
   alert('Création déclenchée ! 🎉')
