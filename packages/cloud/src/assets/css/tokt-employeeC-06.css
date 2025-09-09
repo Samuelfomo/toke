@@ -79,7 +79,7 @@
 .indicator-present { background: var(--color-success); }
 .indicator-late { background: var(--color-warning); }
 .indicator-absent { background: var(--color-error); }
-.indicator-leave { background: var(--color-primary); }
+.indicator-info { background: var(--color-primary); }
 
 .employee-info {
     flex: 1;
@@ -138,6 +138,19 @@
     flex-shrink: 0;
 }
 
+.employee-validated {
+    display: flex;
+    align-items: center;
+    gap: 0.25rem;
+    color: #10b981; /* Couleur verte pour la validation */
+    font-size: 0.875rem;
+    font-weight: 500;
+}
+
+.validated-text {
+    color: #10b981;
+}
+
 .action-btn-small {
     display: flex;
     align-items: center;
@@ -155,9 +168,24 @@
     text-decoration: none;
 }
 
+.action-primary:hover {
+    background: var( --color-primary);
+    border-color: var( --color-primary);
+    color: white;
+}
+.action-label {
+    display: none;
+}
+
+.action-warning:hover {
+    background: var(--color-warning);
+    border-color: var( --color-warning);
+    color: white;
+}
+
 .action-btn-small:hover {
-    border-color: var(--color-primary);
-    color: var(--color-primary);
+    border-color: var( --color-primary);
+    color: #FFFFFF;
 }
 
 /* RESPONSIVE */

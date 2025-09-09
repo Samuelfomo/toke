@@ -28,6 +28,8 @@ import Auth from './views/auth.vue';
 import Otp from './views/otp.vue';
 import Welcome from './views/welcome.vue';
 import DashboardMain from './views/dashboard/dashboardMain.vue';
+import Memo from './views/memo.vue';
+import Module from './views/module.vue';
 // Typage explicite des routes
 
 // Typage explicite des routes
@@ -42,7 +44,7 @@ const routes: RouteRecordRaw[] = [
     name: 'country',
     component: Country,
   },{
-    path: '/auth',
+    path: '/',
     name: 'auth',
     component: Auth,
   },
@@ -57,9 +59,19 @@ const routes: RouteRecordRaw[] = [
     component: Otp,
   },
   {
-    path: '/',
+    path: '/dashboard',
     name: 'dashboard',
     component: DashboardMain,
+  },
+  {
+    path: '/memo',
+    name: 'memo',
+    component: Memo,
+  },
+  {
+    path: '/module',
+    name: 'module',
+    component: Module,
   },
 ];
 

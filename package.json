@@ -23,7 +23,9 @@
   "dependencies": {
     "eslint": "^9.34.0",
     "glob": "^11.0.3",
+    "pinia": "^3.0.3",
     "pm2": "^6.0.8",
-    "rimraf": "^6.0.1"
+    "rimraf": "^6.0.1",
+    "vue-router": "^4.5.1"
   }
 }

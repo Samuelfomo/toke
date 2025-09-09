@@ -56,7 +56,9 @@ import otpCss from '../assets/css/toke-otp-02.css?url'
 import authCss from '../assets/css/toke-auth-01.css?url'
 import AuthForm from './components/auth/authForm.vue'
 import HeadBuilder from './../utils/HeadBuilder';
+import { useRouter } from 'vue-router';
 
+const router = useRouter()
 // État des champs OTP
 const otpDigits = ref(['', '', '', '', '', ''])
 const inputRefs = ref<(HTMLInputElement | null)[]>([])
@@ -166,5 +168,7 @@ const handleOtpVerification = async (formData: any) => {
   // Simulation d'appel API
   await new Promise(resolve => setTimeout(resolve, 2000))
   console.log('Code vérifié avec succès')
+  // ✅ Redirection après succès
+  router.push('/dashboard')
 }
 </script>

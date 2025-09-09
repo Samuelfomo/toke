@@ -18,10 +18,12 @@
     font-size: 32px;
     font-weight: 700;
     color: var(--text-primary);
+    margin: 0; /* Supprime les marges par défaut */
 }
 
 .date-info {
     text-align: right;
+    flex-shrink: 0; /* Empêche la compression */
 }
 
 .current-date {
@@ -35,6 +37,7 @@
     font-size: 14px;
     color: var(--text-muted);
 }
+
 .stats-grid {
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
@@ -47,7 +50,7 @@
     align-items: center;
     gap: var(--space-md);
     padding: 20px;
-    background: var(  --bg-secondary);
+    background: var(--bg-secondary);
     border-radius: 12px;
     border: 2px solid transparent;
     transition: all 0.2s;
@@ -115,7 +118,7 @@
 .stat-percentage {
     font-size: 18px;
     font-weight: 600;
-    color: var( --color-success);
+    color: var(--color-success);
     margin-top: var(--space-xs);
 }
 
@@ -163,8 +166,8 @@
 }
 
 .action-late:hover {
-    border-color: var(  --color-warning);
-    color: var(  --color-warning);
+    border-color: var(--color-warning);
+    color: var(--color-warning);
 }
 
 .presence-progress {
@@ -230,6 +233,7 @@
     }
     .date-info {
         align-self: stretch;
+        text-align: left; /* Sur mobile, alignement à gauche */
     }
     .stats-grid {
         grid-template-columns: 1fr;

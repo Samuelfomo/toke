@@ -44,8 +44,8 @@
 }
 
 .company-name {
-    font-size: 18px;
-    font-weight: 600;
+    font-size: 10px;
+    font-weight: 400;
     color: var(--text-primary);
 }
 
@@ -109,9 +109,20 @@
 }
 
 .user-name {
-    font-size: 16px;
-    font-weight: 500;
+    font-size: 18px;
+    font-weight: 600;
     color: var(--text-primary);
+}
+
+.profile-menu {
+    display: flex;
+    align-items: center; /* This will vertically align the avatar and the text */
+    gap: 10px; /* Adjust as needed for spacing between the avatar and text */
+}
+
+.user-info {
+    display: flex;
+    flex-direction: column; /* This will stack the name and company vertically */
 }
 
 .main-navigation {

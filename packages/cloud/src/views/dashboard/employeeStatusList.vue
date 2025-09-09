@@ -4,51 +4,65 @@
       <a
         v-for="tab in tabs"
         :key="tab.key"
-        :href="'#'"
         :class="['filter-btn', { active: activeTab === tab.key }]"
         @click.prevent="setActiveTab(tab.key)"
       >
-        <svg class="icon-sm" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
-        </svg>
         <span>{{ tab.label }}</span>
         <span class="filter-count">{{ tab.count }}</span>
       </a>
     </div>
 
     <div class="employee-list">
-      <div v-if="activeTab === 'problems'" class="section-title section-problems">
-        <span>Problèmes à traiter ({{ problemEmployees.length }})</span>
-        <svg class="chevron-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
-        </svg>
+      <div v-if="activeTab === 'all' || activeTab === 'problems'">
+        <div class="section-title section-problems">
+          <span>Problèmes à traiter ({{ problemEmployees.length }})</span>
+          <svg class="chevron-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
+          </svg>
+        </div>
+        <div class="employees-grid">
+          <EmployeeCard
+            v-for="employee in problemEmployees"
+            :key="employee.id"
+            :employee="employee"
+          />
+        </div>
       </div>
 
-      <div v-if="activeTab === 'info'" class="section-title section-info">
-        <span>Informations ({{ infoEmployees.length }})</span>
-        <svg class="chevron-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
-        </svg>
+      <div v-if="activeTab === 'all' || activeTab === 'info'">
+        <div class="section-title section-info">
+          <span>Informations ({{ infoEmployees.length }})</span>
+          <svg class="chevron-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
+          </svg>
+        </div>
+        <div class="employees-grid">
+          <EmployeeCard
+            v-for="employee in infoEmployees"
+            :key="employee.id"
+            :employee="employee"
+          />
+        </div>
       </div>
 
-      <div v-if="activeTab === 'present'" class="section-title section-present">
-        <span>Employés présents ({{ presentEmployees.length }})</span>
-        <svg class="chevron-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
-        </svg>
-      </div>
-
-      <div class="employees-grid">
-        <EmployeeCard
-          v-for="employee in filteredEmployees"
-          :key="employee.id"
-          :employee="employee"
-        />
+      <div v-if="activeTab === 'all' || activeTab === 'present'">
+        <div class="section-title section-present">
+          <span>Employés présents ({{ presentEmployees.length }})</span>
+          <svg class="chevron-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
+          </svg>
+        </div>
+        <div class="employees-grid">
+          <EmployeeCard
+            v-for="employee in presentEmployees"
+            :key="employee.id"
+            :employee="employee"
+          />
+        </div>
       </div>
     </div>
   </section>
 </template>
-
 <script setup lang="ts">
 import { ref, computed } from 'vue'
 import EmployeeCard from './employeeCard.vue'
@@ -64,6 +78,8 @@ interface Employee {
   time?: string
   avatar?: string
   priority?: 'high' | 'medium' | 'low'
+  isJustified?: boolean;
+  isValidated?: boolean;
 }
 
 const activeTab = ref<string>('problems')
@@ -71,30 +87,50 @@ const activeTab = ref<string>('problems')
 const employees = ref<Employee[]>([
   {
     id: 1,
-    name: 'Jean Djoko',
-    initials: 'JD',
+    name: 'Samuel Femo',
+    initials: 'SF',
     status: 'absent',
     statusText: 'Absent',
     priority: 'high'
   },
   {
     id: 2,
+    name: 'Manfred Moukate ',
+    initials: 'MM',
+    status: 'late',
+    statusText: 'En retard arrivé à 09:45',
+    location: 'Chantier Bonabéri',
+    isJustified: false
+  },
+  {
+    id: 3,
+    name: 'Jordan',
+    initials: 'J',
+    status: 'late',
+    statusText: 'En retard arrivé à 08:35',
+    location: 'Bureau central',
+    isValidated: false
+  },
+  {
+    id: 3,
+    name: 'Jean Djoko',
+    initials: 'JD',
+    status: 'absent',
+    statusText: 'Absent',
+    priority: 'high',
+    isJustified: false // Ajout pour l'absence non justifiée
+  },
+  {
+    id: 4,
     name: 'Marie Kengne',
     initials: 'MK',
     status: 'late',
     statusText: 'En retard arrivé à 09:45',
-    location: 'Chantier Bonabéri'
+    location: 'Chantier Bonabéri',
+    isValidated: false // Ajout pour le retard
   },
   {
-    id: 3,
-    name: 'Alain Ngomo',
-    initials: 'AN',
-    status: 'late',
-    statusText: 'En retard arrivé à 08:35',
-    location: 'Bureau central'
-  },
-  {
-    id: 4,
+    id: 5,
     name: 'Sophie Raoul',
     initials: 'SR',
     status: 'info',
@@ -102,7 +138,7 @@ const employees = ref<Employee[]>([
     location: 'Congé parental - retour le 15 octobre'
   },
   {
-    id: 5,
+    id: 6,
     name: 'Alex Tchioffo',
     initials: 'AT',
     status: 'info',
@@ -167,20 +203,34 @@ const lateEmployees = computed(() =>
 const filteredEmployees = computed(() => {
   switch (activeTab.value) {
     case 'problems':
-      return problemEmployees.value
-    case 'info':
-      return infoEmployees.value
+      return problemEmployees.value;
     case 'present':
-      return presentEmployees.value
+      return presentEmployees.value;
     case 'absent':
-      return absentEmployees.value
+      return absentEmployees.value;
     case 'late':
-      return lateEmployees.value
+      return lateEmployees.value;
+    case 'info': // Vous avez un cas 'info' séparé, mais il ne semble pas être utilisé dans l'image
+      return infoEmployees.value;
+    case 'all': // C'est ici que vous devez afficher les sections groupées
     default:
-      return employees.value
+      return employees.value; // L'image montre un regroupement spécifique, pas juste tous les employés
+  }
+});
+const statusIcon = computed(() => {
+  switch (props.employee.status) {
+    case 'absent':
+      return 'icon-x' // icône pour absent
+    case 'late':
+      return 'icon-clock' // icône pour en retard
+    case 'present':
+      return 'icon-check' // icône pour présent
+    case 'info':
+      return 'icon-info' // icône pour en congé/formation
+    default:
+      return 'icon-info' // icône par défaut
   }
 })
-
 const setActiveTab = (tab: string) => {
   activeTab.value = tab
 }

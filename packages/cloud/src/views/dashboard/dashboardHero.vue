@@ -1,14 +1,13 @@
 <template>
   <section class="dashboard-hero">
     <div class="hero-header">
-      <div>
-        <h1 class="hero-title">Tableau de bord</h1>
-        <div class="date-info">
-          <div class="current-date">{{ currentDate }}</div>
-          <div class="last-update">Dernière mise à jour: {{ lastUpdate }}</div>
-        </div>
+      <h1 class="hero-title">Tableau de bord</h1>
+      <div class="date-info">
+        <div class="current-date">{{ currentDate }}</div>
+        <div class="last-update">Dernière mise à jour: {{ lastUpdate }}</div>
       </div>
     </div>
+
     <div class="stats-grid">
       <div class="stat-card stat-present">
         <div class="stat-icon">
@@ -22,6 +21,7 @@
           <div class="stat-percentage">{{ stats.present.percentage }}%</div>
         </div>
       </div>
+
       <div class="stat-card stat-warning has-issues">
         <div class="stat-icon">
           <svg class="icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -34,6 +34,7 @@
           <div class="stat-detail">Moyenne: 25min</div>
         </div>
       </div>
+
       <div class="stat-card stat-error has-issues">
         <div class="stat-icon">
           <svg class="icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -46,6 +47,7 @@
           <div class="stat-detail">Non justifiés: 3</div>
         </div>
       </div>
+
       <div class="stat-card stat-info">
         <div class="stat-icon">
           <svg class="icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -59,6 +61,7 @@
         </div>
       </div>
     </div>
+
     <div class="quick-actions">
       <h3 class="actions-title">Actions rapides</h3>
       <div class="actions-grid">
@@ -82,6 +85,7 @@
         </a>
       </div>
     </div>
+
     <div class="presence-progress">
       <div class="progress-header">
         <span class="progress-label">Taux de présence du jour</span>
@@ -96,6 +100,7 @@
     </div>
   </section>
 </template>
+
 <script setup lang="ts">
 import { ref, computed } from 'vue'
 import "../../assets/css/toke-dHero-03.css"
@@ -133,6 +138,9 @@ const stats = ref<Stats>({
   }
 })
 
+// Vous devez définir lastUpdate quelque part
+const lastUpdate = ref('09:30')
+
 const currentDate = computed(() => {
   const date = new Date()
   return `Vendredi ${date.getDate()} septembre`
@@ -145,5 +153,5 @@ const presenceRate = computed(() => {
 </script>
 
 <style>
-
+/* Les styles sont importés depuis le fichier CSS séparé */
 </style>
