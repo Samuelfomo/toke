@@ -130,15 +130,29 @@ export const GlobalLicenseDbStructure = {
       },
       comment: 'Next license renewal date',
     },
+    // total_seats_purchased: {
+    //   type: DataTypes.INTEGER,
+    //   allowNull: true,
+    //   defaultValue: 0,
+    //   validate: {
+    //     isInt: true,
+    //     min: 0,
+    //   },
+    //   comment: 'Total number of seats purchased (calculated field)',
+    // },
     total_seats_purchased: {
       type: DataTypes.INTEGER,
-      allowNull: true,
+      allowNull: false,
       defaultValue: 0,
-      validate: {
-        isInt: true,
-        min: 0,
+      comment: 'Total number of seats purchased (PostgreSQL generated column)',
+      // Getter normal - lit la valeur calculée par PostgreSQL
+      get() {
+        return this.getDataValue('total_seats_purchased');
       },
-      comment: 'Total number of seats purchased (calculated field)',
+      // Setter bloqué - PostgreSQL gère cette colonne
+      set() {
+        throw new Error('Cannot manually set total_seats_purchased - it is automatically computed by PostgreSQL');
+      }
     },
     license_status: {
       type: DataTypes.ENUM(...Object.values(LicenseStatus)),
@@ -161,6 +175,10 @@ export const GlobalLicenseDbStructure = {
     underscored: true,
     freezeTableName: true,
     comment: 'Global license management table',
+
+    // Exclure total_seats_purchased de la synchronisation automatique
+    // car elle sera gérée par la migration PostgreSQL
+    omitNull: false,
 
     // Model-level validations
     validate: {

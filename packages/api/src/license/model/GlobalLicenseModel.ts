@@ -177,7 +177,7 @@ export default class GlobalLicenseModel extends BaseModel {
       [this.db.current_period_start]: this.current_period_start,
       [this.db.current_period_end]: this.current_period_end,
       [this.db.next_renewal_date]: this.next_renewal_date,
-      [this.db.total_seats_purchased]: this.total_seats_purchased || 0,
+      // [this.db.total_seats_purchased]: this.total_seats_purchased || 0, PostgreSQL gère cette colonne
       [this.db.license_status]: this.license_status || LicenseStatus.ACTIVE,
     });
 
@@ -232,7 +232,6 @@ export default class GlobalLicenseModel extends BaseModel {
    * Valide les données avant création/mise à jour
    */
   private async validate(): Promise<void> {
-    try {
       // Nettoyer les données en utilisant la structure de validation
       GlobalLicenseDbStructure.validation.cleanData(this);
 
@@ -285,10 +284,5 @@ export default class GlobalLicenseModel extends BaseModel {
         this.total_seats_purchased > 0 && this.total_seats_purchased < this.minimum_seats) {
         throw new Error(`Total seats purchased (${this.total_seats_purchased}) must meet minimum requirement (${this.minimum_seats})`);
       }
-
-    } catch (error: any) {
-      console.error('⚠️ Erreur validation licence globale:', error.message);
-      throw error;
-    }
   }
 }

@@ -1,6 +1,5 @@
 import { Response } from 'express';
-
-import HttpStatus from './http-status.js';
+import { HttpStatus } from '@toke/shared';
 
 export default class R {
   /**

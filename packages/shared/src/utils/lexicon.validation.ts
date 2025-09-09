@@ -21,10 +21,10 @@ export class LexiconValidationUtils {
   /**
    * Valide un code de langue (utilise la validation dynamique des langues)
    */
-  static async validateLanguageCode(
+  static validateLanguageCode(
     langCode: string,
     // activeLanguagesOnly: boolean = true,
-  ): Promise<boolean> {
+  ): boolean {
     if (!langCode || typeof langCode !== 'string') return false;
 
     // Utilise la validation du système de langues
@@ -38,10 +38,7 @@ export class LexiconValidationUtils {
   /**
    * Valide un objet translation
    */
-  static async validateTranslation(
-    translation: any,
-    availableLanguageCodes?: string[],
-  ): Promise<boolean> {
+  static validateTranslation(translation: any, availableLanguageCodes?: string[]): boolean {
     if (!translation || typeof translation !== 'object') return false;
 
     // Vérifier la présence de la langue par défaut (français)
@@ -56,7 +53,7 @@ export class LexiconValidationUtils {
     // Valider tous les codes de langue présents
     for (const langCode of Object.keys(translation)) {
       // Valider le format du code de langue
-      if (!(await this.validateLanguageCode(langCode))) {
+      if (!this.validateLanguageCode(langCode)) {
         return false;
       }
 
@@ -128,20 +125,17 @@ export class LexiconValidationUtils {
   /**
    * Valide qu'un lexique est complet pour création
    */
-  static async isValidForCreation(data: any, availableLanguageCodes?: string[]): Promise<boolean> {
+  static isValidForCreation(data: any, availableLanguageCodes?: string[]): boolean {
     return (
       this.validateReference(data.reference) &&
-      (await this.validateTranslation(data.translation, availableLanguageCodes))
+      this.validateTranslation(data.translation, availableLanguageCodes)
     );
   }
 
   /**
    * Extrait les erreurs de validation pour un lexique
    */
-  static async getValidationErrors(
-    data: any,
-    availableLanguageCodes?: string[],
-  ): Promise<string[]> {
+  static getValidationErrors(data: any, availableLanguageCodes?: string[]): string[] {
     const errors: string[] = [];
 
     if (!this.validateReference(data.reference)) {
@@ -150,7 +144,7 @@ export class LexiconValidationUtils {
       );
     }
 
-    if (!(await this.validateTranslation(data.translation, availableLanguageCodes))) {
+    if (!this.validateTranslation(data.translation, availableLanguageCodes)) {
       errors.push(
         'Invalid translation: must contain at least French translation and valid language codes',
       );

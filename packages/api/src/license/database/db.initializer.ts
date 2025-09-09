@@ -121,7 +121,7 @@ export class TableInitializer {
   private static defineAllModels(): void {
     console.log('🏗️ Définition des modèles...');
 
-    // this.defineLexiconModel();
+    this.defineLexiconModel();
     this.defineCountryModel();
     this.defineCurrencyModel();
     this.defineExchangeRateModel();
@@ -303,6 +303,7 @@ export class TableInitializer {
     console.log('🔄 Synchronisation avec la base de données...');
 
     const isDevelopment = process.env.NODE_ENV !== 'production';
+    // TODO supprimer le mode alter : true en production
     const syncOptions = isDevelopment ? { alter: true } : {};
 
     console.error(`🆘 Current Mode: ${process.env.NODE_ENV}`);

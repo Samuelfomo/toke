@@ -123,9 +123,9 @@ export const partialTranslationSchema = z
   });
 
 // Fonctions de validation avec gestion d'erreurs
-export const validateLexiconCreation = (data: any) => {
+export const validateLexiconCreation = async (data: any) => {
   try {
-    return createLexiconSchema.parse(data);
+    return createLexiconSchema.parseAsync(data);
   } catch (error) {
     if (error instanceof z.ZodError) {
       throw new Error(`Validation failed: ${error.errors.map((e) => e.message).join(', ')}`);

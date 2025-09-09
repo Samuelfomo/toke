@@ -452,9 +452,9 @@ router.put('/:guid', Ensure.put(), async (req: Request, res: Response) => {
 });
 
 /**
- * PUT /:guid/database - Définir la configuration de base de données d'un tenant
+ * PATCH /:guid/database - Définir la configuration de base de données d'un tenant
  */
-router.put('/:guid/database', Ensure.post(), async (req: Request, res: Response) => {
+router.patch('/:guid/database', Ensure.patch(), async (req: Request, res: Response) => {
   try {
     const validGuid = TN.validateTenantGuid(req.params.guid);
 

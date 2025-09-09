@@ -141,7 +141,7 @@ router.get('/type/:license_type', Ensure.get(), async (req: Request, res: Respon
 
     if (!Object.values(Type).includes(validType)) {
       return R.handleError(res, HttpStatus.BAD_REQUEST, {
-        code: 'LICENSE_TYPE_INVALID',
+        code: GLOBAL_LICENSE_CODES.LICENSE_TYPE_INVALID,
         message: `Invalid license type. Must be one of: ${Object.values(Type).join(', ')}`,
       });
     }
@@ -164,13 +164,13 @@ router.get('/type/:license_type', Ensure.get(), async (req: Request, res: Respon
     console.error('⚠️ Erreur recherche par type:', error);
     if (error.issues) {
       return R.handleError(res, HttpStatus.BAD_REQUEST, {
-        code: 'PAGINATION_INVALID',
-        message: 'Invalid pagination parameters',
+        code: GLOBAL_LICENSE_CODES.PAGINATION_INVALID,
+        message: GLOBAL_LICENSE_ERRORS.PAGINATION_INVALID,
         details: error.issues,
       });
     } else {
       R.handleError(res, HttpStatus.INTERNAL_ERROR, {
-        code: 'SEARCH_FAILED',
+        code: GLOBAL_LICENSE_CODES.SEARCH_FAILED,
         message: `Failed to search licenses by type: ${req.params.license_type}`,
       });
     }
@@ -186,7 +186,7 @@ router.get('/billing-cycle/:months', Ensure.get(), async (req: Request, res: Res
 
     if (isNaN(months) || !BILLING_CYCLES.includes(months as BillingCycle)) {
       return R.handleError(res, HttpStatus.BAD_REQUEST, {
-        code: 'BILLING_CYCLE_INVALID',
+        code: GLOBAL_LICENSE_CODES.BILLING_CYCLE_INVALID,
         message: `Invalid billing cycle. Must be one of: ${BILLING_CYCLES.join(', ')}`,
       });
     }
@@ -209,13 +209,13 @@ router.get('/billing-cycle/:months', Ensure.get(), async (req: Request, res: Res
     console.error('⚠️ Erreur recherche par cycle facturation:', error);
     if (error.issues) {
       return R.handleError(res, HttpStatus.BAD_REQUEST, {
-        code: 'PAGINATION_INVALID',
-        message: 'Invalid pagination parameters',
+        code: GLOBAL_LICENSE_CODES.PAGINATION_INVALID,
+        message: GLOBAL_LICENSE_ERRORS.PAGINATION_INVALID,
         details: error.issues,
       });
     } else {
       R.handleError(res, HttpStatus.INTERNAL_ERROR, {
-        code: 'SEARCH_FAILED',
+        code: GLOBAL_LICENSE_CODES.SEARCH_FAILED,
         message: `Failed to search licenses by billing cycle: ${req.params.months}`,
       });
     }
@@ -232,7 +232,7 @@ router.get('/status/:status', Ensure.get(), async (req: Request, res: Response) 
 
     if (!Object.values(LicenseStatus).includes(validStatus)) {
       return R.handleError(res, HttpStatus.BAD_REQUEST, {
-        code: 'LICENSE_STATUS_INVALID',
+        code: GLOBAL_LICENSE_CODES.LICENSE_STATUS_INVALID,
         message: `Invalid license status. Must be one of: ${Object.values(LicenseStatus).join(', ')}`,
       });
     }
@@ -255,13 +255,13 @@ router.get('/status/:status', Ensure.get(), async (req: Request, res: Response) 
     console.error('⚠️ Erreur recherche par statut:', error);
     if (error.issues) {
       return R.handleError(res, HttpStatus.BAD_REQUEST, {
-        code: 'PAGINATION_INVALID',
-        message: 'Invalid pagination parameters',
+        code: GLOBAL_LICENSE_CODES.PAGINATION_INVALID,
+        message: GLOBAL_LICENSE_ERRORS.PAGINATION_INVALID,
         details: error.issues,
       });
     } else {
       R.handleError(res, HttpStatus.INTERNAL_ERROR, {
-        code: 'SEARCH_FAILED',
+        code: GLOBAL_LICENSE_CODES.SEARCH_FAILED,
         message: `Failed to search licenses by status: ${req.params.status}`,
       });
     }
@@ -276,7 +276,7 @@ router.get('/expiring/:days', Ensure.get(), async (req: Request, res: Response) 
     const days = parseInt(req.params.days);
     if (isNaN(days) || days < 1) {
       return R.handleError(res, HttpStatus.BAD_REQUEST, {
-        code: 'DAYS_INVALID',
+        code: GLOBAL_LICENSE_CODES.VALIDATION_FAILED,
         message: 'Days must be a positive number',
       });
     }
@@ -299,13 +299,13 @@ router.get('/expiring/:days', Ensure.get(), async (req: Request, res: Response) 
     console.error('⚠️ Erreur recherche licences expirant:', error);
     if (error.issues) {
       return R.handleError(res, HttpStatus.BAD_REQUEST, {
-        code: 'PAGINATION_INVALID',
-        message: 'Invalid pagination parameters',
+        code: GLOBAL_LICENSE_CODES.PAGINATION_INVALID,
+        message: GLOBAL_LICENSE_ERRORS.PAGINATION_INVALID,
         details: error.issues,
       });
     } else {
       R.handleError(res, HttpStatus.INTERNAL_ERROR, {
-        code: 'SEARCH_FAILED',
+        code: GLOBAL_LICENSE_CODES.SEARCH_FAILED,
         message: `Failed to search expiring licenses: ${req.params.days} days`,
       });
     }
@@ -334,13 +334,13 @@ router.get('/expired', Ensure.get(), async (req: Request, res: Response) => {
     console.error('⚠️ Erreur recherche licences expirées:', error);
     if (error.issues) {
       return R.handleError(res, HttpStatus.BAD_REQUEST, {
-        code: 'PAGINATION_INVALID',
-        message: 'Invalid pagination parameters',
+        code: GLOBAL_LICENSE_CODES.PAGINATION_INVALID,
+        message: GLOBAL_LICENSE_ERRORS.PAGINATION_INVALID,
         details: error.issues,
       });
     } else {
       R.handleError(res, HttpStatus.INTERNAL_ERROR, {
-        code: 'SEARCH_FAILED',
+        code: GLOBAL_LICENSE_CODES.SEARCH_FAILED,
         message: 'Failed to search expired licenses',
       });
     }
@@ -465,8 +465,8 @@ router.delete('/:guid', Ensure.delete(), async (req: Request, res: Response) => 
     const license = await GlobalLicense._load(validGuid, true);
     if (!license) {
       return R.handleError(res, HttpStatus.NOT_FOUND, {
-        code: 'LICENSE_NOT_FOUND',
-        message: 'Global license not found',
+        code: GLOBAL_LICENSE_CODES.GLOBAL_LICENSE_NOT_FOUND,
+        message: GLOBAL_LICENSE_ERRORS.NOT_FOUND,
       });
     }
 
@@ -488,12 +488,12 @@ router.delete('/:guid', Ensure.delete(), async (req: Request, res: Response) => 
 
     if (error.issues) {
       return R.handleError(res, HttpStatus.BAD_REQUEST, {
-        code: 'INVALID_GUID',
-        message: 'Invalid GUID format',
+        code: GLOBAL_LICENSE_CODES.INVALID_GUID,
+        message: GLOBAL_LICENSE_ERRORS.GUID_INVALID,
       });
     } else {
       R.handleError(res, HttpStatus.INTERNAL_ERROR, {
-        code: 'DELETE_FAILED',
+        code: GLOBAL_LICENSE_CODES.DELETE_FAILED,
         message: error.message,
       });
     }
@@ -544,14 +544,14 @@ router.get('/list', Ensure.get(), async (req: Request, res: Response) => {
     console.error('⚠️ Erreur listing licences globales:', error);
     if (error.issues) { // Erreur Zod
       return R.handleError(res, HttpStatus.BAD_REQUEST, {
-        code: 'VALIDATION_FAILED',
-        message: 'Invalid filters or pagination parameters',
+        code: GLOBAL_LICENSE_CODES.VALIDATION_FAILED,
+        message: GLOBAL_LICENSE_ERRORS.VALIDATION_FAILED,
         details: error.issues,
       });
     } else {
       return R.handleError(res, HttpStatus.INTERNAL_ERROR, {
-        code: 'LISTING_FAILED',
-        message: 'Failed to export global licenses',
+        code: GLOBAL_LICENSE_CODES.LISTING_FAILED,
+        message: GLOBAL_LICENSE_ERRORS.EXPORT_FAILED,
       });
     }
   }
@@ -580,7 +580,7 @@ router.get('/:identifier', Ensure.get(), async (req: Request, res: Response) => 
 
     if (!license) {
       return R.handleError(res, HttpStatus.NOT_FOUND, {
-        code: 'LICENSE_NOT_FOUND',
+        code: GLOBAL_LICENSE_CODES.GLOBAL_LICENSE_NOT_FOUND,
         message: `Global license with identifier '${identifier}' not found`,
       });
     }
@@ -589,8 +589,8 @@ router.get('/:identifier', Ensure.get(), async (req: Request, res: Response) => 
   } catch (error: any) {
     console.error('⚠️ Erreur recherche licence globale:', error);
     R.handleError(res, HttpStatus.INTERNAL_ERROR, {
-      code: 'SEARCH_FAILED',
-      message: 'Global license not found',
+      code: GLOBAL_LICENSE_CODES.SEARCH_FAILED,
+      message: GLOBAL_LICENSE_ERRORS.NOT_FOUND,
     });
   }
 });

@@ -1,172 +1,617 @@
 .
 ├── Project-structure.txt
 ├── README.md
-└── packages
-    ├── api
-    │   ├── README.md
-    │   ├── ecosystem.config.cjs
-    │   ├── eslint.config.cjs
-    │   └── src
-    │       ├── app.ts
-    │       ├── license
-    │       │   ├── class
-    │       │   │   ├── Country.ts
-    │       │   │   ├── Currency.ts
-    │       │   │   ├── ExchangeRate.ts
-    │       │   │   ├── Language.ts
-    │       │   │   ├── TaxRule.ts
-    │       │   │   └── Tenant.ts
-    │       │   ├── database
-    │       │   │   ├── data
-    │       │   │   │   ├── activity.monitoring.db.ts
-    │       │   │   │   ├── billing.cycle.db.ts
-    │       │   │   │   ├── country.db.ts
-    │       │   │   │   ├── currency.db.ts
-    │       │   │   │   ├── employee.license.db.ts
-    │       │   │   │   ├── exchange.rate.db.ts
-    │       │   │   │   ├── fraud.detection.log.db.ts
-    │       │   │   │   ├── global.license.db.ts
-    │       │   │   │   ├── language.db.ts
-    │       │   │   │   ├── license.adjustment.db.ts
-    │       │   │   │   ├── payment.method.db.ts
-    │       │   │   │   ├── payment.transaction.db.ts
-    │       │   │   │   ├── tax.rule.db.ts
-    │       │   │   │   └── tenant.db.ts
-    │       │   │   ├── db.base.ts
-    │       │   │   ├── db.config.ts
-    │       │   │   └── db.initializer.ts
-    │       │   ├── middle
-    │       │   │   └── ensured-routes.ts
-    │       │   ├── model
-    │       │   │   ├── CountryModel.ts
-    │       │   │   ├── CurrencyModel.ts
-    │       │   │   ├── ExchangeRateModel.ts
-    │       │   │   ├── GlobalLicenseModel.ts
-    │       │   │   ├── LanguageModel.ts
-    │       │   │   ├── TaxRuleModel.ts
-    │       │   │   └── TenantModel.ts
-    │       │   └── routes
-    │       │       ├── country.route.ts
-    │       │       ├── currency.route.ts
-    │       │       ├── exchange.rate.route.ts
-    │       │       ├── language.route.ts
-    │       │       ├── tax.rule.route.ts
-    │       │       └── tenant.route.ts
-    │       ├── server.ts
-    │       ├── tools
-    │       │   ├── glossary.ts
-    │       │   ├── http-status.ts
-    │       │   ├── response.ts
-    │       │   ├── revision.ts
-    │       │   └── watcher.ts
-    │       └── utils
-    │           ├── extract.query.params.ts
-    │           ├── regex.validator.ts
-    │           └── response.model.ts
-    ├── cloud
-    │   ├── README.md
-    │   ├── index.html
-    │   ├── postcss.config.js
-    │   ├── src
-    │   │   ├── App.vue
-    │   │   ├── assets
-    │   │   │   ├── images
-    │   │   │   │   └── toké-icon-01.svg
-    │   │   │   └── main.css
-    │   │   ├── composables
-    │   │   │   ├── useCountries.ts
-    │   │   │   └── useNotifications.ts
-    │   │   ├── env.d.ts
-    │   │   ├── main.ts
-    │   │   ├── router.ts
-    │   │   ├── services
-    │   │   │   ├── api.service.ts
-    │   │   │   └── countries.service.ts
-    │   │   ├── stores
-    │   │   └── views
-    │   │       ├── components
-    │   │       │   ├── country
-    │   │       │   │   ├── ConfirmDeleteModal.vue
-    │   │       │   │   └── countryFormModal.vue
-    │   │       │   └── layouts
-    │   │       │       ├── dashboard.vue
-    │   │       │       ├── footer.vue
-    │   │       │       └── header.vue
-    │   │       ├── country.vue
-    │   │       └── home.vue
-    │   ├── tailwind.config.js
-    │   └── vite.config.ts
-    └── shared
-        ├── README.md
-        ├── dist
-        │   ├── constants
-        │   │   ├── api.constant.d.ts
-        │   │   ├── api.constant.d.ts.map
-        │   │   ├── api.constant.js
-        │   │   ├── api.constant.js.map
-        │   │   ├── country.constants.d.ts
-        │   │   ├── country.constants.d.ts.map
-        │   │   ├── country.constants.js
-        │   │   ├── country.constants.js.map
-        │   │   ├── index.d.ts
-        │   │   ├── index.d.ts.map
-        │   │   ├── index.js
-        │   │   └── index.js.map
-        │   ├── index.d.ts
-        │   ├── index.d.ts.map
-        │   ├── index.js
-        │   ├── index.js.map
-        │   ├── schemas
-        │   │   ├── country.schema.d.ts
-        │   │   ├── country.schema.d.ts.map
-        │   │   ├── country.schema.js
-        │   │   ├── country.schema.js.map
-        │   │   ├── index.d.ts
-        │   │   ├── index.d.ts.map
-        │   │   ├── index.js
-        │   │   └── index.js.map
-        │   ├── types
-        │   │   ├── common.types.d.ts
-        │   │   ├── common.types.d.ts.map
-        │   │   ├── common.types.js
-        │   │   ├── common.types.js.map
-        │   │   ├── country.types.d.ts
-        │   │   ├── country.types.d.ts.map
-        │   │   ├── country.types.js
-        │   │   ├── country.types.js.map
-        │   │   ├── index.js.d.ts
-        │   │   ├── index.js.d.ts.map
-        │   │   ├── index.js.js
-        │   │   └── index.js.js.map
-        │   └── utils
-        │       ├── formatting.utils.d.ts
-        │       ├── formatting.utils.d.ts.map
-        │       ├── formatting.utils.js
-        │       ├── formatting.utils.js.map
-        │       ├── index.d.ts
-        │       ├── index.d.ts.map
-        │       ├── index.js
-        │       ├── index.js.map
-        │       ├── validation.utils.d.ts
-        │       ├── validation.utils.d.ts.map
-        │       ├── validation.utils.js
-        │       └── validation.utils.js.map
-        └── src
-            ├── constants
-            │   ├── api.ts
-            │   ├── country.ts
-            │   └── index.ts
-            ├── index.ts
-            ├── schemas
-            │   ├── country.ts
-            │   └── index.ts
-            ├── types
-            │   ├── common.ts
-            │   ├── country.ts
-            │   └── index.js.ts
-            └── utils
-                ├── country.formatting.ts
-                ├── index.ts
-                └── country.validation.ts
+├── eslint.config.cjs
+├── package-lock.json
+├── package.json
+├── packages
+│   ├── api
+│   │   ├── README.md
+│   │   ├── dist
+│   │   │   ├── app.d.ts
+│   │   │   ├── app.d.ts.map
+│   │   │   ├── app.js
+│   │   │   ├── app.js.map
+│   │   │   ├── license
+│   │   │   │   ├── class
+│   │   │   │   │   ├── Country.d.ts
+│   │   │   │   │   ├── Country.d.ts.map
+│   │   │   │   │   ├── Country.js
+│   │   │   │   │   ├── Country.js.map
+│   │   │   │   │   ├── Currency.d.ts
+│   │   │   │   │   ├── Currency.d.ts.map
+│   │   │   │   │   ├── Currency.js
+│   │   │   │   │   ├── Currency.js.map
+│   │   │   │   │   ├── EmployeeLicense.d.ts
+│   │   │   │   │   ├── EmployeeLicense.d.ts.map
+│   │   │   │   │   ├── EmployeeLicense.js
+│   │   │   │   │   ├── EmployeeLicense.js.map
+│   │   │   │   │   ├── ExchangeRate.d.ts
+│   │   │   │   │   ├── ExchangeRate.d.ts.map
+│   │   │   │   │   ├── ExchangeRate.js
+│   │   │   │   │   ├── ExchangeRate.js.map
+│   │   │   │   │   ├── GlobalLicense.d.ts
+│   │   │   │   │   ├── GlobalLicense.d.ts.map
+│   │   │   │   │   ├── GlobalLicense.js
+│   │   │   │   │   ├── GlobalLicense.js.map
+│   │   │   │   │   ├── Language.d.ts
+│   │   │   │   │   ├── Language.d.ts.map
+│   │   │   │   │   ├── Language.js
+│   │   │   │   │   ├── Language.js.map
+│   │   │   │   │   ├── Lexicon.d.ts
+│   │   │   │   │   ├── Lexicon.d.ts.map
+│   │   │   │   │   ├── Lexicon.js
+│   │   │   │   │   ├── Lexicon.js.map
+│   │   │   │   │   ├── TaxRule.d.ts
+│   │   │   │   │   ├── TaxRule.d.ts.map
+│   │   │   │   │   ├── TaxRule.js
+│   │   │   │   │   ├── TaxRule.js.map
+│   │   │   │   │   ├── Tenant.d.ts
+│   │   │   │   │   ├── Tenant.d.ts.map
+│   │   │   │   │   ├── Tenant.js
+│   │   │   │   │   └── Tenant.js.map
+│   │   │   │   ├── database
+│   │   │   │   │   ├── data
+│   │   │   │   │   │   ├── activity.monitoring.db.d.ts
+│   │   │   │   │   │   ├── activity.monitoring.db.d.ts.map
+│   │   │   │   │   │   ├── activity.monitoring.db.js
+│   │   │   │   │   │   ├── activity.monitoring.db.js.map
+│   │   │   │   │   │   ├── billing.cycle.db.d.ts
+│   │   │   │   │   │   ├── billing.cycle.db.d.ts.map
+│   │   │   │   │   │   ├── billing.cycle.db.js
+│   │   │   │   │   │   ├── billing.cycle.db.js.map
+│   │   │   │   │   │   ├── country.db.d.ts
+│   │   │   │   │   │   ├── country.db.d.ts.map
+│   │   │   │   │   │   ├── country.db.js
+│   │   │   │   │   │   ├── country.db.js.map
+│   │   │   │   │   │   ├── currency.db.d.ts
+│   │   │   │   │   │   ├── currency.db.d.ts.map
+│   │   │   │   │   │   ├── currency.db.js
+│   │   │   │   │   │   ├── currency.db.js.map
+│   │   │   │   │   │   ├── employee.license.db.d.ts
+│   │   │   │   │   │   ├── employee.license.db.d.ts.map
+│   │   │   │   │   │   ├── employee.license.db.js
+│   │   │   │   │   │   ├── employee.license.db.js.map
+│   │   │   │   │   │   ├── exchange.rate.db.d.ts
+│   │   │   │   │   │   ├── exchange.rate.db.d.ts.map
+│   │   │   │   │   │   ├── exchange.rate.db.js
+│   │   │   │   │   │   ├── exchange.rate.db.js.map
+│   │   │   │   │   │   ├── fraud.detection.log.db.d.ts
+│   │   │   │   │   │   ├── fraud.detection.log.db.d.ts.map
+│   │   │   │   │   │   ├── fraud.detection.log.db.js
+│   │   │   │   │   │   ├── fraud.detection.log.db.js.map
+│   │   │   │   │   │   ├── global.license.db.d.ts
+│   │   │   │   │   │   ├── global.license.db.d.ts.map
+│   │   │   │   │   │   ├── global.license.db.js
+│   │   │   │   │   │   ├── global.license.db.js.map
+│   │   │   │   │   │   ├── language.db.d.ts
+│   │   │   │   │   │   ├── language.db.d.ts.map
+│   │   │   │   │   │   ├── language.db.js
+│   │   │   │   │   │   ├── language.db.js.map
+│   │   │   │   │   │   ├── lexicon.db.d.ts
+│   │   │   │   │   │   ├── lexicon.db.d.ts.map
+│   │   │   │   │   │   ├── lexicon.db.js
+│   │   │   │   │   │   ├── lexicon.db.js.map
+│   │   │   │   │   │   ├── license.adjustment.db.d.ts
+│   │   │   │   │   │   ├── license.adjustment.db.d.ts.map
+│   │   │   │   │   │   ├── license.adjustment.db.js
+│   │   │   │   │   │   ├── license.adjustment.db.js.map
+│   │   │   │   │   │   ├── payment.method.db.d.ts
+│   │   │   │   │   │   ├── payment.method.db.d.ts.map
+│   │   │   │   │   │   ├── payment.method.db.js
+│   │   │   │   │   │   ├── payment.method.db.js.map
+│   │   │   │   │   │   ├── payment.transaction.db.d.ts
+│   │   │   │   │   │   ├── payment.transaction.db.d.ts.map
+│   │   │   │   │   │   ├── payment.transaction.db.js
+│   │   │   │   │   │   ├── payment.transaction.db.js.map
+│   │   │   │   │   │   ├── tax.rule.db.d.ts
+│   │   │   │   │   │   ├── tax.rule.db.d.ts.map
+│   │   │   │   │   │   ├── tax.rule.db.js
+│   │   │   │   │   │   ├── tax.rule.db.js.map
+│   │   │   │   │   │   ├── tenant.db.d.ts
+│   │   │   │   │   │   ├── tenant.db.d.ts.map
+│   │   │   │   │   │   ├── tenant.db.js
+│   │   │   │   │   │   └── tenant.db.js.map
+│   │   │   │   │   ├── db.base.d.ts
+│   │   │   │   │   ├── db.base.d.ts.map
+│   │   │   │   │   ├── db.base.js
+│   │   │   │   │   ├── db.base.js.map
+│   │   │   │   │   ├── db.config.d.ts
+│   │   │   │   │   ├── db.config.d.ts.map
+│   │   │   │   │   ├── db.config.js
+│   │   │   │   │   ├── db.config.js.map
+│   │   │   │   │   ├── db.initializer.d.ts
+│   │   │   │   │   ├── db.initializer.d.ts.map
+│   │   │   │   │   ├── db.initializer.js
+│   │   │   │   │   └── db.initializer.js.map
+│   │   │   │   ├── middle
+│   │   │   │   │   ├── ensured-routes.d.ts
+│   │   │   │   │   ├── ensured-routes.d.ts.map
+│   │   │   │   │   ├── ensured-routes.js
+│   │   │   │   │   └── ensured-routes.js.map
+│   │   │   │   ├── model
+│   │   │   │   │   ├── CountryModel.d.ts
+│   │   │   │   │   ├── CountryModel.d.ts.map
+│   │   │   │   │   ├── CountryModel.js
+│   │   │   │   │   ├── CountryModel.js.map
+│   │   │   │   │   ├── CurrencyModel.d.ts
+│   │   │   │   │   ├── CurrencyModel.d.ts.map
+│   │   │   │   │   ├── CurrencyModel.js
+│   │   │   │   │   ├── CurrencyModel.js.map
+│   │   │   │   │   ├── EmployeeLicenseModel.d.ts
+│   │   │   │   │   ├── EmployeeLicenseModel.d.ts.map
+│   │   │   │   │   ├── EmployeeLicenseModel.js
+│   │   │   │   │   ├── EmployeeLicenseModel.js.map
+│   │   │   │   │   ├── ExchangeRateModel.d.ts
+│   │   │   │   │   ├── ExchangeRateModel.d.ts.map
+│   │   │   │   │   ├── ExchangeRateModel.js
+│   │   │   │   │   ├── ExchangeRateModel.js.map
+│   │   │   │   │   ├── GlobalLicenseModel.d.ts
+│   │   │   │   │   ├── GlobalLicenseModel.d.ts.map
+│   │   │   │   │   ├── GlobalLicenseModel.js
+│   │   │   │   │   ├── GlobalLicenseModel.js.map
+│   │   │   │   │   ├── LanguageModel.d.ts
+│   │   │   │   │   ├── LanguageModel.d.ts.map
+│   │   │   │   │   ├── LanguageModel.js
+│   │   │   │   │   ├── LanguageModel.js.map
+│   │   │   │   │   ├── LexiconModel.d.ts
+│   │   │   │   │   ├── LexiconModel.d.ts.map
+│   │   │   │   │   ├── LexiconModel.js
+│   │   │   │   │   ├── LexiconModel.js.map
+│   │   │   │   │   ├── TaxRuleModel.d.ts
+│   │   │   │   │   ├── TaxRuleModel.d.ts.map
+│   │   │   │   │   ├── TaxRuleModel.js
+│   │   │   │   │   ├── TaxRuleModel.js.map
+│   │   │   │   │   ├── TenantModel.d.ts
+│   │   │   │   │   ├── TenantModel.d.ts.map
+│   │   │   │   │   ├── TenantModel.js
+│   │   │   │   │   └── TenantModel.js.map
+│   │   │   │   └── routes
+│   │   │   │       ├── country.route.d.ts
+│   │   │   │       ├── country.route.d.ts.map
+│   │   │   │       ├── country.route.js
+│   │   │   │       ├── country.route.js.map
+│   │   │   │       ├── currency.route.d.ts
+│   │   │   │       ├── currency.route.d.ts.map
+│   │   │   │       ├── currency.route.js
+│   │   │   │       ├── currency.route.js.map
+│   │   │   │       ├── employee.license.route.d.ts
+│   │   │   │       ├── employee.license.route.d.ts.map
+│   │   │   │       ├── employee.license.route.js
+│   │   │   │       ├── employee.license.route.js.map
+│   │   │   │       ├── exchange.rate.route.d.ts
+│   │   │   │       ├── exchange.rate.route.d.ts.map
+│   │   │   │       ├── exchange.rate.route.js
+│   │   │   │       ├── exchange.rate.route.js.map
+│   │   │   │       ├── global.license.route.d.ts
+│   │   │   │       ├── global.license.route.d.ts.map
+│   │   │   │       ├── global.license.route.js
+│   │   │   │       ├── global.license.route.js.map
+│   │   │   │       ├── language.route.d.ts
+│   │   │   │       ├── language.route.d.ts.map
+│   │   │   │       ├── language.route.js
+│   │   │   │       ├── language.route.js.map
+│   │   │   │       ├── lexicon.route.d.ts
+│   │   │   │       ├── lexicon.route.d.ts.map
+│   │   │   │       ├── lexicon.route.js
+│   │   │   │       ├── lexicon.route.js.map
+│   │   │   │       ├── tax.rule.route.d.ts
+│   │   │   │       ├── tax.rule.route.d.ts.map
+│   │   │   │       ├── tax.rule.route.js
+│   │   │   │       ├── tax.rule.route.js.map
+│   │   │   │       ├── tenant.route.d.ts
+│   │   │   │       ├── tenant.route.d.ts.map
+│   │   │   │       ├── tenant.route.js
+│   │   │   │       └── tenant.route.js.map
+│   │   │   ├── server.d.ts
+│   │   │   ├── server.d.ts.map
+│   │   │   ├── server.js
+│   │   │   ├── server.js.map
+│   │   │   ├── tools
+│   │   │   │   ├── glossary.d.ts
+│   │   │   │   ├── glossary.d.ts.map
+│   │   │   │   ├── glossary.js
+│   │   │   │   ├── glossary.js.map
+│   │   │   │   ├── http-status.d.ts
+│   │   │   │   ├── http-status.d.ts.map
+│   │   │   │   ├── http-status.js
+│   │   │   │   ├── http-status.js.map
+│   │   │   │   ├── response.d.ts
+│   │   │   │   ├── response.d.ts.map
+│   │   │   │   ├── response.js
+│   │   │   │   ├── response.js.map
+│   │   │   │   ├── revision.d.ts
+│   │   │   │   ├── revision.d.ts.map
+│   │   │   │   ├── revision.js
+│   │   │   │   ├── revision.js.map
+│   │   │   │   ├── watcher.d.ts
+│   │   │   │   ├── watcher.d.ts.map
+│   │   │   │   ├── watcher.js
+│   │   │   │   └── watcher.js.map
+│   │   │   └── utils
+│   │   │       ├── encryption.d.ts
+│   │   │       ├── encryption.d.ts.map
+│   │   │       ├── encryption.js
+│   │   │       ├── encryption.js.map
+│   │   │       ├── extract.query.params.d.ts
+│   │   │       ├── extract.query.params.d.ts.map
+│   │   │       ├── extract.query.params.js
+│   │   │       ├── extract.query.params.js.map
+│   │   │       ├── generate.otp.d.ts
+│   │   │       ├── generate.otp.d.ts.map
+│   │   │       ├── generate.otp.js
+│   │   │       ├── generate.otp.js.map
+│   │   │       ├── regex.validator.d.ts
+│   │   │       ├── regex.validator.d.ts.map
+│   │   │       ├── regex.validator.js
+│   │   │       ├── regex.validator.js.map
+│   │   │       ├── response.model.d.ts
+│   │   │       ├── response.model.d.ts.map
+│   │   │       ├── response.model.js
+│   │   │       └── response.model.js.map
+│   │   ├── docs
+│   │   │   └── toke API.postman_collection.json
+│   │   ├── ecosystem.config.cjs
+│   │   ├── logs
+│   │   ├── migrations
+│   │   │   ├── 20250909094204-add-computed-billing-status.cjs
+│   │   │   └── 20250909100827-add-generated-columns-global-license.cjs
+│   │   ├── package.json
+│   │   ├── scripts
+│   │   │   ├── countryManager.js
+│   │   │   ├── countryManager.ts
+│   │   │   ├── currencyManager.js
+│   │   │   ├── currencyManager.ts
+│   │   │   ├── kill.js
+│   │   │   ├── nuclear-cleanup.js
+│   │   │   ├── status.js
+│   │   │   ├── stop.js
+│   │   │   ├── test.js
+│   │   │   └── test.ts
+│   │   ├── src
+│   │   │   ├── app.ts
+│   │   │   ├── license
+│   │   │   │   ├── Project-structure.txt
+│   │   │   │   ├── class
+│   │   │   │   │   ├── Country.ts
+│   │   │   │   │   ├── Currency.ts
+│   │   │   │   │   ├── EmployeeLicense.ts
+│   │   │   │   │   ├── ExchangeRate.ts
+│   │   │   │   │   ├── GlobalLicense.ts
+│   │   │   │   │   ├── Language.ts
+│   │   │   │   │   ├── Lexicon.ts
+│   │   │   │   │   ├── TaxRule.ts
+│   │   │   │   │   └── Tenant.ts
+│   │   │   │   ├── database
+│   │   │   │   │   ├── data
+│   │   │   │   │   │   ├── activity.monitoring.db.ts
+│   │   │   │   │   │   ├── billing.cycle.db.ts
+│   │   │   │   │   │   ├── country.db.ts
+│   │   │   │   │   │   ├── currency.db.ts
+│   │   │   │   │   │   ├── employee.license.db.ts
+│   │   │   │   │   │   ├── exchange.rate.db.ts
+│   │   │   │   │   │   ├── fraud.detection.log.db.ts
+│   │   │   │   │   │   ├── global.license.db.ts
+│   │   │   │   │   │   ├── language.db.ts
+│   │   │   │   │   │   ├── lexicon.db.ts
+│   │   │   │   │   │   ├── license.adjustment.db.ts
+│   │   │   │   │   │   ├── payment.method.db.ts
+│   │   │   │   │   │   ├── payment.transaction.db.ts
+│   │   │   │   │   │   ├── tax.rule.db.ts
+│   │   │   │   │   │   └── tenant.db.ts
+│   │   │   │   │   ├── db.base.ts
+│   │   │   │   │   ├── db.config.ts
+│   │   │   │   │   ├── db.initializer.ts
+│   │   │   │   │   └── migration.config.cjs
+│   │   │   │   ├── middle
+│   │   │   │   │   └── ensured-routes.ts
+│   │   │   │   ├── model
+│   │   │   │   │   ├── CountryModel.ts
+│   │   │   │   │   ├── CurrencyModel.ts
+│   │   │   │   │   ├── EmployeeLicenseModel.ts
+│   │   │   │   │   ├── ExchangeRateModel.ts
+│   │   │   │   │   ├── GlobalLicenseModel.ts
+│   │   │   │   │   ├── LanguageModel.ts
+│   │   │   │   │   ├── LexiconModel.ts
+│   │   │   │   │   ├── TaxRuleModel.ts
+│   │   │   │   │   └── TenantModel.ts
+│   │   │   │   └── routes
+│   │   │   │       ├── country.route.ts
+│   │   │   │       ├── currency.route.ts
+│   │   │   │       ├── employee.license.route.ts
+│   │   │   │       ├── exchange.rate.route.ts
+│   │   │   │       ├── global.license.route.ts
+│   │   │   │       ├── language.route.ts
+│   │   │   │       ├── lexicon.route.ts
+│   │   │   │       ├── tax.rule.route.ts
+│   │   │   │       └── tenant.route.ts
+│   │   │   ├── server.ts
+│   │   │   ├── tools
+│   │   │   │   ├── glossary.ts
+│   │   │   │   ├── http-status.ts
+│   │   │   │   ├── response.ts
+│   │   │   │   ├── revision.ts
+│   │   │   │   └── watcher.ts
+│   │   │   └── utils
+│   │   │       ├── encryption.ts
+│   │   │       ├── extract.query.params.ts
+│   │   │       ├── generate.otp.ts
+│   │   │       ├── regex.validator.ts
+│   │   │       └── response.model.ts
+│   │   └── tsconfig.json
+│   ├── cloud
+│   │   ├── README.md
+│   │   ├── dist
+│   │   │   ├── assets
+│   │   │   │   ├── index-D7YK0NIY.css
+│   │   │   │   ├── index-V4IfGCSI.js
+│   │   │   │   ├── toké-icon-01-9OJIrXWU.svg
+│   │   │   │   └── vendor-oNUdUsqO.js
+│   │   │   └── index.html
+│   │   ├── index.html
+│   │   ├── package.json
+│   │   ├── postcss.config.js
+│   │   ├── src
+│   │   │   ├── App.vue
+│   │   │   ├── assets
+│   │   │   │   ├── images
+│   │   │   │   │   └── toké-icon-01.svg
+│   │   │   │   └── main.css
+│   │   │   ├── composables
+│   │   │   │   ├── useCountries.ts
+│   │   │   │   └── useNotifications.ts
+│   │   │   ├── env.d.ts
+│   │   │   ├── main.ts
+│   │   │   ├── router.ts
+│   │   │   ├── services
+│   │   │   │   ├── api.service.ts
+│   │   │   │   └── countries.service.ts
+│   │   │   ├── stores
+│   │   │   └── views
+│   │   │       ├── components
+│   │   │       │   ├── country
+│   │   │       │   │   ├── confirmDeleteModal.vue
+│   │   │       │   │   └── countryFormModal.vue
+│   │   │       │   └── layouts
+│   │   │       │       ├── dashboard.vue
+│   │   │       │       ├── footer.vue
+│   │   │       │       └── header.vue
+│   │   │       ├── country.vue
+│   │   │       └── home.vue
+│   │   ├── tailwind.config.js
+│   │   ├── tsconfig.json
+│   │   ├── vite.config.js
+│   │   └── vite.config.ts
+│   ├── shared
+│   │   ├── README.md
+│   │   ├── dist
+│   │   │   ├── constants
+│   │   │   │   ├── api.d.ts
+│   │   │   │   ├── api.d.ts.map
+│   │   │   │   ├── api.js
+│   │   │   │   ├── api.js.map
+│   │   │   │   ├── country.d.ts
+│   │   │   │   ├── country.d.ts.map
+│   │   │   │   ├── country.js
+│   │   │   │   ├── country.js.map
+│   │   │   │   ├── currency.d.ts
+│   │   │   │   ├── currency.d.ts.map
+│   │   │   │   ├── currency.js
+│   │   │   │   ├── currency.js.map
+│   │   │   │   ├── employee.license.d.ts
+│   │   │   │   ├── employee.license.d.ts.map
+│   │   │   │   ├── employee.license.js
+│   │   │   │   ├── employee.license.js.map
+│   │   │   │   ├── exchange.rate.d.ts
+│   │   │   │   ├── exchange.rate.d.ts.map
+│   │   │   │   ├── exchange.rate.js
+│   │   │   │   ├── exchange.rate.js.map
+│   │   │   │   ├── global.license.d.ts
+│   │   │   │   ├── global.license.d.ts.map
+│   │   │   │   ├── global.license.js
+│   │   │   │   ├── global.license.js.map
+│   │   │   │   ├── http.status.d.ts
+│   │   │   │   ├── http.status.d.ts.map
+│   │   │   │   ├── http.status.js
+│   │   │   │   ├── http.status.js.map
+│   │   │   │   ├── index.d.ts
+│   │   │   │   ├── index.d.ts.map
+│   │   │   │   ├── index.js
+│   │   │   │   ├── index.js.map
+│   │   │   │   ├── language.d.ts
+│   │   │   │   ├── language.d.ts.map
+│   │   │   │   ├── language.js
+│   │   │   │   ├── language.js.map
+│   │   │   │   ├── lexicon.d.ts
+│   │   │   │   ├── lexicon.d.ts.map
+│   │   │   │   ├── lexicon.js
+│   │   │   │   ├── lexicon.js.map
+│   │   │   │   ├── tax.rule.d.ts
+│   │   │   │   ├── tax.rule.d.ts.map
+│   │   │   │   ├── tax.rule.js
+│   │   │   │   ├── tax.rule.js.map
+│   │   │   │   ├── tenant.d.ts
+│   │   │   │   ├── tenant.d.ts.map
+│   │   │   │   ├── tenant.js
+│   │   │   │   └── tenant.js.map
+│   │   │   ├── index.d.ts
+│   │   │   ├── index.d.ts.map
+│   │   │   ├── index.js
+│   │   │   ├── index.js.map
+│   │   │   ├── schemas
+│   │   │   │   ├── country.d.ts
+│   │   │   │   ├── country.d.ts.map
+│   │   │   │   ├── country.js
+│   │   │   │   ├── country.js.map
+│   │   │   │   ├── currency.d.ts
+│   │   │   │   ├── currency.d.ts.map
+│   │   │   │   ├── currency.js
+│   │   │   │   ├── currency.js.map
+│   │   │   │   ├── employee.license.d.ts
+│   │   │   │   ├── employee.license.d.ts.map
+│   │   │   │   ├── employee.license.js
+│   │   │   │   ├── employee.license.js.map
+│   │   │   │   ├── exchange.rate.d.ts
+│   │   │   │   ├── exchange.rate.d.ts.map
+│   │   │   │   ├── exchange.rate.js
+│   │   │   │   ├── exchange.rate.js.map
+│   │   │   │   ├── global.license.d.ts
+│   │   │   │   ├── global.license.d.ts.map
+│   │   │   │   ├── global.license.js
+│   │   │   │   ├── global.license.js.map
+│   │   │   │   ├── index.d.ts
+│   │   │   │   ├── index.d.ts.map
+│   │   │   │   ├── index.js
+│   │   │   │   ├── index.js.map
+│   │   │   │   ├── language.d.ts
+│   │   │   │   ├── language.d.ts.map
+│   │   │   │   ├── language.js
+│   │   │   │   ├── language.js.map
+│   │   │   │   ├── lexicon.d.ts
+│   │   │   │   ├── lexicon.d.ts.map
+│   │   │   │   ├── lexicon.js
+│   │   │   │   ├── lexicon.js.map
+│   │   │   │   ├── tax.rule.d.ts
+│   │   │   │   ├── tax.rule.d.ts.map
+│   │   │   │   ├── tax.rule.js
+│   │   │   │   ├── tax.rule.js.map
+│   │   │   │   ├── tenant.d.ts
+│   │   │   │   ├── tenant.d.ts.map
+│   │   │   │   ├── tenant.js
+│   │   │   │   └── tenant.js.map
+│   │   │   ├── types
+│   │   │   │   ├── common.d.ts
+│   │   │   │   ├── common.d.ts.map
+│   │   │   │   ├── common.js
+│   │   │   │   ├── common.js.map
+│   │   │   │   ├── country.d.ts
+│   │   │   │   ├── country.d.ts.map
+│   │   │   │   ├── country.js
+│   │   │   │   ├── country.js.map
+│   │   │   │   ├── currency.d.ts
+│   │   │   │   ├── currency.d.ts.map
+│   │   │   │   ├── currency.js
+│   │   │   │   ├── currency.js.map
+│   │   │   │   ├── exchange.rate.d.ts
+│   │   │   │   ├── exchange.rate.d.ts.map
+│   │   │   │   ├── exchange.rate.js
+│   │   │   │   ├── exchange.rate.js.map
+│   │   │   │   ├── global.license.d.ts
+│   │   │   │   ├── global.license.d.ts.map
+│   │   │   │   ├── global.license.js
+│   │   │   │   ├── global.license.js.map
+│   │   │   │   ├── index.js.d.ts
+│   │   │   │   ├── index.js.d.ts.map
+│   │   │   │   ├── index.js.js
+│   │   │   │   ├── index.js.js.map
+│   │   │   │   ├── language.d.ts
+│   │   │   │   ├── language.d.ts.map
+│   │   │   │   ├── language.js
+│   │   │   │   ├── language.js.map
+│   │   │   │   ├── tax.rule.d.ts
+│   │   │   │   ├── tax.rule.d.ts.map
+│   │   │   │   ├── tax.rule.js
+│   │   │   │   ├── tax.rule.js.map
+│   │   │   │   ├── tenant.d.ts
+│   │   │   │   ├── tenant.d.ts.map
+│   │   │   │   ├── tenant.js
+│   │   │   │   └── tenant.js.map
+│   │   │   └── utils
+│   │   │       ├── country.formatting.d.ts
+│   │   │       ├── country.formatting.d.ts.map
+│   │   │       ├── country.formatting.js
+│   │   │       ├── country.formatting.js.map
+│   │   │       ├── country.validation.d.ts
+│   │   │       ├── country.validation.d.ts.map
+│   │   │       ├── country.validation.js
+│   │   │       ├── country.validation.js.map
+│   │   │       ├── currency.validation.d.ts
+│   │   │       ├── currency.validation.d.ts.map
+│   │   │       ├── currency.validation.js
+│   │   │       ├── currency.validation.js.map
+│   │   │       ├── employee.license.validation.d.ts
+│   │   │       ├── employee.license.validation.d.ts.map
+│   │   │       ├── employee.license.validation.js
+│   │   │       ├── employee.license.validation.js.map
+│   │   │       ├── exchange.rate.validation.d.ts
+│   │   │       ├── exchange.rate.validation.d.ts.map
+│   │   │       ├── exchange.rate.validation.js
+│   │   │       ├── exchange.rate.validation.js.map
+│   │   │       ├── global.license.validation.d.ts
+│   │   │       ├── global.license.validation.d.ts.map
+│   │   │       ├── global.license.validation.js
+│   │   │       ├── global.license.validation.js.map
+│   │   │       ├── index.d.ts
+│   │   │       ├── index.d.ts.map
+│   │   │       ├── index.js
+│   │   │       ├── index.js.map
+│   │   │       ├── language.validation.d.ts
+│   │   │       ├── language.validation.d.ts.map
+│   │   │       ├── language.validation.js
+│   │   │       ├── language.validation.js.map
+│   │   │       ├── lexicon.validation.d.ts
+│   │   │       ├── lexicon.validation.d.ts.map
+│   │   │       ├── lexicon.validation.js
+│   │   │       ├── lexicon.validation.js.map
+│   │   │       ├── tax.rule.validation.d.ts
+│   │   │       ├── tax.rule.validation.d.ts.map
+│   │   │       ├── tax.rule.validation.js
+│   │   │       ├── tax.rule.validation.js.map
+│   │   │       ├── tenant.validation.d.ts
+│   │   │       ├── tenant.validation.d.ts.map
+│   │   │       ├── tenant.validation.js
+│   │   │       └── tenant.validation.js.map
+│   │   ├── package.json
+│   │   ├── src
+│   │   │   ├── constants
+│   │   │   │   ├── api.ts
+│   │   │   │   ├── country.ts
+│   │   │   │   ├── currency.ts
+│   │   │   │   ├── employee.license.ts
+│   │   │   │   ├── exchange.rate.ts
+│   │   │   │   ├── global.license.ts
+│   │   │   │   ├── http.status.ts
+│   │   │   │   ├── index.ts
+│   │   │   │   ├── language.ts
+│   │   │   │   ├── lexicon.ts
+│   │   │   │   ├── tax.rule.ts
+│   │   │   │   └── tenant.ts
+│   │   │   ├── index.ts
+│   │   │   ├── schemas
+│   │   │   │   ├── country.ts
+│   │   │   │   ├── currency.ts
+│   │   │   │   ├── employee.license.ts
+│   │   │   │   ├── exchange.rate.ts
+│   │   │   │   ├── global.license.ts
+│   │   │   │   ├── index.ts
+│   │   │   │   ├── language.ts
+│   │   │   │   ├── lexicon.ts
+│   │   │   │   ├── tax.rule.ts
+│   │   │   │   └── tenant.ts
+│   │   │   ├── types
+│   │   │   │   ├── common.ts
+│   │   │   │   ├── country.ts
+│   │   │   │   ├── currency.ts
+│   │   │   │   ├── exchange.rate.ts
+│   │   │   │   ├── global.license.ts
+│   │   │   │   ├── index.js.ts
+│   │   │   │   ├── language.ts
+│   │   │   │   ├── tax.rule.ts
+│   │   │   │   └── tenant.ts
+│   │   │   └── utils
+│   │   │       ├── country.formatting.ts
+│   │   │       ├── country.validation.ts
+│   │   │       ├── currency.validation.ts
+│   │   │       ├── employee.license.validation.ts
+│   │   │       ├── exchange.rate.validation.ts
+│   │   │       ├── global.license.validation.ts
+│   │   │       ├── index.ts
+│   │   │       ├── language.validation.ts
+│   │   │       ├── lexicon.validation.ts
+│   │   │       ├── tax.rule.validation.ts
+│   │   │       └── tenant.validation.ts
+│   │   └── tsconfig.json
+│   └── test.js
+└── tsconfig.json
 
-35 directories, 135 files
+51 directories, 564 files

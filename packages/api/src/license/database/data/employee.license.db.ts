@@ -160,18 +160,33 @@ export const EmployeeLicenseDbStructure = {
       },
       comment: 'Long leave reason',
     },
+    // Cette colonne est GÉNÉRÉE par PostgreSQL - NE PAS MODIFIER
     computed_billing_status: {
-      type: DataTypes.ENUM(...Object.values(BillingStatusComputed)), // Statut de facturation calculé automatiquement
+      type: DataTypes.ENUM(...Object.values(BillingStatusComputed)),
       allowNull: false,
-      defaultValue: BillingStatusComputed.BILLABLE,
-      validate: {
-        isIn: {
-          args: [Object.values(BillingStatusComputed)],
-          msg: 'Invalid computed billing status',
-        },
+      field: 'computed_billing_status',
+      comment: 'Computed billing status (PostgreSQL generated column)',
+      // Getter normal - lit la valeur calculée par PostgreSQL
+      get() {
+        return this.getDataValue('computed_billing_status');
       },
-      comment: 'Computed billing status',
+      // Setter bloqué - PostgreSQL gère cette colonne
+      set() {
+        throw new Error('Cannot manually set computed_billing_status - it is automatically computed by PostgreSQL based on business rules');
+      }
     },
+    // computed_billing_status: {
+    //   type: DataTypes.ENUM(...Object.values(BillingStatusComputed)), // Statut de facturation calculé automatiquement
+    //   allowNull: false,
+    //   defaultValue: BillingStatusComputed.BILLABLE,
+    //   validate: {
+    //     isIn: {
+    //       args: [Object.values(BillingStatusComputed)],
+    //       msg: 'Invalid computed billing status',
+    //     },
+    //   },
+    //   comment: 'Computed billing status',
+    // },
     grace_period_start: {
       type: DataTypes.DATE,
       allowNull: true,
@@ -197,6 +212,9 @@ export const EmployeeLicenseDbStructure = {
     underscored: true,
     freezeTableName: true,
     comment: 'Employee license table',
+    // Exclure computed_billing_status de la synchronisation automatique
+    // car elle sera gérée par la migration PostgreSQL
+    omitNull: false,
     indexes: [
       {
         fields: ['guid'],

@@ -489,7 +489,7 @@ export default class EmployeeLicenseModel extends BaseModel {
    * Valide les données avant création/mise à jour
    */
   private async validate(): Promise<void> {
-    try {
+    // try {
       // Nettoyer les données en utilisant la structure de validation
       EmployeeLicenseDbStructure.validation.cleanData(this);
 
@@ -571,9 +571,9 @@ export default class EmployeeLicenseModel extends BaseModel {
         throw new Error('Long leave reason is too long (max 500 characters)');
       }
 
-    } catch (error: any) {
-      console.error('⚠️ Erreur validation licence employé:', error.message);
-      throw error;
-    }
+    // } catch (error: any) {
+    //   console.error('⚠️ Erreur validation licence employé:', error.message);
+    //   throw error;
+    // }
   }
 }

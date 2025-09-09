@@ -24,7 +24,11 @@
     "testCurrency": "npm run testCurrency --workspace=@toke/api",
     "autoTestCountry": "npm run testCountryAuto --workspace=@toke/api",
     "status:api": "npm run status --workspace=@toke/api",
-    "nuclear:api": "npm run nuclear-cleanup --workspace=@toke/api"
+    "nuclear:api": "npm run nuclear-cleanup --workspace=@toke/api",
+    "migrate:api": "npm run migrate --workspace=@toke/api",
+    "migrate:dev:api": "npm run migrate:dev --workspace=@toke/api",
+    "migrate:undo:api": "npm run migrate:undo --workspace=@toke/api",
+    "status:migrate:api": "npm run status:migrate --workspace=@toke/api"
   },
   "devDependencies": {
     "concurrently": "^8.0.0",

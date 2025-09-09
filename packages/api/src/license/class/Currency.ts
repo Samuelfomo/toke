@@ -88,7 +88,7 @@ export default class Currency extends CurrencyModel {
   }
 
   getCode(): string | undefined {
-    return this.code?.toUpperCase();
+    return this.code?.toLowerCase();
   }
 
   getName(): string | undefined {

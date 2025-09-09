@@ -238,12 +238,12 @@ export default class EmployeeLicense extends EmployeeLicenseModel {
     return this;
   }
 
-  setDeactivationDate(deactivation_date: Date | null): EmployeeLicense {
+  setDeactivationDate(deactivation_date: Date): EmployeeLicense {
     this.deactivation_date = deactivation_date;
     return this;
   }
 
-  setLastActivityDate(last_activity_date: Date | null): EmployeeLicense {
+  setLastActivityDate(last_activity_date: Date): EmployeeLicense {
     this.last_activity_date = last_activity_date;
     return this;
   }
@@ -258,32 +258,32 @@ export default class EmployeeLicense extends EmployeeLicenseModel {
     return this;
   }
 
-  setLongLeaveDeclaredBy(long_leave_declared_by: string | null): EmployeeLicense {
+  setLongLeaveDeclaredBy(long_leave_declared_by: string): EmployeeLicense {
     this.long_leave_declared_by = long_leave_declared_by;
     return this;
   }
 
-  setLongLeaveDeclaredAt(long_leave_declared_at: Date | null): EmployeeLicense {
+  setLongLeaveDeclaredAt(long_leave_declared_at: Date): EmployeeLicense {
     this.long_leave_declared_at = long_leave_declared_at;
     return this;
   }
 
-  setLongLeaveType(long_leave_type: LeaveType | null): EmployeeLicense {
+  setLongLeaveType(long_leave_type: LeaveType): EmployeeLicense {
     this.long_leave_type = long_leave_type;
     return this;
   }
 
-  setLongLeaveReason(long_leave_reason: string | null): EmployeeLicense {
+  setLongLeaveReason(long_leave_reason: string): EmployeeLicense {
     this.long_leave_reason = long_leave_reason;
     return this;
   }
 
-  setGracePeriodStart(grace_period_start: Date | null): EmployeeLicense {
+  setGracePeriodStart(grace_period_start: Date): EmployeeLicense {
     this.grace_period_start = grace_period_start;
     return this;
   }
 
-  setGracePeriodEnd(grace_period_end: Date | null): EmployeeLicense {
+  setGracePeriodEnd(grace_period_end: Date): EmployeeLicense {
     this.grace_period_end = grace_period_end;
     return this;
   }
@@ -492,7 +492,7 @@ export default class EmployeeLicense extends EmployeeLicenseModel {
       this.long_leave_declared_by = declared_by;
       this.long_leave_declared_at = new Date();
       this.long_leave_type = leave_type;
-      this.long_leave_reason = reason || null;
+      this.long_leave_reason = reason;
     }
     return result;
   }
@@ -506,10 +506,10 @@ export default class EmployeeLicense extends EmployeeLicenseModel {
     if (result) {
       // Mettre à jour l'instance locale
       this.declared_long_leave = false;
-      this.long_leave_declared_by = null;
-      this.long_leave_declared_at = null;
-      this.long_leave_type = null;
-      this.long_leave_reason = null;
+      this.long_leave_declared_by = undefined;
+      this.long_leave_declared_at = undefined;
+      this.long_leave_type = undefined;
+      this.long_leave_reason = undefined;
     }
     return result;
   }

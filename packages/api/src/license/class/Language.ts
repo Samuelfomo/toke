@@ -80,7 +80,7 @@ export default class Language extends LanguageModel {
   }
 
   getCode(): string | undefined {
-    return this.code?.toUpperCase();
+    return this.code?.toLowerCase();
   }
   getNameEn(): string | undefined {
     return this.name_en;

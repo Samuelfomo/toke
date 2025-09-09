@@ -204,7 +204,7 @@ export default class LexiconModel extends BaseModel {
     if (!this.translation){
       throw new Error(LEXICON_ERRORS.TRANSLATION_REQUIRED);
     }
-    if (!(await LexiconValidationUtils.validateTranslation(this.translation))){
+    if (!LexiconValidationUtils.validateTranslation(this.translation)){
       throw new Error(LEXICON_ERRORS.TRANSLATION_INVALID);
     }
 

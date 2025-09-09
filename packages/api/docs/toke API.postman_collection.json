@@ -660,7 +660,7 @@
 										],
 										"body": {
 											"mode": "raw",
-											"raw": "{\n    \"code\": \"CM\"\n    // \"name_en\": \"cameroon (🇨🇲)\",\n    // \"name_local\": \"cameroun\",\n    // \"default_currency_code\": \"CMR\",\n    // \"default_language_code\": \"fr\",\n    // \"is_active\": true\n}",
+											"raw": "{\n    \"code\": \"CM\",\n    \"name_en\": \"cameroon (🇨🇲)\",\n    \"name_local\": \"cameroun\",\n    \"default_currency_code\": \"CMR\",\n    \"default_language_code\": \"fr\",\n    \"active\": true,\n    \"timezone_default\": \"Africa/Douala\",\n    \"phone_prefix\": \"+237\"\n}",
 											"options": {
 												"raw": {
 													"language": "json"
@@ -914,9 +914,371 @@
 										}
 									},
 									"response": []
+								}
+							]
+						},
+						{
+							"name": "📝 CRUD - READ",
+							"item": [
+								{
+									"name": "Liste Toutes Entrées",
+									"request": {
+										"method": "GET",
+										"header": [
+											{
+												"key": "Content-Type",
+												"value": "application/json"
+											},
+											{
+												"key": "x-api-key",
+												"value": "{{x-api-token}}",
+												"type": "text"
+											},
+											{
+												"key": "x-api-signature",
+												"value": "{{x-api-signature}}",
+												"type": "text"
+											}
+										],
+										"url": {
+											"raw": "{{endpoint}}/{{master}}/currency/list",
+											"host": [
+												"{{endpoint}}"
+											],
+											"path": [
+												"{{master}}",
+												"currency",
+												"list"
+											]
+										}
+									},
+									"response": []
 								},
 								{
-									"name": "Créer Deuxième Pays",
+									"name": "Rechercher par code ISO",
+									"request": {
+										"method": "GET",
+										"header": [
+											{
+												"key": "Content-Type",
+												"value": "application/json"
+											},
+											{
+												"key": "x-api-key",
+												"value": "{{x-api-token}}",
+												"type": "text"
+											},
+											{
+												"key": "x-api-signature",
+												"value": "{{x-api-signature}}",
+												"type": "text"
+											}
+										],
+										"url": {
+											"raw": "{{endpoint}}/{{master}}/country/search/iso/{{iso_code: e.g: CM}}",
+											"host": [
+												"{{endpoint}}"
+											],
+											"path": [
+												"{{master}}",
+												"country",
+												"search",
+												"iso",
+												"{{iso_code: e.g: CM}}"
+											]
+										}
+									},
+									"response": []
+								},
+								{
+									"name": "Rechercher par code numérique",
+									"request": {
+										"method": "GET",
+										"header": [
+											{
+												"key": "Content-Type",
+												"value": "application/json"
+											},
+											{
+												"key": "x-api-key",
+												"value": "{{x-api-token}}",
+												"type": "text"
+											},
+											{
+												"key": "x-api-signature",
+												"value": "{{x-api-signature}}",
+												"type": "text"
+											}
+										],
+										"url": {
+											"raw": "{{endpoint}}/{{master}}/country/search/code/{{code: e.g: 237}}",
+											"host": [
+												"{{endpoint}}"
+											],
+											"path": [
+												"{{master}}",
+												"country",
+												"search",
+												"code",
+												"{{code: e.g: 237}}"
+											]
+										}
+									},
+									"response": []
+								},
+								{
+									"name": "Recherche intelligente par ID, GUID, ISO ou code",
+									"request": {
+										"method": "GET",
+										"header": [
+											{
+												"key": "Content-Type",
+												"value": "application/json"
+											},
+											{
+												"key": "x-api-key",
+												"value": "{{x-api-token}}",
+												"type": "text"
+											},
+											{
+												"key": "x-api-signature",
+												"value": "{{x-api-signature}}",
+												"type": "text"
+											}
+										],
+										"url": {
+											"raw": "{{endpoint}}/{{master}}/country/{{ID, GUID, ISO ou code}}",
+											"host": [
+												"{{endpoint}}"
+											],
+											"path": [
+												"{{master}}",
+												"country",
+												"{{ID, GUID, ISO ou code}}"
+											]
+										}
+									},
+									"response": []
+								}
+							]
+						},
+						{
+							"name": "✏️ CRUD - UPDATE",
+							"item": [
+								{
+									"name": "Modifier une devise par GUID",
+									"request": {
+										"method": "PUT",
+										"header": [
+											{
+												"key": "Content-Type",
+												"value": "application/json"
+											},
+											{
+												"key": "x-api-key",
+												"value": "{{x-api-token}}",
+												"type": "text"
+											},
+											{
+												"key": "x-api-signature",
+												"value": "{{x-api-signature}}",
+												"type": "text"
+											}
+										],
+										"body": {
+											"mode": "raw",
+											"raw": "{\n  \"code\": {{e.g(236)}},\n  \"iso\": {{e.g(ht)}},\n  \"name\": {{e.g(Test Country)}},\n  \"timezone\": {{e.g(Africa/Tchad)}},\n  \"mobileRegex\": {{e.g(EEEEEEE)}},\n  \"flag\": \"{{e.g(🏳️)}}\"\n}\n",
+											"options": {
+												"raw": {
+													"language": "json"
+												}
+											}
+										},
+										"url": {
+											"raw": "{{endpoint}}/{{master}}/currency/{{guid (e.g:100002)}}",
+											"host": [
+												"{{endpoint}}"
+											],
+											"path": [
+												"{{master}}",
+												"currency",
+												"{{guid (e.g:100002)}}"
+											]
+										}
+									},
+									"response": []
+								}
+							]
+						},
+						{
+							"name": "🗑️ CRUD - DELETE",
+							"item": [
+								{
+									"name": "Supprimer un pays par GUID",
+									"request": {
+										"method": "DELETE",
+										"header": [
+											{
+												"key": "x-api-key",
+												"value": "{{x-api-token}}",
+												"type": "text"
+											},
+											{
+												"key": "x-api-signature",
+												"value": "{{x-api-signature}}",
+												"type": "text"
+											},
+											{
+												"key": "x-api-user",
+												"value": "{{x-api-user}}",
+												"type": "text"
+											}
+										],
+										"url": {
+											"raw": "{{endpoint}}/{{master}}/country/100004",
+											"host": [
+												"{{endpoint}}"
+											],
+											"path": [
+												"{{master}}",
+												"country",
+												"100004"
+											]
+										}
+									},
+									"response": []
+								}
+							]
+						}
+					]
+				},
+				{
+					"name": "exchange_rate",
+					"item": [
+						{
+							"name": "📤 EXPORTS",
+							"item": [
+								{
+									"name": "Export Complet (Tous les devise)",
+									"event": [
+										{
+											"listen": "test",
+											"script": {
+												"exec": [
+													"pm.test('Status is 200', function () {",
+													"    pm.response.to.have.status(200);",
+													"});",
+													"",
+													"pm.test('Response has revision', function () {",
+													"    const jsonData = pm.response.json();",
+													"    pm.expect(jsonData.response).to.have.property('revision');",
+													"    pm.expect(jsonData.response).to.have.property('data');",
+													"    pm.expect(jsonData.response).to.have.property('exported_at');",
+													"});",
+													"",
+													"// Sauvegarder la révision pour les autres tests",
+													"const jsonData = pm.response.json();",
+													"if (jsonData.response && jsonData.response.revision) {",
+													"    pm.environment.set('current_revision', jsonData.response.revision);",
+													"}"
+												],
+												"type": "text/javascript",
+												"packages": {}
+											}
+										}
+									],
+									"request": {
+										"method": "GET",
+										"header": [
+											{
+												"key": "Content-Type",
+												"value": "application/json"
+											},
+											{
+												"key": "x-api-key",
+												"value": "{{x-api-token}}",
+												"type": "text"
+											},
+											{
+												"key": "x-api-signature",
+												"value": "{{x-api-signature}}",
+												"type": "text"
+											}
+										],
+										"url": {
+											"raw": "{{endpoint}}/{{master}}/currency",
+											"host": [
+												"{{endpoint}}"
+											],
+											"path": [
+												"{{master}}",
+												"currency"
+											]
+										}
+									},
+									"response": []
+								},
+								{
+									"name": "Révision Actuelle",
+									"event": [
+										{
+											"listen": "test",
+											"script": {
+												"exec": [
+													"pm.test('Status is 200', function () {",
+													"    pm.response.to.have.status(200);",
+													"});",
+													"",
+													"pm.test('Response has revision and timestamp', function () {",
+													"    const jsonData = pm.response.json();",
+													"    pm.expect(jsonData.response).to.have.property('revision');",
+													"    pm.expect(jsonData.response).to.have.property('checked_at');",
+													"});"
+												],
+												"type": "text/javascript",
+												"packages": {}
+											}
+										}
+									],
+									"request": {
+										"method": "GET",
+										"header": [
+											{
+												"key": "Content-Type",
+												"value": "application/json"
+											},
+											{
+												"key": "x-api-key",
+												"value": "{{x-api-token}}",
+												"type": "text"
+											},
+											{
+												"key": "x-api-signature",
+												"value": "{{x-api-signature}}",
+												"type": "text"
+											}
+										],
+										"url": {
+											"raw": "{{endpoint}}/{{master}}/currency/revision",
+											"host": [
+												"{{endpoint}}"
+											],
+											"path": [
+												"{{master}}",
+												"currency",
+												"revision"
+											]
+										}
+									},
+									"response": []
+								}
+							]
+						},
+						{
+							"name": "➕ CRUD - CREATE",
+							"item": [
+								{
+									"name": "Créer une devise",
 									"event": [
 										{
 											"listen": "test",
@@ -926,9 +1288,17 @@
 													"    pm.response.to.have.status(201);",
 													"});",
 													"",
+													"pm.test('Country created successfully', function () {",
+													"    const jsonData = pm.response.json();",
+													"    pm.expect(jsonData.response).to.have.property('guid');",
+													"    pm.expect(jsonData.response).to.have.property('iso');",
+													"    pm.expect(jsonData.response.iso).to.eql('TE');",
+													"});",
+													"",
+													"// Sauvegarder le GUID pour les autres tests",
 													"const jsonData = pm.response.json();",
 													"if (jsonData.response && jsonData.response.guid) {",
-													"    pm.environment.set('second_country_guid', jsonData.response.guid);",
+													"    pm.environment.set('created_country_guid', jsonData.response.guid);",
 													"}"
 												],
 												"type": "text/javascript",
@@ -956,187 +1326,16 @@
 										],
 										"body": {
 											"mode": "raw",
-											"raw": "{\n  \"code\": 998,\n  \"iso\": \"T2\",\n  \"name\": \"Test Country 2\",\n  \"timezone\": \"America/New_York\"\n}"
+											"raw": "{\n  \"code\": 234,\n  \"iso\": \"TE\",\n  \"name\": \"Test Country\",\n  \"timezone\": \"Europe/Paris\",\n  \"mobileRegex\": \"/^(\\\\+237|237)?6(2[0]\\\\d{6}|[5-9]\\\\d{7})$/\",\n  \"flag\": \"🏳️\"\n}"
 										},
 										"url": {
-											"raw": "{{endpoint}}/{{master}}/country/",
+											"raw": "{{endpoint}}/{{master}}/currency/",
 											"host": [
 												"{{endpoint}}"
 											],
 											"path": [
 												"{{master}}",
-												"country",
-												""
-											]
-										}
-									},
-									"response": []
-								},
-								{
-									"name": "❌ Erreur - Code requis",
-									"event": [
-										{
-											"listen": "test",
-											"script": {
-												"exec": [
-													"pm.test('Status is 400', function () {",
-													"    pm.response.to.have.status(400);",
-													"});",
-													"",
-													"pm.test('Error code is code_required', function () {",
-													"    const jsonData = pm.response.json();",
-													"    pm.expect(jsonData.error.code).to.eql('code_required');",
-													"});"
-												],
-												"type": "text/javascript",
-												"packages": {}
-											}
-										}
-									],
-									"request": {
-										"method": "POST",
-										"header": [
-											{
-												"key": "Content-Type",
-												"value": "application/json"
-											},
-											{
-												"key": "x-api-key",
-												"value": "{{x-api-token}}",
-												"type": "text"
-											},
-											{
-												"key": "x-api-signature",
-												"value": "{{x-api-signature}}",
-												"type": "text"
-											}
-										],
-										"body": {
-											"mode": "raw",
-											"raw": "{\n  \"iso\": \"XX\",\n  \"name\": \"Test sans code\"\n}"
-										},
-										"url": {
-											"raw": "{{endpoint}}/{{master}}/country/",
-											"host": [
-												"{{endpoint}}"
-											],
-											"path": [
-												"{{master}}",
-												"country",
-												""
-											]
-										}
-									},
-									"response": []
-								},
-								{
-									"name": "❌ Erreur - ISO requis",
-									"event": [
-										{
-											"listen": "test",
-											"script": {
-												"exec": [
-													"pm.test('Status is 400', function () {",
-													"    pm.response.to.have.status(400);",
-													"});",
-													"",
-													"pm.test('Error code is iso_required', function () {",
-													"    const jsonData = pm.response.json();",
-													"    pm.expect(jsonData.error.code).to.eql('iso_required');",
-													"});"
-												],
-												"type": "text/javascript",
-												"packages": {}
-											}
-										}
-									],
-									"request": {
-										"method": "POST",
-										"header": [
-											{
-												"key": "Content-Type",
-												"value": "application/json"
-											},
-											{
-												"key": "x-api-key",
-												"value": "{{x-api-token}}",
-												"type": "text"
-											},
-											{
-												"key": "x-api-signature",
-												"value": "{{x-api-signature}}",
-												"type": "text"
-											}
-										],
-										"body": {
-											"mode": "raw",
-											"raw": "{\n  \"code\": 997,\n  \"name\": \"Test sans ISO\"\n}"
-										},
-										"url": {
-											"raw": "{{endpoint}}/{{master}}/country/",
-											"host": [
-												"{{endpoint}}"
-											],
-											"path": [
-												"{{master}}",
-												"country",
-												""
-											]
-										}
-									},
-									"response": []
-								},
-								{
-									"name": "❌ Erreur - Pays déjà existant",
-									"event": [
-										{
-											"listen": "test",
-											"script": {
-												"exec": [
-													"pm.test('Status is 409 (Conflict)', function () {",
-													"    pm.response.to.have.status(409);",
-													"});",
-													"",
-													"pm.test('Error code is country_already_exists', function () {",
-													"    const jsonData = pm.response.json();",
-													"    pm.expect(jsonData.error.code).to.eql('country_already_exists');",
-													"});"
-												],
-												"type": "text/javascript",
-												"packages": {}
-											}
-										}
-									],
-									"request": {
-										"method": "POST",
-										"header": [
-											{
-												"key": "Content-Type",
-												"value": "application/json"
-											},
-											{
-												"key": "x-api-key",
-												"value": "{{x-api-token}}",
-												"type": "text"
-											},
-											{
-												"key": "x-api-signature",
-												"value": "{{x-api-signature}}",
-												"type": "text"
-											}
-										],
-										"body": {
-											"mode": "raw",
-											"raw": "{\n  \"code\": 999,\n  \"iso\": \"TE\",\n  \"name\": \"Test doublon\"\n}"
-										},
-										"url": {
-											"raw": "{{endpoint}}/{{master}}/country/",
-											"host": [
-												"{{endpoint}}"
-											],
-											"path": [
-												"{{master}}",
-												"country",
+												"currency",
 												""
 											]
 										}
@@ -1569,177 +1768,6 @@
 										}
 									},
 									"response": []
-								},
-								{
-									"name": "❌ Erreur - Code requis",
-									"event": [
-										{
-											"listen": "test",
-											"script": {
-												"exec": [
-													"pm.test('Status is 400', function () {",
-													"    pm.response.to.have.status(400);",
-													"});",
-													"",
-													"pm.test('Error code is code_required', function () {",
-													"    const jsonData = pm.response.json();",
-													"    pm.expect(jsonData.error.code).to.eql('code_required');",
-													"});"
-												],
-												"type": "text/javascript",
-												"packages": {}
-											}
-										}
-									],
-									"request": {
-										"method": "POST",
-										"header": [
-											{
-												"key": "Content-Type",
-												"value": "application/json"
-											},
-											{
-												"key": "x-api-key",
-												"value": "{{x-api-token}}",
-												"type": "text"
-											},
-											{
-												"key": "x-api-signature",
-												"value": "{{x-api-signature}}",
-												"type": "text"
-											}
-										],
-										"body": {
-											"mode": "raw",
-											"raw": "{\n  \"iso\": \"XX\",\n  \"name\": \"Test sans code\"\n}"
-										},
-										"url": {
-											"raw": "{{endpoint}}/{{master}}/country/",
-											"host": [
-												"{{endpoint}}"
-											],
-											"path": [
-												"{{master}}",
-												"country",
-												""
-											]
-										}
-									},
-									"response": []
-								},
-								{
-									"name": "❌ Erreur - ISO requis",
-									"event": [
-										{
-											"listen": "test",
-											"script": {
-												"exec": [
-													"pm.test('Status is 400', function () {",
-													"    pm.response.to.have.status(400);",
-													"});",
-													"",
-													"pm.test('Error code is iso_required', function () {",
-													"    const jsonData = pm.response.json();",
-													"    pm.expect(jsonData.error.code).to.eql('iso_required');",
-													"});"
-												],
-												"type": "text/javascript",
-												"packages": {}
-											}
-										}
-									],
-									"request": {
-										"method": "POST",
-										"header": [
-											{
-												"key": "Content-Type",
-												"value": "application/json"
-											},
-											{
-												"key": "x-api-key",
-												"value": "{{x-api-token}}",
-												"type": "text"
-											},
-											{
-												"key": "x-api-signature",
-												"value": "{{x-api-signature}}",
-												"type": "text"
-											}
-										],
-										"body": {
-											"mode": "raw",
-											"raw": "{\n  \"code\": 997,\n  \"name\": \"Test sans ISO\"\n}"
-										},
-										"url": {
-											"raw": "{{endpoint}}/{{master}}/country/",
-											"host": [
-												"{{endpoint}}"
-											],
-											"path": [
-												"{{master}}",
-												"country",
-												""
-											]
-										}
-									},
-									"response": []
-								},
-								{
-									"name": "❌ Erreur - Pays déjà existant",
-									"event": [
-										{
-											"listen": "test",
-											"script": {
-												"exec": [
-													"pm.test('Status is 409 (Conflict)', function () {",
-													"    pm.response.to.have.status(409);",
-													"});",
-													"",
-													"pm.test('Error code is country_already_exists', function () {",
-													"    const jsonData = pm.response.json();",
-													"    pm.expect(jsonData.error.code).to.eql('country_already_exists');",
-													"});"
-												],
-												"type": "text/javascript",
-												"packages": {}
-											}
-										}
-									],
-									"request": {
-										"method": "POST",
-										"header": [
-											{
-												"key": "Content-Type",
-												"value": "application/json"
-											},
-											{
-												"key": "x-api-key",
-												"value": "{{x-api-token}}",
-												"type": "text"
-											},
-											{
-												"key": "x-api-signature",
-												"value": "{{x-api-signature}}",
-												"type": "text"
-											}
-										],
-										"body": {
-											"mode": "raw",
-											"raw": "{\n  \"code\": 999,\n  \"iso\": \"TE\",\n  \"name\": \"Test doublon\"\n}"
-										},
-										"url": {
-											"raw": "{{endpoint}}/{{master}}/country/",
-											"host": [
-												"{{endpoint}}"
-											],
-											"path": [
-												"{{master}}",
-												"country",
-												""
-											]
-										}
-									},
-									"response": []
 								}
 							]
 						},
@@ -1775,112 +1803,6 @@
 												"{{master}}",
 												"currency",
 												"list"
-											]
-										}
-									},
-									"response": []
-								},
-								{
-									"name": "Rechercher par code ISO",
-									"request": {
-										"method": "GET",
-										"header": [
-											{
-												"key": "Content-Type",
-												"value": "application/json"
-											},
-											{
-												"key": "x-api-key",
-												"value": "{{x-api-token}}",
-												"type": "text"
-											},
-											{
-												"key": "x-api-signature",
-												"value": "{{x-api-signature}}",
-												"type": "text"
-											}
-										],
-										"url": {
-											"raw": "{{endpoint}}/{{master}}/country/search/iso/{{iso_code: e.g: CM}}",
-											"host": [
-												"{{endpoint}}"
-											],
-											"path": [
-												"{{master}}",
-												"country",
-												"search",
-												"iso",
-												"{{iso_code: e.g: CM}}"
-											]
-										}
-									},
-									"response": []
-								},
-								{
-									"name": "Rechercher par code numérique",
-									"request": {
-										"method": "GET",
-										"header": [
-											{
-												"key": "Content-Type",
-												"value": "application/json"
-											},
-											{
-												"key": "x-api-key",
-												"value": "{{x-api-token}}",
-												"type": "text"
-											},
-											{
-												"key": "x-api-signature",
-												"value": "{{x-api-signature}}",
-												"type": "text"
-											}
-										],
-										"url": {
-											"raw": "{{endpoint}}/{{master}}/country/search/code/{{code: e.g: 237}}",
-											"host": [
-												"{{endpoint}}"
-											],
-											"path": [
-												"{{master}}",
-												"country",
-												"search",
-												"code",
-												"{{code: e.g: 237}}"
-											]
-										}
-									},
-									"response": []
-								},
-								{
-									"name": "Recherche intelligente par ID, GUID, ISO ou code",
-									"request": {
-										"method": "GET",
-										"header": [
-											{
-												"key": "Content-Type",
-												"value": "application/json"
-											},
-											{
-												"key": "x-api-key",
-												"value": "{{x-api-token}}",
-												"type": "text"
-											},
-											{
-												"key": "x-api-signature",
-												"value": "{{x-api-signature}}",
-												"type": "text"
-											}
-										],
-										"url": {
-											"raw": "{{endpoint}}/{{master}}/country/{{ID, GUID, ISO ou code}}",
-											"host": [
-												"{{endpoint}}"
-											],
-											"path": [
-												"{{master}}",
-												"country",
-												"{{ID, GUID, ISO ou code}}"
 											]
 										}
 									},
@@ -1979,13 +1901,13 @@
 					]
 				},
 				{
-					"name": "Tenant",
+					"name": "tax_rule",
 					"item": [
 						{
 							"name": "📤 EXPORTS",
 							"item": [
 								{
-									"name": "Export Complet (Tous les tenants)",
+									"name": "Export Complet (Règles Fiscales))",
 									"event": [
 										{
 											"listen": "test",
@@ -2032,13 +1954,13 @@
 											}
 										],
 										"url": {
-											"raw": "{{endpoint}}/{{master}}/tenant",
+											"raw": "{{endpoint}}/{{master}}/tax-rule",
 											"host": [
 												"{{endpoint}}"
 											],
 											"path": [
 												"{{master}}",
-												"tenant"
+												"tax-rule"
 											]
 										}
 									},
@@ -2085,13 +2007,13 @@
 											}
 										],
 										"url": {
-											"raw": "{{endpoint}}/{{master}}/currency/revision",
+											"raw": "{{endpoint}}/{{master}}/tax-rule/revision",
 											"host": [
 												"{{endpoint}}"
 											],
 											"path": [
 												"{{master}}",
-												"currency",
+												"tax-rule",
 												"revision"
 											]
 										}
@@ -2104,7 +2026,7 @@
 							"name": "➕ CRUD - CREATE",
 							"item": [
 								{
-									"name": "Créer un tenant",
+									"name": "Créer une règle fiscale",
 									"event": [
 										{
 											"listen": "test",
@@ -2152,7 +2074,209 @@
 										],
 										"body": {
 											"mode": "raw",
-											"raw": "{\n    \"name\": \"SAKE Sarl\",\n    \"short_name\": \"SK\",\n    \"country_code\": \"CM\",\n    \"primary_currency_code\": \"XAF\",\n    \"preferred_language_code\": \"en\",\n    \"timezone\": \"Africa/Douala\",\n    \"billing_email\": \"princefomo49@gmail.com\",\n    \"billing_address\": {\n        \"city\": \"douala\",\n        \"location\": \"makepe\",\n        \"place_name\": \"carrefour abou de bangui\"\n    },\n    \"billing_phone\": \"695601145\",\n    \"registration_number\": \"na987263\" \n}"
+											"raw": "{\n    \"country_code\": \"CM\",\n    \"tax_type\": \"VAT\",\n    \"tax_name\": \"TVA Cameroun\",\n    \"tax_rate\": 0.1925\n}"
+										},
+										"url": {
+											"raw": "{{endpoint}}/{{master}}/tax-rule/",
+											"host": [
+												"{{endpoint}}"
+											],
+											"path": [
+												"{{master}}",
+												"tax-rule",
+												""
+											]
+										}
+									},
+									"response": []
+								}
+							]
+						},
+						{
+							"name": "📝 CRUD - READ",
+							"item": [
+								{
+									"name": "Liste Toutes Entrées",
+									"request": {
+										"method": "GET",
+										"header": [
+											{
+												"key": "Content-Type",
+												"value": "application/json"
+											},
+											{
+												"key": "x-api-key",
+												"value": "{{x-api-token}}",
+												"type": "text"
+											},
+											{
+												"key": "x-api-signature",
+												"value": "{{x-api-signature}}",
+												"type": "text"
+											}
+										],
+										"url": {
+											"raw": "{{endpoint}}/{{master}}/tax-rule/list",
+											"host": [
+												"{{endpoint}}"
+											],
+											"path": [
+												"{{master}}",
+												"tax-rule",
+												"list"
+											]
+										}
+									},
+									"response": []
+								}
+							]
+						},
+						{
+							"name": "✏️ CRUD - UPDATE",
+							"item": [
+								{
+									"name": "Modifier  une règle fiscale par GUID",
+									"request": {
+										"method": "PUT",
+										"header": [
+											{
+												"key": "Content-Type",
+												"value": "application/json"
+											},
+											{
+												"key": "x-api-key",
+												"value": "{{x-api-token}}",
+												"type": "text"
+											},
+											{
+												"key": "x-api-signature",
+												"value": "{{x-api-signature}}",
+												"type": "text"
+											}
+										],
+										"body": {
+											"mode": "raw",
+											"raw": "{\n  \"code\": {{e.g(236)}},\n  \"iso\": {{e.g(ht)}},\n  \"name\": {{e.g(Test Country)}},\n  \"timezone\": {{e.g(Africa/Tchad)}},\n  \"mobileRegex\": {{e.g(EEEEEEE)}},\n  \"flag\": \"{{e.g(🏳️)}}\"\n}\n",
+											"options": {
+												"raw": {
+													"language": "json"
+												}
+											}
+										},
+										"url": {
+											"raw": "{{endpoint}}/{{master}}/tax-rule/{{guid (e.g:100002)}}",
+											"host": [
+												"{{endpoint}}"
+											],
+											"path": [
+												"{{master}}",
+												"tax-rule",
+												"{{guid (e.g:100002)}}"
+											]
+										}
+									},
+									"response": []
+								}
+							]
+						},
+						{
+							"name": "🗑️ CRUD - DELETE",
+							"item": [
+								{
+									"name": "Supprimer une règle fiscale  par GUID",
+									"request": {
+										"method": "DELETE",
+										"header": [
+											{
+												"key": "x-api-key",
+												"value": "{{x-api-token}}",
+												"type": "text"
+											},
+											{
+												"key": "x-api-signature",
+												"value": "{{x-api-signature}}",
+												"type": "text"
+											},
+											{
+												"key": "x-api-user",
+												"value": "{{x-api-user}}",
+												"type": "text"
+											}
+										],
+										"url": {
+											"raw": "{{endpoint}}/{{master}}/tax-rule/100004",
+											"host": [
+												"{{endpoint}}"
+											],
+											"path": [
+												"{{master}}",
+												"tax-rule",
+												"100004"
+											]
+										}
+									},
+									"response": []
+								}
+							]
+						}
+					]
+				},
+				{
+					"name": "Tenant",
+					"item": [
+						{
+							"name": "➕ CRUD - CREATE",
+							"item": [
+								{
+									"name": "Créer un nouveau tenant",
+									"event": [
+										{
+											"listen": "test",
+											"script": {
+												"exec": [
+													"pm.test('Status is 201', function () {",
+													"    pm.response.to.have.status(201);",
+													"});",
+													"",
+													"pm.test('Country created successfully', function () {",
+													"    const jsonData = pm.response.json();",
+													"    pm.expect(jsonData.response).to.have.property('guid');",
+													"    pm.expect(jsonData.response).to.have.property('iso');",
+													"    pm.expect(jsonData.response.iso).to.eql('TE');",
+													"});",
+													"",
+													"// Sauvegarder le GUID pour les autres tests",
+													"const jsonData = pm.response.json();",
+													"if (jsonData.response && jsonData.response.guid) {",
+													"    pm.environment.set('created_country_guid', jsonData.response.guid);",
+													"}"
+												],
+												"type": "text/javascript",
+												"packages": {}
+											}
+										}
+									],
+									"request": {
+										"method": "POST",
+										"header": [
+											{
+												"key": "Content-Type",
+												"value": "application/json"
+											},
+											{
+												"key": "x-api-key",
+												"value": "{{x-api-token}}",
+												"type": "text"
+											},
+											{
+												"key": "x-api-signature",
+												"value": "{{x-api-signature}}",
+												"type": "text"
+											}
+										],
+										"body": {
+											"mode": "raw",
+											"raw": "{\n    \"name\": \"SAKE Sarl\",\n    \"short_name\": \"SK\",\n    \"country_code\": \"CM\",\n    \"primary_currency_code\": \"XAF\",\n    \"preferred_language_code\": \"en\",\n    \"timezone\": \"Africa/Douala\",\n    \"billing_email\": \"princefomo49@gmail.com\",\n    \"billing_address\": {\n        \"city\": \"douala\",\n        \"location\": \"makepe\",\n        \"place_name\": \"carrefour abou de bangui\"\n    },\n    \"billing_phone\": \"695601145\",\n    \"registration_number\": \"na987263\",\n    \"employee_count\": [1,10],\n    \"tax_number\": \"1bfdbm27u3mjkk\"\n}"
 										},
 										"url": {
 											"raw": "{{endpoint}}/{{master}}/tenant/",
@@ -2206,6 +2330,383 @@
 										}
 									},
 									"response": []
+								},
+								{
+									"name": "Lister les tenants par code pays",
+									"request": {
+										"method": "GET",
+										"header": [
+											{
+												"key": "Content-Type",
+												"value": "application/json"
+											},
+											{
+												"key": "x-api-key",
+												"value": "{{x-api-token}}",
+												"type": "text"
+											},
+											{
+												"key": "x-api-signature",
+												"value": "{{x-api-signature}}",
+												"type": "text"
+											}
+										],
+										"url": {
+											"raw": "{{endpoint}}/{{master}}/tenant/country/:country_code",
+											"host": [
+												"{{endpoint}}"
+											],
+											"path": [
+												"{{master}}",
+												"tenant",
+												"country",
+												":country_code"
+											],
+											"variable": [
+												{
+													"key": "country_code",
+													"value": ""
+												}
+											]
+										}
+									},
+									"response": []
+								},
+								{
+									"name": "Lister les tenants par code devise",
+									"request": {
+										"method": "GET",
+										"header": [
+											{
+												"key": "Content-Type",
+												"value": "application/json"
+											},
+											{
+												"key": "x-api-key",
+												"value": "{{x-api-token}}",
+												"type": "text"
+											},
+											{
+												"key": "x-api-signature",
+												"value": "{{x-api-signature}}",
+												"type": "text"
+											}
+										],
+										"url": {
+											"raw": "{{endpoint}}/{{master}}/tenant/currency/:currency_code",
+											"host": [
+												"{{endpoint}}"
+											],
+											"path": [
+												"{{master}}",
+												"tenant",
+												"currency",
+												":currency_code"
+											],
+											"variable": [
+												{
+													"key": "currency_code",
+													"value": ""
+												}
+											]
+										}
+									},
+									"response": []
+								},
+								{
+									"name": "Lister les tenants par code de langue",
+									"request": {
+										"method": "GET",
+										"header": [
+											{
+												"key": "Content-Type",
+												"value": "application/json"
+											},
+											{
+												"key": "x-api-key",
+												"value": "{{x-api-token}}",
+												"type": "text"
+											},
+											{
+												"key": "x-api-signature",
+												"value": "{{x-api-signature}}",
+												"type": "text"
+											}
+										],
+										"url": {
+											"raw": "{{endpoint}}/{{master}}/tenant/language/:language_code",
+											"host": [
+												"{{endpoint}}"
+											],
+											"path": [
+												"{{master}}",
+												"tenant",
+												"language",
+												":language_code"
+											],
+											"variable": [
+												{
+													"key": "language_code",
+													"value": ""
+												}
+											]
+										}
+									},
+									"response": []
+								},
+								{
+									"name": "Lister les tenants par fuseau horaire",
+									"request": {
+										"method": "GET",
+										"header": [
+											{
+												"key": "Content-Type",
+												"value": "application/json"
+											},
+											{
+												"key": "x-api-key",
+												"value": "{{x-api-token}}",
+												"type": "text"
+											},
+											{
+												"key": "x-api-signature",
+												"value": "{{x-api-signature}}",
+												"type": "text"
+											}
+										],
+										"url": {
+											"raw": "{{endpoint}}/{{master}}/tenant/timezone/:timezone",
+											"host": [
+												"{{endpoint}}"
+											],
+											"path": [
+												"{{master}}",
+												"tenant",
+												"timezone",
+												":timezone"
+											],
+											"variable": [
+												{
+													"key": "timezone",
+													"value": ""
+												}
+											]
+										}
+									},
+									"response": []
+								},
+								{
+									"name": "Lister les tenants par exemption fiscale",
+									"request": {
+										"method": "GET",
+										"header": [
+											{
+												"key": "Content-Type",
+												"value": "application/json"
+											},
+											{
+												"key": "x-api-key",
+												"value": "{{x-api-token}}",
+												"type": "text"
+											},
+											{
+												"key": "x-api-signature",
+												"value": "{{x-api-signature}}",
+												"type": "text"
+											}
+										],
+										"url": {
+											"raw": "{{endpoint}}/{{master}}/tenant/tax-exempt/:status",
+											"host": [
+												"{{endpoint}}"
+											],
+											"path": [
+												"{{master}}",
+												"tenant",
+												"tax-exempt",
+												":status"
+											],
+											"variable": [
+												{
+													"key": "status",
+													"value": ""
+												}
+											]
+										}
+									},
+									"response": []
+								},
+								{
+									"name": "Lister les tenants par statut",
+									"request": {
+										"method": "GET",
+										"header": [
+											{
+												"key": "Content-Type",
+												"value": "application/json"
+											},
+											{
+												"key": "x-api-key",
+												"value": "{{x-api-token}}",
+												"type": "text"
+											},
+											{
+												"key": "x-api-signature",
+												"value": "{{x-api-signature}}",
+												"type": "text"
+											}
+										],
+										"url": {
+											"raw": "{{endpoint}}/{{master}}/tenant/status/:status",
+											"host": [
+												"{{endpoint}}"
+											],
+											"path": [
+												"{{master}}",
+												"tenant",
+												"status",
+												":status"
+											],
+											"variable": [
+												{
+													"key": "status",
+													"value": ""
+												}
+											]
+										}
+									},
+									"response": []
+								},
+								{
+									"name": "Rechercher par sous-domaine",
+									"request": {
+										"method": "GET",
+										"header": [
+											{
+												"key": "Content-Type",
+												"value": "application/json"
+											},
+											{
+												"key": "x-api-key",
+												"value": "{{x-api-token}}",
+												"type": "text"
+											},
+											{
+												"key": "x-api-signature",
+												"value": "{{x-api-signature}}",
+												"type": "text"
+											}
+										],
+										"url": {
+											"raw": "{{endpoint}}/{{master}}/tenant/search/subdomain/:subdomain",
+											"host": [
+												"{{endpoint}}"
+											],
+											"path": [
+												"{{master}}",
+												"tenant",
+												"search",
+												"subdomain",
+												":subdomain"
+											],
+											"variable": [
+												{
+													"key": "subdomain",
+													"value": ""
+												}
+											]
+										}
+									},
+									"response": []
+								},
+								{
+									"name": "Révision Actuelle",
+									"event": [
+										{
+											"listen": "test",
+											"script": {
+												"exec": [
+													"pm.test('Status is 200', function () {",
+													"    pm.response.to.have.status(200);",
+													"});",
+													"",
+													"pm.test('Response has revision and timestamp', function () {",
+													"    const jsonData = pm.response.json();",
+													"    pm.expect(jsonData.response).to.have.property('revision');",
+													"    pm.expect(jsonData.response).to.have.property('checked_at');",
+													"});"
+												],
+												"type": "text/javascript",
+												"packages": {}
+											}
+										}
+									],
+									"request": {
+										"method": "GET",
+										"header": [
+											{
+												"key": "Content-Type",
+												"value": "application/json"
+											},
+											{
+												"key": "x-api-key",
+												"value": "{{x-api-token}}",
+												"type": "text"
+											},
+											{
+												"key": "x-api-signature",
+												"value": "{{x-api-signature}}",
+												"type": "text"
+											}
+										],
+										"url": {
+											"raw": "{{endpoint}}/{{master}}/tenant/revision",
+											"host": [
+												"{{endpoint}}"
+											],
+											"path": [
+												"{{master}}",
+												"tenant",
+												"revision"
+											]
+										}
+									},
+									"response": []
+								},
+								{
+									"name": "Demande un OTP",
+									"request": {
+										"method": "GET",
+										"header": [
+											{
+												"key": "Content-Type",
+												"value": "application/json"
+											},
+											{
+												"key": "x-api-key",
+												"value": "{{x-api-token}}",
+												"type": "text"
+											},
+											{
+												"key": "x-api-signature",
+												"value": "{{x-api-signature}}",
+												"type": "text"
+											}
+										],
+										"url": {
+											"raw": "{{endpoint}}/{{master}}/tenant/otp/695601145",
+											"host": [
+												"{{endpoint}}"
+											],
+											"path": [
+												"{{master}}",
+												"tenant",
+												"otp",
+												"695601145"
+											]
+										}
+									},
+									"response": []
 								}
 							]
 						},
@@ -2254,6 +2755,50 @@
 										}
 									},
 									"response": []
+								},
+								{
+									"name": "Définir la configuration de base de données d'un tenantt par GUID Copy",
+									"request": {
+										"method": "PATCH",
+										"header": [
+											{
+												"key": "Content-Type",
+												"value": "application/json"
+											},
+											{
+												"key": "x-api-key",
+												"value": "{{x-api-token}}",
+												"type": "text"
+											},
+											{
+												"key": "x-api-signature",
+												"value": "{{x-api-signature}}",
+												"type": "text"
+											}
+										],
+										"body": {
+											"mode": "raw",
+											"raw": "{\n  \"code\": {{e.g(236)}},\n  \"iso\": {{e.g(ht)}},\n  \"name\": {{e.g(Test Country)}},\n  \"timezone\": {{e.g(Africa/Tchad)}},\n  \"mobileRegex\": {{e.g(EEEEEEE)}},\n  \"flag\": \"{{e.g(🏳️)}}\"\n}\n",
+											"options": {
+												"raw": {
+													"language": "json"
+												}
+											}
+										},
+										"url": {
+											"raw": "{{endpoint}}/{{master}}/tenant/{{guid )}}/database",
+											"host": [
+												"{{endpoint}}"
+											],
+											"path": [
+												"{{master}}",
+												"tenant",
+												"{{guid )}}",
+												"database"
+											]
+										}
+									},
+									"response": []
 								}
 							]
 						},
@@ -2282,13 +2827,582 @@
 											}
 										],
 										"url": {
-											"raw": "{{endpoint}}/{{master}}/tenant/100001",
+											"raw": "{{endpoint}}/{{master}}/tenant/100015",
 											"host": [
 												"{{endpoint}}"
 											],
 											"path": [
 												"{{master}}",
 												"tenant",
+												"100015"
+											]
+										}
+									},
+									"response": []
+								}
+							]
+						}
+					]
+				},
+				{
+					"name": "global_license",
+					"item": [
+						{
+							"name": "➕ CRUD - CREATE",
+							"item": [
+								{
+									"name": "Créer une nouvelle licence globale",
+									"event": [
+										{
+											"listen": "test",
+											"script": {
+												"exec": [
+													"pm.test('Status is 201', function () {",
+													"    pm.response.to.have.status(201);",
+													"});",
+													"",
+													"pm.test('Country created successfully', function () {",
+													"    const jsonData = pm.response.json();",
+													"    pm.expect(jsonData.response).to.have.property('guid');",
+													"    pm.expect(jsonData.response).to.have.property('iso');",
+													"    pm.expect(jsonData.response.iso).to.eql('TE');",
+													"});",
+													"",
+													"// Sauvegarder le GUID pour les autres tests",
+													"const jsonData = pm.response.json();",
+													"if (jsonData.response && jsonData.response.guid) {",
+													"    pm.environment.set('created_country_guid', jsonData.response.guid);",
+													"}"
+												],
+												"type": "text/javascript",
+												"packages": {}
+											}
+										}
+									],
+									"request": {
+										"method": "POST",
+										"header": [
+											{
+												"key": "Content-Type",
+												"value": "application/json"
+											},
+											{
+												"key": "x-api-key",
+												"value": "{{x-api-token}}",
+												"type": "text"
+											},
+											{
+												"key": "x-api-signature",
+												"value": "{{x-api-signature}}",
+												"type": "text"
+											}
+										],
+										"body": {
+											"mode": "raw",
+											"raw": "{\n    \"name\": \"SAKE Sarl\",\n    \"short_name\": \"SK\",\n    \"country_code\": \"CM\",\n    \"primary_currency_code\": \"XAF\",\n    \"preferred_language_code\": \"en\",\n    \"timezone\": \"Africa/Douala\",\n    \"billing_email\": \"princefomo49@gmail.com\",\n    \"billing_address\": {\n        \"city\": \"douala\",\n        \"location\": \"makepe\",\n        \"place_name\": \"carrefour abou de bangui\"\n    },\n    \"billing_phone\": \"695601145\",\n    \"registration_number\": \"na987263\" \n}"
+										},
+										"url": {
+											"raw": "{{endpoint}}/{{master}}/global-license/",
+											"host": [
+												"{{endpoint}}"
+											],
+											"path": [
+												"{{master}}",
+												"global-license",
+												""
+											]
+										}
+									},
+									"response": []
+								}
+							]
+						},
+						{
+							"name": "📝 CRUD - READ",
+							"item": [
+								{
+									"name": "Lister toutes les licences globales (pour admin)",
+									"request": {
+										"method": "GET",
+										"header": [
+											{
+												"key": "Content-Type",
+												"value": "application/json"
+											},
+											{
+												"key": "x-api-key",
+												"value": "{{x-api-token}}",
+												"type": "text"
+											},
+											{
+												"key": "x-api-signature",
+												"value": "{{x-api-signature}}",
+												"type": "text"
+											}
+										],
+										"url": {
+											"raw": "{{endpoint}}/{{master}}/global-license/list",
+											"host": [
+												"{{endpoint}}"
+											],
+											"path": [
+												"{{master}}",
+												"global-license",
+												"list"
+											]
+										}
+									},
+									"response": []
+								},
+								{
+									"name": "Lister les licences par tenant",
+									"request": {
+										"method": "GET",
+										"header": [
+											{
+												"key": "Content-Type",
+												"value": "application/json"
+											},
+											{
+												"key": "x-api-key",
+												"value": "{{x-api-token}}",
+												"type": "text"
+											},
+											{
+												"key": "x-api-signature",
+												"value": "{{x-api-signature}}",
+												"type": "text"
+											}
+										],
+										"url": {
+											"raw": "{{endpoint}}/{{master}}/global-license/tenant/:tenant",
+											"host": [
+												"{{endpoint}}"
+											],
+											"path": [
+												"{{master}}",
+												"global-license",
+												"tenant",
+												":tenant"
+											],
+											"variable": [
+												{
+													"key": "tenant",
+													"value": ""
+												}
+											]
+										}
+									},
+									"response": []
+								},
+								{
+									"name": "Lister les licences par type",
+									"request": {
+										"method": "GET",
+										"header": [
+											{
+												"key": "Content-Type",
+												"value": "application/json"
+											},
+											{
+												"key": "x-api-key",
+												"value": "{{x-api-token}}",
+												"type": "text"
+											},
+											{
+												"key": "x-api-signature",
+												"value": "{{x-api-signature}}",
+												"type": "text"
+											}
+										],
+										"url": {
+											"raw": "{{endpoint}}/{{master}}/global-license/type/:license_type",
+											"host": [
+												"{{endpoint}}"
+											],
+											"path": [
+												"{{master}}",
+												"global-license",
+												"type",
+												":license_type"
+											],
+											"variable": [
+												{
+													"key": "license_type",
+													"value": ""
+												}
+											]
+										}
+									},
+									"response": []
+								},
+								{
+									"name": "Lister les licences par cycle de facturation",
+									"request": {
+										"method": "GET",
+										"header": [
+											{
+												"key": "Content-Type",
+												"value": "application/json"
+											},
+											{
+												"key": "x-api-key",
+												"value": "{{x-api-token}}",
+												"type": "text"
+											},
+											{
+												"key": "x-api-signature",
+												"value": "{{x-api-signature}}",
+												"type": "text"
+											}
+										],
+										"url": {
+											"raw": "{{endpoint}}/{{master}}/global-license/billing-cycle/:months",
+											"host": [
+												"{{endpoint}}"
+											],
+											"path": [
+												"{{master}}",
+												"global-license",
+												"billing-cycle",
+												":months"
+											],
+											"variable": [
+												{
+													"key": "months",
+													"value": ""
+												}
+											]
+										}
+									},
+									"response": []
+								},
+								{
+									"name": "Lister les licences par statut",
+									"request": {
+										"method": "GET",
+										"header": [
+											{
+												"key": "Content-Type",
+												"value": "application/json"
+											},
+											{
+												"key": "x-api-key",
+												"value": "{{x-api-token}}",
+												"type": "text"
+											},
+											{
+												"key": "x-api-signature",
+												"value": "{{x-api-signature}}",
+												"type": "text"
+											}
+										],
+										"url": {
+											"raw": "{{endpoint}}/{{master}}/global-license/status/:status",
+											"host": [
+												"{{endpoint}}"
+											],
+											"path": [
+												"{{master}}",
+												"global-license",
+												"status",
+												":status"
+											],
+											"variable": [
+												{
+													"key": "status",
+													"value": ""
+												}
+											]
+										}
+									},
+									"response": []
+								},
+								{
+									"name": "Lister les licences expirant dans X jours",
+									"request": {
+										"method": "GET",
+										"header": [
+											{
+												"key": "Content-Type",
+												"value": "application/json"
+											},
+											{
+												"key": "x-api-key",
+												"value": "{{x-api-token}}",
+												"type": "text"
+											},
+											{
+												"key": "x-api-signature",
+												"value": "{{x-api-signature}}",
+												"type": "text"
+											}
+										],
+										"url": {
+											"raw": "{{endpoint}}/{{master}}/global-license/expiring/:days",
+											"host": [
+												"{{endpoint}}"
+											],
+											"path": [
+												"{{master}}",
+												"global-license",
+												"expiring",
+												":days"
+											],
+											"variable": [
+												{
+													"key": "days",
+													"value": ""
+												}
+											]
+										}
+									},
+									"response": []
+								},
+								{
+									"name": "Lister les licences expirées",
+									"request": {
+										"method": "GET",
+										"header": [
+											{
+												"key": "Content-Type",
+												"value": "application/json"
+											},
+											{
+												"key": "x-api-key",
+												"value": "{{x-api-token}}",
+												"type": "text"
+											},
+											{
+												"key": "x-api-signature",
+												"value": "{{x-api-signature}}",
+												"type": "text"
+											}
+										],
+										"url": {
+											"raw": "{{endpoint}}/{{master}}/global-license/expired",
+											"host": [
+												"{{endpoint}}"
+											],
+											"path": [
+												"{{master}}",
+												"global-license",
+												"expired"
+											]
+										}
+									},
+									"response": []
+								},
+								{
+									"name": "Recherche intelligente par ID ou GUID",
+									"request": {
+										"method": "GET",
+										"header": [
+											{
+												"key": "Content-Type",
+												"value": "application/json"
+											},
+											{
+												"key": "x-api-key",
+												"value": "{{x-api-token}}",
+												"type": "text"
+											},
+											{
+												"key": "x-api-signature",
+												"value": "{{x-api-signature}}",
+												"type": "text"
+											}
+										],
+										"url": {
+											"raw": "{{endpoint}}/{{master}}/global-license/:identifier",
+											"host": [
+												"{{endpoint}}"
+											],
+											"path": [
+												"{{master}}",
+												"global-license",
+												":identifier"
+											],
+											"variable": [
+												{
+													"key": "identifier",
+													"value": ""
+												}
+											]
+										}
+									},
+									"response": []
+								},
+								{
+									"name": "Révision Actuelle",
+									"event": [
+										{
+											"listen": "test",
+											"script": {
+												"exec": [
+													"pm.test('Status is 200', function () {",
+													"    pm.response.to.have.status(200);",
+													"});",
+													"",
+													"pm.test('Response has revision and timestamp', function () {",
+													"    const jsonData = pm.response.json();",
+													"    pm.expect(jsonData.response).to.have.property('revision');",
+													"    pm.expect(jsonData.response).to.have.property('checked_at');",
+													"});"
+												],
+												"type": "text/javascript",
+												"packages": {}
+											}
+										}
+									],
+									"request": {
+										"method": "GET",
+										"header": [
+											{
+												"key": "Content-Type",
+												"value": "application/json"
+											},
+											{
+												"key": "x-api-key",
+												"value": "{{x-api-token}}",
+												"type": "text"
+											},
+											{
+												"key": "x-api-signature",
+												"value": "{{x-api-signature}}",
+												"type": "text"
+											}
+										],
+										"url": {
+											"raw": "{{endpoint}}/{{master}}/global-license/revision",
+											"host": [
+												"{{endpoint}}"
+											],
+											"path": [
+												"{{master}}",
+												"global-license",
+												"revision"
+											]
+										}
+									},
+									"response": []
+								},
+								{
+									"name": "Demande un OTP",
+									"request": {
+										"method": "GET",
+										"header": [
+											{
+												"key": "Content-Type",
+												"value": "application/json"
+											},
+											{
+												"key": "x-api-key",
+												"value": "{{x-api-token}}",
+												"type": "text"
+											},
+											{
+												"key": "x-api-signature",
+												"value": "{{x-api-signature}}",
+												"type": "text"
+											}
+										],
+										"url": {
+											"raw": "{{endpoint}}/{{master}}/tenant/otp",
+											"host": [
+												"{{endpoint}}"
+											],
+											"path": [
+												"{{master}}",
+												"tenant",
+												"otp"
+											]
+										}
+									},
+									"response": []
+								}
+							]
+						},
+						{
+							"name": "✏️ CRUD - UPDATE",
+							"item": [
+								{
+									"name": "Modifier une licence globale par GUID",
+									"request": {
+										"method": "PUT",
+										"header": [
+											{
+												"key": "Content-Type",
+												"value": "application/json"
+											},
+											{
+												"key": "x-api-key",
+												"value": "{{x-api-token}}",
+												"type": "text"
+											},
+											{
+												"key": "x-api-signature",
+												"value": "{{x-api-signature}}",
+												"type": "text"
+											}
+										],
+										"body": {
+											"mode": "raw",
+											"raw": "{\n  \"code\": {{e.g(236)}},\n  \"iso\": {{e.g(ht)}},\n  \"name\": {{e.g(Test Country)}},\n  \"timezone\": {{e.g(Africa/Tchad)}},\n  \"mobileRegex\": {{e.g(EEEEEEE)}},\n  \"flag\": \"{{e.g(🏳️)}}\"\n}\n",
+											"options": {
+												"raw": {
+													"language": "json"
+												}
+											}
+										},
+										"url": {
+											"raw": "{{endpoint}}/{{master}}/global-license/{{guid (e.g:100002)}}",
+											"host": [
+												"{{endpoint}}"
+											],
+											"path": [
+												"{{master}}",
+												"global-license",
+												"{{guid (e.g:100002)}}"
+											]
+										}
+									},
+									"response": []
+								}
+							]
+						},
+						{
+							"name": "🗑️ CRUD - DELETE",
+							"item": [
+								{
+									"name": "Supprimer une licence globale par GUID",
+									"request": {
+										"method": "DELETE",
+										"header": [
+											{
+												"key": "x-api-key",
+												"value": "{{x-api-token}}",
+												"type": "text"
+											},
+											{
+												"key": "x-api-signature",
+												"value": "{{x-api-signature}}",
+												"type": "text"
+											},
+											{
+												"key": "x-api-user",
+												"value": "{{x-api-user}}",
+												"type": "text"
+											}
+										],
+										"url": {
+											"raw": "{{endpoint}}/{{master}}/global-license/100001",
+											"host": [
+												"{{endpoint}}"
+											],
+											"path": [
+												"{{master}}",
+												"global-license",
 												"100001"
 											]
 										}
@@ -2298,6 +3412,1678 @@
 							]
 						}
 					]
+				},
+				{
+					"name": "Employee_License",
+					"item": [
+						{
+							"name": "➕ CRUD - CREATE",
+							"item": [
+								{
+									"name": "Créer une nouvelle licence globale",
+									"event": [
+										{
+											"listen": "test",
+											"script": {
+												"exec": [
+													"pm.test('Status is 201', function () {",
+													"    pm.response.to.have.status(201);",
+													"});",
+													"",
+													"pm.test('Country created successfully', function () {",
+													"    const jsonData = pm.response.json();",
+													"    pm.expect(jsonData.response).to.have.property('guid');",
+													"    pm.expect(jsonData.response).to.have.property('iso');",
+													"    pm.expect(jsonData.response.iso).to.eql('TE');",
+													"});",
+													"",
+													"// Sauvegarder le GUID pour les autres tests",
+													"const jsonData = pm.response.json();",
+													"if (jsonData.response && jsonData.response.guid) {",
+													"    pm.environment.set('created_country_guid', jsonData.response.guid);",
+													"}"
+												],
+												"type": "text/javascript",
+												"packages": {}
+											}
+										}
+									],
+									"request": {
+										"method": "POST",
+										"header": [
+											{
+												"key": "Content-Type",
+												"value": "application/json"
+											},
+											{
+												"key": "x-api-key",
+												"value": "{{x-api-token}}",
+												"type": "text"
+											},
+											{
+												"key": "x-api-signature",
+												"value": "{{x-api-signature}}",
+												"type": "text"
+											}
+										],
+										"body": {
+											"mode": "raw",
+											"raw": "{\n    \"name\": \"SAKE Sarl\",\n    \"short_name\": \"SK\",\n    \"country_code\": \"CM\",\n    \"primary_currency_code\": \"XAF\",\n    \"preferred_language_code\": \"en\",\n    \"timezone\": \"Africa/Douala\",\n    \"billing_email\": \"princefomo49@gmail.com\",\n    \"billing_address\": {\n        \"city\": \"douala\",\n        \"location\": \"makepe\",\n        \"place_name\": \"carrefour abou de bangui\"\n    },\n    \"billing_phone\": \"695601145\",\n    \"registration_number\": \"na987263\" \n}"
+										},
+										"url": {
+											"raw": "{{endpoint}}/{{master}}/global-license/",
+											"host": [
+												"{{endpoint}}"
+											],
+											"path": [
+												"{{master}}",
+												"global-license",
+												""
+											]
+										}
+									},
+									"response": []
+								}
+							]
+						},
+						{
+							"name": "📝 CRUD - READ",
+							"item": [
+								{
+									"name": "Lister toutes les licences globales (pour admin)",
+									"request": {
+										"method": "GET",
+										"header": [
+											{
+												"key": "Content-Type",
+												"value": "application/json"
+											},
+											{
+												"key": "x-api-key",
+												"value": "{{x-api-token}}",
+												"type": "text"
+											},
+											{
+												"key": "x-api-signature",
+												"value": "{{x-api-signature}}",
+												"type": "text"
+											}
+										],
+										"url": {
+											"raw": "{{endpoint}}/{{master}}/global-license/list",
+											"host": [
+												"{{endpoint}}"
+											],
+											"path": [
+												"{{master}}",
+												"global-license",
+												"list"
+											]
+										}
+									},
+									"response": []
+								},
+								{
+									"name": "Lister les licences par tenant",
+									"request": {
+										"method": "GET",
+										"header": [
+											{
+												"key": "Content-Type",
+												"value": "application/json"
+											},
+											{
+												"key": "x-api-key",
+												"value": "{{x-api-token}}",
+												"type": "text"
+											},
+											{
+												"key": "x-api-signature",
+												"value": "{{x-api-signature}}",
+												"type": "text"
+											}
+										],
+										"url": {
+											"raw": "{{endpoint}}/{{master}}/global-license/tenant/:tenant",
+											"host": [
+												"{{endpoint}}"
+											],
+											"path": [
+												"{{master}}",
+												"global-license",
+												"tenant",
+												":tenant"
+											],
+											"variable": [
+												{
+													"key": "tenant",
+													"value": ""
+												}
+											]
+										}
+									},
+									"response": []
+								},
+								{
+									"name": "Lister les licences par type",
+									"request": {
+										"method": "GET",
+										"header": [
+											{
+												"key": "Content-Type",
+												"value": "application/json"
+											},
+											{
+												"key": "x-api-key",
+												"value": "{{x-api-token}}",
+												"type": "text"
+											},
+											{
+												"key": "x-api-signature",
+												"value": "{{x-api-signature}}",
+												"type": "text"
+											}
+										],
+										"url": {
+											"raw": "{{endpoint}}/{{master}}/global-license/type/:license_type",
+											"host": [
+												"{{endpoint}}"
+											],
+											"path": [
+												"{{master}}",
+												"global-license",
+												"type",
+												":license_type"
+											],
+											"variable": [
+												{
+													"key": "license_type",
+													"value": ""
+												}
+											]
+										}
+									},
+									"response": []
+								},
+								{
+									"name": "Lister les licences par cycle de facturation",
+									"request": {
+										"method": "GET",
+										"header": [
+											{
+												"key": "Content-Type",
+												"value": "application/json"
+											},
+											{
+												"key": "x-api-key",
+												"value": "{{x-api-token}}",
+												"type": "text"
+											},
+											{
+												"key": "x-api-signature",
+												"value": "{{x-api-signature}}",
+												"type": "text"
+											}
+										],
+										"url": {
+											"raw": "{{endpoint}}/{{master}}/global-license/billing-cycle/:months",
+											"host": [
+												"{{endpoint}}"
+											],
+											"path": [
+												"{{master}}",
+												"global-license",
+												"billing-cycle",
+												":months"
+											],
+											"variable": [
+												{
+													"key": "months",
+													"value": ""
+												}
+											]
+										}
+									},
+									"response": []
+								},
+								{
+									"name": "Lister les licences par statut",
+									"request": {
+										"method": "GET",
+										"header": [
+											{
+												"key": "Content-Type",
+												"value": "application/json"
+											},
+											{
+												"key": "x-api-key",
+												"value": "{{x-api-token}}",
+												"type": "text"
+											},
+											{
+												"key": "x-api-signature",
+												"value": "{{x-api-signature}}",
+												"type": "text"
+											}
+										],
+										"url": {
+											"raw": "{{endpoint}}/{{master}}/global-license/status/:status",
+											"host": [
+												"{{endpoint}}"
+											],
+											"path": [
+												"{{master}}",
+												"global-license",
+												"status",
+												":status"
+											],
+											"variable": [
+												{
+													"key": "status",
+													"value": ""
+												}
+											]
+										}
+									},
+									"response": []
+								},
+								{
+									"name": "Lister les licences expirant dans X jours",
+									"request": {
+										"method": "GET",
+										"header": [
+											{
+												"key": "Content-Type",
+												"value": "application/json"
+											},
+											{
+												"key": "x-api-key",
+												"value": "{{x-api-token}}",
+												"type": "text"
+											},
+											{
+												"key": "x-api-signature",
+												"value": "{{x-api-signature}}",
+												"type": "text"
+											}
+										],
+										"url": {
+											"raw": "{{endpoint}}/{{master}}/global-license/expiring/:days",
+											"host": [
+												"{{endpoint}}"
+											],
+											"path": [
+												"{{master}}",
+												"global-license",
+												"expiring",
+												":days"
+											],
+											"variable": [
+												{
+													"key": "days",
+													"value": ""
+												}
+											]
+										}
+									},
+									"response": []
+								},
+								{
+									"name": "Lister les licences expirées",
+									"request": {
+										"method": "GET",
+										"header": [
+											{
+												"key": "Content-Type",
+												"value": "application/json"
+											},
+											{
+												"key": "x-api-key",
+												"value": "{{x-api-token}}",
+												"type": "text"
+											},
+											{
+												"key": "x-api-signature",
+												"value": "{{x-api-signature}}",
+												"type": "text"
+											}
+										],
+										"url": {
+											"raw": "{{endpoint}}/{{master}}/global-license/expired",
+											"host": [
+												"{{endpoint}}"
+											],
+											"path": [
+												"{{master}}",
+												"global-license",
+												"expired"
+											]
+										}
+									},
+									"response": []
+								},
+								{
+									"name": "Recherche intelligente par ID ou GUID",
+									"request": {
+										"method": "GET",
+										"header": [
+											{
+												"key": "Content-Type",
+												"value": "application/json"
+											},
+											{
+												"key": "x-api-key",
+												"value": "{{x-api-token}}",
+												"type": "text"
+											},
+											{
+												"key": "x-api-signature",
+												"value": "{{x-api-signature}}",
+												"type": "text"
+											}
+										],
+										"url": {
+											"raw": "{{endpoint}}/{{master}}/global-license/:identifier",
+											"host": [
+												"{{endpoint}}"
+											],
+											"path": [
+												"{{master}}",
+												"global-license",
+												":identifier"
+											],
+											"variable": [
+												{
+													"key": "identifier",
+													"value": ""
+												}
+											]
+										}
+									},
+									"response": []
+								},
+								{
+									"name": "Révision Actuelle",
+									"event": [
+										{
+											"listen": "test",
+											"script": {
+												"exec": [
+													"pm.test('Status is 200', function () {",
+													"    pm.response.to.have.status(200);",
+													"});",
+													"",
+													"pm.test('Response has revision and timestamp', function () {",
+													"    const jsonData = pm.response.json();",
+													"    pm.expect(jsonData.response).to.have.property('revision');",
+													"    pm.expect(jsonData.response).to.have.property('checked_at');",
+													"});"
+												],
+												"type": "text/javascript",
+												"packages": {}
+											}
+										}
+									],
+									"request": {
+										"method": "GET",
+										"header": [
+											{
+												"key": "Content-Type",
+												"value": "application/json"
+											},
+											{
+												"key": "x-api-key",
+												"value": "{{x-api-token}}",
+												"type": "text"
+											},
+											{
+												"key": "x-api-signature",
+												"value": "{{x-api-signature}}",
+												"type": "text"
+											}
+										],
+										"url": {
+											"raw": "{{endpoint}}/{{master}}/global-license/revision",
+											"host": [
+												"{{endpoint}}"
+											],
+											"path": [
+												"{{master}}",
+												"global-license",
+												"revision"
+											]
+										}
+									},
+									"response": []
+								},
+								{
+									"name": "Demande un OTP",
+									"request": {
+										"method": "GET",
+										"header": [
+											{
+												"key": "Content-Type",
+												"value": "application/json"
+											},
+											{
+												"key": "x-api-key",
+												"value": "{{x-api-token}}",
+												"type": "text"
+											},
+											{
+												"key": "x-api-signature",
+												"value": "{{x-api-signature}}",
+												"type": "text"
+											}
+										],
+										"url": {
+											"raw": "{{endpoint}}/{{master}}/tenant/otp",
+											"host": [
+												"{{endpoint}}"
+											],
+											"path": [
+												"{{master}}",
+												"tenant",
+												"otp"
+											]
+										}
+									},
+									"response": []
+								}
+							]
+						},
+						{
+							"name": "✏️ CRUD - UPDATE",
+							"item": [
+								{
+									"name": "Modifier une licence globale par GUID",
+									"request": {
+										"method": "PUT",
+										"header": [
+											{
+												"key": "Content-Type",
+												"value": "application/json"
+											},
+											{
+												"key": "x-api-key",
+												"value": "{{x-api-token}}",
+												"type": "text"
+											},
+											{
+												"key": "x-api-signature",
+												"value": "{{x-api-signature}}",
+												"type": "text"
+											}
+										],
+										"body": {
+											"mode": "raw",
+											"raw": "{\n  \"code\": {{e.g(236)}},\n  \"iso\": {{e.g(ht)}},\n  \"name\": {{e.g(Test Country)}},\n  \"timezone\": {{e.g(Africa/Tchad)}},\n  \"mobileRegex\": {{e.g(EEEEEEE)}},\n  \"flag\": \"{{e.g(🏳️)}}\"\n}\n",
+											"options": {
+												"raw": {
+													"language": "json"
+												}
+											}
+										},
+										"url": {
+											"raw": "{{endpoint}}/{{master}}/global-license/{{guid (e.g:100002)}}",
+											"host": [
+												"{{endpoint}}"
+											],
+											"path": [
+												"{{master}}",
+												"global-license",
+												"{{guid (e.g:100002)}}"
+											]
+										}
+									},
+									"response": []
+								}
+							]
+						},
+						{
+							"name": "🗑️ CRUD - DELETE",
+							"item": [
+								{
+									"name": "Supprimer une licence globale par GUID",
+									"request": {
+										"method": "DELETE",
+										"header": [
+											{
+												"key": "x-api-key",
+												"value": "{{x-api-token}}",
+												"type": "text"
+											},
+											{
+												"key": "x-api-signature",
+												"value": "{{x-api-signature}}",
+												"type": "text"
+											},
+											{
+												"key": "x-api-user",
+												"value": "{{x-api-user}}",
+												"type": "text"
+											}
+										],
+										"url": {
+											"raw": "{{endpoint}}/{{master}}/global-license/100001",
+											"host": [
+												"{{endpoint}}"
+											],
+											"path": [
+												"{{master}}",
+												"global-license",
+												"100001"
+											]
+										}
+									},
+									"response": []
+								}
+							]
+						}
+					]
+				},
+				{
+					"name": "Lexicon",
+					"item": [
+						{
+							"name": "📤 EXPORTS",
+							"item": [
+								{
+									"name": "Export Complet (Toutes langues)",
+									"event": [
+										{
+											"listen": "test",
+											"script": {
+												"exec": [
+													"pm.test('Status is 200', function () {",
+													"    pm.response.to.have.status(200);",
+													"});",
+													"",
+													"pm.test('Response has revision', function () {",
+													"    const jsonData = pm.response.json();",
+													"    pm.expect(jsonData.response).to.have.property('revision');",
+													"    pm.expect(jsonData.response).to.have.property('data');",
+													"    pm.expect(jsonData.response).to.have.property('exported_at');",
+													"});",
+													"",
+													"// Sauvegarder la révision pour les autres tests",
+													"const jsonData = pm.response.json();",
+													"if (jsonData.response && jsonData.response.revision) {",
+													"    pm.environment.set('current_revision', jsonData.response.revision);",
+													"}"
+												],
+												"type": "text/javascript",
+												"packages": {}
+											}
+										}
+									],
+									"request": {
+										"method": "GET",
+										"header": [
+											{
+												"key": "Content-Type",
+												"value": "application/json"
+											},
+											{
+												"key": "x-api-key",
+												"value": "{{x-api-token}}",
+												"type": "text"
+											},
+											{
+												"key": "x-api-signature",
+												"value": "{{x-api-signature}}",
+												"type": "text"
+											}
+										],
+										"url": {
+											"raw": "{{endpoint}}:{{port}}/lexicon",
+											"host": [
+												"{{endpoint}}"
+											],
+											"port": "{{port}}",
+											"path": [
+												"lexicon"
+											]
+										}
+									},
+									"response": []
+								},
+								{
+									"name": "Export Français",
+									"event": [
+										{
+											"listen": "test",
+											"script": {
+												"exec": [
+													"pm.test('Status is 200', function () {",
+													"    pm.response.to.have.status(200);",
+													"});",
+													"",
+													"pm.test('Response has French data', function () {",
+													"    const jsonData = pm.response.json();",
+													"    pm.expect(jsonData.response).to.have.property('revision');",
+													"    pm.expect(jsonData.response).to.have.property('data');",
+													"});",
+													"",
+													"pm.test('Headers are correct', function () {",
+													"    pm.expect(pm.response.headers.get('X-Language')).to.eql('fr');",
+													"});"
+												],
+												"type": "text/javascript",
+												"packages": {}
+											}
+										}
+									],
+									"request": {
+										"method": "GET",
+										"header": [
+											{
+												"key": "Content-Type",
+												"value": "application/json"
+											},
+											{
+												"key": "x-api-key",
+												"value": "{{x-api-token}}",
+												"type": "text"
+											},
+											{
+												"key": "x-api-signature",
+												"value": "{{x-api-signature}}",
+												"type": "text"
+											}
+										],
+										"url": {
+											"raw": "{{endpoint}}:{{port}}/lexicon/fr",
+											"host": [
+												"{{endpoint}}"
+											],
+											"port": "{{port}}",
+											"path": [
+												"lexicon",
+												"fr"
+											]
+										}
+									},
+									"response": []
+								},
+								{
+									"name": "Export Anglais",
+									"event": [
+										{
+											"listen": "test",
+											"script": {
+												"exec": [
+													"pm.test('Status is 200', function () {",
+													"    pm.response.to.have.status(200);",
+													"});",
+													"",
+													"pm.test('Headers are correct', function () {",
+													"    pm.expect(pm.response.headers.get('X-Language')).to.eql('en');",
+													"});"
+												],
+												"type": "text/javascript",
+												"packages": {}
+											}
+										}
+									],
+									"request": {
+										"method": "GET",
+										"header": [
+											{
+												"key": "Content-Type",
+												"value": "application/json"
+											},
+											{
+												"key": "x-api-key",
+												"value": "{{x-api-token}}",
+												"type": "text"
+											},
+											{
+												"key": "x-api-signature",
+												"value": "{{x-api-signature}}",
+												"type": "text"
+											}
+										],
+										"url": {
+											"raw": "{{endpoint}}:{{port}}/lexicon/en",
+											"host": [
+												"{{endpoint}}"
+											],
+											"port": "{{port}}",
+											"path": [
+												"lexicon",
+												"en"
+											]
+										}
+									},
+									"response": []
+								},
+								{
+									"name": "Révision Actuelle",
+									"event": [
+										{
+											"listen": "test",
+											"script": {
+												"exec": [
+													"pm.test('Status is 200', function () {",
+													"    pm.response.to.have.status(200);",
+													"});",
+													"",
+													"pm.test('Response has revision and timestamp', function () {",
+													"    const jsonData = pm.response.json();",
+													"    pm.expect(jsonData.response).to.have.property('revision');",
+													"    pm.expect(jsonData.response).to.have.property('checked_at');",
+													"});"
+												],
+												"type": "text/javascript",
+												"packages": {}
+											}
+										}
+									],
+									"request": {
+										"method": "GET",
+										"header": [
+											{
+												"key": "Content-Type",
+												"value": "application/json"
+											},
+											{
+												"key": "x-api-key",
+												"value": "{{x-api-token}}",
+												"type": "text"
+											},
+											{
+												"key": "x-api-signature",
+												"value": "{{x-api-signature}}",
+												"type": "text"
+											}
+										],
+										"url": {
+											"raw": "{{endpoint}}:{{port}}/lexicon/revision",
+											"host": [
+												"{{endpoint}}"
+											],
+											"port": "{{port}}",
+											"path": [
+												"lexicon",
+												"revision"
+											]
+										}
+									},
+									"response": []
+								}
+							]
+						},
+						{
+							"name": "➕ CRUD - CREATE",
+							"item": [
+								{
+									"name": "Créer Entrée Lexique",
+									"event": [
+										{
+											"listen": "test",
+											"script": {
+												"exec": [
+													"pm.test('Status is 201', function () {",
+													"    pm.response.to.have.status(201);",
+													"});",
+													"",
+													"pm.test('Entry created successfully', function () {",
+													"    const jsonData = pm.response.json();",
+													"    pm.expect(jsonData.response).to.have.property('guid');",
+													"    pm.expect(jsonData.response).to.have.property('reference');",
+													"    pm.expect(jsonData.response.reference).to.eql('welcomeMessage');",
+													"});",
+													"",
+													"// Sauvegarder le GUID pour les autres tests",
+													"const jsonData = pm.response.json();",
+													"if (jsonData.response && jsonData.response.guid) {",
+													"    pm.environment.set('created_guid', jsonData.response.guid);",
+													"}"
+												],
+												"type": "text/javascript",
+												"packages": {}
+											}
+										}
+									],
+									"request": {
+										"method": "POST",
+										"header": [
+											{
+												"key": "Content-Type",
+												"value": "application/json"
+											},
+											{
+												"key": "x-api-key",
+												"value": "{{x-api-token}}",
+												"type": "text"
+											},
+											{
+												"key": "x-api-signature",
+												"value": "{{x-api-signature}}",
+												"type": "text"
+											}
+										],
+										"body": {
+											"mode": "raw",
+											"raw": "{\n  \"reference\": \"welcomeMessage\",\n  \"translation\": {\n    \"fr\": \"Bienvenue dans notre application\",\n    \"en\": \"Welcome to our application\",\n    \"es\": \"Bienvenido a nuestra aplicación\"\n  },\n  \"portable\": true\n}"
+										},
+										"url": {
+											"raw": "{{endpoint}}:{{port}}/lexicon/",
+											"host": [
+												"{{endpoint}}"
+											],
+											"port": "{{port}}",
+											"path": [
+												"lexicon",
+												""
+											]
+										}
+									},
+									"response": []
+								},
+								{
+									"name": "Créer Deuxième Entrée",
+									"event": [
+										{
+											"listen": "test",
+											"script": {
+												"exec": [
+													"pm.test('Status is 201', function () {",
+													"    pm.response.to.have.status(201);",
+													"});",
+													"",
+													"const jsonData = pm.response.json();",
+													"if (jsonData.response && jsonData.response.guid) {",
+													"    pm.environment.set('second_guid', jsonData.response.guid);",
+													"}"
+												],
+												"type": "text/javascript",
+												"packages": {}
+											}
+										}
+									],
+									"request": {
+										"method": "POST",
+										"header": [
+											{
+												"key": "Content-Type",
+												"value": "application/json"
+											},
+											{
+												"key": "x-api-key",
+												"value": "{{x-api-token}}",
+												"type": "text"
+											},
+											{
+												"key": "x-api-signature",
+												"value": "{{x-api-signature}}",
+												"type": "text"
+											}
+										],
+										"body": {
+											"mode": "raw",
+											"raw": "{\n  \"reference\": \"goodbyeMessage\",\n  \"translation\": {\n    \"fr\": \"Au revoir et à bientôt\",\n    \"en\": \"Goodbye and see you soon\"\n  },\n  \"portable\": false\n}"
+										},
+										"url": {
+											"raw": "{{endpoint}}:{{port}}/lexicon/",
+											"host": [
+												"{{endpoint}}"
+											],
+											"port": "{{port}}",
+											"path": [
+												"lexicon",
+												""
+											]
+										}
+									},
+									"response": []
+								},
+								{
+									"name": "❌ Erreur - Référence dupliquée",
+									"event": [
+										{
+											"listen": "test",
+											"script": {
+												"exec": [
+													"pm.test('Status is 409 (Conflict)', function () {",
+													"    pm.response.to.have.status(409);",
+													"});",
+													"",
+													"pm.test('Error code is reference_already_exists', function () {",
+													"    const jsonData = pm.response.json();",
+													"    pm.expect(jsonData.error.code).to.eql('reference_already_exists');",
+													"});"
+												],
+												"type": "text/javascript",
+												"packages": {}
+											}
+										}
+									],
+									"request": {
+										"method": "POST",
+										"header": [
+											{
+												"key": "Content-Type",
+												"value": "application/json"
+											},
+											{
+												"key": "x-api-key",
+												"value": "{{x-api-token}}",
+												"type": "text"
+											},
+											{
+												"key": "x-api-signature",
+												"value": "{{x-api-signature}}",
+												"type": "text"
+											}
+										],
+										"body": {
+											"mode": "raw",
+											"raw": "{\n  \"reference\": \"welcomeMessage\",\n  \"translation\": {\n    \"fr\": \"Test doublon\"\n  }\n}"
+										},
+										"url": {
+											"raw": "{{endpoint}}:{{port}}/lexicon/",
+											"host": [
+												"{{endpoint}}"
+											],
+											"port": "{{port}}",
+											"path": [
+												"lexicon",
+												""
+											]
+										}
+									},
+									"response": []
+								},
+								{
+									"name": "❌ Erreur - Référence invalide",
+									"event": [
+										{
+											"listen": "test",
+											"script": {
+												"exec": [
+													"pm.test('Status is 400', function () {",
+													"    pm.response.to.have.status(400);",
+													"});"
+												],
+												"type": "text/javascript",
+												"packages": {}
+											}
+										}
+									],
+									"request": {
+										"method": "POST",
+										"header": [
+											{
+												"key": "Content-Type",
+												"value": "application/json"
+											},
+											{
+												"key": "x-api-key",
+												"value": "{{x-api-token}}",
+												"type": "text"
+											},
+											{
+												"key": "x-api-signature",
+												"value": "{{x-api-signature}}",
+												"type": "text"
+											}
+										],
+										"body": {
+											"mode": "raw",
+											"raw": "{\n  \"reference\": \"invalid-reference-with-dashes\",\n  \"translation\": {\n    \"fr\": \"Test invalide\"\n  }\n}"
+										},
+										"url": {
+											"raw": "{{endpoint}}:{{port}}/lexicon/",
+											"host": [
+												"{{endpoint}}"
+											],
+											"port": "{{port}}",
+											"path": [
+												"lexicon",
+												""
+											]
+										}
+									},
+									"response": []
+								}
+							]
+						},
+						{
+							"name": "📝 CRUD - READ",
+							"item": [
+								{
+									"name": "Liste Toutes Entrées",
+									"event": [
+										{
+											"listen": "test",
+											"script": {
+												"exec": [
+													"pm.test('Status is 200', function () {",
+													"    pm.response.to.have.status(200);",
+													"});",
+													"",
+													"pm.test('Response has count and entries', function () {",
+													"    const jsonData = pm.response.json();",
+													"    pm.expect(jsonData.response).to.have.property('count');",
+													"    pm.expect(jsonData.response).to.have.property('entries');",
+													"});"
+												],
+												"type": "text/javascript",
+												"packages": {}
+											}
+										}
+									],
+									"request": {
+										"method": "GET",
+										"header": [
+											{
+												"key": "Content-Type",
+												"value": "application/json"
+											},
+											{
+												"key": "x-api-key",
+												"value": "{{x-api-token}}",
+												"type": "text"
+											},
+											{
+												"key": "x-api-signature",
+												"value": "{{x-api-signature}}",
+												"type": "text"
+											}
+										],
+										"url": {
+											"raw": "{{endpoint}}:{{port}}/lexicon/list",
+											"host": [
+												"{{endpoint}}"
+											],
+											"port": "{{port}}",
+											"path": [
+												"lexicon",
+												"list"
+											]
+										}
+									},
+									"response": []
+								},
+								{
+									"name": "Liste Entrées Portables",
+									"event": [
+										{
+											"listen": "test",
+											"script": {
+												"exec": [
+													"pm.test('Status is 200', function () {",
+													"    pm.response.to.have.status(200);",
+													"});",
+													"",
+													"pm.test('All entries are portable', function () {",
+													"    const jsonData = pm.response.json();",
+													"    if (jsonData.response.entries.length > 0) {",
+													"        jsonData.response.entries.forEach(entry => {",
+													"            pm.expect(entry.portable).to.be.true;",
+													"        });",
+													"    }",
+													"});"
+												],
+												"type": "text/javascript"
+											}
+										}
+									],
+									"request": {
+										"method": "GET",
+										"header": [
+											{
+												"key": "Content-Type",
+												"value": "application/json"
+											},
+											{
+												"key": "x-api-key",
+												"value": "{{x-api-token}}",
+												"type": "text"
+											},
+											{
+												"key": "x-api-signature",
+												"value": "{{x-api-signature}}",
+												"type": "text"
+											}
+										],
+										"url": {
+											"raw": "{{base_url}}/list?portable=true",
+											"host": [
+												"{{base_url}}"
+											],
+											"path": [
+												"list"
+											],
+											"query": [
+												{
+													"key": "portable",
+													"value": "true"
+												}
+											]
+										}
+									},
+									"response": []
+								},
+								{
+									"name": "Recherche par Référence",
+									"event": [
+										{
+											"listen": "test",
+											"script": {
+												"exec": [
+													"pm.test('Status is 200', function () {",
+													"    pm.response.to.have.status(200);",
+													"});",
+													"",
+													"pm.test('Found correct entry', function () {",
+													"    const jsonData = pm.response.json();",
+													"    pm.expect(jsonData.response.reference).to.eql('welcomeMessage');",
+													"});"
+												],
+												"type": "text/javascript",
+												"packages": {}
+											}
+										}
+									],
+									"request": {
+										"method": "GET",
+										"header": [
+											{
+												"key": "Content-Type",
+												"value": "application/json"
+											},
+											{
+												"key": "x-api-key",
+												"value": "{{x-api-token}}",
+												"type": "text"
+											},
+											{
+												"key": "x-api-signature",
+												"value": "{{x-api-signature}}",
+												"type": "text"
+											}
+										],
+										"url": {
+											"raw": "{{base_url}}/search/{{test_reference}}",
+											"host": [
+												"{{base_url}}"
+											],
+											"path": [
+												"search",
+												"{{test_reference}}"
+											]
+										}
+									},
+									"response": []
+								},
+								{
+									"name": "❌ Recherche Introuvable",
+									"event": [
+										{
+											"listen": "test",
+											"script": {
+												"exec": [
+													"pm.test('Status is 404', function () {",
+													"    pm.response.to.have.status(404);",
+													"});"
+												],
+												"type": "text/javascript"
+											}
+										}
+									],
+									"request": {
+										"method": "GET",
+										"header": [
+											{
+												"key": "Content-Type",
+												"value": "application/json"
+											},
+											{
+												"key": "x-api-key",
+												"value": "{{x-api-token}}",
+												"type": "text"
+											},
+											{
+												"key": "x-api-signature",
+												"value": "{{x-api-signature}}",
+												"type": "text"
+											}
+										],
+										"url": {
+											"raw": "{{base_url}}/search/nonExistentReference",
+											"host": [
+												"{{base_url}}"
+											],
+											"path": [
+												"search",
+												"nonExistentReference"
+											]
+										}
+									},
+									"response": []
+								}
+							]
+						},
+						{
+							"name": "✏️ CRUD - UPDATE",
+							"item": [
+								{
+									"name": "Modifier Entrée Complète",
+									"event": [
+										{
+											"listen": "test",
+											"script": {
+												"exec": [
+													"pm.test('Status is 200', function () {",
+													"    pm.response.to.have.status(200);",
+													"});",
+													"",
+													"pm.test('Entry updated successfully', function () {",
+													"    const jsonData = pm.response.json();",
+													"    pm.expect(jsonData.response.reference).to.eql('welcomeMessageUpdated');",
+													"    pm.expect(jsonData.response.portable).to.be.false;",
+													"});"
+												],
+												"type": "text/javascript",
+												"packages": {}
+											}
+										}
+									],
+									"request": {
+										"method": "PUT",
+										"header": [
+											{
+												"key": "Content-Type",
+												"value": "application/json"
+											},
+											{
+												"key": "x-api-key",
+												"value": "{{x-api-token}}",
+												"type": "text"
+											},
+											{
+												"key": "x-api-signature",
+												"value": "{{x-api-signature}}",
+												"type": "text"
+											}
+										],
+										"body": {
+											"mode": "raw",
+											"raw": "{\n  \"reference\": \"welcomeMessageUpdated\",\n  \"translation\": {\n    \"fr\": \"Bienvenue dans notre super application\",\n    \"en\": \"Welcome to our awesome application\",\n    \"es\": \"Bienvenido a nuestra increíble aplicación\",\n    \"de\": \"Willkommen in unserer tollen Anwendung\"\n  },\n  \"portable\": false\n}"
+										},
+										"url": {
+											"raw": "{{endpoint}}:{{port}}/lexicon/{{created_guid}}",
+											"host": [
+												"{{endpoint}}"
+											],
+											"port": "{{port}}",
+											"path": [
+												"lexicon",
+												"{{created_guid}}"
+											]
+										}
+									},
+									"response": []
+								},
+								{
+									"name": "Mise à Jour Partielle Traductions",
+									"event": [
+										{
+											"listen": "test",
+											"script": {
+												"exec": [
+													"pm.test('Status is 200', function () {",
+													"    pm.response.to.have.status(200);",
+													"});",
+													"",
+													"pm.test('Translations updated', function () {",
+													"    const jsonData = pm.response.json();",
+													"    pm.expect(jsonData.response.translation).to.have.property('it');",
+													"    pm.expect(jsonData.response.translation).to.have.property('pt');",
+													"});"
+												],
+												"type": "text/javascript",
+												"packages": {}
+											}
+										}
+									],
+									"request": {
+										"method": "PATCH",
+										"header": [
+											{
+												"key": "Content-Type",
+												"value": "application/json"
+											},
+											{
+												"key": "x-api-key",
+												"value": "{{x-api-token}}",
+												"type": "text"
+											},
+											{
+												"key": "x-api-signature",
+												"value": "{{x-api-signature}}",
+												"type": "text"
+											}
+										],
+										"body": {
+											"mode": "raw",
+											"raw": "{\n  \"de\": \"Willkommen in unserer super App\"\n}"
+										},
+										"url": {
+											"raw": "{{base_url}}/{{created_guid}}/translations",
+											"host": [
+												"{{base_url}}"
+											],
+											"path": [
+												"{{created_guid}}",
+												"translations"
+											]
+										}
+									},
+									"response": []
+								},
+								{
+									"name": "❌ Modification GUID Inexistant",
+									"event": [
+										{
+											"listen": "test",
+											"script": {
+												"exec": [
+													"pm.test('Status is 404', function () {",
+													"    pm.response.to.have.status(404);",
+													"});"
+												],
+												"type": "text/javascript"
+											}
+										}
+									],
+									"request": {
+										"method": "PUT",
+										"header": [
+											{
+												"key": "Content-Type",
+												"value": "application/json"
+											},
+											{
+												"key": "x-api-key",
+												"value": "{{x-api-token}}",
+												"type": "text"
+											},
+											{
+												"key": "x-api-signature",
+												"value": "{{x-api-signature}}",
+												"type": "text"
+											}
+										],
+										"body": {
+											"mode": "raw",
+											"raw": "{\n  \"reference\": \"testUpdate\",\n  \"translation\": {\n    \"fr\": \"Test\"\n  }\n}"
+										},
+										"url": {
+											"raw": "{{base_url}}/999999",
+											"host": [
+												"{{base_url}}"
+											],
+											"path": [
+												"999999"
+											]
+										}
+									},
+									"response": []
+								}
+							]
+						},
+						{
+							"name": "🗑️ CRUD - DELETE",
+							"item": [
+								{
+									"name": "Supprimer Deuxième Entrée",
+									"event": [
+										{
+											"listen": "test",
+											"script": {
+												"exec": [
+													"pm.test('Status is 200', function () {",
+													"    pm.response.to.have.status(200);",
+													"});",
+													"",
+													"pm.test('Deletion confirmed', function () {",
+													"    const jsonData = pm.response.json();",
+													"    pm.expect(jsonData.response.message).to.include('deleted');",
+													"});"
+												],
+												"type": "text/javascript"
+											}
+										}
+									],
+									"request": {
+										"method": "DELETE",
+										"header": [
+											{
+												"key": "Content-Type",
+												"value": "application/json"
+											},
+											{
+												"key": "x-api-key",
+												"value": "{{x-api-token}}",
+												"type": "text"
+											},
+											{
+												"key": "x-api-signature",
+												"value": "{{x-api-signature}}",
+												"type": "text"
+											}
+										],
+										"url": {
+											"raw": "{{base_url}}/{{second_guid}}",
+											"host": [
+												"{{base_url}}"
+											],
+											"path": [
+												"{{second_guid}}"
+											]
+										}
+									},
+									"response": []
+								},
+								{
+									"name": "❌ Supprimer GUID Inexistant",
+									"event": [
+										{
+											"listen": "test",
+											"script": {
+												"exec": [
+													"pm.test('Status is 404', function () {",
+													"    pm.response.to.have.status(404);",
+													"});"
+												],
+												"type": "text/javascript"
+											}
+										}
+									],
+									"request": {
+										"method": "DELETE",
+										"header": [
+											{
+												"key": "Content-Type",
+												"value": "application/json"
+											},
+											{
+												"key": "x-api-key",
+												"value": "{{x-api-token}}",
+												"type": "text"
+											},
+											{
+												"key": "x-api-signature",
+												"value": "{{x-api-signature}}",
+												"type": "text"
+											}
+										],
+										"url": {
+											"raw": "{{base_url}}/999999",
+											"host": [
+												"{{base_url}}"
+											],
+											"path": [
+												"999999"
+											]
+										}
+									},
+									"response": []
+								},
+								{
+									"name": "Supprimer Première Entrée (Cleanup)",
+									"event": [
+										{
+											"listen": "test",
+											"script": {
+												"exec": [
+													"pm.test('Status is 200', function () {",
+													"    pm.response.to.have.status(200);",
+													"});"
+												],
+												"type": "text/javascript"
+											}
+										}
+									],
+									"request": {
+										"method": "DELETE",
+										"header": [
+											{
+												"key": "Content-Type",
+												"value": "application/json"
+											},
+											{
+												"key": "x-api-key",
+												"value": "{{x-api-token}}",
+												"type": "text"
+											},
+											{
+												"key": "x-api-signature",
+												"value": "{{x-api-signature}}",
+												"type": "text"
+											}
+										],
+										"url": {
+											"raw": "{{base_url}}/{{created_guid}}",
+											"host": [
+												"{{base_url}}"
+											],
+											"path": [
+												"{{created_guid}}"
+											]
+										}
+									},
+									"response": []
+								}
+							]
+						},
+						{
+							"name": "🔒 SÉCURITÉ - Tests Méthodes HTTP",
+							"item": [
+								{
+									"name": "❌ POST avec méthode PUT",
+									"event": [
+										{
+											"listen": "test",
+											"script": {
+												"exec": [
+													"pm.test('Should fail with wrong method', function () {",
+													"    // Cette requête devrait échouer car PUT sur / n'est pas autorisé",
+													"    pm.expect(pm.response.code).to.be.oneOf([404, 405]);",
+													"});"
+												],
+												"type": "text/javascript"
+											}
+										}
+									],
+									"request": {
+										"method": "PUT",
+										"header": [
+											{
+												"key": "Content-Type",
+												"value": "application/json"
+											},
+											{
+												"key": "x-api-key",
+												"value": "{{x-api-token}}",
+												"type": "text"
+											},
+											{
+												"key": "x-api-signature",
+												"value": "{{x-api-signature}}",
+												"type": "text"
+											}
+										],
+										"body": {
+											"mode": "raw",
+											"raw": "{\n  \"reference\": \"testWrongMethod\",\n  \"translation\": {\n    \"fr\": \"Test mauvaise méthode\"\n  }\n}"
+										},
+										"url": {
+											"raw": "{{base_url}}/",
+											"host": [
+												"{{base_url}}"
+											],
+											"path": [
+												""
+											]
+										}
+									},
+									"response": []
+								},
+								{
+									"name": "❌ DELETE avec GET",
+									"event": [
+										{
+											"listen": "test",
+											"script": {
+												"exec": [
+													"pm.test('GET on GUID endpoint should fail', function () {",
+													"    // GET sur /:guid n'est pas défini dans nos routes",
+													"    pm.expect(pm.response.code).to.be.oneOf([404, 405]);",
+													"});"
+												],
+												"type": "text/javascript"
+											}
+										}
+									],
+									"request": {
+										"method": "GET",
+										"header": [
+											{
+												"key": "Content-Type",
+												"value": "application/json"
+											},
+											{
+												"key": "x-api-key",
+												"value": "{{x-api-token}}",
+												"type": "text"
+											},
+											{
+												"key": "x-api-signature",
+												"value": "{{x-api-signature}}",
+												"type": "text"
+											}
+										],
+										"url": {
+											"raw": "{{base_url}}/{{test_guid}}",
+											"host": [
+												"{{base_url}}"
+											],
+											"path": [
+												"{{test_guid}}"
+											]
+										}
+									},
+									"response": []
+								}
+							]
+						}
+					],
+					"description": "Collection complète pour tester l'API Lexicon avec CRUD et exports"
 				}
 			]
 		},

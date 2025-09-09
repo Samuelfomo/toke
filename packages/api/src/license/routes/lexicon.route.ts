@@ -1,11 +1,12 @@
-import { Request, Response, Router } from 'express';
-import { HttpStatus, LEXICON_CODES, LEXICON_ERRORS, LexiconValidationUtils, LX } from '@toke/shared';
+import {Request, Response, Router} from 'express';
+import {HttpStatus, LEXICON_CODES, LEXICON_ERRORS, LexiconValidationUtils, LX} from '@toke/shared';
 
 import Lexicon from '../class/Lexicon.js';
 import R from '../../tools/response.js';
 import Ensure from '../middle/ensured-routes.js';
 import Revision from '../../tools/revision.js';
-import { tableName } from '../../utils/response.model.js';
+import {tableName} from '../../utils/response.model.js';
+import Language from '../class/Language.js';
 
 const router = Router();
 
@@ -37,8 +38,6 @@ router.get(
  */
 router.get('/revision', Ensure.get(), async (req: Request, res: Response) => {
   try {
-    // const instance = new Lexicon();
-    // const revision = await (instance as any).getRevision(); // Accès à la méthode private
     const revision = await Revision.getRevision(tableName.LEXICON);
     R.handleSuccess(res, {
       revision,
@@ -94,7 +93,7 @@ router.get(
 router.get('/:lang', Ensure.get(), async (req: Request, res: Response) => {
   try {
     const { lang } = req.params;
-    if (!(await LexiconValidationUtils.validateLanguageCode(lang))){
+    if (!LexiconValidationUtils.validateLanguageCode(lang)){
       return R.handleError(res, HttpStatus.BAD_REQUEST, {
         code: LEXICON_CODES.LANGUAGE_CODE_INVALID,
         message: LEXICON_ERRORS.LANGUAGE_CODE_INVALID,
@@ -131,7 +130,30 @@ router.post(
   async (req: Request, res: Response) => {
     try {
 
-      const validatedData = LX.validateLexiconCreation(req.body);
+      const validatedData = await LX.validateLexiconCreation(req.body);
+
+      const availableLanguages = Object.keys(validatedData.translation);
+      let errors: string[] = [];
+
+      // Vérifier que chaque langue existe dans ta table "Language"
+      await Promise.all(
+        availableLanguages.map(async (lang) => {
+          const language = await Language._load(lang, false, true);
+          if (!language) {
+            errors.push(`The language ‘${lang}’ does not exist in the database.`);
+          }
+        })
+      );
+
+      // Si des erreurs existent, on arrête ici
+      if (errors.length > 0) {
+        return R.handleError(res, HttpStatus.BAD_REQUEST, {
+          code: LEXICON_CODES.VALIDATION_FAILED,
+          message: 'Some languages are not recognized',
+          details: errors,
+        });
+      }
+
       const lexicon = new Lexicon()
         .setReference(validatedData.reference)
         .setTranslation(validatedData.translation)
@@ -205,9 +227,35 @@ router.put(
       }
 
       const validatedData = LX.validateLexiconUpdate(req.body);
+
       // Mise à jour des champs fournis
       if (validatedData.reference !== undefined) lexicon.setReference(validatedData.reference);
-      if (validatedData.translation !== undefined) lexicon.setTranslation(validatedData.translation);
+
+      if (validatedData.translation !== undefined){
+        const availableLanguages = Object.keys(validatedData.translation);
+        let errors: string[] = [];
+
+        // Vérifier que chaque langue existe dans ta table "Language"
+        await Promise.all(
+          availableLanguages.map(async (lang) => {
+            const language = await Language._load(lang, false, true);
+            if (!language) {
+              errors.push(`The language ‘${lang}’ does not exist in the database.`);
+            }
+          })
+        );
+
+        // Si des erreurs existent, on arrête ici
+        if (errors.length > 0) {
+          return R.handleError(res, HttpStatus.BAD_REQUEST, {
+            code: LEXICON_CODES.VALIDATION_FAILED,
+            message: 'Some languages are not recognized',
+            details: errors,
+          });
+        }
+
+        lexicon.setTranslation(validatedData.translation);
+      }
       if (validatedData.portable !== undefined) lexicon.setPortable(validatedData.portable);
 
       await lexicon.save();
@@ -369,6 +417,28 @@ router.patch(
           code: LEXICON_CODES.TRANSLATION_INVALID,
           message: LEXICON_ERRORS.TRANSLATION_INVALID,
         })
+      }
+
+      const availableLanguages = Object.keys(req.body);
+      let errors: string[] = [];
+
+      // Vérifier que chaque langue existe dans ta table "Language"
+      await Promise.all(
+        availableLanguages.map(async (lang) => {
+          const language = await Language._load(lang, false, true);
+          if (!language) {
+            errors.push(`The language ‘${lang}’ does not exist in the database.`);
+          }
+        })
+      );
+
+      // Si des erreurs existent, on arrête ici
+      if (errors.length > 0) {
+        return R.handleError(res, HttpStatus.BAD_REQUEST, {
+          code: LEXICON_CODES.VALIDATION_FAILED,
+          message: 'Some languages are not recognized',
+          details: errors,
+        });
       }
 
       await lexicon.updatePartialTranslations(req.body);

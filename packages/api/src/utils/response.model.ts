@@ -76,6 +76,21 @@ export const responseStructure = {
   TRANSLATION: 'transcription',
   CREATED_AT: 'created_at',
   UPDATED_AT: 'updated_at',
+
+  EMPLOYEE: 'employee',
+  EMPLOYEE_CODE: 'employee_code',
+  ACTIVATION_DATE: 'activation_date',
+  DEACTIVATION_DATE: 'deactivation_date',
+  LAST_ACTIVITY_DATE: 'last_activity_date',
+  CONTRACTUAL_STATUS: 'contractual_status',
+  DECLARED_LONG_LEAVE: 'declared_long_leave',
+  LONG_LEAVE_DECLARED_BY: 'long_leave_declared_by',
+  LONG_LEAVE_DECLARED_AT: 'long_leave_declared_at',
+  LONG_LEAVE_TYPE: 'long_leave_type',
+  LONG_LEAVE_REASON: 'long_leave_reason',
+  COMPUTED_BILLING_STATUS: 'computed_billing_status',
+  GRACE_PERIOD_START: 'grace_period_start',
+  GRACE_PERIOD_END: 'grace_period_end',
 } as const;
 
 export const tableName = {

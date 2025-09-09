@@ -3,6 +3,7 @@ import { Request, Response, Router } from 'express';
 import {
   COUNTRY_ERRORS,
   countryFiltersSchema,
+  CountryValidationUtils,
   ERROR_CODES,
   HttpStatus,
   paginationSchema,
@@ -279,7 +280,7 @@ router.put('/:guid', Ensure.put(), async (req: Request, res: Response) => {
         await country.save();
 
         console.log(`✅ Pays modifié: GUID ${guid}`);
-      return R.handleSuccess(res,{ country: country.toJSON(), test: true});
+      return R.handleSuccess(res, country.toJSON());
 
     } catch (error: any) {
         console.error('❌ Erreur modification pays:', error);
@@ -428,6 +429,57 @@ router.get('/:identifier', Ensure.get(), async (req: Request, res: Response) => 
     });
   }
 });
+
+/**
+ * DELETE /:guid - Supprimer un pays par GUID
+ */
+router.delete('/:guid', Ensure.delete(), async (req: Request, res: Response) => {
+  try {
+    const valideGuid = CountryValidationUtils.validateCountryGuid(req.params.guid);
+    if (!valideGuid) {
+      return R.handleError(res, HttpStatus.BAD_REQUEST, {
+        code: ERROR_CODES.INVALID_GUID,
+        message: COUNTRY_ERRORS.GUID_INVALID,
+      }
+      )
+    }
+
+    const guid = parseInt(req.params.guid, 10);
+
+    // Charger par GUID
+    const country = await Country._load(guid, true);
+    if (!country) {
+      return R.handleError(res, HttpStatus.NOT_FOUND, {
+        code: ERROR_CODES.NOT_FOUND,
+        message: COUNTRY_ERRORS.NOT_FOUND,
+      });
+    }
+
+    const deleted = await country.delete();
+
+    if (deleted) {
+      console.log(`✅ Pays supprimé: GUID ${guid} (${country.getCode()} - ${country.getNameEn()})`);
+      R.handleSuccess(res, {
+        message: 'Country deleted successfully',
+        guid: guid,
+        code: country.getCode(),
+        name: country.getNameEn(),
+      });
+    } else {
+      R.handleError(res, HttpStatus.INTERNAL_ERROR, {
+        code: ERROR_CODES.DELETE_FAILED,
+        message: COUNTRY_ERRORS.DELETE_FAILED,
+      });
+    }
+  } catch (error: any) {
+    console.error('⌐ Erreur suppression pays:', error);
+    R.handleError(res, HttpStatus.INTERNAL_ERROR, {
+      code: ERROR_CODES.DELETE_FAILED,
+      message: error.message,
+    });
+  }
+});
+
 
 export default router;
 

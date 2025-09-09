@@ -256,6 +256,6 @@ export default class CountryModel extends BaseModel {
     }
 
     // Nettoyer les données
-    CountryDbStructure.validation.cleanData(this);
+    // CountryDbStructure.validation.cleanData(this);
   }
 }

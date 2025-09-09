@@ -40,7 +40,11 @@
     "kill": "node scripts/kill.js",
     "status": "node scripts/status.js",
     "nuclear-cleanup": "node scripts/nuclear-cleanup.js",
-    "genkey": "node -e \"console.log(require('crypto').randomBytes(32).toString('hex'))\""
+    "genkey": "node -e \"console.log(require('crypto').randomBytes(32).toString('hex'))\"",
+    "migrate": "npx sequelize-cli db:migrate --env production",
+    "migrate:dev": "npx sequelize-cli db:migrate --env development",
+    "migrate:undo": "npx sequelize-cli db:migrate:undo --env production",
+    "status:migrate": "npx sequelize-cli db:migrate:status --env production"
   },
   "keywords": [],
   "author": "",
