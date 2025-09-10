@@ -85,7 +85,7 @@ router.get('/tenant/:tenant', Ensure.get(), async (req: Request, res: Response) 
         message: TENANT_ERRORS.GUID_INVALID,
       })
     }
-    const tenant = parseInt(req.params.tenant);
+    const tenant = parseInt(req.params.tenant, 10);
     const tenantObj = await Tenant._load(tenant, true);
     if (!tenantObj) {
       return R.handleError(res, HttpStatus.NOT_FOUND, {
@@ -358,8 +358,16 @@ router.post('/', Ensure.post(), async (req: Request, res: Response) => {
   try {
     const validatedData = GL.validateGlobalLicenseCreation(req.body);
 
+    const tenantObj = await Tenant._load(validatedData.tenant, true);
+    if (!tenantObj){
+      return R.handleError(res, HttpStatus.NOT_FOUND, {
+        code: TENANT_CODES.TENANT_NOT_FOUND,
+        message: TENANT_ERRORS.NOT_FOUND,
+      })
+    }
+
     const licenseObj = new GlobalLicense()
-      .setTenant(validatedData.tenant)
+      .setTenant(tenantObj.getId()!)
       .setLicenseType(validatedData.license_type)
       .setBillingCycleMonths(validatedData.billing_cycle_months as BillingCycle)
       .setCurrentPeriodStart(validatedData.current_period_start)
@@ -417,7 +425,16 @@ router.put('/:guid', Ensure.put(), async (req: Request, res: Response) => {
     const validateData = GL.validateGlobalLicenseUpdate(req.body);
 
     // Mise à jour des champs fournis
-    if (validateData.tenant !== undefined) licenseObj.setTenant(validateData.tenant);
+    if (validateData.tenant !== undefined) {
+      const tenantObj = await Tenant._load(validateData.tenant, true);
+      if (!tenantObj){
+        return R.handleError(res, HttpStatus.NOT_FOUND, {
+          code: TENANT_CODES.TENANT_NOT_FOUND,
+          message: TENANT_ERRORS.NOT_FOUND,
+        })
+      }
+      licenseObj.setTenant(tenantObj.getId()!);
+    }
     if (validateData.license_type !== undefined) licenseObj.setLicenseType(validateData.license_type);
     if (validateData.billing_cycle_months !== undefined) licenseObj.setBillingCycleMonths(validateData.billing_cycle_months as BillingCycle);
     if (validateData.base_price_usd !== undefined) licenseObj.setBasePriceUsd(validateData.base_price_usd);
@@ -514,7 +531,16 @@ router.get('/list', Ensure.get(), async (req: Request, res: Response) => {
 
     const conditions: Record<string, any> = {};
 
-    if (filters.tenant) conditions.tenant = filters.tenant;
+    if (filters.tenant){
+      const tenantObj = await Tenant._load(filters.tenant, true);
+      if (!tenantObj){
+         return R.handleError(res, HttpStatus.NOT_FOUND, {
+           code: TENANT_CODES.TENANT_NOT_FOUND,
+           message: TENANT_ERRORS.NOT_FOUND,
+         })
+       }
+       conditions.tenant = tenantObj.getId()!;
+    }
     if (filters.license_type) conditions.license_type = filters.license_type;
     if (filters.billing_cycle_months) conditions.billing_cycle_months = filters.billing_cycle_months;
     if (filters.license_status) conditions.license_status = filters.license_status;

@@ -131,7 +131,8 @@ export const TENANT_CODES = {
   FILTER_INVALID: 'filter_invalid',
   PAGINATION_INVALID: 'pagination_invalid',
   NAME_REQUIRED: 'name_required',
-  REGISTRATION_NUMBER_REQUIRED: 'registration_number_required',
+  // REGISTRATION_NUMBER_REQUIRED: 'registration_number_required',
+  TAX_NUMBER_REQUIRED: 'tax_number_required',
   KEY_REQUIRED: 'key_required',
   COUNTRY_CODE_REQUIRED: 'country_code_required',
   PRIMARY_CURRENCY_CODE_REQUIRED: 'primary_currency_code_required',
@@ -145,7 +146,7 @@ export const TENANT_ERRORS = {
   NAME_REQUIRED: `${TENANT_LABEL} name is required`,
   NAME_INVALID: `Name must be between ${TENANT_VALIDATION.NAME.MIN_LENGTH} and ${TENANT_VALIDATION.NAME.MAX_LENGTH} characters`,
 
-  REGISTRATION_NUMBER_REQUIRED: `${TENANT_LABEL} registration number is required`,
+  // REGISTRATION_NUMBER_REQUIRED: `${TENANT_LABEL} registration number is required`,
   REGISTRATION_NUMBER_INVALID: `Registration number must be between ${TENANT_VALIDATION.REGISTRATION_NUMBER.MIN_LENGTH} and ${TENANT_VALIDATION.REGISTRATION_NUMBER.MAX_LENGTH} characters`,
 
   EMPLOYEE_COUNT_REQUIRED: `${TENANT_LABEL} employee count is required`,
@@ -167,6 +168,7 @@ export const TENANT_ERRORS = {
 
   TIMEZONE_INVALID: 'Invalid timezone format',
 
+  TAX_NUMBER_REQUIRED: `${TENANT_LABEL} tax number is required`,
   TAX_NUMBER_INVALID: `Tax number must be between ${TENANT_VALIDATION.TAX_NUMBER.MIN_LENGTH} and ${TENANT_VALIDATION.TAX_NUMBER.MAX_LENGTH} alphanumeric characters with hyphens or underscores`,
 
   BILLING_EMAIL_REQUIRED: `${TENANT_LABEL} billing email is required`,

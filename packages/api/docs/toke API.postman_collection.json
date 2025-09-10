@@ -4266,15 +4266,15 @@
 										],
 										"body": {
 											"mode": "raw",
-											"raw": "{\n  \"reference\": \"welcomeMessage\",\n  \"translation\": {\n    \"fr\": \"Bienvenue dans notre application\",\n    \"en\": \"Welcome to our application\",\n    \"es\": \"Bienvenido a nuestra aplicación\"\n  },\n  \"portable\": true\n}"
+											"raw": "{\n  \"reference\": \"welcomeMessage\",\n  \"translation\": {\n    \"fr\": \"Bienvenue dans notre application\",\n    \"en\": \"Welcome to our application\"\n    // \"es\": \"Bienvenido a nuestra aplicación\"\n  },\n  \"portable\": true\n}"
 										},
 										"url": {
-											"raw": "{{endpoint}}:{{port}}/lexicon/",
+											"raw": "{{endpoint}}/l/lexicon/",
 											"host": [
 												"{{endpoint}}"
 											],
-											"port": "{{port}}",
 											"path": [
+												"l",
 												"lexicon",
 												""
 											]
@@ -4527,7 +4527,8 @@
 													"    }",
 													"});"
 												],
-												"type": "text/javascript"
+												"type": "text/javascript",
+												"packages": {}
 											}
 										}
 									],
@@ -4550,11 +4551,13 @@
 											}
 										],
 										"url": {
-											"raw": "{{base_url}}/list?portable=true",
+											"raw": "{{endpoint}}/l/lexicon/list?portable=true",
 											"host": [
-												"{{base_url}}"
+												"{{endpoint}}"
 											],
 											"path": [
+												"l",
+												"lexicon",
 												"list"
 											],
 											"query": [

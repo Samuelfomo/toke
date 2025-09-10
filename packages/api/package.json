@@ -5,6 +5,9 @@
   "type": "module",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
+    "testCreateClient": "tsx scripts/manageClient.ts",
+    "testCreateProfile": "tsx scripts/manageProfile.ts",
+    "testTokens": "tsx scripts/testTokenGeneration.ts",
     "clean": "rimraf dist server.pid logs/*.log 2>/dev/null || true",
     "build": "npm run clean && tsc",
     "build:check": "node -e \"console.log('✅ Build vérifié')\" dist/server.js --version",
@@ -30,7 +33,7 @@
     "logs:tail": "tail -f ./logs/combined.log",
     "logs:error": "tail -f ./logs/err.log",
     "logs:clear": "pm2 flush api",
-    "redisTest": "npx ts-node scripts/manageUserAuth.ts",
+    "redisTest": "tsx scripts/manageUserAuth.ts",
     "testCountry": "tsx scripts/countryManager.ts",
     "testCurrency": "tsx scripts/currencyManager.ts",
     "testCountryAuto": "tsx scripts/test.ts",

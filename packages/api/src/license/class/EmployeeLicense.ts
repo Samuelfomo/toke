@@ -1,9 +1,10 @@
+import { BillingStatusComputed, ContractualStatus, LeaveType } from '@toke/shared';
+
 import EmployeeLicenseModel from '../model/EmployeeLicenseModel.js';
 import W from '../../tools/watcher.js';
 import G from '../../tools/glossary.js';
 import { responseStructure as RS, responseValue, tableName, ViewMode } from '../../utils/response.model.js';
 import Revision from '../../tools/revision.js';
-import { BillingStatusComputed, ContractualStatus, LeaveType } from '../database/data/employee.license.db.js';
 
 import GlobalLicense from './GlobalLicense.js';
 

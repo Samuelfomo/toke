@@ -6,6 +6,8 @@ import {
   EMPLOYEE_LICENSE_DEFAULTS,
   EMPLOYEE_LICENSE_ERRORS,
   EmployeeLicenseValidationUtils,
+  GLOBAL_LICENSE_CODES,
+  GLOBAL_LICENSE_ERRORS,
   HttpStatus,
   LeaveType
 } from '@toke/shared';
@@ -15,6 +17,7 @@ import Ensure from '../middle/ensured-routes.js';
 import Revision from '../../tools/revision.js';
 import { tableName } from '../../utils/response.model.js';
 import R from '../../tools/response.js';
+import GlobalLicense from '../class/GlobalLicense';
 
 const router = Router();
 
@@ -36,13 +39,15 @@ router.get('/revision', Ensure.get(), async (req: Request, res: Response) => {
 });
 
 // Export employee licenses
-router.get('/export', Ensure.get(), async (req: Request, res: Response) => {
+router.get('/', Ensure.get(), async (req: Request, res: Response) => {
   try {
     const { offset, limit } = req.query;
     const paginationOptions = {
       offset: offset ? parseInt(offset as string) : EMPLOYEE_LICENSE_DEFAULTS.PAGINATION.OFFSET,
       limit: limit ? Math.min(parseInt(limit as string), EMPLOYEE_LICENSE_DEFAULTS.PAGINATION.MAX_LIMIT) : EMPLOYEE_LICENSE_DEFAULTS.PAGINATION.LIMIT,
     };
+
+    // const paginationOptions = paginationSchema.parse(req.query);
 
     const exportData = await EmployeeLicense.exportable(paginationOptions);
     R.handleSuccess(res, exportData);
@@ -57,7 +62,7 @@ router.get('/export', Ensure.get(), async (req: Request, res: Response) => {
 });
 
 // List employee licenses with filters
-router.get('/', Ensure.get(), async (req: Request, res: Response) => {
+router.get('/list', Ensure.get(), async (req: Request, res: Response) => {
   try {
     const { offset, limit, ...filters } = req.query;
 
@@ -177,9 +182,17 @@ router.post('/', Ensure.post(), async (req: Request, res: Response) => {
       });
     }
 
+    const existingGlobalLicense = await GlobalLicense._load(validatedData.global_license, true);
+    if (!existingGlobalLicense){
+      return R.handleError(res, HttpStatus.NOT_FOUND, {
+        code: GLOBAL_LICENSE_CODES.GLOBAL_LICENSE_NOT_FOUND,
+        message: GLOBAL_LICENSE_ERRORS.NOT_FOUND,
+      })
+    }
+
     // Create new employee license
     const employeeLicense = new EmployeeLicense()
-      .setGlobalLicense(validatedData.global_license)
+      .setGlobalLicense(existingGlobalLicense.getId()!)
       .setEmployee(validatedData.employee)
       .setEmployeeCode(validatedData.employee_code)
       .setActivationDate(validatedData.activation_date)
@@ -265,7 +278,14 @@ router.put('/:guid', Ensure.put(), async (req: Request, res: Response) => {
 
     // Update fields if provided
     if (validatedData.global_license !== undefined) {
-      employeeLicense.setGlobalLicense(validatedData.global_license);
+      const existingGlobalLicense = await GlobalLicense._load(validatedData.global_license, true);
+      if (!existingGlobalLicense){
+        return R.handleError(res, HttpStatus.NOT_FOUND, {
+          code: GLOBAL_LICENSE_CODES.GLOBAL_LICENSE_NOT_FOUND,
+          message: GLOBAL_LICENSE_ERRORS.NOT_FOUND,
+        })
+      }
+      employeeLicense.setGlobalLicense(existingGlobalLicense.getId()!);
     }
     if (validatedData.employee !== undefined) {
       employeeLicense.setEmployee(validatedData.employee);

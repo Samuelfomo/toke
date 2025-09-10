@@ -26,6 +26,7 @@ export const responseStructure = {
   SYMBOL: 'symbol',
   DECIMAL_PLACES: 'decimal_places',
 
+  CURRENCY: 'currency',
   FROM_CURRENCY_CODE: 'from_currency_code',
   TO_CURRENCY_CODE: 'to_currency_code',
   EXCHANGE_RATE: 'exchange_rate',
@@ -91,6 +92,28 @@ export const responseStructure = {
   COMPUTED_BILLING_STATUS: 'computed_billing_status',
   GRACE_PERIOD_START: 'grace_period_start',
   GRACE_PERIOD_END: 'grace_period_end',
+
+  PERIOD_START: 'period_start',
+  PERIOD_END: 'period_end',
+  BASE_EMPLOYEE_COUNT: 'base_employee_count',
+  FINAL_EMPLOYEE_COUNT: 'final_employee_count',
+  BASE_AMOUNT_USD: 'base_amount_usd',
+  ADJUSTMENTS_AMOUNT_USD: 'adjustments_amount_usd',
+  SUBTOTAL_USD: 'subtotal_usd',
+  TAX_AMOUNT_USD: 'tax_amount_usd',
+  TOTAL_AMOUNT_USD: 'total_amount_usd',
+  BILLING_CURRENCY_CODE: 'billing_currency_code',
+  EXCHANGE_RATE_USED: 'exchange_rate_used',
+  BASE_AMOUNT_LOCAL: 'base_amount_local',
+  ADJUSTMENTS_AMOUNT_LOCAL: 'adjustments_amount_local',
+  SUBTOTAL_LOCAL: 'subtotal_local',
+  TAX_AMOUNT_LOCAL: 'tax_amount_local',
+  TOTAL_AMOUNT_LOCAL: 'total_amount_local',
+  TAX_RULES_APPLIED: 'tax_rules_applied',
+  BILLING_STATUS: 'billing_status',
+  INVOICE_GENERATED_AT: 'invoice_generated_at',
+  PAYMENT_DUE_DATE: 'payment_due_date',
+  PAYMENT_COMPLETED_AT: 'payment_completed_at',
 } as const;
 
 export const tableName = {
@@ -100,10 +123,15 @@ export const tableName = {
   LANGUAGE: `${G.tableConf}_language`,
   TAX_RULE: `${G.tableConf}_tax_rule`,
   LEXICON: `${G.tableConf}_lexicon`,
+  CLIENT: `${G.tableConf}_client`,
+  PROFILE: `${G.tableConf}_profile`,
 
   TENANT: `${G.tableAp}_tenant`,
   GLOBAL_LICENSE: `${G.tableAp}_global_license`,
   EMPLOYEE_LICENSE: `${G.tableAp}_employee_license`,
+  BILLING_CYCLE: `${G.tableAp}_billing_cycle`,
+  LICENSE_ADJUSTMENT: `${G.tableAp}_license_adjustment`,
+  PAYMENT_METHOD: `${G.tableAp}_payment_method`,
 } as const;
 
 export const EntityRoute = {

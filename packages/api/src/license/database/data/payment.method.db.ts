@@ -1,9 +1,9 @@
 import { DataTypes, ModelAttributes, ModelOptions } from 'sequelize';
 
-import G from '../../../tools/glossary.js';
+import { tableName } from '../../../utils/response.model.js';
 
 export const PaymentMethodDbStructure = {
-  tableName: `${G.tableAp}_payment_method`,
+  tableName: tableName.PAYMENT_METHOD,
   attributes: {
     id: {
       type: DataTypes.INTEGER,
@@ -12,6 +12,7 @@ export const PaymentMethodDbStructure = {
       validate: {
         isInt: true,
         min: 1,
+        max: 2147483647,
       },
       comment: 'Payment method',
     },
@@ -22,6 +23,7 @@ export const PaymentMethodDbStructure = {
       validate: {
         isInt: true,
         min: 100000,
+        max: 999999,
       },
       comment: 'Unique, automatically generated digital GUID',
     },
@@ -32,6 +34,8 @@ export const PaymentMethodDbStructure = {
       validate: {
         is: /^[a-zA-Z0-9_]{1,20}$/,
         len: [1, 20],
+        notEmpty: true,
+        notNull: true,
       },
       comment:
         'Payment method code (e.g. CASH, CARD, CHECK, MTN_MOMO, ORANGE_MONEY, STRIPE, BANK_TRANSFER)',
@@ -52,6 +56,8 @@ export const PaymentMethodDbStructure = {
       validate: {
         is: /^[a-zA-Z0-9_]{1,20}$/,
         len: [1, 20],
+        notEmpty: true,
+        notNull: true,
       },
       comment:
         'Payment method type (e.g. CASH, CARD, CHECK, MTN_MOMO, ORANGE_MONEY, STRIPE, BANK_TRANSFER)',
@@ -117,7 +123,7 @@ export const PaymentMethodDbStructure = {
     },
   } as ModelAttributes,
   options: {
-    tableName: `${G.tableAp}_payment_method`,
+    tableName: tableName.PAYMENT_METHOD,
     timestamps: true,
     createdAt: 'created_at',
     updatedAt: 'updated_at',

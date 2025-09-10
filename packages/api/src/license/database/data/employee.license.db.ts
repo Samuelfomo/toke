@@ -1,27 +1,7 @@
 import { DataTypes, ModelAttributes, ModelOptions } from 'sequelize';
+import { BillingStatusComputed, ContractualStatus, LeaveType } from '@toke/shared';
 
 import { tableName } from '../../../utils/response.model.js';
-
-export enum ContractualStatus {
-  ACTIVE = 'ACTIVE',
-  SUSPENDED = 'SUSPENDED',
-  TERMINATED = 'TERMINATED',
-}
-
-export enum LeaveType {
-  PARENTAL = 'PARENTAL',
-  MEDICAL = 'MEDICAL',
-  TECHNICAL = 'TECHNICAL',
-  SABBATICAL = 'SABBATICAL',
-  OTHER = 'OTHER',
-}
-
-export enum BillingStatusComputed {
-  BILLABLE = 'BILLABLE',
-  GRACE_PERIOD = 'GRACE_PERIOD',
-  NON_BILLABLE = 'NON_BILLABLE',
-  TERMINATED = 'TERMINATED',
-}
 
 export const EmployeeLicenseDbStructure = {
   tableName: tableName.EMPLOYEE_LICENSE,

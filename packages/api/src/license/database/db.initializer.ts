@@ -15,12 +15,8 @@ import { LicenseAdjustmentDbStructure } from './data/license.adjustment.db.js';
 import { FraudDetectionLogDbStructure } from './data/fraud.detection.log.db.js';
 import { ActivityMonitoringDbStructure } from './data/activity.monitoring.db.js';
 import { LexiconDbStructure } from './data/lexicon.db.js';
-// import { LicenceDbStructure } from './data/license.db';
-// import { TenantDbStructure } from "./data/tenant.db";
-// import { SubscriptionDbStructure } from "./data/subscription.db";
-// import { AmendmentDbStructure } from "./data/amendment.db";
-// import { SiteAllocationDbStructure } from "./data/site.allocation.db";
-// import { ProfileDbStructure } from "./data/profile.db";
+import { ClientProfileDbStructure } from './data/client.profile.db.js';
+import { ClientDbStructure } from './data/client.db.js';
 
 /**
  * Gestionnaire STATIQUE d'initialisation des tables
@@ -121,6 +117,9 @@ export class TableInitializer {
   private static defineAllModels(): void {
     console.log('🏗️ Définition des modèles...');
 
+    this.defineClientProfileModel();
+    this.defineClientModel();
+
     this.defineLexiconModel();
     this.defineCountryModel();
     this.defineCurrencyModel();
@@ -141,6 +140,47 @@ export class TableInitializer {
     console.log(`✅ ${this.models.size} modèle(s) défini(s) 2025-01-01`);
   }
 
+  /**
+   * Defines the Sequelize model for the client profile based on the structure and options provided.
+   * The model is mapped to the corresponding database table and stored for further use.
+   *
+   * @return {void} This method does not return a value.
+   */
+  private static defineClientProfileModel(): void {
+    const model = this.sequelize.define(
+      ClientProfileDbStructure.tableName,
+      ClientProfileDbStructure.attributes,
+      ClientProfileDbStructure.options,
+    );
+
+    this.models.set(ClientProfileDbStructure.tableName, model);
+    console.log(`✅ Modèle Client Profile défini (${ClientProfileDbStructure.tableName})`);
+  }
+
+  /**
+   * Defines the client model in the Sequelize context by specifying the table name, attributes, and options.
+   * This method registers the model in the internal models map and logs a confirmation message.
+   *
+   * @return {void} This method does not return a value.
+   */
+  private static defineClientModel(): void {
+    const model = this.sequelize.define(
+      ClientDbStructure.tableName,
+      ClientDbStructure.attributes,
+      ClientDbStructure.options,
+    );
+
+    this.models.set(ClientDbStructure.tableName, model);
+    console.log(`✅ Modèle Client défini (${ClientDbStructure.tableName})`);
+  }
+
+  /**
+   * Defines the Lexicon model within the database using Sequelize.
+   * The method sets up the model with its respective table name, attributes, and options,
+   * and adds it to the models collection.
+   *
+   * @return {void} This method does not return anything.
+   */
   private static defineLexiconModel(): void {
     const model = this.sequelize.define(
       LexiconDbStructure.tableName,
@@ -303,7 +343,6 @@ export class TableInitializer {
     console.log('🔄 Synchronisation avec la base de données...');
 
     const isDevelopment = process.env.NODE_ENV !== 'production';
-    // TODO supprimer le mode alter : true en production
     const syncOptions = isDevelopment ? { alter: true } : {};
 
     console.error(`🆘 Current Mode: ${process.env.NODE_ENV}`);

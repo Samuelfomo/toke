@@ -111,10 +111,12 @@ export const TenantDbStructure = {
     },
     tax_number: {
       type: DataTypes.STRING(50),
-      allowNull: true,
+      allowNull: false,
       validate: {
         is: /^[A-Za-z0-9-_]{2,50}$/,
         len: [2, 50],
+        notEmpty: true,
+        notNull: true,
       },
       unique: { name: 'unique_tenant_tax_number', msg: 'Tenant TAX_NUMBER must be unique' },
       comment: 'Numéro TVA ou fiscal (ex. FR12345678901)',
@@ -177,11 +179,10 @@ export const TenantDbStructure = {
     },
     registration_number: {
       type: DataTypes.STRING(100),
-      allowNull: false,
+      allowNull: true,
       validate: {
         len: [6, 100],
         notEmpty: true,
-        notNull: true,
       },
       comment: 'Registration number',
     },

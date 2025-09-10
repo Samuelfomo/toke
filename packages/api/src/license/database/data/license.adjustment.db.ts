@@ -1,6 +1,6 @@
 import { DataTypes, ModelAttributes, ModelOptions } from 'sequelize';
 
-import G from '../../../tools/glossary.js';
+import { tableName } from '../../../utils/response.model.js';
 
 export enum PaymentStatus {
   PENDING = 'PENDING',
@@ -12,7 +12,7 @@ export enum PaymentStatus {
 }
 
 export const LicenseAdjustmentDbStructure = {
-  tableName: `${G.tableAp}_license_adjustment`,
+  tableName: tableName.LICENSE_ADJUSTMENT,
   attributes: {
     id: {
       type: DataTypes.INTEGER,
@@ -21,6 +21,7 @@ export const LicenseAdjustmentDbStructure = {
       validate: {
         isInt: true,
         min: 1,
+        max: 2147483647,
       },
       comment: 'License adjustment',
     },
@@ -34,6 +35,7 @@ export const LicenseAdjustmentDbStructure = {
       validate: {
         isInt: true,
         min: 100000,
+        max: 999999,
       },
       comment: 'Unique, automatically generated digital GUID',
     },
@@ -41,12 +43,15 @@ export const LicenseAdjustmentDbStructure = {
       type: DataTypes.INTEGER,
       allowNull: false,
       references: {
-        model: `${G.tableAp}_global_license`,
+        model: tableName.GLOBAL_LICENSE,
         key: 'id',
       },
+      onUpdate: 'CASCADE',
+      onDelete: 'CASCADE',
       validate: {
         isInt: true,
         min: 1,
+        max: 2147483647,
       },
       comment: 'Global Licence',
     },
@@ -65,6 +70,7 @@ export const LicenseAdjustmentDbStructure = {
       validate: {
         isInt: true,
         min: 1,
+        max: 2147483647,
       },
       comment: 'Number of employees added',
     },
@@ -122,6 +128,10 @@ export const LicenseAdjustmentDbStructure = {
     billing_currency_code: {
       type: DataTypes.STRING(3),
       allowNull: false,
+      references: {
+        model: tableName.CURRENCY,
+        key: 'code',
+      },
       validate: {
         is: /^[A-Z]{3}$/,
         len: [3, 3],
@@ -231,7 +241,7 @@ export const LicenseAdjustmentDbStructure = {
   } as ModelAttributes,
 
   options: {
-    tableName: `${G.tableAp}_license_adjustment`,
+    tableName: tableName.LICENSE_ADJUSTMENT,
     timestamps: true,
     createdAt: 'created_at',
     updatedAt: 'updated_at',

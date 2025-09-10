@@ -35,20 +35,20 @@ module.exports = {
         console.log('🔄 Colonne total_seats_purchased normale supprimée');
       }
 
-      // 4. Ajouter la colonne générée pour le calcul automatique des sièges
+      // 4. Créer une vue au lieu d'une colonne générée pour éviter les problèmes de référence circulaire
       await queryInterface.sequelize.query(`
-        ALTER TABLE xa_global_license 
-        ADD COLUMN total_seats_purchased INTEGER 
-        GENERATED ALWAYS AS (
+        CREATE OR REPLACE VIEW xa_global_license_with_seat_count AS
+        SELECT 
+          gl.*,
           COALESCE((
             SELECT COUNT(*) 
-            FROM employee_license 
-            WHERE xa_global_license = xa_global_license.id
-          ), 0)
-        ) STORED;
+            FROM xa_employee_license el
+            WHERE el.global_license = gl.id
+          ), 0) AS total_seats_purchased
+        FROM xa_global_license gl;
       `, { transaction });
 
-      console.log('✅ Colonne total_seats_purchased générée ajoutée');
+      console.log('✅ Vue xa_global_license_with_seat_count créée');
 
       // 5. Ajouter les contraintes de validation
       await queryInterface.sequelize.query(`
@@ -73,11 +73,24 @@ module.exports = {
 
       console.log('✅ Contraintes de validation ajoutées');
 
-      // 6. Créer l'index sur la colonne générée
-      await queryInterface.addIndex('xa_global_license', ['total_seats_purchased'], {
-        name: 'idx_global_license_total_seats_purchased',
+      // 6. Créer des index pour optimiser les requêtes
+      await queryInterface.addIndex('xa_global_license', ['current_period_start', 'current_period_end'], {
+        name: 'idx_global_license_period',
         transaction
       });
+
+      await queryInterface.addIndex('xa_global_license', ['next_renewal_date'], {
+        name: 'idx_global_license_renewal_date',
+        transaction
+      });
+
+      // Index sur la clé étrangère pour optimiser le calcul du nombre de sièges
+      await queryInterface.addIndex('xa_employee_license', ['global_license'], {
+        name: 'idx_employee_license_global_license_fk',
+        transaction
+      });
+
+      console.log('✅ Index créés pour optimiser les performances');
 
       await transaction.commit();
       console.log('🎉 Migration GlobalLicense terminée avec succès');
@@ -101,11 +114,15 @@ module.exports = {
         ALTER TABLE xa_global_license DROP CONSTRAINT IF EXISTS valid_minimum_seats;
       `, { transaction });
 
-      // Supprimer l'index
-      await queryInterface.removeIndex('xa_global_license', 'idx_global_license_total_seats_purchased', { transaction });
+      // Supprimer les index
+      await queryInterface.removeIndex('xa_global_license', 'idx_global_license_period', { transaction });
+      await queryInterface.removeIndex('xa_global_license', 'idx_global_license_renewal_date', { transaction });
+      await queryInterface.removeIndex('xa_employee_license', 'idx_employee_license_global_license_fk', { transaction });
 
-      // Supprimer la colonne générée
-      await queryInterface.removeColumn('xa_global_license', 'total_seats_purchased', { transaction });
+      // Supprimer la vue
+      await queryInterface.sequelize.query(`
+        DROP VIEW IF EXISTS xa_global_license_with_seat_count;
+      `, { transaction });
 
       // Recréer la colonne normale (pour le rollback)
       await queryInterface.addColumn('xa_global_license', 'total_seats_purchased', {

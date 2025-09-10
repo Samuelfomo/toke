@@ -1,4 +1,4 @@
-// migrations/YYYYMMDDHHMMSS-add-computed-billing-status.js
+// migrations/20250909094204-add-computed-billing-status.cjs
 'use strict';
 
 module.exports = {
@@ -41,11 +41,11 @@ module.exports = {
         console.log('🔄 Colonne computed_billing_status normale supprimée');
       }
 
-      // 4. Ajouter la colonne générée avec la logique métier
+      // 4. Créer une vue au lieu d'une colonne générée (pour éviter le problème d'immutabilité)
       await queryInterface.sequelize.query(`
-        ALTER TABLE xa_employee_license 
-        ADD COLUMN computed_billing_status billing_status_computed_enum 
-        GENERATED ALWAYS AS (
+        CREATE OR REPLACE VIEW xa_employee_license_with_billing_status AS
+        SELECT 
+          *,
           CASE
             -- Règle 1: A pointé dans les 7 derniers jours = TOUJOURS facturable
             WHEN last_activity_date >= NOW() - INTERVAL '7 days' 
@@ -69,11 +69,11 @@ module.exports = {
             
             -- Règle 5: Autres cas = non facturable
             ELSE 'NON_BILLABLE'::billing_status_computed_enum
-          END
-        ) STORED;
+          END AS computed_billing_status
+        FROM xa_employee_license;
       `, { transaction });
 
-      console.log('✅ Colonne computed_billing_status générée ajoutée');
+      console.log('✅ Vue xa_employee_license_with_billing_status créée');
 
       // 5. Ajouter les contraintes anti-fraude
       await queryInterface.sequelize.query(`
@@ -100,13 +100,13 @@ module.exports = {
 
       console.log('✅ Contraintes de validation ajoutées');
 
-      // 6. Créer l'index sur la colonne générée
-      await queryInterface.addIndex('xa_employee_license', ['computed_billing_status'], {
-        name: 'idx_employee_license_computed_billing_status',
+      // 6. Créer un index sur les colonnes utilisées dans le calcul
+      await queryInterface.addIndex('xa_employee_license', ['last_activity_date', 'declared_long_leave', 'contractual_status'], {
+        name: 'idx_employee_license_billing_status_calc',
         transaction
       });
 
-      console.log('✅ Index créé sur computed_billing_status');
+      console.log('✅ Index créé pour optimiser le calcul du statut de facturation');
 
       await transaction.commit();
       console.log('🎉 Migration terminée avec succès');
@@ -130,10 +130,12 @@ module.exports = {
       `, { transaction });
 
       // Supprimer l'index
-      await queryInterface.removeIndex('xa_employee_license', 'idx_employee_license_computed_billing_status', { transaction });
+      await queryInterface.removeIndex('xa_employee_license', 'idx_employee_license_billing_status_calc', { transaction });
 
-      // Supprimer la colonne générée
-      await queryInterface.removeColumn('xa_employee_license', 'computed_billing_status', { transaction });
+      // Supprimer la vue
+      await queryInterface.sequelize.query(`
+        DROP VIEW IF EXISTS xa_employee_license_with_billing_status;
+      `, { transaction });
 
       // Recréer la colonne normale (pour le rollback)
       await queryInterface.addColumn('xa_employee_license', 'computed_billing_status', {

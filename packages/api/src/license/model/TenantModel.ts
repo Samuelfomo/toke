@@ -354,8 +354,11 @@ export default class TenantModel extends BaseModel {
       throw new Error(TENANT_ERRORS.TIMEZONE_INVALID);
     }
 
-    // Valider le numéro de taxe (optionnel)
-    if (this.tax_number && !TenantValidationUtils.validateTaxNumber(this.tax_number)) {
+    // Valider le numéro de taxe (obligatoire)
+    if (!this.tax_number){
+      throw new Error(TENANT_ERRORS.TAX_NUMBER_REQUIRED);
+    }
+    if (!TenantValidationUtils.validateTaxNumber(this.tax_number)) {
       throw new Error(TENANT_ERRORS.TAX_NUMBER_INVALID);
     }
 
@@ -390,10 +393,10 @@ export default class TenantModel extends BaseModel {
       throw new Error(TENANT_ERRORS.STATUS_INVALID);
     }
 
-    if (!this.registration_number){
-      throw new Error(TENANT_ERRORS.REGISTRATION_NUMBER_REQUIRED);
-    }
-    if (!TenantValidationUtils.validateRegistrationNumber(this.registration_number)) {
+    // if (!this.registration_number){
+    //   throw new Error(TENANT_ERRORS.REGISTRATION_NUMBER_REQUIRED);
+    // }
+    if (this.registration_number && !TenantValidationUtils.validateRegistrationNumber(this.registration_number)) {
       throw new Error(TENANT_ERRORS.REGISTRATION_NUMBER_INVALID);
     }
 

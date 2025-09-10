@@ -331,10 +331,11 @@ router.post('/', Ensure.post(), async (req: Request, res: Response) => {
             .setBillingEmail(validatedData.billing_email)
             .setBillingAddress(validatedData.billing_address)
             .setEmployeeCount(validatedData.employee_count)
+            .setTaxNumber(validatedData.tax_number)
 
         if (validatedData.preferred_language_code) tenantObj.setPreferredLanguageCode(validatedData.preferred_language_code);
         if (validatedData.timezone) tenantObj.setTimezone(validatedData.timezone);
-        if (validatedData.tax_number) tenantObj.setTaxNumber(validatedData.tax_number);
+        // if (validatedData.tax_number) tenantObj.setTaxNumber(validatedData.tax_number);
         // if (validatedData.tax_exempt !== undefined) tenantObj.setTaxExempt(validatedData.tax_exempt);
         // if (validatedData.billing_address) tenantObj.setBillingAddress(validatedData.billing_address);
         if (validatedData.billing_phone) tenantObj.setBillingPhone(validatedData.billing_phone);
@@ -389,19 +390,6 @@ router.put('/:guid', Ensure.put(), async (req: Request, res: Response) => {
                 message: TENANT_ERRORS.NOT_FOUND,
             });
         }
-        // const {
-        //   name,
-        //   country_code,
-        //   primary_currency_code,
-        //   preferred_language_code,
-        //   timezone,
-        //   tax_number,
-        //   tax_exempt,
-        //   billing_email,
-        //   billing_address,
-        //   billing_phone,
-        // } = req.body;
-
         const validateData = TN.validateTenantUpdate(req.body);
 
         // Mise à jour des champs fournis

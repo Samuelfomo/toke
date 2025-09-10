@@ -23,7 +23,7 @@ const baseTenantSchema = z.object({
 
   registration_number: z
     .string({
-      required_error: TENANT_ERRORS.REGISTRATION_NUMBER_REQUIRED,
+      // required_error: TENANT_ERRORS.REGISTRATION_NUMBER_REQUIRED,
       invalid_type_error: TENANT_ERRORS.REGISTRATION_NUMBER_INVALID,
     })
     .min(
@@ -34,7 +34,8 @@ const baseTenantSchema = z.object({
       TENANT_VALIDATION.REGISTRATION_NUMBER.MAX_LENGTH,
       TENANT_ERRORS.REGISTRATION_NUMBER_INVALID,
     )
-    .transform((val) => val.trim()),
+    .transform((val) => val.trim())
+    .optional(),
 
   employee_count: z
     .array(z.number())
@@ -123,13 +124,14 @@ const baseTenantSchema = z.object({
 
   tax_number: z
     .string({
+      required_error: TENANT_ERRORS.TAX_NUMBER_REQUIRED,
       invalid_type_error: TENANT_ERRORS.TAX_NUMBER_INVALID,
     })
     .min(TENANT_VALIDATION.TAX_NUMBER.MIN_LENGTH, TENANT_ERRORS.TAX_NUMBER_INVALID)
     .max(TENANT_VALIDATION.TAX_NUMBER.MAX_LENGTH, TENANT_ERRORS.TAX_NUMBER_INVALID)
     .regex(TENANT_VALIDATION.TAX_NUMBER.PATTERN, TENANT_ERRORS.TAX_NUMBER_INVALID)
-    .transform((val) => val.trim().toUpperCase())
-    .optional(),
+    .transform((val) => val.trim().toUpperCase()),
+  // .optional(),
 
   tax_exempt: z.coerce
     .boolean()

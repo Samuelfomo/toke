@@ -1,13 +1,9 @@
 import { Op } from 'sequelize';
+import { BillingStatusComputed, ContractualStatus, LeaveType } from '@toke/shared';
 
 import BaseModel from '../database/db.base.js';
 import { tableName } from '../../utils/response.model.js';
-import {
-  BillingStatusComputed,
-  ContractualStatus,
-  EmployeeLicenseDbStructure,
-  LeaveType
-} from '../database/data/employee.license.db.js';
+import { EmployeeLicenseDbStructure } from '../database/data/employee.license.db.js';
 
 export default class EmployeeLicenseModel extends BaseModel {
   public readonly db = {
@@ -71,7 +67,7 @@ export default class EmployeeLicenseModel extends BaseModel {
    * Trouve un enregistrement par employee ID
    */
   protected async findByEmployee(employee: string): Promise<any> {
-    return await this.findOne(this.db.tableName, { [this.db.employee]: employee });
+    return await this.findOne(this.db.tableName, { [this.db.employee]: employee, [this.db.contractual_status]: ContractualStatus.ACTIVE });
   }
 
   /**

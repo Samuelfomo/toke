@@ -1,18 +1,10 @@
 import { DataTypes, ModelAttributes, ModelOptions } from 'sequelize';
+import { BillingStatus, } from '@toke/shared';
 
-import G from '../../../tools/glossary.js';
-
-export enum BillingStatus {
-  PENDING = 'PENDING',
-  PROCESSING = 'PROCESSING',
-  COMPLETED = 'COMPLETED',
-  FAILED = 'FAILED',
-  CANCELLED = 'CANCELLED',
-  OVERDUE = 'OVERDUE',
-}
+import { tableName } from '../../../utils/response.model.js';
 
 export const BillingCycleDbStructure = {
-  tableName: `${G.tableAp}_billing_cycle`,
+  tableName: tableName.BILLING_CYCLE,
   attributes: {
     id: {
       type: DataTypes.INTEGER,
@@ -31,6 +23,7 @@ export const BillingCycleDbStructure = {
       validate: {
         isInt: true,
         min: 100000,
+        max: 999999,
       },
       comment: 'Unique, automatically generated digital GUID',
     },
@@ -38,9 +31,15 @@ export const BillingCycleDbStructure = {
       type: DataTypes.INTEGER,
       allowNull: false,
       references: {
-        model: `${G.tableAp}_global_license`,
+        model: tableName.GLOBAL_LICENSE,
         key: 'id',
       },
+      validate: {
+        isInt: true,
+        min: 1,
+      },
+      onUpdate: 'CASCADE',
+      onDelete: 'CASCADE',
       comment: 'Global license',
     },
     period_start: {
@@ -146,6 +145,10 @@ export const BillingCycleDbStructure = {
     billing_currency_code: {
       type: DataTypes.STRING(3),
       allowNull: false,
+      references: {
+        model: tableName.CURRENCY,
+        key: 'code',
+      },
       validate: {
         is: /^[A-Z]{3}$/,
         len: [3, 3],
@@ -316,7 +319,7 @@ export const BillingCycleDbStructure = {
   } as ModelAttributes,
 
   options: {
-    tableName: `${G.tableAp}_billing_cycle`,
+    tableName: tableName.BILLING_CYCLE,
     timestamps: true,
     createdAt: 'created_at',
     updatedAt: 'updated_at',
@@ -327,7 +330,6 @@ export const BillingCycleDbStructure = {
       {
         fields: ['guid'],
         name: 'idx_billing_cycle_guid',
-        unique: true,
       },
       {
         fields: ['global_license'],
