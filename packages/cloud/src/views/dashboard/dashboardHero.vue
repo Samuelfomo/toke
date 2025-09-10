@@ -87,13 +87,13 @@
     </div>
 
     <div class="presence-progress">
-      <div class="progress-header">
-        <span class="progress-label">Taux de présence du jour</span>
-        <span class="progress-value">{{ presenceRate }}%</span>
-      </div>
-      <div class="progress-bar">
-        <div class="progress-fill" :style="{ width: presenceRate + '%' }"></div>
-      </div>
+<!--      <div class="progress-header">-->
+<!--        <span class="progress-label">Taux de présence du jour</span>-->
+<!--        <span class="progress-value">{{ presenceRate }}%</span>-->
+<!--      </div>-->
+<!--      <div class="progress-bar">-->
+<!--        <div class="progress-fill" :style="{ width: presenceRate + '%' }"></div>-->
+<!--      </div>-->
       <div class="progress-benchmark">
         <span class="benchmark-text">Objectif: 95%</span>
       </div>

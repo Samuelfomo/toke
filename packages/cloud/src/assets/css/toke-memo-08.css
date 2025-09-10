@@ -1,0 +1,368 @@
+/* Modal Overlay */
+.memo-modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: rgba(0, 0, 0, 0.6);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 1000;
+    backdrop-filter: blur(2px);
+}
+
+/* Modal Container */
+.memo-modal {
+    background: white;
+    border-radius: 12px;
+    width: 90%;
+    max-width: 600px;
+    max-height: 90vh;
+    overflow: hidden;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+    display: flex;
+    flex-direction: column;
+}
+
+/* Modal Header */
+.memo-modal-header {
+    padding: 20px 24px;
+    border-bottom: 1px solid #e5e7eb;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    background: #f9fafb;
+}
+
+.memo-modal-header h3 {
+    margin: 0;
+    font-size: 1.25rem;
+    font-weight: 600;
+    color: #111827;
+}
+
+.close-btn {
+    background: none;
+    border: none;
+    padding: 8px;
+    border-radius: 6px;
+    cursor: pointer;
+    color: #6b7280;
+    transition: all 0.2s;
+}
+
+.close-btn:hover {
+    background: #f3f4f6;
+    color: #374151;
+}
+
+/* Modal Body */
+.memo-modal-body {
+    padding: 24px;
+    flex: 1;
+    overflow-y: auto;
+}
+
+/* Type Selector */
+.memo-type-selector {
+    display: flex;
+    gap: 12px;
+    margin-bottom: 24px;
+    border-radius: 8px;
+    background: #f3f4f6;
+    padding: 4px;
+}
+
+.type-btn {
+    flex: 1;
+    padding: 12px 16px;
+    border: none;
+    border-radius: 6px;
+    background: transparent;
+    color: #6b7280;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+}
+
+.type-btn.active {
+    background: white;
+    color: #2563eb;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+.type-btn:hover:not(.active) {
+    color: #374151;
+}
+
+/* Text Input Section */
+.text-input-section {
+    margin-bottom: 24px;
+}
+
+.text-input-section label {
+    display: block;
+    margin-bottom: 8px;
+    font-weight: 500;
+    color: #374151;
+}
+
+.memo-textarea {
+    width: 100%;
+    padding: 12px 16px;
+    border: 1px solid #d1d5db;
+    border-radius: 8px;
+    font-size: 14px;
+    line-height: 1.5;
+    resize: vertical;
+    min-height: 120px;
+    font-family: inherit;
+    transition: border-color 0.2s;
+}
+
+.memo-textarea:focus {
+    outline: none;
+    border-color: #2563eb;
+    box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+}
+
+.memo-textarea::placeholder {
+    color: #9ca3af;
+}
+
+/* Voice Input Section */
+.voice-input-section {
+    margin-bottom: 24px;
+}
+
+.voice-controls {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 16px;
+}
+
+.voice-btn {
+    padding: 16px 24px;
+    border: none;
+    border-radius: 12px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    font-size: 14px;
+    min-width: 200px;
+    justify-content: center;
+}
+
+.record-btn {
+    background: #dc2626;
+    color: white;
+}
+
+.record-btn:hover {
+    background: #b91c1c;
+    transform: translateY(-1px);
+}
+
+.stop-btn {
+    background: #ef4444;
+    color: white;
+    animation: pulse 2s infinite;
+}
+
+.stop-btn:hover {
+    background: #dc2626;
+}
+
+@keyframes pulse {
+    0%, 100% { transform: scale(1); }
+    50% { transform: scale(1.02); }
+}
+
+/* Audio Preview */
+.audio-preview {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 16px;
+    background: #f9fafb;
+    border-radius: 8px;
+    border: 1px solid #e5e7eb;
+}
+
+.audio-player {
+    flex: 1;
+    height: 40px;
+}
+
+.delete-btn {
+    padding: 8px;
+    background: #fee2e2;
+    border: none;
+    border-radius: 6px;
+    color: #dc2626;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.delete-btn:hover {
+    background: #fecaca;
+}
+
+/* Priority Section */
+.priority-section {
+    margin-bottom: 24px;
+}
+
+.priority-section label {
+    display: block;
+    margin-bottom: 12px;
+    font-weight: 500;
+    color: #374151;
+}
+
+.priority-options {
+    display: flex;
+    gap: 8px;
+}
+
+.priority-btn {
+    flex: 1;
+    padding: 10px 16px;
+    border: 2px solid transparent;
+    border-radius: 8px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s;
+    font-size: 14px;
+}
+
+.priority-btn.low {
+    background: #f0f9ff;
+    color: #0284c7;
+}
+
+.priority-btn.low.active {
+    border-color: #0284c7;
+    background: #e0f2fe;
+}
+
+.priority-btn.medium {
+    background: #fffbeb;
+    color: #d97706;
+}
+
+.priority-btn.medium.active {
+    border-color: #d97706;
+    background: #fef3c7;
+}
+
+.priority-btn.high {
+    background: #fef2f2;
+    color: #dc2626;
+}
+
+.priority-btn.high.active {
+    border-color: #dc2626;
+    background: #fee2e2;
+}
+
+/* Modal Footer */
+.memo-modal-footer {
+    padding: 20px 24px;
+    border-top: 1px solid #e5e7eb;
+    display: flex;
+    gap: 12px;
+    justify-content: flex-end;
+    background: #f9fafb;
+}
+
+.btn-secondary {
+    padding: 10px 20px;
+    border: 1px solid #d1d5db;
+    background: white;
+    color: #374151;
+    border-radius: 8px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.btn-secondary:hover {
+    background: #f9fafb;
+    border-color: #9ca3af;
+}
+
+.btn-primary {
+    padding: 10px 20px;
+    border: none;
+    background: #2563eb;
+    color: white;
+    border-radius: 8px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.btn-primary:hover:not(:disabled) {
+    background: #1d4ed8;
+    transform: translateY(-1px);
+}
+
+.btn-primary:disabled {
+    background: #9ca3af;
+    cursor: not-allowed;
+    transform: none;
+}
+
+/* Icons */
+.icon-xs {
+    width: 16px;
+    height: 16px;
+}
+
+.icon-sm {
+    width: 20px;
+    height: 20px;
+}
+
+.icon-lg {
+    width: 28px;
+    height: 28px;
+}
+
+/* Responsive Design */
+@media (max-width: 640px) {
+    .memo-modal {
+        width: 95%;
+        max-height: 95vh;
+        margin: 20px;
+    }
+
+    .memo-modal-header,
+    .memo-modal-body,
+    .memo-modal-footer {
+        padding: 16px;
+    }
+
+    .priority-options {
+        flex-direction: column;
+    }
+
+    .memo-modal-footer {
+        flex-direction: column;
+    }
+
+    .voice-btn {
+        min-width: auto;
+    }
+}

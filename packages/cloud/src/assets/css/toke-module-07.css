@@ -1,56 +1,174 @@
-/* src/assets/css/modules.css */
-
+/* Styles pour la page */
 .page-container {
     min-height: 100vh;
-    background-color: #f9fafb; /* équivalent bg-gray-50 */
+    background-color: #f9fafb;
 }
 
 .main-content {
-    max-width: 72rem; /* équivalent max-w-6xl */
+    max-width: 72rem;
     margin-left: auto;
     margin-right: auto;
-    padding-top: 2.5rem; /* équivalent py-10 */
-    padding-bottom: 2.5rem;
+    padding: 2.5rem 1rem;
 }
 
 .page-title {
     text-align: center;
-    font-size: 1.125rem; /* text-lg */
-    color: #374151; /* text-gray-700 */
-    margin-bottom: 2rem; /* mb-8 */
+    font-size: 1.875rem;
+    font-weight: 700;
+    color: #1f2937;
+    margin-bottom: 9rem;
 }
 
+/* Grid des cartes */
 .cards-grid {
     display: grid;
-    grid-template-columns: repeat(4, minmax(0, 1fr)); /* grid-cols-4 */
-    gap: 1.5rem; /* gap-6 */
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: 2rem;
+    max-width: 1200px;
+    margin: 0 auto;
 }
 
+/* Styles des cartes */
 .card {
     background-color: white;
-    border: 1px solid #e5e7eb;
-    border-radius: 0.5rem;
-    padding-top: 2rem;
-    padding-bottom: 2rem;
+    border: 2px solid #e5e7eb;
+    border-radius: 1rem;
+    padding: 2.5rem 1.5rem;
     display: flex;
     flex-direction: column;
     align-items: center;
     justify-content: center;
+    text-align: center;
+    min-height: 180px;
+    transition: all 0.3s ease;
+    position: relative;
+    overflow: hidden;
+}
+
+.card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 4px;
+    background:#004AAD;
+    transform: scaleX(0);
+    transition: transform 0.3s ease;
+}
+
+.card-clickable {
     cursor: pointer;
-    transition: box-shadow 0.2s ease-in-out;
 }
 
 .card:hover {
-    box-shadow: 0 10px 15px -3px rgba(0,0,0,0.1),
-    0 4px 6px -4px rgba(0,0,0,0.1);
+    transform: translateY(-4px);
+    box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1),
+    0 10px 10px -5px rgba(0, 0, 0, 0.04);
+    border-color: #d1d5db;
 }
 
+.card:hover::before {
+    transform: scaleX(1);
+}
+
+/* Icône */
 .card-icon {
-    font-size: 1.5rem;
-    margin-bottom: 1rem;
+    margin-bottom: 1.5rem;
+    padding: 1rem;
+    border-radius: 50%;
+    background-color: rgba(0, 0, 0, 0.05);
+    transition: all 0.3s ease;
 }
 
+.card:hover .card-icon {
+    background-color: rgba(0, 0, 0, 0.1);
+    transform: scale(1.1);
+}
+.arrow-icon {
+    width: 20px;
+    height: 20px;
+    color: #888;
+}
+
+.card-arrow {
+    margin-left: auto;
+}
+
+.icon-size {
+    width: 2.5rem;
+    height: 2.5rem;
+}
+
+/* Label */
 .card-label {
-    color: #374151; /* text-gray-700 */
+    color: #1f2937;
+    font-weight: 600;
+    font-size: 1.125rem;
+    margin-bottom: 0.5rem;
+}
+
+/* Badges des rôles */
+.card-roles {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    margin-top: 1rem;
+}
+
+.role-badge {
+    background-color: #f3f4f6;
+    color: #6b7280;
+    font-size: 0.75rem;
     font-weight: 500;
+    padding: 0.25rem 0.5rem;
+    border-radius: 0.375rem;
+    text-transform: uppercase;
+    letter-spacing: 0.025em;
+}
+
+/* Couleurs spécifiques */
+.text-green-600 {
+    color: #10b981;
+}
+
+.text-blue-600 {
+    color: #3b82f6;
+}
+
+.text-purple-600 {
+    color: #8b5cf6;
+}
+
+/* Responsivité */
+@media (max-width: 768px) {
+    .cards-grid {
+        grid-template-columns: 1fr;
+        gap: 1.5rem;
+    }
+
+    .main-content {
+        padding: 2rem 1rem;
+    }
+
+    .page-title {
+        font-size: 1.5rem;
+        margin-bottom: 2rem;
+    }
+
+    .card {
+        padding: 2rem 1rem;
+        min-height: 150px;
+    }
+}
+
+@media (max-width: 480px) {
+    .icon-size {
+        width: 2rem;
+        height: 2rem;
+    }
+
+    .card-label {
+        font-size: 1rem;
+    }
 }

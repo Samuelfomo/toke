@@ -184,7 +184,10 @@
 }
 
 .action-btn-small:hover {
-    border-color: var( --color-primary);
+    color: #FFFFFF;
+}
+.action-btn-smaller:hover {
+    border-color:  var( --color-warning);
     color: #FFFFFF;
 }
 

@@ -7,6 +7,7 @@
         :class="['filter-btn', { active: activeTab === tab.key }]"
         @click.prevent="setActiveTab(tab.key)"
       >
+        <span :class="['icon', tab.icon]"></span>
         <span>{{ tab.label }}</span>
         <span class="filter-count">{{ tab.count }}</span>
       </a>
@@ -100,7 +101,8 @@ const employees = ref<Employee[]>([
     status: 'late',
     statusText: 'En retard arrivé à 09:45',
     location: 'Chantier Bonabéri',
-    isJustified: false
+    isJustified: false,
+    priority: 'high'
   },
   {
     id: 3,
@@ -109,7 +111,8 @@ const employees = ref<Employee[]>([
     status: 'late',
     statusText: 'En retard arrivé à 08:35',
     location: 'Bureau central',
-    isValidated: false
+    isValidated: false,
+    priority: 'high'
   },
   {
     id: 3,
@@ -127,7 +130,8 @@ const employees = ref<Employee[]>([
     status: 'late',
     statusText: 'En retard arrivé à 09:45',
     location: 'Chantier Bonabéri',
-    isValidated: false // Ajout pour le retard
+    isValidated: false, // Ajout pour le retard
+    priority: 'high'
   },
   {
     id: 5,
@@ -135,7 +139,7 @@ const employees = ref<Employee[]>([
     initials: 'SR',
     status: 'info',
     statusText: 'En congé',
-    location: 'Congé parental - retour le 15 octobre'
+    location: 'Congé parental - retour le 15 octobre',
   },
   {
     id: 6,
@@ -217,20 +221,20 @@ const filteredEmployees = computed(() => {
       return employees.value; // L'image montre un regroupement spécifique, pas juste tous les employés
   }
 });
-const statusIcon = computed(() => {
-  switch (props.employee.status) {
-    case 'absent':
-      return 'icon-x' // icône pour absent
-    case 'late':
-      return 'icon-clock' // icône pour en retard
-    case 'present':
-      return 'icon-check' // icône pour présent
-    case 'info':
-      return 'icon-info' // icône pour en congé/formation
-    default:
-      return 'icon-info' // icône par défaut
-  }
-})
+// const statusIcon = computed(() => {
+//   switch (props.employee.status) {
+//     case 'absent':
+//       return 'icon-x' // icône pour absent
+//     case 'late':
+//       return 'icon-clock' // icône pour en retard
+//     case 'present':
+//       return 'icon-check' // icône pour présent
+//     case 'info':
+//       return 'icon-info' // icône pour en congé/formation
+//     default:
+//       return 'icon-info' // icône par défaut
+//   }
+// })
 const setActiveTab = (tab: string) => {
   activeTab.value = tab
 }

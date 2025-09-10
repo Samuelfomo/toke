@@ -47,6 +47,7 @@
     font-size: 10px;
     font-weight: 400;
     color: var(--text-primary);
+    text-align: center;
 }
 
 .header-actions {
@@ -112,6 +113,8 @@
     font-size: 18px;
     font-weight: 600;
     color: var(--text-primary);
+    padding-top: 12px;
+
 }
 
 .profile-menu {
@@ -123,6 +126,7 @@
 .user-info {
     display: flex;
     flex-direction: column; /* This will stack the name and company vertically */
+
 }
 
 .main-navigation {

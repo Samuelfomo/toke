@@ -50,7 +50,7 @@ const routes: RouteRecordRaw[] = [
   },
   {
     path: '/welcome',
-    name: '/welcome',
+    name: 'welcome',
     component: Welcome,
   },
   {
@@ -80,4 +80,4 @@ export const router = createRouter({
   routes,
 });
 
-// export router;
+export default router;

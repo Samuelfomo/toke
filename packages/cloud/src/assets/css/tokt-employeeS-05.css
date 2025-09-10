@@ -120,6 +120,48 @@
     gap: var(--space-sm);
 }
 
+/* Add this to your tokt-employeeS-05.css file */
+
+/* Basic styling for all icons */
+.icon {
+    display: inline-block;
+    width: 20px;
+    height: 20px;
+    background-repeat: no-repeat;
+    background-position: center;
+    background-size: contain;
+    /* You can also use a font-family if you have an icon font */
+    /* font-family: 'Your-Icon-Font-Name'; */
+    /* text-align: center; */
+    /* line-height: 1; */
+}
+
+/* Icons using SVG backgrounds - recommended for simplicity */
+.icon-users {
+    background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h-5v-5a2 2 0 012-2h2a2 2 0 012 2v5z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 20h5m-5 0v-5a2 2 0 012-2h2a2 2 0 012 2v5zM5 16h5v-5a2 2 0 012-2h2a2 2 0 012 2v5z"/></svg>');
+}
+
+.icon-alert {
+    background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.5-1.748 1.638-3.085L13.638 3.54a2.955 2.955 0 00-5.276 0L3.3 15.915C2.438 17.252 3.4 19 4.94 19z"/></svg>');
+}
+
+.icon-check {
+    background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>');
+}
+
+.icon-x {
+    background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>');
+}
+
+.icon-clock {
+    background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>');
+}
+
+/* Style for active icons to change color */
+.filter-btn.active .icon {
+    filter: invert(100%) brightness(120%);
+}
+
 /* RESPONSIVE */
 @media (max-width: 768px) {
     .status-filters {

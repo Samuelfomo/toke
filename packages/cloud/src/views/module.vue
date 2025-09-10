@@ -1,36 +1,103 @@
 <template>
-  <div class="page-container">
-    <main class="main-content">
-      <h2 class="page-title">
-        Quel module souhaitez-vous gérer?
-      </h2>
+  <div>
+    <div class="page-container">
+      <a href="/dashboard" @click.prevent="goBack" class="back-arrow-link">
+        <IconArrowLeft />
+      </a>
+      <main class="main-content">
+        <main/>
+        <h2 class="page-title">
+          Quel module souhaitez-vous gérer?
+        </h2>
 
-      <div class="cards-grid">
-        <div
-          v-for="card in contentCards"
-          :key="card.icon"
-          class="card"
-        >
-          <div class="card-icon">
-            <component :is="card.icon" stroke={2} :class="card.color" class="w-6 h-6 flex-shrink-0" />
+        <div class="cards-grid">
+          <div
+            v-for="card in contentCards"
+            :key="card.label"
+            class="card"
+            @click="handleCardClick(card)"
+            :class="{ 'card-clickable': card.route }"
+          >
+            <div class="card-icon">
+              <component
+                :is="card.icon"
+                :stroke-width="2"
+                :class="card.color"
+                class="icon-size"
+              />
+            </div>
+            <div class="card-label">{{ card.label }}</div>
+
+            <!-- Badge optionnel pour indiquer les rôles requis -->
+            <div v-if="card.roles" class="card-roles">
+              <span
+                v-for="role in card.roles"
+                :key="role"
+                class="role-badge"
+              >
+                {{ role }}
+              </span>
+            </div>
           </div>
-          <div class="card-label">{{ card.label }}</div>
         </div>
-      </div>
-    </main>
+      </main>
+    </div>
   </div>
 </template>
 
 <script setup lang="ts">
 import { ref } from 'vue'
-import { IconFlag, IconLanguage, IconUsersGroup } from '@tabler/icons-vue'
-
-// ✅ Import du CSS
+import { useRouter } from 'vue-router' // Si vous utilisez Vue Router
+import { IconFlag, IconLanguage, IconLicense, IconUsersGroup, IconArrowLeft } from '@tabler/icons-vue';
 import "../assets/css/toke-module-07.css"
+const router = useRouter() // Décommentez si vous utilisez Vue Router
+
+
+// Fonction pour revenir à la page précédente
+const goBack = () => {
+  router.back();
+}
 
 const contentCards = ref([
-  { icon: IconFlag, label: "Country", color: "text-green-600" },
-  { icon: IconLanguage, label: "Lexicon", color: "text-blue-600", route: '/lexicon', roles: ['PARTNER', 'MANAGER'] },
-  { icon: IconUsersGroup, label: "User", color: "text-purple-600" },
+  {
+    icon: IconFlag,
+    label: "Country",
+    color: "text-green-600",
+    route: ''
+  },
+  {
+    icon: IconLanguage,
+    label: "Lexicon",
+    color: "text-blue-600",
+    route: '',
+    roles: ''
+  },
+  {
+    icon: IconUsersGroup,
+    label: "User",
+    color: "text-purple-600",
+    route: '/users'
+  },
+  {
+    icon: IconLicense,
+    label: "License",
+    color: "text-yellow-600",
+    route: ''
+  },
 ])
+
+// Fonction pour gérer le clic sur une carte
+const handleCardClick = (card: any) => {
+  if (card.route) {
+    // Navigation avec Vue Router
+    router.push(card.route)
+
+    // Ou navigation simple avec window.location si vous n'utilisez pas Vue Router
+    // window.location.href = card.route
+
+    console.log(`Navigation vers: ${card.route}`)
+  } else {
+    console.log(`Module ${card.label} cliqué - aucune route définie`)
+  }
+}
 </script>

@@ -1,5 +1,5 @@
 <template>
-  <div :class="['employee-card', { 'has-issue': employee.priority === 'high' }]">
+  <div :class="['employee-card', { 'has-issue': employee.priority === 'high'}]">
     <div class="employee-main">
       <div class="employee-avatar">
         <div class="avatar-employee">{{ employee.initials }}</div>
@@ -47,19 +47,26 @@
         <svg class="icon-sm" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                 d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z">
-
           </path>
         </svg>
         <span>Justifier</span>
       </a>
 
       <!-- Bouton Mémo : toujours visible -->
-      <a href="/memo" class="action-btn-small action-primary">
+      <button @click="openMemoModal" class="action-btn-small action-primary">
         <svg class="icon-xs" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"></path>
         </svg>
         <span>Mémo</span>
-      </a>
+      </button>
+
+<!--      &lt;!&ndash; Bouton Historique des mémos &ndash;&gt;-->
+<!--      <button @click="openMemoHistory" class="action-btn-small action-secondary">-->
+<!--        <svg class="icon-xs" fill="none" stroke="currentColor" viewBox="0 0 24 24">-->
+<!--          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>-->
+<!--        </svg>-->
+<!--        <span>Historique</span>-->
+<!--      </button>-->
 
       <!-- Bouton Avertir : apparaît pour les retards non validés -->
       <a href="#" class="action-btn-small action-warning" v-if="employee.status === 'late' && !employee.isValidated">
@@ -85,12 +92,28 @@
         <span class="validated-text">Retard validé</span>
       </div>
     </div>
+
+    <!-- Modal pour créer un mémo -->
+    <Memo
+      v-if="showMemoModal"
+      :employee="employee"
+      @close="closeMemoModal"
+      @memo-sent="handleMemoSent"
+    />
+
+    <!-- Modal pour l'historique des mémos -->
+    <MemoHistoryModal
+      v-if="showMemoHistory"
+      :employee="employee"
+      @close="closeMemoHistory"
+    />
   </div>
 </template>
 
 <script setup lang="ts">
-import { computed } from 'vue'
-import"../../assets/css/tokt-employeeC-06.css"
+import { computed, ref } from 'vue'
+import Memo from '../memo.vue'
+import "../../assets/css/tokt-employeeC-06.css"
 
 interface Employee {
   id: number
@@ -102,13 +125,37 @@ interface Employee {
   time?: string
   avatar?: string
   priority?: 'high' | 'medium' | 'low'
-  isJustified?: boolean  // Nouveau : indique si l'absence est justifiée
-  isValidated?: boolean  // Nouveau : indique si le retard est validé
+  isJustified?: boolean
+  isValidated?: boolean
 }
 
 const props = defineProps<{
   employee: Employee
 }>()
+
+const showMemoModal = ref(false)
+const showMemoHistory = ref(false)
+
+const openMemoModal = () => {
+  showMemoModal.value = true
+}
+
+const closeMemoModal = () => {
+  showMemoModal.value = false
+}
+
+const openMemoHistory = () => {
+  showMemoHistory.value = true
+}
+
+const closeMemoHistory = () => {
+  showMemoHistory.value = false
+}
+
+const handleMemoSent = (memo: any) => {
+  // Vous pouvez émettre un événement vers le parent si nécessaire
+  console.log('Mémo envoyé:', memo)
+}
 
 const statusIcon = computed(() => {
   switch (props.employee.status) {
@@ -127,5 +174,4 @@ const statusIcon = computed(() => {
 </script>
 
 <style>
-
 </style>
