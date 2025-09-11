@@ -1,11 +1,18 @@
 <template>
   <div>
+    <!-- Utilisation du composant header réutilisable -->
+    <Header
+      :user-name="currentUser.name"
+      :company-name="currentUser.company"
+      :notification-count="notificationCount"
+    />
+
     <div class="page-container">
       <a href="/dashboard" @click.prevent="goBack" class="back-arrow-link">
-        <IconArrowLeft />
+<!--        <IconArrowLeft />-->
       </a>
+
       <main class="main-content">
-        <main/>
         <h2 class="page-title">
           Quel module souhaitez-vous gérer?
         </h2>
@@ -47,15 +54,24 @@
 
 <script setup lang="ts">
 import { ref } from 'vue'
-import { useRouter } from 'vue-router' // Si vous utilisez Vue Router
-import { IconFlag, IconLanguage, IconLicense, IconUsersGroup, IconArrowLeft } from '@tabler/icons-vue';
+import { useRouter } from 'vue-router'
+import { IconFlag, IconLanguage, IconLicense, IconUsersGroup, IconArrowLeft } from '@tabler/icons-vue'
+import Header from '../views/components/header.vue' // Import du composant header
 import "../assets/css/toke-module-07.css"
-const router = useRouter() // Décommentez si vous utilisez Vue Router
 
+const router = useRouter()
+
+// Données pour le header
+const currentUser = ref({
+  name: 'Danielle',
+  company: 'IMEDIATIS'
+})
+
+const notificationCount = ref(0) // Aucune notification sur cette page
 
 // Fonction pour revenir à la page précédente
 const goBack = () => {
-  router.back();
+  router.back()
 }
 
 const contentCards = ref([
@@ -89,12 +105,7 @@ const contentCards = ref([
 // Fonction pour gérer le clic sur une carte
 const handleCardClick = (card: any) => {
   if (card.route) {
-    // Navigation avec Vue Router
     router.push(card.route)
-
-    // Ou navigation simple avec window.location si vous n'utilisez pas Vue Router
-    // window.location.href = card.route
-
     console.log(`Navigation vers: ${card.route}`)
   } else {
     console.log(`Module ${card.label} cliqué - aucune route définie`)

@@ -136,6 +136,64 @@
     color: #9ca3af;
 }
 
+/* Style pour la nouvelle section d'importation de fichiers */
+.file-input-section {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 2rem;
+    border: 2px dashed #e0e0e0;
+    border-radius: 12px;
+    background-color: #fafafa;
+    flex-direction: column;
+    gap: 1rem;
+    transition: all 0.2s ease-in-out;
+}
+
+.file-input-section:hover {
+    background-color: #f0f0f0;
+    border-color: #ccc;
+}
+
+.file-input-section .plus-icon {
+    width: 50px;
+    height: 50px;
+    color: #a0a0a0;
+    transition: transform 0.2s;
+}
+
+.file-input-section:hover .plus-icon {
+    transform: scale(1.1);
+}
+
+.file-upload-label {
+    cursor: pointer;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 10px;
+    font-size: 1rem;
+    color: #666;
+    text-align: center;
+}
+
+/* Masque le champ de saisie de fichier par défaut */
+.file-input {
+    display: none;
+}
+
+.clear-file-btn {
+    background: none;
+    border: none;
+    cursor: pointer;
+    color: #ff4d4d;
+    transition: color 0.2s;
+}
+
+.clear-file-btn:hover {
+    color: #cc0000;
+}
+
 /* Voice Input Section */
 .voice-input-section {
     margin-bottom: 24px;

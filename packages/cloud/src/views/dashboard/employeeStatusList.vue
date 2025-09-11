@@ -148,6 +148,13 @@ const employees = ref<Employee[]>([
     status: 'info',
     statusText: 'Formation',
     location: 'Formation sécurité - CCIMA'
+  },
+  {
+    id: 7,
+    name: 'Tchioffo',
+    initials: 'T',
+    status: 'present',
+    statusText: 'Formation',
   }
 ])
 
