@@ -21,6 +21,9 @@ export * from './constants/global.license.js';
 export * from './constants/lexicon.js';
 export * from './constants/employee.license.js';
 export * from './constants/billing.cycle.js';
+export * from './constants/payment.method.js';
+export * from './constants/license.adjustment.js';
+export * from './constants/payment.transaction.js';
 
 // Export des schémas
 export * from './schemas/country.js';
@@ -33,6 +36,9 @@ export * as GL from './schemas/global.license.js';
 export * as LX from './schemas/lexicon.js';
 export * as EL from './schemas/employee.license.js';
 export * as BC from './schemas/billing.cycle.js';
+export * as PM from './schemas/payment.method.js';
+export * as LA from './schemas/license.adjustment.js';
+export * as PT from './schemas/payment.transaction.js';
 
 // Export des utilitaires
 export * from './utils/country.validation.js';
@@ -46,3 +52,6 @@ export * from './utils/global.license.validation.js';
 export * from './utils/lexicon.validation.js';
 export * from './utils/employee.license.validation.js';
 export * from './utils/billing.cycle.validation.js';
+export * from './utils/payment.method.validation.js';
+export * from './utils/license.adjustment.validation.js';
+export * from './utils/payment.transaction.validation.js';

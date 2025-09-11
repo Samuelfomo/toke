@@ -122,9 +122,37 @@ export const LicenseAdjustmentDbStructure = {
         isDecimal: true,
         min: 0,
         max: 9999999999.99,
+        matchesSubtotalAndTax(value: any) {
+          const subtotal = parseFloat((this as any).subtotal_usd ?? 0);
+          const tax = parseFloat((this as any).tax_amount_usd ?? 0);
+          const expected = Math.round((subtotal + tax) * 100) / 100; // arrondi à 2 décimales
+
+          if (parseFloat(value) !== expected) {
+            throw new Error(
+              `total_amount_usd must equal subtotal_usd + tax_amount_usd (expected: ${expected}, got: ${value})`
+            );
+          }
+        },
       },
-      comment: 'Total amount (USD)',
+      comment: 'Total amount in USD (must equal subtotal_usd + tax_amount_usd)',
     },
+    // total_amount_usd: {
+    //   type: DataTypes.DECIMAL(12, 2),
+    //   allowNull: false,
+    //   validate: {
+    //     isDecimal: true,
+    //     min: 0,
+    //     max: 9999999999.99,
+    //     matchesSubtotalAndTax(value: any) {
+    //       const subtotal = (this as any).subtotal_usd;
+    //       const tax = (this as any).tax_amount_usd;
+    //       if (parseFloat(value) !== parseFloat(subtotal) + parseFloat(tax)) {
+    //         throw new Error('total_amount_usd must equal subtotal_usd + tax_amount_usd');
+    //       }
+    //     },
+    //   },
+    //   comment: 'Total amount (USD)',
+    // },
     billing_currency_code: {
       type: DataTypes.STRING(3),
       allowNull: false,

@@ -114,6 +114,32 @@ export const responseStructure = {
   INVOICE_GENERATED_AT: 'invoice_generated_at',
   PAYMENT_DUE_DATE: 'payment_due_date',
   PAYMENT_COMPLETED_AT: 'payment_completed_at',
+
+  METHOD_TYPE: 'method_type',
+  SUPPORTED_CURRENCIES: 'supported_currencies',
+  PROCESSING_FEE_RATE: 'processing_fee_rate',
+  MIN_AMOUNT_USD: 'min_amount_usd',
+  MAX_AMOUNT_USD: 'max_amount_usd',
+  BILLING_CYCLE: 'billing_cycle',
+  ADJUSTMENT: 'adjustment',
+  AMOUNT_USD: 'amount_usd',
+  AMOUNT_LOCAL: 'amount_local',
+  CURRENCY_CODE: 'currency_code',
+  PAYMENT_REFERENCE: 'payment_reference',
+  TRANSACTION_STATUS: 'transaction_status',
+  INITIATED_AT: 'initiated_at',
+  COMPLETED_AT: 'completed_at',
+  FAILED_AT: 'failed_at',
+  FAILURE_REASON: 'failure_reason',
+  PAYMENT_METHOD: 'payment_method',
+
+  ADJUSTMENT_DATE: 'adjustment_date',
+  EMPLOYEES_ADDED_COUNT: 'employees_added_count',
+  MONTHS_REMAINING: 'months_remaining',
+  PRICE_PER_EMPLOYEE_USD: 'price_per_employee_usd',
+  PAYMENT_STATUS: 'payment_status',
+  PAYMENT_DUE_IMMEDIATELY: 'payment_due_immediately',
+  INVOICE_SENT_AT: 'invoice_sent_at',
 } as const;
 
 export const tableName = {
@@ -132,6 +158,7 @@ export const tableName = {
   BILLING_CYCLE: `${G.tableAp}_billing_cycle`,
   LICENSE_ADJUSTMENT: `${G.tableAp}_license_adjustment`,
   PAYMENT_METHOD: `${G.tableAp}_payment_method`,
+  PAYMENT_TRANSACTION: `${G.tableAp}_payment_transaction`,
 } as const;
 
 export const EntityRoute = {

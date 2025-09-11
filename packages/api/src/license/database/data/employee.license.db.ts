@@ -248,10 +248,10 @@ export const EmployeeLicenseDbStructure = {
         fields: ['long_leave_reason'],
         name: 'idx_employee_license_long_leave_reason',
       },
-      {
-        fields: ['computed_billing_status'],
-        name: 'idx_employee_license_computed_billing_status',
-      },
+      // {
+      //   fields: ['computed_billing_status'],
+      //   name: 'idx_employee_license_computed_billing_status',
+      // },
       {
         fields: ['grace_period_start'],
         name: 'idx_employee_license_grace_period_start',

@@ -1,18 +1,10 @@
 import { DataTypes, ModelAttributes, ModelOptions } from 'sequelize';
+import { PaymentTransactionStatus } from '@toke/shared';
 
-import G from '../../../tools/glossary.js';
-
-export enum PaymentTransactionStatus {
-  PENDING = 'PENDING',
-  PROCESSING = 'PROCESSING',
-  COMPLETED = 'COMPLETED',
-  FAILED = 'FAILED',
-  CANCELLED = 'CANCELLED',
-  REFUNDED = 'REFUNDED',
-}
+import { tableName } from '../../../utils/response.model.js';
 
 export const PaymentTransactionDbStructure = {
-  tableName: `${G.tableAp}_payment_transaction`,
+  tableName: tableName.PAYMENT_TRANSACTION,
   attributes: {
     id: {
       type: DataTypes.INTEGER,
@@ -21,6 +13,7 @@ export const PaymentTransactionDbStructure = {
       validate: {
         isInt: true,
         min: 1,
+        max: 2147483647,
       },
       comment: 'Payment transaction',
     },
@@ -34,6 +27,7 @@ export const PaymentTransactionDbStructure = {
       validate: {
         isInt: true,
         min: 100000,
+        max: 999999,
       },
       comment: 'Unique, automatically generated digital GUID',
     },
@@ -41,12 +35,13 @@ export const PaymentTransactionDbStructure = {
       type: DataTypes.INTEGER,
       allowNull: false,
       references: {
-        model: `${G.tableAp}_billing_cycle`,
+        model: tableName.BILLING_CYCLE,
         key: 'id',
       },
       validate: {
         isInt: true,
         min: 1,
+        max: 2147483647,
       },
       comment: 'Billing cycle',
     },
@@ -54,12 +49,13 @@ export const PaymentTransactionDbStructure = {
       type: DataTypes.INTEGER,
       allowNull: false,
       references: {
-        model: `${G.tableAp}_license_adjustment`,
+        model: tableName.LICENSE_ADJUSTMENT,
         key: 'id',
       },
       validate: {
         isInt: true,
         min: 1,
+        max: 2147483647,
       },
       comment: 'Adjustment',
     },
@@ -86,10 +82,10 @@ export const PaymentTransactionDbStructure = {
     currency_code: {
       type: DataTypes.STRING(3),
       allowNull: false,
-      // references: {
-      //   model: `${G.tableAp}_currency`,
-      //   key: 'code',
-      // },
+      references: {
+        model: tableName.CURRENCY,
+        key: 'code',
+      },
       validate: {
         is: /^[A-Z]{3}$/,
         len: [3, 3],
@@ -110,18 +106,20 @@ export const PaymentTransactionDbStructure = {
       type: DataTypes.INTEGER,
       allowNull: false,
       references: {
-        model: `${G.tableAp}_payment_method`,
+        model: tableName.PAYMENT_METHOD,
         key: 'id',
       },
       validate: {
         isInt: true,
         min: 1,
+        max: 2147483647,
       },
       comment: 'Payment method',
     },
     payment_reference: {
-      type: DataTypes.STRING(100),
+      type: DataTypes.STRING(100), // -- Référence externe (MTN transaction ID, etc.)
       allowNull: false,
+      unique: {name:'unique_payment_reference', msg: 'Payment reference must be unique'},
       validate: {
         len: [1, 100],
         notEmpty: true,
@@ -177,7 +175,7 @@ export const PaymentTransactionDbStructure = {
   } as ModelAttributes,
 
   options: {
-    tableName: `${G.tableAp}_payment_transaction`,
+    tableName: tableName.PAYMENT_TRANSACTION,
     timestamps: true,
     createdAt: 'created_at',
     updatedAt: 'updated_at',
