@@ -24,7 +24,6 @@
           <div class="skeleton-button"></div>
           <div class="skeleton-footer"></div>
         </div>
-
         <div v-else class="auth-form-card">
           <slot name="welcome">
             <p class="auth-welcome-message">

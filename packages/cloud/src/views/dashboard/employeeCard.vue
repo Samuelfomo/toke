@@ -1,5 +1,5 @@
 <template>
-  <div :class="['employee-card', { 'has-issue': employee.priority === 'high'}]">
+  <div :class="['employee-card', { 'has-issue': employee.priority === 'high' }]">
     <div class="employee-main">
       <div class="employee-avatar">
         <div class="avatar-employee">{{ employee.initials }}</div>
@@ -34,7 +34,6 @@
       </div>
     </div>
     <div class="employee-actions">
-      <!-- Bouton Valider : apparaît pour les retards non validés -->
       <a href="#" class="action-btn-small action-primary" v-if="employee.status === 'late' && !employee.isValidated">
         <svg class="icon-sm" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
@@ -42,7 +41,6 @@
         <span>Valider</span>
       </a>
 
-      <!-- Bouton Justifier : apparaît pour les absences non justifiées -->
       <a href="#" class="action-btn-small action-primary" v-if="employee.status === 'absent' && !employee.isJustified">
         <svg class="icon-sm" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
@@ -52,23 +50,15 @@
         <span>Justifier</span>
       </a>
 
-      <!-- Bouton Mémo : toujours visible -->
-      <button @click="openMemoModal" class="action-btn-small action-primary">
-        <svg class="icon-xs" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"></path>
+      <button @click="openMemoChat" class="action-btn-small action-primary" v-if="employee.status === 'absent' && !employee.isJustified">
+        <svg class="icon-sm" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z">
+          </path>
         </svg>
-        <span>Mémo</span>
+        <span>Memo</span>
       </button>
 
-<!--      &lt;!&ndash; Bouton Historique des mémos &ndash;&gt;-->
-<!--      <button @click="openMemoHistory" class="action-btn-small action-secondary">-->
-<!--        <svg class="icon-xs" fill="none" stroke="currentColor" viewBox="0 0 24 24">-->
-<!--          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>-->
-<!--        </svg>-->
-<!--        <span>Historique</span>-->
-<!--      </button>-->
-
-      <!-- Bouton Avertir : apparaît pour les retards non validés -->
       <a href="#" class="action-btn-small action-warning" v-if="employee.status === 'late' && !employee.isValidated">
         <svg class="icon-xs" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.732-.833-2.502 0L4.268 18.5c-.77.833.192 2.5 1.732 2.5z"></path>
@@ -76,44 +66,36 @@
         <span>Avertir</span>
       </a>
 
-      <!-- Notification "Absence non justifiée" : apparaît uniquement pour les absences non justifiées -->
       <div class="employee-issue" v-if="employee.status === 'absent' && !employee.isJustified">
         <svg class="icon-xs" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.732-.833-2.502 0L4.268 18.5c-.77.833.192 2.5 1.732 2.5z"></path>
         </svg>
-        <span class="issue-text">Absence non justifiée</span>
+        <span class="issue-text">Absence non justifie</span>
       </div>
 
-      <!-- Notification "Retard validé" : apparaît pour les retards validés -->
       <div class="employee-validated" v-if="employee.status === 'late' && employee.isValidated">
         <svg class="icon-xs" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
         </svg>
-        <span class="validated-text">Retard validé</span>
+        <span class="validated-text">Retard valide</span>
       </div>
     </div>
 
-    <!-- Modal pour créer un mémo -->
     <Memo
-      v-if="showMemoModal"
+      v-if="showMemoChat"
       :employee="employee"
-      @close="closeMemoModal"
+      @goBack="closeMemoChat"
       @memo-sent="handleMemoSent"
-    />
-
-    <!-- Modal pour l'historique des mémos -->
-    <MemoHistoryModal
-      v-if="showMemoHistory"
-      :employee="employee"
-      @close="closeMemoHistory"
     />
   </div>
 </template>
 
 <script setup lang="ts">
-import { computed, ref } from 'vue'
+import { computed, onMounted, ref } from 'vue';
 import Memo from '../memo.vue'
-import "../../assets/css/tokt-employeeC-06.css"
+// import MemoHistoryModal from './MemoHistoryModal.vue'
+import  cardCss from "../../assets/css/tokt-employeeC-06.css?url"
+import HeadBuilder from '@/utils/HeadBuilder';
 
 interface Employee {
   id: number
@@ -133,15 +115,20 @@ const props = defineProps<{
   employee: Employee
 }>()
 
-const showMemoModal = ref(false)
+const emit = defineEmits<{
+  memoSent: [memo: any]
+  employeeUpdated: [employee: Employee]
+}>()
+
+const showMemoChat = ref(false)
 const showMemoHistory = ref(false)
 
-const openMemoModal = () => {
-  showMemoModal.value = true
+const openMemoChat = () => {
+  showMemoChat.value = true
 }
 
-const closeMemoModal = () => {
-  showMemoModal.value = false
+const closeMemoChat = () => {
+  showMemoChat.value = false
 }
 
 const openMemoHistory = () => {
@@ -153,8 +140,13 @@ const closeMemoHistory = () => {
 }
 
 const handleMemoSent = (memo: any) => {
-  // Vous pouvez émettre un événement vers le parent si nécessaire
-  console.log('Mémo envoyé:', memo)
+  console.log('Mémos envoyé:', memo)
+
+  // Émettre l'événement vers le parent pour traitement
+  emit('memoSent', memo)
+
+  // Optionnel: Afficher une notification de succès
+  // Vous pouvez implémenter un système de toast/notification ici
 }
 
 const statusIcon = computed(() => {
@@ -171,7 +163,16 @@ const statusIcon = computed(() => {
       return 'icon-user'
   }
 })
+
+onMounted(()=> {
+  HeadBuilder.apply({
+    title: 'card - Toké',
+    css: [cardCss], // Charger les deux fichiers CSS
+    meta: { viewport: "width=device-width, initial-scale=1.0" }
+  })
+})
 </script>
 
 <style>
+/* Les styles existants de la carte employé restent inchangés */
 </style>

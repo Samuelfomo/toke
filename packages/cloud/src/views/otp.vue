@@ -76,17 +76,13 @@ const setInputRef = (el: HTMLInputElement | null, index: number) => {
 }
 const cssFiles = [authCss, otpCss]
 
-// ✅ SOLUTION 1 : Charger les CSS manuellement
+// Focus automatique sur le premier champ
 onMounted(() => {
   HeadBuilder.apply({
     title: 'Vérification OTP - Toké',
     css: [authCss, otpCss], // Charger les deux fichiers CSS
     meta: { viewport: "width=device-width, initial-scale=1.0" }
   })
-})
-
-// Focus automatique sur le premier champ
-onMounted(() => {
   nextTick(() => {
     inputRefs.value[0]?.focus()
   })

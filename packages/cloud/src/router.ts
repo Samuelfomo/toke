@@ -67,6 +67,7 @@ const routes: RouteRecordRaw[] = [
     path: '/memo',
     name: 'memo',
     component: Memo,
+    props: true,
   },
   {
     path: '/module',

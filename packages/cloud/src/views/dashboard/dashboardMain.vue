@@ -17,16 +17,26 @@
 </template>
 
 <script setup lang="ts">
-import { ref } from 'vue'
+import { onMounted, ref } from 'vue';
 import Header from '../components/header.vue'
 import DashboardHero from './dashboardHero.vue'
 import EmployeeStatusList from '../dashboard/employeeStatusList.vue'
-import "../../assets/css/toke-dMain-04.css"
+import dashboardCss from "../../assets/css/toke-dMain-04.css?url"
+import HeadBuilder from '../../utils/HeadBuilder';
 
 // Données réactives pour le header
 const currentUser = ref({
   name: 'Danielle',
   company: 'IMEDIATIS'
+})
+
+// ✅ SOLUTION 1 : Charger les CSS manuellement
+onMounted(() => {
+  HeadBuilder.apply({
+    title: 'Vérification OTP - Toké',
+    css: [dashboardCss], // Charger les deux fichiers CSS
+    meta: { viewport: "width=device-width, initial-scale=1.0" }
+  })
 })
 
 const notificationCount = ref(2)
