@@ -17,7 +17,8 @@ import Ensure from '../middle/ensured-routes.js';
 import Revision from '../../tools/revision.js';
 import { tableName } from '../../utils/response.model.js';
 import R from '../../tools/response.js';
-import GlobalLicense from '../class/GlobalLicense';
+import GlobalLicense from '../class/GlobalLicense.js';
+import Tenant from '../class/Tenant.js';
 
 const router = Router();
 
@@ -187,6 +188,14 @@ router.post('/', Ensure.post(), async (req: Request, res: Response) => {
       return R.handleError(res, HttpStatus.NOT_FOUND, {
         code: GLOBAL_LICENSE_CODES.GLOBAL_LICENSE_NOT_FOUND,
         message: GLOBAL_LICENSE_ERRORS.NOT_FOUND,
+      })
+    }
+
+    const existingTenantDb = await Tenant._load(existingGlobalLicense.getTenant());
+    if(!existingTenantDb?.getSubdomain() || !existingTenantDb?.getDatabaseName()){
+      return R.handleError(res, HttpStatus.NOT_FOUND, {
+        code: 'tenant_system_not_exists',
+        message: 'Tenant database does not exist',
       })
     }
 

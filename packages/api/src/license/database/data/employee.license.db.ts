@@ -140,21 +140,21 @@ export const EmployeeLicenseDbStructure = {
       },
       comment: 'Long leave reason',
     },
-    // Cette colonne est GÉNÉRÉE par PostgreSQL - NE PAS MODIFIER
-    computed_billing_status: {
-      type: DataTypes.ENUM(...Object.values(BillingStatusComputed)),
-      allowNull: false,
-      field: 'computed_billing_status',
-      comment: 'Computed billing status (PostgreSQL generated column)',
-      // Getter normal - lit la valeur calculée par PostgreSQL
-      get() {
-        return this.getDataValue('computed_billing_status');
-      },
-      // Setter bloqué - PostgreSQL gère cette colonne
-      set() {
-        throw new Error('Cannot manually set computed_billing_status - it is automatically computed by PostgreSQL based on business rules');
-      }
-    },
+    // // Cette colonne est GÉNÉRÉE par PostgreSQL - NE PAS MODIFIER
+    // computed_billing_status: {
+    //   type: DataTypes.ENUM(...Object.values(BillingStatusComputed)),
+    //   allowNull: false,
+    //   field: 'computed_billing_status',
+    //   comment: 'Computed billing status (PostgreSQL generated column)',
+    //   // Getter normal - lit la valeur calculée par PostgreSQL
+    //   get() {
+    //     return this.getDataValue('computed_billing_status');
+    //   },
+    //   // Setter bloqué - PostgreSQL gère cette colonne
+    //   set() {
+    //     throw new Error('Cannot manually set computed_billing_status - it is automatically computed by PostgreSQL based on business rules');
+    //   }
+    // },
     // computed_billing_status: {
     //   type: DataTypes.ENUM(...Object.values(BillingStatusComputed)), // Statut de facturation calculé automatiquement
     //   allowNull: false,
@@ -191,7 +191,13 @@ export const EmployeeLicenseDbStructure = {
     updatedAt: 'updated_at',
     underscored: true,
     freezeTableName: true,
-    comment: 'Employee license table',
+    comment: 'Employee license table',scopes: {
+      withComputedStatus: {
+        // Utiliser la vue créée par votre migration
+        from: 'xa_employee_license_with_billing_status'
+      }
+    },
+
     // Exclure computed_billing_status de la synchronisation automatique
     // car elle sera gérée par la migration PostgreSQL
     omitNull: false,

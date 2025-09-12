@@ -57,7 +57,9 @@ export const TENANT_VALIDATION = {
   SUBDOMAIN: {
     MIN_LENGTH: 1,
     MAX_LENGTH: 255,
-    PATTERN: /^[a-z0-9]+(?:-[a-z0-9]+)*$/,
+    PATTERN:
+      /^(?=.{1,255}$)([a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?)(?:\.[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?)*$/,
+    // PATTERN: /^[a-z0-9]+(?:-[a-z0-9]+)*$/,
   },
   DATABASE_NAME: {
     MIN_LENGTH: 1,

@@ -47,7 +47,9 @@
     "migrate": "npx sequelize-cli db:migrate --env production",
     "migrate:dev": "npx sequelize-cli db:migrate --env development",
     "migrate:undo": "npx sequelize-cli db:migrate:undo --env production",
-    "status:migrate": "npx sequelize-cli db:migrate:status --env production"
+    "status:migrate": "npx sequelize-cli db:migrate:status --env production",
+    "migration:create": "npx sequelize-cli migration:create",
+    "migration:generate": "npx sequelize-cli migration:generate"
   },
   "keywords": [],
   "author": "",

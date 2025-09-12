@@ -140,6 +140,22 @@ export const responseStructure = {
   PAYMENT_STATUS: 'payment_status',
   PAYMENT_DUE_IMMEDIATELY: 'payment_due_immediately',
   INVOICE_SENT_AT: 'invoice_sent_at',
+
+  DETECTION_TYPE: 'detection_type',
+  EMPLOYEE_LICENSES_AFFECTED: 'employee_licenses_affected',
+  RISK_LEVEL: 'risk_level',
+  ACTION_TAKEN: 'action_taken',
+  NOTES: 'notes',
+  RESOLVED_AT: 'resolved_at',
+  RESOLVED_BY: 'resolved_by',
+
+  EMPLOYEE_LICENSE: 'employee_license',
+  MONITORING_DATE: 'monitoring_date',
+  LAST_PUNCH_DATE: 'last_punch_date',
+  PUNCH_COUNT_7_DAYS: 'punch_count_7_days',
+  PUNCH_COUNT_30_DAYS: 'punch_count_30_days',
+  CONSECUTIVE_ABSENT_DAYS: 'consecutive_absent_days',
+  STATUS_AT_DATE: 'status_at_date',
 } as const;
 
 export const tableName = {
@@ -159,6 +175,8 @@ export const tableName = {
   LICENSE_ADJUSTMENT: `${G.tableAp}_license_adjustment`,
   PAYMENT_METHOD: `${G.tableAp}_payment_method`,
   PAYMENT_TRANSACTION: `${G.tableAp}_payment_transaction`,
+  FRAUD_DETECTION_LOG: `${G.tableAp}_fraud_detection_log`,
+  ACTIVITY_MONITORING: `${G.tableAp}_activity_monitoring`,
 } as const;
 
 export const EntityRoute = {

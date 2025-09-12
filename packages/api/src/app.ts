@@ -19,6 +19,10 @@ import TenantRoute from './license/routes/tenant.route.js';
 import Revision from './tools/revision.js';
 import GlobalLicenseRoute from './license/routes/global.license.route.js';
 import LexiconRoute from './license/routes/lexicon.route.js';
+import PaymentMethodRoute from './license/routes/payment.method.route.js';
+import LicenseAdjustmentRoute from './license/routes/license.adjustment.route.js';
+import PaymentTransactionRoute from './license/routes/payment.transaction.route.js';
+import EmployeeLicenseRoute from './license/routes/employee.license.route.js';
 
 interface AppConfig {
   port: number;
@@ -205,7 +209,11 @@ export default class App {
     this.app.use(`/${EntityRoute.MASTER}/tax-rule`, TaxRuleRoute);
     this.app.use(`/${EntityRoute.MASTER}/tenant`, TenantRoute);
     this.app.use(`/${EntityRoute.MASTER}/global-license`, GlobalLicenseRoute);
+    this.app.use(`/${EntityRoute.MASTER}/employee-license`, EmployeeLicenseRoute);
     this.app.use(`/${EntityRoute.MASTER}/lexicon`, LexiconRoute);
+    this.app.use(`/${EntityRoute.MASTER}/payment-method`, PaymentMethodRoute);
+    this.app.use(`/${EntityRoute.MASTER}/license-adjustment`, LicenseAdjustmentRoute);
+    this.app.use(`/${EntityRoute.MASTER}/payment-transaction`, PaymentTransactionRoute);
 
     // Route 404
     this.app.use((req, res) => {

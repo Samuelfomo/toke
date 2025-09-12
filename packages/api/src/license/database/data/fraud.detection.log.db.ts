@@ -1,6 +1,6 @@
 import { DataTypes, ModelAttributes, ModelOptions } from 'sequelize';
 
-import G from '../../../tools/glossary.js';
+import { tableName } from '../../../utils/response.model.js';
 
 export enum FraudDetection {
   SUSPICIOUS_LEAVE_PATTERN = 'SUSPICIOUS_LEAVE_PATTERN',
@@ -18,7 +18,7 @@ export enum RiskLevel {
 }
 
 export const FraudDetectionLogDbStructure = {
-  tableName: `${G.tableAp}_fraud_detection_log`,
+  tableName:tableName.FRAUD_DETECTION_LOG,
   attributes: {
     id: {
       type: DataTypes.INTEGER,
@@ -27,6 +27,7 @@ export const FraudDetectionLogDbStructure = {
       validate: {
         isInt: true,
         min: 1,
+        max: 2147483647,
       },
       comment: 'Fraud Detection Log',
     },
@@ -34,12 +35,13 @@ export const FraudDetectionLogDbStructure = {
       type: DataTypes.INTEGER,
       allowNull: false,
       references: {
-        model: `${G.tableAp}_tenant`,
+        model: tableName.TENANT,
         key: 'id',
       },
       validate: {
         isInt: true,
         min: 1,
+        max: 2147483647,
       },
       comment: 'Tenant',
     },
@@ -103,19 +105,16 @@ export const FraudDetectionLogDbStructure = {
     resolved_by: {
       type: DataTypes.INTEGER,
       allowNull: true,
-      // references: {
-      //   model: `${G.tableAp}_user`,
-      //   key: 'id',
-      // },
       validate: {
         isInt: true,
         min: 1,
+        max: 2147483647,
       },
       comment: 'Resolved by',
     },
   } as ModelAttributes,
   options: {
-    tableName: `${G.tableAp}_fraud_detection_log`,
+    tableName: tableName.FRAUD_DETECTION_LOG,
     timestamps: true,
     createdAt: 'created_at',
     updatedAt: 'updated_at',
@@ -123,14 +122,14 @@ export const FraudDetectionLogDbStructure = {
     freezeTableName: true,
     comment: 'Fraud detection log table with validation information',
     indexes: [
-      {
-        fields: ['tenant'],
-        name: 'idx_fraud_detection_log_tenant',
-      },
-      {
-        fields: ['detection_type'],
-        name: 'idx_fraud_detection_log_detection_type',
-      },
+      // {
+      //   fields: ['tenant'],
+      //   name: 'idx_fraud_detection_log_tenant',
+      // },
+      // {
+      //   fields: ['detection_type'],
+      //   name: 'idx_fraud_detection_log_detection_type',
+      // },
       {
         fields: ['employee_licenses_affected'],
         name: 'idx_fraud_detection_log_employee_licenses',

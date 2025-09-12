@@ -230,7 +230,8 @@ export const TenantDbStructure = {
       allowNull: true,
       unique: { name: 'unique_tenant_subdomain', msg: 'Tenant subdomain must be unique' },
       validate: {
-        is: /^[a-z0-9]+(?:-[a-z0-9]+)*$/,
+        is: /^(?=.{1,255}$)([a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?)(?:\.[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?)*$/,
+        // is: /^[a-z0-9]+(?:-[a-z0-9]+)*$/,
         len: [1, 255],
         // len: [0, 255],
       },

@@ -1,6 +1,6 @@
 import { DataTypes, ModelAttributes, ModelOptions } from 'sequelize';
 
-import G from '../../../tools/glossary.js';
+import { tableName } from '../../../utils/response.model.js';
 
 export enum ActivityStatus {
   ACTIVE = 'ACTIVE',
@@ -9,7 +9,7 @@ export enum ActivityStatus {
 }
 
 export const ActivityMonitoringDbStructure = {
-  tableName: `${G.tableAp}_activity_monitoring`,
+  tableName: tableName.ACTIVITY_MONITORING,
   attributes: {
     id: {
       type: DataTypes.INTEGER,
@@ -18,32 +18,35 @@ export const ActivityMonitoringDbStructure = {
       validate: {
         isInt: true,
         min: 1,
+        max: 2147483647,
       },
       comment: 'Activity monitoring',
     },
-    guid: {
-      type: DataTypes.INTEGER,
-      allowNull: false,
-      unique: {
-        name: 'unique_activity_monitoring_guid',
-        msg: 'Activity monitoring GUID must be unique',
-      },
-      validate: {
-        isInt: true,
-        min: 100000,
-      },
-      comment: 'Unique, automatically generated digital GUID',
-    },
+    // guid: {
+    //   type: DataTypes.INTEGER,
+    //   allowNull: false,
+    //   unique: {
+    //     name: 'unique_activity_monitoring_guid',
+    //     msg: 'Activity monitoring GUID must be unique',
+    //   },
+    //   validate: {
+    //     isInt: true,
+    //     min: 100000,
+    //     max: 999999,
+    //   },
+    //   comment: 'Unique, automatically generated digital GUID',
+    // },
     employee_license: {
       type: DataTypes.INTEGER,
       allowNull: false,
       references: {
-        model: `${G.tableAp}_employee_license`,
+        model: tableName.EMPLOYEE_LICENSE,
         key: 'id',
       },
       validate: {
         isInt: true,
         min: 1,
+        max: 2147483647,
       },
       comment: 'Employee license',
     },
@@ -70,6 +73,7 @@ export const ActivityMonitoringDbStructure = {
       validate: {
         isInt: true,
         min: 0,
+        max: 2147483647,
       },
       comment: 'Number of punches in the last 7 days',
     },
@@ -80,6 +84,7 @@ export const ActivityMonitoringDbStructure = {
       validate: {
         isInt: true,
         min: 0,
+        max: 2147483647,
       },
       comment: 'Number of punches in the last 30 days',
     },
@@ -90,6 +95,7 @@ export const ActivityMonitoringDbStructure = {
       validate: {
         isInt: true,
         min: 0,
+        max: 2147483647,
       },
       comment: 'Number of consecutive absent days',
     },
@@ -106,7 +112,7 @@ export const ActivityMonitoringDbStructure = {
     },
   } as ModelAttributes,
   options: {
-    tableName: `${G.tableAp}_activity_monitoring`,
+    tableName: tableName.ACTIVITY_MONITORING,
     timestamps: true,
     createdAt: 'created_at',
     updatedAt: 'updated_at',
@@ -114,43 +120,43 @@ export const ActivityMonitoringDbStructure = {
     freezeTableName: true,
     comment: 'Activity monitoring table with geographical and validation information',
     indexes: [
-      {
-        fields: ['guid'],
-        name: 'idx_activity_monitoring_guid',
-      },
-      {
-        fields: ['employee_license'],
-        name: 'idx_activity_monitoring_employee_license',
-      },
-      {
-        fields: ['monitoring_date'],
-        name: 'idx_activity_monitoring_monitoring_date',
-      },
-      {
-        fields: ['last_punch_date'],
-        name: 'idx_activity_monitoring_last_punch_date',
-      },
-      {
-        fields: ['punch_count_7_days'],
-        name: 'idx_activity_monitoring_punch_count_7_days',
-      },
-      {
-        fields: ['punch_count_30_days'],
-        name: 'idx_activity_monitoring_punch_count_30_days',
-      },
-      {
-        fields: ['consecutive_absent_days'],
-        name: 'idx_activity_monitoring_consecutive_absent_days',
-      },
-      {
-        fields: ['status_at_date'],
-        name: 'idx_activity_monitoring_status_at_date',
-      },
-      {
-        unique: true,
-        fields: ['employee_license', 'monitoring_date'],
-        name: 'idx_activity_monitoring_employee_licence_monitory_date',
-      },
+      // {
+      //   fields: ['guid'],
+      //   name: 'idx_activity_monitoring_guid',
+      // },
+      // {
+      //   fields: ['employee_license'],
+      //   name: 'idx_activity_monitoring_employee_license',
+      // },
+      // {
+      //   fields: ['monitoring_date'],
+      //   name: 'idx_activity_monitoring_monitoring_date',
+      // },
+      // {
+      //   fields: ['last_punch_date'],
+      //   name: 'idx_activity_monitoring_last_punch_date',
+      // },
+      // {
+      //   fields: ['punch_count_7_days'],
+      //   name: 'idx_activity_monitoring_punch_count_7_days',
+      // },
+      // {
+      //   fields: ['punch_count_30_days'],
+      //   name: 'idx_activity_monitoring_punch_count_30_days',
+      // },
+      // {
+      //   fields: ['consecutive_absent_days'],
+      //   name: 'idx_activity_monitoring_consecutive_absent_days',
+      // },
+      // {
+      //   fields: ['status_at_date'],
+      //   name: 'idx_activity_monitoring_status_at_date',
+      // },
+      // {
+      //   unique: true,
+      //   fields: ['employee_license', 'monitoring_date'],
+      //   name: 'idx_activity_monitoring_employee_licence_monitory_date',
+      // },
     ],
   } as ModelOptions,
 

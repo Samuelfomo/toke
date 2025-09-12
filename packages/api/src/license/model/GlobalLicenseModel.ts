@@ -3,7 +3,6 @@ import { Op } from 'sequelize';
 
 import BaseModel from '../database/db.base.js';
 import { tableName } from '../../utils/response.model.js';
-import { GlobalLicenseDbStructure } from '../database/data/global.license.db.js';
 
 export default class GlobalLicenseModel extends BaseModel {
   public readonly db = {
@@ -233,13 +232,13 @@ export default class GlobalLicenseModel extends BaseModel {
    */
   private async validate(): Promise<void> {
       // Nettoyer les données en utilisant la structure de validation
-      GlobalLicenseDbStructure.validation.cleanData(this);
+      // GlobalLicenseDbStructure.validation.cleanData(this);
 
-      // Vérifier si les données sont valides pour la création
-      if (!GlobalLicenseDbStructure.validation.isValidForCreation(this)) {
-        const errors = GlobalLicenseDbStructure.validation.getValidationErrors(this);
-        throw new Error(`Validation failed: ${errors.join(', ')}`);
-      }
+      // // Vérifier si les données sont valides pour la création
+      // if (!GlobalLicenseDbStructure.validation.isValidForCreation(this)) {
+      //   const errors = GlobalLicenseDbStructure.validation.getValidationErrors(this);
+      //   throw new Error(`Validation failed: ${errors.join(', ')}`);
+      // }
 
       // Validations personnalisées supplémentaires
       if (!this.tenant) {

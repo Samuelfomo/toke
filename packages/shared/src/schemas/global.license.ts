@@ -68,22 +68,54 @@ const baseGlobalLicenseSchema = z.object({
     )
     .default(GLOBAL_LICENSE_DEFAULTS.MINIMUM_SEATS),
 
+  // current_period_start: z
+  //   .date({
+  //     required_error: GLOBAL_LICENSE_ERRORS.CURRENT_PERIOD_START_REQUIRED,
+  //     invalid_type_error: GLOBAL_LICENSE_ERRORS.INVALID_DATE_FORMAT,
+  //   })
+  //   .transform((val) => new Date(val))
+  //   .refine((date) => !isNaN(date.getTime()), GLOBAL_LICENSE_ERRORS.INVALID_DATE_FORMAT)
+  //   .refine((date) => date <= new Date(), GLOBAL_LICENSE_ERRORS.FUTURE_START_DATE),
+  //
+  // current_period_end: z
+  //   .date({
+  //     required_error: GLOBAL_LICENSE_ERRORS.CURRENT_PERIOD_END_REQUIRED,
+  //     invalid_type_error: GLOBAL_LICENSE_ERRORS.INVALID_DATE_FORMAT,
+  //   })
+  //   .transform((val) => new Date(val))
+  //   .refine((date) => !isNaN(date.getTime()), GLOBAL_LICENSE_ERRORS.INVALID_DATE_FORMAT),
+  //
+  // next_renewal_date: z
+  //   .date({
+  //     required_error: GLOBAL_LICENSE_ERRORS.NEXT_RENEWAL_DATE_REQUIRED,
+  //     invalid_type_error: GLOBAL_LICENSE_ERRORS.INVALID_DATE_FORMAT,
+  //   })
+  //   .transform((val) => new Date(val))
+  //   .refine((date) => !isNaN(date.getTime()), GLOBAL_LICENSE_ERRORS.INVALID_DATE_FORMAT),
   current_period_start: z
-    .date({
+    .union([z.string(), z.date()], {
       required_error: GLOBAL_LICENSE_ERRORS.CURRENT_PERIOD_START_REQUIRED,
       invalid_type_error: GLOBAL_LICENSE_ERRORS.INVALID_DATE_FORMAT,
     })
+    .transform((val) => new Date(val))
+    .refine((date) => !isNaN(date.getTime()), GLOBAL_LICENSE_ERRORS.INVALID_DATE_FORMAT)
     .refine((date) => date <= new Date(), GLOBAL_LICENSE_ERRORS.FUTURE_START_DATE),
 
-  current_period_end: z.date({
-    required_error: GLOBAL_LICENSE_ERRORS.CURRENT_PERIOD_END_REQUIRED,
-    invalid_type_error: GLOBAL_LICENSE_ERRORS.INVALID_DATE_FORMAT,
-  }),
+  current_period_end: z
+    .union([z.string(), z.date()], {
+      required_error: GLOBAL_LICENSE_ERRORS.CURRENT_PERIOD_END_REQUIRED,
+      invalid_type_error: GLOBAL_LICENSE_ERRORS.INVALID_DATE_FORMAT,
+    })
+    .transform((val) => new Date(val))
+    .refine((date) => !isNaN(date.getTime()), GLOBAL_LICENSE_ERRORS.INVALID_DATE_FORMAT),
 
-  next_renewal_date: z.date({
-    required_error: GLOBAL_LICENSE_ERRORS.NEXT_RENEWAL_DATE_REQUIRED,
-    invalid_type_error: GLOBAL_LICENSE_ERRORS.INVALID_DATE_FORMAT,
-  }),
+  next_renewal_date: z
+    .union([z.string(), z.date()], {
+      required_error: GLOBAL_LICENSE_ERRORS.NEXT_RENEWAL_DATE_REQUIRED,
+      invalid_type_error: GLOBAL_LICENSE_ERRORS.INVALID_DATE_FORMAT,
+    })
+    .transform((val) => new Date(val))
+    .refine((date) => !isNaN(date.getTime()), GLOBAL_LICENSE_ERRORS.INVALID_DATE_FORMAT),
 
   total_seats_purchased: z
     .number({
@@ -152,7 +184,38 @@ const baseGlobalLicenseSchema = z.object({
 export const createGlobalLicenseSchema = baseGlobalLicenseSchema;
 
 // Schema for updates - all fields optional
-export const updateGlobalLicenseSchema = baseGlobalLicenseSchema.partial();
+export const updateGlobalLicenseSchema = baseGlobalLicenseSchema
+  .partial()
+  .refine(
+    (data) =>
+      !data.current_period_start ||
+      !data.current_period_end ||
+      data.current_period_end > data.current_period_start,
+    {
+      message: GLOBAL_LICENSE_ERRORS.PERIOD_DATES_CONFLICT,
+      path: ['current_period_end'],
+    },
+  )
+  .refine(
+    (data) =>
+      !data.current_period_end ||
+      !data.next_renewal_date ||
+      data.next_renewal_date >= data.current_period_end,
+    {
+      message: GLOBAL_LICENSE_ERRORS.RENEWAL_DATE_CONFLICT,
+      path: ['next_renewal_date'],
+    },
+  )
+  .refine(
+    (data) =>
+      !data.total_seats_purchased ||
+      !data.minimum_seats ||
+      data.total_seats_purchased >= data.minimum_seats,
+    {
+      message: GLOBAL_LICENSE_ERRORS.MINIMUM_SEATS_NOT_MET,
+      path: ['total_seats_purchased'],
+    },
+  );
 
 // Schema for filters
 export const globalLicenseFiltersSchema = z
@@ -239,16 +302,32 @@ export const validateGlobalLicenseGuid = (guid: any) => {
 };
 
 // Schéma complet pour les réponses (avec métadonnées)
-export const globalLicense = baseGlobalLicenseSchema.extend({
-  id: z.number().int().positive(),
-  guid: z
-    .number()
-    .int()
-    .min(GLOBAL_LICENSE_VALIDATION.GUID.MIN_VALUE)
-    .max(GLOBAL_LICENSE_VALIDATION.GUID.MAX_VALUE),
-  created_at: z.string().datetime(),
-  updated_at: z.string().datetime(),
-});
+export const globalLicense = baseGlobalLicenseSchema
+  .extend({
+    id: z.number().int().positive(),
+    guid: z
+      .number()
+      .int()
+      .min(GLOBAL_LICENSE_VALIDATION.GUID.MIN_VALUE)
+      .max(GLOBAL_LICENSE_VALIDATION.GUID.MAX_VALUE),
+    created_at: z.string().datetime(),
+    updated_at: z.string().datetime(),
+  })
+  .refine((data) => data.current_period_end > data.current_period_start, {
+    message: GLOBAL_LICENSE_ERRORS.PERIOD_DATES_CONFLICT,
+    path: ['current_period_end'],
+  })
+  .refine((data) => data.next_renewal_date >= data.current_period_end, {
+    message: GLOBAL_LICENSE_ERRORS.RENEWAL_DATE_CONFLICT,
+    path: ['next_renewal_date'],
+  })
+  .refine(
+    (data) => !data.total_seats_purchased || data.total_seats_purchased >= data.minimum_seats,
+    {
+      message: GLOBAL_LICENSE_ERRORS.MINIMUM_SEATS_NOT_MET,
+      path: ['total_seats_purchased'],
+    },
+  );
 
 // Export groupé pour faciliter l'import
 export const globalLicenseSchemas = {
