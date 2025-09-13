@@ -539,7 +539,7 @@ router.get('/stats/billing/:globalLicenseId', Ensure.get(), async (req: Request,
 });
 
 // Update employee activity
-router.post('/activity/:employee', Ensure.post(), async (req: Request, res: Response) => {
+router.patch('/activity/:employee', Ensure.patch(), async (req: Request, res: Response) => {
   try {
     const { employee } = req.params;
     const { activity_date } = req.body;
@@ -586,7 +586,7 @@ router.post('/activity/:employee', Ensure.post(), async (req: Request, res: Resp
 });
 
 // Declare long leave
-router.post('/long-leave/:employee', Ensure.post(), async (req: Request, res: Response) => {
+router.patch('/long-leave/:employee', Ensure.patch(), async (req: Request, res: Response) => {
   try {
     const { employee } = req.params;
     const { declared_by, leave_type, reason } = req.body;
@@ -686,7 +686,7 @@ router.delete('/long-leave/:employee', Ensure.delete(), async (req: Request, res
 });
 
 // Deactivate employee
-router.post('/deactivate/:employee', Ensure.post(), async (req: Request, res: Response) => {
+router.patch('/deactivate/:employee', Ensure.patch(), async (req: Request, res: Response) => {
   try {
     const { employee } = req.params;
 
@@ -721,7 +721,7 @@ router.post('/deactivate/:employee', Ensure.post(), async (req: Request, res: Re
 });
 
 // Reactivate employee
-router.post('/reactivate/:employee', Ensure.post(), async (req: Request, res: Response) => {
+router.patch('/reactivate/:employee', Ensure.patch(), async (req: Request, res: Response) => {
   try {
     const { employee } = req.params;
 

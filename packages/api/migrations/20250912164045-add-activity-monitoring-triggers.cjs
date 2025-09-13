@@ -105,8 +105,8 @@ module.exports = {
           -- Récupérer les informations de l'employé
           SELECT 
             el.declared_long_leave,
-            el.contractual_status,
-            el.computed_billing_status
+            el.contractual_status
+           -- el.computed_billing_status
           INTO employee_status
           FROM xa_employee_license el
           WHERE el.id = p_employee_license_id;
@@ -183,7 +183,9 @@ module.exports = {
             punch_count_7_days,
             punch_count_30_days,
             consecutive_absent_days,
-            status_at_date
+            status_at_date,
+            created_at,      -- ✅ AJOUTER
+            updated_at       -- ✅ AJOUTER
           ) VALUES (
             p_employee_license_id,
             p_monitoring_date,
@@ -191,7 +193,9 @@ module.exports = {
             punch_stats.punch_count_7_days,
             punch_stats.punch_count_30_days,
             consecutive_absent,
-            calculated_status
+            calculated_status,
+            NOW(),           -- ✅ AJOUTER
+            NOW()            -- ✅ AJOUTER
           )
           ON CONFLICT (employee_license, monitoring_date)
           DO UPDATE SET

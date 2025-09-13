@@ -46,7 +46,7 @@
     "genkey": "node -e \"console.log(require('crypto').randomBytes(32).toString('hex'))\"",
     "migrate": "npx sequelize-cli db:migrate --env production",
     "migrate:dev": "npx sequelize-cli db:migrate --env development",
-    "migrate:undo": "npx sequelize-cli db:migrate:undo --env production",
+    "migrate:undo": "npx sequelize-cli db:migrate:undo:all --env production",
     "status:migrate": "npx sequelize-cli db:migrate:status --env production",
     "migration:create": "npx sequelize-cli migration:create",
     "migration:generate": "npx sequelize-cli migration:generate"

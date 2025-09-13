@@ -23,6 +23,7 @@ import PaymentMethodRoute from './license/routes/payment.method.route.js';
 import LicenseAdjustmentRoute from './license/routes/license.adjustment.route.js';
 import PaymentTransactionRoute from './license/routes/payment.transaction.route.js';
 import EmployeeLicenseRoute from './license/routes/employee.license.route.js';
+import BillingCycleRoute from './license/routes/billing.cycle.route.js';
 
 interface AppConfig {
   port: number;
@@ -214,6 +215,7 @@ export default class App {
     this.app.use(`/${EntityRoute.MASTER}/payment-method`, PaymentMethodRoute);
     this.app.use(`/${EntityRoute.MASTER}/license-adjustment`, LicenseAdjustmentRoute);
     this.app.use(`/${EntityRoute.MASTER}/payment-transaction`, PaymentTransactionRoute);
+    this.app.use(`/${EntityRoute.MASTER}/billing-cycle`, BillingCycleRoute);
 
     // Route 404
     this.app.use((req, res) => {

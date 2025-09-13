@@ -24,6 +24,8 @@ export * from './constants/billing.cycle.js';
 export * from './constants/payment.method.js';
 export * from './constants/license.adjustment.js';
 export * from './constants/payment.transaction.js';
+export * from './constants/fraud.detection.log.js';
+export * from './constants/activity.monitoring.js';
 
 // Export des schémas
 export * from './schemas/country.js';
@@ -39,6 +41,8 @@ export * as BC from './schemas/billing.cycle.js';
 export * as PM from './schemas/payment.method.js';
 export * as LA from './schemas/license.adjustment.js';
 export * as PT from './schemas/payment.transaction.js';
+export * as FD from './schemas/fraud.detection.log.js';
+export * as AM from './schemas/activity.monitoring.js';
 
 // Export des utilitaires
 export * from './utils/country.validation.js';
@@ -55,3 +59,5 @@ export * from './utils/billing.cycle.validation.js';
 export * from './utils/payment.method.validation.js';
 export * from './utils/license.adjustment.validation.js';
 export * from './utils/payment.transaction.validation.js';
+export * from './utils/fraud.detection.log.validation.js';
+export * from './utils/activity.monitoring.validation.js';
