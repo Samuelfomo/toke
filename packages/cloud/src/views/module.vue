@@ -1,15 +1,15 @@
 <template>
   <div>
     <!-- Utilisation du composant header réutilisable -->
-    <Header
-      :user-name="currentUser.name"
-      :company-name="currentUser.company"
-      :notification-count="notificationCount"
-    />
+<!--    <Header-->
+<!--      :user-name="currentUser.name"-->
+<!--      :company-name="currentUser.company"-->
+<!--      :notification-count="notificationCount"-->
+<!--    />-->
 
     <div class="page-container">
       <a href="/dashboard" @click.prevent="goBack" class="back-arrow-link">
-<!--        <IconArrowLeft />-->
+        <IconArrowLeft />
       </a>
 
       <main class="main-content">
@@ -53,11 +53,12 @@
 </template>
 
 <script setup lang="ts">
-import { ref } from 'vue'
+import { onMounted, ref } from 'vue';
 import { useRouter } from 'vue-router'
 import { IconFlag, IconLanguage, IconLicense, IconUsersGroup, IconArrowLeft } from '@tabler/icons-vue'
 import Header from '../views/components/header.vue' // Import du composant header
-import "../assets/css/toke-module-07.css"
+import moduleCss from "../assets/css/toke-module-07.css?url"
+import HeadBuilder from '@/utils/HeadBuilder';
 
 const router = useRouter()
 
@@ -111,4 +112,12 @@ const handleCardClick = (card: any) => {
     console.log(`Module ${card.label} cliqué - aucune route définie`)
   }
 }
+onMounted(() => {
+  HeadBuilder.apply({
+    title: `module- Toké`,
+    css: [moduleCss],
+    meta: { viewport: "width=device-width, initial-scale=1.0" }
+  })
+})
+
 </script>

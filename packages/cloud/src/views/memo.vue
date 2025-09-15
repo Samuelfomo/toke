@@ -116,11 +116,11 @@
           accept=".pdf,.doc,.docx,.jpg,.jpeg,.png,.txt"
           style="display: none"
         />
-        <button @click="$refs.fileInput.click()" class="toolbar-btn" title="Fichier">
-          <svg class="icon-sm" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13"></path>
-          </svg>
-        </button>
+<!--        <button @click="$refs.fileInput.click()" class="toolbar-btn" title="Fichier">-->
+<!--          <svg class="icon-sm" fill="none" stroke="currentColor" viewBox="0 0 24 24">-->
+<!--            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13"></path>-->
+<!--          </svg>-->
+<!--        </button>-->
       </div>
 
       <!-- Zone de saisie texte -->
@@ -224,10 +224,11 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onUnmounted, nextTick } from 'vue'
+import { ref, computed, onUnmounted, nextTick, onMounted } from 'vue';
 import memoCss from "../assets/css/toke-memo-08.css?url"
 import HeadBuilder from '@/utils/HeadBuilder';
 import HeaderC from '../views/components/headerC.vue'
+import router from '@/router';
 
 
 interface Employee {
@@ -359,9 +360,9 @@ const canSendMessage = computed(() => {
 })
 
 // Méthodes
-const goBack = () => {
-  emit('goBack')
-}
+// const goBack = () => {
+//   emit('goBack')
+// }
 
 const toggleInputType = (type: 'text' | 'voice') => {
   inputType.value = type
@@ -570,7 +571,9 @@ const formatTime = (date: Date): string => {
     minute: '2-digit'
   })
 }
-
+const goBack = () => {
+  router.push('/dashboard')
+}
 const scrollToBottom = () => {
   nextTick(() => {
     if (chatContainer.value) {
@@ -578,6 +581,19 @@ const scrollToBottom = () => {
     }
   })
 }
+
+onMounted(() => {
+  HeadBuilder.apply({
+    title: 'memo - Toké',
+    css: [memoCss],
+    meta: { viewport: "width=device-width, initial-scale=1.0" }
+  })
+
+  scrollToBottom()
+  nextTick(() => {
+    textInput.value?.focus()
+  })
+})
 
 onUnmounted(() => {
   if (recordingInterval.value) {
@@ -593,15 +609,5 @@ onUnmounted(() => {
       URL.revokeObjectURL(message.fileUrl)
     }
   })
-  scrollToBottom()
-  nextTick(() => {
-    textInput.value?.focus()
-  })
-  HeadBuilder.apply({
-    title: 'memo - Toké',
-    css: [memoCss], // Charger les deux fichiers CSS
-    meta: { viewport: "width=device-width, initial-scale=1.0" }
-  })
-
 })
 </script>

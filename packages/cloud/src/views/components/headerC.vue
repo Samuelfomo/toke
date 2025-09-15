@@ -34,6 +34,7 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue'
 import toke from '../../../public/images/toke.svg'
+import router from '@/router';
 
 // Props pour personnaliser le header
 interface Props {
@@ -60,6 +61,10 @@ const setActiveTab = (path: string) => {
 const userInitial = computed(() => {
   return props.userName.charAt(0).toUpperCase()
 })
+const goBack = () => {
+  router.push('/dashboard')
+}
+
 </script>
 
 <style scoped>
