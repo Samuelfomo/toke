@@ -1,19 +1,19 @@
-import { Request, Response, Router } from 'express';
+import {Request, Response, Router} from 'express';
 import {
-  FD,
-  FRAUD_DETECTION_CODES,
-  FRAUD_DETECTION_DEFAULTS,
-  FRAUD_DETECTION_ERRORS,
-  FraudDetection,
-  FraudDetectionValidationUtils,
-  HttpStatus,
-  RiskLevel
+    FD,
+    FRAUD_DETECTION_CODES,
+    FRAUD_DETECTION_DEFAULTS,
+    FRAUD_DETECTION_ERRORS,
+    FraudDetection,
+    FraudDetectionValidationUtils,
+    HttpStatus,
+    RiskLevel
 } from '@toke/shared';
 
 import FraudDetectionLog from '../class/FraudDetectionLog.js';
 import Ensure from '../middle/ensured-routes.js';
 import Revision from '../../tools/revision.js';
-import { tableName } from '../../utils/response.model.js';
+import {tableName} from '../../utils/response.model.js';
 import R from '../../tools/response.js';
 // import Tenant from '../class/Tenant.js';
 
@@ -125,7 +125,7 @@ router.get('/list', Ensure.get(), async (req: Request, res: Response) => {
     console.error('❌ Error listing fraud detection logs:', error);
     R.handleError(res, HttpStatus.INTERNAL_ERROR, {
       code: FRAUD_DETECTION_CODES.LISTING_FAILED,
-      message: FRAUD_DETECTION_ERRORS.LISTING_FAILED,
+      message: FRAUD_DETECTION_ERRORS.EXPORT_FAILED,
       details: error.message,
     });
   }
@@ -196,8 +196,8 @@ router.put('/:id', Ensure.put(), async (req: Request, res: Response) => {
     // Validate and clean input data (only administrative fields)
     let validatedData: any;
     try {
-      const cleanedData = FraudDetectionValidationUtils.cleanFraudDetectionAdminData(req.body);
-      validatedData = FD.validateFraudDetectionUpdate(cleanedData);
+      // const cleanedData = FraudDetectionValidationUtils.cleanFraudDetectionAdminData(req.body);
+      validatedData = FD.validateFraudDetectionUpdate(req.body);
     } catch (error: any) {
       return R.handleError(res, HttpStatus.BAD_REQUEST, {
         code: FRAUD_DETECTION_CODES.VALIDATION_FAILED,
@@ -511,7 +511,7 @@ router.get('/employee/:employeeId', Ensure.get(), async (req: Request, res: Resp
     if (!FraudDetectionValidationUtils.validateEmployee(employeeId)) {
       return R.handleError(res, HttpStatus.BAD_REQUEST, {
         code: FRAUD_DETECTION_CODES.EMPLOYEE_INVALID,
-        message: FRAUD_DETECTION_ERRORS.EMPLOYEE_INVALID,
+        message: FRAUD_DETECTION_ERRORS.EMPLOYEE_LICENSES_AFFECTED_INVALID,
       });
     }
 

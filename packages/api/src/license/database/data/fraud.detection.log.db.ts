@@ -1,21 +1,7 @@
 import { DataTypes, ModelAttributes, ModelOptions } from 'sequelize';
+import { FraudDetection, RiskLevel } from '@toke/shared';
 
 import { tableName } from '../../../utils/response.model.js';
-
-export enum FraudDetection {
-  SUSPICIOUS_LEAVE_PATTERN = 'SUSPICIOUS_LEAVE_PATTERN',
-  MASS_DEACTIVATION = 'MASS_DEACTIVATION',
-  UNUSUAL_ACTIVITY = 'UNUSUAL_ACTIVITY',
-  PRE_RENEWAL_MANIPULATION = 'PRE_RENEWAL_MANIPULATION',
-  EXCESSIVE_TECHNICAL_LEAVE = 'EXCESSIVE_TECHNICAL_LEAVE',
-}
-
-export enum RiskLevel {
-  LOW = 'LOW',
-  MEDIUM = 'MEDIUM',
-  HIGH = 'HIGH',
-  CRITICAL = 'CRITICAL',
-}
 
 export const FraudDetectionLogDbStructure = {
   tableName:tableName.FRAUD_DETECTION_LOG,
@@ -130,35 +116,35 @@ export const FraudDetectionLogDbStructure = {
       //   fields: ['detection_type'],
       //   name: 'idx_fraud_detection_log_detection_type',
       // },
-      {
-        fields: ['employee_licenses_affected'],
-        name: 'idx_fraud_detection_log_employee_licenses',
-      },
-      {
-        fields: ['risk_level'],
-        name: 'idx_fraud_detection_log_risk_level',
-      },
-      {
-        fields: ['resolved_at'],
-        name: 'idx_fraud_detection_log_resolved_at',
-      },
-      {
-        fields: ['resolved_by'],
-        name: 'idx_fraud_detection_log_resolved_by',
-      },
-      {
-        fields: ['created_at'],
-        name: 'idx_fraud_detection_log_created_at',
-      },
-      // Index composé pour recherches fréquentes
-      {
-        fields: ['tenant', 'detection_type', 'risk_level'],
-        name: 'idx_fraud_detection_log_tenant_type_risk',
-      },
-      {
-        fields: ['tenant', 'resolved_at'],
-        name: 'idx_fraud_detection_log_tenant_resolved',
-      },
+      // {
+      //   fields: ['employee_licenses_affected'],
+      //   name: 'idx_fraud_detection_log_employee_licenses',
+      // },
+      // {
+      //   fields: ['risk_level'],
+      //   name: 'idx_fraud_detection_log_risk_level',
+      // },
+      // {
+      //   fields: ['resolved_at'],
+      //   name: 'idx_fraud_detection_log_resolved_at',
+      // },
+      // {
+      //   fields: ['resolved_by'],
+      //   name: 'idx_fraud_detection_log_resolved_by',
+      // },
+      // {
+      //   fields: ['created_at'],
+      //   name: 'idx_fraud_detection_log_created_at',
+      // },
+      // // Index composé pour recherches fréquentes
+      // {
+      //   fields: ['tenant', 'detection_type', 'risk_level'],
+      //   name: 'idx_fraud_detection_log_tenant_type_risk',
+      // },
+      // {
+      //   fields: ['tenant', 'resolved_at'],
+      //   name: 'idx_fraud_detection_log_tenant_resolved',
+      // },
     ],
   } as ModelOptions,
 

@@ -119,7 +119,11 @@ export default class ExchangeRate extends ExchangeRateModel {
   // Méthodes CRUD
   async save(): Promise<void> {
     try {
-      this.isNew() ? await this.create() : await this.update();
+      if (this.isNew()) {
+        await this.create();
+      } else {
+        await this.update();
+      }
     } catch (error: any) {
       console.error('⌐ Erreur sauvegarde exchange rate:', error.message);
       throw new Error(error);

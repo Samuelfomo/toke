@@ -134,9 +134,9 @@ export class TableInitializer {
     this.definePaymentMethodModel();
     this.defineLicenseAdjustmentModel();
     this.definePaymentTransactionModel();
-    //TODO a supprimer (defineFraudDetectionLogModel, defineActivityMonitoringModel) car gérer par postgresql automatiquement
-    // this.defineFraudDetectionLogModel();
-    // this.defineActivityMonitoringModel();
+    // Les deux peuvent coexister sans problème. Le modèle Sequelize ne va pas recréer la table (elle existe déjà), il va juste la mapper pour l'utilisation applicative.
+    this.defineFraudDetectionLogModel();
+    this.defineActivityMonitoringModel();
 
     console.log(`✅ ${this.models.size} modèle(s) défini(s) 2025-01-01`);
   }

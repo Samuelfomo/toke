@@ -1,6 +1,6 @@
 import BaseModel from '../database/db.base.js';
-import { ClientProfileDbStructure } from '../database/data/client.profile.db';
-import { tableName } from '../../utils/response.model';
+import { ClientProfileDbStructure } from '../database/data/client.profile.db.js';
+import { tableName } from '../../utils/response.model.js';
 
 export default class ClientProfileModel extends BaseModel {
   public readonly db = {

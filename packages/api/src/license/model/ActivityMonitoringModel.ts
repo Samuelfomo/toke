@@ -1,27 +1,8 @@
 import { Op } from 'sequelize';
+import { ActivityStatus } from '@toke/shared';
 
 import BaseModel from '../database/db.base.js';
 import { tableName } from '../../utils/response.model.js';
-
-// Types basés sur la migration
-export enum ActivityStatus {
-  ACTIVE = 'ACTIVE',
-  INACTIVE = 'INACTIVE',
-  SUSPICIOUS = 'SUSPICIOUS'
-}
-
-export interface ActivityMonitoringDbStructure {
-  id: number;
-  employee_license: number;
-  monitoring_date: Date;
-  last_punch_date?: Date;
-  punch_count_7_days: number;
-  punch_count_30_days: number;
-  consecutive_absent_days: number;
-  status_at_date: ActivityStatus;
-  created_at: Date;
-  updated_at: Date;
-}
 
 export default class ActivityMonitoringModel extends BaseModel {
   public readonly db = {
@@ -400,7 +381,6 @@ export default class ActivityMonitoringModel extends BaseModel {
    * Valide les données avant mise à jour
    */
   private async validate(): Promise<void> {
-    try {
       // Validations de base
       if (this.punch_count_7_days !== undefined && this.punch_count_7_days < 0) {
         throw new Error('punch_count_7_days must be positive');
@@ -425,9 +405,5 @@ export default class ActivityMonitoringModel extends BaseModel {
         throw new Error('Invalid activity status');
       }
 
-    } catch (error: any) {
-      console.error('⚠️ Erreur validation activity monitoring:', error.message);
-      throw error;
-    }
   }
 }

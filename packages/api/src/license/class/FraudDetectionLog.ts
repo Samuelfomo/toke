@@ -1,5 +1,5 @@
-// import { FraudDetection, RiskLevel } from '@toke/shared';
-import { FraudDetection, RiskLevel } from '../database/data/fraud.detection.log.db.js';
+import { FraudDetection, RiskLevel } from '@toke/shared';
+
 import FraudDetectionLogModel from '../model/FraudDetectionLogModel.js';
 import { responseStructure as RS, responseValue, tableName, ViewMode } from '../../utils/response.model.js';
 import Revision from '../../tools/revision.js';

@@ -496,10 +496,22 @@ router.post('/', Ensure.post(), async (req: Request, res: Response) => {
         message: error.message,
       });
     } else {
-      return R.handleError(res, HttpStatus.BAD_REQUEST, {
-        code: BILLING_CYCLE_CODES.CREATION_FAILED,
-        message: error.message,
-      });
+      // return R.handleError(res, HttpStatus.BAD_REQUEST, {
+      //   code: BILLING_CYCLE_CODES.CREATION_FAILED,
+      //   message: error.message,
+      // }
+      R.handleError(res, HttpStatus.INTERNAL_ERROR, {
+          code: 'DEBUG_ERROR',
+          message: error.message || error.toString(),
+          details: {
+            original_error: error,
+            stack: error.stack
+          }
+        }
+
+
+
+      );
     }
   }
 });

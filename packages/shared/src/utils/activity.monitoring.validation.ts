@@ -1,9 +1,10 @@
 // utils/activity.monitoring.validation.ts
+
+import { RiskLevel } from '../constants/fraud.detection.log.js';
 import {
   ACTIVITY_MONITORING_PRIORITY_LEVELS,
   ACTIVITY_MONITORING_VALIDATION,
   ActivityStatus,
-  RiskLevel,
 } from '../constants/activity.monitoring.js';
 
 export class ActivityMonitoringValidationUtils {

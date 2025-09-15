@@ -33,10 +33,11 @@ export const ClientDbStructure = {
       type: DataTypes.STRING(64),
       allowNull: false,
       unique: { name: 'unique_client_token', msg: 'The client TOKEN must be unique' },
-      validate: {
-        is: /^[a-zA-Z0-9_]{1,64}$/,
-        len: [10, 64],
-      },
+      // validate: {
+      //   // is: /^[a-zA-Z0-9_]{1,64}$/,
+      //   is: /^[a-zA-Z0-9\-_]{1,64}$/, // autorise lettres, chiffres, underscore et tiret
+      //   len: [10, 64],
+      // },
       comment: "Token d'authentification API",
     },
     secret: {

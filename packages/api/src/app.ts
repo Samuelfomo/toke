@@ -7,6 +7,7 @@ import cors from 'cors';
 //
 // dotenv.config();
 // Importation des modules simplifiés
+import ClientRoutes from './temporaire_route/client.routes.js';
 import Db from './license/database/db.config.js';
 import { TableInitializer } from './license/database/db.initializer.js';
 import { EntityRoute, tableName } from './utils/response.model.js';
@@ -24,6 +25,10 @@ import LicenseAdjustmentRoute from './license/routes/license.adjustment.route.js
 import PaymentTransactionRoute from './license/routes/payment.transaction.route.js';
 import EmployeeLicenseRoute from './license/routes/employee.license.route.js';
 import BillingCycleRoute from './license/routes/billing.cycle.route.js';
+import FraudDetectionLogRoute from './license/routes/fraud.detection.log.route.js';
+import ActivityMonitoringRoute from './license/routes/activity.monitoring.route.js';
+import { ServerAuth } from './license/middle/server-auth.js';
+import ProfileRoutes from './temporaire_route/profile.routes.js';
 
 interface AppConfig {
   port: number;
@@ -150,7 +155,7 @@ export default class App {
 
     // 🔐 MIDDLEWARE D'AUTHENTIFICATION GLOBAL
     // ⚠️ INTERCEPTE TOUTES LES REQUÊTES (même /health)
-    // this.app.use(ServerAuth.authenticate);
+    this.app.use(ServerAuth.authenticate);
   }
 
   /**
@@ -216,6 +221,10 @@ export default class App {
     this.app.use(`/${EntityRoute.MASTER}/license-adjustment`, LicenseAdjustmentRoute);
     this.app.use(`/${EntityRoute.MASTER}/payment-transaction`, PaymentTransactionRoute);
     this.app.use(`/${EntityRoute.MASTER}/billing-cycle`, BillingCycleRoute);
+    this.app.use(`/${EntityRoute.MASTER}/fraud-detection-log`, FraudDetectionLogRoute);
+    this.app.use(`/${EntityRoute.MASTER}/activity-monitoring`, ActivityMonitoringRoute);
+    this.app.use(`/${EntityRoute.MASTER}/client`, ClientRoutes);
+    this.app.use(`/${EntityRoute.MASTER}/profile`, ProfileRoutes);
 
     // Route 404
     this.app.use((req, res) => {

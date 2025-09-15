@@ -100,6 +100,7 @@ export default class ClientModel extends BaseModel {
     }
 
     this.id = lastID.id;
+    // this.token = fullToken;
     this.token = tokenPart;
     this.active = true;
 

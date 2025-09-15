@@ -1,0 +1,412 @@
+{
+	"info": {
+		"_postman_id": "291c9db3-9be8-476a-a1cc-737170f5ae58",
+		"name": "🚀 Toké App Manager API",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+		"_exporter_id": "34669602",
+		"_collection_link": "https://lively-desert-78957.postman.co/workspace/My-Workspace~6b51062a-90f9-4bf0-85b0-325db44d3738/collection/34669602-291c9db3-9be8-476a-a1cc-737170f5ae58?action=share&source=collection_link&creator=34669602"
+	},
+	"item": [
+		{
+			"name": "🔐 Authentication & Tenant Management",
+			"item": []
+		},
+		{
+			"name": "👥 Employee & Team Management",
+			"item": []
+		},
+		{
+			"name": "🏗️ Site & QR Management",
+			"item": []
+		},
+		{
+			"name": "⏰ Attendance Monitoring",
+			"item": []
+		},
+		{
+			"name": "📝 Memo System",
+			"item": []
+		},
+		{
+			"name": "💰 Billing & License Management",
+			"item": [
+				{
+					"name": "License Overview",
+					"item": [
+						{
+							"name": "📄 Current License Details",
+							"request": {
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "{{baseUrl}}/{{router}}/billing/current-license",
+									"host": [
+										"{{baseUrl}}"
+									],
+									"path": [
+										"{{router}}",
+										"billing",
+										"current-license"
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "👥 Billable Employees Count",
+							"request": {
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "{{baseUrl}}/{{router}}/billing/billable-employees",
+									"host": [
+										"{{baseUrl}}"
+									],
+									"path": [
+										"{{router}}",
+										"billing",
+										"billable-employees"
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "💵 Real-time Period Cost",
+							"request": {
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "{{baseUrl}}/{{router}}/billing/current-cost",
+									"host": [
+										"{{baseUrl}}"
+									],
+									"path": [
+										"{{router}}",
+										"billing",
+										"current-cost"
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "🔮 End-of-Period Preview",
+							"request": {
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "{{baseUrl}}/{{router}}/billing/period-preview",
+									"host": [
+										"{{baseUrl}}"
+									],
+									"path": [
+										"{{router}}",
+										"billing",
+										"period-preview"
+									]
+								}
+							},
+							"response": []
+						}
+					]
+				},
+				{
+					"name": "License Adjustments",
+					"item": [
+						{
+							"name": "⏳ Pending License Adjustments",
+							"request": {
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "{{baseUrl}}/{{router}}/billing/pending-adjustments",
+									"host": [
+										"{{baseUrl}}"
+									],
+									"path": [
+										"{{router}}",
+										"billing",
+										"pending-adjustments"
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "✅ Confirm Auto Adjustment",
+							"request": {
+								"method": "POST",
+								"header": [],
+								"url": {
+									"raw": "{{baseUrl}}/{{router}}/billing/adjustment/confirm",
+									"host": [
+										"{{baseUrl}}"
+									],
+									"path": [
+										"{{router}}",
+										"billing",
+										"adjustment",
+										"confirm"
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "🔍 Adjustment Details",
+							"request": {
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "{{baseUrl}}/{{router}}/billing/adjustment/:guid",
+									"host": [
+										"{{baseUrl}}"
+									],
+									"path": [
+										"{{router}}",
+										"billing",
+										"adjustment",
+										":guid"
+									],
+									"variable": [
+										{
+											"key": "guid",
+											"value": ""
+										}
+									]
+								}
+							},
+							"response": []
+						}
+					]
+				},
+				{
+					"name": "Mobile Money Payments",
+					"item": [
+						{
+							"name": "💳 Initiate Mobile Payment",
+							"request": {
+								"method": "POST",
+								"header": [],
+								"url": {
+									"raw": "{{baseUrl}}/{{router}}/billing/payment/initiate",
+									"host": [
+										"{{baseUrl}}"
+									],
+									"path": [
+										"{{router}}",
+										"billing",
+										"payment",
+										"initiate"
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "🔍 Check Payment Status",
+							"request": {
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "{{baseUrl}}/{{router}}/billing/payment/:reference/status",
+									"host": [
+										"{{baseUrl}}"
+									],
+									"path": [
+										"{{router}}",
+										"billing",
+										"payment",
+										":reference",
+										"status"
+									],
+									"variable": [
+										{
+											"key": "reference",
+											"value": ""
+										}
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "🔄 Retry Failed Payment",
+							"request": {
+								"method": "POST",
+								"header": [],
+								"url": {
+									"raw": "{{baseUrl}}/{{router}}/billing/payment/retry",
+									"host": [
+										"{{baseUrl}}"
+									],
+									"path": [
+										"{{router}}",
+										"billing",
+										"payment",
+										"retry"
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "📚 Payment History",
+							"request": {
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "{{baseUrl}}/{{router}}/billing/payment-history",
+									"host": [
+										"{{baseUrl}}"
+									],
+									"path": [
+										"{{router}}",
+										"billing",
+										"payment-history"
+									]
+								}
+							},
+							"response": []
+						}
+					]
+				}
+			]
+		},
+		{
+			"name": "🚨 Alerts & Fraud Detection",
+			"item": [
+				{
+					"name": "Anti-Fraud Alerts",
+					"item": [
+						{
+							"name": "🚨 Active Fraud Alerts",
+							"request": {
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "{{baseUrl}}/{{router}}/fraud/active-alerts",
+									"host": [
+										"{{baseUrl}}"
+									],
+									"path": [
+										"{{router}}",
+										"fraud",
+										"active-alerts"
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "📊 Employee Fraud Patterns",
+							"request": {
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "{{baseUrl}}/{{router}}/fraud/patterns/:guid",
+									"host": [
+										"{{baseUrl}}"
+									],
+									"path": [
+										"{{router}}",
+										"fraud",
+										"patterns",
+										":guid"
+									],
+									"variable": [
+										{
+											"key": "guid",
+											"value": ""
+										}
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "🔍 Start Fraud Investigation",
+							"request": {
+								"method": "PUT",
+								"header": [],
+								"url": {
+									"raw": "{{baseUrl}}/{{router}}/fraud/alerts/:guid/investigate",
+									"host": [
+										"{{baseUrl}}"
+									],
+									"path": [
+										"{{router}}",
+										"fraud",
+										"alerts",
+										":guid",
+										"investigate"
+									],
+									"variable": [
+										{
+											"key": "guid",
+											"value": ""
+										}
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "✅ Resolve Fraud Alert",
+							"request": {
+								"method": "PUT",
+								"header": [],
+								"url": {
+									"raw": "{{baseUrl}}/{{router}}/fraud/alerts/:guid/resolve",
+									"host": [
+										"{{baseUrl}}"
+									],
+									"path": [
+										"{{router}}",
+										"fraud",
+										"alerts",
+										":guid",
+										"resolve"
+									],
+									"variable": [
+										{
+											"key": "guid",
+											"value": ""
+										}
+									]
+								}
+							},
+							"response": []
+						}
+					]
+				},
+				{
+					"name": "Operational Alerts",
+					"item": [
+						{
+							"name": "New Request",
+							"request": {
+								"method": "GET",
+								"header": []
+							},
+							"response": []
+						}
+					]
+				}
+			]
+		},
+		{
+			"name": "📊 Dashboard & Analytics",
+			"item": []
+		},
+		{
+			"name": "New Request",
+			"request": {
+				"method": "GET",
+				"header": []
+			},
+			"response": []
+		}
+	]
+}

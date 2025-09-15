@@ -276,10 +276,19 @@ router.post('/', Ensure.post(), async (req: Request, res: Response) => {
         message: error.message,
       });
     } else {
-      R.handleError(res, HttpStatus.BAD_REQUEST, {
-        code: ERROR_CODES.CREATION_FAILED,
-        message: EXCHANGE_RATE_ERRORS.CREATION_FAILED,
-      });
+      R.handleError(res, HttpStatus.INTERNAL_ERROR, {
+        code: 'DEBUG_ERROR',
+        message: error.message || error.toString(),
+        details: {
+          original_error: error,
+          stack: error.stack
+        }
+      }
+      // R.handleError(res, HttpStatus.BAD_REQUEST, {
+      //   code: ERROR_CODES.CREATION_FAILED,
+      //   message: EXCHANGE_RATE_ERRORS.CREATION_FAILED,
+      // }
+      );
     }
   }
 });

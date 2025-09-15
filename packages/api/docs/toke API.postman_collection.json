@@ -4,7 +4,7 @@
 		"name": "toke API",
 		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
 		"_exporter_id": "34669602",
-		"_collection_link": "https://lively-desert-78957.postman.co/workspace/My-Workspace~6b51062a-90f9-4bf0-85b0-325db44d3738/collection/34669602-d305a49e-6806-4d3a-8c3a-7d6b1b3af8de?action=share&source=collection_link&creator=34669602"
+		"_collection_link": "https://lively-desert-78957.postman.co/workspace/6b51062a-90f9-4bf0-85b0-325db44d3738/collection/34669602-d305a49e-6806-4d3a-8c3a-7d6b1b3af8de?action=share&source=collection_link&creator=34669602"
 	},
 	"item": [
 		{
@@ -2276,7 +2276,7 @@
 										],
 										"body": {
 											"mode": "raw",
-											"raw": "{\n    \"name\": \"SAKE Sarl\",\n    \"short_name\": \"SK\",\n    \"country_code\": \"CM\",\n    \"primary_currency_code\": \"XAF\",\n    \"preferred_language_code\": \"en\",\n    \"timezone\": \"Africa/Douala\",\n    \"billing_email\": \"princefomo49@gmail.com\",\n    \"billing_address\": {\n        \"city\": \"douala\",\n        \"location\": \"makepe\",\n        \"place_name\": \"carrefour abou de bangui\"\n    },\n    \"billing_phone\": \"695601145\",\n    \"registration_number\": \"na987263\",\n    \"employee_count\": [1,10],\n    \"tax_number\": \"1bfdbm27u3mjkk\"\n}"
+											"raw": "{\n    \"name\": \"SAKE Sarl\",\n    \"short_name\": \"SK\",\n    \"country_code\": \"CM\",\n    \"primary_currency_code\": \"XAF\",\n    \"preferred_language_code\": \"en\",\n    \"timezone\": \"Africa/Douala\",\n    \"billing_email\": \"princefomo49@gmail.com\",\n    \"billing_address\": {\n        \"city\": \"douala\",\n        \"location\": \"makepe\",\n        \"place_name\": \"carrefour abou de bangui\"\n    },\n    \"billing_phone\": \"695601145\",\n    \"registration_number\": \"na987263\",\n    \"employee_count\": [1,10]\n    // \"tax_number\": \"1bfdbm27u3mjkk\"\n}"
 										},
 										"url": {
 											"raw": "{{endpoint}}/{{master}}/tenant/",
@@ -2778,7 +2778,7 @@
 										],
 										"body": {
 											"mode": "raw",
-											"raw": "{\n  \"code\": {{e.g(236)}},\n  \"iso\": {{e.g(ht)}},\n  \"name\": {{e.g(Test Country)}},\n  \"timezone\": {{e.g(Africa/Tchad)}},\n  \"mobileRegex\": {{e.g(EEEEEEE)}},\n  \"flag\": \"{{e.g(🏳️)}}\"\n}\n",
+											"raw": "{\n    \"subdomain\": \"ime.toke.cm\",\n    \"database_name\": \"imediatis_db\",\n    \"database_username\": \"toke_imediatis\",\n    \"database_password\": \"mhdjfcdjtsdghvfsvhjdygs\"\n}",
 											"options": {
 												"raw": {
 													"language": "json"
@@ -2899,7 +2899,7 @@
 										],
 										"body": {
 											"mode": "raw",
-											"raw": "{\n    \"name\": \"SAKE Sarl\",\n    \"short_name\": \"SK\",\n    \"country_code\": \"CM\",\n    \"primary_currency_code\": \"XAF\",\n    \"preferred_language_code\": \"en\",\n    \"timezone\": \"Africa/Douala\",\n    \"billing_email\": \"princefomo49@gmail.com\",\n    \"billing_address\": {\n        \"city\": \"douala\",\n        \"location\": \"makepe\",\n        \"place_name\": \"carrefour abou de bangui\"\n    },\n    \"billing_phone\": \"695601145\",\n    \"registration_number\": \"na987263\" \n}"
+											"raw": "{\n   \"tenant\": 100001,\n  \"license_type\": \"CLOUD_FLEX\",\n  \"billing_cycle_months\": 3,\n  \"current_period_start\": \"2025-06-01\",\n  \"current_period_end\": \"2025-09-01\",\n  \"next_renewal_date\": \"2025-09-01\",\n  \"base_price_usd\": 199.99,\n  \"minimum_seats\": 5,\n  \"total_seats_purchased\": 10,\n  \"license_status\": \"ACTIVE\"\n}"
 										},
 										"url": {
 											"raw": "{{endpoint}}/{{master}}/global-license/",
@@ -3282,40 +3282,6 @@
 												"{{master}}",
 												"global-license",
 												"revision"
-											]
-										}
-									},
-									"response": []
-								},
-								{
-									"name": "Demande un OTP",
-									"request": {
-										"method": "GET",
-										"header": [
-											{
-												"key": "Content-Type",
-												"value": "application/json"
-											},
-											{
-												"key": "x-api-key",
-												"value": "{{x-api-token}}",
-												"type": "text"
-											},
-											{
-												"key": "x-api-signature",
-												"value": "{{x-api-signature}}",
-												"type": "text"
-											}
-										],
-										"url": {
-											"raw": "{{endpoint}}/{{master}}/tenant/otp",
-											"host": [
-												"{{endpoint}}"
-											],
-											"path": [
-												"{{master}}",
-												"tenant",
-												"otp"
 											]
 										}
 									},
@@ -3420,7 +3386,7 @@
 							"name": "➕ CRUD - CREATE",
 							"item": [
 								{
-									"name": "Créer une nouvelle licence globale",
+									"name": "Créer une nouvel employee license",
 									"event": [
 										{
 											"listen": "test",
@@ -3468,16 +3434,16 @@
 										],
 										"body": {
 											"mode": "raw",
-											"raw": "{\n    \"name\": \"SAKE Sarl\",\n    \"short_name\": \"SK\",\n    \"country_code\": \"CM\",\n    \"primary_currency_code\": \"XAF\",\n    \"preferred_language_code\": \"en\",\n    \"timezone\": \"Africa/Douala\",\n    \"billing_email\": \"princefomo49@gmail.com\",\n    \"billing_address\": {\n        \"city\": \"douala\",\n        \"location\": \"makepe\",\n        \"place_name\": \"carrefour abou de bangui\"\n    },\n    \"billing_phone\": \"695601145\",\n    \"registration_number\": \"na987263\" \n}"
+											"raw": "{\n    \"global_license\": 100001,\n    \"employee\": \"129920799202\",\n    \"employee_code\":\"dswdggsddsagdfjksbgfdskjsdfjm\",\n    \"activation_date\": \"2025-09-10T00:00:00.000Z\",\n    \"contractual_status\": \"ACTIVE\"\n}"
 										},
 										"url": {
-											"raw": "{{endpoint}}/{{master}}/global-license/",
+											"raw": "{{endpoint}}/{{master}}/employee-license/",
 											"host": [
 												"{{endpoint}}"
 											],
 											"path": [
 												"{{master}}",
-												"global-license",
+												"employee-license",
 												""
 											]
 										}
@@ -3490,7 +3456,7 @@
 							"name": "📝 CRUD - READ",
 							"item": [
 								{
-									"name": "Lister toutes les licences globales (pour admin)",
+									"name": "Lister toutes les employee licenses with filters (pour admin)",
 									"request": {
 										"method": "GET",
 										"header": [
@@ -3510,13 +3476,13 @@
 											}
 										],
 										"url": {
-											"raw": "{{endpoint}}/{{master}}/global-license/list",
+											"raw": "{{endpoint}}/{{master}}/employee-license/list",
 											"host": [
 												"{{endpoint}}"
 											],
 											"path": [
 												"{{master}}",
-												"global-license",
+												"employee-license",
 												"list"
 											]
 										}
@@ -3524,7 +3490,7 @@
 									"response": []
 								},
 								{
-									"name": "Lister les licences par tenant",
+									"name": "Get employee license by GUID",
 									"request": {
 										"method": "GET",
 										"header": [
@@ -3544,19 +3510,18 @@
 											}
 										],
 										"url": {
-											"raw": "{{endpoint}}/{{master}}/global-license/tenant/:tenant",
+											"raw": "{{endpoint}}/{{master}}/employee-license/:guid",
 											"host": [
 												"{{endpoint}}"
 											],
 											"path": [
 												"{{master}}",
-												"global-license",
-												"tenant",
-												":tenant"
+												"employee-license",
+												":guid"
 											],
 											"variable": [
 												{
-													"key": "tenant",
+													"key": "guid",
 													"value": ""
 												}
 											]
@@ -3565,7 +3530,7 @@
 									"response": []
 								},
 								{
-									"name": "Lister les licences par type",
+									"name": "Get employee license by employee",
 									"request": {
 										"method": "GET",
 										"header": [
@@ -3585,19 +3550,19 @@
 											}
 										],
 										"url": {
-											"raw": "{{endpoint}}/{{master}}/global-license/type/:license_type",
+											"raw": "{{endpoint}}/{{master}}/employee-license/employee/:employee",
 											"host": [
 												"{{endpoint}}"
 											],
 											"path": [
 												"{{master}}",
-												"global-license",
-												"type",
-												":license_type"
+												"employee-license",
+												"employee",
+												":employee"
 											],
 											"variable": [
 												{
-													"key": "license_type",
+													"key": "employee",
 													"value": ""
 												}
 											]
@@ -3606,7 +3571,7 @@
 									"response": []
 								},
 								{
-									"name": "Lister les licences par cycle de facturation",
+									"name": "Get employee license by employee code",
 									"request": {
 										"method": "GET",
 										"header": [
@@ -3626,19 +3591,19 @@
 											}
 										],
 										"url": {
-											"raw": "{{endpoint}}/{{master}}/global-license/billing-cycle/:months",
+											"raw": "{{endpoint}}/{{master}}/employee-license/code/:employeeCode",
 											"host": [
 												"{{endpoint}}"
 											],
 											"path": [
 												"{{master}}",
-												"global-license",
-												"billing-cycle",
-												":months"
+												"employee-license",
+												"code",
+												":employeeCode"
 											],
 											"variable": [
 												{
-													"key": "months",
+													"key": "employeeCode",
 													"value": ""
 												}
 											]
@@ -3647,7 +3612,7 @@
 									"response": []
 								},
 								{
-									"name": "Lister les licences par statut",
+									"name": "List employee licenses by global license",
 									"request": {
 										"method": "GET",
 										"header": [
@@ -3667,19 +3632,19 @@
 											}
 										],
 										"url": {
-											"raw": "{{endpoint}}/{{master}}/global-license/status/:status",
+											"raw": "{{endpoint}}/{{master}}/employee-license/global/:globalLicenseId",
 											"host": [
 												"{{endpoint}}"
 											],
 											"path": [
 												"{{master}}",
-												"global-license",
-												"status",
-												":status"
+												"employee-license",
+												"global",
+												":globalLicenseId"
 											],
 											"variable": [
 												{
-													"key": "status",
+													"key": "globalLicenseId",
 													"value": ""
 												}
 											]
@@ -3688,7 +3653,7 @@
 									"response": []
 								},
 								{
-									"name": "Lister les licences expirant dans X jours",
+									"name": "Get billing statistics by global license",
 									"request": {
 										"method": "GET",
 										"header": [
@@ -3708,19 +3673,20 @@
 											}
 										],
 										"url": {
-											"raw": "{{endpoint}}/{{master}}/global-license/expiring/:days",
+											"raw": "{{endpoint}}/{{master}}/employee-license/stats/billing/:globalLicenseId",
 											"host": [
 												"{{endpoint}}"
 											],
 											"path": [
 												"{{master}}",
-												"global-license",
-												"expiring",
-												":days"
+												"employee-license",
+												"stats",
+												"billing",
+												":globalLicenseId"
 											],
 											"variable": [
 												{
-													"key": "days",
+													"key": "globalLicenseId",
 													"value": ""
 												}
 											]
@@ -3729,7 +3695,7 @@
 									"response": []
 								},
 								{
-									"name": "Lister les licences expirées",
+									"name": "List employees on long leave",
 									"request": {
 										"method": "GET",
 										"header": [
@@ -3749,21 +3715,22 @@
 											}
 										],
 										"url": {
-											"raw": "{{endpoint}}/{{master}}/global-license/expired",
+											"raw": "{{endpoint}}/{{master}}/employee-license/long-leave/list",
 											"host": [
 												"{{endpoint}}"
 											],
 											"path": [
 												"{{master}}",
-												"global-license",
-												"expired"
+												"employee-license",
+												"long-leave",
+												"list"
 											]
 										}
 									},
 									"response": []
 								},
 								{
-									"name": "Recherche intelligente par ID ou GUID",
+									"name": "List employees in grace period",
 									"request": {
 										"method": "GET",
 										"header": [
@@ -3783,20 +3750,15 @@
 											}
 										],
 										"url": {
-											"raw": "{{endpoint}}/{{master}}/global-license/:identifier",
+											"raw": "{{endpoint}}/{{master}}/employee-license/grace-period/list",
 											"host": [
 												"{{endpoint}}"
 											],
 											"path": [
 												"{{master}}",
-												"global-license",
-												":identifier"
-											],
-											"variable": [
-												{
-													"key": "identifier",
-													"value": ""
-												}
+												"employee-license",
+												"grace-period",
+												"list"
 											]
 										}
 									},
@@ -3843,48 +3805,14 @@
 											}
 										],
 										"url": {
-											"raw": "{{endpoint}}/{{master}}/global-license/revision",
+											"raw": "{{endpoint}}/{{master}}/employee-license/revision",
 											"host": [
 												"{{endpoint}}"
 											],
 											"path": [
 												"{{master}}",
-												"global-license",
+												"employee-license",
 												"revision"
-											]
-										}
-									},
-									"response": []
-								},
-								{
-									"name": "Demande un OTP",
-									"request": {
-										"method": "GET",
-										"header": [
-											{
-												"key": "Content-Type",
-												"value": "application/json"
-											},
-											{
-												"key": "x-api-key",
-												"value": "{{x-api-token}}",
-												"type": "text"
-											},
-											{
-												"key": "x-api-signature",
-												"value": "{{x-api-signature}}",
-												"type": "text"
-											}
-										],
-										"url": {
-											"raw": "{{endpoint}}/{{master}}/tenant/otp",
-											"host": [
-												"{{endpoint}}"
-											],
-											"path": [
-												"{{master}}",
-												"tenant",
-												"otp"
 											]
 										}
 									},
@@ -3896,7 +3824,7 @@
 							"name": "✏️ CRUD - UPDATE",
 							"item": [
 								{
-									"name": "Modifier une licence globale par GUID",
+									"name": "Modifier un employee license by GUID",
 									"request": {
 										"method": "PUT",
 										"header": [
@@ -3917,7 +3845,7 @@
 										],
 										"body": {
 											"mode": "raw",
-											"raw": "{\n  \"code\": {{e.g(236)}},\n  \"iso\": {{e.g(ht)}},\n  \"name\": {{e.g(Test Country)}},\n  \"timezone\": {{e.g(Africa/Tchad)}},\n  \"mobileRegex\": {{e.g(EEEEEEE)}},\n  \"flag\": \"{{e.g(🏳️)}}\"\n}\n",
+											"raw": "{\n \n}\n",
 											"options": {
 												"raw": {
 													"language": "json"
@@ -3925,14 +3853,264 @@
 											}
 										},
 										"url": {
-											"raw": "{{endpoint}}/{{master}}/global-license/{{guid (e.g:100002)}}",
+											"raw": "{{endpoint}}/{{master}}/employee-license/:guid",
 											"host": [
 												"{{endpoint}}"
 											],
 											"path": [
 												"{{master}}",
-												"global-license",
-												"{{guid (e.g:100002)}}"
+												"employee-license",
+												":guid"
+											],
+											"variable": [
+												{
+													"key": "guid",
+													"value": ""
+												}
+											]
+										}
+									},
+									"response": []
+								},
+								{
+									"name": "Update employee activity",
+									"request": {
+										"method": "PATCH",
+										"header": [
+											{
+												"key": "Content-Type",
+												"value": "application/json"
+											},
+											{
+												"key": "x-api-key",
+												"value": "{{x-api-token}}",
+												"type": "text"
+											},
+											{
+												"key": "x-api-signature",
+												"value": "{{x-api-signature}}",
+												"type": "text"
+											}
+										],
+										"body": {
+											"mode": "raw",
+											"raw": "{\n \n}\n",
+											"options": {
+												"raw": {
+													"language": "json"
+												}
+											}
+										},
+										"url": {
+											"raw": "{{endpoint}}/{{master}}/employee-license/activity/:employee",
+											"host": [
+												"{{endpoint}}"
+											],
+											"path": [
+												"{{master}}",
+												"employee-license",
+												"activity",
+												":employee"
+											],
+											"variable": [
+												{
+													"key": "employee",
+													"value": ""
+												}
+											]
+										}
+									},
+									"response": []
+								},
+								{
+									"name": "Declare long leave",
+									"request": {
+										"method": "PATCH",
+										"header": [
+											{
+												"key": "Content-Type",
+												"value": "application/json"
+											},
+											{
+												"key": "x-api-key",
+												"value": "{{x-api-token}}",
+												"type": "text"
+											},
+											{
+												"key": "x-api-signature",
+												"value": "{{x-api-signature}}",
+												"type": "text"
+											}
+										],
+										"body": {
+											"mode": "raw",
+											"raw": "{\n    \"declared_by\": \"Samuel\",\n    \"leave_type\": \"OTHER\",\n    \"reason\": \"french\"\n}",
+											"options": {
+												"raw": {
+													"language": "json"
+												}
+											}
+										},
+										"url": {
+											"raw": "{{endpoint}}/{{master}}/employee-license/long-leave/",
+											"host": [
+												"{{endpoint}}"
+											],
+											"path": [
+												"{{master}}",
+												"employee-license",
+												"long-leave",
+												""
+											]
+										}
+									},
+									"response": []
+								},
+								{
+									"name": "Cancel long leave",
+									"request": {
+										"method": "DELETE",
+										"header": [
+											{
+												"key": "Content-Type",
+												"value": "application/json"
+											},
+											{
+												"key": "x-api-key",
+												"value": "{{x-api-token}}",
+												"type": "text"
+											},
+											{
+												"key": "x-api-signature",
+												"value": "{{x-api-signature}}",
+												"type": "text"
+											}
+										],
+										"body": {
+											"mode": "raw",
+											"raw": "{\n \n}\n",
+											"options": {
+												"raw": {
+													"language": "json"
+												}
+											}
+										},
+										"url": {
+											"raw": "{{endpoint}}/{{master}}/employee-license/long-leave/:employee",
+											"host": [
+												"{{endpoint}}"
+											],
+											"path": [
+												"{{master}}",
+												"employee-license",
+												"long-leave",
+												":employee"
+											],
+											"variable": [
+												{
+													"key": "employee",
+													"value": ""
+												}
+											]
+										}
+									},
+									"response": []
+								},
+								{
+									"name": "Deactivate employee",
+									"request": {
+										"method": "PATCH",
+										"header": [
+											{
+												"key": "Content-Type",
+												"value": "application/json"
+											},
+											{
+												"key": "x-api-key",
+												"value": "{{x-api-token}}",
+												"type": "text"
+											},
+											{
+												"key": "x-api-signature",
+												"value": "{{x-api-signature}}",
+												"type": "text"
+											}
+										],
+										"body": {
+											"mode": "raw",
+											"raw": "{\n \n}\n",
+											"options": {
+												"raw": {
+													"language": "json"
+												}
+											}
+										},
+										"url": {
+											"raw": "{{endpoint}}/{{master}}/employee-license/deactivate/:employee",
+											"host": [
+												"{{endpoint}}"
+											],
+											"path": [
+												"{{master}}",
+												"employee-license",
+												"deactivate",
+												":employee"
+											],
+											"variable": [
+												{
+													"key": "employee",
+													"value": ""
+												}
+											]
+										}
+									},
+									"response": []
+								},
+								{
+									"name": "Reactivate employee",
+									"request": {
+										"method": "PATCH",
+										"header": [
+											{
+												"key": "Content-Type",
+												"value": "application/json"
+											},
+											{
+												"key": "x-api-key",
+												"value": "{{x-api-token}}",
+												"type": "text"
+											},
+											{
+												"key": "x-api-signature",
+												"value": "{{x-api-signature}}",
+												"type": "text"
+											}
+										],
+										"body": {
+											"mode": "raw",
+											"raw": "{\n \n}\n",
+											"options": {
+												"raw": {
+													"language": "json"
+												}
+											}
+										},
+										"url": {
+											"raw": "{{endpoint}}/{{master}}/employee-license/reactivate/:employee",
+											"host": [
+												"{{endpoint}}"
+											],
+											"path": [
+												"{{master}}",
+												"employee-license",
+												"reactivate",
+												":employee"
+											],
+											"variable": [
+												{
+													"key": "employee",
+													"value": ""
+												}
 											]
 										}
 									},
@@ -3944,7 +4122,7 @@
 							"name": "🗑️ CRUD - DELETE",
 							"item": [
 								{
-									"name": "Supprimer une licence globale par GUID",
+									"name": "Supprimer un employee license par GUID",
 									"request": {
 										"method": "DELETE",
 										"header": [
@@ -3965,14 +4143,3271 @@
 											}
 										],
 										"url": {
-											"raw": "{{endpoint}}/{{master}}/global-license/100001",
+											"raw": "{{endpoint}}/{{master}}/employee-license/100001",
 											"host": [
 												"{{endpoint}}"
 											],
 											"path": [
 												"{{master}}",
-												"global-license",
+												"employee-license",
 												"100001"
+											]
+										}
+									},
+									"response": []
+								}
+							]
+						}
+					]
+				},
+				{
+					"name": "Cycles de Facturation Multi-Devises",
+					"item": [
+						{
+							"name": "➕ CRUD - CREATE",
+							"item": [
+								{
+									"name": "Créer un nouveau cycle de facturation",
+									"event": [
+										{
+											"listen": "test",
+											"script": {
+												"exec": [
+													"pm.test('Status is 201', function () {",
+													"    pm.response.to.have.status(201);",
+													"});",
+													"",
+													"pm.test('Country created successfully', function () {",
+													"    const jsonData = pm.response.json();",
+													"    pm.expect(jsonData.response).to.have.property('guid');",
+													"    pm.expect(jsonData.response).to.have.property('iso');",
+													"    pm.expect(jsonData.response.iso).to.eql('TE');",
+													"});",
+													"",
+													"// Sauvegarder le GUID pour les autres tests",
+													"const jsonData = pm.response.json();",
+													"if (jsonData.response && jsonData.response.guid) {",
+													"    pm.environment.set('created_country_guid', jsonData.response.guid);",
+													"}"
+												],
+												"type": "text/javascript",
+												"packages": {}
+											}
+										}
+									],
+									"request": {
+										"method": "POST",
+										"header": [
+											{
+												"key": "Content-Type",
+												"value": "application/json"
+											},
+											{
+												"key": "x-api-key",
+												"value": "{{x-api-token}}",
+												"type": "text"
+											},
+											{
+												"key": "x-api-signature",
+												"value": "{{x-api-signature}}",
+												"type": "text"
+											}
+										],
+										"body": {
+											"mode": "raw",
+											"raw": "{\n    \"global_license\": 100001,\n    \"employee\": \"129920799202\",\n    \"employee_code\":\"dswdggsddsagdfjksbgfdskjsdfjm\",\n    \"activation_date\": \"2025-09-10T00:00:00.000Z\",\n    \"contractual_status\": \"ACTIVE\"\n}"
+										},
+										"url": {
+											"raw": "{{endpoint}}/{{master}}/billing-cycle/",
+											"host": [
+												"{{endpoint}}"
+											],
+											"path": [
+												"{{master}}",
+												"billing-cycle",
+												""
+											]
+										}
+									},
+									"response": []
+								}
+							]
+						},
+						{
+							"name": "📝 CRUD - READ",
+							"item": [
+								{
+									"name": "Lister tous les cycles de facturation (pour admin)",
+									"request": {
+										"method": "GET",
+										"header": [
+											{
+												"key": "Content-Type",
+												"value": "application/json"
+											},
+											{
+												"key": "x-api-key",
+												"value": "{{x-api-token}}",
+												"type": "text"
+											},
+											{
+												"key": "x-api-signature",
+												"value": "{{x-api-signature}}",
+												"type": "text"
+											}
+										],
+										"url": {
+											"raw": "{{endpoint}}/{{master}}/billing-cycle/list",
+											"host": [
+												"{{endpoint}}"
+											],
+											"path": [
+												"{{master}}",
+												"billing-cycle",
+												"list"
+											]
+										}
+									},
+									"response": []
+								},
+								{
+									"name": "Lister les cycles par licence globale",
+									"request": {
+										"method": "GET",
+										"header": [
+											{
+												"key": "Content-Type",
+												"value": "application/json"
+											},
+											{
+												"key": "x-api-key",
+												"value": "{{x-api-token}}",
+												"type": "text"
+											},
+											{
+												"key": "x-api-signature",
+												"value": "{{x-api-signature}}",
+												"type": "text"
+											}
+										],
+										"url": {
+											"raw": "{{endpoint}}/{{master}}/billing-cycle/global-license/:global_license",
+											"host": [
+												"{{endpoint}}"
+											],
+											"path": [
+												"{{master}}",
+												"billing-cycle",
+												"global-license",
+												":global_license"
+											],
+											"variable": [
+												{
+													"key": "global_license",
+													"value": ""
+												}
+											]
+										}
+									},
+									"response": []
+								},
+								{
+									"name": "Lister les cycles par statut",
+									"request": {
+										"method": "GET",
+										"header": [
+											{
+												"key": "Content-Type",
+												"value": "application/json"
+											},
+											{
+												"key": "x-api-key",
+												"value": "{{x-api-token}}",
+												"type": "text"
+											},
+											{
+												"key": "x-api-signature",
+												"value": "{{x-api-signature}}",
+												"type": "text"
+											}
+										],
+										"url": {
+											"raw": "{{endpoint}}/{{master}}/billing-cycle/status/:status'",
+											"host": [
+												"{{endpoint}}"
+											],
+											"path": [
+												"{{master}}",
+												"billing-cycle",
+												"status",
+												":status'"
+											],
+											"variable": [
+												{
+													"key": "status'",
+													"value": ""
+												}
+											]
+										}
+									},
+									"response": []
+								},
+								{
+									"name": "Lister les cycles par devise",
+									"request": {
+										"method": "GET",
+										"header": [
+											{
+												"key": "Content-Type",
+												"value": "application/json"
+											},
+											{
+												"key": "x-api-key",
+												"value": "{{x-api-token}}",
+												"type": "text"
+											},
+											{
+												"key": "x-api-signature",
+												"value": "{{x-api-signature}}",
+												"type": "text"
+											}
+										],
+										"url": {
+											"raw": "{{endpoint}}/{{master}}/billing-cycle/currency/:currency_code",
+											"host": [
+												"{{endpoint}}"
+											],
+											"path": [
+												"{{master}}",
+												"billing-cycle",
+												"currency",
+												":currency_code"
+											],
+											"variable": [
+												{
+													"key": "currency_code",
+													"value": ""
+												}
+											]
+										}
+									},
+									"response": []
+								},
+								{
+									"name": "Lister les cycles en retard",
+									"request": {
+										"method": "GET",
+										"header": [
+											{
+												"key": "Content-Type",
+												"value": "application/json"
+											},
+											{
+												"key": "x-api-key",
+												"value": "{{x-api-token}}",
+												"type": "text"
+											},
+											{
+												"key": "x-api-signature",
+												"value": "{{x-api-signature}}",
+												"type": "text"
+											}
+										],
+										"url": {
+											"raw": "{{endpoint}}/{{master}}/billing-cycle/overdue",
+											"host": [
+												"{{endpoint}}"
+											],
+											"path": [
+												"{{master}}",
+												"billing-cycle",
+												"overdue"
+											]
+										}
+									},
+									"response": []
+								},
+								{
+									"name": "Lister les cycles avec échéance proche",
+									"request": {
+										"method": "GET",
+										"header": [
+											{
+												"key": "Content-Type",
+												"value": "application/json"
+											},
+											{
+												"key": "x-api-key",
+												"value": "{{x-api-token}}",
+												"type": "text"
+											},
+											{
+												"key": "x-api-signature",
+												"value": "{{x-api-signature}}",
+												"type": "text"
+											}
+										],
+										"url": {
+											"raw": "{{endpoint}}/{{master}}/billing-cycle/due-soon/:days",
+											"host": [
+												"{{endpoint}}"
+											],
+											"path": [
+												"{{master}}",
+												"billing-cycle",
+												"due-soon",
+												":days"
+											],
+											"variable": [
+												{
+													"key": "days",
+													"value": ""
+												}
+											]
+										}
+									},
+									"response": []
+								},
+								{
+									"name": "Lister les cycles en attente de facture",
+									"request": {
+										"method": "GET",
+										"header": [
+											{
+												"key": "Content-Type",
+												"value": "application/json"
+											},
+											{
+												"key": "x-api-key",
+												"value": "{{x-api-token}}",
+												"type": "text"
+											},
+											{
+												"key": "x-api-signature",
+												"value": "{{x-api-signature}}",
+												"type": "text"
+											}
+										],
+										"url": {
+											"raw": "{{endpoint}}/{{master}}/billing-cycle/pending-invoice",
+											"host": [
+												"{{endpoint}}"
+											],
+											"path": [
+												"{{master}}",
+												"billing-cycle",
+												"pending-invoice"
+											]
+										}
+									},
+									"response": []
+								},
+								{
+									"name": "Lister les cycles terminés",
+									"request": {
+										"method": "GET",
+										"header": [
+											{
+												"key": "Content-Type",
+												"value": "application/json"
+											},
+											{
+												"key": "x-api-key",
+												"value": "{{x-api-token}}",
+												"type": "text"
+											},
+											{
+												"key": "x-api-signature",
+												"value": "{{x-api-signature}}",
+												"type": "text"
+											}
+										],
+										"url": {
+											"raw": "{{endpoint}}/{{master}}/billing-cycle/completed",
+											"host": [
+												"{{endpoint}}"
+											],
+											"path": [
+												"{{master}}",
+												"billing-cycle",
+												"completed"
+											]
+										}
+									},
+									"response": []
+								},
+								{
+									"name": "Lister les cycles par période",
+									"request": {
+										"method": "GET",
+										"header": [
+											{
+												"key": "Content-Type",
+												"value": "application/json"
+											},
+											{
+												"key": "x-api-key",
+												"value": "{{x-api-token}}",
+												"type": "text"
+											},
+											{
+												"key": "x-api-signature",
+												"value": "{{x-api-signature}}",
+												"type": "text"
+											}
+										],
+										"url": {
+											"raw": "{{endpoint}}/{{master}}/billing-cycle/period",
+											"host": [
+												"{{endpoint}}"
+											],
+											"path": [
+												"{{master}}",
+												"billing-cycle",
+												"period"
+											]
+										}
+									},
+									"response": []
+								},
+								{
+									"name": "Révision Actuelle",
+									"event": [
+										{
+											"listen": "test",
+											"script": {
+												"exec": [
+													"pm.test('Status is 200', function () {",
+													"    pm.response.to.have.status(200);",
+													"});",
+													"",
+													"pm.test('Response has revision and timestamp', function () {",
+													"    const jsonData = pm.response.json();",
+													"    pm.expect(jsonData.response).to.have.property('revision');",
+													"    pm.expect(jsonData.response).to.have.property('checked_at');",
+													"});"
+												],
+												"type": "text/javascript",
+												"packages": {}
+											}
+										}
+									],
+									"request": {
+										"method": "GET",
+										"header": [
+											{
+												"key": "Content-Type",
+												"value": "application/json"
+											},
+											{
+												"key": "x-api-key",
+												"value": "{{x-api-token}}",
+												"type": "text"
+											},
+											{
+												"key": "x-api-signature",
+												"value": "{{x-api-signature}}",
+												"type": "text"
+											}
+										],
+										"url": {
+											"raw": "{{endpoint}}/{{master}}/billing-cycle/revision",
+											"host": [
+												"{{endpoint}}"
+											],
+											"path": [
+												"{{master}}",
+												"billing-cycle",
+												"revision"
+											]
+										}
+									},
+									"response": []
+								}
+							]
+						},
+						{
+							"name": "✏️ CRUD - UPDATE",
+							"item": [
+								{
+									"name": "Modifier un cycle de facturation par GUID",
+									"request": {
+										"method": "PUT",
+										"header": [
+											{
+												"key": "Content-Type",
+												"value": "application/json"
+											},
+											{
+												"key": "x-api-key",
+												"value": "{{x-api-token}}",
+												"type": "text"
+											},
+											{
+												"key": "x-api-signature",
+												"value": "{{x-api-signature}}",
+												"type": "text"
+											}
+										],
+										"body": {
+											"mode": "raw",
+											"raw": "{\n \n}\n",
+											"options": {
+												"raw": {
+													"language": "json"
+												}
+											}
+										},
+										"url": {
+											"raw": "{{endpoint}}/{{master}}/billing-cycle/:guid",
+											"host": [
+												"{{endpoint}}"
+											],
+											"path": [
+												"{{master}}",
+												"billing-cycle",
+												":guid"
+											],
+											"variable": [
+												{
+													"key": "guid",
+													"value": ""
+												}
+											]
+										}
+									},
+									"response": []
+								},
+								{
+									"name": "Marquer comme facturé",
+									"request": {
+										"method": "PATCH",
+										"header": [
+											{
+												"key": "Content-Type",
+												"value": "application/json"
+											},
+											{
+												"key": "x-api-key",
+												"value": "{{x-api-token}}",
+												"type": "text"
+											},
+											{
+												"key": "x-api-signature",
+												"value": "{{x-api-signature}}",
+												"type": "text"
+											}
+										],
+										"body": {
+											"mode": "raw",
+											"raw": "{\n \n}\n",
+											"options": {
+												"raw": {
+													"language": "json"
+												}
+											}
+										},
+										"url": {
+											"raw": "{{endpoint}}/{{master}}/billing-cycle/:guid/mark-invoiced",
+											"host": [
+												"{{endpoint}}"
+											],
+											"path": [
+												"{{master}}",
+												"billing-cycle",
+												":guid",
+												"mark-invoiced"
+											],
+											"variable": [
+												{
+													"key": "guid",
+													"value": ""
+												}
+											]
+										}
+									},
+									"response": []
+								},
+								{
+									"name": "Marquer comme payé",
+									"request": {
+										"method": "PATCH",
+										"header": [
+											{
+												"key": "Content-Type",
+												"value": "application/json"
+											},
+											{
+												"key": "x-api-key",
+												"value": "{{x-api-token}}",
+												"type": "text"
+											},
+											{
+												"key": "x-api-signature",
+												"value": "{{x-api-signature}}",
+												"type": "text"
+											}
+										],
+										"body": {
+											"mode": "raw",
+											"raw": "{\n \n}\n",
+											"options": {
+												"raw": {
+													"language": "json"
+												}
+											}
+										},
+										"url": {
+											"raw": "{{endpoint}}/{{master}}/billing-cycle/:guid/mark-paid",
+											"host": [
+												"{{endpoint}}"
+											],
+											"path": [
+												"{{master}}",
+												"billing-cycle",
+												":guid",
+												"mark-paid"
+											],
+											"variable": [
+												{
+													"key": "guid",
+													"value": ""
+												}
+											]
+										}
+									},
+									"response": []
+								},
+								{
+									"name": "Marquer comme en retard",
+									"request": {
+										"method": "PATCH",
+										"header": [
+											{
+												"key": "Content-Type",
+												"value": "application/json"
+											},
+											{
+												"key": "x-api-key",
+												"value": "{{x-api-token}}",
+												"type": "text"
+											},
+											{
+												"key": "x-api-signature",
+												"value": "{{x-api-signature}}",
+												"type": "text"
+											}
+										],
+										"body": {
+											"mode": "raw",
+											"raw": "{\n \n}\n",
+											"options": {
+												"raw": {
+													"language": "json"
+												}
+											}
+										},
+										"url": {
+											"raw": "{{endpoint}}/{{master}}/billing-cycle/:guid/mark-overdue",
+											"host": [
+												"{{endpoint}}"
+											],
+											"path": [
+												"{{master}}",
+												"billing-cycle",
+												":guid",
+												"mark-overdue"
+											],
+											"variable": [
+												{
+													"key": "guid",
+													"value": ""
+												}
+											]
+										}
+									},
+									"response": []
+								},
+								{
+									"name": "Annuler le cycle",
+									"request": {
+										"method": "PATCH",
+										"header": [
+											{
+												"key": "Content-Type",
+												"value": "application/json"
+											},
+											{
+												"key": "x-api-key",
+												"value": "{{x-api-token}}",
+												"type": "text"
+											},
+											{
+												"key": "x-api-signature",
+												"value": "{{x-api-signature}}",
+												"type": "text"
+											}
+										],
+										"body": {
+											"mode": "raw",
+											"raw": "{\n \n}\n",
+											"options": {
+												"raw": {
+													"language": "json"
+												}
+											}
+										},
+										"url": {
+											"raw": "{{endpoint}}/{{master}}/billing-cycle/:guid/cancel",
+											"host": [
+												"{{endpoint}}"
+											],
+											"path": [
+												"{{master}}",
+												"billing-cycle",
+												":guid",
+												"cancel"
+											],
+											"variable": [
+												{
+													"key": "guid",
+													"value": ""
+												}
+											]
+										}
+									},
+									"response": []
+								}
+							]
+						},
+						{
+							"name": "🗑️ CRUD - DELETE",
+							"item": [
+								{
+									"name": "Supprimer un cycle de facturation par GUID",
+									"request": {
+										"method": "DELETE",
+										"header": [
+											{
+												"key": "x-api-key",
+												"value": "{{x-api-token}}",
+												"type": "text"
+											},
+											{
+												"key": "x-api-signature",
+												"value": "{{x-api-signature}}",
+												"type": "text"
+											},
+											{
+												"key": "x-api-user",
+												"value": "{{x-api-user}}",
+												"type": "text"
+											}
+										],
+										"url": {
+											"raw": "{{endpoint}}/{{master}}/billing-cycle/100001",
+											"host": [
+												"{{endpoint}}"
+											],
+											"path": [
+												"{{master}}",
+												"billing-cycle",
+												"100001"
+											]
+										}
+									},
+									"response": []
+								}
+							]
+						}
+					]
+				},
+				{
+					"name": "Moyens de Paiement par Pays",
+					"item": [
+						{
+							"name": "➕ CRUD - CREATE",
+							"item": [
+								{
+									"name": "Créer un nouveau moyen de paiement",
+									"event": [
+										{
+											"listen": "test",
+											"script": {
+												"exec": [
+													"pm.test('Status is 201', function () {",
+													"    pm.response.to.have.status(201);",
+													"});",
+													"",
+													"pm.test('Country created successfully', function () {",
+													"    const jsonData = pm.response.json();",
+													"    pm.expect(jsonData.response).to.have.property('guid');",
+													"    pm.expect(jsonData.response).to.have.property('iso');",
+													"    pm.expect(jsonData.response.iso).to.eql('TE');",
+													"});",
+													"",
+													"// Sauvegarder le GUID pour les autres tests",
+													"const jsonData = pm.response.json();",
+													"if (jsonData.response && jsonData.response.guid) {",
+													"    pm.environment.set('created_country_guid', jsonData.response.guid);",
+													"}"
+												],
+												"type": "text/javascript",
+												"packages": {}
+											}
+										}
+									],
+									"request": {
+										"method": "POST",
+										"header": [
+											{
+												"key": "Content-Type",
+												"value": "application/json"
+											},
+											{
+												"key": "x-api-key",
+												"value": "{{x-api-token}}",
+												"type": "text"
+											},
+											{
+												"key": "x-api-signature",
+												"value": "{{x-api-signature}}",
+												"type": "text"
+											}
+										],
+										"body": {
+											"mode": "raw",
+											"raw": "{\n    \"global_license\": 100001,\n    \"employee\": \"129920799202\",\n    \"employee_code\":\"dswdggsddsagdfjksbgfdskjsdfjm\",\n    \"activation_date\": \"2025-09-10T00:00:00.000Z\",\n    \"contractual_status\": \"ACTIVE\"\n}"
+										},
+										"url": {
+											"raw": "{{endpoint}}/{{master}}/payment-method/",
+											"host": [
+												"{{endpoint}}"
+											],
+											"path": [
+												"{{master}}",
+												"payment-method",
+												""
+											]
+										}
+									},
+									"response": []
+								}
+							]
+						},
+						{
+							"name": "📝 CRUD - READ",
+							"item": [
+								{
+									"name": "Lister les moyens de paiement par statut actif",
+									"request": {
+										"method": "GET",
+										"header": [
+											{
+												"key": "Content-Type",
+												"value": "application/json"
+											},
+											{
+												"key": "x-api-key",
+												"value": "{{x-api-token}}",
+												"type": "text"
+											},
+											{
+												"key": "x-api-signature",
+												"value": "{{x-api-signature}}",
+												"type": "text"
+											}
+										],
+										"url": {
+											"raw": "{{endpoint}}/{{master}}/payment-method/active/:active",
+											"host": [
+												"{{endpoint}}"
+											],
+											"path": [
+												"{{master}}",
+												"payment-method",
+												"active",
+												":active"
+											],
+											"variable": [
+												{
+													"key": "active",
+													"value": ""
+												}
+											]
+										}
+									},
+									"response": []
+								},
+								{
+									"name": "Lister les moyens de paiement par type",
+									"request": {
+										"method": "GET",
+										"header": [
+											{
+												"key": "Content-Type",
+												"value": "application/json"
+											},
+											{
+												"key": "x-api-key",
+												"value": "{{x-api-token}}",
+												"type": "text"
+											},
+											{
+												"key": "x-api-signature",
+												"value": "{{x-api-signature}}",
+												"type": "text"
+											}
+										],
+										"url": {
+											"raw": "{{endpoint}}/{{master}}/payment-method/method-type/:method_type",
+											"host": [
+												"{{endpoint}}"
+											],
+											"path": [
+												"{{master}}",
+												"payment-method",
+												"method-type",
+												":method_type"
+											],
+											"variable": [
+												{
+													"key": "method_type",
+													"value": ""
+												}
+											]
+										}
+									},
+									"response": []
+								},
+								{
+									"name": "Lister les moyens de paiement supportant une devise",
+									"request": {
+										"method": "GET",
+										"header": [
+											{
+												"key": "Content-Type",
+												"value": "application/json"
+											},
+											{
+												"key": "x-api-key",
+												"value": "{{x-api-token}}",
+												"type": "text"
+											},
+											{
+												"key": "x-api-signature",
+												"value": "{{x-api-signature}}",
+												"type": "text"
+											}
+										],
+										"url": {
+											"raw": "{{endpoint}}/{{master}}/payment-method/currency/:currency",
+											"host": [
+												"{{endpoint}}"
+											],
+											"path": [
+												"{{master}}",
+												"payment-method",
+												"currency",
+												":currency"
+											],
+											"variable": [
+												{
+													"key": "currency",
+													"value": ""
+												}
+											]
+										}
+									},
+									"response": []
+								},
+								{
+									"name": "Lister les moyens de paiement disponibles pour un montant",
+									"request": {
+										"method": "GET",
+										"header": [
+											{
+												"key": "Content-Type",
+												"value": "application/json"
+											},
+											{
+												"key": "x-api-key",
+												"value": "{{x-api-token}}",
+												"type": "text"
+											},
+											{
+												"key": "x-api-signature",
+												"value": "{{x-api-signature}}",
+												"type": "text"
+											}
+										],
+										"url": {
+											"raw": "{{endpoint}}/{{master}}/payment-method/amount/:amount",
+											"host": [
+												"{{endpoint}}"
+											],
+											"path": [
+												"{{master}}",
+												"payment-method",
+												"amount",
+												":amount"
+											],
+											"variable": [
+												{
+													"key": "amount",
+													"value": ""
+												}
+											]
+										}
+									},
+									"response": []
+								},
+								{
+									"name": "Lister les moyens de paiement mobile",
+									"request": {
+										"method": "GET",
+										"header": [
+											{
+												"key": "Content-Type",
+												"value": "application/json"
+											},
+											{
+												"key": "x-api-key",
+												"value": "{{x-api-token}}",
+												"type": "text"
+											},
+											{
+												"key": "x-api-signature",
+												"value": "{{x-api-signature}}",
+												"type": "text"
+											}
+										],
+										"url": {
+											"raw": "{{endpoint}}/{{master}}/payment-method/mobile",
+											"host": [
+												"{{endpoint}}"
+											],
+											"path": [
+												"{{master}}",
+												"payment-method",
+												"mobile"
+											]
+										}
+									},
+									"response": []
+								},
+								{
+									"name": "Lister les moyens de paiement par carte",
+									"request": {
+										"method": "GET",
+										"header": [
+											{
+												"key": "Content-Type",
+												"value": "application/json"
+											},
+											{
+												"key": "x-api-key",
+												"value": "{{x-api-token}}",
+												"type": "text"
+											},
+											{
+												"key": "x-api-signature",
+												"value": "{{x-api-signature}}",
+												"type": "text"
+											}
+										],
+										"url": {
+											"raw": "{{endpoint}}/{{master}}/payment-method/card",
+											"host": [
+												"{{endpoint}}"
+											],
+											"path": [
+												"{{master}}",
+												"payment-method",
+												"card"
+											]
+										}
+									},
+									"response": []
+								},
+								{
+									"name": "Lister les moyens de paiement par virement bancaire",
+									"request": {
+										"method": "GET",
+										"header": [
+											{
+												"key": "Content-Type",
+												"value": "application/json"
+											},
+											{
+												"key": "x-api-key",
+												"value": "{{x-api-token}}",
+												"type": "text"
+											},
+											{
+												"key": "x-api-signature",
+												"value": "{{x-api-signature}}",
+												"type": "text"
+											}
+										],
+										"url": {
+											"raw": "{{endpoint}}/{{master}}/payment-method/bank-transfer",
+											"host": [
+												"{{endpoint}}"
+											],
+											"path": [
+												"{{master}}",
+												"payment-method",
+												"bank-transfer"
+											]
+										}
+									},
+									"response": []
+								},
+								{
+									"name": "Révision Actuelle",
+									"event": [
+										{
+											"listen": "test",
+											"script": {
+												"exec": [
+													"pm.test('Status is 200', function () {",
+													"    pm.response.to.have.status(200);",
+													"});",
+													"",
+													"pm.test('Response has revision and timestamp', function () {",
+													"    const jsonData = pm.response.json();",
+													"    pm.expect(jsonData.response).to.have.property('revision');",
+													"    pm.expect(jsonData.response).to.have.property('checked_at');",
+													"});"
+												],
+												"type": "text/javascript",
+												"packages": {}
+											}
+										}
+									],
+									"request": {
+										"method": "GET",
+										"header": [
+											{
+												"key": "Content-Type",
+												"value": "application/json"
+											},
+											{
+												"key": "x-api-key",
+												"value": "{{x-api-token}}",
+												"type": "text"
+											},
+											{
+												"key": "x-api-signature",
+												"value": "{{x-api-signature}}",
+												"type": "text"
+											}
+										],
+										"url": {
+											"raw": "{{endpoint}}/{{master}}/payment-method/revision",
+											"host": [
+												"{{endpoint}}"
+											],
+											"path": [
+												"{{master}}",
+												"payment-method",
+												"revision"
+											]
+										}
+									},
+									"response": []
+								}
+							]
+						},
+						{
+							"name": "✏️ CRUD - UPDATE",
+							"item": [
+								{
+									"name": "Modifier un moyen de paiement par GUID",
+									"request": {
+										"method": "PUT",
+										"header": [
+											{
+												"key": "Content-Type",
+												"value": "application/json"
+											},
+											{
+												"key": "x-api-key",
+												"value": "{{x-api-token}}",
+												"type": "text"
+											},
+											{
+												"key": "x-api-signature",
+												"value": "{{x-api-signature}}",
+												"type": "text"
+											}
+										],
+										"body": {
+											"mode": "raw",
+											"raw": "{\n \n}\n",
+											"options": {
+												"raw": {
+													"language": "json"
+												}
+											}
+										},
+										"url": {
+											"raw": "{{endpoint}}/{{master}}/payment-method/:guid",
+											"host": [
+												"{{endpoint}}"
+											],
+											"path": [
+												"{{master}}",
+												"payment-method",
+												":guid"
+											],
+											"variable": [
+												{
+													"key": "guid",
+													"value": ""
+												}
+											]
+										}
+									},
+									"response": []
+								},
+								{
+									"name": "Activer un moyen de paiement",
+									"request": {
+										"method": "PATCH",
+										"header": [
+											{
+												"key": "Content-Type",
+												"value": "application/json"
+											},
+											{
+												"key": "x-api-key",
+												"value": "{{x-api-token}}",
+												"type": "text"
+											},
+											{
+												"key": "x-api-signature",
+												"value": "{{x-api-signature}}",
+												"type": "text"
+											}
+										],
+										"body": {
+											"mode": "raw",
+											"raw": "{\n \n}\n",
+											"options": {
+												"raw": {
+													"language": "json"
+												}
+											}
+										},
+										"url": {
+											"raw": "{{endpoint}}/{{master}}/payment-method/:guid/activate",
+											"host": [
+												"{{endpoint}}"
+											],
+											"path": [
+												"{{master}}",
+												"payment-method",
+												":guid",
+												"activate"
+											],
+											"variable": [
+												{
+													"key": "guid",
+													"value": ""
+												}
+											]
+										}
+									},
+									"response": []
+								},
+								{
+									"name": "Désactiver un moyen de paiement",
+									"request": {
+										"method": "PATCH",
+										"header": [
+											{
+												"key": "Content-Type",
+												"value": "application/json"
+											},
+											{
+												"key": "x-api-key",
+												"value": "{{x-api-token}}",
+												"type": "text"
+											},
+											{
+												"key": "x-api-signature",
+												"value": "{{x-api-signature}}",
+												"type": "text"
+											}
+										],
+										"body": {
+											"mode": "raw",
+											"raw": "{\n \n}\n",
+											"options": {
+												"raw": {
+													"language": "json"
+												}
+											}
+										},
+										"url": {
+											"raw": "{{endpoint}}/{{master}}/payment-method/:guid/deactivate",
+											"host": [
+												"{{endpoint}}"
+											],
+											"path": [
+												"{{master}}",
+												"payment-method",
+												":guid",
+												"deactivate"
+											],
+											"variable": [
+												{
+													"key": "guid",
+													"value": ""
+												}
+											]
+										}
+									},
+									"response": []
+								}
+							]
+						},
+						{
+							"name": "🗑️ CRUD - DELETE",
+							"item": [
+								{
+									"name": "Supprimer un moyen de paiement par GUID",
+									"request": {
+										"method": "DELETE",
+										"header": [
+											{
+												"key": "x-api-key",
+												"value": "{{x-api-token}}",
+												"type": "text"
+											},
+											{
+												"key": "x-api-signature",
+												"value": "{{x-api-signature}}",
+												"type": "text"
+											},
+											{
+												"key": "x-api-user",
+												"value": "{{x-api-user}}",
+												"type": "text"
+											}
+										],
+										"url": {
+											"raw": "{{endpoint}}/{{master}}payment-method/100001",
+											"host": [
+												"{{endpoint}}"
+											],
+											"path": [
+												"{{master}}payment-method",
+												"100001"
+											]
+										}
+									},
+									"response": []
+								}
+							]
+						}
+					]
+				},
+				{
+					"name": "Historique des Paiements",
+					"item": [
+						{
+							"name": "➕ CRUD - CREATE",
+							"item": [
+								{
+									"name": "Créer une nouvelle transaction de paiement",
+									"event": [
+										{
+											"listen": "test",
+											"script": {
+												"exec": [
+													"pm.test('Status is 201', function () {",
+													"    pm.response.to.have.status(201);",
+													"});",
+													"",
+													"pm.test('Country created successfully', function () {",
+													"    const jsonData = pm.response.json();",
+													"    pm.expect(jsonData.response).to.have.property('guid');",
+													"    pm.expect(jsonData.response).to.have.property('iso');",
+													"    pm.expect(jsonData.response.iso).to.eql('TE');",
+													"});",
+													"",
+													"// Sauvegarder le GUID pour les autres tests",
+													"const jsonData = pm.response.json();",
+													"if (jsonData.response && jsonData.response.guid) {",
+													"    pm.environment.set('created_country_guid', jsonData.response.guid);",
+													"}"
+												],
+												"type": "text/javascript",
+												"packages": {}
+											}
+										}
+									],
+									"request": {
+										"method": "POST",
+										"header": [
+											{
+												"key": "Content-Type",
+												"value": "application/json"
+											},
+											{
+												"key": "x-api-key",
+												"value": "{{x-api-token}}",
+												"type": "text"
+											},
+											{
+												"key": "x-api-signature",
+												"value": "{{x-api-signature}}",
+												"type": "text"
+											}
+										],
+										"body": {
+											"mode": "raw",
+											"raw": "{\n    \"global_license\": 100001,\n    \"employee\": \"129920799202\",\n    \"employee_code\":\"dswdggsddsagdfjksbgfdskjsdfjm\",\n    \"activation_date\": \"2025-09-10T00:00:00.000Z\",\n    \"contractual_status\": \"ACTIVE\"\n}"
+										},
+										"url": {
+											"raw": "{{endpoint}}/{{master}}/payment-transaction/",
+											"host": [
+												"{{endpoint}}"
+											],
+											"path": [
+												"{{master}}",
+												"payment-transaction",
+												""
+											]
+										}
+									},
+									"response": []
+								}
+							]
+						},
+						{
+							"name": "📝 CRUD - READ",
+							"item": [
+								{
+									"name": "Lister toutes les transactions de paiement (pour admin)",
+									"request": {
+										"method": "GET",
+										"header": [
+											{
+												"key": "Content-Type",
+												"value": "application/json"
+											},
+											{
+												"key": "x-api-key",
+												"value": "{{x-api-token}}",
+												"type": "text"
+											},
+											{
+												"key": "x-api-signature",
+												"value": "{{x-api-signature}}",
+												"type": "text"
+											}
+										],
+										"url": {
+											"raw": "{{endpoint}}/{{master}}/payment-transaction/list",
+											"host": [
+												"{{endpoint}}"
+											],
+											"path": [
+												"{{master}}",
+												"payment-transaction",
+												"list"
+											]
+										}
+									},
+									"response": []
+								},
+								{
+									"name": "Révision Actuelle",
+									"event": [
+										{
+											"listen": "test",
+											"script": {
+												"exec": [
+													"pm.test('Status is 200', function () {",
+													"    pm.response.to.have.status(200);",
+													"});",
+													"",
+													"pm.test('Response has revision and timestamp', function () {",
+													"    const jsonData = pm.response.json();",
+													"    pm.expect(jsonData.response).to.have.property('revision');",
+													"    pm.expect(jsonData.response).to.have.property('checked_at');",
+													"});"
+												],
+												"type": "text/javascript",
+												"packages": {}
+											}
+										}
+									],
+									"request": {
+										"method": "GET",
+										"header": [
+											{
+												"key": "Content-Type",
+												"value": "application/json"
+											},
+											{
+												"key": "x-api-key",
+												"value": "{{x-api-token}}",
+												"type": "text"
+											},
+											{
+												"key": "x-api-signature",
+												"value": "{{x-api-signature}}",
+												"type": "text"
+											}
+										],
+										"url": {
+											"raw": "{{endpoint}}/{{master}}/payment-transaction/revision",
+											"host": [
+												"{{endpoint}}"
+											],
+											"path": [
+												"{{master}}",
+												"payment-transaction",
+												"revision"
+											]
+										}
+									},
+									"response": []
+								}
+							]
+						},
+						{
+							"name": "✏️ CRUD - UPDATE",
+							"item": [
+								{
+									"name": "Modifier une transaction de paiement par GUID",
+									"request": {
+										"method": "PUT",
+										"header": [
+											{
+												"key": "Content-Type",
+												"value": "application/json"
+											},
+											{
+												"key": "x-api-key",
+												"value": "{{x-api-token}}",
+												"type": "text"
+											},
+											{
+												"key": "x-api-signature",
+												"value": "{{x-api-signature}}",
+												"type": "text"
+											}
+										],
+										"body": {
+											"mode": "raw",
+											"raw": "{\n \n}\n",
+											"options": {
+												"raw": {
+													"language": "json"
+												}
+											}
+										},
+										"url": {
+											"raw": "{{endpoint}}/{{master}}/payment-transaction/:guid",
+											"host": [
+												"{{endpoint}}"
+											],
+											"path": [
+												"{{master}}",
+												"payment-transaction",
+												":guid"
+											],
+											"variable": [
+												{
+													"key": "guid",
+													"value": ""
+												}
+											]
+										}
+									},
+									"response": []
+								}
+							]
+						},
+						{
+							"name": "🗑️ CRUD - DELETE",
+							"item": [
+								{
+									"name": "Supprimer une transaction de paiement par GUID",
+									"request": {
+										"method": "DELETE",
+										"header": [
+											{
+												"key": "x-api-key",
+												"value": "{{x-api-token}}",
+												"type": "text"
+											},
+											{
+												"key": "x-api-signature",
+												"value": "{{x-api-signature}}",
+												"type": "text"
+											},
+											{
+												"key": "x-api-user",
+												"value": "{{x-api-user}}",
+												"type": "text"
+											}
+										],
+										"url": {
+											"raw": "{{endpoint}}/{{master}}/payment-transaction/100001",
+											"host": [
+												"{{endpoint}}"
+											],
+											"path": [
+												"{{master}}",
+												"payment-transaction",
+												"100001"
+											]
+										}
+									},
+									"response": []
+								}
+							]
+						}
+					]
+				},
+				{
+					"name": "Avenants Groupés Multi-Devises",
+					"item": [
+						{
+							"name": "➕ CRUD - CREATE",
+							"item": [
+								{
+									"name": "Créer un nouvel avenant de licence",
+									"event": [
+										{
+											"listen": "test",
+											"script": {
+												"exec": [
+													"pm.test('Status is 201', function () {",
+													"    pm.response.to.have.status(201);",
+													"});",
+													"",
+													"pm.test('Country created successfully', function () {",
+													"    const jsonData = pm.response.json();",
+													"    pm.expect(jsonData.response).to.have.property('guid');",
+													"    pm.expect(jsonData.response).to.have.property('iso');",
+													"    pm.expect(jsonData.response.iso).to.eql('TE');",
+													"});",
+													"",
+													"// Sauvegarder le GUID pour les autres tests",
+													"const jsonData = pm.response.json();",
+													"if (jsonData.response && jsonData.response.guid) {",
+													"    pm.environment.set('created_country_guid', jsonData.response.guid);",
+													"}"
+												],
+												"type": "text/javascript",
+												"packages": {}
+											}
+										}
+									],
+									"request": {
+										"method": "POST",
+										"header": [
+											{
+												"key": "Content-Type",
+												"value": "application/json"
+											},
+											{
+												"key": "x-api-key",
+												"value": "{{x-api-token}}",
+												"type": "text"
+											},
+											{
+												"key": "x-api-signature",
+												"value": "{{x-api-signature}}",
+												"type": "text"
+											}
+										],
+										"body": {
+											"mode": "raw",
+											"raw": "{\n    \"global_license\": 100001,\n    \"employee\": \"129920799202\",\n    \"employee_code\":\"dswdggsddsagdfjksbgfdskjsdfjm\",\n    \"activation_date\": \"2025-09-10T00:00:00.000Z\",\n    \"contractual_status\": \"ACTIVE\"\n}"
+										},
+										"url": {
+											"raw": "{{endpoint}}/{{master}}/license-adjustment/",
+											"host": [
+												"{{endpoint}}"
+											],
+											"path": [
+												"{{master}}",
+												"license-adjustment",
+												""
+											]
+										}
+									},
+									"response": []
+								}
+							]
+						},
+						{
+							"name": "📝 CRUD - READ",
+							"item": [
+								{
+									"name": "Lister tous les avenants de licence (pour admin)",
+									"request": {
+										"method": "GET",
+										"header": [
+											{
+												"key": "Content-Type",
+												"value": "application/json"
+											},
+											{
+												"key": "x-api-key",
+												"value": "{{x-api-token}}",
+												"type": "text"
+											},
+											{
+												"key": "x-api-signature",
+												"value": "{{x-api-signature}}",
+												"type": "text"
+											}
+										],
+										"url": {
+											"raw": "{{endpoint}}/{{master}}/license-adjustment/list",
+											"host": [
+												"{{endpoint}}"
+											],
+											"path": [
+												"{{master}}",
+												"license-adjustment",
+												"list"
+											]
+										}
+									},
+									"response": []
+								},
+								{
+									"name": "Révision Actuelle",
+									"event": [
+										{
+											"listen": "test",
+											"script": {
+												"exec": [
+													"pm.test('Status is 200', function () {",
+													"    pm.response.to.have.status(200);",
+													"});",
+													"",
+													"pm.test('Response has revision and timestamp', function () {",
+													"    const jsonData = pm.response.json();",
+													"    pm.expect(jsonData.response).to.have.property('revision');",
+													"    pm.expect(jsonData.response).to.have.property('checked_at');",
+													"});"
+												],
+												"type": "text/javascript",
+												"packages": {}
+											}
+										}
+									],
+									"request": {
+										"method": "GET",
+										"header": [
+											{
+												"key": "Content-Type",
+												"value": "application/json"
+											},
+											{
+												"key": "x-api-key",
+												"value": "{{x-api-token}}",
+												"type": "text"
+											},
+											{
+												"key": "x-api-signature",
+												"value": "{{x-api-signature}}",
+												"type": "text"
+											}
+										],
+										"url": {
+											"raw": "{{endpoint}}/{{master}}/license-adjustment/revision",
+											"host": [
+												"{{endpoint}}"
+											],
+											"path": [
+												"{{master}}",
+												"license-adjustment",
+												"revision"
+											]
+										}
+									},
+									"response": []
+								}
+							]
+						},
+						{
+							"name": "✏️ CRUD - UPDATE",
+							"item": [
+								{
+									"name": "Modifier un avenant de licence par GUID",
+									"request": {
+										"method": "PUT",
+										"header": [
+											{
+												"key": "Content-Type",
+												"value": "application/json"
+											},
+											{
+												"key": "x-api-key",
+												"value": "{{x-api-token}}",
+												"type": "text"
+											},
+											{
+												"key": "x-api-signature",
+												"value": "{{x-api-signature}}",
+												"type": "text"
+											}
+										],
+										"body": {
+											"mode": "raw",
+											"raw": "{\n \n}\n",
+											"options": {
+												"raw": {
+													"language": "json"
+												}
+											}
+										},
+										"url": {
+											"raw": "{{endpoint}}/{{master}}/license-adjustment/:guid",
+											"host": [
+												"{{endpoint}}"
+											],
+											"path": [
+												"{{master}}",
+												"license-adjustment",
+												":guid"
+											],
+											"variable": [
+												{
+													"key": "guid",
+													"value": ""
+												}
+											]
+										}
+									},
+									"response": []
+								}
+							]
+						},
+						{
+							"name": "🗑️ CRUD - DELETE",
+							"item": [
+								{
+									"name": "Supprimer un avenant de licence par GUID",
+									"request": {
+										"method": "DELETE",
+										"header": [
+											{
+												"key": "x-api-key",
+												"value": "{{x-api-token}}",
+												"type": "text"
+											},
+											{
+												"key": "x-api-signature",
+												"value": "{{x-api-signature}}",
+												"type": "text"
+											},
+											{
+												"key": "x-api-user",
+												"value": "{{x-api-user}}",
+												"type": "text"
+											}
+										],
+										"url": {
+											"raw": "{{endpoint}}/{{master}}/license-adjustment/100001",
+											"host": [
+												"{{endpoint}}"
+											],
+											"path": [
+												"{{master}}",
+												"license-adjustment",
+												"100001"
+											]
+										}
+									},
+									"response": []
+								}
+							]
+						}
+					]
+				},
+				{
+					"name": "FRAUD_DETECTION_LOG (Détection de Fraude)",
+					"item": [
+						{
+							"name": "📝 CRUD - READ",
+							"item": [
+								{
+									"name": "List fraud detection logs with filters",
+									"request": {
+										"method": "GET",
+										"header": [
+											{
+												"key": "Content-Type",
+												"value": "application/json"
+											},
+											{
+												"key": "x-api-key",
+												"value": "{{x-api-token}}",
+												"type": "text"
+											},
+											{
+												"key": "x-api-signature",
+												"value": "{{x-api-signature}}",
+												"type": "text"
+											}
+										],
+										"url": {
+											"raw": "{{endpoint}}/{{master}}/fraud-detection-log/list",
+											"host": [
+												"{{endpoint}}"
+											],
+											"path": [
+												"{{master}}",
+												"fraud-detection-log",
+												"list"
+											]
+										}
+									},
+									"response": []
+								},
+								{
+									"name": "Lister les cycles par licence globale",
+									"request": {
+										"method": "GET",
+										"header": [
+											{
+												"key": "Content-Type",
+												"value": "application/json"
+											},
+											{
+												"key": "x-api-key",
+												"value": "{{x-api-token}}",
+												"type": "text"
+											},
+											{
+												"key": "x-api-signature",
+												"value": "{{x-api-signature}}",
+												"type": "text"
+											}
+										],
+										"url": {
+											"raw": "{{endpoint}}/{{master}}/billing-cycle/global-license/:global_license",
+											"host": [
+												"{{endpoint}}"
+											],
+											"path": [
+												"{{master}}",
+												"billing-cycle",
+												"global-license",
+												":global_license"
+											],
+											"variable": [
+												{
+													"key": "global_license",
+													"value": ""
+												}
+											]
+										}
+									},
+									"response": []
+								},
+								{
+									"name": "Lister les cycles par statut",
+									"request": {
+										"method": "GET",
+										"header": [
+											{
+												"key": "Content-Type",
+												"value": "application/json"
+											},
+											{
+												"key": "x-api-key",
+												"value": "{{x-api-token}}",
+												"type": "text"
+											},
+											{
+												"key": "x-api-signature",
+												"value": "{{x-api-signature}}",
+												"type": "text"
+											}
+										],
+										"url": {
+											"raw": "{{endpoint}}/{{master}}/billing-cycle/status/:status'",
+											"host": [
+												"{{endpoint}}"
+											],
+											"path": [
+												"{{master}}",
+												"billing-cycle",
+												"status",
+												":status'"
+											],
+											"variable": [
+												{
+													"key": "status'",
+													"value": ""
+												}
+											]
+										}
+									},
+									"response": []
+								},
+								{
+									"name": "Lister les cycles par devise",
+									"request": {
+										"method": "GET",
+										"header": [
+											{
+												"key": "Content-Type",
+												"value": "application/json"
+											},
+											{
+												"key": "x-api-key",
+												"value": "{{x-api-token}}",
+												"type": "text"
+											},
+											{
+												"key": "x-api-signature",
+												"value": "{{x-api-signature}}",
+												"type": "text"
+											}
+										],
+										"url": {
+											"raw": "{{endpoint}}/{{master}}/billing-cycle/currency/:currency_code",
+											"host": [
+												"{{endpoint}}"
+											],
+											"path": [
+												"{{master}}",
+												"billing-cycle",
+												"currency",
+												":currency_code"
+											],
+											"variable": [
+												{
+													"key": "currency_code",
+													"value": ""
+												}
+											]
+										}
+									},
+									"response": []
+								},
+								{
+									"name": "Lister les cycles en retard",
+									"request": {
+										"method": "GET",
+										"header": [
+											{
+												"key": "Content-Type",
+												"value": "application/json"
+											},
+											{
+												"key": "x-api-key",
+												"value": "{{x-api-token}}",
+												"type": "text"
+											},
+											{
+												"key": "x-api-signature",
+												"value": "{{x-api-signature}}",
+												"type": "text"
+											}
+										],
+										"url": {
+											"raw": "{{endpoint}}/{{master}}/billing-cycle/overdue",
+											"host": [
+												"{{endpoint}}"
+											],
+											"path": [
+												"{{master}}",
+												"billing-cycle",
+												"overdue"
+											]
+										}
+									},
+									"response": []
+								},
+								{
+									"name": "Lister les cycles avec échéance proche",
+									"request": {
+										"method": "GET",
+										"header": [
+											{
+												"key": "Content-Type",
+												"value": "application/json"
+											},
+											{
+												"key": "x-api-key",
+												"value": "{{x-api-token}}",
+												"type": "text"
+											},
+											{
+												"key": "x-api-signature",
+												"value": "{{x-api-signature}}",
+												"type": "text"
+											}
+										],
+										"url": {
+											"raw": "{{endpoint}}/{{master}}/billing-cycle/due-soon/:days",
+											"host": [
+												"{{endpoint}}"
+											],
+											"path": [
+												"{{master}}",
+												"billing-cycle",
+												"due-soon",
+												":days"
+											],
+											"variable": [
+												{
+													"key": "days",
+													"value": ""
+												}
+											]
+										}
+									},
+									"response": []
+								},
+								{
+									"name": "Lister les cycles en attente de facture",
+									"request": {
+										"method": "GET",
+										"header": [
+											{
+												"key": "Content-Type",
+												"value": "application/json"
+											},
+											{
+												"key": "x-api-key",
+												"value": "{{x-api-token}}",
+												"type": "text"
+											},
+											{
+												"key": "x-api-signature",
+												"value": "{{x-api-signature}}",
+												"type": "text"
+											}
+										],
+										"url": {
+											"raw": "{{endpoint}}/{{master}}/billing-cycle/pending-invoice",
+											"host": [
+												"{{endpoint}}"
+											],
+											"path": [
+												"{{master}}",
+												"billing-cycle",
+												"pending-invoice"
+											]
+										}
+									},
+									"response": []
+								},
+								{
+									"name": "Lister les cycles terminés",
+									"request": {
+										"method": "GET",
+										"header": [
+											{
+												"key": "Content-Type",
+												"value": "application/json"
+											},
+											{
+												"key": "x-api-key",
+												"value": "{{x-api-token}}",
+												"type": "text"
+											},
+											{
+												"key": "x-api-signature",
+												"value": "{{x-api-signature}}",
+												"type": "text"
+											}
+										],
+										"url": {
+											"raw": "{{endpoint}}/{{master}}/billing-cycle/completed",
+											"host": [
+												"{{endpoint}}"
+											],
+											"path": [
+												"{{master}}",
+												"billing-cycle",
+												"completed"
+											]
+										}
+									},
+									"response": []
+								},
+								{
+									"name": "Lister les cycles par période",
+									"request": {
+										"method": "GET",
+										"header": [
+											{
+												"key": "Content-Type",
+												"value": "application/json"
+											},
+											{
+												"key": "x-api-key",
+												"value": "{{x-api-token}}",
+												"type": "text"
+											},
+											{
+												"key": "x-api-signature",
+												"value": "{{x-api-signature}}",
+												"type": "text"
+											}
+										],
+										"url": {
+											"raw": "{{endpoint}}/{{master}}/billing-cycle/period",
+											"host": [
+												"{{endpoint}}"
+											],
+											"path": [
+												"{{master}}",
+												"billing-cycle",
+												"period"
+											]
+										}
+									},
+									"response": []
+								},
+								{
+									"name": "Révision Actuelle",
+									"event": [
+										{
+											"listen": "test",
+											"script": {
+												"exec": [
+													"pm.test('Status is 200', function () {",
+													"    pm.response.to.have.status(200);",
+													"});",
+													"",
+													"pm.test('Response has revision and timestamp', function () {",
+													"    const jsonData = pm.response.json();",
+													"    pm.expect(jsonData.response).to.have.property('revision');",
+													"    pm.expect(jsonData.response).to.have.property('checked_at');",
+													"});"
+												],
+												"type": "text/javascript",
+												"packages": {}
+											}
+										}
+									],
+									"request": {
+										"method": "GET",
+										"header": [
+											{
+												"key": "Content-Type",
+												"value": "application/json"
+											},
+											{
+												"key": "x-api-key",
+												"value": "{{x-api-token}}",
+												"type": "text"
+											},
+											{
+												"key": "x-api-signature",
+												"value": "{{x-api-signature}}",
+												"type": "text"
+											}
+										],
+										"url": {
+											"raw": "{{endpoint}}/{{master}}/fraud-detection-log/revision",
+											"host": [
+												"{{endpoint}}"
+											],
+											"path": [
+												"{{master}}",
+												"fraud-detection-log",
+												"revision"
+											]
+										}
+									},
+									"response": []
+								}
+							]
+						},
+						{
+							"name": "✏️ CRUD - UPDATE",
+							"item": [
+								{
+									"name": "Update fraud detection log (administrative fields only)",
+									"request": {
+										"method": "PUT",
+										"header": [
+											{
+												"key": "Content-Type",
+												"value": "application/json"
+											},
+											{
+												"key": "x-api-key",
+												"value": "{{x-api-token}}",
+												"type": "text"
+											},
+											{
+												"key": "x-api-signature",
+												"value": "{{x-api-signature}}",
+												"type": "text"
+											}
+										],
+										"body": {
+											"mode": "raw",
+											"raw": "{\n \"action_taken\":\"Removed this\" ,\n \"notes\": \"fraud detection log entry\"\n//  \"resolved_at\": ,\n//  \"resolved_by\": \n}\n",
+											"options": {
+												"raw": {
+													"language": "json"
+												}
+											}
+										},
+										"url": {
+											"raw": "{{endpoint}}/{{master}}/fraud-detection-log/1",
+											"host": [
+												"{{endpoint}}"
+											],
+											"path": [
+												"{{master}}",
+												"fraud-detection-log",
+												"1"
+											]
+										}
+									},
+									"response": []
+								},
+								{
+									"name": "Marquer comme facturé",
+									"request": {
+										"method": "PATCH",
+										"header": [
+											{
+												"key": "Content-Type",
+												"value": "application/json"
+											},
+											{
+												"key": "x-api-key",
+												"value": "{{x-api-token}}",
+												"type": "text"
+											},
+											{
+												"key": "x-api-signature",
+												"value": "{{x-api-signature}}",
+												"type": "text"
+											}
+										],
+										"body": {
+											"mode": "raw",
+											"raw": "{\n \n}\n",
+											"options": {
+												"raw": {
+													"language": "json"
+												}
+											}
+										},
+										"url": {
+											"raw": "{{endpoint}}/{{master}}/billing-cycle/:guid/mark-invoiced",
+											"host": [
+												"{{endpoint}}"
+											],
+											"path": [
+												"{{master}}",
+												"billing-cycle",
+												":guid",
+												"mark-invoiced"
+											],
+											"variable": [
+												{
+													"key": "guid",
+													"value": ""
+												}
+											]
+										}
+									},
+									"response": []
+								},
+								{
+									"name": "Marquer comme payé",
+									"request": {
+										"method": "PATCH",
+										"header": [
+											{
+												"key": "Content-Type",
+												"value": "application/json"
+											},
+											{
+												"key": "x-api-key",
+												"value": "{{x-api-token}}",
+												"type": "text"
+											},
+											{
+												"key": "x-api-signature",
+												"value": "{{x-api-signature}}",
+												"type": "text"
+											}
+										],
+										"body": {
+											"mode": "raw",
+											"raw": "{\n \n}\n",
+											"options": {
+												"raw": {
+													"language": "json"
+												}
+											}
+										},
+										"url": {
+											"raw": "{{endpoint}}/{{master}}/billing-cycle/:guid/mark-paid",
+											"host": [
+												"{{endpoint}}"
+											],
+											"path": [
+												"{{master}}",
+												"billing-cycle",
+												":guid",
+												"mark-paid"
+											],
+											"variable": [
+												{
+													"key": "guid",
+													"value": ""
+												}
+											]
+										}
+									},
+									"response": []
+								},
+								{
+									"name": "Marquer comme en retard",
+									"request": {
+										"method": "PATCH",
+										"header": [
+											{
+												"key": "Content-Type",
+												"value": "application/json"
+											},
+											{
+												"key": "x-api-key",
+												"value": "{{x-api-token}}",
+												"type": "text"
+											},
+											{
+												"key": "x-api-signature",
+												"value": "{{x-api-signature}}",
+												"type": "text"
+											}
+										],
+										"body": {
+											"mode": "raw",
+											"raw": "{\n \n}\n",
+											"options": {
+												"raw": {
+													"language": "json"
+												}
+											}
+										},
+										"url": {
+											"raw": "{{endpoint}}/{{master}}/billing-cycle/:guid/mark-overdue",
+											"host": [
+												"{{endpoint}}"
+											],
+											"path": [
+												"{{master}}",
+												"billing-cycle",
+												":guid",
+												"mark-overdue"
+											],
+											"variable": [
+												{
+													"key": "guid",
+													"value": ""
+												}
+											]
+										}
+									},
+									"response": []
+								},
+								{
+									"name": "Annuler le cycle",
+									"request": {
+										"method": "PATCH",
+										"header": [
+											{
+												"key": "Content-Type",
+												"value": "application/json"
+											},
+											{
+												"key": "x-api-key",
+												"value": "{{x-api-token}}",
+												"type": "text"
+											},
+											{
+												"key": "x-api-signature",
+												"value": "{{x-api-signature}}",
+												"type": "text"
+											}
+										],
+										"body": {
+											"mode": "raw",
+											"raw": "{\n \n}\n",
+											"options": {
+												"raw": {
+													"language": "json"
+												}
+											}
+										},
+										"url": {
+											"raw": "{{endpoint}}/{{master}}/billing-cycle/:guid/cancel",
+											"host": [
+												"{{endpoint}}"
+											],
+											"path": [
+												"{{master}}",
+												"billing-cycle",
+												":guid",
+												"cancel"
+											],
+											"variable": [
+												{
+													"key": "guid",
+													"value": ""
+												}
+											]
+										}
+									},
+									"response": []
+								}
+							]
+						},
+						{
+							"name": "🗑️ CRUD - DELETE",
+							"item": [
+								{
+									"name": "Delete fraud detection log (admin only)",
+									"request": {
+										"method": "DELETE",
+										"header": [
+											{
+												"key": "x-api-key",
+												"value": "{{x-api-token}}",
+												"type": "text"
+											},
+											{
+												"key": "x-api-signature",
+												"value": "{{x-api-signature}}",
+												"type": "text"
+											},
+											{
+												"key": "x-api-user",
+												"value": "{{x-api-user}}",
+												"type": "text"
+											}
+										],
+										"url": {
+											"raw": "{{endpoint}}/{{master}}/fraud-detection-log/1",
+											"host": [
+												"{{endpoint}}"
+											],
+											"path": [
+												"{{master}}",
+												"fraud-detection-log",
+												"1"
+											]
+										}
+									},
+									"response": []
+								}
+							]
+						}
+					]
+				},
+				{
+					"name": "ACTIVITY_MONITORING (Suivi d’Activité)",
+					"item": [
+						{
+							"name": "📝 CRUD - READ",
+							"item": [
+								{
+									"name": "List with filters and pagination",
+									"request": {
+										"method": "GET",
+										"header": [
+											{
+												"key": "Content-Type",
+												"value": "application/json"
+											},
+											{
+												"key": "x-api-key",
+												"value": "{{x-api-token}}",
+												"type": "text"
+											},
+											{
+												"key": "x-api-signature",
+												"value": "{{x-api-signature}}",
+												"type": "text"
+											}
+										],
+										"url": {
+											"raw": "{{endpoint}}/{{master}}/activity-monitoring/list",
+											"host": [
+												"{{endpoint}}"
+											],
+											"path": [
+												"{{master}}",
+												"activity-monitoring",
+												"list"
+											]
+										}
+									},
+									"response": []
+								},
+								{
+									"name": "Lister les cycles par licence globale",
+									"request": {
+										"method": "GET",
+										"header": [
+											{
+												"key": "Content-Type",
+												"value": "application/json"
+											},
+											{
+												"key": "x-api-key",
+												"value": "{{x-api-token}}",
+												"type": "text"
+											},
+											{
+												"key": "x-api-signature",
+												"value": "{{x-api-signature}}",
+												"type": "text"
+											}
+										],
+										"url": {
+											"raw": "{{endpoint}}/{{master}}/billing-cycle/global-license/:global_license",
+											"host": [
+												"{{endpoint}}"
+											],
+											"path": [
+												"{{master}}",
+												"billing-cycle",
+												"global-license",
+												":global_license"
+											],
+											"variable": [
+												{
+													"key": "global_license",
+													"value": ""
+												}
+											]
+										}
+									},
+									"response": []
+								},
+								{
+									"name": "Lister les cycles par statut",
+									"request": {
+										"method": "GET",
+										"header": [
+											{
+												"key": "Content-Type",
+												"value": "application/json"
+											},
+											{
+												"key": "x-api-key",
+												"value": "{{x-api-token}}",
+												"type": "text"
+											},
+											{
+												"key": "x-api-signature",
+												"value": "{{x-api-signature}}",
+												"type": "text"
+											}
+										],
+										"url": {
+											"raw": "{{endpoint}}/{{master}}/billing-cycle/status/:status'",
+											"host": [
+												"{{endpoint}}"
+											],
+											"path": [
+												"{{master}}",
+												"billing-cycle",
+												"status",
+												":status'"
+											],
+											"variable": [
+												{
+													"key": "status'",
+													"value": ""
+												}
+											]
+										}
+									},
+									"response": []
+								},
+								{
+									"name": "Lister les cycles par devise",
+									"request": {
+										"method": "GET",
+										"header": [
+											{
+												"key": "Content-Type",
+												"value": "application/json"
+											},
+											{
+												"key": "x-api-key",
+												"value": "{{x-api-token}}",
+												"type": "text"
+											},
+											{
+												"key": "x-api-signature",
+												"value": "{{x-api-signature}}",
+												"type": "text"
+											}
+										],
+										"url": {
+											"raw": "{{endpoint}}/{{master}}/billing-cycle/currency/:currency_code",
+											"host": [
+												"{{endpoint}}"
+											],
+											"path": [
+												"{{master}}",
+												"billing-cycle",
+												"currency",
+												":currency_code"
+											],
+											"variable": [
+												{
+													"key": "currency_code",
+													"value": ""
+												}
+											]
+										}
+									},
+									"response": []
+								},
+								{
+									"name": "Lister les cycles en retard",
+									"request": {
+										"method": "GET",
+										"header": [
+											{
+												"key": "Content-Type",
+												"value": "application/json"
+											},
+											{
+												"key": "x-api-key",
+												"value": "{{x-api-token}}",
+												"type": "text"
+											},
+											{
+												"key": "x-api-signature",
+												"value": "{{x-api-signature}}",
+												"type": "text"
+											}
+										],
+										"url": {
+											"raw": "{{endpoint}}/{{master}}/billing-cycle/overdue",
+											"host": [
+												"{{endpoint}}"
+											],
+											"path": [
+												"{{master}}",
+												"billing-cycle",
+												"overdue"
+											]
+										}
+									},
+									"response": []
+								},
+								{
+									"name": "Lister les cycles avec échéance proche",
+									"request": {
+										"method": "GET",
+										"header": [
+											{
+												"key": "Content-Type",
+												"value": "application/json"
+											},
+											{
+												"key": "x-api-key",
+												"value": "{{x-api-token}}",
+												"type": "text"
+											},
+											{
+												"key": "x-api-signature",
+												"value": "{{x-api-signature}}",
+												"type": "text"
+											}
+										],
+										"url": {
+											"raw": "{{endpoint}}/{{master}}/billing-cycle/due-soon/:days",
+											"host": [
+												"{{endpoint}}"
+											],
+											"path": [
+												"{{master}}",
+												"billing-cycle",
+												"due-soon",
+												":days"
+											],
+											"variable": [
+												{
+													"key": "days",
+													"value": ""
+												}
+											]
+										}
+									},
+									"response": []
+								},
+								{
+									"name": "Lister les cycles en attente de facture",
+									"request": {
+										"method": "GET",
+										"header": [
+											{
+												"key": "Content-Type",
+												"value": "application/json"
+											},
+											{
+												"key": "x-api-key",
+												"value": "{{x-api-token}}",
+												"type": "text"
+											},
+											{
+												"key": "x-api-signature",
+												"value": "{{x-api-signature}}",
+												"type": "text"
+											}
+										],
+										"url": {
+											"raw": "{{endpoint}}/{{master}}/billing-cycle/pending-invoice",
+											"host": [
+												"{{endpoint}}"
+											],
+											"path": [
+												"{{master}}",
+												"billing-cycle",
+												"pending-invoice"
+											]
+										}
+									},
+									"response": []
+								},
+								{
+									"name": "Lister les cycles terminés",
+									"request": {
+										"method": "GET",
+										"header": [
+											{
+												"key": "Content-Type",
+												"value": "application/json"
+											},
+											{
+												"key": "x-api-key",
+												"value": "{{x-api-token}}",
+												"type": "text"
+											},
+											{
+												"key": "x-api-signature",
+												"value": "{{x-api-signature}}",
+												"type": "text"
+											}
+										],
+										"url": {
+											"raw": "{{endpoint}}/{{master}}/billing-cycle/completed",
+											"host": [
+												"{{endpoint}}"
+											],
+											"path": [
+												"{{master}}",
+												"billing-cycle",
+												"completed"
+											]
+										}
+									},
+									"response": []
+								},
+								{
+									"name": "Lister les cycles par période",
+									"request": {
+										"method": "GET",
+										"header": [
+											{
+												"key": "Content-Type",
+												"value": "application/json"
+											},
+											{
+												"key": "x-api-key",
+												"value": "{{x-api-token}}",
+												"type": "text"
+											},
+											{
+												"key": "x-api-signature",
+												"value": "{{x-api-signature}}",
+												"type": "text"
+											}
+										],
+										"url": {
+											"raw": "{{endpoint}}/{{master}}/billing-cycle/period",
+											"host": [
+												"{{endpoint}}"
+											],
+											"path": [
+												"{{master}}",
+												"billing-cycle",
+												"period"
+											]
+										}
+									},
+									"response": []
+								},
+								{
+									"name": "Révision Actuelle",
+									"event": [
+										{
+											"listen": "test",
+											"script": {
+												"exec": [
+													"pm.test('Status is 200', function () {",
+													"    pm.response.to.have.status(200);",
+													"});",
+													"",
+													"pm.test('Response has revision and timestamp', function () {",
+													"    const jsonData = pm.response.json();",
+													"    pm.expect(jsonData.response).to.have.property('revision');",
+													"    pm.expect(jsonData.response).to.have.property('checked_at');",
+													"});"
+												],
+												"type": "text/javascript",
+												"packages": {}
+											}
+										}
+									],
+									"request": {
+										"method": "GET",
+										"header": [
+											{
+												"key": "Content-Type",
+												"value": "application/json"
+											},
+											{
+												"key": "x-api-key",
+												"value": "{{x-api-token}}",
+												"type": "text"
+											},
+											{
+												"key": "x-api-signature",
+												"value": "{{x-api-signature}}",
+												"type": "text"
+											}
+										],
+										"url": {
+											"raw": "{{endpoint}}/{{master}}/activity-monitoring/revision",
+											"host": [
+												"{{endpoint}}"
+											],
+											"path": [
+												"{{master}}",
+												"activity-monitoring",
+												"revision"
+											]
+										}
+									},
+									"response": []
+								}
+							]
+						},
+						{
+							"name": "✏️ CRUD - UPDATE",
+							"item": [
+								{
+									"name": "Modifier un cycle de facturation par GUID",
+									"request": {
+										"method": "PUT",
+										"header": [
+											{
+												"key": "Content-Type",
+												"value": "application/json"
+											},
+											{
+												"key": "x-api-key",
+												"value": "{{x-api-token}}",
+												"type": "text"
+											},
+											{
+												"key": "x-api-signature",
+												"value": "{{x-api-signature}}",
+												"type": "text"
+											}
+										],
+										"body": {
+											"mode": "raw",
+											"raw": "{\n \n}\n",
+											"options": {
+												"raw": {
+													"language": "json"
+												}
+											}
+										},
+										"url": {
+											"raw": "{{endpoint}}/{{master}}/activity-monitoring/:guid",
+											"host": [
+												"{{endpoint}}"
+											],
+											"path": [
+												"{{master}}",
+												"activity-monitoring",
+												":guid"
+											],
+											"variable": [
+												{
+													"key": "guid",
+													"value": ""
+												}
+											]
+										}
+									},
+									"response": []
+								},
+								{
+									"name": "Marquer comme facturé",
+									"request": {
+										"method": "PATCH",
+										"header": [
+											{
+												"key": "Content-Type",
+												"value": "application/json"
+											},
+											{
+												"key": "x-api-key",
+												"value": "{{x-api-token}}",
+												"type": "text"
+											},
+											{
+												"key": "x-api-signature",
+												"value": "{{x-api-signature}}",
+												"type": "text"
+											}
+										],
+										"body": {
+											"mode": "raw",
+											"raw": "{\n \n}\n",
+											"options": {
+												"raw": {
+													"language": "json"
+												}
+											}
+										},
+										"url": {
+											"raw": "{{endpoint}}/{{master}}/billing-cycle/:guid/mark-invoiced",
+											"host": [
+												"{{endpoint}}"
+											],
+											"path": [
+												"{{master}}",
+												"billing-cycle",
+												":guid",
+												"mark-invoiced"
+											],
+											"variable": [
+												{
+													"key": "guid",
+													"value": ""
+												}
+											]
+										}
+									},
+									"response": []
+								},
+								{
+									"name": "Marquer comme payé",
+									"request": {
+										"method": "PATCH",
+										"header": [
+											{
+												"key": "Content-Type",
+												"value": "application/json"
+											},
+											{
+												"key": "x-api-key",
+												"value": "{{x-api-token}}",
+												"type": "text"
+											},
+											{
+												"key": "x-api-signature",
+												"value": "{{x-api-signature}}",
+												"type": "text"
+											}
+										],
+										"body": {
+											"mode": "raw",
+											"raw": "{\n \n}\n",
+											"options": {
+												"raw": {
+													"language": "json"
+												}
+											}
+										},
+										"url": {
+											"raw": "{{endpoint}}/{{master}}/billing-cycle/:guid/mark-paid",
+											"host": [
+												"{{endpoint}}"
+											],
+											"path": [
+												"{{master}}",
+												"billing-cycle",
+												":guid",
+												"mark-paid"
+											],
+											"variable": [
+												{
+													"key": "guid",
+													"value": ""
+												}
+											]
+										}
+									},
+									"response": []
+								},
+								{
+									"name": "Marquer comme en retard",
+									"request": {
+										"method": "PATCH",
+										"header": [
+											{
+												"key": "Content-Type",
+												"value": "application/json"
+											},
+											{
+												"key": "x-api-key",
+												"value": "{{x-api-token}}",
+												"type": "text"
+											},
+											{
+												"key": "x-api-signature",
+												"value": "{{x-api-signature}}",
+												"type": "text"
+											}
+										],
+										"body": {
+											"mode": "raw",
+											"raw": "{\n \n}\n",
+											"options": {
+												"raw": {
+													"language": "json"
+												}
+											}
+										},
+										"url": {
+											"raw": "{{endpoint}}/{{master}}/billing-cycle/:guid/mark-overdue",
+											"host": [
+												"{{endpoint}}"
+											],
+											"path": [
+												"{{master}}",
+												"billing-cycle",
+												":guid",
+												"mark-overdue"
+											],
+											"variable": [
+												{
+													"key": "guid",
+													"value": ""
+												}
+											]
+										}
+									},
+									"response": []
+								},
+								{
+									"name": "Annuler le cycle",
+									"request": {
+										"method": "PATCH",
+										"header": [
+											{
+												"key": "Content-Type",
+												"value": "application/json"
+											},
+											{
+												"key": "x-api-key",
+												"value": "{{x-api-token}}",
+												"type": "text"
+											},
+											{
+												"key": "x-api-signature",
+												"value": "{{x-api-signature}}",
+												"type": "text"
+											}
+										],
+										"body": {
+											"mode": "raw",
+											"raw": "{\n \n}\n",
+											"options": {
+												"raw": {
+													"language": "json"
+												}
+											}
+										},
+										"url": {
+											"raw": "{{endpoint}}/{{master}}/billing-cycle/:guid/cancel",
+											"host": [
+												"{{endpoint}}"
+											],
+											"path": [
+												"{{master}}",
+												"billing-cycle",
+												":guid",
+												"cancel"
+											],
+											"variable": [
+												{
+													"key": "guid",
+													"value": ""
+												}
+											]
+										}
+									},
+									"response": []
+								}
+							]
+						},
+						{
+							"name": "🗑️ CRUD - DELETE",
+							"item": [
+								{
+									"name": "Supprimer un cycle de facturation par GUID",
+									"request": {
+										"method": "DELETE",
+										"header": [
+											{
+												"key": "x-api-key",
+												"value": "{{x-api-token}}",
+												"type": "text"
+											},
+											{
+												"key": "x-api-signature",
+												"value": "{{x-api-signature}}",
+												"type": "text"
+											},
+											{
+												"key": "x-api-user",
+												"value": "{{x-api-user}}",
+												"type": "text"
+											}
+										],
+										"url": {
+											"raw": "{{endpoint}}/{{master}}/activity-monitoring/1",
+											"host": [
+												"{{endpoint}}"
+											],
+											"path": [
+												"{{master}}",
+												"activity-monitoring",
+												"1"
 											]
 										}
 									},

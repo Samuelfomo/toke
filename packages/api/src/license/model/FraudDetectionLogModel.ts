@@ -1,9 +1,9 @@
 import { Op } from 'sequelize';
+import { FraudDetection, RiskLevel } from '@toke/shared';
 
-// import { FraudDetection, RiskLevel } from '@toke/shared';
 import BaseModel from '../database/db.base.js';
 import { tableName } from '../../utils/response.model.js';
-import { FraudDetection, FraudDetectionLogDbStructure, RiskLevel } from '../database/data/fraud.detection.log.db.js';
+import { FraudDetectionLogDbStructure } from '../database/data/fraud.detection.log.db.js';
 
 export default class FraudDetectionLogModel extends BaseModel {
   public readonly db = {
@@ -444,16 +444,15 @@ export default class FraudDetectionLogModel extends BaseModel {
    * Valide les données avant mise à jour
    */
   private async validate(): Promise<void> {
-    try {
       // Nettoyer les données
-      FraudDetectionLogDbStructure.validation.cleanData(this);
+      // FraudDetectionLogDbStructure.validation.cleanData(this);
 
       // Validation globale du modèle
-      const validation = FraudDetectionLogDbStructure.validation.validateFraudDetectionModel(this);
+      // const validation = FraudDetectionLogDbStructure.validation.validateFraudDetectionModel(this);
 
-      if (!validation.isValid) {
-        throw new Error(`Validation errors: ${validation.errors.join(', ')}`);
-      }
+      // if (!validation.isValid) {
+      //   throw new Error(`Validation errors: ${validation.errors.join(', ')}`);
+      // }
 
       // Validations spécifiques des champs modifiables
       if (this.action_taken !== undefined &&
@@ -484,10 +483,5 @@ export default class FraudDetectionLogModel extends BaseModel {
       )) {
         throw new Error('Resolution fields are inconsistent');
       }
-
-    } catch (error: any) {
-      console.error('⚠️ Erreur validation fraud detection log:', error.message);
-      throw error;
-    }
   }
 }

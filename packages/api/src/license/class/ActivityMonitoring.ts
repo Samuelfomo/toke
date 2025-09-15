@@ -1,4 +1,6 @@
-import ActivityMonitoringModel, { ActivityStatus } from '../model/ActivityMonitoringModel.js';
+import { ActivityStatus } from '@toke/shared';
+
+import ActivityMonitoringModel from '../model/ActivityMonitoringModel.js';
 import { responseStructure as RS, responseValue, tableName, ViewMode } from '../../utils/response.model.js';
 import Revision from '../../tools/revision.js';
 

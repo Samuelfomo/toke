@@ -1,12 +1,12 @@
 // schemas/activity.monitoring.ts
 import { z } from 'zod';
 
+import { RiskLevel } from '../constants/fraud.detection.log.js';
 import {
   ACTIVITY_MONITORING_DEFAULTS,
   ACTIVITY_MONITORING_ERRORS,
   ACTIVITY_MONITORING_VALIDATION,
   ActivityStatus,
-  RiskLevel,
 } from '../constants/activity.monitoring.js';
 
 // Base schema for activity monitoring (read-only fields)

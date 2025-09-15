@@ -18,12 +18,21 @@ const baseBillingCycleSchema = z.object({
     .int(BILLING_CYCLE_ERRORS.GLOBAL_LICENSE_INVALID)
     .positive(BILLING_CYCLE_ERRORS.GLOBAL_LICENSE_INVALID),
 
-  period_start: z.date({
+  // period_start: z.date({
+  //   required_error: BILLING_CYCLE_ERRORS.PERIOD_START_REQUIRED,
+  //   invalid_type_error: BILLING_CYCLE_ERRORS.INVALID_DATE_FORMAT,
+  // }),
+
+  // period_end: z.date({
+  //   required_error: BILLING_CYCLE_ERRORS.PERIOD_END_REQUIRED,
+  //   invalid_type_error: BILLING_CYCLE_ERRORS.INVALID_DATE_FORMAT,
+  // }),
+  period_start: z.union([z.date(), z.string().transform((val) => new Date(val))], {
     required_error: BILLING_CYCLE_ERRORS.PERIOD_START_REQUIRED,
     invalid_type_error: BILLING_CYCLE_ERRORS.INVALID_DATE_FORMAT,
   }),
 
-  period_end: z.date({
+  period_end: z.union([z.date(), z.string().transform((val) => new Date(val))], {
     required_error: BILLING_CYCLE_ERRORS.PERIOD_END_REQUIRED,
     invalid_type_error: BILLING_CYCLE_ERRORS.INVALID_DATE_FORMAT,
   }),
@@ -250,7 +259,11 @@ const baseBillingCycleSchema = z.object({
     })
     .optional(),
 
-  payment_due_date: z.date({
+  // payment_due_date: z.date({
+  //   required_error: BILLING_CYCLE_ERRORS.PAYMENT_DUE_DATE_REQUIRED,
+  //   invalid_type_error: BILLING_CYCLE_ERRORS.INVALID_DATE_FORMAT,
+  // }),
+  payment_due_date: z.union([z.date(), z.string().transform((val) => new Date(val))], {
     required_error: BILLING_CYCLE_ERRORS.PAYMENT_DUE_DATE_REQUIRED,
     invalid_type_error: BILLING_CYCLE_ERRORS.INVALID_DATE_FORMAT,
   }),

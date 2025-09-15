@@ -1,16 +1,19 @@
 // constants/activity.monitoring.ts
+
+import { RiskLevel } from './fraud.detection.log.js';
+
 export enum ActivityStatus {
   ACTIVE = 'ACTIVE',
   INACTIVE = 'INACTIVE',
   SUSPICIOUS = 'SUSPICIOUS',
 }
 
-export enum RiskLevel {
-  LOW = 'LOW',
-  MEDIUM = 'MEDIUM',
-  HIGH = 'HIGH',
-  CRITICAL = 'CRITICAL',
-}
+// export enum RiskLevel {
+//   LOW = 'LOW',
+//   MEDIUM = 'MEDIUM',
+//   HIGH = 'HIGH',
+//   CRITICAL = 'CRITICAL',
+// }
 
 export const ACTIVITY_MONITORING_VALIDATION = {
   EMPLOYEE_LICENSE: {

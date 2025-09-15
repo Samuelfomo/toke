@@ -1,12 +1,7 @@
 import { DataTypes, ModelAttributes, ModelOptions } from 'sequelize';
+import { ActivityStatus } from '@toke/shared';
 
 import { tableName } from '../../../utils/response.model.js';
-
-export enum ActivityStatus {
-  ACTIVE = 'ACTIVE',
-  INACTIVE = 'INACTIVE',
-  SUSPICIOUS = 'SUSPICIOUS',
-}
 
 export const ActivityMonitoringDbStructure = {
   tableName: tableName.ACTIVITY_MONITORING,
@@ -22,20 +17,6 @@ export const ActivityMonitoringDbStructure = {
       },
       comment: 'Activity monitoring',
     },
-    // guid: {
-    //   type: DataTypes.INTEGER,
-    //   allowNull: false,
-    //   unique: {
-    //     name: 'unique_activity_monitoring_guid',
-    //     msg: 'Activity monitoring GUID must be unique',
-    //   },
-    //   validate: {
-    //     isInt: true,
-    //     min: 100000,
-    //     max: 999999,
-    //   },
-    //   comment: 'Unique, automatically generated digital GUID',
-    // },
     employee_license: {
       type: DataTypes.INTEGER,
       allowNull: false,
