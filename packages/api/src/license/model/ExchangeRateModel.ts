@@ -58,6 +58,25 @@ export default class ExchangeRateModel extends BaseModel {
     return await this.listAll({ [this.db.current]: current }, paginationOptions);
   }
 
+  protected async getCurrentExchangeRate(fromCurrency: string, toCurrency: string): Promise<number> {
+    // Si même devise, retourner 1
+    if (fromCurrency === toCurrency) {
+      return 1;
+    }
+
+    const result = await this.findOne(this.db.tableName, {
+      [this.db.from_currency_code]: fromCurrency,
+      [this.db.to_currency_code]: toCurrency,
+      [this.db.current]: true
+    });
+
+    if (!result) {
+      throw new Error(`No current exchange rate found for ${fromCurrency} to ${toCurrency}`);
+    }
+
+    return result[this.db.exchange_rate];
+  }
+
   protected async create(): Promise<void> {
     await this.validate();
     const guid = await this.guidGenerator(this.db.tableName, 6);

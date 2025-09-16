@@ -31,6 +31,26 @@ const validateTotalCalculation = (data: {
   return Math.abs(calculatedTotal - data.total_amount_usd) <= tolerance;
 };
 
+// const validateLocalAmountsConsistency = (data: {
+//   subtotal_usd: number;
+//   tax_amount_usd: number;
+//   total_amount_usd: number;
+//   exchange_rate_used: number;
+//   subtotal_local: number;
+//   tax_amount_local: number;
+//   total_amount_local: number;
+// }) => {
+//   const tolerance = 0.01;
+//   const calculatedSubtotalLocal = data.subtotal_usd * data.exchange_rate_used;
+//   const calculatedTaxLocal = data.tax_amount_usd * data.exchange_rate_used;
+//   const calculatedTotalLocal = data.total_amount_usd * data.exchange_rate_used;
+//
+//   return (
+//     Math.abs(calculatedSubtotalLocal - data.subtotal_local) <= tolerance &&
+//     Math.abs(calculatedTaxLocal - data.tax_amount_local) <= tolerance &&
+//     Math.abs(calculatedTotalLocal - data.total_amount_local) <= tolerance
+//   );
+// };
 const validateLocalAmountsConsistency = (data: {
   subtotal_usd: number;
   tax_amount_usd: number;
@@ -41,10 +61,11 @@ const validateLocalAmountsConsistency = (data: {
   total_amount_local: number;
 }) => {
   const tolerance = 0.01;
-  const calculatedSubtotalLocal = data.subtotal_usd * data.exchange_rate_used;
-  const calculatedTaxLocal = data.tax_amount_usd * data.exchange_rate_used;
-  const calculatedTotalLocal = data.total_amount_usd * data.exchange_rate_used;
-
+  const calculatedSubtotalLocal =
+    Math.round(data.subtotal_usd * data.exchange_rate_used * 100) / 100;
+  const calculatedTaxLocal = Math.round(data.tax_amount_usd * data.exchange_rate_used * 100) / 100;
+  const calculatedTotalLocal =
+    Math.round(data.total_amount_usd * data.exchange_rate_used * 100) / 100;
   return (
     Math.abs(calculatedSubtotalLocal - data.subtotal_local) <= tolerance &&
     Math.abs(calculatedTaxLocal - data.tax_amount_local) <= tolerance &&
@@ -474,6 +495,20 @@ export const paymentStatusUpdateSchema = z.object({
 // Validation functions with error handling
 export const validateLicenseAdjustmentCreation = (data: any) => {
   try {
+    // Calcul des montants locaux côté serveur
+    if (
+      data.subtotal_usd != null &&
+      data.tax_amount_usd != null &&
+      data.total_amount_usd != null &&
+      data.exchange_rate_used != null
+    ) {
+      const round2 = (val: number) => Math.round(val * 100) / 100;
+
+      data.subtotal_local = round2(data.subtotal_usd * data.exchange_rate_used);
+      data.tax_amount_local = round2(data.tax_amount_usd * data.exchange_rate_used);
+      data.total_amount_local = round2(data.total_amount_usd * data.exchange_rate_used);
+    }
+
     return createLicenseAdjustmentSchema.parse(data);
   } catch (error) {
     if (error instanceof z.ZodError) {

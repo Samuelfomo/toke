@@ -180,6 +180,6 @@ export const tableName = {
 } as const;
 
 export const EntityRoute = {
-  MASTER: 'l',
-  TENANT: 'p',
+  MASTER: 'm',
+  TENANT: 't',
 } as const;

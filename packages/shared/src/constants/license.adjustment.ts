@@ -65,7 +65,7 @@ export const LICENSE_ADJUSTMENT_VALIDATION = {
   },
   TAX_RATE: {
     MIN_VALUE: 0,
-    MAX_VALUE: 1,
+    MAX_VALUE: 100,
     DECIMAL_PLACES: 4,
   },
 } as const;

@@ -223,7 +223,7 @@ export default class PaymentTransactionModel extends BaseModel {
   protected async markAsRefunded(): Promise<void> {
     this.transaction_status = PaymentTransactionStatus.REFUNDED;
     await this.update();
-  }
+  } 
 
   private async validate(): Promise<void> {
     const validationResult = PaymentTransactionDbStructure.validation.validateTransactionModel({

@@ -55,20 +55,31 @@ const basePaymentTransactionSchema = z.object({
     )
     .transform((val) => Math.round(val * 100) / 100), // Round to 2 decimal places
 
+  // amount_local: z
+  //   .number({
+  //     required_error: PAYMENT_TRANSACTION_ERRORS.AMOUNT_LOCAL_REQUIRED,
+  //     invalid_type_error: PAYMENT_TRANSACTION_ERRORS.AMOUNT_LOCAL_INVALID,
+  //   })
+  //   .min(
+  //     PAYMENT_TRANSACTION_VALIDATION.AMOUNT_LOCAL.MIN_VALUE,
+  //     PAYMENT_TRANSACTION_ERRORS.AMOUNT_LOCAL_INVALID,
+  //   )
+  //   .max(
+  //     PAYMENT_TRANSACTION_VALIDATION.AMOUNT_LOCAL.MAX_VALUE,
+  //     PAYMENT_TRANSACTION_ERRORS.AMOUNT_LOCAL_INVALID,
+  //   )
+  //   .transform((val) => Math.round(val * 100) / 100), // Round to 2 decimal places
+
+  // amount_local n'est plus fourni par l'utilisateur, mais calculé automatiquement
   amount_local: z
-    .number({
-      required_error: PAYMENT_TRANSACTION_ERRORS.AMOUNT_LOCAL_REQUIRED,
-      invalid_type_error: PAYMENT_TRANSACTION_ERRORS.AMOUNT_LOCAL_INVALID,
-    })
-    .min(
-      PAYMENT_TRANSACTION_VALIDATION.AMOUNT_LOCAL.MIN_VALUE,
-      PAYMENT_TRANSACTION_ERRORS.AMOUNT_LOCAL_INVALID,
-    )
-    .max(
-      PAYMENT_TRANSACTION_VALIDATION.AMOUNT_LOCAL.MAX_VALUE,
-      PAYMENT_TRANSACTION_ERRORS.AMOUNT_LOCAL_INVALID,
-    )
-    .transform((val) => Math.round(val * 100) / 100), // Round to 2 decimal places
+    .number()
+    .optional() // facultatif côté entrée
+    .transform((val, ctx) => {
+      // On ne peut pas accéder directement à parent ici
+      // La transformation finale se fera après parsing, côté serveur
+      // Ici on laisse val inchangé pour type safety
+      return val;
+    }),
 
   currency_code: z
     .string({
@@ -137,24 +148,67 @@ const basePaymentTransactionSchema = z.object({
     })
     .default(PaymentTransactionStatus.PENDING),
 
+  // initiated_at: z
+  //   .date({
+  //     required_error: PAYMENT_TRANSACTION_ERRORS.INITIATED_AT_REQUIRED,
+  //     invalid_type_error: PAYMENT_TRANSACTION_ERRORS.INITIATED_AT_INVALID,
+  //   })
+  //   .default(() => new Date()),
+  //
+  // completed_at: z
+  //   .date({
+  //     invalid_type_error: PAYMENT_TRANSACTION_ERRORS.COMPLETED_AT_INVALID,
+  //   })
+  //   .optional()
+  //   .nullable(),
+  //
+  // failed_at: z
+  //   .date({
+  //     invalid_type_error: PAYMENT_TRANSACTION_ERRORS.FAILED_AT_INVALID,
+  //   })
+  //   .optional()
+  //   .nullable(),
+
   initiated_at: z
-    .date({
-      required_error: PAYMENT_TRANSACTION_ERRORS.INITIATED_AT_REQUIRED,
-      invalid_type_error: PAYMENT_TRANSACTION_ERRORS.INITIATED_AT_INVALID,
-    })
+    .union([
+      z.date({
+        required_error: PAYMENT_TRANSACTION_ERRORS.INITIATED_AT_REQUIRED,
+        invalid_type_error: PAYMENT_TRANSACTION_ERRORS.INITIATED_AT_INVALID,
+      }),
+      z
+        .string({
+          required_error: PAYMENT_TRANSACTION_ERRORS.INITIATED_AT_REQUIRED,
+          invalid_type_error: PAYMENT_TRANSACTION_ERRORS.INITIATED_AT_INVALID,
+        })
+        .transform((val) => new Date(val)),
+    ])
     .default(() => new Date()),
 
   completed_at: z
-    .date({
-      invalid_type_error: PAYMENT_TRANSACTION_ERRORS.COMPLETED_AT_INVALID,
-    })
+    .union([
+      z.date({
+        invalid_type_error: PAYMENT_TRANSACTION_ERRORS.COMPLETED_AT_INVALID,
+      }),
+      z
+        .string({
+          invalid_type_error: PAYMENT_TRANSACTION_ERRORS.COMPLETED_AT_INVALID,
+        })
+        .transform((val) => new Date(val)),
+    ])
     .optional()
     .nullable(),
 
   failed_at: z
-    .date({
-      invalid_type_error: PAYMENT_TRANSACTION_ERRORS.FAILED_AT_INVALID,
-    })
+    .union([
+      z.date({
+        invalid_type_error: PAYMENT_TRANSACTION_ERRORS.FAILED_AT_INVALID,
+      }),
+      z
+        .string({
+          invalid_type_error: PAYMENT_TRANSACTION_ERRORS.FAILED_AT_INVALID,
+        })
+        .transform((val) => new Date(val)),
+    ])
     .optional()
     .nullable(),
 
@@ -177,18 +231,18 @@ const basePaymentTransactionSchema = z.object({
 
 // Schema with business logic validations
 const paymentTransactionWithValidations = basePaymentTransactionSchema
-  .refine(
-    (data) => {
-      // Amount consistency validation
-      const calculatedLocal = data.amount_usd * data.exchange_rate_used;
-      const tolerance = PAYMENT_TRANSACTION_VALIDATION.AMOUNT_CONSISTENCY_TOLERANCE;
-      return Math.abs(calculatedLocal - data.amount_local) <= tolerance;
-    },
-    {
-      message: PAYMENT_TRANSACTION_ERRORS.AMOUNT_CONSISTENCY_INVALID,
-      path: ['amount_local'],
-    },
-  )
+  // .refine(
+  //   (data) => {
+  //     // Amount consistency validation
+  //     const calculatedLocal = data.amount_usd * data.exchange_rate_used;
+  //     const tolerance = PAYMENT_TRANSACTION_VALIDATION.AMOUNT_CONSISTENCY_TOLERANCE;
+  //     return Math.abs(calculatedLocal - data.amount_local) <= tolerance;
+  //   },
+  //   {
+  //     message: PAYMENT_TRANSACTION_ERRORS.AMOUNT_CONSISTENCY_INVALID,
+  //     path: ['amount_local'],
+  //   },
+  // )
   .refine(
     (data) => {
       // Completed date must be after initiated date
@@ -230,36 +284,53 @@ const paymentTransactionWithValidations = basePaymentTransactionSchema
   );
 
 // Puis appliquer les règles métier sur ce sous-schéma
-export const createPaymentTransactionSchema = basePaymentTransactionSchema
-  .omit({
-    completed_at: true,
-    failed_at: true,
-    failure_reason: true,
-  })
-  .refine(
-    (data) => {
-      const calculatedLocal = data.amount_usd * data.exchange_rate_used;
-      const tolerance = PAYMENT_TRANSACTION_VALIDATION.AMOUNT_CONSISTENCY_TOLERANCE;
-      return Math.abs(calculatedLocal - data.amount_local) <= tolerance;
-    },
-    {
-      message: PAYMENT_TRANSACTION_ERRORS.AMOUNT_CONSISTENCY_INVALID,
-      path: ['amount_local'],
-    },
-  );
+export const createPaymentTransactionSchema = basePaymentTransactionSchema.omit({
+  completed_at: true,
+  failed_at: true,
+  failure_reason: true,
+});
+// .refine(
+//   (data) => {
+//     const calculatedLocal = Math.round(data.amount_usd * data.exchange_rate_used * 100) / 100; // 2 décimales
+//     const tolerance = PAYMENT_TRANSACTION_VALIDATION.AMOUNT_CONSISTENCY_TOLERANCE;
+//     return Math.abs(calculatedLocal - data.amount_local) <= tolerance;
+//   },
+//   {
+//     message: PAYMENT_TRANSACTION_ERRORS.AMOUNT_CONSISTENCY_INVALID,
+//     path: ['amount_local'],
+//   },
+// );
 
 // Schema for updates - most fields optional
 export const updatePaymentTransactionSchema = basePaymentTransactionSchema
   .partial()
+  // .refine(
+  //   (data) => {
+  //     // Amount consistency validation (only if all three values are present)
+  //     if (
+  //       data.amount_usd !== undefined &&
+  //       data.exchange_rate_used !== undefined &&
+  //       data.amount_local !== undefined
+  //     ) {
+  //       const calculatedLocal = data.amount_usd * data.exchange_rate_used;
+  //       const tolerance = PAYMENT_TRANSACTION_VALIDATION.AMOUNT_CONSISTENCY_TOLERANCE;
+  //       return Math.abs(calculatedLocal - data.amount_local) <= tolerance;
+  //     }
+  //     return true;
+  //   },
+  //   {
+  //     message: PAYMENT_TRANSACTION_ERRORS.AMOUNT_CONSISTENCY_INVALID,
+  //     path: ['amount_local'],
+  //   },
+  // )
   .refine(
     (data) => {
-      // Amount consistency validation (only if all three values are present)
       if (
         data.amount_usd !== undefined &&
         data.exchange_rate_used !== undefined &&
         data.amount_local !== undefined
       ) {
-        const calculatedLocal = data.amount_usd * data.exchange_rate_used;
+        const calculatedLocal = Math.round(data.amount_usd * data.exchange_rate_used * 100) / 100;
         const tolerance = PAYMENT_TRANSACTION_VALIDATION.AMOUNT_CONSISTENCY_TOLERANCE;
         return Math.abs(calculatedLocal - data.amount_local) <= tolerance;
       }
@@ -427,6 +498,9 @@ export const paymentTransactionSearchSchema = z
 // Validation functions with error handling
 export const validatePaymentTransactionCreation = (data: any) => {
   try {
+    if (typeof data.amount_usd === 'number' && typeof data.exchange_rate_used === 'number') {
+      data.amount_local = Math.round(data.amount_usd * data.exchange_rate_used * 100) / 100;
+    }
     return createPaymentTransactionSchema.parse(data);
   } catch (error) {
     if (error instanceof z.ZodError) {
@@ -438,6 +512,9 @@ export const validatePaymentTransactionCreation = (data: any) => {
 
 export const validatePaymentTransactionUpdate = (data: any) => {
   try {
+    if (typeof data.amount_usd === 'number' && typeof data.exchange_rate_used === 'number') {
+      data.amount_local = Math.round(data.amount_usd * data.exchange_rate_used * 100) / 100;
+    }
     return updatePaymentTransactionSchema.parse(data);
   } catch (error) {
     if (error instanceof z.ZodError) {

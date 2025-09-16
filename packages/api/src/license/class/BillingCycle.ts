@@ -1,9 +1,9 @@
-import { BillingStatus, } from '@toke/shared';
+import {BillingStatus,} from '@toke/shared';
 
 import BillingCycleModel from '../model/BillingCycleModel.js';
 import W from '../../tools/watcher.js';
 import G from '../../tools/glossary.js';
-import { responseStructure as RS, responseValue, tableName, ViewMode } from '../../utils/response.model.js';
+import {responseStructure as RS, responseValue, tableName, ViewMode} from '../../utils/response.model.js';
 import Revision from '../../tools/revision.js';
 
 import GlobalLicense from './GlobalLicense.js';
@@ -301,7 +301,7 @@ export default class BillingCycle extends BillingCycleModel {
   async getCurrencyObject(): Promise<Currency | null> {
     if (!this.billing_currency_code) return null;
     if (!this.currencyObject) {
-      this.currencyObject = (await Currency._load(this.billing_currency_code, true)) || undefined;
+      this.currencyObject = (await Currency._load(this.billing_currency_code, false, true)) || undefined;
     }
     return this.currencyObject || null;
   }

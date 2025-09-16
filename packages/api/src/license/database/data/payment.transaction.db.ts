@@ -334,17 +334,27 @@ export const PaymentTransactionDbStructure = {
     validateTransactionModel: (data: any): { isValid: boolean; errors: string[] } => {
       const errors: string[] = [];
 
+      // // Vérification cohérence montants
+      // if (data.amount_usd && data.exchange_rate_used && data.amount_local) {
+      //   const calculatedLocal = data.amount_usd * data.exchange_rate_used;
+      //   const tolerance = 0.01;
+      //   if (Math.abs(calculatedLocal - data.amount_local) > tolerance) {
+      //     errors.push(
+      //       'Amount inconsistency: amount_usd * exchange_rate_used must equal amount_local (±0.01)',
+      //     );
+      //   }
+      // }
       // Vérification cohérence montants
       if (data.amount_usd && data.exchange_rate_used && data.amount_local) {
-        const calculatedLocal = data.amount_usd * data.exchange_rate_used;
+        const calculatedLocal = Number((data.amount_usd * data.exchange_rate_used).toFixed(2));
         const tolerance = 0.01;
-        if (Math.abs(calculatedLocal - data.amount_local) > tolerance) {
+        if (Math.abs(calculatedLocal - Number(data.amount_local)) > tolerance) {
           errors.push(
             'Amount inconsistency: amount_usd * exchange_rate_used must equal amount_local (±0.01)',
           );
         }
       }
-
+  
       // Vérification dates
       if (data.initiated_at && data.completed_at) {
         if (new Date(data.completed_at).getTime() < new Date(data.initiated_at).getTime()) {

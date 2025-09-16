@@ -1,7 +1,13 @@
 import { Request, Response, Router } from 'express';
 import {
+  BILLING_CYCLE_CODES,
+  BILLING_CYCLE_ERRORS,
   HttpStatus,
+  LICENSE_ADJUSTMENT_CODES,
+  LICENSE_ADJUSTMENT_ERRORS,
   paginationSchema,
+  PAYMENT_METHOD_CODES,
+  PAYMENT_METHOD_ERRORS,
   PAYMENT_TRANSACTION_CODES,
   PAYMENT_TRANSACTION_ERRORS,
   PaymentTransactionStatus,
@@ -14,6 +20,9 @@ import G from '../../tools/glossary.js';
 import Ensure from '../middle/ensured-routes.js';
 import Revision from '../../tools/revision.js';
 import { tableName } from '../../utils/response.model.js';
+import LicenseAdjustment from '../class/LicenseAdjustment.js';
+import BillingCycle from '../class/BillingCycle.js';
+import PaymentMethod from '../class/PaymentMethod.js';
 
 const router = Router();
 
@@ -567,14 +576,38 @@ router.post('/', Ensure.post(), async (req: Request, res: Response) => {
   try {
     const validatedData = PT.validatePaymentTransactionCreation(req.body);
 
+    const licenceAdjObj = await LicenseAdjustment._load(validatedData.adjustment, true);
+    if (!licenceAdjObj) {
+      return R.handleError(res, HttpStatus.NOT_FOUND, {
+        code: LICENSE_ADJUSTMENT_CODES.LICENSE_ADJUSTMENT_NOT_FOUND,
+        message: LICENSE_ADJUSTMENT_ERRORS.NOT_FOUND,
+      })
+    }
+
+    const billingObj = await BillingCycle._load(validatedData.billing_cycle, true);
+    if (!billingObj) {
+      return R.handleError(res, HttpStatus.NOT_FOUND, {
+        code: BILLING_CYCLE_CODES.BILLING_CYCLE_NOT_FOUND,
+        message: BILLING_CYCLE_ERRORS.NOT_FOUND,
+      })
+    }
+
+    const paymentMethodObj = await PaymentMethod._load(validatedData.payment_method, true);
+    if (!paymentMethodObj) {
+      return R.handleError(res, HttpStatus.NOT_FOUND, {
+        code: PAYMENT_METHOD_CODES.PAYMENT_METHOD_NOT_FOUND,
+        message: PAYMENT_METHOD_ERRORS.NOT_FOUND,
+      })
+    }
+
     const transactionObj = PaymentTransaction.createNew({
-      billing_cycle: validatedData.billing_cycle,
-      adjustment: validatedData.adjustment,
+      billing_cycle: billingObj.getId()!,
+      adjustment: licenceAdjObj.getId()!,
       amount_usd: validatedData.amount_usd,
-      amount_local: validatedData.amount_local,
+      amount_local: validatedData.amount_local!,
       currency_code: validatedData.currency_code,
       exchange_rate_used: validatedData.exchange_rate_used,
-      payment_method: validatedData.payment_method,
+      payment_method: paymentMethodObj.getId()!,
       payment_reference: validatedData.payment_reference,
     });
 
@@ -601,10 +634,19 @@ router.post('/', Ensure.post(), async (req: Request, res: Response) => {
         message: error.message,
       });
     } else {
-      return R.handleError(res, HttpStatus.BAD_REQUEST, {
-        code: PAYMENT_TRANSACTION_CODES.CREATION_FAILED,
-        message: error.message,
-      });
+      // return R.handleError(res, HttpStatus.BAD_REQUEST, {
+      //   code: PAYMENT_TRANSACTION_CODES.CREATION_FAILED,
+      //   message: error.message,
+      // }
+      R.handleError(res, HttpStatus.INTERNAL_ERROR, {
+          code: 'DEBUG_ERROR',
+          message: error.message || error.toString(),
+          details: {
+            original_error: error,
+            stack: error.stack
+          }
+        }
+      );
     }
   }
 });

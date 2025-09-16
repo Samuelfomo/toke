@@ -133,6 +133,16 @@ export default class LicenseAdjustment extends LicenseAdjustmentModel {
   }
 
   /**
+   * Liste les avenants facturés mais non payés pour une licence globale
+   */
+  static _listInvoicedNotPaidGlobalLicense(
+    global_license: number,
+  ): Promise<LicenseAdjustment[] | null> {
+    return (new LicenseAdjustment()).listAllInvoicedNotPaidGlobalLicense(global_license);
+  }
+
+
+  /**
    * Obtient les statistiques financières par devise
    */
   static async _getFinancialStats(currency_code?: string): Promise<any[]> {

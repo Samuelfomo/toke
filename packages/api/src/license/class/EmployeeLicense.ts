@@ -106,6 +106,12 @@ export default class EmployeeLicense extends EmployeeLicenseModel {
     return new EmployeeLicense().listByBillingStatus(billing_status, paginationOptions);
   }
 
+  static _getBillableCountForLicense(
+    global_license: number,
+  ): Promise<number>{
+    return (new EmployeeLicense()).countBillableForLicense(global_license);
+  }
+
   /**
    * Liste tous les employés en congé long
    */
@@ -733,7 +739,7 @@ export default class EmployeeLicense extends EmployeeLicenseModel {
 
     return {
       ...baseData,
-      [RS.GLOBAL_LICENSE]: globalLicense?.toJSON(responseValue.MINIMAL),
+      [RS.GLOBAL_LICENSE]: await globalLicense?.toJSON(responseValue.MINIMAL),
     };
   }
 

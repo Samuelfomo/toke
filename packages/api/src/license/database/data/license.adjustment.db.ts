@@ -375,7 +375,8 @@ export const LicenseAdjustmentDbStructure = {
       return taxRules.every((rule: any, index: number) => {
         if (typeof rule !== 'object' || rule === null) return false;
         if (!rule.hasOwnProperty('rate') || typeof rule.rate !== 'number') return false;
-        return rule.rate >= 0 && rule.rate <= 1; // Taux entre 0 et 100%
+        // return rule.rate >= 0 && rule.rate <= 1; // Taux entre 0 et 100%
+        return rule.rate >= 0 && rule.rate <= 100;
       });
     },
 
@@ -424,9 +425,13 @@ export const LicenseAdjustmentDbStructure = {
       total_amount_local: number;
     }): boolean => {
       const tolerance = 0.01;
-      const calculatedSubtotalLocal = data.subtotal_usd * data.exchange_rate_used;
-      const calculatedTaxLocal = data.tax_amount_usd * data.exchange_rate_used;
-      const calculatedTotalLocal = data.total_amount_usd * data.exchange_rate_used;
+      // const calculatedSubtotalLocal = data.subtotal_usd * data.exchange_rate_used;
+      // const calculatedTaxLocal = data.tax_amount_usd * data.exchange_rate_used;
+      // const calculatedTotalLocal = data.total_amount_usd * data.exchange_rate_used;
+      const calculatedSubtotalLocal = Math.round(data.subtotal_usd * data.exchange_rate_used * 100) / 100;
+      const calculatedTaxLocal = Math.round(data.tax_amount_usd * data.exchange_rate_used * 100) / 100;
+      const calculatedTotalLocal = Math.round(data.total_amount_usd * data.exchange_rate_used * 100) / 100;
+
 
       return (
         Math.abs(calculatedSubtotalLocal - data.subtotal_local) <= tolerance &&
@@ -467,7 +472,7 @@ export const LicenseAdjustmentDbStructure = {
         const tolerance = 0.01;
         if (Math.abs(calculatedSubtotal - data.subtotal_usd) > tolerance) {
           errors.push(
-            'Subtotal calculation error: employees_added_count * months_remaining * price_per_employee_usd must equal subtotal_usd (±0.01)',
+            'Subtotal calculation error: employees_added_count * months_remaining * price_per_employee_usd must equal subtotal_usd (±0.01)1',
           );
         }
       }

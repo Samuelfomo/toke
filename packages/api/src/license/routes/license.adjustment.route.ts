@@ -1,5 +1,13 @@
 import { Request, Response, Router } from 'express';
-import { HttpStatus, LA, LICENSE_ADJUSTMENT_CODES, LICENSE_ADJUSTMENT_ERRORS, paginationSchema } from '@toke/shared';
+import {
+  GLOBAL_LICENSE_CODES,
+  GLOBAL_LICENSE_ERRORS,
+  HttpStatus,
+  LA,
+  LICENSE_ADJUSTMENT_CODES,
+  LICENSE_ADJUSTMENT_ERRORS,
+  paginationSchema
+} from '@toke/shared';
 
 import { PaymentStatus } from '../database/data/license.adjustment.db.js';
 import LicenseAdjustment from '../class/LicenseAdjustment.js';
@@ -8,6 +16,7 @@ import G from '../../tools/glossary.js';
 import Ensure from '../middle/ensured-routes.js';
 import Revision from '../../tools/revision.js';
 import { tableName } from '../../utils/response.model.js';
+import GlobalLicense from '../class/GlobalLicense.js';
 
 const router = Router();
 
@@ -333,7 +342,7 @@ router.get('/date-range/created', Ensure.get(), async (req: Request, res: Respon
       date_range: {
         start: startDate.toISOString(),
         end: endDate.toISOString(),
-        type: 'created'
+        type: 'created',
       },
       pagination: {
         offset: paginationOptions.offset || 0,
@@ -399,7 +408,7 @@ router.get('/date-range/paid', Ensure.get(), async (req: Request, res: Response)
       date_range: {
         start: startDate.toISOString(),
         end: endDate.toISOString(),
-        type: 'paid'
+        type: 'paid',
       },
       pagination: {
         offset: paginationOptions.offset || 0,
@@ -438,7 +447,7 @@ router.get('/financial-stats', Ensure.get(), async (req: Request, res: Response)
 
     R.handleSuccess(res, {
       financial_statistics: stats,
-      currency_filter: currency_code || 'ALL'
+      currency_filter: currency_code || 'ALL',
     });
   } catch (error: any) {
     console.error('⚠️ Erreur récupération statistiques financières:', error);
@@ -460,15 +469,23 @@ router.post('/', Ensure.post(), async (req: Request, res: Response) => {
   try {
     const validatedData = LA.validateLicenseAdjustmentCreation(req.body);
 
+    const globalLicenseObj = await GlobalLicense._load(validatedData.global_license, true);
+    if (!globalLicenseObj) {
+      return R.handleError(res, HttpStatus.NOT_FOUND, {
+        code: GLOBAL_LICENSE_CODES.GLOBAL_LICENSE_NOT_FOUND,
+        message: GLOBAL_LICENSE_ERRORS.NOT_FOUND,
+      });
+    }
+
     const adjustmentObj = new LicenseAdjustment()
-      .setGlobalLicense(validatedData.global_license)
+      .setGlobalLicense(globalLicenseObj.getId()!)
       .setAdjustmentDate(validatedData.adjustment_date)
       .setEmployeesAddedCount(validatedData.employees_added_count)
       .setMonthsRemaining(validatedData.months_remaining)
       .setPricePerEmployeeUsd(validatedData.price_per_employee_usd)
       .setBillingCurrencyCode(validatedData.billing_currency_code)
       .setExchangeRateUsed(validatedData.exchange_rate_used)
-      .setPaymentStatus(validatedData.payment_status as PaymentStatus  || PaymentStatus.PENDING)
+      .setPaymentStatus(validatedData.payment_status as PaymentStatus || PaymentStatus.PENDING)
       .setPaymentDueImmediately(validatedData.payment_due_immediately || false);
 
     // Calcul automatique des montants si les règles fiscales sont fournies

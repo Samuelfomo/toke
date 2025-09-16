@@ -176,6 +176,22 @@ export default class EmployeeLicenseModel extends BaseModel {
   }
 
   /**
+   * Compte les employés facturables pour une global_license spécifique
+   */
+  protected async countBillableForLicense(globalLicenseId: number): Promise<number> {
+    const result = await this.findAll(this.db.tableName, {
+      [this.db.global_license]: globalLicenseId,
+      [this.db.contractual_status]: ContractualStatus.ACTIVE,
+      // Utiliser la colonne calculée automatiquement
+      [this.db.computed_billing_status]: {
+        [Op.in]: [BillingStatusComputed.BILLABLE, BillingStatusComputed.GRACE_PERIOD] // Les deux sont facturables
+      }
+    });
+
+    return result.length;
+  }
+
+  /**
    * Récupère tous les employés sans activité récente
    */
   protected async listAllWithoutRecentActivity(

@@ -704,7 +704,7 @@ export default class PaymentTransaction extends PaymentTransactionModel {
    */
   async save(): Promise<void> {
     try {
-      if (this.isNew()) {
+      if (this.isNew()) { 
         await this.create();
       } else {
         await this.update();

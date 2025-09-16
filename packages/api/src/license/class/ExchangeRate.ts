@@ -51,6 +51,10 @@ export default class ExchangeRate extends ExchangeRateModel {
     return new ExchangeRate().listByCurrentStatus(is_current, paginationOptions);
   }
 
+  static async getCurrentRate(fromCurrency: string, toCurrency: string): Promise<number> {
+    return new ExchangeRate().getCurrentExchangeRate(fromCurrency, toCurrency);
+  }
+
   // Setters avec validation et formatage
   setFromCurrencyCode(code: string): ExchangeRate {
     this.from_currency_code = code.toUpperCase();

@@ -173,6 +173,25 @@ export default class LicenseAdjustmentModel extends BaseModel {
   }
 
   /**
+   * Récupère tous les avenants avec facture envoyée mais non payés pour une license globale
+   */
+  protected async listAllInvoicedNotPaidGlobalLicense(
+    global_license: number,
+  ): Promise<any[]> {
+    return await this.findAll(
+      this.db.tableName,
+      {
+        [this.db.global_license]: global_license,
+        [this.db.invoice_sent_at]: { [Op.ne]: null },
+        [this.db.payment_completed_at]: null,
+        [this.db.payment_status]: {
+          [Op.notIn]: [PaymentStatus.COMPLETED, PaymentStatus.CANCELLED, PaymentStatus.REFUNDED]
+        }
+      },
+    );
+  }
+
+  /**
    * Récupère tous les avenants payés dans une période
    */
   protected async listAllPaidBetween(

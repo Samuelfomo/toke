@@ -462,16 +462,24 @@ router.get('/code/:employeeCode', Ensure.get(), async (req: Request, res: Respon
 });
 
 // List employee licenses by global license
-router.get('/global/:globalLicenseId', Ensure.get(), async (req: Request, res: Response) => {
+router.get('/global/:globalLicense', Ensure.get(), async (req: Request, res: Response) => {
   try {
-    const { globalLicenseId } = req.params;
+    const { globalLicense } = req.params;
     const { offset, limit } = req.query;
 
-    const globalLicense = parseInt(globalLicenseId);
-    if (!EmployeeLicenseValidationUtils.validateGlobalLicenseId(globalLicense)) {
+    const globalLicenseGuid = parseInt(globalLicense);
+    if (!EmployeeLicenseValidationUtils.validateGlobalLicenseId(globalLicenseGuid)) {
       return R.handleError(res, HttpStatus.BAD_REQUEST, {
         code: EMPLOYEE_LICENSE_CODES.GLOBAL_LICENSE_INVALID,
         message: EMPLOYEE_LICENSE_ERRORS.GLOBAL_LICENSE_INVALID,
+      });
+    }
+
+    const globalLicenseModel = await GlobalLicense._load(globalLicenseGuid, true);
+    if (!globalLicenseModel) {
+      return R.handleError(res, HttpStatus.NOT_FOUND, {
+        code: GLOBAL_LICENSE_CODES.GLOBAL_LICENSE_NOT_FOUND,
+        message: GLOBAL_LICENSE_ERRORS.NOT_FOUND,
       });
     }
 
@@ -480,7 +488,7 @@ router.get('/global/:globalLicenseId', Ensure.get(), async (req: Request, res: R
       limit: limit ? Math.min(parseInt(limit as string), EMPLOYEE_LICENSE_DEFAULTS.PAGINATION.MAX_LIMIT) : EMPLOYEE_LICENSE_DEFAULTS.PAGINATION.LIMIT,
     };
 
-    const employeeLicenses = await EmployeeLicense._listByGlobalLicense(globalLicense, paginationOptions);
+    const employeeLicenses = await EmployeeLicense._listByGlobalLicense(globalLicenseModel.getId()!, paginationOptions);
 
     if (!employeeLicenses) {
       return R.handleSuccess(res, {
@@ -491,7 +499,7 @@ router.get('/global/:globalLicenseId', Ensure.get(), async (req: Request, res: R
     }
 
     const items = await Promise.all(
-      employeeLicenses.map(license => license.toJSON())
+      employeeLicenses.map(async (license) => await license.toJSON())
     );
 
     R.handleSuccess(res, {
