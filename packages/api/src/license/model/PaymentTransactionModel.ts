@@ -134,6 +134,11 @@ export default class PaymentTransactionModel extends BaseModel {
       throw new Error('Failed to generate GUID for payment transaction entry');
     }
 
+    const reference = await this.timeBasedTokenGenerator(this.db.tableName, 3, '_', 'TOKE');
+    if (!reference) {
+      throw new Error('Failed to generate Reference for payment transaction entry');
+    }
+
     const insertData: Record<string, any> = {
       [this.db.guid]: guid,
       [this.db.billing_cycle]: this.billing_cycle,
@@ -143,7 +148,7 @@ export default class PaymentTransactionModel extends BaseModel {
       [this.db.currency_code]: this.currency_code,
       [this.db.exchange_rate_used]: this.exchange_rate_used,
       [this.db.payment_method]: this.payment_method,
-      [this.db.payment_reference]: this.payment_reference,
+      [this.db.payment_reference]: reference,
       [this.db.transaction_status]: PaymentTransactionStatus.PENDING,
       [this.db.initiated_at]: this.initiated_at || new Date(),
     };
@@ -154,6 +159,7 @@ export default class PaymentTransactionModel extends BaseModel {
     }
     this.id = typeof lastID === 'object' ? lastID.id : lastID;
     this.guid = guid;
+    this.payment_reference = reference;
     this.transaction_status = PaymentTransactionStatus.PENDING;
     if (!this.initiated_at) {
       this.initiated_at = new Date();

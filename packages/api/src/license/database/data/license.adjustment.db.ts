@@ -1,15 +1,7 @@
 import { DataTypes, ModelAttributes, ModelOptions } from 'sequelize';
+import { PaymentTransactionStatus } from '@toke/shared';
 
 import { tableName } from '../../../utils/response.model.js';
-
-export enum PaymentStatus {
-  PENDING = 'PENDING',
-  PROCESSING = 'PROCESSING',
-  COMPLETED = 'COMPLETED',
-  FAILED = 'FAILED',
-  CANCELLED = 'CANCELLED',
-  REFUNDED = 'REFUNDED',
-}
 
 export const LicenseAdjustmentDbStructure = {
   tableName: tableName.LICENSE_ADJUSTMENT,
@@ -230,12 +222,12 @@ export const LicenseAdjustmentDbStructure = {
       comment: 'Tax rules applied',
     },
     payment_status: {
-      type: DataTypes.ENUM(...Object.values(PaymentStatus)),
+      type: DataTypes.ENUM(...Object.values(PaymentTransactionStatus)),
       allowNull: false,
-      defaultValue: PaymentStatus.PENDING,
+      defaultValue: PaymentTransactionStatus.PENDING,
       validate: {
         isIn: {
-          args: [[...Object.values(PaymentStatus)]],
+          args: [[...Object.values(PaymentTransactionStatus)]],
           msg: 'Invalid payment status',
         },
       },
@@ -381,7 +373,7 @@ export const LicenseAdjustmentDbStructure = {
     },
 
     validatePaymentStatus: (paymentStatus: string): boolean => {
-      return Object.values(PaymentStatus).includes(paymentStatus as PaymentStatus);
+      return Object.values(PaymentTransactionStatus).includes(paymentStatus as PaymentTransactionStatus);
     },
 
     validateInvoiceSentAt: (value: Date | null | undefined): boolean => {

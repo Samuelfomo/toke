@@ -191,7 +191,8 @@ export const EmployeeLicenseDbStructure = {
     updatedAt: 'updated_at',
     underscored: true,
     freezeTableName: true,
-    comment: 'Employee license table',scopes: {
+    comment: 'Employee license table',
+    scopes: {
       withComputedStatus: {
         // Utiliser la vue créée par votre migration
         from: 'xa_employee_license_with_billing_status'

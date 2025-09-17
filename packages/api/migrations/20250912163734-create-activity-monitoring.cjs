@@ -29,6 +29,16 @@ module.exports = {
           allowNull: false,
           comment: 'Activity Monitoring ID'
         },
+        guid: {
+          type: Sequelize.UUID,
+          allowNull: false,
+          defaultValue: Sequelize.UUIDV4,
+          unique: {
+            name: 'unique_activity_monitoring_guid',
+            msg: 'Activity monitoring GUID must be unique'
+          },
+          comment: 'GUID unique généré automatiquement'
+        },
         employee_license: {
           type: Sequelize.INTEGER,
           allowNull: false,
@@ -115,6 +125,12 @@ module.exports = {
       console.log('✅ Contraintes de validation ajoutées');
 
       // 4. Créer les index pour les performances
+      await queryInterface.addIndex('xa_activity_monitoring', ['guid'], {
+        name: 'idx_activity_monitoring_guid',
+        unique: true,
+        transaction
+      });
+
       await queryInterface.addIndex('xa_activity_monitoring', ['employee_license'], {
         name: 'idx_activity_monitoring_employee_license',
         transaction
@@ -175,6 +191,7 @@ module.exports = {
 
     try {
       // Supprimer les index
+      await queryInterface.removeIndex('xa_activity_monitoring', 'idx_activity_monitoring_guid', { transaction });
       await queryInterface.removeIndex('xa_activity_monitoring', 'idx_activity_monitoring_employee_license', { transaction });
       await queryInterface.removeIndex('xa_activity_monitoring', 'idx_activity_monitoring_monitoring_date', { transaction });
       await queryInterface.removeIndex('xa_activity_monitoring', 'idx_activity_monitoring_last_punch_date', { transaction });

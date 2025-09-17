@@ -9,6 +9,7 @@ export default class FraudDetectionLogModel extends BaseModel {
   public readonly db = {
     tableName: tableName.FRAUD_DETECTION_LOG,
     id: 'id',
+    guid: 'guid',
     tenant: 'tenant',
     detection_type: 'detection_type',
     employee_licenses_affected: 'employee_licenses_affected',
@@ -23,6 +24,7 @@ export default class FraudDetectionLogModel extends BaseModel {
   } as const;
 
   protected id?: number;
+  protected guid?: string;
   protected tenant?: number;
   protected detection_type?: FraudDetection;
   protected employee_licenses_affected?: string[];
@@ -44,6 +46,10 @@ export default class FraudDetectionLogModel extends BaseModel {
    */
   protected async find(id: number): Promise<any> {
     return await this.findOne(this.db.tableName, { [this.db.id]: id });
+  }
+
+  protected async findByGuid(guid: string): Promise<any> {
+    return await this.findOne(this.db.tableName, { [this.db.guid]: guid });
   }
 
   /**

@@ -52,6 +52,10 @@ export default class GlobalLicenseModel extends BaseModel {
     return await this.findOne(this.db.tableName, { [this.db.guid]: guid });
   }
 
+  protected async findByTenant(tenant: number): Promise<any> {
+    return await this.findOne(this.db.tableName, { [this.db.tenant]: tenant });
+  }
+
   /**
    * Liste tous les enregistrements selon les conditions
    */

@@ -6,10 +6,10 @@ import {
   LA,
   LICENSE_ADJUSTMENT_CODES,
   LICENSE_ADJUSTMENT_ERRORS,
-  paginationSchema
+  paginationSchema,
+  PaymentTransactionStatus
 } from '@toke/shared';
 
-import { PaymentStatus } from '../database/data/license.adjustment.db.js';
 import LicenseAdjustment from '../class/LicenseAdjustment.js';
 import R from '../../tools/response.js';
 import G from '../../tools/glossary.js';
@@ -125,9 +125,9 @@ router.get('/global-license/:global_license', Ensure.get(), async (req: Request,
 router.get('/payment-status/:status', Ensure.get(), async (req: Request, res: Response) => {
   try {
     const { status } = req.params;
-    const paymentStatus = status.toUpperCase() as PaymentStatus;
+    const paymentStatus = status.toUpperCase() as PaymentTransactionStatus;
 
-    if (!Object.values(PaymentStatus).includes(paymentStatus)) {
+    if (!Object.values(PaymentTransactionStatus).includes(paymentStatus)) {
       return R.handleError(res, HttpStatus.BAD_REQUEST, {
         code: LICENSE_ADJUSTMENT_CODES.VALIDATION_FAILED,
         message: `Invalid payment status: ${status}`,
@@ -485,7 +485,7 @@ router.post('/', Ensure.post(), async (req: Request, res: Response) => {
       .setPricePerEmployeeUsd(validatedData.price_per_employee_usd)
       .setBillingCurrencyCode(validatedData.billing_currency_code)
       .setExchangeRateUsed(validatedData.exchange_rate_used)
-      .setPaymentStatus(validatedData.payment_status as PaymentStatus || PaymentStatus.PENDING)
+      .setPaymentStatus(validatedData.payment_status as PaymentTransactionStatus || PaymentTransactionStatus.PENDING)
       .setPaymentDueImmediately(validatedData.payment_due_immediately || false);
 
     // Calcul automatique des montants si les règles fiscales sont fournies
@@ -546,7 +546,7 @@ router.put('/:guid', Ensure.put(), async (req: Request, res: Response) => {
     if (validateData.price_per_employee_usd !== undefined) adjustmentObj.setPricePerEmployeeUsd(validateData.price_per_employee_usd);
     if (validateData.billing_currency_code !== undefined) adjustmentObj.setBillingCurrencyCode(validateData.billing_currency_code);
     if (validateData.exchange_rate_used !== undefined) adjustmentObj.setExchangeRateUsed(validateData.exchange_rate_used);
-    if (validateData.payment_status !== undefined) adjustmentObj.setPaymentStatus(validateData.payment_status as PaymentStatus);
+    if (validateData.payment_status !== undefined) adjustmentObj.setPaymentStatus(validateData.payment_status as PaymentTransactionStatus);
     if (validateData.payment_due_immediately !== undefined) adjustmentObj.setPaymentDueImmediately(validateData.payment_due_immediately);
 
     // Recalcul des montants si nécessaire
@@ -640,7 +640,7 @@ router.patch('/:guid/update-payment-status', Ensure.patch(), async (req: Request
     const validGuid = LA.validateLicenseAdjustmentGuid(req.params.guid);
     const { payment_status, completed_at } = req.body;
 
-    if (!payment_status || !Object.values(PaymentStatus).includes(payment_status)) {
+    if (!payment_status || !Object.values(PaymentTransactionStatus).includes(payment_status)) {
       return R.handleError(res, HttpStatus.BAD_REQUEST, {
         code: LICENSE_ADJUSTMENT_CODES.VALIDATION_FAILED,
         message: 'Valid payment_status is required',
@@ -726,29 +726,6 @@ router.get('/list', Ensure.get(), async (req: Request, res: Response) => {
         message: LICENSE_ADJUSTMENT_ERRORS.NOT_FOUND,
       });
     }
-
-    // // Appliquer les filtres supplémentaires si nécessaire
-    // let filteredAdjustments = adjustmentEntries;
-    //
-    // if (filters.min_amount_usd !== undefined) {
-    //   filteredAdjustments = filteredAdjustments.filter(adjustment =>
-    //     (adjustment.getTotalAmountUsd() || 0) >= filters.min_amount_usd!
-    //   );
-    // }
-    //
-    // if (filters.max_amount_usd !== undefined) {
-    //   filteredAdjustments = filteredAdjustments.filter(adjustment =>
-    //     (adjustment.getTotalAmountUsd() || 0) <= filters.max_amount_usd!
-    //   );
-    // }
-    // const licenseAdjustments = {
-    //   pagination: {
-    //     offset: paginationOptions.offset || 0,
-    //     limit: paginationOptions.limit || filteredAdjustments.length,
-    //     count: filteredAdjustments.length || 0,
-    //   },
-    //   items: await Promise.all(filteredAdjustments.map(async (adjustment) => await adjustment.toJSON())) || [],
-    // };
     const licenseAdjustments = {
       pagination: {
         offset: paginationOptions.offset || 0,

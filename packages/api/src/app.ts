@@ -29,6 +29,8 @@ import FraudDetectionLogRoute from './license/routes/fraud.detection.log.route.j
 import ActivityMonitoringRoute from './license/routes/activity.monitoring.route.js';
 import { ServerAuth } from './license/middle/server-auth.js';
 import ProfileRoutes from './temporaire_route/profile.routes.js';
+import BillingRoute from './license/routes/manager/billing.route.js';
+import FraudRoute from './license/routes/manager/fraud.route.js';
 
 interface AppConfig {
   port: number;
@@ -225,6 +227,10 @@ export default class App {
     this.app.use(`/${EntityRoute.MASTER}/activity-monitoring`, ActivityMonitoringRoute);
     this.app.use(`/${EntityRoute.MASTER}/client`, ClientRoutes);
     this.app.use(`/${EntityRoute.MASTER}/profile`, ProfileRoutes);
+
+    // *** Manager Route ***//
+    this.app.use(`/${EntityRoute.MASTER}/billing`, BillingRoute);
+    this.app.use(`/${EntityRoute.MASTER}/fraud`, FraudRoute);
 
     // Route 404
     this.app.use((req, res) => {

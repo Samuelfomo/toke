@@ -5221,7 +5221,7 @@
     avec référence aux systèmes de paiement externes</p>
 <pre><code class="has-line-data" class="language-sql" data-line-end="363" data-line-start="331"><span
         class="hljs-operator"><span class="hljs-keyword">CREATE</span> <span class="hljs-keyword">TABLE</span> payment_transaction (
-    transaction_id <span class="hljs-keyword">UUID</span> PRIMARY <span class="hljs-keyword">KEY</span> <span
+    transaction <span class="hljs-keyword">UUID</span> PRIMARY <span class="hljs-keyword">KEY</span> <span
             class="hljs-keyword">DEFAULT</span> gen_random_uuid(),
     billing_cycle_id <span class="hljs-keyword">UUID</span>,
     adjustment_id <span class="hljs-keyword">UUID</span>, <span class="hljs-comment">-- Pour les avenants</span>

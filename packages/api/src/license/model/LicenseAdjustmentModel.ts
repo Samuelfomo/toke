@@ -1,9 +1,9 @@
 import { Op } from 'sequelize';
+import { PaymentTransactionStatus } from '@toke/shared';
 
-// import { PaymentStatus } from '@toke/shared';
 import BaseModel from '../database/db.base.js';
 import { tableName } from '../../utils/response.model.js';
-import { LicenseAdjustmentDbStructure, PaymentStatus } from '../database/data/license.adjustment.db.js';
+import { LicenseAdjustmentDbStructure } from '../database/data/license.adjustment.db.js';
 
 export default class LicenseAdjustmentModel extends BaseModel {
   public readonly db = {
@@ -46,7 +46,7 @@ export default class LicenseAdjustmentModel extends BaseModel {
   protected tax_amount_local?: number;
   protected total_amount_local?: number;
   protected tax_rules_applied?: any[];
-  protected payment_status?: PaymentStatus;
+  protected payment_status?: PaymentTransactionStatus;
   protected payment_due_immediately?: boolean;
   protected invoice_sent_at?: Date;
   protected payment_completed_at?: Date;
@@ -96,7 +96,7 @@ export default class LicenseAdjustmentModel extends BaseModel {
    * Récupère tous les avenants par statut de paiement
    */
   protected async listAllByPaymentStatus(
-    payment_status: PaymentStatus,
+    payment_status: PaymentTransactionStatus,
     paginationOptions: { offset?: number; limit?: number } = {},
   ): Promise<any[]> {
     return await this.listAll(
@@ -146,12 +146,13 @@ export default class LicenseAdjustmentModel extends BaseModel {
     return await this.listAll(
       {
         [this.db.payment_status]: {
-          [Op.in]: [PaymentStatus.PENDING, PaymentStatus.PROCESSING]
+          [Op.in]: [PaymentTransactionStatus.PENDING, PaymentTransactionStatus.PROCESSING]
         }
       },
       paginationOptions,
     );
   }
+  
 
   /**
    * Récupère tous les avenants avec facture envoyée mais non payés
@@ -165,7 +166,7 @@ export default class LicenseAdjustmentModel extends BaseModel {
         [this.db.invoice_sent_at]: { [Op.ne]: null },
         [this.db.payment_completed_at]: null,
         [this.db.payment_status]: {
-          [Op.notIn]: [PaymentStatus.COMPLETED, PaymentStatus.CANCELLED, PaymentStatus.REFUNDED]
+          [Op.notIn]: [PaymentTransactionStatus.COMPLETED, PaymentTransactionStatus.CANCELLED, PaymentTransactionStatus.REFUNDED]
         }
       },
       paginationOptions,
@@ -185,7 +186,7 @@ export default class LicenseAdjustmentModel extends BaseModel {
         [this.db.invoice_sent_at]: { [Op.ne]: null },
         [this.db.payment_completed_at]: null,
         [this.db.payment_status]: {
-          [Op.notIn]: [PaymentStatus.COMPLETED, PaymentStatus.CANCELLED, PaymentStatus.REFUNDED]
+          [Op.notIn]: [PaymentTransactionStatus.COMPLETED, PaymentTransactionStatus.CANCELLED, PaymentTransactionStatus.REFUNDED]
         }
       },
     );
@@ -205,7 +206,7 @@ export default class LicenseAdjustmentModel extends BaseModel {
         [this.db.payment_completed_at]: {
           [Op.between]: [startDate, endDate]
         },
-        [this.db.payment_status]: PaymentStatus.COMPLETED
+        [this.db.payment_status]: PaymentTransactionStatus.COMPLETED
       },
       paginationOptions,
     );
@@ -247,7 +248,7 @@ export default class LicenseAdjustmentModel extends BaseModel {
       stats[currency].total_amount_usd += parseFloat(adjustment[this.db.total_amount_usd] || 0);
       stats[currency].total_employees_added += adjustment[this.db.employees_added_count] || 0;
 
-      if (adjustment[this.db.payment_status] === PaymentStatus.COMPLETED) {
+      if (adjustment[this.db.payment_status] === PaymentTransactionStatus.COMPLETED) {
         stats[currency].completed_amount_local += parseFloat(adjustment[this.db.total_amount_local] || 0);
         stats[currency].completed_amount_usd += parseFloat(adjustment[this.db.total_amount_usd] || 0);
       } else {
@@ -269,12 +270,12 @@ export default class LicenseAdjustmentModel extends BaseModel {
   /**
    * Met à jour le statut de paiement
    */
-  protected async updatePaymentStatus(id: number, status: PaymentStatus, completed_at?: Date): Promise<boolean> {
+  protected async updatePaymentStatus(id: number, status: PaymentTransactionStatus, completed_at?: Date): Promise<boolean> {
     const updateData: Record<string, any> = {
       [this.db.payment_status]: status
     };
 
-    if (status === PaymentStatus.COMPLETED && completed_at) {
+    if (status === PaymentTransactionStatus.COMPLETED && completed_at) {
       updateData[this.db.payment_completed_at] = completed_at;
     }
 
@@ -332,7 +333,7 @@ export default class LicenseAdjustmentModel extends BaseModel {
       [this.db.tax_amount_local]: this.tax_amount_local || 0,
       [this.db.total_amount_local]: this.total_amount_local,
       [this.db.tax_rules_applied]: this.tax_rules_applied || [],
-      [this.db.payment_status]: this.payment_status || PaymentStatus.PENDING,
+      [this.db.payment_status]: this.payment_status || PaymentTransactionStatus.PENDING,
       [this.db.payment_due_immediately]: this.payment_due_immediately ?? true,
       [this.db.invoice_sent_at]: this.invoice_sent_at || null,
       [this.db.payment_completed_at]: this.payment_completed_at || null,

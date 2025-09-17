@@ -1,5 +1,5 @@
-import { PaymentStatus } from '../database/data/license.adjustment.db.js';
-// import { PaymentStatus } from '@toke/shared';
+import { PaymentTransactionStatus } from '@toke/shared';
+
 import LicenseAdjustmentModel from '../model/LicenseAdjustmentModel.js';
 import W from '../../tools/watcher.js';
 import G from '../../tools/glossary.js';
@@ -76,7 +76,7 @@ export default class LicenseAdjustment extends LicenseAdjustmentModel {
    * Liste les avenants par statut de paiement
    */
   static _listByPaymentStatus(
-    payment_status: PaymentStatus,
+    payment_status: PaymentTransactionStatus,
     paginationOptions: { offset?: number; limit?: number } = {},
   ): Promise<LicenseAdjustment[] | null> {
     return new LicenseAdjustment().listByPaymentStatus(payment_status, paginationOptions);
@@ -159,7 +159,7 @@ export default class LicenseAdjustment extends LicenseAdjustmentModel {
   /**
    * Met à jour le statut de paiement d'un avenant
    */
-  static async _updatePaymentStatus(id: number, status: PaymentStatus, completed_at?: Date): Promise<boolean> {
+  static async _updatePaymentStatus(id: number, status: PaymentTransactionStatus, completed_at?: Date): Promise<boolean> {
     return new LicenseAdjustment().updatePaymentStatus(id, status, completed_at);
   }
 
@@ -288,7 +288,7 @@ export default class LicenseAdjustment extends LicenseAdjustmentModel {
     return this;
   }
 
-  setPaymentStatus(payment_status: PaymentStatus): LicenseAdjustment {
+  setPaymentStatus(payment_status: PaymentTransactionStatus): LicenseAdjustment {
     this.payment_status = payment_status;
     return this;
   }
@@ -381,7 +381,7 @@ export default class LicenseAdjustment extends LicenseAdjustmentModel {
     return this.tax_rules_applied;
   }
 
-  getPaymentStatus(): PaymentStatus | undefined {
+  getPaymentStatus(): PaymentTransactionStatus | undefined {
     return this.payment_status;
   }
 
@@ -410,35 +410,35 @@ export default class LicenseAdjustment extends LicenseAdjustmentModel {
    * Vérifie si l'avenant est en attente de paiement
    */
   isPendingPayment(): boolean {
-    return this.payment_status === PaymentStatus.PENDING;
+    return this.payment_status === PaymentTransactionStatus.PENDING;
   }
 
   /**
    * Vérifie si l'avenant est en cours de traitement
    */
   isProcessing(): boolean {
-    return this.payment_status === PaymentStatus.PROCESSING;
+    return this.payment_status === PaymentTransactionStatus.PROCESSING;
   }
 
   /**
    * Vérifie si l'avenant est payé
    */
   isPaid(): boolean {
-    return this.payment_status === PaymentStatus.COMPLETED;
+    return this.payment_status === PaymentTransactionStatus.COMPLETED;
   }
 
   /**
    * Vérifie si l'avenant est annulé
    */
   isCancelled(): boolean {
-    return this.payment_status === PaymentStatus.CANCELLED;
+    return this.payment_status === PaymentTransactionStatus.CANCELLED;
   }
 
   /**
    * Vérifie si l'avenant est remboursé
    */
   isRefunded(): boolean {
-    return this.payment_status === PaymentStatus.REFUNDED;
+    return this.payment_status === PaymentTransactionStatus.REFUNDED;
   }
 
   /**
@@ -509,12 +509,12 @@ export default class LicenseAdjustment extends LicenseAdjustmentModel {
   /**
    * Met à jour le statut de paiement pour cet avenant
    */
-  async updatePaymentStatusForThis(status: PaymentStatus, completed_at?: Date): Promise<boolean> {
+  async updatePaymentStatusForThis(status: PaymentTransactionStatus, completed_at?: Date): Promise<boolean> {
     if (!this.id) return false;
     const result = await this.updatePaymentStatus(this.id, status, completed_at);
     if (result) {
       this.payment_status = status;
-      if (status === PaymentStatus.COMPLETED && completed_at) {
+      if (status === PaymentTransactionStatus.COMPLETED && completed_at) {
         this.payment_completed_at = completed_at;
       }
     }
@@ -628,7 +628,7 @@ export default class LicenseAdjustment extends LicenseAdjustmentModel {
    * Liste les avenants par statut de paiement
    */
   async listByPaymentStatus(
-    payment_status: PaymentStatus,
+    payment_status: PaymentTransactionStatus,
     paginationOptions: { offset?: number; limit?: number } = {},
   ): Promise<LicenseAdjustment[] | null> {
     const dataset = await this.listAllByPaymentStatus(payment_status, paginationOptions);
@@ -739,7 +739,7 @@ export default class LicenseAdjustment extends LicenseAdjustmentModel {
 
     return {
       ...baseData,
-      [RS.GLOBAL_LICENSE]: globalLicense?.toJSON(responseValue.MINIMAL),
+      [RS.GLOBAL_LICENSE]: await globalLicense?.toJSON(responseValue.MINIMAL),
     };
   }
 

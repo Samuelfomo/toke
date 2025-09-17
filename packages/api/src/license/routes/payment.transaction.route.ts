@@ -608,7 +608,7 @@ router.post('/', Ensure.post(), async (req: Request, res: Response) => {
       currency_code: validatedData.currency_code,
       exchange_rate_used: validatedData.exchange_rate_used,
       payment_method: paymentMethodObj.getId()!,
-      payment_reference: validatedData.payment_reference,
+      // payment_reference: validatedData.payment_reference,
     });
 
     if (validatedData.transaction_status) {

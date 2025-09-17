@@ -47,8 +47,9 @@ export default class GlobalLicense extends GlobalLicenseModel {
   static _load(
     identifier: any,
     byGuid: boolean = false,
+    byTenant: boolean = false,
   ): Promise<GlobalLicense | null> {
-    return new GlobalLicense().load(identifier, byGuid);
+    return new GlobalLicense().load(identifier, byGuid, byTenant);
   }
 
   /**
@@ -335,14 +336,18 @@ export default class GlobalLicense extends GlobalLicenseModel {
    * @param {any} identifier - The identifier used to find the GlobalLicense object.
    *                           Can be a GUID or an ID number.
    * @param {boolean} [byGuid=false] - Specifies if the lookup should be performed by GUID.
+   * @param byTenant
    * @return {Promise<GlobalLicense | null>} A promise that resolves to the located GlobalLicense object, or null if not found.
    */
   async load(
     identifier: any,
     byGuid: boolean = false,
+    byTenant: boolean = false,
   ): Promise<GlobalLicense | null> {
     const data = byGuid
       ? await this.findByGuid(identifier)
+      : byTenant
+        ? await this.findByTenant(identifier)
       : await this.find(Number(identifier));
 
     if (!data) return null;

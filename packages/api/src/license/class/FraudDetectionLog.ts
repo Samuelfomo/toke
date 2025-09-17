@@ -1,7 +1,7 @@
-import { FraudDetection, RiskLevel } from '@toke/shared';
+import {FraudDetection, RiskLevel} from '@toke/shared';
 
 import FraudDetectionLogModel from '../model/FraudDetectionLogModel.js';
-import { responseStructure as RS, responseValue, tableName, ViewMode } from '../../utils/response.model.js';
+import {responseStructure as RS, responseValue, tableName, ViewMode} from '../../utils/response.model.js';
 import Revision from '../../tools/revision.js';
 
 import Tenant from './Tenant.js';
@@ -89,8 +89,9 @@ export default class FraudDetectionLog extends FraudDetectionLogModel {
    */
   static _load(
     identifier: any,
+    byGuid: boolean = false,
   ): Promise<FraudDetectionLog | null> {
-    return new FraudDetectionLog().load(identifier);
+    return new FraudDetectionLog().load(identifier, byGuid);
   }
 
   /**
@@ -420,8 +421,12 @@ export default class FraudDetectionLog extends FraudDetectionLogModel {
     return result;
     }
 
-    async load(identifier : number): Promise<FraudDetectionLog | null>{
-      const data = await this.find(Number(identifier));
+    async load(identifier : any, byGuid: boolean = false ): Promise<FraudDetectionLog | null>{
+      let data;
+
+        data = byGuid
+          ? await this.findByGuid(identifier)
+          : await this.find(Number(identifier));
 
       if (!data) return null;
       return this.hydrate(data);

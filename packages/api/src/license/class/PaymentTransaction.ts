@@ -9,12 +9,14 @@ import Revision from '../../tools/revision.js';
 import BillingCycle from './BillingCycle.js';
 import Currency from './Currency.js';
 import LicenseAdjustment from './LicenseAdjustment.js';
+import PaymentMethod from './PaymentMethod.js';
 
 export default class PaymentTransaction extends PaymentTransactionModel {
 
   private billingCycleObj?: BillingCycle;
   private adjustmentObj?: LicenseAdjustment;
   private currencyCodeObj?: Currency;
+  private paymentMethodObj?: PaymentMethod;
   constructor() {
     super();
   }
@@ -100,6 +102,16 @@ export default class PaymentTransaction extends PaymentTransactionModel {
   }
 
   /**
+   * Liste les transactions par avenants
+   */
+  static _listByAdjustment(
+    adjustment: number,
+    paginationOptions: { offset?: number; limit?: number } = {},
+  ): Promise<PaymentTransaction[] | null> {
+    return new PaymentTransaction().listAllByLicenceAdjustment(adjustment, paginationOptions);
+  }
+
+  /**
    * Liste les transactions par devise
    */
   static _listByCurrency(
@@ -170,7 +182,7 @@ export default class PaymentTransaction extends PaymentTransactionModel {
     currency_code: string;
     exchange_rate_used: number;
     payment_method: number;
-    payment_reference: string;
+    // payment_reference: string;
   }): PaymentTransaction {
     return new PaymentTransaction()
       .setBillingCycle(data.billing_cycle)
@@ -180,7 +192,7 @@ export default class PaymentTransaction extends PaymentTransactionModel {
       .setCurrencyCode(data.currency_code)
       .setExchangeRate(data.exchange_rate_used)
       .setPaymentMethod(data.payment_method)
-      .setPaymentReference(data.payment_reference)
+      // .setPaymentReference(data.payment_reference)
       .setInitiatedAt(new Date());
   }
 
@@ -372,6 +384,14 @@ export default class PaymentTransaction extends PaymentTransactionModel {
     return this.guid;
   }
 
+  getBillingCycleId(): number | undefined {
+    return this.billing_cycle;
+  }
+
+  getAdjustmentId(): number | undefined {
+    return this.adjustment;
+  }
+
   async getBillingCycle(): Promise<BillingCycle | null> {
     if(!this.billing_cycle) return null;
     if (!this.billingCycleObj){
@@ -396,6 +416,10 @@ export default class PaymentTransaction extends PaymentTransactionModel {
     return this.amount_local;
   }
 
+  getCurrency(): string | undefined {
+    return this.currency_code;
+  }
+
   async getCurrencyCode(): Promise<Currency | null> {
     if (!this.currency_code) return null;
     if (!this.currencyCodeObj){
@@ -408,8 +432,15 @@ export default class PaymentTransaction extends PaymentTransactionModel {
     return this.exchange_rate_used;
   }
 
-  getPaymentMethod(): number | undefined {
+  getPaymentMethodId(): number | undefined {
     return this.payment_method;
+  }
+  async getPaymentMethod(): Promise<PaymentMethod | null> {
+    if (!this.payment_method) return null;
+    if (!this.paymentMethodObj) {
+      this.paymentMethodObj = (await PaymentMethod._load(this.payment_method)) || undefined;
+    }
+    return this.paymentMethodObj || null;
   }
 
   getPaymentReference(): string | undefined {
@@ -733,13 +764,13 @@ export default class PaymentTransaction extends PaymentTransactionModel {
 
     const billingCycle = await this.getBillingCycle();
     const adjustment = await this.getAdjustment();
+    const paymentMethod = await this.getPaymentMethod();
     const baseData = {
       [RS.GUID]: this.guid,
       [RS.AMOUNT_USD]: this.amount_usd,
       [RS.AMOUNT_LOCAL]: this.amount_local,
       [RS.CURRENCY_CODE]: this.currency_code,
       [RS.EXCHANGE_RATE_USED]: this.exchange_rate_used,
-      [RS.PAYMENT_METHOD]: this.payment_method,
       [RS.PAYMENT_REFERENCE]: this.payment_reference,
       [RS.TRANSACTION_STATUS]: this.transaction_status,
       [RS.INITIATED_AT]: this.initiated_at,
@@ -756,12 +787,14 @@ export default class PaymentTransaction extends PaymentTransactionModel {
         ...baseData,
         [RS.BILLING_CYCLE]: billingCycle?.getGuid(),
         [RS.ADJUSTMENT]: adjustment?.getGuid(),
+        [RS.PAYMENT_METHOD]: paymentMethod?.getCode(),
       };
     }
     return {
       ...baseData,
-      [RS.BILLING_CYCLE]: billingCycle?.toJSON(responseValue.MINIMAL),
-      [RS.ADJUSTMENT]: adjustment?.toJSON(responseValue.MINIMAL),
+      [RS.BILLING_CYCLE]: await billingCycle?.toJSON(responseValue.MINIMAL),
+      [RS.ADJUSTMENT]: await adjustment?.toJSON(responseValue.MINIMAL),
+      [RS.PAYMENT_METHOD]: await paymentMethod?.toJSON(responseValue.MINIMAL),
     };
 
   }

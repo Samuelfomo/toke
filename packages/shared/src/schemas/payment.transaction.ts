@@ -139,7 +139,8 @@ const basePaymentTransactionSchema = z.object({
       PAYMENT_TRANSACTION_VALIDATION.PAYMENT_REFERENCE.MAX_LENGTH,
       PAYMENT_TRANSACTION_ERRORS.PAYMENT_REFERENCE_INVALID,
     )
-    .transform((val) => val.trim()),
+    .optional() // rend le champ facultatif
+    .transform((val) => val?.trim()),
 
   transaction_status: z
     .nativeEnum(PaymentTransactionStatus, {
