@@ -192,11 +192,13 @@ const userInitial = computed(() => {
 .user-name {
   font-weight: 600;
   color: #111827;
-  font-size: 0.875rem;
+
+
 }
 
 .company-name {
-  color: #6b7280;
-  font-size: 0.75rem;
+  color: #111827;
+  font-weight: 300;
+
 }
 </style>

@@ -1,42 +1,11 @@
 <template>
   <div class="memo-page">
-    <!-- En-tête de la page -->
-    <HeaderC
-      :user-name="currentUser.name"
-      :company-name="currentUser.company"
-      :notification-count="notificationCount"
-    />
-    <div class="memo-page-header">
-      <div class="header-left">
-        <div class="employee-info">
-          <div class="employee-avatar-small">{{ employee.initials }}</div>
-          <div class="employee-details">
-            <h1>{{ employee.name }}</h1>
-            <div class="employee-status-info">
-              <span :class="['status-badge', 'status-' + employee.status]">
-                {{ employee.statusText }}
-              </span>
-              <span v-if="employee.location" class="location-info">
-                {{ employee.location }}
-              </span>
-            </div>
-          </div>
-        </div>
-      </div>
-      <div class="header-actions">
-        <button class="action-btn-header">
-          <svg class="icon-sm" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 5v.01M12 12v.01M12 19v.01M12 6a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2z"></path>
-          </svg>
-        </button>
-      </div>
-    </div>
     <!-- Contenu principal -->
     <div class="memo-page-content">
       <!-- Zone de chat -->
       <div class="chat-container" ref="chatContainer">
         <!-- Messages -->
-        <div class="chat-messages">
+        <div class="">
           <div v-for="message in messages" :key="message.id" :class="['message', message.type]">
             <div class="message-content">
               <div v-if="message.contentType === 'text'" class="message-text">
@@ -81,9 +50,6 @@
               </div>
             </button>
           </div>
-          <button @click="showTemplates = false" class="hide-templates-btn">
-            Masquer les templates
-          </button>
         </div>
       </div>
     </div>
@@ -91,11 +57,6 @@
     <div class="memo-page-footer">
       <!-- Barre d'outils -->
       <div class="input-toolbar">
-        <button @click="showTemplates = !showTemplates" class="toolbar-btn" title="Templates">
-          <svg class="icon-sm" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"></path>
-          </svg>
-        </button>
 
         <button @click="toggleInputType('text')" :class="['toolbar-btn', { active: inputType === 'text' }]" title="Texte">
           <svg class="icon-sm" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -304,56 +265,56 @@ const selectedFile = ref<File | null>(null)
 const fileInput = ref<HTMLInputElement | null>(null)
 
 // Templates de mémos
-const memoTemplates = ref<MemoTemplate[]>([
-  {
-    id: '1',
-    title: 'Demande d\'explication',
-    content: 'Bonjour, pouvez-vous m\'expliquer la raison de votre absence/retard aujourd\'hui ?',
-    preview: 'Demande d\'explication pour absence/retard',
-    icon: 'M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z',
-    category: 'explanation'
-  },
-  {
-    id: '2',
-    title: 'Rappel de procédure',
-    content: 'Je vous rappelle qu\'il est important de signaler tout retard ou absence en avance. Merci de votre compréhension.',
-    preview: 'Rappel des procédures d\'absence',
-    icon: 'M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.732-.833-2.502 0L4.268 18.5c-.77.833.192 2.5 1.732 2.5z',
-    category: 'reminder'
-  },
-  {
-    id: '3',
-    title: 'Demande de justificatif',
-    content: 'Merci de fournir un justificatif médical ou administratif pour votre absence d\'aujourd\'hui dans les plus brefs délais.',
-    preview: 'Demande de justificatif médical/administratif',
-    icon: 'M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z',
-    category: 'document'
-  },
-  {
-    id: '4',
-    title: 'Avertissement léger',
-    content: 'Ceci constitue un avertissement concernant vos récents retards. Merci de faire attention à la ponctualité.',
-    preview: 'Avertissement pour retards répétés',
-    icon: 'M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z',
-    category: 'warning'
-  },
-  {
-    id: '5',
-    title: 'Félicitations',
-    content: 'Félicitations pour votre ponctualité et votre assiduité cette semaine. Continuez ainsi !',
-    preview: 'Message de félicitations',
-    icon: 'M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z',
-    category: 'positive'
-  },
-  {
-    id: '6',
-    title: 'Convocation',
-    content: 'Je souhaiterais vous rencontrer dans mon bureau concernant votre situation. Merci de prendre rendez-vous.',
-    preview: 'Convocation pour entretien',
-    icon: 'M8 7V3a2 2 0 012-2h4a2 2 0 012 2v4m-6 0h6m-6 0l-1.5 8.5A2 2 0 009.5 21h5a2 2 0 002-1.5L15 12',
-    category: 'meeting'
-  }
-])
+// const memoTemplates = ref<MemoTemplate[]>([
+//   {
+//     id: '1',
+//     title: 'Demande d\'explication',
+//     content: 'Bonjour, pouvez-vous m\'expliquer la raison de votre absence/retard aujourd\'hui ?',
+//     preview: 'Demande d\'explication pour absence/retard',
+//     icon: 'M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z',
+//     category: 'explanation'
+//   },
+//   {
+//     id: '2',
+//     title: 'Rappel de procédure',
+//     content: 'Je vous rappelle qu\'il est important de signaler tout retard ou absence en avance. Merci de votre compréhension.',
+//     preview: 'Rappel des procédures d\'absence',
+//     icon: 'M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.732-.833-2.502 0L4.268 18.5c-.77.833.192 2.5 1.732 2.5z',
+//     category: 'reminder'
+//   },
+//   {
+//     id: '3',
+//     title: 'Demande de justificatif',
+//     content: 'Merci de fournir un justificatif médical ou administratif pour votre absence d\'aujourd\'hui dans les plus brefs délais.',
+//     preview: 'Demande de justificatif médical/administratif',
+//     icon: 'M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z',
+//     category: 'document'
+//   },
+//   {
+//     id: '4',
+//     title: 'Avertissement léger',
+//     content: 'Ceci constitue un avertissement concernant vos récents retards. Merci de faire attention à la ponctualité.',
+//     preview: 'Avertissement pour retards répétés',
+//     icon: 'M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z',
+//     category: 'warning'
+//   },
+//   {
+//     id: '5',
+//     title: 'Félicitations',
+//     content: 'Félicitations pour votre ponctualité et votre assiduité cette semaine. Continuez ainsi !',
+//     preview: 'Message de félicitations',
+//     icon: 'M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z',
+//     category: 'positive'
+//   },
+//   {
+//     id: '6',
+//     title: 'Convocation',
+//     content: 'Je souhaiterais vous rencontrer dans mon bureau concernant votre situation. Merci de prendre rendez-vous.',
+//     preview: 'Convocation pour entretien',
+//     icon: 'M8 7V3a2 2 0 012-2h4a2 2 0 012 2v4m-6 0h6m-6 0l-1.5 8.5A2 2 0 009.5 21h5a2 2 0 002-1.5L15 12',
+//     category: 'meeting'
+//   }
+// ])
 
 const canSendMessage = computed(() => {
   return currentMessage.value.trim().length > 0

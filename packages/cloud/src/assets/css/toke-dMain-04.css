@@ -33,7 +33,7 @@
 .logo {
     width: 55px;
     height: 55px;
-    /*background: var(--color-primary);*/
+
     border-radius: 8px;
     display: flex;
     align-items: center;
@@ -45,9 +45,9 @@
 
 .company-name {
     font-size: 10px;
-    font-weight: 400;
     color: var(--text-primary);
     text-align: center;
+    height: 8%;
 }
 
 .header-actions {
@@ -111,9 +111,8 @@
 
 .user-name {
     font-size: 18px;
-    font-weight: 600;
+    font-weight: 800;
     color: var(--text-primary);
-    padding-top: 12px;
 
 }
 
@@ -193,9 +192,6 @@
         padding: 0 var(--space-md);
     }
     .company-name {
-        display: none;
-    }
-    .user-name {
         display: none;
     }
     .nav-container {

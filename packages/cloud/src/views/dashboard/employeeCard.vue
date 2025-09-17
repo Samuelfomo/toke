@@ -91,7 +91,7 @@
 </template>
 
 <script setup lang="ts">
-import { onMounted, ref } from 'vue';
+import { onMounted } from 'vue';
 import cardCss from "../../assets/css/tokt-employeeC-06.css?url"
 import HeadBuilder from '@/utils/HeadBuilder';
 import router from '@/router';
