@@ -350,7 +350,7 @@ router.get('/pending-adjustments/:tenant', Ensure.get(), async (req: Request, re
       return R.handleError(res, HttpStatus.BAD_REQUEST, {
         code: 'not_active_license',
         message: 'active global license not found',
-      })
+      }) 
     }
 
     // Récupérer les ajustements en attente de paiement

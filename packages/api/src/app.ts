@@ -27,7 +27,6 @@ import EmployeeLicenseRoute from './license/routes/employee.license.route.js';
 import BillingCycleRoute from './license/routes/billing.cycle.route.js';
 import FraudDetectionLogRoute from './license/routes/fraud.detection.log.route.js';
 import ActivityMonitoringRoute from './license/routes/activity.monitoring.route.js';
-import { ServerAuth } from './license/middle/server-auth.js';
 import ProfileRoutes from './temporaire_route/profile.routes.js';
 import BillingRoute from './license/routes/manager/billing.route.js';
 import FraudRoute from './license/routes/manager/fraud.route.js';
@@ -157,7 +156,7 @@ export default class App {
 
     // 🔐 MIDDLEWARE D'AUTHENTIFICATION GLOBAL
     // ⚠️ INTERCEPTE TOUTES LES REQUÊTES (même /health)
-    this.app.use(ServerAuth.authenticate);
+    // this.app.use(ServerAuth.authenticate);
   }
 
   /**

@@ -197,7 +197,11 @@ export default class FraudDetectionLogModel extends BaseModel {
       {
         [this.db.employee_licenses_affected]: {
           [Op.contains]: [employeeId]
+          // [Op.and]: [
+          //   Sequelize.literal(`"${this.db.employee_licenses_affected}" ? '${employeeId}'`)
+          // ]
         }
+
       },
       paginationOptions,
       // [{ field: this.db.created_at, direction: 'DESC' }]

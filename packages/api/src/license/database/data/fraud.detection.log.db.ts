@@ -17,6 +17,16 @@ export const FraudDetectionLogDbStructure = {
       },
       comment: 'Fraud Detection Log',
     },
+    guid: {
+      type: DataTypes.UUID,
+      allowNull: false,
+      defaultValue: DataTypes.UUIDV4,
+      unique: {name: 'unique_fraud_guid', msg: 'This GUID must be unique.'},
+      validate: {
+        isUUID: 4,
+      },
+      comment: 'Unique identifier',
+    },
     tenant: {
       type: DataTypes.INTEGER,
       allowNull: false,

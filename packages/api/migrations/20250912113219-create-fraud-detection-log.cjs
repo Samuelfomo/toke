@@ -66,8 +66,13 @@ module.exports = {
           allowNull: false,
           comment: 'Type de fraude détectée'
         },
+        // employee_licenses_affected: {
+        //   type: 'TEXT[]',
+        //   allowNull: false,
+        //   comment: 'Array des IDs employés concernés (références vers employee field)'
+        // },
         employee_licenses_affected: {
-          type: 'TEXT[]',
+          type: Sequelize.JSONB,
           allowNull: false,
           comment: 'Array des IDs employés concernés (références vers employee field)'
         },

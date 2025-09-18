@@ -25,7 +25,8 @@ module.exports = {
           percentage_technical DECIMAL;
           risk_level risk_level_enum;
           criteria JSONB;
-          affected_employees TEXT[];
+          affected_employees JSONB;
+          -- affected_employees TEXT[];
           
           -- Variables pour détection masse déactivation
           deactivations_24h INTEGER;

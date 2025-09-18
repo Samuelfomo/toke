@@ -1,0 +1,831 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<meta http-equiv="content-type" content="text/html; charset=utf-8"/>
+	<title></title>
+	<meta name="generator" content="LibreOffice 24.8.4.2 (MacOSX)"/>
+	<meta name="created" content="00:00:00"/>
+	<meta name="changed" content="2025-09-18T15:36:20.509148376"/>
+	<style type="text/css">
+		@page { size: 21cm 29.7cm; margin: 2cm }
+		p { line-height: 115%; margin-bottom: 0.25cm; background: transparent }
+		pre { font-family: "Liberation Mono", monospace; font-size: 10pt; background: transparent }
+		a:link { color: #000080; text-decoration: underline }
+		a:visited { color: #800000; text-decoration: underline }
+	</style>
+</head>
+<body lang="en-GB" link="#000080" vlink="#800000" dir="ltr"><pre lang="fr-FR" style="line-height: 150%; text-align: justify"><font size="3" style="font-size: 12pt"># 📋 TOKÉ - PRÉSENTATION DU POINTAGE EMPLOYÉ</font>
+
+<font size="3" style="font-size: 12pt"><span lang="fr-FR">&gt; **Document de Référence Technique v2.0**  </span></font>
+<font size="3" style="font-size: 12pt"><span lang="fr-FR">&gt; **Système de Pointage 100% Smartphone pour l'Afrique Centrale**  </span></font>
+<font size="3" style="font-size: 12pt"><span lang="fr-FR">&gt; **Architecture Unifiée - Sessions de Travail - Anti-Fraude Intégré**</span></font>
+
+<font size="3" style="font-size: 12pt"><span lang="fr-FR">---</span></font>
+
+<font size="3" style="font-size: 12pt"><span lang="fr-FR">## 🎯 CONCEPT GÉNÉRAL</span></font>
+
+<font size="3" style="font-size: 12pt"><span lang="fr-FR">### 📱 Vision Produit</span></font>
+<font size="3" style="font-size: 12pt"><span lang="fr-FR">**Toké transforme le smartphone en badgeuse universelle** permettant aux employés de pointer leur présence via QR Code + GPS, avec une approche **&quot;cancre-proof&quot;** adaptée au marché africain.</span></font>
+
+<font size="3" style="font-size: 12pt"><span lang="fr-FR">### 🔑 Principe Fondamental : **SESSIONS DE POINTAGE**</span></font>
+<font size="3" style="font-size: 12pt"><span lang="fr-FR">Contrairement aux systèmes traditionnels basés sur des &quot;journées&quot;, Toké gère des **sessions de travail** :</span></font>
+<font size="3" style="font-size: 12pt"><span lang="fr-FR">- **Session = Clock-in → Clock-out** avec pauses optionnelles entre</span></font>
+<font size="3" style="font-size: 12pt"><span lang="fr-FR">- **Un employé = Une session active maximum** (cohérence garantie)</span></font>
+<font size="3" style="font-size: 12pt"><span lang="fr-FR">- **Calculs automatiques** durées travail/pause par session</span></font>
+<font size="3" style="font-size: 12pt"><span lang="fr-FR">- **Gestion chevauchements** jour/nuit (gardes, équipes de nuit)</span></font>
+
+<font size="3" style="font-size: 12pt"><span lang="fr-FR">### 🛡️ Sécurité Anti-Fraude</span></font>
+<font size="3" style="font-size: 12pt"><span lang="fr-FR">- **QR Code + GPS obligatoires** : Double validation présence</span></font>
+<font size="3" style="font-size: 12pt"><span lang="fr-FR">- **Géofencing intelligent** : Polygones complexes par site</span></font>
+<font size="3" style="font-size: 12pt"><span lang="fr-FR">- **Détection patterns suspects** : Vitesse, doublons, incohérences</span></font>
+<font size="3" style="font-size: 12pt"><span lang="fr-FR">- **Audit trail complet** : Traçabilité légale toute modification</span></font>
+
+<font size="3" style="font-size: 12pt"><span lang="fr-FR">---</span></font>
+
+<font size="3" style="font-size: 12pt"><span lang="fr-FR">## 👥 ACTEURS &amp; RÔLES</span></font>
+
+<font size="3" style="font-size: 12pt"><span lang="fr-FR">### 🏗️ Architecture Utilisateurs Unifiée</span></font>
+
+<font size="3" style="font-size: 12pt"><span lang="fr-FR">Toké utilise une **table `users` unique** avec système de **rôles flexibles** pour supporter tous cas organisationnels.</span></font>
+
+<font size="3" style="font-size: 12pt"><span lang="fr-FR">#### 📋 **Rôles Système Prédéfinis**</span></font>
+
+<font size="3" style="font-size: 12pt"><span lang="fr-FR">| Rôle | Code | Permissions | Cas d'Usage |</span></font>
+<font size="3" style="font-size: 12pt"><span lang="fr-FR">|------|------|-------------|-------------|</span></font>
+<font size="3" style="font-size: 12pt"><span lang="fr-FR">| **Employé** | `EMPLOYEE` | • Pointage&lt;br/&gt;• Création mémos&lt;br/&gt;• Consultation historique personnel | Ouvriers, secrétaires, techniciens |</span></font>
+<font size="3" style="font-size: 12pt"><span lang="fr-FR">| **Manager** | `MANAGER` | • Pointage personnel&lt;br/&gt;• Gestion équipe&lt;br/&gt;• Validation mémos&lt;br/&gt;• Création sites/QR | Chefs d'équipe, responsables service |</span></font>
+<font size="3" style="font-size: 12pt"><span lang="fr-FR">| **Manager Senior** | `MANAGER_SENIOR` | • Toutes permissions Manager&lt;br/&gt;• Supervision managers&lt;br/&gt;• Escalade mémos&lt;br/&gt;• Analytics avancées | Directeurs, responsables région |</span></font>
+<font size="3" style="font-size: 12pt"><span lang="fr-FR">| **Admin RH** | `HR_ADMIN` | • Accès tenant complet&lt;br/&gt;• Gestion utilisateurs&lt;br/&gt;• Configuration système | Service RH, comptabilité |</span></font>
+<font size="3" style="font-size: 12pt"><span lang="fr-FR">| **Auditeur** | `AUDITOR` | • Pointage multi-sites&lt;br/&gt;• Rapports audit&lt;br/&gt;• Missions temporaires | Contrôleurs, inspecteurs |</span></font>
+
+<font size="3" style="font-size: 12pt"><span lang="fr-FR">#### 🔄 **Combinaisons de Rôles** (Multi-Rôles)</span></font>
+
+<font size="3" style="font-size: 12pt"><span lang="fr-FR">```</span></font>
+<font size="3" style="font-size: 12pt"><span lang="fr-FR">Exemple : Pierre = Chef Chantier</span></font>
+├── <font size="3" style="font-size: 12pt"><span lang="fr-FR">Rôle MANAGER : Gère 8 ouvriers + crée QR Chantier Nord</span></font>
+└── <font size="3" style="font-size: 12pt"><span lang="fr-FR">Rôle EMPLOYEE : Pointe ses propres heures + manager = Directeur Travaux</span></font>
+
+<font size="3" style="font-size: 12pt"><span lang="fr-FR">Exemple : Sophie = Responsable Région  </span></font>
+├── <font size="3" style="font-size: 12pt"><span lang="fr-FR">Rôle MANAGER_SENIOR : Supervise 3 chefs d'agence</span></font>
+└── <font size="3" style="font-size: 12pt"><span lang="fr-FR">Rôle EMPLOYEE : Employée du Directeur National</span></font>
+<font size="3" style="font-size: 12pt"><span lang="fr-FR">```</span></font>
+
+<font size="3" style="font-size: 12pt"><span lang="fr-FR">### 🏢 **Hiérarchie Organisationnelle**</span></font>
+
+<font size="3" style="font-size: 12pt"><span lang="fr-FR">**Structure Flexible N-Niveaux** via table `org_hierarchy` :</span></font>
+
+<font size="3" style="font-size: 12pt"><span lang="fr-FR">```</span></font>
+<font size="3" style="font-size: 12pt"><span lang="fr-FR">TENANT : BATIX SARL</span></font>
+│
+├── <font size="3" style="font-size: 12pt"><span lang="fr-FR">Directeur Général (HR_ADMIN + MANAGER_SENIOR)</span></font>
+│   │
+│   ├── <font size="3" style="font-size: 12pt"><span lang="fr-FR">Directeur Travaux (MANAGER_SENIOR + EMPLOYEE)</span></font>
+│   │   │
+│   │   ├── <font size="3" style="font-size: 12pt"><span lang="fr-FR">Chef Chantier Nord (MANAGER + EMPLOYEE)</span></font>
+│   │   │   ├── <font size="3" style="font-size: 12pt"><span lang="fr-FR">Ouvrier 1 (EMPLOYEE)</span></font>
+│   │   │   ├── <font size="3" style="font-size: 12pt"><span lang="fr-FR">Ouvrier 2 (EMPLOYEE)  </span></font>
+│   │   │   └── <font size="3" style="font-size: 12pt"><span lang="fr-FR">Ouvrier 3 (EMPLOYEE)</span></font>
+│   │   │
+│   │   └── <font size="3" style="font-size: 12pt"><span lang="fr-FR">Chef Chantier Sud (MANAGER + EMPLOYEE)</span></font>
+│   │       ├── <font size="3" style="font-size: 12pt"><span lang="fr-FR">Ouvrier 4 (EMPLOYEE)</span></font>
+│   │       └── <font size="3" style="font-size: 12pt"><span lang="fr-FR">Ouvrier 5 (EMPLOYEE)</span></font>
+│   │
+│   └── <font size="3" style="font-size: 12pt"><span lang="fr-FR">Responsable Bureau (MANAGER + EMPLOYEE)</span></font>
+│       ├── <font size="3" style="font-size: 12pt"><span lang="fr-FR">Secrétaire (EMPLOYEE)</span></font>
+│       ├── <font size="3" style="font-size: 12pt"><span lang="fr-FR">Comptable (EMPLOYEE)</span></font>
+│       └── <font size="3" style="font-size: 12pt"><span lang="fr-FR">Auditeur Mobile (AUDITOR + EMPLOYEE)</span></font>
+<font size="3" style="font-size: 12pt"><span lang="fr-FR">```</span></font>
+
+<font size="3" style="font-size: 12pt"><span lang="fr-FR">---</span></font>
+
+<font size="3" style="font-size: 12pt"><span lang="fr-FR">## 🏗️ MODULES &amp; FONCTIONNALITÉS</span></font>
+
+<font size="3" style="font-size: 12pt"><span lang="fr-FR">### 📱 **Module Pointage Core**</span></font>
+
+<font size="3" style="font-size: 12pt"><span lang="fr-FR">#### **1. Authentification Différenciée**</span></font>
+<font size="3" style="font-size: 12pt"><span lang="fr-FR">- **OTP Onboarding** : Code 6 chiffres temporaire (première connexion)</span></font>
+<font size="3" style="font-size: 12pt"><span lang="fr-FR">- **PIN Employé** : 4 chiffres + biométrie (usage quotidien pointage)</span></font>
+<font size="3" style="font-size: 12pt"><span lang="fr-FR">- **Password Manager** : Email + mot de passe (gestion équipe)</span></font>
+
+<font size="3" style="font-size: 12pt"><span lang="fr-FR">#### **2. Types de Pointage**</span></font>
+<font size="3" style="font-size: 12pt"><span lang="fr-FR">| Type | Description | Impact Session | Géofencing |</span></font>
+<font size="3" style="font-size: 12pt"><span lang="fr-FR">|------|-------------|----------------|------------|</span></font>
+<font size="3" style="font-size: 12pt"><span lang="fr-FR">| `clock_in` | Ouverture session travail | Crée nouvelle session | Obligatoire |</span></font>
+<font size="3" style="font-size: 12pt"><span lang="fr-FR">| `clock_out` | Fermeture session travail | Ferme session active | Obligatoire |</span></font>
+<font size="3" style="font-size: 12pt"><span lang="fr-FR">| `pause_start` | Début pause (déjeuner, etc.) | Session reste ouverte | Obligatoire |</span></font>
+<font size="3" style="font-size: 12pt"><span lang="fr-FR">| `pause_end` | Fin pause | Session reste ouverte | Obligatoire |</span></font>
+<font size="3" style="font-size: 12pt"><span lang="fr-FR">| `external_mission` | Mission externe site | Session reste ouverte | Flexibilité GPS |</span></font>
+
+<font size="3" style="font-size: 12pt"><span lang="fr-FR">#### **3. Gestion Sites Flexible**</span></font>
+<font size="3" style="font-size: 12pt"><span lang="fr-FR">- **Manager Sites** : QR personnel manager (équipe dédiée)</span></font>
+<font size="3" style="font-size: 12pt"><span lang="fr-FR">- **Global Sites** : Sites partagés (agences, bureaux communs)</span></font>
+<font size="3" style="font-size: 12pt"><span lang="fr-FR">- **Temporary Sites** : Missions temporaires, chantiers courts</span></font>
+<font size="3" style="font-size: 12pt"><span lang="fr-FR">- **Public Sites** : Gares, aéroports (cas auditeurs/commerciaux)</span></font>
+
+<font size="3" style="font-size: 12pt"><span lang="fr-FR">### 🔄 **Module Synchronisation Offline**</span></font>
+
+<font size="3" style="font-size: 12pt"><span lang="fr-FR">#### **Architecture Offline-First**</span></font>
+<font size="3" style="font-size: 12pt"><span lang="fr-FR">- **Stockage local SQLite** : Pointages en attente sync</span></font>
+<font size="3" style="font-size: 12pt"><span lang="fr-FR">- **Conflict resolution** : Timestamp serveur prime</span></font>
+<font size="3" style="font-size: 12pt"><span lang="fr-FR">- **Batch synchronisation** : Upload multiple pointages offline</span></font>
+<font size="3" style="font-size: 12pt"><span lang="fr-FR">- **Auto-retry intelligent** : Exponential backoff réseau instable</span></font>
+
+<font size="3" style="font-size: 12pt"><span lang="fr-FR">#### **Gestion Conflits**</span></font>
+<font size="3" style="font-size: 12pt"><span lang="fr-FR">```</span></font>
+<font size="3" style="font-size: 12pt"><span lang="fr-FR">Scénario Conflit :</span></font>
+<font size="3" style="font-size: 12pt"><span lang="fr-FR">1. Employé pointe offline 8h00</span></font>
+<font size="3" style="font-size: 12pt"><span lang="fr-FR">2. Manager corrige online 8h15  </span></font>
+<font size="3" style="font-size: 12pt"><span lang="fr-FR">3. Sync employé : détection conflit</span></font>
+<font size="3" style="font-size: 12pt"><span lang="fr-FR">4. Résolution auto si &lt;30min, sinon mémo review manager</span></font>
+<font size="3" style="font-size: 12pt"><span lang="fr-FR">```</span></font>
+
+<font size="3" style="font-size: 12pt"><span lang="fr-FR">### 📝 **Module Mémos &amp; Justifications**</span></font>
+
+<font size="3" style="font-size: 12pt"><span lang="fr-FR">#### **Types de Mémos**</span></font>
+<font size="3" style="font-size: 12pt"><span lang="fr-FR">- **Préventifs** : &quot;Demain retard rdv médical&quot; (avant incident)</span></font>
+<font size="3" style="font-size: 12pt"><span lang="fr-FR">- **Correctifs** : &quot;Oubli pointage sortie hier 17h&quot; (après incident)  </span></font>
+<font size="3" style="font-size: 12pt"><span lang="fr-FR">- **Auto-générés** : Système détecte incohérence → mémo automatique</span></font>
+
+<font size="3" style="font-size: 12pt"><span lang="fr-FR">#### **Workflow Validation**</span></font>
+<font size="3" style="font-size: 12pt"><span lang="fr-FR">```</span></font>
+<font size="3" style="font-size: 12pt"><span lang="fr-FR">Employé crée mémo → Manager validation (24h) → [Validé/Rejeté]</span></font>
+                    ↓ <font size="3" style="font-size: 12pt"><span lang="fr-FR">(si délai dépassé)</span></font>
+                  <font size="3" style="font-size: 12pt"><span lang="fr-FR">Escalade N+1 automatique</span></font>
+<font size="3" style="font-size: 12pt"><span lang="fr-FR">```</span></font>
+
+<font size="3" style="font-size: 12pt"><span lang="fr-FR">#### **Pièces Jointes**</span></font>
+<font size="3" style="font-size: 12pt"><span lang="fr-FR">- **Photos** : Justificatifs, tickets transport (max 5MB)</span></font>
+<font size="3" style="font-size: 12pt"><span lang="fr-FR">- **Audio** : Explications 30s max (français local)</span></font>
+<font size="3" style="font-size: 12pt"><span lang="fr-FR">- **Métadonnées** : GPS création, device info, timestamp légal</span></font>
+
+<font size="3" style="font-size: 12pt"><span lang="fr-FR">### 🚨 **Module Anti-Fraude**</span></font>
+
+<font size="3" style="font-size: 12pt"><span lang="fr-FR">#### **Détections Automatiques**</span></font>
+<font size="3" style="font-size: 12pt"><span lang="fr-FR">- **Géofencing violation** : Pointage hors zone autorisée</span></font>
+<font size="3" style="font-size: 12pt"><span lang="fr-FR">- **Doublons temporels** : &lt;15min même site même employé</span></font>
+<font size="3" style="font-size: 12pt"><span lang="fr-FR">- **Vitesse impossible** : Déplacement irréaliste entre sites</span></font>
+<font size="3" style="font-size: 12pt"><span lang="fr-FR">- **GPS spoofing** : Mock location Android détectée</span></font>
+<font size="3" style="font-size: 12pt"><span lang="fr-FR">- **Patterns suspects** : Comportements récurrents anormaux</span></font>
+
+<font size="3" style="font-size: 12pt"><span lang="fr-FR">#### **Niveaux d'Alerte**</span></font>
+<font size="3" style="font-size: 12pt"><span lang="fr-FR">- **Low** : Logs système, pas de notification</span></font>
+<font size="3" style="font-size: 12pt"><span lang="fr-FR">- **Medium** : Notification manager delayed</span></font>
+<font size="3" style="font-size: 12pt"><span lang="fr-FR">- **High** : Notification manager immédiate  </span></font>
+<font size="3" style="font-size: 12pt"><span lang="fr-FR">- **Critical** : Blocage pointage + investigation manuelle</span></font>
+
+<font size="3" style="font-size: 12pt"><span lang="fr-FR">---</span></font>
+
+<font size="3" style="font-size: 12pt"><span lang="fr-FR">## 🔄 WORKFLOWS DÉTAILLÉS</span></font>
+
+<font size="3" style="font-size: 12pt"><span lang="fr-FR">### 📋 **Workflow 1 : Onboarding Employé**</span></font>
+
+<font size="3" style="font-size: 12pt"><span lang="fr-FR">```mermaid</span></font>
+<font size="3" style="font-size: 12pt"><span lang="fr-FR">sequenceDiagram</span></font>
+    <font size="3" style="font-size: 12pt"><span lang="fr-FR">participant M as Manager (App Manager)</span></font>
+    <font size="3" style="font-size: 12pt"><span lang="fr-FR">participant S as Serveur Toké</span></font>
+    <font size="3" style="font-size: 12pt"><span lang="fr-FR">participant E as Employé (App Pointage)</span></font>
+    
+    <font size="3" style="font-size: 12pt"><span lang="fr-FR">M-&gt;&gt;S: Ajout employé + génération OTP</span></font>
+    <font size="3" style="font-size: 12pt"><span lang="fr-FR">S-&gt;&gt;E: SMS/WhatsApp OTP (847392)</span></font>
+    <font size="3" style="font-size: 12pt"><span lang="fr-FR">E-&gt;&gt;S: Installation app + saisie OTP</span></font>
+    <font size="3" style="font-size: 12pt"><span lang="fr-FR">S-&gt;&gt;E: Authentification + liaison manager</span></font>
+    <font size="3" style="font-size: 12pt"><span lang="fr-FR">E-&gt;&gt;E: Configuration PIN local + biométrie</span></font>
+    <font size="3" style="font-size: 12pt"><span lang="fr-FR">E-&gt;&gt;S: Premier pointage test</span></font>
+    <font size="3" style="font-size: 12pt"><span lang="fr-FR">S-&gt;&gt;M: Notification employé actif</span></font>
+<font size="3" style="font-size: 12pt"><span lang="fr-FR">```</span></font>
+
+<font size="3" style="font-size: 12pt"><span lang="fr-FR">### ⏰ **Workflow 2 : Session Pointage Standard**</span></font>
+
+<font size="3" style="font-size: 12pt"><span lang="fr-FR">```mermaid</span></font>
+<font size="3" style="font-size: 12pt"><span lang="fr-FR">sequenceDiagram</span></font>
+    <font size="3" style="font-size: 12pt"><span lang="fr-FR">participant E as Employé</span></font>
+    <font size="3" style="font-size: 12pt"><span lang="fr-FR">participant A as App Pointage</span></font>
+    <font size="3" style="font-size: 12pt"><span lang="fr-FR">participant S as Serveur</span></font>
+    <font size="3" style="font-size: 12pt"><span lang="fr-FR">participant M as Manager</span></font>
+    
+    <font size="3" style="font-size: 12pt"><span lang="fr-FR">Note over E,M: Matinée - Arrivée Chantier</span></font>
+    <font size="3" style="font-size: 12pt"><span lang="fr-FR">E-&gt;&gt;A: Ouvre app (PIN/Touch)</span></font>
+    <font size="3" style="font-size: 12pt"><span lang="fr-FR">A-&gt;&gt;A: Scan QR Code site</span></font>
+    <font size="3" style="font-size: 12pt"><span lang="fr-FR">A-&gt;&gt;S: POST /pointage (clock_in + GPS)</span></font>
+    <font size="3" style="font-size: 12pt"><span lang="fr-FR">S-&gt;&gt;S: Validation géofencing + création session</span></font>
+    <font size="3" style="font-size: 12pt"><span lang="fr-FR">S-&gt;&gt;A: ✅ Session ouverte 8h15</span></font>
+    <font size="3" style="font-size: 12pt"><span lang="fr-FR">S-&gt;&gt;M: 📱 Notification arrivée Pierre</span></font>
+    
+    <font size="3" style="font-size: 12pt"><span lang="fr-FR">Note over E,M: Midi - Pause Déjeuner  </span></font>
+    <font size="3" style="font-size: 12pt"><span lang="fr-FR">E-&gt;&gt;A: Bouton &quot;Pause Déj&quot;</span></font>
+    <font size="3" style="font-size: 12pt"><span lang="fr-FR">A-&gt;&gt;S: POST /pointage (pause_start)</span></font>
+    <font size="3" style="font-size: 12pt"><span lang="fr-FR">S-&gt;&gt;A: ✅ Pause débutée 12h00</span></font>
+    
+    <font size="3" style="font-size: 12pt"><span lang="fr-FR">Note over E,M: 13h30 - Reprise Travail</span></font>
+    <font size="3" style="font-size: 12pt"><span lang="fr-FR">E-&gt;&gt;A: Bouton &quot;Reprendre&quot;  </span></font>
+    <font size="3" style="font-size: 12pt"><span lang="fr-FR">A-&gt;&gt;S: POST /pointage (pause_end)</span></font>
+    <font size="3" style="font-size: 12pt"><span lang="fr-FR">S-&gt;&gt;A: ✅ Travail repris 13h32</span></font>
+    
+    <font size="3" style="font-size: 12pt"><span lang="fr-FR">Note over E,M: Soir - Départ</span></font>
+    <font size="3" style="font-size: 12pt"><span lang="fr-FR">E-&gt;&gt;A: Scan QR Code site</span></font>
+    <font size="3" style="font-size: 12pt"><span lang="fr-FR">A-&gt;&gt;S: POST /pointage (clock_out + GPS)</span></font>
+    <font size="3" style="font-size: 12pt"><span lang="fr-FR">S-&gt;&gt;S: Fermeture session + calcul durées</span></font>
+    <font size="3" style="font-size: 12pt"><span lang="fr-FR">S-&gt;&gt;A: 🏠 Session fermée - 8h58 travaillées</span></font>
+    <font size="3" style="font-size: 12pt"><span lang="fr-FR">S-&gt;&gt;M: 📊 Rapport journée Pierre</span></font>
+<font size="3" style="font-size: 12pt"><span lang="fr-FR">```</span></font>
+
+<font size="3" style="font-size: 12pt"><span lang="fr-FR">### 🚨 **Workflow 3 : Gestion Exception**</span></font>
+
+<font size="3" style="font-size: 12pt"><span lang="fr-FR">```mermaid</span></font>
+<font size="3" style="font-size: 12pt"><span lang="fr-FR">sequenceDiagram</span></font>
+    <font size="3" style="font-size: 12pt"><span lang="fr-FR">participant E as Employé</span></font>
+    <font size="3" style="font-size: 12pt"><span lang="fr-FR">participant A as App Pointage  </span></font>
+    <font size="3" style="font-size: 12pt"><span lang="fr-FR">participant S as Serveur</span></font>
+    <font size="3" style="font-size: 12pt"><span lang="fr-FR">participant M as Manager</span></font>
+    
+    <font size="3" style="font-size: 12pt"><span lang="fr-FR">Note over E,M: Scénario : Employé oublie clock-out hier</span></font>
+    <font size="3" style="font-size: 12pt"><span lang="fr-FR">E-&gt;&gt;A: Tentative clock-in ce matin</span></font>
+    <font size="3" style="font-size: 12pt"><span lang="fr-FR">A-&gt;&gt;S: POST /pointage (clock_in)</span></font>
+    <font size="3" style="font-size: 12pt"><span lang="fr-FR">S-&gt;&gt;S: ⚠️ Détection session non fermée</span></font>
+    <font size="3" style="font-size: 12pt"><span lang="fr-FR">S-&gt;&gt;S: Auto-fermeture session précédente</span></font>
+    <font size="3" style="font-size: 12pt"><span lang="fr-FR">S-&gt;&gt;S: Création mémo automatique</span></font>
+    <font size="3" style="font-size: 12pt"><span lang="fr-FR">S-&gt;&gt;A: ✅ Nouveau clock-in + ⚠️ Mémo créé</span></font>
+    <font size="3" style="font-size: 12pt"><span lang="fr-FR">S-&gt;&gt;M: 📝 Mémo auto &quot;Session non fermée&quot;</span></font>
+    
+    <font size="3" style="font-size: 12pt"><span lang="fr-FR">Note over M: Manager traite mémo</span></font>
+    <font size="3" style="font-size: 12pt"><span lang="fr-FR">M-&gt;&gt;S: Validation mémo</span></font>
+    <font size="3" style="font-size: 12pt"><span lang="fr-FR">S-&gt;&gt;E: 📱 Mémo validé</span></font>
+    <font size="3" style="font-size: 12pt"><span lang="fr-FR">S-&gt;&gt;S: Correction données pointage</span></font>
+<font size="3" style="font-size: 12pt"><span lang="fr-FR">```</span></font>
+
+<font size="3" style="font-size: 12pt"><span lang="fr-FR">### 🔄 **Workflow 4 : Synchronisation Offline**</span></font>
+
+<font size="3" style="font-size: 12pt"><span lang="fr-FR">```mermaid</span></font>
+<font size="3" style="font-size: 12pt"><span lang="fr-FR">sequenceDiagram</span></font>
+    <font size="3" style="font-size: 12pt"><span lang="fr-FR">participant E as Employé</span></font>
+    <font size="3" style="font-size: 12pt"><span lang="fr-FR">participant L as SQLite Local</span></font>
+    <font size="3" style="font-size: 12pt"><span lang="fr-FR">participant A as App Pointage</span></font>
+    <font size="3" style="font-size: 12pt"><span lang="fr-FR">participant S as Serveur</span></font>
+    
+    <font size="3" style="font-size: 12pt"><span lang="fr-FR">Note over E,S: Mode Offline (pas de réseau)</span></font>
+    <font size="3" style="font-size: 12pt"><span lang="fr-FR">E-&gt;&gt;A: Pointages multiples</span></font>
+    <font size="3" style="font-size: 12pt"><span lang="fr-FR">A-&gt;&gt;L: Stockage local sécurisé</span></font>
+    <font size="3" style="font-size: 12pt"><span lang="fr-FR">L-&gt;&gt;A: Queue sync (3 pointages en attente)</span></font>
+    
+    <font size="3" style="font-size: 12pt"><span lang="fr-FR">Note over E,S: Connexion récupérée</span></font>
+    <font size="3" style="font-size: 12pt"><span lang="fr-FR">A-&gt;&gt;A: Détection réseau</span></font>
+    <font size="3" style="font-size: 12pt"><span lang="fr-FR">A-&gt;&gt;S: POST /pointage/batch (3 pointages)</span></font>
+    <font size="3" style="font-size: 12pt"><span lang="fr-FR">S-&gt;&gt;S: Traitement séquentiel + validation</span></font>
+    <font size="3" style="font-size: 12pt"><span lang="fr-FR">S-&gt;&gt;A: Résultats : 2 ✅ / 1 ❌ (conflit)</span></font>
+    <font size="3" style="font-size: 12pt"><span lang="fr-FR">A-&gt;&gt;L: Nettoyage données synchronisées</span></font>
+    <font size="3" style="font-size: 12pt"><span lang="fr-FR">A-&gt;&gt;E: 📱 Sync terminée - 1 conflit à résoudre</span></font>
+<font size="3" style="font-size: 12pt"><span lang="fr-FR">```</span></font>
+
+<font size="3" style="font-size: 12pt"><span lang="fr-FR">---</span></font>
+
+<font size="3" style="font-size: 12pt"><span lang="fr-FR">## 🗄️ STRUCTURE TABLES SQL</span></font>
+
+<font size="3" style="font-size: 12pt"><span lang="fr-FR">### 📊 **Tables Core Système**</span></font>
+
+<font size="3" style="font-size: 12pt"><span lang="fr-FR">#### **1. Utilisateurs Unifiés**</span></font>
+<font size="3" style="font-size: 12pt"><span lang="fr-FR">```sql</span></font>
+<font size="3" style="font-size: 12pt"><span lang="fr-FR">-- Table principale : tous utilisateurs (managers + employés)</span></font>
+<font size="3" style="font-size: 12pt"><span lang="fr-FR">CREATE TABLE users (</span></font>
+    <font size="3" style="font-size: 12pt"><span lang="fr-FR">id SERIAL PRIMARY KEY,</span></font>
+    <font size="3" style="font-size: 12pt"><span lang="fr-FR">user_guid UUID UNIQUE NOT NULL DEFAULT gen_random_uuid(),</span></font>
+    <font size="3" style="font-size: 12pt"><span lang="fr-FR">tenant_id INTEGER REFERENCES tenants(id) ON DELETE CASCADE,</span></font>
+    
+    <font size="3" style="font-size: 12pt"><span lang="fr-FR">-- Informations personnelles</span></font>
+    <font size="3" style="font-size: 12pt"><span lang="fr-FR">email VARCHAR(255) UNIQUE,          -- Obligatoire si manager</span></font>
+    <font size="3" style="font-size: 12pt"><span lang="fr-FR">first_name VARCHAR(100) NOT NULL,</span></font>
+    <font size="3" style="font-size: 12pt"><span lang="fr-FR">last_name VARCHAR(100) NOT NULL,</span></font>
+    <font size="3" style="font-size: 12pt"><span lang="fr-FR">phone_number VARCHAR(20) UNIQUE,    -- Obligatoire si employé</span></font>
+    <font size="3" style="font-size: 12pt"><span lang="fr-FR">employee_code VARCHAR(20) UNIQUE,   -- Auto-généré si employé</span></font>
+    
+    <font size="3" style="font-size: 12pt"><span lang="fr-FR">-- Authentification différenciée</span></font>
+    <font size="3" style="font-size: 12pt"><span lang="fr-FR">pin_hash VARCHAR(255),              -- PIN employé (pointage)</span></font>
+    <font size="3" style="font-size: 12pt"><span lang="fr-FR">password_hash VARCHAR(255),         -- Password manager (gestion)</span></font>
+    <font size="3" style="font-size: 12pt"><span lang="fr-FR">otp_token VARCHAR(10),              -- OTP temporaire onboarding</span></font>
+    <font size="3" style="font-size: 12pt"><span lang="fr-FR">otp_expires_at TIMESTAMPTZ,</span></font>
+    
+    <font size="3" style="font-size: 12pt"><span lang="fr-FR">-- QR Code personnel (si manager)</span></font>
+    <font size="3" style="font-size: 12pt"><span lang="fr-FR">qr_code_token VARCHAR(255) UNIQUE,</span></font>
+    <font size="3" style="font-size: 12pt"><span lang="fr-FR">qr_code_expires_at TIMESTAMPTZ,</span></font>
+    
+    <font size="3" style="font-size: 12pt"><span lang="fr-FR">-- Métadonnées</span></font>
+    <font size="3" style="font-size: 12pt"><span lang="fr-FR">avatar_url TEXT,</span></font>
+    <font size="3" style="font-size: 12pt"><span lang="fr-FR">hire_date DATE,</span></font>
+    <font size="3" style="font-size: 12pt"><span lang="fr-FR">department VARCHAR(100),</span></font>
+    <font size="3" style="font-size: 12pt"><span lang="fr-FR">job_title VARCHAR(100),</span></font>
+    
+    <font size="3" style="font-size: 12pt"><span lang="fr-FR">-- Statuts</span></font>
+    <font size="3" style="font-size: 12pt"><span lang="fr-FR">is_active BOOLEAN DEFAULT TRUE,</span></font>
+    <font size="3" style="font-size: 12pt"><span lang="fr-FR">last_login_at TIMESTAMPTZ,</span></font>
+    <font size="3" style="font-size: 12pt"><span lang="fr-FR">created_at TIMESTAMPTZ DEFAULT NOW(),</span></font>
+    <font size="3" style="font-size: 12pt"><span lang="fr-FR">updated_at TIMESTAMPTZ DEFAULT NOW()</span></font>
+<font size="3" style="font-size: 12pt"><span lang="fr-FR">);</span></font>
+<font size="3" style="font-size: 12pt"><span lang="fr-FR">```</span></font>
+
+<font size="3" style="font-size: 12pt"><span lang="fr-FR">#### **2. Système de Rôles**</span></font>
+<font size="3" style="font-size: 12pt"><span lang="fr-FR">```sql</span></font>
+<font size="3" style="font-size: 12pt"><span lang="fr-FR">-- Rôles système (permissions granulaires)</span></font>
+<font size="3" style="font-size: 12pt"><span lang="fr-FR">CREATE TABLE roles (</span></font>
+    <font size="3" style="font-size: 12pt"><span lang="fr-FR">id SERIAL PRIMARY KEY,</span></font>
+    <font size="3" style="font-size: 12pt"><span lang="fr-FR">role_code VARCHAR(50) UNIQUE NOT NULL,</span></font>
+    <font size="3" style="font-size: 12pt"><span lang="fr-FR">role_name VARCHAR(100) NOT NULL,</span></font>
+    <font size="3" style="font-size: 12pt"><span lang="fr-FR">description TEXT,</span></font>
+    <font size="3" style="font-size: 12pt"><span lang="fr-FR">permissions JSONB NOT NULL,</span></font>
+    <font size="3" style="font-size: 12pt"><span lang="fr-FR">is_system_role BOOLEAN DEFAULT TRUE</span></font>
+<font size="3" style="font-size: 12pt"><span lang="fr-FR">);</span></font>
+
+<font size="3" style="font-size: 12pt"><span lang="fr-FR">-- Attribution rôles aux utilisateurs (many-to-many)</span></font>
+<font size="3" style="font-size: 12pt"><span lang="fr-FR">CREATE TABLE user_roles (</span></font>
+    <font size="3" style="font-size: 12pt"><span lang="fr-FR">id SERIAL PRIMARY KEY,</span></font>
+    <font size="3" style="font-size: 12pt"><span lang="fr-FR">user_id INTEGER REFERENCES users(id) ON DELETE CASCADE,</span></font>
+    <font size="3" style="font-size: 12pt"><span lang="fr-FR">role_id INTEGER REFERENCES roles(id) ON DELETE CASCADE,</span></font>
+    <font size="3" style="font-size: 12pt"><span lang="fr-FR">assigned_at TIMESTAMPTZ DEFAULT NOW(),</span></font>
+    <font size="3" style="font-size: 12pt"><span lang="fr-FR">assigned_by INTEGER REFERENCES users(id),</span></font>
+    <font size="3" style="font-size: 12pt"><span lang="fr-FR">UNIQUE(user_id, role_id)</span></font>
+<font size="3" style="font-size: 12pt"><span lang="fr-FR">);</span></font>
+<font size="3" style="font-size: 12pt"><span lang="fr-FR">```</span></font>
+
+<font size="3" style="font-size: 12pt"><span lang="fr-FR">#### **3. Hiérarchie Organisationnelle**</span></font>
+<font size="3" style="font-size: 12pt"><span lang="fr-FR">```sql</span></font>
+<font size="3" style="font-size: 12pt"><span lang="fr-FR">-- Relations hiérarchiques (n-levels, flexible)</span></font>
+<font size="3" style="font-size: 12pt"><span lang="fr-FR">CREATE TABLE org_hierarchy (</span></font>
+    <font size="3" style="font-size: 12pt"><span lang="fr-FR">id SERIAL PRIMARY KEY,</span></font>
+    <font size="3" style="font-size: 12pt"><span lang="fr-FR">subordinate_id INTEGER REFERENCES users(id) ON DELETE CASCADE,</span></font>
+    <font size="3" style="font-size: 12pt"><span lang="fr-FR">supervisor_id INTEGER REFERENCES users(id) ON DELETE CASCADE,</span></font>
+    
+    <font size="3" style="font-size: 12pt"><span lang="fr-FR">-- Métadonnées relation</span></font>
+    <font size="3" style="font-size: 12pt"><span lang="fr-FR">relationship_type VARCHAR(50) DEFAULT 'direct_report',</span></font>
+    <font size="3" style="font-size: 12pt"><span lang="fr-FR">effective_from DATE NOT NULL DEFAULT CURRENT_DATE,</span></font>
+    <font size="3" style="font-size: 12pt"><span lang="fr-FR">effective_to DATE, -- NULL = relation active</span></font>
+    
+    <font size="3" style="font-size: 12pt"><span lang="fr-FR">-- Contexte organisationnel</span></font>
+    <font size="3" style="font-size: 12pt"><span lang="fr-FR">department VARCHAR(100),</span></font>
+    <font size="3" style="font-size: 12pt"><span lang="fr-FR">cost_center VARCHAR(50),</span></font>
+    <font size="3" style="font-size: 12pt"><span lang="fr-FR">delegation_level INTEGER DEFAULT 1,</span></font>
+    
+    <font size="3" style="font-size: 12pt"><span lang="fr-FR">created_at TIMESTAMPTZ DEFAULT NOW(),</span></font>
+    <font size="3" style="font-size: 12pt"><span lang="fr-FR">UNIQUE(subordinate_id, supervisor_id, effective_from)</span></font>
+<font size="3" style="font-size: 12pt"><span lang="fr-FR">);</span></font>
+<font size="3" style="font-size: 12pt"><span lang="fr-FR">```</span></font>
+
+<font size="3" style="font-size: 12pt"><span lang="fr-FR">### 🏢 **Tables Sites &amp; Géolocalisation**</span></font>
+
+<font size="3" style="font-size: 12pt"><span lang="fr-FR">#### **4. Sites de Travail**</span></font>
+<font size="3" style="font-size: 12pt"><span lang="fr-FR">```sql</span></font>
+<font size="3" style="font-size: 12pt"><span lang="fr-FR">CREATE TABLE sites (</span></font>
+    <font size="3" style="font-size: 12pt"><span lang="fr-FR">id SERIAL PRIMARY KEY,</span></font>
+    <font size="3" style="font-size: 12pt"><span lang="fr-FR">site_guid UUID UNIQUE NOT NULL DEFAULT gen_random_uuid(),</span></font>
+    <font size="3" style="font-size: 12pt"><span lang="fr-FR">tenant_id INTEGER REFERENCES tenants(id) ON DELETE CASCADE,</span></font>
+    <font size="3" style="font-size: 12pt"><span lang="fr-FR">created_by_user_id INTEGER REFERENCES users(id) ON DELETE SET NULL,</span></font>
+    
+    <font size="3" style="font-size: 12pt"><span lang="fr-FR">-- Informations site</span></font>
+    <font size="3" style="font-size: 12pt"><span lang="fr-FR">site_name VARCHAR(255) NOT NULL,</span></font>
+    <font size="3" style="font-size: 12pt"><span lang="fr-FR">site_type site_type NOT NULL DEFAULT 'manager_site',</span></font>
+    <font size="3" style="font-size: 12pt"><span lang="fr-FR">address TEXT,</span></font>
+    
+    <font size="3" style="font-size: 12pt"><span lang="fr-FR">-- Géofencing (polygone complexe GeoJSON)</span></font>
+    <font size="3" style="font-size: 12pt"><span lang="fr-FR">geofence_polygon JSONB NOT NULL,</span></font>
+    <font size="3" style="font-size: 12pt"><span lang="fr-FR">geofence_radius INTEGER DEFAULT 100,</span></font>
+    
+    <font size="3" style="font-size: 12pt"><span lang="fr-FR">-- QR Code &amp; autorisations</span></font>
+    <font size="3" style="font-size: 12pt"><span lang="fr-FR">qr_reference_user_id INTEGER REFERENCES users(id),</span></font>
+    <font size="3" style="font-size: 12pt"><span lang="fr-FR">qr_code_data JSONB NOT NULL,</span></font>
+    <font size="3" style="font-size: 12pt"><span lang="fr-FR">is_active BOOLEAN DEFAULT TRUE,</span></font>
+    <font size="3" style="font-size: 12pt"><span lang="fr-FR">is_public BOOLEAN DEFAULT FALSE,</span></font>
+    <font size="3" style="font-size: 12pt"><span lang="fr-FR">allowed_roles JSONB,</span></font>
+    
+    <font size="3" style="font-size: 12pt"><span lang="fr-FR">created_at TIMESTAMPTZ DEFAULT NOW(),</span></font>
+    <font size="3" style="font-size: 12pt"><span lang="fr-FR">updated_at TIMESTAMPTZ DEFAULT NOW()</span></font>
+<font size="3" style="font-size: 12pt"><span lang="fr-FR">);</span></font>
+
+<font size="3" style="font-size: 12pt"><span lang="fr-FR">-- Types de sites</span></font>
+<font size="3" style="font-size: 12pt"><span lang="fr-FR">CREATE TYPE site_type AS ENUM (</span></font>
+    <font size="3" style="font-size: 12pt"><span lang="fr-FR">'manager_site',     -- Site créé par manager</span></font>
+    <font size="3" style="font-size: 12pt"><span lang="fr-FR">'global_site',      -- Site partagé</span></font>
+    <font size="3" style="font-size: 12pt"><span lang="fr-FR">'temporary_site',   -- Mission temporaire</span></font>
+    <font size="3" style="font-size: 12pt"><span lang="fr-FR">'public_site'       -- Accès libre (gares, etc.)</span></font>
+<font size="3" style="font-size: 12pt"><span lang="fr-FR">);</span></font>
+<font size="3" style="font-size: 12pt"><span lang="fr-FR">```</span></font>
+
+<font size="3" style="font-size: 12pt"><span lang="fr-FR">### ⏰ **Tables Pointages &amp; Sessions**</span></font>
+
+<font size="3" style="font-size: 12pt"><span lang="fr-FR">#### **5. Sessions de Travail**</span></font>
+<font size="3" style="font-size: 12pt"><span lang="fr-FR">```sql</span></font>
+<font size="3" style="font-size: 12pt"><span lang="fr-FR">-- Sessions de travail (concept central)</span></font>
+<font size="3" style="font-size: 12pt"><span lang="fr-FR">CREATE TABLE work_sessions (</span></font>
+    <font size="3" style="font-size: 12pt"><span lang="fr-FR">id SERIAL PRIMARY KEY,</span></font>
+    <font size="3" style="font-size: 12pt"><span lang="fr-FR">session_guid UUID UNIQUE NOT NULL DEFAULT gen_random_uuid(),</span></font>
+    <font size="3" style="font-size: 12pt"><span lang="fr-FR">user_id INTEGER REFERENCES users(id) ON DELETE CASCADE,</span></font>
+    <font size="3" style="font-size: 12pt"><span lang="fr-FR">site_id INTEGER REFERENCES sites(id) ON DELETE CASCADE,</span></font>
+    <font size="3" style="font-size: 12pt"><span lang="fr-FR">session_status session_status DEFAULT 'open',</span></font>
+    
+    <font size="3" style="font-size: 12pt"><span lang="fr-FR">-- Timestamps session</span></font>
+    <font size="3" style="font-size: 12pt"><span lang="fr-FR">session_start_at TIMESTAMPTZ NOT NULL,</span></font>
+    <font size="3" style="font-size: 12pt"><span lang="fr-FR">session_end_at TIMESTAMPTZ,</span></font>
+    
+    <font size="3" style="font-size: 12pt"><span lang="fr-FR">-- Calculs automatiques</span></font>
+    <font size="3" style="font-size: 12pt"><span lang="fr-FR">total_work_duration INTERVAL,</span></font>
+    <font size="3" style="font-size: 12pt"><span lang="fr-FR">total_pause_duration INTERVAL,</span></font>
+    
+    <font size="3" style="font-size: 12pt"><span lang="fr-FR">-- Géolocalisation</span></font>
+    <font size="3" style="font-size: 12pt"><span lang="fr-FR">start_latitude DECIMAL(10,8),</span></font>
+    <font size="3" style="font-size: 12pt"><span lang="fr-FR">start_longitude DECIMAL(11,8),</span></font>
+    <font size="3" style="font-size: 12pt"><span lang="fr-FR">end_latitude DECIMAL(10,8),</span></font>
+    <font size="3" style="font-size: 12pt"><span lang="fr-FR">end_longitude DECIMAL(11,8),</span></font>
+    
+    <font size="3" style="font-size: 12pt"><span lang="fr-FR">-- Justification liée</span></font>
+    <font size="3" style="font-size: 12pt"><span lang="fr-FR">memo_id INTEGER REFERENCES memos(id) ON DELETE SET NULL,</span></font>
+    
+    <font size="3" style="font-size: 12pt"><span lang="fr-FR">created_at TIMESTAMPTZ DEFAULT NOW(),</span></font>
+    <font size="3" style="font-size: 12pt"><span lang="fr-FR">updated_at TIMESTAMPTZ DEFAULT NOW()</span></font>
+<font size="3" style="font-size: 12pt"><span lang="fr-FR">);</span></font>
+
+<font size="3" style="font-size: 12pt"><span lang="fr-FR">-- Statuts de session</span></font>
+<font size="3" style="font-size: 12pt"><span lang="fr-FR">CREATE TYPE session_status AS ENUM (</span></font>
+    <font size="3" style="font-size: 12pt"><span lang="fr-FR">'open',         -- Session en cours</span></font>
+    <font size="3" style="font-size: 12pt"><span lang="fr-FR">'closed',       -- Fermée normalement</span></font>
+    <font size="3" style="font-size: 12pt"><span lang="fr-FR">'abandoned',    -- Non fermée (oubli)</span></font>
+    <font size="3" style="font-size: 12pt"><span lang="fr-FR">'corrected'     -- Corrigée manuellement</span></font>
+<font size="3" style="font-size: 12pt"><span lang="fr-FR">);</span></font>
+
+<font size="3" style="font-size: 12pt"><span lang="fr-FR">-- Partitionnement par mois (performance)</span></font>
+<font size="3" style="font-size: 12pt"><span lang="fr-FR">-- Créé automatiquement par fonction maintenance</span></font>
+<font size="3" style="font-size: 12pt"><span lang="fr-FR">```</span></font>
+
+<font size="3" style="font-size: 12pt"><span lang="fr-FR">#### **6. Pointages Individuels**</span></font>
+<font size="3" style="font-size: 12pt"><span lang="fr-FR">```sql</span></font>
+<font size="3" style="font-size: 12pt"><span lang="fr-FR">-- Pointages individuels (actions dans sessions)</span></font>
+<font size="3" style="font-size: 12pt"><span lang="fr-FR">CREATE TABLE time_entries (</span></font>
+    <font size="3" style="font-size: 12pt"><span lang="fr-FR">id SERIAL PRIMARY KEY,</span></font>
+    <font size="3" style="font-size: 12pt"><span lang="fr-FR">entry_guid UUID UNIQUE NOT NULL DEFAULT gen_random_uuid(),</span></font>
+    <font size="3" style="font-size: 12pt"><span lang="fr-FR">session_id INTEGER REFERENCES work_sessions(id) ON DELETE CASCADE,</span></font>
+    <font size="3" style="font-size: 12pt"><span lang="fr-FR">user_id INTEGER REFERENCES users(id) ON DELETE CASCADE,</span></font>
+    <font size="3" style="font-size: 12pt"><span lang="fr-FR">site_id INTEGER REFERENCES sites(id) ON DELETE CASCADE,</span></font>
+    
+    <font size="3" style="font-size: 12pt"><span lang="fr-FR">-- Type et statut pointage</span></font>
+    <font size="3" style="font-size: 12pt"><span lang="fr-FR">pointage_type pointage_type NOT NULL,</span></font>
+    <font size="3" style="font-size: 12pt"><span lang="fr-FR">pointage_status pointage_status DEFAULT 'pending',</span></font>
+    
+    <font size="3" style="font-size: 12pt"><span lang="fr-FR">-- Timestamps (déclaré vs réel si correction)</span></font>
+    <font size="3" style="font-size: 12pt"><span lang="fr-FR">clocked_at TIMESTAMPTZ NOT NULL,</span></font>
+    <font size="3" style="font-size: 12pt"><span lang="fr-FR">real_clocked_at TIMESTAMPTZ,</span></font>
+    <font size="3" style="font-size: 12pt"><span lang="fr-FR">server_received_at TIMESTAMPTZ DEFAULT NOW(),</span></font>
+    
+    <font size="3" style="font-size: 12pt"><span lang="fr-FR">-- Géolocalisation obligatoire</span></font>
+    <font size="3" style="font-size: 12pt"><span lang="fr-FR">latitude DECIMAL(10,8) NOT NULL,</span></font>
+    <font size="3" style="font-size: 12pt"><span lang="fr-FR">longitude DECIMAL(11,8) NOT NULL,</span></font>
+    <font size="3" style="font-size: 12pt"><span lang="fr-FR">gps_accuracy INTEGER,</span></font>
+    
+    <font size="3" style="font-size: 12pt"><span lang="fr-FR">-- Métadonnées device (anti-fraude)</span></font>
+    <font size="3" style="font-size: 12pt"><span lang="fr-FR">device_info JSONB,</span></font>
+    <font size="3" style="font-size: 12pt"><span lang="fr-FR">ip_address INET,</span></font>
+    <font size="3" style="font-size: 12pt"><span lang="fr-FR">user_agent TEXT,</span></font>
+    
+    <font size="3" style="font-size: 12pt"><span lang="fr-FR">-- Gestion offline/sync</span></font>
+    <font size="3" style="font-size: 12pt"><span lang="fr-FR">created_offline BOOLEAN DEFAULT FALSE,</span></font>
+    <font size="3" style="font-size: 12pt"><span lang="fr-FR">local_id VARCHAR(50),</span></font>
+    <font size="3" style="font-size: 12pt"><span lang="fr-FR">sync_attempts INTEGER DEFAULT 0,</span></font>
+    <font size="3" style="font-size: 12pt"><span lang="fr-FR">last_sync_attempt TIMESTAMPTZ,</span></font>
+    
+    <font size="3" style="font-size: 12pt"><span lang="fr-FR">-- Justification</span></font>
+    <font size="3" style="font-size: 12pt"><span lang="fr-FR">memo_id INTEGER REFERENCES memos(id) ON DELETE SET NULL,</span></font>
+    <font size="3" style="font-size: 12pt"><span lang="fr-FR">correction_reason TEXT,</span></font>
+    
+    <font size="3" style="font-size: 12pt"><span lang="fr-FR">created_at TIMESTAMPTZ DEFAULT NOW(),</span></font>
+    <font size="3" style="font-size: 12pt"><span lang="fr-FR">updated_at TIMESTAMPTZ DEFAULT NOW()</span></font>
+<font size="3" style="font-size: 12pt"><span lang="fr-FR">);</span></font>
+
+<font size="3" style="font-size: 12pt"><span lang="fr-FR">-- Types de pointage</span></font>
+<font size="3" style="font-size: 12pt"><span lang="fr-FR">CREATE TYPE pointage_type AS ENUM (</span></font>
+    <font size="3" style="font-size: 12pt"><span lang="fr-FR">'clock_in',         -- Ouverture session</span></font>
+    <font size="3" style="font-size: 12pt"><span lang="fr-FR">'clock_out',        -- Fermeture session</span></font>
+    <font size="3" style="font-size: 12pt"><span lang="fr-FR">'pause_start',      -- Début pause</span></font>
+    <font size="3" style="font-size: 12pt"><span lang="fr-FR">'pause_end',        -- Fin pause</span></font>
+    <font size="3" style="font-size: 12pt"><span lang="fr-FR">'external_mission'  -- Mission externe</span></font>
+<font size="3" style="font-size: 12pt"><span lang="fr-FR">);</span></font>
+
+<font size="3" style="font-size: 12pt"><span lang="fr-FR">-- Statuts pointage</span></font>
+<font size="3" style="font-size: 12pt"><span lang="fr-FR">CREATE TYPE pointage_status AS ENUM (</span></font>
+    <font size="3" style="font-size: 12pt"><span lang="fr-FR">'draft',        -- Créé offline</span></font>
+    <font size="3" style="font-size: 12pt"><span lang="fr-FR">'pending',      -- En attente validation</span></font>
+    <font size="3" style="font-size: 12pt"><span lang="fr-FR">'accepted',     -- Validé automatiquement</span></font>
+    <font size="3" style="font-size: 12pt"><span lang="fr-FR">'corrected',    -- Corrigé par manager</span></font>
+    <font size="3" style="font-size: 12pt"><span lang="fr-FR">'accounted',    -- Pris en compte paie</span></font>
+    <font size="3" style="font-size: 12pt"><span lang="fr-FR">'rejected'      -- Rejeté (fraude)</span></font>
+<font size="3" style="font-size: 12pt"><span lang="fr-FR">);</span></font>
+<font size="3" style="font-size: 12pt"><span lang="fr-FR">```</span></font>
+
+<font size="3" style="font-size: 12pt"><span lang="fr-FR">### 📝 **Tables Mémos &amp; Justifications**</span></font>
+
+<font size="3" style="font-size: 12pt"><span lang="fr-FR">#### **7. Mémos**</span></font>
+<font size="3" style="font-size: 12pt"><span lang="fr-FR">```sql</span></font>
+<font size="3" style="font-size: 12pt"><span lang="fr-FR">-- Mémos (justifications employés/managers)</span></font>
+<font size="3" style="font-size: 12pt"><span lang="fr-FR">CREATE TABLE memos (</span></font>
+    <font size="3" style="font-size: 12pt"><span lang="fr-FR">id SERIAL PRIMARY KEY,</span></font>
+    <font size="3" style="font-size: 12pt"><span lang="fr-FR">memo_guid UUID UNIQUE NOT NULL DEFAULT gen_random_uuid(),</span></font>
+    <font size="3" style="font-size: 12pt"><span lang="fr-FR">author_user_id INTEGER REFERENCES users(id) ON DELETE CASCADE,</span></font>
+    <font size="3" style="font-size: 12pt"><span lang="fr-FR">target_user_id INTEGER REFERENCES users(id) ON DELETE CASCADE, -- Si différent auteur</span></font>
+    <font size="3" style="font-size: 12pt"><span lang="fr-FR">validator_user_id INTEGER REFERENCES users(id) ON DELETE CASCADE,</span></font>
+    
+    <font size="3" style="font-size: 12pt"><span lang="fr-FR">-- Contenu mémo</span></font>
+    <font size="3" style="font-size: 12pt"><span lang="fr-FR">memo_type memo_type NOT NULL,</span></font>
+    <font size="3" style="font-size: 12pt"><span lang="fr-FR">memo_status memo_status DEFAULT 'draft',</span></font>
+    <font size="3" style="font-size: 12pt"><span lang="fr-FR">title VARCHAR(200) NOT NULL,</span></font>
+    <font size="3" style="font-size: 12pt"><span lang="fr-FR">description TEXT NOT NULL,</span></font>
+    
+    <font size="3" style="font-size: 12pt"><span lang="fr-FR">-- Incident concerné</span></font>
+    <font size="3" style="font-size: 12pt"><span lang="fr-FR">incident_datetime TIMESTAMPTZ,</span></font>
+    <font size="3" style="font-size: 12pt"><span lang="fr-FR">affected_session_id INTEGER REFERENCES work_sessions(id),</span></font>
+    <font size="3" style="font-size: 12pt"><span lang="fr-FR">affected_entries_ids INTEGER[], -- Array IDs pointages concernés</span></font>
+    
+    <font size="3" style="font-size: 12pt"><span lang="fr-FR">-- Pièces jointes (URLs signées)</span></font>
+    <font size="3" style="font-size: 12pt"><span lang="fr-FR">attachments JSONB,</span></font>
+    
+    <font size="3" style="font-size: 12pt"><span lang="fr-FR">-- Traitement</span></font>
+    <font size="3" style="font-size: 12pt"><span lang="fr-FR">validator_comments TEXT,</span></font>
+    <font size="3" style="font-size: 12pt"><span lang="fr-FR">processed_at TIMESTAMPTZ,</span></font>
+    
+    <font size="3" style="font-size: 12pt"><span lang="fr-FR">-- Auto-génération</span></font>
+    <font size="3" style="font-size: 12pt"><span lang="fr-FR">auto_generated BOOLEAN DEFAULT FALSE,</span></font>
+    <font size="3" style="font-size: 12pt"><span lang="fr-FR">auto_reason VARCHAR(255),</span></font>
+    
+    <font size="3" style="font-size: 12pt"><span lang="fr-FR">created_at TIMESTAMPTZ DEFAULT NOW(),</span></font>
+    <font size="3" style="font-size: 12pt"><span lang="fr-FR">updated_at TIMESTAMPTZ DEFAULT NOW()</span></font>
+<font size="3" style="font-size: 12pt"><span lang="fr-FR">);</span></font>
+
+<font size="3" style="font-size: 12pt"><span lang="fr-FR">-- Types de mémos</span></font>
+<font size="3" style="font-size: 12pt"><span lang="fr-FR">CREATE TYPE memo_type AS ENUM (</span></font>
+    <font size="3" style="font-size: 12pt"><span lang="fr-FR">'delay_justification',      -- Retard expliqué</span></font>
+    <font size="3" style="font-size: 12pt"><span lang="fr-FR">'absence_justification',    -- Absence expliquée</span></font>
+    <font size="3" style="font-size: 12pt"><span lang="fr-FR">'correction_request',       -- Demande correction</span></font>
+    <font size="3" style="font-size: 12pt"><span lang="fr-FR">'session_closure',          -- Fermeture oubliée</span></font>
+    <font size="3" style="font-size: 12pt"><span lang="fr-FR">'auto_generated'            -- Mémo automatique</span></font>
+<font size="3" style="font-size: 12pt"><span lang="fr-FR">);</span></font>
+
+<font size="3" style="font-size: 12pt"><span lang="fr-FR">-- Statuts mémos</span></font>
+<font size="3" style="font-size: 12pt"><span lang="fr-FR">CREATE TYPE memo_status AS ENUM (</span></font>
+    <font size="3" style="font-size: 12pt"><span lang="fr-FR">'draft',        -- Brouillon local</span></font>
+    <font size="3" style="font-size: 12pt"><span lang="fr-FR">'submitted',    -- Soumis validateur</span></font>
+    <font size="3" style="font-size: 12pt"><span lang="fr-FR">'pending',      -- En attente traitement</span></font>
+    <font size="3" style="font-size: 12pt"><span lang="fr-FR">'approved',     -- Approuvé</span></font>
+    <font size="3" style="font-size: 12pt"><span lang="fr-FR">'rejected'      -- Rejeté</span></font>
+<font size="3" style="font-size: 12pt"><span lang="fr-FR">);</span></font>
+<font size="3" style="font-size: 12pt"><span lang="fr-FR">```</span></font>
+
+<font size="3" style="font-size: 12pt"><span lang="fr-FR">### 🔍 **Tables Audit &amp; Sécurité**</span></font>
+
+<font size="3" style="font-size: 12pt"><span lang="fr-FR">#### **8. Audit Trail**</span></font>
+<font size="3" style="font-size: 12pt"><span lang="fr-FR">```sql</span></font>
+<font size="3" style="font-size: 12pt"><span lang="fr-FR">-- Logs d'audit (toute modification tracée)</span></font>
+<font size="3" style="font-size: 12pt"><span lang="fr-FR">CREATE TABLE audit_logs (</span></font>
+    <font size="3" style="font-size: 12pt"><span lang="fr-FR">id SERIAL PRIMARY KEY,</span></font>
+    <font size="3" style="font-size: 12pt"><span lang="fr-FR">table_name VARCHAR(50) NOT NULL,</span></font>
+    <font size="3" style="font-size: 12pt"><span lang="fr-FR">record_id INTEGER NOT NULL,</span></font>
+    <font size="3" style="font-size: 12pt"><span lang="fr-FR">record_guid UUID,</span></font>
+    <font size="3" style="font-size: 12pt"><span lang="fr-FR">operation VARCHAR(10) NOT NULL, -- INSERT, UPDATE, DELETE</span></font>
+    <font size="3" style="font-size: 12pt"><span lang="fr-FR">old_values JSONB,</span></font>
+    <font size="3" style="font-size: 12pt"><span lang="fr-FR">new_values JSONB,</span></font>
+    <font size="3" style="font-size: 12pt"><span lang="fr-FR">changed_by_user_id INTEGER,</span></font>
+    <font size="3" style="font-size: 12pt"><span lang="fr-FR">changed_by_type VARCHAR(20), -- 'user', 'system', 'api'</span></font>
+    <font size="3" style="font-size: 12pt"><span lang="fr-FR">change_reason TEXT,</span></font>
+    <font size="3" style="font-size: 12pt"><span lang="fr-FR">ip_address INET,</span></font>
+    <font size="3" style="font-size: 12pt"><span lang="fr-FR">user_agent TEXT,</span></font>
+    <font size="3" style="font-size: 12pt"><span lang="fr-FR">created_at TIMESTAMPTZ DEFAULT NOW()</span></font>
+<font size="3" style="font-size: 12pt"><span lang="fr-FR">);</span></font>
+<font size="3" style="font-size: 12pt"><span lang="fr-FR">```</span></font>
+
+<font size="3" style="font-size: 12pt"><span lang="fr-FR">#### **9. Détection Fraude**</span></font>
+<font size="3" style="font-size: 12pt"><span lang="fr-FR">```sql</span></font>
+<font size="3" style="font-size: 12pt"><span lang="fr-FR">-- Alertes fraude &amp; anomalies</span></font>
+<font size="3" style="font-size: 12pt"><span lang="fr-FR">CREATE TABLE fraud_alerts (</span></font>
+    <font size="3" style="font-size: 12pt"><span lang="fr-FR">id SERIAL PRIMARY KEY,</span></font>
+    <font size="3" style="font-size: 12pt"><span lang="fr-FR">alert_guid UUID UNIQUE NOT NULL DEFAULT gen_random_uuid(),</span></font>
+    <font size="3" style="font-size: 12pt"><span lang="fr-FR">user_id INTEGER REFERENCES users(id) ON DELETE CASCADE,</span></font>
+    <font size="3" style="font-size: 12pt"><span lang="fr-FR">time_entry_id INTEGER REFERENCES time_entries(id) ON DELETE CASCADE,</span></font>
+    
+    <font size="3" style="font-size: 12pt"><span lang="fr-FR">alert_type VARCHAR(50) NOT NULL,</span></font>
+    <font size="3" style="font-size: 12pt"><span lang="fr-FR">alert_severity VARCHAR(20) DEFAULT 'medium',</span></font>
+    <font size="3" style="font-size: 12pt"><span lang="fr-FR">alert_description TEXT NOT NULL,</span></font>
+    <font size="3" style="font-size: 12pt"><span lang="fr-FR">alert_data JSONB, -- Données détaillées</span></font>
+    
+    <font size="3" style="font-size: 12pt"><span lang="fr-FR">is_investigated BOOLEAN DEFAULT FALSE,</span></font>
+    <font size="3" style="font-size: 12pt"><span lang="fr-FR">investigation_notes TEXT,</span></font>
+    <font size="3" style="font-size: 12pt"><span lang="fr-FR">is_false_positive BOOLEAN DEFAULT FALSE,</span></font>
+    
+    <font size="3" style="font-size: 12pt"><span lang="fr-FR">created_at TIMESTAMPTZ DEFAULT NOW(),</span></font>
+    <font size="3" style="font-size: 12pt"><span lang="fr-FR">investigated_at TIMESTAMPTZ</span></font>
+<font size="3" style="font-size: 12pt"><span lang="fr-FR">);</span></font>
+<font size="3" style="font-size: 12pt"><span lang="fr-FR">```</span></font>
+
+<font size="3" style="font-size: 12pt"><span lang="fr-FR">### 📈 **Index &amp; Performance**</span></font>
+
+<font size="3" style="font-size: 12pt"><span lang="fr-FR">#### **Index Principaux**</span></font>
+<font size="3" style="font-size: 12pt"><span lang="fr-FR">```sql</span></font>
+<font size="3" style="font-size: 12pt"><span lang="fr-FR">-- Index utilisateurs</span></font>
+<font size="3" style="font-size: 12pt"><span lang="fr-FR">CREATE INDEX idx_users_tenant_id ON users(tenant_id);</span></font>
+<font size="3" style="font-size: 12pt"><span lang="fr-FR">CREATE INDEX idx_users_phone ON users(phone_number);</span></font>
+<font size="3" style="font-size: 12pt"><span lang="fr-FR">CREATE INDEX idx_users_email ON users(email);</span></font>
+<font size="3" style="font-size: 12pt"><span lang="fr-FR">CREATE INDEX idx_users_employee_code ON users(employee_code);</span></font>
+
+<font size="3" style="font-size: 12pt"><span lang="fr-FR">-- Index hiérarchie</span></font>
+<font size="3" style="font-size: 12pt"><span lang="fr-FR">CREATE INDEX idx_org_hierarchy_subordinate ON org_hierarchy(subordinate_id);</span></font>
+<font size="3" style="font-size: 12pt"><span lang="fr-FR">CREATE INDEX idx_org_hierarchy_supervisor ON org_hierarchy(supervisor_id);</span></font>
+<font size="3" style="font-size: 12pt"><span lang="fr-FR">CREATE INDEX idx_org_hierarchy_active ON org_hierarchy(supervisor_id, subordinate_id) </span></font>
+<font size="3" style="font-size: 12pt"><span lang="fr-FR">WHERE effective_to IS NULL;</span></font>
+
+<font size="3" style="font-size: 12pt"><span lang="fr-FR">-- Index sessions (requêtes fréquentes)</span></font>
+<font size="3" style="font-size: 12pt"><span lang="fr-FR">CREATE INDEX idx_work_sessions_user_id ON work_sessions(user_id);</span></font>
+<font size="3" style="font-size: 12pt"><span lang="fr-FR">CREATE INDEX idx_work_sessions_site_id ON work_sessions(site_id);</span></font>
+<font size="3" style="font-size: 12pt"><span lang="fr-FR">CREATE INDEX idx_work_sessions_status ON work_sessions(session_status);</span></font>
+<font size="3" style="font-size: 12pt"><span lang="fr-FR">CREATE INDEX idx_work_sessions_start_date ON work_sessions(session_start_at);</span></font>
+<font size="3" style="font-size: 12pt"><span lang="fr-FR">CREATE INDEX idx_work_sessions_user_start ON work_sessions(user_id, session_start_at DESC);</span></font>
+
+<font size="3" style="font-size: 12pt"><span lang="fr-FR">-- Index pointages (volume important)</span></font>
+<font size="3" style="font-size: 12pt"><span lang="fr-FR">CREATE INDEX idx_time_entries_session_id ON time_entries(session_id);</span></font>
+<font size="3" style="font-size: 12pt"><span lang="fr-FR">CREATE INDEX idx_time_entries_user_id ON time_entries(user_id);</span></font>
+<font size="3" style="font-size: 12pt"><span lang="fr-FR">CREATE INDEX idx_time_entries_site_id ON time_entries(site_id);</span></font>
+<font size="3" style="font-size: 12pt"><span lang="fr-FR">CREATE INDEX idx_time_entries_clocked_at ON time_entries(clocked_at);</span></font>
+<font size="3" style="font-size: 12pt"><span lang="fr-FR">CREATE INDEX idx_time_entries_status ON time_entries(pointage_status);</span></font>
+<font size="3" style="font-size: 12pt"><span lang="fr-FR">CREATE INDEX idx_time_entries_user_date ON time_entries(user_id, clocked_at DESC);</span></font>
+
+<font size="3" style="font-size: 12pt"><span lang="fr-FR">-- Index géospatial (géofencing)</span></font>
+<font size="3" style="font-size: 12pt"><span lang="fr-FR">CREATE INDEX idx_time_entries_location ON time_entries </span></font>
+<font size="3" style="font-size: 12pt"><span lang="fr-FR">USING GIST(ST_Point(longitude, latitude));</span></font>
+<font size="3" style="font-size: 12pt"><span lang="fr-FR">CREATE INDEX idx_sites_geofence ON sites USING GIN(geofence_polygon);</span></font>
+
+<font size="3" style="font-size: 12pt"><span lang="fr-FR">-- Index mémos</span></font>
+<font size="3" style="font-size: 12pt"><span lang="fr-FR">CREATE INDEX idx_memos_author_user_id ON memos(author_user_id);</span></font>
+<font size="3" style="font-size: 12pt"><span lang="fr-FR">CREATE INDEX idx_memos_validator_user_id ON memos(validator_user_id);</span></font>
+<font size="3" style="font-size: 12pt"><span lang="fr-FR">CREATE INDEX idx_memos_status ON memos(memo_status);</span></font>
+<font size="3" style="font-size: 12pt"><span lang="fr-FR">CREATE INDEX idx_memos_type ON memos(memo_type);</span></font>
+<font size="3" style="font-size: 12pt"><span lang="fr-FR">CREATE INDEX idx_memos_session_id ON memos(affected_session_id);</span></font>
+<font size="3" style="font-size: 12pt"><span lang="fr-FR">```</span></font>
+
+<font size="3" style="font-size: 12pt"><span lang="fr-FR">#### **Contraintes Métier**</span></font>
+<font size="3" style="font-size: 12pt"><span lang="fr-FR">```sql</span></font>
+<font size="3" style="font-size: 12pt"><span lang="fr-FR">-- Un utilisateur ne peut avoir qu'une session ouverte</span></font>
+<font size="3" style="font-size: 12pt"><span lang="fr-FR">CREATE UNIQUE INDEX idx_unique_open_session </span></font>
+<font size="3" style="font-size: 12pt"><span lang="fr-FR">ON work_sessions(user_id) </span></font>
+<font size="3" style="font-size: 12pt"><span lang="fr-FR">WHERE session_status = 'open';</span></font>
+
+<font size="3" style="font-size: 12pt"><span lang="fr-FR">-- Pointage offline unique par local_id</span></font>
+<font size="3" style="font-size: 12pt"><span lang="fr-FR">CREATE UNIQUE INDEX idx_unique_offline_entry</span></font>
+<font size="3" style="font-size: 12pt"><span lang="fr-FR">ON time_entries(user_id, local_id)</span></font>
+<font size="3" style="font-size: 12pt"><span lang="fr-FR">WHERE local_id IS NOT NULL;</span></font>
+
+<font size="3" style="font-size: 12pt"><span lang="fr-FR">-- QR code manager unique</span></font>
+<font size="3" style="font-size: 12pt"><span lang="fr-FR">CREATE UNIQUE INDEX idx_unique_manager_qr </span></font>
+<font size="3" style="font-size: 12pt"><span lang="fr-FR">ON users(qr_code_token) </span></font>
+<font size="3" style="font-size: 12pt"><span lang="fr-FR">WHERE qr_code_token IS NOT NULL;</span></font>
+
+<font size="3" style="font-size: 12pt"><span lang="fr-FR">-- OTP temporaire unique actif</span></font>
+<font size="3" style="font-size: 12pt"><span lang="fr-FR">CREATE UNIQUE INDEX idx_unique_active_otp</span></font>
+<font size="3" style="font-size: 12pt"><span lang="fr-FR">ON users(otp_token)</span></font>
+<font size="3" style="font-size: 12pt"><span lang="fr-FR">WHERE otp_token IS NOT NULL AND otp_expires_at &gt; NOW();</span></font>
+<font size="3" style="font-size: 12pt"><span lang="fr-FR">```</span></font>
+
+<font size="3" style="font-size: 12pt"><span lang="fr-FR">---</span></font>
+
+<font size="3" style="font-size: 12pt"><span lang="fr-FR">## 🔧 FONCTIONS MÉTIER CLÉS</span></font>
+
+<font size="3" style="font-size: 12pt"><span lang="fr-FR">### 📋 **Procédures Pointage**</span></font>
+
+<font size="3" style="font-size: 12pt"><span lang="fr-FR">#### **1. Authentification Employé**</span></font>
+<font size="3" style="font-size: 12pt"><span lang="fr-FR">```sql</span></font>
+<font size="3" style="font-size: 12pt"><span lang="fr-FR">CREATE OR REPLACE FUNCTION authenticate_user(</span></font>
+    <font size="3" style="font-size: 12pt"><span lang="fr-FR">p_otp VARCHAR(10) DEFAULT NULL,</span></font>
+    <font size="3" style="font-size: 12pt"><span lang="fr-FR">p_phone VARCHAR(20) DEFAULT NULL,</span></font>
+    <font size="3" style="font-size: 12pt"><span lang="fr-FR">p_pin_hash VARCHAR(255) DEFAULT NULL</span></font>
+<font size="3" style="font-size: 12pt"><span lang="fr-FR">) RETURNS TABLE (</span></font>
+    <font size="3" style="font-size: 12pt"><span lang="fr-FR">user_guid UUID,</span></font>
+    <font size="3" style="font-size: 12pt"><span lang="fr-FR">employee_code VARCHAR(20),</span></font>
+    <font size="3" style="font-size: 12pt"><span lang="fr-FR">full_name TEXT,</span></font>
+    <font size="3" style="font-size: 12pt"><span lang="fr-FR">roles TEXT[],</span></font>
+    <font size="3" style="font-size: 12pt"><span lang="fr-FR">tenant_guid UUID,</span></font>
+    <font size="3" style="font-size: 12pt"><span lang="fr-FR">is_first_login BOOLEAN</span></font>
+<font size="3" style="font-size: 12pt"><span lang="fr-FR">);</span></font>
+<font size="3" style="font-size: 12pt"><span lang="fr-FR">```</span></font>
+
+<font size="3" style="font-size: 12pt"><span lang="fr-FR">#### **2. Traitement Pointage**</span></font>
+<font size="3" style="font-size: 12pt"><span lang="fr-FR">```sql</span></font>
+<font size="3" style="font-size: 12pt"><span lang="fr-FR">CREATE OR REPLACE FUNCTION process_pointage(</span></font>
+    <font size="3" style="font-size: 12pt"><span lang="fr-FR">p_user_guid UUID,</span></font>
+    <font size="3" style="font-size: 12pt"><span lang="fr-FR">p_site_guid UUID,</span></font>
+    <font size="3" style="font-size: 12pt"><span lang="fr-FR">p_pointage_type pointage_type,</span></font>
+    <font size="3" style="font-size: 12pt"><span lang="fr-FR">p_clocked_at TIMESTAMPTZ,</span></font>
+    <font size="3" style="font-size: 12pt"><span lang="fr-FR">p_latitude DECIMAL(10,8),</span></font>
+    <font size="3" style="font-size: 12pt"><span lang="fr-FR">p_longitude DECIMAL(11,8),</span></font>
+    <font size="3" style="font-size: 12pt"><span lang="fr-FR">p_device_info JSONB DEFAULT NULL,</span></font>
+    <font size="3" style="font-size: 12pt"><span lang="fr-FR">p_local_id VARCHAR(50) DEFAULT NULL,</span></font>
+    <font size="3" style="font-size: 12pt"><span lang="fr-FR">p_created_offline BOOLEAN DEFAULT FALSE</span></font>
+<font size="3" style="font-size: 12pt"><span lang="fr-FR">) RETURNS TABLE (</span></font>
+    <font size="3" style="font-size: 12pt"><span lang="fr-FR">success BOOLEAN,</span></font>
+    <font size="3" style="font-size: 12pt"><span lang="fr-FR">entry_guid UUID,</span></font>
+    <font size="3" style="font-size: 12pt"><span lang="fr-FR">session_guid UUID,</span></font>
+    <font size="3" style="font-size: 12pt"><span lang="fr-FR">message TEXT,</span></font>
+    <font size="3" style="font-size: 12pt"><span lang="fr-FR">auto_memo_created BOOLEAN</span></font>
+<font size="3" style="font-size: 12pt"><span lang="fr-FR">);</span></font>
+<font size="3" style="font-size: 12pt"><span lang="fr-FR">```</span></font>
+
+<font size="3" style="font-size: 12pt"><span lang="fr-FR">#### **3. Synchronisation Batch**</span></font>
+<font size="3" style="font-size: 12pt"><span lang="fr-FR">```sql</span></font>
+<font size="3" style="font-size: 12pt"><span lang="fr-FR">CREATE OR REPLACE FUNCTION process_batch_pointages(</span></font>
+    <font size="3" style="font-size: 12pt"><span lang="fr-FR">p_user_guid UUID,</span></font>
+    <font size="3" style="font-size: 12pt"><span lang="fr-FR">p_pointages JSONB -- Array pointages offline</span></font>
+<font size="3" style="font-size: 12pt"><span lang="fr-FR">) RETURNS TABLE (</span></font>
+    <font size="3" style="font-size: 12pt"><span lang="fr-FR">processed_count INTEGER,</span></font>
+    <font size="3" style="font-size: 12pt"><span lang="fr-FR">success_count INTEGER,</span></font>
+    <font size="3" style="font-size: 12pt"><span lang="fr-FR">error_count INTEGER,</span></font>
+    <font size="3" style="font-size: 12pt"><span lang="fr-FR">results JSONB</span></font>
+<font size="3" style="font-size: 12pt"><span lang="fr-FR">);</span></font>
+<font size="3" style="font-size: 12pt"><span lang="fr-FR">```</span></font>
+
+<font size="3" style="font-size: 12pt"><span lang="fr-FR">### 🏢 **Fonctions Hiérarchie**</span></font>
+
+<font size="3" style="font-size: 12pt"><span lang="fr-FR">#### **4. Récupération Subordinés Récursive**</span></font>
+<font size="3" style="font-size: 12pt"><span lang="fr-FR">```sql</span></font>
+<font size="3" style="font-size: 12pt"><span lang="fr-FR">CREATE OR REPLACE FUNCTION get_all_subordinates(p_supervisor_id INTEGER)</span></font>
+<font size="3" style="font-size: 12pt"><span lang="fr-FR">RETURNS TABLE(</span></font>
+    <font size="3" style="font-size: 12pt"><span lang="fr-FR">subordinate_id INTEGER,</span></font>
+    <font size="3" style="font-size: 12pt"><span lang="fr-FR">subordinate_guid UUID,</span></font>
+    <font size="3" style="font-size: 12pt"><span lang="fr-FR">full_name TEXT,</span></font>
+    <font size="3" style="font-size: 12pt"><span lang="fr-FR">level_depth INTEGER,</span></font>
+    <font size="3" style="font-size: 12pt"><span lang="fr-FR">relationship_path TEXT[]</span></font>
+<font size="3" style="font-size: 12pt"><span lang="fr-FR">);</span></font>
+<font size="3" style="font-size: 12pt"><span lang="fr-FR">```</span></font>
+
+<font size="3" style="font-size: 12pt"><span lang="fr-FR">#### **5. Validation Autorisation Site**</span></font>
+<font size="3" style="font-size: 12pt"><span lang="fr-FR">```sql</span></font>
+<font size="3" style="font-size: 12pt"><span lang="fr-FR">CREATE OR REPLACE FUNCTION can_user_point_at_site(</span></font>
+    <font size="3" style="font-size: 12pt"><span lang="fr-FR">p_user_id INTEGER,</span></font>
+    <font size="3" style="font-size: 12pt"><span lang="fr-FR">p_site_id INTEGER</span></font>
+<font size="3" style="font-size: 12pt"><span lang="fr-FR">) RETURNS BOOLEAN;</span></font>
+<font size="3" style="font-size: 12pt"><span lang="fr-FR">```</span></font>
+
+<font size="3" style="font-size: 12pt"><span lang="fr-FR">#### **6. Résolution Validateur Mémo**</span></font>
+<font size="3" style="font-size: 12pt"><span lang="fr-FR">```sql</span></font>
+<font size="3" style="font-size: 12pt"><span lang="fr-FR">CREATE OR REPLACE FUNCTION get_memo_validator(p_user_id INTEGER)</span></font>
+<font size="3" style="font-size: 12pt"><span lang="fr-FR">RETURNS INTEGER;</span></font>
+<font size="3" style="font-size: 12pt"><span lang="fr-FR">```</span></font>
+
+<font size="3" style="font-size: 12pt"><span lang="fr-FR">---</span></font>
+
+<font size="3" style="font-size: 12pt"><span lang="fr-FR">## 🎯 POINTS CLÉS ARCHITECTURE</span></font>
+
+<font size="3" style="font-size: 12pt"><span lang="fr-FR">### ✅ **Avantages Système**</span></font>
+
+<font size="3" style="font-size: 12pt"><span lang="fr-FR">#### **Flexibilité Organisationnelle**</span></font>
+<font size="3" style="font-size: 12pt"><span lang="fr-FR">- **Multi-rôles** : Manager qui pointe ses propres heures</span></font>
+<font size="3" style="font-size: 12pt"><span lang="fr-FR">- **Hiérarchie n-niveaux** : Support organisations complexes</span></font>
+<font size="3" style="font-size: 12pt"><span lang="fr-FR">- **Sites adaptatifs** : Manager, global, temporaire, public</span></font>
+<font size="3" style="font-size: 12pt"><span lang="fr-FR">- **Délégations** : Missions, intérims, restructurations</span></font>
+
+<font size="3" style="font-size: 12pt"><span lang="fr-FR">#### **Robustesse Technique** </span></font>
+<font size="3" style="font-size: 12pt"><span lang="fr-FR">- **Sessions cohérentes** : Impossible d'être &quot;pointé&quot; sans contrôle</span></font>
+<font size="3" style="font-size: 12pt"><span lang="fr-FR">- **Offline-first** : Fonctionne 7 jours sans connexion</span></font>
+<font size="3" style="font-size: 12pt"><span lang="fr-FR">- **Anti-fraude intégré** : GPS + QR + patterns analysis</span></font>
+<font size="3" style="font-size: 12pt"><span lang="fr-FR">- **Audit trail complet** : Conformité légale Cameroun</span></font>
+
+<font size="3" style="font-size: 12pt"><span lang="fr-FR">#### **Performance Optimisée**</span></font>
+<font size="3" style="font-size: 12pt"><span lang="fr-FR">- **Partitionnement** : Tables pointages par mois</span></font>
+<font size="3" style="font-size: 12pt"><span lang="fr-FR">- **Indexation** : Requêtes sub-seconde même gros volumes</span></font>
+<font size="3" style="font-size: 12pt"><span lang="fr-FR">- **Batch processing** : Sync offline intelligente</span></font>
+<font size="3" style="font-size: 12pt"><span lang="fr-FR">- **Cache stratégique** : Sites fréquents, hiérarchie</span></font>
+
+<font size="3" style="font-size: 12pt"><span lang="fr-FR">### 🚀 **Évolutivité Future**</span></font>
+
+<font size="3" style="font-size: 12pt"><span lang="fr-FR">#### **Intégrations Prévues**</span></font>
+<font size="3" style="font-size: 12pt"><span lang="fr-FR">- **SIRH existants** : Sage, Cegid, SAP (APIs standard)</span></font>
+<font size="3" style="font-size: 12pt"><span lang="fr-FR">- **Biométrie** : Empreintes, reconnaissance faciale</span></font>
+<font size="3" style="font-size: 12pt"><span lang="fr-FR">- **IoT Hybride** : Badgeuses + QR + biométrie </span></font>
+<font size="3" style="font-size: 12pt"><span lang="fr-FR">- **Analytics IA** : Détection fraude sophistiquée</span></font>
+
+<font size="3" style="font-size: 12pt"><span lang="fr-FR">#### **Multi-Pays**</span></font>
+<font size="3" style="font-size: 12pt"><span lang="fr-FR">- **Timezone dynamique** : TIMESTAMPTZ partout</span></font>
+<font size="3" style="font-size: 12pt"><span lang="fr-FR">- **Conformité légale** : Horodatage selon pays</span></font>
+<font size="3" style="font-size: 12pt"><span lang="fr-FR">- **Multi-devises** : Calculs paie localisés</span></font>
+<font size="3" style="font-size: 12pt"><span lang="fr-FR">- **Langues** : i18n français/anglais/arabe</span></font>
+
+<font size="3" style="font-size: 12pt"><span lang="fr-FR">---</span></font>
+
+<font size="3" style="font-size: 12pt"><span lang="fr-FR">## 📋 CONCLUSION</span></font>
+
+<font size="3" style="font-size: 12pt"><span lang="fr-FR">### 🎯 **Système Complet &amp; Évolutif**</span></font>
+
+<font size="3" style="font-size: 12pt"><span lang="fr-FR">Le système de pointage employé Toké offre une **architecture unifiée robuste** qui :</span></font>
+
+✅ <font size="3" style="font-size: 12pt"><span lang="fr-FR">**Répond aux besoins métier** : Tous types d'organisations, de l'artisan à la multinationale  </span></font>
+✅ <font size="3" style="font-size: 12pt"><span lang="fr-FR">**Garantit la sécurité** : Anti-fraude multi-couches, audit trail complet  </span></font>
+✅ <font size="3" style="font-size: 12pt"><span lang="fr-FR">**Assure la performance** : Optimisé smartphones low-end, offline-first  </span></font>
+✅ <font size="3" style="font-size: 12pt"><span lang="fr-FR">**Facilite l'évolution** : Rôles flexibles, hiérarchie adaptable, intégrations futures</span></font>
+
+<font size="3" style="font-size: 12pt"><span lang="fr-FR">### 🚀 **Prêt Production**</span></font>
+
+<font size="3" style="font-size: 12pt"><span lang="fr-FR">Cette présentation constitue la **référence technique complète** pour :</span></font>
+<font size="3" style="font-size: 12pt"><span lang="fr-FR">- **Équipe développement** : Structure SQL, fonctions métier, workflows</span></font>
+<font size="3" style="font-size: 12pt"><span lang="fr-FR">- **Product Owners** : Cas d'usage, acteurs, modules fonctionnels  </span></font>
+<font size="3" style="font-size: 12pt"><span lang="fr-FR">- **Architectes** : Décisions techniques, patterns, évolutivité</span></font>
+<font size="3" style="font-size: 12pt"><span lang="fr-FR">- **QA/Tests** : Scénarios validation, contraintes métier</span></font>
+
+<font size="3" style="font-size: 12pt"><span lang="fr-FR">**Le système de pointage Toké est prêt à révolutionner la gestion RH en Afrique centrale ! 🎯**</span></font></pre>
+</body>
+</html>

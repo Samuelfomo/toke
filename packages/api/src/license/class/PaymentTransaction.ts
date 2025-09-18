@@ -108,7 +108,7 @@ export default class PaymentTransaction extends PaymentTransactionModel {
     adjustment: number,
     paginationOptions: { offset?: number; limit?: number } = {},
   ): Promise<PaymentTransaction[] | null> {
-    return new PaymentTransaction().listAllByLicenceAdjustment(adjustment, paginationOptions);
+    return new PaymentTransaction().listByLicenceAdjustment(adjustment, paginationOptions);
   }
 
   /**
@@ -684,6 +684,15 @@ export default class PaymentTransaction extends PaymentTransactionModel {
     paginationOptions: { offset?: number; limit?: number } = {},
   ): Promise<PaymentTransaction[] | null> {
     const dataset = await this.listAllByBillingCycle(billingCycle, paginationOptions);
+    if (!dataset) return null;
+    return dataset.map((data) => new PaymentTransaction().hydrate(data));
+  }
+
+  async listByLicenceAdjustment(
+    adjustment: number,
+    paginationOptions: { offset?: number; limit?: number } = {},
+  ): Promise<PaymentTransaction[] | null> {
+    const dataset = await this.listAllByLicenceAdjustment(adjustment, paginationOptions);
     if (!dataset) return null;
     return dataset.map((data) => new PaymentTransaction().hydrate(data));
   }

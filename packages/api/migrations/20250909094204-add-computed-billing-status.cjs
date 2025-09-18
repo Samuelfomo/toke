@@ -76,27 +76,77 @@ module.exports = {
       console.log('✅ Vue xa_employee_license_with_billing_status créée');
 
       // 5. Ajouter les contraintes anti-fraude
-      await queryInterface.sequelize.query(`
-        ALTER TABLE xa_employee_license 
-        ADD CONSTRAINT no_long_leave_with_recent_activity CHECK (
-          NOT (declared_long_leave = TRUE AND last_activity_date >= NOW() - INTERVAL '7 days')
-        );
-      `, { transaction });
+      // await queryInterface.sequelize.query(`
+      //   ALTER TABLE xa_employee_license
+      //   ADD CONSTRAINT no_long_leave_with_recent_activity CHECK (
+      //     NOT (declared_long_leave = TRUE AND last_activity_date >= NOW() - INTERVAL '7 days')
+      //   );
+      // `, { transaction });
+      // Vérifier si la contrainte existe déjà
+      const [constraintExists] = await queryInterface.sequelize.query(`
+  SELECT constraint_name 
+  FROM information_schema.table_constraints 
+  WHERE table_name = 'xa_employee_license' 
+  AND constraint_name = 'no_long_leave_with_recent_activity';
+`, { transaction });
 
-      await queryInterface.sequelize.query(`
-        ALTER TABLE xa_employee_license 
-        ADD CONSTRAINT valid_long_leave_data CHECK (
-          (declared_long_leave = FALSE) OR 
-          (declared_long_leave = TRUE AND long_leave_declared_by IS NOT NULL AND long_leave_declared_at IS NOT NULL)
-        );
-      `, { transaction });
+      if (constraintExists.length === 0) {
+        await queryInterface.sequelize.query(`
+    ALTER TABLE xa_employee_license 
+    ADD CONSTRAINT no_long_leave_with_recent_activity CHECK (
+      NOT (declared_long_leave = TRUE AND last_activity_date >= NOW() - INTERVAL '7 days')
+    );
+  `, { transaction });
+      }
 
-      await queryInterface.sequelize.query(`
-        ALTER TABLE xa_employee_license 
-        ADD CONSTRAINT valid_deactivation_date CHECK (
-          deactivation_date IS NULL OR deactivation_date >= activation_date
-        );
-      `, { transaction });
+
+      const [validLongLeaveConstraint] = await queryInterface.sequelize.query(`
+  SELECT constraint_name 
+  FROM information_schema.table_constraints 
+  WHERE table_name = 'xa_employee_license' 
+  AND constraint_name = 'valid_long_leave_data';
+`, { transaction });
+
+      if (validLongLeaveConstraint.length === 0) {
+        await queryInterface.sequelize.query(`
+          ALTER TABLE xa_employee_license
+            ADD CONSTRAINT valid_long_leave_data CHECK (
+              (declared_long_leave = FALSE) OR
+              (declared_long_leave = TRUE AND long_leave_declared_by IS NOT NULL AND long_leave_declared_at IS NOT NULL)
+              );
+        `, { transaction });
+      }
+
+      // await queryInterface.sequelize.query(`
+      //   ALTER TABLE xa_employee_license
+      //   ADD CONSTRAINT valid_long_leave_data CHECK (
+      //     (declared_long_leave = FALSE) OR
+      //     (declared_long_leave = TRUE AND long_leave_declared_by IS NOT NULL AND long_leave_declared_at IS NOT NULL)
+      //   );
+      // `, { transaction });
+
+      const [validDeactivationDateConstraint] = await queryInterface.sequelize.query(`
+  SELECT constraint_name 
+  FROM information_schema.table_constraints 
+  WHERE table_name = 'xa_employee_license' 
+  AND constraint_name = 'valid_deactivation_date';
+`, { transaction });
+
+      if (validDeactivationDateConstraint.length === 0) {
+        await queryInterface.sequelize.query(`
+          ALTER TABLE xa_employee_license
+            ADD CONSTRAINT valid_deactivation_date CHECK (
+              deactivation_date IS NULL OR deactivation_date >= activation_date
+              );
+        `, { transaction });
+      }
+
+      // await queryInterface.sequelize.query(`
+      //   ALTER TABLE xa_employee_license
+      //   ADD CONSTRAINT valid_deactivation_date CHECK (
+      //     deactivation_date IS NULL OR deactivation_date >= activation_date
+      //   );
+      // `, { transaction });
 
       console.log('✅ Contraintes de validation ajoutées');
 

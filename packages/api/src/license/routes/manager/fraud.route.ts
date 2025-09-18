@@ -1,22 +1,22 @@
-import {Request, Response, Router} from 'express';
+import { Request, Response, Router } from 'express';
 import {
-    FRAUD_DETECTION_CODES,
-    FRAUD_DETECTION_ERRORS,
-    FraudDetection,
-    HttpStatus,
-    paginationSchema,
-    RiskLevel,
-    TENANT_CODES,
-    TENANT_ERRORS,
-    TenantValidationUtils
+  FRAUD_DETECTION_CODES,
+  FRAUD_DETECTION_ERRORS,
+  FraudDetection,
+  HttpStatus,
+  paginationSchema,
+  RiskLevel,
+  TENANT_CODES,
+  TENANT_ERRORS,
+  TenantValidationUtils
 } from '@toke/shared';
 
 import FraudDetectionLog from '../../class/FraudDetectionLog.js';
 import ActivityMonitoring from '../../class/ActivityMonitoring.js';
 import R from '../../../tools/response.js';
 import Ensure from '../../middle/ensured-routes.js';
-import Tenant from "../../class/Tenant.js";
-import EmployeeLicense from "../../class/EmployeeLicense.js";
+import Tenant from '../../class/Tenant.js';
+import EmployeeLicense from '../../class/EmployeeLicense.js';
 
 const router = Router();
 
@@ -38,6 +38,8 @@ router.get('/active-alerts', Ensure.get(), async (req: Request, res: Response) =
             filters.resolved = resolved === 'true';
         }
 
+        let alertsData;
+
         if (tenant) {
             if (!TenantValidationUtils.validateTenantGuid(tenant as string)) {
                 return R.handleError(res, HttpStatus.BAD_REQUEST, {
@@ -45,7 +47,6 @@ router.get('/active-alerts', Ensure.get(), async (req: Request, res: Response) =
                     message: TENANT_ERRORS.GUID_INVALID,
                 });
             }
-        }
         const tenantGuid = parseInt(tenant as string, 10);
         const tenantObj = await Tenant._load(tenantGuid, true);
         if (!tenantObj) {
@@ -54,15 +55,18 @@ router.get('/active-alerts', Ensure.get(), async (req: Request, res: Response) =
                 message: TENANT_ERRORS.NOT_FOUND,
             })
         }
-
-        const alertsData = await FraudDetectionLog.exportable(tenantObj.getId()!, filters, paginationOptions);
+          alertsData = await FraudDetectionLog.exportable(tenantObj.getId()!, filters, paginationOptions);
+        }
+        else {
+          alertsData = await FraudDetectionLog.exportable(undefined, filters, paginationOptions);
+        }
 
         return R.handleSuccess(res, {alertsData});
 
     } catch (error: any) {
         console.error('⚠️ Erreur récupération alertes actives:', error);
         return R.handleError(res, HttpStatus.INTERNAL_ERROR, {
-            code: FRAUD_DETECTION_CODES.LISTING_FAILED || 'LISTING_FAILED',
+            code: FRAUD_DETECTION_CODES.LISTING_FAILED,
             message: 'Failed to retrieve active alerts',
             details: error.message,
         });
@@ -145,13 +149,19 @@ router.get('/patterns/:reference', Ensure.get(), async (req: Request, res: Respo
             recommendations: generateEmployeeRecommendations(employeeAlerts, activityHistory!),
         });
 
-    } catch (error: any) {
-        console.error('⚠️ Erreur analyse patterns employé:', error);
-        return R.handleError(res, HttpStatus.INTERNAL_ERROR, {
-            code: 'pattern_analysis_failed',
-            message: 'Failed to analyze employee patterns',
-            details: error.message,
-        });
+    }
+    catch (error: any) {
+      console.error('⚠️ Erreur analyse patterns employé:', error);
+      console.error('Stack trace:', error.stack);
+      return R.handleError(res, HttpStatus.INTERNAL_ERROR, {
+        code: 'pattern_analysis_failed',
+        message: 'Failed to analyze employee patterns',
+        // details: {
+        //   message: error.message,
+        //   name: error.name,
+        //   stack: error.stack
+        // },
+      });
     }
 });
 
@@ -236,7 +246,7 @@ router.put('/alerts/:guid/resolve', Ensure.put(), async (req: Request, res: Resp
         if (!resolved_by) {
             return R.handleError(res, HttpStatus.BAD_REQUEST, {
                 code: 'resolved_by_required',
-                message: 'resolved_by is required to resolve an alert',
+                message: 'Resolved_by is required to resolve an alert',
             });
         }
 
