@@ -264,57 +264,57 @@ const recordingInterval = ref<number | null>(null)
 const selectedFile = ref<File | null>(null)
 const fileInput = ref<HTMLInputElement | null>(null)
 
-// Templates de mémos
-// const memoTemplates = ref<MemoTemplate[]>([
-//   {
-//     id: '1',
-//     title: 'Demande d\'explication',
-//     content: 'Bonjour, pouvez-vous m\'expliquer la raison de votre absence/retard aujourd\'hui ?',
-//     preview: 'Demande d\'explication pour absence/retard',
-//     icon: 'M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z',
-//     category: 'explanation'
-//   },
-//   {
-//     id: '2',
-//     title: 'Rappel de procédure',
-//     content: 'Je vous rappelle qu\'il est important de signaler tout retard ou absence en avance. Merci de votre compréhension.',
-//     preview: 'Rappel des procédures d\'absence',
-//     icon: 'M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.732-.833-2.502 0L4.268 18.5c-.77.833.192 2.5 1.732 2.5z',
-//     category: 'reminder'
-//   },
-//   {
-//     id: '3',
-//     title: 'Demande de justificatif',
-//     content: 'Merci de fournir un justificatif médical ou administratif pour votre absence d\'aujourd\'hui dans les plus brefs délais.',
-//     preview: 'Demande de justificatif médical/administratif',
-//     icon: 'M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z',
-//     category: 'document'
-//   },
-//   {
-//     id: '4',
-//     title: 'Avertissement léger',
-//     content: 'Ceci constitue un avertissement concernant vos récents retards. Merci de faire attention à la ponctualité.',
-//     preview: 'Avertissement pour retards répétés',
-//     icon: 'M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z',
-//     category: 'warning'
-//   },
-//   {
-//     id: '5',
-//     title: 'Félicitations',
-//     content: 'Félicitations pour votre ponctualité et votre assiduité cette semaine. Continuez ainsi !',
-//     preview: 'Message de félicitations',
-//     icon: 'M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z',
-//     category: 'positive'
-//   },
-//   {
-//     id: '6',
-//     title: 'Convocation',
-//     content: 'Je souhaiterais vous rencontrer dans mon bureau concernant votre situation. Merci de prendre rendez-vous.',
-//     preview: 'Convocation pour entretien',
-//     icon: 'M8 7V3a2 2 0 012-2h4a2 2 0 012 2v4m-6 0h6m-6 0l-1.5 8.5A2 2 0 009.5 21h5a2 2 0 002-1.5L15 12',
-//     category: 'meeting'
-//   }
-// ])
+
+const memoTemplates = ref<MemoTemplate[]>([
+  {
+    id: '1',
+    title: 'Demande d\'explication',
+    content: 'Bonjour, pouvez-vous m\'expliquer la raison de votre absence/retard aujourd\'hui ?',
+    preview: 'Demande d\'explication pour absence/retard',
+    icon: 'M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z',
+    category: 'explanation'
+  },
+  {
+    id: '2',
+    title: 'Rappel de procédure',
+    content: 'Je vous rappelle qu\'il est important de signaler tout retard ou absence en avance. Merci de votre compréhension.',
+    preview: 'Rappel des procédures d\'absence',
+    icon: 'M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.732-.833-2.502 0L4.268 18.5c-.77.833.192 2.5 1.732 2.5z',
+    category: 'reminder'
+  },
+  {
+    id: '3',
+    title: 'Demande de justificatif',
+    content: 'Merci de fournir un justificatif médical ou administratif pour votre absence d\'aujourd\'hui dans les plus brefs délais.',
+    preview: 'Demande de justificatif médical/administratif',
+    icon: 'M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z',
+    category: 'document'
+  },
+  {
+    id: '4',
+    title: 'Avertissement léger',
+    content: 'Ceci constitue un avertissement concernant vos récents retards. Merci de faire attention à la ponctualité.',
+    preview: 'Avertissement pour retards répétés',
+    icon: 'M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z',
+    category: 'warning'
+  },
+  {
+    id: '5',
+    title: 'Félicitations',
+    content: 'Félicitations pour votre ponctualité et votre assiduité cette semaine. Continuez ainsi !',
+    preview: 'Message de félicitations',
+    icon: 'M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z',
+    category: 'positive'
+  },
+  {
+    id: '6',
+    title: 'Convocation',
+    content: 'Je souhaiterais vous rencontrer dans mon bureau concernant votre situation. Merci de prendre rendez-vous.',
+    preview: 'Convocation pour entretien',
+    icon: 'M8 7V3a2 2 0 012-2h4a2 2 0 012 2v4m-6 0h6m-6 0l-1.5 8.5A2 2 0 009.5 21h5a2 2 0 002-1.5L15 12',
+    category: 'meeting'
+  }
+])
 
 const canSendMessage = computed(() => {
   return currentMessage.value.trim().length > 0
