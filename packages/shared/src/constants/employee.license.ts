@@ -1,4 +1,4 @@
-// constants/employee.license.ts
+// constants/employee.master.ts
 export enum ContractualStatus {
   ACTIVE = 'ACTIVE',
   SUSPENDED = 'SUSPENDED',
@@ -101,7 +101,7 @@ export const EMPLOYEE_LICENSE_ERRORS = {
   EMPLOYEE_LICENSE: EMPLOYEE_LICENSE_LABEL,
 
   GLOBAL_LICENSE_REQUIRED: `${EMPLOYEE_LICENSE_LABEL} global license is required`,
-  GLOBAL_LICENSE_INVALID: 'Global license must be a positive integer',
+  GLOBAL_LICENSE_INVALID: 'Global master must be a positive integer',
 
   EMPLOYEE_REQUIRED: `${EMPLOYEE_LICENSE_LABEL} employee ID is required`,
   EMPLOYEE_INVALID: `Employee ID must be alphanumeric/underscore, 1-${EMPLOYEE_LICENSE_VALIDATION.EMPLOYEE.MAX_LENGTH} characters`,

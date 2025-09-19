@@ -1,9 +1,9 @@
 import { Request, Response, Router } from 'express';
+import { HttpStatus } from '@toke/shared';
 
-import ClientProfil from '../license/class/ClientProfil.js';
+import ClientProfil from '../master/class/ClientProfil.js';
 import R from '../tools/response.js';
-import HttpStatus from '../tools/http-status.js';
-import Ensure from '../license/middle/ensured-routes.js';
+import Ensure from '../middle/ensured-routes.js';
 import ExtractQueryParams from '../utils/extract.query.params.js';
 
 const router = Router();

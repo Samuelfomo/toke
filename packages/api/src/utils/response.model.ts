@@ -159,6 +159,7 @@ export const responseStructure = {
 } as const;
 
 export const tableName = {
+  // ** MASTER TABLE ** //
   COUNTRY: `${G.tableConf}_country`,
   CURRENCY: `${G.tableConf}_currency`,
   EXCHANGE_RATE: `${G.tableConf}_exchange_rate`,
@@ -177,9 +178,25 @@ export const tableName = {
   PAYMENT_TRANSACTION: `${G.tableAp}_payment_transaction`,
   FRAUD_DETECTION_LOG: `${G.tableAp}_fraud_detection_log`,
   ACTIVITY_MONITORING: `${G.tableAp}_activity_monitoring`,
+
+  // ** TENANT TABLE ** //
+  USERS: `${G.tableAp}_users`,
+  ROLES: `${G.tableAp}_roles`,
+  USER_ROLES: `${G.tableAp}_user_roles`,
+  ORG_HIERARCHY: `${G.tableAp}_org_hierarchy`,
+  SITES: `${G.tableAp}_sites`,
+  WORK_SESSIONS: `${G.tableAp}_work_sessions`,
+
+  MEMOS: `${G.tableOp}_memos`,
+  TIME_ENTRIES: `${G.tableOp}_time_entries`,
 } as const;
 
 export const EntityRoute = {
   MASTER: 'm',
   TENANT: 't',
+} as const;
+
+export const EntityRouteValue = {
+  MASTER: 'master',
+  TENANT: 'tenant',
 } as const;

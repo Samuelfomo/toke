@@ -89,8 +89,8 @@ export const ACTIVITY_MONITORING_ERRORS = {
 
   INVALID_ID: 'Activity monitoring ID must be a positive integer',
 
-  EMPLOYEE_LICENSE_REQUIRED: 'Employee license ID is required',
-  INVALID_EMPLOYEE_LICENSE: 'Employee license must be a positive integer',
+  EMPLOYEE_LICENSE_REQUIRED: 'Employee master ID is required',
+  INVALID_EMPLOYEE_LICENSE: 'Employee master must be a positive integer',
 
   MONITORING_DATE_REQUIRED: 'Monitoring date is required',
   INVALID_DATE: 'Date must be a valid date in YYYY-MM-DD format',

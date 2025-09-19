@@ -1,4 +1,4 @@
-// constants/global-license.ts
+// constants/global-master.ts
 export enum Type {
   CLOUD_FLEX = 'CLOUD_FLEX',
 }

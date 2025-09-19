@@ -1,4 +1,4 @@
-// constants/license.adjustment.ts
+// constants/master.adjustment.ts
 
 export const LICENSE_ADJUSTMENT_VALIDATION = {
   GUID: {
@@ -218,10 +218,10 @@ export const LICENSE_ADJUSTMENT_ERRORS = {
     'Local amounts inconsistency: USD amounts * exchange_rate must equal local amounts (±0.01)',
   PAYMENT_COMPLETED_BEFORE_ADJUSTMENT: 'Payment completed date must be after adjustment date',
   PAYMENT_COMPLETED_BEFORE_INVOICE: 'Payment completed date must be after invoice sent date',
-  GLOBAL_LICENSE_NOT_FOUND: 'Referenced global license does not exist',
+  GLOBAL_LICENSE_NOT_FOUND: 'Referenced global master does not exist',
   CURRENCY_NOT_SUPPORTED: 'Billing currency is not supported',
   INVALID_TAX_RULE_STRUCTURE: 'Tax rules must contain valid rate objects',
-  PAYMENT_ALREADY_COMPLETED: 'Cannot modify a license adjustment with completed payment',
+  PAYMENT_ALREADY_COMPLETED: 'Cannot modify a master adjustment with completed payment',
 } as const;
 
 export type LicenseAdjustmentError =

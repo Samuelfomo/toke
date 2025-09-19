@@ -1,9 +1,9 @@
 import * as readline from 'readline';
 
-import Client from '../src/license/class/Client.js';
-import Db from '../src/license/database/db.config.js';
-import { TableInitializer } from '../src/license/database/db.initializer.js';
-import ClientProfil from '../src/license/class/ClientProfil.js';
+import Client from '../src/master/class/Client.js';
+import Db from '../src/master/database/db.config.js';
+import { TableInitializer } from '../src/master/database/db.initializer.js';
+import ClientProfil from '../src/master/class/ClientProfil.js';
 
 export class ClientManager {
   private rl: readline.Interface;

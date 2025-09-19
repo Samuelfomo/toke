@@ -99,7 +99,7 @@ export const BILLING_CYCLE_ERRORS = {
   BILLING_CYCLE: BILLING_CYCLE_LABEL,
 
   GLOBAL_LICENSE_REQUIRED: `${BILLING_CYCLE_LABEL} global license is required`,
-  GLOBAL_LICENSE_INVALID: 'Global license must be a positive integer',
+  GLOBAL_LICENSE_INVALID: 'Global master must be a positive integer',
 
   PERIOD_START_REQUIRED: `${BILLING_CYCLE_LABEL} period start date is required`,
   PERIOD_START_INVALID: 'Period start date must be a valid date',

@@ -1,11 +1,11 @@
-// utils/license.adjustment.validation.ts
+// utils/master.adjustment.validation.ts
 import { LICENSE_ADJUSTMENT_VALIDATION, PAYMENT_STATUS } from '../constants/license.adjustment.js';
 
 export class LicenseAdjustmentValidationUtils {
   private static readonly TOLERANCE = 0.01;
 
   /**
-   * Validates global license ID
+   * Validates global master ID
    */
   static validateGlobalLicense(globalLicense: any): boolean {
     const numValue = typeof globalLicense === 'string' ? parseInt(globalLicense) : globalLicense;
@@ -312,7 +312,7 @@ export class LicenseAdjustmentValidationUtils {
   }
 
   /**
-   * Cleans and normalizes license adjustment data
+   * Cleans and normalizes master adjustment data
    */
   static cleanLicenseAdjustmentData(data: Record<string, any>): Record<string, any> {
     const cleaned = { ...data };
@@ -389,7 +389,7 @@ export class LicenseAdjustmentValidationUtils {
   }
 
   /**
-   * Validates complete license adjustment data for creation
+   * Validates complete master adjustment data for creation
    */
   static isValidForCreation(data: any): boolean {
     const requiredFields = [
@@ -439,7 +439,7 @@ export class LicenseAdjustmentValidationUtils {
   }
 
   /**
-   * Gets all validation errors for license adjustment data
+   * Gets all validation errors for master adjustment data
    */
   static getValidationErrors(data: any): string[] {
     const errors: string[] = [];
@@ -607,7 +607,7 @@ export class LicenseAdjustmentValidationUtils {
 }
 
   /**
-   * Auto-corrects common license adjustment data issues
+   * Auto-corrects common master adjustment data issues
    */
   // static autoCorrectData(data: Record<string, any>): {
   //   correctedData: Record<string, any>;

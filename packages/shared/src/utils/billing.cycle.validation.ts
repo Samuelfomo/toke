@@ -3,7 +3,7 @@ import { BILLING_CYCLE_VALIDATION, BillingStatus } from '../constants/billing.cy
 
 export class BillingCycleValidationUtils {
   /**
-   * Validates global license ID
+   * Validates global master ID
    */
   static validateGlobalLicense(globalLicense: number): boolean {
     return Number.isInteger(globalLicense) && globalLicense >= 1;

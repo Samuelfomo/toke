@@ -231,7 +231,7 @@ export const activityMonitoringIdSchema = z.union([z.string(), z.number()]).tran
   return num;
 });
 
-// Schema for employee license validation
+// Schema for employee master validation
 export const activityMonitoringEmployeeLicenseSchema = z
   .union([z.string(), z.number()])
   .transform((val) => {

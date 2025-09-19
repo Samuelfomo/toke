@@ -48,7 +48,7 @@ module.exports = {
           },
           onUpdate: 'CASCADE',
           onDelete: 'CASCADE',
-          comment: 'Employee license référence'
+          comment: 'Employee master référence'
         },
         monitoring_date: {
           type: Sequelize.DATEONLY,

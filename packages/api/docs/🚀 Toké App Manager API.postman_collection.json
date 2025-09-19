@@ -37,16 +37,28 @@
 							"name": "📄 Current License Details",
 							"request": {
 								"method": "GET",
-								"header": [],
+								"header": [
+									{
+										"key": "x-api-key",
+										"value": "{{x-api-token}}",
+										"type": "text"
+									},
+									{
+										"key": "x-api-signature",
+										"value": "{{x-api-signature}}",
+										"type": "text"
+									}
+								],
 								"url": {
-									"raw": "{{baseUrl}}/{{router}}/billing/current-license",
+									"raw": "{{baseUrl}}/{{router}}/global-license/current-license/100001",
 									"host": [
 										"{{baseUrl}}"
 									],
 									"path": [
 										"{{router}}",
-										"billing",
-										"current-license"
+										"global-license",
+										"current-license",
+										"100001"
 									]
 								}
 							},
@@ -56,16 +68,28 @@
 							"name": "👥 Billable Employees Count",
 							"request": {
 								"method": "GET",
-								"header": [],
+								"header": [
+									{
+										"key": "x-api-key",
+										"value": "{{x-api-token}}",
+										"type": "text"
+									},
+									{
+										"key": "x-api-signature",
+										"value": "{{x-api-signature}}",
+										"type": "text"
+									}
+								],
 								"url": {
-									"raw": "{{baseUrl}}/{{router}}/billing/billable-employees",
+									"raw": "{{baseUrl}}/{{router}}/employee-license/billable-employees/100001",
 									"host": [
 										"{{baseUrl}}"
 									],
 									"path": [
 										"{{router}}",
-										"billing",
-										"billable-employees"
+										"employee-license",
+										"billable-employees",
+										"100001"
 									]
 								}
 							},
@@ -75,7 +99,18 @@
 							"name": "💵 Real-time Period Cost",
 							"request": {
 								"method": "GET",
-								"header": [],
+								"header": [
+									{
+										"key": "x-api-key",
+										"value": "{{x-api-token}}",
+										"type": "text"
+									},
+									{
+										"key": "x-api-signature",
+										"value": "{{x-api-signature}}",
+										"type": "text"
+									}
+								],
 								"url": {
 									"raw": "{{baseUrl}}/{{router}}/billing/current-cost",
 									"host": [
@@ -118,16 +153,28 @@
 							"name": "⏳ Pending License Adjustments",
 							"request": {
 								"method": "GET",
-								"header": [],
+								"header": [
+									{
+										"key": "x-api-key",
+										"value": "{{x-api-token}}",
+										"type": "text"
+									},
+									{
+										"key": "x-api-signature",
+										"value": "{{x-api-signature}}",
+										"type": "text"
+									}
+								],
 								"url": {
-									"raw": "{{baseUrl}}/{{router}}/billing/pending-adjustments",
+									"raw": "{{baseUrl}}/{{router}}/billing/pending-adjustments/100001",
 									"host": [
 										"{{baseUrl}}"
 									],
 									"path": [
 										"{{router}}",
 										"billing",
-										"pending-adjustments"
+										"pending-adjustments",
+										"100001"
 									]
 								}
 							},
@@ -136,8 +183,28 @@
 						{
 							"name": "✅ Confirm Auto Adjustment",
 							"request": {
-								"method": "POST",
-								"header": [],
+								"method": "PATCH",
+								"header": [
+									{
+										"key": "x-api-key",
+										"value": "{{x-api-token}}",
+										"type": "text"
+									},
+									{
+										"key": "x-api-signature",
+										"value": "{{x-api-signature}}",
+										"type": "text"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n    \"adjustment\": 100001\n}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
 								"url": {
 									"raw": "{{baseUrl}}/{{router}}/billing/adjustment/confirm",
 									"host": [
@@ -157,9 +224,20 @@
 							"name": "🔍 Adjustment Details",
 							"request": {
 								"method": "GET",
-								"header": [],
+								"header": [
+									{
+										"key": "x-api-key",
+										"value": "{{x-api-token}}",
+										"type": "text"
+									},
+									{
+										"key": "x-api-signature",
+										"value": "{{x-api-signature}}",
+										"type": "text"
+									}
+								],
 								"url": {
-									"raw": "{{baseUrl}}/{{router}}/billing/adjustment/:guid",
+									"raw": "{{baseUrl}}/{{router}}/billing/adjustment/100001",
 									"host": [
 										"{{baseUrl}}"
 									],
@@ -167,13 +245,7 @@
 										"{{router}}",
 										"billing",
 										"adjustment",
-										":guid"
-									],
-									"variable": [
-										{
-											"key": "guid",
-											"value": ""
-										}
+										"100001"
 									]
 								}
 							},
@@ -188,7 +260,27 @@
 							"name": "💳 Initiate Mobile Payment",
 							"request": {
 								"method": "POST",
-								"header": [],
+								"header": [
+									{
+										"key": "x-api-key",
+										"value": "{{x-api-token}}",
+										"type": "text"
+									},
+									{
+										"key": "x-api-signature",
+										"value": "{{x-api-signature}}",
+										"type": "text"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n  \"billing_cycle\": 100001,\n  \"adjustment\": 100001,\n  \"amount_usd\": 150.75,\n  \"currency_code\": \"XAF\",\n  \"exchange_rate_used\": 611.50,\n  \"payment_method\": 100001,\n  \"failure_reason\": null\n}\n",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
 								"url": {
 									"raw": "{{baseUrl}}/{{router}}/billing/payment/initiate",
 									"host": [
@@ -208,9 +300,20 @@
 							"name": "🔍 Check Payment Status",
 							"request": {
 								"method": "GET",
-								"header": [],
+								"header": [
+									{
+										"key": "x-api-key",
+										"value": "{{x-api-token}}",
+										"type": "text"
+									},
+									{
+										"key": "x-api-signature",
+										"value": "{{x-api-signature}}",
+										"type": "text"
+									}
+								],
 								"url": {
-									"raw": "{{baseUrl}}/{{router}}/billing/payment/:reference/status",
+									"raw": "{{baseUrl}}/{{router}}/billing/payment/TOKE_20250917151110_103/status",
 									"host": [
 										"{{baseUrl}}"
 									],
@@ -218,14 +321,8 @@
 										"{{router}}",
 										"billing",
 										"payment",
-										":reference",
+										"TOKE_20250917151110_103",
 										"status"
-									],
-									"variable": [
-										{
-											"key": "reference",
-											"value": ""
-										}
 									]
 								}
 							},
@@ -235,7 +332,27 @@
 							"name": "🔄 Retry Failed Payment",
 							"request": {
 								"method": "POST",
-								"header": [],
+								"header": [
+									{
+										"key": "x-api-key",
+										"value": "{{x-api-token}}",
+										"type": "text"
+									},
+									{
+										"key": "x-api-signature",
+										"value": "{{x-api-signature}}",
+										"type": "text"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n    \"transaction\": \"MTN-TRX-202509150001\"\n}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
 								"url": {
 									"raw": "{{baseUrl}}/{{router}}/billing/payment/retry",
 									"host": [
@@ -255,16 +372,28 @@
 							"name": "📚 Payment History",
 							"request": {
 								"method": "GET",
-								"header": [],
+								"header": [
+									{
+										"key": "x-api-key",
+										"value": "{{x-api-token}}",
+										"type": "text"
+									},
+									{
+										"key": "x-api-signature",
+										"value": "{{x-api-signature}}",
+										"type": "text"
+									}
+								],
 								"url": {
-									"raw": "{{baseUrl}}/{{router}}/billing/payment-history",
+									"raw": "{{baseUrl}}/{{router}}/billing/payment-history/100001",
 									"host": [
 										"{{baseUrl}}"
 									],
 									"path": [
 										"{{router}}",
 										"billing",
-										"payment-history"
+										"payment-history",
+										"100001"
 									]
 								}
 							},
@@ -303,9 +432,20 @@
 							"name": "📊 Employee Fraud Patterns",
 							"request": {
 								"method": "GET",
-								"header": [],
+								"header": [
+									{
+										"key": "x-api-key",
+										"value": "{{x-api-token}}",
+										"type": "text"
+									},
+									{
+										"key": "x-api-signature",
+										"value": "{{x-api-signature}}",
+										"type": "text"
+									}
+								],
 								"url": {
-									"raw": "{{baseUrl}}/{{router}}/fraud/patterns/:guid",
+									"raw": "{{baseUrl}}/{{router}}/fraud/patterns/",
 									"host": [
 										"{{baseUrl}}"
 									],
@@ -313,13 +453,7 @@
 										"{{router}}",
 										"fraud",
 										"patterns",
-										":guid"
-									],
-									"variable": [
-										{
-											"key": "guid",
-											"value": ""
-										}
+										""
 									]
 								}
 							},
@@ -330,8 +464,17 @@
 							"request": {
 								"method": "PUT",
 								"header": [],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n    \"notes\": \"hello test\",\n    \"investigator\":\"okay test\"\n}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
 								"url": {
-									"raw": "{{baseUrl}}/{{router}}/fraud/alerts/:guid/investigate",
+									"raw": "{{baseUrl}}/{{router}}/fraud/alerts/100001/investigate",
 									"host": [
 										"{{baseUrl}}"
 									],
@@ -339,14 +482,8 @@
 										"{{router}}",
 										"fraud",
 										"alerts",
-										":guid",
+										"100001",
 										"investigate"
-									],
-									"variable": [
-										{
-											"key": "guid",
-											"value": ""
-										}
 									]
 								}
 							},

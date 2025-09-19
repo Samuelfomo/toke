@@ -1,4 +1,4 @@
-// utils/global-license.validation.ts
+// utils/global-master.validation.ts
 import { GLOBAL_LICENSE_VALIDATION, LicenseStatus, Type } from '../constants/global.license.js';
 
 export class GlobalLicenseValidationUtils {
@@ -10,7 +10,7 @@ export class GlobalLicenseValidationUtils {
   }
 
   /**
-   * Validates license type
+   * Validates master type
    */
   static validateLicenseType(licenseType: string): boolean {
     if (!licenseType || typeof licenseType !== 'string') return false;
@@ -100,7 +100,7 @@ export class GlobalLicenseValidationUtils {
   }
 
   /**
-   * Validates license status
+   * Validates master status
    */
   static validateLicenseStatus(status: string): boolean {
     if (!status || typeof status !== 'string') return false;
@@ -146,21 +146,21 @@ export class GlobalLicenseValidationUtils {
   }
 
   /**
-   * Checks if license is expired
+   * Checks if master is expired
    */
   static isExpired(endDate: Date | string): boolean {
     return new Date(endDate) < new Date();
   }
 
   /**
-   * Checks if license is active
+   * Checks if master is active
    */
   static isActive(status: string, endDate: Date | string): boolean {
     return status === LicenseStatus.ACTIVE && !this.isExpired(endDate);
   }
 
   /**
-   * Cleans and normalizes global license data
+   * Cleans and normalizes global master data
    */
   static cleanGlobalLicenseData(data: Record<string, any>): Record<string, any> {
     const cleaned = { ...data };
@@ -240,7 +240,7 @@ export class GlobalLicenseValidationUtils {
   }
 
   /**
-   * Validates that a global license is complete for creation
+   * Validates that a global master is complete for creation
    */
   static isValidForCreation(data: any): boolean {
     const requiredFields = [
@@ -275,7 +275,7 @@ export class GlobalLicenseValidationUtils {
   }
 
   /**
-   * Extracts validation errors for a global license
+   * Extracts validation errors for a global master
    */
   static getValidationErrors(data: any): string[] {
     const errors: string[] = [];
@@ -383,21 +383,21 @@ export class GlobalLicenseValidationUtils {
   }
 
   /**
-   * Normalizes license type for search
+   * Normalizes master type for search
    */
   static normalizeLicenseType(type: string): string {
     if (!this.validateLicenseType(type)) {
-      throw new Error('Invalid license type for normalization');
+      throw new Error('Invalid master type for normalization');
     }
     return type.trim().toUpperCase();
   }
 
   /**
-   * Normalizes license status for search
+   * Normalizes master status for search
    */
   static normalizeLicenseStatus(status: string): string {
     if (!this.validateLicenseStatus(status)) {
-      throw new Error('Invalid license status for normalization');
+      throw new Error('Invalid master status for normalization');
     }
     return status.trim().toUpperCase();
   }

@@ -1,8 +1,8 @@
 import * as readline from 'readline';
 
-import Currency from '../src/license/class/Currency';
-import Db from '../src/license/database/db.config';
-import { TableInitializer } from '../src/license/database/db.initializer';
+import Currency from '../src/master/class/Currency';
+import Db from '../src/master/database/db.config';
+import { TableInitializer } from '../src/master/database/db.initializer';
 
 export class CurrencyManager {
   private rl: readline.Interface;

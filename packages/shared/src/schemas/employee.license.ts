@@ -1,4 +1,4 @@
-// schemas/employee.license.ts
+// schemas/employee.master.ts
 import { z } from 'zod';
 
 import {

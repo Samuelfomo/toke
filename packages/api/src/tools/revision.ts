@@ -1,4 +1,4 @@
-import BaseModel from '../license/database/db.base.js';
+import BaseModel from '../master/database/db.base.js';
 
 export default class Revision extends BaseModel {
   static async getRevision(tableName: string): Promise<string> {

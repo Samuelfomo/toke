@@ -1,4 +1,4 @@
-// utils/employee.license.validation.ts
+// utils/employee.master.validation.ts
 import {
   BillingStatusComputed,
   ContractualStatus,
@@ -8,7 +8,7 @@ import {
 
 export class EmployeeLicenseValidationUtils {
   /**
-   * Validates global license ID
+   * Validates global master ID
    */
   static validateGlobalLicenseId(globalLicenseId: number): boolean {
     return Number.isInteger(globalLicenseId) && globalLicenseId >= 1;
@@ -233,7 +233,7 @@ export class EmployeeLicenseValidationUtils {
   }
 
   /**
-   * Checks if employee license is currently active
+   * Checks if employee master is currently active
    */
   static isActive(contractualStatus: string, deactivationDate: Date | string | null): boolean {
     if (contractualStatus !== ContractualStatus.ACTIVE) return false;
@@ -253,7 +253,7 @@ export class EmployeeLicenseValidationUtils {
   }
 
   /**
-   * Cleans and normalizes employee license data
+   * Cleans and normalizes employee master data
    */
   static cleanEmployeeLicenseData(data: Record<string, any>): Record<string, any> {
     const cleaned = { ...data };
@@ -328,7 +328,7 @@ export class EmployeeLicenseValidationUtils {
   }
 
   /**
-   * Validates that an employee license is complete for creation
+   * Validates that an employee master is complete for creation
    */
   static isValidForCreation(data: any): boolean {
     const requiredFields = ['global_license', 'employee', 'employee_code', 'activation_date'];
@@ -367,7 +367,7 @@ export class EmployeeLicenseValidationUtils {
   }
 
   /**
-   * Extracts validation errors for an employee license
+   * Extracts validation errors for an employee master
    */
   static getValidationErrors(data: any): string[] {
     const errors: string[] = [];
@@ -586,17 +586,17 @@ export class EmployeeLicenseValidationUtils {
   }
 }
 
-// // utils/employee.license.validation.ts
+// // utils/employee.master.validation.ts
 // import {
 //   BillingStatusComputed,
 //   ContractualStatus,
 //   EMPLOYEE_LICENSE_VALIDATION,
 //   LeaveType,
-// } from '../constants/employee.license.js';
+// } from '../constants/employee.master.js';
 //
 // export class EmployeeLicenseValidationUtils {
 //   /**
-//    * Validates global license ID
+//    * Validates global master ID
 //    */
 //   static validateGlobalLicenseId(globalLicenseId: number): boolean {
 //     return Number.isInteger(globalLicenseId) && globalLicenseId >= 1;
@@ -821,7 +821,7 @@ export class EmployeeLicenseValidationUtils {
 //   }
 //
 //   /**
-//    * Checks if employee license is currently active
+//    * Checks if employee master is currently active
 //    */
 //   static isActive(contractualStatus: string, deactivationDate: Date | string | null): boolean {
 //     if (contractualStatus !== ContractualStatus.ACTIVE) return false;

@@ -1,8 +1,8 @@
 import * as readline from 'readline';
 
-import Country from '../src/license/class/Country';
-import Db from '../src/license/database/db.config';
-import { TableInitializer } from '../src/license/database/db.initializer';
+import Country from '../src/master/class/Country';
+import Db from '../src/master/database/db.config';
+import { TableInitializer } from '../src/master/database/db.initializer';
 
 export class CountryManager {
   private rl: readline.Interface;

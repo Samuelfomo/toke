@@ -1,4 +1,4 @@
-// schemas/license.adjustment.ts
+// schemas/master.adjustment.ts
 import { z } from 'zod';
 
 import {

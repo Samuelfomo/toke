@@ -1,4 +1,4 @@
-// schemas/global-license.ts
+// schemas/global-master.ts
 import { z } from 'zod';
 
 import {

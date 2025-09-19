@@ -1,8 +1,8 @@
 import { config } from 'dotenv';
 
-import Db from '../src/license/database/db.config';
-import { TableInitializer } from '../src/license/database/db.initializer';
-import BaseModel from '../src/license/database/db.base';
+import Db from '../src/master/database/db.config';
+import { TableInitializer } from '../src/master/database/db.initializer';
+import BaseModel from '../src/master/database/db.base';
 
 config();
 

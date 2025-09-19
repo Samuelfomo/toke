@@ -20,7 +20,7 @@ export class ActivityMonitoringValidationUtils {
   }
 
   /**
-   * Validates employee license ID
+   * Validates employee master ID
    */
   static validateEmployeeLicense(employeeLicense: number | string): number {
     const numEmployeeLicense =
@@ -30,7 +30,7 @@ export class ActivityMonitoringValidationUtils {
       !Number.isInteger(numEmployeeLicense) ||
       numEmployeeLicense < ACTIVITY_MONITORING_VALIDATION.EMPLOYEE_LICENSE.MIN_VALUE
     ) {
-      throw new Error('Employee license must be a positive integer');
+      throw new Error('Employee master must be a positive integer');
     }
     return numEmployeeLicense;
   }

@@ -14,6 +14,22 @@
 │   │   │   ├── app.js.map
 │   │   │   ├── license
 │   │   │   │   ├── class
+│   │   │   │   │   ├── ActivityMonitoring.d.ts
+│   │   │   │   │   ├── ActivityMonitoring.d.ts.map
+│   │   │   │   │   ├── ActivityMonitoring.js
+│   │   │   │   │   ├── ActivityMonitoring.js.map
+│   │   │   │   │   ├── BillingCycle.d.ts
+│   │   │   │   │   ├── BillingCycle.d.ts.map
+│   │   │   │   │   ├── BillingCycle.js
+│   │   │   │   │   ├── BillingCycle.js.map
+│   │   │   │   │   ├── Client.d.ts
+│   │   │   │   │   ├── Client.d.ts.map
+│   │   │   │   │   ├── Client.js
+│   │   │   │   │   ├── Client.js.map
+│   │   │   │   │   ├── ClientProfil.d.ts
+│   │   │   │   │   ├── ClientProfil.d.ts.map
+│   │   │   │   │   ├── ClientProfil.js
+│   │   │   │   │   ├── ClientProfil.js.map
 │   │   │   │   │   ├── Country.d.ts
 │   │   │   │   │   ├── Country.d.ts.map
 │   │   │   │   │   ├── Country.js
@@ -30,6 +46,10 @@
 │   │   │   │   │   ├── ExchangeRate.d.ts.map
 │   │   │   │   │   ├── ExchangeRate.js
 │   │   │   │   │   ├── ExchangeRate.js.map
+│   │   │   │   │   ├── FraudDetectionLog.d.ts
+│   │   │   │   │   ├── FraudDetectionLog.d.ts.map
+│   │   │   │   │   ├── FraudDetectionLog.js
+│   │   │   │   │   ├── FraudDetectionLog.js.map
 │   │   │   │   │   ├── GlobalLicense.d.ts
 │   │   │   │   │   ├── GlobalLicense.d.ts.map
 │   │   │   │   │   ├── GlobalLicense.js
@@ -42,6 +62,18 @@
 │   │   │   │   │   ├── Lexicon.d.ts.map
 │   │   │   │   │   ├── Lexicon.js
 │   │   │   │   │   ├── Lexicon.js.map
+│   │   │   │   │   ├── LicenseAdjustment.d.ts
+│   │   │   │   │   ├── LicenseAdjustment.d.ts.map
+│   │   │   │   │   ├── LicenseAdjustment.js
+│   │   │   │   │   ├── LicenseAdjustment.js.map
+│   │   │   │   │   ├── PaymentMethod.d.ts
+│   │   │   │   │   ├── PaymentMethod.d.ts.map
+│   │   │   │   │   ├── PaymentMethod.js
+│   │   │   │   │   ├── PaymentMethod.js.map
+│   │   │   │   │   ├── PaymentTransaction.d.ts
+│   │   │   │   │   ├── PaymentTransaction.d.ts.map
+│   │   │   │   │   ├── PaymentTransaction.js
+│   │   │   │   │   ├── PaymentTransaction.js.map
 │   │   │   │   │   ├── TaxRule.d.ts
 │   │   │   │   │   ├── TaxRule.d.ts.map
 │   │   │   │   │   ├── TaxRule.js
@@ -60,6 +92,14 @@
 │   │   │   │   │   │   ├── billing.cycle.db.d.ts.map
 │   │   │   │   │   │   ├── billing.cycle.db.js
 │   │   │   │   │   │   ├── billing.cycle.db.js.map
+│   │   │   │   │   │   ├── client.db.d.ts
+│   │   │   │   │   │   ├── client.db.d.ts.map
+│   │   │   │   │   │   ├── client.db.js
+│   │   │   │   │   │   ├── client.db.js.map
+│   │   │   │   │   │   ├── client.profile.db.d.ts
+│   │   │   │   │   │   ├── client.profile.db.d.ts.map
+│   │   │   │   │   │   ├── client.profile.db.js
+│   │   │   │   │   │   ├── client.profile.db.js.map
 │   │   │   │   │   │   ├── country.db.d.ts
 │   │   │   │   │   │   ├── country.db.d.ts.map
 │   │   │   │   │   │   ├── country.db.js
@@ -128,8 +168,28 @@
 │   │   │   │   │   ├── ensured-routes.d.ts
 │   │   │   │   │   ├── ensured-routes.d.ts.map
 │   │   │   │   │   ├── ensured-routes.js
-│   │   │   │   │   └── ensured-routes.js.map
+│   │   │   │   │   ├── ensured-routes.js.map
+│   │   │   │   │   ├── server-auth.d.ts
+│   │   │   │   │   ├── server-auth.d.ts.map
+│   │   │   │   │   ├── server-auth.js
+│   │   │   │   │   └── server-auth.js.map
 │   │   │   │   ├── model
+│   │   │   │   │   ├── ActivityMonitoringModel.d.ts
+│   │   │   │   │   ├── ActivityMonitoringModel.d.ts.map
+│   │   │   │   │   ├── ActivityMonitoringModel.js
+│   │   │   │   │   ├── ActivityMonitoringModel.js.map
+│   │   │   │   │   ├── BillingCycleModel.d.ts
+│   │   │   │   │   ├── BillingCycleModel.d.ts.map
+│   │   │   │   │   ├── BillingCycleModel.js
+│   │   │   │   │   ├── BillingCycleModel.js.map
+│   │   │   │   │   ├── ClientModel.d.ts
+│   │   │   │   │   ├── ClientModel.d.ts.map
+│   │   │   │   │   ├── ClientModel.js
+│   │   │   │   │   ├── ClientModel.js.map
+│   │   │   │   │   ├── ClientProfileModel.d.ts
+│   │   │   │   │   ├── ClientProfileModel.d.ts.map
+│   │   │   │   │   ├── ClientProfileModel.js
+│   │   │   │   │   ├── ClientProfileModel.js.map
 │   │   │   │   │   ├── CountryModel.d.ts
 │   │   │   │   │   ├── CountryModel.d.ts.map
 │   │   │   │   │   ├── CountryModel.js
@@ -146,6 +206,10 @@
 │   │   │   │   │   ├── ExchangeRateModel.d.ts.map
 │   │   │   │   │   ├── ExchangeRateModel.js
 │   │   │   │   │   ├── ExchangeRateModel.js.map
+│   │   │   │   │   ├── FraudDetectionLogModel.d.ts
+│   │   │   │   │   ├── FraudDetectionLogModel.d.ts.map
+│   │   │   │   │   ├── FraudDetectionLogModel.js
+│   │   │   │   │   ├── FraudDetectionLogModel.js.map
 │   │   │   │   │   ├── GlobalLicenseModel.d.ts
 │   │   │   │   │   ├── GlobalLicenseModel.d.ts.map
 │   │   │   │   │   ├── GlobalLicenseModel.js
@@ -158,6 +222,18 @@
 │   │   │   │   │   ├── LexiconModel.d.ts.map
 │   │   │   │   │   ├── LexiconModel.js
 │   │   │   │   │   ├── LexiconModel.js.map
+│   │   │   │   │   ├── LicenseAdjustmentModel.d.ts
+│   │   │   │   │   ├── LicenseAdjustmentModel.d.ts.map
+│   │   │   │   │   ├── LicenseAdjustmentModel.js
+│   │   │   │   │   ├── LicenseAdjustmentModel.js.map
+│   │   │   │   │   ├── PaymentMethodModel.d.ts
+│   │   │   │   │   ├── PaymentMethodModel.d.ts.map
+│   │   │   │   │   ├── PaymentMethodModel.js
+│   │   │   │   │   ├── PaymentMethodModel.js.map
+│   │   │   │   │   ├── PaymentTransactionModel.d.ts
+│   │   │   │   │   ├── PaymentTransactionModel.d.ts.map
+│   │   │   │   │   ├── PaymentTransactionModel.js
+│   │   │   │   │   ├── PaymentTransactionModel.js.map
 │   │   │   │   │   ├── TaxRuleModel.d.ts
 │   │   │   │   │   ├── TaxRuleModel.d.ts.map
 │   │   │   │   │   ├── TaxRuleModel.js
@@ -167,6 +243,14 @@
 │   │   │   │   │   ├── TenantModel.js
 │   │   │   │   │   └── TenantModel.js.map
 │   │   │   │   └── routes
+│   │   │   │       ├── activity.monitoring.route.d.ts
+│   │   │   │       ├── activity.monitoring.route.d.ts.map
+│   │   │   │       ├── activity.monitoring.route.js
+│   │   │   │       ├── activity.monitoring.route.js.map
+│   │   │   │       ├── billing.cycle.route.d.ts
+│   │   │   │       ├── billing.cycle.route.d.ts.map
+│   │   │   │       ├── billing.cycle.route.js
+│   │   │   │       ├── billing.cycle.route.js.map
 │   │   │   │       ├── country.route.d.ts
 │   │   │   │       ├── country.route.d.ts.map
 │   │   │   │       ├── country.route.js
@@ -183,6 +267,10 @@
 │   │   │   │       ├── exchange.rate.route.d.ts.map
 │   │   │   │       ├── exchange.rate.route.js
 │   │   │   │       ├── exchange.rate.route.js.map
+│   │   │   │       ├── fraud.detection.log.route.d.ts
+│   │   │   │       ├── fraud.detection.log.route.d.ts.map
+│   │   │   │       ├── fraud.detection.log.route.js
+│   │   │   │       ├── fraud.detection.log.route.js.map
 │   │   │   │       ├── global.license.route.d.ts
 │   │   │   │       ├── global.license.route.d.ts.map
 │   │   │   │       ├── global.license.route.js
@@ -195,6 +283,27 @@
 │   │   │   │       ├── lexicon.route.d.ts.map
 │   │   │   │       ├── lexicon.route.js
 │   │   │   │       ├── lexicon.route.js.map
+│   │   │   │       ├── license.adjustment.route.d.ts
+│   │   │   │       ├── license.adjustment.route.d.ts.map
+│   │   │   │       ├── license.adjustment.route.js
+│   │   │   │       ├── license.adjustment.route.js.map
+│   │   │   │       ├── manager
+│   │   │   │       │   ├── billing.route.d.ts
+│   │   │   │       │   ├── billing.route.d.ts.map
+│   │   │   │       │   ├── billing.route.js
+│   │   │   │       │   ├── billing.route.js.map
+│   │   │   │       │   ├── fraud.route.d.ts
+│   │   │   │       │   ├── fraud.route.d.ts.map
+│   │   │   │       │   ├── fraud.route.js
+│   │   │   │       │   └── fraud.route.js.map
+│   │   │   │       ├── payment.method.route.d.ts
+│   │   │   │       ├── payment.method.route.d.ts.map
+│   │   │   │       ├── payment.method.route.js
+│   │   │   │       ├── payment.method.route.js.map
+│   │   │   │       ├── payment.transaction.route.d.ts
+│   │   │   │       ├── payment.transaction.route.d.ts.map
+│   │   │   │       ├── payment.transaction.route.js
+│   │   │   │       ├── payment.transaction.route.js.map
 │   │   │   │       ├── tax.rule.route.d.ts
 │   │   │   │       ├── tax.rule.route.d.ts.map
 │   │   │   │       ├── tax.rule.route.js
@@ -207,7 +316,20 @@
 │   │   │   ├── server.d.ts.map
 │   │   │   ├── server.js
 │   │   │   ├── server.js.map
+│   │   │   ├── temporaire_route
+│   │   │   │   ├── client.routes.d.ts
+│   │   │   │   ├── client.routes.d.ts.map
+│   │   │   │   ├── client.routes.js
+│   │   │   │   ├── client.routes.js.map
+│   │   │   │   ├── profile.routes.d.ts
+│   │   │   │   ├── profile.routes.d.ts.map
+│   │   │   │   ├── profile.routes.js
+│   │   │   │   └── profile.routes.js.map
 │   │   │   ├── tools
+│   │   │   │   ├── api-key-manager.d.ts
+│   │   │   │   ├── api-key-manager.d.ts.map
+│   │   │   │   ├── api-key-manager.js
+│   │   │   │   ├── api-key-manager.js.map
 │   │   │   │   ├── glossary.d.ts
 │   │   │   │   ├── glossary.d.ts.map
 │   │   │   │   ├── glossary.js
@@ -250,42 +372,62 @@
 │   │   │       ├── response.model.js
 │   │   │       └── response.model.js.map
 │   │   ├── docs
-│   │   │   └── toke API.postman_collection.json
+│   │   │   ├── automatique migration avis .pdf
+│   │   │   ├── toke API.postman_collection.json
+│   │   │   ├── toke-app-manager-api-guide.html
+│   │   │   ├── toke-pointage-employee-doc.html
+│   │   │   ├── toke-pointage-employee-doc.md
+│   │   │   ├── toke-syst-gestion-licences.html
+│   │   │   └── 🚀 Toké App Manager API.postman_collection.json
 │   │   ├── ecosystem.config.cjs
 │   │   ├── logs
 │   │   ├── migrations
 │   │   │   ├── 20250909094204-add-computed-billing-status.cjs
-│   │   │   └── 20250909100827-add-generated-columns-global-license.cjs
+│   │   │   ├── 20250909100827-add-generated-columns-global-license.cjs
+│   │   │   ├── 20250912113219-create-fraud-detection-log.cjs
+│   │   │   ├── 20250912113257-add-fraud-detection-triggers.cjs
+│   │   │   ├── 20250912163734-create-activity-monitoring.cjs
+│   │   │   └── 20250912164045-add-activity-monitoring-triggers.cjs
 │   │   ├── package.json
 │   │   ├── scripts
-│   │   │   ├── countryManager.js
 │   │   │   ├── countryManager.ts
-│   │   │   ├── currencyManager.js
 │   │   │   ├── currencyManager.ts
 │   │   │   ├── kill.js
+│   │   │   ├── manageClient.ts
+│   │   │   ├── manageProfile.ts
 │   │   │   ├── nuclear-cleanup.js
 │   │   │   ├── status.js
 │   │   │   ├── stop.js
-│   │   │   ├── test.js
-│   │   │   └── test.ts
+│   │   │   ├── test.ts
+│   │   │   └── testTokenGeneration.ts
 │   │   ├── src
 │   │   │   ├── app.ts
 │   │   │   ├── license
 │   │   │   │   ├── Project-structure.txt
 │   │   │   │   ├── class
+│   │   │   │   │   ├── ActivityMonitoring.ts
+│   │   │   │   │   ├── BillingCycle.ts
+│   │   │   │   │   ├── Client.ts
+│   │   │   │   │   ├── ClientProfil.ts
 │   │   │   │   │   ├── Country.ts
 │   │   │   │   │   ├── Currency.ts
 │   │   │   │   │   ├── EmployeeLicense.ts
 │   │   │   │   │   ├── ExchangeRate.ts
+│   │   │   │   │   ├── FraudDetectionLog.ts
 │   │   │   │   │   ├── GlobalLicense.ts
 │   │   │   │   │   ├── Language.ts
 │   │   │   │   │   ├── Lexicon.ts
+│   │   │   │   │   ├── LicenseAdjustment.ts
+│   │   │   │   │   ├── PaymentMethod.ts
+│   │   │   │   │   ├── PaymentTransaction.ts
 │   │   │   │   │   ├── TaxRule.ts
 │   │   │   │   │   └── Tenant.ts
 │   │   │   │   ├── database
 │   │   │   │   │   ├── data
 │   │   │   │   │   │   ├── activity.monitoring.db.ts
 │   │   │   │   │   │   ├── billing.cycle.db.ts
+│   │   │   │   │   │   ├── client.db.ts
+│   │   │   │   │   │   ├── client.profile.db.ts
 │   │   │   │   │   │   ├── country.db.ts
 │   │   │   │   │   │   ├── currency.db.ts
 │   │   │   │   │   │   ├── employee.license.db.ts
@@ -304,29 +446,51 @@
 │   │   │   │   │   ├── db.initializer.ts
 │   │   │   │   │   └── migration.config.cjs
 │   │   │   │   ├── middle
-│   │   │   │   │   └── ensured-routes.ts
+│   │   │   │   │   ├── ensured-routes.ts
+│   │   │   │   │   └── server-auth.ts
 │   │   │   │   ├── model
+│   │   │   │   │   ├── ActivityMonitoringModel.ts
+│   │   │   │   │   ├── BillingCycleModel.ts
+│   │   │   │   │   ├── ClientModel.ts
+│   │   │   │   │   ├── ClientProfileModel.ts
 │   │   │   │   │   ├── CountryModel.ts
 │   │   │   │   │   ├── CurrencyModel.ts
 │   │   │   │   │   ├── EmployeeLicenseModel.ts
 │   │   │   │   │   ├── ExchangeRateModel.ts
+│   │   │   │   │   ├── FraudDetectionLogModel.ts
 │   │   │   │   │   ├── GlobalLicenseModel.ts
 │   │   │   │   │   ├── LanguageModel.ts
 │   │   │   │   │   ├── LexiconModel.ts
+│   │   │   │   │   ├── LicenseAdjustmentModel.ts
+│   │   │   │   │   ├── PaymentMethodModel.ts
+│   │   │   │   │   ├── PaymentTransactionModel.ts
 │   │   │   │   │   ├── TaxRuleModel.ts
 │   │   │   │   │   └── TenantModel.ts
 │   │   │   │   └── routes
+│   │   │   │       ├── activity.monitoring.route.ts
+│   │   │   │       ├── billing.cycle.route.ts
 │   │   │   │       ├── country.route.ts
 │   │   │   │       ├── currency.route.ts
 │   │   │   │       ├── employee.license.route.ts
 │   │   │   │       ├── exchange.rate.route.ts
+│   │   │   │       ├── fraud.detection.log.route.ts
 │   │   │   │       ├── global.license.route.ts
 │   │   │   │       ├── language.route.ts
 │   │   │   │       ├── lexicon.route.ts
+│   │   │   │       ├── license.adjustment.route.ts
+│   │   │   │       ├── manager
+│   │   │   │       │   ├── billing.route.ts
+│   │   │   │       │   └── fraud.route.ts
+│   │   │   │       ├── payment.method.route.ts
+│   │   │   │       ├── payment.transaction.route.ts
 │   │   │   │       ├── tax.rule.route.ts
 │   │   │   │       └── tenant.route.ts
 │   │   │   ├── server.ts
+│   │   │   ├── temporaire_route
+│   │   │   │   ├── client.routes.ts
+│   │   │   │   └── profile.routes.ts
 │   │   │   ├── tools
+│   │   │   │   ├── api-key-manager.ts
 │   │   │   │   ├── glossary.ts
 │   │   │   │   ├── http-status.ts
 │   │   │   │   ├── response.ts
@@ -386,10 +550,18 @@
 │   │   ├── README.md
 │   │   ├── dist
 │   │   │   ├── constants
+│   │   │   │   ├── activity.monitoring.d.ts
+│   │   │   │   ├── activity.monitoring.d.ts.map
+│   │   │   │   ├── activity.monitoring.js
+│   │   │   │   ├── activity.monitoring.js.map
 │   │   │   │   ├── api.d.ts
 │   │   │   │   ├── api.d.ts.map
 │   │   │   │   ├── api.js
 │   │   │   │   ├── api.js.map
+│   │   │   │   ├── billing.cycle.d.ts
+│   │   │   │   ├── billing.cycle.d.ts.map
+│   │   │   │   ├── billing.cycle.js
+│   │   │   │   ├── billing.cycle.js.map
 │   │   │   │   ├── country.d.ts
 │   │   │   │   ├── country.d.ts.map
 │   │   │   │   ├── country.js
@@ -406,6 +578,10 @@
 │   │   │   │   ├── exchange.rate.d.ts.map
 │   │   │   │   ├── exchange.rate.js
 │   │   │   │   ├── exchange.rate.js.map
+│   │   │   │   ├── fraud.detection.log.d.ts
+│   │   │   │   ├── fraud.detection.log.d.ts.map
+│   │   │   │   ├── fraud.detection.log.js
+│   │   │   │   ├── fraud.detection.log.js.map
 │   │   │   │   ├── global.license.d.ts
 │   │   │   │   ├── global.license.d.ts.map
 │   │   │   │   ├── global.license.js
@@ -426,6 +602,18 @@
 │   │   │   │   ├── lexicon.d.ts.map
 │   │   │   │   ├── lexicon.js
 │   │   │   │   ├── lexicon.js.map
+│   │   │   │   ├── license.adjustment.d.ts
+│   │   │   │   ├── license.adjustment.d.ts.map
+│   │   │   │   ├── license.adjustment.js
+│   │   │   │   ├── license.adjustment.js.map
+│   │   │   │   ├── payment.method.d.ts
+│   │   │   │   ├── payment.method.d.ts.map
+│   │   │   │   ├── payment.method.js
+│   │   │   │   ├── payment.method.js.map
+│   │   │   │   ├── payment.transaction.d.ts
+│   │   │   │   ├── payment.transaction.d.ts.map
+│   │   │   │   ├── payment.transaction.js
+│   │   │   │   ├── payment.transaction.js.map
 │   │   │   │   ├── tax.rule.d.ts
 │   │   │   │   ├── tax.rule.d.ts.map
 │   │   │   │   ├── tax.rule.js
@@ -439,6 +627,14 @@
 │   │   │   ├── index.js
 │   │   │   ├── index.js.map
 │   │   │   ├── schemas
+│   │   │   │   ├── activity.monitoring.d.ts
+│   │   │   │   ├── activity.monitoring.d.ts.map
+│   │   │   │   ├── activity.monitoring.js
+│   │   │   │   ├── activity.monitoring.js.map
+│   │   │   │   ├── billing.cycle.d.ts
+│   │   │   │   ├── billing.cycle.d.ts.map
+│   │   │   │   ├── billing.cycle.js
+│   │   │   │   ├── billing.cycle.js.map
 │   │   │   │   ├── country.d.ts
 │   │   │   │   ├── country.d.ts.map
 │   │   │   │   ├── country.js
@@ -455,6 +651,10 @@
 │   │   │   │   ├── exchange.rate.d.ts.map
 │   │   │   │   ├── exchange.rate.js
 │   │   │   │   ├── exchange.rate.js.map
+│   │   │   │   ├── fraud.detection.log.d.ts
+│   │   │   │   ├── fraud.detection.log.d.ts.map
+│   │   │   │   ├── fraud.detection.log.js
+│   │   │   │   ├── fraud.detection.log.js.map
 │   │   │   │   ├── global.license.d.ts
 │   │   │   │   ├── global.license.d.ts.map
 │   │   │   │   ├── global.license.js
@@ -471,6 +671,18 @@
 │   │   │   │   ├── lexicon.d.ts.map
 │   │   │   │   ├── lexicon.js
 │   │   │   │   ├── lexicon.js.map
+│   │   │   │   ├── license.adjustment.d.ts
+│   │   │   │   ├── license.adjustment.d.ts.map
+│   │   │   │   ├── license.adjustment.js
+│   │   │   │   ├── license.adjustment.js.map
+│   │   │   │   ├── payment.method.d.ts
+│   │   │   │   ├── payment.method.d.ts.map
+│   │   │   │   ├── payment.method.js
+│   │   │   │   ├── payment.method.js.map
+│   │   │   │   ├── payment.transaction.d.ts
+│   │   │   │   ├── payment.transaction.d.ts.map
+│   │   │   │   ├── payment.transaction.js
+│   │   │   │   ├── payment.transaction.js.map
 │   │   │   │   ├── tax.rule.d.ts
 │   │   │   │   ├── tax.rule.d.ts.map
 │   │   │   │   ├── tax.rule.js
@@ -517,6 +729,14 @@
 │   │   │   │   ├── tenant.js
 │   │   │   │   └── tenant.js.map
 │   │   │   └── utils
+│   │   │       ├── activity.monitoring.validation.d.ts
+│   │   │       ├── activity.monitoring.validation.d.ts.map
+│   │   │       ├── activity.monitoring.validation.js
+│   │   │       ├── activity.monitoring.validation.js.map
+│   │   │       ├── billing.cycle.validation.d.ts
+│   │   │       ├── billing.cycle.validation.d.ts.map
+│   │   │       ├── billing.cycle.validation.js
+│   │   │       ├── billing.cycle.validation.js.map
 │   │   │       ├── country.formatting.d.ts
 │   │   │       ├── country.formatting.d.ts.map
 │   │   │       ├── country.formatting.js
@@ -537,6 +757,10 @@
 │   │   │       ├── exchange.rate.validation.d.ts.map
 │   │   │       ├── exchange.rate.validation.js
 │   │   │       ├── exchange.rate.validation.js.map
+│   │   │       ├── fraud.detection.log.validation.d.ts
+│   │   │       ├── fraud.detection.log.validation.d.ts.map
+│   │   │       ├── fraud.detection.log.validation.js
+│   │   │       ├── fraud.detection.log.validation.js.map
 │   │   │       ├── global.license.validation.d.ts
 │   │   │       ├── global.license.validation.d.ts.map
 │   │   │       ├── global.license.validation.js
@@ -553,6 +777,18 @@
 │   │   │       ├── lexicon.validation.d.ts.map
 │   │   │       ├── lexicon.validation.js
 │   │   │       ├── lexicon.validation.js.map
+│   │   │       ├── license.adjustment.validation.d.ts
+│   │   │       ├── license.adjustment.validation.d.ts.map
+│   │   │       ├── license.adjustment.validation.js
+│   │   │       ├── license.adjustment.validation.js.map
+│   │   │       ├── payment.method.validation.d.ts
+│   │   │       ├── payment.method.validation.d.ts.map
+│   │   │       ├── payment.method.validation.js
+│   │   │       ├── payment.method.validation.js.map
+│   │   │       ├── payment.transaction.validation.d.ts
+│   │   │       ├── payment.transaction.validation.d.ts.map
+│   │   │       ├── payment.transaction.validation.js
+│   │   │       ├── payment.transaction.validation.js.map
 │   │   │       ├── tax.rule.validation.d.ts
 │   │   │       ├── tax.rule.validation.d.ts.map
 │   │   │       ├── tax.rule.validation.js
@@ -564,28 +800,40 @@
 │   │   ├── package.json
 │   │   ├── src
 │   │   │   ├── constants
+│   │   │   │   ├── activity.monitoring.ts
 │   │   │   │   ├── api.ts
+│   │   │   │   ├── billing.cycle.ts
 │   │   │   │   ├── country.ts
 │   │   │   │   ├── currency.ts
 │   │   │   │   ├── employee.license.ts
 │   │   │   │   ├── exchange.rate.ts
+│   │   │   │   ├── fraud.detection.log.ts
 │   │   │   │   ├── global.license.ts
 │   │   │   │   ├── http.status.ts
 │   │   │   │   ├── index.ts
 │   │   │   │   ├── language.ts
 │   │   │   │   ├── lexicon.ts
+│   │   │   │   ├── license.adjustment.ts
+│   │   │   │   ├── payment.method.ts
+│   │   │   │   ├── payment.transaction.ts
 │   │   │   │   ├── tax.rule.ts
 │   │   │   │   └── tenant.ts
 │   │   │   ├── index.ts
 │   │   │   ├── schemas
+│   │   │   │   ├── activity.monitoring.ts
+│   │   │   │   ├── billing.cycle.ts
 │   │   │   │   ├── country.ts
 │   │   │   │   ├── currency.ts
 │   │   │   │   ├── employee.license.ts
 │   │   │   │   ├── exchange.rate.ts
+│   │   │   │   ├── fraud.detection.log.ts
 │   │   │   │   ├── global.license.ts
 │   │   │   │   ├── index.ts
 │   │   │   │   ├── language.ts
 │   │   │   │   ├── lexicon.ts
+│   │   │   │   ├── license.adjustment.ts
+│   │   │   │   ├── payment.method.ts
+│   │   │   │   ├── payment.transaction.ts
 │   │   │   │   ├── tax.rule.ts
 │   │   │   │   └── tenant.ts
 │   │   │   ├── types
@@ -595,23 +843,30 @@
 │   │   │   │   ├── exchange.rate.ts
 │   │   │   │   ├── global.license.ts
 │   │   │   │   ├── index.js.ts
+│   │   │   │   ├── language.js
 │   │   │   │   ├── language.ts
 │   │   │   │   ├── tax.rule.ts
 │   │   │   │   └── tenant.ts
 │   │   │   └── utils
+│   │   │       ├── activity.monitoring.validation.ts
+│   │   │       ├── billing.cycle.validation.ts
 │   │   │       ├── country.formatting.ts
 │   │   │       ├── country.validation.ts
 │   │   │       ├── currency.validation.ts
 │   │   │       ├── employee.license.validation.ts
 │   │   │       ├── exchange.rate.validation.ts
+│   │   │       ├── fraud.detection.log.validation.ts
 │   │   │       ├── global.license.validation.ts
 │   │   │       ├── index.ts
 │   │   │       ├── language.validation.ts
 │   │   │       ├── lexicon.validation.ts
+│   │   │       ├── license.adjustment.validation.ts
+│   │   │       ├── payment.method.validation.ts
+│   │   │       ├── payment.transaction.validation.ts
 │   │   │       ├── tax.rule.validation.ts
 │   │   │       └── tenant.validation.ts
 │   │   └── tsconfig.json
 │   └── test.js
 └── tsconfig.json
 
-51 directories, 564 files
+55 directories, 815 files

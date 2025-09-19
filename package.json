@@ -29,7 +29,8 @@
     "migrate:dev:api": "npm run migrate:dev --workspace=@toke/api",
     "migrate:undo:api": "npm run migrate:undo --workspace=@toke/api",
     "status:migrate:api": "npm run status:migrate --workspace=@toke/api",
-    "testClient": "npm run testCreateClient --workspace=@toke/api"
+    "testClient": "npm run testCreateClient --workspace=@toke/api",
+    "structure": "tree -I 'node_modules|.*|tmp' > Project-structure.txt"
   },
   "devDependencies": {
     "concurrently": "^8.0.0",

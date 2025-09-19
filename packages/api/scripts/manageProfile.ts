@@ -1,8 +1,8 @@
 import * as readline from 'readline';
 
-import Db from '../src/license/database/db.config.js';
-import { TableInitializer } from '../src/license/database/db.initializer.js';
-import ClientProfil from '../src/license/class/ClientProfil.js';
+import Db from '../src/master/database/db.config.js';
+import { TableInitializer } from '../src/master/database/db.initializer.js';
+import ClientProfil from '../src/master/class/ClientProfil.js';
 
 class ProfilManager {
   private rl: readline.Interface;
