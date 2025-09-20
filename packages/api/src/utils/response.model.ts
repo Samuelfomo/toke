@@ -186,6 +186,8 @@ export const tableName = {
   ORG_HIERARCHY: `${G.tableAp}_org_hierarchy`,
   SITES: `${G.tableAp}_sites`,
   WORK_SESSIONS: `${G.tableAp}_work_sessions`,
+  AUDIT_LOGS: `${G.tableAp}_audit_logs`,
+  FRAUD_ALERTS: `${G.tableAp}_fraud_alerts`,
 
   MEMOS: `${G.tableOp}_memos`,
   TIME_ENTRIES: `${G.tableOp}_time_entries`,

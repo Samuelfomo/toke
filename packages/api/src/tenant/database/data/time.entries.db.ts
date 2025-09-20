@@ -55,7 +55,7 @@ export const TimeEntriesDbStructure = {
         min: 1,
         max: 2147483647,
       },
-      OnDelete: 'CASCADE',
+      onDelete: 'CASCADE',
       comment: 'Work sessions',
     },
     user: {
@@ -85,7 +85,7 @@ export const TimeEntriesDbStructure = {
         min: 1,
         max: 2147483647,
       },
-      OnDelete: 'CASCADE',
+      onDelete: 'CASCADE',
       comment: 'Sites',
     },
     pointage_type: {

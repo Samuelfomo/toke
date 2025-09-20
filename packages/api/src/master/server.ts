@@ -2,7 +2,7 @@
 import { existsSync, unlinkSync, writeFileSync } from 'fs';
 import { join } from 'path';
 
-import App from './master/app.js';
+import App from './app.js';
 
 // Fichier PID pour permettre l'arrêt externe
 const PID_FILE = join(process.cwd(), 'server.pid');
