@@ -110,7 +110,7 @@ body {
 /* 📱 CONTAINER PRINCIPAL */
 .employee-details-container {
     min-height: 100vh;
-    background: linear-gradient(135deg, var(--bg-secondary) 0%, #f1f5f9 100%);
+    background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
     padding: var(--space-md);
     animation: fadeInScale 0.4s ease-out;
 }

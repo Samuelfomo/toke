@@ -36,7 +36,7 @@
         <span class="tab-label">Aujourd'hui</span>
       </a>
       <a
-        href="#"
+        href="/equipe"
         class="nav-tab"
         :class="{ active: activeTab === '/equipe' }"
         @click="setActiveTab('/equipe')">

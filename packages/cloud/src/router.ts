@@ -31,6 +31,7 @@ import DashboardMain from './views/dashboard/dashboardMain.vue';
 import Memo from './views/memo.vue';
 import Module from './views/module.vue';
 import EmployeeDetails from './views/EmployeeDetails.vue';
+import Equipe from './views/equipe.vue';
 // Typage explicite des routes
 
 // Typage explicite des routes
@@ -89,6 +90,11 @@ const routes: RouteRecordRaw[] = [
     path: '/employee/:employeeId/details',
     name: 'employeeD',
     component: EmployeeDetails
+  },
+  {
+    path: '/equipe',
+    name: 'equipe',
+    component: Equipe
   }
 ];
 
