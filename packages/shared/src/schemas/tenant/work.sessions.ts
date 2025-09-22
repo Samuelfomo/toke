@@ -1,4 +1,4 @@
-// schemas/work_sessions.ts
+// schemas/work.sessions.ts
 import { z } from 'zod';
 
 import {

@@ -156,6 +156,19 @@ export const responseStructure = {
   PUNCH_COUNT_30_DAYS: 'punch_count_30_days',
   CONSECUTIVE_ABSENT_DAYS: 'consecutive_absent_days',
   STATUS_AT_DATE: 'status_at_date',
+
+  DESCRIPTION: 'description',
+  PERMISSIONS: 'permissions',
+  SYSTEM_ROLE: 'system_role',
+  EMAIL: 'email',
+  FIRST_NAME: 'first_name',
+  LAST_NAME: 'last_name',
+  PHONE_NUMBER: 'phone_number',
+  AVATAR_URL: 'avatar_url',
+  HIRE_DATE: 'hire_date',
+  DEPARTMENT: 'department',
+  JOB_TITLE: 'job_title',
+  LAST_LOGIN_AT: 'last_login_at',
 } as const;
 
 export const tableName = {

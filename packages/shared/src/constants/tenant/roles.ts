@@ -32,6 +32,7 @@ export const ROLES_DEFAULTS = {
 export const ROLES_CODES = {
   ROLE_ALREADY_EXISTS: 'role_already_exists',
   ROLE_NOT_FOUND: 'role_not_found',
+  INVALID_GUID: 'invalid_guid',
   CODE_REQUIRED: 'code_required',
   CODE_INVALID: 'code_invalid',
   CODE_ALREADY_EXISTS: 'code_already_exists',
@@ -59,9 +60,14 @@ const ROLES_LABEL = 'Role';
 export const ROLES_ERRORS = {
   ROLE: ROLES_LABEL,
 
+  ID_REQUIRED: `${ROLES_LABEL} ID is required`,
+
   CODE_REQUIRED: `${ROLES_LABEL} code is required`,
   CODE_INVALID: `Role code must be 1-${ROLES_VALIDATION.CODE.MAX_LENGTH} characters`,
   CODE_ALREADY_EXISTS: 'Role code already exists',
+
+  GUID_GENERATED_FAILED: 'Failed to generate GUID for role',
+  GUID_INVALID: 'Invalid GUID format',
 
   NAME_REQUIRED: `${ROLES_LABEL} name is required`,
   NAME_INVALID: `Role name must be 1-${ROLES_VALIDATION.NAME.MAX_LENGTH} characters`,

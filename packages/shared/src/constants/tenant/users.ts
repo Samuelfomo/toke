@@ -133,6 +133,8 @@ export const USERS_ERRORS = {
   TENANT_REQUIRED: `${USERS_LABEL} tenant is required`,
   TENANT_INVALID: `Tenant must be 1-${USERS_VALIDATION.TENANT.MAX_LENGTH} characters`,
 
+  ID_REQUIRED: `${USERS_LABEL} ID is required`,
+
   EMAIL_INVALID: `Email must be valid and between ${USERS_VALIDATION.EMAIL.MIN_LENGTH}-${USERS_VALIDATION.EMAIL.MAX_LENGTH} characters`,
   EMAIL_ALREADY_EXISTS: 'Email address is already registered',
 
@@ -174,6 +176,7 @@ export const USERS_ERRORS = {
   LAST_LOGIN_DATE_INVALID: 'Last login date must be a valid date',
 
   GUID_INVALID: 'GUID must be a valid UUID format',
+  GUID_GENERATION_FAILED: 'Failed to generate GUID',
   NOT_FOUND: `${USERS_LABEL} not found`,
   VALIDATION_FAILED: `${USERS_LABEL} validation failed`,
 

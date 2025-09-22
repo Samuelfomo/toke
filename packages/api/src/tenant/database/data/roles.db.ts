@@ -3,7 +3,7 @@ import { DataTypes, ModelAttributes, ModelOptions } from 'sequelize';
 import { tableName } from '../../../utils/response.model.js';
 
 export const RolesDbStructure = {
-  tableName: tableName,
+  tableName: tableName.ROLES,
   attributes: {
     id: {
       type: DataTypes.SMALLINT,
@@ -16,6 +16,16 @@ export const RolesDbStructure = {
       },
       comment: 'Roles ID',
     },
+    guid: {
+      type: DataTypes.STRING(128),
+      allowNull: false,
+      unique: { name: 'unique_role_guid', msg: 'Role GUID must be unique.' },
+      defaultValue: DataTypes.UUIDV4,
+      validate: {
+        len: [1, 128],
+      },
+      comment: 'Unique, automatically generated digital GUID',
+    },
     code: {
       type: DataTypes.STRING(50),
       allowNull: false,
@@ -23,12 +33,11 @@ export const RolesDbStructure = {
       validate: {
         len: [1, 50],
       },
-      comment: 'Unique, automatically generated digital CODE',
+      comment: 'Unique role CODE',
     },
     name: {
       type: DataTypes.STRING(100),
       allowNull: false,
-      // unique: { name: 'unique_role_name', msg: 'Role NAME must be unique.' },
       validate: {
         len: [1, 100],
       },
@@ -38,7 +47,7 @@ export const RolesDbStructure = {
       type: DataTypes.TEXT,
       allowNull: true,
       validate: {
-        len: [1, 500],
+        len: [10, 500],
       },
       comment: 'Role description',
     },
@@ -66,6 +75,10 @@ export const RolesDbStructure = {
     freezeTableName: true,
     comment: 'Roles table with validation information',
     indexes: [
+      {
+        fields: ['guid'],
+        name: 'idx_role_guid',
+      },
       {
         fields: ['code'],
         name: 'idx_role_code',

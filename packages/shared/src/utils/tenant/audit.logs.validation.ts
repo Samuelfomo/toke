@@ -517,8 +517,8 @@ export class AuditLogsValidationUtils {
       }
     });
 
-    summary.timeRange.earliest = earliestDate?.toISOString() || null;
-    summary.timeRange.latest = latestDate?.toISOString() || null;
+    summary.timeRange.earliest = (earliestDate as Date | null)?.toISOString() || null;
+    summary.timeRange.latest = (latestDate as Date | null)?.toISOString() || null;
 
     return summary;
   }
@@ -704,8 +704,11 @@ export class AuditLogsValidationUtils {
     );
 
     const mostActiveTable =
-      Object.entries(tableCounts).sort(([, a], [, b]) => b - a)[0]?.[0] || null;
-    const mostActiveUser = Object.entries(userCounts).sort(([, a], [, b]) => b - a)[0]?.[0] || null;
+      (Object.entries(tableCounts) as [string, number][]).sort(([, a], [, b]) => b - a)[0]?.[0] ||
+      null;
+    const mostActiveUser =
+      (Object.entries(userCounts) as [string, number][]).sort(([, a], [, b]) => b - a)[0]?.[0] ||
+      null;
 
     return {
       totalChanges,

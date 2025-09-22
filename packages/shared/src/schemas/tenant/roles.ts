@@ -63,10 +63,10 @@ export const updateRolesSchema = baseRolesSchema.partial();
 // Schema pour les filtres
 export const rolesFiltersSchema = z
   .object({
-    code: z.string().optional(),
-    name: z.string().optional(),
+    // code: z.string().optional(),
+    // name: z.string().optional(),
     system_role: z.boolean().optional(),
-    permissions_key: z.string().optional(), // Pour rechercher par clé de permission
+    permissions: z.string().optional(), // Pour rechercher par clé de permission
   })
   .strict();
 

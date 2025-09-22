@@ -8,6 +8,8 @@ export * from './types/exchange.rate.js';
 export * from './types/language.js';
 export * from './types/tax.rule.js';
 
+// tenant specific types
+
 // Export des constantes
 export * from './constants/api.js';
 export * from './constants/http.status.js';
@@ -27,6 +29,18 @@ export * from './constants/payment.transaction.js';
 export * from './constants/fraud.detection.log.js';
 export * from './constants/activity.monitoring.js';
 
+// tenant specific constants
+export * from './constants/tenant/users.js';
+export * from './constants/tenant/roles.js';
+export * from './constants/tenant/user.roles.js';
+export * from './constants/tenant/org.hierarchy.js';
+export * from './constants/tenant/sites.js';
+export * from './constants/tenant/work.sessions.js';
+export * from './constants/tenant/time.entries.js';
+export * from './constants/tenant/memos.js';
+export * from './constants/tenant/audit.logs.js';
+export * from './constants/tenant/fraud.alerts.js';
+
 // Export des schémas
 export * from './schemas/country.js';
 export * as currencySchemas from './schemas/currency.js';
@@ -43,6 +57,18 @@ export * as LA from './schemas/license.adjustment.js';
 export * as PT from './schemas/payment.transaction.js';
 export * as FD from './schemas/fraud.detection.log.js';
 export * as AM from './schemas/activity.monitoring.js';
+
+// tenant specific schemas
+export * from './schemas/tenant/users.js';
+export * from './schemas/tenant/roles.js';
+export * from './schemas/tenant/user.roles.js';
+export * from './schemas/tenant/org.hierarchy.js';
+export * from './schemas/tenant/sites.js';
+export * from './schemas/tenant/work.sessions.js';
+export * from './schemas/tenant/time.entries.js';
+export * from './schemas/tenant/memos.js';
+export * from './schemas/tenant/audit.logs.js';
+export * from './schemas/tenant/fraud.alerts.js';
 
 // Export des utilitaires
 export * from './utils/country.validation.js';
@@ -61,3 +87,14 @@ export * from './utils/license.adjustment.validation.js';
 export * from './utils/payment.transaction.validation.js';
 export * from './utils/fraud.detection.log.validation.js';
 export * from './utils/activity.monitoring.validation.js';
+
+// tenant specific utils
+export * from './utils/tenant/users.validation.js';
+export * from './utils/tenant/roles.validation.js';
+export * from './utils/tenant/user.roles.validation.js';
+export * from './utils/tenant/org.hierarchy.validation.js';
+export * from './utils/tenant/work.sessions.validation.js';
+export * from './utils/tenant/time.entries.validation.js';
+export * from './utils/tenant/memos.validation.js';
+export * from './utils/tenant/audit.logs.validation.js';
+export * from './utils/tenant/fraud.alerts.validation.js';

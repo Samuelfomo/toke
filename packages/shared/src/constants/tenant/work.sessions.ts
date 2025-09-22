@@ -1,4 +1,4 @@
-// constants/work_sessions.ts
+// constants/work.sessions.ts
 
 export enum SessionStatus {
   OPEN = 'open',

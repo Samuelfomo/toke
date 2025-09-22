@@ -302,7 +302,7 @@ export const validateSelfValidation = (authorId: number, validatorId: number | n
 };
 
 // Validation de modification des mémos traités
-export const validateModificationAllowed = (currentStatus: MemoStatus) => {
+export const validateMemoModificationAllowed = (currentStatus: MemoStatus) => {
   const processedStatuses = [MemoStatus.APPROVED, MemoStatus.REJECTED];
   if (processedStatuses.includes(currentStatus)) {
     throw new Error(MEMOS_ERRORS.CANNOT_MODIFY_PROCESSED_MEMO);
@@ -326,7 +326,7 @@ export const memosSchemas = {
   validateMemosGuid,
   validateMemoStatusTransition,
   validateSelfValidation,
-  validateModificationAllowed,
+  validateMemoModificationAllowed,
   createMemosSchema,
   updateMemosSchema,
   memosFiltersSchema,

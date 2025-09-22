@@ -370,7 +370,7 @@ router.post('/', Ensure.post(), async (req: Request, res: Response) => {
         message: error.message,
       });
     } else {
-      return R.handleError(res, HttpStatus.BAD_REQUEST, {
+      return R.handleError(res, HttpStatus.INTERNAL_ERROR, {
         code: TENANT_CODES.CREATION_FAILED,
         message: error.message,
       });
@@ -442,7 +442,7 @@ router.put('/:guid', Ensure.put(), async (req: Request, res: Response) => {
         message: error.message,
       });
     } else {
-      return R.handleError(res, HttpStatus.BAD_REQUEST, {
+      return R.handleError(res, HttpStatus.INTERNAL_ERROR, {
         code: TENANT_CODES.UPDATE_FAILED,
         message: error.message,
       });
