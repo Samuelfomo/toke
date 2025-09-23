@@ -1,6 +1,6 @@
-import {LANGUAGE_ERRORS, LanguageValidationUtils} from '@toke/shared';
+import { LANGUAGE_ERRORS, LanguageValidationUtils } from '@toke/shared';
 
-import {tableName} from '../../utils/response.model.js';
+import { tableName } from '../../utils/response.model.js';
 import BaseModel from '../database/db.base.js';
 
 export default class LanguageModel extends BaseModel {
@@ -139,33 +139,33 @@ export default class LanguageModel extends BaseModel {
   private async validate(): Promise<void> {
     // Valider le code ISO 639-1
     if (!this.code) {
-        throw new Error(LANGUAGE_ERRORS.CODE_REQUIRED);
+      throw new Error(LANGUAGE_ERRORS.CODE_REQUIRED);
     }
 
     if (!LanguageValidationUtils.validateCode(this.code)) {
-        throw new Error(LANGUAGE_ERRORS.CODE_INVALID);
+      throw new Error(LANGUAGE_ERRORS.CODE_INVALID);
     }
 
     // Valider le nom anglais (obligatoire)
     if (!this.name_en) {
-        throw new Error(LANGUAGE_ERRORS.NAME_EN_REQUIRED);
+      throw new Error(LANGUAGE_ERRORS.NAME_EN_REQUIRED);
     }
     if (!LanguageValidationUtils.validateNameEn(this.name_en)) {
-        throw new Error(LANGUAGE_ERRORS.NAME_EN_INVALID);
+      throw new Error(LANGUAGE_ERRORS.NAME_EN_INVALID);
     }
 
     if (!this.name_local) {
-        throw new Error(LANGUAGE_ERRORS.NAME_LOCAL_REQUIRED);
+      throw new Error(LANGUAGE_ERRORS.NAME_LOCAL_REQUIRED);
     }
     if (!LanguageValidationUtils.validateNameLocal(this.name_local)) {
-        throw new Error(LANGUAGE_ERRORS.NAME_LOCAL_INVALID);
+      throw new Error(LANGUAGE_ERRORS.NAME_LOCAL_INVALID);
     }
 
     if (this.active !== undefined && !LanguageValidationUtils.validateActive(this.active)) {
-        throw new Error(LANGUAGE_ERRORS.INVALID_BOOLEAN);
+      throw new Error(LANGUAGE_ERRORS.INVALID_BOOLEAN);
     }
 
-   const cleaned = LanguageValidationUtils.cleanLanguageData(this);
+    const cleaned = LanguageValidationUtils.cleanLanguageData(this);
     Object.assign(this, cleaned);
   }
 }

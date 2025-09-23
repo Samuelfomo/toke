@@ -1,13 +1,7 @@
 import { DataTypes, ModelAttributes, ModelOptions } from 'sequelize';
+import { SessionStatus } from '@toke/shared';
 
 import { tableName } from '../../../utils/response.model.js';
-
-export enum SessionStatus {
-  OPEN = 'open',
-  CLOSED = 'closed',
-  ABANDONED = 'abandoned',
-  CORRECTED = 'corrected',
-}
 
 export const WorkSessionsDbStructure = {
   tableName: tableName.WORK_SESSIONS,

@@ -99,12 +99,12 @@ export class UserRolesValidationUtils {
     const cleaned = { ...data };
 
     // Convert numeric fields
-    if (cleaned.user_id !== undefined && cleaned.user_id !== null) {
-      cleaned.user_id = Number(cleaned.user_id);
+    if (cleaned.user !== undefined && cleaned.user !== null) {
+      cleaned.user = Number(cleaned.user);
     }
 
-    if (cleaned.role_id !== undefined && cleaned.role_id !== null) {
-      cleaned.role_id = Number(cleaned.role_id);
+    if (cleaned.role !== undefined && cleaned.role !== null) {
+      cleaned.role = Number(cleaned.role);
     }
 
     if (cleaned.assigned_by !== undefined && cleaned.assigned_by !== null) {
@@ -132,7 +132,7 @@ export class UserRolesValidationUtils {
    * Validates that a user role assignment is complete for creation
    */
   static isValidForCreation(data: any): boolean {
-    const requiredFields = ['user_id', 'role_id', 'assigned_by'];
+    const requiredFields = ['user', 'role', 'assigned_by'];
 
     // Check required fields
     for (const field of requiredFields) {
@@ -142,8 +142,8 @@ export class UserRolesValidationUtils {
     }
 
     return (
-      this.validateUserId(data.user_id) &&
-      this.validateRoleId(data.role_id) &&
+      this.validateUserId(data.user) &&
+      this.validateRoleId(data.role) &&
       this.validateAssignedBy(data.assigned_by) &&
       this.validateAssignedAt(data.assigned_at) &&
       (data.guid === undefined || this.validateGuid(data.guid))
@@ -156,8 +156,8 @@ export class UserRolesValidationUtils {
   static isValidForUpdate(data: any): boolean {
     // For updates, validate only fields that are present
     const validations = [
-      data.user_id === undefined || this.validateUserId(data.user_id),
-      data.role_id === undefined || this.validateRoleId(data.role_id),
+      data.user === undefined || this.validateUserId(data.user),
+      data.role === undefined || this.validateRoleId(data.role),
       data.assigned_by === undefined || this.validateAssignedBy(data.assigned_by),
       data.assigned_at === undefined || this.validateAssignedAt(data.assigned_at),
       data.guid === undefined || this.validateGuid(data.guid),
@@ -172,15 +172,15 @@ export class UserRolesValidationUtils {
   static getValidationErrors(data: any): string[] {
     const errors: string[] = [];
 
-    if (data.user_id === undefined || data.user_id === null || !this.validateUserId(data.user_id)) {
+    if (data.user === undefined || data.user === null || !this.validateUserId(data.user)) {
       errors.push(
-        `Invalid user_id: must be between ${USER_ROLES_VALIDATION.USER.MIN} and ${USER_ROLES_VALIDATION.USER.MAX}`,
+        `Invalid user: must be between ${USER_ROLES_VALIDATION.USER.MIN} and ${USER_ROLES_VALIDATION.USER.MAX}`,
       );
     }
 
-    if (data.role_id === undefined || data.role_id === null || !this.validateRoleId(data.role_id)) {
+    if (data.role === undefined || data.role === null || !this.validateRoleId(data.role)) {
       errors.push(
-        `Invalid role_id: must be between ${USER_ROLES_VALIDATION.ROLE.MIN} and ${USER_ROLES_VALIDATION.ROLE.MAX}`,
+        `Invalid role: must be between ${USER_ROLES_VALIDATION.ROLE.MIN} and ${USER_ROLES_VALIDATION.ROLE.MAX}`,
       );
     }
 
@@ -206,9 +206,9 @@ export class UserRolesValidationUtils {
 
     // Business rule validations
     if (
-      data.user_id &&
+      data.user &&
       data.assigned_by &&
-      !this.validateNotSelfAssignment(data.user_id, data.assigned_by)
+      !this.validateNotSelfAssignment(data.user, data.assigned_by)
     ) {
       errors.push('Self-assignment is not allowed');
     }
@@ -221,8 +221,8 @@ export class UserRolesValidationUtils {
    */
   static validateFilterData(data: any): boolean {
     return (
-      (data.user_id && this.validateUserId(data.user_id)) ||
-      (data.role_id && this.validateRoleId(data.role_id)) ||
+      (data.user && this.validateUserId(data.user)) ||
+      (data.role && this.validateRoleId(data.role)) ||
       (data.assigned_by && this.validateAssignedBy(data.assigned_by)) ||
       (data.assigned_at_from && !isNaN(new Date(data.assigned_at_from).getTime())) ||
       (data.assigned_at_to && !isNaN(new Date(data.assigned_at_to).getTime())) ||
@@ -239,7 +239,7 @@ export class UserRolesValidationUtils {
     roleId: number,
   ): boolean {
     return existingAssignments.some(
-      (assignment) => assignment.user_id === userId && assignment.role_id === roleId,
+      (assignment) => assignment.user === userId && assignment.role === roleId,
     );
   }
 
@@ -387,11 +387,11 @@ export class UserRolesValidationUtils {
     details: Record<string, any>;
   } {
     return {
-      assignmentId: assignment.guid || `${assignment.user_id}-${assignment.role_id}`,
-      summary: `User ${assignment.user_id} assigned role ${assignment.role_id} by user ${assignment.assigned_by}`,
+      assignmentId: assignment.guid || `${assignment.user}-${assignment.role}`,
+      summary: `User ${assignment.user} assigned role ${assignment.role} by user ${assignment.assigned_by}`,
       details: {
-        user_id: assignment.user_id,
-        role_id: assignment.role_id,
+        user: assignment.user,
+        role: assignment.role,
         assigned_by: assignment.assigned_by,
         assigned_at: assignment.assigned_at,
         role_name: assignment.role?.name,

@@ -1,13 +1,7 @@
 import { DataTypes, ModelAttributes, ModelOptions } from 'sequelize';
+import { SITES_DEFAULTS, SiteType } from '@toke/shared';
 
 import { tableName } from '../../../utils/response.model.js';
-
-export enum SiteType {
-  MANAGER = 'manager_site',
-  GLOBAL = 'global_site',
-  TEMPORARY = 'temporary_site',
-  PUBLIC = 'public_site',
-}
 
 export const SitesDbStructure = {
   tableName: tableName.SITES,
@@ -109,7 +103,7 @@ export const SitesDbStructure = {
     geofence_radius: {
       type: DataTypes.INTEGER,
       allowNull: false,
-      defaultValue: 100,
+      defaultValue: SITES_DEFAULTS.GEOFENCE_RADIUS,
       validate: {
         isInt: true,
         min: 1,
@@ -160,7 +154,7 @@ export const SitesDbStructure = {
     active: {
       type: DataTypes.BOOLEAN,
       allowNull: false,
-      defaultValue: true,
+      defaultValue: SITES_DEFAULTS.ACTIVE,
       validate: {
         isBoolean: true,
       },
@@ -169,7 +163,7 @@ export const SitesDbStructure = {
     public: {
       type: DataTypes.BOOLEAN,
       allowNull: false,
-      defaultValue: false,
+      defaultValue: SITES_DEFAULTS.PUBLIC,
       validate: {
         isBoolean: true,
       },

@@ -1,9 +1,9 @@
 import bcrypt from 'bcrypt';
 
 import UserModel from '../model/UserModel.js';
-import W from '../../tools/watcher';
-import G from '../../tools/glossary';
-import { responseStructure as RS } from '../../utils/response.model';
+import W from '../../tools/watcher.js';
+import G from '../../tools/glossary.js';
+import { responseStructure as RS } from '../../utils/response.model.js';
 
 export default class User extends UserModel {
   constructor() {

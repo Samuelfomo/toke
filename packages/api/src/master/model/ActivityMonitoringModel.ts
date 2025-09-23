@@ -46,11 +46,11 @@ export default class ActivityMonitoringModel extends BaseModel {
    */
   protected async findByEmployeeLicenseAndDate(
     employee_license: number,
-    monitoring_date: Date
+    monitoring_date: Date,
   ): Promise<any> {
     return await this.findOne(this.db.tableName, {
       [this.db.employee_license]: employee_license,
-      [this.db.monitoring_date]: monitoring_date
+      [this.db.monitoring_date]: monitoring_date,
     });
   }
 
@@ -61,11 +61,7 @@ export default class ActivityMonitoringModel extends BaseModel {
     conditions: Record<string, any> = {},
     paginationOptions: { offset?: number; limit?: number } = {},
   ): Promise<any[]> {
-    return await this.findAll(
-      this.db.tableName,
-      conditions,
-      paginationOptions
-    );
+    return await this.findAll(this.db.tableName, conditions, paginationOptions);
   }
 
   /**
@@ -75,10 +71,7 @@ export default class ActivityMonitoringModel extends BaseModel {
     employee_license: number,
     paginationOptions: { offset?: number; limit?: number } = {},
   ): Promise<any[]> {
-    return await this.listAll(
-      { [this.db.employee_license]: employee_license },
-      paginationOptions,
-    );
+    return await this.listAll({ [this.db.employee_license]: employee_license }, paginationOptions);
   }
 
   /**
@@ -88,10 +81,7 @@ export default class ActivityMonitoringModel extends BaseModel {
     monitoring_date: Date,
     paginationOptions: { offset?: number; limit?: number } = {},
   ): Promise<any[]> {
-    return await this.listAll(
-      { [this.db.monitoring_date]: monitoring_date },
-      paginationOptions,
-    );
+    return await this.listAll({ [this.db.monitoring_date]: monitoring_date }, paginationOptions);
   }
 
   /**
@@ -101,10 +91,7 @@ export default class ActivityMonitoringModel extends BaseModel {
     status: ActivityStatus,
     paginationOptions: { offset?: number; limit?: number } = {},
   ): Promise<any[]> {
-    return await this.listAll(
-      { [this.db.status_at_date]: status },
-      paginationOptions,
-    );
+    return await this.listAll({ [this.db.status_at_date]: status }, paginationOptions);
   }
 
   /**
@@ -144,7 +131,7 @@ export default class ActivityMonitoringModel extends BaseModel {
     return await this.listAll(
       {
         [this.db.punch_count_7_days]: { [Op.lte]: maxPunchCount },
-        [this.db.status_at_date]: { [Op.ne]: ActivityStatus.INACTIVE }
+        [this.db.status_at_date]: { [Op.ne]: ActivityStatus.INACTIVE },
       },
       paginationOptions,
     );
@@ -174,8 +161,8 @@ export default class ActivityMonitoringModel extends BaseModel {
     return await this.listAll(
       {
         [this.db.monitoring_date]: {
-          [Op.between]: [startDate, endDate]
-        }
+          [Op.between]: [startDate, endDate],
+        },
       },
       paginationOptions,
     );
@@ -196,10 +183,10 @@ export default class ActivityMonitoringModel extends BaseModel {
             SELECT MAX(monitoring_date) 
             FROM ${this.db.tableName} sub 
             WHERE sub.employee_license = ${this.db.tableName}.employee_license
-          )`)
-        }
+          )`),
+        },
       },
-      paginationOptions
+      paginationOptions,
     );
   }
 
@@ -243,7 +230,7 @@ export default class ActivityMonitoringModel extends BaseModel {
    */
   protected async getPunchStatistics(
     startDate: Date,
-    endDate: Date
+    endDate: Date,
   ): Promise<{
     avgPunchCount7Days: number;
     avgPunchCount30Days: number;
@@ -257,21 +244,24 @@ export default class ActivityMonitoringModel extends BaseModel {
         avgPunchCount7Days: 0,
         avgPunchCount30Days: 0,
         avgConsecutiveAbsentDays: 0,
-        totalEmployeesMonitored: 0
+        totalEmployeesMonitored: 0,
       };
     }
 
-    const totals = records.reduce((acc, record) => ({
-      punch7Days: acc.punch7Days + (record[this.db.punch_count_7_days] || 0),
-      punch30Days: acc.punch30Days + (record[this.db.punch_count_30_days] || 0),
-      absentDays: acc.absentDays + (record[this.db.consecutive_absent_days] || 0)
-    }), { punch7Days: 0, punch30Days: 0, absentDays: 0 });
+    const totals = records.reduce(
+      (acc, record) => ({
+        punch7Days: acc.punch7Days + (record[this.db.punch_count_7_days] || 0),
+        punch30Days: acc.punch30Days + (record[this.db.punch_count_30_days] || 0),
+        absentDays: acc.absentDays + (record[this.db.consecutive_absent_days] || 0),
+      }),
+      { punch7Days: 0, punch30Days: 0, absentDays: 0 },
+    );
 
     return {
       avgPunchCount7Days: Math.round((totals.punch7Days / records.length) * 100) / 100,
       avgPunchCount30Days: Math.round((totals.punch30Days / records.length) * 100) / 100,
       avgConsecutiveAbsentDays: Math.round((totals.absentDays / records.length) * 100) / 100,
-      totalEmployeesMonitored: records.length
+      totalEmployeesMonitored: records.length,
     };
   }
 
@@ -282,7 +272,7 @@ export default class ActivityMonitoringModel extends BaseModel {
   protected async create(): Promise<void> {
     throw new Error(
       'ARCHITECTURE VIOLATION: INSERT dans xa_activity_monitoring est réservé aux triggers PostgreSQL. ' +
-      'Les enregistrements sont générés automatiquement par les fonctions PostgreSQL.'
+        'Les enregistrements sont générés automatiquement par les fonctions PostgreSQL.',
     );
   }
 
@@ -290,7 +280,7 @@ export default class ActivityMonitoringModel extends BaseModel {
    * Met à jour un enregistrement existant (lecture seule - usage limité)
    */
   protected async update(): Promise<void> {
-    console.warn('⚠️ ATTENTION: Mise à jour manuelle d\'activity_monitoring - Usage découragé');
+    console.warn("⚠️ ATTENTION: Mise à jour manuelle d'activity_monitoring - Usage découragé");
 
     await this.validate();
 
@@ -381,29 +371,32 @@ export default class ActivityMonitoringModel extends BaseModel {
    * Valide les données avant mise à jour
    */
   private async validate(): Promise<void> {
-      // Validations de base
-      if (this.punch_count_7_days !== undefined && this.punch_count_7_days < 0) {
-        throw new Error('punch_count_7_days must be positive');
-      }
+    // Validations de base
+    if (this.punch_count_7_days !== undefined && this.punch_count_7_days < 0) {
+      throw new Error('punch_count_7_days must be positive');
+    }
 
-      if (this.punch_count_30_days !== undefined && this.punch_count_30_days < 0) {
-        throw new Error('punch_count_30_days must be positive');
-      }
+    if (this.punch_count_30_days !== undefined && this.punch_count_30_days < 0) {
+      throw new Error('punch_count_30_days must be positive');
+    }
 
-      if (this.consecutive_absent_days !== undefined && this.consecutive_absent_days < 0) {
-        throw new Error('consecutive_absent_days must be positive');
-      }
+    if (this.consecutive_absent_days !== undefined && this.consecutive_absent_days < 0) {
+      throw new Error('consecutive_absent_days must be positive');
+    }
 
-      if (this.punch_count_7_days !== undefined &&
-        this.punch_count_30_days !== undefined &&
-        this.punch_count_7_days > this.punch_count_30_days) {
-        throw new Error('punch_count_7_days cannot be greater than punch_count_30_days');
-      }
+    if (
+      this.punch_count_7_days !== undefined &&
+      this.punch_count_30_days !== undefined &&
+      this.punch_count_7_days > this.punch_count_30_days
+    ) {
+      throw new Error('punch_count_7_days cannot be greater than punch_count_30_days');
+    }
 
-      if (this.status_at_date !== undefined &&
-        !Object.values(ActivityStatus).includes(this.status_at_date)) {
-        throw new Error('Invalid activity status');
-      }
-
+    if (
+      this.status_at_date !== undefined &&
+      !Object.values(ActivityStatus).includes(this.status_at_date)
+    ) {
+      throw new Error('Invalid activity status');
+    }
   }
 }

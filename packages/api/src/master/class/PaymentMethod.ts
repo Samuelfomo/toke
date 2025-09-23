@@ -1,7 +1,12 @@
 import PaymentMethodModel from '../model/PaymentMethodModel.js';
 import W from '../../tools/watcher.js';
 import G from '../../tools/glossary.js';
-import { responseStructure as RS, responseValue, tableName, ViewMode } from '../../utils/response.model.js';
+import {
+  responseStructure as RS,
+  responseValue,
+  tableName,
+  ViewMode,
+} from '../../utils/response.model.js';
 import Revision from '../../tools/revision.js';
 
 export default class PaymentMethod extends PaymentMethodModel {
@@ -22,7 +27,7 @@ export default class PaymentMethod extends PaymentMethodModel {
 
     const allMethods = await this._list({}, paginationOptions);
     if (allMethods) {
-      data = await Promise.all(allMethods.map(async method => await method.toJSON()));
+      data = await Promise.all(allMethods.map(async (method) => await method.toJSON()));
     }
 
     return {
@@ -234,9 +239,7 @@ export default class PaymentMethod extends PaymentMethodModel {
    * Vérifie si le moyen de paiement est disponible pour un montant et une devise
    */
   isAvailableFor(amountUsd: number, currency: string): boolean {
-    return this.isActive() &&
-      this.supportsCurrency(currency) &&
-      this.isAmountInRange(amountUsd);
+    return this.isActive() && this.supportsCurrency(currency) && this.isAmountInRange(amountUsd);
   }
 
   /**
@@ -244,9 +247,9 @@ export default class PaymentMethod extends PaymentMethodModel {
    */
   isMobilePayment(): boolean {
     const mobileTypes = ['MOBILE_MONEY', 'MTN_MOMO', 'ORANGE_MONEY'];
-    return mobileTypes.some(type =>
-      this.method_type?.toUpperCase().includes(type) ||
-      this.code?.toUpperCase().includes(type)
+    return mobileTypes.some(
+      (type) =>
+        this.method_type?.toUpperCase().includes(type) || this.code?.toUpperCase().includes(type),
     );
   }
 
@@ -255,9 +258,9 @@ export default class PaymentMethod extends PaymentMethodModel {
    */
   isCardPayment(): boolean {
     const cardTypes = ['CARD', 'CREDIT_CARD', 'STRIPE'];
-    return cardTypes.some(type =>
-      this.method_type?.toUpperCase().includes(type) ||
-      this.code?.toUpperCase().includes(type)
+    return cardTypes.some(
+      (type) =>
+        this.method_type?.toUpperCase().includes(type) || this.code?.toUpperCase().includes(type),
     );
   }
 
@@ -266,9 +269,9 @@ export default class PaymentMethod extends PaymentMethodModel {
    */
   isBankTransfer(): boolean {
     const bankTypes = ['BANK_TRANSFER', 'WIRE', 'SEPA'];
-    return bankTypes.some(type =>
-      this.method_type?.toUpperCase().includes(type) ||
-      this.code?.toUpperCase().includes(type)
+    return bankTypes.some(
+      (type) =>
+        this.method_type?.toUpperCase().includes(type) || this.code?.toUpperCase().includes(type),
     );
   }
 
@@ -285,7 +288,7 @@ export default class PaymentMethod extends PaymentMethodModel {
    * Désactive le moyen de paiement
    */
   async deactivateMethod(): Promise<void> {
-    await (new PaymentMethod()).deactivate();
+    await new PaymentMethod().deactivate();
   }
 
   /**
@@ -383,7 +386,7 @@ export default class PaymentMethod extends PaymentMethodModel {
     const allMethods = await this.listAll({}, paginationOptions);
     if (!allMethods) return null;
 
-    const filtered = allMethods.filter(data => {
+    const filtered = allMethods.filter((data) => {
       const method = new PaymentMethod().hydrate(data);
       return method.supportsCurrency(currency);
     });
@@ -401,7 +404,7 @@ export default class PaymentMethod extends PaymentMethodModel {
     const allMethods = await this.listAll({}, paginationOptions);
     if (!allMethods) return null;
 
-    const filtered = allMethods.filter(data => {
+    const filtered = allMethods.filter((data) => {
       const method = new PaymentMethod().hydrate(data);
       return method.isAmountInRange(amount);
     });

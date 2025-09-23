@@ -194,22 +194,25 @@ export default class TaxRuleModel extends BaseModel {
    * Valide les données avant création/mise à jour
    */
   private async validate(): Promise<void> {
-
     // Valider le code pays (obligatoire)
     if (!this.country_code) throw new Error(TAX_RULE_ERRORS.COUNTRY_CODE_REQUIRED);
-    if (!TaxRuleValidationUtils.validateCountryCode(this.country_code)) throw new Error(TAX_RULE_ERRORS.COUNTRY_CODE_INVALID);
+    if (!TaxRuleValidationUtils.validateCountryCode(this.country_code))
+      throw new Error(TAX_RULE_ERRORS.COUNTRY_CODE_INVALID);
 
     // Valider le type de taxe (obligatoire)
     if (!this.tax_type) throw new Error(TAX_RULE_ERRORS.TAX_TYPE_REQUIRED);
-    if (!TaxRuleValidationUtils.validateTaxType(this.tax_type)) throw new Error(TAX_RULE_ERRORS.TAX_TYPE_INVALID);
+    if (!TaxRuleValidationUtils.validateTaxType(this.tax_type))
+      throw new Error(TAX_RULE_ERRORS.TAX_TYPE_INVALID);
 
     // Valider le nom de la taxe (obligatoire)
     if (!this.tax_name) throw new Error(TAX_RULE_ERRORS.TAX_NAME_REQUIRED);
-    if (!TaxRuleValidationUtils.validateTaxName(this.tax_name)) throw new Error(TAX_RULE_ERRORS.TAX_NAME_INVALID);
+    if (!TaxRuleValidationUtils.validateTaxName(this.tax_name))
+      throw new Error(TAX_RULE_ERRORS.TAX_NAME_INVALID);
 
     // Valider le taux de taxe (obligatoire)
     if (!this.tax_rate) throw new Error(TAX_RULE_ERRORS.TAX_RATE_REQUIRED);
-    if (!TaxRuleValidationUtils.validateTaxRate(this.tax_rate.toString())) throw new Error(TAX_RULE_ERRORS.TAX_RATE_INVALID);
+    if (!TaxRuleValidationUtils.validateTaxRate(this.tax_rate.toString()))
+      throw new Error(TAX_RULE_ERRORS.TAX_RATE_INVALID);
 
     // Valider "s'applique à" (optionnel)
     if (this.applies_to && !TaxRuleValidationUtils.validateAppliesTo(this.applies_to)) {
@@ -217,7 +220,10 @@ export default class TaxRuleModel extends BaseModel {
     }
 
     // Valider le numéro de taxe requis (optionnel avec valeur par défaut)
-    if (this.required_tax_number !== undefined && !TaxRuleValidationUtils.validateBoolean(this.required_tax_number)) {
+    if (
+      this.required_tax_number !== undefined &&
+      !TaxRuleValidationUtils.validateBoolean(this.required_tax_number)
+    ) {
       throw new Error(TAX_RULE_ERRORS.INVALID_BOOLEAN);
     }
 

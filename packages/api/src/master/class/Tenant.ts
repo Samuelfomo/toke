@@ -24,7 +24,7 @@ export default class Tenant extends TenantModel {
 
     const allTenants = await this._list({ ['status']: Status.ACTIVE }, paginationOptions);
     if (allTenants) {
-      data = allTenants.map(tenant => tenant.toJSON());
+      data = allTenants.map((tenant) => tenant.toJSON());
     }
 
     return {
@@ -224,7 +224,12 @@ export default class Tenant extends TenantModel {
   }
 
   // Ajouter ces méthodes après les autres setters
-  setDatabaseConfig(subdomain: string, database_name: string, database_username: string, database_password: string): Tenant {
+  setDatabaseConfig(
+    subdomain: string,
+    database_name: string,
+    database_username: string,
+    database_password: string,
+  ): Tenant {
     this.subdomain = subdomain.toLowerCase();
     this.database_name = database_name.toLowerCase();
     this.database_username = database_username.toLowerCase();
@@ -372,8 +377,7 @@ export default class Tenant extends TenantModel {
     return this.primary_currency_code === 'EUR';
   }
 
-
-// Méthode publique pour définir la configuration DB
+  // Méthode publique pour définir la configuration DB
   async defineDatabaseConfig(): Promise<void> {
     try {
       await this.defineDb();

@@ -20,11 +20,9 @@ export default class Country extends CountryModel {
     const revision = await Revision.getRevision(tableName.COUNTRY);
     let data: any[] = [];
 
-    const allCountries = await this._list({ [`${RS.ACTIVE}`]: true}, paginationOptions);
+    const allCountries = await this._list({ [`${RS.ACTIVE}`]: true }, paginationOptions);
     if (allCountries) {
-      data = await Promise.all(allCountries.map(
-        (country) => country.toJSON(),
-      ))
+      data = await Promise.all(allCountries.map((country) => country.toJSON()));
     }
 
     return {

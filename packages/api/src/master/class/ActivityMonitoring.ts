@@ -1,7 +1,12 @@
 import { ActivityStatus } from '@toke/shared';
 
 import ActivityMonitoringModel from '../model/ActivityMonitoringModel.js';
-import { responseStructure as RS, responseValue, tableName, ViewMode } from '../../utils/response.model.js';
+import {
+  responseStructure as RS,
+  responseValue,
+  tableName,
+  ViewMode,
+} from '../../utils/response.model.js';
 import Revision from '../../tools/revision.js';
 
 import EmployeeLicense from './EmployeeLicense.js';
@@ -24,7 +29,7 @@ export default class ActivityMonitoring extends ActivityMonitoringModel {
       minAbsentDays?: number;
       maxPunchCount?: number;
     } = {},
-    paginationOptions: { offset?: number; limit?: number } = {}
+    paginationOptions: { offset?: number; limit?: number } = {},
   ): Promise<{
     revision: string;
     pagination: { offset?: number; limit?: number; count?: number };
@@ -38,7 +43,9 @@ export default class ActivityMonitoring extends ActivityMonitoringModel {
     };
     items: any[];
   }> {
-    const revision = await Revision.getRevision(tableName.ACTIVITY_MONITORING || 'xa_activity_monitoring');
+    const revision = await Revision.getRevision(
+      tableName.ACTIVITY_MONITORING || 'xa_activity_monitoring',
+    );
     let data: any[] = [];
     let summary = {
       total: 0,
@@ -63,7 +70,7 @@ export default class ActivityMonitoring extends ActivityMonitoringModel {
 
     const allRecords = await this._list(conditions, paginationOptions);
     if (allRecords) {
-      data = await Promise.all(allRecords.map(async record => await record.toJSON()));
+      data = await Promise.all(allRecords.map(async (record) => await record.toJSON()));
 
       // Calculer le summary
       summary = await this._getActivitySummary(filters.monitoring_date);
@@ -93,7 +100,7 @@ export default class ActivityMonitoring extends ActivityMonitoringModel {
    */
   static _loadByEmployeeLicenseAndDate(
     employee_license: number,
-    monitoring_date: Date
+    monitoring_date: Date,
   ): Promise<ActivityMonitoring | null> {
     return new ActivityMonitoring().loadByEmployeeLicenseAndDate(employee_license, monitoring_date);
   }
@@ -224,7 +231,7 @@ export default class ActivityMonitoring extends ActivityMonitoringModel {
    */
   static async _getPunchStatistics(
     startDate: Date,
-    endDate: Date
+    endDate: Date,
   ): Promise<{
     avgPunchCount7Days: number;
     avgPunchCount30Days: number;
@@ -243,7 +250,7 @@ export default class ActivityMonitoring extends ActivityMonitoringModel {
 
   // === SETTERS FLUENT (usage très limité car données calculées automatiquement) ===
   setEmployeeLicense(employee_license: number): ActivityMonitoring {
-    console.warn('⚠️ ATTENTION: Modification manuelle d\'employee_license dans activity_monitoring');
+    console.warn("⚠️ ATTENTION: Modification manuelle d'employee_license dans activity_monitoring");
     this.employee_license = employee_license;
     return this;
   }
@@ -377,9 +384,7 @@ export default class ActivityMonitoring extends ActivityMonitoringModel {
    * Vérifie si l'employé nécessite une attention
    */
   requiresAttention(): boolean {
-    return this.isSuspicious() ||
-      this.hasLowActivity() ||
-      this.hasLongAbsence(14);
+    return this.isSuspicious() || this.hasLowActivity() || this.hasLongAbsence(14);
   }
 
   /**
@@ -399,10 +404,14 @@ export default class ActivityMonitoring extends ActivityMonitoringModel {
    */
   getDisplayColor(): string {
     switch (this.status_at_date) {
-      case ActivityStatus.ACTIVE: return '#22c55e'; // vert
-      case ActivityStatus.SUSPICIOUS: return '#f59e0b'; // orange
-      case ActivityStatus.INACTIVE: return '#6b7280'; // gris
-      default: return '#dc2626'; // rouge par défaut
+      case ActivityStatus.ACTIVE:
+        return '#22c55e'; // vert
+      case ActivityStatus.SUSPICIOUS:
+        return '#f59e0b'; // orange
+      case ActivityStatus.INACTIVE:
+        return '#6b7280'; // gris
+      default:
+        return '#dc2626'; // rouge par défaut
     }
   }
 
@@ -411,15 +420,19 @@ export default class ActivityMonitoring extends ActivityMonitoringModel {
    */
   getDisplayIcon(): string {
     switch (this.status_at_date) {
-      case ActivityStatus.ACTIVE: return '✅';
-      case ActivityStatus.SUSPICIOUS: return '⚠️';
-      case ActivityStatus.INACTIVE: return '😴';
-      default: return '❓';
+      case ActivityStatus.ACTIVE:
+        return '✅';
+      case ActivityStatus.SUSPICIOUS:
+        return '⚠️';
+      case ActivityStatus.INACTIVE:
+        return '😴';
+      default:
+        return '❓';
     }
   }
 
   // === COMPLÉTION DE LA CLASSE ACTIVITYMONITORING ===
-// À ajouter après la méthode getActivityMessage()
+  // À ajouter après la méthode getActivityMessage()
 
   /**
    * Format le message d'activité pour affichage
@@ -436,9 +449,9 @@ export default class ActivityMonitoring extends ActivityMonitoringModel {
         return `Suspect - ${punchCount} pointage${punchCount > 1 ? 's' : ''} sur 7j, ${absentDays} jour${absentDays > 1 ? 's' : ''} d'absence`;
 
       case ActivityStatus.INACTIVE:
-        return absentDays > 0 ?
-          `Inactif - ${absentDays} jour${absentDays > 1 ? 's' : ''} d'absence` :
-          'Inactif - Aucune activité récente';
+        return absentDays > 0
+          ? `Inactif - ${absentDays} jour${absentDays > 1 ? 's' : ''} d'absence`
+          : 'Inactif - Aucune activité récente';
 
       default:
         return 'Statut inconnu';
@@ -455,10 +468,11 @@ export default class ActivityMonitoring extends ActivityMonitoringModel {
     const monitoring = new Date(this.monitoring_date);
     const diffDays = Math.floor((now.getTime() - monitoring.getTime()) / (1000 * 60 * 60 * 24));
 
-    if (diffDays === 0) return 'Aujourd\'hui';
+    if (diffDays === 0) return "Aujourd'hui";
     if (diffDays === 1) return 'Hier';
     if (diffDays < 7) return `Il y a ${diffDays} jours`;
-    if (diffDays < 30) return `Il y a ${Math.floor(diffDays / 7)} semaine${Math.floor(diffDays / 7) > 1 ? 's' : ''}`;
+    if (diffDays < 30)
+      return `Il y a ${Math.floor(diffDays / 7)} semaine${Math.floor(diffDays / 7) > 1 ? 's' : ''}`;
 
     return monitoring.toLocaleDateString('fr-FR');
   }
@@ -523,20 +537,20 @@ export default class ActivityMonitoring extends ActivityMonitoringModel {
 
     if (this.isSuspicious()) {
       if (absentDays > 30) {
-        recommendations.push('Contacter l\'employé immédiatement');
+        recommendations.push("Contacter l'employé immédiatement");
         recommendations.push('Vérifier les congés déclarés');
         recommendations.push('Évaluer la continuité du contrat');
       } else if (absentDays > 14) {
-        recommendations.push('Prendre contact avec l\'employé');
+        recommendations.push("Prendre contact avec l'employé");
         recommendations.push('Vérifier les déclarations de congés');
       } else if (punchCount === 0) {
-        recommendations.push('Vérifier l\'activité récente');
+        recommendations.push("Vérifier l'activité récente");
         recommendations.push('Contacter le superviseur');
       }
     }
 
     if (this.hasLowActivity() && this.isActive()) {
-      recommendations.push('Surveiller l\'évolution de l\'activité');
+      recommendations.push("Surveiller l'évolution de l'activité");
       recommendations.push('Vérifier la charge de travail');
     }
 
@@ -559,7 +573,7 @@ export default class ActivityMonitoring extends ActivityMonitoringModel {
     return `Employé ${employeeLicenseId} - ${statusText} (${dateText}) - Score d'activité: ${score}/100`;
   }
 
-// === MÉTHODES D'INSTANCE CORRESPONDANT AUX MÉTHODES STATIQUES ===
+  // === MÉTHODES D'INSTANCE CORRESPONDANT AUX MÉTHODES STATIQUES ===
 
   async load(identifier: any): Promise<ActivityMonitoring | null> {
     const data = await this.find(Number(identifier));
@@ -569,7 +583,7 @@ export default class ActivityMonitoring extends ActivityMonitoringModel {
 
   async loadByEmployeeLicenseAndDate(
     employee_license: number,
-    monitoring_date: Date
+    monitoring_date: Date,
   ): Promise<ActivityMonitoring | null> {
     const data = await this.findByEmployeeLicenseAndDate(employee_license, monitoring_date);
     if (!data) return null;
@@ -708,7 +722,7 @@ export default class ActivityMonitoring extends ActivityMonitoringModel {
     try {
       if (this.isNew()) {
         throw new Error(
-          'ARCHITECTURE VIOLATION: La création d\'activity_monitoring est réservée aux triggers PostgreSQL'
+          "ARCHITECTURE VIOLATION: La création d'activity_monitoring est réservée aux triggers PostgreSQL",
         );
       } else {
         await this.update();
@@ -790,4 +804,4 @@ export default class ActivityMonitoring extends ActivityMonitoringModel {
     this.updated_at = data.updated_at;
     return this;
   }
-  }
+}

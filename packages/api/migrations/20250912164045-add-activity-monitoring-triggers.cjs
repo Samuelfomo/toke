@@ -8,7 +8,8 @@ module.exports = {
       console.log('⚡ Implémentation des triggers de monitoring automatique...');
 
       // 1. Fonction pour calculer les compteurs de pointages
-      await queryInterface.sequelize.query(`
+      await queryInterface.sequelize.query(
+        `
         CREATE OR REPLACE FUNCTION calculate_punch_counts(
           p_employee_license_id INTEGER,
           p_reference_date DATE DEFAULT CURRENT_DATE
@@ -50,12 +51,15 @@ module.exports = {
             ) as last_punch_date;
         END;
         $$ LANGUAGE plpgsql;
-      `, { transaction });
+      `,
+        { transaction },
+      );
 
       console.log('✅ Fonction calculate_punch_counts créée');
 
       // 2. Fonction pour calculer les jours d'absence consécutifs
-      await queryInterface.sequelize.query(`
+      await queryInterface.sequelize.query(
+        `
         CREATE OR REPLACE FUNCTION calculate_consecutive_absent_days(
           p_employee_license_id INTEGER,
           p_reference_date DATE DEFAULT CURRENT_DATE
@@ -86,12 +90,15 @@ module.exports = {
           RETURN consecutive_days;
         END;
         $$ LANGUAGE plpgsql;
-      `, { transaction });
+      `,
+        { transaction },
+      );
 
       console.log('✅ Fonction calculate_consecutive_absent_days créée');
 
       // 3. Fonction pour déterminer le statut d'activité
-      await queryInterface.sequelize.query(`
+      await queryInterface.sequelize.query(
+        `
         CREATE OR REPLACE FUNCTION determine_activity_status(
           p_punch_count_7_days INTEGER,
           p_consecutive_absent_days INTEGER,
@@ -145,12 +152,15 @@ module.exports = {
 
         END;
         $$ LANGUAGE plpgsql;
-      `, { transaction });
+      `,
+        { transaction },
+      );
 
       console.log('✅ Fonction determine_activity_status créée');
 
       // 4. Fonction principale de mise à jour du monitoring
-      await queryInterface.sequelize.query(`
+      await queryInterface.sequelize.query(
+        `
         CREATE OR REPLACE FUNCTION update_activity_monitoring(
           p_employee_license_id INTEGER,
           p_monitoring_date DATE DEFAULT CURRENT_DATE
@@ -212,12 +222,15 @@ module.exports = {
 
         END;
         $$ LANGUAGE plpgsql;
-      `, { transaction });
+      `,
+        { transaction },
+      );
 
       console.log('✅ Fonction update_activity_monitoring créée');
 
       // 5. Trigger sur employee_license pour mise à jour automatique
-      await queryInterface.sequelize.query(`
+      await queryInterface.sequelize.query(
+        `
         CREATE OR REPLACE FUNCTION employee_license_activity_trigger()
         RETURNS TRIGGER AS $$
         BEGIN
@@ -247,19 +260,25 @@ module.exports = {
           RETURN NEW;
         END;
         $$ LANGUAGE plpgsql;
-      `, { transaction });
+      `,
+        { transaction },
+      );
 
-      await queryInterface.sequelize.query(`
+      await queryInterface.sequelize.query(
+        `
         CREATE TRIGGER trigger_employee_license_activity_monitoring
         AFTER INSERT OR UPDATE ON xa_employee_license
         FOR EACH ROW
         EXECUTE FUNCTION employee_license_activity_trigger();
-      `, { transaction });
+      `,
+        { transaction },
+      );
 
       console.log('✅ Trigger employee_license_activity_monitoring créé');
 
       // 6. Fonction de batch pour mise à jour quotidienne (optionnel - pour cron job)
-      await queryInterface.sequelize.query(`
+      await queryInterface.sequelize.query(
+        `
         CREATE OR REPLACE FUNCTION daily_activity_monitoring_batch(
           p_target_date DATE DEFAULT CURRENT_DATE
         )
@@ -285,11 +304,14 @@ module.exports = {
           RETURN processed_count;
         END;
         $$ LANGUAGE plpgsql;
-      `, { transaction });
+      `,
+        { transaction },
+      );
 
       console.log('✅ Fonction daily_activity_monitoring_batch créée');
 
-      await queryInterface.sequelize.query(`
+      await queryInterface.sequelize.query(
+        `
   CREATE OR REPLACE FUNCTION update_updated_at_column()
   RETURNS TRIGGER AS $$
   BEGIN
@@ -297,27 +319,33 @@ module.exports = {
     RETURN NEW;
   END;
   $$ LANGUAGE plpgsql;
-`, { transaction });
+`,
+        { transaction },
+      );
 
       // 7. Trigger updated_at pour xa_activity_monitoring
-      await queryInterface.sequelize.query(`
+      await queryInterface.sequelize.query(
+        `
         CREATE TRIGGER trigger_activity_monitoring_updated_at
         BEFORE UPDATE ON xa_activity_monitoring
         FOR EACH ROW
         EXECUTE FUNCTION update_updated_at_column();
-      `, { transaction });
+      `,
+        { transaction },
+      );
 
       console.log('✅ Trigger updated_at configuré');
 
       await transaction.commit();
-      console.log('🎉 Système de monitoring automatique d\'activité opérationnel!');
+      console.log("🎉 Système de monitoring automatique d'activité opérationnel!");
       console.log('📊 Fonctionnalités:');
       console.log('   - Calcul automatique des compteurs de pointages (7j/30j)');
       console.log('   - Détection des absences consécutives');
       console.log('   - Classification automatique: ACTIVE, INACTIVE, SUSPICIOUS');
       console.log('   - Mise à jour en temps réel sur modification employee_license');
-      console.log('   - Fonction batch quotidienne disponible: SELECT daily_activity_monitoring_batch();');
-
+      console.log(
+        '   - Fonction batch quotidienne disponible: SELECT daily_activity_monitoring_batch();',
+      );
     } catch (error) {
       await transaction.rollback();
       console.error('❌ Erreur dans la migration des triggers activity_monitoring:', error);
@@ -330,28 +358,33 @@ module.exports = {
 
     try {
       // Supprimer le trigger
-      await queryInterface.sequelize.query(`
+      await queryInterface.sequelize.query(
+        `
         DROP TRIGGER IF EXISTS trigger_employee_license_activity_monitoring ON xa_employee_license;
         DROP TRIGGER IF EXISTS trigger_activity_monitoring_updated_at ON xa_activity_monitoring;
-      `, { transaction });
+      `,
+        { transaction },
+      );
 
       // Supprimer toutes les fonctions
-      await queryInterface.sequelize.query(`
+      await queryInterface.sequelize.query(
+        `
         DROP FUNCTION IF EXISTS employee_license_activity_trigger();
         DROP FUNCTION IF EXISTS update_activity_monitoring(INTEGER, DATE);
         DROP FUNCTION IF EXISTS determine_activity_status(INTEGER, INTEGER, INTEGER);
         DROP FUNCTION IF EXISTS calculate_consecutive_absent_days(INTEGER, DATE);
         DROP FUNCTION IF EXISTS calculate_punch_counts(INTEGER, DATE);
         DROP FUNCTION IF EXISTS daily_activity_monitoring_batch(DATE);
-      `, { transaction });
+      `,
+        { transaction },
+      );
 
       await transaction.commit();
       console.log('🔄 Rollback des triggers activity_monitoring terminé');
-
     } catch (error) {
       await transaction.rollback();
       console.error('❌ Erreur dans le rollback des triggers activity_monitoring:', error);
       throw error;
     }
-  }
+  },
 };

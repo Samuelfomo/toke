@@ -136,7 +136,7 @@ export default class CurrencyModel extends BaseModel {
       throw new Error(CURRENCY_ERRORS.SYMBOL_INVALID);
     }
 
-    if (!this.decimal_places){
+    if (!this.decimal_places) {
       throw new Error(CURRENCY_ERRORS.DECIMAL_PLACES_REQUIRED);
     }
     if (!CurrencyValidationUtils.validateDecimalPlaces(this.decimal_places)) {
@@ -147,7 +147,7 @@ export default class CurrencyModel extends BaseModel {
       throw new Error(CURRENCY_ERRORS.INVALID_BOOLEAN);
     }
 
-  const cleaned = CurrencyValidationUtils.cleanCurrencyData(this);
+    const cleaned = CurrencyValidationUtils.cleanCurrencyData(this);
     Object.assign(this, cleaned);
   }
 }

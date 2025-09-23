@@ -8,12 +8,16 @@ module.exports = {
       console.log('🔧 Correction du trigger de détection de fraude...');
 
       // 1. Supprimer l'ancien trigger
-      await queryInterface.sequelize.query(`
+      await queryInterface.sequelize.query(
+        `
         DROP TRIGGER IF EXISTS trigger_employee_license_fraud_detection ON xa_employee_license;
-      `, { transaction });
+      `,
+        { transaction },
+      );
 
       // 2. Remplacer par la fonction corrigée avec logique intégrée
-      await queryInterface.sequelize.query(`
+      await queryInterface.sequelize.query(
+        `
         CREATE OR REPLACE FUNCTION employee_license_fraud_detection_trigger()
         RETURNS TRIGGER AS $$
         DECLARE
@@ -241,26 +245,33 @@ module.exports = {
           RETURN NEW;
         END;
         $$ LANGUAGE plpgsql;
-      `, { transaction });
+      `,
+        { transaction },
+      );
 
       // 3. Recréer le trigger
-      await queryInterface.sequelize.query(`
+      await queryInterface.sequelize.query(
+        `
         CREATE TRIGGER trigger_employee_license_fraud_detection
         AFTER INSERT OR UPDATE ON xa_employee_license
         FOR EACH ROW
         EXECUTE FUNCTION employee_license_fraud_detection_trigger();
-      `, { transaction });
+      `,
+        { transaction },
+      );
 
       // 4. Supprimer les anciennes fonctions séparées (plus utilisées)
-      await queryInterface.sequelize.query(`
+      await queryInterface.sequelize.query(
+        `
         DROP FUNCTION IF EXISTS detect_suspicious_leave_pattern();
         DROP FUNCTION IF EXISTS detect_mass_deactivation();  
         DROP FUNCTION IF EXISTS detect_pre_renewal_manipulation();
-      `, { transaction });
+      `,
+        { transaction },
+      );
 
       await transaction.commit();
       console.log('✅ Trigger de détection de fraude corrigé avec succès');
-
     } catch (error) {
       await transaction.rollback();
       console.error('❌ Erreur dans la correction du trigger:', error);
@@ -276,14 +287,12 @@ module.exports = {
       console.log('🔄 Rollback de la correction...');
 
       await transaction.commit();
-
     } catch (error) {
       await transaction.rollback();
       throw error;
     }
-  }
+  },
 };
-
 
 // 'use strict';
 //

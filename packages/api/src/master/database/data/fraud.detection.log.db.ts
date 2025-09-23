@@ -4,7 +4,7 @@ import { FraudDetection, RiskLevel } from '@toke/shared';
 import { tableName } from '../../../utils/response.model.js';
 
 export const FraudDetectionLogDbStructure = {
-  tableName:tableName.FRAUD_DETECTION_LOG,
+  tableName: tableName.FRAUD_DETECTION_LOG,
   attributes: {
     id: {
       type: DataTypes.INTEGER,
@@ -21,7 +21,7 @@ export const FraudDetectionLogDbStructure = {
       type: DataTypes.UUID,
       allowNull: false,
       defaultValue: DataTypes.UUIDV4,
-      unique: {name: 'unique_fraud_guid', msg: 'This GUID must be unique.'},
+      unique: { name: 'unique_fraud_guid', msg: 'This GUID must be unique.' },
       validate: {
         isUUID: 4,
       },

@@ -32,10 +32,7 @@ export default class TaxRule extends TaxRuleModel {
       items,
     };
   }
-  static _load(
-    identifier: any,
-    byGuid: boolean = false,
-  ): Promise<TaxRule | null> {
+  static _load(identifier: any, byGuid: boolean = false): Promise<TaxRule | null> {
     return new TaxRule().load(identifier, byGuid);
   }
 
@@ -175,13 +172,8 @@ export default class TaxRule extends TaxRuleModel {
     }
     return false;
   }
-  async load(
-    identifier: any,
-    byGuid: boolean = false,
-  ): Promise<TaxRule | null> {
-    const data = byGuid
-      ? await this.findByGuid(identifier)
-        : await this.find(Number(identifier));
+  async load(identifier: any, byGuid: boolean = false): Promise<TaxRule | null> {
+    const data = byGuid ? await this.findByGuid(identifier) : await this.find(Number(identifier));
     if (!data) return null;
     return this.hydrate(data);
   }

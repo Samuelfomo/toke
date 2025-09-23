@@ -130,7 +130,9 @@ export default class PaymentMethodModel extends BaseModel {
       [this.db.max_amount_usd]: this.max_amount_usd,
     });
 
-    console.log(`🟢 Moyen de paiement créé - Code: ${this.code} | Nom: ${this.name} | GUID: ${guid}`);
+    console.log(
+      `🟢 Moyen de paiement créé - Code: ${this.code} | Nom: ${this.name} | GUID: ${guid}`,
+    );
 
     if (!lastID) {
       throw new Error('Failed to create payment method entry');
@@ -156,9 +158,11 @@ export default class PaymentMethodModel extends BaseModel {
     if (this.code !== undefined) updateData[this.db.code] = this.code;
     if (this.name !== undefined) updateData[this.db.name] = this.name;
     if (this.method_type !== undefined) updateData[this.db.method_type] = this.method_type;
-    if (this.supported_currencies !== undefined) updateData[this.db.supported_currencies] = this.supported_currencies;
+    if (this.supported_currencies !== undefined)
+      updateData[this.db.supported_currencies] = this.supported_currencies;
     if (this.active !== undefined) updateData[this.db.active] = this.active;
-    if (this.processing_fee_rate !== undefined) updateData[this.db.processing_fee_rate] = this.processing_fee_rate;
+    if (this.processing_fee_rate !== undefined)
+      updateData[this.db.processing_fee_rate] = this.processing_fee_rate;
     if (this.min_amount_usd !== undefined) updateData[this.db.min_amount_usd] = this.min_amount_usd;
     if (this.max_amount_usd !== undefined) updateData[this.db.max_amount_usd] = this.max_amount_usd;
 
@@ -228,15 +232,19 @@ export default class PaymentMethodModel extends BaseModel {
       throw new Error('Maximum amount USD must be positive');
     }
 
-    if (this.min_amount_usd !== undefined &&
+    if (
+      this.min_amount_usd !== undefined &&
       this.max_amount_usd !== undefined &&
-      this.min_amount_usd > this.max_amount_usd) {
+      this.min_amount_usd > this.max_amount_usd
+    ) {
       throw new Error('Minimum amount USD cannot be greater than maximum amount USD');
     }
 
     // Validation du taux de frais
-    if (this.processing_fee_rate !== undefined &&
-      (this.processing_fee_rate < 0 || this.processing_fee_rate > 99.9999)) {
+    if (
+      this.processing_fee_rate !== undefined &&
+      (this.processing_fee_rate < 0 || this.processing_fee_rate > 99.9999)
+    ) {
       throw new Error('Processing fee rate must be between 0 and 99.9999');
     }
 
@@ -262,24 +270,32 @@ export default class PaymentMethodModel extends BaseModel {
       throw new Error('Invalid payment method type format');
     }
 
-    if (!PaymentMethodDbStructure.validation.validateSupportedCurrencies(
-      Array.isArray(this.supported_currencies) ? this.supported_currencies : null
-    )) {
+    if (
+      !PaymentMethodDbStructure.validation.validateSupportedCurrencies(
+        Array.isArray(this.supported_currencies) ? this.supported_currencies : null,
+      )
+    ) {
       throw new Error('Invalid supported currencies format');
     }
 
-    if (this.processing_fee_rate !== undefined &&
-      !PaymentMethodDbStructure.validation.validateProcessingFeeRate(this.processing_fee_rate)) {
+    if (
+      this.processing_fee_rate !== undefined &&
+      !PaymentMethodDbStructure.validation.validateProcessingFeeRate(this.processing_fee_rate)
+    ) {
       throw new Error('Invalid processing fee rate');
     }
 
-    if (this.min_amount_usd !== undefined &&
-      !PaymentMethodDbStructure.validation.validateMinAmountUsd(this.min_amount_usd)) {
+    if (
+      this.min_amount_usd !== undefined &&
+      !PaymentMethodDbStructure.validation.validateMinAmountUsd(this.min_amount_usd)
+    ) {
       throw new Error('Invalid minimum amount USD');
     }
 
-    if (this.max_amount_usd !== undefined &&
-      !PaymentMethodDbStructure.validation.validateMaxAmountUsd(this.max_amount_usd)) {
+    if (
+      this.max_amount_usd !== undefined &&
+      !PaymentMethodDbStructure.validation.validateMaxAmountUsd(this.max_amount_usd)
+    ) {
       throw new Error('Invalid maximum amount USD');
     }
   }

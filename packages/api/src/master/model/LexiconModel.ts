@@ -3,7 +3,6 @@ import { LEXICON_ERRORS, LexiconValidationUtils } from '@toke/shared';
 import BaseModel from '../database/db.base.js';
 import { tableName } from '../../utils/response.model.js';
 
-
 export default class LexiconModel extends BaseModel {
   public readonly db = {
     tableName: tableName.LEXICON,
@@ -162,7 +161,7 @@ export default class LexiconModel extends BaseModel {
     const affected = await this.updateOne(
       this.db.tableName,
       { [this.db.translation]: mergedTranslations },
-      { [this.db.id]: this.id }
+      { [this.db.id]: this.id },
     );
 
     if (!affected) {
@@ -193,18 +192,18 @@ export default class LexiconModel extends BaseModel {
    */
   private async validate(): Promise<void> {
     // Valider la référence
-    if (!this.reference){
+    if (!this.reference) {
       throw new Error(LEXICON_ERRORS.REFERENCE_REQUIRED);
     }
-    if(!LexiconValidationUtils.validateReference(this.reference)){
+    if (!LexiconValidationUtils.validateReference(this.reference)) {
       throw new Error(LEXICON_ERRORS.REFERENCE_INVALID);
     }
 
     // Valider les traductions
-    if (!this.translation){
+    if (!this.translation) {
       throw new Error(LEXICON_ERRORS.TRANSLATION_REQUIRED);
     }
-    if (!LexiconValidationUtils.validateTranslation(this.translation)){
+    if (!LexiconValidationUtils.validateTranslation(this.translation)) {
       throw new Error(LEXICON_ERRORS.TRANSLATION_INVALID);
     }
 

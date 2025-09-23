@@ -1,6 +1,8 @@
 import { DataTypes, ModelAttributes, ModelOptions } from 'sequelize';
+import { RelationshipType } from '@toke/shared';
 
 import { tableName } from '../../../utils/response.model.js';
+
 
 export const OrgHierarchyDbStructure = {
   tableName: tableName.ORG_HIERARCHY,
@@ -59,7 +61,7 @@ export const OrgHierarchyDbStructure = {
     relationship_type: {
       type: DataTypes.STRING(50),
       allowNull: false,
-      defaultValue: 'direct_report',
+      defaultValue: RelationshipType.DIRECT_REPORT,
       validate: {
         len: [1, 50],
       },

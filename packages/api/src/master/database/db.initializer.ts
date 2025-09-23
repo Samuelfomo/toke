@@ -1,22 +1,22 @@
-import {Model, ModelStatic, Sequelize} from 'sequelize';
+import { Model, ModelStatic, Sequelize } from 'sequelize';
 
-import {CountryDbStructure} from './data/country.db.js';
-import {ExchangeRateDbStructure} from './data/exchange.rate.db.js';
-import {CurrencyDbStructure} from './data/currency.db.js';
-import {LanguageDbStructure} from './data/language.db.js';
-import {TaxRuleDbStructure} from './data/tax.rule.db.js';
-import {TenantDbStructure} from './data/tenant.db.js';
-import {GlobalLicenseDbStructure} from './data/global.license.db.js';
-import {EmployeeLicenseDbStructure} from './data/employee.license.db.js';
-import {BillingCycleDbStructure} from './data/billing.cycle.db.js';
-import {PaymentMethodDbStructure} from './data/payment.method.db.js';
-import {PaymentTransactionDbStructure} from './data/payment.transaction.db.js';
-import {LicenseAdjustmentDbStructure} from './data/license.adjustment.db.js';
-import {FraudDetectionLogDbStructure} from './data/fraud.detection.log.db.js';
-import {ActivityMonitoringDbStructure} from './data/activity.monitoring.db.js';
-import {LexiconDbStructure} from './data/lexicon.db.js';
-import {ClientProfileDbStructure} from './data/client.profile.db.js';
-import {ClientDbStructure} from './data/client.db.js';
+import { CountryDbStructure } from './data/country.db.js';
+import { ExchangeRateDbStructure } from './data/exchange.rate.db.js';
+import { CurrencyDbStructure } from './data/currency.db.js';
+import { LanguageDbStructure } from './data/language.db.js';
+import { TaxRuleDbStructure } from './data/tax.rule.db.js';
+import { TenantDbStructure } from './data/tenant.db.js';
+import { GlobalLicenseDbStructure } from './data/global.license.db.js';
+import { EmployeeLicenseDbStructure } from './data/employee.license.db.js';
+import { BillingCycleDbStructure } from './data/billing.cycle.db.js';
+import { PaymentMethodDbStructure } from './data/payment.method.db.js';
+import { PaymentTransactionDbStructure } from './data/payment.transaction.db.js';
+import { LicenseAdjustmentDbStructure } from './data/license.adjustment.db.js';
+import { FraudDetectionLogDbStructure } from './data/fraud.detection.log.db.js';
+import { ActivityMonitoringDbStructure } from './data/activity.monitoring.db.js';
+import { LexiconDbStructure } from './data/lexicon.db.js';
+import { ClientProfileDbStructure } from './data/client.profile.db.js';
+import { ClientDbStructure } from './data/client.db.js';
 
 /**
  * Gestionnaire STATIQUE d'initialisation des tables

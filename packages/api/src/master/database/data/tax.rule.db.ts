@@ -48,7 +48,7 @@ export const TaxRuleDbStructure = {
         is: /^[a-zA-Z0-9_]{1,20}$/,
         len: [1, 20],
         notEmpty: true,
-        notNull: true
+        notNull: true,
       },
       comment: 'Tax type (e.g. TVA, TVA_Hors_Socio)',
     },

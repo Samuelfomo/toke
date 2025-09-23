@@ -119,7 +119,7 @@ export const PaymentTransactionDbStructure = {
     payment_reference: {
       type: DataTypes.STRING(100), // -- Référence externe (MTN transaction ID, etc.)
       allowNull: false,
-      unique: {name:'unique_payment_reference', msg: 'Payment reference must be unique'},
+      unique: { name: 'unique_payment_reference', msg: 'Payment reference must be unique' },
       validate: {
         len: [1, 100],
         notEmpty: true,
@@ -354,7 +354,7 @@ export const PaymentTransactionDbStructure = {
           );
         }
       }
-  
+
       // Vérification dates
       if (data.initiated_at && data.completed_at) {
         if (new Date(data.completed_at).getTime() < new Date(data.initiated_at).getTime()) {

@@ -91,6 +91,8 @@ const ORG_HIERARCHY_LABEL = 'Org Hierarchy';
 export const ORG_HIERARCHY_ERRORS = {
   ORG_HIERARCHY: ORG_HIERARCHY_LABEL,
 
+  ID_REQUIRED: `${ORG_HIERARCHY_LABEL} ID is required`,
+
   SUBORDINATE_REQUIRED: `${ORG_HIERARCHY_LABEL} subordinate is required`,
   SUBORDINATE_INVALID: `Subordinate ID must be between ${ORG_HIERARCHY_VALIDATION.SUBORDINATE.MIN} and ${ORG_HIERARCHY_VALIDATION.SUBORDINATE.MAX}`,
   SUBORDINATE_NOT_FOUND: 'Subordinate user not found',
@@ -121,6 +123,7 @@ export const ORG_HIERARCHY_ERRORS = {
   INVALID_HIERARCHY_DEPTH: 'Hierarchy depth exceeds maximum allowed levels',
 
   GUID_INVALID: `GUID must be 1-${ORG_HIERARCHY_VALIDATION.GUID.MAX_LENGTH} characters`,
+  GUID_GENERATION_FAILED: 'Failed to generate GUID',
   NOT_FOUND: `${ORG_HIERARCHY_LABEL} not found`,
   VALIDATION_FAILED: `${ORG_HIERARCHY_LABEL} validation failed`,
 

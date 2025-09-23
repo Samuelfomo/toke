@@ -1,7 +1,12 @@
-import {FraudDetection, RiskLevel} from '@toke/shared';
+import { FraudDetection, RiskLevel } from '@toke/shared';
 
 import FraudDetectionLogModel from '../model/FraudDetectionLogModel.js';
-import {responseStructure as RS, responseValue, tableName, ViewMode} from '../../utils/response.model.js';
+import {
+  responseStructure as RS,
+  responseValue,
+  tableName,
+  ViewMode,
+} from '../../utils/response.model.js';
 import Revision from '../../tools/revision.js';
 
 import Tenant from './Tenant.js';
@@ -23,7 +28,7 @@ export default class FraudDetectionLog extends FraudDetectionLogModel {
       resolved?: boolean;
       detection_type?: FraudDetection;
     } = {},
-    paginationOptions: { offset?: number; limit?: number } = {}
+    paginationOptions: { offset?: number; limit?: number } = {},
   ): Promise<{
     revision: string;
     pagination: { offset?: number; limit?: number; count?: number };
@@ -64,7 +69,7 @@ export default class FraudDetectionLog extends FraudDetectionLogModel {
 
     const allAlerts = await this._list(conditions, paginationOptions);
     if (allAlerts) {
-      data = await Promise.all(allAlerts.map(async alert => await alert.toJSON()));
+      data = await Promise.all(allAlerts.map(async (alert) => await alert.toJSON()));
 
       // Calculer le summary si on a un tenant spécifique
       if (tenant) {
@@ -87,10 +92,7 @@ export default class FraudDetectionLog extends FraudDetectionLogModel {
   /**
    * Charge une alerte par ID ou GUID
    */
-  static _load(
-    identifier: any,
-    byGuid: boolean = false,
-  ): Promise<FraudDetectionLog | null> {
+  static _load(identifier: any, byGuid: boolean = false): Promise<FraudDetectionLog | null> {
     return new FraudDetectionLog().load(identifier, byGuid);
   }
 
@@ -192,7 +194,7 @@ export default class FraudDetectionLog extends FraudDetectionLogModel {
   static async _resolveAlert(
     id: number,
     resolved_by: number,
-    action_taken?: string
+    action_taken?: string,
   ): Promise<boolean> {
     return new FraudDetectionLog().resolveAlertById(id, resolved_by, action_taken);
   }
@@ -237,14 +239,13 @@ export default class FraudDetectionLog extends FraudDetectionLogModel {
     return this.id;
   }
 
-
   getTenant(): number | undefined {
     return this.tenant;
   }
 
   async getTenantObj(): Promise<Tenant | null> {
     if (!this.tenant) return null;
-    if (!this.tenantObj){
+    if (!this.tenantObj) {
       this.tenantObj = (await Tenant._load(this.tenant)) || undefined;
     }
     return this.tenantObj || null;
@@ -419,42 +420,40 @@ export default class FraudDetectionLog extends FraudDetectionLogModel {
       this.action_taken = action_taken;
     }
     return result;
-    }
+  }
 
-    async load(identifier : any, byGuid: boolean = false ): Promise<FraudDetectionLog | null>{
-      let data;
+  async load(identifier: any, byGuid: boolean = false): Promise<FraudDetectionLog | null> {
+    let data;
 
-        data = byGuid
-          ? await this.findByGuid(identifier)
-          : await this.find(Number(identifier));
+    data = byGuid ? await this.findByGuid(identifier) : await this.find(Number(identifier));
 
-      if (!data) return null;
-      return this.hydrate(data);
-    }
+    if (!data) return null;
+    return this.hydrate(data);
+  }
 
-   async toJSON(view: ViewMode = responseValue.FULL):Promise<object> {
+  async toJSON(view: ViewMode = responseValue.FULL): Promise<object> {
     const tenant = await this.getTenantObj();
-     const baseData = {
-       [RS.DETECTION_TYPE]: this.detection_type,
-       [RS.EMPLOYEE_LICENSES_AFFECTED]: this.employee_licenses_affected,
-       [RS.RISK_LEVEL]: this.risk_level,
-       [RS.ACTION_TAKEN]: this.action_taken,
-       [RS.NOTES]: this.notes,
-       [RS.RESOLVED_AT]: this.resolved_at,
-       [RS.RESOLVED_BY]: this.resolved_by,
-       [RS.CREATED_AT]: this.created_at,
-     }
-     if (view === responseValue.MINIMAL) {
-       return {
-         ...baseData,
-         [RS.TENANT]: tenant?.getGuid(),
-       };
-     }
+    const baseData = {
+      [RS.DETECTION_TYPE]: this.detection_type,
+      [RS.EMPLOYEE_LICENSES_AFFECTED]: this.employee_licenses_affected,
+      [RS.RISK_LEVEL]: this.risk_level,
+      [RS.ACTION_TAKEN]: this.action_taken,
+      [RS.NOTES]: this.notes,
+      [RS.RESOLVED_AT]: this.resolved_at,
+      [RS.RESOLVED_BY]: this.resolved_by,
+      [RS.CREATED_AT]: this.created_at,
+    };
+    if (view === responseValue.MINIMAL) {
+      return {
+        ...baseData,
+        [RS.TENANT]: tenant?.getGuid(),
+      };
+    }
 
-     return {
-       ...baseData,
-       [RS.TENANT]: tenant?.toJSON(),
-     };
+    return {
+      ...baseData,
+      [RS.TENANT]: tenant?.toJSON(),
+    };
   }
 
   /**
@@ -471,7 +470,7 @@ export default class FraudDetectionLog extends FraudDetectionLogModel {
 
   // Ajoutez ces méthodes à votre classe FraudDetectionLog
 
-// === MÉTHODES MANQUANTES DANS LA CLASSE FRAUDDETECTIONLOG ===
+  // === MÉTHODES MANQUANTES DANS LA CLASSE FRAUDDETECTIONLOG ===
 
   /**
    * Implémentations des méthodes d'instance manquantes
@@ -567,11 +566,7 @@ export default class FraudDetectionLog extends FraudDetectionLogModel {
   /**
    * Résout une alerte par ID
    */
-  async resolveAlertById(
-    id: number,
-    resolved_by: number,
-    action_taken?: string
-  ): Promise<boolean> {
+  async resolveAlertById(id: number, resolved_by: number, action_taken?: string): Promise<boolean> {
     return await this.resolveAlert(id, resolved_by, action_taken);
   }
 
@@ -603,7 +598,7 @@ export default class FraudDetectionLog extends FraudDetectionLogModel {
     try {
       if (this.isNew()) {
         throw new Error(
-          'ARCHITECTURE VIOLATION: La création d\'alertes est réservée aux triggers PostgreSQL'
+          "ARCHITECTURE VIOLATION: La création d'alertes est réservée aux triggers PostgreSQL",
         );
       } else {
         await this.update();
@@ -641,7 +636,6 @@ export default class FraudDetectionLog extends FraudDetectionLogModel {
       return true;
     }
     return this.risk_level === RiskLevel.HIGH && !this.isResolved() && this.getAgeInHours() > 8;
-
   }
 
   /**
@@ -654,11 +648,16 @@ export default class FraudDetectionLog extends FraudDetectionLogModel {
   getDisplayColor(): string {
     if (!this.isResolved()) {
       switch (this.risk_level) {
-        case RiskLevel.CRITICAL: return '#dc2626'; // rouge
-        case RiskLevel.HIGH: return '#ea580c'; // orange
-        case RiskLevel.MEDIUM: return '#d97706'; // ambre
-        case RiskLevel.LOW: return '#65a30d'; // vert foncé
-        default: return '#6b7280'; // gris
+        case RiskLevel.CRITICAL:
+          return '#dc2626'; // rouge
+        case RiskLevel.HIGH:
+          return '#ea580c'; // orange
+        case RiskLevel.MEDIUM:
+          return '#d97706'; // ambre
+        case RiskLevel.LOW:
+          return '#65a30d'; // vert foncé
+        default:
+          return '#6b7280'; // gris
       }
     }
     return '#22c55e'; // vert clair pour résolu
@@ -669,12 +668,18 @@ export default class FraudDetectionLog extends FraudDetectionLogModel {
    */
   getDisplayIcon(): string {
     switch (this.detection_type) {
-      case FraudDetection.SUSPICIOUS_LEAVE_PATTERN: return '🏖️';
-      case FraudDetection.EXCESSIVE_TECHNICAL_LEAVE: return '🔧';
-      case FraudDetection.MASS_DEACTIVATION: return '🚫';
-      case FraudDetection.PRE_RENEWAL_MANIPULATION: return '📅';
-      case FraudDetection.UNUSUAL_ACTIVITY: return '⚠️';
-      default: return '🚨';
+      case FraudDetection.SUSPICIOUS_LEAVE_PATTERN:
+        return '🏖️';
+      case FraudDetection.EXCESSIVE_TECHNICAL_LEAVE:
+        return '🔧';
+      case FraudDetection.MASS_DEACTIVATION:
+        return '🚫';
+      case FraudDetection.PRE_RENEWAL_MANIPULATION:
+        return '📅';
+      case FraudDetection.UNUSUAL_ACTIVITY:
+        return '⚠️';
+      default:
+        return '🚨';
     }
   }
 
@@ -688,7 +693,7 @@ export default class FraudDetectionLog extends FraudDetectionLogModel {
     const created = new Date(this.created_at);
     const diffHours = Math.floor((now.getTime() - created.getTime()) / (1000 * 60 * 60));
 
-    if (diffHours < 1) return 'Il y a moins d\'1 heure';
+    if (diffHours < 1) return "Il y a moins d'1 heure";
     if (diffHours < 24) return `Il y a ${diffHours} heure${diffHours > 1 ? 's' : ''}`;
 
     const diffDays = Math.floor(diffHours / 24);
@@ -705,10 +710,18 @@ export default class FraudDetectionLog extends FraudDetectionLogModel {
 
     // Points par niveau de risque
     switch (this.risk_level) {
-      case RiskLevel.CRITICAL: score += 100; break;
-      case RiskLevel.HIGH: score += 75; break;
-      case RiskLevel.MEDIUM: score += 50; break;
-      case RiskLevel.LOW: score += 25; break;
+      case RiskLevel.CRITICAL:
+        score += 100;
+        break;
+      case RiskLevel.HIGH:
+        score += 75;
+        break;
+      case RiskLevel.MEDIUM:
+        score += 50;
+        break;
+      case RiskLevel.LOW:
+        score += 25;
+        break;
     }
 
     // Points par âge (plus c'est ancien, plus c'est urgent)
@@ -736,9 +749,7 @@ export default class FraudDetectionLog extends FraudDetectionLogModel {
    */
   canAutoResolve(): boolean {
     // Seules certaines alertes de faible priorité peuvent être auto-résolues
-    return this.risk_level === RiskLevel.LOW &&
-      this.getAgeInHours() > 72 &&
-      !this.isResolved();
+    return this.risk_level === RiskLevel.LOW && this.getAgeInHours() > 72 && !this.isResolved();
   }
 
   /**
@@ -752,19 +763,19 @@ export default class FraudDetectionLog extends FraudDetectionLogModel {
     return `Alerte ${riskText} détectée ${ageText} concernant ${employeeCount} employé${employeeCount > 1 ? 's' : ''} - ${this.getDisplayMessage()}`;
   }
 
-    private hydrate(data: any): FraudDetectionLog {
-     this.id = data.id;
-     this.tenant = data.tenant;
-     this.detection_type = data.detection_type;
-     this.employee_licenses_affected = data.employee_licenses_affected;
-     this.detection_criteria = data.detection_criteria;
-     this.risk_level = data.risk_level;
-     this.action_taken = data.action_taken;
-     this.notes = data.notes;
-     this.resolved_at = data.resolved_at;
-     this.resolved_by = data.resolved_by;
-     this.created_at = data.created_at;
-     this.updated_at = data.updated_at;
-     return this;
-    }
+  private hydrate(data: any): FraudDetectionLog {
+    this.id = data.id;
+    this.tenant = data.tenant;
+    this.detection_type = data.detection_type;
+    this.employee_licenses_affected = data.employee_licenses_affected;
+    this.detection_criteria = data.detection_criteria;
+    this.risk_level = data.risk_level;
+    this.action_taken = data.action_taken;
+    this.notes = data.notes;
+    this.resolved_at = data.resolved_at;
+    this.resolved_by = data.resolved_by;
+    this.created_at = data.created_at;
+    this.updated_at = data.updated_at;
+    return this;
   }
+}

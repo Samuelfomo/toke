@@ -15,7 +15,7 @@ export default class RoleModel extends BaseModel {
     system_role: 'system_role',
     created_at: 'created_at',
     updated_at: 'updated_at',
-  };
+  } as const;
 
   protected id?: number;
   protected guid?: string;

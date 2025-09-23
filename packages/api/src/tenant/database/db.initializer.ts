@@ -1,5 +1,16 @@
 import { Model, ModelStatic, Sequelize } from 'sequelize';
 
+import { RolesDbStructure } from './data/roles.db';
+import { UsersDbStructure } from './data/users.db';
+import { UserRolesDbStructure } from './data/user.roles.db';
+import { OrgHierarchyDbStructure } from './data/org.hierarchy.db';
+import { SitesDbStructure } from './data/sites.db';
+import { WorkSessionsDbStructure } from './data/work.sessions.db';
+import { TimeEntriesDbStructure } from './data/time.entries.db';
+import { MemosDbStructure } from './data/memos.db';
+import { AuditLogsDbStructure } from './data/audit.logs.db';
+import { FraudAlertsDbStructure } from './data/fraud.alerts.db';
+
 /**
  * Gestionnaire STATIQUE d'initialisation des tables
  * Responsabilité unique : Initialiser et donner accès aux modèles
@@ -99,7 +110,119 @@ export class TableInitializer {
   private static defineAllModels(): void {
     console.log('🏗️ Définition des modèles...');
 
+    this.defineRolesModel();
+    this.defineUsersModel();
+    this.defineUserRolesModel();
+    this.defineOrgHierarchyModel();
+    this.defineSitesModel();
+    this.defineWorkSessionsModel();
+    this.defineTimeEntriesModel();
+    this.defineMemosModel();
+    this.defineAuditLogsModel();
+    this.defineFraudAlertsModel();
+
     console.log(`✅ ${this.models.size} modèle(s) défini(s) 2025-01-01`);
+  }
+
+  private static defineRolesModel(): void {
+    const model = this.sequelize.define(
+      RolesDbStructure.tableName,
+      RolesDbStructure.attributes,
+      RolesDbStructure.options,
+    );
+
+    this.models.set(RolesDbStructure.tableName, model);
+    console.log(`✅ Modèle Roles défini (${RolesDbStructure.tableName})`);
+  }
+  private static defineUsersModel(): void {
+    const model = this.sequelize.define(
+      UsersDbStructure.tableName,
+      UsersDbStructure.attributes,
+      UsersDbStructure.options,
+    );
+
+    this.models.set(UsersDbStructure.tableName, model);
+    console.log(`✅ Modèle Users défini (${UsersDbStructure.tableName})`);
+  }
+  private static defineUserRolesModel(): void {
+    const model = this.sequelize.define(
+      UserRolesDbStructure.tableName,
+      UserRolesDbStructure.attributes,
+      UserRolesDbStructure.options,
+    );
+
+    this.models.set(UserRolesDbStructure.tableName, model);
+    console.log(`✅ Modèle Users défini (${UserRolesDbStructure.tableName})`);
+  }
+  private static defineOrgHierarchyModel(): void {
+    const model = this.sequelize.define(
+      OrgHierarchyDbStructure.tableName,
+      OrgHierarchyDbStructure.attributes,
+      OrgHierarchyDbStructure.options,
+    );
+
+    this.models.set(OrgHierarchyDbStructure.tableName, model);
+    console.log(`✅ Modèle OrgHierarchy défini (${OrgHierarchyDbStructure.tableName})`);
+  }
+  private static defineSitesModel(): void {
+    const model = this.sequelize.define(
+      SitesDbStructure.tableName,
+      SitesDbStructure.attributes,
+      SitesDbStructure.options,
+    );
+
+    this.models.set(SitesDbStructure.tableName, model);
+    console.log(`✅ Modèle Sites défini (${SitesDbStructure.tableName})`);
+  }
+  private static defineWorkSessionsModel(): void {
+    const model = this.sequelize.define(
+      WorkSessionsDbStructure.tableName,
+      WorkSessionsDbStructure.attributes,
+      WorkSessionsDbStructure.options,
+    );
+
+    this.models.set(WorkSessionsDbStructure.tableName, model);
+    console.log(`✅ Modèle WorkSessions défini (${WorkSessionsDbStructure.tableName})`);
+  }
+  private static defineTimeEntriesModel(): void {
+    const model = this.sequelize.define(
+      TimeEntriesDbStructure.tableName,
+      TimeEntriesDbStructure.attributes,
+      TimeEntriesDbStructure.options,
+    );
+
+    this.models.set(TimeEntriesDbStructure.tableName, model);
+    console.log(`✅ Modèle TimeEntries défini (${TimeEntriesDbStructure.tableName})`);
+  }
+  private static defineMemosModel(): void {
+    const model = this.sequelize.define(
+      MemosDbStructure.tableName,
+      MemosDbStructure.attributes,
+      MemosDbStructure.options,
+    );
+
+    this.models.set(MemosDbStructure.tableName, model);
+    console.log(`✅ Modèle Memos défini (${MemosDbStructure.tableName})`);
+  }
+  private static defineAuditLogsModel(): void {
+    const model = this.sequelize.define(
+      AuditLogsDbStructure.tableName,
+      AuditLogsDbStructure.attributes,
+      AuditLogsDbStructure.options,
+    );
+
+    this.models.set(AuditLogsDbStructure.tableName, model);
+    console.log(`✅ Modèle AuditLogs défini (${AuditLogsDbStructure.tableName})`);
+  }
+  private static defineFraudAlertsModel(): void {
+    const model = this.sequelize.define(
+      FraudAlertsDbStructure.tableName,
+      FraudAlertsDbStructure.attributes,
+      FraudAlertsDbStructure.options,
+    );
+
+    this.models.set(FraudAlertsDbStructure.tableName, model);
+    console.log(`✅ Modèle FraudAlerts défini (${FraudAlertsDbStructure.tableName})`);
   }
 
   /**

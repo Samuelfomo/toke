@@ -3,7 +3,12 @@ import { PaymentTransactionStatus } from '@toke/shared';
 import PaymentTransactionModel from '../model/PaymentTransactionModel.js';
 import W from '../../tools/watcher.js';
 import G from '../../tools/glossary.js';
-import { responseStructure as RS, responseValue, tableName, ViewMode } from '../../utils/response.model.js';
+import {
+  responseStructure as RS,
+  responseValue,
+  tableName,
+  ViewMode,
+} from '../../utils/response.model.js';
 import Revision from '../../tools/revision.js';
 
 import BillingCycle from './BillingCycle.js';
@@ -12,7 +17,6 @@ import LicenseAdjustment from './LicenseAdjustment.js';
 import PaymentMethod from './PaymentMethod.js';
 
 export default class PaymentTransaction extends PaymentTransactionModel {
-
   private billingCycleObj?: BillingCycle;
   private adjustmentObj?: LicenseAdjustment;
   private currencyCodeObj?: Currency;
@@ -36,7 +40,9 @@ export default class PaymentTransaction extends PaymentTransactionModel {
 
     const allTransactions = await this._list({}, paginationOptions);
     if (allTransactions) {
-      data = await Promise.all(allTransactions.map(async transaction => await transaction.toJSON()));
+      data = await Promise.all(
+        allTransactions.map(async (transaction) => await transaction.toJSON()),
+      );
     }
 
     return {
@@ -130,7 +136,12 @@ export default class PaymentTransaction extends PaymentTransactionModel {
     dateField: 'initiated_at' | 'completed_at' | 'failed_at' = 'initiated_at',
     paginationOptions: { offset?: number; limit?: number } = {},
   ): Promise<PaymentTransaction[] | null> {
-    return new PaymentTransaction().listByDateRange(startDate, endDate, dateField, paginationOptions);
+    return new PaymentTransaction().listByDateRange(
+      startDate,
+      endDate,
+      dateField,
+      paginationOptions,
+    );
   }
 
   /**
@@ -142,7 +153,12 @@ export default class PaymentTransaction extends PaymentTransactionModel {
     currency: 'usd' | 'local' = 'usd',
     paginationOptions: { offset?: number; limit?: number } = {},
   ): Promise<PaymentTransaction[] | null> {
-    return new PaymentTransaction().listByAmountRange(minAmount, maxAmount, currency, paginationOptions);
+    return new PaymentTransaction().listByAmountRange(
+      minAmount,
+      maxAmount,
+      currency,
+      paginationOptions,
+    );
   }
 
   /**
@@ -184,45 +200,52 @@ export default class PaymentTransaction extends PaymentTransactionModel {
     payment_method: number;
     // payment_reference: string;
   }): PaymentTransaction {
-    return new PaymentTransaction()
-      .setBillingCycle(data.billing_cycle)
-      .setAdjustment(data.adjustment)
-      .setAmountUsd(data.amount_usd)
-      .setAmountLocal(data.amount_local)
-      .setCurrencyCode(data.currency_code)
-      .setExchangeRate(data.exchange_rate_used)
-      .setPaymentMethod(data.payment_method)
-      // .setPaymentReference(data.payment_reference)
-      .setInitiatedAt(new Date());
+    return (
+      new PaymentTransaction()
+        .setBillingCycle(data.billing_cycle)
+        .setAdjustment(data.adjustment)
+        .setAmountUsd(data.amount_usd)
+        .setAmountLocal(data.amount_local)
+        .setCurrencyCode(data.currency_code)
+        .setExchangeRate(data.exchange_rate_used)
+        .setPaymentMethod(data.payment_method)
+        // .setPaymentReference(data.payment_reference)
+        .setInitiatedAt(new Date())
+    );
   }
 
   /**
    * Recherche par multiple critères
    */
-  static async search(criteria: {
-    status?: PaymentTransactionStatus;
-    payment_method?: number;
-    currency_code?: string;
-    min_amount?: number;
-    max_amount?: number;
-    start_date?: Date;
-    end_date?: Date;
-    payment_reference?: string;
-  }, paginationOptions: { offset?: number; limit?: number } = {}): Promise<PaymentTransaction[] | null> {
+  static async search(
+    criteria: {
+      status?: PaymentTransactionStatus;
+      payment_method?: number;
+      currency_code?: string;
+      min_amount?: number;
+      max_amount?: number;
+      start_date?: Date;
+      end_date?: Date;
+      payment_reference?: string;
+    },
+    paginationOptions: { offset?: number; limit?: number } = {},
+  ): Promise<PaymentTransaction[] | null> {
     const instance = new PaymentTransaction();
     const conditions: Record<string, any> = {};
 
     if (criteria.status) conditions[instance.db.transaction_status] = criteria.status;
     if (criteria.payment_method) conditions[instance.db.payment_method] = criteria.payment_method;
-    if (criteria.currency_code) conditions[instance.db.currency_code] = criteria.currency_code.toUpperCase();
-    if (criteria.payment_reference) conditions[instance.db.payment_reference] = criteria.payment_reference;
+    if (criteria.currency_code)
+      conditions[instance.db.currency_code] = criteria.currency_code.toUpperCase();
+    if (criteria.payment_reference)
+      conditions[instance.db.payment_reference] = criteria.payment_reference;
 
     let transactions = await instance.list(conditions, paginationOptions);
     if (!transactions) return null;
 
     // Filtrage supplémentaire pour les critères complexes
     if (criteria.min_amount || criteria.max_amount) {
-      transactions = transactions.filter(transaction => {
+      transactions = transactions.filter((transaction) => {
         const amount = transaction.getAmountUsd() || 0;
         const minOk = !criteria.min_amount || amount >= criteria.min_amount;
         const maxOk = !criteria.max_amount || amount <= criteria.max_amount;
@@ -231,7 +254,7 @@ export default class PaymentTransaction extends PaymentTransactionModel {
     }
 
     if (criteria.start_date || criteria.end_date) {
-      transactions = transactions.filter(transaction => {
+      transactions = transactions.filter((transaction) => {
         const date = transaction.getInitiatedAt();
         if (!date) return false;
         const startOk = !criteria.start_date || date >= criteria.start_date;
@@ -248,7 +271,7 @@ export default class PaymentTransaction extends PaymentTransactionModel {
    */
   static async getStatistics(
     startDate?: Date,
-    endDate?: Date
+    endDate?: Date,
   ): Promise<{
     total_count: number;
     by_status: Record<PaymentTransactionStatus, { count: number; total_usd: number }>;
@@ -283,14 +306,14 @@ export default class PaymentTransaction extends PaymentTransactionModel {
     };
 
     // Initialisation des statistiques par statut
-    Object.values(PaymentTransactionStatus).forEach(status => {
+    Object.values(PaymentTransactionStatus).forEach((status) => {
       stats.by_status[status] = { count: 0, total_usd: 0 };
     });
 
     let completedCount = 0;
 
     // Calcul des statistiques
-    allTransactions.forEach(transaction => {
+    allTransactions.forEach((transaction) => {
       const status = transaction.getTransactionStatus()!;
       const amountUsd = transaction.getAmountUsd() || 0;
 
@@ -393,16 +416,16 @@ export default class PaymentTransaction extends PaymentTransactionModel {
   }
 
   async getBillingCycle(): Promise<BillingCycle | null> {
-    if(!this.billing_cycle) return null;
-    if (!this.billingCycleObj){
+    if (!this.billing_cycle) return null;
+    if (!this.billingCycleObj) {
       this.billingCycleObj = (await BillingCycle._load(this.billing_cycle)) || undefined;
     }
     return this.billingCycleObj || null;
   }
 
-  async getAdjustment(): Promise<LicenseAdjustment |null> {
-    if(!this.adjustment) return null;
-    if (!this.adjustmentObj){
+  async getAdjustment(): Promise<LicenseAdjustment | null> {
+    if (!this.adjustment) return null;
+    if (!this.adjustmentObj) {
       this.adjustmentObj = (await LicenseAdjustment._load(this.adjustment)) || undefined;
     }
     return this.adjustmentObj || null;
@@ -422,7 +445,7 @@ export default class PaymentTransaction extends PaymentTransactionModel {
 
   async getCurrencyCode(): Promise<Currency | null> {
     if (!this.currency_code) return null;
-    if (!this.currencyCodeObj){
+    if (!this.currencyCodeObj) {
       this.currencyCodeObj = (await Currency._load(this.currency_code)) || undefined;
     }
     return this.currencyCodeObj || null;
@@ -526,7 +549,7 @@ export default class PaymentTransaction extends PaymentTransactionModel {
       PaymentTransactionStatus.COMPLETED,
       PaymentTransactionStatus.FAILED,
       PaymentTransactionStatus.CANCELLED,
-      PaymentTransactionStatus.REFUNDED
+      PaymentTransactionStatus.REFUNDED,
     ].includes(this.transaction_status!);
   }
 
@@ -725,7 +748,12 @@ export default class PaymentTransaction extends PaymentTransactionModel {
     currency: 'usd' | 'local' = 'usd',
     paginationOptions: { offset?: number; limit?: number } = {},
   ): Promise<PaymentTransaction[] | null> {
-    const dataset = await this.listAllByAmountRange(minAmount, maxAmount, currency, paginationOptions);
+    const dataset = await this.listAllByAmountRange(
+      minAmount,
+      maxAmount,
+      currency,
+      paginationOptions,
+    );
     if (!dataset) return null;
     return dataset.map((data) => new PaymentTransaction().hydrate(data));
   }
@@ -744,7 +772,7 @@ export default class PaymentTransaction extends PaymentTransactionModel {
    */
   async save(): Promise<void> {
     try {
-      if (this.isNew()) { 
+      if (this.isNew()) {
         await this.create();
       } else {
         await this.update();
@@ -770,7 +798,6 @@ export default class PaymentTransaction extends PaymentTransactionModel {
    * Conversion JSON pour API
    */
   async toJSON(view: ViewMode = responseValue.FULL): Promise<object> {
-
     const billingCycle = await this.getBillingCycle();
     const adjustment = await this.getAdjustment();
     const paymentMethod = await this.getPaymentMethod();
@@ -805,7 +832,6 @@ export default class PaymentTransaction extends PaymentTransactionModel {
       [RS.ADJUSTMENT]: await adjustment?.toJSON(responseValue.MINIMAL),
       [RS.PAYMENT_METHOD]: await paymentMethod?.toJSON(responseValue.MINIMAL),
     };
-
   }
 
   // === MÉTHODES UTILITAIRES STATIQUES ===

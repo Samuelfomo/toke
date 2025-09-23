@@ -85,6 +85,7 @@ export const USER_ROLES_ERRORS = {
   INSUFFICIENT_PERMISSIONS: 'Insufficient permissions to assign this role',
 
   GUID_INVALID: `GUID must be 1-${USER_ROLES_VALIDATION.GUID.MAX_LENGTH} characters`,
+  GUID_GENERATION_FAILED: 'Failed to generate GUID',
   NOT_FOUND: `${USER_ROLES_LABEL} not found`,
   VALIDATION_FAILED: `${USER_ROLES_LABEL} validation failed`,
 

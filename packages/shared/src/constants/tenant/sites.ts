@@ -98,6 +98,8 @@ export const SITES_ERRORS = {
   TENANT_REQUIRED: `${SITES_LABEL} tenant is required`,
   TENANT_INVALID: `Tenant must be 1-${SITES_VALIDATION.TENANT.MAX_LENGTH} characters`,
 
+  ID_REQUIRED: `${SITES_LABEL} ID is required`,
+
   CREATED_BY_REQUIRED: `${SITES_LABEL} created by is required`,
   CREATED_BY_INVALID: `Created by must be between ${SITES_VALIDATION.CREATED_BY.MIN} and ${SITES_VALIDATION.CREATED_BY.MAX}`,
   CREATED_BY_NOT_FOUND: 'Creating user not found',
@@ -132,6 +134,8 @@ export const SITES_ERRORS = {
   GEOFENCE_OVERLAP_DETECTED: 'Geofence overlaps with existing site',
 
   GUID_INVALID: `GUID must be 1-${SITES_VALIDATION.GUID.MAX_LENGTH} characters`,
+  GUID_GENERATION_FAILED: 'Failed to generate GUID',
+
   NOT_FOUND: `${SITES_LABEL} not found`,
   VALIDATION_FAILED: `${SITES_LABEL} validation failed`,
 

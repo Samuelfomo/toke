@@ -97,6 +97,8 @@ export const WORK_SESSIONS_ERRORS = {
   USER_INVALID: `User ID must be between ${WORK_SESSIONS_VALIDATION.USER.MIN} and ${WORK_SESSIONS_VALIDATION.USER.MAX}`,
   USER_NOT_FOUND: 'User not found',
 
+  ID_REQUIRED: `${WORK_SESSIONS_LABEL} ID is required`,
+
   SITE_REQUIRED: `${WORK_SESSIONS_LABEL} site is required`,
   SITE_INVALID: `Site ID must be between ${WORK_SESSIONS_VALIDATION.SITE.MIN} and ${WORK_SESSIONS_VALIDATION.SITE.MAX}`,
   SITE_NOT_FOUND: 'Site not found',
@@ -130,6 +132,7 @@ export const WORK_SESSIONS_ERRORS = {
   OVERLAPPING_SESSION: 'Session overlaps with existing session for this user',
 
   GUID_INVALID: `GUID must be 1-${WORK_SESSIONS_VALIDATION.GUID.MAX_LENGTH} characters`,
+  GUID_GENERATION_FAILED: 'Failed to generate GUID',
   NOT_FOUND: `${WORK_SESSIONS_LABEL} not found`,
   VALIDATION_FAILED: `${WORK_SESSIONS_LABEL} validation failed`,
 

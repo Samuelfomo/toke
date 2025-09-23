@@ -22,7 +22,7 @@ export default class PaymentTransactionModel extends BaseModel {
     completed_at: 'completed_at',
     failed_at: 'failed_at',
     failure_reason: 'failure_reason',
-  }
+  };
 
   protected id?: number;
   protected guid?: number;
@@ -58,27 +58,45 @@ export default class PaymentTransactionModel extends BaseModel {
     return await this.findOne(this.db.tableName, { [this.db.payment_reference]: reference });
   }
 
-  protected async listAll(conditions: Record<string, any> = {}, paginationOptions: { offset?: number; limit?: number } = {}): Promise<any[]> {
+  protected async listAll(
+    conditions: Record<string, any> = {},
+    paginationOptions: { offset?: number; limit?: number } = {},
+  ): Promise<any[]> {
     return await this.findAll(this.db.tableName, conditions, paginationOptions);
   }
 
-  protected async listAllByTransactionStatus(status: PaymentTransactionStatus, paginationOptions: { offset?: number; limit?: number } = {}): Promise<any[]> {
+  protected async listAllByTransactionStatus(
+    status: PaymentTransactionStatus,
+    paginationOptions: { offset?: number; limit?: number } = {},
+  ): Promise<any[]> {
     return await this.listAll({ [this.db.transaction_status]: status }, paginationOptions);
   }
 
-  protected async listAllByPaymentMethod(payment_method: number, paginationOptions: { offset?: number; limit?: number } = {}): Promise<any[]> {
+  protected async listAllByPaymentMethod(
+    payment_method: number,
+    paginationOptions: { offset?: number; limit?: number } = {},
+  ): Promise<any[]> {
     return await this.listAll({ [this.db.payment_method]: payment_method }, paginationOptions);
   }
 
-  protected async listAllByBillingCycle(billing_cycle: number, paginationOptions: { offset?: number; limit?: number } = {}): Promise<any[]> {
+  protected async listAllByBillingCycle(
+    billing_cycle: number,
+    paginationOptions: { offset?: number; limit?: number } = {},
+  ): Promise<any[]> {
     return await this.listAll({ [this.db.billing_cycle]: billing_cycle }, paginationOptions);
   }
 
-  protected async listAllByLicenceAdjustment(adjustment: number, paginationOptions: { offset?: number; limit?: number } = {}): Promise<any[]> {
+  protected async listAllByLicenceAdjustment(
+    adjustment: number,
+    paginationOptions: { offset?: number; limit?: number } = {},
+  ): Promise<any[]> {
     return await this.listAll({ [this.db.adjustment]: adjustment }, paginationOptions);
   }
 
-  protected async listAllByCurrencyCode(code: string, paginationOptions: { offset?: number; limit?: number } = {}): Promise<any[]> {
+  protected async listAllByCurrencyCode(
+    code: string,
+    paginationOptions: { offset?: number; limit?: number } = {},
+  ): Promise<any[]> {
     return await this.listAll({ [this.db.currency_code]: code }, paginationOptions);
   }
 
@@ -86,7 +104,7 @@ export default class PaymentTransactionModel extends BaseModel {
     startDate: Date,
     endDate: Date,
     dateField: 'initiated_at' | 'completed_at' | 'failed_at' = 'initiated_at',
-    paginationOptions: { offset?: number; limit?: number } = {}
+    paginationOptions: { offset?: number; limit?: number } = {},
   ): Promise<any[]> {
     const conditions = {
       [`${this.db[dateField]} >= ?`]: startDate,
@@ -99,7 +117,7 @@ export default class PaymentTransactionModel extends BaseModel {
     minAmount: number,
     maxAmount: number,
     currency: 'usd' | 'local' = 'usd',
-    paginationOptions: { offset?: number; limit?: number } = {}
+    paginationOptions: { offset?: number; limit?: number } = {},
   ): Promise<any[]> {
     const amountField = currency === 'usd' ? this.db.amount_usd : this.db.amount_local;
     const conditions = {
@@ -180,10 +198,13 @@ export default class PaymentTransactionModel extends BaseModel {
     if (this.amount_usd !== undefined) updateData[this.db.amount_usd] = this.amount_usd;
     if (this.amount_local !== undefined) updateData[this.db.amount_local] = this.amount_local;
     if (this.currency_code !== undefined) updateData[this.db.currency_code] = this.currency_code;
-    if (this.exchange_rate_used !== undefined) updateData[this.db.exchange_rate_used] = this.exchange_rate_used;
+    if (this.exchange_rate_used !== undefined)
+      updateData[this.db.exchange_rate_used] = this.exchange_rate_used;
     if (this.payment_method !== undefined) updateData[this.db.payment_method] = this.payment_method;
-    if (this.payment_reference !== undefined) updateData[this.db.payment_reference] = this.payment_reference;
-    if (this.transaction_status !== undefined) updateData[this.db.transaction_status] = this.transaction_status;
+    if (this.payment_reference !== undefined)
+      updateData[this.db.payment_reference] = this.payment_reference;
+    if (this.transaction_status !== undefined)
+      updateData[this.db.transaction_status] = this.transaction_status;
     if (this.initiated_at !== undefined) updateData[this.db.initiated_at] = this.initiated_at;
     if (this.completed_at !== undefined) updateData[this.db.completed_at] = this.completed_at;
     if (this.failed_at !== undefined) updateData[this.db.failed_at] = this.failed_at;
@@ -229,7 +250,7 @@ export default class PaymentTransactionModel extends BaseModel {
   protected async markAsRefunded(): Promise<void> {
     this.transaction_status = PaymentTransactionStatus.REFUNDED;
     await this.update();
-  } 
+  }
 
   private async validate(): Promise<void> {
     const validationResult = PaymentTransactionDbStructure.validation.validateTransactionModel({

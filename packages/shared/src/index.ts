@@ -9,6 +9,7 @@ export * from './types/language.js';
 export * from './types/tax.rule.js';
 
 // tenant specific types
+export * from './types/tenant/work.sessions.js';
 
 // Export des constantes
 export * from './constants/api.js';
@@ -93,6 +94,7 @@ export * from './utils/tenant/users.validation.js';
 export * from './utils/tenant/roles.validation.js';
 export * from './utils/tenant/user.roles.validation.js';
 export * from './utils/tenant/org.hierarchy.validation.js';
+export * from './utils/tenant/sites.validation.js';
 export * from './utils/tenant/work.sessions.validation.js';
 export * from './utils/tenant/time.entries.validation.js';
 export * from './utils/tenant/memos.validation.js';

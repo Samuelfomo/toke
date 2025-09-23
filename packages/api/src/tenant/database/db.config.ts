@@ -22,7 +22,6 @@ export default class Db {
   }
 }
 
-
 // import { Sequelize } from 'sequelize';
 // import { config } from 'dotenv';
 //

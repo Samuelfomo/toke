@@ -76,7 +76,7 @@ export default class Lexicon extends LexiconModel {
   static _load(
     identifier: any,
     byGuid: boolean = false,
-    byReference: boolean = false
+    byReference: boolean = false,
   ): Promise<Lexicon | null> {
     return new Lexicon().load(identifier, byGuid, byReference);
   }
@@ -252,7 +252,7 @@ export default class Lexicon extends LexiconModel {
   async load(
     identifier: any,
     byGuid: boolean = false,
-    byReference: boolean = false
+    byReference: boolean = false,
   ): Promise<Lexicon | null> {
     const data = byGuid
       ? await this.findByGuid(identifier)

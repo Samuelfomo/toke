@@ -85,7 +85,7 @@ export default class TenantModel extends BaseModel {
   }
 
   protected async findByTaxNumber(tax: string): Promise<any> {
-    return await this.findOne(this.db.tableName, {[this.db.tax_number]: tax});
+    return await this.findOne(this.db.tableName, { [this.db.tax_number]: tax });
   }
 
   /**
@@ -181,7 +181,7 @@ export default class TenantModel extends BaseModel {
 
     // const key = await this.guidGenerator(this.db.tableName, 6);
     const key = await this.timeBasedTokenGenerator(this.db.tableName);
-    if (!key){
+    if (!key) {
       throw new Error('Failed to generate KEY for tenant entry');
     }
     this.key = key;
@@ -199,7 +199,7 @@ export default class TenantModel extends BaseModel {
     // }
 
     const existingTaxNumber = await this.findByTaxNumber(this.tax_number!);
-    if (existingTaxNumber){
+    if (existingTaxNumber) {
       throw new Error('Tenant tax number already exists');
     }
 
@@ -260,7 +260,8 @@ export default class TenantModel extends BaseModel {
     if (this.billing_address !== undefined)
       updateData[this.db.billing_address] = this.billing_address;
     if (this.billing_phone !== undefined) updateData[this.db.billing_phone] = this.billing_phone;
-    if (this.registration_number !== undefined) updateData[this.db.registration_number] = this.registration_number;
+    if (this.registration_number !== undefined)
+      updateData[this.db.registration_number] = this.registration_number;
     if (this.employee_count !== undefined) updateData[this.db.employee_count] = this.employee_count;
 
     const affected = await this.updateOne(this.db.tableName, updateData, { [this.db.id]: this.id });
@@ -283,8 +284,9 @@ export default class TenantModel extends BaseModel {
     }
 
     // Chiffrer le mot de passe avant sauvegarde
-    const encryptedPassword = this.database_password ?
-      DatabaseEncryption.encrypt(this.database_password) : undefined;
+    const encryptedPassword = this.database_password
+      ? DatabaseEncryption.encrypt(this.database_password)
+      : undefined;
 
     const updateData: Record<string, any> = {
       [this.db.subdomain]: this.subdomain,
@@ -307,7 +309,7 @@ export default class TenantModel extends BaseModel {
     }
   }
 
-// Ajouter une méthode pour récupérer le mot de passe déchiffré
+  // Ajouter une méthode pour récupérer le mot de passe déchiffré
   protected getDecryptedDatabasePassword(): string | undefined {
     return this.database_password ? DatabaseEncryption.decrypt(this.database_password) : undefined;
   }
@@ -329,7 +331,7 @@ export default class TenantModel extends BaseModel {
     }
 
     // Valider le code pays (obligatoire)
-    if (!this.country_code){
+    if (!this.country_code) {
       throw new Error(TENANT_ERRORS.COUNTRY_CODE_REQUIRED);
     }
     if (!TenantValidationUtils.validateCountryCode(this.country_code)) {
@@ -345,7 +347,10 @@ export default class TenantModel extends BaseModel {
     }
 
     // Valider le code de langue préféré (optionnel avec valeur par défaut)
-    if (this.preferred_language_code && !TenantValidationUtils.validatePreferredLanguageCode(this.preferred_language_code)) {
+    if (
+      this.preferred_language_code &&
+      !TenantValidationUtils.validatePreferredLanguageCode(this.preferred_language_code)
+    ) {
       throw new Error(TENANT_ERRORS.PREFERRED_LANGUAGE_CODE_INVALID);
     }
 
@@ -355,7 +360,7 @@ export default class TenantModel extends BaseModel {
     }
 
     // Valider le numéro de taxe (obligatoire)
-    if (!this.tax_number){
+    if (!this.tax_number) {
       throw new Error(TENANT_ERRORS.TAX_NUMBER_REQUIRED);
     }
     if (!TenantValidationUtils.validateTaxNumber(this.tax_number)) {
@@ -368,7 +373,7 @@ export default class TenantModel extends BaseModel {
     }
 
     // Valider l'email de facturation (obligatoire)
-    if (!this.billing_email){
+    if (!this.billing_email) {
       throw new Error(TENANT_ERRORS.BILLING_EMAIL_REQUIRED);
     }
     if (!TenantValidationUtils.validateBillingEmail(this.billing_email)) {
@@ -376,7 +381,7 @@ export default class TenantModel extends BaseModel {
     }
 
     // Valider l'adresse de facturation (optionnel)
-    if (!this.billing_address){
+    if (!this.billing_address) {
       throw new Error(TENANT_ERRORS.BILLING_ADDRESS_REQUIRED);
     }
     if (!TenantValidationUtils.validateBillingAddress(this.billing_address)) {
@@ -396,11 +401,14 @@ export default class TenantModel extends BaseModel {
     // if (!this.registration_number){
     //   throw new Error(TENANT_ERRORS.REGISTRATION_NUMBER_REQUIRED);
     // }
-    if (this.registration_number && !TenantValidationUtils.validateRegistrationNumber(this.registration_number)) {
+    if (
+      this.registration_number &&
+      !TenantValidationUtils.validateRegistrationNumber(this.registration_number)
+    ) {
       throw new Error(TENANT_ERRORS.REGISTRATION_NUMBER_INVALID);
     }
 
-    if (!this.employee_count){
+    if (!this.employee_count) {
       throw new Error(TENANT_ERRORS.EMPLOYEE_COUNT_REQUIRED);
     }
     if (!TenantValidationUtils.validateEmployeeCount(this.employee_count)) {

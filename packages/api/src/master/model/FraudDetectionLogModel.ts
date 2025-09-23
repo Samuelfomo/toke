@@ -64,7 +64,8 @@ export default class FraudDetectionLogModel extends BaseModel {
   ): Promise<any[]> {
     return await this.findAll(
       this.db.tableName,
-      conditions, paginationOptions,
+      conditions,
+      paginationOptions,
       // orderBy
     );
   }
@@ -76,10 +77,7 @@ export default class FraudDetectionLogModel extends BaseModel {
     tenant: number,
     paginationOptions: { offset?: number; limit?: number } = {},
   ): Promise<any[]> {
-    return await this.listAll(
-      { [this.db.tenant]: tenant },
-      paginationOptions,
-    );
+    return await this.listAll({ [this.db.tenant]: tenant }, paginationOptions);
   }
 
   /**
@@ -89,10 +87,7 @@ export default class FraudDetectionLogModel extends BaseModel {
     detection_type: FraudDetection,
     paginationOptions: { offset?: number; limit?: number } = {},
   ): Promise<any[]> {
-    return await this.listAll(
-      { [this.db.detection_type]: detection_type },
-      paginationOptions,
-    );
+    return await this.listAll({ [this.db.detection_type]: detection_type }, paginationOptions);
   }
 
   /**
@@ -102,10 +97,7 @@ export default class FraudDetectionLogModel extends BaseModel {
     risk_level: RiskLevel,
     paginationOptions: { offset?: number; limit?: number } = {},
   ): Promise<any[]> {
-    return await this.listAll(
-      { [this.db.risk_level]: risk_level },
-      paginationOptions,
-    );
+    return await this.listAll({ [this.db.risk_level]: risk_level }, paginationOptions);
   }
 
   /**
@@ -116,7 +108,7 @@ export default class FraudDetectionLogModel extends BaseModel {
     paginationOptions: { offset?: number; limit?: number } = {},
   ): Promise<any[]> {
     const conditions: Record<string, any> = {
-      [this.db.resolved_at]: null
+      [this.db.resolved_at]: null,
     };
 
     if (tenant) {
@@ -134,7 +126,7 @@ export default class FraudDetectionLogModel extends BaseModel {
     paginationOptions: { offset?: number; limit?: number } = {},
   ): Promise<any[]> {
     const conditions: Record<string, any> = {
-      [this.db.resolved_at]: { [Op.not]: null }
+      [this.db.resolved_at]: { [Op.not]: null },
     };
 
     if (tenant) {
@@ -153,7 +145,7 @@ export default class FraudDetectionLogModel extends BaseModel {
   ): Promise<any[]> {
     const conditions: Record<string, any> = {
       [this.db.risk_level]: RiskLevel.CRITICAL,
-      [this.db.resolved_at]: null
+      [this.db.resolved_at]: null,
     };
 
     if (tenant) {
@@ -174,8 +166,8 @@ export default class FraudDetectionLogModel extends BaseModel {
   ): Promise<any[]> {
     const conditions: Record<string, any> = {
       [this.db.created_at]: {
-        [Op.between]: [startDate, endDate]
-      }
+        [Op.between]: [startDate, endDate],
+      },
     };
 
     if (tenant) {
@@ -196,12 +188,11 @@ export default class FraudDetectionLogModel extends BaseModel {
       this.db.tableName,
       {
         [this.db.employee_licenses_affected]: {
-          [Op.contains]: [employeeId]
+          [Op.contains]: [employeeId],
           // [Op.and]: [
           //   Sequelize.literal(`"${this.db.employee_licenses_affected}" ? '${employeeId}'`)
           // ]
-        }
-
+        },
       },
       paginationOptions,
       // [{ field: this.db.created_at, direction: 'DESC' }]
@@ -265,14 +256,10 @@ export default class FraudDetectionLogModel extends BaseModel {
    */
   protected async updateActionTaken(id: number, action_taken: string): Promise<boolean> {
     const updateData = {
-      [this.db.action_taken]: action_taken
+      [this.db.action_taken]: action_taken,
     };
 
-    const affected = await this.updateOne(
-      this.db.tableName,
-      updateData,
-      { [this.db.id]: id }
-    );
+    const affected = await this.updateOne(this.db.tableName, updateData, { [this.db.id]: id });
 
     return !!affected;
   }
@@ -282,14 +269,10 @@ export default class FraudDetectionLogModel extends BaseModel {
    */
   protected async updateNotes(id: number, notes: string): Promise<boolean> {
     const updateData = {
-      [this.db.notes]: notes
+      [this.db.notes]: notes,
     };
 
-    const affected = await this.updateOne(
-      this.db.tableName,
-      updateData,
-      { [this.db.id]: id }
-    );
+    const affected = await this.updateOne(this.db.tableName, updateData, { [this.db.id]: id });
 
     return !!affected;
   }
@@ -300,22 +283,18 @@ export default class FraudDetectionLogModel extends BaseModel {
   protected async resolveAlert(
     id: number,
     resolved_by: number,
-    action_taken?: string
+    action_taken?: string,
   ): Promise<boolean> {
     const updateData: Record<string, any> = {
       [this.db.resolved_at]: new Date(),
-      [this.db.resolved_by]: resolved_by
+      [this.db.resolved_by]: resolved_by,
     };
 
     if (action_taken) {
       updateData[this.db.action_taken] = action_taken;
     }
 
-    const affected = await this.updateOne(
-      this.db.tableName,
-      updateData,
-      { [this.db.id]: id }
-    );
+    const affected = await this.updateOne(this.db.tableName, updateData, { [this.db.id]: id });
 
     return !!affected;
   }
@@ -326,14 +305,10 @@ export default class FraudDetectionLogModel extends BaseModel {
   protected async reopenAlert(id: number): Promise<boolean> {
     const updateData = {
       [this.db.resolved_at]: null,
-      [this.db.resolved_by]: null
+      [this.db.resolved_by]: null,
     };
 
-    const affected = await this.updateOne(
-      this.db.tableName,
-      updateData,
-      { [this.db.id]: id }
-    );
+    const affected = await this.updateOne(this.db.tableName, updateData, { [this.db.id]: id });
 
     return !!affected;
   }
@@ -348,7 +323,7 @@ export default class FraudDetectionLogModel extends BaseModel {
       notes?: string;
       resolved_by?: number;
       resolved_at?: Date;
-    }
+    },
   ): Promise<boolean> {
     const updateData: Record<string, any> = {};
 
@@ -365,11 +340,7 @@ export default class FraudDetectionLogModel extends BaseModel {
       updateData[this.db.resolved_at] = fields.resolved_at;
     }
 
-    const affected = await this.updateOne(
-      this.db.tableName,
-      updateData,
-      { [this.db.id]: id }
-    );
+    const affected = await this.updateOne(this.db.tableName, updateData, { [this.db.id]: id });
 
     return !!affected;
   }
@@ -405,7 +376,7 @@ export default class FraudDetectionLogModel extends BaseModel {
   protected async create(): Promise<void> {
     throw new Error(
       'ARCHITECTURE VIOLATION: INSERT dans fraud_detection_log est réservé à PostgreSQL. ' +
-      'Les alertes sont générées automatiquement par les triggers PostgreSQL.'
+        'Les alertes sont générées automatiquement par les triggers PostgreSQL.',
     );
   }
 
@@ -454,44 +425,54 @@ export default class FraudDetectionLogModel extends BaseModel {
    * Valide les données avant mise à jour
    */
   private async validate(): Promise<void> {
-      // Nettoyer les données
-      // FraudDetectionLogDbStructure.validation.cleanData(this);
+    // Nettoyer les données
+    // FraudDetectionLogDbStructure.validation.cleanData(this);
 
-      // Validation globale du modèle
-      // const validation = FraudDetectionLogDbStructure.validation.validateFraudDetectionModel(this);
+    // Validation globale du modèle
+    // const validation = FraudDetectionLogDbStructure.validation.validateFraudDetectionModel(this);
 
-      // if (!validation.isValid) {
-      //   throw new Error(`Validation errors: ${validation.errors.join(', ')}`);
-      // }
+    // if (!validation.isValid) {
+    //   throw new Error(`Validation errors: ${validation.errors.join(', ')}`);
+    // }
 
-      // Validations spécifiques des champs modifiables
-      if (this.action_taken !== undefined &&
-        !FraudDetectionLogDbStructure.validation.validateActionTaken(this.action_taken)) {
-        throw new Error('Invalid action_taken format or length');
-      }
+    // Validations spécifiques des champs modifiables
+    if (
+      this.action_taken !== undefined &&
+      !FraudDetectionLogDbStructure.validation.validateActionTaken(this.action_taken)
+    ) {
+      throw new Error('Invalid action_taken format or length');
+    }
 
-      if (this.notes !== undefined &&
-        !FraudDetectionLogDbStructure.validation.validateNotes(this.notes)) {
-        throw new Error('Invalid notes format or length');
-      }
+    if (
+      this.notes !== undefined &&
+      !FraudDetectionLogDbStructure.validation.validateNotes(this.notes)
+    ) {
+      throw new Error('Invalid notes format or length');
+    }
 
-      if (this.resolved_by !== undefined &&
-        !FraudDetectionLogDbStructure.validation.validateResolvedBy(this.resolved_by)) {
-        throw new Error('Invalid resolved_by format');
-      }
+    if (
+      this.resolved_by !== undefined &&
+      !FraudDetectionLogDbStructure.validation.validateResolvedBy(this.resolved_by)
+    ) {
+      throw new Error('Invalid resolved_by format');
+    }
 
-      if (this.resolved_at !== undefined &&
-        !FraudDetectionLogDbStructure.validation.validateResolvedAt(this.resolved_at)) {
-        throw new Error('Invalid resolved_at date');
-      }
+    if (
+      this.resolved_at !== undefined &&
+      !FraudDetectionLogDbStructure.validation.validateResolvedAt(this.resolved_at)
+    ) {
+      throw new Error('Invalid resolved_at date');
+    }
 
-      // Validation de cohérence résolution
-      if (!FraudDetectionLogDbStructure.validation.validateResolutionConsistency(
+    // Validation de cohérence résolution
+    if (
+      !FraudDetectionLogDbStructure.validation.validateResolutionConsistency(
         this.resolved_at || null,
         this.resolved_by || null,
-        this.action_taken || null
-      )) {
-        throw new Error('Resolution fields are inconsistent');
-      }
+        this.action_taken || null,
+      )
+    ) {
+      throw new Error('Resolution fields are inconsistent');
+    }
   }
 }

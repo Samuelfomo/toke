@@ -27,7 +27,7 @@ export const UserRolesDbStructure = {
       comment: 'Unique, automatically generated digital GUID',
     },
     user: {
-      type: DataTypes.SMALLINT,
+      type: DataTypes.INTEGER,
       allowNull: false,
       references: {
         model: tableName.USERS,
@@ -51,7 +51,7 @@ export const UserRolesDbStructure = {
       validate: {
         isInt: true,
         min: 1,
-        max: 65535,
+        max: 2147483647,
       },
       OnDelete: 'CASCADE',
       comment: 'Roles',

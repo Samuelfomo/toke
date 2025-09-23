@@ -8,7 +8,7 @@ import {
   HttpStatus,
   paginationSchema,
   validateCountryCreation,
-  validateCountryUpdate
+  validateCountryUpdate,
 } from '@toke/shared';
 
 import Country from '../class/Country.js';
@@ -25,41 +25,40 @@ const router = Router();
  * GET / - Exporter tous les pays
  */
 router.get('/', Ensure.get(), async (req: Request, res: Response) => {
-    try {
-        // Validation avec le schéma partagé
-        const paginationOptions = paginationSchema.parse(req.query);
+  try {
+    // Validation avec le schéma partagé
+    const paginationOptions = paginationSchema.parse(req.query);
 
-        const countries = await Country.exportable(paginationOptions);
-        R.handleSuccess(res, { countries });
-    } catch (error: any) {
-        console.error('❌ Erreur export pays:', error);
-        R.handleError(res, HttpStatus.INTERNAL_ERROR, {
-            code: ERROR_CODES.EXPORT_FAILED,
-            message: COUNTRY_ERRORS.EXPORT_FAILED,
-        });
-    }
+    const countries = await Country.exportable(paginationOptions);
+    R.handleSuccess(res, { countries });
+  } catch (error: any) {
+    console.error('❌ Erreur export pays:', error);
+    R.handleError(res, HttpStatus.INTERNAL_ERROR, {
+      code: ERROR_CODES.EXPORT_FAILED,
+      message: COUNTRY_ERRORS.EXPORT_FAILED,
+    });
+  }
 });
 
 /**
  * GET /revision - Récupérer uniquement la révision actuelle
  */
 router.get('/revision', Ensure.get(), async (req: Request, res: Response) => {
-    try {
-        const revision = await Revision.getRevision(TS.COUNTRY);
+  try {
+    const revision = await Revision.getRevision(TS.COUNTRY);
 
-        R.handleSuccess(res, {
-            revision,
-            checked_at: new Date().toISOString(),
-        });
-    } catch (error: any) {
-        console.error('⌐ Erreur récupération révision:', error);
-        R.handleError(res, HttpStatus.INTERNAL_ERROR, {
-            code: 'revision_check_failed',
-            message: 'Failed to get current revision',
-        });
-    }
+    R.handleSuccess(res, {
+      revision,
+      checked_at: new Date().toISOString(),
+    });
+  } catch (error: any) {
+    console.error('⌐ Erreur récupération révision:', error);
+    R.handleError(res, HttpStatus.INTERNAL_ERROR, {
+      code: 'revision_check_failed',
+      message: 'Failed to get current revision',
+    });
+  }
 });
-
 
 /**
  * GET /timezone/:timezone - Lister les pays par fuseau horaire
@@ -125,7 +124,6 @@ router.get('/currency/:currency_code', Ensure.get(), async (req: Request, res: R
   }
 });
 
-
 /**
  * GET /language/:language_code - Lister les pays par code de langue
  */
@@ -188,172 +186,174 @@ router.get('/active/:status', Ensure.get(), async (req: Request, res: Response) 
   }
 });
 
-
-
 /**
  * POST / - Créer un nouveau pays
  */
 router.post('/', Ensure.post(), async (req: Request, res: Response) => {
-    try {
-        // Validation avec les schémas partagés
-        const validatedData = validateCountryCreation(req.body);
+  try {
+    // Validation avec les schémas partagés
+    const validatedData = validateCountryCreation(req.body);
 
-        const country = new Country()
-            .setCode(validatedData.code)
-            .setNameEn(validatedData.name_en)
-            .setDefaultCurrencyCode(validatedData.default_currency_code)
-            .setDefaultLanguageCode(validatedData.default_language_code)
-            .setPhonePrefix(validatedData.phone_prefix);
+    const country = new Country()
+      .setCode(validatedData.code)
+      .setNameEn(validatedData.name_en)
+      .setDefaultCurrencyCode(validatedData.default_currency_code)
+      .setDefaultLanguageCode(validatedData.default_language_code)
+      .setPhonePrefix(validatedData.phone_prefix);
 
-        if (validatedData.name_local) country.setNameLocal(validatedData.name_local);
-        if (validatedData.active !== undefined) country.setActive(validatedData.active);
-        if (validatedData.timezone_default) country.setTimezoneDefault(validatedData.timezone_default);
+    if (validatedData.name_local) country.setNameLocal(validatedData.name_local);
+    if (validatedData.active !== undefined) country.setActive(validatedData.active);
+    if (validatedData.timezone_default) country.setTimezoneDefault(validatedData.timezone_default);
 
-        await country.save();
+    await country.save();
 
-        console.log(`✅ Pays créé: ${validatedData.code} - ${validatedData.name_en} (GUID: ${country.getGuid()})`);
-       return R.handleCreated(res,country.toJSON());
+    console.log(
+      `✅ Pays créé: ${validatedData.code} - ${validatedData.name_en} (GUID: ${country.getGuid()})`,
+    );
+    return R.handleCreated(res, country.toJSON());
+  } catch (error: any) {
+    console.error('❌ Erreur création pays:', error.message);
 
-    } catch (error: any) {
-        console.error('❌ Erreur création pays:', error.message);
-
-        // Gestion d'erreur avec les constantes partagées
-        if (error.message.includes('already exists')) {
-            R.handleError(res, HttpStatus.CONFLICT, {
-                code: ERROR_CODES.COUNTRY_ALREADY_EXISTS,
-                message: error.message,
-            });
-        } else if (error.issues) { // Erreur Zod
-            R.handleError(res, HttpStatus.BAD_REQUEST, {
-                code: ERROR_CODES.VALIDATION_FAILED,
-                message: 'Validation failed',
-                details: error.issues,
-            });
-        } else {
-            R.handleError(res, HttpStatus.BAD_REQUEST, {
-                code: ERROR_CODES.CREATION_FAILED,
-                message: error.message,
-            });
-        }
+    // Gestion d'erreur avec les constantes partagées
+    if (error.message.includes('already exists')) {
+      R.handleError(res, HttpStatus.CONFLICT, {
+        code: ERROR_CODES.COUNTRY_ALREADY_EXISTS,
+        message: error.message,
+      });
+    } else if (error.issues) {
+      // Erreur Zod
+      R.handleError(res, HttpStatus.BAD_REQUEST, {
+        code: ERROR_CODES.VALIDATION_FAILED,
+        message: 'Validation failed',
+        details: error.issues,
+      });
+    } else {
+      R.handleError(res, HttpStatus.BAD_REQUEST, {
+        code: ERROR_CODES.CREATION_FAILED,
+        message: error.message,
+      });
     }
+  }
 });
 
 /**
  * PUT /:guid - Modifier un pays par GUID
  */
 router.put('/:guid', Ensure.put(), async (req: Request, res: Response) => {
-    try {
-        // Validation du GUID avec le schéma partagé
-        if (!/^\d{6}$/.test(req.params.guid)) {
-            return R.handleError(res, HttpStatus.BAD_REQUEST, {
-                code: ERROR_CODES.INVALID_GUID,
-                message: COUNTRY_ERRORS.GUID_INVALID,
-            });
-        }
-
-        const guid = parseInt(req.params.guid);
-
-        // Validation des données avec le schéma partagé
-        const validatedData = validateCountryUpdate(req.body);
-
-        const country = await Country._load(guid, true);
-        if (!country) {
-            return R.handleError(res, HttpStatus.NOT_FOUND, {
-                code: ERROR_CODES.COUNTRY_NOT_FOUND,
-                message: COUNTRY_ERRORS.NOT_FOUND,
-            });
-        }
-
-        // Mise à jour des champs fournis
-        if (validatedData.code !== undefined) country.setCode(validatedData.code);
-        if (validatedData.name_en !== undefined) country.setNameEn(validatedData.name_en);
-        if (validatedData.name_local !== undefined) country.setNameLocal(validatedData.name_local!);
-        if (validatedData.default_currency_code !== undefined)
-            country.setDefaultCurrencyCode(validatedData.default_currency_code);
-        if (validatedData.default_language_code !== undefined)
-            country.setDefaultLanguageCode(validatedData.default_language_code);
-        if (validatedData.active !== undefined) country.setActive(validatedData.active);
-        if (validatedData.timezone_default !== undefined)
-            country.setTimezoneDefault(validatedData.timezone_default);
-        if (validatedData.phone_prefix !== undefined) country.setPhonePrefix(validatedData.phone_prefix);
-
-        await country.save();
-
-        console.log(`✅ Pays modifié: GUID ${guid}`);
-      return R.handleSuccess(res, country.toJSON());
-
-    } catch (error: any) {
-        console.error('❌ Erreur modification pays:', error);
-
-        if (error.issues) { // Erreur Zod
-            R.handleError(res, HttpStatus.BAD_REQUEST, {
-                code: ERROR_CODES.VALIDATION_FAILED,
-                message: 'Validation failed',
-                details: error.issues,
-            });
-        } else if (error.message.includes('already exists')) {
-            R.handleError(res, HttpStatus.CONFLICT, {
-                code: ERROR_CODES.COUNTRY_ALREADY_EXISTS,
-                message: error.message,
-            });
-        } else {
-            R.handleError(res, HttpStatus.BAD_REQUEST, {
-                code: ERROR_CODES.UPDATE_FAILED,
-                message: error.message,
-            });
-        }
+  try {
+    // Validation du GUID avec le schéma partagé
+    if (!/^\d{6}$/.test(req.params.guid)) {
+      return R.handleError(res, HttpStatus.BAD_REQUEST, {
+        code: ERROR_CODES.INVALID_GUID,
+        message: COUNTRY_ERRORS.GUID_INVALID,
+      });
     }
+
+    const guid = parseInt(req.params.guid);
+
+    // Validation des données avec le schéma partagé
+    const validatedData = validateCountryUpdate(req.body);
+
+    const country = await Country._load(guid, true);
+    if (!country) {
+      return R.handleError(res, HttpStatus.NOT_FOUND, {
+        code: ERROR_CODES.COUNTRY_NOT_FOUND,
+        message: COUNTRY_ERRORS.NOT_FOUND,
+      });
+    }
+
+    // Mise à jour des champs fournis
+    if (validatedData.code !== undefined) country.setCode(validatedData.code);
+    if (validatedData.name_en !== undefined) country.setNameEn(validatedData.name_en);
+    if (validatedData.name_local !== undefined) country.setNameLocal(validatedData.name_local!);
+    if (validatedData.default_currency_code !== undefined)
+      country.setDefaultCurrencyCode(validatedData.default_currency_code);
+    if (validatedData.default_language_code !== undefined)
+      country.setDefaultLanguageCode(validatedData.default_language_code);
+    if (validatedData.active !== undefined) country.setActive(validatedData.active);
+    if (validatedData.timezone_default !== undefined)
+      country.setTimezoneDefault(validatedData.timezone_default);
+    if (validatedData.phone_prefix !== undefined)
+      country.setPhonePrefix(validatedData.phone_prefix);
+
+    await country.save();
+
+    console.log(`✅ Pays modifié: GUID ${guid}`);
+    return R.handleSuccess(res, country.toJSON());
+  } catch (error: any) {
+    console.error('❌ Erreur modification pays:', error);
+
+    if (error.issues) {
+      // Erreur Zod
+      R.handleError(res, HttpStatus.BAD_REQUEST, {
+        code: ERROR_CODES.VALIDATION_FAILED,
+        message: 'Validation failed',
+        details: error.issues,
+      });
+    } else if (error.message.includes('already exists')) {
+      R.handleError(res, HttpStatus.CONFLICT, {
+        code: ERROR_CODES.COUNTRY_ALREADY_EXISTS,
+        message: error.message,
+      });
+    } else {
+      R.handleError(res, HttpStatus.BAD_REQUEST, {
+        code: ERROR_CODES.UPDATE_FAILED,
+        message: error.message,
+      });
+    }
+  }
 });
 
 /**
  * GET /list - Lister tous les pays avec filtres
  */
 router.get('/list', Ensure.get(), async (req: Request, res: Response) => {
-    try {
-        // Validation des filtres avec le schéma partagé
-        const filters = countryFiltersSchema.parse(req.query);
-        const paginationOptions = paginationSchema.parse(req.query);
+  try {
+    // Validation des filtres avec le schéma partagé
+    const filters = countryFiltersSchema.parse(req.query);
+    const paginationOptions = paginationSchema.parse(req.query);
 
-        // Conversion des filtres pour la compatibilité avec l'existant
-        const conditions: Record<string, any> = {};
-        if (filters.timezone_default) conditions.timezone_default = filters.timezone_default;
-        if (filters.default_currency_code) conditions.default_currency_code = filters.default_currency_code;
-        if (filters.default_language_code) conditions.default_language_code = filters.default_language_code;
-        if (filters.is_active !== undefined) conditions.is_active = filters.is_active;
+    // Conversion des filtres pour la compatibilité avec l'existant
+    const conditions: Record<string, any> = {};
+    if (filters.timezone_default) conditions.timezone_default = filters.timezone_default;
+    if (filters.default_currency_code)
+      conditions.default_currency_code = filters.default_currency_code;
+    if (filters.default_language_code)
+      conditions.default_language_code = filters.default_language_code;
+    if (filters.is_active !== undefined) conditions.is_active = filters.is_active;
 
-        const countryEntries = await Country._list(conditions, paginationOptions);
-        const countries = {
-            pagination: {
-                offset: paginationOptions.offset || 0,
-                limit: paginationOptions.limit || countryEntries?.length || 0,
-                count: countryEntries?.length || 0,
-            },
-            items: countryEntries?.map((country) => country.toJSON()) || [],
-        };
+    const countryEntries = await Country._list(conditions, paginationOptions);
+    const countries = {
+      pagination: {
+        offset: paginationOptions.offset || 0,
+        limit: paginationOptions.limit || countryEntries?.length || 0,
+        count: countryEntries?.length || 0,
+      },
+      items: countryEntries?.map((country) => country.toJSON()) || [],
+    };
 
-        R.handleSuccess(res, { countries });
+    R.handleSuccess(res, { countries });
+  } catch (error: any) {
+    console.error('❌ Erreur listing pays:', error);
 
-    } catch (error: any) {
-        console.error('❌ Erreur listing pays:', error);
-
-        if (error.issues) { // Erreur Zod
-            R.handleError(res, HttpStatus.BAD_REQUEST, {
-                code: ERROR_CODES.VALIDATION_FAILED,
-                message: 'Invalid filters or pagination parameters',
-                details: error.issues,
-            });
-        } else {
-            R.handleError(res, HttpStatus.INTERNAL_ERROR, {
-                code: ERROR_CODES.LISTING_FAILED,
-                message: COUNTRY_ERRORS.EXPORT_FAILED,
-            });
-        }
+    if (error.issues) {
+      // Erreur Zod
+      R.handleError(res, HttpStatus.BAD_REQUEST, {
+        code: ERROR_CODES.VALIDATION_FAILED,
+        message: 'Invalid filters or pagination parameters',
+        details: error.issues,
+      });
+    } else {
+      R.handleError(res, HttpStatus.INTERNAL_ERROR, {
+        code: ERROR_CODES.LISTING_FAILED,
+        message: COUNTRY_ERRORS.EXPORT_FAILED,
+      });
     }
+  }
 });
 
 // Les autres routes restent similaires mais utilisent les constantes partagées
 // pour les codes d'erreur et les validations...
-
 
 /**
  * GET /search/code/:code - Rechercher par code ISO
@@ -440,8 +440,7 @@ router.delete('/:guid', Ensure.delete(), async (req: Request, res: Response) => 
       return R.handleError(res, HttpStatus.BAD_REQUEST, {
         code: ERROR_CODES.INVALID_GUID,
         message: COUNTRY_ERRORS.GUID_INVALID,
-      }
-      )
+      });
     }
 
     const guid = parseInt(req.params.guid, 10);
@@ -479,7 +478,6 @@ router.delete('/:guid', Ensure.delete(), async (req: Request, res: Response) => 
     });
   }
 });
-
 
 export default router;
 

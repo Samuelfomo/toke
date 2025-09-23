@@ -1,9 +1,14 @@
-import {BillingStatus,} from '@toke/shared';
+import { BillingStatus } from '@toke/shared';
 
 import BillingCycleModel from '../model/BillingCycleModel.js';
 import W from '../../tools/watcher.js';
 import G from '../../tools/glossary.js';
-import {responseStructure as RS, responseValue, tableName, ViewMode} from '../../utils/response.model.js';
+import {
+  responseStructure as RS,
+  responseValue,
+  tableName,
+  ViewMode,
+} from '../../utils/response.model.js';
 import Revision from '../../tools/revision.js';
 
 import GlobalLicense from './GlobalLicense.js';
@@ -28,9 +33,12 @@ export default class BillingCycle extends BillingCycleModel {
     const revision = await Revision.getRevision(tableName.BILLING_CYCLE);
     let data: any[] = [];
 
-    const allCycles = await this._list({ [BillingStatus.COMPLETED]: BillingStatus.COMPLETED }, paginationOptions);
+    const allCycles = await this._list(
+      { [BillingStatus.COMPLETED]: BillingStatus.COMPLETED },
+      paginationOptions,
+    );
     if (allCycles) {
-      data = await Promise.all(allCycles.map(async cycle => await cycle.toJSON()));
+      data = await Promise.all(allCycles.map(async (cycle) => await cycle.toJSON()));
     }
 
     return {
@@ -47,10 +55,7 @@ export default class BillingCycle extends BillingCycleModel {
   /**
    * Loads a billing cycle based on the provided identifier.
    */
-  static _load(
-    identifier: any,
-    byGuid: boolean = false,
-  ): Promise<BillingCycle | null> {
+  static _load(identifier: any, byGuid: boolean = false): Promise<BillingCycle | null> {
     return new BillingCycle().load(identifier, byGuid);
   }
 
@@ -301,7 +306,8 @@ export default class BillingCycle extends BillingCycleModel {
   async getCurrencyObject(): Promise<Currency | null> {
     if (!this.billing_currency_code) return null;
     if (!this.currencyObject) {
-      this.currencyObject = (await Currency._load(this.billing_currency_code, false, true)) || undefined;
+      this.currencyObject =
+        (await Currency._load(this.billing_currency_code, false, true)) || undefined;
     }
     return this.currencyObject || null;
   }
@@ -408,7 +414,10 @@ export default class BillingCycle extends BillingCycleModel {
     if (!this.payment_due_date || this.isCompleted() || this.isCancelled()) return false;
     const warningDate = new Date();
     warningDate.setDate(warningDate.getDate() + days);
-    return new Date(this.payment_due_date) <= warningDate && new Date(this.payment_due_date) >= new Date();
+    return (
+      new Date(this.payment_due_date) <= warningDate &&
+      new Date(this.payment_due_date) >= new Date()
+    );
   }
 
   /**
@@ -537,13 +546,8 @@ export default class BillingCycle extends BillingCycleModel {
    * @param {boolean} [byGuid=false] - Specifies if the lookup should be performed by GUID.
    * @return {Promise<BillingCycle | null>} A promise that resolves to the located BillingCycle object, or null if not found.
    */
-  async load(
-    identifier: any,
-    byGuid: boolean = false,
-  ): Promise<BillingCycle | null> {
-    const data = byGuid
-      ? await this.findByGuid(identifier)
-      : await this.find(Number(identifier));
+  async load(identifier: any, byGuid: boolean = false): Promise<BillingCycle | null> {
+    const data = byGuid ? await this.findByGuid(identifier) : await this.find(Number(identifier));
 
     if (!data) return null;
     return this.hydrate(data);

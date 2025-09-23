@@ -58,7 +58,10 @@ export default class ExchangeRateModel extends BaseModel {
     return await this.listAll({ [this.db.current]: current }, paginationOptions);
   }
 
-  protected async getCurrentExchangeRate(fromCurrency: string, toCurrency: string): Promise<number> {
+  protected async getCurrentExchangeRate(
+    fromCurrency: string,
+    toCurrency: string,
+  ): Promise<number> {
     // Si même devise, retourner 1
     if (fromCurrency === toCurrency) {
       return 1;
@@ -67,7 +70,7 @@ export default class ExchangeRateModel extends BaseModel {
     const result = await this.findOne(this.db.tableName, {
       [this.db.from_currency_code]: fromCurrency,
       [this.db.to_currency_code]: toCurrency,
-      [this.db.current]: true
+      [this.db.current]: true,
     });
 
     if (!result) {
@@ -122,28 +125,28 @@ export default class ExchangeRateModel extends BaseModel {
     return await this.deleteOne(this.db.tableName, { [this.db.id]: id });
   }
   private async validate(): Promise<void> {
-    if(!this.from_currency_code){
+    if (!this.from_currency_code) {
       throw new Error(EXCHANGE_RATE_ERRORS.FROM_CURRENCY_CODE_REQUIRED);
     }
     if (!ExchangeRateValidationUtils.validateFromCurrencyCode(this.from_currency_code)) {
       throw new Error(EXCHANGE_RATE_ERRORS.FROM_CURRENCY_CODE_INVALID);
     }
-    if(!this.to_currency_code){
+    if (!this.to_currency_code) {
       throw new Error(EXCHANGE_RATE_ERRORS.TO_CURRENCY_CODE_REQUIRED);
     }
     if (!ExchangeRateValidationUtils.validateToCurrencyCode(this.to_currency_code)) {
       throw new Error(EXCHANGE_RATE_ERRORS.TO_CURRENCY_CODE_INVALID);
     }
-    if(!this.exchange_rate){
+    if (!this.exchange_rate) {
       throw new Error(EXCHANGE_RATE_ERRORS.EXCHANGE_RATE_REQUIRED);
     }
     if (!ExchangeRateValidationUtils.validateExchangeRate(this.exchange_rate)) {
       throw new Error(EXCHANGE_RATE_ERRORS.EXCHANGE_RATE_INVALID);
     }
-    if (this.current !== undefined && !ExchangeRateValidationUtils.validateCurrent(this.current)){
+    if (this.current !== undefined && !ExchangeRateValidationUtils.validateCurrent(this.current)) {
       throw new Error(EXCHANGE_RATE_ERRORS.INVALID_BOOLEAN);
     }
-    if(!this.created_by){
+    if (!this.created_by) {
       throw new Error(EXCHANGE_RATE_ERRORS.CREATED_BY_REQUIRED);
     }
     if (!ExchangeRateValidationUtils.validateCreatedBy(this.created_by)) {

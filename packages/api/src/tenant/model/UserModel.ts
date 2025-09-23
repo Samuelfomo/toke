@@ -2,10 +2,11 @@ import { USERS_ERRORS, UsersValidationUtils } from '@toke/shared';
 import { Op } from 'sequelize';
 
 import BaseModel from '../database/db.base.js';
+import { tableName } from '../../utils/response.model.js';
 
 export default class UserModel extends BaseModel {
   public readonly db = {
-    tableName: 'user',
+    tableName: tableName.USERS,
     id: 'id',
     guid: 'guid',
     tenant: 'tenant',
@@ -26,7 +27,7 @@ export default class UserModel extends BaseModel {
     job_title: 'job_title',
     active: 'active',
     last_login_at: 'last_login_at',
-  };
+  } as const;
   protected id?: number;
   protected guid?: string;
   protected tenant?: string;

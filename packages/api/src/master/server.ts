@@ -21,7 +21,7 @@ async function gracefulShutdown(signal: string): Promise<void> {
 
   isShuttingDown = true;
   console.log(`\n🛑 Signal ${signal} reçu, arrêt du serveur...`);
- 
+
   try {
     // Supprimer le fichier PID immédiatement
     if (existsSync(PID_FILE)) {
@@ -37,7 +37,7 @@ async function gracefulShutdown(signal: string): Promise<void> {
 
     process.exit(0);
   } catch (error) {
-    console.error('❌ Erreur lors de l\'arrêt:', error);
+    console.error("❌ Erreur lors de l'arrêt:", error);
     process.exit(1);
   }
 }
@@ -82,7 +82,7 @@ async function main(): Promise<void> {
     // Initialiser l'application
     appInstance = new App({
       port: parseInt(process.env.PORT || '4891'),
-      host: process.env.SERVER_HOST || '0.0.0.0'
+      host: process.env.SERVER_HOST || '0.0.0.0',
     });
 
     // Configurer les gestionnaires de signaux AVANT le démarrage
@@ -119,9 +119,8 @@ async function main(): Promise<void> {
 
     console.log('✅ Serveur démarré avec succès');
     console.log('💡 Utilisez Ctrl+C ou "npm run stop" pour arrêter');
-
   } catch (error) {
-    console.error('❌ Échec du démarrage de l\'application:', error);
+    console.error("❌ Échec du démarrage de l'application:", error);
 
     // Nettoyer le fichier PID en cas d'erreur
     if (existsSync(PID_FILE)) {
@@ -574,4 +573,3 @@ export { appInstance, gracefulShutdown };
 //
 // // Export pour les tests
 // export { gatewayInstance, gracefulShutdown };
-

@@ -121,7 +121,7 @@ export const LicenseAdjustmentDbStructure = {
 
           if (parseFloat(value) !== expected) {
             throw new Error(
-              `total_amount_usd must equal subtotal_usd + tax_amount_usd (expected: ${expected}, got: ${value})`
+              `total_amount_usd must equal subtotal_usd + tax_amount_usd (expected: ${expected}, got: ${value})`,
             );
           }
         },
@@ -373,7 +373,9 @@ export const LicenseAdjustmentDbStructure = {
     },
 
     validatePaymentStatus: (paymentStatus: string): boolean => {
-      return Object.values(PaymentTransactionStatus).includes(paymentStatus as PaymentTransactionStatus);
+      return Object.values(PaymentTransactionStatus).includes(
+        paymentStatus as PaymentTransactionStatus,
+      );
     },
 
     validateInvoiceSentAt: (value: Date | null | undefined): boolean => {
@@ -420,10 +422,12 @@ export const LicenseAdjustmentDbStructure = {
       // const calculatedSubtotalLocal = data.subtotal_usd * data.exchange_rate_used;
       // const calculatedTaxLocal = data.tax_amount_usd * data.exchange_rate_used;
       // const calculatedTotalLocal = data.total_amount_usd * data.exchange_rate_used;
-      const calculatedSubtotalLocal = Math.round(data.subtotal_usd * data.exchange_rate_used * 100) / 100;
-      const calculatedTaxLocal = Math.round(data.tax_amount_usd * data.exchange_rate_used * 100) / 100;
-      const calculatedTotalLocal = Math.round(data.total_amount_usd * data.exchange_rate_used * 100) / 100;
-
+      const calculatedSubtotalLocal =
+        Math.round(data.subtotal_usd * data.exchange_rate_used * 100) / 100;
+      const calculatedTaxLocal =
+        Math.round(data.tax_amount_usd * data.exchange_rate_used * 100) / 100;
+      const calculatedTotalLocal =
+        Math.round(data.total_amount_usd * data.exchange_rate_used * 100) / 100;
 
       return (
         Math.abs(calculatedSubtotalLocal - data.subtotal_local) <= tolerance &&
