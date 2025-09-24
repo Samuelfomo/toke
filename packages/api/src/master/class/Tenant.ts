@@ -225,12 +225,12 @@ export default class Tenant extends TenantModel {
 
   // Ajouter ces méthodes après les autres setters
   setDatabaseConfig(
-    subdomain: string,
+    // subdomain: string,
     database_name: string,
     database_username: string,
     database_password: string,
   ): Tenant {
-    this.subdomain = subdomain.toLowerCase();
+    // this.subdomain = subdomain.toLowerCase();
     this.database_name = database_name.toLowerCase();
     this.database_username = database_username.toLowerCase();
     this.database_password = database_password;
@@ -383,6 +383,14 @@ export default class Tenant extends TenantModel {
       await this.defineDb();
     } catch (error: any) {
       console.error('⚠️ Erreur définition config DB tenant:', error.message);
+      throw new Error(error);
+    }
+  }
+
+  async defineDbSubdomain(): Promise<void> {
+    try {
+      await this.defineSubdomain();
+    } catch (error: any) {
       throw new Error(error);
     }
   }
@@ -557,6 +565,7 @@ export default class Tenant extends TenantModel {
       [RS.SHORT_NAME]: this.short_name,
       [RS.REGISTRATION_NUMBER]: this.registration_number,
       [RS.EMPLOYEE_COUNT]: this.employee_count,
+      [RS.QUALIFY]: this.database_name ? 'true' : 'false',
       // Note: Ne pas exposer le mot de passe dans le JSON
     };
   }

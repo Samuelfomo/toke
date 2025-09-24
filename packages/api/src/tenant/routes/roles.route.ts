@@ -7,9 +7,9 @@ import {
   RolesValidationUtils,
   TENANT_CODES,
   validateRolesCreation,
+  validateRolesFilters,
   validateRolesUpdate,
 } from '@toke/shared';
-import { validateRolesFilters } from '@toke/shared/src/schemas/tenant/roles';
 
 import Ensure from '../../middle/ensured-routes.js';
 import R from '../../tools/response';

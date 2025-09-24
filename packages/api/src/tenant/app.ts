@@ -7,6 +7,7 @@ import cors from 'cors';
 //
 // dotenv.config();
 // Importation des modules simplifiés
+import { tenantMiddleware } from '../middle/tenant.middleware';
 
 interface AppConfig {
   port: number;
@@ -40,8 +41,8 @@ export default class App {
         throw new Error('Impossible de démarrer: arrêt en cours');
       }
 
-      // Initialiser l'application
-      await this.initializeApp();
+      // Configurer les routes
+      this.setupRoutes();
 
       // Démarrer le serveur HTTP
       console.log(`🚀 Démarrage serveur sur ${this.config.host}:${this.config.port}...`);
@@ -72,7 +73,6 @@ export default class App {
       this.setupGracefulShutdown();
     } catch (error) {
       console.error('❌ Erreur démarrage serveur:', error);
-      await this.cleanup();
       throw error;
     }
   }
@@ -86,21 +86,6 @@ export default class App {
         this.server!.close(() => resolve());
       });
     }
-    await this.cleanup();
-  }
-
-  /**
-   * Getter pour Express (utile pour tests)
-   */
-  getExpressApp(): express.Application {
-    return this.app;
-  }
-
-  /**
-   * Vérifier si le serveur fonctionne
-   */
-  isRunning(): boolean {
-    return this.server !== null && !this.isShuttingDown;
   }
 
   /**
@@ -134,6 +119,9 @@ export default class App {
     // 🔐 MIDDLEWARE D'AUTHENTIFICATION GLOBAL
     // ⚠️ INTERCEPTE TOUTES LES REQUÊTES (même /health)
     // this.app.use(ServerAuth.authenticate);
+
+    // Appliquer le middleware tenant sur toutes les routes API (sauf health)
+    this.app.use('/api', tenantMiddleware);
   }
 
   /**
@@ -218,46 +206,6 @@ export default class App {
   }
 
   /**
-   * Initialisation de la base de données
-   */
-  private async initializeDatabase(): Promise<void> {
-    try {
-      console.log('🗄️ Initialisation de la base de données...');
-
-      // // 1. Obtenir la connexion Sequelize
-      // const sequelize = await Db.getInstance();
-      //
-      // // 2. Initialiser toutes les tables (statique)
-      // await TableInitializer.initialize(sequelize);
-
-      console.log('✅ Base de données initialisée');
-    } catch (error) {
-      console.error('❌ Erreur initialisation DB:', error);
-      throw error;
-    }
-  }
-
-  /**
-   * Initialisation complète de l'application
-   */
-  private async initializeApp(): Promise<void> {
-    try {
-      console.log("🚀 Initialisation de l'application...");
-
-      // 1. Initialiser la base de données
-      await this.initializeDatabase();
-
-      // 2. Configurer les routes
-      this.setupRoutes();
-
-      console.log('✅ Application initialisée');
-    } catch (error) {
-      console.error('❌ Erreur initialisation app:', error);
-      throw error;
-    }
-  }
-
-  /**
    * Configuration de l'arrêt gracieux
    */
   private setupGracefulShutdown(): void {
@@ -282,9 +230,6 @@ export default class App {
           });
         }
 
-        // 2. Nettoyage
-        await this.cleanup();
-
         console.log('✅ Arrêt gracieux terminé');
         process.exit(0);
       } catch (error) {
@@ -307,24 +252,5 @@ export default class App {
       console.error('❌ Promise rejetée:', reason);
       shutdown('UNHANDLED_REJECTION');
     });
-  }
-
-  /**
-   * Nettoyage des ressources
-   */
-  private async cleanup(): Promise<void> {
-    try {
-      console.log('🧹 Nettoyage des ressources...');
-
-      // Nettoyer l'initialisateur de tables (statique)
-      // TableInitializer.cleanup();
-
-      // Fermer la connexion DB
-      // await Db.close();
-
-      console.log('✅ Nettoyage terminé');
-    } catch (error) {
-      console.error('❌ Erreur lors du nettoyage:', error);
-    }
   }
 }

@@ -123,6 +123,7 @@ export const TENANT_CODES = {
   DATABASE_NAME_INVALID: 'database_name_invalid',
   DATABASE_USERNAME_INVALID: 'database_username_invalid',
   DATABASE_PASSWORD_INVALID: 'database_password_invalid',
+  DATABASE_CONFIG_NOT_FOUND: 'config_not_found',
   VALIDATION_FAILED: 'validation_failed',
   CREATION_FAILED: 'creation_failed',
   UPDATE_FAILED: 'update_failed',
@@ -190,6 +191,8 @@ export const TENANT_ERRORS = {
   DATABASE_USERNAME_INVALID: `Database username must be between ${TENANT_VALIDATION.DATABASE_USERNAME.MIN_LENGTH} and ${TENANT_VALIDATION.DATABASE_USERNAME.MAX_LENGTH} lowercase alphanumeric characters with underscores or hyphens`,
 
   DATABASE_PASSWORD_INVALID: `Database password must be between ${TENANT_VALIDATION.DATABASE_PASSWORD.MIN_LENGTH} and ${TENANT_VALIDATION.DATABASE_PASSWORD.MAX_LENGTH} characters with at least one uppercase, one lowercase, and one digit`,
+
+  DATABASE_CONFIG_NOT_FOUND: 'Tenant database configuration not found',
 
   INVALID_BOOLEAN: 'Invalid boolean format.',
 

@@ -84,6 +84,10 @@ export default class TenantModel extends BaseModel {
     return await this.findOne(this.db.tableName, { [this.db.subdomain]: subdomain.toLowerCase() });
   }
 
+  protected async findByDbName(dbName: string): Promise<any> {
+    return await this.findOne(this.db.tableName, { [this.db.database_name]: dbName.toLowerCase() });
+  }
+
   protected async findByTaxNumber(tax: string): Promise<any> {
     return await this.findOne(this.db.tableName, { [this.db.tax_number]: tax });
   }
@@ -289,23 +293,41 @@ export default class TenantModel extends BaseModel {
       : undefined;
 
     const updateData: Record<string, any> = {
-      [this.db.subdomain]: this.subdomain,
+      // [this.db.subdomain]: this.subdomain,
       [this.db.database_name]: this.database_name,
       [this.db.database_username]: this.database_username,
       [this.db.database_password]: encryptedPassword,
     };
 
-    // Vérifier l'unicité du sous-domaine
-    if (this.subdomain) {
-      const existSubdomain = await this.findBySubdomain(this.subdomain);
-      if (existSubdomain && existSubdomain.id !== this.id) {
-        throw new Error('Subdomain already exists');
-      }
+    // Vérifier l'unicité du nom de la base de donnees
+    const existDbName = await this.findByDbName(this.database_name!);
+    if (existDbName && existDbName.id !== this.id) {
+      throw new Error('Tenant database already exists');
     }
 
     const affected = await this.updateOne(this.db.tableName, updateData, { [this.db.id]: this.id });
     if (!affected) {
       throw new Error('Failed to define tenant database parameters');
+    }
+  }
+  protected async defineSubdomain(): Promise<void> {
+    if (this.id == null) {
+      throw new Error('Tenant ID is required for defining tenant subdomain');
+    }
+
+    const updateData: Record<string, any> = {
+      [this.db.subdomain]: this.subdomain,
+    };
+
+    // Vérifier l'unicité du sous-domaine
+    const existSubdomain = await this.findBySubdomain(this.subdomain!);
+    if (existSubdomain && existSubdomain.id !== this.id) {
+      throw new Error('Tenant subdomain already exists');
+    }
+
+    const affected = await this.updateOne(this.db.tableName, updateData, { [this.db.id]: this.id });
+    if (!affected) {
+      throw new Error('Failed to define tenant subdomain');
     }
   }
 

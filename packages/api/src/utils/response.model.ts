@@ -207,6 +207,7 @@ export const responseStructure = {
   IS_CORRECTED: 'is_corrected',
   WORKING_DATES: 'working_dates',
   SESSION_SUMMARY: 'session_summary',
+  QUALIFY: 'qualify',
 } as const;
 
 export const tableName = {
@@ -253,3 +254,8 @@ export const EntityRouteValue = {
   MASTER: 'master',
   TENANT: 'tenant',
 } as const;
+
+export const DbConstant = {
+  TOKE: 'toke',
+  USER: 'user',
+};
