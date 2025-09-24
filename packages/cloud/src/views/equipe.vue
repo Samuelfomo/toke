@@ -54,22 +54,53 @@
 
       <div class="charts-container">
         <div class="main-chart">
-          <div class="bar-chart-wrapper">
-            <h3 class="chart-title">Taux de Présence et d'Absence</h3>
-            <div class="bar-chart">
-              <div class="bar-item">
-                <div class="bar present" :style="{ height: `${(presentCount / totalEmployees) * 100}%` }">
-                  <span class="bar-value">{{ presentCount }}</span>
+          <div class="chart-with-axes">
+            <h3 class="chart-title">Répartition des Présences/Absences</h3>
+            <div class="chart-wrapper">
+              <div class="y-axis">
+                <div class="y-axis-label">Nombre d'employés</div>
+                <div class="y-axis-ticks">
+                  <div v-for="tick in yAxisTicks" :key="tick" class="y-tick">
+                    <span class="tick-label">{{ tick }}</span>
+                    <div class="tick-line"></div>
+                  </div>
                 </div>
-                <span class="bar-label">Présents</span>
               </div>
-              <div class="bar-item">
-                <div class="bar absent" :style="{ height: `${((lateCount + absentCount) / totalEmployees) * 100}%` }">
-                  <span class="bar-value">{{ lateCount + absentCount }}</span>
+
+              <div class="chart-area">
+                <div class="chart-grid">
+                  <div v-for="tick in yAxisTicks" :key="tick" class="grid-line"
+                       :style="{ bottom: `${(tick / maxEmployeeCount) * 100}%` }"></div>
                 </div>
-                <span class="bar-label">Absents</span>
+
+                <div class="bar-chart-new">
+                  <div class="bar-item-new">
+                    <div class="bar-new present"
+                         :style="{ height: `${(presentCount / maxEmployeeCount) * 100}%` }">
+                      <span class="bar-value-new">{{ presentCount }}</span>
+                    </div>
+                  </div>
+                  <div class="bar-item-new">
+                    <div class="bar-new absent"
+                         :style="{ height: `${((lateCount + absentCount) / maxEmployeeCount) * 100}%` }">
+                      <span class="bar-value-new">{{ lateCount + absentCount }}</span>
+                    </div>
+                  </div>
+                </div>
               </div>
             </div>
+
+            <div class="x-axis">
+              <div class="x-axis-ticks">
+                <div class="x-tick">
+                  <span class="tick-label-x">Présents</span>
+                </div>
+                <div class="x-tick">
+                  <span class="tick-label-x">Absents</span>
+                </div>
+              </div>
+            </div>
+
             <div class="attendance-rate">
               <span class="rate-value">{{ attendanceRate }}%</span>
               <span class="rate-label">Taux de présence</span>
@@ -207,10 +238,15 @@
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 15l7-7 7 7"></path>
               </svg>
             </th>
+            <th></th>
           </tr>
           </thead>
           <tbody>
-          <tr v-for="employee in paginatedEmployees" :key="employee.id">
+          <tr v-for="employee in paginatedEmployees"
+              :key="employee.id"
+              class="employee-row"
+              @mouseenter="hoveredEmployee = employee.id"
+              @mouseleave="hoveredEmployee = null">
             <td class="employee-cell">
               <div class="employee-info">
                 <div class="employee-avatar">
@@ -249,6 +285,41 @@
                   ></div>
                 </div>
                 <span class="punctuality-score">{{ employee.punctualityScore }}%</span>
+              </div>
+            </td>
+            <td class="actions-cell">
+              <div class="employee-menu" :class="{ 'visible': hoveredEmployee === employee.id }">
+                <button
+                  @click="toggleEmployeeMenu(employee.id)"
+                  class="menu-trigger"
+                  :class="{ 'active': activeEmployeeMenu === employee.id }">
+                  <svg viewBox="0 0 24 24" fill="currentColor" class="menu-dots">
+                    <circle cx="12" cy="5" r="2"></circle>
+                    <circle cx="12" cy="12" r="2"></circle>
+                    <circle cx="12" cy="19" r="2"></circle>
+                  </svg>
+                </button>
+
+                <div v-if="activeEmployeeMenu === employee.id" class="employee-dropdown">
+                  <button @click="editEmployee(employee)" class="dropdown-item">
+                    <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" class="item-icon">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path>
+                    </svg>
+                    Modifier
+                  </button>
+                  <button @click="sendMemo(employee)" class="dropdown-item">
+                    <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" class="item-icon">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 8h10M7 12h4m1 8l-4-4H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-3l-4 4z"></path>
+                    </svg>
+                    mémo
+                  </button>
+                  <button @click="deleteEmployee(employee)" class="dropdown-item delete">
+                    <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" class="item-icon">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path>
+                    </svg>
+                    Supprimer
+                  </button>
+                </div>
               </div>
             </td>
           </tr>
@@ -293,9 +364,8 @@
     />
   </section>
 </template>
-
 <script setup lang="ts">
-import { ref, computed, onMounted, watch } from 'vue'
+import { ref, computed, onMounted, watch, onUnmounted } from 'vue';
 import "../assets/css/toke-equipe-09.css"
 
 // Interface definitions
@@ -448,7 +518,8 @@ const currentPage = ref<number>(1)
 const itemsPerPage = 8
 const showAddEmployee = ref<boolean>(false)
 const showAddSite = ref<boolean>(false)
-const activeDropdown = ref<number | null>(null)
+const activeEmployeeMenu = ref<number | null>(null)
+const hoveredEmployee = ref<number | null>(null)
 
 // Computed properties
 const managerEmployees = computed(() => employees.value.filter(emp => emp.managerId === currentManager.value.id))
@@ -463,6 +534,18 @@ const attendanceRate = computed(() => {
   if (totalEmployees.value === 0) return 0
   const presentAndLate = presentCount.value + lateCount.value
   return Math.round((presentAndLate / totalEmployees.value) * 100)
+})
+
+// Nouveaux computed pour le diagramme avec axes
+const maxEmployeeCount = computed(() => Math.max(totalEmployees.value, 10))
+const yAxisTicks = computed(() => {
+  const max = maxEmployeeCount.value
+  const step = Math.ceil(max / 5)
+  const ticks = []
+  for (let i = 0; i <= max; i += step) {
+    ticks.push(i)
+  }
+  return ticks
 })
 
 const isToday = computed(() => {
@@ -571,30 +654,36 @@ const setSortBy = (field: string) => {
   sortBy.value = field
 }
 
-const toggleDropdown = (employeeId: number) => {
-  activeDropdown.value = activeDropdown.value === employeeId ? null : employeeId
-}
-
-const sendReminder = (employee: Employee) => {
-  alert(`Rappel envoyé à ${employee.name} !`)
-  activeDropdown.value = null
-}
-
-const markAsJustified = (employee: Employee) => {
-  const attendanceRecord = dailyAttendance.value.find(att => att.employeeId === employee.id)
-  if (attendanceRecord) {
-    attendanceRecord.justified = true
+const toggleEmployeeMenu = (employeeId: number) => {
+  if (activeEmployeeMenu.value === employeeId) {
+    activeEmployeeMenu.value = null
+  } else {
+    activeEmployeeMenu.value = employeeId
   }
-  alert(`${employee.name} est maintenant marqué comme absent justifié.`)
-  activeDropdown.value = null
-}
-
-const viewEmployeeProfile = (employee: Employee) => {
-  alert(`Afficher le profil de ${employee.name}`)
 }
 
 const editEmployee = (employee: Employee) => {
-  alert(`Éditer les informations de ${employee.name}`)
+  alert(`Modifier les informations de ${employee.name}`)
+  activeEmployeeMenu.value = null
+}
+
+const sendMemo = (employee: Employee) => {
+  const memo = prompt(`Saisir le mémo à envoyer à ${employee.name}:`)
+  if (memo) {
+    alert(`Mémo envoyé à ${employee.name}: "${memo}"`)
+  }
+  activeEmployeeMenu.value = null
+}
+
+const deleteEmployee = (employee: Employee) => {
+  if (confirm(`Êtes-vous sûr de vouloir supprimer ${employee.name} de l'équipe ?`)) {
+    const index = employees.value.findIndex(emp => emp.id === employee.id)
+    if (index !== -1) {
+      employees.value.splice(index, 1)
+      alert(`${employee.name} a été supprimé de l'équipe.`)
+    }
+  }
+  activeEmployeeMenu.value = null
 }
 
 const generateReport = () => {
@@ -613,9 +702,28 @@ const handleSiteAdded = (newSite: Site) => {
   sites.value.push(newSite)
 }
 
+// Fermer le menu au clic à l'extérieur
+const closeMenuOnClickOutside = (event: MouseEvent) => {
+  if (activeEmployeeMenu.value !== null) {
+    const target = event.target as HTMLElement
+    if (!target.closest('.employee-menu')) {
+      activeEmployeeMenu.value = null
+    }
+  }
+}
+
 // Watchers
 watch(filteredEmployees, () => {
   currentPage.value = 1
+})
+
+// Lifecycle
+onMounted(() => {
+  document.addEventListener('click', closeMenuOnClickOutside)
+})
+
+onUnmounted(() => {
+  document.removeEventListener('click', closeMenuOnClickOutside)
 })
 
 </script>

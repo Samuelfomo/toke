@@ -242,7 +242,7 @@ const employee = ref<Employee>({
   phone: '+237 6XX XXX XXX',
   department: 'Ressources Humaines',
   position: 'Employé',
-  manager: 'Jean Dupont',
+  manager: 'Danielle',
   hireDate: '15/03/2022',
   time: route.query.employeeTime as string || '08:30',
   departureTime: 'En cours',
