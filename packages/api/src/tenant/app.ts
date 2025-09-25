@@ -154,8 +154,8 @@ export default class App {
           uptime: process.uptime(),
           environment: process.env.NODE_ENV || 'development',
           // database: dbStatus,
-          tables: 0,
-          revision: {},
+          // tables: 0,
+          // revision: {},
         });
       }),
     );

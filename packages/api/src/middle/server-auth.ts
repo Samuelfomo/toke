@@ -5,7 +5,7 @@ import { ApiKeyManager } from '../tools/api-key-manager.js';
 import { TableInitializer } from '../master/database/db.initializer.js';
 import R from '../tools/response.js';
 import G from '../tools/glossary.js';
-import Client from '../master/class/Client.js';
+import ClientCacheService from '../tools/client.cache.service.js';
 // import Endpoint from '../class/Endpoint';
 // import Permission from '../class/Permission';
 
@@ -15,7 +15,7 @@ import Client from '../master/class/Client.js';
  */
 export class ServerAuth {
   /**
-   * Middleware principal d'authentification
+   * Middleware principal d'authentification avec cache
    */
   static async authenticate(req: Request, res: Response, next: NextFunction): Promise<void> {
     try {
@@ -26,28 +26,46 @@ export class ServerAuth {
         return;
       }
 
-      // 2. Verify that the tables are initialised
-      if (!TableInitializer.isInitialized()) {
-        R.handleError(res, HttpStatus.SERVER_UNAVAILABLE, G.serviceIsInitialising);
-        return;
+      // 3. Rechercher le client dans le cache d'abord
+      let clientConfig = await ClientCacheService.getClientConfig(token);
+
+      // Si pas trouvé dans le cache, chercher en base et mettre en cache
+      if (!clientConfig) {
+        // 2. Verify that the tables are initialised
+        if (!TableInitializer.isInitialized()) {
+          R.handleError(res, HttpStatus.SERVER_UNAVAILABLE, G.serviceIsInitialising);
+          return;
+        }
+        console.log(`🔍 Client '${token}' non trouvé en cache, recherche en base...`);
+
+        // Fallback vers la base de données (import dynamique pour éviter les dépendances circulaires)
+        const { default: Client } = await import('../master/class/Client.js');
+        const clientRecord = await Client._load(token, true);
+
+        if (!clientRecord) {
+          R.handleError(res, HttpStatus.UNAUTHORIZED, G.authenticationFailed);
+          return;
+        }
+
+        // Mettre le client en cache pour les prochaines requêtes
+        await ClientCacheService.setClientConfig(clientRecord);
+
+        // Récupérer la config depuis le cache maintenant
+        clientConfig = await ClientCacheService.getClientConfig(token);
+        if (!clientConfig) {
+          R.handleError(res, HttpStatus.UNAUTHORIZED, G.authenticationFailed);
+          return;
+        }
       }
 
-      // 3. Search for the customer in the database
-      const clientRecord = await Client._load(token, true);
-      if (!clientRecord) {
-        R.handleError(res, HttpStatus.UNAUTHORIZED, G.authenticationFailed);
-        return;
-      }
-
-      // 4. Check if a client is active
-      if (!clientRecord.isActive()) {
+      // 4. Check if a client is active (déjà vérifié dans getClientConfig)
+      if (!clientConfig.active) {
         R.handleError(res, HttpStatus.UNAUTHORIZED, G.clientBlocked);
         return;
       }
 
       // 5. Verify uuid signature (additional security)
       const rawToken = `${req.headers['x-api-signature'] || ''}`;
-
       const [uuidWithValidity, signature] = rawToken.split('.');
 
       // Extraire uuid et validity
@@ -58,36 +76,29 @@ export class ServerAuth {
       // Reconstruire signedToken attendu par verify (3 parties)
       const signedToken = `${uuid}.${validity}.${signature}`;
 
-      const isSignatureValid = ApiKeyManager.verify(signedToken, clientRecord.getSecret()!);
+      const isSignatureValid = ApiKeyManager.verify(signedToken, clientConfig.secret);
 
       if (!isSignatureValid) {
-        // If signature provided but invalid
         R.handleError(res, HttpStatus.UNAUTHORIZED, G.authenticationFailed);
         return;
       }
 
-      const profil = await clientRecord.getProfil();
-      if (!profil) {
-        R.handleError(res, HttpStatus.UNAUTHORIZED, G.authenticationFailed);
-        return;
-      }
-
-      // 6. Add customer information to the request
+      // 6. Add customer information to the request (depuis le cache)
       (req as any).client = {
-        id: clientRecord.getId(),
-        name: clientRecord.getName(),
-        token: clientRecord.getToken(),
-        active: clientRecord.isActive(),
-        profile: profil.getId(),
-        isRoot: profil.isRoot(),
+        id: clientConfig.id,
+        name: clientConfig.name,
+        token: clientConfig.token,
+        active: clientConfig.active,
+        profile: clientConfig.profile.id,
+        isRoot: clientConfig.profile.root,
       };
 
       // 7. Log access (optional)
       if (process.env.NODE_ENV !== 'production') {
-        console.log(`🔑 API Key valide: ${clientRecord.getName()} → ${req.method} ${req.path}`);
+        console.log(`🔑 API Key valide (cache): ${clientConfig.name} → ${req.method} ${req.path}`);
       }
 
-      // 8. Continue to the next road
+      // 8. Continue to the next middleware
       next();
     } catch (error: any) {
       console.error('❌ Erreur middleware auth:', error);
@@ -95,6 +106,9 @@ export class ServerAuth {
     }
   }
 
+  // /**
+  //  * Middleware principal d'authentification
+  //  */
   // static async authenticate(req: Request, res: Response, next: NextFunction): Promise<void> {
   //   try {
   //     const token = ServerAuth.extractToken(req);
@@ -123,8 +137,19 @@ export class ServerAuth {
   //       return;
   //     }
   //
-  //     // 5. Verify token signature (additional security)
-  //     const signedToken = `${token}.${req.headers['x-api-signature'] || ''}`;
+  //     // 5. Verify uuid signature (additional security)
+  //     const rawToken = `${req.headers['x-api-signature'] || ''}`;
+  //
+  //     const [uuidWithValidity, signature] = rawToken.split('.');
+  //
+  //     // Extraire uuid et validity
+  //     const lastDashIndex = uuidWithValidity.lastIndexOf('-');
+  //     const uuid = uuidWithValidity.substring(0, lastDashIndex);
+  //     const validity = uuidWithValidity.substring(lastDashIndex + 1);
+  //
+  //     // Reconstruire signedToken attendu par verify (3 parties)
+  //     const signedToken = `${uuid}.${validity}.${signature}`;
+  //
   //     const isSignatureValid = ApiKeyManager.verify(signedToken, clientRecord.getSecret()!);
   //
   //     if (!isSignatureValid) {
@@ -161,7 +186,6 @@ export class ServerAuth {
   //     R.handleError(res, HttpStatus.INTERNAL_ERROR, [error.message]);
   //   }
   // }
-
   /**
    * Middleware optionnel pour vérification de signature renforcée
    * À utiliser pour les endpoints sensibles

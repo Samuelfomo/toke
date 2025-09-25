@@ -7,6 +7,7 @@ import Ensure from '../middle/ensured-routes.js';
 import ExtractQueryParams from '../utils/extract.query.params.js';
 import ClientProfil from '../master/class/ClientProfil.js';
 import G from '../tools/glossary.js';
+import ClientCacheService from '../tools/client.cache.service.js';
 
 const router = Router();
 
@@ -129,6 +130,9 @@ router.post('/', Ensure.post(), async (req: Request, res: Response) => {
 
     await client.save();
 
+    // NOUVEAU : Mettre le client en cache après création
+    await ClientCacheService.setClientConfig(client);
+
     console.log('Client créé avec succès:', client.getName());
     return R.handleCreated(res, await client.toJSON());
   } catch (error: any) {
@@ -182,6 +186,9 @@ router.put('/:id', Ensure.put(), async (req: Request, res: Response) => {
 
     await client.save();
 
+    // NOUVEAU : Mettre à jour le cache après modification
+    await ClientCacheService.setClientConfig(client);
+
     return R.handleSuccess(res, await client.toJSON());
   } catch (error: any) {
     console.error('Erreur mise à jour client:', error);
@@ -215,6 +222,12 @@ router.patch('/:id/status', Ensure.patch(), async (req: Request, res: Response) 
 
     await client.patchStatus();
 
+    // NOUVEAU : Mettre à jour le statut dans le cache
+    const token = client.getToken();
+    if (token) {
+      await ClientCacheService.updateClientStatus(token, client.isActive()!);
+    }
+
     return R.handleSuccess(res, await client.toJSON());
   } catch (error: any) {
     console.error('Erreur changement statut client:', error);
@@ -247,9 +260,15 @@ router.delete('/:id', Ensure.delete(), async (req: Request, res: Response) => {
     }
 
     const clientName = client.getName();
+    const clientToken = client.getToken();
     const deleted = await client.delete();
 
     if (deleted) {
+      // NOUVEAU : Supprimer du cache après suppression
+      if (clientToken) {
+        await ClientCacheService.removeClientConfig(clientToken);
+      }
+
       console.log(`Client supprimé: ID ${id} (${clientName})`);
       return R.handleSuccess(res, {
         message: 'Client deleted successfully',
@@ -266,6 +285,46 @@ router.delete('/:id', Ensure.delete(), async (req: Request, res: Response) => {
     console.error('Erreur suppression client:', error);
     return R.handleError(res, HttpStatus.INTERNAL_ERROR, {
       code: 'client_deletion_failed',
+      message: error.message,
+    });
+  }
+});
+
+// NOUVELLE ROUTE : Endpoint pour recharger le cache manuellement
+router.post('/cache/refresh', Ensure.post(), async (req: Request, res: Response) => {
+  try {
+    await ClientCacheService.refreshCacheFromDatabase();
+
+    const stats = ClientCacheService.getCacheStats();
+
+    return R.handleSuccess(res, {
+      message: 'Cache rechargé avec succès',
+      stats: stats,
+    });
+  } catch (error: any) {
+    console.error('Erreur rechargement cache:', error);
+    return R.handleError(res, HttpStatus.INTERNAL_ERROR, {
+      code: 'cache_refresh_failed',
+      message: error.message,
+    });
+  }
+});
+
+// NOUVELLE ROUTE : Endpoint pour obtenir les statistiques du cache
+router.get('/cache/stats', Ensure.get(), async (req: Request, res: Response) => {
+  try {
+    const stats = ClientCacheService.getCacheStats();
+    const tokens = await ClientCacheService.listClientTokens();
+
+    return R.handleSuccess(res, {
+      stats: stats,
+      cached_tokens: tokens.length,
+      sample_tokens: tokens.slice(0, 5), // Première 5 tokens pour exemple
+    });
+  } catch (error: any) {
+    console.error('Erreur statistiques cache:', error);
+    return R.handleError(res, HttpStatus.INTERNAL_ERROR, {
+      code: 'cache_stats_failed',
       message: error.message,
     });
   }
