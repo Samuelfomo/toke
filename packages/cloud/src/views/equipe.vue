@@ -1,5 +1,10 @@
 <template>
   <section class="manager-team">
+    <Header
+      :user-name="currentUser.name"
+      :company-name="currentUser.company"
+      :notification-count="notificationCount"
+    />
     <div class="manager-header">
       <div class="manager-profile">
         <div class="manager-avatar">
@@ -249,7 +254,7 @@
               @mouseleave="hoveredEmployee = null">
             <td class="employee-cell">
               <div class="employee-info">
-                <div class="employee-avatar">
+                <div class="employee-avatar-table">
                   <img v-if="employee.avatar" :src="employee.avatar" :alt="employee.name">
                   <div v-else class="avatar-placeholder">
                     {{ getInitials(employee.name) }}
@@ -364,9 +369,14 @@
     />
   </section>
 </template>
+
+
 <script setup lang="ts">
 import { ref, computed, onMounted, watch, onUnmounted } from 'vue';
-import "../assets/css/toke-equipe-09.css"
+import equipeCss from "../assets/css/toke-equipe-09.css?url"
+import dashboardCss from "../assets/css/toke-dMain-04.css?url"
+import Header from '../views/components/header.vue'
+import HeadBuilder from '@/utils/HeadBuilder';
 
 // Interface definitions
 interface Manager {
@@ -403,13 +413,19 @@ interface ArrivalInterval {
   count: number
 }
 
+const currentUser = ref({
+  name: 'Danielle',
+  company: 'IMEDIATIS'
+})
+const notificationCount = ref(2)
+
 // État réactif
 const currentManager = ref<Manager>({
   id: 1,
-  name: 'Marie Dupont',
+  name: 'Danielle',
   title: 'Manager IT',
   department: 'Département Informatique',
-  email: 'marie.dupont@company.com'
+  email: 'danielle@company.com'
 })
 
 const employees = ref<Employee[]>([
@@ -720,6 +736,11 @@ watch(filteredEmployees, () => {
 // Lifecycle
 onMounted(() => {
   document.addEventListener('click', closeMenuOnClickOutside)
+  HeadBuilder.apply({
+    title: 'Vérification OTP - Toké',
+    css: [dashboardCss, equipeCss], // Charger les deux fichiers CSS
+    meta: { viewport: "width=device-width, initial-scale=1.0" }
+  })
 })
 
 onUnmounted(() => {
