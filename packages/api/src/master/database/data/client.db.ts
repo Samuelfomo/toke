@@ -44,7 +44,7 @@ export const ClientDbStructure = {
       type: DataTypes.STRING(64),
       allowNull: false,
       validate: {
-        is: /^[a-zA-Z0-9_]{1,64}$/,
+        // is: /^[a-zA-Z0-9_]{1,64}$/, // is: /^[a-zA-Z0-9_-]{8,64}$/,
         len: [8, 64],
       },
       comment: 'Secret signature key',
@@ -74,7 +74,7 @@ export const ClientDbStructure = {
     comment: 'Table of API customers',
     indexes: [
       {
-        unique: true,
+        // unique: true,
         fields: ['token'],
         name: 'idx_client_token',
       },

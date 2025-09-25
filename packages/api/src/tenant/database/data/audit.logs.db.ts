@@ -1,6 +1,6 @@
 import { DataTypes, ModelAttributes, ModelOptions } from 'sequelize';
 
-import { tableName } from '../../../utils/response.model';
+import { tableName } from '../../../utils/response.model.js';
 
 export const AuditLogsDbStructure = {
   tableName: tableName.AUDIT_LOGS,

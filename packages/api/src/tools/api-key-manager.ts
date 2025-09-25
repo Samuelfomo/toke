@@ -3,6 +3,8 @@ import crypto from 'crypto';
 import { v4 as uuidv4 } from 'uuid';
 
 export class ApiKeyManager {
+  private static readonly validityHours = 24;
+
   /**
    * Génère un UUID signé avec une signature HMAC
    * @param secret - Clé secrète pour la signature
@@ -27,12 +29,12 @@ export class ApiKeyManager {
   public static verify(signedUUID: string, secret: string): boolean {
     try {
       const parts: string[] = signedUUID.split('.');
-      if (parts.length !== 2) {
+      if (parts.length !== 3) {
         console.log(`Invalid 🔴`);
         return false;
       }
 
-      const [uuid, providedSignature] = parts;
+      const [uuid, validity, providedSignature] = parts;
 
       // Vérifier que l'UUID est valide (format UUID v4)
       const uuidRegex: RegExp =
@@ -41,23 +43,38 @@ export class ApiKeyManager {
         console.log(`Invalid 🔴🔴`);
         return false;
       }
+      const timestamp = parseInt(validity, 10);
+      const now = Date.now();
+      // Vérification de la validité temporelle
+      if (timestamp > now) {
+        console.log(`Invalid 🔴🔴🔴 futur timestamp`);
+        return false;
+      }
+
+      const maxAgeMs = this.validityHours * 60 * 60 * 1000;
+      if (now - timestamp > maxAgeMs) {
+        console.log(`Invalid 🔴🔴🔴🔴 token expiré`);
+        return false;
+      }
 
       // VALIDATION CRITIQUE : Vérifier que la signature fournie fait exactement 64 caractères (HMAC-SHA256)
       if (providedSignature.length !== 64) {
-        console.log(`Invalid 🔴🔴🔴`);
+        console.log(`Invalid 🔴🔴🔴🔴🔴`);
         return false;
       }
 
       // Vérifier que la signature ne contient que des caractères hexadécimaux
       if (!/^[0-9a-f]+$/i.test(providedSignature)) {
-        console.log(`Invalid 🔴🔴🔴🔴`);
+        console.log(`Invalid 🔴🔴🔴🔴🔴🔴`);
         return false;
       }
+
+      const dataToSign = `${uuid}.${validity}`;
 
       // Recalculer la signature avec la clé secrète
       const expectedSignature: string = crypto
         .createHmac('sha256', secret)
-        .update(uuid)
+        .update(dataToSign)
         .digest('hex');
 
       // Vérifier que la signature attendue fait bien 64 caractères (sanity check)

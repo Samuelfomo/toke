@@ -22,6 +22,9 @@ import GenerateOtp from '../../utils/generate.otp.js';
 import GlobalLicense from '../class/GlobalLicense.js';
 import TenantConfig from '../../utils/generate.tenant.config.js';
 import ManageTenantDatabase from '../../utils/generate.database.js';
+import TenantCacheService from '../../tools/tenant-cache.service.js';
+import TenantManager from '../../tenant/database/db.tenant-manager.js';
+import { TableInitializer } from '../../tenant/database/db.initializer.js';
 
 const router = Router();
 
@@ -482,44 +485,6 @@ router.patch('/:guid/database', Ensure.patch(), async (req: Request, res: Respon
       tenantObj.getGuid()!,
     );
 
-    // const { subdomain, database_name, database_username, database_password } = req.body;
-    // // Validation des champs requis
-    // if (!subdomain || !database_name || !database_username || !database_password) {
-    //   return R.handleError(res, HttpStatus.BAD_REQUEST, {
-    //     code: TENANT_CODES.VALIDATION_FAILED,
-    //     message: 'All database configuration fields are required',
-    //   });
-    // }
-    //
-    // // Validation avec les utilitaires existants
-    // if (!TenantValidationUtils.validateSubdomain(subdomain)) {
-    //   return R.handleError(res, HttpStatus.BAD_REQUEST, {
-    //     code: TENANT_CODES.SUBDOMAIN_INVALID,
-    //     message: TENANT_ERRORS.SUBDOMAIN_INVALID,
-    //   });
-    // }
-    //
-    // if (!TenantValidationUtils.validateDatabaseName(database_name)) {
-    //   return R.handleError(res, HttpStatus.BAD_REQUEST, {
-    //     code: TENANT_CODES.DATABASE_NAME_INVALID,
-    //     message: TENANT_ERRORS.DATABASE_NAME_INVALID,
-    //   });
-    // }
-    //
-    // if (!TenantValidationUtils.validateDatabaseUsername(database_username)) {
-    //   return R.handleError(res, HttpStatus.BAD_REQUEST, {
-    //     code: TENANT_CODES.DATABASE_USERNAME_INVALID,
-    //     message: TENANT_ERRORS.DATABASE_USERNAME_INVALID,
-    //   });
-    // }
-    //
-    // if (!TenantValidationUtils.validateDatabasePassword(database_password)) {
-    //   return R.handleError(res, HttpStatus.BAD_REQUEST, {
-    //     code: TENANT_CODES.DATABASE_PASSWORD_INVALID,
-    //     message: TENANT_ERRORS.DATABASE_PASSWORD_INVALID,
-    //   });
-    // }
-
     // Définir la configuration
     tenantObj.setDatabaseConfig(
       tenantConfig.database_name,
@@ -539,6 +504,7 @@ router.patch('/:guid/database', Ensure.patch(), async (req: Request, res: Respon
         message: createDb.error, // 💡 renvoie l’erreur PostgreSQL réelle
       });
     }
+
     console.log(`✅ Configuration DB définie pour tenant GUID: ${validGuid}`);
 
     return R.handleSuccess(res, {
@@ -602,6 +568,40 @@ router.patch('/:guid/subdomain', Ensure.patch(), async (req: Request, res: Respo
 
     await tenantObj.defineDbSubdomain();
 
+    await TenantCacheService.setTenantConfig(tenantObj.getSubdomain()!, {
+      host: process.env.DB_HOST || tenantObj.getSubdomain()!,
+      port: parseInt(process.env.DB_PORT ? process.env.DB_PORT : '5432'),
+      username: tenantObj.getDatabaseUsername()!,
+      password: tenantObj.getDatabasePassword()!,
+      database: tenantObj.getDatabaseName()!,
+      active: tenantObj.isActive(),
+    });
+
+    // 3. Récupérer la configuration du tenant depuis le cache
+    const tenantConfig = await TenantCacheService.getTenantConfig(subdomain);
+    if (!tenantConfig) {
+      return R.handleError(res, HttpStatus.NOT_FOUND, {
+        code: 'tenant_not_found',
+        message: `Tenant parameter system not found`,
+      });
+    }
+
+    // 4. Définir le tenant actuel dans TenantManager
+    TenantManager.setCurrentTenant(subdomain);
+    // await ManageTenantDatabase.initializeDatabase()
+
+    // 5. Initialiser la connexion DB pour ce tenant
+    const connection = await TenantManager.getConnectionForTenant(subdomain, {
+      host: tenantConfig.host,
+      port: tenantConfig.port,
+      username: tenantConfig.username,
+      password: tenantConfig.password,
+      database: tenantConfig.database,
+    });
+
+    // 2. Initialiser toutes les tables (statique)
+    await TableInitializer.initialize(connection);
+
     return R.handleSuccess(res, {
       message: 'Tenant subdomain has been set successfully',
       tenant_guid: validGuid,
@@ -627,8 +627,32 @@ router.patch('/:guid/subdomain', Ensure.patch(), async (req: Request, res: Respo
       return R.handleError(res, HttpStatus.INTERNAL_ERROR, {
         code: TENANT_CODES.UPDATE_FAILED,
         message: error.message,
+        details: error,
       });
     }
+  }
+});
+
+// TODO : test cache a supprimer apres
+router.post('/:subdomain/cache/test', Ensure.post(), async (req: Request, res: Response) => {
+  try {
+    const cacheTest = await TenantCacheService.getTenantConfig(req.params.subdomain);
+    if (!cacheTest) {
+      return R.handleError(res, HttpStatus.NOT_FOUND, {
+        code: TENANT_CODES.TENANT_NOT_FOUND,
+        message: TENANT_ERRORS.NOT_FOUND,
+      });
+    }
+    return R.handleSuccess(res, {
+      message: 'Tenant cache test success',
+      cach_test: cacheTest,
+    });
+  } catch (error: any) {
+    return R.handleError(res, HttpStatus.INTERNAL_ERROR, {
+      code: TENANT_CODES.UPDATE_FAILED,
+      message: error.message,
+      details: error,
+    });
   }
 });
 

@@ -57,13 +57,12 @@ export default class TenantCacheService {
     subdomain: string,
     config: Omit<TenantConfig, 'subdomain' | 'last_updated'>,
   ): Promise<void> {
-    const tenantConfig: TenantConfig = {
+    this.cache[subdomain] = {
       ...config,
       subdomain,
       last_updated: new Date().toISOString(),
     };
 
-    this.cache[subdomain] = tenantConfig;
     await this.saveCacheToFile();
     console.log(`✅ Configuration tenant '${subdomain}' mise à jour dans le cache`);
   }
@@ -120,13 +119,13 @@ export default class TenantCacheService {
         this.cache = JSON.parse(data);
         this.lastLoadTime = Date.now();
         console.log(`📦 Cache tenants chargé: ${Object.keys(this.cache).length} tenant(s)`);
-      } catch (error) {
+      } catch (error: any) {
         // Fichier n'existe pas, créer un cache vide
         this.cache = {};
         await this.saveCacheToFile();
         console.log('📦 Cache tenants initialisé (vide)');
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error('❌ Erreur chargement cache tenants:', error);
       this.cache = {};
     }

@@ -45,8 +45,19 @@ export class ServerAuth {
         return;
       }
 
-      // 5. Verify token signature (additional security)
-      const signedToken = `${token}.${req.headers['x-api-signature'] || ''}`;
+      // 5. Verify uuid signature (additional security)
+      const rawToken = `${req.headers['x-api-signature'] || ''}`;
+
+      const [uuidWithValidity, signature] = rawToken.split('.');
+
+      // Extraire uuid et validity
+      const lastDashIndex = uuidWithValidity.lastIndexOf('-');
+      const uuid = uuidWithValidity.substring(0, lastDashIndex);
+      const validity = uuidWithValidity.substring(lastDashIndex + 1);
+
+      // Reconstruire signedToken attendu par verify (3 parties)
+      const signedToken = `${uuid}.${validity}.${signature}`;
+
       const isSignatureValid = ApiKeyManager.verify(signedToken, clientRecord.getSecret()!);
 
       if (!isSignatureValid) {
@@ -83,6 +94,73 @@ export class ServerAuth {
       R.handleError(res, HttpStatus.INTERNAL_ERROR, [error.message]);
     }
   }
+
+  // static async authenticate(req: Request, res: Response, next: NextFunction): Promise<void> {
+  //   try {
+  //     const token = ServerAuth.extractToken(req);
+  //
+  //     if (!token) {
+  //       R.handleError(res, HttpStatus.UNAUTHORIZED, G.authenticatorMissing);
+  //       return;
+  //     }
+  //
+  //     // 2. Verify that the tables are initialised
+  //     if (!TableInitializer.isInitialized()) {
+  //       R.handleError(res, HttpStatus.SERVER_UNAVAILABLE, G.serviceIsInitialising);
+  //       return;
+  //     }
+  //
+  //     // 3. Search for the customer in the database
+  //     const clientRecord = await Client._load(token, true);
+  //     if (!clientRecord) {
+  //       R.handleError(res, HttpStatus.UNAUTHORIZED, G.authenticationFailed);
+  //       return;
+  //     }
+  //
+  //     // 4. Check if a client is active
+  //     if (!clientRecord.isActive()) {
+  //       R.handleError(res, HttpStatus.UNAUTHORIZED, G.clientBlocked);
+  //       return;
+  //     }
+  //
+  //     // 5. Verify token signature (additional security)
+  //     const signedToken = `${token}.${req.headers['x-api-signature'] || ''}`;
+  //     const isSignatureValid = ApiKeyManager.verify(signedToken, clientRecord.getSecret()!);
+  //
+  //     if (!isSignatureValid) {
+  //       // If signature provided but invalid
+  //       R.handleError(res, HttpStatus.UNAUTHORIZED, G.authenticationFailed);
+  //       return;
+  //     }
+  //
+  //     const profil = await clientRecord.getProfil();
+  //     if (!profil) {
+  //       R.handleError(res, HttpStatus.UNAUTHORIZED, G.authenticationFailed);
+  //       return;
+  //     }
+  //
+  //     // 6. Add customer information to the request
+  //     (req as any).client = {
+  //       id: clientRecord.getId(),
+  //       name: clientRecord.getName(),
+  //       token: clientRecord.getToken(),
+  //       active: clientRecord.isActive(),
+  //       profile: profil.getId(),
+  //       isRoot: profil.isRoot(),
+  //     };
+  //
+  //     // 7. Log access (optional)
+  //     if (process.env.NODE_ENV !== 'production') {
+  //       console.log(`🔑 API Key valide: ${clientRecord.getName()} → ${req.method} ${req.path}`);
+  //     }
+  //
+  //     // 8. Continue to the next road
+  //     next();
+  //   } catch (error: any) {
+  //     console.error('❌ Erreur middleware auth:', error);
+  //     R.handleError(res, HttpStatus.INTERNAL_ERROR, [error.message]);
+  //   }
+  // }
 
   /**
    * Middleware optionnel pour vérification de signature renforcée

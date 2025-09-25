@@ -1,15 +1,15 @@
 import { Model, ModelStatic, Sequelize } from 'sequelize';
 
-import { RolesDbStructure } from './data/roles.db';
-import { UsersDbStructure } from './data/users.db';
-import { UserRolesDbStructure } from './data/user.roles.db';
-import { OrgHierarchyDbStructure } from './data/org.hierarchy.db';
-import { SitesDbStructure } from './data/sites.db';
-import { WorkSessionsDbStructure } from './data/work.sessions.db';
-import { TimeEntriesDbStructure } from './data/time.entries.db';
-import { MemosDbStructure } from './data/memos.db';
-import { AuditLogsDbStructure } from './data/audit.logs.db';
-import { FraudAlertsDbStructure } from './data/fraud.alerts.db';
+import { RolesDbStructure } from './data/roles.db.js';
+import { UsersDbStructure } from './data/users.db.js';
+import { UserRolesDbStructure } from './data/user.roles.db.js';
+import { OrgHierarchyDbStructure } from './data/org.hierarchy.db.js';
+import { SitesDbStructure } from './data/sites.db.js';
+import { WorkSessionsDbStructure } from './data/work.sessions.db.js';
+import { TimeEntriesDbStructure } from './data/time.entries.db.js';
+import { MemosDbStructure } from './data/memos.db.js';
+import { AuditLogsDbStructure } from './data/audit.logs.db.js';
+import { FraudAlertsDbStructure } from './data/fraud.alerts.db.js';
 
 /**
  * Gestionnaire STATIQUE d'initialisation des tables

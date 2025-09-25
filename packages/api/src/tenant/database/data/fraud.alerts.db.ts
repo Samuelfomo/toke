@@ -1,6 +1,6 @@
 import { DataTypes, ModelAttributes, ModelOptions } from 'sequelize';
 
-import { tableName } from '../../../utils/response.model';
+import { tableName } from '../../../utils/response.model.js';
 
 export const FraudAlertsDbStructure = {
   tableName: tableName.FRAUD_ALERTS,

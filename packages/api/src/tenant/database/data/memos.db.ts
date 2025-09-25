@@ -1,22 +1,7 @@
 import { DataTypes, ModelAttributes, ModelOptions } from 'sequelize';
+import { MemoStatus, MemoType } from '@toke/shared';
 
-import { tableName } from '../../../utils/response.model';
-
-export enum MemoType {
-  DELAY_JUSTIFICATION = 'delay_justification',
-  ABSENCE_JUSTIFICATION = 'absence_justification',
-  CORRECTION_REQUEST = 'correction_request',
-  SESSION_CLOSURE = 'session_closure',
-  AUTO_GENERATED = 'auto_generated',
-}
-
-export enum MemoStatus {
-  DRAFT = 'draft',
-  SUBMITTED = 'submitted',
-  PENDING = 'pending',
-  APPROVED = 'approved',
-  REJECTED = 'rejected',
-}
+import { tableName } from '../../../utils/response.model.js';
 
 export const MemosDbStructure = {
   tableName: tableName.MEMOS,

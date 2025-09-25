@@ -11,6 +11,7 @@ import ClientRoutes from '../temporaire_route/client.routes.js';
 import { EntityRoute, tableName } from '../utils/response.model.js';
 import Revision from '../tools/revision.js';
 import ProfileRoutes from '../temporaire_route/profile.routes.js';
+import { ServerAuth } from '../middle/server-auth.js';
 
 import Db from './database/db.config.js';
 import { TableInitializer } from './database/db.initializer.js';
@@ -46,7 +47,7 @@ export default class App {
 
   constructor(config: Partial<AppConfig> = {}) {
     this.config = {
-      port: config.port || parseInt(process.env.PORT || '4891'),
+      port: config.port || parseInt(process.env.MT_PORT || '4892'),
       host: config.host || process.env.SERVER_HOST || '0.0.0.0',
       cors: config.cors ?? true,
     };
@@ -157,7 +158,7 @@ export default class App {
 
     // 🔐 MIDDLEWARE D'AUTHENTIFICATION GLOBAL
     // ⚠️ INTERCEPTE TOUTES LES REQUÊTES (même /health)
-    // this.app.use(ServerAuth.authenticate);
+    this.app.use(ServerAuth.authenticate);
   }
 
   /**

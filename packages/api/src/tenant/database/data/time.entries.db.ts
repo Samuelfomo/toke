@@ -1,23 +1,7 @@
 import { DataTypes, ModelAttributes, ModelOptions } from 'sequelize';
+import { PointageStatus, PointageType } from '@toke/shared';
 
-import { tableName } from '../../../utils/response.model';
-
-export enum PointageType {
-  CLOCK_IN = 'clock_in',
-  CLOCK_OUT = 'clock_out',
-  PAUSE_START = 'pause_start',
-  PAUSE_END = 'pause_end',
-  EXTERNAL_MISSION = 'external_mission',
-}
-
-export enum PointageStatus {
-  DRAFT = 'draft',
-  PENDING = 'pending',
-  ACCEPTED = 'accepted',
-  CORRECTED = 'corrected',
-  ACCOUNTED = 'accounted',
-  REJECTED = 'rejected',
-}
+import { tableName } from '../../../utils/response.model.js';
 
 export const TimeEntriesDbStructure = {
   tableName: tableName.TIME_ENTRIES,

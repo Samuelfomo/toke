@@ -7,7 +7,11 @@ import cors from 'cors';
 //
 // dotenv.config();
 // Importation des modules simplifiés
-import { tenantMiddleware } from '../middle/tenant.middleware';
+import { tenantMiddleware } from '../middle/tenant.middleware.js';
+import { TableInitializer } from '../master/database/db.initializer.js';
+import { ServerAuth } from '../middle/server-auth.js';
+
+import TenantManager from './database/db.tenant-manager.js';
 
 interface AppConfig {
   port: number;
@@ -23,7 +27,7 @@ export default class App {
 
   constructor(config: Partial<AppConfig> = {}) {
     this.config = {
-      port: config.port || parseInt(process.env.PORT || '4891'),
+      port: config.port || parseInt(process.env.TN_PORT || '4891'),
       host: config.host || process.env.SERVER_HOST || '0.0.0.0',
       cors: config.cors ?? true,
     };
@@ -41,8 +45,8 @@ export default class App {
         throw new Error('Impossible de démarrer: arrêt en cours');
       }
 
-      // Configurer les routes
-      this.setupRoutes();
+      // Initialiser l'application
+      await this.initializeApp();
 
       // Démarrer le serveur HTTP
       console.log(`🚀 Démarrage serveur sur ${this.config.host}:${this.config.port}...`);
@@ -118,7 +122,7 @@ export default class App {
 
     // 🔐 MIDDLEWARE D'AUTHENTIFICATION GLOBAL
     // ⚠️ INTERCEPTE TOUTES LES REQUÊTES (même /health)
-    // this.app.use(ServerAuth.authenticate);
+    this.app.use(ServerAuth.authenticate);
 
     // Appliquer le middleware tenant sur toutes les routes API (sauf health)
     this.app.use('/api', tenantMiddleware);
@@ -203,6 +207,46 @@ export default class App {
     );
 
     console.log('✅ Routes configurées');
+  }
+
+  /**
+   * Initialisation de la base de données
+   */
+  private async initializeDatabase(): Promise<void> {
+    try {
+      console.log('🗄️ Initialisation de la base de données...');
+
+      // 1. Obtenir la connexion Sequelize
+      const sequelize = await TenantManager.getConnection();
+
+      // 2. Initialiser toutes les tables (statique)
+      await TableInitializer.initialize(sequelize);
+
+      console.log('✅ Base de données initialisée');
+    } catch (error) {
+      console.error('❌ Erreur initialisation DB:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Initialisation complète de l'application
+   */
+  private async initializeApp(): Promise<void> {
+    try {
+      console.log("🚀 Initialisation de l'application...");
+
+      // 1. Initialiser la base de données
+      // await this.initializeDatabase();
+
+      // 2. Configurer les routes
+      this.setupRoutes();
+
+      console.log('✅ Application initialisée');
+    } catch (error) {
+      console.error('❌ Erreur initialisation app:', error);
+      throw error;
+    }
   }
 
   /**
