@@ -256,7 +256,7 @@ const employee = ref<Employee>({
 // Navigation vers la page memo
 const openMemoChat = () => {
   router.push({
-    name: 'memo',
+    name: 'memoList',
     // params: { employeeId: props.employee.id },
     // query: {
     //   employeeName: props.employee.name,

@@ -28,10 +28,11 @@ import Auth from './views/auth.vue';
 import Otp from './views/otp.vue';
 import Welcome from './views/welcome.vue';
 import DashboardMain from './views/dashboard/dashboardMain.vue';
-import Memo from './views/memo.vue';
+import Memo from './views/memo/memo.vue';
 import Module from './views/module.vue';
 import EmployeeDetails from './views/EmployeeDetails.vue';
 import Equipe from './views/equipe.vue';
+import MemoList from './views/memo/memoList.vue';
 // Typage explicite des routes
 
 // Typage explicite des routes
@@ -95,6 +96,11 @@ const routes: RouteRecordRaw[] = [
     path: '/equipe',
     name: 'equipe',
     component: Equipe
+  },
+  {
+    path: '/memoList',
+    name: 'memoList',
+    component: MemoList
   }
 ];
 

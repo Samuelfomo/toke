@@ -33,7 +33,7 @@ const currentUser = ref({
 // ✅ SOLUTION 1 : Charger les CSS manuellement
 onMounted(() => {
   HeadBuilder.apply({
-    title: 'Vérification OTP - Toké',
+    title: 'Dashboard - Toké',
     css: [dashboardCss], // Charger les deux fichiers CSS
     meta: { viewport: "width=device-width, initial-scale=1.0" }
   })

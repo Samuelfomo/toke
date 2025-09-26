@@ -1,15 +1,14 @@
 <template>
   <div>
-    <!-- Utilisation du composant header réutilisable -->
-<!--    <Header-->
-<!--      :user-name="currentUser.name"-->
-<!--      :company-name="currentUser.company"-->
-<!--      :notification-count="notificationCount"-->
-<!--    />-->
+    <Header
+      :user-name="currentUser.name"
+      :company-name="currentUser.company"
+      :notification-count="notificationCount"
+    />
 
     <div class="page-container">
       <a href="/dashboard" @click.prevent="goBack" class="back-arrow-link">
-        <IconArrowLeft />
+<!--        <IconArrowLeft />-->
       </a>
 
       <main class="main-content">
@@ -59,7 +58,7 @@ import { IconFlag, IconLanguage, IconLicense, IconUsersGroup, IconArrowLeft } fr
 import Header from '../views/components/header.vue' // Import du composant header
 import moduleCss from "../assets/css/toke-module-07.css?url"
 import HeadBuilder from '@/utils/HeadBuilder';
-
+import dashboardCss from "../assets/css/toke-dMain-04.css?url"
 const router = useRouter()
 
 // Données pour le header
@@ -68,12 +67,13 @@ const currentUser = ref({
   company: 'IMEDIATIS'
 })
 
-const notificationCount = ref(0) // Aucune notification sur cette page
+const notificationCount = ref(2) // Aucune notification sur cette page
 
 // Fonction pour revenir à la page précédente
 const goBack = () => {
   router.back()
 }
+
 
 const contentCards = ref([
   {
@@ -114,8 +114,8 @@ const handleCardClick = (card: any) => {
 }
 onMounted(() => {
   HeadBuilder.apply({
-    title: `module- Toké`,
-    css: [moduleCss],
+    title: `Module- Toké`,
+    css: [moduleCss, dashboardCss],
     meta: { viewport: "width=device-width, initial-scale=1.0" }
   })
 })

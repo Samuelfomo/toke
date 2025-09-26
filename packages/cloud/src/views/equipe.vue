@@ -5,39 +5,39 @@
       :company-name="currentUser.company"
       :notification-count="notificationCount"
     />
-    <div class="manager-header">
-      <div class="manager-profile">
-        <div class="manager-avatar">
-          <img v-if="currentManager.avatar" :src="currentManager.avatar" :alt="currentManager.name">
-          <div v-else class="avatar-placeholder">
-            {{ getInitials(currentManager.name) }}
-          </div>
-        </div>
-        <div class="manager-info">
-          <h1 class="manager-name">{{ currentManager.name }}</h1>
-          <p class="manager-title">{{ currentManager.title }}</p>
-          <p class="manager-department">
-            <svg class="icon-sm" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"></path>
-            </svg>
-            {{ currentManager.department }}
-          </p>
-        </div>
-      </div>
-      <div class="team-overview-stats">
-        <div class="overview-card total">
-          <div class="stat-icon">
-            <svg fill="currentColor" viewBox="0 0 20 20">
-              <path d="M9 6a3 3 0 11-6 0 3 3 0 016 0zM17 6a3 3 0 11-6 0 3 3 0 016 0zM12.93 17c.046-.327.07-.66.07-1a6.97 6.97 0 00-1.5-4.33A5 5 0 0119 16v1h-6.07zM6 11a5 5 0 015 5v1H1v-1a5 5 0 015-5z"></path>
-            </svg>
-          </div>
-          <div class="stat-content">
-            <span class="stat-number">{{ totalEmployees }}</span>
-            <span class="stat-label">Total équipe</span>
-          </div>
-        </div>
-      </div>
-    </div>
+<!--    <div class="manager-header">-->
+<!--      <div class="manager-profile">-->
+<!--        <div class="manager-avatar">-->
+<!--          <img v-if="currentManager.avatar" :src="currentManager.avatar" :alt="currentManager.name">-->
+<!--          <div v-else class="avatar-placeholder">-->
+<!--            {{ getInitials(currentManager.name) }}-->
+<!--          </div>-->
+<!--        </div>-->
+<!--        <div class="manager-info">-->
+<!--          <h1 class="manager-name">{{ currentManager.name }}</h1>-->
+<!--          <p class="manager-title">{{ currentManager.title }}</p>-->
+<!--          <p class="manager-department">-->
+<!--            <svg class="icon-sm" fill="none" stroke="currentColor" viewBox="0 0 24 24">-->
+<!--              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"></path>-->
+<!--            </svg>-->
+<!--            {{ currentManager.department }}-->
+<!--          </p>-->
+<!--        </div>-->
+<!--      </div>-->
+<!--      <div class="team-overview-stats">-->
+<!--        <div class="overview-card total">-->
+<!--          <div class="stat-icon">-->
+<!--            <svg fill="currentColor" viewBox="0 0 20 20">-->
+<!--              <path d="M9 6a3 3 0 11-6 0 3 3 0 016 0zM17 6a3 3 0 11-6 0 3 3 0 016 0zM12.93 17c.046-.327.07-.66.07-1a6.97 6.97 0 00-1.5-4.33A5 5 0 0119 16v1h-6.07zM6 11a5 5 0 015 5v1H1v-1a5 5 0 015-5z"></path>-->
+<!--            </svg>-->
+<!--          </div>-->
+<!--          <div class="stat-content">-->
+<!--            <span class="stat-number">{{ totalEmployees }}</span>-->
+<!--            <span class="stat-label">Total équipe</span>-->
+<!--          </div>-->
+<!--        </div>-->
+<!--      </div>-->
+<!--    </div>-->
 
     <div class="presence-analytics">
       <div class="analytics-header">
@@ -737,7 +737,7 @@ watch(filteredEmployees, () => {
 onMounted(() => {
   document.addEventListener('click', closeMenuOnClickOutside)
   HeadBuilder.apply({
-    title: 'Vérification OTP - Toké',
+    title: 'Equipe - Toké',
     css: [dashboardCss, equipeCss], // Charger les deux fichiers CSS
     meta: { viewport: "width=device-width, initial-scale=1.0" }
   })

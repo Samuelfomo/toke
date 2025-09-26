@@ -35,35 +35,6 @@
       </div>
       <!-- Actions - empêcher la propagation du clic -->
       <div class="employee-actions" @click.stop>
-        <!--      <a href="#" class="action-btn-small action-primary"-->
-        <!--         v-if="employee.status === 'late' && !employee.isValidated"-->
-        <!--         @click.prevent="validateLate">-->
-        <!--        <svg class="icon-sm" fill="none" stroke="currentColor" viewBox="0 0 24 24">-->
-        <!--          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>-->
-        <!--        </svg>-->
-        <!--        <span>Valider</span>-->
-        <!--      </a>-->
-
-        <!--      <a href="#" class="action-btn-small action-primary"-->
-        <!--         v-if="employee.status === 'absent' && !employee.isJustified"-->
-        <!--         @click.prevent="justifyAbsence">-->
-        <!--        <svg class="icon-sm" fill="none" stroke="currentColor" viewBox="0 0 24 24">-->
-        <!--          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"-->
-        <!--                d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z">-->
-        <!--          </path>-->
-        <!--        </svg>-->
-        <!--        <span>Justifier</span>-->
-        <!--      </a>-->
-
-        <!--      <a href="#" class="action-btn-small action-warning"-->
-        <!--         v-if="employee.status === 'late' && !employee.isValidated"-->
-        <!--         @click.prevent="warnEmployee">-->
-        <!--        <svg class="icon-xs" fill="none" stroke="currentColor" viewBox="0 0 24 24">-->
-        <!--          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.732-.833-2.502 0L4.268 18.5c-.77.833.192 2.5 1.732 2.5z"></path>-->
-        <!--        </svg>-->
-        <!--        <span>Avertir</span>-->
-        <!--      </a>-->
-
         <div class="employee-issue" v-if="employee.status === 'absent' && !employee.isJustified">
           <svg class="icon-xs" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.732-.833-2.502 0L4.268 18.5c-.77.833.192 2.5 1.732 2.5z"></path>
