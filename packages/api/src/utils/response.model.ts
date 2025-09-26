@@ -208,6 +208,9 @@ export const responseStructure = {
   WORKING_DATES: 'working_dates',
   SESSION_SUMMARY: 'session_summary',
   QUALIFY: 'qualify',
+
+  ROLE: 'role',
+  ASSIGNED_BY: 'assigned_by',
 } as const;
 
 export const tableName = {

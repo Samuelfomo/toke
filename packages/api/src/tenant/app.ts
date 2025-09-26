@@ -12,6 +12,7 @@ import { TableInitializer } from '../master/database/db.initializer.js';
 import { ServerAuth } from '../middle/server-auth.js';
 
 import TenantManager from './database/db.tenant-manager.js';
+import userRoute from './routes/user.route.js';
 
 interface AppConfig {
   port: number;
@@ -170,6 +171,8 @@ export default class App {
     });
 
     // TODO: Ajouter les routes métier ici
+
+    this.app.use('/user', userRoute);
 
     // Route 404
     this.app.use((req, res) => {

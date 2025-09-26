@@ -1,4 +1,9 @@
-import { ORG_HIERARCHY_ERRORS, OrgHierarchyValidationUtils, RelationshipType } from '@toke/shared';
+import {
+  ORG_HIERARCHY_DEFAULTS,
+  ORG_HIERARCHY_ERRORS,
+  OrgHierarchyValidationUtils,
+  RelationshipType,
+} from '@toke/shared';
 import { Op } from 'sequelize';
 
 import BaseModel from '../database/db.base.js';
@@ -199,8 +204,12 @@ export default class OrgHierarchyModel extends BaseModel {
       [this.db.guid]: guid,
       [this.db.subordinate]: this.subordinate,
       [this.db.supervisor]: this.supervisor,
-      [this.db.relationship_type]: this.relationship_type,
-      [this.db.effective_from]: this.effective_from,
+      [this.db.relationship_type]: this.relationship_type
+        ? this.relationship_type
+        : RelationshipType.DIRECT_REPORT,
+      [this.db.effective_from]: this.effective_from
+        ? this.effective_from
+        : ORG_HIERARCHY_DEFAULTS.EFFECTIVE_FROM,
       [this.db.effective_to]: this.effective_to,
       [this.db.department]: this.department,
       [this.db.cost_center]: this.cost_center,

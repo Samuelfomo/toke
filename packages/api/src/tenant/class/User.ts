@@ -4,6 +4,7 @@ import UserModel from '../model/UserModel.js';
 import W from '../../tools/watcher.js';
 import G from '../../tools/glossary.js';
 import { responseStructure as RS } from '../../utils/response.model.js';
+import GenerateOtp from '../../utils/generate.otp.js';
 
 export default class User extends UserModel {
   constructor() {
@@ -232,7 +233,8 @@ export default class User extends UserModel {
 
   generateOtpToken(expirationMinutes: number = 15): User {
     // Génère un OTP à 6 chiffres
-    this.otp_token = Math.floor(100000 + Math.random() * 900000).toString();
+    this.otp_token = GenerateOtp.generateOTP(6);
+    // this.otp_token = Math.floor(100000 + Math.random() * 900000).toString();
     this.otp_expires_at = new Date(Date.now() + expirationMinutes * 60 * 1000);
     return this;
   }

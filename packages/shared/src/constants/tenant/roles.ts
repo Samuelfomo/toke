@@ -22,6 +22,7 @@ export const ROLES_VALIDATION = {
 
 export const ROLES_DEFAULTS = {
   SYSTEM_ROLE: true,
+  DEFAULT_ROLE: false,
   PAGINATION: {
     OFFSET: 0,
     LIMIT: 50,
@@ -54,6 +55,8 @@ export const ROLES_CODES = {
   PAGINATION_INVALID: 'pagination_invalid',
   PERMISSION_STRUCTURE_INVALID: 'permission_structure_invalid',
   ROLE_IN_USE: 'role_in_use',
+  DEFAULT_ROLE_ALREADY_EXISTS: 'default_role_already_exists',
+  DEFAULT_ROLE_NOT_FOUND: 'default_role_not_found',
 } as const;
 
 const ROLES_LABEL = 'Role';
@@ -66,8 +69,13 @@ export const ROLES_ERRORS = {
   CODE_INVALID: `Role code must be 1-${ROLES_VALIDATION.CODE.MAX_LENGTH} characters`,
   CODE_ALREADY_EXISTS: 'Role code already exists',
 
+  DEFAULT_ROLE_ALREADY_EXISTS: 'Default role already exists',
+  DEFAULT_ROLE_INVALID: 'Default role must be a boolean value (true or false)',
+  DEFAULT_ROLE_NOT_FOUND: `${ROLES_LABEL} default role not found`,
+
   GUID_GENERATED_FAILED: 'Failed to generate GUID for role',
-  GUID_INVALID: 'Invalid GUID format',
+  GUID_INVALID: `${ROLES_LABEL} GUID format invalid`,
+  GUID_REQUIRED: `${ROLES_LABEL} GUID is required`,
 
   NAME_REQUIRED: `${ROLES_LABEL} name is required`,
   NAME_INVALID: `Role name must be 1-${ROLES_VALIDATION.NAME.MAX_LENGTH} characters`,

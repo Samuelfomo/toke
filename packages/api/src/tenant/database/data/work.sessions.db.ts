@@ -135,20 +135,20 @@ export const WorkSessionsDbStructure = {
       },
       comment: 'End longitude',
     },
-    memo: {
-      type: DataTypes.INTEGER,
-      allowNull: true,
-      references: {
-        model: tableName.MEMOS,
-        key: 'id',
-      },
-      validate: {
-        isInt: true,
-        min: 1,
-        max: 2147483647,
-      },
-      comment: 'Memos',
-    },
+    // memo: {
+    //   type: DataTypes.INTEGER,
+    //   allowNull: true,
+    //   references: {
+    //     model: tableName.MEMOS,
+    //     key: 'id',
+    //   },
+    //   validate: {
+    //     isInt: true,
+    //     min: 1,
+    //     max: 2147483647,
+    //   },
+    //   comment: 'Memos',
+    // },
   } as ModelAttributes,
   options: {
     tableName: tableName.WORK_SESSIONS,
@@ -207,10 +207,10 @@ export const WorkSessionsDbStructure = {
         fields: ['end_longitude'],
         name: 'idx_work_session_end_longitude',
       },
-      {
-        fields: ['memo'],
-        name: 'idx_work_session_memo',
-      },
+      // {
+      //   fields: ['memo'],
+      //   name: 'idx_work_session_memo',
+      // },
       {
         fields: ['created_at'],
         name: 'idx_work_session_created_at',

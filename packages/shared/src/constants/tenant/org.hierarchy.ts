@@ -44,6 +44,7 @@ export const ORG_HIERARCHY_VALIDATION = {
 
 export const ORG_HIERARCHY_DEFAULTS = {
   RELATIONSHIP_TYPE: 'direct_report',
+  EFFECTIVE_FROM: new Date().toISOString().slice(0, 10),
   DELEGATION_LEVEL: 1,
   PAGINATION: {
     OFFSET: 0,
@@ -85,6 +86,7 @@ export const ORG_HIERARCHY_CODES = {
   LISTING_FAILED: 'listing_failed',
   FILTER_INVALID: 'filter_invalid',
   PAGINATION_INVALID: 'pagination_invalid',
+  REVISION_FAILED: 'revison_failed',
 } as const;
 
 const ORG_HIERARCHY_LABEL = 'Org Hierarchy';

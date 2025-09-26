@@ -1,7 +1,7 @@
 import { ROLES_DEFAULTS, ROLES_ERRORS, RolesValidationUtils } from '@toke/shared';
 
 import BaseModel from '../database/db.base.js';
-import { tableName } from '../../utils/response.model';
+import { tableName } from '../../utils/response.model.js';
 
 export default class RoleModel extends BaseModel {
   public readonly db = {
@@ -13,6 +13,7 @@ export default class RoleModel extends BaseModel {
     description: 'description',
     permissions: 'permissions',
     system_role: 'system_role',
+    default_role: 'default_role',
     created_at: 'created_at',
     updated_at: 'updated_at',
   } as const;
@@ -24,6 +25,7 @@ export default class RoleModel extends BaseModel {
   protected description?: string;
   protected permissions?: Record<string, any> | string[];
   protected system_role?: boolean;
+  protected default_role?: boolean;
   protected created_at?: Date;
   protected updated_at?: Date;
   protected constructor() {
@@ -39,6 +41,15 @@ export default class RoleModel extends BaseModel {
   protected async findByCode(code: string): Promise<any> {
     return await this.findOne(this.db.tableName, { [this.db.code]: code });
   }
+
+  protected async findExistingDefaultRole(): Promise<any> {
+    return await this.findOne(this.db.tableName, {
+      [this.db.default_role]: !ROLES_DEFAULTS.DEFAULT_ROLE,
+    });
+
+    // return !!role;
+  }
+
   protected async findByAttribut(attribute: string, value: any): Promise<any> {
     return await this.findOne(this.db.tableName, { [attribute]: value });
   }
@@ -67,6 +78,13 @@ export default class RoleModel extends BaseModel {
       throw new Error(ROLES_ERRORS.CODE_ALREADY_EXISTS);
     }
 
+    if (this.default_role === !ROLES_DEFAULTS.DEFAULT_ROLE) {
+      const existingDefaultRole = await this.findExistingDefaultRole();
+      if (existingDefaultRole) {
+        throw new Error(ROLES_ERRORS.DEFAULT_ROLE_ALREADY_EXISTS);
+      }
+    }
+
     const lastID = await this.insertOne(this.db.tableName, {
       [this.db.guid]: guid,
       [this.db.code]: this.code?.toUpperCase(),
@@ -74,6 +92,7 @@ export default class RoleModel extends BaseModel {
       [this.db.description]: this.description,
       [this.db.permissions]: this.permissions,
       [this.db.system_role]: this.system_role ? this.system_role : ROLES_DEFAULTS.SYSTEM_ROLE,
+      [this.db.default_role]: this.default_role ? this.default_role : ROLES_DEFAULTS.DEFAULT_ROLE,
     });
     if (!lastID) {
       throw new Error(ROLES_ERRORS.CREATION_FAILED);
@@ -101,6 +120,12 @@ export default class RoleModel extends BaseModel {
     }
     if (this.system_role !== undefined) {
       updateData[this.db.system_role] = this.system_role;
+    }
+    if (this.default_role !== undefined) {
+      const existingDefaultRole = await this.findExistingDefaultRole();
+      if (existingDefaultRole && existingDefaultRole.id !== this.id) {
+        throw new Error(ROLES_ERRORS.DEFAULT_ROLE_ALREADY_EXISTS);
+      }
     }
     const affected = await this.updateOne(this.db.tableName, { [this.db.id]: this.id }, updateData);
     if (!affected) {
@@ -134,6 +159,10 @@ export default class RoleModel extends BaseModel {
     }
     if (this.system_role && !RolesValidationUtils.validateSystemRole(this.system_role)) {
       throw new Error(ROLES_ERRORS.SYSTEM_ROLE_INVALID);
+    }
+
+    if (this.default_role && !RolesValidationUtils.validateDefaultRole(this.default_role)) {
+      throw new Error(ROLES_ERRORS.DEFAULT_ROLE_INVALID);
     }
 
     const cleaned = RolesValidationUtils.cleanRoleData(this);

@@ -6,18 +6,18 @@ export const USER_ROLES_VALIDATION = {
     MAX_LENGTH: 128,
   },
   USER: {
-    MIN: 1,
-    MAX: 65535,
+    MIN_LENGTH: 1,
+    MAX_LENGTH: 128,
     REQUIRED: true,
   },
   ROLE: {
-    MIN: 1,
-    MAX: 65535,
+    MIN_LENGTH: 1,
+    MAX_LENGTH: 128,
     REQUIRED: true,
   },
   ASSIGNED_BY: {
-    MIN: 1,
-    MAX: 2147483647,
+    MIN_LENGTH: 1,
+    MAX_LENGTH: 128,
     REQUIRED: true,
   },
 } as const;
@@ -57,6 +57,7 @@ export const USER_ROLES_CODES = {
   PAGINATION_INVALID: 'pagination_invalid',
   INSUFFICIENT_PERMISSIONS: 'insufficient_permissions',
   ROLE_ASSIGNMENT_CONFLICT: 'role_assignment_conflict',
+  REVISION_FAILED: 'revision_failed',
 } as const;
 
 const USER_ROLES_LABEL = 'User Role';
@@ -64,15 +65,15 @@ export const USER_ROLES_ERRORS = {
   USER_ROLE: USER_ROLES_LABEL,
 
   USER_REQUIRED: `${USER_ROLES_LABEL} user is required`,
-  USER_INVALID: `User ID must be between ${USER_ROLES_VALIDATION.USER.MIN} and ${USER_ROLES_VALIDATION.USER.MAX}`,
+  USER_INVALID: `User ID must be between ${USER_ROLES_VALIDATION.USER.MIN_LENGTH} and ${USER_ROLES_VALIDATION.USER.MAX_LENGTH}`,
   USER_NOT_FOUND: 'User not found',
 
   ROLE_REQUIRED: `${USER_ROLES_LABEL} role is required`,
-  ROLE_INVALID: `Role ID must be between ${USER_ROLES_VALIDATION.ROLE.MIN} and ${USER_ROLES_VALIDATION.ROLE.MAX}`,
+  ROLE_INVALID: `Role ID must be between ${USER_ROLES_VALIDATION.ROLE.MIN_LENGTH} and ${USER_ROLES_VALIDATION.ROLE.MAX_LENGTH}`,
   ROLE_NOT_FOUND: 'Role not found',
 
   ASSIGNED_BY_REQUIRED: `${USER_ROLES_LABEL} assigned by is required`,
-  ASSIGNED_BY_INVALID: `Assigned by must be between ${USER_ROLES_VALIDATION.ASSIGNED_BY.MIN} and ${USER_ROLES_VALIDATION.ASSIGNED_BY.MAX}`,
+  ASSIGNED_BY_INVALID: `Assigned by must be between ${USER_ROLES_VALIDATION.ASSIGNED_BY.MIN_LENGTH} and ${USER_ROLES_VALIDATION.ASSIGNED_BY.MAX_LENGTH}`,
   ASSIGNED_BY_NOT_FOUND: 'Assigning user not found',
 
   ASSIGNED_AT_INVALID: 'Assignment date must be a valid date',

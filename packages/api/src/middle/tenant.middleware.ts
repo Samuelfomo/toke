@@ -11,6 +11,7 @@ import TenantManager from '../tenant/database/db.tenant-manager.js';
 import TenantCacheService from '../tools/tenant-cache.service.js';
 import CredentialExtractorService from '../tools/credential-extractor.service.js';
 import R from '../tools/response.js';
+import { TableInitializer } from '../tenant/database/db.initializer.js';
 
 declare global {
   namespace Express {
@@ -38,11 +39,11 @@ export const tenantMiddleware = async (req: Request, res: Response, next: NextFu
     const credentials = CredentialExtractorService.extractCredentials(req);
     req.credentials = credentials;
 
-    console.log('📋 Credentials extraits:', {
-      subdomain: credentials.subdomain,
-      hasToken: !!credentials.token,
-      hasApiKey: !!credentials.apiKey,
-    });
+    // console.log('📋 Credentials extraits:', {
+    //   subdomain: credentials.subdomain,
+    //   hasToken: !!credentials.token,
+    //   hasApiKey: !!credentials.apiKey,
+    // });
 
     // 2. Valider les credentials
     const validation = CredentialExtractorService.validateCredentials(credentials);
@@ -76,6 +77,8 @@ export const tenantMiddleware = async (req: Request, res: Response, next: NextFu
       password: tenantConfig.password,
       database: tenantConfig.database,
     });
+
+    await TableInitializer.initialize(connection);
 
     // 6. Ajouter les informations à la requête
     req.tenant = {

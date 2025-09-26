@@ -91,13 +91,19 @@ export const SitesDbStructure = {
       },
       comment: 'Sites address as JSON object with city, location, place_name',
     },
+    // geofence_polygon: {
+    //   type: DataTypes.GEOMETRY('POLYGON', 4326),
+    //   allowNull: false,
+    //   // defaultValue: { type: 'Polygon', coordinates: [[[0,0],[0,100],[100,100],[100,0],[0,0]]] }
+    //   validate: {
+    //     isPolygon: true,
+    //   },
+    //   comment: 'Sites geofence polygon',
+    // },
     geofence_polygon: {
-      type: DataTypes.GEOMETRY('POLYGON', 4326),
+      type: DataTypes.JSONB,
       allowNull: false,
       // defaultValue: { type: 'Polygon', coordinates: [[[0,0],[0,100],[100,100],[100,0],[0,0]]] }
-      validate: {
-        isPolygon: true,
-      },
       comment: 'Sites geofence polygon',
     },
     geofence_radius: {
@@ -234,8 +240,13 @@ export const SitesDbStructure = {
       {
         fields: ['geofence_polygon'],
         name: 'idx_site_geofence_polygon',
-        using: 'GIST',
+        using: 'GIN',
       },
+      // {
+      //   fields: ['geofence_polygon'],
+      //   name: 'idx_site_geofence_polygon',
+      //   using: 'GIST',
+      // },
       {
         fields: ['geofence_radius'],
         name: 'idx_site_geofence_radius',

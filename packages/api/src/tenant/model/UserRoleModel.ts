@@ -105,24 +105,24 @@ export default class UserRoleModel extends BaseModel {
   }
 
   private async validate(): Promise<void> {
-    if (!this.user) {
-      throw new Error(USER_ROLES_ERRORS.USER_REQUIRED);
-    }
-    if (!UserRolesValidationUtils.validateUserId(this.user)) {
-      throw new Error(USER_ROLES_ERRORS.USER_INVALID);
-    }
-    if (!this.role) {
-      throw new Error(USER_ROLES_ERRORS.ROLE_REQUIRED);
-    }
-    if (!UserRolesValidationUtils.validateRoleId(this.role)) {
-      throw new Error(USER_ROLES_ERRORS.ROLE_INVALID);
-    }
-    if (!this.assigned_by) {
-      throw new Error(USER_ROLES_ERRORS.ASSIGNED_BY_REQUIRED);
-    }
-    if (!UserRolesValidationUtils.validateAssignedBy(this.assigned_by)) {
-      throw new Error(USER_ROLES_ERRORS.ASSIGNED_BY_INVALID);
-    }
+    // if (!this.user) {
+    //   throw new Error(USER_ROLES_ERRORS.USER_REQUIRED);
+    // }
+    // if (!UserRolesValidationUtils.validateUserId(this.user)) {
+    //   throw new Error(USER_ROLES_ERRORS.USER_INVALID);
+    // }
+    // if (!this.role) {
+    //   throw new Error(USER_ROLES_ERRORS.ROLE_REQUIRED);
+    // }
+    // if (!UserRolesValidationUtils.validateRoleId(this.role)) {
+    //   throw new Error(USER_ROLES_ERRORS.ROLE_INVALID);
+    // }
+    // if (!this.assigned_by) {
+    //   throw new Error(USER_ROLES_ERRORS.ASSIGNED_BY_REQUIRED);
+    // }
+    // if (!UserRolesValidationUtils.validateAssignedBy(this.assigned_by)) {
+    //   throw new Error(USER_ROLES_ERRORS.ASSIGNED_BY_INVALID);
+    // }
 
     const cleaned = UserRolesValidationUtils.cleanUserRoleData(this);
     Object.assign(this, cleaned);

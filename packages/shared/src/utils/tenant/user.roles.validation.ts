@@ -21,32 +21,64 @@ export class UserRolesValidationUtils {
     const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
     return uuidRegex.test(trimmed);
   }
-
   /**
-   * Validates user ID
+   * Validates user GUID
    */
-  static validateUserId(userId: number): boolean {
-    if (typeof userId !== 'number' || !Number.isInteger(userId)) return false;
-    return userId >= USER_ROLES_VALIDATION.USER.MIN && userId <= USER_ROLES_VALIDATION.USER.MAX;
+  static validateUserId(user: string): boolean {
+    if (!user || typeof user !== 'string') return false;
+    const trimmed = user.trim();
+
+    // Check length
+    if (
+      trimmed.length < USER_ROLES_VALIDATION.USER.MIN_LENGTH ||
+      trimmed.length > USER_ROLES_VALIDATION.USER.MAX_LENGTH
+    ) {
+      return false;
+    }
+
+    // UUID v4 regex
+    const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+    return uuidRegex.test(trimmed);
   }
 
   /**
-   * Validates role ID
+   * Validates role GUID
    */
-  static validateRoleId(roleId: number): boolean {
-    if (typeof roleId !== 'number' || !Number.isInteger(roleId)) return false;
-    return roleId >= USER_ROLES_VALIDATION.ROLE.MIN && roleId <= USER_ROLES_VALIDATION.ROLE.MAX;
+  static validateRoleId(role: string): boolean {
+    if (!role || typeof role !== 'string') return false;
+    const trimmed = role.trim();
+
+    // Check length
+    if (
+      trimmed.length < USER_ROLES_VALIDATION.ROLE.MIN_LENGTH ||
+      trimmed.length > USER_ROLES_VALIDATION.ROLE.MAX_LENGTH
+    ) {
+      return false;
+    }
+
+    // UUID v4 regex
+    const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+    return uuidRegex.test(trimmed);
   }
 
   /**
-   * Validates assigned by user ID
+   * Validates assigned by user GUID
    */
-  static validateAssignedBy(assignedBy: number): boolean {
-    if (typeof assignedBy !== 'number' || !Number.isInteger(assignedBy)) return false;
-    return (
-      assignedBy >= USER_ROLES_VALIDATION.ASSIGNED_BY.MIN &&
-      assignedBy <= USER_ROLES_VALIDATION.ASSIGNED_BY.MAX
-    );
+  static validateAssignedBy(assignedBy: string): boolean {
+    if (!assignedBy || typeof assignedBy !== 'string') return false;
+    const trimmed = assignedBy.trim();
+
+    // Check length
+    if (
+      trimmed.length < USER_ROLES_VALIDATION.ASSIGNED_BY.MIN_LENGTH ||
+      trimmed.length > USER_ROLES_VALIDATION.ASSIGNED_BY.MAX_LENGTH
+    ) {
+      return false;
+    }
+
+    // UUID v4 regex
+    const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+    return uuidRegex.test(trimmed);
   }
 
   /**
@@ -77,7 +109,7 @@ export class UserRolesValidationUtils {
   /**
    * Validates that assignment is not self-assignment
    */
-  static validateNotSelfAssignment(userId: number, assignedBy: number): boolean {
+  static validateNotSelfAssignment(userId: string, assignedBy: string): boolean {
     return userId !== assignedBy;
   }
 
@@ -174,13 +206,13 @@ export class UserRolesValidationUtils {
 
     if (data.user === undefined || data.user === null || !this.validateUserId(data.user)) {
       errors.push(
-        `Invalid user: must be between ${USER_ROLES_VALIDATION.USER.MIN} and ${USER_ROLES_VALIDATION.USER.MAX}`,
+        `Invalid user: must be between ${USER_ROLES_VALIDATION.USER.MIN_LENGTH} and ${USER_ROLES_VALIDATION.USER.MAX_LENGTH}`,
       );
     }
 
     if (data.role === undefined || data.role === null || !this.validateRoleId(data.role)) {
       errors.push(
-        `Invalid role: must be between ${USER_ROLES_VALIDATION.ROLE.MIN} and ${USER_ROLES_VALIDATION.ROLE.MAX}`,
+        `Invalid role: must be between ${USER_ROLES_VALIDATION.ROLE.MIN_LENGTH} and ${USER_ROLES_VALIDATION.ROLE.MAX_LENGTH}`,
       );
     }
 
@@ -190,7 +222,7 @@ export class UserRolesValidationUtils {
       !this.validateAssignedBy(data.assigned_by)
     ) {
       errors.push(
-        `Invalid assigned_by: must be between ${USER_ROLES_VALIDATION.ASSIGNED_BY.MIN} and ${USER_ROLES_VALIDATION.ASSIGNED_BY.MAX}`,
+        `Invalid assigned_by: must be between ${USER_ROLES_VALIDATION.ASSIGNED_BY.MIN_LENGTH} and ${USER_ROLES_VALIDATION.ASSIGNED_BY.MAX_LENGTH}`,
       );
     }
 

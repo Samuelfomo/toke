@@ -1,4 +1,4 @@
-import { USERS_ERRORS, UsersValidationUtils } from '@toke/shared';
+import { USERS_DEFAULTS, USERS_ERRORS, UsersValidationUtils } from '@toke/shared';
 import { Op } from 'sequelize';
 
 import BaseModel from '../database/db.base.js';
@@ -250,7 +250,7 @@ export default class UserModel extends BaseModel {
       [this.db.hire_date]: this.hire_date,
       [this.db.department]: this.department,
       [this.db.job_title]: this.job_title,
-      [this.db.active]: this.active,
+      [this.db.active]: this.active || USERS_DEFAULTS.ACTIVE,
       // [this.db.last_login_at]: this.last_login_at,
     });
     if (!lastID) {

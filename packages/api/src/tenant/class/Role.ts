@@ -1,9 +1,9 @@
 import { ROLES_DEFAULTS } from '@toke/shared';
 
 import RoleModel from '../model/RoleModel.js';
-import W from '../../tools/watcher';
-import G from '../../tools/glossary';
-import { responseStructure as RS } from '../../utils/response.model';
+import W from '../../tools/watcher.js';
+import G from '../../tools/glossary.js';
+import { responseStructure as RS } from '../../utils/response.model.js';
 
 export default class Role extends RoleModel {
   constructor() {
@@ -16,6 +16,9 @@ export default class Role extends RoleModel {
     byCode: boolean = false,
   ): Promise<Role | null> {
     return new Role().load(identifier, byGuid, byCode);
+  }
+  static _loadDefaultRole(): Promise<Role | null> {
+    return new Role().loadDefaultRole();
   }
 
   static _list(
@@ -80,12 +83,13 @@ export default class Role extends RoleModel {
   getPermission(): Record<string, any> | String[] | undefined {
     return this.permissions;
   }
-
-  // === SETTERS FLUENT ===
-
   isSystemRole(): boolean | undefined {
     return this.system_role;
   }
+  isDefaultRole(): boolean | undefined {
+    return this.default_role;
+  }
+  // === SETTERS FLUENT ===
 
   setGuid(guid: string): Role {
     this.guid = guid;
@@ -117,6 +121,11 @@ export default class Role extends RoleModel {
     return this;
   }
 
+  setDefaultRole(defaultRole: boolean): Role {
+    this.default_role = defaultRole;
+    return this;
+  }
+
   isNew(): boolean {
     return this.id === undefined;
   }
@@ -144,6 +153,13 @@ export default class Role extends RoleModel {
         ? await this.findByCode(identifier)
         : await this.find(Number(identifier));
     if (!data) return null;
+    return this.hydrate(data);
+  }
+  async loadDefaultRole(): Promise<Role | null> {
+    const data = await this.findExistingDefaultRole();
+    if (!data) {
+      return null;
+    }
     return this.hydrate(data);
   }
 

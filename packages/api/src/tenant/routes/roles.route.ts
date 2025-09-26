@@ -12,10 +12,10 @@ import {
 } from '@toke/shared';
 
 import Ensure from '../../middle/ensured-routes.js';
-import R from '../../tools/response';
-import Role from '../class/Role';
-import Revision from '../../tools/revision';
-import { tableName } from '../../utils/response.model';
+import R from '../../tools/response.js';
+import Role from '../class/Role.js';
+import Revision from '../../tools/revision.js';
+import { tableName } from '../../utils/response.model.js';
 
 const router = Router();
 
@@ -71,6 +71,9 @@ router.post('/', Ensure.post(), async (req: Request, res: Response) => {
     }
     if (validatedData.system_role) {
       roleObj.setSystemRole(validatedData.system_role);
+    }
+    if (validatedData.default_role) {
+      roleObj.setDefaultRole(validatedData.default_role);
     }
     await roleObj.save();
     return R.handleCreated(res, roleObj.toJSON());
@@ -137,6 +140,9 @@ router.put('/:guid', Ensure.put(), async (req: Request, res: Response) => {
     if (validatedData.system_role) {
       roleObj.setSystemRole(validatedData.system_role);
     }
+    if (validatedData.default_role) {
+      roleObj.setDefaultRole(validatedData.default_role);
+    }
     await roleObj.save();
     return R.handleSuccess(res, roleObj.toJSON());
   } catch (error: any) {
@@ -171,6 +177,9 @@ router.get('/:list', Ensure.get(), async (req: Request, res: Response) => {
     const conditions: Record<string, any> = {};
     if (filters.system_role) {
       conditions.system_role = filters.system_role;
+    }
+    if (filters.default_role) {
+      conditions.default_role = filters.default_role;
     }
     if (filters.permissions) {
       conditions.permissions = filters.permissions;

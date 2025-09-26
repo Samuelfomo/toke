@@ -87,6 +87,13 @@ export class RolesValidationUtils {
   }
 
   /**
+   * Validates defauld role flag
+   */
+  static validateDefaultRole(defaultRole: boolean): boolean {
+    return typeof defaultRole === 'boolean';
+  }
+
+  /**
    * Validates GUID
    */
   static validateGuid(guid: string): boolean {
@@ -132,6 +139,9 @@ export class RolesValidationUtils {
     if (cleaned.system_role !== undefined) {
       cleaned.system_role = Boolean(cleaned.system_role);
     }
+    if (cleaned.default_role !== undefined) {
+      cleaned.default_role = Boolean(cleaned.default_role);
+    }
 
     // Validate and clean permissions
     if (cleaned.permissions !== undefined) {
@@ -165,7 +175,8 @@ export class RolesValidationUtils {
       this.validateName(data.name) &&
       this.validateDescription(data.description) &&
       this.validatePermissionsStructure(data.permissions) &&
-      (data.system_role === undefined || this.validateSystemRole(data.system_role))
+      (data.system_role === undefined || this.validateSystemRole(data.system_role)) &&
+      (data.default_role === undefined || this.validateDefaultRole(data.default_role))
     );
   }
 
@@ -180,6 +191,7 @@ export class RolesValidationUtils {
       data.description === undefined || this.validateDescription(data.description),
       data.permissions === undefined || this.validatePermissionsStructure(data.permissions),
       data.system_role === undefined || this.validateSystemRole(data.system_role),
+      data.default_role === undefined || this.validateDefaultRole(data.default_role),
     ];
 
     return validations.every((validation) => validation === true);
@@ -219,6 +231,10 @@ export class RolesValidationUtils {
       errors.push('Invalid system_role: must be a boolean value');
     }
 
+    if (data.default_role !== undefined && !this.validateDefaultRole(data.default_role)) {
+      errors.push('Invalid default_role: must be a boolean value');
+    }
+
     if (data.guid !== undefined && !this.validateGuid(data.guid)) {
       errors.push('Invalid GUID: must be a valid UUID v4');
     }
@@ -235,6 +251,7 @@ export class RolesValidationUtils {
       (data.name && this.validateName(data.name)) ||
       (data.description && this.validateDescription(data.description)) ||
       (data.system_role !== undefined && this.validateSystemRole(data.system_role)) ||
+      (data.default_role !== undefined && this.validateDefaultRole(data.default_role)) ||
       (data.permissions && this.validatePermissions(data.permissions))
     );
   }

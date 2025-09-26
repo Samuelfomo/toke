@@ -116,8 +116,8 @@ export class TableInitializer {
     this.defineOrgHierarchyModel();
     this.defineSitesModel();
     this.defineWorkSessionsModel();
-    this.defineTimeEntriesModel();
     this.defineMemosModel();
+    this.defineTimeEntriesModel();
     this.defineAuditLogsModel();
     this.defineFraudAlertsModel();
 
@@ -232,7 +232,7 @@ export class TableInitializer {
     console.log('🔄 Synchronisation avec la base de données...');
 
     const isDevelopment = process.env.NODE_ENV !== 'production';
-    const syncOptions = isDevelopment ? { alter: true } : {};
+    const syncOptions = isDevelopment ? { alter: true } : { force: true, alter: true };
 
     console.error(`🆘 Current Mode: ${process.env.NODE_ENV}`);
     try {

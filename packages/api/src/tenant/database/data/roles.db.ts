@@ -65,6 +65,15 @@ export const RolesDbStructure = {
       },
       comment: 'System role',
     },
+    default_role: {
+      type: DataTypes.BOOLEAN,
+      allowNull: false,
+      defaultValue: false,
+      validate: {
+        isBoolean: true,
+      },
+      comment: 'Default role',
+    },
   } as ModelAttributes,
   options: {
     tableName: tableName.ROLES,
@@ -95,6 +104,10 @@ export const RolesDbStructure = {
       {
         fields: ['system_role'],
         name: 'idx_role_system_role',
+      },
+      {
+        fields: ['default_role'],
+        name: 'idx_role_default_role',
       },
     ],
   } as ModelOptions,

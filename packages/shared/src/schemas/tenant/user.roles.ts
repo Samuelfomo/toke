@@ -6,31 +6,31 @@ import { USER_ROLES_ERRORS, USER_ROLES_VALIDATION } from '../../constants/tenant
 // Base schema pour les validations communes
 const baseUserRolesSchema = z.object({
   user: z
-    .number({
+    .string({
       required_error: USER_ROLES_ERRORS.USER_REQUIRED,
       invalid_type_error: USER_ROLES_ERRORS.USER_INVALID,
     })
-    .int()
-    .min(USER_ROLES_VALIDATION.USER.MIN, USER_ROLES_ERRORS.USER_INVALID)
-    .max(USER_ROLES_VALIDATION.USER.MAX, USER_ROLES_ERRORS.USER_INVALID),
+    .min(USER_ROLES_VALIDATION.USER.MIN_LENGTH, USER_ROLES_ERRORS.USER_INVALID)
+    .max(USER_ROLES_VALIDATION.USER.MAX_LENGTH, USER_ROLES_ERRORS.USER_INVALID)
+    .trim(),
 
   role: z
-    .number({
+    .string({
       required_error: USER_ROLES_ERRORS.ROLE_REQUIRED,
       invalid_type_error: USER_ROLES_ERRORS.ROLE_INVALID,
     })
-    .int()
-    .min(USER_ROLES_VALIDATION.ROLE.MIN, USER_ROLES_ERRORS.ROLE_INVALID)
-    .max(USER_ROLES_VALIDATION.ROLE.MAX, USER_ROLES_ERRORS.ROLE_INVALID),
+    .min(USER_ROLES_VALIDATION.ROLE.MIN_LENGTH, USER_ROLES_ERRORS.ROLE_INVALID)
+    .max(USER_ROLES_VALIDATION.ROLE.MAX_LENGTH, USER_ROLES_ERRORS.ROLE_INVALID)
+    .trim(),
 
   assigned_by: z
-    .number({
+    .string({
       required_error: USER_ROLES_ERRORS.ASSIGNED_BY_REQUIRED,
       invalid_type_error: USER_ROLES_ERRORS.ASSIGNED_BY_INVALID,
     })
-    .int()
-    .min(USER_ROLES_VALIDATION.ASSIGNED_BY.MIN, USER_ROLES_ERRORS.ASSIGNED_BY_INVALID)
-    .max(USER_ROLES_VALIDATION.ASSIGNED_BY.MAX, USER_ROLES_ERRORS.ASSIGNED_BY_INVALID),
+    .min(USER_ROLES_VALIDATION.ASSIGNED_BY.MIN_LENGTH, USER_ROLES_ERRORS.ASSIGNED_BY_INVALID)
+    .max(USER_ROLES_VALIDATION.ASSIGNED_BY.MAX_LENGTH, USER_ROLES_ERRORS.ASSIGNED_BY_INVALID)
+    .trim(),
 
   assigned_at: z
     .union([z.date(), z.string().transform((val) => new Date(val))], {
@@ -49,9 +49,9 @@ export const updateUserRolesSchema = baseUserRolesSchema.partial();
 // Schema pour les filtres
 export const userRolesFiltersSchema = z
   .object({
-    user: z.number().int().optional(),
-    role: z.number().int().optional(),
-    assigned_by: z.number().int().optional(),
+    user: z.string().optional(),
+    role: z.string().optional(),
+    assigned_by: z.string().optional(),
     assigned_at_from: z.union([z.date(), z.string().transform((val) => new Date(val))]).optional(),
     assigned_at_to: z.union([z.date(), z.string().transform((val) => new Date(val))]).optional(),
   })

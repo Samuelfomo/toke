@@ -157,7 +157,7 @@ export const TimeEntriesDbStructure = {
       comment: 'Device information',
     },
     ip_address: {
-      type: DataTypes.CITEXT, // ou DataTypes.CITEXT si dispo
+      type: DataTypes.TEXT, // ou DataTypes.CITEXT si dispo
       allowNull: true,
       validate: {
         isIP: true, // Sequelize sait valider IPv4 & IPv6

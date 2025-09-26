@@ -85,6 +85,7 @@ export const USERS_DEFAULTS = {
 export const USERS_CODES = {
   USER_ALREADY_EXISTS: 'user_already_exists',
   USER_NOT_FOUND: 'user_not_found',
+  SUPERVISOR_NOT_FOUND: 'supervisor_not_found',
   INVALID_GUID: 'invalid_guid',
   TENANT_REQUIRED: 'tenant_required',
   TENANT_INVALID: 'tenant_invalid',
@@ -99,6 +100,7 @@ export const USERS_CODES = {
   EMPLOYEE_CODE_INVALID: 'employee_code_invalid',
   EMPLOYEE_CODE_ALREADY_EXISTS: 'employee_code_already_exists',
   PIN_INVALID: 'pin_invalid',
+  PIN_UPDATE_FAILED: 'pin_update_failed',
   PASSWORD_INVALID: 'password_invalid',
   PASSWORD_TOO_WEAK: 'password_too_weak',
   OTP_TOKEN_INVALID: 'otp_token_invalid',
@@ -124,6 +126,9 @@ export const USERS_CODES = {
   AUTHORIZATION_FAILED: 'authorization_failed',
   ACCOUNT_INACTIVE: 'account_inactive',
   ACCOUNT_SUSPENDED: 'account_suspended',
+  RETRIEVAL_FAILED: 'retrieval_failed',
+  OTP_GENERATION_FAILED: 'otp_generation_failed',
+  QR_GENERATION_FAILED: 'qr_generation_failed',
 } as const;
 
 const USERS_LABEL = 'User';
@@ -151,6 +156,8 @@ export const USERS_ERRORS = {
   EMPLOYEE_CODE_ALREADY_EXISTS: 'Employee code is already in use',
 
   PIN_INVALID: `PIN must be ${USERS_VALIDATION.PIN.MIN_LENGTH} to ${USERS_VALIDATION.PIN.MAX_LENGTH} digits`,
+  CURRENT_PIN_REQUIRED: 'Current PIN and new PIN are required',
+  CURRENT_PIN_INVALID: 'Current PIN is invalid',
 
   PASSWORD_INVALID: `Password must be ${USERS_VALIDATION.PASSWORD.MIN_LENGTH}-${USERS_VALIDATION.PASSWORD.MAX_LENGTH} characters`,
   PASSWORD_TOO_WEAK:
@@ -175,10 +182,12 @@ export const USERS_ERRORS = {
 
   LAST_LOGIN_DATE_INVALID: 'Last login date must be a valid date',
 
-  GUID_INVALID: 'GUID must be a valid UUID format',
+  GUID_INVALID: `${USERS_LABEL} GUID must be a valid UUID format`,
+  GUID_REQUIRED: `${USERS_LABEL} GUID is required`,
   GUID_GENERATION_FAILED: 'Failed to generate GUID',
   NOT_FOUND: `${USERS_LABEL} not found`,
   VALIDATION_FAILED: `${USERS_LABEL} validation failed`,
+  SUPERVISOR_NOT_FOUND: `${USERS_LABEL} supervisor not found`,
 
   CREATION_FAILED: `Failed to create ${USERS_LABEL}`,
   UPDATE_FAILED: `Failed to update ${USERS_LABEL}`,

@@ -1,7 +1,8 @@
 // schemas/users.ts
 import { z } from 'zod';
 
-import { USERS_DEFAULTS, USERS_ERRORS, USERS_VALIDATION } from '../../constants/tenant/users.js'; // Base schema for common validations
+import { USERS_DEFAULTS, USERS_ERRORS, USERS_VALIDATION } from '../../constants/tenant/users.js';
+import { ROLES_ERRORS } from '../../constants/tenant/roles.js'; // Base schema for common validations
 
 // Base schema for common validations
 const baseUsersSchema = z.object({
@@ -13,6 +14,22 @@ const baseUsersSchema = z.object({
     .min(USERS_VALIDATION.TENANT.MIN_LENGTH, USERS_ERRORS.TENANT_INVALID)
     .max(USERS_VALIDATION.TENANT.MAX_LENGTH, USERS_ERRORS.TENANT_INVALID)
     .trim(),
+
+  supervisor: z
+    .string({
+      required_error: USERS_ERRORS.GUID_REQUIRED,
+      invalid_type_error: USERS_ERRORS.GUID_INVALID,
+    })
+    .min(USERS_VALIDATION.GUID.MIN_LENGTH, USERS_ERRORS.GUID_INVALID)
+    .max(USERS_VALIDATION.GUID.MAX_LENGTH, USERS_ERRORS.GUID_INVALID),
+
+  role: z
+    .string({
+      required_error: ROLES_ERRORS.GUID_REQUIRED,
+      invalid_type_error: USERS_ERRORS.GUID_INVALID,
+    })
+    .min(USERS_VALIDATION.GUID.MIN_LENGTH, USERS_ERRORS.GUID_INVALID)
+    .max(USERS_VALIDATION.GUID.MAX_LENGTH, USERS_ERRORS.GUID_INVALID),
 
   email: z
     .string({
@@ -50,9 +67,9 @@ const baseUsersSchema = z.object({
     })
     .min(USERS_VALIDATION.PHONE_NUMBER.MIN_LENGTH, USERS_ERRORS.PHONE_NUMBER_INVALID)
     .max(USERS_VALIDATION.PHONE_NUMBER.MAX_LENGTH, USERS_ERRORS.PHONE_NUMBER_INVALID)
-    .trim()
-    .optional()
-    .nullable(),
+    .trim(),
+  // .optional()
+  // .nullable(),
 
   employee_code: z
     .string({
