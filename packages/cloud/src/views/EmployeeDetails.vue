@@ -206,6 +206,7 @@ interface Employee {
   priority?: 'high' | 'medium' | 'low'
   isJustified?: boolean
   isValidated?: boolean
+
   // Informations complémentaires
   matricule?: string
   email?: string
@@ -236,6 +237,8 @@ const employee = ref<Employee>({
   status: route.query.employeeStatus as any || 'info',
   statusText: route.query.employeeStatusText as string || 'Statut inconnu',
   location: route.query.employeeLocation as string || '',
+
+
   // Données simulées - à remplacer par un appel API
   matricule: 'EMP' + Number(route.params.employeeId).toString().padStart(4, '0'),
   email: (route.query.employeeName as string || 'employe').toLowerCase().replace(' ', '.') + '@company.com',
@@ -254,19 +257,21 @@ const employee = ref<Employee>({
   }
 })
 // Navigation vers la page memo
+// Remplacer la fonction openMemoChat existante par :
 const openMemoChat = () => {
   router.push({
-    name: 'memoList',
-    // params: { employeeId: props.employee.id },
-    // query: {
-    //   employeeName: props.employee.name,
-    //   employeeInitials: props.employee.initials,
-    //   employeeStatus: props.employee.status,
-    //   employeeStatusText: props.employee.statusText,
-    //   employeeLocation: props.employee.location || ''
-    // }
+    path: '/memoList',
+    query: {
+      employeeId: employee.value.id.toString(),
+      employeeName: employee.value.name,
+      employeeInitials: employee.value.initials,
+      employeeStatus: employee.value.status,
+      employeeStatusText: employee.value.statusText,
+      employeeLocation: employee.value.location || ''
+    }
   })
 }
+
 const goBack = () => {
   router.go(-1)
 }

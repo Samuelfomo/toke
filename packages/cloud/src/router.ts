@@ -33,7 +33,8 @@ import Module from './views/module.vue';
 import EmployeeDetails from './views/EmployeeDetails.vue';
 import Equipe from './views/equipe.vue';
 import MemoList from './views/memo/memoList.vue';
-// Typage explicite des routes
+import MemoDetail from './views/memo/memoDetail.vue';
+
 
 // Typage explicite des routes
 const routes: RouteRecordRaw[] = [
@@ -101,6 +102,11 @@ const routes: RouteRecordRaw[] = [
     path: '/memoList',
     name: 'memoList',
     component: MemoList
+  },
+  {
+    path: '/memoDetail',
+    name: 'memoDetail',
+    component: MemoDetail
   }
 ];
 

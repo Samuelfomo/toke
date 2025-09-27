@@ -64,6 +64,8 @@
     </div>
   </section>
 </template>
+
+
 <script setup lang="ts">
 import { ref, computed } from 'vue'
 import EmployeeCard from './employeeCard.vue'
