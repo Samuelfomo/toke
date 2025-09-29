@@ -211,6 +211,7 @@ export const responseStructure = {
 
   ROLE: 'role',
   ASSIGNED_BY: 'assigned_by',
+  COORDINATES: 'coordinates',
 } as const;
 
 export const tableName = {

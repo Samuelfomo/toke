@@ -1,4 +1,5 @@
-import { ApiKeyManager } from '../../tools/api-key-manager.js';
+import { v4 as uuidv4 } from 'uuid';
+
 import BaseModel from '../database/db.base.js';
 import { tableName } from '../../utils/response.model.js';
 
@@ -76,8 +77,7 @@ export default class ClientModel extends BaseModel {
     this.validate();
 
     // Generate unique token
-    const fullToken = ApiKeyManager.generate(this.secret!);
-    const tokenPart = fullToken.split('.')[0];
+    const token = uuidv4();
 
     // const existingToken = await this.findByToken(tokenPart);
     // if (existingToken) {
@@ -87,21 +87,20 @@ export default class ClientModel extends BaseModel {
     console.log('💾 Appel insertOne...', this.profile);
     const lastID = await this.insertOne(this.db.tableName, {
       [this.db.name]: this.name,
-      [this.db.token]: tokenPart,
+      [this.db.token]: token,
       [this.db.secret]: this.secret,
       [this.db.profile]: this.profile,
       [this.db.active]: true,
     });
 
-    console.log(`🔑 Token généré - API Key: ${tokenPart} | Secret: ${fullToken.split('.')[1]}`);
+    console.log(`🔑 Token généré - API Key: ${token}`);
 
     if (!lastID) {
       throw new Error('Failed to create client');
     }
 
     this.id = lastID.id;
-    // this.token = fullToken;
-    this.token = tokenPart;
+    this.token = token;
     this.active = true;
 
     console.log('✅ Client créé avec ID:', this.id);

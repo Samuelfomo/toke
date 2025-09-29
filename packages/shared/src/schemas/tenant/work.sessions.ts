@@ -125,15 +125,15 @@ const baseWorkSessionsSchema = z.object({
     .optional()
     .nullable(),
 
-  memo: z
-    .number({
-      invalid_type_error: WORK_SESSIONS_ERRORS.MEMO_INVALID,
-    })
-    .int()
-    .min(WORK_SESSIONS_VALIDATION.MEMO.MIN, WORK_SESSIONS_ERRORS.MEMO_INVALID)
-    .max(WORK_SESSIONS_VALIDATION.MEMO.MAX, WORK_SESSIONS_ERRORS.MEMO_INVALID)
-    .optional()
-    .nullable(),
+  // memo: z
+  //   .number({
+  //     invalid_type_error: WORK_SESSIONS_ERRORS.MEMO_INVALID,
+  //   })
+  //   .int()
+  //   .min(WORK_SESSIONS_VALIDATION.MEMO.MIN, WORK_SESSIONS_ERRORS.MEMO_INVALID)
+  //   .max(WORK_SESSIONS_VALIDATION.MEMO.MAX, WORK_SESSIONS_ERRORS.MEMO_INVALID)
+  //   .optional()
+  //   .nullable(),
 });
 
 // Schema avec validations complexes
@@ -204,7 +204,7 @@ export const workSessionsFiltersSchema = z
     session_end_from: z.union([z.date(), z.string().transform((val) => new Date(val))]).optional(),
     session_end_to: z.union([z.date(), z.string().transform((val) => new Date(val))]).optional(),
     has_coordinates: z.boolean().optional(), // Pour filtrer les sessions avec/sans coordonnées
-    has_memo: z.boolean().optional(), // Pour filtrer les sessions avec/sans memo
+    // has_memo: z.boolean().optional(), // Pour filtrer les sessions avec/sans memo
     open_sessions_only: z.boolean().optional(), // Pour ne récupérer que les sessions ouvertes
   })
   .strict();

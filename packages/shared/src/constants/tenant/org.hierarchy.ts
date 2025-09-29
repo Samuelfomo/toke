@@ -60,9 +60,11 @@ export const ORG_HIERARCHY_CODES = {
   SUBORDINATE_REQUIRED: 'subordinate_required',
   SUBORDINATE_INVALID: 'subordinate_invalid',
   SUBORDINATE_NOT_FOUND: 'subordinate_not_found',
+  SUBORDINATES_RESOLUTION_FAILED: 'subordinates_resolution_failed',
   SUPERVISOR_REQUIRED: 'supervisor_required',
   SUPERVISOR_INVALID: 'supervisor_invalid',
   SUPERVISOR_NOT_FOUND: 'supervisor_not_found',
+  SUPERVISOR_RESOLUTION_FAILED: 'supervisor_resolution_failed',
   SELF_SUPERVISION_INVALID: 'self_supervision_invalid',
   RELATIONSHIP_TYPE_REQUIRED: 'relationship_type_required',
   RELATIONSHIP_TYPE_INVALID: 'relationship_type_invalid',
@@ -86,7 +88,10 @@ export const ORG_HIERARCHY_CODES = {
   LISTING_FAILED: 'listing_failed',
   FILTER_INVALID: 'filter_invalid',
   PAGINATION_INVALID: 'pagination_invalid',
-  REVISION_FAILED: 'revison_failed',
+  REVISION_FAILED: 'revision_failed',
+  RETRIEVAL_FAILED: 'retrieval_failed',
+  TRANSFER_FAILED: 'transfer_failed',
+  STATISTICS_FAILED: 'statistics_failed',
 } as const;
 
 const ORG_HIERARCHY_LABEL = 'Org Hierarchy';

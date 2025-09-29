@@ -209,7 +209,7 @@ export default class UserModel extends BaseModel {
 
   protected async create(): Promise<void> {
     await this.validate();
-    const guid = await this.timeBasedTokenGenerator(this.db.tableName, 3, '_', 'TKU');
+    const guid = await this.uuidTokenGenerator(this.db.tableName);
     if (!guid) {
       throw new Error(USERS_ERRORS.GUID_GENERATION_FAILED);
     }

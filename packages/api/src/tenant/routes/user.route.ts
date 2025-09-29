@@ -22,6 +22,7 @@ import Revision from '../../tools/revision.js';
 import { tableName } from '../../utils/response.model.js';
 import Role from '../class/Role.js';
 import OrgHierarchy from '../class/OrgHierarchy.js';
+import WapService from '../../tools/send.otp.service.js';
 
 const router = Router();
 
@@ -179,6 +180,13 @@ router.post('/', Ensure.post(), async (req: Request, res: Response) => {
     //     message: ROLES_ERRORS.NOT_FOUND,
     //   });
     // }
+
+    if (!validatedData.supervisor) {
+      return R.handleError(res, HttpStatus.BAD_REQUEST, {
+        code: USERS_CODES.SUPERVISOR_REQUIRED,
+        message: USERS_ERRORS.SUPERVISOR_REQUIRED,
+      });
+    }
 
     const existingSupervisor = await User._load(validatedData.supervisor, true);
     if (!existingSupervisor) {
@@ -515,6 +523,153 @@ router.delete('/:guid', Ensure.delete(), async (req: Request, res: Response) => 
       message: error.message,
     });
   }
+});
+
+router.post('/admin', Ensure.post(), async (req: Request, res: Response) => {
+  try {
+    const validatedData = validateUsersCreation(req.body);
+
+    const existingSystemSupervisor = await User._load(1);
+    if (!existingSystemSupervisor) {
+      return R.handleError(res, HttpStatus.NOT_FOUND, {
+        code: 'user_system_not_found',
+        message: 'User system does not exist',
+      });
+    }
+
+    const userObj = new User()
+      .setTenant(validatedData.tenant)
+      .setFirstName(validatedData.first_name)
+      .setLastName(validatedData.last_name)
+      .setPhoneNumber(validatedData.phone_number);
+
+    if (validatedData.email) {
+      userObj.setEmail(validatedData.email);
+    }
+
+    if (validatedData.employee_code) {
+      userObj.setEmployeeCode(validatedData.employee_code);
+    }
+
+    if (validatedData.hire_date) {
+      userObj.setHireDate(new Date(validatedData.hire_date));
+    }
+
+    if (validatedData.department) {
+      userObj.setDepartment(validatedData.department);
+    }
+
+    if (validatedData.job_title) {
+      userObj.setJobTitle(validatedData.job_title);
+    }
+
+    // Génération OTP pour nouvel utilisateur
+    userObj.generateOtpToken(parseInt(validatedData.otp_expires_at?.toDateString()!, 10) || 1440); // 24h par défaut
+
+    await userObj.save();
+
+    const existingDefaultRole = await Role._loadDefaultRole();
+    if (!existingDefaultRole) {
+      return R.handleError(res, HttpStatus.NOT_FOUND, {
+        code: ROLES_CODES.DEFAULT_ROLE_NOT_FOUND,
+        message: ROLES_ERRORS.DEFAULT_ROLE_NOT_FOUND,
+      });
+    }
+
+    const existingAdminRole = await Role._loadAdminRole();
+    if (!existingAdminRole) {
+      return R.handleError(res, HttpStatus.NOT_FOUND, {
+        code: ROLES_CODES.ADMIN_ROLE_NOT_FOUND,
+        message: ROLES_ERRORS.ADMIN_ROLE_NOT_FOUND,
+      });
+    }
+
+    const userRoleObj = new UserRole()
+      .setRole(existingDefaultRole.getId()!)
+      .setUser(userObj.getId()!)
+      .setAssignedBy(existingSystemSupervisor.getId()!);
+
+    await userRoleObj.save();
+
+    const newUserRoleObj = new UserRole()
+      .setRole(existingAdminRole.getId()!)
+      .setUser(userObj.getId()!)
+      .setAssignedBy(existingSystemSupervisor.getId()!);
+
+    await newUserRoleObj.save();
+
+    return R.handleCreated(res, userObj.toJSON());
+  } catch (error: any) {
+    if (error.issues) {
+      return R.handleError(res, HttpStatus.BAD_REQUEST, {
+        code: USERS_CODES.VALIDATION_FAILED,
+        message: USERS_ERRORS.VALIDATION_FAILED,
+        details: error.issues,
+      });
+    } else if (error.message.includes('already exists')) {
+      return R.handleError(res, HttpStatus.CONFLICT, {
+        code: USERS_CODES.EMAIL_ALREADY_EXISTS,
+        message: error.message,
+      });
+    } else if (error.message.includes('required')) {
+      return R.handleError(res, HttpStatus.BAD_REQUEST, {
+        code: USERS_CODES.VALIDATION_FAILED,
+        message: error.message,
+      });
+    } else {
+      return R.handleError(res, HttpStatus.INTERNAL_ERROR, {
+        code: USERS_CODES.CREATION_FAILED,
+        message: error.message,
+      });
+    }
+  }
+});
+
+router.post('/system', Ensure.post(), async (req: Request, res: Response) => {
+  try {
+    const userObj = new User()
+      .setTenant('System')
+      .setFirstName('System')
+      .setLastName('Account')
+      .setPhoneNumber('+237000000000')
+      .setEmail('system@local.com')
+      .setEmployeeCode('SYS-0001')
+      .setHireDate(new Date('2025-01-01'))
+      .setDepartment('SYSTEM')
+      .setJobTitle('SYSTEM');
+
+    // Génération OTP pour nouvel utilisateur
+    userObj.generateOtpToken(1440); // 24h par défaut
+
+    await userObj.save();
+
+    return R.handleCreated(res, userObj.toJSON());
+  } catch (error: any) {
+    if (error.message.includes('already exists')) {
+      return R.handleError(res, HttpStatus.CONFLICT, {
+        code: USERS_CODES.EMAIL_ALREADY_EXISTS,
+        message: error.message,
+      });
+    } else if (error.message.includes('required')) {
+      return R.handleError(res, HttpStatus.BAD_REQUEST, {
+        code: USERS_CODES.VALIDATION_FAILED,
+        message: error.message,
+      });
+    } else {
+      return R.handleError(res, HttpStatus.INTERNAL_ERROR, {
+        code: USERS_CODES.CREATION_FAILED,
+        message: error.message,
+      });
+    }
+  }
+});
+
+router.post('/otp', Ensure.post(), async (req: Request, res: Response) => {
+  const result = await WapService.sendOtp();
+  if (result.status !== HttpStatus.CREATED) {
+    return R.handleError(res, result.status, result.response);
+  }
+  return R.handleCreated(res, result.response);
 });
 
 export default router;

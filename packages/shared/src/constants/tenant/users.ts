@@ -86,6 +86,7 @@ export const USERS_CODES = {
   USER_ALREADY_EXISTS: 'user_already_exists',
   USER_NOT_FOUND: 'user_not_found',
   SUPERVISOR_NOT_FOUND: 'supervisor_not_found',
+  SUPERVISOR_REQUIRED: 'supervisor_is_required',
   INVALID_GUID: 'invalid_guid',
   TENANT_REQUIRED: 'tenant_required',
   TENANT_INVALID: 'tenant_invalid',
@@ -187,7 +188,9 @@ export const USERS_ERRORS = {
   GUID_GENERATION_FAILED: 'Failed to generate GUID',
   NOT_FOUND: `${USERS_LABEL} not found`,
   VALIDATION_FAILED: `${USERS_LABEL} validation failed`,
+
   SUPERVISOR_NOT_FOUND: `${USERS_LABEL} supervisor not found`,
+  SUPERVISOR_REQUIRED: `${USERS_LABEL} supervisor is required`,
 
   CREATION_FAILED: `Failed to create ${USERS_LABEL}`,
   UPDATE_FAILED: `Failed to update ${USERS_LABEL}`,

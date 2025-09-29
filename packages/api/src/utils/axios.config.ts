@@ -1,15 +1,21 @@
 import axios from 'axios';
+import dotenv from 'dotenv';
 
-const isDev = process.env.NODE_ENV === 'development';
-const baseURL = isDev
-  ? `${process.env.SERVER_HOST}:${process.env.MT_PORT}`
-  : process.env.SERVER_HOST;
+import { ApiKeyManager } from '../tools/api-key-manager.js';
+
+dotenv.config();
+
+const baseURL = process.env.SITE_URL;
+
+const signature = ApiKeyManager.generate(process.env.API_SECRET!, process.env.API_KEY!);
 
 const api = axios.create({
   baseURL,
   headers: {
-    'x-api-key': process.env.API_KEY,
-    'x-api-signature': process.env.API_SIGNATURE,
+    'Content-Type': 'application/json',
+    'X-Api-Key': process.env.API_KEY,
+    'X-Api-Timestamp': Math.floor(Date.now() / 1000).toString(),
+    'X-Api-Signature': signature,
   },
 });
 

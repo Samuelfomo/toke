@@ -23,6 +23,7 @@ export const ROLES_VALIDATION = {
 export const ROLES_DEFAULTS = {
   SYSTEM_ROLE: true,
   DEFAULT_ROLE: false,
+  ADMIN_ROLE: false,
   PAGINATION: {
     OFFSET: 0,
     LIMIT: 50,
@@ -57,6 +58,7 @@ export const ROLES_CODES = {
   ROLE_IN_USE: 'role_in_use',
   DEFAULT_ROLE_ALREADY_EXISTS: 'default_role_already_exists',
   DEFAULT_ROLE_NOT_FOUND: 'default_role_not_found',
+  ADMIN_ROLE_NOT_FOUND: 'admin_role_not_found',
 } as const;
 
 const ROLES_LABEL = 'Role';
@@ -72,6 +74,10 @@ export const ROLES_ERRORS = {
   DEFAULT_ROLE_ALREADY_EXISTS: 'Default role already exists',
   DEFAULT_ROLE_INVALID: 'Default role must be a boolean value (true or false)',
   DEFAULT_ROLE_NOT_FOUND: `${ROLES_LABEL} default role not found`,
+
+  ADMIN_ROLE_ALREADY_EXISTS: 'Admin role already exists',
+  ADMIN_ROLE_INVALID: 'Admin role must be a boolean value (true or false)',
+  ADMIN_ROLE_NOT_FOUND: `${ROLES_LABEL} admin role not found`,
 
   GUID_GENERATED_FAILED: 'Failed to generate GUID for role',
   GUID_INVALID: `${ROLES_LABEL} GUID format invalid`,

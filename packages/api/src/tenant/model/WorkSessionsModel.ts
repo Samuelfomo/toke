@@ -1,4 +1,9 @@
-import { SessionStatus, WORK_SESSIONS_ERRORS, WorkSessionsValidationUtils } from '@toke/shared';
+import {
+  PointageType,
+  SessionStatus,
+  WORK_SESSIONS_ERRORS,
+  WorkSessionsValidationUtils,
+} from '@toke/shared';
 import { Op } from 'sequelize';
 
 import BaseModel from '../database/db.base.js';
@@ -20,7 +25,7 @@ export default class WorkSessionsModel extends BaseModel {
     start_longitude: 'start_longitude',
     end_latitude: 'end_latitude',
     end_longitude: 'end_longitude',
-    memo: 'memo',
+    // memo: 'memo',
     created_at: 'created_at',
     updated_at: 'updated_at',
   } as const;
@@ -38,7 +43,7 @@ export default class WorkSessionsModel extends BaseModel {
   protected start_longitude?: number;
   protected end_latitude?: number;
   protected end_longitude?: number;
-  protected memo?: number;
+  // protected memo?: number;
   protected created_at?: Date;
   protected updated_at?: Date;
 
@@ -183,21 +188,33 @@ export default class WorkSessionsModel extends BaseModel {
     const startTime = new Date(sessionData.session_start_at);
     const endTime = sessionData.session_end_at ? new Date(sessionData.session_end_at) : new Date();
 
-    // Calcul simple de la durée totale (sera affiné avec les pauses)
+    // Calcul durée brute
     const totalMs = endTime.getTime() - startTime.getTime();
+
+    // Récupérer les pauses
+    const pauses = await this.getPausesHistory(session);
+
+    // Calculer durée totale des pauses
+    let totalPauseMinutes = 0;
+    pauses.forEach((pause) => {
+      totalPauseMinutes += pause.duration_minutes;
+    });
+
+    // Durée nette = durée totale - pauses
+    const netMinutes = Math.floor(totalMs / (1000 * 60)) - totalPauseMinutes;
+    const netHours = Math.floor(netMinutes / 60);
+    const netRemainingMinutes = netMinutes % 60;
+
     const totalHours = Math.floor(totalMs / (1000 * 60 * 60));
     const totalMinutes = Math.floor((totalMs % (1000 * 60 * 60)) / (1000 * 60));
 
-    const total_work_duration = `${totalHours} hours ${totalMinutes} minutes`;
-
-    // Pour l'instant, on n'a pas encore implémenté les pauses
-    const total_pause_duration = sessionData.total_pause_duration || '0 minutes';
-    const net_work_time = total_work_duration; // Sera modifié avec les pauses
+    const pauseHours = Math.floor(totalPauseMinutes / 60);
+    const pauseMinutes = totalPauseMinutes % 60;
 
     return {
-      total_work_duration,
-      total_pause_duration,
-      net_work_time,
+      total_work_duration: `${totalHours} hours ${totalMinutes} minutes`,
+      total_pause_duration: `${pauseHours} hours ${pauseMinutes} minutes`,
+      net_work_time: `${netHours} hours ${netRemainingMinutes} minutes`,
     };
   }
 
@@ -235,6 +252,48 @@ export default class WorkSessionsModel extends BaseModel {
     end_date: Date,
   ): Promise<any[]> {
     return await this.findSessionsByDateRange(null, site, start_date, end_date);
+  }
+
+  protected async getPausesHistory(session: number): Promise<any[]> {
+    // Récupérer les time_entries de type pause_start/pause_end
+    const pauses = await this.findAll(tableName.TIME_ENTRIES, {
+      session: session,
+      pointage_type: {
+        [Op.in]: [PointageType.PAUSE_START, PointageType.PAUSE_END],
+      },
+    });
+
+    // Grouper par paires start/end
+    const pausePairs: any[] = [];
+    for (let i = 0; i < pauses.length; i += 2) {
+      if (pauses[i + 1]) {
+        pausePairs.push({
+          pause_start: pauses[i].clocked_at,
+          pause_end: pauses[i + 1].clocked_at,
+          duration_minutes: this.calculatePauseDuration(
+            pauses[i].clocked_at,
+            pauses[i + 1].clocked_at,
+          ),
+        });
+      }
+    }
+
+    return pausePairs;
+  }
+
+  protected calculatePauseDuration(start: Date, end: Date): number {
+    return Math.floor((end.getTime() - start.getTime()) / (1000 * 60));
+  }
+
+  protected async hasActivePause(session: number): Promise<boolean> {
+    const lastPauseEntry = await this.findOne(tableName.TIME_ENTRIES, {
+      session: session,
+      pointage_type: {
+        [Op.in]: [PointageType.PAUSE_START, PointageType.PAUSE_END],
+      },
+    });
+
+    return lastPauseEntry?.pointage_type === PointageType.PAUSE_START;
   }
 
   // === GESTION DES CORRECTIONS ===
@@ -303,7 +362,7 @@ export default class WorkSessionsModel extends BaseModel {
       [this.db.start_longitude]: this.start_longitude,
       [this.db.end_latitude]: this.end_latitude,
       [this.db.end_longitude]: this.end_longitude,
-      [this.db.memo]: this.memo,
+      // [this.db.memo]: this.memo,
     });
 
     if (!lastID) {
@@ -330,7 +389,7 @@ export default class WorkSessionsModel extends BaseModel {
       updateData[this.db.total_pause_duration] = this.total_pause_duration;
     if (this.end_latitude !== undefined) updateData[this.db.end_latitude] = this.end_latitude;
     if (this.end_longitude !== undefined) updateData[this.db.end_longitude] = this.end_longitude;
-    if (this.memo !== undefined) updateData[this.db.memo] = this.memo;
+    // if (this.memo !== undefined) updateData[this.db.memo] = this.memo;
 
     const updated = await this.updateOne(this.db.tableName, updateData, { [this.db.id]: this.id });
 
@@ -432,9 +491,9 @@ export default class WorkSessionsModel extends BaseModel {
       throw new Error(WORK_SESSIONS_ERRORS.END_LONGITUDE_INVALID);
     }
 
-    if (this.memo && !WorkSessionsValidationUtils.validateMemoId(this.memo)) {
-      throw new Error(WORK_SESSIONS_ERRORS.MEMO_INVALID);
-    }
+    // if (this.memo && !WorkSessionsValidationUtils.validateMemoId(this.memo)) {
+    //   throw new Error(WORK_SESSIONS_ERRORS.MEMO_INVALID);
+    // }
 
     const cleaned = WorkSessionsValidationUtils.cleanWorkSessionData(this);
     Object.assign(this, cleaned);

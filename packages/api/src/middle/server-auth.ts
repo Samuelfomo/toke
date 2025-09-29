@@ -1,11 +1,11 @@
 import { NextFunction, Request, Response } from 'express';
 import { HttpStatus } from '@toke/shared';
 
-import { ApiKeyManager } from '../tools/api-key-manager.js';
 import { TableInitializer } from '../master/database/db.initializer.js';
 import R from '../tools/response.js';
 import G from '../tools/glossary.js';
 import ClientCacheService from '../tools/client.cache.service.js';
+import { ApiKeyManager } from '../tools/api-key-manager.js';
 // import Endpoint from '../class/Endpoint';
 // import Permission from '../class/Permission';
 
@@ -64,19 +64,10 @@ export class ServerAuth {
         return;
       }
 
-      // 5. Verify uuid signature (additional security)
-      const rawToken = `${req.headers['x-api-signature'] || ''}`;
-      const [uuidWithValidity, signature] = rawToken.split('.');
+      const rawToken = `${req.headers['x-api-signature'] || req.headers['X-Api-Signature'] || ''}`;
+      const validity = `${req.headers['x-api-timestamp'] || req.headers['X-Api-Timestamp'] || ''}`;
 
-      // Extraire uuid et validity
-      const lastDashIndex = uuidWithValidity.lastIndexOf('-');
-      const uuid = uuidWithValidity.substring(0, lastDashIndex);
-      const validity = uuidWithValidity.substring(lastDashIndex + 1);
-
-      // Reconstruire signedToken attendu par verify (3 parties)
-      const signedToken = `${uuid}.${validity}.${signature}`;
-
-      const isSignatureValid = ApiKeyManager.verify(signedToken, clientConfig.secret);
+      const isSignatureValid = ApiKeyManager.verify(rawToken, token, validity, clientConfig.secret);
 
       if (!isSignatureValid) {
         R.handleError(res, HttpStatus.UNAUTHORIZED, G.authenticationFailed);

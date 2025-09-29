@@ -20,6 +20,9 @@ export default class Role extends RoleModel {
   static _loadDefaultRole(): Promise<Role | null> {
     return new Role().loadDefaultRole();
   }
+  static _loadAdminRole(): Promise<Role | null> {
+    return new Role().loadAdminRole();
+  }
 
   static _list(
     conditions: Record<string, any> = {},
@@ -157,6 +160,13 @@ export default class Role extends RoleModel {
   }
   async loadDefaultRole(): Promise<Role | null> {
     const data = await this.findExistingDefaultRole();
+    if (!data) {
+      return null;
+    }
+    return this.hydrate(data);
+  }
+  async loadAdminRole(): Promise<Role | null> {
+    const data = await this.findExistingAdminRole();
     if (!data) {
       return null;
     }

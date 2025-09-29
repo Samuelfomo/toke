@@ -159,16 +159,16 @@ export class WorkSessionsValidationUtils {
     return intervalRegex.test(interval.trim());
   }
 
-  /**
-   * Validates memo ID
-   */
-  static validateMemoId(memoId: number | null): boolean {
-    if (memoId === null || memoId === undefined) return true;
-    if (typeof memoId !== 'number' || !Number.isInteger(memoId)) return false;
-    return (
-      memoId >= WORK_SESSIONS_VALIDATION.MEMO.MIN && memoId <= WORK_SESSIONS_VALIDATION.MEMO.MAX
-    );
-  }
+  // /**
+  //  * Validates memo ID
+  //  */
+  // static validateMemoId(memoId: number | null): boolean {
+  //   if (memoId === null || memoId === undefined) return true;
+  //   if (typeof memoId !== 'number' || !Number.isInteger(memoId)) return false;
+  //   return (
+  //     memoId >= WORK_SESSIONS_VALIDATION.MEMO.MIN && memoId <= WORK_SESSIONS_VALIDATION.MEMO.MAX
+  //   );
+  // }
 
   /**
    * Validates pagination parameters
@@ -241,7 +241,7 @@ export class WorkSessionsValidationUtils {
   static hasOpenSession(sessions: any[], userId: number, excludeSessionId?: string): boolean {
     return sessions.some(
       (session) =>
-        session.user_id === userId &&
+        session.user === userId &&
         session.session_status === SessionStatus.OPEN &&
         session.guid !== excludeSessionId,
     );
@@ -261,7 +261,7 @@ export class WorkSessionsValidationUtils {
     const newEnd = sessionEnd ? new Date(sessionEnd) : null;
 
     return sessions.some((session) => {
-      if (session.user_id !== userId) return false;
+      if (session.user !== userId) return false;
       if (session.guid === excludeSessionId) return false;
 
       const existingStart = new Date(session.session_start);
@@ -338,7 +338,8 @@ export class WorkSessionsValidationUtils {
     const cleaned = { ...data };
 
     // Convert numeric fields
-    ['user_id', 'site_id', 'memo_id'].forEach((field) => {
+    // ['user', 'site', 'memo'].forEach((field) => {
+    ['user', 'site'].forEach((field) => {
       if (cleaned[field] !== undefined && cleaned[field] !== null) {
         cleaned[field] = Number(cleaned[field]);
       }
@@ -383,7 +384,7 @@ export class WorkSessionsValidationUtils {
    * Validates that a work session is complete for creation
    */
   static isValidForCreation(data: any): boolean {
-    const requiredFields = ['user_id', 'site_id', 'session_start'];
+    const requiredFields = ['user', 'site', 'session_start'];
 
     // Check required fields
     for (const field of requiredFields) {
@@ -393,8 +394,8 @@ export class WorkSessionsValidationUtils {
     }
 
     return (
-      this.validateUserId(data.user_id) &&
-      this.validateSiteId(data.site_id) &&
+      this.validateUserId(data.user) &&
+      this.validateSiteId(data.site) &&
       (data.session_status === undefined || this.validateSessionStatus(data.session_status)) &&
       this.validateSessionStart(data.session_start) &&
       this.validateSessionEnd(data.session_end) &&
@@ -407,7 +408,7 @@ export class WorkSessionsValidationUtils {
       this.validateLatitude(data.end_latitude) &&
       this.validateLongitude(data.end_longitude) &&
       this.validateCoordinatePair(data.end_latitude, data.end_longitude) &&
-      this.validateMemoId(data.memo_id) &&
+      // this.validateMemoId(data.memo) &&
       (data.guid === undefined || this.validateGuid(data.guid))
     );
   }
@@ -418,8 +419,8 @@ export class WorkSessionsValidationUtils {
   static isValidForUpdate(data: any): boolean {
     // For updates, validate only fields that are present
     const validations = [
-      data.user_id === undefined || this.validateUserId(data.user_id),
-      data.site_id === undefined || this.validateSiteId(data.site_id),
+      data.user === undefined || this.validateUserId(data.user),
+      data.site === undefined || this.validateSiteId(data.site),
       data.session_status === undefined || this.validateSessionStatus(data.session_status),
       data.session_start === undefined || this.validateSessionStart(data.session_start),
       data.session_end === undefined || this.validateSessionEnd(data.session_end),
@@ -431,7 +432,7 @@ export class WorkSessionsValidationUtils {
       data.start_longitude === undefined || this.validateLongitude(data.start_longitude),
       data.end_latitude === undefined || this.validateLatitude(data.end_latitude),
       data.end_longitude === undefined || this.validateLongitude(data.end_longitude),
-      data.memo_id === undefined || this.validateMemoId(data.memo_id),
+      // data.memo === undefined || this.validateMemoId(data.memo),
       data.guid === undefined || this.validateGuid(data.guid),
     ];
 
@@ -463,15 +464,15 @@ export class WorkSessionsValidationUtils {
   static getValidationErrors(data: any): string[] {
     const errors: string[] = [];
 
-    if (data.user_id === undefined || data.user_id === null || !this.validateUserId(data.user_id)) {
+    if (data.user === undefined || data.user === null || !this.validateUserId(data.user)) {
       errors.push(
-        `Invalid user_id: must be between ${WORK_SESSIONS_VALIDATION.USER.MIN} and ${WORK_SESSIONS_VALIDATION.USER.MAX}`,
+        `Invalid user: must be between ${WORK_SESSIONS_VALIDATION.USER.MIN} and ${WORK_SESSIONS_VALIDATION.USER.MAX}`,
       );
     }
 
-    if (data.site_id === undefined || data.site_id === null || !this.validateSiteId(data.site_id)) {
+    if (data.site === undefined || data.site === null || !this.validateSiteId(data.site)) {
       errors.push(
-        `Invalid site_id: must be between ${WORK_SESSIONS_VALIDATION.SITE.MIN} and ${WORK_SESSIONS_VALIDATION.SITE.MAX}`,
+        `Invalid site: must be between ${WORK_SESSIONS_VALIDATION.SITE.MIN} and ${WORK_SESSIONS_VALIDATION.SITE.MAX}`,
       );
     }
 
@@ -547,11 +548,11 @@ export class WorkSessionsValidationUtils {
       errors.push('Both end_latitude and end_longitude must be provided together');
     }
 
-    if (data.memo_id !== undefined && !this.validateMemoId(data.memo_id)) {
-      errors.push(
-        `Invalid memo_id: must be between ${WORK_SESSIONS_VALIDATION.MEMO.MIN} and ${WORK_SESSIONS_VALIDATION.MEMO.MAX}`,
-      );
-    }
+    // if (data.memo !== undefined && !this.validateMemoId(data.memo)) {
+    //   errors.push(
+    //     `Invalid memo: must be between ${WORK_SESSIONS_VALIDATION.MEMO.MIN} and ${WORK_SESSIONS_VALIDATION.MEMO.MAX}`,
+    //   );
+    // }
 
     if (data.guid !== undefined && !this.validateGuid(data.guid)) {
       errors.push(
@@ -567,10 +568,10 @@ export class WorkSessionsValidationUtils {
    */
   static validateFilterData(data: any): boolean {
     return (
-      (data.user_id && this.validateUserId(data.user_id)) ||
-      (data.site_id && this.validateSiteId(data.site_id)) ||
+      (data.user && this.validateUserId(data.user)) ||
+      (data.site && this.validateSiteId(data.site)) ||
       (data.session_status && this.validateSessionStatus(data.session_status)) ||
-      (data.memo_id && this.validateMemoId(data.memo_id)) ||
+      // (data.memo && this.validateMemoId(data.memo)) ||
       (data.session_start_from && !isNaN(new Date(data.session_start_from).getTime())) ||
       (data.session_start_to && !isNaN(new Date(data.session_start_to).getTime())) ||
       (data.session_end_from && !isNaN(new Date(data.session_end_from).getTime())) ||
@@ -597,7 +598,7 @@ export class WorkSessionsValidationUtils {
     siteCounts: Record<number, number>;
   } {
     const filteredSessions = userId
-      ? sessions.filter((session) => session.user_id === userId)
+      ? sessions.filter((session) => session.user === userId)
       : sessions;
 
     const summary = {
@@ -632,7 +633,7 @@ export class WorkSessionsValidationUtils {
       }
 
       // Count sessions by site
-      summary.siteCounts[session.site_id] = (summary.siteCounts[session.site_id] || 0) + 1;
+      summary.siteCounts[session.site] = (summary.siteCounts[session.site] || 0) + 1;
 
       // Calculate durations
       if (session.session_end) {
@@ -673,7 +674,7 @@ export class WorkSessionsValidationUtils {
     // Check for existing open session
     if (
       data.session_status === SessionStatus.OPEN &&
-      this.hasOpenSession(existingSessions, data.user_id, data.guid)
+      this.hasOpenSession(existingSessions, data.user, data.guid)
     ) {
       errors.push('User already has an open session');
     }
@@ -683,7 +684,7 @@ export class WorkSessionsValidationUtils {
       !allowOverlappingSessions &&
       this.hasOverlappingSession(
         existingSessions,
-        data.user_id,
+        data.user,
         data.session_start,
         data.session_end,
         data.guid,
@@ -733,7 +734,7 @@ export class WorkSessionsValidationUtils {
   ) {
     const periodSessions = sessions.filter((session) => {
       const sessionStart = new Date(session.session_start);
-      const matchesUser = !userId || session.user_id === userId;
+      const matchesUser = !userId || session.user === userId;
       const inPeriod = sessionStart >= period.start && sessionStart <= period.end;
       return matchesUser && inPeriod;
     });

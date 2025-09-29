@@ -75,6 +75,7 @@ export const SITES_CODES = {
   QR_REFERENCE_NOT_FOUND: 'qr_reference_not_found',
   QR_CODE_DATA_REQUIRED: 'qr_code_data_required',
   QR_CODE_DATA_INVALID: 'qr_code_data_invalid',
+  QR_REGENERATION_FAILED: 'qr_regeneration_failed',
   ACTIVE_STATUS_INVALID: 'active_status_invalid',
   PUBLIC_STATUS_INVALID: 'public_status_invalid',
   ALLOWED_ROLES_INVALID: 'allowed_roles_invalid',
@@ -89,6 +90,12 @@ export const SITES_CODES = {
   LISTING_FAILED: 'listing_failed',
   FILTER_INVALID: 'filter_invalid',
   PAGINATION_INVALID: 'pagination_invalid',
+  REVISION_FAILED: 'revision_failed',
+  RETRIEVAL_FAILED: 'retrieval_failed',
+  TEAM_MANAGEMENT_FAILED: 'team_management_failed',
+  VALIDITY_EXTENSION_FAILED: 'validity_extension_failed',
+  MAINTENANCE_FAILED: 'maintenance_failed',
+  STATISTICS_FAILED: 'statistics_failed',
 } as const;
 
 const SITES_LABEL = 'Site';
@@ -103,6 +110,7 @@ export const SITES_ERRORS = {
   CREATED_BY_REQUIRED: `${SITES_LABEL} created by is required`,
   CREATED_BY_INVALID: `Created by must be between ${SITES_VALIDATION.CREATED_BY.MIN} and ${SITES_VALIDATION.CREATED_BY.MAX}`,
   CREATED_BY_NOT_FOUND: 'Creating user not found',
+  UNABLE_EXPAND_SITE: `Only temporary sites can have their validity extended`,
 
   NAME_REQUIRED: `${SITES_LABEL} name is required`,
   NAME_INVALID: `Site name must be 1-${SITES_VALIDATION.NAME.MAX_LENGTH} characters and not empty`,
@@ -147,7 +155,11 @@ export const SITES_ERRORS = {
 
   PAGINATION_INVALID: 'Invalid pagination parameters',
 } as const;
+export const SITES_MESSAGES = {
+  DELETED_SUCCESSFULLY: `${SITES_LABEL} deleted successfully`,
+} as const;
 
 export type SiteError = (typeof SITES_ERRORS)[keyof typeof SITES_ERRORS];
 export type SiteCode = (typeof SITES_CODES)[keyof typeof SITES_CODES];
+export type SiteMessage = (typeof SITES_MESSAGES)[keyof typeof SITES_MESSAGES];
 export type SiteValidation = typeof SITES_VALIDATION;

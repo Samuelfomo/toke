@@ -1,4 +1,11 @@
-import { ClockInData, ClockOutData, MissionData, PauseData, SessionStatus } from '@toke/shared';
+import {
+  ClockInData,
+  ClockOutData,
+  MissionData,
+  PauseData,
+  PointageType,
+  SessionStatus,
+} from '@toke/shared';
 import { Op } from 'sequelize';
 
 import WorkSessionsModel from '../model/WorkSessionsModel.js';
@@ -8,11 +15,12 @@ import { responseStructure as RS, responseValue, ViewMode } from '../../utils/re
 
 import User from './User.js';
 import Site from './Site.js';
+import TimeEntries from './TimeEntries.js';
 
 export default class WorkSessions extends WorkSessionsModel {
   private userObj?: User;
   private siteObj?: Site;
-  private memoObj?: any; // À définir selon votre modèle Memo
+  // private memoObj?: any; // À définir selon votre modèle Memo
 
   constructor() {
     super();
@@ -224,9 +232,9 @@ export default class WorkSessions extends WorkSessionsModel {
 
   // === SETTERS FLUENT ===
 
-  getMemo(): number | undefined {
-    return this.memo;
-  }
+  // getMemo(): number | undefined {
+  //   return this.memo;
+  // }
 
   getCreatedAt(): Date | undefined {
     return this.created_at;
@@ -277,10 +285,10 @@ export default class WorkSessions extends WorkSessionsModel {
 
   // === MÉTHODES MÉTIER - PAUSES ===
 
-  setMemo(memo: number): WorkSessions {
-    this.memo = memo;
-    return this;
-  }
+  // setMemo(memo: number): WorkSessions {
+  //   this.memo = memo;
+  //   return this;
+  // }
 
   async clockIn(clockInData: ClockInData): Promise<void> {
     // Vérifier qu'il n'y a pas de session active
@@ -314,7 +322,7 @@ export default class WorkSessions extends WorkSessionsModel {
       throw new Error('Session is not active');
     }
 
-    if (!this.canClockOut()) {
+    if (!(await this.canClockOut())) {
       throw new Error('Session cannot be closed at this time');
     }
 
@@ -351,7 +359,7 @@ export default class WorkSessions extends WorkSessionsModel {
     console.log('Ending pause and resuming work');
   }
 
-  getPauseStatus(): string {
+  async getPauseStatus(): Promise<string> {
     // TODO: Implémenter le statut des pauses
     return 'no_pause';
   }
@@ -381,10 +389,15 @@ export default class WorkSessions extends WorkSessionsModel {
     return this.session_status === SessionStatus.OPEN;
   }
 
-  canClockOut(): boolean {
-    // Vérifier que toutes les pauses sont terminées
-    // TODO: Implémenter la vérification des pauses actives
-    return this.isActive();
+  async canClockOut(): Promise<boolean> {
+    if (!this.isActive() || !this.id) {
+      return false;
+    }
+
+    // Vérifier via TimeEntriesModel
+    const hasActivePause = await this.hasActivePause(this.id);
+
+    return !hasActivePause;
   }
 
   // === MÉTHODES MÉTIER - CALCULS ===
@@ -502,6 +515,56 @@ export default class WorkSessions extends WorkSessionsModel {
   }
 
   // === MÉTHODES DE BASE ===
+
+  async getPauseDetails(): Promise<any[]> {
+    if (!this.id) return [];
+    return await this.getPausesHistory(this.id);
+  }
+
+  async getTotalPauseTime(): Promise<number> {
+    const pauses = await this.getPauseDetails();
+    return pauses.reduce((total, pause) => total + pause.duration_minutes, 0);
+  }
+
+  async isOnPause(): Promise<boolean> {
+    if (!this.id) return false;
+    return await this.hasActivePause(this.id);
+  }
+  async getPauseStatusDetailed(): Promise<{
+    is_on_pause: boolean;
+    current_pause_start?: Date;
+    current_pause_duration_minutes?: number;
+    total_pauses_today: number;
+  }> {
+    if (!this.id) {
+      return { is_on_pause: false, total_pauses_today: 0 };
+    }
+
+    const isOnPause = await this.hasActivePause(this.id);
+    const pausesHistory = await this.getPausesHistory(this.id);
+
+    if (isOnPause) {
+      // Trouver la pause en cours
+      const entries = await TimeEntries._listBySession(this.id);
+      const lastPause = entries
+        ?.reverse()
+        .find((e) => e.getPointageType() === PointageType.PAUSE_START);
+
+      return {
+        is_on_pause: true,
+        current_pause_start: lastPause?.getClockedAt(),
+        current_pause_duration_minutes: lastPause?.getClockedAt()
+          ? Math.floor((new Date().getTime() - lastPause.getClockedAt()!.getTime()) / (1000 * 60))
+          : 0,
+        total_pauses_today: pausesHistory.length,
+      };
+    }
+
+    return {
+      is_on_pause: false,
+      total_pauses_today: pausesHistory.length,
+    };
+  }
 
   async getDailyReport(date: Date): Promise<any> {
     if (!this.user) {
@@ -669,7 +732,7 @@ export default class WorkSessions extends WorkSessionsModel {
       [RS.START_LONGITUDE]: this.start_longitude,
       [RS.END_LATITUDE]: this.end_latitude,
       [RS.END_LONGITUDE]: this.end_longitude,
-      [RS.MEMO]: this.memo,
+      // [RS.MEMO]: this.memo,
       // Informations calculées
       [RS.IS_ACTIVE]: this.isActive(),
       [RS.IS_CROSS_DAY]: this.isCrossDaySession(),
@@ -696,7 +759,7 @@ export default class WorkSessions extends WorkSessionsModel {
     this.start_longitude = data.start_longitude;
     this.end_latitude = data.end_latitude;
     this.end_longitude = data.end_longitude;
-    this.memo = data.memo;
+    // this.memo = data.memo;
     this.created_at = data.created_at;
     this.updated_at = data.updated_at;
     return this;

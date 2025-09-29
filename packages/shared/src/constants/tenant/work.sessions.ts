@@ -32,10 +32,10 @@ export const WORK_SESSIONS_VALIDATION = {
     MAX: 180,
     DECIMAL_PLACES: 8,
   },
-  MEMO: {
-    MIN: 1,
-    MAX: 2147483647,
-  },
+  // MEMO: {
+  //   MIN: 1,
+  //   MAX: 2147483647,
+  // },
 } as const;
 
 export const WORK_SESSIONS_DEFAULTS = {
@@ -69,8 +69,8 @@ export const WORK_SESSIONS_CODES = {
   END_LATITUDE_INVALID: 'end_latitude_invalid',
   END_LONGITUDE_INVALID: 'end_longitude_invalid',
   COORDINATES_INCOMPLETE: 'coordinates_incomplete',
-  MEMO_INVALID: 'memo_invalid',
-  MEMO_NOT_FOUND: 'memo_not_found',
+  // MEMO_INVALID: 'memo_invalid',
+  // MEMO_NOT_FOUND: 'memo_not_found',
   SESSION_ALREADY_OPEN: 'session_already_open',
   SESSION_ALREADY_CLOSED: 'session_already_closed',
   SESSION_CANNOT_CLOSE: 'session_cannot_close',
@@ -87,6 +87,7 @@ export const WORK_SESSIONS_CODES = {
   LISTING_FAILED: 'listing_failed',
   FILTER_INVALID: 'filter_invalid',
   PAGINATION_INVALID: 'pagination_invalid',
+  REVISION_FAILED: 'revision_failed',
 } as const;
 
 const WORK_SESSIONS_LABEL = 'Work Session';
@@ -121,8 +122,8 @@ export const WORK_SESSIONS_ERRORS = {
   COORDINATES_INCOMPLETE: 'Both latitude and longitude must be provided together',
   GEOFENCE_VIOLATION: 'Session coordinates are outside the allowed site geofence',
 
-  MEMO_INVALID: `Memo ID must be between ${WORK_SESSIONS_VALIDATION.MEMO.MIN} and ${WORK_SESSIONS_VALIDATION.MEMO.MAX}`,
-  MEMO_NOT_FOUND: 'Memo not found',
+  // MEMO_INVALID: `Memo ID must be between ${WORK_SESSIONS_VALIDATION.MEMO.MIN} and ${WORK_SESSIONS_VALIDATION.MEMO.MAX}`,
+  // MEMO_NOT_FOUND: 'Memo not found',
 
   SESSION_ALREADY_OPEN: 'User already has an open session',
   SESSION_ALREADY_CLOSED: 'Session is already closed',

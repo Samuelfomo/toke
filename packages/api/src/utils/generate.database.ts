@@ -19,6 +19,10 @@ export default class ManageTenantDatabase {
   //   return response.data.data;
   // }
 
+  static async sendOtp(otp: number, phone: string): Promise<any> {
+    const response = await api.post(`/v1/tenants/${otp}/sendOtp`, phone);
+  }
+
   static async getDatabaseConfig(tenant: string): Promise<{
     database_name: string;
     database_username: string;

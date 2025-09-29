@@ -31,8 +31,8 @@ export default class OrgHierarchyModel extends BaseModel {
   protected subordinate?: number;
   protected supervisor?: number;
   protected relationship_type?: string;
-  protected effective_from?: string;
-  protected effective_to?: string | null;
+  protected effective_from?: string | Date;
+  protected effective_to?: string | null | Date;
   protected department?: string;
   protected cost_center?: string;
   protected delegation_level?: number;

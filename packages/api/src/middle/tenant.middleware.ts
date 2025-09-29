@@ -39,21 +39,21 @@ export const tenantMiddleware = async (req: Request, res: Response, next: NextFu
     const credentials = CredentialExtractorService.extractCredentials(req);
     req.credentials = credentials;
 
-    // console.log('📋 Credentials extraits:', {
-    //   subdomain: credentials.subdomain,
-    //   hasToken: !!credentials.token,
-    //   hasApiKey: !!credentials.apiKey,
-    // });
+    console.log('📋 Credentials extraits:', {
+      subdomain: credentials.subdomain,
+      hasToken: !!credentials.token,
+      hasApiKey: !!credentials.apiKey,
+    });
 
-    // 2. Valider les credentials
-    const validation = CredentialExtractorService.validateCredentials(credentials);
-    if (!validation.valid) {
-      return R.handleError(res, HttpStatus.BAD_REQUEST, {
-        code: 'invalid_credentials',
-        message: 'Credentials invalides',
-        details: validation.errors,
-      })
-    }
+    // // 2. Valider les credentials
+    // const validation = CredentialExtractorService.validateCredentials(credentials);
+    // if (!validation.valid) {
+    //   return R.handleError(res, HttpStatus.BAD_REQUEST, {
+    //     code: 'invalid_credentials',
+    //     message: 'Credentials invalides',
+    //     details: validation.errors,
+    //   })
+    // }
 
     const subdomain = credentials.subdomain!;
 
@@ -94,7 +94,7 @@ export const tenantMiddleware = async (req: Request, res: Response, next: NextFu
     return R.handleError(res, HttpStatus.INTERNAL_ERROR, {
       code: 'tenant_configuration_error',
       message: 'Impossible de configurer le tenant',
-      details: error.message,
+      details: error,
     })
   }
 };

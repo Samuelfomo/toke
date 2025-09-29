@@ -3,8 +3,6 @@
 // ========================================
 
 // services/credential-extractor.service.ts
-import { Request } from 'express';
-
 export interface ClientCredentials {
   subdomain?: string;
   apiKey?: string;
@@ -16,48 +14,43 @@ export default class CredentialExtractorService {
   /**
    * Extrait les credentials depuis différentes sources
    */
-  public static extractCredentials(req: Request): ClientCredentials {
+  public static extractCredentials(req: any): ClientCredentials {
     const credentials: ClientCredentials = {};
 
-    // // 1. Extraction du sous-domaine depuis l'hostname
-    // const hostname = req.hostname || req.get('host') || '';
-    // const hostParts = hostname.split('.');
-    //
-    // if (hostParts.length > 2) {
-    //   credentials.subdomain = hostParts[0];
-    // } else if (hostParts[0] !== 'localhost' && hostParts[0] !== '127') {
-    //   credentials.subdomain = hostParts[0];
-    // }
+    // 1. Extraction du sous-domaine depuis l'hostname
+    const hostname = req.hostname || req.get('host') || '';
+    const hostParts = hostname.split('.');
 
-    // // 2. Extraction depuis les headers personnalisés
-    // const tenantHeader = req.get('X-Tenant-ID') || req.get('x-tenant-id');
-    // if (tenantHeader) {
-    //   credentials.subdomain = tenantHeader;
-    // }
+    if (hostParts.length > 2) {
+      credentials.subdomain = hostParts[0];
+    } else if (hostParts[0] !== 'localhost' && hostParts[0] !== '127') {
+      credentials.subdomain = hostParts[0];
+    }
 
-    // // 3. Extraction depuis l'Authorization header
-    // const authHeader = req.get('Authorization');
-    // if (authHeader) {
-    //   if (authHeader.startsWith('Bearer ')) {
-    //     credentials.token = authHeader.substring(7);
-    //   } else if (authHeader.startsWith('ApiKey ')) {
-    //     credentials.apiKey = authHeader.substring(7);
-    //   }
-    // }
-
-    // // 4. Extraction depuis les query parameters (pour les tests)
-    // if (req.query.tenant) {
-    //   credentials.subdomain = req.query.tenant as string;
-    // }
-    //
-    // // 5. Extraction depuis le body (si applicable)
-    // if (req.body && req.body.tenant_id) {
-    //   credentials.subdomain = req.body.tenant_id;
-    // }
-
-    const tenantHeader = req.headers['x-tenant-header'] as string;
+    // 2. Extraction depuis les headers personnalisés
+    const tenantHeader = req.get('X-Tenant-ID') || req.get('x-tenant-id');
     if (tenantHeader) {
-      credentials.subdomain = tenantHeader.trim();
+      credentials.subdomain = tenantHeader;
+    }
+
+    // 3. Extraction depuis l'Authorization header
+    const authHeader = req.get('Authorization');
+    if (authHeader) {
+      if (authHeader.startsWith('Bearer ')) {
+        credentials.token = authHeader.substring(7);
+      } else if (authHeader.startsWith('ApiKey ')) {
+        credentials.apiKey = authHeader.substring(7);
+      }
+    }
+
+    // 4. Extraction depuis les query parameters (pour les tests)
+    if (req.query.tenant) {
+      credentials.subdomain = req.query.tenant as string;
+    }
+
+    // 5. Extraction depuis le body (si applicable)
+    if (req.body && req.body.tenant_id) {
+      credentials.subdomain = req.body.tenant_id;
     }
 
     return credentials;
@@ -77,7 +70,9 @@ export default class CredentialExtractorService {
     }
 
     if (credentials.subdomain && !/^[a-z0-9-]+$/.test(credentials.subdomain)) {
-      errors.push('Format subdomain invalide (seuls a-z, 0-9 et - sont autorisés)');
+      errors.push(
+        `Format subdomain invalide (seuls a-z, 0-9 et - sont autorisés) ${credentials.subdomain}`,
+      );
     }
 
     return {

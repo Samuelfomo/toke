@@ -170,7 +170,7 @@ router.put('/:guid', Ensure.put(), async (req: Request, res: Response) => {
   }
 });
 
-router.get('/:list', Ensure.get(), async (req: Request, res: Response) => {
+router.get('/list', Ensure.get(), async (req: Request, res: Response) => {
   try {
     const filters = validateRolesFilters(req.query);
     const paginationOptions = paginationSchema.parse(req.query);

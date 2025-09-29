@@ -2,7 +2,6 @@
 import { z } from 'zod';
 
 import { USERS_DEFAULTS, USERS_ERRORS, USERS_VALIDATION } from '../../constants/tenant/users.js';
-import { ROLES_ERRORS } from '../../constants/tenant/roles.js'; // Base schema for common validations
 
 // Base schema for common validations
 const baseUsersSchema = z.object({
@@ -21,15 +20,17 @@ const baseUsersSchema = z.object({
       invalid_type_error: USERS_ERRORS.GUID_INVALID,
     })
     .min(USERS_VALIDATION.GUID.MIN_LENGTH, USERS_ERRORS.GUID_INVALID)
-    .max(USERS_VALIDATION.GUID.MAX_LENGTH, USERS_ERRORS.GUID_INVALID),
+    .max(USERS_VALIDATION.GUID.MAX_LENGTH, USERS_ERRORS.GUID_INVALID)
+    .optional()
+    .nullable(),
 
-  role: z
-    .string({
-      required_error: ROLES_ERRORS.GUID_REQUIRED,
-      invalid_type_error: USERS_ERRORS.GUID_INVALID,
-    })
-    .min(USERS_VALIDATION.GUID.MIN_LENGTH, USERS_ERRORS.GUID_INVALID)
-    .max(USERS_VALIDATION.GUID.MAX_LENGTH, USERS_ERRORS.GUID_INVALID),
+  // role: z
+  //   .string({
+  //     required_error: ROLES_ERRORS.GUID_REQUIRED,
+  //     invalid_type_error: USERS_ERRORS.GUID_INVALID,
+  //   })
+  //   .min(USERS_VALIDATION.GUID.MIN_LENGTH, USERS_ERRORS.GUID_INVALID)
+  //   .max(USERS_VALIDATION.GUID.MAX_LENGTH, USERS_ERRORS.GUID_INVALID),
 
   email: z
     .string({

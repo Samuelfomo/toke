@@ -1,18 +1,17 @@
 import { Server } from 'http';
 
-import express from 'express';
 import cors from 'cors';
+import express, { NextFunction, Request, Response } from 'express';
 
 // import dotenv from 'dotenv';
 //
 // dotenv.config();
 // Importation des modules simplifiés
 import { tenantMiddleware } from '../middle/tenant.middleware.js';
-import { TableInitializer } from '../master/database/db.initializer.js';
 import { ServerAuth } from '../middle/server-auth.js';
 
-import TenantManager from './database/db.tenant-manager.js';
 import userRoute from './routes/user.route.js';
+import roleRoute from './routes/roles.route.js';
 
 interface AppConfig {
   port: number;
@@ -46,8 +45,8 @@ export default class App {
         throw new Error('Impossible de démarrer: arrêt en cours');
       }
 
-      // Initialiser l'application
-      await this.initializeApp();
+      // Configurer les routes
+      this.setupRoutes();
 
       // Démarrer le serveur HTTP
       console.log(`🚀 Démarrage serveur sur ${this.config.host}:${this.config.port}...`);
@@ -125,8 +124,19 @@ export default class App {
     // ⚠️ INTERCEPTE TOUTES LES REQUÊTES (même /health)
     this.app.use(ServerAuth.authenticate);
 
-    // Appliquer le middleware tenant sur toutes les routes API (sauf health)
-    this.app.use('/api', tenantMiddleware);
+    // // Appliquer le middleware tenant sur toutes les routes API (sauf health)
+    // this.app.use(tenantMiddleware);
+
+    // ✅ Tenant middleware appliqué sauf sur /health
+    this.app.use(this.skipMiddleware(tenantMiddleware, ['/health']));
+
+    // // Appliquer tenantMiddleware sur toutes les routes sauf /health
+    // this.app.use((req, res, next) => {
+    //   if (req.path === '/health') {
+    //     return next(); // on skip le tenantMiddleware
+    //   }
+    //   return tenantMiddleware(req, res, next);
+    // });
   }
 
   /**
@@ -173,6 +183,7 @@ export default class App {
     // TODO: Ajouter les routes métier ici
 
     this.app.use('/user', userRoute);
+    this.app.use('/role', roleRoute);
 
     // Route 404
     this.app.use((req, res) => {
@@ -210,46 +221,6 @@ export default class App {
     );
 
     console.log('✅ Routes configurées');
-  }
-
-  /**
-   * Initialisation de la base de données
-   */
-  private async initializeDatabase(): Promise<void> {
-    try {
-      console.log('🗄️ Initialisation de la base de données...');
-
-      // 1. Obtenir la connexion Sequelize
-      const sequelize = await TenantManager.getConnection();
-
-      // 2. Initialiser toutes les tables (statique)
-      await TableInitializer.initialize(sequelize);
-
-      console.log('✅ Base de données initialisée');
-    } catch (error) {
-      console.error('❌ Erreur initialisation DB:', error);
-      throw error;
-    }
-  }
-
-  /**
-   * Initialisation complète de l'application
-   */
-  private async initializeApp(): Promise<void> {
-    try {
-      console.log("🚀 Initialisation de l'application...");
-
-      // 1. Initialiser la base de données
-      // await this.initializeDatabase();
-
-      // 2. Configurer les routes
-      this.setupRoutes();
-
-      console.log('✅ Application initialisée');
-    } catch (error) {
-      console.error('❌ Erreur initialisation app:', error);
-      throw error;
-    }
   }
 
   /**
@@ -299,5 +270,18 @@ export default class App {
       console.error('❌ Promise rejetée:', reason);
       shutdown('UNHANDLED_REJECTION');
     });
+  }
+
+  // ✅ ta méthode utilitaire
+  private skipMiddleware(
+    middleware: (req: Request, res: Response, next: NextFunction) => any,
+    excludePaths: string[],
+  ): express.RequestHandler {
+    return (req: Request, res: Response, next: NextFunction) => {
+      if (excludePaths.includes(req.originalUrl)) {
+        return next();
+      }
+      return middleware(req, res, next);
+    };
   }
 }

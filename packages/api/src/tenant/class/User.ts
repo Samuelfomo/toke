@@ -231,7 +231,7 @@ export default class User extends UserModel {
 
   // === MÉTHODES DE GESTION DES TOKENS ===
 
-  generateOtpToken(expirationMinutes: number = 15): User {
+  generateOtpToken(expirationMinutes: number = 5): User {
     // Génère un OTP à 6 chiffres
     this.otp_token = GenerateOtp.generateOTP(6);
     // this.otp_token = Math.floor(100000 + Math.random() * 900000).toString();

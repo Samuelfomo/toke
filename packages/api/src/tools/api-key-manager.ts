@@ -1,20 +1,25 @@
 import crypto from 'crypto';
 
-import { v4 as uuidv4 } from 'uuid';
-
 export class ApiKeyManager {
   private static readonly validityHours = 24;
 
   /**
    * Génère un UUID signé avec une signature HMAC
    * @param secret - Clé secrète pour la signature
+   * @param key
    * @returns UUID signé au format: token.signature
    */
-  public static generate(secret: string): string {
+  public static generate(secret: string, key: string): string {
     try {
-      const uuid: string = uuidv4();
-      const signature: string = crypto.createHmac('sha256', secret).update(uuid).digest('hex');
-      return `${uuid}.${signature}`;
+      const timestamp: string = Math.floor(Date.now() / 1000).toString();
+      const code = key + timestamp;
+
+      // secret en base64
+      const secretBytes = Buffer.from(secret, 'base64');
+
+      // sortie en base64 (pas hex)
+
+      return crypto.createHmac('sha256', secretBytes).update(code).digest('base64');
     } catch (error: any) {
       return `${error.message}`;
     }
@@ -22,72 +27,52 @@ export class ApiKeyManager {
 
   /**
    * Vérifie qu'un UUID signé a été généré avec la bonne clé secrète
-   * @param signedUUID - UUID signé au format token.signature
+   * @param signature - UUID signé au format signature
+   * @param token
+   * @param validity
    * @param secret - Clé secrète pour vérifier la signature
    * @returns true si la signature est valide
    */
-  public static verify(signedUUID: string, secret: string): boolean {
+  public static verify(
+    signature: string,
+    token: string,
+    validity: string,
+    secret: string,
+  ): boolean {
     try {
-      const parts: string[] = signedUUID.split('.');
-      if (parts.length !== 3) {
-        console.log(`Invalid 🔴`);
-        return false;
-      }
-
-      const [uuid, validity, providedSignature] = parts;
-
-      // Vérifier que l'UUID est valide (format UUID v4)
-      const uuidRegex: RegExp =
-        /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
-      if (!uuidRegex.test(uuid)) {
-        console.log(`Invalid 🔴🔴`);
-        return false;
-      }
       const timestamp = parseInt(validity, 10);
-      const now = Date.now();
+      const now = Math.floor(Date.now() / 1000);
       // Vérification de la validité temporelle
       if (timestamp > now) {
-        console.log(`Invalid 🔴🔴🔴 futur timestamp`);
         return false;
       }
 
-      const maxAgeMs = this.validityHours * 60 * 60 * 1000;
-      if (now - timestamp > maxAgeMs) {
-        console.log(`Invalid 🔴🔴🔴🔴 token expiré`);
-        return false;
-      }
-
-      // VALIDATION CRITIQUE : Vérifier que la signature fournie fait exactement 64 caractères (HMAC-SHA256)
-      if (providedSignature.length !== 64) {
-        console.log(`Invalid 🔴🔴🔴🔴🔴`);
+      const maxAgeSec = this.validityHours * 60 * 60;
+      if (now - timestamp > maxAgeSec) {
         return false;
       }
 
       // Vérifier que la signature ne contient que des caractères hexadécimaux
-      if (!/^[0-9a-f]+$/i.test(providedSignature)) {
-        console.log(`Invalid 🔴🔴🔴🔴🔴🔴`);
+      if (!/^[A-Za-z0-9+/=]+$/.test(signature)) {
         return false;
       }
 
-      const dataToSign = `${uuid}.${validity}`;
+      const dataToSign = token + validity;
 
       // Recalculer la signature avec la clé secrète
-      const expectedSignature: string = crypto
-        .createHmac('sha256', secret)
+      const expectedSignature = crypto
+        .createHmac('sha256', Buffer.from(secret, 'base64'))
         .update(dataToSign)
-        .digest('hex');
+        .digest('base64');
 
-      // Vérifier que la signature attendue fait bien 64 caractères (sanity check)
-      if (expectedSignature.length !== 64) {
-        console.log(`Invalid 🔴🔴🔴🔴🔴`);
-        return false;
-      }
+      if (signature.length !== expectedSignature.length) return false;
+      // ou if (!/^[A-Za-z0-9+/]{43}=$/.test(signature)) return false;
 
       // Comparer les signatures de manière sécurisée
       // Maintenant nous sommes sûrs que les deux buffers ont la même taille
       return crypto.timingSafeEqual(
-        Buffer.from(providedSignature, 'hex'),
-        Buffer.from(expectedSignature, 'hex'),
+        Buffer.from(signature, 'base64'),
+        Buffer.from(expectedSignature, 'base64'),
       );
     } catch (error: any) {
       console.error('❌ Erreur lors de la vérification de signature:', error.message);

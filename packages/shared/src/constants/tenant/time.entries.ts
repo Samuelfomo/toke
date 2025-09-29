@@ -135,6 +135,13 @@ export const TIME_ENTRIES_CODES = {
   LISTING_FAILED: 'listing_failed',
   FILTER_INVALID: 'filter_invalid',
   PAGINATION_INVALID: 'pagination_invalid',
+  REVISION_FAILED: 'revision_failed',
+  RETRIEVAL_FAILED: 'retry_failed',
+  APPROVAL_FAILED: 'approval_failed',
+  REJECTION_FAILED: 'rejection_failed',
+  CORRECTION_FAILED: 'correction_failed',
+  ANOMALY_DETECTION_FAILED: 'anomaly_detection_failed',
+  STATISTICS_FAILED: 'statistics_failed',
 } as const;
 
 const TIME_ENTRIES_LABEL = 'Time Entry';
@@ -210,8 +217,16 @@ export const TIME_ENTRIES_ERRORS = {
 
   INVALID_DATE_FORMAT: 'Invalid date format provided',
   PAGINATION_INVALID: 'Invalid pagination parameters',
+  GUID_GENERATION_FAILED: `Failed to generate GUID for ${TIME_ENTRIES_LABEL}`,
+  ID_REQUIRED: `${TIME_ENTRIES_LABEL} id is required`,
 } as const;
 
+export const TIME_ENTRIES_MESSAGES = {
+  CREATED_SUCCESSFULLY: `${TIME_ENTRIES_LABEL} created successfully`,
+  DELETED_SUCCESSFULLY: `${TIME_ENTRIES_LABEL} deleted successfully`,
+};
+
 export type TimeEntryError = (typeof TIME_ENTRIES_ERRORS)[keyof typeof TIME_ENTRIES_ERRORS];
+export type TimeEntryMessage = (typeof TIME_ENTRIES_MESSAGES)[keyof typeof TIME_ENTRIES_MESSAGES];
 export type TimeEntryCode = (typeof TIME_ENTRIES_CODES)[keyof typeof TIME_ENTRIES_CODES];
 export type TimeEntryValidation = typeof TIME_ENTRIES_VALIDATION;

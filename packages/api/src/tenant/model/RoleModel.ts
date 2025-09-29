@@ -14,6 +14,7 @@ export default class RoleModel extends BaseModel {
     permissions: 'permissions',
     system_role: 'system_role',
     default_role: 'default_role',
+    admin_role: 'admin_role',
     created_at: 'created_at',
     updated_at: 'updated_at',
   } as const;
@@ -26,6 +27,7 @@ export default class RoleModel extends BaseModel {
   protected permissions?: Record<string, any> | string[];
   protected system_role?: boolean;
   protected default_role?: boolean;
+  protected admin_role?: boolean;
   protected created_at?: Date;
   protected updated_at?: Date;
   protected constructor() {
@@ -45,6 +47,14 @@ export default class RoleModel extends BaseModel {
   protected async findExistingDefaultRole(): Promise<any> {
     return await this.findOne(this.db.tableName, {
       [this.db.default_role]: !ROLES_DEFAULTS.DEFAULT_ROLE,
+    });
+
+    // return !!role;
+  }
+
+  protected async findExistingAdminRole(): Promise<any> {
+    return await this.findOne(this.db.tableName, {
+      [this.db.admin_role]: !ROLES_DEFAULTS.ADMIN_ROLE,
     });
 
     // return !!role;
@@ -84,6 +94,12 @@ export default class RoleModel extends BaseModel {
         throw new Error(ROLES_ERRORS.DEFAULT_ROLE_ALREADY_EXISTS);
       }
     }
+    if (this.admin_role === !ROLES_DEFAULTS.ADMIN_ROLE) {
+      const existingAdminRole = await this.findExistingAdminRole();
+      if (existingAdminRole) {
+        throw new Error(ROLES_ERRORS.ADMIN_ROLE_ALREADY_EXISTS);
+      }
+    }
 
     const lastID = await this.insertOne(this.db.tableName, {
       [this.db.guid]: guid,
@@ -93,6 +109,7 @@ export default class RoleModel extends BaseModel {
       [this.db.permissions]: this.permissions,
       [this.db.system_role]: this.system_role ? this.system_role : ROLES_DEFAULTS.SYSTEM_ROLE,
       [this.db.default_role]: this.default_role ? this.default_role : ROLES_DEFAULTS.DEFAULT_ROLE,
+      [this.db.admin_role]: this.admin_role ? this.admin_role : ROLES_DEFAULTS.ADMIN_ROLE,
     });
     if (!lastID) {
       throw new Error(ROLES_ERRORS.CREATION_FAILED);
@@ -125,6 +142,12 @@ export default class RoleModel extends BaseModel {
       const existingDefaultRole = await this.findExistingDefaultRole();
       if (existingDefaultRole && existingDefaultRole.id !== this.id) {
         throw new Error(ROLES_ERRORS.DEFAULT_ROLE_ALREADY_EXISTS);
+      }
+    }
+    if (this.admin_role !== undefined) {
+      const existingAdminRole = await this.findExistingAdminRole();
+      if (existingAdminRole && existingAdminRole.id !== this.id) {
+        throw new Error(ROLES_ERRORS.ADMIN_ROLE_ALREADY_EXISTS);
       }
     }
     const affected = await this.updateOne(this.db.tableName, { [this.db.id]: this.id }, updateData);
@@ -163,6 +186,9 @@ export default class RoleModel extends BaseModel {
 
     if (this.default_role && !RolesValidationUtils.validateDefaultRole(this.default_role)) {
       throw new Error(ROLES_ERRORS.DEFAULT_ROLE_INVALID);
+    }
+    if (this.admin_role && !RolesValidationUtils.validateDefaultRole(this.admin_role)) {
+      throw new Error(ROLES_ERRORS.ADMIN_ROLE_INVALID);
     }
 
     const cleaned = RolesValidationUtils.cleanRoleData(this);

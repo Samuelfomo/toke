@@ -370,10 +370,10 @@ export default class Site extends SiteModel {
     console.log(`Site ${this.guid} géofence étendu. Raison: ${reason}`);
   }
 
-  async addTeamMembers(user_ids: number[]): Promise<void> {
+  async addTeamMembers(user: number[]): Promise<void> {
     // Cette méthode pourrait être étendue pour gérer une table de liaison
     // Pour l'instant, on peut l'implémenter via allowed_roles ou une logique similaire
-    console.log(`Ajout membres équipe ${user_ids.join(', ')} au site ${this.guid}`);
+    console.log(`Ajout membres équipe ${user.join(', ')} au site ${this.guid}`);
   }
 
   async removeTeamMembers(user_ids: number[]): Promise<void> {

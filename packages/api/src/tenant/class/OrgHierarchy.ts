@@ -119,11 +119,11 @@ export default class OrgHierarchy extends OrgHierarchyModel {
     return this.relationship_type;
   }
 
-  getEffectiveFrom(): string | undefined {
+  getEffectiveFrom(): string | undefined | Date {
     return this.effective_from;
   }
 
-  getEffectiveTo(): string | null | undefined {
+  getEffectiveTo(): string | null | undefined | Date {
     return this.effective_to;
   }
 
@@ -164,12 +164,12 @@ export default class OrgHierarchy extends OrgHierarchyModel {
     return this;
   }
 
-  setEffectiveFrom(effective_from: string): OrgHierarchy {
+  setEffectiveFrom(effective_from: string | Date): OrgHierarchy {
     this.effective_from = effective_from;
     return this;
   }
 
-  setEffectiveTo(effective_to: string | null): OrgHierarchy {
+  setEffectiveTo(effective_to: string | null | Date): OrgHierarchy {
     this.effective_to = effective_to;
     return this;
   }
