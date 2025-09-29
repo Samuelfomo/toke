@@ -31,10 +31,6 @@
           : (searchQuery ? 'Aucun mémo ne correspond à votre recherche.' : 'Vous n\'avez encore envoyé aucun mémo.')
           }}
         </p>
-        <button @click="createNewMemo" class="empty-action-btn">
-          <IconPlus />
-          <span>{{ isEmployeeSpecific ? 'Créer le premier mémo' : 'Créer un mémo' }}</span>
-        </button>
       </div>
 
       <div v-else class="memo-grid">
@@ -50,6 +46,9 @@
                 <IconCheck v-if="memo.status === 'sent'" />
                 <IconEdit v-else />
                 {{ memo.status === 'sent' ? 'Envoyé' : 'Brouillon' }}
+              </span>
+              <span v-if="memo.updatedAt" class="updated-badge" title="Modifié">
+                <IconEdit class="icon-xs" />
               </span>
             </div>
 
@@ -79,12 +78,12 @@
             <p class="memo-preview">{{ getMessagePreview(memo.message) }}</p>
 
             <!-- Affichage du destinataire si pas vue employé spécifique -->
-            <div v-if="!isEmployeeSpecific" class="memo-recipient">
-              <div class="recipient-avatar">
-                {{ getEmployeeInitials(memo.employeeId) }}
-              </div>
-              <span class="recipient-name">{{ getEmployeeName(memo.employeeId) }}</span>
-            </div>
+<!--            <div v-if="!isEmployeeSpecific" class="memo-recipient">-->
+<!--              <div class="recipient-avatar">-->
+<!--                {{ getEmployeeInitials(memo.employeeId) }}-->
+<!--              </div>-->
+<!--              <span class="recipient-name">{{ getEmployeeName(memo.employeeId) }}</span>-->
+<!--            </div>-->
           </div>
 
           <div class="memo-card-footer">
@@ -106,6 +105,10 @@
               <div class="memo-time">
                 <IconClock />
                 <span>{{ formatTime(memo.createdAt) }}</span>
+              </div>
+              <div v-if="memo.updatedAt" class="memo-updated">
+                <IconEdit class="icon-xs" />
+                <span class="updated-text">Modifié le {{ formatDateTime(memo.updatedAt) }}</span>
               </div>
             </div>
           </div>
@@ -142,6 +145,7 @@ import {
   IconCalendar,
   IconClock,
   IconX,
+  IconSearch,
 } from '@tabler/icons-vue'
 
 interface Employee {
@@ -150,6 +154,12 @@ interface Employee {
   initials: string
   status: 'absent' | 'late' | 'present' | 'info'
   statusText: string
+  location?: string
+  time?: string
+  avatar?: string
+  priority?: 'high' | 'medium' | 'low'
+  isJustified?: boolean
+  isValidated?: boolean
 }
 
 interface Memo {
@@ -161,6 +171,7 @@ interface Memo {
   attachments: File[]
   voiceNote?: Blob
   createdAt: Date
+  updatedAt?: Date
   status: 'draft' | 'sent'
 }
 
@@ -184,25 +195,34 @@ const targetEmployeeId = ref<number | null>(
 
 const isEmployeeSpecific = computed(() => targetEmployeeId.value !== null)
 
-// Mock employees data
-const employees = ref<Employee[]>([
-  { id: 1, name: 'Jean Dupont', initials: 'JD', status: 'present', statusText: 'Présent' },
-  { id: 2, name: 'Marie Martin', initials: 'MM', status: 'late', statusText: 'En retard' },
-  { id: 3, name: 'Pierre Durand', initials: 'PD', status: 'absent', statusText: 'Absent' },
-  { id: 4, name: 'Sophie Leblanc', initials: 'SL', status: 'present', statusText: 'Présent' },
-  { id: 5, name: 'Lucas Bernard', initials: 'LB', status: 'present', statusText: 'Présent' }
-])
+// IMPORT DES DONNÉES DEPUIS EMPLOYEESTATUSLIST
+// Fonction pour récupérer les employés depuis localStorage ou autre source
+const loadEmployees = (): Employee[] => {
+  // Option 1: Si vous stockez les employés dans localStorage
+  try {
+    const savedEmployees = localStorage.getItem('employees')
+    if (savedEmployees) {
+      return JSON.parse(savedEmployees)
+    }
+  } catch (error) {
+    console.error('Erreur lors du chargement des employés:', error)
+  }
+  return []
+}
+
+// Charger les employés
+const employees = ref<Employee[]>(loadEmployees())
 
 // Employé cible si vue spécifique
 const targetEmployee = computed(() => {
   if (!targetEmployeeId.value) return null
 
-  // D'abord chercher dans les employés existants
-  const foundEmployee = employees.value.find(emp => emp.id === targetEmployeeId.value)
-
-  if (foundEmployee) {
-    return foundEmployee
-  }
+  // D'abord chercher dans les employés chargés
+  // const foundEmployee = employees.value.find(emp => emp.id === targetEmployeeId.value)
+  //
+  // if (foundEmployee) {
+  //   return foundEmployee
+  // }
 
   // Si pas trouvé, utiliser les données de l'URL
   return {
@@ -210,7 +230,8 @@ const targetEmployee = computed(() => {
     name: decodeURIComponent(route.query.employeeName as string || 'Employé inconnu'),
     initials: route.query.employeeInitials as string || 'EI',
     status: route.query.employeeStatus as any || 'info',
-    statusText: decodeURIComponent(route.query.employeeStatusText as string || 'Statut inconnu')
+    statusText: decodeURIComponent(route.query.employeeStatusText as string || 'Statut inconnu'),
+    location: route.query.employeeLocation as string || ''
   }
 })
 
@@ -243,7 +264,11 @@ const filteredMemos = computed(() => {
     filtered = filtered.filter(memo => memo.employeeId === Number(selectedEmployee.value))
   }
 
-  return filtered.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
+  return filtered.sort((a, b) => {
+    const dateA = a.updatedAt || a.createdAt
+    const dateB = b.updatedAt || b.createdAt
+    return new Date(dateB).getTime() - new Date(dateA).getTime()
+  })
 })
 
 const uniqueEmployees = computed(() => {
@@ -260,7 +285,9 @@ const loadMemos = () => {
       memos.value = parsed.map((memo: any) => ({
         ...memo,
         createdAt: new Date(memo.createdAt),
-        attachments: memo.attachments || []
+        updatedAt: memo.updatedAt ? new Date(memo.updatedAt) : undefined,
+        attachments: memo.attachments || [],
+        voiceNote: memo.voiceNote ? memo.voiceNote : undefined
       }))
     }
   } catch (error) {
@@ -309,6 +336,16 @@ const formatTime = (date: Date): string => {
   })
 }
 
+const formatDateTime = (date: Date): string => {
+  return date.toLocaleDateString('fr-FR', {
+    day: '2-digit',
+    month: '2-digit',
+    year: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit'
+  })
+}
+
 const showToastMessage = (message: string, type: 'success' | 'error' = 'success') => {
   toastMessage.value = message
   toastType.value = type
@@ -329,7 +366,8 @@ const createNewMemo = () => {
         employeeName: targetEmployee.value.name,
         employeeInitials: targetEmployee.value.initials,
         employeeStatus: targetEmployee.value.status,
-        employeeStatusText: targetEmployee.value.statusText
+        employeeStatusText: targetEmployee.value.statusText,
+        employeeLocation: targetEmployee.value.location || ''
       }
     })
   } else {
@@ -338,7 +376,7 @@ const createNewMemo = () => {
 }
 
 const viewMemo = (memo: Memo) => {
-  // Optionnel: navigation vers vue détaillée du mémo
+  // Optionnel: afficher les détails du mémo
   console.log('Voir le mémo:', memo)
 }
 
@@ -372,7 +410,7 @@ const editMemo = (memo: Memo) => {
       employeeInitials: employee.initials,
       employeeStatus: employee.status,
       employeeStatusText: employee.statusText,
-      // Ajouter des informations supplémentaires si disponibles
+      employeeLocation: employee.location || ''
     }
   })
 
@@ -396,7 +434,10 @@ const copyMemo = async (memo: Memo) => {
     }
 
     copyText += `Statut: ${memo.status === 'sent' ? 'Envoyé' : 'Brouillon'}\n`
-    copyText += `Date: ${formatDate(memo.createdAt)} à ${formatTime(memo.createdAt)}\n`
+    copyText += `Date de création: ${formatDateTime(memo.createdAt)}\n`
+    if (memo.updatedAt) {
+      copyText += `Dernière modification: ${formatDateTime(memo.updatedAt)}\n`
+    }
     copyText += `Destinataire: ${getEmployeeName(memo.employeeId)}`
 
     await navigator.clipboard.writeText(copyText)
@@ -453,11 +494,12 @@ const goBack = () => {
         employeeName: targetEmployee.value?.name,
         employeeInitials: targetEmployee.value?.initials,
         employeeStatus: targetEmployee.value?.status,
-        employeeStatusText: targetEmployee.value?.statusText
+        employeeStatusText: targetEmployee.value?.statusText,
+        employeeLocation: targetEmployee.value?.location || ''
       }
     })
   } else {
-    router.push('/dashboard')
+    router.push('/employeeD')
   }
 }
 
@@ -470,11 +512,6 @@ const handleClickOutside = (event: MouseEvent) => {
 }
 
 onMounted(() => {
-  // Debug : afficher les paramètres reçus
-  console.log('Route query params:', route.query)
-  console.log('Target employee ID:', targetEmployeeId.value)
-  console.log('Target employee data:', targetEmployee.value)
-
   const title = isEmployeeSpecific.value
     ? `Mémos - ${targetEmployee.value?.name} - Toké`
     : 'Historique des Mémos - Toké'
@@ -574,6 +611,22 @@ onUnmounted(() => {
   min-width: 150px;
 }
 
+.updated-badge {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+  background: #f59e0b;
+  color: white;
+  padding: 0.25rem 0.5rem;
+  border-radius: 6px;
+  font-size: 0.7rem;
+}
+
+.icon-xs {
+  width: 12px;
+  height: 12px;
+}
+
 .memo-recipient {
   display: flex;
   align-items: center;
@@ -614,6 +667,20 @@ onUnmounted(() => {
   gap: 0.25rem;
   font-size: 0.75rem;
   color: #6b7280;
+}
+
+.memo-updated {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+  font-size: 0.7rem;
+  color: #f59e0b;
+  font-style: italic;
+  margin-top: 0.25rem;
+}
+
+.updated-text {
+  font-size: 0.7rem;
 }
 
 .toast {

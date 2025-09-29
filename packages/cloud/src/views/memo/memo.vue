@@ -6,7 +6,7 @@
         <IconArrowLeft />
       </button>
       <div class="memo-title">
-        <h1>{{ isEditMode ? 'Modifier le MÃ©mo' : 'Nouveau MÃ©mo' }}</h1>
+        <h1>{{ isEditMode ? 'Modifier le memo' : 'Nouveau memo' }}</h1>
       </div>
     </div>
 
@@ -16,14 +16,14 @@
       <div class="memo-field">
         <label for="subject" class="field-label">
           <IconFileText class="field-icon" />
-          Objet du mÃ©mo
+          Objet du memo
         </label>
         <input
           id="subject"
           v-model="memo.subject"
           type="text"
           class="memo-input"
-          placeholder="Saisissez l'objet de votre mÃ©mo..."
+          placeholder="Saisissez l'objet de votre memo..."
           maxlength="100"
         />
         <div class="char-counter">{{ memo.subject.length }}/100</div>
@@ -39,7 +39,7 @@
           id="message"
           v-model="memo.message"
           class="memo-textarea"
-          placeholder="RÃ©digez votre message..."
+          placeholder="Redigez votre message..."
           rows="6"
           maxlength="1000"
         ></textarea>
@@ -84,7 +84,7 @@
         <div class="memo-field">
           <label class="field-label">
             <IconPaperclip class="field-icon" />
-            PiÃ¨ces jointes
+            Pieces jointes
           </label>
           <div class="file-upload-area">
             <input
@@ -127,7 +127,7 @@
         </button>
         <button @click="sendMemo" class="action-btn send-btn" :disabled="!canSend">
           <IconSend />
-          <span>{{ isEditMode ? 'Mettre Ã  jour et envoyer' : 'Envoyer le mÃ©mo' }}</span>
+          <span>{{ isEditMode ? 'Mettre a  jour et envoyer' : 'Envoyer le memo' }}</span>
         </button>
       </div>
 
@@ -135,7 +135,7 @@
       <div v-if="isEditMode" class="delete-section">
         <button @click="confirmDelete" class="delete-memo-btn">
           <IconTrash />
-          <span>Supprimer ce mÃ©mo</span>
+          <span>Supprimer ce memo</span>
         </button>
       </div>
     </div>
@@ -239,9 +239,9 @@ const toastType = ref<'success' | 'error'>('success')
 
 // Computed properties
 const recordButtonText = computed(() => {
-  if (isRecording.value) return 'ArrÃªter l\'enregistrement'
+  if (isRecording.value) return 'Arreter l\'enregistrement'
   if (audioBlob.value || existingVoiceNote.value) return 'Nouvel enregistrement'
-  return 'DÃ©marrer l\'enregistrement'
+  return 'Demarrer l\'enregistrement'
 })
 
 const canSave = computed(() => {
@@ -296,8 +296,8 @@ const loadMemoForEdit = () => {
       }
     }
   } catch (error) {
-    console.error('Erreur lors du chargement du mÃ©mo:', error)
-    showToastMessage('Erreur lors du chargement du mÃ©mo', 'error')
+    console.error('Erreur lors du chargement du memo:', error)
+    showToastMessage('Erreur lors du chargement du memo', 'error')
   }
 }
 
@@ -344,8 +344,8 @@ const startRecording = async () => {
       recordingTime.value++
     }, 1000)
   } catch (error) {
-    console.error('Erreur lors du dÃ©marrage de l\'enregistrement:', error)
-    showToastMessage('Impossible d\'accÃ©der au microphone', 'error')
+    console.error('Erreur lors du demarrage de l\'enregistrement:', error)
+    showToastMessage('Impossible d\'acceder au microphone', 'error')
   }
 }
 
@@ -384,7 +384,7 @@ const handleFileSelect = (event: Event) => {
     })
 
     if (validFiles.length !== files.length) {
-      showToastMessage('Certains fichiers dÃ©passent la taille limite de 10MB et ont Ã©tÃ© ignorÃ©s', 'error')
+      showToastMessage('Certains fichiers depassent la taille limite de 10MB et ont ete ignores', 'error')
     }
 
     attachedFiles.value = [...attachedFiles.value, ...validFiles]
@@ -431,11 +431,11 @@ const saveDraft = async () => {
       if (index > -1) {
         existingMemos[index] = memoData
       }
-      showToastMessage('MÃ©mo modifiÃ© avec succÃ¨s')
+      showToastMessage('Memo modifie avec succes')
     } else {
       // Add new memo
       existingMemos.push(memoData)
-      showToastMessage('MÃ©mo sauvegardÃ© comme brouillon')
+      showToastMessage('Memo sauvegarfe comme brouillon')
     }
 
     localStorage.setItem('memos', JSON.stringify(existingMemos))
@@ -468,11 +468,11 @@ const sendMemo = async () => {
       if (index > -1) {
         existingMemos[index] = memoData
       }
-      showToastMessage('MÃ©mo mis Ã  jour et envoyÃ© avec succÃ¨s')
+      showToastMessage('Memo mis a  jour et envoyer avec succes')
     } else {
       // Add new memo
       existingMemos.push(memoData)
-      showToastMessage('MÃ©mo envoyÃ© avec succÃ¨s')
+      showToastMessage('Memo envoye avec succes')
     }
 
     localStorage.setItem('memos', JSON.stringify(existingMemos))
@@ -482,7 +482,7 @@ const sendMemo = async () => {
     }, 1000)
   } catch (error) {
     console.error('Erreur lors de l\'envoi:', error)
-    showToastMessage('Erreur lors de l\'envoi du mÃ©mo', 'error')
+    showToastMessage('Erreur lors de l\'envoi du memo', 'error')
   }
 }
 
@@ -498,7 +498,7 @@ const deleteMemo = () => {
     const filteredMemos = existingMemos.filter((m: Memo) => m.id !== editMemoId.value)
 
     localStorage.setItem('memos', JSON.stringify(filteredMemos))
-    showToastMessage('MÃ©mo supprimÃ© avec succÃ¨s')
+    showToastMessage('Memomo supprime avec succes')
 
     setTimeout(() => {
       router.push('/memoList')
@@ -511,7 +511,7 @@ const deleteMemo = () => {
 
 const goBack = () => {
   if (canSave.value && !isEditMode.value) {
-    const shouldSave = window.confirm('Voulez-vous sauvegarder ce mÃ©mo avant de quitter ?')
+    const shouldSave = window.confirm('Voulez-vous sauvegarder ce memo avant de quitter ?')
     if (shouldSave) {
       saveDraft()
       return
@@ -519,7 +519,7 @@ const goBack = () => {
   }
 
   if (isEditMode.value && hasUnsavedChanges()) {
-    const shouldSave = window.confirm('Vous avez des modifications non sauvegardÃ©es. Voulez-vous les sauvegarder avant de quitter ?')
+    const shouldSave = window.confirm('Vous avez des modifications non sauvegardees. Voulez-vous les sauvegarder avant de quitter ?')
     if (shouldSave) {
       saveDraft()
       return
@@ -552,7 +552,7 @@ const hasUnsavedChanges = (): boolean => {
 
 onMounted(() => {
   HeadBuilder.apply({
-    title: `${isEditMode.value ? 'Modifier le MÃ©mo' : 'Nouveau MÃ©mo'} - TokÃ©`,
+    title: `${isEditMode.value ? 'Modifier le memo' : 'Nouveau memo'} - Toke`,
     css: [memoCss],
     meta: { viewport: "width=device-width, initial-scale=1.0" }
   })
