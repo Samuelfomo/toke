@@ -1,15 +1,17 @@
-import { Request, Response, Router } from 'express';
+import {Request, Response, Router} from 'express';
 import {
-  GLOBAL_LICENSE_CODES,
-  GLOBAL_LICENSE_ERRORS,
-  HttpStatus,
-  LicenseStatus,
-  paginationSchema,
-  Status,
-  TENANT_CODES,
-  TENANT_ERRORS,
-  TenantValidationUtils,
-  TN,
+    COUNTRY_ERRORS,
+    CountryValidationUtils,
+    GLOBAL_LICENSE_CODES,
+    GLOBAL_LICENSE_ERRORS,
+    HttpStatus,
+    LicenseStatus,
+    paginationSchema,
+    Status,
+    TENANT_CODES,
+    TENANT_ERRORS,
+    TenantValidationUtils,
+    TN,
 } from '@toke/shared';
 
 import Tenant from '../class/Tenant.js';
@@ -17,14 +19,19 @@ import R from '../../tools/response.js';
 import G from '../../tools/glossary.js';
 import Ensure from '../../middle/ensured-routes.js';
 import Revision from '../../tools/revision.js';
-import { tableName } from '../../utils/response.model.js';
-import GenerateOtp from '../../utils/generate.otp.js';
+import {tableName} from '../../utils/response.model.js';
 import GlobalLicense from '../class/GlobalLicense.js';
 import TenantConfig from '../../utils/generate.tenant.config.js';
 import ManageTenantDatabase from '../../utils/generate.database.js';
 import TenantCacheService from '../../tools/tenant-cache.service.js';
 import TenantManager from '../../tenant/database/db.tenant-manager.js';
-import { TableInitializer } from '../../tenant/database/db.initializer.js';
+import {TableInitializer} from '../../tenant/database/db.initializer.js';
+import Country from '../class/Country.js';
+import WapService from '../../tools/send.otp.service.js';
+import TenantOtpManager from '../../tools/tenant.otp.manager.js';
+import OTPCacheService from '../../tools/otp-cache.service.js';
+
+const otpManager = new TenantOtpManager();
 
 const router = Router();
 
@@ -876,9 +883,121 @@ router.get('/:identifier', Ensure.get(), async (req: Request, res: Response) => 
 
 // endregion
 
-router.get('/otp/:phone', Ensure.get(), async (req: Request, res: Response) => {
+// router.post('/otp', Ensure.post(), async (req: Request, res: Response) => {
+//   try {
+//     const { phone, country } = req.body;
+//     const validatePhone = TenantValidationUtils.validateBillingPhone(phone);
+//     const validateCountry = CountryValidationUtils.validateIsoCode(country);
+//     if (!validateCountry) {
+//       return R.handleError(res, HttpStatus.BAD_REQUEST, {
+//         code: 'invalid_country',
+//         message: COUNTRY_ERRORS.CODE_INVALID,
+//       });
+//     }
+//
+//     const countryObj = await Country._load(country, false, true);
+//     if (!countryObj) {
+//       return R.handleError(res, HttpStatus.NOT_FOUND, {
+//         code: 'country_not_found',
+//         message: COUNTRY_ERRORS.NOT_FOUND,
+//       });
+//     }
+//
+//     if (!validatePhone) {
+//       return R.handleError(res, HttpStatus.BAD_REQUEST, {
+//         code: TENANT_CODES.BILLING_PHONE_INVALID,
+//         message: TENANT_ERRORS.BILLING_PHONE_INVALID,
+//       });
+//     }
+//     const generateOtp = await otpManager.generateAndStoreOTP(phone);
+//     if (!generateOtp) {
+//       return R.handleError(res, HttpStatus.BAD_REQUEST, {
+//         code: 'OTP_generator_failed',
+//         message: 'An error has occurred during otp generation',
+//       });
+//     }
+//     const result = await WapService.sendOtp(generateOtp, phone, country);
+//     if (result.status !== HttpStatus.CREATED) {
+//       await otpManager.deleteOTP(generateOtp);
+//
+//       return R.handleError(res, result.status, result.response);
+//     }
+//
+//     return R.handleNoContent(res);
+//   } catch (error: any) {
+//     return R.handleError(res, HttpStatus.INTERNAL_ERROR, {
+//       code: TENANT_CODES.CREATION_FAILED,
+//       message: error.message,
+//     });
+//   }
+// });
+//
+// /**
+//  * PATCH / - Vérifier l'OTP généré
+//  */
+// router.patch('/verify-otp', Ensure.patch(), async (req: Request, res: Response) => {
+//   try {
+//     const { otp, phone } = req.body;
+//     if (!otp) {
+//       return R.handleError(res, HttpStatus.BAD_REQUEST, {
+//         code: 'invalid_otp',
+//         message: 'OTP must be a valid string',
+//       });
+//     }
+//     // Utiliser le service d'authentification
+//     const result = await otpManager.verifyOTP(otp.toString());
+//
+//     if (!result) {
+//       return R.handleError(res, HttpStatus.BAD_REQUEST, {
+//         code: 'otp_verification_failed',
+//         message: 'otp verification failed',
+//       });
+//     }
+//
+//     if (result.phone !== phone) {
+//       return R.handleError(res, HttpStatus.FORBIDDEN, {
+//         code: 'verification_failed',
+//         message: 'tenant otp verification failed',
+//       });
+//     }
+//
+//     return R.handleSuccess(res, {
+//       message: 'Tenant otp verification successfully ',
+//       tenant: result.phone,
+//     });
+//   } catch (error: any) {
+//     return R.handleError(res, HttpStatus.INTERNAL_ERROR, {
+//       code: 'internal_server_error',
+//       message: error.message,
+//     });
+//   }
+// });
+
+/**
+ * POST /otp - Générer et envoyer un OTP
+ */
+router.post('/otp', Ensure.post(), async (req: Request, res: Response) => {
   try {
-    const { phone } = req.params;
+    const { phone, country } = req.body;
+
+    // Validation du pays
+    const validateCountry = CountryValidationUtils.validateIsoCode(country);
+    if (!validateCountry) {
+      return R.handleError(res, HttpStatus.BAD_REQUEST, {
+        code: 'invalid_country',
+        message: COUNTRY_ERRORS.CODE_INVALID,
+      });
+    }
+
+    const countryObj = await Country._load(country, false, true);
+    if (!countryObj) {
+      return R.handleError(res, HttpStatus.NOT_FOUND, {
+        code: 'country_not_found',
+        message: COUNTRY_ERRORS.NOT_FOUND,
+      });
+    }
+
+    // Validation du téléphone
     const validatePhone = TenantValidationUtils.validateBillingPhone(phone);
     if (!validatePhone) {
       return R.handleError(res, HttpStatus.BAD_REQUEST, {
@@ -886,11 +1005,130 @@ router.get('/otp/:phone', Ensure.get(), async (req: Request, res: Response) => {
         message: TENANT_ERRORS.BILLING_PHONE_INVALID,
       });
     }
-    const generateOtp = GenerateOtp.generateOTP(6);
-    return R.handleSuccess(res, { otp: generateOtp });
+
+    // Générer l'OTP
+    const generateOtp = await OTPCacheService.generateAndStoreOTP(phone);
+    if (!generateOtp) {
+      return R.handleError(res, HttpStatus.BAD_REQUEST, {
+        code: 'OTP_generator_failed',
+        message: 'An error has occurred during otp generation',
+      });
+    }
+
+    // Envoyer l'OTP via WhatsApp
+    const result = await WapService.sendOtp(generateOtp, phone, country);
+    if (result.status !== HttpStatus.CREATED) {
+      // Supprimer l'OTP si l'envoi a échoué
+      await OTPCacheService.deleteOTP(generateOtp);
+
+      return R.handleError(res, result.status, result.response);
+    }
+
+    return R.handleNoContent(res);
   } catch (error: any) {
     return R.handleError(res, HttpStatus.INTERNAL_ERROR, {
       code: TENANT_CODES.CREATION_FAILED,
+      message: error.message,
+    });
+  }
+});
+
+/**
+ * PATCH /verify-otp - Vérifier l'OTP généré
+ */
+router.patch('/verify-otp', Ensure.patch(), async (req: Request, res: Response) => {
+  try {
+    const { otp, phone } = req.body;
+
+    // Validation de l'OTP
+    if (!otp) {
+      return R.handleError(res, HttpStatus.BAD_REQUEST, {
+        code: 'invalid_otp',
+        message: 'OTP must be a valid string',
+      });
+    }
+
+    // Vérifier l'OTP
+    const result = await OTPCacheService.verifyOTP(otp.toString());
+
+    if (!result) {
+      return R.handleError(res, HttpStatus.BAD_REQUEST, {
+        code: 'otp_verification_failed',
+        message:
+          'OTP verification failed. OTP may be invalid, expired, or maximum attempts reached.',
+      });
+    }
+
+    // Vérifier que le téléphone correspond
+    if (result.phone !== phone) {
+      return R.handleError(res, HttpStatus.FORBIDDEN, {
+        code: 'verification_failed',
+        message: 'Phone number does not match the OTP',
+      });
+    }
+
+    // Supprimer l'OTP après vérification réussie
+    await OTPCacheService.deleteOTP(otp.toString());
+
+    return R.handleSuccess(res, {
+      message: 'OTP verified successfully',
+      phone: result.phone,
+    });
+  } catch (error: any) {
+    return R.handleError(res, HttpStatus.INTERNAL_ERROR, {
+      code: 'internal_server_error',
+      message: error.message,
+    });
+  }
+});
+
+/**
+ * GET /otp/stats - Statistiques des OTP (pour admin/debug)
+ */
+router.get('/otp/stats', async (req: Request, res: Response) => {
+  try {
+    const stats = OTPCacheService.getStats();
+    return R.handleSuccess(res, stats);
+  } catch (error: any) {
+    return R.handleError(res, HttpStatus.INTERNAL_ERROR, {
+      code: 'internal_server_error',
+      message: error.message,
+    });
+  }
+});
+
+/**
+ * GET /otp/list - Liste des OTP actifs (pour admin/debug)
+ */
+router.get('/otp/list', async (req: Request, res: Response) => {
+  try {
+    const activeOTPs = OTPCacheService.listActiveOTPs();
+    return R.handleSuccess(res, {
+      count: activeOTPs.length,
+      otps: activeOTPs,
+    });
+  } catch (error: any) {
+    return R.handleError(res, HttpStatus.INTERNAL_ERROR, {
+      code: 'internal_server_error',
+      message: error.message,
+    });
+  }
+});
+
+/**
+ * DELETE /otp/cleanup - Nettoyer les OTP expirés manuellement
+ */
+router.delete('/otp/cleanup', async (req: Request, res: Response) => {
+  try {
+    await OTPCacheService.cleanupExpiredOTPs();
+    const stats = OTPCacheService.getStats();
+    return R.handleSuccess(res, {
+      message: 'Cleanup completed',
+      stats,
+    });
+  } catch (error: any) {
+    return R.handleError(res, HttpStatus.INTERNAL_ERROR, {
+      code: 'internal_server_error',
       message: error.message,
     });
   }

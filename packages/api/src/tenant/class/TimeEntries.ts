@@ -92,9 +92,9 @@ export default class TimeEntries extends TimeEntriesModel {
     return new TimeEntries().batchSync(user_id, entries_data);
   }
 
-  // static async detectUserAnomalies(user_id: number, days: number = 7): Promise<any[]> {
-  //   return new TimeEntries().detectAnomalies(user_id, days);
-  // }
+  static async detectUserAnomalies(user: number, days: number = 7): Promise<any[]> {
+    return new TimeEntries().detectAnomalies();
+  }
 
   // === GETTERS FLUENT ===
 
@@ -772,12 +772,12 @@ export default class TimeEntries extends TimeEntriesModel {
       [RS.GUID]: this.guid,
       [RS.USER]: user?.getGuid(),
       [RS.SITE]: site?.getGuid(),
-      // [RS.SESSION]: session?.getGuid(),
-      // [RS.POINTAGE_TYPE]: this.pointage_type,
-      // [RS.POINTAGE_STATUS]: this.pointage_status,
-      // [RS.CLOCKED_AT]: this.clocked_at,
-      // [RS.SERVER_RECEIVED_AT]: this.server_received_at,
-      // [RS.CREATED_OFFLINE]: this.created_offline,
+      [RS.SESSION]: session?.getGuid(),
+      [RS.POINTAGE_TYPE]: this.pointage_type,
+      [RS.POINTAGE_STATUS]: this.pointage_status,
+      [RS.CLOCKED_AT]: this.clocked_at,
+      [RS.SERVER_RECEIVED_AT]: this.server_received_at,
+      [RS.CREATED_OFFLINE]: this.created_offline,
     };
 
     if (view === responseValue.MINIMAL) {
@@ -792,26 +792,26 @@ export default class TimeEntries extends TimeEntriesModel {
       ...baseData,
       [RS.USER]: user ? user.toJSON() : null,
       [RS.SITE]: site ? await site.toJSON(responseValue.MINIMAL) : null,
-      // [RS.SESSION]: session ? await session.toJSON(responseValue.MINIMAL) : null,
-      // [RS.REAL_CLOCKED_AT]: this.real_clocked_at,
-      // [RS.LATITUDE]: this.latitude,
-      // [RS.LONGITUDE]: this.longitude,
-      // [RS.GPS_ACCURACY]: this.gps_accuracy,
-      // [RS.DEVICE_INFO]: this.device_info,
-      // [RS.IP_ADDRESS]: this.ip_address,
-      // [RS.USER_AGENT]: this.user_agent,
-      // [RS.LOCAL_ID]: this.local_id,
-      // [RS.SYNC_ATTEMPTS]: this.sync_attempts,
-      // [RS.LAST_SYNC_ATTEMPT]: this.last_sync_attempt,
-      // [RS.MEMO]: this.memo,
-      // [RS.CORRECTION_REASON]: this.correction_reason,
-      // [RS.UPDATED_AT]: this.updated_at,
-      // // Informations calculées
-      // [RS.IS_VALID]: await this.isValid(),
-      // [RS.REQUIRES_VALIDATION]: await this.requiresManagerValidation(),
-      // [RS.WITHIN_GEOFENCE]: await this.isWithinGeofence(),
-      // [RS.HAS_ANOMALIES]: await this.hasAnomalies(),
-      // [RS.FRAUD_SCORE]: await this.getFraudScore(),
+      [RS.SESSION]: session ? await session.toJSON(responseValue.MINIMAL) : null,
+      [RS.REAL_CLOCKED_AT]: this.real_clocked_at,
+      [RS.LATITUDE]: this.latitude,
+      [RS.LONGITUDE]: this.longitude,
+      [RS.GPS_ACCURACY]: this.gps_accuracy,
+      [RS.DEVICE_INFO]: this.device_info,
+      [RS.IP_ADDRESS]: this.ip_address,
+      [RS.USER_AGENT]: this.user_agent,
+      [RS.LOCAL_ID]: this.local_id,
+      [RS.SYNC_ATTEMPTS]: this.sync_attempts,
+      [RS.LAST_SYNC_ATTEMPT]: this.last_sync_attempt,
+      [RS.MEMO]: this.memo,
+      [RS.CORRECTION_REASON]: this.correction_reason,
+      [RS.UPDATED_AT]: this.updated_at,
+      // Informations calculées
+      [RS.IS_VALID]: await this.isValid(),
+      [RS.REQUIRES_VALIDATION]: await this.requiresManagerValidation(),
+      [RS.WITHIN_GEOFENCE]: await this.isWithinGeofence(),
+      [RS.HAS_ANOMALIES]: await this.hasAnomalies(),
+      [RS.FRAUD_SCORE]: await this.getFraudScore(),
     };
   }
 

@@ -9,6 +9,7 @@ import express, { NextFunction, Request, Response } from 'express';
 // Importation des modules simplifiés
 import { tenantMiddleware } from '../middle/tenant.middleware.js';
 import { ServerAuth } from '../middle/server-auth.js';
+import { MasterRevision } from '../tools/revision.js';
 
 import userRoute from './routes/user.route.js';
 import roleRoute from './routes/roles.route.js';
@@ -159,14 +160,23 @@ export default class App {
       this.asyncHandler(async (req: any, res: any) => {
         // const dbStatus = TableInitializer.isInitialized() ? 'connected' : 'disconnected';
 
+        // return R.handleSuccess(res, {
+        //   timestamp: new Date().toISOString(),
+        //   uptime: process.uptime(),
+        //   environment: process.env.NODE_ENV || 'development',
+        //   revision: {
+        //     Lexicon: (await MasterRevision.getLexiconRevision()) || 0,
+        //   },
+        // });
+
         res.json({
-          status: true,
+          success: true,
           timestamp: new Date().toISOString(),
           uptime: process.uptime(),
           environment: process.env.NODE_ENV || 'development',
-          // database: dbStatus,
-          // tables: 0,
-          // revision: {},
+          revision: {
+            Lexicon: (await MasterRevision.getLexiconRevision()) || 0,
+          },
         });
       }),
     );

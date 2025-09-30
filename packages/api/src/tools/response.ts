@@ -1,6 +1,8 @@
 import { Response } from 'express';
 import { HttpStatus } from '@toke/shared';
 
+import { RT } from '../utils/response.model.js';
+
 export default class R {
   /**
    * Handle successful JSON response
@@ -11,8 +13,8 @@ export default class R {
     httpCode: number = HttpStatus.SUCCESS,
   ): void {
     res.status(httpCode).json({
-      success: true,
-      data: structure,
+      [RT.SUCCESS]: true,
+      [RT.DATA]: structure,
     });
   }
 
@@ -25,9 +27,9 @@ export default class R {
    */
   static handleError(res: Response, httpCode: number, error: object): void {
     res.status(httpCode).json({
-      success: false,
-      error: error,
-      timestamp: new Date().toISOString(),
+      [RT.SUCCESS]: false,
+      [RT.ERROR]: error,
+      [RT.TIMESTAMP]: new Date().toISOString(),
     });
   }
 

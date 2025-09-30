@@ -6,27 +6,24 @@ import api from '../utils/axios.config.js';
 
 dotenv.config();
 
-console.log('🔍 Axios config:', api.defaults);
-
 export default class WapService {
   static async sendOtp(
-    otp?: number,
-    phone: string = '651721536',
-    country: string = 'CM',
+    otp: string,
+    phone: string,
+    country: string,
     scheduled: Date = new Date(),
   ): Promise<{
     status: number;
     response: object;
   }> {
     try {
-      const value = GenerateOtp.generateOTP(6);
       const response = await api.post('/automation', {
         reference: process.env.SEND_OTP_MESSAGE,
         country: country,
         recipient: phone,
-        scheduled: scheduled.toISOString(),
+        scheduled: scheduled.toISOString() || GenerateOtp.generateOTP(6).toString(),
         variables: {
-          code_otp: otp?.toString() || value.toString(),
+          code_otp: otp.toString(),
         },
       });
 

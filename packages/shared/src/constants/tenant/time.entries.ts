@@ -142,6 +142,8 @@ export const TIME_ENTRIES_CODES = {
   CORRECTION_FAILED: 'correction_failed',
   ANOMALY_DETECTION_FAILED: 'anomaly_detection_failed',
   STATISTICS_FAILED: 'statistics_failed',
+  CANNOT_CLOCK_OUT: 'cannot_clock_out',
+  INVALID_POINTAGE_TYPE: 'invalid_pointage_type',
 } as const;
 
 const TIME_ENTRIES_LABEL = 'Time Entry';
@@ -224,6 +226,7 @@ export const TIME_ENTRIES_ERRORS = {
 export const TIME_ENTRIES_MESSAGES = {
   CREATED_SUCCESSFULLY: `${TIME_ENTRIES_LABEL} created successfully`,
   DELETED_SUCCESSFULLY: `${TIME_ENTRIES_LABEL} deleted successfully`,
+  CLOCK_IN_SUCCESS: `${TIME_ENTRIES_LABEL} clock-in successful`,
 };
 
 export type TimeEntryError = (typeof TIME_ENTRIES_ERRORS)[keyof typeof TIME_ENTRIES_ERRORS];

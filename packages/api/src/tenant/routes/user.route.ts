@@ -22,7 +22,6 @@ import Revision from '../../tools/revision.js';
 import { tableName } from '../../utils/response.model.js';
 import Role from '../class/Role.js';
 import OrgHierarchy from '../class/OrgHierarchy.js';
-import WapService from '../../tools/send.otp.service.js';
 
 const router = Router();
 
@@ -664,12 +663,12 @@ router.post('/system', Ensure.post(), async (req: Request, res: Response) => {
   }
 });
 
-router.post('/otp', Ensure.post(), async (req: Request, res: Response) => {
-  const result = await WapService.sendOtp();
-  if (result.status !== HttpStatus.CREATED) {
-    return R.handleError(res, result.status, result.response);
-  }
-  return R.handleCreated(res, result.response);
-});
+// router.post('/otp', Ensure.post(), async (req: Request, res: Response) => {
+//   const result = await WapService.sendOtp();
+//   if (result.status !== HttpStatus.CREATED) {
+//     return R.handleError(res, result.status, result.response);
+//   }
+//   return R.handleCreated(res, result.response);
+// });
 
 export default router;

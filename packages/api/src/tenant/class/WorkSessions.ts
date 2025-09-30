@@ -1,11 +1,4 @@
-import {
-  ClockInData,
-  ClockOutData,
-  MissionData,
-  PauseData,
-  PointageType,
-  SessionStatus,
-} from '@toke/shared';
+import { ClockInData, ClockOutData, PauseData, PointageType, SessionStatus } from '@toke/shared';
 import { Op } from 'sequelize';
 
 import WorkSessionsModel from '../model/WorkSessionsModel.js';
@@ -47,8 +40,8 @@ export default class WorkSessions extends WorkSessionsModel {
     return new WorkSessions().listBySite(site_id);
   }
 
-  static async _findActiveSessionByUser(user_id: number): Promise<WorkSessions | null> {
-    return new WorkSessions().findActiveUserSession(user_id);
+  static async _findActiveSessionByUser(user: number): Promise<WorkSessions | null> {
+    return new WorkSessions().findActiveUserSession(user);
   }
 
   static async _detectAbandonedSessions(
@@ -125,8 +118,8 @@ export default class WorkSessions extends WorkSessionsModel {
   }
 
   static async generateSessionReport(filters: {
-    user_id?: number;
-    site_id?: number;
+    user?: number;
+    site?: number;
     start_date?: Date;
     end_date?: Date;
     status?: SessionStatus;
@@ -140,8 +133,8 @@ export default class WorkSessions extends WorkSessionsModel {
     const model = new WorkSessions();
     const conditions: Record<string, any> = {};
 
-    if (filters.user_id) conditions.user = filters.user_id;
-    if (filters.site_id) conditions.site = filters.site_id;
+    if (filters.user) conditions.user = filters.user;
+    if (filters.site) conditions.site = filters.site;
     if (filters.status) conditions.session_status = filters.status;
 
     if (filters.start_date || filters.end_date) {
@@ -364,27 +357,6 @@ export default class WorkSessions extends WorkSessionsModel {
     return 'no_pause';
   }
 
-  // === MÉTHODES MÉTIER - ÉTATS ===
-
-  async startExternalMission(missionData: MissionData): Promise<void> {
-    if (!this.isActive()) {
-      throw new Error('No active session for external mission');
-    }
-
-    // TODO: Implémenter la gestion des missions externes
-    console.log(`Starting external mission to: ${missionData.destination}`);
-  }
-
-  async updateMissionLocation(latitude: number, longitude: number): Promise<void> {
-    // TODO: Implémenter le suivi de mission
-    console.log(`Mission location updated: ${latitude}, ${longitude}`);
-  }
-
-  async completeMission(summary?: any): Promise<void> {
-    // TODO: Implémenter la fin de mission
-    console.log('Mission completed');
-  }
-
   isActive(): boolean {
     return this.session_status === SessionStatus.OPEN;
   }
@@ -483,15 +455,12 @@ export default class WorkSessions extends WorkSessionsModel {
     return [...speedAnomalies, ...durationAnomalies];
   }
 
-  async applyManagerCorrection(
-    corrections: Record<string, any>,
-    manager_id: number,
-  ): Promise<void> {
+  async applyManagerCorrection(corrections: Record<string, any>, manager: number): Promise<void> {
     if (!this.id) {
       throw new Error('Session must be saved before applying corrections');
     }
 
-    const success = await this.applyCorrections(this.id, corrections, manager_id);
+    const success = await this.applyCorrections(this.id, corrections, manager);
     if (!success) {
       throw new Error('Failed to apply corrections');
     }
@@ -667,8 +636,8 @@ export default class WorkSessions extends WorkSessionsModel {
     return dataset.map((data) => new WorkSessions().hydrate(data));
   }
 
-  async findActiveUserSession(user_id: number): Promise<WorkSessions | null> {
-    const data = await this.findActiveSessionByUser(user_id);
+  async findActiveUserSession(user: number): Promise<WorkSessions | null> {
+    const data = await this.findActiveSessionByUser(user);
     if (!data) return null;
     return new WorkSessions().hydrate(data);
   }

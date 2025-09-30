@@ -28,6 +28,19 @@ const deviceInfoSchema = z.record(z.any()).refine((deviceInfo) => {
   }
 }, TIME_ENTRIES_ERRORS.DEVICE_INFO_INVALID);
 
+const missionDataSchema = z.object({
+  destination: z.string(),
+  purpose: z.string(),
+  expected_return: z.string().optional(),
+  transport: z.string().optional(),
+  authorization: z.string().optional(),
+});
+
+const validatedDataSchema = z.object({
+  device_info: deviceInfoSchema.optional().nullable(),
+  mission_data: missionDataSchema.optional().nullable(),
+});
+
 // Base schema pour les validations communes
 const baseTimeEntriesSchema = z.object({
   session: z
@@ -108,7 +121,8 @@ const baseTimeEntriesSchema = z.object({
     .optional()
     .nullable(),
 
-  device_info: deviceInfoSchema.optional().nullable(),
+  // device_info: deviceInfoSchema.optional().nullable(),
+  validatedDataSchema,
 
   ip_address: ipAddressSchema.optional().nullable(),
 
@@ -347,3 +361,4 @@ export type UpdateTimeEntriesInput = z.infer<typeof updateTimeEntriesSchema>;
 export type TimeEntriesData = z.infer<typeof timeEntriesResponseSchema>;
 export type TimeEntriesFilters = z.infer<typeof timeEntriesFiltersSchema>;
 export type DeviceInfo = z.infer<typeof deviceInfoSchema>;
+// export type ValidatedData = z.infer<typeof validatedDataSchema>;

@@ -49,6 +49,7 @@ export const WORK_SESSIONS_DEFAULTS = {
 
 export const WORK_SESSIONS_CODES = {
   WORK_SESSION_ALREADY_EXISTS: 'work_session_already_exists',
+  ACTIVE_SESSION_EXISTS: 'active_session_exists',
   WORK_SESSION_NOT_FOUND: 'work_session_not_found',
   INVALID_GUID: 'invalid_guid',
   USER_REQUIRED: 'user_required',
@@ -88,6 +89,13 @@ export const WORK_SESSIONS_CODES = {
   FILTER_INVALID: 'filter_invalid',
   PAGINATION_INVALID: 'pagination_invalid',
   REVISION_FAILED: 'revision_failed',
+  RETRIEVAL_FAILED: 'retrieval_failed',
+  CORRECTION_FAILED: 'correction_failed',
+  REPORT_GENERATION_FAILED: 'report_generation_failed',
+  STATISTICS_FAILED: 'statistics_failed',
+  MAINTENANCE_FAILED: 'maintenance_failed',
+  NO_ACTIVE_SESSION: 'no_active_session',
+  NO_ACTIVE_PAUSE: 'no_active_pause',
 } as const;
 
 const WORK_SESSIONS_LABEL = 'Work Session';
@@ -97,6 +105,8 @@ export const WORK_SESSIONS_ERRORS = {
   USER_REQUIRED: `${WORK_SESSIONS_LABEL} user is required`,
   USER_INVALID: `User ID must be between ${WORK_SESSIONS_VALIDATION.USER.MIN} and ${WORK_SESSIONS_VALIDATION.USER.MAX}`,
   USER_NOT_FOUND: 'User not found',
+
+  ACTIVE_SESSION_EXISTS: 'User already has an active session',
 
   ID_REQUIRED: `${WORK_SESSIONS_LABEL} ID is required`,
 
@@ -145,6 +155,9 @@ export const WORK_SESSIONS_ERRORS = {
 
   INVALID_DATE_FORMAT: 'Invalid date format provided',
   PAGINATION_INVALID: 'Invalid pagination parameters',
+  NO_ACTIVE_SESSION: 'No active session to start pause',
+  NO_ACTIVE_PAUSE_END: 'No active pause to end',
+  NO_ACTIVE_CLOSE_SESSION: 'No active session to close',
 } as const;
 
 export type WorkSessionError = (typeof WORK_SESSIONS_ERRORS)[keyof typeof WORK_SESSIONS_ERRORS];

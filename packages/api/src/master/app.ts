@@ -181,8 +181,24 @@ export default class App {
       this.asyncHandler(async (req: any, res: any) => {
         const dbStatus = TableInitializer.isInitialized() ? 'connected' : 'disconnected';
 
+        // return R.handleSuccess(res, {
+        //   timestamp: new Date().toISOString(),
+        //   uptime: process.uptime(),
+        //   environment: process.env.NODE_ENV || 'development',
+        //   database: dbStatus,
+        //   tables: TableInitializer.getAllModels().size || 0,
+        //   revision: {
+        //     country: await Revision.getRevision(tableName.COUNTRY),
+        //     currency: await Revision.getRevision(tableName.CURRENCY),
+        //     exchange_rate: await Revision.getRevision(tableName.EXCHANGE_RATE),
+        //     language: await Revision.getRevision(tableName.LANGUAGE),
+        //     tax_rule: await Revision.getRevision(tableName.TAX_RULE),
+        //     lexicon: await Revision.getRevision(tableName.LEXICON),
+        //   },
+        // });
+
         res.json({
-          status: true,
+          success: true,
           timestamp: new Date().toISOString(),
           uptime: process.uptime(),
           environment: process.env.NODE_ENV || 'development',

@@ -116,6 +116,8 @@ export const MEMOS_CODES = {
   LISTING_FAILED: 'listing_failed',
   FILTER_INVALID: 'filter_invalid',
   PAGINATION_INVALID: 'pagination_invalid',
+  REVISION_FAILED: 'revision_failed',
+  RETRIEVAL_FAILED: 'retrieval_failed',
 } as const;
 
 const MEMOS_LABEL = 'Memo';
@@ -181,6 +183,9 @@ export const MEMOS_ERRORS = {
 
   INVALID_DATE_FORMAT: 'Invalid date format provided',
   PAGINATION_INVALID: 'Invalid pagination parameters',
+
+  GUID_GENERATION_FAILED: `Failed to generate GUID for ${MEMOS_LABEL}`,
+  ID_REQUIRED: `${MEMOS_LABEL} id is required`,
 } as const;
 
 export type MemoError = (typeof MEMOS_ERRORS)[keyof typeof MEMOS_ERRORS];
