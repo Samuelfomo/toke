@@ -27,34 +27,48 @@ export default class OrgHierarchy extends OrgHierarchyModel {
     return new OrgHierarchy().list(conditions, paginationOptions);
   }
 
-  static _listBySubordinate(subordinate_id: number): Promise<OrgHierarchy[] | null> {
-    return new OrgHierarchy().listBySubordinate(subordinate_id);
+  static _listBySubordinate(
+    subordinate_id: number,
+    paginationOptions?: { offset?: number; limit?: number },
+  ): Promise<OrgHierarchy[] | null> {
+    return new OrgHierarchy().listBySubordinate(subordinate_id, paginationOptions);
   }
 
-  static _listBySupervisor(supervisor_id: number): Promise<OrgHierarchy[] | null> {
-    return new OrgHierarchy().listBySupervisor(supervisor_id);
+  static _listBySupervisor(
+    supervisor_id: number,
+    paginationOptions?: { offset?: number; limit?: number },
+  ): Promise<OrgHierarchy[] | null> {
+    return new OrgHierarchy().listBySupervisor(supervisor_id, paginationOptions);
   }
 
-  static _listByDepartment(department: string): Promise<OrgHierarchy[] | null> {
-    return new OrgHierarchy().listByDepartment(department);
+  static _listByDepartment(
+    department: string,
+    paginationOptions?: { offset?: number; limit?: number },
+  ): Promise<OrgHierarchy[] | null> {
+    return new OrgHierarchy().listByDepartment(department, paginationOptions);
   }
 
-  static _listActiveRelations(): Promise<OrgHierarchy[] | null> {
-    return new OrgHierarchy().listActiveRelations();
+  static _listActiveRelations(paginationOptions?: {
+    offset?: number;
+    limit?: number;
+  }): Promise<OrgHierarchy[] | null> {
+    return new OrgHierarchy().listActiveRelations(paginationOptions);
   }
 
   static async getCurrentSupervisor(
     subordinate_id: number,
     date?: Date,
+    paginationOptions?: { offset?: number; limit?: number },
   ): Promise<OrgHierarchy | null> {
-    return new OrgHierarchy().getCurrentSupervisor(subordinate_id, date);
+    return new OrgHierarchy().getCurrentSupervisor(subordinate_id, date, paginationOptions);
   }
 
   static async getActiveSubordinates(
     supervisor_id: number,
     date?: Date,
+    paginationOptions?: { offset?: number; limit?: number },
   ): Promise<OrgHierarchy[] | null> {
-    return new OrgHierarchy().getActiveSubordinates(supervisor_id, date);
+    return new OrgHierarchy().getActiveSubordinates(supervisor_id, date, paginationOptions);
   }
 
   static async exportable(
@@ -234,14 +248,22 @@ export default class OrgHierarchy extends OrgHierarchyModel {
 
   // === MÉTHODES DE RÉSOLUTION HIÉRARCHIQUE ===
 
-  async getCurrentSupervisor(subordinate_id: number, date?: Date): Promise<OrgHierarchy | null> {
-    const data = await this.ListAllCurrentSupervisor(subordinate_id, date);
+  async getCurrentSupervisor(
+    subordinate_id: number,
+    date?: Date,
+    paginationOptions?: { offset?: number; limit?: number },
+  ): Promise<OrgHierarchy | null> {
+    const data = await this.ListAllCurrentSupervisor(subordinate_id, date, paginationOptions);
     if (!data) return null;
     return new OrgHierarchy().hydrate(data);
   }
 
-  async getActiveSubordinates(supervisor_id: number, date?: Date): Promise<OrgHierarchy[] | null> {
-    const dataset = await this.listAllActiveSubordinates(supervisor_id, date);
+  async getActiveSubordinates(
+    supervisor_id: number,
+    date?: Date,
+    paginationOptions?: { offset?: number; limit?: number },
+  ): Promise<OrgHierarchy[] | null> {
+    const dataset = await this.listAllActiveSubordinates(supervisor_id, date, paginationOptions);
     if (!dataset || dataset.length === 0) return null;
     return dataset.map((data) => new OrgHierarchy().hydrate(data));
   }
@@ -317,26 +339,37 @@ export default class OrgHierarchy extends OrgHierarchyModel {
     return dataset.map((data) => new OrgHierarchy().hydrate(data));
   }
 
-  async listBySubordinate(subordinate_id: number): Promise<OrgHierarchy[] | null> {
-    const dataset = await this.listAllBySubordinate(subordinate_id);
+  async listBySubordinate(
+    subordinate_id: number,
+    paginationOptions: { offset?: number; limit?: number } = {},
+  ): Promise<OrgHierarchy[] | null> {
+    const dataset = await this.listAllBySubordinate(subordinate_id, paginationOptions);
     if (!dataset || dataset.length === 0) return null;
     return dataset.map((data) => new OrgHierarchy().hydrate(data));
   }
 
-  async listBySupervisor(supervisor_id: number): Promise<OrgHierarchy[] | null> {
-    const dataset = await this.listAllBySupervisor(supervisor_id);
+  async listBySupervisor(
+    supervisor_id: number,
+    paginationOptions: { offset?: number; limit?: number } = {},
+  ): Promise<OrgHierarchy[] | null> {
+    const dataset = await this.listAllBySupervisor(supervisor_id, paginationOptions);
     if (!dataset || dataset.length === 0) return null;
     return dataset.map((data) => new OrgHierarchy().hydrate(data));
   }
 
-  async listByDepartment(department: string): Promise<OrgHierarchy[] | null> {
-    const dataset = await this.listAllByDepartment(department);
+  async listByDepartment(
+    department: string,
+    paginationOptions: { offset?: number; limit?: number } = {},
+  ): Promise<OrgHierarchy[] | null> {
+    const dataset = await this.listAllByDepartment(department, paginationOptions);
     if (!dataset || dataset.length === 0) return null;
     return dataset.map((data) => new OrgHierarchy().hydrate(data));
   }
 
-  async listActiveRelations(): Promise<OrgHierarchy[] | null> {
-    const dataset = await this.listAllActiveRelations();
+  async listActiveRelations(
+    paginationOptions: { offset?: number; limit?: number } = {},
+  ): Promise<OrgHierarchy[] | null> {
+    const dataset = await this.listAllActiveRelations(paginationOptions);
     if (!dataset || dataset.length === 0) return null;
     return dataset.map((data) => new OrgHierarchy().hydrate(data));
   }

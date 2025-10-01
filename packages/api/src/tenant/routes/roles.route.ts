@@ -75,6 +75,9 @@ router.post('/', Ensure.post(), async (req: Request, res: Response) => {
     if (validatedData.default_role) {
       roleObj.setDefaultRole(validatedData.default_role);
     }
+    if (validatedData.admin_role) {
+      roleObj.setAdminRole(validatedData.admin_role);
+    }
     await roleObj.save();
     return R.handleCreated(res, roleObj.toJSON());
   } catch (error: any) {
@@ -143,6 +146,9 @@ router.put('/:guid', Ensure.put(), async (req: Request, res: Response) => {
     if (validatedData.default_role) {
       roleObj.setDefaultRole(validatedData.default_role);
     }
+    if (validatedData.admin_role) {
+      roleObj.setAdminRole(validatedData.admin_role);
+    }
     await roleObj.save();
     return R.handleSuccess(res, roleObj.toJSON());
   } catch (error: any) {
@@ -172,8 +178,8 @@ router.put('/:guid', Ensure.put(), async (req: Request, res: Response) => {
 
 router.get('/list', Ensure.get(), async (req: Request, res: Response) => {
   try {
-    const filters = validateRolesFilters(req.query);
     const paginationOptions = paginationSchema.parse(req.query);
+    const filters = validateRolesFilters(req.query);
     const conditions: Record<string, any> = {};
     if (filters.system_role) {
       conditions.system_role = filters.system_role;

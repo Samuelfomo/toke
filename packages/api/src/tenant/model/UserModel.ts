@@ -334,12 +334,12 @@ export default class UserModel extends BaseModel {
     return await this.deleteOne(this.db.tableName, { [this.db.id]: id });
   }
   private async validate(): Promise<void> {
-    if (!this.tenant) {
-      throw new Error(USERS_ERRORS.TENANT_REQUIRED);
-    }
-    if (!UsersValidationUtils.validateTenant(this.tenant)) {
-      throw new Error(USERS_ERRORS.TENANT_INVALID);
-    }
+    // if (!this.tenant) {
+    //   throw new Error(USERS_ERRORS.TENANT_REQUIRED);
+    // }
+    // if (!UsersValidationUtils.validateTenant(this.tenant)) {
+    //   throw new Error(USERS_ERRORS.TENANT_INVALID);
+    // }
     if (this.email && !UsersValidationUtils.validateEmail(this.email)) {
       throw new Error(USERS_ERRORS.EMAIL_INVALID);
     }

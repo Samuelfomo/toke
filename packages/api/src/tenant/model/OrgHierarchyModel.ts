@@ -53,17 +53,27 @@ export default class OrgHierarchyModel extends BaseModel {
     return await this.findOne(this.db.tableName, { [this.db.guid]: guid });
   }
 
-  protected async listAllBySubordinate(subordinate: number): Promise<any[]> {
-    return await this.findAll(this.db.tableName, { [this.db.subordinate]: subordinate });
+  protected async listAllBySubordinate(
+    subordinate: number,
+    paginationOptions: { offset?: number; limit?: number } = {},
+  ): Promise<any[]> {
+    return await this.listAll({ [this.db.subordinate]: subordinate }, paginationOptions);
   }
 
-  protected async listAllBySupervisor(supervisor: number): Promise<any[]> {
-    return await this.findAll(this.db.tableName, { [this.db.supervisor]: supervisor });
+  protected async listAllBySupervisor(
+    supervisor: number,
+    paginationOptions: { offset?: number; limit?: number } = {},
+  ): Promise<any[]> {
+    return await this.listAll({ [this.db.supervisor]: supervisor }, paginationOptions);
   }
 
   // === RÉSOLUTION SUPERVISEUR ACTIF ===
 
-  protected async ListAllCurrentSupervisor(subordinate: number, date?: Date): Promise<any> {
+  protected async ListAllCurrentSupervisor(
+    subordinate: number,
+    date?: Date,
+    paginationOptions: { offset?: number; limit?: number } = {},
+  ): Promise<any> {
     const currentDate = date || new Date();
     const dateStr = currentDate.toISOString().slice(0, 10);
 
@@ -76,7 +86,7 @@ export default class OrgHierarchyModel extends BaseModel {
       ],
     };
 
-    const results = await this.findAll(this.db.tableName, conditions);
+    const results = await this.listAll(conditions, paginationOptions);
     if (!results || results.length === 0) return null;
 
     // Retourner le plus récent
@@ -85,7 +95,11 @@ export default class OrgHierarchyModel extends BaseModel {
     })[0];
   }
 
-  protected async listAllActiveSubordinates(supervisor_id: number, date?: Date): Promise<any[]> {
+  protected async listAllActiveSubordinates(
+    supervisor_id: number,
+    date?: Date,
+    paginationOptions: { offset?: number; limit?: number } = {},
+  ): Promise<any[]> {
     const currentDate = date || new Date();
     const dateStr = currentDate.toISOString().slice(0, 10);
 
@@ -98,26 +112,51 @@ export default class OrgHierarchyModel extends BaseModel {
       ],
     };
 
-    return await this.findAll(this.db.tableName, conditions);
+    return await this.findAll(this.db.tableName, conditions, paginationOptions);
   }
 
   // === RECHERCHES PAR CRITÈRES ===
 
-  protected async listAllByDepartment(department: string): Promise<any[]> {
-    return await this.findAll(this.db.tableName, { [this.db.department]: department });
+  protected async listAllByDepartment(
+    department: string,
+    paginationOptions: { offset?: number; limit?: number } = {},
+  ): Promise<any[]> {
+    return await this.findAll(
+      this.db.tableName,
+      { [this.db.department]: department },
+      paginationOptions,
+    );
   }
 
-  protected async listAllByCostCenter(cost_center: string): Promise<any[]> {
-    return await this.findAll(this.db.tableName, { [this.db.cost_center]: cost_center });
+  protected async listAllByCostCenter(
+    cost_center: string,
+    paginationOptions: { offset?: number; limit?: number } = {},
+  ): Promise<any[]> {
+    return await this.findAll(
+      this.db.tableName,
+      { [this.db.cost_center]: cost_center },
+      paginationOptions,
+    );
   }
 
-  protected async listAllByRelationshipType(relationship_type: string): Promise<any[]> {
-    return await this.findAll(this.db.tableName, {
-      [this.db.relationship_type]: relationship_type,
-    });
+  protected async listAllByRelationshipType(
+    relationship_type: string,
+    paginationOptions: { offset?: number; limit?: number } = {},
+  ): Promise<any[]> {
+    return await this.findAll(
+      this.db.tableName,
+      {
+        [this.db.relationship_type]: relationship_type,
+      },
+      paginationOptions,
+    );
   }
 
-  protected async listAllActiveBetweenDates(startDate: Date, endDate: Date): Promise<any[]> {
+  protected async listAllActiveBetweenDates(
+    startDate: Date,
+    endDate: Date,
+    paginationOptions: { offset?: number; limit?: number } = {},
+  ): Promise<any[]> {
     const startStr = startDate.toISOString().slice(0, 10);
     const endStr = endDate.toISOString().slice(0, 10);
 
@@ -129,7 +168,7 @@ export default class OrgHierarchyModel extends BaseModel {
       ],
     };
 
-    return await this.findAll(this.db.tableName, conditions);
+    return await this.findAll(this.db.tableName, conditions, paginationOptions);
   }
 
   // === LISTE ET PAGINATION ===
@@ -213,7 +252,9 @@ export default class OrgHierarchyModel extends BaseModel {
       [this.db.effective_to]: this.effective_to,
       [this.db.department]: this.department,
       [this.db.cost_center]: this.cost_center,
-      [this.db.delegation_level]: this.delegation_level,
+      [this.db.delegation_level]: this.delegation_level
+        ? this.delegation_level
+        : ORG_HIERARCHY_DEFAULTS.DELEGATION_LEVEL,
     });
 
     if (!lastID) {

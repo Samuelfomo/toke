@@ -5,11 +5,11 @@ export const USERS_VALIDATION = {
     MIN_LENGTH: 1,
     MAX_LENGTH: 255,
   },
-  TENANT: {
-    MIN_LENGTH: 1,
-    MAX_LENGTH: 128,
-    REQUIRED: true,
-  },
+  // TENANT: {
+  //   MIN_LENGTH: 1,
+  //   MAX_LENGTH: 128,
+  //   REQUIRED: true,
+  // },
   EMAIL: {
     MIN_LENGTH: 5,
     MAX_LENGTH: 255,
@@ -136,8 +136,8 @@ const USERS_LABEL = 'User';
 export const USERS_ERRORS = {
   USER: USERS_LABEL,
 
-  TENANT_REQUIRED: `${USERS_LABEL} tenant is required`,
-  TENANT_INVALID: `Tenant must be 1-${USERS_VALIDATION.TENANT.MAX_LENGTH} characters`,
+  // TENANT_REQUIRED: `${USERS_LABEL} tenant is required`,
+  // TENANT_INVALID: `Tenant must be 1-${USERS_VALIDATION.TENANT.MAX_LENGTH} characters`,
 
   ID_REQUIRED: `${USERS_LABEL} ID is required`,
 

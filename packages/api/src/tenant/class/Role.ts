@@ -92,6 +92,9 @@ export default class Role extends RoleModel {
   isDefaultRole(): boolean | undefined {
     return this.default_role;
   }
+  isAdminRole(): boolean | undefined {
+    return this.admin_role;
+  }
   // === SETTERS FLUENT ===
 
   setGuid(guid: string): Role {
@@ -126,6 +129,10 @@ export default class Role extends RoleModel {
 
   setDefaultRole(defaultRole: boolean): Role {
     this.default_role = defaultRole;
+    return this;
+  }
+  setAdminRole(adminRole: boolean): Role {
+    this.admin_role = adminRole;
     return this;
   }
 

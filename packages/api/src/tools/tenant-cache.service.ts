@@ -11,6 +11,7 @@ interface TenantConfig {
   database: string;
   active: boolean;
   last_updated: string;
+  reference: string;
 }
 
 interface TenantCache {

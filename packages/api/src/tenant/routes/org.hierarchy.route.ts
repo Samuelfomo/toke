@@ -376,6 +376,8 @@ router.get('/subordinate/:userGuid/list', Ensure.get(), async (req: Request, res
       });
     }
 
+    const paginationOptions = paginationSchema.parse(req.query);
+
     const userObj = await User._load(req.params.userGuid, true);
     if (!userObj) {
       return R.handleError(res, HttpStatus.NOT_FOUND, {
@@ -384,8 +386,16 @@ router.get('/subordinate/:userGuid/list', Ensure.get(), async (req: Request, res
       });
     }
 
-    const hierarchyEntries = await OrgHierarchy._listBySubordinate(userObj.getId()!);
+    const hierarchyEntries = await OrgHierarchy._listBySubordinate(
+      userObj.getId()!,
+      paginationOptions,
+    );
     const hierarchies = {
+      pagination: {
+        offset: paginationOptions.offset || 0,
+        limit: paginationOptions.limit || hierarchyEntries?.length || 0,
+        count: hierarchyEntries?.length || 0,
+      },
       user: userObj.toPublicJSON(),
       relations: hierarchyEntries
         ? await Promise.all(
@@ -394,7 +404,6 @@ router.get('/subordinate/:userGuid/list', Ensure.get(), async (req: Request, res
             ),
           )
         : [],
-      count: hierarchyEntries?.length || 0,
     };
 
     return R.handleSuccess(res, { hierarchies });
@@ -415,6 +424,8 @@ router.get('/supervisor/:userGuid/list', Ensure.get(), async (req: Request, res:
       });
     }
 
+    const paginationOptions = paginationSchema.parse(req.query);
+
     const userObj = await User._load(req.params.userGuid, true);
     if (!userObj) {
       return R.handleError(res, HttpStatus.NOT_FOUND, {
@@ -423,8 +434,16 @@ router.get('/supervisor/:userGuid/list', Ensure.get(), async (req: Request, res:
       });
     }
 
-    const hierarchyEntries = await OrgHierarchy._listBySupervisor(userObj.getId()!);
+    const hierarchyEntries = await OrgHierarchy._listBySupervisor(
+      userObj.getId()!,
+      paginationOptions,
+    );
     const hierarchies = {
+      pagination: {
+        offset: paginationOptions.offset || 0,
+        limit: paginationOptions.limit || hierarchyEntries?.length || 0,
+        count: hierarchyEntries?.length || 0,
+      },
       supervisor: userObj.toPublicJSON(),
       subordinates: hierarchyEntries
         ? await Promise.all(
@@ -433,7 +452,6 @@ router.get('/supervisor/:userGuid/list', Ensure.get(), async (req: Request, res:
             ),
           )
         : [],
-      count: hierarchyEntries?.length || 0,
     };
 
     return R.handleSuccess(res, { hierarchies });
@@ -503,6 +521,8 @@ router.get(
         });
       }
 
+      const paginationOptions = paginationSchema.parse(req.query);
+
       const userObj = await User._load(req.params.userGuid, true);
       if (!userObj) {
         return R.handleError(res, HttpStatus.NOT_FOUND, {
@@ -512,14 +532,22 @@ router.get(
       }
 
       const date = req.query.date ? new Date(req.query.date as string) : undefined;
-      const activeSubordinates = await OrgHierarchy.getActiveSubordinates(userObj.getId()!, date);
+      const activeSubordinates = await OrgHierarchy.getActiveSubordinates(
+        userObj.getId()!,
+        date,
+        paginationOptions,
+      );
 
       const subordinatesData = {
+        pagination: {
+          offset: paginationOptions.offset || 0,
+          limit: paginationOptions.limit || activeSubordinates?.length || 0,
+          count: activeSubordinates?.length || 0,
+        },
         supervisor: userObj.toPublicJSON(),
         active_subordinates: activeSubordinates
           ? await Promise.all(activeSubordinates.map(async (hierarchy) => await hierarchy.toJSON()))
           : [],
-        count: activeSubordinates?.length || 0,
       };
 
       return R.handleSuccess(res, { subordinatesData });

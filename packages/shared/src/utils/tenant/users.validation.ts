@@ -2,17 +2,17 @@
 import { USERS_VALIDATION } from '../../constants/tenant/users.js';
 
 export class UsersValidationUtils {
-  /**
-   * Validates tenant
-   */
-  static validateTenant(tenant: string): boolean {
-    if (!tenant || typeof tenant !== 'string') return false;
-    const trimmed = tenant.trim();
-    return (
-      trimmed.length >= USERS_VALIDATION.TENANT.MIN_LENGTH &&
-      trimmed.length <= USERS_VALIDATION.TENANT.MAX_LENGTH
-    );
-  }
+  // /**
+  //  * Validates tenant
+  //  */
+  // static validateTenant(tenant: string): boolean {
+  //   if (!tenant || typeof tenant !== 'string') return false;
+  //   const trimmed = tenant.trim();
+  //   return (
+  //     trimmed.length >= USERS_VALIDATION.TENANT.MIN_LENGTH &&
+  //     trimmed.length <= USERS_VALIDATION.TENANT.MAX_LENGTH
+  //   );
+  // }
 
   /**
    * Validates email
@@ -325,7 +325,7 @@ export class UsersValidationUtils {
     }
 
     return (
-      this.validateTenant(data.tenant) &&
+      // this.validateTenant(data.tenant) &&
       this.validateEmail(data.email) &&
       this.validateFirstName(data.first_name) &&
       this.validateLastName(data.last_name) &&
@@ -351,9 +351,9 @@ export class UsersValidationUtils {
   static getValidationErrors(data: any): string[] {
     const errors: string[] = [];
 
-    if (!data.tenant || !this.validateTenant(data.tenant)) {
-      errors.push(`Invalid tenant: must be 1-${USERS_VALIDATION.TENANT.MAX_LENGTH} characters`);
-    }
+    // if (!data.tenant || !this.validateTenant(data.tenant)) {
+    //   errors.push(`Invalid tenant: must be 1-${USERS_VALIDATION.TENANT.MAX_LENGTH} characters`);
+    // }
 
     if (data.email !== undefined && !this.validateEmail(data.email)) {
       errors.push(
@@ -460,7 +460,7 @@ export class UsersValidationUtils {
    */
   static validateFilterData(data: any): boolean {
     return (
-      (data.tenant && this.validateTenant(data.tenant)) ||
+      // (data.tenant && this.validateTenant(data.tenant)) ||
       (data.email && this.validateEmail(data.email)) ||
       (data.first_name && this.validateFirstName(data.first_name)) ||
       (data.last_name && this.validateLastName(data.last_name)) ||

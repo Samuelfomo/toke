@@ -24,7 +24,7 @@ export default class OTPCacheService {
     private static otpCache: OTPCache = {};
     private static phoneIndex: PhoneOTPIndex = {};
     private static cacheFile = path.join(process.cwd(), 'cache', 'otp.json');
-    private static readonly OTP_EXPIRY = 5 * 60 * 1000; // 5 minutes en millisecondes
+    private static readonly OTP_EXPIRY = 60 * 60 * 1000; // 5 minutes en millisecondes
     private static readonly MAX_ATTEMPTS = 3;
     private static readonly CLEANUP_INTERVAL = 60 * 1000; // Nettoyer toutes les minutes
     private static readonly TIMEZONE_OFFSET = 1; // GMT+1 pour le Cameroun

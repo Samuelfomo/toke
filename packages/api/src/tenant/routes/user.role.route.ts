@@ -216,165 +216,6 @@ router.get('/user/:userGuid/list', Ensure.get(), async (req: Request, res: Respo
   }
 });
 
-// router.get(
-//   '/user/:userId/has-role/:roleCode',
-//   Ensure.get(),
-//   async (req: Request, res: Response) => {
-//     try {
-//       const userId = parseInt(req.params.userId, 10);
-//       const { roleCode } = req.params;
-//
-//       if (isNaN(userId)) {
-//         return R.handleError(res, HttpStatus.BAD_REQUEST, {
-//           code: USER_ROLES_CODES.INVALID_USER_ID,
-//           message: 'Invalid user ID',
-//         });
-//       }
-//
-//       if (!roleCode) {
-//         return R.handleError(res, HttpStatus.BAD_REQUEST, {
-//           code: USER_ROLES_CODES.INVALID_ROLE_CODE,
-//           message: 'Role code is required',
-//         });
-//       }
-//
-//       const hasRole = await UserRole.hasRole(userId, roleCode);
-//
-//       return R.handleSuccess(res, {
-//         user_id: userId,
-//         role_code: roleCode,
-//         has_role: hasRole,
-//       });
-//     } catch (error: any) {
-//       return R.handleError(res, HttpStatus.INTERNAL_ERROR, {
-//         code: USER_ROLES_CODES.ROLE_CHECK_FAILED,
-//         message: error.message,
-//       });
-//     }
-//   },
-// );
-
-// === ROUTES PAR RÔLE ===
-
-// router.get('/role/:roleId/list', Ensure.get(), async (req: Request, res: Response) => {
-//   try {
-//     const roleId = parseInt(req.params.roleId, 10);
-//     if (isNaN(roleId)) {
-//       return R.handleError(res, HttpStatus.BAD_REQUEST, {
-//         code: USER_ROLES_CODES.INVALID_ROLE_ID,
-//         message: 'Invalid role ID',
-//       });
-//     }
-//
-//     const paginationOptions = paginationSchema.parse(req.query);
-//     const userRoleEntries = await UserRole._listByRole(roleId, paginationOptions);
-//
-//     const userRoles = {
-//       pagination: {
-//         offset: paginationOptions.offset || 0,
-//         limit: paginationOptions.limit || userRoleEntries?.length || 0,
-//         count: userRoleEntries?.length || 0,
-//       },
-//       items: userRoleEntries
-//         ? await Promise.all(userRoleEntries.map(async (userRole) => await userRole.toJSON()))
-//         : [],
-//     };
-//
-//     return R.handleSuccess(res, { userRoles });
-//   } catch (error: any) {
-//     return R.handleError(res, HttpStatus.INTERNAL_ERROR, {
-//       code: USER_ROLES_CODES.LISTING_FAILED,
-//       message: error.message,
-//     });
-//   }
-// });
-//
-// router.get('/role/:roleId/users', Ensure.get(), async (req: Request, res: Response) => {
-//   try {
-//     const roleId = parseInt(req.params.roleId, 10);
-//     if (isNaN(roleId)) {
-//       return R.handleError(res, HttpStatus.BAD_REQUEST, {
-//         code: USER_ROLES_CODES.INVALID_ROLE_ID,
-//         message: 'Invalid role ID',
-//       });
-//     }
-//
-//     // Vérification de l'existence du rôle
-//     const roleObj = await Role._load(roleId);
-//     if (!roleObj) {
-//       return R.handleError(res, HttpStatus.NOT_FOUND, {
-//         code: ROLES_CODES.ROLE_NOT_FOUND,
-//         message: ROLES_ERRORS.NOT_FOUND,
-//       });
-//     }
-//
-//     const paginationOptions = paginationSchema.parse(req.query);
-//     const userRoleEntries = await UserRole._listByRole(roleId, paginationOptions);
-//
-//     const users = [];
-//     if (userRoleEntries) {
-//       for (const userRole of userRoleEntries) {
-//         const user = await userRole.getUserObject();
-//         if (user) {
-//           users.push({
-//             ...user.toJSON(),
-//             assignment_date: userRole.getCreatedAt(),
-//             assigned_by: await userRole.getAssignedByObject(),
-//           });
-//         }
-//       }
-//     }
-//
-//     return R.handleSuccess(res, {
-//       role: roleObj.toJSON(),
-//       users: {
-//         pagination: {
-//           offset: paginationOptions.offset || 0,
-//           limit: paginationOptions.limit || users.length,
-//           count: users.length,
-//         },
-//         items: users,
-//       },
-//     });
-//   } catch (error: any) {
-//     return R.handleError(res, HttpStatus.INTERNAL_ERROR, {
-//       code: USER_ROLES_CODES.USERS_RETRIEVAL_FAILED,
-//       message: error.message,
-//     });
-//   }
-// });
-
-// === RÉCUPÉRATION D'UN ASSIGNMENT SPÉCIFIQUE ===
-
-// router.get('/:guid', Ensure.get(), async (req: Request, res: Response) => {
-//   try {
-//     const validGuid = UserRolesValidationUtils.validateGuid(req.params.guid);
-//     if (!validGuid) {
-//       return R.handleError(res, HttpStatus.BAD_REQUEST, {
-//         code: USER_ROLES_CODES.INVALID_GUID,
-//         message: USER_ROLES_ERRORS.GUID_INVALID,
-//       });
-//     }
-//
-//     const userRoleObj = await UserRole._load(req.params.guid, true);
-//     if (!userRoleObj) {
-//       return R.handleError(res, HttpStatus.NOT_FOUND, {
-//         code: USER_ROLES_CODES.ASSIGNMENT_NOT_FOUND,
-//         message: USER_ROLES_ERRORS.NOT_FOUND,
-//       });
-//     }
-//
-//     return R.handleSuccess(res, {
-//       userRole: await userRoleObj.toJSON(),
-//     });
-//   } catch (error: any) {
-//     return R.handleError(res, HttpStatus.INTERNAL_ERROR, {
-//       code: USER_ROLES_CODES.RETRIEVAL_FAILED,
-//       message: error.message,
-//     });
-//   }
-// });
-
 // === SUPPRESSION D'UN ASSIGNMENT SPÉCIFIQUE ===
 
 router.delete('/:guid', Ensure.delete(), async (req: Request, res: Response) => {
@@ -427,20 +268,23 @@ router.delete('/:guid', Ensure.delete(), async (req: Request, res: Response) => 
 
 // router.post('/bulk-assign', Ensure.post(), async (req: Request, res: Response) => {
 //   try {
-//     const { user_ids, role_ids, assigned_by } = req.body;
+//     const { users, roles, assigned_by } = req.body;
 //
-//     if (!Array.isArray(user_ids) || !Array.isArray(role_ids) || !assigned_by) {
+//     if (!Array.isArray(users) || !Array.isArray(roles) || !assigned_by) {
 //       return R.handleError(res, HttpStatus.BAD_REQUEST, {
 //         code: USER_ROLES_CODES.VALIDATION_FAILED,
 //         message: 'user_ids, role_ids arrays and assigned_by are required',
 //       });
 //     }
 //
+//     const userIds = [];
+//     const roleIds = [];
+//
 //     const assignments = [];
 //     const errors = [];
 //
-//     for (const userId of user_ids) {
-//       for (const roleId of role_ids) {
+//     for (const userId of users) {
+//       for (const roleId of roles) {
 //         try {
 //           const userRole = await UserRole.assignRole(userId, roleId, assigned_by);
 //           assignments.push(await userRole.toJSON());

@@ -231,7 +231,7 @@ router.put(
         });
       }
 
-      const validatedData = LX.validateLexiconUpdate(req.body);
+      const validatedData = await LX.validateLexiconUpdate(req.body);
 
       // Mise à jour des champs fournis
       if (validatedData.reference !== undefined) lexicon.setReference(validatedData.reference);
@@ -286,7 +286,7 @@ router.put(
           message: LEXICON_ERRORS.DEFAULT_LANGUAGE_REQUIRED,
         });
       } else {
-        R.handleError(res, HttpStatus.BAD_REQUEST, {
+        R.handleError(res, HttpStatus.INTERNAL_ERROR, {
           code: LEXICON_CODES.UPDATE_FAILED,
           message: error.message,
         });

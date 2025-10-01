@@ -2,7 +2,8 @@ import dotenv from 'dotenv';
 import { HttpStatus } from '@toke/shared';
 
 import GenerateOtp from '../utils/generate.otp.js';
-import api from '../utils/axios.config.js';
+// import api from '../utils/axios.config.js';
+import { createApiClient } from '../utils/axios.config.js';
 
 dotenv.config();
 
@@ -17,6 +18,7 @@ export default class WapService {
     response: object;
   }> {
     try {
+      const api = createApiClient(process.env.SITE_URL);
       const response = await api.post('/automation', {
         reference: process.env.SEND_OTP_MESSAGE,
         country: country,

@@ -118,6 +118,13 @@ export const MEMOS_CODES = {
   PAGINATION_INVALID: 'pagination_invalid',
   REVISION_FAILED: 'revision_failed',
   RETRIEVAL_FAILED: 'retrieval_failed',
+  SUBMISSION_FAILED: 'submission_failed',
+  APPROVAL_FAILED: 'approval_failed',
+  REJECTION_FAILED: 'rejection_failed',
+  ESCALATION_FAILED: 'escalation_failed',
+  ATTACHMENT_FAILED: 'attachment_failed',
+  ANALYSIS_FAILED: 'analysis_failed',
+  STATISTICS_FAILED: 'statistics_failed',
 } as const;
 
 const MEMOS_LABEL = 'Memo';
@@ -133,6 +140,7 @@ export const MEMOS_ERRORS = {
 
   VALIDATOR_USER_INVALID: `Validator user ID must be between ${MEMOS_VALIDATION.VALIDATOR_USER.MIN} and ${MEMOS_VALIDATION.VALIDATOR_USER.MAX}`,
   VALIDATOR_USER_NOT_FOUND: 'Validator user not found',
+  VALIDATOR_USER_REQUIRED: 'Validator user is required',
 
   MEMO_TYPE_REQUIRED: `${MEMOS_LABEL} type is required`,
   MEMO_TYPE_INVALID: `Memo type must be one of: ${Object.values(MemoType).join(', ')}`,
@@ -187,6 +195,12 @@ export const MEMOS_ERRORS = {
   GUID_GENERATION_FAILED: `Failed to generate GUID for ${MEMOS_LABEL}`,
   ID_REQUIRED: `${MEMOS_LABEL} id is required`,
 } as const;
+
+export const MEMOS_MESSAGES = {
+  DELETED_SUCCESSFULLY: `${MEMOS_LABEL} deleted successfully`,
+  APPROVED_SUCCESSFULLY: `${MEMOS_LABEL} approved successfully`,
+  REJECTED_SUCCESSFULLY: `${MEMOS_LABEL} rejected successfully`,
+};
 
 export type MemoError = (typeof MEMOS_ERRORS)[keyof typeof MEMOS_ERRORS];
 export type MemoCode = (typeof MEMOS_CODES)[keyof typeof MEMOS_CODES];

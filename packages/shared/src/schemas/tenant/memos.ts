@@ -231,6 +231,25 @@ export const memosGuidSchema = z
   .min(MEMOS_VALIDATION.GUID.MIN_LENGTH, MEMOS_ERRORS.GUID_INVALID)
   .max(MEMOS_VALIDATION.GUID.MAX_LENGTH, MEMOS_ERRORS.GUID_INVALID);
 
+// Schema pour la validation d'un mémo (approval/rejection)
+export const memoValidationSchema = z.object({
+  validator_user: z
+    .string({
+      required_error: MEMOS_ERRORS.VALIDATOR_USER_REQUIRED,
+      invalid_type_error: MEMOS_ERRORS.VALIDATOR_USER_INVALID,
+    })
+    .min(1, MEMOS_ERRORS.VALIDATOR_USER_INVALID),
+
+  validator_comments: z
+    .string({
+      invalid_type_error: MEMOS_ERRORS.VALIDATOR_COMMENTS_INVALID,
+    })
+    .min(MEMOS_VALIDATION.VALIDATOR_COMMENTS.MIN_LENGTH, MEMOS_ERRORS.VALIDATOR_COMMENTS_INVALID)
+    .max(MEMOS_VALIDATION.VALIDATOR_COMMENTS.MAX_LENGTH, MEMOS_ERRORS.VALIDATOR_COMMENTS_INVALID)
+    .trim()
+    .optional(),
+});
+
 // Fonctions de validation avec gestion d'erreurs
 export const validateMemosCreation = (data: any) => {
   try {
@@ -310,6 +329,18 @@ export const validateMemoModificationAllowed = (currentStatus: MemoStatus) => {
   return true;
 };
 
+// Fonction de validation
+export const validateMemoValidation = (data: any) => {
+  try {
+    return memoValidationSchema.parse(data);
+  } catch (error) {
+    if (error instanceof z.ZodError) {
+      throw new Error(`Validation failed: ${error.errors.map((e) => e.message).join(', ')}`);
+    }
+    throw error;
+  }
+};
+
 // Schema complet pour les réponses (avec métadonnées)
 export const memosResponseSchema = baseMemosSchema.extend({
   id: z.number().int().positive(),
@@ -327,10 +358,12 @@ export const memosSchemas = {
   validateMemoStatusTransition,
   validateSelfValidation,
   validateMemoModificationAllowed,
+  validateMemoValidation,
   createMemosSchema,
   updateMemosSchema,
   memosFiltersSchema,
   memosGuidSchema,
+  memoValidationSchema,
 };
 
 // Types TypeScript générés à partir des schemas
@@ -339,3 +372,4 @@ export type UpdateMemosInput = z.infer<typeof updateMemosSchema>;
 export type MemosData = z.infer<typeof memosResponseSchema>;
 export type MemosFilters = z.infer<typeof memosFiltersSchema>;
 export type AffectedEntries = z.infer<typeof affectedEntriesSchema>;
+export type MemoValidationInput = z.infer<typeof memoValidationSchema>;

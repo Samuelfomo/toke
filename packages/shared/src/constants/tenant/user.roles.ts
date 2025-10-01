@@ -58,6 +58,7 @@ export const USER_ROLES_CODES = {
   INSUFFICIENT_PERMISSIONS: 'insufficient_permissions',
   ROLE_ASSIGNMENT_CONFLICT: 'role_assignment_conflict',
   REVISION_FAILED: 'revision_failed',
+  BULK_ASSIGNMENT_FAILED: 'bulk_assignment_failed',
 } as const;
 
 const USER_ROLES_LABEL = 'User Role';

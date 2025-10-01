@@ -5,14 +5,14 @@ import { USERS_DEFAULTS, USERS_ERRORS, USERS_VALIDATION } from '../../constants/
 
 // Base schema for common validations
 const baseUsersSchema = z.object({
-  tenant: z
-    .string({
-      required_error: USERS_ERRORS.TENANT_REQUIRED,
-      invalid_type_error: USERS_ERRORS.TENANT_INVALID,
-    })
-    .min(USERS_VALIDATION.TENANT.MIN_LENGTH, USERS_ERRORS.TENANT_INVALID)
-    .max(USERS_VALIDATION.TENANT.MAX_LENGTH, USERS_ERRORS.TENANT_INVALID)
-    .trim(),
+  // tenant: z
+  //   .string({
+  //     required_error: USERS_ERRORS.TENANT_REQUIRED,
+  //     invalid_type_error: USERS_ERRORS.TENANT_INVALID,
+  //   })
+  //   .min(USERS_VALIDATION.TENANT.MIN_LENGTH, USERS_ERRORS.TENANT_INVALID)
+  //   .max(USERS_VALIDATION.TENANT.MAX_LENGTH, USERS_ERRORS.TENANT_INVALID)
+  //   .trim(),
 
   supervisor: z
     .string({

@@ -167,7 +167,7 @@ router.get('/active/:status/list', Ensure.get(), async (req: Request, res: Respo
 });
 
 // === CRÉATION UTILISATEUR ===
-
+// 👤 Add new employee to manager's team with basic info and automatic role assignment
 router.post('/', Ensure.post(), async (req: Request, res: Response) => {
   try {
     const validatedData = validateUsersCreation(req.body);
@@ -187,6 +187,8 @@ router.post('/', Ensure.post(), async (req: Request, res: Response) => {
       });
     }
 
+    const tenant = req.tenant;
+
     const existingSupervisor = await User._load(validatedData.supervisor, true);
     if (!existingSupervisor) {
       return R.handleError(res, HttpStatus.NOT_FOUND, {
@@ -196,7 +198,7 @@ router.post('/', Ensure.post(), async (req: Request, res: Response) => {
     }
 
     const userObj = new User()
-      .setTenant(validatedData.tenant)
+      .setTenant(tenant.config.reference)
       .setFirstName(validatedData.first_name)
       .setLastName(validatedData.last_name)
       .setPhoneNumber(validatedData.phone_number);
@@ -230,8 +232,6 @@ router.post('/', Ensure.post(), async (req: Request, res: Response) => {
     userObj.generateOtpToken(parseInt(validatedData.otp_expires_at?.toDateString()!, 10) || 1440); // 24h par défaut
     // }
 
-    await userObj.save();
-
     const existingDefaultRole = await Role._loadDefaultRole();
     if (!existingDefaultRole) {
       return R.handleError(res, HttpStatus.NOT_FOUND, {
@@ -240,18 +240,20 @@ router.post('/', Ensure.post(), async (req: Request, res: Response) => {
       });
     }
 
+    await userObj.save();
+
     const userRoleObj = new UserRole()
       .setRole(existingDefaultRole.getId()!)
       .setUser(userObj.getId()!)
       .setAssignedBy(existingSupervisor.getId()!);
-
-    await userRoleObj.save();
 
     const orgHierarchyObj = new OrgHierarchy()
       .setSubordinate(userObj.getId()!)
       .setSupervisor(existingSupervisor.getId()!)
       .setDepartment(userObj.getDepartment()!)
       .setEffectiveFrom(ORG_HIERARCHY_DEFAULTS.EFFECTIVE_FROM);
+
+    await userRoleObj.save();
 
     await orgHierarchyObj.save();
 
@@ -536,8 +538,10 @@ router.post('/admin', Ensure.post(), async (req: Request, res: Response) => {
       });
     }
 
+    const tenant = req.tenant;
+
     const userObj = new User()
-      .setTenant(validatedData.tenant)
+      .setTenant(tenant.config.reference)
       .setFirstName(validatedData.first_name)
       .setLastName(validatedData.last_name)
       .setPhoneNumber(validatedData.phone_number);
@@ -565,8 +569,6 @@ router.post('/admin', Ensure.post(), async (req: Request, res: Response) => {
     // Génération OTP pour nouvel utilisateur
     userObj.generateOtpToken(parseInt(validatedData.otp_expires_at?.toDateString()!, 10) || 1440); // 24h par défaut
 
-    await userObj.save();
-
     const existingDefaultRole = await Role._loadDefaultRole();
     if (!existingDefaultRole) {
       return R.handleError(res, HttpStatus.NOT_FOUND, {
@@ -582,6 +584,8 @@ router.post('/admin', Ensure.post(), async (req: Request, res: Response) => {
         message: ROLES_ERRORS.ADMIN_ROLE_NOT_FOUND,
       });
     }
+
+    await userObj.save();
 
     const userRoleObj = new UserRole()
       .setRole(existingDefaultRole.getId()!)
@@ -618,7 +622,7 @@ router.post('/admin', Ensure.post(), async (req: Request, res: Response) => {
     } else {
       return R.handleError(res, HttpStatus.INTERNAL_ERROR, {
         code: USERS_CODES.CREATION_FAILED,
-        message: error.message,
+        message: error,
       });
     }
   }
@@ -626,14 +630,15 @@ router.post('/admin', Ensure.post(), async (req: Request, res: Response) => {
 
 router.post('/system', Ensure.post(), async (req: Request, res: Response) => {
   try {
+    const tenant = req.tenant;
     const userObj = new User()
-      .setTenant('System')
+      .setTenant(tenant.config.reference)
       .setFirstName('System')
       .setLastName('Account')
       .setPhoneNumber('+237000000000')
       .setEmail('system@local.com')
       .setEmployeeCode('SYS-0001')
-      .setHireDate(new Date('2025-01-01'))
+      .setHireDate(new Date(Date.now()))
       .setDepartment('SYSTEM')
       .setJobTitle('SYSTEM');
 

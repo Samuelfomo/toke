@@ -1,1 +1,44 @@
-{}
+{
+  "f98a942f-ecba-44f1-b56c-be6df4f4c2c7": {
+    "id": 1,
+    "name": "toke_clock",
+    "token": "f98a942f-ecba-44f1-b56c-be6df4f4c2c7",
+    "secret": "3e13e5ff-00c1-470b-a746-aadb9f6af807",
+    "active": true,
+    "profile": {
+      "id": 1,
+      "name": "Clock-In",
+      "root": false,
+      "description": "Pour l'app de pointage de presences"
+    },
+    "last_updated": "2025-09-25T18:48:23.014Z"
+  },
+  "b7082dd3-2a44-4736-a229-a2fd86f0ba3a": {
+    "id": 2,
+    "name": "toke_manager",
+    "token": "b7082dd3-2a44-4736-a229-a2fd86f0ba3a",
+    "secret": "fbc1dc1a-78d5-494a-8faa-a786e8667649",
+    "active": true,
+    "profile": {
+      "id": 2,
+      "name": "manager",
+      "root": false,
+      "description": "manager tenant"
+    },
+    "last_updated": "2025-09-29T18:53:09.028Z"
+  },
+  "1759209902443128": {
+    "id": 3,
+    "name": "toke_api_tenant",
+    "token": "1759209902443128",
+    "secret": "0G+OU0+QqlhC7AX0DUwEdjngbzWqYdlQ5IwwXGWqrTI=",
+    "active": true,
+    "profile": {
+      "id": 3,
+      "name": "api",
+      "root": true,
+      "description": "toke tenant"
+    },
+    "last_updated": "2025-09-30T12:58:53.410Z"
+  }
+}

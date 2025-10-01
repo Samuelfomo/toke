@@ -1,17 +1,17 @@
-import {Request, Response, Router} from 'express';
+import { Request, Response, Router } from 'express';
 import {
-    COUNTRY_ERRORS,
-    CountryValidationUtils,
-    GLOBAL_LICENSE_CODES,
-    GLOBAL_LICENSE_ERRORS,
-    HttpStatus,
-    LicenseStatus,
-    paginationSchema,
-    Status,
-    TENANT_CODES,
-    TENANT_ERRORS,
-    TenantValidationUtils,
-    TN,
+  COUNTRY_ERRORS,
+  CountryValidationUtils,
+  GLOBAL_LICENSE_CODES,
+  GLOBAL_LICENSE_ERRORS,
+  HttpStatus,
+  LicenseStatus,
+  paginationSchema,
+  Status,
+  TENANT_CODES,
+  TENANT_ERRORS,
+  TenantValidationUtils,
+  TN,
 } from '@toke/shared';
 
 import Tenant from '../class/Tenant.js';
@@ -19,17 +19,17 @@ import R from '../../tools/response.js';
 import G from '../../tools/glossary.js';
 import Ensure from '../../middle/ensured-routes.js';
 import Revision from '../../tools/revision.js';
-import {tableName} from '../../utils/response.model.js';
+import { tableName } from '../../utils/response.model.js';
 import GlobalLicense from '../class/GlobalLicense.js';
 import TenantConfig from '../../utils/generate.tenant.config.js';
 import ManageTenantDatabase from '../../utils/generate.database.js';
 import TenantCacheService from '../../tools/tenant-cache.service.js';
 import TenantManager from '../../tenant/database/db.tenant-manager.js';
-import {TableInitializer} from '../../tenant/database/db.initializer.js';
+import { TableInitializer } from '../../tenant/database/db.initializer.js';
 import Country from '../class/Country.js';
-import WapService from '../../tools/send.otp.service.js';
 import TenantOtpManager from '../../tools/tenant.otp.manager.js';
 import OTPCacheService from '../../tools/otp-cache.service.js';
+import WapService from '../../tools/send.otp.service.js';
 
 const otpManager = new TenantOtpManager();
 
@@ -582,6 +582,7 @@ router.patch('/:guid/subdomain', Ensure.patch(), async (req: Request, res: Respo
       password: tenantObj.getDatabasePassword()!,
       database: tenantObj.getDatabaseName()!,
       active: tenantObj.isActive(),
+      reference: tenantObj.getGuid()!.toString(),
     });
 
     // 3. Récupérer la configuration du tenant depuis le cache
@@ -1017,14 +1018,17 @@ router.post('/otp', Ensure.post(), async (req: Request, res: Response) => {
 
     // Envoyer l'OTP via WhatsApp
     const result = await WapService.sendOtp(generateOtp, phone, country);
-    if (result.status !== HttpStatus.CREATED) {
+    if (result.status !== HttpStatus.SUCCESS) {
       // Supprimer l'OTP si l'envoi a échoué
       await OTPCacheService.deleteOTP(generateOtp);
 
       return R.handleError(res, result.status, result.response);
     }
 
-    return R.handleNoContent(res);
+    return R.handleSuccess(res, {
+      message: 'OTP successfully sent',
+      phone: phone,
+    });
   } catch (error: any) {
     return R.handleError(res, HttpStatus.INTERNAL_ERROR, {
       code: TENANT_CODES.CREATION_FAILED,
