@@ -136,7 +136,7 @@ export const UsersDbStructure = {
       type: DataTypes.STRING(10), //-- OTP temporaire onboarding
       allowNull: true,
       validate: {
-        len: [1, 10],
+        len: [6, 10],
       },
       comment: 'User OTP token',
     },

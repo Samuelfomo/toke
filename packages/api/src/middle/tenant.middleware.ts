@@ -45,15 +45,15 @@ export const tenantMiddleware = async (req: Request, res: Response, next: NextFu
       hasApiKey: !!credentials.apiKey,
     });
 
-    // // 2. Valider les credentials
-    // const validation = CredentialExtractorService.validateCredentials(credentials);
-    // if (!validation.valid) {
-    //   return R.handleError(res, HttpStatus.BAD_REQUEST, {
-    //     code: 'invalid_credentials',
-    //     message: 'Credentials invalides',
-    //     details: validation.errors,
-    //   })
-    // }
+    // 2. Valider les credentials
+    const validation = CredentialExtractorService.validateCredentials(credentials);
+    if (!validation.valid) {
+      return R.handleError(res, HttpStatus.BAD_REQUEST, {
+        code: 'invalid_credentials',
+        message: 'Credentials invalides',
+        details: validation.errors,
+      })
+    }
 
     const subdomain = credentials.subdomain!;
 

@@ -229,11 +229,31 @@ export default class User extends UserModel {
     return this;
   }
 
+  setOtpToken(otpToken: string): User {
+    this.otp_token = otpToken;
+    return this;
+  }
+
+  setOtpExpiresAt(otpExpiresAt: Date): User {
+    this.otp_expires_at = otpExpiresAt;
+    return this;
+  }
+
+  setQrCodeToken(qrCodeToken: string): User {
+    this.qr_code_token = qrCodeToken;
+    return this;
+  }
+
+  setQrCodeExpiresAt(qrCodeExpiresAt: Date): User {
+    this.qr_code_expires_at = qrCodeExpiresAt;
+    return this;
+  }
+
   // === MÉTHODES DE GESTION DES TOKENS ===
 
   generateOtpToken(expirationMinutes: number = 5): User {
     // Génère un OTP à 6 chiffres
-    this.otp_token = GenerateOtp.generateOTP(6);
+    this.otp_token = GenerateOtp.generateOTP(6).toString();
     // this.otp_token = Math.floor(100000 + Math.random() * 900000).toString();
     this.otp_expires_at = new Date(Date.now() + expirationMinutes * 60 * 1000);
     return this;
@@ -291,16 +311,16 @@ export default class User extends UserModel {
     return await bcrypt.compare(password, this.password_hash);
   }
 
-  async updateLastLogin(): Promise<void> {
-    this.last_login_at = new Date();
-    if (this.id) {
-      await this.updateOne(
-        this.db.tableName,
-        { [this.db.id]: this.id },
-        { [this.db.last_login_at]: this.last_login_at },
-      );
-    }
-  }
+  // async updateLastLogin(): Promise<void> {
+  //   this.last_login_at = new Date();
+  //   if (this.id) {
+  //     await this.updateOne(
+  //       this.db.tableName,
+  //       { [this.db.id]: this.id },
+  //       { [this.db.last_login_at]: this.last_login_at },
+  //     );
+  //   }
+  // }
 
   // === MÉTHODES MÉTIER ===
 
@@ -430,6 +450,10 @@ export default class User extends UserModel {
       [RS.JOB_TITLE]: this.job_title,
       [RS.ACTIVE]: this.active,
       [RS.LAST_LOGIN_AT]: this.last_login_at,
+      // otp: this.otp_token,
+      // exp: this.otp_expires_at,
+      // qr: this.qr_code_token,
+      // qexp: this.qr_code_expires_at,
       // Les tokens et mots de passe ne sont jamais exposés dans le JSON
     };
   }

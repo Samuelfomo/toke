@@ -206,6 +206,8 @@ export const USERS_ERRORS = {
   INVALID_DATE_FORMAT: 'Invalid date format provided',
   PAGINATION_INVALID: 'Invalid pagination parameters',
   HIRE_DATE_FUTURE: 'Hire date cannot be in the future',
+  PASSWORD_VERIFICATION_FAILED: `${USERS_LABEL} password verification failed`,
+  PIN_VERIFICATION_FAILED: `${USERS_LABEL} PIN verification failed`,
 } as const;
 
 export type UserError = (typeof USERS_ERRORS)[keyof typeof USERS_ERRORS];

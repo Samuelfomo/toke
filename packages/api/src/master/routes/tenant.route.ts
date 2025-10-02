@@ -712,6 +712,41 @@ router.delete('/:guid', Ensure.delete(), async (req: Request, res: Response) => 
   }
 });
 
+router.get('/:guid/check', Ensure.get(), async (req: Request, res: Response) => {
+  try {
+    const { guid } = req.params;
+    if (!TenantValidationUtils.validateTenantGuid(guid)) {
+      return R.handleError(res, HttpStatus.BAD_REQUEST, {
+        code: TENANT_CODES.INVALID_GUID,
+        message: TENANT_ERRORS.GUID_INVALID,
+      });
+    }
+    const tenant = await Tenant._load(parseInt(guid, 10), true);
+    if (!tenant) {
+      return R.handleError(res, HttpStatus.NOT_FOUND, {
+        code: TENANT_CODES.TENANT_NOT_FOUND,
+        message: TENANT_ERRORS.NOT_FOUND,
+      });
+    }
+    if (!tenant.getSubdomain() || !tenant.getDatabaseName()) {
+      return R.handleError(res, HttpStatus.NOT_FOUND, {
+        code: TENANT_CODES.DATABASE_CONFIG_NOT_FOUND,
+        message: TENANT_ERRORS.DATABASE_CONFIG_NOT_FOUND,
+      });
+    }
+    return R.handleSuccess(res, {
+      message: `System tenant ${tenant.getName()} is active`,
+      tenant: tenant.toJSON(),
+      reference: tenant.getSubdomain(),
+    });
+  } catch (error: any) {
+    return R.handleError(res, HttpStatus.INTERNAL_ERROR, {
+      code: TENANT_CODES.SEARCH_FAILED,
+      message: `${TENANT_ERRORS.NOT_FOUND}: ${error.message}`,
+    });
+  }
+});
+
 // endregion
 
 // region ROUTES UTILITAIRES

@@ -132,6 +132,7 @@ export const AUDIT_LOGS_ERRORS = {
   DELETE_NOT_ALLOWED: `${AUDIT_LOGS_LABEL} cannot be deleted`,
 
   PAGINATION_INVALID: 'Invalid pagination parameters',
+  GUID_GENERATION_FAILED: 'GUID generation failed',
 } as const;
 
 export type AuditLogError = (typeof AUDIT_LOGS_ERRORS)[keyof typeof AUDIT_LOGS_ERRORS];

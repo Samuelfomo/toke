@@ -293,8 +293,24 @@ export class UsersValidationUtils {
     );
 
     // Convert dates
+    // ['hire_date', 'last_login_at', 'otp_expires_at', 'qr_code_expires_at'].forEach((field) => {
+    //   if (cleaned[field] !== undefined && cleaned[field] !== null) {
+    //     const date = new Date(cleaned[field]);
+    //     if (isNaN(date.getTime())) {
+    //       throw new Error(`Invalid ${field}: must be a valid date`);
+    //     }
+    //     cleaned[field] = date;
+    //   }
+    // });
+
     ['hire_date', 'last_login_at', 'otp_expires_at', 'qr_code_expires_at'].forEach((field) => {
       if (cleaned[field] !== undefined && cleaned[field] !== null) {
+        // Si c'est déjà un objet Date valide, le garder tel quel
+        if (cleaned[field] instanceof Date && !isNaN(cleaned[field].getTime())) {
+          return; // Passer au champ suivant
+        }
+
+        // Sinon, tenter de le convertir
         const date = new Date(cleaned[field]);
         if (isNaN(date.getTime())) {
           throw new Error(`Invalid ${field}: must be a valid date`);

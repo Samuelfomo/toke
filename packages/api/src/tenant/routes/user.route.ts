@@ -410,12 +410,19 @@ router.post('/:guid/generate-otp', Ensure.post(), async (req: Request, res: Resp
     }
 
     const { expiration_minutes = 1440 } = req.body; // 24h par défaut
+
+    // const otp = GenerateOtp.generateOTP(6);
+    // const expiresAt = new Date(Date.now() + expiration_minutes * 60 * 1000);
+
+    // userObj.setOtpToken(otp);
+    // userObj.setOtpExpiresAt(expiresAt);
     userObj.generateOtpToken(expiration_minutes);
     await userObj.save();
 
     return R.handleSuccess(res, {
       message: 'OTP generated successfully',
       otp_expires_at: userObj.getOtpExpiresAt(),
+      userObj: userObj.getOtpToken(),
     });
   } catch (error: any) {
     return R.handleError(res, HttpStatus.INTERNAL_ERROR, {
@@ -665,6 +672,150 @@ router.post('/system', Ensure.post(), async (req: Request, res: Response) => {
         message: error.message,
       });
     }
+  }
+});
+
+router.patch('/:guid/define-password', Ensure.patch(), async (req: Request, res: Response) => {
+  try {
+    const { guid } = req.params;
+    if (!UsersValidationUtils.validateGuid(guid)) {
+      return R.handleError(res, HttpStatus.BAD_REQUEST, {
+        code: USERS_CODES.INVALID_GUID,
+        message: USERS_ERRORS.GUID_INVALID,
+      });
+    }
+    const userObj = await User._load(parseInt(guid, 10), true);
+    if (!userObj) {
+      return R.handleError(res, HttpStatus.NOT_FOUND, {
+        code: USERS_CODES.USER_NOT_FOUND,
+        message: USERS_ERRORS.NOT_FOUND,
+      });
+    }
+    const { password } = req.body;
+    if (!UsersValidationUtils.validatePasswordHash(password)) {
+      return R.handleError(res, HttpStatus.BAD_REQUEST, {
+        code: USERS_CODES.PASSWORD_INVALID,
+        message: USERS_ERRORS.PASSWORD_INVALID,
+      });
+    }
+    userObj.setPassword(password);
+    await userObj.save();
+    return R.handleSuccess(res, { message: 'Password defined successfully' });
+  } catch (error: any) {
+    return R.handleError(res, HttpStatus.INTERNAL_ERROR, {
+      code: USERS_CODES.CREATION_FAILED,
+      message: error.message,
+    });
+  }
+});
+
+router.patch('/verify-password', Ensure.patch(), async (req: Request, res: Response) => {
+  try {
+    const { email, password } = req.body;
+    if (!UsersValidationUtils.validateEmail(email)) {
+      return R.handleError(res, HttpStatus.BAD_REQUEST, {
+        code: USERS_CODES.EMAIL_INVALID,
+        message: USERS_ERRORS.EMAIL_INVALID,
+      });
+    }
+    if (!UsersValidationUtils.validatePasswordHash(password)) {
+      return R.handleError(res, HttpStatus.BAD_REQUEST, {
+        code: USERS_CODES.PASSWORD_INVALID,
+        message: USERS_ERRORS.PASSWORD_INVALID,
+      });
+    }
+    const userObj = await User._load(email, false, true);
+    if (!userObj) {
+      return R.handleError(res, HttpStatus.NOT_FOUND, {
+        code: USERS_CODES.USER_NOT_FOUND,
+        message: USERS_ERRORS.NOT_FOUND,
+      });
+    }
+    const isValidPassword = await userObj.verifyPassword(password);
+    if (!isValidPassword) {
+      return R.handleError(res, HttpStatus.UNAUTHORIZED, {
+        code: USERS_CODES.PASSWORD_INVALID,
+        message: USERS_ERRORS.PASSWORD_VERIFICATION_FAILED,
+      });
+    }
+    return R.handleSuccess(res, { message: 'Password verified successfully' });
+  } catch (error: any) {
+    return R.handleError(res, HttpStatus.INTERNAL_ERROR, {
+      code: USERS_CODES.CREATION_FAILED,
+      message: error.message,
+    });
+  }
+});
+
+router.patch('/:guid/define-pin', Ensure.patch(), async (req: Request, res: Response) => {
+  try {
+    const { guid } = req.params;
+    if (!UsersValidationUtils.validateGuid(guid)) {
+      return R.handleError(res, HttpStatus.BAD_REQUEST, {
+        code: USERS_CODES.INVALID_GUID,
+        message: USERS_ERRORS.GUID_INVALID,
+      });
+    }
+    const userObj = await User._load(parseInt(guid, 10), true);
+    if (!userObj) {
+      return R.handleError(res, HttpStatus.NOT_FOUND, {
+        code: USERS_CODES.USER_NOT_FOUND,
+        message: USERS_ERRORS.NOT_FOUND,
+      });
+    }
+    const { pin } = req.body;
+    if (!UsersValidationUtils.validatePinHash(pin.toString())) {
+      return R.handleError(res, HttpStatus.BAD_REQUEST, {
+        code: USERS_CODES.PIN_INVALID,
+        message: USERS_ERRORS.PIN_INVALID,
+      });
+    }
+    userObj.setPin(pin);
+    await userObj.save();
+    return R.handleSuccess(res, { message: 'PIN defined successfully' });
+  } catch (error: any) {
+    return R.handleError(res, HttpStatus.INTERNAL_ERROR, {
+      code: USERS_CODES.CREATION_FAILED,
+      message: error.message,
+    });
+  }
+});
+
+router.patch('/verify-pin', Ensure.patch(), async (req: Request, res: Response) => {
+  try {
+    const { phone_number, pin } = req.body;
+    if (!UsersValidationUtils.validatePhoneNumber(phone_number)) {
+      return R.handleError(res, HttpStatus.BAD_REQUEST, {
+        code: USERS_CODES.PHONE_NUMBER_INVALID,
+        message: USERS_ERRORS.PHONE_NUMBER_INVALID,
+      });
+    }
+    if (!UsersValidationUtils.validatePinHash(pin.toString())) {
+      return R.handleError(res, HttpStatus.BAD_REQUEST, {
+        code: USERS_CODES.PIN_INVALID,
+      });
+    }
+    const userObj = await User._load(phone_number, false, false, false, true);
+    if (!userObj) {
+      return R.handleError(res, HttpStatus.NOT_FOUND, {
+        code: USERS_CODES.USER_NOT_FOUND,
+        message: USERS_ERRORS.NOT_FOUND,
+      });
+    }
+    const isValidPin = await userObj.verifyPin(pin);
+    if (!isValidPin) {
+      return R.handleError(res, HttpStatus.UNAUTHORIZED, {
+        code: USERS_CODES.PIN_INVALID,
+        message: USERS_ERRORS.PIN_VERIFICATION_FAILED,
+      });
+    }
+
+    return R.handleSuccess(res, { message: 'PIN verified successfully' });
+  } catch (error: any) {
+    return R.handleError(res, HttpStatus.INTERNAL_ERROR, {
+      code: USERS_CODES.CREATION_FAILED,
+      message: error.message,
+    });
   }
 });
 

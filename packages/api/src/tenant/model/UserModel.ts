@@ -293,7 +293,7 @@ export default class UserModel extends BaseModel {
       updateData[this.db.otp_token] = this.otp_token;
     }
     if (this.otp_expires_at !== undefined) {
-      updateData[this.db.otp_expires_at] = this.otp_expires_at;
+      updateData[this.db.otp_expires_at] = new Date(Date.now() + 1440 * 60 * 1000); //this.otp_expires_at;
     }
     if (this.qr_code_token !== undefined) {
       updateData[this.db.qr_code_token] = this.qr_code_token;
@@ -370,15 +370,23 @@ export default class UserModel extends BaseModel {
     if (this.otp_token && !UsersValidationUtils.validateOtpToken(this.otp_token)) {
       throw new Error(USERS_ERRORS.OTP_TOKEN_INVALID);
     }
-    if (this.otp_token && !UsersValidationUtils.validateOtpExpiresAt(this.otp_expires_at!)) {
-      throw new Error(USERS_ERRORS.OTP_TOKEN_EXPIRED);
+    // if (this.otp_token && !UsersValidationUtils.validateOtpExpiresAt(this.otp_expires_at!)) {
+    //   throw new Error(USERS_ERRORS.OTP_TOKEN_EXPIRED);
+    // }
+    if (
+      this.otp_token &&
+      this.otp_expires_at &&
+      !UsersValidationUtils.validateOtpExpiresAt(this.otp_expires_at)
+    ) {
+      throw new Error(USERS_ERRORS.OTP_TOKEN_INVALID); // Message d'erreur pour format invalide
     }
     if (this.qr_code_token && !UsersValidationUtils.validateQrCodeToken(this.qr_code_token)) {
       throw new Error(USERS_ERRORS.QR_CODE_TOKEN_INVALID);
     }
     if (
       this.qr_code_token &&
-      !UsersValidationUtils.validateQrCodeExpiresAt(this.qr_code_expires_at!)
+      this.qr_code_expires_at &&
+      !UsersValidationUtils.validateQrCodeExpiresAt(this.qr_code_expires_at)
     ) {
       throw new Error(USERS_ERRORS.QR_CODE_TOKEN_EXPIRED);
     }

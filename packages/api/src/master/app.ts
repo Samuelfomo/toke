@@ -8,7 +8,7 @@ import cors from 'cors';
 // dotenv.config();
 // Importation des modules simplifiés
 import ClientRoutes from '../temporaire_route/client.routes.js';
-import { EntityRoute, tableName } from '../utils/response.model.js';
+import { tableName } from '../utils/response.model.js';
 import Revision from '../tools/revision.js';
 import ProfileRoutes from '../temporaire_route/profile.routes.js';
 import { ServerAuth } from '../middle/server-auth.js';
@@ -227,27 +227,28 @@ export default class App {
 
     // TODO: Ajouter les routes métier ici
 
-    this.app.use(`/${EntityRoute.MASTER}/country`, CountryRoute);
-    this.app.use(`/${EntityRoute.MASTER}/currency`, CurrencyRoute);
-    this.app.use(`/${EntityRoute.MASTER}/exchange-rate`, ExchangeRateRoute);
-    this.app.use(`/${EntityRoute.MASTER}/language`, LanguageRoute);
-    this.app.use(`/${EntityRoute.MASTER}/tax-rule`, TaxRuleRoute);
-    this.app.use(`/${EntityRoute.MASTER}/tenant`, TenantRoute);
-    this.app.use(`/${EntityRoute.MASTER}/global-license`, GlobalLicenseRoute);
-    this.app.use(`/${EntityRoute.MASTER}/employee-license`, EmployeeLicenseRoute);
-    this.app.use(`/${EntityRoute.MASTER}/lexicon`, LexiconRoute);
-    this.app.use(`/${EntityRoute.MASTER}/payment-method`, PaymentMethodRoute);
-    this.app.use(`/${EntityRoute.MASTER}/license-adjustment`, LicenseAdjustmentRoute);
-    this.app.use(`/${EntityRoute.MASTER}/payment-transaction`, PaymentTransactionRoute);
-    this.app.use(`/${EntityRoute.MASTER}/billing-cycle`, BillingCycleRoute);
-    this.app.use(`/${EntityRoute.MASTER}/fraud-detection-log`, FraudDetectionLogRoute);
-    this.app.use(`/${EntityRoute.MASTER}/activity-monitoring`, ActivityMonitoringRoute);
-    this.app.use(`/${EntityRoute.MASTER}/client`, ClientRoutes);
-    this.app.use(`/${EntityRoute.MASTER}/profile`, ProfileRoutes);
+    // this.app.use(`/country`, CountryRoute);
+    this.app.use(`/country`, CountryRoute);
+    this.app.use(`/currency`, CurrencyRoute);
+    this.app.use(`/exchange-rate`, ExchangeRateRoute);
+    this.app.use(`/language`, LanguageRoute);
+    this.app.use(`/tax-rule`, TaxRuleRoute);
+    this.app.use(`/tenant`, TenantRoute);
+    this.app.use(`/global-license`, GlobalLicenseRoute);
+    this.app.use(`/employee-license`, EmployeeLicenseRoute);
+    this.app.use(`/lexicon`, LexiconRoute);
+    this.app.use(`/payment-method`, PaymentMethodRoute);
+    this.app.use(`/license-adjustment`, LicenseAdjustmentRoute);
+    this.app.use(`/payment-transaction`, PaymentTransactionRoute);
+    this.app.use(`/billing-cycle`, BillingCycleRoute);
+    this.app.use(`/fraud-detection-log`, FraudDetectionLogRoute);
+    this.app.use(`/activity-monitoring`, ActivityMonitoringRoute);
+    this.app.use(`/client`, ClientRoutes);
+    this.app.use(`/profile`, ProfileRoutes);
 
     // *** Manager Route ***//
-    this.app.use(`/${EntityRoute.MASTER}/billing`, BillingRoute);
-    this.app.use(`/${EntityRoute.MASTER}/fraud`, FraudRoute);
+    this.app.use(`/billing`, BillingRoute);
+    this.app.use(`/fraud`, FraudRoute);
 
     // Route 404
     this.app.use((req, res) => {

@@ -565,7 +565,8 @@ export default class Tenant extends TenantModel {
       [RS.SHORT_NAME]: this.short_name,
       [RS.REGISTRATION_NUMBER]: this.registration_number,
       [RS.EMPLOYEE_COUNT]: this.employee_count,
-      [RS.QUALIFY]: this.database_name ? 'true' : 'false',
+      [RS.QUALIFY]: this.subdomain ? 'true' : 'false',
+      // [RS.QUALIFY]: this.database_name ? 'true' : 'false',
       // Note: Ne pas exposer le mot de passe dans le JSON
     };
   }
