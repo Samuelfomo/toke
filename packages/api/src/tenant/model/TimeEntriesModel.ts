@@ -535,7 +535,7 @@ export default class TimeEntriesModel extends BaseModel {
   protected async create(): Promise<void> {
     await this.validate();
 
-    const guid = await this.uuidTokenGenerator(this.db.tableName);
+    const guid = await this.randomGuidGenerator(this.db.tableName);
     if (!guid) {
       throw new Error(TIME_ENTRIES_ERRORS?.GUID_GENERATION_FAILED);
     }

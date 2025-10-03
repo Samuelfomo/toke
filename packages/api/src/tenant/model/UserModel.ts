@@ -207,9 +207,85 @@ export default class UserModel extends BaseModel {
     return { active: activeCount, inactive: inactiveCount };
   }
 
+  protected async defineOtpDb(): Promise<void> {
+    if (this.id == null) {
+      throw new Error('User ID is required for defining otp');
+    }
+
+    const updateData: Record<string, any> = {
+      [this.db.otp_token]: this.otp_token,
+      [this.db.otp_expires_at]: this.otp_expires_at,
+    };
+
+    const affected = await this.updateOne(this.db.tableName, updateData, { [this.db.id]: this.id });
+    if (!affected) {
+      throw new Error('Failed to define user otp');
+    }
+  }
+  protected async definePwDb(): Promise<void> {
+    if (this.id == null) {
+      throw new Error('User ID is required for defining password');
+    }
+
+    const updateData: Record<string, any> = {
+      [this.db.password_hash]: this.password_hash,
+    };
+
+    const affected = await this.updateOne(this.db.tableName, updateData, { [this.db.id]: this.id });
+    if (!affected) {
+      throw new Error('Failed to define manager password');
+    }
+  }
+  protected async definePinDb(): Promise<void> {
+    if (this.id == null) {
+      throw new Error('User ID is required for defining pin');
+    }
+
+    const updateData: Record<string, any> = {
+      [this.db.pin_hash]: this.pin_hash?.toString(),
+    };
+
+    const affected = await this.updateOne(this.db.tableName, updateData, { [this.db.id]: this.id });
+    if (!affected) {
+      throw new Error('Failed to define user pin');
+    }
+  }
+
+  protected async defineQrCodeDb(): Promise<void> {
+    if (this.id == null) {
+      throw new Error('User ID is required for defining qr code');
+    }
+
+    const updateData: Record<string, any> = {
+      [this.db.qr_code_token]: this.qr_code_token,
+      [this.db.qr_code_expires_at]: this.qr_code_expires_at,
+    };
+
+    const affected = await this.updateOne(this.db.tableName, updateData, { [this.db.id]: this.id });
+    if (!affected) {
+      throw new Error('Failed to define user qr code');
+    }
+  }
+
+  protected async cleanOtpDb(): Promise<void> {
+    if (this.id == null) {
+      throw new Error('User ID is required for cleaning otp');
+    }
+
+    const updateData: Record<string, any> = {
+      [this.db.otp_token]: null,
+      [this.db.otp_expires_at]: null,
+    };
+    const cleaning = await this.updateOne(this.db.tableName, updateData, { [this.db.id]: this.id });
+
+    if (!cleaning) {
+      throw new Error('Failed to clean user otp');
+    }
+  }
+
   protected async create(): Promise<void> {
     await this.validate();
-    const guid = await this.uuidTokenGenerator(this.db.tableName);
+    const guid = await this.randomGuidGenerator(this.db.tableName);
     if (!guid) {
       throw new Error(USERS_ERRORS.GUID_GENERATION_FAILED);
     }

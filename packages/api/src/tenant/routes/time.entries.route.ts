@@ -534,6 +534,23 @@ router.post('/', Ensure.post(), async (req: Request, res: Response) => {
 
 // === RÉCUPÉRATION PAR GUID ===
 
+router.get('/requirement', Ensure.get(), async (req: Request, res: Response) => {
+  try {
+    return R.handleSuccess(res, {
+      count: Object.entries(PointageType).length,
+      items: Object.entries(PointageType).map(([key, value]) => ({
+        key,
+        value,
+      })),
+    });
+  } catch (error: any) {
+    return R.handleError(res, HttpStatus.INTERNAL_ERROR, {
+      code: TIME_ENTRIES_CODES.LISTING_FAILED,
+      message: error.message,
+    });
+  }
+});
+
 router.get('/:guid', Ensure.get(), async (req: Request, res: Response) => {
   try {
     if (!TimeEntriesValidationUtils.validateGuid(req.params.guid)) {

@@ -583,6 +583,11 @@ router.patch('/:guid/subdomain', Ensure.patch(), async (req: Request, res: Respo
       database: tenantObj.getDatabaseName()!,
       active: tenantObj.isActive(),
       reference: tenantObj.getGuid()!.toString(),
+      name: tenantObj.getName()!,
+      address: tenantObj.getBillingAddress()!,
+      country: tenantObj.getCountryCode()!,
+      email: tenantObj.getBillingEmail()!,
+      phone: tenantObj.getBillingPhone()!,
     });
 
     // 3. Récupérer la configuration du tenant depuis le cache
@@ -737,7 +742,7 @@ router.get('/:guid/check', Ensure.get(), async (req: Request, res: Response) => 
     return R.handleSuccess(res, {
       message: `System tenant ${tenant.getName()} is active`,
       tenant: tenant.toJSON(),
-      reference: tenant.getSubdomain(),
+      subdomain: tenant.getSubdomain(),
     });
   } catch (error: any) {
     return R.handleError(res, HttpStatus.INTERNAL_ERROR, {

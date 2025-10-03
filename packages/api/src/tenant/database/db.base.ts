@@ -240,6 +240,60 @@ export default abstract class BaseModel {
     }
   }
 
+  /**
+   * Génère un GUID numérique de taille fixe avec préfixe aléatoire + nextId
+   * Ex: tableName="users", size=16 → 1759209902443128
+   */
+  protected async randomGuidGenerator(
+    tableName: string,
+    size: number = 16,
+  ): Promise<string | null> {
+    try {
+      await this.ensureInitialized();
+      const model = TableInitializer.getModel(tableName);
+
+      if (!model) {
+        console.error(`❌ Modèle '${tableName}' non trouvé pour génération GUID`);
+        return null;
+      }
+
+      if (size < 3) {
+        console.error(`❌ Taille '${size}' non autorisée pour la génération GUID`);
+        return null;
+      }
+
+      const maxId = ((await model.max('id')) as number) || 0;
+      const nextId = (maxId + 1).toString();
+
+      // Taille du préfixe = taille totale - taille du nextId
+      const prefixSize = size - nextId.length;
+
+      if (prefixSize <= 0) {
+        console.error(`❌ Impossible de générer GUID : nextId trop grand pour la taille ${size}`);
+        return null;
+      }
+
+      // Préfixe aléatoire (chiffres uniquement)
+      let prefix = '';
+      for (let i = 0; i < prefixSize - 1; i++) {
+        prefix += Math.floor(Math.random() * 10); // 0–9
+      }
+
+      // Ajouter un "0" avant nextId
+      const guid = prefix + '0' + nextId;
+
+      const currentTenant = TenantManager.getCurrentTenant();
+      console.log(
+        `🔢 GUID généré pour '${tableName}' (tenant: ${currentTenant}): ${guid} (prefixSize: ${prefixSize}, nextId: ${nextId})`,
+      );
+
+      return guid;
+    } catch (error: any) {
+      console.error(`❌ Erreur génération GUID pour '${tableName}':`, error.message);
+      return null;
+    }
+  }
+
   // Autres méthodes similaires...
   protected async timeBasedTokenGenerator(
     tableName: string,

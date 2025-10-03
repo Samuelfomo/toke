@@ -19,8 +19,9 @@ export default class User extends UserModel {
     byEmail: boolean = false,
     byEmployeeCode: boolean = false,
     byPhoneNumber: boolean = false,
+    byOtp: boolean = false,
   ): Promise<User | null> {
-    return new User().load(identifier, byGuid, byEmail, byEmployeeCode, byPhoneNumber);
+    return new User().load(identifier, byGuid, byEmail, byEmployeeCode, byPhoneNumber, byOtp);
   }
 
   static _list(
@@ -73,6 +74,43 @@ export default class User extends UserModel {
       },
       items,
     };
+  }
+
+  /**
+   * Charge un utilisateur et nettoie son OTP s'il est expiré
+   */
+  static async _loadAndCleanExpiredOtp(
+    identifier: any,
+    byGuid: boolean = false,
+    byEmail: boolean = false,
+    byEmployeeCode: boolean = false,
+    byPhoneNumber: boolean = false,
+    byOtp: boolean = false,
+  ): Promise<User | null> {
+    const user = await User._load(
+      identifier,
+      byGuid,
+      byEmail,
+      byEmployeeCode,
+      byPhoneNumber,
+      byOtp,
+    );
+    if (user) {
+      await user.clearExpiredOtp();
+    }
+    return user;
+  }
+
+  /**
+   * Vérifie et nettoie l'OTP s'il est expiré
+   * @returns true si OTP expiré et nettoyé, false sinon
+   */
+  async clearExpiredOtp(): Promise<boolean> {
+    if (this.otp_token && this.otp_expires_at && new Date() > this.otp_expires_at) {
+      await this.clearOtp();
+      return true;
+    }
+    return false;
   }
 
   // === GETTERS FLUENT ===
@@ -188,14 +226,16 @@ export default class User extends UserModel {
   }
 
   setPin(pin: string): User {
-    const salt = bcrypt.genSaltSync(12);
-    this.pin_hash = bcrypt.hashSync(pin, salt);
+    // const salt = bcrypt.genSaltSync(12);
+    // this.pin_hash = bcrypt.hashSync(pin, salt);
+    this.pin_hash = pin;
     return this;
   }
 
   setPassword(password: string): User {
-    const salt = bcrypt.genSaltSync(12);
-    this.password_hash = bcrypt.hashSync(password, salt);
+    // const salt = bcrypt.genSaltSync(12);
+    // this.password_hash = bcrypt.hashSync(password, salt);
+    this.password_hash = password;
     return this;
   }
 
@@ -266,6 +306,37 @@ export default class User extends UserModel {
     return this;
   }
 
+  /**
+   * Génère un OTP unique en vérifiant qu'il n'existe pas déjà
+   * @param expirationMinutes Durée de validité en minutes
+   */
+  async generateUniqueOtpToken(expirationMinutes: number = 5): Promise<User> {
+    let attempts = 0;
+    const maxAttempts = 10;
+    let otpGenerated = false;
+
+    while (!otpGenerated && attempts < maxAttempts) {
+      const newOtp = GenerateOtp.generateOTP(6).toString();
+
+      // Vérifie si cet OTP existe déjà pour un autre utilisateur
+      const existingUser = await this.findByAttribut(this.db.otp_token, newOtp);
+
+      if (!existingUser || existingUser.id === this.id) {
+        this.otp_token = newOtp;
+        this.otp_expires_at = new Date(Date.now() + expirationMinutes * 60 * 1000);
+        otpGenerated = true;
+      }
+
+      attempts++;
+    }
+
+    if (!otpGenerated) {
+      throw new Error('Impossible de générer un OTP unique après plusieurs tentatives');
+    }
+
+    return this;
+  }
+
   clearOtpToken(): User {
     this.otp_token = undefined;
     this.otp_expires_at = undefined;
@@ -278,7 +349,7 @@ export default class User extends UserModel {
     return this;
   }
 
-  isOtpValid(otp: string): boolean {
+  async isOtpValid(otp: string): Promise<boolean> {
     if (!this.otp_token || !this.otp_expires_at) {
       return false;
     }
@@ -286,6 +357,20 @@ export default class User extends UserModel {
       return false;
     }
     return this.otp_token === otp;
+  }
+
+  /**
+   * Nettoie l'OTP (reset en mémoire + DB)
+   */
+  async clearOtp(): Promise<void> {
+    try {
+      this.clearOtpToken(); // méthode interne qui remet otp_token et otp_expires_at à null
+
+      await this.cleanOtpDb();
+    } catch (error: any) {
+      console.error('⚠️ Erreur définition otp user:', error.message);
+      throw new Error(error);
+    }
   }
 
   isQrCodeValid(): boolean {
@@ -366,12 +451,48 @@ export default class User extends UserModel {
     }
   }
 
+  async defineOtpToken(): Promise<void> {
+    try {
+      await this.defineOtpDb();
+    } catch (error: any) {
+      console.error('⚠️ Erreur définition otp user:', error.message);
+      throw new Error(error);
+    }
+  }
+
+  async definePassword(): Promise<void> {
+    try {
+      await this.definePwDb();
+    } catch (error: any) {
+      console.error('⚠️ Erreur définition password manager:', error.message);
+      throw new Error(error);
+    }
+  }
+  async definePin(): Promise<void> {
+    try {
+      await this.definePinDb();
+    } catch (error: any) {
+      console.error('⚠️ Erreur définition pin user:', error.message);
+      throw new Error(error);
+    }
+  }
+
+  async defineQrCodeToken(): Promise<void> {
+    try {
+      await this.defineQrCodeDb();
+    } catch (error: any) {
+      console.error('⚠️ Erreur définition qr code user:', error.message);
+      throw new Error(error);
+    }
+  }
+
   async load(
     identifier: any,
     byGuid: boolean = false,
     byEmail: boolean = false,
     byEmployeeCode: boolean = false,
     byPhoneNumber: boolean = false,
+    byOtp: boolean = false,
   ): Promise<User | null> {
     let data = null;
 
@@ -383,6 +504,8 @@ export default class User extends UserModel {
       data = await this.findByEmployeeCode(identifier);
     } else if (byPhoneNumber) {
       data = await this.findByPhoneNumber(identifier);
+    } else if (byOtp) {
+      data = await this.findByAttribut(this.db.otp_token, identifier);
     } else {
       data = await this.find(Number(identifier));
     }

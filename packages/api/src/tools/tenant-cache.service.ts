@@ -12,6 +12,11 @@ interface TenantConfig {
   active: boolean;
   last_updated: string;
   reference: string;
+  name: string;
+  address: object;
+  country: string;
+  email: string;
+  phone: string;
 }
 
 interface TenantCache {

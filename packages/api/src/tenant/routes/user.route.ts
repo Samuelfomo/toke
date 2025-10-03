@@ -1,5 +1,7 @@
 import { Request, Response, Router } from 'express';
 import {
+  COUNTRY_ERRORS,
+  CountryValidationUtils,
   HttpStatus,
   ORG_HIERARCHY_DEFAULTS,
   paginationSchema,
@@ -22,6 +24,9 @@ import Revision from '../../tools/revision.js';
 import { tableName } from '../../utils/response.model.js';
 import Role from '../class/Role.js';
 import OrgHierarchy from '../class/OrgHierarchy.js';
+import { DatabaseEncryption } from '../../utils/encryption.js';
+import Country from '../../master/class/Country.js';
+import WapService from '../../tools/send.otp.service.js';
 
 const router = Router();
 
@@ -166,6 +171,29 @@ router.get('/active/:status/list', Ensure.get(), async (req: Request, res: Respo
   }
 });
 
+router.get('/config', Ensure.get(), async (req: Request, res: Response) => {
+  try {
+    const tenant = req.tenant;
+
+    const tenantToken = DatabaseEncryption.encrypt({
+      subdomain: tenant.subdomain,
+      name: tenant.config.name,
+      email: tenant.config.email,
+      phone: tenant.config.phone,
+      address: tenant.config.address,
+      country: tenant.config.country,
+    });
+    return R.handleSuccess(res, {
+      subdomain: tenantToken,
+    });
+  } catch (error: any) {
+    return R.handleError(res, HttpStatus.INTERNAL_ERROR, {
+      code: USERS_CODES.CREATION_FAILED,
+      message: error.message,
+    });
+  }
+});
+
 // === CRÉATION UTILISATEUR ===
 // 👤 Add new employee to manager's team with basic info and automatic role assignment
 router.post('/', Ensure.post(), async (req: Request, res: Response) => {
@@ -229,8 +257,36 @@ router.post('/', Ensure.post(), async (req: Request, res: Response) => {
 
     // Génération OTP pour nouvel utilisateur
     // if (validatedData.otp_token) {
-    userObj.generateOtpToken(parseInt(validatedData.otp_expires_at?.toDateString()!, 10) || 1440); // 24h par défaut
+    await userObj.generateUniqueOtpToken(
+      parseInt(validatedData.otp_expires_at?.toDateString()!, 10) || 1440,
+    ); // 24h par défaut
     // }
+
+    const { country } = req.body;
+    if (!CountryValidationUtils.validateIsoCode(country)) {
+      return R.handleError(res, HttpStatus.BAD_REQUEST, {
+        code: 'country_code_invalid',
+        message: COUNTRY_ERRORS.CODE_INVALID,
+      });
+    }
+
+    const existingCountry = await Country._load(country, false, true);
+    if (!existingCountry) {
+      return R.handleError(res, HttpStatus.NOT_FOUND, {
+        code: 'country_not_found',
+        message: COUNTRY_ERRORS.NOT_FOUND,
+      });
+    }
+
+    // Envoyer l'OTP via WhatsApp
+    const result = await WapService.sendOtp(
+      userObj.getOtpToken()!,
+      validatedData.phone_number,
+      country,
+    );
+    if (result.status !== HttpStatus.SUCCESS) {
+      return R.handleError(res, result.status, result.response);
+    }
 
     const existingDefaultRole = await Role._loadDefaultRole();
     if (!existingDefaultRole) {
@@ -257,7 +313,11 @@ router.post('/', Ensure.post(), async (req: Request, res: Response) => {
 
     await orgHierarchyObj.save();
 
-    return R.handleCreated(res, userObj.toJSON());
+    return R.handleCreated(res, {
+      message: 'User created and OTP sent successfully',
+      ...userObj.toJSON(),
+      role: existingDefaultRole.toJSON(),
+    });
   } catch (error: any) {
     if (error.issues) {
       return R.handleError(res, HttpStatus.BAD_REQUEST, {
@@ -399,7 +459,7 @@ router.put('/:guid', Ensure.put(), async (req: Request, res: Response) => {
 
 // === GESTION DES TOKENS ===
 
-router.post('/:guid/generate-otp', Ensure.post(), async (req: Request, res: Response) => {
+router.patch('/:guid/generate-otp', Ensure.patch(), async (req: Request, res: Response) => {
   try {
     const userObj = await User._load(req.params.guid, true);
     if (!userObj) {
@@ -416,13 +476,13 @@ router.post('/:guid/generate-otp', Ensure.post(), async (req: Request, res: Resp
 
     // userObj.setOtpToken(otp);
     // userObj.setOtpExpiresAt(expiresAt);
-    userObj.generateOtpToken(expiration_minutes);
-    await userObj.save();
+    await userObj.generateUniqueOtpToken(expiration_minutes);
+    // userObj.generateOtpToken(expiration_minutes);
+    await userObj.defineOtpToken();
 
     return R.handleSuccess(res, {
       message: 'OTP generated successfully',
       otp_expires_at: userObj.getOtpExpiresAt(),
-      userObj: userObj.getOtpToken(),
     });
   } catch (error: any) {
     return R.handleError(res, HttpStatus.INTERNAL_ERROR, {
@@ -432,7 +492,7 @@ router.post('/:guid/generate-otp', Ensure.post(), async (req: Request, res: Resp
   }
 });
 
-router.post('/:guid/generate-qr-code', Ensure.post(), async (req: Request, res: Response) => {
+router.patch('/:guid/generate-qr-code', Ensure.patch(), async (req: Request, res: Response) => {
   try {
     const userObj = await User._load(req.params.guid, true);
     if (!userObj) {
@@ -444,7 +504,7 @@ router.post('/:guid/generate-qr-code', Ensure.post(), async (req: Request, res: 
 
     const { expiration_hours = 24 } = req.body;
     userObj.generateQrCodeToken(expiration_hours);
-    await userObj.save();
+    await userObj.defineQrCodeToken();
 
     return R.handleSuccess(res, {
       message: 'QR code generated successfully',
@@ -459,9 +519,66 @@ router.post('/:guid/generate-qr-code', Ensure.post(), async (req: Request, res: 
   }
 });
 
+router.patch('/:guid/modify', Ensure.patch(), async (req: Request, res: Response) => {
+  try {
+    const { guid } = req.params;
+    if (!UsersValidationUtils.validateGuid(guid)) {
+      return R.handleError(res, HttpStatus.BAD_REQUEST, {
+        code: USERS_CODES.INVALID_GUID,
+        message: USERS_ERRORS.GUID_INVALID,
+      });
+    }
+
+    const { first_name, last_name, phone } = req.body;
+
+    if (first_name) {
+      if (!UsersValidationUtils.validateFirstName(first_name)) {
+        return R.handleError(res, HttpStatus.BAD_REQUEST, {
+          code: USERS_CODES.FIRST_NAME_INVALID,
+          message: USERS_ERRORS.FIRST_NAME_INVALID,
+        });
+      }
+    }
+    if (last_name) {
+      if (!UsersValidationUtils.validateLastName(last_name)) {
+        return R.handleError(res, HttpStatus.BAD_REQUEST, {
+          code: USERS_CODES.LAST_NAME_INVALID,
+          message: USERS_ERRORS.LAST_NAME_INVALID,
+        });
+      }
+    }
+    if (phone) {
+      if (!UsersValidationUtils.validatePhoneNumber(phone)) {
+        return R.handleError(res, HttpStatus.BAD_REQUEST, {
+          code: USERS_CODES.PHONE_NUMBER_INVALID,
+          message: USERS_ERRORS.PHONE_NUMBER_INVALID,
+        });
+      }
+    }
+
+    const userObj = await User._load(guid, true);
+    if (!userObj) {
+      return R.handleError(res, HttpStatus.NOT_FOUND, {
+        code: USERS_CODES.USER_NOT_FOUND,
+        message: USERS_ERRORS.NOT_FOUND,
+      });
+    }
+    userObj.setFirstName(first_name || userObj.getFirstName());
+    userObj.setLastName(last_name || userObj.getLastName());
+    userObj.setPhoneNumber(phone || userObj.getPhoneNumber());
+    await userObj.save();
+    return R.handleSuccess(res, userObj.toJSON());
+  } catch (error: any) {
+    return R.handleError(res, HttpStatus.INTERNAL_ERROR, {
+      code: USERS_CODES.UPDATE_FAILED,
+      message: error.message,
+    });
+  }
+});
+
 // === GESTION DU PIN ===
 
-router.put('/:guid/change-pin', Ensure.put(), async (req: Request, res: Response) => {
+router.patch('/:guid/change-pin', Ensure.patch(), async (req: Request, res: Response) => {
   try {
     const userObj = await User._load(req.params.guid, true);
     if (!userObj) {
@@ -537,13 +654,13 @@ router.post('/admin', Ensure.post(), async (req: Request, res: Response) => {
   try {
     const validatedData = validateUsersCreation(req.body);
 
-    const existingSystemSupervisor = await User._load(1);
-    if (!existingSystemSupervisor) {
-      return R.handleError(res, HttpStatus.NOT_FOUND, {
-        code: 'user_system_not_found',
-        message: 'User system does not exist',
-      });
-    }
+    // const existingSystemSupervisor = await User._load(1);
+    // if (!existingSystemSupervisor) {
+    //   return R.handleError(res, HttpStatus.NOT_FOUND, {
+    //     code: 'user_system_not_found',
+    //     message: 'User system does not exist',
+    //   });
+    // }
 
     const tenant = req.tenant;
 
@@ -574,15 +691,35 @@ router.post('/admin', Ensure.post(), async (req: Request, res: Response) => {
     }
 
     // Génération OTP pour nouvel utilisateur
-    userObj.generateOtpToken(parseInt(validatedData.otp_expires_at?.toDateString()!, 10) || 1440); // 24h par défaut
+    await userObj.generateUniqueOtpToken(
+      parseInt(validatedData.otp_expires_at?.toDateString()!, 10) || 1440,
+    ); // 24h par défaut
 
-    const existingDefaultRole = await Role._loadDefaultRole();
-    if (!existingDefaultRole) {
-      return R.handleError(res, HttpStatus.NOT_FOUND, {
-        code: ROLES_CODES.DEFAULT_ROLE_NOT_FOUND,
-        message: ROLES_ERRORS.DEFAULT_ROLE_NOT_FOUND,
-      });
-    }
+    // const { country } = req.body;
+    // if (!CountryValidationUtils.validateIsoCode(country)) {
+    //   return R.handleError(res, HttpStatus.BAD_REQUEST, {
+    //     code: 'country_code_invalid',
+    //     message: COUNTRY_ERRORS.CODE_INVALID,
+    //   });
+    // }
+
+    // const existingCountry = await Country._load(country, false, true);
+    // if (!existingCountry) {
+    //   return R.handleError(res, HttpStatus.NOT_FOUND, {
+    //     code: 'country_not_found',
+    //     message: COUNTRY_ERRORS.NOT_FOUND,
+    //   });
+    // }
+    //
+    // // Envoyer l'OTP via WhatsApp
+    // const result = await WapService.sendOtp(
+    //   userObj.getOtpToken()!,
+    //   validatedData.phone_number,
+    //   country,
+    // );
+    // if (result.status !== HttpStatus.SUCCESS) {
+    //   return R.handleError(res, result.status, result.response);
+    // }
 
     const existingAdminRole = await Role._loadAdminRole();
     if (!existingAdminRole) {
@@ -592,23 +729,50 @@ router.post('/admin', Ensure.post(), async (req: Request, res: Response) => {
       });
     }
 
+    const adminAssigned = await UserRole._listByRole(existingAdminRole.getId()!);
+    if (adminAssigned && adminAssigned.length > 0) {
+      return R.handleError(res, HttpStatus.CONFLICT, {
+        code: 'user_admin_already_exists',
+        message: 'User already has admin role',
+      });
+    }
+
+    const existingDefaultRole = await Role._loadDefaultRole();
+    if (!existingDefaultRole) {
+      return R.handleError(res, HttpStatus.NOT_FOUND, {
+        code: ROLES_CODES.DEFAULT_ROLE_NOT_FOUND,
+        message: ROLES_ERRORS.DEFAULT_ROLE_NOT_FOUND,
+      });
+    }
+
     await userObj.save();
 
     const userRoleObj = new UserRole()
       .setRole(existingDefaultRole.getId()!)
-      .setUser(userObj.getId()!)
-      .setAssignedBy(existingSystemSupervisor.getId()!);
+      .setUser(userObj.getId()!);
+    // .setAssignedBy(existingSystemSupervisor.getId()!);
 
     await userRoleObj.save();
 
     const newUserRoleObj = new UserRole()
       .setRole(existingAdminRole.getId()!)
-      .setUser(userObj.getId()!)
-      .setAssignedBy(existingSystemSupervisor.getId()!);
+      .setUser(userObj.getId()!);
+    // .setAssignedBy(existingSystemSupervisor.getId()!);
 
     await newUserRoleObj.save();
 
-    return R.handleCreated(res, userObj.toJSON());
+    const roles = await UserRole.getUserRoles(userObj.getId()!);
+
+    return R.handleCreated(res, {
+      // message: 'User created and OTP sent successfully',
+      user: {
+        ...userObj.toJSON(),
+        roles: {
+          count: roles.length,
+          items: roles.map((role) => role.toJSON()),
+        },
+      },
+    });
   } catch (error: any) {
     if (error.issues) {
       return R.handleError(res, HttpStatus.BAD_REQUEST, {
@@ -635,45 +799,45 @@ router.post('/admin', Ensure.post(), async (req: Request, res: Response) => {
   }
 });
 
-router.post('/system', Ensure.post(), async (req: Request, res: Response) => {
-  try {
-    const tenant = req.tenant;
-    const userObj = new User()
-      .setTenant(tenant.config.reference)
-      .setFirstName('System')
-      .setLastName('Account')
-      .setPhoneNumber('+237000000000')
-      .setEmail('system@local.com')
-      .setEmployeeCode('SYS-0001')
-      .setHireDate(new Date(Date.now()))
-      .setDepartment('SYSTEM')
-      .setJobTitle('SYSTEM');
-
-    // Génération OTP pour nouvel utilisateur
-    userObj.generateOtpToken(1440); // 24h par défaut
-
-    await userObj.save();
-
-    return R.handleCreated(res, userObj.toJSON());
-  } catch (error: any) {
-    if (error.message.includes('already exists')) {
-      return R.handleError(res, HttpStatus.CONFLICT, {
-        code: USERS_CODES.EMAIL_ALREADY_EXISTS,
-        message: error.message,
-      });
-    } else if (error.message.includes('required')) {
-      return R.handleError(res, HttpStatus.BAD_REQUEST, {
-        code: USERS_CODES.VALIDATION_FAILED,
-        message: error.message,
-      });
-    } else {
-      return R.handleError(res, HttpStatus.INTERNAL_ERROR, {
-        code: USERS_CODES.CREATION_FAILED,
-        message: error.message,
-      });
-    }
-  }
-});
+// router.post('/system', Ensure.post(), async (req: Request, res: Response) => {
+//   try {
+//     const tenant = req.tenant;
+//     const userObj = new User()
+//       .setTenant(tenant.config.reference)
+//       .setFirstName('System')
+//       .setLastName('Account')
+//       .setPhoneNumber('+237000000000')
+//       .setEmail('system@local.com')
+//       .setEmployeeCode('SYS-0001')
+//       .setHireDate(new Date(Date.now()))
+//       .setDepartment('SYSTEM')
+//       .setJobTitle('SYSTEM');
+//
+//     // Génération OTP pour nouvel utilisateur
+//     // userObj.generateOtpToken(1440); // 24h par défaut
+//
+//     await userObj.save();
+//
+//     return R.handleCreated(res, userObj.toJSON());
+//   } catch (error: any) {
+//     if (error.message.includes('already exists')) {
+//       return R.handleError(res, HttpStatus.CONFLICT, {
+//         code: USERS_CODES.EMAIL_ALREADY_EXISTS,
+//         message: error.message,
+//       });
+//     } else if (error.message.includes('required')) {
+//       return R.handleError(res, HttpStatus.BAD_REQUEST, {
+//         code: USERS_CODES.VALIDATION_FAILED,
+//         message: error.message,
+//       });
+//     } else {
+//       return R.handleError(res, HttpStatus.INTERNAL_ERROR, {
+//         code: USERS_CODES.CREATION_FAILED,
+//         message: error.message,
+//       });
+//     }
+//   }
+// });
 
 router.patch('/:guid/define-password', Ensure.patch(), async (req: Request, res: Response) => {
   try {
@@ -684,7 +848,7 @@ router.patch('/:guid/define-password', Ensure.patch(), async (req: Request, res:
         message: USERS_ERRORS.GUID_INVALID,
       });
     }
-    const userObj = await User._load(parseInt(guid, 10), true);
+    const userObj = await User._load(guid, true);
     if (!userObj) {
       return R.handleError(res, HttpStatus.NOT_FOUND, {
         code: USERS_CODES.USER_NOT_FOUND,
@@ -698,8 +862,15 @@ router.patch('/:guid/define-password', Ensure.patch(), async (req: Request, res:
         message: USERS_ERRORS.PASSWORD_INVALID,
       });
     }
+    const isManager = await UserRole._listByUser(userObj.getId()!);
+    if (!isManager || isManager.length < 2) {
+      return R.handleError(res, HttpStatus.FORBIDDEN, {
+        code: USERS_CODES.AUTHORIZATION_FAILED,
+        message: USERS_ERRORS.AUTHORIZATION_FAILED,
+      });
+    }
     userObj.setPassword(password);
-    await userObj.save();
+    await userObj.definePassword();
     return R.handleSuccess(res, { message: 'Password defined successfully' });
   } catch (error: any) {
     return R.handleError(res, HttpStatus.INTERNAL_ERROR, {
@@ -709,7 +880,7 @@ router.patch('/:guid/define-password', Ensure.patch(), async (req: Request, res:
   }
 });
 
-router.patch('/verify-password', Ensure.patch(), async (req: Request, res: Response) => {
+router.patch('/manager/password', Ensure.patch(), async (req: Request, res: Response) => {
   try {
     const { email, password } = req.body;
     if (!UsersValidationUtils.validateEmail(email)) {
@@ -731,6 +902,16 @@ router.patch('/verify-password', Ensure.patch(), async (req: Request, res: Respo
         message: USERS_ERRORS.NOT_FOUND,
       });
     }
+
+    const isManager = await UserRole._listByUser(userObj.getId()!);
+
+    if (!isManager || isManager.length < 2) {
+      return R.handleError(res, HttpStatus.FORBIDDEN, {
+        code: USERS_CODES.AUTHORIZATION_FAILED,
+        message: USERS_ERRORS.AUTHORIZATION_FAILED,
+      });
+    }
+
     const isValidPassword = await userObj.verifyPassword(password);
     if (!isValidPassword) {
       return R.handleError(res, HttpStatus.UNAUTHORIZED, {
@@ -756,7 +937,7 @@ router.patch('/:guid/define-pin', Ensure.patch(), async (req: Request, res: Resp
         message: USERS_ERRORS.GUID_INVALID,
       });
     }
-    const userObj = await User._load(parseInt(guid, 10), true);
+    const userObj = await User._load(guid, true);
     if (!userObj) {
       return R.handleError(res, HttpStatus.NOT_FOUND, {
         code: USERS_CODES.USER_NOT_FOUND,
@@ -770,8 +951,8 @@ router.patch('/:guid/define-pin', Ensure.patch(), async (req: Request, res: Resp
         message: USERS_ERRORS.PIN_INVALID,
       });
     }
-    userObj.setPin(pin);
-    await userObj.save();
+    userObj.setPin(pin.toString());
+    await userObj.definePin();
     return R.handleSuccess(res, { message: 'PIN defined successfully' });
   } catch (error: any) {
     return R.handleError(res, HttpStatus.INTERNAL_ERROR, {
@@ -793,6 +974,7 @@ router.patch('/verify-pin', Ensure.patch(), async (req: Request, res: Response) 
     if (!UsersValidationUtils.validatePinHash(pin.toString())) {
       return R.handleError(res, HttpStatus.BAD_REQUEST, {
         code: USERS_CODES.PIN_INVALID,
+        message: USERS_ERRORS.PIN_INVALID,
       });
     }
     const userObj = await User._load(phone_number, false, false, false, true);
@@ -802,7 +984,7 @@ router.patch('/verify-pin', Ensure.patch(), async (req: Request, res: Response) 
         message: USERS_ERRORS.NOT_FOUND,
       });
     }
-    const isValidPin = await userObj.verifyPin(pin);
+    const isValidPin = await userObj.verifyPin(pin.toString());
     if (!isValidPin) {
       return R.handleError(res, HttpStatus.UNAUTHORIZED, {
         code: USERS_CODES.PIN_INVALID,
@@ -814,6 +996,42 @@ router.patch('/verify-pin', Ensure.patch(), async (req: Request, res: Response) 
   } catch (error: any) {
     return R.handleError(res, HttpStatus.INTERNAL_ERROR, {
       code: USERS_CODES.CREATION_FAILED,
+      message: error.message,
+    });
+  }
+});
+
+router.get('/:otp/verify', Ensure.get(), async (req: Request, res: Response) => {
+  try {
+    const { otp } = req.params;
+    if (!UsersValidationUtils.validateOtpToken(otp)) {
+      return R.handleError(res, HttpStatus.BAD_REQUEST, {
+        code: USERS_CODES.OTP_TOKEN_INVALID,
+        message: USERS_ERRORS.OTP_TOKEN_INVALID,
+      });
+    }
+    const userObj = await User._load(otp, false, false, false, false, true);
+    if (!userObj) {
+      return R.handleError(res, HttpStatus.NOT_FOUND, {
+        code: USERS_CODES.USER_NOT_FOUND,
+        message: USERS_ERRORS.NOT_FOUND,
+      });
+    }
+    const isExpired = await userObj.isOtpValid(userObj.getOtpToken()!);
+    if (!isExpired) {
+      return R.handleError(res, HttpStatus.UNAUTHORIZED, {
+        code: USERS_CODES.OTP_TOKEN_EXPIRED,
+        message: USERS_ERRORS.OTP_TOKEN_EXPIRED,
+      });
+    }
+    await userObj.clearOtp();
+    return R.handleSuccess(res, {
+      message: 'OTP verified successfully',
+      user: userObj.toJSON(),
+    });
+  } catch (error: any) {
+    return R.handleError(res, HttpStatus.INTERNAL_ERROR, {
+      code: USERS_CODES.SEARCH_FAILED,
       message: error.message,
     });
   }

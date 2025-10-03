@@ -67,7 +67,7 @@ export const UserRolesDbStructure = {
     // },
     assigned_by: {
       type: DataTypes.INTEGER,
-      allowNull: false,
+      allowNull: true, //  dur au premier user
       references: {
         model: tableName.USERS,
         key: 'id',

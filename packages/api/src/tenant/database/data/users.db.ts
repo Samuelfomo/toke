@@ -135,6 +135,10 @@ export const UsersDbStructure = {
     otp_token: {
       type: DataTypes.STRING(10), //-- OTP temporaire onboarding
       allowNull: true,
+      unique: {
+        name: 'unique_user_otp_token',
+        msg: 'User OTP token must be unique.',
+      },
       validate: {
         len: [6, 10],
       },

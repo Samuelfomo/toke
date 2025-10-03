@@ -228,7 +228,7 @@ export default class OrgHierarchyModel extends BaseModel {
 
   protected async create(): Promise<void> {
     await this.validate();
-    const guid = await this.timeBasedTokenGenerator(this.db.tableName, 3, '_', 'TKH');
+    const guid = await this.randomGuidGenerator(this.db.tableName, 16);
     if (!guid) {
       throw new Error(ORG_HIERARCHY_ERRORS.GUID_GENERATION_FAILED);
     }
@@ -303,13 +303,16 @@ export default class OrgHierarchyModel extends BaseModel {
     if (this.subordinate === this.supervisor) {
       throw new Error(ORG_HIERARCHY_ERRORS.SELF_SUPERVISION_INVALID);
     }
-    if (!this.relationship_type) {
-      throw new Error(ORG_HIERARCHY_ERRORS.RELATIONSHIP_TYPE_REQUIRED);
-    }
+    // if (!this.relationship_type) {
+    //   throw new Error(ORG_HIERARCHY_ERRORS.RELATIONSHIP_TYPE_REQUIRED);
+    // }
     if (!this.effective_from) {
       throw new Error(ORG_HIERARCHY_ERRORS.EFFECTIVE_FROM_REQUIRED);
     }
-    if (!OrgHierarchyValidationUtils.validateRelationshipType(this.relationship_type)) {
+    if (
+      this.relationship_type &&
+      !OrgHierarchyValidationUtils.validateRelationshipType(this.relationship_type)
+    ) {
       throw new Error(ORG_HIERARCHY_ERRORS.RELATIONSHIP_TYPE_INVALID);
     }
     if (

@@ -79,7 +79,7 @@ export default class RoleModel extends BaseModel {
 
   protected async create(): Promise<void> {
     await this.validate();
-    const guid = await this.uuidTokenGenerator(this.db.tableName);
+    const guid = await this.randomGuidGenerator(this.db.tableName);
     if (!guid) {
       throw new Error(ROLES_ERRORS.GUID_GENERATED_FAILED);
     }

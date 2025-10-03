@@ -13,11 +13,14 @@ const key = Buffer.from(process.env.DB_ENCRYPTION_KEY, 'hex');
 // );
 
 export class DatabaseEncryption {
-  static encrypt(text: string): string {
-    if (!text) return text;
+  static encrypt(data: string | object): string {
+    if (!data) return '';
+
+    // Si objet → convertir en string JSON
+    const text = typeof data === 'string' ? data : JSON.stringify(data);
 
     // Vérifier si déjà chiffré
-    if (text.includes(':')) return text;
+    if (this.isEncrypted(text)) return text;
 
     const iv = crypto.randomBytes(16);
     const cipher = crypto.createCipheriv(algorithm, key, iv);
@@ -34,5 +37,20 @@ export class DatabaseEncryption {
     let decrypted = decipher.update(encryptedData, 'hex', 'utf8');
     decrypted += decipher.final('utf8');
     return decrypted;
+  }
+
+  // Déchiffre et parse en objet (optionnel)
+  static decryptToObject(encrypted: string): any {
+    const decrypted = this.decrypt(encrypted);
+    try {
+      return JSON.parse(decrypted);
+    } catch {
+      return decrypted; // ce n'était pas un objet
+    }
+  }
+
+  // Vérifie si c'est déjà chiffré (hex:hex)
+  private static isEncrypted(value: string): boolean {
+    return /^[0-9a-f]+:[0-9a-f]+$/i.test(value);
   }
 }
