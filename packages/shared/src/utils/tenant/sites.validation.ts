@@ -38,10 +38,11 @@ export class SitesValidationUtils {
   /**
    * Validates created by user ID
    */
-  static validateCreatedBy(createdBy: number): boolean {
-    if (typeof createdBy !== 'number' || !Number.isInteger(createdBy)) return false;
+  static validateCreatedBy(createdBy: string): boolean {
+    if (typeof createdBy !== 'string') return false;
     return (
-      createdBy >= SITES_VALIDATION.CREATED_BY.MIN && createdBy <= SITES_VALIDATION.CREATED_BY.MAX
+      createdBy.length >= SITES_VALIDATION.CREATED_BY.MIN_LENGTH &&
+      createdBy.length <= SITES_VALIDATION.CREATED_BY.MAX_LENGTH
     );
   }
 
@@ -158,12 +159,12 @@ export class SitesValidationUtils {
   /**
    * Validates QR reference
    */
-  static validateQrReference(qrReference: number | null): boolean {
+  static validateQrReference(qrReference: string | null): boolean {
     if (qrReference === null || qrReference === undefined) return true;
-    if (typeof qrReference !== 'number' || !Number.isInteger(qrReference)) return false;
+    if (typeof qrReference !== 'string') return false;
     return (
-      qrReference >= SITES_VALIDATION.QR_REFERENCE.MIN &&
-      qrReference <= SITES_VALIDATION.QR_REFERENCE.MAX
+      qrReference.length >= SITES_VALIDATION.QR_REFERENCE.MIN_LENGTH &&
+      qrReference.length <= SITES_VALIDATION.QR_REFERENCE.MAX_LENGTH
     );
   }
 
@@ -408,7 +409,7 @@ export class SitesValidationUtils {
       !this.validateCreatedBy(data.created_by)
     ) {
       errors.push(
-        `Invalid created_by: must be between ${SITES_VALIDATION.CREATED_BY.MIN} and ${SITES_VALIDATION.CREATED_BY.MAX}`,
+        `Invalid created_by: must be between ${SITES_VALIDATION.CREATED_BY.MIN_LENGTH} and ${SITES_VALIDATION.CREATED_BY.MAX_LENGTH}`,
       );
     }
 
@@ -442,7 +443,7 @@ export class SitesValidationUtils {
 
     if (data.qr_reference !== undefined && !this.validateQrReference(data.qr_reference)) {
       errors.push(
-        `Invalid qr_reference: must be between ${SITES_VALIDATION.QR_REFERENCE.MIN} and ${SITES_VALIDATION.QR_REFERENCE.MAX}`,
+        `Invalid qr_reference: must be between ${SITES_VALIDATION.QR_REFERENCE.MIN_LENGTH} and ${SITES_VALIDATION.QR_REFERENCE.MAX_LENGTH}`,
       );
     }
 

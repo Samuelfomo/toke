@@ -28,13 +28,13 @@ export const TIME_ENTRIES_VALIDATION = {
     REQUIRED: true,
   },
   USER: {
-    MIN: 1,
-    MAX: 2147483647,
+    MIN_LENGTH: 1,
+    MAX_LENGTH: 128,
     REQUIRED: true,
   },
   SITE: {
-    MIN: 1,
-    MAX: 2147483647,
+    MIN_LENGTH: 1,
+    MAX_LENGTH: 128,
     REQUIRED: true,
   },
   LATITUDE: {
@@ -155,11 +155,11 @@ export const TIME_ENTRIES_ERRORS = {
   SESSION_NOT_FOUND: 'Work session not found',
 
   USER_REQUIRED: `${TIME_ENTRIES_LABEL} user is required`,
-  USER_INVALID: `User ID must be between ${TIME_ENTRIES_VALIDATION.USER.MIN} and ${TIME_ENTRIES_VALIDATION.USER.MAX}`,
+  USER_INVALID: `User ID must be between ${TIME_ENTRIES_VALIDATION.USER.MIN_LENGTH} and ${TIME_ENTRIES_VALIDATION.USER.MAX_LENGTH}`,
   USER_NOT_FOUND: 'User not found',
 
   SITE_REQUIRED: `${TIME_ENTRIES_LABEL} site is required`,
-  SITE_INVALID: `Site ID must be between ${TIME_ENTRIES_VALIDATION.SITE.MIN} and ${TIME_ENTRIES_VALIDATION.SITE.MAX}`,
+  SITE_INVALID: `Site ID must be between ${TIME_ENTRIES_VALIDATION.SITE.MIN_LENGTH} and ${TIME_ENTRIES_VALIDATION.SITE.MAX_LENGTH}`,
   SITE_NOT_FOUND: 'Site not found',
 
   POINTAGE_TYPE_REQUIRED: `${TIME_ENTRIES_LABEL} pointage type is required`,

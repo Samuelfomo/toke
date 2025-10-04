@@ -25,7 +25,6 @@ import { tableName } from '../../utils/response.model.js';
 import Role from '../class/Role.js';
 import OrgHierarchy from '../class/OrgHierarchy.js';
 import { DatabaseEncryption } from '../../utils/encryption.js';
-import Country from '../../master/class/Country.js';
 import WapService from '../../tools/send.otp.service.js';
 
 const router = Router();
@@ -270,23 +269,13 @@ router.post('/', Ensure.post(), async (req: Request, res: Response) => {
       });
     }
 
-    const existingCountry = await Country._load(country, false, true);
-    if (!existingCountry) {
-      return R.handleError(res, HttpStatus.NOT_FOUND, {
-        code: 'country_not_found',
-        message: COUNTRY_ERRORS.NOT_FOUND,
-      });
-    }
-
-    // Envoyer l'OTP via WhatsApp
-    const result = await WapService.sendOtp(
-      userObj.getOtpToken()!,
-      validatedData.phone_number,
-      country,
-    );
-    if (result.status !== HttpStatus.SUCCESS) {
-      return R.handleError(res, result.status, result.response);
-    }
+    // const existingCountry = await Country._load(country, false, true);
+    // if (!existingCountry) {
+    //   return R.handleError(res, HttpStatus.NOT_FOUND, {
+    //     code: 'country_not_found',
+    //     message: COUNTRY_ERRORS.NOT_FOUND,
+    //   });
+    // }
 
     const existingDefaultRole = await Role._loadDefaultRole();
     if (!existingDefaultRole) {
@@ -312,6 +301,16 @@ router.post('/', Ensure.post(), async (req: Request, res: Response) => {
     await userRoleObj.save();
 
     await orgHierarchyObj.save();
+
+    // Envoyer l'OTP via WhatsApp
+    const result = await WapService.sendOtp(
+      userObj.getOtpToken()!,
+      validatedData.phone_number,
+      country,
+    );
+    if (result.status !== HttpStatus.SUCCESS) {
+      return R.handleError(res, result.status, result.response);
+    }
 
     return R.handleCreated(res, {
       message: 'User created and OTP sent successfully',
@@ -492,7 +491,7 @@ router.patch('/:guid/generate-otp', Ensure.patch(), async (req: Request, res: Re
   }
 });
 
-router.patch('/:guid/generate-qr-code', Ensure.patch(), async (req: Request, res: Response) => {
+router.patch('/:guid/define-qr-code', Ensure.patch(), async (req: Request, res: Response) => {
   try {
     const userObj = await User._load(req.params.guid, true);
     if (!userObj) {
@@ -919,7 +918,11 @@ router.patch('/manager/password', Ensure.patch(), async (req: Request, res: Resp
         message: USERS_ERRORS.PASSWORD_VERIFICATION_FAILED,
       });
     }
-    return R.handleSuccess(res, { message: 'Password verified successfully' });
+    return R.handleSuccess(res, {
+      message: 'Password verified successfully',
+      user: userObj.toJSON(),
+      roles: await Promise.all(isManager.map(async (role) => await role.getRoleObject())),
+    });
   } catch (error: any) {
     return R.handleError(res, HttpStatus.INTERNAL_ERROR, {
       code: USERS_CODES.CREATION_FAILED,
@@ -1043,6 +1046,24 @@ router.get('/:otp/verify', Ensure.get(), async (req: Request, res: Response) => 
 //     return R.handleError(res, result.status, result.response);
 //   }
 //   return R.handleCreated(res, result.response);
+// });
+
+// router.patch('/:manager/generate-qr-code', Ensure.patch(), async (req: Request, res: Response) => {
+//   try {
+//     const { manager } = req.params;
+//     if (!manager || !UsersValidationUtils.validateGuid(manager)) {
+//       return R.handleError(res, HttpStatus.BAD_REQUEST, {
+//         code: USERS_CODES.INVALID_GUID,
+//         message: USERS_ERRORS.GUID_INVALID,
+//       });
+//     }
+//
+//     const { geolocation, site, valid_from, valid_to } = req.body;
+//
+//     if ()
+//   } catch (error: any) {
+//     return R.handleError(res, HttpStatus.INTERNAL_ERROR, {});
+//   }
 // });
 
 export default router;

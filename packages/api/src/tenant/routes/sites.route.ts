@@ -20,6 +20,7 @@ import User from '../class/User.js';
 import Site from '../class/Site.js';
 import Revision from '../../tools/revision.js';
 import { responseValue, tableName } from '../../utils/response.model.js';
+import UserRole from '../class/UserRole.js';
 
 const router = Router();
 
@@ -224,13 +225,24 @@ router.post('/', Ensure.post(), async (req: Request, res: Response) => {
       });
     }
 
+    const roles = await UserRole._listByUser(creatorObj.getId()!);
+    if (!roles || roles.length < 2) {
+      return R.handleError(res, HttpStatus.UNAUTHORIZED, {
+        code: SITES_CODES.CREATION_FAILED,
+        message: 'Creator user must permissions to create sites',
+      });
+    }
+
+    const tenant = req.tenant;
+
     const siteObj = new Site()
-      .setTenant(validatedData.tenant)
+      .setTenant(tenant.config.reference)
       .setCreatedBy(creatorObj.getId()!)
       .setName(validatedData.name)
       .setSiteType(validatedData.site_type || SiteType.MANAGER)
       .setGeofencePolygon(validatedData.geofence_polygon)
-      .setGeofenceRadius(validatedData.geofence_radius);
+      .setGeofenceRadius(validatedData.geofence_radius)
+      .setQRCodeData(validatedData.qr_code_data);
 
     if (validatedData.address) {
       siteObj.setAddress(validatedData.address);

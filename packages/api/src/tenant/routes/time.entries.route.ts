@@ -485,10 +485,23 @@ router.post('/', Ensure.post(), async (req: Request, res: Response) => {
         });
     }
   } catch (error: any) {
-    return R.handleError(res, HttpStatus.INTERNAL_ERROR, {
-      code: TIME_ENTRIES_CODES.CREATION_FAILED,
-      message: error.message,
-    });
+    if (error.issues) {
+      return R.handleError(res, HttpStatus.BAD_REQUEST, {
+        code: TIME_ENTRIES_CODES.VALIDATION_FAILED,
+        message: TIME_ENTRIES_ERRORS.VALIDATION_FAILED,
+        details: error.issues,
+      });
+    } else if (error.message.includes('required')) {
+      return R.handleError(res, HttpStatus.BAD_REQUEST, {
+        code: TIME_ENTRIES_CODES.VALIDATION_FAILED,
+        message: error.message,
+      });
+    } else {
+      return R.handleError(res, HttpStatus.INTERNAL_ERROR, {
+        code: TIME_ENTRIES_CODES.CREATION_FAILED,
+        message: error.message,
+      });
+    }
   }
 });
 

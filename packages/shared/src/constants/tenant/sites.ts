@@ -18,8 +18,8 @@ export const SITES_VALIDATION = {
     REQUIRED: true,
   },
   CREATED_BY: {
-    MIN: 1,
-    MAX: 2147483647,
+    MIN_LENGTH: 1,
+    MAX_LENGTH: 128,
     REQUIRED: true,
   },
   NAME: {
@@ -36,8 +36,8 @@ export const SITES_VALIDATION = {
     REQUIRED: true,
   },
   QR_REFERENCE: {
-    MIN: 1,
-    MAX: 2147483647,
+    MIN_LENGTH: 1,
+    MAX_LENGTH: 128,
   },
 } as const;
 
@@ -108,7 +108,7 @@ export const SITES_ERRORS = {
   ID_REQUIRED: `${SITES_LABEL} ID is required`,
 
   CREATED_BY_REQUIRED: `${SITES_LABEL} created by is required`,
-  CREATED_BY_INVALID: `Created by must be between ${SITES_VALIDATION.CREATED_BY.MIN} and ${SITES_VALIDATION.CREATED_BY.MAX}`,
+  CREATED_BY_INVALID: `Created by must be between ${SITES_VALIDATION.CREATED_BY.MIN_LENGTH} and ${SITES_VALIDATION.CREATED_BY.MAX_LENGTH}`,
   CREATED_BY_NOT_FOUND: 'Creating user not found',
   UNABLE_EXPAND_SITE: `Only temporary sites can have their validity extended`,
 
@@ -128,7 +128,7 @@ export const SITES_ERRORS = {
   GEOFENCE_RADIUS_REQUIRED: `${SITES_LABEL} geofence radius is required`,
   GEOFENCE_RADIUS_INVALID: `Geofence radius must be between ${SITES_VALIDATION.GEOFENCE_RADIUS.MIN} and ${SITES_VALIDATION.GEOFENCE_RADIUS.MAX} meters`,
 
-  QR_REFERENCE_INVALID: `QR reference must be between ${SITES_VALIDATION.QR_REFERENCE.MIN} and ${SITES_VALIDATION.QR_REFERENCE.MAX}`,
+  QR_REFERENCE_INVALID: `QR reference must be between ${SITES_VALIDATION.QR_REFERENCE.MIN_LENGTH} and ${SITES_VALIDATION.QR_REFERENCE.MAX_LENGTH}`,
   QR_REFERENCE_NOT_FOUND: 'QR reference user not found',
 
   QR_CODE_DATA_REQUIRED: `${SITES_LABEL} QR code data is required`,

@@ -112,7 +112,7 @@ router.get('/list', Ensure.get(), async (req: Request, res: Response) => {
 
 // === ASSIGNMENT DE RÔLES ===
 
-router.post('/assign', Ensure.post(), async (req: Request, res: Response) => {
+router.post('/', Ensure.post(), async (req: Request, res: Response) => {
   try {
     const validatedData = validateUserRoleAssignment(req.body);
 

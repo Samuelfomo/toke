@@ -43,23 +43,23 @@ const geofencePolygonSchema = z
 
 // Base schema pour les validations communes
 const baseSitesSchema = z.object({
-  tenant: z
-    .string({
-      required_error: SITES_ERRORS.TENANT_REQUIRED,
-      invalid_type_error: SITES_ERRORS.TENANT_INVALID,
-    })
-    .min(SITES_VALIDATION.TENANT.MIN_LENGTH, SITES_ERRORS.TENANT_INVALID)
-    .max(SITES_VALIDATION.TENANT.MAX_LENGTH, SITES_ERRORS.TENANT_INVALID)
-    .trim(),
+  // tenant: z
+  //   .string({
+  //     required_error: SITES_ERRORS.TENANT_REQUIRED,
+  //     invalid_type_error: SITES_ERRORS.TENANT_INVALID,
+  //   })
+  //   .min(SITES_VALIDATION.TENANT.MIN_LENGTH, SITES_ERRORS.TENANT_INVALID)
+  //   .max(SITES_VALIDATION.TENANT.MAX_LENGTH, SITES_ERRORS.TENANT_INVALID)
+  //   .trim(),
 
   created_by: z
-    .number({
+    .string({
       required_error: SITES_ERRORS.CREATED_BY_REQUIRED,
       invalid_type_error: SITES_ERRORS.CREATED_BY_INVALID,
     })
-    .int()
-    .min(SITES_VALIDATION.CREATED_BY.MIN, SITES_ERRORS.CREATED_BY_INVALID)
-    .max(SITES_VALIDATION.CREATED_BY.MAX, SITES_ERRORS.CREATED_BY_INVALID),
+    .min(SITES_VALIDATION.CREATED_BY.MIN_LENGTH, SITES_ERRORS.CREATED_BY_INVALID)
+    .max(SITES_VALIDATION.CREATED_BY.MAX_LENGTH, SITES_ERRORS.CREATED_BY_INVALID)
+    .trim(),
 
   name: z
     .string({
@@ -98,14 +98,14 @@ const baseSitesSchema = z.object({
     .default(SITES_DEFAULTS.GEOFENCE_RADIUS),
 
   qr_reference: z
-    .number({
+    .string({
       invalid_type_error: SITES_ERRORS.QR_REFERENCE_INVALID,
     })
-    .int()
-    .min(SITES_VALIDATION.QR_REFERENCE.MIN, SITES_ERRORS.QR_REFERENCE_INVALID)
-    .max(SITES_VALIDATION.QR_REFERENCE.MAX, SITES_ERRORS.QR_REFERENCE_INVALID)
+    .min(SITES_VALIDATION.QR_REFERENCE.MIN_LENGTH, SITES_ERRORS.QR_REFERENCE_INVALID)
+    .max(SITES_VALIDATION.QR_REFERENCE.MAX_LENGTH, SITES_ERRORS.QR_REFERENCE_INVALID)
     .optional()
-    .nullable(),
+    .nullable()
+    .transform((value) => value?.trim()),
 
   qr_code_data: z
     .record(z.any(), {

@@ -15,6 +15,8 @@ import userRoute from './routes/user.route.js';
 import roleRoute from './routes/roles.route.js';
 import userRoleRoute from './routes/user.role.route.js';
 import timeEntriesRoute from './routes/time.entries.route.js';
+import sitesRoute from './routes/sites.route.js';
+import workSessionsRoute from './routes/work.sessions.route.js';
 
 interface AppConfig {
   port: number;
@@ -198,6 +200,8 @@ export default class App {
     this.app.use('/role', roleRoute);
     this.app.use('/user-role', userRoleRoute);
     this.app.use('/time-entries', timeEntriesRoute);
+    this.app.use('/work-session', workSessionsRoute);
+    this.app.use('/site', sitesRoute);
 
     // Route 404
     this.app.use((req, res) => {

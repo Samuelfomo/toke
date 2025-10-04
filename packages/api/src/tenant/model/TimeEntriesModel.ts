@@ -622,16 +622,16 @@ export default class TimeEntriesModel extends BaseModel {
     if (!this.user) {
       throw new Error(TIME_ENTRIES_ERRORS?.USER_REQUIRED);
     }
-    if (!TimeEntriesValidationUtils.validateUserId(this.user)) {
-      throw new Error(TIME_ENTRIES_ERRORS.USER_INVALID);
-    }
+    // if (!TimeEntriesValidationUtils.validateUserId(this.user)) {
+    //   throw new Error(TIME_ENTRIES_ERRORS.USER_INVALID);
+    // }
 
     if (!this.site) {
       throw new Error(TIME_ENTRIES_ERRORS?.SITE_REQUIRED);
     }
-    if (!TimeEntriesValidationUtils.validateSiteId(this.site)) {
-      throw new Error(TIME_ENTRIES_ERRORS.SITE_INVALID);
-    }
+    // if (!TimeEntriesValidationUtils.validateSiteId(this.site)) {
+    //   throw new Error(TIME_ENTRIES_ERRORS.SITE_INVALID);
+    // }
 
     if (!this.pointage_type) {
       throw new Error(TIME_ENTRIES_ERRORS?.POINTAGE_TYPE_REQUIRED);

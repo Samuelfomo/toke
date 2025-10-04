@@ -392,18 +392,18 @@ export default class SiteModel extends BaseModel {
   }
 
   private async validate(): Promise<void> {
-    if (!this.tenant) {
-      throw new Error(SITES_ERRORS.TENANT_REQUIRED);
-    }
-    if (!SitesValidationUtils.validateTenant(this.tenant)) {
-      throw new Error(SITES_ERRORS.TENANT_INVALID);
-    }
-    if (!this.created_by) {
-      throw new Error(SITES_ERRORS.CREATED_BY_REQUIRED);
-    }
-    if (!SitesValidationUtils.validateCreatedBy(this.created_by)) {
-      throw new Error(SITES_ERRORS.CREATED_BY_INVALID);
-    }
+    // if (!this.tenant) {
+    //   throw new Error(SITES_ERRORS.TENANT_REQUIRED);
+    // }
+    // if (!SitesValidationUtils.validateTenant(this.tenant)) {
+    //   throw new Error(SITES_ERRORS.TENANT_INVALID);
+    // }
+    // if (!this.created_by) {
+    //   throw new Error(SITES_ERRORS.CREATED_BY_REQUIRED);
+    // }
+    // if (!SitesValidationUtils.validateCreatedBy(this.created_by)) {
+    //   throw new Error(SITES_ERRORS.CREATED_BY_INVALID);
+    // }
     if (!this.name) {
       throw new Error(SITES_ERRORS.NAME_REQUIRED);
     }
@@ -435,9 +435,9 @@ export default class SiteModel extends BaseModel {
       throw new Error(SITES_ERRORS.GEOFENCE_RADIUS_INVALID);
     }
 
-    if (this.qr_reference && !SitesValidationUtils.validateQrReference(this.qr_reference)) {
-      throw new Error(SITES_ERRORS.QR_REFERENCE_INVALID);
-    }
+    // if (this.qr_reference && !SitesValidationUtils.validateQrReference(this.qr_reference)) {
+    //   throw new Error(SITES_ERRORS.QR_REFERENCE_INVALID);
+    // }
 
     if (!this.qr_code_data) {
       throw new Error(SITES_ERRORS.QR_CODE_DATA_REQUIRED);

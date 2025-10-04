@@ -43,17 +43,23 @@ export class TimeEntriesValidationUtils {
   /**
    * Validates user ID
    */
-  static validateUserId(userId: number): boolean {
-    if (typeof userId !== 'number' || !Number.isInteger(userId)) return false;
-    return userId >= TIME_ENTRIES_VALIDATION.USER.MIN && userId <= TIME_ENTRIES_VALIDATION.USER.MAX;
+  static validateUserId(userId: string): boolean {
+    if (typeof userId !== 'string') return false;
+    return (
+      userId.length >= TIME_ENTRIES_VALIDATION.USER.MIN_LENGTH &&
+      userId.length <= TIME_ENTRIES_VALIDATION.USER.MAX_LENGTH
+    );
   }
 
   /**
    * Validates site ID
    */
-  static validateSiteId(siteId: number): boolean {
-    if (typeof siteId !== 'number' || !Number.isInteger(siteId)) return false;
-    return siteId >= TIME_ENTRIES_VALIDATION.SITE.MIN && siteId <= TIME_ENTRIES_VALIDATION.SITE.MAX;
+  static validateSiteId(siteId: string): boolean {
+    if (typeof siteId !== 'string') return false;
+    return (
+      siteId.length >= TIME_ENTRIES_VALIDATION.SITE.MIN_LENGTH &&
+      siteId.length <= TIME_ENTRIES_VALIDATION.SITE.MAX_LENGTH
+    );
   }
 
   /**
@@ -565,13 +571,13 @@ export class TimeEntriesValidationUtils {
 
     if (data.user_id === undefined || data.user_id === null || !this.validateUserId(data.user_id)) {
       errors.push(
-        `Invalid user_id: must be between ${TIME_ENTRIES_VALIDATION.USER.MIN} and ${TIME_ENTRIES_VALIDATION.USER.MAX}`,
+        `Invalid user_id: must be between ${TIME_ENTRIES_VALIDATION.USER.MIN_LENGTH} and ${TIME_ENTRIES_VALIDATION.USER.MAX_LENGTH}`,
       );
     }
 
     if (data.site_id === undefined || data.site_id === null || !this.validateSiteId(data.site_id)) {
       errors.push(
-        `Invalid site_id: must be between ${TIME_ENTRIES_VALIDATION.SITE.MIN} and ${TIME_ENTRIES_VALIDATION.SITE.MAX}`,
+        `Invalid site_id: must be between ${TIME_ENTRIES_VALIDATION.SITE.MIN_LENGTH} and ${TIME_ENTRIES_VALIDATION.SITE.MAX_LENGTH}`,
       );
     }
 

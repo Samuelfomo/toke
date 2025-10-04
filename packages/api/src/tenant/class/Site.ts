@@ -229,6 +229,11 @@ export default class Site extends SiteModel {
     return this;
   }
 
+  setQRCodeData(qr_code_data: any): Site {
+    this.qr_code_data = qr_code_data;
+    return this;
+  }
+
   setAllowedRoles(allowed_roles: any): Site {
     this.allowed_roles = allowed_roles;
     return this;
