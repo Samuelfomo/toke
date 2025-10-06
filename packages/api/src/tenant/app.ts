@@ -17,6 +17,7 @@ import userRoleRoute from './routes/user.role.route.js';
 import timeEntriesRoute from './routes/time.entries.route.js';
 import sitesRoute from './routes/sites.route.js';
 import workSessionsRoute from './routes/work.sessions.route.js';
+import orgHierarchyRoute from './routes/org.hierarchy.route.js';
 
 interface AppConfig {
   port: number;
@@ -198,6 +199,7 @@ export default class App {
 
     this.app.use('/user', userRoute);
     this.app.use('/role', roleRoute);
+    this.app.use('/org-hierarchy', orgHierarchyRoute);
     this.app.use('/user-role', userRoleRoute);
     this.app.use('/time-entries', timeEntriesRoute);
     this.app.use('/work-session', workSessionsRoute);

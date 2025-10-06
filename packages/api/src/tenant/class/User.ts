@@ -1,4 +1,5 @@
 import bcrypt from 'bcrypt';
+import { USERS_DEFAULTS } from '@toke/shared';
 
 import UserModel from '../model/UserModel.js';
 import W from '../../tools/watcher.js';
@@ -53,7 +54,10 @@ export default class User extends UserModel {
   }
 
   static async exportable(
-    conditions: Record<string, any> = {},
+    conditions: Record<string, any> = {
+      ['active']: USERS_DEFAULTS.ACTIVE,
+    },
+    // conditions.active = USERS_DEFAULTS.ACTIVE,
     paginationOptions: { offset?: number; limit?: number } = {},
   ): Promise<{
     revision: string;

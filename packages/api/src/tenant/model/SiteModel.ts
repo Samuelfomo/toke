@@ -320,7 +320,7 @@ export default class SiteModel extends BaseModel {
       [this.db.geofence_polygon]: this.geofence_polygon,
       [this.db.geofence_radius]: this.geofence_radius,
       [this.db.qr_reference]: this.qr_reference,
-      [this.db.qr_code_data]: qr_content,
+      [this.db.qr_code_data]: this.qr_code_data,
       [this.db.active]: this.active,
       [this.db.public]: this.public,
       [this.db.allowed_roles]: this.allowed_roles,

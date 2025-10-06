@@ -9,6 +9,7 @@ import {
   SiteType,
   USERS_CODES,
   USERS_ERRORS,
+  UsersValidationUtils,
   validateSitesCreation,
   validateSitesFilters,
   validateSitesUpdate,
@@ -21,6 +22,7 @@ import Site from '../class/Site.js';
 import Revision from '../../tools/revision.js';
 import { responseValue, tableName } from '../../utils/response.model.js';
 import UserRole from '../class/UserRole.js';
+import { DatabaseEncryption } from '../../utils/encryption.js';
 
 const router = Router();
 
@@ -242,7 +244,7 @@ router.post('/', Ensure.post(), async (req: Request, res: Response) => {
       .setSiteType(validatedData.site_type || SiteType.MANAGER)
       .setGeofencePolygon(validatedData.geofence_polygon)
       .setGeofenceRadius(validatedData.geofence_radius)
-      .setQRCodeData(validatedData.qr_code_data);
+      .setQRCodeData(validatedData.qr_code_data || { valid_from: new Date().toISOString() });
 
     if (validatedData.address) {
       siteObj.setAddress(validatedData.address);
@@ -778,6 +780,72 @@ router.post(
   },
 );
 
+router.patch('/generate-qr-code', Ensure.patch(), async (req: Request, res: Response) => {
+  try {
+    // const { manager } = req.params;
+    const { site, manager } = req.body;
+
+    if (!manager || !UsersValidationUtils.validateGuid(manager)) {
+      return R.handleError(res, HttpStatus.BAD_REQUEST, {
+        code: USERS_CODES.INVALID_GUID,
+        message: USERS_ERRORS.GUID_INVALID,
+      });
+    }
+
+    if (!site || !SitesValidationUtils.validateGuid(site)) {
+      return R.handleError(res, HttpStatus.BAD_REQUEST, {
+        code: SITES_CODES.VALIDATION_FAILED,
+        message: SITES_ERRORS.GUID_INVALID,
+      });
+    }
+    const siteObj = await Site._load(site, true);
+    if (!siteObj) {
+      return R.handleError(res, HttpStatus.NOT_FOUND, {
+        code: SITES_CODES.SITE_NOT_FOUND,
+        message: SITES_ERRORS.NOT_FOUND,
+      });
+    }
+
+    const userObj = await User._load(manager, true);
+    if (!userObj) {
+      return R.handleError(res, HttpStatus.NOT_FOUND, {
+        code: USERS_CODES.USER_NOT_FOUND,
+        message: USERS_ERRORS.NOT_FOUND,
+      });
+    }
+
+    const roles = await UserRole.getUserRoles(userObj.getId()!);
+    if (roles.length < 2) {
+      return R.handleError(res, HttpStatus.UNAUTHORIZED, {
+        code: USERS_CODES.AUTHORIZATION_FAILED,
+        message: USERS_ERRORS.AUTHORIZATION_FAILED,
+      });
+    }
+
+    const tenant = req.tenant;
+    const qrGenerator = DatabaseEncryption.encrypt(
+      {
+        manager: userObj.getGuid(),
+        site: siteObj.getGuid(),
+        period: siteObj.getQRCodeData(),
+        site_name: siteObj.getName(),
+        site_type: siteObj.getSiteType(),
+        site_address: siteObj.getAddress(),
+        geofence_polygon: siteObj.getGeofencePolygon(),
+        geofence_radius: siteObj.getGeofenceRadius(),
+      },
+      // tenant.config.reference,
+    );
+    return R.handleSuccess(res, {
+      site_qr_code: qrGenerator,
+    });
+  } catch (error: any) {
+    return R.handleError(res, HttpStatus.INTERNAL_ERROR, {
+      code: SITES_CODES.QR_REGENERATION_FAILED,
+      message: error.message,
+    });
+  }
+});
 // === STATISTIQUES ===
 
 router.get('/statistics/overview', Ensure.get(), async (_req: Request, res: Response) => {

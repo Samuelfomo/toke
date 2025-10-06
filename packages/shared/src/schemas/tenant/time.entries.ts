@@ -121,8 +121,8 @@ const baseTimeEntriesSchema = z.object({
     .optional()
     .nullable(),
 
-  // device_info: deviceInfoSchema.optional().nullable(),
-  validatedDataSchema,
+  device_info: deviceInfoSchema.optional().nullable(),
+  // validatedDataSchema,
 
   ip_address: ipAddressSchema.optional().nullable(),
 

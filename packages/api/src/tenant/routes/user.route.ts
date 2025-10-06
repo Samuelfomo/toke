@@ -31,6 +31,7 @@ const router = Router();
 
 // === ROUTES DE LISTAGE ===
 
+// === RECUPERER LES UTILISATEURS ACTIVES D'UN TENANT
 router.get('/', Ensure.get(), async (req: Request, res: Response) => {
   try {
     const paginationData = paginationSchema.parse(req.query);
@@ -518,7 +519,9 @@ router.patch('/:guid/define-qr-code', Ensure.patch(), async (req: Request, res: 
   }
 });
 
-router.patch('/:guid/modify', Ensure.patch(), async (req: Request, res: Response) => {
+// === MODIFIER LES INFORMATIONS PERSONNELLES DE L"UTILISATEUR (NOM(S) ET PRENOM(S)) === cette route est à revoir (condition d'existence)
+
+router.patch('/:guid/modify-personal', Ensure.patch(), async (req: Request, res: Response) => {
   try {
     const { guid } = req.params;
     if (!UsersValidationUtils.validateGuid(guid)) {
@@ -575,11 +578,18 @@ router.patch('/:guid/modify', Ensure.patch(), async (req: Request, res: Response
   }
 });
 
-// === GESTION DU PIN ===
+// === GESTION DU PIN === (A REVOIR car pas necessaire selon le dev back)
 
 router.patch('/:guid/change-pin', Ensure.patch(), async (req: Request, res: Response) => {
   try {
-    const userObj = await User._load(req.params.guid, true);
+    const { guid } = req.params;
+    if (!UsersValidationUtils.validateGuid(guid)) {
+      return R.handleError(res, HttpStatus.BAD_REQUEST, {
+        code: USERS_CODES.INVALID_GUID,
+        message: USERS_ERRORS.GUID_INVALID,
+      });
+    }
+    const userObj = await User._load(guid, true);
     if (!userObj) {
       return R.handleError(res, HttpStatus.NOT_FOUND, {
         code: USERS_CODES.USER_NOT_FOUND,
@@ -619,7 +629,7 @@ router.patch('/:guid/change-pin', Ensure.patch(), async (req: Request, res: Resp
   }
 });
 
-// === SUPPRESSION UTILISATEUR ===
+// === SUPPRESSION UTILISATEUR === (Route à ne pas utiliser, car on ne doit pas delete un user)
 
 router.delete('/:guid', Ensure.delete(), async (req: Request, res: Response) => {
   try {

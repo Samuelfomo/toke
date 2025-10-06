@@ -134,27 +134,49 @@ export const SitesDbStructure = {
     qr_code_data: {
       type: DataTypes.JSONB,
       allowNull: false,
-      // validate: {
-      //   isValidQRCodeData(value: any) {
-      //     // if (value === null || value === undefined) return;
-      //     if (typeof value !== 'object') {
-      //       throw new Error('QR code data must be an object');
-      //     }
-      //     const requiredFields = [
-      //       'site_id',
-      //       'site_name',
-      //       'site_type',
-      //       'site_address',
-      //       'site_geofence_polygon',
-      //       'site_geofence_radius',
-      //     ];
-      //     for (const field of requiredFields) {
-      //       if (!value[field] || typeof value[field] !== 'string') {
-      //         throw new Error(`QR code data must contain a valid ${field}`);
-      //       }
-      //     }
-      //   },
-      // },
+      validate: {
+        isValidQRCodeData(value: any) {
+          // if (value === null || value === undefined) return;
+          if (typeof value !== 'object') {
+            throw new Error('QR code data must be an object');
+          }
+
+          // const requiredFields = [
+          //   'site_guid',
+          //   'validaty',
+          //   'site_name',
+          //   'site_type',
+          //   'site_address',
+          //   'site_geofence_polygon',
+          //   'site_geofence_radius',
+          // ];
+          // for (const field of requiredFields) {
+          //   if (!value[field] || typeof value[field] !== 'string') {
+          //     throw new Error(`QR code data must contain a valid ${field}`);
+          //   }
+          // }
+          // === ✅ Validation du champ validity ===
+          // if (!value.validity || typeof value.validity !== 'object') {
+          //   throw new Error('QR code data must contain a validity object');
+          // }
+          //
+          const { valid_from, valid_to } = value;
+
+          if (!valid_from || isNaN(Date.parse(valid_from))) {
+            throw new Error('QR code validity must contain a valid start date');
+          }
+
+          // end est optionnel, mais si présent, il doit être une date valide
+          if (valid_to && isNaN(Date.parse(valid_to))) {
+            throw new Error('QR code validity end date must be a valid date if provided');
+          }
+
+          // Si end est présent, start doit être antérieur à end
+          if (valid_to && new Date(valid_from) >= new Date(valid_to)) {
+            throw new Error('QR code validity start date must be before end date');
+          }
+        },
+      },
       comment: 'QR code data as JSON object',
     },
     active: {

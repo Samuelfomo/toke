@@ -6,6 +6,7 @@ import G from '../../tools/glossary.js';
 import { responseStructure as RS, responseValue, ViewMode } from '../../utils/response.model.js';
 
 import User from './User.js';
+import UserRole from './UserRole.js';
 
 export default class OrgHierarchy extends OrgHierarchyModel {
   private subordinateObj?: User;
@@ -69,6 +70,17 @@ export default class OrgHierarchy extends OrgHierarchyModel {
     paginationOptions?: { offset?: number; limit?: number },
   ): Promise<OrgHierarchy[] | null> {
     return new OrgHierarchy().getActiveSubordinates(supervisor_id, date, paginationOptions);
+  }
+  static async _getAllSubordinates(supervisor_id: number): Promise<User[]> {
+    const org = new OrgHierarchy();
+    const visited = new Set<number>(); // éviter les boucles
+    return await org._recursiveFetchSubordinates(supervisor_id, visited);
+  }
+
+  static async _buildHierarchyTree(supervisorId: number): Promise<any[]> {
+    const org = new OrgHierarchy();
+    const visited = new Set<number>(); // éviter les boucles
+    return await org._recursiveHierarchy(supervisorId, visited);
   }
 
   static async exportable(
@@ -268,8 +280,6 @@ export default class OrgHierarchy extends OrgHierarchyModel {
     return dataset.map((data) => new OrgHierarchy().hydrate(data));
   }
 
-  // === MÉTHODES DE TRANSFERT ===
-
   async transferEmployee(
     subordinate_id: number,
     new_supervisor_id: number,
@@ -293,17 +303,19 @@ export default class OrgHierarchy extends OrgHierarchyModel {
     await newHierarchy.save();
   }
 
-  // === MÉTHODES D'ANALYSE ===
+  // === MÉTHODES DE TRANSFERT ===
 
   async getHierarchyStatistics(): Promise<any> {
     return await this.getHierarchyCountStatistics();
   }
 
-  // === MÉTHODES DE BASE ===
+  // === MÉTHODES D'ANALYSE ===
 
   isNew(): boolean {
     return this.id === undefined;
   }
+
+  // === MÉTHODES DE BASE ===
 
   async save(): Promise<void> {
     try {
@@ -410,6 +422,67 @@ export default class OrgHierarchy extends OrgHierarchyModel {
       [RS.SUBORDINATE]: subordinate?.toJSON(),
       [RS.SUPERVISOR]: supervisor?.toJSON(),
     };
+  }
+
+  private async _recursiveFetchSubordinates(
+    supervisor_id: number,
+    visited: Set<number>,
+  ): Promise<User[]> {
+    if (visited.has(supervisor_id)) return [];
+    visited.add(supervisor_id);
+
+    // Récupérer les relations directes
+    const directRelations = await this.listAllBySupervisor(supervisor_id);
+    if (!directRelations || directRelations.length === 0) return [];
+
+    const allSubordinates: User[] = [];
+
+    for (const relation of directRelations) {
+      const subordinateId = relation[this.db.subordinate];
+      const subordinate = await User._load(subordinateId);
+      if (subordinate) {
+        allSubordinates.push(subordinate);
+
+        // Récursivité → chercher les subordonnés du subordonné
+        const subSubs = await this._recursiveFetchSubordinates(subordinate.getId()!, visited);
+        allSubordinates.push(...subSubs);
+      }
+    }
+
+    return allSubordinates;
+  }
+
+  private async _recursiveHierarchy(supervisorId: number, visited: Set<number>): Promise<any[]> {
+    if (visited.has(supervisorId)) return [];
+    visited.add(supervisorId);
+
+    // Récupérer les relations directes
+    const relations = await this.listAllBySupervisor(supervisorId);
+    if (!relations || relations.length === 0) return [];
+
+    const hierarchy = [];
+
+    for (const relation of relations) {
+      const subordinateId = relation[this.db.subordinate];
+      const subordinate = await User._load(subordinateId);
+      if (!subordinate) continue;
+
+      // Rôles du subordonné
+      const roles = await UserRole._listByUser(subordinateId);
+
+      // Récursivité : chercher les subordonnés du subordonné
+      const subTree = await this._recursiveHierarchy(subordinateId, visited);
+
+      hierarchy.push({
+        user: subordinate.toJSON(),
+        roles: roles
+          ? await Promise.all(roles.map(async (r) => await r.toJSON(responseValue.MINIMAL)))
+          : [],
+        subordinates: subTree,
+      });
+    }
+
+    return hierarchy;
   }
 
   // === MÉTHODES PRIVÉES ===

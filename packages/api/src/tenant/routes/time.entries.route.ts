@@ -9,7 +9,6 @@ import {
   TIME_ENTRIES_ERRORS,
   TIME_ENTRIES_MESSAGES,
   TimeEntriesValidationUtils,
-  USERS_ERRORS,
   validateTimeEntriesCreation,
   validateTimeEntriesFilters,
   validateTimeEntriesUpdate,
@@ -26,6 +25,7 @@ import WorkSessions from '../class/WorkSessions.js';
 import TimeEntries from '../class/TimeEntries.js';
 import Revision from '../../tools/revision.js';
 import { responseValue, tableName } from '../../utils/response.model.js';
+import { UserAuth } from '../../middle/user-auth.js';
 
 const router = Router();
 
@@ -245,265 +245,297 @@ router.get('/list', Ensure.get(), async (req: Request, res: Response) => {
 //   }
 // });
 
-router.post('/', Ensure.post(), async (req: Request, res: Response) => {
-  try {
-    const validatedData = validateTimeEntriesCreation(req.body);
+router.post(
+  '/',
+  Ensure.post(),
+  UserAuth.timeEntriesAuthenticate,
+  async (req: Request, res: Response) => {
+    try {
+      // Récupération des informations depuis les headers
+      // const ipAddress = req.ip || req.headers['x-forwarded-for'] || req.connection.remoteAddress;
+      // IP réelle du client
+      const ip =
+        (req.headers['x-forwarded-for'] as string)?.split(',')[0].trim() || // derrière proxy
+        req.socket.remoteAddress || // fallback socket
+        req.ip; // Express shortcut
+      const userAgent = req.headers['user-agent'] || '';
 
-    // Vérifier utilisateur
-    const userObj = await User._load(validatedData.user, true);
-    if (!userObj) {
-      return R.handleError(res, HttpStatus.NOT_FOUND, {
-        code: TIME_ENTRIES_CODES.USER_NOT_FOUND,
-        message: USERS_ERRORS.NOT_FOUND,
-      });
-    }
+      // Fusion avec le body avant validation
+      const bodyWithMetadata = {
+        ...req.body,
+        ip_address: ip,
+        user_agent: userAgent,
+      };
 
-    // Vérifier site
-    const siteObj = await Site._load(validatedData.site, true);
-    if (!siteObj) {
-      return R.handleError(res, HttpStatus.NOT_FOUND, {
-        code: TIME_ENTRIES_CODES.SITE_NOT_FOUND,
-        message: SITES_ERRORS.NOT_FOUND,
-      });
-    }
+      const validatedData = validateTimeEntriesCreation(bodyWithMetadata);
 
-    // === LOGIQUE SELON TYPE DE POINTAGE ===
+      // // Vérifier utilisateur
+      // const userObj = await User._load(validatedData.user, true);
+      // if (!userObj) {
+      //   return R.handleError(res, HttpStatus.NOT_FOUND, {
+      //     code: TIME_ENTRIES_CODES.USER_NOT_FOUND,
+      //     message: USERS_ERRORS.NOT_FOUND,
+      //   });
+      // }
 
-    switch (validatedData.pointage_type) {
-      case PointageType.CLOCK_IN: {
-        // Vérifier pas de session active
-        const activeSession = await WorkSessions._findActiveSessionByUser(userObj.getId()!);
-        if (activeSession) {
-          return R.handleError(res, HttpStatus.CONFLICT, {
-            code: WORK_SESSIONS_CODES.ACTIVE_SESSION_EXISTS,
-            message: WORK_SESSIONS_ERRORS.ACTIVE_SESSION_EXISTS,
-          });
-        }
-
-        // Validation géofencing
-        const geofenceCheck = await WorkSessions.validateGeofencing(
-          siteObj.getId()!,
-          validatedData.latitude,
-          validatedData.longitude,
-        );
-
-        if (!geofenceCheck.access_granted) {
-          return R.handleError(res, HttpStatus.FORBIDDEN, {
-            code: WORK_SESSIONS_CODES.GEOFENCE_VIOLATION,
-            message: WORK_SESSIONS_ERRORS.GEOFENCE_VIOLATION,
-          });
-        }
-
-        // 1. Créer SESSION automatiquement
-        const sessionObj = new WorkSessions()
-          .setUser(userObj.getId()!)
-          .setSite(siteObj.getId()!)
-          .setSessionStartAt(new Date(validatedData.clocked_at))
-          .setStartCoordinates(validatedData.latitude, validatedData.longitude);
-
-        await sessionObj.save();
-
-        // 2. Créer TIME_ENTRY
-        const entryObj = new TimeEntries()
-          .setSession(sessionObj.getId()!)
-          .setUser(userObj.getId()!)
-          .setSite(siteObj.getId()!)
-          .setPointageType(PointageType.CLOCK_IN)
-          .setClockedAt(new Date(validatedData.clocked_at))
-          .setCoordinates(validatedData.latitude, validatedData.longitude);
-        if (validatedData.validatedDataSchema) {
-          entryObj.setDeviceInfo(validatedData.validatedDataSchema);
-        }
-
-        await entryObj.save();
-        await entryObj.accept(); // Auto-accept si pas d'anomalies
-
-        return R.handleCreated(res, {
-          message: TIME_ENTRIES_MESSAGES.CLOCK_IN_SUCCESS,
-          session: await sessionObj.toJSON(responseValue.MINIMAL),
-          entry: await entryObj.toJSON(responseValue.MINIMAL),
-        });
-      }
-      // === CLOCK-IN : Ouverture Session ===
-
-      // === PAUSE-START ===
-      case PointageType.PAUSE_START: {
-        const activeSession = await WorkSessions._findActiveSessionByUser(userObj.getId()!);
-        if (!activeSession) {
-          return R.handleError(res, HttpStatus.BAD_REQUEST, {
-            code: WORK_SESSIONS_CODES.NO_ACTIVE_SESSION,
-            message: WORK_SESSIONS_ERRORS.NO_ACTIVE_SESSION,
-          });
-        }
-
-        const entryObj = new TimeEntries()
-          .setSession(activeSession.getId()!)
-          .setUser(userObj.getId()!)
-          .setSite(siteObj.getId()!)
-          .setPointageType(PointageType.PAUSE_START)
-          .setClockedAt(new Date(validatedData.clocked_at))
-          .setCoordinates(validatedData.latitude, validatedData.longitude);
-
-        await entryObj.save();
-        await entryObj.accept();
-
-        return R.handleCreated(res, {
-          message: 'Pause started',
-          entry: await entryObj.toJSON(responseValue.MINIMAL),
+      // Vérifier site
+      const siteObj = await Site._load(validatedData.site, true);
+      if (!siteObj) {
+        return R.handleError(res, HttpStatus.NOT_FOUND, {
+          code: TIME_ENTRIES_CODES.SITE_NOT_FOUND,
+          message: SITES_ERRORS.NOT_FOUND,
         });
       }
 
-      // === PAUSE-END ===
-      case PointageType.PAUSE_END: {
-        const activeSession = await WorkSessions._findActiveSessionByUser(userObj.getId()!);
-        if (!activeSession) {
-          return R.handleError(res, HttpStatus.BAD_REQUEST, {
-            code: WORK_SESSIONS_CODES.NO_ACTIVE_SESSION,
-            message: WORK_SESSIONS_ERRORS.NO_ACTIVE_SESSION,
+      const userId = (req as any).userId;
+
+      // === LOGIQUE SELON TYPE DE POINTAGE ===
+
+      switch (validatedData.pointage_type) {
+        case PointageType.CLOCK_IN: {
+          // Vérifier pas de session active
+          const activeSession = await WorkSessions._findActiveSessionByUser(userId);
+          if (activeSession) {
+            return R.handleError(res, HttpStatus.CONFLICT, {
+              code: WORK_SESSIONS_CODES.ACTIVE_SESSION_EXISTS,
+              message: WORK_SESSIONS_ERRORS.ACTIVE_SESSION_EXISTS,
+            });
+          }
+
+          // Validation géofencing
+          const geofenceCheck = await WorkSessions.validateGeofencing(
+            siteObj.getId()!,
+            validatedData.latitude,
+            validatedData.longitude,
+          );
+
+          if (!geofenceCheck.access_granted) {
+            return R.handleError(res, HttpStatus.FORBIDDEN, {
+              code: WORK_SESSIONS_CODES.GEOFENCE_VIOLATION,
+              message: WORK_SESSIONS_ERRORS.GEOFENCE_VIOLATION,
+            });
+          }
+
+          // 1. Créer SESSION automatiquement
+          const sessionObj = new WorkSessions()
+            .setUser(userId)
+            .setSite(siteObj.getId()!)
+            .setSessionStartAt(new Date(validatedData.clocked_at))
+            .setStartCoordinates(validatedData.latitude, validatedData.longitude);
+
+          await sessionObj.save();
+
+          // 2. Créer TIME_ENTRY
+          const entryObj = new TimeEntries()
+            .setSession(sessionObj.getId()!)
+            .setUser(userId)
+            .setSite(siteObj.getId()!)
+            .setPointageType(PointageType.CLOCK_IN)
+            .setClockedAt(new Date(validatedData.clocked_at))
+            .setCoordinates(validatedData.latitude, validatedData.longitude);
+          if (validatedData.device_info) {
+            entryObj.setDeviceInfo(validatedData.device_info);
+          }
+
+          await entryObj.save();
+          await entryObj.accept(); // Auto-accept si pas d'anomalies
+
+          return R.handleCreated(res, {
+            message: TIME_ENTRIES_MESSAGES.CLOCK_IN_SUCCESS,
+            session: await sessionObj.toJSON(responseValue.MINIMAL),
+            entry: await entryObj.toJSON(responseValue.MINIMAL),
+          });
+        }
+        // === CLOCK-IN : Ouverture Session ===
+
+        // === PAUSE-START ===
+        case PointageType.PAUSE_START: {
+          const activeSession = await WorkSessions._findActiveSessionByUser(userId);
+          if (!activeSession) {
+            return R.handleError(res, HttpStatus.BAD_REQUEST, {
+              code: WORK_SESSIONS_CODES.NO_ACTIVE_SESSION,
+              message: WORK_SESSIONS_ERRORS.NO_ACTIVE_SESSION,
+            });
+          }
+
+          // Vérifier qu'il n'y a pas une pause active (car on ne peut aller en pause et aller en pause juste apres)
+          const hasActivePause = await activeSession.isOnPause();
+          if (hasActivePause) {
+            return R.handleError(res, HttpStatus.BAD_REQUEST, {
+              code: WORK_SESSIONS_CODES.NO_ACTIVE_PAUSE,
+              message: WORK_SESSIONS_ERRORS.NO_ACTIVE_PAUSE_END,
+            });
+          }
+
+          const entryObj = new TimeEntries()
+            .setSession(activeSession.getId()!)
+            .setUser(userId)
+            .setSite(siteObj.getId()!)
+            .setPointageType(PointageType.PAUSE_START)
+            .setClockedAt(new Date(validatedData.clocked_at))
+            .setCoordinates(validatedData.latitude, validatedData.longitude);
+
+          await entryObj.save();
+          await entryObj.accept();
+
+          return R.handleCreated(res, {
+            message: 'Pause started',
+            entry: await entryObj.toJSON(responseValue.MINIMAL),
           });
         }
 
-        // Vérifier qu'il y a bien une pause active
-        const hasActivePause = await activeSession.isOnPause();
-        if (!hasActivePause) {
-          return R.handleError(res, HttpStatus.BAD_REQUEST, {
-            code: WORK_SESSIONS_CODES.NO_ACTIVE_PAUSE,
-            message: WORK_SESSIONS_ERRORS.NO_ACTIVE_PAUSE_END,
+        // === PAUSE-END ===
+        case PointageType.PAUSE_END: {
+          const activeSession = await WorkSessions._findActiveSessionByUser(userId);
+          if (!activeSession) {
+            return R.handleError(res, HttpStatus.BAD_REQUEST, {
+              code: WORK_SESSIONS_CODES.NO_ACTIVE_SESSION,
+              message: WORK_SESSIONS_ERRORS.NO_ACTIVE_SESSION,
+            });
+          }
+
+          // Vérifier qu'il y a bien une pause active
+          const hasActivePause = await activeSession.isOnPause();
+          if (!hasActivePause) {
+            return R.handleError(res, HttpStatus.BAD_REQUEST, {
+              code: WORK_SESSIONS_CODES.NO_ACTIVE_PAUSE,
+              message: WORK_SESSIONS_ERRORS.NO_ACTIVE_PAUSE_END,
+            });
+          }
+
+          const entryObj = new TimeEntries()
+            .setSession(activeSession.getId()!)
+            .setUser(userId)
+            .setSite(siteObj.getId()!)
+            .setPointageType(PointageType.PAUSE_END)
+            .setClockedAt(new Date(validatedData.clocked_at))
+            .setCoordinates(validatedData.latitude, validatedData.longitude);
+
+          await entryObj.save();
+          await entryObj.accept();
+
+          return R.handleCreated(res, {
+            message: 'Pause ended',
+            entry: await entryObj.toJSON(responseValue.MINIMAL),
           });
         }
 
-        const entryObj = new TimeEntries()
-          .setSession(activeSession.getId()!)
-          .setUser(userObj.getId()!)
-          .setSite(siteObj.getId()!)
-          .setPointageType(PointageType.PAUSE_END)
-          .setClockedAt(new Date(validatedData.clocked_at))
-          .setCoordinates(validatedData.latitude, validatedData.longitude);
+        // === EXTERNAL-MISSION ===
+        case PointageType.EXTERNAL_MISSION: {
+          const activeSession = await WorkSessions._findActiveSessionByUser(userId);
+          if (!activeSession) {
+            return R.handleError(res, HttpStatus.NOT_FOUND, {
+              code: WORK_SESSIONS_CODES.NO_ACTIVE_SESSION,
+              message: WORK_SESSIONS_ERRORS.NO_ACTIVE_SESSION,
+            });
+          }
+          const entryObj = new TimeEntries()
+            .setSession(activeSession.getId()!)
+            .setUser(userId)
+            .setSite(siteObj.getId()!)
+            .setPointageType(PointageType.EXTERNAL_MISSION)
+            .setClockedAt(new Date(validatedData.clocked_at))
+            .setCoordinates(validatedData.latitude, validatedData.longitude)
+            .setDeviceInfo({
+              // Device info classique
+              device_id: validatedData.device_info?.device_id,
+              os: validatedData.device_info?.os,
 
-        await entryObj.save();
-        await entryObj.accept();
+              // // Contexte mission (stocké dans le même JSONB)
+              // mission_context: {
+              //   destination: validatedData.validatedDataSchema.mission_data?.destination,
+              //   purpose: validatedData.validatedDataSchema.mission_data?.purpose,
+              //   expected_return: validatedData.validatedDataSchema.mission_data?.expected_return,
+              //   transport: validatedData.validatedDataSchema.mission_data?.transport,
+              //   authorization: validatedData.validatedDataSchema.mission_data?.authorization,
+              // },
+            });
 
-        return R.handleCreated(res, {
-          message: 'Pause ended',
-          entry: await entryObj.toJSON(responseValue.MINIMAL),
-        });
+          await entryObj.save();
+
+          return R.handleCreated(res, {
+            message: 'External mission started',
+            entry: await entryObj.toJSON(),
+          });
+        }
+
+        // === CLOCK-OUT : Fermeture Session ===
+        case PointageType.CLOCK_OUT: {
+          const activeSession = await WorkSessions._findActiveSessionByUser(userId);
+          if (!activeSession) {
+            return R.handleError(res, HttpStatus.BAD_REQUEST, {
+              code: WORK_SESSIONS_CODES.NO_ACTIVE_SESSION,
+              message: WORK_SESSIONS_ERRORS.NO_ACTIVE_CLOSE_SESSION,
+            });
+          }
+
+          // Vérifier pas de pause active
+          const canClose = await activeSession.canClockOut();
+          if (!canClose) {
+            return R.handleError(res, HttpStatus.BAD_REQUEST, {
+              code: TIME_ENTRIES_CODES.CANNOT_CLOCK_OUT,
+              message: 'Cannot clock-out: active pause or mission',
+            });
+          }
+
+          // 1. Créer TIME_ENTRY
+          const entryObj = new TimeEntries()
+            .setSession(activeSession.getId()!)
+            .setUser(userId)
+            .setSite(siteObj.getId()!)
+            .setPointageType(PointageType.CLOCK_OUT)
+            .setClockedAt(new Date(validatedData.clocked_at))
+            .setCoordinates(validatedData.latitude, validatedData.longitude);
+
+          await entryObj.save();
+          await entryObj.accept();
+
+          // 2. Fermer SESSION
+          activeSession
+            .setSessionEndAt(new Date(validatedData.clocked_at))
+            .setEndCoordinates(validatedData.latitude, validatedData.longitude)
+            .setSessionStatus(SessionStatus.CLOSED);
+
+          // 3. Calculer durées
+          const durations = await activeSession.calculateDurations();
+          // Note: calculateDurations met à jour total_work_duration et total_pause_duration
+
+          await activeSession.save();
+
+          return R.handleCreated(res, {
+            message: 'Clock-out successful',
+            session: await activeSession.toJSON(),
+            entry: await entryObj.toJSON(responseValue.MINIMAL),
+            durations,
+          });
+        }
+
+        default:
+          return R.handleError(res, HttpStatus.BAD_REQUEST, {
+            code: TIME_ENTRIES_CODES.INVALID_POINTAGE_TYPE,
+          });
       }
-
-      // === EXTERNAL-MISSION ===
-      case PointageType.EXTERNAL_MISSION: {
-        const activeSession = await WorkSessions._findActiveSessionByUser(userObj.getId()!);
-        if (!activeSession) {
-          return R.handleError(res, HttpStatus.NOT_FOUND, {
-            code: WORK_SESSIONS_CODES.NO_ACTIVE_SESSION,
-            message: WORK_SESSIONS_ERRORS.NO_ACTIVE_SESSION,
-          });
-        }
-        const entryObj = new TimeEntries()
-          .setSession(activeSession.getId()!)
-          .setUser(userObj.getId()!)
-          .setSite(siteObj.getId()!)
-          .setPointageType(PointageType.EXTERNAL_MISSION)
-          .setClockedAt(new Date(validatedData.clocked_at))
-          .setCoordinates(validatedData.latitude, validatedData.longitude)
-          .setDeviceInfo({
-            // Device info classique
-            device_id: validatedData.validatedDataSchema.device_info?.device_id,
-            os: validatedData.validatedDataSchema.device_info?.os,
-
-            // Contexte mission (stocké dans le même JSONB)
-            mission_context: {
-              destination: validatedData.validatedDataSchema.mission_data?.destination,
-              purpose: validatedData.validatedDataSchema.mission_data?.purpose,
-              expected_return: validatedData.validatedDataSchema.mission_data?.expected_return,
-              transport: validatedData.validatedDataSchema.mission_data?.transport,
-              authorization: validatedData.validatedDataSchema.mission_data?.authorization,
-            },
-          });
-
-        await entryObj.save();
-
-        return R.handleCreated(res, {
-          message: 'External mission started',
-          entry: await entryObj.toJSON(),
-        });
-      }
-
-      // === CLOCK-OUT : Fermeture Session ===
-      case PointageType.CLOCK_OUT: {
-        const activeSession = await WorkSessions._findActiveSessionByUser(userObj.getId()!);
-        if (!activeSession) {
-          return R.handleError(res, HttpStatus.BAD_REQUEST, {
-            code: WORK_SESSIONS_CODES.NO_ACTIVE_SESSION,
-            message: WORK_SESSIONS_ERRORS.NO_ACTIVE_CLOSE_SESSION,
-          });
-        }
-
-        // Vérifier pas de pause active
-        const canClose = await activeSession.canClockOut();
-        if (!canClose) {
-          return R.handleError(res, HttpStatus.BAD_REQUEST, {
-            code: TIME_ENTRIES_CODES.CANNOT_CLOCK_OUT,
-            message: 'Cannot clock-out: active pause or mission',
-          });
-        }
-
-        // 1. Créer TIME_ENTRY
-        const entryObj = new TimeEntries()
-          .setSession(activeSession.getId()!)
-          .setUser(userObj.getId()!)
-          .setSite(siteObj.getId()!)
-          .setPointageType(PointageType.CLOCK_OUT)
-          .setClockedAt(new Date(validatedData.clocked_at))
-          .setCoordinates(validatedData.latitude, validatedData.longitude);
-
-        await entryObj.save();
-        await entryObj.accept();
-
-        // 2. Fermer SESSION
-        activeSession
-          .setSessionEndAt(new Date(validatedData.clocked_at))
-          .setEndCoordinates(validatedData.latitude, validatedData.longitude)
-          .setSessionStatus(SessionStatus.CLOSED);
-
-        // 3. Calculer durées
-        const durations = await activeSession.calculateDurations();
-        // Note: calculateDurations met à jour total_work_duration et total_pause_duration
-
-        await activeSession.save();
-
-        return R.handleCreated(res, {
-          message: 'Clock-out successful',
-          session: await activeSession.toJSON(),
-          entry: await entryObj.toJSON(responseValue.MINIMAL),
-          durations,
-        });
-      }
-
-      default:
+    } catch (error: any) {
+      if (error.issues) {
         return R.handleError(res, HttpStatus.BAD_REQUEST, {
-          code: TIME_ENTRIES_CODES.INVALID_POINTAGE_TYPE,
+          code: TIME_ENTRIES_CODES.VALIDATION_FAILED,
+          message: TIME_ENTRIES_ERRORS.VALIDATION_FAILED,
+          details: error.issues,
         });
+      } else if (error.message.includes('required')) {
+        return R.handleError(res, HttpStatus.BAD_REQUEST, {
+          code: TIME_ENTRIES_CODES.VALIDATION_FAILED,
+          message: error.message,
+        });
+      } else {
+        return R.handleError(res, HttpStatus.INTERNAL_ERROR, {
+          code: TIME_ENTRIES_CODES.CREATION_FAILED,
+          message: error.message,
+        });
+      }
     }
-  } catch (error: any) {
-    if (error.issues) {
-      return R.handleError(res, HttpStatus.BAD_REQUEST, {
-        code: TIME_ENTRIES_CODES.VALIDATION_FAILED,
-        message: TIME_ENTRIES_ERRORS.VALIDATION_FAILED,
-        details: error.issues,
-      });
-    } else if (error.message.includes('required')) {
-      return R.handleError(res, HttpStatus.BAD_REQUEST, {
-        code: TIME_ENTRIES_CODES.VALIDATION_FAILED,
-        message: error.message,
-      });
-    } else {
-      return R.handleError(res, HttpStatus.INTERNAL_ERROR, {
-        code: TIME_ENTRIES_CODES.CREATION_FAILED,
-        message: error.message,
-      });
-    }
-  }
-});
+  },
+);
 
 // === SYNCHRONISATION BATCH OFFLINE ===
 

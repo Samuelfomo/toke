@@ -6,18 +6,25 @@ if (!process.env.DB_ENCRYPTION_KEY) {
   throw new Error('DB_ENCRYPTION_KEY manquant dans .env !');
 }
 
-const key = Buffer.from(process.env.DB_ENCRYPTION_KEY, 'hex');
+const defaultKey = Buffer.from(process.env.DB_ENCRYPTION_KEY, 'hex');
 // const key = Buffer.from(
 //   process.env.DB_ENCRYPTION_KEY || crypto.randomBytes(32).toString('hex'),
 //   'hex',
 // );
 
 export class DatabaseEncryption {
-  static encrypt(data: string | object): string {
+  /**
+   * Chiffre une donnée (string ou objet)
+   * @param data Donnée à chiffrer
+   * @param customKey Clé optionnelle en hex
+   */
+  static encrypt(data: string | object, customKey?: string): string {
     if (!data) return '';
 
     // Si objet → convertir en string JSON
     const text = typeof data === 'string' ? data : JSON.stringify(data);
+
+    const key = customKey ? Buffer.from(customKey, 'hex') : defaultKey;
 
     // Vérifier si déjà chiffré
     if (this.isEncrypted(text)) return text;
@@ -29,9 +36,15 @@ export class DatabaseEncryption {
     return iv.toString('hex') + ':' + encrypted;
   }
 
-  static decrypt(encrypted: string): string {
+  /**
+   * Déchiffre une donnée
+   * @param encrypted Texte chiffré
+   * @param customKey Clé optionnelle en hex
+   */
+  static decrypt(encrypted: string, customKey?: string): string {
     if (!encrypted || !encrypted.includes(':')) return encrypted;
 
+    const key = customKey ? Buffer.from(customKey, 'hex') : defaultKey;
     const [ivHex, encryptedData] = encrypted.split(':');
     const decipher = crypto.createDecipheriv(algorithm, key, Buffer.from(ivHex, 'hex'));
     let decrypted = decipher.update(encryptedData, 'hex', 'utf8');
@@ -40,8 +53,8 @@ export class DatabaseEncryption {
   }
 
   // Déchiffre et parse en objet (optionnel)
-  static decryptToObject(encrypted: string): any {
-    const decrypted = this.decrypt(encrypted);
+  static decryptToObject(encrypted: string, customKey?: string): any {
+    const decrypted = this.decrypt(encrypted, customKey);
     try {
       return JSON.parse(decrypted);
     } catch {

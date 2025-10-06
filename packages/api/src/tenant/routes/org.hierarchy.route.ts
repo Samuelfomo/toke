@@ -8,6 +8,7 @@ import {
   RelationshipType,
   USERS_CODES,
   USERS_ERRORS,
+  UsersValidationUtils,
   validateOrgHierarchyCreation,
   validateOrgHierarchyFilters,
   validateOrgHierarchyUpdate,
@@ -19,6 +20,7 @@ import User from '../class/User.js';
 import OrgHierarchy from '../class/OrgHierarchy.js';
 import Revision from '../../tools/revision.js';
 import { responseValue, tableName } from '../../utils/response.model.js';
+import UserRole from '../class/UserRole.js';
 
 const router = Router();
 
@@ -139,6 +141,92 @@ router.get('/active', Ensure.get(), async (req: Request, res: Response) => {
     };
 
     return R.handleSuccess(res, { activeHierarchies: hierarchies });
+  } catch (error: any) {
+    return R.handleError(res, HttpStatus.INTERNAL_ERROR, {
+      code: ORG_HIERARCHY_CODES.LISTING_FAILED,
+      message: error.message,
+    });
+  }
+});
+
+// // === 🔍 Get complete hierarchical list of all employees under manager's responsibility (recursive) === //
+// router.get('/employee/all-subordinates', Ensure.get(), async (req: Request, res: Response) => {
+//   try {
+//     const { supervisor } = req.query;
+//
+//     // Vérification du GUID
+//     if (!supervisor || !UsersValidationUtils.validateGuid(String(supervisor))) {
+//       return R.handleError(res, HttpStatus.BAD_REQUEST, {
+//         code: ORG_HIERARCHY_CODES.INVALID_GUID,
+//         message: ORG_HIERARCHY_ERRORS.GUID_INVALID,
+//       });
+//     }
+//
+//     // Chargement du superviseur
+//     const supervisorObj = await User._load(String(supervisor), true);
+//     if (!supervisorObj) {
+//       return R.handleError(res, HttpStatus.NOT_FOUND, {
+//         code: USERS_CODES.USER_NOT_FOUND,
+//         message: USERS_ERRORS.NOT_FOUND,
+//       });
+//     }
+//
+//     // Appel de la méthode récursive
+//     const allSubordinates = await OrgHierarchy._getAllSubordinates(supervisorObj.getId()!);
+//
+//     const allRoles = await Promise.all(
+//       allSubordinates.map(async (user) => await UserRole._listByUser(user.getId()!)),
+//     );
+//
+//     return R.handleSuccess(res, {
+//       supervisor: supervisorObj.toPublicJSON(),
+//       total: allSubordinates.length,
+//       allSubordinates: allSubordinates.map((s) => s.toPublicJSON()),
+//     });
+//   } catch (error: any) {
+//     return R.handleError(res, HttpStatus.INTERNAL_ERROR, {
+//       code: ORG_HIERARCHY_CODES.LISTING_FAILED,
+//       message: error.message,
+//     });
+//   }
+// });
+
+// === 🔍 Get complete hierarchical list of all employees under manager's responsibility (recursive) === //
+router.get('/employee/all-subordinates', Ensure.get(), async (req: Request, res: Response) => {
+  try {
+    const { supervisor } = req.query;
+
+    // Vérification du GUID
+    if (!supervisor || !UsersValidationUtils.validateGuid(String(supervisor))) {
+      return R.handleError(res, HttpStatus.BAD_REQUEST, {
+        code: ORG_HIERARCHY_CODES.INVALID_GUID,
+        message: ORG_HIERARCHY_ERRORS.GUID_INVALID,
+      });
+    }
+
+    // Chargement du superviseur
+    const supervisorObj = await User._load(String(supervisor), true);
+    if (!supervisorObj) {
+      return R.handleError(res, HttpStatus.NOT_FOUND, {
+        code: USERS_CODES.USER_NOT_FOUND,
+        message: USERS_ERRORS.NOT_FOUND,
+      });
+    }
+
+    // Construction hiérarchique récursive
+    const hierarchyTree = await OrgHierarchy._buildHierarchyTree(supervisorObj.getId()!);
+
+    // Rôles du superviseur lui-même
+    const supervisorRoles = await UserRole._listByUser(supervisorObj.getId()!);
+
+    return R.handleSuccess(res, {
+      supervisor: supervisorObj.toPublicJSON(),
+      supervisor_roles: supervisorRoles
+        ? await Promise.all(supervisorRoles.map(async (r) => await r.toJSON(responseValue.MINIMAL)))
+        : [],
+      total_subordinates: hierarchyTree.length,
+      hierarchy: hierarchyTree,
+    });
   } catch (error: any) {
     return R.handleError(res, HttpStatus.INTERNAL_ERROR, {
       code: ORG_HIERARCHY_CODES.LISTING_FAILED,
@@ -367,6 +455,7 @@ router.delete('/:guid', Ensure.delete(), async (req: Request, res: Response) => 
 
 // === ROUTES PAR UTILISATEUR ===
 
+// === Liste des relations où cet utilisateur est le subordonné ===
 router.get('/subordinate/:userGuid/list', Ensure.get(), async (req: Request, res: Response) => {
   try {
     if (!OrgHierarchyValidationUtils.validateGuid(req.params.userGuid)) {
@@ -415,6 +504,7 @@ router.get('/subordinate/:userGuid/list', Ensure.get(), async (req: Request, res
   }
 });
 
+// === Liste les subordonnés immédiats d’un superviseur (1er niveau seulement). ===
 router.get('/supervisor/:userGuid/list', Ensure.get(), async (req: Request, res: Response) => {
   try {
     if (!OrgHierarchyValidationUtils.validateGuid(req.params.userGuid)) {
@@ -465,6 +555,7 @@ router.get('/supervisor/:userGuid/list', Ensure.get(), async (req: Request, res:
 
 // === RÉSOLUTION HIÉRARCHIQUE ===
 
+// === Trouver le superviseur actif d’un subordonné (à une date donnée) ===
 router.get(
   '/subordinate/:userGuid/current-supervisor',
   Ensure.get(),
@@ -509,6 +600,7 @@ router.get(
   },
 );
 
+// === Trouver les subordonnés actifs directs d’un superviseur (à une date donnée) ===
 router.get(
   '/supervisor/:userGuid/active-subordinates',
   Ensure.get(),

@@ -64,6 +64,11 @@ export class ServerAuth {
         return;
       }
 
+      // TODO a supprimer apres les le devs
+      if (clientConfig.profile.root) {
+        return next();
+      }
+
       const rawToken = `${req.headers['x-api-signature'] || req.headers['X-Api-Signature'] || ''}`;
       const validity = `${req.headers['x-api-timestamp'] || req.headers['X-Api-Timestamp'] || ''}`;
 
