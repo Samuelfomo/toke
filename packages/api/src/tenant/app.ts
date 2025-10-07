@@ -18,6 +18,7 @@ import timeEntriesRoute from './routes/time.entries.route.js';
 import sitesRoute from './routes/sites.route.js';
 import workSessionsRoute from './routes/work.sessions.route.js';
 import orgHierarchyRoute from './routes/org.hierarchy.route.js';
+import memosRoute from './routes/memos.route.js';
 
 interface AppConfig {
   port: number;
@@ -204,6 +205,7 @@ export default class App {
     this.app.use('/time-entries', timeEntriesRoute);
     this.app.use('/work-session', workSessionsRoute);
     this.app.use('/site', sitesRoute);
+    this.app.use('/memo', memosRoute);
 
     // Route 404
     this.app.use((req, res) => {

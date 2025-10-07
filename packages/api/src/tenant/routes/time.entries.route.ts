@@ -9,6 +9,9 @@ import {
   TIME_ENTRIES_ERRORS,
   TIME_ENTRIES_MESSAGES,
   TimeEntriesValidationUtils,
+  USERS_CODES,
+  USERS_ERRORS,
+  UsersValidationUtils,
   validateTimeEntriesCreation,
   validateTimeEntriesFilters,
   validateTimeEntriesUpdate,
@@ -685,7 +688,7 @@ router.get('/user/:userGuid/list', Ensure.get(), async (req: Request, res: Respo
     const entryList = await TimeEntries._listByUser(userObj.getId()!);
     const entries = {
       user: userObj.toPublicJSON(),
-      entries: entryList
+      items: entryList
         ? await Promise.all(
             entryList.map(async (entry) => await entry.toJSON(responseValue.MINIMAL)),
           )
@@ -943,7 +946,7 @@ router.get('/:guid/anomalies', Ensure.get(), async (req: Request, res: Response)
 
 router.get('/user/:userGuid/anomalies', Ensure.get(), async (req: Request, res: Response) => {
   try {
-    if (!TimeEntriesValidationUtils.validateGuid(req.params.userGuid)) {
+    if (!UsersValidationUtils.validateGuid(req.params.userGuid)) {
       return R.handleError(res, HttpStatus.BAD_REQUEST, {
         code: TIME_ENTRIES_CODES.INVALID_GUID,
         message: TIME_ENTRIES_ERRORS.GUID_INVALID,
@@ -1000,6 +1003,46 @@ router.get('/statistics/overview', Ensure.get(), async (req: Request, res: Respo
   } catch (error: any) {
     return R.handleError(res, HttpStatus.INTERNAL_ERROR, {
       code: TIME_ENTRIES_CODES.STATISTICS_FAILED,
+      message: error.message,
+    });
+  }
+});
+
+// === LAST POINTAGE ===
+router.get('/:guid/last', Ensure.get(), async (req: Request, res: Response) => {
+  try {
+    const guid = req.params.guid;
+    if (!UsersValidationUtils.validateGuid(String(guid))) {
+      return R.handleError(res, HttpStatus.BAD_REQUEST, {
+        code: USERS_CODES.INVALID_GUID,
+        message: USERS_ERRORS.GUID_INVALID,
+      });
+    }
+
+    const userObj = await User._load(String(guid), true);
+    if (!userObj) {
+      return R.handleError(res, HttpStatus.NOT_FOUND, {
+        code: TIME_ENTRIES_CODES.USER_NOT_FOUND,
+        message: 'User not found',
+      });
+    }
+
+    const lastEntries = await TimeEntries._listByUser(userObj.getId()!);
+    if (!lastEntries || lastEntries.length === 0) {
+      return R.handleError(res, HttpStatus.NOT_FOUND, {
+        code: TIME_ENTRIES_CODES.TIME_ENTRY_NOT_FOUND,
+        message: 'No time entries found',
+      });
+    }
+
+    const lastEntry = lastEntries.at(-1);
+
+    return R.handleSuccess(res, {
+      entry: await lastEntry?.toJSON(responseValue.MINIMAL),
+    });
+  } catch (error: any) {
+    return R.handleError(res, HttpStatus.INTERNAL_ERROR, {
+      code: TIME_ENTRIES_CODES.SEARCH_FAILED,
       message: error.message,
     });
   }

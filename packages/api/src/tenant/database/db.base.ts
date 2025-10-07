@@ -32,10 +32,20 @@ export default abstract class BaseModel {
   /**
    * Trouver un enregistrement
    */
-  protected async findOne(tableName: string, where: any): Promise<any> {
+  // protected async findOne(tableName: string, where: any): Promise<any> {
+  //   await this.ensureInitialized();
+  //   const model = TableInitializer.getModel(tableName);
+  //   const result = await model.findOne({ where });
+  //   return result ? result.get() : null;
+  // }
+  protected async findOne(
+    tableName: string,
+    where: any,
+    options: any = {}, // ✅ Ajouter support des options (order, etc.)
+  ): Promise<any> {
     await this.ensureInitialized();
     const model = TableInitializer.getModel(tableName);
-    const result = await model.findOne({ where });
+    const result = await model.findOne({ where, ...options });
     return result ? result.get() : null;
   }
 

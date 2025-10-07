@@ -213,7 +213,7 @@ router.get('/public', Ensure.get(), async (req: Request, res: Response) => {
 });
 
 // === CRÉATION DE SITE ===
-
+// 🏗️ Create new work site or construction area with geolocation and access controls
 router.post('/', Ensure.post(), async (req: Request, res: Response) => {
   try {
     const validatedData = validateSitesCreation(req.body);
@@ -294,7 +294,7 @@ router.post('/', Ensure.post(), async (req: Request, res: Response) => {
 });
 
 // === RÉCUPÉRATION PAR GUID ===
-
+// 🔍 Get Site Details
 router.get('/:guid', Ensure.get(), async (req: Request, res: Response) => {
   try {
     if (!SitesValidationUtils.validateGuid(req.params.guid)) {
@@ -531,16 +531,17 @@ router.post('/validate-qr', Ensure.post(), async (req: Request, res: Response) =
 
 // === ROUTES PAR CRÉATEUR ===
 
-router.get('/creator/:userGuid/list', Ensure.get(), async (req: Request, res: Response) => {
+router.get('/creator/:guid/list', Ensure.get(), async (req: Request, res: Response) => {
   try {
-    if (!SitesValidationUtils.validateGuid(req.params.userGuid)) {
+    const { guid } = req.params;
+    if (!SitesValidationUtils.validateGuid(guid)) {
       return R.handleError(res, HttpStatus.BAD_REQUEST, {
         code: SITES_CODES.INVALID_GUID,
         message: SITES_ERRORS.GUID_INVALID,
       });
     }
 
-    const userObj = await User._load(req.params.userGuid, true);
+    const userObj = await User._load(guid, true);
     if (!userObj) {
       return R.handleError(res, HttpStatus.NOT_FOUND, {
         code: USERS_CODES.USER_NOT_FOUND,
@@ -549,6 +550,49 @@ router.get('/creator/:userGuid/list', Ensure.get(), async (req: Request, res: Re
     }
 
     const siteEntries = await Site._listByCreator(userObj.getId()!);
+    const sites = {
+      creator: userObj.toPublicJSON(),
+      sites: siteEntries
+        ? await Promise.all(
+            siteEntries.map(async (site) => await site.toJSON(responseValue.MINIMAL)),
+          )
+        : [],
+      count: siteEntries?.length || 0,
+    };
+
+    return R.handleSuccess(res, { sites });
+  } catch (error: any) {
+    return R.handleError(res, HttpStatus.INTERNAL_ERROR, {
+      code: SITES_CODES.LISTING_FAILED,
+      message: error.message,
+    });
+  }
+});
+
+// 🏗️ Retrieve all active work sites managed by current manager with status information
+router.get('/creator/:guid/active', Ensure.get(), async (req: Request, res: Response) => {
+  try {
+    const { guid } = req.params;
+    if (!SitesValidationUtils.validateGuid(guid)) {
+      return R.handleError(res, HttpStatus.BAD_REQUEST, {
+        code: SITES_CODES.INVALID_GUID,
+        message: SITES_ERRORS.GUID_INVALID,
+      });
+    }
+
+    const userObj = await User._load(guid, true);
+    if (!userObj) {
+      return R.handleError(res, HttpStatus.NOT_FOUND, {
+        code: USERS_CODES.USER_NOT_FOUND,
+        message: USERS_ERRORS.NOT_FOUND,
+      });
+    }
+    const conditions: Record<string, any> = {
+      ['active']: true,
+      ['created_by']: userObj.getId()!,
+    };
+
+    const siteEntries = await Site._list(conditions);
     const sites = {
       creator: userObj.toPublicJSON(),
       sites: siteEntries
@@ -700,7 +744,7 @@ router.get('/temporary/expiring', Ensure.get(), async (req: Request, res: Respon
   }
 });
 
-router.post('/:guid/extend-validity', Ensure.post(), async (req: Request, res: Response) => {
+router.patch('/:guid/extend-validity', Ensure.patch(), async (req: Request, res: Response) => {
   try {
     if (!SitesValidationUtils.validateGuid(req.params.guid)) {
       return R.handleError(res, HttpStatus.BAD_REQUEST, {
@@ -759,9 +803,9 @@ router.post('/:guid/extend-validity', Ensure.post(), async (req: Request, res: R
 
 // === MAINTENANCE AUTOMATIQUE ===
 
-router.post(
+router.patch(
   '/maintenance/deactivate-expired',
-  Ensure.post(),
+  Ensure.patch(),
   async (_req: Request, res: Response) => {
     try {
       const deactivatedCount = await Site.deactivateExpiredSites();
@@ -822,17 +866,17 @@ router.patch('/generate-qr-code', Ensure.patch(), async (req: Request, res: Resp
       });
     }
 
-    const tenant = req.tenant;
+    // const tenant = req.tenant;
     const qrGenerator = DatabaseEncryption.encrypt(
       {
         manager: userObj.getGuid(),
         site: siteObj.getGuid(),
         period: siteObj.getQRCodeData(),
-        site_name: siteObj.getName(),
-        site_type: siteObj.getSiteType(),
-        site_address: siteObj.getAddress(),
-        geofence_polygon: siteObj.getGeofencePolygon(),
-        geofence_radius: siteObj.getGeofenceRadius(),
+        // site_name: siteObj.getName(),
+        // site_type: siteObj.getSiteType(),
+        // site_address: siteObj.getAddress(),
+        // geofence_polygon: siteObj.getGeofencePolygon(),
+        // geofence_radius: siteObj.getGeofenceRadius(),
       },
       // tenant.config.reference,
     );

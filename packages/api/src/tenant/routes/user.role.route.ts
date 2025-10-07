@@ -1,5 +1,7 @@
 import { Request, Response, Router } from 'express';
 import {
+  COUNTRY_ERRORS,
+  CountryValidationUtils,
   HttpStatus,
   paginationSchema,
   ROLES_CODES,
@@ -20,6 +22,8 @@ import Role from '../class/Role.js';
 import UserRole from '../class/UserRole.js';
 import Revision from '../../tools/revision.js';
 import { tableName } from '../../utils/response.model.js';
+import WapService from '../../tools/send.otp.service.js';
+import GenerateOtp from '../../utils/generate.otp.js';
 
 const router = Router();
 
@@ -116,6 +120,13 @@ router.post('/', Ensure.post(), async (req: Request, res: Response) => {
   try {
     const validatedData = validateUserRoleAssignment(req.body);
 
+    const { country } = req.body;
+    if (!country || CountryValidationUtils.validateIsoCode(country)) {
+      return R.handleError(res, HttpStatus.BAD_REQUEST, {
+        code: 'invalid_entry',
+        message: COUNTRY_ERRORS.CODE_INVALID,
+      });
+    }
     // Vérification de l'existence de l'utilisateur
     const userObj = await User._load(validatedData.user, true);
     if (!userObj) {
@@ -150,7 +161,24 @@ router.post('/', Ensure.post(), async (req: Request, res: Response) => {
       assignedByObj.getId()!,
     );
 
-    return R.handleCreated(res, await userRole.toJSON());
+    const otp = GenerateOtp.generateOTP(6).toString();
+    userObj.setOtpToken(otp);
+
+    await userObj.save();
+
+    const sendOtp = await WapService.sendOtp(
+      userObj.getOtpToken()!,
+      userObj.getPhoneNumber()!,
+      country,
+    );
+
+    if (sendOtp.status !== HttpStatus.SUCCESS) {
+      return R.handleError(res, sendOtp.status, sendOtp.response);
+    }
+    return R.handleCreated(res, {
+      message: 'User role assignment created and OTP dispatch successful',
+      user_role: await userRole.toJSON(),
+    });
   } catch (error: any) {
     if (error.issues) {
       return R.handleError(res, HttpStatus.BAD_REQUEST, {
@@ -174,16 +202,17 @@ router.post('/', Ensure.post(), async (req: Request, res: Response) => {
 
 // === ROUTES PAR UTILISATEUR ===
 
-router.get('/user/:userGuid/list', Ensure.get(), async (req: Request, res: Response) => {
+// === Répertorier tous les rôles attribués à un utilisateur === //
+router.get('/:guid/list', Ensure.get(), async (req: Request, res: Response) => {
   try {
-    if (!UserRolesValidationUtils.validateGuid(req.params.userGuid)) {
+    if (!UserRolesValidationUtils.validateGuid(req.params.guid)) {
       return R.handleError(res, HttpStatus.BAD_REQUEST, {
         code: USER_ROLES_CODES.INVALID_GUID,
         message: USER_ROLES_ERRORS.GUID_INVALID,
       });
     }
 
-    const userGuid = req.params.userGuid;
+    const userGuid = req.params.guid;
 
     const userObj = await User._load(userGuid, true);
     if (!userObj) {
@@ -193,21 +222,17 @@ router.get('/user/:userGuid/list', Ensure.get(), async (req: Request, res: Respo
       });
     }
 
-    const paginationOptions = paginationSchema.parse(req.query);
-    const userRoleEntries = await UserRole._listByUser(userObj.getId()!, paginationOptions);
+    // const paginationOptions = paginationSchema.parse(req.query);
+    const userRoleEntries = await UserRole._listByUser(userObj.getId()!);
 
     const userRoles = {
-      pagination: {
-        offset: paginationOptions.offset || 0,
-        limit: paginationOptions.limit || userRoleEntries?.length || 0,
-        count: userRoleEntries?.length || 0,
-      },
+      count: userRoleEntries?.length || 0,
       items: userRoleEntries
         ? await Promise.all(userRoleEntries.map(async (userRole) => await userRole.toJSON()))
         : [],
     };
 
-    return R.handleSuccess(res, { userRoles });
+    return R.handleSuccess(res, { roles: userRoles });
   } catch (error: any) {
     return R.handleError(res, HttpStatus.INTERNAL_ERROR, {
       code: USER_ROLES_CODES.LISTING_FAILED,

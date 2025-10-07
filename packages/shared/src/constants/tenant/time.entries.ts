@@ -144,6 +144,7 @@ export const TIME_ENTRIES_CODES = {
   STATISTICS_FAILED: 'statistics_failed',
   CANNOT_CLOCK_OUT: 'cannot_clock_out',
   INVALID_POINTAGE_TYPE: 'invalid_pointage_type',
+  ALREADY_PAUSE_CLOSED: 'already_pause_closed',
 } as const;
 
 const TIME_ENTRIES_LABEL = 'Time Entry';

@@ -654,19 +654,41 @@ router.get(
 
 // === TRANSFERT D'EMPLOYÉ ===
 
-router.post('/transfer', Ensure.post(), async (req: Request, res: Response) => {
+// ↔️ Transfer employee to another manager within the organization hierarchy
+router.post('/reassign', Ensure.post(), async (req: Request, res: Response) => {
   try {
-    const { subordinate_guid, new_supervisor_guid, effective_date } = req.body;
+    const { subordinate, new_supervisor, effective_date } = req.body;
 
-    if (!subordinate_guid || !new_supervisor_guid || !effective_date) {
+    if (!subordinate || !new_supervisor || !effective_date) {
       return R.handleError(res, HttpStatus.BAD_REQUEST, {
         code: ORG_HIERARCHY_CODES.VALIDATION_FAILED,
-        message: 'subordinate_guid, new_supervisor_guid and effective_date are required',
+        message: 'subordinate, new_supervisor and effective_date are required',
+      });
+    }
+
+    if (!UsersValidationUtils.validateGuid(subordinate)) {
+      return R.handleError(res, HttpStatus.BAD_REQUEST, {
+        code: ORG_HIERARCHY_CODES.SUBORDINATE_INVALID,
+        message: ORG_HIERARCHY_ERRORS.SUBORDINATE_INVALID,
+      });
+    }
+
+    if (!UsersValidationUtils.validateGuid(new_supervisor)) {
+      return R.handleError(res, HttpStatus.BAD_REQUEST, {
+        code: ORG_HIERARCHY_CODES.VALIDATION_FAILED,
+        message: ORG_HIERARCHY_ERRORS.SUPERVISOR_INVALID,
+      });
+    }
+
+    if (!OrgHierarchyValidationUtils.validateEffectiveFrom(effective_date)) {
+      return R.handleError(res, HttpStatus.BAD_REQUEST, {
+        code: ORG_HIERARCHY_CODES.VALIDATION_FAILED,
+        message: ORG_HIERARCHY_ERRORS.EFFECTIVE_FROM_INVALID,
       });
     }
 
     // Vérification des utilisateurs
-    const subordinateObj = await User._load(subordinate_guid, true);
+    const subordinateObj = await User._load(subordinate, true);
     if (!subordinateObj) {
       return R.handleError(res, HttpStatus.NOT_FOUND, {
         code: USERS_CODES.USER_NOT_FOUND,
@@ -674,7 +696,7 @@ router.post('/transfer', Ensure.post(), async (req: Request, res: Response) => {
       });
     }
 
-    const newSupervisorObj = await User._load(new_supervisor_guid, true);
+    const newSupervisorObj = await User._load(new_supervisor, true);
     if (!newSupervisorObj) {
       return R.handleError(res, HttpStatus.NOT_FOUND, {
         code: USERS_CODES.USER_NOT_FOUND,
@@ -753,6 +775,83 @@ router.get('/statistics/overview', Ensure.get(), async (_req: Request, res: Resp
   } catch (error: any) {
     return R.handleError(res, HttpStatus.INTERNAL_ERROR, {
       code: ORG_HIERARCHY_CODES.STATISTICS_FAILED,
+      message: error.message,
+    });
+  }
+});
+
+// ===  👥 Get Peer Managers ===
+// 🤝 List managers at same hierarchical level for collaboration and coordination
+router.get('/my-level', Ensure.get(), async (req: Request, res: Response) => {
+  try {
+    const { manager } = req.query;
+
+    // 🔎 Validation du GUID du manager
+    if (!manager || !UsersValidationUtils.validateGuid(String(manager))) {
+      return R.handleError(res, HttpStatus.BAD_REQUEST, {
+        code: ORG_HIERARCHY_CODES.INVALID_GUID,
+        message: ORG_HIERARCHY_ERRORS.GUID_INVALID,
+      });
+    }
+
+    // 🧠 Chargement du manager
+    const managerObj = await User._load(String(manager), true);
+    if (!managerObj) {
+      return R.handleError(res, HttpStatus.NOT_FOUND, {
+        code: USERS_CODES.USER_NOT_FOUND,
+        message: USERS_ERRORS.NOT_FOUND,
+      });
+    }
+
+    // 🪜 Trouver le superviseur direct du manager
+    const currentSupervisor = await OrgHierarchy.getCurrentSupervisor(managerObj.getId()!);
+    if (!currentSupervisor) {
+      return R.handleError(res, HttpStatus.NOT_FOUND, {
+        code: ORG_HIERARCHY_CODES.SUPERVISOR_NOT_FOUND,
+        message: 'Aucun superviseur trouvé pour ce manager',
+      });
+    }
+
+    // 👥 Récupérer tous les subordonnés actifs de ce superviseur
+    const peerHierarchies = await OrgHierarchy.getActiveSubordinates(currentSupervisor.getId()!);
+
+    // ✅ Vérification de null avant d’utiliser peerHierarchies
+    if (!peerHierarchies || peerHierarchies.length === 0) {
+      return R.handleSuccess(res, {
+        manager: managerObj.toJSON(),
+        supervisor: await currentSupervisor.toJSON(),
+        total_peers: 0,
+        peers: [],
+        message: 'Aucun pair trouvé à ce niveau hiérarchique',
+      });
+    }
+
+    // 🎯 Exclure le manager lui-même pour ne garder que ses pairs
+    const peers = peerHierarchies
+      .filter((h: any) => h.subordinate_id !== managerObj.getId())
+      .map((h: any) => h.subordinate);
+
+    // 🧩 Charger les rôles de chaque pair
+    const peersWithRoles = await Promise.all(
+      peers.map(async (peer: any) => {
+        const roles = await UserRole.getUserRoles(peer.id);
+        return {
+          ...peer.toJSON(),
+          roles: roles ? roles.map((r) => r.toJSON()) : [],
+        };
+      }),
+    );
+
+    // ✅ Réponse finale
+    return R.handleSuccess(res, {
+      manager: managerObj.toJSON(),
+      supervisor: await currentSupervisor.toJSON(),
+      total_peers: peersWithRoles.length,
+      peers: peersWithRoles,
+    });
+  } catch (error: any) {
+    return R.handleError(res, HttpStatus.INTERNAL_ERROR, {
+      code: ORG_HIERARCHY_CODES.LISTING_FAILED,
       message: error.message,
     });
   }

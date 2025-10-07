@@ -1,9 +1,4 @@
-import {
-  PointageType,
-  SessionStatus,
-  WORK_SESSIONS_ERRORS,
-  WorkSessionsValidationUtils,
-} from '@toke/shared';
+import { PointageType, SessionStatus, WORK_SESSIONS_ERRORS, WorkSessionsValidationUtils, } from '@toke/shared';
 import { Op } from 'sequelize';
 
 import BaseModel from '../database/db.base.js';
@@ -285,13 +280,30 @@ export default class WorkSessionsModel extends BaseModel {
     return Math.floor((end.getTime() - start.getTime()) / (1000 * 60));
   }
 
+  // protected async hasActivePause(session: number): Promise<boolean> {
+  //   const lastPauseEntry = await this.findOne(tableName.TIME_ENTRIES, {
+  //     session: session,
+  //     pointage_type: {
+  //       [Op.in]: [PointageType.PAUSE_START, PointageType.PAUSE_END],
+  //     },
+  //   });
+  //
+  //   return lastPauseEntry?.pointage_type === PointageType.PAUSE_START;
+  // }
+
   protected async hasActivePause(session: number): Promise<boolean> {
-    const lastPauseEntry = await this.findOne(tableName.TIME_ENTRIES, {
-      session: session,
-      pointage_type: {
-        [Op.in]: [PointageType.PAUSE_START, PointageType.PAUSE_END],
+    const lastPauseEntry = await this.findOne(
+      tableName.TIME_ENTRIES,
+      {
+        session: session,
+        pointage_type: {
+          [Op.in]: [PointageType.PAUSE_START, PointageType.PAUSE_END],
+        },
       },
-    });
+      {
+        order: [['server_received_at', 'DESC']], // ✅ Récupérer la plus récente
+      },
+    );
 
     return lastPauseEntry?.pointage_type === PointageType.PAUSE_START;
   }

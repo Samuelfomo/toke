@@ -23,9 +23,9 @@ export default class WapService {
         reference: process.env.SEND_OTP_MESSAGE,
         country: country,
         recipient: phone,
-        scheduled: scheduled.toISOString() || GenerateOtp.generateOTP(6).toString(),
+        scheduled: scheduled.toISOString(),
         variables: {
-          code_otp: otp.toString(),
+          code_otp: otp.toString() || GenerateOtp.generateOTP(6).toString(),
         },
       });
 

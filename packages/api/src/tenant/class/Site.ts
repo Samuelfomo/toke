@@ -351,14 +351,12 @@ export default class Site extends SiteModel {
       throw new Error('Seuls les sites temporaires peuvent être étendus');
     }
 
-    const updatedQRData = {
+    this.qr_code_data = {
       ...this.qr_code_data,
       auto_expire_date: new_end_date.toISOString(),
       extended_by: approved_by,
       extended_at: new Date().toISOString(),
     };
-
-    this.qr_code_data = updatedQRData;
     await this.save();
   }
 

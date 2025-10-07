@@ -341,9 +341,9 @@ export default class UserModel extends BaseModel {
       throw new Error(USERS_ERRORS.ID_REQUIRED);
     }
     const updateData: Record<string, any> = {};
-    if (this.tenant !== undefined) {
-      updateData[this.db.tenant] = this.tenant;
-    }
+    // if (this.tenant !== undefined) {
+    //   updateData[this.db.tenant] = this.tenant;
+    // }
     if (this.email !== undefined) {
       updateData[this.db.email] = this.email ? this.email.toLowerCase() : null;
     }

@@ -403,6 +403,31 @@ router.put('/:guid', Ensure.put(), async (req: Request, res: Response) => {
 
     const validatedData = validateUsersUpdate(req.body);
 
+    const Roles = await UserRole._listByUser(userObj.getId()!);
+    if (!Roles) {
+      return R.handleError(res, HttpStatus.NOT_ACCEPTABLE, {
+        code: USERS_CODES.AUTHORIZATION_FAILED,
+        message: USERS_ERRORS.AUTHORIZATION_FAILED,
+      });
+    }
+    let assigns: string[] = [];
+
+    await Promise.all(
+      Roles.map(async (role) => {
+        const assignByObj = await role.getAssignedByObject();
+        if (assignByObj) {
+          assigns.push(assignByObj.getGuid()!);
+        }
+      }),
+    );
+
+    if (!assigns.includes(validatedData.supervisor!)) {
+      return R.handleError(res, HttpStatus.UNAUTHORIZED, {
+        code: USERS_CODES.AUTHORIZATION_FAILED,
+        message: USERS_ERRORS.AUTHORIZATION_FAILED,
+      });
+    }
+
     if (validatedData.email) {
       userObj.setEmail(validatedData.email);
     }
@@ -469,7 +494,14 @@ router.patch('/:guid/generate-otp', Ensure.patch(), async (req: Request, res: Re
       });
     }
 
-    const { expiration_minutes = 1440 } = req.body; // 24h par défaut
+    const { expiration_minutes = 1440, country } = req.body; // 24h par défaut
+
+    if (!CountryValidationUtils.validateIsoCode(country)) {
+      return R.handleError(res, HttpStatus.BAD_REQUEST, {
+        code: 'country_code_invalid',
+        message: COUNTRY_ERRORS.CODE_INVALID,
+      });
+    }
 
     // const otp = GenerateOtp.generateOTP(6);
     // const expiresAt = new Date(Date.now() + expiration_minutes * 60 * 1000);
@@ -480,8 +512,17 @@ router.patch('/:guid/generate-otp', Ensure.patch(), async (req: Request, res: Re
     // userObj.generateOtpToken(expiration_minutes);
     await userObj.defineOtpToken();
 
+    const sendOtp = await WapService.sendOtp(
+      userObj.getOtpToken()!,
+      userObj.getPhoneNumber()!,
+      country,
+    );
+    if (sendOtp.status !== HttpStatus.SUCCESS) {
+      return R.handleError(res, sendOtp.status, sendOtp.response);
+    }
+
     return R.handleSuccess(res, {
-      message: 'OTP generated successfully',
+      message: 'OTP generated and sent successfully',
       otp_expires_at: userObj.getOtpExpiresAt(),
     });
   } catch (error: any) {
@@ -1038,13 +1079,76 @@ router.get('/:otp/verify', Ensure.get(), async (req: Request, res: Response) => 
       });
     }
     await userObj.clearOtp();
+
+    const roles = await UserRole.getUserRoles(userObj.getId()!);
     return R.handleSuccess(res, {
       message: 'OTP verified successfully',
       user: userObj.toJSON(),
+      roles: roles.map((role) => role.toJSON()),
     });
   } catch (error: any) {
     return R.handleError(res, HttpStatus.INTERNAL_ERROR, {
       code: USERS_CODES.SEARCH_FAILED,
+      message: error.message,
+    });
+  }
+});
+
+router.patch('/:guid/status', Ensure.patch(), async (req: Request, res: Response) => {
+  try {
+    const { guid } = req.params;
+    if (!UsersValidationUtils.validateGuid(guid)) {
+      return R.handleError(res, HttpStatus.BAD_REQUEST, {
+        code: USERS_CODES.INVALID_GUID,
+        message: USERS_ERRORS.GUID_INVALID,
+      });
+    }
+    const { status, supervisor } = req.body;
+    if (!status || !UsersValidationUtils.validateActive(status)) {
+      return R.handleError(res, HttpStatus.BAD_REQUEST, {
+        code: USERS_CODES.ACTIVE_STATUS_INVALID,
+        message: USERS_ERRORS.ACTIVE_STATUS_INVALID,
+      });
+    }
+    if (!supervisor || !UsersValidationUtils.validateGuid(supervisor)) {
+      return R.handleError(res, HttpStatus.BAD_REQUEST, {
+        code: USERS_CODES.INVALID_GUID,
+        message: USERS_ERRORS.SUPERVISOR_NOT_FOUND,
+      });
+    }
+    const userObj = await User._load(guid, true);
+    if (!userObj) {
+      return R.handleError(res, HttpStatus.NOT_FOUND, {
+        code: USERS_CODES.USER_NOT_FOUND,
+        message: USERS_ERRORS.NOT_FOUND,
+      });
+    }
+    const supervisorObj = await User._load(supervisor, true);
+    if (!supervisorObj) {
+      return R.handleError(res, HttpStatus.NOT_FOUND, {
+        code: USERS_CODES.SUPERVISOR_NOT_FOUND,
+        message: USERS_ERRORS.SUPERVISOR_NOT_FOUND,
+      });
+    }
+
+    const isManager = await UserRole._listByUser(supervisorObj.getId()!);
+    if (!isManager || isManager.length < 2) {
+      return R.handleError(res, HttpStatus.FORBIDDEN, {
+        code: USERS_CODES.AUTHORIZATION_FAILED,
+        message: USERS_ERRORS.AUTHORIZATION_FAILED,
+      });
+    }
+
+    userObj.setActive(status);
+
+    await userObj.save();
+    return R.handleSuccess(res, {
+      message: 'User status updated successfully',
+      user: userObj.toJSON(),
+    });
+  } catch (error: any) {
+    return R.handleError(res, HttpStatus.INTERNAL_ERROR, {
+      code: USERS_CODES.UPDATE_FAILED,
       message: error.message,
     });
   }

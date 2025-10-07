@@ -499,6 +499,7 @@ export default class WorkSessions extends WorkSessionsModel {
     if (!this.id) return false;
     return await this.hasActivePause(this.id);
   }
+
   async getPauseStatusDetailed(): Promise<{
     is_on_pause: boolean;
     current_pause_start?: Date;
