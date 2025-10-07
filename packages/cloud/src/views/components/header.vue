@@ -24,12 +24,12 @@
     </div>
   </header>
   <nav class="main-navigation">
-    <div class="nav-container">
+    <div class="nav-container" ref="navContainerRef">
       <a
         href="/dashboard"
         class="nav-tab"
         :class="{ active: activeTab === '/dashboard' }"
-        @click="setActiveTab('/dashboard')">
+        @click="setActiveTab('/dashboard', $event)">
         <svg class="tab-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
         </svg>
@@ -39,7 +39,7 @@
         href="/equipe"
         class="nav-tab"
         :class="{ active: activeTab === '/equipe' }"
-        @click="setActiveTab('/equipe')">
+        @click="setActiveTab('/equipe', $event)">
         <svg class="tab-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"></path>
         </svg>
@@ -49,7 +49,7 @@
         href="#"
         class="nav-tab"
         :class="{ active: activeTab === '/analytics' }"
-        @click="setActiveTab('/analytics')">
+        @click="setActiveTab('/analytics', $event)">
         <svg class="tab-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path>
         </svg>
@@ -59,47 +59,97 @@
         href="/module"
         class="nav-tab"
         :class="{ active: activeTab === '/module' }"
-        @click="setActiveTab('/module')">
+        @click="setActiveTab('/module', $event)">
         <svg class="tab-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"></path>
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
         </svg>
         <span class="tab-label">Paramètres</span>
       </a>
+
+      <div class="active-tab-indicator" :style="indicatorStyle"></div>
     </div>
-  </nav>
-</template>
+  </nav></template>
 
 <script setup lang="ts">
-import { computed, ref } from 'vue'
+import { computed, ref, onMounted, nextTick } from 'vue'
 import toke from '../../../public/images/toke.svg'
 
-// Props pour personnaliser le header
+// DÉBUT DE LA CORRECTION : Définition de l'interface Props manquante
 interface Props {
   userName?: string
   companyName?: string
   notificationCount?: number
 }
 
+// FIN DE LA CORRECTION
 const props = withDefaults(defineProps<Props>(), {
   userName: 'Danielle',
   companyName: 'IMEDIATIS',
   notificationCount: 0
 })
 
-// Variable réactive pour suivre l'onglet actif
-const activeTab = ref('/dashboard'); // Initialise avec l'onglet par défaut
+// Détecter l'onglet actif basé sur l'URL actuelle
+const activeTab = ref(window.location.pathname || '/dashboard');
+const navContainerRef = ref<HTMLElement | null>(null)
+const indicatorStyle = ref({})
 
-// Méthode pour définir l'onglet actif
-const setActiveTab = (path: string) => {
-  activeTab.value = path;
-};
-
-// Computed pour récupérer la première lettre du nom d'utilisateur
+// Logique pour obtenir la première lettre du nom d'utilisateur
 const userInitial = computed(() => {
   return props.userName.charAt(0).toUpperCase()
 })
+
+// Fonction pour mettre à jour la position et la taille de la barre mobile
+const updateIndicator = () => {
+  nextTick(() => {
+    if (!navContainerRef.value) return
+
+    // Trouver l'onglet actif actuel
+    const activeLink = navContainerRef.value.querySelector('.nav-tab.active') as HTMLElement
+
+    if (activeLink) {
+      const containerRect = navContainerRef.value.getBoundingClientRect()
+      const linkRect = activeLink.getBoundingClientRect()
+
+      // Calculer la position (décalage horizontal) et la largeur
+      indicatorStyle.value = {
+        width: `${linkRect.width}px`,
+        // Calcul du décalage par rapport au début du conteneur nav
+        transform: `translateX(${linkRect.left - containerRect.left}px)`
+      }
+    } else {
+      // Cacher la barre si aucun onglet actif n'est trouvé
+      indicatorStyle.value = {
+        width: '0px',
+        transform: 'translateX(0px)'
+      }
+    }
+  })
+}
+
+// Définit l'onglet actif et met à jour l'indicateur
+const setActiveTab = (path: string, event: MouseEvent) => {
+  // Mettre à jour l'onglet actif immédiatement pour l'animation
+  activeTab.value = path;
+  updateIndicator();
+
+  // Laisser le navigateur gérer la navigation naturellement
+  // (ne pas appeler preventDefault)
+};
+
+// Appeler la mise à jour lors du montage initial
+onMounted(() => {
+  updateIndicator()
+  // Écouteur pour la mise à jour lors du redimensionnement de la fenêtre
+  window.addEventListener('resize', updateIndicator)
+})
+// Nettoyage de l'écouteur d'événement au démontage (bonne pratique)
+import { onUnmounted } from 'vue'
+onUnmounted(() => {
+  window.removeEventListener('resize', updateIndicator)
+})
 </script>
+
 
 <style scoped>
 .dashboard-header {

@@ -5,39 +5,6 @@
       :company-name="currentUser.company"
       :notification-count="notificationCount"
     />
-<!--    <div class="manager-header">-->
-<!--      <div class="manager-profile">-->
-<!--        <div class="manager-avatar">-->
-<!--          <img v-if="currentManager.avatar" :src="currentManager.avatar" :alt="currentManager.name">-->
-<!--          <div v-else class="avatar-placeholder">-->
-<!--            {{ getInitials(currentManager.name) }}-->
-<!--          </div>-->
-<!--        </div>-->
-<!--        <div class="manager-info">-->
-<!--          <h1 class="manager-name">{{ currentManager.name }}</h1>-->
-<!--          <p class="manager-title">{{ currentManager.title }}</p>-->
-<!--          <p class="manager-department">-->
-<!--            <svg class="icon-sm" fill="none" stroke="currentColor" viewBox="0 0 24 24">-->
-<!--              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"></path>-->
-<!--            </svg>-->
-<!--            {{ currentManager.department }}-->
-<!--          </p>-->
-<!--        </div>-->
-<!--      </div>-->
-<!--      <div class="team-overview-stats">-->
-<!--        <div class="overview-card total">-->
-<!--          <div class="stat-icon">-->
-<!--            <svg fill="currentColor" viewBox="0 0 20 20">-->
-<!--              <path d="M9 6a3 3 0 11-6 0 3 3 0 016 0zM17 6a3 3 0 11-6 0 3 3 0 016 0zM12.93 17c.046-.327.07-.66.07-1a6.97 6.97 0 00-1.5-4.33A5 5 0 0119 16v1h-6.07zM6 11a5 5 0 015 5v1H1v-1a5 5 0 015-5z"></path>-->
-<!--            </svg>-->
-<!--          </div>-->
-<!--          <div class="stat-content">-->
-<!--            <span class="stat-number">{{ totalEmployees }}</span>-->
-<!--            <span class="stat-label">Total équipe</span>-->
-<!--          </div>-->
-<!--        </div>-->
-<!--      </div>-->
-<!--    </div>-->
 
     <div class="presence-analytics">
       <div class="analytics-header">
@@ -81,14 +48,14 @@
                 <div class="bar-chart-new">
                   <div class="bar-item-new">
                     <div class="bar-new present"
-                         :style="{ height: `${(presentCount / maxEmployeeCount) * 100}%` }">
-                      <span class="bar-value-new">{{ presentCount }}</span>
+                         :style="{ height: `${(dailyStats.present / maxEmployeeCount) * 100}%` }">
+                      <span class="bar-value-new">{{ dailyStats.present }}</span>
                     </div>
                   </div>
                   <div class="bar-item-new">
                     <div class="bar-new absent"
-                         :style="{ height: `${((lateCount + absentCount) / maxEmployeeCount) * 100}%` }">
-                      <span class="bar-value-new">{{ lateCount + absentCount }}</span>
+                         :style="{ height: `${((dailyStats.late + dailyStats.absent) / maxEmployeeCount) * 100}%` }">
+                      <span class="bar-value-new">{{ dailyStats.late + dailyStats.absent }}</span>
                     </div>
                   </div>
                 </div>
@@ -101,13 +68,13 @@
                   <span class="tick-label-x">Présents</span>
                 </div>
                 <div class="x-tick">
-                  <span class="tick-label-x">Absents</span>
+                  <span class="tick-label-x">Absents/Retards</span>
                 </div>
               </div>
             </div>
 
             <div class="attendance-rate">
-              <span class="rate-value">{{ attendanceRate }}%</span>
+              <span class="rate-value">{{ dailyAttendanceRate }}%</span>
               <span class="rate-label">Taux de présence</span>
             </div>
           </div>
@@ -205,10 +172,11 @@
             <option value="present">Présents</option>
             <option value="late">En retard</option>
             <option value="absent">Absents</option>
+            <option value="info">Information</option>
           </select>
           <select v-model="siteFilter" class="filter-select">
             <option value="">Tous les sites</option>
-            <option v-for="site in managerSites" :key="site.id" :value="site.id">
+            <option v-for="site in employeeStore.sites.value" :key="site.id" :value="site.id">
               {{ site.name }}
             </option>
           </select>
@@ -228,6 +196,12 @@
             <th class="sortable" @click="setSortBy('position')">
               Poste
               <svg v-if="sortBy === 'position'" class="sort-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 15l7-7 7 7"></path>
+              </svg>
+            </th>
+            <th class="sortable" @click="setSortBy('status')">
+              Statut du jour
+              <svg v-if="sortBy === 'status'" class="sort-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 15l7-7 7 7"></path>
               </svg>
             </th>
@@ -257,7 +231,7 @@
                 <div class="employee-avatar-table">
                   <img v-if="employee.avatar" :src="employee.avatar" :alt="employee.name">
                   <div v-else class="avatar-placeholder">
-                    {{ getInitials(employee.name) }}
+                    {{ employee.initials }}
                   </div>
                 </div>
                 <div class="employee-details">
@@ -268,11 +242,17 @@
             </td>
             <td>{{ employee.position }}</td>
             <td>
+              <div class="status-badge" :class="`status-${employeeStore.getEmployeeDailyStatus(employee.id, selectedDate).status}`">
+                <span :class="statusIcon(employeeStore.getEmployeeDailyStatus(employee.id, selectedDate).status)"></span>
+                <span>{{ employeeStore.getEmployeeDailyStatus(employee.id, selectedDate).statusText }}</span>
+              </div>
+            </td>
+            <td>
               <div class="site-info">
                 <svg class="icon-xs" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"></path>
                 </svg>
-                {{ employee.siteName }}
+                {{ employeeStore.getSiteName(employee.siteId) }}
               </div>
             </td>
             <td>
@@ -290,6 +270,9 @@
                   ></div>
                 </div>
                 <span class="punctuality-score">{{ employee.punctualityScore }}%</span>
+                <span class="punctuality-details">
+                  ({{ employee.punctualityDetails.onTime }}/{{ employee.punctualityDetails.totalDays }} jours)
+                </span>
               </div>
             </td>
             <td class="actions-cell">
@@ -358,7 +341,7 @@
       @close="showAddEmployee = false"
       @employee-added="handleEmployeeAdded"
       :manager-id="currentManager.id"
-      :available-sites="managerSites"
+      :available-sites="employeeStore.sites.value"
     />
 
     <SiteModal
@@ -370,15 +353,14 @@
   </section>
 </template>
 
-
 <script setup lang="ts">
 import { ref, computed, onMounted, watch, onUnmounted } from 'vue';
 import equipeCss from "../assets/css/toke-equipe-09.css?url"
 import dashboardCss from "../assets/css/toke-dMain-04.css?url"
 import Header from '../views/components/header.vue'
 import HeadBuilder from '@/utils/HeadBuilder';
+import { useEmployeeStore } from '../composables/useEmployeeStore'
 
-// Interface definitions
 interface Manager {
   id: number
   name: string
@@ -388,38 +370,12 @@ interface Manager {
   email: string
 }
 
-interface Employee {
-  id: number
-  name: string
-  position: string
-  email: string
-  siteId: number
-  siteName: string
-  managerId: number
-  punctualityScore: number
-  hireDate: string
-}
-
-interface Site {
-  id: number
-  name: string
-  address: string
-  managerId: number
-  description: string
-}
-
-interface ArrivalInterval {
-  range: string
-  count: number
-}
-
 const currentUser = ref({
   name: 'Danielle',
   company: 'IMEDIATIS'
 })
 const notificationCount = ref(2)
 
-// État réactif
 const currentManager = ref<Manager>({
   id: 1,
   name: 'Danielle',
@@ -428,106 +384,12 @@ const currentManager = ref<Manager>({
   email: 'danielle@company.com'
 })
 
-const employees = ref<Employee[]>([
-  {
-    id: 1,
-    name: 'Jean-Paul Kamdem',
-    position: 'Développeur Senior',
-    email: 'jp.kamdem@company.com',
-    siteId: 1,
-    siteName: 'Douala Centre',
-    managerId: 1,
-    punctualityScore: 95,
-    hireDate: '2023-01-15'
-  },
-  {
-    id: 2,
-    name: 'Sarah Mbarga',
-    position: 'Analyste Système',
-    email: 'sarah.mbarga@company.com',
-    siteId: 1,
-    siteName: 'Douala Centre',
-    managerId: 1,
-    punctualityScore: 78,
-    hireDate: '2023-03-10'
-  },
-  {
-    id: 3,
-    name: 'Michel Fosso',
-    position: 'Chef de Projet',
-    email: 'michel.fosso@company.com',
-    siteId: 2,
-    siteName: 'Yaoundé Tech',
-    managerId: 1,
-    punctualityScore: 85,
-    hireDate: '2022-11-20'
-  },
-  {
-    id: 4,
-    name: 'Christophe Nana',
-    position: 'Ingénieur DevOps',
-    email: 'c.nana@company.com',
-    siteId: 1,
-    siteName: 'Douala Centre',
-    managerId: 1,
-    punctualityScore: 99,
-    hireDate: '2023-05-01'
-  },
-  {
-    id: 5,
-    name: 'Linda Ngono',
-    position: 'UX/UI Designer',
-    email: 'linda.ngono@company.com',
-    siteId: 3,
-    siteName: 'Bafoussam Innovation Hub',
-    managerId: 1,
-    punctualityScore: 92,
-    hireDate: '2024-02-28'
-  },
-  {
-    id: 6,
-    name: 'Paul Talla',
-    position: 'Data Scientist',
-    email: 'p.talla@company.com',
-    siteId: 2,
-    siteName: 'Yaoundé Tech',
-    managerId: 1,
-    punctualityScore: 65,
-    hireDate: '2023-09-01'
-  },
-  {
-    id: 7,
-    name: 'Sophie Nde',
-    position: 'Spécialiste Cybersécurité',
-    email: 's.nde@company.com',
-    siteId: 1,
-    siteName: 'Douala Centre',
-    managerId: 1,
-    punctualityScore: 98,
-    hireDate: '2023-06-05'
-  },
-])
-
-const sites = ref<Site[]>([
-  { id: 1, name: 'Douala Centre', address: '123 Avenue de l\'Indépendance, Douala', managerId: 1, description: 'Siège social' },
-  { id: 2, name: 'Yaoundé Tech', address: '456 Boulevard de l\'Innovation, Yaoundé', managerId: 1, description: 'Centre de R&D' },
-  { id: 3, name: 'Bafoussam Innovation Hub', address: '789 Rue de la Créativité, Bafoussam', managerId: 1, description: 'Incubateur de startups' }
-])
-
-// Données fictives pour les calculs des stats et des graphiques
-const dailyAttendance = ref([
-  { employeeId: 1, status: 'present', arrivalTime: '08:00' },
-  { employeeId: 2, status: 'late', arrivalTime: '08:45', lateMinutes: 15 },
-  { employeeId: 3, status: 'absent' },
-  { employeeId: 4, status: 'present', arrivalTime: '07:55' },
-  { employeeId: 5, status: 'present', arrivalTime: '08:10' },
-  { employeeId: 6, status: 'late', arrivalTime: '09:10', lateMinutes: 40 },
-  { employeeId: 7, status: 'present', arrivalTime: '08:05' },
-])
+// Utilisation du store partagé
+const employeeStore = useEmployeeStore()
 
 const selectedDate = ref<Date>(new Date())
 const searchTerm = ref<string>('')
-const statusFilter = ref<'present' | 'absent' | 'late' | ''>('')
+const statusFilter = ref<'present' | 'absent' | 'late' | 'info' | ''>('')
 const siteFilter = ref<number | ''>('')
 const sortBy = ref<string>('name')
 const currentPage = ref<number>(1)
@@ -537,23 +399,19 @@ const showAddSite = ref<boolean>(false)
 const activeEmployeeMenu = ref<number | null>(null)
 const hoveredEmployee = ref<number | null>(null)
 
-// Computed properties
-const managerEmployees = computed(() => employees.value.filter(emp => emp.managerId === currentManager.value.id))
-const managerSites = computed(() => sites.value.filter(site => site.managerId === currentManager.value.id))
+// Statistiques journalières depuis le store
+const dailyStats = computed(() => employeeStore.getDailyStats(selectedDate.value))
 
-// Mises à jour des counts pour les statistiques
-const presentCount = computed(() => dailyAttendance.value.filter(e => e.status === 'present').length)
-const lateCount = computed(() => dailyAttendance.value.filter(e => e.status === 'late').length)
-const absentCount = computed(() => dailyAttendance.value.filter(e => e.status === 'absent').length)
-const totalEmployees = computed(() => employees.value.length)
-const attendanceRate = computed(() => {
-  if (totalEmployees.value === 0) return 0
-  const presentAndLate = presentCount.value + lateCount.value
-  return Math.round((presentAndLate / totalEmployees.value) * 100)
+// Taux de présence journalier
+const dailyAttendanceRate = computed(() => {
+  const total = employeeStore.employees.value.length
+  if (total === 0) return 0
+  const presentAndLate = dailyStats.value.present + dailyStats.value.late
+  return Math.round((presentAndLate / total) * 100)
 })
 
-// Nouveaux computed pour le diagramme avec axes
-const maxEmployeeCount = computed(() => Math.max(totalEmployees.value, 10))
+// Configuration de l'axe Y pour le graphique
+const maxEmployeeCount = computed(() => Math.max(employeeStore.employees.value.length, 10))
 const yAxisTicks = computed(() => {
   const max = maxEmployeeCount.value
   const step = Math.ceil(max / 5)
@@ -571,47 +429,18 @@ const isToday = computed(() => {
 
 const currentDate = computed(() => formatDate(selectedDate.value))
 
-// Nouveaux computed pour les intervalles d'arrivée
-const arrivalIntervals = computed<ArrivalInterval[]>(() => {
-  const intervals = [
-    { range: '7h45-8h15', count: 0 },
-    { range: '8h15-8h30', count: 0 },
-    { range: '8h30-9h00', count: 0 },
-    { range: '9h00-9h30', count: 0 },
-    { range: '> 9h30', count: 0 }
-  ]
-
-  const presentEmployees = dailyAttendance.value.filter(e => e.status !== 'absent' && e.arrivalTime)
-
-  presentEmployees.forEach(emp => {
-    const [hour, minute] = emp.arrivalTime!.split(':').map(Number)
-    const totalMinutes = hour * 60 + minute
-
-    if (totalMinutes >= 7 * 60 + 45 && totalMinutes <= 8 * 60 + 15) {
-      intervals[0].count++
-    } else if (totalMinutes > 8 * 60 + 15 && totalMinutes <= 8 * 60 + 30) {
-      intervals[1].count++
-    } else if (totalMinutes > 8 * 60 + 30 && totalMinutes <= 9 * 60) {
-      intervals[2].count++
-    } else if (totalMinutes > 9 * 60 && totalMinutes <= 9 * 60 + 30) {
-      intervals[3].count++
-    } else if (totalMinutes > 9 * 60 + 30) {
-      intervals[4].count++
-    }
-  })
-
-  return intervals
-})
-
+// Intervalles d'arrivée depuis le store
+const arrivalIntervals = computed(() => employeeStore.getArrivalIntervals(selectedDate.value))
 const maxIntervalCount = computed(() => Math.max(...arrivalIntervals.value.map(interval => interval.count), 1))
 
+// Filtrage des employés
 const filteredEmployees = computed(() => {
-  let filtered = managerEmployees.value.filter(employee => {
+  let filtered = employeeStore.employees.value.filter(employee => {
     const matchesSearch = employee.name.toLowerCase().includes(searchTerm.value.toLowerCase()) ||
       employee.position.toLowerCase().includes(searchTerm.value.toLowerCase()) ||
-      employee.siteName.toLowerCase().includes(searchTerm.value.toLowerCase())
+      employeeStore.getSiteName(employee.siteId).toLowerCase().includes(searchTerm.value.toLowerCase())
 
-    const dailyStatus = dailyAttendance.value.find(att => att.employeeId === employee.id)?.status || 'absent'
+    const dailyStatus = employeeStore.getEmployeeDailyStatus(employee.id, selectedDate.value).status
     const matchesStatus = statusFilter.value ? dailyStatus === statusFilter.value : true
     const matchesSite = siteFilter.value ? employee.siteId === siteFilter.value : true
 
@@ -625,8 +454,11 @@ const filteredEmployees = computed(() => {
         return a.name.localeCompare(b.name)
       case 'position':
         return a.position.localeCompare(b.position)
+      case 'status':
+        return employeeStore.getEmployeeDailyStatus(a.id, selectedDate.value).status
+          .localeCompare(employeeStore.getEmployeeDailyStatus(b.id, selectedDate.value).status)
       case 'site':
-        return a.siteName.localeCompare(b.siteName)
+        return employeeStore.getSiteName(a.siteId).localeCompare(employeeStore.getSiteName(b.siteId))
       case 'punctualityScore':
         return b.punctualityScore - a.punctualityScore
       default:
@@ -646,10 +478,6 @@ const paginatedEmployees = computed(() => {
 })
 
 // Fonctions
-const getInitials = (name: string): string => {
-  return name.split(' ').map(n => n[0]).join('').toUpperCase()
-}
-
 const formatDate = (date: Date): string => {
   return date.toLocaleDateString('fr-FR', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })
 }
@@ -678,12 +506,27 @@ const toggleEmployeeMenu = (employeeId: number) => {
   }
 }
 
-const editEmployee = (employee: Employee) => {
+const statusIcon = (status: string) => {
+  switch (status) {
+    case 'absent':
+      return 'icon-x'
+    case 'late':
+      return 'icon-clock'
+    case 'present':
+      return 'icon-check'
+    case 'info':
+      return 'icon-info'
+    default:
+      return 'icon-info'
+  }
+}
+
+const editEmployee = (employee: any) => {
   alert(`Modifier les informations de ${employee.name}`)
   activeEmployeeMenu.value = null
 }
 
-const sendMemo = (employee: Employee) => {
+const sendMemo = (employee: any) => {
   const memo = prompt(`Saisir le mémo à envoyer à ${employee.name}:`)
   if (memo) {
     alert(`Mémo envoyé à ${employee.name}: "${memo}"`)
@@ -691,31 +534,29 @@ const sendMemo = (employee: Employee) => {
   activeEmployeeMenu.value = null
 }
 
-const deleteEmployee = (employee: Employee) => {
+const deleteEmployee = (employee: any) => {
   if (confirm(`Êtes-vous sûr de vouloir supprimer ${employee.name} de l'équipe ?`)) {
-    const index = employees.value.findIndex(emp => emp.id === employee.id)
-    if (index !== -1) {
-      employees.value.splice(index, 1)
-      alert(`${employee.name} a été supprimé de l'équipe.`)
-    }
+    employeeStore.removeEmployee(employee.id)
+    alert(`${employee.name} a été supprimé de l'équipe.`)
   }
   activeEmployeeMenu.value = null
 }
 
 const generateReport = () => {
-  alert('Génération du rapport mensuel...')
+  const month = selectedDate.value.toLocaleDateString('fr-FR', { month: 'long', year: 'numeric' })
+  alert(`Génération du rapport mensuel pour ${month}...`)
 }
 
 const manageSchedules = () => {
   alert('Accéder à la gestion des plannings...')
 }
 
-const handleEmployeeAdded = (newEmployee: Employee) => {
-  employees.value.push(newEmployee)
+const handleEmployeeAdded = (newEmployee: any) => {
+  employeeStore.addEmployee(newEmployee)
 }
 
-const handleSiteAdded = (newSite: Site) => {
-  sites.value.push(newSite)
+const handleSiteAdded = (newSite: any) => {
+  employeeStore.addSite(newSite)
 }
 
 // Fermer le menu au clic à l'extérieur
@@ -738,13 +579,53 @@ onMounted(() => {
   document.addEventListener('click', closeMenuOnClickOutside)
   HeadBuilder.apply({
     title: 'Equipe - Toké',
-    css: [dashboardCss, equipeCss], // Charger les deux fichiers CSS
+    css: [dashboardCss, equipeCss],
     meta: { viewport: "width=device-width, initial-scale=1.0" }
   })
+
+  // Initialiser le store
+  employeeStore.initialize()
 })
 
 onUnmounted(() => {
   document.removeEventListener('click', closeMenuOnClickOutside)
 })
-
 </script>
+
+<style scoped>
+.status-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.25rem 0.75rem;
+  border-radius: 1rem;
+  font-size: 0.875rem;
+  font-weight: 500;
+}
+
+.status-absent {
+  background-color: #fee;
+  color: #c33;
+}
+
+.status-late {
+  background-color: #ffeaa7;
+  color: #d63031;
+}
+
+.status-present {
+  background-color: #d4edda;
+  color: #155724;
+}
+
+.status-info {
+  background-color: #d1ecf1;
+  color: #0c5460;
+}
+
+.punctuality-details {
+  font-size: 0.75rem;
+  color: #666;
+  margin-left: 0.5rem;
+}
+</style>

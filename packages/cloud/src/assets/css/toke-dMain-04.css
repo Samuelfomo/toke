@@ -4,6 +4,9 @@
     display: flex;
     flex-direction: column;
     background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+    /*flex: 1;*/
+    /*!* AUGMENTEZ cette valeur pour plus d'espace *!*/
+    /*padding: var(--space-lg) 0; !* par exemple, passer à 30px ou 40px *!*/
 }
 
 .dashboard-header {
