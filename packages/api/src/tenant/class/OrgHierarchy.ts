@@ -480,6 +480,11 @@ export default class OrgHierarchy extends OrgHierarchyModel {
           : [],
         subordinates: subTree,
       });
+      // hierarchy.push({
+      //   user: subordinate, // ⚠️ garder l’objet brut
+      //   roles: roles || [],
+      //   subordinates: subTree,
+      // });
     }
 
     return hierarchy;

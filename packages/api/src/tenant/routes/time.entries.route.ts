@@ -17,6 +17,7 @@ import {
   validateTimeEntriesUpdate,
   WORK_SESSIONS_CODES,
   WORK_SESSIONS_ERRORS,
+  WorkSessionsValidationUtils,
 } from '@toke/shared';
 import { Op } from 'sequelize';
 
@@ -432,6 +433,17 @@ router.post(
               message: WORK_SESSIONS_ERRORS.NO_ACTIVE_SESSION,
             });
           }
+
+          // 🚫 Vérifier si une mission est déjà en cours
+          const hasActiveMission = await activeSession.activeMission(); // 👈 Méthode à créer
+          if (hasActiveMission) {
+            return R.handleError(res, HttpStatus.CONFLICT, {
+              code: TIME_ENTRIES_CODES.MISSION_ALREADY_ACTIVE,
+              message:
+                'An external mission is already in progress. Complete it before starting a new one.',
+            });
+          }
+
           const entryObj = new TimeEntries()
             .setSession(activeSession.getId()!)
             .setUser(userId)
@@ -469,6 +481,36 @@ router.post(
             return R.handleError(res, HttpStatus.BAD_REQUEST, {
               code: WORK_SESSIONS_CODES.NO_ACTIVE_SESSION,
               message: WORK_SESSIONS_ERRORS.NO_ACTIVE_CLOSE_SESSION,
+            });
+          }
+
+          if (
+            validatedData.clocked_at &&
+            !WorkSessionsValidationUtils.validateSessionDateLogic(
+              activeSession.getSessionStartAt()!,
+              new Date(validatedData.clocked_at),
+            )
+          ) {
+            return R.handleError(res, HttpStatus.BAD_REQUEST, {
+              code: WORK_SESSIONS_CODES.SESSION_DATES_LOGIC_INVALID,
+              message: WORK_SESSIONS_ERRORS.SESSION_DATES_LOGIC_INVALID,
+            });
+          }
+
+          // 🚫 Vérifier si la session n'est pas déjà fermée
+          if (activeSession.getSessionStatus() === SessionStatus.CLOSED) {
+            return R.handleError(res, HttpStatus.CONFLICT, {
+              code: WORK_SESSIONS_CODES.SESSION_ALREADY_CLOSED,
+              message: `Session already closed, cannot clock-out again. ${activeSession.getSessionStatus()} ${SessionStatus.CLOSED}`,
+            });
+          }
+
+          // 🚫 Vérifier si le dernier pointage n'est pas déjà un CLOCK_OUT
+          const lastEntry = await activeSession.LastEntry(); // 👈 Méthode à créer
+          if (lastEntry?.pointage_type === PointageType.CLOCK_OUT) {
+            return R.handleError(res, HttpStatus.CONFLICT, {
+              code: TIME_ENTRIES_CODES.ALREADY_CLOCKED_OUT,
+              message: `Already clocked-out, cannot clock-out again. ${lastEntry.pointage_type} ${PointageType.CLOCK_OUT}`,
             });
           }
 

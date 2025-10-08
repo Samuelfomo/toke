@@ -417,7 +417,7 @@ router.delete('/:guid', Ensure.delete(), async (req: Request, res: Response) => 
 
 // === GESTION DES QR CODES ===
 
-router.post('/:guid/regenerate-qr', Ensure.post(), async (req: Request, res: Response) => {
+router.patch('/:guid/regenerate-qr', Ensure.patch(), async (req: Request, res: Response) => {
   try {
     if (!SitesValidationUtils.validateGuid(req.params.guid)) {
       return R.handleError(res, HttpStatus.BAD_REQUEST, {
@@ -450,7 +450,7 @@ router.post('/:guid/regenerate-qr', Ensure.post(), async (req: Request, res: Res
   }
 });
 
-router.post('/validate-qr', Ensure.post(), async (req: Request, res: Response) => {
+router.patch('/validate-qr', Ensure.patch(), async (req: Request, res: Response) => {
   try {
     const { qr_token } = req.body;
 
@@ -824,6 +824,7 @@ router.patch(
   },
 );
 
+// === 📱 Create unique QR code for site check-in with embedded security and location data
 router.patch('/generate-qr-code', Ensure.patch(), async (req: Request, res: Response) => {
   try {
     // const { manager } = req.params;
@@ -900,6 +901,54 @@ router.get('/statistics/overview', Ensure.get(), async (_req: Request, res: Resp
   } catch (error: any) {
     return R.handleError(res, HttpStatus.INTERNAL_ERROR, {
       code: SITES_CODES.STATISTICS_FAILED,
+      message: error.message,
+    });
+  }
+});
+
+// === 🔃 Change status site
+router.patch('/:guid/status', Ensure.patch(), async (req: Request, res: Response) => {
+  try {
+    const { guid } = req.params;
+    const { active } = req.query;
+
+    if (!SitesValidationUtils.validateGuid(String(guid))) {
+      return R.handleError(res, HttpStatus.BAD_REQUEST, {
+        code: SITES_CODES.INVALID_GUID,
+        message: SITES_ERRORS.GUID_INVALID,
+      });
+    }
+
+    const isActive =
+      active === 'true' || active === '1'
+        ? true
+        : active === 'false' || active === '0'
+          ? false
+          : undefined;
+
+    if (isActive === undefined || !SitesValidationUtils.validateActive(isActive)) {
+      return R.handleError(res, HttpStatus.BAD_REQUEST, {
+        code: SITES_CODES.ACTIVE_STATUS_INVALID,
+        message: SITES_ERRORS.ACTIVE_STATUS_INVALID,
+      });
+    }
+
+    const siteObj = await Site._load(String(guid), true);
+    if (!siteObj) {
+      return R.handleError(res, HttpStatus.NOT_FOUND, {
+        code: SITES_CODES.SITE_NOT_FOUND,
+        message: SITES_ERRORS.NOT_FOUND,
+      });
+    }
+
+    siteObj.setActive(isActive);
+
+    await siteObj.save();
+
+    return R.handleSuccess(res, await siteObj.toJSON(responseValue.MINIMAL));
+  } catch (error: any) {
+    return R.handleError(res, HttpStatus.INTERNAL_ERROR, {
+      code: SITES_CODES.UPDATE_FAILED,
       message: error.message,
     });
   }

@@ -145,6 +145,8 @@ export const TIME_ENTRIES_CODES = {
   CANNOT_CLOCK_OUT: 'cannot_clock_out',
   INVALID_POINTAGE_TYPE: 'invalid_pointage_type',
   ALREADY_PAUSE_CLOSED: 'already_pause_closed',
+  ALREADY_CLOCKED_OUT: 'already_clocked_out',
+  MISSION_ALREADY_ACTIVE: 'mission_already_active',
 } as const;
 
 const TIME_ENTRIES_LABEL = 'Time Entry';

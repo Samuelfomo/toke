@@ -1,444 +1,1810 @@
 {
-  "info": {
-    "_postman_id": "291c9db3-9be8-476a-a1cc-737170f5ae58",
-    "name": "🚀 Toké App Manager API",
-    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
-    "_exporter_id": "34669602",
-    "_collection_link": "https://lively-desert-78957.postman.co/workspace/My-Workspace~6b51062a-90f9-4bf0-85b0-325db44d3738/collection/34669602-291c9db3-9be8-476a-a1cc-737170f5ae58?action=share&source=collection_link&creator=34669602"
-  },
-  "item": [
-    {
-      "name": "🔐 Authentication & Tenant Management",
-      "item": []
-    },
-    {
-      "name": "👥 Employee & Team Management",
-      "item": []
-    },
-    {
-      "name": "🏗️ Site & QR Management",
-      "item": []
-    },
-    {
-      "name": "⏰ Attendance Monitoring",
-      "item": []
-    },
-    {
-      "name": "📝 Memo System",
-      "item": []
-    },
-    {
-      "name": "💰 Billing & License Management",
-      "item": [
-        {
-          "name": "License Overview",
-          "item": [
-            {
-              "name": "📄 Current License Details",
-              "request": {
-                "method": "GET",
-                "header": [
-                  {
-                    "key": "x-api-key",
-                    "value": "{{x-api-token}}",
-                    "type": "text"
-                  },
-                  {
-                    "key": "x-api-signature",
-                    "value": "{{x-api-signature}}",
-                    "type": "text"
-                  }
-                ],
-                "url": {
-                  "raw": "{{baseUrl}}/{{router}}/global-license/current-license/100001",
-                  "host": ["{{baseUrl}}"],
-                  "path": ["{{router}}", "global-license", "current-license", "100001"]
-                }
-              },
-              "response": []
-            },
-            {
-              "name": "👥 Billable Employees Count",
-              "request": {
-                "method": "GET",
-                "header": [
-                  {
-                    "key": "x-api-key",
-                    "value": "{{x-api-token}}",
-                    "type": "text"
-                  },
-                  {
-                    "key": "x-api-signature",
-                    "value": "{{x-api-signature}}",
-                    "type": "text"
-                  }
-                ],
-                "url": {
-                  "raw": "{{baseUrl}}/{{router}}/employee-license/billable-employees/100001",
-                  "host": ["{{baseUrl}}"],
-                  "path": ["{{router}}", "employee-license", "billable-employees", "100001"]
-                }
-              },
-              "response": []
-            },
-            {
-              "name": "💵 Real-time Period Cost",
-              "request": {
-                "method": "GET",
-                "header": [
-                  {
-                    "key": "x-api-key",
-                    "value": "{{x-api-token}}",
-                    "type": "text"
-                  },
-                  {
-                    "key": "x-api-signature",
-                    "value": "{{x-api-signature}}",
-                    "type": "text"
-                  }
-                ],
-                "url": {
-                  "raw": "{{baseUrl}}/{{router}}/billing/current-cost",
-                  "host": ["{{baseUrl}}"],
-                  "path": ["{{router}}", "billing", "current-cost"]
-                }
-              },
-              "response": []
-            },
-            {
-              "name": "🔮 End-of-Period Preview",
-              "request": {
-                "method": "GET",
-                "header": [],
-                "url": {
-                  "raw": "{{baseUrl}}/{{router}}/billing/period-preview",
-                  "host": ["{{baseUrl}}"],
-                  "path": ["{{router}}", "billing", "period-preview"]
-                }
-              },
-              "response": []
-            }
-          ]
-        },
-        {
-          "name": "License Adjustments",
-          "item": [
-            {
-              "name": "⏳ Pending License Adjustments",
-              "request": {
-                "method": "GET",
-                "header": [
-                  {
-                    "key": "x-api-key",
-                    "value": "{{x-api-token}}",
-                    "type": "text"
-                  },
-                  {
-                    "key": "x-api-signature",
-                    "value": "{{x-api-signature}}",
-                    "type": "text"
-                  }
-                ],
-                "url": {
-                  "raw": "{{baseUrl}}/{{router}}/billing/pending-adjustments/100001",
-                  "host": ["{{baseUrl}}"],
-                  "path": ["{{router}}", "billing", "pending-adjustments", "100001"]
-                }
-              },
-              "response": []
-            },
-            {
-              "name": "✅ Confirm Auto Adjustment",
-              "request": {
-                "method": "PATCH",
-                "header": [
-                  {
-                    "key": "x-api-key",
-                    "value": "{{x-api-token}}",
-                    "type": "text"
-                  },
-                  {
-                    "key": "x-api-signature",
-                    "value": "{{x-api-signature}}",
-                    "type": "text"
-                  }
-                ],
-                "body": {
-                  "mode": "raw",
-                  "raw": "{\n    \"adjustment\": 100001\n}",
-                  "options": {
-                    "raw": {
-                      "language": "json"
-                    }
-                  }
-                },
-                "url": {
-                  "raw": "{{baseUrl}}/{{router}}/billing/adjustment/confirm",
-                  "host": ["{{baseUrl}}"],
-                  "path": ["{{router}}", "billing", "adjustment", "confirm"]
-                }
-              },
-              "response": []
-            },
-            {
-              "name": "🔍 Adjustment Details",
-              "request": {
-                "method": "GET",
-                "header": [
-                  {
-                    "key": "x-api-key",
-                    "value": "{{x-api-token}}",
-                    "type": "text"
-                  },
-                  {
-                    "key": "x-api-signature",
-                    "value": "{{x-api-signature}}",
-                    "type": "text"
-                  }
-                ],
-                "url": {
-                  "raw": "{{baseUrl}}/{{router}}/billing/adjustment/100001",
-                  "host": ["{{baseUrl}}"],
-                  "path": ["{{router}}", "billing", "adjustment", "100001"]
-                }
-              },
-              "response": []
-            }
-          ]
-        },
-        {
-          "name": "Mobile Money Payments",
-          "item": [
-            {
-              "name": "💳 Initiate Mobile Payment",
-              "request": {
-                "method": "POST",
-                "header": [
-                  {
-                    "key": "x-api-key",
-                    "value": "{{x-api-token}}",
-                    "type": "text"
-                  },
-                  {
-                    "key": "x-api-signature",
-                    "value": "{{x-api-signature}}",
-                    "type": "text"
-                  }
-                ],
-                "body": {
-                  "mode": "raw",
-                  "raw": "{\n  \"billing_cycle\": 100001,\n  \"adjustment\": 100001,\n  \"amount_usd\": 150.75,\n  \"currency_code\": \"XAF\",\n  \"exchange_rate_used\": 611.50,\n  \"payment_method\": 100001,\n  \"failure_reason\": null\n}\n",
-                  "options": {
-                    "raw": {
-                      "language": "json"
-                    }
-                  }
-                },
-                "url": {
-                  "raw": "{{baseUrl}}/{{router}}/billing/payment/initiate",
-                  "host": ["{{baseUrl}}"],
-                  "path": ["{{router}}", "billing", "payment", "initiate"]
-                }
-              },
-              "response": []
-            },
-            {
-              "name": "🔍 Check Payment Status",
-              "request": {
-                "method": "GET",
-                "header": [
-                  {
-                    "key": "x-api-key",
-                    "value": "{{x-api-token}}",
-                    "type": "text"
-                  },
-                  {
-                    "key": "x-api-signature",
-                    "value": "{{x-api-signature}}",
-                    "type": "text"
-                  }
-                ],
-                "url": {
-                  "raw": "{{baseUrl}}/{{router}}/billing/payment/TOKE_20250917151110_103/status",
-                  "host": ["{{baseUrl}}"],
-                  "path": ["{{router}}", "billing", "payment", "TOKE_20250917151110_103", "status"]
-                }
-              },
-              "response": []
-            },
-            {
-              "name": "🔄 Retry Failed Payment",
-              "request": {
-                "method": "POST",
-                "header": [
-                  {
-                    "key": "x-api-key",
-                    "value": "{{x-api-token}}",
-                    "type": "text"
-                  },
-                  {
-                    "key": "x-api-signature",
-                    "value": "{{x-api-signature}}",
-                    "type": "text"
-                  }
-                ],
-                "body": {
-                  "mode": "raw",
-                  "raw": "{\n    \"transaction\": \"MTN-TRX-202509150001\"\n}",
-                  "options": {
-                    "raw": {
-                      "language": "json"
-                    }
-                  }
-                },
-                "url": {
-                  "raw": "{{baseUrl}}/{{router}}/billing/payment/retry",
-                  "host": ["{{baseUrl}}"],
-                  "path": ["{{router}}", "billing", "payment", "retry"]
-                }
-              },
-              "response": []
-            },
-            {
-              "name": "📚 Payment History",
-              "request": {
-                "method": "GET",
-                "header": [
-                  {
-                    "key": "x-api-key",
-                    "value": "{{x-api-token}}",
-                    "type": "text"
-                  },
-                  {
-                    "key": "x-api-signature",
-                    "value": "{{x-api-signature}}",
-                    "type": "text"
-                  }
-                ],
-                "url": {
-                  "raw": "{{baseUrl}}/{{router}}/billing/payment-history/100001",
-                  "host": ["{{baseUrl}}"],
-                  "path": ["{{router}}", "billing", "payment-history", "100001"]
-                }
-              },
-              "response": []
-            }
-          ]
-        }
-      ]
-    },
-    {
-      "name": "🚨 Alerts & Fraud Detection",
-      "item": [
-        {
-          "name": "Anti-Fraud Alerts",
-          "item": [
-            {
-              "name": "🚨 Active Fraud Alerts",
-              "request": {
-                "method": "GET",
-                "header": [],
-                "url": {
-                  "raw": "{{baseUrl}}/{{router}}/fraud/active-alerts",
-                  "host": ["{{baseUrl}}"],
-                  "path": ["{{router}}", "fraud", "active-alerts"]
-                }
-              },
-              "response": []
-            },
-            {
-              "name": "📊 Employee Fraud Patterns",
-              "request": {
-                "method": "GET",
-                "header": [
-                  {
-                    "key": "x-api-key",
-                    "value": "{{x-api-token}}",
-                    "type": "text"
-                  },
-                  {
-                    "key": "x-api-signature",
-                    "value": "{{x-api-signature}}",
-                    "type": "text"
-                  }
-                ],
-                "url": {
-                  "raw": "{{baseUrl}}/{{router}}/fraud/patterns/",
-                  "host": ["{{baseUrl}}"],
-                  "path": ["{{router}}", "fraud", "patterns", ""]
-                }
-              },
-              "response": []
-            },
-            {
-              "name": "🔍 Start Fraud Investigation",
-              "request": {
-                "method": "PUT",
-                "header": [],
-                "body": {
-                  "mode": "raw",
-                  "raw": "{\n    \"notes\": \"hello test\",\n    \"investigator\":\"okay test\"\n}",
-                  "options": {
-                    "raw": {
-                      "language": "json"
-                    }
-                  }
-                },
-                "url": {
-                  "raw": "{{baseUrl}}/{{router}}/fraud/alerts/100001/investigate",
-                  "host": ["{{baseUrl}}"],
-                  "path": ["{{router}}", "fraud", "alerts", "100001", "investigate"]
-                }
-              },
-              "response": []
-            },
-            {
-              "name": "✅ Resolve Fraud Alert",
-              "request": {
-                "method": "PUT",
-                "header": [],
-                "url": {
-                  "raw": "{{baseUrl}}/{{router}}/fraud/alerts/:guid/resolve",
-                  "host": ["{{baseUrl}}"],
-                  "path": ["{{router}}", "fraud", "alerts", ":guid", "resolve"],
-                  "variable": [
-                    {
-                      "key": "guid",
-                      "value": ""
-                    }
-                  ]
-                }
-              },
-              "response": []
-            }
-          ]
-        },
-        {
-          "name": "Operational Alerts",
-          "item": [
-            {
-              "name": "New Request",
-              "request": {
-                "method": "GET",
-                "header": []
-              },
-              "response": []
-            }
-          ]
-        }
-      ]
-    },
-    {
-      "name": "📊 Dashboard & Analytics",
-      "item": []
-    },
-    {
-      "name": "New Request",
-      "request": {
-        "method": "GET",
-        "header": []
-      },
-      "response": []
-    }
-  ]
+	"info": {
+		"_postman_id": "291c9db3-9be8-476a-a1cc-737170f5ae58",
+		"name": "🚀 Toké App Manager API",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+		"_exporter_id": "34669602",
+		"_collection_link": "https://lively-desert-78957.postman.co/workspace/My-Workspace~6b51062a-90f9-4bf0-85b0-325db44d3738/collection/34669602-291c9db3-9be8-476a-a1cc-737170f5ae58?action=share&source=collection_link&creator=34669602"
+	},
+	"item": [
+		{
+			"name": "🔐 Authentication & Tenant Management",
+			"item": [
+				{
+					"name": "Manager Authentication",
+					"item": [
+						{
+							"name": "🔑 Manager Login with Password",
+							"request": {
+								"method": "PATCH",
+								"header": [
+									{
+										"key": "Content-Type",
+										"value": "application/json"
+									},
+									{
+										"key": "x-api-key",
+										"value": "{{x-api-token}}",
+										"type": "text"
+									},
+									{
+										"key": "x-api-signature",
+										"value": "{{x-api-signature}}",
+										"type": "text"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n    \"email\": \"\",\n    \"password\": \"\"\n}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{baseUrl}}/user/manager/password",
+									"host": [
+										"{{baseUrl}}"
+									],
+									"path": [
+										"user",
+										"manager",
+										"password"
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "🔧 Change Security Password",
+							"request": {
+								"method": "PATCH",
+								"header": [
+									{
+										"key": "Content-Type",
+										"value": "application/json"
+									},
+									{
+										"key": "x-api-key",
+										"value": "{{x-api-token}}",
+										"type": "text"
+									},
+									{
+										"key": "x-api-signature",
+										"value": "{{x-api-signature}}",
+										"type": "text"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n    \"password\": \"\"\n}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{baseUrl}}/user/:guid/define-password",
+									"host": [
+										"{{baseUrl}}"
+									],
+									"path": [
+										"user",
+										":guid",
+										"define-password"
+									],
+									"variable": [
+										{
+											"key": "guid",
+											"value": ""
+										}
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "👤 Get User Profile",
+							"protocolProfileBehavior": {
+								"disableBodyPruning": true
+							},
+							"request": {
+								"method": "GET",
+								"header": [
+									{
+										"key": "Content-Type",
+										"value": "application/json"
+									},
+									{
+										"key": "x-api-key",
+										"value": "{{x-api-token}}",
+										"type": "text"
+									},
+									{
+										"key": "x-api-signature",
+										"value": "{{x-api-signature}}",
+										"type": "text"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n    \"password\": \"\"\n}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{baseUrl}}/user-role/:guid/list",
+									"host": [
+										"{{baseUrl}}"
+									],
+									"path": [
+										"user-role",
+										":guid",
+										"list"
+									],
+									"variable": [
+										{
+											"key": "guid",
+											"value": ""
+										}
+									]
+								}
+							},
+							"response": []
+						}
+					]
+				},
+				{
+					"name": "Tenant Setup (First Manager Only)",
+					"item": [
+						{
+							"name": "🏢 Initialize New Tenant",
+							"request": {
+								"method": "POST",
+								"header": [
+									{
+										"key": "Content-Type",
+										"value": "application/json"
+									},
+									{
+										"key": "x-api-key",
+										"value": "{{x-api-token}}",
+										"type": "text"
+									},
+									{
+										"key": "x-api-signature",
+										"value": "{{x-api-signature}}",
+										"type": "text"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n    \"name\": \"SAKE Sarl\",\n    \"short_name\": \"SK\",\n    \"country_code\": \"CM\",\n    \"primary_currency_code\": \"XAF\",\n    \"preferred_language_code\": \"en\",\n    \"timezone\": \"Africa/Douala\",\n    \"billing_email\": \"princefomo49@gmail.com\",\n    \"billing_address\": {\n        \"city\": \"douala\",\n        \"location\": \"makepe\",\n        \"place_name\": \"carrefour abou de bangui\"\n    },\n    \"billing_phone\": \"695601145\",\n    \"registration_number\": \"na987263\",\n    \"employee_count\": [1,10],\n    \"tax_number\": \"1bfdbm27u3mjkk\"\n}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{baseUrl}}/tenant",
+									"host": [
+										"{{baseUrl}}"
+									],
+									"path": [
+										"tenant"
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "🏢 Initialize New Global license",
+							"request": {
+								"method": "POST",
+								"header": [
+									{
+										"key": "Content-Type",
+										"value": "application/json"
+									},
+									{
+										"key": "x-api-key",
+										"value": "{{x-api-token}}",
+										"type": "text"
+									},
+									{
+										"key": "x-api-signature",
+										"value": "{{x-api-signature}}",
+										"type": "text"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n    \"tenant\": 100002,\n    \"license_type\": \"CLOUD_FLEX\",\n    \"billing_cycle_months\": 3,\n    \"current_period_start\": \"2025-06-01\",\n    \"current_period_end\": \"2025-09-01\",\n    \"next_renewal_date\": \"2025-09-01\",\n    \"base_price_usd\": 199.99,\n    \"minimum_seats\": 5,\n    \"total_seats_purchased\": 10,\n    \"license_status\": \"ACTIVE\"\n}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{baseUrl}}/global-license/",
+									"host": [
+										"{{baseUrl}}"
+									],
+									"path": [
+										"global-license",
+										""
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "🎯 Définir la configuration de base de données d'un tenant par GUID",
+							"request": {
+								"method": "PATCH",
+								"header": [
+									{
+										"key": "Content-Type",
+										"value": "application/json"
+									},
+									{
+										"key": "x-api-key",
+										"value": "{{x-api-token}}",
+										"type": "text"
+									},
+									{
+										"key": "x-api-signature",
+										"value": "{{x-api-signature}}",
+										"type": "text"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n    \"tenant\": 100002,\n    \"license_type\": \"CLOUD_FLEX\",\n    \"billing_cycle_months\": 3,\n    \"current_period_start\": \"2025-06-01\",\n    \"current_period_end\": \"2025-09-01\",\n    \"next_renewal_date\": \"2025-09-01\",\n    \"base_price_usd\": 199.99,\n    \"minimum_seats\": 5,\n    \"total_seats_purchased\": 10,\n    \"license_status\": \"ACTIVE\"\n}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{endpoint}}/tenant/{{guid )}}/database",
+									"host": [
+										"{{endpoint}}"
+									],
+									"path": [
+										"tenant",
+										"{{guid )}}",
+										"database"
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "✅ Complete Tenant Setup",
+							"request": {
+								"method": "PATCH",
+								"header": [
+									{
+										"key": "Content-Type",
+										"value": "application/json"
+									},
+									{
+										"key": "x-api-key",
+										"value": "{{x-api-token}}",
+										"type": "text"
+									},
+									{
+										"key": "x-api-signature",
+										"value": "{{x-api-signature}}",
+										"type": "text"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n    \"tenant\": 100002,\n    \"license_type\": \"CLOUD_FLEX\",\n    \"billing_cycle_months\": 3,\n    \"current_period_start\": \"2025-06-01\",\n    \"current_period_end\": \"2025-09-01\",\n    \"next_renewal_date\": \"2025-09-01\",\n    \"base_price_usd\": 199.99,\n    \"minimum_seats\": 5,\n    \"total_seats_purchased\": 10,\n    \"license_status\": \"ACTIVE\"\n}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{endpoint}}/tenant/{{guid )}}/subdomain",
+									"host": [
+										"{{endpoint}}"
+									],
+									"path": [
+										"tenant",
+										"{{guid )}}",
+										"subdomain"
+									]
+								}
+							},
+							"response": []
+						}
+					]
+				},
+				{
+					"name": "Additional Managers",
+					"item": [
+						{
+							"name": "📧 Invite New Manager",
+							"request": {
+								"method": "POST",
+								"header": [
+									{
+										"key": "Content-Type",
+										"value": "application/json"
+									},
+									{
+										"key": "x-api-key",
+										"value": "{{x-api-token}}",
+										"type": "text"
+									},
+									{
+										"key": "x-api-signature",
+										"value": "{{x-api-signature}}",
+										"type": "text"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n    \"user\": \"\",\n    \"role\": \"\",\n    \"assigned_by\": \"\",\n    \"country\": \"\"\n}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{baseUrl}}/user-role/",
+									"host": [
+										"{{baseUrl}}"
+									],
+									"path": [
+										"user-role",
+										""
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "🤝 Join Tenant via OTP",
+							"request": {
+								"method": "GET",
+								"header": [
+									{
+										"key": "Content-Type",
+										"value": "application/json"
+									},
+									{
+										"key": "x-api-key",
+										"value": "{{x-api-token}}",
+										"type": "text"
+									},
+									{
+										"key": "x-api-signature",
+										"value": "{{x-api-signature}}",
+										"type": "text"
+									}
+								],
+								"url": {
+									"raw": "{{baseUrl}}/user/:otp/verify",
+									"host": [
+										"{{baseUrl}}"
+									],
+									"path": [
+										"user",
+										":otp",
+										"verify"
+									],
+									"variable": [
+										{
+											"key": "otp",
+											"value": ""
+										}
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "🔓 Activate Manager Account",
+							"request": {
+								"method": "PATCH",
+								"header": [
+									{
+										"key": "Content-Type",
+										"value": "application/json"
+									},
+									{
+										"key": "x-api-key",
+										"value": "{{x-api-token}}",
+										"type": "text"
+									},
+									{
+										"key": "x-api-signature",
+										"value": "{{x-api-signature}}",
+										"type": "text"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n    \"password\": \"\"\n}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{endpoint}}/user/:guid/define-password",
+									"host": [
+										"{{endpoint}}"
+									],
+									"path": [
+										"user",
+										":guid",
+										"define-password"
+									],
+									"variable": [
+										{
+											"key": "guid",
+											"value": ""
+										}
+									]
+								}
+							},
+							"response": []
+						}
+					]
+				}
+			]
+		},
+		{
+			"name": "👥 Employee & Team Management",
+			"item": [
+				{
+					"name": "Employee CRUD Operations",
+					"item": [
+						{
+							"name": "➕ Add New Employee",
+							"request": {
+								"method": "POST",
+								"header": [
+									{
+										"key": "Content-Type",
+										"value": "application/json"
+									},
+									{
+										"key": "x-api-key",
+										"value": "{{x-api-token}}",
+										"type": "text"
+									},
+									{
+										"key": "x-api-signature",
+										"value": "{{x-api-signature}}",
+										"type": "text"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n    \"supervisor\": \"387939f0-bd62-42fb-9421-4a85f057ed9d\",\n    \"email\": \"manfred@gmail.cm\",\n    \"first_name\": \"manfred\",\n    \"last_name\": \"Moukaté\",\n    \"phone_number\": \"699888709\",\n    \"employee_code\": \"SYS-0001\",\n    \"hire_date\": \"2025-09-01\",\n    \"department\": \"INFO\",\n    \"job_title\": \"LOGICIEL\"\n}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{baseUrl}}/user/",
+									"host": [
+										"{{baseUrl}}"
+									],
+									"path": [
+										"user",
+										""
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "📋 List My Direct Employees",
+							"request": {
+								"method": "GET",
+								"header": [
+									{
+										"key": "Content-Type",
+										"value": "application/json"
+									},
+									{
+										"key": "x-api-key",
+										"value": "{{x-api-token}}",
+										"type": "text"
+									},
+									{
+										"key": "x-api-signature",
+										"value": "{{x-api-signature}}",
+										"type": "text"
+									}
+								],
+								"url": {
+									"raw": "{{baseUrl}}/org-hierarchy/supervisor/:userGuid/list",
+									"host": [
+										"{{baseUrl}}"
+									],
+									"path": [
+										"org-hierarchy",
+										"supervisor",
+										":userGuid",
+										"list"
+									],
+									"variable": [
+										{
+											"key": "userGuid",
+											"value": ""
+										}
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "🌳 List All Subordinates",
+							"request": {
+								"method": "GET",
+								"header": [
+									{
+										"key": "Content-Type",
+										"value": "application/json"
+									},
+									{
+										"key": "x-api-key",
+										"value": "{{x-api-token}}",
+										"type": "text"
+									},
+									{
+										"key": "x-api-signature",
+										"value": "{{x-api-signature}}",
+										"type": "text"
+									}
+								],
+								"url": {
+									"raw": "{{baseUrl}}/org-hierarchy//employee/all-subordinates?supervisor=supervisorGuid",
+									"host": [
+										"{{baseUrl}}"
+									],
+									"path": [
+										"org-hierarchy",
+										"",
+										"employee",
+										"all-subordinates"
+									],
+									"query": [
+										{
+											"key": "supervisor",
+											"value": "supervisorGuid"
+										}
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "👤 Get Employee Details",
+							"request": {
+								"method": "GET",
+								"header": [
+									{
+										"key": "Content-Type",
+										"value": "application/json"
+									},
+									{
+										"key": "x-api-key",
+										"value": "{{x-api-token}}",
+										"type": "text"
+									},
+									{
+										"key": "x-api-signature",
+										"value": "{{x-api-signature}}",
+										"type": "text"
+									}
+								],
+								"url": {
+									"raw": "{{baseUrl}}/user/:guid",
+									"host": [
+										"{{baseUrl}}"
+									],
+									"path": [
+										"user",
+										":guid"
+									],
+									"variable": [
+										{
+											"key": "guid",
+											"value": ""
+										}
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "✏️ Update Employee Info",
+							"request": {
+								"method": "PUT",
+								"header": [
+									{
+										"key": "Content-Type",
+										"value": "application/json"
+									},
+									{
+										"key": "x-api-key",
+										"value": "{{x-api-token}}",
+										"type": "text"
+									},
+									{
+										"key": "x-api-signature",
+										"value": "{{x-api-signature}}",
+										"type": "text"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n    \"supervisor\": \"1266456664545455\",\n    \"email\": \"manfred@gmail.cm\",\n    \"first_name\": \"manfred\",\n    \"last_name\": \"Moukaté\",\n    \"phone_number\": \"699888709\",\n    \"employee_code\": \"SYS-0001\",\n    \"hire_date\": \"2025-09-01\",\n    \"department\": \"INFO\",\n    \"job_title\": \"LOGICIEL\"\n}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{baseUrl}}/user/:guid",
+									"host": [
+										"{{baseUrl}}"
+									],
+									"path": [
+										"user",
+										":guid"
+									],
+									"variable": [
+										{
+											"key": "guid",
+											"value": ""
+										}
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "🔄 Change Employee Status",
+							"request": {
+								"method": "PATCH",
+								"header": [
+									{
+										"key": "Content-Type",
+										"value": "application/json"
+									},
+									{
+										"key": "x-api-key",
+										"value": "{{x-api-token}}",
+										"type": "text"
+									},
+									{
+										"key": "x-api-signature",
+										"value": "{{x-api-signature}}",
+										"type": "text"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n    \"supervisor\": \"1266456664545455\",\n    \"status\": true // ou false\n}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{baseUrl}}/user/:guid/status",
+									"host": [
+										"{{baseUrl}}"
+									],
+									"path": [
+										"user",
+										":guid",
+										"status"
+									],
+									"variable": [
+										{
+											"key": "guid",
+											"value": ""
+										}
+									]
+								}
+							},
+							"response": []
+						}
+					]
+				},
+				{
+					"name": "Employee Onboarding & Access",
+					"item": [
+						{
+							"name": "🎫 Generate Employee OTP",
+							"request": {
+								"method": "PATCH",
+								"header": [
+									{
+										"key": "Content-Type",
+										"value": "application/json"
+									},
+									{
+										"key": "x-api-key",
+										"value": "{{x-api-token}}",
+										"type": "text"
+									},
+									{
+										"key": "x-api-signature",
+										"value": "{{x-api-signature}}",
+										"type": "text"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n    \"country\": \"CM\",\n    \"expiration_minutes\": 1440 // 24h par défaut\n}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{baseUrl}}/user/:guid/generate-otp",
+									"host": [
+										"{{baseUrl}}"
+									],
+									"path": [
+										"user",
+										":guid",
+										"generate-otp"
+									],
+									"variable": [
+										{
+											"key": "guid",
+											"value": ""
+										}
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "🔄 Reset Employee Access",
+							"protocolProfileBehavior": {
+								"disableBodyPruning": true
+							},
+							"request": {
+								"method": "GET",
+								"header": [
+									{
+										"key": "Content-Type",
+										"value": "application/json"
+									},
+									{
+										"key": "x-api-key",
+										"value": "{{x-api-token}}",
+										"type": "text"
+									},
+									{
+										"key": "x-api-signature",
+										"value": "{{x-api-signature}}",
+										"type": "text"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n    \"country\": \"CM\",\n    \"expiration_minutes\": 1440 // 24h par défaut\n}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{baseUrl}}/user/:otp/verify",
+									"host": [
+										"{{baseUrl}}"
+									],
+									"path": [
+										"user",
+										":otp",
+										"verify"
+									],
+									"variable": [
+										{
+											"key": "otp",
+											"value": ""
+										}
+									]
+								}
+							},
+							"response": []
+						}
+					]
+				},
+				{
+					"name": "Organization Hierarchy",
+					"item": [
+						{
+							"name": "🔄 Reassign Employee",
+							"request": {
+								"method": "POST",
+								"header": [
+									{
+										"key": "Content-Type",
+										"value": "application/json"
+									},
+									{
+										"key": "x-api-key",
+										"value": "{{x-api-token}}",
+										"type": "text"
+									},
+									{
+										"key": "x-api-signature",
+										"value": "{{x-api-signature}}",
+										"type": "text"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n    \"subordinate_guid\": \"\",\n    \"new_supervisor_guid\": \"\",\n    \"effective_date\": \"\"\n}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{baseUrl}}/org-hierarchy/reassign",
+									"host": [
+										"{{baseUrl}}"
+									],
+									"path": [
+										"org-hierarchy",
+										"reassign"
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "👥 Get Peer Managers",
+							"protocolProfileBehavior": {
+								"disableBodyPruning": true
+							},
+							"request": {
+								"method": "GET",
+								"header": [
+									{
+										"key": "Content-Type",
+										"value": "application/json"
+									},
+									{
+										"key": "x-api-key",
+										"value": "{{x-api-token}}",
+										"type": "text"
+									},
+									{
+										"key": "x-api-signature",
+										"value": "{{x-api-signature}}",
+										"type": "text"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n    \"country\": \"CM\",\n    \"expiration_minutes\": 1440 // 24h par défaut\n}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{baseUrl}}/org-hierarchy/my-level?manager=managerGuid",
+									"host": [
+										"{{baseUrl}}"
+									],
+									"path": [
+										"org-hierarchy",
+										"my-level"
+									],
+									"query": [
+										{
+											"key": "manager",
+											"value": "managerGuid"
+										}
+									]
+								}
+							},
+							"response": []
+						}
+					]
+				}
+			]
+		},
+		{
+			"name": "🏗️ Site & QR Management",
+			"item": [
+				{
+					"name": "Site Management",
+					"item": [
+						{
+							"name": "🏢 Create New Site",
+							"request": {
+								"method": "POST",
+								"header": [
+									{
+										"key": "Content-Type",
+										"value": "application/json"
+									},
+									{
+										"key": "x-api-key",
+										"value": "{{x-api-token}}",
+										"type": "text"
+									},
+									{
+										"key": "x-api-signature",
+										"value": "{{x-api-signature}}",
+										"type": "text"
+									},
+									{
+										"key": "x-api-timestamp",
+										"value": "{{timestamp}}",
+										"type": "text"
+									},
+									{
+										"key": "",
+										"value": "",
+										"type": "text"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n    \"name\": \"Chantier Nord BATIX\",\n    \"site_type\": \"manager_site\",\n    \"created_by\": \"3915293612562351\",\n    \"address\": {\n        \"city\": \"Douala\",\n        \"location\": \"Quartier Bonanjo\",\n        \"place_name\": \"baba\"\n    },\n    \"description\": \"Chantier construction immeuble 8 étages\",\n    \"geofence_polygon\": {\n        \"type\": \"Polygon\",\n        \"coordinates\": [\n            [\n                [\n                    9.70123,\n                    4.04567\n                ],\n                [\n                    9.70134,\n                    4.04567\n                ],\n                [\n                    9.70134,\n                    4.04578\n                ],\n                [\n                    9.70123,\n                    4.04578\n                ],\n                [\n                    9.70123,\n                    4.04567\n                ]\n            ]\n        ]\n    },\n    \"geofence_radius\": 50,\n    \"qr_reference\": \"15\",\n    \"allowed_roles\": {\n        \"1\": \"EMPLOYEE\",\n        \"2\": \"MANAGER\"\n    },\n    \"active\": true,\n    \"qr_code_data\": {\n        \"valid_from\": \"2025-10-06T20:34:37.389Z\", // optionnel pour site site \n        \"valid_to\":  \"\" // optionnel\n    }\n}"
+								},
+								"url": {
+									"raw": "{{baseUrl}}/site",
+									"host": [
+										"{{baseUrl}}"
+									],
+									"path": [
+										"site"
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "📋 List My Active Sites",
+							"request": {
+								"method": "GET",
+								"header": [
+									{
+										"key": "Content-Type",
+										"value": "application/json"
+									},
+									{
+										"key": "x-api-key",
+										"value": "{{x-api-token}}",
+										"type": "text"
+									},
+									{
+										"key": "x-api-signature",
+										"value": "{{x-api-signature}}",
+										"type": "text"
+									},
+									{
+										"key": "x-api-timestamp",
+										"value": "{{timestamp}}",
+										"type": "text"
+									},
+									{
+										"key": "",
+										"value": "",
+										"type": "text"
+									}
+								],
+								"url": {
+									"raw": "{{baseUrl}}/site/creator/:guid/active",
+									"host": [
+										"{{baseUrl}}"
+									],
+									"path": [
+										"site",
+										"creator",
+										":guid",
+										"active"
+									],
+									"variable": [
+										{
+											"key": "guid",
+											"value": ""
+										}
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "🔍 Get Site Details",
+							"request": {
+								"method": "GET",
+								"header": [
+									{
+										"key": "Content-Type",
+										"value": "application/json"
+									},
+									{
+										"key": "x-api-key",
+										"value": "{{x-api-token}}",
+										"type": "text"
+									},
+									{
+										"key": "x-api-signature",
+										"value": "{{x-api-signature}}",
+										"type": "text"
+									},
+									{
+										"key": "x-api-timestamp",
+										"value": "{{timestamp}}",
+										"type": "text"
+									},
+									{
+										"key": "",
+										"value": "",
+										"type": "text"
+									}
+								],
+								"url": {
+									"raw": "{{baseUrl}}/site/:guid",
+									"host": [
+										"{{baseUrl}}"
+									],
+									"path": [
+										"site",
+										":guid"
+									],
+									"variable": [
+										{
+											"key": "guid",
+											"value": ""
+										}
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "✏️ Update Site Information",
+							"request": {
+								"method": "PUT",
+								"header": [
+									{
+										"key": "Content-Type",
+										"value": "application/json"
+									},
+									{
+										"key": "x-api-key",
+										"value": "{{x-api-token}}",
+										"type": "text"
+									},
+									{
+										"key": "x-api-signature",
+										"value": "{{x-api-signature}}",
+										"type": "text"
+									},
+									{
+										"key": "x-api-timestamp",
+										"value": "{{timestamp}}",
+										"type": "text"
+									},
+									{
+										"key": "",
+										"value": "",
+										"type": "text"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n    \"name\": \"Chantier Nord BATIX\",\n    \"site_type\": \"manager_site\",\n    \"created_by\": \"3915293612562351\",\n    \"address\": {\n        \"city\": \"Douala\",\n        \"location\": \"Quartier Bonanjo\",\n        \"place_name\": \"baba\"\n    },\n    \"description\": \"Chantier construction immeuble 8 étages\",\n    \"geofence_polygon\": {\n        \"type\": \"Polygon\",\n        \"coordinates\": [\n            [\n                [\n                    9.70123,\n                    4.04567\n                ],\n                [\n                    9.70134,\n                    4.04567\n                ],\n                [\n                    9.70134,\n                    4.04578\n                ],\n                [\n                    9.70123,\n                    4.04578\n                ],\n                [\n                    9.70123,\n                    4.04567\n                ]\n            ]\n        ]\n    },\n    \"geofence_radius\": 50,\n    \"qr_reference\": \"15\",\n    \"allowed_roles\": {\n        \"1\": \"EMPLOYEE\",\n        \"2\": \"MANAGER\"\n    },\n    \"active\": true,\n    \"qr_code_data\": {\n        \"valid_from\": \"2025-10-06\", // optionnel pour site site \n        \"valid_to\":  \"\" // optionnel\n    }\n}"
+								},
+								"url": {
+									"raw": "{{baseUrl}}/site/:guid",
+									"host": [
+										"{{baseUrl}}"
+									],
+									"path": [
+										"site",
+										":guid"
+									],
+									"variable": [
+										{
+											"key": "guid",
+											"value": ""
+										}
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "🔃 Change status site",
+							"request": {
+								"method": "PATCH",
+								"header": [
+									{
+										"key": "Content-Type",
+										"value": "application/json"
+									},
+									{
+										"key": "x-api-key",
+										"value": "{{x-api-token}}",
+										"type": "text"
+									},
+									{
+										"key": "x-api-signature",
+										"value": "{{x-api-signature}}",
+										"type": "text"
+									},
+									{
+										"key": "x-api-timestamp",
+										"value": "{{timestamp}}",
+										"type": "text"
+									},
+									{
+										"key": "",
+										"value": "",
+										"type": "text"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n    \"name\": \"Chantier Nord BATIX\",\n    \"site_type\": \"manager_site\",\n    \"created_by\": \"3915293612562351\",\n    \"address\": {\n        \"city\": \"Douala\",\n        \"location\": \"Quartier Bonanjo\",\n        \"place_name\": \"baba\"\n    },\n    \"description\": \"Chantier construction immeuble 8 étages\",\n    \"geofence_polygon\": {\n        \"type\": \"Polygon\",\n        \"coordinates\": [\n            [\n                [\n                    9.70123,\n                    4.04567\n                ],\n                [\n                    9.70134,\n                    4.04567\n                ],\n                [\n                    9.70134,\n                    4.04578\n                ],\n                [\n                    9.70123,\n                    4.04578\n                ],\n                [\n                    9.70123,\n                    4.04567\n                ]\n            ]\n        ]\n    },\n    \"geofence_radius\": 50,\n    \"qr_reference\": \"15\",\n    \"allowed_roles\": {\n        \"1\": \"EMPLOYEE\",\n        \"2\": \"MANAGER\"\n    },\n    \"active\": true,\n    \"qr_code_data\": {\n        \"valid_from\": \"2025-10-06\", // optionnel pour site site \n        \"valid_to\":  \"\" // optionnel\n    }\n}"
+								},
+								"url": {
+									"raw": "{{baseUrl}}/site/:guid/status?active=true",
+									"host": [
+										"{{baseUrl}}"
+									],
+									"path": [
+										"site",
+										":guid",
+										"status"
+									],
+									"query": [
+										{
+											"key": "active",
+											"value": "true"
+										}
+									],
+									"variable": [
+										{
+											"key": "guid",
+											"value": ""
+										}
+									]
+								}
+							},
+							"response": []
+						}
+					]
+				},
+				{
+					"name": "QR Code Management",
+					"item": [
+						{
+							"name": "🎫 Generate Site QR Code",
+							"request": {
+								"method": "PATCH",
+								"header": [
+									{
+										"key": "Content-Type",
+										"value": "application/json"
+									},
+									{
+										"key": "x-api-key",
+										"value": "{{x-api-token}}",
+										"type": "text"
+									},
+									{
+										"key": "x-api-signature",
+										"value": "{{x-api-signature}}",
+										"type": "text"
+									},
+									{
+										"key": "x-api-timestamp",
+										"value": "{{timestamp}}",
+										"type": "text"
+									},
+									{
+										"key": "",
+										"value": "",
+										"type": "text"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n    \"site\": \"\",\n    \"manager\": \"\"\n}"
+								},
+								"url": {
+									"raw": "{{baseUrl}}/site/generate-qr-code",
+									"host": [
+										"{{baseUrl}}"
+									],
+									"path": [
+										"site",
+										"generate-qr-code"
+									]
+								}
+							},
+							"response": []
+						}
+					]
+				}
+			]
+		},
+		{
+			"name": "⏰ Attendance Monitoring",
+			"item": [
+				{
+					"name": "Real-time Session Monitoring",
+					"item": [
+						{
+							"name": "New Request",
+							"request": {
+								"method": "GET",
+								"header": []
+							},
+							"response": []
+						}
+					]
+				}
+			]
+		},
+		{
+			"name": "📝 Memo System",
+			"item": []
+		},
+		{
+			"name": "💰 Billing & License Management",
+			"item": [
+				{
+					"name": "License Overview",
+					"item": [
+						{
+							"name": "📄 Current License Details",
+							"request": {
+								"method": "GET",
+								"header": [
+									{
+										"key": "x-api-key",
+										"value": "{{x-api-token}}",
+										"type": "text"
+									},
+									{
+										"key": "x-api-signature",
+										"value": "{{x-api-signature}}",
+										"type": "text"
+									}
+								],
+								"url": {
+									"raw": "{{baseUrl}}/{{router}}/global-license/current-license/100001",
+									"host": [
+										"{{baseUrl}}"
+									],
+									"path": [
+										"{{router}}",
+										"global-license",
+										"current-license",
+										"100001"
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "👥 Billable Employees Count",
+							"request": {
+								"method": "GET",
+								"header": [
+									{
+										"key": "x-api-key",
+										"value": "{{x-api-token}}",
+										"type": "text"
+									},
+									{
+										"key": "x-api-signature",
+										"value": "{{x-api-signature}}",
+										"type": "text"
+									}
+								],
+								"url": {
+									"raw": "{{baseUrl}}/{{router}}/employee-license/billable-employees/100001",
+									"host": [
+										"{{baseUrl}}"
+									],
+									"path": [
+										"{{router}}",
+										"employee-license",
+										"billable-employees",
+										"100001"
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "💵 Real-time Period Cost",
+							"request": {
+								"method": "GET",
+								"header": [
+									{
+										"key": "x-api-key",
+										"value": "{{x-api-token}}",
+										"type": "text"
+									},
+									{
+										"key": "x-api-signature",
+										"value": "{{x-api-signature}}",
+										"type": "text"
+									}
+								],
+								"url": {
+									"raw": "{{baseUrl}}/{{router}}/billing/current-cost",
+									"host": [
+										"{{baseUrl}}"
+									],
+									"path": [
+										"{{router}}",
+										"billing",
+										"current-cost"
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "🔮 End-of-Period Preview",
+							"request": {
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "{{baseUrl}}/{{router}}/billing/period-preview",
+									"host": [
+										"{{baseUrl}}"
+									],
+									"path": [
+										"{{router}}",
+										"billing",
+										"period-preview"
+									]
+								}
+							},
+							"response": []
+						}
+					]
+				},
+				{
+					"name": "License Adjustments",
+					"item": [
+						{
+							"name": "⏳ Pending License Adjustments",
+							"request": {
+								"method": "GET",
+								"header": [
+									{
+										"key": "x-api-key",
+										"value": "{{x-api-token}}",
+										"type": "text"
+									},
+									{
+										"key": "x-api-signature",
+										"value": "{{x-api-signature}}",
+										"type": "text"
+									}
+								],
+								"url": {
+									"raw": "{{baseUrl}}/{{router}}/billing/pending-adjustments/100001",
+									"host": [
+										"{{baseUrl}}"
+									],
+									"path": [
+										"{{router}}",
+										"billing",
+										"pending-adjustments",
+										"100001"
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "✅ Confirm Auto Adjustment",
+							"request": {
+								"method": "PATCH",
+								"header": [
+									{
+										"key": "x-api-key",
+										"value": "{{x-api-token}}",
+										"type": "text"
+									},
+									{
+										"key": "x-api-signature",
+										"value": "{{x-api-signature}}",
+										"type": "text"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n    \"adjustment\": 100001\n}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{baseUrl}}/{{router}}/billing/adjustment/confirm",
+									"host": [
+										"{{baseUrl}}"
+									],
+									"path": [
+										"{{router}}",
+										"billing",
+										"adjustment",
+										"confirm"
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "🔍 Adjustment Details",
+							"request": {
+								"method": "GET",
+								"header": [
+									{
+										"key": "x-api-key",
+										"value": "{{x-api-token}}",
+										"type": "text"
+									},
+									{
+										"key": "x-api-signature",
+										"value": "{{x-api-signature}}",
+										"type": "text"
+									}
+								],
+								"url": {
+									"raw": "{{baseUrl}}/{{router}}/billing/adjustment/100001",
+									"host": [
+										"{{baseUrl}}"
+									],
+									"path": [
+										"{{router}}",
+										"billing",
+										"adjustment",
+										"100001"
+									]
+								}
+							},
+							"response": []
+						}
+					]
+				},
+				{
+					"name": "Mobile Money Payments",
+					"item": [
+						{
+							"name": "💳 Initiate Mobile Payment",
+							"request": {
+								"method": "POST",
+								"header": [
+									{
+										"key": "x-api-key",
+										"value": "{{x-api-token}}",
+										"type": "text"
+									},
+									{
+										"key": "x-api-signature",
+										"value": "{{x-api-signature}}",
+										"type": "text"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n  \"billing_cycle\": 100001,\n  \"adjustment\": 100001,\n  \"amount_usd\": 150.75,\n  \"currency_code\": \"XAF\",\n  \"exchange_rate_used\": 611.50,\n  \"payment_method\": 100001,\n  \"failure_reason\": null\n}\n",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{baseUrl}}/{{router}}/billing/payment/initiate",
+									"host": [
+										"{{baseUrl}}"
+									],
+									"path": [
+										"{{router}}",
+										"billing",
+										"payment",
+										"initiate"
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "🔍 Check Payment Status",
+							"request": {
+								"method": "GET",
+								"header": [
+									{
+										"key": "x-api-key",
+										"value": "{{x-api-token}}",
+										"type": "text"
+									},
+									{
+										"key": "x-api-signature",
+										"value": "{{x-api-signature}}",
+										"type": "text"
+									}
+								],
+								"url": {
+									"raw": "{{baseUrl}}/{{router}}/billing/payment/TOKE_20250917151110_103/status",
+									"host": [
+										"{{baseUrl}}"
+									],
+									"path": [
+										"{{router}}",
+										"billing",
+										"payment",
+										"TOKE_20250917151110_103",
+										"status"
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "🔄 Retry Failed Payment",
+							"request": {
+								"method": "POST",
+								"header": [
+									{
+										"key": "x-api-key",
+										"value": "{{x-api-token}}",
+										"type": "text"
+									},
+									{
+										"key": "x-api-signature",
+										"value": "{{x-api-signature}}",
+										"type": "text"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n    \"transaction\": \"MTN-TRX-202509150001\"\n}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{baseUrl}}/{{router}}/billing/payment/retry",
+									"host": [
+										"{{baseUrl}}"
+									],
+									"path": [
+										"{{router}}",
+										"billing",
+										"payment",
+										"retry"
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "📚 Payment History",
+							"request": {
+								"method": "GET",
+								"header": [
+									{
+										"key": "x-api-key",
+										"value": "{{x-api-token}}",
+										"type": "text"
+									},
+									{
+										"key": "x-api-signature",
+										"value": "{{x-api-signature}}",
+										"type": "text"
+									}
+								],
+								"url": {
+									"raw": "{{baseUrl}}/{{router}}/billing/payment-history/100001",
+									"host": [
+										"{{baseUrl}}"
+									],
+									"path": [
+										"{{router}}",
+										"billing",
+										"payment-history",
+										"100001"
+									]
+								}
+							},
+							"response": []
+						}
+					]
+				}
+			]
+		},
+		{
+			"name": "🚨 Alerts & Fraud Detection",
+			"item": [
+				{
+					"name": "Anti-Fraud Alerts",
+					"item": [
+						{
+							"name": "🚨 Active Fraud Alerts",
+							"request": {
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "{{baseUrl}}/{{router}}/fraud/active-alerts",
+									"host": [
+										"{{baseUrl}}"
+									],
+									"path": [
+										"{{router}}",
+										"fraud",
+										"active-alerts"
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "📊 Employee Fraud Patterns",
+							"request": {
+								"method": "GET",
+								"header": [
+									{
+										"key": "x-api-key",
+										"value": "{{x-api-token}}",
+										"type": "text"
+									},
+									{
+										"key": "x-api-signature",
+										"value": "{{x-api-signature}}",
+										"type": "text"
+									}
+								],
+								"url": {
+									"raw": "{{baseUrl}}/{{router}}/fraud/patterns/",
+									"host": [
+										"{{baseUrl}}"
+									],
+									"path": [
+										"{{router}}",
+										"fraud",
+										"patterns",
+										""
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "🔍 Start Fraud Investigation",
+							"request": {
+								"method": "PUT",
+								"header": [],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n    \"notes\": \"hello test\",\n    \"investigator\":\"okay test\"\n}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{baseUrl}}/{{router}}/fraud/alerts/100001/investigate",
+									"host": [
+										"{{baseUrl}}"
+									],
+									"path": [
+										"{{router}}",
+										"fraud",
+										"alerts",
+										"100001",
+										"investigate"
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "✅ Resolve Fraud Alert",
+							"request": {
+								"method": "PUT",
+								"header": [],
+								"url": {
+									"raw": "{{baseUrl}}/{{router}}/fraud/alerts/:guid/resolve",
+									"host": [
+										"{{baseUrl}}"
+									],
+									"path": [
+										"{{router}}",
+										"fraud",
+										"alerts",
+										":guid",
+										"resolve"
+									],
+									"variable": [
+										{
+											"key": "guid",
+											"value": ""
+										}
+									]
+								}
+							},
+							"response": []
+						}
+					]
+				},
+				{
+					"name": "Operational Alerts",
+					"item": [
+						{
+							"name": "New Request",
+							"request": {
+								"method": "GET",
+								"header": []
+							},
+							"response": []
+						}
+					]
+				}
+			]
+		},
+		{
+			"name": "📊 Dashboard & Analytics",
+			"item": []
+		},
+		{
+			"name": "New Request",
+			"request": {
+				"method": "GET",
+				"header": []
+			},
+			"response": []
+		}
+	]
 }

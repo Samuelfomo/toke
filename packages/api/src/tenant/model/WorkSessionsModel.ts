@@ -1,4 +1,9 @@
-import { PointageType, SessionStatus, WORK_SESSIONS_ERRORS, WorkSessionsValidationUtils, } from '@toke/shared';
+import {
+  PointageType,
+  SessionStatus,
+  WORK_SESSIONS_ERRORS,
+  WorkSessionsValidationUtils,
+} from '@toke/shared';
 import { Op } from 'sequelize';
 
 import BaseModel from '../database/db.base.js';
@@ -308,6 +313,58 @@ export default class WorkSessionsModel extends BaseModel {
     return lastPauseEntry?.pointage_type === PointageType.PAUSE_START;
   }
 
+  protected async getLastEntry(session: number): Promise<any> {
+    if (!session) return null;
+
+    return await this.findOne(
+      tableName.TIME_ENTRIES,
+      { session: session },
+      { order: [['server_received_at', 'DESC']] },
+    );
+  }
+
+  // protected async hasActiveMission(session: number): Promise<boolean> {
+  //   if (!session) return false;
+  //
+  //   // Récupérer le dernier pointage de type EXTERNAL_MISSION
+  //   const lastMissionEntry = await this.findOne(
+  //     tableName.TIME_ENTRIES,
+  //     {
+  //       session: session,
+  //       pointage_type: PointageType.EXTERNAL_MISSION,
+  //     },
+  //     { order: [['server_received_at', 'DESC']] },
+  //   );
+  //
+  //   // Si une mission a été démarrée, vérifier qu'elle n'a pas été "fermée" par un autre événement
+  //   if (!lastMissionEntry) return false;
+  //
+  //   // Vérifier s'il y a un pointage APRÈS la mission qui l'invalide
+  //   const lastEntry = await this.findOne(
+  //     tableName.TIME_ENTRIES,
+  //     { session: session },
+  //     { order: [['server_received_at', 'DESC']] },
+  //   );
+  //
+  //   // Une mission est active si le dernier pointage global EST la mission elle-même
+  //   // (ou si vous avez un pointage MISSION_END dédié, vérifier qu'il n'existe pas)
+  //   return lastEntry?.pointage_type === PointageType.EXTERNAL_MISSION;
+  // }
+
+  protected async hasActiveMission(session: number): Promise<boolean> {
+    if (!session) return false;
+
+    // ✅ Une seule requête optimisée
+    const lastEntry = await this.findOne(
+      tableName.TIME_ENTRIES,
+      { session: session },
+      { order: [['server_received_at', 'DESC']] },
+    );
+
+    // Mission active si le dernier pointage est EXTERNAL_MISSION
+    return lastEntry?.pointage_type === PointageType.EXTERNAL_MISSION;
+  }
+
   // === GESTION DES CORRECTIONS ===
 
   protected async applyCorrections(
@@ -484,22 +541,31 @@ export default class WorkSessionsModel extends BaseModel {
 
     // Validation des coordonnées GPS si présentes
 
-    if (this.start_latitude && !WorkSessionsValidationUtils.validateLatitude(this.start_latitude)) {
+    if (
+      this.start_latitude &&
+      !WorkSessionsValidationUtils.validateLatitude(parseFloat(this.start_latitude as any))
+    ) {
       throw new Error(WORK_SESSIONS_ERRORS.START_LATITUDE_INVALID);
     }
 
     if (
       this.start_longitude &&
-      !WorkSessionsValidationUtils.validateLongitude(this.start_longitude)
+      !WorkSessionsValidationUtils.validateLongitude(parseFloat(this.start_longitude as any))
     ) {
       throw new Error(WORK_SESSIONS_ERRORS.START_LONGITUDE_INVALID);
     }
 
-    if (this.end_latitude && !WorkSessionsValidationUtils.validateLatitude(this.end_latitude)) {
+    if (
+      this.end_latitude &&
+      !WorkSessionsValidationUtils.validateLatitude(parseFloat(this.end_latitude as any))
+    ) {
       throw new Error(WORK_SESSIONS_ERRORS.END_LATITUDE_INVALID);
     }
 
-    if (this.end_longitude && !WorkSessionsValidationUtils.validateLongitude(this.end_longitude)) {
+    if (
+      this.end_longitude &&
+      !WorkSessionsValidationUtils.validateLongitude(parseFloat(this.end_longitude as any))
+    ) {
       throw new Error(WORK_SESSIONS_ERRORS.END_LONGITUDE_INVALID);
     }
 

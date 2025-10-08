@@ -465,7 +465,7 @@ export default class Site extends SiteModel {
   // }
 
   async findByQRToken(qr_token: string): Promise<Site | null> {
-    const data = await super.findByQRToken(qr_token);
+    const data = await this.getByQRToken(qr_token);
     if (!data) return null;
     return new Site().hydrate(data);
   }

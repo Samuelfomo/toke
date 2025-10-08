@@ -1154,6 +1154,33 @@ router.patch('/:guid/status', Ensure.patch(), async (req: Request, res: Response
   }
 });
 
+router.get('/attendance/active-sessions', Ensure.get(), async (req: Request, res: Response) => {
+  try {
+    const { manager } = req.query;
+    if (!manager || !UsersValidationUtils.validateGuid(String(manager))) {
+      return R.handleError(res, HttpStatus.BAD_REQUEST, {
+        code: USERS_CODES.VALIDATION_FAILED,
+        message: USERS_ERRORS.GUID_INVALID,
+      });
+    }
+
+    const userObj = await User._load(String(manager), true);
+    if (!userObj) {
+      return R.handleError(res, HttpStatus.NOT_FOUND, {
+        code: USERS_CODES.SUPERVISOR_NOT_FOUND,
+        message: USERS_ERRORS.SUPERVISOR_NOT_FOUND,
+      });
+    }
+
+    const userRolesSub = await UserRole._listByAssignedBy(userObj.getId()!);
+  } catch (error: any) {
+    return R.handleError(res, HttpStatus.INTERNAL_ERROR, {
+      code: USERS_CODES.LISTING_FAILED,
+      message: error.message,
+    });
+  }
+});
+
 // router.post('/otp', Ensure.post(), async (req: Request, res: Response) => {
 //   const result = await WapService.sendOtp();
 //   if (result.status !== HttpStatus.CREATED) {

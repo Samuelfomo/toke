@@ -499,6 +499,14 @@ export default class WorkSessions extends WorkSessionsModel {
     if (!this.id) return false;
     return await this.hasActivePause(this.id);
   }
+  async LastEntry(): Promise<any> {
+    if (!this.id) return null;
+    return await this.getLastEntry(this.id);
+  }
+  async activeMission(): Promise<boolean> {
+    if (!this.id) return false;
+    return await this.hasActiveMission(this.id);
+  }
 
   async getPauseStatusDetailed(): Promise<{
     is_on_pause: boolean;

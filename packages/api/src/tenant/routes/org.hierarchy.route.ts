@@ -216,6 +216,24 @@ router.get('/employee/all-subordinates', Ensure.get(), async (req: Request, res:
     // Construction hiérarchique récursive
     const hierarchyTree = await OrgHierarchy._buildHierarchyTree(supervisorObj.getId()!);
 
+    // const formattedHierarchy = await Promise.all(
+    //   hierarchyTree.map(async (node) => ({
+    //     user: node.user.toJSON(responseValue.MINIMAL), // ou .toJSON(responseValue.MINIMAL)
+    //     roles: await Promise.all(
+    //       node.roles.map(async (r: Role) => r.toJSON()),
+    //     ),
+    //     subordinates: await Promise.all(
+    //       node.subordinates.map(async (sub: any) => ({
+    //         user: sub.user.toPublicJSON(),
+    //         roles: await Promise.all(
+    //           sub.roles.map(async (r: Role) => r.toJSON(),
+    //         ),
+    //         subordinates: sub.subordinates, // récursif si besoin
+    //       })),
+    //     ),
+    //   })),
+    // );
+
     // Rôles du superviseur lui-même
     const supervisorRoles = await UserRole._listByUser(supervisorObj.getId()!);
 

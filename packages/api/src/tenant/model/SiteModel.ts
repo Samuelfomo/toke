@@ -186,7 +186,7 @@ export default class SiteModel extends BaseModel {
 
   // === GESTION QR CODES ===
 
-  protected async findByQRToken(qr_token: string): Promise<any> {
+  protected async getByQRToken(qr_token: string): Promise<any> {
     return await this.findOne(this.db.tableName, {
       [this.db.qr_code_data]: {
         [Op.contains]: { qr_token },
@@ -308,7 +308,7 @@ export default class SiteModel extends BaseModel {
     }
 
     // Génération automatique du QR code
-    const qr_content = await this.generateInitialQRCode();
+    // const qr_content = await this.generateInitialQRCode();
 
     const lastID = await this.insertOne(this.db.tableName, {
       [this.db.guid]: guid,
@@ -332,7 +332,6 @@ export default class SiteModel extends BaseModel {
 
     this.id = typeof lastID === 'object' ? lastID.id : lastID;
     this.guid = guid;
-    this.qr_code_data = qr_content;
   }
 
   // === CRUD OPERATIONS ===
