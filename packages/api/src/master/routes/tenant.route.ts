@@ -30,6 +30,8 @@ import Country from '../class/Country.js';
 import TenantOtpManager from '../../tools/tenant.otp.manager.js';
 import OTPCacheService from '../../tools/otp-cache.service.js';
 import WapService from '../../tools/send.otp.service.js';
+import EmailSender from '../../tools/send.email.service.js';
+import { Contact } from '../class/Contact.js';
 
 const otpManager = new TenantOtpManager();
 
@@ -646,29 +648,6 @@ router.patch('/:guid/subdomain', Ensure.patch(), async (req: Request, res: Respo
   }
 });
 
-// TODO : test cache a supprimer apres
-router.post('/:subdomain/cache/test', Ensure.post(), async (req: Request, res: Response) => {
-  try {
-    const cacheTest = await TenantCacheService.getTenantConfig(req.params.subdomain);
-    if (!cacheTest) {
-      return R.handleError(res, HttpStatus.NOT_FOUND, {
-        code: TENANT_CODES.TENANT_NOT_FOUND,
-        message: TENANT_ERRORS.NOT_FOUND,
-      });
-    }
-    return R.handleSuccess(res, {
-      message: 'Tenant cache test success',
-      cach_test: cacheTest,
-    });
-  } catch (error: any) {
-    return R.handleError(res, HttpStatus.INTERNAL_ERROR, {
-      code: TENANT_CODES.UPDATE_FAILED,
-      message: error.message,
-      details: error,
-    });
-  }
-});
-
 /**
  * DELETE /:guid - Supprimer un tenant par GUID
  */
@@ -1019,36 +998,57 @@ router.get('/:identifier', Ensure.get(), async (req: Request, res: Response) => 
  */
 router.post('/otp', Ensure.post(), async (req: Request, res: Response) => {
   try {
-    const { phone, country } = req.body;
+    const { phone, country, email } = req.body;
 
-    // Validation du pays
-    const validateCountry = CountryValidationUtils.validateIsoCode(country);
-    if (!validateCountry) {
+    if (!phone && !email) {
       return R.handleError(res, HttpStatus.BAD_REQUEST, {
-        code: 'invalid_country',
-        message: COUNTRY_ERRORS.CODE_INVALID,
-      });
-    }
-
-    const countryObj = await Country._load(country, false, true);
-    if (!countryObj) {
-      return R.handleError(res, HttpStatus.NOT_FOUND, {
-        code: 'country_not_found',
-        message: COUNTRY_ERRORS.NOT_FOUND,
+        code: TENANT_CODES.VALIDATION_FAILED,
+        message: 'Entries are required',
       });
     }
 
     // Validation du téléphone
-    const validatePhone = TenantValidationUtils.validateBillingPhone(phone);
-    if (!validatePhone) {
-      return R.handleError(res, HttpStatus.BAD_REQUEST, {
-        code: TENANT_CODES.BILLING_PHONE_INVALID,
-        message: TENANT_ERRORS.BILLING_PHONE_INVALID,
-      });
+    if (phone) {
+      // Validation du pays
+      const validateCountry = CountryValidationUtils.validateIsoCode(country);
+      if (!validateCountry) {
+        return R.handleError(res, HttpStatus.BAD_REQUEST, {
+          code: 'invalid_country',
+          message: COUNTRY_ERRORS.CODE_INVALID,
+        });
+      }
+
+      const countryObj = await Country._load(country, false, true);
+      if (!countryObj) {
+        return R.handleError(res, HttpStatus.NOT_FOUND, {
+          code: 'country_not_found',
+          message: COUNTRY_ERRORS.NOT_FOUND,
+        });
+      }
+
+      const validatePhone = TenantValidationUtils.validateBillingPhone(phone);
+      if (!validatePhone) {
+        return R.handleError(res, HttpStatus.BAD_REQUEST, {
+          code: TENANT_CODES.BILLING_PHONE_INVALID,
+          message: TENANT_ERRORS.BILLING_PHONE_INVALID,
+        });
+      }
     }
 
+    if (email) {
+      const validateEmail = TenantValidationUtils.validateBillingEmail(email);
+      if (!validateEmail) {
+        return R.handleError(res, HttpStatus.BAD_REQUEST, {
+          code: TENANT_CODES.BILLING_EMAIL_INVALID,
+          message: TENANT_ERRORS.BILLING_EMAIL_INVALID,
+        });
+      }
+    }
+
+    const value = phone || email;
+
     // Générer l'OTP
-    const generateOtp = await OTPCacheService.generateAndStoreOTP(phone);
+    const generateOtp = await OTPCacheService.generateAndStoreOTP(value);
     if (!generateOtp) {
       return R.handleError(res, HttpStatus.BAD_REQUEST, {
         code: 'OTP_generator_failed',
@@ -1056,19 +1056,52 @@ router.post('/otp', Ensure.post(), async (req: Request, res: Response) => {
       });
     }
 
-    // Envoyer l'OTP via WhatsApp
-    const result = await WapService.sendOtp(generateOtp, phone, country);
-    if (result.status !== HttpStatus.SUCCESS) {
-      // Supprimer l'OTP si l'envoi a échoué
-      await OTPCacheService.deleteOTP(generateOtp);
+    let verify: boolean | undefined = undefined;
 
-      return R.handleError(res, result.status, result.response);
+    // Envoyer l'OTP via WhatsApp
+    if (phone && country) {
+      const contactObj = await Contact._load(value, false, true);
+
+      if (!contactObj) {
+        // Numéro inconnu : on envoie l’OTP
+        verify = false;
+        const result = await WapService.sendOtp(generateOtp, phone, country);
+        if (result.status !== HttpStatus.SUCCESS) {
+          await OTPCacheService.deleteOTP(generateOtp);
+          return R.handleError(res, result.status, result.response);
+        }
+      } else {
+        // Numéro déjà existant → ne pas envoyer l’OTP
+        verify = true;
+      }
+    } else if (email) {
+      try {
+        await EmailSender.sender(generateOtp, email);
+      } catch (err) {
+        await OTPCacheService.deleteOTP(generateOtp);
+        return R.handleError(res, HttpStatus.INTERNAL_ERROR, {
+          code: 'EMAIL_SENDING_FAILED',
+          message: (err as Error).message,
+        });
+      }
+    } else {
+      return R.handleError(res, HttpStatus.BAD_REQUEST, {
+        code: 'entries_are_required',
+        message: 'failed to send otp: entries are required',
+      });
     }
 
-    return R.handleSuccess(res, {
+    // === RÉPONSE ===
+    const response: any = {
       message: 'OTP successfully sent',
-      phone: phone,
-    });
+      reference: phone || email,
+    };
+
+    if (phone) {
+      response.verify = verify;
+    }
+
+    return R.handleSuccess(res, response);
   } catch (error: any) {
     return R.handleError(res, HttpStatus.INTERNAL_ERROR, {
       code: TENANT_CODES.CREATION_FAILED,
@@ -1082,13 +1115,21 @@ router.post('/otp', Ensure.post(), async (req: Request, res: Response) => {
  */
 router.patch('/verify-otp', Ensure.patch(), async (req: Request, res: Response) => {
   try {
-    const { otp, phone } = req.body;
+    const { otp, phone, email } = req.body;
 
     // Validation de l'OTP
     if (!otp) {
       return R.handleError(res, HttpStatus.BAD_REQUEST, {
         code: 'invalid_otp',
         message: 'OTP must be a valid string',
+      });
+    }
+
+    // Vérifie qu'au moins une entrée (phone ou email) est fournie
+    if (!phone && !email) {
+      return R.handleError(res, HttpStatus.BAD_REQUEST, {
+        code: 'missing_reference',
+        message: 'Either phone or email is required for verification',
       });
     }
 
@@ -1103,21 +1144,39 @@ router.patch('/verify-otp', Ensure.patch(), async (req: Request, res: Response) 
       });
     }
 
+    // Vérifie la correspondance du téléphone ou de l'email
+    const reference = phone || email;
+
     // Vérifier que le téléphone correspond
-    if (result.phone !== phone) {
+    if (result.phone !== reference) {
       return R.handleError(res, HttpStatus.FORBIDDEN, {
         code: 'verification_failed',
-        message: 'Phone number does not match the OTP',
+        message: 'Reference (phone/email) does not match the OTP',
       });
     }
 
     // Supprimer l'OTP après vérification réussie
     await OTPCacheService.deleteOTP(otp.toString());
 
-    return R.handleSuccess(res, {
+    if (result.phone === phone) {
+      const contactObj = new Contact().setPhone(phone);
+      try {
+        await contactObj.save();
+      } catch (err) {
+        return R.handleError(res, HttpStatus.INTERNAL_ERROR, {
+          code: 'CONTACT_CREATION_FAILED',
+          message: (err as Error).message,
+        });
+      }
+    }
+
+    // Réponse dynamique selon le type de référence
+    const response: any = {
       message: 'OTP verified successfully',
-      phone: result.phone,
-    });
+    };
+    if (phone) response.phone = phone;
+    if (email) response.email = email;
+    return R.handleSuccess(res, response);
   } catch (error: any) {
     return R.handleError(res, HttpStatus.INTERNAL_ERROR, {
       code: 'internal_server_error',

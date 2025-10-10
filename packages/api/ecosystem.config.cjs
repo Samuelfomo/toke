@@ -2,7 +2,7 @@ module.exports = {
   apps: [
     {
       name: 'api',
-      script: 'dist/server.js',
+      script: 'dist/master/server.js',
 
       // 🔧 RECOMMANDÉ POUR PRODUCTION: Une seule instance
       instances: 1,

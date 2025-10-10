@@ -297,6 +297,8 @@ export const tableName = {
 
   MEMOS: `${G.tableOp}_memos`,
   TIME_ENTRIES: `${G.tableOp}_time_entries`,
+
+  CONTACT: `${G.tableAp}_contact`,
 } as const;
 
 export const EntityRoute = {

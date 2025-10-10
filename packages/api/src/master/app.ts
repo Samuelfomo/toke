@@ -11,7 +11,6 @@ import ClientRoutes from '../temporaire_route/client.routes.js';
 import { tableName } from '../utils/response.model.js';
 import Revision from '../tools/revision.js';
 import ProfileRoutes from '../temporaire_route/profile.routes.js';
-import { ServerAuth } from '../middle/server-auth.js';
 
 import Db from './database/db.config.js';
 import { TableInitializer } from './database/db.initializer.js';
@@ -72,17 +71,13 @@ export default class App {
       console.log(`🚀 Démarrage serveur sur ${this.config.host}:${this.config.port}...`);
 
       await new Promise<void>((resolve, reject) => {
-        this.server = this.app.listen(
-          this.config.port,
-          // this.config.host,
-          () => {
-            console.log(`✅ Serveur actif sur http://${this.config.host}`);
-            console.log(`📊 Health check: http://${this.config.host}/health`);
-            console.log(`🔧 Environnement: ${process.env.NODE_ENV || 'development'}`);
-            console.log('🎉 Serveur prêt!');
-            resolve();
-          },
-        );
+        this.server = this.app.listen(this.config.port, this.config.host, () => {
+          console.log(`✅ Serveur actif sur http://${this.config.host}:${this.config.port}`);
+          console.log(`📊 Health check: http://${this.config.host}:${this.config.port}/health`);
+          console.log(`🔧 Environnement: ${process.env.NODE_ENV || 'development'}`);
+          console.log('🎉 Serveur prêt!');
+          resolve();
+        });
 
         this.server?.on('error', (error: any) => {
           if (error.code === 'EADDRINUSE') {
@@ -158,7 +153,7 @@ export default class App {
 
     // 🔐 MIDDLEWARE D'AUTHENTIFICATION GLOBAL
     // ⚠️ INTERCEPTE TOUTES LES REQUÊTES (même /health)
-    this.app.use(ServerAuth.authenticate);
+    // this.app.use(ServerAuth.authenticate);
   }
 
   /**

@@ -7,370 +7,9 @@
 ├── packages
 │   ├── api
 │   │   ├── README.md
-│   │   ├── dist
-│   │   │   ├── app.d.ts
-│   │   │   ├── app.d.ts.map
-│   │   │   ├── app.js
-│   │   │   ├── app.js.map
-│   │   │   ├── license
-│   │   │   │   ├── class
-│   │   │   │   │   ├── ActivityMonitoring.d.ts
-│   │   │   │   │   ├── ActivityMonitoring.d.ts.map
-│   │   │   │   │   ├── ActivityMonitoring.js
-│   │   │   │   │   ├── ActivityMonitoring.js.map
-│   │   │   │   │   ├── BillingCycle.d.ts
-│   │   │   │   │   ├── BillingCycle.d.ts.map
-│   │   │   │   │   ├── BillingCycle.js
-│   │   │   │   │   ├── BillingCycle.js.map
-│   │   │   │   │   ├── Client.d.ts
-│   │   │   │   │   ├── Client.d.ts.map
-│   │   │   │   │   ├── Client.js
-│   │   │   │   │   ├── Client.js.map
-│   │   │   │   │   ├── ClientProfil.d.ts
-│   │   │   │   │   ├── ClientProfil.d.ts.map
-│   │   │   │   │   ├── ClientProfil.js
-│   │   │   │   │   ├── ClientProfil.js.map
-│   │   │   │   │   ├── Country.d.ts
-│   │   │   │   │   ├── Country.d.ts.map
-│   │   │   │   │   ├── Country.js
-│   │   │   │   │   ├── Country.js.map
-│   │   │   │   │   ├── Currency.d.ts
-│   │   │   │   │   ├── Currency.d.ts.map
-│   │   │   │   │   ├── Currency.js
-│   │   │   │   │   ├── Currency.js.map
-│   │   │   │   │   ├── EmployeeLicense.d.ts
-│   │   │   │   │   ├── EmployeeLicense.d.ts.map
-│   │   │   │   │   ├── EmployeeLicense.js
-│   │   │   │   │   ├── EmployeeLicense.js.map
-│   │   │   │   │   ├── ExchangeRate.d.ts
-│   │   │   │   │   ├── ExchangeRate.d.ts.map
-│   │   │   │   │   ├── ExchangeRate.js
-│   │   │   │   │   ├── ExchangeRate.js.map
-│   │   │   │   │   ├── FraudDetectionLog.d.ts
-│   │   │   │   │   ├── FraudDetectionLog.d.ts.map
-│   │   │   │   │   ├── FraudDetectionLog.js
-│   │   │   │   │   ├── FraudDetectionLog.js.map
-│   │   │   │   │   ├── GlobalLicense.d.ts
-│   │   │   │   │   ├── GlobalLicense.d.ts.map
-│   │   │   │   │   ├── GlobalLicense.js
-│   │   │   │   │   ├── GlobalLicense.js.map
-│   │   │   │   │   ├── Language.d.ts
-│   │   │   │   │   ├── Language.d.ts.map
-│   │   │   │   │   ├── Language.js
-│   │   │   │   │   ├── Language.js.map
-│   │   │   │   │   ├── Lexicon.d.ts
-│   │   │   │   │   ├── Lexicon.d.ts.map
-│   │   │   │   │   ├── Lexicon.js
-│   │   │   │   │   ├── Lexicon.js.map
-│   │   │   │   │   ├── LicenseAdjustment.d.ts
-│   │   │   │   │   ├── LicenseAdjustment.d.ts.map
-│   │   │   │   │   ├── LicenseAdjustment.js
-│   │   │   │   │   ├── LicenseAdjustment.js.map
-│   │   │   │   │   ├── PaymentMethod.d.ts
-│   │   │   │   │   ├── PaymentMethod.d.ts.map
-│   │   │   │   │   ├── PaymentMethod.js
-│   │   │   │   │   ├── PaymentMethod.js.map
-│   │   │   │   │   ├── PaymentTransaction.d.ts
-│   │   │   │   │   ├── PaymentTransaction.d.ts.map
-│   │   │   │   │   ├── PaymentTransaction.js
-│   │   │   │   │   ├── PaymentTransaction.js.map
-│   │   │   │   │   ├── TaxRule.d.ts
-│   │   │   │   │   ├── TaxRule.d.ts.map
-│   │   │   │   │   ├── TaxRule.js
-│   │   │   │   │   ├── TaxRule.js.map
-│   │   │   │   │   ├── Tenant.d.ts
-│   │   │   │   │   ├── Tenant.d.ts.map
-│   │   │   │   │   ├── Tenant.js
-│   │   │   │   │   └── Tenant.js.map
-│   │   │   │   ├── database
-│   │   │   │   │   ├── data
-│   │   │   │   │   │   ├── activity.monitoring.db.d.ts
-│   │   │   │   │   │   ├── activity.monitoring.db.d.ts.map
-│   │   │   │   │   │   ├── activity.monitoring.db.js
-│   │   │   │   │   │   ├── activity.monitoring.db.js.map
-│   │   │   │   │   │   ├── billing.cycle.db.d.ts
-│   │   │   │   │   │   ├── billing.cycle.db.d.ts.map
-│   │   │   │   │   │   ├── billing.cycle.db.js
-│   │   │   │   │   │   ├── billing.cycle.db.js.map
-│   │   │   │   │   │   ├── client.db.d.ts
-│   │   │   │   │   │   ├── client.db.d.ts.map
-│   │   │   │   │   │   ├── client.db.js
-│   │   │   │   │   │   ├── client.db.js.map
-│   │   │   │   │   │   ├── client.profile.db.d.ts
-│   │   │   │   │   │   ├── client.profile.db.d.ts.map
-│   │   │   │   │   │   ├── client.profile.db.js
-│   │   │   │   │   │   ├── client.profile.db.js.map
-│   │   │   │   │   │   ├── country.db.d.ts
-│   │   │   │   │   │   ├── country.db.d.ts.map
-│   │   │   │   │   │   ├── country.db.js
-│   │   │   │   │   │   ├── country.db.js.map
-│   │   │   │   │   │   ├── currency.db.d.ts
-│   │   │   │   │   │   ├── currency.db.d.ts.map
-│   │   │   │   │   │   ├── currency.db.js
-│   │   │   │   │   │   ├── currency.db.js.map
-│   │   │   │   │   │   ├── employee.license.db.d.ts
-│   │   │   │   │   │   ├── employee.license.db.d.ts.map
-│   │   │   │   │   │   ├── employee.license.db.js
-│   │   │   │   │   │   ├── employee.license.db.js.map
-│   │   │   │   │   │   ├── exchange.rate.db.d.ts
-│   │   │   │   │   │   ├── exchange.rate.db.d.ts.map
-│   │   │   │   │   │   ├── exchange.rate.db.js
-│   │   │   │   │   │   ├── exchange.rate.db.js.map
-│   │   │   │   │   │   ├── fraud.detection.log.db.d.ts
-│   │   │   │   │   │   ├── fraud.detection.log.db.d.ts.map
-│   │   │   │   │   │   ├── fraud.detection.log.db.js
-│   │   │   │   │   │   ├── fraud.detection.log.db.js.map
-│   │   │   │   │   │   ├── global.license.db.d.ts
-│   │   │   │   │   │   ├── global.license.db.d.ts.map
-│   │   │   │   │   │   ├── global.license.db.js
-│   │   │   │   │   │   ├── global.license.db.js.map
-│   │   │   │   │   │   ├── language.db.d.ts
-│   │   │   │   │   │   ├── language.db.d.ts.map
-│   │   │   │   │   │   ├── language.db.js
-│   │   │   │   │   │   ├── language.db.js.map
-│   │   │   │   │   │   ├── lexicon.db.d.ts
-│   │   │   │   │   │   ├── lexicon.db.d.ts.map
-│   │   │   │   │   │   ├── lexicon.db.js
-│   │   │   │   │   │   ├── lexicon.db.js.map
-│   │   │   │   │   │   ├── license.adjustment.db.d.ts
-│   │   │   │   │   │   ├── license.adjustment.db.d.ts.map
-│   │   │   │   │   │   ├── license.adjustment.db.js
-│   │   │   │   │   │   ├── license.adjustment.db.js.map
-│   │   │   │   │   │   ├── payment.method.db.d.ts
-│   │   │   │   │   │   ├── payment.method.db.d.ts.map
-│   │   │   │   │   │   ├── payment.method.db.js
-│   │   │   │   │   │   ├── payment.method.db.js.map
-│   │   │   │   │   │   ├── payment.transaction.db.d.ts
-│   │   │   │   │   │   ├── payment.transaction.db.d.ts.map
-│   │   │   │   │   │   ├── payment.transaction.db.js
-│   │   │   │   │   │   ├── payment.transaction.db.js.map
-│   │   │   │   │   │   ├── tax.rule.db.d.ts
-│   │   │   │   │   │   ├── tax.rule.db.d.ts.map
-│   │   │   │   │   │   ├── tax.rule.db.js
-│   │   │   │   │   │   ├── tax.rule.db.js.map
-│   │   │   │   │   │   ├── tenant.db.d.ts
-│   │   │   │   │   │   ├── tenant.db.d.ts.map
-│   │   │   │   │   │   ├── tenant.db.js
-│   │   │   │   │   │   └── tenant.db.js.map
-│   │   │   │   │   ├── db.base.d.ts
-│   │   │   │   │   ├── db.base.d.ts.map
-│   │   │   │   │   ├── db.base.js
-│   │   │   │   │   ├── db.base.js.map
-│   │   │   │   │   ├── db.config.d.ts
-│   │   │   │   │   ├── db.config.d.ts.map
-│   │   │   │   │   ├── db.config.js
-│   │   │   │   │   ├── db.config.js.map
-│   │   │   │   │   ├── db.initializer.d.ts
-│   │   │   │   │   ├── db.initializer.d.ts.map
-│   │   │   │   │   ├── db.initializer.js
-│   │   │   │   │   └── db.initializer.js.map
-│   │   │   │   ├── middle
-│   │   │   │   │   ├── ensured-routes.d.ts
-│   │   │   │   │   ├── ensured-routes.d.ts.map
-│   │   │   │   │   ├── ensured-routes.js
-│   │   │   │   │   ├── ensured-routes.js.map
-│   │   │   │   │   ├── server-auth.d.ts
-│   │   │   │   │   ├── server-auth.d.ts.map
-│   │   │   │   │   ├── server-auth.js
-│   │   │   │   │   └── server-auth.js.map
-│   │   │   │   ├── model
-│   │   │   │   │   ├── ActivityMonitoringModel.d.ts
-│   │   │   │   │   ├── ActivityMonitoringModel.d.ts.map
-│   │   │   │   │   ├── ActivityMonitoringModel.js
-│   │   │   │   │   ├── ActivityMonitoringModel.js.map
-│   │   │   │   │   ├── BillingCycleModel.d.ts
-│   │   │   │   │   ├── BillingCycleModel.d.ts.map
-│   │   │   │   │   ├── BillingCycleModel.js
-│   │   │   │   │   ├── BillingCycleModel.js.map
-│   │   │   │   │   ├── ClientModel.d.ts
-│   │   │   │   │   ├── ClientModel.d.ts.map
-│   │   │   │   │   ├── ClientModel.js
-│   │   │   │   │   ├── ClientModel.js.map
-│   │   │   │   │   ├── ClientProfileModel.d.ts
-│   │   │   │   │   ├── ClientProfileModel.d.ts.map
-│   │   │   │   │   ├── ClientProfileModel.js
-│   │   │   │   │   ├── ClientProfileModel.js.map
-│   │   │   │   │   ├── CountryModel.d.ts
-│   │   │   │   │   ├── CountryModel.d.ts.map
-│   │   │   │   │   ├── CountryModel.js
-│   │   │   │   │   ├── CountryModel.js.map
-│   │   │   │   │   ├── CurrencyModel.d.ts
-│   │   │   │   │   ├── CurrencyModel.d.ts.map
-│   │   │   │   │   ├── CurrencyModel.js
-│   │   │   │   │   ├── CurrencyModel.js.map
-│   │   │   │   │   ├── EmployeeLicenseModel.d.ts
-│   │   │   │   │   ├── EmployeeLicenseModel.d.ts.map
-│   │   │   │   │   ├── EmployeeLicenseModel.js
-│   │   │   │   │   ├── EmployeeLicenseModel.js.map
-│   │   │   │   │   ├── ExchangeRateModel.d.ts
-│   │   │   │   │   ├── ExchangeRateModel.d.ts.map
-│   │   │   │   │   ├── ExchangeRateModel.js
-│   │   │   │   │   ├── ExchangeRateModel.js.map
-│   │   │   │   │   ├── FraudDetectionLogModel.d.ts
-│   │   │   │   │   ├── FraudDetectionLogModel.d.ts.map
-│   │   │   │   │   ├── FraudDetectionLogModel.js
-│   │   │   │   │   ├── FraudDetectionLogModel.js.map
-│   │   │   │   │   ├── GlobalLicenseModel.d.ts
-│   │   │   │   │   ├── GlobalLicenseModel.d.ts.map
-│   │   │   │   │   ├── GlobalLicenseModel.js
-│   │   │   │   │   ├── GlobalLicenseModel.js.map
-│   │   │   │   │   ├── LanguageModel.d.ts
-│   │   │   │   │   ├── LanguageModel.d.ts.map
-│   │   │   │   │   ├── LanguageModel.js
-│   │   │   │   │   ├── LanguageModel.js.map
-│   │   │   │   │   ├── LexiconModel.d.ts
-│   │   │   │   │   ├── LexiconModel.d.ts.map
-│   │   │   │   │   ├── LexiconModel.js
-│   │   │   │   │   ├── LexiconModel.js.map
-│   │   │   │   │   ├── LicenseAdjustmentModel.d.ts
-│   │   │   │   │   ├── LicenseAdjustmentModel.d.ts.map
-│   │   │   │   │   ├── LicenseAdjustmentModel.js
-│   │   │   │   │   ├── LicenseAdjustmentModel.js.map
-│   │   │   │   │   ├── PaymentMethodModel.d.ts
-│   │   │   │   │   ├── PaymentMethodModel.d.ts.map
-│   │   │   │   │   ├── PaymentMethodModel.js
-│   │   │   │   │   ├── PaymentMethodModel.js.map
-│   │   │   │   │   ├── PaymentTransactionModel.d.ts
-│   │   │   │   │   ├── PaymentTransactionModel.d.ts.map
-│   │   │   │   │   ├── PaymentTransactionModel.js
-│   │   │   │   │   ├── PaymentTransactionModel.js.map
-│   │   │   │   │   ├── TaxRuleModel.d.ts
-│   │   │   │   │   ├── TaxRuleModel.d.ts.map
-│   │   │   │   │   ├── TaxRuleModel.js
-│   │   │   │   │   ├── TaxRuleModel.js.map
-│   │   │   │   │   ├── TenantModel.d.ts
-│   │   │   │   │   ├── TenantModel.d.ts.map
-│   │   │   │   │   ├── TenantModel.js
-│   │   │   │   │   └── TenantModel.js.map
-│   │   │   │   └── routes
-│   │   │   │       ├── activity.monitoring.route.d.ts
-│   │   │   │       ├── activity.monitoring.route.d.ts.map
-│   │   │   │       ├── activity.monitoring.route.js
-│   │   │   │       ├── activity.monitoring.route.js.map
-│   │   │   │       ├── billing.cycle.route.d.ts
-│   │   │   │       ├── billing.cycle.route.d.ts.map
-│   │   │   │       ├── billing.cycle.route.js
-│   │   │   │       ├── billing.cycle.route.js.map
-│   │   │   │       ├── country.route.d.ts
-│   │   │   │       ├── country.route.d.ts.map
-│   │   │   │       ├── country.route.js
-│   │   │   │       ├── country.route.js.map
-│   │   │   │       ├── currency.route.d.ts
-│   │   │   │       ├── currency.route.d.ts.map
-│   │   │   │       ├── currency.route.js
-│   │   │   │       ├── currency.route.js.map
-│   │   │   │       ├── employee.license.route.d.ts
-│   │   │   │       ├── employee.license.route.d.ts.map
-│   │   │   │       ├── employee.license.route.js
-│   │   │   │       ├── employee.license.route.js.map
-│   │   │   │       ├── exchange.rate.route.d.ts
-│   │   │   │       ├── exchange.rate.route.d.ts.map
-│   │   │   │       ├── exchange.rate.route.js
-│   │   │   │       ├── exchange.rate.route.js.map
-│   │   │   │       ├── fraud.detection.log.route.d.ts
-│   │   │   │       ├── fraud.detection.log.route.d.ts.map
-│   │   │   │       ├── fraud.detection.log.route.js
-│   │   │   │       ├── fraud.detection.log.route.js.map
-│   │   │   │       ├── global.license.route.d.ts
-│   │   │   │       ├── global.license.route.d.ts.map
-│   │   │   │       ├── global.license.route.js
-│   │   │   │       ├── global.license.route.js.map
-│   │   │   │       ├── language.route.d.ts
-│   │   │   │       ├── language.route.d.ts.map
-│   │   │   │       ├── language.route.js
-│   │   │   │       ├── language.route.js.map
-│   │   │   │       ├── lexicon.route.d.ts
-│   │   │   │       ├── lexicon.route.d.ts.map
-│   │   │   │       ├── lexicon.route.js
-│   │   │   │       ├── lexicon.route.js.map
-│   │   │   │       ├── license.adjustment.route.d.ts
-│   │   │   │       ├── license.adjustment.route.d.ts.map
-│   │   │   │       ├── license.adjustment.route.js
-│   │   │   │       ├── license.adjustment.route.js.map
-│   │   │   │       ├── manager
-│   │   │   │       │   ├── billing.route.d.ts
-│   │   │   │       │   ├── billing.route.d.ts.map
-│   │   │   │       │   ├── billing.route.js
-│   │   │   │       │   ├── billing.route.js.map
-│   │   │   │       │   ├── fraud.route.d.ts
-│   │   │   │       │   ├── fraud.route.d.ts.map
-│   │   │   │       │   ├── fraud.route.js
-│   │   │   │       │   └── fraud.route.js.map
-│   │   │   │       ├── payment.method.route.d.ts
-│   │   │   │       ├── payment.method.route.d.ts.map
-│   │   │   │       ├── payment.method.route.js
-│   │   │   │       ├── payment.method.route.js.map
-│   │   │   │       ├── payment.transaction.route.d.ts
-│   │   │   │       ├── payment.transaction.route.d.ts.map
-│   │   │   │       ├── payment.transaction.route.js
-│   │   │   │       ├── payment.transaction.route.js.map
-│   │   │   │       ├── tax.rule.route.d.ts
-│   │   │   │       ├── tax.rule.route.d.ts.map
-│   │   │   │       ├── tax.rule.route.js
-│   │   │   │       ├── tax.rule.route.js.map
-│   │   │   │       ├── tenant.route.d.ts
-│   │   │   │       ├── tenant.route.d.ts.map
-│   │   │   │       ├── tenant.route.js
-│   │   │   │       └── tenant.route.js.map
-│   │   │   ├── server.d.ts
-│   │   │   ├── server.d.ts.map
-│   │   │   ├── server.js
-│   │   │   ├── server.js.map
-│   │   │   ├── temporaire_route
-│   │   │   │   ├── client.routes.d.ts
-│   │   │   │   ├── client.routes.d.ts.map
-│   │   │   │   ├── client.routes.js
-│   │   │   │   ├── client.routes.js.map
-│   │   │   │   ├── profile.routes.d.ts
-│   │   │   │   ├── profile.routes.d.ts.map
-│   │   │   │   ├── profile.routes.js
-│   │   │   │   └── profile.routes.js.map
-│   │   │   ├── tools
-│   │   │   │   ├── api-key-manager.d.ts
-│   │   │   │   ├── api-key-manager.d.ts.map
-│   │   │   │   ├── api-key-manager.js
-│   │   │   │   ├── api-key-manager.js.map
-│   │   │   │   ├── glossary.d.ts
-│   │   │   │   ├── glossary.d.ts.map
-│   │   │   │   ├── glossary.js
-│   │   │   │   ├── glossary.js.map
-│   │   │   │   ├── http-status.d.ts
-│   │   │   │   ├── http-status.d.ts.map
-│   │   │   │   ├── http-status.js
-│   │   │   │   ├── http-status.js.map
-│   │   │   │   ├── response.d.ts
-│   │   │   │   ├── response.d.ts.map
-│   │   │   │   ├── response.js
-│   │   │   │   ├── response.js.map
-│   │   │   │   ├── revision.d.ts
-│   │   │   │   ├── revision.d.ts.map
-│   │   │   │   ├── revision.js
-│   │   │   │   ├── revision.js.map
-│   │   │   │   ├── watcher.d.ts
-│   │   │   │   ├── watcher.d.ts.map
-│   │   │   │   ├── watcher.js
-│   │   │   │   └── watcher.js.map
-│   │   │   └── utils
-│   │   │       ├── encryption.d.ts
-│   │   │       ├── encryption.d.ts.map
-│   │   │       ├── encryption.js
-│   │   │       ├── encryption.js.map
-│   │   │       ├── extract.query.params.d.ts
-│   │   │       ├── extract.query.params.d.ts.map
-│   │   │       ├── extract.query.params.js
-│   │   │       ├── extract.query.params.js.map
-│   │   │       ├── generate.otp.d.ts
-│   │   │       ├── generate.otp.d.ts.map
-│   │   │       ├── generate.otp.js
-│   │   │       ├── generate.otp.js.map
-│   │   │       ├── regex.validator.d.ts
-│   │   │       ├── regex.validator.d.ts.map
-│   │   │       ├── regex.validator.js
-│   │   │       ├── regex.validator.js.map
-│   │   │       ├── response.model.d.ts
-│   │   │       ├── response.model.d.ts.map
-│   │   │       ├── response.model.js
-│   │   │       └── response.model.js.map
+│   │   ├── cache
+│   │   │   ├── clients.json
+│   │   │   └── tenants.json
 │   │   ├── docs
 │   │   │   ├── automatique migration avis .pdf
 │   │   │   ├── toke API.postman_collection.json
@@ -380,6 +19,7 @@
 │   │   │   ├── toke-syst-gestion-licences.html
 │   │   │   └── 🚀 Toké App Manager API.postman_collection.json
 │   │   ├── ecosystem.config.cjs
+│   │   ├── express.d.ts
 │   │   ├── logs
 │   │   ├── migrations
 │   │   │   ├── 20250909094204-add-computed-billing-status.cjs
@@ -401,9 +41,9 @@
 │   │   │   ├── test.ts
 │   │   │   └── testTokenGeneration.ts
 │   │   ├── src
-│   │   │   ├── app.ts
-│   │   │   ├── license
+│   │   │   ├── master
 │   │   │   │   ├── Project-structure.txt
+│   │   │   │   ├── app.ts
 │   │   │   │   ├── class
 │   │   │   │   │   ├── ActivityMonitoring.ts
 │   │   │   │   │   ├── BillingCycle.ts
@@ -445,9 +85,6 @@
 │   │   │   │   │   ├── db.config.ts
 │   │   │   │   │   ├── db.initializer.ts
 │   │   │   │   │   └── migration.config.cjs
-│   │   │   │   ├── middle
-│   │   │   │   │   ├── ensured-routes.ts
-│   │   │   │   │   └── server-auth.ts
 │   │   │   │   ├── model
 │   │   │   │   │   ├── ActivityMonitoringModel.ts
 │   │   │   │   │   ├── BillingCycleModel.ts
@@ -466,40 +103,106 @@
 │   │   │   │   │   ├── PaymentTransactionModel.ts
 │   │   │   │   │   ├── TaxRuleModel.ts
 │   │   │   │   │   └── TenantModel.ts
-│   │   │   │   └── routes
-│   │   │   │       ├── activity.monitoring.route.ts
-│   │   │   │       ├── billing.cycle.route.ts
-│   │   │   │       ├── country.route.ts
-│   │   │   │       ├── currency.route.ts
-│   │   │   │       ├── employee.license.route.ts
-│   │   │   │       ├── exchange.rate.route.ts
-│   │   │   │       ├── fraud.detection.log.route.ts
-│   │   │   │       ├── global.license.route.ts
-│   │   │   │       ├── language.route.ts
-│   │   │   │       ├── lexicon.route.ts
-│   │   │   │       ├── license.adjustment.route.ts
-│   │   │   │       ├── manager
-│   │   │   │       │   ├── billing.route.ts
-│   │   │   │       │   └── fraud.route.ts
-│   │   │   │       ├── payment.method.route.ts
-│   │   │   │       ├── payment.transaction.route.ts
-│   │   │   │       ├── tax.rule.route.ts
-│   │   │   │       └── tenant.route.ts
-│   │   │   ├── server.ts
+│   │   │   │   ├── routes
+│   │   │   │   │   ├── activity.monitoring.route.ts
+│   │   │   │   │   ├── billing.cycle.route.ts
+│   │   │   │   │   ├── country.route.ts
+│   │   │   │   │   ├── currency.route.ts
+│   │   │   │   │   ├── employee.license.route.ts
+│   │   │   │   │   ├── exchange.rate.route.ts
+│   │   │   │   │   ├── fraud.detection.log.route.ts
+│   │   │   │   │   ├── global.license.route.ts
+│   │   │   │   │   ├── language.route.ts
+│   │   │   │   │   ├── lexicon.route.ts
+│   │   │   │   │   ├── license.adjustment.route.ts
+│   │   │   │   │   ├── manager
+│   │   │   │   │   │   ├── billing.route.ts
+│   │   │   │   │   │   └── fraud.route.ts
+│   │   │   │   │   ├── payment.method.route.ts
+│   │   │   │   │   ├── payment.transaction.route.ts
+│   │   │   │   │   ├── tax.rule.route.ts
+│   │   │   │   │   └── tenant.route.ts
+│   │   │   │   └── server.ts
+│   │   │   ├── middle
+│   │   │   │   ├── ensured-routes.ts
+│   │   │   │   ├── server-auth.ts
+│   │   │   │   ├── tenant.middleware.ts
+│   │   │   │   └── user-auth.ts
 │   │   │   ├── temporaire_route
 │   │   │   │   ├── client.routes.ts
 │   │   │   │   └── profile.routes.ts
+│   │   │   ├── tenant
+│   │   │   │   ├── app.ts
+│   │   │   │   ├── class
+│   │   │   │   │   ├── AuditLogs.ts
+│   │   │   │   │   ├── Memos.ts
+│   │   │   │   │   ├── OrgHierarchy.ts
+│   │   │   │   │   ├── Role.ts
+│   │   │   │   │   ├── Site.ts
+│   │   │   │   │   ├── TimeEntries.ts
+│   │   │   │   │   ├── User.ts
+│   │   │   │   │   ├── UserRole.ts
+│   │   │   │   │   └── WorkSessions.ts
+│   │   │   │   ├── database
+│   │   │   │   │   ├── data
+│   │   │   │   │   │   ├── audit.logs.db.ts
+│   │   │   │   │   │   ├── fraud.alerts.db.ts
+│   │   │   │   │   │   ├── memos.db.ts
+│   │   │   │   │   │   ├── org.hierarchy.db.ts
+│   │   │   │   │   │   ├── roles.db.ts
+│   │   │   │   │   │   ├── sites.db.ts
+│   │   │   │   │   │   ├── time.entries.db.ts
+│   │   │   │   │   │   ├── user.roles.db.ts
+│   │   │   │   │   │   ├── users.db.ts
+│   │   │   │   │   │   └── work.sessions.db.ts
+│   │   │   │   │   ├── db.base.ts
+│   │   │   │   │   ├── db.config.ts
+│   │   │   │   │   ├── db.initializer.ts
+│   │   │   │   │   └── db.tenant-manager.ts
+│   │   │   │   ├── model
+│   │   │   │   │   ├── AuditLogsModel.ts
+│   │   │   │   │   ├── MemosModel.ts
+│   │   │   │   │   ├── OrgHierarchyModel.ts
+│   │   │   │   │   ├── RoleModel.ts
+│   │   │   │   │   ├── SiteModel.ts
+│   │   │   │   │   ├── TimeEntriesModel.ts
+│   │   │   │   │   ├── UserModel.ts
+│   │   │   │   │   ├── UserRoleModel.ts
+│   │   │   │   │   └── WorkSessionsModel.ts
+│   │   │   │   ├── routes
+│   │   │   │   │   ├── audit.logs.route.ts
+│   │   │   │   │   ├── fraud.alerts.route.ts
+│   │   │   │   │   ├── memos.route.ts
+│   │   │   │   │   ├── org.hierarchy.route.ts
+│   │   │   │   │   ├── roles.route.ts
+│   │   │   │   │   ├── sites.route.ts
+│   │   │   │   │   ├── time.entries.route.ts
+│   │   │   │   │   ├── user.role.route.ts
+│   │   │   │   │   ├── user.route.ts
+│   │   │   │   │   └── work.sessions.route.ts
+│   │   │   │   └── server.ts
 │   │   │   ├── tools
 │   │   │   │   ├── api-key-manager.ts
+│   │   │   │   ├── client.cache.service.ts
+│   │   │   │   ├── credential-extractor.service.ts
 │   │   │   │   ├── glossary.ts
 │   │   │   │   ├── http-status.ts
+│   │   │   │   ├── otp-cache.service.ts
 │   │   │   │   ├── response.ts
 │   │   │   │   ├── revision.ts
+│   │   │   │   ├── send.otp.service.ts
+│   │   │   │   ├── tenant-cache.service.ts
+│   │   │   │   ├── tenant.otp.manager.ts
 │   │   │   │   └── watcher.ts
 │   │   │   └── utils
+│   │   │       ├── axios.config.ts
+│   │   │       ├── docs
+│   │   │       │   └── Liste des Fonctionnalités à Implémenter.odt
 │   │   │       ├── encryption.ts
 │   │   │       ├── extract.query.params.ts
+│   │   │       ├── generate.database.ts
 │   │   │       ├── generate.otp.ts
+│   │   │       ├── generate.tenant.config.ts
 │   │   │       ├── regex.validator.ts
 │   │   │       └── response.model.ts
 │   │   └── tsconfig.json
@@ -522,12 +225,14 @@
 │   │   │   │   │   └── toké-icon-01.svg
 │   │   │   │   └── main.css
 │   │   │   ├── composables
+│   │   │   │   ├── useCountries.js
 │   │   │   │   ├── useCountries.ts
 │   │   │   │   └── useNotifications.ts
 │   │   │   ├── env.d.ts
 │   │   │   ├── main.ts
 │   │   │   ├── router.ts
 │   │   │   ├── services
+│   │   │   │   ├── api.service.js
 │   │   │   │   ├── api.service.ts
 │   │   │   │   └── countries.service.ts
 │   │   │   ├── stores
@@ -618,6 +323,47 @@
 │   │   │   │   ├── tax.rule.d.ts.map
 │   │   │   │   ├── tax.rule.js
 │   │   │   │   ├── tax.rule.js.map
+│   │   │   │   ├── tenant
+│   │   │   │   │   ├── audit.logs.d.ts
+│   │   │   │   │   ├── audit.logs.d.ts.map
+│   │   │   │   │   ├── audit.logs.js
+│   │   │   │   │   ├── audit.logs.js.map
+│   │   │   │   │   ├── fraud.alerts.d.ts
+│   │   │   │   │   ├── fraud.alerts.d.ts.map
+│   │   │   │   │   ├── fraud.alerts.js
+│   │   │   │   │   ├── fraud.alerts.js.map
+│   │   │   │   │   ├── memos.d.ts
+│   │   │   │   │   ├── memos.d.ts.map
+│   │   │   │   │   ├── memos.js
+│   │   │   │   │   ├── memos.js.map
+│   │   │   │   │   ├── org.hierarchy.d.ts
+│   │   │   │   │   ├── org.hierarchy.d.ts.map
+│   │   │   │   │   ├── org.hierarchy.js
+│   │   │   │   │   ├── org.hierarchy.js.map
+│   │   │   │   │   ├── roles.d.ts
+│   │   │   │   │   ├── roles.d.ts.map
+│   │   │   │   │   ├── roles.js
+│   │   │   │   │   ├── roles.js.map
+│   │   │   │   │   ├── sites.d.ts
+│   │   │   │   │   ├── sites.d.ts.map
+│   │   │   │   │   ├── sites.js
+│   │   │   │   │   ├── sites.js.map
+│   │   │   │   │   ├── time.entries.d.ts
+│   │   │   │   │   ├── time.entries.d.ts.map
+│   │   │   │   │   ├── time.entries.js
+│   │   │   │   │   ├── time.entries.js.map
+│   │   │   │   │   ├── user.roles.d.ts
+│   │   │   │   │   ├── user.roles.d.ts.map
+│   │   │   │   │   ├── user.roles.js
+│   │   │   │   │   ├── user.roles.js.map
+│   │   │   │   │   ├── users.d.ts
+│   │   │   │   │   ├── users.d.ts.map
+│   │   │   │   │   ├── users.js
+│   │   │   │   │   ├── users.js.map
+│   │   │   │   │   ├── work.sessions.d.ts
+│   │   │   │   │   ├── work.sessions.d.ts.map
+│   │   │   │   │   ├── work.sessions.js
+│   │   │   │   │   └── work.sessions.js.map
 │   │   │   │   ├── tenant.d.ts
 │   │   │   │   ├── tenant.d.ts.map
 │   │   │   │   ├── tenant.js
@@ -687,6 +433,51 @@
 │   │   │   │   ├── tax.rule.d.ts.map
 │   │   │   │   ├── tax.rule.js
 │   │   │   │   ├── tax.rule.js.map
+│   │   │   │   ├── tenant
+│   │   │   │   │   ├── audit.logs.d.ts
+│   │   │   │   │   ├── audit.logs.d.ts.map
+│   │   │   │   │   ├── audit.logs.js
+│   │   │   │   │   ├── audit.logs.js.map
+│   │   │   │   │   ├── fraud.alerts.d.ts
+│   │   │   │   │   ├── fraud.alerts.d.ts.map
+│   │   │   │   │   ├── fraud.alerts.js
+│   │   │   │   │   ├── fraud.alerts.js.map
+│   │   │   │   │   ├── memos.d.ts
+│   │   │   │   │   ├── memos.d.ts.map
+│   │   │   │   │   ├── memos.js
+│   │   │   │   │   ├── memos.js.map
+│   │   │   │   │   ├── org.hierarchy.d.ts
+│   │   │   │   │   ├── org.hierarchy.d.ts.map
+│   │   │   │   │   ├── org.hierarchy.js
+│   │   │   │   │   ├── org.hierarchy.js.map
+│   │   │   │   │   ├── roles.d.ts
+│   │   │   │   │   ├── roles.d.ts.map
+│   │   │   │   │   ├── roles.js
+│   │   │   │   │   ├── roles.js.map
+│   │   │   │   │   ├── sites.d.ts
+│   │   │   │   │   ├── sites.d.ts.map
+│   │   │   │   │   ├── sites.js
+│   │   │   │   │   ├── sites.js.map
+│   │   │   │   │   ├── time.entries.d.ts
+│   │   │   │   │   ├── time.entries.d.ts.map
+│   │   │   │   │   ├── time.entries.js
+│   │   │   │   │   ├── time.entries.js.map
+│   │   │   │   │   ├── user.roles.d.ts
+│   │   │   │   │   ├── user.roles.d.ts.map
+│   │   │   │   │   ├── user.roles.js
+│   │   │   │   │   ├── user.roles.js.map
+│   │   │   │   │   ├── users.d.ts
+│   │   │   │   │   ├── users.d.ts.map
+│   │   │   │   │   ├── users.js
+│   │   │   │   │   ├── users.js.map
+│   │   │   │   │   ├── work.sessions.d.ts
+│   │   │   │   │   ├── work.sessions.d.ts.map
+│   │   │   │   │   ├── work.sessions.js
+│   │   │   │   │   ├── work.sessions.js.map
+│   │   │   │   │   ├── work_sessions.d.ts
+│   │   │   │   │   ├── work_sessions.d.ts.map
+│   │   │   │   │   ├── work_sessions.js
+│   │   │   │   │   └── work_sessions.js.map
 │   │   │   │   ├── tenant.d.ts
 │   │   │   │   ├── tenant.d.ts.map
 │   │   │   │   ├── tenant.js
@@ -724,6 +515,11 @@
 │   │   │   │   ├── tax.rule.d.ts.map
 │   │   │   │   ├── tax.rule.js
 │   │   │   │   ├── tax.rule.js.map
+│   │   │   │   ├── tenant
+│   │   │   │   │   ├── work.sessions.d.ts
+│   │   │   │   │   ├── work.sessions.d.ts.map
+│   │   │   │   │   ├── work.sessions.js
+│   │   │   │   │   └── work.sessions.js.map
 │   │   │   │   ├── tenant.d.ts
 │   │   │   │   ├── tenant.d.ts.map
 │   │   │   │   ├── tenant.js
@@ -793,6 +589,47 @@
 │   │   │       ├── tax.rule.validation.d.ts.map
 │   │   │       ├── tax.rule.validation.js
 │   │   │       ├── tax.rule.validation.js.map
+│   │   │       ├── tenant
+│   │   │       │   ├── audit.logs.validation.d.ts
+│   │   │       │   ├── audit.logs.validation.d.ts.map
+│   │   │       │   ├── audit.logs.validation.js
+│   │   │       │   ├── audit.logs.validation.js.map
+│   │   │       │   ├── fraud.alerts.validation.d.ts
+│   │   │       │   ├── fraud.alerts.validation.d.ts.map
+│   │   │       │   ├── fraud.alerts.validation.js
+│   │   │       │   ├── fraud.alerts.validation.js.map
+│   │   │       │   ├── memos.validation.d.ts
+│   │   │       │   ├── memos.validation.d.ts.map
+│   │   │       │   ├── memos.validation.js
+│   │   │       │   ├── memos.validation.js.map
+│   │   │       │   ├── org.hierarchy.validation.d.ts
+│   │   │       │   ├── org.hierarchy.validation.d.ts.map
+│   │   │       │   ├── org.hierarchy.validation.js
+│   │   │       │   ├── org.hierarchy.validation.js.map
+│   │   │       │   ├── roles.validation.d.ts
+│   │   │       │   ├── roles.validation.d.ts.map
+│   │   │       │   ├── roles.validation.js
+│   │   │       │   ├── roles.validation.js.map
+│   │   │       │   ├── sites.validation.d.ts
+│   │   │       │   ├── sites.validation.d.ts.map
+│   │   │       │   ├── sites.validation.js
+│   │   │       │   ├── sites.validation.js.map
+│   │   │       │   ├── time.entries.validation.d.ts
+│   │   │       │   ├── time.entries.validation.d.ts.map
+│   │   │       │   ├── time.entries.validation.js
+│   │   │       │   ├── time.entries.validation.js.map
+│   │   │       │   ├── user.roles.validation.d.ts
+│   │   │       │   ├── user.roles.validation.d.ts.map
+│   │   │       │   ├── user.roles.validation.js
+│   │   │       │   ├── user.roles.validation.js.map
+│   │   │       │   ├── users.validation.d.ts
+│   │   │       │   ├── users.validation.d.ts.map
+│   │   │       │   ├── users.validation.js
+│   │   │       │   ├── users.validation.js.map
+│   │   │       │   ├── work.sessions.validation.d.ts
+│   │   │       │   ├── work.sessions.validation.d.ts.map
+│   │   │       │   ├── work.sessions.validation.js
+│   │   │       │   └── work.sessions.validation.js.map
 │   │   │       ├── tenant.validation.d.ts
 │   │   │       ├── tenant.validation.d.ts.map
 │   │   │       ├── tenant.validation.js
@@ -817,6 +654,17 @@
 │   │   │   │   ├── payment.method.ts
 │   │   │   │   ├── payment.transaction.ts
 │   │   │   │   ├── tax.rule.ts
+│   │   │   │   ├── tenant
+│   │   │   │   │   ├── audit.logs.ts
+│   │   │   │   │   ├── fraud.alerts.ts
+│   │   │   │   │   ├── memos.ts
+│   │   │   │   │   ├── org.hierarchy.ts
+│   │   │   │   │   ├── roles.ts
+│   │   │   │   │   ├── sites.ts
+│   │   │   │   │   ├── time.entries.ts
+│   │   │   │   │   ├── user.roles.ts
+│   │   │   │   │   ├── users.ts
+│   │   │   │   │   └── work.sessions.ts
 │   │   │   │   └── tenant.ts
 │   │   │   ├── index.ts
 │   │   │   ├── schemas
@@ -835,6 +683,17 @@
 │   │   │   │   ├── payment.method.ts
 │   │   │   │   ├── payment.transaction.ts
 │   │   │   │   ├── tax.rule.ts
+│   │   │   │   ├── tenant
+│   │   │   │   │   ├── audit.logs.ts
+│   │   │   │   │   ├── fraud.alerts.ts
+│   │   │   │   │   ├── memos.ts
+│   │   │   │   │   ├── org.hierarchy.ts
+│   │   │   │   │   ├── roles.ts
+│   │   │   │   │   ├── sites.ts
+│   │   │   │   │   ├── time.entries.ts
+│   │   │   │   │   ├── user.roles.ts
+│   │   │   │   │   ├── users.ts
+│   │   │   │   │   └── work.sessions.ts
 │   │   │   │   └── tenant.ts
 │   │   │   ├── types
 │   │   │   │   ├── common.ts
@@ -843,9 +702,10 @@
 │   │   │   │   ├── exchange.rate.ts
 │   │   │   │   ├── global.license.ts
 │   │   │   │   ├── index.js.ts
-│   │   │   │   ├── language.js
 │   │   │   │   ├── language.ts
 │   │   │   │   ├── tax.rule.ts
+│   │   │   │   ├── tenant
+│   │   │   │   │   └── work.sessions.ts
 │   │   │   │   └── tenant.ts
 │   │   │   └── utils
 │   │   │       ├── activity.monitoring.validation.ts
@@ -864,9 +724,20 @@
 │   │   │       ├── payment.method.validation.ts
 │   │   │       ├── payment.transaction.validation.ts
 │   │   │       ├── tax.rule.validation.ts
+│   │   │       ├── tenant
+│   │   │       │   ├── audit.logs.validation.ts
+│   │   │       │   ├── fraud.alerts.validation.ts
+│   │   │       │   ├── memos.validation.ts
+│   │   │       │   ├── org.hierarchy.validation.ts
+│   │   │       │   ├── roles.validation.ts
+│   │   │       │   ├── sites.validation.ts
+│   │   │       │   ├── time.entries.validation.ts
+│   │   │       │   ├── user.roles.validation.ts
+│   │   │       │   ├── users.validation.ts
+│   │   │       │   └── work.sessions.validation.ts
 │   │   │       └── tenant.validation.ts
 │   │   └── tsconfig.json
 │   └── test.js
 └── tsconfig.json
 
-55 directories, 815 files
+59 directories, 682 files
