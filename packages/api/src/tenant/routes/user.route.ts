@@ -5,8 +5,10 @@ import {
   HttpStatus,
   ORG_HIERARCHY_DEFAULTS,
   paginationSchema,
+  PointageType,
   ROLES_CODES,
   ROLES_ERRORS,
+  SITES_ERRORS,
   TENANT_CODES,
   USERS_CODES,
   USERS_ERRORS,
@@ -14,18 +16,24 @@ import {
   validateUsersCreation,
   validateUsersFilters,
   validateUsersUpdate,
+  WORK_SESSIONS_CODES,
+  WORK_SESSIONS_ERRORS,
+  WorkSessionsValidationUtils,
 } from '@toke/shared';
+import { Op } from 'sequelize';
 
 import Ensure from '../../middle/ensured-routes.js';
 import R from '../../tools/response.js';
 import User from '../class/User.js';
 import UserRole from '../class/UserRole.js';
 import Revision from '../../tools/revision.js';
-import { tableName } from '../../utils/response.model.js';
+import { responseValue, tableName } from '../../utils/response.model.js';
 import Role from '../class/Role.js';
 import OrgHierarchy from '../class/OrgHierarchy.js';
 import { DatabaseEncryption } from '../../utils/encryption.js';
 import WapService from '../../tools/send.otp.service.js';
+import WorkSessions from '../class/WorkSessions.js';
+import Site from '../class/Site.js';
 
 const router = Router();
 
@@ -1154,9 +1162,12 @@ router.patch('/:guid/status', Ensure.patch(), async (req: Request, res: Response
   }
 });
 
+// ⚡ Get real-time list of employees currently checked in with active work sessions
 router.get('/attendance/active-sessions', Ensure.get(), async (req: Request, res: Response) => {
   try {
     const { manager } = req.query;
+
+    // Validation du GUID du manager
     if (!manager || !UsersValidationUtils.validateGuid(String(manager))) {
       return R.handleError(res, HttpStatus.BAD_REQUEST, {
         code: USERS_CODES.VALIDATION_FAILED,
@@ -1164,6 +1175,7 @@ router.get('/attendance/active-sessions', Ensure.get(), async (req: Request, res
       });
     }
 
+    // Charger le manager
     const userObj = await User._load(String(manager), true);
     if (!userObj) {
       return R.handleError(res, HttpStatus.NOT_FOUND, {
@@ -1172,11 +1184,596 @@ router.get('/attendance/active-sessions', Ensure.get(), async (req: Request, res
       });
     }
 
+    const isManage = await UserRole.isManager(userObj.getId()!);
+
+    if (!isManage) {
+      return R.handleError(res, HttpStatus.UNAUTHORIZED, {
+        code: USERS_CODES.AUTHORIZATION_FAILED,
+        message: USERS_ERRORS.AUTHORIZATION_FAILED,
+      });
+    }
+
+    // Récupérer les rôles des subordonnés assignés par ce manager
     const userRolesSub = await UserRole._listByAssignedBy(userObj.getId()!);
+
+    if (!userRolesSub || userRolesSub.length === 0) {
+      return R.handleError(res, HttpStatus.NOT_FOUND, {
+        code: 'subordinate_not_found',
+        message: 'No subordinates found for this manager',
+      });
+    }
+
+    // Récupérer les IDs des subordonnés
+    const subordinateIds: number[] = [];
+    await Promise.all(
+      userRolesSub.map(async (userRole) => {
+        const userRoleId = userRole.getUser();
+        if (userRoleId) {
+          subordinateIds.push(userRoleId);
+        }
+      }),
+    );
+
+    if (subordinateIds.length === 0) {
+      return R.handleSuccess(res, {
+        code: 'ACTIVE_SESSIONS_RETRIEVED',
+        message: 'No active sessions found',
+        data: {
+          manager: userObj.toJSON(),
+          total_subordinates: 0,
+          active_sessions_count: 0,
+          active_sessions: [],
+        },
+      });
+    }
+
+    // Récupérer toutes les sessions actives pour ces subordonnés
+    const allActiveSessions: any[] = [];
+
+    await Promise.all(
+      subordinateIds.map(async (userId) => {
+        const activeSession = await WorkSessions._findActiveSessionByUser(userId);
+        if (activeSession) {
+          // Enrichir avec les informations de l'employé
+          const employee = await User._load(userId);
+          const sessionData = await activeSession.toJSON(responseValue.FULL);
+
+          // Informations de statut détaillées
+          const pauseStatus = await activeSession.getPauseStatusDetailed();
+          const lastEntry = await activeSession.LastEntry();
+          const hasActiveMission = await activeSession.activeMission();
+
+          allActiveSessions.push({
+            ...sessionData,
+            employee: employee ? employee.toJSON() : null,
+            pause_status: pauseStatus,
+            last_activity: lastEntry
+              ? {
+                  type: lastEntry.pointage_type,
+                  timestamp: lastEntry.clocked_at,
+                  location: lastEntry.location_name,
+                }
+              : null,
+            is_on_external_mission: hasActiveMission,
+          });
+        }
+      }),
+    );
+
+    // Trier par heure de début de session (plus récent en premier)
+    allActiveSessions.sort((a, b) => {
+      const dateA = new Date(a.session_start_at).getTime();
+      const dateB = new Date(b.session_start_at).getTime();
+      return dateB - dateA;
+    });
+
+    // Statistiques supplémentaires
+    const statistics = {
+      total_active: allActiveSessions.length,
+      on_pause: allActiveSessions.filter((s) => s.pause_status.is_on_pause).length,
+      on_mission: allActiveSessions.filter((s) => s.is_on_external_mission).length,
+      working: allActiveSessions.filter(
+        (s) => !s.pause_status.is_on_pause && !s.is_on_external_mission,
+      ).length,
+    };
+
+    return R.handleSuccess(res, {
+      message: 'Active sessions retrieved successfully',
+      data: {
+        manager: userObj.toJSON(),
+        total_subordinates: subordinateIds.length,
+        active_sessions_count: allActiveSessions.length,
+        statistics,
+        active_sessions: allActiveSessions,
+      },
+    });
   } catch (error: any) {
     return R.handleError(res, HttpStatus.INTERNAL_ERROR, {
-      code: USERS_CODES.LISTING_FAILED,
-      message: error.message,
+      code: 'ACTIVE_SESSIONS_RETRIEVAL_FAILED',
+      message: error.message || 'Failed to retrieve active sessions',
+    });
+  }
+});
+
+// === RÉSUMÉ DE PRÉSENCE DU JOUR ===
+// 📊 Complete overview of today's attendance including check-ins, check-outs, and absences
+router.get('/attendance/today', Ensure.get(), async (req: Request, res: Response) => {
+  try {
+    const { manager, site } = req.query;
+
+    // Définir le début et la fin de la journée
+    const startOfDay = new Date();
+    startOfDay.setHours(0, 0, 0, 0);
+
+    const endOfDay = new Date();
+    endOfDay.setHours(23, 59, 59, 999);
+
+    // Construire les conditions de recherche
+    const conditions: Record<string, any> = {
+      session_start_at: {
+        [Op.between]: [startOfDay, endOfDay],
+      },
+    };
+
+    let subordinateIds: number[] | null = null;
+    let managerObj: User | null = null;
+    let siteObj: Site | null = null;
+
+    // Si un manager est spécifié, filtrer par ses subordonnés
+    if (manager) {
+      if (!UsersValidationUtils.validateGuid(String(manager))) {
+        return R.handleError(res, HttpStatus.BAD_REQUEST, {
+          code: USERS_CODES.VALIDATION_FAILED,
+          message: USERS_ERRORS.GUID_INVALID,
+        });
+      }
+
+      managerObj = await User._load(String(manager), true);
+      if (!managerObj) {
+        return R.handleError(res, HttpStatus.NOT_FOUND, {
+          code: USERS_CODES.SUPERVISOR_NOT_FOUND,
+          message: USERS_ERRORS.SUPERVISOR_NOT_FOUND,
+        });
+      }
+
+      const userRolesSub = await UserRole._listByAssignedBy(managerObj.getId()!);
+      if (userRolesSub && userRolesSub.length > 0) {
+        subordinateIds = [];
+        userRolesSub.forEach((userRole) => {
+          const userId = userRole.getUser();
+          if (userId) subordinateIds!.push(userId);
+        });
+
+        conditions.user = { [Op.in]: subordinateIds };
+      } else {
+        subordinateIds = [];
+      }
+    }
+
+    // Si un site est spécifié
+    if (site) {
+      if (!WorkSessionsValidationUtils.validateGuid(String(site))) {
+        return R.handleError(res, HttpStatus.BAD_REQUEST, {
+          code: WORK_SESSIONS_CODES.INVALID_GUID,
+          message: WORK_SESSIONS_ERRORS.GUID_INVALID,
+        });
+      }
+
+      siteObj = await Site._load(String(site), true);
+      if (!siteObj) {
+        return R.handleError(res, HttpStatus.NOT_FOUND, {
+          code: WORK_SESSIONS_CODES.SITE_NOT_FOUND,
+          message: SITES_ERRORS.NOT_FOUND,
+        });
+      }
+
+      conditions.site = siteObj.getId();
+    }
+
+    // Récupérer toutes les sessions du jour
+    const todaySessions = await WorkSessions._list(conditions);
+
+    // Enrichir les données
+    const enrichedSessions: any[] = [];
+    const activeCheckIns: any[] = [];
+    const completedCheckOuts: any[] = [];
+    let totalWorkHours = 0;
+
+    if (todaySessions) {
+      await Promise.all(
+        todaySessions.map(async (session) => {
+          const employee = await User._load(session.getUser()!);
+          const sessionSite = await Site._load(session.getSite()!);
+          const sessionData = await session.toJSON(responseValue.MINIMAL);
+
+          const enrichedSession = {
+            ...sessionData,
+            employee: employee ? employee.toJSON() : null,
+            site: sessionSite ? await sessionSite.toJSON(responseValue.MINIMAL) : null,
+          };
+
+          enrichedSessions.push(enrichedSession);
+
+          // Classer les sessions
+          if (session.isActive()) {
+            const pauseStatus = await session.getPauseStatusDetailed();
+            const lastEntry = await session.LastEntry();
+            const hasActiveMission = await session.activeMission();
+
+            activeCheckIns.push({
+              ...enrichedSession,
+              pause_status: pauseStatus,
+              last_activity: lastEntry
+                ? {
+                    type: lastEntry.pointage_type,
+                    timestamp: lastEntry.clocked_at,
+                  }
+                : null,
+              is_on_external_mission: hasActiveMission,
+            });
+          } else if (session.isClosed()) {
+            completedCheckOuts.push(enrichedSession);
+
+            // Calculer les heures travaillées
+            if (session.getTotalWorkDuration()) {
+              const matches = session
+                .getTotalWorkDuration()!
+                .match(/(\d+)\s*hours?\s*(\d+)?\s*minutes?/);
+              if (matches) {
+                const hours = parseInt(matches[1]) || 0;
+                const minutes = parseInt(matches[2]) || 0;
+                totalWorkHours += hours + minutes / 60;
+              }
+            }
+          }
+        }),
+      );
+    }
+
+    // Calculer les absences (si on filtre par manager)
+    let absences: any[] = [];
+    if (subordinateIds !== null) {
+      const presentUserIds = new Set(todaySessions?.map((s) => s.getUser()) || []);
+
+      await Promise.all(
+        subordinateIds.map(async (userId) => {
+          if (!presentUserIds.has(userId)) {
+            const employee = await User._load(userId);
+            if (employee) {
+              absences.push({
+                employee: employee.toJSON(),
+                status: 'absent',
+                last_seen: null, // TODO: Récupérer la dernière session
+              });
+            }
+          }
+        }),
+      );
+    }
+
+    // Statistiques globales
+    const statistics = {
+      total_employees: subordinateIds ? subordinateIds.length : enrichedSessions.length,
+      present_count: enrichedSessions.length,
+      absent_count: absences.length,
+      active_now: activeCheckIns.length,
+      checked_out: completedCheckOuts.length,
+      on_pause: activeCheckIns.filter((s) => s.pause_status?.is_on_pause).length,
+      on_mission: activeCheckIns.filter((s) => s.is_on_external_mission).length,
+      total_work_hours: totalWorkHours.toFixed(2),
+      average_work_hours:
+        enrichedSessions.length > 0
+          ? (totalWorkHours / completedCheckOuts.length).toFixed(2)
+          : '0.00',
+    };
+
+    // Grouper par site si plusieurs sites
+    const sessionsBySite: Record<string, any> = {};
+    if (!site && todaySessions) {
+      for (const session of todaySessions) {
+        const siteId = session.getSite();
+        if (siteId) {
+          if (!sessionsBySite[siteId]) {
+            const siteData = await Site._load(siteId);
+            sessionsBySite[siteId] = {
+              site: siteData ? await siteData.toJSON(responseValue.MINIMAL) : null,
+              sessions_count: 0,
+              active_count: 0,
+            };
+          }
+          sessionsBySite[siteId].sessions_count++;
+          if (session.isActive()) {
+            sessionsBySite[siteId].active_count++;
+          }
+        }
+      }
+    }
+
+    return R.handleSuccess(res, {
+      message: "Today's attendance summary retrieved successfully",
+      data: {
+        date: startOfDay.toISOString().split('T')[0],
+        manager: managerObj ? managerObj.toJSON() : null,
+        site_filter: siteObj ? await siteObj.toJSON(responseValue.MINIMAL) : null,
+        statistics,
+        active_check_ins: activeCheckIns,
+        completed_check_outs: completedCheckOuts,
+        absences,
+        sessions_by_site:
+          Object.keys(sessionsBySite).length > 0 ? Object.values(sessionsBySite) : null,
+        all_sessions: enrichedSessions,
+      },
+    });
+  } catch (error: any) {
+    return R.handleError(res, HttpStatus.INTERNAL_ERROR, {
+      code: 'today_attendance_retrieval_failed',
+      message: error.message || "Failed to retrieve today's attendance",
+    });
+  }
+});
+
+// === SESSION ACTUELLE PAR EMPLOYÉ ===
+// 🔍 Get detailed current work session for specific employee with timing and location
+router.get(
+  '/attendance/employee/:guid/current',
+  Ensure.get(),
+  async (req: Request, res: Response) => {
+    try {
+      const { guid } = req.params;
+
+      // Validation du GUID
+      if (!UsersValidationUtils.validateGuid(guid)) {
+        return R.handleError(res, HttpStatus.BAD_REQUEST, {
+          code: USERS_CODES.VALIDATION_FAILED,
+          message: USERS_ERRORS.GUID_INVALID,
+        });
+      }
+
+      // Charger l'employé
+      const employee = await User._load(guid, true);
+      if (!employee) {
+        return R.handleError(res, HttpStatus.NOT_FOUND, {
+          code: USERS_CODES.USER_NOT_FOUND,
+          message: USERS_ERRORS.NOT_FOUND,
+        });
+      }
+
+      // Récupérer la session active
+      const activeSession = await WorkSessions._findActiveSessionByUser(employee.getId()!);
+
+      if (!activeSession) {
+        return R.handleSuccess(res, {
+          message: 'Employee has no active session',
+          data: {
+            employee: employee.toJSON(),
+            has_active_session: false,
+            last_session: null, // TODO: Récupérer la dernière session
+          },
+        });
+      }
+
+      // Enrichir les données de la session
+      const sessionData = await activeSession.toJSON(responseValue.FULL);
+      const pauseStatus = await activeSession.getPauseStatusDetailed();
+      const lastEntry = await activeSession.LastEntry();
+      const hasActiveMission = await activeSession.activeMission();
+      const pauseDetails = await activeSession.getPauseDetails();
+
+      // Calculer la durée actuelle de travail
+      const startTime = activeSession.getSessionStartAt();
+      const currentTime = new Date();
+      const workDurationMs = startTime ? currentTime.getTime() - startTime.getTime() : 0;
+      const workHours = Math.floor(workDurationMs / (1000 * 60 * 60));
+      const workMinutes = Math.floor((workDurationMs % (1000 * 60 * 60)) / (1000 * 60));
+
+      // Calculer temps de pause total
+      const totalPauseMinutes = await activeSession.getTotalPauseTime();
+
+      // Temps de travail net (sans les pauses)
+      const netWorkMinutes = Math.floor(workDurationMs / (1000 * 60)) - totalPauseMinutes;
+      const netWorkHours = Math.floor(netWorkMinutes / 60);
+      const netWorkRemainingMinutes = netWorkMinutes % 60;
+
+      // Récupérer le site
+      const siteObj = await activeSession.getSiteObj();
+
+      return R.handleSuccess(res, {
+        message: 'Current session retrieved successfully',
+        data: {
+          employee: employee.toJSON(),
+          has_active_session: true,
+          session: {
+            ...sessionData,
+            site: siteObj ? await siteObj.toJSON(responseValue.MINIMAL) : null,
+          },
+          current_status: {
+            is_working: !pauseStatus.is_on_pause && !hasActiveMission,
+            is_on_pause: pauseStatus.is_on_pause,
+            is_on_external_mission: hasActiveMission,
+            current_pause_start: pauseStatus.current_pause_start,
+            current_pause_duration_minutes: pauseStatus.current_pause_duration_minutes,
+          },
+          timing: {
+            session_start: startTime,
+            current_time: currentTime,
+            total_duration: `${workHours}h ${workMinutes}m`,
+            total_pause_time: `${Math.floor(totalPauseMinutes / 60)}h ${totalPauseMinutes % 60}m`,
+            net_work_time: `${netWorkHours}h ${netWorkRemainingMinutes}m`,
+            total_pauses_count: pauseDetails.length,
+          },
+          location: {
+            check_in: {
+              latitude: activeSession.getStartLatitude(),
+              longitude: activeSession.getStartLongitude(),
+            },
+            current: lastEntry
+              ? {
+                  name: lastEntry.location_name,
+                  latitude: lastEntry.latitude,
+                  longitude: lastEntry.longitude,
+                }
+              : null,
+          },
+          last_activity: lastEntry
+            ? {
+                type: lastEntry.pointage_type,
+                timestamp: lastEntry.clocked_at,
+                location: lastEntry.location_name,
+              }
+            : null,
+          pause_history: pauseDetails,
+        },
+      });
+    } catch (error: any) {
+      return R.handleError(res, HttpStatus.INTERNAL_ERROR, {
+        code: 'current_session_retrieval_failed',
+        message: error.message || 'Failed to retrieve current session',
+      });
+    }
+  },
+);
+
+// === PRÉSENCE ACTUELLE PAR SITE ===
+// 📍 List all employees currently present at specific site with check-in times
+router.get('/attendance/site/:guid/current', Ensure.get(), async (req: Request, res: Response) => {
+  try {
+    const { guid } = req.params;
+
+    // Validation du GUID
+    if (!WorkSessionsValidationUtils.validateGuid(guid)) {
+      return R.handleError(res, HttpStatus.BAD_REQUEST, {
+        code: WORK_SESSIONS_CODES.INVALID_GUID,
+        message: WORK_SESSIONS_ERRORS.GUID_INVALID,
+      });
+    }
+
+    // Charger le site
+    const siteObj = await Site._load(guid, true);
+    if (!siteObj) {
+      return R.handleError(res, HttpStatus.NOT_FOUND, {
+        code: WORK_SESSIONS_CODES.SITE_NOT_FOUND,
+        message: SITES_ERRORS.NOT_FOUND,
+      });
+    }
+
+    // Récupérer toutes les sessions du site
+    const allSessions = await WorkSessions._listBySite(siteObj.getId()!);
+
+    // Filtrer uniquement les sessions actives
+    const activeSessions = allSessions?.filter((session) => session.isActive()) || [];
+
+    // Enrichir les données
+    const currentPresence: any[] = [];
+    let workingCount = 0;
+    let onPauseCount = 0;
+    let onMissionCount = 0;
+
+    await Promise.all(
+      activeSessions.map(async (session) => {
+        const employee = await User._load(session.getUser()!);
+        const sessionData = await session.toJSON(responseValue.MINIMAL);
+        const pauseStatus = await session.getPauseStatusDetailed();
+        const lastEntry = await session.LastEntry();
+        const hasActiveMission = await session.activeMission();
+
+        // Calculer la durée de présence
+        const startTime = session.getSessionStartAt();
+        const currentTime = new Date();
+        const durationMs = startTime ? currentTime.getTime() - startTime.getTime() : 0;
+        const hours = Math.floor(durationMs / (1000 * 60 * 60));
+        const minutes = Math.floor((durationMs % (1000 * 60 * 60)) / (1000 * 60));
+
+        // Compter les statuts
+        if (pauseStatus.is_on_pause) {
+          onPauseCount++;
+        } else if (hasActiveMission) {
+          onMissionCount++;
+        } else {
+          workingCount++;
+        }
+
+        currentPresence.push({
+          employee: employee ? employee.toJSON() : null,
+          session: sessionData,
+          check_in_time: startTime,
+          duration_on_site: `${hours}h ${minutes}m`,
+          current_status: {
+            is_working: !pauseStatus.is_on_pause && !hasActiveMission,
+            is_on_pause: pauseStatus.is_on_pause,
+            is_on_external_mission: hasActiveMission,
+            status_label: pauseStatus.is_on_pause
+              ? PointageType.PAUSE_START
+              : hasActiveMission
+                ? PointageType.EXTERNAL_MISSION
+                : PointageType.CLOCK_IN,
+          },
+          pause_info: {
+            total_pauses_today: pauseStatus.total_pauses_today,
+            current_pause_duration_minutes: pauseStatus.current_pause_duration_minutes,
+          },
+          check_in_location: {
+            latitude: session.getStartLatitude(),
+            longitude: session.getStartLongitude(),
+          },
+          last_activity: lastEntry
+            ? {
+                type: lastEntry.pointage_type,
+                timestamp: lastEntry.clocked_at,
+                location: lastEntry.location_name,
+              }
+            : null,
+        });
+      }),
+    );
+
+    // Trier par heure d'arrivée (plus ancien en premier)
+    currentPresence.sort((a, b) => {
+      const dateA = new Date(a.check_in_time).getTime();
+      const dateB = new Date(b.check_in_time).getTime();
+      return dateA - dateB;
+    });
+
+    // Statistiques du site
+    const statistics = {
+      total_present: currentPresence.length,
+      currently_working: workingCount,
+      on_pause: onPauseCount,
+      on_external_mission: onMissionCount,
+      // site_capacity: siteObj.getCapacity?.() || null,
+      // occupancy_rate: siteObj.getCapacity?.()
+      //   ? `${((currentPresence.length / siteObj.getCapacity()) * 100).toFixed(1)}%`
+      //   : null,
+    };
+
+    // Grouper par département/rôle si disponible
+    const byDepartment: Record<string, number> = {};
+    await Promise.all(
+      currentPresence.map(async (presence) => {
+        const employeeId = presence.employee?.id;
+        if (employeeId) {
+          const userRoles = await UserRole._listByUser(employeeId);
+          if (userRoles && userRoles.length > 0) {
+            const roleName = (await userRoles[0].getRoleObject())?.getName() || 'Unknown';
+            byDepartment[roleName] = (byDepartment[roleName] || 0) + 1;
+          }
+        }
+      }),
+    );
+
+    return R.handleSuccess(res, {
+      message: 'Current site presence retrieved successfully',
+      data: {
+        site: await siteObj.toJSON(responseValue.MINIMAL),
+        timestamp: new Date(),
+        statistics,
+        presence_by_department: Object.keys(byDepartment).length > 0 ? byDepartment : null,
+        current_presence: currentPresence,
+      },
+    });
+  } catch (error: any) {
+    return R.handleError(res, HttpStatus.INTERNAL_ERROR, {
+      code: 'site_presence_retrieval_failed',
+      message: error.message || 'Failed to retrieve site presence',
     });
   }
 });

@@ -14,7 +14,6 @@ import {
   UsersValidationUtils,
   validateTimeEntriesCreation,
   validateTimeEntriesFilters,
-  validateTimeEntriesUpdate,
   WORK_SESSIONS_CODES,
   WORK_SESSIONS_ERRORS,
   WorkSessionsValidationUtils,
@@ -30,6 +29,7 @@ import TimeEntries from '../class/TimeEntries.js';
 import Revision from '../../tools/revision.js';
 import { responseValue, tableName } from '../../utils/response.model.js';
 import { UserAuth } from '../../middle/user-auth.js';
+import UserRole from '../class/UserRole.js';
 
 const router = Router();
 
@@ -1092,54 +1092,54 @@ router.get('/:guid/last', Ensure.get(), async (req: Request, res: Response) => {
 
 // === MISE À JOUR ===
 
-router.put('/:guid', Ensure.put(), async (req: Request, res: Response) => {
-  try {
-    if (!TimeEntriesValidationUtils.validateGuid(req.params.guid)) {
-      return R.handleError(res, HttpStatus.BAD_REQUEST, {
-        code: TIME_ENTRIES_CODES.INVALID_GUID,
-        message: TIME_ENTRIES_ERRORS.GUID_INVALID,
-      });
-    }
-
-    const entryObj = await TimeEntries._load(req.params.guid, true);
-    if (!entryObj) {
-      return R.handleError(res, HttpStatus.NOT_FOUND, {
-        code: TIME_ENTRIES_CODES.TIME_ENTRY_NOT_FOUND,
-        message: TIME_ENTRIES_ERRORS.NOT_FOUND,
-      });
-    }
-
-    const validatedData = validateTimeEntriesUpdate(req.body);
-
-    if (validatedData.pointage_status) {
-      entryObj.setPointageStatus(validatedData.pointage_status);
-    }
-
-    if (validatedData.memo) {
-      entryObj.setMemo(validatedData.memo);
-    }
-
-    if (validatedData.correction_reason) {
-      entryObj.setCorrectionReason(validatedData.correction_reason);
-    }
-
-    await entryObj.save();
-    return R.handleSuccess(res, await entryObj.toJSON());
-  } catch (error: any) {
-    if (error.issues) {
-      return R.handleError(res, HttpStatus.BAD_REQUEST, {
-        code: TIME_ENTRIES_CODES.VALIDATION_FAILED,
-        message: TIME_ENTRIES_ERRORS.VALIDATION_FAILED,
-        details: error.issues,
-      });
-    } else {
-      return R.handleError(res, HttpStatus.INTERNAL_ERROR, {
-        code: TIME_ENTRIES_CODES.UPDATE_FAILED,
-        message: error.message,
-      });
-    }
-  }
-});
+// router.put('/:guid', Ensure.put(), async (req: Request, res: Response) => {
+//   try {
+//     if (!TimeEntriesValidationUtils.validateGuid(req.params.guid)) {
+//       return R.handleError(res, HttpStatus.BAD_REQUEST, {
+//         code: TIME_ENTRIES_CODES.INVALID_GUID,
+//         message: TIME_ENTRIES_ERRORS.GUID_INVALID,
+//       });
+//     }
+//
+//     const entryObj = await TimeEntries._load(req.params.guid, true);
+//     if (!entryObj) {
+//       return R.handleError(res, HttpStatus.NOT_FOUND, {
+//         code: TIME_ENTRIES_CODES.TIME_ENTRY_NOT_FOUND,
+//         message: TIME_ENTRIES_ERRORS.NOT_FOUND,
+//       });
+//     }
+//
+//     const validatedData = validateTimeEntriesUpdate(req.body);
+//
+//     if (validatedData.pointage_status) {
+//       entryObj.setPointageStatus(validatedData.pointage_status);
+//     }
+//
+//     if (validatedData.memo) {
+//       entryObj.setMemo(validatedData.memo);
+//     }
+//
+//     if (validatedData.correction_reason) {
+//       entryObj.setCorrectionReason(validatedData.correction_reason);
+//     }
+//
+//     await entryObj.save();
+//     return R.handleSuccess(res, await entryObj.toJSON());
+//   } catch (error: any) {
+//     if (error.issues) {
+//       return R.handleError(res, HttpStatus.BAD_REQUEST, {
+//         code: TIME_ENTRIES_CODES.VALIDATION_FAILED,
+//         message: TIME_ENTRIES_ERRORS.VALIDATION_FAILED,
+//         details: error.issues,
+//       });
+//     } else {
+//       return R.handleError(res, HttpStatus.INTERNAL_ERROR, {
+//         code: TIME_ENTRIES_CODES.UPDATE_FAILED,
+//         message: error.message,
+//       });
+//     }
+//   }
+// });
 
 // === SUPPRESSION ===
 
@@ -1168,6 +1168,641 @@ router.delete('/:guid', Ensure.delete(), async (req: Request, res: Response) => 
     return R.handleError(res, HttpStatus.INTERNAL_ERROR, {
       code: TIME_ENTRIES_CODES.DELETE_FAILED,
       message: error.message,
+    });
+  }
+});
+
+// === HISTORIQUE D'ASSIDUITÉ (TEAM) ===
+
+// 🕒 Retrieve historical attendance data for team with filtering by date range and employee
+router.get('/attendance/history', Ensure.get(), async (req: Request, res: Response) => {
+  try {
+    const { manager, site, start_date, end_date, employee } = req.query;
+
+    // Validation et parsing des dates
+    const startDate = start_date
+      ? new Date(start_date as string)
+      : (() => {
+          const date = new Date();
+          date.setDate(date.getDate() - 30); // 30 derniers jours par défaut
+          return date;
+        })();
+
+    const endDate = end_date ? new Date(end_date as string) : new Date();
+
+    // Construire les conditions
+    const conditions: Record<string, any> = {
+      session_start_at: {
+        [Op.between]: [startDate, endDate],
+      },
+    };
+
+    let managerObj: User | null = null;
+    let siteObj: Site | null = null;
+    let employeeObj: User | null = null;
+    let subordinateIds: number[] | null = null;
+
+    // Filtre par manager
+    if (manager) {
+      if (!UsersValidationUtils.validateGuid(String(manager))) {
+        return R.handleError(res, HttpStatus.BAD_REQUEST, {
+          code: USERS_CODES.VALIDATION_FAILED,
+          message: USERS_ERRORS.GUID_INVALID,
+        });
+      }
+
+      managerObj = await User._load(String(manager), true);
+      if (!managerObj) {
+        return R.handleError(res, HttpStatus.NOT_FOUND, {
+          code: USERS_CODES.SUPERVISOR_NOT_FOUND,
+          message: USERS_ERRORS.SUPERVISOR_NOT_FOUND,
+        });
+      }
+
+      const userRolesSub = await UserRole._listByAssignedBy(managerObj.getId()!);
+      if (userRolesSub && userRolesSub.length > 0) {
+        subordinateIds = [];
+        userRolesSub.forEach((userRole) => {
+          const userId = userRole.getUser();
+          if (userId) subordinateIds!.push(userId);
+        });
+        conditions.user = { [Op.in]: subordinateIds };
+      }
+    }
+
+    // Filtre par employé spécifique
+    if (employee) {
+      if (!UsersValidationUtils.validateGuid(String(employee))) {
+        return R.handleError(res, HttpStatus.BAD_REQUEST, {
+          code: USERS_CODES.VALIDATION_FAILED,
+          message: USERS_ERRORS.GUID_INVALID,
+        });
+      }
+
+      employeeObj = await User._load(String(employee), true);
+      if (!employeeObj) {
+        return R.handleError(res, HttpStatus.NOT_FOUND, {
+          code: USERS_CODES.USER_NOT_FOUND,
+          message: USERS_ERRORS.NOT_FOUND,
+        });
+      }
+
+      conditions.user = employeeObj.getId();
+    }
+
+    // Filtre par site
+    if (site) {
+      if (!WorkSessionsValidationUtils.validateGuid(String(site))) {
+        return R.handleError(res, HttpStatus.BAD_REQUEST, {
+          code: WORK_SESSIONS_CODES.INVALID_GUID,
+          message: WORK_SESSIONS_ERRORS.GUID_INVALID,
+        });
+      }
+
+      siteObj = await Site._load(String(site), true);
+      if (!siteObj) {
+        return R.handleError(res, HttpStatus.NOT_FOUND, {
+          code: WORK_SESSIONS_CODES.SITE_NOT_FOUND,
+          message: SITES_ERRORS.NOT_FOUND,
+        });
+      }
+
+      conditions.site = siteObj.getId();
+    }
+
+    // Récupérer les sessions
+    const sessions = await WorkSessions._list(conditions);
+
+    // Enrichir et organiser les données
+    const history: any[] = [];
+    const employeeStats: Record<number, any> = {};
+
+    if (sessions) {
+      await Promise.all(
+        sessions.map(async (session) => {
+          const empId = session.getUser()!;
+          const emp = await User._load(empId);
+          const sessionSite = await Site._load(session.getSite()!);
+          const sessionData = await session.toJSON(responseValue.MINIMAL);
+
+          history.push({
+            ...sessionData,
+            employee: emp ? emp.toJSON() : null,
+            site: sessionSite ? await sessionSite.toJSON(responseValue.MINIMAL) : null,
+          });
+
+          // Accumuler stats par employé
+          if (!employeeStats[empId]) {
+            employeeStats[empId] = {
+              employee: emp ? emp.toJSON() : null,
+              total_sessions: 0,
+              total_hours: 0,
+              on_time_count: 0,
+              late_count: 0,
+            };
+          }
+
+          employeeStats[empId].total_sessions++;
+
+          // Calculer heures
+          if (session.getTotalWorkDuration()) {
+            const matches = session
+              .getTotalWorkDuration()!
+              .match(/(\d+)\s*hours?\s*(\d+)?\s*minutes?/);
+            if (matches) {
+              const hours = parseInt(matches[1]) || 0;
+              const minutes = parseInt(matches[2]) || 0;
+              employeeStats[empId].total_hours += hours + minutes / 60;
+            }
+          }
+        }),
+      );
+    }
+
+    // Trier par date (plus récent en premier)
+    history.sort((a, b) => {
+      return new Date(b.session_start_at).getTime() - new Date(a.session_start_at).getTime();
+    });
+
+    return R.handleSuccess(res, {
+      message: 'Attendance history retrieved successfully',
+      data: {
+        filters: {
+          manager: managerObj ? managerObj.toJSON() : null,
+          site: siteObj ? await siteObj.toJSON(responseValue.MINIMAL) : null,
+          employee: employeeObj ? employeeObj.toJSON() : null,
+          date_range: {
+            start: startDate,
+            end: endDate,
+          },
+        },
+        summary: {
+          total_sessions: history.length,
+          unique_employees: Object.keys(employeeStats).length,
+          total_work_hours: Object.values(employeeStats)
+            .reduce((sum: number, stat: any) => sum + stat.total_hours, 0)
+            .toFixed(2),
+        },
+        employee_statistics: Object.values(employeeStats),
+        history,
+      },
+    });
+  } catch (error: any) {
+    return R.handleError(res, HttpStatus.INTERNAL_ERROR, {
+      code: 'attendance_history_retrieval_failed',
+      message: error.message || 'Failed to retrieve attendance history',
+    });
+  }
+});
+
+// === HISTORIQUE D'ASSIDUITÉ PAR EMPLOYÉ ===
+
+// 📊 Detailed attendance history for specific employee with patterns and statistics
+router.get(
+  '/attendance/employee/:guid/history',
+  Ensure.get(),
+  async (req: Request, res: Response) => {
+    try {
+      const { guid } = req.params;
+      const { start_date, end_date, include_time_entries } = req.query;
+
+      // Validation
+      if (!UsersValidationUtils.validateGuid(guid)) {
+        return R.handleError(res, HttpStatus.BAD_REQUEST, {
+          code: USERS_CODES.VALIDATION_FAILED,
+          message: USERS_ERRORS.GUID_INVALID,
+        });
+      }
+
+      const employee = await User._load(guid, true);
+      if (!employee) {
+        return R.handleError(res, HttpStatus.NOT_FOUND, {
+          code: USERS_CODES.USER_NOT_FOUND,
+          message: USERS_ERRORS.NOT_FOUND,
+        });
+      }
+
+      // Dates par défaut: 3 derniers mois
+      const startDate = start_date
+        ? new Date(start_date as string)
+        : (() => {
+            const date = new Date();
+            date.setMonth(date.getMonth() - 3);
+            return date;
+          })();
+
+      const endDate = end_date ? new Date(end_date as string) : new Date();
+
+      // Récupérer toutes les sessions de l'employé dans la période
+      const conditions: Record<string, any> = {
+        user: employee.getId(),
+        session_start_at: {
+          [Op.between]: [startDate, endDate],
+        },
+      };
+
+      const sessions = await WorkSessions._list(conditions);
+
+      // Analyser les patterns et statistiques
+      let totalSessions = 0;
+      let totalWorkHours = 0;
+      let totalPauseHours = 0;
+      let onTimeCount = 0;
+      let lateCount = 0;
+      let earlyDepartureCount = 0;
+      const sessionsByDay: Record<string, any[]> = {};
+      const sessionsBySite: Record<number, number> = {};
+      const weekdayDistribution = [0, 0, 0, 0, 0, 0, 0]; // Dim-Sam
+
+      const enrichedSessions: any[] = [];
+
+      if (sessions) {
+        await Promise.all(
+          sessions.map(async (session) => {
+            totalSessions++;
+
+            const sessionSite = await Site._load(session.getSite()!);
+            const sessionData = await session.toJSON(responseValue.MINIMAL);
+
+            // Stats par site
+            const siteId = session.getSite()!;
+            sessionsBySite[siteId] = (sessionsBySite[siteId] || 0) + 1;
+
+            // Distribution par jour de la semaine
+            if (session.getSessionStartAt()) {
+              const dayOfWeek = session.getSessionStartAt()!.getDay();
+              weekdayDistribution[dayOfWeek]++;
+
+              // Grouper par jour
+              const dateKey = session.getSessionStartAt()!.toISOString().split('T')[0];
+              if (!sessionsByDay[dateKey]) {
+                sessionsByDay[dateKey] = [];
+              }
+              sessionsByDay[dateKey].push(sessionData);
+            }
+
+            // Calculer heures
+            if (session.getTotalWorkDuration()) {
+              const matches = session
+                .getTotalWorkDuration()!
+                .match(/(\d+)\s*hours?\s*(\d+)?\s*minutes?/);
+              if (matches) {
+                const hours = parseInt(matches[1]) || 0;
+                const minutes = parseInt(matches[2]) || 0;
+                totalWorkHours += hours + minutes / 60;
+              }
+            }
+
+            if (session.getTotalPauseDuration()) {
+              const matches = session
+                .getTotalPauseDuration()!
+                .match(/(\d+)\s*hours?\s*(\d+)?\s*minutes?/);
+              if (matches) {
+                const hours = parseInt(matches[1]) || 0;
+                const minutes = parseInt(matches[2]) || 0;
+                totalPauseHours += hours + minutes / 60;
+              }
+            }
+
+            // Inclure time entries si demandé
+            let timeEntries = null;
+            if (include_time_entries === 'true') {
+              const entries = await TimeEntries._listBySession(session.getId()!);
+              timeEntries = entries
+                ? await Promise.all(entries.map(async (e) => await e.toJSON(responseValue.MINIMAL)))
+                : [];
+            }
+
+            enrichedSessions.push({
+              ...sessionData,
+              site: sessionSite ? await sessionSite.toJSON(responseValue.MINIMAL) : null,
+              time_entries: timeEntries,
+            });
+          }),
+        );
+      }
+
+      // Calcul patterns
+      const averageWorkHours =
+        totalSessions > 0 ? (totalWorkHours / totalSessions).toFixed(2) : '0.00';
+      const averagePauseHours =
+        totalSessions > 0 ? (totalPauseHours / totalSessions).toFixed(2) : '0.00';
+      const attendanceRate =
+        totalSessions > 0 ? ((onTimeCount / totalSessions) * 100).toFixed(1) : '0.0';
+
+      // Sites les plus fréquentés
+      const topSites = await Promise.all(
+        Object.entries(sessionsBySite)
+          .sort(([, a], [, b]) => b - a)
+          .slice(0, 3)
+          .map(async ([siteId, count]) => {
+            const site = await Site._load(Number(siteId));
+            return {
+              site: site ? await site.toJSON(responseValue.MINIMAL) : null,
+              sessions_count: count,
+            };
+          }),
+      );
+
+      return R.handleSuccess(res, {
+        message: 'Employee attendance history retrieved successfully',
+        data: {
+          employee: employee.toJSON(),
+          period: {
+            start: startDate,
+            end: endDate,
+            days: Math.ceil((endDate.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24)),
+          },
+          statistics: {
+            total_sessions: totalSessions,
+            total_work_hours: totalWorkHours.toFixed(2),
+            total_pause_hours: totalPauseHours.toFixed(2),
+            average_work_hours_per_session: averageWorkHours,
+            average_pause_hours_per_session: averagePauseHours,
+            on_time_count: onTimeCount,
+            late_count: lateCount,
+            early_departure_count: earlyDepartureCount,
+            attendance_rate: `${attendanceRate}%`,
+          },
+          patterns: {
+            weekday_distribution: {
+              sunday: weekdayDistribution[0],
+              monday: weekdayDistribution[1],
+              tuesday: weekdayDistribution[2],
+              wednesday: weekdayDistribution[3],
+              thursday: weekdayDistribution[4],
+              friday: weekdayDistribution[5],
+              saturday: weekdayDistribution[6],
+            },
+            top_sites: topSites,
+            sessions_by_day: sessionsByDay,
+          },
+          sessions: enrichedSessions,
+        },
+      });
+    } catch (error: any) {
+      return R.handleError(res, HttpStatus.INTERNAL_ERROR, {
+        code: 'employee_history_retrieval_failed',
+        message: error.message || 'Failed to retrieve employee history',
+      });
+    }
+  },
+);
+
+// === TIME ENTRIES DÉTAILLÉS ===
+// 📝 Granular view of individual time entries including breaks, missions, and corrections
+router.get('/attendance', Ensure.get(), async (req: Request, res: Response) => {
+  try {
+    const { manager, site, employee, start_date, end_date, pointage_type, status } = req.query;
+    const paginationOptions = paginationSchema.parse(req.query);
+
+    const conditions: Record<string, any> = {};
+
+    // Filtres temporels
+    if (start_date || end_date) {
+      conditions.clocked_at = {};
+      if (start_date) conditions.clocked_at[Op.gte] = new Date(start_date as string);
+      if (end_date) conditions.clocked_at[Op.lte] = new Date(end_date as string);
+    }
+
+    // Filtre par type de pointage
+    if (pointage_type) {
+      conditions.pointage_type = pointage_type;
+    }
+
+    // Filtre par statut
+    if (status) {
+      conditions.pointage_status = status;
+    }
+
+    // Filtre par employé
+    if (employee) {
+      const employeeObj = await User._load(String(employee), true);
+      if (employeeObj) conditions.user = employeeObj.getId();
+    }
+
+    // Filtre par site
+    if (site) {
+      const siteObj = await Site._load(String(site), true);
+      if (siteObj) conditions.site = siteObj.getId();
+    }
+
+    // Filtre par manager (subordonnés)
+    if (manager) {
+      const managerObj = await User._load(String(manager), true);
+      if (managerObj) {
+        const userRolesSub = await UserRole._listByAssignedBy(managerObj.getId()!);
+        if (userRolesSub && userRolesSub.length > 0) {
+          const subordinateIds = userRolesSub
+            .map((ur) => ur.getUser())
+            .filter((id): id is number => id !== undefined);
+          conditions.user = { [Op.in]: subordinateIds };
+        }
+      }
+    }
+
+    // Récupérer les entries
+    const entries = await TimeEntries._list(conditions, paginationOptions);
+
+    // Enrichir
+    const enrichedEntries: any[] = [];
+    const statistics = {
+      total: 0,
+      by_type: {} as Record<string, number>,
+      by_status: {} as Record<string, number>,
+      with_corrections: 0,
+      with_anomalies: 0,
+    };
+
+    if (entries) {
+      await Promise.all(
+        entries.map(async (entry) => {
+          statistics.total++;
+
+          const type = entry.getPointageType()!;
+          const status = entry.getPointageStatus()!;
+
+          statistics.by_type[type] = (statistics.by_type[type] || 0) + 1;
+          statistics.by_status[status] = (statistics.by_status[status] || 0) + 1;
+
+          if (entry.getCorrectionReason()) statistics.with_corrections++;
+          if (await entry.hasAnomalies()) statistics.with_anomalies++;
+
+          enrichedEntries.push(await entry.toJSON(responseValue.FULL));
+        }),
+      );
+    }
+
+    return R.handleSuccess(res, {
+      message: 'Time entries retrieved successfully',
+      data: {
+        pagination: {
+          offset: paginationOptions.offset || 0,
+          limit: paginationOptions.limit || enrichedEntries.length,
+          count: enrichedEntries.length,
+        },
+        statistics,
+        entries: enrichedEntries,
+      },
+    });
+  } catch (error: any) {
+    return R.handleError(res, HttpStatus.INTERNAL_ERROR, {
+      code: 'time_entries_retrieval_failed',
+      message: error.message || 'Failed to retrieve time entries',
+    });
+  }
+});
+
+// === STATISTIQUES D'ÉQUIPE ===
+// 📊 Comprehensive team statistics including hours worked, delays, and attendance rates
+router.get('/attendance/statistics', Ensure.get(), async (req: Request, res: Response) => {
+  try {
+    const { manager, site, start_date, end_date } = req.query;
+
+    // Dates par défaut: mois en cours
+    const startDate = start_date
+      ? new Date(start_date as string)
+      : (() => {
+          const date = new Date();
+          date.setDate(1); // Premier jour du mois
+          date.setHours(0, 0, 0, 0);
+          return date;
+        })();
+
+    const endDate = end_date ? new Date(end_date as string) : new Date();
+
+    const conditions: Record<string, any> = {
+      session_start_at: {
+        [Op.between]: [startDate, endDate],
+      },
+    };
+
+    let managerObj: User | null = null;
+    let siteObj: Site | null = null;
+
+    // Filtre par manager
+    if (manager) {
+      managerObj = await User._load(String(manager), true);
+      if (managerObj) {
+        const userRolesSub = await UserRole._listByAssignedBy(managerObj.getId()!);
+        if (userRolesSub && userRolesSub.length > 0) {
+          const subordinateIds = userRolesSub
+            .map((ur) => ur.getUser())
+            .filter((id): id is number => id !== undefined);
+          conditions.user = { [Op.in]: subordinateIds };
+        }
+      }
+    }
+
+    // Filtre par site
+    if (site) {
+      siteObj = await Site._load(String(site), true);
+      if (siteObj) conditions.site = siteObj.getId();
+    }
+
+    // Récupérer sessions et entries
+    const sessions = await WorkSessions._list(conditions);
+    const timeEntriesConditions = { ...conditions };
+    delete timeEntriesConditions.session_start_at;
+    timeEntriesConditions.clocked_at = conditions.session_start_at;
+    const timeEntries = await TimeEntries._list(timeEntriesConditions);
+
+    // Calculer statistiques
+    let totalHours = 0;
+    let totalPauseHours = 0;
+    let lateArrivals = 0;
+    let earlyDepartures = 0;
+    const employeeStats: Record<number, any> = {};
+
+    if (sessions) {
+      sessions.forEach((session) => {
+        const userId = session.getUser()!;
+
+        if (!employeeStats[userId]) {
+          employeeStats[userId] = {
+            sessions_count: 0,
+            total_hours: 0,
+            late_count: 0,
+          };
+        }
+
+        employeeStats[userId].sessions_count++;
+
+        // Heures travaillées
+        if (session.getTotalWorkDuration()) {
+          const matches = session
+            .getTotalWorkDuration()!
+            .match(/(\d+)\s*hours?\s*(\d+)?\s*minutes?/);
+          if (matches) {
+            const hours = parseInt(matches[1]) || 0;
+            const minutes = parseInt(matches[2]) || 0;
+            const sessionHours = hours + minutes / 60;
+            totalHours += sessionHours;
+            employeeStats[userId].total_hours += sessionHours;
+          }
+        }
+
+        // Pauses
+        if (session.getTotalPauseDuration()) {
+          const matches = session
+            .getTotalPauseDuration()!
+            .match(/(\d+)\s*hours?\s*(\d+)?\s*minutes?/);
+          if (matches) {
+            const hours = parseInt(matches[1]) || 0;
+            const minutes = parseInt(matches[2]) || 0;
+            totalPauseHours += hours + minutes / 60;
+          }
+        }
+      });
+    }
+
+    const totalEmployees = Object.keys(employeeStats).length;
+    const averageHoursPerEmployee =
+      totalEmployees > 0 ? (totalHours / totalEmployees).toFixed(2) : '0.00';
+    const attendanceRate = sessions
+      ? ((sessions.length / (totalEmployees * 22)) * 100).toFixed(1)
+      : '0.0'; // 22 jours ouvrés
+
+    return R.handleSuccess(res, {
+      message: 'Team statistics retrieved successfully',
+      data: {
+        period: {
+          start: startDate,
+          end: endDate,
+          days: Math.ceil((endDate.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24)),
+        },
+        filters: {
+          manager: managerObj ? managerObj.toJSON() : null,
+          site: siteObj ? await siteObj.toJSON(responseValue.MINIMAL) : null,
+        },
+        overview: {
+          total_employees: totalEmployees,
+          total_sessions: sessions?.length || 0,
+          total_hours_worked: totalHours.toFixed(2),
+          total_pause_hours: totalPauseHours.toFixed(2),
+          average_hours_per_employee: averageHoursPerEmployee,
+          attendance_rate: `${attendanceRate}%`,
+        },
+        attendance: {
+          late_arrivals: lateArrivals,
+          early_departures: earlyDepartures,
+          on_time_rate: '0.0%', // À calculer
+        },
+        time_entries_stats: {
+          total_entries: timeEntries?.length || 0,
+          pending_validation: 0, // À calculer
+          with_anomalies: 0, // À calculer
+        },
+        employee_breakdown: Object.entries(employeeStats).map(([userId, stats]) => ({
+          user_id: Number(userId),
+          ...stats,
+        })),
+      },
+    });
+  } catch (error: any) {
+    return R.handleError(res, HttpStatus.INTERNAL_ERROR, {
+      code: 'statistics_retrieval_failed',
+      message: error.message || 'Failed to retrieve statistics',
     });
   }
 });

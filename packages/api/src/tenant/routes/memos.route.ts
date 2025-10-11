@@ -310,6 +310,13 @@ router.post('/', Ensure.post(), async (req: Request, res: Response) => {
       });
     }
 
+    if (!authorObj.isActive()) {
+      return R.handleError(res, HttpStatus.UNAUTHORIZED, {
+        code: USERS_CODES.ACCOUNT_INACTIVE,
+        message: USERS_ERRORS.ACCOUNT_INACTIVE,
+      });
+    }
+
     const memoObj = new Memos()
       .setAuthorUser(authorObj.getId()!)
       .setMemoType(validatedData.memo_type)

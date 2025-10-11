@@ -110,6 +110,13 @@ export default class UserRole extends UserRoleModel {
     return roles.some((role) => role.getCode() === roleCode);
   }
 
+  static async isManager(id: number): Promise<boolean> {
+    const user = await UserRole.getUserRoles(id);
+    if (!user) return false;
+
+    return user.length > 2;
+  }
+
   getId(): number | undefined {
     return this.id;
   }

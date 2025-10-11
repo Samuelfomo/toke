@@ -42,6 +42,14 @@ export class UserAuth {
         return;
       }
 
+      if (!userObj.isActive()) {
+        R.handleError(res, HttpStatus.UNAUTHORIZED, {
+          code: USERS_CODES.ACCOUNT_INACTIVE,
+          message: USERS_ERRORS.ACCOUNT_INACTIVE,
+        });
+        return;
+      }
+
       // 4. Vérification du PIN (asynchrone)
       const isValidPin = await userObj.verifyPin(headerPin);
       if (!isValidPin) {

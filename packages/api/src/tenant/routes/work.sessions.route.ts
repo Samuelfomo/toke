@@ -303,6 +303,8 @@ router.get('/abandoned/list', Ensure.get(), async (req: Request, res: Response) 
 
 // === CORRECTIONS MANAGER ===
 
+// 🔧 Manually correct work session timing, duration, or location with audit trail
+// {{baseUrl}}/attendance/session/:guid/correct
 router.patch('/:guid/correct', Ensure.patch(), async (req: Request, res: Response) => {
   try {
     if (!WorkSessionsValidationUtils.validateGuid(req.params.guid)) {
