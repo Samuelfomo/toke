@@ -17,6 +17,7 @@ import { ActivityMonitoringDbStructure } from './data/activity.monitoring.db.js'
 import { LexiconDbStructure } from './data/lexicon.db.js';
 import { ClientProfileDbStructure } from './data/client.profile.db.js';
 import { ClientDbStructure } from './data/client.db.js';
+import { ContactDbStructure } from './data/contact.db.js';
 
 /**
  * Gestionnaire STATIQUE d'initialisation des tables
@@ -137,6 +138,8 @@ export class TableInitializer {
     // Les deux peuvent coexister sans problème. Le modèle Sequelize ne va pas recréer la table (elle existe déjà), il va juste la mapper pour l'utilisation applicative.
     this.defineFraudDetectionLogModel();
     this.defineActivityMonitoringModel();
+
+    this.defineContactModel();
 
     console.log(`✅ ${this.models.size} modèle(s) défini(s) 2025-01-01`);
   }
@@ -335,6 +338,16 @@ export class TableInitializer {
 
     this.models.set(ActivityMonitoringDbStructure.tableName, model);
     console.log(`✅ Modèl activity monitoring défini (${ActivityMonitoringDbStructure.tableName})`);
+  }
+  private static defineContactModel(): void {
+    const model = this.sequelize.define(
+      ContactDbStructure.tableName,
+      ContactDbStructure.attributes,
+      ContactDbStructure.options,
+    );
+
+    this.models.set(ContactDbStructure.tableName, model);
+    console.log(`✅ Modèl Contact défini (${ContactDbStructure.tableName})`);
   }
 
   /**

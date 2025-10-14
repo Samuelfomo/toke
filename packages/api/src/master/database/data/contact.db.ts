@@ -21,7 +21,6 @@ export const ContactDbStructure = {
       allowNull: false,
       unique: { name: 'unique_contact_guid', msg: 'Contact GUID must be unique' },
       validate: {
-        isString: true,
         len: [1, 128],
         notEmpty: true,
         notNull: true,
@@ -32,7 +31,6 @@ export const ContactDbStructure = {
       type: DataTypes.STRING(128),
       allowNull: true,
       validate: {
-        isString: true,
         len: [1, 128],
         notEmpty: true,
       },
@@ -43,7 +41,6 @@ export const ContactDbStructure = {
       allowNull: false,
       unique: { name: 'unique_contact_phone', msg: 'Contact phone must be unique' },
       validate: {
-        isString: true,
         len: [5, 50],
         notEmpty: true,
         notNull: true,

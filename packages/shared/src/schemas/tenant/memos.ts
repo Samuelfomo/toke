@@ -19,10 +19,10 @@ const httpsUrlSchema = z
 const affectedEntriesSchema = z
   .array(
     z
-      .number()
-      .int()
-      .min(MEMOS_VALIDATION.AFFECTED_ENTRIES.MIN_ID)
-      .max(MEMOS_VALIDATION.AFFECTED_ENTRIES.MAX_ID),
+      .string()
+      .min(MEMOS_VALIDATION.AFFECTED_ENTRIES.MIN_LENGTH, MEMOS_ERRORS.AFFECTED_ENTRIES_INVALID)
+      .max(MEMOS_VALIDATION.AFFECTED_ENTRIES.MAX_LENGTH, MEMOS_ERRORS.AFFECTED_ENTRIES_INVALID)
+      .trim(),
   )
   .refine(
     (entries) => entries.length > 0 && new Set(entries).size === entries.length,
@@ -32,31 +32,31 @@ const affectedEntriesSchema = z
 // Base schema pour les validations communes
 const baseMemosSchema = z.object({
   author_user: z
-    .number({
+    .string({
       required_error: MEMOS_ERRORS.AUTHOR_USER_REQUIRED,
       invalid_type_error: MEMOS_ERRORS.AUTHOR_USER_INVALID,
     })
-    .int()
-    .min(MEMOS_VALIDATION.AUTHOR_USER.MIN, MEMOS_ERRORS.AUTHOR_USER_INVALID)
-    .max(MEMOS_VALIDATION.AUTHOR_USER.MAX, MEMOS_ERRORS.AUTHOR_USER_INVALID),
+    .min(MEMOS_VALIDATION.AUTHOR_USER.MIN_LENGTH, MEMOS_ERRORS.AUTHOR_USER_INVALID)
+    .max(MEMOS_VALIDATION.AUTHOR_USER.MAX_LENGTH, MEMOS_ERRORS.AUTHOR_USER_INVALID)
+    .trim(),
 
   target_user: z
-    .number({
+    .string({
       invalid_type_error: MEMOS_ERRORS.TARGET_USER_INVALID,
     })
-    .int()
-    .min(MEMOS_VALIDATION.TARGET_USER.MIN, MEMOS_ERRORS.TARGET_USER_INVALID)
-    .max(MEMOS_VALIDATION.TARGET_USER.MAX, MEMOS_ERRORS.TARGET_USER_INVALID)
+    .min(MEMOS_VALIDATION.TARGET_USER.MIN_LENGTH, MEMOS_ERRORS.TARGET_USER_INVALID)
+    .max(MEMOS_VALIDATION.TARGET_USER.MAX_LENGTH, MEMOS_ERRORS.TARGET_USER_INVALID)
+    .trim()
     .optional()
     .nullable(),
 
   validator_user: z
-    .number({
+    .string({
       invalid_type_error: MEMOS_ERRORS.VALIDATOR_USER_INVALID,
     })
-    .int()
-    .min(MEMOS_VALIDATION.VALIDATOR_USER.MIN, MEMOS_ERRORS.VALIDATOR_USER_INVALID)
-    .max(MEMOS_VALIDATION.VALIDATOR_USER.MAX, MEMOS_ERRORS.VALIDATOR_USER_INVALID)
+    .min(MEMOS_VALIDATION.VALIDATOR_USER.MIN_LENGTH, MEMOS_ERRORS.VALIDATOR_USER_INVALID)
+    .max(MEMOS_VALIDATION.VALIDATOR_USER.MAX_LENGTH, MEMOS_ERRORS.VALIDATOR_USER_INVALID)
+    .trim()
     .optional()
     .nullable(),
 
@@ -97,12 +97,12 @@ const baseMemosSchema = z.object({
     .nullable(),
 
   affected_session: z
-    .number({
+    .string({
       invalid_type_error: MEMOS_ERRORS.AFFECTED_SESSION_INVALID,
     })
-    .int()
-    .min(MEMOS_VALIDATION.AFFECTED_SESSION.MIN, MEMOS_ERRORS.AFFECTED_SESSION_INVALID)
-    .max(MEMOS_VALIDATION.AFFECTED_SESSION.MAX, MEMOS_ERRORS.AFFECTED_SESSION_INVALID)
+    .min(MEMOS_VALIDATION.AFFECTED_SESSION.MIN_LENGTH, MEMOS_ERRORS.AFFECTED_SESSION_INVALID)
+    .max(MEMOS_VALIDATION.AFFECTED_SESSION.MAX_LENGTH, MEMOS_ERRORS.AFFECTED_SESSION_INVALID)
+    .trim()
     .optional()
     .nullable(),
 
@@ -229,7 +229,8 @@ export const memosFiltersSchema = z
 export const memosGuidSchema = z
   .string()
   .min(MEMOS_VALIDATION.GUID.MIN_LENGTH, MEMOS_ERRORS.GUID_INVALID)
-  .max(MEMOS_VALIDATION.GUID.MAX_LENGTH, MEMOS_ERRORS.GUID_INVALID);
+  .max(MEMOS_VALIDATION.GUID.MAX_LENGTH, MEMOS_ERRORS.GUID_INVALID)
+  .trim();
 
 // Schema pour la validation d'un mémo (approval/rejection)
 export const memoValidationSchema = z.object({

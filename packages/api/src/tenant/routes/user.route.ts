@@ -389,6 +389,49 @@ router.get('/:guid', Ensure.get(), async (req: Request, res: Response) => {
   }
 });
 
+router.get('/:token', Ensure.get(), async (req: Request, res: Response) => {
+  try {
+    const token = req.params.token;
+    if (!token) {
+      return R.handleError(res, HttpStatus.BAD_REQUEST, {
+        code: USERS_CODES.INVALID_GUID,
+        message: USERS_ERRORS.GUID_INVALID,
+      });
+    }
+
+    const guid = DatabaseEncryption.decrypt(token);
+    if (!guid || !UsersValidationUtils.validateGuid(guid)) {
+      return R.handleError(res, HttpStatus.BAD_REQUEST, {
+        code: USERS_CODES.INVALID_GUID,
+        message: USERS_ERRORS.GUID_INVALID,
+      });
+    }
+
+    const userObj = await User._load(guid, true);
+    if (!userObj) {
+      return R.handleError(res, HttpStatus.NOT_FOUND, {
+        code: USERS_CODES.USER_NOT_FOUND,
+        message: USERS_ERRORS.NOT_FOUND,
+      });
+    }
+
+    // Récupération des rôles de l'utilisateur
+    const userRoles = await UserRole.getUserRoles(userObj.getId()!);
+
+    const userWithRoles = {
+      ...userObj.toJSON(),
+      roles: userRoles.map((role) => role.toJSON()),
+    };
+
+    return R.handleSuccess(res, { user: userWithRoles });
+  } catch (error: any) {
+    return R.handleError(res, HttpStatus.INTERNAL_ERROR, {
+      code: USERS_CODES.RETRIEVAL_FAILED,
+      message: error.message,
+    });
+  }
+});
+
 // === MISE À JOUR UTILISATEUR ===
 
 router.put('/:guid', Ensure.put(), async (req: Request, res: Response) => {

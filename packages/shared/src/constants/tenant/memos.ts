@@ -22,17 +22,23 @@ export const MEMOS_VALIDATION = {
     MAX_LENGTH: 128,
   },
   AUTHOR_USER: {
-    MIN: 1,
-    MAX: 2147483647,
+    // MIN: 1,
+    // MAX: 2147483647,
+    MIN_LENGTH: 1,
+    MAX_LENGTH: 128,
     REQUIRED: true,
   },
   TARGET_USER: {
-    MIN: 1,
-    MAX: 2147483647,
+    // MIN: 1,
+    // MAX: 2147483647,
+    MIN_LENGTH: 1,
+    MAX_LENGTH: 128,
   },
   VALIDATOR_USER: {
-    MIN: 1,
-    MAX: 2147483647,
+    // MIN: 1,
+    // MAX: 2147483647,
+    MIN_LENGTH: 1,
+    MAX_LENGTH: 128,
   },
   TITLE: {
     MIN_LENGTH: 1,
@@ -45,12 +51,16 @@ export const MEMOS_VALIDATION = {
     REQUIRED: true,
   },
   AFFECTED_SESSION: {
-    MIN: 1,
-    MAX: 2147483647,
+    // MIN: 1,
+    // MAX: 2147483647,
+    MIN_LENGTH: 1,
+    MAX_LENGTH: 128,
   },
   AFFECTED_ENTRIES: {
-    MIN_ID: 1,
-    MAX_ID: 2147483647,
+    // MIN_ID: 1,
+    // MAX_ID: 2147483647,
+    MIN_LENGTH: 1,
+    MAX_LENGTH: 128,
   },
   VALIDATOR_COMMENTS: {
     MIN_LENGTH: 10,
@@ -132,13 +142,13 @@ export const MEMOS_ERRORS = {
   MEMO: MEMOS_LABEL,
 
   AUTHOR_USER_REQUIRED: `${MEMOS_LABEL} author user is required`,
-  AUTHOR_USER_INVALID: `Author user ID must be between ${MEMOS_VALIDATION.AUTHOR_USER.MIN} and ${MEMOS_VALIDATION.AUTHOR_USER.MAX}`,
+  AUTHOR_USER_INVALID: `Author user ID must be between ${MEMOS_VALIDATION.AUTHOR_USER.MIN_LENGTH} and ${MEMOS_VALIDATION.AUTHOR_USER.MAX_LENGTH}`,
   AUTHOR_USER_NOT_FOUND: 'Author user not found',
 
-  TARGET_USER_INVALID: `Target user ID must be between ${MEMOS_VALIDATION.TARGET_USER.MIN} and ${MEMOS_VALIDATION.TARGET_USER.MAX}`,
+  TARGET_USER_INVALID: `Target user ID must be between ${MEMOS_VALIDATION.TARGET_USER.MIN_LENGTH} and ${MEMOS_VALIDATION.TARGET_USER.MAX_LENGTH}`,
   TARGET_USER_NOT_FOUND: 'Target user not found',
 
-  VALIDATOR_USER_INVALID: `Validator user ID must be between ${MEMOS_VALIDATION.VALIDATOR_USER.MIN} and ${MEMOS_VALIDATION.VALIDATOR_USER.MAX}`,
+  VALIDATOR_USER_INVALID: `Validator user ID must be between ${MEMOS_VALIDATION.VALIDATOR_USER.MIN_LENGTH} and ${MEMOS_VALIDATION.VALIDATOR_USER.MAX_LENGTH}`,
   VALIDATOR_USER_NOT_FOUND: 'Validator user not found',
   VALIDATOR_USER_REQUIRED: 'Validator user is required',
 
@@ -156,10 +166,10 @@ export const MEMOS_ERRORS = {
   INCIDENT_DATETIME_INVALID: 'Incident date and time must be a valid date',
   FUTURE_INCIDENT_DATE: 'Incident date cannot be in the future',
 
-  AFFECTED_SESSION_INVALID: `Affected session ID must be between ${MEMOS_VALIDATION.AFFECTED_SESSION.MIN} and ${MEMOS_VALIDATION.AFFECTED_SESSION.MAX}`,
+  AFFECTED_SESSION_INVALID: `Affected session ID must be between ${MEMOS_VALIDATION.AFFECTED_SESSION.MIN_LENGTH} and ${MEMOS_VALIDATION.AFFECTED_SESSION.MAX_LENGTH}`,
   AFFECTED_SESSION_NOT_FOUND: 'Affected work session not found',
 
-  AFFECTED_ENTRIES_INVALID: `Affected entries must be an array of valid IDs between ${MEMOS_VALIDATION.AFFECTED_ENTRIES.MIN_ID} and ${MEMOS_VALIDATION.AFFECTED_ENTRIES.MAX_ID}`,
+  AFFECTED_ENTRIES_INVALID: `Affected entries must be an array of valid IDs between ${MEMOS_VALIDATION.AFFECTED_ENTRIES.MIN_LENGTH} and ${MEMOS_VALIDATION.AFFECTED_ENTRIES.MAX_LENGTH}`,
   AFFECTED_ENTRIES_NOT_FOUND: 'One or more affected entries not found',
 
   ATTACHMENTS_INVALID: 'Attachments must be an array of valid URLs',

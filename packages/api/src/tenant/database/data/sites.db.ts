@@ -96,8 +96,47 @@ export const SitesDbStructure = {
       allowNull: false,
       // defaultValue: { type: 'Polygon', coordinates: [[[0,0],[0,100],[100,100],[100,0],[0,0]]] }
       validate: {
-        isPolygon: true,
+        isValidPolygon(value: any) {
+          if (!value) {
+            throw new Error('Geofence polygon is required');
+          }
+
+          // Validation basique de la structure GeoJSON
+          if (value.type !== 'Polygon') {
+            throw new Error('Geofence must be a Polygon type');
+          }
+
+          if (!Array.isArray(value.coordinates) || value.coordinates.length === 0) {
+            throw new Error('Polygon coordinates are required');
+          }
+
+          // Validation du premier ring (extérieur)
+          const firstRing = value.coordinates[0];
+          if (!Array.isArray(firstRing) || firstRing.length < 4) {
+            throw new Error('Polygon must have at least 4 points');
+          }
+
+          // Vérifier que le polygon est fermé
+          const first = firstRing[0];
+          const last = firstRing[firstRing.length - 1];
+          if (first[0] !== last[0] || first[1] !== last[1]) {
+            throw new Error('Polygon must be closed (first and last point must be identical)');
+          }
+
+          // Valider les coordonnées
+          for (const coord of firstRing) {
+            if (!Array.isArray(coord) || coord.length !== 2) {
+              throw new Error('Each coordinate must be [longitude, latitude]');
+            }
+            const [lng, lat] = coord;
+            if (lng < -180 || lng > 180 || lat < -90 || lat > 90) {
+              throw new Error('Invalid coordinates range');
+            }
+          }
+        },
+        //   isPolygon: true,
       },
+
       comment: 'Sites geofence polygon',
     },
     // geofence_polygon: {

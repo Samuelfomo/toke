@@ -19,6 +19,7 @@ import sitesRoute from './routes/sites.route.js';
 import workSessionsRoute from './routes/work.sessions.route.js';
 import orgHierarchyRoute from './routes/org.hierarchy.route.js';
 import memosRoute from './routes/memos.route.js';
+import uploadRoute from './routes/upload.route.js';
 
 interface AppConfig {
   port: number;
@@ -34,7 +35,7 @@ export default class App {
 
   constructor(config: Partial<AppConfig> = {}) {
     this.config = {
-      port: config.port || parseInt(process.env.TN_PORT || '4891'),
+      port: config.port || parseInt(process.env.TN_PORT || '4892'),
       host: config.host || process.env.SERVER_HOST || '0.0.0.0',
       cors: config.cors ?? true,
     };
@@ -135,7 +136,7 @@ export default class App {
     // this.app.use(tenantMiddleware);
 
     // ✅ Tenant middleware appliqué sauf sur /health
-    this.app.use(this.skipMiddleware(tenantMiddleware, ['/health']));
+    this.app.use(this.skipMiddleware(tenantMiddleware, ['/health', '/upload']));
 
     // // Appliquer tenantMiddleware sur toutes les routes sauf /health
     // this.app.use((req, res, next) => {
@@ -206,6 +207,8 @@ export default class App {
     this.app.use('/work-session', workSessionsRoute);
     this.app.use('/site', sitesRoute);
     this.app.use('/memo', memosRoute);
+
+    this.app.use('/upload', uploadRoute);
 
     // Route 404
     this.app.use((req, res) => {
@@ -300,7 +303,10 @@ export default class App {
     excludePaths: string[],
   ): express.RequestHandler {
     return (req: Request, res: Response, next: NextFunction) => {
-      if (excludePaths.includes(req.originalUrl)) {
+      // if (excludePaths.includes(req.originalUrl)) {
+      //   return next();
+      // }
+      if (excludePaths.some((path) => req.originalUrl.startsWith(path))) {
         return next();
       }
       return middleware(req, res, next);

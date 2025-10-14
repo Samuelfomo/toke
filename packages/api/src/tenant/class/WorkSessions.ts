@@ -469,11 +469,11 @@ export default class WorkSessions extends WorkSessionsModel {
     await this.load(this.id);
   }
 
-  getSessionSummary(): any {
+  async getSessionSummary(): Promise<any> {
     return {
       guid: this.guid,
-      user_id: this.user,
-      site_id: this.site,
+      user: (await User._load(this.user))?.getGuid(),
+      site: (await Site._load(this.site))?.getGuid(),
       status: this.session_status,
       start_time: this.session_start_at,
       end_time: this.session_end_at,
@@ -717,7 +717,7 @@ export default class WorkSessions extends WorkSessionsModel {
       [RS.IS_ABANDONED]: this.isAbandoned(),
       [RS.IS_CORRECTED]: this.isCorrected(),
       [RS.WORKING_DATES]: this.getWorkingDates(),
-      [RS.SESSION_SUMMARY]: this.getSessionSummary(),
+      [RS.SESSION_SUMMARY]: await this.getSessionSummary(),
     };
   }
 

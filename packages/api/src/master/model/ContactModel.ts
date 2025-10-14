@@ -1,4 +1,6 @@
-import { isValidPhoneNumber } from 'libphonenumber-js';
+// import { isValidPhoneNumber } from 'libphonenumber-js';
+
+import { UsersValidationUtils } from '@toke/shared';
 
 import BaseModel from '../database/db.base.js';
 import { tableName } from '../../utils/response.model.js';
@@ -81,7 +83,7 @@ export default class ContactModel extends BaseModel {
     if (!this.phone) {
       throw new Error('Phone number is required');
     }
-    if (!isValidPhoneNumber(this.phone)) {
+    if (!UsersValidationUtils.validatePhoneNumber(this.phone)) {
       throw new Error('Invalid phone number');
     }
     if (this.tenant && (this.tenant.trim().length < 1 || this.tenant.trim().length > 128)) {

@@ -581,8 +581,8 @@ export default class Memos extends MemosModel {
     return await this.findMemosForEscalation(hours_threshold);
   }
 
-  async analyzeSuspiciousPatterns(user_id: number, days: number = 30): Promise<any> {
-    return await this.findSuspiciousPatterns(user_id, days);
+  async analyzeSuspiciousPatterns(user: number, days: number = 30): Promise<any> {
+    return await this.findSuspiciousPatterns(user, days);
   }
 
   async getStatistics(filters: Record<string, any> = {}): Promise<any> {

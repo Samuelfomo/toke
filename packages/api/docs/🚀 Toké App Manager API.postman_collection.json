@@ -1273,10 +1273,333 @@
 					"name": "Real-time Session Monitoring",
 					"item": [
 						{
-							"name": "New Request",
+							"name": "🕐 View Active Work Sessions",
 							"request": {
 								"method": "GET",
-								"header": []
+								"header": [],
+								"url": {
+									"raw": "{{baseUrl}}/user/attendance/active-sessions?manager=managerGuid",
+									"host": [
+										"{{baseUrl}}"
+									],
+									"path": [
+										"user",
+										"attendance",
+										"active-sessions"
+									],
+									"query": [
+										{
+											"key": "manager",
+											"value": "managerGuid"
+										}
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "📅 Today's Attendance Summary",
+							"request": {
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "{{baseUrl}}/user/attendance/today?manager=managerGuid(optional)&site=siteGuid(optional)",
+									"host": [
+										"{{baseUrl}}"
+									],
+									"path": [
+										"user",
+										"attendance",
+										"today"
+									],
+									"query": [
+										{
+											"key": "manager",
+											"value": "managerGuid(optional)"
+										},
+										{
+											"key": "site",
+											"value": "siteGuid(optional)"
+										}
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "👤 Employee Current Session",
+							"request": {
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "{{baseUrl}}/user/attendance/employee/:guid/current",
+									"host": [
+										"{{baseUrl}}"
+									],
+									"path": [
+										"user",
+										"attendance",
+										"employee",
+										":guid",
+										"current"
+									],
+									"variable": [
+										{
+											"key": "guid",
+											"value": ""
+										}
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "🏗️ Site Current Presence",
+							"request": {
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "{{baseUrl}}/user/attendance/site/:guid/current",
+									"host": [
+										"{{baseUrl}}"
+									],
+									"path": [
+										"user",
+										"attendance",
+										"site",
+										":guid",
+										"current"
+									],
+									"variable": [
+										{
+											"key": "guid",
+											"value": ""
+										}
+									]
+								}
+							},
+							"response": []
+						}
+					]
+				},
+				{
+					"name": "Historical Data & Analytics",
+					"item": [
+						{
+							"name": "📚 Attendance History",
+							"request": {
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "{{baseUrl}}/time-entries/attendance/history?{manager, site, start_date, end_date, employee }=req.query",
+									"host": [
+										"{{baseUrl}}"
+									],
+									"path": [
+										"time-entries",
+										"attendance",
+										"history"
+									],
+									"query": [
+										{
+											"key": "{manager, site, start_date, end_date, employee }",
+											"value": "req.query"
+										}
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "👤 Employee Attendance History",
+							"request": {
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "{{baseUrl}}/time-entries/attendance/employee/:guid/history?{ start_date, end_date, include_time_entries } = req.query",
+									"host": [
+										"{{baseUrl}}"
+									],
+									"path": [
+										"time-entries",
+										"attendance",
+										"employee",
+										":guid",
+										"history"
+									],
+									"query": [
+										{
+											"key": "{ start_date, end_date, include_time_entries } ",
+											"value": " req.query"
+										}
+									],
+									"variable": [
+										{
+											"key": "guid",
+											"value": ""
+										}
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "👤 Employee Attendance History Copy",
+							"request": {
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "{{baseUrl}}/time-entries/attendance?{ manager, site, employee, start_date, end_date, pointage_type, status } = req.query",
+									"host": [
+										"{{baseUrl}}"
+									],
+									"path": [
+										"time-entries",
+										"attendance"
+									],
+									"query": [
+										{
+											"key": "{ manager, site, employee, start_date, end_date, pointage_type, status } ",
+											"value": " req.query"
+										}
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "📈 Team Attendance Statistics",
+							"request": {
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "{{baseUrl}}/time-entries/attendance/statistics?{ manager, site, start_date, end_date } = req.query",
+									"host": [
+										"{{baseUrl}}"
+									],
+									"path": [
+										"time-entries",
+										"attendance",
+										"statistics"
+									],
+									"query": [
+										{
+											"key": "{ manager, site, start_date, end_date } ",
+											"value": " req.query"
+										}
+									]
+								}
+							},
+							"response": []
+						}
+					]
+				},
+				{
+					"name": "Attendance Corrections & Management",
+					"item": [
+						{
+							"name": "✏️ Correct Work Session",
+							"request": {
+								"method": "PATCH",
+								"header": [],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n    \"corrections\": \"\",\n    \"manager_guid\": \"\"\n}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{baseUrl}}/work-sessions/:guid/correct",
+									"host": [
+										"{{baseUrl}}"
+									],
+									"path": [
+										"work-sessions",
+										":guid",
+										"correct"
+									],
+									"variable": [
+										{
+											"key": "guid",
+											"value": ""
+										}
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "✏️ Correct Time Entry",
+							"request": {
+								"method": "PATCH",
+								"header": [],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n    \"corrections\": \"\",\n    \"manager_guid\": \"\"\n}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{baseUrl}}/work-sessions/attendance/entry/:guid/correct",
+									"host": [
+										"{{baseUrl}}"
+									],
+									"path": [
+										"work-sessions",
+										"attendance",
+										"entry",
+										":guid",
+										"correct"
+									],
+									"variable": [
+										{
+											"key": "guid",
+											"value": ""
+										}
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "🔒 Force Close Session",
+							"request": {
+								"method": "PATCH",
+								"header": [],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n    \"corrections\": \"\",\n    \"manager_guid\": \"\"\n}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{baseUrl}}/work-sessions/attendance/session/:guid/close",
+									"host": [
+										"{{baseUrl}}"
+									],
+									"path": [
+										"work-sessions",
+										"attendance",
+										"session",
+										":guid",
+										"close"
+									],
+									"variable": [
+										{
+											"key": "guid",
+											"value": ""
+										}
+									]
+								}
 							},
 							"response": []
 						}

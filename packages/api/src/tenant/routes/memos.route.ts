@@ -15,6 +15,7 @@ import {
   validateMemosUpdate,
   validateMemoValidation,
   WORK_SESSIONS_CODES,
+  WorkSessionsValidationUtils,
 } from '@toke/shared';
 
 import Ensure from '../../middle/ensured-routes.js';
@@ -188,8 +189,9 @@ router.get('/status/:memoStatus/list', Ensure.get(), async (req: Request, res: R
         message: MEMOS_ERRORS.MEMO_STATUS_INVALID,
       });
     }
+    // const paginationOptions = paginationSchema.parse(req.query);
 
-    const memoEntries = await Memos._findByStatus(memoStatus as MemoStatus);
+    const memoEntries = await Memos._findByStatus(memoStatus as MemoStatus, {});
     const memos = {
       memo_status: memoStatus,
       items: memoEntries
@@ -296,7 +298,7 @@ router.get('/urgent', Ensure.get(), async (req: Request, res: Response) => {
 });
 
 // === CRÉATION DE MÉMO ===
-
+// 📋 Create memo to request justification from employee for attendance irregularities
 router.post('/', Ensure.post(), async (req: Request, res: Response) => {
   try {
     const validatedData = validateMemosCreation(req.body);
@@ -354,7 +356,16 @@ router.post('/', Ensure.post(), async (req: Request, res: Response) => {
     }
 
     if (validatedData.affected_entries) {
-      memoObj.setAffectedEntriesIds(validatedData.affected_entries);
+      const affectedEntries = await Promise.all(
+        validatedData.affected_entries.map(async (entry) => {
+          const sessionObj = await WorkSessions._load(entry, true);
+          return sessionObj?.getId() ?? null;
+        }),
+      );
+
+      // 🧹 Enlever les null avant de les envoyer
+      const validEntries = affectedEntries.filter((id): id is number => id !== null);
+      memoObj.setAffectedEntriesIds(validEntries);
     }
 
     if (validatedData.attachments) {
@@ -510,7 +521,7 @@ router.delete('/:guid', Ensure.delete(), async (req: Request, res: Response) => 
 
 // === GESTION DU CYCLE DE VIE ===
 
-router.post('/:guid/submit', Ensure.post(), async (req: Request, res: Response) => {
+router.patch('/:guid/submit', Ensure.patch(), async (req: Request, res: Response) => {
   try {
     if (!MemosValidationUtils.validateGuid(req.params.guid)) {
       return R.handleError(res, HttpStatus.BAD_REQUEST, {
@@ -541,7 +552,7 @@ router.post('/:guid/submit', Ensure.post(), async (req: Request, res: Response) 
   }
 });
 
-router.post('/:guid/approve', Ensure.post(), async (req: Request, res: Response) => {
+router.patch('/:guid/approve', Ensure.patch(), async (req: Request, res: Response) => {
   try {
     if (!MemosValidationUtils.validateGuid(req.params.guid)) {
       return R.handleError(res, HttpStatus.BAD_REQUEST, {
@@ -590,7 +601,7 @@ router.post('/:guid/approve', Ensure.post(), async (req: Request, res: Response)
   }
 });
 
-router.post('/:guid/reject', Ensure.post(), async (req: Request, res: Response) => {
+router.patch('/:guid/reject', Ensure.patch(), async (req: Request, res: Response) => {
   try {
     if (!MemosValidationUtils.validateGuid(req.params.guid)) {
       return R.handleError(res, HttpStatus.BAD_REQUEST, {
@@ -639,7 +650,7 @@ router.post('/:guid/reject', Ensure.post(), async (req: Request, res: Response) 
   }
 });
 
-router.post('/:guid/escalate', Ensure.post(), async (req: Request, res: Response) => {
+router.patch('/:guid/escalate', Ensure.patch(), async (req: Request, res: Response) => {
   try {
     if (!MemosValidationUtils.validateGuid(req.params.guid)) {
       return R.handleError(res, HttpStatus.BAD_REQUEST, {
@@ -690,6 +701,7 @@ router.post('/:guid/escalate', Ensure.post(), async (req: Request, res: Response
 
 // === ROUTES PAR AUTEUR ===
 
+// 📝 List all memos created by current manager with response status tracking
 router.get('/author/:userGuid/list', Ensure.get(), async (req: Request, res: Response) => {
   try {
     if (!MemosValidationUtils.validateGuid(req.params.userGuid)) {
@@ -809,7 +821,7 @@ router.get('/validator/:userGuid/list', Ensure.get(), async (req: Request, res: 
 
 router.get('/session/:sessionGuid/list', Ensure.get(), async (req: Request, res: Response) => {
   try {
-    if (!MemosValidationUtils.validateGuid(req.params.sessionGuid)) {
+    if (!WorkSessionsValidationUtils.validateGuid(req.params.sessionGuid)) {
       return R.handleError(res, HttpStatus.BAD_REQUEST, {
         code: MEMOS_CODES.INVALID_GUID,
         message: MEMOS_ERRORS.GUID_INVALID,
@@ -978,7 +990,7 @@ router.get('/corrective/list', Ensure.get(), async (req: Request, res: Response)
 
 // === GESTION DES PIÈCES JOINTES ===
 
-router.post('/:guid/attachments', Ensure.post(), async (req: Request, res: Response) => {
+router.patch('/:guid/attachments', Ensure.patch(), async (req: Request, res: Response) => {
   try {
     if (!MemosValidationUtils.validateGuid(req.params.guid)) {
       return R.handleError(res, HttpStatus.BAD_REQUEST, {
@@ -997,7 +1009,7 @@ router.post('/:guid/attachments', Ensure.post(), async (req: Request, res: Respo
 
     const { attachment } = req.body;
 
-    if (!attachment) {
+    if (!attachment || !MemosValidationUtils.validateAttachments(attachment)) {
       return R.handleError(res, HttpStatus.BAD_REQUEST, {
         code: MEMOS_CODES.VALIDATION_FAILED,
         message: 'attachment object is required',
@@ -1100,7 +1112,7 @@ router.get(
 
 // === ESCALADE AUTOMATIQUE ===
 
-router.post('/maintenance/auto-escalate', Ensure.post(), async (req: Request, res: Response) => {
+router.patch('/maintenance/auto-escalate', Ensure.patch(), async (req: Request, res: Response) => {
   try {
     const { hours_threshold = 24 } = req.body;
     const threshold = parseInt(hours_threshold, 10);

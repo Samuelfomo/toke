@@ -613,14 +613,14 @@ export default class TimeEntriesModel extends BaseModel {
   private async validate(): Promise<void> {
     // Validation champs obligatoires
     if (!this.session) {
-      throw new Error(TIME_ENTRIES_ERRORS?.SESSION_REQUIRED);
+      throw new Error(TIME_ENTRIES_ERRORS.SESSION_REQUIRED);
     }
     if (!TimeEntriesValidationUtils.validateSessionId(this.session)) {
       throw new Error(TIME_ENTRIES_ERRORS.SESSION_INVALID);
     }
 
     if (!this.user) {
-      throw new Error(TIME_ENTRIES_ERRORS?.USER_REQUIRED);
+      throw new Error(TIME_ENTRIES_ERRORS.USER_REQUIRED);
     }
     // if (!TimeEntriesValidationUtils.validateUserId(this.user)) {
     //   throw new Error(TIME_ENTRIES_ERRORS.USER_INVALID);

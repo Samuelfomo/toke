@@ -52,6 +52,7 @@ export default class ClientProfileModel extends BaseModel {
     if (!this.root) {
       this.root = false;
     }
+    console.log(this.root, 'root');
     await this.validate();
 
     const existName = await this.findByName(this.name!);
@@ -60,7 +61,7 @@ export default class ClientProfileModel extends BaseModel {
     }
     // const existRoot = await this.findOne(this.db.tableName, { [this.db.root]: true });
     const existRoot = await this.existAdmin();
-    if (existRoot) {
+    if (existRoot && this.root) {
       throw new Error(`profil admin root already exists`);
     }
     const lastID = await this.insertOne(this.db.tableName, {

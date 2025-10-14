@@ -1094,11 +1094,14 @@ router.post('/otp', Ensure.post(), async (req: Request, res: Response) => {
     // === RÉPONSE ===
     const response: any = {
       message: 'OTP successfully sent',
-      reference: phone || email,
+      // reference: phone || email,
     };
 
     if (phone) {
       response.verify = verify;
+      response.phone = phone;
+    } else {
+      response.email = email;
     }
 
     return R.handleSuccess(res, response);
@@ -1164,7 +1167,7 @@ router.patch('/verify-otp', Ensure.patch(), async (req: Request, res: Response) 
         await contactObj.save();
       } catch (err) {
         return R.handleError(res, HttpStatus.INTERNAL_ERROR, {
-          code: 'CONTACT_CREATION_FAILED',
+          code: 'contact_creation_failed',
           message: (err as Error).message,
         });
       }

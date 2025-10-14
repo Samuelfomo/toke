@@ -29,38 +29,56 @@ export class MemosValidationUtils {
   }
 
   /**
-   * Validates author user ID
+   * Validates author user
    */
-  static validateAuthorUserId(authorUserId: number): boolean {
-    if (typeof authorUserId !== 'number' || !Number.isInteger(authorUserId)) return false;
-    return (
-      authorUserId >= MEMOS_VALIDATION.AUTHOR_USER.MIN &&
-      authorUserId <= MEMOS_VALIDATION.AUTHOR_USER.MAX
-    );
+  static validateAuthorUserId(authorUserId: string): boolean {
+    if (typeof authorUserId !== 'string') return false;
+
+    const trimmed = authorUserId.trim();
+    if (
+      trimmed.length >= MEMOS_VALIDATION.AUTHOR_USER.MIN_LENGTH ||
+      trimmed.length <= MEMOS_VALIDATION.AUTHOR_USER.MAX_LENGTH
+    ) {
+      return false;
+    }
+
+    const uuidRegex = /^[0-9]+$/;
+    return uuidRegex.test(trimmed);
   }
 
   /**
-   * Validates target user ID
+   * Validates target user
    */
-  static validateTargetUserId(targetUserId: number | null): boolean {
+  static validateTargetUserId(targetUserId: string | null): boolean {
     if (targetUserId === null || targetUserId === undefined) return true;
-    if (typeof targetUserId !== 'number' || !Number.isInteger(targetUserId)) return false;
-    return (
-      targetUserId >= MEMOS_VALIDATION.TARGET_USER.MIN &&
-      targetUserId <= MEMOS_VALIDATION.TARGET_USER.MAX
-    );
+    if (typeof targetUserId !== 'string') return false;
+
+    const trimmed = targetUserId.trim();
+    if (
+      trimmed.length >= MEMOS_VALIDATION.TARGET_USER.MIN_LENGTH ||
+      trimmed.length <= MEMOS_VALIDATION.TARGET_USER.MAX_LENGTH
+    ) {
+      return false;
+    }
+    const uuidRegex = /^[0-9]+$/;
+    return uuidRegex.test(trimmed);
   }
 
   /**
-   * Validates validator user ID
+   * Validates validator user
    */
-  static validateValidatorUserId(validatorUserId: number | null): boolean {
+  static validateValidatorUserId(validatorUserId: string | null): boolean {
     if (validatorUserId === null || validatorUserId === undefined) return true;
-    if (typeof validatorUserId !== 'number' || !Number.isInteger(validatorUserId)) return false;
-    return (
-      validatorUserId >= MEMOS_VALIDATION.VALIDATOR_USER.MIN &&
-      validatorUserId <= MEMOS_VALIDATION.VALIDATOR_USER.MAX
-    );
+    if (typeof validatorUserId !== 'string') return false;
+    const trimmed = validatorUserId.trim();
+    if (
+      trimmed.length >= MEMOS_VALIDATION.VALIDATOR_USER.MIN_LENGTH ||
+      trimmed.length <= MEMOS_VALIDATION.VALIDATOR_USER.MAX_LENGTH
+    ) {
+      return false;
+    }
+    const uuidRegex = /^[0-9]+$/;
+    return uuidRegex.test(trimmed);
   }
 
   /**
@@ -121,13 +139,19 @@ export class MemosValidationUtils {
   /**
    * Validates affected session ID
    */
-  static validateAffectedSessionId(sessionId: number | null): boolean {
+  static validateAffectedSessionId(sessionId: string | null): boolean {
     if (sessionId === null || sessionId === undefined) return true;
-    if (typeof sessionId !== 'number' || !Number.isInteger(sessionId)) return false;
-    return (
-      sessionId >= MEMOS_VALIDATION.AFFECTED_SESSION.MIN &&
-      sessionId <= MEMOS_VALIDATION.AFFECTED_SESSION.MAX
-    );
+    if (typeof sessionId !== 'string') return false;
+    const trimmed = sessionId.trim();
+    if (
+      trimmed.length >= MEMOS_VALIDATION.AFFECTED_SESSION.MIN_LENGTH ||
+      trimmed.length <= MEMOS_VALIDATION.AFFECTED_SESSION.MAX_LENGTH
+    ) {
+      return false;
+    }
+
+    const uuidRegex = /^[0-9]+$/;
+    return uuidRegex.test(trimmed);
   }
 
   /**
@@ -138,11 +162,18 @@ export class MemosValidationUtils {
     if (!Array.isArray(entries)) return false;
 
     return entries.every((entryId) => {
-      if (typeof entryId !== 'number' || !Number.isInteger(entryId)) return false;
-      return (
-        entryId >= MEMOS_VALIDATION.AFFECTED_ENTRIES.MIN_ID &&
-        entryId <= MEMOS_VALIDATION.AFFECTED_ENTRIES.MAX_ID
-      );
+      if (typeof entryId !== 'string') return false;
+
+      const trimmed = entryId.trim();
+      if (
+        trimmed.length >= MEMOS_VALIDATION.AFFECTED_ENTRIES.MIN_LENGTH &&
+        trimmed.length <= MEMOS_VALIDATION.AFFECTED_ENTRIES.MAX_LENGTH
+      ) {
+        return false;
+      }
+
+      const uuidRegex = /^[0-9]+$/;
+      return uuidRegex.test(trimmed);
     });
   }
 
@@ -288,13 +319,11 @@ export class MemosValidationUtils {
     const cleaned = { ...data };
 
     // Convert numeric fields
-    ['author_user_id', 'target_user_id', 'validator_user_id', 'affected_session_id'].forEach(
-      (field) => {
-        if (cleaned[field] !== undefined && cleaned[field] !== null) {
-          cleaned[field] = Number(cleaned[field]);
-        }
-      },
-    );
+    ['author_user', 'target_user', 'validator_user', 'affected_session'].forEach((field) => {
+      if (cleaned[field] !== undefined && cleaned[field] !== null) {
+        cleaned[field] = Number(cleaned[field]);
+      }
+    });
 
     // Clean string fields
     [
@@ -353,7 +382,7 @@ export class MemosValidationUtils {
    * Validates that a memo is complete for creation
    */
   static isValidForCreation(data: any): boolean {
-    const requiredFields = ['author_user_id', 'memo_type', 'title', 'description'];
+    const requiredFields = ['author_user', 'memo_type', 'title', 'description'];
 
     // Check required fields
     for (const field of requiredFields) {
@@ -363,15 +392,15 @@ export class MemosValidationUtils {
     }
 
     return (
-      this.validateAuthorUserId(data.author_user_id) &&
-      this.validateTargetUserId(data.target_user_id) &&
-      this.validateValidatorUserId(data.validator_user_id) &&
+      this.validateAuthorUserId(data.author_user) &&
+      this.validateTargetUserId(data.target_user) &&
+      this.validateValidatorUserId(data.validator_user) &&
       this.validateMemoType(data.memo_type) &&
       (data.memo_status === undefined || this.validateMemoStatus(data.memo_status)) &&
       this.validateTitle(data.title) &&
       this.validateDescription(data.description) &&
       this.validateIncidentDatetime(data.incident_datetime) &&
-      this.validateAffectedSessionId(data.affected_session_id) &&
+      this.validateAffectedSessionId(data.affected_session) &&
       this.validateAffectedEntries(data.affected_entries) &&
       this.validateAttachments(data.attachments) &&
       this.validateValidatorComments(data.validator_comments, data.memo_status) &&
@@ -388,16 +417,15 @@ export class MemosValidationUtils {
   static isValidForUpdate(data: any): boolean {
     // For updates, validate only fields that are present
     const validations = [
-      data.author_user_id === undefined || this.validateAuthorUserId(data.author_user_id),
-      data.target_user_id === undefined || this.validateTargetUserId(data.target_user_id),
-      data.validator_user_id === undefined || this.validateValidatorUserId(data.validator_user_id),
+      data.author_user === undefined || this.validateAuthorUserId(data.author_user),
+      data.target_user === undefined || this.validateTargetUserId(data.target_user),
+      data.validator_user === undefined || this.validateValidatorUserId(data.validator_user),
       data.memo_type === undefined || this.validateMemoType(data.memo_type),
       data.memo_status === undefined || this.validateMemoStatus(data.memo_status),
       data.title === undefined || this.validateTitle(data.title),
       data.description === undefined || this.validateDescription(data.description),
       data.incident_datetime === undefined || this.validateIncidentDatetime(data.incident_datetime),
-      data.affected_session_id === undefined ||
-        this.validateAffectedSessionId(data.affected_session_id),
+      data.affected_session === undefined || this.validateAffectedSessionId(data.affected_session),
       data.affected_entries === undefined || this.validateAffectedEntries(data.affected_entries),
       data.attachments === undefined || this.validateAttachments(data.attachments),
       data.validator_comments === undefined ||
@@ -419,27 +447,24 @@ export class MemosValidationUtils {
     const errors: string[] = [];
 
     if (
-      data.author_user_id === undefined ||
-      data.author_user_id === null ||
-      !this.validateAuthorUserId(data.author_user_id)
+      data.author_user === undefined ||
+      data.author_user === null ||
+      !this.validateAuthorUserId(data.author_user)
     ) {
       errors.push(
-        `Invalid author_user_id: must be between ${MEMOS_VALIDATION.AUTHOR_USER.MIN} and ${MEMOS_VALIDATION.AUTHOR_USER.MAX}`,
+        `Invalid author_user: must be between ${MEMOS_VALIDATION.AUTHOR_USER.MIN_LENGTH} and ${MEMOS_VALIDATION.AUTHOR_USER.MAX_LENGTH}`,
       );
     }
 
-    if (data.target_user_id !== undefined && !this.validateTargetUserId(data.target_user_id)) {
+    if (data.target_user !== undefined && !this.validateTargetUserId(data.target_user)) {
       errors.push(
-        `Invalid target_user_id: must be between ${MEMOS_VALIDATION.TARGET_USER.MIN} and ${MEMOS_VALIDATION.TARGET_USER.MAX}`,
+        `Invalid target_user: must be between ${MEMOS_VALIDATION.TARGET_USER.MIN_LENGTH} and ${MEMOS_VALIDATION.TARGET_USER.MAX_LENGTH}`,
       );
     }
 
-    if (
-      data.validator_user_id !== undefined &&
-      !this.validateValidatorUserId(data.validator_user_id)
-    ) {
+    if (data.validator_user !== undefined && !this.validateValidatorUserId(data.validator_user)) {
       errors.push(
-        `Invalid validator_user_id: must be between ${MEMOS_VALIDATION.VALIDATOR_USER.MIN} and ${MEMOS_VALIDATION.VALIDATOR_USER.MAX}`,
+        `Invalid validator_user: must be between ${MEMOS_VALIDATION.VALIDATOR_USER.MIN_LENGTH} and ${MEMOS_VALIDATION.VALIDATOR_USER.MAX_LENGTH}`,
       );
     }
 
@@ -473,11 +498,11 @@ export class MemosValidationUtils {
     }
 
     if (
-      data.affected_session_id !== undefined &&
-      !this.validateAffectedSessionId(data.affected_session_id)
+      data.affected_session !== undefined &&
+      !this.validateAffectedSessionId(data.affected_session)
     ) {
       errors.push(
-        `Invalid affected_session_id: must be between ${MEMOS_VALIDATION.AFFECTED_SESSION.MIN} and ${MEMOS_VALIDATION.AFFECTED_SESSION.MAX}`,
+        `Invalid affected_session: must be between ${MEMOS_VALIDATION.AFFECTED_SESSION.MIN_LENGTH} and ${MEMOS_VALIDATION.AFFECTED_SESSION.MAX_LENGTH}`,
       );
     }
 
@@ -486,7 +511,7 @@ export class MemosValidationUtils {
       !this.validateAffectedEntries(data.affected_entries)
     ) {
       errors.push(
-        `Invalid affected_entries: must be an array of valid IDs between ${MEMOS_VALIDATION.AFFECTED_ENTRIES.MIN_ID} and ${MEMOS_VALIDATION.AFFECTED_ENTRIES.MAX_ID}`,
+        `Invalid affected_entries: must be an array of valid IDs between ${MEMOS_VALIDATION.AFFECTED_ENTRIES.MIN_LENGTH} and ${MEMOS_VALIDATION.AFFECTED_ENTRIES.MAX_LENGTH}`,
       );
     }
 
@@ -536,13 +561,13 @@ export class MemosValidationUtils {
    */
   static validateFilterData(data: any): boolean {
     return (
-      (data.author_user_id && this.validateAuthorUserId(data.author_user_id)) ||
-      (data.target_user_id && this.validateTargetUserId(data.target_user_id)) ||
-      (data.validator_user_id && this.validateValidatorUserId(data.validator_user_id)) ||
+      (data.author_user && this.validateAuthorUserId(data.author_user)) ||
+      (data.target_user && this.validateTargetUserId(data.target_user)) ||
+      (data.validator_user && this.validateValidatorUserId(data.validator_user)) ||
       (data.memo_type && this.validateMemoType(data.memo_type)) ||
       (data.memo_status && this.validateMemoStatus(data.memo_status)) ||
       (data.auto_generated !== undefined && this.validateAutoGenerated(data.auto_generated)) ||
-      (data.affected_session_id && this.validateAffectedSessionId(data.affected_session_id)) ||
+      (data.affected_session && this.validateAffectedSessionId(data.affected_session)) ||
       (data.incident_datetime_from && !isNaN(new Date(data.incident_datetime_from).getTime())) ||
       (data.incident_datetime_to && !isNaN(new Date(data.incident_datetime_to).getTime())) ||
       (data.processed_at_from && !isNaN(new Date(data.processed_at_from).getTime())) ||
@@ -570,9 +595,9 @@ export class MemosValidationUtils {
     const filteredMemos = userId
       ? memos.filter(
           (memo) =>
-            memo.author_user_id === userId ||
-            memo.target_user_id === userId ||
-            memo.validator_user_id === userId,
+            memo.author_user === userId ||
+            memo.target_user === userId ||
+            memo.validator_user === userId,
         )
       : memos;
 
@@ -592,9 +617,9 @@ export class MemosValidationUtils {
 
     filteredMemos.forEach((memo) => {
       if (userId) {
-        if (memo.author_user_id === userId) summary.authoredMemos++;
-        if (memo.target_user_id === userId) summary.targetedMemos++;
-        if (memo.validator_user_id === userId) summary.validatedMemos++;
+        if (memo.author_user === userId) summary.authoredMemos++;
+        if (memo.target_user === userId) summary.targetedMemos++;
+        if (memo.validator_user === userId) summary.validatedMemos++;
       }
 
       const status = memo.memo_status || MemoStatus.DRAFT;
@@ -639,9 +664,9 @@ export class MemosValidationUtils {
     // Check self-validation
     if (
       !allowSelfValidation &&
-      data.author_user_id &&
-      data.validator_user_id &&
-      !this.validateNotSelfValidation(data.author_user_id, data.validator_user_id)
+      data.author_user &&
+      data.validator_user &&
+      !this.validateNotSelfValidation(data.author_user, data.validator_user)
     ) {
       errors.push('Users cannot validate their own memos');
     }
@@ -661,7 +686,7 @@ export class MemosValidationUtils {
     }
 
     // Check validator requirement for approval/rejection
-    if (data.memo_status && this.isValidatorRequired(data.memo_status) && !data.validator_user_id) {
+    if (data.memo_status && this.isValidatorRequired(data.memo_status) && !data.validator_user) {
       errors.push('Validator user is required for approval or rejection');
     }
 
@@ -695,7 +720,7 @@ export class MemosValidationUtils {
         break;
 
       case MemoType.SESSION_CLOSURE:
-        if (!data.affected_session_id) {
+        if (!data.affected_session) {
           errors.push('Affected session is required for session closure memos');
         }
         break;
