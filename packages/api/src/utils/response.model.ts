@@ -9,6 +9,8 @@ export const responseValue = {
   FULL: 'full',
 } as const;
 
+export type ViewType = (typeof responseValue)[keyof typeof responseValue];
+
 export const responseStructure = {
   ID: 'id',
   GUID: 'guid',

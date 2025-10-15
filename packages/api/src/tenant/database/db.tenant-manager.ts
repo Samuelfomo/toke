@@ -17,6 +17,9 @@ export default class TenantManager {
   private static connections: Map<string, Sequelize> = new Map();
   private static currentTenant: string | null = null;
 
+  // Timezone pour l'Afrique Centrale (Cameroun, Congo, etc.)
+  private static readonly TIMEZONE = 'Africa/Douala'; // UTC+1
+
   public static setCurrentTenant(subdomain: string): void {
     TenantManager.currentTenant = subdomain;
     console.log(`🏢 Tenant actuel défini: ${subdomain}`);
@@ -45,6 +48,7 @@ export default class TenantManager {
 
     console.log(`🔌 Création nouvelle connexion pour tenant: ${subdomain}`);
     console.log(`📍 DB: ${config.username}@${config.host}:${config.port}/${config.database}`);
+    console.log(`🌍 Timezone: ${TenantManager.TIMEZONE} (UTC+1)`);
 
     const sequelize = new Sequelize(
       config.database,
@@ -55,18 +59,36 @@ export default class TenantManager {
         port: config.port,
         dialect: 'postgres',
         logging: false, // Activer en dev si nécessaire
+
+        // Configuration timezone Afrique Centrale
+        timezone: TenantManager.TIMEZONE,
+        dialectOptions: {
+          timezone: TenantManager.TIMEZONE,
+        },
+
         pool: {
           max: 5,
           min: 0,
           acquire: 30000,
           idle: 10000,
         },
+
+        // Définir les options par défaut pour les timestamps
+        define: {
+          timestamps: true,
+          underscored: true,
+        },
+
       }
     );
 
     try {
       await sequelize.authenticate();
       console.log(`✅ Connexion DB établie pour tenant: ${subdomain}`);
+
+      // Configurer le timezone au niveau de la session PostgreSQL
+      await sequelize.query(`SET timezone = '${TenantManager.TIMEZONE}'`);
+      console.log(`⏰ Timezone configuré: ${TenantManager.TIMEZONE}`);
 
       TenantManager.connections.set(connectionKey, sequelize);
       return sequelize;
@@ -86,6 +108,20 @@ export default class TenantManager {
     }
 
     return connection;
+  }
+
+  /**
+   * Retourne le timezone configuré
+   */
+  public static getTimezone(): string {
+    return TenantManager.TIMEZONE;
+  }
+
+  /**
+   * Retourne la date/heure actuelle au timezone Africa/Douala
+   */
+  public static getCurrentTime(): Date {
+    return new Date(new Date().toLocaleString('en-US', { timeZone: TenantManager.TIMEZONE }));
   }
 
   public static async closeAllConnections(): Promise<void> {

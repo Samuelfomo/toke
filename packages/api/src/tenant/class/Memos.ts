@@ -97,6 +97,7 @@ export default class Memos extends MemosModel {
   static async exportable(
     conditions: Record<string, any> = {},
     paginationOptions: { offset?: number; limit?: number } = {},
+    view?: any,
   ): Promise<{
     revision: string;
     pagination: { offset?: number; limit?: number; count?: number };
@@ -105,7 +106,7 @@ export default class Memos extends MemosModel {
     let items: any[] = [];
     const memos = await this._list(conditions, paginationOptions);
     if (memos) {
-      items = await Promise.all(memos.map(async (memo) => await memo.toJSON()));
+      items = await Promise.all(memos.map(async (memo) => await memo.toJSON(view)));
     }
     return {
       revision: '',

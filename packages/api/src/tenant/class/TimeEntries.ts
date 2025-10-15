@@ -31,24 +31,38 @@ export default class TimeEntries extends TimeEntriesModel {
     return new TimeEntries().list(conditions, paginationOptions);
   }
 
-  static _listBySession(session_id: number): Promise<TimeEntries[] | null> {
-    return new TimeEntries().listBySession(session_id);
+  static _listBySession(
+    session: number,
+    paginationOptions: { offset?: number; limit?: number } = {},
+  ): Promise<TimeEntries[] | null> {
+    return new TimeEntries().listBySession(session, paginationOptions);
   }
 
-  static _listByUser(user_id: number): Promise<TimeEntries[] | null> {
-    return new TimeEntries().listByUser(user_id);
+  static _listByUser(
+    user: number,
+    paginationOptions: { offset?: number; limit?: number } = {},
+  ): Promise<TimeEntries[] | null> {
+    return new TimeEntries().listByUser(user, paginationOptions);
   }
 
-  static _listBySite(site_id: number): Promise<TimeEntries[] | null> {
-    return new TimeEntries().listBySite(site_id);
+  static _listBySite(
+    site: number,
+    paginationOptions: { offset?: number; limit?: number } = {},
+  ): Promise<TimeEntries[] | null> {
+    return new TimeEntries().listBySite(site, paginationOptions);
   }
 
-  static _findPendingValidation(): Promise<TimeEntries[] | null> {
-    return new TimeEntries().findAllPendingValidation();
+  static _findPendingValidation(
+    paginationOptions: { offset?: number; limit?: number } = {},
+  ): Promise<TimeEntries[] | null> {
+    return new TimeEntries().findAllPendingValidation(paginationOptions);
   }
 
-  static _findOfflineEntries(user_id: number): Promise<TimeEntries[] | null> {
-    return new TimeEntries().findOffline(user_id);
+  static _findOfflineEntries(
+    user: number,
+    paginationOptions: { offset?: number; limit?: number } = {},
+  ): Promise<TimeEntries[] | null> {
+    return new TimeEntries().findOffline(user, paginationOptions);
   }
 
   static async exportable(
@@ -721,38 +735,52 @@ export default class TimeEntries extends TimeEntriesModel {
     return dataset.map((data) => new TimeEntries().hydrate(data));
   }
 
-  async listBySession(session_id: number): Promise<TimeEntries[] | null> {
-    const dataset = await this.listAllBySession(session_id);
+  async listBySession(
+    session: number,
+    paginationOptions: { offset?: number; limit?: number } = {},
+  ): Promise<TimeEntries[] | null> {
+    const dataset = await this.listAllBySession(session, paginationOptions);
     if (!dataset || dataset.length === 0) return null;
     return dataset.map((data) => new TimeEntries().hydrate(data));
   }
 
-  async listByUser(user_id: number): Promise<TimeEntries[] | null> {
-    const dataset = await this.listAllByUser(user_id);
+  async listByUser(
+    user: number,
+    paginationOptions: { offset?: number; limit?: number } = {},
+  ): Promise<TimeEntries[] | null> {
+    const dataset = await this.listAllByUser(user, paginationOptions);
     if (!dataset || dataset.length === 0) return null;
     return dataset.map((data) => new TimeEntries().hydrate(data));
   }
 
-  async listBySite(site_id: number): Promise<TimeEntries[] | null> {
-    const dataset = await this.listAllBySite(site_id);
+  async listBySite(
+    site: number,
+    paginationOptions: { offset?: number; limit?: number } = {},
+  ): Promise<TimeEntries[] | null> {
+    const dataset = await this.listAllBySite(site, paginationOptions);
     if (!dataset || dataset.length === 0) return null;
     return dataset.map((data) => new TimeEntries().hydrate(data));
   }
 
-  async findAllPendingValidation(): Promise<TimeEntries[] | null> {
-    const dataset = await this.findPendingValidation();
+  async findAllPendingValidation(
+    paginationOptions: { offset?: number; limit?: number } = {},
+  ): Promise<TimeEntries[] | null> {
+    const dataset = await this.findPendingValidation(paginationOptions);
     if (!dataset || dataset.length === 0) return null;
     return dataset.map((data) => new TimeEntries().hydrate(data));
   }
 
-  async findOffline(user_id: number): Promise<TimeEntries[] | null> {
-    const dataset = await this.findOfflineEntries(user_id);
+  async findOffline(
+    user: number,
+    paginationOptions: { offset?: number; limit?: number } = {},
+  ): Promise<TimeEntries[] | null> {
+    const dataset = await this.findOfflineEntries(user, paginationOptions);
     if (!dataset || dataset.length === 0) return null;
     return dataset.map((data) => new TimeEntries().hydrate(data));
   }
 
-  async batchSync(user_id: number, entries_data: any[]): Promise<any> {
-    return await this.processBatchSync(user_id, entries_data);
+  async batchSync(user: number, entries_data: any[]): Promise<any> {
+    return await this.processBatchSync(user, entries_data);
   }
 
   // async detectAnomalies(user_id: number, days: number): Promise<any[]> {

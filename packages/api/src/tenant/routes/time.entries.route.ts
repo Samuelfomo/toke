@@ -30,6 +30,7 @@ import Revision from '../../tools/revision.js';
 import { responseValue, tableName } from '../../utils/response.model.js';
 import { UserAuth } from '../../middle/user-auth.js';
 import UserRole from '../class/UserRole.js';
+import { ValidationUtils } from '../../utils/view.validator.js';
 
 const router = Router();
 
@@ -48,7 +49,7 @@ router.get('/', Ensure.get(), async (req: Request, res: Response) => {
       return R.handleError(res, HttpStatus.BAD_REQUEST, {
         code: TIME_ENTRIES_CODES.PAGINATION_INVALID,
         message: TIME_ENTRIES_ERRORS.PAGINATION_INVALID,
-        details: error.issues,
+        // details: error.issues,
       });
     } else {
       return R.handleError(res, HttpStatus.INTERNAL_ERROR, {
@@ -77,8 +78,19 @@ router.get('/revision', Ensure.get(), async (_req: Request, res: Response) => {
 
 router.get('/list', Ensure.get(), async (req: Request, res: Response) => {
   try {
-    const filters = validateTimeEntriesFilters(req.query);
+    // 1️⃣ Valider la pagination d'abord
     const paginationOptions = paginationSchema.parse(req.query);
+
+    const views = ValidationUtils.validateView(req.query.view, responseValue.FULL);
+
+    //2️⃣ ✅ On supprime les clés offset & limit sans créer de variables inutilisées
+    const filtersQuery = { ...req.query };
+    delete filtersQuery.offset;
+    delete filtersQuery.limit;
+    delete filtersQuery.view;
+
+    // 3️⃣ Valider les filtres
+    const filters = validateTimeEntriesFilters(filtersQuery);
     const conditions: Record<string, any> = {};
 
     if (filters.user) {
@@ -127,27 +139,40 @@ router.get('/list', Ensure.get(), async (req: Request, res: Response) => {
         count: entryList?.length || 0,
       },
       items: entryList
-        ? await Promise.all(
-            entryList.map(async (entry) => await entry.toJSON(responseValue.MINIMAL)),
-          )
+        ? await Promise.all(entryList.map(async (entry) => await entry.toJSON(views)))
         : [],
     };
 
     return R.handleSuccess(res, { entries });
   } catch (error: any) {
-    if (error.issues) {
+    // Erreur de validation (a un code custom)
+    if (error.code) {
       return R.handleError(res, HttpStatus.BAD_REQUEST, {
-        code: TIME_ENTRIES_CODES.VALIDATION_FAILED,
-        message: TIME_ENTRIES_ERRORS.VALIDATION_FAILED,
-        details: error.issues,
-      });
-    } else {
-      return R.handleError(res, HttpStatus.INTERNAL_ERROR, {
-        code: TIME_ENTRIES_CODES.LISTING_FAILED,
+        code: error.code,
         message: error.message,
       });
     }
+
+    // Erreur système/inattendue
+    return R.handleError(res, HttpStatus.INTERNAL_ERROR, {
+      code: TIME_ENTRIES_CODES.LISTING_FAILED,
+      message: error.message,
+    });
   }
+  // catch (error: any) {
+  //   if (error.issues) {
+  //     return R.handleError(res, HttpStatus.BAD_REQUEST, {
+  //       code: TIME_ENTRIES_CODES.VALIDATION_FAILED,
+  //       message: TIME_ENTRIES_ERRORS.VALIDATION_FAILED,
+  //       details: error.issues,
+  //     });
+  //   } else {
+  //     return R.handleError(res, HttpStatus.INTERNAL_ERROR, {
+  //       code: TIME_ENTRIES_CODES.LISTING_FAILED,
+  //       message: error.message,
+  //     });
+  //   }
+  // }
 });
 
 // === CRÉATION POINTAGE ===
@@ -561,24 +586,40 @@ router.post(
           });
       }
     } catch (error: any) {
-      if (error.issues) {
+      // Erreur de validation (a un code custom)
+      if (error.code) {
         return R.handleError(res, HttpStatus.BAD_REQUEST, {
-          code: TIME_ENTRIES_CODES.VALIDATION_FAILED,
-          message: TIME_ENTRIES_ERRORS.VALIDATION_FAILED,
-          details: error.issues,
-        });
-      } else if (error.message.includes('required')) {
-        return R.handleError(res, HttpStatus.BAD_REQUEST, {
-          code: TIME_ENTRIES_CODES.VALIDATION_FAILED,
-          message: error.message,
-        });
-      } else {
-        return R.handleError(res, HttpStatus.INTERNAL_ERROR, {
-          code: TIME_ENTRIES_CODES.CREATION_FAILED,
+          code: error.code,
           message: error.message,
         });
       }
+
+      // Erreur système/inattendue
+      return R.handleError(res, HttpStatus.INTERNAL_ERROR, {
+        code: TIME_ENTRIES_CODES.CREATION_FAILED,
+        message: error.message,
+      });
     }
+
+    // catch (error: any) {
+    //   if (error.issues) {
+    //     return R.handleError(res, HttpStatus.BAD_REQUEST, {
+    //       code: TIME_ENTRIES_CODES.VALIDATION_FAILED,
+    //       message: TIME_ENTRIES_ERRORS.VALIDATION_FAILED,
+    //       details: error.issues,
+    //     });
+    //   } else if (error.message.includes('required')) {
+    //     return R.handleError(res, HttpStatus.BAD_REQUEST, {
+    //       code: TIME_ENTRIES_CODES.VALIDATION_FAILED,
+    //       message: error.message,
+    //     });
+    //   } else {
+    //     return R.handleError(res, HttpStatus.INTERNAL_ERROR, {
+    //       code: TIME_ENTRIES_CODES.CREATION_FAILED,
+    //       message: error.message,
+    //     });
+    //   }
+    // }
   },
 );
 
@@ -719,6 +760,10 @@ router.get('/user/:userGuid/list', Ensure.get(), async (req: Request, res: Respo
       });
     }
 
+    const paginationOptions = paginationSchema.parse(req.query);
+
+    const views = ValidationUtils.validateView(req.query.view, responseValue.FULL);
+
     const userObj = await User._load(req.params.userGuid, true);
     if (!userObj) {
       return R.handleError(res, HttpStatus.NOT_FOUND, {
@@ -727,13 +772,11 @@ router.get('/user/:userGuid/list', Ensure.get(), async (req: Request, res: Respo
       });
     }
 
-    const entryList = await TimeEntries._listByUser(userObj.getId()!);
+    const entryList = await TimeEntries._listByUser(userObj.getId()!, paginationOptions);
     const entries = {
-      user: userObj.toPublicJSON(),
+      // user: userObj.toPublicJSON(),
       items: entryList
-        ? await Promise.all(
-            entryList.map(async (entry) => await entry.toJSON(responseValue.MINIMAL)),
-          )
+        ? await Promise.all(entryList.map(async (entry) => await entry.toJSON(views)))
         : [],
       count: entryList?.length || 0,
     };
@@ -758,6 +801,10 @@ router.get('/user/:userGuid/offline', Ensure.get(), async (req: Request, res: Re
       });
     }
 
+    const paginationOptions = paginationSchema.parse(req.query);
+
+    const views = ValidationUtils.validateView(req.query.view, responseValue.FULL);
+
     const userObj = await User._load(req.params.userGuid, true);
     if (!userObj) {
       return R.handleError(res, HttpStatus.NOT_FOUND, {
@@ -766,13 +813,14 @@ router.get('/user/:userGuid/offline', Ensure.get(), async (req: Request, res: Re
       });
     }
 
-    const offlineEntries = await TimeEntries._findOfflineEntries(userObj.getId()!);
+    const offlineEntries = await TimeEntries._findOfflineEntries(
+      userObj.getId()!,
+      paginationOptions,
+    );
     const entries = {
-      user: userObj.toPublicJSON(),
+      // user: userObj.toPublicJSON(),
       offline_entries: offlineEntries
-        ? await Promise.all(
-            offlineEntries.map(async (entry) => await entry.toJSON(responseValue.MINIMAL)),
-          )
+        ? await Promise.all(offlineEntries.map(async (entry) => await entry.toJSON(views)))
         : [],
       count: offlineEntries?.length || 0,
     };
@@ -788,14 +836,16 @@ router.get('/user/:userGuid/offline', Ensure.get(), async (req: Request, res: Re
 
 // === POINTAGES EN ATTENTE VALIDATION ===
 
-router.get('/pending/validation', Ensure.get(), async (_req: Request, res: Response) => {
+router.get('/pending/validation', Ensure.get(), async (req: Request, res: Response) => {
   try {
-    const pendingEntries = await TimeEntries._findPendingValidation();
+    const paginationOptions = paginationSchema.parse(req.query);
+
+    const views = ValidationUtils.validateView(req.query.view, responseValue.FULL);
+
+    const pendingEntries = await TimeEntries._findPendingValidation(paginationOptions);
     const entries = {
       pending_entries: pendingEntries
-        ? await Promise.all(
-            pendingEntries.map(async (entry) => await entry.toJSON(responseValue.MINIMAL)),
-          )
+        ? await Promise.all(pendingEntries.map(async (entry) => await entry.toJSON(views)))
         : [],
       count: pendingEntries?.length || 0,
     };
@@ -1366,6 +1416,10 @@ router.get(
       const { guid } = req.params;
       const { start_date, end_date, include_time_entries } = req.query;
 
+      const paginationOptions = paginationSchema.parse(req.query);
+
+      const views = ValidationUtils.validateView(req.query.view, responseValue.FULL);
+
       // Validation
       if (!UsersValidationUtils.validateGuid(guid)) {
         return R.handleError(res, HttpStatus.BAD_REQUEST, {
@@ -1467,9 +1521,9 @@ router.get(
             // Inclure time entries si demandé
             let timeEntries = null;
             if (include_time_entries === 'true') {
-              const entries = await TimeEntries._listBySession(session.getId()!);
+              const entries = await TimeEntries._listBySession(session.getId()!, paginationOptions);
               timeEntries = entries
-                ? await Promise.all(entries.map(async (e) => await e.toJSON(responseValue.MINIMAL)))
+                ? await Promise.all(entries.map(async (e) => await e.toJSON(views)))
                 : [];
             }
 

@@ -63,10 +63,16 @@ export class WorkSessionsValidationUtils {
     const date = new Date(sessionStart);
     if (isNaN(date.getTime())) return false;
 
-    // Session start cannot be in the future (allowing current time with 1 minute tolerance)
-    const now = new Date();
-    now.setMinutes(now.getMinutes() + 1);
-    return date <= now;
+    // // Session start cannot be in the future (allowing current time with 1 minute tolerance)
+    // const now = new Date();
+    // now.setMinutes(now.getMinutes() + 1);
+    // return date <= now;
+
+    // Obtenir l'heure actuelle au timezone Africa/Douala
+    const nowInDouala = new Date(new Date().toLocaleString('en-US', { timeZone: 'Africa/Douala' }));
+    nowInDouala.setMinutes(nowInDouala.getMinutes() + 1); // Tolérance 1 minute
+
+    return date <= nowInDouala;
   }
 
   /**

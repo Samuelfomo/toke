@@ -64,7 +64,13 @@ const baseWorkSessionsSchema = z.object({
       required_error: WORK_SESSIONS_ERRORS.SESSION_START_REQUIRED,
       invalid_type_error: WORK_SESSIONS_ERRORS.SESSION_START_INVALID,
     })
-    .refine((date) => date <= new Date(), WORK_SESSIONS_ERRORS.FUTURE_SESSION_START),
+    .refine((date) => {
+      const nowInDouala = new Date(
+        new Date().toLocaleString('en-US', { timeZone: 'Africa/Douala' }),
+      );
+      return date <= nowInDouala;
+    }, WORK_SESSIONS_ERRORS.FUTURE_SESSION_START),
+  // .refine((date) => date <= new Date(), WORK_SESSIONS_ERRORS.FUTURE_SESSION_START),
 
   session_end: z
     .union([z.date(), z.string().transform((val) => new Date(val))], {

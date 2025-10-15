@@ -71,10 +71,20 @@ export const country = baseCountrySchema.extend({
   updated_at: z.string().datetime(),
 });
 
-// Schéma pour la pagination
+// // Schéma pour la pagination
+// export const paginationSchema = z.object({
+//   offset: z.number().int().min(0).default(COUNTRY_DEFAULTS.PAGINATION.OFFSET),
+//   limit: z
+//     .number()
+//     .int()
+//     .min(1)
+//     .max(COUNTRY_DEFAULTS.PAGINATION.MAX_LIMIT)
+//     .default(COUNTRY_DEFAULTS.PAGINATION.LIMIT),
+// });
+
 export const paginationSchema = z.object({
-  offset: z.number().int().min(0).default(COUNTRY_DEFAULTS.PAGINATION.OFFSET),
-  limit: z
+  offset: z.coerce.number().int().min(0).default(COUNTRY_DEFAULTS.PAGINATION.OFFSET),
+  limit: z.coerce
     .number()
     .int()
     .min(1)

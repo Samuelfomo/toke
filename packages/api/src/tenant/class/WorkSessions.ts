@@ -285,23 +285,20 @@ export default class WorkSessions extends WorkSessionsModel {
 
   async clockIn(clockInData: ClockInData): Promise<void> {
     // Vérifier qu'il n'y a pas de session active
-    const activeSession = await this.findActiveUserSession(clockInData.site_id);
+    const activeSession = await this.findActiveUserSession(clockInData.site);
     if (activeSession) {
       throw new Error('User already has an active session');
     }
 
     // Valider l'accès au site
-    const isAccessValid = await this.validateUserSiteAccess(
-      clockInData.site_id,
-      clockInData.site_id,
-    );
+    const isAccessValid = await this.validateUserSiteAccess(clockInData.site, clockInData.site);
     if (!isAccessValid) {
       throw new Error('User does not have access to this site');
     }
 
     // Configurer la session
-    this.user = clockInData.site_id; // TODO: Récupérer user_id du contexte
-    this.site = clockInData.site_id;
+    this.user = clockInData.site; // TODO: Récupérer user_id du contexte
+    this.site = clockInData.site;
     this.session_start_at = new Date();
     this.session_status = SessionStatus.OPEN;
     this.start_latitude = clockInData.latitude;

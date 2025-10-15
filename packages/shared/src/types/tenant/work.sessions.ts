@@ -1,5 +1,5 @@
 export interface ClockInData {
-  site_id: number;
+  site: number;
   latitude: number;
   longitude: number;
   device_info?: any;

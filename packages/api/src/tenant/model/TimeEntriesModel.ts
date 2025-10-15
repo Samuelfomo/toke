@@ -75,26 +75,42 @@ export default class TimeEntriesModel extends BaseModel {
     return await this.findOne(this.db.tableName, { [this.db.guid]: guid });
   }
 
-  protected async listAllBySession(session: number): Promise<any[]> {
-    return await this.findAll(this.db.tableName, { [this.db.session]: session });
+  protected async listAllBySession(
+    session: number,
+    paginationOptions: { offset?: number; limit?: number } = {},
+  ): Promise<any[]> {
+    return await this.findAll(this.db.tableName, { [this.db.session]: session }, paginationOptions);
   }
 
-  protected async listAllByUser(user: number): Promise<any[]> {
-    return await this.findAll(this.db.tableName, { [this.db.user]: user });
+  protected async listAllByUser(
+    user: number,
+    paginationOptions: { offset?: number; limit?: number } = {},
+  ): Promise<any[]> {
+    return await this.findAll(this.db.tableName, { [this.db.user]: user }, paginationOptions);
   }
 
-  protected async listAllBySite(site: number): Promise<any[]> {
-    return await this.findAll(this.db.tableName, { [this.db.site]: site });
+  protected async listAllBySite(
+    site: number,
+    paginationOptions: { offset?: number; limit?: number } = {},
+  ): Promise<any[]> {
+    return await this.findAll(this.db.tableName, { [this.db.site]: site }, paginationOptions);
   }
 
   // === 2. GESTION OFFLINE/SYNC ===
 
-  protected async findOfflineEntries(user: number): Promise<any[]> {
-    return await this.findAll(this.db.tableName, {
-      [this.db.user]: user,
-      [this.db.created_offline]: true,
-      [this.db.pointage_status]: PointageStatus.DRAFT,
-    });
+  protected async findOfflineEntries(
+    user: number,
+    paginationOptions: { offset?: number; limit?: number } = {},
+  ): Promise<any[]> {
+    return await this.findAll(
+      this.db.tableName,
+      {
+        [this.db.user]: user,
+        [this.db.created_offline]: true,
+        [this.db.pointage_status]: PointageStatus.DRAFT,
+      },
+      paginationOptions,
+    );
   }
 
   protected async findByLocalId(user: number, local_id: string): Promise<any> {
@@ -134,27 +150,43 @@ export default class TimeEntriesModel extends BaseModel {
   protected async findByType(
     pointage_type: PointageType,
     conditions: Record<string, any> = {},
+    paginationOptions: { offset?: number; limit?: number } = {},
   ): Promise<any[]> {
-    return await this.findAll(this.db.tableName, {
-      [this.db.pointage_type]: pointage_type,
-      ...conditions,
-    });
+    return await this.findAll(
+      this.db.tableName,
+      {
+        [this.db.pointage_type]: pointage_type,
+        ...conditions,
+      },
+      paginationOptions,
+    );
   }
 
   protected async findByStatus(
     pointage_status: PointageStatus,
     conditions: Record<string, any> = {},
+    paginationOptions: { offset?: number; limit?: number } = {},
   ): Promise<any[]> {
-    return await this.findAll(this.db.tableName, {
-      [this.db.pointage_status]: pointage_status,
-      ...conditions,
-    });
+    return await this.findAll(
+      this.db.tableName,
+      {
+        [this.db.pointage_status]: pointage_status,
+        ...conditions,
+      },
+      paginationOptions,
+    );
   }
 
-  protected async findPendingValidation(): Promise<any[]> {
-    return await this.findAll(this.db.tableName, {
-      [this.db.pointage_status]: PointageStatus.PENDING,
-    });
+  protected async findPendingValidation(
+    paginationOptions: { offset?: number; limit?: number } = {},
+  ): Promise<any[]> {
+    return await this.findAll(
+      this.db.tableName,
+      {
+        [this.db.pointage_status]: PointageStatus.PENDING,
+      },
+      paginationOptions,
+    );
   }
 
   // === 4. DÉTECTION ANOMALIES ===

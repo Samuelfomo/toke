@@ -81,15 +81,32 @@ export class TimeEntriesValidationUtils {
   /**
    * Validates clocked at date
    */
+  // static validateClockedAt(clockedAt: Date | string): boolean {
+  //   if (!clockedAt) return false;
+  //   const date = new Date(clockedAt);
+  //   if (isNaN(date.getTime())) return false;
+  //
+  //   // Cannot be in the future (allowing current time with 1 minute tolerance)
+  //   const now = new Date();
+  //   now.setMinutes(now.getMinutes() + 1);
+  //   return date <= now;
+  // }
+
   static validateClockedAt(clockedAt: Date | string): boolean {
     if (!clockedAt) return false;
     const date = new Date(clockedAt);
     if (isNaN(date.getTime())) return false;
 
-    // Cannot be in the future (allowing current time with 1 minute tolerance)
-    const now = new Date();
-    now.setMinutes(now.getMinutes() + 1);
-    return date <= now;
+    //   // Cannot be in the future (allowing current time with 1 minute tolerance)
+    //   const now = new Date();
+    //   now.setMinutes(now.getMinutes() + 1);
+    //   return date <= now;
+
+    // Obtenir l'heure actuelle au timezone Africa/Douala
+    const nowInDouala = new Date(new Date().toLocaleString('en-US', { timeZone: 'Africa/Douala' }));
+    nowInDouala.setMinutes(nowInDouala.getMinutes() + 1); // Tolérance 1 minute
+
+    return date <= nowInDouala;
   }
 
   /**
@@ -394,7 +411,7 @@ export class TimeEntriesValidationUtils {
 
     return existingEntries.some((entry) => {
       if (entry.guid === newEntry.guid) return false; // Skip self
-      if (entry.user_id !== newEntry.user_id) return false;
+      if (entry.user !== newEntry.user) return false;
       if (entry.pointage_type !== newEntry.pointage_type) return false;
 
       const entryDate = new Date(entry.clocked_at);
@@ -411,13 +428,11 @@ export class TimeEntriesValidationUtils {
     const cleaned = { ...data };
 
     // Convert numeric fields
-    ['session_id', 'user_id', 'site_id', 'gps_accuracy', 'sync_attempts', 'memo_id'].forEach(
-      (field) => {
-        if (cleaned[field] !== undefined && cleaned[field] !== null) {
-          cleaned[field] = Number(cleaned[field]);
-        }
-      },
-    );
+    ['session', 'user', 'site', 'gps_accuracy', 'sync_attempts', 'memo'].forEach((field) => {
+      if (cleaned[field] !== undefined && cleaned[field] !== null) {
+        cleaned[field] = Number(cleaned[field]);
+      }
+    });
 
     // Convert coordinate fields to precise numbers
     if (cleaned.latitude !== undefined && cleaned.latitude !== null) {
@@ -483,9 +498,9 @@ export class TimeEntriesValidationUtils {
    */
   static isValidForCreation(data: any): boolean {
     const requiredFields = [
-      'session_id',
-      'user_id',
-      'site_id',
+      'session',
+      'user',
+      'site',
       'pointage_type',
       'clocked_at',
       'latitude',
@@ -500,9 +515,9 @@ export class TimeEntriesValidationUtils {
     }
 
     return (
-      this.validateSessionId(data.session_id) &&
-      this.validateUserId(data.user_id) &&
-      this.validateSiteId(data.site_id) &&
+      this.validateSessionId(data.session) &&
+      this.validateUserId(data.user) &&
+      this.validateSiteId(data.site) &&
       this.validatePointageType(data.pointage_type) &&
       (data.pointage_status === undefined || this.validatePointageStatus(data.pointage_status)) &&
       this.validateClockedAt(data.clocked_at) &&
@@ -516,7 +531,7 @@ export class TimeEntriesValidationUtils {
       this.validateLocalId(data.local_id) &&
       (data.sync_attempts === undefined || this.validateSyncAttempts(data.sync_attempts)) &&
       this.validateLastSyncAttempt(data.last_sync_attempt) &&
-      this.validateMemoId(data.memo_id) &&
+      this.validateMemoId(data.memo) &&
       this.validateCorrectionReason(data.correction_reason, data.pointage_status) &&
       (data.guid === undefined || this.validateGuid(data.guid))
     );
@@ -528,9 +543,9 @@ export class TimeEntriesValidationUtils {
   static isValidForUpdate(data: any): boolean {
     // For updates, validate only fields that are present
     const validations = [
-      data.session_id === undefined || this.validateSessionId(data.session_id),
-      data.user_id === undefined || this.validateUserId(data.user_id),
-      data.site_id === undefined || this.validateSiteId(data.site_id),
+      data.session === undefined || this.validateSessionId(data.session),
+      data.user === undefined || this.validateUserId(data.user),
+      data.site === undefined || this.validateSiteId(data.site),
       data.pointage_type === undefined || this.validatePointageType(data.pointage_type),
       data.pointage_status === undefined || this.validatePointageStatus(data.pointage_status),
       data.clocked_at === undefined || this.validateClockedAt(data.clocked_at),
@@ -544,7 +559,7 @@ export class TimeEntriesValidationUtils {
       data.local_id === undefined || this.validateLocalId(data.local_id),
       data.sync_attempts === undefined || this.validateSyncAttempts(data.sync_attempts),
       data.last_sync_attempt === undefined || this.validateLastSyncAttempt(data.last_sync_attempt),
-      data.memo_id === undefined || this.validateMemoId(data.memo_id),
+      data.memo === undefined || this.validateMemoId(data.memo),
       data.correction_reason === undefined ||
         this.validateCorrectionReason(data.correction_reason, data.pointage_status),
       data.guid === undefined || this.validateGuid(data.guid),
@@ -560,24 +575,24 @@ export class TimeEntriesValidationUtils {
     const errors: string[] = [];
 
     if (
-      data.session_id === undefined ||
-      data.session_id === null ||
-      !this.validateSessionId(data.session_id)
+      data.session === undefined ||
+      data.session === null ||
+      !this.validateSessionId(data.session)
     ) {
       errors.push(
-        `Invalid session_id: must be between ${TIME_ENTRIES_VALIDATION.SESSION.MIN} and ${TIME_ENTRIES_VALIDATION.SESSION.MAX}`,
+        `Invalid session: must be between ${TIME_ENTRIES_VALIDATION.SESSION.MIN} and ${TIME_ENTRIES_VALIDATION.SESSION.MAX}`,
       );
     }
 
-    if (data.user_id === undefined || data.user_id === null || !this.validateUserId(data.user_id)) {
+    if (data.user === undefined || data.user === null || !this.validateUserId(data.user)) {
       errors.push(
-        `Invalid user_id: must be between ${TIME_ENTRIES_VALIDATION.USER.MIN_LENGTH} and ${TIME_ENTRIES_VALIDATION.USER.MAX_LENGTH}`,
+        `Invalid user: must be between ${TIME_ENTRIES_VALIDATION.USER.MIN_LENGTH} and ${TIME_ENTRIES_VALIDATION.USER.MAX_LENGTH}`,
       );
     }
 
-    if (data.site_id === undefined || data.site_id === null || !this.validateSiteId(data.site_id)) {
+    if (data.site === undefined || data.site === null || !this.validateSiteId(data.site)) {
       errors.push(
-        `Invalid site_id: must be between ${TIME_ENTRIES_VALIDATION.SITE.MIN_LENGTH} and ${TIME_ENTRIES_VALIDATION.SITE.MAX_LENGTH}`,
+        `Invalid site: must be between ${TIME_ENTRIES_VALIDATION.SITE.MIN_LENGTH} and ${TIME_ENTRIES_VALIDATION.SITE.MAX_LENGTH}`,
       );
     }
 
@@ -666,9 +681,9 @@ export class TimeEntriesValidationUtils {
       errors.push('Invalid last_sync_attempt: must be a valid date');
     }
 
-    if (data.memo_id !== undefined && !this.validateMemoId(data.memo_id)) {
+    if (data.memo !== undefined && !this.validateMemoId(data.memo)) {
       errors.push(
-        `Invalid memo_id: must be between ${TIME_ENTRIES_VALIDATION.MEMO.MIN} and ${TIME_ENTRIES_VALIDATION.MEMO.MAX}`,
+        `Invalid memo: must be between ${TIME_ENTRIES_VALIDATION.MEMO.MIN} and ${TIME_ENTRIES_VALIDATION.MEMO.MAX}`,
       );
     }
 
@@ -696,9 +711,9 @@ export class TimeEntriesValidationUtils {
    */
   static validateFilterData(data: any): boolean {
     return (
-      (data.session_id && this.validateSessionId(data.session_id)) ||
-      (data.user_id && this.validateUserId(data.user_id)) ||
-      (data.site_id && this.validateSiteId(data.site_id)) ||
+      (data.session && this.validateSessionId(data.session)) ||
+      (data.user && this.validateUserId(data.user)) ||
+      (data.site && this.validateSiteId(data.site)) ||
       (data.pointage_type && this.validatePointageType(data.pointage_type)) ||
       (data.pointage_status && this.validatePointageStatus(data.pointage_status)) ||
       (data.created_offline !== undefined && this.validateCreatedOffline(data.created_offline)) ||
@@ -732,7 +747,7 @@ export class TimeEntriesValidationUtils {
     offlineEntries: number;
     averageGpsAccuracy: number;
   } {
-    const userEntries = entries.filter((entry) => entry.user_id === userId);
+    const userEntries = entries.filter((entry) => entry.user === userId);
 
     const summary = {
       totalEntries: userEntries.length,
@@ -852,7 +867,7 @@ export class TimeEntriesValidationUtils {
       const serverEntry = serverEntries.find(
         (entry) =>
           entry.local_id === offlineEntry.local_id ||
-          (entry.user_id === offlineEntry.user_id &&
+          (entry.user === offlineEntry.user &&
             entry.pointage_type === offlineEntry.pointage_type &&
             Math.abs(
               new Date(entry.clocked_at).getTime() - new Date(offlineEntry.clocked_at).getTime(),
@@ -974,7 +989,7 @@ export class TimeEntriesValidationUtils {
   ) {
     const userEntries = entries.filter(
       (entry) =>
-        entry.user_id === userId &&
+        entry.user === userId &&
         new Date(entry.clocked_at) >= period.start &&
         new Date(entry.clocked_at) <= period.end,
     );
@@ -993,7 +1008,7 @@ export class TimeEntriesValidationUtils {
     // Group by site
     const siteBreakdown: Record<number, number> = {};
     userEntries.forEach((entry) => {
-      siteBreakdown[entry.site_id] = (siteBreakdown[entry.site_id] || 0) + 1;
+      siteBreakdown[entry.site] = (siteBreakdown[entry.site] || 0) + 1;
     });
 
     // Identify issues

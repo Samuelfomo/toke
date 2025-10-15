@@ -271,7 +271,7 @@ router.post('/', Ensure.post(), async (req: Request, res: Response) => {
 
     await siteObj.save();
 
-    return R.handleCreated(res, await siteObj.toJSON());
+    return R.handleCreated(res, await siteObj.toJSON(responseValue.MINIMAL));
   } catch (error: any) {
     if (error.issues) {
       return R.handleError(res, HttpStatus.BAD_REQUEST, {
@@ -367,7 +367,7 @@ router.put('/:guid', Ensure.put(), async (req: Request, res: Response) => {
     }
 
     await siteObj.save();
-    return R.handleSuccess(res, await siteObj.toJSON());
+    return R.handleSuccess(res, await siteObj.toJSON(responseValue.MINIMAL));
   } catch (error: any) {
     if (error.issues) {
       return R.handleError(res, HttpStatus.BAD_REQUEST, {
