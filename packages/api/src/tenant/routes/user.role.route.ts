@@ -186,7 +186,7 @@ router.post('/', Ensure.post(), async (req: Request, res: Response) => {
         message: USER_ROLES_ERRORS.VALIDATION_FAILED,
         details: error.issues,
       });
-    } else if (error.message.includes('DUPLICATE_ASSIGNMENT')) {
+    } else if (error.message.includes('duplicate_assignment')) {
       return R.handleError(res, HttpStatus.CONFLICT, {
         code: USER_ROLES_CODES.DUPLICATE_ASSIGNMENT,
         message: USER_ROLES_ERRORS.DUPLICATE_ASSIGNMENT,

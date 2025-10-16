@@ -572,6 +572,9 @@ export default class TimeEntriesModel extends BaseModel {
       throw new Error(TIME_ENTRIES_ERRORS?.GUID_GENERATION_FAILED);
     }
 
+    const now = new Date();
+    const nowInDouala = new Date(now.toLocaleString('en-US', { timeZone: 'Africa/Douala' }));
+
     const lastID = await this.insertOne(this.db.tableName, {
       [this.db.guid]: guid,
       [this.db.session]: this.session,
@@ -581,6 +584,7 @@ export default class TimeEntriesModel extends BaseModel {
       [this.db.pointage_status]: this.pointage_status || PointageStatus.PENDING,
       [this.db.clocked_at]: this.clocked_at,
       [this.db.real_clocked_at]: this.real_clocked_at,
+      [this.db.server_received_at]: nowInDouala,
       [this.db.latitude]: this.latitude,
       [this.db.longitude]: this.longitude,
       [this.db.gps_accuracy]: this.gps_accuracy,

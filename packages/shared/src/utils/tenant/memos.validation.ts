@@ -32,7 +32,7 @@ export class MemosValidationUtils {
    * Validates author user
    */
   static validateAuthorUserId(authorUserId: string): boolean {
-    if (typeof authorUserId !== 'string') return false;
+    if (!authorUserId || typeof authorUserId !== 'string') return false;
 
     const trimmed = authorUserId.trim();
     if (

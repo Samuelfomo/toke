@@ -760,7 +760,7 @@ router.get('/user/:userGuid/list', Ensure.get(), async (req: Request, res: Respo
       });
     }
 
-    const paginationOptions = paginationSchema.parse(req.query);
+    // const paginationOptions = paginationSchema.parse(req.query);
 
     const views = ValidationUtils.validateView(req.query.view, responseValue.FULL);
 
@@ -772,7 +772,7 @@ router.get('/user/:userGuid/list', Ensure.get(), async (req: Request, res: Respo
       });
     }
 
-    const entryList = await TimeEntries._listByUser(userObj.getId()!, paginationOptions);
+    const entryList = await TimeEntries._listByUser(userObj.getId()!);
     const entries = {
       // user: userObj.toPublicJSON(),
       items: entryList
@@ -1119,18 +1119,38 @@ router.get('/:guid/last', Ensure.get(), async (req: Request, res: Response) => {
       });
     }
 
-    const lastEntries = await TimeEntries._listByUser(userObj.getId()!);
-    if (!lastEntries || lastEntries.length === 0) {
+    const views = ValidationUtils.validateView(req.query.view, responseValue.MINIMAL);
+
+    // ✅ Liste de tous les pointages de l'utilisateur
+    const entries = await TimeEntries._listByUser(userObj.getId()!);
+    if (!entries || entries.length === 0) {
       return R.handleError(res, HttpStatus.NOT_FOUND, {
         code: TIME_ENTRIES_CODES.TIME_ENTRY_NOT_FOUND,
         message: 'No time entries found',
       });
     }
 
-    const lastEntry = lastEntries.at(-1);
+    // ✅ Tri par date décroissante selon server_received_at
+    const sortedEntries = entries.sort((a, b) => {
+      const dateA = a.getServerReceivedAt() ? new Date(a.getServerReceivedAt()!).getTime() : 0;
+      const dateB = b.getServerReceivedAt() ? new Date(b.getServerReceivedAt()!).getTime() : 0;
+      return dateB - dateA; // du plus récent au plus ancien
+    });
+
+    const lastEntry = sortedEntries[0]; // ✅ le plus récent
+
+    // const lastEntries = await TimeEntries._listByUser(userObj.getId()!);
+    // if (!lastEntries || lastEntries.length === 0) {
+    //   return R.handleError(res, HttpStatus.NOT_FOUND, {
+    //     code: TIME_ENTRIES_CODES.TIME_ENTRY_NOT_FOUND,
+    //     message: 'No time entries found',
+    //   });
+    // }
+    //
+    // const lastEntry = lastEntries.at(-1);
 
     return R.handleSuccess(res, {
-      entry: await lastEntry?.toJSON(responseValue.MINIMAL),
+      entry: await lastEntry?.toJSON(views),
     });
   } catch (error: any) {
     return R.handleError(res, HttpStatus.INTERNAL_ERROR, {
