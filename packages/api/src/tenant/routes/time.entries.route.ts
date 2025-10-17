@@ -499,6 +499,46 @@ router.post(
           });
         }
 
+        // === EXTERNAL-MISSION-END ===
+        case PointageType.EXTERNAL_MISSION_END: {
+          const activeSession = await WorkSessions._findActiveSessionByUser(userId);
+          if (!activeSession) {
+            return R.handleError(res, HttpStatus.NOT_FOUND, {
+              code: WORK_SESSIONS_CODES.NO_ACTIVE_SESSION,
+              message: WORK_SESSIONS_ERRORS.NO_ACTIVE_SESSION,
+            });
+          }
+
+          // Vérifier qu'une mission est active
+          const hasActiveMission = await activeSession.activeMission();
+          if (!hasActiveMission) {
+            return R.handleError(res, HttpStatus.CONFLICT, {
+              code: 'no_active_mission',
+              message: 'No active external mission to end.',
+            });
+          }
+
+          const entryObj = new TimeEntries()
+            .setSession(activeSession.getId()!)
+            .setUser(userId)
+            .setSite(siteObj.getId()!)
+            .setPointageType(PointageType.EXTERNAL_MISSION_END)
+            .setClockedAt(new Date(validatedData.clocked_at))
+            .setCoordinates(validatedData.latitude, validatedData.longitude);
+
+          if (validatedData.device_info) {
+            entryObj.setDeviceInfo(validatedData.device_info);
+          }
+
+          await entryObj.save();
+          await entryObj.accept();
+
+          return R.handleCreated(res, {
+            message: 'External mission ended',
+            entry: await entryObj.toJSON(responseValue.MINIMAL),
+          });
+        }
+
         // === CLOCK-OUT : Fermeture Session ===
         case PointageType.CLOCK_OUT: {
           const activeSession = await WorkSessions._findActiveSessionByUser(userId);

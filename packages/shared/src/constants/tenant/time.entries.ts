@@ -6,6 +6,7 @@ export enum PointageType {
   PAUSE_START = 'pause_start',
   PAUSE_END = 'pause_end',
   EXTERNAL_MISSION = 'external_mission',
+  EXTERNAL_MISSION_END = 'external_mission_end',
 }
 
 export enum PointageStatus {

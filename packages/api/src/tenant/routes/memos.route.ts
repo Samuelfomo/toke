@@ -27,6 +27,7 @@ import WorkSessions from '../class/WorkSessions.js';
 import Revision from '../../tools/revision.js';
 import { responseValue, tableName } from '../../utils/response.model.js';
 import { ValidationUtils } from '../../utils/view.validator.js';
+import TimeEntries from '../class/TimeEntries.js';
 
 const router = Router();
 
@@ -479,7 +480,7 @@ router.post('/', Ensure.post(), async (req: Request, res: Response) => {
     if (validatedData.affected_entries) {
       const affectedEntries = await Promise.all(
         validatedData.affected_entries.map(async (entry) => {
-          const sessionObj = await WorkSessions._load(entry, true);
+          const sessionObj = await TimeEntries._load(entry, true);
           return sessionObj?.getId() ?? null;
         }),
       );
@@ -498,6 +499,17 @@ router.post('/', Ensure.post(), async (req: Request, res: Response) => {
     }
 
     await memoObj.save();
+
+    if (memoObj.getAffectedEntriesIds() !== undefined || memoObj.getAffectedEntriesIds() !== null) {
+      const affectedEntriesIds = memoObj.getAffectedEntriesIds();
+      affectedEntriesIds?.map(async (entryId) => {
+        const affectedEntryObj = await TimeEntries._load(entryId);
+        if (affectedEntryObj) {
+          affectedEntryObj.setMemo(memoObj.getId()!);
+          await affectedEntryObj.save();
+        }
+      });
+    }
 
     return R.handleCreated(res, await memoObj.toJSON());
   } catch (error: any) {

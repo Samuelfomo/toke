@@ -349,7 +349,8 @@ export default class TimeEntriesModel extends BaseModel {
           lastEntry &&
           (lastEntry.pointage_type === PointageType.CLOCK_IN ||
             lastEntry.pointage_type === PointageType.PAUSE_END ||
-            lastEntry.pointage_type === PointageType.EXTERNAL_MISSION)
+            lastEntry.pointage_type === PointageType.EXTERNAL_MISSION ||
+            lastEntry.pointage_type === PointageType.EXTERNAL_MISSION_END)
         );
       },
       [PointageType.EXTERNAL_MISSION]: () => {
@@ -359,6 +360,10 @@ export default class TimeEntriesModel extends BaseModel {
           (lastEntry.pointage_type === PointageType.CLOCK_IN ||
             lastEntry.pointage_type === PointageType.PAUSE_END)
         );
+      },
+      [PointageType.EXTERNAL_MISSION_END]: () => {
+        const lastEntry = sessionEntries[sessionEntries.length - 1];
+        return lastEntry && lastEntry.pointage_type === PointageType.EXTERNAL_MISSION;
       },
     };
 

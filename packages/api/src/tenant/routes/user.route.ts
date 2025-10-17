@@ -34,6 +34,7 @@ import { DatabaseEncryption } from '../../utils/encryption.js';
 import WapService from '../../tools/send.otp.service.js';
 import WorkSessions from '../class/WorkSessions.js';
 import Site from '../class/Site.js';
+import EmailSender from '../../tools/send.email.service.js';
 
 const router = Router();
 
@@ -545,7 +546,7 @@ router.patch('/:guid/generate-otp', Ensure.patch(), async (req: Request, res: Re
       });
     }
 
-    const { expiration_minutes = 1440, country } = req.body; // 24h par défaut
+    const { expiration_minutes = 1440, country, email } = req.body; // 24h par défaut
 
     if (!CountryValidationUtils.validateIsoCode(country)) {
       return R.handleError(res, HttpStatus.BAD_REQUEST, {
@@ -563,14 +564,45 @@ router.patch('/:guid/generate-otp', Ensure.patch(), async (req: Request, res: Re
     // userObj.generateOtpToken(expiration_minutes);
     await userObj.defineOtpToken();
 
-    const sendOtp = await WapService.sendOtp(
-      userObj.getOtpToken()!,
-      userObj.getPhoneNumber()!,
-      country,
-    );
-    if (sendOtp.status !== HttpStatus.SUCCESS) {
-      return R.handleError(res, sendOtp.status, sendOtp.response);
+    let sendOtp;
+    // 🔹 Envoi du code OTP selon le canal choisi
+    if (email) {
+      let value = userObj.getEmail();
+      if (!UsersValidationUtils.validateEmail(email)) {
+        // return R.handleError(res, HttpStatus.BAD_REQUEST, {
+        //   code: USERS_CODES.EMAIL_INVALID,
+        //   message: USERS_ERRORS.EMAIL_INVALID,
+        // });
+        value = email;
+      }
+      // Envoi par email
+      await EmailSender.sender(
+        userObj.getEmail()!,
+        value!,
+        // expiration_minutes,
+      );
+    } else {
+      // Envoi via WhatsApp
+      sendOtp = await WapService.sendOtp(
+        userObj.getOtpToken()!,
+        userObj.getPhoneNumber()!,
+        country,
+      );
+
+      if (sendOtp.status !== HttpStatus.SUCCESS) {
+        return R.handleError(res, sendOtp.status, sendOtp.response);
+      }
     }
+
+    // const sendOtp = await WapService.sendOtp(
+    //   userObj.getOtpToken()!,
+    //   userObj.getPhoneNumber()!,
+    //   country,
+    // );
+
+    // if (sendOtp.status !== HttpStatus.SUCCESS) {
+    //   return R.handleError(res, sendOtp.status, sendOtp.response);
+    // }
 
     return R.handleSuccess(res, {
       message: 'OTP generated and sent successfully',
@@ -1821,29 +1853,14 @@ router.get('/attendance/site/:guid/current', Ensure.get(), async (req: Request, 
   }
 });
 
-// router.post('/otp', Ensure.post(), async (req: Request, res: Response) => {
-//   const result = await WapService.sendOtp();
-//   if (result.status !== HttpStatus.CREATED) {
-//     return R.handleError(res, result.status, result.response);
-//   }
-//   return R.handleCreated(res, result.response);
-// });
-
-// router.patch('/:manager/generate-qr-code', Ensure.patch(), async (req: Request, res: Response) => {
+// router.patch('/share', Ensure.patch(), async (req: Request, res: Response) => {
 //   try {
-//     const { manager } = req.params;
-//     if (!manager || !UsersValidationUtils.validateGuid(manager)) {
-//       return R.handleError(res, HttpStatus.BAD_REQUEST, {
-//         code: USERS_CODES.INVALID_GUID,
-//         message: USERS_ERRORS.GUID_INVALID,
-//       });
-//     }
-//
-//     const { geolocation, site, valid_from, valid_to } = req.body;
-//
-//     if ()
+//     const { user, phone_number, affiliate, lead } = req.body;
 //   } catch (error: any) {
-//     return R.handleError(res, HttpStatus.INTERNAL_ERROR, {});
+//     return R.handleError(res, HttpStatus.INTERNAL_ERROR, {
+//       code: USERS_CODES.VALIDATION_FAILED,
+//       message: error.message,
+//     });
 //   }
 // });
 

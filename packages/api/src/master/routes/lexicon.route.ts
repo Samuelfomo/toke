@@ -194,7 +194,7 @@ router.post(
           message: LEXICON_ERRORS.DEFAULT_LANGUAGE_REQUIRED,
         });
       } else {
-        R.handleError(res, HttpStatus.BAD_REQUEST, {
+        R.handleError(res, HttpStatus.INTERNAL_ERROR, {
           code: LEXICON_CODES.CREATION_FAILED,
           message: error.message,
         });

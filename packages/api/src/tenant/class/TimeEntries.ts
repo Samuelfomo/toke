@@ -8,11 +8,13 @@ import { responseStructure as RS, responseValue, ViewMode } from '../../utils/re
 import User from './User.js';
 import Site from './Site.js';
 import WorkSessions from './WorkSessions.js';
+import Memos from './Memos.js';
 
 export default class TimeEntries extends TimeEntriesModel {
   private userObj?: User;
   private siteObj?: Site;
   private sessionObj?: WorkSessions;
+  private memoObj?: Memos;
 
   constructor() {
     super();
@@ -218,6 +220,14 @@ export default class TimeEntries extends TimeEntriesModel {
 
   getMemo(): number | undefined {
     return this.memo;
+  }
+
+  async getMemoObj(): Promise<Memos | null> {
+    if (!this.memo) return null;
+    if (!this.memoObj) {
+      this.memoObj = (await Memos._load(this.memo)) || undefined;
+    }
+    return this.memoObj || null;
   }
 
   getCorrectionReason(): string | undefined {
@@ -790,29 +800,36 @@ export default class TimeEntries extends TimeEntriesModel {
   async getStatistics(filters: Record<string, any> = {}): Promise<any> {
     return await this.getEntriesStatistics(filters);
   }
-
   async toJSON(view: ViewMode = responseValue.FULL): Promise<object> {
     const user = await this.getUserObj();
     const site = await this.getSiteObj();
     const session = await this.getSessionObj();
 
+    const memo = await this.getMemoObj();
+
     const baseData = {
       [RS.GUID]: this.guid,
-      [RS.USER]: user?.getGuid(),
-      [RS.SITE]: site?.getGuid(),
-      [RS.SESSION]: session?.getGuid(),
       [RS.POINTAGE_TYPE]: this.pointage_type,
       [RS.POINTAGE_STATUS]: this.pointage_status,
       [RS.CLOCKED_AT]: this.clocked_at,
       [RS.SERVER_RECEIVED_AT]: this.server_received_at,
+      [RS.REAL_CLOCKED_AT]: this.real_clocked_at,
       [RS.CREATED_OFFLINE]: this.created_offline,
+      [RS.COORDINATES]:
+        this.latitude && this.longitude ? `${this.latitude},${this.longitude}` : null,
+      [RS.GPS_ACCURACY]: this.gps_accuracy,
+
+      // [RS.MEMO]: this.memo,
+      [RS.CORRECTION_REASON]: this.correction_reason,
     };
 
     if (view === responseValue.MINIMAL) {
       return {
         ...baseData,
-        [RS.COORDINATES]:
-          this.latitude && this.longitude ? `${this.latitude},${this.longitude}` : null,
+        [RS.USER]: user?.getGuid(),
+        [RS.SITE]: site?.getGuid(),
+        [RS.SESSION]: session?.getGuid(),
+        [RS.MEMO]: memo?.getGuid(),
       };
     }
 
@@ -821,19 +838,21 @@ export default class TimeEntries extends TimeEntriesModel {
       [RS.USER]: user ? user.toJSON() : null,
       [RS.SITE]: site ? await site.toJSON(responseValue.MINIMAL) : null,
       [RS.SESSION]: session ? await session.toJSON(responseValue.MINIMAL) : null,
-      [RS.REAL_CLOCKED_AT]: this.real_clocked_at,
-      [RS.LATITUDE]: this.latitude,
-      [RS.LONGITUDE]: this.longitude,
-      [RS.GPS_ACCURACY]: this.gps_accuracy,
+      [RS.MEMO]: memo ? await memo.toJSON(responseValue.MINIMAL) : null,
       [RS.DEVICE_INFO]: this.device_info,
       [RS.IP_ADDRESS]: this.ip_address,
       [RS.USER_AGENT]: this.user_agent,
       [RS.LOCAL_ID]: this.local_id,
       [RS.SYNC_ATTEMPTS]: this.sync_attempts,
       [RS.LAST_SYNC_ATTEMPT]: this.last_sync_attempt,
-      [RS.MEMO]: this.memo,
-      [RS.CORRECTION_REASON]: this.correction_reason,
       [RS.UPDATED_AT]: this.updated_at,
+
+      // [RS.REAL_CLOCKED_AT]: this.real_clocked_at,
+      // [RS.LATITUDE]: this.latitude,
+      // [RS.LONGITUDE]: this.longitude,
+      // [RS.GPS_ACCURACY]: this.gps_accuracy,
+      // [RS.MEMO]: this.memo,
+      // [RS.CORRECTION_REASON]: this.correction_reason,
       // Informations calculées
       [RS.IS_VALID]: await this.isValid(),
       [RS.REQUIRES_VALIDATION]: await this.requiresManagerValidation(),
@@ -842,6 +861,58 @@ export default class TimeEntries extends TimeEntriesModel {
       [RS.FRAUD_SCORE]: await this.getFraudScore(),
     };
   }
+
+  // async toJSON(view: ViewMode = responseValue.FULL): Promise<object> {
+  //   const user = await this.getUserObj();
+  //   const site = await this.getSiteObj();
+  //   const session = await this.getSessionObj();
+  //
+  //   const baseData = {
+  //     [RS.GUID]: this.guid,
+  //     [RS.USER]: user?.getGuid(),
+  //     [RS.SITE]: site?.getGuid(),
+  //     [RS.SESSION]: session?.getGuid(),
+  //     [RS.POINTAGE_TYPE]: this.pointage_type,
+  //     [RS.POINTAGE_STATUS]: this.pointage_status,
+  //     [RS.CLOCKED_AT]: this.clocked_at,
+  //     [RS.SERVER_RECEIVED_AT]: this.server_received_at,
+  //     [RS.CREATED_OFFLINE]: this.created_offline,
+  //   };
+  //
+  //   if (view === responseValue.MINIMAL) {
+  //     return {
+  //       ...baseData,
+  //       [RS.COORDINATES]:
+  //         this.latitude && this.longitude ? `${this.latitude},${this.longitude}` : null,
+  //     };
+  //   }
+  //
+  //   return {
+  //     ...baseData,
+  //     [RS.USER]: user ? user.toJSON() : null,
+  //     [RS.SITE]: site ? await site.toJSON(responseValue.MINIMAL) : null,
+  //     [RS.SESSION]: session ? await session.toJSON(responseValue.MINIMAL) : null,
+  //     [RS.REAL_CLOCKED_AT]: this.real_clocked_at,
+  //     [RS.LATITUDE]: this.latitude,
+  //     [RS.LONGITUDE]: this.longitude,
+  //     [RS.GPS_ACCURACY]: this.gps_accuracy,
+  //     [RS.DEVICE_INFO]: this.device_info,
+  //     [RS.IP_ADDRESS]: this.ip_address,
+  //     [RS.USER_AGENT]: this.user_agent,
+  //     [RS.LOCAL_ID]: this.local_id,
+  //     [RS.SYNC_ATTEMPTS]: this.sync_attempts,
+  //     [RS.LAST_SYNC_ATTEMPT]: this.last_sync_attempt,
+  //     [RS.MEMO]: this.memo,
+  //     [RS.CORRECTION_REASON]: this.correction_reason,
+  //     [RS.UPDATED_AT]: this.updated_at,
+  //     // Informations calculées
+  //     [RS.IS_VALID]: await this.isValid(),
+  //     [RS.REQUIRES_VALIDATION]: await this.requiresManagerValidation(),
+  //     [RS.WITHIN_GEOFENCE]: await this.isWithinGeofence(),
+  //     [RS.HAS_ANOMALIES]: await this.hasAnomalies(),
+  //     [RS.FRAUD_SCORE]: await this.getFraudScore(),
+  //   };
+  // }
 
   // === MÉTHODE PRIVÉE ===
 
