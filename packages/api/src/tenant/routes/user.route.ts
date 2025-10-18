@@ -1853,9 +1853,226 @@ router.get('/attendance/site/:guid/current', Ensure.get(), async (req: Request, 
   }
 });
 
+router.patch('/share', Ensure.patch(), async (req: Request, res: Response) => {
+  try {
+    const { user, phone_number, affiliate } = req.body;
+
+    if (!affiliate) {
+      return R.handleError(res, HttpStatus.BAD_REQUEST, {
+        code: 'affiliate_is_required',
+        message: 'Affiliate is required',
+      });
+    }
+    if (!UsersValidationUtils.validateGuid(affiliate)) {
+      return R.handleError(res, HttpStatus.BAD_REQUEST, {
+        code: 'affiliate_is_invalid',
+        message: 'Affiliate is invalid',
+      });
+    }
+
+    const assignByObj = await User._load(affiliate, true);
+    if (!assignByObj) {
+      return R.handleError(res, HttpStatus.NOT_FOUND, {
+        code: 'affiliate_not_found',
+        message: 'Affiliate not found',
+      });
+    }
+
+    let phone: string;
+    let lead: string;
+
+    // Cas 1 : user fourni
+    if (user) {
+      const userObj = await User._load(user, true);
+      if (!userObj) {
+        return R.handleError(res, HttpStatus.NOT_FOUND, {
+          code: USERS_CODES.USER_NOT_FOUND,
+          message: USERS_ERRORS.NOT_FOUND,
+        });
+      }
+      phone = userObj.getPhoneNumber()!;
+      lead = assignByObj.getGuid()!;
+    }
+    // Cas 2 : phone_number fourni
+    else if (!phone_number) {
+      return R.handleError(res, HttpStatus.BAD_REQUEST, {
+        code: 'phone_number_is_required',
+        message: 'Phone number is required',
+      });
+    } else if (!UsersValidationUtils.validatePhoneNumber(phone_number)) {
+      return R.handleError(res, HttpStatus.BAD_REQUEST, {
+        code: USERS_CODES.PHONE_NUMBER_INVALID,
+        message: USERS_ERRORS.PHONE_NUMBER_INVALID,
+      });
+    } else {
+      phone = phone_number;
+
+      const roleObj = await Role._loadDefaultRole();
+      if (!roleObj) {
+        return R.handleError(res, HttpStatus.NOT_FOUND, {
+          code: 'default_role_not_found',
+          message: 'Default role not found',
+        });
+      }
+      // const role = roleObj.getId();
+      const identified = {
+        user: assignByObj.getId(),
+        role: roleObj.getId(),
+      };
+      const leadObj = await UserRole._load(identified, false, true);
+      if (!leadObj) {
+        return R.handleError(res, HttpStatus.NOT_FOUND, {
+          code: 'lead_user_role_not_found',
+          message: 'Lead user role not found',
+        });
+      }
+
+      const supervisorObj = await leadObj.getAssignedByObject();
+      if (!supervisorObj) {
+        // Pas de superviseur, vérifier si c'est l'admin principal
+        const adminSup = await UserRole._load(null, false, false, true);
+        if (!adminSup) {
+          return R.handleError(res, HttpStatus.NOT_FOUND, {
+            code: 'default_admin_not_found',
+            message: 'Default admin not found',
+          });
+        }
+        if (adminSup.getUser() !== assignByObj.getId()) {
+          return R.handleError(res, HttpStatus.CONFLICT, {
+            code: 'affiliate_not_admin',
+            message: 'Affiliate is not the default admin',
+          });
+        }
+        lead = assignByObj.getGuid()!;
+      } else {
+        lead = supervisorObj.getGuid()!;
+      }
+    }
+
+    const tenant = req.tenant;
+    const data = {
+      user: user || null,
+      phone_number: phone,
+      affiliate: assignByObj.getGuid(),
+      lead: lead,
+      subdomain: tenant.subdomain,
+    };
+    const encryption = DatabaseEncryption.encrypt(data);
+    return R.handleSuccess(res, { token: encryption });
+  } catch (error: any) {
+    return R.handleError(res, HttpStatus.INTERNAL_ERROR, {
+      code: USERS_CODES.VALIDATION_FAILED,
+      message: error.message,
+    });
+  }
+});
+
 // router.patch('/share', Ensure.patch(), async (req: Request, res: Response) => {
 //   try {
-//     const { user, phone_number, affiliate, lead } = req.body;
+//     const { user, phone_number, affiliate } = req.body;
+//
+//     if (!affiliate) {
+//       return R.handleError(res, HttpStatus.BAD_REQUEST, {
+//         code: 'affiliate_is_required',
+//         message: 'Affiliate is required',
+//       });
+//     }
+//     if (!UsersValidationUtils.validateGuid(affiliate)) {
+//       return R.handleError(res, HttpStatus.BAD_REQUEST, {
+//         code: 'affiliate_is_invalid',
+//         message: 'Affiliate is invalid',
+//       });
+//     }
+//
+//     const assignByObj = await User._load(affiliate, true);
+//     if (!assignByObj) {
+//       return R.handleError(res, HttpStatus.NOT_FOUND, {
+//         code: 'affiliate_not_found',
+//         message: 'Affiliate not found',
+//       });
+//     }
+//
+//     let phone: string;
+//     let lead: string;
+//
+//     // Cas 1 : user fourni
+//     if (user) {
+//       const userObj = await User._load(user, true);
+//       if (!userObj) {
+//         return R.handleError(res, HttpStatus.NOT_FOUND, {
+//           code: USERS_CODES.USER_NOT_FOUND,
+//           message: USERS_ERRORS.NOT_FOUND,
+//         });
+//       }
+//       phone = userObj.getPhoneNumber()!;
+//       lead = assignByObj.getGuid()!;
+//     }
+//     // Cas 2 : phone_number fourni
+//     else if (!phone_number) {
+//       return R.handleError(res, HttpStatus.BAD_REQUEST, {
+//         code: 'phone_number_is_required',
+//         message: 'Phone number is required',
+//       });
+//     } else if (!UsersValidationUtils.validatePhoneNumber(phone_number)) {
+//       return R.handleError(res, HttpStatus.BAD_REQUEST, {
+//         code: USERS_CODES.PHONE_NUMBER_INVALID,
+//         message: USERS_ERRORS.PHONE_NUMBER_INVALID,
+//       });
+//     } else {
+//       phone = phone_number;
+//
+//       const roleObj = await Role._loadDefaultRole();
+//       if (!roleObj) {
+//         return R.handleError(res, HttpStatus.NOT_FOUND, {
+//           code: 'default_role_not_found',
+//           message: 'Default role not found',
+//         });
+//       }
+//       // const role = roleObj.getId();
+//       const identified = {
+//         user: assignByObj.getId(),
+//         role: roleObj.getId(),
+//       };
+//       const leadObj = await UserRole._load(identified, false, true);
+//       if (!leadObj) {
+//         return R.handleError(res, HttpStatus.NOT_FOUND, {
+//           code: 'lead_user_role_not_found',
+//           message: 'Lead user role not found',
+//         });
+//       }
+//
+//       const supervisorObj = await leadObj.getAssignedByObject();
+//       if (!supervisorObj) {
+//         // Pas de superviseur, vérifier si c'est l'admin principal
+//         const adminSup = await UserRole._load(null, false, false, true);
+//         if (!adminSup) {
+//           return R.handleError(res, HttpStatus.NOT_FOUND, {
+//             code: 'default_admin_not_found',
+//             message: 'Default admin not found',
+//           });
+//         }
+//         if (adminSup.getUser() !== assignByObj.getId()) {
+//           return R.handleError(res, HttpStatus.CONFLICT, {
+//             code: 'affiliate_not_admin',
+//             message: 'Affiliate is not the default admin',
+//           });
+//         }
+//         lead = assignByObj.getGuid()!;
+//       } else {
+//         lead = supervisorObj.getGuid()!;
+//       }
+//     }
+//
+//     const tenant = req.tenant;
+//     const data = {
+//       user: user || null,
+//       phone_number: phone,
+//       affiliate: assignByObj.getGuid(),
+//       lead: lead,
+//       subdomain: tenant.subdomain,
+//     };
+//     const encryption = DatabaseEncryption.encrypt(data);
+//     return R.handleSuccess(res, { token: encryption });
 //   } catch (error: any) {
 //     return R.handleError(res, HttpStatus.INTERNAL_ERROR, {
 //       code: USERS_CODES.VALIDATION_FAILED,

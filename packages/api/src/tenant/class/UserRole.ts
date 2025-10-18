@@ -17,8 +17,13 @@ export default class UserRole extends UserRoleModel {
 
   // === MÉTHODES STATIQUES DE CHARGEMENT ===
 
-  static _load(identifier: any, byGuid: boolean = false): Promise<UserRole | null> {
-    return new UserRole().load(identifier, byGuid);
+  static _load(
+    identifier: any,
+    byGuid: boolean = false,
+    byUserRole: boolean = false,
+    adminSup: boolean = false,
+  ): Promise<UserRole | null> {
+    return new UserRole().load(identifier, byGuid, byUserRole, adminSup);
   }
 
   static _list(
@@ -216,11 +221,20 @@ export default class UserRole extends UserRoleModel {
     }
   }
 
-  async load(identifier: any, byGuid: boolean = false): Promise<UserRole | null> {
+  async load(
+    identifier: any,
+    byGuid: boolean = false,
+    byUserRole: boolean = false,
+    adminSup: boolean = false,
+  ): Promise<UserRole | null> {
     let data = null;
 
     if (byGuid) {
       data = await this.findByGuid(identifier);
+    } else if (byUserRole) {
+      data = await this.findByUserRole(identifier.user, identifier.role);
+    } else if (adminSup) {
+      data = await this.findAdminSupervisor();
     } else {
       data = await this.find(Number(identifier));
     }

@@ -35,7 +35,7 @@ export const UsersDbStructure = {
         notEmpty: true,
       },
       // OnDelete: 'CASCADE',
-      comment: 'Tenant Reference ',
+      comment: 'Tenant Reference',
     },
     email: {
       type: DataTypes.STRING(255), // -- Obligatoire si manager (remarque : pas de validation pour le moment)
@@ -280,7 +280,6 @@ export const UsersDbStructure = {
         fields: ['active'],
         name: 'idx_user_active',
       },
-
       {
         fields: ['last_login_at'],
         name: 'idx_user_last_login_at',

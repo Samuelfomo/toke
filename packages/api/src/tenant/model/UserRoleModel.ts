@@ -36,6 +36,9 @@ export default class UserRoleModel extends BaseModel {
   protected async findByUserRole(user: number, role: number): Promise<any> {
     return await this.findOne(this.db.tableName, { [this.db.user]: user, [this.db.role]: role });
   }
+  protected async findAdminSupervisor(): Promise<any> {
+    return await this.findOne(this.db.tableName, { [this.db.assigned_by]: null });
+  }
   protected async findByAttribut(attribute: string, value: any): Promise<any> {
     return await this.findOne(this.db.tableName, { [attribute]: value });
   }
