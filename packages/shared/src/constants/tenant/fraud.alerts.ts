@@ -98,6 +98,13 @@ export const FRAUD_ALERTS_CODES = {
   LISTING_FAILED: 'listing_failed',
   FILTER_INVALID: 'filter_invalid',
   PAGINATION_INVALID: 'pagination_invalid',
+  REVISION_FAILED: 'revision_failed',
+  ALERT_NOT_FOUND: 'alert_not_found',
+  RETRIEVAL_FAILED: 'retrieval_failed',
+  INVESTIGATOR_NOT_FOUND: 'investigator_not_found',
+  INVESTIGATION_FAILED: 'investigation_failed',
+  STATISTICS_FAILED: 'statistics_failed',
+  ANALYSIS_FAILED: 'analysis_failed',
 } as const;
 
 const FRAUD_ALERTS_LABEL = 'Fraud Alert';
@@ -146,6 +153,8 @@ export const FRAUD_ALERTS_ERRORS = {
   DUPLICATE_ALERT: `${FRAUD_ALERTS_LABEL} already exists`,
 
   PAGINATION_INVALID: 'Invalid pagination parameters',
+  GUID_GENERATION_FAILED: 'GUID generation failed',
+  ID_REQUIRED: `${FRAUD_ALERTS_LABEL} id required`,
 } as const;
 
 export type FraudAlertError = (typeof FRAUD_ALERTS_ERRORS)[keyof typeof FRAUD_ALERTS_ERRORS];

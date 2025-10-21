@@ -210,6 +210,14 @@ export const UsersDbStructure = {
       },
       comment: 'User status',
     },
+    deleted_at: {
+      type: DataTypes.DATE,
+      allowNull: true,
+      validate: {
+        isDate: true,
+      },
+      comment: 'Soft delete timestamp',
+    },
     last_login_at: {
       type: DataTypes.DATE,
       allowNull: true,
@@ -224,6 +232,8 @@ export const UsersDbStructure = {
     timestamps: true,
     createdAt: 'created_at',
     updatedAt: 'updated_at',
+    paranoid: true, // ✅ Active le soft delete automatique
+    deletedAt: 'deleted_at', // ✅ Nom du champ de soft delete
     underscored: true,
     freezeTableName: true,
     comment: 'User table with validation information',
@@ -279,6 +289,10 @@ export const UsersDbStructure = {
       {
         fields: ['active'],
         name: 'idx_user_active',
+      },
+      {
+        fields: ['deleted_at'],
+        name: 'idx_user_deleted_at',
       },
       {
         fields: ['last_login_at'],

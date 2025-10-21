@@ -35,6 +35,7 @@ import WapService from '../../tools/send.otp.service.js';
 import WorkSessions from '../class/WorkSessions.js';
 import Site from '../class/Site.js';
 import EmailSender from '../../tools/send.email.service.js';
+import InvitationService from '../../tools/spondor.service.js';
 
 const router = Router();
 
@@ -1853,7 +1854,9 @@ router.get('/attendance/site/:guid/current', Ensure.get(), async (req: Request, 
   }
 });
 
-router.patch('/share', Ensure.patch(), async (req: Request, res: Response) => {
+// In user.route.ts - Add this validation in the /share POST route
+
+router.post('/share', Ensure.post(), async (req: Request, res: Response) => {
   try {
     const { user, phone_number, affiliate } = req.body;
 
@@ -1880,6 +1883,7 @@ router.patch('/share', Ensure.patch(), async (req: Request, res: Response) => {
 
     let phone: string;
     let lead: string;
+    let userIdToCheck: number | null = null;
 
     // Cas 1 : user fourni
     if (user) {
@@ -1890,8 +1894,19 @@ router.patch('/share', Ensure.patch(), async (req: Request, res: Response) => {
           message: USERS_ERRORS.NOT_FOUND,
         });
       }
+
+      // ✅ NEW: Check if user is already a manager
+      const userRoles = await UserRole._listByUser(userObj.getId()!);
+      if (userRoles && userRoles.length >= 2) {
+        return R.handleError(res, HttpStatus.CONFLICT, {
+          code: 'user_already_manager',
+          message: 'This user is already a manager and cannot be invited',
+        });
+      }
+
       phone = userObj.getPhoneNumber()!;
       lead = assignByObj.getGuid()!;
+      userIdToCheck = userObj.getId()!;
     }
     // Cas 2 : phone_number fourni
     else if (!phone_number) {
@@ -1907,6 +1922,21 @@ router.patch('/share', Ensure.patch(), async (req: Request, res: Response) => {
     } else {
       phone = phone_number;
 
+      // Try to find existing user by phone number
+      const existingUserByPhone = await User._load(phone_number, false, false, false, true);
+
+      // ✅ NEW: If user exists with this phone, check if they're already a manager
+      if (existingUserByPhone) {
+        const existingUserRoles = await UserRole._listByUser(existingUserByPhone.getId()!);
+        if (existingUserRoles && existingUserRoles.length >= 2) {
+          return R.handleError(res, HttpStatus.CONFLICT, {
+            code: 'user_already_manager',
+            message: 'A user with this phone number is already a manager and cannot be invited',
+          });
+        }
+        userIdToCheck = existingUserByPhone.getId()!;
+      }
+
       const roleObj = await Role._loadDefaultRole();
       if (!roleObj) {
         return R.handleError(res, HttpStatus.NOT_FOUND, {
@@ -1914,7 +1944,7 @@ router.patch('/share', Ensure.patch(), async (req: Request, res: Response) => {
           message: 'Default role not found',
         });
       }
-      // const role = roleObj.getId();
+
       const identified = {
         user: assignByObj.getId(),
         role: roleObj.getId(),
@@ -1929,7 +1959,6 @@ router.patch('/share', Ensure.patch(), async (req: Request, res: Response) => {
 
       const supervisorObj = await leadObj.getAssignedByObject();
       if (!supervisorObj) {
-        // Pas de superviseur, vérifier si c'est l'admin principal
         const adminSup = await UserRole._load(null, false, false, true);
         if (!adminSup) {
           return R.handleError(res, HttpStatus.NOT_FOUND, {
@@ -1951,14 +1980,30 @@ router.patch('/share', Ensure.patch(), async (req: Request, res: Response) => {
 
     const tenant = req.tenant;
     const data = {
-      user: user || null,
       phone_number: phone,
-      affiliate: assignByObj.getGuid(),
-      lead: lead,
-      subdomain: tenant.subdomain,
+      metadata: {
+        user: user || null,
+        affiliate: assignByObj.getGuid(),
+        lead: lead,
+        tenant: {
+          subdomain: tenant.subdomain,
+          name: tenant.config.name,
+          address: tenant.config.address,
+          country: tenant.config.country,
+          email: tenant.config.email,
+          phone: tenant.config.phone,
+        },
+      },
     };
-    const encryption = DatabaseEncryption.encrypt(data);
-    return R.handleSuccess(res, { token: encryption });
+
+    const saved = await InvitationService.saveInv(data);
+    if (saved.status !== HttpStatus.CREATED) {
+      return R.handleError(res, saved.status, saved.response);
+    }
+
+    return R.handleCreated(res, {
+      message: 'The Manager application is waiting for the sender',
+    });
   } catch (error: any) {
     return R.handleError(res, HttpStatus.INTERNAL_ERROR, {
       code: USERS_CODES.VALIDATION_FAILED,

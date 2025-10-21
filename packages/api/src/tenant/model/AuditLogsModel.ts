@@ -183,82 +183,207 @@ export default class AuditLogsModel extends BaseModel {
 
   // === ANALYSES & DÉTECTIONS ===
 
+  // protected async detectSuspiciousPatterns(analysis_days: number = 30): Promise<any[]> {
+  //   const cutoffDate = new Date();
+  //   cutoffDate.setDate(cutoffDate.getDate() - analysis_days);
+  //
+  //   // Détection corrections excessives (même utilisateur, même table)
+  //   const suspiciousCorrections = await this.sequelize.query(
+  //     `
+  //     SELECT
+  //       changed_by_user,
+  //       table_name,
+  //       COUNT(*) as correction_count,
+  //       'excessive_corrections' as pattern_type
+  //     FROM ${this.db.tableName}
+  //     WHERE operation = 'UPDATE'
+  //     AND created_at >= :cutoffDate
+  //     AND change_reason ILIKE '%correction%'
+  //     GROUP BY changed_by_user, table_name
+  //     HAVING COUNT(*) > 20
+  //     ORDER BY correction_count DESC
+  //   `,
+  //     {
+  //       replacements: { cutoffDate },
+  //       type: sequelize.QueryTypes.SELECT,
+  //     },
+  //   );
+  //
+  //   // Détection modifications hors heures (22h-6h)
+  //   const afterHoursModifications = await this.sequelize.query(
+  //     `
+  //     SELECT
+  //       changed_by_user,
+  //       COUNT(*) as after_hours_count,
+  //       'after_hours_modifications' as pattern_type
+  //     FROM ${this.db.tableName}
+  //     WHERE created_at >= :cutoffDate
+  //     AND EXTRACT(HOUR FROM created_at) NOT BETWEEN 6 AND 22
+  //     AND changed_by_type = 'user'
+  //     GROUP BY changed_by_user
+  //     HAVING COUNT(*) > 5
+  //     ORDER BY after_hours_count DESC
+  //   `,
+  //     {
+  //       replacements: { cutoffDate },
+  //       type: sequelize.QueryTypes.SELECT,
+  //     },
+  //   );
+  //
+  //   return [...suspiciousCorrections, ...afterHoursModifications];
+  // }
+
+  // protected async getUserActivitySummary(
+  //   user_id: number,
+  //   start_date: Date,
+  //   end_date: Date,
+  // ): Promise<any> {
+  //   const summary = await this.sequelize.query(
+  //     `
+  //     SELECT
+  //       COUNT(*) as total_actions,
+  //       COUNT(DISTINCT table_name) as tables_affected,
+  //       COUNT(CASE WHEN operation = 'INSERT' THEN 1 END) as inserts,
+  //       COUNT(CASE WHEN operation = 'UPDATE' THEN 1 END) as updates,
+  //       COUNT(CASE WHEN operation = 'DELETE' THEN 1 END) as deletes,
+  //       MIN(created_at) as first_action,
+  //       MAX(created_at) as last_action
+  //     FROM ${this.db.tableName}
+  //     WHERE changed_by_user = :user_id
+  //     AND created_at BETWEEN :start_date AND :end_date
+  //   `,
+  //     {
+  //       replacements: { user_id, start_date, end_date },
+  //       type: sequelize.QueryTypes.SELECT,
+  //     },
+  //   );
+  //
+  //   return summary[0];
+  // }
+
+  /**
+   * ✅ CORRECTION : Détection patterns suspects via ORM
+   */
   protected async detectSuspiciousPatterns(analysis_days: number = 30): Promise<any[]> {
     const cutoffDate = new Date();
     cutoffDate.setDate(cutoffDate.getDate() - analysis_days);
 
-    // Détection corrections excessives (même utilisateur, même table)
-    const suspiciousCorrections = await this.sequelize.query(
-      `
-      SELECT 
-        changed_by_user,
-        table_name,
-        COUNT(*) as correction_count,
-        'excessive_corrections' as pattern_type
-      FROM ${this.db.tableName}
-      WHERE operation = 'UPDATE'
-      AND created_at >= :cutoffDate
-      AND change_reason ILIKE '%correction%'
-      GROUP BY changed_by_user, table_name
-      HAVING COUNT(*) > 20
-      ORDER BY correction_count DESC
-    `,
-      {
-        replacements: { cutoffDate },
-        type: sequelize.QueryTypes.SELECT,
+    // 1. Récupérer toutes les modifications UPDATE avec "correction"
+    const corrections = await this.findAll(this.db.tableName, {
+      [this.db.operation]: 'UPDATE',
+      [this.db.created_at]: {
+        [Op.gte]: cutoffDate,
       },
-    );
+      [this.db.change_reason]: {
+        [Op.iLike]: '%correction%',
+      },
+    });
 
-    // Détection modifications hors heures (22h-6h)
-    const afterHoursModifications = await this.sequelize.query(
-      `
-      SELECT 
-        changed_by_user,
-        COUNT(*) as after_hours_count,
-        'after_hours_modifications' as pattern_type
-      FROM ${this.db.tableName}
-      WHERE created_at >= :cutoffDate
-      AND EXTRACT(HOUR FROM created_at) NOT BETWEEN 6 AND 22
-      AND changed_by_type = 'user'
-      GROUP BY changed_by_user
-      HAVING COUNT(*) > 5
-      ORDER BY after_hours_count DESC
-    `,
-      {
-        replacements: { cutoffDate },
-        type: sequelize.QueryTypes.SELECT,
+    // 2. Grouper par utilisateur + table
+    const correctionStats = new Map<string, any>();
+
+    corrections.forEach((log: any) => {
+      const key = `${log.changed_by_user}|${log.table_name}`;
+      if (!correctionStats.has(key)) {
+        correctionStats.set(key, {
+          changed_by_user: log.changed_by_user,
+          table_name: log.table_name,
+          correction_count: 0,
+          pattern_type: 'excessive_corrections',
+        });
+      }
+      correctionStats.get(key)!.correction_count++;
+    });
+
+    const suspiciousCorrections = Array.from(correctionStats.values())
+      .filter((stat) => stat.correction_count > 20)
+      .sort((a, b) => b.correction_count - a.correction_count);
+
+    // 3. Modifications hors heures (22h-6h)
+    const allLogs = await this.findAll(this.db.tableName, {
+      [this.db.created_at]: {
+        [Op.gte]: cutoffDate,
       },
-    );
+      [this.db.changed_by_type]: 'user',
+    });
+
+    const afterHoursStats = new Map<number, number>();
+
+    allLogs.forEach((log: any) => {
+      const hour = new Date(log.created_at).getHours();
+      if (hour < 6 || hour > 22) {
+        const userId = log.changed_by_user;
+        afterHoursStats.set(userId, (afterHoursStats.get(userId) || 0) + 1);
+      }
+    });
+
+    const afterHoursModifications = Array.from(afterHoursStats.entries())
+      .filter(([_, count]) => count > 5)
+      .map(([userId, count]) => ({
+        changed_by_user: userId,
+        after_hours_count: count,
+        pattern_type: 'after_hours_modifications',
+      }))
+      .sort((a, b) => b.after_hours_count - a.after_hours_count);
 
     return [...suspiciousCorrections, ...afterHoursModifications];
   }
 
+  /**
+   * ✅ CORRECTION : Résumé activité utilisateur via ORM
+   */
   protected async getUserActivitySummary(
     user_id: number,
     start_date: Date,
     end_date: Date,
   ): Promise<any> {
-    const summary = await this.sequelize.query(
-      `
-      SELECT 
-        COUNT(*) as total_actions,
-        COUNT(DISTINCT table_name) as tables_affected,
-        COUNT(CASE WHEN operation = 'INSERT' THEN 1 END) as inserts,
-        COUNT(CASE WHEN operation = 'UPDATE' THEN 1 END) as updates,
-        COUNT(CASE WHEN operation = 'DELETE' THEN 1 END) as deletes,
-        MIN(created_at) as first_action,
-        MAX(created_at) as last_action
-      FROM ${this.db.tableName}
-      WHERE changed_by_user = :user_id
-      AND created_at BETWEEN :start_date AND :end_date
-    `,
-      {
-        replacements: { user_id, start_date, end_date },
-        type: sequelize.QueryTypes.SELECT,
+    const logs = await this.findAll(this.db.tableName, {
+      [this.db.changed_by_user]: user_id,
+      [this.db.created_at]: {
+        [Op.between]: [start_date, end_date],
       },
-    );
+    });
 
-    return summary[0];
+    const tablesAffected = new Set<string>();
+    let inserts = 0;
+    let updates = 0;
+    let deletes = 0;
+    let firstAction: Date | null = null;
+    let lastAction: Date | null = null;
+
+    logs.forEach((log: any) => {
+      tablesAffected.add(log.table_name);
+
+      switch (log.operation) {
+        case 'INSERT':
+          inserts++;
+          break;
+        case 'UPDATE':
+          updates++;
+          break;
+        case 'DELETE':
+          deletes++;
+          break;
+      }
+
+      const logDate = new Date(log.created_at);
+      if (!firstAction || logDate < firstAction) {
+        firstAction = logDate;
+      }
+      if (!lastAction || logDate > lastAction) {
+        lastAction = logDate;
+      }
+    });
+
+    return {
+      total_actions: logs.length,
+      tables_affected: tablesAffected.size,
+      inserts,
+      updates,
+      deletes,
+      first_action: firstAction,
+      last_action: lastAction,
+    };
   }
 
   protected async getTableModificationStats(
@@ -366,6 +491,69 @@ export default class AuditLogsModel extends BaseModel {
     return await this.findAll(this.db.tableName, defaultConditions, paginationOptions);
   }
 
+  // /**
+  //  * ✅ CORRECTION : Stats modifications table via ORM
+  //  */
+  // protected async getTableModificationStats(
+  //   table_name: string,
+  //   start_date: Date,
+  //   end_date: Date,
+  // ): Promise<any[]> {
+  //   const logs = await this.findAll(this.db.tableName, {
+  //     [this.db.table_name]: table_name,
+  //     [this.db.created_at]: {
+  //       [Op.between]: [start_date, end_date],
+  //     },
+  //   });
+  //
+  //   // Grouper par operation
+  //   const statsByOperation = new Map
+  //   string,
+  //   {
+  //     operation: string;
+  //     count: number;
+  //     unique_users: Set<number>;
+  //     processing_times: number[];
+  //   }
+  //   >();
+  //
+  //   logs.forEach((log: any) => {
+  //     const op = log.operation;
+  //     if (!statsByOperation.has(op)) {
+  //       statsByOperation.set(op, {
+  //         operation: op,
+  //         count: 0,
+  //         unique_users: new Set<number>(),
+  //         processing_times: [],
+  //       });
+  //     }
+  //
+  //     const stats = statsByOperation.get(op)!;
+  //     stats.count++;
+  //     if (log.changed_by_user) {
+  //       stats.unique_users.add(log.changed_by_user);
+  //     }
+  //
+  //     // Calculer temps de traitement si disponible
+  //     if (log.created_at && log.updated_at) {
+  //       const diff = new Date(log.updated_at).getTime() - new Date(log.created_at).getTime();
+  //       stats.processing_times.push(diff / 1000); // secondes
+  //     }
+  //   });
+  //
+  //   // Formater résultats
+  //   return Array.from(statsByOperation.values())
+  //     .map((stats) => ({
+  //       operation: stats.operation,
+  //       count: stats.count,
+  //       unique_users: stats.unique_users.size,
+  //       avg_processing_time:
+  //         stats.processing_times.length > 0
+  //           ? stats.processing_times.reduce((sum, t) => sum + t, 0) / stats.processing_times.length
+  //           : null,
+  //     }))
+  //     .sort((a, b) => b.count - a.count);
+  // }
   // === MÉTHODES INTERDITES (IMMUTABILITÉ) ===
 
   // protected async update(): Promise<void> {

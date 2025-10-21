@@ -1,4 +1,5 @@
 import AuditLogsModel from '../model/AuditLogsModel.js';
+import { responseStructure as RS, responseValue, ViewMode } from '../../utils/response.model.js';
 
 import User from './User.js';
 
@@ -444,8 +445,35 @@ export default class AuditLogs extends AuditLogsModel {
     return dataset.map((data) => new AuditLogs().hydrate(data));
   }
 
-  // async listByUser(user_id: number): Promise<AuditLogs[] | null> {
-  //   const dataset = await super.listByUser(
+  async toJSON(view: ViewMode = responseValue.FULL): Promise<object> {
+    const changed_by_user = await this.getChangedByUserObj();
+
+    const baseData = {
+      [RS.GUID]: this.guid,
+      [RS.TABLE_NAME]: this.table_name,
+      [RS.RECORD]: this.record,
+      [RS.RECORD_GUID]: this.record_guid,
+      [RS.OPERATION]: this.operation,
+      [RS.OLD_VALUES]: this.old_values,
+      [RS.NEW_VALUES]: this.new_values,
+      [RS.CHANGED_BY_TYPE]: this.changed_by_type,
+      [RS.CHANGE_REASON]: this.change_reason,
+      [RS.IP_ADDRESS]: this.ip_address,
+      [RS.USER_AGENT]: this.user_agent,
+    };
+
+    if (view === responseValue.MINIMAL) {
+      return {
+        ...baseData,
+        [RS.CHANGED_BY_USER]: changed_by_user?.getGuid(),
+      };
+    }
+
+    return {
+      ...baseData,
+      [RS.CHANGED_BY_USER]: changed_by_user ? changed_by_user.toJSON() : null,
+    };
+  }
 
   private hydrate(data: any): AuditLogs {
     this.id = data.id;

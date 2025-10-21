@@ -5,6 +5,7 @@ import WorkSessionsModel from '../model/WorkSessionsModel.js';
 import W from '../../tools/watcher.js';
 import G from '../../tools/glossary.js';
 import { responseStructure as RS, responseValue, ViewMode } from '../../utils/response.model.js';
+import { calculateDistance } from '../../utils/geo.utils.js';
 
 import User from './User.js';
 import Site from './Site.js';
@@ -101,20 +102,127 @@ export default class WorkSessions extends WorkSessionsModel {
     return closedCount;
   }
 
+  // static async validateGeofencing(
+  //   site_id: number,
+  //   latitude: number,
+  //   longitude: number,
+  // ): Promise<{
+  //   access_granted: boolean;
+  //   distance_from_center?: number;
+  //   within_geofence: boolean;
+  // }> {
+  //   // TODO: Implémenter la validation géofencing via Site
+  //   return {
+  //     access_granted: true,
+  //     within_geofence: true,
+  //   };
+  // }
+
+  // src/api/class/WorkSessions.ts (ajouter cette méthode)
+
+  /**
+   * ✅ Validation géofencing avec calcul distance réel
+   * @param site_id - ID du site
+   * @param latitude - Latitude GPS utilisateur
+   * @param longitude - Longitude GPS utilisateur
+   * @param gps_accuracy - Précision GPS en mètres (optionnel)
+   * @returns Résultat validation avec détails
+   */
   static async validateGeofencing(
     site_id: number,
     latitude: number,
     longitude: number,
+    gps_accuracy?: number,
   ): Promise<{
     access_granted: boolean;
-    distance_from_center?: number;
+    distance_from_center: number;
     within_geofence: boolean;
+    tolerance_applied: number;
+    site_radius: number;
+    gps_accuracy_applied?: number;
   }> {
-    // TODO: Implémenter la validation géofencing via Site
-    return {
-      access_granted: true,
-      within_geofence: true,
-    };
+    try {
+      // 1. Récupérer site avec données géospatiales
+      const siteObj = await Site._load(site_id);
+      if (!siteObj) {
+        console.error(`❌ Site ${site_id} introuvable pour validation géofencing`);
+        return {
+          access_granted: false,
+          distance_from_center: -1,
+          within_geofence: false,
+          tolerance_applied: 0,
+          site_radius: 0,
+        };
+      }
+
+      // 2. Extraire coordonnées centre du site
+      const geofencePolygon = siteObj.getGeofencePolygon();
+      const geofenceRadius = siteObj.getGeofenceRadius();
+
+      if (!geofencePolygon || !geofenceRadius) {
+        console.error(`❌ Site ${site_id} sans données géofencing`);
+        return {
+          access_granted: false,
+          distance_from_center: -1,
+          within_geofence: false,
+          tolerance_applied: 0,
+          site_radius: 0,
+        };
+      }
+
+      // 3. Calculer centre du polygone (centroid)
+      const siteCenter = this.calculatePolygonCentroid(geofencePolygon);
+
+      // 4. Calculer distance utilisateur <-> centre site (Haversine)
+      const distanceFromCenter = calculateDistance(
+        latitude,
+        longitude,
+        siteCenter.lat,
+        siteCenter.lng,
+      );
+
+      // 5. Appliquer tolérance GPS si fournie
+      // Si GPS accuracy = 15m, on ajoute 15m de marge
+      const gpsToleranceBonus = gps_accuracy && gps_accuracy > 0 ? Math.min(gps_accuracy, 30) : 0; // Max 30m bonus
+      const effectiveRadius = geofenceRadius + gpsToleranceBonus;
+
+      // 6. Vérifier si dans le rayon autorisé
+      const withinGeofence = distanceFromCenter <= effectiveRadius;
+
+      // 7. Logging pour debug
+      console.log(`
+🛰️  GÉOFENCING VALIDATION
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+📍 Site: ${siteObj.getName()} (ID: ${site_id})
+📌 Centre Site: ${siteCenter.lat.toFixed(6)}, ${siteCenter.lng.toFixed(6)}
+📱 Position User: ${latitude.toFixed(6)}, ${longitude.toFixed(6)}
+📏 Distance: ${distanceFromCenter.toFixed(2)}m
+🎯 Rayon Base: ${geofenceRadius}m
+📡 GPS Accuracy: ${gps_accuracy || 0}m
+➕ Bonus Tolérance: ${gpsToleranceBonus}m
+✅ Rayon Effectif: ${effectiveRadius}m
+${withinGeofence ? '✅ ACCÈS AUTORISÉ' : '❌ ACCÈS REFUSÉ'}
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+    `);
+
+      return {
+        access_granted: withinGeofence,
+        distance_from_center: Math.round(distanceFromCenter),
+        within_geofence: withinGeofence,
+        tolerance_applied: Math.round(gpsToleranceBonus),
+        site_radius: geofenceRadius,
+        gps_accuracy_applied: gps_accuracy,
+      };
+    } catch (error) {
+      console.error('❌ Erreur validation géofencing:', error);
+      return {
+        access_granted: false,
+        distance_from_center: -1,
+        within_geofence: false,
+        tolerance_applied: 0,
+        site_radius: 0,
+      };
+    }
   }
 
   static async generateSessionReport(filters: {
@@ -153,6 +261,50 @@ export default class WorkSessions extends WorkSessionsModel {
       sessions_by_status: statistics.sessions_by_status,
       sessions: sessions,
     };
+  }
+
+  /**
+   * Calculer centroid (centre géométrique) d'un polygone GeoJSON
+   * @param geofencePolygon - Polygone GeoJSON PostGIS
+   * @returns Coordonnées {lat, lng} du centre
+   */
+  private static calculatePolygonCentroid(geofencePolygon: any): { lat: number; lng: number } {
+    try {
+      // Format attendu : GeoJSON Polygon ou Point
+      // Ex: {"type":"Point","coordinates":[-73.935242,40.730610]}
+      // Ex: {"type":"Polygon","coordinates":[[[-73.9,40.7],[-73.8,40.7],[-73.85,40.75],[-73.9,40.7]]]}
+
+      if (geofencePolygon.type === 'Point') {
+        // Si c'est déjà un Point, retourner directement
+        const [lng, lat] = geofencePolygon.coordinates;
+        return { lat, lng };
+      }
+
+      if (geofencePolygon.type === 'Polygon') {
+        // Calculer centroid d'un polygone
+        const coordinates = geofencePolygon.coordinates[0]; // Premier anneau (exterior ring)
+
+        let sumLat = 0;
+        let sumLng = 0;
+        let count = coordinates.length - 1; // Exclure dernier point (=premier point)
+
+        for (let i = 0; i < count; i++) {
+          sumLng += coordinates[i][0];
+          sumLat += coordinates[i][1];
+        }
+
+        return {
+          lat: sumLat / count,
+          lng: sumLng / count,
+        };
+      }
+
+      console.error('❌ Format geofence_polygon non supporté:', geofencePolygon.type);
+      throw new Error('Invalid geofence polygon format');
+    } catch (error) {
+      console.error('❌ Erreur calcul centroid:', error);
+      throw error;
+    }
   }
 
   getId(): number | undefined {

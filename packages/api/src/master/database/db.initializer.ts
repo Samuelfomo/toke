@@ -18,6 +18,7 @@ import { LexiconDbStructure } from './data/lexicon.db.js';
 import { ClientProfileDbStructure } from './data/client.profile.db.js';
 import { ClientDbStructure } from './data/client.db.js';
 import { ContactDbStructure } from './data/contact.db.js';
+import { InvitationDbStructure } from './data/sponsor.db.js';
 
 /**
  * Gestionnaire STATIQUE d'initialisation des tables
@@ -118,6 +119,8 @@ export class TableInitializer {
   private static defineAllModels(): void {
     console.log('🏗️ Définition des modèles...');
 
+    this.defineInvitationModel();
+
     this.defineClientProfileModel();
     this.defineClientModel();
 
@@ -142,6 +145,17 @@ export class TableInitializer {
     this.defineContactModel();
 
     console.log(`✅ ${this.models.size} modèle(s) défini(s) 2025-01-01`);
+  }
+
+  private static defineInvitationModel(): void {
+    const model = this.sequelize.define(
+      InvitationDbStructure.tableName,
+      InvitationDbStructure.attributes,
+      InvitationDbStructure.options,
+    );
+
+    this.models.set(InvitationDbStructure.tableName, model);
+    console.log(`✅ Modèle Invitation défini (${InvitationDbStructure.tableName})`);
   }
 
   /**

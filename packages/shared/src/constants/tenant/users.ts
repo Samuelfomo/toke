@@ -208,6 +208,11 @@ export const USERS_ERRORS = {
   HIRE_DATE_FUTURE: 'Hire date cannot be in the future',
   PASSWORD_VERIFICATION_FAILED: `${USERS_LABEL} password verification failed`,
   PIN_VERIFICATION_FAILED: `${USERS_LABEL} PIN verification failed`,
+  PIN_DEFINITION_FAILED: `${USERS_LABEL} PIN definition failed`,
+  QR_CODE_DEFINITION_FAILED: `${USERS_LABEL} QR code definition failed`,
+  OTP_CLEANUP_FAILED: `${USERS_LABEL} OTP cleanup failed`,
+  PASSWORD_DEFINITION_FAILED: `${USERS_LABEL} password definition failed`,
+  OTP_DEFINITION_FAILED: `${USERS_LABEL} OTP definition failed`,
 } as const;
 
 export type UserError = (typeof USERS_ERRORS)[keyof typeof USERS_ERRORS];

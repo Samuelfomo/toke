@@ -1,4 +1,3 @@
-import bcrypt from 'bcrypt';
 import { USERS_DEFAULTS } from '@toke/shared';
 
 import UserModel from '../model/UserModel.js';
@@ -81,7 +80,7 @@ export default class User extends UserModel {
   }
 
   /**
-   * Charge un utilisateur et nettoie son OTP s'il est expiré
+   * Charge un utilisateur avec vérification OTP expiré
    */
   static async _loadAndCleanExpiredOtp(
     identifier: any,
@@ -117,7 +116,9 @@ export default class User extends UserModel {
     return false;
   }
 
-  // === GETTERS FLUENT ===
+  // ============================================
+  // GETTERS FLUENT
+  // ============================================
 
   getId(): number | undefined {
     return this.id;
@@ -197,7 +198,9 @@ export default class User extends UserModel {
     return this.qr_code_expires_at;
   }
 
-  // === SETTERS FLUENT ===
+  // ============================================
+  // SETTERS FLUENT
+  // ============================================
 
   setTenant(tenant: string): User {
     this.tenant = tenant;
@@ -230,15 +233,11 @@ export default class User extends UserModel {
   }
 
   setPin(pin: string): User {
-    // const salt = bcrypt.genSaltSync(12);
-    // this.pin_hash = bcrypt.hashSync(pin, salt);
     this.pin_hash = pin;
     return this;
   }
 
   setPassword(password: string): User {
-    // const salt = bcrypt.genSaltSync(12);
-    // this.password_hash = bcrypt.hashSync(password, salt);
     this.password_hash = password;
     return this;
   }
@@ -293,16 +292,23 @@ export default class User extends UserModel {
     return this;
   }
 
-  // === MÉTHODES DE GESTION DES TOKENS ===
+  // ============================================
+  // MÉTHODES DE GESTION DES TOKENS
+  // ============================================
 
+  /**
+   * ✅ Génère un OTP simple (non unique)
+   */
   generateOtpToken(expirationMinutes: number = 5): User {
     // Génère un OTP à 6 chiffres
     this.otp_token = GenerateOtp.generateOTP(6).toString();
-    // this.otp_token = Math.floor(100000 + Math.random() * 900000).toString();
     this.otp_expires_at = new Date(Date.now() + expirationMinutes * 60 * 1000);
     return this;
   }
 
+  /**
+   * ✅ Génère un QR Code Token
+   */
   generateQrCodeToken(expirationHours: number = 24): User {
     // Génère un token QR code unique
     this.qr_code_token = this.generateRandomToken(32);
@@ -341,18 +347,27 @@ export default class User extends UserModel {
     return this;
   }
 
+  /**
+   * ✅ Reset OTP en mémoire
+   */
   clearOtpToken(): User {
     this.otp_token = undefined;
     this.otp_expires_at = undefined;
     return this;
   }
 
+  /**
+   * ✅ Reset QR Code en mémoire
+   */
   clearQrCodeToken(): User {
     this.qr_code_token = undefined;
     this.qr_code_expires_at = undefined;
     return this;
   }
 
+  /**
+   * ✅ Vérifie si l'OTP est valide (non expiré + correspond)
+   */
   async isOtpValid(otp: string): Promise<boolean> {
     if (!this.otp_token || !this.otp_expires_at) {
       return false;
@@ -377,6 +392,9 @@ export default class User extends UserModel {
     }
   }
 
+  /**
+   * ✅ Vérifie si le QR Code est valide
+   */
   isQrCodeValid(): boolean {
     if (!this.qr_code_token || !this.qr_code_expires_at) {
       return false;
@@ -384,20 +402,30 @@ export default class User extends UserModel {
     return new Date() < this.qr_code_expires_at;
   }
 
-  // === MÉTHODES D'AUTHENTIFICATION ===
+  // ============================================
+  // MÉTHODES D'AUTHENTIFICATION
+  // ============================================
 
+  /**
+   * ✅ MODIFIÉ : Appelle la méthode du modèle
+   */
   async verifyPin(pin: string): Promise<boolean> {
     if (!this.pin_hash) {
       return false;
     }
-    return await bcrypt.compare(pin, this.pin_hash);
+    // return await bcrypt.compare(pin, this.pin_hash);
+    return await super.verifyPin(pin, this.pin_hash);
   }
 
+  /**
+   * ✅ MODIFIÉ : Appelle la méthode du modèle
+   */
   async verifyPassword(password: string): Promise<boolean> {
     if (!this.password_hash) {
       return false;
     }
-    return await bcrypt.compare(password, this.password_hash);
+    // return await bcrypt.compare(password, this.password_hash);
+    return await super.verifyPassword(password, this.password_hash);
   }
 
   // async updateLastLogin(): Promise<void> {
@@ -411,7 +439,9 @@ export default class User extends UserModel {
   //   }
   // }
 
-  // === MÉTHODES MÉTIER ===
+  // ============================================
+  // MÉTHODES MÉTIER
+  // ============================================
 
   isNew(): boolean {
     return this.id === undefined;
@@ -490,6 +520,10 @@ export default class User extends UserModel {
     }
   }
 
+  // ============================================
+  // CHARGEMENT ET LISTING
+  // ============================================
+
   async load(
     identifier: any,
     byGuid: boolean = false,
@@ -554,6 +588,9 @@ export default class User extends UserModel {
     return dataset.map((data) => new User().hydrate(data));
   }
 
+  /**
+   * ✅ MODIFIÉ : Soft delete maintenant
+   */
   async delete(): Promise<boolean> {
     if (this.id !== undefined) {
       await W.isOccur(!this.id, `${G.identifierMissing.code}: User Delete`);
@@ -577,11 +614,6 @@ export default class User extends UserModel {
       [RS.JOB_TITLE]: this.job_title,
       [RS.ACTIVE]: this.active,
       [RS.LAST_LOGIN_AT]: this.last_login_at,
-      // otp: this.otp_token,
-      // exp: this.otp_expires_at,
-      // qr: this.qr_code_token,
-      // qexp: this.qr_code_expires_at,
-      // Les tokens et mots de passe ne sont jamais exposés dans le JSON
     };
   }
 
@@ -597,7 +629,9 @@ export default class User extends UserModel {
     };
   }
 
-  // === MÉTHODES PRIVÉES ===
+  // ============================================
+  // MÉTHODES PRIVÉES
+  // ============================================
 
   private hydrate(data: any): User {
     this.id = data.id;

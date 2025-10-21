@@ -70,37 +70,45 @@ export const InvitationDbStructure = {
             throw new Error('Metadata must be an object');
           }
 
-          // Champs obligatoires
           const requiredFields = ['affiliate', 'lead', 'tenant'];
           for (const field of requiredFields) {
             if (!value[field]) {
               throw new Error(`Metadata.${field} is required`);
             }
-            if (typeof value[field] !== 'string' || value[field].trim() === '') {
-              throw new Error(`Metadata.${field} must be a non-empty string`);
+          }
+
+          // ✅ affiliate et lead doivent être des chaînes non vides
+          if (typeof value.affiliate !== 'string' || value.affiliate.trim() === '') {
+            throw new Error('Metadata.affiliate must be a non-empty string');
+          }
+          if (typeof value.lead !== 'string' || value.lead.trim() === '') {
+            throw new Error('Metadata.lead must be a non-empty string');
+          }
+
+          // ✅ tenant doit être un objet
+          if (typeof value.tenant !== 'object' || !value.tenant.subdomain) {
+            throw new Error('Metadata.tenant must be an object with a valid subdomain');
+          }
+
+          // ✅ Regex plus flexible pour accepter "demo.toke.cm" ou "app.sub.toke.cm"
+          const subdomainRegex = /^(?=.{1,255}$)([a-z0-9]([a-z0-9-]{0,61}[a-z0-9])?\.)+[a-z]{2,}$/i;
+          if (!subdomainRegex.test(value.tenant.subdomain.toLowerCase())) {
+            throw new Error('Metadata.tenant.subdomain must be a valid subdomain');
+          }
+
+          // Vérifie d’autres champs requis dans tenant
+          const tenantRequiredFields = ['name', 'country', 'email', 'phone'];
+          for (const field of tenantRequiredFields) {
+            if (!value.tenant[field]) {
+              throw new Error(`Metadata.tenant.${field} is required`);
             }
           }
 
-          // Validation du champ user (optionnel)
+          // ✅ Validation du champ user (optionnel)
           if (value.user !== null && value.user !== undefined) {
-            if (typeof value.user !== 'number' && typeof value.user !== 'string') {
-              throw new Error('Metadata.user must be a number or string if provided');
+            if (typeof value.user !== 'string' || value.user.trim() === '') {
+              throw new Error('Metadata.user must be a non-empty string if provided');
             }
-          }
-
-          // Validation des GUIDs (affiliate et lead)
-          const guidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
-          if (!guidRegex.test(value.affiliate)) {
-            throw new Error('Metadata.affiliate must be a valid GUID');
-          }
-          if (!guidRegex.test(value.lead)) {
-            throw new Error('Metadata.lead must be a valid GUID');
-          }
-
-          // Validation du tenant (subdomain)
-          const subdomainRegex = /^[a-z0-9]([a-z0-9-]{0,61}[a-z0-9])?$/i;
-          if (!subdomainRegex.test(value.tenant)) {
-            throw new Error('Metadata.tenant must be a valid subdomain');
           }
         },
       },

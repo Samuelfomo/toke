@@ -257,6 +257,27 @@ export const responseStructure = {
   IS_APPROVED: 'is_approved',
   IS_REJECTED: 'is_rejected',
   IS_DRAFT: 'is_draft',
+  METADATA: 'metadata',
+
+  ALERT_TYPE: 'alert_type',
+  ALERT_SEVERITY: 'alert_severity',
+  ALERT_DESCRIPTION: 'alert_description',
+  INVESTIGATED: 'investigated',
+  FALSE_POSITIVE: 'false_positive',
+  TIME_ENTRY: 'time_entry',
+  ALERT_DATA: 'alert_data',
+  INVESTIGATION_NOTES: 'investigation_notes',
+  INVESTIGATED_AT: 'investigated_at',
+
+  TABLE_NAME: 'table_name',
+  RECORD: 'record',
+  RECORD_GUID: 'record_guid',
+  OPERATION: 'operation',
+  OLD_VALUES: 'old_values',
+  NEW_VALUES: 'new_values',
+  CHANGED_BY_USER: 'changed_by_user',
+  CHANGED_BY_TYPE: 'changed_by_type',
+  CHANGE_REASON: 'change_reason',
 } as const;
 
 export const RT = {

@@ -88,6 +88,15 @@ export const AUDIT_LOGS_CODES = {
   LISTING_FAILED: 'listing_failed',
   FILTER_INVALID: 'filter_invalid',
   PAGINATION_INVALID: 'pagination_invalid',
+  REVISION_FAILED: 'revision_failed',
+  LOG_NOT_FOUND: 'log_not_found',
+  RETRIEVAL_FAILED: 'retrieval_failed',
+  USER_NOT_FOUND: 'user_not_found',
+  DATE_RANGE_REQUIRED: 'date_range_required',
+  REPORT_FAILED: 'report_failed',
+  DETECTION_FAILED: 'detection_failed',
+  ANALYSIS_FAILED: 'analysis_failed',
+  GDPR_REPORT_FAILED: 'gdpr_report_failed',
 } as const;
 
 const AUDIT_LOGS_LABEL = 'Audit Log';

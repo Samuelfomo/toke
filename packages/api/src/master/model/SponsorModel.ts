@@ -1,6 +1,9 @@
+import { Op } from 'sequelize';
+
 import BaseModel from '../database/db.base.js';
 import { tableName } from '../../utils/response.model.js';
 import { InvitationStatus } from '../database/data/sponsor.db.js';
+import TokenManager from '../../utils/token.generator.js';
 
 export default class SponsorModel extends BaseModel {
   public readonly db = {
@@ -60,20 +63,64 @@ export default class SponsorModel extends BaseModel {
   }
 
   /**
+   * ✅ NEW: Find invitation by USER in metadata
+   * Prevents the same user from being invited twice
+   */
+  protected async findByUser(user: string | number): Promise<any> {
+    // Utilise une requête SQL pour chercher dans le JSONB directement
+    return await this.findOne(this.db.tableName, {
+      [Op.and]: [{ metadata: { [Op.contains]: { user: String(user) } } }],
+    });
+  }
+
+  /**
    * Créer une invitation
    */
   protected async create(): Promise<void> {
     // await this.validate();
 
-    const guid = await this.randomGuidGenerator(this.db.tableName, 6);
+    // const guid = await this.randomGuidGenerator(this.db.tableName, 6);
+    let guid: string | null = null;
+    const maxAttempts = 10;
+    let attempt = 0;
+
+    // 🔁 Essayer de générer un GUID unique jusqu’à 10 fois
+    while (attempt < maxAttempts) {
+      attempt++;
+      const newGuid = await TokenManager.tokenGenerator(6);
+
+      if (!newGuid) {
+        console.warn(`⚠️ Tentative ${attempt}: échec de génération du GUID`);
+        continue;
+      }
+
+      const exists = await this.findByGuid(newGuid);
+      if (!exists) {
+        guid = newGuid;
+        break; // ✅ GUID unique trouvé
+      }
+
+      console.warn(`⚠️ Tentative ${attempt}: GUID ${newGuid} déjà existant`);
+    }
+
+    // ❌ Après 10 tentatives sans succès
     if (!guid) {
-      throw new Error(`Failed to generate GUID token for inviation master entry`);
+      throw new Error(`❌ Impossible de générer un GUID unique après ${maxAttempts} tentatives`);
     }
 
     const existPhone = await this.findByPhoneNumber(this.phone_number!);
     if (existPhone) {
       throw new Error(`Invitation phone number already exists`);
     }
+
+    // ✅ NEW: Si user est fourni, vérifier qu'il n'a pas été invité avant
+    if (this.metadata && (this.metadata as any).user) {
+      const existUser = await this.findByUser((this.metadata as any).user);
+      if (existUser) {
+        throw new Error(`User ${(this.metadata as any).user} has already been invited`);
+      }
+    }
+
     const lastID = await this.insertOne(this.db.tableName, {
       [this.db.guid]: guid,
       [this.db.phone_number]: this.phone_number,
@@ -85,7 +132,8 @@ export default class SponsorModel extends BaseModel {
       throw new Error(`Failed to create invitation user entry`);
     }
 
-    this.id = lastID.id;
+    this.id = typeof lastID === 'object' ? lastID.id : lastID;
+
     this.guid = guid;
     this.status = InvitationStatus.PENDING;
   }
