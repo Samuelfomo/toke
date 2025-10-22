@@ -1,5 +1,5 @@
 const path = require('path');
 
 module.exports = {
-  config: path.resolve(__dirname, 'src/license/database/migration.config.cjs'),
+  config: path.resolve(__dirname, 'src/master/database/migration.config.cjs'),
 };

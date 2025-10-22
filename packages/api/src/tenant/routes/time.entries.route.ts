@@ -605,6 +605,8 @@ router.post(
         validatedData.longitude,
       );
 
+      console.log('geofenceCheck', geofenceCheck);
+
       if (!geofenceCheck.access_granted) {
         // ❌ REFUS POINTAGE
         // // ✅ MAIS génération mémo automatique

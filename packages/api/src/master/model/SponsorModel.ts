@@ -35,6 +35,7 @@ export default class SponsorModel extends BaseModel {
    * Trouve un enregistrement par son GUID
    */
   protected async findByGuid(guid: string): Promise<any> {
+    console.log(guid);
     return await this.findOne(this.db.tableName, { [this.db.guid]: guid });
   }
 

@@ -327,27 +327,16 @@ router.put('/:guid', Ensure.put(), async (req: Request, res: Response) => {
 /**
  * GET /:identifier - Recherche intelligente par ID ou GUID
  */
-router.get('/:identifier', Ensure.get(), async (req: Request, res: Response) => {
+router.get('/:guid', Ensure.get(), async (req: Request, res: Response) => {
   try {
-    const { identifier } = req.params;
-    let invitation: Sponsor | null = null;
-
-    if (/^\d+$/.test(identifier)) {
-      const numericId = parseInt(identifier);
-
-      // Essayer par ID d'abord
-      invitation = await Sponsor._load(numericId);
-
-      // Si pas trouvé, essayer par GUID
-      if (!invitation) {
-        invitation = await Sponsor._load(numericId, true);
-      }
-    }
+    const { guid } = req.params;
+    // Si pas trouvé, essayer par GUID
+    const invitation = await Sponsor._load(String(guid), true);
 
     if (!invitation) {
       return R.handleError(res, HttpStatus.NOT_FOUND, {
         code: 'invitation_not_found',
-        message: `Invitation with identifier '${identifier}' not found`,
+        message: `Invitation with guid '${guid}' not found`,
       });
     }
 

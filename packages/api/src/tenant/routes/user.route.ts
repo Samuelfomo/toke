@@ -578,7 +578,7 @@ router.patch('/:guid/generate-otp', Ensure.patch(), async (req: Request, res: Re
       }
       // Envoi par email
       await EmailSender.sender(
-        userObj.getEmail()!,
+        userObj.getOtpToken()!,
         value!,
         // expiration_minutes,
       );
@@ -1996,9 +1996,18 @@ router.post('/share', Ensure.post(), async (req: Request, res: Response) => {
       },
     };
 
-    const saved = await InvitationService.saveInv(data);
+    const saved: any = await InvitationService.saveInv(data);
     if (saved.status !== HttpStatus.CREATED) {
       return R.handleError(res, saved.status, saved.response);
+    }
+    // TODO juste pour le teste
+    const { email } = req.query;
+    if (email) {
+      await EmailSender.sender(
+        saved.response.data.guid,
+        String(email),
+        // expiration_minutes,
+      );
     }
 
     return R.handleCreated(res, {
