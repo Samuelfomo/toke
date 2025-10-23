@@ -1858,7 +1858,23 @@ router.get('/attendance/site/:guid/current', Ensure.get(), async (req: Request, 
 
 router.post('/share', Ensure.post(), async (req: Request, res: Response) => {
   try {
-    const { user, phone_number, affiliate } = req.body;
+    const { user, phone_number, affiliate, country } = req.body;
+
+    if (!country) {
+      return R.handleError(res, HttpStatus.BAD_REQUEST, {
+        code: 'country_is_required',
+        message: COUNTRY_ERRORS.CODE_REQUIRED,
+      });
+    }
+
+    if (!CountryValidationUtils.validateIsoCode(country)) {
+      return R.handleError(res, HttpStatus.BAD_REQUEST, {
+        code: 'invalid_country_code',
+        message: COUNTRY_ERRORS.CODE_INVALID,
+      });
+    }
+
+    // === TODO implementer la logique de verification d'existence du country dans le système via le master ===/
 
     if (!affiliate) {
       return R.handleError(res, HttpStatus.BAD_REQUEST, {
@@ -1883,7 +1899,10 @@ router.post('/share', Ensure.post(), async (req: Request, res: Response) => {
 
     let phone: string;
     let lead: string;
-    let userIdToCheck: number | null = null;
+    // let userIdToCheck: number | null = null;
+    let userToCheck: string | null = null;
+
+    // let userInstance: User | null = null;
 
     // Cas 1 : user fourni
     if (user) {
@@ -1906,7 +1925,9 @@ router.post('/share', Ensure.post(), async (req: Request, res: Response) => {
 
       phone = userObj.getPhoneNumber()!;
       lead = assignByObj.getGuid()!;
-      userIdToCheck = userObj.getId()!;
+      // userIdToCheck = userObj.getId()!;
+      userToCheck = userObj.getGuid()!;
+      // userInstance = userObj;
     }
     // Cas 2 : phone_number fourni
     else if (!phone_number) {
@@ -1934,7 +1955,9 @@ router.post('/share', Ensure.post(), async (req: Request, res: Response) => {
             message: 'A user with this phone number is already a manager and cannot be invited',
           });
         }
-        userIdToCheck = existingUserByPhone.getId()!;
+        // userIdToCheck = existingUserByPhone.getId()!;
+        userToCheck = existingUserByPhone.getGuid()!;
+        // userInstance = existingUserByPhone;
       }
 
       const roleObj = await Role._loadDefaultRole();
@@ -1982,7 +2005,8 @@ router.post('/share', Ensure.post(), async (req: Request, res: Response) => {
     const data = {
       phone_number: phone,
       metadata: {
-        user: user || null,
+        user: userToCheck || null,
+        // user: userInstance?.toJSON() || null,
         affiliate: assignByObj.getGuid(),
         lead: lead,
         tenant: {
@@ -2008,6 +2032,16 @@ router.post('/share', Ensure.post(), async (req: Request, res: Response) => {
         String(email),
         // expiration_minutes,
       );
+    }
+    const response = saved.response.data;
+    const sendToken = await WapService.sendOtp(response.guid, response.phone_number, country);
+    if (sendToken.status !== HttpStatus.SUCCESS) {
+      return R.handleError(res, sendToken.status, sendToken.response);
+    }
+
+    const result = await InvitationService.sendInvitation(response.guid);
+    if (result.status !== HttpStatus.SUCCESS) {
+      return R.handleError(res, result.status, result.response);
     }
 
     return R.handleCreated(res, {

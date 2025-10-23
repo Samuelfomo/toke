@@ -48,4 +48,36 @@ export default class InvitationService {
       }
     }
   }
+
+  static async sendInvitation(guid: string): Promise<{ status: number; response: object }> {
+    try {
+      const api = createApiClient(`http:${process.env.SERVER_HOST}:${process.env.MT_PORT}`);
+      const response = await api.patch(`/sponsors/${guid}/send`);
+
+      return {
+        status: response.status,
+        response: response.data,
+      };
+    } catch (error: any) {
+      if (error.response) {
+        // Erreur renvoyée par le serveur
+        return {
+          status: error.response.status,
+          response: error.response.data,
+        };
+      } else if (error.request) {
+        // Pas de réponse reçue
+        return {
+          status: HttpStatus.INTERNAL_ERROR,
+          response: { message: 'No response from server', details: error.message },
+        };
+      } else {
+        // Erreur Axios/JS
+        return {
+          status: HttpStatus.INTERNAL_ERROR,
+          response: { message: 'Unexpected error', details: error.message },
+        };
+      }
+    }
+  }
 }

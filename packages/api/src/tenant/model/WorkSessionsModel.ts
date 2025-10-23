@@ -523,6 +523,7 @@ export default class WorkSessionsModel extends BaseModel {
         this.session_end_at,
       )
     ) {
+      console.log(this.session_start_at, this.session_end_at);
       throw new Error(WORK_SESSIONS_ERRORS.SESSION_DATES_LOGIC_INVALID);
     }
 

@@ -397,4 +397,81 @@ router.delete('/:guid', Ensure.delete(), async (req: Request, res: Response) => 
   }
 });
 
+router.patch('/:guid/status', Ensure.patch(), async (req: Request, res: Response) => {
+  try {
+    const { guid } = req.params;
+    if (!guid) {
+      return R.handleError(res, HttpStatus.BAD_REQUEST, {
+        code: 'guid_required',
+        message: 'Sponsor GUID is required',
+      });
+    }
+
+    const invitation = await Sponsor._load(String(guid), true);
+    if (!invitation) {
+      return R.handleError(res, HttpStatus.NOT_FOUND, {
+        code: 'invitation_not_found',
+        message: `Invitation with guid '${guid}' not found`,
+      });
+    }
+    const { status } = req.query;
+    if (!status) {
+      return R.handleError(res, HttpStatus.BAD_REQUEST, {
+        code: 'status_required',
+        message: 'Status is required',
+      });
+    }
+    if (!Object.values(InvitationStatus).includes(status as any)) {
+      return R.handleError(res, HttpStatus.BAD_REQUEST, {
+        code: 'invalid_status',
+        message: `Invalid status. Must be one of: ${Object.values(InvitationStatus).join(', ')}`,
+      });
+    }
+    invitation.setStatus(status as InvitationStatus);
+
+    await invitation.save();
+
+    return R.handleSuccess(res, {
+      message: 'Invitation status changed successfully',
+      data: invitation.toJSON(),
+    });
+  } catch (error: any) {
+    return R.handleError(res, HttpStatus.INTERNAL_ERROR, {
+      code: 'change_status_failed',
+      message: error.message,
+    });
+  }
+});
+router.patch('/:guid/send', Ensure.patch(), async (req: Request, res: Response) => {
+  try {
+    const { guid } = req.params;
+    if (!guid) {
+      return R.handleError(res, HttpStatus.BAD_REQUEST, {
+        code: 'guid_required',
+        message: 'Sponsor GUID is required',
+      });
+    }
+
+    const invitation = await Sponsor._load(String(guid), true);
+    if (!invitation) {
+      return R.handleError(res, HttpStatus.NOT_FOUND, {
+        code: 'invitation_not_found',
+        message: `Invitation with guid '${guid}' not found`,
+      });
+    }
+    invitation.setStatus(InvitationStatus.SEND);
+
+    await invitation.save();
+
+    return R.handleSuccess(res, {
+      message: 'Invitation status send successfully',
+      data: invitation.toJSON(),
+    });
+  } catch (error: any) {
+    return R.handleError(res, HttpStatus.INTERNAL_ERROR, {
+      code: 'change_status_failed',
+      message: error.message,
+    });
+  }
+});
 export default router;

@@ -1,6 +1,13 @@
 // src/api/services/AnomalyDetectionService.ts
 
-import { MemoStatus, MemoType, PointageStatus, PointageType } from '@toke/shared';
+import {
+  AlertSeverity,
+  MemoStatus,
+  MemoType,
+  PointageStatus,
+  PointageType,
+  SessionStatus,
+} from '@toke/shared';
 import { Op } from 'sequelize';
 
 import TimeEntries from '../tenant/class/TimeEntries.js';
@@ -38,7 +45,7 @@ export enum AnomalyType {
 
 export interface Anomaly {
   type: AnomalyType;
-  severity: 'low' | 'medium' | 'high' | 'critical';
+  severity: AlertSeverity;
   description: string;
   technical_details?: Record<string, any>;
   auto_correctable: boolean;
@@ -71,7 +78,7 @@ class AnomalyDetectionService {
     if (activeSession) {
       anomalies.push({
         type: AnomalyType.SESSION_ALREADY_OPEN,
-        severity: 'medium',
+        severity: AlertSeverity.MEDIUM, // 'medium',
         description: `Session déjà ouverte depuis ${activeSession.getSessionStartAt()?.toLocaleString('fr-FR')}`,
         technical_details: {
           existing_session_guid: activeSession.getGuid(),
@@ -88,7 +95,7 @@ class AnomalyDetectionService {
       const estimatedEnd = new Date(validatedData.clocked_at);
       estimatedEnd.setMinutes(estimatedEnd.getMinutes() - 1);
 
-      activeSession.setSessionEndAt(estimatedEnd).setSessionStatus('abandoned' as any);
+      activeSession.setSessionEndAt(estimatedEnd).setSessionStatus(SessionStatus.ABANDONED);
 
       await activeSession.save();
 
@@ -106,7 +113,7 @@ class AnomalyDetectionService {
     if (hour < 5 || hour > 23) {
       anomalies.push({
         type: AnomalyType.TIMING_ABNORMAL,
-        severity: 'low',
+        severity: AlertSeverity.LOW, //'low',
         description: `Pointage à horaire inhabituel (${hour}h)`,
         technical_details: {
           hour,
@@ -120,7 +127,7 @@ class AnomalyDetectionService {
     if (validatedData.device_info?.mock_location_detected) {
       anomalies.push({
         type: AnomalyType.GPS_SPOOFING_SUSPECTED,
-        severity: 'high',
+        severity: AlertSeverity.HIGH, // 'high',
         description: 'Position GPS simulée détectée',
         technical_details: {
           mock_location: true,
@@ -152,7 +159,7 @@ class AnomalyDetectionService {
     if (!activeSession) {
       anomalies.push({
         type: AnomalyType.SESSION_NOT_FOUND,
-        severity: 'critical',
+        severity: AlertSeverity.HIGH, //'critical',
         description: 'Aucune session active pour démarrer une pause',
         auto_correctable: true,
         suggested_correction: {
@@ -169,7 +176,7 @@ class AnomalyDetectionService {
     if (hasActivePause) {
       anomalies.push({
         type: AnomalyType.PAUSE_ALREADY_ACTIVE,
-        severity: 'medium',
+        severity: AlertSeverity.MEDIUM, // 'medium',
         description: 'Une pause est déjà en cours',
         auto_correctable: true,
       });
@@ -207,7 +214,7 @@ class AnomalyDetectionService {
     if (todayPauses >= 3) {
       anomalies.push({
         type: AnomalyType.FREQUENCY_SUSPICIOUS,
-        severity: 'low',
+        severity: AlertSeverity.LOW, // 'low',
         description: `Nombre de pauses inhabituel (${todayPauses + 1} aujourd'hui)`,
         technical_details: {
           today_pauses_count: todayPauses + 1,
@@ -238,7 +245,7 @@ class AnomalyDetectionService {
     if (!activeSession) {
       anomalies.push({
         type: AnomalyType.SESSION_NOT_FOUND,
-        severity: 'critical',
+        severity: AlertSeverity.CRITICAL, // 'critical',
         description: 'Aucune session active pour terminer une pause',
         auto_correctable: true,
       });
@@ -250,7 +257,7 @@ class AnomalyDetectionService {
     if (!hasActivePause) {
       anomalies.push({
         type: AnomalyType.PAUSE_NOT_ACTIVE,
-        severity: 'medium',
+        severity: AlertSeverity.MEDIUM, // 'medium',
         description: 'Aucune pause active à terminer',
         auto_correctable: false,
       });
@@ -272,7 +279,7 @@ class AnomalyDetectionService {
         if (pauseDuration > 120) {
           anomalies.push({
             type: AnomalyType.DURATION_ABNORMAL,
-            severity: 'high',
+            severity: AlertSeverity.HIGH, // 'high',
             description: `Pause anormalement longue (${Math.floor(pauseDuration / 60)}h${pauseDuration % 60}min)`,
             technical_details: {
               duration_minutes: pauseDuration,
@@ -306,7 +313,7 @@ class AnomalyDetectionService {
     if (!activeSession) {
       anomalies.push({
         type: AnomalyType.SESSION_NOT_FOUND,
-        severity: 'critical',
+        severity: AlertSeverity.CRITICAL, // 'critical',
         description: 'Aucune session active à fermer',
         auto_correctable: true,
       });
@@ -318,7 +325,7 @@ class AnomalyDetectionService {
     if (hasActivePause) {
       anomalies.push({
         type: AnomalyType.PAUSE_NOT_ACTIVE,
-        severity: 'medium',
+        severity: AlertSeverity.MEDIUM, // 'medium',
         description: 'Pause non fermée - fermeture automatique',
         auto_correctable: true,
       });
@@ -352,7 +359,7 @@ class AnomalyDetectionService {
     if (sessionDuration > 12) {
       anomalies.push({
         type: AnomalyType.SESSION_TOO_LONG,
-        severity: 'high',
+        severity: AlertSeverity.HIGH, // 'high',
         description: `Session anormalement longue (${sessionDuration.toFixed(1)}h)`,
         technical_details: {
           duration_hours: sessionDuration,
@@ -384,7 +391,7 @@ class AnomalyDetectionService {
     if (!activeSession) {
       anomalies.push({
         type: AnomalyType.SESSION_NOT_FOUND,
-        severity: 'critical',
+        severity: AlertSeverity.CRITICAL, // 'critical',
         description: 'Aucune session active pour démarrer une mission',
         auto_correctable: true,
       });
@@ -396,7 +403,7 @@ class AnomalyDetectionService {
     if (hasActiveMission) {
       anomalies.push({
         type: AnomalyType.MISSION_ALREADY_ACTIVE,
-        severity: 'high',
+        severity: AlertSeverity.HIGH, // 'high',
         description: 'Une mission externe est déjà en cours',
         auto_correctable: false,
       });
@@ -423,7 +430,7 @@ class AnomalyDetectionService {
     if (!activeSession) {
       anomalies.push({
         type: AnomalyType.SESSION_NOT_FOUND,
-        severity: 'critical',
+        severity: AlertSeverity.CRITICAL, // 'critical',
         description: 'Aucune session active pour terminer une mission',
         auto_correctable: true,
       });
@@ -435,7 +442,7 @@ class AnomalyDetectionService {
     if (!hasActiveMission) {
       anomalies.push({
         type: AnomalyType.MISSION_NOT_ACTIVE,
-        severity: 'medium',
+        severity: AlertSeverity.MEDIUM, //'medium',
         description: 'Aucune mission active à terminer',
         auto_correctable: false,
       });
@@ -474,7 +481,9 @@ class AnomalyDetectionService {
       .setTargetUser(userId)
       .setValidatorUser(validatorId)
       .setMemoType(memoType)
-      .setMemoStatus(severity === 'critical' ? MemoStatus.SUBMITTED : MemoStatus.PENDING)
+      .setMemoStatus(
+        severity === AlertSeverity.CRITICAL ? MemoStatus.SUBMITTED : MemoStatus.PENDING,
+      )
       .setTitle(title)
       .setDescription(description)
       .setIncidentDatetime(entryObj.getClockedAt()!)
@@ -488,7 +497,7 @@ class AnomalyDetectionService {
     await memo.save();
 
     // Notification manager si high/critical
-    if (['high', 'critical'].includes(severity)) {
+    if ([AlertSeverity.HIGH, AlertSeverity.CRITICAL].includes(severity)) {
       console.log(`🔔 Notification manager ${validatorId} - Mémo ${memo.getGuid()}`);
     }
 
@@ -561,7 +570,9 @@ Validation manager requise pour accepter manuellement si raison légitime.
     userId: number,
   ): Promise<FraudAlerts | null> {
     // Seulement créer alert si sévérité >= medium
-    if (!['medium', 'high', 'critical'].includes(anomaly.severity)) {
+    if (
+      ![AlertSeverity.MEDIUM, AlertSeverity.HIGH, AlertSeverity.CRITICAL].includes(anomaly.severity)
+    ) {
       return null;
     }
 
@@ -628,7 +639,7 @@ Validation manager requise pour accepter manuellement si raison légitime.
       .setSite(siteId)
       .setSessionStartAt(estimatedStart)
       .setStartCoordinates(entryObj.getLatitude()!, entryObj.getLongitude()!)
-      .setSessionStatus('corrected' as any);
+      .setSessionStatus(SessionStatus.CORRECTED as any);
 
     await session.save();
 
@@ -645,11 +656,11 @@ Validation manager requise pour accepter manuellement si raison légitime.
   // UTILITAIRES
   // ========================================
 
-  private calculateGlobalSeverity(anomalies: Anomaly[]): 'low' | 'medium' | 'high' | 'critical' {
-    if (anomalies.some((a) => a.severity === 'critical')) return 'critical';
-    if (anomalies.some((a) => a.severity === 'high')) return 'high';
-    if (anomalies.some((a) => a.severity === 'medium')) return 'medium';
-    return 'low';
+  private calculateGlobalSeverity(anomalies: Anomaly[]): AlertSeverity {
+    if (anomalies.some((a) => a.severity === AlertSeverity.CRITICAL)) return AlertSeverity.CRITICAL;
+    if (anomalies.some((a) => a.severity === AlertSeverity.HIGH)) return AlertSeverity.HIGH;
+    if (anomalies.some((a) => a.severity === AlertSeverity.MEDIUM)) return AlertSeverity.MEDIUM;
+    return AlertSeverity.LOW;
   }
 
   private generateMemoTitle(pointageType: PointageType, anomalies: Anomaly[]): string {
