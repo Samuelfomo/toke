@@ -22,6 +22,7 @@ const baseUserRolesSchema = z.object({
     .min(USER_ROLES_VALIDATION.ROLE.MIN_LENGTH, USER_ROLES_ERRORS.ROLE_INVALID)
     .max(USER_ROLES_VALIDATION.ROLE.MAX_LENGTH, USER_ROLES_ERRORS.ROLE_INVALID)
     .trim(),
+  // .optional(),
 
   assigned_by: z
     .string({

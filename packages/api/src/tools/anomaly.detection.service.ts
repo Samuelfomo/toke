@@ -2,6 +2,7 @@
 
 import {
   AlertSeverity,
+  AlertType,
   MemoStatus,
   MemoType,
   PointageStatus,
@@ -93,10 +94,17 @@ class AnomalyDetectionService {
 
       // ✅ CORRECTION AUTO : Fermer session précédente
       const estimatedEnd = new Date(validatedData.clocked_at);
-      estimatedEnd.setMinutes(estimatedEnd.getMinutes() - 1);
+      const sessionStart = activeSession.getSessionStartAt();
+
+      // Vérifier que end_at > start_at
+      if (estimatedEnd <= sessionStart!) {
+        // Force une fin quelques secondes après le start, pour éviter l’erreur logique
+        estimatedEnd.setTime(sessionStart!.getTime() + 1000 * 60); // +1 minute
+      }
+      // estimatedEnd.setMinutes(estimatedEnd.getMinutes() - 1);
 
       activeSession.setSessionEndAt(estimatedEnd).setSessionStatus(SessionStatus.ABANDONED);
-
+      console.log('je suis ici 1');
       await activeSession.save();
 
       corrections.push({
@@ -374,81 +382,477 @@ class AnomalyDetectionService {
   }
 
   /**
-   * Détection anomalies EXTERNAL_MISSION (start)
+   * Détection et correction automatique pour CLOCK_OUT sans session active
+   */
+  async detectAndCorrectClockOutWithoutSession(
+    userId: number,
+    validatedData: any,
+    siteObj: Site,
+  ): Promise<{
+    anomalies: Anomaly[];
+    corrections: any[];
+    activeSession: WorkSessions | null;
+    autoCreatedSession: boolean;
+  }> {
+    const anomalies: Anomaly[] = [];
+    const corrections: any[] = [];
+    let autoCreatedSession = false;
+
+    let activeSession = await WorkSessions._findActiveSessionByUser(userId);
+
+    // ✅ CAS SPÉCIAL : CLOCK_OUT sans session active
+    if (!activeSession) {
+      anomalies.push({
+        type: AnomalyType.SESSION_NOT_FOUND,
+        severity: AlertSeverity.CRITICAL,
+        description: 'Tentative de sortie sans entrée préalable - Session créée automatiquement',
+        technical_details: {
+          clock_out_time: validatedData.clocked_at,
+          estimated_entry_time: null,
+        },
+        auto_correctable: true,
+        auto_correction_applied: true,
+      });
+
+      // 🔧 CORRECTION AUTO : Créer session artificielle
+      const estimatedEntry = new Date(validatedData.clocked_at);
+      estimatedEntry.setHours(8, 0, 0, 0); // Entrée estimée à 8h00
+
+      // Si le clock_out est avant 8h, ajuster l'entrée à minuit
+      if (new Date(validatedData.clocked_at).getHours() < 8) {
+        estimatedEntry.setHours(0, 0, 0, 0);
+      }
+
+      // Créer session de correction
+      activeSession = new WorkSessions()
+        .setUser(userId)
+        .setSite(siteObj.getId()!)
+        .setSessionStartAt(estimatedEntry)
+        .setStartCoordinates(validatedData.latitude, validatedData.longitude)
+        .setSessionStatus(SessionStatus.CORRECTED);
+
+      await activeSession.save();
+
+      // Créer entry d'entrée artificielle
+      const artificialEntry = new TimeEntries()
+        .setSession(activeSession.getId()!)
+        .setUser(userId)
+        .setSite(siteObj.getId()!)
+        .setPointageType(PointageType.CLOCK_IN)
+        .setClockedAt(estimatedEntry)
+        .setCoordinates(validatedData.latitude, validatedData.longitude)
+        .setPointageStatus(PointageStatus.CORRECTED)
+        .setDeviceInfo({
+          ...validatedData.device_info,
+          auto_generated: true,
+          reason: 'missing_clock_in',
+        });
+
+      await artificialEntry.save();
+      await artificialEntry.accept();
+
+      corrections.push({
+        action: 'auto_create_missing_session',
+        session_guid: activeSession.getGuid(),
+        estimated_entry_time: estimatedEntry,
+        artificial_entry_guid: artificialEntry.getGuid(),
+      });
+
+      autoCreatedSession = true;
+
+      // Mettre à jour les détails techniques de l'anomalie
+      anomalies[0].technical_details!.estimated_entry_time = estimatedEntry;
+      anomalies[0].technical_details!.artificial_session_guid = activeSession.getGuid();
+      anomalies[0].technical_details!.artificial_entry_guid = artificialEntry.getGuid();
+    }
+
+    // Vérifier pause non fermée (logique existante)
+    const hasActivePause = await activeSession.isOnPause();
+    if (hasActivePause) {
+      anomalies.push({
+        type: AnomalyType.PAUSE_NOT_ACTIVE,
+        severity: AlertSeverity.MEDIUM,
+        description: 'Pause non fermée - fermeture automatique',
+        auto_correctable: true,
+      });
+
+      const autoPauseEnd = new TimeEntries()
+        .setSession(activeSession.getId()!)
+        .setUser(userId)
+        .setSite(activeSession.getSite()!)
+        .setPointageType(PointageType.PAUSE_END)
+        .setClockedAt(new Date(validatedData.clocked_at - 60000))
+        .setCoordinates(validatedData.latitude, validatedData.longitude)
+        .setPointageStatus(PointageStatus.CORRECTED);
+
+      await autoPauseEnd.save();
+      await autoPauseEnd.accept();
+
+      corrections.push({
+        action: 'auto_close_active_pause',
+      });
+
+      anomalies[anomalies.length - 1].auto_correction_applied = true;
+    }
+
+    // Session trop longue (logique existante)
+    const sessionDuration = this.calculateDurationHours(
+      activeSession.getSessionStartAt()!,
+      new Date(validatedData.clocked_at),
+    );
+
+    if (sessionDuration > 12) {
+      anomalies.push({
+        type: AnomalyType.SESSION_TOO_LONG,
+        severity: AlertSeverity.HIGH,
+        description: `Session anormalement longue (${sessionDuration.toFixed(1)}h)`,
+        technical_details: {
+          duration_hours: sessionDuration,
+          expected_max: 12,
+          session_start: activeSession.getSessionStartAt(),
+        },
+        auto_correctable: false,
+      });
+    }
+
+    return { anomalies, corrections, activeSession, autoCreatedSession };
+  }
+
+  // /**
+  //  * Détection anomalies EXTERNAL_MISSION (start)
+  //  */
+  // async detectMissionStartAnomalies(
+  //   userId: number,
+  //   validatedData: any,
+  // ): Promise<{
+  //   anomalies: Anomaly[];
+  //   corrections: any[];
+  //   activeSession: WorkSessions | null;
+  // }> {
+  //   const anomalies: Anomaly[] = [];
+  //   const corrections: any[] = [];
+  //
+  //   const activeSession = await WorkSessions._findActiveSessionByUser(userId);
+  //   if (!activeSession) {
+  //     anomalies.push({
+  //       type: AnomalyType.SESSION_NOT_FOUND,
+  //       severity: AlertSeverity.CRITICAL, // 'critical',
+  //       description: 'Aucune session active pour démarrer une mission',
+  //       auto_correctable: true,
+  //     });
+  //     return { anomalies, corrections, activeSession: null };
+  //   }
+  //
+  //   // Mission déjà active
+  //   const hasActiveMission = await activeSession.activeMission();
+  //   if (hasActiveMission) {
+  //     anomalies.push({
+  //       type: AnomalyType.MISSION_ALREADY_ACTIVE,
+  //       severity: AlertSeverity.HIGH, // 'high',
+  //       description: 'Une mission externe est déjà en cours',
+  //       auto_correctable: false,
+  //     });
+  //   }
+  //
+  //   return { anomalies, corrections, activeSession };
+  // }
+
+  /**
+   * Détection et correction automatique EXTERNAL_MISSION
    */
   async detectMissionStartAnomalies(
     userId: number,
     validatedData: any,
+    siteObj: Site,
   ): Promise<{
     anomalies: Anomaly[];
     corrections: any[];
     activeSession: WorkSessions | null;
+    autoCreatedSession: boolean;
   }> {
     const anomalies: Anomaly[] = [];
     const corrections: any[] = [];
+    let autoCreatedSession = false;
 
-    const activeSession = await WorkSessions._findActiveSessionByUser(userId);
+    let activeSession = await WorkSessions._findActiveSessionByUser(userId);
+
+    // ✅ CAS 1 : Pas de session active → Créer session auto
     if (!activeSession) {
       anomalies.push({
         type: AnomalyType.SESSION_NOT_FOUND,
-        severity: AlertSeverity.CRITICAL, // 'critical',
-        description: 'Aucune session active pour démarrer une mission',
+        severity: AlertSeverity.CRITICAL,
+        description: 'Démarrage mission sans session active - Session créée automatiquement',
+        technical_details: {
+          mission_start_time: validatedData.clocked_at,
+          estimated_entry_time: null,
+        },
         auto_correctable: true,
+        auto_correction_applied: true,
       });
-      return { anomalies, corrections, activeSession: null };
+
+      // 🔧 CORRECTION AUTO : Créer session artificielle
+      const estimatedEntry = new Date(validatedData.clocked_at);
+      estimatedEntry.setHours(8, 0, 0, 0); // Entrée estimée à 8h00
+
+      // Si mission start avant 8h, ajuster à minuit
+      if (new Date(validatedData.clocked_at).getHours() < 8) {
+        estimatedEntry.setHours(0, 0, 0, 0);
+      }
+
+      activeSession = new WorkSessions()
+        .setUser(userId)
+        .setSite(siteObj.getId()!)
+        .setSessionStartAt(estimatedEntry)
+        .setStartCoordinates(validatedData.latitude, validatedData.longitude)
+        .setSessionStatus(SessionStatus.CORRECTED);
+
+      await activeSession.save();
+
+      // Créer entry CLOCK_IN artificielle
+      const artificialEntry = new TimeEntries()
+        .setSession(activeSession.getId()!)
+        .setUser(userId)
+        .setSite(siteObj.getId()!)
+        .setPointageType(PointageType.CLOCK_IN)
+        .setClockedAt(estimatedEntry)
+        .setCoordinates(validatedData.latitude, validatedData.longitude)
+        .setPointageStatus(PointageStatus.CORRECTED)
+        .setDeviceInfo({
+          ...validatedData.device_info,
+          auto_generated: true,
+          reason: 'missing_clock_in_before_mission',
+        });
+
+      await artificialEntry.save();
+      await artificialEntry.accept();
+
+      corrections.push({
+        action: 'auto_create_session_for_mission',
+        session_guid: activeSession.getGuid(),
+        estimated_entry_time: estimatedEntry,
+        artificial_entry_guid: artificialEntry.getGuid(),
+      });
+
+      autoCreatedSession = true;
+
+      anomalies[0].technical_details!.estimated_entry_time = estimatedEntry;
+      anomalies[0].technical_details!.artificial_session_guid = activeSession.getGuid();
     }
 
-    // Mission déjà active
+    // ✅ CAS 2 : Mission déjà active
     const hasActiveMission = await activeSession.activeMission();
     if (hasActiveMission) {
       anomalies.push({
         type: AnomalyType.MISSION_ALREADY_ACTIVE,
-        severity: AlertSeverity.HIGH, // 'high',
+        severity: AlertSeverity.HIGH,
         description: 'Une mission externe est déjà en cours',
+        technical_details: {
+          current_mission_start: activeSession.getSessionStartAt(), // hasActiveMission.getClockedAt()
+        },
         auto_correctable: false,
       });
     }
 
-    return { anomalies, corrections, activeSession };
+    return { anomalies, corrections, activeSession, autoCreatedSession };
   }
 
+  // /**
+  //  * Détection anomalies EXTERNAL_MISSION_END
+  //  */
+  // async detectMissionEndAnomalies(
+  //   userId: number,
+  //   validatedData: any,
+  // ): Promise<{
+  //   anomalies: Anomaly[];
+  //   corrections: any[];
+  //   activeSession: WorkSessions | null;
+  // }> {
+  //   const anomalies: Anomaly[] = [];
+  //   const corrections: any[] = [];
+  //
+  //   const activeSession = await WorkSessions._findActiveSessionByUser(userId);
+  //   if (!activeSession) {
+  //     anomalies.push({
+  //       type: AnomalyType.SESSION_NOT_FOUND,
+  //       severity: AlertSeverity.CRITICAL, // 'critical',
+  //       description: 'Aucune session active pour terminer une mission',
+  //       auto_correctable: true,
+  //     });
+  //     return { anomalies, corrections, activeSession: null };
+  //   }
+  //
+  //   // Mission non active
+  //   const hasActiveMission = await activeSession.activeMission();
+  //   if (!hasActiveMission) {
+  //     anomalies.push({
+  //       type: AnomalyType.MISSION_NOT_ACTIVE,
+  //       severity: AlertSeverity.MEDIUM, //'medium',
+  //       description: 'Aucune mission active à terminer',
+  //       auto_correctable: false,
+  //     });
+  //   }
+  //
+  //   return { anomalies, corrections, activeSession };
+  // }
+
   /**
-   * Détection anomalies EXTERNAL_MISSION_END
+   * Détection et correction automatique EXTERNAL_MISSION_END
    */
   async detectMissionEndAnomalies(
     userId: number,
     validatedData: any,
+    siteObj: Site,
   ): Promise<{
     anomalies: Anomaly[];
     corrections: any[];
     activeSession: WorkSessions | null;
+    autoCreatedSession: boolean;
+    autoCreatedMissionStart: boolean;
   }> {
     const anomalies: Anomaly[] = [];
     const corrections: any[] = [];
+    let autoCreatedSession = false;
+    let autoCreatedMissionStart = false;
 
-    const activeSession = await WorkSessions._findActiveSessionByUser(userId);
+    let activeSession = await WorkSessions._findActiveSessionByUser(userId);
+
+    // ✅ CAS 1 : Pas de session active → Créer session + mission start auto
     if (!activeSession) {
       anomalies.push({
         type: AnomalyType.SESSION_NOT_FOUND,
-        severity: AlertSeverity.CRITICAL, // 'critical',
-        description: 'Aucune session active pour terminer une mission',
+        severity: AlertSeverity.CRITICAL,
+        description: 'Fin mission sans session active - Session et mission créées automatiquement',
+        technical_details: {
+          mission_end_time: validatedData.clocked_at,
+        },
         auto_correctable: true,
+        auto_correction_applied: true,
       });
-      return { anomalies, corrections, activeSession: null };
+
+      // Estimer début mission = 2h avant fin (ou 8h si avant 10h)
+      const estimatedMissionStart = new Date(validatedData.clocked_at);
+      estimatedMissionStart.setHours(estimatedMissionStart.getHours() - 2);
+
+      const estimatedEntry = new Date(estimatedMissionStart);
+      estimatedEntry.setHours(8, 0, 0, 0);
+
+      // Créer session artificielle
+      activeSession = new WorkSessions()
+        .setUser(userId)
+        .setSite(siteObj.getId()!)
+        .setSessionStartAt(estimatedEntry)
+        .setStartCoordinates(validatedData.latitude, validatedData.longitude)
+        .setSessionStatus(SessionStatus.CORRECTED);
+
+      await activeSession.save();
+
+      // Créer CLOCK_IN artificiel
+      const artificialClockIn = new TimeEntries()
+        .setSession(activeSession.getId()!)
+        .setUser(userId)
+        .setSite(siteObj.getId()!)
+        .setPointageType(PointageType.CLOCK_IN)
+        .setClockedAt(estimatedEntry)
+        .setCoordinates(validatedData.latitude, validatedData.longitude)
+        .setPointageStatus(PointageStatus.CORRECTED)
+        .setDeviceInfo({
+          ...validatedData.device_info,
+          auto_generated: true,
+          reason: 'missing_clock_in_before_mission_end',
+        });
+
+      await artificialClockIn.save();
+      await artificialClockIn.accept();
+
+      // Créer MISSION_START artificiel
+      const artificialMissionStart = new TimeEntries()
+        .setSession(activeSession.getId()!)
+        .setUser(userId)
+        .setSite(siteObj.getId()!)
+        .setPointageType(PointageType.EXTERNAL_MISSION)
+        .setClockedAt(estimatedMissionStart)
+        .setCoordinates(validatedData.latitude, validatedData.longitude)
+        .setPointageStatus(PointageStatus.CORRECTED)
+        .setDeviceInfo({
+          ...validatedData.device_info,
+          auto_generated: true,
+          reason: 'missing_mission_start',
+        });
+
+      await artificialMissionStart.save();
+      await artificialMissionStart.accept();
+
+      corrections.push({
+        action: 'auto_create_session_and_mission_for_mission_end',
+        session_guid: activeSession.getGuid(),
+        artificial_clock_in_guid: artificialClockIn.getGuid(),
+        artificial_mission_start_guid: artificialMissionStart.getGuid(),
+        estimated_mission_start: estimatedMissionStart,
+      });
+
+      autoCreatedSession = true;
+      autoCreatedMissionStart = true;
+
+      anomalies[0].technical_details!.estimated_mission_start = estimatedMissionStart;
+      anomalies[0].technical_details!.artificial_session_guid = activeSession.getGuid();
+    }
+    // ✅ CAS 2 : Session active mais pas de mission active
+    else {
+      const hasActiveMission = await activeSession.activeMission();
+
+      if (!hasActiveMission) {
+        anomalies.push({
+          type: AnomalyType.MISSION_NOT_ACTIVE,
+          severity: AlertSeverity.MEDIUM,
+          description: 'Aucune mission active à terminer - Mission start créée automatiquement',
+          technical_details: {
+            session_guid: activeSession.getGuid(),
+          },
+          auto_correctable: true,
+          auto_correction_applied: true,
+        });
+
+        // Créer MISSION_START automatique (1h avant)
+        const estimatedMissionStart = new Date(validatedData.clocked_at);
+        estimatedMissionStart.setHours(estimatedMissionStart.getHours() - 1);
+
+        const artificialMissionStart = new TimeEntries()
+          .setSession(activeSession.getId()!)
+          .setUser(userId)
+          .setSite(siteObj.getId()!)
+          .setPointageType(PointageType.EXTERNAL_MISSION)
+          .setClockedAt(estimatedMissionStart)
+          .setCoordinates(validatedData.latitude, validatedData.longitude)
+          .setPointageStatus(PointageStatus.CORRECTED)
+          .setDeviceInfo({
+            ...validatedData.device_info,
+            auto_generated: true,
+            reason: 'missing_mission_start_before_end',
+          });
+
+        await artificialMissionStart.save();
+        await artificialMissionStart.accept();
+
+        corrections.push({
+          action: 'auto_create_mission_start',
+          artificial_mission_start_guid: artificialMissionStart.getGuid(),
+          estimated_mission_start: estimatedMissionStart,
+        });
+
+        autoCreatedMissionStart = true;
+
+        anomalies[anomalies.length - 1].technical_details!.estimated_mission_start =
+          estimatedMissionStart;
+      }
     }
 
-    // Mission non active
-    const hasActiveMission = await activeSession.activeMission();
-    if (!hasActiveMission) {
-      anomalies.push({
-        type: AnomalyType.MISSION_NOT_ACTIVE,
-        severity: AlertSeverity.MEDIUM, //'medium',
-        description: 'Aucune mission active à terminer',
-        auto_correctable: false,
-      });
-    }
-
-    return { anomalies, corrections, activeSession };
+    return {
+      anomalies,
+      corrections,
+      activeSession,
+      autoCreatedSession,
+      autoCreatedMissionStart,
+    };
   }
 
   // ========================================
@@ -494,6 +898,7 @@ class AnomalyDetectionService {
       );
     // .setAutoReason(`${anomalies.length} anomalie(s): ${anomalies.map((a) => a.type).join(', ')}`);
 
+    console.log('🔴🔴🔴🔴 meno');
     await memo.save();
 
     // Notification manager si high/critical
@@ -579,14 +984,16 @@ Validation manager requise pour accepter manuellement si raison légitime.
     const alert = new FraudAlerts()
       .setUser(userId)
       .setTimeEntry(entryObj.getId()!)
-      .setAlertType(anomaly.type)
+      .setAlertType(this.mapAnomalyTypeToAlertType(anomaly.type)) // ✅ MAPPER ICI
+      // .setAlertType(anomaly.type)
       .setAlertSeverity(anomaly.severity)
       .setAlertDescription(anomaly.description)
       .setAlertData({
+        original_anomaly_type: anomaly.type, // ✅ Garder trace du type original
         technical_details: anomaly.technical_details,
         pointage_type: entryObj.getPointageType(),
         clocked_at: entryObj.getClockedAt(),
-        site_id: entryObj.getSite(),
+        site: (await entryObj.getSiteObj())?.getGuid(),
         auto_correctable: anomaly.auto_correctable,
         auto_correction_applied: anomaly.auto_correction_applied,
       });
@@ -609,6 +1016,7 @@ Validation manager requise pour accepter manuellement si raison légitime.
     const alerts: FraudAlerts[] = [];
 
     for (const anomaly of anomalies) {
+      console.log('🔴🔴🔴🔴🔴');
       const alert = await this.createFraudAlert(anomaly, entryObj, userId);
       if (alert) {
         alerts.push(alert);
@@ -766,6 +1174,38 @@ ${
 
   private calculateDurationMinutes(start: Date, end: Date): number {
     return Math.floor((end.getTime() - start.getTime()) / (1000 * 60));
+  }
+
+  /**
+   * Mapper AnomalyType vers AlertType pour FraudAlerts
+   */
+  private mapAnomalyTypeToAlertType(anomalyType: AnomalyType): string {
+    const mapping: Record<AnomalyType, AlertType> = {
+      // États sessions
+      [AnomalyType.SESSION_ALREADY_OPEN]: AlertType.SUSPICIOUS_PATTERN,
+      [AnomalyType.SESSION_NOT_FOUND]: AlertType.SUSPICIOUS_PATTERN,
+      [AnomalyType.SESSION_TOO_LONG]: AlertType.SCHEDULE_VIOLATION,
+
+      // Séquences pointages
+      [AnomalyType.PAUSE_ALREADY_ACTIVE]: AlertType.DUPLICATE_ENTRY,
+      [AnomalyType.PAUSE_NOT_ACTIVE]: AlertType.SUSPICIOUS_PATTERN,
+      [AnomalyType.MISSION_ALREADY_ACTIVE]: AlertType.DUPLICATE_ENTRY,
+      [AnomalyType.MISSION_NOT_ACTIVE]: AlertType.SUSPICIOUS_PATTERN,
+
+      // Timing
+      [AnomalyType.TIMING_ABNORMAL]: AlertType.TIME_MANIPULATION,
+      [AnomalyType.DURATION_ABNORMAL]: AlertType.TIME_MANIPULATION,
+      [AnomalyType.FREQUENCY_SUSPICIOUS]: AlertType.SUSPICIOUS_PATTERN,
+
+      // GPS/Fraude
+      [AnomalyType.GPS_SPOOFING_SUSPECTED]: AlertType.DEVICE_ANOMALY,
+      [AnomalyType.DISTANCE_IMPOSSIBLE]: AlertType.VELOCITY_CHECK,
+
+      // Géofencing
+      [AnomalyType.GEOFENCE_VIOLATION]: AlertType.GEOFENCE_VIOLATION,
+    };
+
+    return mapping[anomalyType] || AlertType.SUSPICIOUS_PATTERN;
   }
 }
 

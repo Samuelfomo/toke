@@ -1,7 +1,5 @@
 import { Request, Response, Router } from 'express';
 import {
-  COUNTRY_ERRORS,
-  CountryValidationUtils,
   HttpStatus,
   paginationSchema,
   ROLES_CODES,
@@ -22,8 +20,6 @@ import Role from '../class/Role.js';
 import UserRole from '../class/UserRole.js';
 import Revision from '../../tools/revision.js';
 import { tableName } from '../../utils/response.model.js';
-import WapService from '../../tools/send.otp.service.js';
-import GenerateOtp from '../../utils/generate.otp.js';
 
 const router = Router();
 
@@ -120,13 +116,13 @@ router.post('/', Ensure.post(), async (req: Request, res: Response) => {
   try {
     const validatedData = validateUserRoleAssignment(req.body);
 
-    const { country } = req.body;
-    if (!country || CountryValidationUtils.validateIsoCode(country)) {
-      return R.handleError(res, HttpStatus.BAD_REQUEST, {
-        code: 'invalid_entry',
-        message: COUNTRY_ERRORS.CODE_INVALID,
-      });
-    }
+    // const { country } = req.body;
+    // if (!country || CountryValidationUtils.validateIsoCode(country)) {
+    //   return R.handleError(res, HttpStatus.BAD_REQUEST, {
+    //     code: 'invalid_entry',
+    //     message: COUNTRY_ERRORS.CODE_INVALID,
+    //   });
+    // }
     // Vérification de l'existence de l'utilisateur
     const userObj = await User._load(validatedData.user, true);
     if (!userObj) {
@@ -161,24 +157,25 @@ router.post('/', Ensure.post(), async (req: Request, res: Response) => {
       assignedByObj.getId()!,
     );
 
-    const otp = GenerateOtp.generateOTP(6).toString();
-    userObj.setOtpToken(otp);
-
-    await userObj.save();
-
-    const sendOtp = await WapService.sendOtp(
-      userObj.getOtpToken()!,
-      userObj.getPhoneNumber()!,
-      country,
+    // const otp = GenerateOtp.generateOTP(6).toString();
+    // userObj.setOtpToken(otp);
+    //
+    // await userObj.save();
+    //
+    // const sendOtp = await WapService.sendOtp(
+    //   userObj.getOtpToken()!,
+    //   userObj.getPhoneNumber()!,
+    //   country,
+    // );
+    //
+    // if (sendOtp.status !== HttpStatus.SUCCESS) {
+    //   return R.handleError(res, sendOtp.status, sendOtp.response);
+    // }
+    return R.handleCreated(
+      res,
+      // message: 'User role assignment created and OTP dispatch successful',
+      await userRole.toJSON(),
     );
-
-    if (sendOtp.status !== HttpStatus.SUCCESS) {
-      return R.handleError(res, sendOtp.status, sendOtp.response);
-    }
-    return R.handleCreated(res, {
-      message: 'User role assignment created and OTP dispatch successful',
-      user_role: await userRole.toJSON(),
-    });
   } catch (error: any) {
     if (error.issues) {
       return R.handleError(res, HttpStatus.BAD_REQUEST, {

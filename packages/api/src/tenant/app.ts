@@ -20,6 +20,8 @@ import workSessionsRoute from './routes/work.sessions.route.js';
 import orgHierarchyRoute from './routes/org.hierarchy.route.js';
 import memosRoute from './routes/memos.route.js';
 import uploadRoute from './routes/upload.route.js';
+import fraudAlertsRoute from './routes/fraud.alerts.route.js';
+import auditLogsRoute from './routes/audit.logs.route.js';
 
 interface AppConfig {
   port: number;
@@ -207,6 +209,8 @@ export default class App {
     this.app.use('/work-session', workSessionsRoute);
     this.app.use('/site', sitesRoute);
     this.app.use('/memo', memosRoute);
+    this.app.use('/fraud-alerts', fraudAlertsRoute);
+    this.app.use('/audit-logs', auditLogsRoute);
 
     this.app.use('/upload', uploadRoute);
 

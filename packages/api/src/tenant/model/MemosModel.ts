@@ -580,6 +580,7 @@ export default class MemosModel extends BaseModel {
       this.incident_datetime &&
       !MemosValidationUtils.validateIncidentDatetime(this.incident_datetime)
     ) {
+      console.log('🔴🔴🔴 incident_datetime: ', this.incident_datetime);
       throw new Error(MEMOS_ERRORS.INCIDENT_DATETIME_INVALID);
     }
 

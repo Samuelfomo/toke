@@ -1,4 +1,4 @@
-import { Request, Response, Router } from 'express';
+import {Request, Response, Router} from 'express';
 import {
   COUNTRY_ERRORS,
   CountryValidationUtils,
@@ -20,17 +20,17 @@ import {
   WORK_SESSIONS_ERRORS,
   WorkSessionsValidationUtils,
 } from '@toke/shared';
-import { Op } from 'sequelize';
+import {Op} from 'sequelize';
 
 import Ensure from '../../middle/ensured-routes.js';
 import R from '../../tools/response.js';
 import User from '../class/User.js';
 import UserRole from '../class/UserRole.js';
 import Revision from '../../tools/revision.js';
-import { responseValue, tableName } from '../../utils/response.model.js';
+import {responseValue, tableName} from '../../utils/response.model.js';
 import Role from '../class/Role.js';
 import OrgHierarchy from '../class/OrgHierarchy.js';
-import { DatabaseEncryption } from '../../utils/encryption.js';
+import {DatabaseEncryption} from '../../utils/encryption.js';
 import WapService from '../../tools/send.otp.service.js';
 import WorkSessions from '../class/WorkSessions.js';
 import Site from '../class/Site.js';
@@ -185,14 +185,7 @@ router.get('/config', Ensure.get(), async (req: Request, res: Response) => {
   try {
     const tenant = req.tenant;
 
-    const tenantToken = DatabaseEncryption.encrypt({
-      subdomain: tenant.subdomain,
-      name: tenant.config.name,
-      email: tenant.config.email,
-      phone: tenant.config.phone,
-      address: tenant.config.address,
-      country: tenant.config.country,
-    });
+    const tenantToken = DatabaseEncryption.encrypt(tenant.subdomain);
     return R.handleSuccess(res, {
       subdomain: tenantToken,
     });
@@ -932,46 +925,6 @@ router.post('/admin', Ensure.post(), async (req: Request, res: Response) => {
     }
   }
 });
-
-// router.post('/system', Ensure.post(), async (req: Request, res: Response) => {
-//   try {
-//     const tenant = req.tenant;
-//     const userObj = new User()
-//       .setTenant(tenant.config.reference)
-//       .setFirstName('System')
-//       .setLastName('Account')
-//       .setPhoneNumber('+237000000000')
-//       .setEmail('system@local.com')
-//       .setEmployeeCode('SYS-0001')
-//       .setHireDate(new Date(Date.now()))
-//       .setDepartment('SYSTEM')
-//       .setJobTitle('SYSTEM');
-//
-//     // Génération OTP pour nouvel utilisateur
-//     // userObj.generateOtpToken(1440); // 24h par défaut
-//
-//     await userObj.save();
-//
-//     return R.handleCreated(res, userObj.toJSON());
-//   } catch (error: any) {
-//     if (error.message.includes('already exists')) {
-//       return R.handleError(res, HttpStatus.CONFLICT, {
-//         code: USERS_CODES.EMAIL_ALREADY_EXISTS,
-//         message: error.message,
-//       });
-//     } else if (error.message.includes('required')) {
-//       return R.handleError(res, HttpStatus.BAD_REQUEST, {
-//         code: USERS_CODES.VALIDATION_FAILED,
-//         message: error.message,
-//       });
-//     } else {
-//       return R.handleError(res, HttpStatus.INTERNAL_ERROR, {
-//         code: USERS_CODES.CREATION_FAILED,
-//         message: error.message,
-//       });
-//     }
-//   }
-// });
 
 router.patch('/:guid/define-password', Ensure.patch(), async (req: Request, res: Response) => {
   try {

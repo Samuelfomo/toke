@@ -643,7 +643,7 @@ router.post(
             .setSite(siteObj.getId()!)
             .setSessionStartAt(new Date(validatedData.clocked_at))
             .setStartCoordinates(validatedData.latitude, validatedData.longitude);
-
+          console.log('🔴🔴');
           await sessionObj.save();
 
           // ✅ CRÉER TIME_ENTRY
@@ -658,13 +658,14 @@ router.post(
           if (validatedData.device_info) {
             entryObj.setDeviceInfo(validatedData.device_info);
           }
-
+          console.log('🔴🔴🔴');
           await entryObj.save();
           await entryObj.accept(); // ✅ Toujours accepté
 
           // ✅ GÉNÉRER MÉMO AUTO SI ANOMALIES
           let autoMemo = null;
           if (anomalies.length > 0) {
+            console.log('🔴🔴🔴🔴');
             autoMemo = await AnomalyDetectionService.generateAutoMemo(
               anomalies,
               entryObj,
@@ -674,6 +675,7 @@ router.post(
 
             // Lier mémo à l'entry
             if (autoMemo) {
+              console.log('🔴🔴🔴🔴🔴');
               entryObj.setMemo(autoMemo.getId()!);
               await entryObj.save();
             }
@@ -819,12 +821,16 @@ router.post(
 
         case PointageType.CLOCK_OUT: {
           // 🔍 DÉTECTION ANOMALIES
-          const { anomalies, corrections, activeSession } =
-            await AnomalyDetectionService.detectClockOutAnomalies(userId, validatedData);
+          const { anomalies, corrections, activeSession, autoCreatedSession } =
+            await AnomalyDetectionService.detectAndCorrectClockOutWithoutSession(
+              userId,
+              validatedData,
+              siteObj,
+            );
 
           // ✅ CRÉER ENTRY (même sans session)
           const entryObj = new TimeEntries()
-            .setSession(activeSession?.getId() || 0)
+            .setSession(activeSession?.getId()!)
             .setUser(userId)
             .setSite(siteObj.getId()!)
             .setPointageType(PointageType.CLOCK_OUT)
@@ -863,6 +869,7 @@ router.post(
               await entryObj.save();
             }
 
+            // ✅ FRAUD ALERTS
             await AnomalyDetectionService.createFraudAlertsForAnomalies(
               anomalies,
               entryObj,
@@ -871,24 +878,33 @@ router.post(
           }
 
           return R.handleCreated(res, {
-            message:
-              anomalies.length > 0 ? 'Clock-out accepté avec anomalies' : 'Clock-out successful',
+            message: autoCreatedSession
+              ? `⚠️ Clock-out accepté - Session d'entrée créée automatiquement`
+              : anomalies.length > 0
+                ? 'Clock-out accepté avec anomalies'
+                : 'Clock-out successful',
             session: activeSession ? await activeSession.toJSON() : null,
             entry: await entryObj.toJSON(responseValue.MINIMAL),
             durations,
             anomalies_detected: anomalies.length,
             auto_memo_created: autoMemo !== null,
+            auto_memo_guid: autoMemo?.getGuid(),
             corrections_applied: corrections.length,
+            auto_created_session: autoCreatedSession, // ✅ Flag important
           });
         }
 
         case PointageType.EXTERNAL_MISSION: {
           // 🔍 DÉTECTION ANOMALIES
-          const { anomalies, corrections, activeSession } =
-            await AnomalyDetectionService.detectMissionStartAnomalies(userId, validatedData);
+          const { anomalies, corrections, activeSession, autoCreatedSession } =
+            await AnomalyDetectionService.detectMissionStartAnomalies(
+              userId,
+              validatedData,
+              siteObj,
+            );
 
           const entryObj = new TimeEntries()
-            .setSession(activeSession?.getId() || 0)
+            .setSession(activeSession?.getId()!) // || 0
             .setUser(userId)
             .setSite(siteObj.getId()!)
             .setPointageType(PointageType.EXTERNAL_MISSION)
@@ -924,21 +940,36 @@ router.post(
           }
 
           return R.handleCreated(res, {
-            message:
-              anomalies.length > 0 ? 'Mission acceptée avec anomalies' : 'External mission started',
+            message: autoCreatedSession
+              ? '⚠️ Mission démarrée - Session créée automatiquement'
+              : anomalies.length > 0
+                ? 'Mission acceptée avec anomalies'
+                : 'External mission started',
             entry: await entryObj.toJSON(),
+            session: activeSession ? await activeSession.toJSON(responseValue.MINIMAL) : null,
             anomalies_detected: anomalies.length,
+            auto_created_session: autoCreatedSession,
             auto_memo_created: autoMemo !== null,
+            corrections_applied: corrections.length,
           });
         }
 
         case PointageType.EXTERNAL_MISSION_END: {
           // 🔍 DÉTECTION ANOMALIES
-          const { anomalies, corrections, activeSession } =
-            await AnomalyDetectionService.detectMissionEndAnomalies(userId, validatedData);
+          const {
+            anomalies,
+            corrections,
+            activeSession,
+            autoCreatedSession,
+            autoCreatedMissionStart,
+          } = await AnomalyDetectionService.detectMissionEndAnomalies(
+            userId,
+            validatedData,
+            siteObj,
+          );
 
           const entryObj = new TimeEntries()
-            .setSession(activeSession?.getId() || 0)
+            .setSession(activeSession?.getId()!)
             .setUser(userId)
             .setSite(siteObj.getId()!)
             .setPointageType(PointageType.EXTERNAL_MISSION_END)
@@ -975,16 +1006,25 @@ router.post(
 
           return R.handleCreated(res, {
             message:
-              anomalies.length > 0 ? 'Mission terminée avec anomalies' : 'External mission ended',
+              autoCreatedSession || autoCreatedMissionStart
+                ? '⚠️ Mission terminée - Corrections automatiques appliquées'
+                : anomalies.length > 0
+                  ? 'Mission terminée avec anomalies'
+                  : 'External mission ended',
             entry: await entryObj.toJSON(responseValue.MINIMAL),
+            session: activeSession ? await activeSession.toJSON(responseValue.MINIMAL) : null,
             anomalies_detected: anomalies.length,
             auto_memo_created: autoMemo !== null,
+            auto_created_session: autoCreatedSession,
+            auto_created_mission_start: autoCreatedMissionStart,
+            corrections_applied: corrections.length,
           });
         }
 
         default:
           return R.handleError(res, HttpStatus.BAD_REQUEST, {
             code: TIME_ENTRIES_CODES.INVALID_POINTAGE_TYPE,
+            message: TIME_ENTRIES_ERRORS.POINTAGE_TYPE_INVALID,
           });
       }
     } catch (error: any) {

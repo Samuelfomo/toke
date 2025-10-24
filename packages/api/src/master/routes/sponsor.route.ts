@@ -5,6 +5,7 @@ import Sponsor from '../class/Sponsor.js';
 import { InvitationStatus } from '../database/data/sponsor.db.js';
 import R from '../../tools/response.js';
 import Ensure from '../../middle/ensured-routes.js';
+import { Contact } from '../class/Contact.js';
 
 const router = Router();
 
@@ -340,10 +341,16 @@ router.get('/:guid', Ensure.get(), async (req: Request, res: Response) => {
       });
     }
 
-    R.handleSuccess(res, invitation.toJSON());
+    const ensureExists = await Contact._load(invitation.getPhoneNumber()!, false, true);
+    if (!ensureExists) {
+      const contact = new Contact().setPhone(invitation.getPhoneNumber()!);
+      await contact.save();
+    }
+
+    return R.handleSuccess(res, invitation.toJSON());
   } catch (error: any) {
     console.error('❌ Erreur recherche invitation:', error);
-    R.handleError(res, HttpStatus.INTERNAL_ERROR, {
+    return R.handleError(res, HttpStatus.INTERNAL_ERROR, {
       code: 'search_failed',
       message: 'Failed to search invitation',
     });

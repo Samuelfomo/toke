@@ -1,10 +1,5 @@
 // utils/memos.validation.ts
-import {
-  MEMOS_DEFAULTS,
-  MEMOS_VALIDATION,
-  MemoStatus,
-  MemoType,
-} from '../../constants/tenant/memos.js';
+import { MEMOS_DEFAULTS, MEMOS_VALIDATION, MemoStatus, MemoType, } from '../../constants/tenant/memos.js';
 
 export class MemosValidationUtils {
   /**
@@ -131,7 +126,8 @@ export class MemosValidationUtils {
     if (isNaN(date.getTime())) return false;
 
     // Incident cannot be in the future (allowing current time with 1 minute tolerance)
-    const now = new Date();
+    const now = new Date(new Date().toLocaleString('en-US', { timeZone: 'Africa/Douala' }));
+    // const now = new Date();
     now.setMinutes(now.getMinutes() + 1);
     return date <= now;
   }
