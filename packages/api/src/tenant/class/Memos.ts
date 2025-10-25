@@ -616,7 +616,7 @@ export default class Memos extends MemosModel {
     return false;
   }
 
-  async toJSON(view: ViewMode = responseValue.FULL): Promise<object> {
+  async toJSON(view: ViewMode = responseValue.MINIMAL): Promise<object> {
     const author = await this.getAuthorObj();
     const target = await this.getTargetObj();
     const validator = await this.getValidatorObj();
@@ -636,37 +636,36 @@ export default class Memos extends MemosModel {
       [RS.UPDATED_AT]: this.updated_at,
     };
 
-    if (view === responseValue.MINIMAL) {
+    if (view === responseValue.FULL) {
       return {
         ...baseData,
-        [RS.AUTHOR_USER]: author?.getGuid(),
-        [RS.TARGET_USER]: target?.getGuid(),
-        [RS.VALIDATOR_USER]: validator?.getGuid(),
-        [RS.AFFECTED_SESSION]: session?.getGuid(),
+        [RS.AUTHOR_USER]: author ? author.toJSON() : null,
+        [RS.TARGET_USER]: target ? target.toJSON() : null,
+        [RS.VALIDATOR_USER]: validator ? validator.toJSON() : null,
+        [RS.AFFECTED_SESSION]: session ? await session.toJSON() : null,
+        [RS.AFFECTED_ENTRIES]: entries
+          ? await Promise.all(entries.map(async (entry) => await entry.toJSON()))
+          : null,
+        [RS.ATTACHMENTS]: this.attachments,
+        [RS.VALIDATOR_COMMENTS]: this.validator_comments,
         [RS.PROCESSED_AT]: this.processed_at,
+        // Informations calculées
+        [RS.IS_PREVENTIVE]: this.isPreventive(),
+        [RS.IS_CORRECTIVE]: this.isCorrective(),
+        [RS.IS_URGENT]: this.isUrgent(),
+        [RS.IS_PENDING]: this.isPending(),
+        [RS.IS_APPROVED]: this.isApproved(),
+        [RS.IS_REJECTED]: this.isRejected(),
+        [RS.IS_DRAFT]: this.isDraft(),
       };
     }
-
     return {
       ...baseData,
-      [RS.AUTHOR_USER]: author ? author.toJSON() : null,
-      [RS.TARGET_USER]: target ? target.toJSON() : null,
-      [RS.VALIDATOR_USER]: validator ? validator.toJSON() : null,
-      [RS.AFFECTED_SESSION]: session ? await session.toJSON() : null,
-      [RS.AFFECTED_ENTRIES]: entries
-        ? await Promise.all(entries.map(async (entry) => await entry.toJSON()))
-        : null,
-      [RS.ATTACHMENTS]: this.attachments,
-      [RS.VALIDATOR_COMMENTS]: this.validator_comments,
+      [RS.AUTHOR_USER]: author?.getGuid(),
+      [RS.TARGET_USER]: target?.getGuid(),
+      [RS.VALIDATOR_USER]: validator?.getGuid(),
+      [RS.AFFECTED_SESSION]: session?.getGuid(),
       [RS.PROCESSED_AT]: this.processed_at,
-      // Informations calculées
-      [RS.IS_PREVENTIVE]: this.isPreventive(),
-      [RS.IS_CORRECTIVE]: this.isCorrective(),
-      [RS.IS_URGENT]: this.isUrgent(),
-      [RS.IS_PENDING]: this.isPending(),
-      [RS.IS_APPROVED]: this.isApproved(),
-      [RS.IS_REJECTED]: this.isRejected(),
-      [RS.IS_DRAFT]: this.isDraft(),
     };
   }
 
