@@ -208,9 +208,25 @@ router.get('/current-cost/:tenant', Ensure.get(), async (req: Request, res: Resp
     // const adjustmentsUSD = pendingAdjustments?.length || 0;
     const adjustmentsUSD =
       pendingAdjustments?.reduce((total, adj) => total + adj.getTotalAmountUsd()!, 0) || 0;
+
+    // ✅ FIX: 7. Taxes - Charger les règles fiscales comme instances de classe
+    const taxRulesData = await TaxRule._listByCountryCode(tenantCountryCode!);
+
+    // ✅ Convertir en instances TaxRule si ce sont des objets plain
+    let taxRules: TaxRule[] = [];
+    if (taxRulesData && taxRulesData.length > 0) {
+      // Si ce sont déjà des instances, les utiliser directement
+      if (typeof taxRulesData[0].isActive === 'function') {
+        taxRules = taxRulesData as TaxRule[];
+      } else {
+        // Sinon, les convertir en instances
+        taxRules = taxRulesData.map((data: any) => TaxRule._toObject(data));
+      }
+    }
+
     // 7. Taxes
-    const taxRules = await TaxRule._listByCountryCode(tenantCountryCode!);
-    const taxAmountUSD = calculateTax(baseCostUSD + adjustmentsUSD, taxRules ?? []);
+    // const taxRules = await TaxRule._listByCountryCode(tenantCountryCode!);
+    const taxAmountUSD = calculateTax(baseCostUSD + adjustmentsUSD, taxRules);
 
     // 8. Conversion devise
     const exchangeRate = await ExchangeRate.getCurrentRate('USD', tenantCurrency!);
@@ -279,8 +295,23 @@ router.get('/period-preview/:tenant', Ensure.get(), async (req: Request, res: Re
     const adjustmentsUSD =
       pendingAdjustments?.reduce((total, adj) => total + adj.getTotalAmountUsd()!, 0) || 0;
 
-    const taxRules = await TaxRule._listByCountryCode(tenantObj.getCountryCode()!);
-    const taxAmountUSD = calculateTax(baseCostUSD + adjustmentsUSD, taxRules ?? []);
+    // const taxRules = await TaxRule._listByCountryCode(tenantObj.getCountryCode()!);
+
+    const taxRulesData = await TaxRule._listByCountryCode(tenantObj.getCountryCode()!);
+
+    // ✅ Convertir en instances TaxRule si ce sont des objets plain
+    let taxRules: TaxRule[] = [];
+    if (taxRulesData && taxRulesData.length > 0) {
+      // Si ce sont déjà des instances, les utiliser directement
+      if (typeof taxRulesData[0].isActive === 'function') {
+        taxRules = taxRulesData as TaxRule[];
+      } else {
+        // Sinon, les convertir en instances
+        taxRules = taxRulesData.map((data: any) => TaxRule._toObject(data));
+      }
+    }
+
+    const taxAmountUSD = calculateTax(baseCostUSD + adjustmentsUSD, taxRules);
 
     const projectedTotalUSD = baseCostUSD + adjustmentsUSD + taxAmountUSD;
 
@@ -790,10 +821,21 @@ router.get('/payment-history/:tenant', Ensure.get(), async (req: Request, res: R
   }
 });
 
+/**
+ * ✅ FIX: Calcule les taxes à partir d'instances TaxRule
+ * @param amount - Montant avant taxes
+ * @param rules - Instances de TaxRule (pas des objets plain)
+ */
 function calculateTax(amount: number, rules: TaxRule[]): number {
+  if (!rules || rules.length === 0) return 0;
   return rules.reduce((total, rule) => {
-    if (rule.isActive()) {
-      return total + amount * rule.getTaxRate()!;
+    // ✅ Vérifier que c'est bien une instance avec la méthode isActive()
+    if (typeof rule.isActive === 'function' && rule.isActive()) {
+      // return total + amount * rule.getTaxRate()!;
+      const rate = rule.getTaxRate();
+      if (rate && rate > 0) {
+        return total + amount * rate;
+      }
     }
     return total;
   }, 0);

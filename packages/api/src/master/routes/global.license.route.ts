@@ -382,8 +382,8 @@ router.post('/', Ensure.post(), async (req: Request, res: Response) => {
       licenseObj.setBasePriceUsd(validatedData.base_price_usd);
     if (validatedData.minimum_seats !== undefined)
       licenseObj.setMinimumSeats(validatedData.minimum_seats);
-    if (validatedData.total_seats_purchased !== undefined)
-      licenseObj.setTotalSeatsPurchased(validatedData.total_seats_purchased);
+    // if (validatedData.total_seats_purchased !== undefined)
+    //   licenseObj.setTotalSeatsPurchased(validatedData.total_seats_purchased);
     if (validatedData.license_status !== undefined)
       licenseObj.setLicenseStatus(validatedData.license_status as LicenseStatus);
 
@@ -460,8 +460,8 @@ router.put('/:guid', Ensure.put(), async (req: Request, res: Response) => {
       licenseObj.setCurrentPeriodEnd(validateData.current_period_end);
     if (validateData.next_renewal_date !== undefined)
       licenseObj.setNextRenewalDate(validateData.next_renewal_date);
-    if (validateData.total_seats_purchased !== undefined)
-      licenseObj.setTotalSeatsPurchased(validateData.total_seats_purchased);
+    // if (validateData.total_seats_purchased !== undefined)
+    //   licenseObj.setTotalSeatsPurchased(validateData.total_seats_purchased);
     if (validateData.license_status !== undefined)
       licenseObj.setLicenseStatus(validateData.license_status);
 

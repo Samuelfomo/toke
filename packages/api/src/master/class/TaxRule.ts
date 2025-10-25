@@ -77,6 +77,15 @@ export default class TaxRule extends TaxRuleModel {
     return new TaxRule().listAllByRequiredTaxNumber(value, paginationOptions);
   }
 
+  /**
+   * ✅ AJOUTER: Convertit des données en objet TaxRule
+   * @param data - Données brutes (objet plain)
+   * @returns Instance de TaxRule
+   */
+  static _toObject(data: any): TaxRule {
+    return new TaxRule().hydrate(data);
+  }
+
   setCountryCode(code: string): TaxRule {
     this.country_code = code;
     return this;
@@ -129,30 +138,39 @@ export default class TaxRule extends TaxRuleModel {
   getGuid(): number | undefined {
     return this.guid;
   }
+
   getCountryCode(): string | undefined {
     return this.country_code;
   }
+
   getTaxType(): string | undefined {
     return this.tax_type;
   }
+
   getTaxName(): string | undefined {
     return this.tax_name;
   }
+
   getTaxRate(): number | undefined {
     return this.tax_rate;
   }
+
   getAppliesTo(): string | undefined {
     return this.applies_to;
   }
+
   RequiredTaxNumber(): boolean | undefined {
     return this.required_tax_number;
   }
+
   getEffectiveDate(): Date | undefined {
     return this.effective_date;
   }
+
   getExpiryDate(): Date | undefined {
     return this.expiry_date;
   }
+
   isActive(): boolean | undefined {
     return this.active;
   }
@@ -165,6 +183,7 @@ export default class TaxRule extends TaxRuleModel {
       throw new Error(error);
     }
   }
+
   async delete(): Promise<boolean> {
     if (this.id !== undefined) {
       await W.isOccur(!this.id, `${G.identifierMissing.code}: Tax rule Delete`);
@@ -172,6 +191,7 @@ export default class TaxRule extends TaxRuleModel {
     }
     return false;
   }
+
   async load(identifier: any, byGuid: boolean = false): Promise<TaxRule | null> {
     const data = byGuid ? await this.findByGuid(identifier) : await this.find(Number(identifier));
     if (!data) return null;

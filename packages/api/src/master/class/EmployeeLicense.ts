@@ -3,12 +3,7 @@ import { BillingStatusComputed, ContractualStatus, LeaveType } from '@toke/share
 import EmployeeLicenseModel from '../model/EmployeeLicenseModel.js';
 import W from '../../tools/watcher.js';
 import G from '../../tools/glossary.js';
-import {
-  responseStructure as RS,
-  responseValue,
-  tableName,
-  ViewMode,
-} from '../../utils/response.model.js';
+import { responseStructure as RS, responseValue, tableName, ViewMode, } from '../../utils/response.model.js';
 import Revision from '../../tools/revision.js';
 
 import GlobalLicense from './GlobalLicense.js';
@@ -364,7 +359,7 @@ export default class EmployeeLicense extends EmployeeLicenseModel {
   }
 
   getComputedBillingStatus(): BillingStatusComputed | undefined {
-    return this.computed_billing_status;
+    return this.getComputedBillingStatusValue();
   }
 
   getGracePeriodStart(): Date | undefined {
@@ -435,14 +430,14 @@ export default class EmployeeLicense extends EmployeeLicenseModel {
    * Vérifie si l'employé est facturable
    */
   isBillable(): boolean {
-    return this.computed_billing_status === BillingStatusComputed.BILLABLE;
+    return this.getComputedBillingStatusValue() === BillingStatusComputed.BILLABLE; // ✅
   }
 
   /**
    * Vérifie si l'employé est non facturable
    */
   isNonBillable(): boolean {
-    return this.computed_billing_status === BillingStatusComputed.NON_BILLABLE;
+    return this.getComputedBillingStatusValue() === BillingStatusComputed.NON_BILLABLE;
   }
 
   /**
@@ -558,7 +553,9 @@ export default class EmployeeLicense extends EmployeeLicenseModel {
     const data = byGuid ? await this.findByGuid(identifier) : await this.find(Number(identifier));
 
     if (!data) return null;
-    return this.hydrate(data);
+    const instance = this.hydrate(data);
+    await instance.loadGeneratedColumns(); // ✅ AJOUTER
+    return instance;
   }
 
   /**
@@ -567,7 +564,9 @@ export default class EmployeeLicense extends EmployeeLicenseModel {
   async loadByEmployee(employee: string): Promise<EmployeeLicense | null> {
     const data = await this.findByEmployee(employee);
     if (!data) return null;
-    return this.hydrate(data);
+    const instance = this.hydrate(data);
+    await instance.loadGeneratedColumns(); // ✅ AJOUTER
+    return instance;
   }
 
   /**
@@ -576,7 +575,9 @@ export default class EmployeeLicense extends EmployeeLicenseModel {
   async loadByEmployeeCode(employee_code: string): Promise<EmployeeLicense | null> {
     const data = await this.findByEmployeeCode(employee_code);
     if (!data) return null;
-    return this.hydrate(data);
+    const instance = this.hydrate(data);
+    await instance.loadGeneratedColumns(); // ✅ AJOUTER
+    return instance;
   }
 
   /**
@@ -588,7 +589,9 @@ export default class EmployeeLicense extends EmployeeLicenseModel {
   ): Promise<EmployeeLicense[] | null> {
     const dataset = await this.listAll(conditions, paginationOptions);
     if (!dataset) return null;
-    return dataset.map((data) => new EmployeeLicense().hydrate(data));
+    const instances = dataset.map((data) => new EmployeeLicense().hydrate(data));
+    await Promise.all(instances.map(async (instance) => instance.loadGeneratedColumns()));
+    return instances;
   }
 
   /**
@@ -600,7 +603,9 @@ export default class EmployeeLicense extends EmployeeLicenseModel {
   ): Promise<EmployeeLicense[] | null> {
     const dataset = await this.listAllByGlobalLicense(global_license, paginationOptions);
     if (!dataset) return null;
-    return dataset.map((data) => new EmployeeLicense().hydrate(data));
+    const instances = dataset.map((data) => new EmployeeLicense().hydrate(data));
+    await Promise.all(instances.map(async (instance) => instance.loadGeneratedColumns()));
+    return instances;
   }
 
   /**
@@ -612,7 +617,9 @@ export default class EmployeeLicense extends EmployeeLicenseModel {
   ): Promise<EmployeeLicense[] | null> {
     const dataset = await this.listAllByContractualStatus(contractual_status, paginationOptions);
     if (!dataset) return null;
-    return dataset.map((data) => new EmployeeLicense().hydrate(data));
+    const instances = dataset.map((data) => new EmployeeLicense().hydrate(data));
+    await Promise.all(instances.map(async (instance) => instance.loadGeneratedColumns()));
+    return instances;
   }
 
   /**
@@ -624,7 +631,9 @@ export default class EmployeeLicense extends EmployeeLicenseModel {
   ): Promise<EmployeeLicense[] | null> {
     const dataset = await this.listAllByBillingStatus(billing_status, paginationOptions);
     if (!dataset) return null;
-    return dataset.map((data) => new EmployeeLicense().hydrate(data));
+    const instances = dataset.map((data) => new EmployeeLicense().hydrate(data));
+    await Promise.all(instances.map(async (instance) => instance.loadGeneratedColumns()));
+    return instances;
   }
 
   /**
@@ -635,7 +644,9 @@ export default class EmployeeLicense extends EmployeeLicenseModel {
   ): Promise<EmployeeLicense[] | null> {
     const dataset = await this.listAllOnLongLeave(paginationOptions);
     if (!dataset) return null;
-    return dataset.map((data) => new EmployeeLicense().hydrate(data));
+    const instances = dataset.map((data) => new EmployeeLicense().hydrate(data));
+    await Promise.all(instances.map(async (instance) => instance.loadGeneratedColumns()));
+    return instances;
   }
 
   /**
@@ -647,7 +658,9 @@ export default class EmployeeLicense extends EmployeeLicenseModel {
   ): Promise<EmployeeLicense[] | null> {
     const dataset = await this.listAllByLeaveType(leave_type, paginationOptions);
     if (!dataset) return null;
-    return dataset.map((data) => new EmployeeLicense().hydrate(data));
+    const instances = dataset.map((data) => new EmployeeLicense().hydrate(data));
+    await Promise.all(instances.map(async (instance) => instance.loadGeneratedColumns()));
+    return instances;
   }
 
   /**
@@ -659,7 +672,9 @@ export default class EmployeeLicense extends EmployeeLicenseModel {
   ): Promise<EmployeeLicense[] | null> {
     const dataset = await this.listAllWithRecentActivity(days, paginationOptions);
     if (!dataset) return null;
-    return dataset.map((data) => new EmployeeLicense().hydrate(data));
+    const instances = dataset.map((data) => new EmployeeLicense().hydrate(data));
+    await Promise.all(instances.map(async (instance) => instance.loadGeneratedColumns()));
+    return instances;
   }
 
   /**
@@ -671,7 +686,9 @@ export default class EmployeeLicense extends EmployeeLicenseModel {
   ): Promise<EmployeeLicense[] | null> {
     const dataset = await this.listAllWithoutRecentActivity(days, paginationOptions);
     if (!dataset) return null;
-    return dataset.map((data) => new EmployeeLicense().hydrate(data));
+    const instances = dataset.map((data) => new EmployeeLicense().hydrate(data));
+    await Promise.all(instances.map(async (instance) => instance.loadGeneratedColumns()));
+    return instances;
   }
 
   /**
@@ -682,7 +699,9 @@ export default class EmployeeLicense extends EmployeeLicenseModel {
   ): Promise<EmployeeLicense[] | null> {
     const dataset = await this.listAllInGracePeriod(paginationOptions);
     if (!dataset) return null;
-    return dataset.map((data) => new EmployeeLicense().hydrate(data));
+    const instances = dataset.map((data) => new EmployeeLicense().hydrate(data));
+    await Promise.all(instances.map(async (instance) => instance.loadGeneratedColumns()));
+    return instances;
   }
 
   /**
@@ -694,7 +713,9 @@ export default class EmployeeLicense extends EmployeeLicenseModel {
   ): Promise<EmployeeLicense[] | null> {
     const dataset = await this.listAllGracePeriodExpiringSoon(days, paginationOptions);
     if (!dataset) return null;
-    return dataset.map((data) => new EmployeeLicense().hydrate(data));
+    const instances = dataset.map((data) => new EmployeeLicense().hydrate(data));
+    await Promise.all(instances.map(async (instance) => instance.loadGeneratedColumns()));
+    return instances;
   }
 
   /**
@@ -723,7 +744,8 @@ export default class EmployeeLicense extends EmployeeLicenseModel {
       [RS.LONG_LEAVE_DECLARED_AT]: this.long_leave_declared_at,
       [RS.LONG_LEAVE_TYPE]: this.long_leave_type,
       [RS.LONG_LEAVE_REASON]: this.long_leave_reason,
-      [RS.COMPUTED_BILLING_STATUS]: this.computed_billing_status,
+      // [RS.COMPUTED_BILLING_STATUS]: this.computed_billing_status,
+      [RS.COMPUTED_BILLING_STATUS]: this.getComputedBillingStatus(), // ✅
       [RS.GRACE_PERIOD_START]: this.grace_period_start,
       [RS.GRACE_PERIOD_END]: this.grace_period_end,
     };
@@ -745,7 +767,7 @@ export default class EmployeeLicense extends EmployeeLicenseModel {
    * Représentation string
    */
   toString(): string {
-    return `EmployeeLicense { ${RS.ID}: ${this.id}, ${RS.GUID}: ${this.guid}, ${RS.EMPLOYEE}: "${this.employee}", ${RS.CONTRACTUAL_STATUS}: "${this.contractual_status}", ${RS.COMPUTED_BILLING_STATUS}: "${this.computed_billing_status}" }`;
+    return `EmployeeLicense { ${RS.ID}: ${this.id}, ${RS.GUID}: ${this.guid}, ${RS.EMPLOYEE}: "${this.employee}", ${RS.CONTRACTUAL_STATUS}: "${this.contractual_status}", ${RS.COMPUTED_BILLING_STATUS}: "${this.getComputedBillingStatus}" }`;
   }
 
   /**
@@ -766,7 +788,10 @@ export default class EmployeeLicense extends EmployeeLicenseModel {
     this.long_leave_declared_at = data.long_leave_declared_at;
     this.long_leave_type = data.long_leave_type;
     this.long_leave_reason = data.long_leave_reason;
-    this.computed_billing_status = data.computed_billing_status;
+    // this.computed_billing_status = data.computed_billing_status;
+    if (data.computed_billing_status !== undefined) {
+      this['_computed_billing_status'] = data.computed_billing_status;
+    }
     this.grace_period_start = data.grace_period_start;
     this.grace_period_end = data.grace_period_end;
     return this;

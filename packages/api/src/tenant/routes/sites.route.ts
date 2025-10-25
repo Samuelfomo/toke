@@ -870,12 +870,12 @@ router.patch('/generate-qr-code', Ensure.patch(), async (req: Request, res: Resp
     // const tenant = req.tenant;
     const qrGenerator = DatabaseEncryption.encrypt(
       {
-        manager: userObj.getGuid(),
+        // manager: userObj.getGuid(),
         site: siteObj.getGuid(),
         period: siteObj.getQRCodeData(),
         site_name: siteObj.getName(),
         // site_type: siteObj.getSiteType(),
-        site_address: siteObj.getAddress(),
+        site_address: siteObj.getAddress().city,
         // geofence_polygon: siteObj.getGeofencePolygon(),
         // geofence_radius: siteObj.getGeofenceRadius(),
       },
