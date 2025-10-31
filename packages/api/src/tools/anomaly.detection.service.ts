@@ -220,6 +220,7 @@ class AnomalyDetectionService {
     // 3. Fréquence suspecte (>3 pauses/jour)
     const todayPauses = await this.getTodayPausesCount(userId);
     if (todayPauses >= 3) {
+      console.log('je suis ici 🔴');
       anomalies.push({
         type: AnomalyType.FREQUENCY_SUSPICIOUS,
         severity: AlertSeverity.LOW, // 'low',
@@ -1051,11 +1052,11 @@ Validation manager requise pour accepter manuellement si raison légitime.
 
     await session.save();
 
-    // Mettre à jour l'entry avec la session
+    // set la session crée
     entryObj.setSession(session.getId()!);
-    await entryObj.save();
+    // await entryObj.save();
 
-    console.log(`✅ Session rétroactive créée: ${session.getGuid()} pour user ${userId}`);
+    // console.log(`✅ Session rétroactive créée: ${session.getGuid()} pour user ${userId}`);
 
     return session;
   }

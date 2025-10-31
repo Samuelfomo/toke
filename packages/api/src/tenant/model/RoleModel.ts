@@ -30,6 +30,7 @@ export default class RoleModel extends BaseModel {
   protected admin_role?: boolean;
   protected created_at?: Date;
   protected updated_at?: Date;
+
   protected constructor() {
     super();
   }
@@ -37,11 +38,13 @@ export default class RoleModel extends BaseModel {
   protected async find(id: number): Promise<any> {
     return await this.findOne(this.db.tableName, { [this.db.id]: id });
   }
+
   protected async findByGuid(guid: string): Promise<any> {
     return await this.findOne(this.db.tableName, { [this.db.guid]: guid });
   }
+
   protected async findByCode(code: string): Promise<any> {
-    return await this.findOne(this.db.tableName, { [this.db.code]: code });
+    return await this.findOne(this.db.tableName, { [this.db.code]: code.toUpperCase() });
   }
 
   protected async findExistingDefaultRole(): Promise<any> {
@@ -70,6 +73,7 @@ export default class RoleModel extends BaseModel {
   ): Promise<any[]> {
     return await this.findAll(this.db.tableName, conditions, paginationOptions);
   }
+
   protected async listAllBySystemRole(
     is_system_role: boolean,
     paginationOptions: { offset?: number; limit?: number } = {},
@@ -117,6 +121,7 @@ export default class RoleModel extends BaseModel {
     this.id = typeof lastID === 'object' ? lastID.id : lastID;
     this.guid = guid;
   }
+
   protected async update(): Promise<void> {
     await this.validate();
     if (!this.id) {
@@ -155,9 +160,11 @@ export default class RoleModel extends BaseModel {
       throw new Error(ROLES_ERRORS.UPDATE_FAILED);
     }
   }
+
   protected async trash(id: number): Promise<boolean> {
     return await this.deleteOne(this.db.tableName, { [this.db.id]: id });
   }
+
   private async validate(): Promise<void> {
     if (!this.code) {
       throw new Error(ROLES_ERRORS.CODE_REQUIRED);

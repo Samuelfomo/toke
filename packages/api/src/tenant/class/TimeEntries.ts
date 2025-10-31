@@ -800,6 +800,7 @@ export default class TimeEntries extends TimeEntriesModel {
   async getStatistics(filters: Record<string, any> = {}): Promise<any> {
     return await this.getEntriesStatistics(filters);
   }
+
   async toJSON(view: ViewMode = responseValue.FULL): Promise<object> {
     const user = await this.getUserObj();
     const site = await this.getSiteObj();

@@ -1,4 +1,4 @@
-import {Request, Response, Router} from 'express';
+import { Request, Response, Router } from 'express';
 import {
   COUNTRY_ERRORS,
   CountryValidationUtils,
@@ -20,17 +20,17 @@ import {
   WORK_SESSIONS_ERRORS,
   WorkSessionsValidationUtils,
 } from '@toke/shared';
-import {Op} from 'sequelize';
+import { Op } from 'sequelize';
 
 import Ensure from '../../middle/ensured-routes.js';
 import R from '../../tools/response.js';
 import User from '../class/User.js';
 import UserRole from '../class/UserRole.js';
 import Revision from '../../tools/revision.js';
-import {responseValue, tableName} from '../../utils/response.model.js';
+import { responseValue, RoleValues, tableName } from '../../utils/response.model.js';
 import Role from '../class/Role.js';
 import OrgHierarchy from '../class/OrgHierarchy.js';
-import {DatabaseEncryption} from '../../utils/encryption.js';
+import { DatabaseEncryption } from '../../utils/encryption.js';
 import WapService from '../../tools/send.otp.service.js';
 import WorkSessions from '../class/WorkSessions.js';
 import Site from '../class/Site.js';
@@ -306,15 +306,15 @@ router.post('/', Ensure.post(), async (req: Request, res: Response) => {
 
     await orgHierarchyObj.save();
 
-    // Envoyer l'OTP via WhatsApp
-    const result = await WapService.sendOtp(
-      userObj.getOtpToken()!,
-      validatedData.phone_number,
-      country,
-    );
-    if (result.status !== HttpStatus.SUCCESS) {
-      return R.handleError(res, result.status, result.response);
-    }
+    // // Envoyer l'OTP via WhatsApp
+    // const result = await WapService.sendOtp(
+    //   userObj.getOtpToken()!,
+    //   validatedData.phone_number,
+    //   country,
+    // );
+    // if (result.status !== HttpStatus.SUCCESS) {
+    //   return R.handleError(res, result.status, result.response);
+    // }
 
     return R.handleCreated(res, {
       message: 'User created and OTP sent successfully',
@@ -562,7 +562,7 @@ router.patch('/:guid/generate-otp', Ensure.patch(), async (req: Request, res: Re
     // 🔹 Envoi du code OTP selon le canal choisi
     if (email) {
       let value = userObj.getEmail();
-      if (!UsersValidationUtils.validateEmail(email)) {
+      if (UsersValidationUtils.validateEmail(email)) {
         // return R.handleError(res, HttpStatus.BAD_REQUEST, {
         //   code: USERS_CODES.EMAIL_INVALID,
         //   message: USERS_ERRORS.EMAIL_INVALID,
@@ -781,14 +781,6 @@ router.post('/admin', Ensure.post(), async (req: Request, res: Response) => {
   try {
     const validatedData = validateUsersCreation(req.body);
 
-    // const existingSystemSupervisor = await User._load(1);
-    // if (!existingSystemSupervisor) {
-    //   return R.handleError(res, HttpStatus.NOT_FOUND, {
-    //     code: 'user_system_not_found',
-    //     message: 'User system does not exist',
-    //   });
-    // }
-
     const tenant = req.tenant;
 
     const userObj = new User()
@@ -848,7 +840,7 @@ router.post('/admin', Ensure.post(), async (req: Request, res: Response) => {
     //   return R.handleError(res, result.status, result.response);
     // }
 
-    const existingAdminRole = await Role._loadAdminRole();
+    const existingAdminRole = await Role._load(RoleValues.EMPLOYEE, false, true);
     if (!existingAdminRole) {
       return R.handleError(res, HttpStatus.NOT_FOUND, {
         code: ROLES_CODES.ADMIN_ROLE_NOT_FOUND,
@@ -856,27 +848,58 @@ router.post('/admin', Ensure.post(), async (req: Request, res: Response) => {
       });
     }
 
+    let adminIds: any = [];
+
     const adminAssigned = await UserRole._listByRole(existingAdminRole.getId()!);
+
     if (adminAssigned && adminAssigned.length > 0) {
+      adminAssigned.map((ad) => adminIds.push(ad.getRole()));
+      // return R.handleError(res, HttpStatus.CONFLICT, {
+      //   code: 'user_admin_already_exists',
+      //   message: 'User already has admin role',
+      // });
+    }
+    if (adminIds.includes(existingAdminRole.getId())) {
       return R.handleError(res, HttpStatus.CONFLICT, {
         code: 'user_admin_already_exists',
         message: 'User already has admin role',
       });
     }
 
-    const existingDefaultRole = await Role._loadDefaultRole();
-    if (!existingDefaultRole) {
+    // const existingDefaultRole = await Role._loadDefaultRole();
+    // if (!existingDefaultRole) {
+    //   return R.handleError(res, HttpStatus.NOT_FOUND, {
+    //     code: ROLES_CODES.DEFAULT_ROLE_NOT_FOUND,
+    //     message: ROLES_ERRORS.DEFAULT_ROLE_NOT_FOUND,
+    //   });
+    // }
+
+    const defaultRole = await Role._load(RoleValues.EMPLOYEE, false, true);
+    if (!defaultRole) {
       return R.handleError(res, HttpStatus.NOT_FOUND, {
         code: ROLES_CODES.DEFAULT_ROLE_NOT_FOUND,
         message: ROLES_ERRORS.DEFAULT_ROLE_NOT_FOUND,
       });
     }
+    const managerRole = await Role._load(RoleValues.MANAGER, false, true);
+    if (!managerRole) {
+      return R.handleError(res, HttpStatus.NOT_FOUND, {
+        code: 'manager_role_not_found',
+        message: 'Role manager not found',
+      });
+    }
 
     await userObj.save();
-
-    const userRoleObj = new UserRole()
-      .setRole(existingDefaultRole.getId()!)
-      .setUser(userObj.getId()!);
+    if (validatedData.supervisor) {
+      const existingSystemSupervisor = await User._load(validatedData.supervisor, true);
+      if (!existingSystemSupervisor) {
+        return R.handleError(res, HttpStatus.NOT_FOUND, {
+          code: 'user_system_not_found',
+          message: 'User system does not exist',
+        });
+      }
+    }
+    const userRoleObj = new UserRole().setRole(defaultRole.getId()!).setUser(userObj.getId()!);
     // .setAssignedBy(existingSystemSupervisor.getId()!);
 
     await userRoleObj.save();
@@ -1987,10 +2010,10 @@ router.post('/share', Ensure.post(), async (req: Request, res: Response) => {
       );
     }
     const response = saved.response.data;
-    const sendToken = await WapService.sendOtp(response.guid, response.phone_number, country);
-    if (sendToken.status !== HttpStatus.SUCCESS) {
-      return R.handleError(res, sendToken.status, sendToken.response);
-    }
+    // const sendToken = await WapService.sendOtp(response.guid, response.phone_number, country);
+    // if (sendToken.status !== HttpStatus.SUCCESS) {
+    //   return R.handleError(res, sendToken.status, sendToken.response);
+    // }
 
     const result = await InvitationService.sendInvitation(response.guid);
     if (result.status !== HttpStatus.SUCCESS) {

@@ -693,8 +693,8 @@ router.post(
               anomalies.length > 0
                 ? 'Clock-in accepté avec anomalies détectées'
                 : TIME_ENTRIES_MESSAGES.CLOCK_IN_SUCCESS,
-            session: await sessionObj.toJSON(responseValue.MINIMAL),
-            entry: await entryObj.toJSON(responseValue.MINIMAL),
+            session: await sessionObj.toJSON(),
+            entry: await entryObj.toJSON(),
             anomalies_detected: anomalies.length,
             auto_memo_created: autoMemo !== null,
             auto_memo_guid: autoMemo?.getGuid(),
@@ -709,17 +709,15 @@ router.post(
 
           // ✅ CRÉER SESSION RÉTROACTIVE SI NÉCESSAIRE
           let sessionToUse = activeSession;
+
+          const tempEntry = new TimeEntries()
+            .setUser(userId)
+            .setSite(siteObj.getId()!)
+            .setPointageType(PointageType.PAUSE_START)
+            .setClockedAt(new Date(validatedData.clocked_at))
+            .setCoordinates(validatedData.latitude, validatedData.longitude);
+
           if (!activeSession && anomalies.some((a) => a.auto_correctable)) {
-            // Créer entry temporaire pour avoir l'ID
-            const tempEntry = new TimeEntries()
-              .setUser(userId)
-              .setSite(siteObj.getId()!)
-              .setPointageType(PointageType.PAUSE_START)
-              .setClockedAt(new Date(validatedData.clocked_at))
-              .setCoordinates(validatedData.latitude, validatedData.longitude);
-
-            await tempEntry.save();
-
             sessionToUse = await AnomalyDetectionService.createRetroactiveSession(
               userId,
               siteObj.getId()!,
@@ -728,35 +726,28 @@ router.post(
           }
 
           // ✅ CRÉER TIME_ENTRY
-          const entryObj = new TimeEntries()
-            .setSession(sessionToUse?.getId() || 0) // 0 si vraiment aucune session
-            .setUser(userId)
-            .setSite(siteObj.getId()!)
-            .setPointageType(PointageType.PAUSE_START)
-            .setClockedAt(new Date(validatedData.clocked_at))
-            .setCoordinates(validatedData.latitude, validatedData.longitude);
-
-          await entryObj.save();
-          await entryObj.accept();
+          tempEntry.setSession(sessionToUse?.getId()!);
+          await tempEntry.save();
+          await tempEntry.accept();
 
           // ✅ GÉNÉRER MÉMO AUTO SI ANOMALIES
           let autoMemo = null;
           if (anomalies.length > 0) {
             autoMemo = await AnomalyDetectionService.generateAutoMemo(
               anomalies,
-              entryObj,
+              tempEntry,
               userId,
               corrections,
             );
 
             if (autoMemo) {
-              entryObj.setMemo(autoMemo.getId()!);
-              await entryObj.save();
+              tempEntry.setMemo(autoMemo.getId()!);
+              await tempEntry.save();
             }
 
             await AnomalyDetectionService.createFraudAlertsForAnomalies(
               anomalies,
-              entryObj,
+              tempEntry,
               userId,
             );
           }
@@ -764,8 +755,8 @@ router.post(
           return R.handleCreated(res, {
             message:
               anomalies.length > 0 ? 'Pause acceptée avec anomalies détectées' : 'Pause started',
-            entry: await entryObj.toJSON(responseValue.MINIMAL),
-            session: sessionToUse ? await sessionToUse.toJSON(responseValue.MINIMAL) : null,
+            entry: await tempEntry.toJSON(),
+            session: sessionToUse ? await sessionToUse.toJSON() : null,
             anomalies_detected: anomalies.length,
             auto_memo_created: autoMemo !== null,
             corrections_applied: corrections.length,
@@ -777,43 +768,54 @@ router.post(
           const { anomalies, corrections, activeSession } =
             await AnomalyDetectionService.detectPauseEndAnomalies(userId, validatedData);
 
-          // ✅ CRÉER ENTRY (même sans session active pour log)
-          const entryObj = new TimeEntries()
-            .setSession(activeSession?.getId() || 0)
+          const tempEntry = new TimeEntries()
             .setUser(userId)
             .setSite(siteObj.getId()!)
-            .setPointageType(PointageType.PAUSE_END)
+            .setPointageType(PointageType.PAUSE_START)
             .setClockedAt(new Date(validatedData.clocked_at))
             .setCoordinates(validatedData.latitude, validatedData.longitude);
 
-          await entryObj.save();
-          await entryObj.accept();
+          // ✅ CRÉER SESSION RÉTROACTIVE SI NÉCESSAIRE
+          let sessionToUse = activeSession;
+          if (!activeSession && anomalies.some((a) => a.auto_correctable)) {
+            sessionToUse = await AnomalyDetectionService.createRetroactiveSession(
+              userId,
+              siteObj.getId()!,
+              tempEntry,
+            );
+          }
+
+          // const entryObj = new TimeEntries()
+          tempEntry.setSession(sessionToUse?.getId()!);
+
+          await tempEntry.save();
+          await tempEntry.accept();
 
           // ✅ MÉMO AUTO
           let autoMemo = null;
           if (anomalies.length > 0) {
             autoMemo = await AnomalyDetectionService.generateAutoMemo(
               anomalies,
-              entryObj,
+              tempEntry,
               userId,
               corrections,
             );
 
             if (autoMemo) {
-              entryObj.setMemo(autoMemo.getId()!);
-              await entryObj.save();
+              tempEntry.setMemo(autoMemo.getId()!);
+              await tempEntry.save();
             }
 
             await AnomalyDetectionService.createFraudAlertsForAnomalies(
               anomalies,
-              entryObj,
+              tempEntry,
               userId,
             );
           }
 
           return R.handleCreated(res, {
             message: anomalies.length > 0 ? 'Pause terminée avec anomalies' : 'Pause ended',
-            entry: await entryObj.toJSON(responseValue.MINIMAL),
+            entry: await tempEntry.toJSON(),
             anomalies_detected: anomalies.length,
             auto_memo_created: autoMemo !== null,
           });
@@ -884,7 +886,7 @@ router.post(
                 ? 'Clock-out accepté avec anomalies'
                 : 'Clock-out successful',
             session: activeSession ? await activeSession.toJSON() : null,
-            entry: await entryObj.toJSON(responseValue.MINIMAL),
+            entry: await entryObj.toJSON(),
             durations,
             anomalies_detected: anomalies.length,
             auto_memo_created: autoMemo !== null,
@@ -904,7 +906,7 @@ router.post(
             );
 
           const entryObj = new TimeEntries()
-            .setSession(activeSession?.getId()!) // || 0
+            .setSession(activeSession?.getId()!)
             .setUser(userId)
             .setSite(siteObj.getId()!)
             .setPointageType(PointageType.EXTERNAL_MISSION)
@@ -946,7 +948,7 @@ router.post(
                 ? 'Mission acceptée avec anomalies'
                 : 'External mission started',
             entry: await entryObj.toJSON(),
-            session: activeSession ? await activeSession.toJSON(responseValue.MINIMAL) : null,
+            session: activeSession ? await activeSession.toJSON() : null,
             anomalies_detected: anomalies.length,
             auto_created_session: autoCreatedSession,
             auto_memo_created: autoMemo !== null,
@@ -1011,8 +1013,8 @@ router.post(
                 : anomalies.length > 0
                   ? 'Mission terminée avec anomalies'
                   : 'External mission ended',
-            entry: await entryObj.toJSON(responseValue.MINIMAL),
-            session: activeSession ? await activeSession.toJSON(responseValue.MINIMAL) : null,
+            entry: await entryObj.toJSON(),
+            session: activeSession ? await activeSession.toJSON() : null,
             anomalies_detected: anomalies.length,
             auto_memo_created: autoMemo !== null,
             auto_created_session: autoCreatedSession,

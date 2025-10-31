@@ -339,3 +339,9 @@ export const DbConstant = {
   TOKE: 'toke',
   USER: 'user',
 };
+
+export const RoleValues = {
+  EMPLOYEE: 'EMPLOYEE',
+  MANAGER: 'MANAGER',
+  ADMIN: 'ADMIN',
+} as const;
