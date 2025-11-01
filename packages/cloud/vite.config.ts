@@ -22,6 +22,10 @@ export default defineConfig({
         resolve(__dirname, 'public'),
         resolve(__dirname, 'node_modules'),
         // resolve(__dirname, '../../shared/src'), // <-- autoriser l'accès à shared
+        // 🧩 ajoute la racine du projet cloud
+        __dirname,
+        // 🧩 et la racine du monorepo si nécessaire
+        resolve(__dirname, '../..'),
       ],
     },
     open: true, // Ouvre automatiquement le navigateur

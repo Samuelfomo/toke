@@ -1,4 +1,19 @@
 <template>
+  <section v-if="loading" class="dashboard-hero-skeleton">
+    <div class="skeleton-header"></div>
+    <div class="stats-grid">
+      <div class="skeleton-card"></div>
+      <div class="skeleton-card"></div>
+      <div class="skeleton-card"></div>
+      <div class="skeleton-card"></div>
+    </div>
+    <div class="skeleton-actions-title"></div>
+    <div class="skeleton-actions-grid">
+      <div class="skeleton-action-btn"></div>
+      <div class="skeleton-action-btn"></div>
+      <div class="skeleton-action-btn"></div>
+    </div>
+  </section>
   <section class="dashboard-hero">
     <div class="hero-header">
       <h1 class="hero-title">Tableau de bord</h1>
@@ -137,7 +152,13 @@ const stats = ref<Stats>({
     label: 'Dernière activité'
   }
 })
-
+// Ajoutez la prop `loading` pour que le parent puisse contrôler l'état
+const props = defineProps({
+  loading: {
+    type: Boolean,
+    default: true
+  }
+})
 // Vous devez définir lastUpdate quelque part
 const lastUpdate = ref('09:30')
 
@@ -153,5 +174,44 @@ const presenceRate = computed(() => {
 </script>
 
 <style>
-/* Les styles sont importés depuis le fichier CSS séparé */
+/* ... Styles pour dashboardHero.vue ... */
+
+/* Styles pour le Skeleton */
+.dashboard-hero-skeleton {
+  padding: 20px;
+}
+.skeleton-header, .skeleton-actions-title {
+  width: 60%;
+  height: 25px;
+  background-color: #f0f0f0;
+  border-radius: 4px;
+  margin-bottom: 20px;
+  animation: pulse 1.5s infinite ease-in-out;
+}
+.skeleton-actions-title {
+  width: 40%;
+}
+.stats-grid, .skeleton-actions-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 20px;
+  margin-bottom: 30px;
+}
+.skeleton-card {
+  height: 120px;
+  background-color: #f0f0f0;
+  border-radius: 8px;
+  animation: pulse 1.5s infinite ease-in-out;
+}
+.skeleton-action-btn {
+  height: 50px;
+  background-color: #f0f0f0;
+  border-radius: 8px;
+  animation: pulse 1.5s infinite ease-in-out;
+}
+@keyframes pulse {
+  0% { background-color: #f0f0f0; }
+  50% { background-color: #e0e0e0; }
+  100% { background-color: #f0f0f0; }
+}
 </style>

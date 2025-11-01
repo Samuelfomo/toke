@@ -101,6 +101,7 @@
     <div class="manager-actions">
       <h2 class="section-title">Actions rapides</h2>
       <div class="actions-grid">
+
         <button @click="showAddEmployee = true" class="action-card primary">
           <div class="action-icon">
             <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -344,6 +345,7 @@
       :available-sites="employeeStore.sites.value"
     />
 
+
     <SiteModal
       v-if="showAddSite"
       @close="showAddSite = false"
@@ -359,7 +361,8 @@ import equipeCss from "../assets/css/toke-equipe-09.css?url"
 import dashboardCss from "../assets/css/toke-dMain-04.css?url"
 import Header from '../views/components/header.vue'
 import HeadBuilder from '@/utils/HeadBuilder';
-import { useEmployeeStore } from '../composables/useEmployeeStore'
+import { useEmployeeStore } from '../composables/useEmployeeStore';
+import EmployeeModal from '../views/components/employeeModal.vue';
 
 interface Manager {
   id: number
