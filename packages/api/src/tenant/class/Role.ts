@@ -17,12 +17,13 @@ export default class Role extends RoleModel {
   ): Promise<Role | null> {
     return new Role().load(identifier, byGuid, byCode);
   }
-  static _loadDefaultRole(): Promise<Role | null> {
-    return new Role().loadDefaultRole();
-  }
-  static _loadAdminRole(): Promise<Role | null> {
-    return new Role().loadAdminRole();
-  }
+
+  // static _loadDefaultRole(): Promise<Role | null> {
+  //   return new Role().loadDefaultRole();
+  // }
+  // static _loadAdminRole(): Promise<Role | null> {
+  //   return new Role().loadAdminRole();
+  // }
 
   static _list(
     conditions: Record<string, any> = {},
@@ -30,6 +31,7 @@ export default class Role extends RoleModel {
   ): Promise<Role[] | null> {
     return new Role().list(conditions, paginationOptions);
   }
+
   static _listBySystemRole(
     systemRole: boolean,
     paginationOptions: { offset?: number; limit?: number } = {},
@@ -86,15 +88,19 @@ export default class Role extends RoleModel {
   getPermission(): Record<string, any> | String[] | undefined {
     return this.permissions;
   }
+
   isSystemRole(): boolean | undefined {
     return this.system_role;
   }
-  isDefaultRole(): boolean | undefined {
-    return this.default_role;
-  }
-  isAdminRole(): boolean | undefined {
-    return this.admin_role;
-  }
+
+  // isDefaultRole(): boolean | undefined {
+  //   return this.default_role;
+  // }
+  //
+  // isAdminRole(): boolean | undefined {
+  //   return this.admin_role;
+  // }
+
   // === SETTERS FLUENT ===
 
   setGuid(guid: string): Role {
@@ -127,14 +133,15 @@ export default class Role extends RoleModel {
     return this;
   }
 
-  setDefaultRole(defaultRole: boolean): Role {
-    this.default_role = defaultRole;
-    return this;
-  }
-  setAdminRole(adminRole: boolean): Role {
-    this.admin_role = adminRole;
-    return this;
-  }
+  // setDefaultRole(defaultRole: boolean): Role {
+  //   this.default_role = defaultRole;
+  //   return this;
+  // }
+  //
+  // setAdminRole(adminRole: boolean): Role {
+  //   this.admin_role = adminRole;
+  //   return this;
+  // }
 
   isNew(): boolean {
     return this.id === undefined;
@@ -165,20 +172,22 @@ export default class Role extends RoleModel {
     if (!data) return null;
     return this.hydrate(data);
   }
-  async loadDefaultRole(): Promise<Role | null> {
-    const data = await this.findExistingDefaultRole();
-    if (!data) {
-      return null;
-    }
-    return this.hydrate(data);
-  }
-  async loadAdminRole(): Promise<Role | null> {
-    const data = await this.findExistingAdminRole();
-    if (!data) {
-      return null;
-    }
-    return this.hydrate(data);
-  }
+
+  // async loadDefaultRole(): Promise<Role | null> {
+  //   const data = await this.findExistingDefaultRole();
+  //   if (!data) {
+  //     return null;
+  //   }
+  //   return this.hydrate(data);
+  // }
+  //
+  // async loadAdminRole(): Promise<Role | null> {
+  //   const data = await this.findExistingAdminRole();
+  //   if (!data) {
+  //     return null;
+  //   }
+  //   return this.hydrate(data);
+  // }
 
   async list(
     conditions: Record<string, any> = {},

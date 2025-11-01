@@ -9,6 +9,7 @@ import {
   UserRolesValidationUtils,
   USERS_CODES,
   USERS_ERRORS,
+  UsersValidationUtils,
   validateUserRoleAssignment,
   validateUserRolesFilters,
 } from '@toke/shared';
@@ -19,7 +20,7 @@ import User from '../class/User.js';
 import Role from '../class/Role.js';
 import UserRole from '../class/UserRole.js';
 import Revision from '../../tools/revision.js';
-import { tableName } from '../../utils/response.model.js';
+import { RoleValues, tableName } from '../../utils/response.model.js';
 
 const router = Router();
 
@@ -281,6 +282,72 @@ router.delete('/:guid', Ensure.delete(), async (req: Request, res: Response) => 
   } catch (error: any) {
     return R.handleError(res, HttpStatus.INTERNAL_ERROR, {
       code: USER_ROLES_CODES.DELETE_FAILED,
+      message: error.message,
+    });
+  }
+});
+
+// 👤 Promote an existing employee to manager
+router.post('/manager', Ensure.post(), async (req: Request, res: Response) => {
+  try {
+    const { user } = req.body;
+    if (!UsersValidationUtils.validateGuid(user)) {
+      return R.handleError(res, HttpStatus.BAD_REQUEST, {
+        code: USER_ROLES_CODES.USER_INVALID,
+        message: USER_ROLES_ERRORS.USER_INVALID,
+      });
+    }
+    const userObj = await User._load(user, true);
+    if (!userObj) {
+      return R.handleError(res, HttpStatus.NOT_FOUND, {
+        code: USERS_CODES.USER_NOT_FOUND,
+        message: USERS_ERRORS.NOT_FOUND,
+      });
+    }
+
+    // Charger les rôles requis
+    const [managerRole, defaultRole] = await Promise.all([
+      Role._load(RoleValues.MANAGER, false, true),
+      Role._load(RoleValues.EMPLOYEE, false, true),
+    ]);
+
+    if (!managerRole || !defaultRole) {
+      return R.handleError(res, HttpStatus.NOT_FOUND, {
+        code: USER_ROLES_CODES.ROLE_NOT_FOUND,
+        message: 'One or more roles (manager/employee) are missing',
+      });
+    }
+
+    const identified1 = { user: userObj.getId()!, role: defaultRole.getId()! };
+    const identified2 = { user: userObj.getId()!, role: managerRole.getId()! };
+
+    const [isEmployee, isManager] = await Promise.all([
+      UserRole._load(identified1, false, true),
+      UserRole._load(identified2, false, true),
+    ]);
+    if (!isEmployee) {
+      return R.handleError(res, HttpStatus.UNAUTHORIZED, {
+        code: 'user_not_employee',
+        message: 'User must be an employee before becoming a manager',
+      });
+    }
+
+    if (isManager) {
+      return R.handleError(res, HttpStatus.CONFLICT, {
+        code: 'already_manager',
+        message: 'User is already assigned as manager',
+      });
+    }
+
+    const userRoleObj = new UserRole()
+      .setRole(managerRole.getId()!)
+      .setUser(userObj.getId()!)
+      .setAssignedBy(isEmployee.getAssignedBy()!);
+    await userRoleObj.save();
+    return R.handleCreated(res, await userRoleObj.toJSON());
+  } catch (error: any) {
+    return R.handleError(res, HttpStatus.INTERNAL_ERROR, {
+      code: USER_ROLES_CODES.CREATION_FAILED,
       message: error.message,
     });
   }

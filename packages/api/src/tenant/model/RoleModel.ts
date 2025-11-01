@@ -13,8 +13,8 @@ export default class RoleModel extends BaseModel {
     description: 'description',
     permissions: 'permissions',
     system_role: 'system_role',
-    default_role: 'default_role',
-    admin_role: 'admin_role',
+    // default_role: 'default_role',
+    // admin_role: 'admin_role',
     created_at: 'created_at',
     updated_at: 'updated_at',
   } as const;
@@ -26,8 +26,8 @@ export default class RoleModel extends BaseModel {
   protected description?: string;
   protected permissions?: Record<string, any> | string[];
   protected system_role?: boolean;
-  protected default_role?: boolean;
-  protected admin_role?: boolean;
+  // protected default_role?: boolean;
+  // protected admin_role?: boolean;
   protected created_at?: Date;
   protected updated_at?: Date;
 
@@ -47,21 +47,17 @@ export default class RoleModel extends BaseModel {
     return await this.findOne(this.db.tableName, { [this.db.code]: code.toUpperCase() });
   }
 
-  protected async findExistingDefaultRole(): Promise<any> {
-    return await this.findOne(this.db.tableName, {
-      [this.db.default_role]: !ROLES_DEFAULTS.DEFAULT_ROLE,
-    });
-
-    // return !!role;
-  }
-
-  protected async findExistingAdminRole(): Promise<any> {
-    return await this.findOne(this.db.tableName, {
-      [this.db.admin_role]: !ROLES_DEFAULTS.ADMIN_ROLE,
-    });
-
-    // return !!role;
-  }
+  // protected async findExistingDefaultRole(): Promise<any> {
+  //   return await this.findOne(this.db.tableName, {
+  //     [this.db.default_role]: !ROLES_DEFAULTS.DEFAULT_ROLE,
+  //   });
+  // }
+  //
+  // protected async findExistingAdminRole(): Promise<any> {
+  //   return await this.findOne(this.db.tableName, {
+  //     [this.db.admin_role]: !ROLES_DEFAULTS.ADMIN_ROLE,
+  //   });
+  // }
 
   protected async findByAttribut(attribute: string, value: any): Promise<any> {
     return await this.findOne(this.db.tableName, { [attribute]: value });
@@ -92,18 +88,18 @@ export default class RoleModel extends BaseModel {
       throw new Error(ROLES_ERRORS.CODE_ALREADY_EXISTS);
     }
 
-    if (this.default_role === !ROLES_DEFAULTS.DEFAULT_ROLE) {
-      const existingDefaultRole = await this.findExistingDefaultRole();
-      if (existingDefaultRole) {
-        throw new Error(ROLES_ERRORS.DEFAULT_ROLE_ALREADY_EXISTS);
-      }
-    }
-    if (this.admin_role === !ROLES_DEFAULTS.ADMIN_ROLE) {
-      const existingAdminRole = await this.findExistingAdminRole();
-      if (existingAdminRole) {
-        throw new Error(ROLES_ERRORS.ADMIN_ROLE_ALREADY_EXISTS);
-      }
-    }
+    // if (this.default_role === !ROLES_DEFAULTS.DEFAULT_ROLE) {
+    //   const existingDefaultRole = await this.findExistingDefaultRole();
+    //   if (existingDefaultRole) {
+    //     throw new Error(ROLES_ERRORS.DEFAULT_ROLE_ALREADY_EXISTS);
+    //   }
+    // }
+    // if (this.admin_role === !ROLES_DEFAULTS.ADMIN_ROLE) {
+    //   const existingAdminRole = await this.findExistingAdminRole();
+    //   if (existingAdminRole) {
+    //     throw new Error(ROLES_ERRORS.ADMIN_ROLE_ALREADY_EXISTS);
+    //   }
+    // }
 
     const lastID = await this.insertOne(this.db.tableName, {
       [this.db.guid]: guid,
@@ -112,8 +108,8 @@ export default class RoleModel extends BaseModel {
       [this.db.description]: this.description,
       [this.db.permissions]: this.permissions,
       [this.db.system_role]: this.system_role ? this.system_role : ROLES_DEFAULTS.SYSTEM_ROLE,
-      [this.db.default_role]: this.default_role ? this.default_role : ROLES_DEFAULTS.DEFAULT_ROLE,
-      [this.db.admin_role]: this.admin_role ? this.admin_role : ROLES_DEFAULTS.ADMIN_ROLE,
+      // [this.db.default_role]: this.default_role ? this.default_role : ROLES_DEFAULTS.DEFAULT_ROLE,
+      // [this.db.admin_role]: this.admin_role ? this.admin_role : ROLES_DEFAULTS.ADMIN_ROLE,
     });
     if (!lastID) {
       throw new Error(ROLES_ERRORS.CREATION_FAILED);
@@ -143,18 +139,18 @@ export default class RoleModel extends BaseModel {
     if (this.system_role !== undefined) {
       updateData[this.db.system_role] = this.system_role;
     }
-    if (this.default_role !== undefined) {
-      const existingDefaultRole = await this.findExistingDefaultRole();
-      if (existingDefaultRole && existingDefaultRole.id !== this.id) {
-        throw new Error(ROLES_ERRORS.DEFAULT_ROLE_ALREADY_EXISTS);
-      }
-    }
-    if (this.admin_role !== undefined) {
-      const existingAdminRole = await this.findExistingAdminRole();
-      if (existingAdminRole && existingAdminRole.id !== this.id) {
-        throw new Error(ROLES_ERRORS.ADMIN_ROLE_ALREADY_EXISTS);
-      }
-    }
+    // if (this.default_role !== undefined) {
+    //   const existingDefaultRole = await this.findExistingDefaultRole();
+    //   if (existingDefaultRole && existingDefaultRole.id !== this.id) {
+    //     throw new Error(ROLES_ERRORS.DEFAULT_ROLE_ALREADY_EXISTS);
+    //   }
+    // }
+    // if (this.admin_role !== undefined) {
+    //   const existingAdminRole = await this.findExistingAdminRole();
+    //   if (existingAdminRole && existingAdminRole.id !== this.id) {
+    //     throw new Error(ROLES_ERRORS.ADMIN_ROLE_ALREADY_EXISTS);
+    //   }
+    // }
     const affected = await this.updateOne(this.db.tableName, { [this.db.id]: this.id }, updateData);
     if (!affected) {
       throw new Error(ROLES_ERRORS.UPDATE_FAILED);
@@ -191,12 +187,12 @@ export default class RoleModel extends BaseModel {
       throw new Error(ROLES_ERRORS.SYSTEM_ROLE_INVALID);
     }
 
-    if (this.default_role && !RolesValidationUtils.validateDefaultRole(this.default_role)) {
-      throw new Error(ROLES_ERRORS.DEFAULT_ROLE_INVALID);
-    }
-    if (this.admin_role && !RolesValidationUtils.validateDefaultRole(this.admin_role)) {
-      throw new Error(ROLES_ERRORS.ADMIN_ROLE_INVALID);
-    }
+    // if (this.default_role && !RolesValidationUtils.validateDefaultRole(this.default_role)) {
+    //   throw new Error(ROLES_ERRORS.DEFAULT_ROLE_INVALID);
+    // }
+    // if (this.admin_role && !RolesValidationUtils.validateDefaultRole(this.admin_role)) {
+    //   throw new Error(ROLES_ERRORS.ADMIN_ROLE_INVALID);
+    // }
 
     const cleaned = RolesValidationUtils.cleanRoleData(this);
     Object.assign(this, cleaned);

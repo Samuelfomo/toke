@@ -632,6 +632,9 @@ export default class Memos extends MemosModel {
       [RS.INCIDENT_DATE_TIME]: this.incident_datetime,
       [RS.AUTO_GENERATED]: this.auto_generated,
       [RS.AUTO_REASON]: this.auto_reason,
+      [RS.ATTACHMENTS]: this.attachments,
+      [RS.VALIDATOR_COMMENTS]: this.validator_comments,
+      [RS.PROCESSED_AT]: this.processed_at,
       [RS.CREATED_AT]: this.created_at,
       [RS.UPDATED_AT]: this.updated_at,
     };
@@ -643,7 +646,6 @@ export default class Memos extends MemosModel {
         [RS.TARGET_USER]: target?.getGuid(),
         [RS.VALIDATOR_USER]: validator?.getGuid(),
         [RS.AFFECTED_SESSION]: session?.getGuid(),
-        [RS.PROCESSED_AT]: this.processed_at,
       };
     }
     return {
@@ -655,8 +657,6 @@ export default class Memos extends MemosModel {
       [RS.AFFECTED_ENTRIES]: entries
         ? await Promise.all(entries.map(async (entry) => await entry.toJSON(responseValue.MINIMAL)))
         : null,
-      [RS.ATTACHMENTS]: this.attachments,
-      [RS.VALIDATOR_COMMENTS]: this.validator_comments,
       [RS.PROCESSED_AT]: this.processed_at,
       // Informations calculées
       [RS.IS_PREVENTIVE]: this.isPreventive(),

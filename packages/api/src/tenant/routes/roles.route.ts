@@ -72,12 +72,12 @@ router.post('/', Ensure.post(), async (req: Request, res: Response) => {
     if (validatedData.system_role) {
       roleObj.setSystemRole(validatedData.system_role);
     }
-    if (validatedData.default_role) {
-      roleObj.setDefaultRole(validatedData.default_role);
-    }
-    if (validatedData.admin_role) {
-      roleObj.setAdminRole(validatedData.admin_role);
-    }
+    // if (validatedData.default_role) {
+    //   roleObj.setDefaultRole(validatedData.default_role);
+    // }
+    // if (validatedData.admin_role) {
+    //   roleObj.setAdminRole(validatedData.admin_role);
+    // }
     await roleObj.save();
     return R.handleCreated(res, roleObj.toJSON());
   } catch (error: any) {
@@ -143,12 +143,12 @@ router.put('/:guid', Ensure.put(), async (req: Request, res: Response) => {
     if (validatedData.system_role) {
       roleObj.setSystemRole(validatedData.system_role);
     }
-    if (validatedData.default_role) {
-      roleObj.setDefaultRole(validatedData.default_role);
-    }
-    if (validatedData.admin_role) {
-      roleObj.setAdminRole(validatedData.admin_role);
-    }
+    // if (validatedData.default_role) {
+    //   roleObj.setDefaultRole(validatedData.default_role);
+    // }
+    // if (validatedData.admin_role) {
+    //   roleObj.setAdminRole(validatedData.admin_role);
+    // }
     await roleObj.save();
     return R.handleSuccess(res, roleObj.toJSON());
   } catch (error: any) {

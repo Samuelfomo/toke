@@ -65,24 +65,24 @@ export const RolesDbStructure = {
       },
       comment: 'System role',
     },
-    default_role: {
-      type: DataTypes.BOOLEAN,
-      allowNull: false,
-      defaultValue: false,
-      validate: {
-        isBoolean: true,
-      },
-      comment: 'Default role',
-    },
-    admin_role: {
-      type: DataTypes.BOOLEAN,
-      allowNull: false,
-      defaultValue: false,
-      validate: {
-        isBoolean: true,
-      },
-      comment: 'Admin role',
-    },
+    // default_role: {
+    //   type: DataTypes.BOOLEAN,
+    //   allowNull: false,
+    //   defaultValue: false,
+    //   validate: {
+    //     isBoolean: true,
+    //   },
+    //   comment: 'Default role',
+    // },
+    // admin_role: {
+    //   type: DataTypes.BOOLEAN,
+    //   allowNull: false,
+    //   defaultValue: false,
+    //   validate: {
+    //     isBoolean: true,
+    //   },
+    //   comment: 'Admin role',
+    // },
   } as ModelAttributes,
   options: {
     tableName: tableName.ROLES,
@@ -114,14 +114,14 @@ export const RolesDbStructure = {
         fields: ['system_role'],
         name: 'idx_role_system_role',
       },
-      {
-        fields: ['default_role'],
-        name: 'idx_role_default_role',
-      },
-      {
-        fields: ['admin_role'],
-        name: 'idx_role_admin_role',
-      },
+      // {
+      //   fields: ['default_role'],
+      //   name: 'idx_role_default_role',
+      // },
+      // {
+      //   fields: ['admin_role'],
+      //   name: 'idx_role_admin_role',
+      // },
     ],
   } as ModelOptions,
 };

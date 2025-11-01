@@ -281,7 +281,7 @@ router.post('/', Ensure.post(), async (req: Request, res: Response) => {
     //   });
     // }
 
-    const existingDefaultRole = await Role._loadDefaultRole();
+    const existingDefaultRole = await Role._load(RoleValues.EMPLOYEE, false, true);
     if (!existingDefaultRole) {
       return R.handleError(res, HttpStatus.NOT_FOUND, {
         code: ROLES_CODES.DEFAULT_ROLE_NOT_FOUND,
@@ -306,15 +306,15 @@ router.post('/', Ensure.post(), async (req: Request, res: Response) => {
 
     await orgHierarchyObj.save();
 
-    // // Envoyer l'OTP via WhatsApp
-    // const result = await WapService.sendOtp(
-    //   userObj.getOtpToken()!,
-    //   validatedData.phone_number,
-    //   country,
-    // );
-    // if (result.status !== HttpStatus.SUCCESS) {
-    //   return R.handleError(res, result.status, result.response);
-    // }
+    // Envoyer l'OTP via WhatsApp
+    const result = await WapService.sendOtp(
+      userObj.getOtpToken()!,
+      validatedData.phone_number,
+      country,
+    );
+    if (result.status !== HttpStatus.SUCCESS) {
+      return R.handleError(res, result.status, result.response);
+    }
 
     return R.handleCreated(res, {
       message: 'User created and OTP sent successfully',
@@ -342,6 +342,184 @@ router.post('/', Ensure.post(), async (req: Request, res: Response) => {
       return R.handleError(res, HttpStatus.INTERNAL_ERROR, {
         code: USERS_CODES.CREATION_FAILED,
         message: error.message,
+      });
+    }
+  }
+});
+
+//👤 Add a new manager to the tenant with basic information and automatic role assignment.
+router.post('/manager/:affiliate', Ensure.post(), async (req: Request, res: Response) => {
+  try {
+    const validatedData = validateUsersCreation(req.body);
+    const tenant = req.tenant;
+    const { affiliate } = req.params;
+
+    // === 1️⃣ Validation préliminaire avant toute sauvegarde ===
+    // Charger les rôles requis
+    const [adminRole, managerRole, defaultRole] = await Promise.all([
+      Role._load(RoleValues.ADMIN, false, true),
+      Role._load(RoleValues.MANAGER, false, true),
+      Role._load(RoleValues.EMPLOYEE, false, true),
+    ]);
+
+    if (!adminRole || !managerRole || !defaultRole) {
+      return R.handleError(res, HttpStatus.NOT_FOUND, {
+        code: 'role_not_found',
+        message: 'One or more roles (admin/manager/employee) are missing',
+      });
+    }
+
+    // Vérifier s’il existe déjà un admin
+    const existingAdmins = await UserRole._listByRole(adminRole.getId()!);
+    const isFirstUser = existingAdmins?.length === 0;
+
+    let affiliateObj;
+    let supervisorObj;
+
+    // === 2️⃣ Vérifications spécifiques avant toute sauvegarde ===
+    if (!isFirstUser) {
+      if (!affiliate || !validatedData.supervisor) {
+        return R.handleError(res, HttpStatus.BAD_REQUEST, {
+          code: 'missing_required_fields',
+          message: 'Both affiliate and supervisor are required for manager creation',
+        });
+      }
+
+      if (!UsersValidationUtils.validateGuid(affiliate)) {
+        return R.handleError(res, HttpStatus.BAD_REQUEST, {
+          code: 'affiliate_guid_invalid',
+          message: 'Invalid affiliate guid',
+        });
+      }
+
+      // Charger les utilisateurs assignateurs
+      const [existingAffiliate, existingSupervisor] = await Promise.all([
+        User._load(affiliate, true),
+        User._load(validatedData.supervisor, true),
+      ]);
+
+      if (!existingAffiliate) {
+        return R.handleError(res, HttpStatus.NOT_FOUND, {
+          code: 'affiliate_not_found',
+          message: 'Affiliate user does not exist',
+        });
+      }
+
+      affiliateObj = existingAffiliate;
+
+      if (!existingSupervisor) {
+        return R.handleError(res, HttpStatus.NOT_FOUND, {
+          code: 'supervisor_not_found',
+          message: 'Supervisor user does not exist',
+        });
+      }
+      supervisorObj = existingSupervisor;
+    }
+
+    // === 3️⃣ Construction de l’objet User ===
+    const buildUserObject = (data: any, tenant: any) => {
+      const user = new User()
+        .setTenant(tenant.config.reference)
+        .setFirstName(data.first_name)
+        .setLastName(data.last_name)
+        .setPhoneNumber(data.phone_number);
+
+      if (data.email) user.setEmail(data.email);
+      if (data.employee_code) user.setEmployeeCode(data.employee_code);
+      if (data.hire_date) user.setHireDate(new Date(data.hire_date));
+      if (data.department) user.setDepartment(data.department);
+      if (data.job_title) user.setJobTitle(data.job_title);
+
+      return user;
+    };
+
+    let userObj = buildUserObject(validatedData, tenant);
+
+    // Générer l’OTP avant sauvegarde
+    await userObj.generateUniqueOtpToken(
+      parseInt(validatedData.otp_expires_at?.toDateString()!, 10),
+    );
+
+    // === 4️⃣ Sauvegarde du user ===
+    await userObj.save();
+
+    // === 5️⃣ Attribution des rôles ===
+    if (isFirstUser) {
+      // Premier utilisateur → Admin (aucun assignedBy)
+      const rolesToAssign = [adminRole, managerRole, defaultRole];
+      for (const role of rolesToAssign) {
+        const userRoleObj = new UserRole().setRole(role.getId()!).setUser(userObj.getId()!);
+        await userRoleObj.save();
+      }
+
+      const roles = await UserRole.getUserRoles(userObj.getId()!);
+      return R.handleCreated(res, {
+        message: 'Admin user created successfully',
+        user: {
+          ...userObj.toJSON(),
+          roles: {
+            count: roles.length,
+            items: roles.map((r) => r.toJSON()),
+          },
+        },
+      });
+    }
+
+    // Autres managers
+    const managerRoleObj = new UserRole()
+      .setRole(managerRole.getId()!)
+      .setUser(userObj.getId()!)
+      .setAssignedBy(affiliateObj?.getId()!);
+
+    const employeeRoleObj = new UserRole()
+      .setRole(defaultRole.getId()!)
+      .setUser(userObj.getId()!)
+      .setAssignedBy(supervisorObj?.getId()!);
+
+    const orgHierarchyObj = new OrgHierarchy()
+      .setSubordinate(userObj.getId()!)
+      .setSupervisor(supervisorObj?.getId()!)
+      .setDepartment(userObj.getDepartment()!)
+      .setEffectiveFrom(ORG_HIERARCHY_DEFAULTS.EFFECTIVE_FROM);
+
+    await managerRoleObj.save();
+    await employeeRoleObj.save();
+
+    await orgHierarchyObj.save();
+
+    const roles = await UserRole.getUserRoles(userObj.getId()!);
+
+    return R.handleCreated(res, {
+      message: 'Manager user created successfully',
+      user: {
+        ...userObj.toJSON(),
+        roles: {
+          count: roles.length,
+          items: roles.map((r) => r.toJSON()),
+        },
+      },
+    });
+  } catch (error: any) {
+    if (error.issues) {
+      return R.handleError(res, HttpStatus.BAD_REQUEST, {
+        code: USERS_CODES.VALIDATION_FAILED,
+        message: USERS_ERRORS.VALIDATION_FAILED,
+        details: error.issues,
+      });
+    } else if (error.message.includes('already exists')) {
+      return R.handleError(res, HttpStatus.CONFLICT, {
+        code: USERS_CODES.EMAIL_ALREADY_EXISTS,
+        message: error.message,
+      });
+    } else if (error.message.includes('required')) {
+      return R.handleError(res, HttpStatus.BAD_REQUEST, {
+        code: USERS_CODES.VALIDATION_FAILED,
+        message: error.message,
+      });
+    } else {
+      return R.handleError(res, HttpStatus.INTERNAL_ERROR, {
+        code: USERS_CODES.CREATION_FAILED,
+        message: error.message || error,
       });
     }
   }
@@ -777,177 +955,173 @@ router.delete('/:guid', Ensure.delete(), async (req: Request, res: Response) => 
   }
 });
 
-router.post('/admin', Ensure.post(), async (req: Request, res: Response) => {
-  try {
-    const validatedData = validateUsersCreation(req.body);
-
-    const tenant = req.tenant;
-
-    const userObj = new User()
-      .setTenant(tenant.config.reference)
-      .setFirstName(validatedData.first_name)
-      .setLastName(validatedData.last_name)
-      .setPhoneNumber(validatedData.phone_number);
-
-    if (validatedData.email) {
-      userObj.setEmail(validatedData.email);
-    }
-
-    if (validatedData.employee_code) {
-      userObj.setEmployeeCode(validatedData.employee_code);
-    }
-
-    if (validatedData.hire_date) {
-      userObj.setHireDate(new Date(validatedData.hire_date));
-    }
-
-    if (validatedData.department) {
-      userObj.setDepartment(validatedData.department);
-    }
-
-    if (validatedData.job_title) {
-      userObj.setJobTitle(validatedData.job_title);
-    }
-
-    // Génération OTP pour nouvel utilisateur
-    await userObj.generateUniqueOtpToken(
-      parseInt(validatedData.otp_expires_at?.toDateString()!, 10) || 1440,
-    ); // 24h par défaut
-
-    // const { country } = req.body;
-    // if (!CountryValidationUtils.validateIsoCode(country)) {
-    //   return R.handleError(res, HttpStatus.BAD_REQUEST, {
-    //     code: 'country_code_invalid',
-    //     message: COUNTRY_ERRORS.CODE_INVALID,
-    //   });
-    // }
-
-    // const existingCountry = await Country._load(country, false, true);
-    // if (!existingCountry) {
-    //   return R.handleError(res, HttpStatus.NOT_FOUND, {
-    //     code: 'country_not_found',
-    //     message: COUNTRY_ERRORS.NOT_FOUND,
-    //   });
-    // }
-    //
-    // // Envoyer l'OTP via WhatsApp
-    // const result = await WapService.sendOtp(
-    //   userObj.getOtpToken()!,
-    //   validatedData.phone_number,
-    //   country,
-    // );
-    // if (result.status !== HttpStatus.SUCCESS) {
-    //   return R.handleError(res, result.status, result.response);
-    // }
-
-    const existingAdminRole = await Role._load(RoleValues.EMPLOYEE, false, true);
-    if (!existingAdminRole) {
-      return R.handleError(res, HttpStatus.NOT_FOUND, {
-        code: ROLES_CODES.ADMIN_ROLE_NOT_FOUND,
-        message: ROLES_ERRORS.ADMIN_ROLE_NOT_FOUND,
-      });
-    }
-
-    let adminIds: any = [];
-
-    const adminAssigned = await UserRole._listByRole(existingAdminRole.getId()!);
-
-    if (adminAssigned && adminAssigned.length > 0) {
-      adminAssigned.map((ad) => adminIds.push(ad.getRole()));
-      // return R.handleError(res, HttpStatus.CONFLICT, {
-      //   code: 'user_admin_already_exists',
-      //   message: 'User already has admin role',
-      // });
-    }
-    if (adminIds.includes(existingAdminRole.getId())) {
-      return R.handleError(res, HttpStatus.CONFLICT, {
-        code: 'user_admin_already_exists',
-        message: 'User already has admin role',
-      });
-    }
-
-    // const existingDefaultRole = await Role._loadDefaultRole();
-    // if (!existingDefaultRole) {
-    //   return R.handleError(res, HttpStatus.NOT_FOUND, {
-    //     code: ROLES_CODES.DEFAULT_ROLE_NOT_FOUND,
-    //     message: ROLES_ERRORS.DEFAULT_ROLE_NOT_FOUND,
-    //   });
-    // }
-
-    const defaultRole = await Role._load(RoleValues.EMPLOYEE, false, true);
-    if (!defaultRole) {
-      return R.handleError(res, HttpStatus.NOT_FOUND, {
-        code: ROLES_CODES.DEFAULT_ROLE_NOT_FOUND,
-        message: ROLES_ERRORS.DEFAULT_ROLE_NOT_FOUND,
-      });
-    }
-    const managerRole = await Role._load(RoleValues.MANAGER, false, true);
-    if (!managerRole) {
-      return R.handleError(res, HttpStatus.NOT_FOUND, {
-        code: 'manager_role_not_found',
-        message: 'Role manager not found',
-      });
-    }
-
-    await userObj.save();
-    if (validatedData.supervisor) {
-      const existingSystemSupervisor = await User._load(validatedData.supervisor, true);
-      if (!existingSystemSupervisor) {
-        return R.handleError(res, HttpStatus.NOT_FOUND, {
-          code: 'user_system_not_found',
-          message: 'User system does not exist',
-        });
-      }
-    }
-    const userRoleObj = new UserRole().setRole(defaultRole.getId()!).setUser(userObj.getId()!);
-    // .setAssignedBy(existingSystemSupervisor.getId()!);
-
-    await userRoleObj.save();
-
-    const newUserRoleObj = new UserRole()
-      .setRole(existingAdminRole.getId()!)
-      .setUser(userObj.getId()!);
-    // .setAssignedBy(existingSystemSupervisor.getId()!);
-
-    await newUserRoleObj.save();
-
-    const roles = await UserRole.getUserRoles(userObj.getId()!);
-
-    return R.handleCreated(res, {
-      // message: 'User created and OTP sent successfully',
-      user: {
-        ...userObj.toJSON(),
-        roles: {
-          count: roles.length,
-          items: roles.map((role) => role.toJSON()),
-        },
-      },
-    });
-  } catch (error: any) {
-    if (error.issues) {
-      return R.handleError(res, HttpStatus.BAD_REQUEST, {
-        code: USERS_CODES.VALIDATION_FAILED,
-        message: USERS_ERRORS.VALIDATION_FAILED,
-        details: error.issues,
-      });
-    } else if (error.message.includes('already exists')) {
-      return R.handleError(res, HttpStatus.CONFLICT, {
-        code: USERS_CODES.EMAIL_ALREADY_EXISTS,
-        message: error.message,
-      });
-    } else if (error.message.includes('required')) {
-      return R.handleError(res, HttpStatus.BAD_REQUEST, {
-        code: USERS_CODES.VALIDATION_FAILED,
-        message: error.message,
-      });
-    } else {
-      return R.handleError(res, HttpStatus.INTERNAL_ERROR, {
-        code: USERS_CODES.CREATION_FAILED,
-        message: error,
-      });
-    }
-  }
-});
+// router.post('/manager/:affiliate', Ensure.post(), async (req: Request, res: Response) => {
+//   try {
+//     const { affiliate } = req.params;
+//     const validatedData = validateUsersCreation(req.body);
+//     const tenant = req.tenant;
+//
+//     // Charger les rôles nécessaires avant toute création
+//     const adminRole = await Role._load(RoleValues.ADMIN, false, true);
+//     const managerRole = await Role._load(RoleValues.MANAGER, false, true);
+//     const defaultRole = await Role._load(RoleValues.EMPLOYEE, false, true);
+//
+//     if (!adminRole || !managerRole || !defaultRole) {
+//       return R.handleError(res, HttpStatus.NOT_FOUND, {
+//         code: 'role_not_found',
+//         message: 'One or more roles (admin/manager/employee) are missing',
+//       });
+//     }
+//
+//     // Vérifier s'il existe déjà un Admin
+//     const existingAdmins = await UserRole._listByRole(adminRole.getId()!);
+//     const isFirstUser = existingAdmins?.length === 0;
+//
+//     // === Cas 1 : Premier utilisateur (ADMIN) ===
+//     if (isFirstUser) {
+//       const userObj = new User()
+//         .setTenant(tenant.config.reference)
+//         .setFirstName(validatedData.first_name)
+//         .setLastName(validatedData.last_name)
+//         .setPhoneNumber(validatedData.phone_number);
+//
+//       if (validatedData.email) userObj.setEmail(validatedData.email);
+//       if (validatedData.employee_code) userObj.setEmployeeCode(validatedData.employee_code);
+//       if (validatedData.hire_date) userObj.setHireDate(new Date(validatedData.hire_date));
+//       if (validatedData.department) userObj.setDepartment(validatedData.department);
+//       if (validatedData.job_title) userObj.setJobTitle(validatedData.job_title);
+//
+//       await userObj.generateUniqueOtpToken(
+//         parseInt(validatedData.otp_expires_at?.toDateString()!, 10) || 1440,
+//       );
+//
+//       await userObj.save();
+//
+//       // L'admin a les trois rôles sans assignedBy
+//       const rolesToAssign = [adminRole, managerRole, defaultRole];
+//       for (const role of rolesToAssign) {
+//         const userRoleObj = new UserRole().setRole(role.getId()!).setUser(userObj.getId()!);
+//         await userRoleObj.save();
+//       }
+//
+//       const roles = await UserRole.getUserRoles(userObj.getId()!);
+//
+//       return R.handleCreated(res, {
+//         message: 'Admin user created successfully',
+//         user: {
+//           ...userObj.toJSON(),
+//           roles: {
+//             count: roles.length,
+//             items: roles.map((r) => r.toJSON()),
+//           },
+//         },
+//       });
+//     }
+//
+//     // === Cas 2 : Managers créés après ===
+//
+//     // Vérification préliminaire des champs nécessaires (avant création user)
+//     if (!affiliate || !validatedData.supervisor) {
+//       return R.handleError(res, HttpStatus.BAD_REQUEST, {
+//         code: 'missing_required_fields',
+//         message: 'Both affiliate (param) and supervisor (body) are required for manager creation',
+//       });
+//     }
+//
+//     if (!UsersValidationUtils.validateGuid(affiliate)) {
+//       return R.handleError(res, HttpStatus.BAD_REQUEST, {
+//         code: 'affiliate_guid_invalid',
+//         message: 'Invalid affiliate guid',
+//       });
+//     }
+//
+//     const existingAffiliate = await User._load(affiliate, true);
+//     const existingSupervisor = await User._load(validatedData.supervisor, true);
+//
+//     if (!existingAffiliate) {
+//       return R.handleError(res, HttpStatus.NOT_FOUND, {
+//         code: 'affiliate_not_found',
+//         message: 'Affiliate user does not exist',
+//       });
+//     }
+//
+//     if (!existingSupervisor) {
+//       return R.handleError(res, HttpStatus.NOT_FOUND, {
+//         code: 'supervisor_not_found',
+//         message: 'Supervisor user does not exist',
+//       });
+//     }
+//
+//     // === Validation passée avec succès → création du nouvel utilisateur ===
+//     const userObj = new User()
+//       .setTenant(tenant.config.reference)
+//       .setFirstName(validatedData.first_name)
+//       .setLastName(validatedData.last_name)
+//       .setPhoneNumber(validatedData.phone_number);
+//
+//     if (validatedData.email) userObj.setEmail(validatedData.email);
+//     if (validatedData.employee_code) userObj.setEmployeeCode(validatedData.employee_code);
+//     if (validatedData.hire_date) userObj.setHireDate(new Date(validatedData.hire_date));
+//     if (validatedData.department) userObj.setDepartment(validatedData.department);
+//     if (validatedData.job_title) userObj.setJobTitle(validatedData.job_title);
+//
+//     await userObj.generateUniqueOtpToken(
+//       parseInt(validatedData.otp_expires_at?.toDateString()!, 10) || 1440,
+//     );
+//
+//     await userObj.save();
+//
+//     // Attribution des rôles
+//     const managerRoleObj = new UserRole()
+//       .setRole(managerRole.getId()!)
+//       .setUser(userObj.getId()!)
+//       .setAssignedBy(existingAffiliate.getId()!);
+//
+//     const employeeRoleObj = new UserRole()
+//       .setRole(defaultRole.getId()!)
+//       .setUser(userObj.getId()!)
+//       .setAssignedBy(existingSupervisor.getId()!);
+//
+//     await managerRoleObj.save();
+//     await employeeRoleObj.save();
+//
+//     const roles = await UserRole.getUserRoles(userObj.getId()!);
+//
+//     return R.handleCreated(res, {
+//       message: 'Manager user created successfully',
+//       user: {
+//         ...userObj.toJSON(),
+//         roles: {
+//           count: roles.length,
+//           items: roles.map((r) => r.toJSON()),
+//         },
+//       },
+//     });
+//   } catch (error: any) {
+//     if (error.issues) {
+//       return R.handleError(res, HttpStatus.BAD_REQUEST, {
+//         code: USERS_CODES.VALIDATION_FAILED,
+//         message: USERS_ERRORS.VALIDATION_FAILED,
+//         details: error.issues,
+//       });
+//     } else if (error.message.includes('already exists')) {
+//       return R.handleError(res, HttpStatus.CONFLICT, {
+//         code: USERS_CODES.EMAIL_ALREADY_EXISTS,
+//         message: error.message,
+//       });
+//     } else if (error.message.includes('required')) {
+//       return R.handleError(res, HttpStatus.BAD_REQUEST, {
+//         code: USERS_CODES.VALIDATION_FAILED,
+//         message: error.message,
+//       });
+//     } else {
+//       return R.handleError(res, HttpStatus.INTERNAL_ERROR, {
+//         code: USERS_CODES.CREATION_FAILED,
+//         message: error.message || error,
+//       });
+//     }
+//   }
+// });
 
 router.patch('/:guid/define-password', Ensure.patch(), async (req: Request, res: Response) => {
   try {
@@ -1936,7 +2110,7 @@ router.post('/share', Ensure.post(), async (req: Request, res: Response) => {
         // userInstance = existingUserByPhone;
       }
 
-      const roleObj = await Role._loadDefaultRole();
+      const roleObj = await Role._load(RoleValues.EMPLOYEE, false, true);
       if (!roleObj) {
         return R.handleError(res, HttpStatus.NOT_FOUND, {
           code: 'default_role_not_found',
@@ -2010,10 +2184,10 @@ router.post('/share', Ensure.post(), async (req: Request, res: Response) => {
       );
     }
     const response = saved.response.data;
-    // const sendToken = await WapService.sendOtp(response.guid, response.phone_number, country);
-    // if (sendToken.status !== HttpStatus.SUCCESS) {
-    //   return R.handleError(res, sendToken.status, sendToken.response);
-    // }
+    const sendToken = await WapService.sendOtp(response.guid, response.phone_number, country);
+    if (sendToken.status !== HttpStatus.SUCCESS) {
+      return R.handleError(res, sendToken.status, sendToken.response);
+    }
 
     const result = await InvitationService.sendInvitation(response.guid);
     if (result.status !== HttpStatus.SUCCESS) {
