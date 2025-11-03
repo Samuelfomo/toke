@@ -106,11 +106,19 @@ export const MemosDbStructure = {
     },
     description: {
       type: DataTypes.TEXT,
-      allowNull: false,
+      allowNull: true,
+      validate: {
+        len: [10, 255],
+      },
+      comment: 'Context/description from author (manager or system)',
+    },
+    response_user: {
+      type: DataTypes.TEXT,
+      allowNull: true,
       validate: {
         len: [10, Infinity],
       },
-      comment: 'Memo description',
+      comment: 'Response from target user (employee)',
     },
     incident_datetime: {
       type: DataTypes.DATE,
@@ -205,6 +213,14 @@ export const MemosDbStructure = {
       },
       comment: 'Processed date',
     },
+    responded_at: {
+      type: DataTypes.DATE,
+      allowNull: true,
+      validate: {
+        isDate: true,
+      },
+      comment: 'Date when user responded to the memo',
+    },
     auto_generated: {
       type: DataTypes.BOOLEAN,
       allowNull: false,
@@ -214,13 +230,13 @@ export const MemosDbStructure = {
       },
       comment: 'Auto generated',
     },
-    auto_reason: {
+    details: {
       type: DataTypes.TEXT,
       allowNull: true,
       validate: {
-        len: [1, 255],
+        len: [10, Infinity],
       },
-      comment: 'Auto reason',
+      comment: 'Additional details from system (for anomalies)',
     },
   } as ModelAttributes,
   options: {
@@ -230,7 +246,7 @@ export const MemosDbStructure = {
     updatedAt: 'updated_at',
     underscored: true,
     freezeTableName: true,
-    comment: 'Memos table with validation information',
+    comment: 'Memos table for employee requests, manager requests, and system anomalies',
     indexes: [
       {
         fields: ['guid'],
@@ -265,6 +281,10 @@ export const MemosDbStructure = {
         name: 'idx_memo_description',
       },
       {
+        fields: ['response_user'],
+        name: 'idx_memo_response_user',
+      },
+      {
         fields: ['incident_datetime'],
         name: 'idx_memo_incident_datetime',
       },
@@ -289,12 +309,16 @@ export const MemosDbStructure = {
         name: 'idx_memo_processed_at',
       },
       {
+        fields: ['responded_at'],
+        name: 'idx_memo_responded_at',
+      },
+      {
         fields: ['auto_generated'],
         name: 'idx_memo_auto_generated',
       },
       {
-        fields: ['auto_reason'],
-        name: 'idx_memo_auto_reason',
+        fields: ['details'],
+        name: 'idx_memo_details',
       },
       {
         fields: ['created_at'],
@@ -303,6 +327,14 @@ export const MemosDbStructure = {
       {
         fields: ['updated_at'],
         name: 'idx_memo_updated_at',
+      },
+      {
+        fields: ['memo_type', 'memo_status'],
+        name: 'idx_memo_type_status',
+      },
+      {
+        fields: ['target_user', 'memo_status'],
+        name: 'idx_memo_target_status',
       },
     ],
   } as ModelOptions,

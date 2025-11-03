@@ -16,14 +16,16 @@ export default class MemosModel extends BaseModel {
     memo_status: 'memo_status',
     title: 'title',
     description: 'description',
+    response_user: 'response_user',
     incident_datetime: 'incident_datetime',
     affected_session: 'affected_session',
     affected_entries: 'affected_entries',
     attachments: 'attachments',
     validator_comments: 'validator_comments',
     processed_at: 'processed_at',
+    responded_at: 'responded_at',
     auto_generated: 'auto_generated',
-    auto_reason: 'auto_reason',
+    details: 'details',
     created_at: 'created_at',
     updated_at: 'updated_at',
   } as const;
@@ -37,6 +39,8 @@ export default class MemosModel extends BaseModel {
   protected memo_status?: MemoStatus;
   protected title?: string;
   protected description?: string;
+  protected response_user?: string;
+  protected details?: string;
   protected incident_datetime?: Date;
   protected affected_session?: number;
   protected affected_entries?: number[];
@@ -44,7 +48,7 @@ export default class MemosModel extends BaseModel {
   protected validator_comments?: string;
   protected processed_at?: Date;
   protected auto_generated?: boolean;
-  protected auto_reason?: string;
+  protected responded_at?: Date;
   protected created_at?: Date;
   protected updated_at?: Date;
 
@@ -106,7 +110,9 @@ export default class MemosModel extends BaseModel {
     );
   }
 
-  // === 2. RECHERCHES PAR TYPE/STATUT ===
+  // ============================================================================
+  // 2. RECHERCHES PAR TYPE/STATUT
+  // ============================================================================
 
   protected async findByType(
     memo_type: MemoType,
@@ -138,6 +144,23 @@ export default class MemosModel extends BaseModel {
     );
   }
 
+  // Memos en attente de réponse (pour l'employé cible)
+  protected async findPendingResponse(
+    target_user: number,
+    paginationOptions: { offset?: number; limit?: number } = {},
+  ): Promise<any[]> {
+    return await this.findAll(
+      this.db.tableName,
+      {
+        [this.db.target_user]: target_user,
+        [this.db.memo_status]: MemoStatus.PENDING,
+        [this.db.response_user]: null,
+      },
+      paginationOptions,
+    );
+  }
+
+  // Memos en attente de validation (pour le manager)
   protected async findPendingValidation(
     paginationOptions: { offset?: number; limit?: number } = {},
   ): Promise<any[]> {
@@ -492,7 +515,7 @@ export default class MemosModel extends BaseModel {
       [this.db.validator_comments]: this.validator_comments,
       [this.db.processed_at]: this.processed_at,
       [this.db.auto_generated]: this.auto_generated || false,
-      [this.db.auto_reason]: this.auto_reason,
+      // [this.db.auto_reason]: this.auto_reason,
     });
 
     if (!lastID) {
@@ -626,10 +649,10 @@ export default class MemosModel extends BaseModel {
       throw new Error(MEMOS_ERRORS.VALIDATOR_COMMENTS_INVALID);
     }
 
-    // Auto reason
-    if (this.auto_reason && !MemosValidationUtils.validateAutoReason(this.auto_reason)) {
-      throw new Error(MEMOS_ERRORS.AUTO_REASON_INVALID);
-    }
+    // // Auto reason
+    // if (this.auto_reason && !MemosValidationUtils.validateAutoReason(this.auto_reason)) {
+    //   throw new Error(MEMOS_ERRORS.AUTO_REASON_INVALID);
+    // }
 
     // Nettoyage données
     const cleaned = MemosValidationUtils.cleanMemoData(this);
