@@ -41,6 +41,7 @@ export * from './constants/tenant/time.entries.js';
 export * from './constants/tenant/memos.js';
 export * from './constants/tenant/audit.logs.js';
 export * from './constants/tenant/fraud.alerts.js';
+export * from './constants/tenant/qr.code.generation.js';
 
 // Export des schémas
 export * from './schemas/country.js';
@@ -70,6 +71,7 @@ export * from './schemas/tenant/time.entries.js';
 export * from './schemas/tenant/memos.js';
 export * from './schemas/tenant/audit.logs.js';
 export * from './schemas/tenant/fraud.alerts.js';
+export * from './schemas/tenant/qr.code.generation.js';
 
 // Export des utilitaires
 export * from './utils/country.validation.js';

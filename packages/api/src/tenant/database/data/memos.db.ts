@@ -336,6 +336,10 @@ export const MemosDbStructure = {
         fields: ['target_user', 'memo_status'],
         name: 'idx_memo_target_status',
       },
+      {
+        fields: ['author_user', 'memo_type'],
+        name: 'idx_memo_author_type',
+      },
     ],
   } as ModelOptions,
 };

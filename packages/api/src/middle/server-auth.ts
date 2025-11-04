@@ -33,7 +33,8 @@ export class ServerAuth {
       if (!clientConfig) {
         // 2. Verify that the tables are initialised
         if (!TableInitializer.isInitialized()) {
-          R.handleError(res, HttpStatus.SERVER_UNAVAILABLE, G.serviceIsInitialising);
+          // R.handleError(res, HttpStatus.SERVER_UNAVAILABLE, G.serviceIsInitialising);
+          R.handleError(res, HttpStatus.SERVER_UNAVAILABLE, G.authenticationFailed);
           return;
         }
         console.log(`🔍 Client '${token}' non trouvé en cache, recherche en base...`);

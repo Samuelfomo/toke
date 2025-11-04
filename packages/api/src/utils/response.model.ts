@@ -258,6 +258,9 @@ export const responseStructure = {
   IS_REJECTED: 'is_rejected',
   IS_DRAFT: 'is_draft',
   METADATA: 'metadata',
+  RESPONDED_AT: 'responded_at',
+  RESPONSE_USER: 'response_user',
+  DETAILS: 'details',
 
   ALERT_TYPE: 'alert_type',
   ALERT_SEVERITY: 'alert_severity',
@@ -278,6 +281,10 @@ export const responseStructure = {
   CHANGED_BY_USER: 'changed_by_user',
   CHANGED_BY_TYPE: 'changed_by_type',
   CHANGE_REASON: 'change_reason',
+
+  MANAGER: 'manager',
+  VALID_FROM: 'valid_from',
+  VALID_TO: 'valid_to',
 } as const;
 
 export const RT = {
@@ -323,6 +330,7 @@ export const tableName = {
 
   CONTACT: `${G.tableAp}_contact`,
   INVITATION: `${G.tableAp}_invitation`,
+  QR_CODE_GENERATION: `${G.tableAp}_qr_code`,
 } as const;
 
 export const EntityRoute = {

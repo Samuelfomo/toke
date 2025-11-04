@@ -8,8 +8,10 @@ import {
   MemosValidationUtils,
   MemoType,
   paginationSchema,
+  ROLES_CODES,
   USERS_CODES,
   USERS_ERRORS,
+  validateMemoResponse,
   validateMemosCreation,
   validateMemosFilters,
   validateMemosUpdate,
@@ -25,9 +27,11 @@ import User from '../class/User.js';
 import Memos from '../class/Memos.js';
 import WorkSessions from '../class/WorkSessions.js';
 import Revision from '../../tools/revision.js';
-import { responseValue, tableName } from '../../utils/response.model.js';
+import { responseValue, RoleValues, tableName } from '../../utils/response.model.js';
 import { ValidationUtils } from '../../utils/view.validator.js';
 import TimeEntries from '../class/TimeEntries.js';
+import UserRole from '../class/UserRole.js';
+import Role from '../class/Role.js';
 
 const router = Router();
 
@@ -78,44 +82,53 @@ router.get('/revision', Ensure.get(), async (_req: Request, res: Response) => {
 
 router.get('/list', Ensure.get(), async (req: Request, res: Response) => {
   try {
-    const filters = validateMemosFilters(req.query);
+    const filtersValidation = validateMemosFilters(req.query);
+    if (!filtersValidation.success) {
+      return R.handleError(res, HttpStatus.BAD_REQUEST, {
+        code: MEMOS_CODES.VALIDATION_FAILED,
+        message: MEMOS_ERRORS.VALIDATION_FAILED,
+        details: filtersValidation.errors,
+      });
+    }
+
     const paginationOptions = paginationSchema.parse(req.query);
+    const filters = filtersValidation.data;
     const conditions: Record<string, any> = {};
 
-    if (filters.memo_type) {
+    if (filters?.memo_type) {
       conditions.memo_type = filters.memo_type;
     }
-    if (filters.memo_status) {
+    if (filters?.memo_status) {
       conditions.memo_status = filters.memo_status;
     }
-    if (filters.author_user) {
+    if (filters?.author_user) {
       conditions.author_user = filters.author_user;
     }
-    if (filters.target_user) {
+    if (filters?.target_user) {
       conditions.target_user = filters.target_user;
     }
-    if (filters.validator_user) {
+    if (filters?.validator_user) {
       conditions.validator_user = filters.validator_user;
     }
-    if (filters.auto_generated !== undefined) {
+    if (filters?.auto_generated !== undefined) {
       conditions.auto_generated = filters.auto_generated;
     }
-    if (filters.has_attachments) {
+    if (filters?.has_attachments) {
       conditions.has_attachments = filters.has_attachments;
     }
-    if (filters.incident_date_from) {
+    if (filters?.incident_date_from) {
       conditions.incident_date_from = filters.incident_date_from;
     }
-    if (filters.incident_date_to) {
+    if (filters?.incident_date_to) {
       conditions.incident_date_to = filters.incident_date_to;
     }
-    if (filters.processed_date_from) {
+    if (filters?.processed_date_from) {
       conditions.processed_date_from = filters.processed_date_from;
     }
-    if (filters.pending_validation) {
+    if (filters?.pending_validation) {
       conditions.pending_validation = filters.pending_validation;
     }
-    if (filters.my_memos_only) {
+    if (filters?.my_memos_only) {
       conditions.my_memos_only = filters.my_memos_only;
     }
 
@@ -423,7 +436,22 @@ router.get('/urgent', Ensure.get(), async (req: Request, res: Response) => {
 // 📋 Create memo to request justification from employee for attendance irregularities
 router.post('/', Ensure.post(), async (req: Request, res: Response) => {
   try {
-    const validatedData = validateMemosCreation(req.body);
+    // const validatedData = validateMemosCreation(req.body);
+    const validation = validateMemosCreation(req.body);
+    if (!validation.success) {
+      return R.handleError(res, HttpStatus.BAD_REQUEST, {
+        code: MEMOS_CODES.VALIDATION_FAILED,
+        message: MEMOS_ERRORS.VALIDATION_FAILED,
+        details: validation.errors,
+      });
+    }
+    const validatedData = validation.data;
+    if (validatedData === undefined) {
+      return R.handleError(res, HttpStatus.BAD_REQUEST, {
+        code: MEMOS_CODES.VALIDATION_FAILED,
+        message: MEMOS_ERRORS.VALIDATION_FAILED,
+      });
+    }
 
     // Vérification de l'existence de l'auteur
     const authorObj = await User._load(validatedData.author_user, true);
@@ -440,31 +468,60 @@ router.post('/', Ensure.post(), async (req: Request, res: Response) => {
         message: USERS_ERRORS.ACCOUNT_INACTIVE,
       });
     }
+    const roleObj = await Role._load(RoleValues.EMPLOYEE, false, true);
+    if (!roleObj) {
+      return R.handleError(res, HttpStatus.NOT_FOUND, {
+        code: ROLES_CODES.ROLE_NOT_FOUND,
+        message: ROLES_CODES.ROLE_NOT_FOUND,
+      });
+    }
+    const identifier = {
+      user: authorObj.getId()!,
+      role: roleObj.getId()!,
+    };
+
+    const supervisorObj = await UserRole._load(identifier, false, true);
+    if (!supervisorObj) {
+      return R.handleError(res, HttpStatus.NOT_FOUND, {
+        code: MEMOS_CODES.TARGET_USER_NOT_FOUND,
+        message: MEMOS_ERRORS.TARGET_USER_NOT_FOUND,
+      });
+    }
+
+    if (!validatedData.response_user) {
+      return R.handleError(res, HttpStatus.BAD_REQUEST, {
+        code: MEMOS_CODES.RESPONSE_USER_REQUIRED,
+        message: MEMOS_ERRORS.RESPONSE_USER_REQUIRED,
+      });
+    }
 
     const memoObj = new Memos()
       .setAuthorUser(authorObj.getId()!)
       .setMemoType(validatedData.memo_type)
       .setTitle(validatedData.title)
-      .setDescription(validatedData.description);
+      .setResponseUser(validatedData.response_user)
+      .setTargetUser(supervisorObj.getId()!)
+      .setMemoStatus(MemoStatus.PENDING);
+    if (validatedData.description) memoObj.setDescription(validatedData.description);
 
-    // Champs optionnels
-    if (validatedData.target_user) {
-      const targetObj = await User._load(validatedData.target_user, true);
-      if (targetObj) {
-        memoObj.setTargetUser(targetObj.getId()!);
-      }
-    }
-
-    if (validatedData.validator_user) {
-      const validatorObj = await User._load(validatedData.validator_user, true);
-      if (validatorObj) {
-        memoObj.setValidatorUser(validatorObj.getId()!);
-      }
-    }
-
-    if (validatedData.memo_status) {
-      memoObj.setMemoStatus(validatedData.memo_status);
-    }
+    // // Champs optionnels
+    // if (validatedData.target_user) {
+    //   const targetObj = await User._load(validatedData.target_user, true);
+    //   if (targetObj) {
+    //     memoObj.setTargetUser(targetObj.getId()!);
+    //   }
+    // }
+    //
+    // if (validatedData.validator_user) {
+    //   const validatorObj = await User._load(validatedData.validator_user, true);
+    //   if (validatorObj) {
+    //     memoObj.setValidatorUser(validatorObj.getId()!);
+    //   }
+    // }
+    //
+    // if (validatedData.memo_status) {
+    //   memoObj.setMemoStatus(validatedData.memo_status);
+    // }
 
     if (validatedData.incident_datetime) {
       memoObj.setIncidentDatetime(new Date(validatedData.incident_datetime));
@@ -492,10 +549,6 @@ router.post('/', Ensure.post(), async (req: Request, res: Response) => {
 
     if (validatedData.attachments) {
       memoObj.setAttachments(validatedData.attachments);
-    }
-
-    if (validatedData.auto_generated) {
-      memoObj.setAutoGenerated(validatedData.auto_generated, validatedData.auto_reason);
     }
 
     await memoObj.save();
@@ -530,6 +583,123 @@ router.post('/', Ensure.post(), async (req: Request, res: Response) => {
         message: error.message,
       });
     }
+  }
+});
+
+router.post('/manager', Ensure.post(), async (req: Request, res: Response) => {
+  try {
+    const validation = validateMemosCreation(req.body);
+    if (!validation.success) {
+      return R.handleError(res, HttpStatus.BAD_REQUEST, {
+        code: MEMOS_CODES.VALIDATION_FAILED,
+        message: MEMOS_ERRORS.VALIDATION_FAILED,
+        details: validation.errors,
+      });
+    }
+    const memoData = validation.data;
+
+    if (memoData === undefined) {
+      return R.handleError(res, HttpStatus.BAD_REQUEST, {
+        code: MEMOS_CODES.VALIDATION_FAILED,
+        message: MEMOS_ERRORS.VALIDATION_FAILED,
+      });
+    }
+    if (!memoData.target_user) {
+      return R.handleError(res, HttpStatus.BAD_REQUEST, {
+        code: MEMOS_CODES.TARGET_USER_REQUIRED,
+        message: MEMOS_ERRORS.TARGET_USER_REQUIRED,
+      });
+    }
+
+    // Vérifier que target_user existe
+    const targetUser = await User._load(memoData.target_user, true);
+    if (!targetUser) {
+      return R.handleError(res, HttpStatus.NOT_FOUND, {
+        code: MEMOS_CODES.TARGET_USER_NOT_FOUND,
+        message: MEMOS_ERRORS.TARGET_USER_NOT_FOUND,
+      });
+    }
+
+    // Vérifier que author_user existe
+    const authorUser = await User._load(memoData.author_user, true);
+    if (!authorUser) {
+      return R.handleError(res, HttpStatus.NOT_FOUND, {
+        code: MEMOS_CODES.AUTHOR_USER_NOT_FOUND,
+        message: MEMOS_ERRORS.AUTHOR_USER_NOT_FOUND,
+      });
+    }
+    if (!authorUser.isActive()) {
+      return R.handleError(res, HttpStatus.UNAUTHORIZED, {
+        code: USERS_CODES.ACCOUNT_INACTIVE,
+        message: USERS_ERRORS.ACCOUNT_INACTIVE,
+      });
+    }
+
+    // TODO Vérifier que author_user est manager: à gérer avec le middleware après gestion des habilitations
+
+    // TODO Vérifier que author_user est manager du target_user ou que le target_user fait partir de l'organigramme hierachique du author_user (de sa branche) et est en dessous
+    // deja implementer a integrer
+
+    let memoStat: MemoStatus = memoData.memo_status;
+
+    if (memoStat !== MemoStatus.SUBMITTED) {
+      memoStat = MemoStatus.DRAFT;
+    }
+    const memoObj = new Memos()
+      .setAuthorUser(authorUser.getId()!)
+      .setMemoType(memoData.memo_type)
+      .setTitle(memoData.title)
+      .setTargetUser(targetUser.getId()!)
+      .setMemoStatus(memoStat);
+    if (memoData.description) memoObj.setDescription(memoData.description);
+
+    if (memoData.incident_datetime) {
+      memoObj.setIncidentDatetime(new Date(memoData.incident_datetime));
+    }
+
+    if (memoData.affected_session) {
+      const sessionObj = await WorkSessions._load(memoData.affected_session, true);
+      if (sessionObj) {
+        memoObj.setAffectedSession(sessionObj.getId()!);
+      }
+    }
+
+    if (memoData.affected_entries) {
+      const affectedEntries = await Promise.all(
+        memoData.affected_entries.map(async (entry) => {
+          const sessionObj = await TimeEntries._load(entry, true);
+          return sessionObj?.getId() ?? null;
+        }),
+      );
+
+      // 🧹 Enlever les null avant de les envoyer
+      const validEntries = affectedEntries.filter((id): id is number => id !== null);
+      memoObj.setAffectedEntriesIds(validEntries);
+    }
+
+    if (memoData.attachments) {
+      memoObj.setAttachments(memoData.attachments);
+    }
+
+    await memoObj.save();
+
+    if (memoObj.getAffectedEntriesIds() !== undefined || memoObj.getAffectedEntriesIds() !== null) {
+      const affectedEntriesIds = memoObj.getAffectedEntriesIds();
+      affectedEntriesIds?.map(async (entryId) => {
+        const affectedEntryObj = await TimeEntries._load(entryId);
+        if (affectedEntryObj) {
+          affectedEntryObj.setMemo(memoObj.getId()!);
+          await affectedEntryObj.save();
+        }
+      });
+    }
+
+    return R.handleCreated(res, await memoObj.toJSON());
+  } catch (error: any) {
+    return R.handleError(res, HttpStatus.INTERNAL_ERROR, {
+      code: MEMOS_CODES.CREATION_FAILED,
+      message: error.message,
+    });
   }
 });
 
@@ -579,6 +749,102 @@ router.get('/my-created', Ensure.get(), async (req: Request, res: Response) => {
     };
 
     return R.handleSuccess(res, { memos });
+  } catch (error: any) {
+    return R.handleError(res, HttpStatus.INTERNAL_ERROR, {
+      code: MEMOS_CODES.LISTING_FAILED,
+      message: error.message,
+    });
+  }
+});
+router.get('/my-memos', Ensure.get(), async (req: Request, res: Response) => {
+  try {
+    const { author, view } = req.query;
+    if (!author) {
+      return R.handleError(res, HttpStatus.BAD_REQUEST, {
+        code: MEMOS_CODES.AUTHOR_USER_REQUIRED,
+        message: MEMOS_ERRORS.AUTHOR_USER_REQUIRED,
+      });
+    }
+
+    if (!MemosValidationUtils.validateGuid(author as string)) {
+      return R.handleError(res, HttpStatus.BAD_REQUEST, {
+        code: MEMOS_CODES.AUTHOR_USER_INVALID,
+        message: MEMOS_ERRORS.AUTHOR_USER_INVALID,
+      });
+    }
+    // const paginationOptions = paginationSchema.parse(req.query);
+    const views = ValidationUtils.validateView(view, responseValue.FULL);
+
+    // // 🔹 2. Validation du paramètre "view"
+    // const { view } = req.query;
+    // const viewValue = Array.isArray(view) ? view[0] : view;
+    // const views = Object.values(responseValue).includes(viewValue as any)
+    //   ? viewValue
+    //   : responseValue.FULL; // Valeur par défaut
+
+    const userObj = await User._load(req.query.author as string, true);
+    if (!userObj) {
+      return R.handleError(res, HttpStatus.NOT_FOUND, {
+        code: USERS_CODES.USER_NOT_FOUND,
+        message: USERS_ERRORS.NOT_FOUND,
+      });
+    }
+
+    // const memoEntries = await Memos._listByAuthor(userObj.getId()!);
+    // const targetMemoEntries = await Memos._listByTarget(userObj.getId()!);
+    const memoEntries = (await Memos._listByAuthor(userObj.getId()!)) ?? [];
+    const targetMemoEntries = (await Memos._listByTarget(userObj.getId()!)) ?? [];
+    const memos = {
+      count: targetMemoEntries?.length + memoEntries?.length,
+      items: [
+        ...(memoEntries.length
+          ? await Promise.all(memoEntries.map(async (memo) => await memo.toJSON(views)))
+          : []),
+        ...(targetMemoEntries
+          ? await Promise.all(targetMemoEntries.map(async (memo) => await memo.toJSON(views)))
+          : []),
+      ],
+      // my_created: {
+      //   count: memoEntries?.length || 0,
+      //   items: memoEntries
+      //     ? await Promise.all(memoEntries.map(async (memo) => await memo.toJSON(views)))
+      //     : [],
+      // },
+      // target_user: {
+      //   count: targetMemoEntries?.length || 0,
+      //   items: targetMemoEntries
+      //     ? await Promise.all(targetMemoEntries.map(async (memo) => await memo.toJSON(views)))
+      //     : [],
+      // },
+    };
+
+    return R.handleSuccess(res, { memos });
+  } catch (error: any) {
+    return R.handleError(res, HttpStatus.INTERNAL_ERROR, {
+      code: MEMOS_CODES.LISTING_FAILED,
+      message: error.message,
+    });
+  }
+});
+
+router.get('/requirement', Ensure.get(), async (req: Request, res: Response) => {
+  try {
+    return R.handleSuccess(res, {
+      meno_types: {
+        count: Object.entries(MemoType).length,
+        items: Object.entries(MemoType).map(([key, value]) => ({
+          key,
+          value,
+        })),
+      },
+      memo_statues: {
+        count: Object.entries(MemoStatus).length,
+        items: Object.entries(MemoStatus).map(([key, value]) => ({
+          key,
+          value,
+        })),
+      },
+    });
   } catch (error: any) {
     return R.handleError(res, HttpStatus.INTERNAL_ERROR, {
       code: MEMOS_CODES.LISTING_FAILED,
@@ -636,8 +902,43 @@ router.put('/:guid', Ensure.put(), async (req: Request, res: Response) => {
         message: MEMOS_ERRORS.NOT_FOUND,
       });
     }
+    // if (
+    //   memoObj.getMemoStatus() !== MemoStatus.DRAFT &&
+    //   memoObj.getMemoStatus() !== MemoStatus.SUBMITTED
+    // ) {
+    //   return R.handleError(res, HttpStatus.FORBIDDEN, {
+    //     code: MEMOS_CODES.CANNOT_MODIFY_PROCESSED_MEMO,
+    //     message:
+    //       MEMOS_ERRORS.CANNOT_MODIFY_PROCESSED_MEMO ||
+    //       'Prohibited action: the memo must be in DRAFT or SUBMITTED status.',
+    //   });
+    // }
 
-    const validatedData = validateMemosUpdate(req.body);
+    // Vérifier qu'on ne modifie pas un memo traité
+    const processedStatuses = [MemoStatus.APPROVED, MemoStatus.REJECTED];
+    if (processedStatuses.includes(memoObj.getMemoStatus()!)) {
+      return R.handleError(res, HttpStatus.BAD_REQUEST, {
+        code: MEMOS_CODES.CANNOT_MODIFY_PROCESSED_MEMO,
+        message: MEMOS_ERRORS.CANNOT_MODIFY_PROCESSED_MEMO,
+      });
+    }
+
+    const validate = validateMemosUpdate(req.body);
+
+    if (!validate.success) {
+      return R.handleError(res, HttpStatus.BAD_REQUEST, {
+        code: MEMOS_CODES.VALIDATION_FAILED,
+        message: MEMOS_ERRORS.VALIDATION_FAILED,
+        details: validate.errors,
+      });
+    }
+    const validatedData = validate.data;
+    if (!validatedData) {
+      return R.handleError(res, HttpStatus.BAD_REQUEST, {
+        code: MEMOS_CODES.VALIDATION_FAILED,
+        message: MEMOS_ERRORS.VALIDATION_FAILED,
+      });
+    }
 
     if (validatedData.memo_status) {
       memoObj.setMemoStatus(validatedData.memo_status);
@@ -651,9 +952,9 @@ router.put('/:guid', Ensure.put(), async (req: Request, res: Response) => {
     if (validatedData.incident_datetime) {
       memoObj.setIncidentDatetime(new Date(validatedData.incident_datetime));
     }
-    if (validatedData.validator_comments) {
-      memoObj.setValidatorComments(validatedData.validator_comments);
-    }
+    // if (validatedData.validator_comments) {
+    //   memoObj.setValidatorComments(validatedData.validator_comments);
+    // }
     if (validatedData.attachments) {
       memoObj.setAttachments(validatedData.attachments);
     }
@@ -726,10 +1027,10 @@ router.patch('/:guid/submit', Ensure.patch(), async (req: Request, res: Response
       });
     }
 
-    await memoObj.submitMemosForValidation();
+    await memoObj.submitMemosForResponse();
 
     return R.handleSuccess(res, {
-      message: 'Memo submitted for validation successfully',
+      message: 'Memo submitted for response successfully',
       memo: await memoObj.toJSON(responseValue.MINIMAL),
     });
   } catch (error: any) {
@@ -740,17 +1041,14 @@ router.patch('/:guid/submit', Ensure.patch(), async (req: Request, res: Response
   }
 });
 
-//👍 Approve employee justification memo and trigger automatic attendance correction
-router.patch('/:guid/validate', Ensure.patch(), async (req: Request, res: Response) => {
+// ============================================================================
+// RÉPONDRE À UN MEMO (EMPLOYÉ RÉPOND AU MANAGER OU SYSTÈME)
+// ============================================================================
+router.patch('/:guid/respond', Ensure.patch(), async (req: Request, res: Response) => {
   try {
-    if (!MemosValidationUtils.validateGuid(req.params.guid)) {
-      return R.handleError(res, HttpStatus.BAD_REQUEST, {
-        code: MEMOS_CODES.INVALID_GUID,
-        message: MEMOS_ERRORS.GUID_INVALID,
-      });
-    }
+    const { guid } = req.params;
+    const memoObj = await Memos._load(guid, true);
 
-    const memoObj = await Memos._load(req.params.guid, true);
     if (!memoObj) {
       return R.handleError(res, HttpStatus.NOT_FOUND, {
         code: MEMOS_CODES.MEMO_NOT_FOUND,
@@ -758,13 +1056,108 @@ router.patch('/:guid/validate', Ensure.patch(), async (req: Request, res: Respon
       });
     }
 
-    const validatedData = validateMemoValidation(req.body);
+    // Vérifier que le memo est en attente de réponse
+    if (memoObj.getMemoStatus() !== MemoStatus.SUBMITTED) {
+      return R.handleError(res, HttpStatus.BAD_REQUEST, {
+        code: MEMOS_CODES.INVALID_STATUS_TRANSITION,
+        message: 'Memo is not pending response',
+      });
+    }
+
+    // Vérifier que le memo n'a pas déjà une réponse
+    if (memoObj.getResponseUser()) {
+      return R.handleError(res, HttpStatus.BAD_REQUEST, {
+        code: MEMOS_CODES.ALREADY_RESPONDED,
+        message: MEMOS_ERRORS.ALREADY_RESPONDED,
+      });
+    }
+
+    const validation = validateMemoResponse(req.body);
+    if (!validation.success) {
+      return R.handleError(res, HttpStatus.BAD_REQUEST, {
+        code: MEMOS_CODES.VALIDATION_FAILED,
+        message: MEMOS_ERRORS.VALIDATION_FAILED,
+        details: validation.errors,
+      });
+    }
+    if (!validation.data) {
+      return R.handleError(res, HttpStatus.BAD_REQUEST, {
+        code: MEMOS_CODES.VALIDATION_FAILED,
+        message: MEMOS_ERRORS.VALIDATION_FAILED,
+      });
+    }
+
+    const { response_user, attachments } = validation.data;
+    let attachmentValues;
+    if (attachments) {
+      attachmentValues = attachments;
+    }
+
+    await memoObj.submitMemosForValidation(response_user, attachmentValues);
+
+    return R.handleSuccess(res, {
+      message: MEMOS_MESSAGES.RESPONDED_SUCCESSFULLY,
+      memo: await memoObj.toJSON(responseValue.FULL),
+    });
+  } catch (error: any) {
+    return R.handleError(res, HttpStatus.INTERNAL_ERROR, {
+      code: MEMOS_CODES.RESPONSE_FAILED,
+      message: error.message,
+    });
+  }
+});
+
+//👍 Approve employee justification memo and trigger automatic attendance correction
+router.patch('/:guid/validate', Ensure.patch(), async (req: Request, res: Response) => {
+  try {
+    const { guid } = req.params;
+    if (!MemosValidationUtils.validateGuid(guid)) {
+      return R.handleError(res, HttpStatus.BAD_REQUEST, {
+        code: MEMOS_CODES.INVALID_GUID,
+        message: MEMOS_ERRORS.GUID_INVALID,
+      });
+    }
+
+    const memoObj = await Memos._load(guid, true);
+    if (!memoObj) {
+      return R.handleError(res, HttpStatus.NOT_FOUND, {
+        code: MEMOS_CODES.MEMO_NOT_FOUND,
+        message: MEMOS_ERRORS.NOT_FOUND,
+      });
+    }
+    // Vérifier que le memo a une réponse
+    if (!memoObj.getResponseUser()) {
+      return R.handleError(res, HttpStatus.BAD_REQUEST, {
+        code: MEMOS_CODES.VALIDATION_FAILED,
+        message: 'Cannot validate memo without response',
+      });
+    }
+
+    const validation = validateMemoValidation(req.body);
+
+    if (!validation.success || !validation.data) {
+      return R.handleError(res, HttpStatus.BAD_REQUEST, {
+        code: MEMOS_CODES.VALIDATION_FAILED,
+        message: MEMOS_ERRORS.VALIDATION_FAILED,
+        details: validation.errors,
+      });
+    }
+
+    const validatedData = validation.data;
 
     const validatorObj = await User._load(validatedData.validator_user, true);
     if (!validatorObj) {
       return R.handleError(res, HttpStatus.NOT_FOUND, {
         code: USERS_CODES.USER_NOT_FOUND,
         message: 'Validator user not found',
+      });
+    }
+
+    // Vérifier qu'on ne valide pas son propre memo
+    if (memoObj.getAuthorUser() === validatorObj.getId()) {
+      return R.handleError(res, HttpStatus.UNAUTHORIZED, {
+        code: MEMOS_CODES.SELF_VALIDATION_NOT_ALLOWED,
+        message: MEMOS_ERRORS.SELF_VALIDATION_NOT_ALLOWED,
       });
     }
 
@@ -793,14 +1186,15 @@ router.patch('/:guid/validate', Ensure.patch(), async (req: Request, res: Respon
 //👎 Reject memo with mandatory comment and notify employee of decision
 router.patch('/:guid/reject', Ensure.patch(), async (req: Request, res: Response) => {
   try {
-    if (!MemosValidationUtils.validateGuid(req.params.guid)) {
+    const { guid } = req.params;
+    if (!MemosValidationUtils.validateGuid(guid)) {
       return R.handleError(res, HttpStatus.BAD_REQUEST, {
         code: MEMOS_CODES.INVALID_GUID,
         message: MEMOS_ERRORS.GUID_INVALID,
       });
     }
 
-    const memoObj = await Memos._load(req.params.guid, true);
+    const memoObj = await Memos._load(guid, true);
     if (!memoObj) {
       return R.handleError(res, HttpStatus.NOT_FOUND, {
         code: MEMOS_CODES.MEMO_NOT_FOUND,
@@ -808,7 +1202,30 @@ router.patch('/:guid/reject', Ensure.patch(), async (req: Request, res: Response
       });
     }
 
-    const validatedData = validateMemoValidation(req.body);
+    // Vérifier que le memo a une réponse
+    if (!memoObj.getResponseUser()) {
+      return R.handleError(res, HttpStatus.BAD_REQUEST, {
+        code: MEMOS_CODES.VALIDATION_FAILED,
+        message: 'Cannot reject memo without response',
+      });
+    }
+    // Vérifier que le statut est PENDING
+    if (memoObj.getMemoStatus() !== MemoStatus.PENDING) {
+      return R.handleError(res, HttpStatus.BAD_REQUEST, {
+        code: MEMOS_CODES.INVALID_STATUS_TRANSITION,
+        message: 'Memo is not in pending status',
+      });
+    }
+
+    const validation = validateMemoValidation(req.body);
+    if (!validation.success || !validation.data) {
+      return R.handleError(res, HttpStatus.BAD_REQUEST, {
+        code: MEMOS_CODES.VALIDATION_FAILED,
+        message: MEMOS_ERRORS.VALIDATION_FAILED,
+        details: validation.errors,
+      });
+    }
+    const validatedData = validation.data;
 
     const validatorObj = await User._load(validatedData.validator_user, true);
     if (!validatorObj) {
@@ -840,7 +1257,7 @@ router.patch('/:guid/reject', Ensure.patch(), async (req: Request, res: Response
   }
 });
 
-// 🔝 Forward memo to higher manager level when unable to decide or needs approval
+// 🔝🚨 Forward memo to higher manager level when unable to decide or needs approval
 router.patch('/:guid/escalate', Ensure.patch(), async (req: Request, res: Response) => {
   try {
     if (!MemosValidationUtils.validateGuid(req.params.guid)) {
@@ -1155,7 +1572,14 @@ router.patch('/:guid/attachments', Ensure.patch(), async (req: Request, res: Res
         message: MEMOS_ERRORS.NOT_FOUND,
       });
     }
+    const statusAvailable = [MemoStatus.APPROVED, MemoStatus.REJECTED];
 
+    if (statusAvailable.includes(memoObj.getMemoStatus()!)) {
+      return R.handleError(res, HttpStatus.FORBIDDEN, {
+        code: MEMOS_CODES.ACTION_NOT_ALLOWED,
+        message: MEMOS_ERRORS.ACTION_NOT_ALLOWED,
+      });
+    }
     const { attachment } = req.body;
 
     if (!attachment || !MemosValidationUtils.validateAttachments(attachment)) {
@@ -1343,32 +1767,6 @@ router.get('/statistics/overview', Ensure.get(), async (req: Request, res: Respo
   } catch (error: any) {
     return R.handleError(res, HttpStatus.INTERNAL_ERROR, {
       code: MEMOS_CODES.STATISTICS_FAILED,
-      message: error.message,
-    });
-  }
-});
-
-router.get('/requirement', Ensure.get(), async (req: Request, res: Response) => {
-  try {
-    return R.handleSuccess(res, {
-      meno_types: {
-        count: Object.entries(MemoType).length,
-        items: Object.entries(MemoType).map(([key, value]) => ({
-          key,
-          value,
-        })),
-      },
-      memo_statues: {
-        count: Object.entries(MemoStatus).length,
-        items: Object.entries(MemoStatus).map(([key, value]) => ({
-          key,
-          value,
-        })),
-      },
-    });
-  } catch (error: any) {
-    return R.handleError(res, HttpStatus.INTERNAL_ERROR, {
-      code: MEMOS_CODES.LISTING_FAILED,
       message: error.message,
     });
   }
