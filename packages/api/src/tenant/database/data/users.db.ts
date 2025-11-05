@@ -65,12 +65,21 @@ export const UsersDbStructure = {
     },
     phone_number: {
       type: DataTypes.STRING(20), // -- Obligatoire si employé (remarque : pas de validation pour le moment)
-      allowNull: true,
+      allowNull: true, // Ne devrait pas etre nullable car tous user est par default un employe
       unique: { name: 'unique_user_phone_number', msg: 'User phone number must be unique.' },
       validate: {
         len: [5, 20],
       },
       comment: 'User phone number',
+    },
+    country: {
+      type: DataTypes.STRING(2),
+      allowNull: false,
+      validate: {
+        is: /^[A-Z]{2}$/,
+        len: [2, 2],
+      },
+      comment: 'ISO 3166-1 alpha-2 code (2 capital letters, e.g. CM)',
     },
     employee_code: {
       type: DataTypes.STRING(20), //-- Auto-généré si employé
@@ -297,6 +306,10 @@ export const UsersDbStructure = {
       {
         fields: ['last_login_at'],
         name: 'idx_user_last_login_at',
+      },
+      {
+        fields: ['country'],
+        name: ['idx_user_country'],
       },
     ],
   } as ModelOptions,

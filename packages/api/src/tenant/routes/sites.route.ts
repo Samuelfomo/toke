@@ -23,6 +23,7 @@ import Revision from '../../tools/revision.js';
 import { responseValue, tableName } from '../../utils/response.model.js';
 import UserRole from '../class/UserRole.js';
 import { DatabaseEncryption } from '../../utils/encryption.js';
+import QrCodeGeneration from '../class/QrCodeGeneration.js';
 
 const router = Router();
 
@@ -866,6 +867,19 @@ router.patch('/generate-qr-code', Ensure.patch(), async (req: Request, res: Resp
         message: USERS_ERRORS.AUTHORIZATION_FAILED,
       });
     }
+
+    const qrCodeObj = new QrCodeGeneration()
+      .setSite(siteObj.getId()!)
+      .setManager(userObj.getId()!)
+      .setValidFrom(siteObj.getQRCodeData().valid_from)
+      .setValidTo(siteObj.getQRCodeData().valid_to);
+
+    await qrCodeObj.save();
+
+    // const qrGenerator = DatabaseEncryption.encrypt({
+    //   qr_reference: qrCodeObj.getGuid(),
+    //   site: siteObj.getGuid(),
+    // });
 
     // const tenant = req.tenant;
     const qrGenerator = DatabaseEncryption.encrypt(

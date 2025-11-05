@@ -45,6 +45,10 @@ export default class Sponsor extends SponsorModel {
     return this.phone_number;
   }
 
+  getCountry(): string | undefined {
+    return this.country;
+  }
+
   getStatus(): InvitationStatus | undefined | string {
     return this.status;
   }
@@ -52,6 +56,7 @@ export default class Sponsor extends SponsorModel {
   getMetadata(): object | undefined {
     return this.metadata;
   }
+
   // === SETTERS ===
 
   setPhoneNumber(phone: string): Sponsor {
@@ -59,10 +64,16 @@ export default class Sponsor extends SponsorModel {
     return this;
   }
 
+  setCountry(country: string): Sponsor {
+    this.country = country;
+    return this;
+  }
+
   setStatus(status: InvitationStatus): Sponsor {
     this.status = status;
     return this;
   }
+
   setMetadata(metadata: object): Sponsor {
     this.metadata = metadata;
     return this;
@@ -133,6 +144,7 @@ export default class Sponsor extends SponsorModel {
     return {
       [RS.GUID]: this.guid,
       [RS.PHONE_NUMBER]: this.phone_number,
+      [RS.COUNTRY]: this.country,
       [RS.STATUS]: this.status,
       [RS.METADATA]: this.metadata,
     };
@@ -142,6 +154,7 @@ export default class Sponsor extends SponsorModel {
     this.id = data.id;
     this.guid = data.guid;
     this.phone_number = data.phone_number;
+    this.country = data.country;
     this.status = data.status;
     this.metadata = data.metadata;
     return this;

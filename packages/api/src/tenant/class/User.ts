@@ -154,6 +154,10 @@ export default class User extends UserModel {
     return this.phone_number;
   }
 
+  getCountry(): string | undefined {
+    return this.country;
+  }
+
   getEmployeeCode(): string | undefined {
     return this.employee_code;
   }
@@ -224,6 +228,11 @@ export default class User extends UserModel {
 
   setPhoneNumber(phoneNumber: string): User {
     this.phone_number = phoneNumber;
+    return this;
+  }
+
+  setCountry(country_code: string): User {
+    this.country = country_code;
     return this;
   }
 
@@ -502,6 +511,7 @@ export default class User extends UserModel {
       throw new Error(error);
     }
   }
+
   async definePin(): Promise<void> {
     try {
       await this.definePinDb();
@@ -607,6 +617,7 @@ export default class User extends UserModel {
       [RS.FIRST_NAME]: this.first_name,
       [RS.LAST_NAME]: this.last_name,
       [RS.PHONE_NUMBER]: this.phone_number,
+      [RS.COUNTRY]: this.country,
       [RS.EMPLOYEE_CODE]: this.employee_code,
       [RS.AVATAR_URL]: this.avatar_url,
       [RS.HIRE_DATE]: this.hire_date,
@@ -641,6 +652,7 @@ export default class User extends UserModel {
     this.first_name = data.first_name;
     this.last_name = data.last_name;
     this.phone_number = data.phone_number;
+    this.country = data.country;
     this.employee_code = data.employee_code;
     this.pin_hash = data.pin_hash;
     this.password_hash = data.password_hash;

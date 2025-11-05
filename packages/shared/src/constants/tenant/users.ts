@@ -29,6 +29,11 @@ export const USERS_VALIDATION = {
     MIN_LENGTH: 5,
     MAX_LENGTH: 20,
   },
+  COUNTRY: {
+    MIN_LENGTH: 2,
+    MAX_LENGTH: 2,
+    PATTERN: /^[A-Z]{2}$/,
+  },
   EMPLOYEE_CODE: {
     MIN_LENGTH: 5,
     MAX_LENGTH: 20,
@@ -90,6 +95,8 @@ export const USERS_CODES = {
   INVALID_GUID: 'invalid_guid',
   TENANT_REQUIRED: 'tenant_required',
   TENANT_INVALID: 'tenant_invalid',
+  COUNTRY_REQUIRED: 'country_required',
+  COUNTRY_INVALID: 'invalid_country_code',
   EMAIL_INVALID: 'email_invalid',
   EMAIL_ALREADY_EXISTS: 'email_already_exists',
   FIRST_NAME_REQUIRED: 'first_name_required',
@@ -146,6 +153,9 @@ export const USERS_ERRORS = {
 
   FIRST_NAME_REQUIRED: `${USERS_LABEL} first name is required`,
   FIRST_NAME_INVALID: `First name must be 1-${USERS_VALIDATION.FIRST_NAME.MAX_LENGTH} characters`,
+
+  COUNTRY_REQUIRED: `${USERS_LABEL} country code is required`,
+  COUNTRY_INVALID: `${USERS_LABEL} country code must be exactly 2 uppercase letters (ISO 3166-1 alpha-2)`,
 
   LAST_NAME_REQUIRED: `${USERS_LABEL} last name is required`,
   LAST_NAME_INVALID: `Last name must be 1-${USERS_VALIDATION.LAST_NAME.MAX_LENGTH} characters`,

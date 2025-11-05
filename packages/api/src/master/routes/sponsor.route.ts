@@ -1,11 +1,12 @@
 import { Request, Response, Router } from 'express';
-import { HttpStatus } from '@toke/shared';
+import { HttpStatus, USERS_CODES, USERS_ERRORS, UsersValidationUtils } from '@toke/shared';
 
 import Sponsor from '../class/Sponsor.js';
 import { InvitationStatus } from '../database/data/sponsor.db.js';
 import R from '../../tools/response.js';
 import Ensure from '../../middle/ensured-routes.js';
 import { Contact } from '../class/Contact.js';
+import CountryPhoneValidation from '../../tools/country.phone.validation.js';
 
 const router = Router();
 
@@ -202,17 +203,38 @@ router.get('/phone/:phone', Ensure.get(), async (req: Request, res: Response) =>
  */
 router.post('/', Ensure.post(), async (req: Request, res: Response) => {
   try {
-    const { phone_number, metadata } = req.body;
+    const { phone_number, country, metadata } = req.body;
 
     // Validation du numéro de téléphone
-    if (!phone_number || !validatePhoneNumber(phone_number)) {
+    if (!phone_number) {
       return R.handleError(res, HttpStatus.BAD_REQUEST, {
-        code: 'invalid_phone',
-        message: 'Phone number is required and must be between 5 and 50 characters',
+        code: 'phone_number_is_required',
+        message: 'Phone number is required',
       });
     }
 
-    console.log(phone_number, metadata);
+    if (!country) {
+      return R.handleError(res, HttpStatus.BAD_REQUEST, {
+        code: USERS_CODES.COUNTRY_REQUIRED,
+        message: USERS_ERRORS.COUNTRY_REQUIRED,
+      });
+    }
+    if (!UsersValidationUtils.validateCountryCode(country)) {
+      return R.handleError(res, HttpStatus.BAD_REQUEST, {
+        code: USERS_CODES.COUNTRY_INVALID,
+        message: USERS_ERRORS.COUNTRY_INVALID,
+      });
+    }
+
+    if (
+      !UsersValidationUtils.validatePhoneNumber(phone_number) ||
+      !CountryPhoneValidation.validatePhoneNumber(phone_number, country)
+    ) {
+      return R.handleError(res, HttpStatus.BAD_REQUEST, {
+        code: USERS_CODES.PHONE_NUMBER_INVALID,
+        message: USERS_ERRORS.PHONE_NUMBER_INVALID,
+      });
+    }
 
     // Validation des metadata
     // const metadataValidation = validateMetadata(metadata);
@@ -223,7 +245,10 @@ router.post('/', Ensure.post(), async (req: Request, res: Response) => {
     //   });
     // }
 
-    const invitation = new Sponsor().setPhoneNumber(phone_number).setMetadata(metadata);
+    const invitation = new Sponsor()
+      .setPhoneNumber(phone_number)
+      .setCountry(country)
+      .setMetadata(metadata);
 
     await invitation.save();
 
@@ -270,14 +295,29 @@ router.put('/:guid', Ensure.put(), async (req: Request, res: Response) => {
       });
     }
 
-    const { phone_number, status, metadata } = req.body;
+    const { phone_number, country, status, metadata } = req.body;
+
+    // let countyData: string = invitation.getCountry()!;
+
+    if (country !== undefined) {
+      if (!UsersValidationUtils.validateCountryCode(country)) {
+        return R.handleError(res, HttpStatus.BAD_REQUEST, {
+          code: USERS_CODES.COUNTRY_INVALID,
+          message: USERS_ERRORS.COUNTRY_INVALID,
+        });
+      }
+      invitation.setCountry(country);
+    }
 
     // Mise à jour des champs fournis
     if (phone_number !== undefined) {
-      if (!validatePhoneNumber(phone_number)) {
+      if (
+        !UsersValidationUtils.validatePhoneNumber(phone_number) ||
+        !CountryPhoneValidation.validatePhoneNumber(phone_number, invitation.getCountry()!)
+      ) {
         return R.handleError(res, HttpStatus.BAD_REQUEST, {
-          code: 'invalid_phone',
-          message: 'Phone number must be between 5 and 50 characters',
+          code: USERS_CODES.PHONE_NUMBER_INVALID,
+          message: USERS_ERRORS.PHONE_NUMBER_INVALID,
         });
       }
       invitation.setPhoneNumber(phone_number);

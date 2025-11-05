@@ -11,12 +11,14 @@ export default class SponsorModel extends BaseModel {
     id: 'id',
     guid: 'guid',
     phone_number: 'phone_number',
+    country: 'country',
     status: 'status',
     metadata: 'metadata',
   } as const;
   protected id?: number;
   protected guid?: string;
   protected phone_number?: string;
+  protected country?: string;
   protected status?: InvitationStatus;
   protected metadata?: object;
 
@@ -125,6 +127,7 @@ export default class SponsorModel extends BaseModel {
     const lastID = await this.insertOne(this.db.tableName, {
       [this.db.guid]: guid,
       [this.db.phone_number]: this.phone_number,
+      [this.db.country]: this.country,
       [this.db.status]: InvitationStatus.PENDING,
       [this.db.metadata]: this.metadata,
     });
@@ -151,6 +154,7 @@ export default class SponsorModel extends BaseModel {
 
     const updateData: Record<string, any> = {};
     if (this.phone_number !== undefined) updateData[this.db.phone_number] = this.phone_number;
+    if (this.country !== undefined) updateData[this.db.country] = this.country;
     if (this.status !== undefined) updateData[this.db.status] = this.status;
     if (this.metadata !== undefined) updateData[this.db.metadata] = this.metadata;
 

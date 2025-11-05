@@ -46,6 +46,15 @@ export const InvitationDbStructure = {
       },
       comment: 'Invited user phone number',
     },
+    country: {
+      type: DataTypes.STRING(2),
+      allowNull: false,
+      validate: {
+        is: /^[A-Z]{2}$/,
+        len: [2, 2],
+      },
+      comment: 'Country ISO 3166-1 alpha-2 code (2 capital letters, e.g. CM)',
+    },
     status: {
       type: DataTypes.ENUM(...Object.values(InvitationStatus)),
       allowNull: false,
@@ -143,6 +152,10 @@ export const InvitationDbStructure = {
         fields: ['metadata'],
         using: 'gin',
         // comment: 'GIN index for JSONB metadata queries',
+      },
+      {
+        name: 'idx_invitation_country',
+        fields: ['country'],
       },
     ],
   } as ModelOptions,

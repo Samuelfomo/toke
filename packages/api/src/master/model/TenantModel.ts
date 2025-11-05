@@ -3,6 +3,7 @@ import { Status, TENANT_ERRORS, TenantValidationUtils } from '@toke/shared';
 import BaseModel from '../database/db.base.js';
 import { tableName } from '../../utils/response.model.js';
 import { DatabaseEncryption } from '../../utils/encryption.js';
+import CountryPhoneValidation from '../../tools/country.phone.validation.js';
 
 export default class TenantModel extends BaseModel {
   public readonly db = {
@@ -310,6 +311,7 @@ export default class TenantModel extends BaseModel {
       throw new Error('Failed to define tenant database parameters');
     }
   }
+
   protected async defineSubdomain(): Promise<void> {
     if (this.id == null) {
       throw new Error('Tenant ID is required for defining tenant subdomain');
@@ -411,7 +413,11 @@ export default class TenantModel extends BaseModel {
     }
 
     // Valider le téléphone de facturation (optionnel)
-    if (this.billing_phone && !TenantValidationUtils.validateBillingPhone(this.billing_phone)) {
+    if (
+      this.billing_phone &&
+      (!TenantValidationUtils.validateBillingPhone(this.billing_phone) ||
+        !CountryPhoneValidation.validatePhoneNumber(this.billing_phone, this.country_code))
+    ) {
       throw new Error(TENANT_ERRORS.BILLING_ADDRESS_INVALID);
     }
 

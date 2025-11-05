@@ -4,6 +4,7 @@ import * as bcrypt from 'bcrypt';
 
 import BaseModel from '../database/db.base.js';
 import { tableName } from '../../utils/response.model.js';
+import CountryPhoneValidation from '../../tools/country.phone.validation.js';
 
 export default class UserModel extends BaseModel {
   public readonly db = {
@@ -18,6 +19,7 @@ export default class UserModel extends BaseModel {
     first_name: 'first_name',
     last_name: 'last_name',
     phone_number: 'phone_number',
+    country: 'country',
     employee_code: 'employee_code',
 
     // Authentification
@@ -57,6 +59,7 @@ export default class UserModel extends BaseModel {
   protected first_name?: string;
   protected last_name?: string;
   protected phone_number?: string;
+  protected country?: string;
   protected employee_code?: string;
 
   // ⚠️ NE PAS HACHER ICI : Sequelize le fait automatiquement
@@ -524,6 +527,7 @@ export default class UserModel extends BaseModel {
       [this.db.first_name]: this.first_name,
       [this.db.last_name]: this.last_name,
       [this.db.phone_number]: this.phone_number ? this.phone_number : null,
+      [this.db.country]: this.country?.toUpperCase(),
       [this.db.employee_code]: this.employee_code ? this.employee_code : null,
       [this.db.pin_hash]: this.pin_hash, // Sequelize hache via set()
       [this.db.password_hash]: this.password_hash, // Sequelize hache via set()
@@ -569,6 +573,9 @@ export default class UserModel extends BaseModel {
     }
     if (this.phone_number !== undefined) {
       updateData[this.db.phone_number] = this.phone_number;
+    }
+    if (this.country !== undefined) {
+      updateData[this.db.country] = this.country?.toUpperCase();
     }
     if (this.employee_code !== undefined) {
       updateData[this.db.employee_code] = this.employee_code;
@@ -674,8 +681,18 @@ export default class UserModel extends BaseModel {
     if (!UsersValidationUtils.validateLastName(this.last_name)) {
       throw new Error(USERS_ERRORS.LAST_NAME_INVALID);
     }
+    if (!this.country) {
+      throw new Error(USERS_ERRORS.COUNTRY_REQUIRED);
+    }
+    if (!UsersValidationUtils.validateCountryCode(this.country)) {
+      throw new Error(USERS_ERRORS.COUNTRY_INVALID);
+    }
 
-    if (this.phone_number && !UsersValidationUtils.validatePhoneNumber(this.phone_number)) {
+    if (
+      this.phone_number &&
+      (!UsersValidationUtils.validatePhoneNumber(this.phone_number) ||
+        !CountryPhoneValidation.validatePhoneNumber(this.phone_number, this.country))
+    ) {
       throw new Error(USERS_ERRORS.PHONE_NUMBER_INVALID);
     }
 

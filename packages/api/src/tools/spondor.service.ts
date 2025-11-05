@@ -7,6 +7,7 @@ dotenv.config();
 
 interface InvitationData {
   phone_number: string;
+  country: string;
   metadata: Record<string, any>;
 }
 

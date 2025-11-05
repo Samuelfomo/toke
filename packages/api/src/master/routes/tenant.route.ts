@@ -32,6 +32,7 @@ import OTPCacheService from '../../tools/otp-cache.service.js';
 import WapService from '../../tools/send.otp.service.js';
 import EmailSender from '../../tools/send.email.service.js';
 import { Contact } from '../class/Contact.js';
+import CountryPhoneValidation from '../../tools/country.phone.validation.js';
 
 const otpManager = new TenantOtpManager();
 
@@ -337,6 +338,35 @@ router.post('/', Ensure.post(), async (req: Request, res: Response) => {
   try {
     const validatedData = TN.validateTenantCreation(req.body);
 
+    // // Normalisation du code pays
+    // const countryCode = validatedData.country_code?.toUpperCase();
+    //
+    // // Vérifie que le code pays existe bien dans libphonenumber-js
+    // const isCountryValid = countryCode && getCountries().includes(countryCode as CountryCode);
+    //
+    // if (
+    //   validatedData.billing_phone &&
+    //   (!isCountryValid ||
+    //     !isValidPhoneNumber(validatedData.billing_phone, countryCode as CountryCode))
+    // ) {
+    //   return R.handleError(res, HttpStatus.BAD_REQUEST, {
+    //     code: TENANT_CODES.BILLING_PHONE_INVALID,
+    //     message: TENANT_ERRORS.BILLING_PHONE_INVALID,
+    //   });
+    // }
+
+    if (
+      validatedData.billing_phone &&
+      !CountryPhoneValidation.validatePhoneNumber(
+        validatedData.billing_phone,
+        validatedData.country_code,
+      )
+    ) {
+      return R.handleError(res, HttpStatus.BAD_REQUEST, {
+        code: TENANT_CODES.BILLING_PHONE_INVALID,
+        message: TENANT_ERRORS.BILLING_PHONE_INVALID,
+      });
+    }
     const tenantObj = new Tenant()
       .setName(validatedData.name)
       .setCountryCode(validatedData.country_code)
@@ -1060,6 +1090,13 @@ router.post('/otp', Ensure.post(), async (req: Request, res: Response) => {
 
     // Envoyer l'OTP via WhatsApp
     if (phone && country) {
+      if (!CountryPhoneValidation.validatePhoneNumber(phone, country)) {
+        return R.handleError(res, HttpStatus.BAD_REQUEST, {
+          code: 'invalid_phone_number',
+          message: 'The phone number must comply with the valid phone number format.',
+        });
+      }
+
       const contactObj = await Contact._load(value, false, true);
 
       if (!contactObj) {

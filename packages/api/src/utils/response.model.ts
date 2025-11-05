@@ -166,6 +166,7 @@ export const responseStructure = {
   FIRST_NAME: 'first_name',
   LAST_NAME: 'last_name',
   PHONE_NUMBER: 'phone_number',
+  COUNTRY: 'country',
   AVATAR_URL: 'avatar_url',
   HIRE_DATE: 'hire_date',
   DEPARTMENT: 'department',

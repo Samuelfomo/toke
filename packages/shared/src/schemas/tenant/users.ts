@@ -72,6 +72,13 @@ const baseUsersSchema = z.object({
   // .optional()
   // .nullable(),
 
+  country: z
+    .string({ required_error: USERS_ERRORS.COUNTRY_REQUIRED })
+    .min(USERS_VALIDATION.COUNTRY.MIN_LENGTH)
+    .max(USERS_VALIDATION.COUNTRY.MAX_LENGTH)
+    .regex(USERS_VALIDATION.COUNTRY.PATTERN, USERS_ERRORS.COUNTRY_INVALID)
+    .transform((val) => val.toUpperCase()),
+
   employee_code: z
     .string({
       invalid_type_error: USERS_ERRORS.EMPLOYEE_CODE_INVALID,
@@ -200,6 +207,7 @@ export const usersFiltersSchema = z
     first_name: z.string().optional(),
     last_name: z.string().optional(),
     phone_number: z.string().optional(),
+    country: z.string().optional(),
     employee_code: z.string().optional(),
     department: z.string().optional(),
     job_title: z.string().optional(),

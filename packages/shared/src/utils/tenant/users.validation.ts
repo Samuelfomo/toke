@@ -72,6 +72,15 @@ export class UsersValidationUtils {
   }
 
   /**
+   * Validates country code ISO 3166-1 alpha-2
+   */
+  static validateCountryCode(country: string): boolean {
+    if (!country || typeof country !== 'string') return false;
+    const trimmed = country.trim().toUpperCase();
+    return USERS_VALIDATION.COUNTRY.PATTERN.test(trimmed);
+  }
+
+  /**
    * Validates employee code
    */
   static validateEmployeeCode(employeeCode: string | null): boolean {
@@ -282,6 +291,9 @@ export class UsersValidationUtils {
     // Clean and normalize email
     if (cleaned.email !== undefined && cleaned.email !== null) {
       cleaned.email = cleaned.email.toString().trim().toLowerCase();
+    }
+    if (cleaned.country !== undefined && cleaned.country !== null) {
+      cleaned.country = cleaned.country.toString().trim().toUpperCase();
     }
 
     // Clean optional string fields

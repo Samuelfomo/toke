@@ -223,6 +223,7 @@ export class TableInitializer {
     this.models.set(CountryDbStructure.tableName, model);
     console.log(`✅ Modèle Country défini (${CountryDbStructure.tableName})`);
   }
+
   private static defineCurrencyModel(): void {
     const model = this.sequelize.define(
       CurrencyDbStructure.tableName,
@@ -233,6 +234,7 @@ export class TableInitializer {
     this.models.set(CurrencyDbStructure.tableName, model);
     console.log(`✅ Modèle Currency défini (${CurrencyDbStructure.tableName})`);
   }
+
   private static defineExchangeRateModel(): void {
     const model = this.sequelize.define(
       ExchangeRateDbStructure.tableName,
@@ -243,6 +245,7 @@ export class TableInitializer {
     this.models.set(ExchangeRateDbStructure.tableName, model);
     console.log(`✅ Modèle ExchangeRate défini (${ExchangeRateDbStructure.tableName})`);
   }
+
   private static defineLanguageModel(): void {
     const model = this.sequelize.define(
       LanguageDbStructure.tableName,
@@ -253,6 +256,7 @@ export class TableInitializer {
     this.models.set(LanguageDbStructure.tableName, model);
     console.log(`✅ Modèle Language défini (${LanguageDbStructure.tableName})`);
   }
+
   private static defineTaxRuleModel(): void {
     const model = this.sequelize.define(
       TaxRuleDbStructure.tableName,
@@ -263,6 +267,7 @@ export class TableInitializer {
     this.models.set(TaxRuleDbStructure.tableName, model);
     console.log(`✅ Modèle TaxRule défini (${TaxRuleDbStructure.tableName})`);
   }
+
   private static defineTenantModel(): void {
     const model = this.sequelize.define(
       TenantDbStructure.tableName,
@@ -273,6 +278,7 @@ export class TableInitializer {
     this.models.set(TenantDbStructure.tableName, model);
     console.log(`✅ Modèle Tenant défini (${TenantDbStructure.tableName})`);
   }
+
   private static defineGlobalLicenseModel(): void {
     const model = this.sequelize.define(
       GlobalLicenseDbStructure.tableName,
@@ -283,6 +289,7 @@ export class TableInitializer {
     this.models.set(GlobalLicenseDbStructure.tableName, model);
     console.log(`✅ Modèle Global License défini (${GlobalLicenseDbStructure.tableName})`);
   }
+
   private static defineEmployeeLicenseModel(): void {
     const model = this.sequelize.define(
       EmployeeLicenseDbStructure.tableName,
@@ -293,6 +300,7 @@ export class TableInitializer {
     this.models.set(EmployeeLicenseDbStructure.tableName, model);
     console.log(`✅ Modèle Employee License défini (${EmployeeLicenseDbStructure.tableName})`);
   }
+
   private static defineBillingCycleModel(): void {
     const model = this.sequelize.define(
       BillingCycleDbStructure.tableName,
@@ -303,6 +311,7 @@ export class TableInitializer {
     this.models.set(BillingCycleDbStructure.tableName, model);
     console.log(`✅ Modèle billing cycle défini (${BillingCycleDbStructure.tableName})`);
   }
+
   private static definePaymentMethodModel(): void {
     const model = this.sequelize.define(
       PaymentMethodDbStructure.tableName,
@@ -313,6 +322,7 @@ export class TableInitializer {
     this.models.set(PaymentMethodDbStructure.tableName, model);
     console.log(`✅ Modèle payment method défini (${PaymentMethodDbStructure.tableName})`);
   }
+
   private static defineLicenseAdjustmentModel(): void {
     const model = this.sequelize.define(
       LicenseAdjustmentDbStructure.tableName,
@@ -323,6 +333,7 @@ export class TableInitializer {
     this.models.set(LicenseAdjustmentDbStructure.tableName, model);
     console.log(`✅ Modèl license adjustment défini (${LicenseAdjustmentDbStructure.tableName})`);
   }
+
   private static definePaymentTransactionModel(): void {
     const model = this.sequelize.define(
       PaymentTransactionDbStructure.tableName,
@@ -333,6 +344,7 @@ export class TableInitializer {
     this.models.set(PaymentTransactionDbStructure.tableName, model);
     console.log(`✅ Modèl payment transaction défini (${PaymentTransactionDbStructure.tableName})`);
   }
+
   private static defineFraudDetectionLogModel(): void {
     const model = this.sequelize.define(
       FraudDetectionLogDbStructure.tableName,
@@ -343,6 +355,7 @@ export class TableInitializer {
     this.models.set(FraudDetectionLogDbStructure.tableName, model);
     console.log(`✅ Modèl fraud detection log défini (${FraudDetectionLogDbStructure.tableName})`);
   }
+
   private static defineActivityMonitoringModel(): void {
     const model = this.sequelize.define(
       ActivityMonitoringDbStructure.tableName,
@@ -353,6 +366,7 @@ export class TableInitializer {
     this.models.set(ActivityMonitoringDbStructure.tableName, model);
     console.log(`✅ Modèl activity monitoring défini (${ActivityMonitoringDbStructure.tableName})`);
   }
+
   private static defineContactModel(): void {
     const model = this.sequelize.define(
       ContactDbStructure.tableName,

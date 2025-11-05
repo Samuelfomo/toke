@@ -36,9 +36,10 @@ import WorkSessions from '../class/WorkSessions.js';
 import Site from '../class/Site.js';
 import EmailSender from '../../tools/send.email.service.js';
 import InvitationService from '../../tools/spondor.service.js';
+import CountryPhoneValidation from '../../tools/country.phone.validation.js';
 
 const router = Router();
-
+ 
 // === ROUTES DE LISTAGE ===
 
 // === RECUPERER LES UTILISATEURS ACTIVES D'UN TENANT
@@ -232,7 +233,8 @@ router.post('/', Ensure.post(), async (req: Request, res: Response) => {
       .setTenant(tenant.config.reference)
       .setFirstName(validatedData.first_name)
       .setLastName(validatedData.last_name)
-      .setPhoneNumber(validatedData.phone_number);
+      .setPhoneNumber(validatedData.phone_number)
+      .setCountry(validatedData.country);
 
     if (validatedData.email) {
       userObj.setEmail(validatedData.email);
@@ -265,13 +267,13 @@ router.post('/', Ensure.post(), async (req: Request, res: Response) => {
     ); // 24h par défaut
     // }
 
-    const { country } = req.body;
-    if (!CountryValidationUtils.validateIsoCode(country)) {
-      return R.handleError(res, HttpStatus.BAD_REQUEST, {
-        code: 'country_code_invalid',
-        message: COUNTRY_ERRORS.CODE_INVALID,
-      });
-    }
+    // const { country } = req.body;
+    // if (!CountryValidationUtils.validateIsoCode(country)) {
+    //   return R.handleError(res, HttpStatus.BAD_REQUEST, {
+    //     code: 'country_code_invalid',
+    //     message: COUNTRY_ERRORS.CODE_INVALID,
+    //   });
+    // }
 
     // const existingCountry = await Country._load(country, false, true);
     // if (!existingCountry) {
@@ -310,7 +312,7 @@ router.post('/', Ensure.post(), async (req: Request, res: Response) => {
     const result = await WapService.sendOtp(
       userObj.getOtpToken()!,
       validatedData.phone_number,
-      country,
+      validatedData.country,
     );
     if (result.status !== HttpStatus.SUCCESS) {
       return R.handleError(res, result.status, result.response);
@@ -422,7 +424,8 @@ router.post('/manager/:affiliate', Ensure.post(), async (req: Request, res: Resp
         .setTenant(tenant.config.reference)
         .setFirstName(data.first_name)
         .setLastName(data.last_name)
-        .setPhoneNumber(data.phone_number);
+        .setPhoneNumber(data.phone_number)
+        .setCountry(data.country);
 
       if (data.email) user.setEmail(data.email);
       if (data.employee_code) user.setEmployeeCode(data.employee_code);
@@ -2010,19 +2013,19 @@ router.post('/share', Ensure.post(), async (req: Request, res: Response) => {
   try {
     const { user, phone_number, affiliate, country } = req.body;
 
-    if (!country) {
-      return R.handleError(res, HttpStatus.BAD_REQUEST, {
-        code: 'country_is_required',
-        message: COUNTRY_ERRORS.CODE_REQUIRED,
-      });
-    }
-
-    if (!CountryValidationUtils.validateIsoCode(country)) {
-      return R.handleError(res, HttpStatus.BAD_REQUEST, {
-        code: 'invalid_country_code',
-        message: COUNTRY_ERRORS.CODE_INVALID,
-      });
-    }
+    // if (!country) {
+    //   return R.handleError(res, HttpStatus.BAD_REQUEST, {
+    //     code: 'country_is_required',
+    //     message: COUNTRY_ERRORS.CODE_REQUIRED,
+    //   });
+    // }
+    //
+    // if (!CountryValidationUtils.validateIsoCode(country)) {
+    //   return R.handleError(res, HttpStatus.BAD_REQUEST, {
+    //     code: 'invalid_country_code',
+    //     message: COUNTRY_ERRORS.CODE_INVALID,
+    //   });
+    // }
 
     // === TODO implementer la logique de verification d'existence du country dans le système via le master ===/
 
@@ -2049,6 +2052,7 @@ router.post('/share', Ensure.post(), async (req: Request, res: Response) => {
 
     let phone: string;
     let lead: string;
+    let countryValue: string;
     // let userIdToCheck: number | null = null;
     let userToCheck: string | null = null;
 
@@ -2075,6 +2079,7 @@ router.post('/share', Ensure.post(), async (req: Request, res: Response) => {
 
       phone = userObj.getPhoneNumber()!;
       lead = assignByObj.getGuid()!;
+      countryValue = userObj.getCountry()!;
       // userIdToCheck = userObj.getId()!;
       userToCheck = userObj.getGuid()!;
       // userInstance = userObj;
@@ -2085,13 +2090,31 @@ router.post('/share', Ensure.post(), async (req: Request, res: Response) => {
         code: 'phone_number_is_required',
         message: 'Phone number is required',
       });
+    } else if (!country) {
+      return R.handleError(res, HttpStatus.BAD_REQUEST, {
+        code: USERS_CODES.COUNTRY_REQUIRED,
+        message: USERS_ERRORS.COUNTRY_REQUIRED,
+      });
+    } else if (!UsersValidationUtils.validateCountryCode(country)) {
+      return R.handleError(res, HttpStatus.BAD_REQUEST, {
+        code: USERS_CODES.COUNTRY_INVALID,
+        message: USERS_ERRORS.COUNTRY_INVALID,
+      });
     } else if (!UsersValidationUtils.validatePhoneNumber(phone_number)) {
       return R.handleError(res, HttpStatus.BAD_REQUEST, {
         code: USERS_CODES.PHONE_NUMBER_INVALID,
         message: USERS_ERRORS.PHONE_NUMBER_INVALID,
       });
-    } else {
+    }
+    // else if (!UsersValidationUtils.validatePhoneNumber(phone_number)) {
+    //   return R.handleError(res, HttpStatus.BAD_REQUEST, {
+    //     code: USERS_CODES.PHONE_NUMBER_INVALID,
+    //     message: USERS_ERRORS.PHONE_NUMBER_INVALID,
+    //   });
+    // }
+    else {
       phone = phone_number;
+      countryValue = country;
 
       // Try to find existing user by phone number
       const existingUserByPhone = await User._load(phone_number, false, false, false, true);
@@ -2151,9 +2174,17 @@ router.post('/share', Ensure.post(), async (req: Request, res: Response) => {
       }
     }
 
+    if (!CountryPhoneValidation.validatePhoneNumber(phone, countryValue)) {
+      return R.handleError(res, HttpStatus.BAD_REQUEST, {
+        code: USERS_CODES.PHONE_NUMBER_INVALID,
+        message: USERS_ERRORS.PHONE_NUMBER_INVALID,
+      });
+    }
+
     const tenant = req.tenant;
     const data = {
       phone_number: phone,
+      country: countryValue,
       metadata: {
         user: userToCheck || null,
         // user: userInstance?.toJSON() || null,
@@ -2184,7 +2215,7 @@ router.post('/share', Ensure.post(), async (req: Request, res: Response) => {
       );
     }
     const response = saved.response.data;
-    const sendToken = await WapService.sendOtp(response.guid, response.phone_number, country);
+    const sendToken = await WapService.sendOtp(response.guid, response.phone_number, countryValue);
     if (sendToken.status !== HttpStatus.SUCCESS) {
       return R.handleError(res, sendToken.status, sendToken.response);
     }
