@@ -200,12 +200,6 @@
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 15l7-7 7 7"></path>
               </svg>
             </th>
-            <th class="sortable" @click="setSortBy('status')">
-              Statut du jour
-              <svg v-if="sortBy === 'status'" class="sort-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 15l7-7 7 7"></path>
-              </svg>
-            </th>
             <th class="sortable" @click="setSortBy('site')">
               Site
               <svg v-if="sortBy === 'site'" class="sort-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -243,12 +237,6 @@
             </td>
             <td>{{ employee.position }}</td>
             <td>
-              <div class="status-badge" :class="`status-${employeeStore.getEmployeeDailyStatus(employee.id, selectedDate).status}`">
-                <span :class="statusIcon(employeeStore.getEmployeeDailyStatus(employee.id, selectedDate).status)"></span>
-                <span>{{ employeeStore.getEmployeeDailyStatus(employee.id, selectedDate).statusText }}</span>
-              </div>
-            </td>
-            <td>
               <div class="site-info">
                 <svg class="icon-xs" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"></path>
@@ -271,14 +259,14 @@
                   ></div>
                 </div>
                 <span class="punctuality-score">{{ employee.punctualityScore }}%</span>
-                <span class="punctuality-details">
-                  ({{ employee.punctualityDetails.onTime }}/{{ employee.punctualityDetails.totalDays }} jours)
-                </span>
+<!--                <span class="punctuality-details">-->
+<!--                  ({{ employee.punctualityDetails.onTime }}/{{ employee.punctualityDetails.totalDays }} jours)-->
+<!--                </span>-->
               </div>
             </td>
             <td class="actions-cell">
               <div class="employee-menu" :class="{ 'visible': hoveredEmployee === employee.id }">
-                <button
+                <button1
                   @click="toggleEmployeeMenu(employee.id)"
                   class="menu-trigger"
                   :class="{ 'active': activeEmployeeMenu === employee.id }">
@@ -287,7 +275,7 @@
                     <circle cx="12" cy="12" r="2"></circle>
                     <circle cx="12" cy="19" r="2"></circle>
                   </svg>
-                </button>
+                </button1>
 
                 <div v-if="activeEmployeeMenu === employee.id" class="employee-dropdown">
                   <button @click="editEmployee(employee)" class="dropdown-item">
@@ -362,7 +350,6 @@ import dashboardCss from "../assets/css/toke-dMain-04.css?url"
 import Header from '../views/components/header.vue'
 import HeadBuilder from '@/utils/HeadBuilder';
 import { useEmployeeStore } from '../composables/useEmployeeStore';
-import EmployeeModal from '../views/components/employeeModal.vue';
 
 interface Manager {
   id: number
@@ -457,9 +444,6 @@ const filteredEmployees = computed(() => {
         return a.name.localeCompare(b.name)
       case 'position':
         return a.position.localeCompare(b.position)
-      case 'status':
-        return employeeStore.getEmployeeDailyStatus(a.id, selectedDate.value).status
-          .localeCompare(employeeStore.getEmployeeDailyStatus(b.id, selectedDate.value).status)
       case 'site':
         return employeeStore.getSiteName(a.siteId).localeCompare(employeeStore.getSiteName(b.siteId))
       case 'punctualityScore':
@@ -506,21 +490,6 @@ const toggleEmployeeMenu = (employeeId: number) => {
     activeEmployeeMenu.value = null
   } else {
     activeEmployeeMenu.value = employeeId
-  }
-}
-
-const statusIcon = (status: string) => {
-  switch (status) {
-    case 'absent':
-      return 'icon-x'
-    case 'late':
-      return 'icon-clock'
-    case 'present':
-      return 'icon-check'
-    case 'info':
-      return 'icon-info'
-    default:
-      return 'icon-info'
   }
 }
 
@@ -596,36 +565,6 @@ onUnmounted(() => {
 </script>
 
 <style scoped>
-.status-badge {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.5rem;
-  padding: 0.25rem 0.75rem;
-  border-radius: 1rem;
-  font-size: 0.875rem;
-  font-weight: 500;
-}
-
-.status-absent {
-  background-color: #fee;
-  color: #c33;
-}
-
-.status-late {
-  background-color: #ffeaa7;
-  color: #d63031;
-}
-
-.status-present {
-  background-color: #d4edda;
-  color: #155724;
-}
-
-.status-info {
-  background-color: #d1ecf1;
-  color: #0c5460;
-}
-
 .punctuality-details {
   font-size: 0.75rem;
   color: #666;

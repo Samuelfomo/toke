@@ -1,133 +1,103 @@
 <template>
-  <div class="employee-details-container">
-    <div class="details-header">
+  <div class="modal-overlay-wrapper">
+    <div class="modal-attendance-card">
       <a href="/dashboard" @click.prevent="goBack" class="back-arrow-link">
         <IconArrowLeft />
       </a>
-      <h1 class="page-title">Détails de l'employé</h1>
-    </div>
 
-    <div v-if="loading" class="employee-profile-skeleton">
-      <div class="skeleton-profile-header">
-        <div class="skeleton-avatar"></div>
-        <div class="skeleton-main-info">
-          <div class="skeleton-name-large"></div>
-          <div class="skeleton-status-large"></div>
+      <div class="modal-attendance-card">
+        <div class="modal-profile-summary">
+          <div class="modal-header">
+            <div class="modal-avatar">{{ employee.initials || employee.name.substring(0, 2) }}</div>
+            <h3 class="modal-employee-name">{{ employee.name }}</h3>
+          </div>
+          <span :class="['modal-status-badge', 'status-' + employee.status]">
+            {{ employee.statusText }}
+          </span>
         </div>
-      </div>
 
-      <div class="skeleton-details-sections">
-        <div v-for="n in 3" :key="'sec'+n" class="skeleton-info-section">
-          <div class="skeleton-section-title"></div>
-          <div class="skeleton-info-grid">
-            <div v-for="i in 4" :key="'item'+i" class="skeleton-info-item">
-              <div class="skeleton-label"></div>
-              <div class="skeleton-value"></div>
+        <div class="modal-info-grid">
+          <!-- ======= EMPLOYÉ PRÉSENT OU EN RETARD ======= -->
+          <div v-if="employee.status === 'present' || employee.status === 'late'" class="modal-info-item modal-arrival-time">
+            <IconClock class="modal-info-icon" />
+            <div>
+              <span class="modal-info-label">Heure d'arrivée</span>
+              <span class="modal-info-value">{{ employee.checkInTime || employee.time || 'Non spécifiée' }}</span>
+            </div>
+          </div>
+
+          <!-- ======= EMPLOYÉ EN RETARD ======= -->
+          <div v-if="employee.status === 'late'" class="modal-info-item modal-late-detail">
+            <IconAlertTriangle class="modal-info-icon" />
+            <div>
+              <span class="modal-info-label">Durée du retard</span>
+              <span class="modal-info-value modal-info-value-warning">{{ employee.lateDuration || employee.lateTime || 'N/A' }}</span>
+            </div>
+          </div>
+
+          <!-- MOTIF DU RETARD -->
+          <div v-if="employee.status === 'late' && employee.motif" class="modal-info-item modal-location-detail">
+            <IconNote class="modal-info-icon" />
+            <div>
+              <span class="modal-info-label">Motif du retard</span>
+              <span class="modal-info-value">{{ employee.motif }}</span>
+            </div>
+          </div>
+
+          <!-- ======= EMPLOYÉ ABSENT ======= -->
+          <div v-if="employee.status === 'absent'" class="modal-info-item modal-absence-detail">
+            <IconCalendarOff class="modal-info-icon" />
+            <div>
+              <span class="modal-info-label">Motif de l'absence</span>
+              <span class="modal-info-value modal-info-value-critical">
+                {{ employee.absenceReason || employee.absenceType || 'Non justifiée' }}
+              </span>
+            </div>
+          </div>
+
+          <!-- ======= EMPLOYÉ EN FORMATION/CONGÉ ======= -->
+          <div v-if="employee.status === 'info' && employee.location" class="modal-info-item modal-location-detail">
+            <IconMapPin class="modal-info-icon" />
+            <div>
+              <span class="modal-info-label">Détails</span>
+              <span class="modal-info-value">{{ employee.location }}</span>
             </div>
           </div>
         </div>
 
-        <div class="skeleton-info-section">
-          <div class="skeleton-section-title"></div>
-          <div class="stats-grid-skeleton">
-            <div v-for="s in 4" :key="'stat'+s" class="skeleton-stat-card"></div>
-          </div>
-        </div>
-      </div>
+        <hr class="modal-separator" />
 
-      <div class="skeleton-details-actions">
-        <div class="skeleton-action-btn" v-for="a in 4" :key="'act'+a"></div>
-      </div>
-    </div>
+        <div class="modal-quick-actions">
+          <!-- N'afficher "Justifier l'absence" QUE si l'absence n'est pas justifiée -->
+          <button v-if="employee.status === 'absent' && !employee.isJustified"
+                  class="modal-action-btn modal-action-justify"
+                  @click="handleAction('justify')">
+            <IconNote class="modal-btn-icon" /> Justifier l'absence
+          </button>
 
-    <div v-else class="employee-profile-card">
-      <div class="profile-header">
-        <div class="profile-avatar">
-          <div class="avatar-large">{{ employee.initials }}</div>
-          <div :class="['status-indicator-large', 'indicator-' + employee.status]"></div>
-        </div>
-        <div class="main-info">
-          <h2 class="employee-name-large">{{ employee.name }}</h2>
-          <div :class="['employee-status-large', 'status-' + employee.status]">
-            {{ employee.statusText }}
-          </div>
-        </div>
-      </div>
+          <!-- Afficher "Valider le retard" seulement si pas encore validé -->
+          <button v-if="employee.status === 'late' && !employee.isValidated"
+                  class="modal-action-btn modal-action-validate"
+                  @click="handleAction('validate')">
+            <IconCheck class="modal-btn-icon" /> Valider le retard
+          </button>
 
-      <div class="details-section">
-        <h3 class="section-title">Informations Générales</h3>
-        <div class="info-grid">
-          <div class="info-item">
-            <span class="info-label">Matricule</span>
-            <span class="info-value">{{ employee.matricule }}</span>
-          </div>
-          <div class="info-item">
-            <span class="info-label">Poste</span>
-            <span class="info-value">{{ employee.position }}</span>
-          </div>
-          <div class="info-item">
-            <span class="info-label">Département</span>
-            <span class="info-value">{{ employee.department }}</span>
-          </div>
-          <div class="info-item">
-            <span class="info-label">Date d'embauche</span>
-            <span class="info-value">{{ employee.hireDate }}</span>
-          </div>
-        </div>
-      </div>
+          <!-- Bouton Mémo toujours disponible -->
+          <button class="modal-action-btn modal-action-memo"
+                  @click="handleAction('memo')">
+            <IconMessage class="modal-btn-icon" /> Envoyer un mémo
+          </button>
 
-      <div class="details-section">
-        <h3 class="section-title">Contact et Supervision</h3>
-        <div class="info-grid">
-          <div class="info-item">
-            <span class="info-label">Email</span>
-            <span class="info-value">{{ employee.email }}</span>
-          </div>
-          <div class="info-item">
-            <span class="info-label">Téléphone</span>
-            <span class="info-value">{{ employee.phone }}</span>
-          </div>
-          <div class="info-item">
-            <span class="info-label">Superviseur</span>
-            <span class="info-value">{{ employee.manager }}</span>
-          </div>
+          <!-- Avertir seulement pour les retards et absences non justifiées -->
+          <button v-if="(employee.status === 'late' && !employee.isValidated) || (employee.status === 'absent' && !employee.isJustified)"
+                  class="modal-action-btn modal-action-warn"
+                  @click="handleAction('warn')">
+            <IconAlertOctagon class="modal-btn-icon" /> Avertir l'employé
+          </button>
         </div>
-      </div>
 
-      <div class="details-section">
-        <h3 class="section-title">Statistiques du mois</h3>
-        <div class="stats-grid">
-          <div class="stat-card stat-present">
-            <div class="stat-number">{{ employee.monthlyStats?.present }}</div>
-            <div class="stat-label">Jours Présents</div>
-          </div>
-          <div class="stat-card stat-late">
-            <div class="stat-number">{{ employee.monthlyStats?.late }}</div>
-            <div class="stat-label">Retards</div>
-          </div>
-          <div class="stat-card stat-absent">
-            <div class="stat-number">{{ employee.monthlyStats?.absent }}</div>
-            <div class="stat-label">Absences</div>
-          </div>
-          <div class="stat-card stat-rate">
-            <div class="stat-number">{{ employee.monthlyStats?.punctualityRate }}%</div>
-            <div class="stat-label">Taux de Ponctualité</div>
-          </div>
-        </div>
-      </div>
-
-      <div class="details-actions">
-        <button class="action-btn action-memo" @click="openMemoChat">
-          Envoyer un mémo
-        </button>
-        <button class="action-btn action-validate">
-          Valider le retard
-        </button>
-        <button class="action-btn action-justify">
-          Justifier l'absence
-        </button>
-        <button class="action-btn action-warn">
-          Avertir l'employé
+        <button @click="viewFullProfile" class="modal-full-profile-link">
+          <IconUserCircle class="modal-link-icon" /> Voir le profil complet (RH, Stats, Contact)
         </button>
       </div>
     </div>
@@ -135,103 +105,86 @@
 </template>
 
 <script setup lang="ts">
-import { onMounted, ref } from 'vue'
-import { useRoute, useRouter } from 'vue-router'
-import HeadBuilder from '@/utils/HeadBuilder'
-import detailsCss from "../assets/css/toke-employeeD-09.css?url"
-import { IconArrowLeft } from '@tabler/icons-vue';
-
-interface MonthlyStats {
-  present: number
-  late: number
-  absent: number
-  punctualityRate: number
-}
+import { defineProps, ref } from 'vue';
+import { useRouter } from 'vue-router';
+import "../assets/css/toke-employeeD-09.css";
+import {
+  IconArrowLeft,
+  IconClock,
+  IconAlertTriangle,
+  IconMapPin,
+  IconCalendarOff,
+  IconCheck,
+  IconNote,
+  IconUserCircle,
+  IconMessage,
+  IconAlertOctagon
+} from '@tabler/icons-vue';
 
 interface Employee {
-  id: number
-  name: string
-  initials: string
-  status: 'absent' | 'late' | 'present' | 'info'
-  statusText: string
-  location?: string
-  time?: string
-  avatar?: string
-  priority?: 'high' | 'medium' | 'low'
-  isJustified?: boolean
-  isValidated?: boolean
-
-  matricule?: string
-  email?: string
-  phone?: string
-  department?: string
-  position?: string
-  manager?: string
-  hireDate?: string
-  departureTime?: string
-  lateTime?: string
-  absenceType?: string
-  monthlyStats?: MonthlyStats
+  id: number;
+  name: string;
+  status: 'absent' | 'late' | 'present' | 'info';
+  statusText: string;
+  time?: string;
+  checkInTime?: string;
+  lateTime?: string;
+  lateDuration?: string;
+  absenceType?: string;
+  absenceReason?: string;
+  motif?: string;
+  isJustified?: boolean;
+  isValidated?: boolean;
+  initials?: string;
+  location?: string;
+  matricule?: string;
+  email?: string;
+  position?: string;
 }
 
-const route = useRoute()
-const router = useRouter()
+const router = useRouter();
+const loading = ref(false);
 
-const loading = ref(true);
+const props = defineProps<{
+  employee: Employee
+}>();
 
-const employee = ref<Employee>({
-  id: Number(route.params.employeeId),
-  name: route.query.employeeName as string || 'Employé en cours de chargement',
-  initials: route.query.employeeInitials as string || '...',
-  status: 'info',
-  statusText: 'Chargement en cours',
-});
+const emit = defineEmits<{
+  close: []
+}>();
 
-const fetchEmployeeDetails = async (id: number) => {
-  // Simulez un délai réseau (ajustez ce temps si nécessaire)
-  await new Promise(resolve => setTimeout(resolve, 800));
-
-  // Simuler la récupération des données complètes
-  employee.value = {
-    ...employee.value,
-    matricule: 'EMP' + id.toString().padStart(4, '0'),
-    email: (route.query.employeeName as string || 'employe').toLowerCase().replace(' ', '.') + '@company.com',
-    phone: '+237 6XX XXX XXX',
-    department: 'Ressources Humaines',
-    position: 'Chef de Projet',
-    manager: 'Danielle',
-    hireDate: '15/03/2022',
-    time: route.query.employeeTime as string || '08:30',
-    departureTime: '17:00',
-    status: route.query.employeeStatus as any || 'present',
-    statusText: route.query.employeeStatusText as string || 'Présent',
-    monthlyStats: {
-      present: 18,
-      late: 2,
-      absent: 1,
-      punctualityRate: 85
-    }
-  };
-
-  loading.value = false;
+const viewFullProfile = () => {
+  router.push({
+    name: 'employee-full-profile',
+    params: { employeeId: props.employee.id },
+  });
 };
 
 const goBack = () => {
-  router.back();
+  emit('close');
 };
 
-const openMemoChat = () => {
-  router.push({ name: 'memo', params: { employeeId: employee.value.id } });
+const handleAction = (actionType: 'justify' | 'validate' | 'memo' | 'warn') => {
+  switch (actionType) {
+    case 'justify':
+      alert(`Justification de l'absence pour ${props.employee.name} en cours...`);
+      // Émettre un événement pour mettre à jour l'employé
+      // emit('action-justified', props.employee.id);
+      break;
+    case 'validate':
+      alert(`Retard de ${props.employee.name} validé !`);
+      // emit('action-validated', props.employee.id);
+      break;
+    case 'memo':
+      alert(`Ouverture de la fenêtre de mémo pour ${props.employee.name}...`);
+      // router.push({ name: 'memo', params: { employeeId: props.employee.id } });
+      break;
+    case 'warn':
+      alert(`Avertissement formel généré pour ${props.employee.name}.`);
+      break;
+  }
 };
-
-onMounted(() => {
-  fetchEmployeeDetails(Number(route.params.employeeId));
-
-  HeadBuilder.apply({
-    title: `Détails - ${employee.value.name} - Toké`,
-    css: [detailsCss],
-    meta: { viewport: "width=device-width, initial-scale=1.0" }
-  })
-})
 </script>
 
+<style scoped>
+</style>

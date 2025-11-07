@@ -26,6 +26,7 @@
             v-for="employee in problemEmployees"
             :key="employee.id"
             :employee="employee"
+            @click="showEmployeeDetails(employee)"
           />
         </div>
       </div>
@@ -42,6 +43,7 @@
             v-for="employee in infoEmployees"
             :key="employee.id"
             :employee="employee"
+            @click="showEmployeeDetails(employee)"
           />
         </div>
       </div>
@@ -58,16 +60,25 @@
             v-for="employee in presentEmployees"
             :key="employee.id"
             :employee="employee"
+            @click="showEmployeeDetails(employee)"
           />
         </div>
       </div>
     </div>
   </section>
-</template>
 
+  <div v-if="isModalOpen && selectedEmployee" class="modal-overlay" @click.self="closeModal">
+    <EmployeeDetails
+      :employee="selectedEmployee"
+      @close="closeModal"
+      class="quick-detail-modal"
+    />
+  </div>
+</template>
 
 <script setup lang="ts">
 import { ref, computed } from 'vue'
+import EmployeeDetails from '../EmployeeDetails.vue'
 import EmployeeCard from './employeeCard.vue'
 import "../../assets/css/tokt-employeeS-05.css";
 
@@ -83,10 +94,17 @@ interface Employee {
   priority?: 'high' | 'medium' | 'low'
   isJustified?: boolean;
   isValidated?: boolean;
+  checkInTime?: string;
+  lateDuration?: string;
+  absenceReason?: string;
+  motif?: string; // Motif du retard
 }
 
 const activeTab = ref<string>('problems')
+const isModalOpen = ref<boolean>(false)
+const selectedEmployee = ref<Employee | null>(null)
 
+// Données des employés avec tous les détails nécessaires
 const employees = ref<Employee[]>([
   {
     id: 1,
@@ -94,49 +112,61 @@ const employees = ref<Employee[]>([
     initials: 'SF',
     status: 'absent',
     statusText: 'Absent',
-    priority: 'high'
+    priority: 'high',
+    absenceReason: 'Maladie',
+    isJustified: true // Absence justifiée - ne doit pas afficher "non justifiée"
   },
   {
     id: 2,
-    name: 'Manfred Moukate ',
+    name: 'Manfred Moukate',
     initials: 'MM',
     status: 'late',
-    statusText: 'En retard arrivé à 09:45',
+    statusText: 'En retard',
     location: 'Chantier Bonabéri',
     isJustified: false,
-    priority: 'high'
+    priority: 'high',
+    checkInTime: '09:45',
+    lateDuration: '1h45',
+    motif: 'Embouteillage sur la route' // Motif du retard
   },
   {
     id: 3,
     name: 'Jordan',
     initials: 'J',
     status: 'late',
-    statusText: 'En retard arrivé à 08:35',
+    statusText: 'En retard',
     location: 'Bureau central',
     isValidated: false,
-    priority: 'high'
+    priority: 'high',
+    checkInTime: '08:35',
+    lateDuration: '35 min',
+    motif: 'Problème de transport' // Motif du retard
   },
   {
-    id: 3,
+    id: 4,
     name: 'Jean Djoko',
     initials: 'JD',
     status: 'absent',
     statusText: 'Absent',
     priority: 'high',
-    isJustified: false // Ajout pour l'absence non justifiée
-  },
-  {
-    id: 4,
-    name: 'Marie Kengne',
-    initials: 'MK',
-    status: 'late',
-    statusText: 'En retard arrivé à 09:45',
-    location: 'Chantier Bonabéri',
-    isValidated: false, // Ajout pour le retard
-    priority: 'high'
+    isJustified: false,
+    absenceReason: 'Non contacté' // Celui-ci affichera "non justifiée"
   },
   {
     id: 5,
+    name: 'Marie Kengne',
+    initials: 'MK',
+    status: 'late',
+    statusText: 'En retard',
+    location: 'Chantier Bonabéri',
+    isValidated: false,
+    priority: 'high',
+    checkInTime: '09:45',
+    lateDuration: '1h45',
+    motif: 'Panne de véhicule'
+  },
+  {
+    id: 6,
     name: 'Sophie Raoul',
     initials: 'SR',
     status: 'info',
@@ -144,7 +174,7 @@ const employees = ref<Employee[]>([
     location: 'Congé parental - retour le 15 octobre',
   },
   {
-    id: 6,
+    id: 7,
     name: 'Alex Tchioffo',
     initials: 'AT',
     status: 'info',
@@ -152,11 +182,12 @@ const employees = ref<Employee[]>([
     location: 'Formation sécurité - CCIMA'
   },
   {
-    id: 7,
+    id: 8,
     name: 'Tchioffo',
     initials: 'T',
     status: 'present',
-    statusText: 'Formation',
+    statusText: 'Présent',
+    checkInTime: '07:58',
   }
 ])
 
@@ -193,6 +224,23 @@ const tabs = computed(() => [
   }
 ])
 
+const showEmployeeDetails = (employeeData: Employee) => {
+  const fullEmployeeData = employees.value.find(emp => emp.id === employeeData.id)
+  if (fullEmployeeData) {
+    selectedEmployee.value = fullEmployeeData
+    isModalOpen.value = true
+  }
+}
+
+const closeModal = () => {
+  isModalOpen.value = false
+  selectedEmployee.value = null
+}
+
+const setActiveTab = (tab: string) => {
+  activeTab.value = tab
+}
+
 const problemEmployees = computed(() =>
   employees.value.filter(emp => emp.status === 'absent' || emp.status === 'late')
 )
@@ -212,43 +260,7 @@ const absentEmployees = computed(() =>
 const lateEmployees = computed(() =>
   employees.value.filter(emp => emp.status === 'late')
 )
-
-const filteredEmployees = computed(() => {
-  switch (activeTab.value) {
-    case 'problems':
-      return problemEmployees.value;
-    case 'present':
-      return presentEmployees.value;
-    case 'absent':
-      return absentEmployees.value;
-    case 'late':
-      return lateEmployees.value;
-    case 'info': // Vous avez un cas 'info' séparé, mais il ne semble pas être utilisé dans l'image
-      return infoEmployees.value;
-    case 'all': // C'est ici que vous devez afficher les sections groupées
-    default:
-      return employees.value; // L'image montre un regroupement spécifique, pas juste tous les employés
-  }
-});
-// const statusIcon = computed(() => {
-//   switch (props.employee.status) {
-//     case 'absent':
-//       return 'icon-x' // icône pour absent
-//     case 'late':
-//       return 'icon-clock' // icône pour en retard
-//     case 'present':
-//       return 'icon-check' // icône pour présent
-//     case 'info':
-//       return 'icon-info' // icône pour en congé/formation
-//     default:
-//       return 'icon-info' // icône par défaut
-//   }
-// })
-const setActiveTab = (tab: string) => {
-  activeTab.value = tab
-}
 </script>
 
-<style>
-
+<style scoped>
 </style>
