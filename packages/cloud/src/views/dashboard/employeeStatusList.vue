@@ -14,6 +14,7 @@
     </div>
 
     <div class="employee-list">
+      <!-- Section Problèmes -->
       <div v-if="activeTab === 'all' || activeTab === 'problems'">
         <div class="section-title section-problems">
           <span>Problèmes à traiter ({{ problemEmployees.length }})</span>
@@ -31,6 +32,43 @@
         </div>
       </div>
 
+      <!-- Section Absents -->
+      <div v-if="activeTab === 'absent'">
+        <div class="section-title section-problems">
+          <span>Employés absents ({{ absentEmployees.length }})</span>
+          <svg class="chevron-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
+          </svg>
+        </div>
+        <div class="employees-grid">
+          <EmployeeCard
+            v-for="employee in absentEmployees"
+            :key="employee.id"
+            :employee="employee"
+            @click="showEmployeeDetails(employee)"
+          />
+        </div>
+      </div>
+
+      <!-- Section Retards -->
+      <div v-if="activeTab === 'late'">
+        <div class="section-title section-problems">
+          <span>Employés en retard ({{ lateEmployees.length }})</span>
+          <svg class="chevron-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
+          </svg>
+        </div>
+        <div class="employees-grid">
+          <EmployeeCard
+            v-for="employee in lateEmployees"
+            :key="employee.id"
+            :employee="employee"
+            @click="showEmployeeDetails(employee)"
+          />
+        </div>
+      </div>
+
+      <!-- Section Informations -->
       <div v-if="activeTab === 'all' || activeTab === 'info'">
         <div class="section-title section-info">
           <span>Informations ({{ infoEmployees.length }})</span>
@@ -48,6 +86,7 @@
         </div>
       </div>
 
+      <!-- Section Présents -->
       <div v-if="activeTab === 'all' || activeTab === 'present'">
         <div class="section-title section-present">
           <span>Employés présents ({{ presentEmployees.length }})</span>

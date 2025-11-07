@@ -80,8 +80,6 @@
     box-shadow: var(--shadow);
 }
 
-/* Les classes de statut restent inchangées car elles sont souvent globales,
-   mais elles sont maintenant utilisées comme modificateurs de .modal-status-badge */
 .modal-status-badge.status-present {
     background-color: var(--color-success);
 }
@@ -148,39 +146,27 @@
     margin-bottom: 4px;
     letter-spacing: 0.5px;
 }
+
 .modal-overlay-wrapper {
-    /* Superpose tout le contenu */
     position: fixed;
     top: 0;
     left: 0;
     width: 100%;
     height: 100%;
-    /* Couleur du voile + légère transparence */
     background-color: rgba(0, 0, 0, 0.5);
-    /* Met la modale au-dessus de tout (ajustez si besoin) */
     z-index: 1000;
-
-    /* Centrage parfait de l'enfant (votre carte) */
     display: flex;
-    justify-content: center; /* Centre horizontalement */
-    align-items: center;     /* Centre verticalement */
-
-    /* Ajout de la gestion du défilement au cas où le contenu est trop grand */
+    justify-content: center;
+    align-items: center;
     overflow-y: auto;
-    padding: 20px; /* Espace autour du modal sur petit écran */
+    padding: 20px;
 }
 
-/* Ajustement pour que la carte soit positionnée au centre du viewport */
 .modal-attendance-card {
-    /* ... (conserve les styles précédents) ... */
-
-    /* Annule le margin: 0 auto; s'il est utilisé pour le centrage horizontal,
-       car le flexbox de l'overlay s'en charge */
     margin: 0;
-
-    /* S'assure que la modale est au premier plan dans l'overlay */
     position: relative;
 }
+
 .modal-info-value {
     display: block;
     font-size: var(--font-size-body);
@@ -195,10 +181,12 @@
 .modal-info-value-critical {
     color: var(--color-error);
 }
+
 .back-arrow-link {
     position: absolute;
     color: var(--color-primary);
 }
+
 /* ========================================
    SÉPARATEUR
    ======================================== */
@@ -209,31 +197,32 @@
 }
 
 /* ========================================
-   ACTIONS RAPIDES (BOUTONS)
+   ACTIONS RAPIDES (BOUTONS) - TOUS SUR UNE LIGNE
    ======================================== */
 .modal-quick-actions {
     display: flex;
-    flex-direction: column;
-    gap: var(--space-md);
+    flex-direction: row;
+    gap: var(--space-sm);
     margin-bottom: var(--space-lg);
 }
 
 .modal-action-btn {
-    width: 100%;
+    flex: 1;
     height: 50px;
-    padding: 0 var(--space-lg);
+    padding: 0 var(--space-md);
     border: none;
     border-radius: var(--border-radius-sm);
     cursor: pointer;
     font-weight: var(--font-weight-semibold);
-    font-size: var(--font-size-body);
+    font-size: var(--font-size-body-sm);
     transition: all var(--transition-fast);
     display: flex;
     align-items: center;
     justify-content: center;
-    gap: var(--space-sm);
+    gap: 6px;
     color: white;
     box-shadow: var(--shadow);
+    white-space: nowrap;
 }
 
 .modal-action-btn:hover {
@@ -275,13 +264,12 @@
     background-color: #003e8c;
 }
 
-/* BOUTON AVERTIR EN ORANGE */
 .modal-action-warn {
-    background-color: #ff8c00; /* Orange vif */
+    background-color: #ff8c00;
 }
 
 .modal-action-warn:hover {
-    background-color: #e67e00; /* Orange plus foncé au survol */
+    background-color: #e67e00;
 }
 
 /* ========================================
@@ -345,8 +333,20 @@
         align-self: flex-start;
     }
 
+    /* Sur mobile, les boutons restent horizontaux mais plus compacts */
+    .modal-quick-actions {
+        gap: 6px;
+    }
+
     .modal-action-btn {
         height: 45px;
-        font-size: var(--font-size-body-sm);
+        padding: 0 8px;
+        font-size: 11px;
+        gap: 4px;
+    }
+
+    .modal-btn-icon {
+        width: 16px;
+        height: 16px;
     }
 }
