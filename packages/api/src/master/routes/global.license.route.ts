@@ -409,7 +409,7 @@ router.post('/', Ensure.post(), async (req: Request, res: Response) => {
         message: error.message,
       });
     } else {
-      return R.handleError(res, HttpStatus.BAD_REQUEST, {
+      return R.handleError(res, HttpStatus.INTERNAL_ERROR, {
         code: GLOBAL_LICENSE_CODES.CREATION_FAILED,
         message: error.message,
       });

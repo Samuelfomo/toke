@@ -19,6 +19,7 @@ import { ClientProfileDbStructure } from './data/client.profile.db.js';
 import { ClientDbStructure } from './data/client.db.js';
 import { ContactDbStructure } from './data/contact.db.js';
 import { InvitationDbStructure } from './data/sponsor.db.js';
+import { AppConfigDBStructure } from './data/app_config.db.js';
 
 /**
  * Gestionnaire STATIQUE d'initialisation des tables
@@ -120,6 +121,7 @@ export class TableInitializer {
     console.log('🏗️ Définition des modèles...');
 
     this.defineInvitationModel();
+    this.defineAppConfigModel();
 
     this.defineClientProfileModel();
     this.defineClientModel();
@@ -156,6 +158,17 @@ export class TableInitializer {
 
     this.models.set(InvitationDbStructure.tableName, model);
     console.log(`✅ Modèle Invitation défini (${InvitationDbStructure.tableName})`);
+  }
+
+  private static defineAppConfigModel(): void {
+    const model = this.sequelize.define(
+      AppConfigDBStructure.tableName,
+      AppConfigDBStructure.attributes,
+      AppConfigDBStructure.options,
+    );
+
+    this.models.set(AppConfigDBStructure.tableName, model);
+    console.log(`✅ Modèle AppConfig défini (${AppConfigDBStructure.tableName})`);
   }
 
   /**

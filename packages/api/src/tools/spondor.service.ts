@@ -20,6 +20,7 @@ export default class InvitationService {
       const api = createApiClient(`http:${process.env.SERVER_HOST}:${process.env.MT_PORT}`);
       const response = await api.post('/sponsors', {
         phone_number: data.phone_number,
+        country: data.country,
         metadata: data.metadata,
       });
 

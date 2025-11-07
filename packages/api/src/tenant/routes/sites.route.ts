@@ -826,7 +826,7 @@ router.patch(
 );
 
 // === 📱 Create unique QR code for site check-in with embedded security and location data
-router.patch('/generate-qr-code', Ensure.patch(), async (req: Request, res: Response) => {
+router.post('/generate-qr-code', Ensure.post(), async (req: Request, res: Response) => {
   try {
     // const { manager } = req.params;
     const { site, manager } = req.body;
@@ -895,7 +895,7 @@ router.patch('/generate-qr-code', Ensure.patch(), async (req: Request, res: Resp
       },
       // tenant.config.reference,
     );
-    return R.handleSuccess(res, {
+    return R.handleCreated(res, {
       site_qr_code: qrGenerator,
     });
   } catch (error: any) {

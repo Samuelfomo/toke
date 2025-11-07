@@ -221,6 +221,7 @@ export default class QrCodeGenerationModel extends BaseModel {
 
   protected async create(): Promise<void> {
     const guid = await this.randomGuidGenerator(this.db.tableName);
+    console.log('guid', guid);
     if (!guid) {
       throw new Error(QR_CODE_ERRORS.GUID_GENERATION_FAILED);
     }

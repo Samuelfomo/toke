@@ -11,6 +11,7 @@ import { MemosDbStructure } from './data/memos.db.js';
 import { AuditLogsDbStructure } from './data/audit.logs.db.js';
 import { FraudAlertsDbStructure } from './data/fraud.alerts.db.js';
 import TenantManager from './db.tenant-manager.js';
+import { QrCodeGenerationDbStructure } from './data/qr.code.generation.db.js';
 
 interface TenantInstance {
   sequelize: Sequelize;
@@ -186,6 +187,7 @@ export class TableInitializer {
   private static defineAllModelsForInstance(instance: TenantInstance): void {
     console.log(`🏗️ Définition des modèles pour tenant...`);
 
+    this.defineQrCodeModelForInstance(instance);
     this.defineRolesModelForInstance(instance);
     this.defineUsersModelForInstance(instance);
     this.defineUserRolesModelForInstance(instance);
@@ -198,6 +200,17 @@ export class TableInitializer {
     this.defineFraudAlertsModelForInstance(instance);
 
     console.log(`✅ ${instance.models.size} modèle(s) défini(s) pour cette instance`);
+  }
+
+  private static defineQrCodeModelForInstance(instance: TenantInstance): void {
+    const model = instance.sequelize.define(
+      QrCodeGenerationDbStructure.tableName,
+      QrCodeGenerationDbStructure.attributes,
+      QrCodeGenerationDbStructure.options,
+    );
+
+    instance.models.set(QrCodeGenerationDbStructure.tableName, model);
+    console.log(`✅ Modèle QrCode défini (${QrCodeGenerationDbStructure.tableName})`);
   }
 
   private static defineRolesModelForInstance(instance: TenantInstance): void {
@@ -317,7 +330,7 @@ export class TableInitializer {
     console.log('🔄 Synchronisation avec la base de données...');
 
     const isDevelopment = process.env.NODE_ENV !== 'production';
-    const syncOptions = isDevelopment ? { alter: true } : { alter: true };
+    const syncOptions = isDevelopment ? {} : {};
 
     console.log(`🆘 Current Mode: ${process.env.NODE_ENV || 'development'}`);
 

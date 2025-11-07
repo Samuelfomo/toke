@@ -39,7 +39,7 @@ import InvitationService from '../../tools/spondor.service.js';
 import CountryPhoneValidation from '../../tools/country.phone.validation.js';
 
 const router = Router();
- 
+
 // === ROUTES DE LISTAGE ===
 
 // === RECUPERER LES UTILISATEURS ACTIVES D'UN TENANT
@@ -350,11 +350,11 @@ router.post('/', Ensure.post(), async (req: Request, res: Response) => {
 });
 
 //👤 Add a new manager to the tenant with basic information and automatic role assignment.
-router.post('/manager/:affiliate', Ensure.post(), async (req: Request, res: Response) => {
+router.post('/manager', Ensure.post(), async (req: Request, res: Response) => {
   try {
     const validatedData = validateUsersCreation(req.body);
     const tenant = req.tenant;
-    const { affiliate } = req.params;
+    const { affiliate } = req.query;
 
     // === 1️⃣ Validation préliminaire avant toute sauvegarde ===
     // Charger les rôles requis
@@ -373,7 +373,8 @@ router.post('/manager/:affiliate', Ensure.post(), async (req: Request, res: Resp
 
     // Vérifier s’il existe déjà un admin
     const existingAdmins = await UserRole._listByRole(adminRole.getId()!);
-    const isFirstUser = existingAdmins?.length === 0;
+    // const isFirstUser = existingAdmins?.length === 0;
+    const isFirstUser = !existingAdmins || existingAdmins.length === 0;
 
     let affiliateObj;
     let supervisorObj;
@@ -387,7 +388,7 @@ router.post('/manager/:affiliate', Ensure.post(), async (req: Request, res: Resp
         });
       }
 
-      if (!UsersValidationUtils.validateGuid(affiliate)) {
+      if (!UsersValidationUtils.validateGuid(String(affiliate))) {
         return R.handleError(res, HttpStatus.BAD_REQUEST, {
           code: 'affiliate_guid_invalid',
           message: 'Invalid affiliate guid',
@@ -438,10 +439,12 @@ router.post('/manager/:affiliate', Ensure.post(), async (req: Request, res: Resp
 
     let userObj = buildUserObject(validatedData, tenant);
 
-    // Générer l’OTP avant sauvegarde
-    await userObj.generateUniqueOtpToken(
-      parseInt(validatedData.otp_expires_at?.toDateString()!, 10),
-    );
+    // // Générer l’OTP avant sauvegarde
+    // await userObj.generateUniqueOtpToken(
+    //   parseInt(validatedData.otp_expires_at?.toDateString()!, 10),
+    // );
+    //
+    // console.log('userObj', userObj);
 
     // === 4️⃣ Sauvegarde du user ===
     await userObj.save();

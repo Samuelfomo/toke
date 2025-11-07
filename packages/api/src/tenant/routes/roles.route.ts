@@ -109,7 +109,8 @@ router.post('/', Ensure.post(), async (req: Request, res: Response) => {
 
 router.put('/:guid', Ensure.put(), async (req: Request, res: Response) => {
   try {
-    const validGuid = RolesValidationUtils.validateGuid(req.params.guid);
+    const { guid } = req.params;
+    const validGuid = RolesValidationUtils.validateGuid(guid);
     if (!validGuid) {
       return R.handleError(res, HttpStatus.BAD_REQUEST, {
         code: ROLES_CODES.INVALID_GUID,
@@ -117,7 +118,7 @@ router.put('/:guid', Ensure.put(), async (req: Request, res: Response) => {
       });
     }
 
-    const guid = parseInt(req.params.guid, 10);
+    // const guid = parseInt(req.params.guid, 10);
 
     const roleObj = await Role._load(guid, true);
     if (!roleObj) {
@@ -126,8 +127,9 @@ router.put('/:guid', Ensure.put(), async (req: Request, res: Response) => {
         message: ROLES_ERRORS.NOT_FOUND,
       });
     }
+    console.log('je suis ici');
     const validatedData = validateRolesUpdate(req.body);
-
+    console.log('validatedData', validatedData);
     if (validatedData.code) {
       roleObj.setCode(validatedData.code);
     }
@@ -150,9 +152,11 @@ router.put('/:guid', Ensure.put(), async (req: Request, res: Response) => {
     //   roleObj.setAdminRole(validatedData.admin_role);
     // }
     await roleObj.save();
+
     return R.handleSuccess(res, roleObj.toJSON());
   } catch (error: any) {
     if (error.issues) {
+      console.error('error1', error);
       return R.handleError(res, HttpStatus.BAD_REQUEST, {
         code: ROLES_CODES.INVALID_GUID,
         message: ROLES_ERRORS.GUID_INVALID,
@@ -168,6 +172,7 @@ router.put('/:guid', Ensure.put(), async (req: Request, res: Response) => {
         message: error.message,
       });
     } else {
+      console.error('error3', error);
       return R.handleError(res, HttpStatus.INTERNAL_ERROR, {
         code: ROLES_CODES.UPDATE_FAILED,
         message: error.message,
@@ -183,9 +188,6 @@ router.get('/list', Ensure.get(), async (req: Request, res: Response) => {
     const conditions: Record<string, any> = {};
     if (filters.system_role) {
       conditions.system_role = filters.system_role;
-    }
-    if (filters.default_role) {
-      conditions.default_role = filters.default_role;
     }
     if (filters.permissions) {
       conditions.permissions = filters.permissions;
@@ -251,14 +253,15 @@ router.get('/:system_role/list', Ensure.get(), async (req: Request, res: Respons
 
 router.delete('/:guid', Ensure.delete(), async (req: Request, res: Response) => {
   try {
-    const validGuid = RolesValidationUtils.validateGuid(req.params.guid);
+    const { guid } = req.params;
+    const validGuid = RolesValidationUtils.validateGuid(guid);
     if (!validGuid) {
       return R.handleError(res, HttpStatus.BAD_REQUEST, {
         code: ROLES_CODES.INVALID_GUID,
         message: ROLES_ERRORS.GUID_INVALID,
       });
     }
-    const guid = parseInt(req.params.guid, 10);
+    // const guid = parseInt(req.params.guid, 10);
     const roleObj = await Role._load(guid, true);
     if (!roleObj) {
       return R.handleError(res, HttpStatus.NOT_FOUND, {

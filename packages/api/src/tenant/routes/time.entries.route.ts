@@ -1005,7 +1005,7 @@ router.post(
               userId,
             );
           }
-
+ 
           return R.handleCreated(res, {
             message:
               autoCreatedSession || autoCreatedMissionStart

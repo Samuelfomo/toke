@@ -309,7 +309,7 @@ export const UsersDbStructure = {
       },
       {
         fields: ['country'],
-        name: ['idx_user_country'],
+        name: 'idx_user_country',
       },
     ],
   } as ModelOptions,

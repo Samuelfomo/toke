@@ -139,19 +139,7 @@ export default class RoleModel extends BaseModel {
     if (this.system_role !== undefined) {
       updateData[this.db.system_role] = this.system_role;
     }
-    // if (this.default_role !== undefined) {
-    //   const existingDefaultRole = await this.findExistingDefaultRole();
-    //   if (existingDefaultRole && existingDefaultRole.id !== this.id) {
-    //     throw new Error(ROLES_ERRORS.DEFAULT_ROLE_ALREADY_EXISTS);
-    //   }
-    // }
-    // if (this.admin_role !== undefined) {
-    //   const existingAdminRole = await this.findExistingAdminRole();
-    //   if (existingAdminRole && existingAdminRole.id !== this.id) {
-    //     throw new Error(ROLES_ERRORS.ADMIN_ROLE_ALREADY_EXISTS);
-    //   }
-    // }
-    const affected = await this.updateOne(this.db.tableName, { [this.db.id]: this.id }, updateData);
+    const affected = await this.updateOne(this.db.tableName, updateData, { [this.db.id]: this.id });
     if (!affected) {
       throw new Error(ROLES_ERRORS.UPDATE_FAILED);
     }

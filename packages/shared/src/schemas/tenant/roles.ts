@@ -53,16 +53,16 @@ const baseRolesSchema = z.object({
     })
     .default(ROLES_DEFAULTS.SYSTEM_ROLE),
 
-  default_role: z
-    .boolean({
-      invalid_type_error: ROLES_ERRORS.DEFAULT_ROLE_INVALID,
-    })
-    .default(ROLES_DEFAULTS.DEFAULT_ROLE),
-  admin_role: z
-    .boolean({
-      invalid_type_error: ROLES_ERRORS.ADMIN_ROLE_INVALID,
-    })
-    .default(ROLES_DEFAULTS.ADMIN_ROLE),
+  // default_role: z
+  //   .boolean({
+  //     invalid_type_error: ROLES_ERRORS.DEFAULT_ROLE_INVALID,
+  //   })
+  //   .default(ROLES_DEFAULTS.DEFAULT_ROLE),
+  // admin_role: z
+  //   .boolean({
+  //     invalid_type_error: ROLES_ERRORS.ADMIN_ROLE_INVALID,
+  //   })
+  //   .default(ROLES_DEFAULTS.ADMIN_ROLE),
 });
 
 // Schema pour la création - tous les champs requis
@@ -77,8 +77,8 @@ export const rolesFiltersSchema = z
     // code: z.string().optional(),
     // name: z.string().optional(),
     system_role: z.boolean().optional(),
-    default_role: z.boolean().optional(),
-    admin_role: z.boolean().optional(),
+    // default_role: z.boolean().optional(),
+    // admin_role: z.boolean().optional(),
     permissions: z.string().optional(), // Pour rechercher par clé de permission
   })
   .strict();

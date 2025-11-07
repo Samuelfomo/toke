@@ -290,7 +290,7 @@ router.delete('/:guid', Ensure.delete(), async (req: Request, res: Response) => 
 // 👤 Promote an existing employee to manager
 router.post('/manager', Ensure.post(), async (req: Request, res: Response) => {
   try {
-    const { user } = req.body;
+    const { user, affiliate } = req.body;
     if (!UsersValidationUtils.validateGuid(user)) {
       return R.handleError(res, HttpStatus.BAD_REQUEST, {
         code: USER_ROLES_CODES.USER_INVALID,
@@ -338,11 +338,30 @@ router.post('/manager', Ensure.post(), async (req: Request, res: Response) => {
         message: 'User is already assigned as manager',
       });
     }
+    let assignedBy: number = isEmployee.getAssignedBy()!;
+
+    if (affiliate) {
+      if (!UsersValidationUtils.validateGuid(affiliate)) {
+        return R.handleError(res, HttpStatus.BAD_REQUEST, {
+          code: USER_ROLES_CODES.ASSIGNED_BY_INVALID,
+          message: USER_ROLES_ERRORS.ASSIGNED_BY_INVALID,
+        });
+      }
+
+      const assignedObj = await User._load(affiliate, true);
+      if (!assignedObj) {
+        return R.handleError(res, HttpStatus.NOT_FOUND, {
+          code: USER_ROLES_CODES.ASSIGNED_BY_NOT_FOUND,
+          message: USER_ROLES_ERRORS.ASSIGNED_BY_NOT_FOUND,
+        });
+      }
+      assignedBy = assignedObj.getId()!;
+    }
 
     const userRoleObj = new UserRole()
       .setRole(managerRole.getId()!)
       .setUser(userObj.getId()!)
-      .setAssignedBy(isEmployee.getAssignedBy()!);
+      .setAssignedBy(assignedBy);
     await userRoleObj.save();
     return R.handleCreated(res, await userRoleObj.toJSON());
   } catch (error: any) {

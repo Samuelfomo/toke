@@ -701,7 +701,7 @@ export default class Memos extends MemosModel {
       [RS.VALIDATOR_USER]: validator ? validator.toJSON() : null,
       [RS.AFFECTED_SESSION]: session ? await session.toJSON(responseValue.MINIMAL) : null,
       [RS.AFFECTED_ENTRIES]: entries
-        ? await Promise.all(entries.map(async (entry) => await entry.toJSON(responseValue.MINIMAL)))
+        ? await Promise.all(entries.map(async (entry) => entry.getGuid()))
         : null,
       [RS.PROCESSED_AT]: this.processed_at,
       // Informations calculées

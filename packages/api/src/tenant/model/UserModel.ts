@@ -718,7 +718,8 @@ export default class UserModel extends BaseModel {
       this.otp_expires_at &&
       !UsersValidationUtils.validateOtpExpiresAt(this.otp_expires_at)
     ) {
-      throw new Error(USERS_ERRORS.OTP_TOKEN_INVALID);
+      console.log(this.otp_token, '&&', this.otp_expires_at);
+      throw new Error(USERS_ERRORS.OTP_TOKEN_EXPIRED);
     }
 
     if (this.qr_code_token && !UsersValidationUtils.validateQrCodeToken(this.qr_code_token)) {

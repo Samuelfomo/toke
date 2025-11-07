@@ -1247,7 +1247,7 @@
 								],
 								"body": {
 									"mode": "raw",
-									"raw": "{\n    \"site\": \"\",\n    \"manager\": \"\"\n}"
+									"raw": "{\n    \"site\": \"9856563826540801\",\n    \"manager\": \"6005188533196401\"\n}"
 								},
 								"url": {
 									"raw": "{{baseUrl}}/site/generate-qr-code",
@@ -1609,7 +1609,497 @@
 		},
 		{
 			"name": "📝 Memo System",
-			"item": []
+			"item": [
+				{
+					"name": "Memo Validation Workflow",
+					"item": [
+						{
+							"name": "⏳ Pending Memo Validations",
+							"request": {
+								"method": "GET",
+								"header": [
+									{
+										"key": "x-api-key",
+										"value": "{{x-api-token}}",
+										"type": "text"
+									},
+									{
+										"key": "x-api-signature",
+										"value": "{{x-api-signature}}",
+										"type": "text"
+									}
+								],
+								"url": {
+									"raw": "{{baseUrl}}/memo/pending-validation?validator=3337892849459602",
+									"host": [
+										"{{baseUrl}}"
+									],
+									"path": [
+										"memo",
+										"pending-validation"
+									],
+									"query": [
+										{
+											"key": "validator",
+											"value": "3337892849459602"
+										}
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "⬆️ Escalated Memos",
+							"request": {
+								"method": "GET",
+								"header": [
+									{
+										"key": "x-api-key",
+										"value": "{{x-api-token}}",
+										"type": "text"
+									},
+									{
+										"key": "x-api-signature",
+										"value": "{{x-api-signature}}",
+										"type": "text"
+									}
+								],
+								"url": {
+									"raw": "{{baseUrl}}/memo/escalated-to-me?validator=3337892849459602",
+									"host": [
+										"{{baseUrl}}"
+									],
+									"path": [
+										"memo",
+										"escalated-to-me"
+									],
+									"query": [
+										{
+											"key": "validator",
+											"value": "3337892849459602"
+										}
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "✅ Validate Employee Memo",
+							"request": {
+								"method": "PATCH",
+								"header": [
+									{
+										"key": "x-api-key",
+										"value": "{{x-api-token}}",
+										"type": "text"
+									},
+									{
+										"key": "x-api-signature",
+										"value": "{{x-api-signature}}",
+										"type": "text"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n    \"validator_user\": \"\",\n    \"validator_comments\": \"\"\n}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{baseUrl}}/memo/3337892849459602/validate",
+									"host": [
+										"{{baseUrl}}"
+									],
+									"path": [
+										"memo",
+										"3337892849459602",
+										"validate"
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "❌ Reject Employee Memo",
+							"request": {
+								"method": "PATCH",
+								"header": [
+									{
+										"key": "x-api-key",
+										"value": "{{x-api-token}}",
+										"type": "text"
+									},
+									{
+										"key": "x-api-signature",
+										"value": "{{x-api-signature}}",
+										"type": "text"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n    \"validator_user\": \"\",\n    \"validator_comments\": \"\"\n}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{baseUrl}}/memo/3337892849459602/reject",
+									"host": [
+										"{{baseUrl}}"
+									],
+									"path": [
+										"memo",
+										"3337892849459602",
+										"reject"
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "⬆️ Escalate Memo to N+1",
+							"request": {
+								"method": "PATCH",
+								"header": [
+									{
+										"key": "x-api-key",
+										"value": "{{x-api-token}}",
+										"type": "text"
+									},
+									{
+										"key": "x-api-signature",
+										"value": "{{x-api-signature}}",
+										"type": "text"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n    \"new_validator\": \"\",\n    \"reason\": \"\"\n}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{baseUrl}}/memo/3337892849459602/escalate",
+									"host": [
+										"{{baseUrl}}"
+									],
+									"path": [
+										"memo",
+										"3337892849459602",
+										"escalate"
+									]
+								}
+							},
+							"response": []
+						}
+					]
+				},
+				{
+					"name": "Manager Memo Creation",
+					"item": [
+						{
+							"name": "📝 Create Manager Memo",
+							"request": {
+								"method": "POST",
+								"header": [
+									{
+										"key": "x-api-key",
+										"value": "{{x-api-token}}",
+										"type": "text"
+									},
+									{
+										"key": "x-api-signature",
+										"value": "{{x-api-signature}}",
+										"type": "text"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n    \"author_user\": \"3337892849459602\",\n    \"target_user\": \"5751601882956203\",\n    \"memo_type\": \"delay_justification\",\n    \"memo_status\": \"draft\",\n    \"title\": \"Retard prévu demain 30min\",\n    \"description\": \"Rendez-vous médical contrôle mensuel. Arriverai 8h30 au lieu 8h00. Rattrapage fin journée.\",\n    \"incident_datetime\": \"2024-12-02T08:30:00Z\",\n    \"affected_session\": null,\n    \"affected_entries\": null,\n    \"attachments\": [\n        \"https://demo.toke.cm/upload/f/1760525068431-663266003.png\"\n    ],\n    \"memo_context\": {\n        \"advance_notice\": \"24_hours\",\n        \"impact_level\": \"minor\",\n        \"mitigation_plan\": \"rattrapage_fin_journee\",\n        \"recurrence\": \"monthly_medical\"\n    },\n    \"auto_generated\": false\n}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{baseUrl}}/memo",
+									"host": [
+										"{{baseUrl}}"
+									],
+									"path": [
+										"memo"
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "📄 My Created Memos",
+							"protocolProfileBehavior": {
+								"disableBodyPruning": true
+							},
+							"request": {
+								"method": "GET",
+								"header": [
+									{
+										"key": "x-api-key",
+										"value": "{{x-api-token}}",
+										"type": "text"
+									},
+									{
+										"key": "x-api-signature",
+										"value": "{{x-api-signature}}",
+										"type": "text"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n    \"author_user\": \"3337892849459602\",\n    \"target_user\": \"5751601882956203\",\n    \"memo_type\": \"delay_justification\",\n    \"memo_status\": \"draft\",\n    \"title\": \"Retard prévu demain 30min\",\n    \"description\": \"Rendez-vous médical contrôle mensuel. Arriverai 8h30 au lieu 8h00. Rattrapage fin journée.\",\n    \"incident_datetime\": \"2024-12-02T08:30:00Z\",\n    \"affected_session\": null,\n    \"affected_entries\": null,\n    \"attachments\": [\n        \"https://demo.toke.cm/upload/f/1760525068431-663266003.png\"\n    ],\n    \"memo_context\": {\n        \"advance_notice\": \"24_hours\",\n        \"impact_level\": \"minor\",\n        \"mitigation_plan\": \"rattrapage_fin_journee\",\n        \"recurrence\": \"monthly_medical\"\n    },\n    \"auto_generated\": false\n}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{baseUrl}}/memo/my-created?author=3337892849459602",
+									"host": [
+										"{{baseUrl}}"
+									],
+									"path": [
+										"memo",
+										"my-created"
+									],
+									"query": [
+										{
+											"key": "author",
+											"value": "3337892849459602"
+										}
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "✏️ Edit Draft Memo",
+							"request": {
+								"method": "PUT",
+								"header": [
+									{
+										"key": "x-api-key",
+										"value": "{{x-api-token}}",
+										"type": "text"
+									},
+									{
+										"key": "x-api-signature",
+										"value": "{{x-api-signature}}",
+										"type": "text"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n    \"author_user\": \"3337892849459602\",\n    \"target_user\": \"5751601882956203\",\n    \"memo_type\": \"delay_justification\",\n    \"memo_status\": \"draft\",\n    \"title\": \"Retard prévu demain 30min\",\n    \"description\": \"Rendez-vous médical contrôle mensuel. Arriverai 8h30 au lieu 8h00. Rattrapage fin journée.\",\n    \"incident_datetime\": \"2024-12-02T08:30:00Z\",\n    \"affected_session\": null,\n    \"affected_entries\": null,\n    \"attachments\": [\n        \"https://demo.toke.cm/upload/f/1760525068431-663266003.png\"\n    ],\n    \"memo_context\": {\n        \"advance_notice\": \"24_hours\",\n        \"impact_level\": \"minor\",\n        \"mitigation_plan\": \"rattrapage_fin_journee\",\n        \"recurrence\": \"monthly_medical\"\n    },\n    \"auto_generated\": false\n}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{baseUrl}}/memo/3337892849459602",
+									"host": [
+										"{{baseUrl}}"
+									],
+									"path": [
+										"memo",
+										"3337892849459602"
+									]
+								}
+							},
+							"response": []
+						}
+					]
+				},
+				{
+					"name": "Memo Analytics & Monitoring",
+					"item": [
+						{
+							"name": "📊 Memo Statistics",
+							"request": {
+								"method": "GET",
+								"header": [
+									{
+										"key": "x-api-key",
+										"value": "{{x-api-token}}",
+										"type": "text"
+									},
+									{
+										"key": "x-api-signature",
+										"value": "{{x-api-signature}}",
+										"type": "text"
+									}
+								],
+								"url": {
+									"raw": "{{baseUrl}}/memo/statistics/overview",
+									"host": [
+										"{{baseUrl}}"
+									],
+									"path": [
+										"memo",
+										"statistics",
+										"overview"
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "⏰ Overdue Memos",
+							"request": {
+								"method": "GET",
+								"header": [
+									{
+										"key": "x-api-key",
+										"value": "{{x-api-token}}",
+										"type": "text"
+									},
+									{
+										"key": "x-api-signature",
+										"value": "{{x-api-signature}}",
+										"type": "text"
+									}
+								],
+								"url": {
+									"raw": "{{baseUrl}}/memo/urgent",
+									"host": [
+										"{{baseUrl}}"
+									],
+									"path": [
+										"memo",
+										"urgent"
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "🤖 Auto-Generated Memos",
+							"request": {
+								"method": "GET",
+								"header": [
+									{
+										"key": "x-api-key",
+										"value": "{{x-api-token}}",
+										"type": "text"
+									},
+									{
+										"key": "x-api-signature",
+										"value": "{{x-api-signature}}",
+										"type": "text"
+									}
+								],
+								"url": {
+									"raw": "{{baseUrl}}/memo/auto-generated",
+									"host": [
+										"{{baseUrl}}"
+									],
+									"path": [
+										"memo",
+										"auto-generated"
+									]
+								}
+							},
+							"response": []
+						}
+					]
+				},
+				{
+					"name": "Memo Attachments",
+					"item": [
+						{
+							"name": "📎 List Memo Attachments",
+							"request": {
+								"method": "GET",
+								"header": [
+									{
+										"key": "x-api-key",
+										"value": "{{x-api-token}}",
+										"type": "text"
+									},
+									{
+										"key": "x-api-signature",
+										"value": "{{x-api-signature}}",
+										"type": "text"
+									}
+								],
+								"url": {
+									"raw": "{{baseUrl}}/memo/:guid/attachments",
+									"host": [
+										"{{baseUrl}}"
+									],
+									"path": [
+										"memo",
+										":guid",
+										"attachments"
+									],
+									"variable": [
+										{
+											"key": "guid",
+											"value": ""
+										}
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "📥 Download Secure Attachment",
+							"request": {
+								"method": "GET",
+								"header": [
+									{
+										"key": "x-api-key",
+										"value": "{{x-api-token}}",
+										"type": "text"
+									},
+									{
+										"key": "x-api-signature",
+										"value": "{{x-api-signature}}",
+										"type": "text"
+									}
+								],
+								"url": {
+									"raw": "{{baseUrl}}/memo/attachments/:token",
+									"host": [
+										"{{baseUrl}}"
+									],
+									"path": [
+										"memo",
+										"attachments",
+										":token"
+									],
+									"variable": [
+										{
+											"key": "token",
+											"value": ""
+										}
+									]
+								}
+							},
+							"response": []
+						}
+					]
+				}
+			]
 		},
 		{
 			"name": "💰 Billing & License Management",
@@ -1634,13 +2124,12 @@
 									}
 								],
 								"url": {
-									"raw": "{{baseUrl}}/{{router}}/global-license/current-license/100001",
+									"raw": "{{mBaseUrl}}/billing/current-license/100001",
 									"host": [
-										"{{baseUrl}}"
+										"{{mBaseUrl}}"
 									],
 									"path": [
-										"{{router}}",
-										"global-license",
+										"billing",
 										"current-license",
 										"100001"
 									]
@@ -1665,13 +2154,12 @@
 									}
 								],
 								"url": {
-									"raw": "{{baseUrl}}/{{router}}/employee-license/billable-employees/100001",
+									"raw": "{{mBaseUrl}}/billing/billable-employees/100001",
 									"host": [
-										"{{baseUrl}}"
+										"{{mBaseUrl}}"
 									],
 									"path": [
-										"{{router}}",
-										"employee-license",
+										"billing",
 										"billable-employees",
 										"100001"
 									]
@@ -1713,16 +2201,27 @@
 							"name": "🔮 End-of-Period Preview",
 							"request": {
 								"method": "GET",
-								"header": [],
+								"header": [
+									{
+										"key": "x-api-key",
+										"value": "{{x-api-token}}",
+										"type": "text"
+									},
+									{
+										"key": "x-api-signature",
+										"value": "{{x-api-signature}}",
+										"type": "text"
+									}
+								],
 								"url": {
-									"raw": "{{baseUrl}}/{{router}}/billing/period-preview",
+									"raw": "{{mBaseUrl}}/billing/period-preview/100001",
 									"host": [
-										"{{baseUrl}}"
+										"{{mBaseUrl}}"
 									],
 									"path": [
-										"{{router}}",
 										"billing",
-										"period-preview"
+										"period-preview",
+										"100001"
 									]
 								}
 							},
@@ -1750,12 +2249,11 @@
 									}
 								],
 								"url": {
-									"raw": "{{baseUrl}}/{{router}}/billing/pending-adjustments/100001",
+									"raw": "{{mBaseUrl}}/billing/pending-adjustments/100001",
 									"host": [
-										"{{baseUrl}}"
+										"{{mBaseUrl}}"
 									],
 									"path": [
-										"{{router}}",
 										"billing",
 										"pending-adjustments",
 										"100001"
@@ -1790,12 +2288,11 @@
 									}
 								},
 								"url": {
-									"raw": "{{baseUrl}}/{{router}}/billing/adjustment/confirm",
+									"raw": "{{mBaseUrl}}/billing/adjustment/confirm",
 									"host": [
-										"{{baseUrl}}"
+										"{{mBaseUrl}}"
 									],
 									"path": [
-										"{{router}}",
 										"billing",
 										"adjustment",
 										"confirm"
@@ -1821,12 +2318,11 @@
 									}
 								],
 								"url": {
-									"raw": "{{baseUrl}}/{{router}}/billing/adjustment/100001",
+									"raw": "{{mBaseUrl}}/billing/adjustment/100001",
 									"host": [
-										"{{baseUrl}}"
+										"{{mBaseUrl}}"
 									],
 									"path": [
-										"{{router}}",
 										"billing",
 										"adjustment",
 										"100001"
@@ -1866,12 +2362,11 @@
 									}
 								},
 								"url": {
-									"raw": "{{baseUrl}}/{{router}}/billing/payment/initiate",
+									"raw": "{{mBaseUrl}}/billing/payment/initiate",
 									"host": [
-										"{{baseUrl}}"
+										"{{mBaseUrl}}"
 									],
 									"path": [
-										"{{router}}",
 										"billing",
 										"payment",
 										"initiate"
@@ -1897,12 +2392,11 @@
 									}
 								],
 								"url": {
-									"raw": "{{baseUrl}}/{{router}}/billing/payment/TOKE_20250917151110_103/status",
+									"raw": "{{mBaseUrl}}/billing/payment/TOKE_20250917151110_103/status",
 									"host": [
-										"{{baseUrl}}"
+										"{{mBaseUrl}}"
 									],
 									"path": [
-										"{{router}}",
 										"billing",
 										"payment",
 										"TOKE_20250917151110_103",
@@ -1938,12 +2432,11 @@
 									}
 								},
 								"url": {
-									"raw": "{{baseUrl}}/{{router}}/billing/payment/retry",
+									"raw": "{{mBaseUrl}}/billing/payment/retry",
 									"host": [
-										"{{baseUrl}}"
+										"{{mBaseUrl}}"
 									],
 									"path": [
-										"{{router}}",
 										"billing",
 										"payment",
 										"retry"
@@ -1969,12 +2462,11 @@
 									}
 								],
 								"url": {
-									"raw": "{{baseUrl}}/{{router}}/billing/payment-history/100001",
+									"raw": "{{mBaseUrl}}/billing/payment-history/100001",
 									"host": [
-										"{{baseUrl}}"
+										"{{mBaseUrl}}"
 									],
 									"path": [
-										"{{router}}",
 										"billing",
 										"payment-history",
 										"100001"
@@ -1997,14 +2489,24 @@
 							"name": "🚨 Active Fraud Alerts",
 							"request": {
 								"method": "GET",
-								"header": [],
+								"header": [
+									{
+										"key": "x-api-key",
+										"value": "{{x-api-token}}",
+										"type": "text"
+									},
+									{
+										"key": "x-api-signature",
+										"value": "{{x-api-signature}}",
+										"type": "text"
+									}
+								],
 								"url": {
-									"raw": "{{baseUrl}}/{{router}}/fraud/active-alerts",
+									"raw": "{{mBaseUrl}}/fraud/active-alerts",
 									"host": [
-										"{{baseUrl}}"
+										"{{mBaseUrl}}"
 									],
 									"path": [
-										"{{router}}",
 										"fraud",
 										"active-alerts"
 									]
@@ -2047,7 +2549,18 @@
 							"name": "🔍 Start Fraud Investigation",
 							"request": {
 								"method": "PUT",
-								"header": [],
+								"header": [
+									{
+										"key": "x-api-key",
+										"value": "{{x-api-token}}",
+										"type": "text"
+									},
+									{
+										"key": "x-api-signature",
+										"value": "{{x-api-signature}}",
+										"type": "text"
+									}
+								],
 								"body": {
 									"mode": "raw",
 									"raw": "{\n    \"notes\": \"hello test\",\n    \"investigator\":\"okay test\"\n}",
@@ -2058,12 +2571,11 @@
 									}
 								},
 								"url": {
-									"raw": "{{baseUrl}}/{{router}}/fraud/alerts/100001/investigate",
+									"raw": "{{mBaseUrl}}/fraud/alerts/100001/investigate",
 									"host": [
-										"{{baseUrl}}"
+										"{{mBaseUrl}}"
 									],
 									"path": [
-										"{{router}}",
 										"fraud",
 										"alerts",
 										"100001",
@@ -2079,12 +2591,11 @@
 								"method": "PUT",
 								"header": [],
 								"url": {
-									"raw": "{{baseUrl}}/{{router}}/fraud/alerts/:guid/resolve",
+									"raw": "{{mBaseUrl}}/fraud/alerts/:guid/resolve",
 									"host": [
-										"{{baseUrl}}"
+										"{{mBaseUrl}}"
 									],
 									"path": [
-										"{{router}}",
 										"fraud",
 										"alerts",
 										":guid",

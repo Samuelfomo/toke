@@ -219,6 +219,8 @@ export default class GlobalLicenseModel extends BaseModel {
       throw new Error('Failed to generate GUID for global master entry');
     }
 
+    console.log('this', this);
+
     const lastID = await this.insertOne(this.db.tableName, {
       [this.db.guid]: guid,
       [this.db.tenant]: this.tenant,

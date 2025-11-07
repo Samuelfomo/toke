@@ -305,6 +305,7 @@ export const tableName = {
   LEXICON: `${G.tableConf}_lexicon`,
   CLIENT: `${G.tableConf}_client`,
   PROFILE: `${G.tableConf}_profile`,
+  APP_CONFIG: `${G.tableConf}_app_config`,
 
   TENANT: `${G.tableAp}_tenant`,
   GLOBAL_LICENSE: `${G.tableAp}_global_license`,
@@ -352,5 +353,5 @@ export const DbConstant = {
 export const RoleValues = {
   EMPLOYEE: 'EMPLOYEE',
   MANAGER: 'MANAGER',
-  ADMIN: 'ADMIN',
+  ADMIN: 'ADMIN-RH',
 } as const;
