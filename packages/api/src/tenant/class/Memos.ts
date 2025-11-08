@@ -683,6 +683,9 @@ export default class Memos extends MemosModel {
       [RS.PROCESSED_AT]: this.processed_at,
       [RS.CREATED_AT]: this.created_at,
       [RS.UPDATED_AT]: this.updated_at,
+      [RS.AFFECTED_ENTRIES]: entries
+        ? await Promise.all(entries.map(async (entry) => entry.getGuid()))
+        : null,
     };
 
     if (view === responseValue.MINIMAL) {
@@ -700,10 +703,7 @@ export default class Memos extends MemosModel {
       [RS.TARGET_USER]: target ? target.toJSON() : null,
       [RS.VALIDATOR_USER]: validator ? validator.toJSON() : null,
       [RS.AFFECTED_SESSION]: session ? await session.toJSON(responseValue.MINIMAL) : null,
-      [RS.AFFECTED_ENTRIES]: entries
-        ? await Promise.all(entries.map(async (entry) => entry.getGuid()))
-        : null,
-      [RS.PROCESSED_AT]: this.processed_at,
+      // [RS.PROCESSED_AT]: this.processed_at,
       // Informations calculées
       // [RS.IS_PREVENTIVE]: this.isPreventive(),
       // [RS.IS_CORRECTIVE]: this.isCorrective(),

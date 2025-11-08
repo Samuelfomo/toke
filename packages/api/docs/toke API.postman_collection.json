@@ -220,7 +220,8 @@
 													"}"
 												],
 												"type": "text/javascript",
-												"packages": {}
+												"packages": {},
+												"requests": {}
 											}
 										}
 									],
@@ -247,12 +248,11 @@
 											"raw": "{\n    \"code\":\"CM\",\n    \"name_en\":\"cameroon (🇨🇲)\",\n    \"name_local\":\"cameroun\",\n    \"default_currency_code\":\"CMR\",\n    \"default_language_code\":\"fr\",\n    \"timezone_default\":\"Africa/Douala\",\n    \"phone_prefix\":\"+237\"\n}"
 										},
 										"url": {
-											"raw": "{{endpoint}}/{{master}}/country/",
+											"raw": "{{endpoint}}/country/",
 											"host": [
 												"{{endpoint}}"
 											],
 											"path": [
-												"{{master}}",
 												"country",
 												""
 											]
@@ -514,12 +514,11 @@
 											}
 										],
 										"url": {
-											"raw": "{{endpoint}}/{{master}}/country/list",
+											"raw": "{{endpoint}}/country/list",
 											"host": [
 												"{{endpoint}}"
 											],
 											"path": [
-												"{{master}}",
 												"country",
 												"list"
 											]
@@ -875,7 +874,8 @@
 													"}"
 												],
 												"type": "text/javascript",
-												"packages": {}
+												"packages": {},
+												"requests": {}
 											}
 										}
 									],
@@ -899,7 +899,7 @@
 										],
 										"body": {
 											"mode": "raw",
-											"raw": "{\n  \"code\": \"USD\",\n  \"name\": \"United States Dollar\",\n  \"symbol\": \"$\",\n  \"decimal_places\": 2,\n  \"active\": true\n}"
+											"raw": "{\n  \"code\": \"XAF\",\n  \"name\": \"Franc CFA\",\n  \"symbol\": \"FCFA\",\n  \"decimal_places\": 2,\n  \"active\": true\n}"
 										},
 										"url": {
 											"raw": "{{endpoint}}/{{master}}/currency/",
@@ -1302,7 +1302,8 @@
 													"}"
 												],
 												"type": "text/javascript",
-												"packages": {}
+												"packages": {},
+												"requests": {}
 											}
 										}
 									],
@@ -1329,12 +1330,11 @@
 											"raw": "{\n  \"from_currency_code\": \"USD\",\n  \"to_currency_code\": \"XAF\",\n  \"exchange_rate\": 610.500000,\n  \"current\": true,\n  \"created_by\": 2\n}"
 										},
 										"url": {
-											"raw": "{{endpoint}}/{{master}}/exchange-rate",
+											"raw": "{{endpoint}}/exchange-rate",
 											"host": [
 												"{{endpoint}}"
 											],
 											"path": [
-												"{{master}}",
 												"exchange-rate"
 											]
 										}
@@ -1728,7 +1728,8 @@
 													"}"
 												],
 												"type": "text/javascript",
-												"packages": {}
+												"packages": {},
+												"requests": {}
 											}
 										}
 									],
@@ -1752,15 +1753,14 @@
 										],
 										"body": {
 											"mode": "raw",
-											"raw": "{\n  \"code\": \"de\",\n  \"name_en\": \"german\",\n  \"name_local\": \"Allemand\",\n  \"active\": true\n}"
+											"raw": "{\n  \"code\": \"fr\",\n  \"name_en\": \"french\",\n  \"name_local\": \"Français\",\n  \"active\": true\n}"
 										},
 										"url": {
-											"raw": "{{endpoint}}/{{master}}/language/",
+											"raw": "{{endpoint}}/language/",
 											"host": [
 												"{{endpoint}}"
 											],
 											"path": [
-												"{{master}}",
 												"language",
 												""
 											]
@@ -1834,7 +1834,7 @@
 										],
 										"body": {
 											"mode": "raw",
-											"raw": "{\n  \"code\": {{e.g(236)}},\n  \"iso\": {{e.g(ht)}},\n  \"name\": {{e.g(Test Country)}},\n  \"timezone\": {{e.g(Africa/Tchad)}},\n  \"mobileRegex\": {{e.g(EEEEEEE)}},\n  \"flag\": \"{{e.g(🏳️)}}\"\n}\n",
+											"raw": "{\n  \"code\": \"en\",\n  \"name_en\": \"english\",\n  \"name_local\": \"Anglais\",\n  \"active\": true\n}",
 											"options": {
 												"raw": {
 													"language": "json"
@@ -1842,13 +1842,12 @@
 											}
 										},
 										"url": {
-											"raw": "{{endpoint}}/{{master}}/currency/{{guid (e.g:100002)}}",
+											"raw": "{{endpoint}}/language/{{guid (e.g:100002)}}",
 											"host": [
 												"{{endpoint}}"
 											],
 											"path": [
-												"{{master}}",
-												"currency",
+												"language",
 												"{{guid (e.g:100002)}}"
 											]
 										}
@@ -2251,7 +2250,8 @@
 													"}"
 												],
 												"type": "text/javascript",
-												"packages": {}
+												"packages": {},
+												"requests": {}
 											}
 										}
 									],
@@ -2278,14 +2278,78 @@
 											"raw": "{\n    \"name\": \"SAKE Sarl\",\n    \"short_name\": \"SK\",\n    \"country_code\": \"CM\",\n    \"primary_currency_code\": \"XAF\",\n    \"preferred_language_code\": \"en\",\n    \"timezone\": \"Africa/Douala\",\n    \"billing_email\": \"princefomo49@gmail.com\",\n    \"billing_address\": {\n        \"city\": \"douala\",\n        \"location\": \"makepe\",\n        \"place_name\": \"carrefour abou de bangui\"\n    },\n    \"billing_phone\": \"695601145\",\n    \"registration_number\": \"na987263\",\n    \"employee_count\": [1,10],\n    \"tax_number\": \"1bfdbm27u3mjkk\"\n}"
 										},
 										"url": {
-											"raw": "{{endpoint}}/{{master}}/tenant/",
+											"raw": "{{endpoint}}/tenant/",
 											"host": [
 												"{{endpoint}}"
 											],
 											"path": [
-												"{{master}}",
 												"tenant",
 												""
+											]
+										}
+									},
+									"response": []
+								},
+								{
+									"name": "Créer un nouveau tenant Copy",
+									"event": [
+										{
+											"listen": "test",
+											"script": {
+												"exec": [
+													"pm.test('Status is 201', function () {",
+													"    pm.response.to.have.status(201);",
+													"});",
+													"",
+													"pm.test('Country created successfully', function () {",
+													"    const jsonData = pm.response.json();",
+													"    pm.expect(jsonData.response).to.have.property('guid');",
+													"    pm.expect(jsonData.response).to.have.property('iso');",
+													"    pm.expect(jsonData.response.iso).to.eql('TE');",
+													"});",
+													"",
+													"// Sauvegarder le GUID pour les autres tests",
+													"const jsonData = pm.response.json();",
+													"if (jsonData.response && jsonData.response.guid) {",
+													"    pm.environment.set('created_country_guid', jsonData.response.guid);",
+													"}"
+												],
+												"type": "text/javascript",
+												"packages": {},
+												"requests": {}
+											}
+										}
+									],
+									"request": {
+										"method": "POST",
+										"header": [
+											{
+												"key": "Content-Type",
+												"value": "application/json"
+											},
+											{
+												"key": "x-api-key",
+												"value": "{{x-api-token}}",
+												"type": "text"
+											},
+											{
+												"key": "x-api-signature",
+												"value": "{{x-api-signature}}",
+												"type": "text"
+											}
+										],
+										"body": {
+											"mode": "raw",
+											"raw": "{\n    \"phone\": \"699888709\",\n    \"country\": \"CM\",\n    \"email\": \"princefomo49@gmail.com\",\n    \"otp\":\"747979\"\n}"
+										},
+										"url": {
+											"raw": "{{endpoint}}/tenant/otp",
+											"host": [
+												"{{endpoint}}"
+											],
+											"path": [
+												"tenant",
+												"otp"
 											]
 										}
 									},
@@ -2760,7 +2824,7 @@
 									"response": []
 								},
 								{
-									"name": "Définir la configuration de base de données d'un tenantt par GUID Copy",
+									"name": "Définir la configuration de base de données d'un tenant par GUID",
 									"request": {
 										"method": "PATCH",
 										"header": [
@@ -2777,11 +2841,16 @@
 												"key": "x-api-signature",
 												"value": "{{x-api-signature}}",
 												"type": "text"
+											},
+											{
+												"key": "x-api-timestamp",
+												"value": "{{timestamp}}",
+												"type": "text"
 											}
 										],
 										"body": {
 											"mode": "raw",
-											"raw": "{\n    \"subdomain\": \"ime.toke.cm\",\n    \"database_name\": \"imediatis_db\",\n    \"database_username\": \"toke_imediatis\",\n    \"database_password\": \"TokeSecure1@\"\n}",
+											"raw": "",
 											"options": {
 												"raw": {
 													"language": "json"
@@ -2804,7 +2873,7 @@
 									"response": []
 								},
 								{
-									"name": "Définir la configuration de base de données d'un tenantt par GUID Copy 2",
+									"name": "Définir le sous domain du tenant",
 									"request": {
 										"method": "PATCH",
 										"header": [
@@ -2821,6 +2890,11 @@
 												"key": "x-api-signature",
 												"value": "{{x-api-signature}}",
 												"type": "text"
+											},
+											{
+												"key": "x-api-timestamp",
+												"value": "{{timestamp}}",
+												"type": "text"
 											}
 										],
 										"body": {
@@ -2833,12 +2907,11 @@
 											}
 										},
 										"url": {
-											"raw": "{{endpoint}}/{{master}}/tenant/{{guid )}}/subdomain",
+											"raw": "{{endpoint}}/tenant/{{guid )}}/subdomain",
 											"host": [
 												"{{endpoint}}"
 											],
 											"path": [
-												"{{master}}",
 												"tenant",
 												"{{guid )}}",
 												"subdomain"
@@ -2922,7 +2995,8 @@
 													"}"
 												],
 												"type": "text/javascript",
-												"packages": {}
+												"packages": {},
+												"requests": {}
 											}
 										}
 									],
@@ -2946,15 +3020,14 @@
 										],
 										"body": {
 											"mode": "raw",
-											"raw": "{\n    \"tenant\": 100001,\n    \"license_type\": \"CLOUD_FLEX\",\n    \"billing_cycle_months\": 3,\n    \"current_period_start\": \"2025-06-01\",\n    \"current_period_end\": \"2025-09-01\",\n    \"next_renewal_date\": \"2025-09-01\",\n    \"base_price_usd\": 199.99,\n    \"minimum_seats\": 5,\n    \"total_seats_purchased\": 10,\n    \"license_status\": \"ACTIVE\"\n}"
+											"raw": "{\n    \"tenant\": 100002,\n    \"license_type\": \"CLOUD_FLEX\",\n    \"billing_cycle_months\": 3,\n    \"current_period_start\": \"2025-06-01\",\n    \"current_period_end\": \"2025-09-01\",\n    \"next_renewal_date\": \"2025-09-01\",\n    \"base_price_usd\": 199.99,\n    \"minimum_seats\": 5\n    // \"total_seats_purchased\": 10,\n    // \"license_status\": \"ACTIVE\"\n}"
 										},
 										"url": {
-											"raw": "{{endpoint}}/{{master}}/global-license/",
+											"raw": "{{endpoint}}/global-license/",
 											"host": [
 												"{{endpoint}}"
 											],
 											"path": [
-												"{{master}}",
 												"global-license",
 												""
 											]
@@ -3523,12 +3596,11 @@
 											}
 										],
 										"url": {
-											"raw": "{{endpoint}}/{{master}}/employee-license/list",
+											"raw": "{{mBaseUrl}}/employee-license/list",
 											"host": [
-												"{{endpoint}}"
+												"{{mBaseUrl}}"
 											],
 											"path": [
-												"{{master}}",
 												"employee-license",
 												"list"
 											]
@@ -3557,12 +3629,11 @@
 											}
 										],
 										"url": {
-											"raw": "{{endpoint}}/{{master}}/employee-license/:guid",
+											"raw": "{{mBaseUrl}}/employee-license/:guid",
 											"host": [
-												"{{endpoint}}"
+												"{{mBaseUrl}}"
 											],
 											"path": [
-												"{{master}}",
 												"employee-license",
 												":guid"
 											],
@@ -3597,12 +3668,11 @@
 											}
 										],
 										"url": {
-											"raw": "{{endpoint}}/{{master}}/employee-license/employee/:employee",
+											"raw": "{{mBaseUrl}}/employee-license/employee/:employee",
 											"host": [
-												"{{endpoint}}"
+												"{{mBaseUrl}}"
 											],
 											"path": [
-												"{{master}}",
 												"employee-license",
 												"employee",
 												":employee"
@@ -3638,12 +3708,11 @@
 											}
 										],
 										"url": {
-											"raw": "{{endpoint}}/{{master}}/employee-license/code/:employeeCode",
+											"raw": "{{mBaseUrl}}/employee-license/code/:employeeCode",
 											"host": [
-												"{{endpoint}}"
+												"{{mBaseUrl}}"
 											],
 											"path": [
-												"{{master}}",
 												"employee-license",
 												"code",
 												":employeeCode"
@@ -3679,21 +3748,14 @@
 											}
 										],
 										"url": {
-											"raw": "{{endpoint}}/{{master}}/employee-license/global/:globalLicenseId",
+											"raw": "{{mBaseUrl}}/employee-license/global/100001",
 											"host": [
-												"{{endpoint}}"
+												"{{mBaseUrl}}"
 											],
 											"path": [
-												"{{master}}",
 												"employee-license",
 												"global",
-												":globalLicenseId"
-											],
-											"variable": [
-												{
-													"key": "globalLicenseId",
-													"value": ""
-												}
+												"100001"
 											]
 										}
 									},
@@ -3720,22 +3782,15 @@
 											}
 										],
 										"url": {
-											"raw": "{{endpoint}}/{{master}}/employee-license/stats/billing/:globalLicenseId",
+											"raw": "{{mBaseUrl}}/employee-license/stats/billing/100001",
 											"host": [
-												"{{endpoint}}"
+												"{{mBaseUrl}}"
 											],
 											"path": [
-												"{{master}}",
 												"employee-license",
 												"stats",
 												"billing",
-												":globalLicenseId"
-											],
-											"variable": [
-												{
-													"key": "globalLicenseId",
-													"value": ""
-												}
+												"100001"
 											]
 										}
 									},
@@ -3762,12 +3817,11 @@
 											}
 										],
 										"url": {
-											"raw": "{{endpoint}}/{{master}}/employee-license/long-leave/list",
+											"raw": "{{mBaseUrl}}/employee-license/long-leave/list",
 											"host": [
-												"{{endpoint}}"
+												"{{mBaseUrl}}"
 											],
 											"path": [
-												"{{master}}",
 												"employee-license",
 												"long-leave",
 												"list"
@@ -3797,12 +3851,11 @@
 											}
 										],
 										"url": {
-											"raw": "{{endpoint}}/{{master}}/employee-license/grace-period/list",
+											"raw": "{{mBaseUrl}}/employee-license/grace-period/list",
 											"host": [
-												"{{endpoint}}"
+												"{{mBaseUrl}}"
 											],
 											"path": [
-												"{{master}}",
 												"employee-license",
 												"grace-period",
 												"list"
@@ -3829,7 +3882,8 @@
 													"});"
 												],
 												"type": "text/javascript",
-												"packages": {}
+												"packages": {},
+												"requests": {}
 											}
 										}
 									],
@@ -3852,12 +3906,11 @@
 											}
 										],
 										"url": {
-											"raw": "{{endpoint}}/{{master}}/employee-license/revision",
+											"raw": "{{mBaseUrl}}/employee-license/revision",
 											"host": [
-												"{{endpoint}}"
+												"{{mBaseUrl}}"
 											],
 											"path": [
-												"{{master}}",
 												"employee-license",
 												"revision"
 											]
@@ -6912,7 +6965,8 @@
 													"}"
 												],
 												"type": "text/javascript",
-												"packages": {}
+												"packages": {},
+												"requests": {}
 											}
 										}
 									],
@@ -6936,15 +6990,14 @@
 										],
 										"body": {
 											"mode": "raw",
-											"raw": "{\n  \"reference\": \"welcomeMessage\",\n  \"translation\": {\n    \"fr\": \"Bienvenue dans notre application\",\n    \"en\": \"Welcome to our application\"\n    // \"es\": \"Bienvenido a nuestra aplicación\"\n  },\n  \"portable\": true\n}"
+											"raw": "{\n  \"reference\": \"welcomeToOurCountry\",\n  \"translation\": {\n    \"fr\": \"Bienvenue dans notre pays\",\n    \"en\": \"Welcome to our country\"\n    // \"es\": \"Bienvenido a nuestra aplicación\"\n  },\n  \"portable\": true\n}"
 										},
 										"url": {
-											"raw": "{{endpoint}}/l/lexicon/",
+											"raw": "{{endpoint}}/lexicon/",
 											"host": [
 												"{{endpoint}}"
 											],
 											"path": [
-												"l",
 												"lexicon",
 												""
 											]
@@ -7141,7 +7194,8 @@
 													"});"
 												],
 												"type": "text/javascript",
-												"packages": {}
+												"packages": {},
+												"requests": {}
 											}
 										}
 									],
@@ -7164,11 +7218,10 @@
 											}
 										],
 										"url": {
-											"raw": "{{endpoint}}:{{port}}/lexicon/list",
+											"raw": "{{endpoint}}/lexicon/list",
 											"host": [
 												"{{endpoint}}"
 											],
-											"port": "{{port}}",
 											"path": [
 												"lexicon",
 												"list"
@@ -7394,12 +7447,11 @@
 											"raw": "// {\n//   \"reference\": \"welcomeMessageUpdated\",\n//   \"translation\": {\n//     \"fr\": \"Bienvenue dans notre super application\",\n//     \"en\": \"Welcome to our awesome application\",\n//     \"es\": \"Bienvenido a nuestra increíble aplicación\",\n//     \"de\": \"Willkommen in unserer tollen Anwendung\"\n//   },\n//   \"portable\": false\n// },\n{\n    \"reference\": \"changeMyPIN\",\n    \"translation\": {\n        \"fr\": \"Modifier mon code PIN\",\n        \"en\": \"Change my PIN\"\n    },\n    \"portable\": true\n}"
 										},
 										"url": {
-											"raw": "{{endpoint}}/m/lexicon/{{created_guid}}",
+											"raw": "{{mBaseUrl}}/lexicon/{{created_guid}}",
 											"host": [
-												"{{endpoint}}"
+												"{{mBaseUrl}}"
 											],
 											"path": [
-												"m",
 												"lexicon",
 												"{{created_guid}}"
 											]
@@ -7895,7 +7947,7 @@
 						],
 						"body": {
 							"mode": "raw",
-							"raw": "{\n    \"name\": \"Clock-In\",\n    \"description\": \"Pour l'app de pointage de presences\"\n}",
+							"raw": "{\n    \"name\": \"Manager\",\n    \"description\": \"Pour l'app de gestion de pointage des employés\",\n    \"root\": false\n}",
 							"options": {
 								"raw": {
 									"language": "json"
@@ -7903,12 +7955,11 @@
 							}
 						},
 						"url": {
-							"raw": "{{endpoint}}/{{master}}/profile",
+							"raw": "{{endpoint}}/profile",
 							"host": [
 								"{{endpoint}}"
 							],
 							"path": [
-								"{{master}}",
 								"profile"
 							]
 						}
@@ -8156,7 +8207,7 @@
 										],
 										"body": {
 											"mode": "raw",
-											"raw": "{\n    \"code\": \"\",\n    \"name\": \"\",\n    \"permissions\": \"\",\n    \"description\": \"\",\n    \"system_role\": true, // false ou undefined\n    \"default_role\": true, // false ou undefined\n    \"admin_role\": true // false ou undefined\n}",
+											"raw": "{\n    \"code\": \"ADMIN\"\n}",
 											"options": {
 												"raw": {
 													"language": "json"
@@ -8164,13 +8215,13 @@
 											}
 										},
 										"url": {
-											"raw": "{{baseUrl}}/role/{{guid}}",
+											"raw": "{{baseUrl}}/role/9220718538557901",
 											"host": [
 												"{{baseUrl}}"
 											],
 											"path": [
 												"role",
-												"{{guid}}"
+												"9220718538557901"
 											]
 										}
 									},
@@ -8280,7 +8331,7 @@
 										],
 										"body": {
 											"mode": "raw",
-											"raw": "{\n    \"code\": \"EMPLOYEE\",\n    \"name\": \"Employee\",\n    \"permissions\": {\n        \"pointage\": \"Effetuer des pointages\",\n        \"memos\": \"Soumettre des memos\"\n    },\n    \"description\": \"bonjour employé\",\n    \"system_role\": true, // false ou undefined\n    \"default_role\": true // false ou undefined\n}"
+											"raw": "{\n    \"code\": \"MANAGER\",\n    \"name\": \"Manager\",\n    \"permissions\": {\n        \"pointage\": \"Gerer les pointages de son equipe\",\n        \"memos\": \"Valides les memos de son equipe\"\n    },\n    \"description\": \"bonjour manager\",\n    \"system_role\": true // false ou undefined\n    // \"default_role\": true\n    // \"admin_role\": true\n}"
 										},
 										"url": {
 											"raw": "{{baseUrl}}/role",
@@ -8305,7 +8356,7 @@
 							"name": "➕ CRUD - CREATE",
 							"item": [
 								{
-									"name": "Créer un nouvel admin",
+									"name": "Créer un nouvel manager",
 									"event": [
 										{
 											"listen": "test",
@@ -8364,23 +8415,29 @@
 										],
 										"body": {
 											"mode": "raw",
-											"raw": "{\n   \"first_name\": \"Pierre\",\n  \"last_name\": \"Mbongo\",\n  \"phone_number\": \"+237698893456\",\n  \"email\": \"mbongo@batix.cm\",\n  \"employee_code\": \"BATT01\", \n  \"hire_date\": \"2024-01-15\",\n  \"department\": \"Travaux Publics\",\n  \"job_title\": \"Chef de Chantier\",\n  \"supervisor\": \"35536367673344r4\", \n  \"tenant\": \"jjhsdcxjhxcb jkb\"\n}"
+											"raw": "{\n    \"first_name\": \"Samuel kerian\",\n    \"last_name\": \"Fomo\",\n    \"phone_number\": \"237693821256\",\n    \"email\": \"samuelkerianfomo@gmail.com\",\n    \"employee_code\": \"BATT03\",\n    \"hire_date\": \"2024-01-15\",\n    \"department\": \"Travaux Publics\",\n    \"job_title\": \"Chef de Chantier\",\n    \"country\": \"CM\",\n    \"supervisor\": \"6005188533196401\"\n    //   \"tenant\": \"jjhsdcxjhxcb jkb\"\n}"
 										},
 										"url": {
-											"raw": "{{baseUrl}}/user/admin",
+											"raw": "{{baseUrl}}/user/manager?affiliate=6005188533196401",
 											"host": [
 												"{{baseUrl}}"
 											],
 											"path": [
 												"user",
-												"admin"
+												"manager"
+											],
+											"query": [
+												{
+													"key": "affiliate",
+													"value": "6005188533196401"
+												}
 											]
 										}
 									},
 									"response": []
 								},
 								{
-									"name": "Créer un nouvel utilisateur",
+									"name": "👤 Add new employee to manager's team with basic info and automatic role assignment",
 									"event": [
 										{
 											"listen": "test",
@@ -8420,34 +8477,20 @@
 												"key": "x-api-key",
 												"value": "{{x-api-token}}",
 												"type": "text"
-											},
-											{
-												"key": "x-api-signature",
-												"value": "{{x-api-signature}}",
-												"type": "text"
-											},
-											{
-												"key": "x-api-timestamp",
-												"value": "{{timestamp}}",
-												"type": "text"
-											},
-											{
-												"key": "x-tenant-id",
-												"value": "{{x-tenant-id}}",
-												"type": "text"
 											}
 										],
 										"body": {
 											"mode": "raw",
-											"raw": "{\n    \"supervisor\": \"387939f0-bd62-42fb-9421-4a85f057ed9d\",\n    \"email\": \"manfred@gmail.cm\",\n    \"first_name\": \"manfred\",\n    \"last_name\": \"Moukaté\",\n    \"phone_number\": \"699888709\",\n    \"employee_code\": \"SYS-0001\",\n    \"hire_date\": \"2025-09-01\",\n    \"department\": \"INFO\",\n    \"job_title\": \"LOGICIEL\"\n}"
+											"raw": "{\n    \"supervisor\": \"1533541683605001\",\n    \"email\": \"princefomo49@gmail.cm\",\n    \"first_name\": \"Samuel kerian\",\n    \"last_name\": \"Fomo\",\n    \"phone_number\": \"651721536\",\n    \"employee_code\": \"21I034IU\",\n    \"hire_date\": \"2024-09-12\",\n    \"department\": \"INFO\",\n    \"job_title\": \"LOGICIEL\",\n\n    \"country\": \"CM\"\n}"
 										},
 										"url": {
-											"raw": "{{baseUrl}}/user",
+											"raw": "{{baseUrl}}/user/",
 											"host": [
 												"{{baseUrl}}"
 											],
 											"path": [
-												"user"
+												"user",
+												""
 											]
 										}
 									},
@@ -8484,7 +8527,7 @@
 										}
 									],
 									"request": {
-										"method": "POST",
+										"method": "PATCH",
 										"header": [
 											{
 												"key": "Content-Type",
@@ -8516,13 +8559,13 @@
 											"raw": ""
 										},
 										"url": {
-											"raw": "{{baseUrl}}/user/8dad6f41-6e8f-4a11-ae29-0e0babecc169/generate-otp",
+											"raw": "{{baseUrl}}/user/3915293612562352/generate-otp",
 											"host": [
 												"{{baseUrl}}"
 											],
 											"path": [
 												"user",
-												"8dad6f41-6e8f-4a11-ae29-0e0babecc169",
+												"3915293612562352",
 												"generate-otp"
 											]
 										}
@@ -9042,6 +9085,706 @@
 										],
 										"body": {
 											"mode": "raw",
+											"raw": "{\n \"country\":\"CM\",\n \"email\": \"manfred@imediatis.net\"\n}\n",
+											"options": {
+												"raw": {
+													"language": "json"
+												}
+											}
+										},
+										"url": {
+											"raw": "{{baseUrl}}/user/3337892849459602/generate-otp",
+											"host": [
+												"{{baseUrl}}"
+											],
+											"path": [
+												"user",
+												"3337892849459602",
+												"generate-otp"
+											]
+										}
+									},
+									"response": []
+								},
+								{
+									"name": "Generer le QR code token du manager",
+									"request": {
+										"method": "PATCH",
+										"header": [
+											{
+												"key": "Content-Type",
+												"value": "application/json"
+											},
+											{
+												"key": "x-api-key",
+												"value": "{{x-api-token}}",
+												"type": "text"
+											},
+											{
+												"key": "x-api-signature",
+												"value": "{{x-api-signature}}",
+												"type": "text"
+											}
+										],
+										"body": {
+											"mode": "raw",
+											"raw": "{\n \n}\n",
+											"options": {
+												"raw": {
+													"language": "json"
+												}
+											}
+										},
+										"url": {
+											"raw": "{{baseUrl}}/user/:guid/generate-qr-code",
+											"host": [
+												"{{baseUrl}}"
+											],
+											"path": [
+												"user",
+												":guid",
+												"generate-qr-code"
+											],
+											"variable": [
+												{
+													"key": "guid",
+													"value": ""
+												}
+											]
+										}
+									},
+									"response": []
+								},
+								{
+									"name": "modifier les donnees personnelles de l'utilisateur",
+									"request": {
+										"method": "PATCH",
+										"header": [
+											{
+												"key": "Content-Type",
+												"value": "application/json"
+											},
+											{
+												"key": "x-api-key",
+												"value": "{{x-api-token}}",
+												"type": "text"
+											},
+											{
+												"key": "x-api-signature",
+												"value": "{{x-api-signature}}",
+												"type": "text"
+											}
+										],
+										"body": {
+											"mode": "raw",
+											"raw": "{\n \n}\n",
+											"options": {
+												"raw": {
+													"language": "json"
+												}
+											}
+										},
+										"url": {
+											"raw": "{{baseUrl}}/user/:guid/modify",
+											"host": [
+												"{{baseUrl}}"
+											],
+											"path": [
+												"user",
+												":guid",
+												"modify"
+											],
+											"variable": [
+												{
+													"key": "guid",
+													"value": ""
+												}
+											]
+										}
+									},
+									"response": []
+								},
+								{
+									"name": "modifier le pin de l'utilisateur",
+									"request": {
+										"method": "PATCH",
+										"header": [
+											{
+												"key": "Content-Type",
+												"value": "application/json"
+											},
+											{
+												"key": "x-api-key",
+												"value": "{{x-api-token}}",
+												"type": "text"
+											},
+											{
+												"key": "x-api-signature",
+												"value": "{{x-api-signature}}",
+												"type": "text"
+											}
+										],
+										"body": {
+											"mode": "raw",
+											"raw": "{\n \n}\n",
+											"options": {
+												"raw": {
+													"language": "json"
+												}
+											}
+										},
+										"url": {
+											"raw": "{{baseUrl}}/user/:guid/change-pin",
+											"host": [
+												"{{baseUrl}}"
+											],
+											"path": [
+												"user",
+												":guid",
+												"change-pin"
+											],
+											"variable": [
+												{
+													"key": "guid",
+													"value": ""
+												}
+											]
+										}
+									},
+									"response": []
+								},
+								{
+									"name": "definir le mot de passe du manager",
+									"request": {
+										"method": "PATCH",
+										"header": [
+											{
+												"key": "Content-Type",
+												"value": "application/json"
+											},
+											{
+												"key": "x-api-key",
+												"value": "{{x-api-token}}",
+												"type": "text"
+											},
+											{
+												"key": "x-api-signature",
+												"value": "{{x-api-signature}}",
+												"type": "text"
+											}
+										],
+										"body": {
+											"mode": "raw",
+											"raw": "{\n \"password\": \"test@09Toke\"\n}\n",
+											"options": {
+												"raw": {
+													"language": "json"
+												}
+											}
+										},
+										"url": {
+											"raw": "{{baseUrl}}/user/6005188533196401/define-password",
+											"host": [
+												"{{baseUrl}}"
+											],
+											"path": [
+												"user",
+												"6005188533196401",
+												"define-password"
+											]
+										}
+									},
+									"response": []
+								},
+								{
+									"name": "verify le password du manager",
+									"request": {
+										"method": "PATCH",
+										"header": [
+											{
+												"key": "Content-Type",
+												"value": "application/json"
+											},
+											{
+												"key": "x-api-key",
+												"value": "{{x-api-token}}",
+												"type": "text"
+											},
+											{
+												"key": "x-api-signature",
+												"value": "{{x-api-signature}}",
+												"type": "text"
+											}
+										],
+										"body": {
+											"mode": "raw",
+											"raw": "{\n \n}\n",
+											"options": {
+												"raw": {
+													"language": "json"
+												}
+											}
+										},
+										"url": {
+											"raw": "{{baseUrl}}/user/manager/password",
+											"host": [
+												"{{baseUrl}}"
+											],
+											"path": [
+												"user",
+												"manager",
+												"password"
+											]
+										}
+									},
+									"response": []
+								},
+								{
+									"name": "Definir le pin de l'utilisateur",
+									"request": {
+										"method": "PATCH",
+										"header": [
+											{
+												"key": "Content-Type",
+												"value": "application/json"
+											},
+											{
+												"key": "x-api-key",
+												"value": "{{x-api-token}}",
+												"type": "text"
+											},
+											{
+												"key": "x-api-signature",
+												"value": "{{x-api-signature}}",
+												"type": "text"
+											}
+										],
+										"body": {
+											"mode": "raw",
+											"raw": "{\n \"pin\":1927\n}\n",
+											"options": {
+												"raw": {
+													"language": "json"
+												}
+											}
+										},
+										"url": {
+											"raw": "{{baseUrl}}/user/5751601882956203/define-pin",
+											"host": [
+												"{{baseUrl}}"
+											],
+											"path": [
+												"user",
+												"5751601882956203",
+												"define-pin"
+											]
+										}
+									},
+									"response": []
+								},
+								{
+									"name": "Verifir le pin de l'utilisateur",
+									"request": {
+										"method": "PATCH",
+										"header": [
+											{
+												"key": "Content-Type",
+												"value": "application/json"
+											},
+											{
+												"key": "x-api-key",
+												"value": "{{x-api-token}}",
+												"type": "text"
+											},
+											{
+												"key": "x-api-signature",
+												"value": "{{x-api-signature}}",
+												"type": "text"
+											}
+										],
+										"body": {
+											"mode": "raw",
+											"raw": "{\n \n}\n",
+											"options": {
+												"raw": {
+													"language": "json"
+												}
+											}
+										},
+										"url": {
+											"raw": "{{baseUrl}}/user/verify-pin",
+											"host": [
+												"{{baseUrl}}"
+											],
+											"path": [
+												"user",
+												"verify-pin"
+											]
+										}
+									},
+									"response": []
+								}
+							]
+						},
+						{
+							"name": "🗑️ CRUD - DELETE",
+							"item": [
+								{
+									"name": "Supprimer un utilisateur par GUID (admin :  a ne pas utilise)",
+									"request": {
+										"method": "DELETE",
+										"header": [
+											{
+												"key": "x-api-key",
+												"value": "{{x-api-token}}",
+												"type": "text"
+											},
+											{
+												"key": "x-api-signature",
+												"value": "{{x-api-signature}}",
+												"type": "text"
+											},
+											{
+												"key": "x-api-user",
+												"value": "{{x-api-user}}",
+												"type": "text"
+											}
+										],
+										"url": {
+											"raw": "{{baseUrl}}/user/100001",
+											"host": [
+												"{{baseUrl}}"
+											],
+											"path": [
+												"user",
+												"100001"
+											]
+										}
+									},
+									"response": []
+								}
+							]
+						}
+					]
+				},
+				{
+					"name": "Assigned roles",
+					"item": [
+						{
+							"name": "➕ CRUD - CREATE",
+							"item": [
+								{
+									"name": "ASSIGNMENT DE RÔLES",
+									"event": [
+										{
+											"listen": "test",
+											"script": {
+												"exec": [
+													"pm.test('Status is 201', function () {",
+													"    pm.response.to.have.status(201);",
+													"});",
+													"",
+													"pm.test('Country created successfully', function () {",
+													"    const jsonData = pm.response.json();",
+													"    pm.expect(jsonData.response).to.have.property('guid');",
+													"    pm.expect(jsonData.response).to.have.property('iso');",
+													"    pm.expect(jsonData.response.iso).to.eql('TE');",
+													"});",
+													"",
+													"// Sauvegarder le GUID pour les autres tests",
+													"const jsonData = pm.response.json();",
+													"if (jsonData.response && jsonData.response.guid) {",
+													"    pm.environment.set('created_country_guid', jsonData.response.guid);",
+													"}"
+												],
+												"type": "text/javascript",
+												"packages": {},
+												"requests": {}
+											}
+										}
+									],
+									"request": {
+										"method": "POST",
+										"header": [
+											{
+												"key": "Content-Type",
+												"value": "application/json"
+											},
+											{
+												"key": "x-api-key",
+												"value": "{{x-api-token}}",
+												"type": "text"
+											},
+											{
+												"key": "x-api-signature",
+												"value": "{{x-api-signature}}",
+												"type": "text"
+											},
+											{
+												"key": "x-api-timestamp",
+												"value": "{{timestamp}}",
+												"type": "text"
+											},
+											{
+												"key": "x-tenant-id",
+												"value": "{{x-tenant-id}}",
+												"type": "text"
+											}
+										],
+										"body": {
+											"mode": "raw",
+											"raw": "{\n   \"user\": \"5751601882956203\",\n  \"role\": \"7903595840880203\",\n  \"assigned_by\": \"1533541683605001\"\n}"
+										},
+										"url": {
+											"raw": "{{baseUrl}}/user-role",
+											"host": [
+												"{{baseUrl}}"
+											],
+											"path": [
+												"user-role"
+											]
+										}
+									},
+									"response": []
+								}
+							]
+						},
+						{
+							"name": "📝 CRUD - READ",
+							"item": [
+								{
+									"name": "Répertorier tous les rôles attribués à un locataire",
+									"request": {
+										"method": "GET",
+										"header": [
+											{
+												"key": "Content-Type",
+												"value": "application/json"
+											},
+											{
+												"key": "x-api-key",
+												"value": "{{x-api-token}}",
+												"type": "text"
+											},
+											{
+												"key": "x-api-signature",
+												"value": "{{x-api-signature}}",
+												"type": "text"
+											},
+											{
+												"key": "x-api-timestamp",
+												"value": "{{timestamp}}",
+												"type": "text"
+											},
+											{
+												"key": "x-tenant-id",
+												"value": "{{x-tenant-id}}",
+												"type": "text"
+											}
+										],
+										"url": {
+											"raw": "{{baseUrl}}/user-role/list",
+											"host": [
+												"{{baseUrl}}"
+											],
+											"path": [
+												"user-role",
+												"list"
+											]
+										}
+									},
+									"response": []
+								},
+								{
+									"name": "Révision Actuelle",
+									"event": [
+										{
+											"listen": "test",
+											"script": {
+												"exec": [
+													"pm.test('Status is 200', function () {",
+													"    pm.response.to.have.status(200);",
+													"});",
+													"",
+													"pm.test('Response has revision and timestamp', function () {",
+													"    const jsonData = pm.response.json();",
+													"    pm.expect(jsonData.response).to.have.property('revision');",
+													"    pm.expect(jsonData.response).to.have.property('checked_at');",
+													"});"
+												],
+												"type": "text/javascript",
+												"packages": {},
+												"requests": {}
+											}
+										}
+									],
+									"request": {
+										"method": "GET",
+										"header": [
+											{
+												"key": "Content-Type",
+												"value": "application/json"
+											},
+											{
+												"key": "x-api-key",
+												"value": "{{x-api-token}}",
+												"type": "text"
+											},
+											{
+												"key": "x-api-signature",
+												"value": "{{x-api-signature}}",
+												"type": "text"
+											}
+										],
+										"url": {
+											"raw": "{{baseUrl}}/user-role/revision",
+											"host": [
+												"{{baseUrl}}"
+											],
+											"path": [
+												"user-role",
+												"revision"
+											]
+										}
+									},
+									"response": []
+								},
+								{
+									"name": "List all roles assigned to a user",
+									"event": [
+										{
+											"listen": "test",
+											"script": {
+												"exec": [
+													"pm.test('Status is 200', function () {",
+													"    pm.response.to.have.status(200);",
+													"});",
+													"",
+													"pm.test('Response has revision and timestamp', function () {",
+													"    const jsonData = pm.response.json();",
+													"    pm.expect(jsonData.response).to.have.property('revision');",
+													"    pm.expect(jsonData.response).to.have.property('checked_at');",
+													"});"
+												],
+												"type": "text/javascript",
+												"packages": {},
+												"requests": {}
+											}
+										}
+									],
+									"request": {
+										"method": "GET",
+										"header": [
+											{
+												"key": "Content-Type",
+												"value": "application/json"
+											},
+											{
+												"key": "x-api-key",
+												"value": "{{x-api-token}}",
+												"type": "text"
+											},
+											{
+												"key": "x-api-signature",
+												"value": "{{x-api-signature}}",
+												"type": "text"
+											}
+										],
+										"url": {
+											"raw": "{{baseUrl}}/user-role/:guid/list",
+											"host": [
+												"{{baseUrl}}"
+											],
+											"path": [
+												"user-role",
+												":guid",
+												"list"
+											],
+											"variable": [
+												{
+													"key": "guid",
+													"value": ""
+												}
+											]
+										}
+									},
+									"response": []
+								}
+							]
+						},
+						{
+							"name": "✏️ CRUD - UPDATE",
+							"item": [
+								{
+									"name": "Modifier un utilisateur par GUID",
+									"request": {
+										"method": "PUT",
+										"header": [
+											{
+												"key": "Content-Type",
+												"value": "application/json"
+											},
+											{
+												"key": "x-api-key",
+												"value": "{{x-api-token}}",
+												"type": "text"
+											},
+											{
+												"key": "x-api-signature",
+												"value": "{{x-api-signature}}",
+												"type": "text"
+											}
+										],
+										"body": {
+											"mode": "raw",
+											"raw": "{\n \n}\n",
+											"options": {
+												"raw": {
+													"language": "json"
+												}
+											}
+										},
+										"url": {
+											"raw": "{{baseUrl}}/user/:guid",
+											"host": [
+												"{{baseUrl}}"
+											],
+											"path": [
+												"user",
+												":guid"
+											],
+											"variable": [
+												{
+													"key": "guid",
+													"value": ""
+												}
+											]
+										}
+									},
+									"response": []
+								},
+								{
+									"name": "Generer l'otp d'un utilisateur",
+									"request": {
+										"method": "PATCH",
+										"header": [
+											{
+												"key": "Content-Type",
+												"value": "application/json"
+											},
+											{
+												"key": "x-api-key",
+												"value": "{{x-api-token}}",
+												"type": "text"
+											},
+											{
+												"key": "x-api-signature",
+												"value": "{{x-api-signature}}",
+												"type": "text"
+											}
+										],
+										"body": {
+											"mode": "raw",
 											"raw": "{\n \n}\n",
 											"options": {
 												"raw": {
@@ -9403,42 +10146,28 @@
 						},
 						{
 							"name": "🗑️ CRUD - DELETE",
-							"item": [
-								{
-									"name": "Supprimer un utilisateur par GUID (admin :  a ne pas utilise)",
-									"request": {
-										"method": "DELETE",
-										"header": [
-											{
-												"key": "x-api-key",
-												"value": "{{x-api-token}}",
-												"type": "text"
-											},
-											{
-												"key": "x-api-signature",
-												"value": "{{x-api-signature}}",
-												"type": "text"
-											},
-											{
-												"key": "x-api-user",
-												"value": "{{x-api-user}}",
-												"type": "text"
-											}
-										],
-										"url": {
-											"raw": "{{baseUrl}}/user/100001",
-											"host": [
-												"{{baseUrl}}"
-											],
-											"path": [
-												"user",
-												"100001"
-											]
-										}
-									},
-									"response": []
-								}
-							]
+							"item": []
+						}
+					]
+				},
+				{
+					"name": "Team",
+					"item": [
+						{
+							"name": "➕ CRUD - CREATE",
+							"item": []
+						},
+						{
+							"name": "📝 CRUD - READ",
+							"item": []
+						},
+						{
+							"name": "✏️ CRUD - UPDATE",
+							"item": []
+						},
+						{
+							"name": "🗑️ CRUD - DELETE",
+							"item": []
 						}
 					]
 				},
@@ -9727,6 +10456,27 @@
 					]
 				},
 				{
+					"name": "Sessions de Travail",
+					"item": [
+						{
+							"name": "➕ CRUD - CREATE",
+							"item": []
+						},
+						{
+							"name": "📝 CRUD - READ",
+							"item": []
+						},
+						{
+							"name": "✏️ CRUD - UPDATE",
+							"item": []
+						},
+						{
+							"name": "🗑️ CRUD - DELETE",
+							"item": []
+						}
+					]
+				},
+				{
 					"name": "TIME ENTRIES",
 					"item": [
 						{
@@ -9778,25 +10528,19 @@
 												"key": "x-api-signature",
 												"value": "{{x-api-signature}}",
 												"type": "text"
-											},
-											{
-												"key": "x-api-timestamp",
-												"value": "{{timestamp}}",
-												"type": "text"
 											}
 										],
 										"body": {
 											"mode": "raw",
-											"raw": "{\n  \"user\": \"3915293612562352\",\n  \"site\": \"7515385671145201\",\n  \"pointage_type\": \"clock_in\",\n  \"clocked_at\": \"2024-12-01T08:00:00Z\",\n  \"server_received_at\": \"2024-12-01T08:00:02Z\",\n  \"latitude\": 9.70123,\n  \"longitude\": 4.04567,\n  \"gps_accuracy\": 8,\n  \"validatedDataSchema\": {\n\"device_info\": {\n    \"device_id\": \"SM-A125F-Pierre\",\n    \"os_version\": \"Android 13\",\n    \"app_version\": \"2.1.3\",\n    \"battery_level\": 85,\n    \"network_type\": \"4G\",\n    \"mock_location_detected\": false\n  }\n  },\n  \"ip_address\": \"196.200.45.123\",\n  \"user_agent\": \"TokeMobile/2.1.3 Android/13\",\n  \"qr_scan_data\": {\n    \"qr_token\": \"QR_BATIX_NORD_15_2024120108\",\n    \"scan_duration\": 1.2,\n    \"scan_quality\": \"good\"\n  },\n  \"created_offline\": false,\n  \"sync_attempts\": 0\n}"
+											"raw": "{\n    \"pin\": \"1234\",\n    \"user\": \"5751601882956203\",\n    \"site\": \"9856563826540801\",\n    \"pointage_type\": \"pause_end\",\n    \"clocked_at\": \"2025-10-24T11:23:00Z\",\n    \"real_clocked_at\": \"2025-10-24T11:24:00Z\",\n    \"latitude\": 4.04573,\n    \"longitude\": 9.70129,\n    \"gps_accuracy\": 5,\n    \"device_info\": {\n        \"device_id\": \"SM-A125F-Pierre\",\n        \"os_version\": \"Android 13\",\n        \"app_version\": \"2.1.3\",\n        \"battery_level\": 85,\n        \"network_type\": \"4G\",\n        \"mock_location_detected\": false\n    },\n    \"created_offline\": false,\n    \"sync_attempts\": 0\n}"
 										},
 										"url": {
-											"raw": "{{baseUrl}}/time-entries/",
+											"raw": "{{baseUrl}}/time-entries",
 											"host": [
 												"{{baseUrl}}"
 											],
 											"path": [
-												"time-entries",
-												""
+												"time-entries"
 											]
 										}
 									},
@@ -9808,50 +10552,10 @@
 							"name": "📝 CRUD - READ",
 							"item": [
 								{
-									"name": "Lister tous les utilisateurs du tenant(pour admin)",
-									"request": {
-										"method": "GET",
-										"header": [
-											{
-												"key": "Content-Type",
-												"value": "application/json"
-											},
-											{
-												"key": "x-api-key",
-												"value": "{{x-api-token}}",
-												"type": "text"
-											},
-											{
-												"key": "x-api-signature",
-												"value": "{{x-api-signature}}",
-												"type": "text"
-											},
-											{
-												"key": "x-api-timestamp",
-												"value": "{{timestamp}}",
-												"type": "text"
-											},
-											{
-												"key": "x-tenant-id",
-												"value": "{{x-tenant-id}}",
-												"type": "text"
-											}
-										],
-										"url": {
-											"raw": "{{baseUrl}}/user/list",
-											"host": [
-												"{{baseUrl}}"
-											],
-											"path": [
-												"user",
-												"list"
-											]
-										}
+									"name": "New Request",
+									"protocolProfileBehavior": {
+										"disableBodyPruning": true
 									},
-									"response": []
-								},
-								{
-									"name": "Lister tous les utilisateurs du tenant par department",
 									"request": {
 										"method": "GET",
 										"header": [
@@ -9875,366 +10579,30 @@
 												"type": "text"
 											},
 											{
-												"key": "x-tenant-id",
-												"value": "{{x-tenant-id}}",
+												"key": "",
+												"value": "",
 												"type": "text"
 											}
 										],
+										"body": {
+											"mode": "raw",
+											"raw": ""
+										},
 										"url": {
-											"raw": "{{baseUrl}}/user/department/:department/list",
+											"raw": "{{baseUrl}}/time-entries/:guid/last",
 											"host": [
 												"{{baseUrl}}"
 											],
 											"path": [
-												"user",
-												"department",
-												":department",
-												"list"
-											],
-											"variable": [
-												{
-													"key": "department",
-													"value": ""
-												}
-											]
-										}
-									},
-									"response": []
-								},
-								{
-									"name": "Lister tous les utilisateurs du tenant par statut",
-									"request": {
-										"method": "GET",
-										"header": [
-											{
-												"key": "Content-Type",
-												"value": "application/json"
-											},
-											{
-												"key": "x-api-key",
-												"value": "{{x-api-token}}",
-												"type": "text"
-											},
-											{
-												"key": "x-api-signature",
-												"value": "{{x-api-signature}}",
-												"type": "text"
-											},
-											{
-												"key": "x-api-timestamp",
-												"value": "{{timestamp}}",
-												"type": "text"
-											},
-											{
-												"key": "x-tenant-id",
-												"value": "{{x-tenant-id}}",
-												"type": "text"
-											}
-										],
-										"url": {
-											"raw": "{{baseUrl}}/user/active/false/list",
-											"host": [
-												"{{baseUrl}}"
-											],
-											"path": [
-												"user",
-												"active",
-												"false",
-												"list"
-											]
-										}
-									},
-									"response": []
-								},
-								{
-									"name": "Recuperer les QR Code de confirgurationdu du tenant",
-									"request": {
-										"method": "GET",
-										"header": [
-											{
-												"key": "Content-Type",
-												"value": "application/json"
-											},
-											{
-												"key": "x-api-key",
-												"value": "{{x-api-token}}",
-												"type": "text"
-											},
-											{
-												"key": "x-api-signature",
-												"value": "{{x-api-signature}}",
-												"type": "text"
-											},
-											{
-												"key": "x-api-timestamp",
-												"value": "{{timestamp}}",
-												"type": "text"
-											},
-											{
-												"key": "x-tenant-id",
-												"value": "{{x-tenant-id}}",
-												"type": "text"
-											}
-										],
-										"url": {
-											"raw": "{{baseUrl}}/user/config",
-											"host": [
-												"{{baseUrl}}"
-											],
-											"path": [
-												"user",
-												"config"
-											]
-										}
-									},
-									"response": []
-								},
-								{
-									"name": "Recuperer un utilisateur par son Guid",
-									"request": {
-										"method": "GET",
-										"header": [
-											{
-												"key": "Content-Type",
-												"value": "application/json"
-											},
-											{
-												"key": "x-api-key",
-												"value": "{{x-api-token}}",
-												"type": "text"
-											},
-											{
-												"key": "x-api-signature",
-												"value": "{{x-api-signature}}",
-												"type": "text"
-											},
-											{
-												"key": "x-api-timestamp",
-												"value": "{{timestamp}}",
-												"type": "text"
-											},
-											{
-												"key": "x-tenant-id",
-												"value": "{{x-tenant-id}}",
-												"type": "text"
-											}
-										],
-										"url": {
-											"raw": "{{baseUrl}}/user/:guid",
-											"host": [
-												"{{baseUrl}}"
-											],
-											"path": [
-												"user",
-												":guid"
+												"time-entries",
+												":guid",
+												"last"
 											],
 											"variable": [
 												{
 													"key": "guid",
 													"value": ""
 												}
-											]
-										}
-									},
-									"response": []
-								},
-								{
-									"name": "Recuperer un utilisateur par son Guid Copy",
-									"request": {
-										"method": "GET",
-										"header": [
-											{
-												"key": "Content-Type",
-												"value": "application/json"
-											},
-											{
-												"key": "x-api-key",
-												"value": "{{x-api-token}}",
-												"type": "text"
-											},
-											{
-												"key": "x-api-signature",
-												"value": "{{x-api-signature}}",
-												"type": "text"
-											},
-											{
-												"key": "x-api-timestamp",
-												"value": "{{timestamp}}",
-												"type": "text"
-											},
-											{
-												"key": "x-tenant-id",
-												"value": "{{x-tenant-id}}",
-												"type": "text"
-											}
-										],
-										"url": {
-											"raw": "{{baseUrl}}/user/:guid",
-											"host": [
-												"{{baseUrl}}"
-											],
-											"path": [
-												"user",
-												":guid"
-											],
-											"variable": [
-												{
-													"key": "guid",
-													"value": ""
-												}
-											]
-										}
-									},
-									"response": []
-								},
-								{
-									"name": "Recuperer un utilisateur par son Guid Copy",
-									"request": {
-										"method": "GET",
-										"header": [
-											{
-												"key": "Content-Type",
-												"value": "application/json"
-											},
-											{
-												"key": "x-api-key",
-												"value": "{{x-api-token}}",
-												"type": "text"
-											},
-											{
-												"key": "x-api-signature",
-												"value": "{{x-api-signature}}",
-												"type": "text"
-											},
-											{
-												"key": "x-api-timestamp",
-												"value": "{{timestamp}}",
-												"type": "text"
-											},
-											{
-												"key": "x-tenant-id",
-												"value": "{{x-tenant-id}}",
-												"type": "text"
-											}
-										],
-										"url": {
-											"raw": "{{baseUrl}}/user/:guid",
-											"host": [
-												"{{baseUrl}}"
-											],
-											"path": [
-												"user",
-												":guid"
-											],
-											"variable": [
-												{
-													"key": "guid",
-													"value": ""
-												}
-											]
-										}
-									},
-									"response": []
-								},
-								{
-									"name": "verifier l'otp de l'utilisateur",
-									"request": {
-										"method": "GET",
-										"header": [
-											{
-												"key": "Content-Type",
-												"value": "application/json"
-											},
-											{
-												"key": "x-api-key",
-												"value": "{{x-api-token}}",
-												"type": "text"
-											},
-											{
-												"key": "x-api-signature",
-												"value": "{{x-api-signature}}",
-												"type": "text"
-											},
-											{
-												"key": "x-api-timestamp",
-												"value": "{{timestamp}}",
-												"type": "text"
-											},
-											{
-												"key": "x-tenant-id",
-												"value": "{{x-tenant-id}}",
-												"type": "text"
-											}
-										],
-										"url": {
-											"raw": "{{baseUrl}}/user/:otp/verify",
-											"host": [
-												"{{baseUrl}}"
-											],
-											"path": [
-												"user",
-												":otp",
-												"verify"
-											],
-											"variable": [
-												{
-													"key": "otp",
-													"value": ""
-												}
-											]
-										}
-									},
-									"response": []
-								},
-								{
-									"name": "Révision Actuelle",
-									"event": [
-										{
-											"listen": "test",
-											"script": {
-												"exec": [
-													"pm.test('Status is 200', function () {",
-													"    pm.response.to.have.status(200);",
-													"});",
-													"",
-													"pm.test('Response has revision and timestamp', function () {",
-													"    const jsonData = pm.response.json();",
-													"    pm.expect(jsonData.response).to.have.property('revision');",
-													"    pm.expect(jsonData.response).to.have.property('checked_at');",
-													"});"
-												],
-												"type": "text/javascript",
-												"packages": {},
-												"requests": {}
-											}
-										}
-									],
-									"request": {
-										"method": "GET",
-										"header": [
-											{
-												"key": "Content-Type",
-												"value": "application/json"
-											},
-											{
-												"key": "x-api-key",
-												"value": "{{x-api-token}}",
-												"type": "text"
-											},
-											{
-												"key": "x-api-signature",
-												"value": "{{x-api-signature}}",
-												"type": "text"
-											}
-										],
-										"url": {
-											"raw": "{{baseUrl}}/user/revision",
-											"host": [
-												"{{baseUrl}}"
-											],
-											"path": [
-												"user",
-												"revision"
 											]
 										}
 									},
@@ -10244,474 +10612,11 @@
 						},
 						{
 							"name": "✏️ CRUD - UPDATE",
-							"item": [
-								{
-									"name": "Modifier un utilisateur par GUID",
-									"request": {
-										"method": "PUT",
-										"header": [
-											{
-												"key": "Content-Type",
-												"value": "application/json"
-											},
-											{
-												"key": "x-api-key",
-												"value": "{{x-api-token}}",
-												"type": "text"
-											},
-											{
-												"key": "x-api-signature",
-												"value": "{{x-api-signature}}",
-												"type": "text"
-											}
-										],
-										"body": {
-											"mode": "raw",
-											"raw": "{\n \n}\n",
-											"options": {
-												"raw": {
-													"language": "json"
-												}
-											}
-										},
-										"url": {
-											"raw": "{{baseUrl}}/user/:guid",
-											"host": [
-												"{{baseUrl}}"
-											],
-											"path": [
-												"user",
-												":guid"
-											],
-											"variable": [
-												{
-													"key": "guid",
-													"value": ""
-												}
-											]
-										}
-									},
-									"response": []
-								},
-								{
-									"name": "Generer l'otp d'un utilisateur",
-									"request": {
-										"method": "PATCH",
-										"header": [
-											{
-												"key": "Content-Type",
-												"value": "application/json"
-											},
-											{
-												"key": "x-api-key",
-												"value": "{{x-api-token}}",
-												"type": "text"
-											},
-											{
-												"key": "x-api-signature",
-												"value": "{{x-api-signature}}",
-												"type": "text"
-											}
-										],
-										"body": {
-											"mode": "raw",
-											"raw": "{\n \n}\n",
-											"options": {
-												"raw": {
-													"language": "json"
-												}
-											}
-										},
-										"url": {
-											"raw": "{{baseUrl}}/user/:guid/generate-otp",
-											"host": [
-												"{{baseUrl}}"
-											],
-											"path": [
-												"user",
-												":guid",
-												"generate-otp"
-											],
-											"variable": [
-												{
-													"key": "guid",
-													"value": ""
-												}
-											]
-										}
-									},
-									"response": []
-								},
-								{
-									"name": "Generer le QR code token du manager",
-									"request": {
-										"method": "PATCH",
-										"header": [
-											{
-												"key": "Content-Type",
-												"value": "application/json"
-											},
-											{
-												"key": "x-api-key",
-												"value": "{{x-api-token}}",
-												"type": "text"
-											},
-											{
-												"key": "x-api-signature",
-												"value": "{{x-api-signature}}",
-												"type": "text"
-											}
-										],
-										"body": {
-											"mode": "raw",
-											"raw": "{\n \n}\n",
-											"options": {
-												"raw": {
-													"language": "json"
-												}
-											}
-										},
-										"url": {
-											"raw": "{{baseUrl}}/user/:guid/generate-qr-code",
-											"host": [
-												"{{baseUrl}}"
-											],
-											"path": [
-												"user",
-												":guid",
-												"generate-qr-code"
-											],
-											"variable": [
-												{
-													"key": "guid",
-													"value": ""
-												}
-											]
-										}
-									},
-									"response": []
-								},
-								{
-									"name": "modifier les donnees personnelles de l'utilisateur",
-									"request": {
-										"method": "PATCH",
-										"header": [
-											{
-												"key": "Content-Type",
-												"value": "application/json"
-											},
-											{
-												"key": "x-api-key",
-												"value": "{{x-api-token}}",
-												"type": "text"
-											},
-											{
-												"key": "x-api-signature",
-												"value": "{{x-api-signature}}",
-												"type": "text"
-											}
-										],
-										"body": {
-											"mode": "raw",
-											"raw": "{\n \n}\n",
-											"options": {
-												"raw": {
-													"language": "json"
-												}
-											}
-										},
-										"url": {
-											"raw": "{{baseUrl}}/user/:guid/modify",
-											"host": [
-												"{{baseUrl}}"
-											],
-											"path": [
-												"user",
-												":guid",
-												"modify"
-											],
-											"variable": [
-												{
-													"key": "guid",
-													"value": ""
-												}
-											]
-										}
-									},
-									"response": []
-								},
-								{
-									"name": "modifier le pin de l'utilisateur",
-									"request": {
-										"method": "PATCH",
-										"header": [
-											{
-												"key": "Content-Type",
-												"value": "application/json"
-											},
-											{
-												"key": "x-api-key",
-												"value": "{{x-api-token}}",
-												"type": "text"
-											},
-											{
-												"key": "x-api-signature",
-												"value": "{{x-api-signature}}",
-												"type": "text"
-											}
-										],
-										"body": {
-											"mode": "raw",
-											"raw": "{\n \n}\n",
-											"options": {
-												"raw": {
-													"language": "json"
-												}
-											}
-										},
-										"url": {
-											"raw": "{{baseUrl}}/user/:guid/change-pin",
-											"host": [
-												"{{baseUrl}}"
-											],
-											"path": [
-												"user",
-												":guid",
-												"change-pin"
-											],
-											"variable": [
-												{
-													"key": "guid",
-													"value": ""
-												}
-											]
-										}
-									},
-									"response": []
-								},
-								{
-									"name": "definir le mot de passe du manager",
-									"request": {
-										"method": "PATCH",
-										"header": [
-											{
-												"key": "Content-Type",
-												"value": "application/json"
-											},
-											{
-												"key": "x-api-key",
-												"value": "{{x-api-token}}",
-												"type": "text"
-											},
-											{
-												"key": "x-api-signature",
-												"value": "{{x-api-signature}}",
-												"type": "text"
-											}
-										],
-										"body": {
-											"mode": "raw",
-											"raw": "{\n \n}\n",
-											"options": {
-												"raw": {
-													"language": "json"
-												}
-											}
-										},
-										"url": {
-											"raw": "{{baseUrl}}/user/:guid/define-password",
-											"host": [
-												"{{baseUrl}}"
-											],
-											"path": [
-												"user",
-												":guid",
-												"define-password"
-											],
-											"variable": [
-												{
-													"key": "guid",
-													"value": ""
-												}
-											]
-										}
-									},
-									"response": []
-								},
-								{
-									"name": "verify le password du manager",
-									"request": {
-										"method": "PATCH",
-										"header": [
-											{
-												"key": "Content-Type",
-												"value": "application/json"
-											},
-											{
-												"key": "x-api-key",
-												"value": "{{x-api-token}}",
-												"type": "text"
-											},
-											{
-												"key": "x-api-signature",
-												"value": "{{x-api-signature}}",
-												"type": "text"
-											}
-										],
-										"body": {
-											"mode": "raw",
-											"raw": "{\n \n}\n",
-											"options": {
-												"raw": {
-													"language": "json"
-												}
-											}
-										},
-										"url": {
-											"raw": "{{baseUrl}}/user/manager/password",
-											"host": [
-												"{{baseUrl}}"
-											],
-											"path": [
-												"user",
-												"manager",
-												"password"
-											]
-										}
-									},
-									"response": []
-								},
-								{
-									"name": "Definir le pin de l'utilisateur",
-									"request": {
-										"method": "PATCH",
-										"header": [
-											{
-												"key": "Content-Type",
-												"value": "application/json"
-											},
-											{
-												"key": "x-api-key",
-												"value": "{{x-api-token}}",
-												"type": "text"
-											},
-											{
-												"key": "x-api-signature",
-												"value": "{{x-api-signature}}",
-												"type": "text"
-											}
-										],
-										"body": {
-											"mode": "raw",
-											"raw": "{\n \n}\n",
-											"options": {
-												"raw": {
-													"language": "json"
-												}
-											}
-										},
-										"url": {
-											"raw": "{{baseUrl}}/user/:guid/define-pin",
-											"host": [
-												"{{baseUrl}}"
-											],
-											"path": [
-												"user",
-												":guid",
-												"define-pin"
-											],
-											"variable": [
-												{
-													"key": "guid",
-													"value": ""
-												}
-											]
-										}
-									},
-									"response": []
-								},
-								{
-									"name": "Verifir le pin de l'utilisateur",
-									"request": {
-										"method": "PATCH",
-										"header": [
-											{
-												"key": "Content-Type",
-												"value": "application/json"
-											},
-											{
-												"key": "x-api-key",
-												"value": "{{x-api-token}}",
-												"type": "text"
-											},
-											{
-												"key": "x-api-signature",
-												"value": "{{x-api-signature}}",
-												"type": "text"
-											}
-										],
-										"body": {
-											"mode": "raw",
-											"raw": "{\n \n}\n",
-											"options": {
-												"raw": {
-													"language": "json"
-												}
-											}
-										},
-										"url": {
-											"raw": "{{baseUrl}}/user/verify-pin",
-											"host": [
-												"{{baseUrl}}"
-											],
-											"path": [
-												"user",
-												"verify-pin"
-											]
-										}
-									},
-									"response": []
-								}
-							]
+							"item": []
 						},
 						{
 							"name": "🗑️ CRUD - DELETE",
-							"item": [
-								{
-									"name": "Supprimer un utilisateur par GUID (admin :  a ne pas utilise)",
-									"request": {
-										"method": "DELETE",
-										"header": [
-											{
-												"key": "x-api-key",
-												"value": "{{x-api-token}}",
-												"type": "text"
-											},
-											{
-												"key": "x-api-signature",
-												"value": "{{x-api-signature}}",
-												"type": "text"
-											},
-											{
-												"key": "x-api-user",
-												"value": "{{x-api-user}}",
-												"type": "text"
-											}
-										],
-										"url": {
-											"raw": "{{baseUrl}}/user/100001",
-											"host": [
-												"{{baseUrl}}"
-											],
-											"path": [
-												"user",
-												"100001"
-											]
-										}
-									},
-									"response": []
-								}
-							]
+							"item": []
 						}
 					]
 				},
@@ -10776,7 +10681,7 @@
 										],
 										"body": {
 											"mode": "raw",
-											"raw": "{\n    \"name\": \"Chantier Nord BATIX\",\n    \"site_type\": \"manager_site\",\n    \"created_by\": \"3915293612562351\",\n    \"address\": {\n        \"city\": \"Douala\",\n        \"location\": \"Quartier Bonanjo\",\n        \"place_name\": \"baba\"\n    },\n    \"description\": \"Chantier construction immeuble 8 étages\",\n    \"geofence_polygon\": {\n        \"type\": \"Polygon\",\n        \"coordinates\": [\n            [\n                [\n                    9.70123,\n                    4.04567\n                ],\n                [\n                    9.70134,\n                    4.04567\n                ],\n                [\n                    9.70134,\n                    4.04578\n                ],\n                [\n                    9.70123,\n                    4.04578\n                ],\n                [\n                    9.70123,\n                    4.04567\n                ]\n            ]\n        ]\n    },\n    \"geofence_radius\": 50,\n    \"qr_reference\": \"15\",\n    \"allowed_roles\": {\n        \"1\": \"EMPLOYEE\",\n        \"2\": \"MANAGER\"\n    },\n    \"active\": true,\n    \"validity_period\": {\n        \"start_date\": \"2024-12-01\",\n        \"end_date\": \"2025-06-30\"\n    },\n    \"qr_code_data\": {\n        \"qr_token\": \"GECAMINESSARL\"\n    }\n}"
+											"raw": "{\n    \"name\": \"Imediatis Sarl\",\n    \"site_type\": \"global_site\",\n    \"created_by\": \"1533541683605001\",\n    \"address\": {\n        \"city\": \"Douala\",\n        \"location\": \"MAKEPE\",\n        \"place_name\": \"MAKEPE Bloc M Consulat De Hongrie\"\n    },\n    // \"description\": \"Chantier construction immeuble 8 étages\",\n    \"geofence_polygon\": {\n        \"type\": \"Polygon\",\n        \"coordinates\": [\n            [\n                [\n                    9.751188000878557,\n                    4.085528184220678\n                ],\n                [\n                    9.750961282274517,\n                    4.085340454971913\n                ],\n                [\n                    9.75113644568927,\n                    4.085147769128909\n                ],\n                [\n                    9.75144329223761,\n                    4.085432770680356\n                ],\n                [\n                    9.751188000878557,\n                    4.085528184220678\n                ]\n            ]\n        ]\n    },\n    \"geofence_radius\": 50\n    // \"qr_reference\": \"15\",\n    // \"allowed_roles\": {\n    //     \"1\": \"EMPLOYEE\",\n    //     \"2\": \"MANAGER\"\n    // },\n    // \"active\": true,\n    // \"validity_period\": {\n    //     \"start_date\": \"2024-12-01\",\n    //     \"end_date\": \"2025-06-30\"\n    // },\n    // \"qr_code_data\": {\n    //     \"valid_from\": \"2025-10-06T20:34:37.389Z\", // optionnel pour site site \n    //     \"valid_to\": \"\" // optionnel\n    // }\n}"
 										},
 										"url": {
 											"raw": "{{baseUrl}}/site",
@@ -10796,400 +10701,54 @@
 							"name": "📝 CRUD - READ",
 							"item": [
 								{
-									"name": "Lister tous les utilisateurs du tenant(pour admin)",
+									"name": "New Request",
 									"request": {
 										"method": "GET",
-										"header": [
-											{
-												"key": "Content-Type",
-												"value": "application/json"
-											},
-											{
-												"key": "x-api-key",
-												"value": "{{x-api-token}}",
-												"type": "text"
-											},
-											{
-												"key": "x-api-signature",
-												"value": "{{x-api-signature}}",
-												"type": "text"
-											},
-											{
-												"key": "x-api-timestamp",
-												"value": "{{timestamp}}",
-												"type": "text"
-											},
-											{
-												"key": "x-tenant-id",
-												"value": "{{x-tenant-id}}",
-												"type": "text"
-											}
-										],
-										"url": {
-											"raw": "{{baseUrl}}/user/list",
-											"host": [
-												"{{baseUrl}}"
-											],
-											"path": [
-												"user",
-												"list"
-											]
-										}
+										"header": []
 									},
 									"response": []
-								},
+								}
+							]
+						},
+						{
+							"name": "✏️ CRUD - UPDATE",
+							"item": []
+						},
+						{
+							"name": "🗑️ CRUD - DELETE",
+							"item": []
+						}
+					]
+				},
+				{
+					"name": "Memos",
+					"item": [
+						{
+							"name": "➕ CRUD - CREATE",
+							"item": [
 								{
-									"name": "Lister tous les utilisateurs du tenant par department",
-									"request": {
-										"method": "GET",
-										"header": [
-											{
-												"key": "Content-Type",
-												"value": "application/json"
-											},
-											{
-												"key": "x-api-key",
-												"value": "{{x-api-token}}",
-												"type": "text"
-											},
-											{
-												"key": "x-api-signature",
-												"value": "{{x-api-signature}}",
-												"type": "text"
-											},
-											{
-												"key": "x-api-timestamp",
-												"value": "{{timestamp}}",
-												"type": "text"
-											},
-											{
-												"key": "x-tenant-id",
-												"value": "{{x-tenant-id}}",
-												"type": "text"
-											}
-										],
-										"url": {
-											"raw": "{{baseUrl}}/user/department/:department/list",
-											"host": [
-												"{{baseUrl}}"
-											],
-											"path": [
-												"user",
-												"department",
-												":department",
-												"list"
-											],
-											"variable": [
-												{
-													"key": "department",
-													"value": ""
-												}
-											]
-										}
-									},
-									"response": []
-								},
-								{
-									"name": "Lister tous les utilisateurs du tenant par statut",
-									"request": {
-										"method": "GET",
-										"header": [
-											{
-												"key": "Content-Type",
-												"value": "application/json"
-											},
-											{
-												"key": "x-api-key",
-												"value": "{{x-api-token}}",
-												"type": "text"
-											},
-											{
-												"key": "x-api-signature",
-												"value": "{{x-api-signature}}",
-												"type": "text"
-											},
-											{
-												"key": "x-api-timestamp",
-												"value": "{{timestamp}}",
-												"type": "text"
-											},
-											{
-												"key": "x-tenant-id",
-												"value": "{{x-tenant-id}}",
-												"type": "text"
-											}
-										],
-										"url": {
-											"raw": "{{baseUrl}}/user/active/false/list",
-											"host": [
-												"{{baseUrl}}"
-											],
-											"path": [
-												"user",
-												"active",
-												"false",
-												"list"
-											]
-										}
-									},
-									"response": []
-								},
-								{
-									"name": "Recuperer les QR Code de confirgurationdu du tenant",
-									"request": {
-										"method": "GET",
-										"header": [
-											{
-												"key": "Content-Type",
-												"value": "application/json"
-											},
-											{
-												"key": "x-api-key",
-												"value": "{{x-api-token}}",
-												"type": "text"
-											},
-											{
-												"key": "x-api-signature",
-												"value": "{{x-api-signature}}",
-												"type": "text"
-											},
-											{
-												"key": "x-api-timestamp",
-												"value": "{{timestamp}}",
-												"type": "text"
-											},
-											{
-												"key": "x-tenant-id",
-												"value": "{{x-tenant-id}}",
-												"type": "text"
-											}
-										],
-										"url": {
-											"raw": "{{baseUrl}}/user/config",
-											"host": [
-												"{{baseUrl}}"
-											],
-											"path": [
-												"user",
-												"config"
-											]
-										}
-									},
-									"response": []
-								},
-								{
-									"name": "Recuperer un utilisateur par son Guid",
-									"request": {
-										"method": "GET",
-										"header": [
-											{
-												"key": "Content-Type",
-												"value": "application/json"
-											},
-											{
-												"key": "x-api-key",
-												"value": "{{x-api-token}}",
-												"type": "text"
-											},
-											{
-												"key": "x-api-signature",
-												"value": "{{x-api-signature}}",
-												"type": "text"
-											},
-											{
-												"key": "x-api-timestamp",
-												"value": "{{timestamp}}",
-												"type": "text"
-											},
-											{
-												"key": "x-tenant-id",
-												"value": "{{x-tenant-id}}",
-												"type": "text"
-											}
-										],
-										"url": {
-											"raw": "{{baseUrl}}/user/:guid",
-											"host": [
-												"{{baseUrl}}"
-											],
-											"path": [
-												"user",
-												":guid"
-											],
-											"variable": [
-												{
-													"key": "guid",
-													"value": ""
-												}
-											]
-										}
-									},
-									"response": []
-								},
-								{
-									"name": "Recuperer un utilisateur par son Guid Copy",
-									"request": {
-										"method": "GET",
-										"header": [
-											{
-												"key": "Content-Type",
-												"value": "application/json"
-											},
-											{
-												"key": "x-api-key",
-												"value": "{{x-api-token}}",
-												"type": "text"
-											},
-											{
-												"key": "x-api-signature",
-												"value": "{{x-api-signature}}",
-												"type": "text"
-											},
-											{
-												"key": "x-api-timestamp",
-												"value": "{{timestamp}}",
-												"type": "text"
-											},
-											{
-												"key": "x-tenant-id",
-												"value": "{{x-tenant-id}}",
-												"type": "text"
-											}
-										],
-										"url": {
-											"raw": "{{baseUrl}}/user/:guid",
-											"host": [
-												"{{baseUrl}}"
-											],
-											"path": [
-												"user",
-												":guid"
-											],
-											"variable": [
-												{
-													"key": "guid",
-													"value": ""
-												}
-											]
-										}
-									},
-									"response": []
-								},
-								{
-									"name": "Recuperer un utilisateur par son Guid Copy",
-									"request": {
-										"method": "GET",
-										"header": [
-											{
-												"key": "Content-Type",
-												"value": "application/json"
-											},
-											{
-												"key": "x-api-key",
-												"value": "{{x-api-token}}",
-												"type": "text"
-											},
-											{
-												"key": "x-api-signature",
-												"value": "{{x-api-signature}}",
-												"type": "text"
-											},
-											{
-												"key": "x-api-timestamp",
-												"value": "{{timestamp}}",
-												"type": "text"
-											},
-											{
-												"key": "x-tenant-id",
-												"value": "{{x-tenant-id}}",
-												"type": "text"
-											}
-										],
-										"url": {
-											"raw": "{{baseUrl}}/user/:guid",
-											"host": [
-												"{{baseUrl}}"
-											],
-											"path": [
-												"user",
-												":guid"
-											],
-											"variable": [
-												{
-													"key": "guid",
-													"value": ""
-												}
-											]
-										}
-									},
-									"response": []
-								},
-								{
-									"name": "verifier l'otp de l'utilisateur",
-									"request": {
-										"method": "GET",
-										"header": [
-											{
-												"key": "Content-Type",
-												"value": "application/json"
-											},
-											{
-												"key": "x-api-key",
-												"value": "{{x-api-token}}",
-												"type": "text"
-											},
-											{
-												"key": "x-api-signature",
-												"value": "{{x-api-signature}}",
-												"type": "text"
-											},
-											{
-												"key": "x-api-timestamp",
-												"value": "{{timestamp}}",
-												"type": "text"
-											},
-											{
-												"key": "x-tenant-id",
-												"value": "{{x-tenant-id}}",
-												"type": "text"
-											}
-										],
-										"url": {
-											"raw": "{{baseUrl}}/user/:otp/verify",
-											"host": [
-												"{{baseUrl}}"
-											],
-											"path": [
-												"user",
-												":otp",
-												"verify"
-											],
-											"variable": [
-												{
-													"key": "otp",
-													"value": ""
-												}
-											]
-										}
-									},
-									"response": []
-								},
-								{
-									"name": "Révision Actuelle",
+									"name": "📤 Endpoint upload",
 									"event": [
 										{
 											"listen": "test",
 											"script": {
 												"exec": [
-													"pm.test('Status is 200', function () {",
-													"    pm.response.to.have.status(200);",
+													"pm.test('Status is 201', function () {",
+													"    pm.response.to.have.status(201);",
 													"});",
 													"",
-													"pm.test('Response has revision and timestamp', function () {",
+													"pm.test('Country created successfully', function () {",
 													"    const jsonData = pm.response.json();",
-													"    pm.expect(jsonData.response).to.have.property('revision');",
-													"    pm.expect(jsonData.response).to.have.property('checked_at');",
-													"});"
+													"    pm.expect(jsonData.response).to.have.property('guid');",
+													"    pm.expect(jsonData.response).to.have.property('iso');",
+													"    pm.expect(jsonData.response.iso).to.eql('TE');",
+													"});",
+													"",
+													"// Sauvegarder le GUID pour les autres tests",
+													"const jsonData = pm.response.json();",
+													"if (jsonData.response && jsonData.response.guid) {",
+													"    pm.environment.set('created_country_guid', jsonData.response.guid);",
+													"}"
 												],
 												"type": "text/javascript",
 												"packages": {},
@@ -11198,7 +10757,7 @@
 										}
 									],
 									"request": {
-										"method": "GET",
+										"method": "POST",
 										"header": [
 											{
 												"key": "Content-Type",
@@ -11213,16 +10772,173 @@
 												"key": "x-api-signature",
 												"value": "{{x-api-signature}}",
 												"type": "text"
+											},
+											{
+												"key": "x-api-timestamp",
+												"value": "{{timestamp}}",
+												"type": "text"
 											}
 										],
+										"body": {
+											"mode": "formdata",
+											"formdata": [
+												{
+													"key": "files",
+													"type": "file",
+													"src": "/Volumes/Workspace/mymy/Délices (1).mp4"
+												}
+											]
+										},
 										"url": {
-											"raw": "{{baseUrl}}/user/revision",
+											"raw": "{{baseUrl}}/upload",
 											"host": [
 												"{{baseUrl}}"
 											],
 											"path": [
-												"user",
-												"revision"
+												"upload"
+											]
+										}
+									},
+									"response": []
+								},
+								{
+									"name": "📝 Create Manager Memo",
+									"event": [
+										{
+											"listen": "test",
+											"script": {
+												"exec": [
+													"pm.test('Status is 201', function () {",
+													"    pm.response.to.have.status(201);",
+													"});",
+													"",
+													"pm.test('Country created successfully', function () {",
+													"    const jsonData = pm.response.json();",
+													"    pm.expect(jsonData.response).to.have.property('guid');",
+													"    pm.expect(jsonData.response).to.have.property('iso');",
+													"    pm.expect(jsonData.response.iso).to.eql('TE');",
+													"});",
+													"",
+													"// Sauvegarder le GUID pour les autres tests",
+													"const jsonData = pm.response.json();",
+													"if (jsonData.response && jsonData.response.guid) {",
+													"    pm.environment.set('created_country_guid', jsonData.response.guid);",
+													"}"
+												],
+												"type": "text/javascript",
+												"packages": {},
+												"requests": {}
+											}
+										}
+									],
+									"request": {
+										"method": "POST",
+										"header": [
+											{
+												"key": "Content-Type",
+												"value": "application/json"
+											},
+											{
+												"key": "x-api-key",
+												"value": "{{x-api-token}}",
+												"type": "text"
+											},
+											{
+												"key": "x-api-signature",
+												"value": "{{x-api-signature}}",
+												"type": "text"
+											},
+											{
+												"key": "x-api-timestamp",
+												"value": "{{timestamp}}",
+												"type": "text"
+											}
+										],
+										"body": {
+											"mode": "raw",
+											"raw": "{\n    \"author_user\": \"3337892849459602\",\n    \"target_user\": \"5751601882956203\",\n    \"memo_type\": \"delay_justification\",\n    \"memo_status\": \"draft\",\n    \"title\": \"Retard prévu demain 30min\",\n    \"description\": \"Rendez-vous médical contrôle mensuel. Arriverai 8h30 au lieu 8h00. Rattrapage fin journée.\",\n    \"incident_datetime\": \"2024-12-02T08:30:00Z\",\n    // \"affected_session\": [],\n    \"affected_entries\": null,\n    \"attachments\": [\n        \"https://demo.toke.cm/upload/f/1760525068431-663266003.png\"\n    ],\n    \"memo_context\": {\n        \"advance_notice\": \"24_hours\",\n        \"impact_level\": \"minor\",\n        \"mitigation_plan\": \"rattrapage_fin_journee\",\n        \"recurrence\": \"monthly_medical\"\n    },\n    \"auto_generated\": false\n}"
+										},
+										"url": {
+											"raw": "{{baseUrl}}/memo",
+											"host": [
+												"{{baseUrl}}"
+											],
+											"path": [
+												"memo"
+											]
+										}
+									},
+									"response": []
+								}
+							]
+						},
+						{
+							"name": "📝 CRUD - READ",
+							"item": [
+								{
+									"name": "🗂 Retrieve the file from the URL",
+									"request": {
+										"method": "GET",
+										"header": [
+											{
+												"key": "x-api-key",
+												"value": "{{x-api-token}}",
+												"type": "text"
+											},
+											{
+												"key": "x-api-signature",
+												"value": "{{x-api-signature}}",
+												"type": "text"
+											}
+										],
+										"url": {
+											"raw": "{{baseUrl}}/upload/f/1760531582496-181407028.png",
+											"host": [
+												"{{baseUrl}}"
+											],
+											"path": [
+												"upload",
+												"f",
+												"1760531582496-181407028.png"
+											]
+										}
+									},
+									"response": []
+								},
+								{
+									"name": "⏳ Pending Memo Validations",
+									"request": {
+										"method": "GET",
+										"header": [
+											{
+												"key": "x-api-key",
+												"value": "{{x-api-token}}",
+												"type": "text"
+											},
+											{
+												"key": "x-api-signature",
+												"value": "{{x-api-signature}}",
+												"type": "text"
+											}
+										],
+										"url": {
+											"raw": "{{baseUrl}}/memo/my-created?author=3337892849459602&?view=full",
+											"host": [
+												"{{baseUrl}}"
+											],
+											"path": [
+												"memo",
+												"my-created"
+											],
+											"query": [
+												{
+													"key": "author",
+													"value": "3337892849459602"
+												},
+												{
+													"key": "?view",
+													"value": "full"
+												}
 											]
 										}
 									},
@@ -11232,474 +10948,11 @@
 						},
 						{
 							"name": "✏️ CRUD - UPDATE",
-							"item": [
-								{
-									"name": "Modifier un utilisateur par GUID",
-									"request": {
-										"method": "PUT",
-										"header": [
-											{
-												"key": "Content-Type",
-												"value": "application/json"
-											},
-											{
-												"key": "x-api-key",
-												"value": "{{x-api-token}}",
-												"type": "text"
-											},
-											{
-												"key": "x-api-signature",
-												"value": "{{x-api-signature}}",
-												"type": "text"
-											}
-										],
-										"body": {
-											"mode": "raw",
-											"raw": "{\n \n}\n",
-											"options": {
-												"raw": {
-													"language": "json"
-												}
-											}
-										},
-										"url": {
-											"raw": "{{baseUrl}}/user/:guid",
-											"host": [
-												"{{baseUrl}}"
-											],
-											"path": [
-												"user",
-												":guid"
-											],
-											"variable": [
-												{
-													"key": "guid",
-													"value": ""
-												}
-											]
-										}
-									},
-									"response": []
-								},
-								{
-									"name": "Generer l'otp d'un utilisateur",
-									"request": {
-										"method": "PATCH",
-										"header": [
-											{
-												"key": "Content-Type",
-												"value": "application/json"
-											},
-											{
-												"key": "x-api-key",
-												"value": "{{x-api-token}}",
-												"type": "text"
-											},
-											{
-												"key": "x-api-signature",
-												"value": "{{x-api-signature}}",
-												"type": "text"
-											}
-										],
-										"body": {
-											"mode": "raw",
-											"raw": "{\n \n}\n",
-											"options": {
-												"raw": {
-													"language": "json"
-												}
-											}
-										},
-										"url": {
-											"raw": "{{baseUrl}}/user/:guid/generate-otp",
-											"host": [
-												"{{baseUrl}}"
-											],
-											"path": [
-												"user",
-												":guid",
-												"generate-otp"
-											],
-											"variable": [
-												{
-													"key": "guid",
-													"value": ""
-												}
-											]
-										}
-									},
-									"response": []
-								},
-								{
-									"name": "Generer le QR code token du manager",
-									"request": {
-										"method": "PATCH",
-										"header": [
-											{
-												"key": "Content-Type",
-												"value": "application/json"
-											},
-											{
-												"key": "x-api-key",
-												"value": "{{x-api-token}}",
-												"type": "text"
-											},
-											{
-												"key": "x-api-signature",
-												"value": "{{x-api-signature}}",
-												"type": "text"
-											}
-										],
-										"body": {
-											"mode": "raw",
-											"raw": "{\n \n}\n",
-											"options": {
-												"raw": {
-													"language": "json"
-												}
-											}
-										},
-										"url": {
-											"raw": "{{baseUrl}}/user/:guid/generate-qr-code",
-											"host": [
-												"{{baseUrl}}"
-											],
-											"path": [
-												"user",
-												":guid",
-												"generate-qr-code"
-											],
-											"variable": [
-												{
-													"key": "guid",
-													"value": ""
-												}
-											]
-										}
-									},
-									"response": []
-								},
-								{
-									"name": "modifier les donnees personnelles de l'utilisateur",
-									"request": {
-										"method": "PATCH",
-										"header": [
-											{
-												"key": "Content-Type",
-												"value": "application/json"
-											},
-											{
-												"key": "x-api-key",
-												"value": "{{x-api-token}}",
-												"type": "text"
-											},
-											{
-												"key": "x-api-signature",
-												"value": "{{x-api-signature}}",
-												"type": "text"
-											}
-										],
-										"body": {
-											"mode": "raw",
-											"raw": "{\n \n}\n",
-											"options": {
-												"raw": {
-													"language": "json"
-												}
-											}
-										},
-										"url": {
-											"raw": "{{baseUrl}}/user/:guid/modify",
-											"host": [
-												"{{baseUrl}}"
-											],
-											"path": [
-												"user",
-												":guid",
-												"modify"
-											],
-											"variable": [
-												{
-													"key": "guid",
-													"value": ""
-												}
-											]
-										}
-									},
-									"response": []
-								},
-								{
-									"name": "modifier le pin de l'utilisateur",
-									"request": {
-										"method": "PATCH",
-										"header": [
-											{
-												"key": "Content-Type",
-												"value": "application/json"
-											},
-											{
-												"key": "x-api-key",
-												"value": "{{x-api-token}}",
-												"type": "text"
-											},
-											{
-												"key": "x-api-signature",
-												"value": "{{x-api-signature}}",
-												"type": "text"
-											}
-										],
-										"body": {
-											"mode": "raw",
-											"raw": "{\n \n}\n",
-											"options": {
-												"raw": {
-													"language": "json"
-												}
-											}
-										},
-										"url": {
-											"raw": "{{baseUrl}}/user/:guid/change-pin",
-											"host": [
-												"{{baseUrl}}"
-											],
-											"path": [
-												"user",
-												":guid",
-												"change-pin"
-											],
-											"variable": [
-												{
-													"key": "guid",
-													"value": ""
-												}
-											]
-										}
-									},
-									"response": []
-								},
-								{
-									"name": "definir le mot de passe du manager",
-									"request": {
-										"method": "PATCH",
-										"header": [
-											{
-												"key": "Content-Type",
-												"value": "application/json"
-											},
-											{
-												"key": "x-api-key",
-												"value": "{{x-api-token}}",
-												"type": "text"
-											},
-											{
-												"key": "x-api-signature",
-												"value": "{{x-api-signature}}",
-												"type": "text"
-											}
-										],
-										"body": {
-											"mode": "raw",
-											"raw": "{\n \n}\n",
-											"options": {
-												"raw": {
-													"language": "json"
-												}
-											}
-										},
-										"url": {
-											"raw": "{{baseUrl}}/user/:guid/define-password",
-											"host": [
-												"{{baseUrl}}"
-											],
-											"path": [
-												"user",
-												":guid",
-												"define-password"
-											],
-											"variable": [
-												{
-													"key": "guid",
-													"value": ""
-												}
-											]
-										}
-									},
-									"response": []
-								},
-								{
-									"name": "verify le password du manager",
-									"request": {
-										"method": "PATCH",
-										"header": [
-											{
-												"key": "Content-Type",
-												"value": "application/json"
-											},
-											{
-												"key": "x-api-key",
-												"value": "{{x-api-token}}",
-												"type": "text"
-											},
-											{
-												"key": "x-api-signature",
-												"value": "{{x-api-signature}}",
-												"type": "text"
-											}
-										],
-										"body": {
-											"mode": "raw",
-											"raw": "{\n \n}\n",
-											"options": {
-												"raw": {
-													"language": "json"
-												}
-											}
-										},
-										"url": {
-											"raw": "{{baseUrl}}/user/manager/password",
-											"host": [
-												"{{baseUrl}}"
-											],
-											"path": [
-												"user",
-												"manager",
-												"password"
-											]
-										}
-									},
-									"response": []
-								},
-								{
-									"name": "Definir le pin de l'utilisateur",
-									"request": {
-										"method": "PATCH",
-										"header": [
-											{
-												"key": "Content-Type",
-												"value": "application/json"
-											},
-											{
-												"key": "x-api-key",
-												"value": "{{x-api-token}}",
-												"type": "text"
-											},
-											{
-												"key": "x-api-signature",
-												"value": "{{x-api-signature}}",
-												"type": "text"
-											}
-										],
-										"body": {
-											"mode": "raw",
-											"raw": "{\n \n}\n",
-											"options": {
-												"raw": {
-													"language": "json"
-												}
-											}
-										},
-										"url": {
-											"raw": "{{baseUrl}}/user/:guid/define-pin",
-											"host": [
-												"{{baseUrl}}"
-											],
-											"path": [
-												"user",
-												":guid",
-												"define-pin"
-											],
-											"variable": [
-												{
-													"key": "guid",
-													"value": ""
-												}
-											]
-										}
-									},
-									"response": []
-								},
-								{
-									"name": "Verifir le pin de l'utilisateur",
-									"request": {
-										"method": "PATCH",
-										"header": [
-											{
-												"key": "Content-Type",
-												"value": "application/json"
-											},
-											{
-												"key": "x-api-key",
-												"value": "{{x-api-token}}",
-												"type": "text"
-											},
-											{
-												"key": "x-api-signature",
-												"value": "{{x-api-signature}}",
-												"type": "text"
-											}
-										],
-										"body": {
-											"mode": "raw",
-											"raw": "{\n \n}\n",
-											"options": {
-												"raw": {
-													"language": "json"
-												}
-											}
-										},
-										"url": {
-											"raw": "{{baseUrl}}/user/verify-pin",
-											"host": [
-												"{{baseUrl}}"
-											],
-											"path": [
-												"user",
-												"verify-pin"
-											]
-										}
-									},
-									"response": []
-								}
-							]
+							"item": []
 						},
 						{
 							"name": "🗑️ CRUD - DELETE",
-							"item": [
-								{
-									"name": "Supprimer un utilisateur par GUID (admin :  a ne pas utilise)",
-									"request": {
-										"method": "DELETE",
-										"header": [
-											{
-												"key": "x-api-key",
-												"value": "{{x-api-token}}",
-												"type": "text"
-											},
-											{
-												"key": "x-api-signature",
-												"value": "{{x-api-signature}}",
-												"type": "text"
-											},
-											{
-												"key": "x-api-user",
-												"value": "{{x-api-user}}",
-												"type": "text"
-											}
-										],
-										"url": {
-											"raw": "{{baseUrl}}/user/100001",
-											"host": [
-												"{{baseUrl}}"
-											],
-											"path": [
-												"user",
-												"100001"
-											]
-										}
-									},
-									"response": []
-								}
-							]
+							"item": []
 						}
 					]
 				},
@@ -11757,7 +11010,7 @@
 				{
 					"name": "New Request Copy",
 					"request": {
-						"method": "POST",
+						"method": "GET",
 						"header": [
 							{
 								"key": "x-api-key",
@@ -11780,17 +11033,8 @@
 								"type": "text"
 							}
 						],
-						"body": {
-							"mode": "raw",
-							"raw": "{\n   \"first_name\": \"Pierre\",\n  \"last_name\": \"Mbongo\",\n  \"phone_number\": \"+237698123456\",\n  \"email\": \"pierre.mbongo@batix.cm\",\n  \"employee_code\": \"BAT001\", \n  \"hire_date\": \"2024-01-15\",\n  \"department\": \"Travaux Publics\",\n  \"job_title\": \"Chef de Chantier\",\n  \"supervisor\": \"35536367673344r4\", \n  \"tenant\": \"jjhsdcxjhxcb jkb\"\n}",
-							"options": {
-								"raw": {
-									"language": "json"
-								}
-							}
-						},
 						"url": {
-							"raw": "https://ime.toke.cm/user/admin",
+							"raw": "https://ime.toke.cm/org-hierarchy/employee/all-subordinates?supervisor=3915293612562351",
 							"protocol": "https",
 							"host": [
 								"ime",
@@ -11798,8 +11042,52 @@
 								"cm"
 							],
 							"path": [
+								"org-hierarchy",
+								"employee",
+								"all-subordinates"
+							],
+							"query": [
+								{
+									"key": "supervisor",
+									"value": "3915293612562351"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "New Request",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "x-api-key",
+								"value": "{{x-api-token}}",
+								"type": "text"
+							},
+							{
+								"key": "x-api-signature",
+								"value": "{{x-api-signature}}",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"user\":\"5751601882956203\",\n    // \"phone_number\":,\n    \"affiliate\": \"1533541683605001\"\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/user/share",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
 								"user",
-								"admin"
+								"share"
 							]
 						}
 					},

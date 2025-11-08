@@ -16,6 +16,9 @@ import WorkSessions from '../tenant/class/WorkSessions.js';
 import Memos from '../tenant/class/Memos.js';
 import FraudAlerts from '../tenant/class/FraudAlerts.js';
 import Site from '../tenant/class/Site.js';
+import UserRole from '../tenant/class/UserRole.js';
+import Role from '../tenant/class/Role.js';
+import { RoleValues } from '../utils/response.model.js';
 
 // === TYPES & ENUMS ===
 
@@ -881,8 +884,17 @@ class AnomalyDetectionService {
     // Type de mémo selon anomalies
     const memoType = this.mapAnomalyToMemoType(anomalies);
 
+    const roleObj = await Role._load(RoleValues.EMPLOYEE, false, true);
+
+    const identifier = {
+      user: userId,
+      role: roleObj?.getId()!,
+    };
+
+    const userAuthor = await UserRole._load(identifier, false, true);
+
     const memo = new Memos()
-      .setAuthorUser(userId)
+      .setAuthorUser(userAuthor?.getAssignedBy()!)
       .setTargetUser(userId)
       // .setValidatorUser(validatorId)
       .setMemoType(memoType)
@@ -899,7 +911,7 @@ class AnomalyDetectionService {
         `${anomalies.length} anomalie(s): ${anomalies.map((a) => a.type).join(', ')}`,
       );
     // .setAutoReason(`${anomalies.length} anomalie(s): ${anomalies.map((a) => a.type).join(', ')}`);
- 
+
     console.log('🔴🔴🔴🔴 meno');
     await memo.save();
 
