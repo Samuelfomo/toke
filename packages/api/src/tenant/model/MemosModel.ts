@@ -85,7 +85,10 @@ export default class MemosModel extends BaseModel {
   ): Promise<any[]> {
     return await this.findAll(
       this.db.tableName,
-      { [this.db.target_user]: target_user },
+      {
+        [this.db.target_user]: target_user,
+        [this.db.memo_status]: { [Op.ne]: MemoStatus.DRAFT },
+      },
       paginationOptions,
     );
   }
@@ -300,7 +303,7 @@ export default class MemosModel extends BaseModel {
   ): Promise<boolean> {
     const updates: Record<string, any> = {
       [this.db.response_user]: response_user,
-      [this.db.memo_status]: MemoStatus.PENDING,
+      [this.db.memo_status]: MemoStatus.SUBMITTED,
       [this.db.responded_at]: new Date(),
     };
 
@@ -318,7 +321,7 @@ export default class MemosModel extends BaseModel {
 
   protected async submitForResponse(memo: number): Promise<boolean> {
     const updates = {
-      [this.db.memo_status]: MemoStatus.SUBMITTED,
+      [this.db.memo_status]: MemoStatus.PENDING,
     };
 
     const affectedRows = await this.updateOne(this.db.tableName, updates, {

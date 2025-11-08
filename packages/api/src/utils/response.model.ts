@@ -286,6 +286,7 @@ export const responseStructure = {
   MANAGER: 'manager',
   VALID_FROM: 'valid_from',
   VALID_TO: 'valid_to',
+  LINK: 'link',
 } as const;
 
 export const RT = {

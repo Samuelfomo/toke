@@ -899,7 +899,7 @@ class AnomalyDetectionService {
       // .setValidatorUser(validatorId)
       .setMemoType(memoType)
       .setMemoStatus(
-        MemoStatus.SUBMITTED,
+        MemoStatus.PENDING,
         // severity === AlertSeverity.CRITICAL ? MemoStatus.SUBMITTED : MemoStatus.PENDING,
       )
       .setTitle(title)
@@ -961,7 +961,7 @@ Validation manager requise pour accepter manuellement si raison légitime.
       .setTargetUser(userId)
       .setValidatorUser(validatorId)
       .setMemoType(MemoType.CORRECTION_REQUEST)
-      .setMemoStatus(MemoStatus.SUBMITTED) // Urgent
+      .setMemoStatus(MemoStatus.PENDING) // Urgent
       .setTitle(title)
       .setDescription(description)
       .setIncidentDatetime(new Date(validatedData.clocked_at))

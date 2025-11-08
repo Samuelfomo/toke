@@ -431,7 +431,7 @@ export default class Memos extends MemosModel {
     }
     const success = await this.submitForResponse(this.id);
     if (success) {
-      this.memo_status = MemoStatus.SUBMITTED;
+      this.memo_status = MemoStatus.PENDING;
     } else {
       throw new Error('Failed to submit memo for validation');
     }

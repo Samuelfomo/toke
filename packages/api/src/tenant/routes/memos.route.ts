@@ -501,7 +501,7 @@ router.post('/', Ensure.post(), async (req: Request, res: Response) => {
       .setTitle(validatedData.title)
       .setResponseUser(validatedData.response_user)
       .setTargetUser(supervisorObj.getId()!)
-      .setMemoStatus(MemoStatus.PENDING);
+      .setMemoStatus(MemoStatus.SUBMITTED);
     if (validatedData.description) memoObj.setDescription(validatedData.description);
 
     // // Champs optionnels
@@ -642,7 +642,7 @@ router.post('/manager', Ensure.post(), async (req: Request, res: Response) => {
 
     let memoStat: MemoStatus = memoData.memo_status;
 
-    if (memoStat !== MemoStatus.SUBMITTED) {
+    if (memoStat !== MemoStatus.PENDING) {
       memoStat = MemoStatus.DRAFT;
     }
     const memoObj = new Memos()
