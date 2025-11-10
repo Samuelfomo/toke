@@ -93,6 +93,12 @@ export default class TenantModel extends BaseModel {
     return await this.findOne(this.db.tableName, { [this.db.tax_number]: tax });
   }
 
+  protected async findByEmail(billingEmail: string): Promise<any> {
+    return await this.findOne(this.db.tableName, {
+      [this.db.billing_email]: billingEmail.toLowerCase(),
+    });
+  }
+
   /**
    * Liste tous les enregistrements selon les conditions
    */

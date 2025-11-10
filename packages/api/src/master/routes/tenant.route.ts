@@ -615,6 +615,15 @@ router.patch('/:guid/subdomain', Ensure.patch(), async (req: Request, res: Respo
       });
     }
 
+    const validGlobalLicense = await GlobalLicense._load(tenantObj.getId()!, false, true);
+
+    if (!validGlobalLicense || validGlobalLicense.getLicenseStatus() !== LicenseStatus.ACTIVE) {
+      return R.handleError(res, HttpStatus.NOT_FOUND, {
+        code: GLOBAL_LICENSE_CODES.GLOBAL_LICENSE_NOT_FOUND,
+        message: GLOBAL_LICENSE_ERRORS.NOT_FOUND,
+      });
+    }
+
     tenantObj.setSubdomain(subdomain);
 
     await tenantObj.defineDbSubdomain();
@@ -632,6 +641,7 @@ router.patch('/:guid/subdomain', Ensure.patch(), async (req: Request, res: Respo
       country: tenantObj.getCountryCode()!,
       email: tenantObj.getBillingEmail()!,
       phone: tenantObj.getBillingPhone()!,
+      global_license: validGlobalLicense.getGuid()!.toString(),
     });
 
     // 3. Récupérer la configuration du tenant depuis le cache
@@ -933,10 +943,45 @@ router.get('/:identifier', Ensure.get(), async (req: Request, res: Response) => 
       });
     }
 
-    R.handleSuccess(res, tenant.toJSON());
+    return R.handleSuccess(res, tenant.toJSON());
   } catch (error: any) {
     console.error('⚠️ Erreur recherche tenant:', error);
-    R.handleError(res, HttpStatus.INTERNAL_ERROR, {
+    return R.handleError(res, HttpStatus.INTERNAL_ERROR, {
+      code: TENANT_CODES.SEARCH_FAILED,
+      message: TENANT_ERRORS.NOT_FOUND,
+    });
+  }
+});
+
+/**
+ * GET /:email - Recherche par email
+ */
+router.get('/:email', Ensure.get(), async (req: Request, res: Response) => {
+  try {
+    const { email } = req.params;
+
+    if (!TenantValidationUtils.validateBillingEmail(email)) {
+      return R.handleError(res, HttpStatus.BAD_REQUEST, {
+        code: TENANT_CODES.BILLING_EMAIL_INVALID,
+        message: TENANT_ERRORS.BILLING_EMAIL_INVALID,
+      });
+    }
+
+    const tenantObj = await Tenant._load(email.toLowerCase(), false, false, false, true);
+    if (!tenantObj) {
+      return R.handleError(res, HttpStatus.NOT_FOUND, {
+        code: 'tenant_not_found',
+        message: `Tenant with identifier '${email}' not found`,
+      });
+    }
+
+    return R.handleSuccess(res, {
+      tenant: tenantObj.toJSON(),
+      subdomain: tenantObj.getSubdomain(),
+    });
+  } catch (error: any) {
+    console.error('⚠️ Erreur recherche tenant:', error);
+    return R.handleError(res, HttpStatus.INTERNAL_ERROR, {
       code: TENANT_CODES.SEARCH_FAILED,
       message: TENANT_ERRORS.NOT_FOUND,
     });
@@ -1003,12 +1048,13 @@ router.post('/otp', Ensure.post(), async (req: Request, res: Response) => {
     const generateOtp = await OTPCacheService.generateAndStoreOTP(value);
     if (!generateOtp) {
       return R.handleError(res, HttpStatus.BAD_REQUEST, {
-        code: 'OTP_generator_failed',
+        code: 'otp_generator_failed',
         message: 'An error has occurred during otp generation',
       });
     }
 
-    let verify: boolean | undefined = undefined;
+    let known_number: boolean | undefined = undefined;
+    let otp_send: boolean | undefined = undefined;
 
     // Envoyer l'OTP via WhatsApp
     if (phone && country) {
@@ -1023,23 +1069,31 @@ router.post('/otp', Ensure.post(), async (req: Request, res: Response) => {
 
       if (!contactObj) {
         // Numéro inconnu : on envoie l’OTP
-        verify = false;
+        known_number = false;
         const result = await WapService.sendOtp(generateOtp, phone, country);
         if (result.status !== HttpStatus.SUCCESS) {
+          otp_send = false;
+
           await OTPCacheService.deleteOTP(generateOtp);
-          return R.handleError(res, result.status, result.response);
+          return R.handleError(res, result.status, {
+            otp_send: otp_send,
+            known_number: known_number,
+            details: result.response,
+          });
         }
       } else {
         // Numéro déjà existant → ne pas envoyer l’OTP
-        verify = true;
+        known_number = true;
       }
     } else if (email) {
       try {
         await EmailSender.sender(generateOtp, email);
       } catch (err) {
+        otp_send = true;
         await OTPCacheService.deleteOTP(generateOtp);
         return R.handleError(res, HttpStatus.INTERNAL_ERROR, {
-          code: 'EMAIL_SENDING_FAILED',
+          otp_send: otp_send,
+          code: 'email_sending_failed',
           message: (err as Error).message,
         });
       }
@@ -1052,15 +1106,14 @@ router.post('/otp', Ensure.post(), async (req: Request, res: Response) => {
 
     // === RÉPONSE ===
     const response: any = {
-      message: 'OTP successfully sent',
-      // reference: phone || email,
+      otp_send: true,
     };
 
     if (phone) {
-      response.verify = verify;
-      response.phone = phone;
+      response.known_number = known_number;
+      response.message = 'OTP successfully sent via WhatsApp';
     } else {
-      response.email = email;
+      response.message = 'OTP successfully sent via email';
     }
 
     return R.handleSuccess(res, response);

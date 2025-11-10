@@ -1,3 +1,9 @@
+import { APP_CONFIG_CODES, APP_CONFIG_DEFAULTS, APP_CONFIG_ERRORS } from '@toke/shared';
+import {
+  validateAppConfigCreation,
+  validateAppConfigUpdate,
+} from '@toke/shared/dist/schemas/app.config';
+
 import BaseModel from '../database/db.base.js';
 import { tableName } from '../../utils/response.model.js';
 
@@ -28,7 +34,7 @@ export default class AppConfigModel extends BaseModel {
   }
 
   protected async findByKey(key: string): Promise<any> {
-    return await this.findOne(this.db.tableName, { [this.db.key]: key });
+    return await this.findOne(this.db.tableName, { [this.db.key]: key.toUpperCase() });
   }
 
   protected async listAll(
@@ -49,43 +55,47 @@ export default class AppConfigModel extends BaseModel {
   }
 
   protected async create(): Promise<void> {
-    await this.validate();
+    await this.validate(true);
 
-    const existKey = await this.findByKey(this.key!);
+    const existKey = await this.findByKey(this.key!.toUpperCase());
     if (existKey) {
-      throw new Error('');
+      throw new Error(
+        `${APP_CONFIG_CODES.KEY_ALREADY_EXISTS}: ${APP_CONFIG_ERRORS.KEY_ALREADY_EXISTS}`,
+      );
     }
 
     const lastID = await this.insertOne(this.db.tableName, {
       [this.db.key]: this.key,
-      [this.db.link]: this.link,
-      [this.db.active]: this.active || true,
+      [this.db.link]: this.link?.toUpperCase(),
+      [this.db.active]: this.active ?? APP_CONFIG_DEFAULTS.ACTIVE,
     });
     if (!lastID) {
-      throw new Error('');
+      throw new Error(`${APP_CONFIG_CODES.CREATION_FAILED}: ${APP_CONFIG_ERRORS.CREATION_FAILED}`);
     }
     this.id = typeof lastID === 'object' ? lastID.id : lastID;
   }
 
   protected async update(): Promise<void> {
-    await this.validate();
+    await this.validate(false);
     if (!this.id) {
-      throw new Error('');
+      throw new Error(`${APP_CONFIG_CODES.INVALID_ID}: ${APP_CONFIG_ERRORS.ID_REQUIRED}`);
     }
     const updateData: Record<string, any> = {};
     if (this.key !== undefined) {
       const existKey = await this.findByKey(this.key!);
       if (existKey && existKey.id !== this.id) {
-        throw new Error('');
+        throw new Error(
+          `${APP_CONFIG_CODES.KEY_ALREADY_EXISTS}: ${APP_CONFIG_ERRORS.KEY_ALREADY_EXISTS}`,
+        );
       }
-      updateData[this.db.key] = this.key;
+      updateData[this.db.key] = this.key.toUpperCase();
     }
     if (this.link !== undefined) updateData[this.db.link] = this.link;
     if (this.active !== undefined) updateData[this.db.active] = this.active;
 
     const affected = await this.updateOne(this.db.tableName, updateData, { [this.db.id]: this.id });
     if (!affected) {
-      throw new Error('');
+      throw new Error(`${APP_CONFIG_CODES.UPDATE_FAILED}: ${APP_CONFIG_ERRORS.UPDATE_FAILED}`);
     }
   }
 
@@ -93,5 +103,32 @@ export default class AppConfigModel extends BaseModel {
     return await this.deleteOne(this.db.tableName, { [this.db.id]: id });
   }
 
-  private async validate(): Promise<void> {}
+  /**
+   * Valide les données avec Zod
+   */
+  private async validate(isCreation: boolean = true): Promise<void> {
+    const data = {
+      key: this.key,
+      link: this.link,
+      active: this.active,
+    };
+
+    try {
+      if (isCreation) {
+        validateAppConfigCreation(data);
+      } else {
+        // Pour la mise à jour, on valide seulement les champs présents
+        const updateData: Record<string, any> = {};
+        if (this.key !== undefined) updateData.key = this.key;
+        if (this.link !== undefined) updateData.link = this.link;
+        if (this.active !== undefined) updateData.active = this.active;
+
+        if (Object.keys(updateData).length > 0) {
+          validateAppConfigUpdate(updateData);
+        }
+      }
+    } catch (error: any) {
+      throw new Error(`${APP_CONFIG_CODES.VALIDATION_FAILED}: ${error.message}`);
+    }
+  }
 }

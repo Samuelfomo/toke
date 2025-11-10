@@ -643,7 +643,6 @@ router.post(
             .setSite(siteObj.getId()!)
             .setSessionStartAt(new Date(validatedData.clocked_at))
             .setStartCoordinates(validatedData.latitude, validatedData.longitude);
-          console.log('🔴🔴');
           await sessionObj.save();
 
           // ✅ CRÉER TIME_ENTRY
@@ -658,14 +657,12 @@ router.post(
           if (validatedData.device_info) {
             entryObj.setDeviceInfo(validatedData.device_info);
           }
-          console.log('🔴🔴🔴');
           await entryObj.save();
           await entryObj.accept(); // ✅ Toujours accepté
 
           // ✅ GÉNÉRER MÉMO AUTO SI ANOMALIES
           let autoMemo = null;
           if (anomalies.length > 0) {
-            console.log('🔴🔴🔴🔴');
             autoMemo = await AnomalyDetectionService.generateAutoMemo(
               anomalies,
               entryObj,
@@ -675,7 +672,6 @@ router.post(
 
             // Lier mémo à l'entry
             if (autoMemo) {
-              console.log('🔴🔴🔴🔴🔴');
               entryObj.setMemo(autoMemo.getId()!);
               await entryObj.save();
             }
@@ -1005,7 +1001,7 @@ router.post(
               userId,
             );
           }
- 
+
           return R.handleCreated(res, {
             message:
               autoCreatedSession || autoCreatedMissionStart

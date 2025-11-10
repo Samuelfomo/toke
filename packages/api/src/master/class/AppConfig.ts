@@ -14,8 +14,24 @@ export default class AppConfig extends AppConfigModel {
     return new AppConfig().load(identifier, byKey);
   }
 
-  static _list(conditions: Record<string, any> = {}): Promise<AppConfig[] | null> {
-    return new AppConfig().list(conditions);
+  static _list(
+    conditions: Record<string, any> = {},
+    paginationOptions: {
+      offset?: number;
+      limit?: number;
+    } = {},
+  ): Promise<AppConfig[] | null> {
+    return new AppConfig().list(conditions, paginationOptions);
+  }
+
+  static _listByStatus(
+    status: boolean,
+    paginationOptions: {
+      offset?: number;
+      limit?: number;
+    } = {},
+  ): Promise<AppConfig[] | null> {
+    return new AppConfig().listByStatus(status, paginationOptions);
   }
 
   setKey(key: string): AppConfig {
@@ -59,6 +75,18 @@ export default class AppConfig extends AppConfigModel {
     } = {},
   ): Promise<AppConfig[] | null> {
     const dataset = await this.listAll(conditions, paginationOptions);
+    if (!dataset) return null;
+    return dataset.map((data) => new AppConfig().hydrate(data));
+  }
+
+  async listByStatus(
+    status: boolean,
+    paginationOptions: {
+      offset?: number;
+      limit?: number;
+    } = {},
+  ): Promise<AppConfig[] | null> {
+    const dataset = await this.listAllByStatus(status, paginationOptions);
     if (!dataset) return null;
     return dataset.map((data) => new AppConfig().hydrate(data));
   }

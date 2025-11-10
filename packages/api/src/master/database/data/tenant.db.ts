@@ -133,13 +133,14 @@ export const TenantDbStructure = {
     billing_email: {
       type: DataTypes.STRING(255),
       allowNull: false,
+      unique: { name: 'unique_tenant_billing_email', msg: 'Billing email must be unique' },
       validate: {
         isEmail: true,
         len: [2, 255],
         notEmpty: true,
         notNull: true,
       },
-      comment: 'Billing email',
+      comment: 'Billing email (must be unique)',
     },
     // billing_address: {
     //   type: DataTypes.TEXT,

@@ -293,6 +293,13 @@ router.post('/', Ensure.post(), async (req: Request, res: Response) => {
 
     await userObj.save();
 
+    // 1-Creer une license employee
+    const employeeLicense = {
+      global_license: tenant.config.global_license,
+      employee: userObj.getGuid()!,
+      employee_code: userObj.getEmployeeCode()!,
+    };
+
     const userRoleObj = new UserRole()
       .setRole(existingDefaultRole.getId()!)
       .setUser(userObj.getId()!)

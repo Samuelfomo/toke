@@ -465,16 +465,30 @@ x-api-timestamp : &lt;SERVER_API_TIMESTAMP&gt;
 </table>
 <hr>
 <h2 class="code-line" data-line-start=371 data-line-end=372 ><a id="_Endpoints_Dtaills_371"></a>📖 Endpoints Détaillés</h2>
-<h3 class="code-line" data-line-start=373 data-line-end=374 ><a id="11_Rechercher_par_subdomain_373"></a>11. Rechercher par subdomain</h3>
-<p class="has-line-data" data-line-start="375" data-line-end="376">Recherche un tenant par son sous-domaine.</p>
+<h3 class="code-line" data-line-start=373 data-line-end=374 ><a id="1_Gnrer_et_envoyer_un_OTP_373"></a>1. Générer et envoyer un OTP</h3>
+<p class="has-line-data" data-line-start="375" data-line-end="376">Génère un code OTP et l’envoie par whatsApp ou email pour vérification.</p>
 <h4 class="code-line" data-line-start=377 data-line-end=378 ><a id="Requte_377"></a>Requête</h4>
-<pre><code class="has-line-data" data-line-start="380" data-line-end="382" class="language-http">GET /tenant/search/subdomain/batix
+<pre><code class="has-line-data" data-line-start="380" data-line-end="388" class="language-http">POST /tenant/otp
+Content-Type: application/json
+
+{
+  "phone": "+237698765432",
+  "country": "CM"
+}
 </code></pre>
-<h4 class="code-line" data-line-start=383 data-line-end=384 ><a id="Paramtres_Path_383"></a>Paramètres Path</h4>
+<p class="has-line-data" data-line-start="389" data-line-end="390"><strong>OU</strong></p>
+<pre><code class="has-line-data" data-line-start="392" data-line-end="399" class="language-http">POST /tenant/otp
+Content-Type: application/json
+
+{
+  "email": "<a href="/cdn-cgi/l/email-protection" class="__cf_email__" data-cfemail="187e717679767b7d587a796c7160367b75">[email&#160;protected]</a>"
+}
+</code></pre>
+<h4 class="code-line" data-line-start=400 data-line-end=401 ><a id="Paramtres_Body_400"></a>Paramètres Body</h4>
 <table class="table table-striped table-bordered">
 <thead>
 <tr>
-<th>Paramètre</th>
+<th>Champ</th>
 <th>Type</th>
 <th>Requis</th>
 <th>Description</th>
@@ -482,108 +496,57 @@ x-api-timestamp : &lt;SERVER_API_TIMESTAMP&gt;
 </thead>
 <tbody>
 <tr>
-<td><code>subdomain</code></td>
+<td><code>phone</code></td>
 <td><code>string</code></td>
-<td>Oui</td>
-<td>Sous-domaine du tenant</td>
+<td>Conditionnel</td>
+<td>Numéro de téléphone (format international)</td>
+</tr>
+<tr>
+<td><code>country</code></td>
+<td><code>string</code></td>
+<td>Conditionnel</td>
+<td>Code pays (requis si <code>phone</code>)</td>
+</tr>
+<tr>
+<td><code>email</code></td>
+<td><code>string</code></td>
+<td>Conditionnel</td>
+<td>Adresse email</td>
 </tr>
 </tbody>
 </table>
-<h4 class="code-line" data-line-start=389 data-line-end=390 ><a id="Rponse_Succs_200_OK_389"></a>Réponse Succès (200 OK)</h4>
-<pre><code class="has-line-data" data-line-start="392" data-line-end="404" class="language-json">{
+<p class="has-line-data" data-line-start="408" data-line-end="409"><strong>Note</strong> : Soit <code>phone</code> + <code>country</code>, soit <code>email</code> doit être fourni.</p>
+<h4 class="code-line" data-line-start=410 data-line-end=411 ><a id="Rponse_Succs_201_OK_410"></a>Réponse Succès (201 OK)</h4>
+<p class="has-line-data" data-line-start="412" data-line-end="413"><strong>Avec téléphone (nouveau numéro)</strong> :</p>
+<pre><code class="has-line-data" data-line-start="414" data-line-end="423" class="language-json">{
   "<span class="hljs-attribute">success</span>": <span class="hljs-value"><span class="hljs-literal">true</span></span>,
   "<span class="hljs-attribute">data</span>": <span class="hljs-value">{
-    "<span class="hljs-attribute">id</span>": <span class="hljs-value"><span class="hljs-number">1</span></span>,
-    "<span class="hljs-attribute">guid</span>": <span class="hljs-value"><span class="hljs-number">12345</span></span>,
-    "<span class="hljs-attribute">name</span>": <span class="hljs-value"><span class="hljs-string">"BATIX SARL"</span></span>,
-    "<span class="hljs-attribute">subdomain</span>": <span class="hljs-value"><span class="hljs-string">"batix"</span></span>,
-    "<span class="hljs-attribute">database_name</span>": <span class="hljs-value"><span class="hljs-string">"toke_tenant_batix"</span></span>,
-    "<span class="hljs-attribute">status</span>": <span class="hljs-value"><span class="hljs-string">"ACTIVE"</span>
+    "<span class="hljs-attribute">message</span>": <span class="hljs-value"><span class="hljs-string">"OTP successfully sent"</span></span>,
+    "<span class="hljs-attribute">verify</span>": <span class="hljs-value"><span class="hljs-literal">false</span></span>,
+    "<span class="hljs-attribute">phone</span>": <span class="hljs-value"><span class="hljs-string">"+237698765432"</span>
   </span>}
 </span>}
 </code></pre>
-<hr>
-<h3 class="code-line" data-line-start=407 data-line-end=408 ><a id="12_Recherche_intelligente_407"></a>12. Recherche intelligente</h3>
-<p class="has-line-data" data-line-start="409" data-line-end="410">Recherche un tenant par ID, GUID, clé ou subdomain.</p>
-<h4 class="code-line" data-line-start=411 data-line-end=412 ><a id="Requte_411"></a>Requête</h4>
-<pre><code class="has-line-data" data-line-start="414" data-line-end="418" class="language-http">GET /tenant/12345
-GET /tenant/batix_sarl_cm_20241108
-GET /tenant/batix
-</code></pre>
-<h4 class="code-line" data-line-start=419 data-line-end=420 ><a id="Paramtres_Path_419"></a>Paramètres Path</h4>
-<table class="table table-striped table-bordered">
-<thead>
-<tr>
-<th>Paramètre</th>
-<th>Type</th>
-<th>Requis</th>
-<th>Description</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td><code>identifier</code></td>
-<td><code>string|integer</code></td>
-<td>Oui</td>
-<td>ID, GUID, clé ou subdomain</td>
-</tr>
-</tbody>
-</table>
-<h4 class="code-line" data-line-start=425 data-line-end=426 ><a id="Rponse_Succs_200_OK_425"></a>Réponse Succès (200 OK)</h4>
-<pre><code class="has-line-data" data-line-start="428" data-line-end="440" class="language-json">{
+<p class="has-line-data" data-line-start="424" data-line-end="425"><strong>Avec téléphone (déjà enregistré)</strong> :</p>
+<pre><code class="has-line-data" data-line-start="426" data-line-end="435" class="language-json">{
   "<span class="hljs-attribute">success</span>": <span class="hljs-value"><span class="hljs-literal">true</span></span>,
   "<span class="hljs-attribute">data</span>": <span class="hljs-value">{
-    "<span class="hljs-attribute">id</span>": <span class="hljs-value"><span class="hljs-number">1</span></span>,
-    "<span class="hljs-attribute">guid</span>": <span class="hljs-value"><span class="hljs-number">12345</span></span>,
-    "<span class="hljs-attribute">name</span>": <span class="hljs-value"><span class="hljs-string">"BATIX SARL"</span></span>,
-    "<span class="hljs-attribute">key</span>": <span class="hljs-value"><span class="hljs-string">"batix_sarl_cm_20241108"</span></span>,
-    "<span class="hljs-attribute">subdomain</span>": <span class="hljs-value"><span class="hljs-string">"batix"</span></span>,
-    "<span class="hljs-attribute">status</span>": <span class="hljs-value"><span class="hljs-string">"ACTIVE"</span>
+    "<span class="hljs-attribute">message</span>": <span class="hljs-value"><span class="hljs-string">"OTP successfully sent"</span></span>,
+    "<span class="hljs-attribute">verify</span>": <span class="hljs-value"><span class="hljs-literal">true</span></span>,
+    "<span class="hljs-attribute">phone</span>": <span class="hljs-value"><span class="hljs-string">"+237698765432"</span>
   </span>}
 </span>}
 </code></pre>
-<hr>
-<h3 class="code-line" data-line-start=443 data-line-end=444 ><a id="13_Vrifier_ltat_du_systme_tenant_443"></a>13. Vérifier l’état du système tenant</h3>
-<p class="has-line-data" data-line-start="445" data-line-end="446">Vérifie si un tenant est configuré et opérationnel.</p>
-<h4 class="code-line" data-line-start=447 data-line-end=448 ><a id="Requte_447"></a>Requête</h4>
-<pre><code class="has-line-data" data-line-start="450" data-line-end="452" class="language-http">GET /tenant/12345/check
-</code></pre>
-<h4 class="code-line" data-line-start=453 data-line-end=454 ><a id="Paramtres_Path_453"></a>Paramètres Path</h4>
-<table class="table table-striped table-bordered">
-<thead>
-<tr>
-<th>Paramètre</th>
-<th>Type</th>
-<th>Requis</th>
-<th>Description</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td><code>guid</code></td>
-<td><code>integer</code></td>
-<td>Oui</td>
-<td>GUID du tenant</td>
-</tr>
-</tbody>
-</table>
-<h4 class="code-line" data-line-start=459 data-line-end=460 ><a id="Rponse_Succs_200_OK_459"></a>Réponse Succès (200 OK)</h4>
-<pre><code class="has-line-data" data-line-start="462" data-line-end="477" class="language-json">{
+<p class="has-line-data" data-line-start="436" data-line-end="437"><strong>Avec email</strong> :</p>
+<pre><code class="has-line-data" data-line-start="438" data-line-end="446" class="language-json">{
   "<span class="hljs-attribute">success</span>": <span class="hljs-value"><span class="hljs-literal">true</span></span>,
   "<span class="hljs-attribute">data</span>": <span class="hljs-value">{
-    "<span class="hljs-attribute">message</span>": <span class="hljs-value"><span class="hljs-string">"System tenant BATIX SARL is active"</span></span>,
-    "<span class="hljs-attribute">tenant</span>": <span class="hljs-value">{
-      "<span class="hljs-attribute">id</span>": <span class="hljs-value"><span class="hljs-number">1</span></span>,
-      "<span class="hljs-attribute">guid</span>": <span class="hljs-value"><span class="hljs-number">12345</span></span>,
-      "<span class="hljs-attribute">name</span>": <span class="hljs-value"><span class="hljs-string">"BATIX SARL"</span></span>,
-      "<span class="hljs-attribute">status</span>": <span class="hljs-value"><span class="hljs-string">"ACTIVE"</span></span>,
-      "<span class="hljs-attribute">database_name</span>": <span class="hljs-value"><span class="hljs-string">"toke_tenant_batix"</span>
-    </span>}</span>,
-    "<span class="hljs-attribute">subdomain</span>": <span class="hljs-value"><span class="hljs-string">"batix"</span>
+    "<span class="hljs-attribute">message</span>": <span class="hljs-value"><span class="hljs-string">"OTP successfully sent"</span></span>,
+    "<span class="hljs-attribute">email</span>": <span class="hljs-value"><span class="hljs-string">"<a href="/cdn-cgi/l/email-protection" class="__cf_email__" data-cfemail="dbbdb2b5bab5b8be9bb9baafb2a3f5b8b6">[email&#160;protected]</a>"</span>
   </span>}
 </span>}
 </code></pre>
-<h4 class="code-line" data-line-start=478 data-line-end=479 ><a id="Codes_dErreur_478"></a>Codes d’Erreur</h4>
+<h4 class="code-line" data-line-start=447 data-line-end=448 ><a id="Codes_dErreur_447"></a>Codes d’Erreur</h4>
 <table class="table table-striped table-bordered">
 <thead>
 <tr>
@@ -595,44 +558,182 @@ GET /tenant/batix
 <tbody>
 <tr>
 <td><code>400</code></td>
-<td><code>INVALID_GUID</code></td>
-<td>GUID invalide</td>
+<td><code>VALIDATION_FAILED</code></td>
+<td>Aucune entrée fournie</td>
+</tr>
+<tr>
+<td><code>400</code></td>
+<td><code>invalid_country</code></td>
+<td>Code pays invalide</td>
+</tr>
+<tr>
+<td><code>400</code></td>
+<td><code>BILLING_PHONE_INVALID</code></td>
+<td>Format téléphone invalide</td>
+</tr>
+<tr>
+<td><code>400</code></td>
+<td><code>BILLING_EMAIL_INVALID</code></td>
+<td>Format email invalide</td>
+</tr>
+<tr>
+<td><code>400</code></td>
+<td><code>invalid_phone_number</code></td>
+<td>Téléphone ne respecte pas le format du pays</td>
 </tr>
 <tr>
 <td><code>404</code></td>
-<td><code>TENANT_NOT_FOUND</code></td>
-<td>Tenant introuvable</td>
+<td><code>country_not_found</code></td>
+<td>Pays non supporté</td>
 </tr>
 <tr>
-<td><code>404</code></td>
-<td><code>DATABASE_CONFIG_NOT_FOUND</code></td>
-<td>Configuration DB manquante</td>
+<td><code>500</code></td>
+<td><code>OTP_generator_failed</code></td>
+<td>Erreur génération OTP</td>
+</tr>
+<tr>
+<td><code>500</code></td>
+<td><code>EMAIL_SENDING_FAILED</code></td>
+<td>Erreur envoi email</td>
 </tr>
 </tbody>
 </table>
 <hr>
-<h3 class="code-line" data-line-start=488 data-line-end=489 ><a id="14_Crer_un_tenant_488"></a>14. Créer un tenant</h3>
-<p class="has-line-data" data-line-start="490" data-line-end="491">Crée une nouvelle organisation cliente.</p>
-<h4 class="code-line" data-line-start=492 data-line-end=493 ><a id="Requte_492"></a>Requête</h4>
-<pre><code class="has-line-data" data-line-start="495" data-line-end="513" class="language-http">POST /tenant
+<h3 class="code-line" data-line-start=462 data-line-end=463 ><a id="16_Vrifier_un_OTP_462"></a>16. Vérifier un OTP</h3>
+<p class="has-line-data" data-line-start="464" data-line-end="465">Vérifie la validité d’un code OTP.</p>
+<h4 class="code-line" data-line-start=466 data-line-end=467 ><a id="Requte_466"></a>Requête</h4>
+<pre><code class="has-line-data" data-line-start="469" data-line-end="477" class="language-http">PATCH /tenant/verify-otp
 Content-Type: application/json
 
 {
-  "name": "BATIX SARL",
-  "short_name": "BATIX",
+  "otp": "847392",
+  "phone": "+237698765432"
+}
+</code></pre>
+<p class="has-line-data" data-line-start="478" data-line-end="479"><strong>OU</strong></p>
+<pre><code class="has-line-data" data-line-start="481" data-line-end="489" class="language-http">PATCH /tenant/verify-otp
+Content-Type: application/json
+
+{
+  "otp": "847392",
+  "email": "<a href="/cdn-cgi/l/email-protection" class="__cf_email__" data-cfemail="c1a7a8afa0afa2a481a3a0b5a8b9efa2ac">[email&#160;protected]</a>"
+}
+</code></pre>
+<h4 class="code-line" data-line-start=490 data-line-end=491 ><a id="Paramtres_Body_490"></a>Paramètres Body</h4>
+<table class="table table-striped table-bordered">
+<thead>
+<tr>
+<th>Champ</th>
+<th>Type</th>
+<th>Requis</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>otp</code></td>
+<td><code>string</code></td>
+<td>Oui</td>
+<td>Code OTP à 6 chiffres</td>
+</tr>
+<tr>
+<td><code>phone</code></td>
+<td><code>string</code></td>
+<td>Conditionnel</td>
+<td>Numéro de téléphone (format international)</td>
+</tr>
+<tr>
+<td><code>email</code></td>
+<td><code>string</code></td>
+<td>Conditionnel</td>
+<td>Adresse email</td>
+</tr>
+</tbody>
+</table>
+<p class="has-line-data" data-line-start="498" data-line-end="499"><strong>Note</strong> : Soit <code>phone</code>, soit <code>email</code> doit être fourni.</p>
+<h4 class="code-line" data-line-start=500 data-line-end=501 ><a id="Rponse_Succs_200_OK_500"></a>Réponse Succès (200 OK)</h4>
+<p class="has-line-data" data-line-start="502" data-line-end="503"><strong>Avec téléphone</strong> :</p>
+<pre><code class="has-line-data" data-line-start="504" data-line-end="512" class="language-json">{
+  "<span class="hljs-attribute">success</span>": <span class="hljs-value"><span class="hljs-literal">true</span></span>,
+  "<span class="hljs-attribute">data</span>": <span class="hljs-value">{
+    "<span class="hljs-attribute">message</span>": <span class="hljs-value"><span class="hljs-string">"OTP verified successfully"</span></span>,
+    "<span class="hljs-attribute">phone</span>": <span class="hljs-value"><span class="hljs-string">"+237698765432"</span>
+  </span>}
+</span>}
+</code></pre>
+<p class="has-line-data" data-line-start="513" data-line-end="514"><strong>Avec email</strong> :</p>
+<pre><code class="has-line-data" data-line-start="515" data-line-end="523" class="language-json">{
+  "<span class="hljs-attribute">success</span>": <span class="hljs-value"><span class="hljs-literal">true</span></span>,
+  "<span class="hljs-attribute">data</span>": <span class="hljs-value">{
+    "<span class="hljs-attribute">message</span>": <span class="hljs-value"><span class="hljs-string">"OTP verified successfully"</span></span>,
+    "<span class="hljs-attribute">email</span>": <span class="hljs-value"><span class="hljs-string">"<a href="/cdn-cgi/l/email-protection" class="__cf_email__" data-cfemail="8aece3e4ebe4e9efcae8ebfee3f2a4e9e7">[email&#160;protected]</a>"</span>
+  </span>}
+</span>}
+</code></pre>
+<h4 class="code-line" data-line-start=524 data-line-end=525 ><a id="Codes_dErreur_524"></a>Codes d’Erreur</h4>
+<table class="table table-striped table-bordered">
+<thead>
+<tr>
+<th>Code</th>
+<th>Message</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>400</code></td>
+<td><code>invalid_otp</code></td>
+<td>OTP invalide ou format incorrect</td>
+</tr>
+<tr>
+<td><code>400</code></td>
+<td><code>missing_reference</code></td>
+<td>Aucun téléphone/email fourni</td>
+</tr>
+<tr>
+<td><code>400</code></td>
+<td><code>otp_verification_failed</code></td>
+<td>OTP invalide, expiré ou tentatives max atteintes</td>
+</tr>
+<tr>
+<td><code>403</code></td>
+<td><code>verification_failed</code></td>
+<td>Téléphone/email ne correspond pas à l’OTP</td>
+</tr>
+<tr>
+<td><code>500</code></td>
+<td><code>contact_creation_failed</code></td>
+<td>Erreur lors de l’enregistrement du contact</td>
+</tr>
+</tbody>
+</table>
+<hr>
+<h3 class="code-line" data-line-start=536 data-line-end=537 ><a id="2_Crer_un_tenant_536"></a>2. Créer un tenant</h3>
+<p class="has-line-data" data-line-start="538" data-line-end="539">Crée une nouvelle organisation cliente.</p>
+<h4 class="code-line" data-line-start=540 data-line-end=541 ><a id="Requte_540"></a>Requête</h4>
+<pre><code class="has-line-data" data-line-start="543" data-line-end="565" class="language-http">POST /tenant
+Content-Type: application/json
+
+{
+  "name": "SAKE SA",
+  "short_name": "SK",
   "country_code": "CM",
   "primary_currency_code": "XAF",
   "preferred_language_code": "fr",
   "timezone": "Africa/Douala",
   "tax_number": "M012345678901234",
-  "billing_email": "<a href="/cdn-cgi/l/email-protection" class="__cf_email__" data-cfemail="a1c7c8cfc0cfc2c4e1c3c0d5c8d98fc2cc">[email&#160;protected]</a>",
-  "billing_address": "123 Rue de la Réunification, Douala",
+  "billing_email": "<a href="/cdn-cgi/l/email-protection" class="__cf_email__" data-cfemail="87e1eee9e6e9e4e2c7e5e6f3eeffa9e4ea">[email&#160;protected]</a>",
+  "billing_address": {
+    "city": "douala",
+    "location": "makepe",
+    "place_name": "carrefour abou de bangui"
+  },
   "billing_phone": "+237698765432",
   "registration_number": "RC/DLA/2024/B/123",
-  "employee_count": 150
+  "employee_count": [1,30]
 }
 </code></pre>
-<h4 class="code-line" data-line-start=514 data-line-end=515 ><a id="Paramtres_Body_514"></a>Paramètres Body</h4>
+<h4 class="code-line" data-line-start=566 data-line-end=567 ><a id="Paramtres_Body_566"></a>Paramètres Body</h4>
 <table class="table table-striped table-bordered">
 <thead>
 <tr>
@@ -693,7 +794,7 @@ Content-Type: application/json
 </tr>
 <tr>
 <td><code>billing_address</code></td>
-<td><code>string</code></td>
+<td><code>JsonB</code></td>
 <td>Oui</td>
 <td>Adresse de facturation</td>
 </tr>
@@ -711,17 +812,16 @@ Content-Type: application/json
 </tr>
 <tr>
 <td><code>employee_count</code></td>
-<td><code>integer</code></td>
+<td><code>Array(integer)(2)</code></td>
 <td>Oui</td>
 <td>Nombre d’employés prévu</td>
 </tr>
 </tbody>
 </table>
-<h4 class="code-line" data-line-start=531 data-line-end=532 ><a id="Rponse_Succs_201_Created_531"></a>Réponse Succès (201 Created)</h4>
-<pre><code class="has-line-data" data-line-start="534" data-line-end="559" class="language-json">{
+<h4 class="code-line" data-line-start=583 data-line-end=584 ><a id="Rponse_Succs_201_Created_583"></a>Réponse Succès (201 Created)</h4>
+<pre><code class="has-line-data" data-line-start="586" data-line-end="614" class="language-json">{
   "<span class="hljs-attribute">success</span>": <span class="hljs-value"><span class="hljs-literal">true</span></span>,
   "<span class="hljs-attribute">data</span>": <span class="hljs-value">{
-    "<span class="hljs-attribute">id</span>": <span class="hljs-value"><span class="hljs-number">1</span></span>,
     "<span class="hljs-attribute">guid</span>": <span class="hljs-value"><span class="hljs-number">12345</span></span>,
     "<span class="hljs-attribute">name</span>": <span class="hljs-value"><span class="hljs-string">"BATIX SARL"</span></span>,
     "<span class="hljs-attribute">short_name</span>": <span class="hljs-value"><span class="hljs-string">"BATIX"</span></span>,
@@ -732,18 +832,22 @@ Content-Type: application/json
     "<span class="hljs-attribute">timezone</span>": <span class="hljs-value"><span class="hljs-string">"Africa/Douala"</span></span>,
     "<span class="hljs-attribute">tax_number</span>": <span class="hljs-value"><span class="hljs-string">"M012345678901234"</span></span>,
     "<span class="hljs-attribute">is_tax_exempt</span>": <span class="hljs-value"><span class="hljs-literal">false</span></span>,
-    "<span class="hljs-attribute">billing_email</span>": <span class="hljs-value"><span class="hljs-string">"<a href="/cdn-cgi/l/email-protection" class="__cf_email__" data-cfemail="34525d5a555a5751745655405d4c1a5759">[email&#160;protected]</a>"</span></span>,
-    "<span class="hljs-attribute">billing_address</span>": <span class="hljs-value"><span class="hljs-string">"123 Rue de la Réunification, Douala"</span></span>,
+    "<span class="hljs-attribute">billing_email</span>": <span class="hljs-value"><span class="hljs-string">"<a href="/cdn-cgi/l/email-protection" class="__cf_email__" data-cfemail="0c6a65626d626f694c6e6d786574226f61">[email&#160;protected]</a>"</span></span>,
+    "<span class="hljs-attribute">billing_address</span>": <span class="hljs-value">{
+        "<span class="hljs-attribute">city</span>": <span class="hljs-value"><span class="hljs-string">"douala"</span></span>,
+        "<span class="hljs-attribute">location</span>": <span class="hljs-value"><span class="hljs-string">"makepe"</span></span>,
+        "<span class="hljs-attribute">place_name</span>": <span class="hljs-value"><span class="hljs-string">"carrefour abou de bangui"</span>
+   </span>}</span>,
     "<span class="hljs-attribute">billing_phone</span>": <span class="hljs-value"><span class="hljs-string">"+237698765432"</span></span>,
     "<span class="hljs-attribute">registration_number</span>": <span class="hljs-value"><span class="hljs-string">"RC/DLA/2024/B/123"</span></span>,
-    "<span class="hljs-attribute">employee_count</span>": <span class="hljs-value"><span class="hljs-number">150</span></span>,
+    "<span class="hljs-attribute">employee_count</span>": <span class="hljs-value">[<span class="hljs-number">1</span>,<span class="hljs-number">30</span>]</span>,
     "<span class="hljs-attribute">status</span>": <span class="hljs-value"><span class="hljs-string">"ACTIVE"</span></span>,
     "<span class="hljs-attribute">created_at</span>": <span class="hljs-value"><span class="hljs-string">"2024-11-08T14:30:45.000Z"</span></span>,
     "<span class="hljs-attribute">updated_at</span>": <span class="hljs-value"><span class="hljs-string">"2024-11-08T14:30:45.000Z"</span>
   </span>}
 </span>}
 </code></pre>
-<h4 class="code-line" data-line-start=560 data-line-end=561 ><a id="Codes_dErreur_560"></a>Codes d’Erreur</h4>
+<h4 class="code-line" data-line-start=615 data-line-end=616 ><a id="Codes_dErreur_615"></a>Codes d’Erreur</h4>
 <table class="table table-striped table-bordered">
 <thead>
 <tr>
@@ -775,8 +879,8 @@ Content-Type: application/json
 </tr>
 </tbody>
 </table>
-<h4 class="code-line" data-line-start=569 data-line-end=570 ><a id="Exemple_dErreur_569"></a>Exemple d’Erreur</h4>
-<pre><code class="has-line-data" data-line-start="572" data-line-end="590" class="language-json">{
+<h4 class="code-line" data-line-start=624 data-line-end=625 ><a id="Exemple_dErreur_624"></a>Exemple d’Erreur</h4>
+<pre><code class="has-line-data" data-line-start="627" data-line-end="645" class="language-json">{
   "<span class="hljs-attribute">success</span>": <span class="hljs-value"><span class="hljs-literal">false</span></span>,
   "<span class="hljs-attribute">error</span>": <span class="hljs-value">{
     "<span class="hljs-attribute">code</span>": <span class="hljs-value"><span class="hljs-string">"VALIDATION_FAILED"</span></span>,
@@ -794,89 +898,124 @@ Content-Type: application/json
   </span>}
 </span>}
 </code></pre>
-<hr>
-<h3 class="code-line" data-line-start=593 data-line-end=594 ><a id="15_Gnrer_et_envoyer_un_OTP_593"></a>15. Générer et envoyer un OTP</h3>
-<p class="has-line-data" data-line-start="595" data-line-end="596">Génère un code OTP et l’envoie par SMS ou email pour vérification.</p>
-<h4 class="code-line" data-line-start=597 data-line-end=598 ><a id="Requte_597"></a>Requête</h4>
-<pre><code class="has-line-data" data-line-start="600" data-line-end="608" class="language-http">POST /tenant/otp
+<h3 class="code-line" data-line-start=646 data-line-end=647 ><a id="NB_646"></a>NB:</h3>
+<p class="has-line-data" data-line-start="647" data-line-end="649">Après la création de votre compte client (tenant), vous recevrez un e-mail contenant un lien vous invitant à procéder au paiement de votre licence de base. Ce paiement vous permettra d’accéder à l’ensemble de nos services et fonctionnalités.<br>
+Une fois le paiement effectué, notre équipe technique mettra en place votre système client sous un délai maximum de 24 heures. Vous recevrez une notification dès que l’installation sera terminée.</p>
+<h3 class="code-line" data-line-start=650 data-line-end=651 ><a id="3_Crer_une_licence_globale_650"></a>3. Créer une licence globale</h3>
+<p class="has-line-data" data-line-start="652" data-line-end="653">Crée une nouvelle licence pour un tenant.</p>
+<h4 class="code-line" data-line-start=654 data-line-end=655 ><a id="Requte_654"></a>Requête</h4>
+<pre><code class="has-line-data" data-line-start="657" data-line-end="671" class="language-http">POST /global-license
 Content-Type: application/json
 
 {
-  "phone": "+237698765432",
-  "country": "CM"
+  "tenant": 100001,
+  "license_type": "CLOUD_FLEX",
+  "billing_cycle_months": 12,
+  "base_price_usd": 3.00,
+  "minimum_seats": 5,
+  "current_period_start": "2024-11-01T00:00:00Z",
+  "current_period_end": "2025-10-31T23:59:59.999Z",
+  "next_renewal_date": "2025-11-01T00:00:00Z"
 }
 </code></pre>
-<p class="has-line-data" data-line-start="609" data-line-end="610"><strong>OU</strong></p>
-<pre><code class="has-line-data" data-line-start="612" data-line-end="619" class="language-http">POST /tenant/otp
-Content-Type: application/json
-
-{
-  "email": "<a href="/cdn-cgi/l/email-protection" class="__cf_email__" data-cfemail="a7c1cec9c6c9c4c2e7c5c6d3cedf89c4ca">[email&#160;protected]</a>"
-}
-</code></pre>
-<h4 class="code-line" data-line-start=620 data-line-end=621 ><a id="Paramtres_Body_620"></a>Paramètres Body</h4>
+<h4 class="code-line" data-line-start=672 data-line-end=673 ><a id="Paramtres_Body_672"></a>Paramètres Body</h4>
 <table class="table table-striped table-bordered">
 <thead>
 <tr>
 <th>Champ</th>
 <th>Type</th>
 <th>Requis</th>
+<th>Défaut</th>
 <th>Description</th>
 </tr>
 </thead>
 <tbody>
 <tr>
-<td><code>phone</code></td>
-<td><code>string</code></td>
-<td>Conditionnel</td>
-<td>Numéro de téléphone (format international)</td>
+<td><code>tenant</code></td>
+<td><code>integer</code></td>
+<td>Oui</td>
+<td>-</td>
+<td>GUID du tenant</td>
 </tr>
 <tr>
-<td><code>country</code></td>
+<td><code>license_type</code></td>
 <td><code>string</code></td>
-<td>Conditionnel</td>
-<td>Code pays (requis si <code>phone</code>)</td>
+<td>Oui</td>
+<td><code>CLOUD_FLEX</code></td>
+<td>Type de licence</td>
 </tr>
 <tr>
-<td><code>email</code></td>
+<td><code>billing_cycle_months</code></td>
+<td><code>integer</code></td>
+<td>Oui</td>
+<td>-</td>
+<td>Cycle de facturation (1, 3, 6, 12)</td>
+</tr>
+<tr>
+<td><code>base_price_usd</code></td>
+<td><code>number</code></td>
+<td>Non</td>
+<td>3.00</td>
+<td>Prix par employé par mois (USD)</td>
+</tr>
+<tr>
+<td><code>minimum_seats</code></td>
+<td><code>integer</code></td>
+<td>Non</td>
+<td>5</td>
+<td>Nombre minimum de sièges facturés</td>
+</tr>
+<tr>
+<td><code>current_period_start</code></td>
 <td><code>string</code></td>
-<td>Conditionnel</td>
-<td>Adresse email</td>
+<td>Oui</td>
+<td>-</td>
+<td>Date début période (ISO 8601)</td>
+</tr>
+<tr>
+<td><code>current_period_end</code></td>
+<td><code>string</code></td>
+<td>Oui</td>
+<td>-</td>
+<td>Date fin période (ISO 8601)</td>
+</tr>
+<tr>
+<td><code>next_renewal_date</code></td>
+<td><code>string</code></td>
+<td>Oui</td>
+<td>-</td>
+<td>Date prochain renouvellement (ISO 8601)</td>
+</tr>
+<tr>
+<td><code>license_status</code></td>
+<td><code>string</code></td>
+<td>Non</td>
+<td><code>ACTIVE</code></td>
+<td>Statut initial</td>
 </tr>
 </tbody>
 </table>
-<p class="has-line-data" data-line-start="628" data-line-end="629"><strong>Note</strong> : Soit <code>phone</code> + <code>country</code>, soit <code>email</code> doit être fourni.</p>
-<h4 class="code-line" data-line-start=630 data-line-end=631 ><a id="Rponse_Succs_200_OK_630"></a>Réponse Succès (200 OK)</h4>
-<p class="has-line-data" data-line-start="632" data-line-end="633"><strong>Avec téléphone (nouveau numéro)</strong> :</p>
-<pre><code class="has-line-data" data-line-start="634" data-line-end="643" class="language-json">{
+<h4 class="code-line" data-line-start=686 data-line-end=687 ><a id="Rponse_Succs_201_Created_686"></a>Réponse Succès (201 Created)</h4>
+<pre><code class="has-line-data" data-line-start="689" data-line-end="708" class="language-json">{
   "<span class="hljs-attribute">success</span>": <span class="hljs-value"><span class="hljs-literal">true</span></span>,
   "<span class="hljs-attribute">data</span>": <span class="hljs-value">{
-    "<span class="hljs-attribute">message</span>": <span class="hljs-value"><span class="hljs-string">"OTP successfully sent"</span></span>,
-    "<span class="hljs-attribute">verify</span>": <span class="hljs-value"><span class="hljs-literal">false</span></span>,
-    "<span class="hljs-attribute">phone</span>": <span class="hljs-value"><span class="hljs-string">"+237698765432"</span>
+    "<span class="hljs-attribute">guid</span>": <span class="hljs-value"><span class="hljs-number">100001</span></span>,
+    "<span class="hljs-attribute">tenant</span>": <span class="hljs-value"><span class="hljs-number">100001</span></span>,
+    "<span class="hljs-attribute">license_type</span>": <span class="hljs-value"><span class="hljs-string">"CLOUD_FLEX"</span></span>,
+    "<span class="hljs-attribute">billing_cycle_months</span>": <span class="hljs-value"><span class="hljs-number">12</span></span>,
+    "<span class="hljs-attribute">base_price_usd</span>": <span class="hljs-value"><span class="hljs-number">3.00</span></span>,
+    "<span class="hljs-attribute">minimum_seats</span>": <span class="hljs-value"><span class="hljs-number">5</span></span>,
+    "<span class="hljs-attribute">total_seats_purchased</span>": <span class="hljs-value"><span class="hljs-number">0</span></span>,
+    "<span class="hljs-attribute">current_period_start</span>": <span class="hljs-value"><span class="hljs-string">"2024-11-01T00:00:00.000Z"</span></span>,
+    "<span class="hljs-attribute">current_period_end</span>": <span class="hljs-value"><span class="hljs-string">"2025-10-31T23:59:59.999Z"</span></span>,
+    "<span class="hljs-attribute">next_renewal_date</span>": <span class="hljs-value"><span class="hljs-string">"2025-11-01T00:00:00.000Z"</span></span>,
+    "<span class="hljs-attribute">license_status</span>": <span class="hljs-value"><span class="hljs-string">"ACTIVE"</span></span>,
+    "<span class="hljs-attribute">created_at</span>": <span class="hljs-value"><span class="hljs-string">"2024-11-01T10:00:00.000Z"</span></span>,
+    "<span class="hljs-attribute">updated_at</span>": <span class="hljs-value"><span class="hljs-string">"2024-11-01T10:00:00.000Z"</span>
   </span>}
 </span>}
 </code></pre>
-<p class="has-line-data" data-line-start="644" data-line-end="645"><strong>Avec téléphone (déjà enregistré)</strong> :</p>
-<pre><code class="has-line-data" data-line-start="646" data-line-end="655" class="language-json">{
-  "<span class="hljs-attribute">success</span>": <span class="hljs-value"><span class="hljs-literal">true</span></span>,
-  "<span class="hljs-attribute">data</span>": <span class="hljs-value">{
-    "<span class="hljs-attribute">message</span>": <span class="hljs-value"><span class="hljs-string">"OTP successfully sent"</span></span>,
-    "<span class="hljs-attribute">verify</span>": <span class="hljs-value"><span class="hljs-literal">true</span></span>,
-    "<span class="hljs-attribute">phone</span>": <span class="hljs-value"><span class="hljs-string">"+237698765432"</span>
-  </span>}
-</span>}
-</code></pre>
-<p class="has-line-data" data-line-start="656" data-line-end="657"><strong>Avec email</strong> :</p>
-<pre><code class="has-line-data" data-line-start="658" data-line-end="666" class="language-json">{
-  "<span class="hljs-attribute">success</span>": <span class="hljs-value"><span class="hljs-literal">true</span></span>,
-  "<span class="hljs-attribute">data</span>": <span class="hljs-value">{
-    "<span class="hljs-attribute">message</span>": <span class="hljs-value"><span class="hljs-string">"OTP successfully sent"</span></span>,
-    "<span class="hljs-attribute">email</span>": <span class="hljs-value"><span class="hljs-string">"<a href="/cdn-cgi/l/email-protection" class="__cf_email__" data-cfemail="16707f7877787573567477627f6e38757b">[email&#160;protected]</a>"</span>
-  </span>}
-</span>}
-</code></pre>
-<h4 class="code-line" data-line-start=667 data-line-end=668 ><a id="Codes_dErreur_667"></a>Codes d’Erreur</h4>
+<h4 class="code-line" data-line-start=709 data-line-end=710 ><a id="Codes_dErreur_709"></a>Codes d’Erreur</h4>
 <table class="table table-striped table-bordered">
 <thead>
 <tr>
@@ -889,348 +1028,7 @@ Content-Type: application/json
 <tr>
 <td><code>400</code></td>
 <td><code>VALIDATION_FAILED</code></td>
-<td>Aucune entrée fournie</td>
-</tr>
-<tr>
-<td><code>400</code></td>
-<td><code>invalid_country</code></td>
-<td>Code pays invalide</td>
-</tr>
-<tr>
-<td><code>400</code></td>
-<td><code>BILLING_PHONE_INVALID</code></td>
-<td>Format téléphone invalide</td>
-</tr>
-<tr>
-<td><code>400</code></td>
-<td><code>BILLING_EMAIL_INVALID</code></td>
-<td>Format email invalide</td>
-</tr>
-<tr>
-<td><code>400</code></td>
-<td><code>invalid_phone_number</code></td>
-<td>Téléphone ne respecte pas le format du pays</td>
-</tr>
-<tr>
-<td><code>404</code></td>
-<td><code>country_not_found</code></td>
-<td>Pays non supporté</td>
-</tr>
-<tr>
-<td><code>500</code></td>
-<td><code>OTP_generator_failed</code></td>
-<td>Erreur génération OTP</td>
-</tr>
-<tr>
-<td><code>500</code></td>
-<td><code>EMAIL_SENDING_FAILED</code></td>
-<td>Erreur envoi email</td>
-</tr>
-</tbody>
-</table>
-<hr>
-<h3 class="code-line" data-line-start=682 data-line-end=683 ><a id="16_Vrifier_un_OTP_682"></a>16. Vérifier un OTP</h3>
-<p class="has-line-data" data-line-start="684" data-line-end="685">Vérifie la validité d’un code OTP.</p>
-<h4 class="code-line" data-line-start=686 data-line-end=687 ><a id="Requte_686"></a>Requête</h4>
-<pre><code class="has-line-data" data-line-start="689" data-line-end="697" class="language-http">PATCH /tenant/verify-otp
-Content-Type: application/json
-
-{
-  "otp": "847392",
-  "phone": "+237698765432"
-}
-</code></pre>
-<p class="has-line-data" data-line-start="698" data-line-end="699"><strong>OU</strong></p>
-<pre><code class="has-line-data" data-line-start="701" data-line-end="709" class="language-http">PATCH /tenant/verify-otp
-Content-Type: application/json
-
-{
-  "otp": "847392",
-  "email": "<a href="/cdn-cgi/l/email-protection" class="__cf_email__" data-cfemail="b3d5daddd2ddd0d6f3d1d2c7dacb9dd0de">[email&#160;protected]</a>"
-}
-</code></pre>
-<h4 class="code-line" data-line-start=710 data-line-end=711 ><a id="Paramtres_Body_710"></a>Paramètres Body</h4>
-<table class="table table-striped table-bordered">
-<thead>
-<tr>
-<th>Champ</th>
-<th>Type</th>
-<th>Requis</th>
-<th>Description</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td><code>otp</code></td>
-<td><code>string</code></td>
-<td>Oui</td>
-<td>Code OTP à 6 chiffres</td>
-</tr>
-<tr>
-<td><code>phone</code></td>
-<td><code>string</code></td>
-<td>Conditionnel</td>
-<td>Numéro de téléphone (format international)</td>
-</tr>
-<tr>
-<td><code>email</code></td>
-<td><code>string</code></td>
-<td>Conditionnel</td>
-<td>Adresse email</td>
-</tr>
-</tbody>
-</table>
-<p class="has-line-data" data-line-start="718" data-line-end="719"><strong>Note</strong> : Soit <code>phone</code>, soit <code>email</code> doit être fourni.</p>
-<h4 class="code-line" data-line-start=720 data-line-end=721 ><a id="Rponse_Succs_200_OK_720"></a>Réponse Succès (200 OK)</h4>
-<p class="has-line-data" data-line-start="722" data-line-end="723"><strong>Avec téléphone</strong> :</p>
-<pre><code class="has-line-data" data-line-start="724" data-line-end="732" class="language-json">{
-  "<span class="hljs-attribute">success</span>": <span class="hljs-value"><span class="hljs-literal">true</span></span>,
-  "<span class="hljs-attribute">data</span>": <span class="hljs-value">{
-    "<span class="hljs-attribute">message</span>": <span class="hljs-value"><span class="hljs-string">"OTP verified successfully"</span></span>,
-    "<span class="hljs-attribute">phone</span>": <span class="hljs-value"><span class="hljs-string">"+237698765432"</span>
-  </span>}
-</span>}
-</code></pre>
-<p class="has-line-data" data-line-start="733" data-line-end="734"><strong>Avec email</strong> :</p>
-<pre><code class="has-line-data" data-line-start="735" data-line-end="743" class="language-json">{
-  "<span class="hljs-attribute">success</span>": <span class="hljs-value"><span class="hljs-literal">true</span></span>,
-  "<span class="hljs-attribute">data</span>": <span class="hljs-value">{
-    "<span class="hljs-attribute">message</span>": <span class="hljs-value"><span class="hljs-string">"OTP verified successfully"</span></span>,
-    "<span class="hljs-attribute">email</span>": <span class="hljs-value"><span class="hljs-string">"<a href="/cdn-cgi/l/email-protection" class="__cf_email__" data-cfemail="6006090e010e03052002011409184e030d">[email&#160;protected]</a>"</span>
-  </span>}
-</span>}
-</code></pre>
-<h4 class="code-line" data-line-start=744 data-line-end=745 ><a id="Codes_dErreur_744"></a>Codes d’Erreur</h4>
-<table class="table table-striped table-bordered">
-<thead>
-<tr>
-<th>Code</th>
-<th>Message</th>
-<th>Description</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td><code>400</code></td>
-<td><code>invalid_otp</code></td>
-<td>OTP invalide ou format incorrect</td>
-</tr>
-<tr>
-<td><code>400</code></td>
-<td><code>missing_reference</code></td>
-<td>Aucun téléphone/email fourni</td>
-</tr>
-<tr>
-<td><code>400</code></td>
-<td><code>otp_verification_failed</code></td>
-<td>OTP invalide, expiré ou tentatives max atteintes</td>
-</tr>
-<tr>
-<td><code>403</code></td>
-<td><code>verification_failed</code></td>
-<td>Téléphone/email ne correspond pas à l’OTP</td>
-</tr>
-<tr>
-<td><code>500</code></td>
-<td><code>contact_creation_failed</code></td>
-<td>Erreur lors de l’enregistrement du contact</td>
-</tr>
-</tbody>
-</table>
-<hr>
-<h3 class="code-line" data-line-start=756 data-line-end=757 ><a id="17_Statistiques_OTP_Debug_756"></a>17. Statistiques OTP (Debug)</h3>
-<p class="has-line-data" data-line-start="758" data-line-end="759">Récupère les statistiques d’utilisation des OTP.</p>
-<h4 class="code-line" data-line-start=760 data-line-end=761 ><a id="Requte_760"></a>Requête</h4>
-<pre><code class="has-line-data" data-line-start="763" data-line-end="765" class="language-http">GET /tenant/otp/stats
-</code></pre>
-<h4 class="code-line" data-line-start=766 data-line-end=767 ><a id="Rponse_Succs_200_OK_766"></a>Réponse Succès (200 OK)</h4>
-<pre><code class="has-line-data" data-line-start="769" data-line-end="779" class="language-json">{
-  "<span class="hljs-attribute">success</span>": <span class="hljs-value"><span class="hljs-literal">true</span></span>,
-  "<span class="hljs-attribute">data</span>": <span class="hljs-value">{
-    "<span class="hljs-attribute">total_active</span>": <span class="hljs-value"><span class="hljs-number">12</span></span>,
-    "<span class="hljs-attribute">total_expired</span>": <span class="hljs-value"><span class="hljs-number">45</span></span>,
-    "<span class="hljs-attribute">total_verified</span>": <span class="hljs-value"><span class="hljs-number">102</span></span>,
-    "<span class="hljs-attribute">average_verification_time_seconds</span>": <span class="hljs-value"><span class="hljs-number">87.5</span>
-  </span>}
-</span>}
-</code></pre>
-<hr>
-<h3 class="code-line" data-line-start=782 data-line-end=783 ><a id="18_Liste_OTP_actifs_Debug_782"></a>18. Liste OTP actifs (Debug)</h3>
-<p class="has-line-data" data-line-start="784" data-line-end="785">Liste tous les OTP actuellement actifs.</p>
-<h4 class="code-line" data-line-start=786 data-line-end=787 ><a id="Requte_786"></a>Requête</h4>
-<pre><code class="has-line-data" data-line-start="789" data-line-end="791" class="language-http">GET /tenant/otp/list
-</code></pre>
-<h4 class="code-line" data-line-start=792 data-line-end=793 ><a id="Rponse_Succs_200_OK_792"></a>Réponse Succès (200 OK)</h4>
-<pre><code class="has-line-data" data-line-start="795" data-line-end="811" class="language-json">{
-  "<span class="hljs-attribute">success</span>": <span class="hljs-value"><span class="hljs-literal">true</span></span>,
-  "<span class="hljs-attribute">data</span>": <span class="hljs-value">{
-    "<span class="hljs-attribute">count</span>": <span class="hljs-value"><span class="hljs-number">3</span></span>,
-    "<span class="hljs-attribute">otps</span>": <span class="hljs-value">[
-      {
-        "<span class="hljs-attribute">otp</span>": <span class="hljs-value"><span class="hljs-string">"847392"</span></span>,
-        "<span class="hljs-attribute">phone</span>": <span class="hljs-value"><span class="hljs-string">"+237698765432"</span></span>,
-        "<span class="hljs-attribute">expires_at</span>": <span class="hljs-value"><span class="hljs-string">"2024-11-08T14:45:00.000Z"</span></span>,
-        "<span class="hljs-attribute">attempts</span>": <span class="hljs-value"><span class="hljs-number">0</span></span>,
-        "<span class="hljs-attribute">created_at</span>": <span class="hljs-value"><span class="hljs-string">"2024-11-08T14:30:00.000Z"</span>
-      </span>}
-    ]
-  </span>}
-</span>}
-</code></pre>
-<hr>
-<h3 class="code-line" data-line-start=814 data-line-end=815 ><a id="19_Nettoyer_OTP_expirs_814"></a>19. Nettoyer OTP expirés</h3>
-<p class="has-line-data" data-line-start="816" data-line-end="817">Supprime manuellement tous les OTP expirés.</p>
-<h4 class="code-line" data-line-start=818 data-line-end=819 ><a id="Requte_818"></a>Requête</h4>
-<pre><code class="has-line-data" data-line-start="821" data-line-end="823" class="language-http">DELETE /tenant/otp/cleanup
-</code></pre>
-<h4 class="code-line" data-line-start=824 data-line-end=825 ><a id="Rponse_Succs_200_OK_824"></a>Réponse Succès (200 OK)</h4>
-<pre><code class="has-line-data" data-line-start="827" data-line-end="838" class="language-json">{
-  "<span class="hljs-attribute">success</span>": <span class="hljs-value"><span class="hljs-literal">true</span></span>,
-  "<span class="hljs-attribute">data</span>": <span class="hljs-value">{
-    "<span class="hljs-attribute">message</span>": <span class="hljs-value"><span class="hljs-string">"Cleanup completed"</span></span>,
-    "<span class="hljs-attribute">stats</span>": <span class="hljs-value">{
-      "<span class="hljs-attribute">total_active</span>": <span class="hljs-value"><span class="hljs-number">3</span></span>,
-      "<span class="hljs-attribute">total_expired</span>": <span class="hljs-value"><span class="hljs-number">0</span>
-    </span>}
-  </span>}
-</span>}
-</code></pre>
-<hr>
-<h3 class="code-line" data-line-start=841 data-line-end=842 ><a id="20_Modifier_un_tenant_841"></a>20. Modifier un tenant</h3>
-<p class="has-line-data" data-line-start="843" data-line-end="844">Met à jour les informations d’un tenant existant.</p>
-<h4 class="code-line" data-line-start=845 data-line-end=846 ><a id="Requte_845"></a>Requête</h4>
-<pre><code class="has-line-data" data-line-start="848" data-line-end="857" class="language-http">PUT /tenant/12345
-Content-Type: application/json
-
-{
-  "name": "BATIX SARL - Nouvelle Raison Sociale",
-  "billing_address": "456 Avenue de l'Indépendance, Douala",
-  "employee_count": 200
-}
-</code></pre>
-<h4 class="code-line" data-line-start=858 data-line-end=859 ><a id="Paramtres_Path_858"></a>Paramètres Path</h4>
-<table class="table table-striped table-bordered">
-<thead>
-<tr>
-<th>Paramètre</th>
-<th>Type</th>
-<th>Requis</th>
-<th>Description</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td><code>guid</code></td>
-<td><code>integer</code></td>
-<td>Oui</td>
-<td>GUID du tenant</td>
-</tr>
-</tbody>
-</table>
-<h4 class="code-line" data-line-start=864 data-line-end=865 ><a id="Paramtres_Body_tous_optionnels_864"></a>Paramètres Body (tous optionnels)</h4>
-<table class="table table-striped table-bordered">
-<thead>
-<tr>
-<th>Champ</th>
-<th>Type</th>
-<th>Description</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td><code>name</code></td>
-<td><code>string</code></td>
-<td>Nom complet</td>
-</tr>
-<tr>
-<td><code>short_name</code></td>
-<td><code>string</code></td>
-<td>Nom court</td>
-</tr>
-<tr>
-<td><code>country_code</code></td>
-<td><code>string</code></td>
-<td>Code pays ISO 3166-1</td>
-</tr>
-<tr>
-<td><code>primary_currency_code</code></td>
-<td><code>string</code></td>
-<td>Code devise ISO 4217</td>
-</tr>
-<tr>
-<td><code>preferred_language_code</code></td>
-<td><code>string</code></td>
-<td>Code langue ISO 639-1</td>
-</tr>
-<tr>
-<td><code>timezone</code></td>
-<td><code>string</code></td>
-<td>Timezone IANA</td>
-</tr>
-<tr>
-<td><code>tax_number</code></td>
-<td><code>string</code></td>
-<td>Numéro fiscal</td>
-</tr>
-<tr>
-<td><code>tax_exempt</code></td>
-<td><code>boolean</code></td>
-<td>Exemption fiscale</td>
-</tr>
-<tr>
-<td><code>billing_email</code></td>
-<td><code>string</code></td>
-<td>Email de facturation</td>
-</tr>
-<tr>
-<td><code>billing_address</code></td>
-<td><code>string</code></td>
-<td>Adresse de facturation</td>
-</tr>
-<tr>
-<td><code>billing_phone</code></td>
-<td><code>string</code></td>
-<td>Téléphone de facturation</td>
-</tr>
-<tr>
-<td><code>registration_number</code></td>
-<td><code>string</code></td>
-<td>Numéro d’enregistrement</td>
-</tr>
-<tr>
-<td><code>employee_count</code></td>
-<td><code>integer</code></td>
-<td>Nombre d’employés</td>
-</tr>
-</tbody>
-</table>
-<h4 class="code-line" data-line-start=882 data-line-end=883 ><a id="Rponse_Succs_200_OK_882"></a>Réponse Succès (200 OK)</h4>
-<pre><code class="has-line-data" data-line-start="885" data-line-end="897" class="language-json">{
-  "<span class="hljs-attribute">success</span>": <span class="hljs-value"><span class="hljs-literal">true</span></span>,
-  "<span class="hljs-attribute">data</span>": <span class="hljs-value">{
-    "<span class="hljs-attribute">id</span>": <span class="hljs-value"><span class="hljs-number">1</span></span>,
-    "<span class="hljs-attribute">guid</span>": <span class="hljs-value"><span class="hljs-number">12345</span></span>,
-    "<span class="hljs-attribute">name</span>": <span class="hljs-value"><span class="hljs-string">"BATIX SARL - Nouvelle Raison Sociale"</span></span>,
-    "<span class="hljs-attribute">billing_address</span>": <span class="hljs-value"><span class="hljs-string">"456 Avenue de l'Indépendance, Douala"</span></span>,
-    "<span class="hljs-attribute">employee_count</span>": <span class="hljs-value"><span class="hljs-number">200</span></span>,
-    "<span class="hljs-attribute">updated_at</span>": <span class="hljs-value"><span class="hljs-string">"2024-11-08T15:00:00.000Z"</span>
-  </span>}
-</span>}
-</code></pre>
-<h4 class="code-line" data-line-start=898 data-line-end=899 ><a id="Codes_dErreur_898"></a>Codes d’Erreur</h4>
-<table class="table table-striped table-bordered">
-<thead>
-<tr>
-<th>Code</th>
-<th>Message</th>
-<th>Description</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td><code>400</code></td>
-<td><code>INVALID_GUID</code></td>
-<td>GUID invalide</td>
+<td>Données invalides (voir <code>details</code>)</td>
 </tr>
 <tr>
 <td><code>404</code></td>
@@ -1238,24 +1036,38 @@ Content-Type: application/json
 <td>Tenant introuvable</td>
 </tr>
 <tr>
-<td><code>409</code></td>
-<td><code>TENANT_ALREADY_EXISTS</code></td>
-<td>Conflit avec un autre tenant</td>
-</tr>
-<tr>
 <td><code>500</code></td>
-<td><code>UPDATE_FAILED</code></td>
-<td>Erreur lors de la mise à jour</td>
+<td><code>CREATION_FAILED</code></td>
+<td>Erreur lors de la création</td>
 </tr>
 </tbody>
 </table>
-<hr>
-<h3 class="code-line" data-line-start=909 data-line-end=910 ><a id="21_Configurer_la_base_de_donnes_909"></a>21. Configurer la base de données</h3>
-<p class="has-line-data" data-line-start="911" data-line-end="912">Crée la base de données dédiée pour le tenant.</p>
-<h4 class="code-line" data-line-start=913 data-line-end=914 ><a id="Requte_913"></a>Requête</h4>
-<pre><code class="has-line-data" data-line-start="916" data-line-end="918" class="language-http">PATCH /tenant/12345/database
+<h4 class="code-line" data-line-start=717 data-line-end=718 ><a id="Exemple_dErreur_717"></a>Exemple d’Erreur</h4>
+<pre><code class="has-line-data" data-line-start="720" data-line-end="738" class="language-json">{
+  "<span class="hljs-attribute">success</span>": <span class="hljs-value"><span class="hljs-literal">false</span></span>,
+  "<span class="hljs-attribute">error</span>": <span class="hljs-value">{
+    "<span class="hljs-attribute">code</span>": <span class="hljs-value"><span class="hljs-string">"VALIDATION_FAILED"</span></span>,
+    "<span class="hljs-attribute">message</span>": <span class="hljs-value"><span class="hljs-string">"Validation failed"</span></span>,
+    "<span class="hljs-attribute">details</span>": <span class="hljs-value">[
+      {
+        "<span class="hljs-attribute">field</span>": <span class="hljs-value"><span class="hljs-string">"billing_cycle_months"</span></span>,
+        "<span class="hljs-attribute">message</span>": <span class="hljs-value"><span class="hljs-string">"Must be one of: 1, 3, 6, 12"</span>
+      </span>},
+      {
+        "<span class="hljs-attribute">field</span>": <span class="hljs-value"><span class="hljs-string">"current_period_end"</span></span>,
+        "<span class="hljs-attribute">message</span>": <span class="hljs-value"><span class="hljs-string">"Must be after current_period_start"</span>
+      </span>}
+    ]
+  </span>}
+</span>}
 </code></pre>
-<h4 class="code-line" data-line-start=919 data-line-end=920 ><a id="Paramtres_Path_919"></a>Paramètres Path</h4>
+<h3 class="code-line" data-line-start=739 data-line-end=740 ><a id="5_Crer_une_transaction_de_paiement_739"></a>5. Créer une transaction de paiement</h3>
+<h3 class="code-line" data-line-start=741 data-line-end=742 ><a id="6_Configurer_la_base_de_donnes_741"></a>6. Configurer la base de données</h3>
+<p class="has-line-data" data-line-start="742" data-line-end="743">Crée la base de données dédiée pour le tenant.</p>
+<h4 class="code-line" data-line-start=744 data-line-end=745 ><a id="Requte_744"></a>Requête</h4>
+<pre><code class="has-line-data" data-line-start="747" data-line-end="749" class="language-http">PATCH /tenant/12345/database
+</code></pre>
+<h4 class="code-line" data-line-start=750 data-line-end=751 ><a id="Paramtres_Path_750"></a>Paramètres Path</h4>
 <table class="table table-striped table-bordered">
 <thead>
 <tr>
@@ -1274,16 +1086,16 @@ Content-Type: application/json
 </tr>
 </tbody>
 </table>
-<h4 class="code-line" data-line-start=925 data-line-end=926 ><a id="Rponse_Succs_200_OK_925"></a>Réponse Succès (200 OK)</h4>
-<pre><code class="has-line-data" data-line-start="928" data-line-end="936" class="language-json">{
+<h4 class="code-line" data-line-start=756 data-line-end=757 ><a id="Rponse_Succs_200_OK_756"></a>Réponse Succès (200 OK)</h4>
+<pre><code class="has-line-data" data-line-start="759" data-line-end="767" class="language-json">{
   "<span class="hljs-attribute">success</span>": <span class="hljs-value"><span class="hljs-literal">true</span></span>,
   "<span class="hljs-attribute">data</span>": <span class="hljs-value">{
     "<span class="hljs-attribute">message</span>": <span class="hljs-value"><span class="hljs-string">"Database configuration defined successfully"</span></span>,
-    "<span class="hljs-attribute">tenant_guid</span>": <span class="hljs-value"><span class="hljs-number">12345</span>
+    "<span class="hljs-attribute">tenant_guid</span>": <span class="hljs-value"><span class="hljs-number">100001</span>
   </span>}
 </span>}
 </code></pre>
-<h4 class="code-line" data-line-start=937 data-line-end=938 ><a id="Codes_dErreur_937"></a>Codes d’Erreur</h4>
+<h4 class="code-line" data-line-start=768 data-line-end=769 ><a id="Codes_dErreur_768"></a>Codes d’Erreur</h4>
 <table class="table table-striped table-bordered">
 <thead>
 <tr>
@@ -1325,19 +1137,19 @@ Content-Type: application/json
 </tr>
 </tbody>
 </table>
-<p class="has-line-data" data-line-start="948" data-line-end="949"><strong>Note</strong> : Cette étape nécessite qu’une licence globale active existe pour le tenant.</p>
+<p class="has-line-data" data-line-start="779" data-line-end="780"><strong>Note</strong> : Cette étape nécessite qu’une licence globale active existe pour le tenant.</p>
 <hr>
-<h3 class="code-line" data-line-start=952 data-line-end=953 ><a id="22_Dfinir_le_subdomain_952"></a>22. Définir le subdomain</h3>
-<p class="has-line-data" data-line-start="954" data-line-end="955">Configure le sous-domaine et initialise les tables tenant.</p>
-<h4 class="code-line" data-line-start=956 data-line-end=957 ><a id="Requte_956"></a>Requête</h4>
-<pre><code class="has-line-data" data-line-start="959" data-line-end="966" class="language-http">PATCH /tenant/12345/subdomain
+<h3 class="code-line" data-line-start=783 data-line-end=784 ><a id="7_Dfinir_le_subdomain_783"></a>7. Définir le subdomain</h3>
+<p class="has-line-data" data-line-start="785" data-line-end="786">Configure le sous-domaine et initialise les tables tenant.</p>
+<h4 class="code-line" data-line-start=787 data-line-end=788 ><a id="Requte_787"></a>Requête</h4>
+<pre><code class="has-line-data" data-line-start="790" data-line-end="797" class="language-http">PATCH /tenant/12345/subdomain
 Content-Type: application/json
 
 {
   "subdomain": "batix"
 }
 </code></pre>
-<h4 class="code-line" data-line-start=967 data-line-end=968 ><a id="Paramtres_Path_967"></a>Paramètres Path</h4>
+<h4 class="code-line" data-line-start=798 data-line-end=799 ><a id="Paramtres_Path_798"></a>Paramètres Path</h4>
 <table class="table table-striped table-bordered">
 <thead>
 <tr>
@@ -1356,7 +1168,7 @@ Content-Type: application/json
 </tr>
 </tbody>
 </table>
-<h4 class="code-line" data-line-start=973 data-line-end=974 ><a id="Paramtres_Body_973"></a>Paramètres Body</h4>
+<h4 class="code-line" data-line-start=804 data-line-end=805 ><a id="Paramtres_Body_804"></a>Paramètres Body</h4>
 <table class="table table-striped table-bordered">
 <thead>
 <tr>
@@ -1375,16 +1187,16 @@ Content-Type: application/json
 </tr>
 </tbody>
 </table>
-<h4 class="code-line" data-line-start=979 data-line-end=980 ><a id="Rponse_Succs_200_OK_979"></a>Réponse Succès (200 OK)</h4>
-<pre><code class="has-line-data" data-line-start="982" data-line-end="990" class="language-json">{
+<h4 class="code-line" data-line-start=810 data-line-end=811 ><a id="Rponse_Succs_200_OK_810"></a>Réponse Succès (200 OK)</h4>
+<pre><code class="has-line-data" data-line-start="813" data-line-end="821" class="language-json">{
   "<span class="hljs-attribute">success</span>": <span class="hljs-value"><span class="hljs-literal">true</span></span>,
   "<span class="hljs-attribute">data</span>": <span class="hljs-value">{
     "<span class="hljs-attribute">message</span>": <span class="hljs-value"><span class="hljs-string">"Tenant subdomain has been set successfully"</span></span>,
-    "<span class="hljs-attribute">tenant_guid</span>": <span class="hljs-value"><span class="hljs-number">12345</span>
+    "<span class="hljs-attribute">tenant_guid</span>": <span class="hljs-value"><span class="hljs-number">100001</span>
   </span>}
 </span>}
 </code></pre>
-<h4 class="code-line" data-line-start=991 data-line-end=992 ><a id="Codes_dErreur_991"></a>Codes d’Erreur</h4>
+<h4 class="code-line" data-line-start=822 data-line-end=823 ><a id="Codes_dErreur_822"></a>Codes d’Erreur</h4>
 <table class="table table-striped table-bordered">
 <thead>
 <tr>
@@ -1426,14 +1238,14 @@ Content-Type: application/json
 </tr>
 </tbody>
 </table>
-<p class="has-line-data" data-line-start="1002" data-line-end="1003"><strong>Note</strong> : Cette étape initialise automatiquement toutes les tables de la base tenant (<code>users</code>, <code>sites</code>, <code>work_sessions</code>, etc.).</p>
+<p class="has-line-data" data-line-start="833" data-line-end="834"><strong>Note</strong> : Cette étape initialise automatiquement toutes les tables de la base tenant (<code>roles</code>,<code>users</code>, <code>sites</code>, <code>work_sessions</code>, etc.).</p>
 <hr>
-<h3 class="code-line" data-line-start=1006 data-line-end=1007 ><a id="23_Supprimer_un_tenant_1006"></a>23. Supprimer un tenant</h3>
-<p class="has-line-data" data-line-start="1008" data-line-end="1009">Supprime définitivement un tenant et toutes ses données.</p>
-<h4 class="code-line" data-line-start=1010 data-line-end=1011 ><a id="Requte_1010"></a>Requête</h4>
-<pre><code class="has-line-data" data-line-start="1013" data-line-end="1015" class="language-http">DELETE /tenant/12345
+<h3 class="code-line" data-line-start=837 data-line-end=838 ><a id="8_Vrifier_ltat_du_systme_tenant_837"></a>8. Vérifier l’état du système tenant</h3>
+<p class="has-line-data" data-line-start="839" data-line-end="840">Vérifie si un tenant est configuré et opérationnel.</p>
+<h4 class="code-line" data-line-start=841 data-line-end=842 ><a id="Requte_841"></a>Requête</h4>
+<pre><code class="has-line-data" data-line-start="844" data-line-end="846" class="language-http">GET /tenant/100001/check
 </code></pre>
-<h4 class="code-line" data-line-start=1016 data-line-end=1017 ><a id="Paramtres_Path_1016"></a>Paramètres Path</h4>
+<h4 class="code-line" data-line-start=847 data-line-end=848 ><a id="Paramtres_Path_847"></a>Paramètres Path</h4>
 <table class="table table-striped table-bordered">
 <thead>
 <tr>
@@ -1452,18 +1264,21 @@ Content-Type: application/json
 </tr>
 </tbody>
 </table>
-<h4 class="code-line" data-line-start=1022 data-line-end=1023 ><a id="Rponse_Succs_200_OK_1022"></a>Réponse Succès (200 OK)</h4>
-<pre><code class="has-line-data" data-line-start="1025" data-line-end="1035" class="language-json">{
+<h4 class="code-line" data-line-start=853 data-line-end=854 ><a id="Rponse_Succs_200_OK_853"></a>Réponse Succès (200 OK)</h4>
+<pre><code class="has-line-data" data-line-start="856" data-line-end="869" class="language-json">{
   "<span class="hljs-attribute">success</span>": <span class="hljs-value"><span class="hljs-literal">true</span></span>,
   "<span class="hljs-attribute">data</span>": <span class="hljs-value">{
-    "<span class="hljs-attribute">message</span>": <span class="hljs-value"><span class="hljs-string">"Tenant deleted successfully"</span></span>,
-    "<span class="hljs-attribute">guid</span>": <span class="hljs-value"><span class="hljs-number">12345</span></span>,
-    "<span class="hljs-attribute">key</span>": <span class="hljs-value"><span class="hljs-string">"batix_sarl_cm_20241108"</span></span>,
-    "<span class="hljs-attribute">name</span>": <span class="hljs-value"><span class="hljs-string">"BATIX SARL"</span>
+    "<span class="hljs-attribute">message</span>": <span class="hljs-value"><span class="hljs-string">"System tenant BATIX SARL is active"</span></span>,
+    "<span class="hljs-attribute">tenant</span>": <span class="hljs-value">{
+      "<span class="hljs-attribute">guid</span>": <span class="hljs-value"><span class="hljs-number">100001</span></span>,
+      "<span class="hljs-attribute">name</span>": <span class="hljs-value"><span class="hljs-string">"BATIX SARL"</span></span>,
+      "<span class="hljs-attribute">status</span>": <span class="hljs-value"><span class="hljs-string">"ACTIVE"</span>
+    </span>}</span>,
+    "<span class="hljs-attribute">subdomain</span>": <span class="hljs-value"><span class="hljs-string">"batix.toke.cm"</span>
   </span>}
 </span>}
 </code></pre>
-<h4 class="code-line" data-line-start=1036 data-line-end=1037 ><a id="Codes_dErreur_1036"></a>Codes d’Erreur</h4>
+<h4 class="code-line" data-line-start=870 data-line-end=871 ><a id="Codes_dErreur_870"></a>Codes d’Erreur</h4>
 <table class="table table-striped table-bordered">
 <thead>
 <tr>
@@ -1484,123 +1299,53 @@ Content-Type: application/json
 <td>Tenant introuvable</td>
 </tr>
 <tr>
-<td><code>500</code></td>
-<td><code>DELETE_FAILED</code></td>
-<td>Erreur lors de la suppression</td>
+<td><code>404</code></td>
+<td><code>DATABASE_CONFIG_NOT_FOUND</code></td>
+<td>Configuration DB manquante</td>
 </tr>
 </tbody>
 </table>
-<p class="has-line-data" data-line-start="1044" data-line-end="1045"><strong>⚠️ Attention</strong> : Cette action est irréversible et supprime :</p>
-<ul>
-<li class="has-line-data" data-line-start="1045" data-line-end="1046">Le tenant</li>
-<li class="has-line-data" data-line-start="1046" data-line-end="1047">Toutes les licences associées</li>
-<li class="has-line-data" data-line-start="1047" data-line-end="1048">Tous les cycles de facturation</li>
-<li class="has-line-data" data-line-start="1048" data-line-end="1049">Toutes les transactions</li>
-<li class="has-line-data" data-line-start="1049" data-line-end="1051">La base de données tenant (si configurée)</li>
-</ul>
 <hr>
-<h2 class="code-line" data-line-start=1053 data-line-end=1054 ><a id="_Workflow_Complet_dInscription_1053"></a>🔄 Workflow Complet d’Inscription</h2>
-<p class="has-line-data" data-line-start="1055" data-line-end="1056">Voici le processus recommandé pour créer un nouveau tenant :</p>
-<h3 class="code-line" data-line-start=1057 data-line-end=1058 ><a id="tape_1__Gnrer_OTP_1057"></a>Étape 1 : Générer OTP</h3>
-<pre><code class="has-line-data" data-line-start="1060" data-line-end="1066" class="language-http">POST /tenant/otp
-{
-  "phone": "+237698765432",
-  "country": "CM"
-}
+<h3 class="code-line" data-line-start=880 data-line-end=881 ><a id="9_Recherche_par_email_880"></a>9. Recherche par email</h3>
+<p class="has-line-data" data-line-start="882" data-line-end="883">Recherche un tenant par email.</p>
+<h4 class="code-line" data-line-start=884 data-line-end=885 ><a id="Requte_884"></a>Requête</h4>
+<pre><code class="has-line-data" data-line-start="887" data-line-end="889" class="language-http">GET /tenant/:email
 </code></pre>
-<h3 class="code-line" data-line-start=1067 data-line-end=1068 ><a id="tape_2__Vrifier_OTP_1067"></a>Étape 2 : Vérifier OTP</h3>
-<pre><code class="has-line-data" data-line-start="1070" data-line-end="1076" class="language-http">PATCH /tenant/verify-otp
-{
-  "otp": "847392",
-  "phone": "+237698765432"
-}
-</code></pre>
-<h3 class="code-line" data-line-start=1077 data-line-end=1078 ><a id="tape_3__Crer_le_tenant_1077"></a>Étape 3 : Créer le tenant</h3>
-<pre><code class="has-line-data" data-line-start="1080" data-line-end="1090" class="language-http">POST /tenant
-{
-  "name": "BATIX SARL",
-  "country_code": "CM",
-  "primary_currency_code": "XAF",
-  "billing_email": "<a href="/cdn-cgi/l/email-protection" class="__cf_email__" data-cfemail="6d0b04030c030e082d0f0c190415430e00">[email&#160;protected]</a>",
-  "billing_address": "123 Rue de la Réunification",
-  "employee_count": 150
-}
-</code></pre>
-<h3 class="code-line" data-line-start=1091 data-line-end=1092 ><a id="tape_4__Crer_la_licence_globale_1091"></a>Étape 4 : Créer la licence globale</h3>
-<pre><code class="has-line-data" data-line-start="1094" data-line-end="1103" class="language-http">POST /global-license
-{
-  "tenant": 12345,
-  "license_type": "CLOUD_FLEX",
-  "billing_cycle_months": 12,
-  "current_period_start": "2024-11-01T00:00:00Z",
-  "current_period_end": "2025-10-31T23:59:59Z"
-}
-</code></pre>
-<h3 class="code-line" data-line-start=1104 data-line-end=1105 ><a id="tape_5__Configurer_la_base_de_donnes_1104"></a>Étape 5 : Configurer la base de données</h3>
-<pre><code class="has-line-data" data-line-start="1107" data-line-end="1109" class="language-http">PATCH /tenant/12345/database
-</code></pre>
-<h3 class="code-line" data-line-start=1110 data-line-end=1111 ><a id="tape_6__Dfinir_le_subdomain_1110"></a>Étape 6 : Définir le subdomain</h3>
-<pre><code class="has-line-data" data-line-start="1113" data-line-end="1118" class="language-http">PATCH /tenant/12345/subdomain
-{
-  "subdomain": "batix"
-}
-</code></pre>
-<h3 class="code-line" data-line-start=1119 data-line-end=1120 ><a id="_Tenant_oprationnel__1119"></a>✅ Tenant opérationnel !</h3>
-<p class="has-line-data" data-line-start="1121" data-line-end="1122">Le tenant peut maintenant :</p>
-<ul>
-<li class="has-line-data" data-line-start="1122" data-line-end="1123">Créer des utilisateurs</li>
-<li class="has-line-data" data-line-start="1123" data-line-end="1124">Définir des sites de pointage</li>
-<li class="has-line-data" data-line-start="1124" data-line-end="1125">Enregistrer des pointages</li>
-<li class="has-line-data" data-line-start="1125" data-line-end="1127">Générer des factures</li>
-</ul>
-<hr>
-<h2 class="code-line" data-line-start=1129 data-line-end=1130 ><a id="_Notes_Importantes_1129"></a>📝 Notes Importantes</h2>
-<h3 class="code-line" data-line-start=1131 data-line-end=1132 ><a id="Validation_des_Donnes_1131"></a>Validation des Données</h3>
-<ul>
-<li class="has-line-data" data-line-start="1133" data-line-end="1134"><strong>Téléphone</strong> : Format international requis (ex: <code>+237698765432</code>)</li>
-<li class="has-line-data" data-line-start="1134" data-line-end="1135"><strong>Email</strong> : Validation RFC 5322</li>
-<li class="has-line-data" data-line-start="1135" data-line-end="1136"><strong>Country Code</strong> : ISO 3166-1 alpha-2 (2 lettres majuscules)</li>
-<li class="has-line-data" data-line-start="1136" data-line-end="1137"><strong>Currency Code</strong> : ISO 4217 (3 lettres majuscules)</li>
-<li class="has-line-data" data-line-start="1137" data-line-end="1138"><strong>Language Code</strong> : ISO 639-1 (2 lettres minuscules)</li>
-<li class="has-line-data" data-line-start="1138" data-line-end="1140"><strong>Subdomain</strong> : Lettres minuscules, chiffres, tirets uniquement (pas d’espaces)</li>
-</ul>
-<h3 class="code-line" data-line-start=1140 data-line-end=1141 ><a id="Cl_Unique_Tenant_1140"></a>Clé Unique Tenant</h3>
-<p class="has-line-data" data-line-start="1142" data-line-end="1143">La <code>key</code> est générée automatiquement :</p>
-<pre><code class="has-line-data" data-line-start="1144" data-line-end="1147">{short_name}_{country_code}_{timestamp}
-Exemple: batix_sarl_cm_20241108143045
-</code></pre>
-<h3 class="code-line" data-line-start=1148 data-line-end=1149 ><a id="Statuts_Tenant_1148"></a>Statuts Tenant</h3>
+<h4 class="code-line" data-line-start=890 data-line-end=891 ><a id="Paramtres_Path_890"></a>Paramètres Path</h4>
 <table class="table table-striped table-bordered">
 <thead>
 <tr>
-<th>Statut</th>
+<th>Paramètre</th>
+<th>Type</th>
+<th>Requis</th>
 <th>Description</th>
 </tr>
 </thead>
 <tbody>
 <tr>
-<td><code>ACTIVE</code></td>
-<td>Tenant actif et opérationnel</td>
-</tr>
-<tr>
-<td><code>SUSPENDED</code></td>
-<td>Tenant suspendu (impayés, etc.)</td>
-</tr>
-<tr>
-<td><code>TERMINATED</code></td>
-<td>Tenant résilié définitivement</td>
+<td><code>email</code></td>
+<td><code>string</code></td>
+<td></td>
+<td></td>
 </tr>
 </tbody>
 </table>
-<h3 class="code-line" data-line-start=1156 data-line-end=1157 ><a id="Gestion_OTP_1156"></a>Gestion OTP</h3>
-<ul>
-<li class="has-line-data" data-line-start="1158" data-line-end="1159"><strong>Durée de validité</strong> : 15 minutes</li>
-<li class="has-line-data" data-line-start="1159" data-line-end="1160"><strong>Tentatives max</strong> : 3</li>
-<li class="has-line-data" data-line-start="1160" data-line-end="1161"><strong>Nettoyage automatique</strong> : Toutes les heures</li>
-<li class="has-line-data" data-line-start="1161" data-line-end="1163"><strong>Réenvoi</strong> : Possible après expiration</li>
-</ul>
+<h4 class="code-line" data-line-start=896 data-line-end=897 ><a id="Rponse_Succs_200_OK_896"></a>Réponse Succès (200 OK)</h4>
+<pre><code class="has-line-data" data-line-start="899" data-line-end="911" class="language-json">{
+  "success": true,
+  "data": {
+    tenant: {
+    "guid": 100001,
+    "name": "BATIX SARL",
+    "status": "ACTIVE"
+    },
+    "subdomain": "batix.toke.cm"
+  },
+}
+</code></pre>
 <hr>
-<h2 class="code-line" data-line-start=1165 data-line-end=1166 ><a id="_Prochaine_Section_1165"></a>🔗 Prochaine Section</h2>
-<p class="has-line-data" data-line-start="1167" data-line-end="1168">👉 <strong><a href="#">LICENCES GLOBALES - Gestion des Abonnements Multi-Employés</a></strong></p>
+<h2 class="code-line" data-line-start=913 data-line-end=914 ><a id="_Prochaine_Section_913"></a>🔗 Prochaine Section</h2>
+<p class="has-line-data" data-line-start="915" data-line-end="916">👉 <strong><a href="#">SYSTEME DE POINTAGE - Gestion des pointages des employés</a></strong></p>
 
-<script data-cfasync="false" src="/cdn-cgi/scripts/5c5dd728/cloudflare-static/email-decode.min.js"></script></body></html>
+<script data-cfasync="false" src="/cdn-cgi/scripts/5c5dd728/cloudflare-static/email-decode.min.js"></script><script defer src="https://static.cloudflareinsights.com/beacon.min.js/vcd15cbe7772f49c399c6a5babf22c1241717689176015" integrity="sha512-ZpsOmlRQV6y907TI0dKBHq9Md29nnaEIPlkf84rnaERnq6zvWvPUqr2ft8M1aS28oN72PdrCzSjY4U6VaAw1EQ==" data-cf-beacon='{"version":"2024.11.0","token":"740eb3d0dfbc4d969cb53bbdc802ad63","r":1,"server_timing":{"name":{"cfCacheStatus":true,"cfEdge":true,"cfExtPri":true,"cfL4":true,"cfOrigin":true,"cfSpeedBrain":true},"location_startswith":null}}' crossorigin="anonymous"></script>
+</body></html>

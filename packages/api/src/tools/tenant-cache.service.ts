@@ -17,6 +17,7 @@ interface TenantConfig {
   country: string;
   email: string;
   phone: string;
+  global_license: string;
 }
 
 interface TenantCache {
@@ -139,7 +140,7 @@ export default class TenantCacheService {
         existing = JSON.parse(data);
       } catch {
         existing = {};
-      } 
+      }
 
       // Fusionner le cache existant et le cache actuel
       const merged = { ...existing, ...this.cache };
@@ -160,7 +161,6 @@ export default class TenantCacheService {
     return Date.now() - this.lastLoadTime > this.CACHE_DURATION;
   }
 }
-
 
 
 // // ========================================

@@ -29,6 +29,7 @@ export * from './constants/license.adjustment.js';
 export * from './constants/payment.transaction.js';
 export * from './constants/fraud.detection.log.js';
 export * from './constants/activity.monitoring.js';
+export * from './constants/app.config.js';
 
 // tenant specific constants
 export * from './constants/tenant/users.js';
@@ -59,6 +60,7 @@ export * as LA from './schemas/license.adjustment.js';
 export * as PT from './schemas/payment.transaction.js';
 export * as FD from './schemas/fraud.detection.log.js';
 export * as AM from './schemas/activity.monitoring.js';
+export * as AP from './schemas/app.config.js';
 
 // tenant specific schemas
 export * from './schemas/tenant/users.js';

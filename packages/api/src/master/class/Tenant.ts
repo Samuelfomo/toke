@@ -46,8 +46,9 @@ export default class Tenant extends TenantModel {
     byGuid: boolean = false,
     byKey: boolean = false,
     bySubdomain: boolean = false,
+    byEmail: boolean = false,
   ): Promise<Tenant | null> {
-    return new Tenant().load(identifier, byGuid, byKey, bySubdomain);
+    return new Tenant().load(identifier, byGuid, byKey, bySubdomain, byEmail);
   }
 
   /**
@@ -301,6 +302,7 @@ export default class Tenant extends TenantModel {
   getRegistrationNumber(): string | undefined {
     return this.registration_number;
   }
+
   getEmployeeCount(): number[] | undefined {
     return this.employee_count;
   }
@@ -430,6 +432,7 @@ export default class Tenant extends TenantModel {
    * @param {boolean} [byGuid=false] - Specifies if the lookup should be performed by GUID.
    * @param {boolean} [byKey=false] - Specifies if the lookup should be performed by key.
    * @param {boolean} [bySubdomain=false] - Specifies if the lookup should be performed by subdomain.
+   * @param byEmail
    * @return {Promise<Tenant | null>} A promise that resolves to the located Tenant object, or null if not found.
    */
   async load(
@@ -437,6 +440,7 @@ export default class Tenant extends TenantModel {
     byGuid: boolean = false,
     byKey: boolean = false,
     bySubdomain: boolean = false,
+    byEmail: boolean = false,
   ): Promise<Tenant | null> {
     const data = byGuid
       ? await this.findByGuid(identifier)
@@ -444,7 +448,9 @@ export default class Tenant extends TenantModel {
         ? await this.findByKey(identifier)
         : bySubdomain
           ? await this.findBySubdomain(identifier)
-          : await this.find(Number(identifier));
+          : byEmail
+            ? await this.findByEmail(identifier)
+            : await this.find(Number(identifier));
 
     if (!data) return null;
     return this.hydrate(data);
