@@ -26,7 +26,7 @@ import R from '../../tools/response.js';
 import User from '../class/User.js';
 import Memos from '../class/Memos.js';
 import WorkSessions from '../class/WorkSessions.js';
-import Revision from '../../tools/revision.js';
+import { TenantRevision } from '../../tools/revision.js';
 import { responseValue, RoleValues, tableName } from '../../utils/response.model.js';
 import { ValidationUtils } from '../../utils/view.validator.js';
 import TimeEntries from '../class/TimeEntries.js';
@@ -43,10 +43,10 @@ router.get('/', Ensure.get(), async (req: Request, res: Response) => {
 
     const views = ValidationUtils.validateView(req.query.view, responseValue.MINIMAL);
 
-    const exportableMemos = await Memos.exportable({}, paginationData, views);
+    const memos = await Memos.exportable({}, paginationData, views);
 
     return R.handleSuccess(res, {
-      exportableMemos,
+      memos,
     });
   } catch (error: any) {
     if (error.issues) {
@@ -66,7 +66,7 @@ router.get('/', Ensure.get(), async (req: Request, res: Response) => {
 
 router.get('/revision', Ensure.get(), async (_req: Request, res: Response) => {
   try {
-    const revision = await Revision.getRevision(tableName.MEMOS);
+    const revision = await TenantRevision.getRevision(tableName.MEMOS);
 
     R.handleSuccess(res, {
       revision,
@@ -82,7 +82,8 @@ router.get('/revision', Ensure.get(), async (_req: Request, res: Response) => {
 
 router.get('/list', Ensure.get(), async (req: Request, res: Response) => {
   try {
-    const filtersValidation = validateMemosFilters(req.query);
+    const { offset, limit, ...filterQuery } = req.query;
+    const filtersValidation = validateMemosFilters(filterQuery);
     if (!filtersValidation.success) {
       return R.handleError(res, HttpStatus.BAD_REQUEST, {
         code: MEMOS_CODES.VALIDATION_FAILED,
@@ -354,7 +355,7 @@ router.get('/escalated-to-me', Ensure.get(), async (req: Request, res: Response)
 
     const memoEntries = await Memos._list({
       validator_user: validatorObj.getId(),
-      memo_status: MemoStatus.PENDING,
+      memo_status: MemoStatus.SUBMITTED,
       // Filtre pour n'avoir que les escaladés (validator_comments contient "Escaladed:")
     });
 
@@ -1057,7 +1058,7 @@ router.patch('/:guid/respond', Ensure.patch(), async (req: Request, res: Respons
     }
 
     // Vérifier que le memo est en attente de réponse
-    if (memoObj.getMemoStatus() !== MemoStatus.SUBMITTED) {
+    if (memoObj.getMemoStatus() !== MemoStatus.PENDING) {
       return R.handleError(res, HttpStatus.BAD_REQUEST, {
         code: MEMOS_CODES.INVALID_STATUS_TRANSITION,
         message: 'Memo is not pending response',
@@ -1210,7 +1211,7 @@ router.patch('/:guid/reject', Ensure.patch(), async (req: Request, res: Response
       });
     }
     // Vérifier que le statut est PENDING
-    if (memoObj.getMemoStatus() !== MemoStatus.PENDING) {
+    if (memoObj.getMemoStatus() !== MemoStatus.SUBMITTED) {
       return R.handleError(res, HttpStatus.BAD_REQUEST, {
         code: MEMOS_CODES.INVALID_STATUS_TRANSITION,
         message: 'Memo is not in pending status',

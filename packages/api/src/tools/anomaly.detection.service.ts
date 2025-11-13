@@ -19,6 +19,7 @@ import Site from '../tenant/class/Site.js';
 import UserRole from '../tenant/class/UserRole.js';
 import Role from '../tenant/class/Role.js';
 import { RoleValues } from '../utils/response.model.js';
+import QrCodeGeneration from '../tenant/class/QrCodeGeneration.js';
 
 // === TYPES & ENUMS ===
 
@@ -45,6 +46,9 @@ export enum AnomalyType {
 
   // Géofencing (cas spécial - blocage)
   GEOFENCE_VIOLATION = 'geofence_violation',
+
+  // Accès non autorisé
+  UNAUTHORIZED_QR_CODE = 'unauthorized_qr_code',
 }
 
 export interface Anomaly {
@@ -63,6 +67,60 @@ class AnomalyDetectionService {
   // ========================================
   // DÉTECTION PAR TYPE DE POINTAGE
   // ========================================
+
+  async detectAccessAnomalies(
+    userId: number,
+    qrCodeObj: QrCodeGeneration,
+  ): Promise<{
+    anomalies: Anomaly[];
+    corrections: any[];
+  }> {
+    const anomalies: Anomaly[] = [];
+    const corrections: any[] = [];
+
+    // 1. Vérifier que l'utilisateur pointe avec le QR code généré par son manager
+    const roleObj = await Role._load(RoleValues.EMPLOYEE, false, true);
+
+    const identifier = {
+      user: userId,
+      role: roleObj?.getId()!,
+    };
+
+    const userRole = await UserRole._load(identifier, false, true);
+
+    // if (!userRole) {
+    //   anomalies.push({
+    //     type: AnomalyType.UNAUTHORIZED_QR_CODE,
+    //     severity: AlertSeverity.HIGH,
+    //     description: `Utilisateur sans rôle assigné - impossible de vérifier le manager`,
+    //     technical_details: {
+    //       user_id: userId,
+    //       qr_code_guid: qrCodeObj.getGuid(),
+    //     },
+    //     auto_correctable: false,
+    //   });
+    //   return { anomalies, corrections };
+    // }
+
+    const userManager = userRole?.getAssignedBy(); // Manager de l'utilisateur
+    const qrCodeManager = qrCodeObj.getManager(); // Manager qui a généré le QR code
+
+    if (userManager !== qrCodeManager) {
+      anomalies.push({
+        type: AnomalyType.UNAUTHORIZED_QR_CODE,
+        severity: AlertSeverity.HIGH,
+        description: `Use of an unauthorized QR code - The employee clocked in using another manager's QR code.`,
+        technical_details: {
+          user_manager: (await userRole?.getAssignedByObject())!.getGuid(),
+          qr_code_manager: (await qrCodeObj.getManagerObj())?.getGuid(),
+          qr_code_guid: qrCodeObj.getGuid(),
+        },
+        auto_correctable: false, // Nécessite validation manager
+      });
+    }
+
+    return { anomalies, corrections };
+  }
 
   /**
    * Détection anomalies CLOCK_IN
@@ -1217,6 +1275,8 @@ ${
 
       // Géofencing
       [AnomalyType.GEOFENCE_VIOLATION]: AlertType.GEOFENCE_VIOLATION,
+
+      [AnomalyType.UNAUTHORIZED_QR_CODE]: AlertType.UNAUTHORIZED_ACCESS,
     };
 
     return mapping[anomalyType] || AlertType.SUSPICIOUS_PATTERN;

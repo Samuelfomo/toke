@@ -32,7 +32,7 @@ export const AppConfigDBStructure = {
       allowNull: true,
       unique: { name: 'unique_app_config_link', msg: 'App config link must be unique' },
       validate: {
-        is: /^(?=.{1,255}$)([a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?)(?:\.[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?)*$/,
+        isUrl: { msg: 'The link must be a valid URL.' },
         len: [1, 255],
       },
       comment: 'Link',

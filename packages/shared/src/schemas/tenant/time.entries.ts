@@ -89,11 +89,11 @@ const baseTimeEntriesSchema = z.object({
       invalid_type_error: TIME_ENTRIES_ERRORS.CLOCKED_AT_INVALID,
     })
     // .refine((date) => date <= new Date(), TIME_ENTRIES_ERRORS.FUTURE_POINTAGE),
-  .refine((date) => {
-    // Obtenir l'heure actuelle en timezone Africa/Douala
-    const nowInDouala = new Date(new Date().toLocaleString('en-US', { timeZone: 'Africa/Douala' }));
-    return date <= nowInDouala;
-  }, TIME_ENTRIES_ERRORS.FUTURE_POINTAGE),
+    .refine((date) => {
+      // Obtenir l'heure actuelle en timezone Africa/Douala
+      const nowInDouala = new Date(new Date().toLocaleString('en-US', { timeZone: 'Africa/Douala' }));
+      return date <= nowInDouala;
+    }, TIME_ENTRIES_ERRORS.FUTURE_POINTAGE),
 
   real_clocked_at: z
     .union([z.date(), z.string().transform((val) => new Date(val))], {
@@ -125,6 +125,16 @@ const baseTimeEntriesSchema = z.object({
     .int()
     .min(TIME_ENTRIES_VALIDATION.GPS_ACCURACY.MIN, TIME_ENTRIES_ERRORS.GPS_ACCURACY_INVALID)
     .max(TIME_ENTRIES_VALIDATION.GPS_ACCURACY.MAX, TIME_ENTRIES_ERRORS.GPS_ACCURACY_INVALID)
+    .optional()
+    .nullable(),
+
+  qr_code: z
+    .number({
+      invalid_type_error: TIME_ENTRIES_ERRORS.QR_CODE_INVALID,
+    })
+    .int()
+    .min(TIME_ENTRIES_VALIDATION.QR_CODE.MIN, TIME_ENTRIES_ERRORS.QR_CODE_INVALID)
+    .max(TIME_ENTRIES_VALIDATION.QR_CODE.MAX, TIME_ENTRIES_ERRORS.QR_CODE_INVALID)
     .optional()
     .nullable(),
 
@@ -226,6 +236,7 @@ export const timeEntriesFiltersSchema = z
     clocked_at_to: z.union([z.date(), z.string().transform((val) => new Date(val))]).optional(),
     created_offline: z.boolean().optional(),
     has_memo: z.boolean().optional(),
+    has_qr_code: z.boolean().optional(),
     needs_sync: z.boolean().optional(), // Pour les entrées créées offline
     gps_accuracy_min: z.number().optional(),
     gps_accuracy_max: z.number().optional(),
@@ -248,6 +259,7 @@ const FIELD_TO_CODE_MAP: Record<string, TimeEntryCode> = {
   site: TIME_ENTRIES_CODES.SITE_INVALID,
   user: TIME_ENTRIES_CODES.USER_INVALID,
   gps_accuracy: TIME_ENTRIES_CODES.GPS_ACCURACY_INVALID,
+  qr_code: TIME_ENTRIES_CODES.QR_CODE_INVALID,
   device_info: TIME_ENTRIES_CODES.DEVICE_INFO_INVALID,
   ip_address: TIME_ENTRIES_CODES.IP_ADDRESS_INVALID,
   correction_reason: TIME_ENTRIES_CODES.CORRECTION_REASON_INVALID,
@@ -481,7 +493,6 @@ export const validatePointageSequence = (
 //
 //   return true;
 // };
-
 
 
 // Schema complet pour les réponses (avec métadonnées)

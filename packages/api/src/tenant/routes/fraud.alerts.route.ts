@@ -14,7 +14,7 @@ import R from '../../tools/response.js';
 import FraudAlerts from '../class/FraudAlerts.js';
 import User from '../class/User.js';
 import TimeEntries from '../class/TimeEntries.js';
-import Revision from '../../tools/revision.js';
+import { TenantRevision } from '../../tools/revision.js';
 import { responseValue, tableName } from '../../utils/response.model.js';
 import { ValidationUtils } from '../../utils/view.validator.js';
 
@@ -40,6 +40,7 @@ router.get('/', Ensure.get(), async (req: Request, res: Response) => {
         count: items.length,
       },
       items,
+      revision: await TenantRevision.getRevision(tableName.FRAUD_ALERTS),
     });
   } catch (error: any) {
     return R.handleError(res, HttpStatus.INTERNAL_ERROR, {
@@ -51,7 +52,7 @@ router.get('/', Ensure.get(), async (req: Request, res: Response) => {
 
 router.get('/revision', Ensure.get(), async (_req: Request, res: Response) => {
   try {
-    const revision = await Revision.getRevision(tableName.FRAUD_ALERTS);
+    const revision = await TenantRevision.getRevision(tableName.FRAUD_ALERTS);
 
     R.handleSuccess(res, {
       revision,

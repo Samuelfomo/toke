@@ -9,7 +9,8 @@ import express, { NextFunction, Request, Response } from 'express';
 // Importation des modules simplifiés
 import { tenantMiddleware } from '../middle/tenant.middleware.js';
 import { ServerAuth } from '../middle/server-auth.js';
-import { MasterRevision } from '../tools/revision.js';
+import { TenantRevision } from '../tools/revision.js';
+import { tableName } from '../utils/response.model.js';
 
 import userRoute from './routes/user.route.js';
 import roleRoute from './routes/roles.route.js';
@@ -138,7 +139,7 @@ export default class App {
     // this.app.use(tenantMiddleware);
 
     // ✅ Tenant middleware appliqué sauf sur /health
-    this.app.use(this.skipMiddleware(tenantMiddleware, ['/health', '/upload']));
+    this.app.use(this.skipMiddleware(tenantMiddleware, ['/upload']));
 
     // // Appliquer tenantMiddleware sur toutes les routes sauf /health
     // this.app.use((req, res, next) => {
@@ -184,7 +185,7 @@ export default class App {
           uptime: process.uptime(),
           environment: process.env.NODE_ENV || 'development',
           revision: {
-            Lexicon: (await MasterRevision.getLexiconRevision()) || 0,
+            site: await TenantRevision.getRevision(tableName.SITES),
           },
         });
       }),

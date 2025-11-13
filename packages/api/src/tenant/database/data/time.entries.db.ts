@@ -219,6 +219,20 @@ export const TimeEntriesDbStructure = {
       },
       comment: 'Memos',
     },
+    qr_code: {
+      type: DataTypes.INTEGER,
+      allowNull: true,
+      references: {
+        model: tableName.QR_CODE_GENERATION,
+        key: 'id',
+      },
+      validate: {
+        isInt: true,
+        min: 1,
+        max: 2147483647,
+      },
+      comment: 'QR_Code',
+    },
     correction_reason: {
       type: DataTypes.TEXT,
       allowNull: true,
@@ -316,6 +330,10 @@ export const TimeEntriesDbStructure = {
       {
         fields: ['memo'],
         name: 'idx_time_entry_memo',
+      },
+      {
+        fields: ['qr_code'],
+        name: 'idx_time_entry_qr_code',
       },
       {
         fields: ['correction_reason'],

@@ -761,7 +761,8 @@ router.patch('/:guid/mark-invoice-sent', Ensure.patch(), async (req: Request, re
  */
 router.get('/list', Ensure.get(), async (req: Request, res: Response) => {
   try {
-    const filters = LA.validateLicenseAdjustmentFilters(req.query);
+    const { offset, limit, ...filterQuery } = req.query;
+    const filters = LA.validateLicenseAdjustmentFilters(filterQuery);
     const paginationOptions = paginationSchema.parse(req.query);
 
     const conditions: Record<string, any> = {};

@@ -20,7 +20,7 @@ import R from '../../tools/response.js';
 import Site from '../class/Site.js';
 import User from '../class/User.js';
 import QrCodeGeneration from '../class/QrCodeGeneration.js';
-import Revision from '../../tools/revision.js';
+import { TenantRevision } from '../../tools/revision.js';
 import { tableName } from '../../utils/response.model.js';
 
 const router = Router();
@@ -29,9 +29,9 @@ router.get('/', Ensure.get(), async (req: Request, res: Response) => {
   try {
     const paginationData = paginationSchema.parse(req.query);
 
-    const exportableQrCodes = await QrCodeGeneration.exportable(paginationData);
+    const qrCodes = await QrCodeGeneration.exportable(paginationData);
     return R.handleSuccess(res, {
-      exportableQrCodes,
+      qrCodes,
     });
   } catch (error: any) {
     if (error.issues) {
@@ -51,7 +51,7 @@ router.get('/', Ensure.get(), async (req: Request, res: Response) => {
 
 router.get('/revision', Ensure.get(), async (_req: Request, res: Response) => {
   try {
-    const revision = await Revision.getRevision(tableName.QR_CODE_GENERATION);
+    const revision = await TenantRevision.getRevision(tableName.QR_CODE_GENERATION);
 
     R.handleSuccess(res, {
       revision,
@@ -224,8 +224,9 @@ router.put('/:guid', Ensure.put(), async (req: Request, res: Response) => {
 
 router.get('/list', Ensure.get(), async (req: Request, res: Response) => {
   try {
+    const { offset, limit, ...filterQuery } = req.query;
     const paginationOptions = paginationSchema.parse(req.query);
-    const filtersValidation = validateQrCodeFilters(req.query);
+    const filtersValidation = validateQrCodeFilters(filterQuery);
     if (!filtersValidation.success) {
       return R.handleError(res, HttpStatus.BAD_REQUEST, {
         code: QR_CODE_CODES.VALIDATION_FAILED,

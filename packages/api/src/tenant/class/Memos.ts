@@ -3,7 +3,13 @@ import { MemoStatus, MemoType } from '@toke/shared';
 import MemosModel from '../model/MemosModel.js';
 import W from '../../tools/watcher.js';
 import G from '../../tools/glossary.js';
-import { responseStructure as RS, responseValue, ViewMode } from '../../utils/response.model.js';
+import {
+  responseStructure as RS,
+  responseValue,
+  tableName,
+  ViewMode,
+} from '../../utils/response.model.js';
+import { TenantRevision } from '../../tools/revision.js';
 
 import User from './User.js';
 import WorkSessions from './WorkSessions.js';
@@ -109,7 +115,7 @@ export default class Memos extends MemosModel {
       items = await Promise.all(memos.map(async (memo) => await memo.toJSON(view)));
     }
     return {
-      revision: '',
+      revision: await TenantRevision.getRevision(tableName.MEMOS),
       pagination: {
         offset: paginationOptions.offset || 0,
         limit: paginationOptions.limit || items.length,

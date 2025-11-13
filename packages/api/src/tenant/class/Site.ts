@@ -3,7 +3,13 @@ import { SiteType } from '@toke/shared';
 import SiteModel from '../model/SiteModel.js';
 import W from '../../tools/watcher.js';
 import G from '../../tools/glossary.js';
-import { responseStructure as RS, responseValue, ViewMode } from '../../utils/response.model.js';
+import {
+  responseStructure as RS,
+  responseValue,
+  tableName,
+  ViewMode,
+} from '../../utils/response.model.js';
+import { TenantRevision } from '../../tools/revision.js';
 
 import User from './User.js';
 
@@ -68,7 +74,7 @@ export default class Site extends SiteModel {
   }
 
   static async exportable(
-    conditions: Record<string, any> = {},
+    conditions: Record<string, any> = { ['active']: true },
     paginationOptions: { offset?: number; limit?: number } = {},
   ): Promise<{
     revision: string;
@@ -78,10 +84,12 @@ export default class Site extends SiteModel {
     let items: any[] = [];
     const sites = await this._list(conditions, paginationOptions);
     if (sites) {
-      items = await Promise.all(sites.map(async (site) => await site.toJSON()));
+      items = await Promise.all(
+        sites.map(async (site) => await site.toJSON(responseValue.MINIMAL)),
+      );
     }
     return {
-      revision: '',
+      revision: await TenantRevision.getRevision(tableName.SITES),
       pagination: {
         offset: paginationOptions.offset || 0,
         limit: paginationOptions.limit || items.length,

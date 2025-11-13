@@ -216,6 +216,28 @@ export default abstract class BaseModel {
   }
 
   /**
+   * Obtient le timestamp de la dernière modification
+   */
+  protected async findLastModification(tableName: string): Promise<Date | null> {
+    try {
+      await this.ensureInitialized();
+      const model = TableInitializer.getModel(tableName);
+
+      // if (!model) {
+      //   console.error(`❌ Modèle '${tableName}' non trouvé pour génération GUID`);
+      //   return null;
+      // }
+
+      const maxUpdatedAt = (await model.max('updated_at')) as Date;
+
+      return maxUpdatedAt || null;
+    } catch (error) {
+      console.error('❌ Erreur récupération dernière modification:', error);
+      return null;
+    }
+  }
+
+  /**
    * Génère un GUID basé sur MAX (id) + offset
    */
   protected async guidGenerator(tableName: string, length: number = 6): Promise<number | null> {

@@ -286,7 +286,8 @@ router.delete('/:guid', Ensure.delete(), async (req: Request, res: Response) => 
  */
 router.get('/list', Ensure.get(), async (req: Request, res: Response) => {
   try {
-    const filters = LS.validateLanguageFilters(req.query);
+    const { offset, limit, ...filterQuery } = req.query;
+    const filters = LS.validateLanguageFilters(filterQuery);
     const paginationOptions = paginationSchema.parse(req.query);
 
     const conditions: Record<string, any> = {};

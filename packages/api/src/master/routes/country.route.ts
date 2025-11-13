@@ -310,7 +310,8 @@ router.put('/:guid', Ensure.put(), async (req: Request, res: Response) => {
 router.get('/list', Ensure.get(), async (req: Request, res: Response) => {
   try {
     // Validation des filtres avec le schéma partagé
-    const filters = countryFiltersSchema.parse(req.query);
+    const { offset, limit, ...filterQuery } = req.query;
+    const filters = countryFiltersSchema.parse(filterQuery);
     const paginationOptions = paginationSchema.parse(req.query);
 
     // Conversion des filtres pour la compatibilité avec l'existant

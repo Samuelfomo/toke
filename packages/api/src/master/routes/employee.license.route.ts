@@ -195,7 +195,14 @@ router.post('/', Ensure.post(), async (req: Request, res: Response) => {
       });
     }
 
+    console.log('existingGlobalLicense', existingGlobalLicense);
+
     const existingTenantDb = await Tenant._load(existingGlobalLicense.getTenant());
+    console.log(
+      'system data',
+      existingTenantDb?.getSubdomain(),
+      existingTenantDb?.getDatabaseName(),
+    );
     if (!existingTenantDb?.getSubdomain() || !existingTenantDb?.getDatabaseName()) {
       return R.handleError(res, HttpStatus.NOT_FOUND, {
         code: 'tenant_system_not_exists',

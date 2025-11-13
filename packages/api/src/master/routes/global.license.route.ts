@@ -548,7 +548,8 @@ router.delete('/:guid', Ensure.delete(), async (req: Request, res: Response) => 
  */
 router.get('/list', Ensure.get(), async (req: Request, res: Response) => {
   try {
-    const filters = GL.validateGlobalLicenseFilters(req.query);
+    const { offset, limit, ...filterQuery } = req.query;
+    const filters = GL.validateGlobalLicenseFilters(filterQuery);
     const paginationOptions = paginationSchema.parse(req.query);
 
     const conditions: Record<string, any> = {};

@@ -18,7 +18,7 @@ import Ensure from '../../middle/ensured-routes.js';
 import R from '../../tools/response.js';
 import User from '../class/User.js';
 import OrgHierarchy from '../class/OrgHierarchy.js';
-import Revision from '../../tools/revision.js';
+import { TenantRevision } from '../../tools/revision.js';
 import { responseValue, tableName } from '../../utils/response.model.js';
 import UserRole from '../class/UserRole.js';
 
@@ -29,10 +29,10 @@ const router = Router();
 router.get('/', Ensure.get(), async (req: Request, res: Response) => {
   try {
     const paginationData = paginationSchema.parse(req.query);
-    const exportableHierarchies = await OrgHierarchy.exportable({}, paginationData);
+    const hierarchies = await OrgHierarchy.exportable({}, paginationData);
 
     return R.handleSuccess(res, {
-      exportableHierarchies,
+      hierarchies,
     });
   } catch (error: any) {
     if (error.issues) {
@@ -52,7 +52,7 @@ router.get('/', Ensure.get(), async (req: Request, res: Response) => {
 
 router.get('/revision', Ensure.get(), async (_req: Request, res: Response) => {
   try {
-    const revision = await Revision.getRevision(tableName.ORG_HIERARCHY);
+    const revision = await TenantRevision.getRevision(tableName.ORG_HIERARCHY);
 
     R.handleSuccess(res, {
       revision,
@@ -68,7 +68,8 @@ router.get('/revision', Ensure.get(), async (_req: Request, res: Response) => {
 
 router.get('/list', Ensure.get(), async (req: Request, res: Response) => {
   try {
-    const filters = validateOrgHierarchyFilters(req.query);
+    const { offset, limit, ...filterQuery } = req.query;
+    const filters = validateOrgHierarchyFilters(filterQuery);
     const paginationOptions = paginationSchema.parse(req.query);
     const conditions: Record<string, any> = {};
 

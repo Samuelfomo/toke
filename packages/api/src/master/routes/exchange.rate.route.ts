@@ -432,7 +432,8 @@ router.delete('/:guid', Ensure.delete(), async (req: Request, res: Response) => 
 router.get('/list', Ensure.get(), async (req: Request, res: Response) => {
   try {
     // Validation des filtres avec schéma shared
-    const filters = ER.exchangeRateSchemas.validateExchangeRateFilters(req.query);
+    const { offset, limit, ...filterQuery } = req.query;
+    const filters = ER.exchangeRateSchemas.validateExchangeRateFilters(filterQuery);
     const paginationOptions = paginationSchema.parse(req.query);
 
     // Conversion des filtres pour compatibilité

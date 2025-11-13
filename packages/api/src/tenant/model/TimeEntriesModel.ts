@@ -25,6 +25,7 @@ export default class TimeEntriesModel extends BaseModel {
     latitude: 'latitude',
     longitude: 'longitude',
     gps_accuracy: 'gps_accuracy',
+    qr_code: 'qr_code',
     device_info: 'device_info',
     ip_address: 'ip_address',
     user_agent: 'user_agent',
@@ -50,6 +51,7 @@ export default class TimeEntriesModel extends BaseModel {
   protected latitude?: number;
   protected longitude?: number;
   protected gps_accuracy?: number;
+  protected qr_code?: number;
   protected device_info?: Record<string, any>;
   protected ip_address?: string;
   protected user_agent?: string;
@@ -593,6 +595,7 @@ export default class TimeEntriesModel extends BaseModel {
       [this.db.latitude]: this.latitude,
       [this.db.longitude]: this.longitude,
       [this.db.gps_accuracy]: this.gps_accuracy,
+      [this.db.qr_code]: this.qr_code ? this.qr_code : null,
       [this.db.device_info]: this.device_info,
       [this.db.ip_address]: this.ip_address,
       [this.db.user_agent]: this.user_agent,

@@ -1,4 +1,3 @@
-// routes/app_config.route.ts
 import { Request, Response, Router } from 'express';
 import {
   AP,
@@ -85,7 +84,8 @@ router.get('/revision', Ensure.get(), async (_req: Request, res: Response) => {
  */
 router.get('/list', Ensure.get(), async (req: Request, res: Response) => {
   try {
-    const filters = AP.validateAppConfigFilters(req.query);
+    const { offset, limit, ...filterQuery } = req.query;
+    const filters = AP.validateAppConfigFilters(filterQuery);
     const paginationOptions = paginationSchema.parse(req.query);
     const conditions: Record<string, any> = {};
 

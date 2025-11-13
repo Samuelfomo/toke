@@ -3,7 +3,8 @@ import { ROLES_DEFAULTS } from '@toke/shared';
 import RoleModel from '../model/RoleModel.js';
 import W from '../../tools/watcher.js';
 import G from '../../tools/glossary.js';
-import { responseStructure as RS } from '../../utils/response.model.js';
+import { responseStructure as RS, tableName } from '../../utils/response.model.js';
+import { TenantRevision } from '../../tools/revision.js';
 
 export default class Role extends RoleModel {
   constructor() {
@@ -53,7 +54,7 @@ export default class Role extends RoleModel {
       items = roles.map((role) => role.toJSON());
     }
     return {
-      revision: '',
+      revision: await TenantRevision.getRevision(tableName.ROLES),
       pagination: {
         offset: paginationOptions.offset || 0,
         limit: paginationOptions.limit || items.length,

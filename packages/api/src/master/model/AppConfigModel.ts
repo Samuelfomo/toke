@@ -1,8 +1,4 @@
-import { APP_CONFIG_CODES, APP_CONFIG_DEFAULTS, APP_CONFIG_ERRORS } from '@toke/shared';
-import {
-  validateAppConfigCreation,
-  validateAppConfigUpdate,
-} from '@toke/shared/dist/schemas/app.config';
+import { AP, APP_CONFIG_CODES, APP_CONFIG_DEFAULTS, APP_CONFIG_ERRORS } from '@toke/shared';
 
 import BaseModel from '../database/db.base.js';
 import { tableName } from '../../utils/response.model.js';
@@ -65,8 +61,8 @@ export default class AppConfigModel extends BaseModel {
     }
 
     const lastID = await this.insertOne(this.db.tableName, {
-      [this.db.key]: this.key,
-      [this.db.link]: this.link?.toUpperCase(),
+      [this.db.key]: this.key!.toUpperCase(),
+      [this.db.link]: this.link,
       [this.db.active]: this.active ?? APP_CONFIG_DEFAULTS.ACTIVE,
     });
     if (!lastID) {
@@ -82,13 +78,13 @@ export default class AppConfigModel extends BaseModel {
     }
     const updateData: Record<string, any> = {};
     if (this.key !== undefined) {
-      const existKey = await this.findByKey(this.key!);
+      const existKey = await this.findByKey(this.key!.toUpperCase());
       if (existKey && existKey.id !== this.id) {
         throw new Error(
           `${APP_CONFIG_CODES.KEY_ALREADY_EXISTS}: ${APP_CONFIG_ERRORS.KEY_ALREADY_EXISTS}`,
         );
       }
-      updateData[this.db.key] = this.key.toUpperCase();
+      updateData[this.db.key] = this.key!.toUpperCase();
     }
     if (this.link !== undefined) updateData[this.db.link] = this.link;
     if (this.active !== undefined) updateData[this.db.active] = this.active;
@@ -115,7 +111,7 @@ export default class AppConfigModel extends BaseModel {
 
     try {
       if (isCreation) {
-        validateAppConfigCreation(data);
+        AP.validateAppConfigCreation(data);
       } else {
         // Pour la mise à jour, on valide seulement les champs présents
         const updateData: Record<string, any> = {};
@@ -124,7 +120,7 @@ export default class AppConfigModel extends BaseModel {
         if (this.active !== undefined) updateData.active = this.active;
 
         if (Object.keys(updateData).length > 0) {
-          validateAppConfigUpdate(updateData);
+          AP.validateAppConfigUpdate(updateData);
         }
       }
     } catch (error: any) {

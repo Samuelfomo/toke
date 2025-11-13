@@ -3,7 +3,13 @@ import { RelationshipType } from '@toke/shared';
 import OrgHierarchyModel from '../model/OrgHierarchyModel.js';
 import W from '../../tools/watcher.js';
 import G from '../../tools/glossary.js';
-import { responseStructure as RS, responseValue, ViewMode } from '../../utils/response.model.js';
+import {
+  responseStructure as RS,
+  responseValue,
+  tableName,
+  ViewMode,
+} from '../../utils/response.model.js';
+import { TenantRevision } from '../../tools/revision.js';
 
 import User from './User.js';
 import UserRole from './UserRole.js';
@@ -11,6 +17,7 @@ import UserRole from './UserRole.js';
 export default class OrgHierarchy extends OrgHierarchyModel {
   private subordinateObj?: User;
   private supervisorObj?: User;
+
   constructor() {
     super();
   }
@@ -71,6 +78,7 @@ export default class OrgHierarchy extends OrgHierarchyModel {
   ): Promise<OrgHierarchy[] | null> {
     return new OrgHierarchy().getActiveSubordinates(supervisor_id, date, paginationOptions);
   }
+
   static async _getAllSubordinates(supervisor_id: number): Promise<User[]> {
     const org = new OrgHierarchy();
     const visited = new Set<number>(); // éviter les boucles
@@ -97,7 +105,7 @@ export default class OrgHierarchy extends OrgHierarchyModel {
       items = await Promise.all(hierarchies.map(async (hierarchy) => await hierarchy.toJSON()));
     }
     return {
-      revision: '',
+      revision: await TenantRevision.getRevision(tableName.ORG_HIERARCHY),
       pagination: {
         offset: paginationOptions.offset || 0,
         limit: paginationOptions.limit || items.length,

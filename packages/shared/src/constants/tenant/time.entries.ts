@@ -54,6 +54,10 @@ export const TIME_ENTRIES_VALIDATION = {
     MIN: 1,
     MAX: 2147483647,
   },
+  QR_CODE: {
+    MIN: 1,
+    MAX: 2147483647,
+  },
   LOCAL_ID: {
     MIN_LENGTH: 1,
     MAX_LENGTH: 50,
@@ -115,6 +119,9 @@ export const TIME_ENTRIES_CODES = {
   LAST_SYNC_ATTEMPT_INVALID: 'last_sync_attempt_invalid',
   MEMO_INVALID: 'memo_invalid',
   MEMO_NOT_FOUND: 'memo_not_found',
+  QR_CODE_REQUIRED: 'qr_code_required',
+  QR_CODE_INVALID: 'qr_code_invalid',
+  QR_CODE_NOT_FOUND: 'qr_code_not_found',
   CORRECTION_REASON_INVALID: 'correction_reason_invalid',
   CORRECTION_REASON_REQUIRED: 'correction_reason_required',
   DUPLICATE_POINTAGE: 'duplicate_pointage',
@@ -199,6 +206,10 @@ export const TIME_ENTRIES_ERRORS = {
 
   MEMO_INVALID: `Memo ID must be between ${TIME_ENTRIES_VALIDATION.MEMO.MIN} and ${TIME_ENTRIES_VALIDATION.MEMO.MAX}`,
   MEMO_NOT_FOUND: 'Memo not found',
+
+  QR_CODE_REQUIRED: `${TIME_ENTRIES_LABEL} qr_code is required`,
+  QR_CODE_INVALID: `QR Code ID must be between ${TIME_ENTRIES_VALIDATION.QR_CODE.MIN} and ${TIME_ENTRIES_VALIDATION.QR_CODE.MAX}`,
+  QR_CODE_NOT_FOUND: 'QR Code not found',
 
   CORRECTION_REASON_REQUIRED: 'Correction reason is required for corrected entries',
   CORRECTION_REASON_INVALID: `Correction reason must be between ${TIME_ENTRIES_VALIDATION.CORRECTION_REASON.MIN_LENGTH} and ${TIME_ENTRIES_VALIDATION.CORRECTION_REASON.MAX_LENGTH} characters`,

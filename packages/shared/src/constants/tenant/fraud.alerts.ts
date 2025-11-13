@@ -16,6 +16,7 @@ export enum AlertType {
   DEVICE_ANOMALY = 'device_anomaly',
   VELOCITY_CHECK = 'velocity_check',
   SCHEDULE_VIOLATION = 'schedule_violation',
+  UNAUTHORIZED_ACCESS = 'unauthorized_access',
 }
 
 export const FRAUD_ALERTS_VALIDATION = {

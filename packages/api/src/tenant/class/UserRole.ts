@@ -1,7 +1,13 @@
 import UserRoleModel from '../model/UserRoleModel.js';
 import W from '../../tools/watcher.js';
 import G from '../../tools/glossary.js';
-import { responseStructure as RS, responseValue, ViewMode } from '../../utils/response.model.js';
+import {
+  responseStructure as RS,
+  responseValue,
+  tableName,
+  ViewMode,
+} from '../../utils/response.model.js';
+import { TenantRevision } from '../../tools/revision.js';
 
 import User from './User.js';
 import Role from './Role.js';
@@ -68,7 +74,7 @@ export default class UserRole extends UserRoleModel {
       items = await Promise.all(userRoles.map(async (userRole) => await userRole.toJSON()));
     }
     return {
-      revision: '',
+      revision: await TenantRevision.getRevision(tableName.USER_ROLES),
       pagination: {
         offset: paginationOptions.offset || 0,
         limit: paginationOptions.limit || items.length,

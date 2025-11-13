@@ -4,8 +4,14 @@ import { Op } from 'sequelize';
 import WorkSessionsModel from '../model/WorkSessionsModel.js';
 import W from '../../tools/watcher.js';
 import G from '../../tools/glossary.js';
-import { responseStructure as RS, responseValue, ViewMode } from '../../utils/response.model.js';
+import {
+  responseStructure as RS,
+  responseValue,
+  tableName,
+  ViewMode,
+} from '../../utils/response.model.js';
 import { calculateDistance } from '../../utils/geo.utils.js';
+import { TenantRevision } from '../../tools/revision.js';
 
 import User from './User.js';
 import Site from './Site.js';
@@ -14,6 +20,7 @@ import TimeEntries from './TimeEntries.js';
 export default class WorkSessions extends WorkSessionsModel {
   private userObj?: User;
   private siteObj?: Site;
+
   // private memoObj?: any; // À définir selon votre modèle Memo
 
   constructor() {
@@ -65,7 +72,7 @@ export default class WorkSessions extends WorkSessionsModel {
       items = await Promise.all(sessions.map(async (session) => await session.toJSON()));
     }
     return {
-      revision: '',
+      revision: await TenantRevision.getRevision(tableName.WORK_SESSIONS),
       pagination: {
         offset: paginationOptions.offset || 0,
         limit: paginationOptions.limit || items.length,
@@ -648,10 +655,12 @@ ${withinGeofence ? '✅ ACCÈS AUTORISÉ' : '❌ ACCÈS REFUSÉ'}
     if (!this.id) return false;
     return await this.hasActivePause(this.id);
   }
+
   async LastEntry(): Promise<any> {
     if (!this.id) return null;
     return await this.getLastEntry(this.id);
   }
+
   async activeMission(): Promise<boolean> {
     if (!this.id) return false;
     return await this.hasActiveMission(this.id);

@@ -5,6 +5,7 @@ import * as bcrypt from 'bcrypt';
 import BaseModel from '../database/db.base.js';
 import { tableName } from '../../utils/response.model.js';
 import CountryPhoneValidation from '../../tools/country.phone.validation.js';
+import TokenManager from '../../utils/token.generator.js';
 
 export default class UserModel extends BaseModel {
   public readonly db = {
@@ -517,6 +518,39 @@ export default class UserModel extends BaseModel {
       if (existingEmployeeCode) {
         throw new Error(USERS_ERRORS.EMPLOYEE_CODE_ALREADY_EXISTS);
       }
+    } else {
+      let employeeCode: string | null = null;
+
+      const maxAttempts = 10;
+      let attempt = 0;
+
+      // 🔁 Essayer de générer un EMPLOYEE_CODE unique jusqu’à 10 fois
+      while (attempt < maxAttempts) {
+        attempt++;
+        const newEmployeeCode = await TokenManager.tokenGenerator(6);
+
+        if (!newEmployeeCode) {
+          console.warn(`⚠️ Tentative ${attempt}: échec de génération du EMPLOYEE_CODE`);
+          continue;
+        }
+
+        const exists = await this.findByEmployeeCode(newEmployeeCode);
+        if (!exists) {
+          employeeCode = newEmployeeCode;
+          break;
+        }
+
+        console.warn(`⚠️ Tentative ${attempt}: EMPLOYEE_CODE ${newEmployeeCode} déjà existant`);
+      }
+
+      // ❌ Après 10 tentatives sans succès
+      if (!employeeCode) {
+        throw new Error(
+          `❌ Impossible de générer un EMPLOYEE_CODE unique après ${maxAttempts} tentatives`,
+        );
+      }
+
+      this.employee_code = employeeCode;
     }
 
     // ⚠️ PAS DE HACHAGE ICI : Sequelize le fait automatiquement via set()
@@ -529,8 +563,8 @@ export default class UserModel extends BaseModel {
       [this.db.phone_number]: this.phone_number ? this.phone_number : null,
       [this.db.country]: this.country?.toUpperCase(),
       [this.db.employee_code]: this.employee_code ? this.employee_code : null,
-      [this.db.pin_hash]: this.pin_hash, // Sequelize hache via set()
-      [this.db.password_hash]: this.password_hash, // Sequelize hache via set()
+      // [this.db.pin_hash]: this.pin_hash, // Sequelize hache via set()
+      // [this.db.password_hash]: this.password_hash, // Sequelize hache via set()
       [this.db.otp_token]: this.otp_token,
       [this.db.otp_expires_at]: this.otp_token ? this.otp_expires_at : null,
       [this.db.qr_code_token]: this.qr_code_token,
@@ -580,14 +614,14 @@ export default class UserModel extends BaseModel {
     if (this.employee_code !== undefined) {
       updateData[this.db.employee_code] = this.employee_code;
     }
-
-    // ⚠️ PAS DE HACHAGE ICI : Sequelize le fait via set()
-    if (this.pin_hash !== undefined) {
-      updateData[this.db.pin_hash] = this.pin_hash;
-    }
-    if (this.password_hash !== undefined) {
-      updateData[this.db.password_hash] = this.password_hash;
-    }
+    //
+    // // ⚠️ PAS DE HACHAGE ICI : Sequelize le fait via set()
+    // if (this.pin_hash !== undefined) {
+    //   updateData[this.db.pin_hash] = this.pin_hash;
+    // }
+    // if (this.password_hash !== undefined) {
+    //   updateData[this.db.password_hash] = this.password_hash;
+    // }
 
     if (this.otp_token !== undefined) {
       updateData[this.db.otp_token] = this.otp_token;
@@ -700,14 +734,14 @@ export default class UserModel extends BaseModel {
       throw new Error(USERS_ERRORS.EMPLOYEE_CODE_INVALID);
     }
 
-    // ✅ Validation PIN/Password AVANT hachage Sequelize
-    if (this.pin_hash && !UsersValidationUtils.validatePinHash(this.pin_hash)) {
-      throw new Error(USERS_ERRORS.PIN_INVALID);
-    }
-
-    if (this.password_hash && !UsersValidationUtils.validatePasswordHash(this.password_hash)) {
-      throw new Error(USERS_ERRORS.PASSWORD_INVALID);
-    }
+    // // ✅ Validation PIN/Password AVANT hachage Sequelize
+    // if (this.pin_hash && !UsersValidationUtils.validatePinHash(this.pin_hash)) {
+    //   throw new Error(USERS_ERRORS.PIN_INVALID);
+    // }
+    //
+    // if (this.password_hash && !UsersValidationUtils.validatePasswordHash(this.password_hash)) {
+    //   throw new Error(USERS_ERRORS.PASSWORD_INVALID);
+    // }
 
     if (this.otp_token && !UsersValidationUtils.validateOtpToken(this.otp_token)) {
       throw new Error(USERS_ERRORS.OTP_TOKEN_INVALID);

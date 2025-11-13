@@ -19,7 +19,7 @@ import R from '../../tools/response.js';
 import User from '../class/User.js';
 import Role from '../class/Role.js';
 import UserRole from '../class/UserRole.js';
-import Revision from '../../tools/revision.js';
+import { TenantRevision } from '../../tools/revision.js';
 import { RoleValues, tableName } from '../../utils/response.model.js';
 
 const router = Router();
@@ -29,10 +29,10 @@ const router = Router();
 router.get('/', Ensure.get(), async (req: Request, res: Response) => {
   try {
     const paginationData = paginationSchema.parse(req.query);
-    const exportableUserRoles = await UserRole.exportable({}, paginationData);
+    const userRoles = await UserRole.exportable({}, paginationData);
 
     return R.handleSuccess(res, {
-      exportableUserRoles,
+      userRoles,
     });
   } catch (error: any) {
     if (error.issues) {
@@ -52,7 +52,7 @@ router.get('/', Ensure.get(), async (req: Request, res: Response) => {
 
 router.get('/revision', Ensure.get(), async (_req: Request, res: Response) => {
   try {
-    const revision = await Revision.getRevision(tableName.USER_ROLES);
+    const revision = await TenantRevision.getRevision(tableName.USER_ROLES);
 
     R.handleSuccess(res, {
       revision,
@@ -68,7 +68,8 @@ router.get('/revision', Ensure.get(), async (_req: Request, res: Response) => {
 
 router.get('/list', Ensure.get(), async (req: Request, res: Response) => {
   try {
-    const filters = validateUserRolesFilters(req.query);
+    const { offset, limit, view, ...filterQuery } = req.query;
+    const filters = validateUserRolesFilters(filterQuery);
     const paginationOptions = paginationSchema.parse(req.query);
     const conditions: Record<string, any> = {};
 
@@ -139,6 +140,13 @@ router.post('/', Ensure.post(), async (req: Request, res: Response) => {
       return R.handleError(res, HttpStatus.NOT_FOUND, {
         code: ROLES_CODES.ROLE_NOT_FOUND,
         message: ROLES_ERRORS.NOT_FOUND,
+      });
+    }
+
+    if (roleObj.isSystemRole()) {
+      return R.handleError(res, HttpStatus.FORBIDDEN, {
+        code: 'role_not_allowed',
+        message: 'System roles are not permitted to perform this action.',
       });
     }
 

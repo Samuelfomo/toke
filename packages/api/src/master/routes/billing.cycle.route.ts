@@ -802,7 +802,8 @@ router.patch('/:guid/cancel', Ensure.patch(), async (req: Request, res: Response
  */
 router.get('/list', Ensure.get(), async (req: Request, res: Response) => {
   try {
-    const filters = BC.validateBillingCycleFilters(req.query);
+    const { offset, limit, ...filterQuery } = req.query;
+    const filters = BC.validateBillingCycleFilters(filterQuery);
     const paginationOptions = paginationSchema.parse(req.query);
 
     const conditions: Record<string, any> = {};

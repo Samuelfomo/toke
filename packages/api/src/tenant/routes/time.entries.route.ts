@@ -26,12 +26,13 @@ import User from '../class/User.js';
 import Site from '../class/Site.js';
 import WorkSessions from '../class/WorkSessions.js';
 import TimeEntries from '../class/TimeEntries.js';
-import Revision from '../../tools/revision.js';
+import { TenantRevision } from '../../tools/revision.js';
 import { responseValue, tableName } from '../../utils/response.model.js';
 import { UserAuth } from '../../middle/user-auth.js';
 import UserRole from '../class/UserRole.js';
 import { ValidationUtils } from '../../utils/view.validator.js';
 import AnomalyDetectionService from '../../tools/anomaly.detection.service.js';
+import QrCodeGeneration from '../class/QrCodeGeneration.js';
 
 const router = Router();
 
@@ -40,10 +41,10 @@ const router = Router();
 router.get('/', Ensure.get(), async (req: Request, res: Response) => {
   try {
     const paginationData = paginationSchema.parse(req.query);
-    const exportableEntries = await TimeEntries.exportable({}, paginationData);
+    const timeEntries = await TimeEntries.exportable({}, paginationData);
 
     return R.handleSuccess(res, {
-      exportableEntries,
+      timeEntries,
     });
   } catch (error: any) {
     if (error.issues) {
@@ -63,7 +64,7 @@ router.get('/', Ensure.get(), async (req: Request, res: Response) => {
 
 router.get('/revision', Ensure.get(), async (_req: Request, res: Response) => {
   try {
-    const revision = await Revision.getRevision(tableName.TIME_ENTRIES);
+    const revision = await TenantRevision.getRevision(tableName.TIME_ENTRIES);
 
     R.handleSuccess(res, {
       revision,
@@ -627,6 +628,28 @@ router.post(
         });
       }
 
+      // selon moi la mise a jours de la verification des habilitations a faire devrait se faire a ce niveau 👇
+
+      // TODO le qr_code est obligatoire car le pointage gps n'est pas encore implementé
+      if (!validatedData.qr_code) {
+        return R.handleError(res, HttpStatus.BAD_REQUEST, {
+          code: TIME_ENTRIES_CODES.QR_CODE_REQUIRED,
+          message: TIME_ENTRIES_ERRORS.QR_CODE_REQUIRED,
+        });
+      }
+
+      const qrCodeObj = await QrCodeGeneration._load(validatedData.qr_code, true);
+      if (!qrCodeObj) {
+        return R.handleError(res, HttpStatus.NOT_FOUND, {
+          code: TIME_ENTRIES_CODES.QR_CODE_NOT_FOUND,
+          message: TIME_ENTRIES_ERRORS.QR_CODE_NOT_FOUND,
+        });
+      }
+
+      // const { anomalies, corrections } = await AnomalyDetectionService.detectAccessAnomalies(userId, qrCodeObj)
+      const { anomalies: qrAnomalies, corrections: qrCorrections } =
+        await AnomalyDetectionService.detectAccessAnomalies(userId, qrCodeObj);
+
       // === LOGIQUE SELON TYPE DE POINTAGE (NON-BLOQUANTE) ===
 
       switch (validatedData.pointage_type) {
@@ -636,6 +659,10 @@ router.post(
             userId,
             validatedData,
           );
+
+          // Fusionner avec anomalies QR
+          const allAnomalies = [...qrAnomalies, ...anomalies];
+          const allCorrections = [...qrCorrections, ...corrections];
 
           // ✅ CRÉER SESSION QUOI QU'IL ARRIVE
           const sessionObj = new WorkSessions()
@@ -662,12 +689,12 @@ router.post(
 
           // ✅ GÉNÉRER MÉMO AUTO SI ANOMALIES
           let autoMemo = null;
-          if (anomalies.length > 0) {
+          if (allAnomalies.length > 0) {
             autoMemo = await AnomalyDetectionService.generateAutoMemo(
-              anomalies,
+              allAnomalies,
               entryObj,
               userId,
-              corrections,
+              allCorrections,
             );
 
             // Lier mémo à l'entry
@@ -678,7 +705,7 @@ router.post(
 
             // ✅ CRÉER FRAUD ALERTS
             await AnomalyDetectionService.createFraudAlertsForAnomalies(
-              anomalies,
+              allAnomalies,
               entryObj,
               userId,
             );
@@ -691,10 +718,10 @@ router.post(
                 : TIME_ENTRIES_MESSAGES.CLOCK_IN_SUCCESS,
             session: await sessionObj.toJSON(),
             entry: await entryObj.toJSON(),
-            anomalies_detected: anomalies.length,
+            anomalies_detected: allAnomalies.length,
             auto_memo_created: autoMemo !== null,
             auto_memo_guid: autoMemo?.getGuid(),
-            corrections_applied: corrections.length,
+            corrections_applied: allCorrections.length,
           });
         }
 
@@ -702,6 +729,9 @@ router.post(
           // 🔍 DÉTECTION ANOMALIES
           const { anomalies, corrections, activeSession } =
             await AnomalyDetectionService.detectPauseStartAnomalies(userId, validatedData);
+          // Fusionner avec anomalies QR
+          const allAnomalies = [...qrAnomalies, ...anomalies];
+          const allCorrections = [...qrCorrections, ...corrections];
 
           // ✅ CRÉER SESSION RÉTROACTIVE SI NÉCESSAIRE
           let sessionToUse = activeSession;
@@ -713,7 +743,7 @@ router.post(
             .setClockedAt(new Date(validatedData.clocked_at))
             .setCoordinates(validatedData.latitude, validatedData.longitude);
 
-          if (!activeSession && anomalies.some((a) => a.auto_correctable)) {
+          if (!activeSession && allAnomalies.some((a) => a.auto_correctable)) {
             sessionToUse = await AnomalyDetectionService.createRetroactiveSession(
               userId,
               siteObj.getId()!,
@@ -728,12 +758,12 @@ router.post(
 
           // ✅ GÉNÉRER MÉMO AUTO SI ANOMALIES
           let autoMemo = null;
-          if (anomalies.length > 0) {
+          if (allAnomalies.length > 0) {
             autoMemo = await AnomalyDetectionService.generateAutoMemo(
-              anomalies,
+              allAnomalies,
               tempEntry,
               userId,
-              corrections,
+              allCorrections,
             );
 
             if (autoMemo) {
@@ -742,7 +772,7 @@ router.post(
             }
 
             await AnomalyDetectionService.createFraudAlertsForAnomalies(
-              anomalies,
+              allAnomalies,
               tempEntry,
               userId,
             );
@@ -750,12 +780,12 @@ router.post(
 
           return R.handleCreated(res, {
             message:
-              anomalies.length > 0 ? 'Pause acceptée avec anomalies détectées' : 'Pause started',
+              allAnomalies.length > 0 ? 'Pause acceptée avec anomalies détectées' : 'Pause started',
             entry: await tempEntry.toJSON(),
             session: sessionToUse ? await sessionToUse.toJSON() : null,
-            anomalies_detected: anomalies.length,
+            anomalies_detected: allAnomalies.length,
             auto_memo_created: autoMemo !== null,
-            corrections_applied: corrections.length,
+            corrections_applied: allCorrections.length,
           });
         }
 
@@ -763,6 +793,10 @@ router.post(
           // 🔍 DÉTECTION ANOMALIES
           const { anomalies, corrections, activeSession } =
             await AnomalyDetectionService.detectPauseEndAnomalies(userId, validatedData);
+
+          // Fusionner avec anomalies QR
+          const allAnomalies = [...qrAnomalies, ...anomalies];
+          const allCorrections = [...qrCorrections, ...corrections];
 
           const tempEntry = new TimeEntries()
             .setUser(userId)
@@ -773,7 +807,7 @@ router.post(
 
           // ✅ CRÉER SESSION RÉTROACTIVE SI NÉCESSAIRE
           let sessionToUse = activeSession;
-          if (!activeSession && anomalies.some((a) => a.auto_correctable)) {
+          if (!activeSession && allAnomalies.some((a) => a.auto_correctable)) {
             sessionToUse = await AnomalyDetectionService.createRetroactiveSession(
               userId,
               siteObj.getId()!,
@@ -791,10 +825,10 @@ router.post(
           let autoMemo = null;
           if (anomalies.length > 0) {
             autoMemo = await AnomalyDetectionService.generateAutoMemo(
-              anomalies,
+              allAnomalies,
               tempEntry,
               userId,
-              corrections,
+              allCorrections,
             );
 
             if (autoMemo) {
@@ -803,16 +837,16 @@ router.post(
             }
 
             await AnomalyDetectionService.createFraudAlertsForAnomalies(
-              anomalies,
+              allAnomalies,
               tempEntry,
               userId,
             );
           }
 
           return R.handleCreated(res, {
-            message: anomalies.length > 0 ? 'Pause terminée avec anomalies' : 'Pause ended',
+            message: allAnomalies.length > 0 ? 'Pause terminée avec anomalies' : 'Pause ended',
             entry: await tempEntry.toJSON(),
-            anomalies_detected: anomalies.length,
+            anomalies_detected: allAnomalies.length,
             auto_memo_created: autoMemo !== null,
           });
         }
@@ -825,6 +859,10 @@ router.post(
               validatedData,
               siteObj,
             );
+
+          // Fusionner avec anomalies QR
+          const allAnomalies = [...qrAnomalies, ...anomalies];
+          const allCorrections = [...qrCorrections, ...corrections];
 
           // ✅ CRÉER ENTRY (même sans session)
           const entryObj = new TimeEntries()
@@ -854,12 +892,12 @@ router.post(
 
           // ✅ MÉMO AUTO
           let autoMemo = null;
-          if (anomalies.length > 0) {
+          if (allAnomalies.length > 0) {
             autoMemo = await AnomalyDetectionService.generateAutoMemo(
-              anomalies,
+              allAnomalies,
               entryObj,
               userId,
-              corrections,
+              allCorrections,
             );
 
             if (autoMemo) {
@@ -869,7 +907,7 @@ router.post(
 
             // ✅ FRAUD ALERTS
             await AnomalyDetectionService.createFraudAlertsForAnomalies(
-              anomalies,
+              allAnomalies,
               entryObj,
               userId,
             );
@@ -878,16 +916,16 @@ router.post(
           return R.handleCreated(res, {
             message: autoCreatedSession
               ? `⚠️ Clock-out accepté - Session d'entrée créée automatiquement`
-              : anomalies.length > 0
+              : allAnomalies.length > 0
                 ? 'Clock-out accepté avec anomalies'
                 : 'Clock-out successful',
             session: activeSession ? await activeSession.toJSON() : null,
             entry: await entryObj.toJSON(),
             durations,
-            anomalies_detected: anomalies.length,
+            anomalies_detected: allAnomalies.length,
             auto_memo_created: autoMemo !== null,
             auto_memo_guid: autoMemo?.getGuid(),
-            corrections_applied: corrections.length,
+            corrections_applied: allCorrections.length,
             auto_created_session: autoCreatedSession, // ✅ Flag important
           });
         }
@@ -900,6 +938,10 @@ router.post(
               validatedData,
               siteObj,
             );
+
+          // Fusionner avec anomalies QR
+          const allAnomalies = [...qrAnomalies, ...anomalies];
+          const allCorrections = [...qrCorrections, ...corrections];
 
           const entryObj = new TimeEntries()
             .setSession(activeSession?.getId()!)
@@ -917,12 +959,12 @@ router.post(
           await entryObj.accept();
 
           let autoMemo = null;
-          if (anomalies.length > 0) {
+          if (allAnomalies.length > 0) {
             autoMemo = await AnomalyDetectionService.generateAutoMemo(
-              anomalies,
+              allAnomalies,
               entryObj,
               userId,
-              corrections,
+              allCorrections,
             );
 
             if (autoMemo) {
@@ -931,7 +973,7 @@ router.post(
             }
 
             await AnomalyDetectionService.createFraudAlertsForAnomalies(
-              anomalies,
+              allAnomalies,
               entryObj,
               userId,
             );
@@ -940,15 +982,15 @@ router.post(
           return R.handleCreated(res, {
             message: autoCreatedSession
               ? '⚠️ Mission démarrée - Session créée automatiquement'
-              : anomalies.length > 0
+              : allAnomalies.length > 0
                 ? 'Mission acceptée avec anomalies'
                 : 'External mission started',
             entry: await entryObj.toJSON(),
             session: activeSession ? await activeSession.toJSON() : null,
-            anomalies_detected: anomalies.length,
+            anomalies_detected: allAnomalies.length,
             auto_created_session: autoCreatedSession,
             auto_memo_created: autoMemo !== null,
-            corrections_applied: corrections.length,
+            corrections_applied: allCorrections.length,
           });
         }
 
@@ -966,6 +1008,10 @@ router.post(
             siteObj,
           );
 
+          // Fusionner avec anomalies QR
+          const allAnomalies = [...qrAnomalies, ...anomalies];
+          const allCorrections = [...qrCorrections, ...corrections];
+
           const entryObj = new TimeEntries()
             .setSession(activeSession?.getId()!)
             .setUser(userId)
@@ -982,12 +1028,12 @@ router.post(
           await entryObj.accept();
 
           let autoMemo = null;
-          if (anomalies.length > 0) {
+          if (allAnomalies.length > 0) {
             autoMemo = await AnomalyDetectionService.generateAutoMemo(
-              anomalies,
+              allAnomalies,
               entryObj,
               userId,
-              corrections,
+              allCorrections,
             );
 
             if (autoMemo) {
@@ -996,7 +1042,7 @@ router.post(
             }
 
             await AnomalyDetectionService.createFraudAlertsForAnomalies(
-              anomalies,
+              allAnomalies,
               entryObj,
               userId,
             );
@@ -1006,16 +1052,16 @@ router.post(
             message:
               autoCreatedSession || autoCreatedMissionStart
                 ? '⚠️ Mission terminée - Corrections automatiques appliquées'
-                : anomalies.length > 0
+                : allAnomalies.length > 0
                   ? 'Mission terminée avec anomalies'
                   : 'External mission ended',
             entry: await entryObj.toJSON(),
             session: activeSession ? await activeSession.toJSON() : null,
-            anomalies_detected: anomalies.length,
+            anomalies_detected: allAnomalies.length,
             auto_memo_created: autoMemo !== null,
             auto_created_session: autoCreatedSession,
             auto_created_mission_start: autoCreatedMissionStart,
-            corrections_applied: corrections.length,
+            corrections_applied: allCorrections.length,
           });
         }
 

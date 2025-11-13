@@ -19,7 +19,7 @@ import { ClientProfileDbStructure } from './data/client.profile.db.js';
 import { ClientDbStructure } from './data/client.db.js';
 import { ContactDbStructure } from './data/contact.db.js';
 import { InvitationDbStructure } from './data/sponsor.db.js';
-import { AppConfigDBStructure } from './data/app_config.db.js';
+import { AppConfigDBStructure } from './data/app.config.db.js';
 
 /**
  * Gestionnaire STATIQUE d'initialisation des tables

@@ -317,7 +317,8 @@ router.delete('/:guid', Ensure.delete(), async (req: Request, res: Response) => 
  */
 router.get('/list', Ensure.get(), async (req: Request, res: Response) => {
   try {
-    const filters = TR.validateTaxRuleFilters(req.query);
+    const { offset, limit, ...filterQuery } = req.query;
+    const filters = TR.validateTaxRuleFilters(filterQuery);
     const paginationOptions = paginationSchema.parse(req.query);
 
     const conditions: Record<string, any> = {};

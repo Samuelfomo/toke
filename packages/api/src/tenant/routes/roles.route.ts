@@ -14,7 +14,7 @@ import {
 import Ensure from '../../middle/ensured-routes.js';
 import R from '../../tools/response.js';
 import Role from '../class/Role.js';
-import Revision from '../../tools/revision.js';
+import { TenantRevision } from '../../tools/revision.js';
 import { tableName } from '../../utils/response.model.js';
 
 const router = Router();
@@ -23,9 +23,9 @@ router.get('/', Ensure.get(), async (req: Request, res: Response) => {
   try {
     const paginationData = paginationSchema.parse(req.query);
 
-    const exportableRoles = await Role.exportable(paginationData);
+    const roles = await Role.exportable(paginationData);
     return R.handleSuccess(res, {
-      exportableRoles,
+      roles,
     });
   } catch (error: any) {
     if (error.issues) {
@@ -45,7 +45,7 @@ router.get('/', Ensure.get(), async (req: Request, res: Response) => {
 
 router.get('/revision', Ensure.get(), async (_req: Request, res: Response) => {
   try {
-    const revision = await Revision.getRevision(tableName.ROLES);
+    const revision = await TenantRevision.getRevision(tableName.ROLES);
 
     R.handleSuccess(res, {
       revision,
@@ -183,8 +183,9 @@ router.put('/:guid', Ensure.put(), async (req: Request, res: Response) => {
 
 router.get('/list', Ensure.get(), async (req: Request, res: Response) => {
   try {
+    const { offset, limit, ...filterQuery } = req.query;
     const paginationOptions = paginationSchema.parse(req.query);
-    const filters = validateRolesFilters(req.query);
+    const filters = validateRolesFilters(filterQuery);
     const conditions: Record<string, any> = {};
     if (filters.system_role) {
       conditions.system_role = filters.system_role;

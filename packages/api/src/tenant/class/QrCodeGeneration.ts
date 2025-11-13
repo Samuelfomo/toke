@@ -1,7 +1,13 @@
 import QrCodeGenerationModel from '../model/QrCodeGenerationModel.js';
 import W from '../../tools/watcher.js';
 import G from '../../tools/glossary.js';
-import { responseStructure as RS, responseValue, ViewMode } from '../../utils/response.model.js';
+import {
+  responseStructure as RS,
+  responseValue,
+  tableName,
+  ViewMode,
+} from '../../utils/response.model.js';
+import { TenantRevision } from '../../tools/revision.js';
 
 import User from './User.js';
 import Site from './Site.js';
@@ -50,7 +56,7 @@ export default class QrCodeGeneration extends QrCodeGenerationModel {
       items = qrCodes.map((qrCode) => qrCode.toJSON());
     }
     return {
-      revision: '',
+      revision: await TenantRevision.getRevision(tableName.QR_CODE_GENERATION),
       pagination: {
         offset: paginationOptions.offset || 0,
         limit: paginationOptions.limit || items.length,

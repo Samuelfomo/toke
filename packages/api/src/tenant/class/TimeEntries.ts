@@ -3,18 +3,26 @@ import { PointageStatus, PointageType } from '@toke/shared';
 import TimeEntriesModel from '../model/TimeEntriesModel.js';
 import W from '../../tools/watcher.js';
 import G from '../../tools/glossary.js';
-import { responseStructure as RS, responseValue, ViewMode } from '../../utils/response.model.js';
+import {
+  responseStructure as RS,
+  responseValue,
+  tableName,
+  ViewMode,
+} from '../../utils/response.model.js';
+import { TenantRevision } from '../../tools/revision.js';
 
 import User from './User.js';
 import Site from './Site.js';
 import WorkSessions from './WorkSessions.js';
 import Memos from './Memos.js';
+import QrCodeGeneration from './QrCodeGeneration.js';
 
 export default class TimeEntries extends TimeEntriesModel {
   private userObj?: User;
   private siteObj?: Site;
   private sessionObj?: WorkSessions;
   private memoObj?: Memos;
+  private qrCodeObj?: QrCodeGeneration;
 
   constructor() {
     super();
@@ -81,7 +89,7 @@ export default class TimeEntries extends TimeEntriesModel {
       items = await Promise.all(entries.map(async (entry) => await entry.toJSON()));
     }
     return {
-      revision: '',
+      revision: await TenantRevision.getRevision(tableName.TIME_ENTRIES),
       pagination: {
         offset: paginationOptions.offset || 0,
         limit: paginationOptions.limit || items.length,
@@ -190,6 +198,18 @@ export default class TimeEntries extends TimeEntriesModel {
     return this.gps_accuracy;
   }
 
+  getQrCode(): number | undefined {
+    return this.qr_code;
+  }
+
+  async getQrCodeObj(): Promise<QrCodeGeneration | null> {
+    if (!this.qr_code) return null;
+    if (!this.qrCodeObj) {
+      this.qrCodeObj = (await QrCodeGeneration._load(this.qr_code)) || undefined;
+    }
+    return this.qrCodeObj || null;
+  }
+
   getDeviceInfo(): Record<string, any> | undefined {
     return this.device_info;
   }
@@ -283,6 +303,11 @@ export default class TimeEntries extends TimeEntriesModel {
 
   setGpsAccuracy(accuracy: number): TimeEntries {
     this.gps_accuracy = accuracy;
+    return this;
+  }
+
+  setQrCode(qr_code: number): TimeEntries {
+    this.qr_code = qr_code;
     return this;
   }
 
@@ -931,6 +956,7 @@ export default class TimeEntries extends TimeEntriesModel {
     this.latitude = data.latitude;
     this.longitude = data.longitude;
     this.gps_accuracy = data.gps_accuracy;
+    this.qr_code = data.qr_code;
     this.device_info = data.device_info;
     this.ip_address = data.ip_address;
     this.user_agent = data.user_agent;

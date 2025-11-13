@@ -35,7 +35,7 @@ export default class AppConfig extends AppConfigModel {
   }
 
   setKey(key: string): AppConfig {
-    this.key = key;
+    this.key = key.toUpperCase();
     return this;
   }
 

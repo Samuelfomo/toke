@@ -637,7 +637,8 @@ router.patch('/:guid/deactivate', Ensure.patch(), async (req: Request, res: Resp
  */
 router.get('/list', Ensure.get(), async (req: Request, res: Response) => {
   try {
-    const filters = PM.validatePaymentMethodFilters(req.query);
+    const { offset, limit, ...filterQuery } = req.query;
+    const filters = PM.validatePaymentMethodFilters(filterQuery);
     const paginationOptions = paginationSchema.parse(req.query);
 
     const conditions: Record<string, any> = {};

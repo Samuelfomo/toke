@@ -49,7 +49,7 @@ export default class TenantCacheService {
       console.log(`⚠️ Tenant '${subdomain}' est inactif`);
       return null;
     }
-
+ 
     return config;
   }
 

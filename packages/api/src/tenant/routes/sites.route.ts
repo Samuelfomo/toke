@@ -19,7 +19,7 @@ import Ensure from '../../middle/ensured-routes.js';
 import R from '../../tools/response.js';
 import User from '../class/User.js';
 import Site from '../class/Site.js';
-import Revision from '../../tools/revision.js';
+import { TenantRevision } from '../../tools/revision.js';
 import { responseValue, tableName } from '../../utils/response.model.js';
 import UserRole from '../class/UserRole.js';
 import { DatabaseEncryption } from '../../utils/encryption.js';
@@ -32,10 +32,10 @@ const router = Router();
 router.get('/', Ensure.get(), async (req: Request, res: Response) => {
   try {
     const paginationData = paginationSchema.parse(req.query);
-    const exportableSites = await Site.exportable({}, paginationData);
+    const sites = await Site.exportable({}, paginationData);
 
     return R.handleSuccess(res, {
-      exportableSites,
+      sites,
     });
   } catch (error: any) {
     if (error.issues) {
@@ -55,7 +55,7 @@ router.get('/', Ensure.get(), async (req: Request, res: Response) => {
 
 router.get('/revision', Ensure.get(), async (_req: Request, res: Response) => {
   try {
-    const revision = await Revision.getRevision(tableName.SITES);
+    const revision = await TenantRevision.getRevision(tableName.SITES);
 
     R.handleSuccess(res, {
       revision,
@@ -71,7 +71,8 @@ router.get('/revision', Ensure.get(), async (_req: Request, res: Response) => {
 
 router.get('/list', Ensure.get(), async (req: Request, res: Response) => {
   try {
-    const filters = validateSitesFilters(req.query);
+    const { offset, limit, ...filterQuery } = req.query;
+    const filters = validateSitesFilters(filterQuery);
     const paginationOptions = paginationSchema.parse(req.query);
     const conditions: Record<string, any> = {};
 
@@ -876,25 +877,30 @@ router.post('/generate-qr-code', Ensure.post(), async (req: Request, res: Respon
 
     await qrCodeObj.save();
 
-    // const qrGenerator = DatabaseEncryption.encrypt({
-    //   qr_reference: qrCodeObj.getGuid(),
-    //   site: siteObj.getGuid(),
-    // });
+    const tenant = req.tenant;
 
-    // const tenant = req.tenant;
     const qrGenerator = DatabaseEncryption.encrypt(
       {
-        // manager: userObj.getGuid(),
+        qr_reference: qrCodeObj.getGuid(),
         site: siteObj.getGuid(),
-        period: siteObj.getQRCodeData(),
-        site_name: siteObj.getName(),
-        // site_type: siteObj.getSiteType(),
-        site_address: siteObj.getAddress().city,
-        // geofence_polygon: siteObj.getGeofencePolygon(),
-        // geofence_radius: siteObj.getGeofenceRadius(),
       },
-      // tenant.config.reference,
+      tenant.config.reference,
     );
+
+    // // const tenant = req.tenant;
+    // const qrGenerator = DatabaseEncryption.encrypt(
+    //   {
+    //     // manager: userObj.getGuid(),
+    //     site: siteObj.getGuid(),
+    //     period: siteObj.getQRCodeData(),
+    //     site_name: siteObj.getName(),
+    //     // site_type: siteObj.getSiteType(),
+    //     site_address: siteObj.getAddress().city,
+    //     // geofence_polygon: siteObj.getGeofencePolygon(),
+    //     // geofence_radius: siteObj.getGeofenceRadius(),
+    //   },
+    //   // tenant.config.reference,
+    // );
     return R.handleCreated(res, {
       site_qr_code: qrGenerator,
     });

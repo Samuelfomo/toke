@@ -1,7 +1,5 @@
 import { Request, Response, Router } from 'express';
 import {
-  COUNTRY_ERRORS,
-  CountryValidationUtils,
   HttpStatus,
   ORG_HIERARCHY_DEFAULTS,
   paginationSchema,
@@ -26,7 +24,7 @@ import Ensure from '../../middle/ensured-routes.js';
 import R from '../../tools/response.js';
 import User from '../class/User.js';
 import UserRole from '../class/UserRole.js';
-import Revision from '../../tools/revision.js';
+import { TenantRevision } from '../../tools/revision.js';
 import { responseValue, RoleValues, tableName } from '../../utils/response.model.js';
 import Role from '../class/Role.js';
 import OrgHierarchy from '../class/OrgHierarchy.js';
@@ -37,6 +35,7 @@ import Site from '../class/Site.js';
 import EmailSender from '../../tools/send.email.service.js';
 import InvitationService from '../../tools/spondor.service.js';
 import CountryPhoneValidation from '../../tools/country.phone.validation.js';
+import EmployeeLicenseService from '../../tools/employee.license.service.js';
 
 const router = Router();
 
@@ -46,10 +45,10 @@ const router = Router();
 router.get('/', Ensure.get(), async (req: Request, res: Response) => {
   try {
     const paginationData = paginationSchema.parse(req.query);
-    const exportableUsers = await User.exportable({}, paginationData);
+    const users = await User.exportable({}, paginationData);
 
     return R.handleSuccess(res, {
-      exportableUsers,
+      users,
     });
   } catch (error: any) {
     if (error.issues) {
@@ -69,7 +68,7 @@ router.get('/', Ensure.get(), async (req: Request, res: Response) => {
 
 router.get('/revision', Ensure.get(), async (_req: Request, res: Response) => {
   try {
-    const revision = await Revision.getRevision(tableName.USERS);
+    const revision = await TenantRevision.getRevision(tableName.USERS);
 
     R.handleSuccess(res, {
       revision,
@@ -85,7 +84,9 @@ router.get('/revision', Ensure.get(), async (_req: Request, res: Response) => {
 
 router.get('/list', Ensure.get(), async (req: Request, res: Response) => {
   try {
-    const filters = validateUsersFilters(req.query);
+    // 2️⃣ Supprimer les clés offset/limit du query avant la validation des filtres
+    const { offset, limit, view, ...filterQuery } = req.query;
+    const filters = validateUsersFilters(filterQuery);
     const paginationOptions = paginationSchema.parse(req.query);
     const conditions: Record<string, any> = {};
 
@@ -300,6 +301,12 @@ router.post('/', Ensure.post(), async (req: Request, res: Response) => {
       employee_code: userObj.getEmployeeCode()!,
     };
 
+    const serviceEmployee = await EmployeeLicenseService.saveEmployeeLicense(employeeLicense);
+
+    if (serviceEmployee.status !== HttpStatus.CREATED) {
+      return R.handleError(res, serviceEmployee.status, serviceEmployee.response);
+    }
+
     const userRoleObj = new UserRole()
       .setRole(existingDefaultRole.getId()!)
       .setUser(userObj.getId()!)
@@ -455,6 +462,19 @@ router.post('/manager', Ensure.post(), async (req: Request, res: Response) => {
 
     // === 4️⃣ Sauvegarde du user ===
     await userObj.save();
+
+    // 1-Creer une license employee
+    const employeeLicense = {
+      global_license: tenant.config.global_license,
+      employee: userObj.getGuid()!,
+      employee_code: userObj.getEmployeeCode()!,
+    };
+
+    const serviceEmployee = await EmployeeLicenseService.saveEmployeeLicense(employeeLicense);
+
+    if (serviceEmployee.status !== HttpStatus.CREATED) {
+      return R.handleError(res, serviceEmployee.status, serviceEmployee.response);
+    }
 
     // === 5️⃣ Attribution des rôles ===
     if (isFirstUser) {
@@ -731,14 +751,14 @@ router.patch('/:guid/generate-otp', Ensure.patch(), async (req: Request, res: Re
       });
     }
 
-    const { expiration_minutes = 1440, country, email } = req.body; // 24h par défaut
+    const { expiration_minutes = 1440, email } = req.body; // 24h par défaut
 
-    if (!CountryValidationUtils.validateIsoCode(country)) {
-      return R.handleError(res, HttpStatus.BAD_REQUEST, {
-        code: 'country_code_invalid',
-        message: COUNTRY_ERRORS.CODE_INVALID,
-      });
-    }
+    // if (!CountryValidationUtils.validateIsoCode(country)) {
+    //   return R.handleError(res, HttpStatus.BAD_REQUEST, {
+    //     code: 'country_code_invalid',
+    //     message: COUNTRY_ERRORS.CODE_INVALID,
+    //   });
+    // }
 
     // const otp = GenerateOtp.generateOTP(6);
     // const expiresAt = new Date(Date.now() + expiration_minutes * 60 * 1000);
@@ -771,7 +791,7 @@ router.patch('/:guid/generate-otp', Ensure.patch(), async (req: Request, res: Re
       sendOtp = await WapService.sendOtp(
         userObj.getOtpToken()!,
         userObj.getPhoneNumber()!,
-        country,
+        userObj.getCountry()!,
       );
 
       if (sendOtp.status !== HttpStatus.SUCCESS) {
@@ -925,7 +945,7 @@ router.patch('/:guid/change-pin', Ensure.patch(), async (req: Request, res: Resp
     }
 
     userObj.setPin(new_pin);
-    await userObj.save();
+    await userObj.definePin();
 
     return R.handleSuccess(res, {
       message: 'PIN updated successfully',

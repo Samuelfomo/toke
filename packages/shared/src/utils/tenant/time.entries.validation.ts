@@ -165,6 +165,18 @@ export class TimeEntriesValidationUtils {
   }
 
   /**
+   * Validates QrCode
+   */
+  static validateQrCode(qr_code: number | null): boolean {
+    if (qr_code === null || qr_code === undefined) return true;
+    if (typeof qr_code !== 'number' || !Number.isInteger(qr_code)) return false;
+    return (
+      qr_code >= TIME_ENTRIES_VALIDATION.QR_CODE.MIN &&
+      qr_code <= TIME_ENTRIES_VALIDATION.QR_CODE.MAX
+    );
+  }
+
+  /**
    * Validates device info
    */
   static validateDeviceInfo(deviceInfo: any): boolean {
@@ -428,11 +440,13 @@ export class TimeEntriesValidationUtils {
     const cleaned = { ...data };
 
     // Convert numeric fields
-    ['session', 'user', 'site', 'gps_accuracy', 'sync_attempts', 'memo'].forEach((field) => {
-      if (cleaned[field] !== undefined && cleaned[field] !== null) {
-        cleaned[field] = Number(cleaned[field]);
-      }
-    });
+    ['session', 'user', 'site', 'gps_accuracy', 'sync_attempts', 'memo', 'qr_code'].forEach(
+      (field) => {
+        if (cleaned[field] !== undefined && cleaned[field] !== null) {
+          cleaned[field] = Number(cleaned[field]);
+        }
+      },
+    );
 
     // Convert coordinate fields to precise numbers
     if (cleaned.latitude !== undefined && cleaned.latitude !== null) {
@@ -525,6 +539,7 @@ export class TimeEntriesValidationUtils {
       this.validateLatitude(data.latitude) &&
       this.validateLongitude(data.longitude) &&
       this.validateGpsAccuracy(data.gps_accuracy) &&
+      this.validateQrCode(data.qr_code) &&
       this.validateDeviceInfo(data.device_info) &&
       this.validateIpAddress(data.ip_address) &&
       (data.created_offline === undefined || this.validateCreatedOffline(data.created_offline)) &&
@@ -553,6 +568,7 @@ export class TimeEntriesValidationUtils {
       data.latitude === undefined || this.validateLatitude(data.latitude),
       data.longitude === undefined || this.validateLongitude(data.longitude),
       data.gps_accuracy === undefined || this.validateGpsAccuracy(data.gps_accuracy),
+      data.qr_code === undefined || this.validateQrCode(data.qr_code),
       data.device_info === undefined || this.validateDeviceInfo(data.device_info),
       data.ip_address === undefined || this.validateIpAddress(data.ip_address),
       data.created_offline === undefined || this.validateCreatedOffline(data.created_offline),
@@ -684,6 +700,12 @@ export class TimeEntriesValidationUtils {
     if (data.memo !== undefined && !this.validateMemoId(data.memo)) {
       errors.push(
         `Invalid memo: must be between ${TIME_ENTRIES_VALIDATION.MEMO.MIN} and ${TIME_ENTRIES_VALIDATION.MEMO.MAX}`,
+      );
+    }
+
+    if (data.qr_code !== undefined && !this.validateQrCode(data.qr_code)) {
+      errors.push(
+        `Invalid qr_code: must be between ${TIME_ENTRIES_VALIDATION.QR_CODE.MIN} and ${TIME_ENTRIES_VALIDATION.QR_CODE.MAX}`,
       );
     }
 

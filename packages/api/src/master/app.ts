@@ -33,6 +33,7 @@ import ActivityMonitoringRoute from './routes/activity.monitoring.route.js';
 import BillingRoute from './routes/manager/billing.route.js';
 import FraudRoute from './routes/manager/fraud.route.js';
 import SponsorRoute from './routes/sponsor.route.js';
+import AppConfigRoute from './routes/app.config.route.js';
 
 interface AppConfig {
   port: number;
@@ -243,6 +244,7 @@ export default class App {
     this.app.use(`/client`, ClientRoutes);
     this.app.use(`/profile`, ProfileRoutes);
     this.app.use('/sponsors', SponsorRoute);
+    this.app.use('/app', AppConfigRoute);
 
     // *** Manager Route ***//
     this.app.use(`/billing`, BillingRoute);

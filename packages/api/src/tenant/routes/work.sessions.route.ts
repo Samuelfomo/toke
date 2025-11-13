@@ -15,7 +15,7 @@ import R from '../../tools/response.js';
 import User from '../class/User.js';
 import Site from '../class/Site.js';
 import WorkSessions from '../class/WorkSessions.js';
-import Revision from '../../tools/revision.js';
+import { TenantRevision } from '../../tools/revision.js';
 import { responseValue, tableName } from '../../utils/response.model.js';
 
 const router = Router();
@@ -25,10 +25,10 @@ const router = Router();
 router.get('/', Ensure.get(), async (req: Request, res: Response) => {
   try {
     const paginationData = paginationSchema.parse(req.query);
-    const exportableSessions = await WorkSessions.exportable({}, paginationData);
+    const workSessions = await WorkSessions.exportable({}, paginationData);
 
     return R.handleSuccess(res, {
-      exportableSessions,
+      workSessions,
     });
   } catch (error: any) {
     if (error.issues) {
@@ -48,7 +48,7 @@ router.get('/', Ensure.get(), async (req: Request, res: Response) => {
 
 router.get('/revision', Ensure.get(), async (_req: Request, res: Response) => {
   try {
-    const revision = await Revision.getRevision(tableName.WORK_SESSIONS);
+    const revision = await TenantRevision.getRevision(tableName.WORK_SESSIONS);
 
     R.handleSuccess(res, {
       revision,
@@ -64,7 +64,9 @@ router.get('/revision', Ensure.get(), async (_req: Request, res: Response) => {
 
 router.get('/list', Ensure.get(), async (req: Request, res: Response) => {
   try {
-    const filters = validateWorkSessionsFilters(req.query);
+    const { offset, limit, view, ...filterQuery } = req.query;
+
+    const filters = validateWorkSessionsFilters(filterQuery);
     const paginationOptions = paginationSchema.parse(req.query);
     const conditions: Record<string, any> = {};
 

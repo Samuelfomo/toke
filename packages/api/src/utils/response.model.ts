@@ -287,6 +287,8 @@ export const responseStructure = {
   VALID_FROM: 'valid_from',
   VALID_TO: 'valid_to',
   LINK: 'link',
+
+  APP_WEB: 'app_web',
 } as const;
 
 export const RT = {

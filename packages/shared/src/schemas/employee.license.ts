@@ -49,24 +49,40 @@ const baseEmployeeLicenseSchema = z.object({
     )
     .transform((val) => val.trim()),
 
+  // activation_date: z
+  //   .date({
+  //     required_error: EMPLOYEE_LICENSE_ERRORS.ACTIVATION_DATE_REQUIRED,
+  //     invalid_type_error: EMPLOYEE_LICENSE_ERRORS.INVALID_DATE_FORMAT,
+  //   })
+  //   .refine((date) => date <= new Date(), EMPLOYEE_LICENSE_ERRORS.FUTURE_ACTIVATION_DATE),
+
   activation_date: z
-    .date({
-      required_error: EMPLOYEE_LICENSE_ERRORS.ACTIVATION_DATE_REQUIRED,
-      invalid_type_error: EMPLOYEE_LICENSE_ERRORS.INVALID_DATE_FORMAT,
-    })
-    .refine((date) => date <= new Date(), EMPLOYEE_LICENSE_ERRORS.FUTURE_ACTIVATION_DATE),
+    .preprocess(
+      (val) => (typeof val === 'string' ? new Date(val) : val),
+      z.date({
+        invalid_type_error: EMPLOYEE_LICENSE_ERRORS.INVALID_DATE_FORMAT,
+      }),
+    )
+    .refine((date) => date <= new Date(), EMPLOYEE_LICENSE_ERRORS.FUTURE_ACTIVATION_DATE)
+    .default(() => new Date()),
 
   deactivation_date: z
-    .date({
-      invalid_type_error: EMPLOYEE_LICENSE_ERRORS.INVALID_DATE_FORMAT,
-    })
+    .preprocess(
+      (val) => (typeof val === 'string' ? new Date(val) : val),
+      z.date({
+        invalid_type_error: EMPLOYEE_LICENSE_ERRORS.INVALID_DATE_FORMAT,
+      }),
+    )
     .optional()
     .nullable(),
 
   last_activity_date: z
-    .date({
-      invalid_type_error: EMPLOYEE_LICENSE_ERRORS.INVALID_DATE_FORMAT,
-    })
+    .preprocess(
+      (val) => (typeof val === 'string' ? new Date(val) : val),
+      z.date({
+        invalid_type_error: EMPLOYEE_LICENSE_ERRORS.INVALID_DATE_FORMAT,
+      }),
+    )
     .optional()
     .nullable(),
 
@@ -97,9 +113,12 @@ const baseEmployeeLicenseSchema = z.object({
     .nullable(),
 
   long_leave_declared_at: z
-    .date({
-      invalid_type_error: EMPLOYEE_LICENSE_ERRORS.INVALID_DATE_FORMAT,
-    })
+    .preprocess(
+      (val) => (typeof val === 'string' ? new Date(val) : val),
+      z.date({
+        invalid_type_error: EMPLOYEE_LICENSE_ERRORS.INVALID_DATE_FORMAT,
+      }),
+    )
     .optional()
     .nullable(),
 
@@ -121,16 +140,22 @@ const baseEmployeeLicenseSchema = z.object({
     .nullable(),
 
   grace_period_start: z
-    .date({
-      invalid_type_error: EMPLOYEE_LICENSE_ERRORS.INVALID_DATE_FORMAT,
-    })
+    .preprocess(
+      (val) => (typeof val === 'string' ? new Date(val) : val),
+      z.date({
+        invalid_type_error: EMPLOYEE_LICENSE_ERRORS.INVALID_DATE_FORMAT,
+      }),
+    )
     .optional()
     .nullable(),
 
   grace_period_end: z
-    .date({
-      invalid_type_error: EMPLOYEE_LICENSE_ERRORS.INVALID_DATE_FORMAT,
-    })
+    .preprocess(
+      (val) => (typeof val === 'string' ? new Date(val) : val),
+      z.date({
+        invalid_type_error: EMPLOYEE_LICENSE_ERRORS.INVALID_DATE_FORMAT,
+      }),
+    )
     .optional()
     .nullable(),
 });

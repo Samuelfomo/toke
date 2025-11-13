@@ -1013,7 +1013,8 @@ router.patch('/:guid/refund', Ensure.patch(), async (req: Request, res: Response
  */
 router.get('/list', Ensure.get(), async (req: Request, res: Response) => {
   try {
-    const filters = PT.validatePaymentTransactionFilters(req.query);
+    const { offset, limit, ...filterQuery } = req.query;
+    const filters = PT.validatePaymentTransactionFilters(filterQuery);
     const paginationOptions = paginationSchema.parse(req.query);
 
     const conditions: Record<string, any> = {};

@@ -19,7 +19,7 @@ import R from '../../tools/response.js';
 import G from '../../tools/glossary.js';
 import Ensure from '../../middle/ensured-routes.js';
 import Revision from '../../tools/revision.js';
-import { tableName } from '../../utils/response.model.js';
+import { responseStructure, tableName } from '../../utils/response.model.js';
 import GlobalLicense from '../class/GlobalLicense.js';
 import TenantConfig from '../../utils/generate.tenant.config.js';
 import ManageTenantDatabase from '../../utils/generate.database.js';
@@ -33,6 +33,7 @@ import WapService from '../../tools/send.otp.service.js';
 import EmailSender from '../../tools/send.email.service.js';
 import { Contact } from '../class/Contact.js';
 import CountryPhoneValidation from '../../tools/country.phone.validation.js';
+import AppConfig from '../class/AppConfig.js';
 
 const otpManager = new TenantOtpManager();
 
@@ -388,11 +389,20 @@ router.post('/', Ensure.post(), async (req: Request, res: Response) => {
       tenantObj.setRegistrationNumber(validatedData.registration_number);
 
     await tenantObj.save();
+
+    const site = await AppConfig._load(responseStructure.APP_WEB, true);
+    if (!site) {
+      return R.handleError(res, HttpStatus.NOT_FOUND, {
+        code: 'url_not_found',
+        message: 'Site url not found',
+      });
+    }
     try {
       await EmailSender.licensePayment(
         tenantObj.getName()!,
         tenantObj.getBillingEmail()!,
         tenantObj.getGuid()!.toString(),
+        site.getLink()!,
       );
     } catch (err) {
       return R.handleError(res, HttpStatus.INTERNAL_ERROR, {
@@ -792,7 +802,8 @@ router.get('/:guid/check', Ensure.get(), async (req: Request, res: Response) => 
  */
 router.get('/list', Ensure.get(), async (req: Request, res: Response) => {
   try {
-    const filters = TN.validateTenantFilters(req.query);
+    const { offset, limit, ...filterQuery } = req.query;
+    const filters = TN.validateTenantFilters(filterQuery);
     const paginationOptions = paginationSchema.parse(req.query);
 
     const conditions: Record<string, any> = {};

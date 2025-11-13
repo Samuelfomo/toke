@@ -13,7 +13,7 @@ import Ensure from '../../middle/ensured-routes.js';
 import R from '../../tools/response.js';
 import AuditLogs from '../class/AuditLogs.js';
 import User from '../class/User.js';
-import Revision from '../../tools/revision.js';
+import { TenantRevision } from '../../tools/revision.js';
 import { tableName } from '../../utils/response.model.js';
 
 const router = Router();
@@ -34,6 +34,7 @@ router.get('/', Ensure.get(), async (req: Request, res: Response) => {
         count: items.length,
       },
       items,
+      revision: await TenantRevision.getRevision(tableName.AUDIT_LOGS),
     });
   } catch (error: any) {
     return R.handleError(res, HttpStatus.INTERNAL_ERROR, {
@@ -47,7 +48,7 @@ router.get('/', Ensure.get(), async (req: Request, res: Response) => {
 
 router.get('/revision', Ensure.get(), async (_req: Request, res: Response) => {
   try {
-    const revision = await Revision.getRevision(tableName.AUDIT_LOGS);
+    const revision = await TenantRevision.getRevision(tableName.AUDIT_LOGS);
 
     R.handleSuccess(res, {
       revision,
