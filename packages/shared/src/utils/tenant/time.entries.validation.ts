@@ -167,12 +167,12 @@ export class TimeEntriesValidationUtils {
   /**
    * Validates QrCode
    */
-  static validateQrCode(qr_code: number | null): boolean {
+  static validateQrCode(qr_code: string | null): boolean {
     if (qr_code === null || qr_code === undefined) return true;
-    if (typeof qr_code !== 'number' || !Number.isInteger(qr_code)) return false;
+    if (typeof qr_code !== 'string') return false;
     return (
-      qr_code >= TIME_ENTRIES_VALIDATION.QR_CODE.MIN &&
-      qr_code <= TIME_ENTRIES_VALIDATION.QR_CODE.MAX
+      qr_code.length >= TIME_ENTRIES_VALIDATION.QR_CODE.MIN_LENGTH &&
+      qr_code.length <= TIME_ENTRIES_VALIDATION.QR_CODE.MAX_LENGTH
     );
   }
 
@@ -705,7 +705,7 @@ export class TimeEntriesValidationUtils {
 
     if (data.qr_code !== undefined && !this.validateQrCode(data.qr_code)) {
       errors.push(
-        `Invalid qr_code: must be between ${TIME_ENTRIES_VALIDATION.QR_CODE.MIN} and ${TIME_ENTRIES_VALIDATION.QR_CODE.MAX}`,
+        `Invalid qr_code: must be between ${TIME_ENTRIES_VALIDATION.QR_CODE.MIN_LENGTH} and ${TIME_ENTRIES_VALIDATION.QR_CODE.MAX_LENGTH}`,
       );
     }
 

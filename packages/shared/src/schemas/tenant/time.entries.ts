@@ -129,12 +129,11 @@ const baseTimeEntriesSchema = z.object({
     .nullable(),
 
   qr_code: z
-    .number({
+    .string({
       invalid_type_error: TIME_ENTRIES_ERRORS.QR_CODE_INVALID,
     })
-    .int()
-    .min(TIME_ENTRIES_VALIDATION.QR_CODE.MIN, TIME_ENTRIES_ERRORS.QR_CODE_INVALID)
-    .max(TIME_ENTRIES_VALIDATION.QR_CODE.MAX, TIME_ENTRIES_ERRORS.QR_CODE_INVALID)
+    .min(TIME_ENTRIES_VALIDATION.QR_CODE.MIN_LENGTH, TIME_ENTRIES_ERRORS.QR_CODE_INVALID)
+    .max(TIME_ENTRIES_VALIDATION.QR_CODE.MAX_LENGTH, TIME_ENTRIES_ERRORS.QR_CODE_INVALID)
     .optional()
     .nullable(),
 

@@ -55,8 +55,8 @@ export const TIME_ENTRIES_VALIDATION = {
     MAX: 2147483647,
   },
   QR_CODE: {
-    MIN: 1,
-    MAX: 2147483647,
+    MIN_LENGTH: 1,
+    MAX_LENGTH: 128,
   },
   LOCAL_ID: {
     MIN_LENGTH: 1,
@@ -208,7 +208,7 @@ export const TIME_ENTRIES_ERRORS = {
   MEMO_NOT_FOUND: 'Memo not found',
 
   QR_CODE_REQUIRED: `${TIME_ENTRIES_LABEL} qr_code is required`,
-  QR_CODE_INVALID: `QR Code ID must be between ${TIME_ENTRIES_VALIDATION.QR_CODE.MIN} and ${TIME_ENTRIES_VALIDATION.QR_CODE.MAX}`,
+  QR_CODE_INVALID: `QR Code ID must be between ${TIME_ENTRIES_VALIDATION.QR_CODE.MIN_LENGTH} and ${TIME_ENTRIES_VALIDATION.QR_CODE.MAX_LENGTH}`,
   QR_CODE_NOT_FOUND: 'QR Code not found',
 
   CORRECTION_REASON_REQUIRED: 'Correction reason is required for corrected entries',
