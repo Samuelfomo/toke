@@ -201,7 +201,7 @@ export default class App {
           uptime: process.uptime(),
           environment: process.env.NODE_ENV || 'development',
           database: dbStatus,
-          tables: TableInitializer.getAllModels().size || 0,
+          // tables: TableInitializer.getAllModels().size || 0,
           revision: {
             country: await Revision.getRevision(tableName.COUNTRY),
             currency: await Revision.getRevision(tableName.CURRENCY),

@@ -134,6 +134,11 @@ export const ExchangeRateDbStructure = {
         fields: ['updated_at'],
         name: 'idx_exchange_rate_updated_at',
       },
+      {
+        unique: true,
+        name: 'unique_currency_pair',
+        fields: ['from_currency_code', 'to_currency_code'],
+      },
     ],
     // Contraintes au niveau table
     validate: {

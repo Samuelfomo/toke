@@ -33,8 +33,12 @@ export default class ExchangeRate extends ExchangeRateModel {
     };
   }
 
-  static _load(identifier: any, byGuid: boolean = false): Promise<ExchangeRate | null> {
-    return new ExchangeRate().load(identifier, byGuid);
+  static _load(
+    identifier: any,
+    byGuid: boolean = false,
+    byCurrencyPair: boolean = false,
+  ): Promise<ExchangeRate | null> {
+    return new ExchangeRate().load(identifier, byGuid, byCurrencyPair);
   }
 
   static _list(
@@ -142,8 +146,16 @@ export default class ExchangeRate extends ExchangeRateModel {
     return false;
   }
 
-  async load(identifier: any, byGuid: boolean = false): Promise<ExchangeRate | null> {
-    const data = byGuid ? await this.findByGuid(identifier) : await this.find(Number(identifier));
+  async load(
+    identifier: any,
+    byGuid: boolean = false,
+    byCurrencyPair: boolean = false,
+  ): Promise<ExchangeRate | null> {
+    const data = byGuid
+      ? await this.findByGuid(identifier)
+      : byCurrencyPair
+        ? await this.findByCurrencyPair(identifier.from, identifier.to)
+        : await this.find(Number(identifier));
     if (!data) return null;
     return this.hydrate(data);
   }

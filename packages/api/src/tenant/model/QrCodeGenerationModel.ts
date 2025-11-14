@@ -3,6 +3,7 @@ import { Op } from 'sequelize';
 
 import BaseModel from '../database/db.base.js';
 import { tableName } from '../../utils/response.model.js';
+import TokenManager from '../../utils/token.generator.js';
 
 export default class QrCodeGenerationModel extends BaseModel {
   public readonly db = {
@@ -220,7 +221,34 @@ export default class QrCodeGenerationModel extends BaseModel {
   // ============================================================================
 
   protected async create(): Promise<void> {
-    const guid = await this.randomGuidGenerator(this.db.tableName, 6);
+    // const guid = await this.randomGuidGenerator(this.db.tableName, 6);
+    // if (!guid) {
+    //   throw new Error(QR_CODE_ERRORS.GUID_GENERATION_FAILED);
+    // }
+    let guid: string | null = null;
+    const maxAttempts = 10;
+    let attempt = 0;
+
+    // 🔁 Essayer de générer un GUID unique jusqu’à 10 fois
+    while (attempt < maxAttempts) {
+      attempt++;
+      const newGuid = await TokenManager.tokenGenerator(6);
+
+      if (!newGuid) {
+        console.warn(`⚠️ Tentative ${attempt}: échec de génération du GUID`);
+        continue;
+      }
+
+      const exists = await this.findByGuid(newGuid);
+      if (!exists) {
+        guid = newGuid;
+        break; // ✅ GUID unique trouvé
+      }
+
+      console.warn(`⚠️ Tentative ${attempt}: GUID ${newGuid} déjà existant`);
+    }
+
+    // ❌ Après 10 tentatives sans succès
     if (!guid) {
       throw new Error(QR_CODE_ERRORS.GUID_GENERATION_FAILED);
     }

@@ -638,7 +638,7 @@ router.get('/:token', Ensure.get(), async (req: Request, res: Response) => {
   }
 });
 
-// === MISE À JOUR UTILISATEUR ===
+// === mise à jour utilisateur ===
 
 router.put('/:guid', Ensure.put(), async (req: Request, res: Response) => {
   try {
@@ -2037,7 +2037,7 @@ router.get('/attendance/site/:guid/current', Ensure.get(), async (req: Request, 
   }
 });
 
-// In user.route.ts - Add this validation in the /share POST route
+// - Add this validation in the /share POST route
 
 router.post('/share', Ensure.post(), async (req: Request, res: Response) => {
   try {

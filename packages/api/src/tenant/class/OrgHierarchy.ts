@@ -102,7 +102,9 @@ export default class OrgHierarchy extends OrgHierarchyModel {
     let items: any[] = [];
     const hierarchies = await this._list(conditions, paginationOptions);
     if (hierarchies) {
-      items = await Promise.all(hierarchies.map(async (hierarchy) => await hierarchy.toJSON()));
+      items = await Promise.all(
+        hierarchies.map(async (hierarchy) => await hierarchy.toJSON(responseValue.MINIMAL)),
+      );
     }
     return {
       revision: await TenantRevision.getRevision(tableName.ORG_HIERARCHY),

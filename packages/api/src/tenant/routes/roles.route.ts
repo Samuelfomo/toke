@@ -3,6 +3,7 @@ import {
   HttpStatus,
   paginationSchema,
   ROLES_CODES,
+  ROLES_DEFAULTS,
   ROLES_ERRORS,
   RolesValidationUtils,
   TENANT_CODES,
@@ -220,13 +221,10 @@ router.get('/list', Ensure.get(), async (req: Request, res: Response) => {
   }
 });
 
-router.get('/:system_role/list', Ensure.get(), async (req: Request, res: Response) => {
+router.get('/system', Ensure.get(), async (req: Request, res: Response) => {
   try {
-    const { system_role } = req.params;
-    const values = system_role.toLowerCase() === 'true' || system_role === '1';
-
     const paginationOptions = paginationSchema.parse(req.query);
-    const RoleEntries = await Role._listBySystemRole(values, paginationOptions);
+    const RoleEntries = await Role._listBySystemRole(ROLES_DEFAULTS.SYSTEM_ROLE, paginationOptions);
     const roles = {
       pagination: {
         offset: paginationOptions.offset || 0,

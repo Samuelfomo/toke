@@ -212,6 +212,11 @@ export const GlobalLicenseDbStructure = {
         name: 'idx_global_license_guid',
       },
       {
+        unique: true,
+        fields: ['tenant', 'license_type'],
+        name: 'idx_global_license_tenant_license_type',
+      },
+      {
         fields: ['tenant'],
         name: 'idx_global_license_tenant',
       },

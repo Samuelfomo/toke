@@ -47,7 +47,7 @@ export default class Role extends RoleModel {
   }> {
     let items: any[] = [];
     const roles = await this._list(
-      { [RS.SYSTEM_ROLE]: ROLES_DEFAULTS.SYSTEM_ROLE },
+      { [RS.SYSTEM_ROLE]: !ROLES_DEFAULTS.SYSTEM_ROLE },
       paginationOptions,
     );
     if (roles) {

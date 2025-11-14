@@ -42,6 +42,16 @@ export default class ExchangeRateModel extends BaseModel {
   }
 
   /**
+   * Trouve un enregistrement par son couple de devises
+   */
+  protected async findByCurrencyPair(from: string, to: string): Promise<any> {
+    return await this.findOne(this.db.tableName, {
+      [this.db.from_currency_code]: from,
+      [this.db.to_currency_code]: to,
+    });
+  }
+
+  /**
    * Liste tous les enregistrements selon les conditions
    */
   protected async listAll(
@@ -103,6 +113,7 @@ export default class ExchangeRateModel extends BaseModel {
 
     console.log('✅ Exchange rate créé avec ID:', this.id);
   }
+
   protected async update(): Promise<void> {
     await this.validate();
     if (!this.id) {
@@ -121,9 +132,11 @@ export default class ExchangeRateModel extends BaseModel {
       throw new Error('Failed to update exchange rate entry');
     }
   }
+
   protected async trash(id: number): Promise<boolean> {
     return await this.deleteOne(this.db.tableName, { [this.db.id]: id });
   }
+
   private async validate(): Promise<void> {
     if (!this.from_currency_code) {
       throw new Error(EXCHANGE_RATE_ERRORS.FROM_CURRENCY_CODE_REQUIRED);

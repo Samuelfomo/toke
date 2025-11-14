@@ -1,4 +1,10 @@
-import { BillingCycle, LicenseStatus, Type } from '@toke/shared';
+import {
+  BillingCycle,
+  BillingStatus,
+  LicenseStatus,
+  PaymentTransactionStatus,
+  Type,
+} from '@toke/shared';
 
 import GlobalLicenseModel from '../model/GlobalLicenseModel.js';
 import W from '../../tools/watcher.js';
@@ -12,6 +18,12 @@ import {
 import Revision from '../../tools/revision.js';
 
 import Tenant from './Tenant.js';
+import ExchangeRate from './ExchangeRate.js';
+import TaxRule from './TaxRule.js';
+import Billing from './BillingCycle.js';
+import PaymentMethod from './PaymentMethod.js';
+import LicenseAdjustment from './LicenseAdjustment.js';
+import PaymentTransaction from './PaymentTransaction.js';
 
 export default class GlobalLicense extends GlobalLicenseModel {
   private tenantObject?: Tenant;
@@ -321,12 +333,19 @@ export default class GlobalLicense extends GlobalLicenseModel {
   }
 
   /**
-   * Sauvegarde la licence globale (création ou mise à jour)
+   * Sauvegarde la licence globale avec création automatique du premier cycle de facturation (création ou mise à jour)
    */
   async save(): Promise<void> {
     try {
       if (this.isNew()) {
         await this.create();
+
+        // ✅ NOUVEAU : Créer automatiquement le premier cycle de facturation
+        await this.createInitialBillingCycle();
+
+        console.log(
+          `✅ Licence globale créée avec cycle de facturation initial - GUID: ${this.guid}`,
+        );
       } else {
         await this.update();
       }
@@ -525,6 +544,192 @@ export default class GlobalLicense extends GlobalLicenseModel {
     }
 
     return this;
+  }
+
+  /**
+   * Crée le cycle de facturation initial pour la licence
+   */
+  private async createInitialBillingCycle(): Promise<Billing> {
+    if (!this.id) {
+      throw new Error('License ID is required to create initial billing cycle');
+    }
+
+    // Récupérer la devise et le taux de change
+    const tenant = await this.getTenantObject();
+    if (!tenant) {
+      throw new Error('Tenant not found for license');
+    }
+
+    const currencyCode = tenant.getPrimaryCurrencyCode();
+
+    // Récupérer le taux de change USD -> devise locale
+    let exchangeRate = 1.0;
+    const fromCurrent = 'USD';
+    if (currencyCode !== fromCurrent) {
+      const identifier = {
+        from: fromCurrent,
+        to: currencyCode,
+      };
+      const exchangeRateObj = await ExchangeRate._load(identifier, false, true);
+      if (exchangeRateObj) {
+        exchangeRate = exchangeRateObj.getExchangeRate()!;
+      }
+    }
+
+    // Calculer le montant de base
+    const baseEmployeeCount = Math.max(this.getTotalSeatsPurchased(), this.getMinimumSeats() || 0);
+
+    const monthlyPrice = (this.getBasePriceUsd() || 0) * baseEmployeeCount;
+    const billingMonths = Number(this.getBillingCycleMonths() || 1);
+    const baseAmountUsd = monthlyPrice * billingMonths;
+    const baseAmountLocal = baseAmountUsd * exchangeRate;
+
+    // Récupérer les règles fiscales du pays
+    const taxRules = await TaxRule._listByCountryCode(tenant.getCountryCode()!);
+
+    // Calculer les taxes
+    let taxAmountUsd = 0;
+    let taxAmountLocal = 0;
+
+    taxRules?.forEach((rule: TaxRule) => {
+      taxAmountUsd += baseAmountUsd * rule.getTaxRate()!;
+      taxAmountLocal += baseAmountLocal * rule.getTaxRate()!;
+    });
+
+    // Calculer les totaux
+    const subtotalUsd = baseAmountUsd;
+    const totalAmountUsd = subtotalUsd + taxAmountUsd;
+    const subtotalLocal = baseAmountLocal;
+    const totalAmountLocal = subtotalLocal + taxAmountLocal;
+
+    // Créer le cycle de facturation
+
+    const billingCycleData = new Billing()
+      .setGlobalLicense(this.id)
+      .setPeriodStart(this.current_period_start!)
+      .setPeriodEnd(this.current_period_end!)
+      .setBaseEmployeeCount(baseEmployeeCount)
+      .setFinalEmployeeCount(baseEmployeeCount)
+      .setBaseAmountUsd(baseAmountUsd)
+      .setAdjustmentsAmountUsd(0)
+      .setTaxAmountUsd(taxAmountUsd)
+      .setBillingCurrencyCode(currencyCode!)
+      .setExchangeRateUsed(exchangeRate)
+      .setBaseAmountLocal(baseAmountLocal)
+      .setAdjustmentsAmountLocal(0)
+      .setTaxAmountLocal(taxAmountLocal)
+      .setTaxRulesApplied(taxRules!)
+      .setBillingStatus(BillingStatus.PENDING)
+      .setPaymentDueDate(
+        new Date(new Date(this.current_period_start!).getTime() + 7 * 24 * 60 * 60 * 1000), // J+7
+      );
+
+    await billingCycleData.save();
+
+    console.log(
+      `✅ Cycle de facturation initial créé - GUID: ${billingCycleData.getGuid()}, Montant: ${totalAmountLocal} ${currencyCode}`,
+    );
+
+    // ✅ Créer automatiquement la transaction de paiement
+    await this.createInitialPaymentTransaction(billingCycleData);
+
+    return billingCycleData;
+  }
+
+  /**
+   * Crée la transaction de paiement initiale pour le cycle de facturation
+   */
+  private async createInitialPaymentTransaction(billingCycle: Billing): Promise<void> {
+    if (!billingCycle.getId()) {
+      throw new Error('BillingCycle ID is required');
+    }
+
+    // Récupérer le tenant pour la méthode de paiement par défaut
+    const tenant = await this.getTenantObject();
+    if (!tenant) {
+      throw new Error('Tenant not found');
+    }
+
+    // Récupérer la méthode de paiement par défaut pour le pays
+    // const defaultPaymentMethod = await PaymentMethod.getDefaultForCountry(tenant.getCountryCode());
+    const methods = await PaymentMethod._list();
+
+    if (!methods?.length) {
+      throw new Error(`No default payment method found for country ${tenant.getCountryCode()}`);
+    }
+    const defaultPaymentMethod = methods[0];
+
+    // Créer une transaction fictive pour l'avenant (montant 0 car cycle de base)
+    const dummyAdjustment = new LicenseAdjustment()
+      .setGlobalLicense(this.id!)
+      .setAdjustmentDate(new Date())
+      .setEmployeesAddedCount(0)
+      .setMonthsRemaining(Number(this.billing_cycle_months || 1))
+      .setPricePerEmployeeUsd(this.base_price_usd || 0)
+      .setSubtotalUsd(0)
+      .setTaxAmountUsd(0)
+      .setTotalAmountUsd(0)
+      .setBillingCurrencyCode(billingCycle.getBillingCurrencyCode()!)
+      .setExchangeRateUsed(billingCycle.getExchangeRateUsed()!)
+      .setSubtotalLocal(0)
+      .setTaxAmountLocal(0)
+      .setTotalAmountLocal(0)
+      .setPaymentStatus(PaymentTransactionStatus.COMPLETED) // Déjà inclus dans le cycle
+      .setPaymentDueImmediately(false);
+
+    await dummyAdjustment.save();
+
+    // Créer la transaction de paiement
+
+    const transaction = PaymentTransaction.createNew({
+      billing_cycle: billingCycle.getId()!,
+      adjustment: dummyAdjustment.getId()!,
+      amount_usd: billingCycle.getTotalAmountUsd()!,
+      amount_local: billingCycle.getTotalAmountLocal()!,
+      currency_code: billingCycle.getBillingCurrencyCode()!,
+      exchange_rate_used: billingCycle.getExchangeRateUsed()!,
+      payment_method: defaultPaymentMethod.getId()!,
+    });
+
+    await transaction.save();
+
+    console.log(
+      `✅ Transaction de paiement créée - GUID: ${transaction.getGuid()}, Référence: ${transaction.getPaymentReference()}`,
+    );
+
+    // ✅ Envoyer l'email avec le lien de paiement
+    await this.sendPaymentEmail(transaction, billingCycle);
+  }
+
+  /**
+   * Envoie l'email avec le lien de paiement
+   */
+  private async sendPaymentEmail(transaction: any, billingCycle: any): Promise<void> {
+    try {
+      const tenant = await this.getTenantObject();
+      if (!tenant) return;
+
+      // TODO: Implémenter l'envoi d'email via votre service de mailing
+      const emailData = {
+        to: tenant.getBillingEmail(),
+        subject: `Nouvelle facture TOKÉ - ${transaction.getPaymentReference()}`,
+        template: 'new_invoice',
+        data: {
+          tenant_name: tenant.getName(),
+          reference: transaction.getPaymentReference(),
+          amount: billingCycle.getTotalAmountLocal(),
+          currency: billingCycle.getBillingCurrencyCode(),
+          due_date: billingCycle.getPaymentDueDate(),
+          payment_link: `${process.env.PAYMENT_BASE_URL}/pay/${transaction.getGuid()}`,
+        },
+      };
+
+      console.log('📧 Email de paiement préparé:', emailData);
+      // await EmailService.send(emailData);
+    } catch (error) {
+      console.error('⚠️ Erreur envoi email de paiement:', error);
+      // Ne pas bloquer la création de la licence si l'email échoue
+    }
   }
 }
 
