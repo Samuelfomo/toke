@@ -25,7 +25,8 @@ router.post(
         });
       }
 
-      const baseUrl = `${req.protocol}://${req.get('host')}`;
+      const baseUrl = `https://${req.get('host')}`;
+      // const baseUrl = `${req.protocol}://${req.get('host')}`;
       const attachments = files.map((file) => ({
         originalName: file.originalname,
         mimeType: file.mimetype,
