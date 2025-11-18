@@ -2245,7 +2245,12 @@ router.post('/share', Ensure.post(), async (req: Request, res: Response) => {
       );
     }
     const response = saved.response.data;
-    const sendToken = await WapService.sendOtp(response.guid, response.phone_number, countryValue);
+    const sendToken = await WapService.sendInvitation(
+      response.guid,
+      response.phone_number,
+      countryValue,
+      response.links,
+    );
     if (sendToken.status !== HttpStatus.SUCCESS) {
       return R.handleError(res, sendToken.status, sendToken.response);
     }

@@ -84,6 +84,8 @@ export default class ClientModel extends BaseModel {
     //   throw new Error('Token collision detected, please retry');
     // }
 
+    console.log('this', this, token);
+
     console.log('💾 Appel insertOne...', this.profile);
     const lastID = await this.insertOne(this.db.tableName, {
       [this.db.name]: this.name,

@@ -139,7 +139,7 @@ export default class App {
     // this.app.use(tenantMiddleware);
 
     // ✅ Tenant middleware appliqué sauf sur /health
-    this.app.use(this.skipMiddleware(tenantMiddleware, ['/upload']));
+    this.app.use(this.skipMiddleware(tenantMiddleware, []));
 
     // // Appliquer tenantMiddleware sur toutes les routes sauf /health
     // this.app.use((req, res, next) => {

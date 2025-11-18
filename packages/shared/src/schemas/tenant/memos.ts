@@ -22,6 +22,11 @@ const httpsUrlSchema = z
     message: MEMOS_ERRORS.ATTACHMENTS_URL_INVALID,
   });
 
+const attachmentSchema = z.object({
+  title: z.string().optional(),
+  link: httpsUrlSchema,
+});
+
 // Schema pour valider les IDs d'entrées affectées
 const affectedEntriesSchema = z
   .array(
@@ -156,11 +161,15 @@ const baseMemosSchema = z.object({
 
   affected_entries: affectedEntriesSchema.optional().nullable(),
 
+  // attachments: z
+  //   .array(httpsUrlSchema)
+  //   .refine((attachments) => attachments.every((url) => typeof url === 'string'), {
+  //     message: MEMOS_ERRORS.ATTACHMENTS_INVALID,
+  //   })
+  //   .optional()
+  //   .nullable(),
   attachments: z
-    .array(httpsUrlSchema)
-    .refine((attachments) => attachments.every((url) => typeof url === 'string'), {
-      message: MEMOS_ERRORS.ATTACHMENTS_INVALID,
-    })
+    .array(attachmentSchema)
     .optional()
     .nullable(),
 
@@ -334,7 +343,7 @@ export const respondToMemoSchema = z.object({
       message: MEMOS_ERRORS.RESPONSE_USER_INVALID,
     })
     .trim(),
-  attachments: z.array(httpsUrlSchema).optional().nullable(),
+  attachments: z.array(attachmentSchema).optional().nullable(),
 });
 
 // Schema pour valider un memo (manager valide la réponse)

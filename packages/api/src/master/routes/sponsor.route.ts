@@ -7,6 +7,8 @@ import R from '../../tools/response.js';
 import Ensure from '../../middle/ensured-routes.js';
 import { Contact } from '../class/Contact.js';
 import CountryPhoneValidation from '../../tools/country.phone.validation.js';
+import AppConfig from '../class/AppConfig.js';
+import { responseStructure } from '../../utils/response.model.js';
 
 const router = Router();
 
@@ -250,11 +252,28 @@ router.post('/', Ensure.post(), async (req: Request, res: Response) => {
       .setCountry(country)
       .setMetadata(metadata);
 
+    const [android, ios] = await Promise.all([
+      AppConfig._load(responseStructure.APP_ANDROID, true),
+      AppConfig._load(responseStructure.APP_IOS, true),
+    ]);
+    if (!android || !ios) {
+      return R.handleError(res, HttpStatus.NOT_FOUND, {
+        code: 'url_not_found',
+        message: 'Site url not found',
+      });
+    }
+
     await invitation.save();
 
     console.log(`✅ Invitation créée: ${phone_number} (GUID: ${invitation.getGuid()})`);
 
-    return R.handleCreated(res, invitation.toJSON());
+    return R.handleCreated(res, {
+      invitation: invitation.toJSON(),
+      links: {
+        android_link: android.getLink(),
+        ios_link: ios.getLink(),
+      },
+    });
   } catch (error: any) {
     console.error('❌ Erreur création invitation:', error.message);
 

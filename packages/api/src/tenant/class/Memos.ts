@@ -1,4 +1,4 @@
-import { MemoStatus, MemoType } from '@toke/shared';
+import { Attachment, MemoStatus, MemosValidationUtils, MemoType } from '@toke/shared';
 
 import MemosModel from '../model/MemosModel.js';
 import W from '../../tools/watcher.js';
@@ -261,7 +261,7 @@ export default class Memos extends MemosModel {
     return entries.length > 0 ? entries : null;
   }
 
-  getAttachments(): string[] | undefined {
+  getAttachments(): Attachment[] | undefined {
     return this.attachments;
   }
 
@@ -360,8 +360,8 @@ export default class Memos extends MemosModel {
     return this;
   }
 
-  setAttachments(attachments: string[]): Memos {
-    this.attachments = attachments;
+  setAttachments(attachments: Array<string | Attachment>): Memos {
+    this.attachments = MemosValidationUtils.normalizeAttachments(attachments);
     return this;
   }
 
@@ -415,17 +415,17 @@ export default class Memos extends MemosModel {
   }
 
   // === GESTION DU CYCLE DE VIE ===
+  async submitMemosForValidation(
+    response_user: string,
+    attachments?: Array<string | Attachment>,
+  ): Promise<void> {
+    if (!this.id) throw new Error('Cannot submit memo without ID');
 
-  async submitMemosForValidation(response_user: string, attachments?: string[]): Promise<void> {
-    if (!this.id) {
-      throw new Error('Cannot submit memo without ID');
-    }
     const success = await this.submitResponse(this.id, response_user, attachments);
-    // const success = await this.submitForValidation(this.id);
     if (success) {
       this.memo_status = MemoStatus.SUBMITTED;
       this.response_user = response_user;
-      this.attachments = attachments;
+      this.attachments = MemosValidationUtils.normalizeAttachments(attachments);
     } else {
       throw new Error('Failed to submit memo for validation');
     }
@@ -489,16 +489,14 @@ export default class Memos extends MemosModel {
 
   // === GESTION DES PIÈCES JOINTES ===
 
-  async addFileAttachment(attachment: string[]): Promise<void> {
-    if (!this.id) {
-      throw new Error('Cannot add attachment to memo without ID');
-    }
+  async addFileAttachment(attachment: Array<string | Attachment>): Promise<void> {
+    if (!this.id) throw new Error('Cannot add attachment to memo without ID');
+
     const success = await this.addAttachment(this.id, attachment);
     if (success) {
-      if (this.attachments?.length === 0) {
-        this.attachments = [];
-      }
-      this.attachments?.push(...attachment);
+      if (!this.attachments) this.attachments = [];
+      const newAttachment = MemosValidationUtils.normalizeAttachments(attachment);
+      this.attachments.push(...newAttachment);
     } else {
       throw new Error('Failed to add attachment');
     }

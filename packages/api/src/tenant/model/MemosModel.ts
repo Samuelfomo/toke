@@ -1,4 +1,11 @@
-import { MEMOS_DEFAULTS, MEMOS_ERRORS, MemoStatus, MemoType } from '@toke/shared';
+import {
+  Attachment,
+  MEMOS_DEFAULTS,
+  MEMOS_ERRORS,
+  MemoStatus,
+  MemosValidationUtils,
+  MemoType,
+} from '@toke/shared';
 import { Op } from 'sequelize';
 
 import BaseModel from '../database/db.base.js';
@@ -45,7 +52,7 @@ export default class MemosModel extends BaseModel {
   protected incident_datetime?: Date;
   protected affected_session?: number;
   protected affected_entries?: number[];
-  protected attachments?: string[];
+  protected attachments?: Attachment[];
   protected validator_comments?: string;
   protected processed_at?: Date;
   protected responded_at?: Date;
@@ -299,7 +306,7 @@ export default class MemosModel extends BaseModel {
   protected async submitResponse(
     memo_id: number,
     response_user: string,
-    attachments?: string[],
+    attachments?: Array<string | Attachment>,
   ): Promise<boolean> {
     const updates: Record<string, any> = {
       [this.db.response_user]: response_user,
@@ -309,8 +316,10 @@ export default class MemosModel extends BaseModel {
 
     if (attachments && attachments.length > 0) {
       const memoData = await this.find(memo_id);
-      const currentAttachments = memoData?.attachments || [];
-      updates[this.db.attachments] = [...currentAttachments, ...attachments];
+      const currentAttachments = MemosValidationUtils.normalizeAttachments(memoData?.attachments);
+      const newAttachments = MemosValidationUtils.normalizeAttachments(attachments);
+      // const currentAttachments = memoData?.attachments || [];
+      updates[this.db.attachments] = [...currentAttachments, ...newAttachments];
     }
 
     const affectedRows = await this.updateOne(this.db.tableName, updates, {
@@ -577,15 +586,19 @@ export default class MemosModel extends BaseModel {
   // 6. GESTION DES ATTACHMENTS
   // ============================================================================
 
-  protected async addAttachment(memo: number, attachment: string[]): Promise<boolean> {
+  protected async addAttachment(
+    memo: number,
+    attachment: Array<string | Attachment>,
+  ): Promise<boolean> {
     const memoData = await this.find(memo);
     if (!memoData) return false;
 
-    const currentAttachments = memoData.attachments || [];
-    currentAttachments.push(...attachment);
+    const currentAttachments = MemosValidationUtils.normalizeAttachments(memoData.attachments);
+    const toAdd = MemosValidationUtils.normalizeAttachments(attachment);
+    const updated = [...currentAttachments, ...toAdd];
 
     const updates = {
-      [this.db.attachments]: currentAttachments,
+      [this.db.attachments]: updated,
     };
 
     const affectedRows = await this.updateOne(this.db.tableName, updates, {
@@ -596,9 +609,9 @@ export default class MemosModel extends BaseModel {
 
   protected async removeAttachment(memo_id: number, attachment_index: number): Promise<boolean> {
     const memoData = await this.find(memo_id);
-    if (!memoData || !memoData.attachments) return false;
+    if (!memoData || !Array.isArray(memoData.attachments)) return false;
 
-    const currentAttachments = memoData.attachments;
+    const currentAttachments = MemosValidationUtils.normalizeAttachments(memoData.attachments);
     if (attachment_index < 0 || attachment_index >= currentAttachments.length) return false;
 
     currentAttachments.splice(attachment_index, 1);

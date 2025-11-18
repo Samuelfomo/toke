@@ -289,6 +289,8 @@ export const responseStructure = {
   LINK: 'link',
 
   APP_WEB: 'app_web',
+  APP_ANDROID: 'app_android',
+  APP_IOS: 'app_ios',
 } as const;
 
 export const RT = {

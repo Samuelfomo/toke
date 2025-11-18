@@ -5,6 +5,7 @@ import {
   MemoStatus,
   MemoType,
 } from '../../constants/tenant/memos.js';
+import { Attachment } from '../../types/tenant/memos.js';
 
 export class MemosValidationUtils {
   /**
@@ -186,16 +187,34 @@ export class MemosValidationUtils {
     if (!Array.isArray(attachments)) return false;
 
     return attachments.every((attachment) => {
-      if (typeof attachment !== 'string') return false;
+      if (typeof attachment !== 'object' || Array.isArray(attachment)) return false;
+
+      if (!attachment.link || typeof attachment.link !== 'string') return false;
 
       try {
-        const url = new URL(attachment);
-        return url.protocol === 'https:'; // Only allow HTTPS URLs
+        const url = new URL(attachment.link);
+        return url.protocol === 'https:';
       } catch {
         return false;
       }
     });
   }
+
+  // static validateAttachments(attachments: any): boolean {
+  //   if (attachments === null || attachments === undefined) return true;
+  //   if (!Array.isArray(attachments)) return false;
+  //
+  //   return attachments.every((attachment) => {
+  //     if (typeof attachment !== 'string') return false;
+  //
+  //     try {
+  //       const url = new URL(attachment);
+  //       return url.protocol === 'https:'; // Only allow HTTPS URLs
+  //     } catch {
+  //       return false;
+  //     }
+  //   });
+  // }
 
   /**
    * Validates validator comments
@@ -345,6 +364,9 @@ export class MemosValidationUtils {
       ) {
         try {
           cleaned[field] = JSON.parse(cleaned[field]);
+          if (field === 'attachments') {
+            cleaned.attachments = MemosValidationUtils.normalizeAttachments(cleaned.attachments);
+          }
         } catch {
           throw new Error(`Invalid ${field}: must be valid JSON array`);
         }
@@ -755,6 +777,21 @@ export class MemosValidationUtils {
       bottlenecks,
       recommendations: this.generateRecommendations(summary, bottlenecks),
     };
+  }
+
+  static normalizeAttachments(input?: Array<string | Attachment> | null): Attachment[] {
+    if (!input) return [];
+    if (!Array.isArray(input)) return [];
+
+    return input
+      .map((item) => {
+        if (typeof item === 'string') {
+          return { link: item };
+        }
+        // assume object-like; copy to be safe
+        return { title: (item as Attachment).title, link: (item as Attachment).link };
+      })
+      .filter((a) => typeof a.link === 'string' && /^https?:\/\/.+/.test(a.link));
   }
 
   /**

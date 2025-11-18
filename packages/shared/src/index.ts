@@ -10,6 +10,7 @@ export * from './types/tax.rule.js';
 
 // tenant specific types
 export * from './types/tenant/work.sessions.js';
+export * from './types/tenant/memos.js';
 
 // Export des constantes
 export * from './constants/api.js';

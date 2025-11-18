@@ -3,7 +3,7 @@ import path from 'path';
 import express, { Request, Response } from 'express';
 import { HttpStatus } from '@toke/shared';
 
-import { upload, uploadDir } from '../../utils/upload.js';
+import { BASE_UPLOAD_DIR, upload } from '../../utils/upload.js';
 import R from '../../tools/response.js';
 import Ensure from '../../middle/ensured-routes.js';
 
@@ -17,6 +17,7 @@ router.post(
   async (req: Request, res: Response) => {
     try {
       const files = req.files as Express.Multer.File[];
+      // const tenantRef = req.tenant.config.reference;
 
       if (!files || files.length === 0) {
         return R.handleError(res, HttpStatus.BAD_REQUEST, {
@@ -32,6 +33,7 @@ router.post(
         mimeType: file.mimetype,
         size: file.size,
         url: `${baseUrl}/upload/f/${file.filename}`, // ✨ Lien direct basé sur le nom du fichier
+        // url: `${baseUrl}/upload/f/${tenantRef}/${file.filename}`,
       }));
 
       return R.handleSuccess(res, {
@@ -54,7 +56,9 @@ router.get('/f/:filename', Ensure.get(), async (req: Request, res: Response) => 
 
     // 🔒 Sécurité : empêche les tentatives de directory traversal
     const sanitizedFilename = path.basename(filename);
-    const filePath = path.join(uploadDir, sanitizedFilename);
+
+    const tenantRef = req.tenant.config.reference;
+    const filePath = path.join(BASE_UPLOAD_DIR, tenantRef, sanitizedFilename);
 
     // 📥 Envoie le fichier
     return res.sendFile(path.resolve(filePath), (err) => {

@@ -31,12 +31,12 @@ export default class CredentialExtractorService {
     //   credentials.subdomain = hostParts[0];
     // }
 
-    // // 2. Extraction depuis les headers personnalisés
-    // const tenantHeader = req.get('X-Tenant-ID') || req.get('x-tenant-id');
-    // if (tenantHeader) {
-    //   credentials.subdomain = tenantHeader;
-    // }
-    //
+    // 2. Extraction depuis les headers personnalisés
+    const tenantHeader = req.get('X-API-Tenant') || req.get('x-api-tenant');
+    if (tenantHeader) {
+      credentials.subdomain = tenantHeader;
+    }
+
     // // 3. Extraction depuis l'Authorization header
     // const authHeader = req.get('Authorization');
     // if (authHeader) {

@@ -32,8 +32,12 @@ export const AppConfigDBStructure = {
       allowNull: true,
       unique: { name: 'unique_app_config_link', msg: 'App config link must be unique' },
       validate: {
-        isUrl: { msg: 'The link must be a valid URL.' },
-        len: [1, 255],
+        // isUrl: { msg: 'The link must be a valid URL.' },
+        // len: [1, 255],
+        len: {
+          args: [1, 255],
+          msg: 'The link must be between 1 and 255 characters.',
+        },
       },
       comment: 'Link',
     },

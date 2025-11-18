@@ -157,46 +157,58 @@ export const MemosDbStructure = {
       },
       comment: 'Affected entries IDs',
     },
+    // attachments: {
+    //   type: DataTypes.JSONB,
+    //   allowNull: true,
+    //   validate: {
+    //     isArrayOfUrls(value: any) {
+    //       if (value == null) return; // autorise null
+    //       if (!Array.isArray(value)) {
+    //         throw new Error('Attachments must be an array');
+    //       }
+    //       for (const url of value) {
+    //         if (typeof url !== 'string' || !/^https?:\/\/.+/.test(url)) {
+    //           throw new Error(`Invalid URL in attachments: ${url}`);
+    //         }
+    //       }
+    //     },
+    //   },
+    //   comment: 'Memo attachments (signed URLs)',
+    // },
     attachments: {
       type: DataTypes.JSONB,
       allowNull: true,
       validate: {
-        isArrayOfUrls(value: any) {
+        isArrayOfObjectsWithTitleAndLink(value: any) {
           if (value == null) return; // autorise null
+
           if (!Array.isArray(value)) {
             throw new Error('Attachments must be an array');
           }
-          for (const url of value) {
-            if (typeof url !== 'string' || !/^https?:\/\/.+/.test(url)) {
-              throw new Error(`Invalid URL in attachments: ${url}`);
+
+          for (const item of value) {
+            if (typeof item !== 'object' || Array.isArray(item)) {
+              throw new Error('Each attachment must be an object');
+            }
+
+            // title optionnel
+            if (item.title && typeof item.title !== 'string') {
+              throw new Error(`Invalid title: ${item.title}`);
+            }
+
+            // link obligatoire
+            if (!item.link) {
+              throw new Error("Each attachment must include a 'link' field");
+            }
+
+            if (typeof item.link !== 'string' || !/^https?:\/\/.+/.test(item.link)) {
+              throw new Error(`Invalid URL in attachment: ${item.link}`);
             }
           }
         },
       },
-      comment: 'Memo attachments (signed URLs)',
+      comment: 'Memo attachments (objects with title + signed URL link)',
     },
-    // attachments: {
-    //     type: DataTypes.JSONB,
-    //     allowNull: true,
-    //     validate: {
-    //         isArrayOfObjects(value: any) {
-    //             if (value == null) return;
-    //             if (!Array.isArray(value)) {
-    //                 throw new Error('Attachments must be an array of objects');
-    //             }
-    //             for (const att of value) {
-    //                 if (
-    //                     typeof att !== 'object' ||
-    //                     typeof att.name !== 'string' ||
-    //                     typeof att.url !== 'string'
-    //                 ) {
-    //                     throw new Error(`Invalid attachment format: ${JSON.stringify(att)}`);
-    //                 }
-    //             }
-    //         },
-    //     },
-    //     comment: 'Memo attachments (signed URLs)',
-    // },
     validator_comments: {
       type: DataTypes.TEXT,
       allowNull: true,
