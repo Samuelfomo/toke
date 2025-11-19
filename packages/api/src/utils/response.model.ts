@@ -311,6 +311,8 @@ export const tableName = {
   CLIENT: `${G.tableConf}_client`,
   PROFILE: `${G.tableConf}_profile`,
   APP_CONFIG: `${G.tableConf}_app_config`,
+  ENDPOINT: `${G.tableConf}_endpoint`,
+  PERMISSION: `${G.tableConf}_permission`,
 
   TENANT: `${G.tableAp}_tenant`,
   GLOBAL_LICENSE: `${G.tableAp}_global_license`,

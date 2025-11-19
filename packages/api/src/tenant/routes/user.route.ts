@@ -2235,19 +2235,21 @@ router.post('/share', Ensure.post(), async (req: Request, res: Response) => {
     if (saved.status !== HttpStatus.CREATED) {
       return R.handleError(res, saved.status, saved.response);
     }
+
+    console.log('saved', saved);
     // TODO juste pour le teste
     const { email } = req.query;
     if (email) {
       await EmailSender.sender(
-        saved.response.data.guid,
+        saved.response.data.invitation.guid,
         String(email),
         // expiration_minutes,
       );
     }
     const response = saved.response.data;
     const sendToken = await WapService.sendInvitation(
-      response.guid,
-      response.phone_number,
+      response.invitation.guid,
+      response.invitation.phone_number,
       countryValue,
       response.links,
     );
@@ -2255,7 +2257,7 @@ router.post('/share', Ensure.post(), async (req: Request, res: Response) => {
       return R.handleError(res, sendToken.status, sendToken.response);
     }
 
-    const result = await InvitationService.sendInvitation(response.guid);
+    const result = await InvitationService.sendInvitation(response.invitation.guid);
     if (result.status !== HttpStatus.SUCCESS) {
       return R.handleError(res, result.status, result.response);
     }

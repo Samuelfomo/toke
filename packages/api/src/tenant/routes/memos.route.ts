@@ -501,7 +501,7 @@ router.post('/', Ensure.post(), async (req: Request, res: Response) => {
       .setMemoType(validatedData.memo_type)
       .setTitle(validatedData.title)
       .setResponseUser(validatedData.response_user)
-      .setTargetUser(supervisorObj.getId()!)
+      .setTargetUser(supervisorObj.getAssignedBy()!)
       .setMemoStatus(MemoStatus.SUBMITTED);
     if (validatedData.description) memoObj.setDescription(validatedData.description);
 

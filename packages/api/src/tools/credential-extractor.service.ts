@@ -32,7 +32,7 @@ export default class CredentialExtractorService {
     // }
 
     // 2. Extraction depuis les headers personnalisés
-    const tenantHeader = req.get('X-API-Tenant') || req.get('x-api-tenant');
+    const tenantHeader = req.get('X-API-TENANT') || req.get('x-api-tenant');
     if (tenantHeader) {
       credentials.subdomain = tenantHeader;
     }

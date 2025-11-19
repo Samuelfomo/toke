@@ -1,5 +1,5 @@
 import { BillingCycle, LicenseStatus, Type } from '@toke/shared';
-import { Op, QueryTypes } from 'sequelize';
+import { QueryTypes } from 'sequelize';
 
 import BaseModel from '../database/db.base.js';
 import { tableName } from '../../utils/response.model.js';
@@ -50,14 +50,17 @@ export default class GlobalLicenseModel extends BaseModel {
     if (!this.guid) return;
 
     try {
-      const result = await this.raw(`
+      const result = await this.raw(
+        `
         SELECT 
           total_seats_purchased,
           billing_status
         FROM xa_global_license
         WHERE guid = $1
         LIMIT 1
-      `, [this.guid]);
+      `,
+        [this.guid],
+      );
 
       if (result && result.length > 0) {
         this._total_seats_purchased = result[0].total_seats_purchased;
@@ -90,7 +93,8 @@ export default class GlobalLicenseModel extends BaseModel {
    * Utilise raw query pour inclure les colonnes générées
    */
   protected async find(id: number): Promise<any> {
-    const result = await this.raw(`
+    const result = await this.raw(
+      `
       SELECT 
         gl.*,
         gl.total_seats_purchased,
@@ -98,7 +102,9 @@ export default class GlobalLicenseModel extends BaseModel {
       FROM xa_global_license gl
       WHERE gl.id = $1
       LIMIT 1
-    `, [id]);
+    `,
+      [id],
+    );
 
     return result && result.length > 0 ? result[0] : null;
   }
@@ -108,7 +114,8 @@ export default class GlobalLicenseModel extends BaseModel {
    * Utilise raw query pour inclure les colonnes générées
    */
   protected async findByGuid(guid: number): Promise<any> {
-    const result = await this.raw(`
+    const result = await this.raw(
+      `
       SELECT 
         gl.*,
         gl.total_seats_purchased,
@@ -116,7 +123,9 @@ export default class GlobalLicenseModel extends BaseModel {
       FROM xa_global_license gl
       WHERE gl.guid = $1
       LIMIT 1
-    `, [guid]);
+    `,
+      [guid],
+    );
 
     return result && result.length > 0 ? result[0] : null;
   }
@@ -126,7 +135,8 @@ export default class GlobalLicenseModel extends BaseModel {
    * Utilise raw query pour inclure les colonnes générées
    */
   protected async findByTenant(tenant: number): Promise<any> {
-    const result = await this.raw(`
+    const result = await this.raw(
+      `
       SELECT 
         gl.*,
         gl.total_seats_purchased,
@@ -134,7 +144,9 @@ export default class GlobalLicenseModel extends BaseModel {
       FROM xa_global_license gl
       WHERE gl.tenant = $1
       LIMIT 1
-    `, [tenant]);
+    `,
+      [tenant],
+    );
 
     return result && result.length > 0 ? result[0] : null;
   }
@@ -160,7 +172,9 @@ export default class GlobalLicenseModel extends BaseModel {
 
     const whereClause = whereClauses.length > 0 ? `WHERE ${whereClauses.join(' AND ')}` : '';
     const limitClause = paginationOptions.limit ? `LIMIT $${paramIndex}` : '';
-    const offsetClause = paginationOptions.offset ? `OFFSET $${paramIndex + (paginationOptions.limit ? 1 : 0)}` : '';
+    const offsetClause = paginationOptions.offset
+      ? `OFFSET $${paramIndex + (paginationOptions.limit ? 1 : 0)}`
+      : '';
 
     if (paginationOptions.limit) params.push(paginationOptions.limit);
     if (paginationOptions.offset) params.push(paginationOptions.offset);
@@ -238,7 +252,9 @@ export default class GlobalLicenseModel extends BaseModel {
     let paramIndex = 3;
 
     const limitClause = paginationOptions.limit ? `LIMIT $${paramIndex}` : '';
-    const offsetClause = paginationOptions.offset ? `OFFSET $${paramIndex + (paginationOptions.limit ? 1 : 0)}` : '';
+    const offsetClause = paginationOptions.offset
+      ? `OFFSET $${paramIndex + (paginationOptions.limit ? 1 : 0)}`
+      : '';
 
     if (paginationOptions.limit) params.push(paginationOptions.limit);
     if (paginationOptions.offset) params.push(paginationOptions.offset);
@@ -271,7 +287,9 @@ export default class GlobalLicenseModel extends BaseModel {
     let paramIndex = 2;
 
     const limitClause = paginationOptions.limit ? `LIMIT $${paramIndex}` : '';
-    const offsetClause = paginationOptions.offset ? `OFFSET $${paramIndex + (paginationOptions.limit ? 1 : 0)}` : '';
+    const offsetClause = paginationOptions.offset
+      ? `OFFSET $${paramIndex + (paginationOptions.limit ? 1 : 0)}`
+      : '';
 
     if (paginationOptions.limit) params.push(paginationOptions.limit);
     if (paginationOptions.offset) params.push(paginationOptions.offset);
@@ -379,6 +397,20 @@ export default class GlobalLicenseModel extends BaseModel {
   }
 
   /**
+   * Getter pour total_seats_purchased (colonne calculée)
+   */
+  protected getTotalSeatsPurchasedValue(): number {
+    return this._total_seats_purchased || 0;
+  }
+
+  /**
+   * Getter pour billing_status (colonne calculée)
+   */
+  protected getBillingStatusValue(): string | undefined {
+    return this._billing_status;
+  }
+
+  /**
    * Valide les données avant création/mise à jour
    */
   private async validate(): Promise<void> {
@@ -420,19 +452,5 @@ export default class GlobalLicenseModel extends BaseModel {
     }
 
     // ❌ Ne plus valider total_seats_purchased car c'est une colonne générée
-  }
-
-  /**
-   * Getter pour total_seats_purchased (colonne calculée)
-   */
-  protected getTotalSeatsPurchasedValue(): number {
-    return this._total_seats_purchased || 0;
-  }
-
-  /**
-   * Getter pour billing_status (colonne calculée)
-   */
-  protected getBillingStatusValue(): string | undefined {
-    return this._billing_status;
   }
 }

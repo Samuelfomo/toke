@@ -439,6 +439,8 @@ export default class BillingCycleModel extends BaseModel {
    * Valide les données avant création/mise à jour
    */
   private async validate(): Promise<void> {
+    console.log('cycle de facturation', this);
+
     // Nettoyer les données en utilisant la structure de validation
     BillingCycleDbStructure.validation.cleanData(this);
 

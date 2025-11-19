@@ -10,7 +10,7 @@ export const APP_CONFIG_VALIDATION = {
   LINK: {
     MIN_LENGTH: 1,
     MAX_LENGTH: 500,
-    PATTERN: /^[a-z0-9_\-\.]+$/,
+    PATTERN: /^[a-zA-Z0-9_\-./?=&]+$/,
     // PATTERN: /^[a-zA-Z0-9_\-\.]+$/,
     // PATTERN: /^https?:\/\/.+$/,
     REQUIRED: true,

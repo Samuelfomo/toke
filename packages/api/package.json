@@ -55,6 +55,7 @@
     "redisTest": "tsx scripts/manageUserAuth.ts",
     "testCountry": "tsx scripts/countryManager.ts",
     "testCurrency": "tsx scripts/currencyManager.ts",
+    "testAppConfig": "tsx scripts/appConfigManager.ts",
     "testCountryAuto": "tsx scripts/test.ts",
     "prod": "npm run build && NODE_ENV=production npm run start:master",
     "prod:bg": "npm run build && NODE_ENV=production nohup npm run start:master > logs/app.log 2>&1 &",

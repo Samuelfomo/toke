@@ -500,6 +500,7 @@ export default class Site extends SiteModel {
       [RS.ACTIVE]: this.active,
       [RS.PUBLIC]: this.public,
       [RS.ALLOWED_ROLES]: this.allowed_roles,
+      [RS.GEOFENCE_POLYGON]: this.geofence_polygon,
       [RS.CREATED_AT]: this.created_at,
       [RS.UPDATED_AT]: this.updated_at,
     };
@@ -517,7 +518,6 @@ export default class Site extends SiteModel {
       ...baseData,
       [RS.CREATED_BY]: createdBy ? createdBy.toJSON() : null,
       [RS.QR_REFERENCE]: qrReference ? qrReference.toJSON() : null,
-      [RS.GEOFENCE_POLYGON]: this.geofence_polygon,
       [RS.QR_CODE_DATA]: this.qr_code_data,
       // Informations calculées
       is_expired: this.isExpired(),

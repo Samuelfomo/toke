@@ -1,4 +1,4 @@
-import { BillingCycle, LicenseStatus, Type } from '@toke/shared';
+import { BillingCycle, GLOBAL_LICENSE_DEFAULTS, LicenseStatus, Type } from '@toke/shared';
 import { Op } from 'sequelize';
 
 import BaseModel from '../database/db.base.js';
@@ -224,10 +224,10 @@ export default class GlobalLicenseModel extends BaseModel {
     const lastID = await this.insertOne(this.db.tableName, {
       [this.db.guid]: guid,
       [this.db.tenant]: this.tenant,
-      [this.db.license_type]: this.license_type,
+      [this.db.license_type]: this.license_type || GLOBAL_LICENSE_DEFAULTS.LICENSE_TYPE,
       [this.db.billing_cycle_months]: this.billing_cycle_months,
-      [this.db.base_price_usd]: this.base_price_usd || 3.0,
-      [this.db.minimum_seats]: this.minimum_seats || 5,
+      [this.db.base_price_usd]: this.base_price_usd || GLOBAL_LICENSE_DEFAULTS.BASE_PRICE_USD,
+      [this.db.minimum_seats]: this.minimum_seats || GLOBAL_LICENSE_DEFAULTS.MINIMUM_SEATS,
       [this.db.current_period_start]: this.current_period_start,
       [this.db.current_period_end]: this.current_period_end,
       [this.db.next_renewal_date]: this.next_renewal_date,

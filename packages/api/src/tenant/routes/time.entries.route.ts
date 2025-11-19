@@ -1127,8 +1127,6 @@ router.post(
 //   }
 // });
 
-// === RÉCUPÉRATION PAR GUID ===
-
 router.get('/requirement', Ensure.get(), async (req: Request, res: Response) => {
   try {
     return R.handleSuccess(res, {
@@ -1141,34 +1139,6 @@ router.get('/requirement', Ensure.get(), async (req: Request, res: Response) => 
   } catch (error: any) {
     return R.handleError(res, HttpStatus.INTERNAL_ERROR, {
       code: TIME_ENTRIES_CODES.LISTING_FAILED,
-      message: error.message,
-    });
-  }
-});
-
-router.get('/:guid', Ensure.get(), async (req: Request, res: Response) => {
-  try {
-    if (!TimeEntriesValidationUtils.validateGuid(req.params.guid)) {
-      return R.handleError(res, HttpStatus.BAD_REQUEST, {
-        code: TIME_ENTRIES_CODES.INVALID_GUID,
-        message: TIME_ENTRIES_ERRORS.GUID_INVALID,
-      });
-    }
-
-    const entryObj = await TimeEntries._load(req.params.guid, true);
-    if (!entryObj) {
-      return R.handleError(res, HttpStatus.NOT_FOUND, {
-        code: TIME_ENTRIES_CODES.TIME_ENTRY_NOT_FOUND,
-        message: TIME_ENTRIES_ERRORS.NOT_FOUND,
-      });
-    }
-
-    return R.handleSuccess(res, {
-      entry: await entryObj.toJSON(),
-    });
-  } catch (error: any) {
-    return R.handleError(res, HttpStatus.INTERNAL_ERROR, {
-      code: TIME_ENTRIES_CODES.RETRIEVAL_FAILED,
       message: error.message,
     });
   }
@@ -2341,6 +2311,198 @@ router.get('/attendance/statistics', Ensure.get(), async (req: Request, res: Res
     return R.handleError(res, HttpStatus.INTERNAL_ERROR, {
       code: 'statistics_retrieval_failed',
       message: error.message || 'Failed to retrieve statistics',
+    });
+  }
+});
+
+// === POINTAGES DE L'ÉQUIPE DU MANAGER ===
+// 📊 Retrieve all time entries for a manager's team members
+router.get('/attendance/team', Ensure.get(), async (req: Request, res: Response) => {
+  try {
+    const { manager, start_date, end_date, pointage_type, status, site } = req.query;
+    const paginationOptions = paginationSchema.parse(req.query);
+
+    // Validation: manager est requis
+    if (!manager) {
+      return R.handleError(res, HttpStatus.BAD_REQUEST, {
+        code: 'manager_required',
+        message: 'Manager Guid is required',
+      });
+    }
+
+    // Charger le manager
+    const managerObj = await User._load(String(manager), true);
+    if (!managerObj) {
+      return R.handleError(res, HttpStatus.NOT_FOUND, {
+        code: 'manager_not_found',
+        message: 'Manager not found',
+      });
+    }
+
+    // Récupérer tous les subordonnés du manager
+    const userRolesSub = await UserRole._listByAssignedBy(managerObj.getId()!);
+    if (!userRolesSub || userRolesSub.length === 0) {
+      return R.handleSuccess(res, {
+        message: 'No team members found for this manager',
+        data: {
+          team_size: 0,
+          pagination: {
+            offset: paginationOptions.offset || 0,
+            limit: paginationOptions.limit || 0,
+            count: 0,
+          },
+          statistics: {
+            total: 0,
+            by_type: {},
+            by_status: {},
+            by_employee: {},
+            with_corrections: 0,
+            with_anomalies: 0,
+          },
+          entries: [],
+        },
+      });
+    }
+
+    // Extraire les IDs des subordonnés
+    const subordinateIds = userRolesSub
+      .map((ur) => ur.getUser())
+      .filter((id): id is number => id !== undefined);
+
+    // Construire les conditions de recherche
+    const conditions: Record<string, any> = {
+      user: { [Op.in]: subordinateIds },
+    };
+
+    // Filtres temporels
+    if (start_date || end_date) {
+      conditions.clocked_at = {};
+      if (start_date) conditions.clocked_at[Op.gte] = new Date(start_date as string);
+      if (end_date) conditions.clocked_at[Op.lte] = new Date(end_date as string);
+    }
+
+    // Filtre par type de pointage
+    if (pointage_type) {
+      conditions.pointage_type = pointage_type;
+    }
+
+    // Filtre par statut
+    if (status) {
+      conditions.pointage_status = status;
+    }
+
+    // Filtre par site
+    if (site) {
+      const siteObj = await Site._load(String(site), true);
+      if (siteObj) conditions.site = siteObj.getId();
+    }
+
+    // Récupérer les entries
+    const entries = await TimeEntries._list(conditions, paginationOptions);
+
+    // Enrichir et calculer les statistiques
+    const enrichedEntries: any[] = [];
+    const statistics = {
+      total: 0,
+      by_type: {} as Record<string, number>,
+      by_status: {} as Record<string, number>,
+      by_employee: {} as Record<string, { name: string; count: number }>,
+      with_corrections: 0,
+      with_anomalies: 0,
+    };
+
+    if (entries) {
+      await Promise.all(
+        entries.map(async (entry) => {
+          statistics.total++;
+
+          const type = entry.getPointageType()!;
+          const status = entry.getPointageStatus()!;
+          const userId = entry.getUser()!;
+
+          // Statistiques par type
+          statistics.by_type[type] = (statistics.by_type[type] || 0) + 1;
+
+          // Statistiques par statut
+          statistics.by_status[status] = (statistics.by_status[status] || 0) + 1;
+
+          // Statistiques par employé
+          if (!statistics.by_employee[userId]) {
+            const userObj = await User._load(userId);
+            statistics.by_employee[userId] = {
+              name: userObj ? `${userObj.getFirstName()} ${userObj.getLastName()}` : 'Unknown',
+              count: 0,
+            };
+          }
+          statistics.by_employee[userId].count++;
+
+          // Corrections et anomalies
+          if (entry.getCorrectionReason()) statistics.with_corrections++;
+          if (await entry.hasAnomalies()) statistics.with_anomalies++;
+
+          enrichedEntries.push(await entry.toJSON(responseValue.FULL));
+        }),
+      );
+    }
+
+    return R.handleSuccess(res, {
+      message: 'Team time entries retrieved successfully',
+      data: {
+        manager: managerObj.toJSON(),
+        team_size: subordinateIds.length,
+        pagination: {
+          offset: paginationOptions.offset || 0,
+          limit: paginationOptions.limit || enrichedEntries.length,
+          count: enrichedEntries.length,
+        },
+        statistics,
+        entries: enrichedEntries,
+      },
+    });
+  } catch (error: any) {
+    return R.handleError(res, HttpStatus.INTERNAL_ERROR, {
+      code: 'team_time_entries_retrieval_failed',
+      message: error.message || 'Failed to retrieve team time entries',
+    });
+  }
+});
+
+// router.get('/team', Ensure.get(), async (req: Request, res: Response) => {
+//   try {
+//     const { manager, view } = req.query;
+//   } catch (error: any) {
+//     return R.handleError(res, HttpStatus.INTERNAL_ERROR, {
+//       code: TIME_ENTRIES_CODES.SEARCH_FAILED,
+//       message: error.message,
+//     });
+//   }
+// });
+
+// === RÉCUPÉRATION PAR GUID ===
+router.get('/:guid', Ensure.get(), async (req: Request, res: Response) => {
+  try {
+    if (!TimeEntriesValidationUtils.validateGuid(req.params.guid)) {
+      return R.handleError(res, HttpStatus.BAD_REQUEST, {
+        code: TIME_ENTRIES_CODES.INVALID_GUID,
+        message: TIME_ENTRIES_ERRORS.GUID_INVALID,
+      });
+    }
+
+    const entryObj = await TimeEntries._load(req.params.guid, true);
+    if (!entryObj) {
+      return R.handleError(res, HttpStatus.NOT_FOUND, {
+        code: TIME_ENTRIES_CODES.TIME_ENTRY_NOT_FOUND,
+        message: TIME_ENTRIES_ERRORS.NOT_FOUND,
+      });
+    }
+
+    return R.handleSuccess(res, {
+      entry: await entryObj.toJSON(),
+    });
+  } catch (error: any) {
+    return R.handleError(res, HttpStatus.INTERNAL_ERROR, {
+      code: TIME_ENTRIES_CODES.RETRIEVAL_FAILED,
+      message: error.message,
     });
   }
 });

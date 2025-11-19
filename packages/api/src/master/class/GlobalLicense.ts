@@ -19,11 +19,11 @@ import Revision from '../../tools/revision.js';
 
 import Tenant from './Tenant.js';
 import ExchangeRate from './ExchangeRate.js';
-import TaxRule from './TaxRule.js';
 import Billing from './BillingCycle.js';
 import PaymentMethod from './PaymentMethod.js';
 import LicenseAdjustment from './LicenseAdjustment.js';
 import PaymentTransaction from './PaymentTransaction.js';
+import TaxRule from './TaxRule.js';
 
 export default class GlobalLicense extends GlobalLicenseModel {
   private tenantObject?: Tenant;
@@ -592,15 +592,14 @@ export default class GlobalLicense extends GlobalLicenseModel {
     let taxAmountLocal = 0;
 
     taxRules?.forEach((rule: TaxRule) => {
-      taxAmountUsd += baseAmountUsd * rule.getTaxRate()!;
-      taxAmountLocal += baseAmountLocal * rule.getTaxRate()!;
+      taxAmountUsd += baseAmountUsd * rule?.getTaxRate()!;
+      taxAmountLocal += baseAmountLocal * rule?.getTaxRate()!;
     });
 
     // Calculer les totaux
-    const subtotalUsd = baseAmountUsd;
-    const totalAmountUsd = subtotalUsd + taxAmountUsd;
-    const subtotalLocal = baseAmountLocal;
-    const totalAmountLocal = subtotalLocal + taxAmountLocal;
+    const totalAmountUsd = baseAmountUsd + taxAmountUsd;
+
+    const totalAmountLocal = baseAmountLocal + taxAmountLocal;
 
     // Créer le cycle de facturation
 
@@ -618,17 +617,17 @@ export default class GlobalLicense extends GlobalLicenseModel {
       .setBaseAmountLocal(baseAmountLocal)
       .setAdjustmentsAmountLocal(0)
       .setTaxAmountLocal(taxAmountLocal)
-      .setTaxRulesApplied(taxRules!)
+      .setTaxRulesApplied(taxRules?.map((entry) => entry.getId())!)
       .setBillingStatus(BillingStatus.PENDING)
       .setPaymentDueDate(
-        new Date(new Date(this.current_period_start!).getTime() + 7 * 24 * 60 * 60 * 1000), // J+7
+        new Date(new Date(this.current_period_end!).getTime() + 7 * 24 * 60 * 60 * 1000), // J+7
       );
 
     await billingCycleData.save();
 
-    console.log(
-      `✅ Cycle de facturation initial créé - GUID: ${billingCycleData.getGuid()}, Montant: ${totalAmountLocal} ${currencyCode}`,
-    );
+    // console.log(
+    //   `✅ Cycle de facturation initial créé - GUID: ${billingCycleData.getGuid()}, Montant: ${totalAmountLocal} ${currencyCode}`,
+    // );
 
     // ✅ Créer automatiquement la transaction de paiement
     await this.createInitialPaymentTransaction(billingCycleData);

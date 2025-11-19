@@ -45,6 +45,7 @@
     "type-check": "npm run type-check --workspaces",
     "testCountry": "npm run testCountry --workspace=@toke/api",
     "testCurrency": "npm run testCurrency --workspace=@toke/api",
+    "testAppConfig": "npm run testAppConfig --workspace=@toke/api",
     "autoTestCountry": "npm run testCountryAuto --workspace=@toke/api",
     "testClient": "npm run testCreateClient --workspace=@toke/api",
     "migrate:api": "npm run migrate --workspace=@toke/api",
