@@ -32,6 +32,7 @@ export default class TaxRule extends TaxRuleModel {
       items,
     };
   }
+
   static _load(identifier: any, byGuid: boolean = false): Promise<TaxRule | null> {
     return new TaxRule().load(identifier, byGuid);
   }
@@ -56,6 +57,7 @@ export default class TaxRule extends TaxRuleModel {
   ): Promise<TaxRule[] | null> {
     return new TaxRule().listAllByCountryCode(code, paginationOptions);
   }
+
   static _listByTaxType(
     type: string,
     paginationOptions: { offset?: number; limit?: number } = {},
@@ -248,7 +250,7 @@ export default class TaxRule extends TaxRuleModel {
     this.country_code = data.country_code;
     this.tax_type = data.tax_type;
     this.tax_name = data.tax_name;
-    this.tax_rate = data.tax_rate;
+    this.tax_rate = Number(data.tax_rate);
     this.applies_to = data.applies_to;
     this.required_tax_number = data.required_tax_number;
     this.effective_date = data.effective_date;

@@ -585,15 +585,19 @@ export default class GlobalLicense extends GlobalLicenseModel {
     const baseAmountLocal = baseAmountUsd * exchangeRate;
 
     // Récupérer les règles fiscales du pays
-    const taxRules = await TaxRule._listByCountryCode(tenant.getCountryCode()!);
+    const taxRulesData = await TaxRule._listByCountryCode(tenant.getCountryCode()!);
+    if (!taxRulesData) {
+      throw new Error('Error xd test2');
+    }
+    const taxRules = taxRulesData.map((data: any) => TaxRule._toObject(data));
 
     // Calculer les taxes
     let taxAmountUsd = 0;
     let taxAmountLocal = 0;
 
-    taxRules?.forEach((rule: TaxRule) => {
-      taxAmountUsd += baseAmountUsd * rule?.getTaxRate()!;
-      taxAmountLocal += baseAmountLocal * rule?.getTaxRate()!;
+    taxRules.forEach((rule) => {
+      taxAmountUsd += baseAmountUsd * rule.getTaxRate()!;
+      taxAmountLocal += baseAmountLocal * rule.getTaxRate()!;
     });
 
     // Calculer les totaux
@@ -617,7 +621,7 @@ export default class GlobalLicense extends GlobalLicenseModel {
       .setBaseAmountLocal(baseAmountLocal)
       .setAdjustmentsAmountLocal(0)
       .setTaxAmountLocal(taxAmountLocal)
-      .setTaxRulesApplied(taxRules?.map((entry) => entry.getId())!)
+      .setTaxRulesApplied(taxRules?.map((entry) => entry)!)
       .setBillingStatus(BillingStatus.PENDING)
       .setPaymentDueDate(
         new Date(new Date(this.current_period_end!).getTime() + 7 * 24 * 60 * 60 * 1000), // J+7
@@ -625,9 +629,9 @@ export default class GlobalLicense extends GlobalLicenseModel {
 
     await billingCycleData.save();
 
-    // console.log(
-    //   `✅ Cycle de facturation initial créé - GUID: ${billingCycleData.getGuid()}, Montant: ${totalAmountLocal} ${currencyCode}`,
-    // );
+    console.log(
+      `✅ Cycle de facturation initial créé - ID: ${billingCycleData.getId()}, Montant: ${totalAmountLocal} ${currencyCode}`,
+    );
 
     // ✅ Créer automatiquement la transaction de paiement
     await this.createInitialPaymentTransaction(billingCycleData);
@@ -662,7 +666,7 @@ export default class GlobalLicense extends GlobalLicenseModel {
     const dummyAdjustment = new LicenseAdjustment()
       .setGlobalLicense(this.id!)
       .setAdjustmentDate(new Date())
-      .setEmployeesAddedCount(0)
+      .setEmployeesAddedCount(this.minimum_seats!)
       .setMonthsRemaining(Number(this.billing_cycle_months || 1))
       .setPricePerEmployeeUsd(this.base_price_usd || 0)
       .setSubtotalUsd(0)
@@ -693,7 +697,7 @@ export default class GlobalLicense extends GlobalLicenseModel {
     await transaction.save();
 
     console.log(
-      `✅ Transaction de paiement créée - GUID: ${transaction.getGuid()}, Référence: ${transaction.getPaymentReference()}`,
+      `✅ Transaction de paiement créée - ID: ${transaction.getId()}, Référence: ${transaction.getPaymentReference()}`,
     );
 
     // ✅ Envoyer l'email avec le lien de paiement

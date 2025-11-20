@@ -204,14 +204,17 @@ export default class BillingCycle extends BillingCycleModel {
     this.exchange_rate_used = exchange_rate_used;
     return this;
   }
+
   setBaseAmountLocal(base_amount_local: number): BillingCycle {
     this.base_amount_local = base_amount_local;
     return this;
   }
+
   setAdjustmentsAmountLocal(adjustments_amount_local: number): BillingCycle {
     this.adjustments_amount_local = adjustments_amount_local;
     return this;
   }
+
   setTaxAmountLocal(tax_amount_local: number): BillingCycle {
     this.tax_amount_local = tax_amount_local;
     return this;

@@ -251,7 +251,7 @@ export const BillingCycleDbStructure = {
             if (typeof rule !== 'object' || rule === null) {
               throw new Error(`Tax rule at index ${index} must be an object`);
             }
-            if (!rule.hasOwnProperty('rate') || typeof rule.rate !== 'number') {
+            if (!rule.hasOwnProperty('tax_rate') || typeof rule.tax_rate !== 'number') {
               throw new Error(`Tax rule at index ${index} must have a numeric rate`);
             }
           });
@@ -506,9 +506,22 @@ export const BillingCycleDbStructure = {
       }
 
       // Parsing des JSON
+      // if (data.tax_rules_applied && typeof data.tax_rules_applied === 'string') {
+      //   try {
+      //     data.tax_rules_applied = JSON.parse(data.tax_rules_applied);
+      //   } catch (error) {
+      //     throw new Error('Invalid JSON format for tax_rules_applied');
+      //   }
+      // }
       if (data.tax_rules_applied && typeof data.tax_rules_applied === 'string') {
         try {
           data.tax_rules_applied = JSON.parse(data.tax_rules_applied);
+
+          // Conversion des tax_rate en number
+          data.tax_rules_applied = data.tax_rules_applied.map((rule: any) => ({
+            ...rule,
+            tax_rate: Number(rule.tax_rate),
+          }));
         } catch (error) {
           throw new Error('Invalid JSON format for tax_rules_applied');
         }

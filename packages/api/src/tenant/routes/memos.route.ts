@@ -530,22 +530,45 @@ router.post('/', Ensure.post(), async (req: Request, res: Response) => {
 
     if (validatedData.affected_session) {
       const sessionObj = await WorkSessions._load(validatedData.affected_session, true);
-      if (sessionObj) {
-        memoObj.setAffectedSession(sessionObj.getId()!);
+      if (!sessionObj) {
+        return R.handleError(res, HttpStatus.NOT_FOUND, {
+          code: MEMOS_CODES.AFFECTED_SESSION_NOT_FOUND,
+          message: MEMOS_ERRORS.AFFECTED_SESSION_NOT_FOUND,
+        });
       }
+      memoObj.setAffectedSession(sessionObj.getId()!);
     }
 
-    if (validatedData.affected_entries) {
-      const affectedEntries = await Promise.all(
-        validatedData.affected_entries.map(async (entry) => {
-          const sessionObj = await TimeEntries._load(entry, true);
-          return sessionObj?.getId() ?? null;
-        }),
-      );
+    // if (validatedData.affected_entries) {
+    //   const affectedEntries = await Promise.all(
+    //     validatedData.affected_entries.map(async (entry) => {
+    //       const sessionObj = await TimeEntries._load(entry, true);
+    //       return sessionObj?.getId() ?? null;
+    //     }),
+    //   );
+    //
+    //   // 🧹 Enlever les null avant de les envoyer
+    //   const validEntries = affectedEntries.filter((id): id is number => id !== null);
+    //   memoObj.setAffectedEntriesIds(validEntries);
+    // }
 
-      // 🧹 Enlever les null avant de les envoyer
-      const validEntries = affectedEntries.filter((id): id is number => id !== null);
-      memoObj.setAffectedEntriesIds(validEntries);
+    if (validatedData.affected_entries) {
+      const affectedEntries: number[] = [];
+
+      for (const entryId of validatedData.affected_entries) {
+        const entryObj = await TimeEntries._load(entryId, true);
+
+        if (!entryObj) {
+          return R.handleError(res, HttpStatus.NOT_FOUND, {
+            code: MEMOS_CODES.AFFECTED_ENTRIES_NOT_FOUND,
+            message: `${MEMOS_ERRORS.AFFECTED_ENTRIES_NOT_FOUND}: ${entryId}`,
+          });
+        }
+
+        affectedEntries.push(entryObj.getId()!);
+      }
+
+      memoObj.setAffectedEntriesIds(affectedEntries);
     }
 
     if (validatedData.attachments) {

@@ -2345,19 +2345,10 @@ router.get('/attendance/team', Ensure.get(), async (req: Request, res: Response)
       return R.handleSuccess(res, {
         message: 'No team members found for this manager',
         data: {
-          team_size: 0,
           pagination: {
             offset: paginationOptions.offset || 0,
             limit: paginationOptions.limit || 0,
             count: 0,
-          },
-          statistics: {
-            total: 0,
-            by_type: {},
-            by_status: {},
-            by_employee: {},
-            with_corrections: 0,
-            with_anomalies: 0,
           },
           entries: [],
         },
@@ -2402,44 +2393,10 @@ router.get('/attendance/team', Ensure.get(), async (req: Request, res: Response)
 
     // Enrichir et calculer les statistiques
     const enrichedEntries: any[] = [];
-    const statistics = {
-      total: 0,
-      by_type: {} as Record<string, number>,
-      by_status: {} as Record<string, number>,
-      by_employee: {} as Record<string, { name: string; count: number }>,
-      with_corrections: 0,
-      with_anomalies: 0,
-    };
 
     if (entries) {
       await Promise.all(
         entries.map(async (entry) => {
-          statistics.total++;
-
-          const type = entry.getPointageType()!;
-          const status = entry.getPointageStatus()!;
-          const userId = entry.getUser()!;
-
-          // Statistiques par type
-          statistics.by_type[type] = (statistics.by_type[type] || 0) + 1;
-
-          // Statistiques par statut
-          statistics.by_status[status] = (statistics.by_status[status] || 0) + 1;
-
-          // Statistiques par employé
-          if (!statistics.by_employee[userId]) {
-            const userObj = await User._load(userId);
-            statistics.by_employee[userId] = {
-              name: userObj ? `${userObj.getFirstName()} ${userObj.getLastName()}` : 'Unknown',
-              count: 0,
-            };
-          }
-          statistics.by_employee[userId].count++;
-
-          // Corrections et anomalies
-          if (entry.getCorrectionReason()) statistics.with_corrections++;
-          if (await entry.hasAnomalies()) statistics.with_anomalies++;
-
           enrichedEntries.push(await entry.toJSON(responseValue.FULL));
         }),
       );
@@ -2448,14 +2405,12 @@ router.get('/attendance/team', Ensure.get(), async (req: Request, res: Response)
     return R.handleSuccess(res, {
       message: 'Team time entries retrieved successfully',
       data: {
-        manager: managerObj.toJSON(),
-        team_size: subordinateIds.length,
+        // manager: managerObj.toJSON(),
         pagination: {
           offset: paginationOptions.offset || 0,
           limit: paginationOptions.limit || enrichedEntries.length,
           count: enrichedEntries.length,
         },
-        statistics,
         entries: enrichedEntries,
       },
     });
