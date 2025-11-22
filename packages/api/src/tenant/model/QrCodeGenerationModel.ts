@@ -16,6 +16,7 @@ export default class QrCodeGenerationModel extends BaseModel {
     valid_to: 'valid_to',
     created_at: 'created_at',
     updated_at: 'updated_at',
+    shared: 'shared',
   } as const;
 
   protected id?: number;
@@ -26,6 +27,7 @@ export default class QrCodeGenerationModel extends BaseModel {
   protected valid_to?: Date;
   protected created_at?: Date;
   protected updated_at?: Date;
+  protected shared: boolean = false;
 
   protected constructor() {
     super();

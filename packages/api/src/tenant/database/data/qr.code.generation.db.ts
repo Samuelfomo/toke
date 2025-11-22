@@ -119,6 +119,10 @@ export const QrCodeGenerationDbStructure = {
         fields: ['site', 'manager'],
         name: 'idx_qr_code_site_manager',
       },
+      {
+        fields: ['shared'],
+        name: 'idx_qr_code_shared',
+      },
     ],
   } as ModelOptions,
 };
