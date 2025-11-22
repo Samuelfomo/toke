@@ -3,7 +3,7 @@ import * as readline from 'readline';
 import Client from '../src/master/class/Client.js';
 import Db from '../src/master/database/db.config.js';
 import { TableInitializer } from '../src/master/database/db.initializer.js';
-import ClientProfil from '../src/master/class/ClientProfil.js';
+import ClientProfile from '../src/master/class/ClientProfile.js';
 
 export class ClientManager {
   private rl: readline.Interface;
@@ -41,7 +41,7 @@ export class ClientManager {
   async createClient(): Promise<void> {
     console.log("📱 === Création d'un nouveau client ===\n");
 
-    const profiles = await ClientProfil._list();
+    const profiles = await ClientProfile._list();
     if (!profiles || profiles.length === 0) {
       console.log(`📝 Aucun profil n'a ete trouvé`);
       return;

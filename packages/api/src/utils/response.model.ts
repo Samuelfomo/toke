@@ -289,8 +289,15 @@ export const responseStructure = {
   LINK: 'link',
 
   APP_WEB: 'app_web',
-  APP_ANDROID: 'app_android',
-  APP_IOS: 'app_ios',
+  MANAGER_ANDROID_APP: 'manager_android_app',
+  MANAGER_IOS_APP: 'manager_ios_app',
+  EMPLOYEE_ANDROID_APP: 'employee_android_app',
+  EMPLOYEE_IOS_APP: 'employee_ios_app',
+
+  METHOD: 'method',
+  PROFILE: 'profile',
+  ENDPOINT: 'endpoint',
+  ROUTE: 'route',
 } as const;
 
 export const RT = {

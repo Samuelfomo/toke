@@ -213,7 +213,7 @@ export const LicenseAdjustmentDbStructure = {
             if (typeof rule !== 'object' || rule === null) {
               throw new Error(`Tax rule at index ${index} must be an object`);
             }
-            if (!rule.hasOwnProperty('rate') || typeof rule.rate !== 'number') {
+            if (!rule.hasOwnProperty('tax_rate') || typeof rule.tax_rate !== 'number') {
               throw new Error(`Tax rule at index ${index} must have a numeric rate`);
             }
           });
@@ -366,9 +366,9 @@ export const LicenseAdjustmentDbStructure = {
 
       return taxRules.every((rule: any, index: number) => {
         if (typeof rule !== 'object' || rule === null) return false;
-        if (!rule.hasOwnProperty('rate') || typeof rule.rate !== 'number') return false;
-        // return rule.rate >= 0 && rule.rate <= 1; // Taux entre 0 et 100%
-        return rule.rate >= 0 && rule.rate <= 100;
+        if (!rule.hasOwnProperty('tax_rate') || typeof rule.tax_rate !== 'number') return false;
+        // return rule.tax_rate >= 0 && rule.tax_rate <= 1; // Taux entre 0 et 100%
+        return rule.tax_rate >= 0 && rule.tax_rate <= 100;
       });
     },
 

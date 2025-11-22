@@ -2,10 +2,11 @@ import ClientModel from '../model/ClientModel.js';
 import W from '../../tools/watcher.js';
 import G from '../../tools/glossary.js';
 
-import ClientProfil from './ClientProfil.js';
+import ClientProfile from './ClientProfile.js';
 
 export default class Client extends ClientModel {
-  private profilObject?: ClientProfil;
+  private profilObject?: ClientProfile;
+
   constructor() {
     super();
   }
@@ -84,12 +85,12 @@ export default class Client extends ClientModel {
   }
 
   /**
-   * Récupère l'objet ClientProfil associé
+   * Récupère l'objet ClientProfile associé
    */
-  async getProfil(): Promise<ClientProfil | null> {
+  async getProfil(): Promise<ClientProfile | null> {
     if (!this.profile) return null;
     if (!this.profilObject) {
-      this.profilObject = (await ClientProfil._load(this.profile)) || undefined;
+      this.profilObject = (await ClientProfile._load(this.profile)) || undefined;
     }
     return this.profilObject || null;
   }

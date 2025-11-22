@@ -2,7 +2,7 @@ import * as readline from 'readline';
 
 import Db from '../src/master/database/db.config.js';
 import { TableInitializer } from '../src/master/database/db.initializer.js';
-import ClientProfil from '../src/master/class/ClientProfil.js';
+import ClientProfile from '../src/master/class/ClientProfile.js';
 
 class ProfilManager {
   private rl: readline.Interface;
@@ -42,7 +42,7 @@ class ProfilManager {
 
     try {
       // Vérifier s'il y a déjà un profil admin
-      const existingAdmin = await new ClientProfil().getExitAdmin();
+      const existingAdmin = await new ClientProfile().getExitAdmin();
 
       const name = await this.question('📝 Nom du profil: ');
       const description = await this.question('⿳Avez-vous une description? (min 10 caractères): ');
@@ -68,10 +68,10 @@ class ProfilManager {
       console.log('\n⏳ Création du profil...');
 
       // Créer le profil
-      const profil = new ClientProfil().setName(name).setDescription(description).setRoot(isRoot);
+      const profil = new ClientProfile().setName(name).setDescription(description).setRoot(isRoot);
       await profil.save();
 
-      console.log('\n✅ ClientProfil créé avec succès!');
+      console.log('\n✅ ClientProfile créé avec succès!');
       console.log(`   - ID: ${profil.getId()}`);
       console.log(`   - Nom: ${profil.getName()}`);
       console.log(`   - Description: ${profil.getDescription()}`);
@@ -94,7 +94,7 @@ class ProfilManager {
     console.log('\n📋 === Liste des profils ===\n');
 
     try {
-      const profiles = await ClientProfil._list();
+      const profiles = await ClientProfile._list();
 
       if (!profiles || profiles.length === 0) {
         console.log('📝 Aucun profil trouvé');
@@ -124,7 +124,7 @@ class ProfilManager {
 
     try {
       // Lister les clients d'abord
-      const profiles = await ClientProfil._list();
+      const profiles = await ClientProfile._list();
       if (!profiles || profiles.length === 0) {
         console.log('📝 Aucun profil à modifier');
         return;
@@ -156,7 +156,7 @@ class ProfilManager {
       // Gestion du statut admin
       if (!profil.isRoot()) {
         // Si le profil n'est pas admin, on peut proposer de le rendre admin
-        const hasAdmin = await new ClientProfil().getExitAdmin();
+        const hasAdmin = await new ClientProfile().getExitAdmin();
         if (!hasAdmin) {
           const makeAdmin = await this.question('👑 Faire de ce profil un admin système? (y/N): ');
           if (makeAdmin.toLowerCase() === 'y') {
@@ -183,7 +183,7 @@ class ProfilManager {
         profil.setDescription(newDescription);
       }
       await profil.save();
-      console.log('\n✅ ClientProfil modifié avec succès!');
+      console.log('\n✅ ClientProfile modifié avec succès!');
       console.log(`   - Nom: ${profil.getName()}`);
       console.log(`   - Description: ${profil.getDescription()}`);
       console.log(`   - Admin: ${profil.isRoot() ? '👑 Oui' : '👤 Non'}`);
@@ -199,7 +199,7 @@ class ProfilManager {
     console.log("\n🗑️ === Suppression d'un profil ===\n");
 
     try {
-      const profiles = await ClientProfil._list();
+      const profiles = await ClientProfile._list();
       if (!profiles || profiles.length === 0) {
         console.log('📝 Aucun profil à supprimer');
         return;
@@ -230,7 +230,7 @@ class ProfilManager {
         const success = await profil.delete();
 
         if (success) {
-          console.log('\n✅ ClientProfil supprimé avec succès');
+          console.log('\n✅ ClientProfile supprimé avec succès');
         } else {
           console.log('\n❌ Erreur lors de la suppression');
         }

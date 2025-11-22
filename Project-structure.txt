@@ -33,10 +33,10 @@
 |   |   |   |   |   |-- Client.d.ts.map
 |   |   |   |   |   |-- Client.js
 |   |   |   |   |   |-- Client.js.map
-|   |   |   |   |   |-- ClientProfil.d.ts
-|   |   |   |   |   |-- ClientProfil.d.ts.map
-|   |   |   |   |   |-- ClientProfil.js
-|   |   |   |   |   |-- ClientProfil.js.map
+|   |   |   |   |   |-- ClientProfile.d.ts
+|   |   |   |   |   |-- ClientProfile.d.ts.map
+|   |   |   |   |   |-- ClientProfile.js
+|   |   |   |   |   |-- ClientProfile.js.map
 |   |   |   |   |   |-- Contact.d.ts
 |   |   |   |   |   |-- Contact.d.ts.map
 |   |   |   |   |   |-- Contact.js
@@ -790,7 +790,7 @@
 |   |   |   |   |   |-- AppConfig.ts
 |   |   |   |   |   |-- BillingCycle.ts
 |   |   |   |   |   |-- Client.ts
-|   |   |   |   |   |-- ClientProfil.ts
+|   |   |   |   |   |-- ClientProfile.ts
 |   |   |   |   |   |-- Contact.ts
 |   |   |   |   |   |-- Country.ts
 |   |   |   |   |   |-- Currency.ts

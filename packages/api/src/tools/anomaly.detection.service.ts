@@ -1136,6 +1136,31 @@ Validation manager requise pour accepter manuellement si raison légitime.
   // UTILITAIRES
   // ========================================
 
+  /**
+   * Détection anomalie géofencing (non-bloquante)
+   */
+  async detectGeofenceAnomaly(geofenceCheck: any, siteObj: Site): Promise<Anomaly[]> {
+    const anomalies: Anomaly[] = [];
+
+    if (!geofenceCheck.access_granted) {
+      anomalies.push({
+        type: AnomalyType.GEOFENCE_VIOLATION,
+        severity: AlertSeverity.HIGH,
+        description: `Pointage hors zone autorisée - Distance: ${geofenceCheck.distance_from_center}m (max: ${geofenceCheck.site_radius}m)`,
+        technical_details: {
+          distance_from_center: geofenceCheck.distance_from_center,
+          site_radius: geofenceCheck.site_radius,
+          tolerance_applied: geofenceCheck.tolerance_applied,
+          gps_accuracy: geofenceCheck.gps_accuracy_applied,
+          overshoot: geofenceCheck.distance_from_center - geofenceCheck.site_radius,
+        },
+        auto_correctable: false, // Nécessite validation manager
+      });
+    }
+
+    return anomalies;
+  }
+
   private calculateGlobalSeverity(anomalies: Anomaly[]): AlertSeverity {
     if (anomalies.some((a) => a.severity === AlertSeverity.CRITICAL)) return AlertSeverity.CRITICAL;
     if (anomalies.some((a) => a.severity === AlertSeverity.HIGH)) return AlertSeverity.HIGH;

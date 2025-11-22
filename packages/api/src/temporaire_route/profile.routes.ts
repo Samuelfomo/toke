@@ -1,7 +1,7 @@
 import { Request, Response, Router } from 'express';
 import { HttpStatus } from '@toke/shared';
 
-import ClientProfil from '../master/class/ClientProfil.js';
+import ClientProfile from '../master/class/ClientProfile.js';
 import R from '../tools/response.js';
 import Ensure from '../middle/ensured-routes.js';
 import ExtractQueryParams from '../utils/extract.query.params.js';
@@ -15,7 +15,7 @@ router.get('/', Ensure.get(), async (req: Request, res: Response) => {
   try {
     const paginationOptions = await ExtractQueryParams.extractPaginationFromQuery(req.query);
 
-    const profiles = await ClientProfil._list();
+    const profiles = await ClientProfile._list();
     if (!profiles) {
       return R.handleSuccess(res, {
         profiles: {
@@ -75,7 +75,7 @@ router.get('/:id', Ensure.get(), async (req: Request, res: Response) => {
       });
     }
 
-    const profile = await ClientProfil._load(id);
+    const profile = await ClientProfile._load(id);
     if (!profile) {
       return R.handleError(res, HttpStatus.NOT_FOUND, {
         code: 'profile_not_found',
@@ -106,7 +106,7 @@ router.get('/:id', Ensure.get(), async (req: Request, res: Response) => {
  */
 router.get('/check-admin', Ensure.get(), async (req: Request, res: Response) => {
   try {
-    const hasAdmin = await new ClientProfil().getExitAdmin();
+    const hasAdmin = await new ClientProfile().getExitAdmin();
     return R.handleSuccess(res, {
       hasAdmin,
       message: hasAdmin ? 'Admin profile exists' : 'No admin profile found',
@@ -151,7 +151,7 @@ router.post('/', Ensure.post(), async (req: Request, res: Response) => {
 
     // Vérifier s'il y a déjà un admin si on veut créer un profil root
     if (root === true) {
-      const hasAdmin = await new ClientProfil().getExitAdmin();
+      const hasAdmin = await new ClientProfile().getExitAdmin();
       if (hasAdmin) {
         return R.handleError(res, HttpStatus.CONFLICT, {
           code: 'admin_already_exists',
@@ -160,7 +160,7 @@ router.post('/', Ensure.post(), async (req: Request, res: Response) => {
       }
     }
 
-    const profile = new ClientProfil()
+    const profile = new ClientProfile()
       .setName(name.trim())
       .setDescription(description?.trim() || undefined)
       .setRoot(root === true);
@@ -205,7 +205,7 @@ router.put('/:id', Ensure.put(), async (req: Request, res: Response) => {
       });
     }
 
-    const profile = await ClientProfil._load(id);
+    const profile = await ClientProfile._load(id);
     if (!profile) {
       return R.handleError(res, HttpStatus.NOT_FOUND, {
         code: 'profile_not_found',
@@ -241,7 +241,7 @@ router.put('/:id', Ensure.put(), async (req: Request, res: Response) => {
     if (root !== undefined && typeof root === 'boolean') {
       if (root === true && !profile.isRoot()) {
         // Vérifier s'il y a déjà un admin
-        const hasAdmin = await new ClientProfil().getExitAdmin();
+        const hasAdmin = await new ClientProfile().getExitAdmin();
         if (hasAdmin) {
           return R.handleError(res, HttpStatus.CONFLICT, {
             code: 'admin_already_exists',
@@ -283,7 +283,7 @@ router.delete('/:id', Ensure.delete(), async (req: Request, res: Response) => {
       });
     }
 
-    const profile = await ClientProfil._load(id);
+    const profile = await ClientProfile._load(id);
     if (!profile) {
       return R.handleError(res, HttpStatus.NOT_FOUND, {
         code: 'profile_not_found',

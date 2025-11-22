@@ -4,7 +4,7 @@ import path from 'path';
 
 import Client from '../master/class/Client.js';
 
-// import ClientProfil from '../master/class/ClientProfil.js';
+// import ClientProfile from '../master/class/ClientProfile.js';
 
 interface ClientConfig {
   id: number;

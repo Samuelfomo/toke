@@ -71,6 +71,15 @@ export const QrCodeGenerationDbStructure = {
       },
       comment: 'QR code validity end date (null = no end limit)',
     },
+    shared: {
+      type: DataTypes.BOOLEAN,
+      allowNull: false,
+      defaultValue: false,
+      validate: {
+        isBoolean: true,
+      },
+      comment: 'Qr code is Shared',
+    },
   } as ModelAttributes,
   options: {
     tableName: tableName.QR_CODE_GENERATION,

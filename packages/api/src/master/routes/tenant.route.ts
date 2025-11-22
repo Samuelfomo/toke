@@ -328,6 +328,41 @@ router.get('/status/:status', Ensure.get(), async (req: Request, res: Response) 
   }
 });
 
+/**
+ * GET /:email - Recherche par email
+ */
+router.get('/email/:email', Ensure.get(), async (req: Request, res: Response) => {
+  try {
+    const { email } = req.params;
+
+    if (!TenantValidationUtils.validateBillingEmail(email)) {
+      return R.handleError(res, HttpStatus.BAD_REQUEST, {
+        code: TENANT_CODES.BILLING_EMAIL_INVALID,
+        message: TENANT_ERRORS.BILLING_EMAIL_INVALID,
+      });
+    }
+
+    const tenantObj = await Tenant._load(email.toLowerCase(), false, false, false, true);
+    if (!tenantObj) {
+      return R.handleError(res, HttpStatus.NOT_FOUND, {
+        code: 'tenant_not_found',
+        message: `Tenant with identifier '${email}' not found`,
+      });
+    }
+
+    return R.handleSuccess(res, {
+      ...tenantObj.toJSON(),
+      subdomain: tenantObj.getSubdomain(),
+    });
+  } catch (error: any) {
+    console.error('⚠️ Erreur recherche tenant:', error);
+    return R.handleError(res, HttpStatus.INTERNAL_ERROR, {
+      code: TENANT_CODES.SEARCH_FAILED,
+      message: TENANT_ERRORS.NOT_FOUND,
+    });
+  }
+});
+
 // endregion
 
 // region ROUTES CRUD
@@ -955,41 +990,6 @@ router.get('/:identifier', Ensure.get(), async (req: Request, res: Response) => 
     }
 
     return R.handleSuccess(res, tenant.toJSON());
-  } catch (error: any) {
-    console.error('⚠️ Erreur recherche tenant:', error);
-    return R.handleError(res, HttpStatus.INTERNAL_ERROR, {
-      code: TENANT_CODES.SEARCH_FAILED,
-      message: TENANT_ERRORS.NOT_FOUND,
-    });
-  }
-});
-
-/**
- * GET /:email - Recherche par email
- */
-router.get('/:email', Ensure.get(), async (req: Request, res: Response) => {
-  try {
-    const { email } = req.params;
-
-    if (!TenantValidationUtils.validateBillingEmail(email)) {
-      return R.handleError(res, HttpStatus.BAD_REQUEST, {
-        code: TENANT_CODES.BILLING_EMAIL_INVALID,
-        message: TENANT_ERRORS.BILLING_EMAIL_INVALID,
-      });
-    }
-
-    const tenantObj = await Tenant._load(email.toLowerCase(), false, false, false, true);
-    if (!tenantObj) {
-      return R.handleError(res, HttpStatus.NOT_FOUND, {
-        code: 'tenant_not_found',
-        message: `Tenant with identifier '${email}' not found`,
-      });
-    }
-
-    return R.handleSuccess(res, {
-      tenant: tenantObj.toJSON(),
-      subdomain: tenantObj.getSubdomain(),
-    });
   } catch (error: any) {
     console.error('⚠️ Erreur recherche tenant:', error);
     return R.handleError(res, HttpStatus.INTERNAL_ERROR, {

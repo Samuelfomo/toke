@@ -606,27 +606,27 @@ router.post(
         validatedData.longitude,
       );
 
-      if (!geofenceCheck.access_granted) {
-        // ❌ REFUS POINTAGE
-        // // ✅ MAIS génération mémo automatique
-        // const autoMemo = await AnomalyDetectionService.generateGeofencingMemo(
-        //   userId,
-        //   siteObj,
-        //   validatedData,
-        //   geofenceCheck,
-        // );
-
-        return R.handleError(res, HttpStatus.FORBIDDEN, {
-          code: WORK_SESSIONS_CODES.GEOFENCE_VIOLATION,
-          message: WORK_SESSIONS_ERRORS.GEOFENCE_VIOLATION,
-          details: {
-            distance_from_center: geofenceCheck.distance_from_center,
-            max_allowed: siteObj.getGeofenceRadius(),
-            // auto_memo_created: true,
-            // memo_guid: autoMemo.getGuid(),
-          },
-        });
-      }
+      // if (!geofenceCheck.access_granted) {
+      //   // ❌ REFUS POINTAGE
+      //   // // ✅ MAIS génération mémo automatique
+      //   // const autoMemo = await AnomalyDetectionService.generateGeofencingMemo(
+      //   //   userId,
+      //   //   siteObj,
+      //   //   validatedData,
+      //   //   geofenceCheck,
+      //   // );
+      //
+      //   return R.handleError(res, HttpStatus.FORBIDDEN, {
+      //     code: WORK_SESSIONS_CODES.GEOFENCE_VIOLATION,
+      //     message: WORK_SESSIONS_ERRORS.GEOFENCE_VIOLATION,
+      //     details: {
+      //       distance_from_center: geofenceCheck.distance_from_center,
+      //       max_allowed: siteObj.getGeofenceRadius(),
+      //       // auto_memo_created: true,
+      //       // memo_guid: autoMemo.getGuid(),
+      //     },
+      //   });
+      // }
 
       // selon moi la mise a jours de la verification des habilitations a faire devrait se faire a ce niveau 👇
 
@@ -650,6 +650,12 @@ router.post(
       const { anomalies: qrAnomalies, corrections: qrCorrections } =
         await AnomalyDetectionService.detectAccessAnomalies(userId, qrCodeObj);
 
+      // ✅ AJOUTER ICI
+      const geofenceAnomalies = await AnomalyDetectionService.detectGeofenceAnomaly(
+        geofenceCheck,
+        siteObj,
+      );
+
       // === LOGIQUE SELON TYPE DE POINTAGE (NON-BLOQUANTE) ===
 
       switch (validatedData.pointage_type) {
@@ -661,7 +667,7 @@ router.post(
           );
 
           // Fusionner avec anomalies QR
-          const allAnomalies = [...qrAnomalies, ...anomalies];
+          const allAnomalies = [...qrAnomalies, ...geofenceAnomalies, ...anomalies];
           const allCorrections = [...qrCorrections, ...corrections];
 
           // ✅ CRÉER SESSION QUOI QU'IL ARRIVE
@@ -730,7 +736,7 @@ router.post(
           const { anomalies, corrections, activeSession } =
             await AnomalyDetectionService.detectPauseStartAnomalies(userId, validatedData);
           // Fusionner avec anomalies QR
-          const allAnomalies = [...qrAnomalies, ...anomalies];
+          const allAnomalies = [...qrAnomalies, ...geofenceAnomalies, ...anomalies];
           const allCorrections = [...qrCorrections, ...corrections];
 
           // ✅ CRÉER SESSION RÉTROACTIVE SI NÉCESSAIRE
@@ -795,7 +801,7 @@ router.post(
             await AnomalyDetectionService.detectPauseEndAnomalies(userId, validatedData);
 
           // Fusionner avec anomalies QR
-          const allAnomalies = [...qrAnomalies, ...anomalies];
+          const allAnomalies = [...qrAnomalies, ...geofenceAnomalies, ...anomalies];
           const allCorrections = [...qrCorrections, ...corrections];
 
           const tempEntry = new TimeEntries()
@@ -861,7 +867,7 @@ router.post(
             );
 
           // Fusionner avec anomalies QR
-          const allAnomalies = [...qrAnomalies, ...anomalies];
+          const allAnomalies = [...qrAnomalies, ...geofenceAnomalies, ...anomalies];
           const allCorrections = [...qrCorrections, ...corrections];
 
           // ✅ CRÉER ENTRY (même sans session)
@@ -940,7 +946,7 @@ router.post(
             );
 
           // Fusionner avec anomalies QR
-          const allAnomalies = [...qrAnomalies, ...anomalies];
+          const allAnomalies = [...qrAnomalies, ...geofenceAnomalies, ...anomalies];
           const allCorrections = [...qrCorrections, ...corrections];
 
           const entryObj = new TimeEntries()
@@ -1009,7 +1015,7 @@ router.post(
           );
 
           // Fusionner avec anomalies QR
-          const allAnomalies = [...qrAnomalies, ...anomalies];
+          const allAnomalies = [...qrAnomalies, ...geofenceAnomalies, ...anomalies];
           const allCorrections = [...qrCorrections, ...corrections];
 
           const entryObj = new TimeEntries()

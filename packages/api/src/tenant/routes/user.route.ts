@@ -25,7 +25,12 @@ import R from '../../tools/response.js';
 import User from '../class/User.js';
 import UserRole from '../class/UserRole.js';
 import { TenantRevision } from '../../tools/revision.js';
-import { responseValue, RoleValues, tableName } from '../../utils/response.model.js';
+import {
+  responseStructure,
+  responseValue,
+  RoleValues,
+  tableName,
+} from '../../utils/response.model.js';
 import Role from '../class/Role.js';
 import OrgHierarchy from '../class/OrgHierarchy.js';
 import { DatabaseEncryption } from '../../utils/encryption.js';
@@ -322,11 +327,23 @@ router.post('/', Ensure.post(), async (req: Request, res: Response) => {
 
     await orgHierarchyObj.save();
 
+    // TODO a revoir
+    const android: any = await InvitationService.findEmployeeLink(
+      responseStructure.EMPLOYEE_ANDROID_APP,
+    );
+
+    const ios: any = await InvitationService.findEmployeeLink(responseStructure.EMPLOYEE_IOS_APP);
+    const buttons = {
+      android_link: android.response.link,
+      ios_link: ios.response.link,
+    };
+
     // Envoyer l'OTP via WhatsApp
-    const result = await WapService.sendOtp(
+    const result = await WapService.sendInvitation(
       userObj.getOtpToken()!,
       validatedData.phone_number,
       validatedData.country,
+      buttons,
     );
     if (result.status !== HttpStatus.SUCCESS) {
       return R.handleError(res, result.status, result.response);
@@ -2236,7 +2253,6 @@ router.post('/share', Ensure.post(), async (req: Request, res: Response) => {
       return R.handleError(res, saved.status, saved.response);
     }
 
-    console.log('saved', saved);
     // TODO juste pour le teste
     const { email } = req.query;
     if (email) {

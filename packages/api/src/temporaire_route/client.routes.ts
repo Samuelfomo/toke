@@ -5,7 +5,7 @@ import Client from '../master/class/Client.js';
 import R from '../tools/response.js';
 import Ensure from '../middle/ensured-routes.js';
 import ExtractQueryParams from '../utils/extract.query.params.js';
-import ClientProfil from '../master/class/ClientProfil.js';
+import ClientProfile from '../master/class/ClientProfile.js';
 import G from '../tools/glossary.js';
 import ClientCacheService from '../tools/client.cache.service.js';
 
@@ -121,7 +121,7 @@ router.post('/', Ensure.post(), async (req: Request, res: Response) => {
       });
     }
 
-    const ProfileObj = await ClientProfil._load(profile);
+    const ProfileObj = await ClientProfile._load(profile);
     if (!ProfileObj) {
       return R.handleError(res, HttpStatus.NOT_FOUND, G.dataNotFound);
     }

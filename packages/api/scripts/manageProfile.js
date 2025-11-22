@@ -45,13 +45,11 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.ClientManager = void 0;
 const readline = __importStar(require("readline"));
-const Client_js_1 = __importDefault(require("../src/master/class/Client.js"));
 const db_config_js_1 = __importDefault(require("../src/master/database/db.config.js"));
 const db_initializer_js_1 = require("../src/master/database/db.initializer.js");
 const ClientProfile_js_1 = __importDefault(require("../src/master/class/ClientProfile.js"));
-class ClientManager {
+class ProfilManager {
     constructor() {
         this.rl = readline.createInterface({
             input: process.stdin,
@@ -78,91 +76,70 @@ class ClientManager {
         });
     }
     /**
-     * Créer un nouveau client
+     * Créer un nouveau profil
      */
-    createClient() {
+    createProfil() {
         return __awaiter(this, void 0, void 0, function* () {
-            var _a;
-            console.log("📱 === Création d'un nouveau client ===\n");
-            const profiles = yield ClientProfile_js_1.default._list();
-            if (!profiles || profiles.length === 0) {
-                console.log(`📝 Aucun profil n'a ete trouvé`);
-                return;
-            }
-            // Afficher la liste
-            console.log(`Profils disponibles:`);
-            profiles.forEach((profil, index) => {
-                console.log(`${index + 1}. ${profil.getName()} (ID: ${profil.getId()})`);
-            });
-            const choice = yield this.question('\nNuméro du profil du client à ajouter: ');
-            const index = parseInt(choice) - 1;
-            if (index < 0 || index >= profiles.length) {
-                console.log('❌ Choix invalide');
-                return;
-            }
-            const profil = profiles[index];
+            console.log("📱 === Création d'un nouveau profil ===\n");
             try {
-                const name = yield this.question("📝 Nom de l'application: ");
-                const secret = yield this.question('🔐 Secret (min 8 caractères): ');
+                // Vérifier s'il y a déjà un profil admin
+                const existingAdmin = yield new ClientProfile_js_1.default().getExitAdmin();
+                const name = yield this.question('📝 Nom du profil: ');
+                const description = yield this.question('⿳Avez-vous une description? (min 10 caractères): ');
+                // Demander le type de profil seulement si pas d'admin existant
+                let isRoot = false;
+                if (!existingAdmin) {
+                    const makeAdmin = yield this.question('👑 Faire de ce profil un admin système? (y/N): ');
+                    isRoot = makeAdmin.toLowerCase() === 'y';
+                }
                 // Validation
                 if (!name.trim()) {
                     console.log('❌ Le nom est requis');
                     return;
                 }
-                if (secret.length < 8) {
-                    console.log('❌ Le secret doit faire au moins 8 caractères');
+                if (description && description.length < 10) {
+                    console.log('❌ La description doit faire au moins 10 caractères');
                     return;
                 }
-                console.log('\n⏳ Création du client...', profil.getId());
-                // Créer le client
-                const client = new Client_js_1.default().setName(name).setSecret(secret).setProfil(profil.getId());
-                yield client.save();
-                const profilData = (_a = (yield client.getProfil())) === null || _a === void 0 ? void 0 : _a.getName();
-                console.log('\n✅ Client créé avec succès!');
-                console.log(`   - ID: ${client.getId()}`);
-                console.log(`   - Nom: ${client.getName()}`);
-                console.log(`   - Token: ${client.getToken()}`);
-                console.log(`   - Profil: ${profilData}`);
-                console.log(`   - Actif: ${client.isActive()}`);
+                console.log('\n⏳ Création du profil...');
+                // Créer le profil
+                const profil = new ClientProfile_js_1.default().setName(name).setDescription(description).setRoot(isRoot);
+                yield profil.save();
+                console.log('\n✅ ClientProfile créé avec succès!');
+                console.log(`   - ID: ${profil.getId()}`);
+                console.log(`   - Nom: ${profil.getName()}`);
+                console.log(`   - Description: ${profil.getDescription()}`);
+                console.log(`   - Admin: ${profil.isRoot()}`);
             }
             catch (error) {
                 console.log(`\n❌ Erreur: ${error.message}`);
                 if (error.message.includes('unique') || error.message.includes('existe déjà')) {
                     console.log('\n💡 Solutions possibles:');
-                    console.log("   - Choisir un autre nom d'application");
-                    console.log('   - Vérifier les clients existants (option 2)');
+                    console.log('   - Choisir un autre nom de profil');
+                    console.log('   - Vérifier les profils existants (option 2)');
                 }
             }
         });
     }
     /**
-     * Lister tous les clients
+     * Lister tous les profils
      */
-    listClients() {
+    listProfiles() {
         return __awaiter(this, void 0, void 0, function* () {
-            console.log('\n📋 === Liste des clients ===\n');
+            console.log('\n📋 === Liste des profils ===\n');
             try {
-                const clients = yield Client_js_1.default._list();
-                if (!clients || clients.length === 0) {
-                    console.log('📝 Aucun client trouvé');
+                const profiles = yield ClientProfile_js_1.default._list();
+                if (!profiles || profiles.length === 0) {
+                    console.log('📝 Aucun profil trouvé');
                     return;
                 }
-                console.log(`📊 ${clients.length} client(s) trouvé(s):\n`);
-                const clientsWithProfiles = yield Promise.all(clients.map((client) => __awaiter(this, void 0, void 0, function* () {
-                    const profil = yield client.getProfil();
-                    return {
-                        client,
-                        profilName: (profil === null || profil === void 0 ? void 0 : profil.getName()) || 'Aucun profil',
-                    };
-                })));
-                clientsWithProfiles.forEach((item, index) => {
-                    const { client, profilName } = item;
-                    const status = client.isActive() ? '🟢 Actif' : '🔴 Inactif';
-                    console.log(`${index + 1}. ${client.getName()}`);
-                    console.log(`   ID: ${client.getId()}`);
-                    console.log(`   Token: ${client.getToken()}`);
-                    console.log(`   Profil: ${profilName}`);
-                    console.log(`   Statut: ${status}`);
+                console.log(`📊 ${profiles.length} profil(s) trouvé(s):\n`);
+                profiles.forEach((profil, index) => {
+                    const status = profil.isRoot() ? '🟢 True' : '🔴 False';
+                    console.log(`${index + 1}. ${profil.getName()}`);
+                    console.log(`   ID: ${profil.getId()}`);
+                    console.log(`   Description: ${profil.getDescription()}`);
+                    console.log(`   Root: ${status}`);
                     console.log('');
                 });
             }
@@ -172,40 +149,67 @@ class ClientManager {
         });
     }
     /**
-     * Modifier un client
+     * Modifier un profil
      */
-    updateClient() {
+    updateProfil() {
         return __awaiter(this, void 0, void 0, function* () {
-            console.log("\n✏️ === Modification d'un client ===\n");
+            console.log("\n✏️ === Modification d'un profil ===\n");
             try {
                 // Lister les clients d'abord
-                const clients = yield Client_js_1.default._list();
-                if (!clients || clients.length === 0) {
-                    console.log('📝 Aucun client à modifier');
+                const profiles = yield ClientProfile_js_1.default._list();
+                if (!profiles || profiles.length === 0) {
+                    console.log('📝 Aucun profil à modifier');
                     return;
                 }
                 // Afficher la liste
-                console.log('Clients disponibles:');
-                clients.forEach((client, index) => {
-                    console.log(`${index + 1}. ${client.getName()} (ID: ${client.getId()})`);
+                console.log('profils disponibles:');
+                profiles.forEach((profil, index) => {
+                    console.log(`${index + 1}. ${profil.getName()} (ID: ${profil.getId()})`);
                 });
-                const choice = yield this.question('\nNuméro du client à modifier: ');
+                const choice = yield this.question('\nNuméro du profil à modifier: ');
                 const index = parseInt(choice) - 1;
-                if (index < 0 || index >= clients.length) {
+                if (index < 0 || index >= profiles.length) {
                     console.log('❌ Choix invalide');
                     return;
                 }
-                const client = clients[index];
-                // Nouveaux nom
-                const newName = yield this.question(`📝 Nouveau nom (actuel: ${client.getName()}): `);
-                if (newName.trim()) {
-                    client.setName(newName);
-                    yield client.save();
-                    console.log('\n✅ Client modifié avec succès!');
+                const profil = profiles[index];
+                // Nouveau nom
+                const newName = yield this.question(`📝 Nouveau nom (actuel: ${profil.getName()}): `);
+                // Nouvelle description
+                const newDescription = yield this.question(`📝 Nouvelle description : Facultatif (actuel: ${profil.getDescription()}): `);
+                // Gestion du statut admin
+                if (!profil.isRoot()) {
+                    // Si le profil n'est pas admin, on peut proposer de le rendre admin
+                    const hasAdmin = yield new ClientProfile_js_1.default().getExitAdmin();
+                    if (!hasAdmin) {
+                        const makeAdmin = yield this.question('👑 Faire de ce profil un admin système? (y/N): ');
+                        if (makeAdmin.toLowerCase() === 'y') {
+                            profil.setRoot(true);
+                        }
+                    }
                 }
                 else {
-                    console.log('\n⚠️ Aucune modification effectuée');
+                    // Si le profil est admin, on peut proposer de retirer le statut admin
+                    const removeAdmin = yield this.question('⚠️ Retirer le statut admin de ce profil? (y/N): ');
+                    if (removeAdmin.toLowerCase() === 'y') {
+                        profil.setRoot(false);
+                    }
                 }
+                if (newName.trim()) {
+                    profil.setName(newName.trim());
+                }
+                if (newDescription.trim()) {
+                    if (newDescription.length < 10) {
+                        console.log('❌ La description doit faire au moins 10 caractères');
+                        return;
+                    }
+                    profil.setDescription(newDescription);
+                }
+                yield profil.save();
+                console.log('\n✅ ClientProfile modifié avec succès!');
+                console.log(`   - Nom: ${profil.getName()}`);
+                console.log(`   - Description: ${profil.getDescription()}`);
+                console.log(`   - Admin: ${profil.isRoot() ? '👑 Oui' : '👤 Non'}`);
             }
             catch (error) {
                 console.log(`\n❌ Erreur: ${error.message}`);
@@ -213,70 +217,35 @@ class ClientManager {
         });
     }
     /**
-     * Changer le statut d'un client
+     * Supprimer un profil
      */
-    toggleClientStatus() {
+    deleteProfil() {
         return __awaiter(this, void 0, void 0, function* () {
-            console.log('\n🔄 === Changement de statut ===\n');
+            console.log("\n🗑️ === Suppression d'un profil ===\n");
             try {
-                const clients = yield Client_js_1.default._list();
-                if (!clients || clients.length === 0) {
-                    console.log('📝 Aucun client trouvé');
-                    return;
-                }
-                // Afficher la liste avec statuts
-                console.log('Clients disponibles:');
-                clients.forEach((client, index) => {
-                    const status = client.isActive() ? '🟢 Actif' : '🔴 Inactif';
-                    console.log(`${index + 1}. ${client.getName()} - ${status}`);
-                });
-                const choice = yield this.question('\nNuméro du client: ');
-                const index = parseInt(choice) - 1;
-                if (index < 0 || index >= clients.length) {
-                    console.log('❌ Choix invalide');
-                    return;
-                }
-                const client = clients[index];
-                const oldStatus = client.isActive() ? 'actif' : 'inactif';
-                yield client.patchStatus();
-                const newStatus = client.isActive() ? 'actif' : 'inactif';
-                console.log(`\n✅ Statut changé: ${oldStatus} → ${newStatus}`);
-            }
-            catch (error) {
-                console.log(`\n❌ Erreur: ${error.message}`);
-            }
-        });
-    }
-    /**
-     * Supprimer un client
-     */
-    deleteClient() {
-        return __awaiter(this, void 0, void 0, function* () {
-            console.log("\n🗑️ === Suppression d'un client ===\n");
-            try {
-                const clients = yield Client_js_1.default._list();
-                if (!clients || clients.length === 0) {
-                    console.log('📝 Aucun client à supprimer');
+                const profiles = yield ClientProfile_js_1.default._list();
+                if (!profiles || profiles.length === 0) {
+                    console.log('📝 Aucun profil à supprimer');
                     return;
                 }
                 // Afficher la liste
-                console.log('Clients disponibles:');
-                clients.forEach((client, index) => {
-                    console.log(`${index + 1}. ${client.getName()} (ID: ${client.getId()})`);
+                console.log('Profils disponibles:');
+                profiles.forEach((profil, index) => {
+                    console.log(`${index + 1}. ${profil.getName()} (ID: ${profil.getId()})`);
                 });
-                const choice = yield this.question('\nNuméro du client à supprimer: ');
+                const choice = yield this.question('\nNuméro du profil à supprimer: ');
                 const index = parseInt(choice) - 1;
-                if (index < 0 || index >= clients.length) {
+                if (index < 0 || index >= profiles.length) {
                     console.log('❌ Choix invalide');
                     return;
                 }
-                const client = clients[index];
+                const profil = profiles[index];
                 // Confirmation
-                const confirm = yield this.question(`⚠️ Confirmer la suppression de "${client.getName()}" ? (oui/non): `);
+                const confirm = yield this.question(`⚠️ Confirmer la suppression de "${profil.getName()}" ? (oui/non): `);
                 if (confirm.toLowerCase() === 'oui' || confirm.toLowerCase() === 'o') {
-                    const success = yield client.delete();
+                    const success = yield profil.delete();
                     if (success) {
-                        console.log('\n✅ Client supprimé avec succès');
+                        console.log('\n✅ ClientProfile supprimé avec succès');
                     }
                     else {
                         console.log('\n❌ Erreur lors de la suppression');
@@ -316,35 +285,31 @@ class ClientManager {
      */
     showMenu() {
         return __awaiter(this, void 0, void 0, function* () {
-            console.log('\n🛠️ === Gestionnaire de clients ===');
-            console.log('1. Créer un nouveau client');
-            console.log('2. Lister tous les clients');
-            console.log('3. Modifier un client');
-            console.log("4. Changer le statut d'un client");
-            console.log('5. Supprimer un client');
-            console.log('6. Tester la connexion DB');
-            console.log('0. Retour au menu principal');
-            const choice = yield this.question('\nVotre choix (1-7): ');
+            console.log('\n🛠️ === Gestionnaire de Profils ===');
+            console.log('1. Créer un nouveau profil');
+            console.log('2. Lister tous les profils');
+            console.log('3. Modifier un profil');
+            console.log('4. Supprimer un profil');
+            console.log('5. Tester la connexion DB');
+            console.log('6. Quitter');
+            const choice = yield this.question('\nVotre choix (1-6): ');
             switch (choice) {
                 case '1':
-                    yield this.createClient();
+                    yield this.createProfil();
                     break;
                 case '2':
-                    yield this.listClients();
+                    yield this.listProfiles();
                     break;
                 case '3':
-                    yield this.updateClient();
+                    yield this.updateProfil();
                     break;
                 case '4':
-                    yield this.toggleClientStatus();
+                    yield this.deleteProfil();
                     break;
                 case '5':
-                    yield this.deleteClient();
-                    break;
-                case '6':
                     yield this.testConnection();
                     break;
-                case '7':
+                case '6':
                     console.log('\n👋 Au revoir!');
                     return;
                 default:
@@ -393,7 +358,6 @@ class ClientManager {
         });
     }
 }
-exports.ClientManager = ClientManager;
 // Gestion propre de l'arrêt
 process.on('SIGINT', () => __awaiter(void 0, void 0, void 0, function* () {
     console.log('\n🛑 Arrêt en cours...');
@@ -405,7 +369,7 @@ process.on('uncaughtException', (error) => {
 });
 // Démarrage
 // if (require.main === module) {
-const manager = new ClientManager();
+const manager = new ProfilManager();
 manager.start().catch((error) => {
     console.error('❌ Erreur de démarrage:', error);
     process.exit(1);

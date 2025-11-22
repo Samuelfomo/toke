@@ -253,8 +253,8 @@ router.post('/', Ensure.post(), async (req: Request, res: Response) => {
       .setMetadata(metadata);
 
     const [android, ios] = await Promise.all([
-      AppConfig._load(responseStructure.APP_ANDROID, true),
-      AppConfig._load(responseStructure.APP_IOS, true),
+      AppConfig._load(responseStructure.MANAGER_ANDROID_APP, true),
+      AppConfig._load(responseStructure.MANAGER_IOS_APP, true),
     ]);
     if (!android || !ios) {
       return R.handleError(res, HttpStatus.NOT_FOUND, {

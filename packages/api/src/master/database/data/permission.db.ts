@@ -70,51 +70,14 @@ export const PermissionDbStructure = {
       {
         // Index composite pour optimiser les requêtes de vérification d'accès
         fields: ['profile', 'route'],
-        name: 'idx_permission_profil_route',
+        name: 'idx_permission_profile_route',
+      },
+      {
+        // Index unique composite : un profil ne peut pas avoir la même permission endpoint+route
+        unique: true,
+        fields: ['profile', 'endpoint'],
+        name: 'idx_permission_unique_profile_endpoint',
       },
     ],
   } as ModelOptions,
-
-  // Méthodes de validation
-  validation: {
-    /**
-     * Valide la route
-     */
-    validateRoute: (route: string): boolean => {
-      const trimmed = route.trim();
-      // Validation basique d'une route (commence par / et contient des caractères valides)
-      // const routeRegex = /^\/[a-zA-Z0-9\/_-]*$/;
-      // return routeRegex.test(trimmed) && trimmed.length <= 128;
-      return trimmed.length >= 2 && trimmed.length <= 128;
-    },
-
-    /**
-     * Valide l'ID du profil
-     */
-    validateProfil: (profil: number): boolean => {
-      return Number.isInteger(profil) && profil > 0;
-    },
-
-    /**
-     * Valide l'ID de l'endpoint
-     */
-    validateEndpoint: (endpoint: number): boolean => {
-      return Number.isInteger(endpoint) && endpoint > 0;
-    },
-
-    /**
-     * Nettoie les données avant insertion/update
-     */
-    cleanData: (data: any): void => {
-      if (data.route) {
-        data.route = data.route.trim();
-      }
-      if (data.profil) {
-        data.profil = parseInt(data.profil, 10);
-      }
-      if (data.endpoint) {
-        data.endpoint = parseInt(data.endpoint, 10);
-      }
-    },
-  },
 };

@@ -76,7 +76,7 @@ export default class ClientProfileModel extends BaseModel {
     }
 
     this.id = lastID.id;
-    console.log('✅ ClientProfil créé avec ID:', this.id);
+    console.log('✅ ClientProfile créé avec ID:', this.id);
   }
 
   /**

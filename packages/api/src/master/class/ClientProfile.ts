@@ -2,7 +2,7 @@ import ClientProfileModel from '../model/ClientProfileModel.js';
 import W from '../../tools/watcher.js';
 import G from '../../tools/glossary.js';
 
-export default class ClientProfil extends ClientProfileModel {
+export default class ClientProfile extends ClientProfileModel {
   constructor() {
     super();
   }
@@ -14,20 +14,20 @@ export default class ClientProfil extends ClientProfileModel {
    *
    * @param {any} identifier - The unique identifier used to load the profil.
    * @param {boolean} [byName=false] - A flag indicating whether to load the profil by token.
-   * @return {Promise<ClientProfil | null>} A promise that resolves to the loaded profil instance or null if not found.
+   * @return {Promise<ClientProfile | null>} A promise that resolves to the loaded profil instance or null if not found.
    */
-  static _load(identifier: any, byName: boolean = false): Promise<ClientProfil | null> {
-    return new ClientProfil().load(identifier, byName);
+  static _load(identifier: any, byName: boolean = false): Promise<ClientProfile | null> {
+    return new ClientProfile().load(identifier, byName);
   }
 
   /**
    * Retrieves a list of profiles based on the specified conditions.
    *
    * @param {Record<string, any>} [conditions={}] - A set of key-value pairs representing the conditions for filtering the profiles.
-   * @return {Promise<ClientProfil[] | null>} A promise that resolves to an array of profiles matching the conditions, or null if no profiles are found.
+   * @return {Promise<ClientProfile[] | null>} A promise that resolves to an array of profiles matching the conditions, or null if no profiles are found.
    */
-  static _list(conditions: Record<string, any> = {}): Promise<ClientProfil[] | null> {
-    return new ClientProfil().list(conditions);
+  static _list(conditions: Record<string, any> = {}): Promise<ClientProfile[] | null> {
+    return new ClientProfile().list(conditions);
   }
 
   getId(): number | undefined {
@@ -48,14 +48,14 @@ export default class ClientProfil extends ClientProfileModel {
     return this.description;
   }
 
-  setName(name: string | undefined): ClientProfil {
+  setName(name: string | undefined): ClientProfile {
     this.name = name;
     return this;
   }
 
   // region Méthodes privées
 
-  setRoot(root: boolean): ClientProfil {
+  setRoot(root: boolean): ClientProfile {
     this.root = root;
     return this;
   }
@@ -92,9 +92,9 @@ export default class ClientProfil extends ClientProfileModel {
    *
    * @param {any} identifier - The identifier to locate the client, can be an ID or name.
    * @param {boolean} [byName=false] - A flag indicating if the lookup should be by name (true) or by numeric identifier (false).
-   * @return {Promise<ClientProfil|null>} A promise resolving to the found client object if successful, or null if not found.
+   * @return {Promise<ClientProfile|null>} A promise resolving to the found client object if successful, or null if not found.
    */
-  async load(identifier: any, byName: boolean = false): Promise<ClientProfil | null> {
+  async load(identifier: any, byName: boolean = false): Promise<ClientProfile | null> {
     const data = byName ? await this.findByName(identifier) : await this.find(Number(identifier));
     if (!data) return null;
     return this.hydrate(data);
@@ -108,12 +108,12 @@ export default class ClientProfil extends ClientProfileModel {
    * Retrieves a list of clients based on the specified conditions.
    *
    * @param {Record<string, any>} [conditions={}] - An optional set of conditions to filter the profiles.
-   * @return {Promise<ClientProfil[] | null>} A promise that resolves to an array of hydrated ClientProfil instances or null if no profiles are found.
+   * @return {Promise<ClientProfile[] | null>} A promise that resolves to an array of hydrated ClientProfile instances or null if no profiles are found.
    */
-  async list(conditions: Record<string, any> = {}): Promise<ClientProfil[] | null> {
+  async list(conditions: Record<string, any> = {}): Promise<ClientProfile[] | null> {
     const dataset = await this.listAll(conditions);
     if (!dataset) return null;
-    return dataset.map((data) => new ClientProfil().hydrate(data));
+    return dataset.map((data) => new ClientProfile().hydrate(data));
   }
 
   /**
@@ -137,8 +137,8 @@ export default class ClientProfil extends ClientProfileModel {
   }
 
   /**
-   * Returns a string representation of the ClientProfil object.
-   * @return {string} A string containing the id, name, and active status of the ClientProfil.
+   * Returns a string representation of the ClientProfile object.
+   * @return {string} A string containing the id, name, and active status of the ClientProfile.
    */
   toString(): string {
     return `Profil { id: ${this.id}, name: "${this.name}", description: ${this.description} }`;
@@ -148,9 +148,9 @@ export default class ClientProfil extends ClientProfileModel {
    * Populates the instance properties with the provided items and returns the instance.
    *
    * @param {any} data - The items object containing properties to hydrate the instance.
-   * @return {ClientProfil} The updated instance of the ClientProfil class.
+   * @return {ClientProfile} The updated instance of the ClientProfile class.
    */
-  private hydrate(data: any): ClientProfil {
+  private hydrate(data: any): ClientProfile {
     this.id = data.id;
     this.name = data.name;
     this.root = data.root;

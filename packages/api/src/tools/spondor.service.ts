@@ -82,4 +82,37 @@ export default class InvitationService {
       }
     }
   }
+
+  // TODO a revoir la logique de gestion des apps
+  static async findEmployeeLink(key: string): Promise<{ status: number; response: object }> {
+    try {
+      const api = createApiClient(`http:${process.env.SERVER_HOST}:${process.env.MT_PORT}`);
+      const response = await api.get(`/app/key/${key}`);
+
+      return {
+        status: response.status,
+        response: response.data.data,
+      };
+    } catch (error: any) {
+      if (error.response) {
+        // Erreur renvoyée par le serveur
+        return {
+          status: error.response.status,
+          response: error.response.data,
+        };
+      } else if (error.request) {
+        // Pas de réponse reçue
+        return {
+          status: HttpStatus.INTERNAL_ERROR,
+          response: { message: 'No response from server', details: error.message },
+        };
+      } else {
+        // Erreur Axios/JS
+        return {
+          status: HttpStatus.INTERNAL_ERROR,
+          response: { message: 'Unexpected error', details: error.message },
+        };
+      }
+    }
+  }
 }
