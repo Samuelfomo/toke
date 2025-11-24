@@ -161,12 +161,13 @@ const props = defineProps({
 })
 // Vous devez définir lastUpdate quelque part
 const lastUpdate = ref('09:30')
+const selectedDate = ref<Date>(new Date())
 
-const currentDate = computed(() => {
-  const date = new Date()
-  return `Vendredi ${date.getDate()} septembre`
-})
+const currentDate = computed(() => formatDate(selectedDate.value))
 
+const formatDate = (date: Date): string => {
+  return date.toLocaleDateString('fr-FR', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })
+}
 const presenceRate = computed(() => {
   const total = stats.value.present.value + stats.value.late.value + stats.value.absent.value
   return Math.round((stats.value.present.value / total) * 100)

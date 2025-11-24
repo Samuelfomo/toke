@@ -15,7 +15,7 @@
 
     <div class="employee-list">
       <!-- Section Problèmes -->
-      <div v-if="activeTab === 'all' || activeTab === 'problems'">
+      <div v-if="(activeTab === 'all' || activeTab === 'problems') && problemEmployees.length > 0">
         <div class="section-title section-problems">
           <span>Problèmes à traiter ({{ problemEmployees.length }})</span>
           <svg class="chevron-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -33,7 +33,7 @@
       </div>
 
       <!-- Section Absents -->
-      <div v-if="activeTab === 'absent'">
+      <div v-if="activeTab === 'absent' && absentEmployees.length > 0">
         <div class="section-title section-problems">
           <span>Employés absents ({{ absentEmployees.length }})</span>
           <svg class="chevron-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -51,7 +51,7 @@
       </div>
 
       <!-- Section Retards -->
-      <div v-if="activeTab === 'late'">
+      <div v-if="activeTab === 'late' && lateEmployees.length > 0">
         <div class="section-title section-problems">
           <span>Employés en retard ({{ lateEmployees.length }})</span>
           <svg class="chevron-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -69,7 +69,7 @@
       </div>
 
       <!-- Section Informations -->
-      <div v-if="activeTab === 'all' || activeTab === 'info'">
+      <div v-if="(activeTab === 'all' || activeTab === 'info') && infoEmployees.length > 0">
         <div class="section-title section-info">
           <span>Informations ({{ infoEmployees.length }})</span>
           <svg class="chevron-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -87,7 +87,7 @@
       </div>
 
       <!-- Section Présents -->
-      <div v-if="activeTab === 'all' || activeTab === 'present'">
+      <div v-if="(activeTab === 'all' || activeTab === 'present') && presentEmployees.length > 0">
         <div class="section-title section-present">
           <span>Employés présents ({{ presentEmployees.length }})</span>
           <svg class="chevron-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -103,11 +103,16 @@
           />
         </div>
       </div>
+
+      <!-- Message si aucun employé -->
+      <div v-if="employees.length === 0" class="no-employees">
+        <p>Aucun employé trouvé</p>
+      </div>
     </div>
   </section>
 
   <div v-if="isModalOpen && selectedEmployee" class="modal-overlay" @click.self="closeModal">
-    <EmployeeDetails
+    <AssiduteDuJour
       :employee="selectedEmployee"
       @close="closeModal"
       class="quick-detail-modal"
@@ -116,12 +121,13 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed } from 'vue'
-import EmployeeDetails from '../EmployeeDetails.vue'
+import { ref, computed, onMounted } from 'vue'
+import AssiduteDuJour from '../AssiduteDuJour.vue'
 import EmployeeCard from './employeeCard.vue'
-import "../../assets/css/tokt-employeeS-05.css";
+import "../../assets/css/tokt-employeeS-05.css"
+import { useEmployeeStore } from '../../composables/useEmployeeStore'
 
-interface Employee {
+interface EmployeeDisplay {
   id: number
   name: string
   initials: string
@@ -131,104 +137,81 @@ interface Employee {
   time?: string
   avatar?: string
   priority?: 'high' | 'medium' | 'low'
-  isJustified?: boolean;
-  isValidated?: boolean;
-  checkInTime?: string;
-  lateDuration?: string;
-  absenceReason?: string;
-  motif?: string; // Motif du retard
+  isJustified?: boolean
+  isValidated?: boolean
+  checkInTime?: string
+  lateDuration?: string
+  absenceReason?: string
+  motif?: string
 }
 
+const employeeStore = useEmployeeStore()
 const activeTab = ref<string>('problems')
 const isModalOpen = ref<boolean>(false)
-const selectedEmployee = ref<Employee | null>(null)
+const selectedEmployee = ref<EmployeeDisplay | null>(null)
 
-// Données des employés avec tous les détails nécessaires
-const employees = ref<Employee[]>([
-  {
-    id: 1,
-    name: 'Samuel Femo',
-    initials: 'SF',
-    status: 'absent',
-    statusText: 'Absent',
-    priority: 'high',
-    absenceReason: 'Maladie',
-    isJustified: true // Absence justifiée - ne doit pas afficher "non justifiée"
-  },
-  {
-    id: 2,
-    name: 'Manfred Moukate',
-    initials: 'MM',
-    status: 'late',
-    statusText: 'En retard',
-    location: 'Chantier Bonabéri',
-    isJustified: false,
-    priority: 'high',
-    checkInTime: '09:45',
-    lateDuration: '1h45',
-    motif: 'Embouteillage sur la route' // Motif du retard
-  },
-  {
-    id: 3,
-    name: 'Jordan',
-    initials: 'J',
-    status: 'late',
-    statusText: 'En retard',
-    location: 'Bureau central',
-    isValidated: false,
-    priority: 'high',
-    checkInTime: '08:35',
-    lateDuration: '35 min',
-    motif: 'Problème de transport' // Motif du retard
-  },
-  {
-    id: 4,
-    name: 'Jean Djoko',
-    initials: 'JD',
-    status: 'absent',
-    statusText: 'Absent',
-    priority: 'high',
-    isJustified: false,
-    absenceReason: 'Non contacté' // Celui-ci affichera "non justifiée"
-  },
-  {
-    id: 5,
-    name: 'Marie Kengne',
-    initials: 'MK',
-    status: 'late',
-    statusText: 'En retard',
-    location: 'Chantier Bonabéri',
-    isValidated: false,
-    priority: 'high',
-    checkInTime: '09:45',
-    lateDuration: '1h45',
-    motif: 'Panne de véhicule'
-  },
-  {
-    id: 6,
-    name: 'Sophie Raoul',
-    initials: 'SR',
-    status: 'info',
-    statusText: 'En congé',
-    location: 'Congé parental - retour le 15 octobre',
-  },
-  {
-    id: 7,
-    name: 'Alex Tchioffo',
-    initials: 'AT',
-    status: 'info',
-    statusText: 'Formation',
-    location: 'Formation sécurité - CCIMA'
-  },
-  {
-    id: 8,
-    name: 'Tchioffo',
-    initials: 'T',
-    status: 'present',
-    statusText: 'Présent',
-    checkInTime: '07:58',
+// Transformer les employés du store en format d'affichage
+const employees = computed<EmployeeDisplay[]>(() => {
+  const today = new Date()
+
+  const allEmployees = employeeStore.employees.value
+
+  console.log('Computing employees from store, count:', allEmployees?.length)
+
+  if (!allEmployees || !Array.isArray(allEmployees)) {
+    console.error('❌ Employees is not an array')
+    return []
   }
-])
+
+  return allEmployees.map(emp => {
+    const dailyStatus = employeeStore.getEmployeeDailyStatus(emp.id, today)
+    const todayRecord = employeeStore.attendanceHistory.value.find(
+      r => r.employeeId === emp.id && r.date === today.toISOString().split('T')[0]
+    )
+
+    console.log(`Employee ${emp.name} (${emp.id}): status=${dailyStatus.status}, record=`, todayRecord)
+
+    // Déterminer la priorité
+    let priority: 'high' | 'medium' | 'low' = 'low'
+    if (dailyStatus.status === 'absent' && !todayRecord?.isJustified) {
+      priority = 'high'
+    } else if (dailyStatus.status === 'late' && (todayRecord?.lateMinutes || 0) > 60) {
+      priority = 'high'
+    } else if (dailyStatus.status === 'late') {
+      priority = 'medium'
+    }
+
+    // Calculer la durée de retard
+    let lateDuration = ''
+    if (todayRecord?.lateMinutes) {
+      const hours = Math.floor(todayRecord.lateMinutes / 60)
+      const minutes = todayRecord.lateMinutes % 60
+      if (hours > 0) {
+        lateDuration = `${hours}h${minutes > 0 ? minutes : ''}`
+      } else {
+        lateDuration = `${minutes} min`
+      }
+    }
+
+    return {
+      id: emp.id,
+      name: emp.name,
+      initials: emp.initials,
+      status: dailyStatus.status,
+      statusText: dailyStatus.statusText,
+      location: employeeStore.getSiteName(emp.siteId),
+      time: todayRecord?.arrivalTime,
+      avatar: emp.avatar,
+      priority,
+      isJustified: todayRecord?.isJustified,
+      isValidated: dailyStatus.status === 'present' || dailyStatus.status === 'info',
+      checkInTime: todayRecord?.arrivalTime,
+      lateDuration,
+      absenceReason: todayRecord?.reason || (dailyStatus.status === 'absent' ? 'Non contacté' : undefined),
+      motif: todayRecord?.reason
+    }
+  })
+})
 
 const tabs = computed(() => [
   {
@@ -263,12 +246,10 @@ const tabs = computed(() => [
   }
 ])
 
-const showEmployeeDetails = (employeeData: Employee) => {
-  const fullEmployeeData = employees.value.find(emp => emp.id === employeeData.id)
-  if (fullEmployeeData) {
-    selectedEmployee.value = fullEmployeeData
-    isModalOpen.value = true
-  }
+const showEmployeeDetails = (employeeData: EmployeeDisplay) => {
+  console.log('Showing details for employee:', employeeData.name, employeeData.id)
+  selectedEmployee.value = employeeData
+  isModalOpen.value = true
 }
 
 const closeModal = () => {
@@ -280,26 +261,49 @@ const setActiveTab = (tab: string) => {
   activeTab.value = tab
 }
 
-const problemEmployees = computed(() =>
-  employees.value.filter(emp => emp.status === 'absent' || emp.status === 'late')
-)
+const problemEmployees = computed(() => {
+  const problems = employees.value.filter(emp => emp.status === 'absent' || emp.status === 'late')
+  console.log('Problem employees:', problems.length)
+  return problems
+})
 
-const infoEmployees = computed(() =>
-  employees.value.filter(emp => emp.status === 'info')
-)
+const infoEmployees = computed(() => {
+  const info = employees.value.filter(emp => emp.status === 'info')
+  console.log('Info employees:', info.length)
+  return info
+})
 
-const presentEmployees = computed(() =>
-  employees.value.filter(emp => emp.status === 'present')
-)
+const presentEmployees = computed(() => {
+  const present = employees.value.filter(emp => emp.status === 'present')
+  console.log('Present employees:', present.length)
+  return present
+})
 
-const absentEmployees = computed(() =>
-  employees.value.filter(emp => emp.status === 'absent')
-)
+const absentEmployees = computed(() => {
+  const absent = employees.value.filter(emp => emp.status === 'absent')
+  console.log('Absent employees:', absent.length)
+  return absent
+})
 
-const lateEmployees = computed(() =>
-  employees.value.filter(emp => emp.status === 'late')
-)
+const lateEmployees = computed(() => {
+  const late = employees.value.filter(emp => emp.status === 'late')
+  console.log('Late employees:', late.length)
+  return late
+})
+
+onMounted(() => {
+  console.log('EmployeeStatusList mounted, initializing store...')
+  // Initialiser le store au chargement du composant
+  employeeStore.initialize()
+  console.log('Store initialized, employees count:', employeeStore.employees.value.length)
+})
 </script>
 
 <style scoped>
+.no-employees {
+  text-align: center;
+  padding: 3rem;
+  color: #6b7280;
+  font-size: 1.125rem;
+}
 </style>

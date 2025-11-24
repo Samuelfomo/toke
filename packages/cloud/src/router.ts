@@ -26,15 +26,16 @@ import Home from './views/home.vue';
 import Country from './views/country.vue';
 import Auth from './views/auth.vue';
 import Otp from './views/otp.vue';
-import Welcome from './views/welcome.vue';
 import DashboardMain from './views/dashboard/dashboardMain.vue';
 import Memo from './views/memo/memo.vue';
 import Module from './views/module.vue';
-import EmployeeDetails from './views/EmployeeDetails.vue';
+import AssiduteDuJour from './views/AssiduteDuJour.vue';
 import Equipe from './views/equipe.vue';
 import MemoList from './views/memo/memoList.vue';
 import MemoDetail from './views/memo/memoDetail.vue';
-
+import EmployeeDetails from './views/EmployeeDetails.vue';
+import Planning from './views/planning.vue';
+import employeeForm from './views/employeeForm.vue';
 
 // Typage explicite des routes
 const routes: RouteRecordRaw[] = [
@@ -51,11 +52,6 @@ const routes: RouteRecordRaw[] = [
     path: '/',
     name: 'auth',
     component: Auth,
-  },
-  {
-    path: '/welcome',
-    name: 'welcome',
-    component: Welcome,
   },
   {
     path: '/otp',
@@ -91,7 +87,7 @@ const routes: RouteRecordRaw[] = [
   {
     path: '/employee/:employeeId/details',
     name: 'employeeD',
-    component: EmployeeDetails
+    component: AssiduteDuJour
   },
   {
     path: '/equipe',
@@ -107,6 +103,21 @@ const routes: RouteRecordRaw[] = [
     path: '/memoDetail',
     name: 'memoDetail',
     component: MemoDetail
+  },
+  {
+    path: '/planning',
+    name: 'planning',
+    component: Planning
+  },
+  {
+    path: '/employeeForm',
+    name: 'employeeForm',
+    component: employeeForm
+  },
+  {
+    path: '/equipe/:employeeId',  // ← IMPORTANT: :employeeId (avec deux points)
+    name: 'employee-details',
+    component: EmployeeDetails
   }
 ];
 

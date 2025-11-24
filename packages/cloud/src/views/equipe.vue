@@ -108,10 +108,13 @@
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z"></path>
             </svg>
           </div>
-          <div class="action-content">
-            <h3 class="action-title">Ajouter Employé</h3>
-            <p class="action-description">Recruter un nouveau membre dans votre équipe</p>
-          </div>
+          <a href="/employeeForm" class="action-link">
+            <div class="action-content">
+              <h3 class="action-title">Ajouter Employé</h3>
+              <p class="action-description">Recruter un nouveau membre dans votre équipe</p>
+            </div>
+          </a>
+
         </button>
 
         <button @click="showAddSite = true" class="action-card secondary">
@@ -127,28 +130,18 @@
           </div>
         </button>
 
-        <button @click="generateReport" class="action-card tertiary">
-          <div class="action-icon">
-            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
-            </svg>
-          </div>
-          <div class="action-content">
-            <h3 class="action-title">Rapport d'équipe</h3>
-            <p class="action-description">Générer le rapport mensuel</p>
-          </div>
-        </button>
-
-        <button @click="manageSchedules" class="action-card quaternary">
+        <button class="action-card quaternary">
           <div class="action-icon">
             <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
             </svg>
           </div>
-          <div class="action-content">
-            <h3 class="action-title">Planning</h3>
-            <p class="action-description">Gérer les horaires de travail</p>
-          </div>
+          <a href="/planning" class="action-link">
+            <div class="action-content">
+              <h3 class="action-title">Planning</h3>
+              <p class="action-description">Gérer les horaires de travail</p>
+            </div>
+          </a>
         </button>
       </div>
     </div>
@@ -177,9 +170,9 @@
           </select>
           <select v-model="siteFilter" class="filter-select">
             <option value="">Tous les sites</option>
-            <option v-for="site in employeeStore.sites.value" :key="site.id" :value="site.id">
-              {{ site.name }}
-            </option>
+<!--            <option v-for="site in employeeStore.sites" :key="site.id" :value="site.id">-->
+<!--              {{ site.name }}-->
+<!--            </option>-->
           </select>
         </div>
       </div>
@@ -219,8 +212,9 @@
           <tr v-for="employee in paginatedEmployees"
               :key="employee.id"
               class="employee-row"
-              @mouseenter="hoveredEmployee = employee.id"
-              @mouseleave="hoveredEmployee = null">
+              @click="viewEmployeeDetail(employee.id)"
+              style="cursor: pointer;"
+             >
             <td class="employee-cell">
               <div class="employee-info">
                 <div class="employee-avatar-table">
@@ -266,7 +260,7 @@
             </td>
             <td class="actions-cell">
               <div class="employee-menu" :class="{ 'visible': hoveredEmployee === employee.id }">
-                <button1
+                <button
                   @click="toggleEmployeeMenu(employee.id)"
                   class="menu-trigger"
                   :class="{ 'active': activeEmployeeMenu === employee.id }">
@@ -275,7 +269,7 @@
                     <circle cx="12" cy="12" r="2"></circle>
                     <circle cx="12" cy="19" r="2"></circle>
                   </svg>
-                </button1>
+                </button>
 
                 <div v-if="activeEmployeeMenu === employee.id" class="employee-dropdown">
                   <button @click="editEmployee(employee)" class="dropdown-item">
@@ -330,16 +324,16 @@
       @close="showAddEmployee = false"
       @employee-added="handleEmployeeAdded"
       :manager-id="currentManager.id"
-      :available-sites="employeeStore.sites.value"
+      :available-sites="employeeStore.sites"
     />
 
 
-    <SiteModal
-      v-if="showAddSite"
-      @close="showAddSite = false"
-      @site-added="handleSiteAdded"
-      :manager-id="currentManager.id"
-    />
+<!--    <SiteModal-->
+<!--      v-if="showAddSite"-->
+<!--      @close="showAddSite = false"-->
+<!--      @site-added="handleSiteAdded"-->
+<!--      :manager-id="currentManager.id"-->
+<!--    />-->
   </section>
 </template>
 
@@ -350,6 +344,7 @@ import dashboardCss from "../assets/css/toke-dMain-04.css?url"
 import Header from '../views/components/header.vue'
 import HeadBuilder from '@/utils/HeadBuilder';
 import { useEmployeeStore } from '../composables/useEmployeeStore';
+import router from '@/router';
 
 interface Manager {
   id: number
@@ -401,7 +396,10 @@ const dailyAttendanceRate = computed(() => {
 })
 
 // Configuration de l'axe Y pour le graphique
+
+// 3. Pour maxEmployeeCount :
 const maxEmployeeCount = computed(() => Math.max(employeeStore.employees.value.length, 10))
+
 const yAxisTicks = computed(() => {
   const max = maxEmployeeCount.value
   const step = Math.ceil(max / 5)
@@ -423,7 +421,8 @@ const currentDate = computed(() => formatDate(selectedDate.value))
 const arrivalIntervals = computed(() => employeeStore.getArrivalIntervals(selectedDate.value))
 const maxIntervalCount = computed(() => Math.max(...arrivalIntervals.value.map(interval => interval.count), 1))
 
-// Filtrage des employés
+// 2. Dans le script, pour filteredEmployees :
+// APRÈS (✅ CORRECT):
 const filteredEmployees = computed(() => {
   let filtered = employeeStore.employees.value.filter(employee => {
     const matchesSearch = employee.name.toLowerCase().includes(searchTerm.value.toLowerCase()) ||
@@ -467,6 +466,27 @@ const paginatedEmployees = computed(() => {
 // Fonctions
 const formatDate = (date: Date): string => {
   return date.toLocaleDateString('fr-FR', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })
+}
+
+const viewEmployeeDetail = (employeeId: number) => {
+  console.log('🔗 Navigating to employee details:', employeeId, 'Type:', typeof employeeId)
+
+  const allEmployees = employeeStore.employees.value
+  console.log('📊 Employees in store:', allEmployees)
+  console.log('✅ Employee exists in store:', Array.isArray(allEmployees) && allEmployees.some(e => e.id === employeeId))
+
+  // S'assurer que l'ID est un nombre
+  const id = Number(employeeId)
+
+  if (isNaN(id)) {
+    console.error('❌ Invalid employee ID:', employeeId)
+    return
+  }
+
+  // Navigation vers la page de détails avec l'ID de l'employé
+  router.push({
+    path: `/equipe/${id}`
+  })
 }
 
 const changeDate = (days: number) => {
@@ -514,14 +534,8 @@ const deleteEmployee = (employee: any) => {
   activeEmployeeMenu.value = null
 }
 
-const generateReport = () => {
-  const month = selectedDate.value.toLocaleDateString('fr-FR', { month: 'long', year: 'numeric' })
-  alert(`Génération du rapport mensuel pour ${month}...`)
-}
-
-const manageSchedules = () => {
-  alert('Accéder à la gestion des plannings...')
-}
+// const manageSchedules = () => {
+// }
 
 const handleEmployeeAdded = (newEmployee: any) => {
   employeeStore.addEmployee(newEmployee)
@@ -563,11 +577,3 @@ onUnmounted(() => {
   document.removeEventListener('click', closeMenuOnClickOutside)
 })
 </script>
-
-<style scoped>
-.punctuality-details {
-  font-size: 0.75rem;
-  color: #666;
-  margin-left: 0.5rem;
-}
-</style>

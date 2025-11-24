@@ -65,7 +65,7 @@
     font-size: var(--font-size-h5);
     font-weight: var(--font-weight-bold);
     color: var(--text-primary);
-    margin: 0;
+    margin: 10px;
 }
 
 .modal-status-badge {
@@ -78,6 +78,7 @@
     letter-spacing: 0.5px;
     white-space: nowrap;
     box-shadow: var(--shadow);
+
 }
 
 .modal-status-badge.status-present {
@@ -320,8 +321,8 @@
     }
 
     .modal-avatar {
-        width: 60px;
-        height: 60px;
+        width: 30px;
+        height: 30px;
         font-size: var(--font-size-h5);
     }
 

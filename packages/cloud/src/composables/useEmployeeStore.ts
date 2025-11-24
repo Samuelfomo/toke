@@ -1,5 +1,5 @@
 // composables/useEmployeeStore.ts
-import { ref, computed } from 'vue'
+import { ref, computed, watch } from 'vue'
 
 interface Employee {
   id: number
@@ -38,18 +38,56 @@ interface Site {
   description: string
 }
 
-// État global partagé
+// État global partagé (SINGLETON)
 const employees = ref<Employee[]>([])
 const attendanceHistory = ref<AttendanceRecord[]>([])
 const sites = ref<Site[]>([])
-
-// Flag pour vérifier si les données sont initialisées
 const isInitialized = ref(false)
+
+// Watchers pour la persistance (optionnel)
+if (typeof window !== 'undefined') {
+  // Sauvegarder dans localStorage quand les données changent
+  watch(employees, (newEmployees) => {
+    try {
+      localStorage.setItem('toke_employees', JSON.stringify(newEmployees))
+    } catch (e) {
+      console.warn('Erreur sauvegarde employees:', e)
+    }
+  }, { deep: true })
+
+  watch(attendanceHistory, (newHistory) => {
+    try {
+      localStorage.setItem('toke_attendance', JSON.stringify(newHistory))
+    } catch (e) {
+      console.warn('Erreur sauvegarde attendance:', e)
+    }
+  }, { deep: true })
+}
 
 export function useEmployeeStore() {
 
-  // Initialiser les sites (en dur pour le moment)
-  const initializeSites = () => {
+  // Charger depuis localStorage si disponible
+  const loadFromStorage = () => {
+    if (typeof window === 'undefined') return false
+
+    try {
+      const savedEmployees = localStorage.getItem('toke_employees')
+      const savedAttendance = localStorage.getItem('toke_attendance')
+
+      if (savedEmployees && savedAttendance) {
+        employees.value = JSON.parse(savedEmployees)
+        attendanceHistory.value = JSON.parse(savedAttendance)
+        console.log('✅ Données chargées depuis localStorage')
+        return true
+      }
+    } catch (e) {
+      console.warn('Erreur chargement localStorage:', e)
+    }
+    return false
+  }
+
+  // Initialiser les sites
+  const initializeSites = () =>  {
     if (sites.value.length === 0) {
       sites.value = [
         {
@@ -185,18 +223,24 @@ export function useEmployeeStore() {
           hireDate: '2023-06-05'
         }
       ]
+      console.log('✅ Employés initialisés:', employees.value.length)
     }
   }
 
   // Générer l'historique de présence pour le mois en cours
   const generateMonthlyAttendance = () => {
-    if (attendanceHistory.value.length > 0) return // Déjà généré
+    if (attendanceHistory.value.length > 0) {
+      console.log('⚠️ Historique déjà existant, skip génération')
+      return
+    }
 
     const records: AttendanceRecord[] = []
     const currentDate = new Date()
     const currentMonth = currentDate.getMonth()
     const currentYear = currentDate.getFullYear()
     const today = currentDate.getDate()
+
+    console.log('🔄 Génération historique pour', employees.value.length, 'employés')
 
     employees.value.forEach(employee => {
       for (let day = 1; day <= today; day++) {
@@ -206,27 +250,26 @@ export function useEmployeeStore() {
         // Skip weekends
         if (date.getDay() === 0 || date.getDay() === 6) continue
 
-        // Générer un statut aléatoire avec une pondération réaliste
         const random = Math.random()
         let status: 'present' | 'late' | 'absent' | 'info'
         let arrivalTime: string | undefined
         let lateMinutes: number | undefined
         let reason: string | undefined
 
-        if (random < 0.75) { // 75% présent à l'heure
+        if (random < 0.75) {
           status = 'present'
           const hour = 7 + Math.floor(Math.random() * 1)
           const minute = Math.floor(Math.random() * 60)
           arrivalTime = `${hour.toString().padStart(2, '0')}:${minute.toString().padStart(2, '0')}`
-        } else if (random < 0.90) { // 15% en retard
+        } else if (random < 0.90) {
           status = 'late'
           const hour = 8 + Math.floor(Math.random() * 2)
           const minute = Math.floor(Math.random() * 60)
           arrivalTime = `${hour.toString().padStart(2, '0')}:${minute.toString().padStart(2, '0')}`
           lateMinutes = (hour - 8) * 60 + minute
-        } else if (random < 0.97) { // 7% absent
+        } else if (random < 0.97) {
           status = 'absent'
-        } else { // 3% congé/formation
+        } else {
           status = 'info'
           const reasons = ['En congé', 'Formation', 'Mission externe', 'Congé maladie']
           reason = reasons[Math.floor(Math.random() * reasons.length)]
@@ -245,9 +288,10 @@ export function useEmployeeStore() {
     })
 
     attendanceHistory.value = records
+    console.log('✅ Historique généré:', records.length, 'enregistrements')
   }
 
-  // Calculer la ponctualité mensuelle de chaque employé
+  // Calculer la ponctualité mensuelle
   const calculateMonthlyPunctuality = () => {
     employees.value.forEach(employee => {
       const employeeRecords = attendanceHistory.value.filter(r => r.employeeId === employee.id)
@@ -269,9 +313,10 @@ export function useEmployeeStore() {
         }
       }
     })
+    console.log('✅ Ponctualité calculée')
   }
 
-  // Obtenir le statut journalier d'un employé pour une date donnée
+  // Obtenir le statut journalier d'un employé
   const getEmployeeDailyStatus = (employeeId: number, date: Date) => {
     const dateString = date.toISOString().split('T')[0]
     const record = attendanceHistory.value.find(r =>
@@ -279,7 +324,7 @@ export function useEmployeeStore() {
     )
 
     if (!record) {
-      return { status: 'absent' as const, statusText: 'Absence non enregistrée' }
+      return { status: 'absent' as const, statusText: 'Absent' }
     }
 
     let statusText = ''
@@ -301,7 +346,7 @@ export function useEmployeeStore() {
     return { status: record.status, statusText }
   }
 
-  // Obtenir les statistiques pour une date donnée
+  // Obtenir les statistiques journalières
   const getDailyStats = (date: Date) => {
     const dateString = date.toISOString().split('T')[0]
     const dayRecords = attendanceHistory.value.filter(r => r.date === dateString)
@@ -314,7 +359,7 @@ export function useEmployeeStore() {
     }
   }
 
-  // Obtenir les intervalles d'arrivée pour une date donnée
+  // Obtenir les intervalles d'arrivée
   const getArrivalIntervals = (date: Date) => {
     const intervals = [
       { range: '7h-8h', count: 0 },
@@ -361,9 +406,32 @@ export function useEmployeeStore() {
 
   // Ajouter un employé
   const addEmployee = (employee: Employee) => {
+    // Générer un nouvel ID
+    const maxId = Math.max(...employees.value.map(e => e.id), 0)
+    employee.id = maxId + 1
+
     employees.value.push(employee)
+    console.log('✅ Employé ajouté:', employee.name)
+
     // Générer l'historique pour le nouvel employé
-    generateMonthlyAttendance()
+    const currentDate = new Date()
+    const currentMonth = currentDate.getMonth()
+    const currentYear = currentDate.getFullYear()
+    const today = currentDate.getDate()
+
+    for (let day = 1; day <= today; day++) {
+      const date = new Date(currentYear, currentMonth, day)
+      if (date.getDay() === 0 || date.getDay() === 6) continue
+
+      const dateString = date.toISOString().split('T')[0]
+      attendanceHistory.value.push({
+        employeeId: employee.id,
+        date: dateString,
+        status: 'present',
+        arrivalTime: '07:30'
+      })
+    }
+
     calculateMonthlyPunctuality()
   }
 
@@ -371,45 +439,83 @@ export function useEmployeeStore() {
   const removeEmployee = (employeeId: number) => {
     const index = employees.value.findIndex(emp => emp.id === employeeId)
     if (index !== -1) {
+      const removedName = employees.value[index].name
       employees.value.splice(index, 1)
-      // Nettoyer l'historique
       attendanceHistory.value = attendanceHistory.value.filter(r => r.employeeId !== employeeId)
+      console.log('✅ Employé supprimé:', removedName)
     }
   }
 
   // Ajouter un site
   const addSite = (site: Site) => {
+    const maxId = Math.max(...sites.value.map(s => s.id), 0)
+    site.id = maxId + 1
     sites.value.push(site)
+    console.log('✅ Site ajouté:', site.name)
   }
 
-  // Récupérer les sites depuis une API (à implémenter plus tard)
-  const fetchSitesFromAPI = async () => {
-    try {
-      // const response = await fetch('/api/sites')
-      // const data = await response.json()
-      // sites.value = data
-      console.log('API call to fetch sites - To be implemented')
-    } catch (error) {
-      console.error('Error fetching sites:', error)
+  // Mettre à jour un employé
+  const updateEmployee = (employeeId: number, updates: Partial<Employee>) => {
+    const index = employees.value.findIndex(emp => emp.id === employeeId)
+    if (index !== -1) {
+      employees.value[index] = { ...employees.value[index], ...updates }
+      console.log('✅ Employé mis à jour:', employees.value[index].name)
     }
+  }
+
+  // Réinitialiser toutes les données
+  const resetData = () => {
+    employees.value = []
+    attendanceHistory.value = []
+    sites.value = []
+    isInitialized.value = false
+
+    if (typeof window !== 'undefined') {
+      localStorage.removeItem('toke_employees')
+      localStorage.removeItem('toke_attendance')
+    }
+
+    console.log('🔄 Données réinitialisées')
   }
 
   // Initialiser toutes les données
   const initialize = () => {
-    if (!isInitialized.value) {
-      initializeSites()
+    if (isInitialized.value) {
+      console.log('⚠️ Store déjà initialisé')
+      return
+    }
+
+    console.log('🚀 Initialisation du store...')
+
+    initializeSites()
+
+    // Essayer de charger depuis localStorage
+    const loaded = loadFromStorage()
+
+    if (!loaded) {
+      // Si pas de données en localStorage, générer les données par défaut
       initializeEmployees()
       generateMonthlyAttendance()
       calculateMonthlyPunctuality()
-      isInitialized.value = true
+    } else {
+      // Recalculer la ponctualité pour les données chargées
+      calculateMonthlyPunctuality()
     }
+
+    isInitialized.value = true
+    console.log('✅ Store initialisé:', {
+      employees: employees.value.length,
+      attendance: attendanceHistory.value.length,
+      sites: sites.value.length
+    })
   }
 
   return {
-    // État
+    // État (reactive refs)
     employees: computed(() => employees.value),
     attendanceHistory: computed(() => attendanceHistory.value),
     sites: computed(() => sites.value),
+    isInitialized: computed(() => isInitialized.value),
 
     // Méthodes
     initialize,
@@ -419,7 +525,9 @@ export function useEmployeeStore() {
     getSiteName,
     addEmployee,
     removeEmployee,
+    updateEmployee,
     addSite,
-    fetchSitesFromAPI
+    resetData,
+    calculateMonthlyPunctuality
   }
 }
