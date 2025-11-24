@@ -432,19 +432,19 @@ router.post('/', Ensure.post(), async (req: Request, res: Response) => {
         message: 'Site url not found',
       });
     }
-    try {
-      await EmailSender.licensePayment(
-        tenantObj.getName()!,
-        tenantObj.getBillingEmail()!,
-        tenantObj.getGuid()!.toString(),
-        site.getLink()!,
-      );
-    } catch (err) {
-      return R.handleError(res, HttpStatus.INTERNAL_ERROR, {
-        code: 'EMAIL_SENDING_FAILED',
-        message: (err as Error).message,
-      });
-    }
+    // try {
+    //   await EmailSender.licensePayment(
+    //     tenantObj.getName()!,
+    //     tenantObj.getBillingEmail()!,
+    //     tenantObj.getGuid()!.toString(),
+    //     site.getLink()!,
+    //   );
+    // } catch (err) {
+    //   return R.handleError(res, HttpStatus.INTERNAL_ERROR, {
+    //     code: 'EMAIL_SENDING_FAILED',
+    //     message: (err as Error).message,
+    //   });
+    // }
 
     console.log(
       `✅ Tenant créé: ${validatedData.country_code} - ${validatedData.name} (GUID: ${tenantObj.getGuid()})`,

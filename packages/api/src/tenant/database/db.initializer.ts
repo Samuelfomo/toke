@@ -187,7 +187,6 @@ export class TableInitializer {
   private static defineAllModelsForInstance(instance: TenantInstance): void {
     console.log(`🏗️ Définition des modèles pour tenant...`);
 
-    this.defineQrCodeModelForInstance(instance);
     this.defineRolesModelForInstance(instance);
     this.defineUsersModelForInstance(instance);
     this.defineUserRolesModelForInstance(instance);
@@ -195,22 +194,12 @@ export class TableInitializer {
     this.defineSitesModelForInstance(instance);
     this.defineWorkSessionsModelForInstance(instance);
     this.defineMemosModelForInstance(instance);
+    this.defineQrCodeModelForInstance(instance);
     this.defineTimeEntriesModelForInstance(instance);
     this.defineAuditLogsModelForInstance(instance);
     this.defineFraudAlertsModelForInstance(instance);
 
     console.log(`✅ ${instance.models.size} modèle(s) défini(s) pour cette instance`);
-  }
-
-  private static defineQrCodeModelForInstance(instance: TenantInstance): void {
-    const model = instance.sequelize.define(
-      QrCodeGenerationDbStructure.tableName,
-      QrCodeGenerationDbStructure.attributes,
-      QrCodeGenerationDbStructure.options,
-    );
-
-    instance.models.set(QrCodeGenerationDbStructure.tableName, model);
-    console.log(`✅ Modèle QrCode défini (${QrCodeGenerationDbStructure.tableName})`);
   }
 
   private static defineRolesModelForInstance(instance: TenantInstance): void {
@@ -321,6 +310,17 @@ export class TableInitializer {
 
     instance.models.set(FraudAlertsDbStructure.tableName, model);
     console.log(`✅ Modèle FraudAlerts défini (${FraudAlertsDbStructure.tableName})`);
+  }
+
+  private static defineQrCodeModelForInstance(instance: TenantInstance): void {
+    const model = instance.sequelize.define(
+      QrCodeGenerationDbStructure.tableName,
+      QrCodeGenerationDbStructure.attributes,
+      QrCodeGenerationDbStructure.options,
+    );
+
+    instance.models.set(QrCodeGenerationDbStructure.tableName, model);
+    console.log(`✅ Modèle QrCode défini (${QrCodeGenerationDbStructure.tableName})`);
   }
 
   /**
