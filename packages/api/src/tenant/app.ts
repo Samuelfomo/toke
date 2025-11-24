@@ -23,6 +23,7 @@ import memosRoute from './routes/memos.route.js';
 import uploadRoute from './routes/upload.route.js';
 import fraudAlertsRoute from './routes/fraud.alerts.route.js';
 import auditLogsRoute from './routes/audit.logs.route.js';
+import qrCodeRoute from './routes/qr.code.route.js';
 
 interface AppConfig {
   port: number;
@@ -214,6 +215,7 @@ export default class App {
     this.app.use('/audit-logs', auditLogsRoute);
 
     this.app.use('/upload', uploadRoute);
+    this.app.use('/qr-code', qrCodeRoute);
 
     // Route 404
     this.app.use((req, res) => {

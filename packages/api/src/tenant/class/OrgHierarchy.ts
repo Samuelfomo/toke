@@ -117,11 +117,46 @@ export default class OrgHierarchy extends OrgHierarchyModel {
     };
   }
 
-  // === GETTERS FLUENT ===
+  /**
+   * Récupère tous les utilisateurs descendants dans la hiérarchie (subordinés directs et indirects)
+   * @param supervisor_id ID du superviseur
+   * @param includeIndirect Si true, inclut tous les niveaux (défaut: true)
+   * @returns Liste de tous les user IDs descendants
+   */
+  static async getAllDescendantUserIds(
+    supervisor_id: number,
+    includeIndirect: boolean = true,
+  ): Promise<number[]> {
+    const org = new OrgHierarchy();
+    const visited = new Set<number>();
+
+    if (includeIndirect) {
+      // Récursif : tous les niveaux
+      return await org._recursiveFetchSubordinateIds(supervisor_id, visited);
+    } else {
+      // Direct seulement
+      const directRelations = await org.listAllActiveSubordinates(supervisor_id);
+      if (!directRelations || directRelations.length === 0) return [];
+      return directRelations.map((relation) => relation[org.db.subordinate]);
+    }
+  }
+
+  /**
+   * Vérifie si un utilisateur est dans la hiérarchie d'un superviseur (direct ou indirect)
+   * @param userId ID de l'utilisateur à vérifier
+   * @param supervisorId ID du superviseur
+   * @returns true si l'utilisateur est un descendant du superviseur
+   */
+  static async isUserInHierarchy(userId: number, supervisorId: number): Promise<boolean> {
+    const descendants = await this.getAllDescendantUserIds(supervisorId);
+    return descendants.includes(userId);
+  }
 
   getId(): number | undefined {
     return this.id;
   }
+
+  // === GETTERS FLUENT ===
 
   getGuid(): string | undefined {
     return this.guid;
@@ -183,12 +218,12 @@ export default class OrgHierarchy extends OrgHierarchyModel {
     return this.updated_at;
   }
 
-  // === SETTERS FLUENT ===
-
   setSubordinate(subordinate: number): OrgHierarchy {
     this.subordinate = subordinate;
     return this;
   }
+
+  // === SETTERS FLUENT ===
 
   setSupervisor(supervisor: number): OrgHierarchy {
     this.supervisor = supervisor;
@@ -225,8 +260,6 @@ export default class OrgHierarchy extends OrgHierarchyModel {
     return this;
   }
 
-  // === MÉTHODES MÉTIER HIÉRARCHIQUES ===
-
   isActive(date?: Date): boolean {
     const checkDate = date || new Date();
     const checkDateStr = checkDate.toISOString().slice(0, 10);
@@ -237,6 +270,8 @@ export default class OrgHierarchy extends OrgHierarchyModel {
 
     return !(this.effective_to && this.effective_to < checkDateStr);
   }
+
+  // === MÉTHODES MÉTIER HIÉRARCHIQUES ===
 
   isDirectReport(): boolean {
     return this.relationship_type === RelationshipType.DIRECT_REPORT;
@@ -268,8 +303,6 @@ export default class OrgHierarchy extends OrgHierarchyModel {
     return daysUntilExpiration !== null && daysUntilExpiration <= days && daysUntilExpiration >= 0;
   }
 
-  // === MÉTHODES DE RÉSOLUTION HIÉRARCHIQUE ===
-
   async getCurrentSupervisor(
     subordinate_id: number,
     date?: Date,
@@ -279,6 +312,8 @@ export default class OrgHierarchy extends OrgHierarchyModel {
     if (!data) return null;
     return new OrgHierarchy().hydrate(data);
   }
+
+  // === MÉTHODES DE RÉSOLUTION HIÉRARCHIQUE ===
 
   async getActiveSubordinates(
     supervisor_id: number,
@@ -313,19 +348,17 @@ export default class OrgHierarchy extends OrgHierarchyModel {
     await newHierarchy.save();
   }
 
-  // === MÉTHODES DE TRANSFERT ===
-
   async getHierarchyStatistics(): Promise<any> {
     return await this.getHierarchyCountStatistics();
   }
 
-  // === MÉTHODES D'ANALYSE ===
+  // === MÉTHODES DE TRANSFERT ===
 
   isNew(): boolean {
     return this.id === undefined;
   }
 
-  // === MÉTHODES DE BASE ===
+  // === MÉTHODES D'ANALYSE ===
 
   async save(): Promise<void> {
     try {
@@ -338,6 +371,8 @@ export default class OrgHierarchy extends OrgHierarchyModel {
       throw new Error(error.message || error);
     }
   }
+
+  // === MÉTHODES DE BASE ===
 
   async load(identifier: any, byGuid: boolean = false): Promise<OrgHierarchy | null> {
     let data = null;
@@ -432,6 +467,33 @@ export default class OrgHierarchy extends OrgHierarchyModel {
       [RS.SUBORDINATE]: subordinate?.toJSON(),
       [RS.SUPERVISOR]: supervisor?.toJSON(),
     };
+  }
+
+  /**
+   * Méthode privée récursive pour récupérer tous les IDs de subordinés
+   */
+  private async _recursiveFetchSubordinateIds(
+    supervisor_id: number,
+    visited: Set<number>,
+  ): Promise<number[]> {
+    if (visited.has(supervisor_id)) return [];
+    visited.add(supervisor_id);
+
+    const directRelations = await this.listAllActiveSubordinates(supervisor_id);
+    if (!directRelations || directRelations.length === 0) return [];
+
+    const allSubordinateIds: number[] = [];
+
+    for (const relation of directRelations) {
+      const subordinateId = relation[this.db.subordinate];
+      allSubordinateIds.push(subordinateId);
+
+      // Récursivité : chercher les subordonnés du subordonné
+      const subIds = await this._recursiveFetchSubordinateIds(subordinateId, visited);
+      allSubordinateIds.push(...subIds);
+    }
+
+    return allSubordinateIds;
   }
 
   private async _recursiveFetchSubordinates(

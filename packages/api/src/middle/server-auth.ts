@@ -70,8 +70,13 @@ export class ServerAuth {
         return next();
       }
 
-      const rawToken = `${req.headers['x-api-signature'] || req.headers['X-Api-Signature'] || ''}`;
+      const rawToken = `${req.headers['x-api-signature'] || req.headers['X-Api-Signature']}`;
       const validity = `${req.headers['x-api-timestamp'] || req.headers['X-Api-Timestamp'] || ''}`;
+
+      if (!rawToken) {
+        R.handleError(res, HttpStatus.UNAUTHORIZED, G.clientDataRequired);
+        return;
+      }
 
       const isSignatureValid = ApiKeyManager.verify(rawToken, token, validity, clientConfig.secret);
 
@@ -251,7 +256,7 @@ export class ServerAuth {
     const authHeader = req.headers.authorization;
     const apiKeyHeader = req.headers['x-api-key'] as string;
     const tokenHeader = req.headers['x-api-token'] as string;
-    const tokenSignatureHeader = req.headers['x-api-signature'] as string;
+    // const tokenSignatureHeader = req.headers['x-api-signature'] as string;
 
     // Format: "Bearer TOKEN" ou "API-Key TOKEN"
     if (authHeader) {
@@ -261,10 +266,10 @@ export class ServerAuth {
       }
     }
 
-    // Check signature
-    if (!tokenSignatureHeader) {
-      return null;
-    }
+    // // Check signature
+    // if (!tokenSignatureHeader) {
+    //   return null;
+    // }
 
     // Headers directs
     if (apiKeyHeader) {

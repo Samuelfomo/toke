@@ -18,6 +18,7 @@ export const QR_CODE_VALIDATION = {
 } as const;
 
 export const QR_CODE_DEFAULTS = {
+  SHARED: false,
   PAGINATION: {
     OFFSET: 0,
     LIMIT: 50,
@@ -29,6 +30,7 @@ export const QR_CODE_CODES = {
   QR_CODE_ALREADY_EXISTS: 'qr_code_already_exists',
   QR_CODE_NOT_FOUND: 'qr_code_not_found',
   INVALID_GUID: 'invalid_guid',
+  GUID_REQUIRED: 'guid_required',
   SITE_REQUIRED: 'site_required',
   SITE_INVALID: 'site_invalid',
   SITE_NOT_FOUND: 'site_not_found',
@@ -52,6 +54,9 @@ export const QR_CODE_CODES = {
   REVISION_FAILED: 'revision_failed',
   RETRIEVAL_FAILED: 'retrieval_failed',
   GENERATION_FAILED: 'generation_failed',
+
+  SHARED_INVALID: 'shared_status_invalid',
+  SHARED_FAILED: 'shared_operation_failed',
 } as const;
 
 const QR_CODE_LABEL = 'QR Code';
@@ -73,7 +78,10 @@ export const QR_CODE_ERRORS = {
   QR_CODE_EXPIRED: 'QR Code has expired',
   QR_CODE_NOT_YET_VALID: 'QR Code is not yet valid',
 
+  SHARED_INVALID: 'shared status must be a boolean value (true or false)',
+
   GUID_INVALID: `GUID must be 1-${QR_CODE_VALIDATION.GUID.MAX_LENGTH} characters`,
+  GUID_REQUIRED: `${QR_CODE_LABEL} GUID is required`,
   NOT_FOUND: `${QR_CODE_LABEL} not found`,
   VALIDATION_FAILED: `${QR_CODE_LABEL} validation failed`,
 
@@ -88,12 +96,14 @@ export const QR_CODE_ERRORS = {
 
   GUID_GENERATION_FAILED: `Failed to generate GUID for ${QR_CODE_LABEL}`,
   ID_REQUIRED: `${QR_CODE_LABEL} id is required`,
+  SHARED_OPERATION_FAILED: `${QR_CODE_LABEL} shared operation failed`,
 };
 
 export const QR_CODE_MESSAGES = {
   CREATED_SUCCESSFULLY: `${QR_CODE_LABEL} generated successfully`,
   DELETED_SUCCESSFULLY: `${QR_CODE_LABEL} deleted successfully`,
   UPDATED_SUCCESSFULLY: `${QR_CODE_LABEL} updated successfully`,
+  SHARED_SUCCESSFULLY: `${QR_CODE_LABEL} shared successfully`,
 };
 
 export type QrCodeError = (typeof QR_CODE_ERRORS)[keyof typeof QR_CODE_ERRORS];

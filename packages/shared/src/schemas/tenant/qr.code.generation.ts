@@ -2,6 +2,7 @@ import { z } from 'zod';
 
 import {
   QR_CODE_CODES,
+  QR_CODE_DEFAULTS,
   QR_CODE_ERRORS,
   QR_CODE_VALIDATION,
 } from '../../constants/tenant/qr.code.generation.js';
@@ -37,6 +38,12 @@ const baseQrCodeSchema = z.object({
       message: QR_CODE_ERRORS.MANAGER_INVALID,
     })
     .trim(),
+
+  shared: z
+    .boolean({
+      invalid_type_error: QR_CODE_ERRORS.SHARED_INVALID,
+    })
+    .default(QR_CODE_DEFAULTS.SHARED),
 
   valid_from: z
     .union([z.date(), z.string().transform((val) => new Date(val))], {
@@ -110,6 +117,7 @@ export const qrCodeFiltersSchema = z
     is_expired: z.boolean().optional(),
     created_from: z.union([z.date(), z.string().transform((val) => new Date(val))]).optional(),
     created_to: z.union([z.date(), z.string().transform((val) => new Date(val))]).optional(),
+    shared: z.boolean().optional(),
     has_expiration: z.boolean().optional(),
   })
   .strict();
@@ -119,6 +127,10 @@ export const qrCodeGuidSchema = z
   .min(QR_CODE_VALIDATION.GUID.MIN_LENGTH, { message: QR_CODE_ERRORS.GUID_INVALID })
   .max(QR_CODE_VALIDATION.GUID.MAX_LENGTH, { message: QR_CODE_ERRORS.GUID_INVALID })
   .trim();
+
+export const qrCodeSharedSchema = z.boolean({
+  invalid_type_error: QR_CODE_ERRORS.SHARED_INVALID,
+});
 
 // ============================================================================
 // FONCTIONS DE VALIDATION
@@ -173,6 +185,23 @@ export const validateQrCodeGuid = (guid: any) => {
           field: 'guid',
           message: QR_CODE_ERRORS.GUID_INVALID,
           code: QR_CODE_CODES.INVALID_GUID,
+        },
+      ],
+    };
+  }
+  return { success: true, data: result.data };
+};
+
+export const validateShared = (value: any) => {
+  const result = qrCodeSharedSchema.safeParse(value);
+  if (!result.success) {
+    return {
+      success: false,
+      errors: [
+        {
+          field: 'shared',
+          message: QR_CODE_ERRORS.SHARED_INVALID,
+          code: QR_CODE_CODES.SHARED_INVALID,
         },
       ],
     };

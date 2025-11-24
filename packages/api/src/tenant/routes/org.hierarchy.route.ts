@@ -22,6 +22,8 @@ import { TenantRevision } from '../../tools/revision.js';
 import { responseValue, tableName } from '../../utils/response.model.js';
 import UserRole from '../class/UserRole.js';
 
+4;
+
 const router = Router();
 
 // === ROUTES DE LISTAGE GÉNÉRAL ===
@@ -269,6 +271,15 @@ router.post('/', Ensure.post(), async (req: Request, res: Response) => {
       });
     }
 
+    // verifier que l'utilisateur n'ai pas l'admin du systeme (root)
+    const userRole = await UserRole._load({}, false, false, true);
+    if (userRole?.getUser() === subordinateObj.getId()) {
+      return R.handleError(res, HttpStatus.UNAUTHORIZED, {
+        code: 'root_cannot_be_subordinate',
+        message:
+          'The root administrator cannot be assigned under another user in the organization hierarchy.',
+      });
+    }
     // Vérification de l'existence du superviseur
     const supervisorObj = await User._load(validatedData.supervisor, true);
     if (!supervisorObj) {

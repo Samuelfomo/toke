@@ -109,7 +109,7 @@ router.post('/', Ensure.post(), async (req: Request, res: Response) => {
 
     await qrCodeObj.save();
 
-    return R.handleCreated(res, qrCodeObj.toJSON());
+    return R.handleCreated(res, await qrCodeObj.toJSON());
   } catch (error: any) {
     if (error.issues) {
       return R.handleError(res, HttpStatus.BAD_REQUEST, {
@@ -196,7 +196,7 @@ router.put('/:guid', Ensure.put(), async (req: Request, res: Response) => {
 
     await qrCodeObj.save();
 
-    return R.handleSuccess(res, qrCodeObj.toJSON());
+    return R.handleSuccess(res, await qrCodeObj.toJSON());
   } catch (error: any) {
     if (error.issues) {
       return R.handleError(res, HttpStatus.BAD_REQUEST, {
@@ -219,6 +219,47 @@ router.put('/:guid', Ensure.put(), async (req: Request, res: Response) => {
         message: error.message,
       });
     }
+  }
+});
+
+router.patch('/shared/:guid', Ensure.patch(), async (req: Request, res: Response) => {
+  try {
+    const { guid } = req.params;
+    if (!guid) {
+      return R.handleError(res, HttpStatus.BAD_REQUEST, {
+        code: QR_CODE_CODES.GUID_REQUIRED,
+        message: QR_CODE_ERRORS.GUID_REQUIRED,
+      });
+    }
+    const isValidGuid = validateQrCodeGuid(guid);
+    if (!isValidGuid.success) {
+      return R.handleError(res, HttpStatus.BAD_REQUEST, {
+        code: QR_CODE_CODES.INVALID_GUID,
+        message: QR_CODE_ERRORS.GUID_INVALID,
+      });
+    }
+
+    const qrCodeObj = await QrCodeGeneration._load(guid, true);
+    if (!qrCodeObj) {
+      return R.handleError(res, HttpStatus.NOT_FOUND, {
+        code: QR_CODE_CODES.QR_CODE_NOT_FOUND,
+        message: QR_CODE_ERRORS.NOT_FOUND,
+      });
+    }
+
+    qrCodeObj.toggleShared();
+
+    await qrCodeObj.sharedSiteQrCode();
+
+    return R.handleSuccess(res, {
+      message: QR_CODE_MESSAGES.SHARED_SUCCESSFULLY,
+      // await qrCodeObj.toJSON()
+    });
+  } catch (error: any) {
+    return R.handleError(res, HttpStatus.INTERNAL_ERROR, {
+      code: QR_CODE_CODES.SHARED_FAILED,
+      message: error.message,
+    });
   }
 });
 
@@ -252,7 +293,8 @@ router.get('/list', Ensure.get(), async (req: Request, res: Response) => {
         limit: paginationOptions.limit || qrCodeEntries?.length,
         count: qrCodeEntries?.length || 0,
       },
-      items: qrCodeEntries?.map((qrCode) => qrCode.toJSON()),
+      // items: await Promise.all((qrCodeEntries ?? []).map(async (qrCode) => await qrCode.toJSON())),
+      items: await Promise.all((qrCodeEntries ?? []).map((qrCode) => qrCode.toJSON())),
     };
     return R.handleSuccess(res, { qrCodes });
   } catch (error: any) {
@@ -271,11 +313,11 @@ router.get('/list', Ensure.get(), async (req: Request, res: Response) => {
   }
 });
 
-router.get('/site/:siteGuid/list', Ensure.get(), async (req: Request, res: Response) => {
+router.get('/site/:site/list', Ensure.get(), async (req: Request, res: Response) => {
   try {
-    const { siteGuid } = req.params;
+    const { site } = req.params;
 
-    const siteObj = await Site._load(siteGuid, true);
+    const siteObj = await Site._load(site, true);
     if (!siteObj) {
       return R.handleError(res, HttpStatus.NOT_FOUND, {
         code: SITES_CODES.SITE_NOT_FOUND,
@@ -292,7 +334,8 @@ router.get('/site/:siteGuid/list', Ensure.get(), async (req: Request, res: Respo
         limit: paginationOptions.limit || qrCodeEntries?.length,
         count: qrCodeEntries?.length || 0,
       },
-      items: qrCodeEntries?.map((qrCode) => qrCode.toJSON()),
+      // items: await Promise.all((qrCodeEntries ?? []).map(async (qrCode) => await qrCode.toJSON())),
+      items: await Promise.all((qrCodeEntries ?? []).map((qrCode) => qrCode.toJSON())),
     };
     return R.handleSuccess(res, { qrCodes });
   } catch (error: any) {
@@ -311,11 +354,11 @@ router.get('/site/:siteGuid/list', Ensure.get(), async (req: Request, res: Respo
   }
 });
 
-router.get('/manager/:managerGuid/list', Ensure.get(), async (req: Request, res: Response) => {
+router.get('/manager/:manager/list', Ensure.get(), async (req: Request, res: Response) => {
   try {
-    const { managerGuid } = req.params;
+    const { manager } = req.params;
 
-    const managerObj = await User._load(managerGuid, true);
+    const managerObj = await User._load(manager, true);
     if (!managerObj) {
       return R.handleError(res, HttpStatus.NOT_FOUND, {
         code: USERS_CODES.USER_NOT_FOUND,
@@ -335,7 +378,8 @@ router.get('/manager/:managerGuid/list', Ensure.get(), async (req: Request, res:
         limit: paginationOptions.limit || qrCodeEntries?.length,
         count: qrCodeEntries?.length || 0,
       },
-      items: qrCodeEntries?.map((qrCode) => qrCode.toJSON()),
+      // items: await Promise.all((qrCodeEntries ?? []).map(async (qrCode) => await qrCode.toJSON())),
+      items: await Promise.all((qrCodeEntries ?? []).map((qrCode) => qrCode.toJSON())),
     };
     return R.handleSuccess(res, { qrCodes });
   } catch (error: any) {

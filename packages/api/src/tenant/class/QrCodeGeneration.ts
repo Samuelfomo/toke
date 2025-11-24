@@ -1,3 +1,5 @@
+import { QR_CODE_DEFAULTS } from '@toke/shared';
+
 import QrCodeGenerationModel from '../model/QrCodeGenerationModel.js';
 import W from '../../tools/watcher.js';
 import G from '../../tools/glossary.js';
@@ -31,6 +33,18 @@ export default class QrCodeGeneration extends QrCodeGenerationModel {
     return new QrCodeGeneration().list(conditions, paginationOptions);
   }
 
+  static _listActive(
+    paginationOptions: { offset?: number; limit?: number } = {},
+  ): Promise<QrCodeGeneration[] | null> {
+    return new QrCodeGeneration().listActive(paginationOptions);
+  }
+
+  static _listExpired(
+    paginationOptions: { offset?: number; limit?: number } = {},
+  ): Promise<QrCodeGeneration[] | null> {
+    return new QrCodeGeneration().listExpired(paginationOptions);
+  }
+
   static _listBySite(
     site: number,
     paginationOptions: { offset?: number; limit?: number } = {},
@@ -51,9 +65,10 @@ export default class QrCodeGeneration extends QrCodeGenerationModel {
     items: any[];
   }> {
     let items: any[] = [];
-    const qrCodes = await this._list({}, paginationOptions);
+    const qrCodes = await this._listActive(paginationOptions);
     if (qrCodes) {
-      items = qrCodes.map((qrCode) => qrCode.toJSON());
+      items = await Promise.all(qrCodes.map((qrCode) => qrCode.toJSON()));
+      // items = await Promise.all(qrCodes.map(async (qrCode) => await qrCode.toJSON()));
     }
     return {
       revision: await TenantRevision.getRevision(tableName.QR_CODE_GENERATION),
@@ -108,6 +123,10 @@ export default class QrCodeGeneration extends QrCodeGenerationModel {
     return this.valid_to;
   }
 
+  isShared(): boolean {
+    return this.shared;
+  }
+
   // === SETTERS ===
 
   setGuid(guid: string): QrCodeGeneration {
@@ -132,6 +151,16 @@ export default class QrCodeGeneration extends QrCodeGenerationModel {
 
   setValidTo(valid_to: Date | null): QrCodeGeneration {
     this.valid_to = valid_to || undefined;
+    return this;
+  }
+
+  setShared(value: boolean = QR_CODE_DEFAULTS.SHARED): QrCodeGeneration {
+    this.shared = value;
+    return this;
+  }
+
+  toggleShared(): QrCodeGeneration {
+    this.shared = !this.shared;
     return this;
   }
 
@@ -197,6 +226,22 @@ export default class QrCodeGeneration extends QrCodeGenerationModel {
     return dataset.map((data) => new QrCodeGeneration().hydrate(data));
   }
 
+  async listActive(
+    paginationOptions: { offset?: number; limit?: number } = {},
+  ): Promise<QrCodeGeneration[] | null> {
+    const dataset = await this.findActiveQrCodes(paginationOptions);
+    if (!dataset) return null;
+    return dataset.map((data) => new QrCodeGeneration().hydrate(data));
+  }
+
+  async listExpired(
+    paginationOptions: { offset?: number; limit?: number } = {},
+  ): Promise<QrCodeGeneration[] | null> {
+    const dataset = await this.findExpiredQrCodes(paginationOptions);
+    if (!dataset) return null;
+    return dataset.map((data) => new QrCodeGeneration().hydrate(data));
+  }
+
   async listBySite(
     site: number,
     paginationOptions: { offset?: number; limit?: number } = {},
@@ -221,6 +266,15 @@ export default class QrCodeGeneration extends QrCodeGenerationModel {
       return await this.trash(this.id);
     }
     return false;
+  }
+
+  async sharedSiteQrCode(): Promise<void> {
+    try {
+      await this.sharedQrCode();
+    } catch (error: any) {
+      console.error('⚠️ Error during shared qr code :', error.message);
+      throw new Error(error);
+    }
   }
 
   async toJSON(view: ViewMode = responseValue.FULL): Promise<object> {

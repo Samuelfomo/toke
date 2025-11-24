@@ -1,4 +1,4 @@
-import { QR_CODE_ERRORS } from '@toke/shared';
+import { QR_CODE_DEFAULTS, QR_CODE_ERRORS } from '@toke/shared';
 import { Op } from 'sequelize';
 
 import BaseModel from '../database/db.base.js';
@@ -27,7 +27,7 @@ export default class QrCodeGenerationModel extends BaseModel {
   protected valid_to?: Date;
   protected created_at?: Date;
   protected updated_at?: Date;
-  protected shared: boolean = false;
+  protected shared: boolean = QR_CODE_DEFAULTS.SHARED;
 
   protected constructor() {
     super();
@@ -261,6 +261,7 @@ export default class QrCodeGenerationModel extends BaseModel {
       [this.db.manager]: this.manager,
       [this.db.valid_from]: this.valid_from,
       [this.db.valid_to]: this.valid_to,
+      [this.db.shared]: this.shared || QR_CODE_DEFAULTS.SHARED,
     });
 
     if (!lastID) {
@@ -278,10 +279,11 @@ export default class QrCodeGenerationModel extends BaseModel {
 
     const updateData: Record<string, any> = {};
 
-    if (this.site !== undefined) updateData[this.db.site] = this.site;
-    if (this.manager !== undefined) updateData[this.db.manager] = this.manager;
+    // if (this.site !== undefined) updateData[this.db.site] = this.site;
+    // if (this.manager !== undefined) updateData[this.db.manager] = this.manager;
     if (this.valid_from !== undefined) updateData[this.db.valid_from] = this.valid_from;
     if (this.valid_to !== undefined) updateData[this.db.valid_to] = this.valid_to;
+    if (this.shared !== undefined) updateData[this.db.shared] = this.shared;
 
     const updated = await this.updateOne(this.db.tableName, updateData, { [this.db.id]: this.id });
 
@@ -299,5 +301,21 @@ export default class QrCodeGenerationModel extends BaseModel {
     paginationOptions: { offset?: number; limit?: number } = {},
   ): Promise<any[]> {
     return await this.findAll(this.db.tableName, conditions, paginationOptions);
+  }
+
+  protected async sharedQrCode(): Promise<void> {
+    if (this.id == null) {
+      throw new Error(QR_CODE_ERRORS.ID_REQUIRED);
+    }
+
+    const updateData: Record<string, any> = {
+      [this.db.shared]: this.shared,
+    };
+
+    const affected = await this.updateOne(this.db.tableName, updateData, { [this.db.id]: this.id });
+
+    if (!affected) {
+      throw new Error(QR_CODE_ERRORS.SHARED_OPERATION_FAILED);
+    }
   }
 }

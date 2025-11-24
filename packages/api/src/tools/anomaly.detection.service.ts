@@ -20,6 +20,7 @@ import UserRole from '../tenant/class/UserRole.js';
 import Role from '../tenant/class/Role.js';
 import { RoleValues } from '../utils/response.model.js';
 import QrCodeGeneration from '../tenant/class/QrCodeGeneration.js';
+import OrgHierarchy from '../tenant/class/OrgHierarchy.js';
 
 // === TYPES & ENUMS ===
 
@@ -46,9 +47,10 @@ export enum AnomalyType {
 
   // Géofencing (cas spécial - blocage)
   GEOFENCE_VIOLATION = 'geofence_violation',
-
+ 
   // Accès non autorisé
   UNAUTHORIZED_QR_CODE = 'unauthorized_qr_code',
+  EXPIRED_QR_CODE = 'expired_qr_code',
 }
 
 export interface Anomaly {
@@ -78,46 +80,74 @@ class AnomalyDetectionService {
     const anomalies: Anomaly[] = [];
     const corrections: any[] = [];
 
-    // 1. Vérifier que l'utilisateur pointe avec le QR code généré par son manager
-    const roleObj = await Role._load(RoleValues.EMPLOYEE, false, true);
+    // 1. ⚠️ Vérifier si le QR code est expiré
+    if (qrCodeObj.isExpired()) {
+      anomalies.push({
+        type: AnomalyType.EXPIRED_QR_CODE,
+        severity: AlertSeverity.MEDIUM,
+        description: 'Expired QR code used for checking in',
+        technical_details: {
+          qr_code_guid: qrCodeObj.getGuid(),
+          valid_to: qrCodeObj.getValidTo(),
+          expired_since_days:
+            qrCodeObj.getRemainingDays() !== null ? Math.abs(qrCodeObj.getRemainingDays()!) : null,
+        },
+        auto_correctable: false,
+      });
+    }
 
+    // 2. Si le QR code est partagé, pas besoin de vérifier les habilitations
+    if (qrCodeObj.isShared()) {
+      return { anomalies, corrections };
+    }
+    const qrCodeManager = qrCodeObj.getManager();
+    if (!qrCodeManager) {
+      // QR code sans manager = anomalie critique
+      anomalies.push({
+        type: AnomalyType.UNAUTHORIZED_QR_CODE,
+        severity: AlertSeverity.CRITICAL,
+        description: 'QR code without assigned manager - corrupted data',
+        technical_details: {
+          qr_code_guid: qrCodeObj.getGuid(),
+        },
+        auto_correctable: false,
+      });
+      return { anomalies, corrections };
+    }
+
+    // 3. Récupérer le manager de l'utilisateur
+    const roleObj = await Role._load(RoleValues.EMPLOYEE, false, true);
     const identifier = {
       user: userId,
       role: roleObj?.getId()!,
     };
-
     const userRole = await UserRole._load(identifier, false, true);
+    const userManager = userRole?.getAssignedBy();
 
-    // if (!userRole) {
-    //   anomalies.push({
-    //     type: AnomalyType.UNAUTHORIZED_QR_CODE,
-    //     severity: AlertSeverity.HIGH,
-    //     description: `Utilisateur sans rôle assigné - impossible de vérifier le manager`,
-    //     technical_details: {
-    //       user_id: userId,
-    //       qr_code_guid: qrCodeObj.getGuid(),
-    //     },
-    //     auto_correctable: false,
-    //   });
-    //   return { anomalies, corrections };
-    // }
-
-    const userManager = userRole?.getAssignedBy(); // Manager de l'utilisateur
-    const qrCodeManager = qrCodeObj.getManager(); // Manager qui a généré le QR code
-
-    if (userManager !== qrCodeManager) {
-      anomalies.push({
-        type: AnomalyType.UNAUTHORIZED_QR_CODE,
-        severity: AlertSeverity.HIGH,
-        description: `Use of an unauthorized QR code - The employee clocked in using another manager's QR code.`,
-        technical_details: {
-          user_manager: (await userRole?.getAssignedByObject())!.getGuid(),
-          qr_code_manager: (await qrCodeObj.getManagerObj())?.getGuid(),
-          qr_code_guid: qrCodeObj.getGuid(),
-        },
-        auto_correctable: false, // Nécessite validation manager
-      });
+    // 4. Vérifier si c'est le manager direct
+    if (userManager === qrCodeManager) {
+      return { anomalies, corrections }; // ✅ Autorisé - manager direct
     }
+
+    // 5. ⭐ Vérifier l'héritage hiérarchique
+    const isInHierarchy = await OrgHierarchy.isUserInHierarchy(userId, qrCodeManager);
+
+    if (isInHierarchy) {
+      return { anomalies, corrections }; // ✅ Autorisé - héritage hiérarchique
+    }
+
+    // 6. ❌ Si aucune autorisation, c'est une anomalie
+    anomalies.push({
+      type: AnomalyType.UNAUTHORIZED_QR_CODE,
+      severity: AlertSeverity.HIGH,
+      description: `Use of an unauthorized QR code - The employee clocked in using another manager's QR code.`,
+      technical_details: {
+        user_manager: (await userRole?.getAssignedByObject())!.getGuid(),
+        qr_code_manager: (await qrCodeObj.getManagerObj())?.getGuid(),
+        qr_code_guid: qrCodeObj.getGuid(),
+      },
+      auto_correctable: false, // Nécessite validation manager
+    });
 
     return { anomalies, corrections };
   }
@@ -1302,6 +1332,7 @@ ${
       [AnomalyType.GEOFENCE_VIOLATION]: AlertType.GEOFENCE_VIOLATION,
 
       [AnomalyType.UNAUTHORIZED_QR_CODE]: AlertType.UNAUTHORIZED_ACCESS,
+      [AnomalyType.EXPIRED_QR_CODE]: AlertType.UNAUTHORIZED_ACCESS,
     };
 
     return mapping[anomalyType] || AlertType.SUSPICIOUS_PATTERN;

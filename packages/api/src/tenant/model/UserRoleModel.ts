@@ -29,6 +29,7 @@ export default class UserRoleModel extends BaseModel {
   protected async find(id: number): Promise<any> {
     return await this.findOne(this.db.tableName, { [this.db.id]: id });
   }
+
   protected async findByGuid(guid: string): Promise<any> {
     return await this.findOne(this.db.tableName, { [this.db.guid]: guid });
   }
@@ -36,10 +37,12 @@ export default class UserRoleModel extends BaseModel {
   protected async findByUserRole(user: number, role: number): Promise<any> {
     return await this.findOne(this.db.tableName, { [this.db.user]: user, [this.db.role]: role });
   }
+
   protected async findAdminSupervisor(): Promise<any> {
     return await this.findOne(this.db.tableName, { [this.db.assigned_by]: null });
   }
-  protected async findByAttribut(attribute: string, value: any): Promise<any> {
+
+  protected async findByAttribute(attribute: string, value: any): Promise<any> {
     return await this.findOne(this.db.tableName, { [attribute]: value });
   }
 
@@ -49,12 +52,14 @@ export default class UserRoleModel extends BaseModel {
   ): Promise<any[]> {
     return await this.findAll(this.db.tableName, conditions, paginationOptions);
   }
+
   protected async listAllByUser(
     user: number,
     paginationOptions: { offset?: number; limit?: number } = {},
   ) {
     return await this.listAll({ [this.db.user]: user }, paginationOptions);
   }
+
   protected async listAllByRole(
     role: number,
     paginationOptions: { offset?: number; limit?: number } = {},
@@ -115,6 +120,7 @@ export default class UserRoleModel extends BaseModel {
       throw new Error(USER_ROLES_ERRORS.UPDATE_FAILED);
     }
   }
+
   protected async trash(id: number): Promise<boolean> {
     return await this.deleteOne(this.db.tableName, { [this.db.id]: id });
   }
