@@ -38,6 +38,8 @@ export const EmployeeLicenseDbStructure = {
         isInt: true,
         min: 1,
       },
+      onUpdate: 'CASCADE',
+      onDelete: 'CASCADE',
       comment: 'Global master',
     },
     employee: {

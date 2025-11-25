@@ -68,6 +68,8 @@ export const TenantDbStructure = {
         is: /^[A-Z]{2}$/,
         len: [2, 2],
       },
+      // onUpdate: 'CASCADE',
+      // onDelete: 'CASCADE',
       comment: 'ISO 3166-1 alpha-2 country code (e.g. CM, FR, US)',
     },
     primary_currency_code: {
@@ -81,6 +83,8 @@ export const TenantDbStructure = {
         is: /^[A-Z]{3}$/,
         len: [3, 3],
       },
+      // onUpdate: 'CASCADE',
+      // onDelete: 'CASCADE',
       comment: 'ISO 4217 primary currency code (e.g. XAF, USD, EUR)',
     },
     preferred_language_code: {
@@ -95,6 +99,8 @@ export const TenantDbStructure = {
         is: /^[a-z]{2}$/,
         len: [2, 2],
       },
+      // onUpdate: 'CASCADE',
+      // onDelete: 'CASCADE',
       comment: 'ISO 639-1 preferred language code (e.g. fr, en)',
     },
     timezone: {

@@ -155,6 +155,8 @@ export const BillingCycleDbStructure = {
         // Validation basique du format ISO 4217 uniquement
         // La validation métier des devises supportées doit se faire au niveau service
       },
+      onUpdate: 'CASCADE',
+      onDelete: 'CASCADE',
       comment: 'ISO 4217 currency code (e.g. XAF, USD, EUR)',
     },
     exchange_rate_used: {

@@ -526,6 +526,38 @@ export default class UserModel extends BaseModel {
 
       // 🔁 Essayer de générer un EMPLOYEE_CODE unique jusqu’à 10 fois
       while (attempt < maxAttempts) {
+        let employeeCode: string | null = null;
+
+        const maxAttempts = 10;
+        let attempt = 0;
+
+        // 🔁 Essayer de générer un EMPLOYEE_CODE unique jusqu’à 10 fois
+        while (attempt < maxAttempts) {
+          attempt++;
+          const newEmployeeCode = await TokenManager.tokenGenerator(6);
+
+          if (!newEmployeeCode) {
+            console.warn(`⚠️ Tentative ${attempt}: échec de génération du EMPLOYEE_CODE`);
+            continue;
+          }
+
+          const exists = await this.findByEmployeeCode(newEmployeeCode);
+          if (!exists) {
+            employeeCode = newEmployeeCode;
+            break;
+          }
+
+          console.warn(`⚠️ Tentative ${attempt}: EMPLOYEE_CODE ${newEmployeeCode} déjà existant`);
+        }
+
+        // ❌ Après 10 tentatives sans succès
+        if (!employeeCode) {
+          throw new Error(
+            `❌ Impossible de générer un EMPLOYEE_CODE unique après ${maxAttempts} tentatives`,
+          );
+        }
+
+        this.employee_code = employeeCode;
         attempt++;
         const newEmployeeCode = await TokenManager.tokenGenerator(6);
 

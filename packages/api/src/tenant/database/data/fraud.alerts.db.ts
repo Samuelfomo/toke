@@ -53,6 +53,7 @@ export const FraudAlertsDbStructure = {
         min: 1,
         max: 2147483647,
       },
+      // onUpdate: 'CASCADE',
       onDelete: 'CASCADE',
       comment: 'Time entries',
     },

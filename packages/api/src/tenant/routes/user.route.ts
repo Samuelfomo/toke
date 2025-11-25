@@ -575,6 +575,41 @@ router.post('/manager', Ensure.post(), async (req: Request, res: Response) => {
   }
 });
 
+router.get('/email/:email', Ensure.get(), async (req: Request, res: Response) => {
+  try {
+    const validateEmail = UsersValidationUtils.validateEmail(req.params.email);
+    if (!validateEmail) {
+      return R.handleError(res, HttpStatus.BAD_REQUEST, {
+        code: USERS_CODES.EMAIL_INVALID,
+        message: USERS_ERRORS.EMAIL_INVALID,
+      });
+    }
+
+    const userObj = await User._load(req.params.email, false, true);
+    if (!userObj) {
+      return R.handleError(res, HttpStatus.NOT_FOUND, {
+        code: USERS_CODES.USER_NOT_FOUND,
+        message: USERS_ERRORS.NOT_FOUND,
+      });
+    }
+
+    // Récupération des rôles de l'utilisateur
+    const userRoles = await UserRole.getUserRoles(userObj.getId()!);
+
+    const user = {
+      ...userObj.toJSON(),
+      roles: userRoles.map((role) => role.toJSON()),
+    };
+
+    return R.handleSuccess(res, user);
+  } catch (error: any) {
+    return R.handleError(res, HttpStatus.INTERNAL_ERROR, {
+      code: USERS_CODES.RETRIEVAL_FAILED,
+      message: error.message,
+    });
+  }
+});
+
 // === RÉCUPÉRATION UTILISATEUR PAR GUID ===
 
 router.get('/:guid', Ensure.get(), async (req: Request, res: Response) => {
@@ -598,12 +633,12 @@ router.get('/:guid', Ensure.get(), async (req: Request, res: Response) => {
     // Récupération des rôles de l'utilisateur
     const userRoles = await UserRole.getUserRoles(userObj.getId()!);
 
-    const userWithRoles = {
+    const user = {
       ...userObj.toJSON(),
       roles: userRoles.map((role) => role.toJSON()),
     };
 
-    return R.handleSuccess(res, { user: userWithRoles });
+    return R.handleSuccess(res, user);
   } catch (error: any) {
     return R.handleError(res, HttpStatus.INTERNAL_ERROR, {
       code: USERS_CODES.RETRIEVAL_FAILED,

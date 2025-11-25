@@ -38,6 +38,8 @@ export const GlobalLicenseDbStructure = {
         isInt: true,
         min: 1,
       },
+      // onUpdate: 'CASCADE',
+      // onDelete: 'CASCADE',
       comment: 'Tenant',
     },
     license_type: {

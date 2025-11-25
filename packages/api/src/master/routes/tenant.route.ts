@@ -34,6 +34,9 @@ import EmailSender from '../../tools/send.email.service.js';
 import { Contact } from '../class/Contact.js';
 import CountryPhoneValidation from '../../tools/country.phone.validation.js';
 import AppConfig from '../class/AppConfig.js';
+import { UserAuthenticationService } from '../../tools/user.authentication.service.js';
+import GenerateOtp from '../../utils/generate.otp.js';
+import GenericCacheService from '../../tools/cache.data.service.js';
 
 const otpManager = new TenantOtpManager();
 
@@ -551,14 +554,208 @@ router.put('/:guid', Ensure.put(), async (req: Request, res: Response) => {
   }
 });
 
+// /**
+//  * PATCH /:guid/database - Définir la configuration de base de données d'un tenant
+//  */
+// router.patch('/:guid/database', Ensure.patch(), async (req: Request, res: Response) => {
+//   try {
+//     const validGuid = TN.validateTenantGuid(req.params.guid);
+//
+//     // Charger le tenant par GUID
+//     const tenantObj = await Tenant._load(validGuid, true);
+//     if (!tenantObj) {
+//       return R.handleError(res, HttpStatus.NOT_FOUND, {
+//         code: TENANT_CODES.TENANT_NOT_FOUND,
+//         message: TENANT_ERRORS.NOT_FOUND,
+//       });
+//     }
+//
+//     const validGlobalLicense = await GlobalLicense._load(tenantObj.getId()!, false, true);
+//
+//     if (!validGlobalLicense || validGlobalLicense.getLicenseStatus() !== LicenseStatus.ACTIVE) {
+//       return R.handleError(res, HttpStatus.NOT_FOUND, {
+//         code: GLOBAL_LICENSE_CODES.GLOBAL_LICENSE_NOT_FOUND,
+//         message: GLOBAL_LICENSE_ERRORS.NOT_FOUND,
+//       });
+//     }
+//
+//     const tenantConfig = await TenantConfig.generateTenantConfig(
+//       tenantObj.getName()!,
+//       tenantObj.getGuid()!,
+//     );
+//
+//     // Définir la configuration
+//     tenantObj.setDatabaseConfig(
+//       tenantConfig.database_name,
+//       tenantConfig.database_username,
+//       tenantConfig.database_password,
+//     );
+//     await tenantObj.defineDatabaseConfig();
+//
+//     const createDb = await ManageTenantDatabase.createDatabase(
+//       tenantObj.getDatabaseName()!,
+//       tenantObj.getDatabaseUsername()!,
+//       tenantObj.getDatabasePassword()!,
+//     );
+//     if (!createDb.success) {
+//       return R.handleError(res, HttpStatus.INTERNAL_ERROR, {
+//         code: 'db_creation_failed',
+//         message: createDb.error, // 💡 renvoie l’erreur PostgreSQL réelle
+//       });
+//     }
+//
+//     console.log(`✅ Configuration DB définie pour tenant GUID: ${validGuid}`);
+//
+//     return R.handleSuccess(res, {
+//       message: 'Database configuration defined successfully',
+//       tenant_guid: validGuid,
+//       // database_name: tenantConfig.database_name,
+//       // database_username: tenantConfig.database_username,
+//       // database_password: tenantConfig.database_password,
+//     });
+//   } catch (error: any) {
+//     console.error('⚠️ Erreur définition config DB:', error);
+//
+//     if (error.issues) {
+//       return R.handleError(res, HttpStatus.BAD_REQUEST, {
+//         code: TENANT_CODES.INVALID_GUID,
+//         message: TENANT_ERRORS.GUID_INVALID,
+//       });
+//     } else if (error.message.includes('already exists')) {
+//       return R.handleError(res, HttpStatus.CONFLICT, {
+//         code: TENANT_CODES.SUBDOMAIN_INVALID,
+//         message: error.message,
+//       });
+//     } else {
+//       return R.handleError(res, HttpStatus.INTERNAL_ERROR, {
+//         code: TENANT_CODES.UPDATE_FAILED,
+//         message: error.message,
+//       });
+//     }
+//   }
+// });
+//
+// router.patch('/:guid/subdomain', Ensure.patch(), async (req: Request, res: Response) => {
+//   try {
+//     const validGuid = TN.validateTenantGuid(req.params.guid);
+//
+//     const tenantObj = await Tenant._load(validGuid, true);
+//     if (!tenantObj) {
+//       return R.handleError(res, HttpStatus.NOT_FOUND, {
+//         code: TENANT_CODES.TENANT_NOT_FOUND,
+//         message: TENANT_ERRORS.NOT_FOUND,
+//       });
+//     }
+//     if (!tenantObj.getDatabaseName()) {
+//       return R.handleError(res, HttpStatus.NOT_FOUND, {
+//         code: TENANT_CODES.DATABASE_CONFIG_NOT_FOUND,
+//         message: TENANT_ERRORS.DATABASE_CONFIG_NOT_FOUND,
+//       });
+//     }
+//
+//     const { subdomain } = req.body;
+//
+//     // Validation avec les utilitaires existants
+//     if (!TenantValidationUtils.validateSubdomain(subdomain)) {
+//       return R.handleError(res, HttpStatus.BAD_REQUEST, {
+//         code: TENANT_CODES.SUBDOMAIN_INVALID,
+//         message: TENANT_ERRORS.SUBDOMAIN_INVALID,
+//       });
+//     }
+//
+//     const validGlobalLicense = await GlobalLicense._load(tenantObj.getId()!, false, true);
+//
+//     if (!validGlobalLicense || validGlobalLicense.getLicenseStatus() !== LicenseStatus.ACTIVE) {
+//       return R.handleError(res, HttpStatus.NOT_FOUND, {
+//         code: GLOBAL_LICENSE_CODES.GLOBAL_LICENSE_NOT_FOUND,
+//         message: GLOBAL_LICENSE_ERRORS.NOT_FOUND,
+//       });
+//     }
+//
+//     tenantObj.setSubdomain(subdomain);
+//
+//     await tenantObj.defineDbSubdomain();
+//
+//     await TenantCacheService.setTenantConfig(tenantObj.getSubdomain()!, {
+//       host: process.env.DB_HOST || tenantObj.getSubdomain()!,
+//       port: parseInt(process.env.DB_PORT ? process.env.DB_PORT : '5432'),
+//       username: tenantObj.getDatabaseUsername()!,
+//       password: tenantObj.getDatabasePassword()!,
+//       database: tenantObj.getDatabaseName()!,
+//       active: tenantObj.isActive(),
+//       reference: tenantObj.getGuid()!.toString(),
+//       name: tenantObj.getName()!,
+//       address: tenantObj.getBillingAddress()!,
+//       country: tenantObj.getCountryCode()!,
+//       email: tenantObj.getBillingEmail()!,
+//       phone: tenantObj.getBillingPhone()!,
+//       global_license: validGlobalLicense.getGuid()!.toString(),
+//     });
+//
+//     // 3. Récupérer la configuration du tenant depuis le cache
+//     const tenantConfig = await TenantCacheService.getTenantConfig(subdomain);
+//     if (!tenantConfig) {
+//       return R.handleError(res, HttpStatus.NOT_FOUND, {
+//         code: 'tenant_not_found',
+//         message: `Tenant parameter system not found`,
+//       });
+//     }
+//
+//     // 4. Définir le tenant actuel dans TenantManager
+//     TenantManager.setCurrentTenant(subdomain);
+//     // await ManageTenantDatabase.initializeDatabase()
+//
+//     // 5. Initialiser la connexion DB pour ce tenant
+//     const connection = await TenantManager.getConnectionForTenant(subdomain, {
+//       host: tenantConfig.host,
+//       port: tenantConfig.port,
+//       username: tenantConfig.username,
+//       password: tenantConfig.password,
+//       database: tenantConfig.database,
+//     });
+//
+//     // 2. Initialiser toutes les tables (statique)
+//     await TableInitializer.initialize(connection);
+//
+//     return R.handleSuccess(res, {
+//       message: 'Tenant subdomain has been set successfully',
+//       tenant_guid: validGuid,
+//       // subdomain: tenantObj.getSubdomain()!,
+//       // database_name: tenantObj.getDatabaseName()!,
+//       // database_username: tenantObj.getDatabaseUsername()!,
+//       // database_password: tenantObj.getDatabasePassword()!,
+//     });
+//   } catch (error: any) {
+//     console.error('⚠️ Erreur définition config DB:', error);
+//
+//     if (error.issues) {
+//       return R.handleError(res, HttpStatus.BAD_REQUEST, {
+//         code: TENANT_CODES.INVALID_GUID,
+//         message: TENANT_ERRORS.GUID_INVALID,
+//       });
+//     } else if (error.message.includes('already exists')) {
+//       return R.handleError(res, HttpStatus.CONFLICT, {
+//         code: TENANT_CODES.SUBDOMAIN_INVALID,
+//         message: error.message,
+//       });
+//     } else {
+//       return R.handleError(res, HttpStatus.INTERNAL_ERROR, {
+//         code: TENANT_CODES.UPDATE_FAILED,
+//         message: error.message,
+//         details: error,
+//       });
+//     }
+//   }
+// });
+
 /**
- * PATCH /:guid/database - Définir la configuration de base de données d'un tenant
+ * PATCH /:guid/subdomain - Définir la configuration de base de données ET le sous-domaine d'un tenant
  */
-router.patch('/:guid/database', Ensure.patch(), async (req: Request, res: Response) => {
+router.patch('/:guid/subdomain', Ensure.patch(), async (req: Request, res: Response) => {
   try {
     const validGuid = TN.validateTenantGuid(req.params.guid);
 
-    // Charger le tenant par GUID
+    // ========== ÉTAPE 1: Charger le tenant ==========
     const tenantObj = await Tenant._load(validGuid, true);
     if (!tenantObj) {
       return R.handleError(res, HttpStatus.NOT_FOUND, {
@@ -567,6 +764,7 @@ router.patch('/:guid/database', Ensure.patch(), async (req: Request, res: Respon
       });
     }
 
+    // ========== ÉTAPE 2: Vérifier la licence globale ==========
     const validGlobalLicense = await GlobalLicense._load(tenantObj.getId()!, false, true);
 
     if (!validGlobalLicense || validGlobalLicense.getLicenseStatus() !== LicenseStatus.ACTIVE) {
@@ -576,83 +774,41 @@ router.patch('/:guid/database', Ensure.patch(), async (req: Request, res: Respon
       });
     }
 
-    const tenantConfig = await TenantConfig.generateTenantConfig(
-      tenantObj.getName()!,
-      tenantObj.getGuid()!,
-    );
-
-    // Définir la configuration
-    tenantObj.setDatabaseConfig(
-      tenantConfig.database_name,
-      tenantConfig.database_username,
-      tenantConfig.database_password,
-    );
-    await tenantObj.defineDatabaseConfig();
-
-    const createDb = await ManageTenantDatabase.createDatabase(
-      tenantObj.getDatabaseName()!,
-      tenantObj.getDatabaseUsername()!,
-      tenantObj.getDatabasePassword()!,
-    );
-    if (!createDb.success) {
-      return R.handleError(res, HttpStatus.INTERNAL_ERROR, {
-        code: 'db_creation_failed',
-        message: createDb.error, // 💡 renvoie l’erreur PostgreSQL réelle
-      });
-    }
-
-    console.log(`✅ Configuration DB définie pour tenant GUID: ${validGuid}`);
-
-    return R.handleSuccess(res, {
-      message: 'Database configuration defined successfully',
-      tenant_guid: validGuid,
-      // database_name: tenantConfig.database_name,
-      // database_username: tenantConfig.database_username,
-      // database_password: tenantConfig.database_password,
-    });
-  } catch (error: any) {
-    console.error('⚠️ Erreur définition config DB:', error);
-
-    if (error.issues) {
-      return R.handleError(res, HttpStatus.BAD_REQUEST, {
-        code: TENANT_CODES.INVALID_GUID,
-        message: TENANT_ERRORS.GUID_INVALID,
-      });
-    } else if (error.message.includes('already exists')) {
-      return R.handleError(res, HttpStatus.CONFLICT, {
-        code: TENANT_CODES.SUBDOMAIN_INVALID,
-        message: error.message,
-      });
-    } else {
-      return R.handleError(res, HttpStatus.INTERNAL_ERROR, {
-        code: TENANT_CODES.UPDATE_FAILED,
-        message: error.message,
-      });
-    }
-  }
-});
-
-router.patch('/:guid/subdomain', Ensure.patch(), async (req: Request, res: Response) => {
-  try {
-    const validGuid = TN.validateTenantGuid(req.params.guid);
-
-    const tenantObj = await Tenant._load(validGuid, true);
-    if (!tenantObj) {
-      return R.handleError(res, HttpStatus.NOT_FOUND, {
-        code: TENANT_CODES.TENANT_NOT_FOUND,
-        message: TENANT_ERRORS.NOT_FOUND,
-      });
-    }
+    // ========== ÉTAPE 3: Configuration de la base de données (si pas déjà fait) ==========
     if (!tenantObj.getDatabaseName()) {
-      return R.handleError(res, HttpStatus.NOT_FOUND, {
-        code: TENANT_CODES.DATABASE_CONFIG_NOT_FOUND,
-        message: TENANT_ERRORS.DATABASE_CONFIG_NOT_FOUND,
-      });
+      const tenantConfig = await TenantConfig.generateTenantConfig(
+        tenantObj.getName()!,
+        tenantObj.getGuid()!,
+      );
+
+      // Définir la configuration
+      tenantObj.setDatabaseConfig(
+        tenantConfig.database_name,
+        tenantConfig.database_username,
+        tenantConfig.database_password,
+      );
+      await tenantObj.defineDatabaseConfig();
+
+      // Créer la base de données
+      const createDb = await ManageTenantDatabase.createDatabase(
+        tenantObj.getDatabaseName()!,
+        tenantObj.getDatabaseUsername()!,
+        tenantObj.getDatabasePassword()!,
+      );
+
+      if (!createDb.success) {
+        return R.handleError(res, HttpStatus.INTERNAL_ERROR, {
+          code: 'db_creation_failed',
+          message: createDb.error,
+        });
+      }
+
+      console.log(`✅ Configuration DB définie pour tenant GUID: ${validGuid}`);
     }
 
+    // ========== ÉTAPE 4: Validation et définition du sous-domaine ==========
     const { subdomain } = req.body;
 
-    // Validation avec les utilitaires existants
     if (!TenantValidationUtils.validateSubdomain(subdomain)) {
       return R.handleError(res, HttpStatus.BAD_REQUEST, {
         code: TENANT_CODES.SUBDOMAIN_INVALID,
@@ -660,19 +816,10 @@ router.patch('/:guid/subdomain', Ensure.patch(), async (req: Request, res: Respo
       });
     }
 
-    const validGlobalLicense = await GlobalLicense._load(tenantObj.getId()!, false, true);
-
-    if (!validGlobalLicense || validGlobalLicense.getLicenseStatus() !== LicenseStatus.ACTIVE) {
-      return R.handleError(res, HttpStatus.NOT_FOUND, {
-        code: GLOBAL_LICENSE_CODES.GLOBAL_LICENSE_NOT_FOUND,
-        message: GLOBAL_LICENSE_ERRORS.NOT_FOUND,
-      });
-    }
-
     tenantObj.setSubdomain(subdomain);
-
     await tenantObj.defineDbSubdomain();
 
+    // ========== ÉTAPE 5: Mise en cache de la configuration du tenant ==========
     await TenantCacheService.setTenantConfig(tenantObj.getSubdomain()!, {
       host: process.env.DB_HOST || tenantObj.getSubdomain()!,
       port: parseInt(process.env.DB_PORT ? process.env.DB_PORT : '5432'),
@@ -689,7 +836,7 @@ router.patch('/:guid/subdomain', Ensure.patch(), async (req: Request, res: Respo
       global_license: validGlobalLicense.getGuid()!.toString(),
     });
 
-    // 3. Récupérer la configuration du tenant depuis le cache
+    // ========== ÉTAPE 6: Récupérer la configuration du tenant depuis le cache ==========
     const tenantConfig = await TenantCacheService.getTenantConfig(subdomain);
     if (!tenantConfig) {
       return R.handleError(res, HttpStatus.NOT_FOUND, {
@@ -698,11 +845,9 @@ router.patch('/:guid/subdomain', Ensure.patch(), async (req: Request, res: Respo
       });
     }
 
-    // 4. Définir le tenant actuel dans TenantManager
+    // ========== ÉTAPE 7: Initialiser la connexion et les tables ==========
     TenantManager.setCurrentTenant(subdomain);
-    // await ManageTenantDatabase.initializeDatabase()
 
-    // 5. Initialiser la connexion DB pour ce tenant
     const connection = await TenantManager.getConnectionForTenant(subdomain, {
       host: tenantConfig.host,
       port: tenantConfig.port,
@@ -711,19 +856,16 @@ router.patch('/:guid/subdomain', Ensure.patch(), async (req: Request, res: Respo
       database: tenantConfig.database,
     });
 
-    // 2. Initialiser toutes les tables (statique)
     await TableInitializer.initialize(connection);
 
+    console.log(`✅ Sous-domaine "${subdomain}" défini pour tenant GUID: ${validGuid}`);
+
     return R.handleSuccess(res, {
-      message: 'Tenant subdomain has been set successfully',
+      message: 'Tenant database and subdomain configured successfully',
       tenant_guid: validGuid,
-      // subdomain: tenantObj.getSubdomain()!,
-      // database_name: tenantObj.getDatabaseName()!,
-      // database_username: tenantObj.getDatabaseUsername()!,
-      // database_password: tenantObj.getDatabasePassword()!,
     });
   } catch (error: any) {
-    console.error('⚠️ Erreur définition config DB:', error);
+    console.error('⚠️ Erreur configuration tenant:', error);
 
     if (error.issues) {
       return R.handleError(res, HttpStatus.BAD_REQUEST, {
@@ -1094,13 +1236,14 @@ router.post('/otp', Ensure.post(), async (req: Request, res: Response) => {
         }
       } else {
         // Numéro déjà existant → ne pas envoyer l’OTP
+        await OTPCacheService.deleteOTP(generateOtp);
         known_number = true;
       }
     } else if (email) {
       try {
         await EmailSender.sender(generateOtp, email);
       } catch (err) {
-        otp_send = true;
+        otp_send = false;
         await OTPCacheService.deleteOTP(generateOtp);
         return R.handleError(res, HttpStatus.INTERNAL_ERROR, {
           otp_send: otp_send,
@@ -1258,6 +1401,205 @@ router.delete('/otp/cleanup', async (req: Request, res: Response) => {
   } catch (error: any) {
     return R.handleError(res, HttpStatus.INTERNAL_ERROR, {
       code: 'internal_server_error',
+      message: error.message,
+    });
+  }
+});
+
+router.post('/auth', Ensure.post(), async (req: Request, res: Response) => {
+  try {
+    const { email, code } = req.body;
+
+    // Validations
+    if (!email) {
+      return R.handleError(res, HttpStatus.BAD_REQUEST, {
+        code: TENANT_CODES.BILLING_EMAIL_REQUIRED,
+        message: TENANT_ERRORS.BILLING_EMAIL_REQUIRED,
+      });
+    }
+    if (!code) {
+      return R.handleError(res, HttpStatus.BAD_REQUEST, {
+        code: TENANT_CODES.KEY_REQUIRED,
+        message: TENANT_ERRORS.KEY_REQUIRED,
+      });
+    }
+    if (!TenantValidationUtils.validateBillingAddress(email)) {
+      return R.handleError(res, HttpStatus.BAD_REQUEST, {
+        code: TENANT_CODES.BILLING_EMAIL_INVALID,
+        message: TENANT_ERRORS.BILLING_EMAIL_INVALID,
+      });
+    }
+    if (!TenantValidationUtils.validateKey(code)) {
+      return R.handleError(res, HttpStatus.BAD_REQUEST, {
+        code: TENANT_CODES.KEY_INVALID,
+        message: TENANT_ERRORS.KEY_INVALID,
+      });
+    }
+
+    // Charger le tenant
+    const tenantObj = await Tenant._load(code, false, true);
+    if (!tenantObj) {
+      return R.handleError(res, HttpStatus.UNAUTHORIZED, {
+        code: 'authentication_failed',
+        message: 'User authentication failed',
+      });
+    }
+
+    // Authentifier l'utilisateur
+    const result = await UserAuthenticationService.auth(email, tenantObj.getSubdomain()!);
+    if (result.status !== HttpStatus.SUCCESS) {
+      return R.handleError(res, HttpStatus.UNAUTHORIZED, {
+        code: 'authentication_failed',
+        message: 'User authentication failed',
+      });
+      // return R.handleError(res, result.status, result.response);
+    }
+
+    // Générer un OTP unique
+    let otp: string;
+    let isUnique = false;
+    let attempts = 0;
+    const maxAttempts = 10;
+
+    do {
+      otp = GenerateOtp.generateOTP(6);
+      // Vérifier si l'OTP existe déjà dans le cache
+      isUnique = !GenericCacheService.exists(otp);
+      attempts++;
+
+      if (attempts >= maxAttempts) {
+        return R.handleError(res, HttpStatus.INTERNAL_ERROR, {
+          code: 'otp_generation_failed',
+          message: 'Unable to generate unique OTP',
+        });
+      }
+    } while (!isUnique);
+
+    // Stocker les données dans le cache avec l'OTP comme référence
+    const dataToStore = {
+      user: result.response,
+      tenant: tenantObj.getSubdomain(),
+    };
+
+    const stored = await GenericCacheService.store(otp, dataToStore);
+
+    if (!stored) {
+      return R.handleError(res, HttpStatus.INTERNAL_ERROR, {
+        code: 'cache_storage_failed',
+        message: 'Failed to store OTP in cache',
+      });
+    }
+
+    // TODO: Envoyer l'OTP par email/SMS
+    console.log(`📧 OTP à envoyer à ${email}: ${otp}`);
+
+    return R.handleSuccess(res, {
+      message: 'OTP generated successfully',
+    });
+    // Générer l'OTP
+    // const generateOtp = await OTPCacheService.generateAndStoreData(email, {
+    //   user: result.response,
+    //   tenant: tenantObj.getSubdomain()!,
+    // });
+    // if (!generateOtp) {
+    //   return R.handleError(res, HttpStatus.BAD_REQUEST, {
+    //     code: 'otp_generator_failed',
+    //     message: 'An error has occurred during otp generation',
+    //   });
+    // }
+  } catch (error: any) {
+    return R.handleError(res, HttpStatus.INTERNAL_ERROR, {
+      code: TENANT_CODES.SEARCH_FAILED,
+      message: error.message,
+    });
+  }
+});
+
+/**
+ * Route pour vérifier l'OTP et récupérer les données
+ */
+router.post('/verify-otp', Ensure.post(), async (req: Request, res: Response) => {
+  try {
+    const { otp } = req.body;
+
+    if (!otp) {
+      return R.handleError(res, HttpStatus.BAD_REQUEST, {
+        code: 'otp_required',
+        message: 'OTP is required',
+      });
+    }
+
+    // Valider le format de l'OTP (6 chiffres)
+    if (!/^\d{6}$/.test(otp)) {
+      return R.handleError(res, HttpStatus.BAD_REQUEST, {
+        code: 'otp_invalid_format',
+        message: 'OTP must be 6 digits',
+      });
+    }
+
+    // Récupérer les données depuis le cache
+    const cachedData = await GenericCacheService.retrieve<{
+      email: string;
+      user: any;
+      tenant: string;
+    }>(otp);
+
+    if (!cachedData) {
+      return R.handleError(res, HttpStatus.UNAUTHORIZED, {
+        code: 'otp_invalid_or_expired',
+        message: 'OTP is invalid or has expired',
+      });
+    }
+
+    // Supprimer l'OTP du cache après utilisation (usage unique)
+    await GenericCacheService.delete(otp);
+
+    return R.handleSuccess(res, {
+      message: 'Authentication successful',
+      user: cachedData.user,
+      tenant: cachedData.tenant,
+    });
+  } catch (error: any) {
+    return R.handleError(res, HttpStatus.INTERNAL_ERROR, {
+      code: 'verification_failed',
+      message: error.message,
+    });
+  }
+});
+
+/**
+ * Route pour obtenir les statistiques du cache (admin uniquement)
+ */
+router.get('/cache/stats', Ensure.delete(), async (req: Request, res: Response) => {
+  try {
+    const stats = GenericCacheService.getStats();
+    const activeEntries = GenericCacheService.listActive();
+
+    return R.handleSuccess(res, {
+      stats,
+      activeEntries,
+    });
+  } catch (error: any) {
+    return R.handleError(res, HttpStatus.INTERNAL_ERROR, {
+      code: 'stats_failed',
+      message: error.message,
+    });
+  }
+});
+
+/**
+ * Route pour vider le cache (admin uniquement)
+ */
+router.delete('/cache/clear', Ensure.delete(), async (req: Request, res: Response) => {
+  try {
+    await GenericCacheService.clearCache();
+
+    return R.handleSuccess(res, {
+      message: 'Cache cleared successfully',
+    });
+  } catch (error: any) {
+    return R.handleError(res, HttpStatus.INTERNAL_ERROR, {
+      code: 'clear_cache_failed',
       message: error.message,
     });
   }

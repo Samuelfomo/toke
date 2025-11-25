@@ -37,6 +37,7 @@ export const QrCodeGenerationDbStructure = {
         min: 1,
         max: 2147483647,
       },
+      // onUpdate: 'CASCADE',
       onDelete: 'CASCADE',
       comment: 'Site ID',
     },
@@ -52,6 +53,7 @@ export const QrCodeGenerationDbStructure = {
         min: 1,
         max: 2147483647,
       },
+      // onUpdate: 'CASCADE',
       onDelete: 'CASCADE',
       comment: 'Manager who generated the QR code',
     },
@@ -116,6 +118,7 @@ export const QrCodeGenerationDbStructure = {
         name: 'idx_qr_code_created_at',
       },
       {
+        unique: true,
         fields: ['site', 'manager'],
         name: 'idx_qr_code_site_manager',
       },

@@ -43,6 +43,8 @@ export const PaymentTransactionDbStructure = {
         min: 1,
         max: 2147483647,
       },
+      // onUpdate: 'CASCADE',
+      // onDelete: 'CASCADE',
       comment: 'Billing cycle',
     },
     adjustment: {
@@ -57,6 +59,8 @@ export const PaymentTransactionDbStructure = {
         min: 1,
         max: 2147483647,
       },
+      // onUpdate: 'CASCADE',
+      // onDelete: 'CASCADE',
       comment: 'Adjustment',
     },
     amount_usd: {
@@ -90,6 +94,8 @@ export const PaymentTransactionDbStructure = {
         is: /^[A-Z]{3}$/,
         len: [3, 3],
       },
+      // onUpdate: 'CASCADE',
+      // onDelete: 'CASCADE',
       comment: 'Currency code',
     },
     exchange_rate_used: {
@@ -114,6 +120,8 @@ export const PaymentTransactionDbStructure = {
         min: 1,
         max: 2147483647,
       },
+      // onUpdate: 'CASCADE',
+      // onDelete: 'CASCADE',
       comment: 'Payment method',
     },
     payment_reference: {

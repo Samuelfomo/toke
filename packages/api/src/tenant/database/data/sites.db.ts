@@ -48,6 +48,7 @@ export const SitesDbStructure = {
         min: 1,
         max: 2147483647,
       },
+      // onUpdate: 'CASCADE',
       OnDelete: 'CASCADE',
       comment: 'Users',
     },
@@ -168,6 +169,8 @@ export const SitesDbStructure = {
         min: 1,
         max: 2147483647,
       },
+      // onUpdate: 'CASCADE',
+      // onDelete: 'CASCADE',
       comment: 'QR reference users',
     },
     qr_code_data: {

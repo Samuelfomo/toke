@@ -181,7 +181,7 @@ export default class QrCodeGeneration extends QrCodeGenerationModel {
   }
 
   isUnlimited(): boolean {
-    return !this.valid_from && !this.valid_to;
+    return !this.valid_to;
   }
 
   getRemainingDays(): number | null {
@@ -284,6 +284,7 @@ export default class QrCodeGeneration extends QrCodeGenerationModel {
       [RS.GUID]: this.guid,
       [RS.VALID_FROM]: this.valid_from,
       [RS.VALID_TO]: this.valid_to,
+      [RS.SHARED]: this.shared,
       is_expired: this.isExpired(),
       is_active: this.isActive(),
       is_unlimited: this.isUnlimited(),
@@ -313,6 +314,7 @@ export default class QrCodeGeneration extends QrCodeGenerationModel {
     this.valid_to = data.valid_to;
     this.created_at = data.created_at;
     this.updated_at = data.updated_at;
+    this.shared = data.shared;
     return this;
   }
 }

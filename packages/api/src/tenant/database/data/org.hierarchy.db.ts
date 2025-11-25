@@ -3,7 +3,6 @@ import { RelationshipType } from '@toke/shared';
 
 import { tableName } from '../../../utils/response.model.js';
 
-
 export const OrgHierarchyDbStructure = {
   tableName: tableName.ORG_HIERARCHY,
   attributes: {
@@ -40,6 +39,7 @@ export const OrgHierarchyDbStructure = {
         min: 1,
         max: 2147483647,
       },
+      // onUpdate: 'CASCADE',
       OnDelete: 'CASCADE',
       comment: 'User',
     },
@@ -55,6 +55,7 @@ export const OrgHierarchyDbStructure = {
         min: 1,
         max: 2147483647,
       },
+      // onUpdate: 'CASCADE',
       OnDelete: 'CASCADE',
       comment: 'User',
     },

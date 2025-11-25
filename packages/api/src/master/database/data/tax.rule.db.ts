@@ -39,6 +39,8 @@ export const TaxRuleDbStructure = {
         is: /^[A-Z]{2}$/,
         len: [2, 2],
       },
+      // onUpdate: 'CASCADE',
+      // onDelete: 'CASCADE',
       comment: 'ISO 3166-1 alpha-2 code (2 capital letters, e.g. CM)',
     },
     tax_type: {

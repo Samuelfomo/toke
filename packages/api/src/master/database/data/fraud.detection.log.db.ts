@@ -39,6 +39,8 @@ export const FraudDetectionLogDbStructure = {
         min: 1,
         max: 2147483647,
       },
+      // onUpdate: 'CASCADE',
+      // onDelete: 'CASCADE',
       comment: 'Tenant',
     },
     detection_type: {

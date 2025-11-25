@@ -156,6 +156,8 @@ export const LicenseAdjustmentDbStructure = {
         is: /^[A-Z]{3}$/,
         len: [3, 3],
       },
+      // onUpdate: 'CASCADE',
+      // onDelete: 'CASCADE',
       comment: 'Billing currency code (e.g. XAF, USD, EUR)',
     },
     exchange_rate_used: {

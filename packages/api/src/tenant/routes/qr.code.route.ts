@@ -22,6 +22,7 @@ import User from '../class/User.js';
 import QrCodeGeneration from '../class/QrCodeGeneration.js';
 import { TenantRevision } from '../../tools/revision.js';
 import { tableName } from '../../utils/response.model.js';
+import { DatabaseEncryption } from '../../utils/encryption';
 
 const router = Router();
 
@@ -98,7 +99,8 @@ router.post('/', Ensure.post(), async (req: Request, res: Response) => {
 
     const qrCodeObj = new QrCodeGeneration()
       .setSite(siteObj.getId()!)
-      .setManager(managerObj.getId()!);
+      .setManager(managerObj.getId()!)
+      .setShared(validatedData.shared);
 
     if (validatedData.valid_from) {
       qrCodeObj.setValidFrom(validatedData.valid_from);
@@ -109,7 +111,19 @@ router.post('/', Ensure.post(), async (req: Request, res: Response) => {
 
     await qrCodeObj.save();
 
-    return R.handleCreated(res, await qrCodeObj.toJSON());
+    const tenant = req.tenant;
+
+    const qrGenerator = DatabaseEncryption.encrypt(
+      {
+        qr_reference: qrCodeObj.getGuid(),
+        site: siteObj.getGuid(),
+      },
+      tenant.config.reference,
+    );
+
+    return R.handleCreated(res, {
+      site_qr_code: qrGenerator,
+    });
   } catch (error: any) {
     if (error.issues) {
       return R.handleError(res, HttpStatus.BAD_REQUEST, {
@@ -421,6 +435,45 @@ router.delete('/:guid', Ensure.delete(), async (req: Request, res: Response) => 
   } catch (error: any) {
     return R.handleError(res, HttpStatus.INTERNAL_ERROR, {
       code: QR_CODE_CODES.DELETE_FAILED,
+      message: error.message,
+    });
+  }
+});
+
+router.get('/:guid', Ensure.get(), async (req: Request, res: Response) => {
+  try {
+    const validGuid = validateQrCodeGuid(req.params.guid);
+    if (!validGuid.success) {
+      return R.handleError(res, HttpStatus.BAD_REQUEST, {
+        code: QR_CODE_CODES.INVALID_GUID,
+        message: QR_CODE_ERRORS.GUID_INVALID,
+      });
+    }
+
+    const qrCodeObj = await QrCodeGeneration._load(req.params.guid, true);
+    if (!qrCodeObj) {
+      return R.handleError(res, HttpStatus.NOT_FOUND, {
+        code: QR_CODE_CODES.QR_CODE_NOT_FOUND,
+        message: QR_CODE_ERRORS.NOT_FOUND,
+      });
+    }
+
+    const tenant = req.tenant;
+
+    const qrGenerator = DatabaseEncryption.encrypt(
+      {
+        qr_reference: qrCodeObj.getGuid(),
+        site: (await qrCodeObj.getSiteObj())?.getGuid(),
+      },
+      tenant.config.reference,
+    );
+
+    return R.handleSuccess(res, {
+      site_qr_code: qrGenerator,
+    });
+  } catch (error: any) {
+    return R.handleError(res, HttpStatus.INTERNAL_ERROR, {
+      code: SITES_CODES.RETRIEVAL_FAILED,
       message: error.message,
     });
   }
