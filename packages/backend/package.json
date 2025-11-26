@@ -1,0 +1,47 @@
+{
+  "name": "@toke/backend",
+  "version": "1.0.0",
+  "main": "index.js",
+  "type": "module",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "build": "npm run clean && tsc",
+    "dev": "tsx server.ts",
+    "dev:watch": "tsx watch --clear-screen=false server.ts",
+    "start:backend": "node dist/server.js",
+    "start:dev": "NODE_ENV=development npm run start:backend",
+    "start:prod": "NODE_ENV=production npm run start:backend",
+    "restart": "npm run stop && sleep 3 && npm run start:backend",
+    "restartDev": "npm run stop && sleep 3 && npm run start:dev",
+    "startAuto": "npm run build && pm2 start ecosystem.config.cjs --env production",
+    "startAuto:backend": "npm run build && pm2 start ecosystem.config.cjs --only api-backend --env production",
+    "startAutoDev": "npm run build && pm2 start ecosystem.config.cjs --env development",
+    "startAutoDev:backend": "npm run build && pm2 start ecosystem.config.cjs --only api-backend --env development",
+    "restartAuto": "npm run build && pm2 restart ecosystem.config.cjs --env production",
+    "restartAuto:backend": "npm run build && pm2 restart api-backend",
+    "reloadAuto": "pm2 reload all",
+    "reloadAuto:backend": "pm2 reload api-backend",
+    "stopAuto": "pm2 stop all",
+    "stopAuto:backend": "pm2 stop api-backend",
+    "deleteAuto": "pm2 delete all",
+    "deleteAuto:backend": "pm2 delete api-backend",
+    "logsAuto": "pm2 logs",
+    "logsAuto:backend": "pm2 logs api-backend",
+    "prod": "npm run build && NODE_ENV=production npm run start:backend",
+    "prod:bg": "npm run build && NODE_ENV=production nohup npm run start:backend > logs/app.log 2>&1 &"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/Samuelfomo/toke.git"
+  },
+  "private": true,
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "description": "",
+  "devDependencies": {
+  },
+  "dependencies": {
+  }
+}
+

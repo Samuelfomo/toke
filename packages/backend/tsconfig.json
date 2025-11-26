@@ -9,7 +9,7 @@
     "strict": true,
     "skipLibCheck": true,
     "outDir": "dist",
-    "rootDir": "src",
+    "rootDir": "./",
     "resolveJsonModule": true,
     "allowJs": false,
     // Ajouts pour une meilleure intégration avec ESLint

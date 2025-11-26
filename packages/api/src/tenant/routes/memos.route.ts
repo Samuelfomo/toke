@@ -1053,10 +1053,14 @@ router.patch('/:guid/submit', Ensure.patch(), async (req: Request, res: Response
 
     await memoObj.submitMemosForResponse();
 
-    return R.handleSuccess(res, {
-      message: 'Memo submitted for response successfully',
-      memo: await memoObj.toJSON(responseValue.MINIMAL),
-    });
+    return R.handleSuccess(
+      res,
+      await memoObj.toJSON(responseValue.MINIMAL),
+      //   {
+      //   message: 'Memo submitted for response successfully',
+      //   memo: await memoObj.toJSON(responseValue.MINIMAL),
+      // }
+    );
   } catch (error: any) {
     return R.handleError(res, HttpStatus.INTERNAL_ERROR, {
       code: MEMOS_CODES.SUBMISSION_FAILED,
@@ -1119,10 +1123,14 @@ router.patch('/:guid/respond', Ensure.patch(), async (req: Request, res: Respons
 
     await memoObj.submitMemosForValidation(response_user, attachmentValues);
 
-    return R.handleSuccess(res, {
-      message: MEMOS_MESSAGES.RESPONDED_SUCCESSFULLY,
-      memo: await memoObj.toJSON(responseValue.FULL),
-    });
+    return R.handleSuccess(
+      res,
+      await memoObj.toJSON(responseValue.FULL),
+      //   {
+      //   message: MEMOS_MESSAGES.RESPONDED_SUCCESSFULLY,
+      //   memo: await memoObj.toJSON(responseValue.FULL),
+      // }
+    );
   } catch (error: any) {
     return R.handleError(res, HttpStatus.INTERNAL_ERROR, {
       code: MEMOS_CODES.RESPONSE_FAILED,
@@ -1187,10 +1195,14 @@ router.patch('/:guid/validate', Ensure.patch(), async (req: Request, res: Respon
 
     await memoObj.approve(validatorObj.getId()!, validatedData.validator_comments);
 
-    return R.handleSuccess(res, {
-      message: MEMOS_MESSAGES.APPROVED_SUCCESSFULLY,
-      memo: await memoObj.toJSON(),
-    });
+    return R.handleSuccess(
+      res,
+      await memoObj.toJSON(),
+      //   {
+      //   message: MEMOS_MESSAGES.APPROVED_SUCCESSFULLY,
+      //   memo: await memoObj.toJSON(),
+      // }
+    );
   } catch (error: any) {
     if (error.issues) {
       return R.handleError(res, HttpStatus.BAD_REQUEST, {
@@ -1261,10 +1273,14 @@ router.patch('/:guid/reject', Ensure.patch(), async (req: Request, res: Response
 
     await memoObj.reject(validatorObj.getId()!, validatedData.validator_comments);
 
-    return R.handleSuccess(res, {
-      message: MEMOS_MESSAGES.REJECTED_SUCCESSFULLY,
-      memo: await memoObj.toJSON(),
-    });
+    return R.handleSuccess(
+      res,
+      await memoObj.toJSON(),
+      //   {
+      //   message: MEMOS_MESSAGES.REJECTED_SUCCESSFULLY,
+      //   memo: await memoObj.toJSON(),
+      // }
+    );
   } catch (error: any) {
     if (error.issues) {
       return R.handleError(res, HttpStatus.BAD_REQUEST, {

@@ -61,7 +61,7 @@ const baseTenantSchema = z.object({
     .min(TENANT_VALIDATION.KEY.MIN_LENGTH, TENANT_ERRORS.KEY_INVALID)
     .max(TENANT_VALIDATION.KEY.MAX_LENGTH, TENANT_ERRORS.KEY_INVALID)
     .regex(TENANT_VALIDATION.KEY.PATTERN, TENANT_ERRORS.KEY_INVALID)
-    .transform((val) => val.trim().toLowerCase())
+    .transform((val) => val.trim())
     .optional(),
 
   country_code: z

@@ -18,7 +18,7 @@ export const TENANT_VALIDATION = {
   KEY: {
     MIN_LENGTH: 2,
     MAX_LENGTH: 100,
-    PATTERN: /^[a-z0-9_-]{2,100}$/,
+    PATTERN: /^[a-zA-Z0-9_-]{2,100}$/,
   },
   COUNTRY_CODE: {
     MIN_LENGTH: 2,
@@ -158,7 +158,7 @@ export const TENANT_ERRORS = {
   SHORT_NAME_INVALID: `Short name must be between ${TENANT_VALIDATION.SHORT_NAME.MIN_LENGTH} and ${TENANT_VALIDATION.SHORT_NAME.MAX_LENGTH} characters`,
 
   KEY_REQUIRED: `${TENANT_LABEL} key is required`,
-  KEY_INVALID: `Key must be between ${TENANT_VALIDATION.KEY.MIN_LENGTH} and ${TENANT_VALIDATION.KEY.MAX_LENGTH} lowercase alphanumeric characters with underscores or hyphens`,
+  KEY_INVALID: `Key must be between ${TENANT_VALIDATION.KEY.MIN_LENGTH} and ${TENANT_VALIDATION.KEY.MAX_LENGTH} alphanumeric characters with underscores or hyphens`,
 
   COUNTRY_CODE_REQUIRED: `${TENANT_LABEL} country code is required`,
   COUNTRY_CODE_INVALID: 'Country code must be 2 uppercase letters (ISO 3166-1)',

@@ -10,12 +10,18 @@ dotenv.config();
 /**
  * Crée un client Axios avec baseURL paramétrable
  * @param customBaseURL (optionnel) – URL de base, par défaut process.env.SITE_URL
+ * @param secret
+ * @param key
  */
-export function createApiClient(customBaseURL?: string): AxiosInstance {
+export function createApiClient(
+  customBaseURL?: string,
+  secret: string = process.env.API_SECRET!,
+  key: string = process.env.API_KEY!,
+): AxiosInstance {
   // const baseURL = customBaseURL ?? process.env.SITE_URL!;
   const baseURL = customBaseURL;
 
-  const signature = ApiKeyManager.generate(process.env.API_SECRET!, process.env.API_KEY!);
+  const signature = ApiKeyManager.generate(secret, key);
 
   return axios.create({
     baseURL,

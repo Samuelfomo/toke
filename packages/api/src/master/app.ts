@@ -135,6 +135,29 @@ export default class App {
       this.app.use(cors());
     }
 
+    // if (this.config.cors) {
+    //   // ✅ Plus tard ces URLs viendront de la base
+    //   const allowedOrigins = ['https://my.toke.cm', 'https://admin.toke.cm'];
+    //
+    //   this.app.use(
+    //     cors({
+    //       origin: (origin, callback) => {
+    //         if (!origin || allowedOrigins.includes(origin)) {
+    //           callback(null, true);
+    //         } else {
+    //           callback(new Error('Not allowed by CORS'));
+    //         }
+    //       },
+    //       credentials: true,
+    //       // methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
+    //       // allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With'],
+    //     }),
+    //   );
+    //
+    //   // // ✅ OBLIGATOIRE POUR AXIOS
+    //   // this.app.options('/*', cors());
+    // }
+
     // Body parsing
     this.app.use(express.json({ limit: '10mb' }));
     this.app.use(express.urlencoded({ extended: true }));

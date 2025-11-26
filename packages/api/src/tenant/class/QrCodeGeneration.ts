@@ -170,11 +170,15 @@ export default class QrCodeGeneration extends QrCodeGenerationModel {
     if (!this.valid_to) {
       return false;
     }
-    return new Date() > this.valid_to;
+    return (
+      new Date(new Date().toLocaleString('en-US', { timeZone: 'Africa/Douala' })) > this.valid_to
+    );
+    // return new Date() > this.valid_to;
   }
 
   isActive(): boolean {
-    const now = new Date();
+    const now = new Date(new Date().toLocaleString('en-US', { timeZone: 'Africa/Douala' }));
+    // const now = new Date();
     const afterStart = !this.valid_from || now >= this.valid_from;
     const beforeEnd = !this.valid_to || now <= this.valid_to;
     return afterStart && beforeEnd;
@@ -188,7 +192,8 @@ export default class QrCodeGeneration extends QrCodeGenerationModel {
     if (!this.valid_to) {
       return null;
     }
-    const now = new Date();
+    const now = new Date(new Date().toLocaleString('en-US', { timeZone: 'Africa/Douala' }));
+    // const now = new Date();
     const diff = this.valid_to.getTime() - now.getTime();
     return Math.ceil(diff / (1000 * 60 * 60 * 24));
   }

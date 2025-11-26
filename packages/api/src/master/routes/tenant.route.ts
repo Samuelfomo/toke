@@ -1220,13 +1220,12 @@ router.post('/otp', Ensure.post(), async (req: Request, res: Response) => {
 
       const contactObj = await Contact._load(value, false, true);
 
+      otp_send = false;
       if (!contactObj) {
         // Numéro inconnu : on envoie l’OTP
         known_number = false;
         const result = await WapService.sendOtp(generateOtp, phone, country);
         if (result.status !== HttpStatus.SUCCESS) {
-          otp_send = false;
-
           await OTPCacheService.deleteOTP(generateOtp);
           return R.handleError(res, result.status, {
             otp_send: otp_send,
@@ -1238,6 +1237,10 @@ router.post('/otp', Ensure.post(), async (req: Request, res: Response) => {
         // Numéro déjà existant → ne pas envoyer l’OTP
         await OTPCacheService.deleteOTP(generateOtp);
         known_number = true;
+        return R.handleError(res, HttpStatus.SUCCESS, {
+          otp_send: otp_send,
+          known_number: known_number,
+        });
       }
     } else if (email) {
       try {
@@ -1259,8 +1262,9 @@ router.post('/otp', Ensure.post(), async (req: Request, res: Response) => {
     }
 
     // === RÉPONSE ===
+    otp_send = true;
     const response: any = {
-      otp_send: true,
+      otp_send: otp_send,
     };
 
     if (phone) {
@@ -1423,7 +1427,7 @@ router.post('/auth', Ensure.post(), async (req: Request, res: Response) => {
         message: TENANT_ERRORS.KEY_REQUIRED,
       });
     }
-    if (!TenantValidationUtils.validateBillingAddress(email)) {
+    if (!TenantValidationUtils.validateBillingEmail(email)) {
       return R.handleError(res, HttpStatus.BAD_REQUEST, {
         code: TENANT_CODES.BILLING_EMAIL_INVALID,
         message: TENANT_ERRORS.BILLING_EMAIL_INVALID,
@@ -1490,23 +1494,21 @@ router.post('/auth', Ensure.post(), async (req: Request, res: Response) => {
       });
     }
 
-    // TODO: Envoyer l'OTP par email/SMS
+    // Envoie d'otp via email de l'utilisateur
     console.log(`📧 OTP à envoyer à ${email}: ${otp}`);
+    try {
+      await EmailSender.sender(otp, email);
+    } catch (err) {
+      await GenericCacheService.delete(otp);
+      return R.handleError(res, HttpStatus.INTERNAL_ERROR, {
+        code: 'email_sending_failed',
+        message: (err as Error).message,
+      });
+    }
 
     return R.handleSuccess(res, {
-      message: 'OTP generated successfully',
+      message: 'OTP generated and sent successfully via email',
     });
-    // Générer l'OTP
-    // const generateOtp = await OTPCacheService.generateAndStoreData(email, {
-    //   user: result.response,
-    //   tenant: tenantObj.getSubdomain()!,
-    // });
-    // if (!generateOtp) {
-    //   return R.handleError(res, HttpStatus.BAD_REQUEST, {
-    //     code: 'otp_generator_failed',
-    //     message: 'An error has occurred during otp generation',
-    //   });
-    // }
   } catch (error: any) {
     return R.handleError(res, HttpStatus.INTERNAL_ERROR, {
       code: TENANT_CODES.SEARCH_FAILED,
@@ -1518,9 +1520,9 @@ router.post('/auth', Ensure.post(), async (req: Request, res: Response) => {
 /**
  * Route pour vérifier l'OTP et récupérer les données
  */
-router.post('/verify-otp', Ensure.post(), async (req: Request, res: Response) => {
+router.get('/verify-otp/:otp', Ensure.get(), async (req: Request, res: Response) => {
   try {
-    const { otp } = req.body;
+    const { otp } = req.params;
 
     if (!otp) {
       return R.handleError(res, HttpStatus.BAD_REQUEST, {
@@ -1570,7 +1572,7 @@ router.post('/verify-otp', Ensure.post(), async (req: Request, res: Response) =>
 /**
  * Route pour obtenir les statistiques du cache (admin uniquement)
  */
-router.get('/cache/stats', Ensure.delete(), async (req: Request, res: Response) => {
+router.get('/cache/stats', Ensure.get(), async (req: Request, res: Response) => {
   try {
     const stats = GenericCacheService.getStats();
     const activeEntries = GenericCacheService.listActive();

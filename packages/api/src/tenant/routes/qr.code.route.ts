@@ -22,7 +22,7 @@ import User from '../class/User.js';
 import QrCodeGeneration from '../class/QrCodeGeneration.js';
 import { TenantRevision } from '../../tools/revision.js';
 import { tableName } from '../../utils/response.model.js';
-import { DatabaseEncryption } from '../../utils/encryption';
+import { DatabaseEncryption } from '../../utils/encryption.js';
 
 const router = Router();
 
@@ -123,6 +123,7 @@ router.post('/', Ensure.post(), async (req: Request, res: Response) => {
 
     return R.handleCreated(res, {
       site_qr_code: qrGenerator,
+      qr_code: await qrCodeObj.toJSON(),
     });
   } catch (error: any) {
     if (error.issues) {
@@ -210,7 +211,22 @@ router.put('/:guid', Ensure.put(), async (req: Request, res: Response) => {
 
     await qrCodeObj.save();
 
-    return R.handleSuccess(res, await qrCodeObj.toJSON());
+    const tenant = req.tenant;
+
+    const qrGenerator = DatabaseEncryption.encrypt(
+      {
+        qr_reference: qrCodeObj.getGuid(),
+        site: (await qrCodeObj.getSiteObj())?.getGuid(),
+      },
+      tenant.config.reference,
+    );
+
+    return R.handleCreated(res, {
+      site_qr_code: qrGenerator,
+      qr_code: await qrCodeObj.toJSON(),
+    });
+
+    // return R.handleSuccess(res, await qrCodeObj.toJSON());
   } catch (error: any) {
     if (error.issues) {
       return R.handleError(res, HttpStatus.BAD_REQUEST, {
