@@ -1506,7 +1506,7 @@ router.post('/auth', Ensure.post(), async (req: Request, res: Response) => {
       });
     }
 
-    return R.handleSuccess(res, {
+    return R.handleCreated(res, {
       message: 'OTP generated and sent successfully via email',
     });
   } catch (error: any) {

@@ -6,6 +6,7 @@
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
     "build": "npm run clean && tsc",
+    "clean": "rimraf dist server.pid logs/*.log 2>/dev/null || true",
     "dev": "tsx server.ts",
     "dev:watch": "tsx watch --clear-screen=false server.ts",
     "start:backend": "node dist/server.js",

@@ -4,6 +4,8 @@ import dotenv from 'dotenv';
 import express from 'express';
 import cors from 'cors';
 
+import tenantRoute from './src/routes/tenant.route.js';
+
 dotenv.config();
 
 // dotenv.config({ path: './.env' });
@@ -149,6 +151,8 @@ export default class App {
     });
 
     // TODO: Ajouter les routes métier ici
+
+    this.app.use('/tenant', tenantRoute);
 
     // Route 404
     this.app.use((req, res) => {
