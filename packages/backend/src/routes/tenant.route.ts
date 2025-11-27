@@ -41,7 +41,10 @@ router.post('/auth', Ensure.post(), async (req: Request, res: Response) => {
       code,
     };
 
+    console.log(data);
+
     const result: any = await TenantService.authenticate(data);
+    console.log(result);
 
     if (result.status !== HttpStatus.CREATED) {
       return R.handleError(res, result.status, result.response.error);
@@ -79,7 +82,7 @@ router.get('/verify-otp/:otp', Ensure.get(), async (req: Request, res: Response)
     if (result.status !== HttpStatus.SUCCESS) {
       return R.handleError(res, result.status, result.response.error);
     }
-    return R.handleCreated(res, result.response);
+    return R.handleSuccess(res, result.response);
   } catch (error: any) {
     return R.handleError(res, HttpStatus.INTERNAL_ERROR, {
       code: 'verification_failed',

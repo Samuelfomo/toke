@@ -27,7 +27,7 @@ export function createApiClient(
     baseURL,
     headers: {
       'Content-Type': 'application/json',
-      'X-Api-Key': process.env.API_KEY,
+      'X-Api-Key': key,
       'X-Api-Timestamp': Math.floor(Date.now() / 1000).toString(),
       'X-Api-Signature': signature,
     },

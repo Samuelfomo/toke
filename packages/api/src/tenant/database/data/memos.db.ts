@@ -1,5 +1,5 @@
 import { DataTypes, ModelAttributes, ModelOptions } from 'sequelize';
-import { MemoStatus, MemoType } from '@toke/shared';
+import { MemoStatus, MemoType, MessageType } from '@toke/shared';
 
 import { tableName } from '../../../utils/response.model.js';
 
@@ -107,22 +107,6 @@ export const MemosDbStructure = {
       },
       comment: 'Memo title',
     },
-    description: {
-      type: DataTypes.TEXT,
-      allowNull: true,
-      validate: {
-        len: [10, 255],
-      },
-      comment: 'Context/description from author (manager or system)',
-    },
-    response_user: {
-      type: DataTypes.TEXT,
-      allowNull: true,
-      validate: {
-        len: [10, Infinity],
-      },
-      comment: 'Response from target user (employee)',
-    },
     incident_datetime: {
       type: DataTypes.DATE,
       allowNull: true,
@@ -162,82 +146,6 @@ export const MemosDbStructure = {
       },
       comment: 'Affected entries IDs',
     },
-    // attachments: {
-    //   type: DataTypes.JSONB,
-    //   allowNull: true,
-    //   validate: {
-    //     isArrayOfUrls(value: any) {
-    //       if (value == null) return; // autorise null
-    //       if (!Array.isArray(value)) {
-    //         throw new Error('Attachments must be an array');
-    //       }
-    //       for (const url of value) {
-    //         if (typeof url !== 'string' || !/^https?:\/\/.+/.test(url)) {
-    //           throw new Error(`Invalid URL in attachments: ${url}`);
-    //         }
-    //       }
-    //     },
-    //   },
-    //   comment: 'Memo attachments (signed URLs)',
-    // },
-    attachments: {
-      type: DataTypes.JSONB,
-      allowNull: true,
-      validate: {
-        isArrayOfObjectsWithTitleAndLink(value: any) {
-          if (value == null) return; // autorise null
-
-          if (!Array.isArray(value)) {
-            throw new Error('Attachments must be an array');
-          }
-
-          for (const item of value) {
-            if (typeof item !== 'object' || Array.isArray(item)) {
-              throw new Error('Each attachment must be an object');
-            }
-
-            // title optionnel
-            if (item.title && typeof item.title !== 'string') {
-              throw new Error(`Invalid title: ${item.title}`);
-            }
-
-            // link obligatoire
-            if (!item.link) {
-              throw new Error("Each attachment must include a 'link' field");
-            }
-
-            if (typeof item.link !== 'string' || !/^https?:\/\/.+/.test(item.link)) {
-              throw new Error(`Invalid URL in attachment: ${item.link}`);
-            }
-          }
-        },
-      },
-      comment: 'Memo attachments (objects with title + signed URL link)',
-    },
-    validator_comments: {
-      type: DataTypes.TEXT,
-      allowNull: true,
-      validate: {
-        len: [10, 65535],
-      },
-      comment: 'Validator comments',
-    },
-    processed_at: {
-      type: DataTypes.DATE,
-      allowNull: true,
-      validate: {
-        isDate: true,
-      },
-      comment: 'Processed date',
-    },
-    responded_at: {
-      type: DataTypes.DATE,
-      allowNull: true,
-      validate: {
-        isDate: true,
-      },
-      comment: 'Date when user responded to the memo',
-    },
     auto_generated: {
       type: DataTypes.BOOLEAN,
       allowNull: false,
@@ -255,6 +163,77 @@ export const MemosDbStructure = {
       },
       comment: 'Additional details from system (for anomalies)',
     },
+    memo_content: {
+      type: DataTypes.JSONB,
+      allowNull: true,
+      defaultValue: [],
+      comment: 'Historique des messages (timeline)',
+      validate: {
+        isValidContent(value: any) {
+          if (!Array.isArray(value)) {
+            throw new Error('memo_content must be an array');
+          }
+          for (const item of value) {
+            // Check required fields
+            if (!item.created_at || !item.user || !item.message) {
+              throw new Error('Each content item must have: created_at, user, message');
+            }
+            // Check message structure
+            if (typeof item.message !== 'object' || !item.message.type || !item.message.content) {
+              throw new Error('Message must be a valid object with type and content');
+            }
+            // Check message.type is valid enum value
+            if (!Object.values(MessageType).includes(item.message.type)) {
+              throw new Error(`Invalid message type: ${item.message.type}`);
+            }
+            // Check content type
+            const isValidContent =
+              typeof item.message.content === 'string' ||
+              (Array.isArray(item.message.content) &&
+                item.message.content.every((c: any) => typeof c === 'string'));
+
+            if (!isValidContent) {
+              throw new Error('Message content must be a string or array of strings');
+            }
+
+            // Validate URL if type is LINK
+            if (item.message.type === MessageType.LINK) {
+              const urls = Array.isArray(item.message.content)
+                ? item.message.content
+                : [item.message.content];
+
+              for (const url of urls) {
+                if (!/^https?:\/\/.+/.test(url)) {
+                  throw new Error(`Invalid URL: ${url}`);
+                }
+              }
+            }
+          }
+        },
+      },
+    },
+
+    // attachments: {
+    //   type: DataTypes.JSONB,
+    //   allowNull: true,
+    //   defaultValue: [],
+    //   validate: {
+    //     isValidAttachments(value: any) {
+    //       if (!Array.isArray(value)) {
+    //         throw new Error('Attachments must be an array');
+    //       }
+    //       for (const item of value) {
+    //         if (!item.date || !item.user || !item.link) {
+    //           throw new Error('Each attachment must have: date, user, link');
+    //         }
+    //         if (!/^https?:\/\/.+/.test(item.link)) {
+    //           throw new Error(`Invalid URL: ${item.link}`);
+    //         }
+    //       }
+    //     },
+    //   },
+    //   comment: 'Attachments with metadata (date, user, link, title?)',
+    // },
   } as ModelAttributes,
   options: {
     tableName: tableName.MEMOS,
@@ -294,14 +273,6 @@ export const MemosDbStructure = {
         name: 'idx_memo_title',
       },
       {
-        fields: ['description'],
-        name: 'idx_memo_description',
-      },
-      {
-        fields: ['response_user'],
-        name: 'idx_memo_response_user',
-      },
-      {
         fields: ['incident_datetime'],
         name: 'idx_memo_incident_datetime',
       },
@@ -313,22 +284,10 @@ export const MemosDbStructure = {
         fields: ['affected_entries'],
         name: 'idx_memo_affected_entries',
       },
-      {
-        fields: ['attachments'],
-        name: 'idx_memo_attachments',
-      },
-      {
-        fields: ['validator_comments'],
-        name: 'idx_memo_validator_comments',
-      },
-      {
-        fields: ['processed_at'],
-        name: 'idx_memo_processed_at',
-      },
-      {
-        fields: ['responded_at'],
-        name: 'idx_memo_responded_at',
-      },
+      // {
+      //   fields: ['attachments'],
+      //   name: 'idx_memo_attachments',
+      // },
       {
         fields: ['auto_generated'],
         name: 'idx_memo_auto_generated',
@@ -356,6 +315,10 @@ export const MemosDbStructure = {
       {
         fields: ['author_user', 'memo_type'],
         name: 'idx_memo_author_type',
+      },
+      {
+        fields: ['memo_content'],
+        name: 'idx_memo_content',
       },
     ],
   } as ModelOptions,

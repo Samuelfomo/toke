@@ -17,6 +17,13 @@ export enum MemoStatus {
   REJECTED = 'rejected',
 }
 
+export enum MessageType {
+  LINK = 'link',
+  TEXT = 'text',
+}
+
+export type ViewMessage = (typeof MessageType)[keyof typeof MessageType];
+
 export const MEMOS_VALIDATION = {
   GUID: {
     MIN_LENGTH: 1,

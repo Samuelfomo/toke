@@ -1,5 +1,6 @@
 import {
   Attachment,
+  MemoContent,
   MEMOS_DEFAULTS,
   MEMOS_ERRORS,
   MemoStatus,
@@ -22,17 +23,12 @@ export default class MemosModel extends BaseModel {
     memo_type: 'memo_type',
     memo_status: 'memo_status',
     title: 'title',
-    description: 'description',
-    response_user: 'response_user',
+    memo_content: 'memo_content',
     auto_generated: 'auto_generated',
     details: 'details',
     incident_datetime: 'incident_datetime',
     affected_session: 'affected_session',
     affected_entries: 'affected_entries',
-    attachments: 'attachments',
-    validator_comments: 'validator_comments',
-    processed_at: 'processed_at',
-    responded_at: 'responded_at',
     created_at: 'created_at',
     updated_at: 'updated_at',
   } as const;
@@ -45,17 +41,12 @@ export default class MemosModel extends BaseModel {
   protected memo_type?: MemoType;
   protected memo_status?: MemoStatus;
   protected title?: string;
-  protected description?: string;
-  protected response_user?: string;
+  protected memo_content?: MemoContent[];
   protected auto_generated?: boolean;
   protected details?: string;
   protected incident_datetime?: Date;
   protected affected_session?: number;
   protected affected_entries?: number[];
-  protected attachments?: Attachment[];
-  protected validator_comments?: string;
-  protected processed_at?: Date;
-  protected responded_at?: Date;
   protected created_at?: Date;
   protected updated_at?: Date;
 
@@ -155,7 +146,7 @@ export default class MemosModel extends BaseModel {
       {
         [this.db.target_user]: target_user,
         [this.db.memo_status]: MemoStatus.SUBMITTED,
-        [this.db.response_user]: null,
+        // [this.db.response_user]: null,
       },
       paginationOptions,
     );
@@ -170,9 +161,9 @@ export default class MemosModel extends BaseModel {
       this.db.tableName,
       {
         [this.db.memo_status]: MemoStatus.PENDING,
-        [this.db.response_user]: {
-          [Op.ne]: null,
-        },
+        // [this.db.response_user]: {
+        //   [Op.ne]: null,
+        // },
         ...conditions,
       },
       paginationOptions,
@@ -645,7 +636,6 @@ export default class MemosModel extends BaseModel {
       this.count(this.db.tableName, {
         ...filters,
         [this.db.memo_status]: MemoStatus.PENDING,
-        [this.db.response_user]: null,
       }),
       this.count(this.db.tableName, {
         ...filters,
@@ -701,17 +691,12 @@ export default class MemosModel extends BaseModel {
       [this.db.memo_type]: this.memo_type,
       [this.db.memo_status]: this.memo_status || MEMOS_DEFAULTS.MEMO_STATUS,
       [this.db.title]: this.title,
-      [this.db.description]: this.description,
-      [this.db.response_user]: this.response_user,
+      [this.db.memo_content]: this.memo_content,
       [this.db.auto_generated]: this.auto_generated || MEMOS_DEFAULTS.AUTO_GENERATED,
       [this.db.details]: this.details,
       [this.db.incident_datetime]: this.incident_datetime,
       [this.db.affected_session]: this.affected_session,
       [this.db.affected_entries]: this.affected_entries,
-      [this.db.attachments]: this.attachments,
-      [this.db.validator_comments]: this.validator_comments,
-      [this.db.processed_at]: this.processed_at,
-      [this.db.responded_at]: this.responded_at,
     });
 
     if (!lastID) {
@@ -731,15 +716,9 @@ export default class MemosModel extends BaseModel {
 
     if (this.memo_status !== undefined) updateData[this.db.memo_status] = this.memo_status;
     if (this.title !== undefined) updateData[this.db.title] = this.title;
-    if (this.description !== undefined) updateData[this.db.description] = this.description;
-    if (this.response_user !== undefined) updateData[this.db.response_user] = this.response_user;
+    if (this.memo_content !== undefined) updateData[this.db.memo_content] = this.memo_content;
     if (this.details !== undefined) updateData[this.db.details] = this.details;
     if (this.validator_user !== undefined) updateData[this.db.validator_user] = this.validator_user;
-    if (this.validator_comments !== undefined)
-      updateData[this.db.validator_comments] = this.validator_comments;
-    if (this.processed_at !== undefined) updateData[this.db.processed_at] = this.processed_at;
-    if (this.responded_at !== undefined) updateData[this.db.responded_at] = this.responded_at;
-    if (this.attachments !== undefined) updateData[this.db.attachments] = this.attachments;
 
     const updated = await this.updateOne(this.db.tableName, updateData, { [this.db.id]: this.id });
 
@@ -759,665 +738,3 @@ export default class MemosModel extends BaseModel {
     return await this.findAll(this.db.tableName, conditions, paginationOptions);
   }
 }
-
-// import { MEMOS_ERRORS, MemoStatus, MemosValidationUtils, MemoType } from '@toke/shared';
-// import { Op } from 'sequelize';
-//
-// import BaseModel from '../database/db.base.js';
-// import { tableName } from '../../utils/response.model.js';
-//
-// export default class MemosModel extends BaseModel {
-//   public readonly db = {
-//     tableName: tableName.MEMOS,
-//     id: 'id',
-//     guid: 'guid',
-//     author_user: 'author_user',
-//     target_user: 'target_user',
-//     validator_user: 'validator_user',
-//     memo_type: 'memo_type',
-//     memo_status: 'memo_status',
-//     title: 'title',
-//     description: 'description',
-//     response_user: 'response_user',
-//     incident_datetime: 'incident_datetime',
-//     affected_session: 'affected_session',
-//     affected_entries: 'affected_entries',
-//     attachments: 'attachments',
-//     validator_comments: 'validator_comments',
-//     processed_at: 'processed_at',
-//     responded_at: 'responded_at',
-//     auto_generated: 'auto_generated',
-//     details: 'details',
-//     created_at: 'created_at',
-//     updated_at: 'updated_at',
-//   } as const;
-//
-//   protected id?: number;
-//   protected guid?: string;
-//   protected author_user?: number;
-//   protected target_user?: number;
-//   protected validator_user?: number;
-//   protected memo_type?: MemoType;
-//   protected memo_status?: MemoStatus;
-//   protected title?: string;
-//   protected description?: string;
-//   protected response_user?: string;
-//   protected details?: string;
-//   protected incident_datetime?: Date;
-//   protected affected_session?: number;
-//   protected affected_entries?: number[];
-//   protected attachments?: Record<string, any>;
-//   protected validator_comments?: string;
-//   protected processed_at?: Date;
-//   protected auto_generated?: boolean;
-//   protected responded_at?: Date;
-//   protected created_at?: Date;
-//   protected updated_at?: Date;
-//
-//   protected constructor() {
-//     super();
-//   }
-//
-//   // === 1. RECHERCHES DE BASE ===
-//
-//   protected async find(id: number): Promise<any> {
-//     return await this.findOne(this.db.tableName, { [this.db.id]: id });
-//   }
-//
-//   protected async findByGuid(guid: string): Promise<any> {
-//     return await this.findOne(this.db.tableName, { [this.db.guid]: guid });
-//   }
-//
-//   protected async listAllByAuthor(
-//     author_user: number,
-//     paginationOptions: { offset?: number; limit?: number } = {},
-//   ): Promise<any[]> {
-//     return await this.findAll(
-//       this.db.tableName,
-//       { [this.db.author_user]: author_user },
-//       paginationOptions,
-//     );
-//   }
-//
-//   protected async listAllByTarget(
-//     target_user: number,
-//     paginationOptions: { offset?: number; limit?: number } = {},
-//   ): Promise<any[]> {
-//     return await this.findAll(
-//       this.db.tableName,
-//       { [this.db.target_user]: target_user },
-//       paginationOptions,
-//     );
-//   }
-//
-//   protected async listAllByValidator(
-//     validator_user: number,
-//     paginationOptions: { offset?: number; limit?: number } = {},
-//   ): Promise<any[]> {
-//     return await this.findAll(
-//       this.db.tableName,
-//       { [this.db.validator_user]: validator_user },
-//       paginationOptions,
-//     );
-//   }
-//
-//   protected async listAllByAutoGenerated(
-//     auto_generated: boolean,
-//     paginationOptions: { offset?: number; limit?: number } = {},
-//   ): Promise<any[]> {
-//     return await this.findAll(
-//       this.db.tableName,
-//       { [this.db.auto_generated]: auto_generated },
-//       paginationOptions,
-//     );
-//   }
-//
-//   // ============================================================================
-//   // 2. RECHERCHES PAR TYPE/STATUT
-//   // ============================================================================
-//
-//   protected async findByType(
-//     memo_type: MemoType,
-//     conditions: Record<string, any> = {},
-//     paginationOptions: { offset?: number; limit?: number } = {},
-//   ): Promise<any[]> {
-//     return await this.findAll(
-//       this.db.tableName,
-//       {
-//         [this.db.memo_type]: memo_type,
-//         ...conditions,
-//       },
-//       paginationOptions,
-//     );
-//   }
-//
-//   protected async findByStatus(
-//     memo_status: MemoStatus,
-//     conditions: Record<string, any> = {},
-//     paginationOptions: { offset?: number; limit?: number } = {},
-//   ): Promise<any[]> {
-//     return await this.findAll(
-//       this.db.tableName,
-//       {
-//         [this.db.memo_status]: memo_status,
-//         ...conditions,
-//       },
-//       paginationOptions,
-//     );
-//   }
-//
-//   // Memos en attente de réponse (pour l'employé cible)
-//   protected async findPendingResponse(
-//     target_user: number,
-//     paginationOptions: { offset?: number; limit?: number } = {},
-//   ): Promise<any[]> {
-//     return await this.findAll(
-//       this.db.tableName,
-//       {
-//         [this.db.target_user]: target_user,
-//         [this.db.memo_status]: MemoStatus.PENDING,
-//         [this.db.response_user]: null,
-//       },
-//       paginationOptions,
-//     );
-//   }
-//
-//   // Memos en attente de validation (pour le manager)
-//   protected async findPendingValidation(
-//     paginationOptions: { offset?: number; limit?: number } = {},
-//   ): Promise<any[]> {
-//     return await this.findAll(
-//       this.db.tableName,
-//       {
-//         [this.db.memo_status]: {
-//           [Op.in]: [MemoStatus.SUBMITTED, MemoStatus.PENDING],
-//         },
-//       },
-//       paginationOptions,
-//     );
-//   }
-//
-//   protected async findAutoGenerated(
-//     paginationOptions: { offset?: number; limit?: number } = {},
-//   ): Promise<any[]> {
-//     return await this.findAll(
-//       this.db.tableName,
-//       {
-//         [this.db.auto_generated]: true,
-//         [this.db.memo_status]: {
-//           [Op.ne]: MemoStatus.REJECTED,
-//         },
-//       },
-//       paginationOptions,
-//     );
-//   }
-//
-//   // === 3. RECHERCHES PAR SESSION/ENTRIES ===
-//
-//   protected async findBySession(
-//     affected_session: number,
-//     paginationOptions: { offset?: number; limit?: number } = {},
-//   ): Promise<any[]> {
-//     return await this.findAll(
-//       this.db.tableName,
-//       { [this.db.affected_session]: affected_session },
-//       {
-//         ...paginationOptions,
-//       },
-//     );
-//   }
-//
-//   protected async findByEntryId(
-//     entry_id: number,
-//     paginationOptions: { offset?: number; limit?: number } = {},
-//   ): Promise<any[]> {
-//     return await this.findAll(
-//       this.db.tableName,
-//       {
-//         [this.db.affected_entries]: {
-//           [Op.contains]: [entry_id],
-//         },
-//       },
-//       paginationOptions,
-//     );
-//   }
-//
-//   // === 4. MÉMOS PRÉVENTIFS/CORRECTIFS ===
-//
-//   protected async findPreventiveMemos(
-//     start_date: Date,
-//     end_date: Date,
-//     paginationOptions: { offset?: number; limit?: number } = {},
-//   ): Promise<any[]> {
-//     return await this.findAll(
-//       this.db.tableName,
-//       {
-//         [this.db.memo_type]: {
-//           [Op.in]: [MemoType.DELAY_JUSTIFICATION, MemoType.ABSENCE_JUSTIFICATION],
-//         },
-//         [this.db.incident_datetime]: {
-//           [Op.between]: [start_date, end_date],
-//         },
-//         [this.db.created_at]: {
-//           [Op.lt]: this.sequelize!.col(this.db.incident_datetime),
-//         },
-//       },
-//       paginationOptions,
-//     );
-//   }
-//
-//   protected async findCorrectiveMemos(
-//     start_date: Date,
-//     end_date: Date,
-//     paginationOptions: { offset?: number; limit?: number } = {},
-//   ): Promise<any[]> {
-//     return await this.findAll(
-//       this.db.tableName,
-//       {
-//         [this.db.memo_type]: MemoType.CORRECTION_REQUEST,
-//         [this.db.incident_datetime]: {
-//           [Op.between]: [start_date, end_date],
-//         },
-//       },
-//       paginationOptions,
-//     );
-//   }
-//
-//   // === 5. VALIDATION & TRAITEMENT ===
-//
-//   protected async processValidation(
-//     memo: number,
-//     validator: number,
-//     decision: 'approved' | 'rejected',
-//     comments?: string,
-//   ): Promise<boolean> {
-//     const updates: Record<string, any> = {
-//       [this.db.memo_status]: decision === 'approved' ? MemoStatus.APPROVED : MemoStatus.REJECTED,
-//       [this.db.validator_user]: validator,
-//       [this.db.validator_comments]: comments,
-//       [this.db.processed_at]: new Date(),
-//     };
-//
-//     const affectedRows = await this.updateOne(this.db.tableName, updates, {
-//       [this.db.id]: memo,
-//     });
-//     return affectedRows > 0;
-//   }
-//
-//   protected async submitForValidation(memo: number): Promise<boolean> {
-//     const updates = {
-//       [this.db.memo_status]: MemoStatus.SUBMITTED,
-//     };
-//
-//     const affectedRows = await this.updateOne(this.db.tableName, updates, {
-//       [this.db.id]: memo,
-//     });
-//     return affectedRows > 0;
-//   }
-//
-//   // === 6. ESCALADE AUTOMATIQUE ===
-//
-//   protected async findMemosForEscalation(
-//     hours_threshold: number = 24,
-//     paginationOptions: { offset?: number; limit?: number } = {},
-//   ): Promise<any[]> {
-//     const thresholdDate = new Date();
-//     thresholdDate.setHours(thresholdDate.getHours() - hours_threshold);
-//
-//     return await this.findAll(
-//       this.db.tableName,
-//       {
-//         [this.db.memo_status]: {
-//           [Op.in]: [MemoStatus.SUBMITTED, MemoStatus.PENDING],
-//         },
-//         [this.db.created_at]: {
-//           [Op.lt]: thresholdDate,
-//         },
-//       },
-//       paginationOptions,
-//     );
-//   }
-//
-//   protected async escalateMemo(
-//     memo: number,
-//     new_validator: number,
-//     reason: string,
-//   ): Promise<boolean> {
-//     const updates = {
-//       [this.db.validator_user]: new_validator,
-//       [this.db.memo_status]: MemoStatus.PENDING,
-//       [this.db.validator_comments]: `Escaladed: ${reason}`,
-//     };
-//
-//     const affectedRows = await this.updateOne(this.db.tableName, updates, {
-//       [this.db.id]: memo,
-//     });
-//     return affectedRows > 0;
-//   }
-//
-//   // === 7. DÉTECTION PATTERNS SUSPECTS ===
-//
-//   protected async findSuspiciousPatterns(
-//     target_user: number,
-//     days: number = 30,
-//     paginationOptions: { offset?: number; limit?: number } = {},
-//   ): Promise<{
-//     frequent_delays: number;
-//     frequent_corrections: number;
-//     frequent_absences: number;
-//     rejection_rate: number;
-//     total_memos: number;
-//   }> {
-//     const startDate = new Date();
-//     startDate.setDate(startDate.getDate() - days);
-//
-//     const allMemos = await this.findAll(
-//       this.db.tableName,
-//       {
-//         [this.db.target_user]: target_user,
-//         [this.db.created_at]: {
-//           [Op.gte]: startDate,
-//         },
-//       },
-//       paginationOptions,
-//     );
-//
-//     const delays = allMemos.filter((m) => m.memo_type === MemoType.DELAY_JUSTIFICATION).length;
-//     const corrections = allMemos.filter((m) => m.memo_type === MemoType.CORRECTION_REQUEST).length;
-//     const absences = allMemos.filter((m) => m.memo_type === MemoType.ABSENCE_JUSTIFICATION).length;
-//     const rejected = allMemos.filter((m) => m.memo_status === MemoStatus.REJECTED).length;
-//
-//     return {
-//       frequent_delays: delays,
-//       frequent_corrections: corrections,
-//       frequent_absences: absences,
-//       rejection_rate: allMemos.length > 0 ? (rejected / allMemos.length) * 100 : 0,
-//       total_memos: allMemos.length,
-//     };
-//   }
-//
-//   // === 8. MÉMOS PAR PÉRIODE ===
-//
-//   protected async findByDateRange(
-//     start_date: Date,
-//     end_date: Date,
-//     filters: Record<string, any> = {},
-//     paginationOptions: { offset?: number; limit?: number } = {},
-//   ): Promise<any[]> {
-//     return await this.findAll(
-//       this.db.tableName,
-//       {
-//         [this.db.incident_datetime]: {
-//           [Op.between]: [start_date, end_date],
-//         },
-//         ...filters,
-//       },
-//       paginationOptions,
-//     );
-//   }
-//
-//   protected async findUrgentMemos(
-//     paginationOptions: { offset?: number; limit?: number } = {},
-//   ): Promise<any[]> {
-//     const twoDaysFromNow = new Date();
-//     twoDaysFromNow.setDate(twoDaysFromNow.getDate() + 2);
-//
-//     return await this.findAll(
-//       this.db.tableName,
-//       {
-//         [this.db.memo_status]: {
-//           [Op.in]: [MemoStatus.SUBMITTED, MemoStatus.PENDING],
-//         },
-//         [this.db.incident_datetime]: {
-//           [Op.lte]: twoDaysFromNow,
-//         },
-//       },
-//       paginationOptions,
-//     );
-//   }
-//
-//   // === 9. STATISTIQUES ===
-//
-//   protected async getMemosStatistics(filters: Record<string, any> = {}): Promise<any> {
-//     const [
-//       totalMemos,
-//       pendingMemos,
-//       approvedMemos,
-//       rejectedMemos,
-//       autoGeneratedMemos,
-//       memosByType,
-//       memosByStatus,
-//     ] = await Promise.all([
-//       this.count(this.db.tableName, filters),
-//       this.count(this.db.tableName, {
-//         ...filters,
-//         [this.db.memo_status]: { [Op.in]: [MemoStatus.SUBMITTED, MemoStatus.PENDING] },
-//       }),
-//       this.count(this.db.tableName, { ...filters, [this.db.memo_status]: MemoStatus.APPROVED }),
-//       this.count(this.db.tableName, { ...filters, [this.db.memo_status]: MemoStatus.REJECTED }),
-//       this.count(this.db.tableName, { ...filters, [this.db.auto_generated]: true }),
-//       this.countByGroup(this.db.tableName, this.db.memo_type, filters),
-//       this.countByGroup(this.db.tableName, this.db.memo_status, filters),
-//     ]);
-//
-//     return {
-//       total_memos: totalMemos,
-//       pending_validation: pendingMemos,
-//       approved: approvedMemos,
-//       rejected: rejectedMemos,
-//       auto_generated: autoGeneratedMemos,
-//       by_type: memosByType,
-//       by_status: memosByStatus,
-//       approval_rate: totalMemos > 0 ? ((approvedMemos / totalMemos) * 100).toFixed(2) : 0,
-//       rejection_rate: totalMemos > 0 ? ((rejectedMemos / totalMemos) * 100).toFixed(2) : 0,
-//     };
-//   }
-//
-//   // === 10. GESTION ATTACHMENTS ===
-//
-//   protected async addAttachment(memo: number, attachment: Record<string, any>): Promise<boolean> {
-//     const memoData = await this.find(memo);
-//     if (!memoData) return false;
-//
-//     const currentAttachments = memoData.attachments || [];
-//     currentAttachments.push(attachment);
-//
-//     const updates = {
-//       [this.db.attachments]: currentAttachments,
-//     };
-//
-//     const affectedRows = await this.updateOne(this.db.tableName, updates, {
-//       [this.db.id]: memo,
-//     });
-//     return affectedRows > 0;
-//   }
-//
-//   protected async removeAttachment(memo: number, attachment_index: number): Promise<boolean> {
-//     const memoData = await this.find(memo);
-//     if (!memoData || !memoData.attachments) return false;
-//
-//     const currentAttachments = memoData.attachments;
-//     if (attachment_index < 0 || attachment_index >= currentAttachments.length) return false;
-//
-//     currentAttachments.splice(attachment_index, 1);
-//
-//     const updates = {
-//       [this.db.attachments]: currentAttachments,
-//     };
-//
-//     const affectedRows = await this.updateOne(this.db.tableName, updates, {
-//       [this.db.id]: memo,
-//     });
-//     return affectedRows > 0;
-//   }
-//
-//   // === 11. CRUD OPERATIONS ===
-//
-//   protected async create(): Promise<void> {
-//     await this.validate();
-//
-//     const guid = await this.randomGuidGenerator(this.db.tableName);
-//     if (!guid) {
-//       throw new Error(MEMOS_ERRORS.GUID_GENERATION_FAILED);
-//     }
-//
-//     const lastID = await this.insertOne(this.db.tableName, {
-//       [this.db.guid]: guid,
-//       [this.db.author_user]: this.author_user,
-//       [this.db.target_user]: this.target_user,
-//       [this.db.validator_user]: this.validator_user,
-//       [this.db.memo_type]: this.memo_type,
-//       [this.db.memo_status]: this.memo_status || MemoStatus.DRAFT,
-//       [this.db.title]: this.title,
-//       [this.db.description]: this.description,
-//       [this.db.incident_datetime]: this.incident_datetime,
-//       [this.db.affected_session]: this.affected_session,
-//       [this.db.affected_entries]: this.affected_entries,
-//       [this.db.attachments]: this.attachments,
-//       [this.db.validator_comments]: this.validator_comments,
-//       [this.db.processed_at]: this.processed_at,
-//       [this.db.auto_generated]: this.auto_generated || false,
-//       // [this.db.auto_reason]: this.auto_reason,
-//     });
-//
-//     if (!lastID) {
-//       throw new Error(MEMOS_ERRORS?.CREATION_FAILED);
-//     }
-//
-//     this.id = typeof lastID === 'object' ? lastID.id : lastID;
-//     this.guid = guid;
-//   }
-//
-//   protected async update(): Promise<void> {
-//     await this.validate();
-//     if (!this.id) {
-//       throw new Error(MEMOS_ERRORS?.ID_REQUIRED);
-//     }
-//
-//     const updateData: Record<string, any> = {};
-//
-//     if (this.memo_status !== undefined) updateData[this.db.memo_status] = this.memo_status;
-//     if (this.title !== undefined) updateData[this.db.title] = this.title;
-//     if (this.description !== undefined) updateData[this.db.description] = this.description;
-//     if (this.validator_user !== undefined) updateData[this.db.validator_user] = this.validator_user;
-//     if (this.validator_comments !== undefined)
-//       updateData[this.db.validator_comments] = this.validator_comments;
-//     if (this.processed_at !== undefined) updateData[this.db.processed_at] = this.processed_at;
-//     if (this.attachments !== undefined) updateData[this.db.attachments] = this.attachments;
-//
-//     const updated = await this.updateOne(this.db.tableName, updateData, { [this.db.id]: this.id });
-//
-//     if (!updated) {
-//       throw new Error(MEMOS_ERRORS?.UPDATE_FAILED || 'Memo update failed');
-//     }
-//   }
-//
-//   protected async trash(id: number): Promise<boolean> {
-//     return await this.deleteOne(this.db.tableName, { [this.db.id]: id });
-//   }
-//
-//   protected async listAll(
-//     conditions: Record<string, any> = {},
-//     paginationOptions: { offset?: number; limit?: number } = {},
-//   ): Promise<any[]> {
-//     return await this.findAll(this.db.tableName, conditions, paginationOptions);
-//   }
-//
-//   // === VALIDATION ===
-//
-//   private async validate(): Promise<void> {
-//     // // Target user optionnel
-//     // if (this.target_user && !MemosValidationUtils.validateTargetUserId(this.target_user)) {
-//     //   throw new Error(MEMOS_ERRORS.TARGET_USER_INVALID);
-//     // }
-//
-//     // Type obligatoire
-//     if (!this.memo_type) {
-//       throw new Error(MEMOS_ERRORS?.MEMO_TYPE_REQUIRED);
-//     }
-//     if (!MemosValidationUtils.validateMemoType(this.memo_type)) {
-//       throw new Error(MEMOS_ERRORS.MEMO_TYPE_INVALID);
-//     }
-//
-//     // Statut
-//     if (this.memo_status && !MemosValidationUtils.validateMemoStatus(this.memo_status)) {
-//       throw new Error(MEMOS_ERRORS.MEMO_STATUS_INVALID);
-//     }
-//
-//     // Titre
-//     if (!this.title) {
-//       throw new Error(MEMOS_ERRORS.TITLE_REQUIRED);
-//     }
-//     if (!MemosValidationUtils.validateTitle(this.title)) {
-//       throw new Error(MEMOS_ERRORS.TITLE_INVALID);
-//     }
-//
-//     // Description
-//     if (!this.description) {
-//       throw new Error(MEMOS_ERRORS.DESCRIPTION_REQUIRED);
-//     }
-//     if (!MemosValidationUtils.validateDescription(this.description)) {
-//       throw new Error(MEMOS_ERRORS.DESCRIPTION_INVALID);
-//     }
-//
-//     // Incident datetime
-//     if (
-//       this.incident_datetime &&
-//       !MemosValidationUtils.validateIncidentDatetime(this.incident_datetime)
-//     ) {
-//       console.log('🔴🔴🔴 incident_datetime: ', this.incident_datetime);
-//       throw new Error(MEMOS_ERRORS.INCIDENT_DATETIME_INVALID);
-//     }
-//
-//     // // Author
-//     // if (!this.author_user) {
-//     //   throw new Error(MEMOS_ERRORS.AUTHOR_USER_REQUIRED);
-//     // }
-//     // if (!MemosValidationUtils.validateAuthorUserId(this.author_user)) {
-//     //   throw new Error(MEMOS_ERRORS.AUTHOR_USER_INVALID);
-//     // }
-//     //
-//     // // Validator
-//     // if (this.validator_user && !MemosValidationUtils.validateValidatorUserId(this.validator_user)) {
-//     //   throw new Error(MEMOS_ERRORS.VALIDATOR_USER_INVALID);
-//     // }
-//
-//     // // Session
-//     // if (
-//     //   this.affected_session &&
-//     //   !MemosValidationUtils.validateAffectedSessionId(this.affected_session)
-//     // ) {
-//     //   throw new Error(MEMOS_ERRORS.AFFECTED_SESSION_INVALID);
-//     // }
-//
-//     // // Entries IDs
-//     // if (
-//     //   this.affected_entries &&
-//     //   !MemosValidationUtils.validateAffectedEntries(this.affected_entries)
-//     // ) {
-//     //   throw new Error(MEMOS_ERRORS.AFFECTED_ENTRIES_INVALID);
-//     // }
-//
-//     // Attachments
-//     if (this.attachments && !MemosValidationUtils.validateAttachments(this.attachments)) {
-//       throw new Error(MEMOS_ERRORS.ATTACHMENTS_INVALID);
-//     }
-//
-//     // Validator comments
-//     if (
-//       this.validator_comments &&
-//       !MemosValidationUtils.validateValidatorComments(this.validator_comments)
-//     ) {
-//       throw new Error(MEMOS_ERRORS.VALIDATOR_COMMENTS_INVALID);
-//     }
-//
-//     // // Auto reason
-//     // if (this.auto_reason && !MemosValidationUtils.validateAutoReason(this.auto_reason)) {
-//     //   throw new Error(MEMOS_ERRORS.AUTO_REASON_INVALID);
-//     // }
-//
-//     // Nettoyage données
-//     const cleaned = MemosValidationUtils.cleanMemoData(this);
-//     Object.assign(this, cleaned);
-//   }
-// }
