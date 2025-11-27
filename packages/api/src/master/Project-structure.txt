@@ -1,0 +1,57 @@
+.
+├── Project-structure.txt
+├── class
+│   ├── Country.ts
+│   ├── Currency.ts
+│   ├── EmployeeLicense.ts
+│   ├── ExchangeRate.ts
+│   ├── GlobalLicense.ts
+│   ├── Language.ts
+│   ├── Lexicon.ts
+│   ├── TaxRule.ts
+│   └── Tenant.ts
+├── database
+│   ├── data
+│   │   ├── activity.monitoring.db.ts
+│   │   ├── billing.cycle.db.ts
+│   │   ├── country.db.ts
+│   │   ├── currency.db.ts
+│   │   ├── employee.license.db.ts
+│   │   ├── exchange.rate.db.ts
+│   │   ├── fraud.detection.log.db.ts
+│   │   ├── global.license.db.ts
+│   │   ├── language.db.ts
+│   │   ├── lexicon.db.ts
+│   │   ├── license.adjustment.db.ts
+│   │   ├── payment.method.db.ts
+│   │   ├── payment.transaction.db.ts
+│   │   ├── tax.rule.db.ts
+│   │   └── tenant.db.ts
+│   ├── db.base.ts
+│   ├── db.config.ts
+│   ├── db.initializer.ts
+│   └── migration.config.cjs
+├── middle
+│   └── ensured-routes.ts
+├── model
+│   ├── CountryModel.ts
+│   ├── CurrencyModel.ts
+│   ├── EmployeeLicenseModel.ts
+│   ├── ExchangeRateModel.ts
+│   ├── GlobalLicenseModel.ts
+│   ├── LanguageModel.ts
+│   ├── LexiconModel.ts
+│   ├── TaxRuleModel.ts
+│   └── TenantModel.ts
+└── routes
+    ├── country.route.ts
+    ├── currency.route.ts
+    ├── employee.license.route.ts
+    ├── exchange.rate.route.ts
+    ├── global.license.route.ts
+    ├── language.route.ts
+    ├── lexicon.route.ts
+    ├── tax.rule.route.ts
+    └── tenant.route.ts
+
+7 directories, 48 files

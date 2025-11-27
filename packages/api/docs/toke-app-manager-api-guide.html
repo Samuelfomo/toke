@@ -1,0 +1,2084 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Toké App Manager API - Developer Guide</title>
+    <style>
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
+
+      body {
+        font-family:
+          'Inter',
+          -apple-system,
+          BlinkMacSystemFont,
+          sans-serif;
+        line-height: 1.6;
+        color: #212529;
+        background: #f8f9fa;
+      }
+
+      .container {
+        max-width: 1200px;
+        margin: 0 auto;
+        padding: 20px;
+      }
+
+      .header {
+        background: linear-gradient(135deg, #004aad, #0056c4);
+        color: white;
+        padding: 30px;
+        border-radius: 12px;
+        margin-bottom: 30px;
+        text-align: center;
+      }
+
+      .header h1 {
+        font-size: 2.5rem;
+        margin-bottom: 10px;
+      }
+
+      .header p {
+        font-size: 1.1rem;
+        opacity: 0.9;
+      }
+
+      .nav-pills {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 10px;
+        margin-bottom: 30px;
+        padding: 20px;
+        background: white;
+        border-radius: 12px;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+      }
+
+      .nav-pill {
+        padding: 8px 16px;
+        background: #e9ecef;
+        border: none;
+        border-radius: 20px;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        text-decoration: none;
+        color: #495057;
+        font-weight: 500;
+      }
+
+      .nav-pill:hover {
+        background: #004aad;
+        color: white;
+      }
+
+      .module {
+        background: white;
+        border-radius: 12px;
+        padding: 30px;
+        margin-bottom: 30px;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+      }
+
+      .module-title {
+        font-size: 1.8rem;
+        color: #004aad;
+        margin-bottom: 20px;
+        padding-bottom: 10px;
+        border-bottom: 3px solid #ffde59;
+      }
+
+      .endpoint-group {
+        margin-bottom: 25px;
+      }
+
+      .endpoint-group h4 {
+        color: #495057;
+        margin-bottom: 15px;
+        font-size: 1.2rem;
+      }
+
+      .endpoint {
+        background: #f8f9fa;
+        border: 1px solid #e9ecef;
+        border-radius: 8px;
+        padding: 15px;
+        margin-bottom: 10px;
+        transition: all 0.3s ease;
+      }
+
+      .endpoint:hover {
+        border-color: #004aad;
+        box-shadow: 0 2px 8px rgba(0, 74, 173, 0.15);
+      }
+
+      .endpoint-header {
+        display: flex;
+        align-items: center;
+        gap: 15px;
+        margin-bottom: 8px;
+      }
+
+      .method {
+        padding: 4px 12px;
+        border-radius: 4px;
+        font-weight: 600;
+        font-size: 0.85rem;
+        color: white;
+      }
+
+      .method.get {
+        background: #28a745;
+      }
+      .method.post {
+        background: #007bff;
+      }
+      .method.put {
+        background: #ffc107;
+        color: #212529;
+      }
+      .method.delete {
+        background: #dc3545;
+      }
+
+      .endpoint-url {
+        font-family: 'Monaco', 'Menlo', monospace;
+        color: #004aad;
+        font-weight: 600;
+      }
+
+      .endpoint-title {
+        font-weight: 600;
+        color: #212529;
+        margin-bottom: 5px;
+      }
+
+      .endpoint-description {
+        color: #6c757d;
+        font-size: 0.95rem;
+      }
+
+      .copy-section {
+        background: #e8f4fd;
+        border: 1px dashed #004aad;
+        border-radius: 6px;
+        padding: 10px;
+        margin-top: 10px;
+      }
+
+      .copy-label {
+        font-size: 0.8rem;
+        color: #004aad;
+        font-weight: 600;
+        margin-bottom: 5px;
+      }
+
+      .copy-text {
+        font-family: 'Monaco', 'Menlo', monospace;
+        background: white;
+        padding: 8px;
+        border-radius: 4px;
+        border: 1px solid #dee2e6;
+        cursor: pointer;
+        user-select: all;
+      }
+
+      .copy-text:hover {
+        background: #f8f9fa;
+      }
+
+      .url-structure {
+        background: #fff3cd;
+        border: 1px solid #ffeaa7;
+        border-radius: 8px;
+        padding: 20px;
+        margin-bottom: 30px;
+      }
+
+      .url-structure h3 {
+        color: #856404;
+        margin-bottom: 10px;
+      }
+
+      .url-example {
+        font-family: 'Monaco', 'Menlo', monospace;
+        background: white;
+        padding: 12px;
+        border-radius: 4px;
+        border: 1px solid #f4d03f;
+        margin-top: 10px;
+      }
+
+      @media (max-width: 768px) {
+        .container {
+          padding: 10px;
+        }
+
+        .header h1 {
+          font-size: 2rem;
+        }
+
+        .nav-pills {
+          padding: 15px;
+        }
+
+        .module {
+          padding: 20px;
+        }
+
+        .endpoint-header {
+          flex-direction: column;
+          align-items: flex-start;
+          gap: 8px;
+        }
+      }
+
+      .sprint-badge {
+        display: inline-block;
+        padding: 4px 8px;
+        border-radius: 12px;
+        font-size: 0.75rem;
+        font-weight: 600;
+        margin-left: 10px;
+      }
+
+      .sprint-1 {
+        background: #d4edda;
+        color: #155724;
+      }
+      .sprint-2 {
+        background: #fff3cd;
+        color: #856404;
+      }
+      .sprint-3 {
+        background: #f8d7da;
+        color: #721c24;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <div class="header">
+        <h1>🚀 Toké App Manager API</h1>
+        <p>Complete Developer Guide for Manager Application Endpoints</p>
+      </div>
+
+      <div class="url-structure">
+        <h3>📍 URL Structure Pattern</h3>
+        <p>All endpoints follow this consistent pattern:</p>
+        <div class="url-example">{{baseUrl}}/{{router}}/endpoint</div>
+        <p style="margin-top: 10px">
+          <strong>Example:</strong> <code>{{baseUrl}}/manager/employees</code>
+        </p>
+      </div>
+
+      <nav class="nav-pills">
+        <a href="#auth" class="nav-pill">🔐 Authentication</a>
+        <a href="#employees" class="nav-pill">👥 Employees</a>
+        <a href="#sites" class="nav-pill">🏗️ Sites & QR</a>
+        <a href="#attendance" class="nav-pill">⏰ Attendance</a>
+        <a href="#memos" class="nav-pill">📝 Memos</a>
+        <a href="#billing" class="nav-pill">💰 Billing</a>
+        <a href="#alerts" class="nav-pill">🚨 Alerts</a>
+        <a href="#dashboard" class="nav-pill">📊 Dashboard</a>
+      </nav>
+
+      <!-- MODULE 1: AUTH & TENANT MANAGEMENT -->
+      <div id="auth" class="module">
+        <h2 class="module-title">
+          🔐 Authentication & Tenant Management <span class="sprint-badge sprint-1">Sprint 1</span>
+        </h2>
+
+        <div class="endpoint-group">
+          <h4>Manager Authentication</h4>
+
+          <div class="endpoint">
+            <div class="endpoint-header">
+              <span class="method post">POST</span>
+              <span class="endpoint-url">{{baseUrl}}/auth/manager/login</span>
+            </div>
+            <div class="copy-section">
+              <div class="copy-label">📋 Copy for Postman Title:</div>
+              <div class="copy-text">🔑 Manager Login with PIN</div>
+            </div>
+            <div class="copy-section">
+              <div class="copy-label">📋 Copy for Postman Description:</div>
+              <div class="copy-text">
+                🔐 Authenticate manager using 4-digit PIN and generate JWT session token for secure
+                API access
+              </div>
+            </div>
+          </div>
+
+          <div class="endpoint">
+            <div class="endpoint-header">
+              <span class="method post">POST</span>
+              <span class="endpoint-url">{{baseUrl}}/auth/manager/biometric-verify</span>
+            </div>
+            <div class="copy-section">
+              <div class="copy-label">📋 Copy for Postman Title:</div>
+              <div class="copy-text">👆 Biometric Authentication</div>
+            </div>
+            <div class="copy-section">
+              <div class="copy-label">📋 Copy for Postman Description:</div>
+              <div class="copy-text">
+                🔒 Verify biometric hash locally and validate stored PIN for enhanced security on
+                supported devices
+              </div>
+            </div>
+          </div>
+
+          <div class="endpoint">
+            <div class="endpoint-header">
+              <span class="method post">POST</span>
+              <span class="endpoint-url">{{baseUrl}}/auth/manager/refresh-token</span>
+            </div>
+            <div class="copy-section">
+              <div class="copy-label">📋 Copy for Postman Title:</div>
+              <div class="copy-text">🔄 Refresh Session Token</div>
+            </div>
+            <div class="copy-section">
+              <div class="copy-label">📋 Copy for Postman Description:</div>
+              <div class="copy-text">
+                ♻️ Renew expired JWT session token without requiring PIN re-entry for seamless user
+                experience
+              </div>
+            </div>
+          </div>
+
+          <div class="endpoint">
+            <div class="endpoint-header">
+              <span class="method post">POST</span>
+              <span class="endpoint-url">{{baseUrl}}/auth/manager/change-pin</span>
+            </div>
+            <div class="copy-section">
+              <div class="copy-label">📋 Copy for Postman Title:</div>
+              <div class="copy-text">🔧 Change Security PIN</div>
+            </div>
+            <div class="copy-section">
+              <div class="copy-label">📋 Copy for Postman Description:</div>
+              <div class="copy-text">
+                🛡️ Update manager's 4-digit security PIN with validation of current PIN for account
+                security
+              </div>
+            </div>
+          </div>
+
+          <div class="endpoint">
+            <div class="endpoint-header">
+              <span class="method get">GET</span>
+              <span class="endpoint-url">{{baseUrl}}/auth/manager/profile</span>
+            </div>
+            <div class="copy-section">
+              <div class="copy-label">📋 Copy for Postman Title:</div>
+              <div class="copy-text">👤 Get Manager Profile</div>
+            </div>
+            <div class="copy-section">
+              <div class="copy-label">📋 Copy for Postman Description:</div>
+              <div class="copy-text">
+                📄 Retrieve current manager's profile information including roles, permissions, and
+                tenant details
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="endpoint-group">
+          <h4>Tenant Setup (First Manager Only)</h4>
+
+          <div class="endpoint">
+            <div class="endpoint-header">
+              <span class="method post">POST</span>
+              <span class="endpoint-url">{{baseUrl}}/tenant/initialize</span>
+            </div>
+            <div class="copy-section">
+              <div class="copy-label">📋 Copy for Postman Title:</div>
+              <div class="copy-text">🏢 Initialize New Tenant</div>
+            </div>
+            <div class="copy-section">
+              <div class="copy-label">📋 Copy for Postman Description:</div>
+              <div class="copy-text">
+                🚀 Create new tenant organization with initial 1/3 payment and setup dedicated
+                database instance
+              </div>
+            </div>
+          </div>
+
+          <div class="endpoint">
+            <div class="endpoint-header">
+              <span class="method get">GET</span>
+              <span class="endpoint-url">{{baseUrl}}/tenant/setup-status</span>
+            </div>
+            <div class="copy-section">
+              <div class="copy-label">📋 Copy for Postman Title:</div>
+              <div class="copy-text">⏳ Check Tenant Setup Status</div>
+            </div>
+            <div class="copy-section">
+              <div class="copy-label">📋 Copy for Postman Description:</div>
+              <div class="copy-text">
+                📊 Monitor tenant database creation progress and initialization status for new
+                organizations
+              </div>
+            </div>
+          </div>
+
+          <div class="endpoint">
+            <div class="endpoint-header">
+              <span class="method post">POST</span>
+              <span class="endpoint-url">{{baseUrl}}/tenant/complete-setup</span>
+            </div>
+            <div class="copy-section">
+              <div class="copy-label">📋 Copy for Postman Title:</div>
+              <div class="copy-text">✅ Complete Tenant Setup</div>
+            </div>
+            <div class="copy-section">
+              <div class="copy-label">📋 Copy for Postman Description:</div>
+              <div class="copy-text">
+                🎯 Finalize tenant configuration and activate all manager features for first-time
+                setup
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="endpoint-group">
+          <h4>Additional Managers</h4>
+
+          <div class="endpoint">
+            <div class="endpoint-header">
+              <span class="method post">POST</span>
+              <span class="endpoint-url">{{baseUrl}}/managers/invite</span>
+            </div>
+            <div class="copy-section">
+              <div class="copy-label">📋 Copy for Postman Title:</div>
+              <div class="copy-text">📧 Invite New Manager</div>
+            </div>
+            <div class="copy-section">
+              <div class="copy-label">📋 Copy for Postman Description:</div>
+              <div class="copy-text">
+                👥 Send invitation email to add new manager to existing tenant organization
+              </div>
+            </div>
+          </div>
+
+          <div class="endpoint">
+            <div class="endpoint-header">
+              <span class="method post">POST</span>
+              <span class="endpoint-url">{{baseUrl}}/managers/join</span>
+            </div>
+            <div class="copy-section">
+              <div class="copy-label">📋 Copy for Postman Title:</div>
+              <div class="copy-text">🤝 Join Tenant via OTP</div>
+            </div>
+            <div class="copy-section">
+              <div class="copy-label">📋 Copy for Postman Description:</div>
+              <div class="copy-text">
+                📱 Validate WhatsApp OTP and join existing tenant organization as additional manager
+              </div>
+            </div>
+          </div>
+
+          <div class="endpoint">
+            <div class="endpoint-header">
+              <span class="method put">PUT</span>
+              <span class="endpoint-url">{{baseUrl}}/managers/activate</span>
+            </div>
+            <div class="copy-section">
+              <div class="copy-label">📋 Copy for Postman Title:</div>
+              <div class="copy-text">🔓 Activate Manager Account</div>
+            </div>
+            <div class="copy-section">
+              <div class="copy-label">📋 Copy for Postman Description:</div>
+              <div class="copy-text">
+                ⚡ Complete manager account activation by setting security PIN and configuring
+                preferences
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- MODULE 2: EMPLOYEE & TEAM MANAGEMENT -->
+      <div id="employees" class="module">
+        <h2 class="module-title">
+          👥 Employee & Team Management <span class="sprint-badge sprint-1">Sprint 1</span>
+        </h2>
+
+        <div class="endpoint-group">
+          <h4>Employee CRUD Operations</h4>
+
+          <div class="endpoint">
+            <div class="endpoint-header">
+              <span class="method post">POST</span>
+              <span class="endpoint-url">{{baseUrl}}/employees</span>
+            </div>
+            <div class="copy-section">
+              <div class="copy-label">📋 Copy for Postman Title:</div>
+              <div class="copy-text">➕ Add New Employee</div>
+            </div>
+            <div class="copy-section">
+              <div class="copy-label">📋 Copy for Postman Description:</div>
+              <div class="copy-text">
+                👤 Add new employee to manager's team with basic info and automatic role assignment
+              </div>
+            </div>
+          </div>
+
+          <div class="endpoint">
+            <div class="endpoint-header">
+              <span class="method get">GET</span>
+              <span class="endpoint-url">{{baseUrl}}/employees</span>
+            </div>
+            <div class="copy-section">
+              <div class="copy-label">📋 Copy for Postman Title:</div>
+              <div class="copy-text">📋 List My Direct Employees</div>
+            </div>
+            <div class="copy-section">
+              <div class="copy-label">📋 Copy for Postman Description:</div>
+              <div class="copy-text">
+                👥 Retrieve list of employees directly managed by current manager with pagination
+                support
+              </div>
+            </div>
+          </div>
+
+          <div class="endpoint">
+            <div class="endpoint-header">
+              <span class="method get">GET</span>
+              <span class="endpoint-url">{{baseUrl}}/employees/all-subordinates</span>
+            </div>
+            <div class="copy-section">
+              <div class="copy-label">📋 Copy for Postman Title:</div>
+              <div class="copy-text">🌳 List All Subordinates</div>
+            </div>
+            <div class="copy-section">
+              <div class="copy-label">📋 Copy for Postman Description:</div>
+              <div class="copy-text">
+                🔍 Get complete hierarchical list of all employees under manager's responsibility
+                (recursive)
+              </div>
+            </div>
+          </div>
+
+          <div class="endpoint">
+            <div class="endpoint-header">
+              <span class="method get">GET</span>
+              <span class="endpoint-url">{{baseUrl}}/employees/:guid</span>
+            </div>
+            <div class="copy-section">
+              <div class="copy-label">📋 Copy for Postman Title:</div>
+              <div class="copy-text">👤 Get Employee Details</div>
+            </div>
+            <div class="copy-section">
+              <div class="copy-label">📋 Copy for Postman Description:</div>
+              <div class="copy-text">
+                📄 Retrieve detailed information for specific employee including status and work
+                history
+              </div>
+            </div>
+          </div>
+
+          <div class="endpoint">
+            <div class="endpoint-header">
+              <span class="method put">PUT</span>
+              <span class="endpoint-url">{{baseUrl}}/employees/:guid</span>
+            </div>
+            <div class="copy-section">
+              <div class="copy-label">📋 Copy for Postman Title:</div>
+              <div class="copy-text">✏️ Update Employee Info</div>
+            </div>
+            <div class="copy-section">
+              <div class="copy-label">📋 Copy for Postman Description:</div>
+              <div class="copy-text">
+                📝 Modify employee details including personal info, job title, and work preferences
+              </div>
+            </div>
+          </div>
+
+          <div class="endpoint">
+            <div class="endpoint-header">
+              <span class="method put">PUT</span>
+              <span class="endpoint-url">{{baseUrl}}/employees/:guid/status</span>
+            </div>
+            <div class="copy-section">
+              <div class="copy-label">📋 Copy for Postman Title:</div>
+              <div class="copy-text">🔄 Change Employee Status</div>
+            </div>
+            <div class="copy-section">
+              <div class="copy-label">📋 Copy for Postman Description:</div>
+              <div class="copy-text">
+                ⚡ Activate or deactivate employee account and adjust billing status accordingly
+              </div>
+            </div>
+          </div>
+
+          <div class="endpoint">
+            <div class="endpoint-header">
+              <span class="method delete">DELETE</span>
+              <span class="endpoint-url">{{baseUrl}}/employees/:guid</span>
+            </div>
+            <div class="copy-section">
+              <div class="copy-label">📋 Copy for Postman Title:</div>
+              <div class="copy-text">🗑️ Remove Employee from Team</div>
+            </div>
+            <div class="copy-section">
+              <div class="copy-label">📋 Copy for Postman Description:</div>
+              <div class="copy-text">
+                ❌ Soft delete employee from team while preserving audit trail and historical data
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="endpoint-group">
+          <h4>Employee Onboarding & Access</h4>
+
+          <div class="endpoint">
+            <div class="endpoint-header">
+              <span class="method post">POST</span>
+              <span class="endpoint-url">{{baseUrl}}/employees/:guid/generate-otp</span>
+            </div>
+            <div class="copy-section">
+              <div class="copy-label">📋 Copy for Postman Title:</div>
+              <div class="copy-text">🎫 Generate Employee OTP</div>
+            </div>
+            <div class="copy-section">
+              <div class="copy-label">📋 Copy for Postman Description:</div>
+              <div class="copy-text">
+                🔐 Create 6-digit OTP for employee to install and activate Pointage App (24h
+                validity)
+              </div>
+            </div>
+          </div>
+
+          <div class="endpoint">
+            <div class="endpoint-header">
+              <span class="method get">GET</span>
+              <span class="endpoint-url">{{baseUrl}}/employees/:guid/otp-status</span>
+            </div>
+            <div class="copy-section">
+              <div class="copy-label">📋 Copy for Postman Title:</div>
+              <div class="copy-text">⏰ Check OTP Status</div>
+            </div>
+            <div class="copy-section">
+              <div class="copy-label">📋 Copy for Postman Description:</div>
+              <div class="copy-text">
+                📊 Verify if employee has used OTP and successfully activated their Pointage App
+              </div>
+            </div>
+          </div>
+
+          <div class="endpoint">
+            <div class="endpoint-header">
+              <span class="method post">POST</span>
+              <span class="endpoint-url">{{baseUrl}}/employees/:guid/reset-access</span>
+            </div>
+            <div class="copy-section">
+              <div class="copy-label">📋 Copy for Postman Title:</div>
+              <div class="copy-text">🔄 Reset Employee Access</div>
+            </div>
+            <div class="copy-section">
+              <div class="copy-label">📋 Copy for Postman Description:</div>
+              <div class="copy-text">
+                🆘 Reset employee's app access and generate new OTP for troubleshooting purposes
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="endpoint-group">
+          <h4>Organization Hierarchy</h4>
+
+          <div class="endpoint">
+            <div class="endpoint-header">
+              <span class="method get">GET</span>
+              <span class="endpoint-url">{{baseUrl}}/organization/hierarchy</span>
+            </div>
+            <div class="copy-section">
+              <div class="copy-label">📋 Copy for Postman Title:</div>
+              <div class="copy-text">🏗️ Get Organization Tree</div>
+            </div>
+            <div class="copy-section">
+              <div class="copy-label">📋 Copy for Postman Description:</div>
+              <div class="copy-text">
+                🌳 Retrieve complete organizational hierarchy tree under manager's responsibility
+              </div>
+            </div>
+          </div>
+
+          <div class="endpoint">
+            <div class="endpoint-header">
+              <span class="method post">POST</span>
+              <span class="endpoint-url">{{baseUrl}}/organization/reassign</span>
+            </div>
+            <div class="copy-section">
+              <div class="copy-label">📋 Copy for Postman Title:</div>
+              <div class="copy-text">🔄 Reassign Employee</div>
+            </div>
+            <div class="copy-section">
+              <div class="copy-label">📋 Copy for Postman Description:</div>
+              <div class="copy-text">
+                ↔️ Transfer employee to another manager within the organization hierarchy
+              </div>
+            </div>
+          </div>
+
+          <div class="endpoint">
+            <div class="endpoint-header">
+              <span class="method get">GET</span>
+              <span class="endpoint-url">{{baseUrl}}/organization/my-level</span>
+            </div>
+            <div class="copy-section">
+              <div class="copy-label">📋 Copy for Postman Title:</div>
+              <div class="copy-text">👥 Get Peer Managers</div>
+            </div>
+            <div class="copy-section">
+              <div class="copy-label">📋 Copy for Postman Description:</div>
+              <div class="copy-text">
+                🤝 List managers at same hierarchical level for collaboration and coordination
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- MODULE 3: SITE & QR MANAGEMENT -->
+      <div id="sites" class="module">
+        <h2 class="module-title">
+          🏗️ Site & QR Management <span class="sprint-badge sprint-1">Sprint 1</span>
+        </h2>
+
+        <div class="endpoint-group">
+          <h4>Site Management</h4>
+
+          <div class="endpoint">
+            <div class="endpoint-header">
+              <span class="method post">POST</span>
+              <span class="endpoint-url">{{baseUrl}}/sites</span>
+            </div>
+            <div class="copy-section">
+              <div class="copy-label">📋 Copy for Postman Title:</div>
+              <div class="copy-text">🏢 Create New Site</div>
+            </div>
+            <div class="copy-section">
+              <div class="copy-label">📋 Copy for Postman Description:</div>
+              <div class="copy-text">
+                🏗️ Create new work site or construction area with geolocation and access controls
+              </div>
+            </div>
+          </div>
+
+          <div class="endpoint">
+            <div class="endpoint-header">
+              <span class="method get">GET</span>
+              <span class="endpoint-url">{{baseUrl}}/sites</span>
+            </div>
+            <div class="copy-section">
+              <div class="copy-label">📋 Copy for Postman Title:</div>
+              <div class="copy-text">📋 List My Active Sites</div>
+            </div>
+            <div class="copy-section">
+              <div class="copy-label">📋 Copy for Postman Description:</div>
+              <div class="copy-text">
+                🏗️ Retrieve all active work sites managed by current manager with status information
+              </div>
+            </div>
+          </div>
+
+          <div class="endpoint">
+            <div class="endpoint-header">
+              <span class="method get">GET</span>
+              <span class="endpoint-url">{{baseUrl}}/sites/:guid</span>
+            </div>
+            <div class="copy-section">
+              <div class="copy-label">📋 Copy for Postman Title:</div>
+              <div class="copy-text">🔍 Get Site Details</div>
+            </div>
+            <div class="copy-section">
+              <div class="copy-label">📋 Copy for Postman Description:</div>
+              <div class="copy-text">
+                📄 Retrieve detailed information for specific site including geofence and QR
+                settings
+              </div>
+            </div>
+          </div>
+
+          <div class="endpoint">
+            <div class="endpoint-header">
+              <span class="method put">PUT</span>
+              <span class="endpoint-url">{{baseUrl}}/sites/:guid</span>
+            </div>
+            <div class="copy-section">
+              <div class="copy-label">📋 Copy for Postman Title:</div>
+              <div class="copy-text">✏️ Update Site Information</div>
+            </div>
+            <div class="copy-section">
+              <div class="copy-label">📋 Copy for Postman Description:</div>
+              <div class="copy-text">
+                📝 Modify site details including name, address, and operational parameters
+              </div>
+            </div>
+          </div>
+
+          <div class="endpoint">
+            <div class="endpoint-header">
+              <span class="method put">PUT</span>
+              <span class="endpoint-url">{{baseUrl}}/sites/:guid/geofence</span>
+            </div>
+            <div class="copy-section">
+              <div class="copy-label">📋 Copy for Postman Title:</div>
+              <div class="copy-text">📍 Configure Site Geofence</div>
+            </div>
+            <div class="copy-section">
+              <div class="copy-label">📋 Copy for Postman Description:</div>
+              <div class="copy-text">
+                🎯 Set GPS perimeter boundaries and tolerance radius for employee check-in
+                validation
+              </div>
+            </div>
+          </div>
+
+          <div class="endpoint">
+            <div class="endpoint-header">
+              <span class="method delete">DELETE</span>
+              <span class="endpoint-url">{{baseUrl}}/sites/:guid</span>
+            </div>
+            <div class="copy-section">
+              <div class="copy-label">📋 Copy for Postman Title:</div>
+              <div class="copy-text">🗑️ Delete Site</div>
+            </div>
+            <div class="copy-section">
+              <div class="copy-label">📋 Copy for Postman Description:</div>
+              <div class="copy-text">
+                ❌ Remove site from active locations while preserving historical attendance data
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="endpoint-group">
+          <h4>QR Code Management</h4>
+
+          <div class="endpoint">
+            <div class="endpoint-header">
+              <span class="method post">POST</span>
+              <span class="endpoint-url">{{baseUrl}}/sites/:guid/qr-generate</span>
+            </div>
+            <div class="copy-section">
+              <div class="copy-label">📋 Copy for Postman Title:</div>
+              <div class="copy-text">🎫 Generate Site QR Code</div>
+            </div>
+            <div class="copy-section">
+              <div class="copy-label">📋 Copy for Postman Description:</div>
+              <div class="copy-text">
+                📱 Create unique QR code for site check-in with embedded security and location data
+              </div>
+            </div>
+          </div>
+
+          <div class="endpoint">
+            <div class="endpoint-header">
+              <span class="method get">GET</span>
+              <span class="endpoint-url">{{baseUrl}}/sites/:guid/qr-current</span>
+            </div>
+            <div class="copy-section">
+              <div class="copy-label">📋 Copy for Postman Title:</div>
+              <div class="copy-text">📱 Get Current QR Code</div>
+            </div>
+            <div class="copy-section">
+              <div class="copy-label">📋 Copy for Postman Description:</div>
+              <div class="copy-text">
+                🔍 Retrieve active QR code for site with download links and display formats
+              </div>
+            </div>
+          </div>
+
+          <div class="endpoint">
+            <div class="endpoint-header">
+              <span class="method put">PUT</span>
+              <span class="endpoint-url">{{baseUrl}}/sites/:guid/qr-regenerate</span>
+            </div>
+            <div class="copy-section">
+              <div class="copy-label">📋 Copy for Postman Title:</div>
+              <div class="copy-text">🔄 Regenerate QR Code</div>
+            </div>
+            <div class="copy-section">
+              <div class="copy-label">📋 Copy for Postman Description:</div>
+              <div class="copy-text">
+                🆘 Generate new QR code for security purposes and invalidate previous codes
+              </div>
+            </div>
+          </div>
+
+          <div class="endpoint">
+            <div class="endpoint-header">
+              <span class="method get">GET</span>
+              <span class="endpoint-url">{{baseUrl}}/sites/:guid/qr-history</span>
+            </div>
+            <div class="copy-section">
+              <div class="copy-label">📋 Copy for Postman Title:</div>
+              <div class="copy-text">📚 QR Code History</div>
+            </div>
+            <div class="copy-section">
+              <div class="copy-label">📋 Copy for Postman Description:</div>
+              <div class="copy-text">
+                🕒 View historical record of all QR codes generated for site with usage statistics
+              </div>
+            </div>
+          </div>
+
+          <div class="endpoint">
+            <div class="endpoint-header">
+              <span class="method post">POST</span>
+              <span class="endpoint-url">{{baseUrl}}/sites/:guid/qr-print-format</span>
+            </div>
+            <div class="copy-section">
+              <div class="copy-label">📋 Copy for Postman Title:</div>
+              <div class="copy-text">🖨️ Generate Printable QR</div>
+            </div>
+            <div class="copy-section">
+              <div class="copy-label">📋 Copy for Postman Description:</div>
+              <div class="copy-text">
+                📄 Create print-ready QR code format (PDF/PNG) with site information and
+                instructions
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- MODULE 4: ATTENDANCE MONITORING -->
+      <div id="attendance" class="module">
+        <h2 class="module-title">
+          ⏰ Attendance Monitoring <span class="sprint-badge sprint-1">Sprint 1</span>
+        </h2>
+
+        <div class="endpoint-group">
+          <h4>Real-time Session Monitoring</h4>
+
+          <div class="endpoint">
+            <div class="endpoint-header">
+              <span class="method get">GET</span>
+              <span class="endpoint-url">{{baseUrl}}/attendance/active-sessions</span>
+            </div>
+            <div class="copy-section">
+              <div class="copy-label">📋 Copy for Postman Title:</div>
+              <div class="copy-text">🕐 View Active Work Sessions</div>
+            </div>
+            <div class="copy-section">
+              <div class="copy-label">📋 Copy for Postman Description:</div>
+              <div class="copy-text">
+                ⚡ Get real-time list of employees currently checked in with active work sessions
+              </div>
+            </div>
+          </div>
+
+          <div class="endpoint">
+            <div class="endpoint-header">
+              <span class="method get">GET</span>
+              <span class="endpoint-url">{{baseUrl}}/attendance/today</span>
+            </div>
+            <div class="copy-section">
+              <div class="copy-label">📋 Copy for Postman Title:</div>
+              <div class="copy-text">📅 Today's Attendance Summary</div>
+            </div>
+            <div class="copy-section">
+              <div class="copy-label">📋 Copy for Postman Description:</div>
+              <div class="copy-text">
+                📊 Complete overview of today's attendance including check-ins, check-outs, and
+                absences
+              </div>
+            </div>
+          </div>
+
+          <div class="endpoint">
+            <div class="endpoint-header">
+              <span class="method get">GET</span>
+              <span class="endpoint-url">{{baseUrl}}/attendance/employee/:guid/current</span>
+            </div>
+            <div class="copy-section">
+              <div class="copy-label">📋 Copy for Postman Title:</div>
+              <div class="copy-text">👤 Employee Current Session</div>
+            </div>
+            <div class="copy-section">
+              <div class="copy-label">📋 Copy for Postman Description:</div>
+              <div class="copy-text">
+                🔍 Get detailed current work session for specific employee with timing and location
+              </div>
+            </div>
+          </div>
+
+          <div class="endpoint">
+            <div class="endpoint-header">
+              <span class="method get">GET</span>
+              <span class="endpoint-url">{{baseUrl}}/attendance/site/:guid/current</span>
+            </div>
+            <div class="copy-section">
+              <div class="copy-label">📋 Copy for Postman Title:</div>
+              <div class="copy-text">🏗️ Site Current Presence</div>
+            </div>
+            <div class="copy-section">
+              <div class="copy-label">📋 Copy for Postman Description:</div>
+              <div class="copy-text">
+                📍 List all employees currently present at specific site with check-in times
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="endpoint-group">
+          <h4>Historical Data & Analytics</h4>
+
+          <div class="endpoint">
+            <div class="endpoint-header">
+              <span class="method get">GET</span>
+              <span class="endpoint-url">{{baseUrl}}/attendance/history</span>
+            </div>
+            <div class="copy-section">
+              <div class="copy-label">📋 Copy for Postman Title:</div>
+              <div class="copy-text">📚 Attendance History</div>
+            </div>
+            <div class="copy-section">
+              <div class="copy-label">📋 Copy for Postman Description:</div>
+              <div class="copy-text">
+                🕒 Retrieve historical attendance data for team with filtering by date range and
+                employee
+              </div>
+            </div>
+          </div>
+
+          <div class="endpoint">
+            <div class="endpoint-header">
+              <span class="method get">GET</span>
+              <span class="endpoint-url">{{baseUrl}}/attendance/employee/:guid/history</span>
+            </div>
+            <div class="copy-section">
+              <div class="copy-label">📋 Copy for Postman Title:</div>
+              <div class="copy-text">👤 Employee Attendance History</div>
+            </div>
+            <div class="copy-section">
+              <div class="copy-label">📋 Copy for Postman Description:</div>
+              <div class="copy-text">
+                📊 Detailed attendance history for specific employee with patterns and statistics
+              </div>
+            </div>
+          </div>
+
+          <div class="endpoint">
+            <div class="endpoint-header">
+              <span class="method get">GET</span>
+              <span class="endpoint-url">{{baseUrl}}/attendance/time-entries</span>
+            </div>
+            <div class="copy-section">
+              <div class="copy-label">📋 Copy for Postman Title:</div>
+              <div class="copy-text">🕐 Detailed Time Entries</div>
+            </div>
+            <div class="copy-section">
+              <div class="copy-label">📋 Copy for Postman Description:</div>
+              <div class="copy-text">
+                📝 Granular view of individual time entries including breaks, missions, and
+                corrections
+              </div>
+            </div>
+          </div>
+
+          <div class="endpoint">
+            <div class="endpoint-header">
+              <span class="method get">GET</span>
+              <span class="endpoint-url">{{baseUrl}}/attendance/statistics</span>
+            </div>
+            <div class="copy-section">
+              <div class="copy-label">📋 Copy for Postman Title:</div>
+              <div class="copy-text">📈 Team Attendance Statistics</div>
+            </div>
+            <div class="copy-section">
+              <div class="copy-label">📋 Copy for Postman Description:</div>
+              <div class="copy-text">
+                📊 Comprehensive team statistics including hours worked, delays, and attendance
+                rates
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="endpoint-group">
+          <h4>Attendance Corrections & Management</h4>
+
+          <div class="endpoint">
+            <div class="endpoint-header">
+              <span class="method put">PUT</span>
+              <span class="endpoint-url">{{baseUrl}}/attendance/session/:guid/correct</span>
+            </div>
+            <div class="copy-section">
+              <div class="copy-label">📋 Copy for Postman Title:</div>
+              <div class="copy-text">✏️ Correct Work Session</div>
+            </div>
+            <div class="copy-section">
+              <div class="copy-label">📋 Copy for Postman Description:</div>
+              <div class="copy-text">
+                🔧 Manually correct work session timing, duration, or location with audit trail
+              </div>
+            </div>
+          </div>
+
+          <div class="endpoint">
+            <div class="endpoint-header">
+              <span class="method put">PUT</span>
+              <span class="endpoint-url">{{baseUrl}}/attendance/entry/:guid/correct</span>
+            </div>
+            <div class="copy-section">
+              <div class="copy-label">📋 Copy for Postman Title:</div>
+              <div class="copy-text">✏️ Correct Time Entry</div>
+            </div>
+            <div class="copy-section">
+              <div class="copy-label">📋 Copy for Postman Description:</div>
+              <div class="copy-text">
+                📝 Fix individual time entry (check-in, break, check-out) with correction reason
+              </div>
+            </div>
+          </div>
+
+          <div class="endpoint">
+            <div class="endpoint-header">
+              <span class="method post">POST</span>
+              <span class="endpoint-url">{{baseUrl}}/attendance/session/:guid/close</span>
+            </div>
+            <div class="copy-section">
+              <div class="copy-label">📋 Copy for Postman Title:</div>
+              <div class="copy-text">🔒 Force Close Session</div>
+            </div>
+            <div class="copy-section">
+              <div class="copy-label">📋 Copy for Postman Description:</div>
+              <div class="copy-text">
+                ⚠️ Manually close unclosed work session when employee forgot to check out
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- MODULE 5: MEMO SYSTEM -->
+      <div id="memos" class="module">
+        <h2 class="module-title">
+          📝 Memo System <span class="sprint-badge sprint-2">Sprint 2</span>
+        </h2>
+
+        <div class="endpoint-group">
+          <h4>Memo Validation Workflow</h4>
+
+          <div class="endpoint">
+            <div class="endpoint-header">
+              <span class="method get">GET</span>
+              <span class="endpoint-url">{{baseUrl}}/memos/pending-validation</span>
+            </div>
+            <div class="copy-section">
+              <div class="copy-label">📋 Copy for Postman Title:</div>
+              <div class="copy-text">⏳ Pending Memo Validations</div>
+            </div>
+            <div class="copy-section">
+              <div class="copy-label">📋 Copy for Postman Description:</div>
+              <div class="copy-text">
+                📝 Get list of employee memos awaiting manager validation with deadline information
+              </div>
+            </div>
+          </div>
+
+          <div class="endpoint">
+            <div class="endpoint-header">
+              <span class="method get">GET</span>
+              <span class="endpoint-url">{{baseUrl}}/memos/escalated-to-me</span>
+            </div>
+            <div class="copy-section">
+              <div class="copy-label">📋 Copy for Postman Title:</div>
+              <div class="copy-text">⬆️ Escalated Memos</div>
+            </div>
+            <div class="copy-section">
+              <div class="copy-label">📋 Copy for Postman Description:</div>
+              <div class="copy-text">
+                🚨 Retrieve memos escalated from subordinate managers requiring senior approval
+              </div>
+            </div>
+          </div>
+
+          <div class="endpoint">
+            <div class="endpoint-header">
+              <span class="method put">PUT</span>
+              <span class="endpoint-url">{{baseUrl}}/memos/:guid/validate</span>
+            </div>
+            <div class="copy-section">
+              <div class="copy-label">📋 Copy for Postman Title:</div>
+              <div class="copy-text">✅ Validate Employee Memo</div>
+            </div>
+            <div class="copy-section">
+              <div class="copy-label">📋 Copy for Postman Description:</div>
+              <div class="copy-text">
+                👍 Approve employee justification memo and trigger automatic attendance correction
+              </div>
+            </div>
+          </div>
+
+          <div class="endpoint">
+            <div class="endpoint-header">
+              <span class="method put">PUT</span>
+              <span class="endpoint-url">{{baseUrl}}/memos/:guid/reject</span>
+            </div>
+            <div class="copy-section">
+              <div class="copy-label">📋 Copy for Postman Title:</div>
+              <div class="copy-text">❌ Reject Employee Memo</div>
+            </div>
+            <div class="copy-section">
+              <div class="copy-label">📋 Copy for Postman Description:</div>
+              <div class="copy-text">
+                👎 Reject memo with mandatory comment and notify employee of decision
+              </div>
+            </div>
+          </div>
+
+          <div class="endpoint">
+            <div class="endpoint-header">
+              <span class="method post">POST</span>
+              <span class="endpoint-url">{{baseUrl}}/memos/:guid/escalate</span>
+            </div>
+            <div class="copy-section">
+              <div class="copy-label">📋 Copy for Postman Title:</div>
+              <div class="copy-text">⬆️ Escalate Memo to N+1</div>
+            </div>
+            <div class="copy-section">
+              <div class="copy-label">📋 Copy for Postman Description:</div>
+              <div class="copy-text">
+                🔝 Forward memo to higher manager level when unable to decide or needs approval
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="endpoint-group">
+          <h4>Manager Memo Creation</h4>
+
+          <div class="endpoint">
+            <div class="endpoint-header">
+              <span class="method post">POST</span>
+              <span class="endpoint-url">{{baseUrl}}/memos</span>
+            </div>
+            <div class="copy-section">
+              <div class="copy-label">📋 Copy for Postman Title:</div>
+              <div class="copy-text">📝 Create Manager Memo</div>
+            </div>
+            <div class="copy-section">
+              <div class="copy-label">📋 Copy for Postman Description:</div>
+              <div class="copy-text">
+                📋 Create memo to request justification from employee for attendance irregularities
+              </div>
+            </div>
+          </div>
+
+          <div class="endpoint">
+            <div class="endpoint-header">
+              <span class="method get">GET</span>
+              <span class="endpoint-url">{{baseUrl}}/memos/my-created</span>
+            </div>
+            <div class="copy-section">
+              <div class="copy-label">📋 Copy for Postman Title:</div>
+              <div class="copy-text">📄 My Created Memos</div>
+            </div>
+            <div class="copy-section">
+              <div class="copy-label">📋 Copy for Postman Description:</div>
+              <div class="copy-text">
+                📝 List all memos created by current manager with response status tracking
+              </div>
+            </div>
+          </div>
+
+          <div class="endpoint">
+            <div class="endpoint-header">
+              <span class="method put">PUT</span>
+              <span class="endpoint-url">{{baseUrl}}/memos/:guid</span>
+            </div>
+            <div class="copy-section">
+              <div class="copy-label">📋 Copy for Postman Title:</div>
+              <div class="copy-text">✏️ Edit Draft Memo</div>
+            </div>
+            <div class="copy-section">
+              <div class="copy-label">📋 Copy for Postman Description:</div>
+              <div class="copy-text">
+                📝 Modify memo content while in draft status before sending to employee
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="endpoint-group">
+          <h4>Memo Analytics & Monitoring</h4>
+
+          <div class="endpoint">
+            <div class="endpoint-header">
+              <span class="method get">GET</span>
+              <span class="endpoint-url">{{baseUrl}}/memos/statistics</span>
+            </div>
+            <div class="copy-section">
+              <div class="copy-label">📋 Copy for Postman Title:</div>
+              <div class="copy-text">📊 Memo Statistics</div>
+            </div>
+            <div class="copy-section">
+              <div class="copy-label">📋 Copy for Postman Description:</div>
+              <div class="copy-text">
+                📈 Analytics on memo volume, response times, and validation rates by employee and
+                period
+              </div>
+            </div>
+          </div>
+
+          <div class="endpoint">
+            <div class="endpoint-header">
+              <span class="method get">GET</span>
+              <span class="endpoint-url">{{baseUrl}}/memos/overdue</span>
+            </div>
+            <div class="copy-section">
+              <div class="copy-label">📋 Copy for Postman Title:</div>
+              <div class="copy-text">⏰ Overdue Memos</div>
+            </div>
+            <div class="copy-section">
+              <div class="copy-label">📋 Copy for Postman Description:</div>
+              <div class="copy-text">
+                🚨 List memos exceeding 24-hour validation deadline requiring immediate attention
+              </div>
+            </div>
+          </div>
+
+          <div class="endpoint">
+            <div class="endpoint-header">
+              <span class="method get">GET</span>
+              <span class="endpoint-url">{{baseUrl}}/memos/auto-generated</span>
+            </div>
+            <div class="copy-section">
+              <div class="copy-label">📋 Copy for Postman Title:</div>
+              <div class="copy-text">🤖 Auto-Generated Memos</div>
+            </div>
+            <div class="copy-section">
+              <div class="copy-label">📋 Copy for Postman Description:</div>
+              <div class="copy-text">
+                ⚡ View memos automatically created by system for attendance anomalies detection
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="endpoint-group">
+          <h4>Memo Attachments</h4>
+
+          <div class="endpoint">
+            <div class="endpoint-header">
+              <span class="method get">GET</span>
+              <span class="endpoint-url">{{baseUrl}}/memos/:guid/attachments</span>
+            </div>
+            <div class="copy-section">
+              <div class="copy-label">📋 Copy for Postman Title:</div>
+              <div class="copy-text">📎 List Memo Attachments</div>
+            </div>
+            <div class="copy-section">
+              <div class="copy-label">📋 Copy for Postman Description:</div>
+              <div class="copy-text">
+                🗂️ Retrieve all attachments (photos, audio, docs) associated with memo
+              </div>
+            </div>
+          </div>
+
+          <div class="endpoint">
+            <div class="endpoint-header">
+              <span class="method get">GET</span>
+              <span class="endpoint-url">{{baseUrl}}/attachments/:token</span>
+            </div>
+            <div class="copy-section">
+              <div class="copy-label">📋 Copy for Postman Title:</div>
+              <div class="copy-text">📥 Download Secure Attachment</div>
+            </div>
+            <div class="copy-section">
+              <div class="copy-label">📋 Copy for Postman Description:</div>
+              <div class="copy-text">
+                🔒 Download attachment file using secure token with expiration and access control
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- MODULE 6: BILLING & LICENSES -->
+      <div id="billing" class="module">
+        <h2 class="module-title">
+          💰 Billing & License Management <span class="sprint-badge sprint-2">Sprint 2</span>
+        </h2>
+
+        <div class="endpoint-group">
+          <h4>License Overview</h4>
+
+          <div class="endpoint">
+            <div class="endpoint-header">
+              <span class="method get">GET</span>
+              <span class="endpoint-url">{{baseUrl}}/billing/current-license</span>
+            </div>
+            <div class="copy-section">
+              <div class="copy-label">📋 Copy for Postman Title:</div>
+              <div class="copy-text">📄 Current License Details</div>
+            </div>
+            <div class="copy-section">
+              <div class="copy-label">📋 Copy for Postman Description:</div>
+              <div class="copy-text">
+                🎫 Retrieve current global license information including status, period, and renewal
+                date
+              </div>
+            </div>
+          </div>
+
+          <div class="endpoint">
+            <div class="endpoint-header">
+              <span class="method get">GET</span>
+              <span class="endpoint-url">{{baseUrl}}/billing/billable-employees</span>
+            </div>
+            <div class="copy-section">
+              <div class="copy-label">📋 Copy for Postman Title:</div>
+              <div class="copy-text">👥 Billable Employees Count</div>
+            </div>
+            <div class="copy-section">
+              <div class="copy-label">📋 Copy for Postman Description:</div>
+              <div class="copy-text">
+                💰 Get current count of billable employees based on anti-fraud rules and activity
+                status
+              </div>
+            </div>
+          </div>
+
+          <div class="endpoint">
+            <div class="endpoint-header">
+              <span class="method get">GET</span>
+              <span class="endpoint-url">{{baseUrl}}/billing/current-cost</span>
+            </div>
+            <div class="copy-section">
+              <div class="copy-label">📋 Copy for Postman Title:</div>
+              <div class="copy-text">💵 Real-time Period Cost</div>
+            </div>
+            <div class="copy-section">
+              <div class="copy-label">📋 Copy for Postman Description:</div>
+              <div class="copy-text">
+                ⚡ Calculate current period cost in real-time with tax calculation and currency
+                conversion
+              </div>
+            </div>
+          </div>
+
+          <div class="endpoint">
+            <div class="endpoint-header">
+              <span class="method get">GET</span>
+              <span class="endpoint-url">{{baseUrl}}/billing/period-preview</span>
+            </div>
+            <div class="copy-section">
+              <div class="copy-label">📋 Copy for Postman Title:</div>
+              <div class="copy-text">🔮 End-of-Period Preview</div>
+            </div>
+            <div class="copy-section">
+              <div class="copy-label">📋 Copy for Postman Description:</div>
+              <div class="copy-text">
+                📊 Preview final billing amount for current period with projections and breakdowns
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="endpoint-group">
+          <h4>License Adjustments</h4>
+
+          <div class="endpoint">
+            <div class="endpoint-header">
+              <span class="method get">GET</span>
+              <span class="endpoint-url">{{baseUrl}}/billing/pending-adjustments</span>
+            </div>
+            <div class="copy-section">
+              <div class="copy-label">📋 Copy for Postman Title:</div>
+              <div class="copy-text">⏳ Pending License Adjustments</div>
+            </div>
+            <div class="copy-section">
+              <div class="copy-label">📋 Copy for Postman Description:</div>
+              <div class="copy-text">
+                📈 List automatic adjustments waiting for payment when employees added mid-period
+              </div>
+            </div>
+          </div>
+
+          <div class="endpoint">
+            <div class="endpoint-header">
+              <span class="method post">POST</span>
+              <span class="endpoint-url">{{baseUrl}}/billing/adjustment/confirm</span>
+            </div>
+            <div class="copy-section">
+              <div class="copy-label">📋 Copy for Postman Title:</div>
+              <div class="copy-text">✅ Confirm Auto Adjustment</div>
+            </div>
+            <div class="copy-section">
+              <div class="copy-label">📋 Copy for Postman Description:</div>
+              <div class="copy-text">
+                👍 Approve and process automatic license adjustment for new employees
+              </div>
+            </div>
+          </div>
+
+          <div class="endpoint">
+            <div class="endpoint-header">
+              <span class="method get">GET</span>
+              <span class="endpoint-url">{{baseUrl}}/billing/adjustment/:guid</span>
+            </div>
+            <div class="copy-section">
+              <div class="copy-label">📋 Copy for Postman Title:</div>
+              <div class="copy-text">🔍 Adjustment Details</div>
+            </div>
+            <div class="copy-section">
+              <div class="copy-label">📋 Copy for Postman Description:</div>
+              <div class="copy-text">
+                📄 Get detailed information about specific license adjustment including calculation
+                breakdown
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="endpoint-group">
+          <h4>Mobile Money Payments</h4>
+
+          <div class="endpoint">
+            <div class="endpoint-header">
+              <span class="method post">POST</span>
+              <span class="endpoint-url">{{baseUrl}}/billing/payment/initiate</span>
+            </div>
+            <div class="copy-section">
+              <div class="copy-label">📋 Copy for Postman Title:</div>
+              <div class="copy-text">💳 Initiate Mobile Payment</div>
+            </div>
+            <div class="copy-section">
+              <div class="copy-label">📋 Copy for Postman Description:</div>
+              <div class="copy-text">
+                📱 Start payment process using MTN MoMo or Orange Money for license fees
+              </div>
+            </div>
+          </div>
+
+          <div class="endpoint">
+            <div class="endpoint-header">
+              <span class="method get">GET</span>
+              <span class="endpoint-url">{{baseUrl}}/billing/payment/:reference/status</span>
+            </div>
+            <div class="copy-section">
+              <div class="copy-label">📋 Copy for Postman Title:</div>
+              <div class="copy-text">🔍 Check Payment Status</div>
+            </div>
+            <div class="copy-section">
+              <div class="copy-label">📋 Copy for Postman Description:</div>
+              <div class="copy-text">
+                ⏱️ Monitor real-time payment status with mobile money provider integration
+              </div>
+            </div>
+          </div>
+
+          <div class="endpoint">
+            <div class="endpoint-header">
+              <span class="method post">POST</span>
+              <span class="endpoint-url">{{baseUrl}}/billing/payment/retry</span>
+            </div>
+            <div class="copy-section">
+              <div class="copy-label">📋 Copy for Postman Title:</div>
+              <div class="copy-text">🔄 Retry Failed Payment</div>
+            </div>
+            <div class="copy-section">
+              <div class="copy-label">📋 Copy for Postman Description:</div>
+              <div class="copy-text">
+                🆘 Retry payment process for failed transactions with different payment method if
+                needed
+              </div>
+            </div>
+          </div>
+
+          <div class="endpoint">
+            <div class="endpoint-header">
+              <span class="method get">GET</span>
+              <span class="endpoint-url">{{baseUrl}}/billing/payment-history</span>
+            </div>
+            <div class="copy-section">
+              <div class="copy-label">📋 Copy for Postman Title:</div>
+              <div class="copy-text">📚 Payment History</div>
+            </div>
+            <div class="copy-section">
+              <div class="copy-label">📋 Copy for Postman Description:</div>
+              <div class="copy-text">
+                🕒 Complete history of all license payments with receipts and transaction details
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- MODULE 7: ALERTS & FRAUD DETECTION -->
+      <div id="alerts" class="module">
+        <h2 class="module-title">
+          🚨 Alerts & Fraud Detection <span class="sprint-badge sprint-2">Sprint 2</span>
+        </h2>
+
+        <div class="endpoint-group">
+          <h4>Anti-Fraud Alerts</h4>
+
+          <div class="endpoint">
+            <div class="endpoint-header">
+              <span class="method get">GET</span>
+              <span class="endpoint-url">{{baseUrl}}/fraud/active-alerts</span>
+            </div>
+            <div class="copy-section">
+              <div class="copy-label">📋 Copy for Postman Title:</div>
+              <div class="copy-text">🚨 Active Fraud Alerts</div>
+            </div>
+            <div class="copy-section">
+              <div class="copy-label">📋 Copy for Postman Description:</div>
+              <div class="copy-text">
+                ⚠️ Get list of active fraud detection alerts requiring manager investigation and
+                action
+              </div>
+            </div>
+          </div>
+
+          <div class="endpoint">
+            <div class="endpoint-header">
+              <span class="method get">GET</span>
+              <span class="endpoint-url">{{baseUrl}}/fraud/patterns/:guid</span>
+            </div>
+            <div class="copy-section">
+              <div class="copy-label">📋 Copy for Postman Title:</div>
+              <div class="copy-text">📊 Employee Fraud Patterns</div>
+            </div>
+            <div class="copy-section">
+              <div class="copy-label">📋 Copy for Postman Description:</div>
+              <div class="copy-text">
+                🔍 Analyze suspicious patterns for specific employee with risk scoring and history
+              </div>
+            </div>
+          </div>
+
+          <div class="endpoint">
+            <div class="endpoint-header">
+              <span class="method put">PUT</span>
+              <span class="endpoint-url">{{baseUrl}}/fraud/alerts/:guid/investigate</span>
+            </div>
+            <div class="copy-section">
+              <div class="copy-label">📋 Copy for Postman Title:</div>
+              <div class="copy-text">🔍 Start Fraud Investigation</div>
+            </div>
+            <div class="copy-section">
+              <div class="copy-label">📋 Copy for Postman Description:</div>
+              <div class="copy-text">
+                🕵️ Mark fraud alert as under investigation and track resolution progress
+              </div>
+            </div>
+          </div>
+
+          <div class="endpoint">
+            <div class="endpoint-header">
+              <span class="method put">PUT</span>
+              <span class="endpoint-url">{{baseUrl}}/fraud/alerts/:guid/resolve</span>
+            </div>
+            <div class="copy-section">
+              <div class="copy-label">📋 Copy for Postman Title:</div>
+              <div class="copy-text">✅ Resolve Fraud Alert</div>
+            </div>
+            <div class="copy-section">
+              <div class="copy-label">📋 Copy for Postman Description:</div>
+              <div class="copy-text">
+                🎯 Close fraud alert with resolution details and corrective actions taken
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="endpoint-group">
+          <h4>Operational Alerts</h4>
+
+          <div class="endpoint">
+            <div class="endpoint-header">
+              <span class="method get">GET</span>
+              <span class="endpoint-url">{{baseUrl}}/alerts/late-arrivals</span>
+            </div>
+            <div class="copy-section">
+              <div class="copy-label">📋 Copy for Postman Title:</div>
+              <div class="copy-text">⏰ Late Arrival Alerts</div>
+            </div>
+            <div class="copy-section">
+              <div class="copy-label">📋 Copy for Postman Description:</div>
+              <div class="copy-text">
+                🕐 Detect and list employees with late arrivals today requiring attention
+              </div>
+            </div>
+          </div>
+
+          <div class="endpoint">
+            <div class="endpoint-header">
+              <span class="method get">GET</span>
+              <span class="endpoint-url">{{baseUrl}}/alerts/missing-clockouts</span>
+            </div>
+            <div class="copy-section">
+              <div class="copy-label">📋 Copy for Postman Title:</div>
+              <div class="copy-text">🔓 Missing Check-outs</div>
+            </div>
+            <div class="copy-section">
+              <div class="copy-label">📋 Copy for Postman Description:</div>
+              <div class="copy-text">
+                ⚠️ Identify unclosed work sessions where employees forgot to check out
+              </div>
+            </div>
+          </div>
+
+          <div class="endpoint">
+            <div class="endpoint-header">
+              <span class="method get">GET</span>
+              <span class="endpoint-url">{{baseUrl}}/alerts/memo-deadlines</span>
+            </div>
+            <div class="copy-section">
+              <div class="copy-label">📋 Copy for Postman Title:</div>
+              <div class="copy-text">📝 Memo Deadline Alerts</div>
+            </div>
+            <div class="copy-section">
+              <div class="copy-label">📋 Copy for Postman Description:</div>
+              <div class="copy-text">
+                ⏳ Alert for memos approaching or exceeding 24-hour validation deadline
+              </div>
+            </div>
+          </div>
+
+          <div class="endpoint">
+            <div class="endpoint-header">
+              <span class="method get">GET</span>
+              <span class="endpoint-url">{{baseUrl}}/alerts/system-notifications</span>
+            </div>
+            <div class="copy-section">
+              <div class="copy-label">📋 Copy for Postman Title:</div>
+              <div class="copy-text">🔔 System Notifications</div>
+            </div>
+            <div class="copy-section">
+              <div class="copy-label">📋 Copy for Postman Description:</div>
+              <div class="copy-text">
+                📢 Get important system notifications including updates, maintenance, and
+                announcements
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="endpoint-group">
+          <h4>Alert Configuration</h4>
+
+          <div class="endpoint">
+            <div class="endpoint-header">
+              <span class="method get">GET</span>
+              <span class="endpoint-url">{{baseUrl}}/alerts/settings</span>
+            </div>
+            <div class="copy-section">
+              <div class="copy-label">📋 Copy for Postman Title:</div>
+              <div class="copy-text">⚙️ Get Alert Preferences</div>
+            </div>
+            <div class="copy-section">
+              <div class="copy-label">📋 Copy for Postman Description:</div>
+              <div class="copy-text">
+                🔧 Retrieve current alert configuration and notification preferences for manager
+              </div>
+            </div>
+          </div>
+
+          <div class="endpoint">
+            <div class="endpoint-header">
+              <span class="method put">PUT</span>
+              <span class="endpoint-url">{{baseUrl}}/alerts/settings</span>
+            </div>
+            <div class="copy-section">
+              <div class="copy-label">📋 Copy for Postman Title:</div>
+              <div class="copy-text">🔧 Update Alert Settings</div>
+            </div>
+            <div class="copy-section">
+              <div class="copy-label">📋 Copy for Postman Description:</div>
+              <div class="copy-text">
+                ⚙️ Configure which alerts to receive and notification delivery preferences
+              </div>
+            </div>
+          </div>
+
+          <div class="endpoint">
+            <div class="endpoint-header">
+              <span class="method post">POST</span>
+              <span class="endpoint-url">{{baseUrl}}/alerts/test-notification</span>
+            </div>
+            <div class="copy-section">
+              <div class="copy-label">📋 Copy for Postman Title:</div>
+              <div class="copy-text">🧪 Test Notification System</div>
+            </div>
+            <div class="copy-section">
+              <div class="copy-label">📋 Copy for Postman Description:</div>
+              <div class="copy-text">
+                📱 Send test notification to verify delivery settings and troubleshoot issues
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- MODULE 8: DASHBOARD & ANALYTICS -->
+      <div id="dashboard" class="module">
+        <h2 class="module-title">
+          📊 Dashboard & Analytics <span class="sprint-badge sprint-3">Sprint 3</span>
+        </h2>
+
+        <div class="endpoint-group">
+          <h4>Main Dashboard</h4>
+
+          <div class="endpoint">
+            <div class="endpoint-header">
+              <span class="method get">GET</span>
+              <span class="endpoint-url">{{baseUrl}}/dashboard/overview</span>
+            </div>
+            <div class="copy-section">
+              <div class="copy-label">📋 Copy for Postman Title:</div>
+              <div class="copy-text">🏠 Manager Dashboard Overview</div>
+            </div>
+            <div class="copy-section">
+              <div class="copy-label">📋 Copy for Postman Description:</div>
+              <div class="copy-text">
+                📊 Get comprehensive manager dashboard with key metrics, alerts, and quick actions
+              </div>
+            </div>
+          </div>
+
+          <div class="endpoint">
+            <div class="endpoint-header">
+              <span class="method get">GET</span>
+              <span class="endpoint-url">{{baseUrl}}/dashboard/team-summary</span>
+            </div>
+            <div class="copy-section">
+              <div class="copy-label">📋 Copy for Postman Title:</div>
+              <div class="copy-text">👥 Real-time Team Summary</div>
+            </div>
+            <div class="copy-section">
+              <div class="copy-label">📋 Copy for Postman Description:</div>
+              <div class="copy-text">
+                ⚡ Live summary of team status including present employees, active sessions, and
+                issues
+              </div>
+            </div>
+          </div>
+
+          <div class="endpoint">
+            <div class="endpoint-header">
+              <span class="method get">GET</span>
+              <span class="endpoint-url">{{baseUrl}}/dashboard/kpis</span>
+            </div>
+            <div class="copy-section">
+              <div class="copy-label">📋 Copy for Postman Title:</div>
+              <div class="copy-text">📈 Key Performance Indicators</div>
+            </div>
+            <div class="copy-section">
+              <div class="copy-label">📋 Copy for Postman Description:</div>
+              <div class="copy-text">
+                🎯 Critical KPIs including attendance rates, memo resolution times, and team
+                productivity
+              </div>
+            </div>
+          </div>
+
+          <div class="endpoint">
+            <div class="endpoint-header">
+              <span class="method get">GET</span>
+              <span class="endpoint-url">{{baseUrl}}/dashboard/recent-activity</span>
+            </div>
+            <div class="copy-section">
+              <div class="copy-label">📋 Copy for Postman Title:</div>
+              <div class="copy-text">⏰ Recent Team Activity</div>
+            </div>
+            <div class="copy-section">
+              <div class="copy-label">📋 Copy for Postman Description:</div>
+              <div class="copy-text">
+                📅 Timeline of recent team activities including check-ins, memos, and important
+                events
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="endpoint-group">
+          <h4>Advanced Analytics</h4>
+
+          <div class="endpoint">
+            <div class="endpoint-header">
+              <span class="method get">GET</span>
+              <span class="endpoint-url">{{baseUrl}}/analytics/attendance-trends</span>
+            </div>
+            <div class="copy-section">
+              <div class="copy-label">📋 Copy for Postman Title:</div>
+              <div class="copy-text">📈 Attendance Trend Analysis</div>
+            </div>
+            <div class="copy-section">
+              <div class="copy-label">📋 Copy for Postman Description:</div>
+              <div class="copy-text">
+                📊 Analyze team attendance patterns, trends, and seasonal variations over time
+              </div>
+            </div>
+          </div>
+
+          <div class="endpoint">
+            <div class="endpoint-header">
+              <span class="method get">GET</span>
+              <span class="endpoint-url">{{baseUrl}}/analytics/memo-patterns</span>
+            </div>
+            <div class="copy-section">
+              <div class="copy-label">📋 Copy for Postman Title:</div>
+              <div class="copy-text">📝 Memo Pattern Analysis</div>
+            </div>
+            <div class="copy-section">
+              <div class="copy-label">📋 Copy for Postman Description:</div>
+              <div class="copy-text">
+                🔍 Identify memo patterns by employee, type, and resolution to improve management
+              </div>
+            </div>
+          </div>
+
+          <div class="endpoint">
+            <div class="endpoint-header">
+              <span class="method get">GET</span>
+              <span class="endpoint-url">{{baseUrl}}/analytics/cost-evolution</span>
+            </div>
+            <div class="copy-section">
+              <div class="copy-label">📋 Copy for Postman Title:</div>
+              <div class="copy-text">💰 License Cost Evolution</div>
+            </div>
+            <div class="copy-section">
+              <div class="copy-label">📋 Copy for Postman Description:</div>
+              <div class="copy-text">
+                📈 Track license cost evolution and budget forecasting with team growth projections
+              </div>
+            </div>
+          </div>
+
+          <div class="endpoint">
+            <div class="endpoint-header">
+              <span class="method post">POST</span>
+              <span class="endpoint-url">{{baseUrl}}/analytics/custom-report</span>
+            </div>
+            <div class="copy-section">
+              <div class="copy-label">📋 Copy for Postman Title:</div>
+              <div class="copy-text">📋 Generate Custom Report</div>
+            </div>
+            <div class="copy-section">
+              <div class="copy-label">📋 Copy for Postman Description:</div>
+              <div class="copy-text">
+                🛠️ Create customized analytics report with specific parameters and date ranges
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="endpoint-group">
+          <h4>Data Export</h4>
+
+          <div class="endpoint">
+            <div class="endpoint-header">
+              <span class="method get">GET</span>
+              <span class="endpoint-url">{{baseUrl}}/exports/attendance/:format</span>
+            </div>
+            <div class="copy-section">
+              <div class="copy-label">📋 Copy for Postman Title:</div>
+              <div class="copy-text">📥 Export Attendance Data</div>
+            </div>
+            <div class="copy-section">
+              <div class="copy-label">📋 Copy for Postman Description:</div>
+              <div class="copy-text">
+                📊 Export attendance data in CSV or PDF format for payroll and reporting purposes
+              </div>
+            </div>
+          </div>
+
+          <div class="endpoint">
+            <div class="endpoint-header">
+              <span class="method get">GET</span>
+              <span class="endpoint-url">{{baseUrl}}/exports/memos/:format</span>
+            </div>
+            <div class="copy-section">
+              <div class="copy-label">📋 Copy for Postman Title:</div>
+              <div class="copy-text">📥 Export Memo Data</div>
+            </div>
+            <div class="copy-section">
+              <div class="copy-label">📋 Copy for Postman Description:</div>
+              <div class="copy-text">
+                📝 Export memo history and statistics for HR documentation and analysis
+              </div>
+            </div>
+          </div>
+
+          <div class="endpoint">
+            <div class="endpoint-header">
+              <span class="method get">GET</span>
+              <span class="endpoint-url">{{baseUrl}}/exports/billing/:format</span>
+            </div>
+            <div class="copy-section">
+              <div class="copy-label">📋 Copy for Postman Title:</div>
+              <div class="copy-text">📥 Export Billing Data</div>
+            </div>
+            <div class="copy-section">
+              <div class="copy-label">📋 Copy for Postman Description:</div>
+              <div class="copy-text">
+                💰 Export billing history and license cost data for accounting and budget tracking
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- FOOTER -->
+      <div
+        style="
+          text-align: center;
+          padding: 40px;
+          color: #6c757d;
+          border-top: 1px solid #dee2e6;
+          margin-top: 40px;
+        "
+      >
+        <h3 style="color: #004aad; margin-bottom: 20px">🚀 Ready to Build Toké App Manager API?</h3>
+        <p>
+          This guide provides complete endpoint specifications for developing a robust Manager
+          application.<br />
+          Copy titles and descriptions directly into Postman collections for consistent API
+          documentation.
+        </p>
+        <p style="margin-top: 20px; font-weight: 600">
+          📞 Need Support? Contact the Development Team
+        </p>
+      </div>
+    </div>
+
+    <script>
+      // Add click handlers for copy functionality
+      document.querySelectorAll('.copy-text').forEach((element) => {
+        element.addEventListener('click', () => {
+          navigator.clipboard.writeText(element.textContent);
+          element.style.background = '#d4edda';
+          setTimeout(() => {
+            element.style.background = 'white';
+          }, 1000);
+        });
+      });
+
+      // Smooth scrolling for navigation
+      document.querySelectorAll('a[href^="#"]').forEach((anchor) => {
+        anchor.addEventListener('click', function (e) {
+          e.preventDefault();
+          const target = document.querySelector(this.getAttribute('href'));
+          target.scrollIntoView({
+            behavior: 'smooth',
+            block: 'start',
+          });
+        });
+      });
+    </script>
+  </body>
+</html>

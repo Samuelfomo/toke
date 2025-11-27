@@ -1,185 +1,273 @@
 <template>
   <AuthForm
-    page-title="Connexion - Toké"
+    ref="authFormRef"
+    page-title="Connexion Employé - Toké"
     :css-file="authCss"
     welcome-message="Authentification"
-    submit-button-text="Envoyer"
-    :loading="loading" loading-text="Connexion..."
-    :secondary-action-link="{ url: '/otp', text: 'J\'ai un jeton valide' }"
-    redirect-to="/otp"
+    submit-button-text="Se connecter"
+    loading-text="Connexion en cours..."
+    :default-fields="loginFields"
+    :validation="validateLogin"
+    :back-link="{ url: '/tenant-selection', text: 'Changer de tenant' }"
     @submit="handleLogin"
-    @field-change="onFieldChange"
   >
-    <template #fields="{ formData, updateField }">
-      <div class="auth-field">
-        <input
-          :id="emailId"
-          :value="formData.email"
-          @input="updateField('email', ($event.target as HTMLInputElement).value)"
-          type="email"
-          placeholder="Renseigner votre email"
-          class="auth-input"
-          :class="{ 'input-error': emailError }" required
-        />
-        <p v-if="emailError" class="error-message">{{ emailError }}</p>
+    <template #fields="{ formData = {}, updateField, errors = {} }">
+      <div class="login-fields">
+        <div class="form-group">
+          <label for="customer_code" class="form-label">
+            <span class="label-icon">🏷️</span>
+            Code client
+          </label>
+
+          <input
+            id="customer_code"
+            :value="formData.customer_code || ''"
+            type="text"
+            class="form-input"
+            placeholder="Ex : CLT-20455"
+            autocomplete="off"
+            :class="{ 'error': errors.customer_code }"
+            @input="updateField('customer_code', ($event.target as HTMLInputElement).value)"
+            @blur="handleCustomerCodeBlur(formData.customer_code, updateField)" />
+          <span v-if="errors.customer_code" class="error-message">
+            {{ errors.customer_code }}
+          </span>
+        </div>
+        <div class="form-group">
+          <label for="email" class="form-label">
+            <span class="label-icon">📧</span>
+            Adresse email
+          </label>
+
+          <input
+            id="email"
+            :value="formData.email || ''"
+            type="email"
+            class="form-input"
+            placeholder="votre.email@entreprise.com"
+            autocomplete="email"
+            :class="{ 'error': errors.email }"
+            @input="updateField('email', ($event.target as HTMLInputElement).value)"
+            @blur="handleEmailBlur(formData.email, updateField)"
+          />
+
+          <span v-if="errors.email" class="error-message">{{ errors.email }}</span>
+        </div>
+
       </div>
     </template>
 
+    <template #footer>
+      <div class="login-footer">
+        <small class="copyright">
+          Copyright Imediatis 2025 - Tous droits réservés
+        </small>
+      </div>
+    </template>
   </AuthForm>
 </template>
 
-
 <script setup lang="ts">
-import { computed, ref } from 'vue';
-import AuthForm from './components/auth/authForm.vue'
-import authCss from '../assets/css/toke-auth-01.css?url'
-import authCtrl from '../ctrl/auth';
+import { ref } from 'vue';
+import AuthForm from './components/auth/authForm.vue';
+import authCss from '../assets/css/toke-auth-01.css?url';
+import authCtrl from '../ctrl/authCtrl';
 import router from '@/router';
 
-// ID unique pour l'email
-const emailId = computed(() => `email-${Math.random().toString(36).substr(2, 9)}`)
-// Initialisation de la donnée 'email' pour être tenue à jour par onFieldChange
+// Référence au composant AuthForm
+const authFormRef = ref<any>(null);
 
-const email = ref<string>("");
-const loading = ref<boolean>(false);
-const emailError = ref<string>("");
+// ---------------------
+// DEFAULT FIELDS POUR AuthForm
+// ---------------------
+const loginFields = ref([
+  { name: 'email', value: '' },
+  { name: 'customer_code', value: '' }
+] as any);
 
-// État pour les notifications (si vous avez un composant qui l'utilise)
-const notification = ref({
-  open: false,
-  message: "",
-  severity: "info" as "success" | "error" | "warning" | "info"
-});
+// ---------------------
+// VALIDATION GLOBALE
+// ---------------------
+const validateLogin = (formData: any = {}) => {
+  const emailValidationResult = authCtrl.validateEmail(formData.email || '');
+  const customerCodeValidationResult = authCtrl.validateCustomerCode(formData.customer_code || '');
 
-
-// --- Fonctions de Contrôle et d'Affichage ---
-
-/**
- * Affiche une notification.
- */
-const showNotification = (message: string, severity: "success" | "error" | "warning" | "info") => {
-  notification.value = { open: true, message, severity };
+  return emailValidationResult.isValid && customerCodeValidationResult.isValid;
 };
 
-/**
- * Valide l'email en utilisant votre contrôle personnalisé.
- */
-const isEmailValid = (): boolean => {
-  if (!email.value) return false;
-  // Utilisation de votre fonction de validation
-  const validation = authCtrl.validateEmail(email.value);
-  return validation.isValid;
-};
+// ---------------------
+// VALIDATION EMAIL AU BLUR
+// ---------------------
+const handleEmailBlur = (email: string, updateField: Function) => {
+  if (!email || email.trim() === '') return;
 
-
-// --- Gestion des Événements du Formulaire ---
-
-/**
- * Gestion des changements de champs provenant de AuthForm.
- * Met à jour la variable 'email' et réinitialise l'erreur d'email.
- */
-const onFieldChange = (fieldName: string, value: any) => {
-  // console.log(`Champ ${fieldName} modifié:`, value) // Décommenter si besoin de debug
-  if (fieldName === 'email') {
-    email.value = value;
-    if (emailError.value) {
-      emailError.value = ""; // Réinitialiser l'erreur dès que l'utilisateur commence à taper
+  const validation = authCtrl.validateEmail(email);
+  if (!validation.isValid) {
+    // Utiliser la méthode exposée du composant AuthForm pour définir l'erreur
+    if (authFormRef.value) {
+      authFormRef.value.setFieldError('email', authCtrl.getUserFriendlyErrorMessage(validation.errors));
     }
   }
 };
 
-/**
- * Logique de soumission principale.
- * Elle est appelée par handleLogin après l'événement @submit.
- */
-const handleSubmit = async () => {
-  // 1. Contrôle Email côté client (si souhaité, en plus du contrôle authCtrl.validateEmail dans isEmailValid)
-  if (!isEmailValid()) {
-    emailError.value = "Format d'email invalide.";
-    showNotification("Veuillez renseigner une adresse email valide.", "error");
-    return;
+// ---------------------
+// VALIDATION CODE CLIENT AU BLUR
+// ---------------------
+const handleCustomerCodeBlur = (customerCode: string, updateField: Function) => {
+  if (!customerCode || customerCode.trim() === '') return;
+
+  const validation = authCtrl.validateCustomerCode(customerCode);
+  if (!validation.isValid) {
+    // Utiliser la méthode exposée du composant AuthForm pour définir l'erreur
+    if (authFormRef.value) {
+      authFormRef.value.setFieldError('customer_code', authCtrl.getUserFriendlyErrorMessage(validation.errors));
+    }
   }
+};
 
-  emailError.value = ""; // Reset de l'erreur
-  loading.value = true;
-
+// ---------------------
+// SOUMISSION DU FORMULAIRE
+// ---------------------
+const handleLogin = async (formData: any) => {
   try {
-    // 2. Appel de l'API avec votre logique (authCtrl.requestLogin)
-    const response = await authCtrl.requestLogin(email.value);
+    // console.log('🚀 Début de la soumission du formulaire:', formData);
+
+    // Validation locale avant envoi
+    const emailValidation = authCtrl.validateEmail(formData.email);
+    if (!emailValidation.isValid) {
+      const errorMsg = authCtrl.getUserFriendlyErrorMessage(emailValidation.errors);
+      if (authFormRef.value) {
+        authFormRef.value.setFieldError('email', errorMsg);
+      }
+      throw new Error(errorMsg);
+    }
+
+    const customerCodeValidation = authCtrl.validateCustomerCode(formData.customer_code);
+    if (!customerCodeValidation.isValid) {
+      const errorMsg = authCtrl.getUserFriendlyErrorMessage(customerCodeValidation.errors);
+      if (authFormRef.value) {
+        authFormRef.value.setFieldError('customer_code', errorMsg);
+      }
+      throw new Error(errorMsg);
+    }
+
+    // console.log('✅ Validation réussie, appel à l\'API...');
+
+    // Appel au contrôleur pour gérer la connexion
+    const response = await authCtrl.requestLogin({
+      email: formData.email,
+      customer_code: formData.customer_code
+    });
+
+    // console.log('📡 Réponse de l\'API:', response);
 
     if (response && response.success) {
-      // Succès : Afficher la notification et rediriger
-      showNotification(
-        response.message || "Un email contenant un code vous a été envoyé !",
-        "success"
-      );
+      // console.log('✨ Connexion réussie!');
 
-      // Délai pour laisser le temps à l'utilisateur de voir le succès avant la redirection
-      await new Promise((resolve) => setTimeout(resolve, 1000));
-      loading.value = false;
-      router.push("/otp");
-      return;
-
-    } else {
-      // Échec de l'API
-      loading.value = false;
-
-      // Logique spécifique de vérification d'email côté serveur
-      if (response.error && response.error.includes("Email invalide")) {
-        emailError.value = response.error;
-        showNotification("Veuillez corriger l'adresse email", "error");
-      } else {
-        // Afficher l'erreur générale
-        showNotification(
-          authCtrl.formatResponseMessage(response),
-          "error"
-        );
+      // Afficher un message de succès
+      if (authFormRef.value) {
+        authFormRef.value.setGlobalSuccess(response.message || 'Code OTP envoyé avec succès! Redirection...');
       }
+
+      // Stocker l'email pour la vérification OTP
+      sessionStorage.setItem('login_email', authCtrl.sanitizeEmail(formData.email));
+      sessionStorage.setItem('customer_code', formData.customer_code);
+
+      // Redirection vers la page OTP après un court délai
+      setTimeout(() => {
+        router.push('/otp');
+      }, 2000);
+
+      return response;
+    } else {
+      // console.error('❌ Échec de la connexion:', response);
+
+      // Afficher l'erreur globale
+      const errorMessage = authCtrl.formatResponseMessage(response);
+      if (authFormRef.value) {
+        authFormRef.value.setGlobalError(errorMessage);
+      }
+
+      throw new Error(errorMessage);
     }
-  } catch (error) {
-    // Erreur réseau/générale
-    loading.value = false;
-    console.error("Erreur réseau :", error);
-    showNotification(
-      "Une erreur est survenue. Veuillez réessayer plus tard.",
-      "error"
-    );
+
+  } catch (error: any) {
+    // console.error('💥 Erreur lors de la connexion:', error);
+
+    // Afficher l'erreur à l'utilisateur
+    if (authFormRef.value && !error.field) {
+      authFormRef.value.setGlobalError(
+        error.message || 'Une erreur est survenue lors de la connexion. Veuillez réessayer.'
+      );
+    }
+
+    // Re-throw pour que AuthForm gère aussi l'état isSubmitting
+    throw error;
   }
 };
+</script>
 
-
-/**
- * Gestion de la soumission du formulaire (appelée par @submit du template).
- * Assure que 'email' est bien dans le formData avant de lancer handleSubmit.
- */
-const handleLogin = (formData: any) => {
-  // console.log('Données de connexion:', formData) // Décommenter si besoin de debug
-
-  // Mettre à jour l'état 'email' à partir de formData si ce n'est pas déjà fait
-  if (formData.email !== undefined) {
-    email.value = formData.email;
-  }
-
-  // Lancer la logique de soumission et de vérification
-  handleSubmit();
+<style scoped>
+.login-fields {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
 }
 
-// Fonction inutile, laissée pour le cas où vous auriez besoin d'un composant notification
-// const handleCloseNotification = () => {
-//   notification.value.open = false;
-// };
+.form-group {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
 
-</script>
-<style scoped>
-/* Style d'erreur pour l'email */
-.input-error {
-  border-color: red !important;
-  box-shadow: 0 0 0 0.2rem rgba(255, 0, 0, 0.25);
+.form-label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-weight: 500;
+  font-size: 14px;
+  color: #333;
+}
+
+.label-icon {
+  font-size: 18px;
+}
+
+.form-input {
+  padding: 12px 16px;
+  border: 1px solid #ddd;
+  border-radius: 6px;
+  font-size: 14px;
+  transition: all 0.2s;
+}
+
+.form-input:focus {
+  outline: none;
+  border-color: #4CAF50;
+  box-shadow: 0 0 0 3px rgba(76, 175, 80, 0.1);
+}
+
+.form-input.error {
+  border-color: #f44336;
+}
+
+.form-input.error:focus {
+  box-shadow: 0 0 0 3px rgba(244, 67, 54, 0.1);
 }
 
 .error-message {
-  color: red;
-  font-size: 0.8em;
-  margin-top: 5px;
+  color: #f44336;
+  font-size: 12px;
+  margin-top: 4px;
+}
+
+.login-footer {
+  margin-top: 24px;
+  text-align: center;
+}
+
+.copyright {
+  color: #666;
+  font-size: 12px;
 }
 </style>

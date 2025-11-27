@@ -33,8 +33,19 @@
               {{ welcomeSubtitle }}
             </p>
           </slot>
+
+          <!-- Message d'erreur global -->
+          <div v-if="globalError" class="auth-global-error">
+            {{ globalError }}
+          </div>
+
+          <!-- Message de succès global -->
+          <div v-if="globalSuccess" class="auth-global-success">
+            {{ globalSuccess }}
+          </div>
+
           <form @submit.prevent="handleSubmit">
-            <slot name="fields" :formData="localFormData" :updateField="updateField">
+            <slot name="fields" :formData="localFormData" :updateField="updateField" :errors="fieldErrors">
               <div v-for="field in defaultFields" :key="field.name" class="auth-field">
                 <label v-if="field.label" :for="field.id" class="auth-field-label">
                   {{ field.label }}
@@ -46,7 +57,11 @@
                   :placeholder="field.placeholder"
                   :required="field.required"
                   class="auth-input"
+                  :class="{ 'error': fieldErrors[field.name] }"
                 />
+                <span v-if="fieldErrors[field.name]" class="error-message">
+                  {{ fieldErrors[field.name] }}
+                </span>
               </div>
             </slot>
             <slot name="actions" :formData="localFormData">
@@ -76,7 +91,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, watch, onMounted, nextTick } from 'vue';
+import { ref, computed, watch, onMounted} from 'vue';
 import { useRouter } from 'vue-router'
 import HeadBuilder from '../../../utils/HeadBuilder'
 import LazySvgImage from '../LazySvgImage.vue';
@@ -189,10 +204,6 @@ const props = defineProps({
     type: Boolean,
     default: false
   },
-  rememberMeText: {
-    type: String,
-    default: 'Se souvenir de moi'
-  },
 
   // Action secondaire
   secondaryActionLink: {
@@ -219,6 +230,9 @@ const emit = defineEmits(['submit', 'field-change', 'loading-complete'])
 // État local
 const isSubmitting = ref(false)
 const localFormData = ref({ ...props.initialData })
+const fieldErrors = ref<Record<string, string>>({})
+const globalError = ref('')
+const globalSuccess = ref('')
 
 // Computed pour la classe CSS du skeleton
 const skeletonContainerClass = computed(() => {
@@ -249,7 +263,27 @@ const isFormValid = computed(() => {
 // Fonction pour mettre à jour un champ
 const updateField = (fieldName: string, value: any) => {
   localFormData.value[fieldName] = value
+  // Nettoyer l'erreur du champ quand l'utilisateur tape
+  if (fieldErrors.value[fieldName]) {
+    fieldErrors.value[fieldName] = ''
+  }
+  // Nettoyer les messages globaux
+  globalError.value = ''
+  globalSuccess.value = ''
+
   emit('field-change', fieldName, value)
+}
+
+// Fonction pour définir une erreur de champ
+const setFieldError = (fieldName: string, errorMessage: string) => {
+  fieldErrors.value[fieldName] = errorMessage
+}
+
+// Fonction pour nettoyer toutes les erreurs
+const clearErrors = () => {
+  fieldErrors.value = {}
+  globalError.value = ''
+  globalSuccess.value = ''
 }
 
 // Watch pour les changements de données initiales
@@ -261,16 +295,28 @@ watch(() => props.initialData, (newData) => {
 const handleSubmit = async () => {
   if (!isFormValid.value) return
 
+  // Nettoyer les erreurs précédentes
+  clearErrors()
   isSubmitting.value = true
 
   try {
-    emit('submit', { ...localFormData.value })
+    const result = await emit('submit', { ...localFormData.value })
 
+    // Si une redirection est spécifiée et que tout s'est bien passé
     if (props.redirectTo) {
       await router.push(props.redirectTo)
     }
-  } catch (error) {
+  } catch (error: any) {
     console.error('Erreur lors de la soumission:', error)
+
+    // Gestion des erreurs
+    if (error.field) {
+      // Erreur spécifique à un champ
+      setFieldError(error.field, error.message)
+    } else {
+      // Erreur globale
+      globalError.value = error.message || 'Une erreur est survenue lors de la soumission du formulaire'
+    }
   } finally {
     isSubmitting.value = false
   }
@@ -294,4 +340,45 @@ onMounted(async () => {
   // Émettre l'événement de fin de chargement
   emit('loading-complete')
 })
+
+// Exposer les méthodes pour utilisation externe
+defineExpose({
+  setFieldError,
+  clearErrors,
+  setGlobalError: (msg: string) => { globalError.value = msg },
+  setGlobalSuccess: (msg: string) => { globalSuccess.value = msg }
+})
 </script>
+
+<style scoped>
+.auth-global-error {
+  background-color: #fee;
+  border: 1px solid #fcc;
+  color: #c33;
+  padding: 12px;
+  border-radius: 4px;
+  margin-bottom: 16px;
+  font-size: 14px;
+}
+
+.auth-global-success {
+  background-color: #efe;
+  border: 1px solid #cfc;
+  color: #3c3;
+  padding: 12px;
+  border-radius: 4px;
+  margin-bottom: 16px;
+  font-size: 14px;
+}
+
+.error-message {
+  color: #c33;
+  font-size: 12px;
+  margin-top: 4px;
+  display: block;
+}
+
+.auth-input.error {
+  border-color: #c33;
+}
+</style>
