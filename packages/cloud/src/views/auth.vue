@@ -3,7 +3,7 @@
     ref="authFormRef"
     page-title="Connexion Employé - Toké"
     :css-file="authCss"
-    welcome-message="Authentification"
+    welcome-message="Authentification 1"
     submit-button-text="Se connecter"
     loading-text="Connexion en cours..."
     :default-fields="loginFields"
@@ -54,7 +54,7 @@
           <span v-if="errors.email" class="error-message">{{ errors.email }}</span>
         </div>
 
-      </div>
+      </div>A-20251013190826-101
     </template>
 
     <template #footer>
@@ -70,7 +70,7 @@
 <script setup lang="ts">
 import { ref } from 'vue';
 import AuthForm from './components/auth/authForm.vue';
-import authCss from '../assets/css/toke-auth-01.css?url';
+import authCss from "../assets/css/toke-auth-01.css?url";
 import authCtrl from '../ctrl/authCtrl';
 import router from '@/router';
 
