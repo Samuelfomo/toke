@@ -392,7 +392,7 @@ export default class Memos extends MemosModel {
 
     const success = await this.submitUserResponse(this.id, userGuid, MemoStatus.SUBMITTED, message);
     if (success) {
-      // this.memo_status = MemoStatus.SUBMITTED;
+      this.memo_status = MemoStatus.SUBMITTED;
       await Memos._load(this.id);
     } else {
       throw new Error('Failed to submit memo for validation');
@@ -405,7 +405,7 @@ export default class Memos extends MemosModel {
     }
     const success = await this.submitUserResponse(this.id, userGuid, MemoStatus.PENDING, message);
     if (success) {
-      // this.memo_status = MemoStatus.PENDING;
+      this.memo_status = MemoStatus.PENDING;
       await Memos._load(this.id);
     } else {
       throw new Error('Failed to submit memo for validation');

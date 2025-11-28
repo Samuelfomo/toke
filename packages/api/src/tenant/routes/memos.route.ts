@@ -630,6 +630,13 @@ router.post('/manager', Ensure.post(), async (req: Request, res: Response) => {
       });
     }
 
+    if (memoData.target_user === memoData.author_user) {
+      return R.handleError(res, HttpStatus.CONFLICT, {
+        code: MEMOS_CODES.ACTION_NOT_ALLOWED,
+        message: MEMOS_ERRORS.NOT_ALLOWED,
+      });
+    }
+
     // Vérifier que target_user existe
     const targetUser = await User._load(memoData.target_user, true);
     if (!targetUser) {

@@ -194,6 +194,7 @@ export const MEMOS_ERRORS = {
   MESSAGE_TYPE_INVALID: 'Message type must be TEXT or LINK',
   NOT_EMPTY_CONTENT: 'Content cannot be empty',
   INVALID_ATTACTMENT_LINK: 'Each link must be a valid URL',
+  NOT_ALLOWED: 'This action is not permitted',
 };
 
 export const MEMOS_MESSAGES = {
