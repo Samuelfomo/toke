@@ -90,11 +90,10 @@ export const MemosDbStructure = {
     memo_status: {
       type: DataTypes.ENUM(...Object.values(MemoStatus)),
       allowNull: false,
-      defaultValue: MemoStatus.DRAFT,
       validate: {
         isIn: {
           args: [Object.values(MemoStatus)],
-          msg: 'Memo status must be one of: draft, submitted, pending, approved, rejected',
+          msg: 'Memo status must be one of: submitted, pending, approved, rejected',
         },
       },
       comment: 'Memo status',
@@ -165,8 +164,7 @@ export const MemosDbStructure = {
     },
     memo_content: {
       type: DataTypes.JSONB,
-      allowNull: true,
-      defaultValue: [],
+      allowNull: false,
       comment: 'Historique des messages (timeline)',
       validate: {
         isValidContent(value: any) {

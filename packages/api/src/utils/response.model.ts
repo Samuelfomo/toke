@@ -262,6 +262,9 @@ export const responseStructure = {
   RESPONDED_AT: 'responded_at',
   RESPONSE_USER: 'response_user',
   DETAILS: 'details',
+  MEMO_CONTENT: 'memo_content',
+  MESSAGES_COUNT: 'messages_count',
+  LATEST_MESSAGE: 'latest_message',
 
   ALERT_TYPE: 'alert_type',
   ALERT_SEVERITY: 'alert_severity',

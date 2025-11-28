@@ -1,11 +1,11 @@
 import {
-  Attachment,
   MemoContent,
   MEMOS_DEFAULTS,
   MEMOS_ERRORS,
   MemoStatus,
   MemosValidationUtils,
   MemoType,
+  Message,
 } from '@toke/shared';
 import { Op } from 'sequelize';
 
@@ -85,7 +85,6 @@ export default class MemosModel extends BaseModel {
       this.db.tableName,
       {
         [this.db.target_user]: target_user,
-        [this.db.memo_status]: { [Op.ne]: MemoStatus.DRAFT },
       },
       paginationOptions,
     );
@@ -145,25 +144,21 @@ export default class MemosModel extends BaseModel {
       this.db.tableName,
       {
         [this.db.target_user]: target_user,
-        [this.db.memo_status]: MemoStatus.SUBMITTED,
-        // [this.db.response_user]: null,
+        [this.db.memo_status]: MemoStatus.PENDING,
       },
       paginationOptions,
     );
   }
 
   // Memos en attente de validation (pour le manager)
-  protected async findPendingValidation(
+  protected async findSubmitForValidation(
     conditions: Record<string, any> = {},
     paginationOptions: { offset?: number; limit?: number } = {},
   ): Promise<any[]> {
     return await this.findAll(
       this.db.tableName,
       {
-        [this.db.memo_status]: MemoStatus.PENDING,
-        // [this.db.response_user]: {
-        //   [Op.ne]: null,
-        // },
+        [this.db.memo_status]: MemoStatus.SUBMITTED,
         ...conditions,
       },
       paginationOptions,
@@ -293,30 +288,28 @@ export default class MemosModel extends BaseModel {
   // 5. OPÉRATIONS DE MODIFICATION
   // ============================================================================
 
-  // Soumettre une réponse utilisateur
-  protected async submitResponse(
-    memo_id: number,
-    response_user: string,
-    attachments?: Array<string | Attachment>,
+  /**
+   * Soumettre une réponse utilisateur
+   */
+  protected async submitUserResponse(
+    memo: number,
+    user_guid: string,
+    status: MemoStatus.SUBMITTED | MemoStatus.PENDING,
+    response: Message | Message[],
   ): Promise<boolean> {
-    const updates: Record<string, any> = {
-      [this.db.response_user]: response_user,
-      [this.db.memo_status]: MemoStatus.SUBMITTED,
-      [this.db.responded_at]: new Date(),
-    };
+    // Ajouter le message à la timeline
+    const contentAdded = await this.addMessageToContent(memo, user_guid, response, 'response');
 
-    if (attachments && attachments.length > 0) {
-      const memoData = await this.find(memo_id);
-      const currentAttachments = MemosValidationUtils.normalizeAttachments(memoData?.attachments);
-      const newAttachments = MemosValidationUtils.normalizeAttachments(attachments);
-      // const currentAttachments = memoData?.attachments || [];
-      updates[this.db.attachments] = [...currentAttachments, ...newAttachments];
-    }
+    if (!contentAdded) return false;
 
-    const affectedRows = await this.updateOne(this.db.tableName, updates, {
-      [this.db.id]: memo_id,
-    });
-    return affectedRows > 0;
+    // Mettre à jour le statut
+    const statusUpdated = await this.updateOne(
+      this.db.tableName,
+      { [this.db.memo_status]: status },
+      { [this.db.id]: memo },
+    );
+
+    return statusUpdated > 0;
   }
 
   protected async submitForResponse(memo: number): Promise<boolean> {
@@ -467,61 +460,68 @@ export default class MemosModel extends BaseModel {
     };
   }
 
-  // Valider un memo (manager approuve la réponse)
-  protected async validateMemo(
-    memo_id: number,
-    validator_user: number,
-    comments: string,
-  ): Promise<boolean> {
-    const updates: Record<string, any> = {
-      [this.db.memo_status]: MemoStatus.APPROVED,
-      [this.db.validator_user]: validator_user,
-      [this.db.validator_comments]: comments,
-      [this.db.processed_at]: new Date(),
-    };
-
-    const affectedRows = await this.updateOne(this.db.tableName, updates, {
-      [this.db.id]: memo_id,
-    });
-    return affectedRows > 0;
-  }
-
-  // Rejeter un memo
-  protected async rejectMemo(
-    memo_id: number,
-    validator_user: number,
-    comments: string,
-  ): Promise<boolean> {
-    const updates: Record<string, any> = {
-      [this.db.memo_status]: MemoStatus.REJECTED,
-      [this.db.validator_user]: validator_user,
-      [this.db.validator_comments]: comments,
-      [this.db.processed_at]: new Date(),
-    };
-
-    const affectedRows = await this.updateOne(this.db.tableName, updates, {
-      [this.db.id]: memo_id,
-    });
-    return affectedRows > 0;
-  }
-
   protected async processValidation(
     memo: number,
     validator: number,
+    validator_guid: string,
     decision: MemoStatus.APPROVED | MemoStatus.REJECTED,
-    comments?: string,
+    message?: Message | Message[],
   ): Promise<boolean> {
+    if (message) {
+      const contentAdded = await this.addMessageToContent(
+        memo,
+        validator_guid,
+        message,
+        'escalation',
+      );
+      if (!contentAdded) return false;
+    }
+
     const updates: Record<string, any> = {
       [this.db.memo_status]:
         decision === MemoStatus.APPROVED ? MemoStatus.APPROVED : MemoStatus.REJECTED,
       [this.db.validator_user]: validator,
-      [this.db.validator_comments]: comments,
-      [this.db.processed_at]: new Date(),
     };
 
     const affectedRows = await this.updateOne(this.db.tableName, updates, {
       [this.db.id]: memo,
     });
+    return affectedRows > 0;
+  }
+
+  /**
+   * Valider un memo avec commentaires (remplace validateMemo)
+   */
+  protected async validateMemoWithComments(
+    memo: number,
+    validator_guid: string,
+    validator: number,
+    decision: MemoStatus.APPROVED | MemoStatus.REJECTED,
+    message?: Message,
+  ): Promise<boolean> {
+    const memoData = await this.find(memo);
+    if (!memoData) return false;
+    if (message) {
+      const contentAdded = await this.addMessageToContent(
+        memo,
+        validator_guid,
+        message,
+        'validation',
+      );
+
+      if (!contentAdded) return false;
+    }
+
+    // Mettre à jour le statut et le validateur
+    const updates = {
+      [this.db.memo_status]: decision,
+      [this.db.validator_user]: validator,
+    };
+
+    const affectedRows = await this.updateOne(this.db.tableName, updates, {
+      [this.db.id]: memo,
+    });
+
     return affectedRows > 0;
   }
 
@@ -556,20 +556,37 @@ export default class MemosModel extends BaseModel {
     return escalatedCount;
   }
 
-  protected async escalateMemo(
+  /**
+   * Escalader un memo avec raison
+   */
+  protected async escalateMemoWithReason(
     memo: number,
+    escalator_guid: string,
     new_validator: number,
-    reason: string,
+    message?: Message | Message[],
   ): Promise<boolean> {
+    const memoData = await this.find(memo);
+    if (!memoData) return false;
+    if (message) {
+      const contentAdded = await this.addMessageToContent(
+        memo,
+        escalator_guid,
+        message,
+        'escalation',
+      );
+      if (!contentAdded) return false;
+    }
+
+    // Mettre à jour le validateur et le statut
     const updates = {
       [this.db.validator_user]: new_validator,
-      [this.db.memo_status]: MemoStatus.PENDING,
-      [this.db.validator_comments]: `Escaladed: ${reason}`,
+      // [this.db.memo_status]: MemoStatus.PENDING,
     };
 
     const affectedRows = await this.updateOne(this.db.tableName, updates, {
       [this.db.id]: memo,
     });
+
     return affectedRows > 0;
   }
 
@@ -577,42 +594,53 @@ export default class MemosModel extends BaseModel {
   // 6. GESTION DES ATTACHMENTS
   // ============================================================================
 
-  protected async addAttachment(
+  /**
+   * Ajoute un message à la timeline du memo
+   */
+  protected async addMessageToContent(
     memo: number,
-    attachment: Array<string | Attachment>,
+    user_guid: string,
+    message: Message | Message[],
+    message_type?: 'initial' | 'response' | 'validation' | 'escalation',
   ): Promise<boolean> {
     const memoData = await this.find(memo);
     if (!memoData) return false;
 
-    const currentAttachments = MemosValidationUtils.normalizeAttachments(memoData.attachments);
-    const toAdd = MemosValidationUtils.normalizeAttachments(attachment);
-    const updated = [...currentAttachments, ...toAdd];
+    const currentContent: MemoContent[] = memoData.memo_content || [];
 
-    const updates = {
-      [this.db.attachments]: updated,
+    const newContent: MemoContent = {
+      created_at: new Date().toISOString(),
+      user: user_guid,
+      message,
+      type: message_type || 'response',
     };
 
-    const affectedRows = await this.updateOne(this.db.tableName, updates, {
-      [this.db.id]: memo,
-    });
+    const updatedContent = [...currentContent, newContent];
+
+    const affectedRows = await this.updateOne(
+      this.db.tableName,
+      { [this.db.memo_content]: updatedContent },
+      { [this.db.id]: memo },
+    );
+
     return affectedRows > 0;
   }
 
-  protected async removeAttachment(memo_id: number, attachment_index: number): Promise<boolean> {
-    const memoData = await this.find(memo_id);
+  protected async removeAttachment(memo: number, attachment_index: number): Promise<boolean> {
+    const memoData = await this.find(memo);
     if (!memoData || !Array.isArray(memoData.attachments)) return false;
 
-    const currentAttachments = MemosValidationUtils.normalizeAttachments(memoData.attachments);
+    const currentAttachments = MemosValidationUtils.normalizeMessages(memoData.memo_content);
     if (attachment_index < 0 || attachment_index >= currentAttachments.length) return false;
 
     currentAttachments.splice(attachment_index, 1);
 
     const updates = {
-      [this.db.attachments]: currentAttachments,
+      [this.db.memo_content]: currentAttachments,
     };
 
     const affectedRows = await this.updateOne(this.db.tableName, updates, {
-      [this.db.id]: memo_id,
+      [this.db.id]: memo,
     });
     return affectedRows > 0;
   }
@@ -676,12 +704,26 @@ export default class MemosModel extends BaseModel {
   // ============================================================================
   // 8. CRUD OPERATIONS
   // ============================================================================
-
   protected async create(): Promise<void> {
     const guid = await this.randomGuidGenerator(this.db.tableName);
     if (!guid) {
       throw new Error(MEMOS_ERRORS.GUID_GENERATION_FAILED);
     }
+
+    // // Créer le message initial si fourni dans details
+    // const initialContent: MemoContent[] = [];
+    //
+    // if (this.details) {
+    //   initialContent.push({
+    //     created_at: new Date().toISOString(),
+    //     user: 'system', // ou this.author_user converti en GUID
+    //     message: {
+    //       type: MessageType.TEXT,
+    //       content: this.details,
+    //     },
+    //     type: 'initial',
+    //   });
+    // }
 
     const lastID = await this.insertOne(this.db.tableName, {
       [this.db.guid]: guid,
@@ -689,14 +731,14 @@ export default class MemosModel extends BaseModel {
       [this.db.target_user]: this.target_user,
       [this.db.validator_user]: this.validator_user,
       [this.db.memo_type]: this.memo_type,
-      [this.db.memo_status]: this.memo_status || MEMOS_DEFAULTS.MEMO_STATUS,
+      [this.db.memo_status]: this.memo_status,
       [this.db.title]: this.title,
-      [this.db.memo_content]: this.memo_content,
       [this.db.auto_generated]: this.auto_generated || MEMOS_DEFAULTS.AUTO_GENERATED,
       [this.db.details]: this.details,
       [this.db.incident_datetime]: this.incident_datetime,
       [this.db.affected_session]: this.affected_session,
       [this.db.affected_entries]: this.affected_entries,
+      [this.db.memo_content]: this.memo_content, // ✅ NOUVEAU
     });
 
     if (!lastID) {
@@ -736,5 +778,119 @@ export default class MemosModel extends BaseModel {
     paginationOptions: { offset?: number; limit?: number } = {},
   ): Promise<any[]> {
     return await this.findAll(this.db.tableName, conditions, paginationOptions);
+  }
+
+  /**
+   * Récupère toute la timeline du memo
+   */
+  protected async getMemoTimeline(memo: number): Promise<MemoContent[]> {
+    const memoData = await this.find(memo);
+    return memoData?.memo_content || [];
+  }
+
+  /**
+   * Récupère le dernier message du memo
+   */
+  protected async getLatestMessage(memo: number): Promise<MemoContent | null> {
+    const timeline = await this.getMemoTimeline(memo);
+    return timeline.length > 0 ? timeline[timeline.length - 1] : null;
+  }
+
+  /**
+   * Récupère tous les messages d'un utilisateur spécifique
+   */
+  protected async getMessagesByUser(memo: number, user_guid: string): Promise<MemoContent[]> {
+    const timeline = await this.getMemoTimeline(memo);
+    return timeline.filter((content) => content.user === user_guid);
+  }
+
+  /**
+   * Compte le nombre total de messages dans le memo
+   */
+  protected async countMessages(memo: number): Promise<number> {
+    const timeline = await this.getMemoTimeline(memo);
+    return timeline.length;
+  }
+
+  /**
+   * Récupère tous les messages de type spécifique
+   */
+  protected async getMessagesByType(
+    memo: number,
+    type: 'initial' | 'response' | 'validation' | 'escalation',
+  ): Promise<MemoContent[]> {
+    const timeline = await this.getMemoTimeline(memo);
+    return timeline.filter((content) => content.type === type);
+  }
+
+  /**
+   * Vérifie si un utilisateur a déjà répondu
+   */
+  protected async hasUserResponded(memo: number, user_guid: string): Promise<boolean> {
+    const userMessages = await this.getMessagesByUser(memo, user_guid);
+    return userMessages.length > 0;
+  }
+
+  /**
+   * Remplace toute la timeline (utile pour migrations)
+   */
+  protected async replaceMemoContent(memo: number, newContent: MemoContent[]): Promise<boolean> {
+    const affectedRows = await this.updateOne(
+      this.db.tableName,
+      { [this.db.memo_content]: newContent },
+      { [this.db.id]: memo },
+    );
+    return affectedRows > 0;
+  }
+
+  // ============================================================================
+  // MÉTHODES UTILITAIRES POUR ANALYTICS
+  // ============================================================================
+
+  /**
+   * Calcule le temps moyen de réponse (en heures)
+   */
+  protected async getAverageResponseTime(memo: number): Promise<number> {
+    const timeline = await this.getMemoTimeline(memo);
+
+    if (timeline.length < 2) return 0;
+
+    let totalTime = 0;
+    let intervals = 0;
+
+    for (let i = 1; i < timeline.length; i++) {
+      const prevTime = new Date(timeline[i - 1].created_at).getTime();
+      const currTime = new Date(timeline[i].created_at).getTime();
+      totalTime += currTime - prevTime;
+      intervals++;
+    }
+
+    return intervals > 0 ? totalTime / intervals / (1000 * 60 * 60) : 0;
+  }
+
+  /**
+   * Compte les échanges entre deux utilisateurs
+   */
+  protected async countExchangesBetweenUsers(
+    memo: number,
+    user1_guid: string,
+    user2_guid: string,
+  ): Promise<number> {
+    const timeline = await this.getMemoTimeline(memo);
+
+    let exchanges = 0;
+    let lastUser = '';
+
+    for (const content of timeline) {
+      if (
+        (content.user === user1_guid || content.user === user2_guid) &&
+        content.user !== lastUser
+      ) {
+        exchanges++;
+        lastUser = content.user;
+      }
+    }
+
+    return Math.floor(exchanges / 2);
   }
 }

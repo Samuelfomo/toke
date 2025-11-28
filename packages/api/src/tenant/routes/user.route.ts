@@ -1422,14 +1422,14 @@ router.patch('/:guid/status', Ensure.patch(), async (req: Request, res: Response
         message: USERS_ERRORS.GUID_INVALID,
       });
     }
-    const { status, supervisor } = req.body;
-    if (!status || !UsersValidationUtils.validateActive(status)) {
-      return R.handleError(res, HttpStatus.BAD_REQUEST, {
-        code: USERS_CODES.ACTIVE_STATUS_INVALID,
-        message: USERS_ERRORS.ACTIVE_STATUS_INVALID,
-      });
-    }
-    if (!supervisor || !UsersValidationUtils.validateGuid(supervisor)) {
+    const { supervisor } = req.query;
+    // if (!status || !UsersValidationUtils.validateActive(status)) {
+    //   return R.handleError(res, HttpStatus.BAD_REQUEST, {
+    //     code: USERS_CODES.ACTIVE_STATUS_INVALID,
+    //     message: USERS_ERRORS.ACTIVE_STATUS_INVALID,
+    //   });
+    // }
+    if (!supervisor || !UsersValidationUtils.validateGuid(String(supervisor))) {
       return R.handleError(res, HttpStatus.BAD_REQUEST, {
         code: USERS_CODES.INVALID_GUID,
         message: USERS_ERRORS.SUPERVISOR_NOT_FOUND,
@@ -1457,8 +1457,9 @@ router.patch('/:guid/status', Ensure.patch(), async (req: Request, res: Response
         message: USERS_ERRORS.AUTHORIZATION_FAILED,
       });
     }
+    const status = userObj.isActive()!;
 
-    userObj.setActive(status);
+    userObj.setActive(!status);
 
     await userObj.save();
     return R.handleSuccess(res, {

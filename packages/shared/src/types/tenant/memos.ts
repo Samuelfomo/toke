@@ -1,10 +1,5 @@
 import { MessageType } from '../../constants/tenant/memos.js';
 
-export interface Attachment {
-  title?: string | undefined;
-  link: string;
-}
-
 export interface Message {
   type: MessageType;
   content: string | string[]; // Array<string>
@@ -13,6 +8,6 @@ export interface Message {
 export interface MemoContent {
   created_at: Date | string;
   user: string;
-  message: Message;
+  message: Message | Message[];
   type?: 'initial' | 'response' | 'validation' | 'escalation';
 }
