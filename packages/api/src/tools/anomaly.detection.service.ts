@@ -1000,10 +1000,12 @@ class AnomalyDetectionService {
           {
             created_at: new Date().toISOString(),
             user: userAuthor?.getGuid()!,
-            message: {
-              type: MessageType.TEXT,
-              content: `${anomalies.map((a) => a.type).join(', ')}`,
-            },
+            message: [
+              {
+                type: MessageType.TEXT,
+                content: `${anomalies.map((a) => a.type).join(', ')}`,
+              },
+            ],
           },
         ],
         // if (description) this.description = description;
@@ -1066,10 +1068,12 @@ Validation manager requise pour accepter manuellement si raison légitime.
         {
           created_at: new Date().toISOString(),
           user: '',
-          message: {
-            type: MessageType.TEXT,
-            content: description,
-          },
+          message: [
+            {
+              type: MessageType.TEXT,
+              content: description,
+            },
+          ],
         },
       ])
       .setIncidentDatetime(new Date(validatedData.clocked_at))

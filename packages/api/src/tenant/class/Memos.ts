@@ -387,26 +387,26 @@ export default class Memos extends MemosModel {
   }
 
   // === GESTION DU CYCLE DE VIE ===
-  async submitMemosForValidation(userGuid: string, message: Message | Message[]): Promise<void> {
+  async submitMemosForValidation(userGuid: string, message: Message[]): Promise<Memos | null> {
     if (!this.id) throw new Error('Cannot submit memo without ID');
 
     const success = await this.submitUserResponse(this.id, userGuid, MemoStatus.SUBMITTED, message);
     if (success) {
       this.memo_status = MemoStatus.SUBMITTED;
-      await Memos._load(this.id);
+      return await Memos._load(this.id);
     } else {
       throw new Error('Failed to submit memo for validation');
     }
   }
 
-  async submitMemosForResponse(userGuid: string, message: Message): Promise<void> {
+  async submitMemosForResponse(userGuid: string, message: Message[]): Promise<Memos | null> {
     if (!this.id) {
       throw new Error('Cannot submit memo without ID');
     }
     const success = await this.submitUserResponse(this.id, userGuid, MemoStatus.PENDING, message);
     if (success) {
       this.memo_status = MemoStatus.PENDING;
-      await Memos._load(this.id);
+      return await Memos._load(this.id);
     } else {
       throw new Error('Failed to submit memo for validation');
     }
@@ -415,8 +415,8 @@ export default class Memos extends MemosModel {
   async approve(
     validator: number,
     validatorGuid: string,
-    message?: Message[] | Message,
-  ): Promise<void> {
+    message?: Message[],
+  ): Promise<Memos | null> {
     if (!this.id) {
       throw new Error('Cannot approve memo without ID');
     }
@@ -428,7 +428,7 @@ export default class Memos extends MemosModel {
       message,
     );
     if (success) {
-      await Memos._load(this.id);
+      return await Memos._load(this.id);
     } else {
       throw new Error('Failed to approve memo');
     }
@@ -437,8 +437,8 @@ export default class Memos extends MemosModel {
   async reject(
     validator: number,
     validatorGuid: string,
-    message?: Message | Message[],
-  ): Promise<void> {
+    message?: Message[],
+  ): Promise<Memos | null> {
     if (!this.id) {
       throw new Error('Cannot reject memo without ID');
     }
@@ -450,7 +450,7 @@ export default class Memos extends MemosModel {
       message,
     );
     if (success) {
-      await Memos._load(this.id);
+      return await Memos._load(this.id);
       // this.memo_status = MemoStatus.REJECTED;
       // this.validator_user = validator;
     } else {
@@ -461,8 +461,8 @@ export default class Memos extends MemosModel {
   async escalate(
     escalator_guid: string,
     new_validator: number,
-    message?: Message | Message[],
-  ): Promise<void> {
+    message?: Message[],
+  ): Promise<Memos | null> {
     if (!this.id) {
       throw new Error('Cannot escalate memo without ID');
     }
@@ -473,7 +473,7 @@ export default class Memos extends MemosModel {
       message,
     );
     if (success) {
-      await Memos._load(this.id);
+      return await Memos._load(this.id);
     } else {
       throw new Error('Failed to escalate memo');
     }
@@ -485,16 +485,16 @@ export default class Memos extends MemosModel {
    */
   async addMessage(
     userGuid: string,
-    message: Message,
+    message: Message[],
     messageType?: 'initial' | 'response' | 'validation' | 'escalation',
-  ): Promise<void> {
+  ): Promise<Memos | null> {
     if (!this.id) throw new Error('Cannot add message without memo ID');
 
     const success = await this.addMessageToContent(this.id, userGuid, message, messageType);
 
     if (success) {
       // Recharger les données pour mettre à jour l'objet local
-      await Memos._load(this.id);
+      return await Memos._load(this.id);
     } else {
       throw new Error('Failed to add text message');
     }

@@ -192,7 +192,10 @@ export const MEMOS_ERRORS = {
   ACTION_NOT_ALLOWED: 'Action not allowed on approved or rejected memo',
   MESSAGE_TYPE_REQUIRED: 'Message type is required',
   MESSAGE_TYPE_INVALID: 'Message type must be TEXT or LINK',
-  NOT_EMPTY_CONTENT: 'Content cannot be empty',
+  NOT_EMPTY_CONTENT: 'Text message must be at least 10 characters',
+  LINK_IS_REQUIRED: 'At least one link is required',
+  CONTENT_REQUIRED: 'Message content is required',
+  INVALID_CONTENT: 'Message content must be text or array of links',
   INVALID_ATTACTMENT_LINK: 'Each link must be a valid URL',
   NOT_ALLOWED: 'This action is not permitted',
 };

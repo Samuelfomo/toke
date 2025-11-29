@@ -295,7 +295,7 @@ export default class MemosModel extends BaseModel {
     memo: number,
     user_guid: string,
     status: MemoStatus.SUBMITTED | MemoStatus.PENDING,
-    response: Message | Message[],
+    response: Message[],
   ): Promise<boolean> {
     // Ajouter le message à la timeline
     const contentAdded = await this.addMessageToContent(memo, user_guid, response, 'response');
@@ -465,7 +465,7 @@ export default class MemosModel extends BaseModel {
     validator: number,
     validator_guid: string,
     decision: MemoStatus.APPROVED | MemoStatus.REJECTED,
-    message?: Message | Message[],
+    message?: Message[],
   ): Promise<boolean> {
     if (message) {
       const contentAdded = await this.addMessageToContent(
@@ -497,7 +497,7 @@ export default class MemosModel extends BaseModel {
     validator_guid: string,
     validator: number,
     decision: MemoStatus.APPROVED | MemoStatus.REJECTED,
-    message?: Message,
+    message?: Message[],
   ): Promise<boolean> {
     const memoData = await this.find(memo);
     if (!memoData) return false;
@@ -563,7 +563,7 @@ export default class MemosModel extends BaseModel {
     memo: number,
     escalator_guid: string,
     new_validator: number,
-    message?: Message | Message[],
+    message?: Message[],
   ): Promise<boolean> {
     const memoData = await this.find(memo);
     if (!memoData) return false;
@@ -600,7 +600,7 @@ export default class MemosModel extends BaseModel {
   protected async addMessageToContent(
     memo: number,
     user_guid: string,
-    message: Message | Message[],
+    message: Message[],
     message_type?: 'initial' | 'response' | 'validation' | 'escalation',
   ): Promise<boolean> {
     const memoData = await this.find(memo);
@@ -616,6 +616,8 @@ export default class MemosModel extends BaseModel {
     };
 
     const updatedContent = [...currentContent, newContent];
+
+    console.log('updatedContent', updatedContent);
 
     const affectedRows = await this.updateOne(
       this.db.tableName,
@@ -854,7 +856,7 @@ export default class MemosModel extends BaseModel {
     const timeline = await this.getMemoTimeline(memo);
 
     if (timeline.length < 2) return 0;
-
+ 
     let totalTime = 0;
     let intervals = 0;
 

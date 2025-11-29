@@ -8,6 +8,6 @@ export interface Message {
 export interface MemoContent {
   created_at: Date | string;
   user: string;
-  message: Message | Message[];
+  message: Message[];
   type?: 'initial' | 'response' | 'validation' | 'escalation';
 }

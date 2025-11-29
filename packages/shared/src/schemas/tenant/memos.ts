@@ -20,10 +20,18 @@ export const messageSchema = z.object({
     required_error: MEMOS_ERRORS.MESSAGE_TYPE_REQUIRED,
     invalid_type_error: MEMOS_ERRORS.MESSAGE_TYPE_INVALID,
   }),
-  content: z.union([
-    z.string().min(1, MEMOS_ERRORS.NOT_EMPTY_CONTENT),
-    z.array(z.string().url(MEMOS_ERRORS.INVALID_ATTACTMENT_LINK)),
-  ]),
+  content: z.union(
+    [
+      z.string().min(10, MEMOS_ERRORS.NOT_EMPTY_CONTENT),
+      z
+        .array(z.string().url(MEMOS_ERRORS.INVALID_ATTACTMENT_LINK))
+        .min(1, MEMOS_ERRORS.LINK_IS_REQUIRED),
+    ],
+    {
+      required_error: MEMOS_ERRORS.CONTENT_REQUIRED,
+      invalid_type_error: MEMOS_ERRORS.INVALID_CONTENT,
+    },
+  ),
 });
 
 export const memoContentSchema = z.object({
@@ -39,7 +47,7 @@ export const memoContentSchema = z.object({
     .max(MEMOS_VALIDATION.AUTHOR_USER.MAX_LENGTH, {
       message: MEMOS_ERRORS.AUTHOR_USER_INVALID,
     }),
-  message: messageSchema, //.or(z.array(messageSchema)),
+  message: z.array(messageSchema), //messageSchema.or(z.array(messageSchema)),
   type: z.enum(['initial', 'response', 'validation', 'escalation']).optional(),
 });
 
@@ -61,23 +69,25 @@ export const addMessageSchema = z.object({
     })
     .trim(),
 
-  message_type: z.nativeEnum(MessageType, {
-    required_error: 'Message type is required (TEXT or LINK)',
-    invalid_type_error: 'Message type must be TEXT or LINK',
-  }),
+  message: z.array(messageSchema), //messageSchema.or(z.array(messageSchema)),
 
-  message_content: z.union(
-    [
-      z.string().min(10, 'Text message must be at least 10 characters'),
-      z
-        .array(z.string().url('Each link must be a valid HTTPS URL'))
-        .min(1, 'At least one link is required'),
-    ],
-    {
-      required_error: 'Message content is required',
-      invalid_type_error: 'Message content must be text or array of links',
-    },
-  ),
+  // message_type: z.nativeEnum(MessageType, {
+  //   required_error: 'Message type is required (TEXT or LINK)',
+  //   invalid_type_error: 'Message type must be TEXT or LINK',
+  // }),
+  //
+  // message_content: z.union(
+  //   [
+  //     z.string().min(10, 'Text message must be at least 10 characters'),
+  //     z
+  //       .array(z.string().url('Each link must be a valid HTTPS URL'))
+  //       .min(1, 'At least one link is required'),
+  //   ],
+  //   {
+  //     required_error: 'Message content is required',
+  //     invalid_type_error: 'Message content must be text or array of links',
+  //   },
+  // ),
 
   content_type: z.enum(['initial', 'response', 'validation', 'escalation']).optional(),
 });
@@ -113,7 +123,7 @@ export const escalationSchema = z.object({
     })
     .trim(),
 
-  message: messageSchema.or(z.array(messageSchema)),
+  message: z.array(messageSchema), //messageSchema.or(z.array(messageSchema)),
 });
 
 // ============================================================================
@@ -364,7 +374,27 @@ export const validateMemoSchema = z.object({
       message: MEMOS_ERRORS.VALIDATOR_USER_INVALID,
     })
     .trim(),
-  memo_content: z.array(memoContentSchema).optional().nullable(),
+  message: z.array(messageSchema).optional(), //messageSchema.or(z.array(messageSchema)),
+
+  // message_type: z.nativeEnum(MessageType, {
+  //   required_error: 'Message type is required (TEXT or LINK)',
+  //   invalid_type_error: 'Message type must be TEXT or LINK',
+  // }),
+  //
+  // message_content: z.union(
+  //   [
+  //     z.string().min(10, 'Text message must be at least 10 characters'),
+  //     z
+  //       .array(z.string().url('Each link must be a valid HTTPS URL'))
+  //       .min(1, 'At least one link is required'),
+  //   ],
+  //   {
+  //     required_error: 'Message content is required',
+  //     invalid_type_error: 'Message content must be text or array of links',
+  //   },
+  // ),
+
+  content_type: z.enum(['initial', 'response', 'validation', 'escalation']).optional(),
 });
 
 // ============================================================================

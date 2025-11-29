@@ -1061,15 +1061,15 @@ router.patch('/:guid/manager-respond', Ensure.patch(), async (req: Request, res:
       });
     }
 
-    const content = {
-      type: validatedData.message_type,
-      content: validatedData.message_content,
-    };
-    await memoObj.submitMemosForResponse(validatedData.user, content);
+    // const content = {
+    //   type: validatedData.message_type,
+    //   content: validatedData.message_content,
+    // };
+    const data = await memoObj.submitMemosForResponse(validatedData.user, validatedData.message);
 
     return R.handleSuccess(
       res,
-      await memoObj.toJSON(responseValue.MINIMAL),
+      await data!.toJSON(responseValue.MINIMAL),
       //   {
       //   message: 'Memo submitted for response successfully',
       //   memo: await memoObj.toJSON(responseValue.MINIMAL),
@@ -1132,16 +1132,16 @@ router.patch('/:guid/respond', Ensure.patch(), async (req: Request, res: Respons
       });
     }
 
-    const content = {
-      type: validatedData.message_type,
-      content: validatedData.message_content,
-    };
+    // const content = {
+    //   type: validatedData.message_type,
+    //   content: validatedData.message_content,
+    // };
 
-    await memoObj.submitMemosForValidation(validatedData.user, content);
+    const data = await memoObj.submitMemosForValidation(validatedData.user, validatedData.message);
 
     return R.handleSuccess(
       res,
-      await memoObj.toJSON(responseValue.FULL),
+      await data!.toJSON(responseValue.FULL),
       //   {
       //   message: MEMOS_MESSAGES.RESPONDED_SUCCESSFULLY,
       //   memo: await memoObj.toJSON(responseValue.FULL),
@@ -1210,15 +1210,15 @@ router.patch('/:guid/validate', Ensure.patch(), async (req: Request, res: Respon
       });
     }
 
-    await memoObj.approve(
+    const data = await memoObj.approve(
       validatorObj.getId()!,
       validatedData.validator_user,
-      validatedData.memo_content?.map((entry) => entry.message),
+      validatedData.message,
     );
 
     return R.handleSuccess(
       res,
-      await memoObj.toJSON(),
+      await data!.toJSON(),
       //   {
       //   message: MEMOS_MESSAGES.APPROVED_SUCCESSFULLY,
       //   memo: await memoObj.toJSON(),
@@ -1288,15 +1288,15 @@ router.patch('/:guid/reject', Ensure.patch(), async (req: Request, res: Response
       });
     }
 
-    await memoObj.reject(
+    const data = await memoObj.reject(
       validatorObj.getId()!,
       validatedData.validator_user,
-      validatedData.memo_content?.map((entry) => entry.message),
+      validatedData.message,
     );
 
     return R.handleSuccess(
       res,
-      await memoObj.toJSON(),
+      await data!.toJSON(),
       //   {
       //   message: MEMOS_MESSAGES.REJECTED_SUCCESSFULLY,
       //   memo: await memoObj.toJSON(),
@@ -1363,7 +1363,7 @@ router.patch('/:guid/escalate', Ensure.patch(), async (req: Request, res: Respon
       });
     }
 
-    await memoObj.escalate(
+    const data = await memoObj.escalate(
       validatorObj.getGuid()!,
       newValidatorObj.getId()!,
       validatedData.message,
@@ -1371,7 +1371,7 @@ router.patch('/:guid/escalate', Ensure.patch(), async (req: Request, res: Respon
 
     return R.handleSuccess(res, {
       message: 'Memo escalated successfully',
-      memo: await memoObj.toJSON(),
+      memo: await data?.toJSON(),
       new_validator: newValidatorObj.toPublicJSON(),
     });
   } catch (error: any) {
@@ -1675,16 +1675,16 @@ router.patch('/:guid/content', Ensure.patch(), async (req: Request, res: Respons
       });
     }
 
-    const content = {
-      type: validatedData.message_type,
-      content: validatedData.message_content,
-    };
+    // const content = {
+    //   type: validatedData.message_type,
+    //   content: validatedData.message_content,
+    // };
 
-    await memoObj.addMessage(validatedData.user, content);
+    const data = await memoObj.addMessage(validatedData.user, validatedData.message);
 
     return R.handleSuccess(res, {
       message: 'Attachment added successfully',
-      memo: await memoObj.toJSON(responseValue.MINIMAL),
+      memo: await data?.toJSON(responseValue.MINIMAL),
     });
   } catch (error: any) {
     return R.handleError(res, HttpStatus.INTERNAL_ERROR, {

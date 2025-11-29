@@ -176,33 +176,68 @@ export const MemosDbStructure = {
             if (!item.created_at || !item.user || !item.message) {
               throw new Error('Each content item must have: created_at, user, message');
             }
-            // Check message structure
-            if (typeof item.message !== 'object' || !item.message.type || !item.message.content) {
-              throw new Error('Message must be a valid object with type and content');
-            }
-            // Check message.type is valid enum value
-            if (!Object.values(MessageType).includes(item.message.type)) {
-              throw new Error(`Invalid message type: ${item.message.type}`);
-            }
-            // Check content type
-            const isValidContent =
-              typeof item.message.content === 'string' ||
-              (Array.isArray(item.message.content) &&
-                item.message.content.every((c: any) => typeof c === 'string'));
 
-            if (!isValidContent) {
-              throw new Error('Message content must be a string or array of strings');
-            }
+            // // Check message structure
+            // if (typeof item.message !== 'object' || !item.message.type || !item.message.content) {
+            //   throw new Error('Message must be a valid object with type and content');
+            // }
+            // // Check message.type is valid enum value
+            // if (!Object.values(MessageType).includes(item.message.type)) {
+            //   throw new Error(`Invalid message type: ${item.message.type}`);
+            // }
+            // // Check content type
+            // const isValidContent =
+            //   typeof item.message.content === 'string' ||
+            //   (Array.isArray(item.message.content) &&
+            //     item.message.content.every((c: any) => typeof c === 'string'));
+            //
+            // if (!isValidContent) {
+            //   throw new Error('Message content must be a string or array of strings');
+            // }
+            //
+            // // Validate URL if type is LINK
+            // if (item.message.type === MessageType.LINK) {
+            //   const urls = Array.isArray(item.message.content)
+            //     ? item.message.content
+            //     : [item.message.content];
+            //
+            //   for (const url of urls) {
+            //     if (!/^https?:\/\/.+/.test(url)) {
+            //       throw new Error(`Invalid URL: ${url}`);
+            //     }
+            //   }
+            // }
+            // ✅ Normalisation: message peut être objet OU tableau d’objets
+            const messages = Array.isArray(item.message) ? item.message : [item.message];
+            for (const msg of messages) {
+              // ✅ Structure de chaque message
+              if (typeof msg !== 'object' || !msg.type || msg.content === undefined) {
+                throw new Error('Each message must be an object with type and content');
+              }
 
-            // Validate URL if type is LINK
-            if (item.message.type === MessageType.LINK) {
-              const urls = Array.isArray(item.message.content)
-                ? item.message.content
-                : [item.message.content];
+              // ✅ Vérification de l’enum MessageType
+              if (!Object.values(MessageType).includes(msg.type)) {
+                throw new Error(`Invalid message type: ${msg.type}`);
+              }
 
-              for (const url of urls) {
-                if (!/^https?:\/\/.+/.test(url)) {
-                  throw new Error(`Invalid URL: ${url}`);
+              // ✅ content peut être string OU tableau de strings
+              const isValidContent =
+                typeof msg.content === 'string' ||
+                (Array.isArray(msg.content) &&
+                  msg.content.every((c: any) => typeof c === 'string'));
+
+              if (!isValidContent) {
+                throw new Error('Message content must be a string or an array of strings');
+              }
+
+              // ✅ Validation stricte des URLs si type === LINK
+              if (msg.type === MessageType.LINK) {
+                const urls = Array.isArray(msg.content) ? msg.content : [msg.content];
+
+                for (const url of urls) {
+                  if (!/^https?:\/\/.+/.test(url)) {
+                    throw new Error(`Invalid URL: ${url}`);
+                  }
                 }
               }
             }
