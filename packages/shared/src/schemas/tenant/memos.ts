@@ -22,7 +22,7 @@ export const messageSchema = z.object({
   }),
   content: z.union(
     [
-      z.string().min(10, MEMOS_ERRORS.NOT_EMPTY_CONTENT),
+      z.string().min(1, MEMOS_ERRORS.NOT_EMPTY_CONTENT),
       z
         .array(z.string().url(MEMOS_ERRORS.INVALID_ATTACTMENT_LINK))
         .min(1, MEMOS_ERRORS.LINK_IS_REQUIRED),

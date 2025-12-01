@@ -10,6 +10,18 @@ interface Auth {
 }
 
 const baseUrl: string = '/tenant';
+// Déterminer si on est en dev ou prod
+const inDev = process.env.NODE_ENV === 'development';
+
+const siteUrl = inDev
+  ? `https://${process.env.MST_HOST}`
+  : `http://${process.env.HOST}:${process.env.MST_PORT}`;
+
+const api = createApiClient(
+  siteUrl, // ✅ Utilise siteUrl
+  process.env.SECRET_KEY,
+  process.env.API_KEY,
+);
 
 export class TenantService {
   static async authenticate(data: Auth): Promise<{
@@ -17,17 +29,16 @@ export class TenantService {
     response: object;
   }> {
     try {
-      const api = createApiClient(
-        `https://${process.env.MST_HOST}`,
-        process.env.SECRET_KEY,
-        process.env.API_KEY,
-      );
-
+      // const api = createApiClient(
+      //   `https://${process.env.MST_HOST}`,
+      //   process.env.SECRET_KEY,
+      //   process.env.API_KEY,
+      // );
+      
       const response = await api.post(`${baseUrl}/auth`, {
         email: data.email,
         code: data.code,
       });
-      console.log(response);
 
       return {
         status: response.status,
@@ -61,15 +72,13 @@ export class TenantService {
     response: object;
   }> {
     try {
-      const api = createApiClient(
-        `https://${process.env.MST_HOST}`,
-        process.env.SECRET_KEY,
-        process.env.API_KEY,
-      );
+      // const api = createApiClient(
+      //   `https://${process.env.MST_HOST}`,
+      //   process.env.SECRET_KEY,
+      //   process.env.API_KEY,
+      // );
 
       const response = await api.get(`${baseUrl}/verify-otp/${data}`);
-      console.log(response);
-
       return {
         status: response.status,
         response: response.data.data,

@@ -1459,6 +1459,17 @@ router.post('/auth', Ensure.post(), async (req: Request, res: Response) => {
       // return R.handleError(res, result.status, result.response);
     }
 
+    // 🆕 VÉRIFIER SI L'EMAIL A DÉJÀ UN OTP EN CACHE
+    const existingOtpRef = GenericCacheService.findByData((data) => {
+      return data.user?.email === email || data.user?.billingEmail === email;
+    });
+
+    if (existingOtpRef) {
+      // Supprimer l'ancien OTP pour cet email
+      await GenericCacheService.delete(existingOtpRef);
+      console.log(`🔄 Ancien OTP supprimé pour l'email ${email}`);
+    }
+
     // Générer un OTP unique
     let otp: string;
     let isUnique = false;

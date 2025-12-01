@@ -8,6 +8,8 @@ import {
   ROLES_ERRORS,
   SITES_ERRORS,
   TENANT_CODES,
+  USER_ROLES_CODES,
+  USER_ROLES_ERRORS,
   USERS_CODES,
   USERS_ERRORS,
   UsersValidationUtils,
@@ -594,11 +596,45 @@ router.get('/email/:email', Ensure.get(), async (req: Request, res: Response) =>
     }
 
     // Récupération des rôles de l'utilisateur
-    const userRoles = await UserRole.getUserRoles(userObj.getId()!);
+    // const userRoles = await UserRole.getUserRoles(userObj.getId()!);
+
+    let roles = [];
+
+    // Charger les rôles requis
+    const [adminRole, managerRole] = await Promise.all([
+      Role._load(RoleValues.ADMIN, false, true),
+      Role._load(RoleValues.MANAGER, false, true),
+    ]);
+
+    if (!adminRole || !managerRole) {
+      return R.handleError(res, HttpStatus.NOT_FOUND, {
+        code: 'role_not_found',
+        message: 'One or more roles (admin/manager) are missing',
+      });
+    }
+
+    const identifierAd = { user: userObj.getId(), role: adminRole.getId() };
+    const identifierMn = { user: userObj.getId(), role: managerRole.getId() };
+
+    const userRolesAd = await UserRole._load(identifierAd, false, true);
+    if (userRolesAd) {
+      roles.push(adminRole.toJSON());
+    }
+    const userRolesMn = await UserRole._load(identifierMn, false, true);
+    if (userRolesMn) {
+      roles.push(managerRole.toJSON());
+    }
+
+    if (!userRolesAd && !userRolesMn) {
+      return R.handleError(res, HttpStatus.NOT_FOUND, {
+        code: USER_ROLES_CODES.USER_ROLE_NOT_FOUND,
+        message: USER_ROLES_ERRORS.NOT_FOUND,
+      });
+    }
 
     const user = {
       ...userObj.toJSON(),
-      roles: userRoles.map((role) => role.toJSON()),
+      roles: roles,
     };
 
     return R.handleSuccess(res, user);
@@ -719,18 +755,54 @@ router.put('/:guid', Ensure.put(), async (req: Request, res: Response) => {
         message: USERS_ERRORS.AUTHORIZATION_FAILED,
       });
     }
-    let assigns: string[] = [];
+    // let assigns: string[] = [];
+    //
+    // await Promise.all(
+    //   Roles.map(async (role) => {
+    //     const assignByObj = await role.getAssignedByObject();
+    //     if (assignByObj) {
+    //       assigns.push(assignByObj.getGuid()!);
+    //     }
+    //   }),
+    // );
 
-    await Promise.all(
-      Roles.map(async (role) => {
-        const assignByObj = await role.getAssignedByObject();
-        if (assignByObj) {
-          assigns.push(assignByObj.getGuid()!);
-        }
-      }),
-    );
+    const assigns = (
+      await Promise.all(
+        Roles.map(async (role) => {
+          const assignByObj = await role.getAssignedByObject();
+          return assignByObj?.getGuid() ?? null;
+        }),
+      )
+    ).filter((guid): guid is string => guid !== null);
 
-    if (!assigns.includes(validatedData.supervisor!)) {
+    // const rolesID = (
+    //   await Promise.all(
+    //     Roles.map(async (role) => role.getRole())
+    //   )
+    // ).filter((id): id is number => Boolean(id));
+
+    const rolesID = Roles.map((role) => role.getRole()).filter(Boolean) as number[];
+
+    // Charger les rôles requis
+    const [adminRole, managerRole] = await Promise.all([
+      Role._load(RoleValues.ADMIN, false, true),
+      Role._load(RoleValues.MANAGER, false, true),
+    ]);
+
+    if (!adminRole || !managerRole) {
+      return R.handleError(res, HttpStatus.NOT_FOUND, {
+        code: 'role_not_found',
+        message: 'One or more roles (admin/manager) are missing',
+      });
+    }
+
+    const isAssigned = assigns.includes(validatedData.supervisor!);
+    const isAdmin = rolesID.includes(adminRole.getId()!);
+    const isManager = rolesID.includes(managerRole.getId()!);
+
+    console.log(isAssigned, isAdmin, isManager);
+
+    if (!isAssigned && !isAdmin && !isManager) {
       return R.handleError(res, HttpStatus.UNAUTHORIZED, {
         code: USERS_CODES.AUTHORIZATION_FAILED,
         message: USERS_ERRORS.AUTHORIZATION_FAILED,

@@ -270,6 +270,56 @@ export default class GenericCacheService {
   }
 
   /**
+   * Recherche une entrée dans le cache par une propriété spécifique des données
+   * @param searchFn - Fonction de recherche qui retourne true si l'entrée correspond
+   * @returns string | null - La référence trouvée ou null
+   */
+  public static findByData(searchFn: (data: any) => boolean): string | null {
+    const now = this.getCameroonTime();
+
+    for (const [ref, cacheData] of Object.entries(this.cache)) {
+      // Vérifier si l'entrée n'est pas expirée
+      const expiresAt = new Date(cacheData.expiresAt);
+      if (now <= expiresAt) {
+        // Appliquer la fonction de recherche
+        if (searchFn(cacheData.data)) {
+          return ref;
+        }
+      }
+    }
+
+    return null;
+  }
+
+  /**
+   * Supprime toutes les entrées correspondant à un critère
+   * @param searchFn - Fonction de recherche
+   * @returns number - Nombre d'entrées supprimées
+   */
+  public static async deleteByData(searchFn: (data: any) => boolean): Promise<number> {
+    const now = this.getCameroonTime();
+    const toDelete: string[] = [];
+
+    for (const [ref, cacheData] of Object.entries(this.cache)) {
+      const expiresAt = new Date(cacheData.expiresAt);
+      if (now <= expiresAt && searchFn(cacheData.data)) {
+        toDelete.push(ref);
+      }
+    }
+
+    for (const ref of toDelete) {
+      delete this.cache[ref];
+    }
+
+    if (toDelete.length > 0) {
+      await this.saveCacheToFile();
+      console.log(`🗑️ ${toDelete.length} entrée(s) supprimée(s) par critère de recherche`);
+    }
+
+    return toDelete.length;
+  }
+
+  /**
    * Obtient la date/heure locale du Cameroun (GMT+1)
    */
   private static getCameroonTime(): Date {
