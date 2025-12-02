@@ -5,6 +5,8 @@ import express from 'express';
 import cors from 'cors';
 
 import tenantRoute from './src/routes/tenant.route.js';
+import userRoute from './src/routes/user.route.js';
+import timeEntriesRoute from './src/routes/time.entries.route.js';
 
 dotenv.config();
 
@@ -153,6 +155,8 @@ export default class App {
     // TODO: Ajouter les routes métier ici
 
     this.app.use('/tenant', tenantRoute);
+    this.app.use('/user', userRoute);
+    this.app.use('/time-entries', timeEntriesRoute);
 
     // Route 404
     this.app.use((req, res) => {

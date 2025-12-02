@@ -49,7 +49,7 @@ export default class TenantCacheService {
       console.log(`⚠️ Tenant '${subdomain}' est inactif`);
       return null;
     }
- 
+
     return config;
   }
 
@@ -103,6 +103,22 @@ export default class TenantCacheService {
   public static async listTenants(): Promise<string[]> {
     await this.loadCacheFromFile();
     return Object.keys(this.cache);
+  }
+
+  /**
+   * Recherche une entrée dans le cache par une propriété spécifique des données
+   * @param searchFn - Fonction de recherche qui retourne true si l'entrée correspond
+   * @returns string | null - Le subdomain trouvé ou null
+   */
+  public static findByData(searchFn: (data: TenantConfig) => boolean): string | null {
+    for (const [subdomain, cacheData] of Object.entries(this.cache)) {
+      // Appliquer la fonction de recherche sur l'objet complet
+      if (searchFn(cacheData)) {
+        return subdomain;
+      }
+    }
+
+    return null;
   }
 
   /**
@@ -160,6 +176,7 @@ export default class TenantCacheService {
   private static shouldReloadCache(): boolean {
     return Date.now() - this.lastLoadTime > this.CACHE_DURATION;
   }
+
 }
 
 

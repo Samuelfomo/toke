@@ -29,6 +29,10 @@ export default class G {
 
   static identifierMissing = { code: 'identifier_missing', message: 'identifier is missing' };
   static clientDataRequired = { code: 'client_data_required', message: 'client data is missing' };
+  static clientReferenceRequired = {
+    code: 'client_reference_required',
+    message: 'client reference is missing',
+  };
 
   static missingRequired = { code: 'missing_required_fields', message: 'entry is required' };
   static unauthorizedAccess = { code: 'access_unauthorized', message: 'access unauthorized' };

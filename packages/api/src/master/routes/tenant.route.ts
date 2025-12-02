@@ -1451,6 +1451,7 @@ router.post('/auth', Ensure.post(), async (req: Request, res: Response) => {
 
     // Authentifier l'utilisateur
     const result = await UserAuthenticationService.auth(email, tenantObj.getSubdomain()!);
+
     if (result.status !== HttpStatus.SUCCESS) {
       return R.handleError(res, HttpStatus.UNAUTHORIZED, {
         code: 'authentication_failed',
@@ -1493,7 +1494,7 @@ router.post('/auth', Ensure.post(), async (req: Request, res: Response) => {
     // Stocker les données dans le cache avec l'OTP comme référence
     const dataToStore = {
       user: result.response,
-      tenant: tenantObj.getSubdomain(),
+      tenant: { ...tenantObj.toJSON(), subdomain: tenantObj.getSubdomain() },
     };
 
     const stored = await GenericCacheService.store(otp, dataToStore);

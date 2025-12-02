@@ -626,7 +626,7 @@ router.get('/email/:email', Ensure.get(), async (req: Request, res: Response) =>
     }
 
     if (!userRolesAd && !userRolesMn) {
-      return R.handleError(res, HttpStatus.NOT_FOUND, {
+      return R.handleError(res, HttpStatus.FORBIDDEN, {
         code: USER_ROLES_CODES.USER_ROLE_NOT_FOUND,
         message: USER_ROLES_ERRORS.NOT_FOUND,
       });
