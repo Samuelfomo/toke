@@ -121,7 +121,7 @@ export default class ClientProfileModel extends BaseModel {
       throw new Error('Profile description must be between 10 and 500 characters');
     }
 
-    // Valider le nom
+    // Valider le type
     if (typeof this.root !== 'boolean') {
       throw new Error('Profile root must be boolean');
     }

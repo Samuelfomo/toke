@@ -20,6 +20,9 @@ import { ClientDbStructure } from './data/client.db.js';
 import { ContactDbStructure } from './data/contact.db.js';
 import { InvitationDbStructure } from './data/sponsor.db.js';
 import { AppConfigDBStructure } from './data/app.config.db.js';
+import { EndpointDbStructure } from './data/endpoint.db.js';
+import { PermissionDbStructure } from './data/permission.db.js';
+import { FeatureDbStructure } from './data/feature.db.js';
 
 /**
  * Gestionnaire STATIQUE d'initialisation des tables
@@ -145,6 +148,9 @@ export class TableInitializer {
     this.defineActivityMonitoringModel();
 
     this.defineContactModel();
+    this.defineEndpointModel();
+    this.definePermissionModel();
+    this.defineFeatureModel();
 
     console.log(`✅ ${this.models.size} modèle(s) défini(s) 2025-01-01`);
   }
@@ -158,6 +164,38 @@ export class TableInitializer {
 
     this.models.set(InvitationDbStructure.tableName, model);
     console.log(`✅ Modèle Invitation défini (${InvitationDbStructure.tableName})`);
+  }
+
+  private static defineEndpointModel(): void {
+    const model = this.sequelize.define(
+      EndpointDbStructure.tableName,
+      EndpointDbStructure.attributes,
+      EndpointDbStructure.options,
+    );
+
+    this.models.set(EndpointDbStructure.tableName, model);
+    console.log(`✅ Modèle Endpoint défini (${EndpointDbStructure.tableName})`);
+  }
+
+  private static definePermissionModel(): void {
+    const model = this.sequelize.define(
+      PermissionDbStructure.tableName,
+      PermissionDbStructure.attributes,
+      PermissionDbStructure.options,
+    );
+
+    this.models.set(PermissionDbStructure.tableName, model);
+    console.log(`✅ Modèle Permission défini (${PermissionDbStructure.tableName})`);
+  }
+  private static defineFeatureModel(): void {
+    const model = this.sequelize.define(
+      FeatureDbStructure.tableName,
+      FeatureDbStructure.attributes,
+      FeatureDbStructure.options,
+    );
+
+    this.models.set(FeatureDbStructure.tableName, model);
+    console.log(`✅ Modèle Feature défini (${FeatureDbStructure.tableName})`);
   }
 
   private static defineAppConfigModel(): void {

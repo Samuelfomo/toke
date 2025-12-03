@@ -8,7 +8,7 @@ export class TimeEntriesService {
     data: string,
   ): Promise<{ status: number; response: object }> {
     try {
-      const api = getApiClient(reference);
+      const api = await getApiClient(reference);
 
       const response = await api.get(`${baseUrl}/attendance/team?manager=${data}`);
 

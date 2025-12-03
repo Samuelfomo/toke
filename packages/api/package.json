@@ -7,6 +7,8 @@
     "test": "echo \"Error: no test specified\" && exit 1",
     "testCreateClient": "tsx scripts/manageClient.ts",
     "testCreateProfile": "tsx scripts/manageProfile.ts",
+    "testCreatePermission": "tsx scripts/managePermission.ts",
+    "testCreateEndpoint": "tsx scripts/manageEndpoint.ts",
     "testTokens": "tsx scripts/testTokenGeneration.ts",
     "clean": "rimraf dist server.pid logs/*.log 2>/dev/null || true",
     "build": "npm run clean && tsc",

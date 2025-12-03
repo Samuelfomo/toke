@@ -6,8 +6,8 @@ import R from '../tools/response.js';
 import G from '../tools/glossary.js';
 import ClientCacheService from '../tools/client.cache.service.js';
 import { ApiKeyManager } from '../tools/api-key-manager.js';
-// import Endpoint from '../class/Endpoint';
-// import Permission from '../class/Permission';
+import Endpoint from '../master/class/Endpoint.js';
+import Permission from '../master/class/Permission.js';
 
 /**
  * Middleware d'authentification API Key global
@@ -65,10 +65,10 @@ export class ServerAuth {
         return;
       }
 
-      // TODO a supprimer apres les le devs
-      if (clientConfig.profile.root) {
-        return next();
-      }
+      // // TODO a supprimer apres les le devs
+      // if (clientConfig.profile.root) {
+      //   return next();
+      // }
 
       const rawToken = `${req.headers['x-api-signature'] || req.headers['X-Api-Signature']}`;
       const validity = `${req.headers['x-api-timestamp'] || req.headers['X-Api-Timestamp'] || ''}`;
@@ -211,20 +211,21 @@ export class ServerAuth {
     return async (req: Request, res: Response, next: NextFunction): Promise<void> => {
       const client = (req as any).client;
 
-      // if (!client.isRoot) {
-      //   const endpoint = await Endpoint._load(endpointData.toUpperCase(), true);
-      //   if (!endpoint) {
-      //     R.handleError(res, HttpStatus.UNAUTHORIZED, G.endpointNotFound);
-      //     return;
-      //   }
-      //   const permission = await Permission._load(client.profile, endpoint.getId());
-      //   if (!permission) {
-      //     R.handleError(res, HttpStatus.UNAUTHORIZED, G.accessForbidden);
-      //     return;
-      //   }
-      // }
+      if (!client.isRoot) {
+        const endpoint = await Endpoint._load(endpointData.toUpperCase(), true);
+        if (!endpoint) {
+          R.handleError(res, HttpStatus.UNAUTHORIZED, G.endpointNotFound);
+          return;
+        }
+        const identifier = { profile: client.profile, endpoint: endpoint.getId() };
+        const permission = await Permission._load(identifier, true);
+        if (!permission) {
+          R.handleError(res, HttpStatus.UNAUTHORIZED, G.accessForbidden);
+          return;
+        }
+      }
 
-      // TODO: Implémenter un système de permissions
+      // // TODO: Implémenter un système de permissions
       // if (!client.permissions.includes(route)) {
       //   ServerAuth.sendError(res, 403, 'INSUFFICIENT_PERMISSIONS', 'Permissions insuffisantes');
       //   return;

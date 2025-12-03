@@ -26,7 +26,9 @@ interface TenantCache {
 
 export default class TenantCacheService {
   private static cache: TenantCache = {};
-  private static cacheFile = path.join(process.cwd(), 'cache', 'tenants.json');
+  // private static cacheFile = path.join(process.cwd(), 'cache', 'tenants.json');
+  // Chemin absolu fixe car projet monorepos
+  private static cacheFile = '/opt/toke/packages/api/cache/tenants.json';
   private static lastLoadTime = 0;
   private static CACHE_DURATION = 5 * 60 * 1000; // 5 minutes
 
@@ -105,12 +107,33 @@ export default class TenantCacheService {
     return Object.keys(this.cache);
   }
 
+  // /**
+  //  * Recherche une entrée dans le cache par une propriété spécifique des données
+  //  * @param searchFn - Fonction de recherche qui retourne true si l'entrée correspond
+  //  * @returns string | null - Le subdomain trouvé ou null
+  //  */
+  // public static findByData(searchFn: (data: TenantConfig) => boolean): string | null {
+  //   for (const [subdomain, cacheData] of Object.entries(this.cache)) {
+  //     // Appliquer la fonction de recherche sur l'objet complet
+  //     if (searchFn(cacheData)) {
+  //       return subdomain;
+  //     }
+  //   }
+  //
+  //   return null;
+  // }
+
   /**
    * Recherche une entrée dans le cache par une propriété spécifique des données
    * @param searchFn - Fonction de recherche qui retourne true si l'entrée correspond
    * @returns string | null - Le subdomain trouvé ou null
    */
-  public static findByData(searchFn: (data: TenantConfig) => boolean): string | null {
+  public static async findByData(searchFn: (data: TenantConfig) => boolean): Promise<string | null> {
+    // Charger le cache si nécessaire
+    if (Object.keys(this.cache).length === 0 || this.shouldReloadCache()) {
+      await this.loadCacheFromFile();
+    }
+
     for (const [subdomain, cacheData] of Object.entries(this.cache)) {
       // Appliquer la fonction de recherche sur l'objet complet
       if (searchFn(cacheData)) {

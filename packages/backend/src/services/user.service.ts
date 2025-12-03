@@ -1,6 +1,8 @@
+import { HttpStatus } from '@toke/shared';
+
 import { getApiClient } from '../tools/api.factory.js';
 
-const baseUrl: string = '/tenant';
+const baseUrl: string = '/org-hierarchy';
 
 export class UserService {
   static async listTeamManager(
@@ -8,7 +10,10 @@ export class UserService {
     data: string,
   ): Promise<{ status: number; response: object }> {
     try {
-      const api = getApiClient(reference);
+      console.log('🚀 Démarrage listTeamManager avec référence:', reference);
+      const api = await getApiClient(reference);
+
+      console.log('✅ Client API créé');
 
       const response = await api.get(`${baseUrl}/employee/all-subordinates?supervisor=${data}`);
 
@@ -24,12 +29,12 @@ export class UserService {
         };
       } else if (error.request) {
         return {
-          status: 500,
+          status: HttpStatus.INTERNAL_ERROR,
           response: { message: 'No response from server', details: error.message },
         };
       } else {
         return {
-          status: 500,
+          status: HttpStatus.INTERNAL_ERROR,
           response: { message: 'Unexpected error', details: error.message },
         };
       }

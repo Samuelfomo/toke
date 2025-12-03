@@ -34,7 +34,7 @@ router.get(
       const result: any = await UserService.listTeamManager(client, String(supervisor));
 
       if (result.status !== HttpStatus.SUCCESS) {
-        return R.handleError(res, result.status, result.response.error);
+        return R.handleError(res, result.status, result.response);
       }
       return R.handleSuccess(res, result.response);
     } catch (error: any) {
