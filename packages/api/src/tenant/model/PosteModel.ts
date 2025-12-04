@@ -1,4 +1,4 @@
-import { Level, POSTE_DEFAULTS, POSTE_ERRORS } from '@toke/shared';
+import { Level, POSTE_DEFAULTS, POSTE_ERRORS, PosteValidationUtils } from '@toke/shared';
 import { Op } from 'sequelize';
 
 import BaseModel from '../database/db.base.js';
@@ -279,16 +279,16 @@ export default class PosteModel extends BaseModel {
     if (!this.title) {
       throw new Error(POSTE_ERRORS.TITLE_REQUIRED);
     }
-    // if (!PosteValidationUtils.validateTitle(this.title)) {
-    //   throw new Error(POSTE_ERRORS.TITLE_INVALID);
-    // }
+    if (!PosteValidationUtils.validateTitle(this.title)) {
+      throw new Error(POSTE_ERRORS.TITLE_INVALID);
+    }
 
     if (!this.code) {
       throw new Error(POSTE_ERRORS.CODE_REQUIRED);
     }
-    // if (!PosteValidationUtils.validateCode(this.code)) {
-    //   throw new Error(POSTE_ERRORS.CODE_INVALID);
-    // }
+    if (!PosteValidationUtils.validateCode(this.code)) {
+      throw new Error(POSTE_ERRORS.CODE_INVALID);
+    }
 
     if (!this.department) {
       throw new Error(POSTE_ERRORS.DEPARTMENT_REQUIRED);
@@ -297,23 +297,23 @@ export default class PosteModel extends BaseModel {
     //   throw new Error(POSTE_ERRORS.DEPARTMENT_INVALID);
     // }
 
-    // if (this.salary_base && !PosteValidationUtils.validateSalaryBase(this.salary_base)) {
-    //   throw new Error(POSTE_ERRORS.SALARY_BASE_INVALID);
-    // }
+    if (this.salary_base && !PosteValidationUtils.validateSalaryBase(this.salary_base)) {
+      throw new Error(POSTE_ERRORS.SALARY_BASE_INVALID);
+    }
 
-    // if (this.description && !PosteValidationUtils.validateDescription(this.description)) {
-    //   throw new Error(POSTE_ERRORS.DESCRIPTION_INVALID);
-    // }
+    if (this.description && !PosteValidationUtils.validateDescription(this.description)) {
+      throw new Error(POSTE_ERRORS.DESCRIPTION_INVALID);
+    }
 
-    // if (this.level && !PosteValidationUtils.validateLevel(this.level)) {
-    //   throw new Error(POSTE_ERRORS.LEVEL_INVALID);
-    // }
+    if (this.level && !PosteValidationUtils.validateLevel(this.level)) {
+      throw new Error(POSTE_ERRORS.LEVEL_INVALID);
+    }
 
-    // if (this.active !== undefined && !PosteValidationUtils.validateActive(this.active)) {
-    //   throw new Error(POSTE_ERRORS.ACTIVE_INVALID);
-    // }
+    if (this.active !== undefined && !PosteValidationUtils.validateActive(this.active)) {
+      throw new Error(POSTE_ERRORS.ACTIVE_INVALID);
+    }
 
-    // const cleaned = PosteValidationUtils.cleanPosteData(this);
-    // Object.assign(this, cleaned);
+    const cleaned = PosteValidationUtils.cleanPosteData(this);
+    Object.assign(this, cleaned);
   }
 }

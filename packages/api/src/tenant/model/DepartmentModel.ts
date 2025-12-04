@@ -1,4 +1,4 @@
-import { DEPARTMENT_DEFAULTS, DEPARTMENT_ERRORS } from '@toke/shared';
+import { DEPARTMENT_DEFAULTS, DEPARTMENT_ERRORS, DepartmentValidationUtils } from '@toke/shared';
 import { Op } from 'sequelize';
 
 import BaseModel from '../database/db.base.js';
@@ -248,30 +248,30 @@ export default class DepartmentModel extends BaseModel {
     if (!this.name) {
       throw new Error(DEPARTMENT_ERRORS.NAME_REQUIRED);
     }
-    // if (!DepartmentValidationUtils.validateName(this.name)) {
-    //   throw new Error(DEPARTMENT_ERRORS.NAME_INVALID);
-    // }
+    if (!DepartmentValidationUtils.validateName(this.name)) {
+      throw new Error(DEPARTMENT_ERRORS.NAME_INVALID);
+    }
 
     if (!this.code) {
       throw new Error(DEPARTMENT_ERRORS.CODE_REQUIRED);
     }
-    // if (!DepartmentValidationUtils.validateCode(this.code)) {
-    //   throw new Error(DEPARTMENT_ERRORS.CODE_INVALID);
-    // }
-    //
-    // if (this.description && !DepartmentValidationUtils.validateDescription(this.description)) {
-    //   throw new Error(DEPARTMENT_ERRORS.DESCRIPTION_INVALID);
-    // }
-    //
+    if (!DepartmentValidationUtils.validateCode(this.code)) {
+      throw new Error(DEPARTMENT_ERRORS.CODE_INVALID);
+    }
+
+    if (this.description && !DepartmentValidationUtils.validateDescription(this.description)) {
+      throw new Error(DEPARTMENT_ERRORS.DESCRIPTION_INVALID);
+    }
+
     // if (this.manager && !DepartmentValidationUtils.validateManager(this.manager)) {
     //   throw new Error(DEPARTMENT_ERRORS.MANAGER_INVALID);
     // }
-    //
-    // if (this.active !== undefined && !DepartmentValidationUtils.validateActive(this.active)) {
-    //   throw new Error(DEPARTMENT_ERRORS.ACTIVE_INVALID);
-    // }
-    //
-    // const cleaned = DepartmentValidationUtils.cleanDepartmentData(this);
-    // Object.assign(this, cleaned);
+
+    if (this.active !== undefined && !DepartmentValidationUtils.validateActive(this.active)) {
+      throw new Error(DEPARTMENT_ERRORS.ACTIVE_INVALID);
+    }
+
+    const cleaned = DepartmentValidationUtils.cleanDepartmentData(this);
+    Object.assign(this, cleaned);
   }
 }

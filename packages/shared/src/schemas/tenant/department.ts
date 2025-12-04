@@ -39,12 +39,12 @@ const baseDepartmentSchema = z.object({
     .nullable(),
 
   manager: z
-    .number({
+    .string({
       invalid_type_error: DEPARTMENT_ERRORS.MANAGER_INVALID,
     })
-    .int()
-    .min(DEPARTMENT_VALIDATION.MANAGER.MIN, DEPARTMENT_ERRORS.MANAGER_INVALID)
-    .max(DEPARTMENT_VALIDATION.MANAGER.MAX, DEPARTMENT_ERRORS.MANAGER_INVALID)
+    .min(DEPARTMENT_VALIDATION.MANAGER.MIN_LENGTH, DEPARTMENT_ERRORS.MANAGER_INVALID)
+    .max(DEPARTMENT_VALIDATION.MANAGER.MAX_LENGTH, DEPARTMENT_ERRORS.MANAGER_INVALID)
+    .trim()
     .optional()
     .nullable(),
 

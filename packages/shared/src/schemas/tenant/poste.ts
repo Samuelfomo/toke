@@ -31,13 +31,13 @@ const basePosteSchema = z.object({
     .trim(),
 
   department: z
-    .number({
+    .string({
       required_error: POSTE_ERRORS.DEPARTMENT_REQUIRED,
       invalid_type_error: POSTE_ERRORS.DEPARTMENT_INVALID,
     })
-    .int()
-    .min(POSTE_VALIDATION.DEPARTMENT.MIN, POSTE_ERRORS.DEPARTMENT_INVALID)
-    .max(POSTE_VALIDATION.DEPARTMENT.MAX, POSTE_ERRORS.DEPARTMENT_INVALID),
+    .min(POSTE_VALIDATION.DEPARTMENT.MIN_LENGTH, POSTE_ERRORS.DEPARTMENT_INVALID)
+    .max(POSTE_VALIDATION.DEPARTMENT.MAX_LENGTH, POSTE_ERRORS.DEPARTMENT_INVALID)
+    .trim(),
 
   salary_base: z
     .number({

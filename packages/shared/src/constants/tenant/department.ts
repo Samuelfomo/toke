@@ -18,8 +18,8 @@ export const DEPARTMENT_VALIDATION = {
     MAX_LENGTH: Infinity,
   },
   MANAGER: {
-    MIN: 1,
-    MAX: 2147483647,
+    MIN_LENGTH: 1,
+    MAX_LENGTH: 128,
   },
 } as const;
 
@@ -70,7 +70,7 @@ export const DEPARTMENT_ERRORS = {
 
   DESCRIPTION_INVALID: `Description must be between ${DEPARTMENT_VALIDATION.DESCRIPTION.MIN_LENGTH} and ${DEPARTMENT_VALIDATION.DESCRIPTION.MAX_LENGTH} characters`,
 
-  MANAGER_INVALID: `Manager ID must be between ${DEPARTMENT_VALIDATION.MANAGER.MIN} and ${DEPARTMENT_VALIDATION.MANAGER.MAX}`,
+  MANAGER_INVALID: `Manager GUID must be between ${DEPARTMENT_VALIDATION.MANAGER.MIN_LENGTH} and ${DEPARTMENT_VALIDATION.MANAGER.MAX_LENGTH}`,
   MANAGER_NOT_FOUND: 'Manager not found',
 
   ACTIVE_INVALID: 'Active must be a boolean value (true or false)',

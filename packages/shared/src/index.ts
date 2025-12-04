@@ -109,3 +109,5 @@ export * from './utils/tenant/time.entries.validation.js';
 export * from './utils/tenant/memos.validation.js';
 export * from './utils/tenant/audit.logs.validation.js';
 export * from './utils/tenant/fraud.alerts.validation.js';
+export * from './utils/tenant/department.validation.js';
+export * from './utils/tenant/poste.validation.js';
