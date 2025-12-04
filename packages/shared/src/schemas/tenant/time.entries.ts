@@ -45,14 +45,6 @@ const validatedDataSchema = z.object({
 
 // Base schema pour les validations communes
 const baseTimeEntriesSchema = z.object({
-  // session: z
-  //   .number({
-  //     required_error: TIME_ENTRIES_ERRORS.SESSION_REQUIRED,
-  //     invalid_type_error: TIME_ENTRIES_ERRORS.SESSION_INVALID,
-  //   })
-  //   .int()
-  //   .min(TIME_ENTRIES_VALIDATION.SESSION.MIN, TIME_ENTRIES_ERRORS.SESSION_INVALID)
-  //   .max(TIME_ENTRIES_VALIDATION.SESSION.MAX, TIME_ENTRIES_ERRORS.SESSION_INVALID),
 
   user: z
     .string({
@@ -391,108 +383,6 @@ export const validatePointageSequence = (
 
   return true;
 };
-
-// // Fonctions de validation avec gestion d'erreurs
-// export const validateTimeEntriesCreation = (data: any) => {
-//   try {
-//     return createTimeEntriesSchema.parse(data);
-//   } catch (error) {
-//     if (error instanceof z.ZodError) {
-//       throw new Error(`Validation failed: ${error.errors.map((e) => e.message).join(', ')}`);
-//     }
-//     throw error;
-//   }
-// };
-
-// export const validateTimeEntriesUpdate = (data: any) => {
-//   try {
-//     return updateTimeEntriesSchema.parse(data);
-//   } catch (error) {
-//     if (error instanceof z.ZodError) {
-//       throw new Error(`Validation failed: ${error.errors.map((e) => e.message).join(', ')}`);
-//     }
-//     throw error;
-//   }
-// };
-
-// export const validateTimeEntriesFilters = (data: any) => {
-//   try {
-//     return timeEntriesFiltersSchema.parse(data);
-//   } catch (error) {
-//     if (error instanceof z.ZodError) {
-//       throw new Error(`Invalid filters: ${error.errors.map((e) => e.message).join(', ')}`);
-//     }
-//     throw error;
-//   }
-// };
-
-// export const validateTimeEntriesGuid = (guid: any) => {
-//   try {
-//     return timeEntriesGuidSchema.parse(guid);
-//   } catch (error) {
-//     if (error instanceof z.ZodError) {
-//       throw new Error(TIME_ENTRIES_ERRORS.GUID_INVALID);
-//     }
-//     throw error;
-//   }
-// };
-//
-// // Validation métier pour les transitions de statut
-// export const validatePointageStatusTransition = (
-//   currentStatus: PointageStatus,
-//   newStatus: PointageStatus,
-// ) => {
-//   const validTransitions: Record<PointageStatus, PointageStatus[]> = {
-//     [PointageStatus.DRAFT]: [PointageStatus.PENDING],
-//     [PointageStatus.PENDING]: [
-//       PointageStatus.ACCEPTED,
-//       PointageStatus.REJECTED,
-//       PointageStatus.CORRECTED,
-//     ],
-//     [PointageStatus.ACCEPTED]: [PointageStatus.ACCOUNTED, PointageStatus.CORRECTED],
-//     [PointageStatus.CORRECTED]: [PointageStatus.ACCEPTED, PointageStatus.REJECTED],
-//     [PointageStatus.ACCOUNTED]: [], // Aucune transition autorisée depuis accounted
-//     [PointageStatus.REJECTED]: [PointageStatus.CORRECTED],
-//   };
-//
-//   if (!validTransitions[currentStatus].includes(newStatus)) {
-//     throw new Error(TIME_ENTRIES_ERRORS.STATUS_TRANSITION_INVALID);
-//   }
-//
-//   return true;
-// };
-
-// // Validation de la séquence de pointage
-// export const validatePointageSequence = (
-//   pointageType: PointageType,
-//   previousEntries: PointageType[],
-// ) => {
-//   const lastEntry = previousEntries[previousEntries.length - 1];
-//
-//   switch (pointageType) {
-//     case PointageType.CLOCK_OUT:
-//       if (lastEntry !== PointageType.CLOCK_IN && lastEntry !== PointageType.PAUSE_END) {
-//         throw new Error(TIME_ENTRIES_ERRORS.CLOCK_OUT_WITHOUT_CLOCK_IN);
-//       }
-//       break;
-//
-//     case PointageType.PAUSE_START:
-//     case PointageType.PAUSE_END:
-//       if (!previousEntries.includes(PointageType.CLOCK_IN)) {
-//         throw new Error(TIME_ENTRIES_ERRORS.PAUSE_WITHOUT_CLOCK_IN);
-//       }
-//       break;
-//
-//     case PointageType.CLOCK_IN:
-//       if (lastEntry === PointageType.CLOCK_IN || lastEntry === PointageType.PAUSE_START) {
-//         throw new Error(TIME_ENTRIES_ERRORS.CLOCK_IN_WITHOUT_CLOCK_OUT);
-//       }
-//       break;
-//   }
-//
-//   return true;
-// };
-
 
 // Schema complet pour les réponses (avec métadonnées)
 export const timeEntriesResponseSchema = baseTimeEntriesSchema.extend({

@@ -302,6 +302,9 @@ export const responseStructure = {
   PROFILE: 'profile',
   ENDPOINT: 'endpoint',
   ROUTE: 'route',
+
+  SALARY_BASE: 'salary_base',
+  LEVEL: 'level',
 } as const;
 
 export const RT = {
@@ -352,6 +355,8 @@ export const tableName = {
   CONTACT: `${G.tableAp}_contact`,
   INVITATION: `${G.tableAp}_invitation`,
   QR_CODE_GENERATION: `${G.tableAp}_qr_code`,
+  DEPARTMENT: `${G.tableAp}_department`,
+  POSTE: `${G.tableAp}_poste`,
 } as const;
 
 export const EntityRoute = {

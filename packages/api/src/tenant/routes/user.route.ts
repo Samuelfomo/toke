@@ -239,13 +239,15 @@ router.post('/', Ensure.post(), async (req: Request, res: Response) => {
 
     const userObj = new User()
       .setTenant(tenant.config.reference)
-      .setFirstName(validatedData.first_name)
       .setLastName(validatedData.last_name)
       .setPhoneNumber(validatedData.phone_number)
       .setCountry(validatedData.country);
 
     if (validatedData.email) {
       userObj.setEmail(validatedData.email);
+    }
+    if (validatedData.first_name) {
+      userObj.setFirstName(validatedData.first_name);
     }
 
     if (validatedData.employee_code) {
@@ -456,11 +458,11 @@ router.post('/manager', Ensure.post(), async (req: Request, res: Response) => {
     const buildUserObject = (data: any, tenant: any) => {
       const user = new User()
         .setTenant(tenant.config.reference)
-        .setFirstName(data.first_name)
         .setLastName(data.last_name)
         .setPhoneNumber(data.phone_number)
         .setCountry(data.country);
 
+      if (data.first_name) user.setFirstName(data.first_name);
       if (data.email) user.setEmail(data.email);
       if (data.employee_code) user.setEmployeeCode(data.employee_code);
       if (data.hire_date) user.setHireDate(new Date(data.hire_date));

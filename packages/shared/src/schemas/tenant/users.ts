@@ -51,7 +51,9 @@ const baseUsersSchema = z.object({
     })
     .min(USERS_VALIDATION.FIRST_NAME.MIN_LENGTH, USERS_ERRORS.FIRST_NAME_INVALID)
     .max(USERS_VALIDATION.FIRST_NAME.MAX_LENGTH, USERS_ERRORS.FIRST_NAME_INVALID)
-    .trim(),
+    .trim()
+    .optional()
+    .nullable(),
 
   last_name: z
     .string({

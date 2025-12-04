@@ -436,7 +436,7 @@ export class TableInitializer {
     console.log('🔄 Synchronisation avec la base de données...');
 
     const isDevelopment = process.env.NODE_ENV !== 'production';
-    const syncOptions = isDevelopment ? { alter: true } : {};
+    const syncOptions = isDevelopment ? {} : {};
 
     console.error(`🆘 Current Mode: ${process.env.NODE_ENV}`);
     try {
