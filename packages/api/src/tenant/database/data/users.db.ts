@@ -235,6 +235,14 @@ export const UsersDbStructure = {
       },
       comment: 'User last login date',
     },
+    device_token: {
+      type: DataTypes.STRING(255),
+      allowNull: true,
+      validate: {
+        len: [1, 255],
+      },
+      comment: 'User device token',
+    },
   } as ModelAttributes,
   options: {
     tableName: tableName.USERS,
@@ -310,6 +318,10 @@ export const UsersDbStructure = {
       {
         fields: ['country'],
         name: 'idx_user_country',
+      },
+      {
+        fields: ['device_token'],
+        name: 'idx_user_device_token',
       },
     ],
   } as ModelOptions,

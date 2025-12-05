@@ -293,9 +293,6 @@ export default class PosteModel extends BaseModel {
     if (!this.department) {
       throw new Error(POSTE_ERRORS.DEPARTMENT_REQUIRED);
     }
-    // if (!PosteValidationUtils.validateDepartment(this.department)) {
-    //   throw new Error(POSTE_ERRORS.DEPARTMENT_INVALID);
-    // }
 
     if (this.salary_base && !PosteValidationUtils.validateSalaryBase(this.salary_base)) {
       throw new Error(POSTE_ERRORS.SALARY_BASE_INVALID);

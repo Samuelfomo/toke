@@ -203,6 +203,10 @@ export default class User extends UserModel {
     return this.qr_code_expires_at;
   }
 
+  getDeviceToken(): string | undefined {
+    return this.device_token;
+  }
+
   // ============================================
   // SETTERS FLUENT
   // ============================================
@@ -299,6 +303,11 @@ export default class User extends UserModel {
 
   setQrCodeExpiresAt(qrCodeExpiresAt: Date): User {
     this.qr_code_expires_at = qrCodeExpiresAt;
+    return this;
+  }
+
+  setDeviceToken(deviceToken: string): User {
+    this.device_token = deviceToken;
     return this;
   }
 
@@ -610,6 +619,14 @@ export default class User extends UserModel {
     return false;
   }
 
+  async addDeviceToken(): Promise<boolean> {
+    if (this.id !== undefined) {
+      await W.isOccur(!this.id, `${G.identifierMissing.code}: User Add Device Token`);
+      return await this.updateDeviceToken(this.id, this.device_token!);
+    }
+    return false;
+  }
+
   toJSON(): object {
     return {
       [RS.GUID]: this.guid,
@@ -667,6 +684,7 @@ export default class User extends UserModel {
     this.job_title = data.job_title;
     this.active = data.active;
     this.last_login_at = data.last_login_at;
+    this.device_token = data.device_token;
     return this;
   }
 

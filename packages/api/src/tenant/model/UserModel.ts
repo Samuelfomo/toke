@@ -28,6 +28,7 @@ export default class UserModel extends BaseModel {
     password_hash: 'password_hash',
     otp_token: 'otp_token',
     otp_expires_at: 'otp_expires_at',
+    device_token: 'device_token',
 
     // QR Code Manager
     qr_code_token: 'qr_code_token',
@@ -62,6 +63,7 @@ export default class UserModel extends BaseModel {
   protected phone_number?: string;
   protected country?: string;
   protected employee_code?: string;
+  protected device_token?: string;
 
   // ⚠️ NE PAS HACHER ICI : Sequelize le fait automatiquement
   protected pin_hash?: string;
@@ -574,6 +576,7 @@ export default class UserModel extends BaseModel {
       [this.db.department]: this.department,
       [this.db.job_title]: this.job_title,
       [this.db.active]: this.active ?? USERS_DEFAULTS.ACTIVE,
+      // [this.db.device_token]: this.device_token ? this.device_token : null,
     });
 
     if (!lastID) {
@@ -654,6 +657,10 @@ export default class UserModel extends BaseModel {
       updateData[this.db.last_login_at] = this.last_login_at;
     }
 
+    // if (this.device_token !== undefined) {
+    //   updateData[this.db.device_token] = this.device_token;
+    // }
+
     const updated = await this.updateOne(this.db.tableName, updateData, { [this.db.id]: this.id });
 
     if (!updated) {
@@ -686,6 +693,18 @@ export default class UserModel extends BaseModel {
       this.db.tableName,
       {
         [this.db.deleted_at]: null,
+      },
+      { [this.db.id]: id },
+    );
+
+    return affected > 0;
+  }
+
+  protected async updateDeviceToken(id: number, device_token: string): Promise<boolean> {
+    const affected = await this.updateOne(
+      this.db.tableName,
+      {
+        [this.db.device_token]: device_token,
       },
       { [this.db.id]: id },
     );

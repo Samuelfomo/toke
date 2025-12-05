@@ -263,10 +263,6 @@ export default class DepartmentModel extends BaseModel {
       throw new Error(DEPARTMENT_ERRORS.DESCRIPTION_INVALID);
     }
 
-    // if (this.manager && !DepartmentValidationUtils.validateManager(this.manager)) {
-    //   throw new Error(DEPARTMENT_ERRORS.MANAGER_INVALID);
-    // }
-
     if (this.active !== undefined && !DepartmentValidationUtils.validateActive(this.active)) {
       throw new Error(DEPARTMENT_ERRORS.ACTIVE_INVALID);
     }

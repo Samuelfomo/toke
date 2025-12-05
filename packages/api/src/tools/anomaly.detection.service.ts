@@ -22,6 +22,9 @@ import Role from '../tenant/class/Role.js';
 import { RoleValues } from '../utils/response.model.js';
 import QrCodeGeneration from '../tenant/class/QrCodeGeneration.js';
 import OrgHierarchy from '../tenant/class/OrgHierarchy.js';
+import User from '../tenant/class/User.js';
+
+import { FCMService } from './notification.service.js';
 
 // === TYPES & ENUMS ===
 
@@ -1019,6 +1022,18 @@ class AnomalyDetectionService {
     // Notification manager si high/critical
     if ([AlertSeverity.HIGH, AlertSeverity.CRITICAL].includes(severity)) {
       console.log(`🔔 Notification manager ${validatorId} - Mémo ${memo.getGuid()}`);
+    }
+
+    const supervisorData = await User._load(userAuthor?.getAssignedBy());
+    // let notification: boolean = false;
+    if (supervisorData?.getDeviceToken()) {
+      try {
+        await FCMService.sendToToken(supervisorData?.getDeviceToken()!);
+        // notification = true;
+      } catch (error: any) {
+        // notification = false;
+        console.error(error);
+      }
     }
 
     return memo;

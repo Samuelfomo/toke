@@ -35,6 +35,7 @@ import { ValidationUtils } from '../../utils/view.validator.js';
 import TimeEntries from '../class/TimeEntries.js';
 import UserRole from '../class/UserRole.js';
 import Role from '../class/Role.js';
+import { FCMService } from '../../tools/notification.service.js';
 
 const router = Router();
 
@@ -583,7 +584,19 @@ router.post('/', Ensure.post(), async (req: Request, res: Response) => {
       });
     }
 
-    return R.handleCreated(res, await memoObj.toJSON());
+    const supervisorData = await User._load(supervisorObj.getAssignedBy());
+    let notification: boolean = false;
+    if (supervisorData?.getDeviceToken()) {
+      try {
+        await FCMService.sendToToken(supervisorData?.getDeviceToken()!);
+        notification = true;
+      } catch (error: any) {
+        notification = false;
+        console.error(error);
+      }
+    }
+
+    return R.handleCreated(res, { ...(await memoObj.toJSON()), notification });
   } catch (error: any) {
     if (error.issues) {
       return R.handleError(res, HttpStatus.BAD_REQUEST, {
@@ -711,7 +724,18 @@ router.post('/manager', Ensure.post(), async (req: Request, res: Response) => {
       });
     }
 
-    return R.handleCreated(res, await memoObj.toJSON());
+    let notification: boolean = false;
+    if (targetUser.getDeviceToken()) {
+      try {
+        await FCMService.sendToToken(targetUser?.getDeviceToken()!);
+        notification = true;
+      } catch (error: any) {
+        notification = false;
+        console.error(error);
+      }
+    }
+
+    return R.handleCreated(res, { ...(await memoObj.toJSON()), notification });
   } catch (error: any) {
     return R.handleError(res, HttpStatus.INTERNAL_ERROR, {
       code: MEMOS_CODES.CREATION_FAILED,
@@ -1067,9 +1091,21 @@ router.patch('/:guid/manager-respond', Ensure.patch(), async (req: Request, res:
     // };
     const data = await memoObj.submitMemosForResponse(validatedData.user, validatedData.message);
 
+    let notification: boolean = false;
+    const targetUser = await User._load(memoObj.getTargetUser()!);
+    if (targetUser?.getDeviceToken()) {
+      try {
+        await FCMService.sendToToken(targetUser?.getDeviceToken()!);
+        notification = true;
+      } catch (error: any) {
+        notification = false;
+        console.error(error);
+      }
+    }
+
     return R.handleSuccess(
       res,
-      await data!.toJSON(responseValue.MINIMAL),
+      { ...(await data!.toJSON(responseValue.MINIMAL)), notification },
       //   {
       //   message: 'Memo submitted for response successfully',
       //   memo: await memoObj.toJSON(responseValue.MINIMAL),
@@ -1139,9 +1175,21 @@ router.patch('/:guid/respond', Ensure.patch(), async (req: Request, res: Respons
 
     const data = await memoObj.submitMemosForValidation(validatedData.user, validatedData.message);
 
+    let notification: boolean = false;
+    const targetUser = await User._load(memoObj.getTargetUser()!);
+    if (targetUser?.getDeviceToken()) {
+      try {
+        await FCMService.sendToToken(targetUser?.getDeviceToken()!);
+        notification = true;
+      } catch (error: any) {
+        notification = false;
+        console.error(error);
+      }
+    }
+
     return R.handleSuccess(
       res,
-      await data!.toJSON(responseValue.FULL),
+      { ...(await data!.toJSON(responseValue.FULL)), notification },
       //   {
       //   message: MEMOS_MESSAGES.RESPONDED_SUCCESSFULLY,
       //   memo: await memoObj.toJSON(responseValue.FULL),
@@ -1216,14 +1264,130 @@ router.patch('/:guid/validate', Ensure.patch(), async (req: Request, res: Respon
       validatedData.message,
     );
 
+    let notification: boolean = false;
+    const targetUser = await User._load(memoObj.getTargetUser()!);
+    if (targetUser?.getDeviceToken()) {
+      try {
+        await FCMService.sendToToken(targetUser?.getDeviceToken()!);
+        notification = true;
+      } catch (error: any) {
+        notification = false;
+        console.error(error);
+      }
+    }
+
     return R.handleSuccess(
       res,
-      await data!.toJSON(),
+      { ...(await data!.toJSON()), notification },
       //   {
       //   message: MEMOS_MESSAGES.APPROVED_SUCCESSFULLY,
       //   memo: await memoObj.toJSON(),
       // }
     );
+  } catch (error: any) {
+    if (error.issues) {
+      return R.handleError(res, HttpStatus.BAD_REQUEST, {
+        code: MEMOS_CODES.VALIDATION_FAILED,
+        message: MEMOS_ERRORS.VALIDATION_FAILED,
+        details: error.issues,
+      });
+    } else {
+      return R.handleError(res, HttpStatus.INTERNAL_ERROR, {
+        code: MEMOS_CODES.APPROVAL_FAILED,
+        message: error.message,
+      });
+    }
+  }
+});
+
+router.patch('/validate-all', Ensure.patch(), async (req: Request, res: Response) => {
+  try {
+    const { guids } = req.body;
+
+    // Vérification du tableau de GUIDs
+    if (!Array.isArray(guids) || guids.length === 0) {
+      return R.handleError(res, HttpStatus.BAD_REQUEST, {
+        code: MEMOS_CODES.INVALID_GUID,
+        message: 'La liste des GUIDs est invalide ou vide.',
+      });
+    }
+
+    // Validation de chaque GUID
+    for (const guid of guids) {
+      if (!MemosValidationUtils.validateGuid(guid)) {
+        return R.handleError(res, HttpStatus.BAD_REQUEST, {
+          code: MEMOS_CODES.INVALID_GUID,
+          message: `${MEMOS_ERRORS.GUID_INVALID}: ${guid}`,
+        });
+      }
+    }
+
+    const validation = validateMemoValidation(req.body);
+    if (!validation.success || !validation.data) {
+      return R.handleError(res, HttpStatus.BAD_REQUEST, {
+        code: MEMOS_CODES.VALIDATION_FAILED,
+        message: MEMOS_ERRORS.VALIDATION_FAILED,
+        details: validation.errors,
+      });
+    }
+
+    const validatedData = validation.data;
+
+    // Vérifier l'existence du validateur
+    const validatorObj = await User._load(validatedData.validator_user, true);
+    if (!validatorObj) {
+      return R.handleError(res, HttpStatus.NOT_FOUND, {
+        code: USERS_CODES.USER_NOT_FOUND,
+        message: 'Validator user not found',
+      });
+    }
+
+    // Traitement de chaque memo
+    // for (const guid of guids) {
+    //   const memoObj = await Memos._load(guid, true);
+    //   if (!memoObj) {
+    //     return R.handleError(res, HttpStatus.NOT_FOUND, {
+    //       code: MEMOS_CODES.MEMO_NOT_FOUND,
+    //       message: `${MEMOS_ERRORS.NOT_FOUND} : ${guid}`,
+    //     });
+    //   }
+    //
+    //   // Empêcher la validation de son propre memo
+    //   if (memoObj.getAuthorUser() === validatorObj.getId()) {
+    //     return R.handleError(res, HttpStatus.UNAUTHORIZED, {
+    //       code: MEMOS_CODES.SELF_VALIDATION_NOT_ALLOWED,
+    //       message: MEMOS_ERRORS.SELF_VALIDATION_NOT_ALLOWED,
+    //     });
+    //   }
+    //
+    //   await memoObj.approve(validatorObj.getId()!, validatedData.validator_user);
+    // }
+
+    await Promise.all(
+      guids.map(async (guid) => {
+        const memoObj = await Memos._load(guid, true);
+        if (!memoObj) {
+          return R.handleError(res, HttpStatus.NOT_FOUND, {
+            code: MEMOS_CODES.MEMO_NOT_FOUND,
+            message: `${MEMOS_ERRORS.NOT_FOUND} : ${guid}`,
+          });
+        }
+
+        // Empêcher la validation de son propre memo
+        if (memoObj.getAuthorUser() === validatorObj.getId()) {
+          return R.handleError(res, HttpStatus.UNAUTHORIZED, {
+            code: MEMOS_CODES.SELF_VALIDATION_NOT_ALLOWED,
+            message: MEMOS_ERRORS.SELF_VALIDATION_NOT_ALLOWED,
+          });
+        }
+
+        await memoObj.approve(validatorObj.getId()!, validatedData.validator_user);
+      }),
+    );
+
+    return R.handleSuccess(res, {
+      message: MEMOS_MESSAGES.APPROVED_SUCCESSFULLY,
+    });
   } catch (error: any) {
     if (error.issues) {
       return R.handleError(res, HttpStatus.BAD_REQUEST, {
@@ -1294,9 +1458,21 @@ router.patch('/:guid/reject', Ensure.patch(), async (req: Request, res: Response
       validatedData.message,
     );
 
+    let notification: boolean = false;
+    const targetUser = await User._load(memoObj.getTargetUser()!);
+    if (targetUser?.getDeviceToken()) {
+      try {
+        await FCMService.sendToToken(targetUser?.getDeviceToken()!);
+        notification = true;
+      } catch (error: any) {
+        notification = false;
+        console.error(error);
+      }
+    }
+
     return R.handleSuccess(
       res,
-      await data!.toJSON(),
+      { ...(await data!.toJSON()), notification },
       //   {
       //   message: MEMOS_MESSAGES.REJECTED_SUCCESSFULLY,
       //   memo: await memoObj.toJSON(),
@@ -1369,10 +1545,22 @@ router.patch('/:guid/escalate', Ensure.patch(), async (req: Request, res: Respon
       validatedData.message,
     );
 
+    let notification: boolean = false;
+    if (newValidatorObj.getDeviceToken()) {
+      try {
+        await FCMService.sendToToken(newValidatorObj.getDeviceToken()!);
+        notification = true;
+      } catch (error: any) {
+        notification = false;
+        console.error(error);
+      }
+    }
+
     return R.handleSuccess(res, {
       message: 'Memo escalated successfully',
       memo: await data?.toJSON(),
       new_validator: newValidatorObj.toPublicJSON(),
+      notification: notification,
     });
   } catch (error: any) {
     return R.handleError(res, HttpStatus.INTERNAL_ERROR, {

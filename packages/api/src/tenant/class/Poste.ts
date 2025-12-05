@@ -3,10 +3,18 @@ import { Level, POSTE_DEFAULTS } from '@toke/shared';
 import PosteModel from '../model/PosteModel.js';
 import W from '../../tools/watcher.js';
 import G from '../../tools/glossary.js';
-import { responseStructure as RS, tableName } from '../../utils/response.model.js';
+import {
+  responseStructure as RS,
+  responseValue,
+  tableName,
+  ViewMode,
+} from '../../utils/response.model.js';
 import { TenantRevision } from '../../tools/revision.js';
 
+import Department from './Department.js';
+
 export default class Poste extends PosteModel {
+  private departmentObj?: Department;
   constructor() {
     super();
   }
@@ -73,7 +81,7 @@ export default class Poste extends PosteModel {
     let items: any[] = [];
     const postes = await this._list(conditions, paginationOptions);
     if (postes) {
-      items = postes.map((poste) => poste.toJSON());
+      items = postes.map(async (poste) => await poste.toJSON());
     }
     return {
       revision: await TenantRevision.getRevision(tableName.POSTE),
@@ -108,6 +116,15 @@ export default class Poste extends PosteModel {
 
   getDepartment(): number | undefined {
     return this.department;
+  }
+
+  async getDepartmentObj(): Promise<Department | null> {
+    if (!this.department) return null;
+    if (this.departmentObj) {
+      this.departmentObj = (await Department._load(this.department)) || undefined;
+    }
+
+    return this.departmentObj || null;
   }
 
   getSalaryBase(): number | undefined {
@@ -287,16 +304,29 @@ export default class Poste extends PosteModel {
     return false;
   }
 
-  toJSON(): object {
-    return {
+  async toJSON(view: ViewMode = responseValue.FULL): Promise<object> {
+    const departmentObj = await this.getDepartmentObj();
+
+    const baseData = {
       [RS.GUID]: this.guid,
       [RS.TITLE]: this.title,
       [RS.CODE]: this.code,
-      [RS.DEPARTMENT]: this.department,
       [RS.SALARY_BASE]: this.salary_base,
       [RS.DESCRIPTION]: this.description,
       [RS.LEVEL]: this.level,
       [RS.ACTIVE]: this.active,
+    };
+
+    if (view === responseValue.MINIMAL) {
+      return {
+        ...baseData,
+        [RS.DEPARTMENT]: departmentObj ? departmentObj.getGuid() : null,
+      };
+    }
+
+    return {
+      ...baseData,
+      [RS.DEPARTMENT]: departmentObj ? await departmentObj.toJSON() : null,
     };
   }
 

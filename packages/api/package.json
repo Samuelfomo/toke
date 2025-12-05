@@ -11,7 +11,7 @@
     "testCreateEndpoint": "tsx scripts/manageEndpoint.ts",
     "testTokens": "tsx scripts/testTokenGeneration.ts",
     "clean": "rimraf dist server.pid logs/*.log 2>/dev/null || true",
-    "build": "npm run clean && tsc",
+    "build": "npm run clean && tsc && cp -r src/utils/prive dist/utils/",
     "build:check": "node -e \"console.log('✅ Build vérifié')\" dist/master/server.js --version",
     "dev": "tsx src/master/server.ts",
     "dev:watch": "tsx watch --clear-screen=false src/master/server.ts",

@@ -1114,6 +1114,43 @@ router.delete('/:guid', Ensure.delete(), async (req: Request, res: Response) => 
   }
 });
 
+router.patch('/terminal/:guid', Ensure.patch(), async (req: Request, res: Response) => {
+  try {
+    const validGuid = UsersValidationUtils.validateGuid(req.params.guid);
+    if (!validGuid) {
+      return R.handleError(res, HttpStatus.BAD_REQUEST, {
+        code: USERS_CODES.INVALID_GUID,
+        message: USERS_ERRORS.GUID_INVALID,
+      });
+    }
+
+    const userObj = await User._load(req.params.guid, true);
+    if (!userObj) {
+      return R.handleError(res, HttpStatus.NOT_FOUND, {
+        code: USERS_CODES.USER_NOT_FOUND,
+        message: USERS_ERRORS.NOT_FOUND,
+      });
+    }
+
+    const { device_token } = req.body;
+    if (
+      device_token &&
+      typeof device_token === 'string' &&
+      device_token !== userObj.getDeviceToken()
+    ) {
+      userObj.setDeviceToken(device_token);
+      await userObj.addDeviceToken();
+    }
+
+    return R.handleSuccess(res, { message: 'User device token saved successfully' });
+  } catch (error: any) {
+    return R.handleError(res, HttpStatus.INTERNAL_ERROR, {
+      code: USERS_CODES.UPDATE_FAILED,
+      message: error.message,
+    });
+  }
+});
+
 // router.post('/manager/:affiliate', Ensure.post(), async (req: Request, res: Response) => {
 //   try {
 //     const { affiliate } = req.params;

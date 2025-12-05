@@ -3,10 +3,18 @@ import { DEPARTMENT_DEFAULTS } from '@toke/shared';
 import DepartmentModel from '../model/DepartmentModel.js';
 import W from '../../tools/watcher.js';
 import G from '../../tools/glossary.js';
-import { responseStructure as RS, tableName } from '../../utils/response.model.js';
+import {
+  responseStructure as RS,
+  responseValue,
+  tableName,
+  ViewMode,
+} from '../../utils/response.model.js';
 import { TenantRevision } from '../../tools/revision.js';
 
+import User from './User.js';
+
 export default class Department extends DepartmentModel {
+  private managerObj?: User;
   constructor() {
     super();
   }
@@ -58,7 +66,7 @@ export default class Department extends DepartmentModel {
     let items: any[] = [];
     const departments = await this._list(conditions, paginationOptions);
     if (departments) {
-      items = departments.map((department) => department.toJSON());
+      items = departments.map(async (department) => await department.toJSON());
     }
     return {
       revision: await TenantRevision.getRevision(tableName.DEPARTMENT),
@@ -97,6 +105,15 @@ export default class Department extends DepartmentModel {
 
   getManager(): number | undefined {
     return this.manager;
+  }
+
+  async getManagerObj(): Promise<User | null> {
+    if (!this.manager) return null;
+    if (!this.managerObj) {
+      this.managerObj = (await User._load(this.manager)) || undefined;
+    }
+
+    return this.managerObj || null;
   }
 
   isActive(): boolean | undefined {
@@ -225,23 +242,27 @@ export default class Department extends DepartmentModel {
     return false;
   }
 
-  toJSON(): object {
-    return {
+  async toJSON(view: ViewMode = responseValue.FULL): Promise<object> {
+    const managerObj = await this.getManagerObj();
+
+    const baseData = {
       [RS.GUID]: this.guid,
       [RS.NAME]: this.name,
       [RS.CODE]: this.code,
       [RS.DESCRIPTION]: this.description,
-      [RS.MANAGER]: this.manager,
       [RS.ACTIVE]: this.active,
     };
-  }
 
-  toPublicJSON(): object {
+    if (view === responseValue.MINIMAL) {
+      return {
+        ...baseData,
+        [RS.MANAGER]: managerObj ? managerObj.getGuid() : null,
+      };
+    }
+
     return {
-      [RS.GUID]: this.guid,
-      [RS.NAME]: this.name,
-      [RS.CODE]: this.code,
-      [RS.ACTIVE]: this.active,
+      ...baseData,
+      [RS.MANAGER]: managerObj ? managerObj.toJSON() : null,
     };
   }
 

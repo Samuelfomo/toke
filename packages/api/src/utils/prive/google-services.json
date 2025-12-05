@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "337264332914",
+    "project_id": "tokenotification",
+    "storage_bucket": "tokenotification.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:337264332914:android:b2d2574c5028fa39a532eb",
+        "android_client_info": {
+          "package_name": "cm.toke.clock"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBB4ubxaH-oYNdzkYPwc9EYEd5Hb9v-3-k"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
