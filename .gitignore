@@ -12,3 +12,4 @@
 .DS_Store
 .idea/
 .vscode/
+packages/api/src/utils/prive/*.json
