@@ -11,6 +11,7 @@ import { Op } from 'sequelize';
 
 import BaseModel from '../database/db.base.js';
 import { tableName } from '../../utils/response.model.js';
+import TimezoneConfig from '../../utils/timezone.config.js';
 
 export default class MemosModel extends BaseModel {
   public readonly db = {
@@ -749,6 +750,8 @@ export default class MemosModel extends BaseModel {
 
     this.id = typeof lastID === 'object' ? lastID.id : lastID;
     this.guid = guid;
+    this.created_at = TimezoneConfig.getCurrentTime();
+    this.updated_at = TimezoneConfig.getCurrentTime();
   }
 
   protected async update(): Promise<void> {
@@ -769,6 +772,8 @@ export default class MemosModel extends BaseModel {
     if (!updated) {
       throw new Error(MEMOS_ERRORS?.UPDATE_FAILED || 'Memo update failed');
     }
+
+    this.updated_at = TimezoneConfig.getCurrentTime();
   }
 
   protected async trash(id: number): Promise<boolean> {
@@ -856,7 +861,7 @@ export default class MemosModel extends BaseModel {
     const timeline = await this.getMemoTimeline(memo);
 
     if (timeline.length < 2) return 0;
- 
+
     let totalTime = 0;
     let intervals = 0;
 

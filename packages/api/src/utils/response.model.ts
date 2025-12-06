@@ -357,6 +357,11 @@ export const tableName = {
   QR_CODE_GENERATION: `${G.tableAp}_qr_code`,
   DEPARTMENT: `${G.tableAp}_department`,
   POSTE: `${G.tableAp}_poste`,
+
+  SESSION_TEMPLATES: `${G.tableAp}_session_templates`,
+  ROTATION_GROUPS: `${G.tableAp}_rotation_groups`,
+  ROTATION_ASSIGNMENTS: `${G.tableAp}_rotation_assignments`,
+  SCHEDULE_EXCEPTIONS: `${G.tableAp}_schedule_exceptions`,
 } as const;
 
 export const EntityRoute = {
