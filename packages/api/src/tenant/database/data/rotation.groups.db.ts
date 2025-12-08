@@ -1,4 +1,5 @@
 import { DataTypes, ModelAttributes, ModelOptions } from 'sequelize';
+import { CycleUnit } from '@toke/shared';
 
 import { tableName } from '../../../utils/response.model.js';
 
@@ -60,10 +61,13 @@ export const RotationGroupsDbStructure = {
       comment: 'Number of cycles in the rotation',
     },
     cycle_unit: {
-      type: DataTypes.STRING(10),
+      type: DataTypes.ENUM(...Object.values(CycleUnit)),
       allowNull: false,
       validate: {
-        isIn: [['day', 'week']],
+        isIn: {
+          args: [Object.values(CycleUnit)],
+          msg: 'Rotation groups cycle unit must be one of: day, week',
+        },
       },
       comment: 'Unit of the cycle: day or week',
     },

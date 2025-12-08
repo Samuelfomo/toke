@@ -305,6 +305,19 @@ export const responseStructure = {
 
   SALARY_BASE: 'salary_base',
   LEVEL: 'level',
+
+  DEFINITION: 'definition',
+  CYCLE_LENGTH: 'cycle_length',
+  CYCLE_UNIT: 'cycle_unit',
+  START_DATE: 'start_date',
+  CYCLE_TEMPLATES: 'cycle_templates',
+  OFFSET: 'offset',
+  ASSIGNED_AT: 'assigned_at',
+  ROTATION_GROUP: 'rotation_group',
+  END_DATE: 'end_date',
+  REASON: 'reason',
+  GROUP: 'group',
+  SESSION_TEMPLATE: 'session_template',
 } as const;
 
 export const RT = {

@@ -46,6 +46,10 @@ export * from './constants/tenant/fraud.alerts.js';
 export * from './constants/tenant/qr.code.generation.js';
 export * from './constants/tenant/department.js';
 export * from './constants/tenant/poste.js';
+export * from './constants/tenant/session.templates.js';
+export * from './constants/tenant/rotation.groups.js';
+export * from './constants/tenant/rotation.assignments.js';
+export * from './constants/tenant/schedule.exceptions.js';
 
 // Export des schémas
 export * from './schemas/country.js';
@@ -79,6 +83,10 @@ export * from './schemas/tenant/fraud.alerts.js';
 export * from './schemas/tenant/qr.code.generation.js';
 export * from './schemas/tenant/department.js';
 export * from './schemas/tenant/poste.js';
+export * from './schemas/tenant/session.templates.js';
+export * from './schemas/tenant/rotation.groups.js';
+export * from './schemas/tenant/rotation.assignments.js';
+export * from './schemas/tenant/schedule.exceptions.js';
 
 // Export des utilitaires
 export * from './utils/country.validation.js';
@@ -111,3 +119,7 @@ export * from './utils/tenant/audit.logs.validation.js';
 export * from './utils/tenant/fraud.alerts.validation.js';
 export * from './utils/tenant/department.validation.js';
 export * from './utils/tenant/poste.validation.js';
+export * from './utils/tenant/session.templates.validation.js';
+export * from './utils/tenant/rotation.groups.validation.js';
+export * from './utils/tenant/rotation.assignments.validation.js';
+export * from './utils/tenant/schedule.exceptions.validation.js';
