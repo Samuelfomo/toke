@@ -27,7 +27,6 @@ import TenantCacheService from '../../tools/tenant-cache.service.js';
 import TenantManager from '../../tenant/database/db.tenant-manager.js';
 import { TableInitializer } from '../../tenant/database/db.initializer.js';
 import Country from '../class/Country.js';
-import TenantOtpManager from '../../tools/tenant.otp.manager.js';
 import OTPCacheService from '../../tools/otp-cache.service.js';
 import WapService from '../../tools/send.otp.service.js';
 import EmailSender from '../../tools/send.email.service.js';
@@ -37,8 +36,6 @@ import AppConfig from '../class/AppConfig.js';
 import { UserAuthenticationService } from '../../tools/user.authentication.service.js';
 import GenerateOtp from '../../utils/generate.otp.js';
 import GenericCacheService from '../../tools/cache.data.service.js';
-
-const otpManager = new TenantOtpManager();
 
 const router = Router();
 

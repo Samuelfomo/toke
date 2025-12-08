@@ -54,6 +54,11 @@ export const ROTATION_ASSIGNMENT_CODES = {
   FILTER_INVALID: 'filter_invalid',
   PAGINATION_INVALID: 'pagination_invalid',
   DUPLICATE_ASSIGNMENT: 'duplicate_assignment',
+  REVISION_FAILED: 'revision_failed',
+  ALREADY_ASSIGNED: 'already_assigned',
+  RETRIEVAL_FAILED: 'retrieval_failed',
+  SCHEDULE_RETRIEVAL_FAILED: 'schedule_retrieval_failed',
+  STATISTICS_FAILED: 'statistics_failed',
 } as const;
 
 const ROTATION_ASSIGNMENT_LABEL = 'Rotation Assignment';

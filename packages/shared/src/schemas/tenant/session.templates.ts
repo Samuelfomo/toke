@@ -179,6 +179,7 @@ export const sessionTemplateFiltersSchema = z
     name: z.string().optional(),
     valid_from: z.string().datetime().optional(),
     valid_to: z.string().datetime().optional(),
+    valid_at: z.string().datetime().optional(),
   })
   .strict();
 

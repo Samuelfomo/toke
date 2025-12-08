@@ -63,6 +63,8 @@ export const SESSION_TEMPLATE_CODES = {
   LISTING_FAILED: 'listing_failed',
   FILTER_INVALID: 'filter_invalid',
   PAGINATION_INVALID: 'pagination_invalid',
+  REVISION_FAILED: 'revision_failed',
+  STATISTICS_FAILED: 'statistics_failed',
 } as const;
 
 const SESSION_TEMPLATE_LABEL = 'Session Template';

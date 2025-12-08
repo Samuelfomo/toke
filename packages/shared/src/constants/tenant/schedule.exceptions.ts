@@ -79,6 +79,9 @@ export const SCHEDULE_EXCEPTION_CODES = {
   FILTER_INVALID: 'filter_invalid',
   PAGINATION_INVALID: 'pagination_invalid',
   DATE_RANGE_OVERLAP: 'date_range_overlap',
+  REVISION_FAILED: 'revision_failed',
+  STATISTICS_FAILED: 'statistics_failed',
+  RETRIEVAL_FAILED: 'retrieval_failed',
 } as const;
 
 const SCHEDULE_EXCEPTION_LABEL = 'Schedule Exception';

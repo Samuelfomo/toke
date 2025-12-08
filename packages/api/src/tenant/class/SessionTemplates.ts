@@ -140,9 +140,7 @@ export default class SessionTemplate extends SessionTemplateModel {
 
     if (date < this.valid_from) return false;
 
-    if (this.valid_to && date > this.valid_to) return false;
-
-    return true;
+    return !(this.valid_to && date > this.valid_to);
   }
 
   hasExpired(): boolean {

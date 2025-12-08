@@ -65,6 +65,12 @@ export const ROTATION_GROUP_CODES = {
   FILTER_INVALID: 'filter_invalid',
   PAGINATION_INVALID: 'pagination_invalid',
   CANNOT_DELETE_WITH_ASSIGNMENTS: 'cannot_delete_with_assignments',
+  MEMBERS_LISTING_FAILED: 'members_listing_failed',
+  PREVIEW_FAILED: 'preview_failed',
+  STATISTICS_FAILED: 'statistics_failed',
+  TEMPLATE_NOT_FOUND: 'template_not_found',
+  RETRIEVAL_FAILED: 'retrieval_failed',
+  REVISION_FAILED: 'revision_failed',
 } as const;
 
 const ROTATION_GROUP_LABEL = 'Rotation Group';
