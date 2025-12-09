@@ -3,6 +3,7 @@ import {
   HttpStatus,
   paginationSchema,
   SCHEDULE_EXCEPTION_CODES,
+  SCHEDULE_EXCEPTION_DEFAULTS,
   SCHEDULE_EXCEPTION_ERRORS,
   SCHEDULE_EXCEPTION_MESSAGES,
   ScheduleExceptionValidationUtils,
@@ -201,12 +202,14 @@ router.post('/', Ensure.post(), async (req: Request, res: Response) => {
       });
     }
 
+    const tenant = req.tenant;
+
     const exceptionObj = new ScheduleException()
-      .setTenant(validatedData.tenant)
+      .setTenant(tenant.config.reference)
       .setSessionTemplate(templateObj.getId()!)
       .setStartDate(validatedData.start_date)
       .setEndDate(validatedData.end_date)
-      .setActive(validatedData.active ?? true);
+      .setActive(validatedData.active ?? SCHEDULE_EXCEPTION_DEFAULTS.ACTIVE);
 
     // Exception pour un utilisateur spécifique
     if (validatedData.user) {
@@ -559,10 +562,10 @@ router.get('/active/current', Ensure.get(), async (req: Request, res: Response) 
 // ============================================
 
 /**
- * PATCH /api/schedule-exceptions/:guid
+ * PUT /api/schedule-exceptions/:guid
  * Met à jour une exception
  */
-router.patch('/:guid', Ensure.patch(), async (req: Request, res: Response) => {
+router.put('/:guid', Ensure.put(), async (req: Request, res: Response) => {
   try {
     if (!ScheduleExceptionValidationUtils.validateGuid(req.params.guid)) {
       return R.handleError(res, HttpStatus.BAD_REQUEST, {

@@ -100,7 +100,8 @@ router.post('/', Ensure.post(), async (req: Request, res: Response) => {
     const qrCodeObj = new QrCodeGeneration()
       .setSite(siteObj.getId()!)
       .setManager(managerObj.getId()!)
-      .setShared(validatedData.shared);
+      .setShared(validatedData.shared)
+      .setName(validatedData.name);
 
     if (validatedData.valid_from) {
       qrCodeObj.setValidFrom(validatedData.valid_from);
@@ -200,6 +201,10 @@ router.put('/:guid', Ensure.put(), async (req: Request, res: Response) => {
         });
       }
       qrCodeObj.setManager(managerObj.getId()!);
+    }
+
+    if (validatedData.name !== undefined) {
+      qrCodeObj.setName(validatedData.name);
     }
 
     if (validatedData.valid_from !== undefined) {

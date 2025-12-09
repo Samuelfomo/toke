@@ -128,14 +128,14 @@ const definitionSchema = z.record(z.enum(VALID_DAYS), z.array(workBlockSchema)).
 
 // Base schema for common validations
 const baseSessionTemplateSchema = z.object({
-  tenant: z
-    .string({
-      required_error: SESSION_TEMPLATE_ERRORS.TENANT_REQUIRED,
-      invalid_type_error: SESSION_TEMPLATE_ERRORS.TENANT_INVALID,
-    })
-    .min(SESSION_TEMPLATE_VALIDATION.TENANT.MIN_LENGTH, SESSION_TEMPLATE_ERRORS.TENANT_INVALID)
-    .max(SESSION_TEMPLATE_VALIDATION.TENANT.MAX_LENGTH, SESSION_TEMPLATE_ERRORS.TENANT_INVALID)
-    .trim(),
+  // tenant: z
+  //   .string({
+  //     required_error: SESSION_TEMPLATE_ERRORS.TENANT_REQUIRED,
+  //     invalid_type_error: SESSION_TEMPLATE_ERRORS.TENANT_INVALID,
+  //   })
+  //   .min(SESSION_TEMPLATE_VALIDATION.TENANT.MIN_LENGTH, SESSION_TEMPLATE_ERRORS.TENANT_INVALID)
+  //   .max(SESSION_TEMPLATE_VALIDATION.TENANT.MAX_LENGTH, SESSION_TEMPLATE_ERRORS.TENANT_INVALID)
+  //   .trim(),
 
   name: z
     .string({
@@ -146,22 +146,32 @@ const baseSessionTemplateSchema = z.object({
     .max(SESSION_TEMPLATE_VALIDATION.NAME.MAX_LENGTH, SESSION_TEMPLATE_ERRORS.NAME_INVALID)
     .trim(),
 
+  // valid_from: z
+  //   .string({
+  //     required_error: SESSION_TEMPLATE_ERRORS.VALID_FROM_REQUIRED,
+  //     invalid_type_error: SESSION_TEMPLATE_ERRORS.VALID_FROM_INVALID,
+  //   })
+  //   .datetime(SESSION_TEMPLATE_ERRORS.VALID_FROM_INVALID)
+  //   .or(z.date()),
   valid_from: z
-    .string({
-      required_error: SESSION_TEMPLATE_ERRORS.VALID_FROM_REQUIRED,
-      invalid_type_error: SESSION_TEMPLATE_ERRORS.VALID_FROM_INVALID,
-    })
-    .datetime(SESSION_TEMPLATE_ERRORS.VALID_FROM_INVALID)
-    .or(z.date()),
-
+    .union([z.string(), z.date()])
+    .refine((val) => !isNaN(new Date(val).getTime()), SESSION_TEMPLATE_ERRORS.VALID_FROM_INVALID),
   valid_to: z
-    .string({
-      invalid_type_error: SESSION_TEMPLATE_ERRORS.VALID_TO_INVALID,
-    })
-    .datetime(SESSION_TEMPLATE_ERRORS.VALID_TO_INVALID)
-    .or(z.date())
-    .nullable()
+    .union([z.string(), z.date(), z.null()])
+    .refine(
+      (val) => val === null || !isNaN(new Date(val).getTime()),
+      SESSION_TEMPLATE_ERRORS.VALID_TO_INVALID,
+    )
     .optional(),
+
+  // valid_to: z
+  //   .string({
+  //     invalid_type_error: SESSION_TEMPLATE_ERRORS.VALID_TO_INVALID,
+  //   })
+  //   .datetime(SESSION_TEMPLATE_ERRORS.VALID_TO_INVALID)
+  //   .or(z.date())
+  //   .nullable()
+  //   .optional(),
 
   definition: definitionSchema,
 });

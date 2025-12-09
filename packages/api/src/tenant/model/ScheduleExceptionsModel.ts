@@ -296,32 +296,32 @@ export default class ScheduleExceptionModel extends BaseModel {
   // ============================================
 
   private async validate(): Promise<void> {
-    if (!this.tenant) {
-      throw new Error(SCHEDULE_EXCEPTION_ERRORS.TENANT_REQUIRED);
-    }
-    if (!ScheduleExceptionValidationUtils.validateTenant(this.tenant)) {
-      throw new Error(SCHEDULE_EXCEPTION_ERRORS.TENANT_INVALID);
-    }
+    // if (!this.tenant) {
+    //   throw new Error(SCHEDULE_EXCEPTION_ERRORS.TENANT_REQUIRED);
+    // }
+    // if (!ScheduleExceptionValidationUtils.validateTenant(this.tenant)) {
+    //   throw new Error(SCHEDULE_EXCEPTION_ERRORS.TENANT_INVALID);
+    // }
 
     // Vérifier qu'au moins user OU group est défini
     if (!this.user && !this.group) {
       throw new Error(SCHEDULE_EXCEPTION_ERRORS.USER_OR_GROUP_REQUIRED);
     }
 
-    if (this.user && !ScheduleExceptionValidationUtils.validateUser(this.user)) {
-      throw new Error(SCHEDULE_EXCEPTION_ERRORS.USER_INVALID);
-    }
+    // if (this.user && !ScheduleExceptionValidationUtils.validateUser(this.user)) {
+    //   throw new Error(SCHEDULE_EXCEPTION_ERRORS.USER_INVALID);
+    // }
 
-    if (this.group && !ScheduleExceptionValidationUtils.validateGroup(this.group)) {
-      throw new Error(SCHEDULE_EXCEPTION_ERRORS.GROUP_INVALID);
-    }
+    // if (this.group && !ScheduleExceptionValidationUtils.validateGroup(this.group)) {
+    //   throw new Error(SCHEDULE_EXCEPTION_ERRORS.GROUP_INVALID);
+    // }
 
     if (!this.session_template) {
       throw new Error(SCHEDULE_EXCEPTION_ERRORS.SESSION_TEMPLATE_REQUIRED);
     }
-    if (!ScheduleExceptionValidationUtils.validateSessionTemplate(this.session_template)) {
-      throw new Error(SCHEDULE_EXCEPTION_ERRORS.SESSION_TEMPLATE_INVALID);
-    }
+    // if (!ScheduleExceptionValidationUtils.validateSessionTemplate(this.session_template)) {
+    //   throw new Error(SCHEDULE_EXCEPTION_ERRORS.SESSION_TEMPLATE_INVALID);
+    // }
 
     if (!this.start_date) {
       throw new Error(SCHEDULE_EXCEPTION_ERRORS.START_DATE_REQUIRED);

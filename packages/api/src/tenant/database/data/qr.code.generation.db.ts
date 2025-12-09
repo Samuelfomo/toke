@@ -25,6 +25,14 @@ export const QrCodeGenerationDbStructure = {
       },
       comment: 'Unique, automatically generated digital GUID',
     },
+    name: {
+      type: DataTypes.STRING(100),
+      allowNull: false,
+      validate: {
+        len: [1, 100],
+      },
+      comment: 'QR Code name',
+    },
     site: {
       type: DataTypes.INTEGER,
       allowNull: false,
@@ -118,13 +126,17 @@ export const QrCodeGenerationDbStructure = {
         name: 'idx_qr_code_created_at',
       },
       {
-        unique: true,
+        // unique: true,
         fields: ['site', 'manager'],
         name: 'idx_qr_code_site_manager',
       },
       {
         fields: ['shared'],
         name: 'idx_qr_code_shared',
+      },
+      {
+        fields: ['name'],
+        name: 'idx_qr_code_name',
       },
     ],
   } as ModelOptions,

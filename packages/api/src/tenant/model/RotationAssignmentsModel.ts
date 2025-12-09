@@ -232,16 +232,16 @@ export default class RotationAssignmentModel extends BaseModel {
     if (!this.user) {
       throw new Error(ROTATION_ASSIGNMENT_ERRORS.USER_REQUIRED);
     }
-    if (!RotationAssignmentValidationUtils.validateUser(this.user)) {
-      throw new Error(ROTATION_ASSIGNMENT_ERRORS.USER_INVALID);
-    }
+    // if (!RotationAssignmentValidationUtils.validateUser(this.user)) {
+    //   throw new Error(ROTATION_ASSIGNMENT_ERRORS.USER_INVALID);
+    // }
 
     if (!this.rotation_group) {
       throw new Error(ROTATION_ASSIGNMENT_ERRORS.ROTATION_GROUP_REQUIRED);
     }
-    if (!RotationAssignmentValidationUtils.validateRotationGroup(this.rotation_group)) {
-      throw new Error(ROTATION_ASSIGNMENT_ERRORS.ROTATION_GROUP_INVALID);
-    }
+    // if (!RotationAssignmentValidationUtils.validateRotationGroup(this.rotation_group)) {
+    //   throw new Error(ROTATION_ASSIGNMENT_ERRORS.ROTATION_GROUP_INVALID);
+    // }
 
     if (
       this.offset !== undefined &&

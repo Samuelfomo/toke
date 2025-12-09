@@ -250,9 +250,9 @@ export const SessionTemplatesDbStructure = {
         name: 'idx_session_templates_deleted_at',
       },
       {
-        fields: ['information'],
-        name: 'idx_session_templates_information',
-        using: 'gin',
+        fields: ['definition'],
+        name: 'idx_session_templates_definition',
+        using: 'GIN',
       },
     ],
   } as ModelOptions,

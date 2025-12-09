@@ -17,6 +17,7 @@ export default class QrCodeGenerationModel extends BaseModel {
     created_at: 'created_at',
     updated_at: 'updated_at',
     shared: 'shared',
+    name: 'name',
   } as const;
 
   protected id?: number;
@@ -28,6 +29,7 @@ export default class QrCodeGenerationModel extends BaseModel {
   protected created_at?: Date;
   protected updated_at?: Date;
   protected shared: boolean = QR_CODE_DEFAULTS.SHARED;
+  protected name?: string;
 
   protected constructor() {
     super();
@@ -45,18 +47,36 @@ export default class QrCodeGenerationModel extends BaseModel {
     return await this.findOne(this.db.tableName, { [this.db.guid]: guid });
   }
 
+  protected async listAll(
+    conditions: Record<string, any> = {},
+    paginationOptions: { offset?: number; limit?: number } = {},
+  ): Promise<any[]> {
+    return await this.findAll(this.db.tableName, conditions, paginationOptions);
+  }
+
   protected async listAllBySite(
     site: number,
     paginationOptions: { offset?: number; limit?: number } = {},
   ): Promise<any[]> {
-    return await this.findAll(this.db.tableName, { [this.db.site]: site }, paginationOptions);
+    return await this.listAll({ [this.db.site]: site }, paginationOptions);
+  }
+
+  protected async listAllByManagerSite(
+    site: number,
+    manager: number,
+    paginationOptions: { offset?: number; limit?: number } = {},
+  ): Promise<any[]> {
+    return await this.listAll(
+      { [this.db.site]: site, [this.db.manager]: manager },
+      paginationOptions,
+    );
   }
 
   protected async listAllByManager(
     manager: number,
     paginationOptions: { offset?: number; limit?: number } = {},
   ): Promise<any[]> {
-    return await this.findAll(this.db.tableName, { [this.db.manager]: manager }, paginationOptions);
+    return await this.listAll({ [this.db.manager]: manager }, paginationOptions);
   }
 
   // ============================================================================
@@ -69,8 +89,7 @@ export default class QrCodeGenerationModel extends BaseModel {
   ): Promise<any[]> {
     const now = new Date();
 
-    return await this.findAll(
-      this.db.tableName,
+    return await this.listAll(
       {
         [Op.and]: [
           // QR code dont la période de validité a commencé (ou pas encore définie)
@@ -92,8 +111,7 @@ export default class QrCodeGenerationModel extends BaseModel {
     paginationOptions: { offset?: number; limit?: number } = {},
   ): Promise<any[]> {
     const now = new Date();
-    return await this.findAll(
-      this.db.tableName,
+    return await this.listAll(
       {
         [this.db.valid_to]: {
           [Op.ne]: null,
@@ -108,7 +126,7 @@ export default class QrCodeGenerationModel extends BaseModel {
   protected async findUnlimitedQrCodes(
     paginationOptions: { offset?: number; limit?: number } = {},
   ): Promise<any[]> {
-    return await this.findAll(this.db.tableName, { [this.db.valid_to]: null }, paginationOptions);
+    return await this.listAll({ [this.db.valid_to]: null }, paginationOptions);
   }
 
   // QR codes pour un site spécifique (actifs uniquement)
@@ -118,8 +136,7 @@ export default class QrCodeGenerationModel extends BaseModel {
   ): Promise<any[]> {
     const now = new Date();
 
-    return await this.findAll(
-      this.db.tableName,
+    return await this.listAll(
       {
         [this.db.site]: site,
         [Op.and]: [
@@ -144,10 +161,33 @@ export default class QrCodeGenerationModel extends BaseModel {
   ): Promise<any[]> {
     const now = new Date();
 
-    return await this.findAll(
-      this.db.tableName,
+    return await this.listAll(
       {
         [this.db.manager]: manager,
+        [Op.and]: [
+          {
+            [Op.or]: [{ [this.db.valid_from]: null }, { [this.db.valid_from]: { [Op.lte]: now } }],
+          },
+          {
+            [Op.or]: [{ [this.db.valid_to]: null }, { [this.db.valid_to]: { [Op.gte]: now } }],
+          },
+        ],
+      },
+      paginationOptions,
+    );
+  }
+
+  protected async findActiveByManagerSite(
+    manager: number,
+    site: number,
+    paginationOptions: { offset?: number; limit?: number } = {},
+  ): Promise<any[]> {
+    const now = new Date();
+
+    return await this.listAll(
+      {
+        [this.db.manager]: manager,
+        [this.db.site]: site,
         [Op.and]: [
           {
             [Op.or]: [{ [this.db.valid_from]: null }, { [this.db.valid_from]: { [Op.lte]: now } }],
@@ -262,6 +302,7 @@ export default class QrCodeGenerationModel extends BaseModel {
       [this.db.valid_from]: this.valid_from,
       [this.db.valid_to]: this.valid_to,
       [this.db.shared]: this.shared || QR_CODE_DEFAULTS.SHARED,
+      [this.db.name]: this.name,
     });
 
     if (!lastID) {
@@ -277,6 +318,12 @@ export default class QrCodeGenerationModel extends BaseModel {
       throw new Error(QR_CODE_ERRORS?.ID_REQUIRED);
     }
 
+    // TODO revoir la logique de la date d'expiration du QR code avec new date dur au timezonee
+    const now = new Date();
+    if (this.valid_to && now > this.valid_to) {
+      throw new Error(QR_CODE_ERRORS.QR_CODE_EXPIRED);
+    }
+
     const updateData: Record<string, any> = {};
 
     // if (this.site !== undefined) updateData[this.db.site] = this.site;
@@ -284,6 +331,7 @@ export default class QrCodeGenerationModel extends BaseModel {
     if (this.valid_from !== undefined) updateData[this.db.valid_from] = this.valid_from;
     if (this.valid_to !== undefined) updateData[this.db.valid_to] = this.valid_to;
     if (this.shared !== undefined) updateData[this.db.shared] = this.shared;
+    if (this.name !== undefined) updateData[this.db.name] = this.name;
 
     const updated = await this.updateOne(this.db.tableName, updateData, { [this.db.id]: this.id });
 
@@ -296,16 +344,15 @@ export default class QrCodeGenerationModel extends BaseModel {
     return await this.deleteOne(this.db.tableName, { [this.db.id]: id });
   }
 
-  protected async listAll(
-    conditions: Record<string, any> = {},
-    paginationOptions: { offset?: number; limit?: number } = {},
-  ): Promise<any[]> {
-    return await this.findAll(this.db.tableName, conditions, paginationOptions);
-  }
-
   protected async sharedQrCode(): Promise<void> {
     if (this.id == null) {
       throw new Error(QR_CODE_ERRORS.ID_REQUIRED);
+    }
+
+    // TODO revoir la logique de la date d'expiration du QR code avec new date dur au timezone
+    const now = new Date();
+    if (this.valid_to && now > this.valid_to) {
+      throw new Error(QR_CODE_ERRORS.QR_CODE_EXPIRED);
     }
 
     const updateData: Record<string, any> = {

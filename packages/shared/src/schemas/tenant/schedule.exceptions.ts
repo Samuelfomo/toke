@@ -11,14 +11,14 @@ import {
 
 // Base schema for common validations
 const baseScheduleExceptionSchema = z.object({
-  tenant: z
-    .string({
-      required_error: SCHEDULE_EXCEPTION_ERRORS.TENANT_REQUIRED,
-      invalid_type_error: SCHEDULE_EXCEPTION_ERRORS.TENANT_INVALID,
-    })
-    .min(SCHEDULE_EXCEPTION_VALIDATION.TENANT.MIN_LENGTH, SCHEDULE_EXCEPTION_ERRORS.TENANT_INVALID)
-    .max(SCHEDULE_EXCEPTION_VALIDATION.TENANT.MAX_LENGTH, SCHEDULE_EXCEPTION_ERRORS.TENANT_INVALID)
-    .trim(),
+  // tenant: z
+  //   .string({
+  //     required_error: SCHEDULE_EXCEPTION_ERRORS.TENANT_REQUIRED,
+  //     invalid_type_error: SCHEDULE_EXCEPTION_ERRORS.TENANT_INVALID,
+  //   })
+  //   .min(SCHEDULE_EXCEPTION_VALIDATION.TENANT.MIN_LENGTH, SCHEDULE_EXCEPTION_ERRORS.TENANT_INVALID)
+  //   .max(SCHEDULE_EXCEPTION_VALIDATION.TENANT.MAX_LENGTH, SCHEDULE_EXCEPTION_ERRORS.TENANT_INVALID)
+  //   .trim(),
 
   user: z
     .string({

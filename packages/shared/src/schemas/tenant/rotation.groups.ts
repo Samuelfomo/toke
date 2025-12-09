@@ -11,14 +11,14 @@ import {
 
 // Base schema for common validations
 const baseRotationGroupSchema = z.object({
-  tenant: z
-    .string({
-      required_error: ROTATION_GROUP_ERRORS.TENANT_REQUIRED,
-      invalid_type_error: ROTATION_GROUP_ERRORS.TENANT_INVALID,
-    })
-    .min(ROTATION_GROUP_VALIDATION.TENANT.MIN_LENGTH, ROTATION_GROUP_ERRORS.TENANT_INVALID)
-    .max(ROTATION_GROUP_VALIDATION.TENANT.MAX_LENGTH, ROTATION_GROUP_ERRORS.TENANT_INVALID)
-    .trim(),
+  // tenant: z
+  //   .string({
+  //     required_error: ROTATION_GROUP_ERRORS.TENANT_REQUIRED,
+  //     invalid_type_error: ROTATION_GROUP_ERRORS.TENANT_INVALID,
+  //   })
+  //   .min(ROTATION_GROUP_VALIDATION.TENANT.MIN_LENGTH, ROTATION_GROUP_ERRORS.TENANT_INVALID)
+  //   .max(ROTATION_GROUP_VALIDATION.TENANT.MAX_LENGTH, ROTATION_GROUP_ERRORS.TENANT_INVALID)
+  //   .trim(),
 
   name: z
     .string({
@@ -43,11 +43,42 @@ const baseRotationGroupSchema = z.object({
     invalid_type_error: ROTATION_GROUP_ERRORS.CYCLE_UNIT_INVALID,
   }),
 
+  // cycle_templates: z
+  //   .array(z.number().int().positive(ROTATION_GROUP_ERRORS.CYCLE_TEMPLATES_INVALID), {
+  //     required_error: ROTATION_GROUP_ERRORS.CYCLE_TEMPLATES_REQUIRED,
+  //     invalid_type_error: ROTATION_GROUP_ERRORS.CYCLE_TEMPLATES_INVALID,
+  //   })
+  //   .min(
+  //     ROTATION_GROUP_VALIDATION.CYCLE_TEMPLATES.MIN_ITEMS,
+  //     ROTATION_GROUP_ERRORS.CYCLE_TEMPLATES_EMPTY,
+  //   )
+  //   .max(
+  //     ROTATION_GROUP_VALIDATION.CYCLE_TEMPLATES.MAX_ITEMS,
+  //     ROTATION_GROUP_ERRORS.CYCLE_TEMPLATES_TOO_MANY,
+  //   )
+  //   .refine(
+  //     (templates) => {
+  //       // Check for duplicates
+  //       const uniqueTemplates = new Set(templates);
+  //       return uniqueTemplates.size === templates.length;
+  //     },
+  //     { message: ROTATION_GROUP_ERRORS.CYCLE_TEMPLATES_DUPLICATE },
+  //   ),
+
   cycle_templates: z
-    .array(z.number().int().positive(ROTATION_GROUP_ERRORS.CYCLE_TEMPLATES_INVALID), {
-      required_error: ROTATION_GROUP_ERRORS.CYCLE_TEMPLATES_REQUIRED,
-      invalid_type_error: ROTATION_GROUP_ERRORS.CYCLE_TEMPLATES_INVALID,
-    })
+    .array(
+      z
+        .string({
+          invalid_type_error: ROTATION_GROUP_ERRORS.CYCLE_TEMPLATES_INVALID,
+          required_error: ROTATION_GROUP_ERRORS.CYCLE_TEMPLATES_REQUIRED,
+        })
+        .min(1, ROTATION_GROUP_ERRORS.CYCLE_TEMPLATES_INVALID)
+        .trim(),
+      {
+        required_error: ROTATION_GROUP_ERRORS.CYCLE_TEMPLATES_REQUIRED,
+        invalid_type_error: ROTATION_GROUP_ERRORS.CYCLE_TEMPLATES_INVALID,
+      },
+    )
     .min(
       ROTATION_GROUP_VALIDATION.CYCLE_TEMPLATES.MIN_ITEMS,
       ROTATION_GROUP_ERRORS.CYCLE_TEMPLATES_EMPTY,
@@ -58,7 +89,6 @@ const baseRotationGroupSchema = z.object({
     )
     .refine(
       (templates) => {
-        // Check for duplicates
         const uniqueTemplates = new Set(templates);
         return uniqueTemplates.size === templates.length;
       },

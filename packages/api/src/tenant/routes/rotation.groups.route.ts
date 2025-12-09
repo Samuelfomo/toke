@@ -4,6 +4,7 @@ import {
   HttpStatus,
   paginationSchema,
   ROTATION_GROUP_CODES,
+  ROTATION_GROUP_DEFAULTS,
   ROTATION_GROUP_ERRORS,
   ROTATION_GROUP_MESSAGES,
   RotationGroupValidationUtils,
@@ -152,14 +153,16 @@ router.post('/', Ensure.post(), async (req: Request, res: Response) => {
       templateIds.push(template.getId()!);
     }
 
+    const tenant = req.tenant;
+
     const groupObj = new RotationGroup()
-      .setTenant(validatedData.tenant)
+      .setTenant(tenant.config.reference)
       .setName(validatedData.name)
       .setCycleLength(validatedData.cycle_length)
       .setCycleUnit(validatedData.cycle_unit as CycleUnit)
       .setCycleTemplates(templateIds)
       .setStartDate(validatedData.start_date)
-      .setActive(validatedData.active ?? true);
+      .setActive(validatedData.active ?? ROTATION_GROUP_DEFAULTS.ACTIVE);
 
     await groupObj.save();
 
@@ -224,10 +227,10 @@ router.get('/:guid', Ensure.get(), async (req: Request, res: Response) => {
 // ============================================
 
 /**
- * PATCH /api/rotation-groups/:guid
+ * put /api/rotation-groups/:guid
  * Met à jour un groupe de rotation
  */
-router.patch('/:guid', Ensure.patch(), async (req: Request, res: Response) => {
+router.put('/:guid', Ensure.put(), async (req: Request, res: Response) => {
   try {
     if (!RotationGroupValidationUtils.validateGuid(req.params.guid)) {
       return R.handleError(res, HttpStatus.BAD_REQUEST, {

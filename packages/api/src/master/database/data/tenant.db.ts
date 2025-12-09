@@ -364,6 +364,7 @@ export const TenantDbStructure = {
       {
         fields: ['billing_address'],
         name: 'idx_tenant_billing_address',
+        using: 'GIN',
       },
       {
         fields: ['billing_phone'],

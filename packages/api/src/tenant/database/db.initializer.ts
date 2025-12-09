@@ -12,6 +12,10 @@ import { AuditLogsDbStructure } from './data/audit.logs.db.js';
 import { FraudAlertsDbStructure } from './data/fraud.alerts.db.js';
 import TenantManager from './db.tenant-manager.js';
 import { QrCodeGenerationDbStructure } from './data/qr.code.generation.db.js';
+import { SessionTemplatesDbStructure } from './data/session.templates.db.js';
+import { RotationGroupsDbStructure } from './data/rotation.groups.db.js';
+import { RotationAssignmentsDbStructure } from './data/rotation.assignments.db.js';
+import { ScheduleExceptionsDbStructure } from './data/schedule.exceptions.db.js';
 
 interface TenantInstance {
   sequelize: Sequelize;
@@ -198,6 +202,10 @@ export class TableInitializer {
     this.defineTimeEntriesModelForInstance(instance);
     this.defineAuditLogsModelForInstance(instance);
     this.defineFraudAlertsModelForInstance(instance);
+    this.defineSessionTemplatesModelForInstance(instance);
+    this.defineRotationGroupsModelForInstance(instance);
+    this.defineRotationAssignmentsModelForInstance(instance);
+    this.defineScheduleExceptionsModelForInstance(instance);
 
     console.log(`✅ ${instance.models.size} modèle(s) défini(s) pour cette instance`);
   }
@@ -321,6 +329,54 @@ export class TableInitializer {
 
     instance.models.set(QrCodeGenerationDbStructure.tableName, model);
     console.log(`✅ Modèle QrCode défini (${QrCodeGenerationDbStructure.tableName})`);
+  }
+
+  private static defineSessionTemplatesModelForInstance(instance: TenantInstance): void {
+    const model = instance.sequelize.define(
+      SessionTemplatesDbStructure.tableName,
+      SessionTemplatesDbStructure.attributes,
+      SessionTemplatesDbStructure.options,
+    );
+
+    instance.models.set(SessionTemplatesDbStructure.tableName, model);
+    console.log(`✅ Modèle Session Templates défini (${SessionTemplatesDbStructure.tableName})`);
+  }
+
+  private static defineRotationGroupsModelForInstance(instance: TenantInstance): void {
+    const model = instance.sequelize.define(
+      RotationGroupsDbStructure.tableName,
+      RotationGroupsDbStructure.attributes,
+      RotationGroupsDbStructure.options,
+    );
+
+    instance.models.set(RotationGroupsDbStructure.tableName, model);
+    console.log(`✅ Modèle Rotation Groups défini (${RotationGroupsDbStructure.tableName})`);
+  }
+
+  private static defineRotationAssignmentsModelForInstance(instance: TenantInstance): void {
+    const model = instance.sequelize.define(
+      RotationAssignmentsDbStructure.tableName,
+      RotationAssignmentsDbStructure.attributes,
+      RotationAssignmentsDbStructure.options,
+    );
+
+    instance.models.set(RotationAssignmentsDbStructure.tableName, model);
+    console.log(
+      `✅ Modèle Rotation Assignments défini (${RotationAssignmentsDbStructure.tableName})`,
+    );
+  }
+
+  private static defineScheduleExceptionsModelForInstance(instance: TenantInstance): void {
+    const model = instance.sequelize.define(
+      ScheduleExceptionsDbStructure.tableName,
+      ScheduleExceptionsDbStructure.attributes,
+      ScheduleExceptionsDbStructure.options,
+    );
+
+    instance.models.set(ScheduleExceptionsDbStructure.tableName, model);
+    console.log(
+      `✅ Modèle Schedule Exceptions défini (${ScheduleExceptionsDbStructure.tableName})`,
+    );
   }
 
   /**

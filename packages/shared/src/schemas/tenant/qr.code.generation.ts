@@ -39,6 +39,19 @@ const baseQrCodeSchema = z.object({
     })
     .trim(),
 
+  name: z
+    .string({
+      required_error: QR_CODE_ERRORS.NAME_REQUIRED,
+      invalid_type_error: QR_CODE_ERRORS.INVALID_NAME,
+    })
+    .min(QR_CODE_VALIDATION.NAME.MIN_LENGTH, {
+      message: QR_CODE_ERRORS.INVALID_NAME,
+    })
+    .max(QR_CODE_VALIDATION.NAME.MAX_LENGTH, {
+      message: QR_CODE_ERRORS.INVALID_NAME,
+    })
+    .trim(),
+
   shared: z
     .boolean({
       invalid_type_error: QR_CODE_ERRORS.SHARED_INVALID,

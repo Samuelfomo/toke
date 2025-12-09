@@ -1,17 +1,17 @@
 import { CycleUnit, ROTATION_GROUP_VALIDATION } from '../../constants/tenant/rotation.groups.js';
 
 export class RotationGroupValidationUtils {
-  /**
-   * Validates tenant
-   */
-  static validateTenant(tenant: any): boolean {
-    if (!tenant || typeof tenant !== 'string') return false;
-    const trimmed = tenant.trim();
-    return (
-      trimmed.length >= ROTATION_GROUP_VALIDATION.TENANT.MIN_LENGTH &&
-      trimmed.length <= ROTATION_GROUP_VALIDATION.TENANT.MAX_LENGTH
-    );
-  }
+  // /**
+  //  * Validates tenant
+  //  */
+  // static validateTenant(tenant: any): boolean {
+  //   if (!tenant || typeof tenant !== 'string') return false;
+  //   const trimmed = tenant.trim();
+  //   return (
+  //     trimmed.length >= ROTATION_GROUP_VALIDATION.TENANT.MIN_LENGTH &&
+  //     trimmed.length <= ROTATION_GROUP_VALIDATION.TENANT.MAX_LENGTH
+  //   );
+  // }
 
   /**
    * Validates name

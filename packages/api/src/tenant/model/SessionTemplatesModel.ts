@@ -212,12 +212,12 @@ export default class SessionTemplateModel extends BaseModel {
   // ============================================
 
   private async validate(): Promise<void> {
-    if (!this.tenant) {
-      throw new Error(SESSION_TEMPLATE_ERRORS.TENANT_REQUIRED);
-    }
-    if (!SessionTemplateValidationUtils.validateTenant(this.tenant)) {
-      throw new Error(SESSION_TEMPLATE_ERRORS.TENANT_INVALID);
-    }
+    // if (!this.tenant) {
+    //   throw new Error(SESSION_TEMPLATE_ERRORS.TENANT_REQUIRED);
+    // }
+    // if (!SessionTemplateValidationUtils.validateTenant(this.tenant)) {
+    //   throw new Error(SESSION_TEMPLATE_ERRORS.TENANT_INVALID);
+    // }
 
     if (!this.name) {
       throw new Error(SESSION_TEMPLATE_ERRORS.NAME_REQUIRED);

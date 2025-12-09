@@ -99,6 +99,10 @@ export default class QrCodeGeneration extends QrCodeGenerationModel {
     return this.manager;
   }
 
+  getName(): string | undefined {
+    return this.name;
+  }
+
   async getManagerObj(): Promise<User | null> {
     if (!this.manager) return null;
     if (!this.managerObj) {
@@ -141,6 +145,11 @@ export default class QrCodeGeneration extends QrCodeGenerationModel {
 
   setManager(manager: number): QrCodeGeneration {
     this.manager = manager;
+    return this;
+  }
+
+  setName(name: string): QrCodeGeneration {
+    this.name = name;
     return this;
   }
 
@@ -290,6 +299,7 @@ export default class QrCodeGeneration extends QrCodeGenerationModel {
       [RS.VALID_FROM]: this.valid_from,
       [RS.VALID_TO]: this.valid_to,
       [RS.SHARED]: this.shared,
+      [RS.NAME]: this.name,
       is_expired: this.isExpired(),
       is_active: this.isActive(),
       is_unlimited: this.isUnlimited(),
@@ -320,6 +330,7 @@ export default class QrCodeGeneration extends QrCodeGenerationModel {
     this.created_at = data.created_at;
     this.updated_at = data.updated_at;
     this.shared = data.shared;
+    this.name = data.name;
     return this;
   }
 }

@@ -24,6 +24,10 @@ import uploadRoute from './routes/upload.route.js';
 import fraudAlertsRoute from './routes/fraud.alerts.route.js';
 import auditLogsRoute from './routes/audit.logs.route.js';
 import qrCodeRoute from './routes/qr.code.route.js';
+import sessionTemplatesRoute from './routes/session.templates.route.js';
+import rotationGroupsRoute from './routes/rotation.groups.route.js';
+import rotationAssignmentsRoute from './routes/rotation.assignments.route.js';
+import scheduleExceptionsRoute from './routes/schedule.exceptions.route.js';
 
 interface AppConfig {
   port: number;
@@ -215,7 +219,12 @@ export default class App {
     this.app.use('/audit-logs', auditLogsRoute);
 
     this.app.use('/upload', uploadRoute);
+
     this.app.use('/qr-code', qrCodeRoute);
+    this.app.use('/session-templates', sessionTemplatesRoute);
+    this.app.use('/rotation-groups', rotationGroupsRoute);
+    this.app.use('/rotation-assignments', rotationAssignmentsRoute);
+    this.app.use('/schedule-exceptions', scheduleExceptionsRoute);
 
     // Route 404
     this.app.use((req, res) => {

@@ -15,6 +15,11 @@ export const QR_CODE_VALIDATION = {
     MAX_LENGTH: 128,
     REQUIRED: true,
   },
+  NAME: {
+    MIN_LENGTH: 1,
+    MAX_LENGTH: 100,
+    REQUIRED: true,
+  },
 } as const;
 
 export const QR_CODE_DEFAULTS = {
@@ -33,6 +38,8 @@ export const QR_CODE_CODES = {
   GUID_REQUIRED: 'guid_required',
   SITE_REQUIRED: 'site_required',
   SITE_INVALID: 'site_invalid',
+  INVALID_NAME: 'invalid_name',
+  NAME_REQUIRED: 'name_required',
   SITE_NOT_FOUND: 'site_not_found',
   MANAGER_REQUIRED: 'manager_required',
   MANAGER_INVALID: 'manager_invalid',
@@ -79,6 +86,9 @@ export const QR_CODE_ERRORS = {
   QR_CODE_NOT_YET_VALID: 'QR Code is not yet valid',
 
   SHARED_INVALID: 'shared status must be a boolean value (true or false)',
+
+  INVALID_NAME: `NAME must be ${QR_CODE_VALIDATION.NAME.MIN_LENGTH}-${QR_CODE_VALIDATION.NAME.MAX_LENGTH} characters`,
+  NAME_REQUIRED: `${QR_CODE_LABEL} NAME is required`,
 
   GUID_INVALID: `GUID must be 1-${QR_CODE_VALIDATION.GUID.MAX_LENGTH} characters`,
   GUID_REQUIRED: `${QR_CODE_LABEL} GUID is required`,

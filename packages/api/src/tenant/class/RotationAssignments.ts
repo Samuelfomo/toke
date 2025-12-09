@@ -28,16 +28,8 @@ export default class RotationAssignment extends RotationAssignmentModel {
     identifier: any,
     byGuid: boolean = false,
     byUserAndGroup: boolean = false,
-    userId?: number,
-    rotationGroupId?: number,
   ): Promise<RotationAssignment | null> {
-    return new RotationAssignment().load(
-      identifier,
-      byGuid,
-      byUserAndGroup,
-      userId,
-      rotationGroupId,
-    );
+    return new RotationAssignment().load(identifier, byGuid, byUserAndGroup);
   }
 
   static _list(
@@ -229,15 +221,13 @@ export default class RotationAssignment extends RotationAssignmentModel {
     identifier: any,
     byGuid: boolean = false,
     byUserAndGroup: boolean = false,
-    userId?: number,
-    rotationGroupId?: number,
   ): Promise<RotationAssignment | null> {
     let data = null;
 
     if (byGuid) {
       data = await this.findByGuid(identifier);
-    } else if (byUserAndGroup && userId && rotationGroupId) {
-      data = await this.findByUserAndGroup(userId, rotationGroupId);
+    } else if (byUserAndGroup) {
+      data = await this.findByUserAndGroup(identifier.user, identifier.rotationGroup);
     } else {
       data = await this.find(Number(identifier));
     }

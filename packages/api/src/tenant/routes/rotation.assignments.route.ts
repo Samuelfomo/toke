@@ -3,6 +3,7 @@ import {
   HttpStatus,
   paginationSchema,
   ROTATION_ASSIGNMENT_CODES,
+  ROTATION_ASSIGNMENT_DEFAULTS,
   ROTATION_ASSIGNMENT_ERRORS,
   ROTATION_ASSIGNMENT_MESSAGES,
   RotationAssignmentValidationUtils,
@@ -23,6 +24,7 @@ import User from '../class/User.js';
 import { TenantRevision } from '../../tools/revision.js';
 import { responseValue, tableName } from '../../utils/response.model.js';
 import { ValidationUtils } from '../../utils/view.validator.js';
+import TimezoneConfig from '../../utils/timezone.config.js';
 
 const router = Router();
 
@@ -66,7 +68,7 @@ router.get('/revision', Ensure.get(), async (_req: Request, res: Response) => {
 
     R.handleSuccess(res, {
       revision,
-      checked_at: new Date().toISOString(),
+      checked_at: TimezoneConfig.getCurrentTime().toISOString(),
     });
   } catch (error: any) {
     R.handleError(res, HttpStatus.INTERNAL_ERROR, {
@@ -163,15 +165,13 @@ router.post('/', Ensure.post(), async (req: Request, res: Response) => {
         message: ROTATION_ASSIGNMENT_ERRORS.ROTATION_GROUP_NOT_FOUND,
       });
     }
+    const identifier = {
+      user: userObj.getId()!,
+      rotationGroup: groupObj.getId()!,
+    };
 
     // Vérifier si l'utilisateur est déjà assigné à ce groupe
-    const existingAssignment = await RotationAssignment._load(
-      null,
-      false,
-      true,
-      userObj.getId()!,
-      groupObj.getId()!,
-    );
+    const existingAssignment = await RotationAssignment._load(identifier, false, true);
 
     if (existingAssignment) {
       return R.handleError(res, HttpStatus.CONFLICT, {
@@ -183,8 +183,8 @@ router.post('/', Ensure.post(), async (req: Request, res: Response) => {
     const assignmentObj = new RotationAssignment()
       .setUser(userObj.getId()!)
       .setRotationGroup(groupObj.getId()!)
-      .setOffset(validatedData.offset ?? 0)
-      .setAssignedAt(new Date());
+      .setOffset(validatedData.offset ?? ROTATION_ASSIGNMENT_DEFAULTS.OFFSET)
+      .setAssignedAt(ROTATION_ASSIGNMENT_DEFAULTS.ASSIGNED_AT);
 
     await assignmentObj.save();
 
@@ -323,7 +323,9 @@ router.get(
       }
 
       // Date cible (aujourd'hui par défaut)
-      const targetDate = req.query.date ? new Date(req.query.date as string) : new Date();
+      const targetDate = req.query.date
+        ? new Date(req.query.date as string)
+        : TimezoneConfig.getCurrentTime();
 
       // Trouver l'assignation active
       const assignments = await RotationAssignment._listByUser(userObj.getId()!);
@@ -372,10 +374,10 @@ router.get(
 // ============================================
 
 /**
- * PATCH /api/rotation-assignments/:guid
+ * PUT /api/rotation-assignments/:guid
  * Met à jour une assignation (surtout l'offset)
  */
-router.patch('/:guid', Ensure.patch(), async (req: Request, res: Response) => {
+router.put('/:guid', Ensure.put(), async (req: Request, res: Response) => {
   try {
     if (!RotationAssignmentValidationUtils.validateGuid(req.params.guid)) {
       return R.handleError(res, HttpStatus.BAD_REQUEST, {

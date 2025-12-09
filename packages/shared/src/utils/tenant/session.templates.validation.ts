@@ -5,17 +5,17 @@ import {
 } from '../../constants/tenant/session.templates.js';
 
 export class SessionTemplateValidationUtils {
-  /**
-   * Validates tenant
-   */
-  static validateTenant(tenant: any): boolean {
-    if (!tenant || typeof tenant !== 'string') return false;
-    const trimmed = tenant.trim();
-    return (
-      trimmed.length >= SESSION_TEMPLATE_VALIDATION.TENANT.MIN_LENGTH &&
-      trimmed.length <= SESSION_TEMPLATE_VALIDATION.TENANT.MAX_LENGTH
-    );
-  }
+  // /**
+  //  * Validates tenant
+  //  */
+  // static validateTenant(tenant: any): boolean {
+  //   if (!tenant || typeof tenant !== 'string') return false;
+  //   const trimmed = tenant.trim();
+  //   return (
+  //     trimmed.length >= SESSION_TEMPLATE_VALIDATION.TENANT.MIN_LENGTH &&
+  //     trimmed.length <= SESSION_TEMPLATE_VALIDATION.TENANT.MAX_LENGTH
+  //   );
+  // }
 
   /**
    * Validates name

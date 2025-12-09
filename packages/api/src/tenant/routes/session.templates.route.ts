@@ -143,14 +143,16 @@ router.get('/list', Ensure.get(), async (req: Request, res: Response) => {
 
 /**
  * POST /api/session-templates
- * Crée un nouveau modèle d'horaire
+ * 📝 Create a new schedule template
  */
 router.post('/', Ensure.post(), async (req: Request, res: Response) => {
   try {
     const validatedData = validateSessionTemplateCreation(req.body);
 
+    const tenant = req.tenant;
+
     const templateObj = new SessionTemplate()
-      .setTenant(validatedData.tenant)
+      .setTenant(tenant.config.reference)
       .setName(validatedData.name)
       .setDefinition(validatedData.definition)
       .setValidFrom(new Date(validatedData.valid_from));
@@ -222,10 +224,10 @@ router.get('/:guid', Ensure.get(), async (req: Request, res: Response) => {
 // ============================================
 
 /**
- * PATCH /api/session-templates/:guid
+ * PUT /api/session-templates/:guid
  * Met à jour un modèle d'horaire existant
  */
-router.patch('/:guid', Ensure.patch(), async (req: Request, res: Response) => {
+router.put('/:guid', Ensure.put(), async (req: Request, res: Response) => {
   try {
     if (!SessionTemplateValidationUtils.validateGuid(req.params.guid)) {
       return R.handleError(res, HttpStatus.BAD_REQUEST, {

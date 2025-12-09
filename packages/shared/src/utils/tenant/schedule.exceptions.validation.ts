@@ -2,17 +2,17 @@
 import { SCHEDULE_EXCEPTION_VALIDATION } from '../../constants/tenant/schedule.exceptions.js';
 
 export class ScheduleExceptionValidationUtils {
-  /**
-   * Validates tenant
-   */
-  static validateTenant(tenant: any): boolean {
-    if (!tenant || typeof tenant !== 'string') return false;
-    const trimmed = tenant.trim();
-    return (
-      trimmed.length >= SCHEDULE_EXCEPTION_VALIDATION.TENANT.MIN_LENGTH &&
-      trimmed.length <= SCHEDULE_EXCEPTION_VALIDATION.TENANT.MAX_LENGTH
-    );
-  }
+  // /**
+  //  * Validates tenant
+  //  */
+  // static validateTenant(tenant: any): boolean {
+  //   if (!tenant || typeof tenant !== 'string') return false;
+  //   const trimmed = tenant.trim();
+  //   return (
+  //     trimmed.length >= SCHEDULE_EXCEPTION_VALIDATION.TENANT.MIN_LENGTH &&
+  //     trimmed.length <= SCHEDULE_EXCEPTION_VALIDATION.TENANT.MAX_LENGTH
+  //   );
+  // }
 
   /**
    * Validates user ID

@@ -1,5 +1,6 @@
 import { z } from 'zod';
 
+// import TimezoneConfig from '@toke/api/dist/utils/timezone.config.js';
 import {
   ROTATION_ASSIGNMENT_CODES,
   ROTATION_ASSIGNMENT_DEFAULTS,
@@ -52,6 +53,7 @@ const baseRotationAssignmentSchema = z.object({
     .or(z.date())
     .optional()
     .default(() => new Date().toISOString()),
+  // .default(() => TimezoneConfig.getCurrentTime().toISOString()),
 });
 
 // Schema for creation - all fields required except defaults

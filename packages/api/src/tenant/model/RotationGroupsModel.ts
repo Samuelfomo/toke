@@ -232,12 +232,12 @@ export default class RotationGroupModel extends BaseModel {
   // ============================================
 
   private async validate(): Promise<void> {
-    if (!this.tenant) {
-      throw new Error(ROTATION_GROUP_ERRORS.TENANT_REQUIRED);
-    }
-    if (!RotationGroupValidationUtils.validateTenant(this.tenant)) {
-      throw new Error(ROTATION_GROUP_ERRORS.TENANT_INVALID);
-    }
+    // if (!this.tenant) {
+    //   throw new Error(ROTATION_GROUP_ERRORS.TENANT_REQUIRED);
+    // }
+    // if (!RotationGroupValidationUtils.validateTenant(this.tenant)) {
+    //   throw new Error(ROTATION_GROUP_ERRORS.TENANT_INVALID);
+    // }
 
     if (!this.name) {
       throw new Error(ROTATION_GROUP_ERRORS.NAME_REQUIRED);
@@ -263,9 +263,9 @@ export default class RotationGroupModel extends BaseModel {
     if (!this.cycle_templates || this.cycle_templates.length === 0) {
       throw new Error(ROTATION_GROUP_ERRORS.CYCLE_TEMPLATES_REQUIRED);
     }
-    if (!RotationGroupValidationUtils.validateCycleTemplates(this.cycle_templates)) {
-      throw new Error(ROTATION_GROUP_ERRORS.CYCLE_TEMPLATES_INVALID);
-    }
+    // if (!RotationGroupValidationUtils.validateCycleTemplates(this.cycle_templates)) {
+    //   throw new Error(ROTATION_GROUP_ERRORS.CYCLE_TEMPLATES_INVALID);
+    // }
 
     if (!this.start_date) {
       throw new Error(ROTATION_GROUP_ERRORS.START_DATE_REQUIRED);

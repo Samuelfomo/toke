@@ -1,3 +1,5 @@
+// import TimezoneConfig from '@toke/api/dist/utils/timezone.config.js';
+
 export const ROTATION_ASSIGNMENT_VALIDATION = {
   GUID: {
     MIN_LENGTH: 1,
@@ -26,6 +28,7 @@ export const ROTATION_ASSIGNMENT_VALIDATION = {
 export const ROTATION_ASSIGNMENT_DEFAULTS = {
   OFFSET: 0,
   ASSIGNED_AT: new Date(),
+  // ASSIGNED_AT: TimezoneConfig.getCurrentTime() || new Date(),
   PAGINATION: {
     OFFSET: 0,
     LIMIT: 50,
