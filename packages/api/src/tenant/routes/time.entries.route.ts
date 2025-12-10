@@ -31,7 +31,7 @@ import { responseValue, tableName } from '../../utils/response.model.js';
 import { UserAuth } from '../../middle/user-auth.js';
 import UserRole from '../class/UserRole.js';
 import { ValidationUtils } from '../../utils/view.validator.js';
-import AnomalyDetectionService from '../../tools/anomaly.detection.service.js';
+import AnomalyDetectionService, { AnomalyType } from '../../tools/anomaly.detection.service.js';
 import QrCodeGeneration from '../class/QrCodeGeneration.js';
 
 const router = Router();
@@ -599,7 +599,7 @@ router.post(
         });
       }
 
-      // === ⚠️ GÉOFENCING : SEULE VÉRIFICATION BLOQUANTE ===
+      // === ⚠️ GÉOFENCING VERIFICATION ===
       const geofenceCheck = await WorkSessions.validateGeofencing(
         siteObj.getId()!,
         validatedData.latitude,
@@ -661,10 +661,8 @@ router.post(
       switch (validatedData.pointage_type) {
         case PointageType.CLOCK_IN: {
           // 🔍 DÉTECTION ANOMALIES
-          const { anomalies, corrections } = await AnomalyDetectionService.detectClockInAnomalies(
-            userId,
-            validatedData,
-          );
+          const { anomalies, corrections, scheduleContext } =
+            await AnomalyDetectionService.detectClockInAnomalies(userId, validatedData);
 
           // Fusionner avec anomalies QR
           const allAnomalies = [...qrAnomalies, ...geofenceAnomalies, ...anomalies];
@@ -676,6 +674,13 @@ router.post(
             .setSite(siteObj.getId()!)
             .setSessionStartAt(new Date(validatedData.clocked_at))
             .setStartCoordinates(validatedData.latitude, validatedData.longitude);
+
+          // 🆕 AJOUTER CONTEXTE HORAIRE (si colonnes existent)
+          if (scheduleContext?.expectedSchedule) {
+            // sessionObj.setExpectedSchedule(scheduleContext.expectedSchedule);
+            // sessionObj.setApplicableTemplate(scheduleContext.expectedSchedule.template_id);
+            // Note: Ces setters nécessitent l'ajout des colonnes dans work_sessions
+          }
           await sessionObj.save();
 
           // ✅ CRÉER TIME_ENTRY
@@ -701,6 +706,7 @@ router.post(
               entryObj,
               userId,
               allCorrections,
+              scheduleContext,
             );
 
             // Lier mémo à l'entry
@@ -717,17 +723,42 @@ router.post(
             );
           }
 
+          // 🆕 MESSAGE ENRICHI AVEC CONTEXTE HORAIRE
+          let message = TIME_ENTRIES_MESSAGES.CLOCK_IN_SUCCESS;
+          if (allAnomalies.length > 0) {
+            const hasLateArrival = allAnomalies.some((a) => a.type === AnomalyType.LATE_ARRIVAL);
+            const hasWorkOnRestDay = allAnomalies.some(
+              (a) => a.type === AnomalyType.WORK_ON_REST_DAY,
+            );
+
+            if (hasLateArrival) {
+              const lateAnomaly = allAnomalies.find((a) => a.type === AnomalyType.LATE_ARRIVAL);
+              message = `⚠️ Retard détecté: ${lateAnomaly?.technical_details?.minutes_late} minutes (tolérance: ${lateAnomaly?.technical_details?.tolerance} min)`;
+            } else if (hasWorkOnRestDay) {
+              message = `⚠️ Pointage effectué un jour de repos`;
+            } else {
+              message = 'Clock-in accepté avec anomalies détectées';
+            }
+          }
+
           return R.handleCreated(res, {
-            message:
-              anomalies.length > 0
-                ? 'Clock-in accepté avec anomalies détectées'
-                : TIME_ENTRIES_MESSAGES.CLOCK_IN_SUCCESS,
+            message,
+            // message:
+            //   anomalies.length > 0
+            //     ? 'Clock-in accepté avec anomalies détectées'
+            //     : TIME_ENTRIES_MESSAGES.CLOCK_IN_SUCCESS,
             session: await sessionObj.toJSON(),
             entry: await entryObj.toJSON(),
+            schedule_context: scheduleContext,
             anomalies_detected: allAnomalies.length,
             auto_memo_created: autoMemo !== null,
             auto_memo_guid: autoMemo?.getGuid(),
             corrections_applied: allCorrections.length,
+            anomaly_details: allAnomalies.map((a) => ({
+              type: a.type,
+              severity: a.severity,
+              description: a.description,
+            })),
           });
         }
 
@@ -735,8 +766,23 @@ router.post(
           // 🔍 DÉTECTION ANOMALIES
           const { anomalies, corrections, activeSession } =
             await AnomalyDetectionService.detectPauseStartAnomalies(userId, validatedData);
+
+          // 🆕 Vérification horaire pause
+          const { anomalies: scheduleAnomalies, scheduleContext } =
+            await AnomalyDetectionService.detectScheduleViolations(
+              userId,
+              PointageType.PAUSE_START,
+              new Date(validatedData.clocked_at),
+              activeSession || undefined,
+            );
+
           // Fusionner avec anomalies QR
-          const allAnomalies = [...qrAnomalies, ...geofenceAnomalies, ...anomalies];
+          const allAnomalies = [
+            ...qrAnomalies,
+            ...geofenceAnomalies,
+            ...anomalies,
+            ...scheduleAnomalies,
+          ];
           const allCorrections = [...qrCorrections, ...corrections];
 
           // ✅ CRÉER SESSION RÉTROACTIVE SI NÉCESSAIRE
@@ -792,6 +838,12 @@ router.post(
             anomalies_detected: allAnomalies.length,
             auto_memo_created: autoMemo !== null,
             corrections_applied: allCorrections.length,
+            schedule_context: scheduleContext, // 🆕
+            anomaly_details: allAnomalies.map((a) => ({
+              type: a.type,
+              severity: a.severity,
+              description: a.description,
+            })),
           });
         }
 
@@ -800,8 +852,22 @@ router.post(
           const { anomalies, corrections, activeSession } =
             await AnomalyDetectionService.detectPauseEndAnomalies(userId, validatedData);
 
+          // 🆕 Vérification horaire pause
+          const { anomalies: scheduleAnomalies, scheduleContext } =
+            await AnomalyDetectionService.detectScheduleViolations(
+              userId,
+              PointageType.PAUSE_END,
+              new Date(validatedData.clocked_at),
+              activeSession || undefined,
+            );
+
           // Fusionner avec anomalies QR
-          const allAnomalies = [...qrAnomalies, ...geofenceAnomalies, ...anomalies];
+          const allAnomalies = [
+            ...qrAnomalies,
+            ...geofenceAnomalies,
+            ...anomalies,
+            ...scheduleAnomalies,
+          ];
           const allCorrections = [...qrCorrections, ...corrections];
 
           const tempEntry = new TimeEntries()
@@ -854,6 +920,12 @@ router.post(
             entry: await tempEntry.toJSON(),
             anomalies_detected: allAnomalies.length,
             auto_memo_created: autoMemo !== null,
+            schedule_context: scheduleContext, // 🆕
+            anomaly_details: allAnomalies.map((a) => ({
+              type: a.type,
+              severity: a.severity,
+              description: a.description,
+            })),
           });
         }
 
@@ -866,8 +938,22 @@ router.post(
               siteObj,
             );
 
+          // 🆕 AJOUTER VÉRIFICATION HORAIRE
+          const { anomalies: scheduleAnomalies, scheduleContext } =
+            await AnomalyDetectionService.detectScheduleViolations(
+              userId,
+              PointageType.CLOCK_OUT,
+              new Date(validatedData.clocked_at),
+              activeSession || undefined,
+            );
+
           // Fusionner avec anomalies QR
-          const allAnomalies = [...qrAnomalies, ...geofenceAnomalies, ...anomalies];
+          const allAnomalies = [
+            ...qrAnomalies,
+            ...geofenceAnomalies,
+            ...anomalies,
+            ...scheduleAnomalies,
+          ];
           const allCorrections = [...qrCorrections, ...corrections];
 
           // ✅ CRÉER ENTRY (même sans session)
@@ -904,6 +990,7 @@ router.post(
               entryObj,
               userId,
               allCorrections,
+              scheduleContext,
             );
 
             if (autoMemo) {
@@ -919,12 +1006,29 @@ router.post(
             );
           }
 
+          // 🆕 MESSAGE ENRICHI
+          let message = 'Clock-out successful';
+          if (autoCreatedSession) {
+            message = `⚠️ Clock-out accepté - Session d'entrée créée automatiquement`;
+          } else {
+            const hasEarlyDeparture = allAnomalies.some(
+              (a) => a.type === AnomalyType.EARLY_DEPARTURE,
+            );
+            if (hasEarlyDeparture) {
+              const earlyAnomaly = allAnomalies.find((a) => a.type === AnomalyType.EARLY_DEPARTURE);
+              message = `⚠️ Départ anticipé: ${earlyAnomaly?.technical_details?.minutes_early} minutes avant la fin prévue`;
+            } else if (allAnomalies.length > 0) {
+              message = 'Clock-out accepté avec anomalies';
+            }
+          }
+
           return R.handleCreated(res, {
-            message: autoCreatedSession
-              ? `⚠️ Clock-out accepté - Session d'entrée créée automatiquement`
-              : allAnomalies.length > 0
-                ? 'Clock-out accepté avec anomalies'
-                : 'Clock-out successful',
+            message,
+            // message: autoCreatedSession
+            //   ? `⚠️ Clock-out accepté - Session d'entrée créée automatiquement`
+            //   : allAnomalies.length > 0
+            //     ? 'Clock-out accepté avec anomalies'
+            //     : 'Clock-out successful',
             session: activeSession ? await activeSession.toJSON() : null,
             entry: await entryObj.toJSON(),
             durations,
@@ -933,6 +1037,12 @@ router.post(
             auto_memo_guid: autoMemo?.getGuid(),
             corrections_applied: allCorrections.length,
             auto_created_session: autoCreatedSession, // ✅ Flag important
+            schedule_context: scheduleContext,
+            anomaly_details: allAnomalies.map((a) => ({
+              type: a.type,
+              severity: a.severity,
+              description: a.description,
+            })),
           });
         }
 

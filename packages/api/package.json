@@ -107,6 +107,7 @@
     "jsonwebtoken": "^9.0.2",
     "libphonenumber-js": "^1.12.24",
     "multer": "^2.0.2",
+    "node-cron": "^4.2.1",
     "nodemailer": "^7.0.3",
     "pg": "^8.16.0",
     "pg-hstore": "^2.3.4",

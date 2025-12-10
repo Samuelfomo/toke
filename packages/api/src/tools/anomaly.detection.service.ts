@@ -1,8 +1,7 @@
-// src/api/services/AnomalyDetectionService.ts
-
 import {
   AlertSeverity,
   AlertType,
+  MEMOS_DEFAULTS,
   MemoStatus,
   MemoType,
   MessageType,
@@ -23,8 +22,10 @@ import { RoleValues } from '../utils/response.model.js';
 import QrCodeGeneration from '../tenant/class/QrCodeGeneration.js';
 import OrgHierarchy from '../tenant/class/OrgHierarchy.js';
 import User from '../tenant/class/User.js';
+import TimezoneConfig from '../utils/timezone.config.js';
 
 import { FCMService } from './notification.service.js';
+import ScheduleResolutionService, { ApplicableSchedule } from './schedule.resolution.service.js';
 
 // === TYPES & ENUMS ===
 
@@ -55,6 +56,18 @@ export enum AnomalyType {
   // Accès non autorisé
   UNAUTHORIZED_QR_CODE = 'unauthorized_qr_code',
   EXPIRED_QR_CODE = 'expired_qr_code',
+
+  // 🆕 SCHEDULE-RELATED ANOMALIES
+  LATE_ARRIVAL = 'late_arrival', // Retard arrivée
+  EARLY_DEPARTURE = 'early_departure', // Départ anticipé
+  ABSENT_NO_SHOW = 'absent_no_show', // Absence non justifiée
+  PAUSE_TOO_LONG = 'pause_too_long', // Pause dépassée
+  PAUSE_NO_RETURN = 'pause_no_return', // Pas de retour de pause
+  MISSED_WORK_BLOCK = 'missed_work_block', // Bloc de travail manqué
+  OFF_SCHEDULE_CLOCKING = 'off_schedule_clocking', // Pointage hors horaire
+  WORK_ON_REST_DAY = 'work_on_rest_day', // Travail jour de repos
+  EARLY_ARRIVAL = 'early_arrival', // Arrivée très en avance (>1h)
+  PAUSE_OUTSIDE_BLOCK = 'pause_outside_block', // Pause hors plage autorisée
 }
 
 export interface Anomaly {
@@ -165,23 +178,25 @@ class AnomalyDetectionService {
   ): Promise<{
     anomalies: Anomaly[];
     corrections: any[];
+    scheduleContext?: any;
   }> {
     const anomalies: Anomaly[] = [];
     const corrections: any[] = [];
 
-    // 1. Session déjà ouverte
+    // 1️⃣ Session déjà ouverte
     const activeSession = await WorkSessions._findActiveSessionByUser(userId);
     if (activeSession) {
       anomalies.push({
         type: AnomalyType.SESSION_ALREADY_OPEN,
         severity: AlertSeverity.MEDIUM, // 'medium',
-        description: `Session déjà ouverte depuis ${activeSession.getSessionStartAt()?.toLocaleString('fr-FR')}`,
+        description: `Session already open since ${activeSession.getSessionStartAt()?.toLocaleString('en-US')}`,
+        // description: `Session déjà ouverte depuis ${activeSession.getSessionStartAt()?.toLocaleString('fr-FR')}`,
         technical_details: {
           existing_session_guid: activeSession.getGuid(),
           session_start: activeSession.getSessionStartAt(),
           duration_hours: this.calculateDurationHours(
             activeSession.getSessionStartAt()!,
-            new Date(),
+            TimezoneConfig.getCurrentTime(),
           ),
         },
         auto_correctable: true,
@@ -199,7 +214,6 @@ class AnomalyDetectionService {
       // estimatedEnd.setMinutes(estimatedEnd.getMinutes() - 1);
 
       activeSession.setSessionEndAt(estimatedEnd).setSessionStatus(SessionStatus.ABANDONED);
-      console.log('je suis ici 1');
       await activeSession.save();
 
       corrections.push({
@@ -211,27 +225,27 @@ class AnomalyDetectionService {
       anomalies[anomalies.length - 1].auto_correction_applied = true;
     }
 
-    // 2. Horaire anormal (avant 5h ou après 23h)
-    const hour = new Date(validatedData.clocked_at).getHours();
-    if (hour < 5 || hour > 23) {
-      anomalies.push({
-        type: AnomalyType.TIMING_ABNORMAL,
-        severity: AlertSeverity.LOW, //'low',
-        description: `Pointage à horaire inhabituel (${hour}h)`,
-        technical_details: {
-          hour,
-          expected_range: '05h-23h',
-        },
-        auto_correctable: false,
-      });
-    }
+    // // 2️⃣ Horaire anormal (avant 5h ou après 23h)
+    // const hour = new Date(validatedData.clocked_at).getHours();
+    // if (hour < 5 || hour > 23) {
+    //   anomalies.push({
+    //     type: AnomalyType.TIMING_ABNORMAL,
+    //     severity: AlertSeverity.LOW, //'low',
+    //     description: `Pointage à horaire inhabituel (${hour}h)`,
+    //     technical_details: {
+    //       hour,
+    //       expected_range: '05h-23h',
+    //     },
+    //     auto_correctable: false,
+    //   });
+    // }
 
-    // 3. GPS spoofing (mock location)
+    // 3️⃣ GPS spoofing (mock location)
     if (validatedData.device_info?.mock_location_detected) {
       anomalies.push({
         type: AnomalyType.GPS_SPOOFING_SUSPECTED,
         severity: AlertSeverity.HIGH, // 'high',
-        description: 'Position GPS simulée détectée',
+        description: 'Simulated GPS position detected',
         technical_details: {
           mock_location: true,
           device_info: validatedData.device_info,
@@ -240,7 +254,17 @@ class AnomalyDetectionService {
       });
     }
 
-    return { anomalies, corrections };
+    // 4️⃣ 🆕 VÉRIFICATION HORAIRE DE TRAVAIL
+    const { anomalies: scheduleAnomalies, scheduleContext } = await this.detectScheduleViolations(
+      userId,
+      PointageType.CLOCK_IN,
+      new Date(validatedData.clocked_at),
+    );
+
+    // Fusionner les anomalies d'horaire
+    anomalies.push(...scheduleAnomalies);
+
+    return { anomalies, corrections, scheduleContext };
   }
 
   /**
@@ -400,84 +424,6 @@ class AnomalyDetectionService {
   }
 
   /**
-   * Détection anomalies CLOCK_OUT
-   */
-  async detectClockOutAnomalies(
-    userId: number,
-    validatedData: any,
-  ): Promise<{
-    anomalies: Anomaly[];
-    corrections: any[];
-    activeSession: WorkSessions | null;
-  }> {
-    const anomalies: Anomaly[] = [];
-    const corrections: any[] = [];
-
-    const activeSession = await WorkSessions._findActiveSessionByUser(userId);
-    if (!activeSession) {
-      anomalies.push({
-        type: AnomalyType.SESSION_NOT_FOUND,
-        severity: AlertSeverity.CRITICAL, // 'critical',
-        description: 'Aucune session active à fermer',
-        auto_correctable: true,
-      });
-      return { anomalies, corrections, activeSession: null };
-    }
-
-    // Pause non fermée
-    const hasActivePause = await activeSession.isOnPause();
-    if (hasActivePause) {
-      anomalies.push({
-        type: AnomalyType.PAUSE_NOT_ACTIVE,
-        severity: AlertSeverity.MEDIUM, // 'medium',
-        description: 'Pause non fermée - fermeture automatique',
-        auto_correctable: true,
-      });
-
-      // ✅ CORRECTION AUTO
-      const autoPauseEnd = new TimeEntries()
-        .setSession(activeSession.getId()!)
-        .setUser(userId)
-        .setSite(activeSession.getSite()!)
-        .setPointageType(PointageType.PAUSE_END)
-        .setClockedAt(new Date(validatedData.clocked_at - 60000))
-        .setCoordinates(validatedData.latitude, validatedData.longitude)
-        .setPointageStatus(PointageStatus.CORRECTED);
-
-      await autoPauseEnd.save();
-      await autoPauseEnd.accept();
-
-      corrections.push({
-        action: 'auto_close_active_pause',
-      });
-
-      anomalies[anomalies.length - 1].auto_correction_applied = true;
-    }
-
-    // Session trop longue
-    const sessionDuration = this.calculateDurationHours(
-      activeSession.getSessionStartAt()!,
-      new Date(validatedData.clocked_at),
-    );
-
-    if (sessionDuration > 12) {
-      anomalies.push({
-        type: AnomalyType.SESSION_TOO_LONG,
-        severity: AlertSeverity.HIGH, // 'high',
-        description: `Session anormalement longue (${sessionDuration.toFixed(1)}h)`,
-        technical_details: {
-          duration_hours: sessionDuration,
-          expected_max: 12,
-          session_start: activeSession.getSessionStartAt(),
-        },
-        auto_correctable: false,
-      });
-    }
-
-    return { anomalies, corrections, activeSession };
-  }
-
-  /**
    * Détection et correction automatique pour CLOCK_OUT sans session active
    */
   async detectAndCorrectClockOutWithoutSession(
@@ -614,45 +560,6 @@ class AnomalyDetectionService {
     return { anomalies, corrections, activeSession, autoCreatedSession };
   }
 
-  // /**
-  //  * Détection anomalies EXTERNAL_MISSION (start)
-  //  */
-  // async detectMissionStartAnomalies(
-  //   userId: number,
-  //   validatedData: any,
-  // ): Promise<{
-  //   anomalies: Anomaly[];
-  //   corrections: any[];
-  //   activeSession: WorkSessions | null;
-  // }> {
-  //   const anomalies: Anomaly[] = [];
-  //   const corrections: any[] = [];
-  //
-  //   const activeSession = await WorkSessions._findActiveSessionByUser(userId);
-  //   if (!activeSession) {
-  //     anomalies.push({
-  //       type: AnomalyType.SESSION_NOT_FOUND,
-  //       severity: AlertSeverity.CRITICAL, // 'critical',
-  //       description: 'Aucune session active pour démarrer une mission',
-  //       auto_correctable: true,
-  //     });
-  //     return { anomalies, corrections, activeSession: null };
-  //   }
-  //
-  //   // Mission déjà active
-  //   const hasActiveMission = await activeSession.activeMission();
-  //   if (hasActiveMission) {
-  //     anomalies.push({
-  //       type: AnomalyType.MISSION_ALREADY_ACTIVE,
-  //       severity: AlertSeverity.HIGH, // 'high',
-  //       description: 'Une mission externe est déjà en cours',
-  //       auto_correctable: false,
-  //     });
-  //   }
-  //
-  //   return { anomalies, corrections, activeSession };
-  // }
-
   /**
    * Détection et correction automatique EXTERNAL_MISSION
    */
@@ -751,45 +658,6 @@ class AnomalyDetectionService {
 
     return { anomalies, corrections, activeSession, autoCreatedSession };
   }
-
-  // /**
-  //  * Détection anomalies EXTERNAL_MISSION_END
-  //  */
-  // async detectMissionEndAnomalies(
-  //   userId: number,
-  //   validatedData: any,
-  // ): Promise<{
-  //   anomalies: Anomaly[];
-  //   corrections: any[];
-  //   activeSession: WorkSessions | null;
-  // }> {
-  //   const anomalies: Anomaly[] = [];
-  //   const corrections: any[] = [];
-  //
-  //   const activeSession = await WorkSessions._findActiveSessionByUser(userId);
-  //   if (!activeSession) {
-  //     anomalies.push({
-  //       type: AnomalyType.SESSION_NOT_FOUND,
-  //       severity: AlertSeverity.CRITICAL, // 'critical',
-  //       description: 'Aucune session active pour terminer une mission',
-  //       auto_correctable: true,
-  //     });
-  //     return { anomalies, corrections, activeSession: null };
-  //   }
-  //
-  //   // Mission non active
-  //   const hasActiveMission = await activeSession.activeMission();
-  //   if (!hasActiveMission) {
-  //     anomalies.push({
-  //       type: AnomalyType.MISSION_NOT_ACTIVE,
-  //       severity: AlertSeverity.MEDIUM, //'medium',
-  //       description: 'Aucune mission active à terminer',
-  //       auto_correctable: false,
-  //     });
-  //   }
-  //
-  //   return { anomalies, corrections, activeSession };
-  // }
 
   /**
    * Détection et correction automatique EXTERNAL_MISSION_END
@@ -963,12 +831,13 @@ class AnomalyDetectionService {
     entryObj: TimeEntries,
     userId: number,
     corrections: any[] = [],
+    scheduleContext?: any,
   ): Promise<Memos | null> {
     if (anomalies.length === 0) return null;
 
     const severity = this.calculateGlobalSeverity(anomalies);
-    const title = this.generateMemoTitle(entryObj.getPointageType()!, anomalies);
-    const details = this.generateMemoDescription(entryObj, anomalies, corrections);
+    const title = this.generateMemoTitle(entryObj.getPointageType()!, anomalies, scheduleContext);
+    const details = this.generateMemoDescription(entryObj, anomalies, corrections, scheduleContext);
 
     // Résolution validateur
     const validatorId = await this.getValidator(userId);
@@ -1001,7 +870,7 @@ class AnomalyDetectionService {
       .setMemoContent(
         [
           {
-            created_at: new Date().toISOString(),
+            created_at: TimezoneConfig.getCurrentTime().toISOString(),
             user: userAuthor?.getGuid()!,
             message: [
               {
@@ -1013,10 +882,9 @@ class AnomalyDetectionService {
         ],
         // if (description) this.description = description;
       )
-      .setAutoGenerated(true);
+      .setAutoGenerated(!MEMOS_DEFAULTS.AUTO_GENERATED); // true
     // .setAutoReason(`${anomalies.length} anomalie(s): ${anomalies.map((a) => a.type).join(', ')}`);
 
-    console.log('🔴🔴🔴🔴 meno');
     await memo.save();
 
     // Notification manager si high/critical
@@ -1025,80 +893,13 @@ class AnomalyDetectionService {
     }
 
     const supervisorData = await User._load(userAuthor?.getAssignedBy());
-    // let notification: boolean = false;
     if (supervisorData?.getDeviceToken()) {
       try {
         await FCMService.sendToToken(supervisorData?.getDeviceToken()!);
-        // notification = true;
       } catch (error: any) {
-        // notification = false;
-        console.error(error);
+        console.error('FCM notification error:', error);
       }
     }
-
-    return memo;
-  }
-
-  /**
-   * Génération mémo GÉOFENCING spécifique (même si pointage refusé)
-   */
-  async generateGeofencingMemo(
-    userId: number,
-    siteObj: Site,
-    validatedData: any,
-    geofenceCheck: any,
-  ): Promise<Memos> {
-    const validatorId = await this.getValidator(userId);
-
-    const title = `🚨 Pointage hors zone - ${validatedData.pointage_type}`;
-    const description = `
-⚠️ MÉMO AUTO-GÉNÉRÉ - Géofencing Violation
-
-📍 Site: ${siteObj.getName()}
-🕐 Tentative: ${new Date(validatedData.clocked_at).toLocaleString('fr-FR')}
-📱 Type: ${validatedData.pointage_type}
-
-🔍 DÉTAILS GÉOFENCING:
-- Distance du centre: ${geofenceCheck.distance_from_center}m
-- Rayon autorisé: ${siteObj.getGeofenceRadius()}m
-- Dépassement: ${geofenceCheck.distance_from_center - siteObj.getGeofenceRadius()!}m
-
-📱 DEVICE INFO:
-- GPS Accuracy: ${validatedData.gps_accuracy}m
-- Coordonnées: ${validatedData.latitude}, ${validatedData.longitude}
-
-⏳ ACTION REQUISE:
-Le pointage a été REFUSÉ automatiquement.
-Validation manager requise pour accepter manuellement si raison légitime.
-    `.trim();
-
-    const memo = new Memos()
-      .setAuthorUser(userId)
-      .setTargetUser(userId)
-      .setValidatorUser(validatorId)
-      .setMemoType(MemoType.CORRECTION_REQUEST)
-      .setMemoStatus(MemoStatus.PENDING) // Urgent
-      .setTitle(title)
-      .setMemoContent([
-        {
-          created_at: new Date().toISOString(),
-          user: '',
-          message: [
-            {
-              type: MessageType.TEXT,
-              content: description,
-            },
-          ],
-        },
-      ])
-      .setIncidentDatetime(new Date(validatedData.clocked_at))
-      .setAutoGenerated(true);
-    // .setAutoReason('geofence_violation');
-
-    await memo.save();
-
-    // Notification immédiate
-    console.log(`🚨 Notification URGENTE manager ${validatorId} - Géofencing violation`);
 
     return memo;
   }
@@ -1207,7 +1008,7 @@ Validation manager requise pour accepter manuellement si raison légitime.
   /**
    * Détection anomalie géofencing (non-bloquante)
    */
-  async detectGeofenceAnomaly(geofenceCheck: any, siteObj: Site): Promise<Anomaly[]> {
+  async detectGeofenceAnomaly(geofenceCheck: any, _siteObj: Site): Promise<Anomaly[]> {
     const anomalies: Anomaly[] = [];
 
     if (!geofenceCheck.access_granted) {
@@ -1229,6 +1030,81 @@ Validation manager requise pour accepter manuellement si raison légitime.
     return anomalies;
   }
 
+  /**
+   * 🆕 MÉTHODE PRINCIPALE : Détection des violations d'horaire
+   */
+  async detectScheduleViolations(
+    userId: number,
+    pointageType: PointageType,
+    clockedAt: Date,
+    sessionObj?: WorkSessions,
+  ): Promise<{
+    anomalies: Anomaly[];
+    scheduleContext: {
+      expectedSchedule: ApplicableSchedule | null;
+      isWorkDay: boolean;
+      expectedBlocks: any[];
+      resolutionPath: string[];
+    };
+  }> {
+    const anomalies: Anomaly[] = [];
+
+    // Résoudre l'horaire applicable
+    const scheduleResult = await ScheduleResolutionService.getApplicableSchedule(userId, clockedAt);
+
+    if (!scheduleResult.success || !scheduleResult.applicable_schedule) {
+      return {
+        anomalies: [],
+        scheduleContext: {
+          expectedSchedule: null,
+          isWorkDay: false,
+          expectedBlocks: [],
+          resolutionPath: scheduleResult.resolution_path || [],
+        },
+      };
+    }
+
+    const schedule = scheduleResult.applicable_schedule;
+    const isWorkDay = schedule.is_work_day;
+    const expectedBlocks = schedule.expected_blocks;
+
+    // 🔍 ANALYSE SELON TYPE DE POINTAGE
+    switch (pointageType) {
+      case PointageType.CLOCK_IN:
+        anomalies.push(...this.analyzeClockInSchedule(clockedAt, schedule));
+        break;
+
+      case PointageType.CLOCK_OUT:
+        anomalies.push(...this.analyzeClockOutSchedule(clockedAt, schedule, sessionObj));
+        break;
+
+      case PointageType.PAUSE_START:
+        anomalies.push(...this.analyzePauseStartSchedule(clockedAt, schedule));
+        break;
+
+      case PointageType.PAUSE_END:
+        anomalies.push(...(await this.analyzePauseEndSchedule(clockedAt, schedule, sessionObj)));
+        break;
+    }
+
+    return {
+      anomalies,
+      scheduleContext: {
+        expectedSchedule: schedule,
+        isWorkDay,
+        expectedBlocks,
+        resolutionPath: scheduleResult.resolution_path,
+      },
+    };
+  }
+
+  /**
+   * 🆕 Formater Date en "HH:MM"
+   */
+  public formatTime(date: Date): string {
+    return date.toTimeString().slice(0, 5);
+  }
+
   private calculateGlobalSeverity(anomalies: Anomaly[]): AlertSeverity {
     if (anomalies.some((a) => a.severity === AlertSeverity.CRITICAL)) return AlertSeverity.CRITICAL;
     if (anomalies.some((a) => a.severity === AlertSeverity.HIGH)) return AlertSeverity.HIGH;
@@ -1236,7 +1112,54 @@ Validation manager requise pour accepter manuellement si raison légitime.
     return AlertSeverity.LOW;
   }
 
-  private generateMemoTitle(pointageType: PointageType, anomalies: Anomaly[]): string {
+  //   private generateMemoDescription(
+  //     entryObj: TimeEntries,
+  //     anomalies: Anomaly[],
+  //     corrections: any[],
+  //   ): string {
+  //     const correctionsList =
+  //       corrections.length > 0
+  //         ? corrections.map((c) => `• ${c.action}`).join('\n')
+  //         : 'Aucune correction automatique appliquée';
+  //
+  //     return `
+  // ⚠️ MÉMO AUTO-GÉNÉRÉ - Anomalies Détectées
+  //
+  // 📍 POINTAGE:
+  // - Type: ${entryObj.getPointageType()}
+  // - Date/Heure: ${entryObj.getClockedAt()?.toLocaleString('fr-FR')}
+  // - GPS: ${entryObj.getLatitude()}, ${entryObj.getLongitude()}
+  // - Précision: ${entryObj.getGpsAccuracy()}m
+  //
+  // 🔍 ANOMALIES DÉTECTÉES (${anomalies.length}):
+  // ${anomalies
+  //   .map(
+  //     (a, i) => `
+  // ${i + 1}. [${a.severity.toUpperCase()}] ${a.type}
+  //    ${a.description}
+  //    ${a.technical_details ? JSON.stringify(a.technical_details, null, 2) : ''}
+  //    ${a.auto_correction_applied ? '✅ Correction automatique appliquée' : ''}
+  // `,
+  //   )
+  //   .join('\n')}
+  //
+  // ✅ CORRECTIONS AUTOMATIQUES:
+  // ${correctionsList}
+  //
+  // ⏳ VALIDATION REQUISE:
+  // ${
+  //   anomalies.some((a) => !a.auto_correctable)
+  //     ? 'Ce mémo nécessite validation manager sous 24h.'
+  //     : 'Corrections automatiques appliquées. Validation recommandée.'
+  // }
+  //     `.trim();
+  //   }
+
+  private generateMemoTitle(
+    pointageType: PointageType,
+    anomalies: Anomaly[],
+    scheduleContext?: any,
+  ): string {
     const severity = this.calculateGlobalSeverity(anomalies);
     const icon = {
       critical: '🚨',
@@ -1254,18 +1177,79 @@ Validation manager requise pour accepter manuellement si raison légitime.
       [PointageType.EXTERNAL_MISSION_END]: 'Fin mission',
     }[pointageType];
 
-    return `${icon} Anomalie ${typeLabel} - ${anomalies.length} incident(s)`;
+    // 🆕 Titre spécifique selon type d'anomalie principale
+    const hasLateArrival = anomalies.some((a) => a.type === AnomalyType.LATE_ARRIVAL);
+    const hasEarlyDeparture = anomalies.some((a) => a.type === AnomalyType.EARLY_DEPARTURE);
+    const hasWorkOnRestDay = anomalies.some((a) => a.type === AnomalyType.WORK_ON_REST_DAY);
+
+    if (hasLateArrival) {
+      const lateAnomaly = anomalies.find((a) => a.type === AnomalyType.LATE_ARRIVAL);
+      return `${icon} Delay ${typeLabel} - ${lateAnomaly?.technical_details?.minutes_late} minutes`;
+    }
+
+    if (hasEarlyDeparture) {
+      const earlyAnomaly = anomalies.find((a) => a.type === AnomalyType.EARLY_DEPARTURE);
+      return `${icon} Early Departure - ${earlyAnomaly?.technical_details?.minutes_early} minutes`;
+    }
+
+    if (hasWorkOnRestDay) {
+      return `${icon} Rest Day Score`;
+    }
+
+    return `${icon} ${typeLabel} anomaly - ${anomalies.length} incident(s)`;
   }
 
+  // private mapAnomalyToMemoType(anomalies: Anomaly[]): MemoType {
+  //   if (anomalies.some((a) => a.type === AnomalyType.SESSION_NOT_FOUND)) {
+  //     return MemoType.SESSION_CLOSURE;
+  //   }
+  //   if (
+  //     anomalies.some((a) =>
+  //       [AnomalyType.TIMING_ABNORMAL, AnomalyType.SESSION_TOO_LONG].includes(a.type),
+  //     )
+  //   ) {
+  //     return MemoType.DELAY_JUSTIFICATION;
+  //   }
+  //   return MemoType.CORRECTION_REQUEST;
+  // }
+
+  /**
+   * 🆕 DESCRIPTION MÉMO ENRICHIE avec contexte horaire
+   */
   private generateMemoDescription(
     entryObj: TimeEntries,
     anomalies: Anomaly[],
     corrections: any[],
+    scheduleContext?: any,
   ): string {
     const correctionsList =
       corrections.length > 0
         ? corrections.map((c) => `• ${c.action}`).join('\n')
         : 'Aucune correction automatique appliquée';
+
+    let scheduleInfo = '';
+
+    // 🆕 AJOUT CONTEXTE HORAIRE si disponible
+    if (scheduleContext?.expectedSchedule) {
+      const schedule = scheduleContext.expectedSchedule;
+
+      scheduleInfo = `
+📅 HORAIRE ATTENDU:
+- Template: ${schedule.template_name} (${schedule.template_guid})
+- Source: ${schedule.source === 'exception' ? '🔴 Exception' : schedule.source === 'rotation' ? '🔄 Rotation' : schedule.source === 'direct' ? '👤 Direct' : '🏢 Défaut'}
+- Date: ${schedule.schedule_date}
+- Jour de travail: ${schedule.is_work_day ? '✅ Oui' : '❌ Non (repos)'}
+${
+  schedule.is_work_day
+    ? `- Plages horaires: ${schedule.expected_blocks.map((b: any) => `${b.work[0]}-${b.work[1]}${b.pause ? ` (pause ${b.pause[0]}-${b.pause[1]})` : ''}`).join(', ')}
+- Tolérance: ${schedule.tolerance_minutes} minutes`
+    : ''
+}
+
+🔍 RÉSOLUTION D'HORAIRE:
+${scheduleContext.resolutionPath?.map((step: string) => `  ${step}`).join('\n')}
+`;
+    }
 
     return `
 ⚠️ MÉMO AUTO-GÉNÉRÉ - Anomalies Détectées
@@ -1275,14 +1259,14 @@ Validation manager requise pour accepter manuellement si raison légitime.
 - Date/Heure: ${entryObj.getClockedAt()?.toLocaleString('fr-FR')}
 - GPS: ${entryObj.getLatitude()}, ${entryObj.getLongitude()}
 - Précision: ${entryObj.getGpsAccuracy()}m
-
+${scheduleInfo}
 🔍 ANOMALIES DÉTECTÉES (${anomalies.length}):
 ${anomalies
   .map(
     (a, i) => `
 ${i + 1}. [${a.severity.toUpperCase()}] ${a.type}
    ${a.description}
-   ${a.technical_details ? JSON.stringify(a.technical_details, null, 2) : ''}
+   ${a.technical_details ? `Détails: ${JSON.stringify(a.technical_details, null, 2)}` : ''}
    ${a.auto_correction_applied ? '✅ Correction automatique appliquée' : ''}
 `,
   )
@@ -1297,21 +1281,54 @@ ${
     ? 'Ce mémo nécessite validation manager sous 24h.'
     : 'Corrections automatiques appliquées. Validation recommandée.'
 }
-    `.trim();
+  `.trim();
   }
 
   private mapAnomalyToMemoType(anomalies: Anomaly[]): MemoType {
-    if (anomalies.some((a) => a.type === AnomalyType.SESSION_NOT_FOUND)) {
-      return MemoType.SESSION_CLOSURE;
-    }
+    // Retard = DELAY_JUSTIFICATION
     if (
-      anomalies.some((a) =>
-        [AnomalyType.TIMING_ABNORMAL, AnomalyType.SESSION_TOO_LONG].includes(a.type),
+      anomalies.some(
+        (a) =>
+          a.type === AnomalyType.LATE_ARRIVAL ||
+          a.type === AnomalyType.EARLY_ARRIVAL ||
+          a.type === AnomalyType.TIMING_ABNORMAL,
       )
     ) {
       return MemoType.DELAY_JUSTIFICATION;
     }
-    return MemoType.CORRECTION_REQUEST;
+
+    // Absence = ABSENCE_JUSTIFICATION
+    if (
+      anomalies.some(
+        (a) =>
+          a.type === AnomalyType.ABSENT_NO_SHOW ||
+          a.type === AnomalyType.WORK_ON_REST_DAY ||
+          a.type === AnomalyType.MISSED_WORK_BLOCK,
+      )
+    ) {
+      return MemoType.ABSENCE_JUSTIFICATION;
+    }
+
+    // Départ anticipé ou pause trop longue = CORRECTION_REQUEST
+    if (
+      anomalies.some(
+        (a) =>
+          a.type === AnomalyType.EARLY_DEPARTURE ||
+          a.type === AnomalyType.PAUSE_TOO_LONG ||
+          a.type === AnomalyType.PAUSE_NO_RETURN ||
+          a.type === AnomalyType.DURATION_ABNORMAL,
+      )
+    ) {
+      return MemoType.CORRECTION_REQUEST;
+    }
+
+    // Session manquante = SESSION_CLOSURE
+    if (anomalies.some((a) => a.type === AnomalyType.SESSION_NOT_FOUND)) {
+      return MemoType.SESSION_CLOSURE;
+    }
+
+    // Par défaut = AUTO_GENERATED
+    return MemoType.AUTO_GENERATED;
   }
 
   private async getValidator(userId: number): Promise<number> {
@@ -1371,9 +1388,287 @@ ${
 
       [AnomalyType.UNAUTHORIZED_QR_CODE]: AlertType.UNAUTHORIZED_ACCESS,
       [AnomalyType.EXPIRED_QR_CODE]: AlertType.UNAUTHORIZED_ACCESS,
+
+      [AnomalyType.LATE_ARRIVAL]: AlertType.SCHEDULE_VIOLATION,
+      [AnomalyType.EARLY_DEPARTURE]: AlertType.SCHEDULE_VIOLATION,
+      [AnomalyType.ABSENT_NO_SHOW]: AlertType.SCHEDULE_VIOLATION,
+      [AnomalyType.PAUSE_TOO_LONG]: AlertType.SCHEDULE_VIOLATION,
+      [AnomalyType.PAUSE_NO_RETURN]: AlertType.SCHEDULE_VIOLATION,
+      [AnomalyType.MISSED_WORK_BLOCK]: AlertType.SCHEDULE_VIOLATION,
+      [AnomalyType.OFF_SCHEDULE_CLOCKING]: AlertType.SCHEDULE_VIOLATION,
+      [AnomalyType.WORK_ON_REST_DAY]: AlertType.SCHEDULE_VIOLATION,
+      [AnomalyType.EARLY_ARRIVAL]: AlertType.SUSPICIOUS_PATTERN,
+      [AnomalyType.PAUSE_OUTSIDE_BLOCK]: AlertType.SCHEDULE_VIOLATION,
     };
 
     return mapping[anomalyType] || AlertType.SUSPICIOUS_PATTERN;
+  }
+
+  /**
+   * 🆕 Analyse CLOCK_IN par rapport à l'horaire
+   */
+  private analyzeClockInSchedule(clockedAt: Date, schedule: ApplicableSchedule): Anomaly[] {
+    const anomalies: Anomaly[] = [];
+
+    // Cas 1 : Pointage un jour de repos
+    if (!schedule.is_work_day) {
+      anomalies.push({
+        type: AnomalyType.WORK_ON_REST_DAY,
+        severity: AlertSeverity.MEDIUM,
+        description: `Time recorded on a day off according to the schedule "${schedule.template_name}"`,
+        technical_details: {
+          schedule_date: schedule.schedule_date,
+          template_name: schedule.template_name,
+          source: schedule.source,
+        },
+        auto_correctable: false,
+      });
+      return anomalies; // Pas besoin d'analyser plus
+    }
+
+    // Cas 2 : Vérifier retard ou arrivée anticipée
+    const firstBlock = schedule.expected_blocks[0];
+    if (!firstBlock) return anomalies;
+
+    const expectedStartTime = firstBlock.work[0];
+    const tolerance = firstBlock.tolerance || 0;
+
+    const clockedTime = this.formatTime(clockedAt);
+    const clockedMinutes = ScheduleResolutionService.parseTimeToMinutes(clockedTime);
+    const expectedMinutes = ScheduleResolutionService.parseTimeToMinutes(expectedStartTime);
+
+    const diffMinutes = clockedMinutes - expectedMinutes;
+
+    // Retard détecté
+    if (diffMinutes > tolerance) {
+      const severity = this.calculateLateSeverity(diffMinutes, tolerance);
+      anomalies.push({
+        type: AnomalyType.LATE_ARRIVAL,
+        severity,
+        description: `Delay of ${diffMinutes} minutes (tolerance: ${tolerance} min, overrun: ${diffMinutes - tolerance} min)`,
+        technical_details: {
+          expected_start: expectedStartTime,
+          actual_start: clockedTime,
+          minutes_late: diffMinutes,
+          tolerance,
+          overshoot: diffMinutes - tolerance,
+          template_name: schedule.template_name,
+        },
+        auto_correctable: false,
+      });
+    }
+    // Arrivée très en avance (>60 min)
+    else if (diffMinutes < -60) {
+      anomalies.push({
+        type: AnomalyType.EARLY_ARRIVAL,
+        severity: AlertSeverity.LOW,
+        description: `Arrivée en avance de ${Math.abs(diffMinutes)} minutes`,
+        technical_details: {
+          expected_start: expectedStartTime,
+          actual_start: clockedTime,
+          minutes_early: Math.abs(diffMinutes),
+        },
+        auto_correctable: false,
+      });
+    }
+
+    return anomalies;
+  }
+
+  /**
+   * 🆕 Analyse CLOCK_OUT par rapport à l'horaire
+   */
+  private analyzeClockOutSchedule(
+    clockedAt: Date,
+    schedule: ApplicableSchedule,
+    sessionObj?: WorkSessions,
+  ): Anomaly[] {
+    const anomalies: Anomaly[] = [];
+
+    if (!schedule.is_work_day || schedule.expected_blocks.length === 0) {
+      return anomalies;
+    }
+
+    // Prendre le dernier bloc de travail de la journée
+    const lastBlock = schedule.expected_blocks[schedule.expected_blocks.length - 1];
+    const expectedEndTime = lastBlock.work[1];
+
+    const clockedTime = this.formatTime(clockedAt);
+    const clockedMinutes = ScheduleResolutionService.parseTimeToMinutes(clockedTime);
+    const expectedMinutes = ScheduleResolutionService.parseTimeToMinutes(expectedEndTime);
+
+    const diffMinutes = expectedMinutes - clockedMinutes;
+
+    // Départ anticipé
+    if (diffMinutes > 0) {
+      const severity = diffMinutes > 60 ? AlertSeverity.HIGH : AlertSeverity.MEDIUM;
+      anomalies.push({
+        type: AnomalyType.EARLY_DEPARTURE,
+        severity,
+        description: `Early departure of ${diffMinutes} minutes`,
+        technical_details: {
+          expected_end: expectedEndTime,
+          actual_end: clockedTime,
+          minutes_early: diffMinutes,
+          template_name: schedule.template_name,
+        },
+        auto_correctable: false,
+      });
+    }
+
+    // Vérifier durée totale travaillée vs attendue
+    if (sessionObj) {
+      const sessionStart = sessionObj.getSessionStartAt()!;
+      const totalWorkedMinutes = this.calculateDurationMinutes(sessionStart, clockedAt);
+      const expectedTotalMinutes = this.calculateExpectedWorkMinutes(schedule);
+
+      const durationDiff = expectedTotalMinutes - totalWorkedMinutes;
+
+      if (Math.abs(durationDiff) > 60) {
+        anomalies.push({
+          type: AnomalyType.DURATION_ABNORMAL,
+          severity: AlertSeverity.MEDIUM,
+          description: `Abnormal working time: ${Math.floor(totalWorkedMinutes / 60)}h${totalWorkedMinutes % 60}min vs ${Math.floor(expectedTotalMinutes / 60)}h${expectedTotalMinutes % 60}min expected`,
+          technical_details: {
+            worked_minutes: totalWorkedMinutes,
+            expected_minutes: expectedTotalMinutes,
+            difference_minutes: durationDiff,
+          },
+          auto_correctable: false,
+        });
+      }
+    }
+
+    return anomalies;
+  }
+
+  /**
+   * 🆕 Analyse PAUSE_START par rapport à l'horaire
+   */
+  private analyzePauseStartSchedule(clockedAt: Date, schedule: ApplicableSchedule): Anomaly[] {
+    const anomalies: Anomaly[] = [];
+
+    if (!schedule.is_work_day) return anomalies;
+
+    // Vérifier si pause est dans une plage autorisée
+    const clockedTime = this.formatTime(clockedAt);
+    const clockedMinutes = ScheduleResolutionService.parseTimeToMinutes(clockedTime);
+
+    let isInPauseWindow = false;
+    for (const block of schedule.expected_blocks) {
+      if (block.pause) {
+        const pauseStart = ScheduleResolutionService.parseTimeToMinutes(block.pause[0]);
+        const pauseEnd = ScheduleResolutionService.parseTimeToMinutes(block.pause[1]);
+
+        if (clockedMinutes >= pauseStart && clockedMinutes <= pauseEnd) {
+          isInPauseWindow = true;
+          break;
+        }
+      }
+    }
+
+    if (!isInPauseWindow && schedule.expected_blocks.some((b) => b.pause)) {
+      anomalies.push({
+        type: AnomalyType.PAUSE_OUTSIDE_BLOCK,
+        severity: AlertSeverity.LOW,
+        description: `Break started outside authorized time slots`,
+        technical_details: {
+          pause_start_time: clockedTime,
+          expected_pause_blocks: schedule.expected_blocks
+            .filter((b) => b.pause)
+            .map((b) => b.pause),
+        },
+        auto_correctable: false,
+      });
+    }
+
+    return anomalies;
+  }
+
+  /**
+   * 🆕 Analyse PAUSE_END par rapport à l'horaire
+   */
+  private async analyzePauseEndSchedule(
+    clockedAt: Date,
+    schedule: ApplicableSchedule,
+    sessionObj?: WorkSessions,
+  ): Promise<Anomaly[]> {
+    const anomalies: Anomaly[] = [];
+
+    if (!sessionObj) return anomalies;
+
+    // Récupérer le dernier PAUSE_START
+    const entries = await TimeEntries._listBySession(sessionObj.getId()!);
+    const lastPauseStart = entries
+      ?.reverse()
+      .find((e) => e.getPointageType() === PointageType.PAUSE_START);
+
+    if (!lastPauseStart) return anomalies;
+
+    const pauseDuration = this.calculateDurationMinutes(lastPauseStart.getClockedAt()!, clockedAt);
+
+    // Trouver la durée de pause autorisée
+    const clockedTime = this.formatTime(lastPauseStart.getClockedAt()!);
+    const clockedMinutes = ScheduleResolutionService.parseTimeToMinutes(clockedTime);
+
+    let maxPauseDuration = 120; // Défaut 2h
+    for (const block of schedule.expected_blocks) {
+      if (block.pause) {
+        const pauseStart = ScheduleResolutionService.parseTimeToMinutes(block.pause[0]);
+        const pauseEnd = ScheduleResolutionService.parseTimeToMinutes(block.pause[1]);
+
+        if (clockedMinutes >= pauseStart && clockedMinutes <= pauseEnd) {
+          maxPauseDuration = pauseEnd - pauseStart;
+          break;
+        }
+      }
+    }
+
+    if (pauseDuration > maxPauseDuration + 15) {
+      // +15 min de tolérance
+      anomalies.push({
+        type: AnomalyType.PAUSE_TOO_LONG,
+        severity: AlertSeverity.HIGH,
+        description: `Pause too long: ${Math.floor(pauseDuration / 60)}h${pauseDuration % 60}min (max: ${Math.floor(maxPauseDuration / 60)}h${maxPauseDuration % 60}min)`,
+        technical_details: {
+          pause_duration_minutes: pauseDuration,
+          max_allowed_minutes: maxPauseDuration,
+          overshoot_minutes: pauseDuration - maxPauseDuration,
+          pause_start: this.formatTime(lastPauseStart.getClockedAt()!),
+          pause_end: this.formatTime(clockedAt),
+        },
+        auto_correctable: false,
+      });
+    }
+
+    return anomalies;
+  }
+
+  /**
+   * 🆕 Calculer sévérité du retard
+   */
+  private calculateLateSeverity(minutesLate: number, tolerance: number): AlertSeverity {
+    const overshoot = minutesLate - tolerance;
+
+    if (overshoot <= 0) return AlertSeverity.LOW; // Dans tolérance
+    if (overshoot <= 15) return AlertSeverity.MEDIUM; // Retard léger
+    if (overshoot <= 60) return AlertSeverity.HIGH; // Retard significatif
+    return AlertSeverity.CRITICAL; // Retard grave (>1h)
+  }
+
+  /**
+   * 🆕 Calculer durée totale de travail attendue
+   */
+  private calculateExpectedWorkMinutes(schedule: ApplicableSchedule): number {
+    let totalMinutes = 0;
+
+    for (const block of schedule.expected_blocks) {
+      const startMinutes = ScheduleResolutionService.parseTimeToMinutes(block.work[0]);
+      const endMinutes = ScheduleResolutionService.parseTimeToMinutes(block.work[1]);
+      totalMinutes += endMinutes - startMinutes;
+    }
+
+    return totalMinutes;
   }
 }
 

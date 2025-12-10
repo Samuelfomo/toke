@@ -122,6 +122,13 @@ export default class TimeEntries extends TimeEntriesModel {
 
   // === GETTERS FLUENT ===
 
+  /**
+   * Convertit des données en objet TimeEntries
+   */
+  static _toObject(data: any): TimeEntries {
+    return new TimeEntries().hydrate(data);
+  }
+
   getId(): number | undefined {
     return this.id;
   }
@@ -254,11 +261,11 @@ export default class TimeEntries extends TimeEntriesModel {
     return this.correction_reason;
   }
 
+  // === SETTERS FLUENT ===
+
   getUpdatedAt(): Date | undefined {
     return this.updated_at;
   }
-
-  // === SETTERS FLUENT ===
 
   setSession(session: number): TimeEntries {
     this.session = session;
@@ -337,12 +344,12 @@ export default class TimeEntries extends TimeEntriesModel {
     return this;
   }
 
+  // === VALIDATION MÉTIER ===
+
   setCorrectionReason(reason: string): TimeEntries {
     this.correction_reason = reason;
     return this;
   }
-
-  // === VALIDATION MÉTIER ===
 
   async isValid(): Promise<boolean> {
     try {
@@ -398,12 +405,12 @@ export default class TimeEntries extends TimeEntriesModel {
     return !result.violation;
   }
 
+  // === GESTION STATUTS ===
+
   async isSequenceValid(): Promise<boolean> {
     if (!this.session || !this.pointage_type) return false;
     return await this.validateSequence(this.session, this.pointage_type);
   }
-
-  // === GESTION STATUTS ===
 
   async accept(): Promise<void> {
     this.pointage_status = PointageStatus.ACCEPTED;
@@ -439,12 +446,12 @@ export default class TimeEntries extends TimeEntriesModel {
     await this.load(this.id);
   }
 
+  // === OFFLINE/SYNC ===
+
   async markAsAccounted(): Promise<void> {
     this.pointage_status = PointageStatus.ACCOUNTED;
     await this.save();
   }
-
-  // === OFFLINE/SYNC ===
 
   markAsOffline(local_id: string): TimeEntries {
     this.created_offline = true;
@@ -475,6 +482,8 @@ export default class TimeEntries extends TimeEntriesModel {
     }
   }
 
+  // === ANTI-FRAUDE ===
+
   getConflictResolution(): 'server_wins' | 'client_wins' | 'manual_review' {
     // Stratégie: serveur prime toujours sauf si offline récent
     if (this.created_offline && this.getSyncAttempts() === 0) {
@@ -487,8 +496,6 @@ export default class TimeEntries extends TimeEntriesModel {
 
     return 'manual_review';
   }
-
-  // === ANTI-FRAUDE ===
 
   async detectAnomalies(): Promise<any[]> {
     const anomalies: any[] = [];
@@ -567,12 +574,12 @@ export default class TimeEntries extends TimeEntriesModel {
     return Math.min(score, 100);
   }
 
+  // === CORRECTIONS & AUDIT ===
+
   async hasAnomalies(): Promise<boolean> {
     const anomalies = await this.detectAnomalies();
     return anomalies.length > 0;
   }
-
-  // === CORRECTIONS & AUDIT ===
 
   async applyManagerCorrection(
     corrections: Record<string, any>,
@@ -605,12 +612,12 @@ export default class TimeEntries extends TimeEntriesModel {
     return await this.getAuditTrail(this.id);
   }
 
+  // === REPORTING ===
+
   async notifyUserCorrection(): Promise<void> {
     // TODO: Implémenter notification push/email
     console.log(`Notification correction envoyée à user ${this.user}`);
   }
-
-  // === REPORTING ===
 
   toExportFormat(): any {
     return {
@@ -646,6 +653,8 @@ export default class TimeEntries extends TimeEntriesModel {
     };
   }
 
+  // === HELPERS MÉTIER ===
+
   toAuditLog(): any {
     return {
       entry_id: this.id,
@@ -664,8 +673,6 @@ export default class TimeEntries extends TimeEntriesModel {
       corrections: this.correction_reason,
     };
   }
-
-  // === HELPERS MÉTIER ===
 
   async calculateTimeSincePrevious(): Promise<number | null> {
     if (!this.user || !this.clocked_at) return null;
@@ -697,6 +704,8 @@ export default class TimeEntries extends TimeEntriesModel {
     return hour >= 6 && hour <= 22; // 6h-22h
   }
 
+  // === GESTION CYCLE DE VIE ===
+
   async needsMemoJustification(): Promise<boolean> {
     // Retard > 15min
     const sessionObj = await this.getSessionObj();
@@ -714,8 +723,6 @@ export default class TimeEntries extends TimeEntriesModel {
 
     return false;
   }
-
-  // === GESTION CYCLE DE VIE ===
 
   isNew(): boolean {
     return this.id === undefined;
@@ -738,6 +745,8 @@ export default class TimeEntries extends TimeEntriesModel {
     }
   }
 
+  // === MÉTHODES DE BASE ===
+
   async delete(): Promise<boolean> {
     if (this.id !== undefined) {
       await W.isOccur(!this.id, `${G.identifierMissing.code}: TimeEntry Delete`);
@@ -745,8 +754,6 @@ export default class TimeEntries extends TimeEntriesModel {
     }
     return false;
   }
-
-  // === MÉTHODES DE BASE ===
 
   async load(identifier: any, byGuid: boolean = false): Promise<TimeEntries | null> {
     let data = null;
@@ -814,13 +821,13 @@ export default class TimeEntries extends TimeEntriesModel {
     return dataset.map((data) => new TimeEntries().hydrate(data));
   }
 
-  async batchSync(user: number, entries_data: any[]): Promise<any> {
-    return await this.processBatchSync(user, entries_data);
-  }
-
   // async detectAnomalies(user_id: number, days: number): Promise<any[]> {
   //   return await this.findSuspiciousPatterns(user_id, days);
   // }
+
+  async batchSync(user: number, entries_data: any[]): Promise<any> {
+    return await this.processBatchSync(user, entries_data);
+  }
 
   async getStatistics(filters: Record<string, any> = {}): Promise<any> {
     return await this.getEntriesStatistics(filters);

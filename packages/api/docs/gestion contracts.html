@@ -1,0 +1,558 @@
+﻿<!DOCTYPE html>
+<html>
+
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>gestion contracts</title>
+  <link rel="stylesheet" href="https://stackedit.io/style.css" />
+</head>
+
+<body class="stackedit">
+  <div class="stackedit__html"><h1 id="les-entités-et-tables-de-toké---expliqué-simplement">Les Entités et Tables de Toké - Expliqué simplement</h1>
+<p>Tu as raison ! Voyons comment tout ça est organisé dans la base de données. Je vais t’expliquer chaque table et son rôle avec des exemples concrets.</p>
+<hr>
+<h2 id="🗂️-les-4-tables-principales">🗂️ Les 4 Tables Principales</h2>
+<h3 id="session_templates-les-modèles-dhoraires"><strong>1. session_templates</strong> (Les Modèles d’Horaires)</h3>
+<p><strong>C’est quoi ?</strong> La bibliothèque de tous les horaires possibles dans ton entreprise.</p>
+<p><strong>Exemple de contenu :</strong></p>
+
+<table>
+<thead>
+<tr>
+<th>id</th>
+<th>tenant_id</th>
+<th>name</th>
+<th>valid_from</th>
+<th>valid_to</th>
+<th>definition</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>1</td>
+<td>100</td>
+<td>“Bureau Standard”</td>
+<td>2024-01-01</td>
+<td>2024-12-31</td>
+<td><code>{...}</code></td>
+</tr>
+<tr>
+<td>2</td>
+<td>100</td>
+<td>“Équipe Matin”</td>
+<td>2024-01-01</td>
+<td>2024-12-31</td>
+<td><code>{...}</code></td>
+</tr>
+<tr>
+<td>3</td>
+<td>100</td>
+<td>“Équipe Soir”</td>
+<td>2024-01-01</td>
+<td>2024-12-31</td>
+<td><code>{...}</code></td>
+</tr>
+<tr>
+<td>4</td>
+<td>100</td>
+<td>“Week-end”</td>
+<td>2024-01-01</td>
+<td>2024-12-31</td>
+<td><code>{...}</code></td>
+</tr>
+</tbody>
+</table><p><strong>Le champ “definition” contient :</strong></p>
+<pre class=" language-json"><code class="prism  language-json"><span class="token punctuation">{</span>
+  <span class="token string">"Mon"</span><span class="token punctuation">:</span> <span class="token punctuation">[</span>
+    <span class="token punctuation">{</span> 
+      <span class="token string">"work"</span><span class="token punctuation">:</span> <span class="token punctuation">[</span><span class="token string">"08:00"</span><span class="token punctuation">,</span> <span class="token string">"12:00"</span><span class="token punctuation">]</span><span class="token punctuation">,</span> 
+      <span class="token string">"pause"</span><span class="token punctuation">:</span> <span class="token keyword">null</span><span class="token punctuation">,</span> 
+      <span class="token string">"tolerance"</span><span class="token punctuation">:</span> <span class="token number">15</span> 
+    <span class="token punctuation">}</span><span class="token punctuation">,</span>
+    <span class="token punctuation">{</span> 
+      <span class="token string">"work"</span><span class="token punctuation">:</span> <span class="token punctuation">[</span><span class="token string">"14:00"</span><span class="token punctuation">,</span> <span class="token string">"18:00"</span><span class="token punctuation">]</span><span class="token punctuation">,</span> 
+      <span class="token string">"pause"</span><span class="token punctuation">:</span> <span class="token keyword">null</span><span class="token punctuation">,</span> 
+      <span class="token string">"tolerance"</span><span class="token punctuation">:</span> <span class="token number">15</span> 
+    <span class="token punctuation">}</span>
+  <span class="token punctuation">]</span><span class="token punctuation">,</span>
+  <span class="token string">"Tue"</span><span class="token punctuation">:</span> <span class="token punctuation">[</span><span class="token operator">...</span><span class="token punctuation">]</span><span class="token punctuation">,</span>
+  <span class="token string">"Wed"</span><span class="token punctuation">:</span> <span class="token punctuation">[</span><span class="token operator">...</span><span class="token punctuation">]</span><span class="token punctuation">,</span>
+  <span class="token string">"Thu"</span><span class="token punctuation">:</span> <span class="token punctuation">[</span><span class="token operator">...</span><span class="token punctuation">]</span><span class="token punctuation">,</span>
+  <span class="token string">"Fri"</span><span class="token punctuation">:</span> <span class="token punctuation">[</span><span class="token operator">...</span><span class="token punctuation">]</span><span class="token punctuation">,</span>
+  <span class="token string">"Sat"</span><span class="token punctuation">:</span> <span class="token punctuation">[</span><span class="token punctuation">]</span><span class="token punctuation">,</span>
+  <span class="token string">"Sun"</span><span class="token punctuation">:</span> <span class="token punctuation">[</span><span class="token punctuation">]</span>
+<span class="token punctuation">}</span>
+</code></pre>
+<p><strong>Scénario :</strong> Tu crées un modèle “Bureau Standard” avec :</p>
+<ul>
+<li>Lundi à Vendredi : 8h-12h puis 14h-18h</li>
+<li>Pause : 12h-14h</li>
+<li>Tolérance : 15 minutes</li>
+<li>Week-end : repos</li>
+</ul>
+<p>➡️ <strong>Cette table stocke UNIQUEMENT le modèle</strong>, pas qui l’utilise !</p>
+<hr>
+<h3 id="rotation_groups-les-groupes-de-rotation"><strong>2. rotation_groups</strong> (Les Groupes de Rotation)</h3>
+<p><strong>C’est quoi ?</strong> Les cycles d’alternance pour les équipes qui tournent.</p>
+<p><strong>Exemple de contenu :</strong></p>
+
+<table>
+<thead>
+<tr>
+<th>id</th>
+<th>tenant_id</th>
+<th>name</th>
+<th>cycle_length</th>
+<th>cycle_unit</th>
+<th>cycle_templates</th>
+<th>start_date</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>1</td>
+<td>100</td>
+<td>“Rotation 2×8 Sécurité”</td>
+<td>2</td>
+<td>“week”</td>
+<td><code>[2, 3]</code></td>
+<td>2024-01-01</td>
+</tr>
+<tr>
+<td>2</td>
+<td>100</td>
+<td>“Rotation 3×8 Production”</td>
+<td>3</td>
+<td>“week”</td>
+<td><code>[2, 3, 5]</code></td>
+<td>2024-01-01</td>
+</tr>
+</tbody>
+</table><p><strong>Décryptage de la ligne 1 :</strong></p>
+<ul>
+<li><strong>name :</strong> “Rotation 2×8 Sécurité” (nom pour le manager)</li>
+<li><strong>cycle_length :</strong> 2 (le cycle dure 2 unités)</li>
+<li><strong>cycle_unit :</strong> “week” (l’unité est la semaine)</li>
+<li><strong>cycle_templates :</strong> <code>[2, 3]</code> (utilise les templates id=2 et id=3 en alternance)</li>
+<li><strong>start_date :</strong> 2024-01-01 (le cycle démarre le 1er janvier)</li>
+</ul>
+<p><strong>Scénario - Rotation 2×8 :</strong></p>
+<ul>
+<li><strong>Semaine 1 :</strong> Template “Équipe Matin” (id=2) → 6h-14h</li>
+<li><strong>Semaine 2 :</strong> Template “Équipe Soir” (id=3) → 14h-22h</li>
+<li><strong>Semaine 3 :</strong> Retour à “Équipe Matin”</li>
+<li>Et ça continue en boucle</li>
+</ul>
+<p><strong>Scénario - Rotation 3×8 :</strong></p>
+<ul>
+<li><strong>Semaine 1 :</strong> Template id=2 (Matin : 6h-14h)</li>
+<li><strong>Semaine 2 :</strong> Template id=3 (Soir : 14h-22h)</li>
+<li><strong>Semaine 3 :</strong> Template id=5 (Nuit : 22h-6h)</li>
+<li><strong>Semaine 4 :</strong> Retour à Matin</li>
+</ul>
+<p>➡️ <strong>Cette table définit COMMENT tourner</strong>, pas QUI tourne !</p>
+<hr>
+<h3 id="rotation_assignments-qui-est-dans-quelle-rotation"><strong>3. rotation_assignments</strong> (Qui est Dans Quelle Rotation)</h3>
+<p><strong>C’est quoi ?</strong> Le lien entre un employé et son groupe de rotation.</p>
+<p><strong>Exemple de contenu :</strong></p>
+
+<table>
+<thead>
+<tr>
+<th>id</th>
+<th>user_id</th>
+<th>rotation_group_id</th>
+<th>offset</th>
+<th>assigned_at</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>1</td>
+<td>501</td>
+<td>1</td>
+<td>0</td>
+<td>2024-01-01</td>
+</tr>
+<tr>
+<td>2</td>
+<td>502</td>
+<td>1</td>
+<td>1</td>
+<td>2024-01-01</td>
+</tr>
+<tr>
+<td>3</td>
+<td>503</td>
+<td>2</td>
+<td>0</td>
+<td>2024-01-01</td>
+</tr>
+<tr>
+<td>4</td>
+<td>504</td>
+<td>2</td>
+<td>1</td>
+<td>2024-01-01</td>
+</tr>
+<tr>
+<td>5</td>
+<td>505</td>
+<td>2</td>
+<td>2</td>
+<td>2024-01-01</td>
+</tr>
+</tbody>
+</table><p><strong>Décryptage :</strong></p>
+<p><strong>Ligne 1 :</strong> Ahmed (user_id=501)</p>
+<ul>
+<li>Est assigné au groupe rotation_group_id=1 (“Rotation 2×8 Sécurité”)</li>
+<li>Avec un offset=0 (il commence en position 0 du cycle)</li>
+</ul>
+<p><strong>Ligne 2 :</strong> Sophie (user_id=502)</p>
+<ul>
+<li>Même groupe (rotation_group_id=1)</li>
+<li>Avec offset=1 (elle commence décalée d’une position)</li>
+</ul>
+<p><strong>Comment ça marche concrètement ?</strong></p>
+<p><strong>Rotation 2×8 (cycle_templates = [2, 3]) :</strong></p>
+
+<table>
+<thead>
+<tr>
+<th>Semaine</th>
+<th>Position 0 (Ahmed)</th>
+<th>Position 1 (Sophie)</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Semaine 1</td>
+<td>Template 2 (Matin)</td>
+<td>Template 3 (Soir)</td>
+</tr>
+<tr>
+<td>Semaine 2</td>
+<td>Template 3 (Soir)</td>
+<td>Template 2 (Matin)</td>
+</tr>
+<tr>
+<td>Semaine 3</td>
+<td>Template 2 (Matin)</td>
+<td>Template 3 (Soir)</td>
+</tr>
+</tbody>
+</table><p><strong>Rotation 3×8 (cycle_templates = [2, 3, 5]) :</strong></p>
+
+<table>
+<thead>
+<tr>
+<th>Semaine</th>
+<th>user_id=503 (offset=0)</th>
+<th>user_id=504 (offset=1)</th>
+<th>user_id=505 (offset=2)</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Sem. 1</td>
+<td>Template 2 (Matin)</td>
+<td>Template 3 (Soir)</td>
+<td>Template 5 (Nuit)</td>
+</tr>
+<tr>
+<td>Sem. 2</td>
+<td>Template 3 (Soir)</td>
+<td>Template 5 (Nuit)</td>
+<td>Template 2 (Matin)</td>
+</tr>
+<tr>
+<td>Sem. 3</td>
+<td>Template 5 (Nuit)</td>
+<td>Template 2 (Matin)</td>
+<td>Template 3 (Soir)</td>
+</tr>
+<tr>
+<td>Sem. 4</td>
+<td>Template 2 (Matin)</td>
+<td>Template 3 (Soir)</td>
+<td>Template 5 (Nuit)</td>
+</tr>
+</tbody>
+</table><p>➡️ <strong>Cette table dit QUI est dans QUELLE rotation et à QUELLE position du cycle</strong></p>
+<hr>
+<h3 id="schedule_exceptions-les-exceptions"><strong>4. schedule_exceptions</strong> (Les Exceptions)</h3>
+<p><strong>C’est quoi ?</strong> Les modifications temporaires d’horaires.</p>
+<p><strong>Exemple de contenu :</strong></p>
+
+<table>
+<thead>
+<tr>
+<th>id</th>
+<th>user_id</th>
+<th>group_id</th>
+<th>session_template_id</th>
+<th>start_date</th>
+<th>end_date</th>
+<th>reason</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>1</td>
+<td>NULL</td>
+<td>100</td>
+<td>10</td>
+<td>2024-12-25</td>
+<td>2024-12-25</td>
+<td>“Noël”</td>
+</tr>
+<tr>
+<td>2</td>
+<td>501</td>
+<td>NULL</td>
+<td>4</td>
+<td>2024-12-05</td>
+<td>2024-12-07</td>
+<td>“Formation”</td>
+</tr>
+<tr>
+<td>3</td>
+<td>502</td>
+<td>NULL</td>
+<td>2</td>
+<td>2024-12-10</td>
+<td>2024-12-10</td>
+<td>“Remplacement”</td>
+</tr>
+</tbody>
+</table><p><strong>Décryptage :</strong></p>
+<p><strong>Ligne 1 - Exception de groupe (pour tout le monde) :</strong></p>
+<ul>
+<li><strong>user_id :</strong> NULL (pas pour un utilisateur spécifique)</li>
+<li><strong>group_id :</strong> 100 (pour tout le groupe/entreprise)</li>
+<li><strong>session_template_id :</strong> 10 (template “Fermé” ou “Jour férié”)</li>
+<li><strong>start_date / end_date :</strong> 25 décembre uniquement</li>
+<li><strong>reason :</strong> “Noël”</li>
+</ul>
+<p>➡️ <strong>Le 25 décembre, TOUT LE MONDE utilise le template id=10</strong></p>
+<p><strong>Ligne 2 - Exception individuelle :</strong></p>
+<ul>
+<li><strong>user_id :</strong> 501 (Ahmed seulement)</li>
+<li><strong>group_id :</strong> NULL (pas pour un groupe)</li>
+<li><strong>session_template_id :</strong> 4 (template “Week-end” ou horaires réduits)</li>
+<li><strong>start_date / end_date :</strong> du 5 au 7 décembre</li>
+<li><strong>reason :</strong> “Formation”</li>
+</ul>
+<p>➡️ <strong>Du 5 au 7 décembre, Ahmed utilise le template id=4 au lieu de son horaire normal</strong></p>
+<p><strong>Ligne 3 - Remplacement d’un jour :</strong></p>
+<ul>
+<li><strong>user_id :</strong> 502 (Sophie)</li>
+<li><strong>session_template_id :</strong> 2 (template “Équipe Matin”)</li>
+<li><strong>Date :</strong> 10 décembre uniquement</li>
+<li><strong>reason :</strong> “Remplacement”</li>
+</ul>
+<p>➡️ <strong>Le 10 décembre, Sophie travaille avec l’horaire “Équipe Matin” au lieu de son horaire habituel</strong></p>
+<hr>
+<h2 id="🔄-exemple-complet--marie-lundi-à-vendredi-8h-12h-puis-14h-18h">🔄 Exemple Complet : Marie, Lundi à Vendredi 8h-12h puis 14h-18h</h2>
+<h3 id="étape-1--créer-le-modèle-dans-session_templates"><strong>Étape 1 : Créer le modèle dans <code>session_templates</code></strong></h3>
+<pre><code>Insertion dans session_templates :
+├─ id: 1
+├─ tenant_id: 100
+├─ name: "Bureau Standard Marie"
+├─ valid_from: 2024-01-01
+├─ valid_to: 2024-12-31
+└─ definition: {
+     "Mon": [
+       {"work": ["08:00", "12:00"], "pause": null, "tolerance": 15},
+       {"work": ["14:00", "18:00"], "pause": null, "tolerance": 15}
+     ],
+     "Tue": [...même chose...],
+     "Wed": [...même chose...],
+     "Thu": [...même chose...],
+     "Fri": [...même chose...],
+     "Sat": [],
+     "Sun": []
+   }
+</code></pre>
+<h3 id="étape-2--assigner-à-marie"><strong>Étape 2 : Assigner à Marie</strong></h3>
+<p><strong>2 options :</strong></p>
+<p><strong>Option A - Assignation directe (pas dans les tables montrées, mais dans une table <code>user_schedule_assignments</code>) :</strong></p>
+<pre><code>user_id: 501 (Marie) → session_template_id: 1
+</code></pre>
+<p><strong>Option B - Via rotation (si Marie fait partie d’une rotation) :</strong></p>
+<pre><code>Dans rotation_groups:
+id: 5, cycle_templates: [1], cycle_length: 1, cycle_unit: "week"
+
+Dans rotation_assignments:
+user_id: 501, rotation_group_id: 5, offset: 0
+</code></pre>
+<h3 id="étape-3--marie-travaille-normalement"><strong>Étape 3 : Marie travaille normalement</strong></h3>
+<p><strong>Lundi 4 décembre 2024 :</strong></p>
+<p>Toké cherche dans cet ordre :</p>
+<ol>
+<li><strong><code>schedule_exceptions</code></strong> → Aucune exception pour user_id=501 le 4 déc</li>
+<li><strong><code>rotation_assignments</code></strong> → Marie est dans rotation_group_id=5</li>
+<li><strong><code>rotation_groups</code></strong> → Le groupe 5 utilise template id=1</li>
+<li><strong><code>session_templates</code></strong> → Template id=1 = “Bureau Standard Marie”</li>
+</ol>
+<p><strong>Résultat :</strong> Marie doit travailler 8h-12h puis 14h-18h</p>
+<hr>
+<h2 id="🔄-exemple-complet--équipe-de-sécurité-en-rotation-2×8">🔄 Exemple Complet : Équipe de Sécurité en Rotation 2×8</h2>
+<h3 id="configuration-complète-"><strong>Configuration complète :</strong></h3>
+<p><strong>1. Créer les 2 templates dans <code>session_templates</code> :</strong></p>
+<pre><code>Template Matin (id=2):
+├─ name: "Équipe Matin"
+└─ definition: {"Mon-Sun": [{"work": ["06:00", "14:00"], ...}]}
+
+Template Soir (id=3):
+├─ name: "Équipe Soir"
+└─ definition: {"Mon-Sun": [{"work": ["14:00", "22:00"], ...}]}
+</code></pre>
+<p><strong>2. Créer le groupe de rotation dans <code>rotation_groups</code> :</strong></p>
+<pre><code>id: 1
+├─ name: "Rotation 2×8 Sécurité"
+├─ cycle_length: 2
+├─ cycle_unit: "week"
+├─ cycle_templates: [2, 3]  ← alternance entre template 2 et 3
+└─ start_date: 2024-01-01
+</code></pre>
+<p><strong>3. Assigner les employés dans <code>rotation_assignments</code> :</strong></p>
+<pre><code>Ahmed (user_id=501):  rotation_group_id=1, offset=0
+Sophie (user_id=502): rotation_group_id=1, offset=1
+</code></pre>
+<p><strong>4. Le système calcule automatiquement :</strong></p>
+<p><strong>Semaine du 4 décembre (semaine 49 de 2024) :</strong></p>
+<p>Calcul pour Ahmed (offset=0) :</p>
+<pre><code>Semaines depuis start_date: 48
+Position dans cycle: 48 % 2 = 0
+Offset appliqué: (0 + 0) % 2 = 0
+Template utilisé: cycle_templates[0] = id=2 (Matin)
+</code></pre>
+<p>Calcul pour Sophie (offset=1) :</p>
+<pre><code>Position dans cycle: 48 % 2 = 0
+Offset appliqué: (0 + 1) % 2 = 1
+Template utilisé: cycle_templates[1] = id=3 (Soir)
+</code></pre>
+<p><strong>Résultat semaine 49 :</strong></p>
+<ul>
+<li>Ahmed → 6h-14h (Matin)</li>
+<li>Sophie → 14h-22h (Soir)</li>
+</ul>
+<p><strong>Semaine du 11 décembre (semaine 50) :</strong></p>
+<ul>
+<li>Ahmed → 14h-22h (Soir)</li>
+<li>Sophie → 6h-14h (Matin)</li>
+</ul>
+<hr>
+<h2 id="🚨-exemple-avec-exception">🚨 Exemple avec Exception</h2>
+<p><strong>Scénario :</strong> Sophie doit remplacer un collègue le 10 décembre</p>
+<p><strong>1. Situation normale (sans exception) :</strong></p>
+<pre><code>Sophie → rotation_assignments → rotation_group_id=1 → offset=1
+Semaine 50 → position 0 → (0+1)%2 = 1 → template id=3 (Soir 14h-22h)
+</code></pre>
+<p><strong>2. Le manager crée une exception dans <code>schedule_exceptions</code> :</strong></p>
+<pre><code>id: 10
+├─ user_id: 502 (Sophie)
+├─ group_id: NULL
+├─ session_template_id: 2 (Équipe Matin)
+├─ start_date: 2024-12-10
+├─ end_date: 2024-12-10
+└─ reason: "Remplacement Jean"
+</code></pre>
+<p><strong>3. Le 10 décembre, Toké vérifie dans cet ordre :</strong></p>
+<pre><code>1. schedule_exceptions pour user_id=502 le 10/12 ?
+   → OUI ! Exception id=10 → template id=2
+   → STOP, on utilise ce template
+   
+Sophie travaille 6h-14h (Matin) au lieu de 14h-22h (Soir)
+</code></pre>
+<p><strong>4. Le 11 décembre (jour suivant) :</strong></p>
+<pre><code>1. schedule_exceptions pour user_id=502 le 11/12 ?
+   → NON (l'exception était juste le 10)
+   
+2. rotation_assignments ?
+   → OUI → retour à l'horaire de rotation normal
+   
+Sophie retourne à 14h-22h (Soir)
+</code></pre>
+<hr>
+<h2 id="📊-tableau-récapitulatif-des-tables">📊 Tableau Récapitulatif des Tables</h2>
+
+<table>
+<thead>
+<tr>
+<th>Table</th>
+<th>Rôle</th>
+<th>Exemple</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>session_templates</strong></td>
+<td>Bibliothèque des horaires</td>
+<td>“Bureau 9h-17h”, “Équipe Nuit”, “Formation”</td>
+</tr>
+<tr>
+<td><strong>rotation_groups</strong></td>
+<td>Définit les cycles de rotation</td>
+<td>“2×8 : alterne Matin/Soir chaque semaine”</td>
+</tr>
+<tr>
+<td><strong>rotation_assignments</strong></td>
+<td>Qui est dans quelle rotation</td>
+<td>“Ahmed dans rotation 2×8, position 0”</td>
+</tr>
+<tr>
+<td><strong>schedule_exceptions</strong></td>
+<td>Modifications temporaires</td>
+<td>“Sophie fait le Matin le 10 déc au lieu du Soir”</td>
+</tr>
+</tbody>
+</table><hr>
+<h2 id="🎯-relations-entre-les-tables">🎯 Relations Entre les Tables</h2>
+<pre><code>session_templates (id=1, id=2, id=3)
+        ↓
+        ↓ sont utilisés par
+        ↓
+rotation_groups (id=1, cycle_templates=[2,3])
+        ↓
+        ↓ assignés via
+        ↓
+rotation_assignments (user_id=501, rotation_group_id=1)
+        ↓
+        ↓ peuvent être remplacés par
+        ↓
+schedule_exceptions (user_id=501, session_template_id=5)
+</code></pre>
+<hr>
+<h2 id="❓-questions-pour-vérifier-la-compréhension">❓ Questions pour Vérifier la Compréhension</h2>
+<p><strong>Q1 : Si je veux que Jean travaille 10h-18h tous les jours, quelle(s) table(s) j’utilise ?</strong></p>
+
+Réponse
+1. Créer un template dans `session_templates` avec 10h-18h
+2. L'assigner à Jean (dans une table d'assignation utilisateur)
+
+<p><strong>Q2 : J’ai 3 équipes qui tournent Matin/Midi/Soir. Combien de lignes dans chaque table ?</strong></p>
+
+Réponse
+- `session_templates` : 3 lignes (1 pour chaque équipe)
+- `rotation_groups` : 1 ligne (le groupe qui contient les 3 templates)
+- `rotation_assignments` : 3+ lignes (1 par employé avec offset 0, 1, 2)
+
+<p><strong>Q3 : Jour férié le 25 déc, personne ne travaille. Quelle table ?</strong></p>
+
+Réponse
+`schedule_exceptions` avec :
+- user_id: NULL (tout le monde)
+- group_id: [id de l'entreprise]
+- session_template_id: [template "Fermé"]
+- date: 25/12
+
+<hr>
+<p>Voilà ! Maintenant tu vois comment les données sont organisées et comment Toké les utilise pour calculer automatiquement qui travaille quand ! 🎯</p>
+</div>
+</body>
+
+</html>
