@@ -14,11 +14,7 @@
     "start:prod": "NODE_ENV=production npm run start:backend",
     "restart": "npm run stop && sleep 3 && npm run start:backend",
     "restartDev": "npm run stop && sleep 3 && npm run start:dev",
-    "startAuto": "npm run build && pm2 start api-backend",
-    "startAuto:backend": "npm run build && pm2 start ecosystem.config.cjs --only api-backend --env production",
-    "startAutoDev": "npm run build && pm2 start ecosystem.config.cjs --env development",
-    "startAutoDev:backend": "npm run build && pm2 start ecosystem.config.cjs --only api-backend --env development",
-    "restartAuto": "npm run build && pm2 restart ecosystem.config.cjs --env production",
+    "startAuto:backend": "npm run build && pm2 start dist/server.js --name api-backend",
     "restartAuto:backend": "npm run build && pm2 restart api-backend",
     "reloadAuto": "pm2 reload all",
     "reloadAuto:backend": "pm2 reload api-backend",
@@ -40,9 +36,6 @@
   "author": "",
   "license": "ISC",
   "description": "",
-  "devDependencies": {
-  },
-  "dependencies": {
-  }
+  "devDependencies": {},
+  "dependencies": {}
 }
-

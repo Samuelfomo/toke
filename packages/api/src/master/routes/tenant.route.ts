@@ -1112,12 +1112,17 @@ router.get('/:identifier', Ensure.get(), async (req: Request, res: Response) => 
         tenant = await Tenant._load(numericId, true);
       }
     } else {
-      // Essayer par clé d'abord
+      // 1️⃣ Essayer par clé
       tenant = await Tenant._load(identifier, false, true);
 
-      // Si pas trouvé, essayer par sous-domaine
+      // 2️⃣ Si pas trouvé → sous-domaine
       if (!tenant) {
         tenant = await Tenant._load(identifier.toLowerCase(), false, false, true);
+      }
+
+      // 3️⃣ Si toujours pas trouvé → email
+      if (!tenant) {
+        tenant = await Tenant._load(identifier, false, false, false, true);
       }
     }
 
@@ -1128,7 +1133,30 @@ router.get('/:identifier', Ensure.get(), async (req: Request, res: Response) => 
       });
     }
 
-    return R.handleSuccess(res, tenant.toJSON());
+    if (!tenant.getSubdomain()) {
+      const site = await AppConfig._load(responseStructure.APP_WEB, true);
+      if (!site) {
+        return R.handleError(res, HttpStatus.NOT_FOUND, {
+          code: 'url_not_found',
+          message: 'Site url not found',
+        });
+      }
+      try {
+        await EmailSender.licensePayment(
+          tenant.getName()!,
+          tenant.getBillingEmail()!,
+          tenant.getGuid()!.toString(),
+          site.getLink()!,
+        );
+      } catch (err) {
+        return R.handleError(res, HttpStatus.INTERNAL_ERROR, {
+          code: 'EMAIL_SENDING_FAILED',
+          message: (err as Error).message,
+        });
+      }
+    }
+
+    return R.handleSuccess(res, { ...tenant.toJSON(), subdomain: tenant?.getSubdomain() || null });
   } catch (error: any) {
     console.error('⚠️ Erreur recherche tenant:', error);
     return R.handleError(res, HttpStatus.INTERNAL_ERROR, {

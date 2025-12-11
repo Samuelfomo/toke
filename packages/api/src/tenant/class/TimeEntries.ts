@@ -379,9 +379,7 @@ export default class TimeEntries extends TimeEntriesModel {
 
     // Vérifier anomalies
     const hasAnomalies = await this.hasAnomalies();
-    if (hasAnomalies) return false;
-
-    return true;
+    return !hasAnomalies;
   }
 
   async requiresManagerValidation(): Promise<boolean> {
@@ -393,9 +391,7 @@ export default class TimeEntries extends TimeEntriesModel {
 
     // Anomalies détectées
     const hasAnomalies = await this.hasAnomalies();
-    if (hasAnomalies) return true;
-
-    return false;
+    return hasAnomalies;
   }
 
   async isWithinGeofence(): Promise<boolean> {
@@ -719,9 +715,7 @@ export default class TimeEntries extends TimeEntriesModel {
 
     // Anomalies détectées
     const hasAnomalies = await this.hasAnomalies();
-    if (hasAnomalies) return true;
-
-    return false;
+    return hasAnomalies;
   }
 
   isNew(): boolean {

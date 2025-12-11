@@ -47,6 +47,8 @@ import ScheduleResolutionService from '../../tools/schedule.resolution.service.j
 import AnomalyDetectionService from '../../tools/anomaly.detection.service.js';
 import TimezoneConfig from '../../utils/timezone.config.js';
 import TimeEntries from '../class/TimeEntries.js';
+import Memos from '../class/Memos.js';
+// import { AnomalyType } from '../../tools/anomaly.detection.service.js';
 // import { AnomalyType } from '../../tools/anomaly.detection.service.js';
 
 const router = Router();
@@ -1980,10 +1982,10 @@ router.get('/attendance/today', Ensure.get(), async (req: Request, res: Response
       }
 
       // Récupérer tous les subordonnés
-      const userRolesSub = await UserRole._listByAssignedBy(managerObj.getId()!);
-      if (userRolesSub && userRolesSub.length > 0) {
-        teamMembers = userRolesSub
-          .map((userRole) => userRole.getUser())
+      const hierarchyEntries = await OrgHierarchy._listBySupervisor(managerObj.getId()!);
+      if (hierarchyEntries && hierarchyEntries.length > 0) {
+        teamMembers = hierarchyEntries
+          .map((subordinateId) => subordinateId.getSubordinate())
           .filter((id): id is number => id !== undefined);
       }
     }
@@ -2037,7 +2039,7 @@ router.get('/attendance/today', Ensure.get(), async (req: Request, res: Response
     const employeeAnalysis: Map<
       number,
       {
-        employee: any;
+        employee: User | null;
         expected_schedule: any;
         status: 'present' | 'late' | 'absent' | 'off-day';
         session: any;
@@ -2047,6 +2049,9 @@ router.get('/attendance/today', Ensure.get(), async (req: Request, res: Response
         pause_status: any;
         is_on_mission: boolean;
         last_activity: any;
+        memos: any | Array<Memos>;
+        time_entries: Array<TimeEntries> | any;
+        roles: Array<Role> | any;
       }
     > = new Map();
 
@@ -2125,9 +2130,43 @@ router.get('/attendance/today', Ensure.get(), async (req: Request, res: Response
         }
       }
 
+      const memoEntries = (await Memos._listByAuthor(userId)) ?? [];
+      const targetMemoEntries = (await Memos._listByTarget(userId)) ?? [];
+      const memos = {
+        count: targetMemoEntries?.length + memoEntries?.length,
+        items: [
+          ...(memoEntries.length
+            ? await Promise.all(
+                memoEntries.map(async (memo) => await memo.toJSON(responseValue.MINIMAL)),
+              )
+            : []),
+          ...(targetMemoEntries
+            ? await Promise.all(
+                targetMemoEntries.map(async (memo) => await memo.toJSON(responseValue.MINIMAL)),
+              )
+            : []),
+        ],
+      };
+
+      const entriesData = (await TimeEntries._listByUser(userId)) ?? [];
+      const entries = {
+        count: entriesData.length,
+        items: await Promise.all(
+          entriesData.map(async (entry) => await entry.toJSON(responseValue.MINIMAL)),
+        ),
+      };
+
+      const userRoles = (await UserRole._listByUser(userId)) ?? [];
+      const roles = {
+        count: userRoles.length,
+        items: await Promise.all(
+          userRoles.map(async (role) => (await role.getRoleObject())?.toJSON()),
+        ),
+      };
+
       // Stocker l'analyse
       employeeAnalysis.set(userId, {
-        employee: employee.toJSON(),
+        employee: employee,
         expected_schedule: expectedSchedule
           ? {
               template_name: expectedSchedule.template_name,
@@ -2145,6 +2184,9 @@ router.get('/attendance/today', Ensure.get(), async (req: Request, res: Response
         pause_status: pauseStatus,
         is_on_mission: isOnMission,
         last_activity: lastActivity,
+        memos: memos,
+        time_entries: entries,
+        roles: roles,
       });
     }
 
@@ -2263,17 +2305,15 @@ router.get('/attendance/today', Ensure.get(), async (req: Request, res: Response
       message: "Today's attendance retrieved successfully with schedule analysis",
       data: {
         date: startOfDay.toISOString().split('T')[0],
-        // manager: managerObj ? managerObj.toJSON() : null,
         manager: managerObj ? managerObj.getGuid() : null,
-        // site_filter: siteObj ? await siteObj.toJSON(responseValue.MINIMAL) : null,
         site_filter: siteObj ? siteObj.getGuid() : null,
 
         // 📊 STATISTIQUES PRINCIPALES
         statistics: {
-          total_history_of_members: teamMembers.length,
           total_team_members: teamMembers.length,
           expected_to_work: teamMembers.length - offDayCount, // Employés qui devraient travailler
           present_on_time: presentCount, // Présents à l'heure
+          present_to_days: presentCount + lateCount, // Présents aujourd'hui
           late_arrivals: lateCount, // Retards
           absences: absentCount, // Absents
           off_day: offDayCount, // Jour de repos
@@ -2308,7 +2348,7 @@ router.get('/attendance/today', Ensure.get(), async (req: Request, res: Response
 
         // 👥 EMPLOYÉS PRÉSENTS À L'HEURE
         present_employees: presentEmployees.map((e) => ({
-          employee: e.employee,
+          employee: e.employee?.getGuid(),
           clock_in_time: e.clock_in_time,
           expected_schedule: e.expected_schedule,
           is_active: e.is_active,
@@ -2320,7 +2360,7 @@ router.get('/attendance/today', Ensure.get(), async (req: Request, res: Response
 
         // ⏰ EMPLOYÉS EN RETARD
         late_employees: lateEmployees.map((e) => ({
-          employee: e.employee,
+          employee: e.employee?.getGuid(),
           clock_in_time: e.clock_in_time,
           delay_minutes: e.delay_minutes,
           expected_start: e.expected_schedule?.expected_blocks[0]?.work[0],
@@ -2332,14 +2372,14 @@ router.get('/attendance/today', Ensure.get(), async (req: Request, res: Response
 
         // ❌ EMPLOYÉS ABSENTS
         absent_employees: absentEmployees.map((e) => ({
-          employee: e.employee,
+          employee: e.employee?.getGuid(),
           expected_schedule: e.expected_schedule,
           last_seen: null, // TODO: Récupérer dernière session
         })),
 
         // 🏖️ EMPLOYÉS EN JOUR DE REPOS
         off_day_employees: offDayEmployees.map((e) => ({
-          employee: e.employee,
+          employee: e.employee?.getGuid(),
           schedule_info: e.expected_schedule,
         })),
 
@@ -2352,13 +2392,16 @@ router.get('/attendance/today', Ensure.get(), async (req: Request, res: Response
 
         // 📋 VUE DÉTAILLÉE (tous les employés)
         all_employees_status: Array.from(employeeAnalysis.values()).map((e) => ({
-          employee: e.employee,
+          employee: e.employee?.toJSON(),
+          roles: e.roles,
           status: e.status,
           expected_schedule: e.expected_schedule,
           clock_in_time: e.clock_in_time,
           delay_minutes: e.status === 'late' ? e.delay_minutes : null,
           is_active: e.is_active,
           session: e.session,
+          memos: e.memos,
+          time_entries: e.time_entries,
         })),
       },
     });
