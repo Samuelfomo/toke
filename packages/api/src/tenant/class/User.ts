@@ -207,6 +207,10 @@ export default class User extends UserModel {
     return this.device_token;
   }
 
+  getSessiontemplate(): number | null {
+    return this.session_template;
+  }
+
   // ============================================
   // SETTERS FLUENT
   // ============================================
@@ -308,6 +312,11 @@ export default class User extends UserModel {
 
   setDeviceToken(deviceToken: string): User {
     this.device_token = deviceToken;
+    return this;
+  }
+
+  setSessionTemplate(sessionTemplate: number): User {
+    this.session_template = sessionTemplate;
     return this;
   }
 

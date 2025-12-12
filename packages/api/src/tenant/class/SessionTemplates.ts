@@ -1,4 +1,4 @@
-import { VALID_DAYS } from '@toke/shared';
+import { SESSION_TEMPLATE_DEFAULTS, VALID_DAYS } from '@toke/shared';
 
 import SessionTemplateModel from '../model/SessionTemplatesModel.js';
 import W from '../../tools/watcher.js';
@@ -98,6 +98,10 @@ export default class SessionTemplate extends SessionTemplateModel {
     return this.deleted_at;
   }
 
+  isDefaultSessionTemplate(): boolean {
+    return this.default;
+  }
+
   // ============================================
   // SETTERS FLUENT
   // ============================================
@@ -124,6 +128,11 @@ export default class SessionTemplate extends SessionTemplateModel {
 
   setDefinition(definition: any): SessionTemplate {
     this.definition = definition;
+    return this;
+  }
+
+  setDefaultSessionTemplate(value: boolean): SessionTemplate {
+    this.default = value;
     return this;
   }
 
@@ -261,6 +270,24 @@ export default class SessionTemplate extends SessionTemplateModel {
     return false;
   }
 
+  async setDefault(): Promise<void> {
+    try {
+      this.setDefaultSessionTemplate(!SESSION_TEMPLATE_DEFAULTS.IS_DEFAULT);
+      await this.update();
+    } catch (error: any) {
+      throw new Error(error.message || error);
+    }
+  }
+
+  async removeDefault(): Promise<void> {
+    try {
+      this.setDefaultSessionTemplate(SESSION_TEMPLATE_DEFAULTS.IS_DEFAULT);
+      await this.update();
+    } catch (error: any) {
+      throw new Error(error.message || error);
+    }
+  }
+
   async toJSON(view: ViewMode = responseValue.FULL): Promise<object> {
     const baseData = {
       [RS.GUID]: this.guid,
@@ -269,6 +296,7 @@ export default class SessionTemplate extends SessionTemplateModel {
       [RS.VALID_FROM]: this.valid_from,
       [RS.VALID_TO]: this.valid_to,
       [RS.DEFINITION]: this.definition,
+      [RS.IS_DEFAULT]: this.default,
     };
 
     if (view === responseValue.MINIMAL) {
@@ -293,6 +321,7 @@ export default class SessionTemplate extends SessionTemplateModel {
     this.valid_from = data.valid_from;
     this.valid_to = data.valid_to;
     this.definition = data.definition;
+    this.default = data.default;
     this.deleted_at = data.deleted_at;
     return this;
   }

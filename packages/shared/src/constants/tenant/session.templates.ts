@@ -19,6 +19,7 @@ export const SESSION_TEMPLATE_VALIDATION = {
 
 export const SESSION_TEMPLATE_DEFAULTS = {
   VALID_FROM: new Date(),
+  IS_DEFAULT: false,
   PAGINATION: {
     OFFSET: 0,
     LIMIT: 50,
@@ -114,6 +115,7 @@ export const SESSION_TEMPLATE_ERRORS = {
   PAGINATION_INVALID: 'Invalid pagination parameters',
   GUID_GENERATION_FAILED: `Failed to generate GUID for ${SESSION_TEMPLATE_LABEL}`,
   ID_REQUIRED: `${SESSION_TEMPLATE_LABEL} id is required`,
+  ACTIVE_DEFAULT_TEMPLATE_ALREADY_EXISTS: `Active default ${SESSION_TEMPLATE_LABEL} already exists`,
 } as const;
 
 export const SESSION_TEMPLATE_MESSAGES = {

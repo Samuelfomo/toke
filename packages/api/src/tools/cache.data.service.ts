@@ -291,6 +291,23 @@ export default class GenericCacheService {
     return null;
   }
 
+  public static findByEmail(searchFn: (data: any) => boolean): CacheData | null {
+    // const now = this.getCameroonTime();
+
+    for (const [ref, cacheData] of Object.entries(this.cache)) {
+      // Vérifier si l'entrée n'est pas expirée
+      // const expiresAt = new Date(cacheData.expiresAt);
+      // if (now <= expiresAt) {
+      // Appliquer la fonction de recherche
+      if (searchFn(cacheData.data)) {
+        return cacheData;
+      }
+      // }
+    }
+
+    return null;
+  }
+
   /**
    * Supprime toutes les entrées correspondant à un critère
    * @param searchFn - Fonction de recherche
@@ -322,7 +339,7 @@ export default class GenericCacheService {
   /**
    * Obtient la date/heure locale du Cameroun (GMT+1)
    */
-  private static getCameroonTime(): Date {
+  public static getCameroonTime(): Date {
     const now = new Date();
     const utc = now.getTime() + now.getTimezoneOffset() * 60000;
     return new Date(utc + this.TIMEZONE_OFFSET * 3600000);

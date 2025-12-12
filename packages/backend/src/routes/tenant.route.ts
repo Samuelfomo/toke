@@ -58,6 +58,39 @@ router.post('/auth', Ensure.post(), async (req: Request, res: Response) => {
   }
 });
 
+router.post('/retry', Ensure.post(), async (req: Request, res: Response) => {
+  try {
+    const { email } = req.body;
+
+    // Validations
+    if (!email) {
+      return R.handleError(res, HttpStatus.BAD_REQUEST, {
+        code: TENANT_CODES.BILLING_EMAIL_REQUIRED,
+        message: TENANT_ERRORS.BILLING_EMAIL_REQUIRED,
+      });
+    }
+    if (!TenantValidationUtils.validateBillingEmail(email)) {
+      return R.handleError(res, HttpStatus.BAD_REQUEST, {
+        code: TENANT_CODES.BILLING_EMAIL_INVALID,
+        message: TENANT_ERRORS.BILLING_EMAIL_INVALID,
+      });
+    }
+
+    const result: any = await TenantService.retryAuthenticate(email);
+    console.log(result);
+
+    if (result.status !== HttpStatus.CREATED) {
+      return R.handleError(res, result.status, result.response.error);
+    }
+    return R.handleCreated(res, result.response);
+  } catch (error: any) {
+    return R.handleError(res, HttpStatus.INTERNAL_ERROR, {
+      code: TENANT_CODES.SEARCH_FAILED,
+      message: error.message,
+    });
+  }
+});
+
 router.get('/verify-otp/:otp', Ensure.get(), async (req: Request, res: Response) => {
   try {
     const { otp } = req.params;

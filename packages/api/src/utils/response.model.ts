@@ -318,6 +318,7 @@ export const responseStructure = {
   REASON: 'reason',
   GROUP: 'group',
   SESSION_TEMPLATE: 'session_template',
+  IS_DEFAULT: 'is_default',
 } as const;
 
 export const RT = {
@@ -375,6 +376,7 @@ export const tableName = {
   ROTATION_GROUPS: `${G.tableAp}_rotation_groups`,
   ROTATION_ASSIGNMENTS: `${G.tableAp}_rotation_assignments`,
   SCHEDULE_EXCEPTIONS: `${G.tableAp}_schedule_exceptions`,
+  TEAMS: `${G.tableAp}_teams`,
 } as const;
 
 export const EntityRoute = {

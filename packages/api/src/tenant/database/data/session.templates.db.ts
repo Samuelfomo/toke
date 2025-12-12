@@ -209,6 +209,15 @@ export const SessionTemplatesDbStructure = {
         },
       },
     },
+    default: {
+      type: DataTypes.BOOLEAN,
+      allowNull: false,
+      defaultValue: false,
+      validate: {
+        isBoolean: true,
+      },
+      comment: 'Session default for the company',
+    },
   } as ModelAttributes,
   options: {
     tableName: tableName.SESSION_TEMPLATES,
@@ -253,6 +262,21 @@ export const SessionTemplatesDbStructure = {
         fields: ['definition'],
         name: 'idx_session_templates_definition',
         using: 'GIN',
+      },
+      // 🚨 Index Unique et Partiel (ou Conditionnel) Ajouté
+      {
+        fields: ['id'], // Peut être n'importe quelle colonne pour un index partiel global uniq
+        unique: true,
+        name: 'idx_unique_default_template',
+        // Condition qui doit être vraie pour que l'unicité s'applique
+        where: {
+          default: true,
+          deleted_at: null,
+        },
+      },
+      {
+        fields: ['default'],
+        name: 'idx_session_templates_default',
       },
     ],
   } as ModelOptions,

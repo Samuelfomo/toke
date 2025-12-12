@@ -34,10 +34,46 @@ export class TenantService {
       //   process.env.SECRET_KEY,
       //   process.env.API_KEY,
       // );
-      
+
       const response = await api.post(`${baseUrl}/auth`, {
         email: data.email,
         code: data.code,
+      });
+
+      return {
+        status: response.status,
+        response: response.data.data,
+      };
+    } catch (error: any) {
+      if (error.response) {
+        // Erreur renvoyée par le serveur
+        return {
+          status: error.response.status,
+          response: error.response.data,
+        };
+      } else if (error.request) {
+        // Pas de réponse reçue
+        return {
+          status: HttpStatus.INTERNAL_ERROR,
+          response: { message: 'No response from server', details: error.message },
+        };
+      } else {
+        // Erreur Axios/JS
+        return {
+          status: HttpStatus.INTERNAL_ERROR,
+          response: { message: 'Unexpected error', details: error.message },
+        };
+      }
+    }
+  }
+
+  static async retryAuthenticate(email: string): Promise<{
+    status: number;
+    response: object;
+  }> {
+    try {
+      const response = await api.post(`${baseUrl}/retry`, {
+        email: email,
       });
 
       return {

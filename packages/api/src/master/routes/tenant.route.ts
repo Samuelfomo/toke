@@ -1308,6 +1308,117 @@ router.post('/otp', Ensure.post(), async (req: Request, res: Response) => {
   }
 });
 
+router.post('/find', Ensure.post(), async (req: Request, res: Response) => {
+  try {
+    const { email } = req.body;
+
+    if (!email) {
+      return R.handleError(res, HttpStatus.BAD_REQUEST, {
+        code: TENANT_CODES.VALIDATION_FAILED,
+        message: 'Entries are required',
+      });
+    }
+
+    // Validation du téléphone
+    if (email) {
+      const validateEmail = TenantValidationUtils.validateBillingEmail(email);
+      if (!validateEmail) {
+        return R.handleError(res, HttpStatus.BAD_REQUEST, {
+          code: TENANT_CODES.BILLING_EMAIL_INVALID,
+          message: TENANT_ERRORS.BILLING_EMAIL_INVALID,
+        });
+      }
+    }
+
+    const tenant = await Tenant._load(email, false, false, false, true);
+    if (!tenant) {
+      return R.handleError(res, HttpStatus.NOT_FOUND, {
+        code: TENANT_CODES.TENANT_NOT_FOUND,
+        message: TENANT_ERRORS.NOT_FOUND,
+      });
+    }
+    // Générer l'OTP
+    const generateOtp = await OTPCacheService.generateAndStoreOTP(email);
+    if (!generateOtp) {
+      return R.handleError(res, HttpStatus.BAD_REQUEST, {
+        code: 'otp_generator_failed',
+        message: 'An error has occurred during otp generation',
+      });
+    }
+
+    try {
+      await EmailSender.sender(generateOtp, email);
+    } catch (err) {
+      await OTPCacheService.deleteOTP(generateOtp);
+      return R.handleError(res, HttpStatus.INTERNAL_ERROR, {
+        otp_send: false,
+        code: 'email_sending_failed',
+        message: (err as Error).message,
+      });
+    }
+    // === RÉPONSE ===
+    const response: any = {
+      otp_send: true,
+      message: 'OTP successfully sent via email',
+    };
+
+    return R.handleSuccess(res, response);
+  } catch (error: any) {
+    return R.handleError(res, HttpStatus.INTERNAL_ERROR, {
+      code: TENANT_CODES.CREATION_FAILED,
+      message: error.message,
+    });
+  }
+});
+
+router.get('/find/:otp', Ensure.get(), async (req: Request, res: Response) => {
+  try {
+    const { otp } = req.params;
+
+    if (!otp) {
+      return R.handleError(res, HttpStatus.BAD_REQUEST, {
+        code: TENANT_CODES.VALIDATION_FAILED,
+        message: 'Entries are required',
+      });
+    }
+
+    // Valider le format de l'OTP (6 chiffres)
+    if (!/^\d{6}$/.test(otp)) {
+      return R.handleError(res, HttpStatus.BAD_REQUEST, {
+        code: 'otp_invalid_format',
+        message: 'OTP must be 6 digits',
+      });
+    }
+
+    // Récupérer les données depuis le cache
+    const cachedData = await OTPCacheService.retrieve(otp);
+    if (!cachedData) {
+      return R.handleError(res, HttpStatus.UNAUTHORIZED, {
+        code: 'otp_invalid_or_expired',
+        message: 'OTP is invalid or has expired',
+      });
+    }
+
+    const tenant = await Tenant._load(cachedData.reference, false, false, false, true);
+    // Supprimer l'OTP du cache après utilisation (usage unique)
+    await OTPCacheService.deleteOTP(otp);
+
+    if (!tenant) {
+      return R.handleError(res, HttpStatus.NOT_FOUND, {
+        code: TENANT_CODES.TENANT_NOT_FOUND,
+        message: TENANT_ERRORS.NOT_FOUND,
+      });
+    }
+
+    return R.handleSuccess(res, { ...tenant.toJSON(), subdomain: tenant?.getSubdomain() || null });
+  } catch (error: any) {
+    return R.handleError(res, HttpStatus.INTERNAL_ERROR, {
+      code: TENANT_CODES.SEARCH_FAILED,
+      message: error.message,
+    });
+  }
+});
+
 /**
  * PATCH /verify-otp - Vérifier l'OTP généré
  */
@@ -1346,7 +1457,7 @@ router.patch('/verify-otp', Ensure.patch(), async (req: Request, res: Response) 
     const reference = phone || email;
 
     // Vérifier que le téléphone correspond
-    if (result.phone !== reference) {
+    if (result.reference !== reference) {
       return R.handleError(res, HttpStatus.FORBIDDEN, {
         code: 'verification_failed',
         message: 'Reference (phone/email) does not match the OTP',
@@ -1356,7 +1467,7 @@ router.patch('/verify-otp', Ensure.patch(), async (req: Request, res: Response) 
     // Supprimer l'OTP après vérification réussie
     await OTPCacheService.deleteOTP(otp.toString());
 
-    if (result.phone === phone) {
+    if (result.reference === phone) {
       const contactObj = new Contact().setPhone(phone);
       try {
         await contactObj.save();
@@ -1597,6 +1708,115 @@ router.get('/verify-otp/:otp', Ensure.get(), async (req: Request, res: Response)
       message: 'Authentication successful',
       user: cachedData.user,
       tenant: cachedData.tenant,
+    });
+  } catch (error: any) {
+    return R.handleError(res, HttpStatus.INTERNAL_ERROR, {
+      code: 'verification_failed',
+      message: error.message,
+    });
+  }
+});
+
+router.post('/retry', Ensure.post(), async (req: Request, res: Response) => {
+  try {
+    const { email } = req.body;
+
+    // Validations
+    if (!email) {
+      return R.handleError(res, HttpStatus.BAD_REQUEST, {
+        code: TENANT_CODES.BILLING_EMAIL_REQUIRED,
+        message: TENANT_ERRORS.BILLING_EMAIL_REQUIRED,
+      });
+    }
+
+    if (!TenantValidationUtils.validateBillingEmail(email)) {
+      return R.handleError(res, HttpStatus.BAD_REQUEST, {
+        code: TENANT_CODES.BILLING_EMAIL_INVALID,
+        message: TENANT_ERRORS.BILLING_EMAIL_INVALID,
+      });
+    }
+
+    // 🆕 VÉRIFIER SI L'EMAIL A DÉJÀ UN OTP EN CACHE
+    const existingOtpRef = GenericCacheService.findByEmail((data) => {
+      return data.user?.email === email || data.user?.billingEmail === email;
+    });
+    if (!existingOtpRef) {
+      return R.handleError(res, HttpStatus.NOT_FOUND, {
+        code: 'email_not_found',
+        message: 'Email not found',
+      });
+    }
+
+    const now = GenericCacheService.getCameroonTime();
+    const expiresAt = new Date(existingOtpRef.expiresAt);
+    if (now <= expiresAt) {
+      // return R.handleError(res, HttpStatus.BAD_REQUEST, {
+      //   code: 'retry_failed',
+      //   message: 'OTP has not expired yet',
+      // });
+
+      try {
+        await EmailSender.sender(existingOtpRef.reference, email);
+      } catch (err) {
+        await GenericCacheService.delete(existingOtpRef.reference);
+        return R.handleError(res, HttpStatus.INTERNAL_ERROR, {
+          code: 'email_sending_failed',
+          message: (err as Error).message,
+        });
+      }
+
+      return R.handleCreated(res, {
+        message: 'OTP generated and sent successfully via email',
+      });
+    }
+
+    await GenericCacheService.delete(existingOtpRef.reference);
+
+    // Générer un OTP unique
+    let otp: string;
+    let isUnique = false;
+    let attempts = 0;
+    const maxAttempts = 10;
+
+    do {
+      otp = GenerateOtp.generateOTP(6);
+      // Vérifier si l'OTP existe déjà dans le cache
+      isUnique = !GenericCacheService.exists(otp);
+      attempts++;
+
+      if (attempts >= maxAttempts) {
+        return R.handleError(res, HttpStatus.INTERNAL_ERROR, {
+          code: 'otp_generation_failed',
+          message: 'Unable to generate unique OTP',
+        });
+      }
+    } while (!isUnique);
+
+    // Stocker les données dans le cache avec l'OTP comme référence
+    const stored = await GenericCacheService.store(otp, existingOtpRef.data);
+
+    if (!stored) {
+      return R.handleError(res, HttpStatus.INTERNAL_ERROR, {
+        code: 'cache_storage_failed',
+        message: 'Failed to store OTP in cache',
+      });
+    }
+
+    // Envoie d'otp via email de l'utilisateur
+    console.log(`📧 OTP à envoyer à ${email}: ${otp}`);
+
+    try {
+      await EmailSender.sender(otp, email);
+    } catch (err) {
+      await GenericCacheService.delete(otp);
+      return R.handleError(res, HttpStatus.INTERNAL_ERROR, {
+        code: 'email_sending_failed',
+        message: (err as Error).message,
+      });
+    }
+
+    return R.handleCreated(res, {
+      message: 'OTP sent successfully via email',
     });
   } catch (error: any) {
     return R.handleError(res, HttpStatus.INTERNAL_ERROR, {

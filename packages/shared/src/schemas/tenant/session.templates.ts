@@ -174,6 +174,8 @@ const baseSessionTemplateSchema = z.object({
   //   .optional(),
 
   definition: definitionSchema,
+
+  default: z.boolean().default(false),
 });
 
 // Schema for creation - all fields required

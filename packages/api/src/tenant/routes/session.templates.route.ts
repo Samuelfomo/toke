@@ -155,7 +155,8 @@ router.post('/', Ensure.post(), async (req: Request, res: Response) => {
       .setTenant(tenant.config.reference)
       .setName(validatedData.name)
       .setDefinition(validatedData.definition)
-      .setValidFrom(new Date(validatedData.valid_from));
+      .setValidFrom(new Date(validatedData.valid_from))
+      .setDefaultSessionTemplate(validatedData.default);
 
     if (validatedData.valid_to) {
       templateObj.setValidTo(new Date(validatedData.valid_to));
@@ -260,6 +261,9 @@ router.put('/:guid', Ensure.put(), async (req: Request, res: Response) => {
 
     if (validatedData.valid_to !== undefined) {
       templateObj.setValidTo(validatedData.valid_to ? new Date(validatedData.valid_to) : null);
+    }
+    if (validatedData.default !== undefined) {
+      templateObj.setDefaultSessionTemplate(validatedData.default);
     }
 
     await templateObj.save();

@@ -29,6 +29,7 @@ export default class UserModel extends BaseModel {
     otp_token: 'otp_token',
     otp_expires_at: 'otp_expires_at',
     device_token: 'device_token',
+    session_template: 'session_template',
 
     // QR Code Manager
     qr_code_token: 'qr_code_token',
@@ -64,6 +65,7 @@ export default class UserModel extends BaseModel {
   protected country?: string;
   protected employee_code?: string;
   protected device_token?: string;
+  protected session_template: number | null = null;
 
   // ⚠️ NE PAS HACHER ICI : Sequelize le fait automatiquement
   protected pin_hash?: string;
@@ -88,6 +90,13 @@ export default class UserModel extends BaseModel {
   // ============================================
   // MÉTHODES DE RECHERCHE AMÉLIORÉES
   // ============================================
+
+  async listAllBySessionTemplate(
+    session_template: number | null = null,
+    paginationOptions: { offset?: number; limit?: number } = {},
+  ): Promise<any[]> {
+    return await this.listAll({ [this.db.session_template]: session_template }, paginationOptions);
+  }
 
   /**
    * ✅ Exclure les utilisateurs supprimés par défaut
@@ -176,6 +185,10 @@ export default class UserModel extends BaseModel {
     });
   }
 
+  // ============================================
+  // MÉTHODES LISTAGE AMÉLIORÉES
+  // ============================================
+
   /**
    * ✅ AMÉLIORATION : Recherche par QR Code valide
    */
@@ -189,10 +202,6 @@ export default class UserModel extends BaseModel {
       [this.db.active]: true,
     });
   }
-
-  // ============================================
-  // MÉTHODES LISTAGE AMÉLIORÉES
-  // ============================================
 
   /**
    * ✅ AMÉLIORATION : Exclure supprimés par défaut
@@ -576,6 +585,7 @@ export default class UserModel extends BaseModel {
       [this.db.department]: this.department,
       [this.db.job_title]: this.job_title,
       [this.db.active]: this.active ?? USERS_DEFAULTS.ACTIVE,
+      [this.db.session_template]: this.session_template || null,
       // [this.db.device_token]: this.device_token ? this.device_token : null,
     });
 
@@ -655,6 +665,10 @@ export default class UserModel extends BaseModel {
     }
     if (this.last_login_at !== undefined) {
       updateData[this.db.last_login_at] = this.last_login_at;
+    }
+
+    if (this.session_template !== undefined) {
+      updateData[this.db.session_template] = this.session_template;
     }
 
     // if (this.device_token !== undefined) {

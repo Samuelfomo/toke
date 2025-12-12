@@ -243,6 +243,19 @@ export const UsersDbStructure = {
       },
       comment: 'User device token',
     },
+    session_template: {
+      type: DataTypes.INTEGER,
+      allowNull: true,
+      references: {
+        model: tableName.SESSION_TEMPLATES,
+        key: 'id',
+      },
+      validate: {
+        isInt: true,
+        // min: 1,
+      },
+      comment: 'Reference to the session model to be applied by default to the user (nullable)',
+    },
   } as ModelAttributes,
   options: {
     tableName: tableName.USERS,
@@ -322,6 +335,10 @@ export const UsersDbStructure = {
       {
         fields: ['device_token'],
         name: 'idx_user_device_token',
+      },
+      {
+        fields: ['session_template'],
+        name: 'idx_user_session_template',
       },
     ],
   } as ModelOptions,
