@@ -5,11 +5,10 @@ export const USERS_VALIDATION = {
     MIN_LENGTH: 1,
     MAX_LENGTH: 255,
   },
-  // TENANT: {
-  //   MIN_LENGTH: 1,
-  //   MAX_LENGTH: 128,
-  //   REQUIRED: true,
-  // },
+  SESSION_TEMPLATE: {
+    MIN_LENGTH: 1,
+    MAX_LENGTH: 128,
+  },
   EMAIL: {
     MIN_LENGTH: 5,
     MAX_LENGTH: 255,
@@ -223,6 +222,8 @@ export const USERS_ERRORS = {
   OTP_CLEANUP_FAILED: `${USERS_LABEL} OTP cleanup failed`,
   PASSWORD_DEFINITION_FAILED: `${USERS_LABEL} password definition failed`,
   OTP_DEFINITION_FAILED: `${USERS_LABEL} OTP definition failed`,
+
+  SESSION_TEMPLATE_INVALID: `${USERS_LABEL} Session template is invalid`,
 } as const;
 
 export type UserError = (typeof USERS_ERRORS)[keyof typeof USERS_ERRORS];

@@ -262,7 +262,7 @@ export default class Department extends DepartmentModel {
 
     return {
       ...baseData,
-      [RS.MANAGER]: managerObj ? managerObj.toJSON() : null,
+      [RS.MANAGER]: managerObj ? await managerObj.toJSON() : null,
     };
   }
 

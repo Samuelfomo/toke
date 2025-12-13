@@ -862,7 +862,7 @@ ${withinGeofence ? '✅ ACCÈS AUTORISÉ' : '❌ ACCÈS REFUSÉ'}
 
     return {
       ...baseData,
-      [RS.USER]: user ? user.toJSON() : null,
+      [RS.USER]: user ? await user.toJSON() : null,
       [RS.SITE]: site ? await site.toJSON(responseValue.MINIMAL) : null,
       [RS.START_LATITUDE]: this.start_latitude,
       [RS.START_LONGITUDE]: this.start_longitude,

@@ -464,8 +464,8 @@ export default class OrgHierarchy extends OrgHierarchyModel {
     }
     return {
       ...baseData,
-      [RS.SUBORDINATE]: subordinate?.toJSON(),
-      [RS.SUPERVISOR]: supervisor?.toJSON(),
+      [RS.SUBORDINATE]: await subordinate?.toJSON(),
+      [RS.SUPERVISOR]: await supervisor?.toJSON(),
     };
   }
 
@@ -546,7 +546,7 @@ export default class OrgHierarchy extends OrgHierarchyModel {
       const subTree = await this._recursiveHierarchy(subordinateId, visited);
 
       hierarchy.push({
-        user: subordinate.toJSON(),
+        user: await subordinate.toJSON(),
         roles: roles
           ? await Promise.all(roles.map(async (r) => await r.toJSON(responseValue.MINIMAL)))
           : [],

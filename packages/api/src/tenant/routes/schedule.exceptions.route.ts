@@ -335,7 +335,7 @@ router.get('/user/:userGuid', Ensure.get(), async (req: Request, res: Response) 
     const exceptionList = await ScheduleException._listByUser(userObj.getId()!, paginationOptions);
 
     const exceptions = {
-      user: userObj.toJSON(),
+      user: await userObj.toJSON(),
       pagination: {
         offset: paginationOptions.offset || 0,
         limit: paginationOptions.limit || exceptionList?.length || 0,
@@ -390,7 +390,7 @@ router.get('/user/:userGuid/on-date', Ensure.get(), async (req: Request, res: Re
     );
 
     const exceptions = {
-      user: userObj.toJSON(),
+      user: await userObj.toJSON(),
       date,
       pagination: {
         offset: paginationOptions.offset || 0,
@@ -704,13 +704,13 @@ router.get('/:guid/statistics', Ensure.get(), async (req: Request, res: Response
       type: exceptionObj.isUserException() ? 'user' : 'group',
       target: exceptionObj.isUserException()
         ? user
-          ? user.toJSON()
+          ? await user.toJSON()
           : null
         : group
           ? await group.toJSON(responseValue.MINIMAL)
           : null,
-      template: template ? await template.toJSON(responseValue.MINIMAL) : null,
-      created_by: createdBy ? createdBy.toJSON() : null,
+      template: template ? template.toJSON(responseValue.MINIMAL) : null,
+      created_by: createdBy ? await createdBy.toJSON() : null,
       duration_days: exceptionObj.getDurationInDays(),
       is_single_day: exceptionObj.isSingleDay(),
       is_active: exceptionObj.isActive(),

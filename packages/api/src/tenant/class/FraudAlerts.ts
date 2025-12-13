@@ -319,7 +319,7 @@ export default class FraudAlerts extends FraudAlertsModel {
 
     return {
       ...baseData,
-      [RS.USER]: user ? user.toJSON() : null,
+      [RS.USER]: user ? await user.toJSON() : null,
       [RS.TIME_ENTRY]: timeEntry ? await timeEntry.toJSON(responseValue.MINIMAL) : null,
       [RS.ALERT_DATA]: this.alert_data,
       [RS.INVESTIGATION_NOTES]: this.investigation_notes,

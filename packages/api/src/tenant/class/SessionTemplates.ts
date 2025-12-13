@@ -20,8 +20,12 @@ export default class SessionTemplate extends SessionTemplateModel {
   // MÉTHODES STATIQUES DE CHARGEMENT
   // ============================================
 
-  static _load(identifier: any, byGuid: boolean = false): Promise<SessionTemplate | null> {
-    return new SessionTemplate().load(identifier, byGuid);
+  static _load(
+    identifier: any,
+    byGuid: boolean = false,
+    defaults: boolean = false,
+  ): Promise<SessionTemplate | null> {
+    return new SessionTemplate().load(identifier, byGuid, defaults);
   }
 
   static _list(
@@ -49,7 +53,7 @@ export default class SessionTemplate extends SessionTemplateModel {
     let items: any[] = [];
     const templates = await this._list(conditions, paginationOptions);
     if (templates) {
-      items = await Promise.all(templates.map(async (template) => await template.toJSON()));
+      items = await Promise.all(templates.map(async (template) => template.toJSON()));
     }
     return {
       revision: await TenantRevision.getRevision(tableName.SESSION_TEMPLATES),
@@ -99,7 +103,7 @@ export default class SessionTemplate extends SessionTemplateModel {
   }
 
   isDefaultSessionTemplate(): boolean {
-    return this.default;
+    return this.defaults;
   }
 
   // ============================================
@@ -132,7 +136,7 @@ export default class SessionTemplate extends SessionTemplateModel {
   }
 
   setDefaultSessionTemplate(value: boolean): SessionTemplate {
-    this.default = value;
+    this.defaults = value;
     return this;
   }
 
@@ -231,14 +235,23 @@ export default class SessionTemplate extends SessionTemplateModel {
   // CHARGEMENT ET LISTING
   // ============================================
 
-  async load(identifier: any, byGuid: boolean = false): Promise<SessionTemplate | null> {
-    let data = null;
-
-    if (byGuid) {
-      data = await this.findByGuid(identifier);
-    } else {
-      data = await this.find(Number(identifier));
-    }
+  async load(
+    identifier: any,
+    byGuid: boolean = false,
+    defaults: boolean = false,
+  ): Promise<SessionTemplate | null> {
+    let data = byGuid
+      ? await this.findByGuid(identifier)
+      : defaults
+        ? await this.findDefault()
+        : await this.find(Number(identifier));
+    // if (byGuid) {
+    //   data = await this.findByGuid(identifier);
+    // } else if (defaults) {
+    //   data = await this.findDefault();
+    // } else {
+    //   data = await this.find(Number(identifier));
+    // }
 
     if (!data) return null;
     return this.hydrate(data);
@@ -288,7 +301,7 @@ export default class SessionTemplate extends SessionTemplateModel {
     }
   }
 
-  async toJSON(view: ViewMode = responseValue.FULL): Promise<object> {
+  toJSON(view: ViewMode = responseValue.FULL): object {
     const baseData = {
       [RS.GUID]: this.guid,
       [RS.TENANT]: this.tenant,
@@ -296,7 +309,7 @@ export default class SessionTemplate extends SessionTemplateModel {
       [RS.VALID_FROM]: this.valid_from,
       [RS.VALID_TO]: this.valid_to,
       [RS.DEFINITION]: this.definition,
-      [RS.IS_DEFAULT]: this.default,
+      [RS.IS_DEFAULT]: this.defaults,
     };
 
     if (view === responseValue.MINIMAL) {
@@ -321,7 +334,7 @@ export default class SessionTemplate extends SessionTemplateModel {
     this.valid_from = data.valid_from;
     this.valid_to = data.valid_to;
     this.definition = data.definition;
-    this.default = data.default;
+    this.defaults = data.defaults;
     this.deleted_at = data.deleted_at;
     return this;
   }

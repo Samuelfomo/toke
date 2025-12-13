@@ -436,9 +436,7 @@ router.get('/:guid/statistics', Ensure.get(), async (req: Request, res: Response
       },
       is_active: groupObj.isActive(),
       is_future: groupObj.isInFuture(),
-      templates: await Promise.all(
-        templates.map(async (t) => await t.toJSON(responseValue.MINIMAL)),
-      ),
+      templates: await Promise.all(templates.map(async (t) => t.toJSON(responseValue.MINIMAL))),
     };
 
     return R.handleSuccess(res, { statistics });
@@ -499,9 +497,9 @@ router.get('/:guid/schedule-preview', Ensure.get(), async (req: Request, res: Re
         const user = await assignment.getUserObj();
 
         dayPreview.assignments.push({
-          user: user ? user.toJSON() : null,
+          user: user ? await user.toJSON() : null,
           offset: assignment.getOffset(),
-          template: template ? await template.toJSON(responseValue.MINIMAL) : null,
+          template: template ? template.toJSON(responseValue.MINIMAL) : null,
         });
       }
 

@@ -18,7 +18,7 @@ export default class SessionTemplateModel extends BaseModel {
     valid_from: 'valid_from',
     valid_to: 'valid_to',
     definition: 'definition',
-    default: 'default',
+    defaults: 'defaults',
     deleted_at: 'deleted_at',
     created_at: 'created_at',
     updated_at: 'updated_at',
@@ -35,7 +35,7 @@ export default class SessionTemplateModel extends BaseModel {
   protected valid_from?: Date;
   protected valid_to?: Date | null;
   protected definition?: any;
-  protected default: boolean = SESSION_TEMPLATE_DEFAULTS.IS_DEFAULT;
+  protected defaults: boolean = SESSION_TEMPLATE_DEFAULTS.IS_DEFAULT;
   protected deleted_at?: Date | null;
 
   protected constructor() {
@@ -68,7 +68,7 @@ export default class SessionTemplateModel extends BaseModel {
 
   protected async findDefault(includeDeleted: boolean = false): Promise<any> {
     const conditions: any = {
-      [this.db.default]: !SESSION_TEMPLATE_DEFAULTS.IS_DEFAULT,
+      [this.db.defaults]: !SESSION_TEMPLATE_DEFAULTS.IS_DEFAULT,
     };
     if (!includeDeleted) {
       conditions[this.db.deleted_at] = null;
@@ -151,7 +151,7 @@ export default class SessionTemplateModel extends BaseModel {
     // }
 
     const existingDefault = await this.findDefault();
-    if (existingDefault && this.default === !SESSION_TEMPLATE_DEFAULTS.IS_DEFAULT) {
+    if (existingDefault && this.defaults === !SESSION_TEMPLATE_DEFAULTS.IS_DEFAULT) {
       throw new Error(SESSION_TEMPLATE_ERRORS.ACTIVE_DEFAULT_TEMPLATE_ALREADY_EXISTS);
     }
 
@@ -162,7 +162,7 @@ export default class SessionTemplateModel extends BaseModel {
       [this.db.valid_from]: this.valid_from ?? new Date(),
       [this.db.valid_to]: this.valid_to ?? null,
       [this.db.definition]: this.definition,
-      [this.db.default]: this.default || SESSION_TEMPLATE_DEFAULTS.IS_DEFAULT,
+      [this.db.defaults]: this.defaults || SESSION_TEMPLATE_DEFAULTS.IS_DEFAULT,
     });
 
     if (!lastID) {
@@ -197,12 +197,12 @@ export default class SessionTemplateModel extends BaseModel {
     if (this.definition !== undefined) {
       updateData[this.db.definition] = this.definition;
     }
-    if (this.default !== undefined) {
-      updateData[this.db.default] = this.default;
+    if (this.defaults !== undefined) {
+      updateData[this.db.defaults] = this.defaults;
     }
 
     // 🚨 VÉRIFICATION D'UNICITÉ DU MODÈLE PAR DÉFAUT
-    if (this.default === !SESSION_TEMPLATE_DEFAULTS.IS_DEFAULT) {
+    if (this.defaults === !SESSION_TEMPLATE_DEFAULTS.IS_DEFAULT) {
       const existingDefault = await this.findDefault();
 
       // On vérifie s'il existe un modèle par défaut différent de celui en cours de modification.

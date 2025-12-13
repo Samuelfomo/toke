@@ -3,11 +3,19 @@ import { USERS_DEFAULTS } from '@toke/shared';
 import UserModel from '../model/UserModel.js';
 import W from '../../tools/watcher.js';
 import G from '../../tools/glossary.js';
-import { responseStructure as RS, tableName } from '../../utils/response.model.js';
+import {
+  responseStructure as RS,
+  responseValue,
+  tableName,
+  ViewMode,
+} from '../../utils/response.model.js';
 import GenerateOtp from '../../utils/generate.otp.js';
 import { TenantRevision } from '../../tools/revision.js';
 
+import SessionTemplate from './SessionTemplates.js';
+
 export default class User extends UserModel {
+  private sessionTemplateObj?: SessionTemplate;
   constructor() {
     super();
   }
@@ -67,7 +75,7 @@ export default class User extends UserModel {
     let items: any[] = [];
     const users = await this._list(conditions, paginationOptions);
     if (users) {
-      items = users.map((user) => user.toJSON());
+      items = await Promise.all(users.map(async (user) => await user.toJSON()));
     }
     return {
       revision: await TenantRevision.getRevision(tableName.USERS),
@@ -207,8 +215,15 @@ export default class User extends UserModel {
     return this.device_token;
   }
 
-  getSessiontemplate(): number | null {
+  getSessionTemplate(): number | null {
     return this.session_template;
+  }
+  async getSessionTemplateObj(): Promise<SessionTemplate | null> {
+    if (!this.session_template) return null;
+    if (!this.sessionTemplateObj) {
+      this.sessionTemplateObj = (await SessionTemplate._load(this.session_template)) || undefined;
+    }
+    return this.sessionTemplateObj || null;
   }
 
   // ============================================
@@ -635,9 +650,17 @@ export default class User extends UserModel {
     }
     return false;
   }
+  async addSessionTemplate(): Promise<boolean> {
+    if (this.id !== undefined) {
+      await W.isOccur(!this.id, `${G.identifierMissing.code}: User Add Session Template`);
+      return await this.definedSessionTemplate(this.id, this.session_template!);
+    }
+    return false;
+  }
 
-  toJSON(): object {
-    return {
+  async toJSON(view: ViewMode = responseValue.FULL): Promise<object> {
+    const sessionTemplate = await this.getSessionTemplateObj();
+    const baseModel = {
       [RS.GUID]: this.guid,
       [RS.TENANT]: this.tenant,
       [RS.EMAIL]: this.email,
@@ -652,6 +675,18 @@ export default class User extends UserModel {
       [RS.JOB_TITLE]: this.job_title,
       [RS.ACTIVE]: this.active,
       [RS.LAST_LOGIN_AT]: this.last_login_at,
+    };
+
+    if (view === responseValue.MINIMAL) {
+      return {
+        ...baseModel,
+        [RS.DEFAULT_SESSION_TEMPLATE]: sessionTemplate?.getGuid() || null,
+      };
+    }
+
+    return {
+      ...baseModel,
+      [RS.DEFAULT_SESSION_TEMPLATE]: sessionTemplate?.toJSON() || null,
     };
   }
 
@@ -694,6 +729,7 @@ export default class User extends UserModel {
     this.active = data.active;
     this.last_login_at = data.last_login_at;
     this.device_token = data.device_token;
+    this.session_template = data.session_template;
     return this;
   }
 

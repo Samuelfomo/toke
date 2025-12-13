@@ -300,7 +300,7 @@ export default class RotationAssignment extends RotationAssignmentModel {
 
     return {
       ...baseData,
-      [RS.USER]: userObj ? userObj.toJSON() : null,
+      [RS.USER]: userObj ? await userObj.toJSON() : null,
       [RS.ROTATION_GROUP]: rotationGroupObj
         ? await rotationGroupObj.toJSON(responseValue.MINIMAL)
         : null,

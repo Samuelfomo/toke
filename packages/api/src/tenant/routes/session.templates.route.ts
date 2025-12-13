@@ -102,9 +102,7 @@ router.get('/list', Ensure.get(), async (req: Request, res: Response) => {
           limit: paginationOptions.limit || templateList?.length || 0,
           count: templateList?.length || 0,
         },
-        items: templateList
-          ? await Promise.all(templateList.map(async (t) => await t.toJSON(views)))
-          : [],
+        items: templateList ? templateList.map((t) => t.toJSON(views)) : [],
       };
 
       return R.handleSuccess(res, { templates });
@@ -117,9 +115,7 @@ router.get('/list', Ensure.get(), async (req: Request, res: Response) => {
         limit: paginationOptions.limit || templateList?.length || 0,
         count: templateList?.length || 0,
       },
-      items: templateList
-        ? await Promise.all(templateList.map(async (t) => await t.toJSON(views)))
-        : [],
+      items: templateList ? templateList.map((t) => t.toJSON(views)) : [],
     };
 
     return R.handleSuccess(res, { templates });
@@ -166,7 +162,7 @@ router.post('/', Ensure.post(), async (req: Request, res: Response) => {
 
     return R.handleCreated(res, {
       message: SESSION_TEMPLATE_MESSAGES.CREATED_SUCCESSFULLY,
-      template: await templateObj.toJSON(),
+      template: templateObj.toJSON(),
     });
   } catch (error: any) {
     if (error.code) {
@@ -210,7 +206,7 @@ router.get('/:guid', Ensure.get(), async (req: Request, res: Response) => {
     }
 
     return R.handleSuccess(res, {
-      template: await templateObj.toJSON(views),
+      template: templateObj.toJSON(views),
     });
   } catch (error: any) {
     return R.handleError(res, HttpStatus.INTERNAL_ERROR, {
@@ -270,7 +266,7 @@ router.put('/:guid', Ensure.put(), async (req: Request, res: Response) => {
 
     return R.handleSuccess(res, {
       message: SESSION_TEMPLATE_MESSAGES.UPDATED_SUCCESSFULLY,
-      template: await templateObj.toJSON(),
+      template: templateObj.toJSON(),
     });
   } catch (error: any) {
     if (error.code) {
@@ -350,7 +346,7 @@ router.get('/:guid/statistics', Ensure.get(), async (req: Request, res: Response
     }
 
     const statistics = {
-      template: await templateObj.toJSON(responseValue.MINIMAL),
+      template: templateObj.toJSON(responseValue.MINIMAL),
       working_days: templateObj.getDaysWithWork(),
       total_working_days: templateObj.getDaysWithWork().length,
       weekly_hours: templateObj.getWeeklyWorkHours(),

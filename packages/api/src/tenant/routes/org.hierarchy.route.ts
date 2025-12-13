@@ -848,7 +848,7 @@ router.get('/my-level', Ensure.get(), async (req: Request, res: Response) => {
     // ✅ Vérification de null avant d’utiliser peerHierarchies
     if (!peerHierarchies || peerHierarchies.length === 0) {
       return R.handleSuccess(res, {
-        manager: managerObj.toJSON(),
+        manager: await managerObj.toJSON(),
         supervisor: await currentSupervisor.toJSON(),
         total_peers: 0,
         peers: [],
@@ -874,7 +874,7 @@ router.get('/my-level', Ensure.get(), async (req: Request, res: Response) => {
 
     // ✅ Réponse finale
     return R.handleSuccess(res, {
-      manager: managerObj.toJSON(),
+      manager: await managerObj.toJSON(),
       supervisor: await currentSupervisor.toJSON(),
       total_peers: peersWithRoles.length,
       peers: peersWithRoles,

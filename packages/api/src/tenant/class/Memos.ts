@@ -711,9 +711,9 @@ export default class Memos extends MemosModel {
     }
     return {
       ...baseData,
-      [RS.AUTHOR_USER]: author ? author.toJSON() : null,
-      [RS.TARGET_USER]: target ? target.toJSON() : null,
-      [RS.VALIDATOR_USER]: validator ? validator.toJSON() : null,
+      [RS.AUTHOR_USER]: author ? await author.toJSON() : null,
+      [RS.TARGET_USER]: target ? await target.toJSON() : null,
+      [RS.VALIDATOR_USER]: validator ? await validator.toJSON() : null,
       [RS.AFFECTED_SESSION]: session ? await session.toJSON(responseValue.MINIMAL) : null,
       [RS.DETAILS]: this.details,
     };

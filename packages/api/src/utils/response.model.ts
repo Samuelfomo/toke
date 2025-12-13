@@ -318,6 +318,7 @@ export const responseStructure = {
   REASON: 'reason',
   GROUP: 'group',
   SESSION_TEMPLATE: 'session_template',
+  DEFAULT_SESSION_TEMPLATE: 'default_session_template',
   IS_DEFAULT: 'is_default',
 } as const;
 

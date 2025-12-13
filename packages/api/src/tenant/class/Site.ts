@@ -516,8 +516,8 @@ export default class Site extends SiteModel {
 
     return {
       ...baseData,
-      [RS.CREATED_BY]: createdBy ? createdBy.toJSON() : null,
-      [RS.QR_REFERENCE]: qrReference ? qrReference.toJSON() : null,
+      [RS.CREATED_BY]: createdBy ? await createdBy.toJSON() : null,
+      [RS.QR_REFERENCE]: qrReference ? await qrReference.toJSON() : null,
       [RS.QR_CODE_DATA]: this.qr_code_data,
       // Informations calculées
       is_expired: this.isExpired(),

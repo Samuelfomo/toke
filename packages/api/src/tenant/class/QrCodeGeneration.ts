@@ -316,7 +316,7 @@ export default class QrCodeGeneration extends QrCodeGenerationModel {
     return {
       ...baseData,
       [RS.SITE]: await site?.toJSON(),
-      [RS.MANAGER]: manager?.toJSON(),
+      [RS.MANAGER]: await manager?.toJSON(),
     };
   }
 

@@ -278,7 +278,7 @@ router.get('/user/:userGuid', Ensure.get(), async (req: Request, res: Response) 
     );
 
     const assignments = {
-      user: userObj.toJSON(),
+      user: await userObj.toJSON(),
       pagination: {
         offset: paginationOptions.offset || 0,
         limit: paginationOptions.limit || assignmentList?.length || 0,
@@ -332,7 +332,7 @@ router.get(
       if (!assignments || assignments.length === 0) {
         return R.handleSuccess(res, {
           message: 'User has no rotation assignment',
-          user: userObj.toJSON(),
+          user: await userObj.toJSON(),
           schedule: null,
         });
       }
@@ -344,7 +344,7 @@ router.get(
       if (!templateId) {
         return R.handleSuccess(res, {
           message: 'No template found for this date',
-          user: userObj.toJSON(),
+          user: await userObj.toJSON(),
           date: targetDate.toISOString().split('T')[0],
           schedule: null,
         });
@@ -354,11 +354,11 @@ router.get(
       const rotationGroup = await assignment.getRotationGroupObj();
 
       return R.handleSuccess(res, {
-        user: userObj.toJSON(),
+        user: await userObj.toJSON(),
         date: targetDate.toISOString().split('T')[0],
         rotation_assignment: await assignment.toJSON(responseValue.MINIMAL),
         rotation_group: rotationGroup ? await rotationGroup.toJSON(responseValue.MINIMAL) : null,
-        schedule: template ? await template.toJSON() : null,
+        schedule: template ? template.toJSON() : null,
       });
     } catch (error: any) {
       return R.handleError(res, HttpStatus.INTERNAL_ERROR, {
@@ -499,7 +499,7 @@ router.get('/:guid/statistics', Ensure.get(), async (req: Request, res: Response
 
     const statistics = {
       assignment: await assignmentObj.toJSON(responseValue.MINIMAL),
-      user: user ? user.toJSON() : null,
+      user: user ? await user.toJSON() : null,
       rotation_group: rotationGroup ? await rotationGroup.toJSON(responseValue.MINIMAL) : null,
       days_assigned: assignmentObj.getDaysAssigned(),
       is_recent: assignmentObj.isRecentAssignment(),

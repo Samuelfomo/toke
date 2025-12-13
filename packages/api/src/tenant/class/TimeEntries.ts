@@ -862,7 +862,7 @@ export default class TimeEntries extends TimeEntriesModel {
 
     return {
       ...baseData,
-      [RS.USER]: user ? user.toJSON() : null,
+      [RS.USER]: user ? await user.toJSON() : null,
       [RS.SITE]: site ? await site.toJSON(responseValue.MINIMAL) : null,
       [RS.SESSION]: session ? await session.toJSON(responseValue.MINIMAL) : null,
       [RS.MEMO]: memo ? await memo.toJSON(responseValue.FULL) : null,

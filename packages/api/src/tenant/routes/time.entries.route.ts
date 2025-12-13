@@ -1907,14 +1907,14 @@ router.get('/attendance/history', Ensure.get(), async (req: Request, res: Respon
 
           history.push({
             ...sessionData,
-            employee: emp ? emp.toJSON() : null,
+            employee: emp ? await emp.toJSON() : null,
             site: sessionSite ? await sessionSite.toJSON(responseValue.MINIMAL) : null,
           });
 
           // Accumuler stats par employé
           if (!employeeStats[empId]) {
             employeeStats[empId] = {
-              employee: emp ? emp.toJSON() : null,
+              employee: emp ? await emp.toJSON() : null,
               total_sessions: 0,
               total_hours: 0,
               on_time_count: 0,
@@ -1948,9 +1948,9 @@ router.get('/attendance/history', Ensure.get(), async (req: Request, res: Respon
       message: 'Attendance history retrieved successfully',
       data: {
         filters: {
-          manager: managerObj ? managerObj.toJSON() : null,
+          manager: managerObj ? await managerObj.toJSON() : null,
           site: siteObj ? await siteObj.toJSON(responseValue.MINIMAL) : null,
-          employee: employeeObj ? employeeObj.toJSON() : null,
+          employee: employeeObj ? await employeeObj.toJSON() : null,
           date_range: {
             start: startDate,
             end: endDate,
@@ -2131,7 +2131,7 @@ router.get(
       return R.handleSuccess(res, {
         message: 'Employee attendance history retrieved successfully',
         data: {
-          employee: employee.toJSON(),
+          employee: await employee.toJSON(),
           period: {
             start: startDate,
             end: endDate,
@@ -2396,7 +2396,7 @@ router.get('/attendance/statistics', Ensure.get(), async (req: Request, res: Res
           days: Math.ceil((endDate.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24)),
         },
         filters: {
-          manager: managerObj ? managerObj.toJSON() : null,
+          manager: managerObj ? await managerObj.toJSON() : null,
           site: siteObj ? await siteObj.toJSON(responseValue.MINIMAL) : null,
         },
         overview: {

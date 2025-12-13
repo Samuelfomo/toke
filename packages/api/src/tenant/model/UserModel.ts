@@ -726,6 +726,18 @@ export default class UserModel extends BaseModel {
     return affected > 0;
   }
 
+  protected async definedSessionTemplate(id: number, session_template: number): Promise<boolean> {
+    const affected = await this.updateOne(
+      this.db.tableName,
+      {
+        [this.db.session_template]: session_template,
+      },
+      { [this.db.id]: id },
+    );
+
+    return affected > 0;
+  }
+
   // ============================================
   // VALIDATION
   // ============================================

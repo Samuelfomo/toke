@@ -4,6 +4,7 @@ import SessionTemplate from '../tenant/class/SessionTemplates.js';
 import RotationAssignment from '../tenant/class/RotationAssignments.js';
 import RotationGroup from '../tenant/class/RotationGroups.js';
 import ScheduleException from '../tenant/class/ScheduleExceptions.js';
+import User from '../tenant/class/User.js';
 
 // === TYPES ===
 
@@ -81,6 +82,15 @@ class ScheduleResolutionService {
       // 3️⃣ ÉTAPE 3 : Chercher template direct (assignation individuelle)
       // TODO: Implémenter table user_schedule_assignments
       resolutionPath.push('Checking direct template assignment');
+      const directSchedule = await this.resolveFromDefaultTemplate(userId, dateStr);
+      if (directSchedule) {
+        resolutionPath.push(`✅ User default template found: ${directSchedule.template_name}`);
+        return {
+          success: true,
+          applicable_schedule: directSchedule,
+          resolution_path: resolutionPath,
+        };
+      }
       resolutionPath.push('❌ No direct template (not implemented yet)');
 
       // 4️⃣ ÉTAPE 4 : Fallback sur défaut entreprise
@@ -157,6 +167,54 @@ class ScheduleResolutionService {
     // TODO: Chercher exception groupe si pas d'exception utilisateur
     // const groupException = await ScheduleException._listForGroupOnDate(groupId, dateStr);
 
+    return null;
+  }
+
+  // Checking direct template assignment
+  private async resolveFromDefaultTemplate(
+    userId: number,
+    dateStr: string,
+  ): Promise<ApplicableSchedule | null> {
+    const userObj = await User._load(userId);
+    const userSchedule = await userObj?.getSessionTemplateObj();
+    if (userSchedule) {
+      return await this.buildScheduleFromTemplate(userSchedule.getId()!, dateStr, 'default', {
+        session_guid: userSchedule.getGuid(),
+        name: userSchedule.getName(),
+        start_date: userSchedule.getValidFrom(),
+        end_date: userSchedule.getValidTo(),
+        definition: userSchedule.getDefinition(),
+      });
+    }
+
+    return null;
+  }
+
+  /**
+   * Fallback sur horaire par défaut de l'entreprise
+   */
+  private async resolveFromDefault(
+    userId: number,
+    dayOfWeek: string,
+  ): Promise<ApplicableSchedule | null> {
+    // TODO: Implémenter récupération du template par défaut de l'entreprise
+
+    const defaultSessionTemplate = await SessionTemplate._load({}, false, true);
+    if (defaultSessionTemplate) {
+      return await this.buildScheduleFromTemplate(
+        defaultSessionTemplate.getId()!,
+        dayOfWeek,
+        'default',
+        {
+          session_guid: defaultSessionTemplate.getGuid(),
+          name: defaultSessionTemplate.getName(),
+          start_date: defaultSessionTemplate.getValidFrom(),
+          end_date: defaultSessionTemplate.getValidTo(),
+          definition: defaultSessionTemplate.getDefinition(),
+          user: userId,
+        },
+      );
+    }
     return null;
   }
 
@@ -239,18 +297,6 @@ class ScheduleResolutionService {
 
     // Récupérer le template_id correspondant
     return cycleTemplates[actualIndex] || null;
-  }
-
-  /**
-   * Fallback sur horaire par défaut de l'entreprise
-   */
-  private async resolveFromDefault(
-    userId: number,
-    dayOfWeek: string,
-  ): Promise<ApplicableSchedule | null> {
-    // TODO: Implémenter récupération du template par défaut de l'entreprise
-    // Pour l'instant, retourner null (pas de travail attendu)
-    return null;
   }
 
   /**

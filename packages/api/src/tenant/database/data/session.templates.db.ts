@@ -209,7 +209,7 @@ export const SessionTemplatesDbStructure = {
         },
       },
     },
-    default: {
+    defaults: {
       type: DataTypes.BOOLEAN,
       allowNull: false,
       defaultValue: false,
@@ -267,16 +267,16 @@ export const SessionTemplatesDbStructure = {
       {
         fields: ['id'], // Peut être n'importe quelle colonne pour un index partiel global uniq
         unique: true,
-        name: 'idx_unique_default_template',
+        name: 'idx_unique_defaults_template',
         // Condition qui doit être vraie pour que l'unicité s'applique
         where: {
-          default: true,
+          defaults: true,
           deleted_at: null,
         },
       },
       {
-        fields: ['default'],
-        name: 'idx_session_templates_default',
+        fields: ['defaults'],
+        name: 'idx_session_templates_defaults',
       },
     ],
   } as ModelOptions,

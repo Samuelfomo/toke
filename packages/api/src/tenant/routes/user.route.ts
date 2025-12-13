@@ -6,6 +6,9 @@ import {
   PointageType,
   ROLES_CODES,
   ROLES_ERRORS,
+  SESSION_TEMPLATE_CODES,
+  SESSION_TEMPLATE_ERRORS,
+  SessionTemplateValidationUtils,
   SITES_ERRORS,
   TENANT_CODES,
   USER_ROLES_CODES,
@@ -48,6 +51,7 @@ import AnomalyDetectionService from '../../tools/anomaly.detection.service.js';
 import TimezoneConfig from '../../utils/timezone.config.js';
 import TimeEntries from '../class/TimeEntries.js';
 import Memos from '../class/Memos.js';
+import SessionTemplate from '../class/SessionTemplates.js';
 // import { AnomalyType } from '../../tools/anomaly.detection.service.js';
 // import { AnomalyType } from '../../tools/anomaly.detection.service.js';
 
@@ -124,7 +128,7 @@ router.get('/list', Ensure.get(), async (req: Request, res: Response) => {
         limit: paginationOptions.limit || userEntries?.length || 0,
         count: userEntries?.length || 0,
       },
-      items: userEntries?.map((user) => user.toJSON()) || [],
+      items: userEntries?.length ? await Promise.all(userEntries.map((user) => user.toJSON())) : [],
     };
 
     return R.handleSuccess(res, { users });
@@ -158,7 +162,7 @@ router.get('/department/:department/list', Ensure.get(), async (req: Request, re
         limit: paginationOptions.limit || userEntries?.length || 0,
         count: userEntries?.length || 0,
       },
-      items: userEntries?.map((user) => user.toJSON()) || [],
+      items: userEntries?.length ? await Promise.all(userEntries.map((user) => user.toJSON())) : [],
     };
 
     return R.handleSuccess(res, { users });
@@ -185,7 +189,9 @@ router.get('/active/:status/list', Ensure.get(), async (req: Request, res: Respo
         limit: paginationOptions.limit || userEntries?.length || 0,
         count: userEntries?.length || 0,
       },
-      items: userEntries?.map((user) => user.toJSON()) || [],
+      items: userEntries?.length
+        ? await Promise.all(userEntries.map(async (user) => await user.toJSON()))
+        : [],
     };
 
     return R.handleSuccess(res, { users });
@@ -271,6 +277,17 @@ router.post('/', Ensure.post(), async (req: Request, res: Response) => {
 
     if (validatedData.job_title) {
       userObj.setJobTitle(validatedData.job_title);
+    }
+
+    if (validatedData.session_template) {
+      const sessionTemplate = await SessionTemplate._load(validatedData.session_template, true);
+      if (!sessionTemplate) {
+        return R.handleError(res, HttpStatus.NOT_FOUND, {
+          code: SESSION_TEMPLATE_CODES.SESSION_TEMPLATE_NOT_FOUND,
+          message: SESSION_TEMPLATE_ERRORS.NOT_FOUND,
+        });
+      }
+      userObj.setSessionTemplate(sessionTemplate.getId()!);
     }
 
     // if (validatedData.active !== undefined) {
@@ -362,7 +379,7 @@ router.post('/', Ensure.post(), async (req: Request, res: Response) => {
 
     return R.handleCreated(res, {
       message: 'User created and OTP sent successfully',
-      ...userObj.toJSON(),
+      ...(await userObj.toJSON()),
       role: existingDefaultRole.toJSON(),
     });
   } catch (error: any) {
@@ -517,7 +534,7 @@ router.post('/manager', Ensure.post(), async (req: Request, res: Response) => {
       return R.handleCreated(res, {
         message: 'Admin user created successfully',
         user: {
-          ...userObj.toJSON(),
+          ...(await userObj.toJSON()),
           roles: {
             count: roles.length,
             items: roles.map((r) => r.toJSON()),
@@ -553,7 +570,7 @@ router.post('/manager', Ensure.post(), async (req: Request, res: Response) => {
     return R.handleCreated(res, {
       message: 'Manager user created successfully',
       user: {
-        ...userObj.toJSON(),
+        ...(await userObj.toJSON()),
         roles: {
           count: roles.length,
           items: roles.map((r) => r.toJSON()),
@@ -642,7 +659,7 @@ router.get('/email/:email', Ensure.get(), async (req: Request, res: Response) =>
     }
 
     const user = {
-      ...userObj.toJSON(),
+      ...(await userObj.toJSON()),
       roles: roles,
     };
 
@@ -679,7 +696,7 @@ router.get('/:guid', Ensure.get(), async (req: Request, res: Response) => {
     const userRoles = await UserRole.getUserRoles(userObj.getId()!);
 
     const user = {
-      ...userObj.toJSON(),
+      ...(await userObj.toJSON()),
       roles: userRoles.map((role) => role.toJSON()),
     };
 
@@ -722,7 +739,7 @@ router.get('/:token', Ensure.get(), async (req: Request, res: Response) => {
     const userRoles = await UserRole.getUserRoles(userObj.getId()!);
 
     const userWithRoles = {
-      ...userObj.toJSON(),
+      ...(await userObj.toJSON()),
       roles: userRoles.map((role) => role.toJSON()),
     };
 
@@ -849,8 +866,19 @@ router.put('/:guid', Ensure.put(), async (req: Request, res: Response) => {
       userObj.setAvatarUrl(validatedData.avatar_url);
     }
 
+    if (validatedData.session_template) {
+      const sessionTemplateObj = await SessionTemplate._load(validatedData.session_template);
+      if (!sessionTemplateObj) {
+        return R.handleError(res, HttpStatus.NOT_FOUND, {
+          code: SESSION_TEMPLATE_CODES.SESSION_TEMPLATE_NOT_FOUND,
+          message: SESSION_TEMPLATE_ERRORS.NOT_FOUND,
+        });
+      }
+      userObj.setSessionTemplate(sessionTemplateObj.getId()!);
+    }
+
     await userObj.save();
-    return R.handleSuccess(res, userObj.toJSON());
+    return R.handleSuccess(res, await userObj.toJSON());
   } catch (error: any) {
     if (error.issues) {
       return R.handleError(res, HttpStatus.BAD_REQUEST, {
@@ -1031,7 +1059,7 @@ router.patch('/:guid/modify-personal', Ensure.patch(), async (req: Request, res:
     userObj.setLastName(last_name || userObj.getLastName());
     userObj.setPhoneNumber(phone || userObj.getPhoneNumber());
     await userObj.save();
-    return R.handleSuccess(res, userObj.toJSON());
+    return R.handleSuccess(res, await userObj.toJSON());
   } catch (error: any) {
     return R.handleError(res, HttpStatus.INTERNAL_ERROR, {
       code: USERS_CODES.UPDATE_FAILED,
@@ -1150,6 +1178,61 @@ router.patch('/terminal/:guid', Ensure.patch(), async (req: Request, res: Respon
     }
 
     return R.handleSuccess(res, { message: 'User device token saved successfully' });
+  } catch (error: any) {
+    return R.handleError(res, HttpStatus.INTERNAL_ERROR, {
+      code: USERS_CODES.UPDATE_FAILED,
+      message: error.message,
+    });
+  }
+});
+
+router.patch('/session-template/:guid', Ensure.patch(), async (req: Request, res: Response) => {
+  try {
+    const validGuid = UsersValidationUtils.validateGuid(req.params.guid);
+    if (!validGuid) {
+      return R.handleError(res, HttpStatus.BAD_REQUEST, {
+        code: USERS_CODES.INVALID_GUID,
+        message: USERS_ERRORS.GUID_INVALID,
+      });
+    }
+
+    const userObj = await User._load(req.params.guid, true);
+    if (!userObj) {
+      return R.handleError(res, HttpStatus.NOT_FOUND, {
+        code: USERS_CODES.USER_NOT_FOUND,
+        message: USERS_ERRORS.NOT_FOUND,
+      });
+    }
+
+    const { session_template } = req.body;
+
+    if (!session_template) {
+      return R.handleError(res, HttpStatus.BAD_REQUEST, {
+        code: USERS_CODES.VALIDATION_FAILED,
+        message: 'session_template is required',
+      });
+    }
+    if (!SessionTemplateValidationUtils.validateGuid(session_template)) {
+      return R.handleError(res, HttpStatus.BAD_REQUEST, {
+        code: USERS_CODES.INVALID_GUID,
+        message: 'session_template is invalid',
+      });
+    }
+    const sessionTemplateObj = await SessionTemplate._load(session_template, true);
+    if (!sessionTemplateObj) {
+      return R.handleError(res, HttpStatus.NOT_FOUND, {
+        code: SESSION_TEMPLATE_CODES.SESSION_TEMPLATE_NOT_FOUND,
+        message: SESSION_TEMPLATE_ERRORS.NOT_FOUND,
+      });
+    }
+
+    userObj.setSessionTemplate(sessionTemplateObj.getId()!);
+    await userObj.addSessionTemplate();
+
+    return R.handleSuccess(res, {
+      message: 'User default session template saved successfully',
+      user: await userObj.toJSON(),
+    });
   } catch (error: any) {
     return R.handleError(res, HttpStatus.INTERNAL_ERROR, {
       code: USERS_CODES.UPDATE_FAILED,
@@ -1408,7 +1491,7 @@ router.patch('/manager/password', Ensure.patch(), async (req: Request, res: Resp
     }
     return R.handleSuccess(res, {
       message: 'Password verified successfully',
-      user: userObj.toJSON(),
+      user: await userObj.toJSON(),
       roles: await Promise.all(isManager.map(async (role) => await role.getRoleObject())),
     });
   } catch (error: any) {
@@ -1520,7 +1603,7 @@ router.get('/:otp/verify', Ensure.get(), async (req: Request, res: Response) => 
     const roles = await UserRole.getUserRoles(userObj.getId()!);
     return R.handleSuccess(res, {
       message: 'OTP verified successfully',
-      user: userObj.toJSON(),
+      user: await userObj.toJSON(),
       roles: roles.map((role) => role.toJSON()),
     });
   } catch (error: any) {
@@ -1582,7 +1665,7 @@ router.patch('/:guid/status', Ensure.patch(), async (req: Request, res: Response
     await userObj.save();
     return R.handleSuccess(res, {
       message: 'User status updated successfully',
-      user: userObj.toJSON(),
+      user: await userObj.toJSON(),
     });
   } catch (error: any) {
     return R.handleError(res, HttpStatus.INTERNAL_ERROR, {
@@ -1649,7 +1732,7 @@ router.get('/attendance/active-sessions', Ensure.get(), async (req: Request, res
         code: 'ACTIVE_SESSIONS_RETRIEVED',
         message: 'No active sessions found',
         data: {
-          manager: userObj.toJSON(),
+          manager: await userObj.toJSON(),
           total_subordinates: 0,
           active_sessions_count: 0,
           active_sessions: [],
@@ -1675,7 +1758,7 @@ router.get('/attendance/active-sessions', Ensure.get(), async (req: Request, res
 
           allActiveSessions.push({
             ...sessionData,
-            employee: employee ? employee.toJSON() : null,
+            employee: employee ? await employee.toJSON() : null,
             pause_status: pauseStatus,
             last_activity: lastEntry
               ? {
@@ -1710,7 +1793,7 @@ router.get('/attendance/active-sessions', Ensure.get(), async (req: Request, res
     return R.handleSuccess(res, {
       message: 'Active sessions retrieved successfully',
       data: {
-        manager: userObj.toJSON(),
+        manager: await userObj.toJSON(),
         total_subordinates: subordinateIds.length,
         active_sessions_count: allActiveSessions.length,
         statistics,
@@ -2447,7 +2530,7 @@ router.get(
         return R.handleSuccess(res, {
           message: 'Employee has no active session',
           data: {
-            employee: employee.toJSON(),
+            employee: await employee.toJSON(),
             has_active_session: false,
             last_session: null, // TODO: Récupérer la dernière session
           },
@@ -2482,7 +2565,7 @@ router.get(
       return R.handleSuccess(res, {
         message: 'Current session retrieved successfully',
         data: {
-          employee: employee.toJSON(),
+          employee: await employee.toJSON(),
           has_active_session: true,
           session: {
             ...sessionData,
@@ -2595,7 +2678,7 @@ router.get('/attendance/site/:guid/current', Ensure.get(), async (req: Request, 
         }
 
         currentPresence.push({
-          employee: employee ? employee.toJSON() : null,
+          employee: employee ? await employee.toJSON() : null,
           session: sessionData,
           check_in_time: startTime,
           duration_on_site: `${hours}h ${minutes}m`,

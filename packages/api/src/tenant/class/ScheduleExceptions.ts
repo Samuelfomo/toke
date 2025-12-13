@@ -458,12 +458,12 @@ export default class ScheduleException extends ScheduleExceptionModel {
 
     return {
       ...baseData,
-      [RS.USER]: userObj ? userObj.toJSON() : null,
+      [RS.USER]: userObj ? await userObj.toJSON() : null,
       [RS.GROUP]: groupObj ? await groupObj.toJSON(responseValue.MINIMAL) : null,
       [RS.SESSION_TEMPLATE]: sessionTemplateObj
-        ? await sessionTemplateObj.toJSON(responseValue.MINIMAL)
+        ? sessionTemplateObj.toJSON(responseValue.MINIMAL)
         : null,
-      [RS.CREATED_BY]: createdByObj ? createdByObj.toJSON() : null,
+      [RS.CREATED_BY]: createdByObj ? await createdByObj.toJSON() : null,
     };
   }
 

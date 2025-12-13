@@ -318,9 +318,9 @@ export default class UserRole extends UserRoleModel {
 
     return {
       ...baseData,
-      [RS.USER]: userObj ? userObj.toJSON() : null,
+      [RS.USER]: userObj ? await userObj.toJSON() : null,
       [RS.ROLE]: roleObj ? roleObj.toJSON() : null,
-      [RS.ASSIGNED_BY]: assignedByObj ? assignedByObj.toJSON() : null,
+      [RS.ASSIGNED_BY]: assignedByObj ? await assignedByObj.toJSON() : null,
     };
   }
 

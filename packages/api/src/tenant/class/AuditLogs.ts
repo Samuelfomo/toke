@@ -471,7 +471,7 @@ export default class AuditLogs extends AuditLogsModel {
 
     return {
       ...baseData,
-      [RS.CHANGED_BY_USER]: changed_by_user ? changed_by_user.toJSON() : null,
+      [RS.CHANGED_BY_USER]: changed_by_user ? await changed_by_user.toJSON() : null,
     };
   }
 
