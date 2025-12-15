@@ -8,6 +8,7 @@ import {
   FraudDetectionValidationUtils,
   HttpStatus,
   RiskLevel,
+  TimezoneConfigUtils,
 } from '@toke/shared';
 
 import FraudDetectionLog from '../class/FraudDetectionLog.js';
@@ -25,7 +26,7 @@ router.get('/revision', Ensure.get(), async (req: Request, res: Response) => {
     const revision = await Revision.getRevision(tableName.FRAUD_DETECTION_LOG);
     R.handleSuccess(res, {
       revision,
-      checked_at: new Date().toISOString(),
+      checked_at: TimezoneConfigUtils.getCurrentTime().toISOString(),
     });
   } catch (error: any) {
     console.error('❌ Error retrieving revision:', error);
@@ -577,7 +578,7 @@ router.get('/stats/summary/:tenantId', Ensure.get(), async (req: Request, res: R
     R.handleSuccess(res, {
       tenant: tenant,
       alert_statistics: stats,
-      generated_at: new Date().toISOString(),
+      generated_at: TimezoneConfigUtils.getCurrentTime().toISOString(),
     });
   } catch (error: any) {
     console.error('❌ Error retrieving alert summary:', error);
@@ -638,7 +639,7 @@ router.patch('/resolve/:id', Ensure.patch(), async (req: Request, res: Response)
       id: validatedId,
       resolved_by: parseInt(resolved_by),
       action_taken,
-      resolved_at: new Date(),
+      resolved_at: TimezoneConfigUtils.getCurrentTime(),
     });
   } catch (error: any) {
     console.error('❌ Error resolving fraud detection alert:', error);

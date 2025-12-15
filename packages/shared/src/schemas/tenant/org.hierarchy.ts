@@ -7,6 +7,7 @@ import {
   ORG_HIERARCHY_VALIDATION,
   RelationshipType,
 } from '../../constants/tenant/org.hierarchy.js';
+import { TimezoneConfigUtils } from '../../utils/timezone.config.validation.js';
 
 // Base schema pour les validations communes
 const baseOrgHierarchySchema = z.object({
@@ -40,7 +41,10 @@ const baseOrgHierarchySchema = z.object({
       required_error: ORG_HIERARCHY_ERRORS.EFFECTIVE_FROM_REQUIRED,
       invalid_type_error: ORG_HIERARCHY_ERRORS.EFFECTIVE_FROM_INVALID,
     })
-    .refine((date) => date <= new Date(), ORG_HIERARCHY_ERRORS.FUTURE_EFFECTIVE_DATE),
+    .refine(
+      (date) => date <= TimezoneConfigUtils.getCurrentTime(),
+      ORG_HIERARCHY_ERRORS.FUTURE_EFFECTIVE_DATE,
+    ),
 
   effective_to: z
     .union([z.date(), z.string().transform((val) => new Date(val))], {

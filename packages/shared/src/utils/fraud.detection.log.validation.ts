@@ -5,6 +5,8 @@ import {
   RiskLevel,
 } from '../constants/fraud.detection.log.js';
 
+import { TimezoneConfigUtils } from './timezone.config.validation.js';
+
 export class FraudDetectionValidationUtils {
   /**
    * Validates fraud detection log ID
@@ -173,7 +175,7 @@ export class FraudDetectionValidationUtils {
    */
   static calculateAgeInHours(createdAt: Date | string): number {
     const created = new Date(createdAt);
-    const now = new Date();
+    const now = TimezoneConfigUtils.getCurrentTime();
     const diffTime = now.getTime() - created.getTime();
     return Math.floor(diffTime / (1000 * 60 * 60));
   }

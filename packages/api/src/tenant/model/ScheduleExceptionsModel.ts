@@ -2,6 +2,7 @@ import {
   SCHEDULE_EXCEPTION_DEFAULTS,
   SCHEDULE_EXCEPTION_ERRORS,
   ScheduleExceptionValidationUtils,
+  TimezoneConfigUtils,
 } from '@toke/shared';
 import { Op } from 'sequelize';
 
@@ -270,7 +271,7 @@ export default class ScheduleExceptionModel extends BaseModel {
     const affected = await this.updateOne(
       this.db.tableName,
       {
-        [this.db.deleted_at]: new Date(),
+        [this.db.deleted_at]: TimezoneConfigUtils.getCurrentTime(),
         [this.db.active]: false,
       },
       { [this.db.id]: id },

@@ -336,7 +336,7 @@ export { appInstance, gracefulShutdown };
 //
 //         res.json({
 //           status: true,
-//           timestamp: new Date().toISOString(),
+//           timestamp: TimezoneConfigUtils.getCurrentTime().toISOString(),
 //           uptime: process.uptime(),
 //           gateway: 'active',
 //           services: {
@@ -361,7 +361,7 @@ export { appInstance, gracefulShutdown };
 //       res.json({
 //         message: 'Toké Multi-Tenant API Gateway',
 //         version: '1.0.0',
-//         timestamp: new Date().toISOString(),
+//         timestamp: TimezoneConfigUtils.getCurrentTime().toISOString(),
 //         endpoints: {
 //           health: '/health - Vérification de santé',
 //           master: `/${EntityRoute.MASTER}/* - Gestion des licences`,

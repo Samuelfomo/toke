@@ -6,6 +6,7 @@ import {
   OrgHierarchyValidationUtils,
   paginationSchema,
   RelationshipType,
+  TimezoneConfigUtils,
   USERS_CODES,
   USERS_ERRORS,
   UsersValidationUtils,
@@ -21,8 +22,6 @@ import OrgHierarchy from '../class/OrgHierarchy.js';
 import { TenantRevision } from '../../tools/revision.js';
 import { responseValue, tableName } from '../../utils/response.model.js';
 import UserRole from '../class/UserRole.js';
-
-4;
 
 const router = Router();
 
@@ -58,7 +57,7 @@ router.get('/revision', Ensure.get(), async (_req: Request, res: Response) => {
 
     R.handleSuccess(res, {
       revision,
-      checked_at: new Date().toISOString(),
+      checked_at: TimezoneConfigUtils.getCurrentTime().toISOString(),
     });
   } catch (error: any) {
     R.handleError(res, HttpStatus.INTERNAL_ERROR, {

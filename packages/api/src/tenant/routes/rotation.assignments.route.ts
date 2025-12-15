@@ -7,6 +7,7 @@ import {
   ROTATION_ASSIGNMENT_ERRORS,
   ROTATION_ASSIGNMENT_MESSAGES,
   RotationAssignmentValidationUtils,
+  TimezoneConfigUtils,
   USERS_CODES,
   USERS_ERRORS,
   UsersValidationUtils,
@@ -24,7 +25,6 @@ import User from '../class/User.js';
 import { TenantRevision } from '../../tools/revision.js';
 import { responseValue, tableName } from '../../utils/response.model.js';
 import { ValidationUtils } from '../../utils/view.validator.js';
-import TimezoneConfig from '../../utils/timezone.config.js';
 
 const router = Router();
 
@@ -68,7 +68,7 @@ router.get('/revision', Ensure.get(), async (_req: Request, res: Response) => {
 
     R.handleSuccess(res, {
       revision,
-      checked_at: TimezoneConfig.getCurrentTime().toISOString(),
+      checked_at: TimezoneConfigUtils.getCurrentTime().toISOString(),
     });
   } catch (error: any) {
     R.handleError(res, HttpStatus.INTERNAL_ERROR, {
@@ -325,7 +325,7 @@ router.get(
       // Date cible (aujourd'hui par défaut)
       const targetDate = req.query.date
         ? new Date(req.query.date as string)
-        : TimezoneConfig.getCurrentTime();
+        : TimezoneConfigUtils.getCurrentTime();
 
       // Trouver l'assignation active
       const assignments = await RotationAssignment._listByUser(userObj.getId()!);

@@ -11,6 +11,7 @@ import {
   SessionTemplateValidationUtils,
   SITES_ERRORS,
   TENANT_CODES,
+  TimezoneConfigUtils,
   USER_ROLES_CODES,
   USER_ROLES_ERRORS,
   USERS_CODES,
@@ -48,7 +49,6 @@ import CountryPhoneValidation from '../../tools/country.phone.validation.js';
 import EmployeeLicenseService from '../../tools/employee.license.service.js';
 import ScheduleResolutionService from '../../tools/schedule.resolution.service.js';
 import AnomalyDetectionService from '../../tools/anomaly.detection.service.js';
-import TimezoneConfig from '../../utils/timezone.config.js';
 import TimeEntries from '../class/TimeEntries.js';
 import Memos from '../class/Memos.js';
 import SessionTemplate from '../class/SessionTemplates.js';
@@ -90,7 +90,7 @@ router.get('/revision', Ensure.get(), async (_req: Request, res: Response) => {
 
     R.handleSuccess(res, {
       revision,
-      checked_at: new Date().toISOString(),
+      checked_at: TimezoneConfigUtils.getCurrentTime().toISOString(),
     });
   } catch (error: any) {
     R.handleError(res, HttpStatus.INTERNAL_ERROR, {
@@ -1815,10 +1815,10 @@ router.get('/attendance/active-sessions', Ensure.get(), async (req: Request, res
 //     const { manager, site } = req.query;
 //
 //     // Définir le début et la fin de la journée
-//     const startOfDay = new Date();
+//     const startOfDay = TimezoneConfigUtils.getCurrentTime();
 //     startOfDay.setHours(0, 0, 0, 0);
 //
-//     const endOfDay = new Date();
+//     const endOfDay = TimezoneConfigUtils.getCurrentTime();
 //     endOfDay.setHours(23, 59, 59, 999);
 //
 //     // Construire les conditions de recherche
@@ -2034,7 +2034,7 @@ router.get('/attendance/today', Ensure.get(), async (req: Request, res: Response
     const { manager, site } = req.query;
 
     // Définir le début et la fin de la journée
-    const today = TimezoneConfig.getCurrentTime();
+    const today = TimezoneConfigUtils.getCurrentTime();
     const startOfDay = new Date(today);
     startOfDay.setHours(0, 0, 0, 0);
 
@@ -2474,18 +2474,20 @@ router.get('/attendance/today', Ensure.get(), async (req: Request, res: Response
           Object.keys(sessionsBySite).length > 0 ? Object.values(sessionsBySite) : null,
 
         // 📋 VUE DÉTAILLÉE (tous les employés)
-        all_employees_status: Array.from(employeeAnalysis.values()).map((e) => ({
-          employee: e.employee?.toJSON(),
-          roles: e.roles,
-          status: e.status,
-          expected_schedule: e.expected_schedule,
-          clock_in_time: e.clock_in_time,
-          delay_minutes: e.status === 'late' ? e.delay_minutes : null,
-          is_active: e.is_active,
-          session: e.session,
-          memos: e.memos,
-          time_entries: e.time_entries,
-        })),
+        all_employees_status: await Promise.all(
+          Array.from(employeeAnalysis.values()).map(async (e) => ({
+            employee: await e.employee?.toJSON(),
+            roles: e.roles,
+            status: e.status,
+            expected_schedule: e.expected_schedule,
+            clock_in_time: e.clock_in_time,
+            delay_minutes: e.status === 'late' ? e.delay_minutes : null,
+            is_active: e.is_active,
+            session: e.session,
+            memos: e.memos,
+            time_entries: e.time_entries,
+          })),
+        ),
       },
     });
   } catch (error: any) {
@@ -2546,7 +2548,7 @@ router.get(
 
       // Calculer la durée actuelle de travail
       const startTime = activeSession.getSessionStartAt();
-      const currentTime = new Date();
+      const currentTime = TimezoneConfigUtils.getCurrentTime();
       const workDurationMs = startTime ? currentTime.getTime() - startTime.getTime() : 0;
       const workHours = Math.floor(workDurationMs / (1000 * 60 * 60));
       const workMinutes = Math.floor((workDurationMs % (1000 * 60 * 60)) / (1000 * 60));
@@ -2663,7 +2665,7 @@ router.get('/attendance/site/:guid/current', Ensure.get(), async (req: Request, 
 
         // Calculer la durée de présence
         const startTime = session.getSessionStartAt();
-        const currentTime = new Date();
+        const currentTime = TimezoneConfigUtils.getCurrentTime();
         const durationMs = startTime ? currentTime.getTime() - startTime.getTime() : 0;
         const hours = Math.floor(durationMs / (1000 * 60 * 60));
         const minutes = Math.floor((durationMs % (1000 * 60 * 60)) / (1000 * 60));
@@ -2749,7 +2751,7 @@ router.get('/attendance/site/:guid/current', Ensure.get(), async (req: Request, 
       message: 'Current site presence retrieved successfully',
       data: {
         site: await siteObj.toJSON(responseValue.MINIMAL),
-        timestamp: new Date(),
+        timestamp: TimezoneConfigUtils.getCurrentTime(),
         statistics,
         presence_by_department: Object.keys(byDepartment).length > 0 ? byDepartment : null,
         current_presence: currentPresence,

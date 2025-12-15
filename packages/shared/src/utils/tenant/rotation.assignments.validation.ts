@@ -1,4 +1,5 @@
 import { ROTATION_ASSIGNMENT_VALIDATION } from '../../constants/tenant/rotation.assignments.js';
+import { TimezoneConfigUtils } from '../timezone.config.validation.js';
 
 export class RotationAssignmentValidationUtils {
   /**
@@ -130,7 +131,7 @@ export class RotationAssignmentValidationUtils {
     cycleLength: number,
     cycleUnit: 'day' | 'week',
     cycleTemplates: number[],
-    targetDate: Date = new Date(),
+    targetDate: Date = TimezoneConfigUtils.getCurrentTime(),
   ): number {
     const effectiveStartDate = this.calculateEffectiveStartDate(
       rotationStartDate,

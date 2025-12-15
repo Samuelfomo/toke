@@ -1,5 +1,7 @@
 // constants/org_hierarchy.ts
 
+import { TimezoneConfigUtils } from '../../utils/timezone.config.validation.js';
+
 export enum RelationshipType {
   DIRECT_REPORT = 'direct_report',
   MATRIX_REPORT = 'matrix_report',
@@ -44,7 +46,7 @@ export const ORG_HIERARCHY_VALIDATION = {
 
 export const ORG_HIERARCHY_DEFAULTS = {
   RELATIONSHIP_TYPE: 'direct_report',
-  EFFECTIVE_FROM: new Date().toISOString().slice(0, 10),
+  EFFECTIVE_FROM: TimezoneConfigUtils.getCurrentTime().toISOString().slice(0, 10),
   DELEGATION_LEVEL: 1,
   PAGINATION: {
     OFFSET: 0,

@@ -8,6 +8,7 @@ import {
   ACTIVITY_MONITORING_VALIDATION,
   ActivityStatus,
 } from '../constants/activity.monitoring.js';
+import { TimezoneConfigUtils } from '../utils/timezone.config.validation.js';
 
 // Base schema for activity monitoring (read-only fields)
 const baseActivityMonitoringSchema = z.object({
@@ -29,7 +30,10 @@ const baseActivityMonitoringSchema = z.object({
     })
     .min(ACTIVITY_MONITORING_VALIDATION.DATE.MIN_DATE, ACTIVITY_MONITORING_ERRORS.INVALID_DATE)
     .max(ACTIVITY_MONITORING_VALIDATION.DATE.MAX_DATE, ACTIVITY_MONITORING_ERRORS.INVALID_DATE)
-    .refine((date) => date <= new Date(), ACTIVITY_MONITORING_ERRORS.FUTURE_DATE_NOT_ALLOWED),
+    .refine(
+      (date) => date <= TimezoneConfigUtils.getCurrentTime(),
+      ACTIVITY_MONITORING_ERRORS.FUTURE_DATE_NOT_ALLOWED,
+    ),
 
   last_punch_date: z
     .date({
@@ -258,7 +262,7 @@ export const activityMonitoringDateSchema = z.union([z.string(), z.date()]).tran
   ) {
     throw new Error(ACTIVITY_MONITORING_ERRORS.INVALID_DATE);
   }
-  if (date > new Date()) {
+  if (date > TimezoneConfigUtils.getCurrentTime()) {
     throw new Error(ACTIVITY_MONITORING_ERRORS.FUTURE_DATE_NOT_ALLOWED);
   }
   return date;

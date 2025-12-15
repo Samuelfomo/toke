@@ -5,6 +5,7 @@ import {
   TIME_ENTRIES_DEFAULTS,
   TIME_ENTRIES_VALIDATION,
 } from '../../constants/tenant/time.entries.js';
+import { TimezoneConfigUtils } from '../timezone.config.validation.js';
 
 export class TimeEntriesValidationUtils {
   /**
@@ -87,7 +88,7 @@ export class TimeEntriesValidationUtils {
   //   if (isNaN(date.getTime())) return false;
   //
   //   // Cannot be in the future (allowing current time with 1 minute tolerance)
-  //   const now = new Date();
+  //   const now = TimezoneConfigUtils.getCurrentTime();
   //   now.setMinutes(now.getMinutes() + 1);
   //   return date <= now;
   // }
@@ -98,12 +99,14 @@ export class TimeEntriesValidationUtils {
     if (isNaN(date.getTime())) return false;
 
     //   // Cannot be in the future (allowing current time with 1 minute tolerance)
-    //   const now = new Date();
+    //   const now = TimezoneConfigUtils.getCurrentTime();
     //   now.setMinutes(now.getMinutes() + 1);
     //   return date <= now;
 
     // Obtenir l'heure actuelle au timezone Africa/Douala
-    const nowInDouala = new Date(new Date().toLocaleString('en-US', { timeZone: 'Africa/Douala' }));
+    const nowInDouala = new Date(
+      TimezoneConfigUtils.getCurrentTime().toLocaleString('en-US', { timeZone: 'Africa/Douala' }),
+    );
     nowInDouala.setMinutes(nowInDouala.getMinutes() + 1); // Tolérance 1 minute
 
     return date <= nowInDouala;
@@ -298,7 +301,7 @@ export class TimeEntriesValidationUtils {
    */
   static isPointageTooOld(clockedAt: Date | string, maxAgeHours: number = 48): boolean {
     const pointageDate = new Date(clockedAt);
-    const now = new Date();
+    const now = TimezoneConfigUtils.getCurrentTime();
     const ageHours = (now.getTime() - pointageDate.getTime()) / (1000 * 60 * 60);
     return ageHours > maxAgeHours;
   }
@@ -976,7 +979,7 @@ export class TimeEntriesValidationUtils {
     const workDaysSet = new Set<string>();
 
     workSessions.forEach((session) => {
-      const endTime = session.end || new Date();
+      const endTime = session.end || TimezoneConfigUtils.getCurrentTime();
       const sessionMinutes = (endTime.getTime() - session.start.getTime()) / (1000 * 60);
       totalMinutes += sessionMinutes;
       pauseMinutes += session.pauses * 15; // Assume 15 minutes per pause

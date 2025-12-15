@@ -2,6 +2,8 @@
 import fs from 'fs/promises';
 import path from 'path';
 
+import { TimezoneConfigUtils } from '@toke/shared';
+
 import Client from '../master/class/Client.js';
 
 // import ClientProfile from '../master/class/ClientProfile.js';
@@ -75,7 +77,7 @@ export default class ClientCacheService {
         root: profile.isRoot(),
         description: profile.getDescription(),
       },
-      last_updated: new Date().toISOString(),
+      last_updated: TimezoneConfigUtils.getCurrentTime().toISOString(),
     };
     await this.saveCacheToFile();
     console.log(`✅ Configuration client '${client.getName()}' mise à jour dans le cache`);
@@ -96,7 +98,7 @@ export default class ClientCacheService {
   public static async updateClientStatus(token: string, active: boolean): Promise<void> {
     if (this.cache[token]) {
       this.cache[token].active = active;
-      this.cache[token].last_updated = new Date().toISOString();
+      this.cache[token].last_updated = TimezoneConfigUtils.getCurrentTime().toISOString();
       await this.saveCacheToFile();
       console.log(`✅ Statut client '${token}' mis à jour: ${active}`);
     }
@@ -116,7 +118,7 @@ export default class ClientCacheService {
       if (updates.profile) {
         this.cache[token].profile = updates.profile;
       }
-      this.cache[token].last_updated = new Date().toISOString();
+      this.cache[token].last_updated = TimezoneConfigUtils.getCurrentTime().toISOString();
       await this.saveCacheToFile();
       console.log(`✅ Informations client '${token}' mises à jour dans le cache`);
     }

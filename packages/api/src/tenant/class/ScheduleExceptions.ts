@@ -1,4 +1,4 @@
-import { SCHEDULE_EXCEPTION_DEFAULTS } from '@toke/shared';
+import { SCHEDULE_EXCEPTION_DEFAULTS, TimezoneConfigUtils } from '@toke/shared';
 
 import ScheduleExceptionModel from '../model/ScheduleExceptionsModel.js';
 import W from '../../tools/watcher.js';
@@ -295,7 +295,7 @@ export default class ScheduleException extends ScheduleExceptionModel {
    */
   isInPast(): boolean {
     if (!this.end_date) return false;
-    const today = new Date().toISOString().split('T')[0];
+    const today = TimezoneConfigUtils.getCurrentTime().toISOString().split('T')[0];
     return this.end_date < today;
   }
 
@@ -304,7 +304,7 @@ export default class ScheduleException extends ScheduleExceptionModel {
    */
   isInFuture(): boolean {
     if (!this.start_date) return false;
-    const today = new Date().toISOString().split('T')[0];
+    const today = TimezoneConfigUtils.getCurrentTime().toISOString().split('T')[0];
     return this.start_date > today;
   }
 
@@ -313,7 +313,7 @@ export default class ScheduleException extends ScheduleExceptionModel {
    */
   isCurrentlyActive(): boolean {
     if (!this.active) return false;
-    const today = new Date().toISOString().split('T')[0];
+    const today = TimezoneConfigUtils.getCurrentTime().toISOString().split('T')[0];
     return this.coversDate(today);
   }
 

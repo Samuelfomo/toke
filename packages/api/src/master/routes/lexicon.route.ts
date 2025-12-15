@@ -5,6 +5,7 @@ import {
   LEXICON_ERRORS,
   LexiconValidationUtils,
   LX,
+  TimezoneConfigUtils,
 } from '@toke/shared';
 
 import Lexicon from '../class/Lexicon.js';
@@ -47,7 +48,7 @@ router.get('/revision', Ensure.get(), async (req: Request, res: Response) => {
     const revision = await Revision.getRevision(tableName.LEXICON);
     R.handleSuccess(res, {
       revision,
-      checked_at: new Date().toISOString(),
+      checked_at: TimezoneConfigUtils.getCurrentTime().toISOString(),
     });
   } catch (error: any) {
     console.error('❌ Erreur récupération révision:', error);

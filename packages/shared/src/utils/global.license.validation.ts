@@ -1,6 +1,8 @@
 // utils/global-master.validation.ts
 import { GLOBAL_LICENSE_VALIDATION, LicenseStatus, Type } from '../constants/global.license.js';
 
+import { TimezoneConfigUtils } from './timezone.config.validation.js';
+
 export class GlobalLicenseValidationUtils {
   /**
    * Validates tenant ID
@@ -54,7 +56,7 @@ export class GlobalLicenseValidationUtils {
    */
   static validateCurrentPeriodStart(date: Date | string): boolean {
     const startDate = new Date(date);
-    return !isNaN(startDate.getTime()) && startDate <= new Date();
+    return !isNaN(startDate.getTime()) && startDate <= TimezoneConfigUtils.getCurrentTime();
   }
 
   /**
@@ -69,7 +71,7 @@ export class GlobalLicenseValidationUtils {
       return !isNaN(start.getTime()) && end > start;
     }
 
-    return end >= new Date();
+    return end >= TimezoneConfigUtils.getCurrentTime();
   }
 
   /**
@@ -84,7 +86,7 @@ export class GlobalLicenseValidationUtils {
       return !isNaN(end.getTime()) && renewal >= end;
     }
 
-    return renewal >= new Date();
+    return renewal >= TimezoneConfigUtils.getCurrentTime();
   }
 
   /**
@@ -149,7 +151,7 @@ export class GlobalLicenseValidationUtils {
    * Checks if master is expired
    */
   static isExpired(endDate: Date | string): boolean {
-    return new Date(endDate) < new Date();
+    return new Date(endDate) < TimezoneConfigUtils.getCurrentTime();
   }
 
   /**

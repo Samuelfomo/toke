@@ -7,6 +7,7 @@ import {
   ERROR_CODES,
   HttpStatus,
   paginationSchema,
+  TimezoneConfigUtils,
   validateCountryCreation,
   validateCountryUpdate,
 } from '@toke/shared';
@@ -49,7 +50,7 @@ router.get('/revision', Ensure.get(), async (req: Request, res: Response) => {
 
     R.handleSuccess(res, {
       revision,
-      checked_at: new Date().toISOString(),
+      checked_at: TimezoneConfigUtils.getCurrentTime().toISOString(),
     });
   } catch (error: any) {
     console.error('⌐ Erreur récupération révision:', error);
@@ -524,7 +525,7 @@ export default router;
 //
 //     R.handleSuccess(res, {
 //       revision,
-//       checked_at: new Date().toISOString(),
+//       checked_at: TimezoneConfigUtils.getCurrentTime().toISOString(),
 //     });
 //   } catch (error: any) {
 //     console.error('⌐ Erreur récupération révision:', error);

@@ -1,5 +1,5 @@
 import dotenv from 'dotenv';
-import { HttpStatus } from '@toke/shared';
+import { HttpStatus, TimezoneConfigUtils } from '@toke/shared';
 
 import GenerateOtp from '../utils/generate.otp.js';
 // import api from '../utils/axios.config.js';
@@ -17,7 +17,7 @@ export default class WapService {
     otp: string,
     phone: string,
     country: string,
-    scheduled: Date = new Date(),
+    scheduled: Date = TimezoneConfigUtils.getCurrentTime(),
   ): Promise<{
     status: number;
     response: object;
@@ -66,7 +66,7 @@ export default class WapService {
     phone: string,
     country: string,
     buttons: Button,
-    scheduled: Date = new Date(),
+    scheduled: Date = TimezoneConfigUtils.getCurrentTime(),
   ): Promise<{
     status: number;
     response: object;

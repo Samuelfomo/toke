@@ -6,6 +6,7 @@ import {
   DepartmentValidationUtils,
   HttpStatus,
   paginationSchema,
+  TimezoneConfigUtils,
   validateDepartmentCreation,
   validateDepartmentFilters,
   validateDepartmentUpdate,
@@ -52,7 +53,7 @@ router.get('/revision', Ensure.get(), async (_req: Request, res: Response) => {
 
     R.handleSuccess(res, {
       revision,
-      checked_at: new Date().toISOString(),
+      checked_at: TimezoneConfigUtils.getCurrentTime().toISOString(),
     });
   } catch (error: any) {
     R.handleError(res, HttpStatus.INTERNAL_ERROR, {

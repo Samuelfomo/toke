@@ -9,6 +9,7 @@ import {
   EMPLOYEE_LICENSE_VALIDATION,
   LeaveType,
 } from '../constants/employee.license.js';
+import { TimezoneConfigUtils } from '../utils/timezone.config.validation.js';
 
 // Base schema for common validations
 const baseEmployeeLicenseSchema = z.object({
@@ -49,13 +50,6 @@ const baseEmployeeLicenseSchema = z.object({
     )
     .transform((val) => val.trim()),
 
-  // activation_date: z
-  //   .date({
-  //     required_error: EMPLOYEE_LICENSE_ERRORS.ACTIVATION_DATE_REQUIRED,
-  //     invalid_type_error: EMPLOYEE_LICENSE_ERRORS.INVALID_DATE_FORMAT,
-  //   })
-  //   .refine((date) => date <= new Date(), EMPLOYEE_LICENSE_ERRORS.FUTURE_ACTIVATION_DATE),
-
   activation_date: z
     .preprocess(
       (val) => (typeof val === 'string' ? new Date(val) : val),
@@ -63,8 +57,11 @@ const baseEmployeeLicenseSchema = z.object({
         invalid_type_error: EMPLOYEE_LICENSE_ERRORS.INVALID_DATE_FORMAT,
       }),
     )
-    .refine((date) => date <= new Date(), EMPLOYEE_LICENSE_ERRORS.FUTURE_ACTIVATION_DATE)
-    .default(() => new Date()),
+    .refine(
+      (date) => date <= TimezoneConfigUtils.getCurrentTime(),
+      EMPLOYEE_LICENSE_ERRORS.FUTURE_ACTIVATION_DATE,
+    )
+    .default(() => TimezoneConfigUtils.getCurrentTime()),
 
   deactivation_date: z
     .preprocess(
@@ -189,7 +186,7 @@ const baseEmployeeLicenseSchema = z.object({
 //   (data) => {
 //     // Anti-fraud constraint: no long leave with recent activity
 //     if (data.declared_long_leave && data.last_activity_date) {
-//       const sevenDaysAgo = new Date();
+//       const sevenDaysAgo = TimezoneConfigUtils.getCurrentTime();
 //       sevenDaysAgo.setDate(
 //         sevenDaysAgo.getDate() -
 //           EMPLOYEE_LICENSE_VALIDATION.GRACE_PERIOD.DAYS_AFTER_LAST_ACTIVITY,

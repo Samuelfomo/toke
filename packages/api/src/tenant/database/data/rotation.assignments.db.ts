@@ -43,7 +43,7 @@ export const RotationAssignmentsDbStructure = {
         isInt: true,
       },
       comment: 'Reference to user',
-    },
+    }, // and teams
     rotation_group: {
       type: DataTypes.INTEGER,
       allowNull: false,

@@ -1,5 +1,6 @@
 // utils/user.roles.validation.ts
 import { USER_ROLES_DEFAULTS, USER_ROLES_VALIDATION } from '../../constants/tenant/user.roles.js';
+import { TimezoneConfigUtils } from '../timezone.config.validation.js';
 
 export class UserRolesValidationUtils {
   /**
@@ -95,7 +96,7 @@ export class UserRolesValidationUtils {
     if (isNaN(date.getTime())) return false;
 
     // Assignment date cannot be in the future
-    return date <= new Date();
+    return date <= TimezoneConfigUtils.getCurrentTime();
   }
 
   /**
@@ -319,7 +320,7 @@ export class UserRolesValidationUtils {
    */
   static calculateDaysSinceAssignment(assignedAt: Date | string): number {
     const assigned = new Date(assignedAt);
-    const now = new Date();
+    const now = TimezoneConfigUtils.getCurrentTime();
     const diffTime = now.getTime() - assigned.getTime();
     return Math.floor(diffTime / (1000 * 60 * 60 * 24));
   }

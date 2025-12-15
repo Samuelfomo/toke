@@ -2,6 +2,7 @@
 import { z } from 'zod';
 
 import { USERS_DEFAULTS, USERS_ERRORS, USERS_VALIDATION } from '../../constants/tenant/users.js';
+import { TimezoneConfigUtils } from '../../utils/timezone.config.validation.js';
 
 // Base schema for common validations
 const baseUsersSchema = z.object({
@@ -157,7 +158,7 @@ const baseUsersSchema = z.object({
     .union([z.date(), z.string().transform((val) => new Date(val))], {
       invalid_type_error: USERS_ERRORS.HIRE_DATE_INVALID,
     })
-    .refine((date) => date <= new Date(), USERS_ERRORS.HIRE_DATE_FUTURE)
+    .refine((date) => date <= TimezoneConfigUtils.getCurrentTime(), USERS_ERRORS.HIRE_DATE_FUTURE)
     .optional()
     .nullable(),
 

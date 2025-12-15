@@ -6,6 +6,7 @@ import {
   ExchangeRateValidationUtils,
   HttpStatus,
   paginationSchema,
+  TimezoneConfigUtils,
 } from '@toke/shared';
 
 import ExchangeRate from '../class/ExchangeRate.js';
@@ -54,7 +55,7 @@ router.get('/revision', Ensure.get(), async (_req: Request, res: Response) => {
 
     R.handleSuccess(res, {
       revision,
-      checked_at: new Date().toISOString(),
+      checked_at: TimezoneConfigUtils.getCurrentTime().toISOString(),
     });
   } catch (error: any) {
     console.error('❌ Erreur récupération révision:', error);
@@ -500,7 +501,7 @@ router.get('/convert/:amount/:from/:to', Ensure.get(), async (req: Request, res:
         exchange_rate: 1,
         currency_pair: `${fromCode}/${toCode}`,
         conversion_note: 'Same currency conversion',
-        conversion_timestamp: new Date().toISOString(),
+        conversion_timestamp: TimezoneConfigUtils.getCurrentTime().toISOString(),
       });
     }
 
@@ -532,7 +533,7 @@ router.get('/convert/:amount/:from/:to', Ensure.get(), async (req: Request, res:
       exchange_rate: rate.getExchangeRate(),
       currency_pair: rate.getCurrencyPair(),
       rate_guid: rate.getGuid(),
-      conversion_timestamp: new Date().toISOString(),
+      conversion_timestamp: TimezoneConfigUtils.getCurrentTime().toISOString(),
     });
   } catch (error: any) {
     console.error('❌ Erreur conversion:', error);

@@ -1,5 +1,5 @@
 import { DataTypes, ModelAttributes, ModelOptions } from 'sequelize';
-import { BillingStatus } from '@toke/shared';
+import { BillingStatus, TimezoneConfigUtils } from '@toke/shared';
 
 import { tableName } from '../../../utils/response.model.js';
 
@@ -409,7 +409,7 @@ export const BillingCycleDbStructure = {
         }
 
         if (this.billing_status === BillingStatus.OVERDUE) {
-          const now = new Date();
+          const now = TimezoneConfigUtils.getCurrentTime();
           if (!this.payment_due_date || this.payment_due_date >= now) {
             throw new Error('Billing cycle can only be OVERDUE if payment due date has passed');
           }

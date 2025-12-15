@@ -1,4 +1,4 @@
-// schemas/time_entries.ts
+// schemas/time.entries.ts
 import { z } from 'zod';
 
 import {
@@ -10,6 +10,7 @@ import {
   TIME_ENTRIES_VALIDATION,
   TimeEntryCode,
 } from '../../constants/tenant/time.entries.js';
+import { TimezoneConfigUtils } from '../../utils/timezone.config.validation.js';
 
 // Schema pour valider les adresses IP (IPv4 et IPv6)
 const ipAddressSchema = z.string().refine((ip) => {
@@ -80,10 +81,10 @@ const baseTimeEntriesSchema = z.object({
       required_error: TIME_ENTRIES_ERRORS.CLOCKED_AT_REQUIRED,
       invalid_type_error: TIME_ENTRIES_ERRORS.CLOCKED_AT_INVALID,
     })
-    // .refine((date) => date <= new Date(), TIME_ENTRIES_ERRORS.FUTURE_POINTAGE),
+    // .refine((date) => date <= TimezoneConfigUtils.getCurrentTime(), TIME_ENTRIES_ERRORS.FUTURE_POINTAGE),
     .refine((date) => {
       // Obtenir l'heure actuelle en timezone Africa/Douala
-      const nowInDouala = new Date(new Date().toLocaleString('en-US', { timeZone: 'Africa/Douala' }));
+      const nowInDouala = new Date(TimezoneConfigUtils.getCurrentTime().toLocaleString('en-US', { timeZone: 'Africa/Douala' }));
       return date <= nowInDouala;
     }, TIME_ENTRIES_ERRORS.FUTURE_POINTAGE),
 

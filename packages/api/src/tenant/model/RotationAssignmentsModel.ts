@@ -2,6 +2,7 @@ import {
   ROTATION_ASSIGNMENT_DEFAULTS,
   ROTATION_ASSIGNMENT_ERRORS,
   RotationAssignmentValidationUtils,
+  TimezoneConfigUtils,
 } from '@toke/shared';
 import { Op } from 'sequelize';
 
@@ -204,7 +205,7 @@ export default class RotationAssignmentModel extends BaseModel {
     const affected = await this.updateOne(
       this.db.tableName,
       {
-        [this.db.deleted_at]: new Date(),
+        [this.db.deleted_at]: TimezoneConfigUtils.getCurrentTime(),
       },
       { [this.db.id]: id },
     );

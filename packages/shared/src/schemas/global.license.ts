@@ -8,6 +8,7 @@ import {
   LicenseStatus,
   Type,
 } from '../constants/global.license.js';
+import { TimezoneConfigUtils } from '../utils/timezone.config.validation.js';
 
 // Base schema for common validations
 const baseGlobalLicenseSchema = z.object({
@@ -75,7 +76,7 @@ const baseGlobalLicenseSchema = z.object({
   //   })
   //   .transform((val) => new Date(val))
   //   .refine((date) => !isNaN(date.getTime()), GLOBAL_LICENSE_ERRORS.INVALID_DATE_FORMAT)
-  //   .refine((date) => date <= new Date(), GLOBAL_LICENSE_ERRORS.FUTURE_START_DATE),
+  //   .refine((date) => date <= TimezoneConfigUtils.getCurrentTime(), GLOBAL_LICENSE_ERRORS.FUTURE_START_DATE),
   //
   // current_period_end: z
   //   .date({
@@ -99,7 +100,10 @@ const baseGlobalLicenseSchema = z.object({
     })
     .transform((val) => new Date(val))
     .refine((date) => !isNaN(date.getTime()), GLOBAL_LICENSE_ERRORS.INVALID_DATE_FORMAT)
-    .refine((date) => date <= new Date(), GLOBAL_LICENSE_ERRORS.FUTURE_START_DATE),
+    .refine(
+      (date) => date <= TimezoneConfigUtils.getCurrentTime(),
+      GLOBAL_LICENSE_ERRORS.FUTURE_START_DATE,
+    ),
 
   current_period_end: z
     .union([z.string(), z.date()], {

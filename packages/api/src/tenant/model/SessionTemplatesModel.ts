@@ -2,6 +2,7 @@ import {
   SESSION_TEMPLATE_DEFAULTS,
   SESSION_TEMPLATE_ERRORS,
   SessionTemplateValidationUtils,
+  TimezoneConfigUtils,
 } from '@toke/shared';
 import { Op } from 'sequelize';
 
@@ -159,7 +160,7 @@ export default class SessionTemplateModel extends BaseModel {
       [this.db.guid]: guid,
       [this.db.tenant]: this.tenant,
       [this.db.name]: this.name,
-      [this.db.valid_from]: this.valid_from ?? new Date(),
+      [this.db.valid_from]: this.valid_from ?? TimezoneConfigUtils.getCurrentTime(),
       [this.db.valid_to]: this.valid_to ?? null,
       [this.db.definition]: this.definition,
       [this.db.defaults]: this.defaults || SESSION_TEMPLATE_DEFAULTS.IS_DEFAULT,
@@ -231,7 +232,7 @@ export default class SessionTemplateModel extends BaseModel {
     const affected = await this.updateOne(
       this.db.tableName,
       {
-        [this.db.deleted_at]: new Date(),
+        [this.db.deleted_at]: TimezoneConfigUtils.getCurrentTime(),
       },
       { [this.db.id]: id },
     );

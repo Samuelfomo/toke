@@ -1,5 +1,6 @@
 // utils/schedule_exceptions.validation.ts
 import { SCHEDULE_EXCEPTION_VALIDATION } from '../../constants/tenant/schedule.exceptions.js';
+import { TimezoneConfigUtils } from '../timezone.config.validation.js';
 
 export class ScheduleExceptionValidationUtils {
   // /**
@@ -263,7 +264,7 @@ export class ScheduleExceptionValidationUtils {
   static isExceptionActive(
     startDate: string,
     endDate: string,
-    currentDate: Date = new Date(),
+    currentDate: Date = TimezoneConfigUtils.getCurrentTime(),
   ): boolean {
     return this.isDateInException(currentDate, startDate, endDate);
   }

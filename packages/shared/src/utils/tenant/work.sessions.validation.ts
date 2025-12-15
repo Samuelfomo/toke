@@ -4,6 +4,7 @@ import {
   WORK_SESSIONS_DEFAULTS,
   WORK_SESSIONS_VALIDATION,
 } from '../../constants/tenant/work.sessions.js';
+import { TimezoneConfigUtils } from '../timezone.config.validation.js';
 
 export class WorkSessionsValidationUtils {
   /**
@@ -64,12 +65,14 @@ export class WorkSessionsValidationUtils {
     if (isNaN(date.getTime())) return false;
 
     // // Session start cannot be in the future (allowing current time with 1 minute tolerance)
-    // const now = new Date();
+    // const now = TimezoneConfigUtils.getCurrentTime();
     // now.setMinutes(now.getMinutes() + 1);
     // return date <= now;
 
     // Obtenir l'heure actuelle au timezone Africa/Douala
-    const nowInDouala = new Date(new Date().toLocaleString('en-US', { timeZone: 'Africa/Douala' }));
+    const nowInDouala = new Date(
+      TimezoneConfigUtils.getCurrentTime().toLocaleString('en-US', { timeZone: 'Africa/Douala' }),
+    );
     nowInDouala.setMinutes(nowInDouala.getMinutes() + 1); // Tolérance 1 minute
 
     return date <= nowInDouala;
@@ -299,7 +302,7 @@ export class WorkSessionsValidationUtils {
     sessionEnd: Date | string | null,
   ): number {
     const start = new Date(sessionStart);
-    const end = sessionEnd ? new Date(sessionEnd) : new Date();
+    const end = sessionEnd ? new Date(sessionEnd) : TimezoneConfigUtils.getCurrentTime();
     return Math.max(0, (end.getTime() - start.getTime()) / (1000 * 60));
   }
 
@@ -457,7 +460,7 @@ export class WorkSessionsValidationUtils {
     }
 
     if (data.session_start !== undefined || data.session_end !== undefined) {
-      const start = data.session_start || new Date();
+      const start = data.session_start || TimezoneConfigUtils.getCurrentTime();
       const end = data.session_end;
       validations.push(this.validateSessionDateLogic(start, end));
     }
@@ -841,7 +844,9 @@ export class WorkSessionsValidationUtils {
     });
 
     // Handle unclosed sessions
-    const sessionEnd = session.session_end ? new Date(session.session_end) : new Date();
+    const sessionEnd = session.session_end
+      ? new Date(session.session_end)
+      : TimezoneConfigUtils.getCurrentTime();
 
     if (currentClockIn) {
       const workMinutes = (sessionEnd.getTime() - (currentClockIn as Date).getTime()) / (1000 * 60);
@@ -1009,7 +1014,7 @@ export class WorkSessionsValidationUtils {
 
       // Detect future session starts
       const sessionStart = new Date(session.session_start);
-      if (sessionStart > new Date()) {
+      if (sessionStart > TimezoneConfigUtils.getCurrentTime()) {
         anomalies.push({
           sessionId: session.guid,
           type: 'future_start',

@@ -1,4 +1,4 @@
-import { SESSION_TEMPLATE_DEFAULTS, VALID_DAYS } from '@toke/shared';
+import { SESSION_TEMPLATE_DEFAULTS, TimezoneConfigUtils, VALID_DAYS } from '@toke/shared';
 
 import SessionTemplateModel from '../model/SessionTemplatesModel.js';
 import W from '../../tools/watcher.js';
@@ -158,7 +158,7 @@ export default class SessionTemplate extends SessionTemplateModel {
 
   hasExpired(): boolean {
     if (!this.valid_to) return false;
-    return new Date() > this.valid_to;
+    return TimezoneConfigUtils.getCurrentTime() > this.valid_to;
   }
 
   getDaysWithWork(): string[] {

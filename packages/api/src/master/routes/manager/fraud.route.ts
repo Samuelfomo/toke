@@ -9,6 +9,7 @@ import {
   TENANT_CODES,
   TENANT_ERRORS,
   TenantValidationUtils,
+  TimezoneConfigUtils,
 } from '@toke/shared';
 
 import FraudDetectionLog from '../../class/FraudDetectionLog.js';
@@ -208,7 +209,7 @@ router.put('/alerts/:guid/investigate', Ensure.put(), async (req: Request, res: 
     if (notes) {
       investigationNotes += ` - ${notes}`;
     }
-    investigationNotes += ` at ${new Date().toISOString()}`;
+    investigationNotes += ` at ${TimezoneConfigUtils.getCurrentTime().toISOString()}`;
 
     const currentNotes = alert.getNotes() || '';
     const updatedNotes = currentNotes
@@ -308,7 +309,7 @@ router.get('/alerts/late-arrivals', Ensure.get(), async (req: Request, res: Resp
   try {
     // const { tenant } = req.query;
     const paginationOptions = paginationSchema.parse(req.query);
-    const today = new Date();
+    const today = TimezoneConfigUtils.getCurrentTime();
 
     // let tenantId: number | undefined;
     // if (tenant) {
@@ -389,7 +390,8 @@ router.get('/alerts/missing-clockouts', Ensure.get(), async (req: Request, res: 
         lastPunchDate &&
         consecutiveAbsent > 0 &&
         consecutiveAbsent < 3 && // Pas trop ancien
-        new Date().getTime() - lastPunchDate.getTime() < 2 * 24 * 60 * 60 * 1000
+        TimezoneConfigUtils.getCurrentTime().getTime() - lastPunchDate.getTime() <
+          2 * 24 * 60 * 60 * 1000
       ); // < 2 jours
     });
 
@@ -489,7 +491,7 @@ router.get('/alerts/system-notifications', Ensure.get(), async (req: Request, re
         title: `${criticalAlerts.length} Critical Fraud Alert${criticalAlerts.length > 1 ? 's' : ''} Require Attention`,
         message: 'Immediate investigation required for critical fraud detection alerts',
         priority: RiskLevel.CRITICAL,
-        created_at: new Date().toISOString(),
+        created_at: TimezoneConfigUtils.getCurrentTime().toISOString(),
         action_required: true,
         action_url: '/fraud-monitoring/active-alerts?risk_level=CRITICAL',
       });
@@ -503,7 +505,7 @@ router.get('/alerts/system-notifications', Ensure.get(), async (req: Request, re
         title: 'High Number of Unresolved Alerts',
         message: `${systemSummary.unresolved} fraud alerts are currently unresolved`,
         priority: RiskLevel.HIGH,
-        created_at: new Date().toISOString(),
+        created_at: TimezoneConfigUtils.getCurrentTime().toISOString(),
         action_required: true,
         action_url: '/fraud-monitoring/active-alerts?resolved=false',
       });
@@ -516,7 +518,7 @@ router.get('/alerts/system-notifications', Ensure.get(), async (req: Request, re
       title: 'Fraud Detection System Status',
       message: 'All fraud detection triggers are operational',
       priority: RiskLevel.LOW,
-      created_at: new Date().toISOString(),
+      created_at: TimezoneConfigUtils.getCurrentTime().toISOString(),
       action_required: false,
     });
 
@@ -525,7 +527,7 @@ router.get('/alerts/system-notifications', Ensure.get(), async (req: Request, re
       system_health: {
         fraud_detection_active: true,
         activity_monitoring_active: true,
-        last_check: new Date().toISOString(),
+        last_check: TimezoneConfigUtils.getCurrentTime().toISOString(),
         total_alerts: systemSummary.total,
         unresolved_alerts: systemSummary.unresolved,
       },
@@ -583,7 +585,7 @@ router.get('/alerts/settings', Ensure.get(), async (req: Request, res: Response)
 
     return R.handleSuccess(res, {
       alert_settings: alertSettings,
-      last_updated: new Date().toISOString(),
+      last_updated: TimezoneConfigUtils.getCurrentTime().toISOString(),
       version: '1.0.0',
     });
   } catch (error: any) {
@@ -627,7 +629,7 @@ router.put('/alerts/settings', Ensure.put(), async (req: Request, res: Response)
     return R.handleSuccess(res, {
       message: 'Alert settings updated successfully',
       updated_settings: alert_settings,
-      updated_at: new Date().toISOString(),
+      updated_at: TimezoneConfigUtils.getCurrentTime().toISOString(),
     });
   } catch (error: any) {
     console.error('⚠️ Erreur mise à jour paramètres:', error);
@@ -655,7 +657,7 @@ router.post('/alerts/test-notification', Ensure.post(), async (req: Request, res
       title: 'Test Notification - TOKE Fraud Monitoring',
       message:
         'This is a test notification to verify your alert delivery settings are working correctly.',
-      timestamp: new Date().toISOString(),
+      timestamp: TimezoneConfigUtils.getCurrentTime().toISOString(),
       type: notification_type,
     };
 
@@ -684,7 +686,7 @@ router.post('/alerts/test-notification', Ensure.post(), async (req: Request, res
       test_details: {
         notification_type,
         recipient: recipient || 'default',
-        sent_at: new Date().toISOString(),
+        sent_at: TimezoneConfigUtils.getCurrentTime().toISOString(),
         message_content: testMessage,
       },
     });
@@ -728,7 +730,7 @@ function generateEmployeeRecommendations(alerts: any[], activityHistory: any[]):
 function calculateSessionDuration(lastPunchDate: Date | undefined): string {
   if (!lastPunchDate) return 'Unknown';
 
-  const now = new Date();
+  const now = TimezoneConfigUtils.getCurrentTime();
   const diffMs = now.getTime() - lastPunchDate.getTime();
   const hours = Math.floor(diffMs / (1000 * 60 * 60));
   const minutes = Math.floor((diffMs % (1000 * 60 * 60)) / (1000 * 60));

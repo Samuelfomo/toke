@@ -1,4 +1,4 @@
-import { TAX_RULE_ERRORS, TaxRuleValidationUtils } from '@toke/shared';
+import { TAX_RULE_ERRORS, TaxRuleValidationUtils, TimezoneConfigUtils } from '@toke/shared';
 
 import BaseModel from '../database/db.base.js';
 import { tableName } from '../../utils/response.model.js';
@@ -136,7 +136,7 @@ export default class TaxRuleModel extends BaseModel {
       [this.db.applies_to]: this.applies_to || 'license_fee',
       [this.db.required_tax_number]:
         this.required_tax_number !== undefined ? this.required_tax_number : true,
-      [this.db.effective_date]: this.effective_date || new Date(),
+      [this.db.effective_date]: this.effective_date || TimezoneConfigUtils.getCurrentTime(),
       [this.db.expiry_date]: this.expiry_date,
       [this.db.active]: this.active !== undefined ? this.active : true,
     });

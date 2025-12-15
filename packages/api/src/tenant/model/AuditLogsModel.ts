@@ -1,4 +1,4 @@
-import { AUDIT_LOGS_ERRORS, AuditLogsValidationUtils } from '@toke/shared';
+import { AUDIT_LOGS_ERRORS, AuditLogsValidationUtils, TimezoneConfigUtils } from '@toke/shared';
 import sequelize, { Op } from 'sequelize';
 
 import BaseModel from '../database/db.base.js';
@@ -184,7 +184,7 @@ export default class AuditLogsModel extends BaseModel {
   // === ANALYSES & DÉTECTIONS ===
 
   // protected async detectSuspiciousPatterns(analysis_days: number = 30): Promise<any[]> {
-  //   const cutoffDate = new Date();
+  //   const cutoffDate = TimezoneConfigUtils.getCurrentTime();
   //   cutoffDate.setDate(cutoffDate.getDate() - analysis_days);
   //
   //   // Détection corrections excessives (même utilisateur, même table)
@@ -265,7 +265,7 @@ export default class AuditLogsModel extends BaseModel {
    * ✅ CORRECTION : Détection patterns suspects via ORM
    */
   protected async detectSuspiciousPatterns(analysis_days: number = 30): Promise<any[]> {
-    const cutoffDate = new Date();
+    const cutoffDate = TimezoneConfigUtils.getCurrentTime();
     cutoffDate.setDate(cutoffDate.getDate() - analysis_days);
 
     // 1. Récupérer toutes les modifications UPDATE avec "correction"
@@ -416,7 +416,7 @@ export default class AuditLogsModel extends BaseModel {
   // === GESTION RÉTENTION & PERFORMANCE ===
 
   protected async findOldLogs(retention_months: number = 36): Promise<any[]> {
-    const cutoffDate = new Date();
+    const cutoffDate = TimezoneConfigUtils.getCurrentTime();
     cutoffDate.setMonth(cutoffDate.getMonth() - retention_months);
 
     return await this.findAll(this.db.tableName, {

@@ -6,6 +6,7 @@ import {
   MemoType,
 } from '../../constants/tenant/memos.js';
 import { MemoContent, Message } from '../../types/tenant/memos.js';
+import { TimezoneConfigUtils } from '../timezone.config.validation.js';
 
 export class MemosValidationUtils {
   /**
@@ -119,8 +120,10 @@ export class MemosValidationUtils {
     if (isNaN(date.getTime())) return false;
 
     // Incident cannot be in the future (allowing current time with 1 minute tolerance)
-    const now = new Date(new Date().toLocaleString('en-US', { timeZone: 'Africa/Douala' }));
-    // const now = new Date();
+    const now = new Date(
+      TimezoneConfigUtils.getCurrentTime().toLocaleString('en-US', { timeZone: 'Africa/Douala' }),
+    );
+    // const now = TimezoneConfigUtils.getCurrentTime();
     now.setMinutes(now.getMinutes() + 1);
     return date <= now;
   }

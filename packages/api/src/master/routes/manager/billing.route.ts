@@ -25,6 +25,7 @@ import {
   TENANT_CODES,
   TENANT_ERRORS,
   TenantValidationUtils,
+  TimezoneConfigUtils,
 } from '@toke/shared';
 
 import GlobalLicense from '../../class/GlobalLicense.js';
@@ -450,7 +451,7 @@ router.patch('/adjustment/confirm', Ensure.patch(), async (req: Request, res: Re
     }
 
     // Marquer comme confirmé et générer la facture
-    adjustmentObj.setInvoiceSentAt(new Date());
+    adjustmentObj.setInvoiceSentAt(TimezoneConfigUtils.getCurrentTime());
     adjustmentObj.setPaymentStatus(PaymentTransactionStatus.COMPLETED);
     await adjustmentObj.save();
 

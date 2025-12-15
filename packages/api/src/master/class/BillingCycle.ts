@@ -1,4 +1,4 @@
-import { BillingStatus } from '@toke/shared';
+import { BillingStatus, TimezoneConfigUtils } from '@toke/shared';
 
 import BillingCycleModel from '../model/BillingCycleModel.js';
 import W from '../../tools/watcher.js';
@@ -407,7 +407,7 @@ export default class BillingCycle extends BillingCycleModel {
   isOverdue(): boolean {
     if (this.billing_status !== BillingStatus.OVERDUE) return false;
     if (!this.payment_due_date) return false;
-    return new Date() > new Date(this.payment_due_date);
+    return TimezoneConfigUtils.getCurrentTime() > new Date(this.payment_due_date);
   }
 
   /**
@@ -415,11 +415,11 @@ export default class BillingCycle extends BillingCycleModel {
    */
   isDueSoon(days: number = 7): boolean {
     if (!this.payment_due_date || this.isCompleted() || this.isCancelled()) return false;
-    const warningDate = new Date();
+    const warningDate = TimezoneConfigUtils.getCurrentTime();
     warningDate.setDate(warningDate.getDate() + days);
     return (
       new Date(this.payment_due_date) <= warningDate &&
-      new Date(this.payment_due_date) >= new Date()
+      new Date(this.payment_due_date) >= TimezoneConfigUtils.getCurrentTime()
     );
   }
 
@@ -469,7 +469,7 @@ export default class BillingCycle extends BillingCycleModel {
    */
   getDaysUntilDue(): number {
     if (!this.payment_due_date) return 0;
-    const now = new Date();
+    const now = TimezoneConfigUtils.getCurrentTime();
     const due = new Date(this.payment_due_date);
     const diffTime = due.getTime() - now.getTime();
     return Math.max(0, Math.ceil(diffTime / (1000 * 60 * 60 * 24)));
@@ -480,7 +480,7 @@ export default class BillingCycle extends BillingCycleModel {
    */
   getDaysOverdue(): number {
     if (!this.payment_due_date || !this.isOverdue()) return 0;
-    const now = new Date();
+    const now = TimezoneConfigUtils.getCurrentTime();
     const due = new Date(this.payment_due_date);
     const diffTime = now.getTime() - due.getTime();
     return Math.ceil(diffTime / (1000 * 60 * 60 * 24));

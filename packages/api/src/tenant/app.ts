@@ -2,6 +2,7 @@ import { Server } from 'http';
 
 import cors from 'cors';
 import express, { NextFunction, Request, Response } from 'express';
+import { TimezoneConfigUtils } from '@toke/shared';
 
 // import dotenv from 'dotenv';
 //
@@ -28,6 +29,7 @@ import sessionTemplatesRoute from './routes/session.templates.route.js';
 import rotationGroupsRoute from './routes/rotation.groups.route.js';
 import rotationAssignmentsRoute from './routes/rotation.assignments.route.js';
 import scheduleExceptionsRoute from './routes/schedule.exceptions.route.js';
+import teamsRoute from './routes/teams.route.js';
 
 interface AppConfig {
   port: number;
@@ -176,7 +178,7 @@ export default class App {
         // const dbStatus = TableInitializer.isInitialized() ? 'connected' : 'disconnected';
 
         // return R.handleSuccess(res, {
-        //   timestamp: new Date().toISOString(),
+        //   timestamp: TimezoneConfigUtils.getCurrentTime().toISOString(),
         //   uptime: process.uptime(),
         //   environment: process.env.NODE_ENV || 'development',
         //   revision: {
@@ -186,7 +188,7 @@ export default class App {
 
         res.json({
           success: true,
-          timestamp: new Date().toISOString(),
+          timestamp: TimezoneConfigUtils.getCurrentTime().toISOString(),
           uptime: process.uptime(),
           environment: process.env.NODE_ENV || 'development',
           revision: {
@@ -200,7 +202,7 @@ export default class App {
     this.app.get('/', (req, res) => {
       res.json({
         message: 'API Server is running',
-        timestamp: new Date().toISOString(),
+        timestamp: TimezoneConfigUtils.getCurrentTime().toISOString(),
         endpoints: ['GET /health - Health check', 'GET / - Cette page'],
       });
     });
@@ -225,6 +227,7 @@ export default class App {
     this.app.use('/rotation-groups', rotationGroupsRoute);
     this.app.use('/rotation-assignments', rotationAssignmentsRoute);
     this.app.use('/schedule-exceptions', scheduleExceptionsRoute);
+    this.app.use('/teams', teamsRoute);
 
     // Route 404
     this.app.use((req, res) => {

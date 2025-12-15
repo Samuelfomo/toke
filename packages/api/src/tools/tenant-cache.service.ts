@@ -2,6 +2,8 @@
 import fs from 'fs/promises';
 import path from 'path';
 
+import { TimezoneConfigUtils } from '@toke/shared';
+
 interface TenantConfig {
   subdomain: string;
   host: string;
@@ -68,7 +70,7 @@ export default class TenantCacheService {
     this.cache[subdomain] = {
       ...config,
       subdomain,
-      last_updated: new Date().toISOString(),
+      last_updated: TimezoneConfigUtils.getCurrentTime().toISOString(),
     };
 
     await this.saveCacheToFile();
@@ -265,7 +267,7 @@ export default class TenantCacheService {
 //     this.cache[subdomain] = {
 //       ...config,
 //       subdomain,
-//       last_updated: new Date().toISOString(),
+//       last_updated: TimezoneConfigUtils.getCurrentTime().toISOString(),
 //     };
 //
 //     await this.saveCacheToFile();

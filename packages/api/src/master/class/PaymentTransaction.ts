@@ -1,4 +1,4 @@
-import { PaymentTransactionStatus } from '@toke/shared';
+import { PaymentTransactionStatus, TimezoneConfigUtils } from '@toke/shared';
 
 import PaymentTransactionModel from '../model/PaymentTransactionModel.js';
 import W from '../../tools/watcher.js';
@@ -210,7 +210,7 @@ export default class PaymentTransaction extends PaymentTransactionModel {
         .setExchangeRate(data.exchange_rate_used)
         .setPaymentMethod(data.payment_method)
         // .setPaymentReference(data.payment_reference)
-        .setInitiatedAt(new Date())
+        .setInitiatedAt(TimezoneConfigUtils.getCurrentTime())
     );
   }
 
@@ -559,7 +559,7 @@ export default class PaymentTransaction extends PaymentTransactionModel {
   getProcessingDuration(): number | null {
     if (!this.initiated_at) return null;
 
-    const endTime = this.completed_at || this.failed_at || new Date();
+    const endTime = this.completed_at || this.failed_at || TimezoneConfigUtils.getCurrentTime();
     return endTime.getTime() - this.initiated_at.getTime();
   }
 

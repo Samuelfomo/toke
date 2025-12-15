@@ -1,4 +1,4 @@
-import { FraudDetection, RiskLevel } from '@toke/shared';
+import { FraudDetection, RiskLevel, TimezoneConfigUtils } from '@toke/shared';
 
 import FraudDetectionLogModel from '../model/FraudDetectionLogModel.js';
 import {
@@ -375,7 +375,7 @@ export default class FraudDetectionLog extends FraudDetectionLogModel {
     const result = await this.resolveAlert(this.id, resolved_by, action_taken);
     if (result) {
       // Mettre à jour l'instance locale
-      this.resolved_at = new Date();
+      this.resolved_at = TimezoneConfigUtils.getCurrentTime();
       this.resolved_by = resolved_by;
       if (action_taken) {
         this.action_taken = action_taken;
@@ -689,7 +689,7 @@ export default class FraudDetectionLog extends FraudDetectionLogModel {
   getRelativeCreatedDate(): string {
     if (!this.created_at) return 'Date inconnue';
 
-    const now = new Date();
+    const now = TimezoneConfigUtils.getCurrentTime();
     const created = new Date(this.created_at);
     const diffHours = Math.floor((now.getTime() - created.getTime()) / (1000 * 60 * 60));
 

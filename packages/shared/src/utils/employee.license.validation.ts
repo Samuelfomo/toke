@@ -6,6 +6,8 @@ import {
   LeaveType,
 } from '../constants/employee.license.js';
 
+import { TimezoneConfigUtils } from './timezone.config.validation.js';
+
 export class EmployeeLicenseValidationUtils {
   /**
    * Validates global master ID
@@ -45,7 +47,9 @@ export class EmployeeLicenseValidationUtils {
    */
   static validateActivationDate(date: Date | string): boolean {
     const activationDate = new Date(date);
-    return !isNaN(activationDate.getTime()) && activationDate <= new Date();
+    return (
+      !isNaN(activationDate.getTime()) && activationDate <= TimezoneConfigUtils.getCurrentTime()
+    );
   }
 
   /**
@@ -191,7 +195,7 @@ export class EmployeeLicenseValidationUtils {
     if (!declaredLongLeave || !lastActivityDate) return true;
 
     const activity = new Date(lastActivityDate);
-    const gracePeriodAgo = new Date();
+    const gracePeriodAgo = TimezoneConfigUtils.getCurrentTime();
     gracePeriodAgo.setDate(
       gracePeriodAgo.getDate() - EMPLOYEE_LICENSE_VALIDATION.GRACE_PERIOD.DAYS_AFTER_LAST_ACTIVITY,
     );
@@ -239,7 +243,7 @@ export class EmployeeLicenseValidationUtils {
     if (contractualStatus !== ContractualStatus.ACTIVE) return false;
     if (!deactivationDate) return true;
 
-    return new Date(deactivationDate) > new Date();
+    return new Date(deactivationDate) > TimezoneConfigUtils.getCurrentTime();
   }
 
   /**
@@ -554,7 +558,7 @@ export class EmployeeLicenseValidationUtils {
   static calculateDaysSinceLastActivity(lastActivityDate: Date | string): number {
     if (!lastActivityDate) return -1;
     const activity = new Date(lastActivityDate);
-    const now = new Date();
+    const now = TimezoneConfigUtils.getCurrentTime();
     const diffTime = now.getTime() - activity.getTime();
     return Math.floor(diffTime / (1000 * 60 * 60 * 24));
   }
@@ -565,7 +569,7 @@ export class EmployeeLicenseValidationUtils {
   static calculateGracePeriodDaysRemaining(gracePeriodEnd: Date | string): number {
     if (!gracePeriodEnd) return 0;
     const end = new Date(gracePeriodEnd);
-    const now = new Date();
+    const now = TimezoneConfigUtils.getCurrentTime();
     if (end <= now) return 0;
     const diffTime = end.getTime() - now.getTime();
     return Math.ceil(diffTime / (1000 * 60 * 60 * 24));
@@ -579,7 +583,7 @@ export class EmployeeLicenseValidationUtils {
     gracePeriodEnd: Date | string | null,
   ): boolean {
     if (!gracePeriodStart || !gracePeriodEnd) return false;
-    const now = new Date();
+    const now = TimezoneConfigUtils.getCurrentTime();
     const start = new Date(gracePeriodStart);
     const end = new Date(gracePeriodEnd);
     return now >= start && now <= end;
@@ -633,7 +637,7 @@ export class EmployeeLicenseValidationUtils {
 //    */
 //   static validateActivationDate(date: Date | string): boolean {
 //     const activationDate = new Date(date);
-//     return !isNaN(activationDate.getTime()) && activationDate <= new Date();
+//     return !isNaN(activationDate.getTime()) && activationDate <= TimezoneConfigUtils.getCurrentTime();
 //   }
 //
 //   /**
@@ -779,7 +783,7 @@ export class EmployeeLicenseValidationUtils {
 //     if (!declaredLongLeave || !lastActivityDate) return true;
 //
 //     const activity = new Date(lastActivityDate);
-//     const gracePeriodAgo = new Date();
+//     const gracePeriodAgo = TimezoneConfigUtils.getCurrentTime();
 //     gracePeriodAgo.setDate(
 //       gracePeriodAgo.getDate() - EMPLOYEE_LICENSE_VALIDATION.GRACE_PERIOD.DAYS_AFTER_LAST_ACTIVITY,
 //     );
@@ -827,7 +831,7 @@ export class EmployeeLicenseValidationUtils {
 //     if (contractualStatus !== ContractualStatus.ACTIVE) return false;
 //     if (!deactivationDate) return true;
 //
-//     return new Date(deactivationDate) > new Date();
+//     return new Date(deactivationDate) > TimezoneConfigUtils.getCurrentTime();
 //   }
 //
 //   /**

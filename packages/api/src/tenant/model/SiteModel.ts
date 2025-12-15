@@ -1,4 +1,10 @@
-import { SITES_DEFAULTS, SITES_ERRORS, SitesValidationUtils, SiteType } from '@toke/shared';
+import {
+  SITES_DEFAULTS,
+  SITES_ERRORS,
+  SitesValidationUtils,
+  SiteType,
+  TimezoneConfigUtils,
+} from '@toke/shared';
 import { Op } from 'sequelize';
 
 import BaseModel from '../database/db.base.js';
@@ -198,7 +204,10 @@ export default class SiteModel extends BaseModel {
     const siteData = await this.find(site);
     if (!siteData) return null;
 
-    const timestamp = new Date().toISOString().replace(/[-:]/g, '').slice(0, 15);
+    const timestamp = TimezoneConfigUtils.getCurrentTime()
+      .toISOString()
+      .replace(/[-:]/g, '')
+      .slice(0, 15);
     const qr_token = `QR_${siteData.name.replace(/\s+/g, '_').toUpperCase()}_${siteData.created_by}_${timestamp}`;
 
     const qr_content = {
@@ -207,7 +216,7 @@ export default class SiteModel extends BaseModel {
       site_name: siteData.name,
       site_type: siteData.site_type,
       manager_id: siteData.created_by,
-      creation_date: new Date().toISOString(),
+      creation_date: TimezoneConfigUtils.getCurrentTime().toISOString(),
       qr_token,
       checksum: this.generateChecksum(qr_token + siteData.guid),
     };
@@ -241,7 +250,7 @@ export default class SiteModel extends BaseModel {
   // === GESTION PERMISSIONS ===
 
   protected async findExpiredTemporarySites(): Promise<any[]> {
-    const currentDate = new Date().toISOString();
+    const currentDate = TimezoneConfigUtils.getCurrentTime().toISOString();
 
     return await this.findAll(this.db.tableName, {
       [this.db.site_type]: SiteType.TEMPORARY,
@@ -376,7 +385,10 @@ export default class SiteModel extends BaseModel {
   }
 
   private async generateInitialQRCode(): Promise<any> {
-    const timestamp = new Date().toISOString().replace(/[-:]/g, '').slice(0, 15);
+    const timestamp = TimezoneConfigUtils.getCurrentTime()
+      .toISOString()
+      .replace(/[-:]/g, '')
+      .slice(0, 15);
     const qr_token = `QR_${this.name?.replace(/\s+/g, '_').toUpperCase()}_${this.created_by}_${timestamp}`;
 
     return {
@@ -384,7 +396,7 @@ export default class SiteModel extends BaseModel {
       name: this.name,
       site_type: this.site_type,
       manager: this.created_by,
-      creation_date: new Date().toISOString(),
+      creation_date: TimezoneConfigUtils.getCurrentTime().toISOString(),
       qr_token,
       checksum: this.generateChecksum(qr_token + (this.guid || '')),
     };

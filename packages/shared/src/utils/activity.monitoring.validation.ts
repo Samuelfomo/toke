@@ -7,6 +7,8 @@ import {
   ActivityStatus,
 } from '../constants/activity.monitoring.js';
 
+import { TimezoneConfigUtils } from './timezone.config.validation.js';
+
 export class ActivityMonitoringValidationUtils {
   /**
    * Validates activity monitoring ID
@@ -49,7 +51,7 @@ export class ActivityMonitoringValidationUtils {
     ) {
       throw new Error('Date is out of valid range');
     }
-    if (validDate > new Date()) {
+    if (validDate > TimezoneConfigUtils.getCurrentTime()) {
       throw new Error('Date cannot be in the future');
     }
     return validDate;
@@ -391,7 +393,7 @@ export class ActivityMonitoringValidationUtils {
    */
   static calculateDaysSinceLastActivity(lastPunchDate: Date | null): number {
     if (!lastPunchDate) return -1;
-    const now = new Date();
+    const now = TimezoneConfigUtils.getCurrentTime();
     const diffTime = now.getTime() - lastPunchDate.getTime();
     return Math.floor(diffTime / (1000 * 60 * 60 * 24));
   }

@@ -1,6 +1,5 @@
 // schemas/memos_validation.ts
 import { z } from 'zod';
-import TimezoneConfig from '@toke/api/dist/utils/timezone.config.js';
 
 import {
   MEMOS_CODES,
@@ -10,6 +9,7 @@ import {
   MemoType,
   MessageType,
 } from '../../constants/tenant/memos.js';
+import { TimezoneConfigUtils } from '../../utils/timezone.config.validation.js';
 
 // ============================================================================
 // SCHEMAS DE BASE POUR MESSAGE
@@ -37,8 +37,8 @@ export const messageSchema = z.object({
 export const memoContentSchema = z.object({
   created_at: z
     .union([z.date(), z.string().datetime('Invalid datetime format')])
-    // .default(() => new Date().toISOString()),
-    .default(() => TimezoneConfig.getCurrentTime().toISOString()),
+    // .default(() => TimezoneConfigUtils.getCurrentTime().toISOString()),
+    .default(() => TimezoneConfigUtils.getCurrentTime().toISOString()),
   user: z
     .string()
     .min(MEMOS_VALIDATION.AUTHOR_USER.MIN_LENGTH, {
@@ -224,7 +224,9 @@ const baseMemosSchema = z.object({
     .union([z.date(), z.string().transform((val) => new Date(val))], {
       invalid_type_error: MEMOS_ERRORS.INCIDENT_DATETIME_INVALID,
     })
-    .refine((date) => date <= new Date(), { message: MEMOS_ERRORS.FUTURE_INCIDENT_DATE })
+    .refine((date) => date <= TimezoneConfigUtils.getCurrentTime(), {
+      message: MEMOS_ERRORS.FUTURE_INCIDENT_DATE,
+    })
     .optional()
     .nullable(),
 

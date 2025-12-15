@@ -2,6 +2,7 @@
 import { z } from 'zod';
 
 import { TAX_RULE_DEFAULTS, TAX_RULE_ERRORS, TAX_RULE_VALIDATION } from '../constants/tax.rule.js';
+import { TimezoneConfigUtils } from '../utils/timezone.config.validation.js';
 
 // Schema de base pour les validations communes
 const baseTaxRuleSchema = z.object({
@@ -79,7 +80,7 @@ const baseTaxRuleSchema = z.object({
     .or(z.date())
     .transform((val) => (typeof val === 'string' ? new Date(val) : val))
     .refine((date) => !isNaN(date.getTime()), TAX_RULE_ERRORS.EFFECTIVE_DATE_INVALID)
-    .default(() => new Date()),
+    .default(() => TimezoneConfigUtils.getCurrentTime()),
 
   expiry_date: z
     .string()

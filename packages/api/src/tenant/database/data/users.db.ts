@@ -252,7 +252,7 @@ export const UsersDbStructure = {
       },
       validate: {
         isInt: true,
-        // min: 1,
+        min: 1,
       },
       comment: 'Reference to the session model to be applied by default to the user (nullable)',
     },

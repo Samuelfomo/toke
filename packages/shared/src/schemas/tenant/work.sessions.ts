@@ -7,6 +7,7 @@ import {
   WORK_SESSIONS_ERRORS,
   WORK_SESSIONS_VALIDATION,
 } from '../../constants/tenant/work.sessions.js';
+import { TimezoneConfigUtils } from '../../utils/timezone.config.validation.js';
 
 // Schema pour valider les coordonnées GPS
 const coordinateSchema = z.object({
@@ -66,11 +67,11 @@ const baseWorkSessionsSchema = z.object({
     })
     .refine((date) => {
       const nowInDouala = new Date(
-        new Date().toLocaleString('en-US', { timeZone: 'Africa/Douala' }),
+        TimezoneConfigUtils.getCurrentTime().toLocaleString('en-US', { timeZone: 'Africa/Douala' }),
       );
       return date <= nowInDouala;
     }, WORK_SESSIONS_ERRORS.FUTURE_SESSION_START),
-  // .refine((date) => date <= new Date(), WORK_SESSIONS_ERRORS.FUTURE_SESSION_START),
+  // .refine((date) => date <= TimezoneConfigUtils.getCurrentTime(), WORK_SESSIONS_ERRORS.FUTURE_SESSION_START),
 
   session_end: z
     .union([z.date(), z.string().transform((val) => new Date(val))], {

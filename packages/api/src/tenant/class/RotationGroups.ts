@@ -1,4 +1,4 @@
-import { CycleUnit, ROTATION_GROUP_DEFAULTS } from '@toke/shared';
+import { CycleUnit, ROTATION_GROUP_DEFAULTS, TimezoneConfigUtils } from '@toke/shared';
 
 import RotationGroupModel from '../model/RotationGroupsModel.js';
 import W from '../../tools/watcher.js';
@@ -217,7 +217,7 @@ export default class RotationGroup extends RotationGroupModel {
   isInFuture(): boolean {
     if (!this.start_date) return false;
     const startDate = new Date(this.start_date);
-    return startDate > new Date();
+    return startDate > TimezoneConfigUtils.getCurrentTime();
   }
 
   /**
@@ -227,7 +227,7 @@ export default class RotationGroup extends RotationGroupModel {
     if (!this.start_date) return 0;
 
     const startDate = new Date(this.start_date);
-    const now = new Date();
+    const now = TimezoneConfigUtils.getCurrentTime();
     const diffTime = now.getTime() - startDate.getTime();
 
     if (diffTime < 0) return 0;

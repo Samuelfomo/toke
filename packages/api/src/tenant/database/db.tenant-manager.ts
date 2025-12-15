@@ -4,6 +4,7 @@
 
 // database/db.tenant-manager.ts (Version améliorée)
 import { Sequelize } from 'sequelize';
+import { TimezoneConfigUtils } from '@toke/shared';
 
 interface TenantConnectionConfig {
   host: string;
@@ -121,7 +122,7 @@ export default class TenantManager {
    * Retourne la date/heure actuelle au timezone Africa/Douala
    */
   public static getCurrentTime(): Date {
-    return new Date(new Date().toLocaleString('en-US', { timeZone: TenantManager.TIMEZONE }));
+    return TimezoneConfigUtils.getCurrentTime();
   }
 
   public static async closeAllConnections(): Promise<void> {

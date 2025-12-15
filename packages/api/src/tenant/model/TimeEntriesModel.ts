@@ -3,6 +3,7 @@ import {
   PointageType,
   TIME_ENTRIES_ERRORS,
   TimeEntriesValidationUtils,
+  TimezoneConfigUtils,
 } from '@toke/shared';
 import { Op } from 'sequelize';
 
@@ -125,7 +126,7 @@ export default class TimeEntriesModel extends BaseModel {
   protected async updateSyncStatus(entry: number, attempts: number): Promise<boolean> {
     const updates = {
       [this.db.sync_attempts]: attempts,
-      [this.db.last_sync_attempt]: new Date(),
+      [this.db.last_sync_attempt]: TimezoneConfigUtils.getCurrentTime(),
     };
 
     const affectedRows = await this.updateOne(this.db.tableName, updates, {
@@ -299,7 +300,7 @@ export default class TimeEntriesModel extends BaseModel {
   }
 
   protected async findSuspiciousPatterns(user: number, days: number = 7): Promise<any[]> {
-    const thresholdDate = new Date();
+    const thresholdDate = TimezoneConfigUtils.getCurrentTime();
     thresholdDate.setDate(thresholdDate.getDate() - days);
 
     const entries = await this.findAll(this.db.tableName, {
@@ -389,7 +390,7 @@ export default class TimeEntriesModel extends BaseModel {
   }
 
   protected async validateTimeLogic(clocked_at: Date, session_start: Date): Promise<boolean> {
-    return clocked_at >= session_start && clocked_at <= new Date();
+    return clocked_at >= session_start && clocked_at <= TimezoneConfigUtils.getCurrentTime();
   }
 
   // === 6. CORRECTIONS & AUDIT ===
@@ -579,7 +580,7 @@ export default class TimeEntriesModel extends BaseModel {
       throw new Error(TIME_ENTRIES_ERRORS?.GUID_GENERATION_FAILED);
     }
 
-    const now = new Date();
+    const now = TimezoneConfigUtils.getCurrentTime();
     const nowInDouala = new Date(now.toLocaleString('en-US', { timeZone: 'Africa/Douala' }));
 
     const lastID = await this.insertOne(this.db.tableName, {

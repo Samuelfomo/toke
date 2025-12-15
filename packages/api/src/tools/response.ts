@@ -1,5 +1,5 @@
 import { Response } from 'express';
-import { HttpStatus } from '@toke/shared';
+import { HttpStatus, TimezoneConfigUtils } from '@toke/shared';
 
 import { RT } from '../utils/response.model.js';
 
@@ -29,7 +29,7 @@ export default class R {
     res.status(httpCode).json({
       [RT.SUCCESS]: false,
       [RT.ERROR]: error,
-      [RT.TIMESTAMP]: new Date().toISOString(),
+      [RT.TIMESTAMP]: TimezoneConfigUtils.getCurrentTime().toISOString(),
     });
   }
 

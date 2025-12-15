@@ -1,4 +1,4 @@
-import { RelationshipType } from '@toke/shared';
+import { RelationshipType, TimezoneConfigUtils } from '@toke/shared';
 
 import OrgHierarchyModel from '../model/OrgHierarchyModel.js';
 import W from '../../tools/watcher.js';
@@ -261,7 +261,7 @@ export default class OrgHierarchy extends OrgHierarchyModel {
   }
 
   isActive(date?: Date): boolean {
-    const checkDate = date || new Date();
+    const checkDate = date || TimezoneConfigUtils.getCurrentTime();
     const checkDateStr = checkDate.toISOString().slice(0, 10);
 
     if (!this.effective_from || this.effective_from > checkDateStr) {
@@ -281,7 +281,9 @@ export default class OrgHierarchy extends OrgHierarchyModel {
     if (!this.effective_from) return null;
 
     const startDate = new Date(this.effective_from);
-    const endDate = this.effective_to ? new Date(this.effective_to) : new Date();
+    const endDate = this.effective_to
+      ? new Date(this.effective_to)
+      : TimezoneConfigUtils.getCurrentTime();
 
     const diffTime = endDate.getTime() - startDate.getTime();
     return Math.floor(diffTime / (1000 * 60 * 60 * 24));
@@ -290,7 +292,7 @@ export default class OrgHierarchy extends OrgHierarchyModel {
   getDaysUntilExpiration(): number | null {
     if (!this.effective_to) return null;
 
-    const today = new Date();
+    const today = TimezoneConfigUtils.getCurrentTime();
     const expirationDate = new Date(this.effective_to);
 
     const diffTime = expirationDate.getTime() - today.getTime();

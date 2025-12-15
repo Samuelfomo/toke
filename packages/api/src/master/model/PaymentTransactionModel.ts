@@ -1,4 +1,4 @@
-import { PaymentTransactionStatus } from '@toke/shared';
+import { PaymentTransactionStatus, TimezoneConfigUtils } from '@toke/shared';
 
 import BaseModel from '../database/db.base.js';
 import { tableName } from '../../utils/response.model.js';
@@ -168,7 +168,7 @@ export default class PaymentTransactionModel extends BaseModel {
       [this.db.payment_method]: this.payment_method,
       [this.db.payment_reference]: reference,
       [this.db.transaction_status]: PaymentTransactionStatus.PENDING,
-      [this.db.initiated_at]: this.initiated_at || new Date(),
+      [this.db.initiated_at]: this.initiated_at || TimezoneConfigUtils.getCurrentTime(),
     };
 
     const lastID = await this.insertOne(this.db.tableName, insertData);
@@ -180,7 +180,7 @@ export default class PaymentTransactionModel extends BaseModel {
     this.payment_reference = reference;
     this.transaction_status = PaymentTransactionStatus.PENDING;
     if (!this.initiated_at) {
-      this.initiated_at = new Date();
+      this.initiated_at = TimezoneConfigUtils.getCurrentTime();
     }
   }
 
@@ -231,13 +231,13 @@ export default class PaymentTransactionModel extends BaseModel {
 
   protected async markAsCompleted(): Promise<void> {
     this.transaction_status = PaymentTransactionStatus.COMPLETED;
-    this.completed_at = new Date();
+    this.completed_at = TimezoneConfigUtils.getCurrentTime();
     await this.update();
   }
 
   protected async markAsFailed(reason: string): Promise<void> {
     this.transaction_status = PaymentTransactionStatus.FAILED;
-    this.failed_at = new Date();
+    this.failed_at = TimezoneConfigUtils.getCurrentTime();
     this.failure_reason = reason;
     await this.update();
   }

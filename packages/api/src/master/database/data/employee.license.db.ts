@@ -1,5 +1,10 @@
 import { DataTypes, ModelAttributes, ModelOptions } from 'sequelize';
-import { BillingStatusComputed, ContractualStatus, LeaveType } from '@toke/shared';
+import {
+  BillingStatusComputed,
+  ContractualStatus,
+  LeaveType,
+  TimezoneConfigUtils,
+} from '@toke/shared';
 
 import { tableName } from '../../../utils/response.model.js';
 
@@ -275,7 +280,7 @@ export const EmployeeLicenseDbStructure = {
       // Contrainte anti-fraude : pas de congé déclaré avec activité récente
       noLongLeaveWithRecentActivity() {
         if (this.declared_long_leave && this.last_activity_date) {
-          const sevenDaysAgo = new Date();
+          const sevenDaysAgo = TimezoneConfigUtils.getCurrentTime();
           sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
 
           if (this.last_activity_date >= sevenDaysAgo) {

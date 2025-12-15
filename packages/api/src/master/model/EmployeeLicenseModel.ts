@@ -1,5 +1,10 @@
 import { Op } from 'sequelize';
-import { BillingStatusComputed, ContractualStatus, LeaveType } from '@toke/shared';
+import {
+  BillingStatusComputed,
+  ContractualStatus,
+  LeaveType,
+  TimezoneConfigUtils,
+} from '@toke/shared';
 
 import BaseModel from '../database/db.base.js';
 import { tableName } from '../../utils/response.model.js';
@@ -207,7 +212,7 @@ export default class EmployeeLicenseModel extends BaseModel {
 
     // ✅ GRACE_PERIOD = période de grâce active
     if (billing_status === BillingStatusComputed.GRACE_PERIOD) {
-      const now = new Date();
+      const now = TimezoneConfigUtils.getCurrentTime();
       return await this.findAll(
         this.db.tableName,
         {
@@ -256,7 +261,7 @@ export default class EmployeeLicenseModel extends BaseModel {
     days: number = 7,
     paginationOptions: { offset?: number; limit?: number } = {},
   ): Promise<any[]> {
-    const pastDate = new Date();
+    const pastDate = TimezoneConfigUtils.getCurrentTime();
     pastDate.setDate(pastDate.getDate() - days);
 
     return await this.findAll(
@@ -279,7 +284,7 @@ export default class EmployeeLicenseModel extends BaseModel {
    */
   protected async countBillableForLicense(globalLicenseId: number): Promise<number> {
     // ✅ BILLABLE = ACTIVE + (pas de congé OU période de grâce)
-    const now = new Date();
+    const now = TimezoneConfigUtils.getCurrentTime();
 
     return await this.count(this.db.tableName, {
       [this.db.global_license]: globalLicenseId,
@@ -308,7 +313,7 @@ export default class EmployeeLicenseModel extends BaseModel {
     days: number = 7,
     paginationOptions: { offset?: number; limit?: number } = {},
   ): Promise<any[]> {
-    const pastDate = new Date();
+    const pastDate = TimezoneConfigUtils.getCurrentTime();
     pastDate.setDate(pastDate.getDate() - days);
 
     return await this.findAll(
@@ -361,7 +366,7 @@ export default class EmployeeLicenseModel extends BaseModel {
   protected async listAllInGracePeriod(
     paginationOptions: { offset?: number; limit?: number } = {},
   ): Promise<any[]> {
-    const now = new Date();
+    const now = TimezoneConfigUtils.getCurrentTime();
 
     return await this.findAll(
       this.db.tableName,
@@ -383,8 +388,8 @@ export default class EmployeeLicenseModel extends BaseModel {
     days: number = 7,
     paginationOptions: { offset?: number; limit?: number } = {},
   ): Promise<any[]> {
-    const now = new Date();
-    const futureDate = new Date();
+    const now = TimezoneConfigUtils.getCurrentTime();
+    const futureDate = TimezoneConfigUtils.getCurrentTime();
     futureDate.setDate(futureDate.getDate() + days);
 
     return await this.findAll(
@@ -416,7 +421,7 @@ export default class EmployeeLicenseModel extends BaseModel {
    * Filtre sur les conditions au lieu de la colonne générée
    */
   protected async countBillable(): Promise<number> {
-    const now = new Date();
+    const now = TimezoneConfigUtils.getCurrentTime();
 
     return await this.count(this.db.tableName, {
       [Op.or]: [
@@ -455,7 +460,7 @@ export default class EmployeeLicenseModel extends BaseModel {
    */
   protected async updateLastActivity(employee: string, activity_date?: Date): Promise<boolean> {
     const updateData = {
-      [this.db.last_activity_date]: activity_date || new Date(),
+      [this.db.last_activity_date]: activity_date || TimezoneConfigUtils.getCurrentTime(),
     };
 
     const affected = await this.updateOne(this.db.tableName, updateData, {
@@ -478,7 +483,7 @@ export default class EmployeeLicenseModel extends BaseModel {
       [this.db.declared_long_leave]: true,
       [this.db.long_leave_type]: leave_type,
       [this.db.long_leave_declared_by]: declared_by,
-      [this.db.long_leave_declared_at]: new Date(),
+      [this.db.long_leave_declared_at]: TimezoneConfigUtils.getCurrentTime(),
       [this.db.long_leave_reason]: reason || null,
     };
 
@@ -549,7 +554,7 @@ export default class EmployeeLicenseModel extends BaseModel {
    */
   protected async deactivateEmployee(employee: string): Promise<boolean> {
     const updateData = {
-      [this.db.deactivation_date]: new Date(),
+      [this.db.deactivation_date]: TimezoneConfigUtils.getCurrentTime(),
       [this.db.contractual_status]: ContractualStatus.TERMINATED,
     };
 
@@ -567,7 +572,7 @@ export default class EmployeeLicenseModel extends BaseModel {
     const updateData = {
       [this.db.deactivation_date]: null,
       [this.db.contractual_status]: ContractualStatus.ACTIVE,
-      [this.db.last_activity_date]: new Date(),
+      [this.db.last_activity_date]: TimezoneConfigUtils.getCurrentTime(),
     };
 
     const affected = await this.updateOne(this.db.tableName, updateData, {
@@ -594,7 +599,7 @@ export default class EmployeeLicenseModel extends BaseModel {
       [this.db.global_license]: this.global_license,
       [this.db.employee]: this.employee,
       [this.db.employee_code]: this.employee_code,
-      [this.db.activation_date]: this.activation_date || new Date(),
+      [this.db.activation_date]: this.activation_date || TimezoneConfigUtils.getCurrentTime(),
       [this.db.deactivation_date]: this.deactivation_date || null,
       [this.db.last_activity_date]: this.last_activity_date || null,
       [this.db.contractual_status]: this.contractual_status || ContractualStatus.ACTIVE,
@@ -820,7 +825,7 @@ export default class EmployeeLicenseModel extends BaseModel {
 
       // Validation anti-fraude : pas de congé déclaré avec activité récente
       if (this.last_activity_date) {
-        const sevenDaysAgo = new Date();
+        const sevenDaysAgo = TimezoneConfigUtils.getCurrentTime();
         sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
 
         if (this.last_activity_date >= sevenDaysAgo) {
@@ -1006,7 +1011,7 @@ export default class EmployeeLicenseModel extends BaseModel {
 //     days: number = 7,
 //     paginationOptions: { offset?: number; limit?: number } = {},
 //   ): Promise<any[]> {
-//     const pastDate = new Date();
+//     const pastDate = TimezoneConfigUtils.getCurrentTime();
 //     pastDate.setDate(pastDate.getDate() - days);
 //
 //     return await this.findAll(
@@ -1043,7 +1048,7 @@ export default class EmployeeLicenseModel extends BaseModel {
 //     days: number = 7,
 //     paginationOptions: { offset?: number; limit?: number } = {},
 //   ): Promise<any[]> {
-//     const pastDate = new Date();
+//     const pastDate = TimezoneConfigUtils.getCurrentTime();
 //     pastDate.setDate(pastDate.getDate() - days);
 //
 //     return await this.findAll(
@@ -1064,7 +1069,7 @@ export default class EmployeeLicenseModel extends BaseModel {
 //   protected async listAllInGracePeriod(
 //     paginationOptions: { offset?: number; limit?: number } = {},
 //   ): Promise<any[]> {
-//     const now = new Date();
+//     const now = TimezoneConfigUtils.getCurrentTime();
 //     return await this.findAll(
 //       this.db.tableName,
 //       {
@@ -1083,8 +1088,8 @@ export default class EmployeeLicenseModel extends BaseModel {
 //     days: number = 7,
 //     paginationOptions: { offset?: number; limit?: number } = {},
 //   ): Promise<any[]> {
-//     const now = new Date();
-//     const futureDate = new Date();
+//     const now = TimezoneConfigUtils.getCurrentTime();
+//     const futureDate = TimezoneConfigUtils.getCurrentTime();
 //     futureDate.setDate(futureDate.getDate() + days);
 //
 //     return await this.findAll(
@@ -1166,7 +1171,7 @@ export default class EmployeeLicenseModel extends BaseModel {
 //    */
 //   protected async updateLastActivity(employee: string, activity_date?: Date): Promise<boolean> {
 //     const updateData = {
-//       [this.db.last_activity_date]: activity_date || new Date(),
+//       [this.db.last_activity_date]: activity_date || TimezoneConfigUtils.getCurrentTime(),
 //     };
 //
 //     const affected = await this.updateOne(this.db.tableName, updateData, {
@@ -1188,7 +1193,7 @@ export default class EmployeeLicenseModel extends BaseModel {
 //     const updateData = {
 //       [this.db.declared_long_leave]: true,
 //       [this.db.long_leave_declared_by]: declared_by,
-//       [this.db.long_leave_declared_at]: new Date(),
+//       [this.db.long_leave_declared_at]: TimezoneConfigUtils.getCurrentTime(),
 //       [this.db.long_leave_type]: leave_type,
 //       [this.db.long_leave_reason]: reason || null,
 //     };
@@ -1224,7 +1229,7 @@ export default class EmployeeLicenseModel extends BaseModel {
 //    */
 //   protected async deactivateEmployee(employee: string): Promise<boolean> {
 //     const updateData = {
-//       [this.db.deactivation_date]: new Date(),
+//       [this.db.deactivation_date]: TimezoneConfigUtils.getCurrentTime(),
 //       [this.db.contractual_status]: ContractualStatus.TERMINATED,
 //     };
 //
@@ -1242,7 +1247,7 @@ export default class EmployeeLicenseModel extends BaseModel {
 //     const updateData = {
 //       [this.db.deactivation_date]: null,
 //       [this.db.contractual_status]: ContractualStatus.ACTIVE,
-//       [this.db.last_activity_date]: new Date(),
+//       [this.db.last_activity_date]: TimezoneConfigUtils.getCurrentTime(),
 //     };
 //
 //     const affected = await this.updateOne(this.db.tableName, updateData, {
@@ -1269,7 +1274,7 @@ export default class EmployeeLicenseModel extends BaseModel {
 //       [this.db.global_license]: this.global_license,
 //       [this.db.employee]: this.employee,
 //       [this.db.employee_code]: this.employee_code,
-//       [this.db.activation_date]: this.activation_date || new Date(),
+//       [this.db.activation_date]: this.activation_date || TimezoneConfigUtils.getCurrentTime(),
 //       [this.db.deactivation_date]: this.deactivation_date || null,
 //       [this.db.last_activity_date]: this.last_activity_date || null,
 //       [this.db.contractual_status]: this.contractual_status || ContractualStatus.ACTIVE,
@@ -1433,7 +1438,7 @@ export default class EmployeeLicenseModel extends BaseModel {
 //
 //       // Validation anti-fraude : pas de congé déclaré avec activité récente
 //       if (this.last_activity_date) {
-//         const sevenDaysAgo = new Date();
+//         const sevenDaysAgo = TimezoneConfigUtils.getCurrentTime();
 //         sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
 //
 //         if (this.last_activity_date >= sevenDaysAgo) {

@@ -1,4 +1,4 @@
-import { QR_CODE_DEFAULTS, QR_CODE_ERRORS } from '@toke/shared';
+import { QR_CODE_DEFAULTS, QR_CODE_ERRORS, TimezoneConfigUtils } from '@toke/shared';
 import { Op } from 'sequelize';
 
 import BaseModel from '../database/db.base.js';
@@ -87,7 +87,7 @@ export default class QrCodeGenerationModel extends BaseModel {
   protected async findActiveQrCodes(
     paginationOptions: { offset?: number; limit?: number } = {},
   ): Promise<any[]> {
-    const now = new Date();
+    const now = TimezoneConfigUtils.getCurrentTime();
 
     return await this.listAll(
       {
@@ -110,7 +110,7 @@ export default class QrCodeGenerationModel extends BaseModel {
   protected async findExpiredQrCodes(
     paginationOptions: { offset?: number; limit?: number } = {},
   ): Promise<any[]> {
-    const now = new Date();
+    const now = TimezoneConfigUtils.getCurrentTime();
     return await this.listAll(
       {
         [this.db.valid_to]: {
@@ -134,7 +134,7 @@ export default class QrCodeGenerationModel extends BaseModel {
     site: number,
     paginationOptions: { offset?: number; limit?: number } = {},
   ): Promise<any[]> {
-    const now = new Date();
+    const now = TimezoneConfigUtils.getCurrentTime();
 
     return await this.listAll(
       {
@@ -159,7 +159,7 @@ export default class QrCodeGenerationModel extends BaseModel {
     manager: number,
     paginationOptions: { offset?: number; limit?: number } = {},
   ): Promise<any[]> {
-    const now = new Date();
+    const now = TimezoneConfigUtils.getCurrentTime();
 
     return await this.listAll(
       {
@@ -182,7 +182,7 @@ export default class QrCodeGenerationModel extends BaseModel {
     site: number,
     paginationOptions: { offset?: number; limit?: number } = {},
   ): Promise<any[]> {
-    const now = new Date();
+    const now = TimezoneConfigUtils.getCurrentTime();
 
     return await this.listAll(
       {
@@ -206,7 +206,7 @@ export default class QrCodeGenerationModel extends BaseModel {
   // ============================================================================
 
   protected async getQrCodeStatistics(filters: Record<string, any> = {}): Promise<any> {
-    const now = new Date();
+    const now = TimezoneConfigUtils.getCurrentTime();
 
     const [totalQrCodes, activeQrCodes, expiredQrCodes, unlimitedQrCodes, qrCodesBySite] =
       await Promise.all([
@@ -319,7 +319,7 @@ export default class QrCodeGenerationModel extends BaseModel {
     }
 
     // TODO revoir la logique de la date d'expiration du QR code avec new date dur au timezonee
-    const now = new Date();
+    const now = TimezoneConfigUtils.getCurrentTime();
     if (this.valid_to && now > this.valid_to) {
       throw new Error(QR_CODE_ERRORS.QR_CODE_EXPIRED);
     }
@@ -350,7 +350,7 @@ export default class QrCodeGenerationModel extends BaseModel {
     }
 
     // TODO revoir la logique de la date d'expiration du QR code avec new date dur au timezone
-    const now = new Date();
+    const now = TimezoneConfigUtils.getCurrentTime();
     if (this.valid_to && now > this.valid_to) {
       throw new Error(QR_CODE_ERRORS.QR_CODE_EXPIRED);
     }

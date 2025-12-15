@@ -6,12 +6,12 @@ import {
   MemosValidationUtils,
   MemoType,
   Message,
+  TimezoneConfigUtils,
 } from '@toke/shared';
 import { Op } from 'sequelize';
 
 import BaseModel from '../database/db.base.js';
 import { tableName } from '../../utils/response.model.js';
-import TimezoneConfig from '../../utils/timezone.config.js';
 
 export default class MemosModel extends BaseModel {
   public readonly db = {
@@ -250,7 +250,7 @@ export default class MemosModel extends BaseModel {
     hours: number = 24,
     paginationOptions: { offset?: number; limit?: number } = {},
   ): Promise<any[]> {
-    const deadlineDate = new Date();
+    const deadlineDate = TimezoneConfigUtils.getCurrentTime();
     deadlineDate.setHours(deadlineDate.getHours() - hours);
 
     return await this.findAll(
@@ -384,7 +384,7 @@ export default class MemosModel extends BaseModel {
   protected async findUrgentMemos(
     paginationOptions: { offset?: number; limit?: number } = {},
   ): Promise<any[]> {
-    const twoDaysFromNow = new Date();
+    const twoDaysFromNow = TimezoneConfigUtils.getCurrentTime();
     twoDaysFromNow.setDate(twoDaysFromNow.getDate() + 2);
 
     return await this.findAll(
@@ -405,7 +405,7 @@ export default class MemosModel extends BaseModel {
     hours_threshold: number = 24,
     paginationOptions: { offset?: number; limit?: number } = {},
   ): Promise<any[]> {
-    const thresholdDate = new Date();
+    const thresholdDate = TimezoneConfigUtils.getCurrentTime();
     thresholdDate.setHours(thresholdDate.getHours() - hours_threshold);
 
     return await this.findAll(
@@ -433,7 +433,7 @@ export default class MemosModel extends BaseModel {
     rejection_rate: number;
     total_memos: number;
   }> {
-    const startDate = new Date();
+    const startDate = TimezoneConfigUtils.getCurrentTime();
     startDate.setDate(startDate.getDate() - days);
 
     const allMemos = await this.findAll(
@@ -531,7 +531,7 @@ export default class MemosModel extends BaseModel {
     hours_threshold: number,
     escalate_to_validator: number,
   ): Promise<number> {
-    const deadlineDate = new Date();
+    const deadlineDate = TimezoneConfigUtils.getCurrentTime();
     deadlineDate.setHours(deadlineDate.getHours() - hours_threshold);
 
     const overdueMemos = await this.findAll(this.db.tableName, {
@@ -610,7 +610,7 @@ export default class MemosModel extends BaseModel {
     const currentContent: MemoContent[] = memoData.memo_content || [];
 
     const newContent: MemoContent = {
-      created_at: new Date().toISOString(),
+      created_at: TimezoneConfigUtils.getCurrentTime().toISOString(),
       user: user_guid,
       message,
       type: message_type || 'response',
@@ -718,7 +718,7 @@ export default class MemosModel extends BaseModel {
     //
     // if (this.details) {
     //   initialContent.push({
-    //     created_at: new Date().toISOString(),
+    //     created_at: TimezoneConfigUtils.getCurrentTime().toISOString(),
     //     user: 'system', // ou this.author_user converti en GUID
     //     message: {
     //       type: MessageType.TEXT,
@@ -750,8 +750,8 @@ export default class MemosModel extends BaseModel {
 
     this.id = typeof lastID === 'object' ? lastID.id : lastID;
     this.guid = guid;
-    this.created_at = TimezoneConfig.getCurrentTime();
-    this.updated_at = TimezoneConfig.getCurrentTime();
+    this.created_at = TimezoneConfigUtils.getCurrentTime();
+    this.updated_at = TimezoneConfigUtils.getCurrentTime();
   }
 
   protected async update(): Promise<void> {
@@ -773,7 +773,7 @@ export default class MemosModel extends BaseModel {
       throw new Error(MEMOS_ERRORS?.UPDATE_FAILED || 'Memo update failed');
     }
 
-    this.updated_at = TimezoneConfig.getCurrentTime();
+    this.updated_at = TimezoneConfigUtils.getCurrentTime();
   }
 
   protected async trash(id: number): Promise<boolean> {

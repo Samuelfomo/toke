@@ -1,4 +1,5 @@
 import Redis from 'ioredis';
+import { TimezoneConfigUtils } from '@toke/shared';
 
 import GenerateOtp from '../utils/generate.otp.js';
 
@@ -73,7 +74,7 @@ export default class TenantOtpManager {
 
       const otpData: OTPData = {
         phone,
-        createdAt: new Date(),
+        createdAt: TimezoneConfigUtils.getCurrentTime(),
         attempts: 0,
       };
 

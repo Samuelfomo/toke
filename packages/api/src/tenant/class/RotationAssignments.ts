@@ -1,3 +1,5 @@
+import { TimezoneConfigUtils } from '@toke/shared';
+
 import RotationAssignmentModel from '../model/RotationAssignmentsModel.js';
 import W from '../../tools/watcher.js';
 import G from '../../tools/glossary.js';
@@ -183,7 +185,7 @@ export default class RotationAssignment extends RotationAssignmentModel {
   isRecentAssignment(daysThreshold: number = 7): boolean {
     if (!this.assigned_at) return false;
 
-    const now = new Date();
+    const now = TimezoneConfigUtils.getCurrentTime();
     const diffTime = now.getTime() - this.assigned_at.getTime();
     const diffDays = diffTime / (1000 * 60 * 60 * 24);
 
@@ -196,7 +198,7 @@ export default class RotationAssignment extends RotationAssignmentModel {
   getDaysAssigned(): number {
     if (!this.assigned_at) return 0;
 
-    const now = new Date();
+    const now = TimezoneConfigUtils.getCurrentTime();
     const diffTime = now.getTime() - this.assigned_at.getTime();
     return Math.floor(diffTime / (1000 * 60 * 60 * 24));
   }

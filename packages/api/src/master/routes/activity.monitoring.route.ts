@@ -5,6 +5,7 @@ import {
   ActivityMonitoringValidationUtils,
   ActivityStatus,
   HttpStatus,
+  TimezoneConfigUtils,
 } from '@toke/shared';
 
 import ActivityMonitoring from '../class/ActivityMonitoring.js';
@@ -23,7 +24,7 @@ router.get('/revision', Ensure.get(), async (req: Request, res: Response) => {
     const revision = await Revision.getRevision(tableName.ACTIVITY_MONITORING);
     R.handleSuccess(res, {
       revision,
-      checked_at: new Date().toISOString(),
+      checked_at: TimezoneConfigUtils.getCurrentTime().toISOString(),
     });
   } catch (error: any) {
     console.error('❌ Error retrieving revision:', error);
@@ -210,8 +211,8 @@ router.get('/analytics/summary', Ensure.get(), async (req: Request, res: Respons
 
     R.handleSuccess(res, {
       summary,
-      date: targetDate || new Date(),
-      generated_at: new Date().toISOString(),
+      date: targetDate || TimezoneConfigUtils.getCurrentTime(),
+      generated_at: TimezoneConfigUtils.getCurrentTime().toISOString(),
     });
   } catch (error: any) {
     console.error('⚠️ Error retrieving activity summary:', error);
@@ -248,7 +249,7 @@ router.get(
       R.handleSuccess(res, {
         statistics: stats,
         period: { start, end },
-        generated_at: new Date().toISOString(),
+        generated_at: TimezoneConfigUtils.getCurrentTime().toISOString(),
       });
     } catch (error: any) {
       console.error('⚠️ Error retrieving punch statistics:', error);
@@ -288,7 +289,7 @@ router.get('/analytics/risk-dashboard', Ensure.get(), async (req: Request, res: 
         summary,
         risk_distribution: { LOW: 0, MEDIUM: 0, HIGH: 0, CRITICAL: 0 },
         attention_required: 0,
-        date: targetDate || new Date(),
+        date: targetDate || TimezoneConfigUtils.getCurrentTime(),
       });
     }
 
@@ -309,8 +310,8 @@ router.get('/analytics/risk-dashboard', Ensure.get(), async (req: Request, res: 
       risk_distribution: riskDistribution,
       attention_required: attentionRequired,
       total_monitored: latestRecords.length,
-      date: targetDate || new Date(),
-      generated_at: new Date().toISOString(),
+      date: targetDate || TimezoneConfigUtils.getCurrentTime(),
+      generated_at: TimezoneConfigUtils.getCurrentTime().toISOString(),
     });
   } catch (error: any) {
     console.error('⚠️ Error generating risk assessment dashboard:', error);

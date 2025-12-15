@@ -1,6 +1,8 @@
 // utils/tax.rule.validation.ts
 import { TAX_RULE_VALIDATION } from '../constants/tax.rule.js';
 
+import { TimezoneConfigUtils } from './timezone.config.validation.js';
+
 export class TaxRuleValidationUtils {
   /**
    * Valide un code pays ISO 3166-1 (2 ou 3 lettres)
@@ -295,7 +297,7 @@ export class TaxRuleValidationUtils {
   static isActiveAtDate(
     effectiveDate: Date | string,
     expiryDate: Date | string | null,
-    checkDate: Date = new Date(),
+    checkDate: Date = TimezoneConfigUtils.getCurrentTime(),
   ): boolean {
     const effective = new Date(effectiveDate);
     const expiry = expiryDate ? new Date(expiryDate) : null;
@@ -395,7 +397,8 @@ export class TaxRuleValidationUtils {
         // Logique de détection de chevauchement
         const hasOverlap =
           (newEffective <= existingEffective && (!newExpiry || newExpiry >= existingEffective)) ||
-          (newEffective <= (existingExpiry || new Date()) && newEffective >= existingEffective);
+          (newEffective <= (existingExpiry || TimezoneConfigUtils.getCurrentTime()) &&
+            newEffective >= existingEffective);
 
         if (hasOverlap) {
           conflicts.push(

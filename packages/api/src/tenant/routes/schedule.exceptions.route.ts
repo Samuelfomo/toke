@@ -7,6 +7,7 @@ import {
   SCHEDULE_EXCEPTION_ERRORS,
   SCHEDULE_EXCEPTION_MESSAGES,
   ScheduleExceptionValidationUtils,
+  TimezoneConfigUtils,
   USERS_CODES,
   USERS_ERRORS,
   UsersValidationUtils,
@@ -68,7 +69,7 @@ router.get('/revision', Ensure.get(), async (_req: Request, res: Response) => {
 
     R.handleSuccess(res, {
       revision,
-      checked_at: new Date().toISOString(),
+      checked_at: TimezoneConfigUtils.getCurrentTime().toISOString(),
     });
   } catch (error: any) {
     R.handleError(res, HttpStatus.INTERNAL_ERROR, {
@@ -378,7 +379,7 @@ router.get('/user/:userGuid/on-date', Ensure.get(), async (req: Request, res: Re
 
     const date = req.query.date
       ? (req.query.date as string)
-      : new Date().toISOString().split('T')[0];
+      : TimezoneConfigUtils.getCurrentTime().toISOString().split('T')[0];
 
     const paginationOptions = paginationSchema.parse(req.query);
     const views = ValidationUtils.validateView(req.query.view, responseValue.FULL);
@@ -530,7 +531,7 @@ router.get('/active/current', Ensure.get(), async (req: Request, res: Response) 
     const paginationOptions = paginationSchema.parse(req.query);
     const views = ValidationUtils.validateView(req.query.view, responseValue.FULL);
 
-    const today = new Date().toISOString().split('T')[0];
+    const today = TimezoneConfigUtils.getCurrentTime().toISOString().split('T')[0];
     const exceptionList = await ScheduleException._listByDateRange(today, today, paginationOptions);
 
     // Filtrer uniquement les actives

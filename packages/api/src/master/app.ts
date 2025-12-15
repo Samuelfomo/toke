@@ -1,7 +1,8 @@
 import { Server } from 'http';
 
-import express from 'express';
 import cors from 'cors';
+import express from 'express';
+import { TimezoneConfigUtils } from '@toke/shared';
 
 // import dotenv from 'dotenv';
 //
@@ -203,7 +204,7 @@ export default class App {
         const dbStatus = TableInitializer.isInitialized() ? 'connected' : 'disconnected';
 
         // return R.handleSuccess(res, {
-        //   timestamp: new Date().toISOString(),
+        //   timestamp: TimezoneConfigUtils.getCurrentTime().toISOString(),
         //   uptime: process.uptime(),
         //   environment: process.env.NODE_ENV || 'development',
         //   database: dbStatus,
@@ -220,7 +221,7 @@ export default class App {
 
         res.json({
           success: true,
-          timestamp: new Date().toISOString(),
+          timestamp: TimezoneConfigUtils.getCurrentTime().toISOString(),
           uptime: process.uptime(),
           environment: process.env.NODE_ENV || 'development',
           database: dbStatus,
@@ -241,7 +242,7 @@ export default class App {
     this.app.get('/', (req, res) => {
       res.json({
         message: 'API Server is running',
-        timestamp: new Date().toISOString(),
+        timestamp: TimezoneConfigUtils.getCurrentTime().toISOString(),
         endpoints: ['GET /health - Health check', 'GET / - Cette page'],
       });
     });

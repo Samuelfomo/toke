@@ -7,6 +7,7 @@ import {
   SITES_MESSAGES,
   SitesValidationUtils,
   SiteType,
+  TimezoneConfigUtils,
   USERS_CODES,
   USERS_ERRORS,
   UsersValidationUtils,
@@ -59,7 +60,7 @@ router.get('/revision', Ensure.get(), async (_req: Request, res: Response) => {
 
     R.handleSuccess(res, {
       revision,
-      checked_at: new Date().toISOString(),
+      checked_at: TimezoneConfigUtils.getCurrentTime().toISOString(),
     });
   } catch (error: any) {
     R.handleError(res, HttpStatus.INTERNAL_ERROR, {
@@ -246,7 +247,11 @@ router.post('/', Ensure.post(), async (req: Request, res: Response) => {
       .setSiteType(validatedData.site_type || SiteType.MANAGER)
       .setGeofencePolygon(validatedData.geofence_polygon)
       .setGeofenceRadius(validatedData.geofence_radius)
-      .setQRCodeData(validatedData.qr_code_data || { valid_from: new Date().toISOString() });
+      .setQRCodeData(
+        validatedData.qr_code_data || {
+          valid_from: TimezoneConfigUtils.getCurrentTime().toISOString(),
+        },
+      );
 
     if (validatedData.address) {
       siteObj.setAddress(validatedData.address);
@@ -815,7 +820,7 @@ router.patch(
       return R.handleSuccess(res, {
         message: 'Expired sites maintenance completed',
         deactivated_sites: deactivatedCount,
-        processed_at: new Date().toISOString(),
+        processed_at: TimezoneConfigUtils.getCurrentTime().toISOString(),
       });
     } catch (error: any) {
       return R.handleError(res, HttpStatus.INTERNAL_ERROR, {

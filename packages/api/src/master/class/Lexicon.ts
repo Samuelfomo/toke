@@ -3,6 +3,7 @@ import W from '../../tools/watcher.js';
 import G from '../../tools/glossary.js';
 import Revision from '../../tools/revision.js';
 import { responseStructure as RS, tableName } from '../../utils/response.model.js';
+// import { TimezoneConfigUtils } from '@toke/shared';
 
 export default class Lexicon extends LexiconModel {
   constructor() {
@@ -38,7 +39,7 @@ export default class Lexicon extends LexiconModel {
           key,
           value,
         })),
-        // exported_at: new Date().toISOString(),
+        // exported_at: TimezoneConfigUtils.getCurrentTime().toISOString(),
       };
     } else {
       // Export complet toutes langues
@@ -60,7 +61,7 @@ export default class Lexicon extends LexiconModel {
           key,
           ...value,
         })),
-        // exported_at: new Date().toISOString(),
+        // exported_at: TimezoneConfigUtils.getCurrentTime().toISOString(),
       };
     }
   }

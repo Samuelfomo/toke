@@ -8,6 +8,7 @@ import {
   ROTATION_ASSIGNMENT_VALIDATION,
   RotationAssignmentCode,
 } from '../../constants/tenant/rotation.assignments.js';
+import { TimezoneConfigUtils } from '../../utils/timezone.config.validation.js';
 
 // Base schema for common validations
 const baseRotationAssignmentSchema = z.object({
@@ -52,8 +53,7 @@ const baseRotationAssignmentSchema = z.object({
     .datetime(ROTATION_ASSIGNMENT_ERRORS.ASSIGNED_AT_INVALID)
     .or(z.date())
     .optional()
-    .default(() => new Date().toISOString()),
-  // .default(() => TimezoneConfig.getCurrentTime().toISOString()),
+    .default(() => TimezoneConfigUtils.getCurrentTime().toISOString()),
 });
 
 // Schema for creation - all fields required except defaults

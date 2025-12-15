@@ -9,6 +9,7 @@ import {
   TIME_ENTRIES_ERRORS,
   TIME_ENTRIES_MESSAGES,
   TimeEntriesValidationUtils,
+  TimezoneConfigUtils,
   USERS_CODES,
   USERS_ERRORS,
   UsersValidationUtils,
@@ -68,7 +69,7 @@ router.get('/revision', Ensure.get(), async (_req: Request, res: Response) => {
 
     R.handleSuccess(res, {
       revision,
-      checked_at: new Date().toISOString(),
+      checked_at: TimezoneConfigUtils.getCurrentTime().toISOString(),
     });
   } catch (error: any) {
     R.handleError(res, HttpStatus.INTERNAL_ERROR, {
@@ -1225,7 +1226,7 @@ router.post(
 //     return R.handleSuccess(res, {
 //       message: 'Batch synchronization completed',
 //       sync_result: syncResult,
-//       processed_at: new Date().toISOString(),
+//       processed_at: TimezoneConfigUtils.getCurrentTime().toISOString(),
 //     });
 //   } catch (error: any) {
 //     if (error.issues) {
@@ -1803,12 +1804,12 @@ router.get('/attendance/history', Ensure.get(), async (req: Request, res: Respon
     const startDate = start_date
       ? new Date(start_date as string)
       : (() => {
-          const date = new Date();
+          const date = TimezoneConfigUtils.getCurrentTime();
           date.setDate(date.getDate() - 30); // 30 derniers jours par défaut
           return date;
         })();
 
-    const endDate = end_date ? new Date(end_date as string) : new Date();
+    const endDate = end_date ? new Date(end_date as string) : TimezoneConfigUtils.getCurrentTime();
 
     // Construire les conditions
     const conditions: Record<string, any> = {
@@ -2010,12 +2011,14 @@ router.get(
       const startDate = start_date
         ? new Date(start_date as string)
         : (() => {
-            const date = new Date();
+            const date = TimezoneConfigUtils.getCurrentTime();
             date.setMonth(date.getMonth() - 3);
             return date;
           })();
 
-      const endDate = end_date ? new Date(end_date as string) : new Date();
+      const endDate = end_date
+        ? new Date(end_date as string)
+        : TimezoneConfigUtils.getCurrentTime();
 
       // Récupérer toutes les sessions de l'employé dans la période
       const conditions: Record<string, any> = {
@@ -2287,13 +2290,13 @@ router.get('/attendance/statistics', Ensure.get(), async (req: Request, res: Res
     const startDate = start_date
       ? new Date(start_date as string)
       : (() => {
-          const date = new Date();
+          const date = TimezoneConfigUtils.getCurrentTime();
           date.setDate(1); // Premier jour du mois
           date.setHours(0, 0, 0, 0);
           return date;
         })();
 
-    const endDate = end_date ? new Date(end_date as string) : new Date();
+    const endDate = end_date ? new Date(end_date as string) : TimezoneConfigUtils.getCurrentTime();
 
     const conditions: Record<string, any> = {
       session_start_at: {

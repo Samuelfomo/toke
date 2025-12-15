@@ -1,5 +1,5 @@
 import { NextFunction, Request, Response } from 'express';
-import { HttpStatus } from '@toke/shared';
+import { HttpStatus, TimezoneConfigUtils } from '@toke/shared';
 
 import R from '../tools/response.js';
 
@@ -195,7 +195,7 @@ export default class Ensure {
           url: req.originalUrl,
           ip: req.ip,
           userAgent: req.get('User-Agent'),
-          timestamp: new Date().toISOString(),
+          timestamp: TimezoneConfigUtils.getCurrentTime().toISOString(),
         });
 
         return R.handleError(res, HttpStatus.METHOD_NOT_ALLOWED, {

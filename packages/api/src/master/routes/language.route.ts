@@ -6,6 +6,7 @@ import {
   LanguageValidationUtils,
   LS,
   paginationSchema,
+  TimezoneConfigUtils,
 } from '@toke/shared';
 
 import Language from '../class/Language.js';
@@ -55,7 +56,7 @@ router.get('/revision', Ensure.get(), async (req: Request, res: Response) => {
 
     return R.handleSuccess(res, {
       revision,
-      checked_at: new Date().toISOString(),
+      checked_at: TimezoneConfigUtils.getCurrentTime().toISOString(),
     });
   } catch (error: any) {
     console.error('⚠️ Erreur récupération révision:', error);

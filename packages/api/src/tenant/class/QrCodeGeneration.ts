@@ -1,4 +1,4 @@
-import { QR_CODE_DEFAULTS } from '@toke/shared';
+import { QR_CODE_DEFAULTS, TimezoneConfigUtils } from '@toke/shared';
 
 import QrCodeGenerationModel from '../model/QrCodeGenerationModel.js';
 import W from '../../tools/watcher.js';
@@ -180,14 +180,18 @@ export default class QrCodeGeneration extends QrCodeGenerationModel {
       return false;
     }
     return (
-      new Date(new Date().toLocaleString('en-US', { timeZone: 'Africa/Douala' })) > this.valid_to
+      new Date(
+        TimezoneConfigUtils.getCurrentTime().toLocaleString('en-US', { timeZone: 'Africa/Douala' }),
+      ) > this.valid_to
     );
-    // return new Date() > this.valid_to;
+    // return TimezoneConfigUtils.getCurrentTime() > this.valid_to;
   }
 
   isActive(): boolean {
-    const now = new Date(new Date().toLocaleString('en-US', { timeZone: 'Africa/Douala' }));
-    // const now = new Date();
+    const now = new Date(
+      TimezoneConfigUtils.getCurrentTime().toLocaleString('en-US', { timeZone: 'Africa/Douala' }),
+    );
+    // const now = TimezoneConfigUtils.getCurrentTime();
     const afterStart = !this.valid_from || now >= this.valid_from;
     const beforeEnd = !this.valid_to || now <= this.valid_to;
     return afterStart && beforeEnd;
@@ -201,8 +205,10 @@ export default class QrCodeGeneration extends QrCodeGenerationModel {
     if (!this.valid_to) {
       return null;
     }
-    const now = new Date(new Date().toLocaleString('en-US', { timeZone: 'Africa/Douala' }));
-    // const now = new Date();
+    const now = new Date(
+      TimezoneConfigUtils.getCurrentTime().toLocaleString('en-US', { timeZone: 'Africa/Douala' }),
+    );
+    // const now = TimezoneConfigUtils.getCurrentTime();
     const diff = this.valid_to.getTime() - now.getTime();
     return Math.ceil(diff / (1000 * 60 * 60 * 24));
   }

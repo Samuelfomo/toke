@@ -8,6 +8,7 @@ import {
   ROTATION_GROUP_ERRORS,
   ROTATION_GROUP_MESSAGES,
   RotationGroupValidationUtils,
+  TimezoneConfigUtils,
   validateRotationGroupCreation,
   validateRotationGroupFilters,
   validateRotationGroupUpdate,
@@ -64,7 +65,7 @@ router.get('/revision', Ensure.get(), async (_req: Request, res: Response) => {
 
     R.handleSuccess(res, {
       revision,
-      checked_at: new Date().toISOString(),
+      checked_at: TimezoneConfigUtils.getCurrentTime().toISOString(),
     });
   } catch (error: any) {
     R.handleError(res, HttpStatus.INTERNAL_ERROR, {
@@ -480,7 +481,7 @@ router.get('/:guid/schedule-preview', Ensure.get(), async (req: Request, res: Re
     }
 
     const preview: any[] = [];
-    const today = new Date();
+    const today = TimezoneConfigUtils.getCurrentTime();
 
     for (let i = 0; i < days; i++) {
       const targetDate = new Date(today);

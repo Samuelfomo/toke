@@ -12,6 +12,7 @@ import {
   PAYMENT_TRANSACTION_ERRORS,
   PaymentTransactionStatus,
   PT,
+  TimezoneConfigUtils,
 } from '@toke/shared';
 
 import PaymentTransaction from '../class/PaymentTransaction.js';
@@ -64,7 +65,7 @@ router.get('/revision', Ensure.get(), async (_req: Request, res: Response) => {
 
     R.handleSuccess(res, {
       revision,
-      checked_at: new Date().toISOString(),
+      checked_at: TimezoneConfigUtils.getCurrentTime().toISOString(),
     });
   } catch (error: any) {
     console.error('⚠️ Erreur récupération révision:', error);

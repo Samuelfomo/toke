@@ -3,6 +3,7 @@ import { Server } from 'http';
 import dotenv from 'dotenv';
 import express from 'express';
 import cors from 'cors';
+import { TimezoneConfigUtils } from '@toke/shared';
 
 import tenantRoute from './src/routes/tenant.route.js';
 import userRoute from './src/routes/user.route.js';
@@ -136,7 +137,7 @@ export default class App {
       this.asyncHandler(async (req: any, res: any) => {
         res.json({
           success: true,
-          timestamp: new Date().toISOString(),
+          timestamp: TimezoneConfigUtils.getCurrentTime().toISOString(),
           uptime: process.uptime(),
           environment: process.env.NODE_ENV || 'development',
         });
@@ -147,7 +148,7 @@ export default class App {
     this.app.get('/', (req, res) => {
       res.json({
         message: 'API Server is running',
-        timestamp: new Date().toISOString(),
+        timestamp: TimezoneConfigUtils.getCurrentTime().toISOString(),
         endpoints: ['GET /health - Health check', 'GET / - Cette page'],
       });
     });

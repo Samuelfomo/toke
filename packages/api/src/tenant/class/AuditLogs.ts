@@ -1,3 +1,5 @@
+import { TimezoneConfigUtils } from '@toke/shared';
+
 import AuditLogsModel from '../model/AuditLogsModel.js';
 import { responseStructure as RS, responseValue, ViewMode } from '../../utils/response.model.js';
 
@@ -133,9 +135,9 @@ export default class AuditLogs extends AuditLogsModel {
 
   static async generateGDPRReport(user_id: number): Promise<any> {
     const model = new AuditLogs();
-    const twoYearsAgo = new Date();
+    const twoYearsAgo = TimezoneConfigUtils.getCurrentTime();
     twoYearsAgo.setFullYear(twoYearsAgo.getFullYear() - 2);
-    const now = new Date();
+    const now = TimezoneConfigUtils.getCurrentTime();
 
     const accessLogs = await model.findSensitiveDataAccess(user_id, twoYearsAgo, now);
 
@@ -150,7 +152,7 @@ export default class AuditLogs extends AuditLogsModel {
 
     return {
       data_subject_id: user_id,
-      report_generated_at: new Date().toISOString(),
+      report_generated_at: TimezoneConfigUtils.getCurrentTime().toISOString(),
       period_covered: { start: twoYearsAgo, end: now },
       total_access_events: dataAccess.length,
       data_access_log: dataAccess,

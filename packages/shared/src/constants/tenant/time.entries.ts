@@ -1,4 +1,4 @@
-// constants/time_entries.ts
+// constants/time.entries.ts
 
 export enum PointageType {
   CLOCK_IN = 'clock_in',

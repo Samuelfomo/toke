@@ -1,6 +1,7 @@
 import { QueryTypes, Sequelize } from 'sequelize';
 
 import { TableInitializer } from './db.initializer.js';
+// import { TimezoneConfigUtils } from '@toke/shared';
 
 /**
  * Classe de base simple pour les modèles
@@ -249,6 +250,7 @@ export default abstract class BaseModel {
 
       // Générer le timestamp: YYYYMMDDHHMMSS
       const now = new Date();
+      // const now = TimezoneConfigUtils.getCurrentTime();
       const timestamp = [
         now.getFullYear(),
         (now.getMonth() + 1).toString().padStart(2, '0'),
@@ -571,7 +573,7 @@ export default abstract class BaseModel {
 //       }
 //
 //       // Générer le timestamp: YYYYMMDDHHMMSS
-//       const now = new Date();
+//       const now = TimezoneConfigUtils.getCurrentTime();
 //       const timestamp = [
 //         now.getFullYear(),
 //         (now.getMonth() + 1).toString().padStart(2, '0'),

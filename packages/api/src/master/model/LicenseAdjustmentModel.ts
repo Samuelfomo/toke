@@ -1,5 +1,5 @@
 import { Op } from 'sequelize';
-import { PaymentTransactionStatus } from '@toke/shared';
+import { PaymentTransactionStatus, TimezoneConfigUtils } from '@toke/shared';
 
 import BaseModel from '../database/db.base.js';
 import { tableName } from '../../utils/response.model.js';
@@ -300,7 +300,7 @@ export default class LicenseAdjustmentModel extends BaseModel {
    */
   protected async markInvoiceSent(id: number, sent_at?: Date): Promise<boolean> {
     const updateData = {
-      [this.db.invoice_sent_at]: sent_at || new Date(),
+      [this.db.invoice_sent_at]: sent_at || TimezoneConfigUtils.getCurrentTime(),
     };
 
     const affected = await this.updateOne(this.db.tableName, updateData, { [this.db.id]: id });
@@ -323,7 +323,7 @@ export default class LicenseAdjustmentModel extends BaseModel {
     const lastID = await this.insertOne(this.db.tableName, {
       [this.db.guid]: guid,
       [this.db.global_license]: this.global_license,
-      [this.db.adjustment_date]: this.adjustment_date || new Date(),
+      [this.db.adjustment_date]: this.adjustment_date || TimezoneConfigUtils.getCurrentTime(),
       [this.db.employees_added_count]: this.employees_added_count,
       [this.db.months_remaining]: this.months_remaining,
       [this.db.price_per_employee_usd]: this.price_per_employee_usd,

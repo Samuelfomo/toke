@@ -7,6 +7,7 @@ import {
   ROLES_ERRORS,
   RolesValidationUtils,
   TENANT_CODES,
+  TimezoneConfigUtils,
   validateRolesCreation,
   validateRolesFilters,
   validateRolesUpdate,
@@ -50,7 +51,7 @@ router.get('/revision', Ensure.get(), async (_req: Request, res: Response) => {
 
     R.handleSuccess(res, {
       revision,
-      checked_at: new Date().toISOString(),
+      checked_at: TimezoneConfigUtils.getCurrentTime().toISOString(),
     });
   } catch (error: any) {
     R.handleError(res, HttpStatus.INTERNAL_ERROR, {

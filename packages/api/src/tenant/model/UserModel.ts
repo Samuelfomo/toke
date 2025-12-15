@@ -1,4 +1,9 @@
-import { USERS_DEFAULTS, USERS_ERRORS, UsersValidationUtils } from '@toke/shared';
+import {
+  TimezoneConfigUtils,
+  USERS_DEFAULTS,
+  USERS_ERRORS,
+  UsersValidationUtils,
+} from '@toke/shared';
 import { Op } from 'sequelize';
 import * as bcrypt from 'bcrypt';
 
@@ -30,6 +35,7 @@ export default class UserModel extends BaseModel {
     otp_expires_at: 'otp_expires_at',
     device_token: 'device_token',
     session_template: 'session_template',
+    assigned_sessions: 'assigned_sessions',
 
     // QR Code Manager
     qr_code_token: 'qr_code_token',
@@ -66,6 +72,7 @@ export default class UserModel extends BaseModel {
   protected employee_code?: string;
   protected device_token?: string;
   protected session_template: number | null = null;
+  protected assigned_sessions: any;
 
   // ⚠️ NE PAS HACHER ICI : Sequelize le fait automatiquement
   protected pin_hash?: string;
@@ -178,7 +185,7 @@ export default class UserModel extends BaseModel {
     return await this.findOne(this.db.tableName, {
       [this.db.otp_token]: otp_token,
       [this.db.otp_expires_at]: {
-        [Op.gt]: new Date(), // OTP non expiré
+        [Op.gt]: TimezoneConfigUtils.getCurrentTime(), // OTP non expiré
       },
       [this.db.deleted_at]: null,
       [this.db.active]: true,
@@ -196,7 +203,7 @@ export default class UserModel extends BaseModel {
     return await this.findOne(this.db.tableName, {
       [this.db.qr_code_token]: qr_code_token,
       [this.db.qr_code_expires_at]: {
-        [Op.gt]: new Date(), // QR Code non expiré
+        [Op.gt]: TimezoneConfigUtils.getCurrentTime(), // QR Code non expiré
       },
       [this.db.deleted_at]: null,
       [this.db.active]: true,
@@ -690,7 +697,7 @@ export default class UserModel extends BaseModel {
     const affected = await this.updateOne(
       this.db.tableName,
       {
-        [this.db.deleted_at]: new Date(),
+        [this.db.deleted_at]: TimezoneConfigUtils.getCurrentTime(),
         [this.db.active]: false,
       },
       { [this.db.id]: id },

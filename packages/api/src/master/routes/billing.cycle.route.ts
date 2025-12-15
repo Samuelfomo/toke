@@ -10,6 +10,7 @@ import {
   GlobalLicenseValidationUtils,
   HttpStatus,
   paginationSchema,
+  TimezoneConfigUtils,
 } from '@toke/shared';
 import { Op } from 'sequelize';
 
@@ -61,7 +62,7 @@ router.get('/revision', Ensure.get(), async (_req: Request, res: Response) => {
 
     R.handleSuccess(res, {
       revision,
-      checked_at: new Date().toISOString(),
+      checked_at: TimezoneConfigUtils.getCurrentTime().toISOString(),
     });
   } catch (error: any) {
     console.error('⚠️ Erreur récupération révision:', error);

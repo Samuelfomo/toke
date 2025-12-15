@@ -1,6 +1,7 @@
 import {
   PointageType,
   SessionStatus,
+  TimezoneConfigUtils,
   WORK_SESSIONS_ERRORS,
   WorkSessionsValidationUtils,
 } from '@toke/shared';
@@ -87,7 +88,7 @@ export default class WorkSessionsModel extends BaseModel {
   // === DÉTECTION SESSIONS ABANDONNÉES ===
 
   protected async listAllAbandonedSessions(hoursThreshold: number = 24): Promise<any[]> {
-    const thresholdDate = new Date();
+    const thresholdDate = TimezoneConfigUtils.getCurrentTime();
     thresholdDate.setHours(thresholdDate.getHours() - hoursThreshold);
 
     return await this.findAll(this.db.tableName, {
@@ -186,7 +187,9 @@ export default class WorkSessionsModel extends BaseModel {
     }
 
     const startTime = new Date(sessionData.session_start_at);
-    const endTime = sessionData.session_end_at ? new Date(sessionData.session_end_at) : new Date();
+    const endTime = sessionData.session_end_at
+      ? new Date(sessionData.session_end_at)
+      : TimezoneConfigUtils.getCurrentTime();
 
     // Calcul durée brute
     const totalMs = endTime.getTime() - startTime.getTime();
@@ -402,7 +405,7 @@ export default class WorkSessionsModel extends BaseModel {
 
     return sessions.filter((session) => {
       const startTime = new Date(session.session_start_at);
-      const currentTime = new Date();
+      const currentTime = TimezoneConfigUtils.getCurrentTime();
       const durationHours = (currentTime.getTime() - startTime.getTime()) / (1000 * 60 * 60);
       return durationHours > max_duration_hours;
     });

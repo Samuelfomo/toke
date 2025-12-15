@@ -1,3 +1,5 @@
+import { TimezoneConfigUtils } from '../../utils/timezone.config.validation.js';
+
 export const SESSION_TEMPLATE_VALIDATION = {
   GUID: {
     MIN_LENGTH: 1,
@@ -18,7 +20,7 @@ export const SESSION_TEMPLATE_VALIDATION = {
 } as const;
 
 export const SESSION_TEMPLATE_DEFAULTS = {
-  VALID_FROM: new Date(),
+  VALID_FROM: TimezoneConfigUtils.getCurrentTime(),
   IS_DEFAULT: false,
   PAGINATION: {
     OFFSET: 0,

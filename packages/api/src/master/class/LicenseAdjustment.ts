@@ -1,4 +1,4 @@
-import { PaymentTransactionStatus } from '@toke/shared';
+import { PaymentTransactionStatus, TimezoneConfigUtils } from '@toke/shared';
 
 import LicenseAdjustmentModel from '../model/LicenseAdjustmentModel.js';
 import W from '../../tools/watcher.js';
@@ -484,7 +484,7 @@ export default class LicenseAdjustment extends LicenseAdjustmentModel {
    */
   getDaysSinceAdjustment(): number {
     if (!this.adjustment_date) return -1;
-    const now = new Date();
+    const now = TimezoneConfigUtils.getCurrentTime();
     const adjustmentDate = new Date(this.adjustment_date);
     const diffTime = now.getTime() - adjustmentDate.getTime();
     return Math.floor(diffTime / (1000 * 60 * 60 * 24));
@@ -495,7 +495,7 @@ export default class LicenseAdjustment extends LicenseAdjustmentModel {
    */
   getDaysSinceInvoiceSent(): number {
     if (!this.invoice_sent_at) return -1;
-    const now = new Date();
+    const now = TimezoneConfigUtils.getCurrentTime();
     const sentDate = new Date(this.invoice_sent_at);
     const diffTime = now.getTime() - sentDate.getTime();
     return Math.floor(diffTime / (1000 * 60 * 60 * 24));
@@ -506,7 +506,7 @@ export default class LicenseAdjustment extends LicenseAdjustmentModel {
    */
   getDaysSincePaymentCompleted(): number {
     if (!this.payment_completed_at) return -1;
-    const now = new Date();
+    const now = TimezoneConfigUtils.getCurrentTime();
     const paymentDate = new Date(this.payment_completed_at);
     const diffTime = now.getTime() - paymentDate.getTime();
     return Math.floor(diffTime / (1000 * 60 * 60 * 24));
@@ -537,7 +537,7 @@ export default class LicenseAdjustment extends LicenseAdjustmentModel {
     if (!this.id) return false;
     const result = await this.markInvoiceSent(this.id, sent_at);
     if (result) {
-      this.invoice_sent_at = sent_at || new Date();
+      this.invoice_sent_at = sent_at || TimezoneConfigUtils.getCurrentTime();
     }
     return result;
   }

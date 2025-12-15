@@ -1,4 +1,4 @@
-import { USERS_DEFAULTS } from '@toke/shared';
+import { TimezoneConfigUtils, USERS_DEFAULTS } from '@toke/shared';
 
 import UserModel from '../model/UserModel.js';
 import W from '../../tools/watcher.js';
@@ -118,7 +118,11 @@ export default class User extends UserModel {
    * @returns true si OTP expiré et nettoyé, false sinon
    */
   async clearExpiredOtp(): Promise<boolean> {
-    if (this.otp_token && this.otp_expires_at && new Date() > this.otp_expires_at) {
+    if (
+      this.otp_token &&
+      this.otp_expires_at &&
+      TimezoneConfigUtils.getCurrentTime() > this.otp_expires_at
+    ) {
       await this.clearOtp();
       return true;
     }
@@ -415,7 +419,7 @@ export default class User extends UserModel {
     if (!this.otp_token || !this.otp_expires_at) {
       return false;
     }
-    if (new Date() > this.otp_expires_at) {
+    if (TimezoneConfigUtils.getCurrentTime() > this.otp_expires_at) {
       return false;
     }
     return this.otp_token === otp;
@@ -442,7 +446,7 @@ export default class User extends UserModel {
     if (!this.qr_code_token || !this.qr_code_expires_at) {
       return false;
     }
-    return new Date() < this.qr_code_expires_at;
+    return TimezoneConfigUtils.getCurrentTime() < this.qr_code_expires_at;
   }
 
   // ============================================
@@ -472,7 +476,7 @@ export default class User extends UserModel {
   }
 
   // async updateLastLogin(): Promise<void> {
-  //   this.last_login_at = new Date();
+  //   this.last_login_at = TimezoneConfigUtils.getCurrentTime();
   //   if (this.id) {
   //     await this.updateOne(
   //       this.db.tableName,
@@ -504,14 +508,14 @@ export default class User extends UserModel {
 
   getDaysUntilHire(): number | null {
     if (!this.hire_date) return null;
-    const today = new Date();
+    const today = TimezoneConfigUtils.getCurrentTime();
     const diffTime = this.hire_date.getTime() - today.getTime();
     return Math.ceil(diffTime / (1000 * 60 * 60 * 24));
   }
 
   getDaysSinceLastLogin(): number | null {
     if (!this.last_login_at) return null;
-    const today = new Date();
+    const today = TimezoneConfigUtils.getCurrentTime();
     const diffTime = today.getTime() - this.last_login_at.getTime();
     return Math.floor(diffTime / (1000 * 60 * 60 * 24));
   }

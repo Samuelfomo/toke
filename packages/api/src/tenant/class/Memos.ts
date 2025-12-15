@@ -1,4 +1,4 @@
-import { MemoContent, MemoStatus, MemoType, Message } from '@toke/shared';
+import { MemoContent, MemoStatus, MemoType, Message, TimezoneConfigUtils } from '@toke/shared';
 
 import MemosModel from '../model/MemosModel.js';
 import W from '../../tools/watcher.js';
@@ -367,7 +367,7 @@ export default class Memos extends MemosModel {
   isUrgent(): boolean {
     if (!this.incident_datetime) return false;
 
-    const now = new Date();
+    const now = TimezoneConfigUtils.getCurrentTime();
     const twoDaysFromNow = new Date(now);
     twoDaysFromNow.setDate(twoDaysFromNow.getDate() + 2);
 

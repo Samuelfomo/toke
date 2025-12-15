@@ -11,6 +11,7 @@ import {
   TENANT_CODES,
   TENANT_ERRORS,
   TenantValidationUtils,
+  TimezoneConfigUtils,
   TN,
 } from '@toke/shared';
 
@@ -77,7 +78,7 @@ router.get('/revision', Ensure.get(), async (req: Request, res: Response) => {
 
     R.handleSuccess(res, {
       revision,
-      checked_at: new Date().toISOString(),
+      checked_at: TimezoneConfigUtils.getCurrentTime().toISOString(),
     });
   } catch (error: any) {
     console.error('⚠️ Erreur récupération révision:', error);

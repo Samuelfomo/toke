@@ -8,6 +8,7 @@ import {
   PointageStatus,
   PointageType,
   SessionStatus,
+  TimezoneConfigUtils,
 } from '@toke/shared';
 import { Op } from 'sequelize';
 
@@ -22,7 +23,6 @@ import { RoleValues } from '../utils/response.model.js';
 import QrCodeGeneration from '../tenant/class/QrCodeGeneration.js';
 import OrgHierarchy from '../tenant/class/OrgHierarchy.js';
 import User from '../tenant/class/User.js';
-import TimezoneConfig from '../utils/timezone.config.js';
 
 import { FCMService } from './notification.service.js';
 import ScheduleResolutionService, { ApplicableSchedule } from './schedule.resolution.service.js';
@@ -196,7 +196,7 @@ class AnomalyDetectionService {
           session_start: activeSession.getSessionStartAt(),
           duration_hours: this.calculateDurationHours(
             activeSession.getSessionStartAt()!,
-            TimezoneConfig.getCurrentTime(),
+            TimezoneConfigUtils.getCurrentTime(),
           ),
         },
         auto_correctable: true,
@@ -870,7 +870,7 @@ class AnomalyDetectionService {
       .setMemoContent(
         [
           {
-            created_at: TimezoneConfig.getCurrentTime().toISOString(),
+            created_at: TimezoneConfigUtils.getCurrentTime().toISOString(),
             user: userAuthor?.getGuid()!,
             message: [
               {
@@ -1338,7 +1338,7 @@ ${
   }
 
   private async getTodayPausesCount(userId: number): Promise<number> {
-    const today = new Date();
+    const today = TimezoneConfigUtils.getCurrentTime();
     today.setHours(0, 0, 0, 0);
 
     const pauses = await TimeEntries._list({

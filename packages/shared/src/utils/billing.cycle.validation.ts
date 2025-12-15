@@ -1,6 +1,8 @@
 // utils/billing.cycle.validation.ts
 import { BILLING_CYCLE_VALIDATION, BillingStatus } from '../constants/billing.cycle.js';
 
+import { TimezoneConfigUtils } from './timezone.config.validation.js';
+
 export class BillingCycleValidationUtils {
   /**
    * Validates global master ID
@@ -14,7 +16,7 @@ export class BillingCycleValidationUtils {
    */
   static validatePeriodStart(date: Date | string): boolean {
     const startDate = new Date(date);
-    return !isNaN(startDate.getTime()) && startDate <= new Date();
+    return !isNaN(startDate.getTime()) && startDate <= TimezoneConfigUtils.getCurrentTime();
   }
 
   /**
@@ -111,7 +113,7 @@ export class BillingCycleValidationUtils {
       return !isNaN(end.getTime()) && due >= end;
     }
 
-    return due >= new Date();
+    return due >= TimezoneConfigUtils.getCurrentTime();
   }
 
   /**
@@ -205,7 +207,7 @@ export class BillingCycleValidationUtils {
     const due = new Date(paymentDueDate);
     if (isNaN(due.getTime())) return false;
 
-    const now = new Date();
+    const now = TimezoneConfigUtils.getCurrentTime();
     return now > due && billingStatus !== BillingStatus.COMPLETED;
   }
 
@@ -216,8 +218,8 @@ export class BillingCycleValidationUtils {
     const due = new Date(paymentDueDate);
     if (isNaN(due.getTime())) return false;
 
-    const now = new Date();
-    const warningDate = new Date();
+    const now = TimezoneConfigUtils.getCurrentTime();
+    const warningDate = TimezoneConfigUtils.getCurrentTime();
     warningDate.setDate(warningDate.getDate() + days);
 
     return due <= warningDate && due >= now;

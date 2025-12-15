@@ -1,4 +1,4 @@
-import { SiteType } from '@toke/shared';
+import { SiteType, TimezoneConfigUtils } from '@toke/shared';
 
 import SiteModel from '../model/SiteModel.js';
 import W from '../../tools/watcher.js';
@@ -334,7 +334,7 @@ export default class Site extends SiteModel {
     const autoExpireDate = this.qr_code_data?.auto_expire_date;
     if (!autoExpireDate) return false;
 
-    return new Date() > new Date(autoExpireDate);
+    return TimezoneConfigUtils.getCurrentTime() > new Date(autoExpireDate);
   }
 
   getDaysUntilExpiration(): number | null {
@@ -343,7 +343,7 @@ export default class Site extends SiteModel {
     const autoExpireDate = this.qr_code_data?.auto_expire_date;
     if (!autoExpireDate) return null;
 
-    const today = new Date();
+    const today = TimezoneConfigUtils.getCurrentTime();
     const expirationDate = new Date(autoExpireDate);
     const diffTime = expirationDate.getTime() - today.getTime();
     return Math.floor(diffTime / (1000 * 60 * 60 * 24));
@@ -363,7 +363,7 @@ export default class Site extends SiteModel {
       ...this.qr_code_data,
       auto_expire_date: new_end_date.toISOString(),
       extended_by: approved_by,
-      extended_at: new Date().toISOString(),
+      extended_at: TimezoneConfigUtils.getCurrentTime().toISOString(),
     };
     await this.save();
   }

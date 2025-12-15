@@ -7,6 +7,7 @@ import {
   AuditOperation,
   ChangedByType,
 } from '../../constants/tenant/audit.logs.js';
+import { TimezoneConfigUtils } from '../../utils/timezone.config.validation.js';
 
 // Schema pour valider les adresses IP (IPv4 et IPv6)
 const ipAddressSchema = z.string().refine((ip) => {
@@ -225,7 +226,7 @@ export const validateAuditLogsGuid = (guid: any) => {
 // Validation des politiques de rétention (logique métier)
 export const validateRetentionPolicy = (changeDate: Date, retentionDays: number = 2555) => {
   // ~7 ans par défaut
-  const cutoffDate = new Date();
+  const cutoffDate = TimezoneConfigUtils.getCurrentTime();
   cutoffDate.setDate(cutoffDate.getDate() - retentionDays);
 
   if (changeDate < cutoffDate) {

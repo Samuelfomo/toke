@@ -1,5 +1,7 @@
 // shared/src/utils/country.formatting.ts
 
+import { TimezoneConfigUtils } from './timezone.config.validation.js';
+
 export class CountryFormattingUtils {
   /**
    * Formate un code pays (ISO 3166-1) en majuscules
@@ -125,7 +127,7 @@ export class DateFormattingUtils {
    * Calcule le temps relatif ("il y a 2 heures")
    */
   static timeAgo(date: Date | string, locale = 'fr'): string {
-    const now = new Date();
+    const now = TimezoneConfigUtils.getCurrentTime();
     const past = typeof date === 'string' ? new Date(date) : date;
     const diffMs = now.getTime() - past.getTime();
     const diffMins = Math.floor(diffMs / 60000);

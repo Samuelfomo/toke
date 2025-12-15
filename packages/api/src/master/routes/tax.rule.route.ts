@@ -5,6 +5,7 @@ import {
   TAX_RULE_CODES,
   TAX_RULE_ERRORS,
   TaxRuleValidationUtils,
+  TimezoneConfigUtils,
   TR,
 } from '@toke/shared';
 
@@ -55,7 +56,7 @@ router.get('/revision', Ensure.get(), async (_req: Request, res: Response) => {
 
     R.handleSuccess(res, {
       revision,
-      checked_at: new Date().toISOString(),
+      checked_at: TimezoneConfigUtils.getCurrentTime().toISOString(),
     });
   } catch (error: any) {
     console.error('⚠️ Erreur récupération révision:', error);

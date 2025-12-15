@@ -4,6 +4,7 @@ import {
   ORG_HIERARCHY_VALIDATION,
   RelationshipType,
 } from '../../constants/tenant/org.hierarchy.js';
+import { TimezoneConfigUtils } from '../timezone.config.validation.js';
 
 export class OrgHierarchyValidationUtils {
   /**
@@ -79,7 +80,7 @@ export class OrgHierarchyValidationUtils {
     if (isNaN(date.getTime())) return false;
 
     // Effective from cannot be in the future (allowing same day)
-    const today = new Date();
+    const today = TimezoneConfigUtils.getCurrentTime();
     today.setHours(23, 59, 59, 999); // End of today
     return date <= today;
   }
@@ -247,7 +248,7 @@ export class OrgHierarchyValidationUtils {
    * Checks if a relationship is currently effective
    */
   static isEffective(relationship: any, checkDate?: Date): boolean {
-    const date = checkDate || new Date();
+    const date = checkDate || TimezoneConfigUtils.getCurrentTime();
     const effectiveFrom = new Date(relationship.effective_from);
     const effectiveTo = relationship.effective_to ? new Date(relationship.effective_to) : null;
 
@@ -382,7 +383,7 @@ export class OrgHierarchyValidationUtils {
     }
 
     if (data.effective_from !== undefined || data.effective_to !== undefined) {
-      const from = data.effective_from || new Date(); // Use current date if not provided
+      const from = data.effective_from || TimezoneConfigUtils.getCurrentTime(); // Use current date if not provided
       const to = data.effective_to;
       validations.push(this.validateEffectiveDateLogic(from, to));
     }

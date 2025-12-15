@@ -5,6 +5,7 @@ import {
   AuditOperation,
   ChangedByType,
 } from '../../constants/tenant/audit.logs.js';
+import { TimezoneConfigUtils } from '../timezone.config.validation.js';
 
 export class AuditLogsValidationUtils {
   /**
@@ -551,7 +552,7 @@ export class AuditLogsValidationUtils {
     // Check retention policy
     if (data.changed_at) {
       const changeDate = new Date(data.changed_at);
-      const cutoffDate = new Date();
+      const cutoffDate = TimezoneConfigUtils.getCurrentTime();
       cutoffDate.setDate(cutoffDate.getDate() - retentionDays);
 
       if (changeDate < cutoffDate) {

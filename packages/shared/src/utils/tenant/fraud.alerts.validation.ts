@@ -5,6 +5,7 @@ import {
   FRAUD_ALERTS_DEFAULTS,
   FRAUD_ALERTS_VALIDATION,
 } from '../../constants/tenant/fraud.alerts.js';
+import { TimezoneConfigUtils } from '../timezone.config.validation.js';
 
 export class FraudAlertsValidationUtils {
   /**
@@ -164,7 +165,7 @@ export class FraudAlertsValidationUtils {
     if (isNaN(date.getTime())) return false;
 
     // Investigation date cannot be in the future
-    const now = new Date();
+    const now = TimezoneConfigUtils.getCurrentTime();
     return date <= now;
   }
 

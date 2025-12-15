@@ -244,9 +244,9 @@ export default class GlobalLicenseModel extends BaseModel {
     days: number = 30,
     paginationOptions: { offset?: number; limit?: number } = {},
   ): Promise<any[]> {
-    const futureDate = new Date();
+    const futureDate = TimezoneConfigUtils.getCurrentTime();
     futureDate.setDate(futureDate.getDate() + days);
-    const now = new Date();
+    const now = TimezoneConfigUtils.getCurrentTime();
 
     const params: any[] = [futureDate, now];
     let paramIndex = 3;
@@ -282,7 +282,7 @@ export default class GlobalLicenseModel extends BaseModel {
   protected async listAllExpired(
     paginationOptions: { offset?: number; limit?: number } = {},
   ): Promise<any[]> {
-    const now = new Date();
+    const now = TimezoneConfigUtils.getCurrentTime();
     const params: any[] = [now];
     let paramIndex = 2;
 

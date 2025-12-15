@@ -3,6 +3,7 @@ import {
   BillingStatus,
   LicenseStatus,
   PaymentTransactionStatus,
+  TimezoneConfigUtils,
   Type,
 } from '@toke/shared';
 
@@ -290,7 +291,7 @@ export default class GlobalLicense extends GlobalLicenseModel {
    */
   isExpired(): boolean {
     if (!this.current_period_end) return false;
-    return new Date() > new Date(this.current_period_end);
+    return TimezoneConfigUtils.getCurrentTime() > new Date(this.current_period_end);
   }
 
   /**
@@ -298,7 +299,7 @@ export default class GlobalLicense extends GlobalLicenseModel {
    */
   isExpiringSoon(days: number = 30): boolean {
     if (!this.current_period_end) return false;
-    const warningDate = new Date();
+    const warningDate = TimezoneConfigUtils.getCurrentTime();
     warningDate.setDate(warningDate.getDate() + days);
     return new Date(this.current_period_end) <= warningDate && !this.isExpired();
   }
@@ -326,7 +327,7 @@ export default class GlobalLicense extends GlobalLicenseModel {
    */
   getDaysRemaining(): number {
     if (!this.current_period_end) return 0;
-    const now = new Date();
+    const now = TimezoneConfigUtils.getCurrentTime();
     const end = new Date(this.current_period_end);
     const diffTime = end.getTime() - now.getTime();
     return Math.max(0, Math.ceil(diffTime / (1000 * 60 * 60 * 24)));
@@ -665,7 +666,7 @@ export default class GlobalLicense extends GlobalLicenseModel {
     // Créer une transaction fictive pour l'avenant (montant 0 car cycle de base)
     const dummyAdjustment = new LicenseAdjustment()
       .setGlobalLicense(this.id!)
-      .setAdjustmentDate(new Date())
+      .setAdjustmentDate(TimezoneConfigUtils.getCurrentTime())
       .setEmployeesAddedCount(this.minimum_seats!)
       .setMonthsRemaining(Number(this.billing_cycle_months || 1))
       .setPricePerEmployeeUsd(this.base_price_usd || 0)
@@ -1008,7 +1009,7 @@ export default class GlobalLicense extends GlobalLicenseModel {
 //    */
 //   isExpired(): boolean {
 //     if (!this.current_period_end) return false;
-//     return new Date() > new Date(this.current_period_end);
+//     return TimezoneConfigUtils.getCurrentTime() > new Date(this.current_period_end);
 //   }
 //
 //   /**
@@ -1016,7 +1017,7 @@ export default class GlobalLicense extends GlobalLicenseModel {
 //    */
 //   isExpiringSoon(days: number = 30): boolean {
 //     if (!this.current_period_end) return false;
-//     const warningDate = new Date();
+//     const warningDate = TimezoneConfigUtils.getCurrentTime();
 //     warningDate.setDate(warningDate.getDate() + days);
 //     return new Date(this.current_period_end) <= warningDate && !this.isExpired();
 //   }
@@ -1043,7 +1044,7 @@ export default class GlobalLicense extends GlobalLicenseModel {
 //    */
 //   getDaysRemaining(): number {
 //     if (!this.current_period_end) return 0;
-//     const now = new Date();
+//     const now = TimezoneConfigUtils.getCurrentTime();
 //     const end = new Date(this.current_period_end);
 //     const diffTime = end.getTime() - now.getTime();
 //     return Math.max(0, Math.ceil(diffTime / (1000 * 60 * 60 * 24)));

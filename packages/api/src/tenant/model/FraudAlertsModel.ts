@@ -1,6 +1,6 @@
 // src/api/model/FraudAlertsModel.ts
 
-import { FRAUD_ALERTS_ERRORS, FraudAlertsValidationUtils } from '@toke/shared';
+import { FRAUD_ALERTS_ERRORS, FraudAlertsValidationUtils, TimezoneConfigUtils } from '@toke/shared';
 import { Op } from 'sequelize';
 
 import BaseModel from '../database/db.base.js';
@@ -223,7 +223,7 @@ export default class FraudAlertsModel extends BaseModel {
       critical_count: number;
     }>
   > {
-    const cutoffDate = new Date();
+    const cutoffDate = TimezoneConfigUtils.getCurrentTime();
     cutoffDate.setDate(cutoffDate.getDate() - days);
 
     // 1. Récupérer toutes les alertes non-false-positive depuis cutoffDate
@@ -295,7 +295,7 @@ export default class FraudAlertsModel extends BaseModel {
       affected_sites: string[];
     }>
   > {
-    const cutoffDate = new Date();
+    const cutoffDate = TimezoneConfigUtils.getCurrentTime();
     cutoffDate.setDate(cutoffDate.getDate() - days);
 
     // 1. Récupérer toutes les alertes de l'utilisateur
@@ -371,7 +371,7 @@ export default class FraudAlertsModel extends BaseModel {
     const updates = {
       [this.db.investigated]: true,
       [this.db.investigation_notes]: notes,
-      [this.db.investigated_at]: new Date(),
+      [this.db.investigated_at]: TimezoneConfigUtils.getCurrentTime(),
     };
 
     const affectedRows = await this.updateOne(this.db.tableName, updates, {
@@ -390,7 +390,7 @@ export default class FraudAlertsModel extends BaseModel {
       [this.db.false_positive]: true,
       [this.db.investigated]: true,
       [this.db.investigation_notes]: `False positive: ${reason}`,
-      [this.db.investigated_at]: new Date(),
+      [this.db.investigated_at]: TimezoneConfigUtils.getCurrentTime(),
     };
 
     const affectedRows = await this.updateOne(this.db.tableName, updates, {
@@ -406,7 +406,7 @@ export default class FraudAlertsModel extends BaseModel {
     hours: number = 24,
     paginationOptions: { offset?: number; limit?: number } = {},
   ): Promise<any[]> {
-    const cutoffDate = new Date();
+    const cutoffDate = TimezoneConfigUtils.getCurrentTime();
     cutoffDate.setHours(cutoffDate.getHours() - hours);
 
     return await this.findAll(

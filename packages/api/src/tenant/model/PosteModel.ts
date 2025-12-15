@@ -1,4 +1,10 @@
-import { Level, POSTE_DEFAULTS, POSTE_ERRORS, PosteValidationUtils } from '@toke/shared';
+import {
+  Level,
+  POSTE_DEFAULTS,
+  POSTE_ERRORS,
+  PosteValidationUtils,
+  TimezoneConfigUtils,
+} from '@toke/shared';
 import { Op } from 'sequelize';
 
 import BaseModel from '../database/db.base.js';
@@ -250,7 +256,7 @@ export default class PosteModel extends BaseModel {
     const affected = await this.updateOne(
       this.db.tableName,
       {
-        [this.db.deleted_at]: new Date(),
+        [this.db.deleted_at]: TimezoneConfigUtils.getCurrentTime(),
         [this.db.active]: false,
       },
       { [this.db.id]: id },

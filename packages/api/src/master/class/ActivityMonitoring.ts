@@ -1,4 +1,4 @@
-import { ActivityStatus } from '@toke/shared';
+import { ActivityStatus, TimezoneConfigUtils } from '@toke/shared';
 
 import ActivityMonitoringModel from '../model/ActivityMonitoringModel.js';
 import {
@@ -464,7 +464,7 @@ export default class ActivityMonitoring extends ActivityMonitoringModel {
   getRelativeMonitoringDate(): string {
     if (!this.monitoring_date) return 'Date inconnue';
 
-    const now = new Date();
+    const now = TimezoneConfigUtils.getCurrentTime();
     const monitoring = new Date(this.monitoring_date);
     const diffDays = Math.floor((now.getTime() - monitoring.getTime()) / (1000 * 60 * 60 * 24));
 
@@ -694,7 +694,7 @@ export default class ActivityMonitoring extends ActivityMonitoringModel {
     lowActivity: number;
     longAbsent: number;
   }> {
-    const targetDate = date || new Date();
+    const targetDate = date || TimezoneConfigUtils.getCurrentTime();
     const baseStats = await this.getActivityCountsByStatus(targetDate);
 
     // Statistiques supplémentaires

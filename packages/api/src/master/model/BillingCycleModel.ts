@@ -1,5 +1,5 @@
 import { Op } from 'sequelize';
-import { BillingStatus } from '@toke/shared';
+import { BillingStatus, TimezoneConfigUtils } from '@toke/shared';
 
 import BaseModel from '../database/db.base.js';
 import { tableName } from '../../utils/response.model.js';
@@ -153,7 +153,7 @@ export default class BillingCycleModel extends BaseModel {
       {
         [this.db.billing_status]: BillingStatus.OVERDUE,
         [this.db.payment_due_date]: {
-          [Op.lt]: new Date(),
+          [Op.lt]: TimezoneConfigUtils.getCurrentTime(),
         },
       },
       paginationOptions,
@@ -167,7 +167,7 @@ export default class BillingCycleModel extends BaseModel {
     days: number = 7,
     paginationOptions: { offset?: number; limit?: number } = {},
   ): Promise<any[]> {
-    const futureDate = new Date();
+    const futureDate = TimezoneConfigUtils.getCurrentTime();
     futureDate.setDate(futureDate.getDate() + days);
 
     return await this.findAll(
@@ -175,7 +175,7 @@ export default class BillingCycleModel extends BaseModel {
       {
         [this.db.payment_due_date]: {
           [Op.lte]: futureDate,
-          [Op.gte]: new Date(),
+          [Op.gte]: TimezoneConfigUtils.getCurrentTime(),
         },
         [this.db.billing_status]: {
           [Op.in]: [BillingStatus.PENDING, BillingStatus.PROCESSING],
@@ -351,7 +351,7 @@ export default class BillingCycleModel extends BaseModel {
       throw new Error('Billing Cycle ID is required');
     }
 
-    this.invoice_generated_at = new Date();
+    this.invoice_generated_at = TimezoneConfigUtils.getCurrentTime();
     this.billing_status = BillingStatus.PROCESSING;
 
     await this.update();
@@ -365,7 +365,7 @@ export default class BillingCycleModel extends BaseModel {
       throw new Error('Billing Cycle ID is required');
     }
 
-    this.payment_completed_at = new Date();
+    this.payment_completed_at = TimezoneConfigUtils.getCurrentTime();
     this.billing_status = BillingStatus.COMPLETED;
 
     await this.update();
@@ -379,7 +379,7 @@ export default class BillingCycleModel extends BaseModel {
       throw new Error('Billing Cycle ID is required');
     }
 
-    if (!this.payment_due_date || this.payment_due_date >= new Date()) {
+    if (!this.payment_due_date || this.payment_due_date >= TimezoneConfigUtils.getCurrentTime()) {
       throw new Error('Cannot mark as overdue - payment due date has not passed');
     }
 
@@ -518,7 +518,7 @@ export default class BillingCycleModel extends BaseModel {
     }
 
     if (this.billing_status === BillingStatus.OVERDUE) {
-      const now = new Date();
+      const now = TimezoneConfigUtils.getCurrentTime();
       if (!this.payment_due_date || this.payment_due_date >= now) {
         throw new Error('Billing cycle can only be OVERDUE if payment due date has passed');
       }

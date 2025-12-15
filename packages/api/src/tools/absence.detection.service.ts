@@ -16,6 +16,7 @@ import {
   MemoType,
   MessageType,
   PointageType,
+  TimezoneConfigUtils,
 } from '@toke/shared';
 import { Op } from 'sequelize';
 
@@ -33,7 +34,9 @@ class AbsenceDetectionService {
   /**
    * Détecter les absences non justifiées pour une date donnée
    */
-  async detectMissingClockIns(checkDate: Date = new Date()): Promise<void> {
+  async detectMissingClockIns(
+    checkDate: Date = TimezoneConfigUtils.getCurrentTime(),
+  ): Promise<void> {
     console.log(`🔍 [Absence Detection] Running for date: ${checkDate.toDateString()}`);
 
     try {
@@ -150,7 +153,7 @@ class AbsenceDetectionService {
    */
   private async detectMissedWorkBlocks(userId: number, schedule: any, date: Date): Promise<any[]> {
     const missedBlocks = [];
-    const now = new Date();
+    const now = TimezoneConfigUtils.getCurrentTime();
 
     // Ne vérifier que les blocs passés
     for (const block of schedule.expected_blocks) {
@@ -227,7 +230,7 @@ Veuillez justifier cette absence dans les 48h ou contactez votre manager.
       .setIncidentDatetime(date)
       .setMemoContent([
         {
-          created_at: new Date().toISOString(),
+          created_at: TimezoneConfigUtils.getCurrentTime().toISOString(),
           user: userAuthor?.getGuid()!,
           message: [
             {
@@ -251,7 +254,7 @@ Veuillez justifier cette absence dans les 48h ou contactez votre manager.
         absence_date: schedule.schedule_date,
         template_name: schedule.template_name,
         expected_blocks: schedule.expected_blocks,
-        detection_time: new Date().toISOString(),
+        detection_time: TimezoneConfigUtils.getCurrentTime().toISOString(),
       });
 
     await alert.save();
@@ -299,7 +302,7 @@ Veuillez justifier ces absences partielles ou corriger vos pointages.
       .setIncidentDatetime(date)
       .setMemoContent([
         {
-          created_at: new Date().toISOString(),
+          created_at: TimezoneConfigUtils.getCurrentTime().toISOString(),
           user: userAuthor?.getGuid()!,
           message: [
             {

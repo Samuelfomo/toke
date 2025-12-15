@@ -3,6 +3,7 @@ import {
   ORG_HIERARCHY_ERRORS,
   OrgHierarchyValidationUtils,
   RelationshipType,
+  TimezoneConfigUtils,
 } from '@toke/shared';
 import { Op } from 'sequelize';
 
@@ -74,7 +75,7 @@ export default class OrgHierarchyModel extends BaseModel {
     date?: Date,
     paginationOptions: { offset?: number; limit?: number } = {},
   ): Promise<any> {
-    const currentDate = date || new Date();
+    const currentDate = date || TimezoneConfigUtils.getCurrentTime();
     const dateStr = currentDate.toISOString().slice(0, 10);
 
     const conditions = {
@@ -100,7 +101,7 @@ export default class OrgHierarchyModel extends BaseModel {
     date?: Date,
     paginationOptions: { offset?: number; limit?: number } = {},
   ): Promise<any[]> {
-    const currentDate = date || new Date();
+    const currentDate = date || TimezoneConfigUtils.getCurrentTime();
     const dateStr = currentDate.toISOString().slice(0, 10);
 
     const conditions = {
@@ -183,7 +184,7 @@ export default class OrgHierarchyModel extends BaseModel {
   protected async listAllActiveRelations(
     paginationOptions: { offset?: number; limit?: number } = {},
   ): Promise<any[]> {
-    const currentDate = new Date().toISOString().slice(0, 10);
+    const currentDate = TimezoneConfigUtils.getCurrentTime().toISOString().slice(0, 10);
     const conditions = {
       [this.db.effective_from]: { [Op.lte]: currentDate },
       [Op.or]: [
@@ -197,7 +198,7 @@ export default class OrgHierarchyModel extends BaseModel {
   // === STATISTIQUES ===
 
   protected async getHierarchyCountStatistics(): Promise<any> {
-    const currentDate = new Date().toISOString().slice(0, 10);
+    const currentDate = TimezoneConfigUtils.getCurrentTime().toISOString().slice(0, 10);
 
     const [totalRelations, activeRelations, departmentStats] = await Promise.all([
       this.count(this.db.tableName, {}),

@@ -1,4 +1,5 @@
 import { CycleUnit, ROTATION_GROUP_VALIDATION } from '../../constants/tenant/rotation.groups.js';
+import { TimezoneConfigUtils } from '../timezone.config.validation.js';
 
 export class RotationGroupValidationUtils {
   // /**
@@ -175,7 +176,7 @@ export class RotationGroupValidationUtils {
     startDate: string,
     cycleLength: number,
     cycleUnit: CycleUnit,
-    currentDate: Date = new Date(),
+    currentDate: Date = TimezoneConfigUtils.getCurrentTime(),
   ): number {
     const start = new Date(startDate);
     const diffTime = currentDate.getTime() - start.getTime();
@@ -199,7 +200,7 @@ export class RotationGroupValidationUtils {
     cycleLength: number,
     cycleUnit: CycleUnit,
     cycleTemplates: number[],
-    targetDate: Date = new Date(),
+    targetDate: Date = TimezoneConfigUtils.getCurrentTime(),
   ): number {
     const cycleDay = this.calculateCurrentCycleDay(startDate, cycleLength, cycleUnit, targetDate);
     return cycleTemplates[cycleDay] || cycleTemplates[0]!;

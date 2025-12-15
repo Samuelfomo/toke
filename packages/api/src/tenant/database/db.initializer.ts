@@ -16,6 +16,7 @@ import { SessionTemplatesDbStructure } from './data/session.templates.db.js';
 import { RotationGroupsDbStructure } from './data/rotation.groups.db.js';
 import { RotationAssignmentsDbStructure } from './data/rotation.assignments.db.js';
 import { ScheduleExceptionsDbStructure } from './data/schedule.exceptions.db.js';
+import { TeamsDbStructure } from './data/teams.db.js';
 
 interface TenantInstance {
   sequelize: Sequelize;
@@ -206,6 +207,7 @@ export class TableInitializer {
     this.defineRotationGroupsModelForInstance(instance);
     this.defineRotationAssignmentsModelForInstance(instance);
     this.defineScheduleExceptionsModelForInstance(instance);
+    this.defineTeamsModelForInstance(instance);
 
     console.log(`✅ ${instance.models.size} modèle(s) défini(s) pour cette instance`);
   }
@@ -377,6 +379,17 @@ export class TableInitializer {
     console.log(
       `✅ Modèle Schedule Exceptions défini (${ScheduleExceptionsDbStructure.tableName})`,
     );
+  }
+
+  private static defineTeamsModelForInstance(instance: TenantInstance): void {
+    const model = instance.sequelize.define(
+      TeamsDbStructure.tableName,
+      TeamsDbStructure.attributes,
+      TeamsDbStructure.options,
+    );
+
+    instance.models.set(TeamsDbStructure.tableName, model);
+    console.log(`✅ Modèle Teams défini (${TeamsDbStructure.tableName})`);
   }
 
   /**

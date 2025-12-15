@@ -10,6 +10,7 @@ import {
   GLOBAL_LICENSE_ERRORS,
   HttpStatus,
   LeaveType,
+  TimezoneConfigUtils,
 } from '@toke/shared';
 
 import EmployeeLicense from '../class/EmployeeLicense.js';
@@ -28,7 +29,7 @@ router.get('/revision', Ensure.get(), async (req: Request, res: Response) => {
     const revision = await Revision.getRevision(tableName.EMPLOYEE_LICENSE);
     R.handleSuccess(res, {
       revision,
-      checked_at: new Date().toISOString(),
+      checked_at: TimezoneConfigUtils.getCurrentTime().toISOString(),
     });
   } catch (error: any) {
     console.error('❌ Error retrieving revision:', error);
@@ -550,7 +551,7 @@ router.get('/stats/billing/:globalLicenseId', Ensure.get(), async (req: Request,
     R.handleSuccess(res, {
       global_license: globalLicense,
       billing_statistics: stats,
-      generated_at: new Date().toISOString(),
+      generated_at: TimezoneConfigUtils.getCurrentTime().toISOString(),
     });
   } catch (error: any) {
     console.error('❌ Error retrieving billing statistics:', error);
@@ -597,7 +598,7 @@ router.patch('/activity/:employee', Ensure.patch(), async (req: Request, res: Re
     R.handleSuccess(res, {
       message: 'Employee activity updated successfully',
       employee: employee,
-      activity_date: activityDate || new Date(),
+      activity_date: activityDate || TimezoneConfigUtils.getCurrentTime(),
     });
   } catch (error: any) {
     console.error('❌ Error updating employee activity:', error);
@@ -663,7 +664,7 @@ router.patch('/long-leave/:employee', Ensure.patch(), async (req: Request, res: 
       declared_by,
       leave_type: leave_type.toUpperCase(),
       reason,
-      declared_at: new Date(),
+      declared_at: TimezoneConfigUtils.getCurrentTime(),
     });
   } catch (error: any) {
     console.error('❌ Error declaring long leave:', error);
@@ -732,7 +733,7 @@ router.patch('/deactivate/:employee', Ensure.patch(), async (req: Request, res: 
     R.handleSuccess(res, {
       message: 'Employee deactivated successfully',
       employee: employee,
-      deactivated_at: new Date(),
+      deactivated_at: TimezoneConfigUtils.getCurrentTime(),
     });
   } catch (error: any) {
     console.error('❌ Error deactivating employee:', error);
@@ -767,7 +768,7 @@ router.patch('/reactivate/:employee', Ensure.patch(), async (req: Request, res: 
     R.handleSuccess(res, {
       message: 'Employee reactivated successfully',
       employee: employee,
-      reactivated_at: new Date(),
+      reactivated_at: TimezoneConfigUtils.getCurrentTime(),
     });
   } catch (error: any) {
     console.error('❌ Error reactivating employee:', error);

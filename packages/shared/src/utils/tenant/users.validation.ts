@@ -1,5 +1,6 @@
 // utils/users.validation.ts
 import { USERS_VALIDATION } from '../../constants/tenant/users.js';
+import { TimezoneConfigUtils } from '../timezone.config.validation.js';
 
 export class UsersValidationUtils {
   // /**
@@ -191,7 +192,7 @@ export class UsersValidationUtils {
     if (isNaN(hireDate.getTime())) return false;
 
     // Hire date cannot be in the future
-    return hireDate <= new Date();
+    return hireDate <= TimezoneConfigUtils.getCurrentTime();
   }
 
   /**
@@ -256,7 +257,7 @@ export class UsersValidationUtils {
   static isOtpTokenExpired(expiresAt: Date | string | null): boolean {
     if (!expiresAt) return true;
     const expiration = new Date(expiresAt);
-    return expiration <= new Date();
+    return expiration <= TimezoneConfigUtils.getCurrentTime();
   }
 
   /**
@@ -265,7 +266,7 @@ export class UsersValidationUtils {
   static isQrCodeTokenExpired(expiresAt: Date | string | null): boolean {
     if (!expiresAt) return true;
     const expiration = new Date(expiresAt);
-    return expiration <= new Date();
+    return expiration <= TimezoneConfigUtils.getCurrentTime();
   }
 
   /**
@@ -511,7 +512,7 @@ export class UsersValidationUtils {
   static calculateDaysSinceLastLogin(lastLoginAt: Date | string | null): number {
     if (!lastLoginAt) return -1;
     const login = new Date(lastLoginAt);
-    const now = new Date();
+    const now = TimezoneConfigUtils.getCurrentTime();
     const diffTime = now.getTime() - login.getTime();
     return Math.floor(diffTime / (1000 * 60 * 60 * 24));
   }
@@ -522,7 +523,7 @@ export class UsersValidationUtils {
   static calculateTenureInDays(hireDate: Date | string | null): number {
     if (!hireDate) return -1;
     const hire = new Date(hireDate);
-    const now = new Date();
+    const now = TimezoneConfigUtils.getCurrentTime();
     const diffTime = now.getTime() - hire.getTime();
     return Math.floor(diffTime / (1000 * 60 * 60 * 24));
   }

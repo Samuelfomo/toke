@@ -3,6 +3,7 @@ import {
   HttpStatus,
   paginationSchema,
   SITES_ERRORS,
+  TimezoneConfigUtils,
   validateWorkSessionsFilters,
   WORK_SESSIONS_CODES,
   WORK_SESSIONS_ERRORS,
@@ -52,7 +53,7 @@ router.get('/revision', Ensure.get(), async (_req: Request, res: Response) => {
 
     R.handleSuccess(res, {
       revision,
-      checked_at: new Date().toISOString(),
+      checked_at: TimezoneConfigUtils.getCurrentTime().toISOString(),
     });
   } catch (error: any) {
     R.handleError(res, HttpStatus.INTERNAL_ERROR, {
@@ -286,7 +287,9 @@ router.get('/abandoned/list', Ensure.get(), async (req: Request, res: Response) 
             abandonedSessions.map(async (session) => ({
               ...(await session.toJSON(responseValue.MINIMAL)),
               hours_abandoned: Math.floor(
-                (new Date().getTime() - session.getSessionStartAt()!.getTime()) / (1000 * 60 * 60),
+                (TimezoneConfigUtils.getCurrentTime().getTime() -
+                  session.getSessionStartAt()!.getTime()) /
+                  (1000 * 60 * 60),
               ),
             })),
           )
@@ -428,7 +431,7 @@ router.patch(
       return R.handleSuccess(res, {
         message: 'Abandoned sessions maintenance completed',
         closed_sessions: closedCount,
-        processed_at: new Date().toISOString(),
+        processed_at: TimezoneConfigUtils.getCurrentTime().toISOString(),
       });
     } catch (error: any) {
       return R.handleError(res, HttpStatus.INTERNAL_ERROR, {

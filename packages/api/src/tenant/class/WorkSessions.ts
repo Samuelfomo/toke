@@ -1,4 +1,11 @@
-import { ClockInData, ClockOutData, PauseData, PointageType, SessionStatus } from '@toke/shared';
+import {
+  ClockInData,
+  ClockOutData,
+  PauseData,
+  PointageType,
+  SessionStatus,
+  TimezoneConfigUtils,
+} from '@toke/shared';
 import { Op } from 'sequelize';
 
 import WorkSessionsModel from '../model/WorkSessionsModel.js';
@@ -458,7 +465,7 @@ ${withinGeofence ? '✅ ACCÈS AUTORISÉ' : '❌ ACCÈS REFUSÉ'}
     // Configurer la session
     this.user = clockInData.site; // TODO: Récupérer user_id du contexte
     this.site = clockInData.site;
-    this.session_start_at = new Date();
+    this.session_start_at = TimezoneConfigUtils.getCurrentTime();
     this.session_status = SessionStatus.OPEN;
     this.start_latitude = clockInData.latitude;
     this.start_longitude = clockInData.longitude;
@@ -478,7 +485,7 @@ ${withinGeofence ? '✅ ACCÈS AUTORISÉ' : '❌ ACCÈS REFUSÉ'}
     // Calculer les durées
     const durations = await this.calculateDurations();
 
-    this.session_end_at = new Date();
+    this.session_end_at = TimezoneConfigUtils.getCurrentTime();
     this.session_status = SessionStatus.CLOSED;
     this.end_latitude = clockOutData.latitude;
     this.end_longitude = clockOutData.longitude;
@@ -690,7 +697,11 @@ ${withinGeofence ? '✅ ACCÈS AUTORISÉ' : '❌ ACCÈS REFUSÉ'}
         is_on_pause: true,
         current_pause_start: lastPause?.getClockedAt(),
         current_pause_duration_minutes: lastPause?.getClockedAt()
-          ? Math.floor((new Date().getTime() - lastPause.getClockedAt()!.getTime()) / (1000 * 60))
+          ? Math.floor(
+              (TimezoneConfigUtils.getCurrentTime().getTime() -
+                lastPause.getClockedAt()!.getTime()) /
+                (1000 * 60),
+            )
           : 0,
         total_pauses_today: pausesHistory.length,
       };
@@ -728,7 +739,7 @@ ${withinGeofence ? '✅ ACCÈS AUTORISÉ' : '❌ ACCÈS REFUSÉ'}
   async getWeeklyStats(): Promise<any> {
     // TODO: Implémenter les statistiques hebdomadaires
     return {
-      week_start: new Date(),
+      week_start: TimezoneConfigUtils.getCurrentTime(),
       total_sessions: 0,
       total_hours: '0 hours',
       overtime_hours: '0 hours',

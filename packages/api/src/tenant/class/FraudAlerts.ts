@@ -1,5 +1,7 @@
 // src/api/class/FraudAlerts.ts
 
+import { TimezoneConfigUtils } from '@toke/shared';
+
 import FraudAlertsModel from '../model/FraudAlertsModel.js';
 import W from '../../tools/watcher.js';
 import G from '../../tools/glossary.js';
@@ -181,7 +183,7 @@ export default class FraudAlerts extends FraudAlertsModel {
 
     this.investigated = true;
     this.investigation_notes = notes;
-    this.investigated_at = new Date();
+    this.investigated_at = TimezoneConfigUtils.getCurrentTime();
   }
 
   async markFalsePositive(investigator_id: number, reason: string): Promise<void> {
@@ -197,7 +199,7 @@ export default class FraudAlerts extends FraudAlertsModel {
     this.false_positive = true;
     this.investigated = true;
     this.investigation_notes = `False positive: ${reason}`;
-    this.investigated_at = new Date();
+    this.investigated_at = TimezoneConfigUtils.getCurrentTime();
   }
 
   isCritical(): boolean {
@@ -214,7 +216,7 @@ export default class FraudAlerts extends FraudAlertsModel {
 
   getDaysSinceCreation(): number {
     if (!this.created_at) return 0;
-    const now = new Date();
+    const now = TimezoneConfigUtils.getCurrentTime();
     const diffTime = now.getTime() - this.created_at.getTime();
     return Math.floor(diffTime / (1000 * 60 * 60 * 24));
   }

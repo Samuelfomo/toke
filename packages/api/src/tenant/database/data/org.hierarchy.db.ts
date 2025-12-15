@@ -1,5 +1,5 @@
 import { DataTypes, ModelAttributes, ModelOptions } from 'sequelize';
-import { RelationshipType } from '@toke/shared';
+import { RelationshipType, TimezoneConfigUtils } from '@toke/shared';
 
 import { tableName } from '../../../utils/response.model.js';
 
@@ -71,7 +71,7 @@ export const OrgHierarchyDbStructure = {
     effective_from: {
       type: DataTypes.DATEONLY,
       allowNull: false,
-      defaultValue: () => new Date().toISOString().slice(0, 10), // 'YYYY-MM-DD',
+      defaultValue: () => TimezoneConfigUtils.getCurrentTime().toISOString().slice(0, 10), // 'YYYY-MM-DD',
       validate: {
         isDate: true,
       },

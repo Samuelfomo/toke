@@ -1,5 +1,5 @@
 import { DataTypes, ModelAttributes, ModelOptions } from 'sequelize';
-import { BILLING_CYCLES, LicenseStatus, Type } from '@toke/shared';
+import { BILLING_CYCLES, LicenseStatus, TimezoneConfigUtils, Type } from '@toke/shared';
 
 import { tableName } from '../../../utils/response.model.js';
 
@@ -95,7 +95,7 @@ export const GlobalLicenseDbStructure = {
         isDate: true,
         notNull: true,
         isNotFuture(value: Date) {
-          if (new Date(value) > new Date()) {
+          if (new Date(value) > TimezoneConfigUtils.getCurrentTime()) {
             throw new Error('Current period start cannot be in the future');
           }
         },
@@ -279,7 +279,7 @@ export const GlobalLicenseDbStructure = {
     // Instance methods
     // instanceMethods: {
     //   isExpired() {
-    //     return new Date() > new Date(this.current_period_end);
+    //     return TimezoneConfigUtils.getCurrentTime() > new Date(this.current_period_end);
     //   },
     //   isActive() {
     //     return this.license_status === LicenseStatus.ACTIVE && !this.isExpired();
@@ -320,7 +320,7 @@ export const GlobalLicenseDbStructure = {
 
     validateCurrentPeriodStart: (value: Date): boolean => {
       const date = new Date(value);
-      return !isNaN(date.getTime()) && date <= new Date();
+      return !isNaN(date.getTime()) && date <= TimezoneConfigUtils.getCurrentTime();
     },
 
     validateCurrentPeriodEnd: (value: Date, startDate?: Date): boolean => {
@@ -330,7 +330,7 @@ export const GlobalLicenseDbStructure = {
       if (startDate) {
         return endDate > new Date(startDate);
       }
-      return endDate >= new Date();
+      return endDate >= TimezoneConfigUtils.getCurrentTime();
     },
 
     validateNextRenewalDate: (value: Date, endDate?: Date): boolean => {
@@ -340,7 +340,7 @@ export const GlobalLicenseDbStructure = {
       if (endDate) {
         return renewalDate >= new Date(endDate);
       }
-      return renewalDate >= new Date();
+      return renewalDate >= TimezoneConfigUtils.getCurrentTime();
     },
 
     validateTotalSeatsPurchased: (value: number): boolean => {

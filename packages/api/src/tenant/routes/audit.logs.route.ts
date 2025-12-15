@@ -7,6 +7,7 @@ import {
   AuditLogsValidationUtils,
   HttpStatus,
   paginationSchema,
+  TimezoneConfigUtils,
 } from '@toke/shared';
 
 import Ensure from '../../middle/ensured-routes.js';
@@ -52,7 +53,7 @@ router.get('/revision', Ensure.get(), async (_req: Request, res: Response) => {
 
     R.handleSuccess(res, {
       revision,
-      checked_at: new Date().toISOString(),
+      checked_at: TimezoneConfigUtils.getCurrentTime().toISOString(),
     });
   } catch (error: any) {
     R.handleError(res, HttpStatus.INTERNAL_ERROR, {

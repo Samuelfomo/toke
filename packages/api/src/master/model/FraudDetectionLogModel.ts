@@ -1,5 +1,5 @@
 import { Op } from 'sequelize';
-import { FraudDetection, RiskLevel } from '@toke/shared';
+import { FraudDetection, RiskLevel, TimezoneConfigUtils } from '@toke/shared';
 
 import BaseModel from '../database/db.base.js';
 import { tableName } from '../../utils/response.model.js';
@@ -286,7 +286,7 @@ export default class FraudDetectionLogModel extends BaseModel {
     action_taken?: string,
   ): Promise<boolean> {
     const updateData: Record<string, any> = {
-      [this.db.resolved_at]: new Date(),
+      [this.db.resolved_at]: TimezoneConfigUtils.getCurrentTime(),
       [this.db.resolved_by]: resolved_by,
     };
 
@@ -408,7 +408,7 @@ export default class FraudDetectionLogModel extends BaseModel {
    */
   protected getAgeInHours(): number {
     if (!this.created_at) return 0;
-    const now = new Date();
+    const now = TimezoneConfigUtils.getCurrentTime();
     const created = new Date(this.created_at);
     const diffTime = now.getTime() - created.getTime();
     return Math.floor(diffTime / (1000 * 60 * 60));

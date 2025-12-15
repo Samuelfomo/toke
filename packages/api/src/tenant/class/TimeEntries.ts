@@ -1,4 +1,4 @@
-import { PointageStatus, PointageType } from '@toke/shared';
+import { PointageStatus, PointageType, TimezoneConfigUtils } from '@toke/shared';
 
 import TimeEntriesModel from '../model/TimeEntriesModel.js';
 import W from '../../tools/watcher.js';
@@ -462,7 +462,7 @@ export default class TimeEntries extends TimeEntriesModel {
     const attempts = this.getSyncAttempts() + 1;
     await this.updateSyncStatus(this.id, attempts);
     this.sync_attempts = attempts;
-    this.last_sync_attempt = new Date();
+    this.last_sync_attempt = TimezoneConfigUtils.getCurrentTime();
   }
 
   async markAsSynced(): Promise<void> {

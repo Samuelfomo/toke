@@ -7,6 +7,7 @@ import {
   PAYMENT_TRANSACTION_VALIDATION,
   PaymentTransactionStatus,
 } from '../constants/payment.transaction.js';
+import { TimezoneConfigUtils } from '../utils/timezone.config.validation.js';
 
 // Base schema for common validations
 const basePaymentTransactionSchema = z.object({
@@ -154,7 +155,7 @@ const basePaymentTransactionSchema = z.object({
   //     required_error: PAYMENT_TRANSACTION_ERRORS.INITIATED_AT_REQUIRED,
   //     invalid_type_error: PAYMENT_TRANSACTION_ERRORS.INITIATED_AT_INVALID,
   //   })
-  //   .default(() => new Date()),
+  //   .default(() => TimezoneConfigUtils.getCurrentTime()),
   //
   // completed_at: z
   //   .date({
@@ -183,7 +184,7 @@ const basePaymentTransactionSchema = z.object({
         })
         .transform((val) => new Date(val)),
     ])
-    .default(() => new Date()),
+    .default(() => TimezoneConfigUtils.getCurrentTime()),
 
   completed_at: z
     .union([
@@ -442,7 +443,7 @@ export const completeTransactionSchema = z.object({
   completed_at: z
     .date()
     .optional()
-    .default(() => new Date()),
+    .default(() => TimezoneConfigUtils.getCurrentTime()),
 });
 
 // Schema for transaction failure
@@ -463,7 +464,7 @@ export const failTransactionSchema = z.object({
   failed_at: z
     .date()
     .optional()
-    .default(() => new Date()),
+    .default(() => TimezoneConfigUtils.getCurrentTime()),
 });
 
 // Schema for search criteria

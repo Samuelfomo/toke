@@ -2,6 +2,8 @@
 import fs from 'fs/promises';
 import path from 'path';
 
+import { TimezoneConfigUtils } from '@toke/shared';
+
 import GenerateOtp from '../utils/generate.otp.js';
 
 export interface OTPData {
@@ -372,7 +374,7 @@ export default class OTPCacheService {
    * Obtient la date/heure locale du Cameroun (GMT+1)
    */
   private static getCameroonTime(): Date {
-    const now = new Date();
+    const now = TimezoneConfigUtils.getCurrentTime();
     const utc = now.getTime() + now.getTimezoneOffset() * 60000;
     return new Date(utc + this.TIMEZONE_OFFSET * 3600000);
   }

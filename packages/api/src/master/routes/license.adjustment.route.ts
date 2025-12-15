@@ -8,6 +8,7 @@ import {
   LICENSE_ADJUSTMENT_ERRORS,
   paginationSchema,
   PaymentTransactionStatus,
+  TimezoneConfigUtils,
 } from '@toke/shared';
 
 import LicenseAdjustment from '../class/LicenseAdjustment.js';
@@ -58,7 +59,7 @@ router.get('/revision', Ensure.get(), async (_req: Request, res: Response) => {
 
     R.handleSuccess(res, {
       revision,
-      checked_at: new Date().toISOString(),
+      checked_at: TimezoneConfigUtils.getCurrentTime().toISOString(),
     });
   } catch (error: any) {
     console.error('⚠️ Erreur récupération révision:', error);

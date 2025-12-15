@@ -1,6 +1,12 @@
 import { Request, Response, Router } from 'express';
 import { isValidPhoneNumber } from 'libphonenumber-js';
-import { ERROR_CODES, HttpStatus, paginationSchema, UsersValidationUtils } from '@toke/shared';
+import {
+  ERROR_CODES,
+  HttpStatus,
+  paginationSchema,
+  TimezoneConfigUtils,
+  UsersValidationUtils,
+} from '@toke/shared';
 
 import { Contact } from '../class/Contact.js';
 import R from '../../tools/response.js';
@@ -21,7 +27,7 @@ router.get('/revision', Ensure.get(), async (req: Request, res: Response) => {
 
     R.handleSuccess(res, {
       revision,
-      checked_at: new Date().toISOString(),
+      checked_at: TimezoneConfigUtils.getCurrentTime().toISOString(),
     });
   } catch (error: any) {
     console.error('❌ Erreur récupération révision:', error);

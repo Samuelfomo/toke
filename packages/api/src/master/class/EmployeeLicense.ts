@@ -1,9 +1,19 @@
-import { BillingStatusComputed, ContractualStatus, LeaveType } from '@toke/shared';
+import {
+  BillingStatusComputed,
+  ContractualStatus,
+  LeaveType,
+  TimezoneConfigUtils,
+} from '@toke/shared';
 
 import EmployeeLicenseModel from '../model/EmployeeLicenseModel.js';
 import W from '../../tools/watcher.js';
 import G from '../../tools/glossary.js';
-import { responseStructure as RS, responseValue, tableName, ViewMode, } from '../../utils/response.model.js';
+import {
+  responseStructure as RS,
+  responseValue,
+  tableName,
+  ViewMode,
+} from '../../utils/response.model.js';
 import Revision from '../../tools/revision.js';
 
 import GlobalLicense from './GlobalLicense.js';
@@ -412,7 +422,7 @@ export default class EmployeeLicense extends EmployeeLicenseModel {
    */
   hasRecentActivity(days: number = 7): boolean {
     if (!this.last_activity_date) return false;
-    const cutoffDate = new Date();
+    const cutoffDate = TimezoneConfigUtils.getCurrentTime();
     cutoffDate.setDate(cutoffDate.getDate() - days);
     return new Date(this.last_activity_date) >= cutoffDate;
   }
@@ -422,7 +432,7 @@ export default class EmployeeLicense extends EmployeeLicenseModel {
    */
   isInGracePeriod(): boolean {
     if (!this.grace_period_start || !this.grace_period_end) return false;
-    const now = new Date();
+    const now = TimezoneConfigUtils.getCurrentTime();
     return now >= new Date(this.grace_period_start) && now <= new Date(this.grace_period_end);
   }
 
@@ -445,7 +455,7 @@ export default class EmployeeLicense extends EmployeeLicenseModel {
    */
   getDaysSinceLastActivity(): number {
     if (!this.last_activity_date) return -1;
-    const now = new Date();
+    const now = TimezoneConfigUtils.getCurrentTime();
     const lastActivity = new Date(this.last_activity_date);
     const diffTime = now.getTime() - lastActivity.getTime();
     return Math.floor(diffTime / (1000 * 60 * 60 * 24));
@@ -456,7 +466,7 @@ export default class EmployeeLicense extends EmployeeLicenseModel {
    */
   getGracePeriodDaysRemaining(): number {
     if (!this.grace_period_end || !this.isInGracePeriod()) return 0;
-    const now = new Date();
+    const now = TimezoneConfigUtils.getCurrentTime();
     const end = new Date(this.grace_period_end);
     const diffTime = end.getTime() - now.getTime();
     return Math.max(0, Math.ceil(diffTime / (1000 * 60 * 60 * 24)));
@@ -467,7 +477,7 @@ export default class EmployeeLicense extends EmployeeLicenseModel {
    */
   getLeaveDurationDays(): number {
     if (!this.long_leave_declared_at) return 0;
-    const now = new Date();
+    const now = TimezoneConfigUtils.getCurrentTime();
     const leaveStart = new Date(this.long_leave_declared_at);
     const diffTime = now.getTime() - leaveStart.getTime();
     return Math.max(0, Math.floor(diffTime / (1000 * 60 * 60 * 24)));
@@ -495,7 +505,7 @@ export default class EmployeeLicense extends EmployeeLicenseModel {
       // Mettre à jour l'instance locale
       this.declared_long_leave = true;
       this.long_leave_declared_by = declared_by;
-      this.long_leave_declared_at = new Date();
+      this.long_leave_declared_at = TimezoneConfigUtils.getCurrentTime();
       this.long_leave_type = leave_type;
       this.long_leave_reason = reason;
     }

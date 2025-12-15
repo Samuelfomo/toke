@@ -7,6 +7,7 @@ import {
   QR_CODE_MESSAGES,
   SITES_CODES,
   SITES_ERRORS,
+  TimezoneConfigUtils,
   USERS_CODES,
   USERS_ERRORS,
   validateQrCodeCreation,
@@ -56,7 +57,7 @@ router.get('/revision', Ensure.get(), async (_req: Request, res: Response) => {
 
     R.handleSuccess(res, {
       revision,
-      checked_at: new Date().toISOString(),
+      checked_at: TimezoneConfigUtils.getCurrentTime().toISOString(),
     });
   } catch (error: any) {
     R.handleError(res, HttpStatus.INTERNAL_ERROR, {

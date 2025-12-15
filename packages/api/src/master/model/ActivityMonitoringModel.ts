@@ -1,5 +1,5 @@
 import { Op } from 'sequelize';
-import { ActivityStatus } from '@toke/shared';
+import { ActivityStatus, TimezoneConfigUtils } from '@toke/shared';
 
 import BaseModel from '../database/db.base.js';
 import { tableName } from '../../utils/response.model.js';
@@ -347,7 +347,7 @@ export default class ActivityMonitoringModel extends BaseModel {
    */
   protected getMonitoringAgeInDays(): number {
     if (!this.monitoring_date) return 0;
-    const now = new Date();
+    const now = TimezoneConfigUtils.getCurrentTime();
     const monitoring = new Date(this.monitoring_date);
     const diffTime = now.getTime() - monitoring.getTime();
     return Math.floor(diffTime / (1000 * 60 * 60 * 24));

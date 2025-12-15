@@ -1,4 +1,10 @@
-import { BillingCycle, GLOBAL_LICENSE_DEFAULTS, LicenseStatus, Type } from '@toke/shared';
+import {
+  BillingCycle,
+  GLOBAL_LICENSE_DEFAULTS,
+  LicenseStatus,
+  TimezoneConfigUtils,
+  Type,
+} from '@toke/shared';
 import { Op } from 'sequelize';
 
 import BaseModel from '../database/db.base.js';
@@ -167,7 +173,7 @@ export default class GlobalLicenseModel extends BaseModel {
     days: number = 30,
     paginationOptions: { offset?: number; limit?: number } = {},
   ): Promise<any[]> {
-    const futureDate = new Date();
+    const futureDate = TimezoneConfigUtils.getCurrentTime();
     futureDate.setDate(futureDate.getDate() + days);
 
     return await this.findAll(
@@ -175,7 +181,7 @@ export default class GlobalLicenseModel extends BaseModel {
       {
         [this.db.current_period_end]: {
           [Op.lte]: futureDate,
-          [Op.gte]: new Date(),
+          [Op.gte]: TimezoneConfigUtils.getCurrentTime(),
         },
         [this.db.license_status]: LicenseStatus.ACTIVE,
       },
@@ -196,7 +202,7 @@ export default class GlobalLicenseModel extends BaseModel {
       this.db.tableName,
       {
         [this.db.current_period_end]: {
-          [Op.lt]: new Date(),
+          [Op.lt]: TimezoneConfigUtils.getCurrentTime(),
         },
       },
       {
@@ -218,7 +224,7 @@ export default class GlobalLicenseModel extends BaseModel {
     if (!guid) {
       throw new Error('Failed to generate GUID for global master entry');
     }
-    
+
     const lastID = await this.insertOne(this.db.tableName, {
       [this.db.guid]: guid,
       [this.db.tenant]: this.tenant,
@@ -470,7 +476,7 @@ export default class GlobalLicenseModel extends BaseModel {
 //     days: number = 30,
 //     paginationOptions: { offset?: number; limit?: number } = {},
 //   ): Promise<any[]> {
-//     const futureDate = new Date();
+//     const futureDate = TimezoneConfigUtils.getCurrentTime();
 //     futureDate.setDate(futureDate.getDate() + days);
 //
 //     return await this.findAll(
@@ -478,7 +484,7 @@ export default class GlobalLicenseModel extends BaseModel {
 //       {
 //         [this.db.current_period_end]: {
 //           [Op.lte]: futureDate,
-//           [Op.gte]: new Date(),
+//           [Op.gte]: TimezoneConfigUtils.getCurrentTime(),
 //         },
 //         [this.db.license_status]: LicenseStatus.ACTIVE,
 //       },
@@ -496,7 +502,7 @@ export default class GlobalLicenseModel extends BaseModel {
 //       this.db.tableName,
 //       {
 //         [this.db.current_period_end]: {
-//           [Op.lt]: new Date(),
+//           [Op.lt]: TimezoneConfigUtils.getCurrentTime(),
 //         },
 //       },
 //       paginationOptions,
