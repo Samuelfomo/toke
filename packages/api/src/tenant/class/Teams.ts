@@ -1,6 +1,6 @@
-import { TeamsValidationUtils, TimezoneConfigUtils } from '@toke/shared';
+import { TeamsValidationUtils, TI, TimezoneConfigUtils } from '@toke/shared';
 
-import TeamsModel, { AssignedSession, TeamMember } from '../model/TeamsModel.js';
+import TeamsModel from '../model/TeamsModel.js';
 import {
   responseStructure as RS,
   responseValue,
@@ -13,6 +13,7 @@ import G from '../../tools/glossary.js';
 
 import User from './User.js';
 import SessionTemplate from './SessionTemplates.js';
+import OrgHierarchy from './OrgHierarchy.js';
 
 export default class Teams extends TeamsModel {
   private managerObj?: User;
@@ -62,6 +63,37 @@ export default class Teams extends TeamsModel {
     paginationOptions: { offset?: number; limit?: number } = {},
   ): Promise<Teams[] | null> {
     return new Teams().listWithActiveSession(paginationOptions);
+  }
+
+  /**
+   * 🎯 POINT D'ENTRÉE PRINCIPAL
+   * Récupère l'équipe complète d'un manager (incluant sous-équipes si hiérarchiquement valides)
+   * @param managerId ID du manager
+   * @returns Structure hiérarchique complète de l'équipe
+   */
+  static async getManagerTeamHierarchy(managerId: number): Promise<any> {
+    const managerObj = await User._load(managerId);
+    if (!managerObj) {
+      throw new Error('Manager not found');
+    }
+
+    // Récupérer l'équipe principale du manager
+    const teams = await Teams._listByManager(managerId);
+    if (!teams || teams.length === 0) {
+      return {
+        manager: await managerObj.toJSON(responseValue.MINIMAL),
+        has_team: false,
+        team: null,
+        total_members: 0,
+        members: [],
+      };
+    }
+
+    // Prendre la première équipe (un manager devrait avoir une seule équipe principale)
+    const mainTeam = teams[0];
+    const visited = new Set<number>();
+
+    return await mainTeam._buildManagerTeamHierarchy(managerId, visited);
   }
 
   static async exportable(
@@ -116,8 +148,14 @@ export default class Teams extends TeamsModel {
     return this.managerObj || null;
   }
 
-  getMembers(): TeamMember[] {
+  getMembers(): TI.TeamMember[] {
     return this.members || [];
+  }
+  /**
+   * Récupère uniquement les membres actifs
+   */
+  getActiveMembers(): TI.TeamMember[] {
+    return this.getMembers().filter((m) => m.active !== false);
   }
 
   async getMemberObj(user: number): Promise<User | null> {
@@ -146,7 +184,7 @@ export default class Teams extends TeamsModel {
     return memberObjs;
   }
 
-  getAssignedSessions(): AssignedSession[] {
+  getAssignedSessions(): TI.AssignedSession[] {
     return this.assigned_sessions || [];
   }
 
@@ -178,12 +216,12 @@ export default class Teams extends TeamsModel {
     return this;
   }
 
-  setMembers(members: TeamMember[]): Teams {
+  setMembers(members: TI.TeamMember[]): Teams {
     this.members = members;
     return this;
   }
 
-  setAssignedSessions(sessions: AssignedSession[]): Teams {
+  setAssignedSessions(sessions: TI.AssignedSession[]): Teams {
     this.assigned_sessions = sessions;
     return this;
   }
@@ -196,7 +234,7 @@ export default class Teams extends TeamsModel {
    * Ajouter un membre à l'équipe
    */
   addMember(user: number, joinedAt?: Date, active: boolean = true): Teams {
-    const newMember: TeamMember = {
+    const newMember: TI.TeamMember = {
       user: user,
       joined_at: joinedAt || TimezoneConfigUtils.getCurrentTime(),
       active,
@@ -237,21 +275,70 @@ export default class Teams extends TeamsModel {
   }
 
   /**
+   * Récupère tous les membres directs (1er niveau uniquement)
+   * @returns Liste des utilisateurs membres directs de cette équipe
+   */
+  async getDirectMembers(): Promise<User[]> {
+    const members = this.getActiveMembers();
+    const userObjs: User[] = [];
+
+    for (const member of members) {
+      const userObj = await this.getMemberObj(member.user);
+      if (userObj) {
+        userObjs.push(userObj);
+      }
+    }
+
+    return userObjs;
+  }
+
+  /**
+   * 📊 Récupère TOUS les membres (avec aplatissement)
+   * Utile pour avoir une liste simple de tous les users sous un manager
+   * @param rootManagerId ID du manager racine
+   * @returns Liste aplatie de tous les users
+   */
+  async getAllMembersFlat(rootManagerId: number): Promise<User[]> {
+    const visited = new Set<number>();
+    const allUsers: User[] = [];
+
+    await this._recursiveFetchAllMembersFlat(rootManagerId, visited, allUsers);
+
+    // Dédupliquer (un user peut apparaître dans plusieurs équipes)
+
+    return Array.from(new Map(allUsers.map((user) => [user.getId(), user])).values());
+  }
+
+  /**
+   * Récupère TOUS les membres (directs + sous-équipes) de manière récursive
+   * @returns Liste complète de tous les utilisateurs (incluant sous-équipes)
+   */
+  async getAllMembersRecursive(): Promise<User[]> {
+    const visited = new Set<number>(); // Éviter les boucles infinies
+    return await this._recursiveFetchAllMembers(visited);
+  }
+
+  /**
+   * Construit l'arbre hiérarchique complet de l'équipe
+   * Structure: { team, members: [{ user, roles, managedTeam }] }
+   */
+  async buildTeamHierarchyTree(): Promise<any> {
+    const visited = new Set<number>();
+    return await this._recursiveBuildTeamTree(visited);
+  }
+
+  /**
    * Compter les membres actifs
    */
   countActiveMembers(): number {
     return TeamsValidationUtils.countActiveMembers(this.members);
   }
 
-  // ============================================
-  // MÉTHODES MÉTIER - GESTION DES SESSIONS
-  // ============================================
-
   /**
    * Assigner une nouvelle session template
    */
   assignSession(sessionTemplate: number, assignAt?: Date, active: boolean = true): Teams {
-    const newSession: AssignedSession = {
+    const newSession: TI.AssignedSession = {
       session_template: sessionTemplate,
       assign_at: assignAt || TimezoneConfigUtils.getCurrentTime(),
       active,
@@ -283,9 +370,13 @@ export default class Teams extends TeamsModel {
   /**
    * Récupérer la session active
    */
-  getActiveSession(): AssignedSession | null {
+  getActiveSession(): TI.AssignedSession | null {
     return TeamsValidationUtils.getActiveSession(this.assigned_sessions);
   }
+
+  // ============================================
+  // MÉTHODES MÉTIER - GESTION DES SESSIONS
+  // ============================================
 
   /**
    * Vérifier si une session est active
@@ -293,10 +384,6 @@ export default class Teams extends TeamsModel {
   hasActiveSession(): boolean {
     return this.getActiveSession() !== null;
   }
-
-  // ============================================
-  // MÉTHODES MÉTIER - STATISTIQUES
-  // ============================================
 
   /**
    * Obtenir un résumé de l'équipe
@@ -327,10 +414,6 @@ export default class Teams extends TeamsModel {
     return TeamsValidationUtils.generateTeamReport(this, memberDetails);
   }
 
-  // ============================================
-  // MÉTHODES STANDARD
-  // ============================================
-
   isNew(): boolean {
     return this.id === undefined;
   }
@@ -338,6 +421,10 @@ export default class Teams extends TeamsModel {
   isDeleted(): boolean {
     return this.deleted_at !== undefined && this.deleted_at !== null;
   }
+
+  // ============================================
+  // MÉTHODES MÉTIER - STATISTIQUES
+  // ============================================
 
   async save(): Promise<void> {
     try {
@@ -359,6 +446,10 @@ export default class Teams extends TeamsModel {
     return false;
   }
 
+  // ============================================
+  // MÉTHODES STANDARD
+  // ============================================
+
   async restoreTeam(): Promise<boolean> {
     if (this.id !== undefined) {
       await W.isOccur(!this.id, `${G.identifierMissing.code}: Teams Restore`);
@@ -366,10 +457,6 @@ export default class Teams extends TeamsModel {
     }
     return false;
   }
-
-  // ============================================
-  // CHARGEMENT ET LISTING
-  // ============================================
 
   async load(identifier: any, byGuid: boolean = false): Promise<Teams | null> {
     let data = null;
@@ -411,6 +498,10 @@ export default class Teams extends TeamsModel {
     return dataset.map((data) => new Teams().hydrate(data));
   }
 
+  // ============================================
+  // CHARGEMENT ET LISTING
+  // ============================================
+
   async listWithMembers(
     paginationOptions: { offset?: number; limit?: number } = {},
   ): Promise<Teams[] | null> {
@@ -426,10 +517,6 @@ export default class Teams extends TeamsModel {
     if (!dataset || dataset.length === 0) return null;
     return dataset.map((data) => new Teams().hydrate(data));
   }
-
-  // ============================================
-  // SÉRIALISATION
-  // ============================================
 
   async toJSON(view: ViewMode = responseValue.FULL): Promise<object> {
     const managerObj = await this.getManagerObj();
@@ -503,6 +590,211 @@ export default class Teams extends TeamsModel {
       [RS.NAME]: this.name,
       [RS.MANAGER]: this.manager,
       total_members: this.members.length,
+    };
+  }
+
+  /**
+   * Méthode récursive privée pour aplatir tous les membres
+   */
+  private async _recursiveFetchAllMembersFlat(
+    rootManagerId: number,
+    visited: Set<number>,
+    accumulator: User[],
+  ): Promise<void> {
+    if (!this.id || visited.has(this.id)) return;
+    visited.add(this.id);
+
+    // Ajouter les membres directs
+    const directMembers = await this.getDirectMembers();
+    accumulator.push(...directMembers);
+
+    // Pour chaque membre, vérifier s'il manage une équipe
+    for (const member of directMembers) {
+      const memberId = member.getId();
+      if (!memberId) continue;
+
+      const memberTeams = await Teams._listByManager(memberId);
+
+      if (memberTeams && memberTeams.length > 0) {
+        const isInHierarchy = await OrgHierarchy.isUserInHierarchy(memberId, rootManagerId);
+
+        if (isInHierarchy) {
+          const memberTeam = memberTeams[0];
+          await memberTeam._recursiveFetchAllMembersFlat(rootManagerId, visited, accumulator);
+        }
+      }
+    }
+  }
+
+  /**
+   * 🔥 MÉTHODE PRINCIPALE RÉCURSIVE
+   * Construit la hiérarchie complète d'équipe basée sur :
+   * 1. L'équipe du manager
+   * 2. Les équipes de ses membres (SI ils sont managers ET hiérarchiquement en dessous)
+   *
+   * @param rootManagerId ID du manager racine (pour validation hiérarchique)
+   * @param visited Set pour éviter les boucles infinies
+   * @returns Structure hiérarchique complète
+   */
+  private async _buildManagerTeamHierarchy(
+    rootManagerId: number,
+    visited: Set<number>,
+  ): Promise<any> {
+    // Protection contre les boucles infinies
+    if (!this.id || visited.has(this.id)) {
+      return null;
+    }
+    visited.add(this.id);
+
+    const managerObj = await this.getManagerObj();
+    if (!managerObj) return null;
+
+    // Récupérer les membres directs de cette équipe
+    const directMembers = await this.getDirectMembers();
+    const activeSession = this.getActiveSession();
+
+    const membersWithSubTeams = [];
+
+    for (const member of directMembers) {
+      const memberId = member.getId();
+      if (!memberId) continue;
+
+      const memberData: any = {
+        user: await member.toJSON(responseValue.MINIMAL),
+        is_team_manager: false,
+        managed_team: null,
+      };
+
+      // Vérifier si ce membre est manager d'une équipe
+      const memberTeams = await Teams._listByManager(memberId);
+
+      if (memberTeams && memberTeams.length > 0) {
+        // ✅ VALIDATION HIÉRARCHIQUE : Ce membre doit être sous le rootManager dans l'organigramme
+        const isInHierarchy = await OrgHierarchy.isUserInHierarchy(memberId, rootManagerId);
+
+        if (isInHierarchy) {
+          // Ce membre est manager ET hiérarchiquement en dessous
+          const memberTeam = memberTeams[0]; // Prendre la première équipe
+          memberData.is_team_manager = true;
+
+          // Récursion : construire la sous-équipe
+          const subTeamHierarchy = await memberTeam._buildManagerTeamHierarchy(
+            rootManagerId,
+            visited,
+          );
+
+          if (subTeamHierarchy) {
+            memberData.managed_team = subTeamHierarchy;
+          }
+        }
+      }
+
+      membersWithSubTeams.push(memberData);
+    }
+
+    // Récupérer les détails de la session active
+    let activeSessionDetails = null;
+    if (activeSession) {
+      const sessionTemplateObj = await this.getSessionTemplateObj(activeSession.session_template);
+      activeSessionDetails = {
+        template: sessionTemplateObj ? await sessionTemplateObj.toJSON() : null,
+        assigned_at: activeSession.assign_at,
+      };
+    }
+
+    return {
+      team: {
+        guid: this.guid,
+        name: this.name,
+        manager: await managerObj.toJSON(responseValue.MINIMAL),
+        has_active_session: activeSession !== null,
+        active_session: activeSessionDetails,
+      },
+      total_direct_members: directMembers.length,
+      members: membersWithSubTeams,
+    };
+  }
+
+  // ============================================
+  // SÉRIALISATION
+  // ============================================
+
+  /**
+   * Méthode privée récursive pour récupérer tous les membres
+   */
+  private async _recursiveFetchAllMembers(visited: Set<number>): Promise<User[]> {
+    // Protection contre les boucles infinies
+    if (!this.id || visited.has(this.id)) {
+      return [];
+    }
+    visited.add(this.id);
+
+    const allUsers: User[] = [];
+
+    // 1. Récupérer les membres directs
+    const directMembers = await this.getDirectMembers();
+    allUsers.push(...directMembers);
+
+    // 2. Pour chaque membre, vérifier s'il manage une équipe
+    for (const member of directMembers) {
+      const memberId = member.getId();
+      if (!memberId) continue;
+
+      // Chercher les équipes où ce membre est manager
+      const subTeams = await Teams._listByManager(memberId);
+
+      if (subTeams && subTeams.length > 0) {
+        for (const subTeam of subTeams) {
+          // Récursion : récupérer les membres de la sous-équipe
+          const subMembers = await subTeam._recursiveFetchAllMembers(visited);
+          allUsers.push(...subMembers);
+        }
+      }
+    }
+
+    return allUsers;
+  }
+
+  /**
+   * Méthode privée récursive pour construire l'arbre
+   */
+  private async _recursiveBuildTeamTree(visited: Set<number>): Promise<any> {
+    // Protection contre les boucles infinies
+    if (!this.id || visited.has(this.id)) {
+      return null;
+    }
+    visited.add(this.id);
+
+    const directMembers = await this.getDirectMembers();
+    const membersWithSubTeams = [];
+
+    for (const member of directMembers) {
+      const memberId = member.getId();
+      if (!memberId) continue;
+
+      // Charger les équipes managées par ce membre
+      const managedTeams = await Teams._listByManager(memberId);
+
+      const memberData: any = {
+        user: await member.toJSON(responseValue.MINIMAL),
+        managed_teams: [],
+      };
+
+      if (managedTeams && managedTeams.length > 0) {
+        for (const subTeam of managedTeams) {
+          const subTreeData = await subTeam._recursiveBuildTeamTree(visited);
+          if (subTreeData) {
+            memberData.managed_teams.push(subTreeData);
+          }
+        }
+      }
+
+      membersWithSubTeams.push(memberData);
+    }
+
+    return {
+      team: await this.toJSON(responseValue.MINIMAL),
+      members: membersWithSubTeams,
     };
   }
 

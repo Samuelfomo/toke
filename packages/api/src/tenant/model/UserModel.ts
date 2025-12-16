@@ -1,4 +1,5 @@
 import {
+  TI,
   TimezoneConfigUtils,
   USERS_DEFAULTS,
   USERS_ERRORS,
@@ -34,7 +35,7 @@ export default class UserModel extends BaseModel {
     otp_token: 'otp_token',
     otp_expires_at: 'otp_expires_at',
     device_token: 'device_token',
-    session_template: 'session_template',
+    // session_template: 'session_template',
     assigned_sessions: 'assigned_sessions',
 
     // QR Code Manager
@@ -71,8 +72,8 @@ export default class UserModel extends BaseModel {
   protected country?: string;
   protected employee_code?: string;
   protected device_token?: string;
-  protected session_template: number | null = null;
-  protected assigned_sessions: any;
+  // protected session_template: number | null = null;
+  protected assigned_sessions: TI.AssignedSession[] = [];
 
   // ⚠️ NE PAS HACHER ICI : Sequelize le fait automatiquement
   protected pin_hash?: string;
@@ -98,11 +99,39 @@ export default class UserModel extends BaseModel {
   // MÉTHODES DE RECHERCHE AMÉLIORÉES
   // ============================================
 
+  /**
+   * Recherche les utilisateurs avec une session template spécifique
+   */
   async listAllBySessionTemplate(
-    session_template: number | null = null,
+    sessionTemplate: number,
     paginationOptions: { offset?: number; limit?: number } = {},
   ): Promise<any[]> {
-    return await this.listAll({ [this.db.session_template]: session_template }, paginationOptions);
+    const conditions = {
+      [this.db.deleted_at]: null,
+    };
+
+    const allUsers = await this.listAll(conditions, paginationOptions);
+
+    return allUsers.filter((user) => {
+      const sessions = user.assigned_sessions || [];
+      return sessions.some(
+        (session: TI.AssignedSession) => session.session_template === sessionTemplate,
+      );
+    });
+  }
+
+  /**
+   * Recherche les utilisateurs ayant une session active
+   */
+  protected async listAllWithActiveSession(
+    paginationOptions: { offset?: number; limit?: number } = {},
+  ): Promise<any[]> {
+    const allUsers = await this.listAll({}, paginationOptions);
+
+    return allUsers.filter((user) => {
+      const sessions = user.assigned_sessions || [];
+      return sessions.some((session: TI.AssignedSession) => session.active === true);
+    });
   }
 
   /**
@@ -592,8 +621,9 @@ export default class UserModel extends BaseModel {
       [this.db.department]: this.department,
       [this.db.job_title]: this.job_title,
       [this.db.active]: this.active ?? USERS_DEFAULTS.ACTIVE,
-      [this.db.session_template]: this.session_template || null,
+      // [this.db.session_template]: this.session_template || null,
       // [this.db.device_token]: this.device_token ? this.device_token : null,
+      [this.db.assigned_sessions]: this.assigned_sessions || [],
     });
 
     if (!lastID) {
@@ -674,13 +704,17 @@ export default class UserModel extends BaseModel {
       updateData[this.db.last_login_at] = this.last_login_at;
     }
 
-    if (this.session_template !== undefined) {
-      updateData[this.db.session_template] = this.session_template;
-    }
+    // if (this.session_template !== undefined) {
+    //   updateData[this.db.session_template] = this.session_template;
+    // }
 
     // if (this.device_token !== undefined) {
     //   updateData[this.db.device_token] = this.device_token;
     // }
+
+    if (this.assigned_sessions !== undefined) {
+      updateData[this.db.assigned_sessions] = this.assigned_sessions;
+    }
 
     const updated = await this.updateOne(this.db.tableName, updateData, { [this.db.id]: this.id });
 
@@ -733,17 +767,17 @@ export default class UserModel extends BaseModel {
     return affected > 0;
   }
 
-  protected async definedSessionTemplate(id: number, session_template: number): Promise<boolean> {
-    const affected = await this.updateOne(
-      this.db.tableName,
-      {
-        [this.db.session_template]: session_template,
-      },
-      { [this.db.id]: id },
-    );
-
-    return affected > 0;
-  }
+  // protected async definedSessionTemplate(id: number, session_template: number): Promise<boolean> {
+  //   const affected = await this.updateOne(
+  //     this.db.tableName,
+  //     {
+  //       [this.db.session_template]: session_template,
+  //     },
+  //     { [this.db.id]: id },
+  //   );
+  //
+  //   return affected > 0;
+  // }
 
   // ============================================
   // VALIDATION

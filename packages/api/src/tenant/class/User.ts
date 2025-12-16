@@ -1,4 +1,4 @@
-import { TimezoneConfigUtils, USERS_DEFAULTS } from '@toke/shared';
+import { TeamsValidationUtils, TI, TimezoneConfigUtils, USERS_DEFAULTS } from '@toke/shared';
 
 import UserModel from '../model/UserModel.js';
 import W from '../../tools/watcher.js';
@@ -16,6 +16,7 @@ import SessionTemplate from './SessionTemplates.js';
 
 export default class User extends UserModel {
   private sessionTemplateObj?: SessionTemplate;
+  private sessionTemplateObjs: Map<number, SessionTemplate> = new Map();
   constructor() {
     super();
   }
@@ -59,6 +60,25 @@ export default class User extends UserModel {
     paginationOptions: { offset?: number; limit?: number } = {},
   ): Promise<User[] | null> {
     return new User().listByActiveStatus(isActive, paginationOptions);
+  }
+
+  /**
+   * Liste les utilisateurs par session template
+   */
+  static async _listBySessionTemplate(
+    sessionTemplate: number,
+    paginationOptions: { offset?: number; limit?: number } = {},
+  ): Promise<User[] | null> {
+    return new User().listBySessionTemplate(sessionTemplate, paginationOptions);
+  }
+
+  /**
+   * Liste les utilisateurs avec session active
+   */
+  static async _listWithActiveSession(
+    paginationOptions: { offset?: number; limit?: number } = {},
+  ): Promise<User[] | null> {
+    return new User().listWithActiveSession(paginationOptions);
   }
 
   static async exportable(
@@ -219,15 +239,18 @@ export default class User extends UserModel {
     return this.device_token;
   }
 
-  getSessionTemplate(): number | null {
-    return this.session_template;
+  getAssignedSessions(): TI.AssignedSession[] {
+    return this.assigned_sessions || [];
   }
-  async getSessionTemplateObj(): Promise<SessionTemplate | null> {
-    if (!this.session_template) return null;
-    if (!this.sessionTemplateObj) {
-      this.sessionTemplateObj = (await SessionTemplate._load(this.session_template)) || undefined;
+
+  async getSessionTemplateObjs(template: number): Promise<SessionTemplate | null> {
+    if (!this.sessionTemplateObjs.has(template)) {
+      const templateObj = await SessionTemplate._load(template);
+      if (templateObj) {
+        this.sessionTemplateObjs.set(template, templateObj);
+      }
     }
-    return this.sessionTemplateObj || null;
+    return this.sessionTemplateObjs.get(template) || null;
   }
 
   // ============================================
@@ -334,8 +357,8 @@ export default class User extends UserModel {
     return this;
   }
 
-  setSessionTemplate(sessionTemplate: number): User {
-    this.session_template = sessionTemplate;
+  setAssignedSessions(sessions: TI.AssignedSession[]): User {
+    this.assigned_sessions = sessions;
     return this;
   }
 
@@ -392,6 +415,95 @@ export default class User extends UserModel {
     }
 
     return this;
+  }
+
+  /**
+   * Assigner une nouvelle session template
+   */
+  assignSession(sessionTemplate: number, assignAt?: Date, active: boolean = true): User {
+    const newSession: TI.AssignedSession = {
+      session_template: sessionTemplate,
+      assign_at: assignAt || TimezoneConfigUtils.getCurrentTime(),
+      active,
+    };
+
+    this.assigned_sessions = TeamsValidationUtils.assignSession(this.assigned_sessions, newSession);
+    return this;
+  }
+
+  /**
+   * Activer une session template spécifique
+   */
+  activateSession(sessionTemplate: number): User {
+    this.assigned_sessions = TeamsValidationUtils.activateSession(
+      this.assigned_sessions,
+      sessionTemplate,
+    );
+    return this;
+  }
+
+  /**
+   * Récupérer la session active
+   */
+  getActiveSession(): TI.AssignedSession | null {
+    return TeamsValidationUtils.getActiveSession(this.assigned_sessions);
+  }
+
+  /**
+   * Vérifier si une session est active
+   */
+  hasActiveSession(): boolean {
+    return this.getActiveSession() !== null;
+  }
+
+  /**
+   * Désactiver toutes les sessions
+   */
+  deactivateAllSessions(): User {
+    this.assigned_sessions = TeamsValidationUtils.deactivateAllSessions(this.assigned_sessions);
+    return this;
+  }
+
+  /**
+   * Retirer une session template
+   */
+  removeSession(sessionTemplate: number): User {
+    this.assigned_sessions = this.assigned_sessions.filter(
+      (session) => session.session_template !== sessionTemplate,
+    );
+    return this;
+  }
+
+  /**
+   * Vérifier si une session template est assignée
+   */
+  hasSessionTemplate(sessionTemplate: number): boolean {
+    return this.assigned_sessions.some((session) => session.session_template === sessionTemplate);
+  }
+
+  /**
+   * Obtenir l'historique complet des sessions
+   */
+  getSessionHistory(): TI.AssignedSession[] {
+    return [...this.assigned_sessions].sort((a, b) => {
+      const dateA = new Date(a.assign_at!).getTime();
+      const dateB = new Date(b.assign_at!).getTime();
+      return dateB - dateA; // Plus récent en premier
+    });
+  }
+
+  /**
+   * Compter le nombre de sessions assignées
+   */
+  countAssignedSessions(): number {
+    return this.assigned_sessions.length;
+  }
+
+  /**
+   * Obtenir toutes les sessions inactives
+   */
+  getInactiveSessions(): TI.AssignedSession[] {
+    return this.assigned_sessions.filter((session) => session.active === false);
   }
 
   /**
@@ -473,6 +585,23 @@ export default class User extends UserModel {
     }
     // return await bcrypt.compare(password, this.password_hash);
     return await super.verifyPassword(password, this.password_hash);
+  }
+
+  async listBySessionTemplate(
+    sessionTemplate: number,
+    paginationOptions: { offset?: number; limit?: number } = {},
+  ): Promise<User[] | null> {
+    const dataset = await this.listAllBySessionTemplate(sessionTemplate, paginationOptions);
+    if (!dataset || dataset.length === 0) return null;
+    return dataset.map((data) => new User().hydrate(data));
+  }
+
+  async listWithActiveSession(
+    paginationOptions: { offset?: number; limit?: number } = {},
+  ): Promise<User[] | null> {
+    const dataset = await this.listAllWithActiveSession(paginationOptions);
+    if (!dataset || dataset.length === 0) return null;
+    return dataset.map((data) => new User().hydrate(data));
   }
 
   // async updateLastLogin(): Promise<void> {
@@ -654,16 +783,16 @@ export default class User extends UserModel {
     }
     return false;
   }
-  async addSessionTemplate(): Promise<boolean> {
-    if (this.id !== undefined) {
-      await W.isOccur(!this.id, `${G.identifierMissing.code}: User Add Session Template`);
-      return await this.definedSessionTemplate(this.id, this.session_template!);
-    }
-    return false;
-  }
+  // async addSessionTemplate(): Promise<boolean> {
+  //   if (this.id !== undefined) {
+  //     await W.isOccur(!this.id, `${G.identifierMissing.code}: User Add Session Template`);
+  //     return await this.definedSessionTemplate(this.id, this.session_template!);
+  //   }
+  //   return false;
+  // }
 
   async toJSON(view: ViewMode = responseValue.FULL): Promise<object> {
-    const sessionTemplate = await this.getSessionTemplateObj();
+    const activeSession = this.getActiveSession();
     const baseModel = {
       [RS.GUID]: this.guid,
       [RS.TENANT]: this.tenant,
@@ -684,13 +813,39 @@ export default class User extends UserModel {
     if (view === responseValue.MINIMAL) {
       return {
         ...baseModel,
-        [RS.DEFAULT_SESSION_TEMPLATE]: sessionTemplate?.getGuid() || null,
+        has_active_session: this.hasActiveSession(),
+        active_session_template: activeSession
+          ? (await this.getSessionTemplateObjs(activeSession.session_template))?.getGuid()
+          : null,
       };
     }
 
+    // Mode FULL
+    const enrichedSessions = await Promise.all(
+      this.assigned_sessions.map(async (session) => {
+        const templateObj = await this.getSessionTemplateObjs(session.session_template);
+        return {
+          session_template: templateObj ? templateObj.toJSON() : null,
+          assign_at: session.assign_at,
+          active: session.active,
+        };
+      }),
+    );
+
     return {
       ...baseModel,
-      [RS.DEFAULT_SESSION_TEMPLATE]: sessionTemplate?.toJSON() || null,
+      assigned_sessions: {
+        count: enrichedSessions.length,
+        active_session: activeSession
+          ? {
+              session_template: (
+                await SessionTemplate._load(activeSession.session_template)
+              )?.getGuid(),
+              assign_at: activeSession.assign_at,
+            }
+          : null,
+        items: enrichedSessions,
+      },
     };
   }
 
@@ -733,7 +888,7 @@ export default class User extends UserModel {
     this.active = data.active;
     this.last_login_at = data.last_login_at;
     this.device_token = data.device_token;
-    this.session_template = data.session_template;
+    this.assigned_sessions = data.assigned_sessions || [];
     return this;
   }
 

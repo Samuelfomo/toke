@@ -1,20 +1,8 @@
 import { Op } from 'sequelize';
-import { TEAMS_ERRORS, TeamsValidationUtils, TimezoneConfigUtils } from '@toke/shared';
+import { TEAMS_ERRORS, TeamsValidationUtils, TI, TimezoneConfigUtils } from '@toke/shared';
 
 import BaseModel from '../database/db.base.js';
 import { tableName } from '../../utils/response.model.js';
-
-export interface TeamMember {
-  user: number;
-  joined_at?: Date;
-  active?: boolean;
-}
-
-export interface AssignedSession {
-  session_template: number;
-  assign_at?: Date;
-  active?: boolean;
-}
 
 export default class TeamsModel extends BaseModel {
   public readonly db = {
@@ -38,8 +26,8 @@ export default class TeamsModel extends BaseModel {
   protected guid?: string;
   protected name?: string;
   protected manager?: number;
-  protected members: TeamMember[] = [];
-  protected assigned_sessions: AssignedSession[] = [];
+  protected members: TI.TeamMember[] = [];
+  protected assigned_sessions: TI.AssignedSession[] = [];
   protected created_at?: Date;
   protected updated_at?: Date;
   protected deleted_at?: Date;
@@ -128,7 +116,7 @@ export default class TeamsModel extends BaseModel {
     // Filtrer les équipes contenant ce membre
     return allTeams.filter((team) => {
       const members = team.members || [];
-      return members.some((member: TeamMember) => member.user === user);
+      return members.some((member: TI.TeamMember) => member.user === user);
     });
   }
 
@@ -148,7 +136,7 @@ export default class TeamsModel extends BaseModel {
     return allTeams.filter((team) => {
       const sessions = team.assigned_sessions || [];
       return sessions.some(
-        (session: AssignedSession) => session.session_template === sessionTemplate,
+        (session: TI.AssignedSession) => session.session_template === sessionTemplate,
       );
     });
   }
@@ -177,7 +165,7 @@ export default class TeamsModel extends BaseModel {
 
     return allTeams.filter((team) => {
       const sessions = team.assigned_sessions || [];
-      return sessions.some((session: AssignedSession) => session.active === true);
+      return sessions.some((session: TI.AssignedSession) => session.active === true);
     });
   }
 

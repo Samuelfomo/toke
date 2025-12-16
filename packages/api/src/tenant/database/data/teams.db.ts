@@ -57,7 +57,6 @@ export const TeamsDbStructure = {
       allowNull: false,
       defaultValue: [],
       validate: {
-        notEmpty: true,
         isValidTeamStructure(value: any) {
           // 1. ✅ La valeur doit être un tableau
           if (!Array.isArray(value)) {

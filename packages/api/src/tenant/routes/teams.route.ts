@@ -6,6 +6,7 @@ import {
   TEAMS_ERRORS,
   TeamsValidationUtils,
   TENANT_CODES,
+  TI,
   TimezoneConfigUtils,
   validateMemberAddition,
   validateSessionAssignment,
@@ -20,8 +21,7 @@ import Teams from '../class/Teams.js';
 import User from '../class/User.js';
 import SessionTemplate from '../class/SessionTemplates.js';
 import { TenantRevision } from '../../tools/revision.js';
-import { tableName } from '../../utils/response.model.js';
-import { AssignedSession, TeamMember } from '../model/TeamsModel.js';
+import { responseValue, tableName } from '../../utils/response.model.js';
 
 const router = Router();
 
@@ -390,7 +390,7 @@ router.put('/:guid', Ensure.put(), async (req: Request, res: Response) => {
     }
 
     if (validatedData.members !== undefined) {
-      let membersData: TeamMember[] = [];
+      let membersData: TI.TeamMember[] = [];
       // Vérifier tous les membres
       for (const member of validatedData.members) {
         const userObj = await User._load(member.user, true);
@@ -411,7 +411,7 @@ router.put('/:guid', Ensure.put(), async (req: Request, res: Response) => {
 
     if (validatedData.assigned_sessions !== undefined) {
       // Vérifier toutes les sessions
-      let templateSessionData: AssignedSession[] = [];
+      let templateSessionData: TI.AssignedSession[] = [];
       for (const session of validatedData.assigned_sessions) {
         const templateObj = await SessionTemplate._load(session.session_template, true);
         if (!templateObj) {
@@ -865,6 +865,422 @@ router.get('/:guid/report', Ensure.get(), async (req: Request, res: Response) =>
   } catch (error: any) {
     return R.handleError(res, HttpStatus.INTERNAL_ERROR, {
       code: TEAMS_CODES.SEARCH_FAILED,
+      message: error.message,
+    });
+  }
+});
+
+// ============================================
+// NOUVELLES ROUTES - HIÉRARCHIE DES ÉQUIPES
+// ============================================
+
+/**
+ * GET /:guid/all-members-recursive - Liste TOUS les membres (incluant sous-équipes)
+ */
+router.get('/:guid/all-members-recursive', Ensure.get(), async (req: Request, res: Response) => {
+  try {
+    const { guid } = req.params;
+
+    if (!TeamsValidationUtils.validateGuid(guid)) {
+      return R.handleError(res, HttpStatus.BAD_REQUEST, {
+        code: TEAMS_CODES.INVALID_GUID,
+        message: TEAMS_ERRORS.GUID_INVALID,
+      });
+    }
+
+    const teamObj = await Teams._load(guid, true);
+    if (!teamObj) {
+      return R.handleError(res, HttpStatus.NOT_FOUND, {
+        code: TEAMS_CODES.TEAM_NOT_FOUND,
+        message: TEAMS_ERRORS.NOT_FOUND,
+      });
+    }
+
+    const allMembers = await teamObj.getAllMembersRecursive();
+
+    // Dédupliquer les utilisateurs (un user peut apparaître dans plusieurs sous-équipes)
+    const uniqueMembers = Array.from(
+      new Map(allMembers.map((member) => [member.getId(), member])).values(),
+    );
+
+    const membersData = await Promise.all(
+      uniqueMembers.map(async (member) => await member.toJSON(responseValue.MINIMAL)),
+    );
+
+    return R.handleSuccess(res, {
+      team: await teamObj.toJSON(responseValue.MINIMAL),
+      total_members_recursive: uniqueMembers.length,
+      all_members: membersData,
+    });
+  } catch (error: any) {
+    return R.handleError(res, HttpStatus.INTERNAL_ERROR, {
+      code: TEAMS_CODES.LISTING_FAILED,
+      message: error.message,
+    });
+  }
+});
+
+/**
+ * GET /:guid/hierarchy-tree - Construit l'arbre hiérarchique complet
+ */
+router.get('/:guid/hierarchy-tree', Ensure.get(), async (req: Request, res: Response) => {
+  try {
+    const { guid } = req.params;
+
+    if (!TeamsValidationUtils.validateGuid(guid)) {
+      return R.handleError(res, HttpStatus.BAD_REQUEST, {
+        code: TEAMS_CODES.INVALID_GUID,
+        message: TEAMS_ERRORS.GUID_INVALID,
+      });
+    }
+
+    const teamObj = await Teams._load(guid, true);
+    if (!teamObj) {
+      return R.handleError(res, HttpStatus.NOT_FOUND, {
+        code: TEAMS_CODES.TEAM_NOT_FOUND,
+        message: TEAMS_ERRORS.NOT_FOUND,
+      });
+    }
+
+    const hierarchyTree = await teamObj.buildTeamHierarchyTree();
+
+    return R.handleSuccess(res, {
+      hierarchy: hierarchyTree,
+    });
+  } catch (error: any) {
+    return R.handleError(res, HttpStatus.INTERNAL_ERROR, {
+      code: TEAMS_CODES.LISTING_FAILED,
+      message: error.message,
+    });
+  }
+});
+
+/**
+ * GET /:guid/active-session-details - Récupère les détails de la session active
+ */
+router.get('/:guid/active-session-details', Ensure.get(), async (req: Request, res: Response) => {
+  try {
+    const { guid } = req.params;
+
+    if (!TeamsValidationUtils.validateGuid(guid)) {
+      return R.handleError(res, HttpStatus.BAD_REQUEST, {
+        code: TEAMS_CODES.INVALID_GUID,
+        message: TEAMS_ERRORS.GUID_INVALID,
+      });
+    }
+
+    const teamObj = await Teams._load(guid, true);
+    if (!teamObj) {
+      return R.handleError(res, HttpStatus.NOT_FOUND, {
+        code: TEAMS_CODES.TEAM_NOT_FOUND,
+        message: TEAMS_ERRORS.NOT_FOUND,
+      });
+    }
+
+    const activeSession = teamObj.getActiveSession();
+
+    if (!activeSession) {
+      return R.handleSuccess(res, {
+        team: await teamObj.toJSON(responseValue.MINIMAL),
+        has_active_session: false,
+        active_session: null,
+        message: 'No active session for this team',
+      });
+    }
+
+    const sessionTemplateObj = await teamObj.getSessionTemplateObj(activeSession.session_template);
+
+    return R.handleSuccess(res, {
+      team: await teamObj.toJSON(responseValue.MINIMAL),
+      has_active_session: true,
+      active_session: {
+        template: sessionTemplateObj ? await sessionTemplateObj.toJSON() : null,
+        assigned_at: activeSession.assign_at,
+        active: activeSession.active,
+      },
+    });
+  } catch (error: any) {
+    return R.handleError(res, HttpStatus.INTERNAL_ERROR, {
+      code: TEAMS_CODES.SEARCH_FAILED,
+      message: error.message,
+    });
+  }
+});
+
+// ============================================
+// 🎯 ROUTES PRINCIPALES - HIÉRARCHIE BASÉE SUR MANAGER
+// ============================================
+
+/**
+ * 🔥 GET /manager/:manager_guid/team-hierarchy
+ * Point d'entrée principal : Récupère la hiérarchie complète de l'équipe d'un manager
+ * Inclut les sous-équipes SI les membres sont managers ET hiérarchiquement en dessous
+ */
+router.get(
+  '/manager/:manager/team-hierarchy',
+  Ensure.get(),
+  async (req: Request, res: Response) => {
+    try {
+      const { manager } = req.params;
+
+      if (!TeamsValidationUtils.validateManager(manager)) {
+        return R.handleError(res, HttpStatus.BAD_REQUEST, {
+          code: TEAMS_CODES.MANAGER_INVALID,
+          message: TEAMS_ERRORS.MANAGER_INVALID,
+        });
+      }
+
+      const managerObj = await User._load(manager, true);
+      if (!managerObj) {
+        return R.handleError(res, HttpStatus.NOT_FOUND, {
+          code: TEAMS_CODES.MANAGER_NOT_FOUND,
+          message: TEAMS_ERRORS.MANAGER_NOT_FOUND,
+        });
+      }
+
+      const hierarchy = await Teams.getManagerTeamHierarchy(managerObj.getId()!);
+
+      return R.handleSuccess(res, {
+        hierarchy,
+      });
+    } catch (error: any) {
+      return R.handleError(res, HttpStatus.INTERNAL_ERROR, {
+        code: TEAMS_CODES.LISTING_FAILED,
+        message: error.message,
+      });
+    }
+  },
+);
+
+/**
+ * 📋 GET /manager/:manager_guid/direct-members
+ * Liste uniquement les membres directs de l'équipe du manager (1er niveau)
+ */
+router.get(
+  '/manager/:manager/direct-members',
+  Ensure.get(),
+  async (req: Request, res: Response) => {
+    try {
+      const { manager } = req.params;
+
+      if (!TeamsValidationUtils.validateManager(manager)) {
+        return R.handleError(res, HttpStatus.BAD_REQUEST, {
+          code: TEAMS_CODES.MANAGER_INVALID,
+          message: TEAMS_ERRORS.MANAGER_INVALID,
+        });
+      }
+
+      const managerObj = await User._load(manager, true);
+      if (!managerObj) {
+        return R.handleError(res, HttpStatus.NOT_FOUND, {
+          code: TEAMS_CODES.MANAGER_NOT_FOUND,
+          message: TEAMS_ERRORS.MANAGER_NOT_FOUND,
+        });
+      }
+
+      // Récupérer l'équipe du manager
+      const teams = await Teams._listByManager(managerObj.getId()!);
+
+      if (!teams || teams.length === 0) {
+        return R.handleSuccess(res, {
+          manager: await managerObj.toJSON(responseValue.MINIMAL),
+          has_team: false,
+          total_direct_members: 0,
+          direct_members: [],
+        });
+      }
+
+      const team = teams[0];
+      const directMembers = await team.getDirectMembers();
+      const membersData = await Promise.all(
+        directMembers.map(async (member) => await member.toJSON(responseValue.MINIMAL)),
+      );
+
+      return R.handleSuccess(res, {
+        manager: await managerObj.toJSON(responseValue.MINIMAL),
+        team: await team.toJSON(responseValue.MINIMAL),
+        total_direct_members: directMembers.length,
+        direct_members: membersData,
+      });
+    } catch (error: any) {
+      return R.handleError(res, HttpStatus.INTERNAL_ERROR, {
+        code: TEAMS_CODES.LISTING_FAILED,
+        message: error.message,
+      });
+    }
+  },
+);
+
+/**
+ * 📊 GET /manager/:manager_guid/all-members-flat
+ * Liste TOUS les membres (aplatie) sous un manager
+ * Inclut les membres des sous-équipes si hiérarchiquement valides
+ */
+router.get(
+  '/manager/:manager/all-members-flat',
+  Ensure.get(),
+  async (req: Request, res: Response) => {
+    try {
+      const { manager } = req.params;
+
+      if (!TeamsValidationUtils.validateManager(manager)) {
+        return R.handleError(res, HttpStatus.BAD_REQUEST, {
+          code: TEAMS_CODES.MANAGER_INVALID,
+          message: TEAMS_ERRORS.MANAGER_INVALID,
+        });
+      }
+
+      const managerObj = await User._load(manager, true);
+      if (!managerObj) {
+        return R.handleError(res, HttpStatus.NOT_FOUND, {
+          code: TEAMS_CODES.MANAGER_NOT_FOUND,
+          message: TEAMS_ERRORS.MANAGER_NOT_FOUND,
+        });
+      }
+
+      const teams = await Teams._listByManager(managerObj.getId()!);
+
+      if (!teams || teams.length === 0) {
+        return R.handleSuccess(res, {
+          manager: await managerObj.toJSON(responseValue.MINIMAL),
+          has_team: false,
+          total_members: 0,
+          all_members: [],
+        });
+      }
+
+      const team = teams[0];
+      const allMembers = await team.getAllMembersFlat(managerObj.getId()!);
+
+      const membersData = await Promise.all(
+        allMembers.map(async (member) => await member.toJSON(responseValue.MINIMAL)),
+      );
+
+      return R.handleSuccess(res, {
+        manager: await managerObj.toJSON(responseValue.MINIMAL),
+        team: await team.toJSON(responseValue.MINIMAL),
+        total_members: allMembers.length,
+        all_members: membersData,
+      });
+    } catch (error: any) {
+      return R.handleError(res, HttpStatus.INTERNAL_ERROR, {
+        code: TEAMS_CODES.LISTING_FAILED,
+        message: error.message,
+      });
+    }
+  },
+);
+
+/**
+ * ⏰ GET /manager/:manager_guid/active-session
+ * Récupère la session active de l'équipe du manager
+ */
+router.get(
+  '/manager/:manager/active-session',
+  Ensure.get(),
+  async (req: Request, res: Response) => {
+    try {
+      const { manager } = req.params;
+
+      if (!TeamsValidationUtils.validateManager(manager)) {
+        return R.handleError(res, HttpStatus.BAD_REQUEST, {
+          code: TEAMS_CODES.MANAGER_INVALID,
+          message: TEAMS_ERRORS.MANAGER_INVALID,
+        });
+      }
+
+      const managerObj = await User._load(manager, true);
+      if (!managerObj) {
+        return R.handleError(res, HttpStatus.NOT_FOUND, {
+          code: TEAMS_CODES.MANAGER_NOT_FOUND,
+          message: TEAMS_ERRORS.MANAGER_NOT_FOUND,
+        });
+      }
+
+      const teams = await Teams._listByManager(managerObj.getId()!);
+
+      if (!teams || teams.length === 0) {
+        return R.handleSuccess(res, {
+          manager: await managerObj.toJSON(responseValue.MINIMAL),
+          has_team: false,
+          has_active_session: false,
+          active_session: null,
+        });
+      }
+
+      const team = teams[0];
+      const activeSession = team.getActiveSession();
+
+      if (!activeSession) {
+        return R.handleSuccess(res, {
+          manager: await managerObj.toJSON(responseValue.MINIMAL),
+          team: await team.toJSON(responseValue.MINIMAL),
+          has_active_session: false,
+          active_session: null,
+          message: 'No active session for this team',
+        });
+      }
+
+      const sessionTemplateObj = await team.getSessionTemplateObj(activeSession.session_template);
+
+      return R.handleSuccess(res, {
+        manager: await managerObj.toJSON(responseValue.MINIMAL),
+        team: await team.toJSON(responseValue.MINIMAL),
+        has_active_session: true,
+        active_session: {
+          template: sessionTemplateObj ? await sessionTemplateObj.toJSON() : null,
+          assigned_at: activeSession.assign_at,
+          active: activeSession.active,
+        },
+      });
+    } catch (error: any) {
+      return R.handleError(res, HttpStatus.INTERNAL_ERROR, {
+        code: TEAMS_CODES.SEARCH_FAILED,
+        message: error.message,
+      });
+    }
+  },
+);
+
+// ============================================
+// ROUTES COMPLÉMENTAIRES - ÉQUIPE PAR GUID
+// ============================================
+
+/**
+ * GET /:guid/direct-members - Liste membres directs d'une équipe spécifique
+ */
+router.get('/:guid/direct-members', Ensure.get(), async (req: Request, res: Response) => {
+  try {
+    const { guid } = req.params;
+
+    if (!TeamsValidationUtils.validateGuid(guid)) {
+      return R.handleError(res, HttpStatus.BAD_REQUEST, {
+        code: TEAMS_CODES.INVALID_GUID,
+        message: TEAMS_ERRORS.GUID_INVALID,
+      });
+    }
+
+    const teamObj = await Teams._load(guid, true);
+    if (!teamObj) {
+      return R.handleError(res, HttpStatus.NOT_FOUND, {
+        code: TEAMS_CODES.TEAM_NOT_FOUND,
+        message: TEAMS_ERRORS.NOT_FOUND,
+      });
+    }
+
+    const directMembers = await teamObj.getDirectMembers();
+    const membersData = await Promise.all(
+      directMembers.map(async (member) => await member.toJSON(responseValue.MINIMAL)),
+    );
+
+    return R.handleSuccess(res, {
+      team: await teamObj.toJSON(responseValue.MINIMAL),
+      total_direct_members: directMembers.length,
+      direct_members: membersData,
+    });
+  } catch (error: any) {
+    return R.handleError(res, HttpStatus.INTERNAL_ERROR, {
+      code: TEAMS_CODES.LISTING_FAILED,
       message: error.message,
     });
   }

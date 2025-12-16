@@ -174,9 +174,14 @@ class ScheduleResolutionService {
   private async resolveFromDefaultTemplate(
     userId: number,
     dateStr: string,
+    groupId?: number,
   ): Promise<ApplicableSchedule | null> {
     const userObj = await User._load(userId);
-    const userSchedule = await userObj?.getSessionTemplateObj();
+    const activeSession = userObj?.getActiveSession();
+    if (!activeSession) {
+      return null;
+    }
+    const userSchedule = await userObj?.getSessionTemplateObjs(activeSession.session_template);
     if (userSchedule) {
       return await this.buildScheduleFromTemplate(userSchedule.getId()!, dateStr, 'default', {
         session_guid: userSchedule.getGuid(),
@@ -187,6 +192,8 @@ class ScheduleResolutionService {
       });
     }
 
+    // TODO: Chercher le template du groupe si pas de template utilisateur
+    // const groupTemplate = await Teams._listForGroupOnDate(groupId, dateStr);
     return null;
   }
 

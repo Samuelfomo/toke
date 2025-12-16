@@ -11,6 +11,7 @@ export * from './types/tax.rule.js';
 // tenant specific types
 export * from './types/tenant/work.sessions.js';
 export * from './types/tenant/memos.js';
+export * as TI from './types/tenant/teams.js';
 
 // Export des constantes
 export * from './constants/api.js';
