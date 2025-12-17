@@ -1,4 +1,4 @@
-// composables/useEmployeeStore.ts
+// composables/useEmployee.ts
 import { ref, computed, watch } from 'vue'
 
 interface Employee {
@@ -64,7 +64,7 @@ if (typeof window !== 'undefined') {
   }, { deep: true })
 }
 
-export function useEmployeeStore() {
+export function useEmployee() {
 
   // Charger depuis localStorage si disponible
   const loadFromStorage = () => {
@@ -488,19 +488,19 @@ export function useEmployeeStore() {
     console.log('🚀 Initialisation du store...')
 
     initializeSites()
+    //
+    // // Essayer de charger depuis localStorage
+    // const loaded = loadFromStorage()
 
-    // Essayer de charger depuis localStorage
-    const loaded = loadFromStorage()
-
-    if (!loaded) {
-      // Si pas de données en localStorage, générer les données par défaut
-      initializeEmployees()
-      generateMonthlyAttendance()
-      calculateMonthlyPunctuality()
-    } else {
-      // Recalculer la ponctualité pour les données chargées
-      calculateMonthlyPunctuality()
-    }
+    // if (!loaded) {
+    //   // Si pas de données en localStorage, générer les données par défaut
+    //   initializeEmployees()
+    //   generateMonthlyAttendance()
+    //   calculateMonthlyPunctuality()
+    // } else {
+    //   // Recalculer la ponctualité pour les données chargées
+    //   calculateMonthlyPunctuality()
+    // }
 
     isInitialized.value = true
     console.log('✅ Store initialisé:', {

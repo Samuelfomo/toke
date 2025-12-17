@@ -188,6 +188,10 @@
     background: var(--color-warning);
 }
 
+.indicator-off-day {
+    background: var(--color-primary);
+}
+
 .indicator-absent {
     background: var(--color-error);
 }

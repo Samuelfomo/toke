@@ -3,7 +3,7 @@
     ref="authFormRef"
     page-title="Connexion Employé - Toké"
     :css-file="authCss"
-    welcome-message="Authentification 1"
+    welcome-message="Authentification"
     submit-button-text="Se connecter"
     loading-text="Connexion en cours..."
     :default-fields="loginFields"
@@ -23,7 +23,7 @@
             id="customer_code"
             :value="formData.customer_code || ''"
             type="text"
-            class="form-input"
+            class="auth-input"
             placeholder="Ex : CLT-20455"
             autocomplete="off"
             :class="{ 'error': errors.customer_code }"
@@ -43,18 +43,16 @@
             id="email"
             :value="formData.email || ''"
             type="email"
-            class="form-input"
+            class="auth-input"
             placeholder="votre.email@entreprise.com"
             autocomplete="email"
             :class="{ 'error': errors.email }"
             @input="updateField('email', ($event.target as HTMLInputElement).value)"
             @blur="handleEmailBlur(formData.email, updateField)"
           />
-
           <span v-if="errors.email" class="error-message">{{ errors.email }}</span>
         </div>
-
-      </div>A-20251013190826-101
+      </div>
     </template>
 
     <template #footer>
@@ -169,18 +167,18 @@ const handleLogin = async (formData: any) => {
         authFormRef.value.setGlobalSuccess(response.message || 'Code OTP envoyé avec succès! Redirection...');
       }
 
-      // Stocker l'email pour la vérification OTP
-      sessionStorage.setItem('login_email', authCtrl.sanitizeEmail(formData.email));
-      sessionStorage.setItem('customer_code', formData.customer_code);
-
       // Redirection vers la page OTP après un court délai
       setTimeout(() => {
-        router.push('/otp');
+        // router.push('/otp');
+        router.push({ path: '/otp', query: { email: formData.email } });
       }, 2000);
 
-      return response;
+
+
+
+      // return response;
     } else {
-      // console.error('❌ Échec de la connexion:', response);
+      console.error('❌ Échec de la connexion:', response);
 
       // Afficher l'erreur globale
       const errorMessage = authCtrl.formatResponseMessage(response);
@@ -192,7 +190,7 @@ const handleLogin = async (formData: any) => {
     }
 
   } catch (error: any) {
-    // console.error('💥 Erreur lors de la connexion:', error);
+    console.error('💥 Erreur lors de la connexion:', error);
 
     // Afficher l'erreur à l'utilisateur
     if (authFormRef.value && !error.field) {
@@ -231,28 +229,6 @@ const handleLogin = async (formData: any) => {
 
 .label-icon {
   font-size: 18px;
-}
-
-.form-input {
-  padding: 12px 16px;
-  border: 1px solid #ddd;
-  border-radius: 6px;
-  font-size: 14px;
-  transition: all 0.2s;
-}
-
-.form-input:focus {
-  outline: none;
-  border-color: #4CAF50;
-  box-shadow: 0 0 0 3px rgba(76, 175, 80, 0.1);
-}
-
-.form-input.error {
-  border-color: #f44336;
-}
-
-.form-input.error:focus {
-  box-shadow: 0 0 0 3px rgba(244, 67, 54, 0.1);
 }
 
 .error-message {

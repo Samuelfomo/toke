@@ -3,35 +3,8 @@
     <div class="max-w-7xl ml-auto px-4 sm:px-6 lg:px-8">
       <div class="flex items-center justify-end h-16">
 
-        <!-- Search Bar - Responsive -->
-        <div class="flex-1 max-w-[16rem] mx-4 lg:mx-8">
-          <div class="relative">
-            <div class="flex items-center bg-[#283a52] hover:bg-[#283a52]-500 rounded-2xl px-4 py-3 transition-all duration-300 shadow-lg hover:shadow-xl backdrop-blur-sm">
-              <svg class="h-6 w-5 text-white mr-3 flex-shrink-0" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-                <circle cx="11" cy="11" r="8"/>
-                <path d="m21 21-4.35-4.35"/>
-              </svg>
-              <input
-                  v-model="searchQuery"
-                  type="text"
-                  placeholder="Rechercher..."
-                  class="flex-1 bg-transparent border-none outline-none text-white placeholder-blue-100 text-sm font-medium"
-                  @keyup.enter="handleSearch"
-              >
-              <div v-if="searchQuery" class="ml-2">
-                <button @click="clearSearch" class="text-blue-100 hover:text-white transition-colors p-1 rounded-full hover:bg-white/10">
-                  <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
-                    <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/>
-                  </svg>
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
-
         <!-- Right section - Notifications & User Profile -->
         <div class="flex items-center space-x-4">
-
           <!-- Notifications -->
           <div class="relative">
             <button
@@ -47,7 +20,6 @@
                 <span class="text-[10px] text-white font-medium">3</span>
               </span>
             </button>
-
             <!-- Notifications Dropdown -->
             <transition name="dropdown">
               <div v-if="showNotifications" class="absolute right-0 mt-2 w-80 bg-white/95 backdrop-blur-md rounded-xl shadow-xl border border-white/20 py-1 z-50">
@@ -77,7 +49,6 @@
               </div>
             </transition>
           </div>
-
           <!-- User Profile Menu -->
           <div class="relative">
             <button

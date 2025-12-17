@@ -162,11 +162,11 @@ import { useRoute, useRouter } from 'vue-router'
 import HeadBuilder from '@/utils/HeadBuilder'
 import detailsCss from "../assets/css/toke-employee-detail13.css?url"
 import { IconArrowLeft, IconMessage } from '@tabler/icons-vue'
-import { useEmployeeStore } from '../composables/useEmployeeStore'
+import { useEmployee } from '../utils/useEmployee'
 
 const route = useRoute()
 const router = useRouter()
-const employeeStore = useEmployeeStore()
+const employeeStore = useEmployee()
 
 const loading = ref(true)
 const employee = ref<any>(null)

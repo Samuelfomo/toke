@@ -196,7 +196,7 @@
 
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue';
-import { useEmployeeStore } from '../composables/useEmployeeStore';
+import { useEmployee } from '../utils/useEmployee';
 import HeadBuilder from '@/utils/HeadBuilder';
 import planningCss from "../assets/css/planning-toke-14.css?url";
 import dashboardCss from "../assets/css/toke-dMain-04.css?url";
@@ -207,7 +207,7 @@ import dashboardCss from "../assets/css/toke-dMain-04.css?url";
 // });
 const notificationCount = ref(2);
 
-const employeeStore = useEmployeeStore();
+const employeeStore = useEmployee();
 const currentWeekStart = ref(getMonday(new Date()));
 const viewMode = ref<'week' | 'month'>('week');
 const searchEmployee = ref('');

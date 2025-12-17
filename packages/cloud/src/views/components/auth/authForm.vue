@@ -97,7 +97,7 @@ import HeadBuilder from '../../../utils/HeadBuilder'
 import LazySvgImage from '../LazySvgImage.vue';
 const router = useRouter()
 const loading = ref(true);
-import toke1 from '../../../../public/images/toke-main-logo.svg'
+import toke1 from '../../../../public/images/toke-white-logo.svg'
 
 // Interface pour les champs
 interface FormField {

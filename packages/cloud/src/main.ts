@@ -1,13 +1,14 @@
-import { createApp } from 'vue';
-import { createPinia } from 'pinia';
+import { createApp } from 'vue'
+import { createPinia } from 'pinia'
 
-import App from './App.vue';
-import './assets/css/main.css';
-import { router } from './router'; // <-- en TypeScript, ça va chercher router.ts
+import App from './App.vue'
+import './assets/css/main.css'
+import { router } from './router'
 
-const app = createApp(App);
+const app = createApp(App)
+const pinia = createPinia()
 
-app.use(createPinia());
-app.use(router);
+app.use(pinia)
+app.use(router)
 
-app.mount('#app');
+app.mount('#app')
