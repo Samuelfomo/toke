@@ -37,8 +37,8 @@
 
 .breadcrumb-back:hover {
     background: #f9fafb;
-    border-color: #6366f1;
-    color: #6366f1;
+    border-color: #004AAD;
+    color: #004AAD;
     transform: translateX(-2px);
 }
 
@@ -203,7 +203,7 @@
    ================================ */
 
 .profile-header {
-    background: var(--color-primary);
+    background: #004AAD;
     border-radius: 1.5rem;
     padding: 2.5rem;
     margin-bottom: 2rem;

@@ -12,7 +12,6 @@ import Module from './views/module.vue'
 import AssiduteDuJour from './views/AssiduteDuJour.vue'
 import Equipe from './views/equipe.vue'
 import MemoList from './views/memo/memoList.vue'
-import MemoDetail from './views/memo/memoDetail.vue'
 import EmployeeDetails from './views/EmployeeDetails.vue'
 import Planning from './views/planning.vue'
 import Profile from './views/profile.vue'
@@ -80,12 +79,6 @@ const routes: RouteRecordRaw[] = [
     path: '/memoList',
     name: 'memoList',
     component: MemoList,
-    meta: { requiresAuth: true },
-  },
-  {
-    path: '/memoDetail',
-    name: 'memoDetail',
-    component: MemoDetail,
     meta: { requiresAuth: true },
   },
   {
