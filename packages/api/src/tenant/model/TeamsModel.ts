@@ -70,6 +70,18 @@ export default class TeamsModel extends BaseModel {
     return await this.findOne(this.db.tableName, conditions);
   }
 
+  protected async findByManagerName(
+    manager: number,
+    name: string,
+    includeDeleted: boolean = false,
+  ): Promise<any> {
+    const conditions: any = { [this.db.manager]: manager, [this.db.name]: name };
+    if (!includeDeleted) {
+      conditions[this.db.deleted_at] = null;
+    }
+    return await this.findOne(this.db.tableName, conditions);
+  }
+
   // ============================================
   // MÉTHODES DE LISTAGE
   // ============================================
@@ -210,13 +222,13 @@ export default class TeamsModel extends BaseModel {
       throw new Error(TEAMS_ERRORS.GUID_GENERATION_FAILED);
     }
 
-    // // Vérification unicité du nom
-    // if (this.name) {
-    //   const existingTeam = await this.findByName(this.name);
-    //   if (existingTeam) {
-    //     throw new Error(TEAMS_ERRORS.DUPLICATE_ENTRY);
-    //   }
-    // }
+    // Vérification unicité du nom pour ce manager
+    if (this.name) {
+      const existingTeam = await this.findByManagerName(this.manager!, this.name, true);
+      if (existingTeam) {
+        throw new Error(TEAMS_ERRORS.DUPLICATE_ENTRY);
+      }
+    }
 
     const lastID = await this.insertOne(this.db.tableName, {
       [this.db.guid]: guid,
@@ -244,12 +256,16 @@ export default class TeamsModel extends BaseModel {
     const updateData: Record<string, any> = {};
 
     if (this.name !== undefined) {
+      const existingTeam = await this.findByManagerName(this.manager!, this.name, true);
+      if (existingTeam && existingTeam.id !== this.id) {
+        throw new Error(TEAMS_ERRORS.DUPLICATE_ENTRY);
+      }
       updateData[this.db.name] = this.name;
     }
 
-    if (this.manager !== undefined) {
-      updateData[this.db.manager] = this.manager;
-    }
+    // if (this.manager !== undefined) {
+    //   updateData[this.db.manager] = this.manager;
+    // }
 
     if (this.members !== undefined) {
       updateData[this.db.members] = this.members;

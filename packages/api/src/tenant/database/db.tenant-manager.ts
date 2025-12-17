@@ -68,7 +68,7 @@ export default class TenantManager {
         },
 
         pool: {
-          max: 5,
+          max: 3,    // max: 5,    // IMPORTANT avec PgBouncer
           min: 0,
           acquire: 30000,
           idle: 10000,
@@ -87,9 +87,9 @@ export default class TenantManager {
       await sequelize.authenticate();
       console.log(`✅ Connexion DB établie pour tenant: ${subdomain}`);
 
-      // Configurer le timezone au niveau de la session PostgreSQL
-      await sequelize.query(`SET timezone = '${TenantManager.TIMEZONE}'`);
-      console.log(`⏰ Timezone configuré: ${TenantManager.TIMEZONE}`);
+      // // Configurer le timezone au niveau de la session PostgreSQL
+      // await sequelize.query(`SET timezone = '${TenantManager.TIMEZONE}'`);
+      // console.log(`⏰ Timezone configuré: ${TenantManager.TIMEZONE}`);
 
       TenantManager.connections.set(connectionKey, sequelize);
       return sequelize;

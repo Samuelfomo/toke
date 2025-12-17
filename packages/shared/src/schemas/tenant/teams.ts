@@ -135,6 +135,7 @@ export const teamsFiltersSchema = z
     has_members: z.boolean().optional(),
     has_active_session: z.boolean().optional(),
     member_user: z.string().trim().optional(),
+    session_template: z.string().trim().optional(),
     created_at_from: z.union([z.date(), z.string().transform((val) => new Date(val))]).optional(),
     created_at_to: z.union([z.date(), z.string().transform((val) => new Date(val))]).optional(),
   })

@@ -89,7 +89,14 @@ router.get('/list', Ensure.get(), async (req: Request, res: Response) => {
       conditions.name = filters.name;
     }
     if (filters.manager) {
-      conditions.manager = filters.manager;
+      const managerObj = await User._load(filters.manager, true);
+      if (!managerObj) {
+        return R.handleError(res, HttpStatus.INTERNAL_ERROR, {
+          code: TEAMS_CODES.MANAGER_NOT_FOUND,
+          message: TEAMS_ERRORS.MANAGER_NOT_FOUND,
+        });
+      }
+      conditions.manager = managerObj.getId()!;
     }
 
     let teamEntries;
@@ -106,12 +113,21 @@ router.get('/list', Ensure.get(), async (req: Request, res: Response) => {
     } else if (filters.member_user) {
       const userObj = await User._load(filters.member_user, true);
       if (!userObj) {
-        return R.handleError(res, HttpStatus.INTERNAL_ERROR, {
+        return R.handleError(res, HttpStatus.NOT_FOUND, {
           code: TEAMS_CODES.MEMBER_USER_NOT_FOUND,
           message: TEAMS_ERRORS.MEMBER_USER_NOT_FOUND,
         });
       }
       teamEntries = await Teams._listByMember(userObj.getId()!, paginationOptions);
+    } else if (filters.session_template) {
+      const templateSessionObj = await SessionTemplate._load(filters.session_template, true);
+      if (!templateSessionObj) {
+        return R.handleError(res, HttpStatus.NOT_FOUND, {
+          code: TEAMS_CODES.SESSION_TEMPLATE_NOT_FOUND,
+          message: TEAMS_ERRORS.SESSION_TEMPLATE_NOT_FOUND,
+        });
+      }
+      teamEntries = await Teams._listBySession(templateSessionObj.getId()!, paginationOptions);
     } else {
       teamEntries = await Teams._list(conditions, paginationOptions);
     }
@@ -190,7 +206,7 @@ router.get('/member/:user/list', Ensure.get(), async (req: Request, res: Respons
   try {
     const { user } = req.params;
 
-    if (!TeamsValidationUtils.validateUser(user)) {
+    if (!TeamsValidationUtils.validateUser(String(user))) {
       return R.handleError(res, HttpStatus.BAD_REQUEST, {
         code: TEAMS_CODES.MEMBER_USER_INVALID,
         message: TEAMS_ERRORS.MEMBER_USER_INVALID,
@@ -456,9 +472,9 @@ router.put('/:guid', Ensure.put(), async (req: Request, res: Response) => {
 // ============================================
 
 /**
- * POST /:guid/members - Ajouter un membre
+ * PATCH /:guid/members - Ajouter un membre
  */
-router.post('/:guid/members', Ensure.post(), async (req: Request, res: Response) => {
+router.patch('/:guid/members', Ensure.patch(), async (req: Request, res: Response) => {
   try {
     const { guid } = req.params;
 
@@ -640,9 +656,9 @@ router.patch('/:guid/members/:user/status', Ensure.patch(), async (req: Request,
 // ============================================
 
 /**
- * POST /:guid/sessions - Assigner une session template
+ * PATCH /:guid/sessions - Assigner une session template
  */
-router.post('/:guid/sessions', Ensure.post(), async (req: Request, res: Response) => {
+router.patch('/:guid/sessions', Ensure.patch(), async (req: Request, res: Response) => {
   try {
     const { guid } = req.params;
 

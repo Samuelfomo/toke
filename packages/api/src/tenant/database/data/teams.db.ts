@@ -262,6 +262,11 @@ export const TeamsDbStructure = {
         name: 'idx_teams_members',
         using: 'GIN',
       },
+      {
+        fields: ['manager', 'name'],
+        name: 'idx_teams_manager_name',
+        unique: true,
+      },
     ],
   } as ModelOptions,
 };

@@ -24,7 +24,7 @@ export default class Db {
           dialect: 'postgres',
           logging: false, // Désactive les logs SQL
           pool: {
-            max: 5,
+            max: 3, // max: 5,
             min: 0,
             acquire: 30000,
             idle: 10000,

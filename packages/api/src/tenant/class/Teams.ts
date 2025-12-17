@@ -53,6 +53,13 @@ export default class Teams extends TeamsModel {
     return new Teams().listByMember(user, paginationOptions);
   }
 
+  static _listBySession(
+    template_session: number,
+    paginationOptions: { offset?: number; limit?: number } = {},
+  ): Promise<Teams[] | null> {
+    return new Teams().listBySessionTemplate(template_session, paginationOptions);
+  }
+
   static _listWithMembers(
     paginationOptions: { offset?: number; limit?: number } = {},
   ): Promise<Teams[] | null> {
@@ -494,6 +501,15 @@ export default class Teams extends TeamsModel {
     paginationOptions: { offset?: number; limit?: number } = {},
   ): Promise<Teams[] | null> {
     const dataset = await this.listAllByMember(user, paginationOptions);
+    if (!dataset || dataset.length === 0) return null;
+    return dataset.map((data) => new Teams().hydrate(data));
+  }
+
+  async listBySessionTemplate(
+    session_template: number,
+    paginationOptions: { offset?: number; limit?: number } = {},
+  ): Promise<Teams[] | null> {
+    const dataset = await this.listAllBySessionTemplate(session_template, paginationOptions);
     if (!dataset || dataset.length === 0) return null;
     return dataset.map((data) => new Teams().hydrate(data));
   }
