@@ -45,7 +45,11 @@ class ScheduleResolutionService {
    * Point d'entrée principal - Résout l'horaire applicable pour un utilisateur à une date donnée
    * Ordre de priorité: exception → rotation → template direct → défaut entreprise
    */
-  async getApplicableSchedule(userId: number, targetDate: Date): Promise<ScheduleResolutionResult> {
+  async getApplicableSchedule(
+    userId: number,
+    targetDate: Date,
+    // managerId?: number,
+  ): Promise<ScheduleResolutionResult> {
     const resolutionPath: string[] = [];
     const dateStr = this.formatDate(targetDate);
     const dayOfWeek = this.getDayOfWeek(targetDate);

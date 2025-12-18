@@ -872,12 +872,16 @@ class AnomalyDetectionService {
           {
             created_at: TimezoneConfigUtils.getCurrentTime().toISOString(),
             user: userAuthor?.getGuid()!,
-            message: [
-              {
-                type: MessageType.TEXT,
-                content: `${anomalies.map((a) => a.type).join(', ')}`,
-              },
-            ],
+            message: anomalies.map((a) => ({
+              type: MessageType.TEXT,
+              content: a.type,
+            })),
+            // message: [
+            // {
+            //   type: MessageType.TEXT,
+            //   content: `${anomalies.map((a) => a.type).join(', ')}`,
+            // },
+            // ],
           },
         ],
         // if (description) this.description = description;

@@ -30,13 +30,13 @@ const baseScheduleExceptionSchema = z.object({
     .nullable()
     .optional(),
 
-  group: z
+  team: z
     .string({
-      invalid_type_error: SCHEDULE_EXCEPTION_ERRORS.GROUP_INVALID,
+      invalid_type_error: SCHEDULE_EXCEPTION_ERRORS.TEAM_INVALID,
     })
     .trim()
-    .min(SCHEDULE_EXCEPTION_VALIDATION.GROUP.MIN_LENGTH, SCHEDULE_EXCEPTION_ERRORS.GROUP_INVALID)
-    .max(SCHEDULE_EXCEPTION_VALIDATION.GROUP.MAX_LENGTH, SCHEDULE_EXCEPTION_ERRORS.GROUP_INVALID)
+    .min(SCHEDULE_EXCEPTION_VALIDATION.TEAM.MIN_LENGTH, SCHEDULE_EXCEPTION_ERRORS.TEAM_INVALID)
+    .max(SCHEDULE_EXCEPTION_VALIDATION.TEAM.MAX_LENGTH, SCHEDULE_EXCEPTION_ERRORS.TEAM_INVALID)
     .nullable()
     .optional(),
 
@@ -120,13 +120,13 @@ const baseScheduleExceptionSchema = z.object({
 export const createScheduleExceptionSchema = baseScheduleExceptionSchema
   .refine(
     (data) => {
-      // Either user or group must be specified, but not both
+      // Either user or team must be specified, but not both
       const hasUser = data.user !== null && data.user !== undefined;
-      const hasGroup = data.group !== null && data.group !== undefined;
-      return hasUser !== hasGroup; // XOR: exactly one must be true
+      const hasTeam = data.team !== null && data.team !== undefined;
+      return hasUser !== hasTeam; // XOR: exactly one must be true
     },
     {
-      message: SCHEDULE_EXCEPTION_ERRORS.USER_OR_GROUP_REQUIRED,
+      message: SCHEDULE_EXCEPTION_ERRORS.USER_OR_TEAM_REQUIRED,
     },
   )
   .refine(
@@ -147,13 +147,13 @@ export const updateScheduleExceptionSchema = baseScheduleExceptionSchema
   .partial()
   .refine(
     (data) => {
-      // Either user or group must be specified, but not both
+      // Either user or team must be specified, but not both
       const hasUser = data.user !== null && data.user !== undefined;
-      const hasGroup = data.group !== null && data.group !== undefined;
-      return hasUser !== hasGroup; // XOR: exactly one must be true
+      const hasTeam = data.team !== null && data.team !== undefined;
+      return hasUser !== hasTeam; // XOR: exactly one must be true
     },
     {
-      message: SCHEDULE_EXCEPTION_ERRORS.USER_OR_GROUP_REQUIRED,
+      message: SCHEDULE_EXCEPTION_ERRORS.USER_OR_TEAM_REQUIRED,
     },
   )
   .refine(
@@ -174,7 +174,7 @@ export const scheduleExceptionFiltersSchema = z
   .object({
     tenant: z.string().optional(),
     user: z.number().int().optional(),
-    group: z.number().int().optional(),
+    team: z.number().int().optional(),
     session_template: z.number().int().optional(),
     active: z.boolean().optional(),
     start_date_from: z
@@ -207,7 +207,7 @@ export const scheduleExceptionGuidSchema = z
 const FIELD_TO_CODE_MAP: Record<string, ScheduleExceptionCode> = {
   tenant: SCHEDULE_EXCEPTION_CODES.TENANT_INVALID,
   user: SCHEDULE_EXCEPTION_CODES.USER_INVALID,
-  group: SCHEDULE_EXCEPTION_CODES.GROUP_INVALID,
+  team: SCHEDULE_EXCEPTION_CODES.TEAM_INVALID,
   session_template: SCHEDULE_EXCEPTION_CODES.SESSION_TEMPLATE_INVALID,
   start_date: SCHEDULE_EXCEPTION_CODES.START_DATE_INVALID,
   end_date: SCHEDULE_EXCEPTION_CODES.END_DATE_INVALID,

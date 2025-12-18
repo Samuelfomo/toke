@@ -2,6 +2,7 @@ import { Request, Response, Router } from 'express';
 import {
   HttpStatus,
   paginationSchema,
+  PointageStatus,
   PointageType,
   SessionStatus,
   SITES_ERRORS,
@@ -1247,11 +1248,20 @@ router.post(
 router.get('/requirement', Ensure.get(), async (req: Request, res: Response) => {
   try {
     return R.handleSuccess(res, {
-      count: Object.entries(PointageType).length,
-      items: Object.entries(PointageType).map(([key, value]) => ({
-        key,
-        value,
-      })),
+      pointage_type: {
+        count: Object.entries(PointageType).length,
+        items: Object.entries(PointageType).map(([key, value]) => ({
+          key,
+          value,
+        })),
+      },
+      pointage_status: {
+        count: Object.entries(PointageStatus).length,
+        items: Object.entries(PointageStatus).map(([key, value]) => ({
+          key,
+          value,
+        })),
+      },
     });
   } catch (error: any) {
     return R.handleError(res, HttpStatus.INTERNAL_ERROR, {
@@ -1451,6 +1461,73 @@ router.patch('/:guid/approve', Ensure.patch(), async (req: Request, res: Respons
     return R.handleSuccess(res, {
       message: 'Entry approved successfully',
       entry: await entryObj.toJSON(),
+    });
+  } catch (error: any) {
+    return R.handleError(res, HttpStatus.INTERNAL_ERROR, {
+      code: TIME_ENTRIES_CODES.APPROVAL_FAILED,
+      message: error.message,
+    });
+  }
+});
+router.patch('/accounted-all', Ensure.patch(), async (req: Request, res: Response) => {
+  try {
+    const { guids, user } = req.body;
+    // Vérification du tableau de GUIDs
+    if (!Array.isArray(guids) || guids.length === 0) {
+      return R.handleError(res, HttpStatus.BAD_REQUEST, {
+        code: TIME_ENTRIES_CODES.INVALID_GUID,
+        message: 'La liste des GUIDs est invalide ou vide.',
+      });
+    }
+
+    // Validation de chaque GUID
+    for (const guid of guids) {
+      if (!TimeEntriesValidationUtils.validateGuid(guid)) {
+        return R.handleError(res, HttpStatus.BAD_REQUEST, {
+          code: TIME_ENTRIES_CODES.INVALID_GUID,
+          message: `${TIME_ENTRIES_ERRORS.GUID_INVALID}: ${guid}`,
+        });
+      }
+    }
+    if (!user || !TimeEntriesValidationUtils.validateGuid(user)) {
+      return R.handleError(res, HttpStatus.BAD_REQUEST, {
+        code: TIME_ENTRIES_CODES.USER_INVALID,
+        message: TIME_ENTRIES_ERRORS.USER_INVALID,
+      });
+    }
+
+    // Vérifier l'existence du validateur
+    const validatorObj = await User._load(user, true);
+    if (!validatorObj) {
+      return R.handleError(res, HttpStatus.NOT_FOUND, {
+        code: USERS_CODES.USER_NOT_FOUND,
+        message: 'Validator user not found',
+      });
+    }
+
+    await Promise.all(
+      guids.map(async (guid) => {
+        const timeEntriesObj = await TimeEntries._load(guid, true);
+        if (!timeEntriesObj) {
+          return R.handleError(res, HttpStatus.NOT_FOUND, {
+            code: TIME_ENTRIES_CODES.TIME_ENTRY_NOT_FOUND,
+            message: `${TIME_ENTRIES_ERRORS.NOT_FOUND} : ${guid}`,
+          });
+        }
+
+        // Empêcher la validation de son propre memo
+        if (timeEntriesObj.getUser() === validatorObj.getId()) {
+          return R.handleError(res, HttpStatus.UNAUTHORIZED, {
+            code: 'self_validation_not_allowed',
+            message: 'Users cannot validate their own time entrie',
+          });
+        }
+        await timeEntriesObj.markAsAccounted();
+      }),
+    );
+
+    return R.handleSuccess(res, {
+      message: 'Entry accounted successfully',
     });
   } catch (error: any) {
     return R.handleError(res, HttpStatus.INTERNAL_ERROR, {

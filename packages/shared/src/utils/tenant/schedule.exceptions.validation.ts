@@ -28,24 +28,24 @@ export class ScheduleExceptionValidationUtils {
   }
 
   /**
-   * Validates group ID
+   * Validates team ID
    */
-  static validateGroup(group: any): boolean {
-    if (group === null || group === undefined) return true;
-    if (typeof group !== 'string') return false;
+  static validateTeam(team: any): boolean {
+    if (team === null || team === undefined) return true;
+    if (typeof team !== 'string') return false;
     return (
-      group.length >= SCHEDULE_EXCEPTION_VALIDATION.GROUP.MIN_LENGTH &&
-      group.length <= SCHEDULE_EXCEPTION_VALIDATION.GROUP.MAX_LENGTH
+      team.length >= SCHEDULE_EXCEPTION_VALIDATION.TEAM.MIN_LENGTH &&
+      team.length <= SCHEDULE_EXCEPTION_VALIDATION.TEAM.MAX_LENGTH
     );
   }
 
   /**
-   * Validates that either user or group is specified (XOR)
+   * Validates that either user or team is specified (XOR)
    */
-  static validateUserOrGroup(user: any, group: any): boolean {
+  static validateUserOrTeam(user: any, team: any): boolean {
     const hasUser = user !== null && user !== undefined;
-    const hasGroup = group !== null && group !== undefined;
-    return hasUser !== hasGroup; // XOR: exactly one must be true
+    const hasTeam = team !== null && team !== undefined;
+    return hasUser !== hasTeam; // XOR: exactly one must be true
   }
 
   /**
@@ -156,10 +156,10 @@ export class ScheduleExceptionValidationUtils {
       }
     }
 
-    if (cleaned.group !== undefined && cleaned.group !== null) {
-      cleaned.group = parseInt(cleaned.group, 10);
-      if (isNaN(cleaned.group)) {
-        throw new Error('Invalid group: must be a valid integer');
+    if (cleaned.team !== undefined && cleaned.team !== null) {
+      cleaned.team = parseInt(cleaned.team, 10);
+      if (isNaN(cleaned.team)) {
+        throw new Error('Invalid team: must be a valid integer');
       }
     }
 
@@ -278,12 +278,12 @@ export class ScheduleExceptionValidationUtils {
       end_date: string;
       active: boolean;
       user?: number | null;
-      group?: number | null;
+      team?: number | null;
       session_template: number;
     }>,
     targetDate: Date,
     userId?: number,
-    groupId?: number,
+    teamId?: number,
   ): Array<{
     start_date: string;
     end_date: string;
@@ -297,9 +297,9 @@ export class ScheduleExceptionValidationUtils {
         // Must be within date range
         if (!this.isDateInException(targetDate, ex.start_date, ex.end_date)) return false;
 
-        // Filter by user or group if specified
+        // Filter by user or team if specified
         if (userId !== undefined && ex.user !== userId) return false;
-        if (groupId !== undefined && ex.group !== groupId) return false;
+        if (teamId !== undefined && ex.team !== teamId) return false;
 
         return true;
       })
@@ -318,25 +318,25 @@ export class ScheduleExceptionValidationUtils {
   }
 
   /**
-   * Groups exceptions by user or group
+   * Teams exceptions by user or team
    */
-  static groupExceptions(
+  static teamExceptions(
     exceptions: Array<{
       user?: number | null;
-      group?: number | null;
+      team?: number | null;
       start_date: string;
       end_date: string;
       session_template: number;
     }>,
   ): {
     byUser: Map<number, Array<{ start_date: string; end_date: string; session_template: number }>>;
-    byGroup: Map<number, Array<{ start_date: string; end_date: string; session_template: number }>>;
+    byTeam: Map<number, Array<{ start_date: string; end_date: string; session_template: number }>>;
   } {
     const byUser = new Map<
       number,
       Array<{ start_date: string; end_date: string; session_template: number }>
     >();
-    const byGroup = new Map<
+    const byTeam = new Map<
       number,
       Array<{ start_date: string; end_date: string; session_template: number }>
     >();
@@ -354,14 +354,14 @@ export class ScheduleExceptionValidationUtils {
         byUser.set(exception.user, userExceptions);
       }
 
-      if (exception.group) {
-        const groupExceptions = byGroup.get(exception.group) || [];
-        groupExceptions.push(exData);
-        byGroup.set(exception.group, groupExceptions);
+      if (exception.team) {
+        const teamExceptions = byTeam.get(exception.team) || [];
+        teamExceptions.push(exData);
+        byTeam.set(exception.team, teamExceptions);
       }
     }
 
-    return { byUser, byGroup };
+    return { byUser, byTeam };
   }
 
   /**
@@ -372,20 +372,20 @@ export class ScheduleExceptionValidationUtils {
       start_date: string;
       end_date: string;
       user?: number | null;
-      group?: number | null;
+      team?: number | null;
     },
     existingExceptions: Array<{
       start_date: string;
       end_date: string;
       user?: number | null;
-      group?: number | null;
+      team?: number | null;
     }>,
   ): boolean {
     for (const existing of existingExceptions) {
-      // Check if they apply to the same user or group
+      // Check if they apply to the same user or team
       const sameTarget =
         (newException.user && existing.user && newException.user === existing.user) ||
-        (newException.group && existing.group && newException.group === existing.group);
+        (newException.team && existing.team && newException.team === existing.team);
 
       if (sameTarget) {
         // Check if date ranges overlap

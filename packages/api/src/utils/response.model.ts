@@ -317,6 +317,7 @@ export const responseStructure = {
   END_DATE: 'end_date',
   REASON: 'reason',
   GROUP: 'group',
+  TEAM: 'team',
   SESSION_TEMPLATE: 'session_template',
   DEFAULT_SESSION_TEMPLATE: 'default_session_template',
   IS_DEFAULT: 'is_default',

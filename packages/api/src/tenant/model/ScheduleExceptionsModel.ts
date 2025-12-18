@@ -16,7 +16,7 @@ export default class ScheduleExceptionModel extends BaseModel {
     guid: 'guid',
     tenant: 'tenant',
     user: 'user',
-    group: 'group',
+    team: 'team',
     session_template: 'session_template',
     start_date: 'start_date',
     end_date: 'end_date',
@@ -36,7 +36,7 @@ export default class ScheduleExceptionModel extends BaseModel {
   protected guid?: string;
   protected tenant?: string;
   protected user?: number | null;
-  protected group?: number | null;
+  protected team?: number | null;
   protected session_template?: number;
   protected start_date?: string;
   protected end_date?: string;
@@ -95,11 +95,11 @@ export default class ScheduleExceptionModel extends BaseModel {
     return await this.listAll({ [this.db.user]: userId }, paginationOptions);
   }
 
-  protected async listAllByGroup(
-    groupId: number,
+  protected async listAllByTeam(
+    teamId: number,
     paginationOptions: { offset?: number; limit?: number } = {},
   ): Promise<any[]> {
-    return await this.listAll({ [this.db.group]: groupId }, paginationOptions);
+    return await this.listAll({ [this.db.team]: teamId }, paginationOptions);
   }
 
   protected async listAllByActiveStatus(
@@ -149,13 +149,13 @@ export default class ScheduleExceptionModel extends BaseModel {
     return await this.listAll(conditions, paginationOptions);
   }
 
-  protected async listAllForGroupOnDate(
-    groupId: number,
+  protected async listAllForTeamOnDate(
+    teamId: number,
     date: string,
     paginationOptions: { offset?: number; limit?: number } = {},
   ): Promise<any[]> {
     const conditions = {
-      [this.db.group]: groupId,
+      [this.db.team]: teamId,
       [this.db.start_date]: { [Op.lte]: date },
       [this.db.end_date]: { [Op.gte]: date },
       [this.db.active]: true,
@@ -206,7 +206,7 @@ export default class ScheduleExceptionModel extends BaseModel {
       [this.db.guid]: guid,
       [this.db.tenant]: this.tenant,
       [this.db.user]: this.user ?? null,
-      [this.db.group]: this.group ?? null,
+      [this.db.team]: this.team ?? null,
       [this.db.session_template]: this.session_template,
       [this.db.start_date]: this.start_date,
       [this.db.end_date]: this.end_date,
@@ -238,8 +238,9 @@ export default class ScheduleExceptionModel extends BaseModel {
     if (this.user !== undefined) {
       updateData[this.db.user] = this.user;
     }
-    if (this.group !== undefined) {
-      updateData[this.db.group] = this.group;
+
+    if (this.team !== undefined) {
+      updateData[this.db.team] = this.team;
     }
     if (this.session_template !== undefined) {
       updateData[this.db.session_template] = this.session_template;
@@ -304,17 +305,17 @@ export default class ScheduleExceptionModel extends BaseModel {
     //   throw new Error(SCHEDULE_EXCEPTION_ERRORS.TENANT_INVALID);
     // }
 
-    // Vérifier qu'au moins user OU group est défini
-    if (!this.user && !this.group) {
-      throw new Error(SCHEDULE_EXCEPTION_ERRORS.USER_OR_GROUP_REQUIRED);
+    // Vérifier qu'au moins user OU team est défini
+    if (!this.user && !this.team) {
+      throw new Error(SCHEDULE_EXCEPTION_ERRORS.USER_OR_TEAM_REQUIRED);
     }
 
     // if (this.user && !ScheduleExceptionValidationUtils.validateUser(this.user)) {
     //   throw new Error(SCHEDULE_EXCEPTION_ERRORS.USER_INVALID);
     // }
 
-    // if (this.group && !ScheduleExceptionValidationUtils.validateGroup(this.group)) {
-    //   throw new Error(SCHEDULE_EXCEPTION_ERRORS.GROUP_INVALID);
+    // if (this.team && !ScheduleExceptionValidationUtils.validateTeam(this.team)) {
+    //   throw new Error(SCHEDULE_EXCEPTION_ERRORS.TEAM_INVALID);
     // }
 
     if (!this.session_template) {

@@ -417,6 +417,19 @@ export default class TimeEntriesModel extends BaseModel {
     return affectedRows > 0;
   }
 
+  protected async applyAccounted(entry: number, corrected_by: number): Promise<boolean> {
+    const updates: Record<string, any> = {
+      [this.db.pointage_status]: PointageStatus.ACCOUNTED,
+    };
+
+    const affectedRows = await this.updateOne(this.db.tableName, updates, {
+      [this.db.id]: entry,
+    });
+
+    // TODO: Créer audit log via fonction dédiée
+    return affectedRows > 0;
+  }
+
   protected async rejectEntry(entry: number, reason: string): Promise<boolean> {
     const updates = {
       [this.db.pointage_status]: PointageStatus.REJECTED,

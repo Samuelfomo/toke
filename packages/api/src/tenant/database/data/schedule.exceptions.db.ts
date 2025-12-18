@@ -51,19 +51,19 @@ export const ScheduleExceptionsDbStructure = {
       validate: {
         isInt: true,
       },
-      comment: 'Reference to user (nullable for group exceptions)',
+      comment: 'Reference to user (nullable for team exceptions)',
     },
-    group: {
+    team: {
       type: DataTypes.INTEGER,
       allowNull: true,
       references: {
-        model: tableName.ROTATION_GROUPS,
+        model: tableName.TEAMS,
         key: 'id',
       },
       validate: {
         isInt: true,
       },
-      comment: 'Reference to group (nullable for user exceptions)',
+      comment: 'Reference to team (nullable for user exceptions)',
     },
     session_template: {
       type: DataTypes.INTEGER,
@@ -152,8 +152,8 @@ export const ScheduleExceptionsDbStructure = {
         name: 'idx_schedule_exceptions_user',
       },
       {
-        fields: ['group'],
-        name: 'idx_schedule_exceptions_group',
+        fields: ['team'],
+        name: 'idx_schedule_exceptions_team',
       },
       {
         fields: ['session_template'],
@@ -185,9 +185,9 @@ export const ScheduleExceptionsDbStructure = {
       },
     ],
     validate: {
-      eitherUserOrGroup() {
-        if (!this.user && !this.group) {
-          throw new Error('Either user or group must be specified');
+      eitherUserOrTeam() {
+        if (!this.user && !this.team) {
+          throw new Error('Either user or team must be specified');
         }
       },
       dateRangeValid() {

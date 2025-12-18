@@ -22,10 +22,10 @@ import R from '../../tools/response.js';
 import ScheduleException from '../class/ScheduleExceptions.js';
 import SessionTemplate from '../class/SessionTemplates.js';
 import User from '../class/User.js';
-import RotationGroup from '../class/RotationGroups.js';
 import { TenantRevision } from '../../tools/revision.js';
 import { responseValue, tableName } from '../../utils/response.model.js';
 import { ValidationUtils } from '../../utils/view.validator.js';
+import Teams from '../class/Teams.js';
 
 const router = Router();
 
@@ -101,9 +101,9 @@ router.get('/list', Ensure.get(), async (req: Request, res: Response) => {
       if (userObj) conditions.user = userObj.getId();
     }
 
-    if (filters.group) {
-      const groupObj = await RotationGroup._load(filters.group, true);
-      if (groupObj) conditions.group = groupObj.getId();
+    if (filters.team) {
+      const teamObj = await Teams._load(filters.team, true);
+      if (teamObj) conditions.team = teamObj.getId();
     }
 
     if (filters.active !== undefined) {
@@ -188,18 +188,17 @@ router.post('/', Ensure.post(), async (req: Request, res: Response) => {
       });
     }
 
-    // Valider que c'est soit user, soit group (mais pas les deux)
-    if (validatedData.user && validatedData.group) {
+    if (validatedData.user && validatedData.team) {
       return R.handleError(res, HttpStatus.BAD_REQUEST, {
         code: SCHEDULE_EXCEPTION_CODES.VALIDATION_FAILED,
-        message: 'Cannot specify both user and group for an exception',
+        message: 'Cannot specify both user and team for an exception',
       });
     }
 
-    if (!validatedData.user && !validatedData.group) {
+    if (!validatedData.user && !validatedData.team) {
       return R.handleError(res, HttpStatus.BAD_REQUEST, {
         code: SCHEDULE_EXCEPTION_CODES.VALIDATION_FAILED,
-        message: 'Must specify either user or group for an exception',
+        message: 'Must specify either user or team for an exception',
       });
     }
 
@@ -224,16 +223,16 @@ router.post('/', Ensure.post(), async (req: Request, res: Response) => {
       exceptionObj.setUser(userObj.getId()!);
     }
 
-    // Exception pour un groupe
-    if (validatedData.group) {
-      const groupObj = await RotationGroup._load(validatedData.group, true);
-      if (!groupObj) {
+    // Exception pour une team
+    if (validatedData.team) {
+      const teamObj = await Teams._load(validatedData.team, true);
+      if (!teamObj) {
         return R.handleError(res, HttpStatus.NOT_FOUND, {
-          code: SCHEDULE_EXCEPTION_CODES.GROUP_NOT_FOUND,
-          message: SCHEDULE_EXCEPTION_ERRORS.GROUP_NOT_FOUND,
+          code: SCHEDULE_EXCEPTION_CODES.TEAM_NOT_FOUND,
+          message: SCHEDULE_EXCEPTION_ERRORS.TEAM_NOT_FOUND,
         });
       }
-      exceptionObj.setGroup(groupObj.getId()!);
+      exceptionObj.setTeam(teamObj.getId()!);
     }
 
     if (validatedData.created_by) {
@@ -413,40 +412,38 @@ router.get('/user/:userGuid/on-date', Ensure.get(), async (req: Request, res: Re
 });
 
 // ============================================
-// EXCEPTIONS PAR GROUPE
+// EXCEPTIONS PAR TEAM
 // ============================================
 
 /**
- * GET /api/schedule-exceptions/group/:groupGuid
- * Liste toutes les exceptions pour un groupe
+ * GET /api/schedule-exceptions/team/:teamGuid
+ * Liste toutes les exceptions pour une team
  */
-router.get('/group/:groupGuid', Ensure.get(), async (req: Request, res: Response) => {
+router.get('/team/:teamGuid', Ensure.get(), async (req: Request, res: Response) => {
   try {
-    if (!ScheduleExceptionValidationUtils.validateGuid(req.params.groupGuid)) {
+    const { teamGuid } = req.params;
+    if (!ScheduleExceptionValidationUtils.validateGuid(teamGuid)) {
       return R.handleError(res, HttpStatus.BAD_REQUEST, {
         code: SCHEDULE_EXCEPTION_CODES.INVALID_GUID,
         message: SCHEDULE_EXCEPTION_ERRORS.GUID_INVALID,
       });
     }
 
-    const groupObj = await RotationGroup._load(req.params.groupGuid, true);
-    if (!groupObj) {
+    const teamObj = await Teams._load(teamGuid, true);
+    if (!teamObj) {
       return R.handleError(res, HttpStatus.NOT_FOUND, {
-        code: SCHEDULE_EXCEPTION_CODES.GROUP_NOT_FOUND,
-        message: SCHEDULE_EXCEPTION_ERRORS.GROUP_NOT_FOUND,
+        code: SCHEDULE_EXCEPTION_CODES.TEAM_NOT_FOUND,
+        message: SCHEDULE_EXCEPTION_ERRORS.TEAM_NOT_FOUND,
       });
     }
 
     const paginationOptions = paginationSchema.parse(req.query);
     const views = ValidationUtils.validateView(req.query.view, responseValue.FULL);
 
-    const exceptionList = await ScheduleException._listByGroup(
-      groupObj.getId()!,
-      paginationOptions,
-    );
+    const exceptionList = await ScheduleException._listByTeams(teamObj.getId()!, paginationOptions);
 
     const exceptions = {
-      group: await groupObj.toJSON(responseValue.MINIMAL),
+      team: await teamObj.toJSON(responseValue.MINIMAL),
       pagination: {
         offset: paginationOptions.offset || 0,
         limit: paginationOptions.limit || exceptionList?.length || 0,
@@ -696,19 +693,19 @@ router.get('/:guid/statistics', Ensure.get(), async (req: Request, res: Response
     }
 
     const user = await exceptionObj.getUserObj();
-    const group = await exceptionObj.getGroupObj();
+    const team = await exceptionObj.getTeamObj();
     const template = await exceptionObj.getSessionTemplateObj();
     const createdBy = await exceptionObj.getCreatedByObj();
 
     const statistics = {
       exception: await exceptionObj.toJSON(responseValue.MINIMAL),
-      type: exceptionObj.isUserException() ? 'user' : 'group',
+      type: exceptionObj.isUserException() ? 'user' : 'team',
       target: exceptionObj.isUserException()
         ? user
           ? await user.toJSON()
           : null
-        : group
-          ? await group.toJSON(responseValue.MINIMAL)
+        : team
+          ? await team.toJSON(responseValue.MINIMAL)
           : null,
       template: template ? template.toJSON(responseValue.MINIMAL) : null,
       created_by: createdBy ? await createdBy.toJSON() : null,
