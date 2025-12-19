@@ -869,7 +869,7 @@ router.get('/my-memos', Ensure.get(), async (req: Request, res: Response) => {
   }
 });
 
-router.get('/requirement', Ensure.get(), async (req: Request, res: Response) => {
+router.get('/requirement', Ensure.get(), async (_req: Request, res: Response) => {
   try {
     return R.handleSuccess(res, {
       meno_types: {

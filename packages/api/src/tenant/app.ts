@@ -1,9 +1,10 @@
-import { Server } from 'http';
+import http, { Server } from 'http';
 
 import cors from 'cors';
 import express, { NextFunction, Request, Response } from 'express';
 import { TimezoneConfigUtils } from '@toke/shared';
 
+import { SocketServer } from '../realtime/SocketServer.js';
 // import dotenv from 'dotenv';
 //
 // dotenv.config();
@@ -43,6 +44,8 @@ export default class App {
   private config: AppConfig;
   private isShuttingDown = false;
 
+  private httpServer: http.Server | null = null;
+
   constructor(config: Partial<AppConfig> = {}) {
     this.config = {
       port: config.port || parseInt(process.env.TN_PORT || '4892'),
@@ -70,6 +73,12 @@ export default class App {
       console.log(`🚀 Démarrage serveur sur ${this.config.host}:${this.config.port}...`);
 
       await new Promise<void>((resolve, reject) => {
+        // 1️⃣ Créer le serveur HTTP
+        this.httpServer = http.createServer(this.app);
+
+        // 2️⃣ Initialiser Socket.IO AVANT listen
+        SocketServer.init(this.httpServer);
+
         this.server = this.app.listen(
           this.config.port,
           // this.config.host,
@@ -105,7 +114,7 @@ export default class App {
   async stop(): Promise<void> {
     if (this.server) {
       await new Promise<void>((resolve) => {
-        this.server!.close(() => resolve());
+        this.server?.close(() => resolve());
       });
     }
   }
