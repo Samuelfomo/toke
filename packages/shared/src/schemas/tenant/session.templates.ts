@@ -6,7 +6,6 @@ import {
   SESSION_TEMPLATE_ERRORS,
   SESSION_TEMPLATE_VALIDATION,
   SessionTemplateCode,
-  VALID_DAYS,
 } from '../../constants/tenant/session.templates.js';
 
 // Time format validation (HH:MM)
@@ -94,37 +93,90 @@ const workBlockSchema = z
     { message: SESSION_TEMPLATE_ERRORS.PAUSE_OUTSIDE_WORK },
   );
 
-// Definition schema with day-based blocks
-const definitionSchema = z.record(z.enum(VALID_DAYS), z.array(workBlockSchema)).refine(
-  (definition) => {
-    // Check for overlapping blocks on each day
-    for (const [day, blocks] of Object.entries(definition)) {
+// 🔧 CORRECTION PRINCIPALE : Accepter null ET array
+const dayValueSchema = z.union([
+  z.array(workBlockSchema), // jour travaillé ou repos ([...] ou [])
+  z.null(), // jour férié
+]);
+
+// 🔧 Definition partielle avec validation des overlaps
+const definitionSchema = z
+  .object({
+    Mon: dayValueSchema.optional(),
+    Tue: dayValueSchema.optional(),
+    Wed: dayValueSchema.optional(),
+    Thu: dayValueSchema.optional(),
+    Fri: dayValueSchema.optional(),
+    Sat: dayValueSchema.optional(),
+    Sun: dayValueSchema.optional(),
+  })
+  .strict()
+  .superRefine((definition, ctx) => {
+    for (const [day, value] of Object.entries(definition)) {
+      if (value === undefined || value === null) continue;
+      // undefined = absent
+      // null = férié
+
+      const blocks = value;
+
       for (let i = 0; i < blocks.length; i++) {
         for (let j = i + 1; j < blocks.length; j++) {
-          const block1 = blocks[i];
-          const block2 = blocks[j];
+          const b1 = blocks[i];
+          const b2 = blocks[j];
 
-          const [start1Hour, start1Min] = block1!.work[0]!.split(':').map(Number);
-          const [end1Hour, end1Min] = block1!.work[1]!.split(':').map(Number);
-          const [start2Hour, start2Min] = block2!.work[0]!.split(':').map(Number);
-          const [end2Hour, end2Min] = block2!.work[1]!.split(':').map(Number);
+          const toMin = (t: string) => {
+            const [h, m] = t.split(':').map(Number);
+            return h! * 60 + m!;
+          };
 
-          const start1 = start1Hour! * 60 + start1Min!;
-          const end1 = end1Hour! * 60 + end1Min!;
-          const start2 = start2Hour! * 60 + start2Min!;
-          const end2 = end2Hour! * 60 + end2Min!;
+          const s1 = toMin(b1?.work[0]!);
+          const e1 = toMin(b1?.work[1]!);
+          const s2 = toMin(b2?.work[0]!);
+          const e2 = toMin(b2?.work[1]!);
 
-          // Check for overlap
-          if (start1 < end2 && start2 < end1) {
-            return false;
+          if (s1 < e2 && s2 < e1) {
+            ctx.addIssue({
+              path: ['definition', day],
+              code: z.ZodIssueCode.custom,
+              message: SESSION_TEMPLATE_ERRORS.OVERLAPPING_BLOCKS,
+            });
           }
         }
       }
     }
-    return true;
-  },
-  { message: SESSION_TEMPLATE_ERRORS.OVERLAPPING_BLOCKS },
-);
+  });
+
+// // Definition schema with day-based blocks
+// const definitionSchema = z.record(z.enum(VALID_DAYS), z.array(workBlockSchema)).refine(
+//   (definition) => {
+//     // Check for overlapping blocks on each day
+//     for (const [day, blocks] of Object.entries(definition)) {
+//       for (let i = 0; i < blocks.length; i++) {
+//         for (let j = i + 1; j < blocks.length; j++) {
+//           const block1 = blocks[i];
+//           const block2 = blocks[j];
+//
+//           const [start1Hour, start1Min] = block1!.work[0]!.split(':').map(Number);
+//           const [end1Hour, end1Min] = block1!.work[1]!.split(':').map(Number);
+//           const [start2Hour, start2Min] = block2!.work[0]!.split(':').map(Number);
+//           const [end2Hour, end2Min] = block2!.work[1]!.split(':').map(Number);
+//
+//           const start1 = start1Hour! * 60 + start1Min!;
+//           const end1 = end1Hour! * 60 + end1Min!;
+//           const start2 = start2Hour! * 60 + start2Min!;
+//           const end2 = end2Hour! * 60 + end2Min!;
+//
+//           // Check for overlap
+//           if (start1 < end2 && start2 < end1) {
+//             return false;
+//           }
+//         }
+//       }
+//     }
+//     return true;
+//   },
+//   { message: SESSION_TEMPLATE_ERRORS.OVERLAPPING_BLOCKS },
+// );
 
 // Base schema for common validations
 const baseSessionTemplateSchema = z.object({
@@ -295,4 +347,5 @@ export type UpdateSessionTemplateInput = z.infer<typeof updateSessionTemplateSch
 export type SessionTemplateData = z.infer<typeof sessionTemplateResponseSchema>;
 export type SessionTemplateFilters = z.infer<typeof sessionTemplateFiltersSchema>;
 export type WorkBlock = z.infer<typeof workBlockSchema>;
+export type DayValue = z.infer<typeof dayValueSchema>;
 export type SessionDefinition = z.infer<typeof definitionSchema>;

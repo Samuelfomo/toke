@@ -49,11 +49,27 @@ export const QrCodeGenerationDbStructure = {
       onDelete: 'CASCADE',
       comment: 'Site ID',
     },
-    manager: {
+    // manager: {
+    //   type: DataTypes.INTEGER,
+    //   allowNull: false,
+    //   references: {
+    //     model: tableName.USERS,
+    //     key: 'id',
+    //   },
+    //   validate: {
+    //     isInt: true,
+    //     min: 1,
+    //     max: 2147483647,
+    //   },
+    //   // onUpdate: 'CASCADE',
+    //   onDelete: 'CASCADE',
+    //   comment: 'Manager who generated the QR code',
+    // },
+    team: {
       type: DataTypes.INTEGER,
       allowNull: false,
       references: {
-        model: tableName.USERS,
+        model: tableName.TEAMS,
         key: 'id',
       },
       validate: {
@@ -61,9 +77,8 @@ export const QrCodeGenerationDbStructure = {
         min: 1,
         max: 2147483647,
       },
-      // onUpdate: 'CASCADE',
       onDelete: 'CASCADE',
-      comment: 'Manager who generated the QR code',
+      comment: 'Team ID',
     },
     valid_from: {
       type: DataTypes.DATE,
@@ -90,6 +105,89 @@ export const QrCodeGenerationDbStructure = {
       },
       comment: 'Qr code is Shared',
     },
+    // shared_with: {
+    //   type: DataTypes.ARRAY(DataTypes.INTEGER),
+    //   allowNull: true,
+    //   validate: {
+    //     areValidIds(value: number[]) {
+    //       if (!Array.isArray(value)) return;
+    //       for (const id of value) {
+    //         if (!Number.isInteger(id) || id < 1 || id > 2147483647) {
+    //           throw new Error(`Invalid entry ID: ${id}`);
+    //         }
+    //       }
+    //     },
+    //   },
+    //   comment: 'Qr code shared with what team ?',
+    // },
+    shared_with: {
+      type: DataTypes.JSONB,
+      allowNull: false,
+      defaultValue: [],
+      validate: {
+        isValidTeamStructure(value: any) {
+          // 1. ✅ La valeur doit être un tableau
+          if (!Array.isArray(value)) {
+            throw new Error('Teams must be an array.');
+          }
+
+          const teams = value as Array<any>;
+          const codeIds = new Set<number>();
+
+          for (let i = 0; i < teams.length; i++) {
+            const team = teams[i];
+
+            // 2. ✅ Chaque equipe doit être un objet
+            if (typeof team !== 'object' || team === null || Array.isArray(team)) {
+              throw new Error(`Team at index ${i} must be a valid object.`);
+            }
+
+            // 3. ✅ Validation des champs requis
+
+            // 3.1. Champ 'code' (ID numérique requis)
+            if (
+              !('code' in team) ||
+              typeof team.code !== 'number' ||
+              !Number.isInteger(team.code) ||
+              team.code <= 0
+            ) {
+              throw new Error(`Team at index ${i}: 'code' must be a valid positive integer ID.`);
+            }
+
+            // 3.2. Champ 'shared_at' (Date requise)
+            if (
+              !('shared_at' in team) ||
+              !(
+                team.shared_at instanceof Date ||
+                (typeof team.shared_at === 'string' && !isNaN(Date.parse(team.shared_at)))
+              )
+            ) {
+              throw new Error(`Team at index ${i}: 'shared_at' must be a valid date/time string.`);
+            }
+
+            // // 3.3. Champ 'active' (booléen, true par défaut si manquant)
+            // let activeStatus = team.active;
+            //
+            // // Si 'active' est manquant, il est implicitement 'true' pour la validation.
+            // if (!('active' in team) || activeStatus === undefined) {
+            //   activeStatus = true; // Défaut pour la vérification de type
+            // }
+            //
+            // if (typeof activeStatus !== 'boolean') {
+            //   throw new Error(`Team at index ${i}: 'active' must be a boolean.`);
+            // }
+
+            // 4. ✅ Vérification de l'unicité de l'utilisateur
+            if (codeIds.has(team.code)) {
+              throw new Error(
+                `Code ID ${team.code} at index ${i} is duplicated in the teams list.`,
+              );
+            }
+            codeIds.add(team.code);
+          }
+        },
+      },
+    },
   } as ModelAttributes,
   options: {
     tableName: tableName.QR_CODE_GENERATION,
@@ -109,9 +207,13 @@ export const QrCodeGenerationDbStructure = {
         fields: ['site'],
         name: 'idx_qr_code_site',
       },
+      // {
+      //   fields: ['manager'],
+      //   name: 'idx_qr_code_manager',
+      // },
       {
-        fields: ['manager'],
-        name: 'idx_qr_code_manager',
+        fields: ['team'],
+        name: 'idx_qr_code_team',
       },
       {
         fields: ['valid_from'],
@@ -125,14 +227,23 @@ export const QrCodeGenerationDbStructure = {
         fields: ['created_at'],
         name: 'idx_qr_code_created_at',
       },
+      // {
+      //   // unique: true,
+      //   fields: ['site', 'manager'],
+      //   name: 'idx_qr_code_site_manager',
+      // },
       {
-        // unique: true,
-        fields: ['site', 'manager'],
-        name: 'idx_qr_code_site_manager',
+        fields: ['site', 'team'],
+        name: 'idx_qr_code_site_team',
       },
       {
         fields: ['shared'],
         name: 'idx_qr_code_shared',
+      },
+      {
+        fields: ['shared_with'],
+        name: 'idx_qr_code_shared_with',
+        using: 'GIN',
       },
       {
         fields: ['name'],

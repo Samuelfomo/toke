@@ -12,6 +12,7 @@ export * from './types/tax.rule.js';
 export * from './types/tenant/work.sessions.js';
 export * from './types/tenant/memos.js';
 export * as TI from './types/tenant/teams.js';
+export * from './types/tenant/qr-code.js';
 
 // Export des constantes
 export * from './constants/api.js';

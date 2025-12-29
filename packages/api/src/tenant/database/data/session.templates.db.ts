@@ -65,28 +65,18 @@ export const SessionTemplatesDbStructure = {
       },
       comment: 'Session valid to date',
     },
-    // definition: {
-    //   type: DataTypes.JSONB,
-    //   allowNull: false,
-    //   // validate: {
-    //   //   isJson: true,
-    //   // },
-    //   comment: 'Session definition',
-    // },
     definition: {
       type: DataTypes.JSONB,
       allowNull: false,
       comment: 'Session definition with day-based work blocks',
+
+      // Dans session.templates.db.ts - Validation corrigée
       validate: {
         isValidDefinition(value: any) {
           // ✅ Must be an object
           if (typeof value !== 'object' || value === null || Array.isArray(value)) {
             throw new Error('definition must be a valid JSON object');
           }
-
-          // ✅ Valid day keys
-          // const validDays = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
-          // const definedDays = Object.keys(value);
 
           const validDays = VALID_DAYS;
           const definedDays = Object.keys(value) as DayOfWeek[];
@@ -98,30 +88,37 @@ export const SessionTemplatesDbStructure = {
             }
           }
 
-          // ✅ Validate each day's blocks
-          for (const [day, blocks] of Object.entries(value)) {
-            // Each day must have an array of blocks (can be empty for rest days)
-            if (!Array.isArray(blocks)) {
-              throw new Error(`${day} must be an array of work blocks`);
+          // ✅ Validate each day's value
+          for (const [day, dayValue] of Object.entries(value)) {
+            // 🔧 CORRECTION : Accepter null explicitement
+            if (dayValue === null) {
+              continue; // Jour férié → pas de validation supplémentaire
             }
 
-            // Validate each block
+            // 🔧 CORRECTION : Message d'erreur mis à jour
+            if (!Array.isArray(dayValue)) {
+              throw new Error(`${day} must be null (holiday) or an array of work blocks`);
+            }
+
+            const blocks = dayValue;
+
+            // Validate each block (code existant inchangé)
             for (let i = 0; i < blocks.length; i++) {
               const block = blocks[i] as any;
 
-              // ✅ Block must be an object
+              // Block must be an object
               if (typeof block !== 'object' || block === null) {
                 throw new Error(`${day}[${i}]: Each block must be an object`);
               }
 
-              // ✅ Required field: work (array of 2 time strings)
+              // Required field: work (array of 2 time strings)
               if (!block.work || !Array.isArray(block.work) || block.work.length !== 2) {
                 throw new Error(
                   `${day}[${i}]: 'work' must be an array of 2 time strings [start, end]`,
                 );
               }
 
-              // ✅ Validate work times format (HH:MM)
+              // Validate work times format (HH:MM)
               const timeRegex = /^([0-1][0-9]|2[0-3]):[0-5][0-9]$/;
               if (!timeRegex.test(block.work[0]) || !timeRegex.test(block.work[1])) {
                 throw new Error(
@@ -129,7 +126,7 @@ export const SessionTemplatesDbStructure = {
                 );
               }
 
-              // ✅ work[0] must be before work[1]
+              // work[0] must be before work[1]
               const [startHour, startMin] = block.work[0].split(':').map(Number);
               const [endHour, endMin] = block.work[1].split(':').map(Number);
               const startMinutes = startHour * 60 + startMin;
@@ -139,7 +136,7 @@ export const SessionTemplatesDbStructure = {
                 throw new Error(`${day}[${i}]: work start time must be before end time`);
               }
 
-              // ✅ Optional field: pause (null or array of 2 time strings)
+              // Optional field: pause (null or array of 2 time strings)
               if (block.pause !== null && block.pause !== undefined) {
                 if (!Array.isArray(block.pause) || block.pause.length !== 2) {
                   throw new Error(
@@ -152,7 +149,7 @@ export const SessionTemplatesDbStructure = {
                   throw new Error(`${day}[${i}]: pause times must be in HH:MM format`);
                 }
 
-                // ✅ pause[0] must be before pause[1]
+                // pause[0] must be before pause[1]
                 const [pauseStartHour, pauseStartMin] = block.pause[0].split(':').map(Number);
                 const [pauseEndHour, pauseEndMin] = block.pause[1].split(':').map(Number);
                 const pauseStartMinutes = pauseStartHour * 60 + pauseStartMin;
@@ -162,13 +159,13 @@ export const SessionTemplatesDbStructure = {
                   throw new Error(`${day}[${i}]: pause start time must be before end time`);
                 }
 
-                // ✅ Pause must be within work block
+                // Pause must be within work block
                 if (pauseStartMinutes < startMinutes || pauseEndMinutes > endMinutes) {
                   throw new Error(`${day}[${i}]: pause must be within work block time range`);
                 }
               }
 
-              // ✅ Required field: tolerance (positive integer in minutes)
+              // Required field: tolerance (positive integer in minutes)
               if (
                 typeof block.tolerance !== 'number' ||
                 block.tolerance < 0 ||
@@ -177,37 +174,170 @@ export const SessionTemplatesDbStructure = {
                 throw new Error(`${day}[${i}]: 'tolerance' must be a positive integer (minutes)`);
               }
 
-              // ✅ Reasonable tolerance limit (e.g., max 120 minutes = 2 hours)
+              // Reasonable tolerance limit (e.g., max 120 minutes = 2 hours)
               if (block.tolerance > 120) {
                 throw new Error(`${day}[${i}]: tolerance cannot exceed 120 minutes`);
               }
             }
 
-            // ✅ Check for overlapping blocks on the same day
-            for (let i = 0; i < blocks.length; i++) {
-              for (let j = i + 1; j < blocks.length; j++) {
-                const block1 = blocks[i] as any;
-                const block2 = blocks[j] as any;
+            // ✅ Check for overlapping blocks (uniquement si blocks.length > 0)
+            if (blocks.length > 1) {
+              for (let i = 0; i < blocks.length; i++) {
+                for (let j = i + 1; j < blocks.length; j++) {
+                  const block1 = blocks[i] as any;
+                  const block2 = blocks[j] as any;
 
-                const [start1Hour, start1Min] = block1.work[0].split(':').map(Number);
-                const [end1Hour, end1Min] = block1.work[1].split(':').map(Number);
-                const [start2Hour, start2Min] = block2.work[0].split(':').map(Number);
-                const [end2Hour, end2Min] = block2.work[1].split(':').map(Number);
+                  const [start1Hour, start1Min] = block1.work[0].split(':').map(Number);
+                  const [end1Hour, end1Min] = block1.work[1].split(':').map(Number);
+                  const [start2Hour, start2Min] = block2.work[0].split(':').map(Number);
+                  const [end2Hour, end2Min] = block2.work[1].split(':').map(Number);
 
-                const start1 = start1Hour * 60 + start1Min;
-                const end1 = end1Hour * 60 + end1Min;
-                const start2 = start2Hour * 60 + start2Min;
-                const end2 = end2Hour * 60 + end2Min;
+                  const start1 = start1Hour * 60 + start1Min;
+                  const end1 = end1Hour * 60 + end1Min;
+                  const start2 = start2Hour * 60 + start2Min;
+                  const end2 = end2Hour * 60 + end2Min;
 
-                // Check for overlap
-                if (start1 < end2 && start2 < end1) {
-                  throw new Error(`${day}: blocks ${i} and ${j} have overlapping work times`);
+                  // Check for overlap
+                  if (start1 < end2 && start2 < end1) {
+                    throw new Error(`${day}: blocks ${i} and ${j} have overlapping work times`);
+                  }
                 }
               }
             }
           }
         },
       },
+      // validate: {
+      //   isValidDefinition(value: any) {
+      //     // ✅ Must be an object
+      //     if (typeof value !== 'object' || value === null || Array.isArray(value)) {
+      //       throw new Error('definition must be a valid JSON object');
+      //     }
+      //
+      //     // ✅ Valid day keys
+      //     // const validDays = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+      //     // const definedDays = Object.keys(value);
+      //
+      //     const validDays = VALID_DAYS;
+      //     const definedDays = Object.keys(value) as DayOfWeek[];
+      //
+      //     // Check for invalid day keys
+      //     for (const day of definedDays) {
+      //       if (!validDays.includes(day)) {
+      //         throw new Error(`Invalid day key: ${day}. Must be one of: ${validDays.join(', ')}`);
+      //       }
+      //     }
+      //
+      //     // ✅ Validate each day's blocks
+      //     for (const [day, blocks] of Object.entries(value)) {
+      //       // Each day must have an array of blocks (can be empty for rest days)
+      //       if (!Array.isArray(blocks)) {
+      //         throw new Error(`${day} must be an array of work blocks`);
+      //       }
+      //
+      //       // Validate each block
+      //       for (let i = 0; i < blocks.length; i++) {
+      //         const block = blocks[i] as any;
+      //
+      //         // ✅ Block must be an object
+      //         if (typeof block !== 'object' || block === null) {
+      //           throw new Error(`${day}[${i}]: Each block must be an object`);
+      //         }
+      //
+      //         // ✅ Required field: work (array of 2 time strings)
+      //         if (!block.work || !Array.isArray(block.work) || block.work.length !== 2) {
+      //           throw new Error(
+      //             `${day}[${i}]: 'work' must be an array of 2 time strings [start, end]`,
+      //           );
+      //         }
+      //
+      //         // ✅ Validate work times format (HH:MM)
+      //         const timeRegex = /^([0-1][0-9]|2[0-3]):[0-5][0-9]$/;
+      //         if (!timeRegex.test(block.work[0]) || !timeRegex.test(block.work[1])) {
+      //           throw new Error(
+      //             `${day}[${i}]: work times must be in HH:MM format (e.g., "08:00", "18:00")`,
+      //           );
+      //         }
+      //
+      //         // ✅ work[0] must be before work[1]
+      //         const [startHour, startMin] = block.work[0].split(':').map(Number);
+      //         const [endHour, endMin] = block.work[1].split(':').map(Number);
+      //         const startMinutes = startHour * 60 + startMin;
+      //         const endMinutes = endHour * 60 + endMin;
+      //
+      //         if (startMinutes >= endMinutes) {
+      //           throw new Error(`${day}[${i}]: work start time must be before end time`);
+      //         }
+      //
+      //         // ✅ Optional field: pause (null or array of 2 time strings)
+      //         if (block.pause !== null && block.pause !== undefined) {
+      //           if (!Array.isArray(block.pause) || block.pause.length !== 2) {
+      //             throw new Error(
+      //               `${day}[${i}]: 'pause' must be null or an array of 2 time strings [start, end]`,
+      //             );
+      //           }
+      //
+      //           // Validate pause times format
+      //           if (!timeRegex.test(block.pause[0]) || !timeRegex.test(block.pause[1])) {
+      //             throw new Error(`${day}[${i}]: pause times must be in HH:MM format`);
+      //           }
+      //
+      //           // ✅ pause[0] must be before pause[1]
+      //           const [pauseStartHour, pauseStartMin] = block.pause[0].split(':').map(Number);
+      //           const [pauseEndHour, pauseEndMin] = block.pause[1].split(':').map(Number);
+      //           const pauseStartMinutes = pauseStartHour * 60 + pauseStartMin;
+      //           const pauseEndMinutes = pauseEndHour * 60 + pauseEndMin;
+      //
+      //           if (pauseStartMinutes >= pauseEndMinutes) {
+      //             throw new Error(`${day}[${i}]: pause start time must be before end time`);
+      //           }
+      //
+      //           // ✅ Pause must be within work block
+      //           if (pauseStartMinutes < startMinutes || pauseEndMinutes > endMinutes) {
+      //             throw new Error(`${day}[${i}]: pause must be within work block time range`);
+      //           }
+      //         }
+      //
+      //         // ✅ Required field: tolerance (positive integer in minutes)
+      //         if (
+      //           typeof block.tolerance !== 'number' ||
+      //           block.tolerance < 0 ||
+      //           !Number.isInteger(block.tolerance)
+      //         ) {
+      //           throw new Error(`${day}[${i}]: 'tolerance' must be a positive integer (minutes)`);
+      //         }
+      //
+      //         // ✅ Reasonable tolerance limit (e.g., max 120 minutes = 2 hours)
+      //         if (block.tolerance > 120) {
+      //           throw new Error(`${day}[${i}]: tolerance cannot exceed 120 minutes`);
+      //         }
+      //       }
+      //
+      //       // ✅ Check for overlapping blocks on the same day
+      //       for (let i = 0; i < blocks.length; i++) {
+      //         for (let j = i + 1; j < blocks.length; j++) {
+      //           const block1 = blocks[i] as any;
+      //           const block2 = blocks[j] as any;
+      //
+      //           const [start1Hour, start1Min] = block1.work[0].split(':').map(Number);
+      //           const [end1Hour, end1Min] = block1.work[1].split(':').map(Number);
+      //           const [start2Hour, start2Min] = block2.work[0].split(':').map(Number);
+      //           const [end2Hour, end2Min] = block2.work[1].split(':').map(Number);
+      //
+      //           const start1 = start1Hour * 60 + start1Min;
+      //           const end1 = end1Hour * 60 + end1Min;
+      //           const start2 = start2Hour * 60 + start2Min;
+      //           const end2 = end2Hour * 60 + end2Min;
+      //
+      //           // Check for overlap
+      //           if (start1 < end2 && start2 < end1) {
+      //             throw new Error(`${day}: blocks ${i} and ${j} have overlapping work times`);
+      //           }
+      //         }
+      //       }
+      //     }
+      //   },
+      // },
     },
     defaults: {
       type: DataTypes.BOOLEAN,
@@ -277,6 +407,10 @@ export const SessionTemplatesDbStructure = {
       {
         fields: ['defaults'],
         name: 'idx_session_templates_defaults',
+      },
+      {
+        fields: ['definition', 'valid_to'],
+        name: 'idx_session_templates_definition_valid_to',
       },
     ],
   } as ModelOptions,

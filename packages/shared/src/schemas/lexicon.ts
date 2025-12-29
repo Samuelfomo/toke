@@ -5,15 +5,35 @@ import { LanguageValidationUtils } from '../utils/language.validation.js';
 
 // Schéma de base pour les validations communes
 const baseLexiconSchema = z.object({
+  // reference: z
+  //   .string({
+  //     required_error: LEXICON_ERRORS.REFERENCE_REQUIRED,
+  //     invalid_type_error: LEXICON_ERRORS.REFERENCE_INVALID,
+  //   })
+  //   .min(LEXICON_VALIDATION.REFERENCE.MIN_LENGTH, LEXICON_ERRORS.REFERENCE_INVALID)
+  //   .max(LEXICON_VALIDATION.REFERENCE.MAX_LENGTH, LEXICON_ERRORS.REFERENCE_INVALID)
+  //   .regex(LEXICON_VALIDATION.REFERENCE.PATTERN, LEXICON_ERRORS.REFERENCE_INVALID)
+  //   .transform((val) => val.trim()),
+
   reference: z
     .string({
       required_error: LEXICON_ERRORS.REFERENCE_REQUIRED,
       invalid_type_error: LEXICON_ERRORS.REFERENCE_INVALID,
     })
-    .min(LEXICON_VALIDATION.REFERENCE.MIN_LENGTH, LEXICON_ERRORS.REFERENCE_INVALID)
-    .max(LEXICON_VALIDATION.REFERENCE.MAX_LENGTH, LEXICON_ERRORS.REFERENCE_INVALID)
-    .regex(LEXICON_VALIDATION.REFERENCE.PATTERN, LEXICON_ERRORS.REFERENCE_INVALID)
-    .transform((val) => val.trim()),
+    // 1️⃣ Normalisation
+    .transform((val) => val.trim())
+    .transform((val) =>
+      val.length > LEXICON_VALIDATION.REFERENCE.MAX_LENGTH
+        ? val.slice(0, LEXICON_VALIDATION.REFERENCE.MAX_LENGTH)
+        : val,
+    )
+    // 2️⃣ Validation finale
+    .pipe(
+      z
+        .string()
+        .min(LEXICON_VALIDATION.REFERENCE.MIN_LENGTH, LEXICON_ERRORS.REFERENCE_INVALID)
+        .regex(LEXICON_VALIDATION.REFERENCE.PATTERN, LEXICON_ERRORS.REFERENCE_INVALID),
+    ),
 
   translation: z
     .record(z.string().min(1, 'Translation value cannot be empty'))

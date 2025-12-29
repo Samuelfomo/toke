@@ -6,6 +6,7 @@ import {
   QR_CODE_ERRORS,
   QR_CODE_VALIDATION,
 } from '../../constants/tenant/qr.code.generation.js';
+import { TEAMS_VALIDATION } from '../../constants/tenant/teams.js';
 
 // ============================================================================
 // SCHEMAS DE VALIDATION
@@ -26,16 +27,29 @@ const baseQrCodeSchema = z.object({
     })
     .trim(),
 
-  manager: z
+  // manager: z
+  //   .string({
+  //     required_error: QR_CODE_ERRORS.MANAGER_REQUIRED,
+  //     invalid_type_error: QR_CODE_ERRORS.MANAGER_INVALID,
+  //   })
+  //   .min(QR_CODE_VALIDATION.MANAGER.MIN_LENGTH, {
+  //     message: QR_CODE_ERRORS.MANAGER_INVALID,
+  //   })
+  //   .max(QR_CODE_VALIDATION.MANAGER.MAX_LENGTH, {
+  //     message: QR_CODE_ERRORS.MANAGER_INVALID,
+  //   })
+  //   .trim(),
+
+  team: z
     .string({
-      required_error: QR_CODE_ERRORS.MANAGER_REQUIRED,
-      invalid_type_error: QR_CODE_ERRORS.MANAGER_INVALID,
+      required_error: QR_CODE_ERRORS.TEAM_REQUIRED,
+      invalid_type_error: QR_CODE_ERRORS.TEAM_INVALID,
     })
-    .min(QR_CODE_VALIDATION.MANAGER.MIN_LENGTH, {
-      message: QR_CODE_ERRORS.MANAGER_INVALID,
+    .min(QR_CODE_VALIDATION.TEAM.MIN_LENGTH, {
+      message: QR_CODE_ERRORS.TEAM_INVALID,
     })
-    .max(QR_CODE_VALIDATION.MANAGER.MAX_LENGTH, {
-      message: QR_CODE_ERRORS.MANAGER_INVALID,
+    .max(QR_CODE_VALIDATION.TEAM.MAX_LENGTH, {
+      message: QR_CODE_ERRORS.TEAM_INVALID,
     })
     .trim(),
 
@@ -57,6 +71,24 @@ const baseQrCodeSchema = z.object({
       invalid_type_error: QR_CODE_ERRORS.SHARED_INVALID,
     })
     .default(QR_CODE_DEFAULTS.SHARED),
+
+  shared_with: z
+    .array(
+      z.object({
+        // code: z.number().int().positive(),
+        code: z
+          .string({
+            required_error: QR_CODE_ERRORS.TEAM_REQUIRED,
+            invalid_type_error: QR_CODE_ERRORS.TEAM_INVALID,
+          })
+          .trim()
+          .min(TEAMS_VALIDATION.MEMBER.USER.MIN_LENGTH, QR_CODE_ERRORS.TEAM_INVALID)
+          .max(TEAMS_VALIDATION.MEMBER.USER.MAX_LENGTH, QR_CODE_ERRORS.TEAM_INVALID),
+        shared_at: z.union([z.date(), z.string().transform((val) => new Date(val))]).optional(),
+      }),
+    )
+    .optional()
+    .default([]),
 
   valid_from: z
     .union([z.date(), z.string().transform((val) => new Date(val))], {
@@ -126,7 +158,8 @@ export const updateQrCodeSchema = baseQrCodeSchema.partial().refine(
 export const qrCodeFiltersSchema = z
   .object({
     site: z.string().optional(),
-    manager: z.string().optional(),
+    // manager: z.string().optional(),
+    team: z.string().optional(),
     is_expired: z.boolean().optional(),
     created_from: z.union([z.date(), z.string().transform((val) => new Date(val))]).optional(),
     created_to: z.union([z.date(), z.string().transform((val) => new Date(val))]).optional(),

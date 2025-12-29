@@ -161,30 +161,127 @@ export default class SessionTemplate extends SessionTemplateModel {
     return TimezoneConfigUtils.getCurrentTime() > this.valid_to;
   }
 
+  // getDaysWithWork(): string[] {
+  //   if (!this.definition) return [];
+  //
+  //   return Object.keys(this.definition).filter(
+  //     (day) => this.definition[day] && this.definition[day].length > 0,
+  //   );
+  // }
+
+  /**
+   * 🔧 MÉTHODE MODIFIÉE
+   * Retourne les jours avec du travail (exclut null et [])
+   */
   getDaysWithWork(): string[] {
     if (!this.definition) return [];
 
-    return Object.keys(this.definition).filter(
-      (day) => this.definition[day] && this.definition[day].length > 0,
-    );
+    return Object.keys(this.definition).filter((day) => {
+      const dayValue = this.definition[day];
+      // ✅ Exclure null (férié) ET [] (repos)
+      return dayValue !== null && Array.isArray(dayValue) && dayValue.length > 0;
+    });
   }
 
+  // hasWorkOnDay(day: string): boolean {
+  //   if (!this.definition || !this.definition[day]) return false;
+  //   return this.definition[day].length > 0;
+  // }
+
+  /**
+   * 🔧 MÉTHODE MODIFIÉE
+   * Vérifie si un jour a du travail
+   */
   hasWorkOnDay(day: string): boolean {
     if (!this.definition || !this.definition[day]) return false;
-    return this.definition[day].length > 0;
+    const dayValue = this.definition[day];
+    // ✅ null = férié → pas de travail
+    if (dayValue === null) return false;
+    return Array.isArray(dayValue) && dayValue.length > 0;
   }
 
+  /**
+   * 🔧 NOUVELLE MÉTHODE
+   * Vérifie si un jour est férié
+   */
+  isHoliday(day: string): boolean {
+    if (!this.definition) return false;
+    return this.definition[day] === null;
+  }
+
+  /**
+   * 🔧 NOUVELLE MÉTHODE
+   * Vérifie si un jour est un jour de repos ([] mais pas null)
+   */
+  isRestDay(day: string): boolean {
+    if (!this.definition) return false;
+    const dayValue = this.definition[day];
+    return Array.isArray(dayValue) && dayValue.length === 0;
+  }
+
+  // getTotalWorkBlocksForDay(day: string): number {
+  //   if (!this.definition || !this.definition[day]) return 0;
+  //   return this.definition[day].length;
+  // }
+
+  /**
+   * 🔧 MÉTHODE MODIFIÉE
+   * Retourne le nombre de blocks pour un jour
+   */
   getTotalWorkBlocksForDay(day: string): number {
     if (!this.definition || !this.definition[day]) return 0;
-    return this.definition[day].length;
+    const dayValue = this.definition[day];
+    // ✅ null = férié → 0 blocks
+    if (dayValue === null) return 0;
+    return Array.isArray(dayValue) ? dayValue.length : 0;
   }
 
+  // getWorkHoursForDay(day: string): number {
+  //   if (!this.definition || !this.definition[day]) return 0;
+  //
+  //   let totalMinutes = 0;
+  //
+  //   for (const block of this.definition[day]) {
+  //     const [startHour, startMin] = block.work[0].split(':').map(Number);
+  //     const [endHour, endMin] = block.work[1].split(':').map(Number);
+  //
+  //     const startMinutes = startHour * 60 + startMin;
+  //     const endMinutes = endHour * 60 + endMin;
+  //
+  //     totalMinutes += endMinutes - startMinutes;
+  //
+  //     // Soustraire la pause si elle existe
+  //     if (block.pause) {
+  //       const [pauseStartHour, pauseStartMin] = block.pause[0].split(':').map(Number);
+  //       const [pauseEndHour, pauseEndMin] = block.pause[1].split(':').map(Number);
+  //
+  //       const pauseStartMinutes = pauseStartHour * 60 + pauseStartMin;
+  //       const pauseEndMinutes = pauseEndHour * 60 + pauseEndMin;
+  //
+  //       totalMinutes -= pauseEndMinutes - pauseStartMinutes;
+  //     }
+  //   }
+  //
+  //   return totalMinutes / 60;
+  // }
+
+  /**
+   * 🔧 MÉTHODE MODIFIÉE
+   * Calcule les heures de travail pour un jour
+   */
   getWorkHoursForDay(day: string): number {
     if (!this.definition || !this.definition[day]) return 0;
+    const dayValue = this.definition[day];
+
+    // ✅ null = férié → 0 heures
+    if (dayValue === null) return 0;
+
+    // ✅ [] = repos → 0 heures
+    if (!Array.isArray(dayValue) || dayValue.length === 0) return 0;
 
     let totalMinutes = 0;
 
-    for (const block of this.definition[day]) {
+    for (const block of dayValue) {
       const [startHour, startMin] = block.work[0].split(':').map(Number);
       const [endHour, endMin] = block.work[1].split(':').map(Number);
 
@@ -217,6 +314,45 @@ export default class SessionTemplate extends SessionTemplateModel {
     }
 
     return totalHours;
+  }
+
+  /**
+   * 🔧 NOUVELLE MÉTHODE
+   * Retourne les statistiques détaillées par type de jour
+   */
+  getDayStatistics(): {
+    working_days: number;
+    rest_days: number;
+    holidays: number;
+    details: Record<string, 'working' | 'rest' | 'holiday'>;
+  } {
+    if (!this.definition) {
+      return { working_days: 0, rest_days: 0, holidays: 0, details: {} };
+    }
+
+    const stats = {
+      working_days: 0,
+      rest_days: 0,
+      holidays: 0,
+      details: {} as Record<string, 'working' | 'rest' | 'holiday'>,
+    };
+
+    for (const day of VALID_DAYS) {
+      const dayValue = this.definition[day];
+
+      if (dayValue === null) {
+        stats.holidays++;
+        stats.details[day] = 'holiday';
+      } else if (Array.isArray(dayValue) && dayValue.length === 0) {
+        stats.rest_days++;
+        stats.details[day] = 'rest';
+      } else if (Array.isArray(dayValue) && dayValue.length > 0) {
+        stats.working_days++;
+        stats.details[day] = 'working';
+      }
+    }
+
+    return stats;
   }
 
   async save(): Promise<void> {

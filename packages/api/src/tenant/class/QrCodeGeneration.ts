@@ -1,4 +1,4 @@
-import { QR_CODE_DEFAULTS, TimezoneConfigUtils } from '@toke/shared';
+import { QR_CODE_DEFAULTS, SharedWith, TimezoneConfigUtils } from '@toke/shared';
 
 import QrCodeGenerationModel from '../model/QrCodeGenerationModel.js';
 import W from '../../tools/watcher.js';
@@ -11,11 +11,12 @@ import {
 } from '../../utils/response.model.js';
 import { TenantRevision } from '../../tools/revision.js';
 
-import User from './User.js';
 import Site from './Site.js';
+import Teams from './Teams.js';
 
 export default class QrCodeGeneration extends QrCodeGenerationModel {
-  private managerObj?: User;
+  // private managerObj?: User;
+  private teamObj?: Teams;
   private siteObj?: Site;
 
   constructor() {
@@ -52,11 +53,18 @@ export default class QrCodeGeneration extends QrCodeGenerationModel {
     return new QrCodeGeneration().listBySite(site, paginationOptions);
   }
 
-  static _listByManager(
-    manager: number,
+  // static _listByManager(
+  //   manager: number,
+  //   paginationOptions: { offset?: number; limit?: number } = {},
+  // ): Promise<QrCodeGeneration[] | null> {
+  //   return new QrCodeGeneration().listByManager(manager, paginationOptions);
+  // }
+
+  static _listByTeam(
+    team: number,
     paginationOptions: { offset?: number; limit?: number } = {},
   ): Promise<QrCodeGeneration[] | null> {
-    return new QrCodeGeneration().listByManager(manager, paginationOptions);
+    return new QrCodeGeneration().listByTeam(team, paginationOptions);
   }
 
   static async exportable(paginationOptions: { offset?: number; limit?: number } = {}): Promise<{
@@ -95,20 +103,36 @@ export default class QrCodeGeneration extends QrCodeGenerationModel {
     return this.site;
   }
 
-  getManager(): number | undefined {
-    return this.manager;
+  // getManager(): number | undefined {
+  //   return this.manager;
+  // }
+
+  getTeam(): number | undefined {
+    return this.team;
+  }
+
+  getSharedWith(): SharedWith[] {
+    return this.shared_with;
   }
 
   getName(): string | undefined {
     return this.name;
   }
 
-  async getManagerObj(): Promise<User | null> {
-    if (!this.manager) return null;
-    if (!this.managerObj) {
-      this.managerObj = (await User._load(this.manager)) || undefined;
+  // async getManagerObj(): Promise<User | null> {
+  //   if (!this.manager) return null;
+  //   if (!this.managerObj) {
+  //     this.managerObj = (await User._load(this.manager)) || undefined;
+  //   }
+  //   return this.managerObj || null;
+  // }
+
+  async getTeamObj(): Promise<Teams | null> {
+    if (!this.team) return null;
+    if (!this.teamObj) {
+      this.teamObj = (await Teams._load(this.team)) || undefined;
     }
-    return this.managerObj || null;
+    return this.teamObj || null;
   }
 
   async getSiteObj(): Promise<Site | null> {
@@ -143,8 +167,18 @@ export default class QrCodeGeneration extends QrCodeGenerationModel {
     return this;
   }
 
-  setManager(manager: number): QrCodeGeneration {
-    this.manager = manager;
+  // setManager(manager: number): QrCodeGeneration {
+  //   this.manager = manager;
+  //   return this;
+  // }
+
+  setTeam(team: number): QrCodeGeneration {
+    this.team = team;
+    return this;
+  }
+
+  setSharedWith(sharedWith: SharedWith[]): QrCodeGeneration {
+    this.shared_with = sharedWith;
     return this;
   }
 
@@ -168,8 +202,24 @@ export default class QrCodeGeneration extends QrCodeGenerationModel {
     return this;
   }
 
-  toggleShared(): QrCodeGeneration {
-    this.shared = !this.shared;
+  toggleShared(shared_with: SharedWith[]): QrCodeGeneration {
+    this.shared = !QR_CODE_DEFAULTS.SHARED;
+    this.shared_with = [...this.shared_with, ...shared_with];
+    return this;
+  }
+
+  addSharedWithTeam(teamId: number): QrCodeGeneration {
+    if (!this.shared_with.some((item) => item.code === teamId)) {
+      this.shared_with.push({
+        code: teamId,
+        shared_at: TimezoneConfigUtils.getCurrentTime(),
+      });
+    }
+    return this;
+  }
+
+  removeSharedWithTeam(teamId: number): QrCodeGeneration {
+    this.shared_with = this.shared_with.filter((item) => item.code !== teamId);
     return this;
   }
 
@@ -271,11 +321,20 @@ export default class QrCodeGeneration extends QrCodeGenerationModel {
     return dataset.map((data) => new QrCodeGeneration().hydrate(data));
   }
 
-  async listByManager(
-    manager: number,
+  // async listByManager(
+  //   manager: number,
+  //   paginationOptions: { offset?: number; limit?: number } = {},
+  // ): Promise<QrCodeGeneration[] | null> {
+  //   const dataset = await this.listAllByManager(manager, paginationOptions);
+  //   if (!dataset) return null;
+  //   return dataset.map((data) => new QrCodeGeneration().hydrate(data));
+  // }
+
+  async listByTeam(
+    team: number,
     paginationOptions: { offset?: number; limit?: number } = {},
   ): Promise<QrCodeGeneration[] | null> {
-    const dataset = await this.listAllByManager(manager, paginationOptions);
+    const dataset = await this.listAllByTeam(team, paginationOptions);
     if (!dataset) return null;
     return dataset.map((data) => new QrCodeGeneration().hydrate(data));
   }
@@ -299,12 +358,14 @@ export default class QrCodeGeneration extends QrCodeGenerationModel {
 
   async toJSON(view: ViewMode = responseValue.FULL): Promise<object> {
     const site = await this.getSiteObj();
-    const manager = await this.getManagerObj();
+    // const manager = await this.getManagerObj();
+    const team = await this.getTeamObj();
     const baseData = {
       [RS.GUID]: this.guid,
       [RS.VALID_FROM]: this.valid_from,
       [RS.VALID_TO]: this.valid_to,
       [RS.SHARED]: this.shared,
+      [RS.SHARED_WITH]: this.shared_with,
       [RS.NAME]: this.name,
       is_expired: this.isExpired(),
       is_active: this.isActive(),
@@ -316,13 +377,15 @@ export default class QrCodeGeneration extends QrCodeGenerationModel {
       return {
         ...baseData,
         [RS.SITE]: site?.getGuid(),
-        [RS.MANAGER]: manager?.getGuid(),
+        // [RS.MANAGER]: manager?.getGuid(),
+        [RS.TEAM]: team?.getGuid(),
       };
     }
     return {
       ...baseData,
       [RS.SITE]: await site?.toJSON(),
-      [RS.MANAGER]: await manager?.toJSON(),
+      // [RS.MANAGER]: await manager?.toJSON(),
+      [RS.TEAM]: await team?.toJSON(),
     };
   }
 
@@ -330,7 +393,9 @@ export default class QrCodeGeneration extends QrCodeGenerationModel {
     this.id = data.id;
     this.guid = data.guid;
     this.site = data.site;
-    this.manager = data.manager;
+    // this.manager = data.manager;
+    this.team = data.team;
+    this.shared_with = data.shared_with;
     this.valid_from = data.valid_from;
     this.valid_to = data.valid_to;
     this.created_at = data.created_at;

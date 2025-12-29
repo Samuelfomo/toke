@@ -5,11 +5,12 @@ import {
   QR_CODE_CODES,
   QR_CODE_ERRORS,
   QR_CODE_MESSAGES,
+  SharedWith,
   SITES_CODES,
   SITES_ERRORS,
+  TEAMS_CODES,
+  TEAMS_ERRORS,
   TimezoneConfigUtils,
-  USERS_CODES,
-  USERS_ERRORS,
   validateQrCodeCreation,
   validateQrCodeFilters,
   validateQrCodeGuid,
@@ -19,11 +20,11 @@ import {
 import Ensure from '../../middle/ensured-routes.js';
 import R from '../../tools/response.js';
 import Site from '../class/Site.js';
-import User from '../class/User.js';
 import QrCodeGeneration from '../class/QrCodeGeneration.js';
 import { TenantRevision } from '../../tools/revision.js';
 import { tableName } from '../../utils/response.model.js';
 import { DatabaseEncryption } from '../../utils/encryption.js';
+import Teams from '../class/Teams';
 
 const router = Router();
 
@@ -89,20 +90,52 @@ router.post('/', Ensure.post(), async (req: Request, res: Response) => {
       });
     }
 
-    // Vérifier manager
-    const managerObj = await User._load(validatedData.manager, true);
-    if (!managerObj) {
+    // // Vérifier manager
+    // const managerObj = await User._load(validatedData.manager, true);
+    // if (!managerObj) {
+    //   return R.handleError(res, HttpStatus.NOT_FOUND, {
+    //     code: USERS_CODES.USER_NOT_FOUND,
+    //     message: USERS_ERRORS.NOT_FOUND,
+    //   });
+    // }
+
+    const teamObj = await Teams._load(validatedData.team, true);
+    if (!teamObj) {
       return R.handleError(res, HttpStatus.NOT_FOUND, {
-        code: USERS_CODES.USER_NOT_FOUND,
-        message: USERS_ERRORS.NOT_FOUND,
+        code: TEAMS_CODES.TEAM_NOT_FOUND,
+        message: TEAMS_ERRORS.NOT_FOUND,
       });
     }
 
     const qrCodeObj = new QrCodeGeneration()
       .setSite(siteObj.getId()!)
-      .setManager(managerObj.getId()!)
+      // .setManager(managerObj.getId()!)
+      .setTeam(teamObj.getId()!)
       .setShared(validatedData.shared)
       .setName(validatedData.name);
+
+    if (
+      validatedData.shared_with &&
+      Array.isArray(validatedData.shared_with) &&
+      validatedData.shared_with.length > 0
+    ) {
+      let shared_with: SharedWith[] = [];
+      for (const team of validatedData.shared_with) {
+        const teamData = await Teams._load(team.code, true);
+        if (!teamData) {
+          return R.handleError(res, HttpStatus.NOT_FOUND, {
+            code: TEAMS_CODES.TEAM_NOT_FOUND,
+            message: `${TEAMS_ERRORS.NOT_FOUND}: ${team.code}`,
+          });
+        }
+
+        shared_with.push({
+          code: teamData.getId()!,
+          shared_at: team.shared_at || TimezoneConfigUtils.getCurrentTime(),
+        });
+      }
+      qrCodeObj.setSharedWith(shared_with);
+    }
 
     if (validatedData.valid_from) {
       qrCodeObj.setValidFrom(validatedData.valid_from);
@@ -193,19 +226,56 @@ router.put('/:guid', Ensure.put(), async (req: Request, res: Response) => {
       qrCodeObj.setSite(siteObj.getId()!);
     }
 
-    if (validatedData.manager) {
-      const managerObj = await User._load(validatedData.manager, true);
-      if (!managerObj) {
+    // if (validatedData.manager) {
+    //   const managerObj = await User._load(validatedData.manager, true);
+    //   if (!managerObj) {
+    //     return R.handleError(res, HttpStatus.NOT_FOUND, {
+    //       code: USERS_CODES.USER_NOT_FOUND,
+    //       message: USERS_ERRORS.NOT_FOUND,
+    //     });
+    //   }
+    //   qrCodeObj.setManager(managerObj.getId()!);
+    // }
+
+    if (validatedData.team) {
+      const teamObj = await Teams._load(validatedData.team, true);
+      if (!teamObj) {
         return R.handleError(res, HttpStatus.NOT_FOUND, {
-          code: USERS_CODES.USER_NOT_FOUND,
-          message: USERS_ERRORS.NOT_FOUND,
+          code: TEAMS_CODES.TEAM_NOT_FOUND,
+          message: TEAMS_ERRORS.NOT_FOUND,
         });
       }
-      qrCodeObj.setManager(managerObj.getId()!);
+      qrCodeObj.setTeam(teamObj.getId()!);
     }
 
     if (validatedData.name !== undefined) {
       qrCodeObj.setName(validatedData.name);
+    }
+
+    // if (validatedData.shared_with !== undefined) {
+    //   qrCodeObj.setSharedWith(validatedData.shared_with);
+    // }
+    if (
+      validatedData.shared_with !== undefined &&
+      Array.isArray(validatedData.shared_with) &&
+      validatedData.shared_with.length > 0
+    ) {
+      let shared_with: SharedWith[] = [];
+      for (const team of validatedData.shared_with) {
+        const teamData = await Teams._load(team.code, true);
+        if (!teamData) {
+          return R.handleError(res, HttpStatus.NOT_FOUND, {
+            code: TEAMS_CODES.TEAM_NOT_FOUND,
+            message: `${TEAMS_ERRORS.NOT_FOUND}: ${team.code}`,
+          });
+        }
+
+        shared_with.push({
+          code: teamData.getId()!,
+          shared_at: team.shared_at || TimezoneConfigUtils.getCurrentTime(),
+        });
+      }
+      qrCodeObj.setSharedWith(shared_with);
     }
 
     if (validatedData.valid_from !== undefined) {
@@ -283,7 +353,31 @@ router.patch('/shared/:guid', Ensure.patch(), async (req: Request, res: Response
       });
     }
 
-    qrCodeObj.toggleShared();
+    const { teams } = req.body;
+    if (!teams.length) {
+      return R.handleError(res, HttpStatus.BAD_REQUEST, {
+        code: QR_CODE_CODES.TEAM_REQUIRED,
+        message: QR_CODE_ERRORS.TEAM_REQUIRED,
+      });
+    }
+    const shared_with: SharedWith[] = [];
+
+    for (const team of teams) {
+      const teamData = await Teams._load(team, true);
+      if (!teamData) {
+        return R.handleError(res, HttpStatus.NOT_FOUND, {
+          code: QR_CODE_CODES.TEAM_NOT_FOUND,
+          message: `${QR_CODE_ERRORS.TEAM_NOT_FOUND} : ${team}`,
+        });
+      }
+
+      shared_with.push({
+        code: teamData.getId()!,
+        shared_at: TimezoneConfigUtils.getCurrentTime(),
+      });
+    }
+
+    qrCodeObj.toggleShared(shared_with);
 
     await qrCodeObj.sharedSiteQrCode();
 
@@ -318,8 +412,12 @@ router.get('/list', Ensure.get(), async (req: Request, res: Response) => {
     if (filters?.site) {
       conditions.site = filters.site;
     }
-    if (filters?.manager) {
-      conditions.manager = filters.manager;
+    // if (filters?.manager) {
+    //   conditions.manager = filters.manager;
+    // }
+
+    if (filters?.team) {
+      conditions.team = filters.team;
     }
 
     const qrCodeEntries = await QrCodeGeneration._list(conditions, paginationOptions);
@@ -390,23 +488,64 @@ router.get('/site/:site/list', Ensure.get(), async (req: Request, res: Response)
   }
 });
 
-router.get('/manager/:manager/list', Ensure.get(), async (req: Request, res: Response) => {
-  try {
-    const { manager } = req.params;
+// router.get('/manager/:manager/list', Ensure.get(), async (req: Request, res: Response) => {
+//   try {
+//     const { manager } = req.params;
+//
+//     const managerObj = await User._load(manager, true);
+//     if (!managerObj) {
+//       return R.handleError(res, HttpStatus.NOT_FOUND, {
+//         code: USERS_CODES.USER_NOT_FOUND,
+//         message: USERS_ERRORS.NOT_FOUND,
+//       });
+//     }
+//
+//     const paginationOptions = paginationSchema.parse(req.query);
+//     const qrCodeEntries = await QrCodeGeneration._listByManager(
+//       managerObj.getId()!,
+//       paginationOptions,
+//     );
+//
+//     const qrCodes = {
+//       pagination: {
+//         offset: paginationOptions.offset || 0,
+//         limit: paginationOptions.limit || qrCodeEntries?.length,
+//         count: qrCodeEntries?.length || 0,
+//       },
+//       // items: await Promise.all((qrCodeEntries ?? []).map(async (qrCode) => await qrCode.toJSON())),
+//       items: await Promise.all((qrCodeEntries ?? []).map((qrCode) => qrCode.toJSON())),
+//     };
+//     return R.handleSuccess(res, { qrCodes });
+//   } catch (error: any) {
+//     if (error.issues) {
+//       return R.handleError(res, HttpStatus.BAD_REQUEST, {
+//         code: QR_CODE_CODES.PAGINATION_INVALID,
+//         message: QR_CODE_ERRORS.PAGINATION_INVALID,
+//         details: error.issues,
+//       });
+//     } else {
+//       return R.handleError(res, HttpStatus.INTERNAL_ERROR, {
+//         code: QR_CODE_CODES.LISTING_FAILED,
+//         message: error.message,
+//       });
+//     }
+//   }
+// });
 
-    const managerObj = await User._load(manager, true);
-    if (!managerObj) {
+router.get('/team/:team/list', Ensure.get(), async (req: Request, res: Response) => {
+  try {
+    const { team } = req.params;
+
+    const teamObj = await Teams._load(team, true);
+    if (!teamObj) {
       return R.handleError(res, HttpStatus.NOT_FOUND, {
-        code: USERS_CODES.USER_NOT_FOUND,
-        message: USERS_ERRORS.NOT_FOUND,
+        code: TEAMS_CODES.TEAM_NOT_FOUND,
+        message: TEAMS_ERRORS.NOT_FOUND,
       });
     }
 
     const paginationOptions = paginationSchema.parse(req.query);
-    const qrCodeEntries = await QrCodeGeneration._listByManager(
-      managerObj.getId()!,
-      paginationOptions,
-    );
+    const qrCodeEntries = await QrCodeGeneration._listByTeam(teamObj.getId()!, paginationOptions);
 
     const qrCodes = {
       pagination: {
@@ -414,7 +553,6 @@ router.get('/manager/:manager/list', Ensure.get(), async (req: Request, res: Res
         limit: paginationOptions.limit || qrCodeEntries?.length,
         count: qrCodeEntries?.length || 0,
       },
-      // items: await Promise.all((qrCodeEntries ?? []).map(async (qrCode) => await qrCode.toJSON())),
       items: await Promise.all((qrCodeEntries ?? []).map((qrCode) => qrCode.toJSON())),
     };
     return R.handleSuccess(res, { qrCodes });

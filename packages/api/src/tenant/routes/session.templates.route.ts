@@ -3,6 +3,7 @@ import {
   HttpStatus,
   paginationSchema,
   SESSION_TEMPLATE_CODES,
+  SESSION_TEMPLATE_DEFAULTS,
   SESSION_TEMPLATE_ERRORS,
   SESSION_TEMPLATE_MESSAGES,
   SessionTemplateValidationUtils,
@@ -146,12 +147,19 @@ router.post('/', Ensure.post(), async (req: Request, res: Response) => {
   try {
     const validatedData = validateSessionTemplateCreation(req.body);
 
+    // 🔧 AJOUT : Normaliser la définition AVANT de la passer au modèle
+    const normalizedDefinition = SessionTemplateValidationUtils.normalizeDefinition(
+      validatedData.definition,
+    );
+
+    console.log('normalizedDefinition', normalizedDefinition);
+
     const tenant = req.tenant;
 
     const templateObj = new SessionTemplate()
       .setTenant(tenant.config.reference)
       .setName(validatedData.name)
-      .setDefinition(validatedData.definition)
+      .setDefinition(normalizedDefinition)
       .setValidFrom(new Date(validatedData.valid_from))
       .setDefaultSessionTemplate(validatedData.default);
 
@@ -172,6 +180,53 @@ router.post('/', Ensure.post(), async (req: Request, res: Response) => {
         message: error.message,
       });
     }
+    return R.handleError(res, HttpStatus.INTERNAL_ERROR, {
+      code: SESSION_TEMPLATE_CODES.CREATION_FAILED,
+      message: error.message,
+    });
+  }
+});
+
+// 🔧 BONUS : Route pour créer une semaine fériée facilement
+router.post('/holiday-week', Ensure.post(), async (req: Request, res: Response) => {
+  try {
+    const { name, valid_from, valid_to } = req.body;
+
+    if (!name) {
+      return R.handleError(res, HttpStatus.BAD_REQUEST, {
+        code: SESSION_TEMPLATE_CODES.NAME_REQUIRED,
+        message: SESSION_TEMPLATE_ERRORS.NAME_REQUIRED,
+      });
+    }
+
+    if (!SessionTemplateValidationUtils.validateName(name)) {
+      return R.handleError(res, HttpStatus.BAD_REQUEST, {
+        code: SESSION_TEMPLATE_CODES.NAME_INVALID,
+        message: SESSION_TEMPLATE_ERRORS.NAME_INVALID,
+      });
+    }
+
+    const tenant = req.tenant;
+    const holidayDefinition = SessionTemplateValidationUtils.createFullWeekHoliday();
+
+    const templateObj = new SessionTemplate()
+      .setTenant(tenant.config.reference)
+      .setName(name)
+      .setDefinition(holidayDefinition)
+      .setValidFrom(valid_from ? new Date(valid_from) : TimezoneConfigUtils.getCurrentTime())
+      .setDefaultSessionTemplate(SESSION_TEMPLATE_DEFAULTS.IS_DEFAULT);
+
+    if (valid_to) {
+      templateObj.setValidTo(new Date(valid_to));
+    }
+
+    await templateObj.save();
+
+    return R.handleCreated(res, {
+      message: SESSION_TEMPLATE_MESSAGES.CREATED_SUCCESSFULLY,
+      template: templateObj.toJSON(),
+    });
+  } catch (error: any) {
     return R.handleError(res, HttpStatus.INTERNAL_ERROR, {
       code: SESSION_TEMPLATE_CODES.CREATION_FAILED,
       message: error.message,
@@ -227,14 +282,15 @@ router.get('/:guid', Ensure.get(), async (req: Request, res: Response) => {
  */
 router.put('/:guid', Ensure.put(), async (req: Request, res: Response) => {
   try {
-    if (!SessionTemplateValidationUtils.validateGuid(req.params.guid)) {
+    const { guid } = req.params;
+    if (!SessionTemplateValidationUtils.validateGuid(guid)) {
       return R.handleError(res, HttpStatus.BAD_REQUEST, {
         code: SESSION_TEMPLATE_CODES.INVALID_GUID,
         message: SESSION_TEMPLATE_ERRORS.GUID_INVALID,
       });
     }
 
-    const templateObj = await SessionTemplate._load(req.params.guid, true);
+    const templateObj = await SessionTemplate._load(guid, true);
     if (!templateObj) {
       return R.handleError(res, HttpStatus.NOT_FOUND, {
         code: SESSION_TEMPLATE_CODES.SESSION_TEMPLATE_NOT_FOUND,
@@ -248,8 +304,15 @@ router.put('/:guid', Ensure.put(), async (req: Request, res: Response) => {
       templateObj.setName(validatedData.name);
     }
 
+    // if (validatedData.definition !== undefined) {
+    //   templateObj.setDefinition(validatedData.definition);
+    // }
+    // 🔧 AJOUT : Normaliser si definition est fournie
     if (validatedData.definition !== undefined) {
-      templateObj.setDefinition(validatedData.definition);
+      const normalizedDefinition = SessionTemplateValidationUtils.normalizeDefinition(
+        validatedData.definition,
+      );
+      templateObj.setDefinition(normalizedDefinition);
     }
 
     if (validatedData.valid_from !== undefined) {

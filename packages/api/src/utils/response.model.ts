@@ -290,6 +290,7 @@ export const responseStructure = {
   VALID_FROM: 'valid_from',
   VALID_TO: 'valid_to',
   SHARED: 'shared',
+  SHARED_WITH: 'shared_with',
   LINK: 'link',
 
   APP_WEB: 'app_web',

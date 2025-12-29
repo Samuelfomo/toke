@@ -1,5 +1,6 @@
 // utils/session_templates.validation.ts
 import {
+  DayOfWeek,
   SESSION_TEMPLATE_VALIDATION,
   VALID_DAYS,
 } from '../../constants/tenant/session.templates.js';
@@ -116,6 +117,39 @@ export class SessionTemplateValidationUtils {
     return true;
   }
 
+  // /**
+  //  * Validates definition object
+  //  */
+  // static validateDefinition(definition: any): boolean {
+  //   if (typeof definition !== 'object' || definition === null || Array.isArray(definition)) {
+  //     return false;
+  //   }
+  //
+  //   // Check for invalid day keys
+  //   for (const day of Object.keys(definition)) {
+  //     if (!VALID_DAYS.includes(day as any)) {
+  //       return false;
+  //     }
+  //   }
+  //
+  //   // Validate each day's blocks
+  //   for (const [day, blocks] of Object.entries(definition)) {
+  //     if (!Array.isArray(blocks)) return false;
+  //
+  //     // Validate each block
+  //     for (const block of blocks) {
+  //       if (!this.validateWorkBlock(block)) return false;
+  //     }
+  //
+  //     // Check for overlapping blocks
+  //     if (!this.validateNoOverlappingBlocks(blocks as any[])) {
+  //       return false;
+  //     }
+  //   }
+  //
+  //   return true;
+  // }
+
   /**
    * Validates definition object
    */
@@ -126,22 +160,35 @@ export class SessionTemplateValidationUtils {
 
     // Check for invalid day keys
     for (const day of Object.keys(definition)) {
-      if (!VALID_DAYS.includes(day as any)) {
+      if (!VALID_DAYS.includes(day as DayOfWeek)) {
         return false;
       }
     }
 
-    // Validate each day's blocks
-    for (const [day, blocks] of Object.entries(definition)) {
-      if (!Array.isArray(blocks)) return false;
+    // Validate each day's value
+    for (const [day, value] of Object.entries(definition)) {
+      // undefined → non envoyé (OK)
+      if (value === undefined) continue;
+
+      // null → jour férié (OK)
+      if (value === null) continue;
+
+      // Sinon → doit être un tableau (repos ou travail)
+      if (!Array.isArray(value)) {
+        return false;
+      }
+
+      const blocks = value;
 
       // Validate each block
       for (const block of blocks) {
-        if (!this.validateWorkBlock(block)) return false;
+        if (!this.validateWorkBlock(block)) {
+          return false;
+        }
       }
 
-      // Check for overlapping blocks
-      if (!this.validateNoOverlappingBlocks(blocks as any[])) {
+      // Check for overlapping blocks (seulement s'il y a des blocks)
+      if (blocks.length > 1 && !this.validateNoOverlappingBlocks(blocks)) {
         return false;
       }
     }
@@ -218,13 +265,41 @@ export class SessionTemplateValidationUtils {
   /**
    * Cleans definition object
    */
+  // static cleanDefinition(definition: Record<string, any>): Record<string, any> {
+  //   const cleaned: Record<string, any> = {};
+  //
+  //   for (const [day, blocks] of Object.entries(definition)) {
+  //     if (Array.isArray(blocks)) {
+  //       cleaned[day] = blocks.map((block) => this.cleanWorkBlock(block));
+  //     }
+  //   }
+  //
+  //   return cleaned;
+  // }
+
   static cleanDefinition(definition: Record<string, any>): Record<string, any> {
     const cleaned: Record<string, any> = {};
 
-    for (const [day, blocks] of Object.entries(definition)) {
-      if (Array.isArray(blocks)) {
-        cleaned[day] = blocks.map((block) => this.cleanWorkBlock(block));
+    for (const day of VALID_DAYS) {
+      const value = definition[day];
+
+      // Jour non envoyé → on laisse undefined (normalisé plus tard)
+      if (value === undefined) continue;
+
+      // Jour férié → on conserve null
+      if (value === null) {
+        cleaned[day] = null;
+        continue;
       }
+
+      // Jour repos ou travaillé
+      if (Array.isArray(value)) {
+        cleaned[day] = value.map((block) => this.cleanWorkBlock(block));
+        // continue;
+      }
+
+      // Toute autre valeur est invalide → ignorée ou throw
+      // throw new Error(`Invalid definition value for day ${day}`);
     }
 
     return cleaned;
@@ -292,5 +367,53 @@ export class SessionTemplateValidationUtils {
     const hours = Math.floor(minutes / 60);
     const mins = minutes % 60;
     return `${hours.toString().padStart(2, '0')}:${mins.toString().padStart(2, '0')}`;
+  }
+
+  /**
+   * 🔧 NOUVELLE FONCTION
+   * Normalise une définition partielle vers 7 jours complets
+   *
+   * @param input - Définition partielle reçue de l'API
+   * @returns Définition complète (7 jours)
+   */
+  static normalizeDefinition(
+    input: Partial<Record<DayOfWeek, any[] | null>>,
+  ): Record<DayOfWeek, any[] | null> {
+    const normalized: Record<string, any[] | null> = {};
+
+    for (const day of VALID_DAYS) {
+      if (day in input) {
+        // Le jour est défini → utiliser sa valeur (peut être null, [], ou [...])
+        normalized[day] = input[day] ?? null;
+      } else {
+        // ⚠️ DÉCISION MÉTIER : jour non défini = férié
+        normalized[day] = null;
+
+        // Alternative si tu préfères : jour non défini = repos
+        // normalized[day] = [];
+      }
+    }
+
+    return normalized as Record<DayOfWeek, any[] | null>;
+  }
+
+  /**
+   * 🔧 UTILITAIRE BONUS
+   * Détecte si une définition est "semaine entière fériée"
+   */
+  static isFullWeekHoliday(definition: Record<DayOfWeek, any[] | null>): boolean {
+    return VALID_DAYS.every((day) => definition[day] === null);
+  }
+
+  /**
+   * 🔧 UTILITAIRE BONUS
+   * Crée une semaine entière de jours fériés
+   */
+  static createFullWeekHoliday(): Record<DayOfWeek, null> {
+    const definition: Record<string, null> = {};
+    for (const day of VALID_DAYS) {
+      definition[day] = null;
+    }
+    return definition as Record<DayOfWeek, null>;
   }
 }
