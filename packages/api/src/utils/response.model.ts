@@ -322,6 +322,11 @@ export const responseStructure = {
   SESSION_TEMPLATE: 'session_template',
   DEFAULT_SESSION_TEMPLATE: 'default_session_template',
   IS_DEFAULT: 'is_default',
+
+  DEVICE_TYPE: 'device_type',
+  CUSTOM_GEOFENCE_RADIUS: 'custom_geofence_radius',
+  LAST_SEEN_AT: 'last_seen_at',
+  ASSIGNED_TO: 'assigned_to',
 } as const;
 
 export const RT = {
@@ -380,6 +385,7 @@ export const tableName = {
   ROTATION_ASSIGNMENTS: `${G.tableAp}_rotation_assignments`,
   SCHEDULE_EXCEPTIONS: `${G.tableAp}_schedule_exceptions`,
   TEAMS: `${G.tableAp}_teams`,
+  DEVICE: `${G.tableAp}_device`,
 } as const;
 
 export const EntityRoute = {

@@ -17,6 +17,7 @@ import { RotationGroupsDbStructure } from './data/rotation.groups.db.js';
 import { RotationAssignmentsDbStructure } from './data/rotation.assignments.db.js';
 import { ScheduleExceptionsDbStructure } from './data/schedule.exceptions.db.js';
 import { TeamsDbStructure } from './data/teams.db.js';
+import { DeviceDbStructure } from './data/device.db.js';
 
 interface TenantInstance {
   sequelize: Sequelize;
@@ -208,6 +209,7 @@ export class TableInitializer {
     this.defineRotationAssignmentsModelForInstance(instance);
     this.defineScheduleExceptionsModelForInstance(instance);
     this.defineTeamsModelForInstance(instance);
+    this.defineDeviceModelForInstance(instance);
 
     console.log(`✅ ${instance.models.size} modèle(s) défini(s) pour cette instance`);
   }
@@ -390,6 +392,17 @@ export class TableInitializer {
 
     instance.models.set(TeamsDbStructure.tableName, model);
     console.log(`✅ Modèle Teams défini (${TeamsDbStructure.tableName})`);
+  }
+
+  private static defineDeviceModelForInstance(instance: TenantInstance): void {
+    const model = instance.sequelize.define(
+      DeviceDbStructure.tableName,
+      DeviceDbStructure.attributes,
+      DeviceDbStructure.options,
+    );
+
+    instance.models.set(DeviceDbStructure.tableName, model);
+    console.log(`✅ Modèle Device défini (${DeviceDbStructure.tableName})`);
   }
 
   /**

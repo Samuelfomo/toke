@@ -31,6 +31,7 @@ import rotationGroupsRoute from './routes/rotation.groups.route.js';
 import rotationAssignmentsRoute from './routes/rotation.assignments.route.js';
 import scheduleExceptionsRoute from './routes/schedule.exceptions.route.js';
 import teamsRoute from './routes/teams.route.js';
+import deviceRoute from './routes/device.route.js';
 
 interface AppConfig {
   port: number;
@@ -134,14 +135,14 @@ export default class App {
 
     // Logging simple en développement
     if (process.env.NODE_ENV !== 'production') {
-      this.app.use((req, res, next) => {
+      this.app.use((req, _res, next) => {
         console.log(`🌐 ${req.method} ${req.path}`);
         next();
       });
     }
 
     // Headers de sécurité basique
-    this.app.use((req, res, next) => {
+    this.app.use((_req, res, next) => {
       res.setHeader('X-Content-Type-Options', 'nosniff');
       res.setHeader('X-Frame-Options', 'DENY');
       next();
@@ -183,7 +184,7 @@ export default class App {
     // Route de santé
     this.app.get(
       '/health',
-      this.asyncHandler(async (req: any, res: any) => {
+      this.asyncHandler(async (_req: any, res: any) => {
         // const dbStatus = TableInitializer.isInitialized() ? 'connected' : 'disconnected';
 
         // return R.handleSuccess(res, {
@@ -208,7 +209,7 @@ export default class App {
     );
 
     // Route racine
-    this.app.get('/', (req, res) => {
+    this.app.get('/', (_req, res) => {
       res.json({
         message: 'API Server is running',
         timestamp: TimezoneConfigUtils.getCurrentTime().toISOString(),
@@ -237,6 +238,7 @@ export default class App {
     this.app.use('/rotation-assignments', rotationAssignmentsRoute);
     this.app.use('/schedule-exceptions', scheduleExceptionsRoute);
     this.app.use('/teams', teamsRoute);
+    this.app.use('/devices', deviceRoute);
 
     // Route 404
     this.app.use((req, res) => {

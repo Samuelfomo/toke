@@ -22,15 +22,25 @@ router.get('/', TenantConfig.authenticate, Ensure.get(), async (req: Request, re
 
     const client = (req as any).client.reference;
 
-    const result: any = await UserService.loadFiles(client, String(url));
+    const response = await UserService.loadFiles(client, String(url));
 
-    if (result.status !== HttpStatus.SUCCESS) {
-      return R.handleError(res, result.status, result.response);
+    // if (result.status !== HttpStatus.SUCCESS) {
+    //   return R.handleError(res, result.status, result.response);
+    // }
+    // return R.handleSuccess(res, result.response);
+
+    // 🔥 TRANSFERT DES HEADERS
+    res.setHeader('Content-Type', response.headers['content-type'] || 'application/octet-stream');
+
+    if (response.headers['content-length']) {
+      res.setHeader('Content-Length', response.headers['content-length']);
     }
-    return R.handleSuccess(res, result.response);
+
+    // 🔥 STREAM DIRECT
+    response.data.pipe(res);
   } catch (error: any) {
     return R.handleError(res, HttpStatus.INTERNAL_ERROR, {
-      code: 'search_failed',
+      code: 'file_proxy_failed',
       message: error.message,
     });
   }

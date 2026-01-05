@@ -74,36 +74,44 @@ export class UserService {
     }
   }
 
-  static async loadFiles(
-    reference: string,
-    data: string,
-  ): Promise<{ status: number; response: any }> {
-    try {
-      const api = await getApiClient(reference);
+  // static async loadFiles(
+  //   reference: string,
+  //   data: string,
+  // ): Promise<{ status: number; response: any }> {
+  //   try {
+  //     const api = await getApiClient(reference);
+  //
+  //     const response = await api.get(`${data}`);
+  //
+  //     return {
+  //       status: response.status,
+  //       response: response.data,
+  //     };
+  //   } catch (error: any) {
+  //     if (error.response) {
+  //       return {
+  //         status: error.response.status,
+  //         response: error.response.data,
+  //       };
+  //     } else if (error.request) {
+  //       return {
+  //         status: HttpStatus.INTERNAL_ERROR,
+  //         response: { message: 'No response from server', details: error.message },
+  //       };
+  //     } else {
+  //       return {
+  //         status: HttpStatus.INTERNAL_ERROR,
+  //         response: { message: 'Unexpected error', details: error.message },
+  //       };
+  //     }
+  //   }
+  // }
 
-      const response = await api.get(`${data}`);
+  static async loadFiles(reference: string, data: string) {
+    const api = await getApiClient(reference);
 
-      return {
-        status: response.status,
-        response: response.data,
-      };
-    } catch (error: any) {
-      if (error.response) {
-        return {
-          status: error.response.status,
-          response: error.response.data,
-        };
-      } else if (error.request) {
-        return {
-          status: HttpStatus.INTERNAL_ERROR,
-          response: { message: 'No response from server', details: error.message },
-        };
-      } else {
-        return {
-          status: HttpStatus.INTERNAL_ERROR,
-          response: { message: 'Unexpected error', details: error.message },
-        };
-      }
-    }
+    return await api.get(data, {
+      responseType: 'stream', // 🔥 OBLIGATOIRE
+    });
   }
 }
