@@ -24,7 +24,7 @@ import QrCodeGeneration from '../class/QrCodeGeneration.js';
 import { TenantRevision } from '../../tools/revision.js';
 import { tableName } from '../../utils/response.model.js';
 import { DatabaseEncryption } from '../../utils/encryption.js';
-import Teams from '../class/Teams';
+import Teams from '../class/Teams.js';
 
 const router = Router();
 

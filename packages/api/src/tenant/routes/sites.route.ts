@@ -27,7 +27,7 @@ import { responseValue, tableName } from '../../utils/response.model.js';
 import UserRole from '../class/UserRole.js';
 import { DatabaseEncryption } from '../../utils/encryption.js';
 import QrCodeGeneration from '../class/QrCodeGeneration.js';
-import Teams from '../class/Teams';
+import Teams from '../class/Teams.js';
 
 const router = Router();
 

@@ -117,7 +117,7 @@ class AnomalyDetectionService {
     if (qrCodeObj.isShared()) {
       return { anomalies, corrections };
     }
-    const qrCodeManager = qrCodeObj.getManager();
+    const qrCodeManager = (await qrCodeObj.getTeamObj())?.getManager();
     if (!qrCodeManager) {
       // QR code sans manager = anomalie critique
       anomalies.push({
@@ -160,7 +160,7 @@ class AnomalyDetectionService {
       description: `Use of an unauthorized QR code - The employee clocked in using another manager's QR code.`,
       technical_details: {
         user_manager: (await userRole?.getAssignedByObject())!.getGuid(),
-        qr_code_manager: (await qrCodeObj.getManagerObj())?.getGuid(),
+        qr_code_manager: (await (await qrCodeObj.getTeamObj())!.getManagerObj())!.getGuid(),
         qr_code_guid: qrCodeObj.getGuid(),
       },
       auto_correctable: false, // Nécessite validation manager
