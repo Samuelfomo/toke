@@ -18,6 +18,8 @@ import { RotationAssignmentsDbStructure } from './data/rotation.assignments.db.j
 import { ScheduleExceptionsDbStructure } from './data/schedule.exceptions.db.js';
 import { TeamsDbStructure } from './data/teams.db.js';
 import { DeviceDbStructure } from './data/device.db.js';
+import { DepartmentDbStructure } from './data/department.db.js';
+import { PosteDbStructure } from './data/poste.db.js';
 
 interface TenantInstance {
   sequelize: Sequelize;
@@ -194,6 +196,8 @@ export class TableInitializer {
     console.log(`🏗️ Définition des modèles pour tenant...`);
 
     this.defineRolesModelForInstance(instance);
+    this.defineDepartmentModelForInstance(instance);
+    this.definePosteModelForInstance(instance);
     this.defineUsersModelForInstance(instance);
     this.defineUserRolesModelForInstance(instance);
     this.defineOrgHierarchyModelForInstance(instance);
@@ -223,6 +227,28 @@ export class TableInitializer {
 
     instance.models.set(RolesDbStructure.tableName, model);
     console.log(`✅ Modèle Roles défini (${RolesDbStructure.tableName})`);
+  }
+
+  private static defineDepartmentModelForInstance(instance: TenantInstance): void {
+    const model = instance.sequelize.define(
+      DepartmentDbStructure.tableName,
+      DepartmentDbStructure.attributes,
+      DepartmentDbStructure.options,
+    );
+
+    instance.models.set(DepartmentDbStructure.tableName, model);
+    console.log(`✅ Modèle Department défini (${DepartmentDbStructure.tableName})`);
+  }
+
+  private static definePosteModelForInstance(instance: TenantInstance): void {
+    const model = instance.sequelize.define(
+      PosteDbStructure.tableName,
+      PosteDbStructure.attributes,
+      PosteDbStructure.options,
+    );
+
+    instance.models.set(PosteDbStructure.tableName, model);
+    console.log(`✅ Modèle Poste défini (${PosteDbStructure.tableName})`);
   }
 
   private static defineUsersModelForInstance(instance: TenantInstance): void {

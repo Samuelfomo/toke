@@ -6,15 +6,14 @@ export const ROTATION_ASSIGNMENT_VALIDATION = {
     MAX_LENGTH: 255,
   },
   USER: {
-    // MIN: 1,
-    // MAX: 2147483647,
     MIN_LENGTH: 1,
     MAX_LENGTH: 255,
-    REQUIRED: true,
+  },
+  TEAM: {
+    MIN_LENGTH: 1,
+    MAX_LENGTH: 255,
   },
   ROTATION_GROUP: {
-    // MIN: 1,
-    // MAX: 2147483647,
     MIN_LENGTH: 1,
     MAX_LENGTH: 255,
     REQUIRED: true,
@@ -39,9 +38,12 @@ export const ROTATION_ASSIGNMENT_CODES = {
   ROTATION_ASSIGNMENT_ALREADY_EXISTS: 'rotation_assignment_already_exists',
   ROTATION_ASSIGNMENT_NOT_FOUND: 'rotation_assignment_not_found',
   INVALID_GUID: 'invalid_guid',
-  USER_REQUIRED: 'user_required',
   USER_INVALID: 'user_invalid',
   USER_NOT_FOUND: 'user_not_found',
+  TEAM_INVALID: 'team_invalid',
+  TEAM_NOT_FOUND: 'team_not_found',
+  USER_OR_TEAM_REQUIRED: 'user_or_team_required',
+  BOTH_USER_AND_TEAM: 'both_user_and_team',
   ROTATION_GROUP_REQUIRED: 'rotation_group_required',
   ROTATION_GROUP_INVALID: 'rotation_group_invalid',
   ROTATION_GROUP_NOT_FOUND: 'rotation_group_not_found',
@@ -67,9 +69,14 @@ const ROTATION_ASSIGNMENT_LABEL = 'Rotation Assignment';
 export const ROTATION_ASSIGNMENT_ERRORS = {
   ROTATION_ASSIGNMENT: ROTATION_ASSIGNMENT_LABEL,
 
-  USER_REQUIRED: `${ROTATION_ASSIGNMENT_LABEL} user is required`,
   USER_INVALID: `User GUID must be between ${ROTATION_ASSIGNMENT_VALIDATION.USER.MIN_LENGTH} and ${ROTATION_ASSIGNMENT_VALIDATION.USER.MAX_LENGTH} letters or numbers`,
   USER_NOT_FOUND: 'User not found',
+
+  TEAM_INVALID: `Team GUID must be between ${ROTATION_ASSIGNMENT_VALIDATION.TEAM.MIN_LENGTH} and ${ROTATION_ASSIGNMENT_VALIDATION.TEAM.MAX_LENGTH} characters`,
+  TEAM_NOT_FOUND: 'Rotation Team not found',
+
+  USER_OR_TEAM_REQUIRED: 'Either user or team must be specified',
+  ONLY_ONE_USER_OR_TEAM_ALLOWED: 'Only one of user or team must be specified, not both',
 
   ROTATION_GROUP_REQUIRED: `${ROTATION_ASSIGNMENT_LABEL} rotation_group is required`,
   ROTATION_GROUP_INVALID: `Rotation Group GUID must be between ${ROTATION_ASSIGNMENT_VALIDATION.ROTATION_GROUP.MIN_LENGTH} and ${ROTATION_ASSIGNMENT_VALIDATION.ROTATION_GROUP.MAX_LENGTH} letters or numbers`,
@@ -93,6 +100,7 @@ export const ROTATION_ASSIGNMENT_ERRORS = {
   GUID_GENERATION_FAILED: `Failed to generate GUID for ${ROTATION_ASSIGNMENT_LABEL}`,
   ID_REQUIRED: `${ROTATION_ASSIGNMENT_LABEL} id is required`,
   USER_ALREADY_ASSIGNED: 'User is already assigned to this rotation group',
+  TEAM_ALREADY_ASSIGNED: 'Team is already assigned to this rotation group',
 } as const;
 
 export const ROTATION_ASSIGNMENT_MESSAGES = {

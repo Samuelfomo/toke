@@ -13,9 +13,11 @@ import { TenantRevision } from '../../tools/revision.js';
 
 import RotationGroup from './RotationGroups.js';
 import User from './User.js';
+import Teams from './Teams.js';
 
 export default class RotationAssignment extends RotationAssignmentModel {
   private userObj?: User;
+  private teamsObj?: Teams;
   private rotationGroupObj?: RotationGroup;
 
   constructor() {
@@ -30,8 +32,9 @@ export default class RotationAssignment extends RotationAssignmentModel {
     identifier: any,
     byGuid: boolean = false,
     byUserAndGroup: boolean = false,
+    byTeamAndGroup: boolean = false,
   ): Promise<RotationAssignment | null> {
-    return new RotationAssignment().load(identifier, byGuid, byUserAndGroup);
+    return new RotationAssignment().load(identifier, byGuid, byUserAndGroup, byTeamAndGroup);
   }
 
   static _list(
@@ -98,7 +101,7 @@ export default class RotationAssignment extends RotationAssignmentModel {
     return this.guid;
   }
 
-  getUser(): number | undefined {
+  getUser(): number | null | undefined {
     return this.user;
   }
 
@@ -108,6 +111,18 @@ export default class RotationAssignment extends RotationAssignmentModel {
       this.userObj = (await User._load(this.user)) || undefined;
     }
     return this.userObj || null;
+  }
+
+  getTeam(): number | null | undefined {
+    return this.team;
+  }
+
+  async getTeamObj(): Promise<Teams | null> {
+    if (!this.team) return null;
+    if (!this.teamsObj) {
+      this.teamsObj = (await Teams._load(this.team)) || undefined;
+    }
+    return this.teamsObj || null;
   }
 
   getRotationGroup(): number | undefined {
@@ -138,9 +153,15 @@ export default class RotationAssignment extends RotationAssignmentModel {
   // SETTERS FLUENT
   // ============================================
 
-  setUser(userId: number): RotationAssignment {
+  setUser(userId: number | null): RotationAssignment {
     this.user = userId;
     this.userObj = undefined; // Reset cache
+    return this;
+  }
+
+  setTeam(teamId: number | null): RotationAssignment {
+    this.team = teamId;
+    this.teamsObj = undefined;
     return this;
   }
 
@@ -166,6 +187,20 @@ export default class RotationAssignment extends RotationAssignmentModel {
 
   isNew(): boolean {
     return this.id === undefined;
+  }
+
+  /**
+   * Vérifie si la rotation est pour un utilisateur spécifique
+   */
+  isUserRotation(): boolean {
+    return this.user !== null && this.user !== undefined;
+  }
+
+  /**
+   * Vérifie si la rotation est pour une team
+   */
+  isTeamRotation(): boolean {
+    return this.team === null && this.team === undefined;
   }
 
   /**
@@ -223,16 +258,15 @@ export default class RotationAssignment extends RotationAssignmentModel {
     identifier: any,
     byGuid: boolean = false,
     byUserAndGroup: boolean = false,
+    byTeamAndGroup: boolean = false,
   ): Promise<RotationAssignment | null> {
-    let data = null;
-
-    if (byGuid) {
-      data = await this.findByGuid(identifier);
-    } else if (byUserAndGroup) {
-      data = await this.findByUserAndGroup(identifier.user, identifier.rotationGroup);
-    } else {
-      data = await this.find(Number(identifier));
-    }
+    const data = byGuid
+      ? await this.findByGuid(identifier)
+      : byUserAndGroup
+        ? await this.findByUserAndGroup(identifier.user, identifier.rotationGroup)
+        : byTeamAndGroup
+          ? await this.findByTeamAndGroup(identifier.team, identifier.teamGroup)
+          : await this.find(Number(identifier));
 
     if (!data) return null;
     return this.hydrate(data);
@@ -252,6 +286,15 @@ export default class RotationAssignment extends RotationAssignmentModel {
     paginationOptions: { offset?: number; limit?: number } = {},
   ): Promise<RotationAssignment[] | null> {
     const dataset = await this.listAllByUser(userId, paginationOptions);
+    if (!dataset || dataset.length === 0) return null;
+    return dataset.map((data) => new RotationAssignment().hydrate(data));
+  }
+
+  async listByTeam(
+    teamId: number,
+    paginationOptions: { offset?: number; limit?: number } = {},
+  ): Promise<RotationAssignment[] | null> {
+    const dataset = await this.listAllByTeam(teamId, paginationOptions);
     if (!dataset || dataset.length === 0) return null;
     return dataset.map((data) => new RotationAssignment().hydrate(data));
   }
@@ -284,6 +327,7 @@ export default class RotationAssignment extends RotationAssignmentModel {
 
   async toJSON(view: ViewMode = responseValue.FULL): Promise<object> {
     const userObj = await this.getUserObj();
+    const teamObj = await this.getTeamObj();
     const rotationGroupObj = await this.getRotationGroupObj();
 
     const baseData = {
@@ -296,6 +340,7 @@ export default class RotationAssignment extends RotationAssignmentModel {
       return {
         ...baseData,
         [RS.USER]: userObj ? userObj.getGuid() : null,
+        [RS.TEAM]: teamObj ? teamObj.getGuid() : null,
         [RS.ROTATION_GROUP]: rotationGroupObj ? rotationGroupObj.getGuid() : null,
       };
     }
@@ -303,6 +348,7 @@ export default class RotationAssignment extends RotationAssignmentModel {
     return {
       ...baseData,
       [RS.USER]: userObj ? await userObj.toJSON() : null,
+      [RS.TEAM]: teamObj ? await teamObj.toJSON() : null,
       [RS.ROTATION_GROUP]: rotationGroupObj
         ? await rotationGroupObj.toJSON(responseValue.MINIMAL)
         : null,
@@ -317,6 +363,7 @@ export default class RotationAssignment extends RotationAssignmentModel {
     this.id = data.id;
     this.guid = data.guid;
     this.user = data.user;
+    this.team = data.team;
     this.rotation_group = data.rotation_group;
     this.offset = data.offset;
     this.assigned_at = data.assigned_at;

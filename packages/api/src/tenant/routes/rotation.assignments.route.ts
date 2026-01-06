@@ -22,6 +22,7 @@ import RotationAssignment from '../class/RotationAssignments.js';
 import RotationGroup from '../class/RotationGroups.js';
 import SessionTemplate from '../class/SessionTemplates.js';
 import User from '../class/User.js';
+import Teams from '../class/Teams.js';
 import { TenantRevision } from '../../tools/revision.js';
 import { responseValue, tableName } from '../../utils/response.model.js';
 import { ValidationUtils } from '../../utils/view.validator.js';
@@ -148,15 +149,6 @@ router.post('/', Ensure.post(), async (req: Request, res: Response) => {
   try {
     const validatedData = validateRotationAssignmentCreation(req.body);
 
-    // Valider l'utilisateur
-    const userObj = await User._load(validatedData.user, true);
-    if (!userObj) {
-      return R.handleError(res, HttpStatus.NOT_FOUND, {
-        code: USERS_CODES.USER_NOT_FOUND,
-        message: USERS_ERRORS.NOT_FOUND,
-      });
-    }
-
     // Valider le groupe de rotation
     const groupObj = await RotationGroup._load(validatedData.rotation_group, true);
     if (!groupObj) {
@@ -165,26 +157,80 @@ router.post('/', Ensure.post(), async (req: Request, res: Response) => {
         message: ROTATION_ASSIGNMENT_ERRORS.ROTATION_GROUP_NOT_FOUND,
       });
     }
-    const identifier = {
-      user: userObj.getId()!,
-      rotationGroup: groupObj.getId()!,
-    };
 
-    // Vérifier si l'utilisateur est déjà assigné à ce groupe
-    const existingAssignment = await RotationAssignment._load(identifier, false, true);
+    if (validatedData.user && validatedData.team) {
+      return R.handleError(res, HttpStatus.BAD_REQUEST, {
+        code: ROTATION_ASSIGNMENT_CODES.VALIDATION_FAILED,
+        message: ROTATION_ASSIGNMENT_ERRORS.ONLY_ONE_USER_OR_TEAM_ALLOWED,
+      });
+    }
 
-    if (existingAssignment) {
-      return R.handleError(res, HttpStatus.CONFLICT, {
-        code: ROTATION_ASSIGNMENT_CODES.ALREADY_ASSIGNED,
-        message: ROTATION_ASSIGNMENT_ERRORS.USER_ALREADY_ASSIGNED,
+    if (!validatedData.user && !validatedData.team) {
+      return R.handleError(res, HttpStatus.BAD_REQUEST, {
+        code: ROTATION_ASSIGNMENT_CODES.VALIDATION_FAILED,
+        message: ROTATION_ASSIGNMENT_ERRORS.USER_OR_TEAM_REQUIRED,
       });
     }
 
     const assignmentObj = new RotationAssignment()
-      .setUser(userObj.getId()!)
       .setRotationGroup(groupObj.getId()!)
       .setOffset(validatedData.offset ?? ROTATION_ASSIGNMENT_DEFAULTS.OFFSET)
       .setAssignedAt(ROTATION_ASSIGNMENT_DEFAULTS.ASSIGNED_AT);
+
+    if (validatedData.user) {
+      // Valider l'utilisateur
+      const userObj = await User._load(validatedData.user, true);
+      if (!userObj) {
+        return R.handleError(res, HttpStatus.NOT_FOUND, {
+          code: ROTATION_ASSIGNMENT_CODES.USER_NOT_FOUND,
+          message: ROTATION_ASSIGNMENT_ERRORS.USER_NOT_FOUND,
+        });
+      }
+
+      const userGroupData = {
+        user: userObj.getId()!,
+        rotationGroup: groupObj.getId()!,
+      };
+
+      // Vérifier si l'utilisateur est déjà assigné à ce groupe
+      const existingAssignment = await RotationAssignment._load(userGroupData, false, true);
+
+      if (existingAssignment) {
+        return R.handleError(res, HttpStatus.CONFLICT, {
+          code: ROTATION_ASSIGNMENT_CODES.ALREADY_ASSIGNED,
+          message: ROTATION_ASSIGNMENT_ERRORS.USER_ALREADY_ASSIGNED,
+        });
+      }
+
+      assignmentObj.setUser(userObj.getId()!);
+    }
+    if (validatedData.team) {
+      // Valider la team
+      const teamObj = await Teams._load(validatedData.team, true);
+      if (!teamObj) {
+        return R.handleError(res, HttpStatus.NOT_FOUND, {
+          code: ROTATION_ASSIGNMENT_CODES.TEAM_NOT_FOUND,
+          message: ROTATION_ASSIGNMENT_ERRORS.TEAM_NOT_FOUND,
+        });
+      }
+
+      const teamGroupData = {
+        team: teamObj.getId()!,
+        rotationGroup: groupObj.getId()!,
+      };
+
+      // Vérifier si la team est déjà assigné à ce groupe
+      const existingAssignment = await RotationAssignment._load(teamGroupData, false, false, true);
+
+      if (existingAssignment) {
+        return R.handleError(res, HttpStatus.CONFLICT, {
+          code: ROTATION_ASSIGNMENT_CODES.ALREADY_ASSIGNED,
+          message: ROTATION_ASSIGNMENT_ERRORS.TEAM_ALREADY_ASSIGNED,
+        });
+      }
+
+      assignmentObj.setTeam(teamObj.getId()!);
+    }
 
     await assignmentObj.save();
 

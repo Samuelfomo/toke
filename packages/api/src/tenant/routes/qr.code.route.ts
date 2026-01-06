@@ -188,7 +188,8 @@ router.post('/', Ensure.post(), async (req: Request, res: Response) => {
 
 router.put('/:guid', Ensure.put(), async (req: Request, res: Response) => {
   try {
-    const validGuid = validateQrCodeGuid(req.params.guid);
+    const { guid } = req.params;
+    const validGuid = validateQrCodeGuid(guid);
     if (!validGuid.success) {
       return R.handleError(res, HttpStatus.BAD_REQUEST, {
         code: QR_CODE_CODES.INVALID_GUID,
@@ -196,7 +197,7 @@ router.put('/:guid', Ensure.put(), async (req: Request, res: Response) => {
       });
     }
 
-    const qrCodeObj = await QrCodeGeneration._load(req.params.guid, true);
+    const qrCodeObj = await QrCodeGeneration._load(guid, true);
     if (!qrCodeObj) {
       return R.handleError(res, HttpStatus.NOT_FOUND, {
         code: QR_CODE_CODES.QR_CODE_NOT_FOUND,

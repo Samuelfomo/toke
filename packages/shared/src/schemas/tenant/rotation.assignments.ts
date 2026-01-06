@@ -14,13 +14,23 @@ import { TimezoneConfigUtils } from '../../utils/timezone.config.validation.js';
 const baseRotationAssignmentSchema = z.object({
   user: z
     .string({
-      required_error: ROTATION_ASSIGNMENT_ERRORS.USER_REQUIRED,
       invalid_type_error: ROTATION_ASSIGNMENT_ERRORS.USER_INVALID,
     })
-    // .int(ROTATION_ASSIGNMENT_ERRORS.USER_INVALID)
+    .trim()
     .min(ROTATION_ASSIGNMENT_VALIDATION.USER.MIN_LENGTH, ROTATION_ASSIGNMENT_ERRORS.USER_INVALID)
     .max(ROTATION_ASSIGNMENT_VALIDATION.USER.MAX_LENGTH, ROTATION_ASSIGNMENT_ERRORS.USER_INVALID)
-    .trim(),
+    .nullable()
+    .optional(),
+
+  team: z
+    .string({
+      invalid_type_error: ROTATION_ASSIGNMENT_ERRORS.TEAM_INVALID,
+    })
+    .trim()
+    .min(ROTATION_ASSIGNMENT_VALIDATION.TEAM.MIN_LENGTH, ROTATION_ASSIGNMENT_ERRORS.TEAM_INVALID)
+    .max(ROTATION_ASSIGNMENT_VALIDATION.TEAM.MAX_LENGTH, ROTATION_ASSIGNMENT_ERRORS.TEAM_INVALID)
+    .nullable()
+    .optional(),
 
   rotation_group: z
     .string({
@@ -57,15 +67,36 @@ const baseRotationAssignmentSchema = z.object({
 });
 
 // Schema for creation - all fields required except defaults
-export const createRotationAssignmentSchema = baseRotationAssignmentSchema;
+export const createRotationAssignmentSchema = baseRotationAssignmentSchema.refine(
+  (data) => {
+    // Either user or team must be specified, but not both
+    const hasUser = data.user !== null && data.user !== undefined;
+    const hasTeam = data.team !== null && data.team !== undefined;
+    return hasUser !== hasTeam; // XOR: exactly one must be true
+  },
+  {
+    message: ROTATION_ASSIGNMENT_ERRORS.USER_OR_TEAM_REQUIRED,
+  },
+);
 
 // Schema for updates - all fields optional
-export const updateRotationAssignmentSchema = baseRotationAssignmentSchema.partial();
+export const updateRotationAssignmentSchema = baseRotationAssignmentSchema.partial().refine(
+  (data) => {
+    // Either user or team must be specified, but not both
+    const hasUser = data.user !== null && data.user !== undefined;
+    const hasTeam = data.team !== null && data.team !== undefined;
+    return hasUser !== hasTeam; // XOR: exactly one must be true
+  },
+  {
+    message: ROTATION_ASSIGNMENT_ERRORS.USER_OR_TEAM_REQUIRED,
+  },
+);
 
 // Schema for filters
 export const rotationAssignmentFiltersSchema = z
   .object({
     user: z.number().int().optional(),
+    team: z.number().int().optional(),
     rotation_group: z.number().int().optional(),
     offset: z.number().int().optional(),
     assigned_at_from: z.string().datetime().optional(),
@@ -82,6 +113,7 @@ export const rotationAssignmentGuidSchema = z
 // Shared constant for field -> code mapping
 const FIELD_TO_CODE_MAP: Record<string, RotationAssignmentCode> = {
   user: ROTATION_ASSIGNMENT_CODES.USER_INVALID,
+  team: ROTATION_ASSIGNMENT_CODES.TEAM_INVALID,
   rotation_group: ROTATION_ASSIGNMENT_CODES.ROTATION_GROUP_INVALID,
   offset: ROTATION_ASSIGNMENT_CODES.OFFSET_INVALID,
   assigned_at: ROTATION_ASSIGNMENT_CODES.ASSIGNED_AT_INVALID,

@@ -183,11 +183,30 @@ export const ScheduleExceptionsDbStructure = {
         fields: ['start_date', 'end_date'],
         name: 'idx_schedule_exceptions_date_range',
       },
+      {
+        unique: true,
+        fields: ['user', 'session_template', 'start_date', 'end_date'],
+        name: 'unique_user_schedule_exception',
+        where: {
+          deleted_at: null,
+        },
+      },
+      {
+        unique: true,
+        fields: ['team', 'session_template', 'start_date', 'end_date'],
+        name: 'unique_team_schedule_exception',
+        where: {
+          deleted_at: null,
+        },
+      },
     ],
     validate: {
       eitherUserOrTeam() {
         if (!this.user && !this.team) {
           throw new Error('Either user or team must be specified');
+        }
+        if (this.user && this.team) {
+          throw new Error('Only one of user or team must be specified, not both');
         }
       },
       dateRangeValid() {

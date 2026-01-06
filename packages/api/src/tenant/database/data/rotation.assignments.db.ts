@@ -1,4 +1,5 @@
 import { DataTypes, ModelAttributes, ModelOptions } from 'sequelize';
+import { TimezoneConfigUtils } from '@toke/shared';
 
 import { tableName } from '../../../utils/response.model.js';
 
@@ -34,7 +35,7 @@ export const RotationAssignmentsDbStructure = {
     },
     user: {
       type: DataTypes.INTEGER,
-      allowNull: false,
+      allowNull: true,
       references: {
         model: tableName.USERS,
         key: 'id',
@@ -42,8 +43,20 @@ export const RotationAssignmentsDbStructure = {
       validate: {
         isInt: true,
       },
-      comment: 'Reference to user',
-    }, // and teams
+      comment: 'Reference to user (nullable for team rotation)',
+    },
+    team: {
+      type: DataTypes.INTEGER,
+      allowNull: true,
+      references: {
+        model: tableName.TEAMS,
+        key: 'id',
+      },
+      validate: {
+        isInt: true,
+      },
+      comment: 'Reference to team (nullable for user rotation )',
+    },
     rotation_group: {
       type: DataTypes.INTEGER,
       allowNull: false,
@@ -54,7 +67,7 @@ export const RotationAssignmentsDbStructure = {
       validate: {
         isInt: true,
       },
-      comment: 'Reference to rotation group',
+      comment: 'Reference to rotation group to apply',
     },
     offset: {
       type: DataTypes.INTEGER,
@@ -123,6 +136,39 @@ export const RotationAssignmentsDbStructure = {
           deleted_at: null,
         },
       },
+      {
+        unique: true,
+        fields: ['team', 'rotation_group'],
+        name: 'unique_team_rotation',
+        where: {
+          deleted_at: null,
+        },
+      },
     ],
+    validate: {
+      eitherUserOrTeam() {
+        if (!this.user && !this.team) {
+          throw new Error('Either user or team must be specified');
+        }
+        if (this.user && this.team) {
+          throw new Error('Only one of user or team must be specified, not both');
+        }
+      },
+      dateNotTooFarInPast() {
+        if (this.assigned_at) {
+          const now = TimezoneConfigUtils.getCurrentTime();
+          const limit = new Date(now.getTime() - 5 * 60 * 1000); // -5 minutes
+
+          if (this.assigned_at < limit) {
+            throw new Error('assigned_at is too far in the past');
+          }
+        }
+      },
+      // dateNotInPast() {
+      //   if (this.assigned_at && this.assigned_at < TimezoneConfigUtils.getCurrentTime()) {
+      //     throw new Error('assigned_at cannot be in the past');
+      //   }
+      // },
+    },
   } as ModelOptions,
 };

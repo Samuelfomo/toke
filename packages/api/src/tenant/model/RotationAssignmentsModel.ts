@@ -15,6 +15,7 @@ export default class RotationAssignmentModel extends BaseModel {
     id: 'id',
     guid: 'guid',
     user: 'user',
+    team: 'team',
     rotation_group: 'rotation_group',
     offset: 'offset',
     assigned_at: 'assigned_at',
@@ -29,7 +30,8 @@ export default class RotationAssignmentModel extends BaseModel {
 
   protected id?: number;
   protected guid?: string;
-  protected user?: number;
+  protected user?: number | null;
+  protected team?: number | null;
   protected rotation_group?: number;
   protected offset?: number;
   protected assigned_at?: Date;
@@ -80,6 +82,23 @@ export default class RotationAssignmentModel extends BaseModel {
     return await this.findOne(this.db.tableName, conditions);
   }
 
+  protected async findByTeamAndGroup(
+    teamId: number,
+    rotationGroupId: number,
+    includeDeleted: boolean = false,
+  ): Promise<any> {
+    const conditions: any = {
+      [this.db.team]: teamId,
+      [this.db.rotation_group]: rotationGroupId,
+    };
+
+    if (!includeDeleted) {
+      conditions[this.db.deleted_at] = null;
+    }
+
+    return await this.findOne(this.db.tableName, conditions);
+  }
+
   // ============================================
   // MÉTHODES LISTAGE
   // ============================================
@@ -100,6 +119,13 @@ export default class RotationAssignmentModel extends BaseModel {
     paginationOptions: { offset?: number; limit?: number } = {},
   ): Promise<any[]> {
     return await this.listAll({ [this.db.user]: userId }, paginationOptions);
+  }
+
+  protected async listAllByTeam(
+    teamId: number,
+    paginationOptions: { offset?: number; limit?: number } = {},
+  ): Promise<any[]> {
+    return await this.listAll({ [this.db.team]: teamId }, paginationOptions);
   }
 
   protected async listAllByRotationGroup(
@@ -151,14 +177,25 @@ export default class RotationAssignmentModel extends BaseModel {
     }
 
     // Vérification unicité user + rotation_group
-    const existing = await this.findByUserAndGroup(this.user!, this.rotation_group!);
-    if (existing) {
-      throw new Error(ROTATION_ASSIGNMENT_ERRORS.USER_ALREADY_ASSIGNED);
+    if (this.user) {
+      const existing = await this.findByUserAndGroup(this.user, this.rotation_group!);
+      if (existing) {
+        throw new Error(ROTATION_ASSIGNMENT_ERRORS.USER_ALREADY_ASSIGNED);
+      }
+    }
+
+    // Vérification unicité team + rotation_group
+    if (this.team) {
+      const existing = await this.findByTeamAndGroup(this.team, this.rotation_group!);
+      if (existing) {
+        throw new Error(ROTATION_ASSIGNMENT_ERRORS.TEAM_ALREADY_ASSIGNED);
+      }
     }
 
     const lastID = await this.insertOne(this.db.tableName, {
       [this.db.guid]: guid,
       [this.db.user]: this.user,
+      [this.db.team]: this.team,
       [this.db.rotation_group]: this.rotation_group,
       [this.db.offset]: this.offset ?? ROTATION_ASSIGNMENT_DEFAULTS.OFFSET,
       [this.db.assigned_at]: this.assigned_at ?? ROTATION_ASSIGNMENT_DEFAULTS.ASSIGNED_AT,
@@ -181,12 +218,17 @@ export default class RotationAssignmentModel extends BaseModel {
 
     const updateData: Record<string, any> = {};
 
-    if (this.user !== undefined) {
-      updateData[this.db.user] = this.user;
-    }
-    if (this.rotation_group !== undefined) {
-      updateData[this.db.rotation_group] = this.rotation_group;
-    }
+    // if (this.user !== undefined) {
+    //   updateData[this.db.user] = this.user;
+    // }
+    //
+    // if (this.team !== undefined) {
+    //   updateData[this.db.team] = this.team;
+    // }
+    // if (this.rotation_group !== undefined) {
+    //   updateData[this.db.rotation_group] = this.rotation_group;
+    // }
+
     if (this.offset !== undefined) {
       updateData[this.db.offset] = this.offset;
     }
@@ -230,19 +272,16 @@ export default class RotationAssignmentModel extends BaseModel {
   // ============================================
 
   private async validate(): Promise<void> {
-    if (!this.user) {
-      throw new Error(ROTATION_ASSIGNMENT_ERRORS.USER_REQUIRED);
+    if (!this.user && !this.team) {
+      throw new Error(ROTATION_ASSIGNMENT_ERRORS.USER_OR_TEAM_REQUIRED);
     }
-    // if (!RotationAssignmentValidationUtils.validateUser(this.user)) {
-    //   throw new Error(ROTATION_ASSIGNMENT_ERRORS.USER_INVALID);
-    // }
+    if (this.user && this.team) {
+      throw new Error(ROTATION_ASSIGNMENT_ERRORS.ONLY_ONE_USER_OR_TEAM_ALLOWED);
+    }
 
     if (!this.rotation_group) {
       throw new Error(ROTATION_ASSIGNMENT_ERRORS.ROTATION_GROUP_REQUIRED);
     }
-    // if (!RotationAssignmentValidationUtils.validateRotationGroup(this.rotation_group)) {
-    //   throw new Error(ROTATION_ASSIGNMENT_ERRORS.ROTATION_GROUP_INVALID);
-    // }
 
     if (
       this.offset !== undefined &&

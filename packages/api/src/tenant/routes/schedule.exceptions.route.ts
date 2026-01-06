@@ -191,14 +191,14 @@ router.post('/', Ensure.post(), async (req: Request, res: Response) => {
     if (validatedData.user && validatedData.team) {
       return R.handleError(res, HttpStatus.BAD_REQUEST, {
         code: SCHEDULE_EXCEPTION_CODES.VALIDATION_FAILED,
-        message: 'Cannot specify both user and team for an exception',
+        message: SCHEDULE_EXCEPTION_ERRORS.BOTH_USER_AND_TEAM,
       });
     }
 
     if (!validatedData.user && !validatedData.team) {
       return R.handleError(res, HttpStatus.BAD_REQUEST, {
         code: SCHEDULE_EXCEPTION_CODES.VALIDATION_FAILED,
-        message: 'Must specify either user or team for an exception',
+        message: SCHEDULE_EXCEPTION_ERRORS.USER_OR_TEAM_REQUIRED,
       });
     }
 

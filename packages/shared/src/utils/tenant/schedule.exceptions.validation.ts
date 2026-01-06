@@ -16,7 +16,7 @@ export class ScheduleExceptionValidationUtils {
   // }
 
   /**
-   * Validates user ID
+   * Validates user
    */
   static validateUser(user: any): boolean {
     if (user === null || user === undefined) return true;
@@ -28,7 +28,7 @@ export class ScheduleExceptionValidationUtils {
   }
 
   /**
-   * Validates team ID
+   * Validates team
    */
   static validateTeam(team: any): boolean {
     if (team === null || team === undefined) return true;
@@ -95,7 +95,7 @@ export class ScheduleExceptionValidationUtils {
   }
 
   /**
-   * Validates created_by ID
+   * Validates created_by
    */
   static validateCreatedBy(createdBy: any): boolean {
     if (createdBy === null || createdBy === undefined) return true;

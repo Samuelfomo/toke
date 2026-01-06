@@ -123,6 +123,8 @@ export const SCHEDULE_EXCEPTION_ERRORS = {
   ID_REQUIRED: `${SCHEDULE_EXCEPTION_LABEL} id is required`,
 
   DATE_RANGE_OVERLAP: 'Exception date range overlaps with existing exception',
+  USER_EXCEPTION_ALREADY_ASSIGNED: "'User is already assigned to this session template",
+  TEAM_EXCEPTION_ALREADY_ASSIGNED: 'Team is already assigned to this session template',
 } as const;
 
 export const SCHEDULE_EXCEPTION_MESSAGES = {

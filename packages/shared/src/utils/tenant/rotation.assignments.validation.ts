@@ -3,7 +3,7 @@ import { TimezoneConfigUtils } from '../timezone.config.validation.js';
 
 export class RotationAssignmentValidationUtils {
   /**
-   * Validates user ID
+   * Validates user
    */
   static validateUser(user: any): boolean {
     if (typeof user !== 'string') return false;
@@ -14,7 +14,28 @@ export class RotationAssignmentValidationUtils {
   }
 
   /**
-   * Validates rotation_group ID
+   * Validates team
+   */
+  static validateTeam(team: any): boolean {
+    if (team === null || team === undefined) return true;
+    if (typeof team !== 'string') return false;
+    return (
+      team.length >= ROTATION_ASSIGNMENT_VALIDATION.TEAM.MIN_LENGTH &&
+      team.length <= ROTATION_ASSIGNMENT_VALIDATION.TEAM.MAX_LENGTH
+    );
+  }
+
+  /**
+   * Validates that either user or team is specified (XOR)
+   */
+  static validateUserOrTeam(user: any, team: any): boolean {
+    const hasUser = user !== null && user !== undefined;
+    const hasTeam = team !== null && team !== undefined;
+    return hasUser !== hasTeam; // XOR: exactly one must be true
+  }
+
+  /**
+   * Validates rotation_group
    */
   static validateRotationGroup(rotationGroup: any): boolean {
     if (typeof rotationGroup !== 'string') return false;
@@ -67,6 +88,13 @@ export class RotationAssignmentValidationUtils {
       cleaned.user = parseInt(cleaned.user, 10);
       if (isNaN(cleaned.user)) {
         throw new Error('Invalid user: must be a valid integer');
+      }
+    }
+
+    if (cleaned.team !== undefined && cleaned.team !== null) {
+      cleaned.team = parseInt(cleaned.team, 10);
+      if (isNaN(cleaned.team)) {
+        throw new Error('Invalid team: must be a valid integer');
       }
     }
 

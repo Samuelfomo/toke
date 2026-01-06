@@ -73,6 +73,40 @@ export default class ScheduleExceptionModel extends BaseModel {
     return await this.findOne(this.db.tableName, conditions);
   }
 
+  protected async findByUserAndTemplate(
+    userId: number,
+    templateId: number,
+    includeDeleted: boolean = false,
+  ): Promise<any> {
+    const conditions: any = {
+      [this.db.user]: userId,
+      [this.db.session_template]: templateId,
+    };
+
+    if (!includeDeleted) {
+      conditions[this.db.deleted_at] = null;
+    }
+
+    return await this.findOne(this.db.tableName, conditions);
+  }
+
+  protected async findByTeamAndTemplate(
+    teamId: number,
+    templateId: number,
+    includeDeleted: boolean = false,
+  ): Promise<any> {
+    const conditions: any = {
+      [this.db.team]: teamId,
+      [this.db.session_template]: templateId,
+    };
+
+    if (!includeDeleted) {
+      conditions[this.db.deleted_at] = null;
+    }
+
+    return await this.findOne(this.db.tableName, conditions);
+  }
+
   // ============================================
   // MÉTHODES LISTAGE
   // ============================================
@@ -100,6 +134,13 @@ export default class ScheduleExceptionModel extends BaseModel {
     paginationOptions: { offset?: number; limit?: number } = {},
   ): Promise<any[]> {
     return await this.listAll({ [this.db.team]: teamId }, paginationOptions);
+  }
+
+  protected async listAllBySessionTemplate(
+    sessionTemplateId: number,
+    paginationOptions: { offset?: number; limit?: number } = {},
+  ): Promise<any[]> {
+    return await this.listAll({ [this.db.session_template]: sessionTemplateId }, paginationOptions);
   }
 
   protected async listAllByActiveStatus(
@@ -202,6 +243,22 @@ export default class ScheduleExceptionModel extends BaseModel {
       throw new Error(SCHEDULE_EXCEPTION_ERRORS.GUID_GENERATION_FAILED);
     }
 
+    // Vérification unicité user + session_template
+    if (this.user) {
+      const existing = await this.findByUserAndTemplate(this.user, this.session_template!);
+      if (existing) {
+        throw new Error(SCHEDULE_EXCEPTION_ERRORS.USER_EXCEPTION_ALREADY_ASSIGNED);
+      }
+    }
+
+    // Vérification unicité team + session_template
+    if (this.team) {
+      const existing = await this.findByTeamAndTemplate(this.team, this.session_template!);
+      if (existing) {
+        throw new Error(SCHEDULE_EXCEPTION_ERRORS.TEAM_EXCEPTION_ALREADY_ASSIGNED);
+      }
+    }
+
     const lastID = await this.insertOne(this.db.tableName, {
       [this.db.guid]: guid,
       [this.db.tenant]: this.tenant,
@@ -235,16 +292,16 @@ export default class ScheduleExceptionModel extends BaseModel {
     if (this.tenant !== undefined) {
       updateData[this.db.tenant] = this.tenant;
     }
-    if (this.user !== undefined) {
-      updateData[this.db.user] = this.user;
-    }
-
-    if (this.team !== undefined) {
-      updateData[this.db.team] = this.team;
-    }
-    if (this.session_template !== undefined) {
-      updateData[this.db.session_template] = this.session_template;
-    }
+    // if (this.user !== undefined) {
+    //   updateData[this.db.user] = this.user;
+    // }
+    //
+    // if (this.team !== undefined) {
+    //   updateData[this.db.team] = this.team;
+    // }
+    // if (this.session_template !== undefined) {
+    //   updateData[this.db.session_template] = this.session_template;
+    // }
     if (this.start_date !== undefined) {
       updateData[this.db.start_date] = this.start_date;
     }
@@ -301,29 +358,19 @@ export default class ScheduleExceptionModel extends BaseModel {
     // if (!this.tenant) {
     //   throw new Error(SCHEDULE_EXCEPTION_ERRORS.TENANT_REQUIRED);
     // }
-    // if (!ScheduleExceptionValidationUtils.validateTenant(this.tenant)) {
-    //   throw new Error(SCHEDULE_EXCEPTION_ERRORS.TENANT_INVALID);
-    // }
 
     // Vérifier qu'au moins user OU team est défini
     if (!this.user && !this.team) {
       throw new Error(SCHEDULE_EXCEPTION_ERRORS.USER_OR_TEAM_REQUIRED);
     }
 
-    // if (this.user && !ScheduleExceptionValidationUtils.validateUser(this.user)) {
-    //   throw new Error(SCHEDULE_EXCEPTION_ERRORS.USER_INVALID);
-    // }
-
-    // if (this.team && !ScheduleExceptionValidationUtils.validateTeam(this.team)) {
-    //   throw new Error(SCHEDULE_EXCEPTION_ERRORS.TEAM_INVALID);
-    // }
+    if (this.user && this.team) {
+      throw new Error(SCHEDULE_EXCEPTION_ERRORS.BOTH_USER_AND_TEAM);
+    }
 
     if (!this.session_template) {
       throw new Error(SCHEDULE_EXCEPTION_ERRORS.SESSION_TEMPLATE_REQUIRED);
     }
-    // if (!ScheduleExceptionValidationUtils.validateSessionTemplate(this.session_template)) {
-    //   throw new Error(SCHEDULE_EXCEPTION_ERRORS.SESSION_TEMPLATE_INVALID);
-    // }
 
     if (!this.start_date) {
       throw new Error(SCHEDULE_EXCEPTION_ERRORS.START_DATE_REQUIRED);

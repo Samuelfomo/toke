@@ -115,6 +115,7 @@ class AnomalyDetectionService {
 
     // 2. Si le QR code est partagé, pas besoin de vérifier les habilitations
     if (qrCodeObj.isShared()) {
+      // verifier que le qr code est partagé avec le manager de l'utilisateur
       return { anomalies, corrections };
     }
     const qrCodeManager = (await qrCodeObj.getTeamObj())?.getManager();
