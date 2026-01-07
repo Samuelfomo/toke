@@ -176,8 +176,11 @@ router.post('/', Ensure.post(), async (req: Request, res: Response) => {
       .setRotationGroup(groupObj.getId()!)
       .setOffset(validatedData.offset ?? ROTATION_ASSIGNMENT_DEFAULTS.OFFSET)
       .setAssignedAt(
-        new Date(validatedData.assigned_at) ?? ROTATION_ASSIGNMENT_DEFAULTS.ASSIGNED_AT,
+        validatedData.assigned_at instanceof Date
+          ? validatedData.assigned_at
+          : new Date(validatedData.assigned_at),
       );
+    console.log('assignmentObj', assignmentObj);
 
     if (validatedData.user) {
       // Valider l'utilisateur
