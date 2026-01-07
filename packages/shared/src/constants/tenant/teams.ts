@@ -75,6 +75,7 @@ export const TEAMS_CODES = {
   LISTING_FAILED: 'listing_failed',
   FILTER_INVALID: 'filter_invalid',
   PAGINATION_INVALID: 'pagination_invalid',
+  MEMBER_ALREADY_ACTIVE_IN_ANOTHER_TEAM: 'member_already_active_in_another_team',
 } as const;
 
 const TEAMS_LABEL = 'Team';
@@ -117,6 +118,8 @@ export const TEAMS_ERRORS = {
   PAGINATION_INVALID: 'Invalid pagination parameters',
   GUID_GENERATION_FAILED: `Failed to generate GUID for ${TEAMS_LABEL}`,
   ID_REQUIRED: `${TEAMS_LABEL} id is required`,
+
+  MEMBER_ALREADY_ACTIVE_IN_ANOTHER_TEAM: 'User is already an active member of another team',
 } as const;
 
 export const TEAMS_MESSAGES = {

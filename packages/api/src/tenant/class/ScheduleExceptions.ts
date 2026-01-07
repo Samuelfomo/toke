@@ -3,12 +3,7 @@ import { SCHEDULE_EXCEPTION_DEFAULTS, TimezoneConfigUtils } from '@toke/shared';
 import ScheduleExceptionModel from '../model/ScheduleExceptionsModel.js';
 import W from '../../tools/watcher.js';
 import G from '../../tools/glossary.js';
-import {
-  responseStructure as RS,
-  responseValue,
-  tableName,
-  ViewMode,
-} from '../../utils/response.model.js';
+import { responseStructure as RS, responseValue, tableName, ViewMode, } from '../../utils/response.model.js';
 import { TenantRevision } from '../../tools/revision.js';
 
 import SessionTemplate from './SessionTemplates.js';
@@ -459,9 +454,9 @@ export default class ScheduleException extends ScheduleExceptionModel {
     return {
       ...baseData,
       [RS.USER]: userObj ? await userObj.toJSON() : null,
-      [RS.TEAM]: teamObj ? await teamObj.toJSON(responseValue.MINIMAL) : null,
+      [RS.TEAM]: teamObj ? await teamObj.toJSON(responseValue.FULL) : null,
       [RS.SESSION_TEMPLATE]: sessionTemplateObj
-        ? sessionTemplateObj.toJSON(responseValue.MINIMAL)
+        ? sessionTemplateObj.toJSON(responseValue.FULL)
         : null,
       [RS.CREATED_BY]: createdByObj ? await createdByObj.toJSON() : null,
     };

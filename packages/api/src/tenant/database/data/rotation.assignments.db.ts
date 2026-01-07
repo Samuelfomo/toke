@@ -1,4 +1,4 @@
-import { DataTypes, ModelAttributes, ModelOptions } from 'sequelize';
+import { DataTypes, ModelAttributes, ModelOptions, Op } from 'sequelize';
 import { TimezoneConfigUtils } from '@toke/shared';
 
 import { tableName } from '../../../utils/response.model.js';
@@ -134,6 +134,7 @@ export const RotationAssignmentsDbStructure = {
         name: 'unique_user_rotation',
         where: {
           deleted_at: null,
+          user: { [Op.not]: null }, // Éviter les conflits avec les teams
         },
       },
       {
@@ -142,6 +143,7 @@ export const RotationAssignmentsDbStructure = {
         name: 'unique_team_rotation',
         where: {
           deleted_at: null,
+          team: { [Op.not]: null }, // Éviter les conflits avec les users
         },
       },
     ],
@@ -159,7 +161,14 @@ export const RotationAssignmentsDbStructure = {
           const now = TimezoneConfigUtils.getCurrentTime();
           const limit = new Date(now.getTime() - 5 * 60 * 1000); // -5 minutes
 
-          if (this.assigned_at < limit) {
+          const assignedAtDate =
+            this.assigned_at instanceof Date
+              ? this.assigned_at
+              : new Date(this.assigned_at as string);
+
+          console.log('assignedAt', assignedAtDate, this.assigned_at);
+
+          if (assignedAtDate < limit) {
             throw new Error('assigned_at is too far in the past');
           }
         }

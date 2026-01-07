@@ -306,6 +306,34 @@ export default class TeamsModel extends BaseModel {
     return affected > 0;
   }
 
+  /**
+   * Vérifie si un utilisateur est déjà membre actif d'une autre équipe
+   */
+  protected async isUserActiveInAnotherTeam(
+    userId: number,
+    currentTeamId?: number,
+  ): Promise<boolean> {
+    const allTeams = await this.listAll();
+
+    for (const team of allTeams) {
+      // Ignorer l'équipe actuelle lors de l'update
+      if (currentTeamId && team.id === currentTeamId) {
+        continue;
+      }
+
+      const members = team.members || [];
+      const activeMember = members.find(
+        (m: TI.TeamMember) => m.user === userId && m.active !== false,
+      );
+
+      if (activeMember) {
+        return true;
+      }
+    }
+
+    return false;
+  }
+
   // ============================================
   // VALIDATION
   // ============================================
@@ -337,6 +365,22 @@ export default class TeamsModel extends BaseModel {
     // ) {
     //   throw new Error(TEAMS_ERRORS.ASSIGNED_SESSIONS_INVALID);
     // }
+
+    // ✅ NOUVELLE VALIDATION : Vérifier qu'aucun membre actif n'est dans une autre équipe
+    if (this.members && this.members.length > 0) {
+      const activeMembers = this.members.filter((m: TI.TeamMember) => m.active !== false);
+
+      for (const member of activeMembers) {
+        const isInAnotherTeam = await this.isUserActiveInAnotherTeam(member.user, this.id);
+
+        if (isInAnotherTeam) {
+          throw new Error(
+            `User ${member.user} is already an active member of another team. ` +
+              `A user can only be active in one team at a time.`,
+          );
+        }
+      }
+    }
 
     const cleaned = TeamsValidationUtils.cleanTeamData(this);
     Object.assign(this, cleaned);

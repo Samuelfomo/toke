@@ -493,7 +493,7 @@ router.patch('/:guid/members', Ensure.patch(), async (req: Request, res: Respons
       });
     }
 
-    const validatedMember = validateMemberAddition(teamObj.getMembers(), req.body);
+    const validatedMember = validateMemberAddition(req.body);
 
     // Vérifier que l'utilisateur existe
     const userObj = await User._load(validatedMember.user, true);
@@ -502,6 +502,40 @@ router.patch('/:guid/members', Ensure.patch(), async (req: Request, res: Respons
         code: TEAMS_CODES.MEMBER_USER_NOT_FOUND,
         message: TEAMS_ERRORS.MEMBER_USER_NOT_FOUND,
       });
+    }
+
+    // Vérifier si l'utilisateur existe déjà dans la teams
+    const existingMember = teamObj.getMembers().find((m) => m.user === userObj.getId());
+    if (existingMember) {
+      return R.handleError(res, HttpStatus.CONFLICT, {
+        code: TEAMS_CODES.MEMBER_DUPLICATE,
+        message: TEAMS_ERRORS.MEMBER_DUPLICATE,
+      });
+    }
+
+    // ✅ NOUVELLE VALIDATION : Si le membre est actif, vérifier qu'il n'est pas dans une autre team
+    if (validatedMember.active) {
+      // Chercher si l'utilisateur est déjà membre actif d'une autre équipe
+      const allTeams = await Teams._list({});
+
+      if (allTeams) {
+        for (const team of allTeams) {
+          if (team.getId() === teamObj.getId()) continue; // Ignorer l'équipe actuelle
+
+          const existingActiveMember = team
+            .getMembers()
+            .find((m) => m.user === userObj.getId() && m.active !== false);
+
+          if (existingActiveMember) {
+            return R.handleError(res, HttpStatus.CONFLICT, {
+              code: TEAMS_CODES.MEMBER_ALREADY_ACTIVE_IN_ANOTHER_TEAM,
+              message:
+                `User is already an active member of team "${team.getName()}". ` +
+                `A user can only be active in one team at a time.`,
+            });
+          }
+        }
+      }
     }
 
     teamObj.addMember(userObj.getId()!, validatedMember.joined_at, validatedMember.active);

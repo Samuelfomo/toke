@@ -125,6 +125,8 @@ export const SCHEDULE_EXCEPTION_ERRORS = {
   DATE_RANGE_OVERLAP: 'Exception date range overlaps with existing exception',
   USER_EXCEPTION_ALREADY_ASSIGNED: "'User is already assigned to this session template",
   TEAM_EXCEPTION_ALREADY_ASSIGNED: 'Team is already assigned to this session template',
+  USER_ALREADY_HAS_ACTIVE_EXCEPTION: 'User already has an active schedule exception',
+  TEAM_ALREADY_HAS_ACTIVE_EXCEPTION: 'Team already has an active schedule exception',
 } as const;
 
 export const SCHEDULE_EXCEPTION_MESSAGES = {

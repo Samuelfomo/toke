@@ -16,7 +16,6 @@ const teamMemberSchema = z.object({
       required_error: TEAMS_ERRORS.MEMBER_USER_REQUIRED,
       invalid_type_error: TEAMS_ERRORS.MEMBER_USER_INVALID,
     })
-    // .int()
     .trim()
     .min(TEAMS_VALIDATION.MEMBER.USER.MIN_LENGTH, TEAMS_ERRORS.MEMBER_USER_INVALID)
     .max(TEAMS_VALIDATION.MEMBER.USER.MAX_LENGTH, TEAMS_ERRORS.MEMBER_USER_INVALID),
@@ -220,15 +219,7 @@ export const validateTeamsGuid = (guid: any) => {
 };
 
 // Validation pour l'ajout d'un membre
-export const validateMemberAddition = (teamMembers: any[], newMember: any) => {
-  // Vérifier si l'utilisateur existe déjà
-  const existingMember = teamMembers.find((m) => m.user === newMember.user);
-  if (existingMember) {
-    const error: any = new Error(TEAMS_ERRORS.MEMBER_DUPLICATE);
-    error.code = TEAMS_CODES.MEMBER_DUPLICATE;
-    throw error;
-  }
-
+export const validateMemberAddition = (newMember: any) => {
   // Valider le nouveau membre
   const result = teamMemberSchema.safeParse(newMember);
   if (!result.success) {
@@ -240,6 +231,27 @@ export const validateMemberAddition = (teamMembers: any[], newMember: any) => {
 
   return result.data;
 };
+
+// export const validateMemberAddition = (teamMembers: any[], newMember: any) => {
+//   // Vérifier si l'utilisateur existe déjà
+//   const existingMember = teamMembers.find((m) => m.user === newMember.user);
+//   if (existingMember) {
+//     const error: any = new Error(TEAMS_ERRORS.MEMBER_DUPLICATE);
+//     error.code = TEAMS_CODES.MEMBER_DUPLICATE;
+//     throw error;
+//   }
+//
+//   // Valider le nouveau membre
+//   const result = teamMemberSchema.safeParse(newMember);
+//   if (!result.success) {
+//     const firstError = result.error.issues[0]!;
+//     const error: any = new Error(firstError.message);
+//     error.code = TEAMS_CODES.MEMBER_USER_INVALID;
+//     throw error;
+//   }
+//
+//   return result.data;
+// };
 
 // Validation pour l'ajout d'une session
 export const validateSessionAssignment = (assignedSessions: any[], newSession: any) => {

@@ -1,4 +1,4 @@
-import { DataTypes, ModelAttributes, ModelOptions } from 'sequelize';
+import { DataTypes, ModelAttributes, ModelOptions, Op } from 'sequelize';
 
 import { tableName } from '../../../utils/response.model.js';
 
@@ -183,22 +183,45 @@ export const ScheduleExceptionsDbStructure = {
         fields: ['start_date', 'end_date'],
         name: 'idx_schedule_exceptions_date_range',
       },
+
+      // ✅ NOUVELLE CONTRAINTE : UNE SEULE exception active par user
       {
         unique: true,
-        fields: ['user', 'session_template', 'start_date', 'end_date'],
-        name: 'unique_user_schedule_exception',
+        fields: ['user'],
+        name: 'unique_user_active_exception',
         where: {
           deleted_at: null,
+          active: true,
+          user: { [Op.not]: null },
         },
       },
+      // ✅ NOUVELLE CONTRAINTE : UNE SEULE exception active par team
       {
         unique: true,
-        fields: ['team', 'session_template', 'start_date', 'end_date'],
-        name: 'unique_team_schedule_exception',
+        fields: ['team'],
+        name: 'unique_team_active_exception',
         where: {
           deleted_at: null,
+          active: true,
+          team: { [Op.not]: null },
         },
       },
+      // {
+      //   unique: true,
+      //   fields: ['user', 'session_template', 'start_date', 'end_date'],
+      //   name: 'unique_user_schedule_exception',
+      //   where: {
+      //     deleted_at: null,
+      //   },
+      // },
+      // {
+      //   unique: true,
+      //   fields: ['team', 'session_template', 'start_date', 'end_date'],
+      //   name: 'unique_team_schedule_exception',
+      //   where: {
+      //     deleted_at: null,
+      //   },
+      // },
     ],
     validate: {
       eitherUserOrTeam() {

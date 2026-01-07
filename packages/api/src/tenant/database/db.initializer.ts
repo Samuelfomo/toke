@@ -204,6 +204,7 @@ export class TableInitializer {
     this.defineSitesModelForInstance(instance);
     this.defineWorkSessionsModelForInstance(instance);
     this.defineMemosModelForInstance(instance);
+    this.defineTeamsModelForInstance(instance);
     this.defineQrCodeModelForInstance(instance);
     this.defineTimeEntriesModelForInstance(instance);
     this.defineAuditLogsModelForInstance(instance);
@@ -212,7 +213,6 @@ export class TableInitializer {
     this.defineRotationGroupsModelForInstance(instance);
     this.defineRotationAssignmentsModelForInstance(instance);
     this.defineScheduleExceptionsModelForInstance(instance);
-    this.defineTeamsModelForInstance(instance);
     this.defineDeviceModelForInstance(instance);
 
     console.log(`✅ ${instance.models.size} modèle(s) défini(s) pour cette instance`);

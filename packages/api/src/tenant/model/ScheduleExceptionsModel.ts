@@ -350,6 +350,19 @@ export default class ScheduleExceptionModel extends BaseModel {
     return affected > 0;
   }
 
+  protected async hasActiveException(userId?: number, teamId?: number): Promise<boolean> {
+    const conditions: any = {
+      [this.db.deleted_at]: null,
+      [this.db.active]: true,
+    };
+
+    if (userId) conditions[this.db.user] = userId;
+    if (teamId) conditions[this.db.team] = teamId;
+
+    const count = await this.count(this.db.tableName, conditions);
+    return count > 0;
+  }
+
   // ============================================
   // VALIDATION
   // ============================================
@@ -404,6 +417,38 @@ export default class ScheduleExceptionModel extends BaseModel {
       !ScheduleExceptionValidationUtils.validateActive(this.active)
     ) {
       throw new Error(SCHEDULE_EXCEPTION_ERRORS.ACTIVE_INVALID);
+    }
+
+    // ✅ NOUVELLE VALIDATION : Vérifier unicité de l'exception active
+    if (this.active) {
+      if (this.user) {
+        const hasActive = await this.hasActiveException(this.user);
+        if (hasActive) {
+          // Si on est en update, vérifier que ce n'est pas la même exception
+          if (this.id) {
+            const existing = await this.find(this.id);
+            if (!existing || existing.user !== this.user) {
+              throw new Error(SCHEDULE_EXCEPTION_ERRORS.USER_ALREADY_HAS_ACTIVE_EXCEPTION);
+            }
+          } else {
+            throw new Error(SCHEDULE_EXCEPTION_ERRORS.USER_ALREADY_HAS_ACTIVE_EXCEPTION);
+          }
+        }
+      }
+
+      if (this.team) {
+        const hasActive = await this.hasActiveException(undefined, this.team);
+        if (hasActive) {
+          if (this.id) {
+            const existing = await this.find(this.id);
+            if (!existing || existing.team !== this.team) {
+              throw new Error(SCHEDULE_EXCEPTION_ERRORS.TEAM_ALREADY_HAS_ACTIVE_EXCEPTION);
+            }
+          } else {
+            throw new Error(SCHEDULE_EXCEPTION_ERRORS.TEAM_ALREADY_HAS_ACTIVE_EXCEPTION);
+          }
+        }
+      }
     }
 
     const cleaned = ScheduleExceptionValidationUtils.cleanScheduleExceptionData(this);
