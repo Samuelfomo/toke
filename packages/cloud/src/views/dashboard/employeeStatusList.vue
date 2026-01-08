@@ -53,7 +53,7 @@
       <!-- Section Retards uniquement -->
       <div v-if="activeTab === 'late' && filteredLateEmployees.length > 0">
         <div class="section-title section-problems">
-          <span>Employés en retard ({{ filteredLateEmployees.length }})</span>
+          <span>Employés en retard ({{ filteredAbsentEmployees.length }})</span>
           <svg class="chevron-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
           </svg>

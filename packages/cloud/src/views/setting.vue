@@ -65,37 +65,122 @@
           <!-- Onglet: Inviter un manager -->
           <div v-if="activeTab === 'invite'" class="tab-panel">
             <h2>Inviter un manager</h2>
-            <p class="tab-description">Invitez d'autres managers à rejoindre votre équipe</p>
+            <p class="tab-description">
+              Vous pouvez inviter un manager soit en sélectionnant un membre existant,
+              soit en envoyant un code d’invitation via WhatsApp.
+            </p>
 
-            <form @submit.prevent="sendInvitation" class="settings-form">
-              <div class="form-group">
-                <label>Email du manager</label>
-                <input v-model="invitation.email" type="email" placeholder="manager@exemple.com" required>
+            <!-- Choix de la méthode -->
+            <div class="form-group">
+              <label>Méthode d’invitation</label>
+              <div class="invite-methods">
+                <label>
+                  <input
+                    type="radio"
+                    value="member"
+                    v-model="inviteMethod"
+                  />
+                  Sélectionner un membre de l’équipe
+                </label>
+
+                <label>
+                  <input
+                    type="radio"
+                    value="whatsapp"
+                    v-model="inviteMethod"
+                  />
+                  Envoyer un code via WhatsApp
+                </label>
               </div>
+            </div>
+
+            <!-- ===================== -->
+            <!-- Invitation par membre -->
+            <!-- ===================== -->
+            <form
+              v-if="inviteMethod === 'member'"
+              @submit.prevent="sendInvitationToMember"
+              class="settings-form"
+            >
               <div class="form-group">
-                <label>Nom complet</label>
-                <input v-model="invitation.name" type="text" placeholder="Nom du manager" required>
+                <label>Membre de l’équipe</label>
+                <select v-model="invitation.memberId" required>
+                  <option value="">Sélectionner un membre...</option>
+                  <option
+                    v-for="member in teamMembers"
+                    :key="member.id"
+                    :value="member.id"
+                  >
+                    {{ member.name }} ({{ member.email }})
+                  </option>
+                </select>
               </div>
+
               <div class="form-group">
                 <label>Rôle</label>
                 <select v-model="invitation.role" required>
-<!--                  <option value="">Sélectionner un rôle...</option>-->
-<!--                  <option value="manager">Manager</option>-->
-<!--                  <option value="admin">Administrateur</option>-->
-<!--                  <option value="supervisor">Superviseur</option>-->
+                  <option value="">Sélectionner un rôle...</option>
+                  <option value="manager">Manager</option>
+                  <option value="admin">Administrateur</option>
+                  <option value="supervisor">Superviseur</option>
                 </select>
               </div>
-              <button type="submit" class="btn-primary">Envoyer l'invitation</button>
+
+              <button type="submit" class="btn-primary">
+                Inviter le manager
+              </button>
             </form>
 
+            <!-- ========================= -->
+            <!-- Invitation via WhatsApp -->
+            <!-- ========================= -->
+            <form
+              v-if="inviteMethod === 'whatsapp'"
+              @submit.prevent="generateWhatsappCode"
+              class="settings-form"
+            >
+              <div class="form-group">
+                <label>Numéro WhatsApp</label>
+                <input
+                  v-model="invitation.phone"
+                  type="tel"
+                  placeholder="+225 07 00 00 00"
+                  required
+                />
+              </div>
+
+              <div class="form-group">
+                <label>Nom du manager (optionnel)</label>
+                <input
+                  v-model="invitation.name"
+                  type="text"
+                  placeholder="Nom du manager"
+                />
+              </div>
+
+              <button type="submit" class="btn-primary">
+                Générer et envoyer le code
+              </button>
+            </form>
+
+            <!-- ================= -->
+            <!-- Invitations list -->
+            <!-- ================= -->
             <div class="invitations-list" v-if="invitationsList.length > 0">
               <h3>Invitations envoyées</h3>
-              <div v-for="inv in invitationsList" :key="inv.id" class="invitation-item">
+              <div
+                v-for="inv in invitationsList"
+                :key="inv.id"
+                class="invitation-item"
+              >
                 <div class="invitation-info">
-                  <strong>{{ inv.name }}</strong>
-                  <span>{{ inv.email }}</span>
+                  <strong>{{ inv.name || '—' }}</strong>
+                  <span v-if="inv.email">{{ inv.email }}</span>
+                  <span v-if="inv.phone">{{ inv.phone }}</span>
                 </div>
-                <span :class="['invitation-status', inv.status]">{{ inv.status }}</span>
+                <span :class="['invitation-status', inv.status]">
+        {{ inv.status }}
+      </span>
               </div>
             </div>
           </div>
@@ -251,18 +336,30 @@ interface CompanyInfo {
   sector: string;
 }
 
-interface Invitation {
-  email: string;
+interface TeamMember {
+  id: number;
   name: string;
-  role: string;
+  email: string;
+}
+
+interface InvitationForm {
+  memberId?: number | '';
+  role?: string;
+  phone?: string;
+  name?: string;
 }
 
 interface InvitationItem {
   id: number;
-  name: string;
-  email: string;
+  name?: string;
+  email?: string;
+  phone?: string;
+  role?: string;
+  code?: string;
   status: string;
+  type: 'member' | 'whatsapp';
 }
+
 
 interface Payment {
   id: number;
@@ -307,16 +404,25 @@ const companyInfo = ref<CompanyInfo>({
   sector: 'restaurant'
 });
 
-const invitation = ref<Invitation>({
-  email: '',
-  name: '',
-  role: ''
-});
+// Méthode d’invitation
+const inviteMethod = ref<'member' | 'whatsapp'>('member')
 
-const invitationsList = ref<InvitationItem[]>([
-  { id: 1, name: 'Marie Dupont', email: 'marie@example.com', status: 'en attente' },
-  { id: 2, name: 'Jean Martin', email: 'jean@example.com', status: 'acceptée' }
-]);
+// Membres de l’équipe (à remplacer plus tard par une API)
+const teamMembers = ref<TeamMember[]>([
+  { id: 1, name: 'Jean Dupont', email: 'jean@exemple.com' },
+  { id: 2, name: 'Marie Kouassi', email: 'marie@exemple.com' }
+])
+
+// Formulaire invitation
+const invitation = ref<InvitationForm>({
+  memberId: '',
+  role: '',
+  phone: '',
+  name: ''
+})
+
+// Liste des invitations envoyées
+const invitationsList = ref<InvitationItem[]>([])
 
 const paymentFilter = ref<string>('all');
 
@@ -352,10 +458,10 @@ const saveCompanyInfo = () => {
   alert('Informations de l\'entreprise enregistrées !');
 };
 
-const sendInvitation = () => {
-  alert(`Invitation envoyée à ${invitation.value.email}`);
-  invitation.value = { email: '', name: '', role: '' };
-};
+// const sendInvitation = () => {
+//   alert(`Invitation envoyée à ${invitation.value.email}`);
+//   invitation.value = { email: '', name: '', role: '' };
+// };
 
 const changePassword = () => {
   if (security.value.newPassword !== security.value.confirmPassword) {
@@ -393,6 +499,71 @@ const closeMenuOnClickOutside = (event: MouseEvent) => {
     }
   }
 }
+
+/* ============================= */
+/* Invitation par membre équipe */
+/* ============================= */
+const sendInvitationToMember = () => {
+  const member = teamMembers.value.find(
+    m => m.id === invitation.value.memberId
+  )
+
+  if (!member || !invitation.value.role) return
+
+  invitationsList.value.push({
+    id: Date.now(),
+    name: member.name,
+    email: member.email,
+    role: invitation.value.role,
+    status: 'envoyée',
+    type: 'member'
+  })
+
+  // Reset formulaire
+  invitation.value.memberId = ''
+  invitation.value.role = ''
+}
+
+/* ============================= */
+/* Invitation via WhatsApp */
+/* ============================= */
+const generateWhatsappCode = () => {
+  if (!invitation.value.phone) return
+
+  const code = generateCode()
+
+  invitationsList.value.push({
+    id: Date.now(),
+    name: invitation.value.name || 'Invitation WhatsApp',
+    phone: invitation.value.phone,
+    code,
+    status: 'envoyée',
+    type: 'whatsapp'
+  })
+
+  const message = `Bonjour, voici votre code d’invitation manager : ${code}`
+  const whatsappUrl = `https://wa.me/${formatPhone(
+    invitation.value.phone
+  )}?text=${encodeURIComponent(message)}`
+
+  window.open(whatsappUrl, '_blank')
+
+  // Reset formulaire
+  invitation.value.phone = ''
+  invitation.value.name = ''
+}
+
+/* ============================= */
+/* Utils */
+/* ============================= */
+const generateCode = (): string => {
+  return Math.random().toString(36).substring(2, 8).toUpperCase()
+}
+
+const formatPhone = (phone: string): string => {
+  return phone.replace(/\D/g, '')
+}
+
 
 // Lifecycle
 onMounted(async () => {

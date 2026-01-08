@@ -7,7 +7,7 @@ import Country from './views/country.vue'
 import Auth from './views/auth.vue'
 import Otp from './views/otp.vue'
 import DashboardMain from './views/dashboard/dashboardMain.vue'
-import Memo from './views/memo/memo.vue'
+import MemoNew from './views/memo/memoNew.vue'
 import Module from './views/module.vue'
 import AssiduteDuJour from './views/AssiduteDuJour.vue'
 import Equipe from './views/equipe.vue'
@@ -17,8 +17,10 @@ import Planning from './views/planning.vue'
 import Profile from './views/profile.vue'
 import EmployeeForm from './views/employeeForm.vue'
 import Setting from './views/setting.vue'
+import MemoDetails from './views/memo/memoDetails.vue';
 
 import { useUserStore } from '@/composables/userStore'
+
 
 const routes: RouteRecordRaw[] = [
   // ✅ PUBLIC
@@ -52,9 +54,9 @@ const routes: RouteRecordRaw[] = [
     meta: { requiresAuth: true },
   },
   {
-    path: '/memo',
-    name: 'memo',
-    component: Memo,
+    path: '/memoNew/:employeeId',
+    name: 'memoNew',
+    component: MemoNew,
     meta: { requiresAuth: true },
   },
   {
@@ -73,12 +75,18 @@ const routes: RouteRecordRaw[] = [
     path: '/equipe',
     name: 'equipe',
     component: Equipe,
-    meta: { requiresAuth: false },
+    meta: { requiresAuth: true },
   },
   {
     path: '/memoList',
     name: 'memoList',
     component: MemoList,
+    meta: { requiresAuth: true },
+  },
+  {
+    path: '/memoDetails/:id',
+    name: 'memoDetails',
+    component: MemoDetails,
     meta: { requiresAuth: true },
   },
   {
@@ -168,7 +176,7 @@ export default router
 // import Auth from './views/auth.vue';
 // import Otp from './views/otp.vue';
 // import DashboardMain from './views/dashboard/dashboardMain.vue';
-// import Memo from './views/memo/memo.vue';
+// import MemoNew from './views/memo/memoNew.vue';
 // import Module from './views/module.vue';
 // import AssiduteDuJour from './views/AssiduteDuJour.vue';
 // import Equipe from './views/equipe.vue';
@@ -207,7 +215,7 @@ export default router
 //   {
 //     path: '/memo',
 //     name: 'memo',
-//     component: Memo,
+//     component: MemoNew,
 //     props: route => ({
 //       employee: {
 //         id: parseInt(Array.isArray(route.params.employeeId) ? route.params.employeeId[0] : (route.params.employeeId as string)),

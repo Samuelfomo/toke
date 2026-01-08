@@ -159,6 +159,19 @@
               </div>
             </a>
           </button>
+          <button class="action-card quaternary">
+            <div class="action-icon">
+              <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
+              </svg>
+            </div>
+            <a href="/memoList" class="action-link">
+              <div class="action-content">
+                <h3 class="action-title">Memo</h3>
+                <p class="action-description">Traiter vos memos</p>
+              </div>
+            </a>
+          </button>
         </div>
       </div>
 
@@ -256,7 +269,7 @@
                     @click="toggleEmployeeMenu(employee.id)"
                     class="menu-trigger"
                     :class="{ 'active': activeEmployeeMenu === employee.id }">
-                    <svg viewBox="0 0 24 24" fill="currentColor" class="menu-dots">
+                    <svg viewBox="0 0 24 24" fill="currentColor" class="menu-dots" width="20" height="20">
                       <circle cx="12" cy="5" r="2"></circle>
                       <circle cx="12" cy="12" r="2"></circle>
                       <circle cx="12" cy="19" r="2"></circle>
@@ -325,10 +338,12 @@ import { useEmployee } from '@/utils/useEmployee';
 import router from '@/router';
 import UserService from '@/service/UserService';
 import EntriesService from '@/service/EntriesService';
+import { useRoute } from 'vue-router';
 
 // Stores (uniquement pour les infos utilisateur)
 const userStore = useUserStore()
 const employeeStore = useEmployee()
+const route = useRoute()
 
 // ==========================================
 // 🎯 DONNÉES LOCALES DE LA VUE
@@ -337,14 +352,17 @@ const teamEmployees = ref<any[]>([])
 const isLoadingEmployees = ref(false)
 const subordinatesData = ref<any>(null)
 const totalSubordinates = ref(0)
+const employee = ref<any>(null)
 
 // User data
 const currentUser = computed(() => ({
   name: userStore.fullName || 'Manager',
   company: userStore.tenantName || 'N/A'
 }))
+
 const currentManagerId = computed(() => userStore.user?.guid)
 const notificationCount = ref(2)
+
 
 // UI State
 const selectedDate = ref<Date>(new Date())
@@ -354,7 +372,7 @@ const currentPage = ref<number>(1)
 const itemsPerPage = 8
 const showAddEmployee = ref<boolean>(false)
 const showAddSite = ref<boolean>(false)
-const activeEmployeeMenu = ref<number | null>(null)
+const activeEmployeeMenu = ref<string | null>(null)
 
 // ==========================================
 // 🔄 FONCTION DE CHARGEMENT DES EMPLOYÉS
@@ -378,15 +396,16 @@ const loadTeamEmployees = async () => {
           console.log('entries data', response.data.hierarchy.map((emp: any) => emp))
 
           const data: User = emp.user;
+
           // Calculer les initiales
-          const nameParts = emp.full_name?.split(' ') || ['U']
+          const nameParts = data.first_name?.split(' ') || ['U']
           const initials = nameParts.length > 1
             ? `${nameParts[0][0]}${nameParts[1][0]}`.toUpperCase()
             : nameParts[0][0].toUpperCase()
 
           return {
             id: data.guid,
-            name: data.last_name || 'N/A',
+            name: data.first_name || 'N/A',
             position: emp.roles?.[0]?.role || 'N/A',
             email: data.email || 'N/A',
             avatar: data.avatar_url || null,
@@ -507,7 +526,9 @@ const setSortBy = (field: string) => {
 }
 
 const toggleEmployeeMenu = (employeeId: string) => {
-  activeEmployeeMenu.value = employeeId ? null : Number(employeeId)
+  console.log('menu clicked', employeeId)
+  activeEmployeeMenu.value =
+    activeEmployeeMenu.value === employeeId ? null : employeeId
 }
 
 // 🔄 ACTUALISER LA LISTE
@@ -521,13 +542,24 @@ const editEmployee = (employee: any) => {
   activeEmployeeMenu.value = null
 }
 
+// Modifier la fonction sendMemo pour accepter l'employé en paramètre
 const sendMemo = (employee: any) => {
-  const memo = prompt(`Saisir le mémo à envoyer à ${employee.name}:`)
-  if (memo) {
-    alert(`Mémo envoyé à ${employee.name}: "${memo}"`)
-  }
-  activeEmployeeMenu.value = null
-}
+  console.log('📨 Envoi mémo pour:', employee.name, employee.id);
+
+  // Naviguer vers la page de création de mémo avec le GUID de l'employé
+  router.push({
+    name: 'memoNew',  // ou '/memo/new' selon votre configuration de routes
+    params: {
+      employeeId: employee.id  // Le GUID de l'employé
+    },
+    query: {
+      employeeName: employee.name,  // Optionnel: passer le nom aussi
+      employeeEmail: employee.email  // Optionnel: passer l'email aussi
+    }
+  });
+
+  activeEmployeeMenu.value = null;
+};
 
 const deleteEmployee = (employee: any) => {
   if (confirm(`Êtes-vous sûr de vouloir supprimer ${employee.name} de l'équipe ?`)) {

@@ -190,6 +190,7 @@ export const useUserStore = defineStore('user', () => {
   }
 
   // 🎯 NOUVELLE FONCTION: Charger les subordonnés depuis l'API
+
   const loadSubordinates = async () => {
     if (!user.value?.guid) {
       console.warn('⚠️ Impossible de charger les subordonnés: utilisateur non connecté')
@@ -203,14 +204,35 @@ export const useUserStore = defineStore('user', () => {
 
       const response = await UserService.listSubordinates(user.value.guid)
 
-      if (response.success && response.data) {
-        // Transformer les données API
-        const transformedSubordinates = response.data.map(transformSubordinate)
+      if (response.success && response.data?.hierarchy) {
+        // ✅ CORRECTION: Accéder à hierarchy et transformer correctement
+        const transformedSubordinates = response.data.hierarchy.map((item: any) => {
+          const firstName = item.user.first_name || ''
+          const lastName = item.user.last_name || ''
+          const name = `${firstName} ${lastName}`.trim()
+
+          const firstInitial = firstName.charAt(0) || '?'
+          const lastInitial = lastName.charAt(0) || '?'
+          const initials = `${firstInitial}${lastInitial}`.toUpperCase()
+
+          return {
+            id: parseInt(item.user.guid) || 0,
+            guid: item.user.guid,
+            name,
+            email: item.user.email || '',
+            position: item.roles?.[0]?.role || item.user.job_title || 'N/A',
+            siteId: item.user.department || 'default',
+            punctualityScore: 0,
+            avatar: item.user.avatar_url,
+            initials
+          }
+        })
+
         subordinates.value = transformedSubordinates
 
         console.log(`✅ ${transformedSubordinates.length} subordonnés chargés:`, transformedSubordinates)
       } else {
-        console.warn('⚠️ Aucun subordonné trouvé ou réponse invalide')
+        console.warn('⚠️ Aucun subordonnŽ trouvé ou réponse invalide')
         subordinates.value = []
       }
     } catch (error) {
@@ -220,6 +242,38 @@ export const useUserStore = defineStore('user', () => {
       isLoadingSubordinates.value = false
     }
   }
+
+
+  // const loadSubordinates = async () => {
+  //   if (!user.value?.guid) {
+  //     console.warn('⚠️ Impossible de charger les subordonnés: utilisateur non connecté')
+  //     return
+  //   }
+  //
+  //   isLoadingSubordinates.value = true
+  //
+  //   try {
+  //     console.log('🔄 Chargement des subordonnés pour:', user.value.guid)
+  //
+  //     const response = await UserService.listSubordinates(user.value.guid)
+  //
+  //     if (response.success && response.data) {
+  //       // Transformer les données API
+  //       const transformedSubordinates = response.data.map(transformSubordinate)
+  //       subordinates.value = transformedSubordinates
+  //
+  //       console.log(`✅ ${transformedSubordinates.length} subordonnés chargés:`, transformedSubordinates)
+  //     } else {
+  //       console.warn('⚠️ Aucun subordonné trouvé ou réponse invalide')
+  //       subordinates.value = []
+  //     }
+  //   } catch (error) {
+  //     console.error('❌ Erreur lors du chargement des subordonnés:', error)
+  //     subordinates.value = []
+  //   } finally {
+  //     isLoadingSubordinates.value = false
+  //   }
+  // }
 
   // Action: Définir les données d'authentification
   const setAuthData = async (authResponse: AuthResponse) => {

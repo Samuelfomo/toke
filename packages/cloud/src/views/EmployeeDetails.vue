@@ -353,9 +353,18 @@ const goBack = () => {
 
 const openMemoChat = () => {
   if (employee.value) {
-    router.push({ name: 'memo', params: { employeeId: employee.value.id } })
+    // Utiliser le GUID de l'employé (pas l'ID local)
+    const employeeGuid = route.params.employeeId as string;
+    console.log('📨 Envoi mémo pour:', employeeGuid);
+
+    router.push({
+      name: 'memoNew',
+      params: { employeeId: employeeGuid }
+    });
+
+    console.log('📨 Navigation vers création de mémo pour:', employee.value.name);
   }
-}
+};
 
 const editEmployee = () => {
   if (employee.value) {

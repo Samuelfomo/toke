@@ -79,7 +79,6 @@
 </template>
 
 <script setup lang="ts">
-import cardCss from "../../assets/css/tokt-employeeC-06.css?url"
 
 interface Employee {
   id: string
@@ -113,6 +112,7 @@ const openEmployeeDetails = () => {
   emit('employeeUpdated', props.employee)
 }
 </script>
+
 
 <style scoped>
 .employee-location {

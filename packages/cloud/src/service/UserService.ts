@@ -1,7 +1,6 @@
 import { ApiResponse } from '@toke/shared';
 
 import { apiRequest } from '@/tools/Fetch.Client';
-import { Root } from '@/utils/interfaces/team.interface';
 
 const baseUrl = '/user';
 

@@ -314,6 +314,7 @@
     align-items: center;
     justify-content: center;
     font-size: var(--font-size-body);
+
 }
 
 .btn-icon:hover {

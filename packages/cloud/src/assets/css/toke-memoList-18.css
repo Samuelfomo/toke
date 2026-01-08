@@ -1,0 +1,247 @@
+/* Import des variables du design system */
+
+/* ===============================
+   STATS (CARDS RÉDUITES)
+================================ */
+.stats-section {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); /* réduit */
+    gap: 12px; /* réduit */
+    margin-bottom: 20px;
+}
+
+.stat-card {
+    background: white;
+    padding: 14px; /* réduit */
+    border-radius: 6px; /* réduit */
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    text-align: center;
+}
+
+.stat-value {
+    font-size: 26px; /* réduit */
+    font-weight: bold;
+    color: #2563eb;
+    margin-bottom: 4px;
+}
+
+.stat-label {
+    font-size: 13px; /* réduit */
+    color: #6b7280;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+/* ===============================
+   LOADING (INCHANGÉ)
+================================ */
+.loading-state {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 60px 20px;
+}
+
+.spinner {
+    width: 50px;
+    height: 50px;
+    border: 4px solid #f3f4f6;
+    border-top: 4px solid #2563eb;
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+    margin-bottom: 16px;
+}
+
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
+/* ===============================
+   EMPTY STATE (INCHANGÉ)
+================================ */
+.empty-state {
+    text-align: center;
+    padding: 60px 20px;
+    background: white;
+    border-radius: 8px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.empty-icon {
+    font-size: 64px;
+    margin-bottom: 16px;
+}
+
+/* ===============================
+   TABS (INCHANGÉ)
+================================ */
+.type-tabs {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 16px;
+    flex-wrap: wrap;
+}
+
+.type-tab {
+    padding: 8px 16px;
+    border-radius: 20px;
+    background: #f3f4f6;
+    border: none;
+    cursor: pointer;
+    transition: all .2s;
+}
+
+.type-tab.active {
+    background: #2563eb;
+    color: white;
+}
+
+/* ===============================
+   HEADERS TYPES (INCHANGÉ)
+================================ */
+.type-header {
+    margin: 16px 0 8px;
+    padding-left: 12px;
+    border-left: 4px solid;
+    display: flex;
+    justify-content: space-between;
+}
+
+.type-delay_justification { border-color: #f59e0b; }
+.type-absence_justification { border-color: #ef4444; }
+.type-absence_notification { border-color: #3b82f6; }
+.type-session_closure { border-color: #6366f1; }
+.type-auto_generated { border-color: #10b981; }
+
+.count {
+    font-size: 13px;
+    color: #6b7280;
+}
+
+/* ===============================
+   MEMO CARD (TAILLE RÉDUITE)
+================================ */
+.memo-card {
+    background-color: var(--bg-card);
+    border: 1px solid var(--border-light);
+    border-radius: var(--border-radius);
+    padding: var(--space-md); /* réduit */
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.memo-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+/* ===============================
+   CONTAINER PRINCIPAL (INCHANGÉ)
+================================ */
+.liste-memos {
+    padding: var(--space-xl);
+    max-width: var(--container-max-width);
+    margin: 0 auto;
+}
+
+/* ===============================
+   HEADER PAGE (BOUTON À GAUCHE)
+================================ */
+.page-header {
+    display: flex;
+    justify-content: flex-start; /* MODIFIÉ */
+    align-items: center;         /* centrage vertical */
+    gap: var(--space-md);
+    margin-bottom: var(--space-xl);
+}
+
+.page-title {
+    font-size: var(--font-size-h2);
+    font-weight: var(--font-weight-bold);
+    color: var(--text-primary);
+    line-height: var(--line-height-h2);
+}
+
+/* ===============================
+   BOUTONS (FLÈCHE ALIGNÉE)
+================================ */
+.btn-primary,
+.btn-secondary {
+    height: 36px; /* réduit */
+    padding: 0 14px;
+    font-size: 14px;
+    font-weight: var(--font-weight-semibold);
+    border-radius: 6px;
+    border: none;
+    cursor: pointer;
+    transition: all var(--transition-base);
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.btn-secondary::before {
+    content: "←";
+    font-size: 16px;
+    line-height: 1;
+}
+
+/* ===============================
+   FILTRES (INCHANGÉ)
+================================ */
+.filtres-section {
+    display: flex;
+    gap: var(--space-md);
+    flex-wrap: wrap;
+    padding: var(--space-lg);
+    background-color: var(--bg-secondary);
+    border-radius: var(--border-radius-lg);
+    margin-bottom: var(--space-xl);
+}
+
+/* ===============================
+   LISTE MEMOS (INCHANGÉ)
+================================ */
+.memos-container {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-xl); /* réduit */
+}
+
+/* ===============================
+   FOOTER MEMO (INCHANGÉ)
+================================ */
+.memo-footer {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding-top: var(--space-sm); /* réduit */
+    border-top: 1px solid var(--border-light);
+}
+
+/* ===============================
+   RESPONSIVE (INCHANGÉ)
+================================ */
+@media (max-width: 768px) {
+    .liste-memos {
+        padding: var(--space-md);
+    }
+
+    .page-header {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: var(--space-sm);
+    }
+
+    .filtres-section {
+        flex-direction: column;
+    }
+
+    .memo-footer {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: var(--space-sm);
+    }
+}
