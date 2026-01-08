@@ -10,7 +10,13 @@ export const QR_CODE_VALIDATION = {
     MAX_LENGTH: 128,
     REQUIRED: true,
   },
-  MANAGER: {
+  // MANAGER: {
+  //   MIN_LENGTH: 1,
+  //   MAX_LENGTH: 128,
+  //   REQUIRED: true,
+  // },
+
+  TEAM: {
     MIN_LENGTH: 1,
     MAX_LENGTH: 128,
     REQUIRED: true,
@@ -41,9 +47,12 @@ export const QR_CODE_CODES = {
   INVALID_NAME: 'invalid_name',
   NAME_REQUIRED: 'name_required',
   SITE_NOT_FOUND: 'site_not_found',
-  MANAGER_REQUIRED: 'manager_required',
-  MANAGER_INVALID: 'manager_invalid',
-  MANAGER_NOT_FOUND: 'manager_not_found',
+  // MANAGER_REQUIRED: 'manager_required',
+  // MANAGER_INVALID: 'manager_invalid',
+  // MANAGER_NOT_FOUND: 'manager_not_found',
+  TEAM_REQUIRED: 'team_required',
+  TEAM_INVALID: 'team_invalid',
+  TEAM_NOT_FOUND: 'team_not_found',
   VALID_FROM_INVALID: 'valid_from_invalid',
   VALID_TO_INVALID: 'valid_to_invalid',
   VALID_FROM_AFTER_VALID_TO: 'valid_from_after_valid_to',
@@ -74,9 +83,13 @@ export const QR_CODE_ERRORS = {
   SITE_INVALID: `Site ID must be between ${QR_CODE_VALIDATION.SITE.MIN_LENGTH} and ${QR_CODE_VALIDATION.SITE.MAX_LENGTH}`,
   SITE_NOT_FOUND: 'Site not found',
 
-  MANAGER_REQUIRED: `${QR_CODE_LABEL} manager is required`,
-  MANAGER_INVALID: `Manager ID must be between ${QR_CODE_VALIDATION.MANAGER.MIN_LENGTH} and ${QR_CODE_VALIDATION.MANAGER.MAX_LENGTH}`,
-  MANAGER_NOT_FOUND: 'Manager not found',
+  // MANAGER_REQUIRED: `${QR_CODE_LABEL} manager is required`,
+  // MANAGER_INVALID: `Manager ID must be between ${QR_CODE_VALIDATION.MANAGER.MIN_LENGTH} and ${QR_CODE_VALIDATION.MANAGER.MAX_LENGTH}`,
+  // MANAGER_NOT_FOUND: 'Manager not found',
+
+  TEAM_REQUIRED: `${QR_CODE_LABEL} team is required`,
+  TEAM_INVALID: `Team ID must be between ${QR_CODE_VALIDATION.TEAM.MIN_LENGTH} and ${QR_CODE_VALIDATION.TEAM.MAX_LENGTH}`,
+  TEAM_NOT_FOUND: 'Team not found',
 
   VALID_FROM_INVALID: 'Valid from date must be a valid date',
   VALID_TO_INVALID: 'Valid to date must be a valid date',
@@ -107,7 +120,7 @@ export const QR_CODE_ERRORS = {
   GUID_GENERATION_FAILED: `Failed to generate GUID for ${QR_CODE_LABEL}`,
   ID_REQUIRED: `${QR_CODE_LABEL} id is required`,
   SHARED_OPERATION_FAILED: `${QR_CODE_LABEL} shared operation failed`,
-};
+} as const;
 
 export const QR_CODE_MESSAGES = {
   CREATED_SUCCESSFULLY: `${QR_CODE_LABEL} generated successfully`,

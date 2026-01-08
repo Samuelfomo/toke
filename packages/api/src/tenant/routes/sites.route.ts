@@ -27,7 +27,6 @@ import { responseValue, tableName } from '../../utils/response.model.js';
 import UserRole from '../class/UserRole.js';
 import { DatabaseEncryption } from '../../utils/encryption.js';
 import QrCodeGeneration from '../class/QrCodeGeneration.js';
-import Teams from '../class/Teams.js';
 
 const router = Router();
 
@@ -838,9 +837,9 @@ router.patch(
 router.post('/generate-qr-code', Ensure.post(), async (req: Request, res: Response) => {
   try {
     // const { manager } = req.params;
-    const { site, team } = req.body;
+    const { site, manager } = req.body;
 
-    if (!team || !UsersValidationUtils.validateGuid(team)) {
+    if (!manager || !UsersValidationUtils.validateGuid(manager)) {
       return R.handleError(res, HttpStatus.BAD_REQUEST, {
         code: TEAMS_CODES.INVALID_GUID,
         message: TEAMS_ERRORS.GUID_INVALID,
@@ -861,15 +860,23 @@ router.post('/generate-qr-code', Ensure.post(), async (req: Request, res: Respon
       });
     }
 
-    const teamObj = await Teams._load(team, true);
-    if (!teamObj) {
+    const managerObj = await User._load(manager, true);
+    if (!managerObj) {
       return R.handleError(res, HttpStatus.NOT_FOUND, {
-        code: TEAMS_CODES.TEAM_NOT_FOUND,
-        message: TEAMS_CODES.TEAM_NOT_FOUND,
+        code: 'manager_not_found',
+        message: 'manager not found',
       });
     }
 
-    const roles = await UserRole.getUserRoles(teamObj.getManager()!);
+    // const teamObj = await Teams._load(team, true);
+    // if (!teamObj) {
+    //   return R.handleError(res, HttpStatus.NOT_FOUND, {
+    //     code: TEAMS_CODES.TEAM_NOT_FOUND,
+    //     message: TEAMS_CODES.TEAM_NOT_FOUND,
+    //   });
+    // }
+
+    const roles = await UserRole.getUserRoles(managerObj.getId()!);
     if (roles.length < 2) {
       return R.handleError(res, HttpStatus.UNAUTHORIZED, {
         code: USERS_CODES.AUTHORIZATION_FAILED,
@@ -879,8 +886,8 @@ router.post('/generate-qr-code', Ensure.post(), async (req: Request, res: Respon
 
     const qrCodeObj = new QrCodeGeneration()
       .setSite(siteObj.getId()!)
-      .setTeam(teamObj.getId()!)
-      // .setManager(userObj.getId()!)
+      // .setTeam(teamObj.getId()!)
+      .setManager(managerObj.getId()!)
       .setValidFrom(siteObj.getQRCodeData().valid_from)
       .setValidTo(siteObj.getQRCodeData().valid_to);
 

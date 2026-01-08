@@ -28,8 +28,12 @@ export default class Teams extends TeamsModel {
   // MÉTHODES STATIQUES DE CHARGEMENT
   // ============================================
 
-  static _load(identifier: any, byGuid: boolean = false): Promise<Teams | null> {
-    return new Teams().load(identifier, byGuid);
+  static _load(
+    identifier: any,
+    byGuid: boolean = false,
+    byUser: boolean = false,
+  ): Promise<Teams | null> {
+    return new Teams().load(identifier, byGuid, byUser);
   }
 
   static _list(
@@ -465,11 +469,17 @@ export default class Teams extends TeamsModel {
     return false;
   }
 
-  async load(identifier: any, byGuid: boolean = false): Promise<Teams | null> {
+  async load(
+    identifier: any,
+    byGuid: boolean = false,
+    byUser: boolean = false,
+  ): Promise<Teams | null> {
     let data = null;
 
     if (byGuid) {
       data = await this.findByGuid(identifier);
+    } else if (byUser) {
+      data = await this.findActiveTeamByUser(Number(identifier));
     } else {
       data = await this.find(Number(identifier));
     }

@@ -82,6 +82,27 @@ export default class TeamsModel extends BaseModel {
     return await this.findOne(this.db.tableName, conditions);
   }
 
+  /**
+   * Retourne l'équipe dans laquelle l'utilisateur est actuellement actif
+   */
+  protected async findActiveTeamByUser(userId: number): Promise<any | null> {
+    const allTeams = await this.listAll(); // deleted_at = null par défaut
+
+    for (const team of allTeams) {
+      const members = team.members || [];
+
+      const activeMember = members.find(
+        (m: TI.TeamMember) => m.user === userId && m.active !== false,
+      );
+
+      if (activeMember) {
+        return team; // ✅ team active trouvée
+      }
+    }
+
+    return null; // ❌ aucune team active
+  }
+
   // ============================================
   // MÉTHODES DE LISTAGE
   // ============================================

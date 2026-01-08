@@ -1,4 +1,4 @@
-import { QR_CODE_DEFAULTS, QR_CODE_ERRORS, TimezoneConfigUtils } from '@toke/shared';
+import { QR_CODE_DEFAULTS, QR_CODE_ERRORS, SharedWith, TimezoneConfigUtils } from '@toke/shared';
 import { Op } from 'sequelize';
 
 import BaseModel from '../database/db.base.js';
@@ -11,24 +11,28 @@ export default class QrCodeGenerationModel extends BaseModel {
     id: 'id',
     guid: 'guid',
     site: 'site',
-    manager: 'manager',
+    // manager: 'manager',
+    team: 'team',
     valid_from: 'valid_from',
     valid_to: 'valid_to',
     created_at: 'created_at',
     updated_at: 'updated_at',
     shared: 'shared',
+    shared_with: 'shared_with',
     name: 'name',
   } as const;
 
   protected id?: number;
   protected guid?: string;
   protected site?: number;
-  protected manager?: number;
+  // protected manager?: number;
+  protected team?: number;
   protected valid_from?: Date;
   protected valid_to?: Date;
   protected created_at?: Date;
   protected updated_at?: Date;
   protected shared: boolean = QR_CODE_DEFAULTS.SHARED;
+  protected shared_with: SharedWith[] = [];
   protected name?: string;
 
   protected constructor() {
@@ -61,22 +65,63 @@ export default class QrCodeGenerationModel extends BaseModel {
     return await this.listAll({ [this.db.site]: site }, paginationOptions);
   }
 
-  protected async listAllByManagerSite(
+  // protected async listAllByManagerSite(
+  //   site: number,
+  //   manager: number,
+  //   paginationOptions: { offset?: number; limit?: number } = {},
+  // ): Promise<any[]> {
+  //   return await this.listAll(
+  //     { [this.db.site]: site, [this.db.manager]: manager },
+  //     paginationOptions,
+  //   );
+  // }
+
+  // Tous les QR codes liés à une équipe (ou partagés) sur un site
+  protected async listAllByTeamSite(
     site: number,
-    manager: number,
+    team: number,
     paginationOptions: { offset?: number; limit?: number } = {},
   ): Promise<any[]> {
-    return await this.listAll(
-      { [this.db.site]: site, [this.db.manager]: manager },
+    return this.listAll(
+      {
+        [this.db.site]: site,
+        [Op.or]: [
+          { [this.db.team]: team },
+          {
+            [this.db.shared_with]: {
+              [Op.contains]: [{ code: team }],
+            },
+          },
+        ],
+      },
       paginationOptions,
     );
   }
 
-  protected async listAllByManager(
-    manager: number,
+  // protected async listAllByManager(
+  //   manager: number,
+  //   paginationOptions: { offset?: number; limit?: number } = {},
+  // ): Promise<any[]> {
+  //   return await this.listAll({ [this.db.manager]: manager }, paginationOptions);
+  // }
+
+  protected async listAllByTeam(
+    team: number,
     paginationOptions: { offset?: number; limit?: number } = {},
   ): Promise<any[]> {
-    return await this.listAll({ [this.db.manager]: manager }, paginationOptions);
+    return this.listAll(
+      {
+        [Op.or]: [
+          { [this.db.team]: team },
+          {
+            [this.db.shared_with]: {
+              [Op.contains]: [{ code: team }],
+            },
+          },
+        ],
+      },
+      paginationOptions,
+    );
   }
 
   // ============================================================================
@@ -154,46 +199,115 @@ export default class QrCodeGenerationModel extends BaseModel {
     );
   }
 
-  // QR codes créés par un manager (actifs uniquement)
-  protected async findActiveByManager(
-    manager: number,
+  // // QR codes créés par un manager (actifs uniquement)
+  // protected async findActiveByManager(
+  //   manager: number,
+  //   paginationOptions: { offset?: number; limit?: number } = {},
+  // ): Promise<any[]> {
+  //   const now = TimezoneConfigUtils.getCurrentTime();
+  //
+  //   return await this.listAll(
+  //     {
+  //       [this.db.manager]: manager,
+  //       [Op.and]: [
+  //         {
+  //           [Op.or]: [{ [this.db.valid_from]: null }, { [this.db.valid_from]: { [Op.lte]: now } }],
+  //         },
+  //         {
+  //           [Op.or]: [{ [this.db.valid_to]: null }, { [this.db.valid_to]: { [Op.gte]: now } }],
+  //         },
+  //       ],
+  //     },
+  //     paginationOptions,
+  //   );
+  // }
+
+  // QR codes générés pour une équipe (actifs uniquement)
+  protected async findActiveByTeam(
+    team: number,
     paginationOptions: { offset?: number; limit?: number } = {},
   ): Promise<any[]> {
     const now = TimezoneConfigUtils.getCurrentTime();
 
-    return await this.listAll(
+    return this.listAll(
       {
-        [this.db.manager]: manager,
         [Op.and]: [
           {
             [Op.or]: [{ [this.db.valid_from]: null }, { [this.db.valid_from]: { [Op.lte]: now } }],
           },
           {
             [Op.or]: [{ [this.db.valid_to]: null }, { [this.db.valid_to]: { [Op.gte]: now } }],
+          },
+          {
+            [Op.or]: [
+              { [this.db.team]: team },
+              {
+                [this.db.shared_with]: {
+                  [Op.contains]: [{ code: team }],
+                },
+              },
+            ],
           },
         ],
       },
       paginationOptions,
     );
   }
+  //
+  // protected async findActiveByManagerSite(
+  //   manager: number,
+  //   site: number,
+  //   paginationOptions: { offset?: number; limit?: number } = {},
+  // ): Promise<any[]> {
+  //   const now = TimezoneConfigUtils.getCurrentTime();
+  //
+  //   return await this.listAll(
+  //     {
+  //       [this.db.manager]: manager,
+  //       [this.db.site]: site,
+  //       [Op.and]: [
+  //         {
+  //           [Op.or]: [{ [this.db.valid_from]: null }, { [this.db.valid_from]: { [Op.lte]: now } }],
+  //         },
+  //         {
+  //           [Op.or]: [{ [this.db.valid_to]: null }, { [this.db.valid_to]: { [Op.gte]: now } }],
+  //         },
+  //       ],
+  //     },
+  //     paginationOptions,
+  //   );
+  // }
 
-  protected async findActiveByManagerSite(
-    manager: number,
+  // QR codes actifs liés à une équipe (ou partagés) sur un site
+  protected async findActiveByTeamSite(
+    team: number,
     site: number,
     paginationOptions: { offset?: number; limit?: number } = {},
   ): Promise<any[]> {
     const now = TimezoneConfigUtils.getCurrentTime();
 
-    return await this.listAll(
+    return this.listAll(
       {
-        [this.db.manager]: manager,
         [this.db.site]: site,
         [Op.and]: [
+          // valid_from
           {
             [Op.or]: [{ [this.db.valid_from]: null }, { [this.db.valid_from]: { [Op.lte]: now } }],
           },
+          // valid_to
           {
             [Op.or]: [{ [this.db.valid_to]: null }, { [this.db.valid_to]: { [Op.gte]: now } }],
+          },
+          // team OR shared_with
+          {
+            [Op.or]: [
+              { [this.db.team]: team },
+              {
+                [this.db.shared_with]: {
+                  [Op.contains]: [{ code: team }],
+                },
+              },
+            ],
           },
         ],
       },
@@ -298,10 +412,12 @@ export default class QrCodeGenerationModel extends BaseModel {
     const lastID = await this.insertOne(this.db.tableName, {
       [this.db.guid]: guid,
       [this.db.site]: this.site,
-      [this.db.manager]: this.manager,
+      // [this.db.manager]: this.manager,
+      [this.db.team]: this.team,
       [this.db.valid_from]: this.valid_from,
       [this.db.valid_to]: this.valid_to,
       [this.db.shared]: this.shared || QR_CODE_DEFAULTS.SHARED,
+      [this.db.shared_with]: this.shared_with || [],
       [this.db.name]: this.name,
     });
 
@@ -357,6 +473,7 @@ export default class QrCodeGenerationModel extends BaseModel {
 
     const updateData: Record<string, any> = {
       [this.db.shared]: this.shared,
+      [this.db.shared_with]: this.shared_with,
     };
 
     const affected = await this.updateOne(this.db.tableName, updateData, { [this.db.id]: this.id });

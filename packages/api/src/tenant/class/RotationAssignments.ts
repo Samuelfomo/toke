@@ -51,6 +51,13 @@ export default class RotationAssignment extends RotationAssignmentModel {
     return new RotationAssignment().listByUser(userId, paginationOptions);
   }
 
+  static _listByTeam(
+    teamId: number,
+    paginationOptions: { offset?: number; limit?: number } = {},
+  ): Promise<RotationAssignment[] | null> {
+    return new RotationAssignment().listByTeam(teamId, paginationOptions);
+  }
+
   static _listByRotationGroup(
     rotationGroupId: number,
     paginationOptions: { offset?: number; limit?: number } = {},

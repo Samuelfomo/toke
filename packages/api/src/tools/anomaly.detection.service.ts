@@ -115,10 +115,11 @@ class AnomalyDetectionService {
 
     // 2. Si le QR code est partagé, pas besoin de vérifier les habilitations
     if (qrCodeObj.isShared()) {
-      // verifier que le qr code est partagé avec le manager de l'utilisateur
+      // TODO verifier que le qr code est partagé avec le manager de l'utilisateur "logique annule pour le moment"
       return { anomalies, corrections };
     }
-    const qrCodeManager = (await qrCodeObj.getTeamObj())?.getManager();
+    // const qrCodeManager = (await qrCodeObj.getTeamObj())?.getManager();
+    const qrCodeManager = qrCodeObj.getManager();
     if (!qrCodeManager) {
       // QR code sans manager = anomalie critique
       anomalies.push({
@@ -161,7 +162,7 @@ class AnomalyDetectionService {
       description: `Use of an unauthorized QR code - The employee clocked in using another manager's QR code.`,
       technical_details: {
         user_manager: (await userRole?.getAssignedByObject())!.getGuid(),
-        qr_code_manager: (await (await qrCodeObj.getTeamObj())!.getManagerObj())!.getGuid(),
+        qr_code_manager: (await qrCodeObj.getManagerObj())!.getGuid(),
         qr_code_guid: qrCodeObj.getGuid(),
       },
       auto_correctable: false, // Nécessite validation manager

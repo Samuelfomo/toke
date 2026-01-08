@@ -5,6 +5,7 @@ import RotationAssignment from '../tenant/class/RotationAssignments.js';
 import RotationGroup from '../tenant/class/RotationGroups.js';
 import ScheduleException from '../tenant/class/ScheduleExceptions.js';
 import User from '../tenant/class/User.js';
+import Teams from '../tenant/class/Teams.js';
 
 // === TYPES ===
 
@@ -45,19 +46,22 @@ class ScheduleResolutionService {
    * Point d'entrée principal - Résout l'horaire applicable pour un utilisateur à une date donnée
    * Ordre de priorité: exception → rotation → template direct → défaut entreprise
    */
-  async getApplicableSchedule(
-    userId: number,
-    targetDate: Date,
-    // managerId?: number,
-  ): Promise<ScheduleResolutionResult> {
+  async getApplicableSchedule(userId: number, targetDate: Date): Promise<ScheduleResolutionResult> {
     const resolutionPath: string[] = [];
     const dateStr = this.formatDate(targetDate);
     const dayOfWeek = this.getDayOfWeek(targetDate);
 
     try {
+      // recherche le groupe auquel appartient l'utilisateur (group where user active)
+      const activeGroup = await Teams._load(userId, false, true);
+
       // 1️⃣ ÉTAPE 1 : Chercher exception active
       resolutionPath.push('Checking schedule_exceptions');
-      const exceptionSchedule = await this.resolveFromException(userId, dateStr);
+      const exceptionSchedule = await this.resolveFromException(
+        userId,
+        dateStr,
+        activeGroup?.getId(),
+      );
 
       if (exceptionSchedule) {
         resolutionPath.push(`✅ Exception found: ${exceptionSchedule.template_name}`);
@@ -71,7 +75,11 @@ class ScheduleResolutionService {
 
       // 2️⃣ ÉTAPE 2 : Chercher rotation assignment
       resolutionPath.push('Checking rotation_assignments');
-      const rotationSchedule = await this.resolveFromRotation(userId, targetDate);
+      const rotationSchedule = await this.resolveFromRotation(
+        userId,
+        targetDate,
+        activeGroup?.getId(),
+      );
 
       if (rotationSchedule) {
         resolutionPath.push(`✅ Rotation found: ${rotationSchedule.template_name}`);
@@ -86,7 +94,11 @@ class ScheduleResolutionService {
       // 3️⃣ ÉTAPE 3 : Chercher template direct (assignation individuelle)
       // TODO: Implémenter table user_schedule_assignments
       resolutionPath.push('Checking direct template assignment');
-      const directSchedule = await this.resolveFromDefaultTemplate(userId, dateStr);
+      const directSchedule = await this.resolveFromDefaultTemplate(
+        userId,
+        dateStr,
+        activeGroup?.getId(),
+      );
       if (directSchedule) {
         resolutionPath.push(`✅ User default template found: ${directSchedule.template_name}`);
         return {
@@ -148,7 +160,7 @@ class ScheduleResolutionService {
   private async resolveFromException(
     userId: number,
     dateStr: string,
-    groupId?: number,
+    activeGroupId?: number,
   ): Promise<ApplicableSchedule | null> {
     // Chercher exception utilisateur
     const userException = await ScheduleException._listForUserOnDate(userId, dateStr);
@@ -168,8 +180,25 @@ class ScheduleResolutionService {
       );
     }
 
-    // TODO: Chercher exception groupe si pas d'exception utilisateur
-    // const groupException = await ScheduleException._listForGroupOnDate(groupId, dateStr);
+    if (activeGroupId) {
+      // TODO: Chercher exception groupe si pas d'exception utilisateur
+      const groupException = await ScheduleException._listForTeamOnDate(activeGroupId, dateStr);
+
+      if (groupException && groupException.length > 0) {
+        const exceptionGroup = groupException[0];
+        return await this.buildScheduleFromTemplate(
+          exceptionGroup.getSessionTemplate()!,
+          dateStr,
+          'exception',
+          {
+            exception_guid: exceptionGroup.getGuid(),
+            reason: exceptionGroup.getReason(),
+            start_date: exceptionGroup.getStartDate(),
+            end_date: exceptionGroup.getEndDate(),
+          },
+        );
+      }
+    }
 
     return null;
   }
@@ -235,45 +264,77 @@ class ScheduleResolutionService {
   private async resolveFromRotation(
     userId: number,
     targetDate: Date,
+    activeGroupId?: number,
   ): Promise<ApplicableSchedule | null> {
     // Récupérer l'assignation rotation de l'utilisateur
     const assignments = await RotationAssignment._listByUser(userId);
 
-    if (!assignments || assignments.length === 0) {
-      return null;
+    let assignmentsGroup: RotationAssignment[] | null = null;
+    if (activeGroupId) {
+      assignmentsGroup = await RotationAssignment._listByTeam(activeGroupId);
     }
 
-    // Prendre la première assignation active
-    const assignment = assignments[0];
-    const rotationGroupId = assignment.getRotationGroup()!;
-    const offset = assignment.getOffset()!;
+    if (assignments && assignments.length > 0) {
+      // Prendre la première assignation active
+      const assignment = assignments[0];
+      const rotationGroupId = assignment.getRotationGroup()!;
+      const offset = assignment.getOffset()!;
 
-    // Charger le groupe de rotation
-    const rotationGroup = await RotationGroup._load(rotationGroupId);
+      // Charger le groupe de rotation
+      const rotationGroup = await RotationGroup._load(rotationGroupId);
 
-    if (!rotationGroup || !rotationGroup.isActive()) {
-      return null;
+      if (rotationGroup && rotationGroup.isActive()) {
+        // Calculer l'index du template à utiliser
+        const templateId = this.calculateRotationTemplateId(rotationGroup, targetDate, offset);
+
+        if (templateId) {
+          return await this.buildScheduleFromTemplate(
+            templateId,
+            this.formatDate(targetDate),
+            'rotation',
+            {
+              rotation_group_guid: rotationGroup.getGuid(),
+              rotation_group_name: rotationGroup.getName(),
+              cycle_length: rotationGroup.getCycleLength(),
+              cycle_unit: rotationGroup.getCycleUnit(),
+              offset: offset,
+            },
+          );
+        }
+      }
     }
 
-    // Calculer l'index du template à utiliser
-    const templateId = this.calculateRotationTemplateId(rotationGroup, targetDate, offset);
+    if (assignmentsGroup && assignmentsGroup.length > 0) {
+      // Prendre la première assignation active
+      const assignment = assignmentsGroup[0];
+      const rotationGroupId = assignment.getRotationGroup()!;
+      const offset = assignment.getOffset()!;
 
-    if (!templateId) {
-      return null;
+      // Charger le groupe de rotation
+      const rotationGroup = await RotationGroup._load(rotationGroupId);
+
+      if (rotationGroup && rotationGroup.isActive()) {
+        // Calculer l'index du template à utiliser
+        const templateId = this.calculateRotationTemplateId(rotationGroup, targetDate, offset);
+
+        if (templateId) {
+          return await this.buildScheduleFromTemplate(
+            templateId,
+            this.formatDate(targetDate),
+            'rotation',
+            {
+              rotation_group_guid: rotationGroup.getGuid(),
+              rotation_group_name: rotationGroup.getName(),
+              cycle_length: rotationGroup.getCycleLength(),
+              cycle_unit: rotationGroup.getCycleUnit(),
+              offset: offset,
+            },
+          );
+        }
+      }
     }
 
-    return await this.buildScheduleFromTemplate(
-      templateId,
-      this.formatDate(targetDate),
-      'rotation',
-      {
-        rotation_group_guid: rotationGroup.getGuid(),
-        rotation_group_name: rotationGroup.getName(),
-        cycle_length: rotationGroup.getCycleLength(),
-        cycle_unit: rotationGroup.getCycleUnit(),
-        offset: offset,
-      },
-    );
+    return null;
   }
 
   /**
