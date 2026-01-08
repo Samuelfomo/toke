@@ -33,6 +33,12 @@ export const TIME_ENTRIES_VALIDATION = {
     MAX_LENGTH: 128,
     REQUIRED: true,
   },
+
+  DEVICE: {
+    MIN_LENGTH: 1,
+    MAX_LENGTH: 128,
+    REQUIRED: true,
+  },
   SITE: {
     MIN_LENGTH: 1,
     MAX_LENGTH: 128,
@@ -97,6 +103,9 @@ export const TIME_ENTRIES_CODES = {
   USER_REQUIRED: 'user_required',
   USER_INVALID: 'user_invalid',
   USER_NOT_FOUND: 'user_not_found',
+  DEVICE_REQUIRED: 'device_required',
+  DEVICE_INVALID: 'device_invalid',
+  DEVICE_NOT_FOUND: 'device_not_found',
   SITE_REQUIRED: 'site_required',
   SITE_INVALID: 'site_invalid',
   SITE_NOT_FOUND: 'site_not_found',
@@ -168,6 +177,10 @@ export const TIME_ENTRIES_ERRORS = {
   USER_REQUIRED: `${TIME_ENTRIES_LABEL} user is required`,
   USER_INVALID: `User ID must be between ${TIME_ENTRIES_VALIDATION.USER.MIN_LENGTH} and ${TIME_ENTRIES_VALIDATION.USER.MAX_LENGTH}`,
   USER_NOT_FOUND: 'User not found',
+
+  DEVICE_REQUIRED: `${TIME_ENTRIES_LABEL} device is required`,
+  DEVICE_INVALID: `Device ID must be between ${TIME_ENTRIES_VALIDATION.DEVICE.MIN_LENGTH} and ${TIME_ENTRIES_VALIDATION.DEVICE.MAX_LENGTH}`,
+  DEVICE_NOT_FOUND: 'Device not found',
 
   SITE_REQUIRED: `${TIME_ENTRIES_LABEL} site is required`,
   SITE_INVALID: `Site ID must be between ${TIME_ENTRIES_VALIDATION.SITE.MIN_LENGTH} and ${TIME_ENTRIES_VALIDATION.SITE.MAX_LENGTH}`,

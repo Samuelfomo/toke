@@ -27,6 +27,7 @@ export default class TimeEntriesModel extends BaseModel {
     longitude: 'longitude',
     gps_accuracy: 'gps_accuracy',
     qr_code: 'qr_code',
+    device: 'device',
     device_info: 'device_info',
     ip_address: 'ip_address',
     user_agent: 'user_agent',
@@ -43,6 +44,7 @@ export default class TimeEntriesModel extends BaseModel {
   protected guid?: string;
   protected session?: number;
   protected user?: number;
+  protected device?: number;
   protected site?: number;
   protected pointage_type?: PointageType;
   protected pointage_status?: PointageStatus;
@@ -90,6 +92,13 @@ export default class TimeEntriesModel extends BaseModel {
     paginationOptions: { offset?: number; limit?: number } = {},
   ): Promise<any[]> {
     return await this.findAll(this.db.tableName, { [this.db.user]: user }, paginationOptions);
+  }
+
+  protected async listAllByDevice(
+    device: number,
+    paginationOptions: { offset?: number; limit?: number } = {},
+  ): Promise<any[]> {
+    return await this.findAll(this.db.tableName, { [this.db.device]: device }, paginationOptions);
   }
 
   protected async listAllBySite(
@@ -600,6 +609,7 @@ export default class TimeEntriesModel extends BaseModel {
       [this.db.guid]: guid,
       [this.db.session]: this.session,
       [this.db.user]: this.user,
+      [this.db.device]: this.device,
       [this.db.site]: this.site,
       [this.db.pointage_type]: this.pointage_type,
       [this.db.pointage_status]: this.pointage_status || PointageStatus.PENDING,
@@ -680,16 +690,14 @@ export default class TimeEntriesModel extends BaseModel {
     if (!this.user) {
       throw new Error(TIME_ENTRIES_ERRORS.USER_REQUIRED);
     }
-    // if (!TimeEntriesValidationUtils.validateUserId(this.user)) {
-    //   throw new Error(TIME_ENTRIES_ERRORS.USER_INVALID);
-    // }
+
+    if (!this.device) {
+      throw new Error(TIME_ENTRIES_ERRORS.DEVICE_REQUIRED);
+    }
 
     if (!this.site) {
       throw new Error(TIME_ENTRIES_ERRORS?.SITE_REQUIRED);
     }
-    // if (!TimeEntriesValidationUtils.validateSiteId(this.site)) {
-    //   throw new Error(TIME_ENTRIES_ERRORS.SITE_INVALID);
-    // }
 
     if (!this.pointage_type) {
       throw new Error(TIME_ENTRIES_ERRORS?.POINTAGE_TYPE_REQUIRED);

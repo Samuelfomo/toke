@@ -192,6 +192,7 @@ export const responseStructure = {
   QR_CODE_DATA: 'qr_code_data',
 
   USER: 'user',
+  DEVICE: 'device',
   SITE: 'site',
   SESSION_STATUS: 'session_status',
   SESSION_START_AT: 'session_start_at',

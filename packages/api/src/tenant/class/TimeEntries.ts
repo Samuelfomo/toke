@@ -16,9 +16,11 @@ import Site from './Site.js';
 import WorkSessions from './WorkSessions.js';
 import Memos from './Memos.js';
 import QrCodeGeneration from './QrCodeGeneration.js';
+import Device from './Device.js';
 
 export default class TimeEntries extends TimeEntriesModel {
   private userObj?: User;
+  private deviceObj?: Device;
   private siteObj?: Site;
   private sessionObj?: WorkSessions;
   private memoObj?: Memos;
@@ -53,6 +55,13 @@ export default class TimeEntries extends TimeEntriesModel {
     paginationOptions: { offset?: number; limit?: number } = {},
   ): Promise<TimeEntries[] | null> {
     return new TimeEntries().listByUser(user, paginationOptions);
+  }
+
+  static _listByDevice(
+    device: number,
+    paginationOptions: { offset?: number; limit?: number } = {},
+  ): Promise<TimeEntries[] | null> {
+    return new TimeEntries().listByDevice(device, paginationOptions);
   }
 
   static _listBySite(
@@ -153,12 +162,24 @@ export default class TimeEntries extends TimeEntriesModel {
     return this.user;
   }
 
+  getDevice(): number | undefined {
+    return this.device;
+  }
+
   async getUserObj(): Promise<User | null> {
     if (!this.user) return null;
     if (!this.userObj) {
       this.userObj = (await User._load(this.user)) || undefined;
     }
     return this.userObj || null;
+  }
+
+  async getDeviceObj(): Promise<Device | null> {
+    if (!this.device) return null;
+    if (!this.deviceObj) {
+      this.deviceObj = (await Device._load(this.device)) || undefined;
+    }
+    return this.deviceObj || null;
   }
 
   getSite(): number | undefined {
@@ -274,6 +295,11 @@ export default class TimeEntries extends TimeEntriesModel {
 
   setUser(user: number): TimeEntries {
     this.user = user;
+    return this;
+  }
+
+  setDevice(device: number): TimeEntries {
+    this.device = device;
     return this;
   }
 
@@ -618,9 +644,10 @@ export default class TimeEntries extends TimeEntriesModel {
   toExportFormat(): any {
     return {
       entry_guid: this.guid,
-      session_id: this.session,
-      user_id: this.user,
-      site_id: this.site,
+      session: this.session,
+      user: this.user,
+      device: this.device,
+      site: this.site,
       pointage_type: this.pointage_type,
       pointage_status: this.pointage_status,
       clocked_at: this.clocked_at?.toISOString(),
@@ -653,9 +680,10 @@ export default class TimeEntries extends TimeEntriesModel {
 
   toAuditLog(): any {
     return {
-      entry_id: this.id,
+      entry: this.id,
       entry_guid: this.guid,
-      user_id: this.user,
+      user: this.user,
+      device: this.device,
       action_type: this.pointage_type,
       timestamp: this.clocked_at,
       location: {
@@ -663,7 +691,7 @@ export default class TimeEntries extends TimeEntriesModel {
         longitude: this.longitude,
         accuracy: this.gps_accuracy,
       },
-      device: this.device_info,
+      device_info: this.device_info,
       ip_address: this.ip_address,
       status: this.pointage_status,
       corrections: this.correction_reason,
@@ -789,6 +817,15 @@ export default class TimeEntries extends TimeEntriesModel {
     return dataset.map((data) => new TimeEntries().hydrate(data));
   }
 
+  async listByDevice(
+    device: number,
+    paginationOptions: { offset?: number; limit?: number } = {},
+  ): Promise<TimeEntries[] | null> {
+    const dataset = await this.listAllByDevice(device, paginationOptions);
+    if (!dataset || dataset.length === 0) return null;
+    return dataset.map((data) => new TimeEntries().hydrate(data));
+  }
+
   async listBySite(
     site: number,
     paginationOptions: { offset?: number; limit?: number } = {},
@@ -829,6 +866,7 @@ export default class TimeEntries extends TimeEntriesModel {
 
   async toJSON(view: ViewMode = responseValue.FULL): Promise<object> {
     const user = await this.getUserObj();
+    const device = await this.getDeviceObj();
     const site = await this.getSiteObj();
     const session = await this.getSessionObj();
 
@@ -854,6 +892,7 @@ export default class TimeEntries extends TimeEntriesModel {
       return {
         ...baseData,
         [RS.USER]: user?.getGuid(),
+        [RS.DEVICE]: device?.getGuid(),
         [RS.SITE]: site?.getGuid(),
         [RS.SESSION]: session?.getGuid(),
         [RS.MEMO]: memo?.getGuid(),
@@ -863,6 +902,7 @@ export default class TimeEntries extends TimeEntriesModel {
     return {
       ...baseData,
       [RS.USER]: user ? await user.toJSON() : null,
+      [RS.DEVICE]: device ? await device.toJSON() : null,
       [RS.SITE]: site ? await site.toJSON(responseValue.MINIMAL) : null,
       [RS.SESSION]: session ? await session.toJSON(responseValue.MINIMAL) : null,
       [RS.MEMO]: memo ? await memo.toJSON(responseValue.FULL) : null,
@@ -948,6 +988,7 @@ export default class TimeEntries extends TimeEntriesModel {
     this.guid = data.guid;
     this.session = data.session;
     this.user = data.user;
+    this.device = data.device;
     this.site = data.site;
     this.pointage_type = data.pointage_type;
     this.pointage_status = data.pointage_status;

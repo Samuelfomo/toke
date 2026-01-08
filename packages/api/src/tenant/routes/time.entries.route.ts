@@ -35,6 +35,7 @@ import UserRole from '../class/UserRole.js';
 import { ValidationUtils } from '../../utils/view.validator.js';
 import AnomalyDetectionService, { AnomalyType } from '../../tools/anomaly.detection.service.js';
 import QrCodeGeneration from '../class/QrCodeGeneration.js';
+import Device from '../class/Device.js';
 
 const router = Router();
 
@@ -601,6 +602,14 @@ router.post(
         });
       }
 
+      const deviceObj = await Device._load(validatedData.device, true);
+      if (!deviceObj) {
+        return R.handleError(res, HttpStatus.NOT_FOUND, {
+          code: TIME_ENTRIES_CODES.DEVICE_NOT_FOUND,
+          message: TIME_ENTRIES_ERRORS.DEVICE_NOT_FOUND,
+        });
+      }
+
       // === ⚠️ GÉOFENCING VERIFICATION ===
       const geofenceCheck = await WorkSessions.validateGeofencing(
         siteObj.getId()!,
@@ -689,6 +698,7 @@ router.post(
           const entryObj = new TimeEntries()
             .setSession(sessionObj.getId()!)
             .setUser(userId)
+            .setDevice(deviceObj.getId()!)
             .setSite(siteObj.getId()!)
             .setPointageType(PointageType.CLOCK_IN)
             .setClockedAt(new Date(validatedData.clocked_at))
@@ -767,7 +777,11 @@ router.post(
         case PointageType.PAUSE_START: {
           // 🔍 DÉTECTION ANOMALIES
           const { anomalies, corrections, activeSession } =
-            await AnomalyDetectionService.detectPauseStartAnomalies(userId, validatedData);
+            await AnomalyDetectionService.detectPauseStartAnomalies(
+              userId,
+              validatedData,
+              deviceObj.getId()!,
+            );
 
           // 🆕 Vérification horaire pause
           const { anomalies: scheduleAnomalies, scheduleContext } =
@@ -792,6 +806,7 @@ router.post(
 
           const tempEntry = new TimeEntries()
             .setUser(userId)
+            .setDevice(deviceObj.getId()!)
             .setSite(siteObj.getId()!)
             .setPointageType(PointageType.PAUSE_START)
             .setClockedAt(new Date(validatedData.clocked_at))
@@ -874,6 +889,7 @@ router.post(
 
           const tempEntry = new TimeEntries()
             .setUser(userId)
+            .setDevice(deviceObj.getId()!)
             .setSite(siteObj.getId()!)
             .setPointageType(PointageType.PAUSE_START)
             .setClockedAt(new Date(validatedData.clocked_at))
@@ -938,6 +954,7 @@ router.post(
               userId,
               validatedData,
               siteObj,
+              deviceObj.getId()!,
             );
 
           // 🆕 AJOUTER VÉRIFICATION HORAIRE
@@ -962,6 +979,7 @@ router.post(
           const entryObj = new TimeEntries()
             .setSession(activeSession?.getId()!)
             .setUser(userId)
+            .setDevice(deviceObj.getId()!)
             .setSite(siteObj.getId()!)
             .setPointageType(PointageType.CLOCK_OUT)
             .setClockedAt(new Date(validatedData.clocked_at))
@@ -1055,6 +1073,7 @@ router.post(
               userId,
               validatedData,
               siteObj,
+              deviceObj.getId()!,
             );
 
           // Fusionner avec anomalies QR
@@ -1064,6 +1083,7 @@ router.post(
           const entryObj = new TimeEntries()
             .setSession(activeSession?.getId()!)
             .setUser(userId)
+            .setDevice(deviceObj.getId()!)
             .setSite(siteObj.getId()!)
             .setPointageType(PointageType.EXTERNAL_MISSION)
             .setClockedAt(new Date(validatedData.clocked_at))
@@ -1124,6 +1144,7 @@ router.post(
             userId,
             validatedData,
             siteObj,
+            deviceObj.getId()!,
           );
 
           // Fusionner avec anomalies QR
@@ -1133,6 +1154,7 @@ router.post(
           const entryObj = new TimeEntries()
             .setSession(activeSession?.getId()!)
             .setUser(userId)
+            .setDevice(deviceObj.getId()!)
             .setSite(siteObj.getId()!)
             .setPointageType(PointageType.EXTERNAL_MISSION_END)
             .setClockedAt(new Date(validatedData.clocked_at))

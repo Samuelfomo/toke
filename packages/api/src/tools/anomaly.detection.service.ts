@@ -275,6 +275,7 @@ class AnomalyDetectionService {
   async detectPauseStartAnomalies(
     userId: number,
     validatedData: any,
+    device: number,
   ): Promise<{
     anomalies: Anomaly[];
     corrections: any[];
@@ -320,6 +321,7 @@ class AnomalyDetectionService {
         const autoPauseEnd = new TimeEntries()
           .setSession(activeSession.getId()!)
           .setUser(userId)
+          .setDevice(device)
           .setSite(lastPause.getSite()!)
           .setPointageType(PointageType.PAUSE_END)
           .setClockedAt(new Date(validatedData.clocked_at - 60000))
@@ -432,6 +434,7 @@ class AnomalyDetectionService {
     userId: number,
     validatedData: any,
     siteObj: Site,
+    device: number,
   ): Promise<{
     anomalies: Anomaly[];
     corrections: any[];
@@ -481,6 +484,7 @@ class AnomalyDetectionService {
       const artificialEntry = new TimeEntries()
         .setSession(activeSession.getId()!)
         .setUser(userId)
+        .setDevice(device)
         .setSite(siteObj.getId()!)
         .setPointageType(PointageType.CLOCK_IN)
         .setClockedAt(estimatedEntry)
@@ -523,6 +527,7 @@ class AnomalyDetectionService {
       const autoPauseEnd = new TimeEntries()
         .setSession(activeSession.getId()!)
         .setUser(userId)
+        .setDevice(device)
         .setSite(activeSession.getSite()!)
         .setPointageType(PointageType.PAUSE_END)
         .setClockedAt(new Date(validatedData.clocked_at - 60000))
@@ -569,6 +574,7 @@ class AnomalyDetectionService {
     userId: number,
     validatedData: any,
     siteObj: Site,
+    device: number,
   ): Promise<{
     anomalies: Anomaly[];
     corrections: any[];
@@ -617,6 +623,7 @@ class AnomalyDetectionService {
       const artificialEntry = new TimeEntries()
         .setSession(activeSession.getId()!)
         .setUser(userId)
+        .setDevice(device)
         .setSite(siteObj.getId()!)
         .setPointageType(PointageType.CLOCK_IN)
         .setClockedAt(estimatedEntry)
@@ -668,6 +675,7 @@ class AnomalyDetectionService {
     userId: number,
     validatedData: any,
     siteObj: Site,
+    device: number,
   ): Promise<{
     anomalies: Anomaly[];
     corrections: any[];
@@ -716,6 +724,7 @@ class AnomalyDetectionService {
       const artificialClockIn = new TimeEntries()
         .setSession(activeSession.getId()!)
         .setUser(userId)
+        .setDevice(device)
         .setSite(siteObj.getId()!)
         .setPointageType(PointageType.CLOCK_IN)
         .setClockedAt(estimatedEntry)
@@ -734,6 +743,7 @@ class AnomalyDetectionService {
       const artificialMissionStart = new TimeEntries()
         .setSession(activeSession.getId()!)
         .setUser(userId)
+        .setDevice(device)
         .setSite(siteObj.getId()!)
         .setPointageType(PointageType.EXTERNAL_MISSION)
         .setClockedAt(estimatedMissionStart)
@@ -785,6 +795,7 @@ class AnomalyDetectionService {
         const artificialMissionStart = new TimeEntries()
           .setSession(activeSession.getId()!)
           .setUser(userId)
+          .setDevice(device)
           .setSite(siteObj.getId()!)
           .setPointageType(PointageType.EXTERNAL_MISSION)
           .setClockedAt(estimatedMissionStart)

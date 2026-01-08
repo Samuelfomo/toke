@@ -154,6 +154,20 @@ export const TimeEntriesDbStructure = {
       },
       comment: 'Geolocation accuracy',
     },
+    device: {
+      type: DataTypes.INTEGER,
+      allowNull: false,
+      references: {
+        model: tableName.DEVICE,
+        key: 'id',
+      },
+      validate: {
+        isInt: true,
+        min: 1,
+        max: 2147483647,
+      },
+      comment: 'Devices',
+    },
     device_info: {
       type: DataTypes.JSONB,
       allowNull: true,
@@ -269,6 +283,10 @@ export const TimeEntriesDbStructure = {
       {
         fields: ['user'],
         name: 'idx_time_entry_user',
+      },
+      {
+        fields: ['device'],
+        name: 'idx_time_entry_device',
       },
       {
         fields: ['site'],

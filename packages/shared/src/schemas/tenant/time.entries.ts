@@ -56,6 +56,15 @@ const baseTimeEntriesSchema = z.object({
     .max(TIME_ENTRIES_VALIDATION.USER.MAX_LENGTH, TIME_ENTRIES_ERRORS.USER_INVALID)
     .trim(),
 
+  device: z
+    .string({
+      required_error: TIME_ENTRIES_ERRORS.DEVICE_REQUIRED,
+      invalid_type_error: TIME_ENTRIES_ERRORS.DEVICE_INVALID,
+    })
+    .min(TIME_ENTRIES_VALIDATION.DEVICE.MIN_LENGTH, TIME_ENTRIES_ERRORS.DEVICE_INVALID)
+    .max(TIME_ENTRIES_VALIDATION.DEVICE.MAX_LENGTH, TIME_ENTRIES_ERRORS.DEVICE_INVALID)
+    .trim(),
+
   site: z
     .string({
       required_error: TIME_ENTRIES_ERRORS.SITE_REQUIRED,
@@ -221,6 +230,7 @@ export const timeEntriesFiltersSchema = z
   .object({
     session: z.number().int().optional(),
     user: z.number().int().optional(),
+    device: z.number().int().optional(),
     site: z.number().int().optional(),
     pointage_type: z.nativeEnum(PointageType).optional(),
     pointage_status: z.nativeEnum(PointageStatus).optional(),
@@ -250,6 +260,7 @@ const FIELD_TO_CODE_MAP: Record<string, TimeEntryCode> = {
   clocked_at: TIME_ENTRIES_CODES.CLOCKED_AT_INVALID,
   site: TIME_ENTRIES_CODES.SITE_INVALID,
   user: TIME_ENTRIES_CODES.USER_INVALID,
+  device: TIME_ENTRIES_CODES.DEVICE_INVALID,
   gps_accuracy: TIME_ENTRIES_CODES.GPS_ACCURACY_INVALID,
   qr_code: TIME_ENTRIES_CODES.QR_CODE_INVALID,
   device_info: TIME_ENTRIES_CODES.DEVICE_INFO_INVALID,
@@ -261,7 +272,7 @@ const FIELD_TO_CODE_MAP: Record<string, TimeEntryCode> = {
   local_id: TIME_ENTRIES_CODES.LOCAL_ID_INVALID,
   sync_attempts: TIME_ENTRIES_CODES.SYNC_ATTEMPTS_INVALID,
   last_sync_attempt: TIME_ENTRIES_CODES.LAST_SYNC_ATTEMPT_INVALID,
-  memo: TIME_ENTRIES_CODES.MEMO_INVALID,
+  memo: TIME_ENTRIES_CODES.MEMO_INVALID, 
 };
 
 // Fonction de validation pour la création
