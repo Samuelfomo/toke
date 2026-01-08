@@ -1104,14 +1104,7 @@ router.get('/:identifier', Ensure.get(), async (req: Request, res: Response) => 
     // Essayer différentes méthodes de recherche selon le format
     if (/^\d+$/.test(identifier)) {
       const numericId = parseInt(identifier);
-
-      // Essayer par ID d'abord
-      tenant = await Tenant._load(numericId);
-
-      // Si pas trouvé, essayer par GUID
-      if (!tenant) {
-        tenant = await Tenant._load(numericId, true);
-      }
+      tenant = await Tenant._load(numericId, true);
     } else {
       // 1️⃣ Essayer par clé
       tenant = await Tenant._load(identifier, false, true);
