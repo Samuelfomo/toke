@@ -11,12 +11,12 @@
 
   <section v-else class="dashboard-hero">
     <div class="hero-header">
-      <h1 class="hero-title">Tableau de bord</h1>
+      <h1 class="hero-title">Tableau de bord – ({{statistics.total_team_members}} membres)</h1>
       <div class="date-info">
         <div class="current-date">{{ formattedDate }}</div>
         <div class="last-update">Dernière mise à jour: {{ lastUpdate }}</div>
       </div>
-    </div>
+    </div> 
 
     <div class="stats-grid">
       <!-- Employés présents -->
@@ -29,7 +29,7 @@
         </div>
         <div class="stat-content">
           <div class="stat-number">
-            {{ statistics.present_to_days }}/{{ statistics.total_team_members }}
+            {{ statistics.present_to_days }}
           </div>
           <div class="stat-label">Employés présents</div>
           <div class="stat-percentage">{{ presencePercentage }}%</div>

@@ -134,6 +134,14 @@
         <span class="tab-label">Équipe</span>
       </a>
       <a
+        href="/site"
+        class="nav-tab"
+        :class="{ active: activeTab === '/site' }"
+        @click="setActiveTab('/site', $event)">
+        <IconMapPin />
+        <span class="tab-label">Site</span>
+      </a>
+      <a
         href="#"
         class="nav-tab"
         :class="{ active: activeTab === '/analytics' }"
@@ -164,6 +172,8 @@
 import { ref, onMounted, nextTick, onUnmounted } from 'vue'
 import { useUserStore } from '@/composables/userStore'
 import toke from '../../../public/images/toke.svg'
+import { IconMapPin } from '@tabler/icons-vue';
+
 
 import { useRouter } from 'vue-router'
 const router = useRouter()

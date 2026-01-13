@@ -10,6 +10,10 @@
  * Ne pas modifier sans validation design.
  */
 
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
 /* ===== CSS CUSTOM PROPERTIES (VARIABLES) ===== */
 :root {
   

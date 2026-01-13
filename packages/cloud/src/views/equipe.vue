@@ -1,11 +1,10 @@
 <template>
+  <Header
+    :user-name="currentUser.name"
+    :company-name="currentUser.company"
+    :notification-count="notificationCount"
+/>
   <section class="manager-team">
-    <Header
-      :user-name="currentUser.name"
-      :company-name="currentUser.company"
-      :notification-count="notificationCount"
-    />
-
     <!-- Loading State -->
     <div v-if="isLoadingEmployees" class="loading-container">
       <div class="loading-spinner"></div>
