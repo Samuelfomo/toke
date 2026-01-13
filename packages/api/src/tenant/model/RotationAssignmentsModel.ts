@@ -17,6 +17,7 @@ export default class RotationAssignmentModel extends BaseModel {
     user: 'user',
     team: 'team',
     rotation_group: 'rotation_group',
+    assigned_by: 'assigned_by',
     offset: 'offset',
     assigned_at: 'assigned_at',
     deleted_at: 'deleted_at',
@@ -33,6 +34,7 @@ export default class RotationAssignmentModel extends BaseModel {
   protected user?: number | null;
   protected team?: number | null;
   protected rotation_group?: number;
+  protected assigned_by?: number;
   protected offset?: number;
   protected assigned_at?: Date;
   protected deleted_at?: Date | null;
@@ -121,6 +123,13 @@ export default class RotationAssignmentModel extends BaseModel {
     return await this.listAll({ [this.db.user]: userId }, paginationOptions);
   }
 
+  protected async listAllByAssignedBy(
+    manager: number,
+    paginationOptions: { offset?: number; limit?: number } = {},
+  ): Promise<any[]> {
+    return await this.listAll({ [this.db.assigned_by]: manager }, paginationOptions);
+  }
+
   protected async listAllByTeam(
     teamId: number,
     paginationOptions: { offset?: number; limit?: number } = {},
@@ -197,6 +206,7 @@ export default class RotationAssignmentModel extends BaseModel {
       [this.db.user]: this.user,
       [this.db.team]: this.team,
       [this.db.rotation_group]: this.rotation_group,
+      [this.db.assigned_by]: this.assigned_by,
       [this.db.offset]: this.offset ?? ROTATION_ASSIGNMENT_DEFAULTS.OFFSET,
       [this.db.assigned_at]: this.assigned_at ?? ROTATION_ASSIGNMENT_DEFAULTS.ASSIGNED_AT,
     });
@@ -281,6 +291,10 @@ export default class RotationAssignmentModel extends BaseModel {
 
     if (!this.rotation_group) {
       throw new Error(ROTATION_ASSIGNMENT_ERRORS.ROTATION_GROUP_REQUIRED);
+    }
+
+    if (!this.assigned_by) {
+      throw new Error(ROTATION_ASSIGNMENT_ERRORS.ASSIGNED_BY_REQUIRED);
     }
 
     if (

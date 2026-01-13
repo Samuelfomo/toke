@@ -1256,7 +1256,7 @@ router.post('/otp', Ensure.post(), async (req: Request, res: Response) => {
         // Numéro déjà existant → ne pas envoyer l’OTP
         await OTPCacheService.deleteOTP(generateOtp);
         known_number = true;
-        return R.handleError(res, HttpStatus.SUCCESS, {
+        return R.handleSuccess(res, {
           otp_send: otp_send,
           known_number: known_number,
         });

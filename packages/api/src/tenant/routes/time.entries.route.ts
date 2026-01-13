@@ -615,29 +615,22 @@ router.post(
         siteObj.getId()!,
         validatedData.latitude,
         validatedData.longitude,
+        validatedData.gps_accuracy || deviceObj.getGpsAccuracy(),
+        deviceObj.getId(),
       );
 
-      // if (!geofenceCheck.access_granted) {
-      //   // ❌ REFUS POINTAGE
-      //   // // ✅ MAIS génération mémo automatique
-      //   // const autoMemo = await AnomalyDetectionService.generateGeofencingMemo(
-      //   //   userId,
-      //   //   siteObj,
-      //   //   validatedData,
-      //   //   geofenceCheck,
-      //   // );
-      //
-      //   return R.handleError(res, HttpStatus.FORBIDDEN, {
-      //     code: WORK_SESSIONS_CODES.GEOFENCE_VIOLATION,
-      //     message: WORK_SESSIONS_ERRORS.GEOFENCE_VIOLATION,
-      //     details: {
-      //       distance_from_center: geofenceCheck.distance_from_center,
-      //       max_allowed: siteObj.getGeofenceRadius(),
-      //       // auto_memo_created: true,
-      //       // memo_guid: autoMemo.getGuid(),
-      //     },
-      //   });
-      // }
+      // 🆕 Log détaillé si rayon personnalisé utilisé
+      if (geofenceCheck.custom_device_radius_applied) {
+        console.log(`
+⚡ RAYON PERSONNALISÉ DEVICE APPLIQUÉ
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+Device: ${deviceObj?.getName()}
+Rayon Site: ${geofenceCheck.site_radius}m
+Rayon Device: ${geofenceCheck.device_radius}m
+Rayon Effectif: ${geofenceCheck.effective_radius}m
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+        `);
+      }
 
       // selon moi la mise a jours de la verification des habilitations a faire devrait se faire a ce niveau 👇
 
@@ -657,7 +650,6 @@ router.post(
         });
       }
 
-      // const { anomalies, corrections } = await AnomalyDetectionService.detectAccessAnomalies(userId, qrCodeObj)
       const { anomalies: qrAnomalies, corrections: qrCorrections } =
         await AnomalyDetectionService.detectAccessAnomalies(userId, qrCodeObj);
 

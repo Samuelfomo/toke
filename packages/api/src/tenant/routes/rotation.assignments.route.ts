@@ -158,6 +158,14 @@ router.post('/', Ensure.post(), async (req: Request, res: Response) => {
       });
     }
 
+    const assignedByObj = await User._load(validatedData.assigned_by, true);
+    if (!assignedByObj) {
+      return R.handleError(res, HttpStatus.NOT_FOUND, {
+        code: ROTATION_ASSIGNMENT_CODES.ASSIGNED_BY_NOT_FOUND,
+        message: ROTATION_ASSIGNMENT_ERRORS.ASSIGNED_BY_NOT_FOUND,
+      });
+    }
+
     if (validatedData.user && validatedData.team) {
       return R.handleError(res, HttpStatus.BAD_REQUEST, {
         code: ROTATION_ASSIGNMENT_CODES.VALIDATION_FAILED,
@@ -174,6 +182,7 @@ router.post('/', Ensure.post(), async (req: Request, res: Response) => {
 
     const assignmentObj = new RotationAssignment()
       .setRotationGroup(groupObj.getId()!)
+      .setAssignedBy(assignedByObj.getId()!)
       .setOffset(validatedData.offset ?? ROTATION_ASSIGNMENT_DEFAULTS.OFFSET)
       .setAssignedAt(
         validatedData.assigned_at instanceof Date

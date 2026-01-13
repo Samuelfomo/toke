@@ -23,6 +23,7 @@ import { TenantRevision } from '../../tools/revision.js';
 import User from './User.js';
 import Site from './Site.js';
 import TimeEntries from './TimeEntries.js';
+import Device from './Device.js';
 
 export default class WorkSessions extends WorkSessionsModel {
   private userObj?: User;
@@ -136,36 +137,42 @@ export default class WorkSessions extends WorkSessionsModel {
 
   /**
    * ✅ Validation géofencing avec calcul distance réel
-   * @param site_id - ID du site
+   * @param site - ID du site
    * @param latitude - Latitude GPS utilisateur
    * @param longitude - Longitude GPS utilisateur
    * @param gps_accuracy - Précision GPS en mètres (optionnel)
+   * @param device - ID du device pour rayon personnalisé (optionnel)
    * @returns Résultat validation avec détails
    */
   static async validateGeofencing(
-    site_id: number,
+    site: number,
     latitude: number,
     longitude: number,
     gps_accuracy?: number,
+    device?: number,
   ): Promise<{
     access_granted: boolean;
     distance_from_center: number;
     within_geofence: boolean;
     tolerance_applied: number;
     site_radius: number;
+    effective_radius: number;
     gps_accuracy_applied?: number;
+    custom_device_radius_applied?: boolean;
+    device_radius?: number;
   }> {
     try {
       // 1. Récupérer site avec données géospatiales
-      const siteObj = await Site._load(site_id);
+      const siteObj = await Site._load(site);
       if (!siteObj) {
-        console.error(`❌ Site ${site_id} introuvable pour validation géofencing`);
+        console.error(`❌ Site ${site} introuvable pour validation géofencing`);
         return {
           access_granted: false,
           distance_from_center: -1,
           within_geofence: false,
           tolerance_applied: 0,
           site_radius: 0,
+          effective_radius: 0,
         };
       }
 
@@ -174,20 +181,39 @@ export default class WorkSessions extends WorkSessionsModel {
       const geofenceRadius = siteObj.getGeofenceRadius();
 
       if (!geofencePolygon || !geofenceRadius) {
-        console.error(`❌ Site ${site_id} sans données géofencing`);
+        console.error(`❌ Site ${site} sans données géofencing`);
         return {
           access_granted: false,
           distance_from_center: -1,
           within_geofence: false,
           tolerance_applied: 0,
           site_radius: 0,
+          effective_radius: 0,
         };
       }
 
-      // 3. Calculer centre du polygone (centroid)
+      // 3. Vérifier si le device a un rayon personnalisé
+      let customDeviceRadius: number | undefined;
+      let deviceObj: Device | null = null;
+
+      if (device) {
+        deviceObj = await Device._load(device);
+        if (deviceObj && deviceObj.getCustomGeofenceRadius()) {
+          customDeviceRadius = deviceObj.getCustomGeofenceRadius();
+          console.log(`📱 Device ${device} a un rayon personnalisé: ${customDeviceRadius}m`);
+        }
+      }
+
+      // 4. Déterminer le rayon de base à utiliser
+      // Priorité: Device personnalisé > Rayon du site
+
+      const baseRadius = customDeviceRadius || geofenceRadius;
+      const isCustomRadiusUsed = customDeviceRadius !== undefined;
+
+      // 5. Calculer centre du polygone (centroid)
       const siteCenter = this.calculatePolygonCentroid(geofencePolygon);
 
-      // 4. Calculer distance utilisateur <-> centre site (Haversine)
+      // 6. Calculer distance utilisateur <-> centre site (Haversine)
       const distanceFromCenter = calculateDistance(
         latitude,
         longitude,
@@ -195,27 +221,32 @@ export default class WorkSessions extends WorkSessionsModel {
         siteCenter.lng,
       );
 
-      // 5. Appliquer tolérance GPS si fournie
+      // 7. Appliquer tolérance GPS si fournie
       // Si GPS accuracy = 15m, on ajoute 15m de marge
       const gpsToleranceBonus = gps_accuracy && gps_accuracy > 0 ? Math.min(gps_accuracy, 30) : 0; // Max 30m bonus
       const effectiveRadius = geofenceRadius + gpsToleranceBonus;
 
-      // 6. Vérifier si dans le rayon autorisé
+      // 8. Vérifier si dans le rayon autorisé
       const withinGeofence = distanceFromCenter <= effectiveRadius;
 
-      // 7. Logging pour debug
+      // 9. Logging pour debug
       console.log(`
 🛰️  GÉOFENCING VALIDATION
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-📍 Site: ${siteObj.getName()} (ID: ${site_id})
+📍 Site: ${siteObj.getName()} (ID: ${site})
 📌 Centre Site: ${siteCenter.lat.toFixed(6)}, ${siteCenter.lng.toFixed(6)}
 📱 Position User: ${latitude.toFixed(6)}, ${longitude.toFixed(6)}
 📏 Distance: ${distanceFromCenter.toFixed(2)}m
-🎯 Rayon Base: ${geofenceRadius}m
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+🎯 Rayon Site: ${geofenceRadius}m
+${isCustomRadiusUsed ? `📱 Rayon Device Personnalisé: ${customDeviceRadius}m ⭐` : ''}
+🔧 Rayon Base Utilisé: ${baseRadius}m ${isCustomRadiusUsed ? '(Device)' : '(Site)'}
 📡 GPS Accuracy: ${gps_accuracy || 0}m
-➕ Bonus Tolérance: ${gpsToleranceBonus}m
-✅ Rayon Effectif: ${effectiveRadius}m
+➕ Bonus Tolérance GPS: ${gpsToleranceBonus}m
+✅ Rayon Effectif Final: ${effectiveRadius}m
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 ${withinGeofence ? '✅ ACCÈS AUTORISÉ' : '❌ ACCÈS REFUSÉ'}
+${isCustomRadiusUsed ? '⚡ Rayon personnalisé device appliqué' : ''}
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
     `);
 
@@ -225,7 +256,10 @@ ${withinGeofence ? '✅ ACCÈS AUTORISÉ' : '❌ ACCÈS REFUSÉ'}
         within_geofence: withinGeofence,
         tolerance_applied: Math.round(gpsToleranceBonus),
         site_radius: geofenceRadius,
+        effective_radius: Math.round(effectiveRadius),
         gps_accuracy_applied: gps_accuracy,
+        custom_device_radius_applied: isCustomRadiusUsed,
+        device_radius: customDeviceRadius,
       };
     } catch (error) {
       console.error('❌ Erreur validation géofencing:', error);
@@ -235,6 +269,7 @@ ${withinGeofence ? '✅ ACCÈS AUTORISÉ' : '❌ ACCÈS REFUSÉ'}
         within_geofence: false,
         tolerance_applied: 0,
         site_radius: 0,
+        effective_radius: 0,
       };
     }
   }

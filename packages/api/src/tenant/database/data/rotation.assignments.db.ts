@@ -79,6 +79,18 @@ export const RotationAssignmentsDbStructure = {
       },
       comment: 'Offset in the rotation cycle for this user',
     },
+    assigned_by: {
+      type: DataTypes.INTEGER,
+      allowNull: false,
+      references: {
+        model: tableName.USERS,
+        key: 'id',
+      },
+      validate: {
+        isInt: true,
+      },
+      comment: 'User ID who assign the rotation',
+    },
     assigned_at: {
       type: DataTypes.DATE,
       allowNull: false,
@@ -119,6 +131,10 @@ export const RotationAssignmentsDbStructure = {
       {
         fields: ['rotation_group'],
         name: 'idx_rotation_assignments_rotation_group',
+      },
+      {
+        fields: ['assigned_by'],
+        name: 'idx_rotation_assignments_assigned_by',
       },
       {
         fields: ['assigned_at'],

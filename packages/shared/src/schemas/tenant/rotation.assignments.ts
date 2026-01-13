@@ -22,6 +22,21 @@ const baseRotationAssignmentSchema = z.object({
     .nullable()
     .optional(),
 
+  assigned_by: z
+    .string({
+      required_error: ROTATION_ASSIGNMENT_ERRORS.ASSIGNED_BY_REQUIRED,
+      invalid_type_error: ROTATION_ASSIGNMENT_ERRORS.ASSIGNED_BY_INVALID,
+    })
+    .trim()
+    .min(
+      ROTATION_ASSIGNMENT_VALIDATION.ASSIGNED_BY.MIN_LENGTH,
+      ROTATION_ASSIGNMENT_ERRORS.ASSIGNED_BY_INVALID,
+    )
+    .max(
+      ROTATION_ASSIGNMENT_VALIDATION.ASSIGNED_BY.MAX_LENGTH,
+      ROTATION_ASSIGNMENT_ERRORS.ASSIGNED_BY_INVALID,
+    ),
+
   team: z
     .string({
       invalid_type_error: ROTATION_ASSIGNMENT_ERRORS.TEAM_INVALID,
@@ -96,6 +111,7 @@ export const updateRotationAssignmentSchema = baseRotationAssignmentSchema.parti
 export const rotationAssignmentFiltersSchema = z
   .object({
     user: z.number().int().optional(),
+    assigned_by: z.number().int().optional(),
     team: z.number().int().optional(),
     rotation_group: z.number().int().optional(),
     offset: z.number().int().optional(),
@@ -113,6 +129,7 @@ export const rotationAssignmentGuidSchema = z
 // Shared constant for field -> code mapping
 const FIELD_TO_CODE_MAP: Record<string, RotationAssignmentCode> = {
   user: ROTATION_ASSIGNMENT_CODES.USER_INVALID,
+  assigned_by: ROTATION_ASSIGNMENT_CODES.ASSIGNED_BY_INVALID,
   team: ROTATION_ASSIGNMENT_CODES.TEAM_INVALID,
   rotation_group: ROTATION_ASSIGNMENT_CODES.ROTATION_GROUP_INVALID,
   offset: ROTATION_ASSIGNMENT_CODES.OFFSET_INVALID,

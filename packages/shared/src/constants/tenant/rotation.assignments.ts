@@ -9,6 +9,10 @@ export const ROTATION_ASSIGNMENT_VALIDATION = {
     MIN_LENGTH: 1,
     MAX_LENGTH: 255,
   },
+  ASSIGNED_BY: {
+    MIN_LENGTH: 1,
+    MAX_LENGTH: 255,
+  },
   TEAM: {
     MIN_LENGTH: 1,
     MAX_LENGTH: 255,
@@ -40,6 +44,9 @@ export const ROTATION_ASSIGNMENT_CODES = {
   INVALID_GUID: 'invalid_guid',
   USER_INVALID: 'user_invalid',
   USER_NOT_FOUND: 'user_not_found',
+  ASSIGNED_BY_REQUIRED: 'assigned_by_required',
+  ASSIGNED_BY_INVALID: 'assigned_by_invalid',
+  ASSIGNED_BY_NOT_FOUND: 'assigned_by_not_found',
   TEAM_INVALID: 'team_invalid',
   TEAM_NOT_FOUND: 'team_not_found',
   USER_OR_TEAM_REQUIRED: 'user_or_team_required',
@@ -71,6 +78,10 @@ export const ROTATION_ASSIGNMENT_ERRORS = {
 
   USER_INVALID: `User GUID must be between ${ROTATION_ASSIGNMENT_VALIDATION.USER.MIN_LENGTH} and ${ROTATION_ASSIGNMENT_VALIDATION.USER.MAX_LENGTH} letters or numbers`,
   USER_NOT_FOUND: 'User not found',
+
+  ASSIGNED_BY_INVALID: `Assigned_by GUID must be between ${ROTATION_ASSIGNMENT_VALIDATION.ASSIGNED_BY.MIN_LENGTH} and ${ROTATION_ASSIGNMENT_VALIDATION.ASSIGNED_BY.MAX_LENGTH} letters or numbers`,
+  ASSIGNED_BY_NOT_FOUND: 'Assigned_by not found',
+  ASSIGNED_BY_REQUIRED: 'Assigned_by not found',
 
   TEAM_INVALID: `Team GUID must be between ${ROTATION_ASSIGNMENT_VALIDATION.TEAM.MIN_LENGTH} and ${ROTATION_ASSIGNMENT_VALIDATION.TEAM.MAX_LENGTH} characters`,
   TEAM_NOT_FOUND: 'Rotation Team not found',

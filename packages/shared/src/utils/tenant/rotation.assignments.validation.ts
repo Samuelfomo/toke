@@ -91,6 +91,13 @@ export class RotationAssignmentValidationUtils {
       }
     }
 
+    if (cleaned.assigned_by !== undefined) {
+      cleaned.assigned_by = parseInt(cleaned.assigned_by, 10);
+      if (isNaN(cleaned.assigned_by)) {
+        throw new Error('Invalid assigned_by: must be a valid integer');
+      }
+    }
+
     if (cleaned.team !== undefined && cleaned.team !== null) {
       cleaned.team = parseInt(cleaned.team, 10);
       if (isNaN(cleaned.team)) {

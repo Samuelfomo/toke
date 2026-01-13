@@ -16,6 +16,7 @@ export default class DeviceModel extends BaseModel {
     id: 'id',
     guid: 'guid',
     name: 'name',
+    // identified: 'identified',
     device_type: 'device_type',
     assigned_to: 'assigned_to',
     gps_accuracy: 'gps_accuracy',
@@ -30,6 +31,7 @@ export default class DeviceModel extends BaseModel {
   protected id?: number;
   protected guid?: string;
   protected name?: string;
+  // protected identified?: string;
   protected device_type?: string;
   protected assigned_to?: number;
   protected gps_accuracy?: number;
@@ -53,6 +55,10 @@ export default class DeviceModel extends BaseModel {
   protected async findByGuid(guid: string): Promise<any> {
     return await this.findOne(this.db.tableName, { [this.db.guid]: guid });
   }
+
+  // protected async findByIdentified(identified: string): Promise<any> {
+  //   return await this.findOne(this.db.tableName, { [this.db.identified]: identified });
+  // }
 
   // === RECHERCHES PAR CRITÈRES ===
 
@@ -162,6 +168,11 @@ export default class DeviceModel extends BaseModel {
     if (!guid) {
       throw new Error(DEVICES_ERRORS.GUID_GENERATION_FAILED);
     }
+
+    // const existingIdentified = await this.findByIdentified(this.identified);
+    // if (existingIdentified) {
+    //   throw new Error('Identifier already exists');
+    // }
 
     const lastID = await this.insertOne(this.db.tableName, {
       [this.db.guid]: guid,

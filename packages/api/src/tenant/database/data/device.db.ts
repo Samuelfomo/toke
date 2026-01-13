@@ -37,6 +37,17 @@ export const DeviceDbStructure = {
       },
       comment: 'Device Name',
     },
+    // identified: {
+    //   type: DataTypes.STRING(255),
+    //   allowNull: false,
+    //   unique: { name: 'unique_device_identified', msg: 'Device Identified must be unique.' },
+    //   validate: {
+    //     len: [1, 255],
+    //     nullable: false,
+    //     notEmpty: true,
+    //   },
+    //   comment: 'Device identified',
+    // },
     device_type: {
       type: DataTypes.ENUM(...Object.values(DeviceType)),
       allowNull: false,
@@ -134,6 +145,10 @@ export const DeviceDbStructure = {
         fields: ['name'],
         name: 'idx_device_name',
       },
+      // {
+      //   fields: ['identified'],
+      //   name: 'idx_device_identified',
+      // },
       {
         fields: ['device_type'],
         name: 'idx_device_type',

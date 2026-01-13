@@ -17,6 +17,7 @@ import Teams from './Teams.js';
 
 export default class RotationAssignment extends RotationAssignmentModel {
   private userObj?: User;
+  private assignedByObj?: User;
   private teamsObj?: Teams;
   private rotationGroupObj?: RotationGroup;
 
@@ -49,6 +50,13 @@ export default class RotationAssignment extends RotationAssignmentModel {
     paginationOptions: { offset?: number; limit?: number } = {},
   ): Promise<RotationAssignment[] | null> {
     return new RotationAssignment().listByUser(userId, paginationOptions);
+  }
+
+  static _listByAssignedBy(
+    manager: number,
+    paginationOptions: { offset?: number; limit?: number } = {},
+  ): Promise<RotationAssignment[] | null> {
+    return new RotationAssignment().listByAssignedBy(manager, paginationOptions);
   }
 
   static _listByTeam(
@@ -112,12 +120,24 @@ export default class RotationAssignment extends RotationAssignmentModel {
     return this.user;
   }
 
+  getAssignedBy(): number | undefined {
+    return this.assigned_by;
+  }
+
   async getUserObj(): Promise<User | null> {
     if (!this.user) return null;
     if (!this.userObj) {
       this.userObj = (await User._load(this.user)) || undefined;
     }
     return this.userObj || null;
+  }
+
+  async getAssignedByObj(): Promise<User | null> {
+    if (!this.assigned_by) return null;
+    if (!this.assignedByObj) {
+      this.assignedByObj = (await User._load(this.assigned_by)) || undefined;
+    }
+    return this.assignedByObj || null;
   }
 
   getTeam(): number | null | undefined {
@@ -163,6 +183,12 @@ export default class RotationAssignment extends RotationAssignmentModel {
   setUser(userId: number | null): RotationAssignment {
     this.user = userId;
     this.userObj = undefined; // Reset cache
+    return this;
+  }
+
+  setAssignedBy(manager: number): RotationAssignment {
+    this.assigned_by = manager;
+    this.assignedByObj = undefined; // Reset cache
     return this;
   }
 
@@ -297,6 +323,15 @@ export default class RotationAssignment extends RotationAssignmentModel {
     return dataset.map((data) => new RotationAssignment().hydrate(data));
   }
 
+  async listByAssignedBy(
+    manager: number,
+    paginationOptions: { offset?: number; limit?: number } = {},
+  ): Promise<RotationAssignment[] | null> {
+    const dataset = await this.listAllByAssignedBy(manager, paginationOptions);
+    if (!dataset || dataset.length === 0) return null;
+    return dataset.map((data) => new RotationAssignment().hydrate(data));
+  }
+
   async listByTeam(
     teamId: number,
     paginationOptions: { offset?: number; limit?: number } = {},
@@ -334,6 +369,7 @@ export default class RotationAssignment extends RotationAssignmentModel {
 
   async toJSON(view: ViewMode = responseValue.FULL): Promise<object> {
     const userObj = await this.getUserObj();
+    const assignedByObj = await this.getAssignedByObj();
     const teamObj = await this.getTeamObj();
     const rotationGroupObj = await this.getRotationGroupObj();
 
@@ -347,6 +383,7 @@ export default class RotationAssignment extends RotationAssignmentModel {
       return {
         ...baseData,
         [RS.USER]: userObj ? userObj.getGuid() : null,
+        [RS.ASSIGNED_BY]: assignedByObj ? assignedByObj.getGuid() : null,
         [RS.TEAM]: teamObj ? teamObj.getGuid() : null,
         [RS.ROTATION_GROUP]: rotationGroupObj ? rotationGroupObj.getGuid() : null,
       };
@@ -355,6 +392,7 @@ export default class RotationAssignment extends RotationAssignmentModel {
     return {
       ...baseData,
       [RS.USER]: userObj ? await userObj.toJSON() : null,
+      [RS.ASSIGNED_BY]: assignedByObj ? await assignedByObj.toJSON() : null,
       [RS.TEAM]: teamObj ? await teamObj.toJSON() : null,
       [RS.ROTATION_GROUP]: rotationGroupObj
         ? await rotationGroupObj.toJSON(responseValue.MINIMAL)
@@ -370,6 +408,7 @@ export default class RotationAssignment extends RotationAssignmentModel {
     this.id = data.id;
     this.guid = data.guid;
     this.user = data.user;
+    this.assigned_by = data.assigned_by;
     this.team = data.team;
     this.rotation_group = data.rotation_group;
     this.offset = data.offset;
