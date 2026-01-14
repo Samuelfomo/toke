@@ -9,6 +9,7 @@ import tenantRoute from './src/routes/tenant.route.js';
 import userRoute from './src/routes/user.route.js';
 import timeEntriesRoute from './src/routes/time.entries.route.js';
 import memosRoute from './src/routes/memos.route.js';
+import siteRoute from './src/routes/site.route.js';
 
 dotenv.config();
 
@@ -159,6 +160,7 @@ export default class App {
     this.app.use('/tenant', tenantRoute);
     this.app.use('/user', userRoute);
     this.app.use('/time-entries', timeEntriesRoute);
+    this.app.use('/site', siteRoute);
     this.app.use('/uploads', memosRoute);
 
     // Route 404

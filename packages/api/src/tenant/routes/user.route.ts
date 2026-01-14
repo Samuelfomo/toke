@@ -2102,12 +2102,17 @@ router.get('/attendance/active-sessions', Ensure.get(), async (req: Request, res
  * 📊 Vue d'ensemble complète de la présence aujourd'hui
  * Inclut : présents, retards, absents basés sur les horaires assignés
  */
-router.get('/attendance/today', Ensure.get(), async (req: Request, res: Response) => {
+router.get('/attendance/stat', Ensure.get(), async (req: Request, res: Response) => {
   try {
-    const { manager, site } = req.query;
+    const { manager, site, date } = req.query;
 
     // Définir le début et la fin de la journée
-    const today = TimezoneConfigUtils.getCurrentTime();
+    let today: Date = TimezoneConfigUtils.getCurrentTime();
+
+    if (typeof date === 'string' && UsersValidationUtils.isValidDate(date)) {
+      today = new Date(date);
+    }
+
     const startOfDay = new Date(today);
     startOfDay.setHours(0, 0, 0, 0);
 

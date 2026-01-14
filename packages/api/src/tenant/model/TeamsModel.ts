@@ -13,6 +13,7 @@ export default class TeamsModel extends BaseModel {
     manager: 'manager',
     members: 'members',
     assigned_sessions: 'assigned_sessions',
+    // rotation_group: 'rotation_group',
     created_at: 'created_at',
     updated_at: 'updated_at',
     deleted_at: 'deleted_at',
@@ -28,6 +29,7 @@ export default class TeamsModel extends BaseModel {
   protected manager?: number;
   protected members: TI.TeamMember[] = [];
   protected assigned_sessions: TI.AssignedSession[] = [];
+  // protected rotation_group: TI.RotationGroup[] = [];
   protected created_at?: Date;
   protected updated_at?: Date;
   protected deleted_at?: Date;

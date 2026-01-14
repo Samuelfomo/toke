@@ -48,7 +48,7 @@ export class UserService {
   ): Promise<{ status: number; response: object }> {
     try {
       const api = await getApiClient(reference);
-      const response = await api.get(`${userBaseUrl}/attendance/today?manager=${data}`);
+      const response = await api.get(`${userBaseUrl}/attendance/stat?manager=${data}`);
 
       return {
         status: response.status,

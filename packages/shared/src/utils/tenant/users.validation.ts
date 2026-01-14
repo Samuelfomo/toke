@@ -49,7 +49,7 @@ export class UsersValidationUtils {
   /**
    * Validates last name
    */
-  static validateLastName(lastName: string): boolean {
+  static validateLastName(lastName: any): boolean {
     if (!lastName || typeof lastName !== 'string') return false;
     const trimmed = lastName.trim();
     return (
@@ -61,7 +61,7 @@ export class UsersValidationUtils {
   /**
    * Validates phone number
    */
-  static validatePhoneNumber(phoneNumber: string | null): boolean {
+  static validatePhoneNumber(phoneNumber: any): boolean {
     if (phoneNumber === null || phoneNumber === undefined) return true;
     if (typeof phoneNumber !== 'string') return false;
 
@@ -75,7 +75,7 @@ export class UsersValidationUtils {
   /**
    * Validates country code ISO 3166-1 alpha-2
    */
-  static validateCountryCode(country: string): boolean {
+  static validateCountryCode(country: any): boolean {
     if (!country || typeof country !== 'string') return false;
     const trimmed = country.trim().toUpperCase();
     return USERS_VALIDATION.COUNTRY.PATTERN.test(trimmed);
@@ -84,7 +84,7 @@ export class UsersValidationUtils {
   /**
    * Validates employee code
    */
-  static validateEmployeeCode(employeeCode: string | null): boolean {
+  static validateEmployeeCode(employeeCode: any): boolean {
     if (employeeCode === null || employeeCode === undefined) return true;
     if (typeof employeeCode !== 'string') return false;
 
@@ -98,7 +98,7 @@ export class UsersValidationUtils {
   /**
    * Validates PIN hash
    */
-  static validatePinHash(pinHash: string | null): boolean {
+  static validatePinHash(pinHash: any): boolean {
     if (pinHash === null || pinHash === undefined) return true;
     if (typeof pinHash !== 'string') return false;
 
@@ -108,7 +108,7 @@ export class UsersValidationUtils {
   /**
    * Validates password hash
    */
-  static validatePasswordHash(passwordHash: string | null): boolean {
+  static validatePasswordHash(passwordHash: any): boolean {
     if (passwordHash === null || passwordHash === undefined) return true;
     if (typeof passwordHash !== 'string') return false;
 
@@ -122,7 +122,7 @@ export class UsersValidationUtils {
   /**
    * Validates OTP token
    */
-  static validateOtpToken(otpToken: string | null): boolean {
+  static validateOtpToken(otpToken: any): boolean {
     if (otpToken === null || otpToken === undefined) return true;
     if (typeof otpToken !== 'string') return false;
 
@@ -141,11 +141,29 @@ export class UsersValidationUtils {
     const expirationDate = new Date(date);
     return !isNaN(expirationDate.getTime());
   }
+  /**
+   * Validates date value
+   */
+  static isValidDate(value: any): boolean {
+    if (typeof value !== 'string') return false;
+
+    const trimmed = value.trim();
+    const dateRegex = /^\d{4}-\d{2}-\d{2}$/;
+    if (!dateRegex.test(trimmed)) return false;
+
+    const date = new Date(trimmed);
+    if (isNaN(date.getTime())) return false;
+
+    // Vérification forte pour éviter 2026-02-31, 2026-13-40, etc.
+    const [y, m, d] = trimmed.split('-').map(Number);
+
+    return date.getUTCFullYear() === y && date.getUTCMonth() + 1 === m && date.getUTCDate() === d;
+  }
 
   /**
    * Validates QR code token
    */
-  static validateQrCodeToken(qrToken: string | null): boolean {
+  static validateQrCodeToken(qrToken: any): boolean {
     if (qrToken === null || qrToken === undefined) return true;
     if (typeof qrToken !== 'string') return false;
 
