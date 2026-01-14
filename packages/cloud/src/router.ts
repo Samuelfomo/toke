@@ -19,6 +19,8 @@ import EmployeeForm from './views/employeeForm.vue'
 import Setting from './views/setting.vue'
 import MemoDetails from './views/memo/memoDetails.vue';
 import Site from './views/site/site.vue';
+import Edit from './views/site/siteForm.vue';
+import MapVue from './views/site/siteMap.vue';
 
 import { useUserStore } from '@/composables/userStore'
 
@@ -78,9 +80,26 @@ const routes: RouteRecordRaw[] = [
     component: Equipe,
     meta: { requiresAuth: true },
   },{
-    path: '/site',
-    name: 'site',
+    path: '/sites',
+    name: 'sites',
     component: Site,
+    meta: { requiresAuth: true },
+  },{
+    path: '/sites/edit',
+    name: 'edit',
+    component: Edit,
+    meta: { requiresAuth: true },
+  },
+    {
+    path: '/sites/add',
+    name: 'add',
+    component: Edit,
+    meta: { requiresAuth: true },
+  },
+    {
+    path: '/sites/map',
+    name: 'map',
+    component: MapVue,
     meta: { requiresAuth: true },
   },
   {

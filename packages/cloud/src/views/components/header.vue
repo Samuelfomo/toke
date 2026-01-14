@@ -134,10 +134,10 @@
         <span class="tab-label">Équipe</span>
       </a>
       <a
-        href="/site"
+        href="/sites"
         class="nav-tab"
-        :class="{ active: activeTab === '/site' }"
-        @click="setActiveTab('/site', $event)">
+        :class="{ active: activeTab === '/sites' }"
+        @click="setActiveTab('/sites', $event)">
         <IconMapPin />
         <span class="tab-label">Site</span>
       </a>
@@ -174,8 +174,10 @@ import { useUserStore } from '@/composables/userStore'
 import toke from '../../../public/images/toke.svg'
 import { IconMapPin } from '@tabler/icons-vue';
 
+import dashboardCss from "@/assets/css/toke-dMain-04.css?url"
 
 import { useRouter } from 'vue-router'
+import HeadBuilder from "@/utils/HeadBuilder";
 const router = useRouter()
 
 
@@ -338,6 +340,11 @@ const setActiveTab = (path: string, event: MouseEvent) => {
 onMounted(() => {
   updateIndicator()
   window.addEventListener('resize', updateIndicator)
+  HeadBuilder.apply({
+    title: 'Toké',
+    css: [dashboardCss],
+    meta: { viewport: "width=device-width, initial-scale=1.0" }
+  });
 })
 
 onUnmounted(() => {
