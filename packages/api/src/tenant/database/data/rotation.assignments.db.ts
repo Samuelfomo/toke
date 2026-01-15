@@ -43,19 +43,19 @@ export const RotationAssignmentsDbStructure = {
       validate: {
         isInt: true,
       },
-      comment: 'Reference to user (nullable for team rotation)',
+      comment: 'Reference to user (nullable for groups rotation)',
     },
-    team: {
+    groups: {
       type: DataTypes.INTEGER,
       allowNull: true,
       references: {
-        model: tableName.TEAMS,
+        model: tableName.GROUPS,
         key: 'id',
       },
       validate: {
         isInt: true,
       },
-      comment: 'Reference to team (nullable for user rotation )',
+      comment: 'Reference to groups (nullable for user rotation )',
     },
     rotation_group: {
       type: DataTypes.INTEGER,
@@ -150,26 +150,26 @@ export const RotationAssignmentsDbStructure = {
         name: 'unique_user_rotation',
         where: {
           deleted_at: null,
-          user: { [Op.not]: null }, // Éviter les conflits avec les teams
+          user: { [Op.not]: null }, // Éviter les conflits avec les groups
         },
       },
       {
         unique: true,
-        fields: ['team', 'rotation_group'],
-        name: 'unique_team_rotation',
+        fields: ['groups', 'rotation_group'],
+        name: 'unique_groups_rotation',
         where: {
           deleted_at: null,
-          team: { [Op.not]: null }, // Éviter les conflits avec les users
+          groups: { [Op.not]: null }, // Éviter les conflits avec les users
         },
       },
     ],
     validate: {
-      eitherUserOrTeam() {
-        if (!this.user && !this.team) {
-          throw new Error('Either user or team must be specified');
+      eitherUserOrGroups() {
+        if (!this.user && !this.groups) {
+          throw new Error('Either user or groups must be specified');
         }
-        if (this.user && this.team) {
-          throw new Error('Only one of user or team must be specified, not both');
+        if (this.user && this.groups) {
+          throw new Error('Only one of user or groups must be specified, not both');
         }
       },
       dateNotTooFarInPast() {

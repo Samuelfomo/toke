@@ -51,19 +51,19 @@ export const ScheduleExceptionsDbStructure = {
       validate: {
         isInt: true,
       },
-      comment: 'Reference to user (nullable for team exceptions)',
+      comment: 'Reference to user (nullable for groups exceptions)',
     },
-    team: {
+    groups: {
       type: DataTypes.INTEGER,
       allowNull: true,
       references: {
-        model: tableName.TEAMS,
+        model: tableName.GROUPS,
         key: 'id',
       },
       validate: {
         isInt: true,
       },
-      comment: 'Reference to team (nullable for user exceptions)',
+      comment: 'Reference to groups (nullable for user exceptions)',
     },
     session_template: {
       type: DataTypes.INTEGER,
@@ -152,8 +152,8 @@ export const ScheduleExceptionsDbStructure = {
         name: 'idx_schedule_exceptions_user',
       },
       {
-        fields: ['team'],
-        name: 'idx_schedule_exceptions_team',
+        fields: ['groups'],
+        name: 'idx_schedule_exceptions_groups',
       },
       {
         fields: ['session_template'],
@@ -195,15 +195,15 @@ export const ScheduleExceptionsDbStructure = {
           user: { [Op.not]: null },
         },
       },
-      // ✅ NOUVELLE CONTRAINTE : UNE SEULE exception active par team
+      // ✅ NOUVELLE CONTRAINTE : UNE SEULE exception active par groups
       {
         unique: true,
-        fields: ['team'],
-        name: 'unique_team_active_exception',
+        fields: ['groups'],
+        name: 'unique_groups_active_exception',
         where: {
           deleted_at: null,
           active: true,
-          team: { [Op.not]: null },
+          groups: { [Op.not]: null },
         },
       },
       // {
@@ -216,20 +216,20 @@ export const ScheduleExceptionsDbStructure = {
       // },
       // {
       //   unique: true,
-      //   fields: ['team', 'session_template', 'start_date', 'end_date'],
-      //   name: 'unique_team_schedule_exception',
+      //   fields: ['groups', 'session_template', 'start_date', 'end_date'],
+      //   name: 'unique_groups_schedule_exception',
       //   where: {
       //     deleted_at: null,
       //   },
       // },
     ],
     validate: {
-      eitherUserOrTeam() {
-        if (!this.user && !this.team) {
-          throw new Error('Either user or team must be specified');
+      eitherUserOrGroups() {
+        if (!this.user && !this.groups) {
+          throw new Error('Either user or groups must be specified');
         }
-        if (this.user && this.team) {
-          throw new Error('Only one of user or team must be specified, not both');
+        if (this.user && this.groups) {
+          throw new Error('Only one of user or groups must be specified, not both');
         }
       },
       dateRangeValid() {

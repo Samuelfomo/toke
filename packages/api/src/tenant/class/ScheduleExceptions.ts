@@ -3,17 +3,22 @@ import { SCHEDULE_EXCEPTION_DEFAULTS, TimezoneConfigUtils } from '@toke/shared';
 import ScheduleExceptionModel from '../model/ScheduleExceptionsModel.js';
 import W from '../../tools/watcher.js';
 import G from '../../tools/glossary.js';
-import { responseStructure as RS, responseValue, tableName, ViewMode, } from '../../utils/response.model.js';
+import {
+  responseStructure as RS,
+  responseValue,
+  tableName,
+  ViewMode,
+} from '../../utils/response.model.js';
 import { TenantRevision } from '../../tools/revision.js';
 
 import SessionTemplate from './SessionTemplates.js';
 import User from './User.js';
-import Teams from './Teams.js';
+import Groups from './Groups.js';
 
 export default class ScheduleException extends ScheduleExceptionModel {
   private sessionTemplateObj?: SessionTemplate;
   private userObj?: User;
-  private teamsObj?: Teams;
+  private groupsObj?: Groups;
   private createdByObj?: User;
 
   constructor() {
@@ -42,11 +47,11 @@ export default class ScheduleException extends ScheduleExceptionModel {
     return new ScheduleException().listByUser(userId, paginationOptions);
   }
 
-  static _listByTeams(
-    teamId: number,
+  static _listByGroups(
+    groupsId: number,
     paginationOptions: { offset?: number; limit?: number } = {},
   ): Promise<ScheduleException[] | null> {
-    return new ScheduleException().listByTeam(teamId, paginationOptions);
+    return new ScheduleException().listByGroups(groupsId, paginationOptions);
   }
 
   static _listByActiveStatus(
@@ -72,12 +77,12 @@ export default class ScheduleException extends ScheduleExceptionModel {
     return new ScheduleException().listForUserOnDate(userId, date, paginationOptions);
   }
 
-  static _listForTeamOnDate(
-    teamId: number,
+  static _listForGroupsOnDate(
+    groupsId: number,
     date: string,
     paginationOptions: { offset?: number; limit?: number } = {},
   ): Promise<ScheduleException[] | null> {
-    return new ScheduleException().listForTeamOnDate(teamId, date, paginationOptions);
+    return new ScheduleException().listForGroupsOnDate(groupsId, date, paginationOptions);
   }
 
   static async exportable(
@@ -134,16 +139,16 @@ export default class ScheduleException extends ScheduleExceptionModel {
     return this.userObj || null;
   }
 
-  getTeam(): number | null | undefined {
-    return this.team;
+  getGroups(): number | null | undefined {
+    return this.groups;
   }
 
-  async getTeamObj(): Promise<Teams | null> {
-    if (!this.team) return null;
-    if (!this.teamsObj) {
-      this.teamsObj = (await Teams._load(this.team)) || undefined;
+  async getGroupsObj(): Promise<Groups | null> {
+    if (!this.groups) return null;
+    if (!this.groupsObj) {
+      this.groupsObj = (await Groups._load(this.groups)) || undefined;
     }
-    return this.teamsObj || null;
+    return this.groupsObj || null;
   }
 
   getSessionTemplate(): number | undefined {
@@ -205,9 +210,9 @@ export default class ScheduleException extends ScheduleExceptionModel {
     return this;
   }
 
-  setTeam(teamId: number | null): ScheduleException {
-    this.team = teamId;
-    this.teamsObj = undefined;
+  setGroups(groupsId: number | null): ScheduleException {
+    this.groups = groupsId;
+    this.groupsObj = undefined;
     return this;
   }
 
@@ -259,10 +264,10 @@ export default class ScheduleException extends ScheduleExceptionModel {
   }
 
   /**
-   * Vérifie si l'exception est pour une team
+   * Vérifie si l'exception est pour une groups
    */
-  isTeamException(): boolean {
-    return this.team === null && this.team === undefined;
+  isGroupsException(): boolean {
+    return this.groups === null && this.groups === undefined;
   }
 
   /**
@@ -370,11 +375,11 @@ export default class ScheduleException extends ScheduleExceptionModel {
     return dataset.map((data) => new ScheduleException().hydrate(data));
   }
 
-  async listByTeam(
-    teamId: number,
+  async listByGroups(
+    groupsId: number,
     paginationOptions: { offset?: number; limit?: number } = {},
   ): Promise<ScheduleException[] | null> {
-    const dataset = await this.listAllByTeam(teamId, paginationOptions);
+    const dataset = await this.listAllByGroups(groupsId, paginationOptions);
     if (!dataset || dataset.length === 0) return null;
     return dataset.map((data) => new ScheduleException().hydrate(data));
   }
@@ -408,12 +413,12 @@ export default class ScheduleException extends ScheduleExceptionModel {
     return dataset.map((data) => new ScheduleException().hydrate(data));
   }
 
-  async listForTeamOnDate(
-    teamId: number,
+  async listForGroupsOnDate(
+    groupsId: number,
     date: string,
     paginationOptions: { offset?: number; limit?: number } = {},
   ): Promise<ScheduleException[] | null> {
-    const dataset = await this.listAllForTeamOnDate(teamId, date, paginationOptions);
+    const dataset = await this.listAllForGroupsOnDate(groupsId, date, paginationOptions);
     if (!dataset || dataset.length === 0) return null;
     return dataset.map((data) => new ScheduleException().hydrate(data));
   }
@@ -428,7 +433,7 @@ export default class ScheduleException extends ScheduleExceptionModel {
 
   async toJSON(view: ViewMode = responseValue.FULL): Promise<object> {
     const userObj = await this.getUserObj();
-    const teamObj = await this.getTeamObj();
+    const groupsObj = await this.getGroupsObj();
     const sessionTemplateObj = await this.getSessionTemplateObj();
     const createdByObj = await this.getCreatedByObj();
 
@@ -445,7 +450,7 @@ export default class ScheduleException extends ScheduleExceptionModel {
       return {
         ...baseData,
         [RS.USER]: userObj ? userObj.getGuid() : null,
-        [RS.TEAM]: teamObj ? teamObj.getGuid() : null,
+        [RS.GROUPS]: groupsObj ? groupsObj.getGuid() : null,
         [RS.SESSION_TEMPLATE]: sessionTemplateObj ? sessionTemplateObj.getGuid() : null,
         [RS.CREATED_BY]: createdByObj ? createdByObj.getGuid() : null,
       };
@@ -454,7 +459,7 @@ export default class ScheduleException extends ScheduleExceptionModel {
     return {
       ...baseData,
       [RS.USER]: userObj ? await userObj.toJSON() : null,
-      [RS.TEAM]: teamObj ? await teamObj.toJSON(responseValue.FULL) : null,
+      [RS.GROUPS]: groupsObj ? await groupsObj.toJSON(responseValue.FULL) : null,
       [RS.SESSION_TEMPLATE]: sessionTemplateObj
         ? sessionTemplateObj.toJSON(responseValue.FULL)
         : null,
@@ -471,7 +476,7 @@ export default class ScheduleException extends ScheduleExceptionModel {
     this.guid = data.guid;
     this.tenant = data.tenant;
     this.user = data.user;
-    this.team = data.team;
+    this.groups = data.groups;
     this.session_template = data.session_template;
     this.start_date = data.start_date;
     this.end_date = data.end_date;

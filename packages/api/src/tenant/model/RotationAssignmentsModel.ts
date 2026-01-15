@@ -15,7 +15,7 @@ export default class RotationAssignmentModel extends BaseModel {
     id: 'id',
     guid: 'guid',
     user: 'user',
-    team: 'team',
+    groups: 'groups',
     rotation_group: 'rotation_group',
     assigned_by: 'assigned_by',
     offset: 'offset',
@@ -32,7 +32,7 @@ export default class RotationAssignmentModel extends BaseModel {
   protected id?: number;
   protected guid?: string;
   protected user?: number | null;
-  protected team?: number | null;
+  protected groups?: number | null;
   protected rotation_group?: number;
   protected assigned_by?: number;
   protected offset?: number;
@@ -84,13 +84,13 @@ export default class RotationAssignmentModel extends BaseModel {
     return await this.findOne(this.db.tableName, conditions);
   }
 
-  protected async findByTeamAndGroup(
-    teamId: number,
+  protected async findByGroupsAndGroupRotation(
+    groupsId: number,
     rotationGroupId: number,
     includeDeleted: boolean = false,
   ): Promise<any> {
     const conditions: any = {
-      [this.db.team]: teamId,
+      [this.db.groups]: groupsId,
       [this.db.rotation_group]: rotationGroupId,
     };
 
@@ -130,11 +130,11 @@ export default class RotationAssignmentModel extends BaseModel {
     return await this.listAll({ [this.db.assigned_by]: manager }, paginationOptions);
   }
 
-  protected async listAllByTeam(
-    teamId: number,
+  protected async listAllByGroups(
+    groupsId: number,
     paginationOptions: { offset?: number; limit?: number } = {},
   ): Promise<any[]> {
-    return await this.listAll({ [this.db.team]: teamId }, paginationOptions);
+    return await this.listAll({ [this.db.groups]: groupsId }, paginationOptions);
   }
 
   protected async listAllByRotationGroup(
@@ -193,18 +193,18 @@ export default class RotationAssignmentModel extends BaseModel {
       }
     }
 
-    // Vérification unicité team + rotation_group
-    if (this.team) {
-      const existing = await this.findByTeamAndGroup(this.team, this.rotation_group!);
+    // Vérification unicité groups + rotation_group
+    if (this.groups) {
+      const existing = await this.findByGroupsAndGroupRotation(this.groups, this.rotation_group!);
       if (existing) {
-        throw new Error(ROTATION_ASSIGNMENT_ERRORS.TEAM_ALREADY_ASSIGNED);
+        throw new Error(ROTATION_ASSIGNMENT_ERRORS.GROUPS_ALREADY_ASSIGNED);
       }
     }
 
     const lastID = await this.insertOne(this.db.tableName, {
       [this.db.guid]: guid,
       [this.db.user]: this.user,
-      [this.db.team]: this.team,
+      [this.db.groups]: this.groups,
       [this.db.rotation_group]: this.rotation_group,
       [this.db.assigned_by]: this.assigned_by,
       [this.db.offset]: this.offset ?? ROTATION_ASSIGNMENT_DEFAULTS.OFFSET,
@@ -232,8 +232,8 @@ export default class RotationAssignmentModel extends BaseModel {
     //   updateData[this.db.user] = this.user;
     // }
     //
-    // if (this.team !== undefined) {
-    //   updateData[this.db.team] = this.team;
+    // if (this.groups !== undefined) {
+    //   updateData[this.db.groups] = this.groups;
     // }
     // if (this.rotation_group !== undefined) {
     //   updateData[this.db.rotation_group] = this.rotation_group;
@@ -282,11 +282,11 @@ export default class RotationAssignmentModel extends BaseModel {
   // ============================================
 
   private async validate(): Promise<void> {
-    if (!this.user && !this.team) {
-      throw new Error(ROTATION_ASSIGNMENT_ERRORS.USER_OR_TEAM_REQUIRED);
+    if (!this.user && !this.groups) {
+      throw new Error(ROTATION_ASSIGNMENT_ERRORS.USER_OR_GROUPS_REQUIRED);
     }
-    if (this.user && this.team) {
-      throw new Error(ROTATION_ASSIGNMENT_ERRORS.ONLY_ONE_USER_OR_TEAM_ALLOWED);
+    if (this.user && this.groups) {
+      throw new Error(ROTATION_ASSIGNMENT_ERRORS.ONLY_ONE_USER_OR_GROUPS_ALLOWED);
     }
 
     if (!this.rotation_group) {

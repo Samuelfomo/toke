@@ -1,4 +1,4 @@
-export interface TeamMember {
+export interface GroupsMember {
   user: number;
   joined_at?: Date;
   active?: boolean;

@@ -16,7 +16,7 @@ export default class ScheduleExceptionModel extends BaseModel {
     guid: 'guid',
     tenant: 'tenant',
     user: 'user',
-    team: 'team',
+    groups: 'groups',
     session_template: 'session_template',
     start_date: 'start_date',
     end_date: 'end_date',
@@ -36,7 +36,7 @@ export default class ScheduleExceptionModel extends BaseModel {
   protected guid?: string;
   protected tenant?: string;
   protected user?: number | null;
-  protected team?: number | null;
+  protected groups?: number | null;
   protected session_template?: number;
   protected start_date?: string;
   protected end_date?: string;
@@ -90,13 +90,13 @@ export default class ScheduleExceptionModel extends BaseModel {
     return await this.findOne(this.db.tableName, conditions);
   }
 
-  protected async findByTeamAndTemplate(
-    teamId: number,
+  protected async findByGroupsAndTemplate(
+    groupsId: number,
     templateId: number,
     includeDeleted: boolean = false,
   ): Promise<any> {
     const conditions: any = {
-      [this.db.team]: teamId,
+      [this.db.groups]: groupsId,
       [this.db.session_template]: templateId,
     };
 
@@ -129,11 +129,11 @@ export default class ScheduleExceptionModel extends BaseModel {
     return await this.listAll({ [this.db.user]: userId }, paginationOptions);
   }
 
-  protected async listAllByTeam(
-    teamId: number,
+  protected async listAllByGroups(
+    groupsId: number,
     paginationOptions: { offset?: number; limit?: number } = {},
   ): Promise<any[]> {
-    return await this.listAll({ [this.db.team]: teamId }, paginationOptions);
+    return await this.listAll({ [this.db.groups]: groupsId }, paginationOptions);
   }
 
   protected async listAllBySessionTemplate(
@@ -190,13 +190,13 @@ export default class ScheduleExceptionModel extends BaseModel {
     return await this.listAll(conditions, paginationOptions);
   }
 
-  protected async listAllForTeamOnDate(
-    teamId: number,
+  protected async listAllForGroupsOnDate(
+    groupsId: number,
     date: string,
     paginationOptions: { offset?: number; limit?: number } = {},
   ): Promise<any[]> {
     const conditions = {
-      [this.db.team]: teamId,
+      [this.db.groups]: groupsId,
       [this.db.start_date]: { [Op.lte]: date },
       [this.db.end_date]: { [Op.gte]: date },
       [this.db.active]: true,
@@ -251,11 +251,11 @@ export default class ScheduleExceptionModel extends BaseModel {
       }
     }
 
-    // Vérification unicité team + session_template
-    if (this.team) {
-      const existing = await this.findByTeamAndTemplate(this.team, this.session_template!);
+    // Vérification unicité groups + session_template
+    if (this.groups) {
+      const existing = await this.findByGroupsAndTemplate(this.groups, this.session_template!);
       if (existing) {
-        throw new Error(SCHEDULE_EXCEPTION_ERRORS.TEAM_EXCEPTION_ALREADY_ASSIGNED);
+        throw new Error(SCHEDULE_EXCEPTION_ERRORS.GROUPS_EXCEPTION_ALREADY_ASSIGNED);
       }
     }
 
@@ -263,7 +263,7 @@ export default class ScheduleExceptionModel extends BaseModel {
       [this.db.guid]: guid,
       [this.db.tenant]: this.tenant,
       [this.db.user]: this.user ?? null,
-      [this.db.team]: this.team ?? null,
+      [this.db.groups]: this.groups ?? null,
       [this.db.session_template]: this.session_template,
       [this.db.start_date]: this.start_date,
       [this.db.end_date]: this.end_date,
@@ -296,8 +296,8 @@ export default class ScheduleExceptionModel extends BaseModel {
     //   updateData[this.db.user] = this.user;
     // }
     //
-    // if (this.team !== undefined) {
-    //   updateData[this.db.team] = this.team;
+    // if (this.groups !== undefined) {
+    //   updateData[this.db.groups] = this.groups;
     // }
     // if (this.session_template !== undefined) {
     //   updateData[this.db.session_template] = this.session_template;
@@ -350,14 +350,14 @@ export default class ScheduleExceptionModel extends BaseModel {
     return affected > 0;
   }
 
-  protected async hasActiveException(userId?: number, teamId?: number): Promise<boolean> {
+  protected async hasActiveException(userId?: number, groupsId?: number): Promise<boolean> {
     const conditions: any = {
       [this.db.deleted_at]: null,
       [this.db.active]: true,
     };
 
     if (userId) conditions[this.db.user] = userId;
-    if (teamId) conditions[this.db.team] = teamId;
+    if (groupsId) conditions[this.db.groups] = groupsId;
 
     const count = await this.count(this.db.tableName, conditions);
     return count > 0;
@@ -372,13 +372,13 @@ export default class ScheduleExceptionModel extends BaseModel {
     //   throw new Error(SCHEDULE_EXCEPTION_ERRORS.TENANT_REQUIRED);
     // }
 
-    // Vérifier qu'au moins user OU team est défini
-    if (!this.user && !this.team) {
-      throw new Error(SCHEDULE_EXCEPTION_ERRORS.USER_OR_TEAM_REQUIRED);
+    // Vérifier qu'au moins user OU groups est défini
+    if (!this.user && !this.groups) {
+      throw new Error(SCHEDULE_EXCEPTION_ERRORS.USER_OR_GROUPS_REQUIRED);
     }
 
-    if (this.user && this.team) {
-      throw new Error(SCHEDULE_EXCEPTION_ERRORS.BOTH_USER_AND_TEAM);
+    if (this.user && this.groups) {
+      throw new Error(SCHEDULE_EXCEPTION_ERRORS.BOTH_USER_AND_GROUPS);
     }
 
     if (!this.session_template) {
@@ -436,16 +436,16 @@ export default class ScheduleExceptionModel extends BaseModel {
         }
       }
 
-      if (this.team) {
-        const hasActive = await this.hasActiveException(undefined, this.team);
+      if (this.groups) {
+        const hasActive = await this.hasActiveException(undefined, this.groups);
         if (hasActive) {
           if (this.id) {
             const existing = await this.find(this.id);
-            if (!existing || existing.team !== this.team) {
-              throw new Error(SCHEDULE_EXCEPTION_ERRORS.TEAM_ALREADY_HAS_ACTIVE_EXCEPTION);
+            if (!existing || existing.groups !== this.groups) {
+              throw new Error(SCHEDULE_EXCEPTION_ERRORS.GROUPS_ALREADY_HAS_ACTIVE_EXCEPTION);
             }
           } else {
-            throw new Error(SCHEDULE_EXCEPTION_ERRORS.TEAM_ALREADY_HAS_ACTIVE_EXCEPTION);
+            throw new Error(SCHEDULE_EXCEPTION_ERRORS.GROUPS_ALREADY_HAS_ACTIVE_EXCEPTION);
           }
         }
       }

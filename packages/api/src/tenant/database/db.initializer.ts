@@ -16,7 +16,7 @@ import { SessionTemplatesDbStructure } from './data/session.templates.db.js';
 import { RotationGroupsDbStructure } from './data/rotation.groups.db.js';
 import { RotationAssignmentsDbStructure } from './data/rotation.assignments.db.js';
 import { ScheduleExceptionsDbStructure } from './data/schedule.exceptions.db.js';
-import { TeamsDbStructure } from './data/teams.db.js';
+import { GroupsDbStructure } from './data/groups.db.js';
 import { DeviceDbStructure } from './data/device.db.js';
 import { DepartmentDbStructure } from './data/department.db.js';
 import { PosteDbStructure } from './data/poste.db.js';
@@ -204,7 +204,7 @@ export class TableInitializer {
     this.defineSitesModelForInstance(instance);
     this.defineWorkSessionsModelForInstance(instance);
     this.defineMemosModelForInstance(instance);
-    this.defineTeamsModelForInstance(instance);
+    this.defineGroupsModelForInstance(instance);
     this.defineQrCodeModelForInstance(instance);
     this.defineDeviceModelForInstance(instance);
     this.defineTimeEntriesModelForInstance(instance);
@@ -409,15 +409,15 @@ export class TableInitializer {
     );
   }
 
-  private static defineTeamsModelForInstance(instance: TenantInstance): void {
+  private static defineGroupsModelForInstance(instance: TenantInstance): void {
     const model = instance.sequelize.define(
-      TeamsDbStructure.tableName,
-      TeamsDbStructure.attributes,
-      TeamsDbStructure.options,
+      GroupsDbStructure.tableName,
+      GroupsDbStructure.attributes,
+      GroupsDbStructure.options,
     );
 
-    instance.models.set(TeamsDbStructure.tableName, model);
-    console.log(`✅ Modèle Teams défini (${TeamsDbStructure.tableName})`);
+    instance.models.set(GroupsDbStructure.tableName, model);
+    console.log(`✅ Modèle Groups défini (${GroupsDbStructure.tableName})`);
   }
 
   private static defineDeviceModelForInstance(instance: TenantInstance): void {

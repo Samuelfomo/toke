@@ -22,7 +22,7 @@ import RotationAssignment from '../class/RotationAssignments.js';
 import RotationGroup from '../class/RotationGroups.js';
 import SessionTemplate from '../class/SessionTemplates.js';
 import User from '../class/User.js';
-import Teams from '../class/Teams.js';
+import Groups from '../class/Groups.js';
 import { TenantRevision } from '../../tools/revision.js';
 import { responseValue, tableName } from '../../utils/response.model.js';
 import { ValidationUtils } from '../../utils/view.validator.js';
@@ -166,17 +166,17 @@ router.post('/', Ensure.post(), async (req: Request, res: Response) => {
       });
     }
 
-    if (validatedData.user && validatedData.team) {
+    if (validatedData.user && validatedData.groups) {
       return R.handleError(res, HttpStatus.BAD_REQUEST, {
         code: ROTATION_ASSIGNMENT_CODES.VALIDATION_FAILED,
-        message: ROTATION_ASSIGNMENT_ERRORS.ONLY_ONE_USER_OR_TEAM_ALLOWED,
+        message: ROTATION_ASSIGNMENT_ERRORS.ONLY_ONE_USER_OR_GROUPS_ALLOWED,
       });
     }
 
-    if (!validatedData.user && !validatedData.team) {
+    if (!validatedData.user && !validatedData.groups) {
       return R.handleError(res, HttpStatus.BAD_REQUEST, {
         code: ROTATION_ASSIGNMENT_CODES.VALIDATION_FAILED,
-        message: ROTATION_ASSIGNMENT_ERRORS.USER_OR_TEAM_REQUIRED,
+        message: ROTATION_ASSIGNMENT_ERRORS.USER_OR_GROUPS_REQUIRED,
       });
     }
 
@@ -218,32 +218,37 @@ router.post('/', Ensure.post(), async (req: Request, res: Response) => {
 
       assignmentObj.setUser(userObj.getId()!);
     }
-    if (validatedData.team) {
-      // Valider la team
-      const teamObj = await Teams._load(validatedData.team, true);
-      if (!teamObj) {
+    if (validatedData.groups) {
+      // Valider la groups
+      const groupsObj = await Groups._load(validatedData.groups, true);
+      if (!groupsObj) {
         return R.handleError(res, HttpStatus.NOT_FOUND, {
-          code: ROTATION_ASSIGNMENT_CODES.TEAM_NOT_FOUND,
-          message: ROTATION_ASSIGNMENT_ERRORS.TEAM_NOT_FOUND,
+          code: ROTATION_ASSIGNMENT_CODES.GROUPS_NOT_FOUND,
+          message: ROTATION_ASSIGNMENT_ERRORS.GROUPS_NOT_FOUND,
         });
       }
 
-      const teamGroupData = {
-        team: teamObj.getId()!,
+      const groupsGroupData = {
+        groups: groupsObj.getId()!,
         rotationGroup: groupObj.getId()!,
       };
 
-      // Vérifier si la team est déjà assigné à ce groupe
-      const existingAssignment = await RotationAssignment._load(teamGroupData, false, false, true);
+      // Vérifier si la groups est déjà assigné à ce groupe
+      const existingAssignment = await RotationAssignment._load(
+        groupsGroupData,
+        false,
+        false,
+        true,
+      );
 
       if (existingAssignment) {
         return R.handleError(res, HttpStatus.CONFLICT, {
           code: ROTATION_ASSIGNMENT_CODES.ALREADY_ASSIGNED,
-          message: ROTATION_ASSIGNMENT_ERRORS.TEAM_ALREADY_ASSIGNED,
+          message: ROTATION_ASSIGNMENT_ERRORS.GROUPS_ALREADY_ASSIGNED,
         });
       }
 
-      assignmentObj.setTeam(teamObj.getId()!);
+      assignmentObj.setGroups(groupsObj.getId()!);
     }
 
     await assignmentObj.save();

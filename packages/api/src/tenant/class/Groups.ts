@@ -1,6 +1,6 @@
-import { TeamsValidationUtils, TI, TimezoneConfigUtils } from '@toke/shared';
+import { GroupsValidationUtils, TI, TimezoneConfigUtils } from '@toke/shared';
 
-import TeamsModel from '../model/TeamsModel.js';
+import GroupsModel from '../model/GroupsModel.js';
 import {
   responseStructure as RS,
   responseValue,
@@ -15,7 +15,7 @@ import User from './User.js';
 import SessionTemplate from './SessionTemplates.js';
 import OrgHierarchy from './OrgHierarchy.js';
 
-export default class Teams extends TeamsModel {
+export default class Groups extends GroupsModel {
   private managerObj?: User;
   private memberObjs: Map<number, User> = new Map();
   private sessionTemplateObjs: Map<number, SessionTemplate> = new Map();
@@ -32,48 +32,48 @@ export default class Teams extends TeamsModel {
     identifier: any,
     byGuid: boolean = false,
     byUser: boolean = false,
-  ): Promise<Teams | null> {
-    return new Teams().load(identifier, byGuid, byUser);
+  ): Promise<Groups | null> {
+    return new Groups().load(identifier, byGuid, byUser);
   }
 
   static _list(
     conditions: Record<string, any> = {},
     paginationOptions: { offset?: number; limit?: number } = {},
-  ): Promise<Teams[] | null> {
-    return new Teams().list(conditions, paginationOptions);
+  ): Promise<Groups[] | null> {
+    return new Groups().list(conditions, paginationOptions);
   }
 
   static _listByManager(
     manager: number,
     paginationOptions: { offset?: number; limit?: number } = {},
-  ): Promise<Teams[] | null> {
-    return new Teams().listByManager(manager, paginationOptions);
+  ): Promise<Groups[] | null> {
+    return new Groups().listByManager(manager, paginationOptions);
   }
 
   static _listByMember(
     user: number,
     paginationOptions: { offset?: number; limit?: number } = {},
-  ): Promise<Teams[] | null> {
-    return new Teams().listByMember(user, paginationOptions);
+  ): Promise<Groups[] | null> {
+    return new Groups().listByMember(user, paginationOptions);
   }
 
   static _listBySession(
     template_session: number,
     paginationOptions: { offset?: number; limit?: number } = {},
-  ): Promise<Teams[] | null> {
-    return new Teams().listBySessionTemplate(template_session, paginationOptions);
+  ): Promise<Groups[] | null> {
+    return new Groups().listBySessionTemplate(template_session, paginationOptions);
   }
 
   static _listWithMembers(
     paginationOptions: { offset?: number; limit?: number } = {},
-  ): Promise<Teams[] | null> {
-    return new Teams().listWithMembers(paginationOptions);
+  ): Promise<Groups[] | null> {
+    return new Groups().listWithMembers(paginationOptions);
   }
 
   static _listWithActiveSession(
     paginationOptions: { offset?: number; limit?: number } = {},
-  ): Promise<Teams[] | null> {
-    return new Teams().listWithActiveSession(paginationOptions);
+  ): Promise<Groups[] | null> {
+    return new Groups().listWithActiveSession(paginationOptions);
   }
 
   /**
@@ -82,29 +82,29 @@ export default class Teams extends TeamsModel {
    * @param managerId ID du manager
    * @returns Structure hiérarchique complète de l'équipe
    */
-  static async getManagerTeamHierarchy(managerId: number): Promise<any> {
+  static async getManagerGroupsHierarchy(managerId: number): Promise<any> {
     const managerObj = await User._load(managerId);
     if (!managerObj) {
       throw new Error('Manager not found');
     }
 
-    // Récupérer l'équipe principale du manager
-    const teams = await Teams._listByManager(managerId);
-    if (!teams || teams.length === 0) {
+    // Récupérer le group principale du manager
+    const groups = await Groups._listByManager(managerId);
+    if (!groups || groups.length === 0) {
       return {
         manager: await managerObj.toJSON(responseValue.MINIMAL),
-        has_team: false,
-        team: null,
+        has_groups: false,
+        group: null,
         total_members: 0,
         members: [],
       };
     }
 
     // Prendre la première équipe (un manager devrait avoir une seule équipe principale)
-    const mainTeam = teams[0];
+    const mainGroups = groups[0];
     const visited = new Set<number>();
 
-    return await mainTeam._buildManagerTeamHierarchy(managerId, visited);
+    return await mainGroups._buildManagerGroupsHierarchy(managerId, visited);
   }
 
   static async exportable(
@@ -116,12 +116,12 @@ export default class Teams extends TeamsModel {
     items: any[];
   }> {
     let items: any[] = [];
-    const teams = await this._list(conditions, paginationOptions);
-    if (teams) {
-      items = await Promise.all(teams.map(async (team) => await team.toJSON()));
+    const groups = await this._list(conditions, paginationOptions);
+    if (groups) {
+      items = await Promise.all(groups.map(async (group) => await group.toJSON()));
     }
     return {
-      revision: await TenantRevision.getRevision(tableName.TEAMS),
+      revision: await TenantRevision.getRevision(tableName.GROUPS),
       pagination: {
         offset: paginationOptions.offset || 0,
         limit: paginationOptions.limit || items.length,
@@ -159,13 +159,13 @@ export default class Teams extends TeamsModel {
     return this.managerObj || null;
   }
 
-  getMembers(): TI.TeamMember[] {
+  getMembers(): TI.GroupsMember[] {
     return this.members || [];
   }
   /**
    * Récupère uniquement les membres actifs
    */
-  getActiveMembers(): TI.TeamMember[] {
+  getActiveMembers(): TI.GroupsMember[] {
     return this.getMembers().filter((m) => m.active !== false);
   }
 
@@ -217,22 +217,22 @@ export default class Teams extends TeamsModel {
   // SETTERS
   // ============================================
 
-  setName(name: string): Teams {
+  setName(name: string): Groups {
     this.name = name;
     return this;
   }
 
-  setManager(manager: number): Teams {
+  setManager(manager: number): Groups {
     this.manager = manager;
     return this;
   }
 
-  setMembers(members: TI.TeamMember[]): Teams {
+  setMembers(members: TI.GroupsMember[]): Groups {
     this.members = members;
     return this;
   }
 
-  setAssignedSessions(sessions: TI.AssignedSession[]): Teams {
+  setAssignedSessions(sessions: TI.AssignedSession[]): Groups {
     this.assigned_sessions = sessions;
     return this;
   }
@@ -244,30 +244,30 @@ export default class Teams extends TeamsModel {
   /**
    * Ajouter un membre à l'équipe
    */
-  addMember(user: number, joinedAt?: Date, active: boolean = true): Teams {
-    const newMember: TI.TeamMember = {
+  addMember(user: number, joinedAt?: Date, active: boolean = true): Groups {
+    const newMember: TI.GroupsMember = {
       user: user,
       joined_at: joinedAt || TimezoneConfigUtils.getCurrentTime(),
       active,
     };
 
-    this.members = TeamsValidationUtils.addMember(this.members, newMember);
+    this.members = GroupsValidationUtils.addMember(this.members, newMember);
     return this;
   }
 
   /**
    * Retirer un membre de l'équipe
    */
-  removeMember(user: number): Teams {
-    this.members = TeamsValidationUtils.removeMember(this.members, user);
+  removeMember(user: number): Groups {
+    this.members = GroupsValidationUtils.removeMember(this.members, user);
     return this;
   }
 
   /**
    * Mettre à jour le statut d'un membre
    */
-  updateMemberStatus(user: number, active: boolean): Teams {
-    this.members = TeamsValidationUtils.updateMemberStatus(this.members, user, active);
+  updateMemberStatus(user: number, active: boolean): Groups {
+    this.members = GroupsValidationUtils.updateMemberStatus(this.members, user, active);
     return this;
   }
 
@@ -275,14 +275,14 @@ export default class Teams extends TeamsModel {
    * Vérifier si un utilisateur est membre
    */
   hasMember(user: number): boolean {
-    return TeamsValidationUtils.hasMember(this.members, user);
+    return GroupsValidationUtils.hasMember(this.members, user);
   }
 
   /**
    * Vérifier si un membre est actif
    */
   isMemberActive(user: number): boolean {
-    return TeamsValidationUtils.isMemberActive(this.members, user);
+    return GroupsValidationUtils.isMemberActive(this.members, user);
   }
 
   /**
@@ -331,39 +331,42 @@ export default class Teams extends TeamsModel {
 
   /**
    * Construit l'arbre hiérarchique complet de l'équipe
-   * Structure: { team, members: [{ user, roles, managedTeam }] }
+   * Structure: { troups, members: [{ user, roles, managedGroups }] }
    */
-  async buildTeamHierarchyTree(): Promise<any> {
+  async buildGroupsHierarchyTree(): Promise<any> {
     const visited = new Set<number>();
-    return await this._recursiveBuildTeamTree(visited);
+    return await this._recursiveBuildGroupsTree(visited);
   }
 
   /**
    * Compter les membres actifs
    */
   countActiveMembers(): number {
-    return TeamsValidationUtils.countActiveMembers(this.members);
+    return GroupsValidationUtils.countActiveMembers(this.members);
   }
 
   /**
    * Assigner une nouvelle session template
    */
-  assignSession(sessionTemplate: number, assignAt?: Date, active: boolean = true): Teams {
+  assignSession(sessionTemplate: number, assignAt?: Date, active: boolean = true): Groups {
     const newSession: TI.AssignedSession = {
       session_template: sessionTemplate,
       assign_at: assignAt || TimezoneConfigUtils.getCurrentTime(),
       active,
     };
 
-    this.assigned_sessions = TeamsValidationUtils.assignSession(this.assigned_sessions, newSession);
+    this.assigned_sessions = GroupsValidationUtils.assignSession(
+      this.assigned_sessions,
+      newSession,
+    );
     return this;
   }
 
   /**
    * Activer une session template spécifique
    */
-  activateSession(sessionTemplate: number): Teams {
-    this.assigned_sessions = TeamsValidationUtils.activateSession(
+  activateSession(sessionTemplate: number): Groups {
+    this.assigned_sessions = GroupsValidationUtils.activateSession(
       this.assigned_sessions,
       sessionTemplate,
     );
@@ -373,8 +376,8 @@ export default class Teams extends TeamsModel {
   /**
    * Désactiver toutes les sessions
    */
-  deactivateAllSessions(): Teams {
-    this.assigned_sessions = TeamsValidationUtils.deactivateAllSessions(this.assigned_sessions);
+  deactivateAllSessions(): Groups {
+    this.assigned_sessions = GroupsValidationUtils.deactivateAllSessions(this.assigned_sessions);
     return this;
   }
 
@@ -382,7 +385,7 @@ export default class Teams extends TeamsModel {
    * Récupérer la session active
    */
   getActiveSession(): TI.AssignedSession | null {
-    return TeamsValidationUtils.getActiveSession(this.assigned_sessions);
+    return GroupsValidationUtils.getActiveSession(this.assigned_sessions);
   }
 
   // ============================================
@@ -407,7 +410,7 @@ export default class Teams extends TeamsModel {
     activeSessionId: number | null;
     totalSessions: number;
   } {
-    return TeamsValidationUtils.getTeamSummary(this);
+    return GroupsValidationUtils.getGroupSummary(this);
   }
 
   /**
@@ -422,7 +425,7 @@ export default class Teams extends TeamsModel {
       })),
     );
 
-    return TeamsValidationUtils.generateTeamReport(this, memberDetails);
+    return GroupsValidationUtils.generateGroupsReport(this, memberDetails);
   }
 
   isNew(): boolean {
@@ -451,7 +454,7 @@ export default class Teams extends TeamsModel {
 
   async delete(): Promise<boolean> {
     if (this.id !== undefined) {
-      await W.isOccur(!this.id, `${G.identifierMissing.code}: Teams Delete`);
+      await W.isOccur(!this.id, `${G.identifierMissing.code}: Groups Delete`);
       return await this.trash(this.id);
     }
     return false;
@@ -461,9 +464,9 @@ export default class Teams extends TeamsModel {
   // MÉTHODES STANDARD
   // ============================================
 
-  async restoreTeam(): Promise<boolean> {
+  async restoreGroups(): Promise<boolean> {
     if (this.id !== undefined) {
-      await W.isOccur(!this.id, `${G.identifierMissing.code}: Teams Restore`);
+      await W.isOccur(!this.id, `${G.identifierMissing.code}: Groups Restore`);
       return await this.restore(this.id);
     }
     return false;
@@ -473,13 +476,13 @@ export default class Teams extends TeamsModel {
     identifier: any,
     byGuid: boolean = false,
     byUser: boolean = false,
-  ): Promise<Teams | null> {
+  ): Promise<Groups | null> {
     let data = null;
 
     if (byGuid) {
       data = await this.findByGuid(identifier);
     } else if (byUser) {
-      data = await this.findActiveTeamByUser(Number(identifier));
+      data = await this.findActiveGroupsByUser(Number(identifier));
     } else {
       data = await this.find(Number(identifier));
     }
@@ -491,37 +494,37 @@ export default class Teams extends TeamsModel {
   async list(
     conditions: Record<string, any> = {},
     paginationOptions: { offset?: number; limit?: number } = {},
-  ): Promise<Teams[] | null> {
+  ): Promise<Groups[] | null> {
     const dataset = await this.listAll(conditions, paginationOptions);
     if (!dataset || dataset.length === 0) return null;
-    return dataset.map((data) => new Teams().hydrate(data));
+    return dataset.map((data) => new Groups().hydrate(data));
   }
 
   async listByManager(
     manager: number,
     paginationOptions: { offset?: number; limit?: number } = {},
-  ): Promise<Teams[] | null> {
+  ): Promise<Groups[] | null> {
     const dataset = await this.listAllByManager(manager, paginationOptions);
     if (!dataset || dataset.length === 0) return null;
-    return dataset.map((data) => new Teams().hydrate(data));
+    return dataset.map((data) => new Groups().hydrate(data));
   }
 
   async listByMember(
     user: number,
     paginationOptions: { offset?: number; limit?: number } = {},
-  ): Promise<Teams[] | null> {
+  ): Promise<Groups[] | null> {
     const dataset = await this.listAllByMember(user, paginationOptions);
     if (!dataset || dataset.length === 0) return null;
-    return dataset.map((data) => new Teams().hydrate(data));
+    return dataset.map((data) => new Groups().hydrate(data));
   }
 
   async listBySessionTemplate(
     session_template: number,
     paginationOptions: { offset?: number; limit?: number } = {},
-  ): Promise<Teams[] | null> {
+  ): Promise<Groups[] | null> {
     const dataset = await this.listAllBySessionTemplate(session_template, paginationOptions);
     if (!dataset || dataset.length === 0) return null;
-    return dataset.map((data) => new Teams().hydrate(data));
+    return dataset.map((data) => new Groups().hydrate(data));
   }
 
   // ============================================
@@ -530,18 +533,18 @@ export default class Teams extends TeamsModel {
 
   async listWithMembers(
     paginationOptions: { offset?: number; limit?: number } = {},
-  ): Promise<Teams[] | null> {
+  ): Promise<Groups[] | null> {
     const dataset = await this.listAllWithMembers(paginationOptions);
     if (!dataset || dataset.length === 0) return null;
-    return dataset.map((data) => new Teams().hydrate(data));
+    return dataset.map((data) => new Groups().hydrate(data));
   }
 
   async listWithActiveSession(
     paginationOptions: { offset?: number; limit?: number } = {},
-  ): Promise<Teams[] | null> {
+  ): Promise<Groups[] | null> {
     const dataset = await this.listAllWithActiveSession(paginationOptions);
     if (!dataset || dataset.length === 0) return null;
-    return dataset.map((data) => new Teams().hydrate(data));
+    return dataset.map((data) => new Groups().hydrate(data));
   }
 
   async toJSON(view: ViewMode = responseValue.FULL): Promise<object> {
@@ -639,14 +642,14 @@ export default class Teams extends TeamsModel {
       const memberId = member.getId();
       if (!memberId) continue;
 
-      const memberTeams = await Teams._listByManager(memberId);
+      const memberGroups = await Groups._listByManager(memberId);
 
-      if (memberTeams && memberTeams.length > 0) {
+      if (memberGroups && memberGroups.length > 0) {
         const isInHierarchy = await OrgHierarchy.isUserInHierarchy(memberId, rootManagerId);
 
         if (isInHierarchy) {
-          const memberTeam = memberTeams[0];
-          await memberTeam._recursiveFetchAllMembersFlat(rootManagerId, visited, accumulator);
+          const memberGroup = memberGroups[0];
+          await memberGroup._recursiveFetchAllMembersFlat(rootManagerId, visited, accumulator);
         }
       }
     }
@@ -662,7 +665,7 @@ export default class Teams extends TeamsModel {
    * @param visited Set pour éviter les boucles infinies
    * @returns Structure hiérarchique complète
    */
-  private async _buildManagerTeamHierarchy(
+  private async _buildManagerGroupsHierarchy(
     rootManagerId: number,
     visited: Set<number>,
   ): Promise<any> {
@@ -679,7 +682,7 @@ export default class Teams extends TeamsModel {
     const directMembers = await this.getDirectMembers();
     const activeSession = this.getActiveSession();
 
-    const membersWithSubTeams = [];
+    const membersWithSubGroups = [];
 
     for (const member of directMembers) {
       const memberId = member.getId();
@@ -687,35 +690,35 @@ export default class Teams extends TeamsModel {
 
       const memberData: any = {
         user: await member.toJSON(responseValue.MINIMAL),
-        is_team_manager: false,
-        managed_team: null,
+        is_groups_manager: false,
+        managed_groups: null,
       };
 
       // Vérifier si ce membre est manager d'une équipe
-      const memberTeams = await Teams._listByManager(memberId);
+      const memberGroups = await Groups._listByManager(memberId);
 
-      if (memberTeams && memberTeams.length > 0) {
+      if (memberGroups && memberGroups.length > 0) {
         // ✅ VALIDATION HIÉRARCHIQUE : Ce membre doit être sous le rootManager dans l'organigramme
         const isInHierarchy = await OrgHierarchy.isUserInHierarchy(memberId, rootManagerId);
 
         if (isInHierarchy) {
           // Ce membre est manager ET hiérarchiquement en dessous
-          const memberTeam = memberTeams[0]; // Prendre la première équipe
-          memberData.is_team_manager = true;
+          const memberGroup = memberGroups[0]; // Prendre la première équipe
+          memberData.is_groups_manager = true;
 
           // Récursion : construire la sous-équipe
-          const subTeamHierarchy = await memberTeam._buildManagerTeamHierarchy(
+          const subGroupsHierarchy = await memberGroup._buildManagerGroupsHierarchy(
             rootManagerId,
             visited,
           );
 
-          if (subTeamHierarchy) {
-            memberData.managed_team = subTeamHierarchy;
+          if (subGroupsHierarchy) {
+            memberData.managed_groups = subGroupsHierarchy;
           }
         }
       }
 
-      membersWithSubTeams.push(memberData);
+      membersWithSubGroups.push(memberData);
     }
 
     // Récupérer les détails de la session active
@@ -729,7 +732,7 @@ export default class Teams extends TeamsModel {
     }
 
     return {
-      team: {
+      groups: {
         guid: this.guid,
         name: this.name,
         manager: await managerObj.toJSON(responseValue.MINIMAL),
@@ -737,7 +740,7 @@ export default class Teams extends TeamsModel {
         active_session: activeSessionDetails,
       },
       total_direct_members: directMembers.length,
-      members: membersWithSubTeams,
+      members: membersWithSubGroups,
     };
   }
 
@@ -767,12 +770,12 @@ export default class Teams extends TeamsModel {
       if (!memberId) continue;
 
       // Chercher les équipes où ce membre est manager
-      const subTeams = await Teams._listByManager(memberId);
+      const subGroups = await Groups._listByManager(memberId);
 
-      if (subTeams && subTeams.length > 0) {
-        for (const subTeam of subTeams) {
+      if (subGroups && subGroups.length > 0) {
+        for (const subGroup of subGroups) {
           // Récursion : récupérer les membres de la sous-équipe
-          const subMembers = await subTeam._recursiveFetchAllMembers(visited);
+          const subMembers = await subGroup._recursiveFetchAllMembers(visited);
           allUsers.push(...subMembers);
         }
       }
@@ -784,7 +787,7 @@ export default class Teams extends TeamsModel {
   /**
    * Méthode privée récursive pour construire l'arbre
    */
-  private async _recursiveBuildTeamTree(visited: Set<number>): Promise<any> {
+  private async _recursiveBuildGroupsTree(visited: Set<number>): Promise<any> {
     // Protection contre les boucles infinies
     if (!this.id || visited.has(this.id)) {
       return null;
@@ -792,35 +795,35 @@ export default class Teams extends TeamsModel {
     visited.add(this.id);
 
     const directMembers = await this.getDirectMembers();
-    const membersWithSubTeams = [];
+    const membersWithSubGroups = [];
 
     for (const member of directMembers) {
       const memberId = member.getId();
       if (!memberId) continue;
 
       // Charger les équipes managées par ce membre
-      const managedTeams = await Teams._listByManager(memberId);
+      const managedGroups = await Groups._listByManager(memberId);
 
       const memberData: any = {
         user: await member.toJSON(responseValue.MINIMAL),
-        managed_teams: [],
+        managed_groups: [],
       };
 
-      if (managedTeams && managedTeams.length > 0) {
-        for (const subTeam of managedTeams) {
-          const subTreeData = await subTeam._recursiveBuildTeamTree(visited);
+      if (managedGroups && managedGroups.length > 0) {
+        for (const subGroup of managedGroups) {
+          const subTreeData = await subGroup._recursiveBuildGroupsTree(visited);
           if (subTreeData) {
-            memberData.managed_teams.push(subTreeData);
+            memberData.managed_groups.push(subTreeData);
           }
         }
       }
 
-      membersWithSubTeams.push(memberData);
+      membersWithSubGroups.push(memberData);
     }
 
     return {
-      team: await this.toJSON(responseValue.MINIMAL),
-      members: membersWithSubTeams,
+      groups: await this.toJSON(responseValue.MINIMAL),
+      members: membersWithSubGroups,
     };
   }
 
@@ -828,7 +831,7 @@ export default class Teams extends TeamsModel {
   // MÉTHODES PRIVÉES
   // ============================================
 
-  private hydrate(data: any): Teams {
+  private hydrate(data: any): Groups {
     this.id = data.id;
     this.guid = data.guid;
     this.name = data.name;

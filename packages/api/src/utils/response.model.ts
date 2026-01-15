@@ -319,6 +319,7 @@ export const responseStructure = {
   END_DATE: 'end_date',
   REASON: 'reason',
   GROUP: 'group',
+  GROUPS: 'groups',
   TEAM: 'team',
   SESSION_TEMPLATE: 'session_template',
   DEFAULT_SESSION_TEMPLATE: 'default_session_template',
@@ -385,7 +386,7 @@ export const tableName = {
   ROTATION_GROUPS: `${G.tableAp}_rotation_groups`,
   ROTATION_ASSIGNMENTS: `${G.tableAp}_rotation_assignments`,
   SCHEDULE_EXCEPTIONS: `${G.tableAp}_schedule_exceptions`,
-  TEAMS: `${G.tableAp}_teams`,
+  GROUPS: `${G.tableAp}_groups`,
   DEVICE: `${G.tableAp}_device`,
 } as const;
 

@@ -11,7 +11,7 @@ export const SCHEDULE_EXCEPTION_VALIDATION = {
     MIN_LENGTH: 1,
     MAX_LENGTH: 255,
   },
-  TEAM: {
+  GROUPS: {
     MIN_LENGTH: 1,
     MAX_LENGTH: 255,
   },
@@ -47,10 +47,10 @@ export const SCHEDULE_EXCEPTION_CODES = {
   TENANT_INVALID: 'tenant_invalid',
   USER_INVALID: 'user_invalid',
   USER_NOT_FOUND: 'user_not_found',
-  TEAM_INVALID: 'team_invalid',
-  TEAM_NOT_FOUND: 'team_not_found',
-  USER_OR_TEAM_REQUIRED: 'user_or_team_required',
-  BOTH_USER_AND_TEAM: 'both_user_and_team',
+  GROUPS_INVALID: 'groups_invalid',
+  GROUPS_NOT_FOUND: 'groups_not_found',
+  USER_OR_GROUPS_REQUIRED: 'user_or_groups_required',
+  BOTH_USER_AND_GROUPS: 'both_user_and_groups',
   SESSION_TEMPLATE_REQUIRED: 'session_template_required',
   SESSION_TEMPLATE_INVALID: 'session_template_invalid',
   SESSION_TEMPLATE_NOT_FOUND: 'session_template_not_found',
@@ -86,11 +86,11 @@ export const SCHEDULE_EXCEPTION_ERRORS = {
   USER_INVALID: `User GUID must be between ${SCHEDULE_EXCEPTION_VALIDATION.USER.MIN_LENGTH} and ${SCHEDULE_EXCEPTION_VALIDATION.USER.MAX_LENGTH} characters`,
   USER_NOT_FOUND: 'User not found',
 
-  TEAM_INVALID: `Team GUID must be between ${SCHEDULE_EXCEPTION_VALIDATION.TEAM.MIN_LENGTH} and ${SCHEDULE_EXCEPTION_VALIDATION.TEAM.MAX_LENGTH} characters`,
-  TEAM_NOT_FOUND: 'Rotation Team not found',
+  GROUPS_INVALID: `Groups GUID must be between ${SCHEDULE_EXCEPTION_VALIDATION.GROUPS.MIN_LENGTH} and ${SCHEDULE_EXCEPTION_VALIDATION.GROUPS.MAX_LENGTH} characters`,
+  GROUPS_NOT_FOUND: 'Rotation Groups not found',
 
-  USER_OR_TEAM_REQUIRED: 'Either user or team must be specified',
-  BOTH_USER_AND_TEAM: 'Cannot specify both user and team',
+  USER_OR_GROUPS_REQUIRED: 'Either user or groups must be specified',
+  BOTH_USER_AND_GROUPS: 'Cannot specify both user and groups',
 
   SESSION_TEMPLATE_REQUIRED: `${SCHEDULE_EXCEPTION_LABEL} session_template is required`,
   SESSION_TEMPLATE_INVALID: `Session Template GUID must be between ${SCHEDULE_EXCEPTION_VALIDATION.SESSION_TEMPLATE.MIN_LENGTH} and ${SCHEDULE_EXCEPTION_VALIDATION.SESSION_TEMPLATE.MAX_LENGTH} characters`,
@@ -124,9 +124,9 @@ export const SCHEDULE_EXCEPTION_ERRORS = {
 
   DATE_RANGE_OVERLAP: 'Exception date range overlaps with existing exception',
   USER_EXCEPTION_ALREADY_ASSIGNED: "'User is already assigned to this session template",
-  TEAM_EXCEPTION_ALREADY_ASSIGNED: 'Team is already assigned to this session template',
+  GROUPS_EXCEPTION_ALREADY_ASSIGNED: 'Groups is already assigned to this session template',
   USER_ALREADY_HAS_ACTIVE_EXCEPTION: 'User already has an active schedule exception',
-  TEAM_ALREADY_HAS_ACTIVE_EXCEPTION: 'Team already has an active schedule exception',
+  GROUPS_ALREADY_HAS_ACTIVE_EXCEPTION: 'Groups already has an active schedule exception',
 } as const;
 
 export const SCHEDULE_EXCEPTION_MESSAGES = {

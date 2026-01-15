@@ -3,6 +3,7 @@
 ## 📦 Phase 1: Préparation (5 min)
 
 ### Vérifications Préalables
+
 - [ ] J'ai lu `EXECUTIVE_SUMMARY.md`
 - [ ] J'ai lu `fix_generated_columns.md`
 - [ ] J'ai accès aux serveurs de développement/production
@@ -10,6 +11,7 @@
 - [ ] J'ai une sauvegarde récente de la base de données
 
 ### Fichiers Nécessaires
+
 - [ ] `GlobalLicenseModel_FIXED.ts` disponible
 - [ ] `GlobalLicense_FIXED.ts` disponible
 - [ ] `test_guide_after_fix.md` disponible
@@ -20,6 +22,7 @@
 ## 🔧 Phase 2: Backup (5 min)
 
 ### Backup du Code
+
 ```bash
 cd packages/api/src/master
 
@@ -35,6 +38,7 @@ cp class/GlobalLicense.ts class/GlobalLicense.ts.backup-$(date +%Y%m%d-%H%M%S)
 - [ ] Backups vérifiés (fichiers existent avec timestamp)
 
 ### Backup de la Base de Données (Optionnel mais Recommandé)
+
 ```bash
 pg_dump -U toke_user -d toke_db > backup_before_fix_$(date +%Y%m%d-%H%M%S).sql
 ```
@@ -48,6 +52,7 @@ pg_dump -U toke_user -d toke_db > backup_before_fix_$(date +%Y%m%d-%H%M%S).sql
 ### Environnement de Développement
 
 #### Étape 1: Copier les Fichiers Corrigés
+
 ```bash
 cd packages/api/src/master
 
@@ -63,6 +68,7 @@ cp /path/to/GlobalLicense_FIXED.ts class/GlobalLicense.ts
 - [ ] Aucune erreur de syntaxe TypeScript visible
 
 #### Étape 2: Compiler (si nécessaire)
+
 ```bash
 npm run build
 # ou
@@ -74,6 +80,7 @@ tsc
 - [ ] Aucun warning critique
 
 #### Étape 3: Redémarrer le Serveur
+
 ```bash
 npm run dev
 # ou
@@ -93,12 +100,14 @@ systemctl restart toke-api
 ### Tests Critiques
 
 #### Test 1: Current License
+
 ```bash
 curl -X GET "{{baseUrl}}/billing/current-license" \
   -H "Authorization: Bearer YOUR_TOKEN"
 ```
 
 **Résultat attendu:**
+
 ```json
 {
   "success": true,
@@ -116,6 +125,7 @@ curl -X GET "{{baseUrl}}/billing/current-license" \
 - [ ] ❌ Aucune erreur "column does not exist"
 
 #### Test 2: Billable Employees
+
 ```bash
 curl -X GET "{{baseUrl}}/billing/billable-employees" \
   -H "Authorization: Bearer YOUR_TOKEN"
@@ -127,6 +137,7 @@ curl -X GET "{{baseUrl}}/billing/billable-employees" \
 - [ ] ❌ Aucune erreur
 
 #### Test 3: Current Cost
+
 ```bash
 curl -X GET "{{baseUrl}}/billing/current-cost" \
   -H "Authorization: Bearer YOUR_TOKEN"
@@ -138,6 +149,7 @@ curl -X GET "{{baseUrl}}/billing/current-cost" \
 - [ ] ❌ Aucune erreur
 
 #### Test 4: Period Preview
+
 ```bash
 curl -X GET "{{baseUrl}}/billing/period-preview" \
   -H "Authorization: Bearer YOUR_TOKEN"
@@ -151,6 +163,7 @@ curl -X GET "{{baseUrl}}/billing/period-preview" \
 ### Tests Secondaires
 
 #### Test 5: Création de Licence (si applicable)
+
 ```bash
 curl -X POST "{{baseUrl}}/admin/global-license/create" \
   -H "Authorization: Bearer YOUR_ADMIN_TOKEN" \
@@ -163,6 +176,7 @@ curl -X POST "{{baseUrl}}/admin/global-license/create" \
 - [ ] ❌ Pas d'erreur "cannot insert generated column"
 
 #### Test 6: Mise à Jour de Licence (si applicable)
+
 ```bash
 curl -X PUT "{{baseUrl}}/admin/global-license/update/123456" \
   -H "Authorization: Bearer YOUR_ADMIN_TOKEN" \
@@ -179,6 +193,7 @@ curl -X PUT "{{baseUrl}}/admin/global-license/update/123456" \
 ## 📊 Phase 5: Vérification des Logs (5 min)
 
 ### Logs d'Application
+
 ```bash
 tail -n 100 /var/log/toke-api/error.log | grep -i "total_seats"
 # ou
@@ -190,6 +205,7 @@ pm2 logs toke-api --lines 100 | grep -i "total_seats"
 - [ ] ✅ Logs propres
 
 ### Logs PostgreSQL
+
 ```bash
 tail -n 100 /var/log/postgresql/postgresql-*.log | grep -i "total_seats"
 ```
@@ -202,12 +218,14 @@ tail -n 100 /var/log/postgresql/postgresql-*.log | grep -i "total_seats"
 ## 🔍 Phase 6: Diagnostic Automatisé (5 min)
 
 ### Exécuter le Script de Diagnostic
+
 ```bash
 chmod +x diagnostic_generated_columns.sh
 ./diagnostic_generated_columns.sh
 ```
 
 **Résultat attendu:**
+
 ```
 ✅ Diagnostic complet - Tout fonctionne correctement
 ```
@@ -225,6 +243,7 @@ chmod +x diagnostic_generated_columns.sh
 ## 📈 Phase 7: Tests de Performance (5 min)
 
 ### Test de Charge Basique
+
 ```bash
 # 10 requêtes simultanées
 for i in {1..10}; do
@@ -240,6 +259,7 @@ wait
 - [ ] ❌ Aucune erreur de concurrence
 
 ### Monitoring
+
 ```bash
 # CPU/Mémoire
 top -p $(pgrep -f toke-api)
@@ -258,13 +278,15 @@ psql -U toke_user -d toke_db -c "SELECT count(*) FROM pg_stat_activity WHERE dat
 ## 📝 Phase 8: Documentation (5 min)
 
 ### Mise à Jour de la Documentation
+
 - [ ] Changelog mis à jour avec la correction
 - [ ] Documentation API vérifiée (total_seats_purchased documenté)
 - [ ] Notes de version préparées
 - [ ] Équipe informée du déploiement
 
 ### Communication
-- [ ] Message Slack/Teams envoyé à l'équipe
+
+- [ ] Message Slack/Groups envoyé à l'équipe
 - [ ] Ticket Jira/GitHub mis à jour
 - [ ] Stakeholders informés
 
@@ -275,18 +297,21 @@ psql -U toke_user -d toke_db -c "SELECT count(*) FROM pg_stat_activity WHERE dat
 ### Checklist Finale
 
 #### Fonctionnalité
+
 - [ ] ✅ Tous les endpoints billing fonctionnent
 - [ ] ✅ `total_seats_purchased` visible dans toutes les réponses
 - [ ] ✅ Calculs corrects
 - [ ] ✅ Performance acceptable
 
 #### Stabilité
+
 - [ ] ✅ Aucune erreur dans les logs (30 min de monitoring)
 - [ ] ✅ Serveur stable
 - [ ] ✅ Base de données stable
 - [ ] ✅ Pas de regression sur autres endpoints
 
 #### Documentation
+
 - [ ] ✅ Changelog mis à jour
 - [ ] ✅ Équipe informée
 - [ ] ✅ Tests documentés
@@ -296,11 +321,13 @@ psql -U toke_user -d toke_db -c "SELECT count(*) FROM pg_stat_activity WHERE dat
 ## 🎯 Phase 10: Déploiement en Production (si DEV OK)
 
 ### Pré-Production (si applicable)
+
 - [ ] Tests en pré-production effectués
 - [ ] Validation QA obtenue
 - [ ] Approbation du chef de projet
 
 ### Production
+
 ```bash
 # Sur le serveur de production
 cd /path/to/production/packages/api/src/master
@@ -326,6 +353,7 @@ pm2 restart toke-api-prod
 - [ ] Monitoring actif (alertes configurées)
 
 ### Rollback Plan (en cas de problème)
+
 ```bash
 # Restaurer les backups
 cp model/GlobalLicenseModel.ts.backup-prod-TIMESTAMP model/GlobalLicenseModel.ts
@@ -344,12 +372,14 @@ pm2 restart toke-api-prod
 ## 📊 Métriques de Succès
 
 ### Avant le Fix
+
 - ❌ GET /billing/current-license: 100% échec
 - ❌ GET /billing/billable-employees: 100% échec
 - ❌ GET /billing/current-cost: 100% échec
 - ❌ GET /billing/period-preview: 100% échec
 
 ### Après le Fix (Objectifs)
+
 - ✅ GET /billing/current-license: 100% succès
 - ✅ GET /billing/billable-employees: 100% succès
 - ✅ GET /billing/current-cost: 100% succès
@@ -363,6 +393,7 @@ pm2 restart toke-api-prod
 ## 🎉 Conclusion
 
 ### Si Tous les Tests Passent ✅
+
 **🎊 Félicitations ! Le déploiement est un succès !**
 
 - Tous les endpoints billing fonctionnent
@@ -371,6 +402,7 @@ pm2 restart toke-api-prod
 - La stabilité est assurée
 
 ### Si Certains Tests Échouent ❌
+
 **⚠️ Ne pas déployer en production**
 
 1. Consulter `test_guide_after_fix.md` → Section Troubleshooting

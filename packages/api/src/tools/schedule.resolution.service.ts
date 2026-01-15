@@ -5,7 +5,7 @@ import RotationAssignment from '../tenant/class/RotationAssignments.js';
 import RotationGroup from '../tenant/class/RotationGroups.js';
 import ScheduleException from '../tenant/class/ScheduleExceptions.js';
 import User from '../tenant/class/User.js';
-import Teams from '../tenant/class/Teams.js';
+import Groups from '../tenant/class/Groups.js';
 
 // === TYPES ===
 
@@ -53,7 +53,7 @@ class ScheduleResolutionService {
 
     try {
       // recherche le groupe auquel appartient l'utilisateur (group where user active)
-      const activeGroup = await Teams._load(userId, false, true);
+      const activeGroup = await Groups._load(userId, false, true);
 
       // 1️⃣ ÉTAPE 1 : Chercher exception active
       resolutionPath.push('Checking schedule_exceptions');
@@ -182,7 +182,7 @@ class ScheduleResolutionService {
 
     if (activeGroupId) {
       // TODO: Chercher exception groupe si pas d'exception utilisateur
-      const groupException = await ScheduleException._listForTeamOnDate(activeGroupId, dateStr);
+      const groupException = await ScheduleException._listForGroupsOnDate(activeGroupId, dateStr);
 
       if (groupException && groupException.length > 0) {
         const exceptionGroup = groupException[0];
@@ -226,7 +226,7 @@ class ScheduleResolutionService {
     }
 
     // TODO: Chercher le template du groupe si pas de template utilisateur
-    // const groupTemplate = await Teams._listForGroupOnDate(groupId, dateStr);
+    // const groupTemplate = await Groups._listForGroupOnDate(groupId, dateStr);
     return null;
   }
 
@@ -271,7 +271,7 @@ class ScheduleResolutionService {
 
     let assignmentsGroup: RotationAssignment[] | null = null;
     if (activeGroupId) {
-      assignmentsGroup = await RotationAssignment._listByTeam(activeGroupId);
+      assignmentsGroup = await RotationAssignment._listByGroups(activeGroupId);
     }
 
     if (assignments && assignments.length > 0) {

@@ -2,8 +2,8 @@ import { DataTypes, ModelAttributes, ModelOptions } from 'sequelize';
 
 import { tableName } from '../../../utils/response.model.js';
 
-export const TeamsDbStructure = {
-  tableName: tableName.TEAMS,
+export const GroupsDbStructure = {
+  tableName: tableName.GROUPS,
   attributes: {
     id: {
       type: DataTypes.INTEGER,
@@ -14,15 +14,15 @@ export const TeamsDbStructure = {
         min: 1,
         max: 2147483647,
       },
-      comment: 'Team ID',
+      comment: 'Groups ID',
     },
     guid: {
       type: DataTypes.STRING(255),
       allowNull: false,
       defaultValue: DataTypes.UUIDV4,
       unique: {
-        name: 'unique_teams_guid',
-        msg: 'Teams GUID must be unique.',
+        name: 'unique_groups_guid',
+        msg: 'Groups GUID must be unique.',
       },
       validate: {
         len: [1, 255],
@@ -36,7 +36,7 @@ export const TeamsDbStructure = {
         len: [1, 128],
         notEmpty: true,
       },
-      comment: 'Teams name',
+      comment: 'Groups name',
     },
     manager: {
       type: DataTypes.INTEGER,
@@ -57,7 +57,7 @@ export const TeamsDbStructure = {
       allowNull: false,
       defaultValue: [],
       validate: {
-        isValidTeamStructure(value: any) {
+        isValidGroupStructure(value: any) {
           // 1. ✅ La valeur doit être un tableau
           if (!Array.isArray(value)) {
             throw new Error('Members must be an array.');
@@ -121,7 +121,7 @@ export const TeamsDbStructure = {
           }
         },
       },
-      comment: 'List of members of the team',
+      comment: 'List of members of the groups',
     },
     // default_session_template: {
     //   type: DataTypes.INTEGER,
@@ -140,7 +140,7 @@ export const TeamsDbStructure = {
       type: DataTypes.JSONB,
       allowNull: false,
       defaultValue: [],
-      comment: 'History of session templates assigned to team members.',
+      comment: 'History of session templates assigned to groups members.',
       validate: {
         isValidSessionAssignmentStructure(value: any) {
           // 1. ✅ La valeur doit être un tableau (Array)
@@ -219,7 +219,7 @@ export const TeamsDbStructure = {
     },
   } as ModelAttributes,
   options: {
-    tableName: tableName.TEAMS,
+    tableName: tableName.GROUPS,
     timestamps: true,
     createdAt: 'created_at',
     updatedAt: 'updated_at',
@@ -227,44 +227,44 @@ export const TeamsDbStructure = {
     deletedAt: 'deleted_at', // ✅ Nom du champ de soft delete
     underscored: true,
     freezeTableName: true,
-    comment: 'Teams table with validation information',
+    comment: 'Groups table with validation information',
     indexes: [
       {
         fields: ['guid'],
-        name: 'idx_teams_guid',
+        name: 'idx_groups_guid',
       },
       {
         fields: ['name'],
-        name: 'idx_teams_name',
+        name: 'idx_groups_name',
       },
       {
         fields: ['manager'],
-        name: 'idx_teams_manager',
+        name: 'idx_groups_manager',
       },
       // {
       //   fields: ['default_session_template'],
-      //   name: 'idx_teams_default_session_template',
+      //   name: 'idx_groups_default_session_template',
       // },
       {
         fields: ['assigned_sessions'],
-        name: 'idx_teams_assigned_sessions',
+        name: 'idx_groups_assigned_sessions',
       },
       {
         fields: ['created_at'],
-        name: 'idx_teams_created_at',
+        name: 'idx_groups_created_at',
       },
       {
         fields: ['deleted_at'],
-        name: 'idx_teams_deleted_at',
+        name: 'idx_groups_deleted_at',
       },
       {
         fields: ['members'],
-        name: 'idx_teams_members',
+        name: 'idx_groups_members',
         using: 'GIN',
       },
       {
         fields: ['manager', 'name'],
-        name: 'idx_teams_manager_name',
+        name: 'idx_groups_manager_name',
         unique: true,
       },
     ],

@@ -1,5 +1,7 @@
 import { Request, Response, Router } from 'express';
 import {
+  GROUPS_CODES,
+  GROUPS_ERRORS,
   HttpStatus,
   paginationSchema,
   SITES_CODES,
@@ -7,8 +9,6 @@ import {
   SITES_MESSAGES,
   SitesValidationUtils,
   SiteType,
-  TEAMS_CODES,
-  TEAMS_ERRORS,
   TimezoneConfigUtils,
   USERS_CODES,
   USERS_ERRORS,
@@ -841,8 +841,8 @@ router.post('/generate-qr-code', Ensure.post(), async (req: Request, res: Respon
 
     if (!manager || !UsersValidationUtils.validateGuid(manager)) {
       return R.handleError(res, HttpStatus.BAD_REQUEST, {
-        code: TEAMS_CODES.INVALID_GUID,
-        message: TEAMS_ERRORS.GUID_INVALID,
+        code: GROUPS_CODES.INVALID_GUID,
+        message: GROUPS_ERRORS.GUID_INVALID,
       });
     }
 
@@ -868,11 +868,11 @@ router.post('/generate-qr-code', Ensure.post(), async (req: Request, res: Respon
       });
     }
 
-    // const teamObj = await Teams._load(team, true);
+    // const teamObj = await Groups._load(team, true);
     // if (!teamObj) {
     //   return R.handleError(res, HttpStatus.NOT_FOUND, {
-    //     code: TEAMS_CODES.TEAM_NOT_FOUND,
-    //     message: TEAMS_CODES.TEAM_NOT_FOUND,
+    //     code: GROUPS_CODES.TEAM_NOT_FOUND,
+    //     message: GROUPS_ERRORS.TEAM_NOT_FOUND,
     //   });
     // }
 

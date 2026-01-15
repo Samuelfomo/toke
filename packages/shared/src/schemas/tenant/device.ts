@@ -65,12 +65,13 @@ const baseDevicesSchema = z.object({
     })
     .default(DEVICES_DEFAULTS.ACTIVE),
 
-  created_by: z
+  config_by: z
     .string({
       required_error: DEVICES_ERRORS.CREATED_BY_REQUIRED,
       invalid_type_error: DEVICES_ERRORS.CREATED_BY_INVALID,
     })
-    .trim(),
+    .trim()
+    .optional(),
 });
 
 // Schema pour la création - tous les champs requis
@@ -85,7 +86,7 @@ export const devicesFiltersSchema = z
     name: z.string().optional(),
     device_type: z.nativeEnum(DeviceType).optional(),
     assigned_to: z.number().int().optional(),
-    created_by: z.number().int().optional(),
+    config_by: z.number().int().optional(),
     active: z.boolean().optional(),
     gps_accuracy_min: z.number().int().optional(),
     gps_accuracy_max: z.number().int().optional(),

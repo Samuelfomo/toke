@@ -37,13 +37,19 @@ const baseRotationAssignmentSchema = z.object({
       ROTATION_ASSIGNMENT_ERRORS.ASSIGNED_BY_INVALID,
     ),
 
-  team: z
+  groups: z
     .string({
-      invalid_type_error: ROTATION_ASSIGNMENT_ERRORS.TEAM_INVALID,
+      invalid_type_error: ROTATION_ASSIGNMENT_ERRORS.GROUPS_INVALID,
     })
     .trim()
-    .min(ROTATION_ASSIGNMENT_VALIDATION.TEAM.MIN_LENGTH, ROTATION_ASSIGNMENT_ERRORS.TEAM_INVALID)
-    .max(ROTATION_ASSIGNMENT_VALIDATION.TEAM.MAX_LENGTH, ROTATION_ASSIGNMENT_ERRORS.TEAM_INVALID)
+    .min(
+      ROTATION_ASSIGNMENT_VALIDATION.GROUPS.MIN_LENGTH,
+      ROTATION_ASSIGNMENT_ERRORS.GROUPS_INVALID,
+    )
+    .max(
+      ROTATION_ASSIGNMENT_VALIDATION.GROUPS.MAX_LENGTH,
+      ROTATION_ASSIGNMENT_ERRORS.GROUPS_INVALID,
+    )
     .nullable()
     .optional(),
 
@@ -84,26 +90,26 @@ const baseRotationAssignmentSchema = z.object({
 // Schema for creation - all fields required except defaults
 export const createRotationAssignmentSchema = baseRotationAssignmentSchema.refine(
   (data) => {
-    // Either user or team must be specified, but not both
+    // Either user or groups must be specified, but not both
     const hasUser = data.user !== null && data.user !== undefined;
-    const hasTeam = data.team !== null && data.team !== undefined;
-    return hasUser !== hasTeam; // XOR: exactly one must be true
+    const hasGroups = data.groups !== null && data.groups !== undefined;
+    return hasUser !== hasGroups; // XOR: exactly one must be true
   },
   {
-    message: ROTATION_ASSIGNMENT_ERRORS.USER_OR_TEAM_REQUIRED,
+    message: ROTATION_ASSIGNMENT_ERRORS.USER_OR_GROUPS_REQUIRED,
   },
 );
 
 // Schema for updates - all fields optional
 export const updateRotationAssignmentSchema = baseRotationAssignmentSchema.partial().refine(
   (data) => {
-    // Either user or team must be specified, but not both
+    // Either user or groups must be specified, but not both
     const hasUser = data.user !== null && data.user !== undefined;
-    const hasTeam = data.team !== null && data.team !== undefined;
-    return hasUser !== hasTeam; // XOR: exactly one must be true
+    const hasGroups = data.groups !== null && data.groups !== undefined;
+    return hasUser !== hasGroups; // XOR: exactly one must be true
   },
   {
-    message: ROTATION_ASSIGNMENT_ERRORS.USER_OR_TEAM_REQUIRED,
+    message: ROTATION_ASSIGNMENT_ERRORS.USER_OR_GROUPS_REQUIRED,
   },
 );
 
@@ -112,7 +118,7 @@ export const rotationAssignmentFiltersSchema = z
   .object({
     user: z.number().int().optional(),
     assigned_by: z.number().int().optional(),
-    team: z.number().int().optional(),
+    groups: z.number().int().optional(),
     rotation_group: z.number().int().optional(),
     offset: z.number().int().optional(),
     assigned_at_from: z.string().datetime().optional(),
@@ -130,7 +136,7 @@ export const rotationAssignmentGuidSchema = z
 const FIELD_TO_CODE_MAP: Record<string, RotationAssignmentCode> = {
   user: ROTATION_ASSIGNMENT_CODES.USER_INVALID,
   assigned_by: ROTATION_ASSIGNMENT_CODES.ASSIGNED_BY_INVALID,
-  team: ROTATION_ASSIGNMENT_CODES.TEAM_INVALID,
+  groups: ROTATION_ASSIGNMENT_CODES.GROUPS_INVALID,
   rotation_group: ROTATION_ASSIGNMENT_CODES.ROTATION_GROUP_INVALID,
   offset: ROTATION_ASSIGNMENT_CODES.OFFSET_INVALID,
   assigned_at: ROTATION_ASSIGNMENT_CODES.ASSIGNED_AT_INVALID,

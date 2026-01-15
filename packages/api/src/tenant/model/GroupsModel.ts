@@ -1,12 +1,12 @@
 import { Op } from 'sequelize';
-import { TEAMS_ERRORS, TeamsValidationUtils, TI, TimezoneConfigUtils } from '@toke/shared';
+import { GROUPS_ERRORS, GroupsValidationUtils, TI, TimezoneConfigUtils } from '@toke/shared';
 
 import BaseModel from '../database/db.base.js';
 import { tableName } from '../../utils/response.model.js';
 
-export default class TeamsModel extends BaseModel {
+export default class GroupsModel extends BaseModel {
   public readonly db = {
-    tableName: tableName.TEAMS,
+    tableName: tableName.GROUPS,
     id: 'id',
     guid: 'guid',
     name: 'name',
@@ -27,7 +27,7 @@ export default class TeamsModel extends BaseModel {
   protected guid?: string;
   protected name?: string;
   protected manager?: number;
-  protected members: TI.TeamMember[] = [];
+  protected members: TI.GroupsMember[] = [];
   protected assigned_sessions: TI.AssignedSession[] = [];
   // protected rotation_group: TI.RotationGroup[] = [];
   protected created_at?: Date;
@@ -87,22 +87,22 @@ export default class TeamsModel extends BaseModel {
   /**
    * Retourne l'équipe dans laquelle l'utilisateur est actuellement actif
    */
-  protected async findActiveTeamByUser(userId: number): Promise<any | null> {
-    const allTeams = await this.listAll(); // deleted_at = null par défaut
+  protected async findActiveGroupsByUser(userId: number): Promise<any | null> {
+    const allGroups = await this.listAll(); // deleted_at = null par défaut
 
-    for (const team of allTeams) {
-      const members = team.members || [];
+    for (const group of allGroups) {
+      const members = group.members || [];
 
       const activeMember = members.find(
-        (m: TI.TeamMember) => m.user === userId && m.active !== false,
+        (m: TI.GroupsMember) => m.user === userId && m.active !== false,
       );
 
       if (activeMember) {
-        return team; // ✅ team active trouvée
+        return group; // ✅ group active trouvée
       }
     }
 
-    return null; // ❌ aucune team active
+    return null; // ❌ aucune group active
   }
 
   // ============================================
@@ -146,12 +146,12 @@ export default class TeamsModel extends BaseModel {
       [this.db.deleted_at]: null,
     };
 
-    const allTeams = await this.listAll(conditions, paginationOptions);
+    const allGroups = await this.listAll(conditions, paginationOptions);
 
     // Filtrer les équipes contenant ce membre
-    return allTeams.filter((team) => {
-      const members = team.members || [];
-      return members.some((member: TI.TeamMember) => member.user === user);
+    return allGroups.filter((group) => {
+      const members = group.members || [];
+      return members.some((member: TI.GroupsMember) => member.user === user);
     });
   }
 
@@ -166,10 +166,10 @@ export default class TeamsModel extends BaseModel {
       [this.db.deleted_at]: null,
     };
 
-    const allTeams = await this.listAll(conditions, paginationOptions);
+    const allGroups = await this.listAll(conditions, paginationOptions);
 
-    return allTeams.filter((team) => {
-      const sessions = team.assigned_sessions || [];
+    return allGroups.filter((group) => {
+      const sessions = group.assigned_sessions || [];
       return sessions.some(
         (session: TI.AssignedSession) => session.session_template === sessionTemplate,
       );
@@ -182,10 +182,10 @@ export default class TeamsModel extends BaseModel {
   protected async listAllWithMembers(
     paginationOptions: { offset?: number; limit?: number } = {},
   ): Promise<any[]> {
-    const allTeams = await this.listAll({}, paginationOptions);
+    const allGroups = await this.listAll({}, paginationOptions);
 
-    return allTeams.filter((team) => {
-      const members = team.members || [];
+    return allGroups.filter((group) => {
+      const members = group.members || [];
       return members.length > 0;
     });
   }
@@ -196,10 +196,10 @@ export default class TeamsModel extends BaseModel {
   protected async listAllWithActiveSession(
     paginationOptions: { offset?: number; limit?: number } = {},
   ): Promise<any[]> {
-    const allTeams = await this.listAll({}, paginationOptions);
+    const allGroups = await this.listAll({}, paginationOptions);
 
-    return allTeams.filter((team) => {
-      const sessions = team.assigned_sessions || [];
+    return allGroups.filter((group) => {
+      const sessions = group.assigned_sessions || [];
       return sessions.some((session: TI.AssignedSession) => session.active === true);
     });
   }
@@ -217,18 +217,18 @@ export default class TeamsModel extends BaseModel {
     return await this.countByGroup(this.db.tableName, this.db.manager, where);
   }
 
-  protected async getTeamsWithMembersCount(): Promise<{
+  protected async getGroupsWithMembersCount(): Promise<{
     with_members: number;
     without_members: number;
   }> {
-    const allTeams = await this.listAll();
+    const allGroups = await this.listAll();
 
-    const withMembers = allTeams.filter((team) => {
-      const members = team.members || [];
+    const withMembers = allGroups.filter((group) => {
+      const members = group.members || [];
       return members.length > 0;
     }).length;
 
-    const withoutMembers = allTeams.length - withMembers;
+    const withoutMembers = allGroups.length - withMembers;
 
     return { with_members: withMembers, without_members: withoutMembers };
   }
@@ -242,14 +242,14 @@ export default class TeamsModel extends BaseModel {
 
     const guid = await this.randomGuidGenerator(this.db.tableName);
     if (!guid) {
-      throw new Error(TEAMS_ERRORS.GUID_GENERATION_FAILED);
+      throw new Error(GROUPS_ERRORS.GUID_GENERATION_FAILED);
     }
 
     // Vérification unicité du nom pour ce manager
     if (this.name) {
-      const existingTeam = await this.findByManagerName(this.manager!, this.name, true);
-      if (existingTeam) {
-        throw new Error(TEAMS_ERRORS.DUPLICATE_ENTRY);
+      const existingGroups = await this.findByManagerName(this.manager!, this.name, true);
+      if (existingGroups) {
+        throw new Error(GROUPS_ERRORS.DUPLICATE_ENTRY);
       }
     }
 
@@ -262,7 +262,7 @@ export default class TeamsModel extends BaseModel {
     });
 
     if (!lastID) {
-      throw new Error(TEAMS_ERRORS.CREATION_FAILED);
+      throw new Error(GROUPS_ERRORS.CREATION_FAILED);
     }
 
     this.id = typeof lastID === 'object' ? lastID.id : lastID;
@@ -273,15 +273,15 @@ export default class TeamsModel extends BaseModel {
     await this.validate();
 
     if (!this.id) {
-      throw new Error(TEAMS_ERRORS.ID_REQUIRED);
+      throw new Error(GROUPS_ERRORS.ID_REQUIRED);
     }
 
     const updateData: Record<string, any> = {};
 
     if (this.name !== undefined) {
-      const existingTeam = await this.findByManagerName(this.manager!, this.name, true);
-      if (existingTeam && existingTeam.id !== this.id) {
-        throw new Error(TEAMS_ERRORS.DUPLICATE_ENTRY);
+      const existingGroups = await this.findByManagerName(this.manager!, this.name, true);
+      if (existingGroups && existingGroups.id !== this.id) {
+        throw new Error(GROUPS_ERRORS.DUPLICATE_ENTRY);
       }
       updateData[this.db.name] = this.name;
     }
@@ -301,7 +301,7 @@ export default class TeamsModel extends BaseModel {
     const updated = await this.updateOne(this.db.tableName, updateData, { [this.db.id]: this.id });
 
     if (!updated) {
-      throw new Error(TEAMS_ERRORS.UPDATE_FAILED);
+      throw new Error(GROUPS_ERRORS.UPDATE_FAILED);
     }
   }
 
@@ -332,21 +332,21 @@ export default class TeamsModel extends BaseModel {
   /**
    * Vérifie si un utilisateur est déjà membre actif d'une autre équipe
    */
-  protected async isUserActiveInAnotherTeam(
+  protected async isUserActiveInAnotherGroups(
     userId: number,
-    currentTeamId?: number,
+    currentGroupsId?: number,
   ): Promise<boolean> {
-    const allTeams = await this.listAll();
+    const allGroups = await this.listAll();
 
-    for (const team of allTeams) {
+    for (const group of allGroups) {
       // Ignorer l'équipe actuelle lors de l'update
-      if (currentTeamId && team.id === currentTeamId) {
+      if (currentGroupsId && group.id === currentGroupsId) {
         continue;
       }
 
-      const members = team.members || [];
+      const members = group.members || [];
       const activeMember = members.find(
-        (m: TI.TeamMember) => m.user === userId && m.active !== false,
+        (m: TI.GroupsMember) => m.user === userId && m.active !== false,
       );
 
       if (activeMember) {
@@ -363,49 +363,49 @@ export default class TeamsModel extends BaseModel {
 
   private async validate(): Promise<void> {
     if (!this.name) {
-      throw new Error(TEAMS_ERRORS.NAME_REQUIRED);
+      throw new Error(GROUPS_ERRORS.NAME_REQUIRED);
     }
 
-    if (!TeamsValidationUtils.validateName(this.name)) {
-      throw new Error(TEAMS_ERRORS.NAME_INVALID);
+    if (!GroupsValidationUtils.validateName(this.name)) {
+      throw new Error(GROUPS_ERRORS.NAME_INVALID);
     }
 
     if (!this.manager) {
-      throw new Error(TEAMS_ERRORS.MANAGER_REQUIRED);
+      throw new Error(GROUPS_ERRORS.MANAGER_REQUIRED);
     }
 
-    // if (!TeamsValidationUtils.validateManager(this.manager)) {
-    //   throw new Error(TEAMS_ERRORS.MANAGER_INVALID);
+    // if (!GroupsValidationUtils.validateManager(this.manager)) {
+    //   throw new Error(GROUPS_ERRORS.MANAGER_INVALID);
     // }
 
-    // if (this.members && !TeamsValidationUtils.validateMembers(this.members)) {
-    //   throw new Error(TEAMS_ERRORS.MEMBERS_INVALID);
+    // if (this.members && !GroupsValidationUtils.validateMembers(this.members)) {
+    //   throw new Error(GROUPS_ERRORS.MEMBERS_INVALID);
     // }
 
     // if (
     //   this.assigned_sessions &&
-    //   !TeamsValidationUtils.validateAssignedSessions(this.assigned_sessions)
+    //   !GroupsValidationUtils.validateAssignedSessions(this.assigned_sessions)
     // ) {
-    //   throw new Error(TEAMS_ERRORS.ASSIGNED_SESSIONS_INVALID);
+    //   throw new Error(GROUPS_ERRORS.ASSIGNED_SESSIONS_INVALID);
     // }
 
     // ✅ NOUVELLE VALIDATION : Vérifier qu'aucun membre actif n'est dans une autre équipe
     if (this.members && this.members.length > 0) {
-      const activeMembers = this.members.filter((m: TI.TeamMember) => m.active !== false);
+      const activeMembers = this.members.filter((m: TI.GroupsMember) => m.active !== false);
 
       for (const member of activeMembers) {
-        const isInAnotherTeam = await this.isUserActiveInAnotherTeam(member.user, this.id);
+        const isInAnotherGroups = await this.isUserActiveInAnotherGroups(member.user, this.id);
 
-        if (isInAnotherTeam) {
+        if (isInAnotherGroups) {
           throw new Error(
-            `User ${member.user} is already an active member of another team. ` +
-              `A user can only be active in one team at a time.`,
+            `User ${member.user} is already an active member of another groups. ` +
+              `A user can only be active in one groups at a time.`,
           );
         }
       }
     }
 
-    const cleaned = TeamsValidationUtils.cleanTeamData(this);
+    const cleaned = GroupsValidationUtils.cleanGroupsData(this);
     Object.assign(this, cleaned);
   }
 }

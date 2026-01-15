@@ -1,8 +1,8 @@
-// utils/teams.validation.ts
-import { TEAMS_DEFAULTS, TEAMS_VALIDATION } from '../../constants/tenant/teams.js';
+// utils/groups.validation.ts
+import { GROUPS_DEFAULTS, GROUPS_VALIDATION } from '../../constants/tenant/groups.js';
 import { TimezoneConfigUtils } from '../timezone.config.validation.js';
 
-export class TeamsValidationUtils {
+export class GroupsValidationUtils {
   /**
    * Validates GUID
    */
@@ -11,8 +11,8 @@ export class TeamsValidationUtils {
     const trimmed = guid.trim();
 
     if (
-      trimmed.length < TEAMS_VALIDATION.GUID.MIN_LENGTH ||
-      trimmed.length > TEAMS_VALIDATION.GUID.MAX_LENGTH
+      trimmed.length < GROUPS_VALIDATION.GUID.MIN_LENGTH ||
+      trimmed.length > GROUPS_VALIDATION.GUID.MAX_LENGTH
     ) {
       return false;
     }
@@ -24,14 +24,14 @@ export class TeamsValidationUtils {
   }
 
   /**
-   * Validates team name
+   * Validates groups name
    */
   static validateName(name: any): boolean {
     if (!name || typeof name !== 'string') return false;
     const trimmed = name.trim();
     return (
-      trimmed.length >= TEAMS_VALIDATION.NAME.MIN_LENGTH &&
-      trimmed.length <= TEAMS_VALIDATION.NAME.MAX_LENGTH
+      trimmed.length >= GROUPS_VALIDATION.NAME.MIN_LENGTH &&
+      trimmed.length <= GROUPS_VALIDATION.NAME.MAX_LENGTH
     );
   }
 
@@ -43,8 +43,8 @@ export class TeamsValidationUtils {
     const trimmed = manager.trim();
 
     if (
-      trimmed.length < TEAMS_VALIDATION.MANAGER.MIN_LENGTH ||
-      trimmed.length > TEAMS_VALIDATION.MANAGER.MAX_LENGTH
+      trimmed.length < GROUPS_VALIDATION.MANAGER.MIN_LENGTH ||
+      trimmed.length > GROUPS_VALIDATION.MANAGER.MAX_LENGTH
     ) {
       return false;
     }
@@ -63,8 +63,8 @@ export class TeamsValidationUtils {
     const trimmed = user.trim();
 
     if (
-      trimmed.length < TEAMS_VALIDATION.MEMBER.USER.MIN_LENGTH ||
-      trimmed.length > TEAMS_VALIDATION.MEMBER.USER.MAX_LENGTH
+      trimmed.length < GROUPS_VALIDATION.MEMBER.USER.MIN_LENGTH ||
+      trimmed.length > GROUPS_VALIDATION.MEMBER.USER.MAX_LENGTH
     ) {
       return false;
     }
@@ -83,8 +83,8 @@ export class TeamsValidationUtils {
     const trimmed = sessionTemplate.trim();
 
     if (
-      trimmed.length < TEAMS_VALIDATION.SESSION_TEMPLATE.MIN_LENGTH ||
-      trimmed.length > TEAMS_VALIDATION.SESSION_TEMPLATE.MAX_LENGTH
+      trimmed.length < GROUPS_VALIDATION.SESSION_TEMPLATE.MIN_LENGTH ||
+      trimmed.length > GROUPS_VALIDATION.SESSION_TEMPLATE.MAX_LENGTH
     ) {
       return false;
     }
@@ -169,12 +169,12 @@ export class TeamsValidationUtils {
       Number.isInteger(limit) &&
       offset >= 0 &&
       limit > 0 &&
-      limit <= TEAMS_DEFAULTS.PAGINATION.MAX_LIMIT
+      limit <= GROUPS_DEFAULTS.PAGINATION.MAX_LIMIT
     );
   }
 
   /**
-   * Checks if a member exists in the team
+   * Checks if a member exists in the groups
    */
   static hasMember(members: any[], userId: number): boolean {
     return members.some((member) => member.user === userId);
@@ -203,9 +203,9 @@ export class TeamsValidationUtils {
   }
 
   /**
-   * Cleans and normalizes team data
+   * Cleans and normalizes groups data
    */
-  static cleanTeamData(data: Record<string, any>): Record<string, any> {
+  static cleanGroupsData(data: Record<string, any>): Record<string, any> {
     const cleaned = { ...data };
 
     // Nettoyer le nom
@@ -260,7 +260,7 @@ export class TeamsValidationUtils {
   }
 
   /**
-   * Validates that a team is complete for creation
+   * Validates that a groups is complete for creation
    */
   static isValidForCreation(data: any): boolean {
     const requiredFields = ['name', 'manager'];
@@ -283,7 +283,7 @@ export class TeamsValidationUtils {
   }
 
   /**
-   * Validates that a team is valid for update
+   * Validates that a groups is valid for update
    */
   static isValidForUpdate(data: any): boolean {
     const validations = [
@@ -298,14 +298,14 @@ export class TeamsValidationUtils {
   }
 
   /**
-   * Extracts validation errors for a team
+   * Extracts validation errors for a groups
    */
   static getValidationErrors(data: any): string[] {
     const errors: string[] = [];
 
     if (data.name === undefined || data.name === null || !this.validateName(data.name)) {
       errors.push(
-        `Invalid name: must be between ${TEAMS_VALIDATION.NAME.MIN_LENGTH} and ${TEAMS_VALIDATION.NAME.MAX_LENGTH} characters`,
+        `Invalid name: must be between ${GROUPS_VALIDATION.NAME.MIN_LENGTH} and ${GROUPS_VALIDATION.NAME.MAX_LENGTH} characters`,
       );
     }
 
@@ -315,7 +315,7 @@ export class TeamsValidationUtils {
       !this.validateManager(data.manager)
     ) {
       errors.push(
-        `Invalid manager: must be between ${TEAMS_VALIDATION.MANAGER.MIN_LENGTH} and ${TEAMS_VALIDATION.MANAGER.MAX_LENGTH}`,
+        `Invalid manager: must be between ${GROUPS_VALIDATION.MANAGER.MIN_LENGTH} and ${GROUPS_VALIDATION.MANAGER.MAX_LENGTH}`,
       );
     }
 
@@ -334,7 +334,7 @@ export class TeamsValidationUtils {
 
     if (data.guid !== undefined && !this.validateGuid(data.guid)) {
       errors.push(
-        `Invalid GUID: must be 1-${TEAMS_VALIDATION.GUID.MAX_LENGTH} characters and valid UUID v4 format`,
+        `Invalid GUID: must be 1-${GROUPS_VALIDATION.GUID.MAX_LENGTH} characters and valid UUID v4 format`,
       );
     }
 
@@ -358,9 +358,9 @@ export class TeamsValidationUtils {
   }
 
   /**
-   * Gets team summary
+   * Gets groups summary
    */
-  static getTeamSummary(team: any): {
+  static getGroupSummary(groups: any): {
     totalMembers: number;
     activeMembers: number;
     inactiveMembers: number;
@@ -368,8 +368,8 @@ export class TeamsValidationUtils {
     activeSessionId: number | null;
     totalSessions: number;
   } {
-    const members = team.members || [];
-    const sessions = team.assigned_sessions || [];
+    const members = groups.members || [];
+    const sessions = groups.assigned_sessions || [];
 
     const activeMembers = members.filter((m: any) => m.active !== false);
     const activeSession = sessions.find((s: any) => s.active === true);
@@ -385,21 +385,21 @@ export class TeamsValidationUtils {
   }
 
   /**
-   * Generates team report
+   * Generates groups report
    */
-  static generateTeamReport(team: any, memberDetails?: any[]) {
-    const summary = this.getTeamSummary(team);
+  static generateGroupsReport(groups: any, memberDetails?: any[]) {
+    const summary = this.getGroupSummary(groups);
 
     const report = {
-      team: {
-        id: team.id,
-        guid: team.guid,
-        name: team.name,
-        manager: team.manager,
-        created_at: team.created_at,
+      groups: {
+        id: groups.id,
+        guid: groups.guid,
+        name: groups.name,
+        manager: groups.manager,
+        created_at: groups.created_at,
       },
       summary,
-      members: (team.members || []).map((member: any) => {
+      members: (groups.members || []).map((member: any) => {
         const detail = memberDetails?.find((d) => d.id === member.user);
         return {
           user_id: member.user,
@@ -408,13 +408,13 @@ export class TeamsValidationUtils {
           active: member.active !== false,
         };
       }),
-      sessions: team.assigned_sessions || [],
+      sessions: groups.assigned_sessions || [],
       issues: [] as string[],
     };
 
     // Identifier les problèmes
     if (summary.totalMembers === 0) {
-      report.issues.push('Team has no members');
+      report.issues.push('Groups has no members');
     }
 
     if (!summary.hasActiveSession && summary.totalSessions > 0) {
@@ -429,7 +429,7 @@ export class TeamsValidationUtils {
   }
 
   /**
-   * Adds a member to the team
+   * Adds a member to the groups
    */
   static addMember(
     currentMembers: any[],
@@ -437,7 +437,7 @@ export class TeamsValidationUtils {
   ): any[] {
     // Vérifier si le membre existe déjà
     if (this.hasMember(currentMembers, newMember.user)) {
-      throw new Error('Member already exists in the team');
+      throw new Error('Member already exists in the groups');
     }
 
     const member = {
@@ -450,7 +450,7 @@ export class TeamsValidationUtils {
   }
 
   /**
-   * Removes a member from the team
+   * Removes a member from the groups
    */
   static removeMember(currentMembers: any[], userId: number): any[] {
     return currentMembers.filter((member) => member.user !== userId);

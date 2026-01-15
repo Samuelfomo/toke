@@ -30,7 +30,7 @@ import sessionTemplatesRoute from './routes/session.templates.route.js';
 import rotationGroupsRoute from './routes/rotation.groups.route.js';
 import rotationAssignmentsRoute from './routes/rotation.assignments.route.js';
 import scheduleExceptionsRoute from './routes/schedule.exceptions.route.js';
-import groupsRoute from './routes/teams.route.js';
+import groupsRoute from './routes/groups.route.js';
 import deviceRoute from './routes/device.route.js';
 
 interface AppConfig {

@@ -14,24 +14,24 @@ export class RotationAssignmentValidationUtils {
   }
 
   /**
-   * Validates team
+   * Validates groups
    */
-  static validateTeam(team: any): boolean {
-    if (team === null || team === undefined) return true;
-    if (typeof team !== 'string') return false;
+  static validateGroups(groups: any): boolean {
+    if (groups === null || groups === undefined) return true;
+    if (typeof groups !== 'string') return false;
     return (
-      team.length >= ROTATION_ASSIGNMENT_VALIDATION.TEAM.MIN_LENGTH &&
-      team.length <= ROTATION_ASSIGNMENT_VALIDATION.TEAM.MAX_LENGTH
+      groups.length >= ROTATION_ASSIGNMENT_VALIDATION.GROUPS.MIN_LENGTH &&
+      groups.length <= ROTATION_ASSIGNMENT_VALIDATION.GROUPS.MAX_LENGTH
     );
   }
 
   /**
-   * Validates that either user or team is specified (XOR)
+   * Validates that either user or groups is specified (XOR)
    */
-  static validateUserOrTeam(user: any, team: any): boolean {
+  static validateUserOrGroups(user: any, groups: any): boolean {
     const hasUser = user !== null && user !== undefined;
-    const hasTeam = team !== null && team !== undefined;
-    return hasUser !== hasTeam; // XOR: exactly one must be true
+    const hasGroups = groups !== null && groups !== undefined;
+    return hasUser !== hasGroups; // XOR: exactly one must be true
   }
 
   /**
@@ -98,10 +98,10 @@ export class RotationAssignmentValidationUtils {
       }
     }
 
-    if (cleaned.team !== undefined && cleaned.team !== null) {
-      cleaned.team = parseInt(cleaned.team, 10);
-      if (isNaN(cleaned.team)) {
-        throw new Error('Invalid team: must be a valid integer');
+    if (cleaned.groups !== undefined && cleaned.groups !== null) {
+      cleaned.groups = parseInt(cleaned.groups, 10);
+      if (isNaN(cleaned.groups)) {
+        throw new Error('Invalid groups: must be a valid integer');
       }
     }
 

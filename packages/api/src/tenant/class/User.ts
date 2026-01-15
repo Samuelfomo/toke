@@ -1,4 +1,4 @@
-import { TeamsValidationUtils, TI, TimezoneConfigUtils, USERS_DEFAULTS } from '@toke/shared';
+import { GroupsValidationUtils, TI, TimezoneConfigUtils, USERS_DEFAULTS } from '@toke/shared';
 
 import UserModel from '../model/UserModel.js';
 import W from '../../tools/watcher.js';
@@ -427,7 +427,10 @@ export default class User extends UserModel {
       active,
     };
 
-    this.assigned_sessions = TeamsValidationUtils.assignSession(this.assigned_sessions, newSession);
+    this.assigned_sessions = GroupsValidationUtils.assignSession(
+      this.assigned_sessions,
+      newSession,
+    );
     return this;
   }
 
@@ -435,7 +438,7 @@ export default class User extends UserModel {
    * Activer une session template spécifique
    */
   activateSession(sessionTemplate: number): User {
-    this.assigned_sessions = TeamsValidationUtils.activateSession(
+    this.assigned_sessions = GroupsValidationUtils.activateSession(
       this.assigned_sessions,
       sessionTemplate,
     );
@@ -446,7 +449,7 @@ export default class User extends UserModel {
    * Récupérer la session active
    */
   getActiveSession(): TI.AssignedSession | null {
-    return TeamsValidationUtils.getActiveSession(this.assigned_sessions);
+    return GroupsValidationUtils.getActiveSession(this.assigned_sessions);
   }
 
   /**
@@ -460,7 +463,7 @@ export default class User extends UserModel {
    * Désactiver toutes les sessions
    */
   deactivateAllSessions(): User {
-    this.assigned_sessions = TeamsValidationUtils.deactivateAllSessions(this.assigned_sessions);
+    this.assigned_sessions = GroupsValidationUtils.deactivateAllSessions(this.assigned_sessions);
     return this;
   }
 
