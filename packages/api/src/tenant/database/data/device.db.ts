@@ -37,17 +37,6 @@ export const DeviceDbStructure = {
       },
       comment: 'Device Name',
     },
-    // identified: {
-    //   type: DataTypes.STRING(255),
-    //   allowNull: false,
-    //   unique: { name: 'unique_device_identified', msg: 'Device Identified must be unique.' },
-    //   validate: {
-    //     len: [1, 255],
-    //     nullable: false,
-    //     notEmpty: true,
-    //   },
-    //   comment: 'Device identified',
-    // },
     device_type: {
       type: DataTypes.ENUM(...Object.values(DeviceType)),
       allowNull: false,
@@ -113,9 +102,9 @@ export const DeviceDbStructure = {
       },
       comment: 'Active device status',
     },
-    created_by: {
+    config_by: {
       type: DataTypes.INTEGER,
-      allowNull: false,
+      allowNull: true,
       references: {
         model: tableName.USERS,
         key: 'id',
@@ -124,8 +113,9 @@ export const DeviceDbStructure = {
         isInt: true,
         min: 1,
         max: 2147483647,
+        nullable: true,
       },
-      comment: 'device created by',
+      comment: 'device config by',
     },
   } as ModelAttributes,
   options: {
@@ -145,10 +135,6 @@ export const DeviceDbStructure = {
         fields: ['name'],
         name: 'idx_device_name',
       },
-      // {
-      //   fields: ['identified'],
-      //   name: 'idx_device_identified',
-      // },
       {
         fields: ['device_type'],
         name: 'idx_device_type',
@@ -174,8 +160,8 @@ export const DeviceDbStructure = {
         name: 'idx_device_active',
       },
       {
-        fields: ['created_by'],
-        name: 'idx_device_created_by',
+        fields: ['config_by'],
+        name: 'idx_device_config_by',
       },
     ],
   } as ModelOptions,

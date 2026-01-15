@@ -34,6 +34,7 @@ export const responseStructure = {
   EXCHANGE_RATE: 'exchange_rate',
   IS_CURRENT: 'is_current',
   CREATED_BY: 'created_by',
+  CONFIG_BY: 'config_by',
 
   COUNTRY_CODE: 'country_code',
   TAX_TYPE: 'tax_type',

@@ -15,7 +15,7 @@ import User from './User.js';
 
 export default class Device extends DeviceModel {
   private assignedToObj?: User;
-  private createdByObj?: User;
+  private configByObj?: User;
 
   constructor() {
     super();
@@ -42,8 +42,8 @@ export default class Device extends DeviceModel {
     return new Device().listByUser(assigned_to);
   }
 
-  static _listByCreator(created_by: number): Promise<Device[] | null> {
-    return new Device().listByCreator(created_by);
+  static _listByCreator(config_by: number): Promise<Device[] | null> {
+    return new Device().listByManager(config_by);
   }
 
   static _listActiveDevices(): Promise<Device[] | null> {
@@ -130,16 +130,16 @@ export default class Device extends DeviceModel {
     return this.active === true;
   }
 
-  getCreatedBy(): number | undefined {
-    return this.created_by;
+  getConfigBy(): number | undefined {
+    return this.config_by;
   }
 
-  async getCreatedByObj(): Promise<User | null> {
-    if (!this.created_by) return null;
-    if (!this.createdByObj) {
-      this.createdByObj = (await User._load(this.created_by)) || undefined;
+  async getManageByObj(): Promise<User | null> {
+    if (!this.config_by) return null;
+    if (!this.configByObj) {
+      this.configByObj = (await User._load(this.config_by)) || undefined;
     }
-    return this.createdByObj || null;
+    return this.configByObj || null;
   }
 
   getCreatedAt(): Date | undefined {
@@ -187,8 +187,8 @@ export default class Device extends DeviceModel {
     return this;
   }
 
-  setCreatedBy(created_by: number): Device {
-    this.created_by = created_by;
+  setConfigBy(config_by: number): Device {
+    this.config_by = config_by;
     return this;
   }
 
@@ -307,8 +307,8 @@ export default class Device extends DeviceModel {
     return dataset.map((data) => new Device().hydrate(data));
   }
 
-  async listByCreator(created_by: number): Promise<Device[] | null> {
-    const dataset = await this.listAllByCreator(created_by);
+  async listByManager(config_by: number): Promise<Device[] | null> {
+    const dataset = await this.listAllByConfig(config_by);
     if (!dataset || dataset.length === 0) return null;
     return dataset.map((data) => new Device().hydrate(data));
   }
@@ -329,7 +329,7 @@ export default class Device extends DeviceModel {
 
   async toJSON(view: ViewMode = responseValue.FULL): Promise<object> {
     const assignedTo = await this.getAssignedToObj();
-    const createdBy = await this.getCreatedByObj();
+    const manageBy = await this.getManageByObj();
 
     const baseData = {
       [RS.GUID]: this.guid,
@@ -347,14 +347,14 @@ export default class Device extends DeviceModel {
       return {
         ...baseData,
         [RS.ASSIGNED_TO]: assignedTo?.getGuid(),
-        [RS.CREATED_BY]: createdBy?.getGuid(),
+        [RS.CONFIG_BY]: manageBy?.getGuid(),
       };
     }
 
     return {
       ...baseData,
       [RS.ASSIGNED_TO]: assignedTo ? await assignedTo.toJSON() : null,
-      [RS.CREATED_BY]: createdBy ? await createdBy.toJSON() : null,
+      [RS.CONFIG_BY]: manageBy ? await manageBy.toJSON() : null,
       // Informations calculées
       days_since_last_seen: this.getDaysSinceLastSeen(),
       is_inactive: this.isInactive(),
@@ -374,7 +374,7 @@ export default class Device extends DeviceModel {
     this.custom_geofence_radius = data.custom_geofence_radius;
     this.last_seen_at = data.last_seen_at;
     this.active = data.active;
-    this.created_by = data.created_by;
+    this.config_by = data.config_by;
     this.created_at = data.created_at;
     this.updated_at = data.updated_at;
     return this;

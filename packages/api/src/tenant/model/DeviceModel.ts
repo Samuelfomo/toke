@@ -23,7 +23,7 @@ export default class DeviceModel extends BaseModel {
     custom_geofence_radius: 'custom_geofence_radius',
     last_seen_at: 'last_seen_at',
     active: 'active',
-    created_by: 'created_by',
+    config_by: 'config_by',
     created_at: 'created_at',
     updated_at: 'updated_at',
   } as const;
@@ -38,7 +38,7 @@ export default class DeviceModel extends BaseModel {
   protected custom_geofence_radius?: number;
   protected last_seen_at?: Date;
   protected active?: boolean;
-  protected created_by?: number;
+  protected config_by?: number;
   protected created_at?: Date;
   protected updated_at?: Date;
 
@@ -75,8 +75,8 @@ export default class DeviceModel extends BaseModel {
     return await this.findAll(this.db.tableName, conditions);
   }
 
-  protected async listAllByCreator(created_by: number): Promise<any[]> {
-    return await this.findAll(this.db.tableName, { [this.db.created_by]: created_by });
+  protected async listAllByConfig(config_by: number): Promise<any[]> {
+    return await this.findAll(this.db.tableName, { [this.db.config_by]: config_by });
   }
 
   protected async listAllByDeviceType(device_type: DeviceType): Promise<any[]> {
@@ -184,7 +184,7 @@ export default class DeviceModel extends BaseModel {
       [this.db.last_seen_at]:
         this.last_seen_at || TimezoneConfigUtils.getCurrentTime().toISOString(),
       [this.db.active]: this.active,
-      [this.db.created_by]: this.created_by,
+      [this.db.config_by]: this.config_by,
     });
 
     if (!lastID) {

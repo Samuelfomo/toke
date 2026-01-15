@@ -83,8 +83,8 @@ router.get('/list', Ensure.get(), async (req: Request, res: Response) => {
     if (filters.assigned_to) {
       conditions.assigned_to = filters.assigned_to;
     }
-    if (filters.created_by) {
-      conditions.created_by = filters.created_by;
+    if (filters.config_by) {
+      conditions.config_by = filters.config_by;
     }
 
     const deviceEntries = await Device._list(conditions, paginationOptions);
@@ -202,23 +202,33 @@ router.post('/', Ensure.post(), async (req: Request, res: Response) => {
       });
     }
 
-    // Vérification du créateur
-    const creatorObj = await User._load(validatedData.created_by, true);
-    if (!creatorObj) {
-      return R.handleError(res, HttpStatus.NOT_FOUND, {
-        code: USERS_CODES.USER_NOT_FOUND,
-        message: 'Creator user not found',
-      });
-    }
+    // // Vérification du créateur
+    // const creatorObj = await User._load(validatedData.config_by, true);
+    // if (!creatorObj) {
+    //   return R.handleError(res, HttpStatus.NOT_FOUND, {
+    //     code: USERS_CODES.USER_NOT_FOUND,
+    //     message: 'Creator user not found',
+    //   });
+    // }
 
     const deviceObj = new Device()
       .setName(validatedData.name)
       .setDeviceType(validatedData.device_type || DeviceType.OTHER)
       .setAssignedTo(assignedUserObj.getId()!)
       .setGpsAccuracy(validatedData.gps_accuracy)
-      .setCustomGeofenceRadius(validatedData.custom_geofence_radius)
-      .setCreatedBy(creatorObj.getId()!);
+      .setCustomGeofenceRadius(validatedData.custom_geofence_radius);
 
+    if (validatedData.config_by) {
+      // Vérification du créateur
+      const creatorObj = await User._load(validatedData.config_by, true);
+      if (!creatorObj) {
+        return R.handleError(res, HttpStatus.NOT_FOUND, {
+          code: USERS_CODES.USER_NOT_FOUND,
+          message: 'Creator user not found',
+        });
+      }
+      deviceObj.setConfigBy(creatorObj.getId()!);
+    }
     if (validatedData.last_seen_at) {
       deviceObj.setLastSeenAt(new Date(validatedData.last_seen_at));
     }

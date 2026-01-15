@@ -160,7 +160,7 @@ router.get('/list', Ensure.get(), async (req: Request, res: Response) => {
 });
 
 /**
- * GET /manager/:manager_guid/list - Liste les équipes d'un manager
+ * GET /manager/:manager_guid/list - Liste les groupes d'un manager
  */
 router.get('/manager/:manager/list', Ensure.get(), async (req: Request, res: Response) => {
   try {
