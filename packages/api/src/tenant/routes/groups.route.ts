@@ -11,15 +11,13 @@ import {
   validateGroupsCreation,
   validateGroupsFilters,
   validateGroupsUpdate,
-  validateMemberAddition,
-  validateSessionAssignment,
+  validateMembersAddition,
 } from '@toke/shared';
 
 import Ensure from '../../middle/ensured-routes.js';
 import R from '../../tools/response.js';
 import Groups from '../class/Groups.js';
 import User from '../class/User.js';
-import SessionTemplate from '../class/SessionTemplates.js';
 import { TenantRevision } from '../../tools/revision.js';
 import { responseValue, tableName } from '../../utils/response.model.js';
 
@@ -106,11 +104,13 @@ router.get('/list', Ensure.get(), async (req: Request, res: Response) => {
       groupsEntries = filters.has_members
         ? await Groups._listWithMembers(paginationOptions)
         : await Groups._list({}, paginationOptions);
-    } else if (filters.has_active_session !== undefined) {
-      groupsEntries = filters.has_active_session
-        ? await Groups._listWithActiveSession(paginationOptions)
-        : await Groups._list(conditions, paginationOptions);
-    } else if (filters.member_user) {
+    }
+    // else if (filters.has_active_session !== undefined) {
+    //   groupsEntries = filters.has_active_session
+    //     ? await Groups._listWithActiveSession(paginationOptions)
+    //     : await Groups._list(conditions, paginationOptions);
+    // }
+    else if (filters.member_user) {
       const userObj = await User._load(filters.member_user, true);
       if (!userObj) {
         return R.handleError(res, HttpStatus.NOT_FOUND, {
@@ -119,16 +119,18 @@ router.get('/list', Ensure.get(), async (req: Request, res: Response) => {
         });
       }
       groupsEntries = await Groups._listByMember(userObj.getId()!, paginationOptions);
-    } else if (filters.session_template) {
-      const templateSessionObj = await SessionTemplate._load(filters.session_template, true);
-      if (!templateSessionObj) {
-        return R.handleError(res, HttpStatus.NOT_FOUND, {
-          code: GROUPS_CODES.SESSION_TEMPLATE_NOT_FOUND,
-          message: GROUPS_ERRORS.SESSION_TEMPLATE_NOT_FOUND,
-        });
-      }
-      groupsEntries = await Groups._listBySession(templateSessionObj.getId()!, paginationOptions);
-    } else {
+    }
+    // else if (filters.session_template) {
+    //   const templateSessionObj = await SessionTemplate._load(filters.session_template, true);
+    //   if (!templateSessionObj) {
+    //     return R.handleError(res, HttpStatus.NOT_FOUND, {
+    //       code: GROUPS_CODES.SESSION_TEMPLATE_NOT_FOUND,
+    //       message: GROUPS_ERRORS.SESSION_TEMPLATE_NOT_FOUND,
+    //     });
+    //   }
+    //   groupsEntries = await Groups._listBySession(templateSessionObj.getId()!, paginationOptions);
+    // }
+    else {
       groupsEntries = await Groups._list(conditions, paginationOptions);
     }
 
@@ -287,21 +289,21 @@ router.post('/', Ensure.post(), async (req: Request, res: Response) => {
       }
     }
 
-    // Ajouter les sessions assignées si fournies
-    if (validatedData.assigned_sessions && validatedData.assigned_sessions.length > 0) {
-      for (const session of validatedData.assigned_sessions) {
-        // Vérifier que chaque session template existe
-        const templateObj = await SessionTemplate._load(session.session_template, true);
-        if (!templateObj) {
-          return R.handleError(res, HttpStatus.NOT_FOUND, {
-            code: GROUPS_CODES.SESSION_TEMPLATE_NOT_FOUND,
-            message: `${GROUPS_ERRORS.SESSION_TEMPLATE_NOT_FOUND}: ${session.session_template}`,
-          });
-        }
-
-        groupsObj.assignSession(templateObj.getId()!, session.assign_at, session.active);
-      }
-    }
+    // // Ajouter les sessions assignées si fournies
+    // if (validatedData.assigned_sessions && validatedData.assigned_sessions.length > 0) {
+    //   for (const session of validatedData.assigned_sessions) {
+    //     // Vérifier que chaque session template existe
+    //     const templateObj = await SessionTemplate._load(session.session_template, true);
+    //     if (!templateObj) {
+    //       return R.handleError(res, HttpStatus.NOT_FOUND, {
+    //         code: GROUPS_CODES.SESSION_TEMPLATE_NOT_FOUND,
+    //         message: `${GROUPS_ERRORS.SESSION_TEMPLATE_NOT_FOUND}: ${session.session_template}`,
+    //       });
+    //     }
+    //
+    //     groupsObj.assignSession(templateObj.getId()!, session.assign_at, session.active);
+    //   }
+    // }
 
     await groupsObj.save();
 
@@ -431,26 +433,26 @@ router.put('/:guid', Ensure.put(), async (req: Request, res: Response) => {
       groupsObj.setMembers(membersData);
     }
 
-    if (validatedData.assigned_sessions !== undefined) {
-      // Vérifier toutes les sessions
-      let templateSessionData: TI.AssignedSession[] = [];
-      for (const session of validatedData.assigned_sessions) {
-        const templateObj = await SessionTemplate._load(session.session_template, true);
-        if (!templateObj) {
-          return R.handleError(res, HttpStatus.NOT_FOUND, {
-            code: GROUPS_CODES.SESSION_TEMPLATE_NOT_FOUND,
-            message: `${GROUPS_ERRORS.SESSION_TEMPLATE_NOT_FOUND}: ${session.session_template}`,
-          });
-        }
-
-        templateSessionData.push({
-          session_template: templateObj.getId()!,
-          assign_at: session.assign_at,
-          active: session.active,
-        });
-      }
-      groupsObj.setAssignedSessions(templateSessionData);
-    }
+    // if (validatedData.assigned_sessions !== undefined) {
+    //   // Vérifier toutes les sessions
+    //   let templateSessionData: TI.AssignedSession[] = [];
+    //   for (const session of validatedData.assigned_sessions) {
+    //     const templateObj = await SessionTemplate._load(session.session_template, true);
+    //     if (!templateObj) {
+    //       return R.handleError(res, HttpStatus.NOT_FOUND, {
+    //         code: GROUPS_CODES.SESSION_TEMPLATE_NOT_FOUND,
+    //         message: `${GROUPS_ERRORS.SESSION_TEMPLATE_NOT_FOUND}: ${session.session_template}`,
+    //       });
+    //     }
+    //
+    //     templateSessionData.push({
+    //       session_template: templateObj.getId()!,
+    //       assign_at: session.assign_at,
+    //       active: session.active,
+    //     });
+    //   }
+    //   groupsObj.setAssignedSessions(templateSessionData);
+    // }
 
     await groupsObj.save();
 
@@ -477,8 +479,96 @@ router.put('/:guid', Ensure.put(), async (req: Request, res: Response) => {
 // GESTION DES MEMBRES
 // ============================================
 
+// /**
+//  * PATCH /:guid/members - Ajouter un membre
+//  */
+// router.patch('/:guid/members', Ensure.patch(), async (req: Request, res: Response) => {
+//   try {
+//     const { guid } = req.params;
+//
+//     if (!GroupsValidationUtils.validateGuid(guid)) {
+//       return R.handleError(res, HttpStatus.BAD_REQUEST, {
+//         code: GROUPS_CODES.INVALID_GUID,
+//         message: GROUPS_ERRORS.GUID_INVALID,
+//       });
+//     }
+//
+//     const groupsObj = await Groups._load(guid, true);
+//     if (!groupsObj) {
+//       return R.handleError(res, HttpStatus.NOT_FOUND, {
+//         code: GROUPS_CODES.GROUPS_NOT_FOUND,
+//         message: GROUPS_ERRORS.NOT_FOUND,
+//       });
+//     }
+//
+//     const validatedMember = validateMemberAddition(req.body);
+//
+//     // Vérifier que l'utilisateur existe
+//     const userObj = await User._load(validatedMember.user, true);
+//     if (!userObj) {
+//       return R.handleError(res, HttpStatus.NOT_FOUND, {
+//         code: GROUPS_CODES.MEMBER_USER_NOT_FOUND,
+//         message: GROUPS_ERRORS.MEMBER_USER_NOT_FOUND,
+//       });
+//     }
+//
+//     // Vérifier si l'utilisateur existe déjà dans la groups
+//     const existingMember = groupsObj.getMembers().find((m) => m.user === userObj.getId());
+//     if (existingMember) {
+//       return R.handleError(res, HttpStatus.CONFLICT, {
+//         code: GROUPS_CODES.MEMBER_DUPLICATE,
+//         message: GROUPS_ERRORS.MEMBER_DUPLICATE,
+//       });
+//     }
+//
+//     // ✅ NOUVELLE VALIDATION : Si le membre est actif, vérifier qu'il n'est pas dans une autre groups
+//     if (validatedMember.active) {
+//       // Chercher si l'utilisateur est déjà membre actif d'une autre équipe
+//       const allGroups = await Groups._list({});
+//
+//       if (allGroups) {
+//         for (const group of allGroups) {
+//           if (group.getId() === groupsObj.getId()) continue; // Ignorer l'équipe actuelle
+//
+//           const existingActiveMember = group
+//             .getMembers()
+//             .find((m) => m.user === userObj.getId() && m.active !== false);
+//
+//           if (existingActiveMember) {
+//             return R.handleError(res, HttpStatus.CONFLICT, {
+//               code: GROUPS_CODES.MEMBER_ALREADY_ACTIVE_IN_ANOTHER_GROUPS,
+//               message:
+//                 `User is already an active member of group "${group.getName()}". ` +
+//                 `A user can only be active in one group at a time.`,
+//             });
+//           }
+//         }
+//       }
+//     }
+//
+//     groupsObj.addMember(userObj.getId()!, validatedMember.joined_at, validatedMember.active);
+//     await groupsObj.save();
+//
+//     return R.handleSuccess(res, {
+//       message: 'Member added successfully',
+//       groups: await groupsObj.toJSON(),
+//     });
+//   } catch (error: any) {
+//     if (error.code === GROUPS_CODES.MEMBER_DUPLICATE) {
+//       return R.handleError(res, HttpStatus.CONFLICT, {
+//         code: error.code,
+//         message: error.message,
+//       });
+//     }
+//     return R.handleError(res, HttpStatus.INTERNAL_ERROR, {
+//       code: GROUPS_CODES.UPDATE_FAILED,
+//       message: error.message,
+//     });
+//   }
+// });
+
 /**
- * PATCH /:guid/members - Ajouter un membre
+ * PATCH /:guid/members - Ajouter plusieurs membres
  */
 router.patch('/:guid/members', Ensure.patch(), async (req: Request, res: Response) => {
   try {
@@ -499,67 +589,70 @@ router.patch('/:guid/members', Ensure.patch(), async (req: Request, res: Respons
       });
     }
 
-    const validatedMember = validateMemberAddition(req.body);
+    // ✅ Validation tableau
+    const validatedMembers = validateMembersAddition(req.body);
 
-    // Vérifier que l'utilisateur existe
-    const userObj = await User._load(validatedMember.user, true);
-    if (!userObj) {
-      return R.handleError(res, HttpStatus.NOT_FOUND, {
-        code: GROUPS_CODES.MEMBER_USER_NOT_FOUND,
-        message: GROUPS_ERRORS.MEMBER_USER_NOT_FOUND,
-      });
-    }
+    const allGroups = await Groups._list({});
+    const existingMembers = groupsObj.getMembers();
 
-    // Vérifier si l'utilisateur existe déjà dans la groups
-    const existingMember = groupsObj.getMembers().find((m) => m.user === userObj.getId());
-    if (existingMember) {
-      return R.handleError(res, HttpStatus.CONFLICT, {
-        code: GROUPS_CODES.MEMBER_DUPLICATE,
-        message: GROUPS_ERRORS.MEMBER_DUPLICATE,
-      });
-    }
+    let membersToAdd: TI.GroupsMember[] = [];
 
-    // ✅ NOUVELLE VALIDATION : Si le membre est actif, vérifier qu'il n'est pas dans une autre groups
-    if (validatedMember.active) {
-      // Chercher si l'utilisateur est déjà membre actif d'une autre équipe
-      const allGroups = await Groups._list({});
+    for (const member of validatedMembers) {
+      // Vérifier user existe
+      const userObj = await User._load(member.user, true);
+      if (!userObj) {
+        return R.handleError(res, HttpStatus.NOT_FOUND, {
+          code: GROUPS_CODES.MEMBER_USER_NOT_FOUND,
+          message: `User ${member.user} not found`,
+        });
+      }
 
-      if (allGroups) {
+      // Déjà dans ce groupe ?
+      if (existingMembers.find((m) => m.user === userObj.getId())) {
+        return R.handleError(res, HttpStatus.CONFLICT, {
+          code: GROUPS_CODES.MEMBER_DUPLICATE,
+          message: `User ${userObj.getId()} already in this group`,
+        });
+      }
+
+      // ✅ Actif dans un autre groupe ?
+      if (member.active && allGroups) {
         for (const group of allGroups) {
-          if (group.getId() === groupsObj.getId()) continue; // Ignorer l'équipe actuelle
+          if (group.getId() === groupsObj.getId()) continue;
 
-          const existingActiveMember = group
+          const activeElsewhere = group
             .getMembers()
             .find((m) => m.user === userObj.getId() && m.active !== false);
 
-          if (existingActiveMember) {
+          if (activeElsewhere) {
             return R.handleError(res, HttpStatus.CONFLICT, {
               code: GROUPS_CODES.MEMBER_ALREADY_ACTIVE_IN_ANOTHER_GROUPS,
-              message:
-                `User is already an active member of group "${group.getName()}". ` +
-                `A user can only be active in one group at a time.`,
+              message: `User ${userObj.getGuid()} already active in group "${group.getName()}"`,
             });
           }
         }
       }
+      membersToAdd.push({
+        user: userObj.getId()!,
+        joined_at: member.joined_at,
+        active: member.active,
+      });
     }
 
-    groupsObj.addMember(userObj.getId()!, validatedMember.joined_at, validatedMember.active);
+    // ✅ Ajout effectif
+    for (const member of membersToAdd) {
+      groupsObj.addMember(member.user, member.joined_at, member.active);
+    }
+
     await groupsObj.save();
 
     return R.handleSuccess(res, {
-      message: 'Member added successfully',
+      message: 'Members added successfully',
       groups: await groupsObj.toJSON(),
     });
   } catch (error: any) {
-    if (error.code === GROUPS_CODES.MEMBER_DUPLICATE) {
-      return R.handleError(res, HttpStatus.CONFLICT, {
-        code: error.code,
-        message: error.message,
-      });
-    }
     return R.handleError(res, HttpStatus.INTERNAL_ERROR, {
-      code: GROUPS_CODES.UPDATE_FAILED,
+      code: error.code || GROUPS_CODES.UPDATE_FAILED,
       message: error.message,
     });
   }
@@ -630,7 +723,7 @@ router.delete('/:guid/members/:user', Ensure.delete(), async (req: Request, res:
 router.patch('/:guid/members/:user/status', Ensure.patch(), async (req: Request, res: Response) => {
   try {
     const { guid, user } = req.params;
-    const { active } = req.body;
+    // const { active } = req.body;
 
     if (!GroupsValidationUtils.validateGuid(guid)) {
       return R.handleError(res, HttpStatus.BAD_REQUEST, {
@@ -646,12 +739,12 @@ router.patch('/:guid/members/:user/status', Ensure.patch(), async (req: Request,
       });
     }
 
-    if (typeof active !== 'boolean') {
-      return R.handleError(res, HttpStatus.BAD_REQUEST, {
-        code: GROUPS_CODES.MEMBER_ACTIVE_INVALID,
-        message: GROUPS_ERRORS.MEMBER_ACTIVE_INVALID,
-      });
-    }
+    // if (typeof active !== 'boolean') {
+    //   return R.handleError(res, HttpStatus.BAD_REQUEST, {
+    //     code: GROUPS_CODES.MEMBER_ACTIVE_INVALID,
+    //     message: GROUPS_ERRORS.MEMBER_ACTIVE_INVALID,
+    //   });
+    // }
 
     const userObj = await User._load(user, true);
     if (!userObj) {
@@ -675,6 +768,11 @@ router.patch('/:guid/members/:user/status', Ensure.patch(), async (req: Request,
         message: 'Member not found in groups',
       });
     }
+    let active = true;
+    const status = groupsObj.isMemberActive(userObj.getId()!);
+    if (status) {
+      active = false;
+    }
 
     groupsObj.updateMemberStatus(userObj.getId()!, active);
     await groupsObj.save();
@@ -695,160 +793,160 @@ router.patch('/:guid/members/:user/status', Ensure.patch(), async (req: Request,
 // GESTION DES SESSIONS
 // ============================================
 
-/**
- * PATCH /:guid/sessions - Assigner une session template
- */
-router.patch('/:guid/sessions', Ensure.patch(), async (req: Request, res: Response) => {
-  try {
-    const { guid } = req.params;
+// /**
+//  * PATCH /:guid/sessions - Assigner une session template
+//  */
+// router.patch('/:guid/sessions', Ensure.patch(), async (req: Request, res: Response) => {
+//   try {
+//     const { guid } = req.params;
+//
+//     if (!GroupsValidationUtils.validateGuid(guid)) {
+//       return R.handleError(res, HttpStatus.BAD_REQUEST, {
+//         code: GROUPS_CODES.INVALID_GUID,
+//         message: GROUPS_ERRORS.GUID_INVALID,
+//       });
+//     }
+//
+//     const groupsObj = await Groups._load(guid, true);
+//     if (!groupsObj) {
+//       return R.handleError(res, HttpStatus.NOT_FOUND, {
+//         code: GROUPS_CODES.GROUPS_NOT_FOUND,
+//         message: GROUPS_ERRORS.NOT_FOUND,
+//       });
+//     }
+//
+//     const validatedSession = validateSessionAssignment(groupsObj.getAssignedSessions(), req.body);
+//
+//     // Vérifier que la session template existe
+//     const templateObj = await SessionTemplate._load(validatedSession.session_template, true);
+//     if (!templateObj) {
+//       return R.handleError(res, HttpStatus.NOT_FOUND, {
+//         code: GROUPS_CODES.SESSION_TEMPLATE_NOT_FOUND,
+//         message: GROUPS_ERRORS.SESSION_TEMPLATE_NOT_FOUND,
+//       });
+//     }
+//
+//     groupsObj.assignSession(
+//       templateObj.getId()!,
+//       validatedSession.assign_at,
+//       validatedSession.active,
+//     );
+//     await groupsObj.save();
+//
+//     return R.handleSuccess(res, {
+//       message: 'Session assigned successfully',
+//       groups: await groupsObj.toJSON(),
+//     });
+//   } catch (error: any) {
+//     if (error.code === GROUPS_CODES.MULTIPLE_ACTIVE_SESSIONS) {
+//       return R.handleError(res, HttpStatus.CONFLICT, {
+//         code: error.code,
+//         message: error.message,
+//       });
+//     }
+//     return R.handleError(res, HttpStatus.INTERNAL_ERROR, {
+//       code: GROUPS_CODES.UPDATE_FAILED,
+//       message: error.message,
+//     });
+//   }
+// });
 
-    if (!GroupsValidationUtils.validateGuid(guid)) {
-      return R.handleError(res, HttpStatus.BAD_REQUEST, {
-        code: GROUPS_CODES.INVALID_GUID,
-        message: GROUPS_ERRORS.GUID_INVALID,
-      });
-    }
+// /**
+//  * PATCH /:guid/sessions/:template_guid/activate - Activer une session
+//  */
+// router.patch(
+//   '/:guid/sessions/:template/activate',
+//   Ensure.patch(),
+//   async (req: Request, res: Response) => {
+//     try {
+//       const { guid, template } = req.params;
+//
+//       if (!GroupsValidationUtils.validateGuid(guid)) {
+//         return R.handleError(res, HttpStatus.BAD_REQUEST, {
+//           code: GROUPS_CODES.INVALID_GUID,
+//           message: GROUPS_ERRORS.GUID_INVALID,
+//         });
+//       }
+//
+//       if (!GroupsValidationUtils.validateSessionTemplate(template)) {
+//         return R.handleError(res, HttpStatus.BAD_REQUEST, {
+//           code: GROUPS_CODES.SESSION_TEMPLATE_INVALID,
+//           message: GROUPS_ERRORS.SESSION_TEMPLATE_INVALID,
+//         });
+//       }
+//
+//       const groupsObj = await Groups._load(guid, true);
+//       if (!groupsObj) {
+//         return R.handleError(res, HttpStatus.NOT_FOUND, {
+//           code: GROUPS_CODES.GROUPS_NOT_FOUND,
+//           message: GROUPS_ERRORS.NOT_FOUND,
+//         });
+//       }
+//
+//       const templateObj = await SessionTemplate._load(template, true);
+//       if (!templateObj) {
+//         return R.handleError(res, HttpStatus.NOT_FOUND, {
+//           code: GROUPS_CODES.SESSION_TEMPLATE_NOT_FOUND,
+//           message: GROUPS_ERRORS.SESSION_TEMPLATE_NOT_FOUND,
+//         });
+//       }
+//
+//       groupsObj.activateSession(templateObj.getId()!);
+//       await groupsObj.save();
+//
+//       return R.handleSuccess(res, {
+//         message: 'Session activated successfully',
+//         groups: await groupsObj.toJSON(),
+//       });
+//     } catch (error: any) {
+//       return R.handleError(res, HttpStatus.INTERNAL_ERROR, {
+//         code: GROUPS_CODES.UPDATE_FAILED,
+//         message: error.message,
+//       });
+//     }
+//   },
+// );
 
-    const groupsObj = await Groups._load(guid, true);
-    if (!groupsObj) {
-      return R.handleError(res, HttpStatus.NOT_FOUND, {
-        code: GROUPS_CODES.GROUPS_NOT_FOUND,
-        message: GROUPS_ERRORS.NOT_FOUND,
-      });
-    }
-
-    const validatedSession = validateSessionAssignment(groupsObj.getAssignedSessions(), req.body);
-
-    // Vérifier que la session template existe
-    const templateObj = await SessionTemplate._load(validatedSession.session_template, true);
-    if (!templateObj) {
-      return R.handleError(res, HttpStatus.NOT_FOUND, {
-        code: GROUPS_CODES.SESSION_TEMPLATE_NOT_FOUND,
-        message: GROUPS_ERRORS.SESSION_TEMPLATE_NOT_FOUND,
-      });
-    }
-
-    groupsObj.assignSession(
-      templateObj.getId()!,
-      validatedSession.assign_at,
-      validatedSession.active,
-    );
-    await groupsObj.save();
-
-    return R.handleSuccess(res, {
-      message: 'Session assigned successfully',
-      groups: await groupsObj.toJSON(),
-    });
-  } catch (error: any) {
-    if (error.code === GROUPS_CODES.MULTIPLE_ACTIVE_SESSIONS) {
-      return R.handleError(res, HttpStatus.CONFLICT, {
-        code: error.code,
-        message: error.message,
-      });
-    }
-    return R.handleError(res, HttpStatus.INTERNAL_ERROR, {
-      code: GROUPS_CODES.UPDATE_FAILED,
-      message: error.message,
-    });
-  }
-});
-
-/**
- * PATCH /:guid/sessions/:template_guid/activate - Activer une session
- */
-router.patch(
-  '/:guid/sessions/:template/activate',
-  Ensure.patch(),
-  async (req: Request, res: Response) => {
-    try {
-      const { guid, template } = req.params;
-
-      if (!GroupsValidationUtils.validateGuid(guid)) {
-        return R.handleError(res, HttpStatus.BAD_REQUEST, {
-          code: GROUPS_CODES.INVALID_GUID,
-          message: GROUPS_ERRORS.GUID_INVALID,
-        });
-      }
-
-      if (!GroupsValidationUtils.validateSessionTemplate(template)) {
-        return R.handleError(res, HttpStatus.BAD_REQUEST, {
-          code: GROUPS_CODES.SESSION_TEMPLATE_INVALID,
-          message: GROUPS_ERRORS.SESSION_TEMPLATE_INVALID,
-        });
-      }
-
-      const groupsObj = await Groups._load(guid, true);
-      if (!groupsObj) {
-        return R.handleError(res, HttpStatus.NOT_FOUND, {
-          code: GROUPS_CODES.GROUPS_NOT_FOUND,
-          message: GROUPS_ERRORS.NOT_FOUND,
-        });
-      }
-
-      const templateObj = await SessionTemplate._load(template, true);
-      if (!templateObj) {
-        return R.handleError(res, HttpStatus.NOT_FOUND, {
-          code: GROUPS_CODES.SESSION_TEMPLATE_NOT_FOUND,
-          message: GROUPS_ERRORS.SESSION_TEMPLATE_NOT_FOUND,
-        });
-      }
-
-      groupsObj.activateSession(templateObj.getId()!);
-      await groupsObj.save();
-
-      return R.handleSuccess(res, {
-        message: 'Session activated successfully',
-        groups: await groupsObj.toJSON(),
-      });
-    } catch (error: any) {
-      return R.handleError(res, HttpStatus.INTERNAL_ERROR, {
-        code: GROUPS_CODES.UPDATE_FAILED,
-        message: error.message,
-      });
-    }
-  },
-);
-
-/**
- * PATCH /:guid/sessions/deactivate-all - Désactiver toutes les sessions
- */
-router.patch(
-  '/:guid/sessions/deactivate-all',
-  Ensure.patch(),
-  async (req: Request, res: Response) => {
-    try {
-      const { guid } = req.params;
-
-      if (!GroupsValidationUtils.validateGuid(guid)) {
-        return R.handleError(res, HttpStatus.BAD_REQUEST, {
-          code: GROUPS_CODES.INVALID_GUID,
-          message: GROUPS_ERRORS.GUID_INVALID,
-        });
-      }
-
-      const groupsObj = await Groups._load(guid, true);
-      if (!groupsObj) {
-        return R.handleError(res, HttpStatus.NOT_FOUND, {
-          code: GROUPS_CODES.GROUPS_NOT_FOUND,
-          message: GROUPS_ERRORS.NOT_FOUND,
-        });
-      }
-
-      groupsObj.deactivateAllSessions();
-      await groupsObj.save();
-
-      return R.handleSuccess(res, {
-        message: 'All sessions deactivated successfully',
-        groups: await groupsObj.toJSON(),
-      });
-    } catch (error: any) {
-      return R.handleError(res, HttpStatus.INTERNAL_ERROR, {
-        code: GROUPS_CODES.UPDATE_FAILED,
-        message: error.message,
-      });
-    }
-  },
-);
+// /**
+//  * PATCH /:guid/sessions/deactivate-all - Désactiver toutes les sessions
+//  */
+// router.patch(
+//   '/:guid/sessions/deactivate-all',
+//   Ensure.patch(),
+//   async (req: Request, res: Response) => {
+//     try {
+//       const { guid } = req.params;
+//
+//       if (!GroupsValidationUtils.validateGuid(guid)) {
+//         return R.handleError(res, HttpStatus.BAD_REQUEST, {
+//           code: GROUPS_CODES.INVALID_GUID,
+//           message: GROUPS_ERRORS.GUID_INVALID,
+//         });
+//       }
+//
+//       const groupsObj = await Groups._load(guid, true);
+//       if (!groupsObj) {
+//         return R.handleError(res, HttpStatus.NOT_FOUND, {
+//           code: GROUPS_CODES.GROUPS_NOT_FOUND,
+//           message: GROUPS_ERRORS.NOT_FOUND,
+//         });
+//       }
+//
+//       groupsObj.deactivateAllSessions();
+//       await groupsObj.save();
+//
+//       return R.handleSuccess(res, {
+//         message: 'All sessions deactivated successfully',
+//         groups: await groupsObj.toJSON(),
+//       });
+//     } catch (error: any) {
+//       return R.handleError(res, HttpStatus.INTERNAL_ERROR, {
+//         code: GROUPS_CODES.UPDATE_FAILED,
+//         message: error.message,
+//       });
+//     }
+//   },
+// );
 
 // ============================================
 // STATISTIQUES ET RAPPORTS
@@ -1011,59 +1109,59 @@ router.get('/:guid/hierarchy-tree', Ensure.get(), async (req: Request, res: Resp
   }
 });
 
-/**
- * GET /:guid/active-session-details - Récupère les détails de la session active
- */
-router.get('/:guid/active-session-details', Ensure.get(), async (req: Request, res: Response) => {
-  try {
-    const { guid } = req.params;
-
-    if (!GroupsValidationUtils.validateGuid(guid)) {
-      return R.handleError(res, HttpStatus.BAD_REQUEST, {
-        code: GROUPS_CODES.INVALID_GUID,
-        message: GROUPS_ERRORS.GUID_INVALID,
-      });
-    }
-
-    const groupsObj = await Groups._load(guid, true);
-    if (!groupsObj) {
-      return R.handleError(res, HttpStatus.NOT_FOUND, {
-        code: GROUPS_CODES.GROUPS_NOT_FOUND,
-        message: GROUPS_ERRORS.NOT_FOUND,
-      });
-    }
-
-    const activeSession = groupsObj.getActiveSession();
-
-    if (!activeSession) {
-      return R.handleSuccess(res, {
-        groups: await groupsObj.toJSON(responseValue.MINIMAL),
-        has_active_session: false,
-        active_session: null,
-        message: 'No active session for this groups',
-      });
-    }
-
-    const sessionTemplateObj = await groupsObj.getSessionTemplateObj(
-      activeSession.session_template,
-    );
-
-    return R.handleSuccess(res, {
-      groups: await groupsObj.toJSON(responseValue.MINIMAL),
-      has_active_session: true,
-      active_session: {
-        template: sessionTemplateObj ? await sessionTemplateObj.toJSON() : null,
-        assigned_at: activeSession.assign_at,
-        active: activeSession.active,
-      },
-    });
-  } catch (error: any) {
-    return R.handleError(res, HttpStatus.INTERNAL_ERROR, {
-      code: GROUPS_CODES.SEARCH_FAILED,
-      message: error.message,
-    });
-  }
-});
+// /**
+//  * GET /:guid/active-session-details - Récupère les détails de la session active
+//  */
+// router.get('/:guid/active-session-details', Ensure.get(), async (req: Request, res: Response) => {
+//   try {
+//     const { guid } = req.params;
+//
+//     if (!GroupsValidationUtils.validateGuid(guid)) {
+//       return R.handleError(res, HttpStatus.BAD_REQUEST, {
+//         code: GROUPS_CODES.INVALID_GUID,
+//         message: GROUPS_ERRORS.GUID_INVALID,
+//       });
+//     }
+//
+//     const groupsObj = await Groups._load(guid, true);
+//     if (!groupsObj) {
+//       return R.handleError(res, HttpStatus.NOT_FOUND, {
+//         code: GROUPS_CODES.GROUPS_NOT_FOUND,
+//         message: GROUPS_ERRORS.NOT_FOUND,
+//       });
+//     }
+//
+//     const activeSession = groupsObj.getActiveSession();
+//
+//     if (!activeSession) {
+//       return R.handleSuccess(res, {
+//         groups: await groupsObj.toJSON(responseValue.MINIMAL),
+//         has_active_session: false,
+//         active_session: null,
+//         message: 'No active session for this groups',
+//       });
+//     }
+//
+//     const sessionTemplateObj = await groupsObj.getSessionTemplateObj(
+//       activeSession.session_template,
+//     );
+//
+//     return R.handleSuccess(res, {
+//       groups: await groupsObj.toJSON(responseValue.MINIMAL),
+//       has_active_session: true,
+//       active_session: {
+//         template: sessionTemplateObj ? await sessionTemplateObj.toJSON() : null,
+//         assigned_at: activeSession.assign_at,
+//         active: activeSession.active,
+//       },
+//     });
+//   } catch (error: any) {
+//     return R.handleError(res, HttpStatus.INTERNAL_ERROR, {
+//       code: GROUPS_CODES.SEARCH_FAILED,
+//       message: error.message,
+//     });
+//   }
+// });
 
 // ============================================
 // 🎯 ROUTES PRINCIPALES - HIÉRARCHIE BASÉE SUR MANAGER
@@ -1261,35 +1359,35 @@ router.get(
         return R.handleSuccess(res, {
           manager: await managerObj.toJSON(responseValue.MINIMAL),
           has_groups: false,
-          has_active_session: false,
-          active_session: null,
+          // has_active_session: false,
+          // active_session: null,
         });
       }
 
       const group = groups[0];
-      const activeSession = group.getActiveSession();
+      // const activeSession = group.getActiveSession();
 
-      if (!activeSession) {
-        return R.handleSuccess(res, {
-          manager: await managerObj.toJSON(responseValue.MINIMAL),
-          groups: await group.toJSON(responseValue.MINIMAL),
-          has_active_session: false,
-          active_session: null,
-          message: 'No active session for this groups',
-        });
-      }
+      // if (!activeSession) {
+      //   return R.handleSuccess(res, {
+      //     manager: await managerObj.toJSON(responseValue.MINIMAL),
+      //     groups: await group.toJSON(responseValue.MINIMAL),
+      //     has_active_session: false,
+      //     active_session: null,
+      //     message: 'No active session for this groups',
+      //   });
+      // }
 
-      const sessionTemplateObj = await group.getSessionTemplateObj(activeSession.session_template);
+      // const sessionTemplateObj = await group.getSessionTemplateObj(activeSession.session_template);
 
       return R.handleSuccess(res, {
         manager: await managerObj.toJSON(responseValue.MINIMAL),
         groups: await group.toJSON(responseValue.MINIMAL),
-        has_active_session: true,
-        active_session: {
-          template: sessionTemplateObj ? await sessionTemplateObj.toJSON() : null,
-          assigned_at: activeSession.assign_at,
-          active: activeSession.active,
-        },
+        // has_active_session: true,
+        // active_session: {
+        //   template: sessionTemplateObj ? await sessionTemplateObj.toJSON() : null,
+        //   assigned_at: activeSession.assign_at,
+        //   active: activeSession.active,
+        // },
       });
     } catch (error: any) {
       return R.handleError(res, HttpStatus.INTERNAL_ERROR, {
@@ -1367,5 +1465,103 @@ router.get('/:guid/direct-members', Ensure.get(), async (req: Request, res: Resp
 //       return R.handleError(res, HttpStatus.NOT_FOUND, {
 //         code: GROUPS_CODES.GROUPS_NOT_FOUND,
 //         message: GROUPS_ERRORS.NOT_FOUND,
+
+/**
+ * GET /api/groups/:guid/assignments
+ */
+router.get('/:guid/assignments', Ensure.get(), async (req: Request, res: Response) => {
+  try {
+    const { guid } = req.params;
+
+    if (!GroupsValidationUtils.validateGuid(guid)) {
+      return R.handleError(res, HttpStatus.BAD_REQUEST, {
+        code: GROUPS_CODES.INVALID_GUID,
+        message: GROUPS_ERRORS.GUID_INVALID,
+      });
+    }
+
+    const groupObj = await Groups._load(guid, true);
+    if (!groupObj) {
+      return R.handleError(res, HttpStatus.NOT_FOUND, {
+        code: GROUPS_CODES.GROUPS_NOT_FOUND,
+        message: GROUPS_ERRORS.NOT_FOUND,
+      });
+    }
+
+    const assignmentType = await groupObj.getCurrentAssignmentType();
+    const activeSchedule = await groupObj.getActiveScheduleAssignment();
+    const activeRotation = await groupObj.getActiveRotationAssignment();
+    const allSchedules = await groupObj.getAllScheduleAssignments();
+    const allRotations = await groupObj.getAllRotationAssignments();
+
+    return R.handleSuccess(res, {
+      groups: await groupObj.toJSON(responseValue.MINIMAL),
+      current_assignment: {
+        type: assignmentType,
+        active_schedule: activeSchedule ? await activeSchedule.toJSON(responseValue.FULL) : null,
+        active_rotation: activeRotation ? await activeRotation.toJSON(responseValue.FULL) : null,
+      },
+      history: {
+        schedule_assignments: {
+          count: allSchedules.length,
+          items: await Promise.all(allSchedules.map((s) => s.toJSON(responseValue.MINIMAL))),
+        },
+        rotation_assignments: {
+          count: allRotations.length,
+          items: await Promise.all(allRotations.map((r) => r.toJSON(responseValue.MINIMAL))),
+        },
+      },
+    });
+  } catch (error: any) {
+    return R.handleError(res, HttpStatus.INTERNAL_ERROR, {
+      code: GROUPS_CODES.SEARCH_FAILED,
+      message: error.message,
+    });
+  }
+});
+
+/**
+ * GET /api/groups/:guid/current-assignment
+ */
+router.get('/:guid/current-assignment', Ensure.get(), async (req: Request, res: Response) => {
+  try {
+    const { guid } = req.params;
+
+    if (!GroupsValidationUtils.validateGuid(guid)) {
+      return R.handleError(res, HttpStatus.BAD_REQUEST, {
+        code: GROUPS_CODES.INVALID_GUID,
+        message: GROUPS_ERRORS.GUID_INVALID,
+      });
+    }
+
+    const groupObj = await Groups._load(guid, true);
+    if (!groupObj) {
+      return R.handleError(res, HttpStatus.NOT_FOUND, {
+        code: GROUPS_CODES.GROUPS_NOT_FOUND,
+        message: GROUPS_ERRORS.NOT_FOUND,
+      });
+    }
+
+    const assignmentType = await groupObj.getCurrentAssignmentType();
+    const activeSchedule = await groupObj.getActiveScheduleAssignment();
+    const activeRotation = await groupObj.getActiveRotationAssignment();
+
+    return R.handleSuccess(res, {
+      groups: await groupObj.toJSON(responseValue.MINIMAL),
+      current_assignment_type: assignmentType,
+      active_schedule_assignment: activeSchedule
+        ? await activeSchedule.toJSON(responseValue.FULL)
+        : null,
+      active_rotation_assignment: activeRotation
+        ? await activeRotation.toJSON(responseValue.FULL)
+        : null,
+    });
+  } catch (error: any) {
+    return R.handleError(res, HttpStatus.INTERNAL_ERROR, {
+      code: GROUPS_CODES.SEARCH_FAILED,
+      message: error.message,
+    });
+  }
+});
 
 export default router;

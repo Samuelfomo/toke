@@ -238,16 +238,19 @@ export default class DeviceModel extends BaseModel {
     if (!this.assigned_to) {
       throw new Error(DEVICES_ERRORS.ASSIGNED_TO_REQUIRED);
     }
-    if (!this.gps_accuracy) {
-      throw new Error(DEVICES_ERRORS.GPS_ACCURACY_REQUIRED);
-    }
-    if (!DevicesValidationUtils.validateGpsAccuracy(this.gps_accuracy)) {
+    // if (!this.gps_accuracy) {
+    //   throw new Error(DEVICES_ERRORS.GPS_ACCURACY_REQUIRED);
+    // }
+    if (this.gps_accuracy && !DevicesValidationUtils.validateGpsAccuracy(this.gps_accuracy)) {
       throw new Error(DEVICES_ERRORS.GPS_ACCURACY_INVALID);
     }
-    if (!this.custom_geofence_radius) {
-      throw new Error(DEVICES_ERRORS.GEOFENCE_RADIUS_REQUIRED);
-    }
-    if (!DevicesValidationUtils.validateGeofenceRadius(this.custom_geofence_radius)) {
+    // if (!this.custom_geofence_radius) {
+    //   throw new Error(DEVICES_ERRORS.GEOFENCE_RADIUS_REQUIRED);
+    // }
+    if (
+      this.custom_geofence_radius &&
+      !DevicesValidationUtils.validateGeofenceRadius(this.custom_geofence_radius)
+    ) {
       throw new Error(DEVICES_ERRORS.GEOFENCE_RADIUS_INVALID);
     }
     if (this.active !== undefined && !DevicesValidationUtils.validateActive(this.active)) {

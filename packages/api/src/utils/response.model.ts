@@ -387,6 +387,7 @@ export const tableName = {
   ROTATION_GROUPS: `${G.tableAp}_rotation_groups`,
   ROTATION_ASSIGNMENTS: `${G.tableAp}_rotation_assignments`,
   SCHEDULE_EXCEPTIONS: `${G.tableAp}_schedule_exceptions`,
+  SCHEDULE_ASSIGNMENTS: `${G.tableAp}_schedule_assignments`,
   GROUPS: `${G.tableAp}_groups`,
   DEVICE: `${G.tableAp}_device`,
 } as const;

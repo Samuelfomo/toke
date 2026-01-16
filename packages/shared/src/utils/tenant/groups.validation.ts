@@ -75,25 +75,26 @@ export class GroupsValidationUtils {
     return uuidRegex.test(trimmed) || trimmed.length > 0; // Allow other GUID formats
   }
 
-  /**
-   * Validates session template
-   */
-  static validateSessionTemplate(sessionTemplate: any): boolean {
-    if (!sessionTemplate || typeof sessionTemplate !== 'string') return false;
-    const trimmed = sessionTemplate.trim();
+  // /**
+  //  * Validates session template
+  //  */
+  // static validateSessionTemplate(sessionTemplate: any): boolean {
+  //   if (!sessionTemplate || typeof sessionTemplate !== 'string') return false;
+  //   const trimmed = sessionTemplate.trim();
+  //
+  //   if (
+  //     trimmed.length < GROUPS_VALIDATION.SESSION_TEMPLATE.MIN_LENGTH ||
+  //     trimmed.length > GROUPS_VALIDATION.SESSION_TEMPLATE.MAX_LENGTH
+  //   ) {
+  //     return false;
+  //   }
+  //
+  //   // const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+  //   // return uuidRegex.test(trimmed);
+  //   const uuidRegex = /^[0-9]+$/;
+  //   return uuidRegex.test(trimmed) || trimmed.length > 0; // Allow other GUID formats
+  // }
 
-    if (
-      trimmed.length < GROUPS_VALIDATION.SESSION_TEMPLATE.MIN_LENGTH ||
-      trimmed.length > GROUPS_VALIDATION.SESSION_TEMPLATE.MAX_LENGTH
-    ) {
-      return false;
-    }
-
-    // const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
-    // return uuidRegex.test(trimmed);
-    const uuidRegex = /^[0-9]+$/;
-    return uuidRegex.test(trimmed) || trimmed.length > 0; // Allow other GUID formats
-  }
   /**
    * Validates date
    */
@@ -132,33 +133,33 @@ export class GroupsValidationUtils {
     return true;
   }
 
-  /**
-   * Validates assigned sessions array structure
-   */
-  static validateAssignedSessions(sessions: any): boolean {
-    if (!Array.isArray(sessions)) return false;
-
-    let activeCount = 0;
-
-    for (const session of sessions) {
-      // Vérifier que c'est un objet
-      if (typeof session !== 'object' || session === null || Array.isArray(session)) return false;
-
-      // Vérifier session_template
-      if (!this.validateSessionTemplate(session.session_template)) return false;
-
-      // Vérifier assign_at
-      if (!this.validateDate(session.assign_at)) return false;
-
-      // Vérifier active
-      if (typeof session.active !== 'boolean') return false;
-
-      if (session.active) activeCount++;
-    }
-
-    // Vérifier qu'il n'y a qu'une seule session active
-    return activeCount <= 1;
-  }
+  // /**
+  //  * Validates assigned sessions array structure
+  //  */
+  // static validateAssignedSessions(sessions: any): boolean {
+  //   if (!Array.isArray(sessions)) return false;
+  //
+  //   let activeCount = 0;
+  //
+  //   for (const session of sessions) {
+  //     // Vérifier que c'est un objet
+  //     if (typeof session !== 'object' || session === null || Array.isArray(session)) return false;
+  //
+  //     // Vérifier session_template
+  //     if (!this.validateSessionTemplate(session.session_template)) return false;
+  //
+  //     // Vérifier assign_at
+  //     if (!this.validateDate(session.assign_at)) return false;
+  //
+  //     // Vérifier active
+  //     if (typeof session.active !== 'boolean') return false;
+  //
+  //     if (session.active) activeCount++;
+  //   }
+  //
+  //   // Vérifier qu'il n'y a qu'une seule session active
+  //   return activeCount <= 1;
+  // }
 
   /**
    * Validates pagination parameters
@@ -234,16 +235,16 @@ export class GroupsValidationUtils {
       }));
     }
 
-    // Nettoyer assigned_sessions
-    if (cleaned.assigned_sessions !== undefined && Array.isArray(cleaned.assigned_sessions)) {
-      cleaned.assigned_sessions = cleaned.assigned_sessions.map((session: any) => ({
-        session_template: Number(session.session_template),
-        assign_at: session.assign_at
-          ? new Date(session.assign_at)
-          : TimezoneConfigUtils.getCurrentTime(),
-        active: Boolean(session.active),
-      }));
-    }
+    // // Nettoyer assigned_sessions
+    // if (cleaned.assigned_sessions !== undefined && Array.isArray(cleaned.assigned_sessions)) {
+    //   cleaned.assigned_sessions = cleaned.assigned_sessions.map((session: any) => ({
+    //     session_template: Number(session.session_template),
+    //     assign_at: session.assign_at
+    //       ? new Date(session.assign_at)
+    //       : TimezoneConfigUtils.getCurrentTime(),
+    //     active: Boolean(session.active),
+    //   }));
+    // }
 
     // Convertir dates
     ['created_at', 'updated_at', 'deleted_at'].forEach((field) => {
@@ -276,8 +277,8 @@ export class GroupsValidationUtils {
       this.validateName(data.name) &&
       this.validateManager(data.manager) &&
       (data.members === undefined || this.validateMembers(data.members)) &&
-      (data.assigned_sessions === undefined ||
-        this.validateAssignedSessions(data.assigned_sessions)) &&
+      // (data.assigned_sessions === undefined ||
+      //   this.validateAssignedSessions(data.assigned_sessions)) &&
       (data.guid === undefined || this.validateGuid(data.guid))
     );
   }
@@ -290,7 +291,7 @@ export class GroupsValidationUtils {
       data.name === undefined || this.validateName(data.name),
       data.manager === undefined || this.validateManager(data.manager),
       data.members === undefined || this.validateMembers(data.members),
-      data.assigned_sessions === undefined || this.validateAssignedSessions(data.assigned_sessions),
+      // data.assigned_sessions === undefined || this.validateAssignedSessions(data.assigned_sessions),
       data.guid === undefined || this.validateGuid(data.guid),
     ];
 
@@ -323,14 +324,14 @@ export class GroupsValidationUtils {
       errors.push('Invalid members: must be a valid array with unique user IDs');
     }
 
-    if (
-      data.assigned_sessions !== undefined &&
-      !this.validateAssignedSessions(data.assigned_sessions)
-    ) {
-      errors.push(
-        'Invalid assigned_sessions: must be a valid array with at most one active session',
-      );
-    }
+    // if (
+    //   data.assigned_sessions !== undefined &&
+    //   !this.validateAssignedSessions(data.assigned_sessions)
+    // ) {
+    //   errors.push(
+    //     'Invalid assigned_sessions: must be a valid array with at most one active session',
+    //   );
+    // }
 
     if (data.guid !== undefined && !this.validateGuid(data.guid)) {
       errors.push(

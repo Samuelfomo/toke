@@ -400,6 +400,21 @@ export default class RotationAssignment extends RotationAssignmentModel {
     };
   }
 
+  async toPUBLIC(): Promise<object> {
+    const assignedByObj = await this.getAssignedByObj();
+    const rotationGroupObj = await this.getRotationGroupObj();
+
+    return {
+      [RS.GUID]: this.guid,
+      [RS.OFFSET]: this.offset,
+      [RS.ASSIGNED_AT]: this.assigned_at,
+      [RS.ASSIGNED_BY]: assignedByObj ? await assignedByObj.toJSON() : null,
+      [RS.ROTATION_GROUP]: rotationGroupObj
+        ? await rotationGroupObj.toJSON(responseValue.FULL)
+        : null,
+    };
+  }
+
   // ============================================
   // MÉTHODES PRIVÉES
   // ============================================

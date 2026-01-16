@@ -336,9 +336,7 @@ export default class RotationGroup extends RotationGroupModel {
 
     return {
       ...baseData,
-      [RS.CYCLE_TEMPLATES]: await Promise.all(
-        templates.map(async (t) => t.toJSON(responseValue.MINIMAL)),
-      ),
+      [RS.CYCLE_TEMPLATES]: await Promise.all(templates.map(async (t) => t.toJSON())),
     };
   }
 

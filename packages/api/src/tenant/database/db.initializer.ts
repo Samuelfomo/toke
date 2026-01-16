@@ -15,7 +15,7 @@ import { QrCodeGenerationDbStructure } from './data/qr.code.generation.db.js';
 import { SessionTemplatesDbStructure } from './data/session.templates.db.js';
 import { RotationGroupsDbStructure } from './data/rotation.groups.db.js';
 import { RotationAssignmentsDbStructure } from './data/rotation.assignments.db.js';
-import { ScheduleExceptionsDbStructure } from './data/schedule.exceptions.db.js';
+import { ScheduleAssignmentsDbStructure } from './data/schedule.assignments.db.js';
 import { GroupsDbStructure } from './data/groups.db.js';
 import { DeviceDbStructure } from './data/device.db.js';
 import { DepartmentDbStructure } from './data/department.db.js';
@@ -398,14 +398,14 @@ export class TableInitializer {
 
   private static defineScheduleExceptionsModelForInstance(instance: TenantInstance): void {
     const model = instance.sequelize.define(
-      ScheduleExceptionsDbStructure.tableName,
-      ScheduleExceptionsDbStructure.attributes,
-      ScheduleExceptionsDbStructure.options,
+      ScheduleAssignmentsDbStructure.tableName,
+      ScheduleAssignmentsDbStructure.attributes,
+      ScheduleAssignmentsDbStructure.options,
     );
 
-    instance.models.set(ScheduleExceptionsDbStructure.tableName, model);
+    instance.models.set(ScheduleAssignmentsDbStructure.tableName, model);
     console.log(
-      `✅ Modèle Schedule Exceptions défini (${ScheduleExceptionsDbStructure.tableName})`,
+      `✅ Modèle Schedule Exceptions défini (${ScheduleAssignmentsDbStructure.tableName})`,
     );
   }
 

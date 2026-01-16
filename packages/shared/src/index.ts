@@ -51,7 +51,7 @@ export * from './constants/tenant/poste.js';
 export * from './constants/tenant/session.templates.js';
 export * from './constants/tenant/rotation.groups.js';
 export * from './constants/tenant/rotation.assignments.js';
-export * from './constants/tenant/schedule.exceptions.js';
+export * from './constants/tenant/schedule.assignments.js';
 export * from './constants/tenant/groups.js';
 export * from './constants/tenant/device.js';
 
@@ -90,7 +90,7 @@ export * from './schemas/tenant/poste.js';
 export * from './schemas/tenant/session.templates.js';
 export * from './schemas/tenant/rotation.groups.js';
 export * from './schemas/tenant/rotation.assignments.js';
-export * from './schemas/tenant/schedule.exceptions.js';
+export * from './schemas/tenant/schedule.assignments.js';
 export * from './schemas/tenant/groups.js';
 export * from './schemas/tenant/device.js';
 
@@ -130,6 +130,6 @@ export * from './utils/tenant/poste.validation.js';
 export * from './utils/tenant/session.templates.validation.js';
 export * from './utils/tenant/rotation.groups.validation.js';
 export * from './utils/tenant/rotation.assignments.validation.js';
-export * from './utils/tenant/schedule.exceptions.validation.js';
+export * from './utils/tenant/schedule.assignments.validation.js';
 export * from './utils/tenant/groups.validation.js';
 export * from './utils/tenant/device.validation.js';

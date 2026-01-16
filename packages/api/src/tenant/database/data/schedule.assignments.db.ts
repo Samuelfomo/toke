@@ -3,10 +3,10 @@ import { DataTypes, ModelAttributes, ModelOptions, Op } from 'sequelize';
 import { tableName } from '../../../utils/response.model.js';
 
 // ==========================================
-// SCHEDULE EXCEPTIONS
+// SCHEDULE ASSIGNMENTS
 // ==========================================
-export const ScheduleExceptionsDbStructure = {
-  tableName: tableName.SCHEDULE_EXCEPTIONS,
+export const ScheduleAssignmentsDbStructure = {
+  tableName: tableName.SCHEDULE_ASSIGNMENTS,
   attributes: {
     id: {
       type: DataTypes.INTEGER,
@@ -17,15 +17,15 @@ export const ScheduleExceptionsDbStructure = {
         min: 1,
         max: 2147483647,
       },
-      comment: 'Schedule Exception ID',
+      comment: 'Schedule Assignments ID',
     },
     guid: {
       type: DataTypes.STRING(255),
       allowNull: false,
       defaultValue: DataTypes.UUIDV4,
       unique: {
-        name: 'unique_schedule_exception_guid',
-        msg: 'Schedule Exception GUID must be unique.',
+        name: 'unique_schedule_assignments_guid',
+        msg: 'Schedule Assignments GUID must be unique.',
       },
       validate: {
         len: [1, 255],
@@ -51,7 +51,7 @@ export const ScheduleExceptionsDbStructure = {
       validate: {
         isInt: true,
       },
-      comment: 'Reference to user (nullable for groups exceptions)',
+      comment: 'Reference to user (nullable for groups Assignments)',
     },
     groups: {
       type: DataTypes.INTEGER,
@@ -63,7 +63,7 @@ export const ScheduleExceptionsDbStructure = {
       validate: {
         isInt: true,
       },
-      comment: 'Reference to groups (nullable for user exceptions)',
+      comment: 'Reference to groups (nullable for user Assignments)',
     },
     session_template: {
       type: DataTypes.INTEGER,
@@ -83,15 +83,15 @@ export const ScheduleExceptionsDbStructure = {
       validate: {
         isDate: true,
       },
-      comment: 'Start date of the exception',
+      comment: 'Start date of the Assignments',
     },
     end_date: {
       type: DataTypes.DATEONLY,
-      allowNull: false,
+      allowNull: true,
       validate: {
         isDate: true,
       },
-      comment: 'End date of the exception',
+      comment: 'End date of the Assignments',
     },
     created_by: {
       type: DataTypes.INTEGER,
@@ -103,12 +103,12 @@ export const ScheduleExceptionsDbStructure = {
       validate: {
         isInt: true,
       },
-      comment: 'User ID who created the exception',
+      comment: 'User ID who created the Assignments',
     },
     reason: {
       type: DataTypes.TEXT,
       allowNull: true,
-      comment: 'Reason for the exception',
+      comment: 'Reason for the exception Assignments',
     },
     active: {
       type: DataTypes.BOOLEAN,
@@ -117,7 +117,7 @@ export const ScheduleExceptionsDbStructure = {
       validate: {
         isBoolean: true,
       },
-      comment: 'Exception status',
+      comment: 'Assignments status',
     },
     deleted_at: {
       type: DataTypes.DATE,
@@ -129,7 +129,7 @@ export const ScheduleExceptionsDbStructure = {
     },
   } as ModelAttributes,
   options: {
-    tableName: tableName.SCHEDULE_EXCEPTIONS,
+    tableName: tableName.SCHEDULE_ASSIGNMENTS,
     timestamps: true,
     createdAt: 'created_at',
     updatedAt: 'updated_at',
@@ -137,69 +137,69 @@ export const ScheduleExceptionsDbStructure = {
     deletedAt: 'deleted_at',
     underscored: true,
     freezeTableName: true,
-    comment: 'Schedule Exceptions table for temporary schedule overrides',
+    comment: 'Schedule Assignments table for temporary schedule overrides',
     indexes: [
       {
         fields: ['guid'],
-        name: 'idx_schedule_exceptions_guid',
+        name: 'idx_schedule_assignments_guid',
       },
       {
         fields: ['tenant'],
-        name: 'idx_schedule_exceptions_tenant',
+        name: 'idx_schedule_assignments_tenant',
       },
       {
         fields: ['user'],
-        name: 'idx_schedule_exceptions_user',
+        name: 'idx_schedule_assignments_user',
       },
       {
         fields: ['groups'],
-        name: 'idx_schedule_exceptions_groups',
+        name: 'idx_schedule_assignments_groups',
       },
       {
         fields: ['session_template'],
-        name: 'idx_schedule_exceptions_session_template',
+        name: 'idx_schedule_assignments_session_template',
       },
       {
         fields: ['start_date'],
-        name: 'idx_schedule_exceptions_start_date',
+        name: 'idx_schedule_assignments_start_date',
       },
       {
         fields: ['end_date'],
-        name: 'idx_schedule_exceptions_end_date',
+        name: 'idx_schedule_assignments_end_date',
       },
       {
         fields: ['created_by'],
-        name: 'idx_schedule_exceptions_created_by',
+        name: 'idx_schedule_assignments_created_by',
       },
       {
         fields: ['active'],
-        name: 'idx_schedule_exceptions_active',
+        name: 'idx_schedule_assignments_active',
       },
       {
         fields: ['deleted_at'],
-        name: 'idx_schedule_exceptions_deleted_at',
+        name: 'idx_schedule_assignments_deleted_at',
       },
       {
         fields: ['start_date', 'end_date'],
-        name: 'idx_schedule_exceptions_date_range',
+        name: 'idx_schedule_assignments_date_range',
       },
 
-      // ✅ NOUVELLE CONTRAINTE : UNE SEULE exception active par user
+      // ✅ NOUVELLE CONTRAINTE : UNE SEULE assignment active par user
       {
         unique: true,
         fields: ['user'],
-        name: 'unique_user_active_exception',
+        name: 'unique_user_active_assignments',
         where: {
           deleted_at: null,
           active: true,
           user: { [Op.not]: null },
         },
       },
-      // ✅ NOUVELLE CONTRAINTE : UNE SEULE exception active par groups
+      // ✅ NOUVELLE CONTRAINTE : UNE SEULE assignments active par groups
       {
         unique: true,
         fields: ['groups'],
-        name: 'unique_groups_active_exception',
+        name: 'unique_groups_active_assignments',
         where: {
           deleted_at: null,
           active: true,
@@ -209,7 +209,7 @@ export const ScheduleExceptionsDbStructure = {
       // {
       //   unique: true,
       //   fields: ['user', 'session_template', 'start_date', 'end_date'],
-      //   name: 'unique_user_schedule_exception',
+      //   name: 'unique_user_schedule_assignments',
       //   where: {
       //     deleted_at: null,
       //   },
@@ -217,7 +217,7 @@ export const ScheduleExceptionsDbStructure = {
       // {
       //   unique: true,
       //   fields: ['groups', 'session_template', 'start_date', 'end_date'],
-      //   name: 'unique_groups_schedule_exception',
+      //   name: 'unique_groups_schedule_assignments',
       //   where: {
       //     deleted_at: null,
       //   },

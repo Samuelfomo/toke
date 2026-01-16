@@ -3,7 +3,7 @@ import { VALID_DAYS } from '@toke/shared';
 import SessionTemplate from '../tenant/class/SessionTemplates.js';
 import RotationAssignment from '../tenant/class/RotationAssignments.js';
 import RotationGroup from '../tenant/class/RotationGroups.js';
-import ScheduleException from '../tenant/class/ScheduleExceptions.js';
+import ScheduleAssignments from '../tenant/class/ScheduleAssignments.js';
 import User from '../tenant/class/User.js';
 import Groups from '../tenant/class/Groups.js';
 
@@ -163,7 +163,7 @@ class ScheduleResolutionService {
     activeGroupId?: number,
   ): Promise<ApplicableSchedule | null> {
     // Chercher exception utilisateur
-    const userException = await ScheduleException._listForUserOnDate(userId, dateStr);
+    const userException = await ScheduleAssignments._listForUserOnDate(userId, dateStr);
 
     if (userException && userException.length > 0) {
       const exception = userException[0];
@@ -182,7 +182,7 @@ class ScheduleResolutionService {
 
     if (activeGroupId) {
       // TODO: Chercher exception groupe si pas d'exception utilisateur
-      const groupException = await ScheduleException._listForGroupsOnDate(activeGroupId, dateStr);
+      const groupException = await ScheduleAssignments._listForGroupsOnDate(activeGroupId, dateStr);
 
       if (groupException && groupException.length > 0) {
         const exceptionGroup = groupException[0];
@@ -210,11 +210,9 @@ class ScheduleResolutionService {
     groupId?: number,
   ): Promise<ApplicableSchedule | null> {
     const userObj = await User._load(userId);
-    const activeSession = userObj?.getActiveSession();
-    if (!activeSession) {
-      return null;
-    }
-    const userSchedule = await userObj?.getSessionTemplateObjs(activeSession.session_template);
+    const userSchedule = await (
+      await userObj?.getActiveScheduleAssignment()
+    )?.getSessionTemplateObj();
     if (userSchedule) {
       return await this.buildScheduleFromTemplate(userSchedule.getId()!, dateStr, 'default', {
         session_guid: userSchedule.getGuid(),

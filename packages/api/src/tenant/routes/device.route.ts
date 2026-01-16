@@ -214,28 +214,28 @@ router.post('/', Ensure.post(), async (req: Request, res: Response) => {
     const deviceObj = new Device()
       .setName(validatedData.name)
       .setDeviceType(validatedData.device_type || DeviceType.OTHER)
-      .setAssignedTo(assignedUserObj.getId()!)
-      .setGpsAccuracy(validatedData.gps_accuracy)
-      .setCustomGeofenceRadius(validatedData.custom_geofence_radius);
+      .setAssignedTo(assignedUserObj.getId()!);
+    // .setGpsAccuracy(validatedData.gps_accuracy)
+    // .setCustomGeofenceRadius(validatedData.custom_geofence_radius);
 
-    if (validatedData.config_by) {
-      // Vérification du créateur
-      const creatorObj = await User._load(validatedData.config_by, true);
-      if (!creatorObj) {
-        return R.handleError(res, HttpStatus.NOT_FOUND, {
-          code: USERS_CODES.USER_NOT_FOUND,
-          message: 'Creator user not found',
-        });
-      }
-      deviceObj.setConfigBy(creatorObj.getId()!);
-    }
-    if (validatedData.last_seen_at) {
-      deviceObj.setLastSeenAt(new Date(validatedData.last_seen_at));
-    }
+    // if (validatedData.config_by) {
+    //   // Vérification du créateur
+    //   const creatorObj = await User._load(validatedData.config_by, true);
+    //   if (!creatorObj) {
+    //     return R.handleError(res, HttpStatus.NOT_FOUND, {
+    //       code: USERS_CODES.USER_NOT_FOUND,
+    //       message: 'Creator user not found',
+    //     });
+    //   }
+    //   deviceObj.setConfigBy(creatorObj.getId()!);
+    // }
+    // if (validatedData.last_seen_at) {
+    //   deviceObj.setLastSeenAt(new Date(validatedData.last_seen_at));
+    // }
 
-    if (validatedData.active !== undefined) {
-      deviceObj.setActive(validatedData.active);
-    }
+    // if (validatedData.active !== undefined) {
+    //   deviceObj.setActive(validatedData.active);
+    // }
 
     await deviceObj.save();
 
@@ -258,6 +258,70 @@ router.post('/', Ensure.post(), async (req: Request, res: Response) => {
         message: error.message,
       });
     }
+  }
+});
+
+router.patch('/:guid/config', Ensure.patch(), async (req: Request, res: Response) => {
+  try {
+    const { guid } = req.params;
+    if (!DevicesValidationUtils.validateGuid(guid)) {
+      return R.handleError(res, HttpStatus.BAD_REQUEST, {
+        code: DEVICES_CODES.INVALID_GUID,
+        message: DEVICES_ERRORS.GUID_INVALID,
+      });
+    }
+    const deviceObj = await Device._load(guid, true);
+    if (!deviceObj) {
+      return R.handleError(res, HttpStatus.NOT_FOUND, {
+        code: DEVICES_CODES.DEVICE_NOT_FOUND,
+        message: DEVICES_ERRORS.NOT_FOUND,
+      });
+    }
+    const { manager, custom_geofence_radius } = req.body;
+
+    if (!manager) {
+      return R.handleError(res, HttpStatus.BAD_REQUEST, {
+        code: DEVICES_CODES.CREATED_BY_REQUIRED,
+        message: DEVICES_ERRORS.CREATED_BY_REQUIRED,
+      });
+    }
+    if (!custom_geofence_radius) {
+      return R.handleError(res, HttpStatus.BAD_REQUEST, {
+        code: DEVICES_CODES.GEOFENCE_RADIUS_INVALID,
+        message: DEVICES_ERRORS.GEOFENCE_RADIUS_INVALID,
+      });
+    }
+    if (!DevicesValidationUtils.validateGuid(manager)) {
+      return R.handleError(res, HttpStatus.BAD_REQUEST, {
+        code: DEVICES_CODES.CREATED_BY_INVALID,
+        message: DEVICES_ERRORS.CREATED_BY_INVALID,
+      });
+    }
+    if (!DevicesValidationUtils.validateGeofenceRadius(custom_geofence_radius)) {
+      return R.handleError(res, HttpStatus.BAD_REQUEST, {
+        code: DEVICES_CODES.GEOFENCE_RADIUS_INVALID,
+        message: DEVICES_ERRORS.GEOFENCE_RADIUS_INVALID,
+      });
+    }
+    const managerObj = await User._load(manager, true);
+    if (!managerObj) {
+      return R.handleError(res, HttpStatus.NOT_FOUND, {
+        code: DEVICES_CODES.CREATED_BY_NOT_FOUND,
+        message: DEVICES_ERRORS.CREATED_BY_NOT_FOUND,
+      });
+    }
+    deviceObj.setConfigBy(managerObj.getId()!);
+    deviceObj.setCustomGeofenceRadius(custom_geofence_radius);
+    await deviceObj.save();
+    return R.handleSuccess(res, {
+      message: DEVICES_MESSAGES.CONFIG_SUCCESSFULLY,
+      device: await deviceObj.toJSON(responseValue.MINIMAL),
+    });
+  } catch (error: any) {
+    return R.handleError(res, HttpStatus.INTERNAL_ERROR, {
+      code: DEVICES_CODES.CONFIG_FAILED,
+      message: error.message,
+    });
   }
 });
 

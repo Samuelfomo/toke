@@ -1,8 +1,8 @@
 // utils/schedule_exceptions.validation.ts
-import { SCHEDULE_EXCEPTION_VALIDATION } from '../../constants/tenant/schedule.exceptions.js';
+import { SCHEDULE_ASSIGNMENTS_VALIDATION } from '../../constants/tenant/schedule.assignments.js';
 import { TimezoneConfigUtils } from '../timezone.config.validation.js';
 
-export class ScheduleExceptionValidationUtils {
+export class ScheduleAssignmentsValidationUtils {
   // /**
   //  * Validates tenant
   //  */
@@ -22,8 +22,8 @@ export class ScheduleExceptionValidationUtils {
     if (user === null || user === undefined) return true;
     if (typeof user !== 'string') return false;
     return (
-      user.length >= SCHEDULE_EXCEPTION_VALIDATION.USER.MIN_LENGTH &&
-      user.length <= SCHEDULE_EXCEPTION_VALIDATION.USER.MAX_LENGTH
+      user.length >= SCHEDULE_ASSIGNMENTS_VALIDATION.USER.MIN_LENGTH &&
+      user.length <= SCHEDULE_ASSIGNMENTS_VALIDATION.USER.MAX_LENGTH
     );
   }
 
@@ -34,8 +34,8 @@ export class ScheduleExceptionValidationUtils {
     if (groups === null || groups === undefined) return true;
     if (typeof groups !== 'string') return false;
     return (
-      groups.length >= SCHEDULE_EXCEPTION_VALIDATION.GROUPS.MIN_LENGTH &&
-      groups.length <= SCHEDULE_EXCEPTION_VALIDATION.GROUPS.MAX_LENGTH
+      groups.length >= SCHEDULE_ASSIGNMENTS_VALIDATION.GROUPS.MIN_LENGTH &&
+      groups.length <= SCHEDULE_ASSIGNMENTS_VALIDATION.GROUPS.MAX_LENGTH
     );
   }
 
@@ -54,8 +54,8 @@ export class ScheduleExceptionValidationUtils {
   static validateSessionTemplate(sessionTemplate: any): boolean {
     if (typeof sessionTemplate !== 'string') return false;
     return (
-      sessionTemplate.length >= SCHEDULE_EXCEPTION_VALIDATION.SESSION_TEMPLATE.MIN_LENGTH &&
-      sessionTemplate.length <= SCHEDULE_EXCEPTION_VALIDATION.SESSION_TEMPLATE.MAX_LENGTH
+      sessionTemplate.length >= SCHEDULE_ASSIGNMENTS_VALIDATION.SESSION_TEMPLATE.MIN_LENGTH &&
+      sessionTemplate.length <= SCHEDULE_ASSIGNMENTS_VALIDATION.SESSION_TEMPLATE.MAX_LENGTH
     );
   }
 
@@ -101,8 +101,8 @@ export class ScheduleExceptionValidationUtils {
     if (createdBy === null || createdBy === undefined) return true;
     if (typeof createdBy !== 'string') return false;
     return (
-      createdBy.length >= SCHEDULE_EXCEPTION_VALIDATION.CREATED_BY.MIN_LENGTH &&
-      createdBy.length <= SCHEDULE_EXCEPTION_VALIDATION.CREATED_BY.MAX_LENGTH
+      createdBy.length >= SCHEDULE_ASSIGNMENTS_VALIDATION.CREATED_BY.MIN_LENGTH &&
+      createdBy.length <= SCHEDULE_ASSIGNMENTS_VALIDATION.CREATED_BY.MAX_LENGTH
     );
   }
 
@@ -114,8 +114,8 @@ export class ScheduleExceptionValidationUtils {
     if (typeof reason !== 'string') return false;
     const trimmed = reason.trim();
     return (
-      trimmed.length >= SCHEDULE_EXCEPTION_VALIDATION.REASON.MIN_LENGTH &&
-      trimmed.length <= SCHEDULE_EXCEPTION_VALIDATION.REASON.MAX_LENGTH
+      trimmed.length >= SCHEDULE_ASSIGNMENTS_VALIDATION.REASON.MIN_LENGTH &&
+      trimmed.length <= SCHEDULE_ASSIGNMENTS_VALIDATION.REASON.MAX_LENGTH
     );
   }
 
@@ -132,15 +132,15 @@ export class ScheduleExceptionValidationUtils {
   static validateGuid(guid: any): boolean {
     if (!guid || typeof guid !== 'string') return false;
     return (
-      guid.length >= SCHEDULE_EXCEPTION_VALIDATION.GUID.MIN_LENGTH &&
-      guid.length <= SCHEDULE_EXCEPTION_VALIDATION.GUID.MAX_LENGTH
+      guid.length >= SCHEDULE_ASSIGNMENTS_VALIDATION.GUID.MIN_LENGTH &&
+      guid.length <= SCHEDULE_ASSIGNMENTS_VALIDATION.GUID.MAX_LENGTH
     );
   }
 
   /**
    * Cleans and normalizes schedule exception data
    */
-  static cleanScheduleExceptionData(data: Record<string, any>): Record<string, any> {
+  static cleanScheduleAssignmentsData(data: Record<string, any>): Record<string, any> {
     const cleaned = { ...data };
 
     // Clean string fields

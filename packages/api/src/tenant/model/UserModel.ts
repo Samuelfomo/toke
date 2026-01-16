@@ -1,5 +1,4 @@
 import {
-  TI,
   TimezoneConfigUtils,
   USERS_DEFAULTS,
   USERS_ERRORS,
@@ -35,8 +34,8 @@ export default class UserModel extends BaseModel {
     otp_token: 'otp_token',
     otp_expires_at: 'otp_expires_at',
     device_token: 'device_token',
-    // session_template: 'session_template',
-    assigned_sessions: 'assigned_sessions',
+
+    // assigned_sessions: 'assigned_sessions',
 
     // QR Code Manager
     qr_code_token: 'qr_code_token',
@@ -72,8 +71,8 @@ export default class UserModel extends BaseModel {
   protected country?: string;
   protected employee_code?: string;
   protected device_token?: string;
-  // protected session_template: number | null = null;
-  protected assigned_sessions: TI.AssignedSession[] = [];
+
+  // protected assigned_sessions: TI.AssignedSession[] = [];
 
   // ⚠️ NE PAS HACHER ICI : Sequelize le fait automatiquement
   protected pin_hash?: string;
@@ -99,40 +98,40 @@ export default class UserModel extends BaseModel {
   // MÉTHODES DE RECHERCHE AMÉLIORÉES
   // ============================================
 
-  /**
-   * Recherche les utilisateurs avec une session template spécifique
-   */
-  async listAllBySessionTemplate(
-    sessionTemplate: number,
-    paginationOptions: { offset?: number; limit?: number } = {},
-  ): Promise<any[]> {
-    const conditions = {
-      [this.db.deleted_at]: null,
-    };
+  // /**
+  //  * Recherche les utilisateurs avec une session template spécifique
+  //  */
+  // async listAllBySessionTemplate(
+  //   sessionTemplate: number,
+  //   paginationOptions: { offset?: number; limit?: number } = {},
+  // ): Promise<any[]> {
+  //   const conditions = {
+  //     [this.db.deleted_at]: null,
+  //   };
+  //
+  //   const allUsers = await this.listAll(conditions, paginationOptions);
+  //
+  //   return allUsers.filter((user) => {
+  //     const sessions = user.assigned_sessions || [];
+  //     return sessions.some(
+  //       (session: TI.AssignedSession) => session.session_template === sessionTemplate,
+  //     );
+  //   });
+  // }
 
-    const allUsers = await this.listAll(conditions, paginationOptions);
-
-    return allUsers.filter((user) => {
-      const sessions = user.assigned_sessions || [];
-      return sessions.some(
-        (session: TI.AssignedSession) => session.session_template === sessionTemplate,
-      );
-    });
-  }
-
-  /**
-   * Recherche les utilisateurs ayant une session active
-   */
-  protected async listAllWithActiveSession(
-    paginationOptions: { offset?: number; limit?: number } = {},
-  ): Promise<any[]> {
-    const allUsers = await this.listAll({}, paginationOptions);
-
-    return allUsers.filter((user) => {
-      const sessions = user.assigned_sessions || [];
-      return sessions.some((session: TI.AssignedSession) => session.active === true);
-    });
-  }
+  // /**
+  //  * Recherche les utilisateurs ayant une session active
+  //  */
+  // protected async listAllWithActiveSession(
+  //   paginationOptions: { offset?: number; limit?: number } = {},
+  // ): Promise<any[]> {
+  //   const allUsers = await this.listAll({}, paginationOptions);
+  //
+  //   return allUsers.filter((user) => {
+  //     const sessions = user.assigned_sessions || [];
+  //     return sessions.some((session: TI.AssignedSession) => session.active === true);
+  //   });
+  // }
 
   /**
    * ✅ Exclure les utilisateurs supprimés par défaut
@@ -623,8 +622,9 @@ export default class UserModel extends BaseModel {
       [this.db.active]: this.active ?? USERS_DEFAULTS.ACTIVE,
       // [this.db.session_template]: this.session_template || null,
       // [this.db.device_token]: this.device_token ? this.device_token : null,
-      [this.db.assigned_sessions]: this.assigned_sessions || [],
+      // [this.db.assigned_sessions]: this.assigned_sessions || [],
     });
+    3;
 
     if (!lastID) {
       throw new Error(USERS_ERRORS.CREATION_FAILED);
@@ -712,9 +712,9 @@ export default class UserModel extends BaseModel {
     //   updateData[this.db.device_token] = this.device_token;
     // }
 
-    if (this.assigned_sessions !== undefined) {
-      updateData[this.db.assigned_sessions] = this.assigned_sessions;
-    }
+    // if (this.assigned_sessions !== undefined) {
+    //   updateData[this.db.assigned_sessions] = this.assigned_sessions;
+    // }
 
     const updated = await this.updateOne(this.db.tableName, updateData, { [this.db.id]: this.id });
 

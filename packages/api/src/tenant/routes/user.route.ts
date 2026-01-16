@@ -6,16 +6,12 @@ import {
   PointageType,
   ROLES_CODES,
   ROLES_ERRORS,
-  SESSION_TEMPLATE_CODES,
-  SESSION_TEMPLATE_ERRORS,
-  SessionTemplateValidationUtils,
   SITES_ERRORS,
   TENANT_CODES,
   TimezoneConfigUtils,
   USER_ROLES_CODES,
   USER_ROLES_ERRORS,
   USERS_CODES,
-  USERS_DEFAULTS,
   USERS_ERRORS,
   UsersValidationUtils,
   validateUsersCreation,
@@ -47,7 +43,6 @@ import ScheduleResolutionService from '../../tools/schedule.resolution.service.j
 import AnomalyDetectionService from '../../tools/anomaly.detection.service.js';
 import TimeEntries from '../class/TimeEntries.js';
 import Memos from '../class/Memos.js';
-import SessionTemplate from '../class/SessionTemplates.js';
 // import { AnomalyType } from '../../tools/anomaly.detection.service.js';
 // import { AnomalyType } from '../../tools/anomaly.detection.service.js';
 
@@ -1182,137 +1177,137 @@ router.patch('/terminal/:guid', Ensure.patch(), async (req: Request, res: Respon
   }
 });
 
-router.patch('/session-template/:guid', Ensure.patch(), async (req: Request, res: Response) => {
-  try {
-    const { guid } = req.params;
-    const validGuid = UsersValidationUtils.validateGuid(guid);
-    if (!validGuid) {
-      return R.handleError(res, HttpStatus.BAD_REQUEST, {
-        code: USERS_CODES.INVALID_GUID,
-        message: USERS_ERRORS.GUID_INVALID,
-      });
-    }
+// router.patch('/session-template/:guid', Ensure.patch(), async (req: Request, res: Response) => {
+//   try {
+//     const { guid } = req.params;
+//     const validGuid = UsersValidationUtils.validateGuid(guid);
+//     if (!validGuid) {
+//       return R.handleError(res, HttpStatus.BAD_REQUEST, {
+//         code: USERS_CODES.INVALID_GUID,
+//         message: USERS_ERRORS.GUID_INVALID,
+//       });
+//     }
+//
+//     const userObj = await User._load(guid, true);
+//     if (!userObj) {
+//       return R.handleError(res, HttpStatus.NOT_FOUND, {
+//         code: USERS_CODES.USER_NOT_FOUND,
+//         message: USERS_ERRORS.NOT_FOUND,
+//       });
+//     }
+//
+//     const { session_template } = req.body;
+//
+//     if (!session_template) {
+//       return R.handleError(res, HttpStatus.BAD_REQUEST, {
+//         code: USERS_CODES.VALIDATION_FAILED,
+//         message: 'session_template is required',
+//       });
+//     }
+//     if (!SessionTemplateValidationUtils.validateGuid(session_template)) {
+//       return R.handleError(res, HttpStatus.BAD_REQUEST, {
+//         code: USERS_CODES.INVALID_GUID,
+//         message: 'session_template is invalid',
+//       });
+//     }
+//     const sessionTemplateObj = await SessionTemplate._load(session_template, true);
+//     if (!sessionTemplateObj) {
+//       return R.handleError(res, HttpStatus.NOT_FOUND, {
+//         code: SESSION_TEMPLATE_CODES.SESSION_TEMPLATE_NOT_FOUND,
+//         message: SESSION_TEMPLATE_ERRORS.NOT_FOUND,
+//       });
+//     }
+//     // Vérifier si déjà assignée
+//     if (userObj.hasSessionTemplate(sessionTemplateObj.getId()!)) {
+//       return R.handleError(res, HttpStatus.CONFLICT, {
+//         code: 'session_already_assigned',
+//         message: 'This session template is already assigned to this user',
+//       });
+//     }
+//     // Assigner la session
+//     userObj.assignSession(
+//       sessionTemplateObj.getId()!,
+//       TimezoneConfigUtils.getCurrentTime(),
+//       USERS_DEFAULTS.ACTIVE,
+//     );
+//
+//     await userObj.save();
+//
+//     return R.handleSuccess(res, {
+//       message: 'User default session template saved successfully',
+//       user: await userObj.toJSON(),
+//     });
+//   } catch (error: any) {
+//     return R.handleError(res, HttpStatus.INTERNAL_ERROR, {
+//       code: USERS_CODES.UPDATE_FAILED,
+//       message: error.message,
+//     });
+//   }
+// });
 
-    const userObj = await User._load(guid, true);
-    if (!userObj) {
-      return R.handleError(res, HttpStatus.NOT_FOUND, {
-        code: USERS_CODES.USER_NOT_FOUND,
-        message: USERS_ERRORS.NOT_FOUND,
-      });
-    }
-
-    const { session_template } = req.body;
-
-    if (!session_template) {
-      return R.handleError(res, HttpStatus.BAD_REQUEST, {
-        code: USERS_CODES.VALIDATION_FAILED,
-        message: 'session_template is required',
-      });
-    }
-    if (!SessionTemplateValidationUtils.validateGuid(session_template)) {
-      return R.handleError(res, HttpStatus.BAD_REQUEST, {
-        code: USERS_CODES.INVALID_GUID,
-        message: 'session_template is invalid',
-      });
-    }
-    const sessionTemplateObj = await SessionTemplate._load(session_template, true);
-    if (!sessionTemplateObj) {
-      return R.handleError(res, HttpStatus.NOT_FOUND, {
-        code: SESSION_TEMPLATE_CODES.SESSION_TEMPLATE_NOT_FOUND,
-        message: SESSION_TEMPLATE_ERRORS.NOT_FOUND,
-      });
-    }
-    // Vérifier si déjà assignée
-    if (userObj.hasSessionTemplate(sessionTemplateObj.getId()!)) {
-      return R.handleError(res, HttpStatus.CONFLICT, {
-        code: 'session_already_assigned',
-        message: 'This session template is already assigned to this user',
-      });
-    }
-    // Assigner la session
-    userObj.assignSession(
-      sessionTemplateObj.getId()!,
-      TimezoneConfigUtils.getCurrentTime(),
-      USERS_DEFAULTS.ACTIVE,
-    );
-
-    await userObj.save();
-
-    return R.handleSuccess(res, {
-      message: 'User default session template saved successfully',
-      user: await userObj.toJSON(),
-    });
-  } catch (error: any) {
-    return R.handleError(res, HttpStatus.INTERNAL_ERROR, {
-      code: USERS_CODES.UPDATE_FAILED,
-      message: error.message,
-    });
-  }
-});
-
-/**
- * PATCH /:guid/sessions/:template_guid/activate - Activer une session template
- */
-router.patch(
-  '/:guid/sessions/:template/activate',
-  Ensure.patch(),
-  async (req: Request, res: Response) => {
-    try {
-      const { guid, template } = req.params;
-
-      if (!UsersValidationUtils.validateGuid(guid)) {
-        return R.handleError(res, HttpStatus.BAD_REQUEST, {
-          code: USERS_CODES.INVALID_GUID,
-          message: USERS_ERRORS.GUID_INVALID,
-        });
-      }
-
-      if (!SessionTemplateValidationUtils.validateGuid(template)) {
-        return R.handleError(res, HttpStatus.BAD_REQUEST, {
-          code: SESSION_TEMPLATE_CODES.INVALID_GUID,
-          message: SESSION_TEMPLATE_ERRORS.GUID_INVALID,
-        });
-      }
-
-      const userObj = await User._load(guid, true);
-      if (!userObj) {
-        return R.handleError(res, HttpStatus.NOT_FOUND, {
-          code: USERS_CODES.USER_NOT_FOUND,
-          message: USERS_ERRORS.NOT_FOUND,
-        });
-      }
-
-      const templateObj = await SessionTemplate._load(template, true);
-      if (!templateObj) {
-        return R.handleError(res, HttpStatus.NOT_FOUND, {
-          code: SESSION_TEMPLATE_CODES.SESSION_TEMPLATE_NOT_FOUND,
-          message: SESSION_TEMPLATE_ERRORS.NOT_FOUND,
-        });
-      }
-
-      // Vérifier que la session est assignée
-      if (!userObj.hasSessionTemplate(templateObj.getId()!)) {
-        return R.handleError(res, HttpStatus.NOT_FOUND, {
-          code: 'session_not_assigned',
-          message: 'This session template is not assigned to this user',
-        });
-      }
-
-      userObj.activateSession(templateObj.getId()!);
-      await userObj.save();
-
-      return R.handleSuccess(res, {
-        message: 'Session template activated successfully',
-        user: await userObj.toJSON(),
-      });
-    } catch (error: any) {
-      return R.handleError(res, HttpStatus.INTERNAL_ERROR, {
-        code: USERS_CODES.UPDATE_FAILED,
-        message: error.message,
-      });
-    }
-  },
-);
+// /**
+//  * PATCH /:guid/sessions/:template_guid/activate - Activer une session template
+//  */
+// router.patch(
+//   '/:guid/sessions/:template/activate',
+//   Ensure.patch(),
+//   async (req: Request, res: Response) => {
+//     try {
+//       const { guid, template } = req.params;
+//
+//       if (!UsersValidationUtils.validateGuid(guid)) {
+//         return R.handleError(res, HttpStatus.BAD_REQUEST, {
+//           code: USERS_CODES.INVALID_GUID,
+//           message: USERS_ERRORS.GUID_INVALID,
+//         });
+//       }
+//
+//       if (!SessionTemplateValidationUtils.validateGuid(template)) {
+//         return R.handleError(res, HttpStatus.BAD_REQUEST, {
+//           code: SESSION_TEMPLATE_CODES.INVALID_GUID,
+//           message: SESSION_TEMPLATE_ERRORS.GUID_INVALID,
+//         });
+//       }
+//
+//       const userObj = await User._load(guid, true);
+//       if (!userObj) {
+//         return R.handleError(res, HttpStatus.NOT_FOUND, {
+//           code: USERS_CODES.USER_NOT_FOUND,
+//           message: USERS_ERRORS.NOT_FOUND,
+//         });
+//       }
+//
+//       const templateObj = await SessionTemplate._load(template, true);
+//       if (!templateObj) {
+//         return R.handleError(res, HttpStatus.NOT_FOUND, {
+//           code: SESSION_TEMPLATE_CODES.SESSION_TEMPLATE_NOT_FOUND,
+//           message: SESSION_TEMPLATE_ERRORS.NOT_FOUND,
+//         });
+//       }
+//
+//       // Vérifier que la session est assignée
+//       if (!userObj.hasSessionTemplate(templateObj.getId()!)) {
+//         return R.handleError(res, HttpStatus.NOT_FOUND, {
+//           code: 'session_not_assigned',
+//           message: 'This session template is not assigned to this user',
+//         });
+//       }
+//
+//       userObj.activateSession(templateObj.getId()!);
+//       await userObj.save();
+//
+//       return R.handleSuccess(res, {
+//         message: 'Session template activated successfully',
+//         user: await userObj.toJSON(),
+//       });
+//     } catch (error: any) {
+//       return R.handleError(res, HttpStatus.INTERNAL_ERROR, {
+//         code: USERS_CODES.UPDATE_FAILED,
+//         message: error.message,
+//       });
+//     }
+//   },
+// );
 
 // router.post('/manager/:affiliate', Ensure.post(), async (req: Request, res: Response) => {
 //   try {
@@ -3192,110 +3187,287 @@ router.post('/share', Ensure.post(), async (req: Request, res: Response) => {
 //   }
 // });
 
+// /**
+//  * DELETE /:guid/sessions/:template_guid - Retirer une session template
+//  */
+// router.delete('/:guid/sessions/:template', Ensure.delete(), async (req: Request, res: Response) => {
+//   try {
+//     const { guid, template } = req.params;
+//
+//     if (!UsersValidationUtils.validateGuid(guid)) {
+//       return R.handleError(res, HttpStatus.BAD_REQUEST, {
+//         code: USERS_CODES.INVALID_GUID,
+//         message: USERS_ERRORS.GUID_INVALID,
+//       });
+//     }
+//
+//     if (!SessionTemplateValidationUtils.validateGuid(template)) {
+//       return R.handleError(res, HttpStatus.BAD_REQUEST, {
+//         code: SESSION_TEMPLATE_CODES.INVALID_GUID,
+//         message: SESSION_TEMPLATE_ERRORS.GUID_INVALID,
+//       });
+//     }
+//
+//     const userObj = await User._load(guid, true);
+//     if (!userObj) {
+//       return R.handleError(res, HttpStatus.NOT_FOUND, {
+//         code: USERS_CODES.USER_NOT_FOUND,
+//         message: USERS_ERRORS.NOT_FOUND,
+//       });
+//     }
+//
+//     const templateObj = await SessionTemplate._load(template, true);
+//     if (!templateObj) {
+//       return R.handleError(res, HttpStatus.NOT_FOUND, {
+//         code: SESSION_TEMPLATE_CODES.SESSION_TEMPLATE_NOT_FOUND,
+//         message: SESSION_TEMPLATE_ERRORS.NOT_FOUND,
+//       });
+//     }
+//
+//     if (!userObj.hasSessionTemplate(templateObj.getId()!)) {
+//       return R.handleError(res, HttpStatus.NOT_FOUND, {
+//         code: 'session_not_assigned',
+//         message: 'This session template is not assigned to this user',
+//       });
+//     }
+//
+//     userObj.removeSession(templateObj.getId()!);
+//     await userObj.save();
+//
+//     return R.handleSuccess(res, {
+//       message: 'Session template removed successfully',
+//       user: await userObj.toJSON(),
+//     });
+//   } catch (error: any) {
+//     return R.handleError(res, HttpStatus.INTERNAL_ERROR, {
+//       code: USERS_CODES.UPDATE_FAILED,
+//       message: error.message,
+//     });
+//   }
+// });
+//
+// /**
+//  * PATCH /:guid/sessions/deactivate-all - Désactiver toutes les sessions
+//  */
+// router.patch(
+//   '/:guid/sessions/deactivate-all',
+//   Ensure.patch(),
+//   async (req: Request, res: Response) => {
+//     try {
+//       const { guid } = req.params;
+//
+//       if (!UsersValidationUtils.validateGuid(guid)) {
+//         return R.handleError(res, HttpStatus.BAD_REQUEST, {
+//           code: USERS_CODES.INVALID_GUID,
+//           message: USERS_ERRORS.GUID_INVALID,
+//         });
+//       }
+//
+//       const userObj = await User._load(guid, true);
+//       if (!userObj) {
+//         return R.handleError(res, HttpStatus.NOT_FOUND, {
+//           code: USERS_CODES.USER_NOT_FOUND,
+//           message: USERS_ERRORS.NOT_FOUND,
+//         });
+//       }
+//
+//       userObj.deactivateAllSessions();
+//       await userObj.save();
+//
+//       return R.handleSuccess(res, {
+//         message: 'All sessions deactivated successfully',
+//         user: await userObj.toJSON(),
+//       });
+//     } catch (error: any) {
+//       return R.handleError(res, HttpStatus.INTERNAL_ERROR, {
+//         code: USERS_CODES.UPDATE_FAILED,
+//         message: error.message,
+//       });
+//     }
+//   },
+// );
+//
+// /**
+//  * GET /:guid/sessions/active - Récupérer la session active d'un utilisateur
+//  */
+// router.get('/:guid/sessions/active', Ensure.get(), async (req: Request, res: Response) => {
+//   try {
+//     const { guid } = req.params;
+//
+//     if (!UsersValidationUtils.validateGuid(guid)) {
+//       return R.handleError(res, HttpStatus.BAD_REQUEST, {
+//         code: USERS_CODES.INVALID_GUID,
+//         message: USERS_ERRORS.GUID_INVALID,
+//       });
+//     }
+//
+//     const userObj = await User._load(guid, true);
+//     if (!userObj) {
+//       return R.handleError(res, HttpStatus.NOT_FOUND, {
+//         code: USERS_CODES.USER_NOT_FOUND,
+//         message: USERS_ERRORS.NOT_FOUND,
+//       });
+//     }
+//
+//     const activeSession = userObj.getActiveSession();
+//
+//     if (!activeSession) {
+//       return R.handleSuccess(res, {
+//         user: await userObj.toJSON(responseValue.MINIMAL),
+//         has_active_session: false,
+//         active_session: null,
+//         message: 'No active session for this user',
+//       });
+//     }
+//
+//     const sessionTemplateObj = await userObj.getSessionTemplateObjs(activeSession.session_template);
+//
+//     return R.handleSuccess(res, {
+//       user: await userObj.toJSON(responseValue.MINIMAL),
+//       has_active_session: true,
+//       active_session: {
+//         template: sessionTemplateObj ? await sessionTemplateObj.toJSON() : null,
+//         assigned_at: activeSession.assign_at,
+//         active: activeSession.active,
+//       },
+//     });
+//   } catch (error: any) {
+//     return R.handleError(res, HttpStatus.INTERNAL_ERROR, {
+//       code: USERS_CODES.SEARCH_FAILED,
+//       message: error.message,
+//     });
+//   }
+// });
+//
+// /**
+//  * GET /:guid/sessions/history - Historique des sessions
+//  */
+// router.get('/:guid/sessions/history', Ensure.get(), async (req: Request, res: Response) => {
+//   try {
+//     const { guid } = req.params;
+//
+//     if (!UsersValidationUtils.validateGuid(guid)) {
+//       return R.handleError(res, HttpStatus.BAD_REQUEST, {
+//         code: USERS_CODES.INVALID_GUID,
+//         message: USERS_ERRORS.GUID_INVALID,
+//       });
+//     }
+//
+//     const userObj = await User._load(guid, true);
+//     if (!userObj) {
+//       return R.handleError(res, HttpStatus.NOT_FOUND, {
+//         code: USERS_CODES.USER_NOT_FOUND,
+//         message: USERS_ERRORS.NOT_FOUND,
+//       });
+//     }
+//
+//     const history = userObj.getSessionHistory();
+//
+//     const enrichedHistory = await Promise.all(
+//       history.map(async (session) => {
+//         const templateObj = await userObj.getSessionTemplateObjs(session.session_template);
+//         return {
+//           session_template: templateObj ? await templateObj.toJSON() : null,
+//           assign_at: session.assign_at,
+//           active: session.active,
+//         };
+//       }),
+//     );
+//
+//     return R.handleSuccess(res, {
+//       user: await userObj.toJSON(responseValue.MINIMAL),
+//       total_sessions: history.length,
+//       active_count: history.filter((s) => s.active).length,
+//       inactive_count: history.filter((s) => !s.active).length,
+//       sessions_history: enrichedHistory,
+//     });
+//   } catch (error: any) {
+//     return R.handleError(res, HttpStatus.INTERNAL_ERROR, {
+//       code: USERS_CODES.SEARCH_FAILED,
+//       message: error.message,
+//     });
+//   }
+// });
+//
+// /**
+//  * GET /sessions/:template_guid/users - Liste utilisateurs par session template
+//  */
+// router.get('/sessions/:template/users', Ensure.get(), async (req: Request, res: Response) => {
+//   try {
+//     const { template } = req.params;
+//
+//     if (!SessionTemplateValidationUtils.validateGuid(template)) {
+//       return R.handleError(res, HttpStatus.BAD_REQUEST, {
+//         code: SESSION_TEMPLATE_CODES.INVALID_GUID,
+//         message: SESSION_TEMPLATE_ERRORS.GUID_INVALID,
+//       });
+//     }
+//
+//     const templateObj = await SessionTemplate._load(template, true);
+//     if (!templateObj) {
+//       return R.handleError(res, HttpStatus.NOT_FOUND, {
+//         code: SESSION_TEMPLATE_CODES.SESSION_TEMPLATE_NOT_FOUND,
+//         message: SESSION_TEMPLATE_ERRORS.NOT_FOUND,
+//       });
+//     }
+//
+//     const paginationOptions = paginationSchema.parse(req.query);
+//     const userEntries = await User._listBySessionTemplate(templateObj.getId()!, paginationOptions);
+//
+//     const users = {
+//       pagination: {
+//         offset: paginationOptions.offset || 0,
+//         limit: paginationOptions.limit || userEntries?.length || 0,
+//         count: userEntries?.length || 0,
+//       },
+//       items: userEntries?.length
+//         ? await Promise.all(userEntries.map((user) => user.toJSON(responseValue.MINIMAL)))
+//         : [],
+//     };
+//
+//     return R.handleSuccess(res, {
+//       session_template: await templateObj.toJSON(),
+//       users,
+//     });
+//   } catch (error: any) {
+//     return R.handleError(res, HttpStatus.INTERNAL_ERROR, {
+//       code: USERS_CODES.LISTING_FAILED,
+//       message: error.message,
+//     });
+//   }
+// });
+//
+// /**
+//  * GET /sessions/active/list - Liste utilisateurs avec session active
+//  */
+// router.get('/sessions/active/list', Ensure.get(), async (req: Request, res: Response) => {
+//   try {
+//     const paginationOptions = paginationSchema.parse(req.query);
+//     const userEntries = await User._listWithActiveSession(paginationOptions);
+//
+//     const users = {
+//       pagination: {
+//         offset: paginationOptions.offset || 0,
+//         limit: paginationOptions.limit || userEntries?.length || 0,
+//         count: userEntries?.length || 0,
+//       },
+//       items: userEntries?.length ? await Promise.all(userEntries.map((user) => user.toJSON())) : [],
+//     };
+//
+//     return R.handleSuccess(res, { users });
+//   } catch (error: any) {
+//     return R.handleError(res, HttpStatus.INTERNAL_ERROR, {
+//       code: USERS_CODES.LISTING_FAILED,
+//       message: error.message,
+//     });
+//   }
+// });
+
 /**
- * DELETE /:guid/sessions/:template_guid - Retirer une session template
+ * GET /api/users/:guid/assignments
+ * Récupère toutes les assignations (schedule + rotation) pour un utilisateur
  */
-router.delete('/:guid/sessions/:template', Ensure.delete(), async (req: Request, res: Response) => {
-  try {
-    const { guid, template } = req.params;
-
-    if (!UsersValidationUtils.validateGuid(guid)) {
-      return R.handleError(res, HttpStatus.BAD_REQUEST, {
-        code: USERS_CODES.INVALID_GUID,
-        message: USERS_ERRORS.GUID_INVALID,
-      });
-    }
-
-    if (!SessionTemplateValidationUtils.validateGuid(template)) {
-      return R.handleError(res, HttpStatus.BAD_REQUEST, {
-        code: SESSION_TEMPLATE_CODES.INVALID_GUID,
-        message: SESSION_TEMPLATE_ERRORS.GUID_INVALID,
-      });
-    }
-
-    const userObj = await User._load(guid, true);
-    if (!userObj) {
-      return R.handleError(res, HttpStatus.NOT_FOUND, {
-        code: USERS_CODES.USER_NOT_FOUND,
-        message: USERS_ERRORS.NOT_FOUND,
-      });
-    }
-
-    const templateObj = await SessionTemplate._load(template, true);
-    if (!templateObj) {
-      return R.handleError(res, HttpStatus.NOT_FOUND, {
-        code: SESSION_TEMPLATE_CODES.SESSION_TEMPLATE_NOT_FOUND,
-        message: SESSION_TEMPLATE_ERRORS.NOT_FOUND,
-      });
-    }
-
-    if (!userObj.hasSessionTemplate(templateObj.getId()!)) {
-      return R.handleError(res, HttpStatus.NOT_FOUND, {
-        code: 'session_not_assigned',
-        message: 'This session template is not assigned to this user',
-      });
-    }
-
-    userObj.removeSession(templateObj.getId()!);
-    await userObj.save();
-
-    return R.handleSuccess(res, {
-      message: 'Session template removed successfully',
-      user: await userObj.toJSON(),
-    });
-  } catch (error: any) {
-    return R.handleError(res, HttpStatus.INTERNAL_ERROR, {
-      code: USERS_CODES.UPDATE_FAILED,
-      message: error.message,
-    });
-  }
-});
-
-/**
- * PATCH /:guid/sessions/deactivate-all - Désactiver toutes les sessions
- */
-router.patch(
-  '/:guid/sessions/deactivate-all',
-  Ensure.patch(),
-  async (req: Request, res: Response) => {
-    try {
-      const { guid } = req.params;
-
-      if (!UsersValidationUtils.validateGuid(guid)) {
-        return R.handleError(res, HttpStatus.BAD_REQUEST, {
-          code: USERS_CODES.INVALID_GUID,
-          message: USERS_ERRORS.GUID_INVALID,
-        });
-      }
-
-      const userObj = await User._load(guid, true);
-      if (!userObj) {
-        return R.handleError(res, HttpStatus.NOT_FOUND, {
-          code: USERS_CODES.USER_NOT_FOUND,
-          message: USERS_ERRORS.NOT_FOUND,
-        });
-      }
-
-      userObj.deactivateAllSessions();
-      await userObj.save();
-
-      return R.handleSuccess(res, {
-        message: 'All sessions deactivated successfully',
-        user: await userObj.toJSON(),
-      });
-    } catch (error: any) {
-      return R.handleError(res, HttpStatus.INTERNAL_ERROR, {
-        code: USERS_CODES.UPDATE_FAILED,
-        message: error.message,
-      });
-    }
-  },
-);
-
-/**
- * GET /:guid/sessions/active - Récupérer la session active d'un utilisateur
- */
-router.get('/:guid/sessions/active', Ensure.get(), async (req: Request, res: Response) => {
+router.get('/:guid/assignments', Ensure.get(), async (req: Request, res: Response) => {
   try {
     const { guid } = req.params;
 
@@ -3314,26 +3486,28 @@ router.get('/:guid/sessions/active', Ensure.get(), async (req: Request, res: Res
       });
     }
 
-    const activeSession = userObj.getActiveSession();
-
-    if (!activeSession) {
-      return R.handleSuccess(res, {
-        user: await userObj.toJSON(responseValue.MINIMAL),
-        has_active_session: false,
-        active_session: null,
-        message: 'No active session for this user',
-      });
-    }
-
-    const sessionTemplateObj = await userObj.getSessionTemplateObjs(activeSession.session_template);
+    const assignmentType = await userObj.getCurrentAssignmentType();
+    const activeSchedule = await userObj.getActiveScheduleAssignment();
+    const activeRotation = await userObj.getActiveRotationAssignment();
+    const allSchedules = await userObj.getAllScheduleAssignments();
+    const allRotations = await userObj.getAllRotationAssignments();
 
     return R.handleSuccess(res, {
       user: await userObj.toJSON(responseValue.MINIMAL),
-      has_active_session: true,
-      active_session: {
-        template: sessionTemplateObj ? await sessionTemplateObj.toJSON() : null,
-        assigned_at: activeSession.assign_at,
-        active: activeSession.active,
+      current_assignment: {
+        type: assignmentType,
+        active_schedule: activeSchedule ? await activeSchedule.toJSON(responseValue.FULL) : null,
+        active_rotation: activeRotation ? await activeRotation.toJSON(responseValue.FULL) : null,
+      },
+      history: {
+        schedule_assignments: {
+          count: allSchedules.length,
+          items: await Promise.all(allSchedules.map((s) => s.toJSON(responseValue.MINIMAL))),
+        },
+        rotation_assignments: {
+          count: allRotations.length,
+          items: await Promise.all(allRotations.map((r) => r.toJSON(responseValue.MINIMAL))),
+        },
       },
     });
   } catch (error: any) {
@@ -3345,9 +3519,10 @@ router.get('/:guid/sessions/active', Ensure.get(), async (req: Request, res: Res
 });
 
 /**
- * GET /:guid/sessions/history - Historique des sessions
+ * GET /api/users/:guid/current-assignment
+ * Récupère uniquement l'assignation active (plus rapide)
  */
-router.get('/:guid/sessions/history', Ensure.get(), async (req: Request, res: Response) => {
+router.get('/:guid/current-assignment', Ensure.get(), async (req: Request, res: Response) => {
   try {
     const { guid } = req.params;
 
@@ -3366,103 +3541,23 @@ router.get('/:guid/sessions/history', Ensure.get(), async (req: Request, res: Re
       });
     }
 
-    const history = userObj.getSessionHistory();
-
-    const enrichedHistory = await Promise.all(
-      history.map(async (session) => {
-        const templateObj = await userObj.getSessionTemplateObjs(session.session_template);
-        return {
-          session_template: templateObj ? await templateObj.toJSON() : null,
-          assign_at: session.assign_at,
-          active: session.active,
-        };
-      }),
-    );
+    const assignmentType = await userObj.getCurrentAssignmentType();
+    const activeSchedule = await userObj.getActiveScheduleAssignment();
+    const activeRotation = await userObj.getActiveRotationAssignment();
 
     return R.handleSuccess(res, {
       user: await userObj.toJSON(responseValue.MINIMAL),
-      total_sessions: history.length,
-      active_count: history.filter((s) => s.active).length,
-      inactive_count: history.filter((s) => !s.active).length,
-      sessions_history: enrichedHistory,
+      current_assignment_type: assignmentType,
+      active_schedule_assignment: activeSchedule
+        ? await activeSchedule.toJSON(responseValue.FULL)
+        : null,
+      active_rotation_assignment: activeRotation
+        ? await activeRotation.toJSON(responseValue.FULL)
+        : null,
     });
   } catch (error: any) {
     return R.handleError(res, HttpStatus.INTERNAL_ERROR, {
       code: USERS_CODES.SEARCH_FAILED,
-      message: error.message,
-    });
-  }
-});
-
-/**
- * GET /sessions/:template_guid/users - Liste utilisateurs par session template
- */
-router.get('/sessions/:template/users', Ensure.get(), async (req: Request, res: Response) => {
-  try {
-    const { template } = req.params;
-
-    if (!SessionTemplateValidationUtils.validateGuid(template)) {
-      return R.handleError(res, HttpStatus.BAD_REQUEST, {
-        code: SESSION_TEMPLATE_CODES.INVALID_GUID,
-        message: SESSION_TEMPLATE_ERRORS.GUID_INVALID,
-      });
-    }
-
-    const templateObj = await SessionTemplate._load(template, true);
-    if (!templateObj) {
-      return R.handleError(res, HttpStatus.NOT_FOUND, {
-        code: SESSION_TEMPLATE_CODES.SESSION_TEMPLATE_NOT_FOUND,
-        message: SESSION_TEMPLATE_ERRORS.NOT_FOUND,
-      });
-    }
-
-    const paginationOptions = paginationSchema.parse(req.query);
-    const userEntries = await User._listBySessionTemplate(templateObj.getId()!, paginationOptions);
-
-    const users = {
-      pagination: {
-        offset: paginationOptions.offset || 0,
-        limit: paginationOptions.limit || userEntries?.length || 0,
-        count: userEntries?.length || 0,
-      },
-      items: userEntries?.length
-        ? await Promise.all(userEntries.map((user) => user.toJSON(responseValue.MINIMAL)))
-        : [],
-    };
-
-    return R.handleSuccess(res, {
-      session_template: await templateObj.toJSON(),
-      users,
-    });
-  } catch (error: any) {
-    return R.handleError(res, HttpStatus.INTERNAL_ERROR, {
-      code: USERS_CODES.LISTING_FAILED,
-      message: error.message,
-    });
-  }
-});
-
-/**
- * GET /sessions/active/list - Liste utilisateurs avec session active
- */
-router.get('/sessions/active/list', Ensure.get(), async (req: Request, res: Response) => {
-  try {
-    const paginationOptions = paginationSchema.parse(req.query);
-    const userEntries = await User._listWithActiveSession(paginationOptions);
-
-    const users = {
-      pagination: {
-        offset: paginationOptions.offset || 0,
-        limit: paginationOptions.limit || userEntries?.length || 0,
-        count: userEntries?.length || 0,
-      },
-      items: userEntries?.length ? await Promise.all(userEntries.map((user) => user.toJSON())) : [],
-    };
-
-    return R.handleSuccess(res, { users });
-  } catch (error: any) {
-    return R.handleError(res, HttpStatus.INTERNAL_ERROR, {
-      code: USERS_CODES.LISTING_FAILED,
       message: error.message,
     });
   }

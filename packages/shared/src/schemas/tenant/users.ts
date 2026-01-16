@@ -195,14 +195,14 @@ const baseUsersSchema = z.object({
     .optional()
     .nullable(),
 
-  session_template: z
-    .string({
-      invalid_type_error: USERS_ERRORS.SESSION_TEMPLATE_INVALID,
-    })
-    .min(USERS_VALIDATION.SESSION_TEMPLATE.MIN_LENGTH, USERS_ERRORS.SESSION_TEMPLATE_INVALID)
-    .max(USERS_VALIDATION.SESSION_TEMPLATE.MAX_LENGTH, USERS_ERRORS.SESSION_TEMPLATE_INVALID)
-    .optional()
-    .nullable(),
+  // session_template: z
+  //   .string({
+  //     invalid_type_error: USERS_ERRORS.SESSION_TEMPLATE_INVALID,
+  //   })
+  //   .min(USERS_VALIDATION.SESSION_TEMPLATE.MIN_LENGTH, USERS_ERRORS.SESSION_TEMPLATE_INVALID)
+  //   .max(USERS_VALIDATION.SESSION_TEMPLATE.MAX_LENGTH, USERS_ERRORS.SESSION_TEMPLATE_INVALID)
+  //   .optional()
+  //   .nullable(),
 });
 
 // Schema for creation - all required fields

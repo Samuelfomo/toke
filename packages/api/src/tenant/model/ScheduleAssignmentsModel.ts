@@ -1,7 +1,7 @@
 import {
-  SCHEDULE_EXCEPTION_DEFAULTS,
-  SCHEDULE_EXCEPTION_ERRORS,
-  ScheduleExceptionValidationUtils,
+  SCHEDULE_ASSIGNMENTS_DEFAULTS,
+  SCHEDULE_ASSIGNMENTS_ERRORS,
+  ScheduleAssignmentsValidationUtils,
   TimezoneConfigUtils,
 } from '@toke/shared';
 import { Op } from 'sequelize';
@@ -9,9 +9,9 @@ import { Op } from 'sequelize';
 import BaseModel from '../database/db.base.js';
 import { tableName } from '../../utils/response.model.js';
 
-export default class ScheduleExceptionModel extends BaseModel {
+export default class ScheduleAssignmentsModel extends BaseModel {
   public readonly db = {
-    tableName: tableName.SCHEDULE_EXCEPTIONS,
+    tableName: tableName.SCHEDULE_ASSIGNMENTS,
     id: 'id',
     guid: 'guid',
     tenant: 'tenant',
@@ -240,14 +240,14 @@ export default class ScheduleExceptionModel extends BaseModel {
 
     const guid = await this.randomGuidGenerator(this.db.tableName);
     if (!guid) {
-      throw new Error(SCHEDULE_EXCEPTION_ERRORS.GUID_GENERATION_FAILED);
+      throw new Error(SCHEDULE_ASSIGNMENTS_ERRORS.GUID_GENERATION_FAILED);
     }
 
     // Vérification unicité user + session_template
     if (this.user) {
       const existing = await this.findByUserAndTemplate(this.user, this.session_template!);
       if (existing) {
-        throw new Error(SCHEDULE_EXCEPTION_ERRORS.USER_EXCEPTION_ALREADY_ASSIGNED);
+        throw new Error(SCHEDULE_ASSIGNMENTS_ERRORS.USER_EXCEPTION_ALREADY_ASSIGNED);
       }
     }
 
@@ -255,7 +255,7 @@ export default class ScheduleExceptionModel extends BaseModel {
     if (this.groups) {
       const existing = await this.findByGroupsAndTemplate(this.groups, this.session_template!);
       if (existing) {
-        throw new Error(SCHEDULE_EXCEPTION_ERRORS.GROUPS_EXCEPTION_ALREADY_ASSIGNED);
+        throw new Error(SCHEDULE_ASSIGNMENTS_ERRORS.GROUPS_EXCEPTION_ALREADY_ASSIGNED);
       }
     }
 
@@ -269,11 +269,11 @@ export default class ScheduleExceptionModel extends BaseModel {
       [this.db.end_date]: this.end_date,
       [this.db.created_by]: this.created_by ?? null,
       [this.db.reason]: this.reason ?? null,
-      [this.db.active]: this.active ?? SCHEDULE_EXCEPTION_DEFAULTS.ACTIVE,
+      [this.db.active]: this.active ?? SCHEDULE_ASSIGNMENTS_DEFAULTS.ACTIVE,
     });
 
     if (!lastID) {
-      throw new Error(SCHEDULE_EXCEPTION_ERRORS.CREATION_FAILED);
+      throw new Error(SCHEDULE_ASSIGNMENTS_ERRORS.CREATION_FAILED);
     }
 
     this.id = typeof lastID === 'object' ? lastID.id : lastID;
@@ -284,7 +284,7 @@ export default class ScheduleExceptionModel extends BaseModel {
     await this.validate();
 
     if (!this.id) {
-      throw new Error(SCHEDULE_EXCEPTION_ERRORS.ID_REQUIRED);
+      throw new Error(SCHEDULE_ASSIGNMENTS_ERRORS.ID_REQUIRED);
     }
 
     const updateData: Record<string, any> = {};
@@ -321,7 +321,7 @@ export default class ScheduleExceptionModel extends BaseModel {
     const updated = await this.updateOne(this.db.tableName, updateData, { [this.db.id]: this.id });
 
     if (!updated) {
-      throw new Error(SCHEDULE_EXCEPTION_ERRORS.UPDATE_FAILED);
+      throw new Error(SCHEDULE_ASSIGNMENTS_ERRORS.UPDATE_FAILED);
     }
   }
 
@@ -374,49 +374,49 @@ export default class ScheduleExceptionModel extends BaseModel {
 
     // Vérifier qu'au moins user OU groups est défini
     if (!this.user && !this.groups) {
-      throw new Error(SCHEDULE_EXCEPTION_ERRORS.USER_OR_GROUPS_REQUIRED);
+      throw new Error(SCHEDULE_ASSIGNMENTS_ERRORS.USER_OR_GROUPS_REQUIRED);
     }
 
     if (this.user && this.groups) {
-      throw new Error(SCHEDULE_EXCEPTION_ERRORS.BOTH_USER_AND_GROUPS);
+      throw new Error(SCHEDULE_ASSIGNMENTS_ERRORS.BOTH_USER_AND_GROUPS);
     }
 
     if (!this.session_template) {
-      throw new Error(SCHEDULE_EXCEPTION_ERRORS.SESSION_TEMPLATE_REQUIRED);
+      throw new Error(SCHEDULE_ASSIGNMENTS_ERRORS.SESSION_TEMPLATE_REQUIRED);
     }
 
     if (!this.start_date) {
-      throw new Error(SCHEDULE_EXCEPTION_ERRORS.START_DATE_REQUIRED);
+      throw new Error(SCHEDULE_ASSIGNMENTS_ERRORS.START_DATE_REQUIRED);
     }
-    if (!ScheduleExceptionValidationUtils.validateStartDate(this.start_date)) {
-      throw new Error(SCHEDULE_EXCEPTION_ERRORS.START_DATE_INVALID);
+    if (!ScheduleAssignmentsValidationUtils.validateStartDate(this.start_date)) {
+      throw new Error(SCHEDULE_ASSIGNMENTS_ERRORS.START_DATE_INVALID);
     }
 
     if (!this.end_date) {
-      throw new Error(SCHEDULE_EXCEPTION_ERRORS.END_DATE_REQUIRED);
+      throw new Error(SCHEDULE_ASSIGNMENTS_ERRORS.END_DATE_REQUIRED);
     }
-    if (!ScheduleExceptionValidationUtils.validateEndDate(this.end_date)) {
-      throw new Error(SCHEDULE_EXCEPTION_ERRORS.END_DATE_INVALID);
+    if (!ScheduleAssignmentsValidationUtils.validateEndDate(this.end_date)) {
+      throw new Error(SCHEDULE_ASSIGNMENTS_ERRORS.END_DATE_INVALID);
     }
 
     // Vérifier que start_date <= end_date
     if (this.start_date > this.end_date) {
-      throw new Error(SCHEDULE_EXCEPTION_ERRORS.END_DATE_BEFORE_START);
+      throw new Error(SCHEDULE_ASSIGNMENTS_ERRORS.END_DATE_BEFORE_START);
     }
 
-    if (this.created_by && !ScheduleExceptionValidationUtils.validateCreatedBy(this.created_by)) {
-      throw new Error(SCHEDULE_EXCEPTION_ERRORS.CREATED_BY_INVALID);
+    if (this.created_by && !ScheduleAssignmentsValidationUtils.validateCreatedBy(this.created_by)) {
+      throw new Error(SCHEDULE_ASSIGNMENTS_ERRORS.CREATED_BY_INVALID);
     }
 
-    if (this.reason && !ScheduleExceptionValidationUtils.validateReason(this.reason)) {
-      throw new Error(SCHEDULE_EXCEPTION_ERRORS.REASON_INVALID);
+    if (this.reason && !ScheduleAssignmentsValidationUtils.validateReason(this.reason)) {
+      throw new Error(SCHEDULE_ASSIGNMENTS_ERRORS.REASON_INVALID);
     }
 
     if (
       this.active !== undefined &&
-      !ScheduleExceptionValidationUtils.validateActive(this.active)
+      !ScheduleAssignmentsValidationUtils.validateActive(this.active)
     ) {
-      throw new Error(SCHEDULE_EXCEPTION_ERRORS.ACTIVE_INVALID);
+      throw new Error(SCHEDULE_ASSIGNMENTS_ERRORS.ACTIVE_INVALID);
     }
 
     // ✅ NOUVELLE VALIDATION : Vérifier unicité de l'exception active
@@ -428,10 +428,10 @@ export default class ScheduleExceptionModel extends BaseModel {
           if (this.id) {
             const existing = await this.find(this.id);
             if (!existing || existing.user !== this.user) {
-              throw new Error(SCHEDULE_EXCEPTION_ERRORS.USER_ALREADY_HAS_ACTIVE_EXCEPTION);
+              throw new Error(SCHEDULE_ASSIGNMENTS_ERRORS.USER_ALREADY_HAS_ACTIVE_EXCEPTION);
             }
           } else {
-            throw new Error(SCHEDULE_EXCEPTION_ERRORS.USER_ALREADY_HAS_ACTIVE_EXCEPTION);
+            throw new Error(SCHEDULE_ASSIGNMENTS_ERRORS.USER_ALREADY_HAS_ACTIVE_EXCEPTION);
           }
         }
       }
@@ -442,16 +442,16 @@ export default class ScheduleExceptionModel extends BaseModel {
           if (this.id) {
             const existing = await this.find(this.id);
             if (!existing || existing.groups !== this.groups) {
-              throw new Error(SCHEDULE_EXCEPTION_ERRORS.GROUPS_ALREADY_HAS_ACTIVE_EXCEPTION);
+              throw new Error(SCHEDULE_ASSIGNMENTS_ERRORS.GROUPS_ALREADY_HAS_ACTIVE_EXCEPTION);
             }
           } else {
-            throw new Error(SCHEDULE_EXCEPTION_ERRORS.GROUPS_ALREADY_HAS_ACTIVE_EXCEPTION);
+            throw new Error(SCHEDULE_ASSIGNMENTS_ERRORS.GROUPS_ALREADY_HAS_ACTIVE_EXCEPTION);
           }
         }
       }
     }
 
-    const cleaned = ScheduleExceptionValidationUtils.cleanScheduleExceptionData(this);
+    const cleaned = ScheduleAssignmentsValidationUtils.cleanScheduleAssignmentsData(this);
     Object.assign(this, cleaned);
   }
 }

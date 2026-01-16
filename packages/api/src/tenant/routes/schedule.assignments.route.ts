@@ -2,24 +2,24 @@ import { Request, Response, Router } from 'express';
 import {
   HttpStatus,
   paginationSchema,
-  SCHEDULE_EXCEPTION_CODES,
-  SCHEDULE_EXCEPTION_DEFAULTS,
-  SCHEDULE_EXCEPTION_ERRORS,
-  SCHEDULE_EXCEPTION_MESSAGES,
-  ScheduleExceptionValidationUtils,
+  SCHEDULE_ASSIGNMENTS_CODES,
+  SCHEDULE_ASSIGNMENTS_DEFAULTS,
+  SCHEDULE_ASSIGNMENTS_ERRORS,
+  SCHEDULE_ASSIGNMENTS_MESSAGES,
+  ScheduleAssignmentsValidationUtils,
   TimezoneConfigUtils,
   USERS_CODES,
   USERS_ERRORS,
   UsersValidationUtils,
-  validateScheduleExceptionCreation,
-  validateScheduleExceptionFilters,
-  validateScheduleExceptionUpdate,
+  validateScheduleAssignmentsCreation,
+  validateScheduleAssignmentsFilters,
+  validateScheduleAssignmentsUpdate,
 } from '@toke/shared';
 import { Op } from 'sequelize';
 
 import Ensure from '../../middle/ensured-routes.js';
 import R from '../../tools/response.js';
-import ScheduleException from '../class/ScheduleExceptions.js';
+import ScheduleAssignments from '../class/ScheduleAssignments.js';
 import SessionTemplate from '../class/SessionTemplates.js';
 import User from '../class/User.js';
 import { TenantRevision } from '../../tools/revision.js';
@@ -34,38 +34,38 @@ const router = Router();
 // ============================================
 
 /**
- * GET /api/schedule-exceptions
- * Liste toutes les exceptions
+ * GET /api/schedule-assignments
+ * Liste toutes les assignments
  */
 router.get('/', Ensure.get(), async (req: Request, res: Response) => {
   try {
     const paginationData = paginationSchema.parse(req.query);
-    const exceptions = await ScheduleException.exportable({}, paginationData);
+    const assignments = await ScheduleAssignments.exportable({}, paginationData);
 
     return R.handleSuccess(res, {
-      schedule_exceptions: exceptions,
+      schedule_assignments: assignments,
     });
   } catch (error: any) {
     if (error.issues) {
       return R.handleError(res, HttpStatus.BAD_REQUEST, {
-        code: SCHEDULE_EXCEPTION_CODES.PAGINATION_INVALID,
-        message: SCHEDULE_EXCEPTION_ERRORS.PAGINATION_INVALID,
+        code: SCHEDULE_ASSIGNMENTS_CODES.PAGINATION_INVALID,
+        message: SCHEDULE_ASSIGNMENTS_ERRORS.PAGINATION_INVALID,
       });
     }
     return R.handleError(res, HttpStatus.INTERNAL_ERROR, {
-      code: SCHEDULE_EXCEPTION_CODES.LISTING_FAILED,
+      code: SCHEDULE_ASSIGNMENTS_CODES.LISTING_FAILED,
       message: error.message,
     });
   }
 });
 
 /**
- * GET /api/schedule-exceptions/revision
+ * GET /api/schedule-assignments/revision
  * Obtient la révision actuelle
  */
 router.get('/revision', Ensure.get(), async (_req: Request, res: Response) => {
   try {
-    const revision = await TenantRevision.getRevision(tableName.SCHEDULE_EXCEPTIONS);
+    const revision = await TenantRevision.getRevision(tableName.SCHEDULE_ASSIGNMENTS);
 
     R.handleSuccess(res, {
       revision,
@@ -73,14 +73,14 @@ router.get('/revision', Ensure.get(), async (_req: Request, res: Response) => {
     });
   } catch (error: any) {
     R.handleError(res, HttpStatus.INTERNAL_ERROR, {
-      code: SCHEDULE_EXCEPTION_CODES.REVISION_FAILED,
+      code: SCHEDULE_ASSIGNMENTS_CODES.REVISION_FAILED,
       message: error.message,
     });
   }
 });
 
 /**
- * GET /api/schedule-exceptions/list
+ * GET /api/schedule-assignments/list
  * Liste avec filtres avancés
  */
 router.get('/list', Ensure.get(), async (req: Request, res: Response) => {
@@ -93,7 +93,7 @@ router.get('/list', Ensure.get(), async (req: Request, res: Response) => {
     delete filtersQuery.limit;
     delete filtersQuery.view;
 
-    const filters = validateScheduleExceptionFilters(filtersQuery);
+    const filters = validateScheduleAssignmentsFilters(filtersQuery);
     const conditions: Record<string, any> = {};
 
     if (filters.user) {
@@ -140,7 +140,7 @@ router.get('/list', Ensure.get(), async (req: Request, res: Response) => {
       conditions.created_by = filters.created_by;
     }
 
-    const exceptionList = await ScheduleException._list(conditions, paginationOptions);
+    const exceptionList = await ScheduleAssignments._list(conditions, paginationOptions);
     const exceptions = {
       pagination: {
         offset: paginationOptions.offset || 0,
@@ -152,7 +152,7 @@ router.get('/list', Ensure.get(), async (req: Request, res: Response) => {
         : [],
     };
 
-    return R.handleSuccess(res, { schedule_exceptions: exceptions });
+    return R.handleSuccess(res, { schedule_assignments: exceptions });
   } catch (error: any) {
     if (error.code) {
       return R.handleError(res, HttpStatus.BAD_REQUEST, {
@@ -161,7 +161,7 @@ router.get('/list', Ensure.get(), async (req: Request, res: Response) => {
       });
     }
     return R.handleError(res, HttpStatus.INTERNAL_ERROR, {
-      code: SCHEDULE_EXCEPTION_CODES.LISTING_FAILED,
+      code: SCHEDULE_ASSIGNMENTS_CODES.LISTING_FAILED,
       message: error.message,
     });
   }
@@ -172,44 +172,44 @@ router.get('/list', Ensure.get(), async (req: Request, res: Response) => {
 // ============================================
 
 /**
- * POST /api/schedule-exceptions
- * Crée une nouvelle exception d'horaire
+ * POST /api/schedule-assignments
+ * Crée une nouvelle assignments d'horaire
  */
 router.post('/', Ensure.post(), async (req: Request, res: Response) => {
   try {
-    const validatedData = validateScheduleExceptionCreation(req.body);
+    const validatedData = validateScheduleAssignmentsCreation(req.body);
 
     // Valider le template
     const templateObj = await SessionTemplate._load(validatedData.session_template, true);
     if (!templateObj) {
       return R.handleError(res, HttpStatus.NOT_FOUND, {
-        code: SCHEDULE_EXCEPTION_CODES.SESSION_TEMPLATE_NOT_FOUND,
-        message: SCHEDULE_EXCEPTION_ERRORS.SESSION_TEMPLATE_NOT_FOUND,
+        code: SCHEDULE_ASSIGNMENTS_CODES.SESSION_TEMPLATE_NOT_FOUND,
+        message: SCHEDULE_ASSIGNMENTS_ERRORS.SESSION_TEMPLATE_NOT_FOUND,
       });
     }
 
     if (validatedData.user && validatedData.groups) {
       return R.handleError(res, HttpStatus.BAD_REQUEST, {
-        code: SCHEDULE_EXCEPTION_CODES.VALIDATION_FAILED,
-        message: SCHEDULE_EXCEPTION_ERRORS.BOTH_USER_AND_GROUPS,
+        code: SCHEDULE_ASSIGNMENTS_CODES.VALIDATION_FAILED,
+        message: SCHEDULE_ASSIGNMENTS_ERRORS.BOTH_USER_AND_GROUPS,
       });
     }
 
     if (!validatedData.user && !validatedData.groups) {
       return R.handleError(res, HttpStatus.BAD_REQUEST, {
-        code: SCHEDULE_EXCEPTION_CODES.VALIDATION_FAILED,
-        message: SCHEDULE_EXCEPTION_ERRORS.USER_OR_GROUPS_REQUIRED,
+        code: SCHEDULE_ASSIGNMENTS_CODES.VALIDATION_FAILED,
+        message: SCHEDULE_ASSIGNMENTS_ERRORS.USER_OR_GROUPS_REQUIRED,
       });
     }
 
     const tenant = req.tenant;
 
-    const exceptionObj = new ScheduleException()
+    const exceptionObj = new ScheduleAssignments()
       .setTenant(tenant.config.reference)
       .setSessionTemplate(templateObj.getId()!)
       .setStartDate(validatedData.start_date)
       .setEndDate(validatedData.end_date)
-      .setActive(validatedData.active ?? SCHEDULE_EXCEPTION_DEFAULTS.ACTIVE);
+      .setActive(validatedData.active ?? SCHEDULE_ASSIGNMENTS_DEFAULTS.ACTIVE);
 
     // Exception pour un utilisateur spécifique
     if (validatedData.user) {
@@ -228,8 +228,8 @@ router.post('/', Ensure.post(), async (req: Request, res: Response) => {
       const groupsObj = await Groups._load(validatedData.groups, true);
       if (!groupsObj) {
         return R.handleError(res, HttpStatus.NOT_FOUND, {
-          code: SCHEDULE_EXCEPTION_CODES.GROUPS_NOT_FOUND,
-          message: SCHEDULE_EXCEPTION_ERRORS.GROUPS_NOT_FOUND,
+          code: SCHEDULE_ASSIGNMENTS_CODES.GROUPS_NOT_FOUND,
+          message: SCHEDULE_ASSIGNMENTS_ERRORS.GROUPS_NOT_FOUND,
         });
       }
       exceptionObj.setGroups(groupsObj.getId()!);
@@ -249,8 +249,8 @@ router.post('/', Ensure.post(), async (req: Request, res: Response) => {
     await exceptionObj.save();
 
     return R.handleCreated(res, {
-      message: SCHEDULE_EXCEPTION_MESSAGES.CREATED_SUCCESSFULLY,
-      schedule_exception: await exceptionObj.toJSON(),
+      message: SCHEDULE_ASSIGNMENTS_MESSAGES.CREATED_SUCCESSFULLY,
+      schedule_assignments: await exceptionObj.toJSON(),
     });
   } catch (error: any) {
     if (error.code) {
@@ -260,7 +260,7 @@ router.post('/', Ensure.post(), async (req: Request, res: Response) => {
       });
     }
     return R.handleError(res, HttpStatus.INTERNAL_ERROR, {
-      code: SCHEDULE_EXCEPTION_CODES.CREATION_FAILED,
+      code: SCHEDULE_ASSIGNMENTS_CODES.CREATION_FAILED,
       message: error.message,
     });
   }
@@ -271,46 +271,46 @@ router.post('/', Ensure.post(), async (req: Request, res: Response) => {
 // ============================================
 
 /**
- * GET /api/schedule-exceptions/:guid
- * Récupère une exception spécifique
+ * GET /api/schedule-assignments/:guid
+ * Récupère une assignments spécifique
  */
 router.get('/:guid', Ensure.get(), async (req: Request, res: Response) => {
   try {
-    if (!ScheduleExceptionValidationUtils.validateGuid(req.params.guid)) {
+    if (!ScheduleAssignmentsValidationUtils.validateGuid(req.params.guid)) {
       return R.handleError(res, HttpStatus.BAD_REQUEST, {
-        code: SCHEDULE_EXCEPTION_CODES.INVALID_GUID,
-        message: SCHEDULE_EXCEPTION_ERRORS.GUID_INVALID,
+        code: SCHEDULE_ASSIGNMENTS_CODES.INVALID_GUID,
+        message: SCHEDULE_ASSIGNMENTS_ERRORS.GUID_INVALID,
       });
     }
 
     const views = ValidationUtils.validateView(req.query.view, responseValue.FULL);
 
-    const exceptionObj = await ScheduleException._load(req.params.guid, true);
+    const exceptionObj = await ScheduleAssignments._load(req.params.guid, true);
     if (!exceptionObj) {
       return R.handleError(res, HttpStatus.NOT_FOUND, {
-        code: SCHEDULE_EXCEPTION_CODES.SCHEDULE_EXCEPTION_NOT_FOUND,
-        message: SCHEDULE_EXCEPTION_ERRORS.NOT_FOUND,
+        code: SCHEDULE_ASSIGNMENTS_CODES.SCHEDULE_ASSIGNMENTS_NOT_FOUND,
+        message: SCHEDULE_ASSIGNMENTS_ERRORS.NOT_FOUND,
       });
     }
 
     return R.handleSuccess(res, {
-      schedule_exception: await exceptionObj.toJSON(views),
+      schedule_assignments: await exceptionObj.toJSON(views),
     });
   } catch (error: any) {
     return R.handleError(res, HttpStatus.INTERNAL_ERROR, {
-      code: SCHEDULE_EXCEPTION_CODES.RETRIEVAL_FAILED,
+      code: SCHEDULE_ASSIGNMENTS_CODES.RETRIEVAL_FAILED,
       message: error.message,
     });
   }
 });
 
 // ============================================
-// EXCEPTIONS PAR UTILISATEUR
+// ASSIGNMENTS PAR UTILISATEUR
 // ============================================
 
 /**
- * GET /api/schedule-exceptions/user/:userGuid
- * Liste toutes les exceptions pour un utilisateur
+ * GET /api/schedule-assignments/user/:userGuid
+ * Liste toutes les assignments pour un utilisateur
  */
 router.get('/user/:userGuid', Ensure.get(), async (req: Request, res: Response) => {
   try {
@@ -332,32 +332,35 @@ router.get('/user/:userGuid', Ensure.get(), async (req: Request, res: Response) 
     const paginationOptions = paginationSchema.parse(req.query);
     const views = ValidationUtils.validateView(req.query.view, responseValue.FULL);
 
-    const exceptionList = await ScheduleException._listByUser(userObj.getId()!, paginationOptions);
+    const exceptionList = await ScheduleAssignments._listByUser(
+      userObj.getId()!,
+      paginationOptions,
+    );
 
-    const exceptions = {
+    const assignments = {
       user: await userObj.toJSON(),
       pagination: {
         offset: paginationOptions.offset || 0,
         limit: paginationOptions.limit || exceptionList?.length || 0,
         count: exceptionList?.length || 0,
       },
-      exceptions: exceptionList
+      items: exceptionList
         ? await Promise.all(exceptionList.map(async (e) => await e.toJSON(views)))
         : [],
     };
 
-    return R.handleSuccess(res, { exceptions });
+    return R.handleSuccess(res, { assignments });
   } catch (error: any) {
     return R.handleError(res, HttpStatus.INTERNAL_ERROR, {
-      code: SCHEDULE_EXCEPTION_CODES.LISTING_FAILED,
+      code: SCHEDULE_ASSIGNMENTS_CODES.LISTING_FAILED,
       message: error.message,
     });
   }
 });
 
 /**
- * GET /api/schedule-exceptions/user/:userGuid/on-date
- * Trouve les exceptions actives pour un utilisateur à une date donnée
+ * GET /api/schedule-assignments/user/:userGuid/on-date
+ * Trouve les assignments actives pour un utilisateur à une date donnée
  */
 router.get('/user/:userGuid/on-date', Ensure.get(), async (req: Request, res: Response) => {
   try {
@@ -383,13 +386,13 @@ router.get('/user/:userGuid/on-date', Ensure.get(), async (req: Request, res: Re
     const paginationOptions = paginationSchema.parse(req.query);
     const views = ValidationUtils.validateView(req.query.view, responseValue.FULL);
 
-    const exceptionList = await ScheduleException._listForUserOnDate(
+    const exceptionList = await ScheduleAssignments._listForUserOnDate(
       userObj.getId()!,
       date,
       paginationOptions,
     );
 
-    const exceptions = {
+    const assignments = {
       user: await userObj.toJSON(),
       date,
       pagination: {
@@ -397,82 +400,82 @@ router.get('/user/:userGuid/on-date', Ensure.get(), async (req: Request, res: Re
         limit: paginationOptions.limit || exceptionList?.length || 0,
         count: exceptionList?.length || 0,
       },
-      exceptions: exceptionList
+      items: exceptionList
         ? await Promise.all(exceptionList.map(async (e) => await e.toJSON(views)))
         : [],
     };
 
-    return R.handleSuccess(res, { exceptions });
+    return R.handleSuccess(res, { assignments });
   } catch (error: any) {
     return R.handleError(res, HttpStatus.INTERNAL_ERROR, {
-      code: SCHEDULE_EXCEPTION_CODES.LISTING_FAILED,
+      code: SCHEDULE_ASSIGNMENTS_CODES.LISTING_FAILED,
       message: error.message,
     });
   }
 });
 
 // ============================================
-// EXCEPTIONS PAR GROUPS
+// ASSIGNMENTS PAR GROUPS
 // ============================================
 
 /**
- * GET /api/schedule-exceptions/groups/:groupsGuid
- * Liste toutes les exceptions pour une groups
+ * GET /api/schedule-assignments/groups/:groupsGuid
+ * Liste toutes les assignments pour une groups
  */
 router.get('/groups/:groupsGuid', Ensure.get(), async (req: Request, res: Response) => {
   try {
     const { groupsGuid } = req.params;
-    if (!ScheduleExceptionValidationUtils.validateGuid(groupsGuid)) {
+    if (!ScheduleAssignmentsValidationUtils.validateGuid(groupsGuid)) {
       return R.handleError(res, HttpStatus.BAD_REQUEST, {
-        code: SCHEDULE_EXCEPTION_CODES.INVALID_GUID,
-        message: SCHEDULE_EXCEPTION_ERRORS.GUID_INVALID,
+        code: SCHEDULE_ASSIGNMENTS_CODES.INVALID_GUID,
+        message: SCHEDULE_ASSIGNMENTS_ERRORS.GUID_INVALID,
       });
     }
 
     const groupsObj = await Groups._load(groupsGuid, true);
     if (!groupsObj) {
       return R.handleError(res, HttpStatus.NOT_FOUND, {
-        code: SCHEDULE_EXCEPTION_CODES.GROUPS_NOT_FOUND,
-        message: SCHEDULE_EXCEPTION_ERRORS.GROUPS_NOT_FOUND,
+        code: SCHEDULE_ASSIGNMENTS_CODES.GROUPS_NOT_FOUND,
+        message: SCHEDULE_ASSIGNMENTS_ERRORS.GROUPS_NOT_FOUND,
       });
     }
 
     const paginationOptions = paginationSchema.parse(req.query);
     const views = ValidationUtils.validateView(req.query.view, responseValue.FULL);
 
-    const exceptionList = await ScheduleException._listByGroups(
+    const exceptionList = await ScheduleAssignments._listByGroups(
       groupsObj.getId()!,
       paginationOptions,
     );
 
-    const exceptions = {
+    const assignments = {
       groups: await groupsObj.toJSON(responseValue.MINIMAL),
       pagination: {
         offset: paginationOptions.offset || 0,
         limit: paginationOptions.limit || exceptionList?.length || 0,
         count: exceptionList?.length || 0,
       },
-      exceptions: exceptionList
+      items: exceptionList
         ? await Promise.all(exceptionList.map(async (e) => await e.toJSON(views)))
         : [],
     };
 
-    return R.handleSuccess(res, { exceptions });
+    return R.handleSuccess(res, { assignments });
   } catch (error: any) {
     return R.handleError(res, HttpStatus.INTERNAL_ERROR, {
-      code: SCHEDULE_EXCEPTION_CODES.LISTING_FAILED,
+      code: SCHEDULE_ASSIGNMENTS_CODES.LISTING_FAILED,
       message: error.message,
     });
   }
 });
 
 // ============================================
-// EXCEPTIONS PAR PÉRIODE
+// ASSIGNMENTS PAR PÉRIODE
 // ============================================
 
 /**
- * GET /api/schedule-exceptions/date-range
- * Liste les exceptions dans une période donnée
+ * GET /api/schedule-assignments/date-range
+ * Liste les assignments dans une période donnée
  */
 router.get('/date-range', Ensure.get(), async (req: Request, res: Response) => {
   try {
@@ -480,7 +483,7 @@ router.get('/date-range', Ensure.get(), async (req: Request, res: Response) => {
 
     if (!start_date || !end_date) {
       return R.handleError(res, HttpStatus.BAD_REQUEST, {
-        code: SCHEDULE_EXCEPTION_CODES.VALIDATION_FAILED,
+        code: SCHEDULE_ASSIGNMENTS_CODES.VALIDATION_FAILED,
         message: 'start_date and end_date are required',
       });
     }
@@ -488,13 +491,13 @@ router.get('/date-range', Ensure.get(), async (req: Request, res: Response) => {
     const paginationOptions = paginationSchema.parse(req.query);
     const views = ValidationUtils.validateView(req.query.view, responseValue.FULL);
 
-    const exceptionList = await ScheduleException._listByDateRange(
+    const exceptionList = await ScheduleAssignments._listByDateRange(
       start_date as string,
       end_date as string,
       paginationOptions,
     );
 
-    const exceptions = {
+    const assignments = {
       date_range: {
         start: start_date,
         end: end_date,
@@ -504,27 +507,27 @@ router.get('/date-range', Ensure.get(), async (req: Request, res: Response) => {
         limit: paginationOptions.limit || exceptionList?.length || 0,
         count: exceptionList?.length || 0,
       },
-      exceptions: exceptionList
+      items: exceptionList
         ? await Promise.all(exceptionList.map(async (e) => await e.toJSON(views)))
         : [],
     };
 
-    return R.handleSuccess(res, { exceptions });
+    return R.handleSuccess(res, { assignments });
   } catch (error: any) {
     return R.handleError(res, HttpStatus.INTERNAL_ERROR, {
-      code: SCHEDULE_EXCEPTION_CODES.LISTING_FAILED,
+      code: SCHEDULE_ASSIGNMENTS_CODES.LISTING_FAILED,
       message: error.message,
     });
   }
 });
 
 // ============================================
-// EXCEPTIONS ACTIVES
+// ASSIGNMENTS ACTIVES
 // ============================================
 
 /**
- * GET /api/schedule-exceptions/active/current
- * Liste toutes les exceptions actuellement actives
+ * GET /api/schedule-assignments/active/current
+ * Liste toutes les assignments actuellement actives
  */
 router.get('/active/current', Ensure.get(), async (req: Request, res: Response) => {
   try {
@@ -532,27 +535,31 @@ router.get('/active/current', Ensure.get(), async (req: Request, res: Response) 
     const views = ValidationUtils.validateView(req.query.view, responseValue.FULL);
 
     const today = TimezoneConfigUtils.getCurrentTime().toISOString().split('T')[0];
-    const exceptionList = await ScheduleException._listByDateRange(today, today, paginationOptions);
+    const exceptionList = await ScheduleAssignments._listByDateRange(
+      today,
+      today,
+      paginationOptions,
+    );
 
     // Filtrer uniquement les actives
     const activeExceptions = exceptionList?.filter((e) => e.isActive() && e.isCurrentlyActive());
 
-    const exceptions = {
+    const assignments = {
       date: today,
       pagination: {
         offset: paginationOptions.offset || 0,
         limit: paginationOptions.limit || activeExceptions?.length || 0,
         count: activeExceptions?.length || 0,
       },
-      exceptions: activeExceptions
+      items: activeExceptions
         ? await Promise.all(activeExceptions.map(async (e) => await e.toJSON(views)))
         : [],
     };
 
-    return R.handleSuccess(res, { exceptions });
+    return R.handleSuccess(res, { assignments });
   } catch (error: any) {
     return R.handleError(res, HttpStatus.INTERNAL_ERROR, {
-      code: SCHEDULE_EXCEPTION_CODES.LISTING_FAILED,
+      code: SCHEDULE_ASSIGNMENTS_CODES.LISTING_FAILED,
       message: error.message,
     });
   }
@@ -563,34 +570,34 @@ router.get('/active/current', Ensure.get(), async (req: Request, res: Response) 
 // ============================================
 
 /**
- * PUT /api/schedule-exceptions/:guid
- * Met à jour une exception
+ * PUT /api/schedule-assignments/:guid
+ * Met à jour une assignments
  */
 router.put('/:guid', Ensure.put(), async (req: Request, res: Response) => {
   try {
-    if (!ScheduleExceptionValidationUtils.validateGuid(req.params.guid)) {
+    if (!ScheduleAssignmentsValidationUtils.validateGuid(req.params.guid)) {
       return R.handleError(res, HttpStatus.BAD_REQUEST, {
-        code: SCHEDULE_EXCEPTION_CODES.INVALID_GUID,
-        message: SCHEDULE_EXCEPTION_ERRORS.GUID_INVALID,
+        code: SCHEDULE_ASSIGNMENTS_CODES.INVALID_GUID,
+        message: SCHEDULE_ASSIGNMENTS_ERRORS.GUID_INVALID,
       });
     }
 
-    const exceptionObj = await ScheduleException._load(req.params.guid, true);
+    const exceptionObj = await ScheduleAssignments._load(req.params.guid, true);
     if (!exceptionObj) {
       return R.handleError(res, HttpStatus.NOT_FOUND, {
-        code: SCHEDULE_EXCEPTION_CODES.SCHEDULE_EXCEPTION_NOT_FOUND,
-        message: SCHEDULE_EXCEPTION_ERRORS.NOT_FOUND,
+        code: SCHEDULE_ASSIGNMENTS_CODES.SCHEDULE_ASSIGNMENTS_NOT_FOUND,
+        message: SCHEDULE_ASSIGNMENTS_ERRORS.NOT_FOUND,
       });
     }
 
-    const validatedData = validateScheduleExceptionUpdate(req.body);
+    const validatedData = validateScheduleAssignmentsUpdate(req.body);
 
     if (validatedData.session_template !== undefined) {
       const templateObj = await SessionTemplate._load(validatedData.session_template, true);
       if (!templateObj) {
         return R.handleError(res, HttpStatus.NOT_FOUND, {
-          code: SCHEDULE_EXCEPTION_CODES.SESSION_TEMPLATE_NOT_FOUND,
-          message: SCHEDULE_EXCEPTION_ERRORS.SESSION_TEMPLATE_NOT_FOUND,
+          code: SCHEDULE_ASSIGNMENTS_CODES.SESSION_TEMPLATE_NOT_FOUND,
+          message: SCHEDULE_ASSIGNMENTS_ERRORS.SESSION_TEMPLATE_NOT_FOUND,
         });
       }
       exceptionObj.setSessionTemplate(templateObj.getId()!);
@@ -615,8 +622,8 @@ router.put('/:guid', Ensure.put(), async (req: Request, res: Response) => {
     await exceptionObj.save();
 
     return R.handleSuccess(res, {
-      message: SCHEDULE_EXCEPTION_MESSAGES.UPDATED_SUCCESSFULLY,
-      schedule_exception: await exceptionObj.toJSON(),
+      message: SCHEDULE_ASSIGNMENTS_MESSAGES.UPDATED_SUCCESSFULLY,
+      schedule_assignments: await exceptionObj.toJSON(),
     });
   } catch (error: any) {
     if (error.code) {
@@ -626,7 +633,7 @@ router.put('/:guid', Ensure.put(), async (req: Request, res: Response) => {
       });
     }
     return R.handleError(res, HttpStatus.INTERNAL_ERROR, {
-      code: SCHEDULE_EXCEPTION_CODES.UPDATE_FAILED,
+      code: SCHEDULE_ASSIGNMENTS_CODES.UPDATE_FAILED,
       message: error.message,
     });
   }
@@ -637,34 +644,34 @@ router.put('/:guid', Ensure.put(), async (req: Request, res: Response) => {
 // ============================================
 
 /**
- * DELETE /api/schedule-exceptions/:guid
- * Supprime une exception
+ * DELETE /api/schedule-assignments/:guid
+ * Supprime une assignments
  */
 router.delete('/:guid', Ensure.delete(), async (req: Request, res: Response) => {
   try {
-    if (!ScheduleExceptionValidationUtils.validateGuid(req.params.guid)) {
+    if (!ScheduleAssignmentsValidationUtils.validateGuid(req.params.guid)) {
       return R.handleError(res, HttpStatus.BAD_REQUEST, {
-        code: SCHEDULE_EXCEPTION_CODES.INVALID_GUID,
-        message: SCHEDULE_EXCEPTION_ERRORS.GUID_INVALID,
+        code: SCHEDULE_ASSIGNMENTS_CODES.INVALID_GUID,
+        message: SCHEDULE_ASSIGNMENTS_ERRORS.GUID_INVALID,
       });
     }
 
-    const exceptionObj = await ScheduleException._load(req.params.guid, true);
+    const exceptionObj = await ScheduleAssignments._load(req.params.guid, true);
     if (!exceptionObj) {
       return R.handleError(res, HttpStatus.NOT_FOUND, {
-        code: SCHEDULE_EXCEPTION_CODES.SCHEDULE_EXCEPTION_NOT_FOUND,
-        message: SCHEDULE_EXCEPTION_ERRORS.NOT_FOUND,
+        code: SCHEDULE_ASSIGNMENTS_CODES.SCHEDULE_ASSIGNMENTS_NOT_FOUND,
+        message: SCHEDULE_ASSIGNMENTS_ERRORS.NOT_FOUND,
       });
     }
 
     await exceptionObj.delete();
 
     return R.handleSuccess(res, {
-      message: SCHEDULE_EXCEPTION_MESSAGES.DELETED_SUCCESSFULLY,
+      message: SCHEDULE_ASSIGNMENTS_MESSAGES.DELETED_SUCCESSFULLY,
     });
   } catch (error: any) {
     return R.handleError(res, HttpStatus.INTERNAL_ERROR, {
-      code: SCHEDULE_EXCEPTION_CODES.DELETE_FAILED,
+      code: SCHEDULE_ASSIGNMENTS_CODES.DELETE_FAILED,
       message: error.message,
     });
   }
@@ -675,23 +682,23 @@ router.delete('/:guid', Ensure.delete(), async (req: Request, res: Response) => 
 // ============================================
 
 /**
- * GET /api/schedule-exceptions/:guid/statistics
- * Statistiques sur une exception
+ * GET /api/schedule-assignments/:guid/statistics
+ * Statistiques sur une assignments
  */
 router.get('/:guid/statistics', Ensure.get(), async (req: Request, res: Response) => {
   try {
-    if (!ScheduleExceptionValidationUtils.validateGuid(req.params.guid)) {
+    if (!ScheduleAssignmentsValidationUtils.validateGuid(req.params.guid)) {
       return R.handleError(res, HttpStatus.BAD_REQUEST, {
-        code: SCHEDULE_EXCEPTION_CODES.INVALID_GUID,
-        message: SCHEDULE_EXCEPTION_ERRORS.GUID_INVALID,
+        code: SCHEDULE_ASSIGNMENTS_CODES.INVALID_GUID,
+        message: SCHEDULE_ASSIGNMENTS_ERRORS.GUID_INVALID,
       });
     }
 
-    const exceptionObj = await ScheduleException._load(req.params.guid, true);
+    const exceptionObj = await ScheduleAssignments._load(req.params.guid, true);
     if (!exceptionObj) {
       return R.handleError(res, HttpStatus.NOT_FOUND, {
-        code: SCHEDULE_EXCEPTION_CODES.SCHEDULE_EXCEPTION_NOT_FOUND,
-        message: SCHEDULE_EXCEPTION_ERRORS.NOT_FOUND,
+        code: SCHEDULE_ASSIGNMENTS_CODES.SCHEDULE_ASSIGNMENTS_NOT_FOUND,
+        message: SCHEDULE_ASSIGNMENTS_ERRORS.NOT_FOUND,
       });
     }
 
@@ -701,7 +708,7 @@ router.get('/:guid/statistics', Ensure.get(), async (req: Request, res: Response
     const createdBy = await exceptionObj.getCreatedByObj();
 
     const statistics = {
-      exception: await exceptionObj.toJSON(responseValue.MINIMAL),
+      assignments: await exceptionObj.toJSON(responseValue.MINIMAL),
       type: exceptionObj.isUserException() ? 'user' : 'groups',
       target: exceptionObj.isUserException()
         ? user
@@ -725,7 +732,7 @@ router.get('/:guid/statistics', Ensure.get(), async (req: Request, res: Response
     return R.handleSuccess(res, { statistics });
   } catch (error: any) {
     return R.handleError(res, HttpStatus.INTERNAL_ERROR, {
-      code: SCHEDULE_EXCEPTION_CODES.STATISTICS_FAILED,
+      code: SCHEDULE_ASSIGNMENTS_CODES.STATISTICS_FAILED,
       message: error.message,
     });
   }

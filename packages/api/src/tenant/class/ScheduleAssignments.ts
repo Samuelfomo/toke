@@ -1,6 +1,6 @@
-import { SCHEDULE_EXCEPTION_DEFAULTS, TimezoneConfigUtils } from '@toke/shared';
+import { SCHEDULE_ASSIGNMENTS_DEFAULTS, TimezoneConfigUtils } from '@toke/shared';
 
-import ScheduleExceptionModel from '../model/ScheduleExceptionsModel.js';
+import ScheduleAssignmentsModel from '../model/ScheduleAssignmentsModel.js';
 import W from '../../tools/watcher.js';
 import G from '../../tools/glossary.js';
 import {
@@ -15,7 +15,7 @@ import SessionTemplate from './SessionTemplates.js';
 import User from './User.js';
 import Groups from './Groups.js';
 
-export default class ScheduleException extends ScheduleExceptionModel {
+export default class ScheduleAssignments extends ScheduleAssignmentsModel {
   private sessionTemplateObj?: SessionTemplate;
   private userObj?: User;
   private groupsObj?: Groups;
@@ -29,65 +29,65 @@ export default class ScheduleException extends ScheduleExceptionModel {
   // MÉTHODES STATIQUES DE CHARGEMENT
   // ============================================
 
-  static _load(identifier: any, byGuid: boolean = false): Promise<ScheduleException | null> {
-    return new ScheduleException().load(identifier, byGuid);
+  static _load(identifier: any, byGuid: boolean = false): Promise<ScheduleAssignments | null> {
+    return new ScheduleAssignments().load(identifier, byGuid);
   }
 
   static _list(
     conditions: Record<string, any> = {},
     paginationOptions: { offset?: number; limit?: number } = {},
-  ): Promise<ScheduleException[] | null> {
-    return new ScheduleException().list(conditions, paginationOptions);
+  ): Promise<ScheduleAssignments[] | null> {
+    return new ScheduleAssignments().list(conditions, paginationOptions);
   }
 
   static _listByUser(
     userId: number,
     paginationOptions: { offset?: number; limit?: number } = {},
-  ): Promise<ScheduleException[] | null> {
-    return new ScheduleException().listByUser(userId, paginationOptions);
+  ): Promise<ScheduleAssignments[] | null> {
+    return new ScheduleAssignments().listByUser(userId, paginationOptions);
   }
 
   static _listByGroups(
     groupsId: number,
     paginationOptions: { offset?: number; limit?: number } = {},
-  ): Promise<ScheduleException[] | null> {
-    return new ScheduleException().listByGroups(groupsId, paginationOptions);
+  ): Promise<ScheduleAssignments[] | null> {
+    return new ScheduleAssignments().listByGroups(groupsId, paginationOptions);
   }
 
   static _listByActiveStatus(
     isActive: boolean,
     paginationOptions: { offset?: number; limit?: number } = {},
-  ): Promise<ScheduleException[] | null> {
-    return new ScheduleException().listByActiveStatus(isActive, paginationOptions);
+  ): Promise<ScheduleAssignments[] | null> {
+    return new ScheduleAssignments().listByActiveStatus(isActive, paginationOptions);
   }
 
   static _listByDateRange(
     startDate: string,
     endDate: string,
     paginationOptions: { offset?: number; limit?: number } = {},
-  ): Promise<ScheduleException[] | null> {
-    return new ScheduleException().listByDateRange(startDate, endDate, paginationOptions);
+  ): Promise<ScheduleAssignments[] | null> {
+    return new ScheduleAssignments().listByDateRange(startDate, endDate, paginationOptions);
   }
 
   static _listForUserOnDate(
     userId: number,
     date: string,
     paginationOptions: { offset?: number; limit?: number } = {},
-  ): Promise<ScheduleException[] | null> {
-    return new ScheduleException().listForUserOnDate(userId, date, paginationOptions);
+  ): Promise<ScheduleAssignments[] | null> {
+    return new ScheduleAssignments().listForUserOnDate(userId, date, paginationOptions);
   }
 
   static _listForGroupsOnDate(
     groupsId: number,
     date: string,
     paginationOptions: { offset?: number; limit?: number } = {},
-  ): Promise<ScheduleException[] | null> {
-    return new ScheduleException().listForGroupsOnDate(groupsId, date, paginationOptions);
+  ): Promise<ScheduleAssignments[] | null> {
+    return new ScheduleAssignments().listForGroupsOnDate(groupsId, date, paginationOptions);
   }
 
   static async exportable(
     conditions: Record<string, any> = {
-      ['active']: SCHEDULE_EXCEPTION_DEFAULTS.ACTIVE,
+      ['active']: SCHEDULE_ASSIGNMENTS_DEFAULTS.ACTIVE,
     },
     paginationOptions: { offset?: number; limit?: number } = {},
   ): Promise<{
@@ -101,7 +101,7 @@ export default class ScheduleException extends ScheduleExceptionModel {
       items = await Promise.all(exceptions.map(async (exception) => await exception.toJSON()));
     }
     return {
-      revision: await TenantRevision.getRevision(tableName.SCHEDULE_EXCEPTIONS),
+      revision: await TenantRevision.getRevision(tableName.SCHEDULE_ASSIGNMENTS),
       pagination: {
         offset: paginationOptions.offset || 0,
         limit: paginationOptions.limit || items.length,
@@ -199,51 +199,51 @@ export default class ScheduleException extends ScheduleExceptionModel {
   // SETTERS FLUENT
   // ============================================
 
-  setTenant(tenant: string): ScheduleException {
+  setTenant(tenant: string): ScheduleAssignments {
     this.tenant = tenant;
     return this;
   }
 
-  setUser(userId: number | null): ScheduleException {
+  setUser(userId: number | null): ScheduleAssignments {
     this.user = userId;
     this.userObj = undefined; // Reset cache
     return this;
   }
 
-  setGroups(groupsId: number | null): ScheduleException {
+  setGroups(groupsId: number | null): ScheduleAssignments {
     this.groups = groupsId;
     this.groupsObj = undefined;
     return this;
   }
 
-  setSessionTemplate(sessionTemplateId: number): ScheduleException {
+  setSessionTemplate(sessionTemplateId: number): ScheduleAssignments {
     this.session_template = sessionTemplateId;
     this.sessionTemplateObj = undefined; // Reset cache
     return this;
   }
 
-  setStartDate(startDate: string): ScheduleException {
+  setStartDate(startDate: string): ScheduleAssignments {
     this.start_date = startDate;
     return this;
   }
 
-  setEndDate(endDate: string): ScheduleException {
+  setEndDate(endDate: string): ScheduleAssignments {
     this.end_date = endDate;
     return this;
   }
 
-  setCreatedBy(createdBy: number | null): ScheduleException {
+  setCreatedBy(createdBy: number | null): ScheduleAssignments {
     this.created_by = createdBy;
     this.createdByObj = undefined; // Reset cache
     return this;
   }
 
-  setReason(reason: string | null): ScheduleException {
+  setReason(reason: string | null): ScheduleAssignments {
     this.reason = reason;
     return this;
   }
 
-  setActive(active: boolean): ScheduleException {
+  setActive(active: boolean): ScheduleAssignments {
     this.active = active;
     return this;
   }
@@ -344,7 +344,7 @@ export default class ScheduleException extends ScheduleExceptionModel {
   // CHARGEMENT ET LISTING
   // ============================================
 
-  async load(identifier: any, byGuid: boolean = false): Promise<ScheduleException | null> {
+  async load(identifier: any, byGuid: boolean = false): Promise<ScheduleAssignments | null> {
     let data = null;
 
     if (byGuid) {
@@ -360,67 +360,67 @@ export default class ScheduleException extends ScheduleExceptionModel {
   async list(
     conditions: Record<string, any> = {},
     paginationOptions: { offset?: number; limit?: number } = {},
-  ): Promise<ScheduleException[] | null> {
+  ): Promise<ScheduleAssignments[] | null> {
     const dataset = await this.listAll(conditions, paginationOptions);
     if (!dataset || dataset.length === 0) return null;
-    return dataset.map((data) => new ScheduleException().hydrate(data));
+    return dataset.map((data) => new ScheduleAssignments().hydrate(data));
   }
 
   async listByUser(
     userId: number,
     paginationOptions: { offset?: number; limit?: number } = {},
-  ): Promise<ScheduleException[] | null> {
+  ): Promise<ScheduleAssignments[] | null> {
     const dataset = await this.listAllByUser(userId, paginationOptions);
     if (!dataset || dataset.length === 0) return null;
-    return dataset.map((data) => new ScheduleException().hydrate(data));
+    return dataset.map((data) => new ScheduleAssignments().hydrate(data));
   }
 
   async listByGroups(
     groupsId: number,
     paginationOptions: { offset?: number; limit?: number } = {},
-  ): Promise<ScheduleException[] | null> {
+  ): Promise<ScheduleAssignments[] | null> {
     const dataset = await this.listAllByGroups(groupsId, paginationOptions);
     if (!dataset || dataset.length === 0) return null;
-    return dataset.map((data) => new ScheduleException().hydrate(data));
+    return dataset.map((data) => new ScheduleAssignments().hydrate(data));
   }
 
   async listByActiveStatus(
     isActive: boolean,
     paginationOptions: { offset?: number; limit?: number } = {},
-  ): Promise<ScheduleException[] | null> {
+  ): Promise<ScheduleAssignments[] | null> {
     const dataset = await this.listAllByActiveStatus(isActive, paginationOptions);
     if (!dataset || dataset.length === 0) return null;
-    return dataset.map((data) => new ScheduleException().hydrate(data));
+    return dataset.map((data) => new ScheduleAssignments().hydrate(data));
   }
 
   async listByDateRange(
     startDate: string,
     endDate: string,
     paginationOptions: { offset?: number; limit?: number } = {},
-  ): Promise<ScheduleException[] | null> {
+  ): Promise<ScheduleAssignments[] | null> {
     const dataset = await this.listAllByDateRange(startDate, endDate, paginationOptions);
     if (!dataset || dataset.length === 0) return null;
-    return dataset.map((data) => new ScheduleException().hydrate(data));
+    return dataset.map((data) => new ScheduleAssignments().hydrate(data));
   }
 
   async listForUserOnDate(
     userId: number,
     date: string,
     paginationOptions: { offset?: number; limit?: number } = {},
-  ): Promise<ScheduleException[] | null> {
+  ): Promise<ScheduleAssignments[] | null> {
     const dataset = await this.listAllForUserOnDate(userId, date, paginationOptions);
     if (!dataset || dataset.length === 0) return null;
-    return dataset.map((data) => new ScheduleException().hydrate(data));
+    return dataset.map((data) => new ScheduleAssignments().hydrate(data));
   }
 
   async listForGroupsOnDate(
     groupsId: number,
     date: string,
     paginationOptions: { offset?: number; limit?: number } = {},
-  ): Promise<ScheduleException[] | null> {
+  ): Promise<ScheduleAssignments[] | null> {
     const dataset = await this.listAllForGroupsOnDate(groupsId, date, paginationOptions);
     if (!dataset || dataset.length === 0) return null;
-    return dataset.map((data) => new ScheduleException().hydrate(data));
+    return dataset.map((data) => new ScheduleAssignments().hydrate(data));
   }
 
   async delete(): Promise<boolean> {
@@ -467,11 +467,33 @@ export default class ScheduleException extends ScheduleExceptionModel {
     };
   }
 
+  async toPUBLIC(): Promise<object> {
+    const sessionTemplateObj = await this.getSessionTemplateObj();
+    const createdByObj = await this.getCreatedByObj();
+
+    return {
+      [RS.GUID]: this.guid,
+      [RS.TENANT]: this.tenant,
+      [RS.START_DATE]: this.start_date,
+      [RS.END_DATE]: this.end_date,
+      [RS.REASON]: this.reason,
+      [RS.ACTIVE]: this.active,
+      [RS.SESSION_TEMPLATE]: sessionTemplateObj
+        ? sessionTemplateObj.toJSON(responseValue.FULL)
+        : null,
+      [RS.CREATED_BY]: createdByObj ? await createdByObj.toJSON(responseValue.MINIMAL) : null,
+    };
+  }
+
   // ============================================
   // MÉTHODES PRIVÉES
   // ============================================
 
-  private hydrate(data: any): ScheduleException {
+  toObject(data: any): ScheduleAssignments {
+    return new ScheduleAssignments().hydrate(data);
+  }
+
+  private hydrate(data: any): ScheduleAssignments {
     this.id = data.id;
     this.guid = data.guid;
     this.tenant = data.tenant;

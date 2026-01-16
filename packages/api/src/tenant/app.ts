@@ -29,7 +29,7 @@ import qrCodeRoute from './routes/qr.code.route.js';
 import sessionTemplatesRoute from './routes/session.templates.route.js';
 import rotationGroupsRoute from './routes/rotation.groups.route.js';
 import rotationAssignmentsRoute from './routes/rotation.assignments.route.js';
-import scheduleExceptionsRoute from './routes/schedule.exceptions.route.js';
+import scheduleAssignmentsRoute from './routes/schedule.assignments.route.js';
 import groupsRoute from './routes/groups.route.js';
 import deviceRoute from './routes/device.route.js';
 
@@ -236,7 +236,7 @@ export default class App {
     this.app.use('/session-templates', sessionTemplatesRoute);
     this.app.use('/rotation-groups', rotationGroupsRoute);
     this.app.use('/rotation-assignments', rotationAssignmentsRoute);
-    this.app.use('/schedule-exceptions', scheduleExceptionsRoute);
+    this.app.use('/schedule-assignments', scheduleAssignmentsRoute);
     this.app.use('/groups', groupsRoute);
     this.app.use('/devices', deviceRoute);
 

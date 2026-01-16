@@ -14,6 +14,8 @@ import G from '../../tools/glossary.js';
 import User from './User.js';
 import SessionTemplate from './SessionTemplates.js';
 import OrgHierarchy from './OrgHierarchy.js';
+import ScheduleAssignments from './ScheduleAssignments.js';
+import RotationAssignment from './RotationAssignments.js';
 
 export default class Groups extends GroupsModel {
   private managerObj?: User;
@@ -57,12 +59,12 @@ export default class Groups extends GroupsModel {
     return new Groups().listByMember(user, paginationOptions);
   }
 
-  static _listBySession(
-    template_session: number,
-    paginationOptions: { offset?: number; limit?: number } = {},
-  ): Promise<Groups[] | null> {
-    return new Groups().listBySessionTemplate(template_session, paginationOptions);
-  }
+  // static _listBySession(
+  //   template_session: number,
+  //   paginationOptions: { offset?: number; limit?: number } = {},
+  // ): Promise<Groups[] | null> {
+  //   return new Groups().listBySessionTemplate(template_session, paginationOptions);
+  // }
 
   static _listWithMembers(
     paginationOptions: { offset?: number; limit?: number } = {},
@@ -70,11 +72,11 @@ export default class Groups extends GroupsModel {
     return new Groups().listWithMembers(paginationOptions);
   }
 
-  static _listWithActiveSession(
-    paginationOptions: { offset?: number; limit?: number } = {},
-  ): Promise<Groups[] | null> {
-    return new Groups().listWithActiveSession(paginationOptions);
-  }
+  // static _listWithActiveSession(
+  //   paginationOptions: { offset?: number; limit?: number } = {},
+  // ): Promise<Groups[] | null> {
+  //   return new Groups().listWithActiveSession(paginationOptions);
+  // }
 
   /**
    * 🎯 POINT D'ENTRÉE PRINCIPAL
@@ -195,22 +197,65 @@ export default class Groups extends GroupsModel {
     return memberObjs;
   }
 
-  getAssignedSessions(): TI.AssignedSession[] {
-    return this.assigned_sessions || [];
-  }
+  // getAssignedSessions(): TI.AssignedSession[] {
+  //   return this.assigned_sessions || [];
+  // }
 
-  async getSessionTemplateObj(template: number): Promise<SessionTemplate | null> {
-    if (!this.sessionTemplateObjs.has(template)) {
-      const templateObj = await SessionTemplate._load(template);
-      if (templateObj) {
-        this.sessionTemplateObjs.set(template, templateObj);
-      }
-    }
-    return this.sessionTemplateObjs.get(template) || null;
-  }
+  // async getSessionTemplateObj(template: number): Promise<SessionTemplate | null> {
+  //   if (!this.sessionTemplateObjs.has(template)) {
+  //     const templateObj = await SessionTemplate._load(template);
+  //     if (templateObj) {
+  //       this.sessionTemplateObjs.set(template, templateObj);
+  //     }
+  //   }
+  //   return this.sessionTemplateObjs.get(template) || null;
+  // }
 
   getDeletedAt(): Date | undefined {
     return this.deleted_at;
+  }
+
+  // ============================================
+  // MÉTHODES DE RÉSOLUTION DES ASSIGNATIONS
+  // ============================================
+
+  async getActiveScheduleAssignment(): Promise<ScheduleAssignments | null> {
+    const today = TimezoneConfigUtils.getCurrentTime().toISOString().split('T')[0];
+
+    const activeAssignments = await ScheduleAssignments._listForGroupsOnDate(this.id!, today);
+
+    if (activeAssignments && activeAssignments.length > 0) {
+      return activeAssignments.sort((a, b) => {
+        const dateA = new Date(a.getStartDate()!).getTime();
+        const dateB = new Date(b.getStartDate()!).getTime();
+        return dateB - dateA;
+      })[0];
+    }
+
+    return null;
+  }
+
+  async getActiveRotationAssignment(): Promise<RotationAssignment | null> {
+    const assignments = await RotationAssignment._listByGroups(this.id!);
+    return assignments && assignments.length > 0 ? assignments[0] : null;
+  }
+
+  async getAllScheduleAssignments(): Promise<ScheduleAssignments[]> {
+    return (await ScheduleAssignments._listByGroups(this.id!)) || [];
+  }
+
+  async getAllRotationAssignments(): Promise<RotationAssignment[]> {
+    return (await RotationAssignment._listByGroups(this.id!)) || [];
+  }
+
+  async getCurrentAssignmentType(): Promise<'schedule' | 'rotation' | 'none'> {
+    const scheduleAssignment = await this.getActiveScheduleAssignment();
+    if (scheduleAssignment) return 'schedule';
+
+    const rotationAssignment = await this.getActiveRotationAssignment();
+    if (rotationAssignment) return 'rotation';
+
+    return 'none';
   }
 
   // ============================================
@@ -232,10 +277,10 @@ export default class Groups extends GroupsModel {
     return this;
   }
 
-  setAssignedSessions(sessions: TI.AssignedSession[]): Groups {
-    this.assigned_sessions = sessions;
-    return this;
-  }
+  // setAssignedSessions(sessions: TI.AssignedSession[]): Groups {
+  //   this.assigned_sessions = sessions;
+  //   return this;
+  // }
 
   // ============================================
   // MÉTHODES MÉTIER - GESTION DES MEMBRES
@@ -345,59 +390,59 @@ export default class Groups extends GroupsModel {
     return GroupsValidationUtils.countActiveMembers(this.members);
   }
 
-  /**
-   * Assigner une nouvelle session template
-   */
-  assignSession(sessionTemplate: number, assignAt?: Date, active: boolean = true): Groups {
-    const newSession: TI.AssignedSession = {
-      session_template: sessionTemplate,
-      assign_at: assignAt || TimezoneConfigUtils.getCurrentTime(),
-      active,
-    };
-
-    this.assigned_sessions = GroupsValidationUtils.assignSession(
-      this.assigned_sessions,
-      newSession,
-    );
-    return this;
-  }
-
-  /**
-   * Activer une session template spécifique
-   */
-  activateSession(sessionTemplate: number): Groups {
-    this.assigned_sessions = GroupsValidationUtils.activateSession(
-      this.assigned_sessions,
-      sessionTemplate,
-    );
-    return this;
-  }
-
-  /**
-   * Désactiver toutes les sessions
-   */
-  deactivateAllSessions(): Groups {
-    this.assigned_sessions = GroupsValidationUtils.deactivateAllSessions(this.assigned_sessions);
-    return this;
-  }
-
-  /**
-   * Récupérer la session active
-   */
-  getActiveSession(): TI.AssignedSession | null {
-    return GroupsValidationUtils.getActiveSession(this.assigned_sessions);
-  }
+  // /**
+  //  * Assigner une nouvelle session template
+  //  */
+  // assignSession(sessionTemplate: number, assignAt?: Date, active: boolean = true): Groups {
+  //   const newSession: TI.AssignedSession = {
+  //     session_template: sessionTemplate,
+  //     assign_at: assignAt || TimezoneConfigUtils.getCurrentTime(),
+  //     active,
+  //   };
+  //
+  //   this.assigned_sessions = GroupsValidationUtils.assignSession(
+  //     this.assigned_sessions,
+  //     newSession,
+  //   );
+  //   return this;
+  // }
+  //
+  // /**
+  //  * Activer une session template spécifique
+  //  */
+  // activateSession(sessionTemplate: number): Groups {
+  //   this.assigned_sessions = GroupsValidationUtils.activateSession(
+  //     this.assigned_sessions,
+  //     sessionTemplate,
+  //   );
+  //   return this;
+  // }
+  //
+  // /**
+  //  * Désactiver toutes les sessions
+  //  */
+  // deactivateAllSessions(): Groups {
+  //   this.assigned_sessions = GroupsValidationUtils.deactivateAllSessions(this.assigned_sessions);
+  //   return this;
+  // }
+  //
+  // /**
+  //  * Récupérer la session active
+  //  */
+  // getActiveSession(): TI.AssignedSession | null {
+  //   return GroupsValidationUtils.getActiveSession(this.assigned_sessions);
+  // }
 
   // ============================================
   // MÉTHODES MÉTIER - GESTION DES SESSIONS
   // ============================================
 
-  /**
-   * Vérifier si une session est active
-   */
-  hasActiveSession(): boolean {
-    return this.getActiveSession() !== null;
-  }
+  // /**
+  //  * Vérifier si une session est active
+  //  */
+  // hasActiveSession(): boolean {
+  //   return this.getActiveSession() !== null;
+  // }
 
   /**
    * Obtenir un résumé de l'équipe
@@ -518,14 +563,14 @@ export default class Groups extends GroupsModel {
     return dataset.map((data) => new Groups().hydrate(data));
   }
 
-  async listBySessionTemplate(
-    session_template: number,
-    paginationOptions: { offset?: number; limit?: number } = {},
-  ): Promise<Groups[] | null> {
-    const dataset = await this.listAllBySessionTemplate(session_template, paginationOptions);
-    if (!dataset || dataset.length === 0) return null;
-    return dataset.map((data) => new Groups().hydrate(data));
-  }
+  // async listBySessionTemplate(
+  //   session_template: number,
+  //   paginationOptions: { offset?: number; limit?: number } = {},
+  // ): Promise<Groups[] | null> {
+  //   const dataset = await this.listAllBySessionTemplate(session_template, paginationOptions);
+  //   if (!dataset || dataset.length === 0) return null;
+  //   return dataset.map((data) => new Groups().hydrate(data));
+  // }
 
   // ============================================
   // CHARGEMENT ET LISTING
@@ -539,17 +584,17 @@ export default class Groups extends GroupsModel {
     return dataset.map((data) => new Groups().hydrate(data));
   }
 
-  async listWithActiveSession(
-    paginationOptions: { offset?: number; limit?: number } = {},
-  ): Promise<Groups[] | null> {
-    const dataset = await this.listAllWithActiveSession(paginationOptions);
-    if (!dataset || dataset.length === 0) return null;
-    return dataset.map((data) => new Groups().hydrate(data));
-  }
+  // async listWithActiveSession(
+  //   paginationOptions: { offset?: number; limit?: number } = {},
+  // ): Promise<Groups[] | null> {
+  //   const dataset = await this.listAllWithActiveSession(paginationOptions);
+  //   if (!dataset || dataset.length === 0) return null;
+  //   return dataset.map((data) => new Groups().hydrate(data));
+  // }
 
   async toJSON(view: ViewMode = responseValue.FULL): Promise<object> {
     const managerObj = await this.getManagerObj();
-    const activeSession = this.getActiveSession();
+    // const activeSession = this.getActiveSession();
     const summary = this.getSummary();
 
     const baseModel = {
@@ -560,12 +605,20 @@ export default class Groups extends GroupsModel {
       [RS.UPDATED_AT]: this.updated_at,
     };
 
+    const assignmentType = await this.getCurrentAssignmentType();
+    const activeSchedule = await this.getActiveScheduleAssignment();
+    const activeRotation = await this.getActiveRotationAssignment();
+
     if (view === responseValue.MINIMAL) {
       return {
         ...baseModel,
         total_members: summary.totalMembers,
         active_members: summary.activeMembers,
-        has_active_session: summary.hasActiveSession,
+        assignment_info: {
+          current_type: assignmentType,
+          active_schedule_assignment: activeSchedule ? activeSchedule.getGuid() : null,
+          active_rotation_assignment: activeRotation ? activeRotation.getGuid() : null,
+        },
       };
     }
 
@@ -582,16 +635,16 @@ export default class Groups extends GroupsModel {
       }),
     );
 
-    const enrichedSessions = await Promise.all(
-      this.assigned_sessions.map(async (session) => {
-        const templateObj = await this.getSessionTemplateObj(session.session_template);
-        return {
-          session_template: templateObj ? templateObj.toJSON() : null,
-          assign_at: session.assign_at,
-          active: session.active,
-        };
-      }),
-    );
+    // const enrichedSessions = await Promise.all(
+    //   this.assigned_sessions.map(async (session) => {
+    //     const templateObj = await this.getSessionTemplateObj(session.session_template);
+    //     return {
+    //       session_template: templateObj ? templateObj.toJSON() : null,
+    //       assign_at: session.assign_at,
+    //       active: session.active,
+    //     };
+    //   }),
+    // );
 
     return {
       ...baseModel,
@@ -600,16 +653,25 @@ export default class Groups extends GroupsModel {
         count: enrichedMembers.length,
         items: enrichedMembers,
       },
-      assigned_sessions: {
-        count: enrichedSessions.length,
-        active_session: activeSession
-          ? {
-              session_template: activeSession.session_template,
-              assign_at: activeSession.assign_at,
-            }
+      assignment_info: {
+        current_type: assignmentType,
+        active_schedule_assignment: activeSchedule
+          ? await activeSchedule.toJSON(responseValue.MINIMAL)
           : null,
-        items: enrichedSessions,
+        active_rotation_assignment: activeRotation
+          ? await activeRotation.toJSON(responseValue.MINIMAL)
+          : null,
       },
+      // assigned_sessions: {
+      //   count: enrichedSessions.length,
+      //   active_session: activeSession
+      //     ? {
+      //         session_template: activeSession.session_template,
+      //         assign_at: activeSession.assign_at,
+      //       }
+      //     : null,
+      //   items: enrichedSessions,
+      // },
     };
   }
 
@@ -680,7 +742,7 @@ export default class Groups extends GroupsModel {
 
     // Récupérer les membres directs de cette équipe
     const directMembers = await this.getDirectMembers();
-    const activeSession = this.getActiveSession();
+    // const activeSession = this.getActiveSession();
 
     const membersWithSubGroups = [];
 
@@ -721,23 +783,23 @@ export default class Groups extends GroupsModel {
       membersWithSubGroups.push(memberData);
     }
 
-    // Récupérer les détails de la session active
-    let activeSessionDetails = null;
-    if (activeSession) {
-      const sessionTemplateObj = await this.getSessionTemplateObj(activeSession.session_template);
-      activeSessionDetails = {
-        template: sessionTemplateObj ? await sessionTemplateObj.toJSON() : null,
-        assigned_at: activeSession.assign_at,
-      };
-    }
+    // // Récupérer les détails de la session active
+    // let activeSessionDetails = null;
+    // if (activeSession) {
+    //   const sessionTemplateObj = await this.getSessionTemplateObj(activeSession.session_template);
+    //   activeSessionDetails = {
+    //     template: sessionTemplateObj ? await sessionTemplateObj.toJSON() : null,
+    //     assigned_at: activeSession.assign_at,
+    //   };
+    // }
 
     return {
       groups: {
         guid: this.guid,
         name: this.name,
         manager: await managerObj.toJSON(responseValue.MINIMAL),
-        has_active_session: activeSession !== null,
-        active_session: activeSessionDetails,
+        // has_active_session: activeSession !== null,
+        // active_session: activeSessionDetails,
       },
       total_direct_members: directMembers.length,
       members: membersWithSubGroups,
@@ -837,7 +899,7 @@ export default class Groups extends GroupsModel {
     this.name = data.name;
     this.manager = data.manager;
     this.members = data.members || [];
-    this.assigned_sessions = data.assigned_sessions || [];
+    // this.assigned_sessions = data.assigned_sessions || [];
     this.created_at = data.created_at;
     this.updated_at = data.updated_at;
     this.deleted_at = data.deleted_at;

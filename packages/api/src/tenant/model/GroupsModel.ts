@@ -3,6 +3,7 @@ import { GROUPS_ERRORS, GroupsValidationUtils, TI, TimezoneConfigUtils } from '@
 
 import BaseModel from '../database/db.base.js';
 import { tableName } from '../../utils/response.model.js';
+import User from '../class/User.js';
 
 export default class GroupsModel extends BaseModel {
   public readonly db = {
@@ -12,8 +13,7 @@ export default class GroupsModel extends BaseModel {
     name: 'name',
     manager: 'manager',
     members: 'members',
-    assigned_sessions: 'assigned_sessions',
-    // rotation_group: 'rotation_group',
+    // assigned_sessions: 'assigned_sessions',
     created_at: 'created_at',
     updated_at: 'updated_at',
     deleted_at: 'deleted_at',
@@ -28,8 +28,7 @@ export default class GroupsModel extends BaseModel {
   protected name?: string;
   protected manager?: number;
   protected members: TI.GroupsMember[] = [];
-  protected assigned_sessions: TI.AssignedSession[] = [];
-  // protected rotation_group: TI.RotationGroup[] = [];
+  // protected assigned_sessions: TI.AssignedSession[] = [];
   protected created_at?: Date;
   protected updated_at?: Date;
   protected deleted_at?: Date;
@@ -155,26 +154,26 @@ export default class GroupsModel extends BaseModel {
     });
   }
 
-  /**
-   * Recherche les équipes avec une session template spécifique
-   */
-  protected async listAllBySessionTemplate(
-    sessionTemplate: number,
-    paginationOptions: { offset?: number; limit?: number } = {},
-  ): Promise<any[]> {
-    const conditions = {
-      [this.db.deleted_at]: null,
-    };
-
-    const allGroups = await this.listAll(conditions, paginationOptions);
-
-    return allGroups.filter((group) => {
-      const sessions = group.assigned_sessions || [];
-      return sessions.some(
-        (session: TI.AssignedSession) => session.session_template === sessionTemplate,
-      );
-    });
-  }
+  // /**
+  //  * Recherche les équipes avec une session template spécifique
+  //  */
+  // protected async listAllBySessionTemplate(
+  //   sessionTemplate: number,
+  //   paginationOptions: { offset?: number; limit?: number } = {},
+  // ): Promise<any[]> {
+  //   const conditions = {
+  //     [this.db.deleted_at]: null,
+  //   };
+  //
+  //   const allGroups = await this.listAll(conditions, paginationOptions);
+  //
+  //   return allGroups.filter((group) => {
+  //     const sessions = group.assigned_sessions || [];
+  //     return sessions.some(
+  //       (session: TI.AssignedSession) => session.session_template === sessionTemplate,
+  //     );
+  //   });
+  // }
 
   /**
    * Recherche les équipes ayant au moins un membre
@@ -190,19 +189,19 @@ export default class GroupsModel extends BaseModel {
     });
   }
 
-  /**
-   * Recherche les équipes ayant une session active
-   */
-  protected async listAllWithActiveSession(
-    paginationOptions: { offset?: number; limit?: number } = {},
-  ): Promise<any[]> {
-    const allGroups = await this.listAll({}, paginationOptions);
-
-    return allGroups.filter((group) => {
-      const sessions = group.assigned_sessions || [];
-      return sessions.some((session: TI.AssignedSession) => session.active === true);
-    });
-  }
+  // /**
+  //  * Recherche les équipes ayant une session active
+  //  */
+  // protected async listAllWithActiveSession(
+  //   paginationOptions: { offset?: number; limit?: number } = {},
+  // ): Promise<any[]> {
+  //   const allGroups = await this.listAll({}, paginationOptions);
+  //
+  //   return allGroups.filter((group) => {
+  //     const sessions = group.assigned_sessions || [];
+  //     return sessions.some((session: TI.AssignedSession) => session.active === true);
+  //   });
+  // }
 
   // ============================================
   // STATISTIQUES
@@ -258,7 +257,7 @@ export default class GroupsModel extends BaseModel {
       [this.db.name]: this.name,
       [this.db.manager]: this.manager,
       [this.db.members]: this.members || [],
-      [this.db.assigned_sessions]: this.assigned_sessions || [],
+      // [this.db.assigned_sessions]: this.assigned_sessions || [],
     });
 
     if (!lastID) {
@@ -293,10 +292,10 @@ export default class GroupsModel extends BaseModel {
     if (this.members !== undefined) {
       updateData[this.db.members] = this.members;
     }
-
-    if (this.assigned_sessions !== undefined) {
-      updateData[this.db.assigned_sessions] = this.assigned_sessions;
-    }
+    //
+    // if (this.assigned_sessions !== undefined) {
+    //   updateData[this.db.assigned_sessions] = this.assigned_sessions;
+    // }
 
     const updated = await this.updateOne(this.db.tableName, updateData, { [this.db.id]: this.id });
 
@@ -397,8 +396,9 @@ export default class GroupsModel extends BaseModel {
         const isInAnotherGroups = await this.isUserActiveInAnotherGroups(member.user, this.id);
 
         if (isInAnotherGroups) {
+          const userObj = await User._load(member.user);
           throw new Error(
-            `User ${member.user} is already an active member of another groups. ` +
+            `User ${userObj?.getGuid()} is already an active member of another groups. ` +
               `A user can only be active in one groups at a time.`,
           );
         }

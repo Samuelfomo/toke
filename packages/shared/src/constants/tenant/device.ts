@@ -57,11 +57,12 @@ export const DEVICES_CODES = {
   GEOFENCE_RADIUS_INVALID: 'geofence_radius_invalid',
   LAST_SEEN_AT_INVALID: 'last_seen_at_invalid',
   ACTIVE_STATUS_INVALID: 'active_status_invalid',
-  CREATED_BY_REQUIRED: 'created_by_required',
-  CREATED_BY_INVALID: 'created_by_invalid',
-  CREATED_BY_NOT_FOUND: 'created_by_not_found',
+  CREATED_BY_REQUIRED: 'manager_required',
+  CREATED_BY_INVALID: 'manager_invalid',
+  CREATED_BY_NOT_FOUND: 'manager_not_found',
   VALIDATION_FAILED: 'validation_failed',
   CREATION_FAILED: 'creation_failed',
+  CONFIG_FAILED: 'config_failed',
   UPDATE_FAILED: 'update_failed',
   DELETE_FAILED: 'delete_failed',
   LISTING_FAILED: 'listing_failed',
@@ -100,9 +101,9 @@ export const DEVICES_ERRORS = {
 
   ACTIVE_STATUS_INVALID: 'Active status must be a boolean value (true or false)',
 
-  CREATED_BY_REQUIRED: `${DEVICES_LABEL} creator is required`,
-  CREATED_BY_INVALID: 'Creator user ID is invalid',
-  CREATED_BY_NOT_FOUND: 'Creator user not found',
+  CREATED_BY_REQUIRED: `${DEVICES_LABEL} manager is required`,
+  CREATED_BY_INVALID: 'Manager user ID is invalid',
+  CREATED_BY_NOT_FOUND: 'Manager user not found',
 
   GUID_INVALID: `GUID must be 1-${DEVICES_VALIDATION.GUID.MAX_LENGTH} characters`,
   GUID_GENERATION_FAILED: 'Failed to generate GUID',
@@ -122,6 +123,7 @@ export const DEVICES_ERRORS = {
 export const DEVICES_MESSAGES = {
   DELETED_SUCCESSFULLY: `${DEVICES_LABEL} deleted successfully`,
   REASSIGNED_SUCCESSFULLY: `${DEVICES_LABEL} reassigned successfully`,
+  CONFIG_SUCCESSFULLY: `${DEVICES_LABEL} user configuration successfully`,
   LAST_SEEN_UPDATED: `${DEVICES_LABEL} last seen updated successfully`,
 } as const;
 

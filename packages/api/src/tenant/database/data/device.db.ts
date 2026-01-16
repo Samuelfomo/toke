@@ -61,13 +61,13 @@ export const DeviceDbStructure = {
         min: 1,
         max: 2147483647,
       },
-      onUpdate: 'CASCADE',
-      onDelete: 'SET NULL',
+      // onUpdate: 'CASCADE',
+      // onDelete: 'SET NULL',
       comment: 'users',
     },
     gps_accuracy: {
       type: DataTypes.INTEGER,
-      allowNull: false,
+      allowNull: true,
       validate: {
         isInt: true,
         min: 1,
@@ -77,7 +77,7 @@ export const DeviceDbStructure = {
     },
     custom_geofence_radius: {
       type: DataTypes.INTEGER,
-      allowNull: false,
+      allowNull: true,
       validate: {
         isInt: true,
         min: 1,
@@ -113,7 +113,6 @@ export const DeviceDbStructure = {
         isInt: true,
         min: 1,
         max: 2147483647,
-        nullable: true,
       },
       comment: 'device config by',
     },

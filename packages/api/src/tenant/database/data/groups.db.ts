@@ -123,100 +123,87 @@ export const GroupsDbStructure = {
       },
       comment: 'List of members of the groups',
     },
-    // default_session_template: {
-    //   type: DataTypes.INTEGER,
-    //   allowNull: true,
-    //   references: {
-    //     model: tableName.SESSION_TEMPLATES,
-    //     key: 'id',
-    //   },
+    // assigned_sessions: {
+    //   type: DataTypes.JSONB,
+    //   allowNull: false,
+    //   defaultValue: [],
+    //   comment: 'History of session templates assigned to groups members.',
     //   validate: {
-    //     isInt: true,
-    //     min: 1,
+    //     isValidSessionAssignmentStructure(value: any) {
+    //       // 1. ✅ La valeur doit être un tableau (Array)
+    //       if (!Array.isArray(value)) {
+    //         throw new Error('Assigned sessions must be an array.');
+    //       }
+    //
+    //       const assignments = value as Array<any>;
+    //       let activeCount = 0;
+    //
+    //       for (let i = 0; i < assignments.length; i++) {
+    //         const assignment = assignments[i];
+    //
+    //         // 2. ✅ Chaque élément doit être un objet
+    //         if (
+    //           typeof assignment !== 'object' ||
+    //           assignment === null ||
+    //           Array.isArray(assignment)
+    //         ) {
+    //           throw new Error(`Assignment at index ${i} must be a valid object.`);
+    //         }
+    //
+    //         // 3. ✅ Validation des champs
+    //
+    //         // 3.1. 'session_template' (ID numérique requis, référence)
+    //         if (
+    //           !('session_template' in assignment) ||
+    //           typeof assignment.session_template !== 'number' ||
+    //           !Number.isInteger(assignment.session_template) ||
+    //           assignment.session_template <= 0
+    //         ) {
+    //           throw new Error(
+    //             `Assignment at index ${i}: 'session_template' must be a valid positive integer ID.`,
+    //           );
+    //         }
+    //
+    //         // 3.2. 'assign_at' (Date requise)
+    //         if (
+    //           !('assign_at' in assignment) ||
+    //           !(
+    //             assignment.assign_at instanceof Date ||
+    //             (typeof assignment.assign_at === 'string' &&
+    //               !isNaN(Date.parse(assignment.assign_at)))
+    //           )
+    //         ) {
+    //           throw new Error(
+    //             `Assignment at index ${i}: 'assign_at' must be a valid date/time string.`,
+    //           );
+    //         }
+    //
+    //         // 3.3. 'active' (Booléen requis)
+    //         // ATTENTION: contrairement au 'members', 'active' doit être explicite ici pour la règle métier.
+    //         if (!('active' in assignment) || typeof assignment.active !== 'boolean') {
+    //           throw new Error(
+    //             `Assignment at index ${i}: 'active' must be explicitly provided as a boolean.`,
+    //           );
+    //         }
+    //
+    //         // 4. 🚨 Règle métier : Vérifier l'unicité du statut 'active = true'
+    //         if (assignment.active === true) {
+    //           activeCount++;
+    //         }
+    //       }
+    //
+    //       // 5. ✅ Contrainte Finale: Un seul modèle actif est autorisé (Count doit être 1)
+    //       if (activeCount > 1) {
+    //         throw new Error('Only one session template can be active (active: true) at a time.');
+    //       }
+    //
+    //       // OPTIONNEL: Permettre 0 modèle actif si l'utilisateur n'en a pas encore un
+    //       // if (activeCount === 0) {
+    //       //   throw new Error('At least one session template must be marked as active.');
+    //       // }
+    //     },
     //   },
-    //   comment: 'Default session template ID',
     // },
-    assigned_sessions: {
-      type: DataTypes.JSONB,
-      allowNull: false,
-      defaultValue: [],
-      comment: 'History of session templates assigned to groups members.',
-      validate: {
-        isValidSessionAssignmentStructure(value: any) {
-          // 1. ✅ La valeur doit être un tableau (Array)
-          if (!Array.isArray(value)) {
-            throw new Error('Assigned sessions must be an array.');
-          }
-
-          const assignments = value as Array<any>;
-          let activeCount = 0;
-
-          for (let i = 0; i < assignments.length; i++) {
-            const assignment = assignments[i];
-
-            // 2. ✅ Chaque élément doit être un objet
-            if (
-              typeof assignment !== 'object' ||
-              assignment === null ||
-              Array.isArray(assignment)
-            ) {
-              throw new Error(`Assignment at index ${i} must be a valid object.`);
-            }
-
-            // 3. ✅ Validation des champs
-
-            // 3.1. 'session_template' (ID numérique requis, référence)
-            if (
-              !('session_template' in assignment) ||
-              typeof assignment.session_template !== 'number' ||
-              !Number.isInteger(assignment.session_template) ||
-              assignment.session_template <= 0
-            ) {
-              throw new Error(
-                `Assignment at index ${i}: 'session_template' must be a valid positive integer ID.`,
-              );
-            }
-
-            // 3.2. 'assign_at' (Date requise)
-            if (
-              !('assign_at' in assignment) ||
-              !(
-                assignment.assign_at instanceof Date ||
-                (typeof assignment.assign_at === 'string' &&
-                  !isNaN(Date.parse(assignment.assign_at)))
-              )
-            ) {
-              throw new Error(
-                `Assignment at index ${i}: 'assign_at' must be a valid date/time string.`,
-              );
-            }
-
-            // 3.3. 'active' (Booléen requis)
-            // ATTENTION: contrairement au 'members', 'active' doit être explicite ici pour la règle métier.
-            if (!('active' in assignment) || typeof assignment.active !== 'boolean') {
-              throw new Error(
-                `Assignment at index ${i}: 'active' must be explicitly provided as a boolean.`,
-              );
-            }
-
-            // 4. 🚨 Règle métier : Vérifier l'unicité du statut 'active = true'
-            if (assignment.active === true) {
-              activeCount++;
-            }
-          }
-
-          // 5. ✅ Contrainte Finale: Un seul modèle actif est autorisé (Count doit être 1)
-          if (activeCount > 1) {
-            throw new Error('Only one session template can be active (active: true) at a time.');
-          }
-
-          // OPTIONNEL: Permettre 0 modèle actif si l'utilisateur n'en a pas encore un
-          // if (activeCount === 0) {
-          //   throw new Error('At least one session template must be marked as active.');
-          // }
-        },
-      },
-    },
   } as ModelAttributes,
   options: {
     tableName: tableName.GROUPS,
@@ -242,13 +229,9 @@ export const GroupsDbStructure = {
         name: 'idx_groups_manager',
       },
       // {
-      //   fields: ['default_session_template'],
-      //   name: 'idx_groups_default_session_template',
+      //   fields: ['assigned_sessions'],
+      //   name: 'idx_groups_assigned_sessions',
       // },
-      {
-        fields: ['assigned_sessions'],
-        name: 'idx_groups_assigned_sessions',
-      },
       {
         fields: ['created_at'],
         name: 'idx_groups_created_at',
