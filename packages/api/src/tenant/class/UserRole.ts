@@ -60,6 +60,14 @@ export default class UserRole extends UserRoleModel {
     return new UserRole().listByAssignedBy(assigned_by, paginationOptions);
   }
 
+  static _listByMyManagerAndRole(
+    assigned_by: number,
+    role: number,
+    paginationOptions: { offset?: number; limit?: number } = {},
+  ): Promise<UserRole[] | null> {
+    return new UserRole().listByMyManagerAndRole(assigned_by, role, paginationOptions);
+  }
+
   static async exportable(
     conditions: Record<string, any> = {},
     paginationOptions: { offset?: number; limit?: number } = {},
@@ -285,6 +293,16 @@ export default class UserRole extends UserRoleModel {
     const dataset = await this.listAllByAssignedBy(assigned_by, paginationOptions);
     if (!dataset || dataset.length === 0) return null;
 
+    return dataset.map((data) => new UserRole().hydrate(data));
+  }
+
+  async listByMyManagerAndRole(
+    manager: number,
+    roleId: number,
+    paginationOptions: { offset?: number; limit?: number } = {},
+  ): Promise<UserRole[] | null> {
+    const dataset = await this.listAllByAssignedByAndRole(manager, roleId, paginationOptions);
+    if (!dataset || dataset.length === 0) return null;
     return dataset.map((data) => new UserRole().hydrate(data));
   }
 

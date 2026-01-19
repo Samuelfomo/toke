@@ -884,7 +884,7 @@ export default class Groups extends GroupsModel {
     }
 
     return {
-      groups: await this.toJSON(responseValue.MINIMAL),
+      group: await this.toJSON(responseValue.MINIMAL),
       members: membersWithSubGroups,
     };
   }

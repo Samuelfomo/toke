@@ -1,6 +1,7 @@
 import { Request, Response, Router } from 'express';
 import {
   HttpStatus,
+  ORG_HIERARCHY_DEFAULTS,
   paginationSchema,
   ROLES_CODES,
   ROLES_ERRORS,
@@ -22,6 +23,7 @@ import Role from '../class/Role.js';
 import UserRole from '../class/UserRole.js';
 import { TenantRevision } from '../../tools/revision.js';
 import { RoleValues, tableName } from '../../utils/response.model.js';
+import OrgHierarchy from '../class/OrgHierarchy.js';
 
 const router = Router();
 
@@ -371,7 +373,16 @@ router.post('/manager', Ensure.post(), async (req: Request, res: Response) => {
       .setRole(managerRole.getId()!)
       .setUser(userObj.getId()!)
       .setAssignedBy(assignedBy);
+
+    const orgHierarchyObj = new OrgHierarchy()
+      .setSubordinate(userObj.getId()!)
+      .setSupervisor(assignedBy)
+      .setDepartment(userObj.getDepartment()!)
+      .setEffectiveFrom(ORG_HIERARCHY_DEFAULTS.EFFECTIVE_FROM);
+
     await userRoleObj.save();
+
+    await orgHierarchyObj.save();
     return R.handleCreated(res, await userRoleObj.toJSON());
   } catch (error: any) {
     return R.handleError(res, HttpStatus.INTERNAL_ERROR, {

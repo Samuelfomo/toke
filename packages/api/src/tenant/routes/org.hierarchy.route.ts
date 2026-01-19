@@ -215,37 +215,86 @@ router.get('/employee/all-subordinates', Ensure.get(), async (req: Request, res:
       });
     }
 
-    // Construction hiérarchique récursive
-    const hierarchyTree = await OrgHierarchy._buildHierarchyTree(supervisorObj.getId()!);
+    // // Construction hiérarchique récursive
+    // const hierarchyTree = await OrgHierarchy._buildHierarchyTree(supervisorObj.getId()!);
+    //
+    // // Rôles du superviseur lui-même
+    // const supervisorRoles = await UserRole._listByUser(supervisorObj.getId()!);
+    //
+    // return R.handleSuccess(res, {
+    //   supervisor: supervisorObj.toPublicJSON(),
+    //   supervisor_roles: supervisorRoles
+    //     ? await Promise.all(supervisorRoles.map(async (r) => await r.toJSON(responseValue.MINIMAL)))
+    //     : [],
+    //   total_subordinates: hierarchyTree.length,
+    //   hierarchy: hierarchyTree,
+    // });
 
-    // const formattedHierarchy = await Promise.all(
-    //   hierarchyTree.map(async (node) => ({
-    //     user: node.user.toJSON(responseValue.MINIMAL), // ou .toJSON(responseValue.MINIMAL)
-    //     roles: await Promise.all(
-    //       node.roles.map(async (r: Role) => r.toJSON()),
-    //     ),
-    //     subordinates: await Promise.all(
-    //       node.subordinates.map(async (sub: any) => ({
-    //         user: sub.user.toPublicJSON(),
-    //         roles: await Promise.all(
-    //           sub.roles.map(async (r: Role) => r.toJSON(),
-    //         ),
-    //         subordinates: sub.subordinates, // récursif si besoin
-    //       })),
-    //     ),
-    //   })),
-    // );
+    // ✅ NOUVELLE LOGIQUE COMPLÈTE
+    const teamData = await OrgHierarchy.getAllTeamMembers(supervisorObj.getId()!);
 
-    // Rôles du superviseur lui-même
-    const supervisorRoles = await UserRole._listByUser(supervisorObj.getId()!);
+    console.log('sub_managers_team', teamData.sub_managers);
+
+    // Grouper par groupe
+    const employeesByGroup = new Map<string, any[]>();
+    const employeesWithoutGroup: any[] = [];
+
+    for (const emp of teamData.direct_employees) {
+      if (emp.in_group && emp.group_name) {
+        if (!employeesByGroup.has(emp.group_name)) {
+          employeesByGroup.set(emp.group_name, []);
+        }
+        employeesByGroup.get(emp.group_name)!.push(emp);
+      } else {
+        employeesWithoutGroup.push(emp);
+      }
+    }
 
     return R.handleSuccess(res, {
       supervisor: supervisorObj.toPublicJSON(),
-      supervisor_roles: supervisorRoles
-        ? await Promise.all(supervisorRoles.map(async (r) => await r.toJSON(responseValue.MINIMAL)))
-        : [],
-      total_subordinates: hierarchyTree.length,
-      hierarchy: hierarchyTree,
+      summary: {
+        total_employees: teamData.all_employees_flat.length,
+        direct_employees: teamData.direct_employees.length,
+        sub_managers_count: teamData.sub_managers.length,
+        employees_in_groups: teamData.direct_employees.filter((e) => e.in_group).length,
+        employees_without_group: employeesWithoutGroup.length,
+        // anomalies_count: teamData.anomalies.length,
+      },
+      employees_by_group: await Promise.all(
+        Array.from(employeesByGroup.entries()).map(async ([groupName, employees]) => ({
+          group_name: groupName,
+          count: employees.length,
+          employees: await Promise.all(
+            employees.map(
+              async (e) => await e.user.toJSON(responseValue.FULL),
+              //   ({
+              //   user: await e.user.toJSON(responseValue.MINIMAL),
+              //   source: e.source,
+              // })
+            ),
+          ),
+        })),
+      ),
+      employees_without_group: await Promise.all(
+        employeesWithoutGroup.map(
+          async (e) => await e.user.toJSON(responseValue.FULL),
+          //   ({
+          //   user: await e.user.toJSON(responseValue.MINIMAL),
+          //   source: e.source,
+          // })
+        ),
+      ),
+      sub_teams: await Promise.all(
+        teamData.sub_managers.map(async (sub) => ({
+          manager: sub.manager.toPublicJSON(),
+          team_summary: {
+            total: sub.team.all_employees_flat.length,
+            direct: sub.team.direct_employees.length,
+            sub_managers: sub.team.sub_managers.length,
+          },
+          team_details: await OrgHierarchy.serializeTeam(sub.team),
+        })),
+      ),
     });
   } catch (error: any) {
     return R.handleError(res, HttpStatus.INTERNAL_ERROR, {
@@ -553,27 +602,48 @@ router.get('/supervisor/:userGuid/list', Ensure.get(), async (req: Request, res:
       });
     }
 
-    const hierarchyEntries = await OrgHierarchy._listBySupervisor(
-      userObj.getId()!,
-      paginationOptions,
-    );
-    const hierarchies = {
-      pagination: {
-        offset: paginationOptions.offset || 0,
-        limit: paginationOptions.limit || hierarchyEntries?.length || 0,
-        count: hierarchyEntries?.length || 0,
-      },
-      supervisor: userObj.toPublicJSON(),
-      subordinates: hierarchyEntries
-        ? await Promise.all(
-            hierarchyEntries.map(
-              async (hierarchy) => await hierarchy.toJSON(responseValue.MINIMAL),
-            ),
-          )
-        : [],
-    };
+    // const hierarchyEntries = await OrgHierarchy._listBySupervisor(
+    //   userObj.getId()!,
+    //   paginationOptions,
+    // );
+    // const hierarchies = {
+    //   pagination: {
+    //     offset: paginationOptions.offset || 0,
+    //     limit: paginationOptions.limit || hierarchyEntries?.length || 0,
+    //     count: hierarchyEntries?.length || 0,
+    //   },
+    //   supervisor: userObj.toPublicJSON(),
+    //   subordinates: hierarchyEntries
+    //     ? await Promise.all(
+    //         hierarchyEntries.map(
+    //           async (hierarchy) => await hierarchy.toJSON(responseValue.MINIMAL),
+    //         ),
+    //       )
+    //     : [],
+    // };
+    //
+    // return R.handleSuccess(res, { hierarchies });
 
-    return R.handleSuccess(res, { hierarchies });
+    // ✅ NOUVELLE LOGIQUE
+    const teamData = await OrgHierarchy.getAllTeamMembers(userObj.getId()!);
+    return R.handleSuccess(res, {
+      supervisor: userObj.toPublicJSON(),
+      summary: {
+        total_direct_reports: teamData.direct_employees.length + teamData.sub_managers.length,
+        employees: teamData.direct_employees.length,
+        managers: teamData.sub_managers.length,
+      },
+      direct_employees: await Promise.all(
+        teamData.direct_employees.map(async (e) => ({
+          user: await e.user.toJSON(responseValue.FULL),
+          in_group: e.in_group,
+          group_name: e.group_name,
+        })),
+      ),
+      managers: await Promise.all(
+        teamData.sub_managers.map(async (m) => await m.manager.toJSON(responseValue.FULL)),
+      ),
+    });
   } catch (error: any) {
     return R.handleError(res, HttpStatus.INTERNAL_ERROR, {
       code: ORG_HIERARCHY_CODES.LISTING_FAILED,
@@ -606,19 +676,33 @@ router.get(
       }
 
       const date = req.query.date ? new Date(req.query.date as string) : undefined;
-      const currentSupervisor = await OrgHierarchy.getCurrentSupervisor(userObj.getId()!, date);
+      // const currentSupervisor = await OrgHierarchy.getCurrentSupervisor(userObj.getId()!, date);
+      //
+      // if (!currentSupervisor) {
+      //   return R.handleSuccess(res, {
+      //     subordinate: userObj.toPublicJSON(),
+      //     current_supervisor: null,
+      //     message: 'No active supervisor found for this user',
+      //   });
+      // }
+      //
+      // return R.handleSuccess(res, {
+      //   subordinate: userObj.toPublicJSON(),
+      //   current_supervisor: await currentSupervisor.toJSON(),
+      // });
+      const supervisorInfo = await OrgHierarchy.findEmployeeSupervisor(userObj.getId()!, date);
 
-      if (!currentSupervisor) {
+      if (!supervisorInfo || !supervisorInfo.supervisor) {
         return R.handleSuccess(res, {
           subordinate: userObj.toPublicJSON(),
           current_supervisor: null,
-          message: 'No active supervisor found for this user',
+          message: 'No supervisor found',
         });
       }
 
       return R.handleSuccess(res, {
         subordinate: userObj.toPublicJSON(),
-        current_supervisor: await currentSupervisor.toJSON(),
+        current_supervisor: await supervisorInfo.supervisor.toJSON(),
       });
     } catch (error: any) {
       return R.handleError(res, HttpStatus.INTERNAL_ERROR, {
@@ -652,26 +736,43 @@ router.get(
         });
       }
 
-      const date = req.query.date ? new Date(req.query.date as string) : undefined;
-      const activeSubordinates = await OrgHierarchy.getActiveSubordinates(
-        userObj.getId()!,
-        date,
-        paginationOptions,
-      );
+      // const date = req.query.date ? new Date(req.query.date as string) : undefined;
+      // const activeSubordinates = await OrgHierarchy.getActiveSubordinates(
+      //   userObj.getId()!,
+      //   date,
+      //   paginationOptions,
+      // );
+      //
+      // const subordinatesData = {
+      //   pagination: {
+      //     offset: paginationOptions.offset || 0,
+      //     limit: paginationOptions.limit || activeSubordinates?.length || 0,
+      //     count: activeSubordinates?.length || 0,
+      //   },
+      //   supervisor: userObj.toPublicJSON(),
+      //   active_subordinates: activeSubordinates
+      //     ? await Promise.all(activeSubordinates.map(async (hierarchy) => await hierarchy.toJSON()))
+      //     : [],
+      // };
+      //
+      // return R.handleSuccess(res, { subordinatesData });
 
-      const subordinatesData = {
-        pagination: {
-          offset: paginationOptions.offset || 0,
-          limit: paginationOptions.limit || activeSubordinates?.length || 0,
-          count: activeSubordinates?.length || 0,
-        },
+      const teamData = await OrgHierarchy.getAllTeamMembers(userObj.getId()!);
+
+      // Filtrer actifs
+      const activeEmployees = teamData.direct_employees.filter((e) => e.user.isActive());
+
+      return R.handleSuccess(res, {
         supervisor: userObj.toPublicJSON(),
-        active_subordinates: activeSubordinates
-          ? await Promise.all(activeSubordinates.map(async (hierarchy) => await hierarchy.toJSON()))
-          : [],
-      };
-
-      return R.handleSuccess(res, { subordinatesData });
+        total_active: activeEmployees.length,
+        active_employees: await Promise.all(
+          activeEmployees.map(async (e) => ({
+            user: await e.user.toJSON(responseValue.FULL),
+            in_group: e.in_group,
+            group_name: e.group_name,
+          })),
+        ),
+      });
     } catch (error: any) {
       return R.handleError(res, HttpStatus.INTERNAL_ERROR, {
         code: ORG_HIERARCHY_CODES.SUBORDINATES_RESOLUTION_FAILED,

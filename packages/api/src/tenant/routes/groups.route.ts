@@ -309,7 +309,7 @@ router.post('/', Ensure.post(), async (req: Request, res: Response) => {
 
     return R.handleCreated(res, {
       message: GROUPS_ERRORS.GROUPS + ' created successfully',
-      groups: await groupsObj.toJSON(),
+      group: await groupsObj.toJSON(),
     });
   } catch (error: any) {
     if (error.issues) {
@@ -359,7 +359,7 @@ router.get('/:guid', Ensure.get(), async (req: Request, res: Response) => {
     }
 
     return R.handleSuccess(res, {
-      groups: await groupsObj.toJSON(),
+      group: await groupsObj.toJSON(),
     });
   } catch (error: any) {
     return R.handleError(res, HttpStatus.INTERNAL_ERROR, {
@@ -458,7 +458,7 @@ router.put('/:guid', Ensure.put(), async (req: Request, res: Response) => {
 
     return R.handleSuccess(res, {
       message: GROUPS_ERRORS.GROUPS + ' updated successfully',
-      groups: await groupsObj.toJSON(),
+      group: await groupsObj.toJSON(),
     });
   } catch (error: any) {
     if (error.issues) {
@@ -648,7 +648,7 @@ router.patch('/:guid/members', Ensure.patch(), async (req: Request, res: Respons
 
     return R.handleSuccess(res, {
       message: 'Members added successfully',
-      groups: await groupsObj.toJSON(),
+      group: await groupsObj.toJSON(),
     });
   } catch (error: any) {
     return R.handleError(res, HttpStatus.INTERNAL_ERROR, {
@@ -707,7 +707,7 @@ router.delete('/:guid/members/:user', Ensure.delete(), async (req: Request, res:
 
     return R.handleSuccess(res, {
       message: 'Member removed successfully',
-      groups: await groupsObj.toJSON(),
+      group: await groupsObj.toJSON(),
     });
   } catch (error: any) {
     return R.handleError(res, HttpStatus.INTERNAL_ERROR, {
@@ -779,7 +779,7 @@ router.patch('/:guid/members/:user/status', Ensure.patch(), async (req: Request,
 
     return R.handleSuccess(res, {
       message: 'Member status updated successfully',
-      groups: await groupsObj.toJSON(),
+      group: await groupsObj.toJSON(),
     });
   } catch (error: any) {
     return R.handleError(res, HttpStatus.INTERNAL_ERROR, {
@@ -977,8 +977,8 @@ router.get('/:guid/summary', Ensure.get(), async (req: Request, res: Response) =
     const summary = groupsObj.getSummary();
 
     return R.handleSuccess(res, {
-      groups_guid: guid,
-      groups_name: groupsObj.getName(),
+      group_guid: guid,
+      group_name: groupsObj.getName(),
       summary,
     });
   } catch (error: any) {
@@ -1062,7 +1062,7 @@ router.get('/:guid/all-members-recursive', Ensure.get(), async (req: Request, re
     );
 
     return R.handleSuccess(res, {
-      groups: await groupsObj.toJSON(responseValue.MINIMAL),
+      group: await groupsObj.toJSON(responseValue.MINIMAL),
       total_members_recursive: uniqueMembers.length,
       all_members: membersData,
     });
@@ -1254,7 +1254,7 @@ router.get(
 
       return R.handleSuccess(res, {
         manager: await managerObj.toJSON(responseValue.MINIMAL),
-        groups: await group.toJSON(responseValue.MINIMAL),
+        group: await group.toJSON(responseValue.MINIMAL),
         total_direct_members: directMembers.length,
         direct_members: membersData,
       });
@@ -1299,7 +1299,7 @@ router.get(
       if (!groups || groups.length === 0) {
         return R.handleSuccess(res, {
           manager: await managerObj.toJSON(responseValue.MINIMAL),
-          has_groups: false,
+          has_group: false,
           total_members: 0,
           all_members: [],
         });
@@ -1314,7 +1314,7 @@ router.get(
 
       return R.handleSuccess(res, {
         manager: await managerObj.toJSON(responseValue.MINIMAL),
-        groups: await group.toJSON(responseValue.MINIMAL),
+        group: await group.toJSON(responseValue.MINIMAL),
         total_members: allMembers.length,
         all_members: membersData,
       });
@@ -1381,7 +1381,7 @@ router.get(
 
       return R.handleSuccess(res, {
         manager: await managerObj.toJSON(responseValue.MINIMAL),
-        groups: await group.toJSON(responseValue.MINIMAL),
+        group: await group.toJSON(responseValue.MINIMAL),
         // has_active_session: true,
         // active_session: {
         //   template: sessionTemplateObj ? await sessionTemplateObj.toJSON() : null,
@@ -1430,7 +1430,7 @@ router.get('/:guid/direct-members', Ensure.get(), async (req: Request, res: Resp
     );
 
     return R.handleSuccess(res, {
-      groups: await groupsObj.toJSON(responseValue.MINIMAL),
+      group: await groupsObj.toJSON(responseValue.MINIMAL),
       total_direct_members: directMembers.length,
       direct_members: membersData,
     });
@@ -1495,7 +1495,7 @@ router.get('/:guid/assignments', Ensure.get(), async (req: Request, res: Respons
     const allRotations = await groupObj.getAllRotationAssignments();
 
     return R.handleSuccess(res, {
-      groups: await groupObj.toJSON(responseValue.MINIMAL),
+      group: await groupObj.toJSON(responseValue.MINIMAL),
       current_assignment: {
         type: assignmentType,
         active_schedule: activeSchedule ? await activeSchedule.toJSON(responseValue.FULL) : null,
@@ -1547,7 +1547,7 @@ router.get('/:guid/current-assignment', Ensure.get(), async (req: Request, res: 
     const activeRotation = await groupObj.getActiveRotationAssignment();
 
     return R.handleSuccess(res, {
-      groups: await groupObj.toJSON(responseValue.MINIMAL),
+      group: await groupObj.toJSON(responseValue.MINIMAL),
       current_assignment_type: assignmentType,
       active_schedule_assignment: activeSchedule
         ? await activeSchedule.toJSON(responseValue.FULL)

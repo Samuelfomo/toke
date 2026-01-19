@@ -450,7 +450,7 @@ export default class ScheduleAssignments extends ScheduleAssignmentsModel {
       return {
         ...baseData,
         [RS.USER]: userObj ? userObj.getGuid() : null,
-        [RS.GROUPS]: groupsObj ? groupsObj.getGuid() : null,
+        [RS.GROUP]: groupsObj ? groupsObj.getGuid() : null,
         [RS.SESSION_TEMPLATE]: sessionTemplateObj ? sessionTemplateObj.getGuid() : null,
         [RS.CREATED_BY]: createdByObj ? createdByObj.getGuid() : null,
       };
@@ -459,7 +459,7 @@ export default class ScheduleAssignments extends ScheduleAssignmentsModel {
     return {
       ...baseData,
       [RS.USER]: userObj ? await userObj.toJSON() : null,
-      [RS.GROUPS]: groupsObj ? await groupsObj.toJSON(responseValue.FULL) : null,
+      [RS.GROUP]: groupsObj ? await groupsObj.toJSON(responseValue.FULL) : null,
       [RS.SESSION_TEMPLATE]: sessionTemplateObj
         ? sessionTemplateObj.toJSON(responseValue.FULL)
         : null,

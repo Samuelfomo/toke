@@ -384,7 +384,7 @@ export default class RotationAssignment extends RotationAssignmentModel {
         ...baseData,
         [RS.USER]: userObj ? userObj.getGuid() : null,
         [RS.ASSIGNED_BY]: assignedByObj ? assignedByObj.getGuid() : null,
-        [RS.GROUPS]: groupsObj ? groupsObj.getGuid() : null,
+        [RS.GROUP]: groupsObj ? groupsObj.getGuid() : null,
         [RS.ROTATION_GROUP]: rotationGroupObj ? rotationGroupObj.getGuid() : null,
       };
     }
@@ -393,7 +393,7 @@ export default class RotationAssignment extends RotationAssignmentModel {
       ...baseData,
       [RS.USER]: userObj ? await userObj.toJSON() : null,
       [RS.ASSIGNED_BY]: assignedByObj ? await assignedByObj.toJSON() : null,
-      [RS.GROUPS]: groupsObj ? await groupsObj.toJSON() : null,
+      [RS.GROUP]: groupsObj ? await groupsObj.toJSON() : null,
       [RS.ROTATION_GROUP]: rotationGroupObj
         ? await rotationGroupObj.toJSON(responseValue.MINIMAL)
         : null,

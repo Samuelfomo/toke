@@ -37,7 +37,7 @@ const baseRotationAssignmentSchema = z.object({
       ROTATION_ASSIGNMENT_ERRORS.ASSIGNED_BY_INVALID,
     ),
 
-  groups: z
+  group: z
     .string({
       invalid_type_error: ROTATION_ASSIGNMENT_ERRORS.GROUPS_INVALID,
     })
@@ -92,7 +92,7 @@ export const createRotationAssignmentSchema = baseRotationAssignmentSchema.refin
   (data) => {
     // Either user or groups must be specified, but not both
     const hasUser = data.user !== null && data.user !== undefined;
-    const hasGroups = data.groups !== null && data.groups !== undefined;
+    const hasGroups = data.group !== null && data.group !== undefined;
     return hasUser !== hasGroups; // XOR: exactly one must be true
   },
   {
@@ -105,7 +105,7 @@ export const updateRotationAssignmentSchema = baseRotationAssignmentSchema.parti
   (data) => {
     // Either user or groups must be specified, but not both
     const hasUser = data.user !== null && data.user !== undefined;
-    const hasGroups = data.groups !== null && data.groups !== undefined;
+    const hasGroups = data.group !== null && data.group !== undefined;
     return hasUser !== hasGroups; // XOR: exactly one must be true
   },
   {
@@ -118,7 +118,7 @@ export const rotationAssignmentFiltersSchema = z
   .object({
     user: z.number().int().optional(),
     assigned_by: z.number().int().optional(),
-    groups: z.number().int().optional(),
+    group: z.number().int().optional(),
     rotation_group: z.number().int().optional(),
     offset: z.number().int().optional(),
     assigned_at_from: z.string().datetime().optional(),
@@ -136,7 +136,7 @@ export const rotationAssignmentGuidSchema = z
 const FIELD_TO_CODE_MAP: Record<string, RotationAssignmentCode> = {
   user: ROTATION_ASSIGNMENT_CODES.USER_INVALID,
   assigned_by: ROTATION_ASSIGNMENT_CODES.ASSIGNED_BY_INVALID,
-  groups: ROTATION_ASSIGNMENT_CODES.GROUPS_INVALID,
+  group: ROTATION_ASSIGNMENT_CODES.GROUPS_INVALID,
   rotation_group: ROTATION_ASSIGNMENT_CODES.ROTATION_GROUP_INVALID,
   offset: ROTATION_ASSIGNMENT_CODES.OFFSET_INVALID,
   assigned_at: ROTATION_ASSIGNMENT_CODES.ASSIGNED_AT_INVALID,

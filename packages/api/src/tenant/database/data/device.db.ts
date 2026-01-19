@@ -32,7 +32,6 @@ export const DeviceDbStructure = {
       allowNull: false,
       validate: {
         len: [1, 255],
-        nullable: false,
         notEmpty: true,
       },
       comment: 'Device Name',
@@ -61,8 +60,6 @@ export const DeviceDbStructure = {
         min: 1,
         max: 2147483647,
       },
-      // onUpdate: 'CASCADE',
-      // onDelete: 'SET NULL',
       comment: 'users',
     },
     gps_accuracy: {

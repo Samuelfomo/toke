@@ -166,14 +166,14 @@ router.post('/', Ensure.post(), async (req: Request, res: Response) => {
       });
     }
 
-    if (validatedData.user && validatedData.groups) {
+    if (validatedData.user && validatedData.group) {
       return R.handleError(res, HttpStatus.BAD_REQUEST, {
         code: ROTATION_ASSIGNMENT_CODES.VALIDATION_FAILED,
         message: ROTATION_ASSIGNMENT_ERRORS.ONLY_ONE_USER_OR_GROUPS_ALLOWED,
       });
     }
 
-    if (!validatedData.user && !validatedData.groups) {
+    if (!validatedData.user && !validatedData.group) {
       return R.handleError(res, HttpStatus.BAD_REQUEST, {
         code: ROTATION_ASSIGNMENT_CODES.VALIDATION_FAILED,
         message: ROTATION_ASSIGNMENT_ERRORS.USER_OR_GROUPS_REQUIRED,
@@ -218,9 +218,9 @@ router.post('/', Ensure.post(), async (req: Request, res: Response) => {
 
       assignmentObj.setUser(userObj.getId()!);
     }
-    if (validatedData.groups) {
+    if (validatedData.group) {
       // Valider la groups
-      const groupsObj = await Groups._load(validatedData.groups, true);
+      const groupsObj = await Groups._load(validatedData.group, true);
       if (!groupsObj) {
         return R.handleError(res, HttpStatus.NOT_FOUND, {
           code: ROTATION_ASSIGNMENT_CODES.GROUPS_NOT_FOUND,

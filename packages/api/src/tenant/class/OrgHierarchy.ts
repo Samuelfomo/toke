@@ -6,6 +6,7 @@ import G from '../../tools/glossary.js';
 import {
   responseStructure as RS,
   responseValue,
+  RoleValues,
   tableName,
   ViewMode,
 } from '../../utils/response.model.js';
@@ -13,6 +14,8 @@ import { TenantRevision } from '../../tools/revision.js';
 
 import User from './User.js';
 import UserRole from './UserRole.js';
+import Groups from './Groups.js';
+import Role from './Role.js';
 
 export default class OrgHierarchy extends OrgHierarchyModel {
   private subordinateObj?: User;
@@ -26,6 +29,10 @@ export default class OrgHierarchy extends OrgHierarchyModel {
 
   static _load(identifier: any, byGuid: boolean = false): Promise<OrgHierarchy | null> {
     return new OrgHierarchy().load(identifier, byGuid);
+  }
+
+  static _loadBySubordinate(subordinate: number): Promise<OrgHierarchy | null> {
+    return new OrgHierarchy().loadBySubordinate(subordinate);
   }
 
   static _list(
@@ -152,11 +159,485 @@ export default class OrgHierarchy extends OrgHierarchyModel {
     return descendants.includes(userId);
   }
 
-  getId(): number | undefined {
-    return this.id;
+  /**
+   * 🎯 MÉTHODE PRINCIPALE RÉVISÉE
+   * Récupère TOUTE l'équipe d'un manager en respectant les 3 sources
+   */
+  // static async getAllTeamMembers(managerId: number): Promise<{
+  //   direct_employees: Array<{
+  //     user: User;
+  //     source: 'user_role' | 'group';
+  //     in_group: boolean;
+  //     group_name?: string;
+  //   }>;
+  //   sub_managers: Array<{
+  //     manager: User;
+  //     team: any; // Résultat récursif
+  //   }>;
+  //   all_employees_flat: User[];
+  //   anomalies: Array<{
+  //     user_guid: string;
+  //     issue: string;
+  //     details: string;
+  //   }>;
+  // }> {
+  //   const result: any = {
+  //     direct_employees: [],
+  //     sub_managers: [],
+  //     all_employees_flat: [],
+  //     anomalies: [],
+  //   };
+  //
+  //   const employeeRole = await Role._load(RoleValues.EMPLOYEE, false, true);
+  //   if (!employeeRole) {
+  //     throw new Error('EMPLOYEE role not found');
+  //   }
+  //
+  //   // 🔹 ÉTAPE 1 : Récupérer les employés assignés par ce manager
+  //   const assignedEmployees = await UserRole._listByMyManagerAndRole(
+  //     managerId,
+  //     employeeRole.getId()!,
+  //   );
+  //
+  //   const assignedEmployeeIds = new Set(
+  //     assignedEmployees?.map((ur) => ur.getUser()).filter(Boolean) || [],
+  //   );
+  //
+  //   // 🔹 ÉTAPE 2 : Récupérer les membres du groupe du manager
+  //   const managerGroups = await Groups._listByManager(managerId);
+  //   const groupMembers = new Map<number, string>(); // userId -> groupName
+  //
+  //   if (managerGroups && managerGroups.length > 0) {
+  //     for (const group of managerGroups) {
+  //       const members = await group.getDirectMembers();
+  //       for (const member of members) {
+  //         groupMembers.set(member.getId()!, group.getName()!);
+  //       }
+  //     }
+  //   }
+  //
+  //   // 🔹 ÉTAPE 3 : Fusionner et vérifier les conflits
+  //   const processedUserIds = new Set<number>();
+  //
+  //   // Traiter les employés assignés
+  //   for (const userId of assignedEmployeeIds) {
+  //     if (processedUserIds.has(userId!)) continue;
+  //     processedUserIds.add(userId!);
+  //
+  //     const userObj = await User._load(userId);
+  //     if (!userObj) continue;
+  //
+  //     // Vérifier s'il est dans un autre groupe
+  //     const otherGroupConflict = await this._checkGroupConflict(userId!, managerId);
+  //     if (otherGroupConflict) {
+  //       result.anomalies.push({
+  //         user_guid: userObj.getGuid()!,
+  //         issue: 'group_conflict',
+  //         details: `Employee assigned by manager ${managerId} but active in group managed by ${otherGroupConflict.conflictManagerId}`,
+  //       });
+  //       continue; // ❌ Exclure cet employé
+  //     }
+  //
+  //     // Vérifier s'il est manager
+  //     const isManager = await this.isUserManager(userId!);
+  //     if (isManager) {
+  //       // 🔁 Récursion pour sous-équipe
+  //       const subTeam = await this.getAllTeamMembers(userId!);
+  //       result.sub_managers.push({
+  //         manager: userObj,
+  //         team: subTeam,
+  //       });
+  //       result.all_employees_flat.push(...subTeam.all_employees_flat);
+  //     } else {
+  //       // ✅ Employé valide
+  //       result.direct_employees.push({
+  //         user: userObj,
+  //         source: 'user_role',
+  //         in_group: groupMembers.has(userId!),
+  //         group_name: groupMembers.get(userId!),
+  //       });
+  //       result.all_employees_flat.push(userObj);
+  //     }
+  //   }
+  //
+  //   // Traiter les membres du groupe non encore traités
+  //   for (const [userId, groupName] of groupMembers.entries()) {
+  //     if (processedUserIds.has(userId)) continue;
+  //     processedUserIds.add(userId);
+  //
+  //     const userObj = await User._load(userId);
+  //     if (!userObj) continue;
+  //
+  //     // Vérifier s'il est assigné par un autre manager
+  //     const assignedByAnother = await this._checkAssignedByConflict(userId, managerId);
+  //     if (assignedByAnother) {
+  //       result.anomalies.push({
+  //         user_guid: userObj.getGuid()!,
+  //         issue: 'assigned_by_conflict',
+  //         details: `In group of manager ${managerId} but assigned by manager ${assignedByAnother.assignedByManagerId}`,
+  //       });
+  //       continue; // ❌ Exclure
+  //     }
+  //
+  //     const isManager = await this.isUserManager(userId);
+  //     if (isManager) {
+  //       const subTeam = await this.getAllTeamMembers(userId);
+  //       result.sub_managers.push({
+  //         manager: userObj,
+  //         team: subTeam,
+  //       });
+  //       result.all_employees_flat.push(...subTeam.all_employees_flat);
+  //     } else {
+  //       result.direct_employees.push({
+  //         user: userObj,
+  //         source: 'group',
+  //         in_group: true,
+  //         group_name: groupName,
+  //       });
+  //       result.all_employees_flat.push(userObj);
+  //     }
+  //   }
+  //
+  //   return result;
+  // }
+
+  /**
+   * 🎯 MÉTHODE PRINCIPALE RÉVISÉE
+   * Récupère TOUTE l'équipe d'un manager en respectant les 3 sources
+   * ✅ Un manager est AUSSI un employé de son supervisor
+   */
+  static async getAllTeamMembers(managerId: number): Promise<{
+    direct_employees: Array<{
+      user: User;
+      source: 'user_role' | 'group';
+      in_group: boolean;
+      group_name?: string;
+    }>;
+    sub_managers: Array<{
+      manager: User;
+      team: any;
+    }>;
+    all_employees_flat: User[];
+    anomalies: Array<{
+      user_guid: string;
+      issue: string;
+      details: string;
+    }>;
+  }> {
+    const result: any = {
+      direct_employees: [],
+      sub_managers: [],
+      all_employees_flat: [],
+      anomalies: [],
+    };
+
+    const employeeRole = await Role._load(RoleValues.EMPLOYEE, false, true);
+    if (!employeeRole) {
+      throw new Error('EMPLOYEE role not found');
+    }
+
+    // 🔹 ÉTAPE 1 : Employés assignés par ce manager
+    const assignedEmployees = await UserRole._listByMyManagerAndRole(
+      managerId,
+      employeeRole.getId()!,
+    );
+
+    const assignedEmployeeIds = new Set(
+      assignedEmployees?.map((ur) => ur.getUser()).filter(Boolean) || [],
+    );
+
+    // 🔹 ÉTAPE 2 : Membres des groupes du manager
+    const managerGroups = await Groups._listByManager(managerId);
+    const groupMembers = new Map<number, string>(); // userId -> groupName
+
+    if (managerGroups && managerGroups.length > 0) {
+      for (const group of managerGroups) {
+        const members = await group.getDirectMembers();
+        for (const member of members) {
+          groupMembers.set(member.getId()!, group.getName()!);
+        }
+      }
+    }
+
+    // 🔹 ÉTAPE 3 : Fusion
+    const processedUserIds = new Set<number>();
+
+    // -------- ASSIGNED EMPLOYEES --------
+    for (const userId of assignedEmployeeIds) {
+      if (processedUserIds.has(userId!)) continue;
+      processedUserIds.add(userId!);
+
+      const userObj = await User._load(userId);
+      if (!userObj) continue;
+
+      // Conflit de groupe
+      const otherGroupConflict = await this._checkGroupConflict(userId!, managerId);
+      if (otherGroupConflict) {
+        result.anomalies.push({
+          user_guid: userObj.getGuid()!,
+          issue: 'group_conflict',
+          details: `Employee assigned by manager ${managerId} but active in group managed by ${otherGroupConflict.conflictManagerId}`,
+        });
+        continue;
+      }
+
+      // ✅ Toujours employé direct
+      result.direct_employees.push({
+        user: userObj,
+        source: 'user_role',
+        in_group: groupMembers.has(userId!),
+        group_name: groupMembers.get(userId!),
+      });
+
+      result.all_employees_flat.push(userObj);
+
+      // 🔁 Si manager, ajouter sous-équipe
+      const isManager = await this.isUserManager(userId!);
+      if (isManager) {
+        const subTeam = await this.getAllTeamMembers(userId!);
+        result.sub_managers.push({
+          manager: userObj,
+          team: subTeam,
+        });
+        result.all_employees_flat.push(...subTeam.all_employees_flat);
+      }
+    }
+
+    // -------- GROUP MEMBERS --------
+    for (const [userId, groupName] of groupMembers.entries()) {
+      if (processedUserIds.has(userId)) continue;
+      processedUserIds.add(userId);
+
+      const userObj = await User._load(userId);
+      if (!userObj) continue;
+
+      // Conflit d'assignation
+      const assignedByAnother = await this._checkAssignedByConflict(userId, managerId);
+      if (assignedByAnother) {
+        result.anomalies.push({
+          user_guid: userObj.getGuid()!,
+          issue: 'assigned_by_conflict',
+          details: `In group of manager ${managerId} but assigned by manager ${assignedByAnother.assignedByManagerId}`,
+        });
+        continue;
+      }
+
+      // ✅ Toujours employé direct
+      result.direct_employees.push({
+        user: userObj,
+        source: 'group',
+        in_group: true,
+        group_name: groupName,
+      });
+
+      result.all_employees_flat.push(userObj);
+
+      // 🔁 Si manager, ajouter sous-équipe
+      const isManager = await this.isUserManager(userId);
+      if (isManager) {
+        const subTeam = await this.getAllTeamMembers(userId);
+        result.sub_managers.push({
+          manager: userObj,
+          team: subTeam,
+        });
+        result.all_employees_flat.push(...subTeam.all_employees_flat);
+      }
+    }
+
+    return result;
+  }
+
+  // Méthode utilitaire
+  static async isUserManager(userId: number): Promise<boolean> {
+    // Vérifier si user a une équipe OU est dans OrgHierarchy comme supervisor
+    // const hasGroup = await Groups._listByManager(userId);
+    // if (!hasGroup || hasGroup.length === 0) return false;
+    // return hasGroup && hasGroup.length > 0;
+    const hasHierarchy = await OrgHierarchy._loadBySubordinate(userId);
+    return !!hasHierarchy;
+  }
+
+  static async serializeTeam(team: any) {
+    return {
+      direct_employees: await Promise.all(
+        team.direct_employees.map(async (e: any) => ({
+          user: await e.user.toJSON(responseValue.FULL),
+          in_group: e.in_group,
+          group_name: e.group_name ?? null,
+        })),
+      ),
+
+      sub_managers: await Promise.all(
+        team.sub_managers.map(async (sub: any) => ({
+          manager: await sub.manager.toJSON(responseValue.FULL),
+          team: await this.serializeTeam(sub.team),
+        })),
+      ),
+
+      all_employees_flat: await Promise.all(
+        team.all_employees_flat.map(async (u: any) => await u.toJSON(responseValue.MINIMAL)),
+      ),
+    };
+  }
+
+  /**
+   * Liste TOUS les membres directs d'un manager :
+   * - Managers (via OrgHierarchy)
+   * - Employés (via Groups)
+   */
+  static async getDirectTeam(managerId: number): Promise<{
+    managers: OrgHierarchy[];
+    employees: User[];
+    all: User[];
+  }> {
+    const result: any = {
+      managers: [],
+      employees: [],
+      all: [],
+    };
+
+    // 1️⃣ Managers (OrgHierarchy)
+    const managerRelations = await this._listBySupervisor(managerId);
+    if (managerRelations) {
+      result.managers = managerRelations;
+      for (const rel of managerRelations) {
+        const manager = await rel.getSubordinateObj();
+        if (manager) result.all.push(manager);
+      }
+    }
+
+    // 2️⃣ Employés (Groups)
+    const groups = await Groups._listByManager(managerId);
+    if (groups && groups.length > 0) {
+      const members = await groups[0].getDirectMembers();
+
+      // Filtrer pour exclure ceux déjà comptés comme managers
+      const managerIds = new Set(result.managers.map((m: OrgHierarchy) => m.getSubordinate()));
+      const pureEmployees = members.filter((m) => !managerIds.has(m.getId()!));
+
+      result.employees = pureEmployees;
+      result.all.push(...pureEmployees);
+    }
+
+    return result;
+  }
+
+  /**
+   * Trouve le superviseur d'un employé en cherchant dans UserRole et Groups
+   */
+  static async findEmployeeSupervisor(
+    userId: number,
+    date?: Date,
+  ): Promise<{
+    supervisor: User | null;
+    source: 'org_hierarchy' | 'user_role' | 'group';
+    details?: string;
+  } | null> {
+    // 1️⃣ Essayer via OrgHierarchy (pour managers)
+    const hierarchySupervisor = await this.getCurrentSupervisor(userId, date);
+    if (hierarchySupervisor) {
+      const supervisorObj = await hierarchySupervisor.getSupervisorObj();
+      return {
+        supervisor: supervisorObj,
+        source: 'org_hierarchy',
+      };
+    }
+
+    // 2️⃣ Chercher via UserRole.assigned_by (EMPLOYEE role)
+    const employeeRole = await Role._load(RoleValues.EMPLOYEE, false, true);
+    if (employeeRole) {
+      const userRoles = await UserRole._listByUser(userId);
+      if (userRoles) {
+        for (const ur of userRoles) {
+          if (ur.getRole() === employeeRole.getId() && ur.getAssignedBy()) {
+            const supervisor = await User._load(ur.getAssignedBy()!);
+            return {
+              supervisor,
+              source: 'user_role',
+              details: `Assigned by manager via EMPLOYEE role`,
+            };
+          }
+        }
+      }
+    }
+
+    // 3️⃣ Chercher via Groups
+    const userGroups = await Groups._listByMember(userId);
+    if (userGroups && userGroups.length > 0) {
+      for (const group of userGroups) {
+        const members = group.getMembers();
+        const activeMember = members.find((m) => m.user === userId && m.active !== false);
+
+        if (activeMember) {
+          const manager = await group.getManagerObj();
+          return {
+            supervisor: manager,
+            source: 'group',
+            details: `Active member of group "${group.getName()}"`,
+          };
+        }
+      }
+    }
+
+    return null;
   }
 
   // === GETTERS FLUENT ===
+
+  /**
+   * 🔍 Vérifie si un employé est actif dans un groupe d'un autre manager
+   */
+  private static async _checkGroupConflict(
+    userId: number,
+    currentManagerId: number,
+  ): Promise<{ conflictManagerId: number } | null> {
+    const userGroups = await Groups._listByMember(userId);
+    if (!userGroups) return null;
+
+    for (const group of userGroups) {
+      const managerId = group.getManager();
+      if (managerId === currentManagerId) continue;
+
+      // Vérifier si actif dans ce groupe
+      const members = group.getMembers();
+      const activeMember = members.find((m) => m.user === userId && m.active !== false);
+
+      if (activeMember) {
+        return { conflictManagerId: managerId! };
+      }
+    }
+
+    return null;
+  }
+
+  /**
+   * 🔍 Vérifie si un employé est assigné par un autre manager
+   */
+  private static async _checkAssignedByConflict(
+    userId: number,
+    currentManagerId: number,
+  ): Promise<{ assignedByManagerId: number } | null> {
+    const employeeRole = await Role._load(RoleValues.EMPLOYEE, false, true);
+    if (!employeeRole) return null;
+
+    const userRoles = await UserRole._listByUser(userId);
+    if (!userRoles) return null;
+
+    for (const ur of userRoles) {
+      if (ur.getRole() === employeeRole.getId()) {
+        const assignedBy = ur.getAssignedBy();
+        if (assignedBy && assignedBy !== currentManagerId) {
+          return { assignedByManagerId: assignedBy };
+        }
+      }
+    }
+
+    return null;
+  }
+
+  getId(): number | undefined {
+    return this.id;
+  }
 
   getGuid(): string | undefined {
     return this.guid;
@@ -214,6 +695,8 @@ export default class OrgHierarchy extends OrgHierarchyModel {
     return this.created_at;
   }
 
+  // === SETTERS FLUENT ===
+
   getUpdatedAt(): Date | undefined {
     return this.updated_at;
   }
@@ -222,8 +705,6 @@ export default class OrgHierarchy extends OrgHierarchyModel {
     this.subordinate = subordinate;
     return this;
   }
-
-  // === SETTERS FLUENT ===
 
   setSupervisor(supervisor: number): OrgHierarchy {
     this.supervisor = supervisor;
@@ -255,6 +736,8 @@ export default class OrgHierarchy extends OrgHierarchyModel {
     return this;
   }
 
+  // === MÉTHODES MÉTIER HIÉRARCHIQUES ===
+
   setDelegationLevel(delegation_level: number): OrgHierarchy {
     this.delegation_level = delegation_level;
     return this;
@@ -270,8 +753,6 @@ export default class OrgHierarchy extends OrgHierarchyModel {
 
     return !(this.effective_to && this.effective_to < checkDateStr);
   }
-
-  // === MÉTHODES MÉTIER HIÉRARCHIQUES ===
 
   isDirectReport(): boolean {
     return this.relationship_type === RelationshipType.DIRECT_REPORT;
@@ -299,6 +780,8 @@ export default class OrgHierarchy extends OrgHierarchyModel {
     return Math.floor(diffTime / (1000 * 60 * 60 * 24));
   }
 
+  // === MÉTHODES DE RÉSOLUTION HIÉRARCHIQUE ===
+
   isExpiringSoon(days: number = 7): boolean {
     if (!this.effective_to) return false;
     const daysUntilExpiration = this.getDaysUntilExpiration();
@@ -315,8 +798,6 @@ export default class OrgHierarchy extends OrgHierarchyModel {
     return new OrgHierarchy().hydrate(data);
   }
 
-  // === MÉTHODES DE RÉSOLUTION HIÉRARCHIQUE ===
-
   async getActiveSubordinates(
     supervisor_id: number,
     date?: Date,
@@ -326,6 +807,8 @@ export default class OrgHierarchy extends OrgHierarchyModel {
     if (!dataset || dataset.length === 0) return null;
     return dataset.map((data) => new OrgHierarchy().hydrate(data));
   }
+
+  // === MÉTHODES DE TRANSFERT ===
 
   async transferEmployee(
     subordinate_id: number,
@@ -350,17 +833,17 @@ export default class OrgHierarchy extends OrgHierarchyModel {
     await newHierarchy.save();
   }
 
+  // === MÉTHODES D'ANALYSE ===
+
   async getHierarchyStatistics(): Promise<any> {
     return await this.getHierarchyCountStatistics();
   }
 
-  // === MÉTHODES DE TRANSFERT ===
+  // === MÉTHODES DE BASE ===
 
   isNew(): boolean {
     return this.id === undefined;
   }
-
-  // === MÉTHODES D'ANALYSE ===
 
   async save(): Promise<void> {
     try {
@@ -374,8 +857,6 @@ export default class OrgHierarchy extends OrgHierarchyModel {
     }
   }
 
-  // === MÉTHODES DE BASE ===
-
   async load(identifier: any, byGuid: boolean = false): Promise<OrgHierarchy | null> {
     let data = null;
 
@@ -385,6 +866,12 @@ export default class OrgHierarchy extends OrgHierarchyModel {
       data = await this.find(Number(identifier));
     }
 
+    if (!data) return null;
+    return this.hydrate(data);
+  }
+
+  async loadBySubordinate(subordinate: number): Promise<OrgHierarchy | null> {
+    const data = await this.findExistSubordinate(subordinate);
     if (!data) return null;
     return this.hydrate(data);
   }
@@ -498,6 +985,8 @@ export default class OrgHierarchy extends OrgHierarchyModel {
     return allSubordinateIds;
   }
 
+  // === MÉTHODES PRIVÉES ===
+
   private async _recursiveFetchSubordinates(
     supervisor_id: number,
     visited: Set<number>,
@@ -563,8 +1052,6 @@ export default class OrgHierarchy extends OrgHierarchyModel {
 
     return hierarchy;
   }
-
-  // === MÉTHODES PRIVÉES ===
 
   private hydrate(data: any): OrgHierarchy {
     this.id = data.id;

@@ -79,6 +79,20 @@ export default class UserRoleModel extends BaseModel {
     );
   }
 
+  protected async listAllByAssignedByAndRole(
+    assigned_by: number,
+    role: number,
+    paginationOptions: { offset?: number; limit?: number } = {},
+  ): Promise<any[]> {
+    return await this.listAll(
+      {
+        [this.db.assigned_by]: assigned_by,
+        [this.db.role]: role,
+      },
+      paginationOptions,
+    );
+  }
+
   protected async create(): Promise<void> {
     await this.validate();
 

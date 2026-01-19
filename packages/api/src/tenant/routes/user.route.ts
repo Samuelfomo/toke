@@ -28,7 +28,12 @@ import R from '../../tools/response.js';
 import User from '../class/User.js';
 import UserRole from '../class/UserRole.js';
 import { TenantRevision } from '../../tools/revision.js';
-import { responseStructure, responseValue, RoleValues, tableName, } from '../../utils/response.model.js';
+import {
+  responseStructure,
+  responseValue,
+  RoleValues,
+  tableName,
+} from '../../utils/response.model.js';
 import Role from '../class/Role.js';
 import OrgHierarchy from '../class/OrgHierarchy.js';
 import { DatabaseEncryption } from '../../utils/encryption.js';
@@ -336,15 +341,15 @@ router.post('/', Ensure.post(), async (req: Request, res: Response) => {
       .setUser(userObj.getId()!)
       .setAssignedBy(existingSupervisor.getId()!);
 
-    const orgHierarchyObj = new OrgHierarchy()
-      .setSubordinate(userObj.getId()!)
-      .setSupervisor(existingSupervisor.getId()!)
-      .setDepartment(userObj.getDepartment()!)
-      .setEffectiveFrom(ORG_HIERARCHY_DEFAULTS.EFFECTIVE_FROM);
+    // const orgHierarchyObj = new OrgHierarchy()
+    //   .setSubordinate(userObj.getId()!)
+    //   .setSupervisor(existingSupervisor.getId()!)
+    //   .setDepartment(userObj.getDepartment()!)
+    //   .setEffectiveFrom(ORG_HIERARCHY_DEFAULTS.EFFECTIVE_FROM);
 
     await userRoleObj.save();
 
-    await orgHierarchyObj.save();
+    // await orgHierarchyObj.save();
 
     // TODO a revoir
     const android: any = await InvitationService.findEmployeeLink(
@@ -1774,26 +1779,28 @@ router.get('/attendance/active-sessions', Ensure.get(), async (req: Request, res
       });
     }
 
-    // Récupérer les rôles des subordonnés assignés par ce manager
-    const userRolesSub = await UserRole._listByAssignedBy(userObj.getId()!);
-
-    if (!userRolesSub || userRolesSub.length === 0) {
-      return R.handleError(res, HttpStatus.NOT_FOUND, {
-        code: 'subordinate_not_found',
-        message: 'No subordinates found for this manager',
-      });
-    }
+    // // Récupérer les rôles des subordonnés assignés par ce manager
+    // const userRolesSub = await UserRole._listByAssignedBy(userObj.getId()!);
+    //
+    // if (!userRolesSub || userRolesSub.length === 0) {
+    //   return R.handleError(res, HttpStatus.NOT_FOUND, {
+    //     code: 'subordinate_not_found',
+    //     message: 'No subordinates found for this manager',
+    //   });
+    // }
 
     // Récupérer les IDs des subordonnés
-    const subordinateIds: number[] = [];
-    await Promise.all(
-      userRolesSub.map(async (userRole) => {
-        const userRoleId = userRole.getUser();
-        if (userRoleId) {
-          subordinateIds.push(userRoleId);
-        }
-      }),
-    );
+    // const subordinateIds: number[] = [];
+    // await Promise.all(
+    //   userRolesSub.map(async (userRole) => {
+    //     const userRoleId = userRole.getUser();
+    //     if (userRoleId) {
+    //       subordinateIds.push(userRoleId);
+    //     }
+    //   }),
+    // );
+    const teamData = await OrgHierarchy.getAllTeamMembers(userObj.getId()!);
+    const subordinateIds = teamData.all_employees_flat.map((u) => u.getId()!);
 
     if (subordinateIds.length === 0) {
       return R.handleSuccess(res, {
@@ -2137,13 +2144,39 @@ router.get('/attendance/stat', Ensure.get(), async (req: Request, res: Response)
         });
       }
 
+      const teamData = await OrgHierarchy.getAllTeamMembers(managerObj.getId()!);
+      teamMembers = teamData.all_employees_flat.map((u) => u.getId()!);
+
       // Récupérer tous les subordonnés
-      const hierarchyEntries = await OrgHierarchy._listBySupervisor(managerObj.getId()!);
-      if (hierarchyEntries && hierarchyEntries.length > 0) {
-        teamMembers = hierarchyEntries
-          .map((subordinateId) => subordinateId.getSubordinate())
-          .filter((id): id is number => id !== undefined);
-      }
+
+      // const hierarchyEntries = await OrgHierarchy._listBySupervisor(managerObj.getId()!);
+      // if (hierarchyEntries && hierarchyEntries.length > 0) {
+      //   teamMembers = hierarchyEntries
+      //     .map((subordinateId) => subordinateId.getSubordinate())
+      //     .filter((id): id is number => id !== undefined);
+      // }
+
+      // const employeeRoles = await Role._load(RoleValues.EMPLOYEE, false, true);
+      // if (!employeeRoles) {
+      //   return R.handleError(res, HttpStatus.NOT_FOUND, {
+      //     code: ROLES_CODES.ROLE_NOT_FOUND,
+      //     message: `Employees ${ROLES_ERRORS.NOT_FOUND}`,
+      //   });
+      // }
+      //
+      // const userRolesSub = await UserRole._listByMyManagerAndRole(
+      //   managerObj.getId()!,
+      //   employeeRoles.getId()!,
+      // );
+      // if (userRolesSub && userRolesSub.length > 0) {
+      //   teamMembers = userRolesSub
+      //     .map((userRole) => userRole.getUser())
+      //     .filter((id): id is number => id !== undefined);
+      // }
+
+      // const employeesByManagerGroup = await Groups._listByManager(managerObj.getId()!);
+      // if (employeesByManagerGroup && employeesByManagerGroup.length > 0) {
+      // }
     }
 
     // Validation site
