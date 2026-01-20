@@ -128,6 +128,12 @@ export default class ScheduleAssignmentsModel extends BaseModel {
   ): Promise<any[]> {
     return await this.listAll({ [this.db.user]: userId }, paginationOptions);
   }
+  protected async listAllByCreatedBy(
+    manager: number,
+    paginationOptions: { offset?: number; limit?: number } = {},
+  ): Promise<any[]> {
+    return await this.listAll({ [this.db.created_by]: manager }, paginationOptions);
+  }
 
   protected async listAllByGroups(
     groupsId: number,

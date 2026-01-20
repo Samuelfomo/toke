@@ -133,6 +133,23 @@ export default class Groups extends GroupsModel {
     };
   }
 
+  /**
+   * Récupère les IDs de tous les utilisateurs actifs dans au moins un groupe
+   */
+  static async getAllActiveGroupMembers(): Promise<number[]> {
+    const allGroups = await Groups._list({});
+    if (!allGroups) return [];
+
+    const activeMemberIds = new Set<number>();
+
+    for (const group of allGroups) {
+      const activeMembers = group.getActiveMembers(); // Filtre active !== false
+      activeMembers.forEach((member) => activeMemberIds.add(member.user));
+    }
+
+    return Array.from(activeMemberIds);
+  }
+
   // ============================================
   // GETTERS
   // ============================================

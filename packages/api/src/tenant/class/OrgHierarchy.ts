@@ -34,6 +34,9 @@ export default class OrgHierarchy extends OrgHierarchyModel {
   static _loadBySubordinate(subordinate: number): Promise<OrgHierarchy | null> {
     return new OrgHierarchy().loadBySubordinate(subordinate);
   }
+  static _loadBySupervisor(supervisor: number): Promise<OrgHierarchy | null> {
+    return new OrgHierarchy().loadBySupervisor(supervisor);
+  }
 
   static _list(
     conditions: Record<string, any> = {},
@@ -163,144 +166,6 @@ export default class OrgHierarchy extends OrgHierarchyModel {
    * 🎯 MÉTHODE PRINCIPALE RÉVISÉE
    * Récupère TOUTE l'équipe d'un manager en respectant les 3 sources
    */
-  // static async getAllTeamMembers(managerId: number): Promise<{
-  //   direct_employees: Array<{
-  //     user: User;
-  //     source: 'user_role' | 'group';
-  //     in_group: boolean;
-  //     group_name?: string;
-  //   }>;
-  //   sub_managers: Array<{
-  //     manager: User;
-  //     team: any; // Résultat récursif
-  //   }>;
-  //   all_employees_flat: User[];
-  //   anomalies: Array<{
-  //     user_guid: string;
-  //     issue: string;
-  //     details: string;
-  //   }>;
-  // }> {
-  //   const result: any = {
-  //     direct_employees: [],
-  //     sub_managers: [],
-  //     all_employees_flat: [],
-  //     anomalies: [],
-  //   };
-  //
-  //   const employeeRole = await Role._load(RoleValues.EMPLOYEE, false, true);
-  //   if (!employeeRole) {
-  //     throw new Error('EMPLOYEE role not found');
-  //   }
-  //
-  //   // 🔹 ÉTAPE 1 : Récupérer les employés assignés par ce manager
-  //   const assignedEmployees = await UserRole._listByMyManagerAndRole(
-  //     managerId,
-  //     employeeRole.getId()!,
-  //   );
-  //
-  //   const assignedEmployeeIds = new Set(
-  //     assignedEmployees?.map((ur) => ur.getUser()).filter(Boolean) || [],
-  //   );
-  //
-  //   // 🔹 ÉTAPE 2 : Récupérer les membres du groupe du manager
-  //   const managerGroups = await Groups._listByManager(managerId);
-  //   const groupMembers = new Map<number, string>(); // userId -> groupName
-  //
-  //   if (managerGroups && managerGroups.length > 0) {
-  //     for (const group of managerGroups) {
-  //       const members = await group.getDirectMembers();
-  //       for (const member of members) {
-  //         groupMembers.set(member.getId()!, group.getName()!);
-  //       }
-  //     }
-  //   }
-  //
-  //   // 🔹 ÉTAPE 3 : Fusionner et vérifier les conflits
-  //   const processedUserIds = new Set<number>();
-  //
-  //   // Traiter les employés assignés
-  //   for (const userId of assignedEmployeeIds) {
-  //     if (processedUserIds.has(userId!)) continue;
-  //     processedUserIds.add(userId!);
-  //
-  //     const userObj = await User._load(userId);
-  //     if (!userObj) continue;
-  //
-  //     // Vérifier s'il est dans un autre groupe
-  //     const otherGroupConflict = await this._checkGroupConflict(userId!, managerId);
-  //     if (otherGroupConflict) {
-  //       result.anomalies.push({
-  //         user_guid: userObj.getGuid()!,
-  //         issue: 'group_conflict',
-  //         details: `Employee assigned by manager ${managerId} but active in group managed by ${otherGroupConflict.conflictManagerId}`,
-  //       });
-  //       continue; // ❌ Exclure cet employé
-  //     }
-  //
-  //     // Vérifier s'il est manager
-  //     const isManager = await this.isUserManager(userId!);
-  //     if (isManager) {
-  //       // 🔁 Récursion pour sous-équipe
-  //       const subTeam = await this.getAllTeamMembers(userId!);
-  //       result.sub_managers.push({
-  //         manager: userObj,
-  //         team: subTeam,
-  //       });
-  //       result.all_employees_flat.push(...subTeam.all_employees_flat);
-  //     } else {
-  //       // ✅ Employé valide
-  //       result.direct_employees.push({
-  //         user: userObj,
-  //         source: 'user_role',
-  //         in_group: groupMembers.has(userId!),
-  //         group_name: groupMembers.get(userId!),
-  //       });
-  //       result.all_employees_flat.push(userObj);
-  //     }
-  //   }
-  //
-  //   // Traiter les membres du groupe non encore traités
-  //   for (const [userId, groupName] of groupMembers.entries()) {
-  //     if (processedUserIds.has(userId)) continue;
-  //     processedUserIds.add(userId);
-  //
-  //     const userObj = await User._load(userId);
-  //     if (!userObj) continue;
-  //
-  //     // Vérifier s'il est assigné par un autre manager
-  //     const assignedByAnother = await this._checkAssignedByConflict(userId, managerId);
-  //     if (assignedByAnother) {
-  //       result.anomalies.push({
-  //         user_guid: userObj.getGuid()!,
-  //         issue: 'assigned_by_conflict',
-  //         details: `In group of manager ${managerId} but assigned by manager ${assignedByAnother.assignedByManagerId}`,
-  //       });
-  //       continue; // ❌ Exclure
-  //     }
-  //
-  //     const isManager = await this.isUserManager(userId);
-  //     if (isManager) {
-  //       const subTeam = await this.getAllTeamMembers(userId);
-  //       result.sub_managers.push({
-  //         manager: userObj,
-  //         team: subTeam,
-  //       });
-  //       result.all_employees_flat.push(...subTeam.all_employees_flat);
-  //     } else {
-  //       result.direct_employees.push({
-  //         user: userObj,
-  //         source: 'group',
-  //         in_group: true,
-  //         group_name: groupName,
-  //       });
-  //       result.all_employees_flat.push(userObj);
-  //     }
-  //   }
-  //
-  //   return result;
-  // }
-
   /**
    * 🎯 MÉTHODE PRINCIPALE RÉVISÉE
    * Récupère TOUTE l'équipe d'un manager en respectant les 3 sources
@@ -311,7 +176,7 @@ export default class OrgHierarchy extends OrgHierarchyModel {
       user: User;
       source: 'user_role' | 'group';
       in_group: boolean;
-      group_name?: string;
+      groups?: any;
     }>;
     sub_managers: Array<{
       manager: User;
@@ -348,13 +213,24 @@ export default class OrgHierarchy extends OrgHierarchyModel {
 
     // 🔹 ÉTAPE 2 : Membres des groupes du manager
     const managerGroups = await Groups._listByManager(managerId);
-    const groupMembers = new Map<number, string>(); // userId -> groupName
+    const groupMembers = new Map<number, string | any>(); // userId -> groups
 
     if (managerGroups && managerGroups.length > 0) {
       for (const group of managerGroups) {
         const members = await group.getDirectMembers();
+        const assignmentType = await group.getCurrentAssignmentType();
+        const activeSchedule = await group.getActiveScheduleAssignment();
+        const activeRotation = await group.getActiveRotationAssignment();
         for (const member of members) {
-          groupMembers.set(member.getId()!, group.getName()!);
+          groupMembers.set(member.getId()!, {
+            name: group.getName()!,
+            guid: group.getGuid()!,
+            assignment_info: {
+              current_type: assignmentType,
+              active_schedule_assignment: activeSchedule ? await activeSchedule.toPUBLIC() : null,
+              active_rotation_assignment: activeRotation ? await activeRotation.toPUBLIC() : null,
+            },
+          });
         }
       }
     }
@@ -386,13 +262,13 @@ export default class OrgHierarchy extends OrgHierarchyModel {
         user: userObj,
         source: 'user_role',
         in_group: groupMembers.has(userId!),
-        group_name: groupMembers.get(userId!),
+        groups: groupMembers.get(userId!),
       });
 
       result.all_employees_flat.push(userObj);
 
       // 🔁 Si manager, ajouter sous-équipe
-      const isManager = await this.isUserManager(userId!);
+      const isManager = await this.hasManagerRole(userId!);
       if (isManager) {
         const subTeam = await this.getAllTeamMembers(userId!);
         result.sub_managers.push({
@@ -404,7 +280,7 @@ export default class OrgHierarchy extends OrgHierarchyModel {
     }
 
     // -------- GROUP MEMBERS --------
-    for (const [userId, groupName] of groupMembers.entries()) {
+    for (const [userId, groups] of groupMembers.entries()) {
       if (processedUserIds.has(userId)) continue;
       processedUserIds.add(userId);
 
@@ -427,13 +303,13 @@ export default class OrgHierarchy extends OrgHierarchyModel {
         user: userObj,
         source: 'group',
         in_group: true,
-        group_name: groupName,
+        groups: groups,
       });
 
       result.all_employees_flat.push(userObj);
 
       // 🔁 Si manager, ajouter sous-équipe
-      const isManager = await this.isUserManager(userId);
+      const isManager = await this.hasManagerRole(userId);
       if (isManager) {
         const subTeam = await this.getAllTeamMembers(userId);
         result.sub_managers.push({
@@ -448,34 +324,68 @@ export default class OrgHierarchy extends OrgHierarchyModel {
   }
 
   // Méthode utilitaire
-  static async isUserManager(userId: number): Promise<boolean> {
-    // Vérifier si user a une équipe OU est dans OrgHierarchy comme supervisor
-    // const hasGroup = await Groups._listByManager(userId);
-    // if (!hasGroup || hasGroup.length === 0) return false;
-    // return hasGroup && hasGroup.length > 0;
-    const hasHierarchy = await OrgHierarchy._loadBySubordinate(userId);
-    return !!hasHierarchy;
+  static async hasManagerRole(userId: number): Promise<boolean> {
+    // Vérifier si user est manager, ou a une équipe OU est dans OrgHierarchy comme supervisor
+
+    const managerRole = await Role._load(RoleValues.MANAGER, false, true);
+    if (!managerRole) return false;
+    const identifier = {
+      user: userId,
+      role: managerRole.getId()!,
+    };
+    const isManager = await UserRole._load(identifier, false, true);
+    return !!isManager;
   }
 
-  static async serializeTeam(team: any) {
+  static async normalizeTeam(teamData: any, supervisor: User) {
+    // Grouper par groupe
+    const employeesByGroup = new Map<string, any[]>();
+    const employeesWithoutGroup: any[] = [];
+
+    for (const emp of teamData.direct_employees) {
+      if (emp.in_group && emp.groups) {
+        if (!employeesByGroup.has(emp.groups)) {
+          employeesByGroup.set(emp.groups, []);
+        }
+        employeesByGroup.get(emp.groups)!.push(emp);
+      } else {
+        employeesWithoutGroup.push(emp);
+      }
+    }
+
+    const buildEmployee = async (e: any) => {
+      const roles = await UserRole.getUserRoles(e.user.getId()!);
+      return {
+        ...(await e.user.toJSON(responseValue.FULL)),
+        roles: roles ? roles.map((r: any) => r.toJSON()) : [],
+      };
+    };
+
     return {
-      direct_employees: await Promise.all(
-        team.direct_employees.map(async (e: any) => ({
-          user: await e.user.toJSON(responseValue.FULL),
-          in_group: e.in_group,
-          group_name: e.group_name ?? null,
+      supervisor: supervisor.getGuid(),
+
+      summary: {
+        total_employees: teamData.all_employees_flat.length,
+        direct_employees: teamData.direct_employees.length,
+        sub_managers_count: teamData.sub_managers.length,
+        employees_in_groups: teamData.direct_employees.filter((e: any) => e.in_group).length,
+        employees_without_group: employeesWithoutGroup.length,
+      },
+
+      employees_by_group: await Promise.all(
+        Array.from(employeesByGroup.entries()).map(async ([groups, employees]) => ({
+          group: groups,
+          count: employees.length,
+          employees: await Promise.all(employees.map(buildEmployee)),
         })),
       ),
 
-      sub_managers: await Promise.all(
-        team.sub_managers.map(async (sub: any) => ({
-          manager: await sub.manager.toJSON(responseValue.FULL),
-          team: await this.serializeTeam(sub.team),
-        })),
-      ),
+      employees_without_group: await Promise.all(employeesWithoutGroup.map(buildEmployee)),
 
-      all_employees_flat: await Promise.all(
-        team.all_employees_flat.map(async (u: any) => await u.toJSON(responseValue.MINIMAL)),
+      sub_teams: await Promise.all(
+        teamData.sub_managers.map(async (sub: any) => {
+          return await this.normalizeTeam(sub.team, sub.manager);
+        }),
       ),
     };
   }
@@ -872,6 +782,12 @@ export default class OrgHierarchy extends OrgHierarchyModel {
 
   async loadBySubordinate(subordinate: number): Promise<OrgHierarchy | null> {
     const data = await this.findExistSubordinate(subordinate);
+    if (!data) return null;
+    return this.hydrate(data);
+  }
+
+  async loadBySupervisor(supervisor: number): Promise<OrgHierarchy | null> {
+    const data = await this.findExistSupervisor(supervisor);
     if (!data) return null;
     return this.hydrate(data);
   }

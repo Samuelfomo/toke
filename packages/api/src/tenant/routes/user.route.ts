@@ -48,6 +48,7 @@ import ScheduleResolutionService from '../../tools/schedule.resolution.service.j
 import AnomalyDetectionService from '../../tools/anomaly.detection.service.js';
 import TimeEntries from '../class/TimeEntries.js';
 import Memos from '../class/Memos.js';
+import Groups from '../class/Groups.js';
 // import { AnomalyType } from '../../tools/anomaly.detection.service.js';
 // import { AnomalyType } from '../../tools/anomaly.detection.service.js';
 
@@ -211,6 +212,166 @@ router.get('/config', Ensure.get(), async (req: Request, res: Response) => {
     return R.handleError(res, HttpStatus.INTERNAL_ERROR, {
       code: USERS_CODES.CREATION_FAILED,
       message: error.message,
+    });
+  }
+});
+
+/**
+ * GET /api/users/unassigned-employees?manager=<guid>
+ * Retourne les employés :
+ * - Pas actifs dans un groupe
+ * - Pas hiérarchiquement supérieurs au manager donné
+ */
+router.get('/unassigned-employees', Ensure.get(), async (req: Request, res: Response) => {
+  try {
+    const { manager } = req.query;
+
+    // ============================================
+    // 1️⃣ VALIDATION DU MANAGER
+    // ============================================
+    if (!manager || !UsersValidationUtils.validateGuid(String(manager))) {
+      return R.handleError(res, HttpStatus.BAD_REQUEST, {
+        code: USERS_CODES.VALIDATION_FAILED,
+        message: USERS_ERRORS.GUID_INVALID,
+      });
+    }
+
+    const managerObj = await User._load(String(manager), true);
+    if (!managerObj) {
+      return R.handleError(res, HttpStatus.NOT_FOUND, {
+        code: USERS_CODES.SUPERVISOR_NOT_FOUND,
+        message: USERS_ERRORS.SUPERVISOR_NOT_FOUND,
+      });
+    }
+
+    const managerId = managerObj.getId()!;
+    const isUserManager = await OrgHierarchy.hasManagerRole(managerId);
+    if (!isUserManager) {
+      return R.handleError(res, HttpStatus.FORBIDDEN, {
+        code: USERS_CODES.AUTHORIZATION_FAILED,
+        message: USERS_ERRORS.AUTHORIZATION_FAILED,
+      });
+    }
+
+    // ============================================
+    // 2️⃣ RÉCUPÉRER TOUS LES EMPLOYÉS ACTIFS
+    // ============================================
+    const allActiveUsers = await User._listByActiveStatus(true);
+    if (!allActiveUsers || allActiveUsers.length === 0) {
+      return R.handleSuccess(res, {
+        manager: await managerObj.toJSON(responseValue.MINIMAL),
+        total_unassigned: 0,
+        unassigned_employees: [],
+        metadata: {
+          total_active_users: 0,
+          total_in_groups: 0,
+          filtered_count: 0,
+        },
+      });
+    }
+
+    // ============================================
+    // 3️⃣ RÉCUPÉRER LES IDS DES MEMBRES ACTIFS DANS DES GROUPES
+    // ============================================
+    const activeGroupMemberIds = await Groups.getAllActiveGroupMembers();
+    const activeGroupMembersSet = new Set(activeGroupMemberIds);
+
+    // ============================================
+    // 4️⃣ CONSTRUIRE LA HIÉRARCHIE COMPLÈTE
+    // ============================================
+    const allHierarchies = await OrgHierarchy._list({});
+
+    // Map: subordinate_id → supervisor_id
+    const hierarchyMap = new Map<number, number>();
+
+    if (allHierarchies && allHierarchies.length > 0) {
+      for (const hierarchy of allHierarchies) {
+        const subordinateId = hierarchy.getSubordinate();
+        const supervisorId = hierarchy.getSupervisor();
+        if (subordinateId && supervisorId) {
+          hierarchyMap.set(subordinateId, supervisorId);
+        }
+      }
+    }
+
+    // ============================================
+    // 5️⃣ FONCTION : Vérifier si user est SUPÉRIEUR ou ÉGAL au manager
+    // ============================================
+    const isUserSuperiorOrEqual = (userId: number): boolean => {
+      // Le manager lui-même
+      if (userId === managerId) return true;
+
+      // Remonter la hiérarchie depuis le manager pour voir si on trouve userId
+      let currentId: number | undefined = managerId;
+      const visited = new Set<number>();
+
+      while (currentId) {
+        if (visited.has(currentId)) break; // Éviter les boucles infinies
+        visited.add(currentId);
+
+        const supervisorId = hierarchyMap.get(currentId);
+        if (!supervisorId) break; // Plus de superviseur au-dessus
+
+        if (supervisorId === userId) {
+          // userId est un superviseur du manager → donc SUPÉRIEUR
+          return true;
+        }
+
+        currentId = supervisorId;
+      }
+
+      return false;
+    };
+
+    // ============================================
+    // 6️⃣ FILTRER LES EMPLOYÉS NON ASSIGNÉS
+    // ============================================
+    const unassignedEmployees: User[] = [];
+
+    for (const user of allActiveUsers) {
+      const userId = user.getId();
+      if (!userId) continue;
+
+      // ❌ Exclure : Déjà actif dans un groupe
+      if (activeGroupMembersSet.has(userId)) continue;
+
+      // ❌ Exclure : Manager lui-même OU supérieur hiérarchique
+      if (isUserSuperiorOrEqual(userId)) continue;
+
+      // ✅ Employé valide (peut être un employé simple OU un manager subordonné)
+      unassignedEmployees.push(user);
+    }
+
+    // ============================================
+    // 7️⃣ ENRICHISSEMENT DES DONNÉES
+    // ============================================
+    const enrichedEmployees = await Promise.all(
+      unassignedEmployees.map(async (employee) => {
+        const roles = await UserRole._listByUser(employee.getId()!);
+        return {
+          ...(await employee.toJSON(responseValue.FULL)),
+          roles: roles ? await Promise.all(roles.map((r) => r.toJSON(responseValue.MINIMAL))) : [],
+        };
+      }),
+    );
+
+    // ============================================
+    // 8️⃣ RÉPONSE FINALE
+    // ============================================
+    return R.handleSuccess(res, {
+      manager: managerObj.getGuid(),
+      total_unassigned: unassignedEmployees.length,
+      unassigned_employees: enrichedEmployees,
+      metadata: {
+        total_active_users: allActiveUsers.length,
+        total_in_groups: activeGroupMemberIds.length,
+        filtered_count: unassignedEmployees.length,
+      },
+    });
+  } catch (error: any) {
+    return R.handleError(res, HttpStatus.INTERNAL_ERROR, {
+      code: USERS_CODES.LISTING_FAILED,
+      message: error.message || 'Failed to retrieve unassigned employees',
     });
   }
 });

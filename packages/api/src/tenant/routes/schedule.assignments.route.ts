@@ -26,6 +26,7 @@ import { TenantRevision } from '../../tools/revision.js';
 import { responseValue, tableName } from '../../utils/response.model.js';
 import { ValidationUtils } from '../../utils/view.validator.js';
 import Groups from '../class/Groups.js';
+import OrgHierarchy from '../class/OrgHierarchy.js';
 
 const router = Router();
 
@@ -160,6 +161,55 @@ router.get('/list', Ensure.get(), async (req: Request, res: Response) => {
         message: error.message,
       });
     }
+    return R.handleError(res, HttpStatus.INTERNAL_ERROR, {
+      code: SCHEDULE_ASSIGNMENTS_CODES.LISTING_FAILED,
+      message: error.message,
+    });
+  }
+});
+
+router.get('/:manager/list', Ensure.get(), async (req: Request, res: Response) => {
+  try {
+    const { manager } = req.params;
+    if (!manager || !UsersValidationUtils.validateGuid(manager)) {
+      return R.handleError(res, HttpStatus.BAD_REQUEST, {
+        code: USERS_CODES.INVALID_GUID,
+        message: USERS_ERRORS.GUID_INVALID,
+      });
+    }
+    const managerObj = await User._load(manager, true);
+    if (!managerObj) {
+      return R.handleError(res, HttpStatus.NOT_FOUND, {
+        code: USERS_CODES.USER_NOT_FOUND,
+        message: USERS_ERRORS.NOT_FOUND,
+      });
+    }
+    const isManager = await OrgHierarchy.hasManagerRole(managerObj.getId()!);
+    if (!isManager) {
+      return R.handleError(res, HttpStatus.FORBIDDEN, {
+        code: USERS_CODES.AUTHORIZATION_FAILED,
+        message: USERS_ERRORS.AUTHORIZATION_FAILED,
+      });
+    }
+    // const paginationOptions = paginationSchema.parse(req.query);
+    // const views = ValidationUtils.validateView(req.query.view, responseValue.FULL);
+
+    const scheduleAssignments = await ScheduleAssignments._listByCreatedBy(managerObj.getId()!);
+    if (!scheduleAssignments || scheduleAssignments.length === 0) {
+      return R.handleSuccess(res, {
+        schedule_assignments: {
+          count: 0,
+          items: [],
+        },
+      });
+    }
+    return R.handleSuccess(res, {
+      schedule_assignments: {
+        count: scheduleAssignments.length,
+        items: await Promise.all(scheduleAssignments.map(async (a) => await a.toJSON())),
+      },
+    });
+  } catch (error: any) {
     return R.handleError(res, HttpStatus.INTERNAL_ERROR, {
       code: SCHEDULE_ASSIGNMENTS_CODES.LISTING_FAILED,
       message: error.message,

@@ -215,87 +215,11 @@ router.get('/employee/all-subordinates', Ensure.get(), async (req: Request, res:
       });
     }
 
-    // // Construction hiérarchique récursive
-    // const hierarchyTree = await OrgHierarchy._buildHierarchyTree(supervisorObj.getId()!);
-    //
-    // // Rôles du superviseur lui-même
-    // const supervisorRoles = await UserRole._listByUser(supervisorObj.getId()!);
-    //
-    // return R.handleSuccess(res, {
-    //   supervisor: supervisorObj.toPublicJSON(),
-    //   supervisor_roles: supervisorRoles
-    //     ? await Promise.all(supervisorRoles.map(async (r) => await r.toJSON(responseValue.MINIMAL)))
-    //     : [],
-    //   total_subordinates: hierarchyTree.length,
-    //   hierarchy: hierarchyTree,
-    // });
-
     // ✅ NOUVELLE LOGIQUE COMPLÈTE
     const teamData = await OrgHierarchy.getAllTeamMembers(supervisorObj.getId()!);
 
-    console.log('sub_managers_team', teamData.sub_managers);
-
-    // Grouper par groupe
-    const employeesByGroup = new Map<string, any[]>();
-    const employeesWithoutGroup: any[] = [];
-
-    for (const emp of teamData.direct_employees) {
-      if (emp.in_group && emp.group_name) {
-        if (!employeesByGroup.has(emp.group_name)) {
-          employeesByGroup.set(emp.group_name, []);
-        }
-        employeesByGroup.get(emp.group_name)!.push(emp);
-      } else {
-        employeesWithoutGroup.push(emp);
-      }
-    }
-
-    return R.handleSuccess(res, {
-      supervisor: supervisorObj.toPublicJSON(),
-      summary: {
-        total_employees: teamData.all_employees_flat.length,
-        direct_employees: teamData.direct_employees.length,
-        sub_managers_count: teamData.sub_managers.length,
-        employees_in_groups: teamData.direct_employees.filter((e) => e.in_group).length,
-        employees_without_group: employeesWithoutGroup.length,
-        // anomalies_count: teamData.anomalies.length,
-      },
-      employees_by_group: await Promise.all(
-        Array.from(employeesByGroup.entries()).map(async ([groupName, employees]) => ({
-          group_name: groupName,
-          count: employees.length,
-          employees: await Promise.all(
-            employees.map(
-              async (e) => await e.user.toJSON(responseValue.FULL),
-              //   ({
-              //   user: await e.user.toJSON(responseValue.MINIMAL),
-              //   source: e.source,
-              // })
-            ),
-          ),
-        })),
-      ),
-      employees_without_group: await Promise.all(
-        employeesWithoutGroup.map(
-          async (e) => await e.user.toJSON(responseValue.FULL),
-          //   ({
-          //   user: await e.user.toJSON(responseValue.MINIMAL),
-          //   source: e.source,
-          // })
-        ),
-      ),
-      sub_teams: await Promise.all(
-        teamData.sub_managers.map(async (sub) => ({
-          manager: sub.manager.toPublicJSON(),
-          team_summary: {
-            total: sub.team.all_employees_flat.length,
-            direct: sub.team.direct_employees.length,
-            sub_managers: sub.team.sub_managers.length,
-          },
-          team_details: await OrgHierarchy.serializeTeam(sub.team),
-        })),
-      ),
-    });
+    const normalized = await OrgHierarchy.normalizeTeam(teamData, supervisorObj);
+    return R.handleSuccess(res, normalized);
   } catch (error: any) {
     return R.handleError(res, HttpStatus.INTERNAL_ERROR, {
       code: ORG_HIERARCHY_CODES.LISTING_FAILED,
@@ -592,7 +516,7 @@ router.get('/supervisor/:userGuid/list', Ensure.get(), async (req: Request, res:
       });
     }
 
-    const paginationOptions = paginationSchema.parse(req.query);
+    // const paginationOptions = paginationSchema.parse(req.query);
 
     const userObj = await User._load(req.params.userGuid, true);
     if (!userObj) {
@@ -637,7 +561,7 @@ router.get('/supervisor/:userGuid/list', Ensure.get(), async (req: Request, res:
         teamData.direct_employees.map(async (e) => ({
           user: await e.user.toJSON(responseValue.FULL),
           in_group: e.in_group,
-          group_name: e.group_name,
+          groups: e.groups,
         })),
       ),
       managers: await Promise.all(
@@ -726,7 +650,7 @@ router.get(
         });
       }
 
-      const paginationOptions = paginationSchema.parse(req.query);
+      // const paginationOptions = paginationSchema.parse(req.query);
 
       const userObj = await User._load(req.params.userGuid, true);
       if (!userObj) {
@@ -769,7 +693,7 @@ router.get(
           activeEmployees.map(async (e) => ({
             user: await e.user.toJSON(responseValue.FULL),
             in_group: e.in_group,
-            group_name: e.group_name,
+            group: e.groups,
           })),
         ),
       });

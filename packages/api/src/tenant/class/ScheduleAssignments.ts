@@ -54,6 +54,13 @@ export default class ScheduleAssignments extends ScheduleAssignmentsModel {
     return new ScheduleAssignments().listByGroups(groupsId, paginationOptions);
   }
 
+  static _listByCreatedBy(
+    manager: number,
+    paginationOptions: { offset?: number; limit?: number } = {},
+  ): Promise<ScheduleAssignments[] | null> {
+    return new ScheduleAssignments().listByCreatedBy(manager, paginationOptions);
+  }
+
   static _listByActiveStatus(
     isActive: boolean,
     paginationOptions: { offset?: number; limit?: number } = {},
@@ -380,6 +387,15 @@ export default class ScheduleAssignments extends ScheduleAssignmentsModel {
     paginationOptions: { offset?: number; limit?: number } = {},
   ): Promise<ScheduleAssignments[] | null> {
     const dataset = await this.listAllByGroups(groupsId, paginationOptions);
+    if (!dataset || dataset.length === 0) return null;
+    return dataset.map((data) => new ScheduleAssignments().hydrate(data));
+  }
+
+  async listByCreatedBy(
+    manager: number,
+    paginationOptions: { offset?: number; limit?: number } = {},
+  ): Promise<ScheduleAssignments[] | null> {
+    const dataset = await this.listAllByCreatedBy(manager, paginationOptions);
     if (!dataset || dataset.length === 0) return null;
     return dataset.map((data) => new ScheduleAssignments().hydrate(data));
   }

@@ -58,6 +58,10 @@ export default class OrgHierarchyModel extends BaseModel {
     return await this.findOne(this.db.tableName, { [this.db.subordinate]: subordinate });
   }
 
+  protected async findExistSupervisor(supervisor: number): Promise<any> {
+    return await this.listAll({ [this.db.supervisor]: supervisor }, { offset: 0, limit: 1 });
+  }
+
   protected async listAllBySubordinate(
     subordinate: number,
     paginationOptions: { offset?: number; limit?: number } = {},
