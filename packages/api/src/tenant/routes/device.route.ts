@@ -95,9 +95,7 @@ router.get('/list', Ensure.get(), async (req: Request, res: Response) => {
         count: deviceEntries?.length || 0,
       },
       items: deviceEntries
-        ? await Promise.all(
-            deviceEntries.map(async (device) => await device.toJSON(responseValue.MINIMAL)),
-          )
+        ? await Promise.all(deviceEntries.map(async (device) => await device.toJSON()))
         : [],
     };
 

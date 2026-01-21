@@ -13,6 +13,7 @@ export * from './types/tenant/work.sessions.js';
 export * from './types/tenant/memos.js';
 export * as TI from './types/tenant/groups.js';
 export * from './types/tenant/qr-code.js';
+export * as SI from './types/tenant/site.js';
 
 // Export des constantes
 export * from './constants/api.js';

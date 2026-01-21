@@ -174,6 +174,10 @@ export default class ScheduleAssignments extends ScheduleAssignmentsModel {
     return this.start_date;
   }
 
+  getAssignedAt(): Date | undefined {
+    return new Date(this.getStartDate()!) || undefined;
+  }
+
   getEndDate(): string | undefined {
     return this.end_date;
   }

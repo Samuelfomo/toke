@@ -1,11 +1,11 @@
 import { VALID_DAYS } from '@toke/shared';
 
 import SessionTemplate from '../tenant/class/SessionTemplates.js';
-import RotationAssignment from '../tenant/class/RotationAssignments.js';
 import RotationGroup from '../tenant/class/RotationGroups.js';
-import ScheduleAssignments from '../tenant/class/ScheduleAssignments.js';
 import User from '../tenant/class/User.js';
 import Groups from '../tenant/class/Groups.js';
+import RotationAssignment from '../tenant/class/RotationAssignments.js';
+import ScheduleAssignments from '../tenant/class/ScheduleAssignments.js';
 
 // === TYPES ===
 
@@ -46,75 +46,201 @@ class ScheduleResolutionService {
    * Point d'entrée principal - Résout l'horaire applicable pour un utilisateur à une date donnée
    * Ordre de priorité: exception → rotation → template direct → défaut entreprise
    */
+  // async getApplicableSchedule(userId: number, targetDate: Date): Promise<ScheduleResolutionResult> {
+  //   const resolutionPath: string[] = [];
+  //   const dateStr = this.formatDate(targetDate);
+  //   const dayOfWeek = this.getDayOfWeek(targetDate);
+  //
+  //   try {
+  //     // recherche le groupe auquel appartient l'utilisateur (group where user active)
+  //     const activeGroup = await Groups._load(userId, false, true);
+  //
+  //     // 1️⃣ ÉTAPE 1 : Chercher exception active
+  //     resolutionPath.push('Checking schedule_exceptions');
+  //     const exceptionSchedule = await this.resolveFromException(
+  //       userId,
+  //       dateStr,
+  //       activeGroup?.getId(),
+  //     );
+  //
+  //     if (exceptionSchedule) {
+  //       resolutionPath.push(`✅ Exception found: ${exceptionSchedule.template_name}`);
+  //       return {
+  //         success: true,
+  //         applicable_schedule: exceptionSchedule,
+  //         resolution_path: resolutionPath,
+  //       };
+  //     }
+  //     resolutionPath.push('❌ No active exception');
+  //
+  //     // 2️⃣ ÉTAPE 2 : Chercher rotation assignment
+  //     resolutionPath.push('Checking rotation_assignments');
+  //     const rotationSchedule = await this.resolveFromRotation(
+  //       userId,
+  //       targetDate,
+  //       activeGroup?.getId(),
+  //     );
+  //
+  //     if (rotationSchedule) {
+  //       resolutionPath.push(`✅ Rotation found: ${rotationSchedule.template_name}`);
+  //       return {
+  //         success: true,
+  //         applicable_schedule: rotationSchedule,
+  //         resolution_path: resolutionPath,
+  //       };
+  //     }
+  //     resolutionPath.push('❌ No rotation assignment');
+  //
+  //     // 3️⃣ ÉTAPE 3 : Chercher template direct (assignation individuelle)
+  //     resolutionPath.push('Checking direct template assignment');
+  //     const directSchedule = await this.resolveFromDefaultTemplate(
+  //       userId,
+  //       dateStr,
+  //       activeGroup?.getId(),
+  //     );
+  //     if (directSchedule) {
+  //       resolutionPath.push(`✅ User default template found: ${directSchedule.template_name}`);
+  //       return {
+  //         success: true,
+  //         applicable_schedule: directSchedule,
+  //         resolution_path: resolutionPath,
+  //       };
+  //     }
+  //     resolutionPath.push('❌ No direct template (not implemented yet)');
+  //
+  //     // 4️⃣ ÉTAPE 4 : Fallback sur défaut entreprise
+  //     resolutionPath.push('⚠️ Falling back to default company schedule');
+  //     const defaultSchedule = await this.resolveFromDefault(userId, dayOfWeek);
+  //
+  //     if (defaultSchedule) {
+  //       resolutionPath.push(`✅ Default schedule applied`);
+  //       return {
+  //         success: true,
+  //         applicable_schedule: defaultSchedule,
+  //         resolution_path: resolutionPath,
+  //       };
+  //     }
+  //
+  //     // ❌ Aucun horaire trouvé
+  //     resolutionPath.push('❌ No schedule found - no work expected');
+  //     return {
+  //       success: true,
+  //       applicable_schedule: this.createNoWorkSchedule(dateStr),
+  //       resolution_path: resolutionPath,
+  //     };
+  //   } catch (error: any) {
+  //     return {
+  //       success: false,
+  //       applicable_schedule: null,
+  //       resolution_path: resolutionPath,
+  //       error: error.message,
+  //     };
+  //   }
+  // }
+
   async getApplicableSchedule(userId: number, targetDate: Date): Promise<ScheduleResolutionResult> {
     const resolutionPath: string[] = [];
     const dateStr = this.formatDate(targetDate);
-    const dayOfWeek = this.getDayOfWeek(targetDate);
 
     try {
-      // recherche le groupe auquel appartient l'utilisateur (group where user active)
+      // 1️⃣ Récupérer l'utilisateur et son groupe actif
+      const userObj = await User._load(userId);
+      if (!userObj) {
+        throw new Error('User not found');
+      }
+
       const activeGroup = await Groups._load(userId, false, true);
 
-      // 1️⃣ ÉTAPE 1 : Chercher exception active
-      resolutionPath.push('Checking schedule_exceptions');
-      const exceptionSchedule = await this.resolveFromException(
-        userId,
-        dateStr,
-        activeGroup?.getId(),
-      );
+      // 2️⃣ Récupérer toutes les assignations actives (user + group)
+      const candidates: Array<{
+        type: 'schedule' | 'rotation';
+        assignedAt: Date;
+        source: 'user' | 'group';
+        data: any;
+      }> = [];
 
-      if (exceptionSchedule) {
-        resolutionPath.push(`✅ Exception found: ${exceptionSchedule.template_name}`);
-        return {
-          success: true,
-          applicable_schedule: exceptionSchedule,
-          resolution_path: resolutionPath,
-        };
+      // Schedule User
+      resolutionPath.push('Checking user schedule assignment');
+      const userSchedule = await userObj.getActiveScheduleAssignment();
+      if (userSchedule) {
+        candidates.push({
+          type: 'schedule',
+          assignedAt: userSchedule.getAssignedAt() || new Date(0),
+          source: 'user',
+          data: userSchedule,
+        });
+        resolutionPath.push(`✅ User schedule found: ${userSchedule.getGuid()}`);
       }
-      resolutionPath.push('❌ No active exception');
 
-      // 2️⃣ ÉTAPE 2 : Chercher rotation assignment
-      resolutionPath.push('Checking rotation_assignments');
-      const rotationSchedule = await this.resolveFromRotation(
-        userId,
-        targetDate,
-        activeGroup?.getId(),
-      );
-
-      if (rotationSchedule) {
-        resolutionPath.push(`✅ Rotation found: ${rotationSchedule.template_name}`);
-        return {
-          success: true,
-          applicable_schedule: rotationSchedule,
-          resolution_path: resolutionPath,
-        };
+      // Rotation User
+      resolutionPath.push('Checking user rotation assignment');
+      const userRotation = await userObj.getActiveRotationAssignment();
+      if (userRotation) {
+        candidates.push({
+          type: 'rotation',
+          assignedAt: userRotation.getAssignedAt() || new Date(0),
+          source: 'user',
+          data: userRotation,
+        });
+        resolutionPath.push(`✅ User rotation found: ${userRotation.getGuid()}`);
       }
-      resolutionPath.push('❌ No rotation assignment');
 
-      // 3️⃣ ÉTAPE 3 : Chercher template direct (assignation individuelle)
-      // TODO: Implémenter table user_schedule_assignments
-      resolutionPath.push('Checking direct template assignment');
-      const directSchedule = await this.resolveFromDefaultTemplate(
-        userId,
-        dateStr,
-        activeGroup?.getId(),
-      );
-      if (directSchedule) {
-        resolutionPath.push(`✅ User default template found: ${directSchedule.template_name}`);
-        return {
-          success: true,
-          applicable_schedule: directSchedule,
-          resolution_path: resolutionPath,
-        };
+      // Schedule Group
+      if (activeGroup) {
+        resolutionPath.push('Checking group schedule assignment');
+        const groupSchedule = await activeGroup.getActiveScheduleAssignment();
+        if (groupSchedule) {
+          candidates.push({
+            type: 'schedule',
+            assignedAt: groupSchedule.getAssignedAt() || new Date(0),
+            source: 'group',
+            data: groupSchedule,
+          });
+          resolutionPath.push(`✅ Group schedule found: ${groupSchedule.getGuid()}`);
+        }
+
+        // Rotation Group
+        resolutionPath.push('Checking group rotation assignment');
+        const groupRotation = await activeGroup.getActiveRotationAssignment();
+        if (groupRotation) {
+          candidates.push({
+            type: 'rotation',
+            assignedAt: groupRotation.getAssignedAt() || new Date(0),
+            source: 'group',
+            data: groupRotation,
+          });
+          resolutionPath.push(`✅ Group rotation found: ${groupRotation.getGuid()}`);
+        }
       }
-      resolutionPath.push('❌ No direct template (not implemented yet)');
 
-      // 4️⃣ ÉTAPE 4 : Fallback sur défaut entreprise
-      resolutionPath.push('⚠️ Falling back to default company schedule');
-      const defaultSchedule = await this.resolveFromDefault(userId, dayOfWeek);
+      // 3️⃣ Trier par date (plus récent en premier)
+      candidates.sort((a, b) => b.assignedAt.getTime() - a.assignedAt.getTime());
+
+      // 4️⃣ Appliquer le plus récent
+      if (candidates.length > 0) {
+        const winner = candidates[0];
+        resolutionPath.push(
+          `🏆 Winner: ${winner.type} from ${winner.source} (assigned: ${winner.assignedAt.toISOString()})`,
+        );
+
+        if (winner.type === 'schedule') {
+          return await this.buildFromScheduleAssignment(winner.data, dateStr, resolutionPath);
+        } else {
+          return await this.buildFromRotationAssignment(
+            winner.data,
+            targetDate,
+            dateStr,
+            resolutionPath,
+          );
+        }
+      }
+
+      // 5️⃣ Fallback: Template par défaut du tenant
+      resolutionPath.push('⚠️ No assignments found, using tenant default');
+      const defaultSchedule = await this.resolveFromDefault(userId, this.getDayOfWeek(targetDate));
 
       if (defaultSchedule) {
-        resolutionPath.push(`✅ Default schedule applied`);
+        resolutionPath.push(`✅ Default template applied`);
         return {
           success: true,
           applicable_schedule: defaultSchedule,
@@ -154,79 +280,79 @@ class ScheduleResolutionService {
     return this.parseTimeToMinutes(time2) - this.parseTimeToMinutes(time1);
   }
 
-  /**
-   * Résolution depuis schedule_exceptions
-   */
-  private async resolveFromException(
-    userId: number,
-    dateStr: string,
-    activeGroupId?: number,
-  ): Promise<ApplicableSchedule | null> {
-    // Chercher exception utilisateur
-    const userException = await ScheduleAssignments._listForUserOnDate(userId, dateStr);
-
-    if (userException && userException.length > 0) {
-      const exception = userException[0];
-      return await this.buildScheduleFromTemplate(
-        exception.getSessionTemplate()!,
-        dateStr,
-        'exception',
-        {
-          exception_guid: exception.getGuid(),
-          reason: exception.getReason(),
-          start_date: exception.getStartDate(),
-          end_date: exception.getEndDate(),
-        },
-      );
-    }
-
-    if (activeGroupId) {
-      // TODO: Chercher exception groupe si pas d'exception utilisateur
-      const groupException = await ScheduleAssignments._listForGroupsOnDate(activeGroupId, dateStr);
-
-      if (groupException && groupException.length > 0) {
-        const exceptionGroup = groupException[0];
-        return await this.buildScheduleFromTemplate(
-          exceptionGroup.getSessionTemplate()!,
-          dateStr,
-          'exception',
-          {
-            exception_guid: exceptionGroup.getGuid(),
-            reason: exceptionGroup.getReason(),
-            start_date: exceptionGroup.getStartDate(),
-            end_date: exceptionGroup.getEndDate(),
-          },
-        );
-      }
-    }
-
-    return null;
-  }
-
-  // Checking direct template assignment
-  private async resolveFromDefaultTemplate(
-    userId: number,
-    dateStr: string,
-    groupId?: number,
-  ): Promise<ApplicableSchedule | null> {
-    const userObj = await User._load(userId);
-    const userSchedule = await (
-      await userObj?.getActiveScheduleAssignment()
-    )?.getSessionTemplateObj();
-    if (userSchedule) {
-      return await this.buildScheduleFromTemplate(userSchedule.getId()!, dateStr, 'default', {
-        session_guid: userSchedule.getGuid(),
-        name: userSchedule.getName(),
-        start_date: userSchedule.getValidFrom(),
-        end_date: userSchedule.getValidTo(),
-        definition: userSchedule.getDefinition(),
-      });
-    }
-
-    // TODO: Chercher le template du groupe si pas de template utilisateur
-    // const groupTemplate = await Groups._listForGroupOnDate(groupId, dateStr);
-    return null;
-  }
+  // /**
+  //  * Résolution depuis schedule_exceptions
+  //  */
+  // private async resolveFromException(
+  //   userId: number,
+  //   dateStr: string,
+  //   activeGroupId?: number,
+  // ): Promise<ApplicableSchedule | null> {
+  //   // Chercher exception utilisateur
+  //   const userException = await ScheduleAssignments._listForUserOnDate(userId, dateStr);
+  //
+  //   if (userException && userException.length > 0) {
+  //     const exception = userException[0];
+  //     return await this.buildScheduleFromTemplate(
+  //       exception.getSessionTemplate()!,
+  //       dateStr,
+  //       'exception',
+  //       {
+  //         exception_guid: exception.getGuid(),
+  //         reason: exception.getReason(),
+  //         start_date: exception.getStartDate(),
+  //         end_date: exception.getEndDate(),
+  //       },
+  //     );
+  //   }
+  //
+  //   if (activeGroupId) {
+  //     // TODO: Chercher exception groupe si pas d'exception utilisateur
+  //     const groupException = await ScheduleAssignments._listForGroupsOnDate(activeGroupId, dateStr);
+  //
+  //     if (groupException && groupException.length > 0) {
+  //       const exceptionGroup = groupException[0];
+  //       return await this.buildScheduleFromTemplate(
+  //         exceptionGroup.getSessionTemplate()!,
+  //         dateStr,
+  //         'exception',
+  //         {
+  //           exception_guid: exceptionGroup.getGuid(),
+  //           reason: exceptionGroup.getReason(),
+  //           start_date: exceptionGroup.getStartDate(),
+  //           end_date: exceptionGroup.getEndDate(),
+  //         },
+  //       );
+  //     }
+  //   }
+  //
+  //   return null;
+  // }
+  //
+  // // Checking direct template assignment
+  // private async resolveFromDefaultTemplate(
+  //   userId: number,
+  //   dateStr: string,
+  //   groupId?: number,
+  // ): Promise<ApplicableSchedule | null> {
+  //   const userObj = await User._load(userId);
+  //   const userSchedule = await (
+  //     await userObj?.getActiveScheduleAssignment()
+  //   )?.getSessionTemplateObj();
+  //   if (userSchedule) {
+  //     return await this.buildScheduleFromTemplate(userSchedule.getId()!, dateStr, 'default', {
+  //       session_guid: userSchedule.getGuid(),
+  //       name: userSchedule.getName(),
+  //       start_date: userSchedule.getValidFrom(),
+  //       end_date: userSchedule.getValidTo(),
+  //       definition: userSchedule.getDefinition(),
+  //     });
+  //   }
+  //
+  //   // TODO: Chercher le template du groupe si pas de template utilisateur
+  //   // const groupTemplate = await Groups._listForGroupOnDate(groupId, dateStr);
+  //   return null;
+  // }
 
   /**
    * Fallback sur horaire par défaut de l'entreprise
@@ -257,83 +383,174 @@ class ScheduleResolutionService {
   }
 
   /**
-   * Résolution depuis rotation_assignments + rotation_groups
+   * Construit un schedule depuis un ScheduleAssignment
    */
-  private async resolveFromRotation(
-    userId: number,
-    targetDate: Date,
-    activeGroupId?: number,
-  ): Promise<ApplicableSchedule | null> {
-    // Récupérer l'assignation rotation de l'utilisateur
-    const assignments = await RotationAssignment._listByUser(userId);
+  private async buildFromScheduleAssignment(
+    assignment: ScheduleAssignments,
+    dateStr: string,
+    resolutionPath: string[],
+  ): Promise<ScheduleResolutionResult> {
+    const templateId = assignment.getSessionTemplate()!;
+    const template = await SessionTemplate._load(templateId);
 
-    let assignmentsGroup: RotationAssignment[] | null = null;
-    if (activeGroupId) {
-      assignmentsGroup = await RotationAssignment._listByGroups(activeGroupId);
+    if (!template) {
+      resolutionPath.push('❌ Template not found');
+      return {
+        success: false,
+        applicable_schedule: null,
+        resolution_path: resolutionPath,
+        error: 'Template not found',
+      };
     }
 
-    if (assignments && assignments.length > 0) {
-      // Prendre la première assignation active
-      const assignment = assignments[0];
-      const rotationGroupId = assignment.getRotationGroup()!;
-      const offset = assignment.getOffset()!;
+    const applicableSchedule = await this.buildScheduleFromTemplate(templateId, dateStr, 'direct', {
+      assignment_guid: assignment.getGuid(),
+      template_name: template.getName(),
+      assigned_at: assignment.getAssignedAt(),
+      start_date: assignment.getStartDate(),
+      end_date: assignment.getEndDate(),
+    });
 
-      // Charger le groupe de rotation
-      const rotationGroup = await RotationGroup._load(rotationGroupId);
-
-      if (rotationGroup && rotationGroup.isActive()) {
-        // Calculer l'index du template à utiliser
-        const templateId = this.calculateRotationTemplateId(rotationGroup, targetDate, offset);
-
-        if (templateId) {
-          return await this.buildScheduleFromTemplate(
-            templateId,
-            this.formatDate(targetDate),
-            'rotation',
-            {
-              rotation_group_guid: rotationGroup.getGuid(),
-              rotation_group_name: rotationGroup.getName(),
-              cycle_length: rotationGroup.getCycleLength(),
-              cycle_unit: rotationGroup.getCycleUnit(),
-              offset: offset,
-            },
-          );
-        }
-      }
-    }
-
-    if (assignmentsGroup && assignmentsGroup.length > 0) {
-      // Prendre la première assignation active
-      const assignment = assignmentsGroup[0];
-      const rotationGroupId = assignment.getRotationGroup()!;
-      const offset = assignment.getOffset()!;
-
-      // Charger le groupe de rotation
-      const rotationGroup = await RotationGroup._load(rotationGroupId);
-
-      if (rotationGroup && rotationGroup.isActive()) {
-        // Calculer l'index du template à utiliser
-        const templateId = this.calculateRotationTemplateId(rotationGroup, targetDate, offset);
-
-        if (templateId) {
-          return await this.buildScheduleFromTemplate(
-            templateId,
-            this.formatDate(targetDate),
-            'rotation',
-            {
-              rotation_group_guid: rotationGroup.getGuid(),
-              rotation_group_name: rotationGroup.getName(),
-              cycle_length: rotationGroup.getCycleLength(),
-              cycle_unit: rotationGroup.getCycleUnit(),
-              offset: offset,
-            },
-          );
-        }
-      }
-    }
-
-    return null;
+    return {
+      success: true,
+      applicable_schedule: applicableSchedule,
+      resolution_path: resolutionPath,
+    };
   }
+
+  /**
+   * Construit un schedule depuis un RotationAssignment
+   */
+  private async buildFromRotationAssignment(
+    assignment: RotationAssignment,
+    targetDate: Date,
+    dateStr: string,
+    resolutionPath: string[],
+  ): Promise<ScheduleResolutionResult> {
+    const rotationGroup = await assignment.getRotationGroupObj();
+
+    if (!rotationGroup) {
+      resolutionPath.push('❌ Rotation group not found');
+      return {
+        success: false,
+        applicable_schedule: null,
+        resolution_path: resolutionPath,
+        error: 'Rotation group not found',
+      };
+    }
+
+    const offset = assignment.getOffset() || 0;
+    const templateId = this.calculateRotationTemplateId(rotationGroup, targetDate, offset);
+
+    if (!templateId) {
+      resolutionPath.push('❌ Could not calculate rotation template');
+      return {
+        success: false,
+        applicable_schedule: null,
+        resolution_path: resolutionPath,
+        error: 'Rotation calculation failed',
+      };
+    }
+
+    const applicableSchedule = await this.buildScheduleFromTemplate(
+      templateId,
+      dateStr,
+      'rotation',
+      {
+        rotation_group_guid: rotationGroup.getGuid(),
+        rotation_group_name: rotationGroup.getName(),
+        assigned_at: assignment.getAssignedAt(),
+        cycle_length: rotationGroup.getCycleLength(),
+        cycle_unit: rotationGroup.getCycleUnit(),
+        offset: offset,
+      },
+    );
+
+    return {
+      success: true,
+      applicable_schedule: applicableSchedule,
+      resolution_path: resolutionPath,
+    };
+  }
+
+  // /**
+  //  * Résolution depuis rotation_assignments + rotation_groups
+  //  */
+  // private async resolveFromRotation(
+  //   userId: number,
+  //   targetDate: Date,
+  //   activeGroupId?: number,
+  // ): Promise<ApplicableSchedule | null> {
+  //   // Récupérer l'assignation rotation de l'utilisateur
+  //   const assignments = await RotationAssignment._listByUser(userId);
+  //
+  //   let assignmentsGroup: RotationAssignment[] | null = null;
+  //   if (activeGroupId) {
+  //     assignmentsGroup = await RotationAssignment._listByGroups(activeGroupId);
+  //   }
+  //
+  //   if (assignments && assignments.length > 0) {
+  //     // Prendre la première assignation active
+  //     const assignment = assignments[0];
+  //     const rotationGroupId = assignment.getRotationGroup()!;
+  //     const offset = assignment.getOffset()!;
+  //
+  //     // Charger le groupe de rotation
+  //     const rotationGroup = await RotationGroup._load(rotationGroupId);
+  //
+  //     if (rotationGroup && rotationGroup.isActive()) {
+  //       // Calculer l'index du template à utiliser
+  //       const templateId = this.calculateRotationTemplateId(rotationGroup, targetDate, offset);
+  //
+  //       if (templateId) {
+  //         return await this.buildScheduleFromTemplate(
+  //           templateId,
+  //           this.formatDate(targetDate),
+  //           'rotation',
+  //           {
+  //             rotation_group_guid: rotationGroup.getGuid(),
+  //             rotation_group_name: rotationGroup.getName(),
+  //             cycle_length: rotationGroup.getCycleLength(),
+  //             cycle_unit: rotationGroup.getCycleUnit(),
+  //             offset: offset,
+  //           },
+  //         );
+  //       }
+  //     }
+  //   }
+  //
+  //   if (assignmentsGroup && assignmentsGroup.length > 0) {
+  //     // Prendre la première assignation active
+  //     const assignment = assignmentsGroup[0];
+  //     const rotationGroupId = assignment.getRotationGroup()!;
+  //     const offset = assignment.getOffset()!;
+  //
+  //     // Charger le groupe de rotation
+  //     const rotationGroup = await RotationGroup._load(rotationGroupId);
+  //
+  //     if (rotationGroup && rotationGroup.isActive()) {
+  //       // Calculer l'index du template à utiliser
+  //       const templateId = this.calculateRotationTemplateId(rotationGroup, targetDate, offset);
+  //
+  //       if (templateId) {
+  //         return await this.buildScheduleFromTemplate(
+  //           templateId,
+  //           this.formatDate(targetDate),
+  //           'rotation',
+  //           {
+  //             rotation_group_guid: rotationGroup.getGuid(),
+  //             rotation_group_name: rotationGroup.getName(),
+  //             cycle_length: rotationGroup.getCycleLength(),
+  //             cycle_unit: rotationGroup.getCycleUnit(),
+  //             offset: offset,
+  //           },
+  //         );
+  //       }
+  //     }
+  //   }
+  //
+  //   return null;
+  // }
 
   /**
    * Calcul de l'index du template dans une rotation
