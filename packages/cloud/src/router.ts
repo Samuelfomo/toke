@@ -88,7 +88,7 @@ const routes: RouteRecordRaw[] = [
     path: '/sites/edit',
     name: 'edit',
     component: Edit,
-    meta: { requiresAuth: true },
+    meta: { requiresAuth: false },
   },
     {
     path: '/sites/add',

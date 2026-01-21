@@ -157,13 +157,14 @@ import { useRoute, useRouter } from 'vue-router';
 import gsap from 'gsap';
 import Header from "@/views/components/header.vue";
 import SiteService from "@/service/SiteService";
+import {Site} from "@/utils/interfaces/site.interface";
 
 const route = useRoute();
 const router = useRouter();
 const isLoading = ref(true);
 const siteGuid = ref(route.query.guid);
 const isEditMode = ref(route.query.mode === 'select');
-const siteData = ref<any>(null);
+const siteData = ref<Site | null>(null);
 const mapCanvas = ref<any>(null);
 const successMessage = ref(null);
 const messageType = ref('success');
@@ -409,27 +410,11 @@ const loadSiteData = async () => {
 
     // Simulation
     setTimeout(() => {
-      console.log('Site:', response.data);
-      siteData.value = response.data? response.data : {
-        guid: "5197983373552705",
-        name: "IMEDIATIS SARL",
-        site_type: "global_site",
-        address: {
-          city: "Douala",
-          location: "Makepe",
-          place_name: "ABOU DE BANGUI"
-        },
-        geofence_radius: 100,
-        active: true,
-        public: true,
-        geofence_polygon: {
-          type: "Polygon",
-          coordinates: [[[9.751171, 4.085104], [9.751342, 4.084906], [9.751542, 4.085018], [9.751299, 4.085196], [9.751171, 4.085104]]]
-        }
-      };
+      console.log('Site:', response.data.site);
+      siteData.value = response.data? response.data.site :  null
 
       // Charger le polygone existant
-      if (siteData.value.geofence_polygon?.coordinates[0]) {
+      if (siteData.value?.geofence_polygon?.coordinates[0]) {
         polygonPoints.value = siteData.value.geofence_polygon.coordinates[0].map((coord: any) =>
             latLngToCanvas(coord[1], coord[0])
         );

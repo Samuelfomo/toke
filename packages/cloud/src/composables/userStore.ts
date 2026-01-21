@@ -65,7 +65,6 @@ interface AuthResponse {
 }
 
 export interface Subordinate {
-  id: number
   guid?: string
   name: string
   email: string
@@ -177,7 +176,6 @@ export const useUserStore = defineStore('user', () => {
     const initials = `${firstInitial}${lastInitial}`.toUpperCase()
 
     return {
-      id: apiData.id,
       guid: apiData.guid,
       name,
       email: apiData.email || '',
@@ -309,14 +307,14 @@ export const useUserStore = defineStore('user', () => {
     console.log(`✅ Subordonné ajouté: ${subordinate.name}`)
   }
 
-  // Action: Supprimer un subordonné
-  const removeSubordinate = (subordinateId: number) => {
-    const index = subordinates.value.findIndex(s => s.id === subordinateId)
-    if (index !== -1) {
-      const removed = subordinates.value.splice(index, 1)[0]
-      console.log(`✅ Subordonné supprimé: ${removed.name}`)
-    }
-  }
+  // // Action: Supprimer un subordonné
+  // const removeSubordinate = (subordinateId: number) => {
+  //   const index = subordinates.value.findIndex(s => s.id === subordinateId)
+  //   if (index !== -1) {
+  //     const removed = subordinates.value.splice(index, 1)[0]
+  //     console.log(`✅ Subordonné supprimé: ${removed.name}`)
+  //   }
+  // }
 
   // Vérification de session
   const checkSession = (): boolean => {
@@ -414,6 +412,6 @@ export const useUserStore = defineStore('user', () => {
     setSubordinates,
     loadSubordinates,
     addSubordinate,
-    removeSubordinate,
+    // removeSubordinate,
   }
 })

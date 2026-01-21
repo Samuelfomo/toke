@@ -376,52 +376,149 @@ const activeEmployeeMenu = ref<string | null>(null)
 // ==========================================
 // 🔄 FONCTION DE CHARGEMENT DES EMPLOYÉS
 // ==========================================
+// const loadTeamEmployees = async () => {
+//   try {
+//     isLoadingEmployees.value = true
+//     console.log('📋 Chargement de l\'équipe du manager...')
+//
+//     // Récupérer les subordonnés
+//     const response = await UserService.listSubordinates(userStore.user?.guid!)
+//
+//     if (response.success && response.data) {
+//       subordinatesData.value = response.data
+//       totalSubordinates.value = response.data.total_subordinates || 0
+//
+//       // Extraire la liste des employés depuis hierarchy
+//       if (response.data.hierarchy && Array.isArray(response.data.hierarchy)) {
+//         teamEmployees.value = response.data.hierarchy.map((emp: any) => {
+//
+//           console.log('entries data', response.data.hierarchy.map((emp: any) => emp))
+//
+//           const data: User = emp.user;
+//
+//           // Calculer les initiales
+//           const nameParts = data.first_name?.split(' ') || ['U']
+//           const initials = nameParts.length > 1
+//             ? `${nameParts[0][0]}${nameParts[1][0]}`.toUpperCase()
+//             : nameParts[0][0].toUpperCase()
+//
+//           return {
+//             id: data.guid,
+//             name: data.first_name || 'N/A',
+//             position: emp.roles?.[0]?.role || 'N/A',
+//             email: data.email || 'N/A',
+//             avatar: data.avatar_url || null,
+//             initials: initials,
+//             punctualityScore: Math.floor(Math.random() * 30) + 70, // Mock pour l'instant
+//             roles: emp.roles || [],
+//             isActive: data.active || false
+//           }
+//         })
+//
+//         console.log('✅ Employés chargés:', teamEmployees.value.length)
+//       } else {
+//         console.warn('⚠️ Aucune hiérarchie trouvée dans la réponse')
+//         teamEmployees.value = []
+//       }
+//     } else {
+//       console.error('❌ Erreur dans la réponse:', response)
+//       teamEmployees.value = []
+//     }
+//   } catch (error) {
+//     console.error('❌ Erreur lors du chargement des employés:', error)
+//     teamEmployees.value = []
+//   } finally {
+//     isLoadingEmployees.value = false
+//   }
+// }
+// ==========================================
+// 🔄 FONCTION DE CHARGEMENT DES EMPLOYÉS (ADAPTÉE)
+// ==========================================
 const loadTeamEmployees = async () => {
   try {
     isLoadingEmployees.value = true
     console.log('📋 Chargement de l\'équipe du manager...')
 
-    // Récupérer les subordonnés
     const response = await UserService.listSubordinates(userStore.user?.guid!)
 
     if (response.success && response.data) {
       subordinatesData.value = response.data
-      totalSubordinates.value = response.data.total_subordinates || 0
 
-      // Extraire la liste des employés depuis hierarchy
-      if (response.data.hierarchy && Array.isArray(response.data.hierarchy)) {
-        teamEmployees.value = response.data.hierarchy.map((emp: any) => {
+      // Récupérer le total depuis summary
+      totalSubordinates.value = response.data.summary?.total_employees || 0
 
-          console.log('entries data', response.data.hierarchy.map((emp: any) => emp))
+      // Créer un tableau temporaire pour tous les employés
+      const allEmployees: any[] = []
 
-          const data: User = emp.user;
-
-          // Calculer les initiales
-          const nameParts = data.first_name?.split(' ') || ['U']
-          const initials = nameParts.length > 1
-            ? `${nameParts[0][0]}${nameParts[1][0]}`.toUpperCase()
-            : nameParts[0][0].toUpperCase()
-
-          return {
-            id: data.guid,
-            name: data.first_name || 'N/A',
-            position: emp.roles?.[0]?.role || 'N/A',
-            email: data.email || 'N/A',
-            avatar: data.avatar_url || null,
-            initials: initials,
-            punctualityScore: Math.floor(Math.random() * 30) + 70, // Mock pour l'instant
-            roles: emp.roles || [],
-            isActive: data.active || false
+      // 1️⃣ Ajouter les employés groupés (employees_by_group)
+      if (response.data.employees_by_group && Array.isArray(response.data.employees_by_group)) {
+        response.data.employees_by_group.forEach((groupData: any) => {
+          if (groupData.employees && Array.isArray(groupData.employees)) {
+            groupData.employees.forEach((emp: any) => {
+              allEmployees.push({
+                ...emp,
+                groupName: groupData.group?.name || 'Sans groupe',
+                groupGuid: groupData.group?.guid || null
+              })
+            })
           }
         })
-
-        console.log('✅ Employés chargés:', teamEmployees.value.length)
-      } else {
-        console.warn('⚠️ Aucune hiérarchie trouvée dans la réponse')
-        teamEmployees.value = []
       }
+
+      // 2️⃣ Ajouter les employés sans groupe (employees_without_group)
+      if (response.data.employees_without_group && Array.isArray(response.data.employees_without_group)) {
+        response.data.employees_without_group.forEach((emp: any) => {
+          allEmployees.push({
+            ...emp,
+            groupName: 'Sans groupe',
+            groupGuid: null
+          })
+        })
+      }
+
+      // 3️⃣ Transformer les données pour l'affichage
+      teamEmployees.value = allEmployees.map((emp: any) => {
+        // Calculer les initiales
+        const firstName = emp.first_name || ''
+        const lastName = emp.last_name || ''
+        const nameParts = firstName.split(' ')
+        const initials = nameParts.length > 1
+            ? `${nameParts[0][0]}${nameParts[1][0]}`.toUpperCase()
+            : lastName ? `${firstName[0]}${lastName[0]}`.toUpperCase() : firstName[0]?.toUpperCase() || 'U'
+
+        // Extraire le rôle principal (premier rôle ou 'N/A')
+        const mainRole = emp.roles?.[0]?.name || 'N/A'
+
+        return {
+          id: emp.guid,
+          name: `${firstName} ${lastName}`.trim() || 'N/A',
+          position: emp.job_title || mainRole,
+          email: emp.email || 'N/A',
+          avatar: emp.avatar_url || null,
+          initials: initials,
+          punctualityScore: Math.floor(Math.random() * 30) + 70, // Mock - à remplacer par vraie donnée
+          roles: emp.roles || [],
+          isActive: emp.active || false,
+          department: emp.department || 'N/A',
+          employeeCode: emp.employee_code || 'N/A',
+          phoneNumber: emp.phone_number || 'N/A',
+          hireDate: emp.hire_date || null,
+          groupName: emp.groupName,
+          groupGuid: emp.groupGuid,
+          assignmentInfo: emp.assignment_info || null
+        }
+      })
+
+      console.log('✅ Employés chargés:', teamEmployees.value.length)
+      console.log('📊 Détails:', {
+        total: totalSubordinates.value,
+        direct: response.data.summary?.direct_employees || 0,
+        inGroups: response.data.summary?.employees_in_groups || 0,
+        withoutGroup: response.data.summary?.employees_without_group || 0,
+        subManagers: response.data.summary?.sub_managers_count || 0
+      })
     } else {
-      console.error('❌ Erreur dans la réponse:', response)
+      console.warn('⚠️ Réponse invalide:', response)
       teamEmployees.value = []
     }
   } catch (error) {
@@ -604,8 +701,8 @@ onMounted(async () => {
 
   // Charger les entrées (si nécessaire)
   try {
-    const entriesData = await EntriesService.listEntries(userStore.user?.guid!)
-    console.log('📊 Entrées chargées:', entriesData)
+    // const entriesData = await EntriesService.listEntries(userStore.user?.guid!)
+    // console.log('📊 Entrées chargées:', entriesData)
   } catch (error) {
     console.error('❌ Erreur lors du chargement des entrées:', error)
   }

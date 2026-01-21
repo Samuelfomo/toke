@@ -5,7 +5,6 @@ import { apiRequest } from '@/tools/Fetch.Client';
 const baseUrl = '/user';
 
 export interface SubordinateResponse {
-  id: number;
   guid: string;
   name: string;
   email: string;
@@ -18,7 +17,6 @@ export interface SubordinateResponse {
   job_title?: string;
   employee_code?: string;
   department?: string;
-  // Ajoutez d'autres champs selon votre API
 }
 
 export default class UserService {

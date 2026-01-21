@@ -115,11 +115,11 @@
                       </span>
                   </td>
                   <td class="py-2 px-4 border-b border-gray-300">
-                    {{ formatDate(site.created_at) }}
+                    {{ formatDate(site.created_at!) }}
                   </td>
                   <td class="py-2 px-4 border-b border-gray-300">
                     <div class="relative">
-                      <button @click.stop="toggleMenu(site.guid)"
+                      <button @click.stop="toggleMenu(site.guid!)"
                               class="p-1 hover:bg-gray-100 rounded">
                         <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
                           <path d="M10 6a2 2 0 110-4 2 2 0 010 4zM10 12a2 2 0 110-4 2 2 0 010 4zM10 18a2 2 0 110-4 2 2 0 010 4z"/>
@@ -128,7 +128,7 @@
                       <div v-if="activeMenu === site.guid"
                            class="absolute right-0 mt-2 w-48 rounded-md shadow-lg bg-white ring-1 ring-black ring-opacity-5 z-50">
                         <div class="py-1">
-                          <button @click="viewSiteMap(site.guid)"
+                          <button @click="viewSiteMap(site.guid!)"
                                   class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 w-full text-left">
                             <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 inline mr-2" fill="none"
                                  viewBox="0 0 24 24" stroke="currentColor">
@@ -137,7 +137,7 @@
                             </svg>
                             Voir sur la carte
                           </button>
-                          <button @click="editSite(site.guid)"
+                          <button @click="editSite(site.guid!)"
                                   class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 w-full text-left">
                             <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 inline mr-2" fill="none"
                                  viewBox="0 0 24 24" stroke="currentColor">
@@ -146,7 +146,7 @@
                             </svg>
                             Modifier
                           </button>
-                          <button @click="deleteSite(site.guid)"
+                          <button @click="deleteSite(site.guid!)"
                                   class="block px-4 py-2 text-sm text-red-600 hover:bg-red-50 w-full text-left">
                             <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 inline mr-2" fill="none"
                                  viewBox="0 0 24 24" stroke="currentColor">
@@ -192,7 +192,7 @@
 
             <!-- Message dynamique -->
             <div ref="successMessage"
-                 :class="['fixed right-8 top-[10%] text-white p-4 rounded-lg shadow-lg opacity-0 transform translate-y-4 transition-all duration-300 z-50',
+                 :class="['fixed right-8 top-[10%] text-white p-4 rounded-lg shadow-lg opacity-0 transform translate-y-4 transition-all duration-300 z-[100]',
                           messageType === 'success' ? 'bg-green-600' : 'bg-red-600']">
               <div class="flex items-center">
                 <svg class="w-6 h-6 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -204,7 +204,7 @@
           </div>
         </main>
       </div>
-      <Footer />
+<!--      <Footer />-->
     </div>
   </div>
 </template>
@@ -313,30 +313,6 @@ const loadSites = async () => {
         sites.value = siteResponse.items
         console.log('siteResponse', siteResponse);
       }
-      // // pour la simulation
-      // else {
-      //   sites.value =  [
-      //     {
-      //       guid: "5197983373552705",
-      //       name: "IMEDIATIS SARL",
-      //       site_type: "global_site",
-      //       address: {
-      //         city: "Douala",
-      //         location: "Makepe",
-      //         place_name: "ABOU DE BANGUI"
-      //       },
-      //       geofence_radius: 100,
-      //       active: true,
-      //       public: true,
-      //       geofence_polygon: {
-      //         type: "Polygon",
-      //         coordinates: [[[9.751171, 4.085104], [9.751342, 4.084906], [9.751542, 4.085018], [9.751299, 4.085196], [9.751171, 4.085104]]]
-      //       },
-      //       created_at: "2025-11-15T16:56:49.966Z"
-      //     }
-      //   ];
-      // }
-
       isLoading.value = false;
     }, 1000);
   } catch (error) {
