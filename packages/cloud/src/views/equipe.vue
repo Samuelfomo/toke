@@ -124,12 +124,12 @@
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z"></path>
               </svg>
             </div>
-            <a href="/employeeForm" class="action-link">
+            <RouterLink to="/employeeForm" class="action-link">
               <div class="action-content">
                 <h3 class="action-title">Ajouter Employé</h3>
                 <p class="action-description">Recruter un nouveau membre dans votre équipe</p>
               </div>
-            </a>
+            </RouterLink>
           </button>
 
           <button @click="showAddSite = true" class="action-card secondary">
@@ -139,10 +139,12 @@
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"></path>
               </svg>
             </div>
+            <RouterLink to="/sites/add" class="action-link">
             <div class="action-content">
               <h3 class="action-title">Nouveau Site</h3>
               <p class="action-description">Créer un nouveau site de travail</p>
             </div>
+            </RouterLink>
           </button>
 
           <button class="action-card quaternary">
@@ -151,25 +153,23 @@
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
               </svg>
             </div>
-            <a href="/planning" class="action-link">
+            <RouterLink to="/planning" class="action-link">
               <div class="action-content">
                 <h3 class="action-title">Planning</h3>
                 <p class="action-description">Gérer les horaires de travail</p>
               </div>
-            </a>
+            </RouterLink>
           </button>
           <button class="action-card quaternary">
             <div class="action-icon">
-              <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
-              </svg>
+              <IconMessage stroke={2} />
             </div>
-            <a href="/memoList" class="action-link">
+            <RouterLink to="/memoList" class="action-link">
               <div class="action-content">
                 <h3 class="action-title">Memo</h3>
-                <p class="action-description">Traiter vos memos</p>
+                <p class="action-description">Gestion des memos</p>
               </div>
-            </a>
+            </RouterLink>
           </button>
         </div>
       </div>
@@ -332,17 +332,18 @@ import equipeCss from "../assets/css/toke-equipe-09.css?url"
 import dashboardCss from "../assets/css/toke-dMain-04.css?url"
 import Header from '../views/components/header.vue'
 import HeadBuilder from '@/utils/HeadBuilder';
-import { User, useUserStore } from '@/composables/userStore';
+import { useUserStore } from '@/composables/userStore';
 import { useEmployee } from '@/utils/useEmployee';
 import router from '@/router';
 import UserService from '@/service/UserService';
-import EntriesService from '@/service/EntriesService';
-import { useRoute } from 'vue-router';
+import { IconMessage } from '@tabler/icons-vue';
+// import EntriesService from '@/service/EntriesService';
+// import { useRoute } from 'vue-router';
 
 // Stores (uniquement pour les infos utilisateur)
 const userStore = useUserStore()
 const employeeStore = useEmployee()
-const route = useRoute()
+// const route = useRoute()
 
 // ==========================================
 // 🎯 DONNÉES LOCALES DE LA VUE
@@ -351,7 +352,7 @@ const teamEmployees = ref<any[]>([])
 const isLoadingEmployees = ref(false)
 const subordinatesData = ref<any>(null)
 const totalSubordinates = ref(0)
-const employee = ref<any>(null)
+// const employee = ref<any>(null)
 
 // User data
 const currentUser = computed(() => ({
@@ -359,7 +360,7 @@ const currentUser = computed(() => ({
   company: userStore.tenantName || 'N/A'
 }))
 
-const currentManagerId = computed(() => userStore.user?.guid)
+// const currentManagerId = computed(() => userStore.user?.guid)
 const notificationCount = ref(2)
 
 
@@ -563,11 +564,9 @@ const maxIntervalCount = computed(() => Math.max(...arrivalIntervals.value.map(i
 // 🎯 FILTRAGE ET TRI DES EMPLOYÉS
 const filteredEmployees = computed(() => {
   let filtered = teamEmployees.value.filter(employee => {
-    const matchesSearch = employee.name.toLowerCase().includes(searchTerm.value.toLowerCase()) ||
+    return employee.name.toLowerCase().includes(searchTerm.value.toLowerCase()) ||
       employee.position.toLowerCase().includes(searchTerm.value.toLowerCase()) ||
       employee.email.toLowerCase().includes(searchTerm.value.toLowerCase())
-
-    return matchesSearch
   })
 
   // Sorting
@@ -665,11 +664,11 @@ const deleteEmployee = (employee: any) => {
   activeEmployeeMenu.value = null
 }
 
-const handleEmployeeAdded = (newEmployee: any) => {
-  teamEmployees.value.push(newEmployee)
-  totalSubordinates.value = teamEmployees.value.length
-  showAddEmployee.value = false
-}
+// const handleEmployeeAdded = (newEmployee: any) => {
+//   teamEmployees.value.push(newEmployee)
+//   totalSubordinates.value = teamEmployees.value.length
+//   showAddEmployee.value = false
+// }
 
 const closeMenuOnClickOutside = (event: MouseEvent) => {
   if (activeEmployeeMenu.value !== null) {

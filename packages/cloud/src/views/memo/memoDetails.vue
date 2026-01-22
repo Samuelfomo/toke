@@ -1,5 +1,82 @@
 <template>
-  <div class="detail-memo-chat">
+<!--  <div class="flex h-screen bg-gray-50 ">-->
+    <!-- SIDEBAR -->
+<!--    <div class="flex-shrink-0 w-[22rem] bg-white border-r flex transition-all">-->
+<!--      <div class="bg-transparent flex flex-col transition-all h-screen space-y-20">-->
+<!--        &lt;!&ndash; HEADER &ndash;&gt;-->
+<!--        <div class="p-3 scale-75 bg-gradient-to-r text-white">-->
+<!--            <div class="flex justify-between">-->
+<!--              <img :src="Logo" alt="Logo" class="w-16 h-16 object-cover"></img>-->
+<!--            </div>-->
+<!--        </div>-->
+
+<!--        &lt;!&ndash; LISTE EMPLOYÉS &ndash;&gt;-->
+<!--        <div class="grid grid-flow-row auto-rows-max p-2 space-y-2">-->
+<!--          <div class="flex flex-col justify-start items-center space-y-2 h-full">-->
+<!--            <div class="flex justify-center items-center rounded-2xl p-3 bg-blue-500/20">-->
+<!--              <IconUsers size="20" />-->
+<!--            </div>-->
+<!--          </div>-->
+<!--          <div class="flex flex-col justify-start items-center space-y-2 h-full">-->
+<!--            <div class="flex justify-center items-center rounded-2xl p-3 bg-blue-500/20">-->
+<!--              <IconBuildingCommunity size="20" />-->
+<!--            </div>-->
+<!--          </div>-->
+<!--          <div class="flex flex-col justify-start items-center space-y-2 h-full">-->
+<!--            <div class="flex justify-center items-center rounded-2xl p-3 bg-blue-500/20">-->
+<!--              <IconEye size="20" />-->
+<!--            </div>-->
+<!--          </div>-->
+<!--        </div>-->
+
+<!--      </div>-->
+<!--      <div :class="[sidebarCollapsed ? 'w-20' : 'w-[22rem]', 'rounded-xl bg-white border-l flex flex-col transition-all']">-->
+<!--        &lt;!&ndash; HEADER &ndash;&gt;-->
+<!--        <div class="p-4 border-b bg-gradient-to-r from-blue-900 to-blue-700 via-blue-800 text-white">-->
+<!--          <div v-if="!sidebarCollapsed">-->
+<!--            <div class="flex justify-between mb-3">-->
+<!--              <h1 class="text-xl font-bold">Mémos</h1>-->
+<!--              <IconDotsVertical class="cursor-pointer" @click="sidebarCollapsed = true" />-->
+<!--            </div>-->
+
+<!--            <div class="bg-white/10 rounded-lg p-3 mb-3 flex justify-between">-->
+<!--              <div class="flex gap-2 items-center">-->
+<!--                <IconClock size="18" /> En attente-->
+<!--              </div>-->
+<!--              <span class="text-xl font-bold">{{ totalMemosEnAttente }}</span>-->
+<!--            </div>-->
+
+<!--            <div class="relative">-->
+<!--              <IconSearch class="absolute left-3 top-1/2 -translate-y-1/2 opacity-60" size="18"/>-->
+<!--              <input v-model="searchTerm"-->
+<!--                     placeholder="Rechercher un employé..."-->
+<!--                     class="w-full pl-9 pr-3 py-2 rounded-lg bg-white/10 outline-none" />-->
+<!--            </div>-->
+<!--          </div>-->
+
+<!--          <IconUsers v-else class="mx-auto cursor-pointer" size="26" @click="sidebarCollapsed=false"/>-->
+<!--        </div>-->
+
+<!--        &lt;!&ndash; LISTE EMPLOYÉS &ndash;&gt;-->
+<!--        <div class="flex-1  overflow-y-auto">-->
+<!--          <div v-for="emp in employesFiltres" :key="emp.id"-->
+<!--               @click="employeSelectionne = emp"-->
+<!--               class="p-4 border-b hover:bg-gray-50 cursor-pointer">-->
+
+<!--            <div class="flex gap-3 items-center">-->
+<!--              <div class="w-10 h-10 rounded-full bg-blue-600 flex items-center justify-center text-white font-bold">-->
+<!--                {{ getInitiales(emp.nom) }}-->
+<!--              </div>-->
+<!--              <div v-if="!sidebarCollapsed">-->
+<!--                <p class="font-semibold">{{ emp.nom }}</p>-->
+<!--                <p class="text-xs text-gray-500">{{ emp.code }} • {{ emp.departement }}</p>-->
+<!--              </div>-->
+<!--            </div>-->
+<!--          </div>-->
+<!--        </div>-->
+<!--      </div>-->
+<!--    </div>-->
+  <div class="detail-memo-chat w-full">
     <!-- En-tête -->
     <div class="chat-header">
       <button @click="retourListe" class="btn-retour">
@@ -419,6 +496,7 @@
       </div>
     </div>
   </div>
+<!--  </div>-->
 </template>
 
 <script setup lang="ts">
@@ -432,6 +510,11 @@ import type { Status, Item2 as ApiMemo, MemoContent } from '@/utils/interfaces/t
 import AuthenticatedMedia from '../../views/memo/AuthenticatedMedia.vue';
 import memoDetailChatCss from "../../assets/css/toke-employee-detail13.css?url";
 import MemoService from '@/service/MemoService';
+// import {IconClock, IconDotsVertical, IconSearch, IconUsers, IconBuildingCommunity, IconEye} from "@tabler/icons-vue";
+// import Logo from '@/assets/images/logo.png';
+// const logo = Logo;
+//
+// const sidebarCollapsed = ref(false)
 
 // Interfaces
 interface AttachedFile {
@@ -451,7 +534,7 @@ interface ConversationMessage {
 }
 
 interface Memo {
-  id: string;
+  guid: string;
   titre: string;
   contenu: string;
   type: string;
@@ -719,7 +802,7 @@ const transformApiMemo = (apiMemo: ApiMemo, employeeStatus: Status): Memo => {
   }
 
   return {
-    id: apiMemo.guid,
+    guid: apiMemo.guid,
     titre: apiMemo.title,
     contenu: extractMemoContent(memoContent),
     type: apiMemo.memo_type,

@@ -20,7 +20,7 @@ import Setting from './views/setting.vue'
 import MemoDetails from './views/memo/memoDetails.vue';
 import Site from './views/site/site.vue';
 import Edit from './views/site/siteForm.vue';
-import MapVue from './views/site/siteMap.vue';
+import MapVue from './views/site/map.vue';
 
 import { useUserStore } from '@/composables/userStore'
 
