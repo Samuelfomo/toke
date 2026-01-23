@@ -482,6 +482,29 @@
           </button>
         </div>
       </div>
+      <!-- Indicateur de progression d'upload -->
+      <div v-if="isUploadingFiles && uploadProgress" class="upload-progress-container">
+        <div class="upload-progress-bar">
+          <div class="upload-progress-fill"
+               :style="{ width: `${(uploadProgress.current / uploadProgress.total) * 100}%` }">
+          </div>
+        </div>
+        <p class="upload-progress-text">
+          Upload en cours... {{ uploadProgress.current }} / {{ uploadProgress.total }} fichiers
+        </p>
+      </div>
+
+      <!-- Limite de fichiers dans la zone de saisie -->
+      <div v-if="peutValider" class="chat-input-area">
+        <div class="input-wrapper">
+          <!-- Badge compteur de fichiers -->
+          <div v-if="fichiers.length > 0 || audioBlob" class="files-counter-badge">
+            {{ fichiers.length + (audioBlob ? 1 : 0) }} / 8
+          </div>
+
+          <!-- ... reste du code existant ... -->
+        </div>
+      </div>
     </div>
 
     <!-- Modal pour voir les images -->
@@ -509,7 +532,12 @@ import UserService from '../../service/UserService';
 import type { Status, Item2 as ApiMemo, MemoContent } from '@/utils/interfaces/team.interface';
 import AuthenticatedMedia from '../../views/memo/AuthenticatedMedia.vue';
 import memoDetailChatCss from "../../assets/css/toke-employee-detail13.css?url";
-import MemoService from '@/service/MemoService';
+import MemoService, {
+  MessageContent,
+  UploadedAttachment,
+  UploadFileResponse,
+  UploadMultipleResponse
+} from '@/service/MemoService';
 // import {IconClock, IconDotsVertical, IconSearch, IconUsers, IconBuildingCommunity, IconEye} from "@tabler/icons-vue";
 // import Logo from '@/assets/images/logo.png';
 // const logo = Logo;
@@ -612,6 +640,9 @@ const currentReponseAudioTime = ref('0:00');
 const reponseAudioElements = ref<Map<string, HTMLAudioElement>>(new Map());
 const audioDurations = reactive<Record<string, number>>({});
 const audioUpdateTrigger = ref(0);
+
+const isUploadingFiles = ref(false);
+const uploadProgress = ref<{ current: number; total: number } | null>(null);
 
 
 
@@ -998,13 +1029,13 @@ const getFormattedDuration = (fileId: string): string => {
 //   return formatDuration(duration);
 // };
 
-// Gestion des fichiers
-const ajouterFichiers = (event: Event) => {
-  const target = event.target as HTMLInputElement;
-  if (target.files) {
-    fichiers.value.push(...Array.from(target.files));
-  }
-};
+// // Gestion des fichiers
+// const ajouterFichiers = (event: Event) => {
+//   const target = event.target as HTMLInputElement;
+//   if (target.files) {
+//     fichiers.value.push(...Array.from(target.files));
+//   }
+// };
 
 const supprimerFichier = (index: number) => {
   fichiers.value.splice(index, 1);
@@ -1266,30 +1297,117 @@ const getWaveformHeight = (index: number, isActive: boolean): string => {
 };
 
 // Envoyer une réponse
+// const envoyerReponse = async () => {
+//   if (!peutEnvoyerReponse.value || isSubmitting.value) return;
+//
+//   isSubmitting.value = true;
+//
+//   try {
+//     // TODO: Appel API pour envoyer la réponse
+//     await new Promise(resolve => setTimeout(resolve, 1000));
+//
+//     const now = new Date();
+//     const timeString = now.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' });
+//
+//     const audioURLToSave = audioBlob.value ? URL.createObjectURL(audioBlob.value) : null;
+//
+//     reponsesEnvoyees.value.push({
+//       contenu: reponseContenu.value,
+//       fichiers: [...fichiers.value],
+//       audioBlob: audioBlob.value,
+//       audioURL: audioURLToSave,
+//       duration: recordedDuration.value,
+//       timestamp: timeString
+//     });
+//     console.log(peutEnvoyerReponse.value, reponsesEnvoyees.value);
+//
+//     // Réinitialiser
+//     reponseContenu.value = '';
+//     fichiers.value = [];
+//     audioBlob.value = null;
+//     recordedDuration.value = '00:00';
+//     if (audioURL.value) {
+//       URL.revokeObjectURL(audioURL.value);
+//       audioURL.value = '';
+//     }
+//
+//     scrollToBottom();
+//   } catch (error: any) {
+//     console.error('❌ Erreur envoi réponse:', error);
+//     alert('Erreur lors de l\'envoi de la réponse');
+//   } finally {
+//     isSubmitting.value = false;
+//   }
+// };
+const collectAllFiles = async (): Promise<File[]> => {
+  const allFiles: File[] = [...fichiers.value];
+
+  if (audioBlob.value) {
+    allFiles.push(
+        new File(
+            [audioBlob.value],
+            `audio-${Date.now()}.webm`,
+            { type: audioBlob.value.type }
+        )
+    );
+  }
+
+  return allFiles;
+};
+
 const envoyerReponse = async () => {
-  if (!peutEnvoyerReponse.value || isSubmitting.value) return;
+  if (!peutEnvoyerReponse.value || isSubmitting.value || !memo.value) return;
+
+  // Validation du nombre de fichiers
+  const totalFiles = fichiers.value.length + (audioBlob.value ? 1 : 0);
+  if (totalFiles > 8) {
+    alert('Maximum 8 fichiers autorisés par envoi');
+    return;
+  }
 
   isSubmitting.value = true;
+  isUploadingFiles.value = true;
 
   try {
-    // TODO: Appel API pour envoyer la réponse
-    await new Promise(resolve => setTimeout(resolve, 1000));
+    // 1️⃣ Regrouper tous les fichiers
+    const allFiles = await collectAllFiles();
 
+    // 2️⃣ Upload en une fois
+    const uploadedFiles =
+        allFiles.length > 0
+            ? await MemoService.uploadMultipleFiles(allFiles)
+            : [];
+    isUploadingFiles.value = false;
+
+    // 3️⃣ Construire le message
+    const messageContent = MemoService.buildMessageContent(
+        reponseContenu.value,
+        uploadedFiles
+    );
+
+    // 4️⃣ Envoyer la réponse
+    await MemoService.sendReply({
+      memo_guid: memo.value.guid,
+      message: messageContent
+    });
+
+    // 5️⃣ Ajouter à l'affichage local
     const now = new Date();
-    const timeString = now.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' });
-
-    const audioURLToSave = audioBlob.value ? URL.createObjectURL(audioBlob.value) : null;
+    const timeString = now.toLocaleTimeString('fr-FR', {
+      hour: '2-digit',
+      minute: '2-digit'
+    });
 
     reponsesEnvoyees.value.push({
       contenu: reponseContenu.value,
       fichiers: [...fichiers.value],
       audioBlob: audioBlob.value,
-      audioURL: audioURLToSave,
+      audioURL: audioBlob.value ? URL.createObjectURL(audioBlob.value) : null,
       duration: recordedDuration.value,
       timestamp: timeString
     });
 
-    // Réinitialiser
+    // 6. Réinitialiser le formulaire
     reponseContenu.value = '';
     fichiers.value = [];
     audioBlob.value = null;
@@ -1298,66 +1416,219 @@ const envoyerReponse = async () => {
       URL.revokeObjectURL(audioURL.value);
       audioURL.value = '';
     }
+    uploadProgress.value = null;
 
     scrollToBottom();
+
+    // 7. Recharger le mémo pour avoir les dernières données
+    await chargerMemo();
+
   } catch (error: any) {
     console.error('❌ Erreur envoi réponse:', error);
-    alert('Erreur lors de l\'envoi de la réponse');
+    alert(`Erreur: ${error.message || 'Impossible d\'envoyer la réponse'}`);
   } finally {
     isSubmitting.value = false;
+    isUploadingFiles.value = false;
+    uploadProgress.value = null;
   }
 };
 
-// Actions de validation
 const approuverMemo = async () => {
   if (!memo.value || isProcessing.value) return;
 
-  const confirmer = confirm('Êtes-vous sûr de vouloir approuver ce mémo ?');
-  if (!confirmer) return;
+  if (!confirm('Êtes-vous sûr de vouloir approuver ce mémo ?')) return;
 
   isProcessing.value = true;
   actionType.value = 'approve';
+  isUploadingFiles.value = true;
 
   try {
-    // TODO: Appel API réel
-    await new Promise(resolve => setTimeout(resolve, 1000));
+    let messageContent: MessageContent[] | undefined;
+
+    // Si une réponse a été ajoutée avant l'approbation
+    if (reponseContenu.value.trim() || fichiers.value.length > 0 || audioBlob.value) {
+      const totalFiles = fichiers.value.length + (audioBlob.value ? 1 : 0);
+      if (totalFiles > 8) {
+        throw new Error('Maximum 8 fichiers autorisés');
+      }
+      const allFiles = await collectAllFiles();
+
+      const uploadedFiles =
+          allFiles.length > 0
+              ? await MemoService.uploadMultipleFiles(allFiles)
+              : [];
+      messageContent = MemoService.buildMessageContent(
+          reponseContenu.value,
+          uploadedFiles
+      );
+    }
+
+    isUploadingFiles.value = false;
+
+    // Appel API d'approbation
+    await MemoService.validateMemo({
+      memo_guid: memo.value.guid,
+      action: 'approve',
+      message: messageContent
+    });
+
     alert('Mémo approuvé avec succès !');
     retourListe();
+
   } catch (error: any) {
     console.error('❌ Erreur approbation:', error);
-    alert('Erreur lors de l\'approbation du mémo');
+    alert(`Erreur: ${error.message || 'Impossible d\'approuver le mémo'}`);
   } finally {
     isProcessing.value = false;
     actionType.value = null;
+    isUploadingFiles.value = false;
+    uploadProgress.value = null;
   }
 };
 
+// Remplacer rejeterMemo
+// const rejeterMemo = async () => {
+//   if (!memo.value || isProcessing.value) return;
+//
+//   // Vérifier qu'une réponse a été fournie
+//   if (!reponseContenu.value.trim() && fichiers.value.length === 0 && !audioBlob.value) {
+//     alert('Veuillez ajouter une réponse pour expliquer le rejet');
+//     showValidationPanel.value = false;
+//     return;
+//   }
+//
+//   const confirmer = confirm('Êtes-vous sûr de vouloir rejeter ce mémo ?');
+//   if (!confirmer) return;
+//
+//   isProcessing.value = true;
+//   actionType.value = 'reject';
+//   isUploadingFiles.value = true;
+//
+//   try {
+//     const totalFiles = fichiers.value.length + (audioBlob.value ? 1 : 0);
+//     if (totalFiles > 8) {
+//       throw new Error('Maximum 8 fichiers autorisés');
+//     }
+//
+//     const uploadedFiles: UploadedAttachment[] = [];
+//
+//     // Upload fichiers
+//     if (fichiers.value.length > 0) {
+//       uploadProgress.value = { current: 0, total: fichiers.value.length };
+//       for (let i = 0; i < fichiers.value.length; i++) {
+//         const uploaded = await MemoService.uploadFile(fichiers.value[i]);
+//         uploadedFiles.push(uploaded);
+//         uploadProgress.value.current = i + 1;
+//       }
+//     }
+//
+//     // Upload audio
+//     if (audioBlob.value) {
+//       const audioUploaded = await MemoService.uploadAudioBlob(
+//           audioBlob.value,
+//           `audio-${Date.now()}.webm`
+//       );
+//       uploadedFiles.push(audioUploaded);
+//     }
+//
+//     isUploadingFiles.value = false;
+//
+//     // Construire le message de rejet
+//     const messageContent = MemoService.buildMessageContent(
+//         reponseContenu.value,
+//         uploadedFiles
+//     );
+//
+//     // Appel API de rejet
+//     await MemoService.validateMemo({
+//       memo_guid: memo.value.guid,
+//       action: 'reject',
+//       message: messageContent
+//     });
+//
+//     alert('Mémo rejeté');
+//     retourListe();
+//
+//   } catch (error: any) {
+//     console.error('❌ Erreur rejet:', error);
+//     alert(`Erreur: ${error.message || 'Impossible de rejeter le mémo'}`);
+//   } finally {
+//     isProcessing.value = false;
+//     actionType.value = null;
+//     isUploadingFiles.value = false;
+//     uploadProgress.value = null;
+//   }
+// };
 const rejeterMemo = async () => {
   if (!memo.value || isProcessing.value) return;
 
-  if (reponsesEnvoyees.value.length === 0) {
+  if (!reponseContenu.value.trim() && !fichiers.value.length && !audioBlob.value) {
     alert('Veuillez ajouter une réponse pour expliquer le rejet');
-    showValidationPanel.value = false;
     return;
   }
 
-  const confirmer = confirm('Êtes-vous sûr de vouloir rejeter ce mémo ?');
-  if (!confirmer) return;
+  if (!confirm('Êtes-vous sûr de vouloir rejeter ce mémo ?')) return;
 
   isProcessing.value = true;
   actionType.value = 'reject';
+  isUploadingFiles.value = true;
 
   try {
-    // TODO: Appel API réel
-    await new Promise(resolve => setTimeout(resolve, 1000));
+    const totalFiles = fichiers.value.length + (audioBlob.value ? 1 : 0);
+    if (totalFiles > 8) throw new Error('Maximum 8 fichiers autorisés');
+
+    const allFiles = await collectAllFiles();
+
+    const uploadedFiles =
+        allFiles.length > 0
+            ? await MemoService.uploadMultipleFiles(allFiles)
+            : [];
+
+    isUploadingFiles.value = false;
+
+    const messageContent = MemoService.buildMessageContent(
+        reponseContenu.value,
+        uploadedFiles
+    );
+
+    await MemoService.validateMemo({
+      memo_guid: memo.value.guid,
+      action: 'reject',
+      message: messageContent
+    });
+
     alert('Mémo rejeté');
     retourListe();
+
   } catch (error: any) {
     console.error('❌ Erreur rejet:', error);
-    alert('Erreur lors du rejet du mémo');
+    alert(`Erreur: ${error.message || "Impossible de rejeter le mémo"}`);
   } finally {
     isProcessing.value = false;
     actionType.value = null;
+    isUploadingFiles.value = false;
+    uploadProgress.value = null;
+  }
+};
+
+// Ajouter validation du nombre de fichiers
+const ajouterFichiers = (event: Event) => {
+  const target = event.target as HTMLInputElement;
+  if (target.files) {
+    const nouveauxFichiers = Array.from(target.files);
+    const totalApres = fichiers.value.length + nouveauxFichiers.length + (audioBlob.value ? 1 : 0);
+
+    if (totalApres > 8) {
+      alert(`Maximum 8 fichiers autorisés. Vous avez déjà ${fichiers.value.length} fichier(s)${audioBlob.value ? ' + 1 audio' : ''}`);
+      return;
+    }
+
+    fichiers.value.push(...nouveauxFichiers);
+  }
+
+  // Réinitialiser l'input pour permettre de sélectionner les mêmes fichiers
+  if (target) {
+    target.value = '';
   }
 };
 
@@ -1434,5 +1705,76 @@ onUnmounted(() => {
   max-width: 100%;
   max-height: 80vh;
   object-fit: contain;
+}
+.upload-progress-container {
+  padding: 12px 16px;
+  background: linear-gradient(to right, #f0f9ff, #e0f2fe);
+  border-radius: 8px;
+  margin-top: 12px;
+}
+
+.upload-progress-bar {
+  width: 100%;
+  height: 8px;
+  background-color: #e5e7eb;
+  border-radius: 9999px;
+  overflow: hidden;
+  margin-bottom: 8px;
+}
+
+.upload-progress-fill {
+  height: 100%;
+  background: linear-gradient(to right, #3b82f6, #2563eb);
+  transition: width 0.3s ease;
+  border-radius: 9999px;
+}
+
+.upload-progress-text {
+  font-size: 13px;
+  color: #1e40af;
+  text-align: center;
+  margin: 0;
+  font-weight: 500;
+}
+
+.files-counter-badge {
+  position: absolute;
+  top: -8px;
+  right: -8px;
+  background: linear-gradient(135deg, #3b82f6, #2563eb);
+  color: white;
+  font-size: 11px;
+  font-weight: 700;
+  padding: 2px 6px;
+  border-radius: 10px;
+  z-index: 10;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+  min-width: 32px;
+  text-align: center;
+}
+
+/* Modifier .input-wrapper pour supporter le badge */
+.input-wrapper {
+  position: relative;
+}
+
+/* État désactivé si limite atteinte */
+.action-button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* Animation de pulsation pour l'upload */
+@keyframes pulse-upload {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.6;
+  }
+}
+
+.upload-progress-container {
+  animation: pulse-upload 2s ease-in-out infinite;
 }
 </style>

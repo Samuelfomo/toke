@@ -24,83 +24,86 @@
       <div class="flex-grow flex">
         <main class="flex-grow bg-gray-100 relative">
           <!-- Panneau d'Information -->
-          <div class="absolute top-4 left-4 z-10 bg-white rounded-lg shadow-lg p-4 max-w-md">
-            <div class="flex items-center justify-between mb-3">
-              <h3 class="text-lg font-semibold text-gray-800">{{ siteData?.name || 'Nouveau Site' }}</h3>
-              <button @click="goBack" class="p-1 hover:bg-gray-100 rounded">
-                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
-                  <path fill-rule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clip-rule="evenodd"/>
-                </svg>
-              </button>
-            </div>
+          <div class="flex flex-col items-center">
 
-            <div v-if="siteData" class="space-y-2 text-sm">
-              <div class="flex justify-between">
-                <span class="text-gray-600">Type:</span>
-                <span class="font-medium">{{ siteData.site_type === 'global_site' ? 'Global' : 'Manager' }}</span>
+            <div class="absolute top-2 z-10 bg-white rounded-lg shadow-lg p-4 max-w-md">
+              <div class="flex items-center justify-between mb-3">
+                <h3 class="text-lg font-semibold text-gray-800">{{ siteData?.name || 'Nouveau Site' }}</h3>
+                <button @click="goBack" class="p-1 hover:bg-gray-100 rounded">
+                  <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                    <path fill-rule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clip-rule="evenodd"/>
+                  </svg>
+                </button>
               </div>
-              <div class="flex justify-between">
-                <span class="text-gray-600">Ville:</span>
-                <span class="font-medium">{{ siteData.address?.city }}</span>
-              </div>
-              <div class="flex justify-between">
-                <span class="text-gray-600">Localisation:</span>
-                <span class="font-medium">{{ siteData.address?.location }}</span>
-              </div>
-              <div class="flex justify-between">
-                <span class="text-gray-600">Rayon:</span>
-                <span class="font-medium">{{ siteData.geofence_radius }}m</span>
-              </div>
-              <div class="flex justify-between">
-                <span class="text-gray-600">Statut:</span>
-                <span :class="siteData.active ? 'text-green-600' : 'text-red-600'" class="font-medium">
+
+              <div v-if="siteData" class="space-y-2 text-sm">
+                <div class="flex justify-between">
+                  <span class="text-gray-600">Type:</span>
+                  <span class="font-medium">{{ siteData.site_type === 'global_site' ? 'Global' : 'Manager' }}</span>
+                </div>
+                <div class="flex justify-between">
+                  <span class="text-gray-600">Ville:</span>
+                  <span class="font-medium">{{ siteData.address?.city }}</span>
+                </div>
+                <div class="flex justify-between">
+                  <span class="text-gray-600">Localisation:</span>
+                  <span class="font-medium">{{ siteData.address?.location }}</span>
+                </div>
+                <div class="flex justify-between">
+                  <span class="text-gray-600">Rayon:</span>
+                  <span class="font-medium">{{ siteData.geofence_radius }}m</span>
+                </div>
+                <div class="flex justify-between">
+                  <span class="text-gray-600">Statut:</span>
+                  <span :class="siteData.active ? 'text-green-600' : 'text-red-600'" class="font-medium">
                   {{ siteData.active ? 'Actif' : 'Inactif' }}
                 </span>
-              </div>
-            </div>
-
-            <!-- Mode d'édition -->
-            <div v-if="isEditMode" class="mt-4 pt-4 border-t">
-              <p class="text-sm text-blue-600 mb-3">
-                Cliquez sur la carte pour dessiner ou modifier le polygone
-              </p>
-
-              <div class="flex space-x-2">
-                <button @click="clearPolygon"
-                        class="flex-1 px-3 py-2 bg-red-500 text-white rounded hover:bg-red-600 text-sm">
-                  Effacer
-                </button>
-                <button disabled
-                        class="flex-1 px-3 py-2 bg-yellow-500 text-white rounded hover:bg-yellow-600 disabled:opacity-50 disabled:cursor-not-allowed text-sm">
-                  Annuler dernier
-                </button>
-                <button @click="savePolygon"
-                        class="flex-1 px-3 py-2 bg-green-600 text-white rounded hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed text-sm">
-                  Sauvegarder
-                </button>
+                </div>
               </div>
 
-              <p class="text-xs text-gray-500 mt-2">
-                Utilise les poignées sur la carte pour ajuster la zone
-              </p>
-            </div>
+              <!-- Mode d'édition -->
+              <div v-if="isEditMode" class="mt-4 pt-4 border-t">
+                <p class="text-sm text-blue-600 mb-3">
+                  Cliquez sur la carte pour dessiner ou modifier le polygone
+                </p>
 
-            <!-- Boutons d'action en mode visualisation -->
-            <div v-else class="mt-4 pt-4 border-t space-y-2">
-              <button @click="enableEditMode"
-                      class="w-full px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 flex items-center justify-center">
-                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/>
-                </svg>
-                Modifier le Polygone
-              </button>
-              <button @click="goToEdit"
-                      class="w-full px-4 py-2 bg-gray-600 text-white rounded hover:bg-gray-700 flex items-center justify-center">
-                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"/>
-                </svg>
-                Modifier le Site
-              </button>
+                <div class="flex space-x-2">
+                  <button @click="clearPolygon"
+                          class="flex-1 px-3 py-2 bg-red-500 text-white rounded hover:bg-red-600 text-sm">
+                    Effacer
+                  </button>
+                  <button disabled
+                          class="flex-1 px-3 py-2 bg-yellow-500 text-white rounded hover:bg-yellow-600 disabled:opacity-50 disabled:cursor-not-allowed text-sm">
+                    Annuler dernier
+                  </button>
+                  <button @click="savePolygon"
+                          class="flex-1 px-3 py-2 bg-green-600 text-white rounded hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed text-sm">
+                    Sauvegarder
+                  </button>
+                </div>
+
+                <p class="text-xs text-gray-500 mt-2">
+                  Utilise les poignées sur la carte pour ajuster la zone
+                </p>
+              </div>
+
+              <!-- Boutons d'action en mode visualisation -->
+              <div v-else class="mt-4 pt-4 border-t space-y-2">
+                <button @click="enableEditMode"
+                        class="w-full px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 flex items-center justify-center">
+                  <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/>
+                  </svg>
+                  Modifier le Polygone
+                </button>
+                <button @click="goToEdit"
+                        class="w-full px-4 py-2 bg-gray-600 text-white rounded hover:bg-gray-700 flex items-center justify-center">
+                  <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"/>
+                  </svg>
+                  Modifier le Site
+                </button>
+              </div>
             </div>
           </div>
 
@@ -123,25 +126,25 @@
             </div>
           </div>
 
-          <!-- Barre de recherche -->
+<!--          &lt;!&ndash; Barre de recherche &ndash;&gt;-->
 
-          <div class="absolute top-2 right-44 z-10 bg-white rounded-lg shadow-lg p-3 w-80">
-            <div class="flex space-x-2">
-              <input
-                  v-model="searchQuery"
-                  @keyup.enter="searchLocation"
-                  type="text"
-                  placeholder="Ex: Akwa Douala, Hôpital Général, 4.05, 9.76"
-                  class="flex-1 px-3 py-2 border rounded focus:outline-none focus:ring focus:ring-blue-300 text-sm"
-              />
-              <button
-                  @click="searchLocation"
-                  class="px-3 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 text-sm"
-              >
-                🔍
-              </button>
-            </div>
-          </div>
+<!--          <div class="absolute top-2 right-44 z-10 bg-white rounded-lg shadow-lg p-3 w-80">-->
+<!--            <div class="flex space-x-2">-->
+<!--              <input-->
+<!--                  v-model="searchQuery"-->
+<!--                  @keyup.enter="searchLocation"-->
+<!--                  type="text"-->
+<!--                  placeholder="Ex: Akwa Douala, Hôpital Général, 4.05, 9.76"-->
+<!--                  class="flex-1 px-3 py-2 border rounded focus:outline-none focus:ring focus:ring-blue-300 text-sm"-->
+<!--              />-->
+<!--              <button-->
+<!--                  @click="searchLocation"-->
+<!--                  class="px-3 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 text-sm"-->
+<!--              >-->
+<!--                🔍-->
+<!--              </button>-->
+<!--            </div>-->
+<!--          </div>-->
 
 
           <div ref="mapContainer" class="w-full h-screen"></div>
@@ -189,8 +192,8 @@ let map:any = null
 let polygon:any = null
 const MAX_POINTS = 4;
 
-const searchQuery = ref('');
-let searchMarker:any = null;
+// const searchQuery = ref('');
+// let searchMarker:any = null;
 
 
 const goBack = () => {
@@ -247,23 +250,22 @@ const style = () => ({
 // const searchLocation = () => {
 //   if (!searchQuery.value || !map) return;
 //
-//   ymaps.geocode(searchQuery.value).then((res:any) => {
-//     const firstResult = res.geoObjects.get(0);
-//     if (!firstResult) {
+//   // @ts-ignore
+//   ymaps.geocode(searchQuery.value, { results: 1 }).then((res: any) => {
+//     if (res.geoObjects.getLength() === 0) {
 //       messageType.value = 'error';
 //       messageText.value = 'Aucun résultat trouvé';
 //       showMessage();
 //       return;
 //     }
 //
+//     const firstResult = res.geoObjects.get(0);
 //     const coords = firstResult.geometry.getCoordinates();
 //
 //     // Supprimer ancien marqueur
-//     if (searchMarker) {
-//       map.geoObjects.remove(searchMarker);
-//     }
+//     if (searchMarker) map.geoObjects.remove(searchMarker);
 //
-//     // Créer un marqueur
+//     // Créer un nouveau marqueur
 //     searchMarker = new ymaps.Placemark(coords, {
 //       balloonContent: firstResult.getAddressLine()
 //     });
@@ -272,42 +274,13 @@ const style = () => ({
 //
 //     // Centrer la carte
 //     map.setCenter(coords, 17, { duration: 500 });
+//   }).catch((err: any) => {
+//     console.error('Erreur géocodage:', err);
+//     messageType.value = 'error';
+//     messageText.value = 'Erreur lors de la recherche';
+//     showMessage();
 //   });
 // };
-const searchLocation = () => {
-  if (!searchQuery.value || !map) return;
-
-  // @ts-ignore
-  ymaps.geocode(searchQuery.value, { results: 1 }).then((res: any) => {
-    if (res.geoObjects.getLength() === 0) {
-      messageType.value = 'error';
-      messageText.value = 'Aucun résultat trouvé';
-      showMessage();
-      return;
-    }
-
-    const firstResult = res.geoObjects.get(0);
-    const coords = firstResult.geometry.getCoordinates();
-
-    // Supprimer ancien marqueur
-    if (searchMarker) map.geoObjects.remove(searchMarker);
-
-    // Créer un nouveau marqueur
-    searchMarker = new ymaps.Placemark(coords, {
-      balloonContent: firstResult.getAddressLine()
-    });
-
-    map.geoObjects.add(searchMarker);
-
-    // Centrer la carte
-    map.setCenter(coords, 17, { duration: 500 });
-  }).catch((err: any) => {
-    console.error('Erreur géocodage:', err);
-    messageType.value = 'error';
-    messageText.value = 'Erreur lors de la recherche';
-    showMessage();
-  });
-};
 
 
 

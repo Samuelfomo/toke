@@ -1,19 +1,50 @@
 import axiosClient from '@/tools/Fetch.Client';
+import { apiRequest } from '@/tools/Fetch.Client';
+import {ApiResponse} from "@toke/shared";
 
 const baseUrl = '/uploads';
 
+export interface UploadFileResponse {
+    success: boolean;
+    url: string;
+    type: 'image' | 'audio' | 'file';
+    filename: string;
+}
+
+export interface MessageContent {
+    type: 'text' | 'link';
+    content: string;
+}
+
+export interface SendReplyPayload {
+    memo_guid: string;
+    message: MessageContent[];
+}
+
+export interface ValidateMemoPayload {
+    memo_guid: string;
+    action: 'approve' | 'reject';
+    message?: MessageContent[];
+}
+
+export interface UploadedAttachment {
+    originalName: string;
+    mimeType: string;
+    size: number;
+    url: string;
+}
+
+export interface UploadMultipleResponse {
+    success: boolean;
+    attachments: UploadedAttachment[];
+}
+
+const API_BASE_URL = '/api'; // Ajustez selon votre config
+const MAX_FILES = 8;
+
+
+
 export default class MemoService {
-  // static async loadFiles(url: string): Promise<any> {
-  //   try {
-  //     return await apiRequest<any>({
-  //       path: `${baseUrl}/?url=${url}`,
-  //       method: 'GET',
-  //     });
-  //   } catch (error: any) {
-  //     console.error('response error', error);
-  //     return error;
-  //   }
-  // }
 
   static async loadFiles(url: string): Promise<Blob> {
     const response = await axiosClient.get(`${baseUrl}/`, {
@@ -23,4 +54,134 @@ export default class MemoService {
 
     return response.data; // ← Blob réel
   }
+
+    // /**
+    //  * Upload un fichier individuel
+    //  */
+    // static async uploadFile(file: File): Promise<UploadFileResponse> {
+    //     const formData = new FormData();
+    //     formData.append('file', file);
+    //
+    //     return await apiRequest<UploadFileResponse>({
+    //         path: `/memos/upload`, // ⚠️ pas besoin de remettre baseURL ici
+    //         method: 'POST',
+    //         data: formData,
+    //         headers: {
+    //             'Content-Type': 'multipart/form-data',
+    //         },
+    //     });
+    //
+    // }
+
+    static async uploadFile(file: File): Promise<UploadedAttachment> {
+        const formData = new FormData();
+        formData.append('files', file); // ⚠️ même pour 1 → "files"
+
+        const response = await apiRequest<UploadMultipleResponse>({
+            path: `${baseUrl}/attachments`,
+            method: 'POST',
+            data: formData,
+            headers: { 'Content-Type': 'multipart/form-data' },
+        });
+
+        return response.attachments[0];
+    }
+
+
+    /**
+     * Upload plusieurs fichiers en une requête
+     */
+    static async uploadMultipleFiles(files: File[]): Promise<UploadedAttachment[]> {
+        if (files.length === 0) return [];
+
+        if (files.length > MAX_FILES) {
+            throw new Error(`Maximum ${MAX_FILES} fichiers autorisés`);
+        }
+
+        const formData = new FormData();
+
+        files.forEach(file => {
+            formData.append('files', file);
+        });
+
+        const response = await apiRequest<UploadMultipleResponse>({
+            path: `${baseUrl}/attachments`,
+            method: 'POST',
+            data: formData,
+            headers: {
+                'Content-Type': 'multipart/form-data',
+            },
+        });
+
+        return response.attachments;
+    }
+
+
+    /**
+     * Construire le contenu du message avec texte et liens
+     */
+    static buildMessageContent(
+        textContent: string,
+        uploadedFiles: UploadedAttachment[]
+    ): MessageContent[] {
+        const messages: MessageContent[] = [];
+
+        // Ajouter le texte si présent
+        if (textContent.trim()) {
+            messages.push({
+                type: 'text',
+                content: textContent.trim()
+            });
+        }
+
+        // Ajouter les liens des fichiers uploadés
+        uploadedFiles.forEach(file => {
+            messages.push({
+                type: 'link',
+                content: file.url
+            });
+        });
+
+        return messages;
+    }
+
+    /**
+     * Envoyer une réponse simple (sans validation)
+     */
+    static async sendReply(payload: SendReplyPayload): Promise<any> {
+        try {
+            return await apiRequest<ApiResponse>({
+                path: `${baseUrl}/reply`,
+                method: 'PATCH',
+                data: payload,
+            });
+        }
+        catch (error: any) {
+            return error;
+        }
+    }
+
+    /**
+     * Valider un mémo (approuver ou rejeter)
+     */
+    static async validateMemo(payload: ValidateMemoPayload): Promise<any> {
+        try {
+            return await apiRequest<ApiResponse>({
+                path: `${baseUrl}/validate`,
+                method: 'PATCH',
+                data: payload,
+            });
+        }
+        catch (error: any) {
+            return error;
+        }
+    }
+
+    /**
+     * Upload audio (Blob) et retourner l'URL
+     */
+    static async uploadAudioBlob(audioBlob: Blob, filename: string = 'audio.webm'): Promise<UploadedAttachment> {
+        const file = new File([audioBlob], filename, { type: audioBlob.type });
+        return await MemoService.uploadFile(file);
+    }
 }
