@@ -2,11 +2,14 @@ import Ensure from '@toke/api/dist/middle/ensured-routes.js';
 import { Request, Response, Router } from 'express';
 import R from '@toke/api/dist/tools/response.js';
 import { HttpStatus, MEMOS_CODES, MEMOS_ERRORS } from '@toke/shared';
+import multer from 'multer';
+import FormData from 'form-data';
 
 import { TenantConfig } from '../tools/tenant.config.js';
 import { UserService } from '../services/user.service.js';
 
 const router = Router();
+const upload = multer();
 
 router.get('/', TenantConfig.authenticate, Ensure.get(), async (req: Request, res: Response) => {
   try {
@@ -45,5 +48,90 @@ router.get('/', TenantConfig.authenticate, Ensure.get(), async (req: Request, re
     });
   }
 });
+
+/**
+ * 📤 UPLOAD MULTIPLE FILES (proxy)
+ */
+router.post(
+  '/attachments',
+  TenantConfig.authenticate,
+  Ensure.post(),
+  upload.array('files', 10),
+  async (req: Request, res: Response) => {
+    try {
+      const files = req.files as Express.Multer.File[];
+      const client = (req as any).client.reference;
+
+      if (!files || files.length === 0) {
+        return R.handleError(res, HttpStatus.BAD_REQUEST, {
+          code: 'no_files_received',
+          message: 'No files received',
+        });
+      }
+
+      // 🔁 reconstruction FormData pour l’API finale
+      const form = new FormData();
+      files.forEach((file) => {
+        form.append('files', file.buffer, {
+          filename: file.originalname,
+          contentType: file.mimetype,
+        });
+      });
+
+      const response = await UserService.uploadAttachments(client, form);
+
+      return res.status(response.status).json(response.data);
+      // return R.handleCreated(res, response.data);
+    } catch (error: any) {
+      console.error('❌ UPLOAD PROXY ERROR:', error.message);
+      return R.handleError(res, HttpStatus.INTERNAL_ERROR, {
+        code: 'upload_proxy_failed',
+        message: error.message,
+      });
+    }
+  },
+);
+
+/**
+ * 💬 SEND REPLY
+ */
+router.patch(
+  '/reply',
+  TenantConfig.authenticate,
+  Ensure.patch(),
+  async (req: Request, res: Response) => {
+    try {
+      const client = (req as any).client.reference;
+      const response = await UserService.sendReply(client, req.body);
+      return res.status(response.status).json(response.data);
+    } catch (error: any) {
+      return R.handleError(res, HttpStatus.INTERNAL_ERROR, {
+        code: 'reply_failed',
+        message: error.message,
+      });
+    }
+  },
+);
+
+/**
+ * ✅❌ VALIDATE MEMO
+ */
+router.patch(
+  '/validate',
+  TenantConfig.authenticate,
+  Ensure.patch(),
+  async (req: Request, res: Response) => {
+    try {
+      const client = (req as any).client.reference;
+      const response = await UserService.validateMemo(client, req.body);
+      return res.status(response.status).json(response.data);
+    } catch (error: any) {
+      return R.handleError(res, HttpStatus.INTERNAL_ERROR, {
+        code: 'validation_failed',
+        message: error.message,
+      });
+    }
+  },
+);
 
 export default router;

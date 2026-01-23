@@ -1,9 +1,13 @@
 import { HttpStatus } from '@toke/shared';
+import FormData from 'form-data';
 
 import { getApiClient } from '../tools/api.factory.js';
 
 const baseUrl: string = '/org-hierarchy';
 const userBaseUrl: string = '/user';
+
+const memoBaseUrl = '/memos';
+const fileBaseUrl = '/uploads';
 
 export class UserService {
   static async listTeamManager(
@@ -113,5 +117,45 @@ export class UserService {
     return await api.get(data, {
       responseType: 'stream', // 🔥 OBLIGATOIRE
     });
+  }
+
+  static async uploadAttachments(reference: string, formData: FormData) {
+    try {
+      const api = await getApiClient(reference);
+
+      return await api.post(`${fileBaseUrl}/attachments`, formData, {
+        headers: formData.getHeaders(),
+        maxBodyLength: Infinity,
+        maxContentLength: Infinity,
+      });
+    } catch (error: any) {
+      if (error.response) return error.response;
+
+      return {
+        status: HttpStatus.INTERNAL_ERROR,
+        data: {
+          success: false,
+          message: error.message,
+        },
+      };
+    }
+  }
+
+  static async sendReply(reference: string, payload: any) {
+    try {
+      const api = await getApiClient(reference);
+      return await api.put(`${memoBaseUrl}/reply`, payload);
+    } catch (error: any) {
+      return error.response;
+    }
+  }
+
+  static async validateMemo(reference: string, payload: any) {
+    try {
+      const api = await getApiClient(reference);
+      return await api.put(`${memoBaseUrl}/validate`, payload);
+    } catch (error: any) {
+      return error.response;
+    }
   }
 }

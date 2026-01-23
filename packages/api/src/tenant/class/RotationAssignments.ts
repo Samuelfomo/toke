@@ -394,9 +394,7 @@ export default class RotationAssignment extends RotationAssignmentModel {
       [RS.USER]: userObj ? await userObj.toJSON() : null,
       [RS.ASSIGNED_BY]: assignedByObj ? await assignedByObj.toJSON() : null,
       [RS.GROUP]: groupsObj ? await groupsObj.toJSON() : null,
-      [RS.ROTATION_GROUP]: rotationGroupObj
-        ? await rotationGroupObj.toJSON(responseValue.MINIMAL)
-        : null,
+      [RS.ROTATION_GROUP]: rotationGroupObj ? await rotationGroupObj.toJSON() : null,
     };
   }
 
@@ -409,9 +407,7 @@ export default class RotationAssignment extends RotationAssignmentModel {
       [RS.OFFSET]: this.offset,
       [RS.ASSIGNED_AT]: this.assigned_at,
       [RS.ASSIGNED_BY]: assignedByObj ? await assignedByObj.toJSON() : null,
-      [RS.ROTATION_GROUP]: rotationGroupObj
-        ? await rotationGroupObj.toJSON(responseValue.FULL)
-        : null,
+      [RS.ROTATION_GROUP]: rotationGroupObj ? await rotationGroupObj.toJSON() : null,
     };
   }
 
