@@ -931,6 +931,11 @@ export default class User extends UserModel {
       [RS.DEPARTMENT]: this.department,
       [RS.JOB_TITLE]: this.job_title,
       [RS.ACTIVE]: this.active,
+      [RS.EMAIL]: this.email,
+      [RS.PHONE_NUMBER]: this.phone_number,
+      [RS.COUNTRY]: this.country,
+      [RS.EMPLOYEE_CODE]: this.employee_code,
+      [RS.HIRE_DATE]: this.hire_date,
     };
   }
 

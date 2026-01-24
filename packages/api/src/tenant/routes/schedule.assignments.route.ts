@@ -196,6 +196,7 @@ router.get('/:manager/list', Ensure.get(), async (req: Request, res: Response) =
 
     const scheduleAssignments = await ScheduleAssignments._listByCreatedBy(managerObj.getId()!);
     if (!scheduleAssignments || scheduleAssignments.length === 0) {
+      console.log('no scheduleAssignments', scheduleAssignments);
       return R.handleSuccess(res, {
         schedule_assignments: {
           count: 0,
@@ -203,6 +204,7 @@ router.get('/:manager/list', Ensure.get(), async (req: Request, res: Response) =
         },
       });
     }
+    console.log('scheduleAssignments', scheduleAssignments);
     return R.handleSuccess(res, {
       schedule_assignments: {
         count: scheduleAssignments.length,

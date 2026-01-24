@@ -391,9 +391,9 @@ export default class RotationAssignment extends RotationAssignmentModel {
 
     return {
       ...baseData,
-      [RS.USER]: userObj ? await userObj.toJSON() : null,
-      [RS.ASSIGNED_BY]: assignedByObj ? await assignedByObj.toJSON() : null,
-      [RS.GROUP]: groupsObj ? await groupsObj.toJSON() : null,
+      [RS.USER]: userObj ? userObj.toPublicJSON() : null,
+      [RS.ASSIGNED_BY]: assignedByObj ? assignedByObj.toPublicJSON() : null,
+      [RS.GROUP]: groupsObj ? await groupsObj.toPublicJSON() : null,
       [RS.ROTATION_GROUP]: rotationGroupObj ? await rotationGroupObj.toJSON() : null,
     };
   }

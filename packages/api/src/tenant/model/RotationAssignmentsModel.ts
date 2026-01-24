@@ -18,6 +18,7 @@ export default class RotationAssignmentModel extends BaseModel {
     groups: 'groups',
     rotation_group: 'rotation_group',
     assigned_by: 'assigned_by',
+    active: 'active',
     offset: 'offset',
     assigned_at: 'assigned_at',
     deleted_at: 'deleted_at',
@@ -35,6 +36,7 @@ export default class RotationAssignmentModel extends BaseModel {
   protected groups?: number | null;
   protected rotation_group?: number;
   protected assigned_by?: number;
+  protected active: boolean = true;
   protected offset?: number;
   protected assigned_at?: Date;
   protected deleted_at?: Date | null;
@@ -151,6 +153,13 @@ export default class RotationAssignmentModel extends BaseModel {
     return await this.listAll({ [this.db.offset]: offset }, paginationOptions);
   }
 
+  protected async listByStatus(
+    isActive: boolean,
+    paginationOptions: { offset?: number; limit?: number } = {},
+  ): Promise<any[]> {
+    return await this.listAll({ [this.db.active]: isActive }, paginationOptions);
+  }
+
   // ============================================
   // STATISTIQUES
   // ============================================
@@ -207,6 +216,7 @@ export default class RotationAssignmentModel extends BaseModel {
       [this.db.groups]: this.groups,
       [this.db.rotation_group]: this.rotation_group,
       [this.db.assigned_by]: this.assigned_by,
+      [this.db.active]: this.active || true,
       [this.db.offset]: this.offset ?? ROTATION_ASSIGNMENT_DEFAULTS.OFFSET,
       [this.db.assigned_at]: this.assigned_at ?? ROTATION_ASSIGNMENT_DEFAULTS.ASSIGNED_AT,
     });
@@ -241,6 +251,9 @@ export default class RotationAssignmentModel extends BaseModel {
 
     if (this.offset !== undefined) {
       updateData[this.db.offset] = this.offset;
+    }
+    if (this.active !== undefined) {
+      updateData[this.db.active] = this.active;
     }
     if (this.assigned_at !== undefined) {
       updateData[this.db.assigned_at] = this.assigned_at;

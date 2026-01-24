@@ -617,7 +617,7 @@ export default class Groups extends GroupsModel {
     const baseModel = {
       [RS.GUID]: this.guid,
       [RS.NAME]: this.name,
-      [RS.MANAGER]: managerObj ? await managerObj.toJSON(responseValue.MINIMAL) : null,
+      [RS.MANAGER]: managerObj ? managerObj.toPublicJSON() : null,
       [RS.CREATED_AT]: this.created_at,
       [RS.UPDATED_AT]: this.updated_at,
     };
@@ -645,7 +645,7 @@ export default class Groups extends GroupsModel {
       this.members.map(async (member) => {
         const userObj = await this.getMemberObj(member.user);
         return {
-          user: userObj ? await userObj.toJSON(responseValue.MINIMAL) : null,
+          user: userObj ? userObj.toPublicJSON() : null,
           joined_at: member.joined_at,
           active: member.active !== false,
         };
@@ -672,12 +672,8 @@ export default class Groups extends GroupsModel {
       },
       assignment_info: {
         current_type: assignmentType,
-        active_schedule_assignment: activeSchedule
-          ? await activeSchedule.toJSON(responseValue.MINIMAL)
-          : null,
-        active_rotation_assignment: activeRotation
-          ? await activeRotation.toJSON(responseValue.MINIMAL)
-          : null,
+        active_schedule_assignment: activeSchedule ? await activeSchedule.toPUBLIC() : null,
+        active_rotation_assignment: activeRotation ? await activeRotation.toPUBLIC() : null,
       },
       // assigned_sessions: {
       //   count: enrichedSessions.length,
@@ -698,6 +694,31 @@ export default class Groups extends GroupsModel {
       [RS.NAME]: this.name,
       [RS.MANAGER]: this.manager,
       total_members: this.members.length,
+    };
+  }
+
+  async toPublicJSON(): Promise<object> {
+    const enrichedMembers = await Promise.all(
+      this.members.map(async (member) => {
+        const userObj = await this.getMemberObj(member.user);
+        return {
+          user: userObj ? userObj.toPublicJSON() : null,
+          joined_at: member.joined_at,
+          active: member.active !== false,
+        };
+      }),
+    );
+    const managerObj = await this.getManagerObj();
+    const summary = this.getSummary();
+    return {
+      [RS.GUID]: this.guid,
+      [RS.NAME]: this.name,
+      [RS.MANAGER]: managerObj ? managerObj.toPublicJSON() : null,
+      summary: summary,
+      members: {
+        count: enrichedMembers.length,
+        items: enrichedMembers,
+      },
     };
   }
 

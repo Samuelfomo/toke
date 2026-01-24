@@ -91,6 +91,15 @@ export const RotationAssignmentsDbStructure = {
       },
       comment: 'User ID who assign the rotation',
     },
+    active: {
+      type: DataTypes.BOOLEAN,
+      allowNull: false,
+      defaultValue: true,
+      validate: {
+        isBoolean: true,
+      },
+      comment: 'Rotation status',
+    },
     assigned_at: {
       type: DataTypes.DATE,
       allowNull: false,
@@ -135,6 +144,10 @@ export const RotationAssignmentsDbStructure = {
       {
         fields: ['assigned_by'],
         name: 'idx_rotation_assignments_assigned_by',
+      },
+      {
+        fields: ['active'],
+        name: 'idx_rotation_assignments_active',
       },
       {
         fields: ['assigned_at'],
