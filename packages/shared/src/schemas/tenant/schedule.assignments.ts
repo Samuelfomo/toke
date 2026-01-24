@@ -91,6 +91,7 @@ const baseScheduleAssignmentSchema = z.object({
 
   created_by: z
     .string({
+      required_error: SCHEDULE_ASSIGNMENTS_ERRORS.CREATED_BY_REQUIRED,
       invalid_type_error: SCHEDULE_ASSIGNMENTS_ERRORS.CREATED_BY_INVALID,
     })
     .trim()
@@ -101,9 +102,9 @@ const baseScheduleAssignmentSchema = z.object({
     .max(
       SCHEDULE_ASSIGNMENTS_VALIDATION.CREATED_BY.MAX_LENGTH,
       SCHEDULE_ASSIGNMENTS_ERRORS.CREATED_BY_INVALID,
-    )
-    .nullable()
-    .optional(),
+    ),
+  // .nullable()
+  // .optional(),
 
   reason: z
     .string({

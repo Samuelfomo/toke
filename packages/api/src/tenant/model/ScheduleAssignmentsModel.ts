@@ -410,8 +410,8 @@ export default class ScheduleAssignmentsModel extends BaseModel {
       throw new Error(SCHEDULE_ASSIGNMENTS_ERRORS.END_DATE_BEFORE_START);
     }
 
-    if (this.created_by && !ScheduleAssignmentsValidationUtils.validateCreatedBy(this.created_by)) {
-      throw new Error(SCHEDULE_ASSIGNMENTS_ERRORS.CREATED_BY_INVALID);
+    if (!this.created_by) {
+      throw new Error(SCHEDULE_ASSIGNMENTS_ERRORS.CREATED_BY_REQUIRED);
     }
 
     if (this.reason && !ScheduleAssignmentsValidationUtils.validateReason(this.reason)) {

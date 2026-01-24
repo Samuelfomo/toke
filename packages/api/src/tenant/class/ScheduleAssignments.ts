@@ -243,7 +243,7 @@ export default class ScheduleAssignments extends ScheduleAssignmentsModel {
     return this;
   }
 
-  setCreatedBy(createdBy: number | null): ScheduleAssignments {
+  setCreatedBy(createdBy: number): ScheduleAssignments {
     this.created_by = createdBy;
     this.createdByObj = undefined; // Reset cache
     return this;
@@ -400,6 +400,7 @@ export default class ScheduleAssignments extends ScheduleAssignmentsModel {
     paginationOptions: { offset?: number; limit?: number } = {},
   ): Promise<ScheduleAssignments[] | null> {
     const dataset = await this.listAllByCreatedBy(manager, paginationOptions);
+    console.log('dataset', dataset);
     if (!dataset || dataset.length === 0) return null;
     return dataset.map((data) => new ScheduleAssignments().hydrate(data));
   }

@@ -196,7 +196,7 @@ router.get('/:manager/list', Ensure.get(), async (req: Request, res: Response) =
 
     const scheduleAssignments = await ScheduleAssignments._listByCreatedBy(managerObj.getId()!);
     if (!scheduleAssignments || scheduleAssignments.length === 0) {
-      console.log('no scheduleAssignments', scheduleAssignments);
+      console.log('no scheduleAssignments', scheduleAssignments, managerObj.getId());
       return R.handleSuccess(res, {
         schedule_assignments: {
           count: 0,
@@ -204,7 +204,7 @@ router.get('/:manager/list', Ensure.get(), async (req: Request, res: Response) =
         },
       });
     }
-    console.log('scheduleAssignments', scheduleAssignments);
+    console.log('scheduleAssignments', scheduleAssignments, managerObj.getId());
     return R.handleSuccess(res, {
       schedule_assignments: {
         count: scheduleAssignments.length,
@@ -240,6 +240,14 @@ router.post('/', Ensure.post(), async (req: Request, res: Response) => {
       });
     }
 
+    const createdByObj = await User._load(validatedData.created_by, true);
+    if (!createdByObj) {
+      return R.handleError(res, HttpStatus.NOT_FOUND, {
+        code: SCHEDULE_ASSIGNMENTS_CODES.CREATED_BY_NOT_FOUND,
+        message: SCHEDULE_ASSIGNMENTS_ERRORS.CREATED_BY_NOT_FOUND,
+      });
+    }
+
     if (validatedData.user && validatedData.groups) {
       return R.handleError(res, HttpStatus.BAD_REQUEST, {
         code: SCHEDULE_ASSIGNMENTS_CODES.VALIDATION_FAILED,
@@ -259,6 +267,7 @@ router.post('/', Ensure.post(), async (req: Request, res: Response) => {
     const exceptionObj = new ScheduleAssignments()
       .setTenant(tenant.config.reference)
       .setSessionTemplate(templateObj.getId()!)
+      .setCreatedBy(createdByObj.getId()!)
       .setStartDate(validatedData.start_date)
       .setEndDate(validatedData.end_date)
       .setActive(validatedData.active ?? SCHEDULE_ASSIGNMENTS_DEFAULTS.ACTIVE);
@@ -285,13 +294,6 @@ router.post('/', Ensure.post(), async (req: Request, res: Response) => {
         });
       }
       exceptionObj.setGroups(groupsObj.getId()!);
-    }
-
-    if (validatedData.created_by) {
-      const createdByObj = await User._load(validatedData.created_by, true);
-      if (createdByObj) {
-        exceptionObj.setCreatedBy(createdByObj.getId()!);
-      }
     }
 
     if (validatedData.reason) {

@@ -23,6 +23,7 @@ export const SCHEDULE_ASSIGNMENTS_VALIDATION = {
   CREATED_BY: {
     MIN_LENGTH: 1,
     MAX_LENGTH: 255,
+    REQUIRED: true,
   },
   REASON: {
     MIN_LENGTH: 1,
@@ -60,6 +61,8 @@ export const SCHEDULE_ASSIGNMENTS_CODES = {
   END_DATE_INVALID: 'end_date_invalid',
   END_DATE_BEFORE_START: 'end_date_before_start',
   CREATED_BY_INVALID: 'created_by_invalid',
+  CREATED_BY_REQUIRED: 'created_by_required',
+  CREATED_BY_NOT_FOUND: 'created_by_not_found',
   REASON_INVALID: 'reason_invalid',
   ACTIVE_INVALID: 'active_invalid',
   VALIDATION_FAILED: 'validation_failed',
@@ -103,7 +106,9 @@ export const SCHEDULE_ASSIGNMENTS_ERRORS = {
   END_DATE_INVALID: 'end_date must be a valid date (YYYY-MM-DD)',
   END_DATE_BEFORE_START: 'end_date must be after or equal to start_date',
 
+  CREATED_BY_REQUIRED: `${SCHEDULE_ASSIGNMENTS_LABEL} created_by is required`,
   CREATED_BY_INVALID: `Created By GUID must be between ${SCHEDULE_ASSIGNMENTS_VALIDATION.CREATED_BY.MIN_LENGTH} and ${SCHEDULE_ASSIGNMENTS_VALIDATION.CREATED_BY.MAX_LENGTH} characters`,
+  CREATED_BY_NOT_FOUND: 'Created By not found',
 
   REASON_INVALID: `Reason must be between ${SCHEDULE_ASSIGNMENTS_VALIDATION.REASON.MIN_LENGTH} and ${SCHEDULE_ASSIGNMENTS_VALIDATION.REASON.MAX_LENGTH} characters`,
 

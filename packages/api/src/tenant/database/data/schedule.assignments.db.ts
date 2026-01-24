@@ -95,7 +95,7 @@ export const ScheduleAssignmentsDbStructure = {
     },
     created_by: {
       type: DataTypes.INTEGER,
-      allowNull: true,
+      allowNull: false,
       references: {
         model: tableName.USERS,
         key: 'id',
