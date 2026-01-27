@@ -587,7 +587,7 @@ const chargerMemos = async () => {
 };
 
 const naviguerCreerMemo = () => {
-  router.push('/memoNew/:employeeId');
+  router.push('/memoNew');
 };
 
 const voirDetailMemo = (memoId: string) => {

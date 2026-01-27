@@ -17,7 +17,7 @@ export interface MessageContent {
 }
 
 export interface SendReplyPayload {
-    memo_guid: string;
+    user: string;
     message: MessageContent[];
 }
 
@@ -104,7 +104,7 @@ export default class MemoService {
             formData.append('files', file);
         });
 
-        const response = await apiRequest<UploadMultipleResponse>({
+        const response = await apiRequest<ApiResponse>({
             path: `${baseUrl}/attachments`,
             method: 'POST',
             data: formData,
@@ -113,7 +113,9 @@ export default class MemoService {
             },
         });
 
-        return response.attachments;
+        if (!response.success) throw new Error(`Erreur lors de l'upload des fichiers : ' + response.data.error?.message || 'Aucun message d'erreur`)
+
+        return response.data.attachments;
     }
 
 
@@ -134,6 +136,8 @@ export default class MemoService {
             });
         }
 
+        console.log('uploadedFiles', uploadedFiles);
+
         // Ajouter les liens des fichiers uploadés
         uploadedFiles.forEach(file => {
             messages.push({
@@ -142,16 +146,18 @@ export default class MemoService {
             });
         });
 
+        console.log('messages', messages);
+
         return messages;
     }
 
     /**
      * Envoyer une réponse simple (sans validation)
      */
-    static async sendReply(payload: SendReplyPayload): Promise<any> {
+    static async sendReply(guid: string, payload: SendReplyPayload): Promise<any> {
         try {
             return await apiRequest<ApiResponse>({
-                path: `${baseUrl}/reply`,
+                path: `${baseUrl}/reply/${guid}`,
                 method: 'PATCH',
                 data: payload,
             });
@@ -164,12 +170,25 @@ export default class MemoService {
     /**
      * Valider un mémo (approuver ou rejeter)
      */
-    static async validateMemo(payload: ValidateMemoPayload): Promise<any> {
+    static async validateMemo(guid: string, user: string): Promise<any> {
         try {
             return await apiRequest<ApiResponse>({
-                path: `${baseUrl}/validate`,
+                path: `${baseUrl}/validate/${guid}`,
                 method: 'PATCH',
-                data: payload,
+                data: {validator_user: user},
+            });
+        }
+        catch (error: any) {
+            return error;
+        }
+    }
+
+    static async rejetMemo(guid: string, user: string): Promise<any> {
+        try {
+            return await apiRequest<ApiResponse>({
+                path: `${baseUrl}/reject/${guid}`,
+                method: 'PATCH',
+                data: {validator_user: user},
             });
         }
         catch (error: any) {

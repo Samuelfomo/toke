@@ -21,7 +21,7 @@
           <div class="destinataire-text">
             <h2 class="destinataire-nom">
               {{ typeDestinataire === 'general' ? 'Tous les employés' :
-              (employeSelectionne ? employeSelectionne.nom : 'Sélectionner un employé') }}
+              (employeSelectionne ? employeSelectionne.name : 'Sélectionner un employé') }}
             </h2>
             <p class="memo-type-label">{{ getTypeLabel(formulaire.type) || 'Sélectionner un type' }}</p>
           </div>
@@ -136,7 +136,7 @@
                     </svg>
                   </div>
                   <div class="employe-text">
-                    <p class="employe-nom-selected">{{ employePreselectionne?.nom }}</p>
+                    <p class="employe-nom-selected">{{ employePreselectionne?.name }}</p>
                     <p class="employe-label">Destinataire</p>
                   </div>
                   <svg class="check-icon" fill="currentColor" viewBox="0 0 20 20">
@@ -178,42 +178,69 @@
                   >
                     <option value="">Choisir un employé</option>
                     <option v-for="employe in employes" :key="employe.id" :value="employe.id">
-                      {{ employe.nom }}
+                      {{ employe.name }}
                     </option>
                   </select>
                 </div>
               </div>
             </div>
 
+<!--            &lt;!&ndash; Type de mémo &ndash;&gt;-->
+<!--            <div class="config-section">-->
+<!--              <h4 class="config-section-title">Type de mémo</h4>-->
+<!--              <select-->
+<!--                v-model="formulaire.type"-->
+<!--                class="form-select"-->
+<!--                required-->
+<!--              >-->
+<!--                <option value="" disabled>Sélectionner un type</option>-->
+<!--                <option v-for="(req, index) in memoTitle" :key="index" :value="req.type">{{ req.titre }}</option>-->
+<!--              </select>-->
+<!--            </div>-->
+
+<!--            &lt;!&ndash; Titre du mémo &ndash;&gt;-->
+<!--            <div class="config-section">-->
+<!--              <h4 class="config-section-title">Titre du mémo *</h4>-->
+<!--              <input-->
+<!--                v-model="formulaire.titre"-->
+<!--                type="text"-->
+<!--                placeholder="Entrez le titre du mémo..."-->
+<!--                class="form-input-titre"-->
+<!--                required-->
+<!--              />-->
+<!--            </div>-->
+
             <!-- Type de mémo -->
             <div class="config-section">
               <h4 class="config-section-title">Type de mémo</h4>
               <select
-                v-model="formulaire.type"
-                class="form-select"
-                required
+                  v-model="formulaire.type"
+                  class="form-select"
+                  required
               >
-                <option value="">Sélectionner un type</option>
-                <option value="justification_retard">Justification de retard</option>
-                <option value="absence">Absence</option>
-                <option value="demande_correction">Demande de correction</option>
-                <option value="cloture_session">Clôture de session</option>
-                <option value="memo_auto">Mémo généré automatiquement</option>
-                <option value="autres">Autres</option>
+                <option value="" disabled>Sélectionner un type</option>
+                <option
+                    v-for="(req, index) in memoTitle"
+                    :key="index"
+                    :value="req.type"
+                >
+                  {{ req.titre }}
+                </option>
               </select>
             </div>
 
-            <!-- Titre du mémo -->
-            <div class="config-section">
+            <!-- Titre du mémo (uniquement si type = other) -->
+            <div class="config-section" v-if="formulaire.type === 'other'">
               <h4 class="config-section-title">Titre du mémo *</h4>
               <input
-                v-model="formulaire.titre"
-                type="text"
-                placeholder="Entrez le titre du mémo..."
-                class="form-input-titre"
-                required
+                  v-model="formulaire.titre"
+                  type="text"
+                  placeholder="Entrez le titre du mémo..."
+                  class="form-input-titre"
+                  required
               />
             </div>
+
           </div>
         </div>
       </transition>
@@ -331,13 +358,9 @@ import { useRoute } from 'vue-router';
 import { useUserStore } from '@/composables/userStore';
 import "../../assets/css/toke-memo-08.css"
 import router from '@/router';
+import {TeamEmployee, useTeamStore} from "@/composables/teamStore";
 
 // Interfaces
-interface User {
-  id: string;
-  nom: string;
-  guid?: string;
-}
 
 interface FormulaireMemo {
   destinataireId: string;
@@ -360,10 +383,12 @@ interface MemoEnvoye {
 const route = useRoute();
 const userStore = useUserStore();
 
+const teamStore = useTeamStore()
+
 // État
-const employes = ref<User[]>([]);
+const employes = computed(() => teamStore.employees);
 const typeDestinataire = ref<'individuel' | 'general'>('individuel');
-const employePreselectionne = ref<User | null>(null);
+const employePreselectionne = ref<TeamEmployee | null>(null);
 const formulaire = ref<FormulaireMemo>({
   destinataireId: '',
   type: '',
@@ -376,6 +401,32 @@ const isSubmitting = ref(false);
 const showConfigPanel = ref(true);
 const messagesContainer = ref<HTMLElement | null>(null);
 const memoInput = ref<HTMLTextAreaElement | null>(null);
+
+
+const memoTitle = ref([
+  {
+    type: 'delay_justification',
+    titre: 'Justification de retard',
+  },
+  {
+    type: 'absence_justification',
+    titre: `Justification d'absence`,
+  },
+  {
+    type: 'other',
+    titre: 'Autres',
+  },
+]);
+
+watch(() => formulaire.value.type, (newType) => {
+  if (newType !== 'other') {
+    const found = memoTitle.value.find(m => m.type === newType);
+    formulaire.value.titre = found ? found.titre : '';
+  } else {
+    formulaire.value.titre = '';
+  }
+});
+
 
 // Mémos envoyés
 const memosEnvoyes = ref<MemoEnvoye[]>([]);
@@ -426,38 +477,9 @@ const isEmployePreselectionne = computed(() => {
 // Méthodes
 const chargerEmployes = async () => {
   try {
-    await userStore.loadSubordinates();
-    employes.value = userStore.subordinates.map(sub => ({
-      id: sub.guid || sub.id.toString(),
-      nom: sub.name,
-      guid: sub.guid
-    }));
-    console.log('✅ Employés chargés:', employes.value.length);
+    await teamStore.loadTeam(userStore.user?.guid!)
   } catch (error) {
     console.error('❌ Erreur chargement employés:', error);
-  }
-};
-
-const chargerEmployeDepuisRoute = async () => {
-  const employeeId = route.params.employeeId as string;
-
-  if (employeeId) {
-    console.log('🔍 Chargement employé depuis route:', employeeId);
-
-    if (employes.value.length === 0) {
-      await chargerEmployes();
-    }
-
-    const employe = employes.value.find(e => e.id === employeeId || e.guid === employeeId);
-
-    if (employe) {
-      employePreselectionne.value = employe;
-      formulaire.value.destinataireId = employe.id;
-      typeDestinataire.value = 'individuel';
-      console.log('✅ Employé présélectionné:', employe.nom);
-    } else {
-      console.warn('⚠️ Employé non trouvé:', employeeId);
-    }
   }
 };
 
@@ -739,10 +761,7 @@ onMounted(async () => {
   console.log('📍 Route params:', route.params);
 
   await chargerEmployes();
-  await chargerEmployeDepuisRoute();
 
-  console.log('✅ Initialisation terminée');
-  console.log('👤 Employé présélectionné:', employePreselectionne.value);
 });
 </script>
 

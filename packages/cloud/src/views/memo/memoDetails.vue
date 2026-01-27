@@ -1356,7 +1356,7 @@ const collectAllFiles = async (): Promise<File[]> => {
 };
 
 const envoyerReponse = async () => {
-  if (!peutEnvoyerReponse.value || isSubmitting.value || !memo.value) return;
+  if (!peutEnvoyerReponse.value || isSubmitting.value || !memo.value || !managerGuid.value) return;
 
   // Validation du nombre de fichiers
   const totalFiles = fichiers.value.length + (audioBlob.value ? 1 : 0);
@@ -1372,6 +1372,8 @@ const envoyerReponse = async () => {
     // 1️⃣ Regrouper tous les fichiers
     const allFiles = await collectAllFiles();
 
+    console.log('allFiles', allFiles.length);
+
     // 2️⃣ Upload en une fois
     const uploadedFiles =
         allFiles.length > 0
@@ -1385,9 +1387,11 @@ const envoyerReponse = async () => {
         uploadedFiles
     );
 
+    console.log('messageContent', messageContent);
+
     // 4️⃣ Envoyer la réponse
-    await MemoService.sendReply({
-      memo_guid: memo.value.guid,
+    await MemoService.sendReply(memo.value.guid,{
+      user: managerGuid.value,
       message: messageContent
     });
 
@@ -1434,7 +1438,7 @@ const envoyerReponse = async () => {
 };
 
 const approuverMemo = async () => {
-  if (!memo.value || isProcessing.value) return;
+  if (!memo.value || isProcessing.value || !managerGuid.value) return;
 
   if (!confirm('Êtes-vous sûr de vouloir approuver ce mémo ?')) return;
 
@@ -1465,15 +1469,19 @@ const approuverMemo = async () => {
 
     isUploadingFiles.value = false;
 
-    // Appel API d'approbation
-    await MemoService.validateMemo({
-      memo_guid: memo.value.guid,
-      action: 'approve',
-      message: messageContent
-    });
 
-    alert('Mémo approuvé avec succès !');
-    retourListe();
+      const contentData = {
+        user: managerGuid.value,
+        message: messageContent
+      }
+
+    // Appel API d'approbation
+    const result = await MemoService.validateMemo(memo.value.guid, managerGuid.value);
+
+    await chargerMemo()
+
+    // alert('Mémo approuvé avec succès !');
+    // retourListe();
 
   } catch (error: any) {
     console.error('❌ Erreur approbation:', error);
@@ -1560,7 +1568,7 @@ const approuverMemo = async () => {
 //   }
 // };
 const rejeterMemo = async () => {
-  if (!memo.value || isProcessing.value) return;
+  if (!memo.value || isProcessing.value || !managerGuid.value) return;
 
   if (!reponseContenu.value.trim() && !fichiers.value.length && !audioBlob.value) {
     alert('Veuillez ajouter une réponse pour expliquer le rejet');
@@ -1591,14 +1599,18 @@ const rejeterMemo = async () => {
         uploadedFiles
     );
 
-    await MemoService.validateMemo({
-      memo_guid: memo.value.guid,
-      action: 'reject',
-      message: messageContent
-    });
 
-    alert('Mémo rejeté');
-    retourListe();
+      const contentData = {
+        user: managerGuid.value,
+        message: messageContent
+      }
+
+    await MemoService.rejetMemo(memo.value.guid, managerGuid.value);
+
+    await chargerMemo()
+
+    // alert('Mémo rejeté');
+    // retourListe();
 
   } catch (error: any) {
     console.error('❌ Erreur rejet:', error);

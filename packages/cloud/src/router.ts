@@ -57,7 +57,7 @@ const routes: RouteRecordRaw[] = [
     meta: { requiresAuth: true },
   },
   {
-    path: '/memoNew/:employeeId',
+    path: '/memoNew',
     name: 'memoNew',
     component: MemoNew,
     meta: { requiresAuth: true },
