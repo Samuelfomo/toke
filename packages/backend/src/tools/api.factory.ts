@@ -18,8 +18,6 @@ export const getApiClient = async (reference: string) => {
   if (!subdomain) {
     throw new Error(`Aucun tenant trouvé avec la référence: ${reference}`);
   }
-  
-  console.log('✅ Tenant trouvé:', subdomain);
 
   return createApiClient(
     siteUrl(subdomain),

@@ -6,8 +6,8 @@ import { getApiClient } from '../tools/api.factory.js';
 const baseUrl: string = '/org-hierarchy';
 const userBaseUrl: string = '/user';
 
-const memoBaseUrl = '/memos';
-const fileBaseUrl = '/uploads';
+const memoBaseUrl = '/memo';
+const fileBaseUrl = '/upload';
 
 export class UserService {
   static async listTeamManager(
@@ -141,19 +141,29 @@ export class UserService {
     }
   }
 
-  static async sendReply(reference: string, payload: any) {
+  static async sendReply(reference: string, guid: string, payload: any) {
     try {
       const api = await getApiClient(reference);
-      return await api.put(`${memoBaseUrl}/reply`, payload);
+      return await api.patch(`${memoBaseUrl}/${guid}/manager-respond`, payload);
     } catch (error: any) {
       return error.response;
     }
   }
 
-  static async validateMemo(reference: string, payload: any) {
+  static async validateMemo(reference: string, guid: string, payload: any) {
     try {
       const api = await getApiClient(reference);
-      return await api.put(`${memoBaseUrl}/validate`, payload);
+
+      console.log('requete', `${memoBaseUrl}/${guid}/validate`, payload);
+      return await api.patch(`${memoBaseUrl}/${guid}/validate`, payload);
+    } catch (error: any) {
+      return error.response;
+    }
+  }
+  static async rejetMemo(reference: string, guid: string, payload: any) {
+    try {
+      const api = await getApiClient(reference);
+      return await api.patch(`${memoBaseUrl}/${guid}/reject`, payload);
     } catch (error: any) {
       return error.response;
     }

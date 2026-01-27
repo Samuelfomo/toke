@@ -1,7 +1,7 @@
 import Ensure from '@toke/api/dist/middle/ensured-routes.js';
 import { Request, Response, Router } from 'express';
 import R from '@toke/api/dist/tools/response.js';
-import { HttpStatus, MEMOS_CODES, MEMOS_ERRORS } from '@toke/shared';
+import { HttpStatus, MEMOS_CODES, MEMOS_ERRORS, MemosValidationUtils } from '@toke/shared';
 import multer from 'multer';
 import FormData from 'form-data';
 
@@ -96,14 +96,32 @@ router.post(
  * 💬 SEND REPLY
  */
 router.patch(
-  '/reply',
+  '/reply/:guid',
   TenantConfig.authenticate,
   Ensure.patch(),
   async (req: Request, res: Response) => {
     try {
       const client = (req as any).client.reference;
-      const response = await UserService.sendReply(client, req.body);
-      return res.status(response.status).json(response.data);
+      const { guid } = req.params;
+      if (!guid) {
+        return R.handleError(res, HttpStatus.BAD_REQUEST, {
+          code: 'guid_required',
+          message: 'Memo GUID required.',
+        });
+      }
+      if (!MemosValidationUtils.validateGuid(guid)) {
+        return R.handleError(res, HttpStatus.BAD_REQUEST, {
+          code: MEMOS_CODES.INVALID_GUID,
+          message: MEMOS_ERRORS.GUID_INVALID,
+        });
+      }
+      const response = await UserService.sendReply(client, guid, req.body);
+      if (response.status !== HttpStatus.SUCCESS) {
+        return R.handleError(res, response.status, response.data);
+      }
+
+      return R.handleSuccess(res, response.data);
+      // return res.status(response.status).json(response.data);
     } catch (error: any) {
       return R.handleError(res, HttpStatus.INTERNAL_ERROR, {
         code: 'reply_failed',
@@ -117,14 +135,70 @@ router.patch(
  * ✅❌ VALIDATE MEMO
  */
 router.patch(
-  '/validate',
+  '/validate/:guid',
   TenantConfig.authenticate,
   Ensure.patch(),
   async (req: Request, res: Response) => {
     try {
       const client = (req as any).client.reference;
-      const response = await UserService.validateMemo(client, req.body);
-      return res.status(response.status).json(response.data);
+      const { guid } = req.params;
+      if (!guid) {
+        return R.handleError(res, HttpStatus.BAD_REQUEST, {
+          code: 'guid_required',
+          message: 'Memo GUID required.',
+        });
+      }
+      if (!MemosValidationUtils.validateGuid(guid)) {
+        return R.handleError(res, HttpStatus.BAD_REQUEST, {
+          code: MEMOS_CODES.INVALID_GUID,
+          message: MEMOS_ERRORS.GUID_INVALID,
+        });
+      }
+
+      const response = await UserService.validateMemo(client, guid, req.body);
+      if (response.status !== HttpStatus.SUCCESS) {
+        return R.handleError(res, response.status, response.data);
+      }
+
+      return R.handleSuccess(res, response.data);
+      // return res.status(response.status).json(response.data);
+    } catch (error: any) {
+      return R.handleError(res, HttpStatus.INTERNAL_ERROR, {
+        code: 'validation_failed',
+        message: error.message,
+      });
+    }
+  },
+);
+
+router.patch(
+  '/rejet/:guid',
+  TenantConfig.authenticate,
+  Ensure.patch(),
+  async (req: Request, res: Response) => {
+    try {
+      const client = (req as any).client.reference;
+      const { guid } = req.params;
+      if (!guid) {
+        return R.handleError(res, HttpStatus.BAD_REQUEST, {
+          code: 'guid_required',
+          message: 'Memo GUID required.',
+        });
+      }
+      if (!MemosValidationUtils.validateGuid(guid)) {
+        return R.handleError(res, HttpStatus.BAD_REQUEST, {
+          code: MEMOS_CODES.INVALID_GUID,
+          message: MEMOS_ERRORS.GUID_INVALID,
+        });
+      }
+
+      const response = await UserService.rejetMemo(client, guid, req.body);
+      if (response.status !== HttpStatus.SUCCESS) {
+        return R.handleError(res, response.status, response.data);
+      }
+
+      return R.handleSuccess(res, response.data);
+      // return res.status(response.status).json(response.data);
     } catch (error: any) {
       return R.handleError(res, HttpStatus.INTERNAL_ERROR, {
         code: 'validation_failed',
