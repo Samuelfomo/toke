@@ -18,7 +18,7 @@ export class UsersValidationUtils {
   /**
    * Validates email
    */
-  static validateEmail(email: string | null): boolean {
+  static validateEmail(email: any): boolean {
     if (email === null || email === undefined) return true;
     if (typeof email !== 'string') return false;
 
@@ -37,7 +37,7 @@ export class UsersValidationUtils {
   /**
    * Validates first name
    */
-  static validateFirstName(firstName: string): boolean {
+  static validateFirstName(firstName: any): boolean {
     if (!firstName || typeof firstName !== 'string') return false;
     const trimmed = firstName.trim();
     return (
@@ -186,7 +186,7 @@ export class UsersValidationUtils {
   /**
    * Validates avatar URL
    */
-  static validateAvatarUrl(avatarUrl: string | null): boolean {
+  static validateAvatarUrl(avatarUrl: any): boolean {
     if (avatarUrl === null || avatarUrl === undefined) return true;
     if (typeof avatarUrl !== 'string') return false;
 
@@ -216,7 +216,7 @@ export class UsersValidationUtils {
   /**
    * Validates department
    */
-  static validateDepartment(department: string | null): boolean {
+  static validateDepartment(department: any): boolean {
     if (department === null || department === undefined) return true;
     if (typeof department !== 'string') return false;
 
@@ -230,7 +230,7 @@ export class UsersValidationUtils {
   /**
    * Validates job title
    */
-  static validateJobTitle(jobTitle: string | null): boolean {
+  static validateJobTitle(jobTitle: any): boolean {
     if (jobTitle === null || jobTitle === undefined) return true;
     if (typeof jobTitle !== 'string') return false;
 
@@ -244,7 +244,7 @@ export class UsersValidationUtils {
   /**
    * Validates active status
    */
-  static validateActive(active: boolean): boolean {
+  static validateActive(active: any): boolean {
     return typeof active === 'boolean';
   }
 
@@ -260,7 +260,7 @@ export class UsersValidationUtils {
   /**
    * Validates GUID
    */
-  static validateGuid(guid: string): boolean {
+  static validateGuid(guid: any): boolean {
     if (!guid || typeof guid !== 'string') return false;
 
     const uuidRegex = /^[0-9]+$/;

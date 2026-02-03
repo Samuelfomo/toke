@@ -150,6 +150,15 @@ export class UserService {
     }
   }
 
+  static async sendMemoCreation(reference: string, payload: any) {
+    try {
+      const api = await getApiClient(reference);
+      return await api.post(`${memoBaseUrl}/manager`, payload);
+    } catch (error: any) {
+      return error.response;
+    }
+  }
+
   static async validateMemo(reference: string, guid: string, payload: any) {
     try {
       const api = await getApiClient(reference);

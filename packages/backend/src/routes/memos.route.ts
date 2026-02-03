@@ -95,6 +95,32 @@ router.post(
 /**
  * 💬 SEND REPLY
  */
+router.post(
+  '/memo',
+  TenantConfig.authenticate,
+  Ensure.post(),
+  async (req: Request, res: Response) => {
+    try {
+      const client = (req as any).client.reference;
+      const response = await UserService.sendMemoCreation(client, req.body);
+      if (response.status !== HttpStatus.CREATED) {
+        return R.handleError(res, response.status, response.data);
+      }
+
+      return R.handleSuccess(res, response.data);
+      // return res.status(response.status).json(response.data);
+    } catch (error: any) {
+      return R.handleError(res, HttpStatus.INTERNAL_ERROR, {
+        code: 'reply_failed',
+        message: error.message,
+      });
+    }
+  },
+);
+
+/**
+ * 💬 SEND REPLY
+ */
 router.patch(
   '/reply/:guid',
   TenantConfig.authenticate,

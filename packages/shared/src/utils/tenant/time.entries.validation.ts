@@ -11,7 +11,7 @@ export class TimeEntriesValidationUtils {
   /**
    * Validates GUID
    */
-  static validateGuid(guid: string): boolean {
+  static validateGuid(guid: any): boolean {
     if (!guid || typeof guid !== 'string') return false;
     const trimmed = guid.trim();
 
@@ -33,7 +33,7 @@ export class TimeEntriesValidationUtils {
   /**
    * Validates session ID
    */
-  static validateSessionId(sessionId: number): boolean {
+  static validateSessionId(sessionId: any): boolean {
     if (typeof sessionId !== 'number' || !Number.isInteger(sessionId)) return false;
     return (
       sessionId >= TIME_ENTRIES_VALIDATION.SESSION.MIN &&
@@ -44,7 +44,7 @@ export class TimeEntriesValidationUtils {
   /**
    * Validates user ID
    */
-  static validateUserId(userId: string): boolean {
+  static validateUserId(userId: any): boolean {
     if (typeof userId !== 'string') return false;
     return (
       userId.length >= TIME_ENTRIES_VALIDATION.USER.MIN_LENGTH &&
@@ -55,7 +55,7 @@ export class TimeEntriesValidationUtils {
   /**
    * Validates site ID
    */
-  static validateSiteId(siteId: string): boolean {
+  static validateSiteId(siteId: any): boolean {
     if (typeof siteId !== 'string') return false;
     return (
       siteId.length >= TIME_ENTRIES_VALIDATION.SITE.MIN_LENGTH &&
@@ -66,7 +66,7 @@ export class TimeEntriesValidationUtils {
   /**
    * Validates pointage type
    */
-  static validatePointageType(pointageType: string): boolean {
+  static validatePointageType(pointageType: any): boolean {
     if (!pointageType || typeof pointageType !== 'string') return false;
     return Object.values(PointageType).includes(pointageType as PointageType);
   }
@@ -74,7 +74,7 @@ export class TimeEntriesValidationUtils {
   /**
    * Validates pointage status
    */
-  static validatePointageStatus(status: string): boolean {
+  static validatePointageStatus(status: any): boolean {
     if (!status || typeof status !== 'string') return false;
     return Object.values(PointageStatus).includes(status as PointageStatus);
   }
@@ -124,7 +124,7 @@ export class TimeEntriesValidationUtils {
   /**
    * Validates latitude
    */
-  static validateLatitude(latitude: number): boolean {
+  static validateLatitude(latitude: any): boolean {
     if (typeof latitude !== 'number') return false;
     return (
       latitude >= TIME_ENTRIES_VALIDATION.LATITUDE.MIN &&
@@ -136,7 +136,7 @@ export class TimeEntriesValidationUtils {
   /**
    * Validates longitude
    */
-  static validateLongitude(longitude: number): boolean {
+  static validateLongitude(longitude: any): boolean {
     if (typeof longitude !== 'number') return false;
     return (
       longitude >= TIME_ENTRIES_VALIDATION.LONGITUDE.MIN &&
@@ -158,7 +158,7 @@ export class TimeEntriesValidationUtils {
   /**
    * Validates GPS accuracy
    */
-  static validateGpsAccuracy(accuracy: number | null): boolean {
+  static validateGpsAccuracy(accuracy: any): boolean {
     if (accuracy === null || accuracy === undefined) return true;
     if (typeof accuracy !== 'number' || !Number.isInteger(accuracy)) return false;
     return (
@@ -170,7 +170,7 @@ export class TimeEntriesValidationUtils {
   /**
    * Validates QrCode
    */
-  static validateQrCode(qr_code: string | null): boolean {
+  static validateQrCode(qr_code: any): boolean {
     if (qr_code === null || qr_code === undefined) return true;
     if (typeof qr_code !== 'string') return false;
     return (
@@ -197,7 +197,7 @@ export class TimeEntriesValidationUtils {
   /**
    * Validates IP address (IPv4 and IPv6)
    */
-  static validateIpAddress(ipAddress: string | null): boolean {
+  static validateIpAddress(ipAddress: any): boolean {
     if (ipAddress === null || ipAddress === undefined) return true;
     if (typeof ipAddress !== 'string') return false;
 
@@ -211,14 +211,14 @@ export class TimeEntriesValidationUtils {
   /**
    * Validates created offline flag
    */
-  static validateCreatedOffline(createdOffline: boolean): boolean {
+  static validateCreatedOffline(createdOffline: any): boolean {
     return typeof createdOffline === 'boolean';
   }
 
   /**
    * Validates local ID
    */
-  static validateLocalId(localId: string | null): boolean {
+  static validateLocalId(localId: any): boolean {
     if (localId === null || localId === undefined) return true;
     if (typeof localId !== 'string') return false;
 
@@ -232,7 +232,7 @@ export class TimeEntriesValidationUtils {
   /**
    * Validates sync attempts
    */
-  static validateSyncAttempts(syncAttempts: number): boolean {
+  static validateSyncAttempts(syncAttempts: any): boolean {
     if (typeof syncAttempts !== 'number' || !Number.isInteger(syncAttempts)) return false;
     return (
       syncAttempts >= TIME_ENTRIES_VALIDATION.SYNC_ATTEMPTS.MIN &&
@@ -252,7 +252,7 @@ export class TimeEntriesValidationUtils {
   /**
    * Validates memo ID
    */
-  static validateMemoId(memoId: number | null): boolean {
+  static validateMemoId(memoId: any): boolean {
     if (memoId === null || memoId === undefined) return true;
     if (typeof memoId !== 'number' || !Number.isInteger(memoId)) return false;
     return memoId >= TIME_ENTRIES_VALIDATION.MEMO.MIN && memoId <= TIME_ENTRIES_VALIDATION.MEMO.MAX;
@@ -261,7 +261,7 @@ export class TimeEntriesValidationUtils {
   /**
    * Validates correction reason
    */
-  static validateCorrectionReason(reason: string | null, status?: string): boolean {
+  static validateCorrectionReason(reason: any, status?: string): boolean {
     // Required for corrected entries
     if (status === PointageStatus.CORRECTED) {
       if (!reason || typeof reason !== 'string') return false;
@@ -584,7 +584,7 @@ export class TimeEntriesValidationUtils {
       data.guid === undefined || this.validateGuid(data.guid),
     ];
 
-    return validations.every((validation) => validation === true);
+    return validations.every((validation) => validation);
   }
 
   /**
@@ -933,8 +933,7 @@ export class TimeEntriesValidationUtils {
       filteredEntries = entries.filter((entry) => {
         const entryDate = new Date(entry.clocked_at);
         if (startDate && entryDate < startDate) return false;
-        if (endDate && entryDate > endDate) return false;
-        return true;
+        return !(endDate && entryDate > endDate);
       });
     }
 

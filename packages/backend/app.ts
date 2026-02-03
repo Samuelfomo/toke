@@ -10,6 +10,7 @@ import userRoute from './src/routes/user.route.js';
 import timeEntriesRoute from './src/routes/time.entries.route.js';
 import memosRoute from './src/routes/memos.route.js';
 import siteRoute from './src/routes/site.route.js';
+import scheduleRoute from './src/routes/schedule.route.js';
 
 dotenv.config();
 
@@ -162,6 +163,7 @@ export default class App {
     this.app.use('/time-entries', timeEntriesRoute);
     this.app.use('/site', siteRoute);
     this.app.use('/uploads', memosRoute);
+    this.app.use('/session-templates', scheduleRoute);
 
     // Route 404
     this.app.use((req, res) => {

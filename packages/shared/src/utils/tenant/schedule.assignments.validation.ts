@@ -299,9 +299,7 @@ export class ScheduleAssignmentsValidationUtils {
 
         // Filter by user or groups if specified
         if (userId !== undefined && ex.user !== userId) return false;
-        if (groupsId !== undefined && ex.groups !== groupsId) return false;
-
-        return true;
+        return !(groupsId !== undefined && ex.groups !== groupsId);
       })
       .map((ex) => ({
         start_date: ex.start_date,

@@ -5,7 +5,7 @@ export class SitesValidationUtils {
   /**
    * Validates GUID
    */
-  static validateGuid(guid: string): boolean {
+  static validateGuid(guid: any): boolean {
     if (!guid || typeof guid !== 'string') return false;
     const trimmed = guid.trim();
 
@@ -26,7 +26,7 @@ export class SitesValidationUtils {
   /**
    * Validates tenant
    */
-  static validateTenant(tenant: string): boolean {
+  static validateTenant(tenant: any): boolean {
     if (!tenant || typeof tenant !== 'string') return false;
     const trimmed = tenant.trim();
     return (
@@ -38,7 +38,7 @@ export class SitesValidationUtils {
   /**
    * Validates created by user ID
    */
-  static validateCreatedBy(createdBy: string): boolean {
+  static validateCreatedBy(createdBy: any): boolean {
     if (typeof createdBy !== 'string') return false;
     return (
       createdBy.length >= SITES_VALIDATION.CREATED_BY.MIN_LENGTH &&
@@ -61,7 +61,7 @@ export class SitesValidationUtils {
   /**
    * Validates site type
    */
-  static validateSiteType(siteType: string): boolean {
+  static validateSiteType(siteType: any): boolean {
     if (!siteType || typeof siteType !== 'string') return false;
     return Object.values(SiteType).includes(siteType as SiteType);
   }
@@ -105,7 +105,7 @@ export class SitesValidationUtils {
       !address.state || (typeof address.state === 'string' && address.state.trim().length <= 100),
     ];
 
-    return validations.every((validation) => validation === true);
+    return validations.every((validation) => validation);
   }
 
   /**
@@ -148,7 +148,7 @@ export class SitesValidationUtils {
   /**
    * Validates geofence radius
    */
-  static validateGeofenceRadius(radius: number): boolean {
+  static validateGeofenceRadius(radius: any): boolean {
     if (typeof radius !== 'number' || !Number.isInteger(radius)) return false;
     return (
       radius >= SITES_VALIDATION.GEOFENCE_RADIUS.MIN &&
@@ -159,7 +159,7 @@ export class SitesValidationUtils {
   /**
    * Validates QR reference
    */
-  static validateQrReference(qrReference: string | null): boolean {
+  static validateQrReference(qrReference: any): boolean {
     if (qrReference === null || qrReference === undefined) return true;
     if (typeof qrReference !== 'string') return false;
     return (
@@ -186,14 +186,14 @@ export class SitesValidationUtils {
   /**
    * Validates active status
    */
-  static validateActive(active: boolean): boolean {
+  static validateActive(active: any): boolean {
     return typeof active === 'boolean';
   }
 
   /**
    * Validates public status
    */
-  static validatePublic(isPublic: boolean): boolean {
+  static validatePublic(isPublic: any): boolean {
     return typeof isPublic === 'boolean';
   }
 
@@ -219,7 +219,7 @@ export class SitesValidationUtils {
   /**
    * Validates coordinates
    */
-  static validateCoordinates(longitude: number, latitude: number): boolean {
+  static validateCoordinates(longitude: any, latitude: any): boolean {
     return (
       typeof longitude === 'number' &&
       typeof latitude === 'number' &&
@@ -390,7 +390,7 @@ export class SitesValidationUtils {
       data.guid === undefined || this.validateGuid(data.guid),
     ];
 
-    return validations.every((validation) => validation === true);
+    return validations.every((validation) => validation);
   }
 
   /**

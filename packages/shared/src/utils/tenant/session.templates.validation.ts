@@ -105,16 +105,12 @@ export class SessionTemplateValidationUtils {
     }
 
     // Validate tolerance
-    if (
+    return !(
       typeof block.tolerance !== 'number' ||
       block.tolerance < SESSION_TEMPLATE_VALIDATION.TOLERANCE.MIN ||
       block.tolerance > SESSION_TEMPLATE_VALIDATION.TOLERANCE.MAX ||
       !Number.isInteger(block.tolerance)
-    ) {
-      return false;
-    }
-
-    return true;
+    );
   }
 
   // /**

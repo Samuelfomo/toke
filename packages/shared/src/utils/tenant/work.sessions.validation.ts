@@ -10,7 +10,7 @@ export class WorkSessionsValidationUtils {
   /**
    * Validates GUID
    */
-  static validateGuid(guid: string): boolean {
+  static validateGuid(guid: any): boolean {
     if (!guid || typeof guid !== 'string') return false;
     const trimmed = guid.trim();
 
@@ -31,7 +31,7 @@ export class WorkSessionsValidationUtils {
   /**
    * Validates user ID
    */
-  static validateUserId(userId: number): boolean {
+  static validateUserId(userId: any): boolean {
     if (typeof userId !== 'number' || !Number.isInteger(userId)) return false;
     return (
       userId >= WORK_SESSIONS_VALIDATION.USER.MIN && userId <= WORK_SESSIONS_VALIDATION.USER.MAX
@@ -41,7 +41,7 @@ export class WorkSessionsValidationUtils {
   /**
    * Validates site ID
    */
-  static validateSiteId(siteId: number): boolean {
+  static validateSiteId(siteId: any): boolean {
     if (typeof siteId !== 'number' || !Number.isInteger(siteId)) return false;
     return (
       siteId >= WORK_SESSIONS_VALIDATION.SITE.MIN && siteId <= WORK_SESSIONS_VALIDATION.SITE.MAX
@@ -51,7 +51,7 @@ export class WorkSessionsValidationUtils {
   /**
    * Validates session status
    */
-  static validateSessionStatus(status: string): boolean {
+  static validateSessionStatus(status: any): boolean {
     if (!status || typeof status !== 'string') return false;
     return Object.values(SessionStatus).includes(status as SessionStatus);
   }
@@ -70,9 +70,10 @@ export class WorkSessionsValidationUtils {
     // return date <= now;
 
     // Obtenir l'heure actuelle au timezone Africa/Douala
-    const nowInDouala = new Date(
-      TimezoneConfigUtils.getCurrentTime().toLocaleString('en-US', { timeZone: 'Africa/Douala' }),
-    );
+    const nowInDouala = new Date(TimezoneConfigUtils.getCurrentTime());
+    // const nowInDouala = new Date(
+    //   TimezoneConfigUtils.getCurrentTime().toLocaleString('en-US', { timeZone: 'Africa/Douala' }),
+    // );
     nowInDouala.setMinutes(nowInDouala.getMinutes() + 1); // Tolérance 1 minute
 
     return date <= nowInDouala;
@@ -107,7 +108,7 @@ export class WorkSessionsValidationUtils {
   /**
    * Validates latitude
    */
-  static validateLatitude(latitude: number | null): boolean {
+  static validateLatitude(latitude: any): boolean {
     if (latitude === null || latitude === undefined) return true;
     if (typeof latitude !== 'number') return false;
     return (
@@ -120,7 +121,7 @@ export class WorkSessionsValidationUtils {
   /**
    * Validates longitude
    */
-  static validateLongitude(longitude: number | null): boolean {
+  static validateLongitude(longitude: any): boolean {
     if (longitude === null || longitude === undefined) return true;
     if (typeof longitude !== 'number') return false;
     return (
@@ -159,7 +160,7 @@ export class WorkSessionsValidationUtils {
   /**
    * Validates PostgreSQL interval string
    */
-  static validatePostgreSQLInterval(interval: string | null): boolean {
+  static validatePostgreSQLInterval(interval: any): boolean {
     if (interval === null || interval === undefined) return true;
     if (typeof interval !== 'string') return false;
 
@@ -465,7 +466,8 @@ export class WorkSessionsValidationUtils {
       validations.push(this.validateSessionDateLogic(start, end));
     }
 
-    return validations.every((validation) => validation === true);
+    return validations.every((validation) => validation);
+    // return validations.every((validation) => validation === true);
   }
 
   /**

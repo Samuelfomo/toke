@@ -1263,6 +1263,14 @@ router.patch('/:guid/validate', Ensure.patch(), async (req: Request, res: Respon
       });
     }
 
+    // Vérifier que le memo est en attente de validation
+    if (memoObj.getMemoStatus() !== MemoStatus.SUBMITTED) {
+      return R.handleError(res, HttpStatus.BAD_REQUEST, {
+        code: MEMOS_CODES.INVALID_STATUS_TRANSITION,
+        message: 'Memo is not submitted for validation',
+      });
+    }
+
     // // Vérifier qu'on ne valide pas son propre memo
     // if (memoObj.getAuthorUser() === validatorObj.getId()) {
     //   return R.handleError(res, HttpStatus.UNAUTHORIZED, {
@@ -1383,6 +1391,14 @@ router.patch('/validate-all', Ensure.patch(), async (req: Request, res: Response
           return R.handleError(res, HttpStatus.NOT_FOUND, {
             code: MEMOS_CODES.MEMO_NOT_FOUND,
             message: `${MEMOS_ERRORS.NOT_FOUND} : ${guid}`,
+          });
+        }
+
+        // Vérifier que le memo est en attente de validation
+        if (memoObj.getMemoStatus() !== MemoStatus.SUBMITTED) {
+          return R.handleError(res, HttpStatus.BAD_REQUEST, {
+            code: MEMOS_CODES.INVALID_STATUS_TRANSITION,
+            message: 'Memo is not submitted for validation',
           });
         }
 

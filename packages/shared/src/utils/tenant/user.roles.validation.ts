@@ -6,7 +6,7 @@ export class UserRolesValidationUtils {
   /**
    * Validates GUID
    */
-  static validateGuid(guid: string): boolean {
+  static validateGuid(guid: any): boolean {
     if (!guid || typeof guid !== 'string') return false;
     const trimmed = guid.trim();
 
@@ -26,7 +26,7 @@ export class UserRolesValidationUtils {
   /**
    * Validates user GUID
    */
-  static validateUserId(user: string): boolean {
+  static validateUserId(user: any): boolean {
     if (!user || typeof user !== 'string') return false;
     const trimmed = user.trim();
 
@@ -47,7 +47,7 @@ export class UserRolesValidationUtils {
   /**
    * Validates role GUID
    */
-  static validateRoleId(role: string): boolean {
+  static validateRoleId(role: any): boolean {
     if (!role || typeof role !== 'string') return false;
     const trimmed = role.trim();
 
@@ -69,7 +69,7 @@ export class UserRolesValidationUtils {
   /**
    * Validates assigned by user GUID
    */
-  static validateAssignedBy(assignedBy: string): boolean {
+  static validateAssignedBy(assignedBy: any): boolean {
     if (!assignedBy || typeof assignedBy !== 'string') return false;
     const trimmed = assignedBy.trim();
 
@@ -124,10 +124,7 @@ export class UserRolesValidationUtils {
    */
   static validateRoleAssignmentPermission(assignerRole: any, targetRole: any): boolean {
     // System roles can only be assigned by administrators/system users
-    if (targetRole.system_role === true && assignerRole.system_role !== true) {
-      return false;
-    }
-    return true;
+    return !(targetRole.system_role === true && assignerRole.system_role !== true);
   }
 
   /**
@@ -201,7 +198,8 @@ export class UserRolesValidationUtils {
       data.guid === undefined || this.validateGuid(data.guid),
     ];
 
-    return validations.every((validation) => validation === true);
+    return validations.every((validation) => validation);
+    // return validations.every((validation) => validation === true);
   }
 
   /**
@@ -291,11 +289,7 @@ export class UserRolesValidationUtils {
     }
 
     // System roles require higher privileges
-    if (targetRole.system_role && !assignerPermissions?.system?.manage_roles) {
-      return false;
-    }
-
-    return true;
+    return !(targetRole.system_role && !assignerPermissions?.system?.manage_roles);
   }
 
   /**
