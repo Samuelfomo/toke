@@ -118,7 +118,7 @@ router.get('/list', Ensure.get(), async (req: Request, res: Response) => {
           message: GROUPS_ERRORS.MEMBER_USER_NOT_FOUND,
         });
       }
-      groupsEntries = await Groups._listByMember(userObj.getId()!, paginationOptions);
+      groupsEntries = await Groups._listByMember(userObj.getId()!, paginationOptions, false);
     }
     // else if (filters.session_template) {
     //   const templateSessionObj = await SessionTemplate._load(filters.session_template, true);
@@ -131,7 +131,7 @@ router.get('/list', Ensure.get(), async (req: Request, res: Response) => {
     //   groupsEntries = await Groups._listBySession(templateSessionObj.getId()!, paginationOptions);
     // }
     else {
-      groupsEntries = await Groups._list(conditions, paginationOptions);
+      groupsEntries = await Groups._list(conditions, paginationOptions, false);
     }
 
     const groups = {
@@ -288,22 +288,6 @@ router.post('/', Ensure.post(), async (req: Request, res: Response) => {
         groupsObj.addMember(userObj.getId()!, member.joined_at, member.active);
       }
     }
-
-    // // Ajouter les sessions assignées si fournies
-    // if (validatedData.assigned_sessions && validatedData.assigned_sessions.length > 0) {
-    //   for (const session of validatedData.assigned_sessions) {
-    //     // Vérifier que chaque session template existe
-    //     const templateObj = await SessionTemplate._load(session.session_template, true);
-    //     if (!templateObj) {
-    //       return R.handleError(res, HttpStatus.NOT_FOUND, {
-    //         code: GROUPS_CODES.SESSION_TEMPLATE_NOT_FOUND,
-    //         message: `${GROUPS_ERRORS.SESSION_TEMPLATE_NOT_FOUND}: ${session.session_template}`,
-    //       });
-    //     }
-    //
-    //     groupsObj.assignSession(templateObj.getId()!, session.assign_at, session.active);
-    //   }
-    // }
 
     await groupsObj.save();
 
@@ -704,7 +688,6 @@ router.delete('/:guid/members/:user', Ensure.delete(), async (req: Request, res:
 
     groupsObj.removeMember(userObj.getId()!);
     await groupsObj.save();
-
     return R.handleSuccess(res, {
       message: 'Member removed successfully',
       group: await groupsObj.toJSON(),
@@ -720,10 +703,9 @@ router.delete('/:guid/members/:user', Ensure.delete(), async (req: Request, res:
 /**
  * PATCH /:guid/members/:user_guid/status - Modifier le statut d'un membre
  */
-router.patch('/:guid/members/:user/status', Ensure.patch(), async (req: Request, res: Response) => {
+router.delete('/:guid/removed/:user', Ensure.delete(), async (req: Request, res: Response) => {
   try {
     const { guid, user } = req.params;
-    // const { active } = req.body;
 
     if (!GroupsValidationUtils.validateGuid(guid)) {
       return R.handleError(res, HttpStatus.BAD_REQUEST, {
@@ -738,13 +720,6 @@ router.patch('/:guid/members/:user/status', Ensure.patch(), async (req: Request,
         message: GROUPS_ERRORS.MEMBER_USER_INVALID,
       });
     }
-
-    // if (typeof active !== 'boolean') {
-    //   return R.handleError(res, HttpStatus.BAD_REQUEST, {
-    //     code: GROUPS_CODES.MEMBER_ACTIVE_INVALID,
-    //     message: GROUPS_ERRORS.MEMBER_ACTIVE_INVALID,
-    //   });
-    // }
 
     const userObj = await User._load(user, true);
     if (!userObj) {
@@ -768,17 +743,22 @@ router.patch('/:guid/members/:user/status', Ensure.patch(), async (req: Request,
         message: 'Member not found in groups',
       });
     }
-    let active = true;
     const status = groupsObj.isMemberActive(userObj.getId()!);
-    if (status) {
-      active = false;
+    if (!status) {
+      return R.handleError(res, HttpStatus.UNAUTHORIZED, {
+        code: 'unauthorized_action',
+        message: `You don't have permission to perform this action`,
+      });
     }
 
-    groupsObj.updateMemberStatus(userObj.getId()!, active);
+    groupsObj.updateMemberStatus(userObj.getId()!, false);
     await groupsObj.save();
 
+    const newMembers = groupsObj.getMembers().filter((member) => member.user !== userObj.getId());
+    groupsObj.setMembers(newMembers);
+
     return R.handleSuccess(res, {
-      message: 'Member status updated successfully',
+      message: 'Member removed successfully',
       group: await groupsObj.toJSON(),
     });
   } catch (error: any) {

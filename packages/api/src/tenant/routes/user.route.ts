@@ -28,7 +28,12 @@ import R from '../../tools/response.js';
 import User from '../class/User.js';
 import UserRole from '../class/UserRole.js';
 import { TenantRevision } from '../../tools/revision.js';
-import { responseStructure, responseValue, RoleValues, tableName, } from '../../utils/response.model.js';
+import {
+  responseStructure,
+  responseValue,
+  RoleValues,
+  tableName,
+} from '../../utils/response.model.js';
 import Role from '../class/Role.js';
 import OrgHierarchy from '../class/OrgHierarchy.js';
 import { DatabaseEncryption } from '../../utils/encryption.js';
@@ -42,6 +47,8 @@ import EmployeeLicenseService from '../../tools/employee.license.service.js';
 import ScheduleResolutionService from '../../tools/schedule.resolution.service.js';
 import AnomalyDetectionService from '../../tools/anomaly.detection.service.js';
 import Groups from '../class/Groups.js';
+import TimeEntries from '../class/TimeEntries.js';
+import Memos from '../class/Memos.js';
 // import { AnomalyType } from '../../tools/anomaly.detection.service.js';
 // import { AnomalyType } from '../../tools/anomaly.detection.service.js';
 
@@ -2254,484 +2261,479 @@ router.get('/attendance/active-sessions', Ensure.get(), async (req: Request, res
 //   }
 // });
 
-// /**
-//  * 📊 Vue d'ensemble complète de la présence aujourd'hui
-//  * Inclut : présents, retards, absents basés sur les horaires assignés
-//  */
-// router.get('/attendance/stat', Ensure.get(), async (req: Request, res: Response) => {
-//   try {
-//     const { manager, site, date } = req.query;
-//
-//     // Définir le début et la fin de la journée
-//     let today: Date = TimezoneConfigUtils.getCurrentTime();
-//
-//     if (typeof date === 'string' && UsersValidationUtils.isValidDate(date)) {
-//       today = new Date(date);
-//     }
-//
-//     const startOfDay = new Date(today);
-//     startOfDay.setHours(0, 0, 0, 0);
-//
-//     const endOfDay = new Date(today);
-//     endOfDay.setHours(23, 59, 59, 999);
-//
-//     // ============================================
-//     // 1️⃣ RÉCUPÉRATION DE L'ÉQUIPE
-//     // ============================================
-//     let teamMembers: number[] = [];
-//     let managerObj: User | null = null;
-//     let siteObj: Site | null = null;
-//
-//     if (manager) {
-//       if (!UsersValidationUtils.validateGuid(String(manager))) {
-//         return R.handleError(res, HttpStatus.BAD_REQUEST, {
-//           code: USERS_CODES.VALIDATION_FAILED,
-//           message: USERS_ERRORS.GUID_INVALID,
-//         });
-//       }
-//
-//       managerObj = await User._load(String(manager), true);
-//       if (!managerObj) {
-//         return R.handleError(res, HttpStatus.NOT_FOUND, {
-//           code: USERS_CODES.SUPERVISOR_NOT_FOUND,
-//           message: USERS_ERRORS.SUPERVISOR_NOT_FOUND,
-//         });
-//       }
-//
-//       const teamData = await OrgHierarchy.getAllTeamMembers(managerObj.getId()!);
-//       teamMembers = teamData.all_employees_flat.map((u) => u.getId()!);
-//     }
-//
-//     // Validation site
-//     if (site) {
-//       if (!WorkSessionsValidationUtils.validateGuid(String(site))) {
-//         return R.handleError(res, HttpStatus.BAD_REQUEST, {
-//           code: WORK_SESSIONS_CODES.INVALID_GUID,
-//           message: WORK_SESSIONS_ERRORS.GUID_INVALID,
-//         });
-//       }
-//
-//       siteObj = await Site._load(String(site), true);
-//       if (!siteObj) {
-//         return R.handleError(res, HttpStatus.NOT_FOUND, {
-//           code: WORK_SESSIONS_CODES.SITE_NOT_FOUND,
-//           message: SITES_ERRORS.NOT_FOUND,
-//         });
-//       }
-//     }
-//
-//     // Si pas de manager spécifié, récupérer tous les utilisateurs actifs (comportement par défaut)
-//     if (teamMembers.length === 0 && !manager) {
-//       // TODO: Implémenter selon votre logique métier
-//       // teamMembers = await getAllActiveUsers();
-//     }
-//
-//     // ============================================
-//     // 2️⃣ RÉCUPÉRATION DES SESSIONS DU JOUR
-//     // ============================================
-//     const sessionConditions: Record<string, any> = {
-//       session_start_at: {
-//         [Op.between]: [startOfDay, endOfDay],
-//       },
-//     };
-//
-//     if (teamMembers.length > 0) {
-//       sessionConditions.user = { [Op.in]: teamMembers };
-//     }
-//
-//     if (siteObj) {
-//       sessionConditions.site = siteObj.getId();
-//     }
-//
-//     const todaySessions = await WorkSessions._list(sessionConditions);
-//
-//     // ============================================
-//     // 3️⃣ ANALYSE PAR EMPLOYÉ AVEC HORAIRES
-//     // ============================================
-//     const employeeAnalysis: Map<
-//       number,
-//       {
-//         employee: User | null;
-//         expected_schedule: any;
-//         status: 'present' | 'late' | 'absent' | 'off-day';
-//         session: any;
-//         clock_in_time: Date | null;
-//         delay_minutes: number;
-//         is_active: boolean;
-//         pause_status: any;
-//         is_on_mission: boolean;
-//         last_activity: any;
-//         memos: any | Array<Memos>;
-//         time_entries: Array<TimeEntries> | any;
-//         roles: Array<Role> | any;
-//       }
-//     > = new Map();
-//
-//     // Analyser chaque membre de l'équipe
-//     for (const userId of teamMembers) {
-//       const employee = await User._load(userId);
-//       if (!employee) continue;
-//
-//       // 🔍 RÉSOUDRE L'HORAIRE ATTENDU
-//       const scheduleResult = await ScheduleResolutionService.getApplicableSchedule(userId, today);
-//
-//       const expectedSchedule = scheduleResult.applicable_schedule;
-//       const isWorkDay = expectedSchedule?.is_work_day || false;
-//
-//       // Trouver la session de cet employé aujourd'hui
-//       const userSession = todaySessions?.find((s) => s.getUser() === userId);
-//
-//       // 📊 DÉTERMINER LE STATUT
-//       let status: 'present' | 'late' | 'absent' | 'off-day' = 'absent';
-//       let delayMinutes = 0;
-//       let clockInTime: Date | null = null;
-//
-//       if (!isWorkDay) {
-//         // Jour de repos selon l'horaire
-//         status = 'off-day';
-//       } else if (userSession) {
-//         // L'employé a pointé
-//         clockInTime = userSession.getSessionStartAt()!;
-//
-//         if (expectedSchedule && expectedSchedule.expected_blocks.length > 0) {
-//           // Calculer le retard
-//           const firstBlock = expectedSchedule.expected_blocks[0];
-//           const expectedStartTime = firstBlock.work[0]; // "08:00"
-//           const tolerance = firstBlock.tolerance || 0;
-//
-//           const clockedTime = AnomalyDetectionService.formatTime(clockInTime);
-//           const clockedMinutes = ScheduleResolutionService.parseTimeToMinutes(clockedTime);
-//           const expectedMinutes = ScheduleResolutionService.parseTimeToMinutes(expectedStartTime);
-//
-//           delayMinutes = clockedMinutes - expectedMinutes;
-//
-//           if (delayMinutes > tolerance) {
-//             status = 'late'; // Retard
-//           } else {
-//             status = 'present'; // À l'heure
-//           }
-//         } else {
-//           // Pas d'horaire défini, considéré comme présent
-//           status = 'present';
-//         }
-//       } else {
-//         // Pas de session aujourd'hui
-//         if (isWorkDay) {
-//           status = 'absent'; // Absence
-//         }
-//       }
-//
-//       // 📋 ENRICHIR LES DONNÉES DE SESSION
-//       let sessionData: any = null;
-//       let pauseStatus: any = null;
-//       let lastActivity: any = null;
-//       let isOnMission = false;
-//
-//       if (userSession) {
-//         sessionData = await userSession.toJSON(responseValue.MINIMAL);
-//         pauseStatus = await userSession.getPauseStatusDetailed();
-//         const lastEntries = await userSession.LastEntry();
-//         const lastEntry = TimeEntries._toObject(lastEntries);
-//         isOnMission = await userSession.activeMission();
-//
-//         if (lastEntry) {
-//           lastActivity = {
-//             type: lastEntry.getPointageType(),
-//             timestamp: lastEntry.getClockedAt(),
-//           };
-//         }
-//       }
-//
-//       const memoEntries = (await Memos._listByAuthor(userId)) ?? [];
-//       const targetMemoEntries = (await Memos._listByTarget(userId)) ?? [];
-//       const memos = {
-//         count: targetMemoEntries?.length + memoEntries?.length,
-//         items: [
-//           ...(memoEntries.length
-//             ? await Promise.all(
-//                 memoEntries.map(async (memo) => await memo.toJSON(responseValue.MINIMAL)),
-//               )
-//             : []),
-//           ...(targetMemoEntries
-//             ? await Promise.all(
-//                 targetMemoEntries.map(async (memo) => await memo.toJSON(responseValue.MINIMAL)),
-//               )
-//             : []),
-//         ],
-//       };
-//
-//       const entriesData = (await TimeEntries._listByUser(userId)) ?? [];
-//       const entries = {
-//         count: entriesData.length,
-//         items: await Promise.all(
-//           entriesData.map(async (entry) => await entry.toJSON(responseValue.MINIMAL)),
-//         ),
-//       };
-//
-//       const userRoles = (await UserRole._listByUser(userId)) ?? [];
-//       const roles = {
-//         count: userRoles.length,
-//         items: await Promise.all(
-//           userRoles.map(async (role) => (await role.getRoleObject())?.toJSON()),
-//         ),
-//       };
-//
-//       // Stocker l'analyse
-//       employeeAnalysis.set(userId, {
-//         employee: employee,
-//         expected_schedule: expectedSchedule
-//           ? {
-//               template_name: expectedSchedule.template_name,
-//               source: expectedSchedule.source,
-//               is_work_day: expectedSchedule.is_work_day,
-//               expected_blocks: expectedSchedule.expected_blocks,
-//               tolerance_minutes: expectedSchedule.tolerance_minutes,
-//             }
-//           : null,
-//         status,
-//         session: sessionData,
-//         clock_in_time: clockInTime,
-//         delay_minutes: delayMinutes,
-//         is_active: userSession?.isActive() || false,
-//         pause_status: pauseStatus,
-//         is_on_mission: isOnMission,
-//         last_activity: lastActivity,
-//         memos: memos,
-//         time_entries: entries,
-//         roles: roles,
-//       });
-//     }
-//
-//     // ============================================
-//     // 4️⃣ CALCUL DES STATISTIQUES GLOBALES
-//     // ============================================
-//     const presentCount = Array.from(employeeAnalysis.values()).filter(
-//       (e) => e.status === 'present',
-//     ).length;
-//
-//     const lateCount = Array.from(employeeAnalysis.values()).filter(
-//       (e) => e.status === 'late',
-//     ).length;
-//
-//     const absentCount = Array.from(employeeAnalysis.values()).filter(
-//       (e) => e.status === 'absent',
-//     ).length;
-//
-//     const offDayCount = Array.from(employeeAnalysis.values()).filter(
-//       (e) => e.status === 'off-day',
-//     ).length;
-//
-//     const activeCount = Array.from(employeeAnalysis.values()).filter((e) => e.is_active).length;
-//
-//     const onPauseCount = Array.from(employeeAnalysis.values()).filter(
-//       (e) => e.pause_status?.is_on_pause,
-//     ).length;
-//
-//     const onMissionCount = Array.from(employeeAnalysis.values()).filter(
-//       (e) => e.is_on_mission,
-//     ).length;
-//
-//     // Calculer heures travaillées totales
-//     let totalWorkHours = 0;
-//     const completedSessions = todaySessions?.filter((s) => s.isClosed()) || [];
-//
-//     for (const session of completedSessions) {
-//       if (session.getTotalWorkDuration()) {
-//         const matches = session.getTotalWorkDuration()!.match(/(\d+)\s*hours?\s*(\d+)?\s*minutes?/);
-//         if (matches) {
-//           const hours = parseInt(matches[1]) || 0;
-//           const minutes = parseInt(matches[2]) || 0;
-//           totalWorkHours += hours + minutes / 60;
-//         }
-//       }
-//     }
-//
-//     // ============================================
-//     // 5️⃣ GROUPEMENTS PAR CATÉGORIES
-//     // ============================================
-//     const presentEmployees = Array.from(employeeAnalysis.values()).filter(
-//       (e) => e.status === 'present',
-//     );
-//
-//     const lateEmployees = Array.from(employeeAnalysis.values()).filter((e) => e.status === 'late');
-//
-//     const absentEmployees = Array.from(employeeAnalysis.values()).filter(
-//       (e) => e.status === 'absent',
-//     );
-//
-//     const offDayEmployees = Array.from(employeeAnalysis.values()).filter(
-//       (e) => e.status === 'off-day',
-//     );
-//
-//     // ============================================
-//     // 6️⃣ GROUPEMENT PAR SITE (si multi-sites)
-//     // ============================================
-//     const sessionsBySite: Record<string, any> = {};
-//
-//     if (!site && todaySessions) {
-//       for (const session of todaySessions) {
-//         const siteId = session.getSite();
-//         if (siteId) {
-//           if (!sessionsBySite[siteId]) {
-//             const siteData = await Site._load(siteId);
-//             sessionsBySite[siteId] = {
-//               site: siteData ? await siteData.toJSON(responseValue.MINIMAL) : null,
-//               sessions_count: 0,
-//               active_count: 0,
-//               late_count: 0,
-//             };
-//           }
-//
-//           sessionsBySite[siteId].sessions_count++;
-//
-//           if (session.isActive()) {
-//             sessionsBySite[siteId].active_count++;
-//           }
-//
-//           // Compter les retards sur ce site
-//           const analysis = employeeAnalysis.get(session.getUser()!);
-//           if (analysis?.status === 'late') {
-//             sessionsBySite[siteId].late_count++;
-//           }
-//         }
-//       }
-//     }
-//
-//     // ============================================
-//     // 7️⃣ TOP RETARDS DU JOUR
-//     // ============================================
-//     const topLateEmployees = lateEmployees
-//       .sort((a, b) => b.delay_minutes - a.delay_minutes)
-//       .slice(0, 5)
-//       .map((e) => ({
-//         employee: e.employee,
-//         delay_minutes: e.delay_minutes,
-//         clock_in_time: e.clock_in_time,
-//         expected_start: e.expected_schedule?.expected_blocks[0]?.work[0],
-//       }));
-//
-//     // ============================================
-//     // 8️⃣ RÉPONSE FINALE
-//     // ============================================
-//     return R.handleSuccess(res, {
-//       message: "Today's attendance retrieved successfully with schedule analysis",
-//       data: {
-//         date: startOfDay.toISOString().split('T')[0],
-//         manager: managerObj ? managerObj.getGuid() : null,
-//         site_filter: siteObj ? siteObj.getGuid() : null,
-//
-//         // 📊 STATISTIQUES PRINCIPALES
-//         statistics: {
-//           total_team_members: teamMembers.length,
-//           expected_to_work: teamMembers.length - offDayCount, // Employés qui devraient travailler
-//           present_on_time: presentCount, // Présents à l'heure
-//           present_to_days: presentCount + lateCount, // Présents aujourd'hui
-//           late_arrivals: lateCount, // Retards
-//           absences: absentCount, // Absents
-//           off_day: offDayCount, // Jour de repos
-//
-//           // Statuts temps réel
-//           currently_active: activeCount,
-//           on_pause: onPauseCount,
-//           on_mission: onMissionCount,
-//           checked_out: completedSessions.length,
-//
-//           // Heures travaillées
-//           total_work_hours: totalWorkHours.toFixed(2),
-//           average_work_hours:
-//             completedSessions.length > 0
-//               ? (totalWorkHours / completedSessions.length).toFixed(2)
-//               : '0.00',
-//
-//           // Taux de présence
-//           attendance_rate:
-//             teamMembers.length - offDayCount > 0
-//               ? (((presentCount + lateCount) / (teamMembers.length - offDayCount)) * 100).toFixed(
-//                   2,
-//                 ) + '%'
-//               : 'N/A',
-//
-//           // Taux de ponctualité
-//           punctuality_rate:
-//             presentCount + lateCount > 0
-//               ? ((presentCount / (presentCount + lateCount)) * 100).toFixed(2) + '%'
-//               : 'N/A',
-//         },
-//
-//         // 👥 EMPLOYÉS PRÉSENTS À L'HEURE
-//         present_employees: presentEmployees.map((e) => ({
-//           employee: e.employee?.getGuid(),
-//           clock_in_time: e.clock_in_time,
-//           expected_schedule: e.expected_schedule,
-//           is_active: e.is_active,
-//           pause_status: e.pause_status,
-//           is_on_mission: e.is_on_mission,
-//           last_activity: e.last_activity,
-//           session: e.session,
-//         })),
-//
-//         // ⏰ EMPLOYÉS EN RETARD
-//         late_employees: lateEmployees.map((e) => ({
-//           employee: e.employee?.getGuid(),
-//           clock_in_time: e.clock_in_time,
-//           delay_minutes: e.delay_minutes,
-//           expected_start: e.expected_schedule?.expected_blocks[0]?.work[0],
-//           tolerance: e.expected_schedule?.tolerance_minutes,
-//           is_active: e.is_active,
-//           pause_status: e.pause_status,
-//           session: e.session,
-//         })),
-//
-//         // ❌ EMPLOYÉS ABSENTS
-//         absent_employees: absentEmployees.map((e) => ({
-//           employee: e.employee?.getGuid(),
-//           expected_schedule: e.expected_schedule,
-//           last_seen: null, // TODO: Récupérer dernière session
-//         })),
-//
-//         // 🏖️ EMPLOYÉS EN JOUR DE REPOS
-//         off_day_employees: offDayEmployees.map((e) => ({
-//           employee: e.employee?.getGuid(),
-//           schedule_info: e.expected_schedule,
-//         })),
-//
-//         // 🔝 TOP 5 RETARDS
-//         top_late_employees: topLateEmployees,
-//
-//         // 📍 RÉPARTITION PAR SITE
-//         sessions_by_site:
-//           Object.keys(sessionsBySite).length > 0 ? Object.values(sessionsBySite) : null,
-//
-//         // 📋 VUE DÉTAILLÉE (tous les employés)
-//         all_employees_status: await Promise.all(
-//           Array.from(employeeAnalysis.values()).map(async (e) => ({
-//             employee: await e.employee?.toJSON(),
-//             roles: e.roles,
-//             status: e.status,
-//             expected_schedule: e.expected_schedule,
-//             clock_in_time: e.clock_in_time,
-//             delay_minutes: e.status === 'late' ? e.delay_minutes : null,
-//             is_active: e.is_active,
-//             session: e.session,
-//             memos: e.memos,
-//             time_entries: e.time_entries,
-//           })),
-//         ),
-//       },
-//     });
-//   } catch (error: any) {
-//     console.error('[Attendance Today] Error:', error);
-//     return R.handleError(res, HttpStatus.INTERNAL_ERROR, {
-//       code: 'attendance_today_failed',
-//       message: error.message || "Failed to retrieve today's attendance",
-//     });
-//   }
-// });
-
 /**
- * 📊 Vue d'ensemble complète de la présence sur une période
+ * 📊 Vue d'ensemble complète de la présence aujourd'hui
  * Inclut : présents, retards, absents basés sur les horaires assignés
  */
+router.get('/attendance/stat0', Ensure.get(), async (req: Request, res: Response) => {
+  try {
+    const { manager, site, date } = req.query;
+
+    // Définir le début et la fin de la journée
+    let today: Date = TimezoneConfigUtils.getCurrentTime();
+
+    if (typeof date === 'string' && UsersValidationUtils.isValidDate(date)) {
+      today = new Date(date);
+    }
+
+    const startOfDay = new Date(today);
+    startOfDay.setHours(0, 0, 0, 0);
+
+    const endOfDay = new Date(today);
+    endOfDay.setHours(23, 59, 59, 999);
+
+    // ============================================
+    // 1️⃣ RÉCUPÉRATION DE L'ÉQUIPE
+    // ============================================
+    let teamMembers: number[] = [];
+    let managerObj: User | null = null;
+    let siteObj: Site | null = null;
+
+    if (manager) {
+      if (!UsersValidationUtils.validateGuid(String(manager))) {
+        return R.handleError(res, HttpStatus.BAD_REQUEST, {
+          code: USERS_CODES.VALIDATION_FAILED,
+          message: USERS_ERRORS.GUID_INVALID,
+        });
+      }
+
+      managerObj = await User._load(String(manager), true);
+      if (!managerObj) {
+        return R.handleError(res, HttpStatus.NOT_FOUND, {
+          code: USERS_CODES.SUPERVISOR_NOT_FOUND,
+          message: USERS_ERRORS.SUPERVISOR_NOT_FOUND,
+        });
+      }
+
+      const teamData = await OrgHierarchy.getAllTeamMembers(managerObj.getId()!);
+      teamMembers = teamData.all_employees_flat.map((u) => u.getId()!);
+    }
+
+    // Validation site
+    if (site) {
+      if (!WorkSessionsValidationUtils.validateGuid(String(site))) {
+        return R.handleError(res, HttpStatus.BAD_REQUEST, {
+          code: WORK_SESSIONS_CODES.INVALID_GUID,
+          message: WORK_SESSIONS_ERRORS.GUID_INVALID,
+        });
+      }
+
+      siteObj = await Site._load(String(site), true);
+      if (!siteObj) {
+        return R.handleError(res, HttpStatus.NOT_FOUND, {
+          code: WORK_SESSIONS_CODES.SITE_NOT_FOUND,
+          message: SITES_ERRORS.NOT_FOUND,
+        });
+      }
+    }
+
+    // Si pas de manager spécifié, récupérer tous les utilisateurs actifs (comportement par défaut)
+    if (teamMembers.length === 0 && !manager) {
+      // TODO: Implémenter selon votre logique métier
+      // teamMembers = await getAllActiveUsers();
+    }
+
+    // ============================================
+    // 2️⃣ RÉCUPÉRATION DES SESSIONS DU JOUR
+    // ============================================
+    const sessionConditions: Record<string, any> = {
+      session_start_at: {
+        [Op.between]: [startOfDay, endOfDay],
+      },
+    };
+
+    if (teamMembers.length > 0) {
+      sessionConditions.user = { [Op.in]: teamMembers };
+    }
+
+    if (siteObj) {
+      sessionConditions.site = siteObj.getId();
+    }
+
+    const todaySessions = await WorkSessions._list(sessionConditions);
+
+    // ============================================
+    // 3️⃣ ANALYSE PAR EMPLOYÉ AVEC HORAIRES
+    // ============================================
+    const employeeAnalysis: Map<
+      number,
+      {
+        employee: User | null;
+        expected_schedule: any;
+        status: 'present' | 'late' | 'absent' | 'off-day';
+        session: any;
+        clock_in_time: Date | null;
+        delay_minutes: number;
+        is_active: boolean;
+        pause_status: any;
+        is_on_mission: boolean;
+        last_activity: any;
+        memos: any | Array<Memos>;
+        time_entries: Array<TimeEntries> | any;
+        roles: Array<Role> | any;
+      }
+    > = new Map();
+
+    // Analyser chaque membre de l'équipe
+    for (const userId of teamMembers) {
+      const employee = await User._load(userId);
+      if (!employee) continue;
+
+      // 🔍 RÉSOUDRE L'HORAIRE ATTENDU
+      const scheduleResult = await ScheduleResolutionService.getApplicableSchedule(userId, today);
+
+      const expectedSchedule = scheduleResult.applicable_schedule;
+      const isWorkDay = expectedSchedule?.is_work_day || false;
+
+      // Trouver la session de cet employé aujourd'hui
+      const userSession = todaySessions?.find((s) => s.getUser() === userId);
+
+      // 📊 DÉTERMINER LE STATUT
+      let status: 'present' | 'late' | 'absent' | 'off-day' = 'absent';
+      let delayMinutes = 0;
+      let clockInTime: Date | null = null;
+
+      if (!isWorkDay) {
+        // Jour de repos selon l'horaire
+        status = 'off-day';
+      } else if (userSession) {
+        // L'employé a pointé
+        clockInTime = userSession.getSessionStartAt()!;
+
+        if (expectedSchedule && expectedSchedule.expected_blocks.length > 0) {
+          // Calculer le retard
+          const firstBlock = expectedSchedule.expected_blocks[0];
+          const expectedStartTime = firstBlock.work[0]; // "08:00"
+          const tolerance = firstBlock.tolerance || 0;
+
+          const clockedTime = AnomalyDetectionService.formatTime(clockInTime);
+          const clockedMinutes = ScheduleResolutionService.parseTimeToMinutes(clockedTime);
+          const expectedMinutes = ScheduleResolutionService.parseTimeToMinutes(expectedStartTime);
+
+          delayMinutes = clockedMinutes - expectedMinutes;
+
+          if (delayMinutes > tolerance) {
+            status = 'late'; // Retard
+          } else {
+            status = 'present'; // À l'heure
+          }
+        } else {
+          // Pas d'horaire défini, considéré comme présent
+          status = 'present';
+        }
+      } else {
+        // Pas de session aujourd'hui
+        if (isWorkDay) {
+          status = 'absent'; // Absence
+        }
+      }
+
+      // 📋 ENRICHIR LES DONNÉES DE SESSION
+      let sessionData: any = null;
+      let pauseStatus: any = null;
+      let lastActivity: any = null;
+      let isOnMission = false;
+
+      if (userSession) {
+        sessionData = await userSession.toJSON(responseValue.MINIMAL);
+        pauseStatus = await userSession.getPauseStatusDetailed();
+        const lastEntries = await userSession.LastEntry();
+        const lastEntry = TimeEntries._toObject(lastEntries);
+        isOnMission = await userSession.activeMission();
+
+        if (lastEntry) {
+          lastActivity = {
+            type: lastEntry.getPointageType(),
+            timestamp: lastEntry.getClockedAt(),
+          };
+        }
+      }
+
+      const memoEntries = (await Memos._listByAuthor(userId)) ?? [];
+      const targetMemoEntries = (await Memos._listByTarget(userId)) ?? [];
+      const memos = {
+        count: targetMemoEntries?.length + memoEntries?.length,
+        items: [
+          ...(memoEntries.length
+            ? await Promise.all(
+                memoEntries.map(async (memo) => await memo.toJSON(responseValue.MINIMAL)),
+              )
+            : []),
+          ...(targetMemoEntries
+            ? await Promise.all(
+                targetMemoEntries.map(async (memo) => await memo.toJSON(responseValue.MINIMAL)),
+              )
+            : []),
+        ],
+      };
+
+      const entriesData = (await TimeEntries._listByUser(userId)) ?? [];
+      const entries = {
+        count: entriesData.length,
+        items: await Promise.all(
+          entriesData.map(async (entry) => await entry.toJSON(responseValue.MINIMAL)),
+        ),
+      };
+
+      const userRoles = (await UserRole._listByUser(userId)) ?? [];
+      const roles = {
+        count: userRoles.length,
+        items: await Promise.all(
+          userRoles.map(async (role) => (await role.getRoleObject())?.toJSON()),
+        ),
+      };
+
+      // Stocker l'analyse
+      employeeAnalysis.set(userId, {
+        employee: employee,
+        expected_schedule: expectedSchedule
+          ? {
+              template_name: expectedSchedule.template_name,
+              source: expectedSchedule.source,
+              is_work_day: expectedSchedule.is_work_day,
+              expected_blocks: expectedSchedule.expected_blocks,
+              tolerance_minutes: expectedSchedule.tolerance_minutes,
+            }
+          : null,
+        status,
+        session: sessionData,
+        clock_in_time: clockInTime,
+        delay_minutes: delayMinutes,
+        is_active: userSession?.isActive() || false,
+        pause_status: pauseStatus,
+        is_on_mission: isOnMission,
+        last_activity: lastActivity,
+        memos: memos,
+        time_entries: entries,
+        roles: roles,
+      });
+    }
+
+    // ============================================
+    // 4️⃣ CALCUL DES STATISTIQUES GLOBALES
+    // ============================================
+    const presentCount = Array.from(employeeAnalysis.values()).filter(
+      (e) => e.status === 'present',
+    ).length;
+
+    const lateCount = Array.from(employeeAnalysis.values()).filter(
+      (e) => e.status === 'late',
+    ).length;
+
+    const absentCount = Array.from(employeeAnalysis.values()).filter(
+      (e) => e.status === 'absent',
+    ).length;
+
+    const offDayCount = Array.from(employeeAnalysis.values()).filter(
+      (e) => e.status === 'off-day',
+    ).length;
+
+    const activeCount = Array.from(employeeAnalysis.values()).filter((e) => e.is_active).length;
+
+    const onPauseCount = Array.from(employeeAnalysis.values()).filter(
+      (e) => e.pause_status?.is_on_pause,
+    ).length;
+
+    const onMissionCount = Array.from(employeeAnalysis.values()).filter(
+      (e) => e.is_on_mission,
+    ).length;
+
+    // Calculer heures travaillées totales
+    let totalWorkHours = 0;
+    const completedSessions = todaySessions?.filter((s) => s.isClosed()) || [];
+
+    for (const session of completedSessions) {
+      if (session.getTotalWorkDuration()) {
+        const matches = session.getTotalWorkDuration()!.match(/(\d+)\s*hours?\s*(\d+)?\s*minutes?/);
+        if (matches) {
+          const hours = parseInt(matches[1]) || 0;
+          const minutes = parseInt(matches[2]) || 0;
+          totalWorkHours += hours + minutes / 60;
+        }
+      }
+    }
+
+    // ============================================
+    // 5️⃣ GROUPEMENTS PAR CATÉGORIES
+    // ============================================
+    const presentEmployees = Array.from(employeeAnalysis.values()).filter(
+      (e) => e.status === 'present',
+    );
+
+    const lateEmployees = Array.from(employeeAnalysis.values()).filter((e) => e.status === 'late');
+
+    const absentEmployees = Array.from(employeeAnalysis.values()).filter(
+      (e) => e.status === 'absent',
+    );
+
+    const offDayEmployees = Array.from(employeeAnalysis.values()).filter(
+      (e) => e.status === 'off-day',
+    );
+
+    // ============================================
+    // 6️⃣ GROUPEMENT PAR SITE (si multi-sites)
+    // ============================================
+    const sessionsBySite: Record<string, any> = {};
+
+    if (!site && todaySessions) {
+      for (const session of todaySessions) {
+        const siteId = session.getSite();
+        if (siteId) {
+          if (!sessionsBySite[siteId]) {
+            const siteData = await Site._load(siteId);
+            sessionsBySite[siteId] = {
+              site: siteData ? await siteData.toJSON(responseValue.MINIMAL) : null,
+              sessions_count: 0,
+              active_count: 0,
+              late_count: 0,
+            };
+          }
+
+          sessionsBySite[siteId].sessions_count++;
+
+          if (session.isActive()) {
+            sessionsBySite[siteId].active_count++;
+          }
+
+          // Compter les retards sur ce site
+          const analysis = employeeAnalysis.get(session.getUser()!);
+          if (analysis?.status === 'late') {
+            sessionsBySite[siteId].late_count++;
+          }
+        }
+      }
+    }
+
+    // ============================================
+    // 7️⃣ TOP RETARDS DU JOUR
+    // ============================================
+    const topLateEmployees = lateEmployees
+      .sort((a, b) => b.delay_minutes - a.delay_minutes)
+      .slice(0, 5)
+      .map((e) => ({
+        employee: e.employee,
+        delay_minutes: e.delay_minutes,
+        clock_in_time: e.clock_in_time,
+        expected_start: e.expected_schedule?.expected_blocks[0]?.work[0],
+      }));
+
+    // ============================================
+    // 8️⃣ RÉPONSE FINALE
+    // ============================================
+    return R.handleSuccess(res, {
+      message: "Today's attendance retrieved successfully with schedule analysis",
+      data: {
+        date: startOfDay.toISOString().split('T')[0],
+        manager: managerObj ? managerObj.getGuid() : null,
+        site_filter: siteObj ? siteObj.getGuid() : null,
+
+        // 📊 STATISTIQUES PRINCIPALES
+        statistics: {
+          total_team_members: teamMembers.length,
+          expected_to_work: teamMembers.length - offDayCount, // Employés qui devraient travailler
+          present_on_time: presentCount, // Présents à l'heure
+          present_to_days: presentCount + lateCount, // Présents aujourd'hui
+          late_arrivals: lateCount, // Retards
+          absences: absentCount, // Absents
+          off_day: offDayCount, // Jour de repos
+
+          // Statuts temps réel
+          currently_active: activeCount,
+          on_pause: onPauseCount,
+          on_mission: onMissionCount,
+          checked_out: completedSessions.length,
+
+          // Heures travaillées
+          total_work_hours: totalWorkHours.toFixed(2),
+          average_work_hours:
+            completedSessions.length > 0
+              ? (totalWorkHours / completedSessions.length).toFixed(2)
+              : '0.00',
+
+          // Taux de présence
+          attendance_rate:
+            teamMembers.length - offDayCount > 0
+              ? (((presentCount + lateCount) / (teamMembers.length - offDayCount)) * 100).toFixed(
+                  2,
+                ) + '%'
+              : 'N/A',
+
+          // Taux de ponctualité
+          punctuality_rate:
+            presentCount + lateCount > 0
+              ? ((presentCount / (presentCount + lateCount)) * 100).toFixed(2) + '%'
+              : 'N/A',
+        },
+
+        // 👥 EMPLOYÉS PRÉSENTS À L'HEURE
+        present_employees: presentEmployees.map((e) => ({
+          employee: e.employee?.getGuid(),
+          clock_in_time: e.clock_in_time,
+          expected_schedule: e.expected_schedule,
+          is_active: e.is_active,
+          pause_status: e.pause_status,
+          is_on_mission: e.is_on_mission,
+          last_activity: e.last_activity,
+          session: e.session,
+        })),
+
+        // ⏰ EMPLOYÉS EN RETARD
+        late_employees: lateEmployees.map((e) => ({
+          employee: e.employee?.getGuid(),
+          clock_in_time: e.clock_in_time,
+          delay_minutes: e.delay_minutes,
+          expected_start: e.expected_schedule?.expected_blocks[0]?.work[0],
+          tolerance: e.expected_schedule?.tolerance_minutes,
+          is_active: e.is_active,
+          pause_status: e.pause_status,
+          session: e.session,
+        })),
+
+        // ❌ EMPLOYÉS ABSENTS
+        absent_employees: absentEmployees.map((e) => ({
+          employee: e.employee?.getGuid(),
+          expected_schedule: e.expected_schedule,
+          last_seen: null, // TODO: Récupérer dernière session
+        })),
+
+        // 🏖️ EMPLOYÉS EN JOUR DE REPOS
+        off_day_employees: offDayEmployees.map((e) => ({
+          employee: e.employee?.getGuid(),
+          schedule_info: e.expected_schedule,
+        })),
+
+        // 🔝 TOP 5 RETARDS
+        top_late_employees: topLateEmployees,
+
+        // 📍 RÉPARTITION PAR SITE
+        sessions_by_site:
+          Object.keys(sessionsBySite).length > 0 ? Object.values(sessionsBySite) : null,
+
+        // 📋 VUE DÉTAILLÉE (tous les employés)
+        all_employees_status: await Promise.all(
+          Array.from(employeeAnalysis.values()).map(async (e) => ({
+            employee: await e.employee?.toJSON(),
+            roles: e.roles,
+            status: e.status,
+            expected_schedule: e.expected_schedule,
+            clock_in_time: e.clock_in_time,
+            delay_minutes: e.status === 'late' ? e.delay_minutes : null,
+            is_active: e.is_active,
+            session: e.session,
+            memos: e.memos,
+            time_entries: e.time_entries,
+          })),
+        ),
+      },
+    });
+  } catch (error: any) {
+    console.error('[Attendance Today] Error:', error);
+    return R.handleError(res, HttpStatus.INTERNAL_ERROR, {
+      code: 'attendance_today_failed',
+      message: error.message || "Failed to retrieve today's attendance",
+    });
+  }
+});
 
 /**
  * 📊 Vue d'ensemble de la présence sur une période - Structure optimale

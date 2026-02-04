@@ -41,46 +41,63 @@ export default class GroupsModel extends BaseModel {
   // MÉTHODES DE RECHERCHE
   // ============================================
 
-  protected async find(id: number, includeDeleted: boolean = false): Promise<any> {
+  protected async find(
+    id: number,
+    includeDeleted: boolean = false,
+    excludeInactive: boolean = true,
+  ): Promise<any> {
     const conditions: any = { [this.db.id]: id };
 
     if (!includeDeleted) {
       conditions[this.db.deleted_at] = null;
     }
 
-    return await this.findOne(this.db.tableName, conditions);
+    const group = await this.findOne(this.db.tableName, conditions);
+    return this.applyMembersFilter(group, excludeInactive);
   }
 
-  protected async findByGuid(guid: string, includeDeleted: boolean = false): Promise<any> {
+  protected async findByGuid(
+    guid: string,
+    includeDeleted: boolean = false,
+    excludeInactive: boolean = true,
+  ): Promise<any> {
     const conditions: any = { [this.db.guid]: guid };
 
     if (!includeDeleted) {
       conditions[this.db.deleted_at] = null;
     }
 
-    return await this.findOne(this.db.tableName, conditions);
+    const group = await this.findOne(this.db.tableName, conditions);
+    return this.applyMembersFilter(group, excludeInactive);
   }
 
-  protected async findByName(name: string, includeDeleted: boolean = false): Promise<any> {
+  protected async findByName(
+    name: string,
+    includeDeleted: boolean = false,
+    excludeInactive: boolean = true,
+  ): Promise<any> {
     const conditions: any = { [this.db.name]: name };
 
     if (!includeDeleted) {
       conditions[this.db.deleted_at] = null;
     }
 
-    return await this.findOne(this.db.tableName, conditions);
+    const group = await this.findOne(this.db.tableName, conditions);
+    return this.applyMembersFilter(group, excludeInactive);
   }
 
   protected async findByManagerName(
     manager: number,
     name: string,
     includeDeleted: boolean = false,
+    excludeInactive: boolean = true,
   ): Promise<any> {
     const conditions: any = { [this.db.manager]: manager, [this.db.name]: name };
     if (!includeDeleted) {
       conditions[this.db.deleted_at] = null;
     }
-    return await this.findOne(this.db.tableName, conditions);
+    const group = await this.findOne(this.db.tableName, conditions);
+    return this.applyMembersFilter(group, excludeInactive);
   }
 
   /**
@@ -111,26 +128,34 @@ export default class GroupsModel extends BaseModel {
   protected async listAll(
     conditions: Record<string, any> = {},
     paginationOptions: { offset?: number; limit?: number } = {},
+    excludeInactive: boolean = true,
   ): Promise<any[]> {
     if (conditions[this.db.deleted_at] === undefined) {
       conditions[this.db.deleted_at] = null;
     }
 
-    return await this.findAll(this.db.tableName, conditions, paginationOptions);
+    const groups = await this.findAll(this.db.tableName, conditions, paginationOptions);
+    return this.applyMembersFilterToList(groups, excludeInactive);
   }
 
   protected async listAllByManager(
     manager: number,
     paginationOptions: { offset?: number; limit?: number } = {},
+    excludeInactive: boolean = true,
   ): Promise<any[]> {
-    return await this.listAll({ [this.db.manager]: manager }, paginationOptions);
+    return await this.listAll({ [this.db.manager]: manager }, paginationOptions, excludeInactive);
   }
 
   protected async listAllByName(
     name: string,
     paginationOptions: { offset?: number; limit?: number } = {},
+    excludeInactive: boolean = true,
   ): Promise<any[]> {
-    return await this.listAll({ [this.db.name]: { [Op.like]: `%${name}%` } }, paginationOptions);
+    return await this.listAll(
+      { [this.db.name]: { [Op.like]: `%${name}%` } },
+      paginationOptions,
+      excludeInactive,
+    );
   }
 
   /**
@@ -139,13 +164,14 @@ export default class GroupsModel extends BaseModel {
   protected async listAllByMember(
     user: number,
     paginationOptions: { offset?: number; limit?: number } = {},
+    excludeInactive: boolean = true,
   ): Promise<any[]> {
     // Utiliser une requête SQL brute ou Sequelize pour rechercher dans le JSON
     const conditions = {
       [this.db.deleted_at]: null,
     };
 
-    const allGroups = await this.listAll(conditions, paginationOptions);
+    const allGroups = await this.listAll(conditions, paginationOptions, excludeInactive);
 
     // Filtrer les équipes contenant ce membre
     return allGroups.filter((group) => {
@@ -180,13 +206,65 @@ export default class GroupsModel extends BaseModel {
    */
   protected async listAllWithMembers(
     paginationOptions: { offset?: number; limit?: number } = {},
+    excludeInactive: boolean = true,
   ): Promise<any[]> {
-    const allGroups = await this.listAll({}, paginationOptions);
+    const allGroups = await this.listAll({}, paginationOptions, excludeInactive);
 
     return allGroups.filter((group) => {
       const members = group.members || [];
       return members.length > 0;
     });
+  }
+
+  // ============================================
+  // MÉTHODES UTILITAIRES POUR FILTRER LES MEMBRES
+  // ============================================
+
+  /**
+   * Filtre les membres selon le paramètre excludeInactive
+   * @param members Liste des membres à filtrer
+   * @param excludeInactive Si true, exclut les membres avec active === false
+   * @returns Liste filtrée des membres
+   */
+  protected filterMembersByActiveStatus(
+    members: TI.GroupsMember[],
+    excludeInactive: boolean,
+  ): TI.GroupsMember[] {
+    if (!excludeInactive) {
+      return members;
+    }
+    return members.filter((m) => m.active !== false);
+  }
+
+  /**
+   * Applique le filtre excludeInactive sur un groupe récupéré de la DB
+   * @param group Groupe à filtrer
+   * @param excludeInactive Si true, exclut les membres inactifs
+   * @returns Groupe avec membres filtrés
+   */
+  protected applyMembersFilter(group: any, excludeInactive: boolean): any {
+    if (!group || !excludeInactive) {
+      return group;
+    }
+
+    return {
+      ...group,
+      members: this.filterMembersByActiveStatus(group.members || [], excludeInactive),
+    };
+  }
+
+  /**
+   * Applique le filtre excludeInactive sur une liste de groupes
+   * @param groups Liste de groupes à filtrer
+   * @param excludeInactive Si true, exclut les membres inactifs
+   * @returns Liste de groupes avec membres filtrés
+   */
+  protected applyMembersFilterToList(groups: any[], excludeInactive: boolean): any[] {
+    if (!excludeInactive) {
+      return groups;
+    }
+
+    return groups.map((group) => this.applyMembersFilter(group, excludeInactive));
   }
 
   // /**
@@ -216,15 +294,24 @@ export default class GroupsModel extends BaseModel {
     return await this.countByGroup(this.db.tableName, this.db.manager, where);
   }
 
-  protected async getGroupsWithMembersCount(): Promise<{
+  /**
+   * Compte les groupes avec et sans membres
+   * @param excludeInactive Si true, compte uniquement les membres actifs
+   */
+  protected async getGroupsWithMembersCount(excludeInactive: boolean = true): Promise<{
     with_members: number;
     without_members: number;
   }> {
-    const allGroups = await this.listAll();
+    const allGroups = await this.listAll({}, {}, false);
 
     const withMembers = allGroups.filter((group) => {
       const members = group.members || [];
-      return members.length > 0;
+
+      const relevantMembers = excludeInactive
+        ? this.filterMembersByActiveStatus(members, true)
+        : members;
+
+      return relevantMembers.length > 0;
     }).length;
 
     const withoutMembers = allGroups.length - withMembers;

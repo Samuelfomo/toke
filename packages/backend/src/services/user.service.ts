@@ -177,4 +177,13 @@ export class UserService {
       return error.response;
     }
   }
+
+  static async listByManager(reference: string, manager: string) {
+    try {
+      const api = await getApiClient(reference);
+      return await api.get(`${memoBaseUrl}/my-memos?author=${manager}`);
+    } catch (error: any) {
+      return error.response;
+    }
+  }
 }

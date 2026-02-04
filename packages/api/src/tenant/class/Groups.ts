@@ -34,64 +34,60 @@ export default class Groups extends GroupsModel {
     identifier: any,
     byGuid: boolean = false,
     byUser: boolean = false,
+    excludeInactive: boolean = true,
   ): Promise<Groups | null> {
-    return new Groups().load(identifier, byGuid, byUser);
+    return new Groups().load(identifier, byGuid, byUser, excludeInactive);
   }
 
   static _list(
     conditions: Record<string, any> = {},
     paginationOptions: { offset?: number; limit?: number } = {},
+    excludeInactive: boolean = true,
   ): Promise<Groups[] | null> {
-    return new Groups().list(conditions, paginationOptions);
+    return new Groups().list(conditions, paginationOptions, excludeInactive);
   }
 
   static _listByManager(
     manager: number,
     paginationOptions: { offset?: number; limit?: number } = {},
+    excludeInactive: boolean = true,
   ): Promise<Groups[] | null> {
-    return new Groups().listByManager(manager, paginationOptions);
+    return new Groups().listByManager(manager, paginationOptions, excludeInactive);
   }
 
   static _listByMember(
     user: number,
     paginationOptions: { offset?: number; limit?: number } = {},
+    excludeInactive: boolean = true,
   ): Promise<Groups[] | null> {
-    return new Groups().listByMember(user, paginationOptions);
+    return new Groups().listByMember(user, paginationOptions, excludeInactive);
   }
-
-  // static _listBySession(
-  //   template_session: number,
-  //   paginationOptions: { offset?: number; limit?: number } = {},
-  // ): Promise<Groups[] | null> {
-  //   return new Groups().listBySessionTemplate(template_session, paginationOptions);
-  // }
 
   static _listWithMembers(
     paginationOptions: { offset?: number; limit?: number } = {},
+    excludeInactive: boolean = true,
   ): Promise<Groups[] | null> {
-    return new Groups().listWithMembers(paginationOptions);
+    return new Groups().listWithMembers(paginationOptions, excludeInactive);
   }
-
-  // static _listWithActiveSession(
-  //   paginationOptions: { offset?: number; limit?: number } = {},
-  // ): Promise<Groups[] | null> {
-  //   return new Groups().listWithActiveSession(paginationOptions);
-  // }
 
   /**
    * 🎯 POINT D'ENTRÉE PRINCIPAL
    * Récupère l'équipe complète d'un manager (incluant sous-équipes si hiérarchiquement valides)
    * @param managerId ID du manager
+   * @param excludeInactive
    * @returns Structure hiérarchique complète de l'équipe
    */
-  static async getManagerGroupsHierarchy(managerId: number): Promise<any> {
+  static async getManagerGroupsHierarchy(
+    managerId: number,
+    excludeInactive: boolean = true,
+  ): Promise<any> {
     const managerObj = await User._load(managerId);
     if (!managerObj) {
       throw new Error('Manager not found');
     }
 
     // Récupérer le group principale du manager
-    const groups = await Groups._listByManager(managerId);
+    const groups = await Groups._listByManager(managerId, {}, excludeInactive);
     if (!groups || groups.length === 0) {
       return {
         manager: await managerObj.toJSON(responseValue.MINIMAL),
@@ -106,19 +102,20 @@ export default class Groups extends GroupsModel {
     const mainGroups = groups[0];
     const visited = new Set<number>();
 
-    return await mainGroups._buildManagerGroupsHierarchy(managerId, visited);
+    return await mainGroups._buildManagerGroupsHierarchy(managerId, visited, excludeInactive);
   }
 
   static async exportable(
     conditions: Record<string, any> = {},
     paginationOptions: { offset?: number; limit?: number } = {},
+    excludeInactive: boolean = true,
   ): Promise<{
     revision: string;
     pagination: { offset?: number; limit?: number; count?: number };
     items: any[];
   }> {
     let items: any[] = [];
-    const groups = await this._list(conditions, paginationOptions);
+    const groups = await this._list(conditions, paginationOptions, excludeInactive);
     if (groups) {
       items = await Promise.all(groups.map(async (group) => await group.toJSON()));
     }
@@ -137,7 +134,7 @@ export default class Groups extends GroupsModel {
    * Récupère les IDs de tous les utilisateurs actifs dans au moins un groupe
    */
   static async getAllActiveGroupMembers(): Promise<number[]> {
-    const allGroups = await Groups._list({});
+    const allGroups = await Groups._list({}, {}, false);
     if (!allGroups) return [];
 
     const activeMemberIds = new Set<number>();
@@ -317,6 +314,58 @@ export default class Groups extends GroupsModel {
     return this;
   }
 
+  // /**
+  //  * Ajoute un membre au groupe
+  //  * @param userId ID de l'utilisateur à ajouter
+  //  * @param markAsActive Si true, réactive le membre s'il était inactif
+  //  */
+  // async addMember(userId: number, markAsActive: boolean = true): Promise<void> {
+  //   if (!this.members) {
+  //     this.members = [];
+  //   }
+  //
+  //   // Vérifier si le membre existe déjà
+  //   const existingMemberIndex = this.members.findIndex((m) => m.user === userId);
+  //
+  //   if (existingMemberIndex !== -1) {
+  //     // Le membre existe déjà
+  //     if (markAsActive) {
+  //       // Réactiver le membre
+  //       this.members[existingMemberIndex].active = true;
+  //     }
+  //   } else {
+  //     // Nouveau membre
+  //     this.members.push({
+  //       user: userId,
+  //       joined_at: TimezoneConfigUtils.getCurrentTime(),
+  //       active: true,
+  //     });
+  //   }
+  //
+  //   await this.update();
+  // }
+
+  /**
+   * Désactive un membre du groupe (soft delete)
+   * @param userId ID de l'utilisateur à désactiver
+   */
+  async deactivateMember(userId: number): Promise<void> {
+    if (!this.members) {
+      throw new Error('No members in this group');
+    }
+
+    const memberIndex = this.members.findIndex((m) => m.user === userId);
+
+    if (memberIndex === -1) {
+      throw new Error('Member not found in this group');
+    }
+
+    // Marquer comme inactif
+    this.members[memberIndex].active = false;
+
+    await this.update();
+  }
+
   /**
    * Retirer un membre de l'équipe
    */
@@ -351,18 +400,22 @@ export default class Groups extends GroupsModel {
    * Récupère tous les membres directs (1er niveau uniquement)
    * @returns Liste des utilisateurs membres directs de cette équipe
    */
-  async getDirectMembers(): Promise<User[]> {
-    const members = this.getActiveMembers();
-    const userObjs: User[] = [];
+  /**
+   * Récupère les membres directs (uniquement ceux de ce groupe)
+   * @param activeOnly Si true, ne retourne que les membres actifs
+   */
+  async getDirectMembers(activeOnly: boolean = false): Promise<User[]> {
+    const members = activeOnly ? this.getActiveMembers() : this.getMembers();
+    const directMembers: User[] = [];
 
     for (const member of members) {
       const userObj = await this.getMemberObj(member.user);
       if (userObj) {
-        userObjs.push(userObj);
+        directMembers.push(userObj);
       }
     }
 
-    return userObjs;
+    return directMembers;
   }
 
   /**
@@ -380,6 +433,21 @@ export default class Groups extends GroupsModel {
     // Dédupliquer (un user peut apparaître dans plusieurs équipes)
 
     return Array.from(new Map(allUsers.map((user) => [user.getId(), user])).values());
+  }
+
+  /**
+   * Récupère tous les membres (incluant les sous-équipes)
+   * @param activeOnly Si true, ne retourne que les membres actifs
+   */
+  async getAllMembers(activeOnly: boolean = false): Promise<User[]> {
+    if (!this.manager) return [];
+
+    const visited = new Set<number>();
+    const accumulator: User[] = [];
+
+    await this._recursiveFetchAllMembersFlat(this.manager, visited, accumulator, activeOnly);
+
+    return accumulator;
   }
 
   /**
@@ -464,15 +532,26 @@ export default class Groups extends GroupsModel {
   /**
    * Obtenir un résumé de l'équipe
    */
-  getSummary(): {
-    totalMembers: number;
-    activeMembers: number;
-    inactiveMembers: number;
-    hasActiveSession: boolean;
-    activeSessionId: number | null;
-    totalSessions: number;
-  } {
-    return GroupsValidationUtils.getGroupSummary(this);
+  // getSummary(): {
+  //   totalMembers: number;
+  //   activeMembers: number;
+  //   inactiveMembers: number;
+  //   hasActiveSession: boolean;
+  //   activeSessionId: number | null;
+  //   totalSessions: number;
+  // } {
+  //   return GroupsValidationUtils.getGroupSummary(this);
+  // }
+
+  getSummary(): { total_members: number; active_members: number; inactive_members: number } {
+    const allMembers = this.getMembers();
+    const activeMembers = this.getActiveMembers();
+
+    return {
+      total_members: allMembers.length,
+      active_members: activeMembers.length,
+      inactive_members: allMembers.length - activeMembers.length,
+    };
   }
 
   /**
@@ -538,15 +617,16 @@ export default class Groups extends GroupsModel {
     identifier: any,
     byGuid: boolean = false,
     byUser: boolean = false,
+    excludeInactive: boolean = true,
   ): Promise<Groups | null> {
     let data = null;
 
     if (byGuid) {
-      data = await this.findByGuid(identifier);
+      data = await this.findByGuid(identifier, false, excludeInactive);
     } else if (byUser) {
       data = await this.findActiveGroupsByUser(Number(identifier));
     } else {
-      data = await this.find(Number(identifier));
+      data = await this.find(Number(identifier), false, excludeInactive);
     }
 
     if (!data) return null;
@@ -556,8 +636,9 @@ export default class Groups extends GroupsModel {
   async list(
     conditions: Record<string, any> = {},
     paginationOptions: { offset?: number; limit?: number } = {},
+    excludeInactive: boolean = true,
   ): Promise<Groups[] | null> {
-    const dataset = await this.listAll(conditions, paginationOptions);
+    const dataset = await this.listAll(conditions, paginationOptions, excludeInactive);
     if (!dataset || dataset.length === 0) return null;
     return dataset.map((data) => new Groups().hydrate(data));
   }
@@ -565,8 +646,9 @@ export default class Groups extends GroupsModel {
   async listByManager(
     manager: number,
     paginationOptions: { offset?: number; limit?: number } = {},
+    excludeInactive: boolean = true,
   ): Promise<Groups[] | null> {
-    const dataset = await this.listAllByManager(manager, paginationOptions);
+    const dataset = await this.listAllByManager(manager, paginationOptions, excludeInactive);
     if (!dataset || dataset.length === 0) return null;
     return dataset.map((data) => new Groups().hydrate(data));
   }
@@ -574,8 +656,9 @@ export default class Groups extends GroupsModel {
   async listByMember(
     user: number,
     paginationOptions: { offset?: number; limit?: number } = {},
+    excludeInactive: boolean = true,
   ): Promise<Groups[] | null> {
-    const dataset = await this.listAllByMember(user, paginationOptions);
+    const dataset = await this.listAllByMember(user, paginationOptions, excludeInactive);
     if (!dataset || dataset.length === 0) return null;
     return dataset.map((data) => new Groups().hydrate(data));
   }
@@ -595,8 +678,9 @@ export default class Groups extends GroupsModel {
 
   async listWithMembers(
     paginationOptions: { offset?: number; limit?: number } = {},
+    excludeInactive: boolean = true,
   ): Promise<Groups[] | null> {
-    const dataset = await this.listAllWithMembers(paginationOptions);
+    const dataset = await this.listAllWithMembers(paginationOptions, excludeInactive);
     if (!dataset || dataset.length === 0) return null;
     return dataset.map((data) => new Groups().hydrate(data));
   }
@@ -612,7 +696,7 @@ export default class Groups extends GroupsModel {
   async toJSON(view: ViewMode = responseValue.FULL): Promise<object> {
     const managerObj = await this.getManagerObj();
     // const activeSession = this.getActiveSession();
-    const summary = this.getSummary();
+    // const summary = this.getSummary();
 
     const baseModel = {
       [RS.GUID]: this.guid,
@@ -629,8 +713,8 @@ export default class Groups extends GroupsModel {
     if (view === responseValue.MINIMAL) {
       return {
         ...baseModel,
-        total_members: summary.totalMembers,
-        active_members: summary.activeMembers,
+        // total_members: summary.total_members,
+        // active_members: summary.active_members,
         assignment_info: {
           current_type: assignmentType,
           active_schedule_assignment: activeSchedule ? activeSchedule.getGuid() : null,
@@ -665,7 +749,7 @@ export default class Groups extends GroupsModel {
 
     return {
       ...baseModel,
-      summary,
+      // summary,
       members: {
         count: enrichedMembers.length,
         items: enrichedMembers,
@@ -709,12 +793,12 @@ export default class Groups extends GroupsModel {
       }),
     );
     const managerObj = await this.getManagerObj();
-    const summary = this.getSummary();
+    // const summary = this.getSummary();
     return {
       [RS.GUID]: this.guid,
       [RS.NAME]: this.name,
       [RS.MANAGER]: managerObj ? managerObj.toPublicJSON() : null,
-      summary: summary,
+      // summary: summary,
       members: {
         count: enrichedMembers.length,
         items: enrichedMembers,
@@ -729,12 +813,13 @@ export default class Groups extends GroupsModel {
     rootManagerId: number,
     visited: Set<number>,
     accumulator: User[],
+    activeOnly: boolean = true,
   ): Promise<void> {
     if (!this.id || visited.has(this.id)) return;
     visited.add(this.id);
 
     // Ajouter les membres directs
-    const directMembers = await this.getDirectMembers();
+    const directMembers = await this.getDirectMembers(activeOnly);
     accumulator.push(...directMembers);
 
     // Pour chaque membre, vérifier s'il manage une équipe
@@ -742,14 +827,19 @@ export default class Groups extends GroupsModel {
       const memberId = member.getId();
       if (!memberId) continue;
 
-      const memberGroups = await Groups._listByManager(memberId);
+      const memberGroups = await Groups._listByManager(memberId, {}, activeOnly);
 
       if (memberGroups && memberGroups.length > 0) {
         const isInHierarchy = await OrgHierarchy.isUserInHierarchy(memberId, rootManagerId);
 
         if (isInHierarchy) {
           const memberGroup = memberGroups[0];
-          await memberGroup._recursiveFetchAllMembersFlat(rootManagerId, visited, accumulator);
+          await memberGroup._recursiveFetchAllMembersFlat(
+            rootManagerId,
+            visited,
+            accumulator,
+            activeOnly,
+          );
         }
       }
     }
@@ -768,6 +858,7 @@ export default class Groups extends GroupsModel {
   private async _buildManagerGroupsHierarchy(
     rootManagerId: number,
     visited: Set<number>,
+    excludeInactive: boolean = true,
   ): Promise<any> {
     // Protection contre les boucles infinies
     if (!this.id || visited.has(this.id)) {
@@ -779,7 +870,7 @@ export default class Groups extends GroupsModel {
     if (!managerObj) return null;
 
     // Récupérer les membres directs de cette équipe
-    const directMembers = await this.getDirectMembers();
+    const directMembers = await this.getDirectMembers(excludeInactive);
     // const activeSession = this.getActiveSession();
 
     const membersWithSubGroups = [];
@@ -795,7 +886,7 @@ export default class Groups extends GroupsModel {
       };
 
       // Vérifier si ce membre est manager d'une équipe
-      const memberGroups = await Groups._listByManager(memberId);
+      const memberGroups = await Groups._listByManager(memberId, {}, excludeInactive);
 
       if (memberGroups && memberGroups.length > 0) {
         // ✅ VALIDATION HIÉRARCHIQUE : Ce membre doit être sous le rootManager dans l'organigramme
@@ -810,6 +901,7 @@ export default class Groups extends GroupsModel {
           const subGroupsHierarchy = await memberGroup._buildManagerGroupsHierarchy(
             rootManagerId,
             visited,
+            excludeInactive,
           );
 
           if (subGroupsHierarchy) {
@@ -851,7 +943,10 @@ export default class Groups extends GroupsModel {
   /**
    * Méthode privée récursive pour récupérer tous les membres
    */
-  private async _recursiveFetchAllMembers(visited: Set<number>): Promise<User[]> {
+  private async _recursiveFetchAllMembers(
+    visited: Set<number>,
+    activeOnly: boolean = true,
+  ): Promise<User[]> {
     // Protection contre les boucles infinies
     if (!this.id || visited.has(this.id)) {
       return [];
@@ -861,7 +956,7 @@ export default class Groups extends GroupsModel {
     const allUsers: User[] = [];
 
     // 1. Récupérer les membres directs
-    const directMembers = await this.getDirectMembers();
+    const directMembers = await this.getDirectMembers(activeOnly);
     allUsers.push(...directMembers);
 
     // 2. Pour chaque membre, vérifier s'il manage une équipe
@@ -870,12 +965,12 @@ export default class Groups extends GroupsModel {
       if (!memberId) continue;
 
       // Chercher les équipes où ce membre est manager
-      const subGroups = await Groups._listByManager(memberId);
+      const subGroups = await Groups._listByManager(memberId, {}, activeOnly);
 
       if (subGroups && subGroups.length > 0) {
         for (const subGroup of subGroups) {
           // Récursion : récupérer les membres de la sous-équipe
-          const subMembers = await subGroup._recursiveFetchAllMembers(visited);
+          const subMembers = await subGroup._recursiveFetchAllMembers(visited, activeOnly);
           allUsers.push(...subMembers);
         }
       }
@@ -887,14 +982,17 @@ export default class Groups extends GroupsModel {
   /**
    * Méthode privée récursive pour construire l'arbre
    */
-  private async _recursiveBuildGroupsTree(visited: Set<number>): Promise<any> {
+  private async _recursiveBuildGroupsTree(
+    visited: Set<number>,
+    activeOnly: boolean = true,
+  ): Promise<any> {
     // Protection contre les boucles infinies
     if (!this.id || visited.has(this.id)) {
       return null;
     }
     visited.add(this.id);
 
-    const directMembers = await this.getDirectMembers();
+    const directMembers = await this.getDirectMembers(activeOnly);
     const membersWithSubGroups = [];
 
     for (const member of directMembers) {
@@ -902,7 +1000,7 @@ export default class Groups extends GroupsModel {
       if (!memberId) continue;
 
       // Charger les équipes managées par ce membre
-      const managedGroups = await Groups._listByManager(memberId);
+      const managedGroups = await Groups._listByManager(memberId, {}, activeOnly);
 
       const memberData: any = {
         user: await member.toJSON(responseValue.MINIMAL),
@@ -911,7 +1009,7 @@ export default class Groups extends GroupsModel {
 
       if (managedGroups && managedGroups.length > 0) {
         for (const subGroup of managedGroups) {
-          const subTreeData = await subGroup._recursiveBuildGroupsTree(visited);
+          const subTreeData = await subGroup._recursiveBuildGroupsTree(visited, activeOnly);
           if (subTreeData) {
             memberData.managed_groups.push(subTreeData);
           }
