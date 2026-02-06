@@ -1,0 +1,59 @@
+//{
+//  "compilerOptions": {
+//    "target": "ESNext",
+//    "module": "NodeNext",
+//    "moduleResolution": "NodeNext",
+//    "strict": true,
+//    "jsx": "preserve",
+//    "sourceMap": true,
+//    "resolveJsonModule": true,
+//    "esModuleInterop": true,
+//    "lib": ["ESNext", "DOM"],
+//    "types": ["vite/client", "node"],
+//    "baseUrl": ".",
+//    "paths": {
+//      "@/*": ["src/*"],
+//    }
+//
+//  },
+//  "include": ["src/**/*.ts", "src/**/*.d.ts", "src/**/*.vue"]
+//}
+//
+//
+//
+
+
+{
+  "compilerOptions": {
+    "target": "ESNext",
+    "module": "ESNext",
+    // pas "NodeNext" pour Vite
+    "moduleResolution": "bundler",
+    // idem
+    "strict": true,
+    "jsx": "preserve",
+    "sourceMap": true,
+    "resolveJsonModule": true,
+    "esModuleInterop": true,
+    "lib": [
+      "ESNext",
+      "DOM"
+    ],
+    "types": [
+      "vite/client"
+    ],
+    "baseUrl": ".",
+    "paths": {
+      "@/*": [
+        "src/*"
+      ]
+    },
+    "noEmit": true
+    // 🚀 clé pour ne plus générer de JS/JS.map
+  },
+  "include": [
+    "src/**/*.ts",
+    "src/**/*.d.ts",
+    "src/**/*.vue"
+  ]
+}

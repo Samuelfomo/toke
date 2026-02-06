@@ -1,0 +1,1351 @@
+<!DOCTYPE html><html><head><meta charset="utf-8"><title>📘 Documentation API REST - TOKÉ.md</title><style>@charset "UTF-8";@import 'https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.9.0-alpha2/katex.min.css';code{color:#c7254e;background-color:#f9f2f4;border-radius:4px}code,kbd{padding:2px 4px}kbd{color:#fff;background-color:#333;border-radius:3px;box-shadow:inset 0 -1px 0 rgba(0,0,0,.25)}kbd kbd{padding:0;font-size:100%;box-shadow:none}pre{display:block;margin:0 0 10px;word-break:break-all;word-wrap:break-word;color:#333;background-color:#f5f5f5;border:1px solid #ccc;border-radius:4px}pre code{padding:0;font-size:inherit;color:inherit;white-space:pre-wrap;background-color:transparent;border-radius:0}.pre-scrollable{max-height:340px;overflow-y:scroll}table{background-color:transparent}th{text-align:left}.table{width:100%;max-width:100%;margin-bottom:20px}.table>thead>tr>th{padding:8px;line-height:1.4285714;border-top:1px solid #ddd}.table>thead>tr>td,.table>tbody>tr>th,.table>tbody>tr>td,.table>tfoot>tr>th,.table>tfoot>tr>td{padding:8px;line-height:1.4285714;vertical-align:top;border-top:1px solid #ddd}.table>thead>tr>th{vertical-align:bottom;border-bottom:2px solid #ddd}.table>caption+thead>tr:first-child>th,.table>caption+thead>tr:first-child>td,.table>colgroup+thead>tr:first-child>th,.table>colgroup+thead>tr:first-child>td,.table>thead:first-child>tr:first-child>th,.table>thead:first-child>tr:first-child>td{border-top:0}.table>tbody+tbody{border-top:2px solid #ddd}.table .table{background-color:#fff}.table-condensed>thead>tr>th,.table-condensed>thead>tr>td,.table-condensed>tbody>tr>th,.table-condensed>tbody>tr>td,.table-condensed>tfoot>tr>th,.table-condensed>tfoot>tr>td{padding:5px}.table-bordered,.table-bordered>thead>tr>th,.table-bordered>thead>tr>td,.table-bordered>tbody>tr>th,.table-bordered>tbody>tr>td,.table-bordered>tfoot>tr>th,.table-bordered>tfoot>tr>td{border:1px solid #ddd}.table-bordered>thead>tr>th,.table-bordered>thead>tr>td{border-bottom-width:2px}.table-striped>tbody>tr:nth-child(odd)>td,.table-striped>tbody>tr:nth-child(odd)>th{background-color:#f9f9f9}.table-hover>tbody>tr:hover>td,.table-hover>tbody>tr:hover>th{background-color:#f5f5f5}table col[class*="col-"]{position:static;float:none;display:table-column}table td[class*="col-"],table th[class*="col-"]{position:static;float:none;display:table-cell}.table>thead>tr>td.active,.table>thead>tr>th.active,.table>thead>tr.active>td,.table>thead>tr.active>th,.table>tbody>tr>td.active,.table>tbody>tr>th.active,.table>tbody>tr.active>td,.table>tbody>tr.active>th,.table>tfoot>tr>td.active,.table>tfoot>tr>th.active,.table>tfoot>tr.active>td,.table>tfoot>tr.active>th{background-color:#f5f5f5}.table-hover>tbody>tr>td.active:hover,.table-hover>tbody>tr>th.active:hover,.table-hover>tbody>tr.active:hover>td,.table-hover>tbody>tr:hover>.active,.table-hover>tbody>tr.active:hover>th{background-color:#e8e8e8}.table>thead>tr>td.success,.table>thead>tr>th.success,.table>thead>tr.success>td,.table>thead>tr.success>th,.table>tbody>tr>td.success,.table>tbody>tr>th.success,.table>tbody>tr.success>td,.table>tbody>tr.success>th,.table>tfoot>tr>td.success,.table>tfoot>tr>th.success,.table>tfoot>tr.success>td,.table>tfoot>tr.success>th{background-color:#dff0d8}.table-hover>tbody>tr>td.success:hover,.table-hover>tbody>tr>th.success:hover,.table-hover>tbody>tr.success:hover>td,.table-hover>tbody>tr:hover>.success,.table-hover>tbody>tr.success:hover>th{background-color:#d0e9c6}.table>thead>tr>td.info,.table>thead>tr>th.info,.table>thead>tr.info>td,.table>thead>tr.info>th,.table>tbody>tr>td.info,.table>tbody>tr>th.info,.table>tbody>tr.info>td,.table>tbody>tr.info>th,.table>tfoot>tr>td.info,.table>tfoot>tr>th.info,.table>tfoot>tr.info>td,.table>tfoot>tr.info>th{background-color:#d9edf7}.table-hover>tbody>tr>td.info:hover,.table-hover>tbody>tr>th.info:hover,.table-hover>tbody>tr.info:hover>td,.table-hover>tbody>tr:hover>.info,.table-hover>tbody>tr.info:hover>th{background-color:#c4e3f3}.table>thead>tr>td.warning,.table>thead>tr>th.warning,.table>thead>tr.warning>td,.table>thead>tr.warning>th,.table>tbody>tr>td.warning,.table>tbody>tr>th.warning,.table>tbody>tr.warning>td,.table>tbody>tr.warning>th,.table>tfoot>tr>td.warning,.table>tfoot>tr>th.warning,.table>tfoot>tr.warning>td,.table>tfoot>tr.warning>th{background-color:#fcf8e3}.table-hover>tbody>tr>td.warning:hover,.table-hover>tbody>tr>th.warning:hover,.table-hover>tbody>tr.warning:hover>td,.table-hover>tbody>tr:hover>.warning,.table-hover>tbody>tr.warning:hover>th{background-color:#faf2cc}.table>thead>tr>td.danger,.table>thead>tr>th.danger,.table>thead>tr.danger>td,.table>thead>tr.danger>th,.table>tbody>tr>td.danger,.table>tbody>tr>th.danger,.table>tbody>tr.danger>td,.table>tbody>tr.danger>th,.table>tfoot>tr>td.danger,.table>tfoot>tr>th.danger,.table>tfoot>tr.danger>td,.table>tfoot>tr.danger>th{background-color:#f2dede}.table-hover>tbody>tr>td.danger:hover,.table-hover>tbody>tr>th.danger:hover,.table-hover>tbody>tr.danger:hover>td,.table-hover>tbody>tr:hover>.danger,.table-hover>tbody>tr.danger:hover>th{background-color:#ebcccc}fieldset{border:0;min-width:0}legend{display:block;width:100%;margin-bottom:20px;font-size:21px;line-height:inherit;color:#333;border-bottom:1px solid #e5e5e5}label{display:inline-block;max-width:100%;margin-bottom:5px;font-weight:700}input[type="radio"],input[type="checkbox"]{margin:4px 0 0;margin-top:1px \9;line-height:normal}input[type="file"]{display:block}input[type="range"]{display:block;width:100%}select[multiple],select[size]{height:auto}input[type="file"]:focus,input[type="radio"]:focus,input[type="checkbox"]:focus{outline:thin dotted;outline:5px auto -webkit-focus-ring-color;outline-offset:-2px}output{padding-top:7px}output,.form-control{display:block;font-size:14px;line-height:1.4285714;color:#555}.form-control{width:100%;height:34px;padding:6px 12px;background-color:#fff;background-image:none;border:1px solid #ccc;border-radius:4px;box-shadow:inset 0 1px 1px rgba(0,0,0,.075);transition:border-color ease-in-out .15s,box-shadow ease-in-out .15s}.form-control:focus{border-color:#66afe9;outline:0;box-shadow:inset 0 1px 1px rgba(0,0,0,.075),0 0 8px rgba(102,175,233,.6)}.form-control::-moz-placeholder{color:#777;opacity:1}.form-control:-ms-input-placeholder{color:#777}.form-control::-webkit-input-placeholder{color:#777}.form-control[disabled],.form-control[readonly],fieldset[disabled] .form-control{cursor:not-allowed;background-color:#eee;opacity:1}textarea.form-control{height:auto}input[type="date"],input[type="time"],input[type="datetime-local"],input[type="month"]{line-height:34px;line-height:1.4285714 \0}input[type="date"].input-sm,.form-horizontal .form-group-sm input.form-control[type="date"],.input-group-sm>input.form-control[type="date"],.input-group-sm>input.input-group-addon[type="date"],.input-group-sm>.input-group-btn>input.btn[type="date"],input[type="time"].input-sm,.form-horizontal .form-group-sm input.form-control[type="time"],.input-group-sm>input.form-control[type="time"],.input-group-sm>input.input-group-addon[type="time"],.input-group-sm>.input-group-btn>input.btn[type="time"],input[type="datetime-local"].input-sm,.form-horizontal .form-group-sm input.form-control[type="datetime-local"],.input-group-sm>input.form-control[type="datetime-local"],.input-group-sm>input.input-group-addon[type="datetime-local"],.input-group-sm>.input-group-btn>input.btn[type="datetime-local"],input[type="month"].input-sm,.form-horizontal .form-group-sm input.form-control[type="month"],.input-group-sm>input.form-control[type="month"],.input-group-sm>input.input-group-addon[type="month"],.input-group-sm>.input-group-btn>input.btn[type="month"]{line-height:30px}input[type="date"].input-lg,.form-horizontal .form-group-lg input.form-control[type="date"],.input-group-lg>input.form-control[type="date"],.input-group-lg>input.input-group-addon[type="date"],.input-group-lg>.input-group-btn>input.btn[type="date"],input[type="time"].input-lg,.form-horizontal .form-group-lg input.form-control[type="time"],.input-group-lg>input.form-control[type="time"],.input-group-lg>input.input-group-addon[type="time"],.input-group-lg>.input-group-btn>input.btn[type="time"],input[type="datetime-local"].input-lg,.form-horizontal .form-group-lg input.form-control[type="datetime-local"],.input-group-lg>input.form-control[type="datetime-local"],.input-group-lg>input.input-group-addon[type="datetime-local"],.input-group-lg>.input-group-btn>input.btn[type="datetime-local"],input[type="month"].input-lg,.form-horizontal .form-group-lg input.form-control[type="month"],.input-group-lg>input.form-control[type="month"],.input-group-lg>input.input-group-addon[type="month"],.input-group-lg>.input-group-btn>input.btn[type="month"]{line-height:46px}.form-group{margin-bottom:15px}.radio,.checkbox{position:relative;display:block;min-height:20px;margin-top:10px;margin-bottom:10px}.radio label,.checkbox label{padding-left:20px;margin-bottom:0;font-weight:400;cursor:pointer}.radio input[type="radio"],.radio-inline input[type="radio"],.checkbox input[type="checkbox"],.checkbox-inline input[type="checkbox"]{position:absolute;margin-left:-20px;margin-top:4px \9}.radio+.radio,.checkbox+.checkbox{margin-top:-5px}.radio-inline,.checkbox-inline{display:inline-block;padding-left:20px;margin-bottom:0;vertical-align:middle;font-weight:400;cursor:pointer}.radio-inline+.radio-inline,.checkbox-inline+.checkbox-inline{margin-top:0;margin-left:10px}input[type="radio"][disabled],input[type="radio"].disabled,fieldset[disabled] input[type="radio"],input[type="checkbox"][disabled],input[type="checkbox"].disabled,fieldset[disabled] input[type="checkbox"],.radio-inline.disabled,fieldset[disabled] .radio-inline,.checkbox-inline.disabled,fieldset[disabled] .checkbox-inline,.radio.disabled label,fieldset[disabled] .radio label,.checkbox.disabled label,fieldset[disabled] .checkbox label{cursor:not-allowed}.form-control-static{padding-top:7px;padding-bottom:7px;margin-bottom:0}.form-control-static.input-lg,.form-horizontal .form-group-lg .form-control-static.form-control,.input-group-lg>.form-control-static.form-control,.input-group-lg>.form-control-static.input-group-addon,.input-group-lg>.input-group-btn>.form-control-static.btn,.form-control-static.input-sm,.form-horizontal .form-group-sm .form-control-static.form-control,.input-group-sm>.form-control-static.form-control,.input-group-sm>.form-control-static.input-group-addon,.input-group-sm>.input-group-btn>.form-control-static.btn{padding-left:0;padding-right:0}.input-sm,.form-horizontal .form-group-sm .form-control,.input-group-sm>.form-control{height:30px;padding:5px 10px;font-size:12px;line-height:1.5;border-radius:3px}.input-group-sm>.input-group-addon{height:30px;line-height:1.5}.input-group-sm>.input-group-btn>.btn{height:30px;padding:5px 10px;font-size:12px;line-height:1.5;border-radius:3px}select.input-sm,.form-horizontal .form-group-sm select.form-control,.input-group-sm>select.form-control,.input-group-sm>select.input-group-addon,.input-group-sm>.input-group-btn>select.btn{height:30px;line-height:30px}textarea.input-sm,.form-horizontal .form-group-sm textarea.form-control,.input-group-sm>textarea.form-control,.input-group-sm>textarea.input-group-addon,.input-group-sm>.input-group-btn>textarea.btn,select[multiple].input-sm,.form-horizontal .form-group-sm select.form-control[multiple],.input-group-sm>select.form-control[multiple],.input-group-sm>select.input-group-addon[multiple],.input-group-sm>.input-group-btn>select.btn[multiple]{height:auto}.input-lg,.form-horizontal .form-group-lg .form-control,.input-group-lg>.form-control{height:46px;padding:10px 16px;font-size:18px;line-height:1.33;border-radius:6px}.input-group-lg>.input-group-addon{height:46px;line-height:1.33}.input-group-lg>.input-group-btn>.btn{height:46px;padding:10px 16px;font-size:18px;line-height:1.33;border-radius:6px}select.input-lg,.form-horizontal .form-group-lg select.form-control,.input-group-lg>select.form-control,.input-group-lg>select.input-group-addon,.input-group-lg>.input-group-btn>select.btn{height:46px;line-height:46px}textarea.input-lg,.form-horizontal .form-group-lg textarea.form-control,.input-group-lg>textarea.form-control,.input-group-lg>textarea.input-group-addon,.input-group-lg>.input-group-btn>textarea.btn,select[multiple].input-lg,.form-horizontal .form-group-lg select.form-control[multiple],.input-group-lg>select.form-control[multiple],.input-group-lg>select.input-group-addon[multiple],.input-group-lg>.input-group-btn>select.btn[multiple]{height:auto}.has-feedback{position:relative}.has-feedback .form-control{padding-right:42.5px}.form-control-feedback{position:absolute;top:25px;right:0;z-index:2;display:block;width:34px;height:34px;line-height:34px;text-align:center}.input-lg+.form-control-feedback,.form-horizontal .form-group-lg .form-control+.form-control-feedback,.input-group-lg>.form-control+.form-control-feedback,.input-group-lg>.input-group-addon+.form-control-feedback,.input-group-lg>.input-group-btn>.btn+.form-control-feedback{width:46px;height:46px;line-height:46px}.input-sm+.form-control-feedback,.form-horizontal .form-group-sm .form-control+.form-control-feedback,.input-group-sm>.form-control+.form-control-feedback,.input-group-sm>.input-group-addon+.form-control-feedback,.input-group-sm>.input-group-btn>.btn+.form-control-feedback{width:30px;height:30px;line-height:30px}.has-success .help-block,.has-success .control-label,.has-success .radio,.has-success .checkbox,.has-success .radio-inline,.has-success .checkbox-inline{color:#3c763d}.has-success .form-control{border-color:#3c763d;box-shadow:inset 0 1px 1px rgba(0,0,0,.075)}.has-success .form-control:focus{border-color:#2b542c;box-shadow:inset 0 1px 1px rgba(0,0,0,.075),0 0 6px #67b168}.has-success .input-group-addon{color:#3c763d;border-color:#3c763d;background-color:#dff0d8}.has-success .form-control-feedback{color:#3c763d}.has-warning .help-block,.has-warning .control-label,.has-warning .radio,.has-warning .checkbox,.has-warning .radio-inline,.has-warning .checkbox-inline{color:#8a6d3b}.has-warning .form-control{border-color:#8a6d3b;box-shadow:inset 0 1px 1px rgba(0,0,0,.075)}.has-warning .form-control:focus{border-color:#66512c;box-shadow:inset 0 1px 1px rgba(0,0,0,.075),0 0 6px #c0a16b}.has-warning .input-group-addon{color:#8a6d3b;border-color:#8a6d3b;background-color:#fcf8e3}.has-warning .form-control-feedback{color:#8a6d3b}.has-error .help-block,.has-error .control-label,.has-error .radio,.has-error .checkbox,.has-error .radio-inline,.has-error .checkbox-inline{color:#a94442}.has-error .form-control{border-color:#a94442;box-shadow:inset 0 1px 1px rgba(0,0,0,.075)}.has-error .form-control:focus{border-color:#843534;box-shadow:inset 0 1px 1px rgba(0,0,0,.075),0 0 6px #ce8483}.has-error .input-group-addon{color:#a94442;border-color:#a94442;background-color:#f2dede}.has-error .form-control-feedback{color:#a94442}.has-feedback label.sr-only~.form-control-feedback{top:0}.help-block{display:block;margin-top:5px;margin-bottom:10px;color:#737373}.form-horizontal .radio,.form-horizontal .checkbox,.form-horizontal .radio-inline,.form-horizontal .checkbox-inline{margin-top:0;margin-bottom:0;padding-top:7px}.form-horizontal .radio,.form-horizontal .checkbox{min-height:27px}.form-horizontal .form-group{margin-left:-15px;margin-right:-15px}.form-horizontal .form-group:before{content:" ";display:table}.form-horizontal .form-group:after{content:" ";display:table;clear:both}.form-horizontal .has-feedback .form-control-feedback{top:0;right:15px}.btn{display:inline-block;vertical-align:middle;cursor:pointer;background-image:none;border:1px solid transparent;white-space:nowrap;-webkit-user-select:none;-moz-user-select:none;-ms-user-select:none;user-select:none}.btn:focus,.btn:active:focus,.btn.active:focus{outline:thin dotted;outline:5px auto -webkit-focus-ring-color;outline-offset:-2px}.btn:hover,.btn:focus{color:#333;text-decoration:none}.btn:active,.btn.active{outline:0;background-image:none;box-shadow:inset 0 3px 5px rgba(0,0,0,.125)}.btn.disabled,.btn[disabled],fieldset[disabled] .btn{cursor:not-allowed;pointer-events:none;opacity:.65;filter:alpha(opacity=65);box-shadow:none}.btn-default{color:#333;background-color:#fff;border-color:#ccc}.btn-default:hover,.btn-default:focus,.btn-default:active,.btn-default.active,.open>.btn-default.dropdown-toggle{color:#333;background-color:#e6e6e6;border-color:#adadad}.btn-default:active,.btn-default.active,.open>.btn-default.dropdown-toggle{background-image:none}.btn-default.disabled,.btn-default.disabled:hover,.btn-default.disabled:focus,.btn-default.disabled:active,.btn-default.disabled.active,.btn-default[disabled],.btn-default[disabled]:hover,.btn-default[disabled]:focus,.btn-default[disabled]:active,.btn-default[disabled].active,fieldset[disabled] .btn-default,fieldset[disabled] .btn-default:hover,fieldset[disabled] .btn-default:focus,fieldset[disabled] .btn-default:active,fieldset[disabled] .btn-default.active{background-color:#fff;border-color:#ccc}.btn-default .badge{color:#fff;background-color:#333}.btn-primary{color:#fff;background-color:#428bca;border-color:#357ebd}.btn-primary:hover,.btn-primary:focus,.btn-primary:active,.btn-primary.active,.open>.btn-primary.dropdown-toggle{color:#fff;background-color:#3071a9;border-color:#285e8e}.btn-primary:active,.btn-primary.active,.open>.btn-primary.dropdown-toggle{background-image:none}.btn-primary.disabled,.btn-primary.disabled:hover,.btn-primary.disabled:focus,.btn-primary.disabled:active,.btn-primary.disabled.active,.btn-primary[disabled],.btn-primary[disabled]:hover,.btn-primary[disabled]:focus,.btn-primary[disabled]:active,.btn-primary[disabled].active,fieldset[disabled] .btn-primary,fieldset[disabled] .btn-primary:hover,fieldset[disabled] .btn-primary:focus,fieldset[disabled] .btn-primary:active,fieldset[disabled] .btn-primary.active{background-color:#428bca;border-color:#357ebd}.btn-primary .badge{color:#428bca;background-color:#fff}.btn-success{color:#fff;background-color:#5cb85c;border-color:#4cae4c}.btn-success:hover,.btn-success:focus,.btn-success:active,.btn-success.active,.open>.btn-success.dropdown-toggle{color:#fff;background-color:#449d44;border-color:#398439}.btn-success:active,.btn-success.active,.open>.btn-success.dropdown-toggle{background-image:none}.btn-success.disabled,.btn-success.disabled:hover,.btn-success.disabled:focus,.btn-success.disabled:active,.btn-success.disabled.active,.btn-success[disabled],.btn-success[disabled]:hover,.btn-success[disabled]:focus,.btn-success[disabled]:active,.btn-success[disabled].active,fieldset[disabled] .btn-success,fieldset[disabled] .btn-success:hover,fieldset[disabled] .btn-success:focus,fieldset[disabled] .btn-success:active,fieldset[disabled] .btn-success.active{background-color:#5cb85c;border-color:#4cae4c}.btn-success .badge{color:#5cb85c;background-color:#fff}.btn-info{color:#fff;background-color:#5bc0de;border-color:#46b8da}.btn-info:hover,.btn-info:focus,.btn-info:active,.btn-info.active,.open>.btn-info.dropdown-toggle{color:#fff;background-color:#31b0d5;border-color:#269abc}.btn-info:active,.btn-info.active,.open>.btn-info.dropdown-toggle{background-image:none}.btn-info.disabled,.btn-info.disabled:hover,.btn-info.disabled:focus,.btn-info.disabled:active,.btn-info.disabled.active,.btn-info[disabled],.btn-info[disabled]:hover,.btn-info[disabled]:focus,.btn-info[disabled]:active,.btn-info[disabled].active,fieldset[disabled] .btn-info,fieldset[disabled] .btn-info:hover,fieldset[disabled] .btn-info:focus,fieldset[disabled] .btn-info:active,fieldset[disabled] .btn-info.active{background-color:#5bc0de;border-color:#46b8da}.btn-info .badge{color:#5bc0de;background-color:#fff}.btn-warning{color:#fff;background-color:#f0ad4e;border-color:#eea236}.btn-warning:hover,.btn-warning:focus,.btn-warning:active,.btn-warning.active,.open>.btn-warning.dropdown-toggle{color:#fff;background-color:#ec971f;border-color:#d58512}.btn-warning:active,.btn-warning.active,.open>.btn-warning.dropdown-toggle{background-image:none}.btn-warning.disabled,.btn-warning.disabled:hover,.btn-warning.disabled:focus,.btn-warning.disabled:active,.btn-warning.disabled.active,.btn-warning[disabled],.btn-warning[disabled]:hover,.btn-warning[disabled]:focus,.btn-warning[disabled]:active,.btn-warning[disabled].active,fieldset[disabled] .btn-warning,fieldset[disabled] .btn-warning:hover,fieldset[disabled] .btn-warning:focus,fieldset[disabled] .btn-warning:active,fieldset[disabled] .btn-warning.active{background-color:#f0ad4e;border-color:#eea236}.btn-warning .badge{color:#f0ad4e;background-color:#fff}.btn-danger{color:#fff;background-color:#d9534f;border-color:#d43f3a}.btn-danger:hover,.btn-danger:focus,.btn-danger:active,.btn-danger.active,.open>.btn-danger.dropdown-toggle{color:#fff;background-color:#c9302c;border-color:#ac2925}.btn-danger:active,.btn-danger.active,.open>.btn-danger.dropdown-toggle{background-image:none}.btn-danger.disabled,.btn-danger.disabled:hover,.btn-danger.disabled:focus,.btn-danger.disabled:active,.btn-danger.disabled.active,.btn-danger[disabled],.btn-danger[disabled]:hover,.btn-danger[disabled]:focus,.btn-danger[disabled]:active,.btn-danger[disabled].active,fieldset[disabled] .btn-danger,fieldset[disabled] .btn-danger:hover,fieldset[disabled] .btn-danger:focus,fieldset[disabled] .btn-danger:active,fieldset[disabled] .btn-danger.active{background-color:#d9534f;border-color:#d43f3a}.btn-danger .badge{color:#d9534f;background-color:#fff}.btn-link{color:#428bca;font-weight:400;cursor:pointer;border-radius:0}.btn-link,.btn-link:active,.btn-link[disabled],fieldset[disabled] .btn-link{background-color:transparent;box-shadow:none}.btn-link,.btn-link:hover,.btn-link:focus,.btn-link:active{border-color:transparent}.btn-link:hover,.btn-link:focus{color:#2a6496;text-decoration:underline;background-color:transparent}.btn-link[disabled]:hover,.btn-link[disabled]:focus,fieldset[disabled] .btn-link:hover,fieldset[disabled] .btn-link:focus{color:#777;text-decoration:none}.btn-lg{padding:10px 16px;font-size:18px;line-height:1.33;border-radius:6px}.btn-sm{padding:5px 10px}.btn-sm,.btn-xs{font-size:12px;line-height:1.5;border-radius:3px}.btn-xs{padding:1px 5px}.btn-block{display:block;width:100%}.btn-block+.btn-block{margin-top:5px}input[type="submit"].btn-block,input[type="reset"].btn-block,input[type="button"].btn-block{width:100%}.fade{opacity:0;transition:opacity .15s linear}.fade.in{opacity:1}.collapse{display:none}.collapse.in{display:block}tr.collapse.in{display:table-row}tbody.collapse.in{display:table-row-group}.collapsing{position:relative;height:0;overflow:hidden;transition:height .35s ease}.input-group{position:relative;display:table;border-collapse:separate}.input-group[class*="col-"]{float:none;padding-left:0;padding-right:0}.input-group .form-control{position:relative;z-index:2;float:left;width:100%;margin-bottom:0}.input-group-addon,.input-group-btn,.input-group .form-control{display:table-cell}.input-group-addon:not(:first-child):not(:last-child),.input-group-btn:not(:first-child):not(:last-child),.input-group .form-control:not(:first-child):not(:last-child){border-radius:0}.input-group-addon{white-space:nowrap}.input-group-addon,.input-group-btn{width:1%;vertical-align:middle}.input-group-addon{padding:6px 12px;font-size:14px;font-weight:400;line-height:1;color:#555;text-align:center;background-color:#eee;border:1px solid #ccc;border-radius:4px}.input-group-addon.input-sm,.form-horizontal .form-group-sm .input-group-addon.form-control,.input-group-sm>.input-group-addon,.input-group-sm>.input-group-btn>.input-group-addon.btn{padding:5px 10px;font-size:12px;border-radius:3px}.input-group-addon.input-lg,.form-horizontal .form-group-lg .input-group-addon.form-control,.input-group-lg>.input-group-addon,.input-group-lg>.input-group-btn>.input-group-addon.btn{padding:10px 16px;font-size:18px;border-radius:6px}.input-group-addon input[type="radio"],.input-group-addon input[type="checkbox"]{margin-top:0}.input-group .form-control:first-child,.input-group-addon:first-child,.input-group-btn:first-child>.btn,.input-group-btn:first-child>.btn-group>.btn,.input-group-btn:first-child>.dropdown-toggle,.input-group-btn:last-child>.btn:not(:last-child):not(.dropdown-toggle),.input-group-btn:last-child>.btn-group:not(:last-child)>.btn{border-bottom-right-radius:0;border-top-right-radius:0}.input-group-addon:first-child{border-right:0}.input-group .form-control:last-child,.input-group-addon:last-child,.input-group-btn:last-child>.btn,.input-group-btn:last-child>.btn-group>.btn,.input-group-btn:last-child>.dropdown-toggle,.input-group-btn:first-child>.btn:not(:first-child),.input-group-btn:first-child>.btn-group:not(:first-child)>.btn{border-bottom-left-radius:0;border-top-left-radius:0}.input-group-addon:last-child{border-left:0}.input-group-btn{font-size:0;white-space:nowrap}.input-group-btn,.input-group-btn>.btn{position:relative}.input-group-btn>.btn+.btn{margin-left:-1px}.input-group-btn>.btn:hover,.input-group-btn>.btn:focus,.input-group-btn>.btn:active{z-index:2}.input-group-btn:first-child>.btn,.input-group-btn:first-child>.btn-group{margin-right:-1px}.input-group-btn:last-child>.btn,.input-group-btn:last-child>.btn-group{margin-left:-1px}.pagination{display:inline-block;padding-left:0;margin:20px 0;border-radius:4px}.pagination>li{display:inline}.pagination>li>a,.pagination>li>span{position:relative;float:left;padding:6px 12px;line-height:1.4285714;text-decoration:none;color:#428bca;background-color:#fff;border:1px solid #ddd;margin-left:-1px}.pagination>li:first-child>a,.pagination>li:first-child>span{margin-left:0;border-bottom-left-radius:4px;border-top-left-radius:4px}.pagination>li:last-child>a,.pagination>li:last-child>span{border-bottom-right-radius:4px;border-top-right-radius:4px}.pagination>li>a:hover,.pagination>li>a:focus,.pagination>li>span:hover,.pagination>li>span:focus{color:#2a6496;background-color:#eee;border-color:#ddd}.pagination>.active>a,.pagination>.active>a:hover,.pagination>.active>a:focus,.pagination>.active>span,.pagination>.active>span:hover,.pagination>.active>span:focus{z-index:2;color:#fff;background-color:#428bca;border-color:#428bca;cursor:default}.pagination>.disabled>span,.pagination>.disabled>span:hover,.pagination>.disabled>span:focus,.pagination>.disabled>a,.pagination>.disabled>a:hover,.pagination>.disabled>a:focus{color:#777;background-color:#fff;border-color:#ddd;cursor:not-allowed}.pagination-lg>li>a,.pagination-lg>li>span{padding:10px 16px;font-size:18px}.pagination-lg>li:first-child>a,.pagination-lg>li:first-child>span{border-bottom-left-radius:6px;border-top-left-radius:6px}.pagination-lg>li:last-child>a,.pagination-lg>li:last-child>span{border-bottom-right-radius:6px;border-top-right-radius:6px}.pagination-sm>li>a,.pagination-sm>li>span{padding:5px 10px;font-size:12px}.pagination-sm>li:first-child>a,.pagination-sm>li:first-child>span{border-bottom-left-radius:3px;border-top-left-radius:3px}.pagination-sm>li:last-child>a,.pagination-sm>li:last-child>span{border-bottom-right-radius:3px;border-top-right-radius:3px}.close{float:right;font-size:21px;font-weight:700;line-height:1;color:#000;text-shadow:0 1px 0 #fff;opacity:.2;filter:alpha(opacity=20)}.close:hover,.close:focus{color:#000;text-decoration:none;cursor:pointer;opacity:.5;filter:alpha(opacity=50)}button.close{padding:0;cursor:pointer;background:0 0;border:0;-webkit-appearance:none}.modal-open,.modal{overflow:hidden}.modal{display:none;position:fixed;top:0;right:0;bottom:0;left:0;z-index:1050;-webkit-overflow-scrolling:touch;outline:0}.modal.fade .modal-dialog{transform:translate3d(0,-25%,0);transition:transform .3s ease-out}.modal.in .modal-dialog{transform:translate3d(0,0,0)}.modal-open .modal{overflow-x:hidden;overflow-y:auto}.modal-dialog{position:relative;width:auto;margin:10px}.modal-content{position:relative;background-color:#fff;border:1px solid #999;border:1px solid rgba(0,0,0,.2);border-radius:6px;box-shadow:0 3px 9px rgba(0,0,0,.5);background-clip:padding-box;outline:0}.modal-backdrop{position:fixed;top:0;right:0;bottom:0;left:0;z-index:1040;background-color:#000}.modal-backdrop.fade{opacity:0;filter:alpha(opacity=0)}.modal-backdrop.in{opacity:.5;filter:alpha(opacity=50)}.modal-header{padding:15px;border-bottom:1px solid #e5e5e5;min-height:16.4285714px}.modal-header .close{margin-top:-2px}.modal-title{margin:0;line-height:1.4285714}.modal-body{position:relative;padding:15px}.modal-footer{padding:15px;text-align:right;border-top:1px solid #e5e5e5}.modal-footer:before,.modal-footer:after{content:" ";display:table}.modal-footer:after{clear:both}.modal-footer .btn+.btn{margin-left:5px;margin-bottom:0}.modal-footer .btn-group .btn+.btn{margin-left:-1px}.modal-footer .btn-block+.btn-block{margin-left:0}.modal-scrollbar-measure{position:absolute;top:-9999px;width:50px;height:50px;overflow:scroll}.clearfix:before,.clearfix:after{content:" ";display:table}.clearfix:after{clear:both}.center-block{display:block;margin-left:auto;margin-right:auto}.pull-right{float:right!important}.pull-left{float:left!important}.hide{display:none!important}.show{display:block!important}.invisible{visibility:hidden}.text-hide{font:0/0 a;color:transparent;text-shadow:none;background-color:transparent;border:0}.hidden{display:none!important;visibility:hidden!important}.affix{position:fixed;transform:translate3d(0,0,0)}.hljs{display:block;overflow-x:auto;padding:.5em;background:#002b36;color:#839496;-webkit-text-size-adjust:none}.hljs-comment,.hljs-template_comment,.diff .hljs-header,.hljs-doctype,.hljs-pi,.lisp .hljs-string,.hljs-javadoc{color:#586e75}.hljs-keyword,.hljs-winutils,.method,.hljs-addition,.css .hljs-tag,.hljs-request,.hljs-status,.nginx .hljs-title{color:#859900}.hljs-number,.hljs-command,.hljs-string,.hljs-tag .hljs-value,.hljs-rules .hljs-value,.hljs-phpdoc,.hljs-dartdoc,.tex .hljs-formula,.hljs-regexp,.hljs-hexcolor,.hljs-link_url{color:#2aa198}.hljs-title,.hljs-localvars,.hljs-chunk,.hljs-decorator,.hljs-built_in,.hljs-identifier,.vhdl .hljs-literal,.hljs-id,.css .hljs-function{color:#268bd2}.hljs-attribute,.hljs-variable,.lisp .hljs-body,.smalltalk .hljs-number,.hljs-constant,.hljs-class .hljs-title,.hljs-parent,.hljs-type,.hljs-link_reference{color:#b58900}.hljs-preprocessor,.hljs-preprocessor .hljs-keyword,.hljs-pragma,.hljs-shebang,.hljs-symbol,.hljs-symbol .hljs-string,.diff .hljs-change,.hljs-special,.hljs-attr_selector,.hljs-subst,.hljs-cdata,.css .hljs-pseudo,.hljs-header{color:#cb4b16}.hljs-deletion,.hljs-important{color:#dc322f}.hljs-link_label{color:#6c71c4}.tex .hljs-formula{background:#073642}*,*:before,*:after{box-sizing:border-box}html{-ms-text-size-adjust:100%;-webkit-text-size-adjust:100%}article,aside,details,figcaption,figure,footer,header,hgroup,main,nav,section,summary{display:block}audio,canvas,progress,video{display:inline-block;vertical-align:baseline}audio:not([controls]){display:none;height:0}[hidden],template{display:none}a{background:0 0}a:active,a:hover{outline:0}abbr[title]{border-bottom:1px dotted}b,strong{font-weight:700}dfn{font-style:italic}h1{margin:.67em 0}mark{background:#ff0;color:#000}small{font-size:80%}sub,sup{font-size:75%;line-height:0;position:relative;vertical-align:baseline}sup{top:-.5em}sub{bottom:-.25em}images{border:0}svg:not(:root){overflow:hidden}figure{margin:1em 40px}hr{box-sizing:content-box;height:0}pre{overflow:auto}code,kbd{font-size:1em}code,kbd,pre,samp{font-family:monospace,monospace}samp{font-size:1em}button,input,optgroup,select,textarea{color:inherit;font:inherit;margin:0}button{overflow:visible}button,select{text-transform:none}button,html input[type="button"],input[type="reset"],input[type="submit"]{-webkit-appearance:button;cursor:pointer}button[disabled],html input[disabled]{cursor:default}button::-moz-focus-inner,input::-moz-focus-inner{border:0;padding:0}input{line-height:normal}input[type="checkbox"],input[type="radio"]{box-sizing:border-box;padding:0;margin-right:5px}input[type="number"]::-webkit-inner-spin-button,input[type="number"]::-webkit-outer-spin-button{height:auto}input[type="search"]{-webkit-appearance:textfield;box-sizing:content-box}input[type="search"]::-webkit-search-cancel-button,input[type="search"]::-webkit-search-decoration{-webkit-appearance:none}fieldset{border:1px solid silver;margin:0 2px;padding:.35em .625em .75em}legend{border:0;padding:0}textarea{overflow:auto}optgroup{font-weight:700}table{border-collapse:collapse;border-spacing:0}.debug{background-color:#ffc0cb!important}.ellipsis{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.ir{background-color:transparent;border:0;overflow:hidden}.ir::before{content:'';display:block;height:150%;width:0}html{font-size:.875em;background:#fff;color:#373D49}html,body{font-family:Georgia,Cambria,serif;height:100%}body{font-size:1rem;font-weight:400;line-height:2rem}ul,ol{margin-bottom:.83999rem;padding-top:.16001rem}li{font-feature-settings:'kern' 1,'onum' 1,'liga' 1;margin-left:1rem}li>ul,li>ol{margin-bottom:0}p{padding-top:.66001rem;font-feature-settings:'kern' 1,'onum' 1,'liga' 1;margin-top:0}p,pre{margin-bottom:1.33999rem}pre{font-size:1rem;padding:.66001rem 9.5px 9.5px;line-height:2rem;background:linear-gradient(to bottom,#fff 0,#fff .75rem,#f5f7fa .75rem,#f5f7fa 2.75rem,#fff 2.75rem,#fff 4rem);background-size:100% 4rem;border-color:#D3DAEA}blockquote{margin:0}blockquote p{font-size:1rem;margin-bottom:.33999rem;font-style:italic;padding:.66001rem 1rem 1rem;border-left:3px solid #A0AABF}th,td{padding:12px}h1,h2,h3,h4,h5,h6{font-family:"Source Sans Pro","Helvetica Neue",Helvetica,Arial,sans-serif;font-feature-settings:'dlig' 1,'liga' 1,'lnum' 1,'kern' 1;font-style:normal;font-weight:600;margin-top:0}h1{line-height:3rem;font-size:2.0571429rem;margin-bottom:.21999rem;padding-top:.78001rem}h2{font-size:1.953125rem;margin-bottom:.1835837rem;padding-top:.8164163rem}h2,h3{line-height:3rem}h3{font-size:1.6457143rem;margin-bottom:.07599rem;padding-top:.92401rem}h4{font-size:1.5625rem;margin-bottom:.546865rem;padding-top:.453135rem}h5{font-size:1.25rem;margin-bottom:-.56251rem;padding-top:.56251rem}h6{font-size:1rem;margin-bottom:-.65001rem;padding-top:.65001rem}a{cursor:pointer;color:#35D7BB;text-decoration:none}a:hover,a:focus{border-bottom-color:#35D7BB;color:#dff9f4}img{height:auto;max-width:100%}dt{font-style:italic;font-weight:600}.g{display:block}.g:after{clear:both;content:'';display:table}.g-b{float:left;margin:0;width:100%}.g{margin-left:-16px;margin-right:-16px}.g-b{padding-left:16px;padding-right:16px}.g-b--center{display:block;float:none;margin:0 auto}.g-b--right{float:right}.g-b--1of1{width:100%}.g-b--1of2,.g-b--2of4,.g-b--3of6,.g-b--4of8,.g-b--5of10,.g-b--6of12{width:50%}.g-b--1of3,.g-b--2of6,.g-b--4of12{width:33.333%}.g-b--2of3,.g-b--4of6,.g-b--8of12{width:66.666%}.g-b--1of4,.g-b--2of8,.g-b--3of12{width:25%}.g-b--3of4,.g-b--6of8,.g-b--9of12{width:75%}.g-b--1of5,.g-b--2of10{width:20%}.g-b--2of5,.g-b--4of10{width:40%}.g-b--3of5,.g-b--6of10{width:60%}.g-b--4of5,.g-b--8of10{width:80%}.g-b--1of6,.g-b--2of12{width:16.666%}.g-b--5of6,.g-b--10of12{width:83.333%}.g-b--1of8{width:12.5%}.g-b--3of8{width:37.5%}.g-b--5of8{width:62.5%}.g-b--7of8{width:87.5%}.g-b--1of10{width:10%}.g-b--3of10{width:30%}.g-b--7of10{width:70%}.g-b--9of10{width:90%}.g-b--1of12{width:8.333%}.g-b--5of12{width:41.666%}.g-b--7of12{width:58.333%}.g-b--11of12{width:91.666%}.g-b--push--1of1{margin-left:100%}.g-b--push--1of2,.g-b--push--2of4,.g-b--push--3of6,.g-b--push--4of8,.g-b--push--5of10,.g-b--push--6of12{margin-left:50%}.g-b--push--1of3,.g-b--push--2of6,.g-b--push--4of12{margin-left:33.333%}.g-b--push--2of3,.g-b--push--4of6,.g-b--push--8of12{margin-left:66.666%}.g-b--push--1of4,.g-b--push--2of8,.g-b--push--3of12{margin-left:25%}.g-b--push--3of4,.g-b--push--6of8,.g-b--push--9of12{margin-left:75%}.g-b--push--1of5,.g-b--push--2of10{margin-left:20%}.g-b--push--2of5,.g-b--push--4of10{margin-left:40%}.g-b--push--3of5,.g-b--push--6of10{margin-left:60%}.g-b--push--4of5,.g-b--push--8of10{margin-left:80%}.g-b--push--1of6,.g-b--push--2of12{margin-left:16.666%}.g-b--push--5of6,.g-b--push--10of12{margin-left:83.333%}.g-b--push--1of8{margin-left:12.5%}.g-b--push--3of8{margin-left:37.5%}.g-b--push--5of8{margin-left:62.5%}.g-b--push--7of8{margin-left:87.5%}.g-b--push--1of10{margin-left:10%}.g-b--push--3of10{margin-left:30%}.g-b--push--7of10{margin-left:70%}.g-b--push--9of10{margin-left:90%}.g-b--push--1of12{margin-left:8.333%}.g-b--push--5of12{margin-left:41.666%}.g-b--push--7of12{margin-left:58.333%}.g-b--push--11of12{margin-left:91.666%}.g-b--pull--1of1{margin-right:100%}.g-b--pull--1of2,.g-b--pull--2of4,.g-b--pull--3of6,.g-b--pull--4of8,.g-b--pull--5of10,.g-b--pull--6of12{margin-right:50%}.g-b--pull--1of3,.g-b--pull--2of6,.g-b--pull--4of12{margin-right:33.333%}.g-b--pull--2of3,.g-b--pull--4of6,.g-b--pull--8of12{margin-right:66.666%}.g-b--pull--1of4,.g-b--pull--2of8,.g-b--pull--3of12{margin-right:25%}.g-b--pull--3of4,.g-b--pull--6of8,.g-b--pull--9of12{margin-right:75%}.g-b--pull--1of5,.g-b--pull--2of10{margin-right:20%}.g-b--pull--2of5,.g-b--pull--4of10{margin-right:40%}.g-b--pull--3of5,.g-b--pull--6of10{margin-right:60%}.g-b--pull--4of5,.g-b--pull--8of10{margin-right:80%}.g-b--pull--1of6,.g-b--pull--2of12{margin-right:16.666%}.g-b--pull--5of6,.g-b--pull--10of12{margin-right:83.333%}.g-b--pull--1of8{margin-right:12.5%}.g-b--pull--3of8{margin-right:37.5%}.g-b--pull--5of8{margin-right:62.5%}.g-b--pull--7of8{margin-right:87.5%}.g-b--pull--1of10{margin-right:10%}.g-b--pull--3of10{margin-right:30%}.g-b--pull--7of10{margin-right:70%}.g-b--pull--9of10{margin-right:90%}.g-b--pull--1of12{margin-right:8.333%}.g-b--pull--5of12{margin-right:41.666%}.g-b--pull--7of12{margin-right:58.333%}.g-b--pull--11of12{margin-right:91.666%}.splashscreen{position:fixed;top:0;left:0;width:100%;height:100%;background-color:#373D49;z-index:22}.splashscreen-dillinger{width:260px;height:auto;display:block;margin:0 auto;padding-bottom:3rem}.splashscreen p{font-size:1.25rem;padding-top:.56251rem;font-family:"Source Sans Pro","Helvetica Neue",Helvetica,Arial,sans-serif;font-weight:400;text-align:center;max-width:500px;margin:0 auto;color:#FFF}.sp-center{position:relative;transform:translateY(-50%);top:50%}.open-menu>.wrapper{overflow-x:hidden}.page{margin:0 auto;position:relative;top:0;left:0;width:100%;height:100%;z-index:2;transition:all .25s ease-in-out;background-color:#fff;padding-top:51px;will-change:left}.open-menu .page{left:270px}.title{line-height:1rem;font-size:.8rem;margin-bottom:.77999rem;padding-top:.22001rem;font-weight:500;color:#A0AABF;letter-spacing:1px;text-transform:uppercase;padding-left:16px;padding-right:16px;margin-top:1rem}.split-preview .title{padding-left:0}.title-document{line-height:1rem;font-size:1.25rem;margin-bottom:.89999rem;padding-top:.10001rem;font-weight:400;font-family:"Ubuntu Mono",Monaco;color:#373D49;padding-left:16px;padding-right:16px;width:80%;min-width:300px;outline:0;border:none}.icon{display:block;margin:0 auto;width:36px;height:36px;border-radius:3px;text-align:center}.icon svg{display:inline-block;margin-left:auto;margin-right:auto}.icon-preview{background-color:#373D49;line-height:40px}.icon-preview svg{width:19px;height:12px}.icon-settings{background-color:#373D49;line-height:44px}.icon-settings svg{width:18px;height:18px}.icon-link{width:16px;height:16px;line-height:1;margin-right:24px;text-align:right}.navbar{background-color:#373D49;height:51px;width:100%;position:fixed;top:0;left:0;z-index:6;transition:all .25s ease-in-out;will-change:left}.navbar:after{content:"";display:table;clear:both}.open-menu .navbar{left:270px}.navbar-brand{float:left;margin:0 0 0 24px;padding:0;line-height:42px}.navbar-brand svg{width:85px;height:11px}.nav-left{float:left}.nav-right{float:right}.nav-sidebar{width:100%}.menu{list-style:none;margin:0;padding:0}.menu a{border:0;color:#A0AABF;font-family:"Source Sans Pro","Helvetica Neue",Helvetica,Arial,sans-serif;outline:none;text-transform:uppercase}.menu a:hover{color:#35D7BB}.menu .menu-item{border:0;display:none;float:left;margin:0;position:relative}.menu .menu-item>a{display:block;font-size:12px;height:51px;letter-spacing:1px;line-height:51px;padding:0 24px}.menu .menu-item--settings,.menu .menu-item--preview,.menu .menu-item--save-to.in-sidebar,.menu .menu-item--import-from.in-sidebar,.menu .menu-item--link-unlink.in-sidebar,.menu .menu-item--documents.in-sidebar{display:block}.menu .menu-item--documents{padding-bottom:1rem}.menu .menu-item.open>a{background-color:#1D212A}.menu .menu-item-icon>a{height:auto;padding:0}.menu .menu-item-icon:hover>a{background-color:transparent}.menu .menu-link.open i{background-color:#1D212A}.menu .menu-link.open g{fill:#35D7BB}.menu .menu-link-preview,.menu .menu-link-settings{margin-top:8px;width:51px}.menu-sidebar{width:100%}.menu-sidebar .menu-item{float:none;margin-bottom:1px;width:100%}.menu-sidebar .menu-item.open>a{background-color:#373D49}.menu-sidebar .open .caret{transform:rotate(180deg)}.menu-sidebar>.menu-item:hover .dropdown a,.menu-sidebar>.menu-item:hover .settings a{background-color:transparent}.menu-sidebar .menu-link{background-color:#373D49;font-weight:600}.menu-sidebar .menu-link:after{content:"";display:table;clear:both}.menu-sidebar .menu-link>span{float:left}.menu-sidebar .menu-link>.caret{float:right;text-align:right;top:22px}.menu-sidebar .dropdown,.menu-sidebar .settings{background-color:transparent;position:static;width:100%}.dropdown{position:absolute;right:0;top:51px;width:188px}.dropdown,.settings{display:none;background-color:#1D212A}.dropdown{padding:0}.dropdown,.settings,.sidebar-list{list-style:none;margin:0}.sidebar-list{padding:0}.dropdown li{margin:32px 0;padding:0 0 0 32px}.dropdown li,.settings li{line-height:1}.sidebar-list li{line-height:1;margin:32px 0;padding:0 0 0 32px}.dropdown a{color:#D0D6E2}.dropdown a,.settings a,.sidebar-list a{display:block;text-transform:none}.sidebar-list a{color:#D0D6E2}.dropdown a:after,.settings a:after,.sidebar-list a:after{content:"";display:table;clear:both}.dropdown .icon,.settings .icon,.sidebar-list .icon{float:right}.open .dropdown,.open .settings,.open .sidebar-list{display:block}.open .dropdown.collapse,.open .collapse.settings,.open .sidebar-list.collapse{display:none}.open .dropdown.collapse.in,.open .collapse.in.settings,.open .sidebar-list.collapse.in{display:block}.dropdown .unlinked .icon,.settings .unlinked .icon,.sidebar-list .unlinked .icon{opacity:.3}.dropdown.documents li,.documents.settings li,.sidebar-list.documents li{background-image:url("../img/icons/file.svg");background-position:240px center;background-repeat:no-repeat;background-size:14px 16px;padding:3px 32px}.dropdown.documents li.octocat,.documents.settings li.octocat,.sidebar-list.documents li.octocat{background-image:url("../img/icons/octocat.svg");background-position:234px center;background-size:24px 24px}.dropdown.documents li:last-child,.documents.settings li:last-child,.sidebar-list.documents li:last-child{margin-bottom:1rem}.dropdown.documents li.active a,.documents.settings li.active a,.sidebar-list.documents li.active a{color:#35D7BB}.settings{position:fixed;top:67px;right:16px;border-radius:3px;width:288px;background-color:#373D49;padding:16px;z-index:7}.show-settings .settings{display:block}.settings .has-checkbox{float:left}.settings form{display:-ms-flexbox;display:flex;-ms-flex-direction:row;flex-direction:row;-ms-flex-pack:justify;justify-content:space-between}.settings input{width:20%}.settings a{font-size:1.25rem;font-family:"Source Sans Pro","Helvetica Neue",Helvetica,Arial,sans-serif;font-weight:400;-webkit-font-smoothing:antialiased;line-height:28px;color:#D0D6E2}.settings a:after{content:"";display:table;clear:both}.settings a:hover{color:#35D7BB}.settings li{border-bottom:1px solid #4F535B;margin:0;padding:16px 0}.settings li:last-child{border-bottom:none}.brand{border:none;display:block}.brand:hover g{fill:#35D7BB}.toggle{display:block;float:left;height:16px;padding:25px 16px 26px;width:40px}.toggle span:after,.toggle span:before{content:'';left:0;position:absolute;top:-6px}.toggle span:after{top:6px}.toggle span{display:block;position:relative}.toggle span,.toggle span:after,.toggle span:before{-webkit-backface-visibility:hidden;backface-visibility:hidden;background-color:#D3DAEA;height:2px;transition:all .3s;width:20px}.open-menu .toggle span{background-color:transparent}.open-menu .toggle span:before{transform:rotate(45deg) translate(3px,3px)}.open-menu .toggle span:after{transform:rotate(-45deg) translate(5px,-6px)}.caret{display:inline-block;width:0;height:0;margin-left:6px;vertical-align:middle;position:relative;top:-1px;border-top:4px solid;border-right:4px solid transparent;border-left:4px solid transparent}.sidebar{overflow:auto;height:100%;padding-right:15px;padding-bottom:15px;width:285px}.sidebar-wrapper{-webkit-overflow-scrolling:touch;background-color:#2B2F36;left:0;height:100%;overflow-y:hidden;position:fixed;top:0;width:285px;z-index:1}.sidebar-branding{width:160px;padding:0;margin:16px auto}.header{border-bottom:1px solid #E8E8E8;position:relative}.words,.characters{line-height:1rem;font-size:.8rem;margin-bottom:.77999rem;padding-top:.22001rem;font-weight:500;font-family:"Source Sans Pro","Helvetica Neue",Helvetica,Arial,sans-serif;letter-spacing:1px;text-transform:uppercase;z-index:5;position:absolute;right:16px;top:0}.words span,.characters span{color:#A0AABF}.words .counter,.characters .counter{color:#000}.words+.characters{top:22px}.mr10{margin-right:10px}.btn{text-align:center;display:inline-block;width:100%;text-transform:uppercase;font-weight:600;font-family:"Source Sans Pro","Helvetica Neue",Helvetica,Arial,sans-serif;font-size:14px;text-shadow:0 1px 0 #1b8b77;padding:16px 24px;background-color:#35D7BB;border-radius:3px;margin:0 auto 16px;line-height:1;color:#fff;transition:all .15s linear;-webkit-font-smoothing:antialiased}.btn--new,.btn--save{display:block;width:238px}.btn--new:hover,.btn--new:focus,.btn--save:hover,.btn--save:focus{color:#fff;border-bottom-color:transparent;box-shadow:0 1px 3px #24b59c;text-shadow:0 1px 0 #24b59c}.btn--save{background-color:#4A5261;text-shadow:0 1px 1px #1e2127}.btn--save:hover,.btn--save:focus{color:#fff;border-bottom-color:transparent;box-shadow:0 1px 5px #08090a;text-shadow:none}.btn--delete{display:block;width:238px;background-color:transparent;font-size:12px;text-shadow:none}.btn--delete:hover,.btn--delete:focus{color:#fff;border-bottom-color:transparent;text-shadow:0 1px 0 #08090a;opacity:.8}.btn--delete-modal,.btn--ok,.btn--close{border-top:0;background-color:#4A5261;text-shadow:0 1px 0 #08090a;margin:0}.btn--delete-modal:hover,.btn--delete-modal:focus,.btn--ok:hover,.btn--ok:focus,.btn--close:hover,.btn--close:focus{color:#fff;background-color:#292d36;text-shadow:none}.btn--delete-modal{display:inline;width:auto}.overlay{position:absolute;top:0;left:0;width:100%;height:100%;background-color:rgba(55,61,73,.8);transition:all .25s ease-in-out;transition-timing-function:ease-out;will-change:left,opacity,visibility;z-index:5;opacity:0;visibility:hidden}.show-settings .overlay{visibility:visible;opacity:1}.switch{float:right;line-height:1}.switch input{display:none}.switch small{display:inline-block;cursor:pointer;padding:0 24px 0 0;transition:all ease .2s;background-color:#2B2F36;border-color:#2B2F36}.switch small,.switch small:before{border-radius:30px;box-shadow:inset 0 0 2px 0 #14171F}.switch small:before{display:block;content:'';width:28px;height:28px;background:#fff}.switch.checked small{padding-right:0;padding-left:24px;background-color:#35D7BB;box-shadow:none}.modal--dillinger.about .modal-dialog{font-size:1.25rem;max-width:500px}.modal--dillinger.scope .modal-dialog{max-width:300px;margin:5rem auto}.modal--dillinger .modal-dialog{max-width:600px;width:auto;margin:5rem auto}.modal--dillinger .modal-content{background:#373D49;border-radius:3px;box-shadow:0 2px 5px 0 #2C3B59;color:#fff;font-family:"Source Sans Pro","Helvetica Neue",Helvetica,Arial,sans-serif;font-weight:400;padding:2rem}.modal--dillinger ul{list-style-type:disc;margin:1rem 0;padding:0 0 0 1rem}.modal--dillinger li{padding:0;margin:0}.modal--dillinger .modal-header{border:0;padding:0}.modal--dillinger .modal-body{padding:0}.modal--dillinger .modal-footer{border:0;padding:0}.modal--dillinger .close{color:#fff;opacity:1}.modal-backdrop{background-color:#373D49}.pagination--dillinger{padding:0!important;margin:1.5rem 0!important;display:-ms-flexbox;display:flex;-ms-flex-pack:justify;justify-content:space-between;-ms-flex-direction:row;flex-direction:row;-ms-flex-align:center;align-items:center;-ms-flex-line-pack:stretch;align-content:stretch}.pagination--dillinger li{display:-ms-flexbox;display:flex;-ms-flex-positive:1;flex-grow:1;text-align:center}.pagination--dillinger li:first-child>a,.pagination--dillinger li.disabled>a,.pagination--dillinger li.disabled>a:hover,.pagination--dillinger li.disabled>a:focus,.pagination--dillinger li>a{background-color:transparent;border-color:#4F535B;border-right-color:transparent}.pagination--dillinger li.active>a,.pagination--dillinger li.active>a:hover,.pagination--dillinger li.active>a:focus{border-color:#4A5261;background-color:#4A5261;color:#fff}.pagination--dillinger li>a{float:none;color:#fff;width:100%;display:block;text-align:center;margin:0;border-right-color:transparent;padding:6px}.pagination--dillinger li>a:hover,.pagination--dillinger li>a:focus{border-color:#35D7BB;background-color:#35D7BB;color:#fff}.pagination--dillinger li:last-child a{border-color:#4F535B}.pagination--dillinger li:first-child a{border-right-color:transparent}.diNotify{position:absolute;z-index:9999;left:0;right:0;top:0;margin:0 auto;max-width:400px;text-align:center;transition:top .5s ease-in-out,opacity .5s ease-in-out;visibility:hidden}.diNotify-body{-webkit-font-smoothing:antialiased;background-color:#35D7BB;background:#666E7F;border-radius:3px;color:#fff;font-family:"Source Sans Pro","Helvetica Neue",Helvetica,Arial,sans-serif;font-weight:400;overflow:hidden;padding:1rem 2rem .5rem;display:-ms-flexbox;display:flex;-ms-flex-align:baseline;align-items:baseline;-ms-flex-pack:center;justify-content:center}.diNotify-icon{display:block;width:16px;height:16px;line-height:16px;position:relative;top:3px}.diNotify-message{padding-left:1rem}.zen-wrapper{position:fixed;top:0;left:0;right:0;bottom:0;width:100%;height:100%;z-index:10;background-color:#FFF;opacity:0;transition:opacity .25s ease-in-out}.zen-wrapper.on{opacity:1}.enter-zen-mode{background-image:url("../img/icons/enter-zen.svg");right:.5rem;top:.313rem;display:none}.enter-zen-mode,.close-zen-mode{font:0/0 a;color:transparent;text-shadow:none;background-color:transparent;border:0;background-repeat:no-repeat;width:32px;height:32px;display:block;position:absolute}.close-zen-mode{background-image:url("../img/icons/exit-zen.svg");right:1rem;top:1rem}.zen-page{position:relative;top:0;bottom:0;z-index:11;height:100%;width:100%}#zen{font-size:1.25rem;width:300px;height:80%;margin:0 auto;position:relative;top:10%}#zen:before,#zen:after{content:"";position:absolute;height:10%;width:100%;z-index:12;pointer-events:none}#preview .table{width:auto}.ui-resizable{position:relative}.ui-resizable-handle{position:absolute;font-size:.1px;z-index:99999;display:block}.ui-resizable-e{background-color:#666;border-right:8px solid #e8e8e8;border-left:1px solid #222;width:10px;z-index:88!important;position:relative}.ui-resizable-e:after{content:"-";display:block;position:absolute;top:calc(50% - 16px);left:0;height:25px;width:2px;background-color:rgba(0,0,0,.4);margin:3px}#editor{cursor:ew-resize;position:relative;z-index:auto}.profile-pic{float:left;width:250px}#_default_ a::before{color:#A0AABF}#_default_ img{display:none}#_default_ #_default_{display:block;float:left;max-width:38%;word-wrap:break-word}#_default_ .default-ad{display:none}#_default_ ._default_{display:block}#_default_ a{color:#35d7bb;text-decoration:none}#_default_ a:hover{color:#8ae8d8}#_default_ .default-image{display:none}#_default_ .default-title:after{content:" — "}#_default_ .default-title,#_default_ .default-text,#_default_ .default-description{display:inline}#_default_ .default-title{position:relative;font-weight:600;display:none}#_default_ a:before{position:relative;top:0;padding:5px;color:#a0aabf;content:"Ad";text-transform:uppercase;font-size:8px;font-family:Verdana,sans-serif}#_default_{display:block;float:left;max-width:38%;word-wrap:break-word}#_default_ ._default_{display:block;font-size:.75rem;height:51px;letter-spacing:1px;line-height:1rem;padding:18px 24px}body{max-width:1024px;margin:0 auto;overflow:auto;padding:2%}.split{overflow:scroll;padding:0!important;-webkit-overflow-scrolling:touch}.split-editor{padding-left:0;padding-right:0;position:relative;z-index:3}.show-preview .split-editor{display:none}.split-preview{background-color:#fff;display:none;top:0;position:relative;z-index:4}.show-preview .split-preview{display:block}#editor{font-size:1rem;font-family:"Ubuntu Mono",Monaco;font-weight:400;line-height:2rem;width:100%;height:100%}#editor .ace_gutter{-webkit-font-smoothing:antialiased}.editor-header{width:50%;float:left;border-bottom:1px solid #E8E8E8;position:relative}.editor-header--first{border-right:1px solid #E8E8E8}.editor-header .title{display:inline-block}.preview-html{padding:15px}.preview-html a{color:#A0AABF;text-decoration:underline}.preview-src{white-space:normal}.preview-mode-toggle-src{background-image:url("../img/icons/code.svg")}.preview-mode-toggle-src,.preview-mode-toggle-html{font:0/0 a;color:transparent;text-shadow:none;background-color:transparent;border:0;background-repeat:no-repeat;width:32px;height:32px;display:block;position:absolute;right:.5rem;top:.5rem;display:none}.preview-mode-toggle-html{background-image:url("../img/icons/eye.svg")}.sr-only{visibility:hidden;text-overflow:110%;overflow:hidden;top:-100px;position:absolute}.mnone{margin:0!important}@media screen and (min-width:27.5em){html{font-size:.875em}body{font-size:1rem}ul,ol{margin-bottom:.83999rem;padding-top:.16001rem}p{padding-top:.66001rem}p,pre{margin-bottom:1.33999rem}pre,blockquote p{font-size:1rem;padding-top:.66001rem}blockquote p{margin-bottom:.33999rem}h1{font-size:2.0571429rem;margin-bottom:.21999rem;padding-top:.78001rem}h2{font-size:1.953125rem;margin-bottom:.1835837rem;padding-top:.8164163rem}h3{font-size:1.6457143rem;margin-bottom:.07599rem;padding-top:.92401rem}h4{font-size:1.5625rem;margin-bottom:.546865rem;padding-top:.453135rem}h5{font-size:1.25rem;margin-bottom:-.56251rem;padding-top:.56251rem}h6{font-size:1rem;margin-bottom:-.65001rem;padding-top:.65001rem}.g{margin-left:-16px;margin-right:-16px}.g-b{padding-left:16px;padding-right:16px}.g-b--m1of1{width:100%}.g-b--m1of2,.g-b--m2of4,.g-b--m3of6,.g-b--m4of8,.g-b--m5of10,.g-b--m6of12{width:50%}.g-b--m1of3,.g-b--m2of6,.g-b--m4of12{width:33.333%}.g-b--m2of3,.g-b--m4of6,.g-b--m8of12{width:66.666%}.g-b--m1of4,.g-b--m2of8,.g-b--m3of12{width:25%}.g-b--m3of4,.g-b--m6of8,.g-b--m9of12{width:75%}.g-b--m1of5,.g-b--m2of10{width:20%}.g-b--m2of5,.g-b--m4of10{width:40%}.g-b--m3of5,.g-b--m6of10{width:60%}.g-b--m4of5,.g-b--m8of10{width:80%}.g-b--m1of6,.g-b--m2of12{width:16.666%}.g-b--m5of6,.g-b--m10of12{width:83.333%}.g-b--m1of8{width:12.5%}.g-b--m3of8{width:37.5%}.g-b--m5of8{width:62.5%}.g-b--m7of8{width:87.5%}.g-b--m1of10{width:10%}.g-b--m3of10{width:30%}.g-b--m7of10{width:70%}.g-b--m9of10{width:90%}.g-b--m1of12{width:8.333%}.g-b--m5of12{width:41.666%}.g-b--m7of12{width:58.333%}.g-b--m11of12{width:91.666%}.g-b--push--m1of1{margin-left:100%}.g-b--push--m1of2,.g-b--push--m2of4,.g-b--push--m3of6,.g-b--push--m4of8,.g-b--push--m5of10,.g-b--push--m6of12{margin-left:50%}.g-b--push--m1of3,.g-b--push--m2of6,.g-b--push--m4of12{margin-left:33.333%}.g-b--push--m2of3,.g-b--push--m4of6,.g-b--push--m8of12{margin-left:66.666%}.g-b--push--m1of4,.g-b--push--m2of8,.g-b--push--m3of12{margin-left:25%}.g-b--push--m3of4,.g-b--push--m6of8,.g-b--push--m9of12{margin-left:75%}.g-b--push--m1of5,.g-b--push--m2of10{margin-left:20%}.g-b--push--m2of5,.g-b--push--m4of10{margin-left:40%}.g-b--push--m3of5,.g-b--push--m6of10{margin-left:60%}.g-b--push--m4of5,.g-b--push--m8of10{margin-left:80%}.g-b--push--m1of6,.g-b--push--m2of12{margin-left:16.666%}.g-b--push--m5of6,.g-b--push--m10of12{margin-left:83.333%}.g-b--push--m1of8{margin-left:12.5%}.g-b--push--m3of8{margin-left:37.5%}.g-b--push--m5of8{margin-left:62.5%}.g-b--push--m7of8{margin-left:87.5%}.g-b--push--m1of10{margin-left:10%}.g-b--push--m3of10{margin-left:30%}.g-b--push--m7of10{margin-left:70%}.g-b--push--m9of10{margin-left:90%}.g-b--push--m1of12{margin-left:8.333%}.g-b--push--m5of12{margin-left:41.666%}.g-b--push--m7of12{margin-left:58.333%}.g-b--push--m11of12{margin-left:91.666%}.g-b--pull--m1of1{margin-right:100%}.g-b--pull--m1of2,.g-b--pull--m2of4,.g-b--pull--m3of6,.g-b--pull--m4of8,.g-b--pull--m5of10,.g-b--pull--m6of12{margin-right:50%}.g-b--pull--m1of3,.g-b--pull--m2of6,.g-b--pull--m4of12{margin-right:33.333%}.g-b--pull--m2of3,.g-b--pull--m4of6,.g-b--pull--m8of12{margin-right:66.666%}.g-b--pull--m1of4,.g-b--pull--m2of8,.g-b--pull--m3of12{margin-right:25%}.g-b--pull--m3of4,.g-b--pull--m6of8,.g-b--pull--m9of12{margin-right:75%}.g-b--pull--m1of5,.g-b--pull--m2of10{margin-right:20%}.g-b--pull--m2of5,.g-b--pull--m4of10{margin-right:40%}.g-b--pull--m3of5,.g-b--pull--m6of10{margin-right:60%}.g-b--pull--m4of5,.g-b--pull--m8of10{margin-right:80%}.g-b--pull--m1of6,.g-b--pull--m2of12{margin-right:16.666%}.g-b--pull--m5of6,.g-b--pull--m10of12{margin-right:83.333%}.g-b--pull--m1of8{margin-right:12.5%}.g-b--pull--m3of8{margin-right:37.5%}.g-b--pull--m5of8{margin-right:62.5%}.g-b--pull--m7of8{margin-right:87.5%}.g-b--pull--m1of10{margin-right:10%}.g-b--pull--m3of10{margin-right:30%}.g-b--pull--m7of10{margin-right:70%}.g-b--pull--m9of10{margin-right:90%}.g-b--pull--m1of12{margin-right:8.333%}.g-b--pull--m5of12{margin-right:41.666%}.g-b--pull--m7of12{margin-right:58.333%}.g-b--pull--m11of12{margin-right:91.666%}.splashscreen p{font-size:1.25rem;margin-bottom:1.43749rem;padding-top:.56251rem}.title{font-size:.8rem;margin-bottom:.77999rem;padding-top:.22001rem}.title-document{margin-bottom:.89999rem;padding-top:.10001rem}.title-document,.settings a{font-size:1.25rem}.words,.characters{font-size:.8rem;margin-bottom:.77999rem;padding-top:.22001rem}.modal--dillinger.about .modal-dialog,#zen{font-size:1.25rem}#zen{width:400px}#editor{font-size:1rem}}@media screen and (min-width:46.25em){html{font-size:.875em}body{font-size:1rem}ul,ol{margin-bottom:.83999rem;padding-top:.16001rem}p{padding-top:.66001rem}p,pre{margin-bottom:1.33999rem}pre,blockquote p{font-size:1rem;padding-top:.66001rem}blockquote p{margin-bottom:.33999rem}h1{font-size:2.0571429rem;margin-bottom:.21999rem;padding-top:.78001rem}h2{font-size:1.953125rem;margin-bottom:.1835837rem;padding-top:.8164163rem}h3{font-size:1.6457143rem;margin-bottom:.07599rem;padding-top:.92401rem}h4{font-size:1.5625rem;margin-bottom:.546865rem;padding-top:.453135rem}h5{font-size:1.25rem;margin-bottom:-.56251rem;padding-top:.56251rem}h6{font-size:1rem;margin-bottom:-.65001rem;padding-top:.65001rem}.g{margin-left:-16px;margin-right:-16px}.g-b{padding-left:16px;padding-right:16px}.g-b--t1of1{width:100%}.g-b--t1of2,.g-b--t2of4,.g-b--t3of6,.g-b--t4of8,.g-b--t5of10,.g-b--t6of12{width:50%}.g-b--t1of3,.g-b--t2of6,.g-b--t4of12{width:33.333%}.g-b--t2of3,.g-b--t4of6,.g-b--t8of12{width:66.666%}.g-b--t1of4,.g-b--t2of8,.g-b--t3of12{width:25%}.g-b--t3of4,.g-b--t6of8,.g-b--t9of12{width:75%}.g-b--t1of5,.g-b--t2of10{width:20%}.g-b--t2of5,.g-b--t4of10{width:40%}.g-b--t3of5,.g-b--t6of10{width:60%}.g-b--t4of5,.g-b--t8of10{width:80%}.g-b--t1of6,.g-b--t2of12{width:16.666%}.g-b--t5of6,.g-b--t10of12{width:83.333%}.g-b--t1of8{width:12.5%}.g-b--t3of8{width:37.5%}.g-b--t5of8{width:62.5%}.g-b--t7of8{width:87.5%}.g-b--t1of10{width:10%}.g-b--t3of10{width:30%}.g-b--t7of10{width:70%}.g-b--t9of10{width:90%}.g-b--t1of12{width:8.333%}.g-b--t5of12{width:41.666%}.g-b--t7of12{width:58.333%}.g-b--t11of12{width:91.666%}.g-b--push--t1of1{margin-left:100%}.g-b--push--t1of2,.g-b--push--t2of4,.g-b--push--t3of6,.g-b--push--t4of8,.g-b--push--t5of10,.g-b--push--t6of12{margin-left:50%}.g-b--push--t1of3,.g-b--push--t2of6,.g-b--push--t4of12{margin-left:33.333%}.g-b--push--t2of3,.g-b--push--t4of6,.g-b--push--t8of12{margin-left:66.666%}.g-b--push--t1of4,.g-b--push--t2of8,.g-b--push--t3of12{margin-left:25%}.g-b--push--t3of4,.g-b--push--t6of8,.g-b--push--t9of12{margin-left:75%}.g-b--push--t1of5,.g-b--push--t2of10{margin-left:20%}.g-b--push--t2of5,.g-b--push--t4of10{margin-left:40%}.g-b--push--t3of5,.g-b--push--t6of10{margin-left:60%}.g-b--push--t4of5,.g-b--push--t8of10{margin-left:80%}.g-b--push--t1of6,.g-b--push--t2of12{margin-left:16.666%}.g-b--push--t5of6,.g-b--push--t10of12{margin-left:83.333%}.g-b--push--t1of8{margin-left:12.5%}.g-b--push--t3of8{margin-left:37.5%}.g-b--push--t5of8{margin-left:62.5%}.g-b--push--t7of8{margin-left:87.5%}.g-b--push--t1of10{margin-left:10%}.g-b--push--t3of10{margin-left:30%}.g-b--push--t7of10{margin-left:70%}.g-b--push--t9of10{margin-left:90%}.g-b--push--t1of12{margin-left:8.333%}.g-b--push--t5of12{margin-left:41.666%}.g-b--push--t7of12{margin-left:58.333%}.g-b--push--t11of12{margin-left:91.666%}.g-b--pull--t1of1{margin-right:100%}.g-b--pull--t1of2,.g-b--pull--t2of4,.g-b--pull--t3of6,.g-b--pull--t4of8,.g-b--pull--t5of10,.g-b--pull--t6of12{margin-right:50%}.g-b--pull--t1of3,.g-b--pull--t2of6,.g-b--pull--t4of12{margin-right:33.333%}.g-b--pull--t2of3,.g-b--pull--t4of6,.g-b--pull--t8of12{margin-right:66.666%}.g-b--pull--t1of4,.g-b--pull--t2of8,.g-b--pull--t3of12{margin-right:25%}.g-b--pull--t3of4,.g-b--pull--t6of8,.g-b--pull--t9of12{margin-right:75%}.g-b--pull--t1of5,.g-b--pull--t2of10{margin-right:20%}.g-b--pull--t2of5,.g-b--pull--t4of10{margin-right:40%}.g-b--pull--t3of5,.g-b--pull--t6of10{margin-right:60%}.g-b--pull--t4of5,.g-b--pull--t8of10{margin-right:80%}.g-b--pull--t1of6,.g-b--pull--t2of12{margin-right:16.666%}.g-b--pull--t5of6,.g-b--pull--t10of12{margin-right:83.333%}.g-b--pull--t1of8{margin-right:12.5%}.g-b--pull--t3of8{margin-right:37.5%}.g-b--pull--t5of8{margin-right:62.5%}.g-b--pull--t7of8{margin-right:87.5%}.g-b--pull--t1of10{margin-right:10%}.g-b--pull--t3of10{margin-right:30%}.g-b--pull--t7of10{margin-right:70%}.g-b--pull--t9of10{margin-right:90%}.g-b--pull--t1of12{margin-right:8.333%}.g-b--pull--t5of12{margin-right:41.666%}.g-b--pull--t7of12{margin-right:58.333%}.g-b--pull--t11of12{margin-right:91.666%}.splashscreen-dillinger{width:500px}.splashscreen p{font-size:1.25rem;margin-bottom:1.43749rem;padding-top:.56251rem}.title{font-size:.8rem;margin-bottom:.77999rem;padding-top:.22001rem}.title-document{font-size:1.25rem;margin-bottom:.89999rem;padding-top:.10001rem}.menu .menu-item--save-to,.menu .menu-item--import-from{display:block}.menu .menu-item--preview,.menu .menu-item--save-to.in-sidebar,.menu .menu-item--import-from.in-sidebar{display:none}.settings a{font-size:1.25rem}.words,.characters{font-size:.8rem;margin-bottom:.77999rem;padding-top:.22001rem}.modal--dillinger.about .modal-dialog{font-size:1.25rem}.enter-zen-mode{display:block}.close-zen-mode{right:3rem;top:3rem}#zen{font-size:1.25rem;width:500px}.split-editor{border-right:1px solid #E8E8E8;float:left;padding-right:16px;width:50%}.show-preview .split-editor{display:block}.split-preview{display:block;float:right;position:relative;top:0;width:50%}#editor{font-size:1rem}.preview-mode-toggle-src,.preview-mode-toggle-html{display:block}}@media screen and (min-width:62.5em){html{font-size:.875em}body{font-size:1rem}ul,ol{margin-bottom:.83999rem;padding-top:.16001rem}p{padding-top:.66001rem}p,pre{margin-bottom:1.33999rem}pre,blockquote p{font-size:1rem;padding-top:.66001rem}blockquote p{margin-bottom:.33999rem}h1{font-size:2.0571429rem;margin-bottom:.21999rem;padding-top:.78001rem}h2{font-size:1.953125rem;margin-bottom:.1835837rem;padding-top:.8164163rem}h3{font-size:1.6457143rem;margin-bottom:.07599rem;padding-top:.92401rem}h4{font-size:1.5625rem;margin-bottom:.546865rem;padding-top:.453135rem}h5{font-size:1.25rem;margin-bottom:-.56251rem;padding-top:.56251rem}h6{font-size:1rem;margin-bottom:-.65001rem;padding-top:.65001rem}.g{margin-left:-16px;margin-right:-16px}.g-b{padding-left:16px;padding-right:16px}.g-b--d1of1{width:100%}.g-b--d1of2,.g-b--d2of4,.g-b--d3of6,.g-b--d4of8,.g-b--d5of10,.g-b--d6of12{width:50%}.g-b--d1of3,.g-b--d2of6,.g-b--d4of12{width:33.333%}.g-b--d2of3,.g-b--d4of6,.g-b--d8of12{width:66.666%}.g-b--d1of4,.g-b--d2of8,.g-b--d3of12{width:25%}.g-b--d3of4,.g-b--d6of8,.g-b--d9of12{width:75%}.g-b--d1of5,.g-b--d2of10{width:20%}.g-b--d2of5,.g-b--d4of10{width:40%}.g-b--d3of5,.g-b--d6of10{width:60%}.g-b--d4of5,.g-b--d8of10{width:80%}.g-b--d1of6,.g-b--d2of12{width:16.666%}.g-b--d5of6,.g-b--d10of12{width:83.333%}.g-b--d1of8{width:12.5%}.g-b--d3of8{width:37.5%}.g-b--d5of8{width:62.5%}.g-b--d7of8{width:87.5%}.g-b--d1of10{width:10%}.g-b--d3of10{width:30%}.g-b--d7of10{width:70%}.g-b--d9of10{width:90%}.g-b--d1of12{width:8.333%}.g-b--d5of12{width:41.666%}.g-b--d7of12{width:58.333%}.g-b--d11of12{width:91.666%}.g-b--push--d1of1{margin-left:100%}.g-b--push--d1of2,.g-b--push--d2of4,.g-b--push--d3of6,.g-b--push--d4of8,.g-b--push--d5of10,.g-b--push--d6of12{margin-left:50%}.g-b--push--d1of3,.g-b--push--d2of6,.g-b--push--d4of12{margin-left:33.333%}.g-b--push--d2of3,.g-b--push--d4of6,.g-b--push--d8of12{margin-left:66.666%}.g-b--push--d1of4,.g-b--push--d2of8,.g-b--push--d3of12{margin-left:25%}.g-b--push--d3of4,.g-b--push--d6of8,.g-b--push--d9of12{margin-left:75%}.g-b--push--d1of5,.g-b--push--d2of10{margin-left:20%}.g-b--push--d2of5,.g-b--push--d4of10{margin-left:40%}.g-b--push--d3of5,.g-b--push--d6of10{margin-left:60%}.g-b--push--d4of5,.g-b--push--d8of10{margin-left:80%}.g-b--push--d1of6,.g-b--push--d2of12{margin-left:16.666%}.g-b--push--d5of6,.g-b--push--d10of12{margin-left:83.333%}.g-b--push--d1of8{margin-left:12.5%}.g-b--push--d3of8{margin-left:37.5%}.g-b--push--d5of8{margin-left:62.5%}.g-b--push--d7of8{margin-left:87.5%}.g-b--push--d1of10{margin-left:10%}.g-b--push--d3of10{margin-left:30%}.g-b--push--d7of10{margin-left:70%}.g-b--push--d9of10{margin-left:90%}.g-b--push--d1of12{margin-left:8.333%}.g-b--push--d5of12{margin-left:41.666%}.g-b--push--d7of12{margin-left:58.333%}.g-b--push--d11of12{margin-left:91.666%}.g-b--pull--d1of1{margin-right:100%}.g-b--pull--d1of2,.g-b--pull--d2of4,.g-b--pull--d3of6,.g-b--pull--d4of8,.g-b--pull--d5of10,.g-b--pull--d6of12{margin-right:50%}.g-b--pull--d1of3,.g-b--pull--d2of6,.g-b--pull--d4of12{margin-right:33.333%}.g-b--pull--d2of3,.g-b--pull--d4of6,.g-b--pull--d8of12{margin-right:66.666%}.g-b--pull--d1of4,.g-b--pull--d2of8,.g-b--pull--d3of12{margin-right:25%}.g-b--pull--d3of4,.g-b--pull--d6of8,.g-b--pull--d9of12{margin-right:75%}.g-b--pull--d1of5,.g-b--pull--d2of10{margin-right:20%}.g-b--pull--d2of5,.g-b--pull--d4of10{margin-right:40%}.g-b--pull--d3of5,.g-b--pull--d6of10{margin-right:60%}.g-b--pull--d4of5,.g-b--pull--d8of10{margin-right:80%}.g-b--pull--d1of6,.g-b--pull--d2of12{margin-right:16.666%}.g-b--pull--d5of6,.g-b--pull--d10of12{margin-right:83.333%}.g-b--pull--d1of8{margin-right:12.5%}.g-b--pull--d3of8{margin-right:37.5%}.g-b--pull--d5of8{margin-right:62.5%}.g-b--pull--d7of8{margin-right:87.5%}.g-b--pull--d1of10{margin-right:10%}.g-b--pull--d3of10{margin-right:30%}.g-b--pull--d7of10{margin-right:70%}.g-b--pull--d9of10{margin-right:90%}.g-b--pull--d1of12{margin-right:8.333%}.g-b--pull--d5of12{margin-right:41.666%}.g-b--pull--d7of12{margin-right:58.333%}.g-b--pull--d11of12{margin-right:91.666%}.splashscreen-dillinger{width:700px}.splashscreen p{font-size:1.25rem;margin-bottom:1.43749rem;padding-top:.56251rem}.title{font-size:.8rem;margin-bottom:.77999rem;padding-top:.22001rem}.title-document{font-size:1.25rem;margin-bottom:.89999rem;padding-top:.10001rem}.menu .menu-item--export-as{display:block}.menu .menu-item--preview{display:none}.settings a{font-size:1.25rem}.words,.characters{font-size:.8rem;margin-bottom:.77999rem;padding-top:.22001rem}.modal--dillinger.about .modal-dialog,#zen{font-size:1.25rem}#zen{width:700px}#editor{font-size:1rem}}@media screen and (min-width:87.5em){html{font-size:.875em}body{font-size:1rem}ul,ol{margin-bottom:.83999rem;padding-top:.16001rem}p{padding-top:.66001rem}p,pre{margin-bottom:1.33999rem}pre,blockquote p{font-size:1rem;padding-top:.66001rem}blockquote p{margin-bottom:.33999rem}h1{font-size:2.0571429rem;margin-bottom:.21999rem;padding-top:.78001rem}h2{font-size:1.953125rem;margin-bottom:.1835837rem;padding-top:.8164163rem}h3{font-size:1.6457143rem;margin-bottom:.07599rem;padding-top:.92401rem}h4{font-size:1.5625rem;margin-bottom:.546865rem;padding-top:.453135rem}h5{font-size:1.25rem;margin-bottom:-.56251rem;padding-top:.56251rem}h6{font-size:1rem;margin-bottom:-.65001rem;padding-top:.65001rem}.splashscreen-dillinger{width:800px}.splashscreen p{font-size:1.25rem;margin-bottom:1.43749rem;padding-top:.56251rem}.title{font-size:.8rem;margin-bottom:.77999rem;padding-top:.22001rem}.title-document{margin-bottom:.89999rem;padding-top:.10001rem}.title-document,.settings a{font-size:1.25rem}.words,.characters{font-size:.8rem;margin-bottom:.77999rem;padding-top:.22001rem}.modal--dillinger.about .modal-dialog,#zen{font-size:1.25rem}#editor{font-size:1rem}}@media (min-width:768px){.form-inline .form-group{display:inline-block;margin-bottom:0;vertical-align:middle}.form-inline .form-control{display:inline-block;width:auto;vertical-align:middle}.form-inline .input-group{display:inline-table;vertical-align:middle}.form-inline .input-group .input-group-addon,.form-inline .input-group .input-group-btn,.form-inline .input-group .form-control{width:auto}.form-inline .input-group>.form-control{width:100%}.form-inline .control-label{margin-bottom:0;vertical-align:middle}.form-inline .radio,.form-inline .checkbox{display:inline-block;margin-top:0;margin-bottom:0;vertical-align:middle}.form-inline .radio label,.form-inline .checkbox label{padding-left:0}.form-inline .radio input[type="radio"],.form-inline .checkbox input[type="checkbox"]{position:relative;margin-left:0}.form-inline .has-feedback .form-control-feedback{top:0}.form-horizontal .control-label{text-align:right;margin-bottom:0;padding-top:7px}.form-horizontal .form-group-lg .control-label{padding-top:14.3px}.form-horizontal .form-group-sm .control-label{padding-top:6px}.modal-dialog{width:600px;margin:30px auto}.modal-content{box-shadow:0 5px 15px rgba(0,0,0,.5)}.modal-sm{width:300px}}@media (min-width:992px){.modal-lg{width:900px}}@media screen and (max-width:1200px){#_default_{max-width:30%}#_default_ ._default_{font-size:.825rem;line-height:.875rem;padding:12px 12px 6px 24px;text-align:justify}}@media screen and (max-width:1100px){#_default_{max-width:27%}#_default_ ._default_{font-size:.8rem;line-height:.85rem;padding:12px 6px 6px 24px;text-align:justify}}@media screen and (max-width:1000px){#_default_{max-width:24%}#_default_ ._default_{font-size:.775rem;line-height:.8rem;padding:12px 6px 6px 24px;text-align:justify}}@media screen and (max-width:900px){#_default_{max-width:30%}}@media screen and (max-width:767px){.table-responsive{width:100%;margin-bottom:15px;overflow-y:hidden;overflow-x:auto;-ms-overflow-style:-ms-autohiding-scrollbar;border:1px solid #ddd;-webkit-overflow-scrolling:touch}.table-responsive>.table{margin-bottom:0}.table-responsive>.table>thead>tr>th,.table-responsive>.table>thead>tr>td,.table-responsive>.table>tbody>tr>th,.table-responsive>.table>tbody>tr>td,.table-responsive>.table>tfoot>tr>th,.table-responsive>.table>tfoot>tr>td{white-space:nowrap}.table-responsive>.table-bordered{border:0}.table-responsive>.table-bordered>thead>tr>th:first-child,.table-responsive>.table-bordered>thead>tr>td:first-child,.table-responsive>.table-bordered>tbody>tr>th:first-child,.table-responsive>.table-bordered>tbody>tr>td:first-child,.table-responsive>.table-bordered>tfoot>tr>th:first-child,.table-responsive>.table-bordered>tfoot>tr>td:first-child{border-left:0}.table-responsive>.table-bordered>thead>tr>th:last-child,.table-responsive>.table-bordered>thead>tr>td:last-child,.table-responsive>.table-bordered>tbody>tr>th:last-child,.table-responsive>.table-bordered>tbody>tr>td:last-child,.table-responsive>.table-bordered>tfoot>tr>th:last-child,.table-responsive>.table-bordered>tfoot>tr>td:last-child{border-right:0}.table-responsive>.table-bordered>tbody>tr:last-child>th,.table-responsive>.table-bordered>tbody>tr:last-child>td,.table-responsive>.table-bordered>tfoot>tr:last-child>th,.table-responsive>.table-bordered>tfoot>tr:last-child>td{border-bottom:0}}@media screen and (max-width:720px){#_default_{max-width:60%}#_default_ ._default_{font-size:.75rem;line-height:1rem;padding:12px 24px}}@media screen and (max-width:620px){#_default_{max-width:50%}#_default_ ._default_{font-size:.66rem;letter-spacing:1px;line-height:1rem;padding:10px 24px}}@media screen and (max-width:520px){#_default_ ._default_{font-size:.4rem;line-height:.875rem;padding:6px 12px 6px 24px;text-align:justify}}@media screen and (max-width:460px){#_default_{display:none}}@media screen and (max-width:46.1875em){.editor-header{display:none}.editor-header--first{display:block;width:100%}}</style></head><body id="preview">
+<h1 class="code-line" data-line-start=0 data-line-end=1 ><a id="_Documentation_API_REST__TOK_0"></a>📘 Documentation API REST - TOKÉ</h1>
+<h2 class="code-line" data-line-start=2 data-line-end=3 ><a id="_Introduction_et_Mise_en_Contexte_2"></a>📋 Introduction et Mise en Contexte</h2>
+<p class="has-line-data" data-line-start="4" data-line-end="5"><strong>TOKÉ</strong> est un système intelligent de gestion des temps et présences conçu spécifiquement pour l’Afrique Centrale.</p>
+<h3 class="code-line" data-line-start=6 data-line-end=7 ><a id="Vision_Produit_6"></a>Vision Produit</h3>
+<p class="has-line-data" data-line-start="8" data-line-end="9">TOKÉ transforme le smartphone en badgeuse universelle, permettant aux employés de pointer leur présence via QR Code combiné à la géolocalisation GPS.</p>
+<h3 class="code-line" data-line-start=10 data-line-end=11 ><a id="Architecture_Globale_10"></a>Architecture Globale</h3>
+<p class="has-line-data" data-line-start="12" data-line-end="13">Soucieux de la gestion efficace des données, TOKÉ adopte une <strong>architecture multi-tenant</strong> où chaque client ou organisation membre possède :</p>
+<ul>
+<li class="has-line-data" data-line-start="13" data-line-end="14">Son propre système de gestion des données isolé</li>
+<li class="has-line-data" data-line-start="14" data-line-end="15">Sa propre base de données dédiée (<code>toke_tenant_XXX</code>)</li>
+<li class="has-line-data" data-line-start="15" data-line-end="17">Ses propres paramètres de configuration (devise, langue, timezone)</li>
+</ul>
+<p class="has-line-data" data-line-start="17" data-line-end="18">Chaque client dispose de son propre environnement de gestion, assurant sécurité et conformité aux réglementations locales.</p>
+<hr>
+<h2 class="code-line" data-line-start=21 data-line-end=22 ><a id="_Authentification_21"></a>🔐 Authentification</h2>
+<h3 class="code-line" data-line-start=23 data-line-end=24 ><a id="Systme_dAuthentification_Serveur_23"></a>Système d’Authentification Serveur</h3>
+<p class="has-line-data" data-line-start="25" data-line-end="26">Toutes les requêtes API doivent inclure un header d’authentification serveur.</p>
+<h4 class="code-line" data-line-start=27 data-line-end=28 ><a id="Header_Requis_27"></a>Header Requis</h4>
+<pre><code class="has-line-data" data-line-start="29" data-line-end="35" class="language-http">Authorization: API Key: { 
+x-api-key : &lt;SERVER_API_KEY&gt;
+x-api-signature : &lt;SERVER_API_SIGNATURE&gt;
+x-api-timestamp : &lt;SERVER_API_TIMESTAMP&gt;
+}
+</code></pre>
+<h4 class="code-line" data-line-start=36 data-line-end=37 ><a id="Codes_dErreur_Authentification_36"></a>Codes d’Erreur Authentification</h4>
+<ul>
+<li class="has-line-data" data-line-start="37" data-line-end="38"><code>401 UNAUTHORIZED</code> : Clé API manquante ou invalide</li>
+<li class="has-line-data" data-line-start="38" data-line-end="40"><code>403 FORBIDDEN</code> : Accès refusé à la ressource</li>
+</ul>
+<hr>
+<h2 class="code-line" data-line-start=42 data-line-end=43 ><a id="_Configuration_de_lAPI_42"></a>🌐 Configuration de l’API</h2>
+<h3 class="code-line" data-line-start=44 data-line-end=45 ><a id="URLs_de_Base_44"></a>URLs de Base</h3>
+<table class="table table-striped table-bordered">
+<thead>
+<tr>
+<th>Environnement</th>
+<th>URL</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Production</strong></td>
+<td><code>https://m.toke.cm</code></td>
+</tr>
+</tbody>
+</table>
+<h3 class="code-line" data-line-start=50 data-line-end=51 ><a id="Format_des_Donnes_50"></a>Format des Données</h3>
+<pre><code class="has-line-data" data-line-start="53" data-line-end="59" class="language-json">{
+  "<span class="hljs-attribute">Content-Type</span>": <span class="hljs-value"><span class="hljs-string">"application/json"</span></span>,
+  "<span class="hljs-attribute">Accept</span>": <span class="hljs-value"><span class="hljs-string">"application/json"</span></span>,
+  "<span class="hljs-attribute">Charset</span>": <span class="hljs-value"><span class="hljs-string">"UTF-8"</span>
+</span>}
+</code></pre>
+<h3 class="code-line" data-line-start=60 data-line-end=61 ><a id="Conventions_de_Dates_60"></a>Conventions de Dates</h3>
+<ul>
+<li class="has-line-data" data-line-start="61" data-line-end="62"><strong>Format</strong> : ISO 8601 (<code>YYYY-MM-DDTHH:mm:ss.sssZ</code>)</li>
+<li class="has-line-data" data-line-start="62" data-line-end="63"><strong>Timezone</strong> : UTC par défaut (stockage)</li>
+<li class="has-line-data" data-line-start="63" data-line-end="65"><strong>Conversion</strong> : Automatique selon le timezone du tenant</li>
+</ul>
+<h3 class="code-line" data-line-start=65 data-line-end=66 ><a id="Codes_de_Statut_HTTP_65"></a>Codes de Statut HTTP</h3>
+<table class="table table-striped table-bordered">
+<thead>
+<tr>
+<th>Code</th>
+<th>Signification</th>
+<th>Usage</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>200</code></td>
+<td>OK</td>
+<td>Succès de la requête</td>
+</tr>
+<tr>
+<td><code>201</code></td>
+<td>Created</td>
+<td>Ressource créée avec succès</td>
+</tr>
+<tr>
+<td><code>400</code></td>
+<td>Bad Request</td>
+<td>Erreur de validation des données</td>
+</tr>
+<tr>
+<td><code>401</code></td>
+<td>Unauthorized</td>
+<td>Authentification requise</td>
+</tr>
+<tr>
+<td><code>403</code></td>
+<td>Forbidden</td>
+<td>Accès interdit</td>
+</tr>
+<tr>
+<td><code>404</code></td>
+<td>Not Found</td>
+<td>Ressource introuvable</td>
+</tr>
+<tr>
+<td><code>409</code></td>
+<td>Conflict</td>
+<td>Ressource déjà existante</td>
+</tr>
+<tr>
+<td><code>500</code></td>
+<td>Internal Server Error</td>
+<td>Erreur serveur</td>
+</tr>
+<tr>
+<td><code>AUTRES</code></td>
+<td>…ETc</td>
+<td>…ETC</td>
+</tr>
+</tbody>
+</table>
+<hr>
+<h2 class="code-line" data-line-start=80 data-line-end=81 ><a id="_Structure_des_Rponses_80"></a>📊 Structure des Réponses</h2>
+<h3 class="code-line" data-line-start=82 data-line-end=83 ><a id="Rponse_de_Succs_82"></a>Réponse de Succès</h3>
+<pre><code class="has-line-data" data-line-start="85" data-line-end="93" class="language-json">{
+  "success": true,
+  "data": {
+    // Données de la ressource
+  },
+  "message": "Operation completed successfully"
+}
+</code></pre>
+<h3 class="code-line" data-line-start=94 data-line-end=95 ><a id="Rponse_dErreur_94"></a>Réponse d’Erreur</h3>
+<pre><code class="has-line-data" data-line-start="97" data-line-end="111" class="language-json">{
+  "<span class="hljs-attribute">success</span>": <span class="hljs-value"><span class="hljs-literal">false</span></span>,
+  "<span class="hljs-attribute">error</span>": <span class="hljs-value">{
+    "<span class="hljs-attribute">code</span>": <span class="hljs-value"><span class="hljs-string">"ERROR_CODE"</span></span>,
+    "<span class="hljs-attribute">message</span>": <span class="hljs-value"><span class="hljs-string">"Description lisible de l'erreur"</span></span>,
+    "<span class="hljs-attribute">details</span>": <span class="hljs-value">[
+      {
+        "<span class="hljs-attribute">field</span>": <span class="hljs-value"><span class="hljs-string">"email"</span></span>,
+        "<span class="hljs-attribute">message</span>": <span class="hljs-value"><span class="hljs-string">"Format d'email invalide"</span>
+      </span>} // optionel pour les details
+    ]
+  </span>}
+</span>}
+</code></pre>
+<h3 class="code-line" data-line-start=112 data-line-end=113 ><a id="Rponse_avec_Pagination_112"></a>Réponse avec Pagination</h3>
+<pre><code class="has-line-data" data-line-start="115" data-line-end="128" class="language-json">{
+  "<span class="hljs-attribute">success</span>": <span class="hljs-value"><span class="hljs-literal">true</span></span>,
+  "<span class="hljs-attribute">data</span>": <span class="hljs-value">{
+    "<span class="hljs-attribute">items</span>": <span class="hljs-value">[ /* ... */ ]</span>,
+    "<span class="hljs-attribute">pagination</span>": <span class="hljs-value">{
+      "<span class="hljs-attribute">offset</span>": <span class="hljs-value"><span class="hljs-number">0</span></span>,
+      "<span class="hljs-attribute">limit</span>": <span class="hljs-value"><span class="hljs-number">20</span></span>,
+      "<span class="hljs-attribute">count</span>": <span class="hljs-value"><span class="hljs-number">45</span></span>,
+      "<span class="hljs-attribute">total</span>": <span class="hljs-value"><span class="hljs-number">45</span>
+    </span>}
+  </span>}
+</span>}
+</code></pre>
+<hr>
+<h2 class="code-line" data-line-start=131 data-line-end=132 ><a id="_Pagination_131"></a>🔄 Pagination</h2>
+<p class="has-line-data" data-line-start="133" data-line-end="134">Toutes les routes retournant des listes supportent la pagination.</p>
+<h3 class="code-line" data-line-start=135 data-line-end=136 ><a id="Paramtres_de_Pagination_135"></a>Paramètres de Pagination</h3>
+<table class="table table-striped table-bordered">
+<thead>
+<tr>
+<th>Paramètre</th>
+<th>Type</th>
+<th>Défaut</th>
+<th>Maximum</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>offset</code></td>
+<td><code>integer</code></td>
+<td>0</td>
+<td>-</td>
+<td>Position de départ</td>
+</tr>
+<tr>
+<td><code>limit</code></td>
+<td><code>integer</code></td>
+<td>50</td>
+<td>100</td>
+<td>Nombre d’éléments</td>
+</tr>
+</tbody>
+</table>
+<h3 class="code-line" data-line-start=142 data-line-end=143 ><a id="Exemple_de_Requte_142"></a>Exemple de Requête</h3>
+<pre><code class="has-line-data" data-line-start="145" data-line-end="147" class="language-http">GET /tenants?offset=0&amp;limit=50
+</code></pre>
+<h3 class="code-line" data-line-start=148 data-line-end=149 ><a id="Exemple_de_Rponse_148"></a>Exemple de Réponse</h3>
+<pre><code class="has-line-data" data-line-start="151" data-line-end="165" class="language-json">{
+  "<span class="hljs-attribute">success</span>": <span class="hljs-value"><span class="hljs-literal">true</span></span>,
+  "<span class="hljs-attribute">data</span>": <span class="hljs-value">{
+    "<span class="hljs-attribute">tenants</span>": <span class="hljs-value">{
+      "<span class="hljs-attribute">items</span>": <span class="hljs-value">[ /* ... */ ]</span>,
+      "<span class="hljs-attribute">pagination</span>": <span class="hljs-value">{
+        "<span class="hljs-attribute">offset</span>": <span class="hljs-value"><span class="hljs-number">0</span></span>,
+        "<span class="hljs-attribute">limit</span>": <span class="hljs-value"><span class="hljs-number">50</span></span>,
+        "<span class="hljs-attribute">count</span>": <span class="hljs-value"><span class="hljs-number">30</span>
+      </span>}
+    </span>}
+  </span>}
+</span>}
+</code></pre>
+<hr>
+<h2 class="code-line" data-line-start=168 data-line-end=169 ><a id="_Endpoint_de_Sant_168"></a>🏥 Endpoint de Santé</h2>
+<h3 class="code-line" data-line-start=170 data-line-end=171 ><a id="GET_health_170"></a>GET /health</h3>
+<p class="has-line-data" data-line-start="172" data-line-end="173">Vérifier l’état du serveur et de la base de données.</p>
+<h4 class="code-line" data-line-start=174 data-line-end=175 ><a id="Requte_174"></a>Requête</h4>
+<pre><code class="has-line-data" data-line-start="177" data-line-end="179" class="language-http">GET /health
+</code></pre>
+<h4 class="code-line" data-line-start=180 data-line-end=181 ><a id="Rponse_Succs_200_OK_180"></a>Réponse Succès (200 OK)</h4>
+<pre><code class="has-line-data" data-line-start="183" data-line-end="200" class="language-json">{
+  "<span class="hljs-attribute">success</span>": <span class="hljs-value"><span class="hljs-literal">true</span></span>,
+  "<span class="hljs-attribute">timestamp</span>": <span class="hljs-value"><span class="hljs-string">"2025-11-08T14:30:00.000Z"</span></span>,
+  "<span class="hljs-attribute">uptime</span>": <span class="hljs-value"><span class="hljs-number">3600.5</span></span>,
+  "<span class="hljs-attribute">environment</span>": <span class="hljs-value"><span class="hljs-string">"production"</span></span>,
+  "<span class="hljs-attribute">database</span>": <span class="hljs-value"><span class="hljs-string">"connected"</span></span>,
+  "<span class="hljs-attribute">tables</span>": <span class="hljs-value"><span class="hljs-number">25</span></span>,
+  "<span class="hljs-attribute">revision</span>": <span class="hljs-value">{
+    "<span class="hljs-attribute">country</span>": <span class="hljs-value"><span class="hljs-string">"202501010000"</span></span>, 
+   "<span class="hljs-attribute">currency</span>": <span class="hljs-value"><span class="hljs-string">"202501010000"</span></span>, 
+   "<span class="hljs-attribute">exchange_rate</span>": <span class="hljs-value"><span class="hljs-string">"202501010000"</span></span>, 
+   "<span class="hljs-attribute">language</span>": <span class="hljs-value"><span class="hljs-string">"202501010000"</span></span>, 
+   "<span class="hljs-attribute">tax_rule</span>": <span class="hljs-value"><span class="hljs-string">"202501010000"</span></span>, 
+   "<span class="hljs-attribute">lexicon</span>": <span class="hljs-value"><span class="hljs-string">"202501010000"</span>
+  </span>}
+</span>}
+</code></pre>
+<h4 class="code-line" data-line-start=201 data-line-end=202 ><a id="Champs_de_Rponse_201"></a>Champs de Réponse</h4>
+<table class="table table-striped table-bordered">
+<thead>
+<tr>
+<th>Champ</th>
+<th>Type</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>timestamp</code></td>
+<td><code>string</code></td>
+<td>Heure actuelle du serveur (ISO 8601)</td>
+</tr>
+<tr>
+<td><code>uptime</code></td>
+<td><code>number</code></td>
+<td>Temps de fonctionnement en secondes</td>
+</tr>
+<tr>
+<td><code>environment</code></td>
+<td><code>string</code></td>
+<td>Environnement (<code>development</code>, <code>staging</code>, <code>production</code>)</td>
+</tr>
+<tr>
+<td><code>database</code></td>
+<td><code>string</code></td>
+<td>État de la connexion DB (<code>connected</code>, <code>disconnected</code>)</td>
+</tr>
+<tr>
+<td><code>tables</code></td>
+<td><code>integer</code></td>
+<td>Nombre de modèles de tables initialisés</td>
+</tr>
+<tr>
+<td><code>revision</code></td>
+<td><code>object</code></td>
+<td>Numéros de révision des tables principales(table de configuration ou de base)</td>
+</tr>
+</tbody>
+</table>
+<hr>
+<h2 class="code-line" data-line-start=214 data-line-end=215 ><a id="_Organisation_de_la_Documentation_214"></a>📚 Organisation de la Documentation</h2>
+<h3 class="code-line" data-line-start=216 data-line-end=217 ><a id="PARTIE_1__SYSTME_DE_GESTION_DES_LICENCES_Master_216"></a>PARTIE 1 : SYSTÈME DE GESTION DES LICENCES (Master)</h3>
+<p class="has-line-data" data-line-start="218" data-line-end="219">Base de données : <code>toke_master</code></p>
+<h4 class="code-line" data-line-start=220 data-line-end=221 ><a id="1_Tables_de_Rfrence_Internationales_220"></a>1. Tables de Référence Internationales</h4>
+<ul>
+<li class="has-line-data" data-line-start="221" data-line-end="222"><strong><a href="#pays-countries">Pays (Countries)</a></strong> - Configuration multi-pays</li>
+<li class="has-line-data" data-line-start="222" data-line-end="223"><strong><a href="#devises-currencies">Devises (Currencies)</a></strong> - Gestion des devises</li>
+<li class="has-line-data" data-line-start="223" data-line-end="224"><strong><a href="#taux-de-change">Taux de Change (Exchange Rates)</a></strong> - Conversions USD ↔ Locales</li>
+<li class="has-line-data" data-line-start="224" data-line-end="225"><strong><a href="#langues-languages">Langues (Languages)</a></strong> - Langues supportées</li>
+<li class="has-line-data" data-line-start="225" data-line-end="226"><strong><a href="#r%C3%A8gles-fiscales">Règles Fiscales (Tax Rules)</a></strong> - TVA/Taxes par pays</li>
+<li class="has-line-data" data-line-start="226" data-line-end="227"><strong><a href="#lexique">Lexique (Lexicon)</a></strong> - Traductions multi-langues</li>
+<li class="has-line-data" data-line-start="227" data-line-end="229"><strong><a href="#moyens-de-paiement">Moyens de Paiement (Payment Methods)</a></strong> - Mobile Money, cartes, etc.</li>
+</ul>
+<h4 class="code-line" data-line-start=229 data-line-end=230 ><a id="2_Gestion_des_Tenants_et_Licences_229"></a>2. Gestion des Tenants et Licences</h4>
+<ul>
+<li class="has-line-data" data-line-start="230" data-line-end="231"><strong><a href="#tenants">Tenants</a></strong> - Organisations clientes</li>
+<li class="has-line-data" data-line-start="231" data-line-end="232"><strong><a href="#licences-globales">Licences Globales (Global Licenses)</a></strong> - Licences multi-employés</li>
+<li class="has-line-data" data-line-start="232" data-line-end="234"><strong><a href="#licences-employ%C3%A9s">Licences Employés (Employee Licenses)</a></strong> - Suivi individuel</li>
+</ul>
+<h4 class="code-line" data-line-start=234 data-line-end=235 ><a id="3_Facturation_et_Paiements_234"></a>3. Facturation et Paiements</h4>
+<ul>
+<li class="has-line-data" data-line-start="235" data-line-end="236"><strong><a href="#cycles-de-facturation">Cycles de Facturation (Billing Cycles)</a></strong> - Périodes de facturation</li>
+<li class="has-line-data" data-line-start="236" data-line-end="237"><strong><a href="#avenants-de-licence">Avenants de Licence (License Adjustments)</a></strong> - Ajustements employés</li>
+<li class="has-line-data" data-line-start="237" data-line-end="239"><strong><a href="#transactions-de-paiement">Transactions de Paiement (Payment Transactions)</a></strong> - Paiements</li>
+</ul>
+<h4 class="code-line" data-line-start=239 data-line-end=240 ><a id="4_Scurit_et_Monitoring_239"></a>4. Sécurité et Monitoring</h4>
+<ul>
+<li class="has-line-data" data-line-start="240" data-line-end="241"><strong><a href="#d%C3%A9tection-de-fraude">Détection de Fraude (Fraud Detection Logs)</a></strong> - Alertes anti-fraude</li>
+<li class="has-line-data" data-line-start="241" data-line-end="243"><strong><a href="#monitoring-dactivit%C3%A9">Monitoring d’Activité (Activity Monitoring)</a></strong> - Suivi employés</li>
+</ul>
+<h4 class="code-line" data-line-start=243 data-line-end=244 ><a id="5_Routes_Manager_Agrgation_243"></a>5. Routes Manager (Agrégation)</h4>
+<ul>
+<li class="has-line-data" data-line-start="244" data-line-end="245"><strong><a href="#billing-manager">Billing Manager</a></strong> - Statistiques de facturation</li>
+<li class="has-line-data" data-line-start="245" data-line-end="247"><strong><a href="#fraud-manager">Fraud Manager</a></strong> - Monitoring fraude avancé</li>
+</ul>
+<h3 class="code-line" data-line-start=247 data-line-end=248 ><a id="PARTIE_2__SYSTME_DE_POINTAGES_Tenant_247"></a>PARTIE 2 : SYSTÈME DE POINTAGES (Tenant)</h3>
+<p class="has-line-data" data-line-start="249" data-line-end="250">Bases de données : <code>toke_tenant_XXX</code> (une par tenant)</p>
+<h4 class="code-line" data-line-start=251 data-line-end=252 ><a id="6_Gestion_des_Utilisateurs_251"></a>6. Gestion des Utilisateurs</h4>
+<ul>
+<li class="has-line-data" data-line-start="252" data-line-end="253"><strong><a href="#utilisateurs">Utilisateurs (Users)</a></strong> - Employés et managers</li>
+<li class="has-line-data" data-line-start="253" data-line-end="254"><strong><a href="#r%C3%B4les">Rôles (Roles)</a></strong> - Permissions</li>
+<li class="has-line-data" data-line-start="254" data-line-end="256"><strong><a href="#hi%C3%A9rarchie">Hiérarchie Organisationnelle</a></strong> - Relations N-N</li>
+</ul>
+<h4 class="code-line" data-line-start=256 data-line-end=257 ><a id="7_Sites_et_Golocalisation_256"></a>7. Sites et Géolocalisation</h4>
+<ul>
+<li class="has-line-data" data-line-start="257" data-line-end="258"><strong><a href="#sites">Sites de Travail (Sites)</a></strong> - Lieux de pointage</li>
+<li class="has-line-data" data-line-start="258" data-line-end="260"><strong><a href="#qr-codes">QR Codes</a></strong> - Génération et validation</li>
+</ul>
+<h4 class="code-line" data-line-start=260 data-line-end=261 ><a id="8_Pointages_260"></a>8. Pointages</h4>
+<ul>
+<li class="has-line-data" data-line-start="261" data-line-end="262"><strong><a href="#sessions">Sessions de Travail (Work Sessions)</a></strong> - Clock-in/out</li>
+<li class="has-line-data" data-line-start="262" data-line-end="263"><strong><a href="#pointages">Entrées de Pointage (Time Entries)</a></strong> - Historique détaillé</li>
+<li class="has-line-data" data-line-start="263" data-line-end="265"><strong><a href="#m%C3%A9mos">Mémos (Memos)</a></strong> - Justifications</li>
+</ul>
+<h4 class="code-line" data-line-start=265 data-line-end=266 ><a id="9_AntiFraude_Pointage_265"></a>9. Anti-Fraude Pointage</h4>
+<ul>
+<li class="has-line-data" data-line-start="266" data-line-end="268"><strong><a href="#alertes-fraude-pointage">Alertes Fraude Pointage</a></strong> - GPS spoofing, etc.</li>
+</ul>
+<hr>
+<h2 class="code-line" data-line-start=270 data-line-end=271 ><a id="_Concepts_Cls_270"></a>🎯 Concepts Clés</h2>
+<h3 class="code-line" data-line-start=272 data-line-end=273 ><a id="MultiTenant_Architecture_272"></a>Multi-Tenant Architecture</h3>
+<pre><code class="has-line-data" data-line-start="275" data-line-end="298">┌─────────────────────────────────────────┐
+│         TOKE_MASTER (Central)           │
+├─────────────────────────────────────────┤
+│  • Tenants                              │
+│  • Global Licenses                      │
+│  • Employee Licenses                    │
+│  • Billing &amp; Payments                   │
+│  • Fraud Detection                      │
+└─────────────────────────────────────────┘
+              ↓ ↓ ↓
+    ┌─────────┴───┴─────────┐
+    ↓                       ↓
+┌──────────────┐    ┌──────────────┐
+│ Tenant A     │    │ Tenant B     │
+│ toke_tenant_ │    │ toke_tenant_ │
+│ ime          │    │ total        │
+├──────────────┤    ├──────────────┤
+│ • Users      │    │ • Users      │
+│ • Sites      │    │ • Sites      │
+│ • Pointages  │    │ • Pointages  │
+│ • Mémos      │    │ • Mémos      │
+└──────────────┘    └──────────────┘
+</code></pre>
+<h3 class="code-line" data-line-start=299 data-line-end=300 ><a id="Workflow_dInscription_Tenant_299"></a>Workflow d’Inscription Tenant</h3>
+<pre><code class="has-line-data" data-line-start="302" data-line-end="316">1. POST /tenant/otp
+   ↓ (Envoi OTP par WhatsApp/Email)
+2. PATCH /tenant/verify-otp
+   ↓ (Vérification OTP)
+3. POST /tenant
+   ↓ (Création tenant + Email bienvenu et lien de payement)
+4. POST /global-license 
+   ↓ (Création licence) // payement de la licence de base
+5. PATCH /tenant/{guid}/database // config tenant system (24h max)
+   ↓ (Création base de données  + init tables)
+6. PATCH /tenant/{guid}/subdomain // finalisation du systeme tenant
+   ↓ (Configuration subdomain)
+7. → Tenant opérationnel ✅
+</code></pre>
+<h3 class="code-line" data-line-start=317 data-line-end=318 ><a id="Workflow_de_Facturation_317"></a>Workflow de Facturation</h3>
+<pre><code class="has-line-data" data-line-start="320" data-line-end="335">1. Période de facturation démarre
+   ↓
+2. Employés pointent (activity tracked)
+   ↓
+3. Calcul automatique statuts
+   • billable (pointé &lt; 7j)
+   • grace_period (pas pointé + grace)
+   • non_billable (congé/inactif)
+   ↓
+4. Génération billing_cycle
+   ↓
+5. Paiement (Mobile Money/Carte)
+   ↓
+6. Renouvellement automatique
+</code></pre>
+<hr>
+<h2 class="code-line" data-line-start=338 data-line-end=339 ><a id="_Prochaines_tapes_338"></a>🚀 Prochaines Étapes</h2>
+<p class="has-line-data" data-line-start="340" data-line-end="341">Nous allons maintenant documenter en détail chaque groupe d’endpoints de mise en place du tenant, en commençant par :</p>
+<h3 class="code-line" data-line-start=342 data-line-end=343 ><a id="_1_TENANTS__Gestion_des_Organisations_342"></a>👉 <a href="#">1. TENANTS - Gestion des Organisations</a></h3>
+<hr>
+<h2 class="code-line" data-line-start=344 data-line-end=345 ><a id="_Vue_densemble_344"></a>📋 Vue d’ensemble</h2>
+<p class="has-line-data" data-line-start="346" data-line-end="347">Les <strong>Tenants</strong> représentent les organisations clientes utilisant TOKÉ. Chaque tenant possède :</p>
+<ul>
+<li class="has-line-data" data-line-start="347" data-line-end="348">Une configuration multi-pays (devise, langue, timezone)</li>
+<li class="has-line-data" data-line-start="348" data-line-end="349">Une base de données isolée (<code>toke_tenant_XXX</code>)</li>
+<li class="has-line-data" data-line-start="349" data-line-end="350">Un système de facturation autonome</li>
+<li class="has-line-data" data-line-start="350" data-line-end="352">Des informations fiscales propres</li>
+</ul>
+<hr>
+<h2 class="code-line" data-line-start=354 data-line-end=355 ><a id="_Endpoints_de_mise_en_place_354"></a>🔗 Endpoints de mise en place</h2>
+<table class="table table-striped table-bordered">
+<thead>
+<tr>
+<th>Méthode</th>
+<th>Endpoint</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>POST</code></td>
+<td><code>/tenant/otp</code></td>
+<td>Générer et envoyer un OTP de verification via whatsApp (pour numero de telephone) ou via mail (pour email)</td>
+</tr>
+<tr>
+<td><code>PATCH</code></td>
+<td><code>/tenant/verify-otp</code></td>
+<td>Vérifier un OTP</td>
+</tr>
+<tr>
+<td><code>POST</code></td>
+<td><code>/tenant</code></td>
+<td>Créer un tenant et envoi du lien de payement de la licence global(de base)</td>
+</tr>
+<tr>
+<td><code>POST</code></td>
+<td><code>/global-license</code></td>
+<td>Créer une licence</td>
+</tr>
+<tr>
+<td><code>POST</code></td>
+<td><code>/billing-cycle</code></td>
+<td>Créer un cycle de facturation</td>
+</tr>
+<tr>
+<td><code>POST</code></td>
+<td><code>/payment-transaction</code></td>
+<td>Créer une transaction de paiement</td>
+</tr>
+<tr>
+<td><code>PATCH</code></td>
+<td><code>/tenant/:guid/database</code></td>
+<td>Configurer la base de données</td>
+</tr>
+<tr>
+<td><code>PATCH</code></td>
+<td><code>/tenant/:guid/subdomain</code></td>
+<td>Définir le subdomain</td>
+</tr>
+<tr>
+<td><code>GET</code></td>
+<td><code>/tenant/:guid/check</code></td>
+<td>Vérifier l’état du système</td>
+</tr>
+<tr>
+<td><code>GET</code></td>
+<td><code>/tenant/:identifier</code></td>
+<td>Recherche intelligente par email</td>
+</tr>
+</tbody>
+</table>
+<hr>
+<h2 class="code-line" data-line-start=371 data-line-end=372 ><a id="_Endpoints_Dtaills_371"></a>📖 Endpoints Détaillés</h2>
+<h3 class="code-line" data-line-start=373 data-line-end=374 ><a id="1_Gnrer_et_envoyer_un_OTP_373"></a>1. Générer et envoyer un OTP</h3>
+<p class="has-line-data" data-line-start="375" data-line-end="376">Génère un code OTP et l’envoie par whatsApp ou email pour vérification.</p>
+<h4 class="code-line" data-line-start=377 data-line-end=378 ><a id="Requte_377"></a>Requête</h4>
+<pre><code class="has-line-data" data-line-start="380" data-line-end="388" class="language-http">POST /tenant/otp
+Content-Type: application/json
+
+{
+  "phone": "+237698765432",
+  "country": "CM"
+}
+</code></pre>
+<p class="has-line-data" data-line-start="389" data-line-end="390"><strong>OU</strong></p>
+<pre><code class="has-line-data" data-line-start="392" data-line-end="399" class="language-http">POST /tenant/otp
+Content-Type: application/json
+
+{
+  "email": "<a href="/cdn-cgi/l/email-protection" class="__cf_email__" data-cfemail="187e717679767b7d587a796c7160367b75">[email&#160;protected]</a>"
+}
+</code></pre>
+<h4 class="code-line" data-line-start=400 data-line-end=401 ><a id="Paramtres_Body_400"></a>Paramètres Body</h4>
+<table class="table table-striped table-bordered">
+<thead>
+<tr>
+<th>Champ</th>
+<th>Type</th>
+<th>Requis</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>phone</code></td>
+<td><code>string</code></td>
+<td>Conditionnel</td>
+<td>Numéro de téléphone (format international)</td>
+</tr>
+<tr>
+<td><code>country</code></td>
+<td><code>string</code></td>
+<td>Conditionnel</td>
+<td>Code pays (requis si <code>phone</code>)</td>
+</tr>
+<tr>
+<td><code>email</code></td>
+<td><code>string</code></td>
+<td>Conditionnel</td>
+<td>Adresse email</td>
+</tr>
+</tbody>
+</table>
+<p class="has-line-data" data-line-start="408" data-line-end="409"><strong>Note</strong> : Soit <code>phone</code> + <code>country</code>, soit <code>email</code> doit être fourni.</p>
+<h4 class="code-line" data-line-start=410 data-line-end=411 ><a id="Rponse_Succs_201_OK_410"></a>Réponse Succès (201 OK)</h4>
+<p class="has-line-data" data-line-start="412" data-line-end="413"><strong>Avec téléphone (nouveau numéro)</strong> :</p>
+<pre><code class="has-line-data" data-line-start="414" data-line-end="423" class="language-json">{
+  "<span class="hljs-attribute">success</span>": <span class="hljs-value"><span class="hljs-literal">true</span></span>,
+  "<span class="hljs-attribute">data</span>": <span class="hljs-value">{
+    "<span class="hljs-attribute">message</span>": <span class="hljs-value"><span class="hljs-string">"OTP successfully sent"</span></span>,
+    "<span class="hljs-attribute">verify</span>": <span class="hljs-value"><span class="hljs-literal">false</span></span>,
+    "<span class="hljs-attribute">phone</span>": <span class="hljs-value"><span class="hljs-string">"+237698765432"</span>
+  </span>}
+</span>}
+</code></pre>
+<p class="has-line-data" data-line-start="424" data-line-end="425"><strong>Avec téléphone (déjà enregistré)</strong> :</p>
+<pre><code class="has-line-data" data-line-start="426" data-line-end="435" class="language-json">{
+  "<span class="hljs-attribute">success</span>": <span class="hljs-value"><span class="hljs-literal">true</span></span>,
+  "<span class="hljs-attribute">data</span>": <span class="hljs-value">{
+    "<span class="hljs-attribute">message</span>": <span class="hljs-value"><span class="hljs-string">"OTP successfully sent"</span></span>,
+    "<span class="hljs-attribute">verify</span>": <span class="hljs-value"><span class="hljs-literal">true</span></span>,
+    "<span class="hljs-attribute">phone</span>": <span class="hljs-value"><span class="hljs-string">"+237698765432"</span>
+  </span>}
+</span>}
+</code></pre>
+<p class="has-line-data" data-line-start="436" data-line-end="437"><strong>Avec email</strong> :</p>
+<pre><code class="has-line-data" data-line-start="438" data-line-end="446" class="language-json">{
+  "<span class="hljs-attribute">success</span>": <span class="hljs-value"><span class="hljs-literal">true</span></span>,
+  "<span class="hljs-attribute">data</span>": <span class="hljs-value">{
+    "<span class="hljs-attribute">message</span>": <span class="hljs-value"><span class="hljs-string">"OTP successfully sent"</span></span>,
+    "<span class="hljs-attribute">email</span>": <span class="hljs-value"><span class="hljs-string">"<a href="/cdn-cgi/l/email-protection" class="__cf_email__" data-cfemail="dbbdb2b5bab5b8be9bb9baafb2a3f5b8b6">[email&#160;protected]</a>"</span>
+  </span>}
+</span>}
+</code></pre>
+<h4 class="code-line" data-line-start=447 data-line-end=448 ><a id="Codes_dErreur_447"></a>Codes d’Erreur</h4>
+<table class="table table-striped table-bordered">
+<thead>
+<tr>
+<th>Code</th>
+<th>Message</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>400</code></td>
+<td><code>VALIDATION_FAILED</code></td>
+<td>Aucune entrée fournie</td>
+</tr>
+<tr>
+<td><code>400</code></td>
+<td><code>invalid_country</code></td>
+<td>Code pays invalide</td>
+</tr>
+<tr>
+<td><code>400</code></td>
+<td><code>BILLING_PHONE_INVALID</code></td>
+<td>Format téléphone invalide</td>
+</tr>
+<tr>
+<td><code>400</code></td>
+<td><code>BILLING_EMAIL_INVALID</code></td>
+<td>Format email invalide</td>
+</tr>
+<tr>
+<td><code>400</code></td>
+<td><code>invalid_phone_number</code></td>
+<td>Téléphone ne respecte pas le format du pays</td>
+</tr>
+<tr>
+<td><code>404</code></td>
+<td><code>country_not_found</code></td>
+<td>Pays non supporté</td>
+</tr>
+<tr>
+<td><code>500</code></td>
+<td><code>OTP_generator_failed</code></td>
+<td>Erreur génération OTP</td>
+</tr>
+<tr>
+<td><code>500</code></td>
+<td><code>EMAIL_SENDING_FAILED</code></td>
+<td>Erreur envoi email</td>
+</tr>
+</tbody>
+</table>
+<hr>
+<h3 class="code-line" data-line-start=462 data-line-end=463 ><a id="16_Vrifier_un_OTP_462"></a>16. Vérifier un OTP</h3>
+<p class="has-line-data" data-line-start="464" data-line-end="465">Vérifie la validité d’un code OTP.</p>
+<h4 class="code-line" data-line-start=466 data-line-end=467 ><a id="Requte_466"></a>Requête</h4>
+<pre><code class="has-line-data" data-line-start="469" data-line-end="477" class="language-http">PATCH /tenant/verify-otp
+Content-Type: application/json
+
+{
+  "otp": "847392",
+  "phone": "+237698765432"
+}
+</code></pre>
+<p class="has-line-data" data-line-start="478" data-line-end="479"><strong>OU</strong></p>
+<pre><code class="has-line-data" data-line-start="481" data-line-end="489" class="language-http">PATCH /tenant/verify-otp
+Content-Type: application/json
+
+{
+  "otp": "847392",
+  "email": "<a href="/cdn-cgi/l/email-protection" class="__cf_email__" data-cfemail="c1a7a8afa0afa2a481a3a0b5a8b9efa2ac">[email&#160;protected]</a>"
+}
+</code></pre>
+<h4 class="code-line" data-line-start=490 data-line-end=491 ><a id="Paramtres_Body_490"></a>Paramètres Body</h4>
+<table class="table table-striped table-bordered">
+<thead>
+<tr>
+<th>Champ</th>
+<th>Type</th>
+<th>Requis</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>otp</code></td>
+<td><code>string</code></td>
+<td>Oui</td>
+<td>Code OTP à 6 chiffres</td>
+</tr>
+<tr>
+<td><code>phone</code></td>
+<td><code>string</code></td>
+<td>Conditionnel</td>
+<td>Numéro de téléphone (format international)</td>
+</tr>
+<tr>
+<td><code>email</code></td>
+<td><code>string</code></td>
+<td>Conditionnel</td>
+<td>Adresse email</td>
+</tr>
+</tbody>
+</table>
+<p class="has-line-data" data-line-start="498" data-line-end="499"><strong>Note</strong> : Soit <code>phone</code>, soit <code>email</code> doit être fourni.</p>
+<h4 class="code-line" data-line-start=500 data-line-end=501 ><a id="Rponse_Succs_200_OK_500"></a>Réponse Succès (200 OK)</h4>
+<p class="has-line-data" data-line-start="502" data-line-end="503"><strong>Avec téléphone</strong> :</p>
+<pre><code class="has-line-data" data-line-start="504" data-line-end="512" class="language-json">{
+  "<span class="hljs-attribute">success</span>": <span class="hljs-value"><span class="hljs-literal">true</span></span>,
+  "<span class="hljs-attribute">data</span>": <span class="hljs-value">{
+    "<span class="hljs-attribute">message</span>": <span class="hljs-value"><span class="hljs-string">"OTP verified successfully"</span></span>,
+    "<span class="hljs-attribute">phone</span>": <span class="hljs-value"><span class="hljs-string">"+237698765432"</span>
+  </span>}
+</span>}
+</code></pre>
+<p class="has-line-data" data-line-start="513" data-line-end="514"><strong>Avec email</strong> :</p>
+<pre><code class="has-line-data" data-line-start="515" data-line-end="523" class="language-json">{
+  "<span class="hljs-attribute">success</span>": <span class="hljs-value"><span class="hljs-literal">true</span></span>,
+  "<span class="hljs-attribute">data</span>": <span class="hljs-value">{
+    "<span class="hljs-attribute">message</span>": <span class="hljs-value"><span class="hljs-string">"OTP verified successfully"</span></span>,
+    "<span class="hljs-attribute">email</span>": <span class="hljs-value"><span class="hljs-string">"<a href="/cdn-cgi/l/email-protection" class="__cf_email__" data-cfemail="8aece3e4ebe4e9efcae8ebfee3f2a4e9e7">[email&#160;protected]</a>"</span>
+  </span>}
+</span>}
+</code></pre>
+<h4 class="code-line" data-line-start=524 data-line-end=525 ><a id="Codes_dErreur_524"></a>Codes d’Erreur</h4>
+<table class="table table-striped table-bordered">
+<thead>
+<tr>
+<th>Code</th>
+<th>Message</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>400</code></td>
+<td><code>invalid_otp</code></td>
+<td>OTP invalide ou format incorrect</td>
+</tr>
+<tr>
+<td><code>400</code></td>
+<td><code>missing_reference</code></td>
+<td>Aucun téléphone/email fourni</td>
+</tr>
+<tr>
+<td><code>400</code></td>
+<td><code>otp_verification_failed</code></td>
+<td>OTP invalide, expiré ou tentatives max atteintes</td>
+</tr>
+<tr>
+<td><code>403</code></td>
+<td><code>verification_failed</code></td>
+<td>Téléphone/email ne correspond pas à l’OTP</td>
+</tr>
+<tr>
+<td><code>500</code></td>
+<td><code>contact_creation_failed</code></td>
+<td>Erreur lors de l’enregistrement du contact</td>
+</tr>
+</tbody>
+</table>
+<hr>
+<h3 class="code-line" data-line-start=536 data-line-end=537 ><a id="2_Crer_un_tenant_536"></a>2. Créer un tenant</h3>
+<p class="has-line-data" data-line-start="538" data-line-end="539">Crée une nouvelle organisation cliente.</p>
+<h4 class="code-line" data-line-start=540 data-line-end=541 ><a id="Requte_540"></a>Requête</h4>
+<pre><code class="has-line-data" data-line-start="543" data-line-end="565" class="language-http">POST /tenant
+Content-Type: application/json
+
+{
+  "name": "SAKE SA",
+  "short_name": "SK",
+  "country_code": "CM",
+  "primary_currency_code": "XAF",
+  "preferred_language_code": "fr",
+  "timezone": "Africa/Douala",
+  "tax_number": "M012345678901234",
+  "billing_email": "<a href="/cdn-cgi/l/email-protection" class="__cf_email__" data-cfemail="87e1eee9e6e9e4e2c7e5e6f3eeffa9e4ea">[email&#160;protected]</a>",
+  "billing_address": {
+    "city": "douala",
+    "location": "makepe",
+    "place_name": "carrefour abou de bangui"
+  },
+  "billing_phone": "+237698765432",
+  "registration_number": "RC/DLA/2024/B/123",
+  "employee_count": [1,30]
+}
+</code></pre>
+<h4 class="code-line" data-line-start=566 data-line-end=567 ><a id="Paramtres_Body_566"></a>Paramètres Body</h4>
+<table class="table table-striped table-bordered">
+<thead>
+<tr>
+<th>Champ</th>
+<th>Type</th>
+<th>Requis</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>name</code></td>
+<td><code>string</code></td>
+<td>Oui</td>
+<td>Nom complet de l’organisation</td>
+</tr>
+<tr>
+<td><code>short_name</code></td>
+<td><code>string</code></td>
+<td>Non</td>
+<td>Nom court (acronyme)</td>
+</tr>
+<tr>
+<td><code>country_code</code></td>
+<td><code>string</code></td>
+<td>Oui</td>
+<td>Code pays ISO 3166-1 (2 lettres)</td>
+</tr>
+<tr>
+<td><code>primary_currency_code</code></td>
+<td><code>string</code></td>
+<td>Oui</td>
+<td>Code devise ISO 4217 (3 lettres)</td>
+</tr>
+<tr>
+<td><code>preferred_language_code</code></td>
+<td><code>string</code></td>
+<td>Non</td>
+<td>Code langue ISO 639-1 (défaut: <code>en</code>)</td>
+</tr>
+<tr>
+<td><code>timezone</code></td>
+<td><code>string</code></td>
+<td>Non</td>
+<td>Timezone IANA (défaut: <code>UTC</code>)</td>
+</tr>
+<tr>
+<td><code>tax_number</code></td>
+<td><code>string</code></td>
+<td>Non</td>
+<td>Numéro fiscal local</td>
+</tr>
+<tr>
+<td><code>billing_email</code></td>
+<td><code>string</code></td>
+<td>Oui</td>
+<td>Email de facturation (validé)</td>
+</tr>
+<tr>
+<td><code>billing_address</code></td>
+<td><code>JsonB</code></td>
+<td>Oui</td>
+<td>Adresse de facturation</td>
+</tr>
+<tr>
+<td><code>billing_phone</code></td>
+<td><code>string</code></td>
+<td>Non</td>
+<td>Téléphone de facturation (format international)</td>
+</tr>
+<tr>
+<td><code>registration_number</code></td>
+<td><code>string</code></td>
+<td>Non</td>
+<td>Numéro d’enregistrement légal</td>
+</tr>
+<tr>
+<td><code>employee_count</code></td>
+<td><code>Array(integer)(2)</code></td>
+<td>Oui</td>
+<td>Nombre d’employés prévu</td>
+</tr>
+</tbody>
+</table>
+<h4 class="code-line" data-line-start=583 data-line-end=584 ><a id="Rponse_Succs_201_Created_583"></a>Réponse Succès (201 Created)</h4>
+<pre><code class="has-line-data" data-line-start="586" data-line-end="614" class="language-json">{
+  "<span class="hljs-attribute">success</span>": <span class="hljs-value"><span class="hljs-literal">true</span></span>,
+  "<span class="hljs-attribute">data</span>": <span class="hljs-value">{
+    "<span class="hljs-attribute">guid</span>": <span class="hljs-value"><span class="hljs-number">12345</span></span>,
+    "<span class="hljs-attribute">name</span>": <span class="hljs-value"><span class="hljs-string">"BATIX SARL"</span></span>,
+    "<span class="hljs-attribute">short_name</span>": <span class="hljs-value"><span class="hljs-string">"BATIX"</span></span>,
+    "<span class="hljs-attribute">key</span>": <span class="hljs-value"><span class="hljs-string">"batix_sarl_cm_20241108143045"</span></span>,
+    "<span class="hljs-attribute">country_code</span>": <span class="hljs-value"><span class="hljs-string">"CM"</span></span>,
+    "<span class="hljs-attribute">primary_currency_code</span>": <span class="hljs-value"><span class="hljs-string">"XAF"</span></span>,
+    "<span class="hljs-attribute">preferred_language_code</span>": <span class="hljs-value"><span class="hljs-string">"fr"</span></span>,
+    "<span class="hljs-attribute">timezone</span>": <span class="hljs-value"><span class="hljs-string">"Africa/Douala"</span></span>,
+    "<span class="hljs-attribute">tax_number</span>": <span class="hljs-value"><span class="hljs-string">"M012345678901234"</span></span>,
+    "<span class="hljs-attribute">is_tax_exempt</span>": <span class="hljs-value"><span class="hljs-literal">false</span></span>,
+    "<span class="hljs-attribute">billing_email</span>": <span class="hljs-value"><span class="hljs-string">"<a href="/cdn-cgi/l/email-protection" class="__cf_email__" data-cfemail="0c6a65626d626f694c6e6d786574226f61">[email&#160;protected]</a>"</span></span>,
+    "<span class="hljs-attribute">billing_address</span>": <span class="hljs-value">{
+        "<span class="hljs-attribute">city</span>": <span class="hljs-value"><span class="hljs-string">"douala"</span></span>,
+        "<span class="hljs-attribute">location</span>": <span class="hljs-value"><span class="hljs-string">"makepe"</span></span>,
+        "<span class="hljs-attribute">place_name</span>": <span class="hljs-value"><span class="hljs-string">"carrefour abou de bangui"</span>
+   </span>}</span>,
+    "<span class="hljs-attribute">billing_phone</span>": <span class="hljs-value"><span class="hljs-string">"+237698765432"</span></span>,
+    "<span class="hljs-attribute">registration_number</span>": <span class="hljs-value"><span class="hljs-string">"RC/DLA/2024/B/123"</span></span>,
+    "<span class="hljs-attribute">employee_count</span>": <span class="hljs-value">[<span class="hljs-number">1</span>,<span class="hljs-number">30</span>]</span>,
+    "<span class="hljs-attribute">status</span>": <span class="hljs-value"><span class="hljs-string">"ACTIVE"</span></span>,
+    "<span class="hljs-attribute">created_at</span>": <span class="hljs-value"><span class="hljs-string">"2024-11-08T14:30:45.000Z"</span></span>,
+    "<span class="hljs-attribute">updated_at</span>": <span class="hljs-value"><span class="hljs-string">"2024-11-08T14:30:45.000Z"</span>
+  </span>}
+</span>}
+</code></pre>
+<h4 class="code-line" data-line-start=615 data-line-end=616 ><a id="Codes_dErreur_615"></a>Codes d’Erreur</h4>
+<table class="table table-striped table-bordered">
+<thead>
+<tr>
+<th>Code</th>
+<th>Message</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>400</code></td>
+<td><code>VALIDATION_FAILED</code></td>
+<td>Données invalides (voir <code>details</code>)</td>
+</tr>
+<tr>
+<td><code>400</code></td>
+<td><code>BILLING_PHONE_INVALID</code></td>
+<td>Format téléphone invalide</td>
+</tr>
+<tr>
+<td><code>409</code></td>
+<td><code>TENANT_ALREADY_EXISTS</code></td>
+<td>Tenant avec ce nom/email existe déjà</td>
+</tr>
+<tr>
+<td><code>500</code></td>
+<td><code>CREATION_FAILED</code></td>
+<td>Erreur lors de la création</td>
+</tr>
+</tbody>
+</table>
+<h4 class="code-line" data-line-start=624 data-line-end=625 ><a id="Exemple_dErreur_624"></a>Exemple d’Erreur</h4>
+<pre><code class="has-line-data" data-line-start="627" data-line-end="645" class="language-json">{
+  "<span class="hljs-attribute">success</span>": <span class="hljs-value"><span class="hljs-literal">false</span></span>,
+  "<span class="hljs-attribute">error</span>": <span class="hljs-value">{
+    "<span class="hljs-attribute">code</span>": <span class="hljs-value"><span class="hljs-string">"VALIDATION_FAILED"</span></span>,
+    "<span class="hljs-attribute">message</span>": <span class="hljs-value"><span class="hljs-string">"Validation failed"</span></span>,
+    "<span class="hljs-attribute">details</span>": <span class="hljs-value">[
+      {
+        "<span class="hljs-attribute">field</span>": <span class="hljs-value"><span class="hljs-string">"billing_email"</span></span>,
+        "<span class="hljs-attribute">message</span>": <span class="hljs-value"><span class="hljs-string">"Invalid email format"</span>
+      </span>},
+      {
+        "<span class="hljs-attribute">field</span>": <span class="hljs-value"><span class="hljs-string">"country_code"</span></span>,
+        "<span class="hljs-attribute">message</span>": <span class="hljs-value"><span class="hljs-string">"Must be a valid ISO 3166-1 code"</span>
+      </span>}
+    ]
+  </span>}
+</span>}
+</code></pre>
+<h3 class="code-line" data-line-start=646 data-line-end=647 ><a id="NB_646"></a>NB:</h3>
+<p class="has-line-data" data-line-start="647" data-line-end="649">Après la création de votre compte client (tenant), vous recevrez un e-mail contenant un lien vous invitant à procéder au paiement de votre licence de base. Ce paiement vous permettra d’accéder à l’ensemble de nos services et fonctionnalités.<br>
+Une fois le paiement effectué, notre équipe technique mettra en place votre système client sous un délai maximum de 24 heures. Vous recevrez une notification dès que l’installation sera terminée.</p>
+<h3 class="code-line" data-line-start=650 data-line-end=651 ><a id="3_Crer_une_licence_globale_650"></a>3. Créer une licence globale</h3>
+<p class="has-line-data" data-line-start="652" data-line-end="653">Crée une nouvelle licence pour un tenant.</p>
+<h4 class="code-line" data-line-start=654 data-line-end=655 ><a id="Requte_654"></a>Requête</h4>
+<pre><code class="has-line-data" data-line-start="657" data-line-end="671" class="language-http">POST /global-license
+Content-Type: application/json
+
+{
+  "tenant": 100001,
+  "license_type": "CLOUD_FLEX",
+  "billing_cycle_months": 12,
+  "base_price_usd": 3.00,
+  "minimum_seats": 5,
+  "current_period_start": "2024-11-01T00:00:00Z",
+  "current_period_end": "2025-10-31T23:59:59.999Z",
+  "next_renewal_date": "2025-11-01T00:00:00Z"
+}
+</code></pre>
+<h4 class="code-line" data-line-start=672 data-line-end=673 ><a id="Paramtres_Body_672"></a>Paramètres Body</h4>
+<table class="table table-striped table-bordered">
+<thead>
+<tr>
+<th>Champ</th>
+<th>Type</th>
+<th>Requis</th>
+<th>Défaut</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>tenant</code></td>
+<td><code>integer</code></td>
+<td>Oui</td>
+<td>-</td>
+<td>GUID du tenant</td>
+</tr>
+<tr>
+<td><code>license_type</code></td>
+<td><code>string</code></td>
+<td>Oui</td>
+<td><code>CLOUD_FLEX</code></td>
+<td>Type de licence</td>
+</tr>
+<tr>
+<td><code>billing_cycle_months</code></td>
+<td><code>integer</code></td>
+<td>Oui</td>
+<td>-</td>
+<td>Cycle de facturation (1, 3, 6, 12)</td>
+</tr>
+<tr>
+<td><code>base_price_usd</code></td>
+<td><code>number</code></td>
+<td>Non</td>
+<td>3.00</td>
+<td>Prix par employé par mois (USD)</td>
+</tr>
+<tr>
+<td><code>minimum_seats</code></td>
+<td><code>integer</code></td>
+<td>Non</td>
+<td>5</td>
+<td>Nombre minimum de sièges facturés</td>
+</tr>
+<tr>
+<td><code>current_period_start</code></td>
+<td><code>string</code></td>
+<td>Oui</td>
+<td>-</td>
+<td>Date début période (ISO 8601)</td>
+</tr>
+<tr>
+<td><code>current_period_end</code></td>
+<td><code>string</code></td>
+<td>Oui</td>
+<td>-</td>
+<td>Date fin période (ISO 8601)</td>
+</tr>
+<tr>
+<td><code>next_renewal_date</code></td>
+<td><code>string</code></td>
+<td>Oui</td>
+<td>-</td>
+<td>Date prochain renouvellement (ISO 8601)</td>
+</tr>
+<tr>
+<td><code>license_status</code></td>
+<td><code>string</code></td>
+<td>Non</td>
+<td><code>ACTIVE</code></td>
+<td>Statut initial</td>
+</tr>
+</tbody>
+</table>
+<h4 class="code-line" data-line-start=686 data-line-end=687 ><a id="Rponse_Succs_201_Created_686"></a>Réponse Succès (201 Created)</h4>
+<pre><code class="has-line-data" data-line-start="689" data-line-end="708" class="language-json">{
+  "<span class="hljs-attribute">success</span>": <span class="hljs-value"><span class="hljs-literal">true</span></span>,
+  "<span class="hljs-attribute">data</span>": <span class="hljs-value">{
+    "<span class="hljs-attribute">guid</span>": <span class="hljs-value"><span class="hljs-number">100001</span></span>,
+    "<span class="hljs-attribute">tenant</span>": <span class="hljs-value"><span class="hljs-number">100001</span></span>,
+    "<span class="hljs-attribute">license_type</span>": <span class="hljs-value"><span class="hljs-string">"CLOUD_FLEX"</span></span>,
+    "<span class="hljs-attribute">billing_cycle_months</span>": <span class="hljs-value"><span class="hljs-number">12</span></span>,
+    "<span class="hljs-attribute">base_price_usd</span>": <span class="hljs-value"><span class="hljs-number">3.00</span></span>,
+    "<span class="hljs-attribute">minimum_seats</span>": <span class="hljs-value"><span class="hljs-number">5</span></span>,
+    "<span class="hljs-attribute">total_seats_purchased</span>": <span class="hljs-value"><span class="hljs-number">0</span></span>,
+    "<span class="hljs-attribute">current_period_start</span>": <span class="hljs-value"><span class="hljs-string">"2024-11-01T00:00:00.000Z"</span></span>,
+    "<span class="hljs-attribute">current_period_end</span>": <span class="hljs-value"><span class="hljs-string">"2025-10-31T23:59:59.999Z"</span></span>,
+    "<span class="hljs-attribute">next_renewal_date</span>": <span class="hljs-value"><span class="hljs-string">"2025-11-01T00:00:00.000Z"</span></span>,
+    "<span class="hljs-attribute">license_status</span>": <span class="hljs-value"><span class="hljs-string">"ACTIVE"</span></span>,
+    "<span class="hljs-attribute">created_at</span>": <span class="hljs-value"><span class="hljs-string">"2024-11-01T10:00:00.000Z"</span></span>,
+    "<span class="hljs-attribute">updated_at</span>": <span class="hljs-value"><span class="hljs-string">"2024-11-01T10:00:00.000Z"</span>
+  </span>}
+</span>}
+</code></pre>
+<h4 class="code-line" data-line-start=709 data-line-end=710 ><a id="Codes_dErreur_709"></a>Codes d’Erreur</h4>
+<table class="table table-striped table-bordered">
+<thead>
+<tr>
+<th>Code</th>
+<th>Message</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>400</code></td>
+<td><code>VALIDATION_FAILED</code></td>
+<td>Données invalides (voir <code>details</code>)</td>
+</tr>
+<tr>
+<td><code>404</code></td>
+<td><code>TENANT_NOT_FOUND</code></td>
+<td>Tenant introuvable</td>
+</tr>
+<tr>
+<td><code>500</code></td>
+<td><code>CREATION_FAILED</code></td>
+<td>Erreur lors de la création</td>
+</tr>
+</tbody>
+</table>
+<h4 class="code-line" data-line-start=717 data-line-end=718 ><a id="Exemple_dErreur_717"></a>Exemple d’Erreur</h4>
+<pre><code class="has-line-data" data-line-start="720" data-line-end="738" class="language-json">{
+  "<span class="hljs-attribute">success</span>": <span class="hljs-value"><span class="hljs-literal">false</span></span>,
+  "<span class="hljs-attribute">error</span>": <span class="hljs-value">{
+    "<span class="hljs-attribute">code</span>": <span class="hljs-value"><span class="hljs-string">"VALIDATION_FAILED"</span></span>,
+    "<span class="hljs-attribute">message</span>": <span class="hljs-value"><span class="hljs-string">"Validation failed"</span></span>,
+    "<span class="hljs-attribute">details</span>": <span class="hljs-value">[
+      {
+        "<span class="hljs-attribute">field</span>": <span class="hljs-value"><span class="hljs-string">"billing_cycle_months"</span></span>,
+        "<span class="hljs-attribute">message</span>": <span class="hljs-value"><span class="hljs-string">"Must be one of: 1, 3, 6, 12"</span>
+      </span>},
+      {
+        "<span class="hljs-attribute">field</span>": <span class="hljs-value"><span class="hljs-string">"current_period_end"</span></span>,
+        "<span class="hljs-attribute">message</span>": <span class="hljs-value"><span class="hljs-string">"Must be after current_period_start"</span>
+      </span>}
+    ]
+  </span>}
+</span>}
+</code></pre>
+<h3 class="code-line" data-line-start=739 data-line-end=740 ><a id="5_Crer_une_transaction_de_paiement_739"></a>5. Créer une transaction de paiement</h3>
+<h3 class="code-line" data-line-start=741 data-line-end=742 ><a id="6_Configurer_la_base_de_donnes_741"></a>6. Configurer la base de données</h3>
+<p class="has-line-data" data-line-start="742" data-line-end="743">Crée la base de données dédiée pour le tenant.</p>
+<h4 class="code-line" data-line-start=744 data-line-end=745 ><a id="Requte_744"></a>Requête</h4>
+<pre><code class="has-line-data" data-line-start="747" data-line-end="749" class="language-http">PATCH /tenant/12345/database
+</code></pre>
+<h4 class="code-line" data-line-start=750 data-line-end=751 ><a id="Paramtres_Path_750"></a>Paramètres Path</h4>
+<table class="table table-striped table-bordered">
+<thead>
+<tr>
+<th>Paramètre</th>
+<th>Type</th>
+<th>Requis</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>guid</code></td>
+<td><code>integer</code></td>
+<td>Oui</td>
+<td>GUID du tenant</td>
+</tr>
+</tbody>
+</table>
+<h4 class="code-line" data-line-start=756 data-line-end=757 ><a id="Rponse_Succs_200_OK_756"></a>Réponse Succès (200 OK)</h4>
+<pre><code class="has-line-data" data-line-start="759" data-line-end="767" class="language-json">{
+  "<span class="hljs-attribute">success</span>": <span class="hljs-value"><span class="hljs-literal">true</span></span>,
+  "<span class="hljs-attribute">data</span>": <span class="hljs-value">{
+    "<span class="hljs-attribute">message</span>": <span class="hljs-value"><span class="hljs-string">"Database configuration defined successfully"</span></span>,
+    "<span class="hljs-attribute">tenant_guid</span>": <span class="hljs-value"><span class="hljs-number">100001</span>
+  </span>}
+</span>}
+</code></pre>
+<h4 class="code-line" data-line-start=768 data-line-end=769 ><a id="Codes_dErreur_768"></a>Codes d’Erreur</h4>
+<table class="table table-striped table-bordered">
+<thead>
+<tr>
+<th>Code</th>
+<th>Message</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>400</code></td>
+<td><code>INVALID_GUID</code></td>
+<td>GUID invalide</td>
+</tr>
+<tr>
+<td><code>404</code></td>
+<td><code>TENANT_NOT_FOUND</code></td>
+<td>Tenant introuvable</td>
+</tr>
+<tr>
+<td><code>404</code></td>
+<td><code>GLOBAL_LICENSE_NOT_FOUND</code></td>
+<td>Licence globale non trouvée ou inactive</td>
+</tr>
+<tr>
+<td><code>409</code></td>
+<td><code>SUBDOMAIN_INVALID</code></td>
+<td>Configuration existe déjà</td>
+</tr>
+<tr>
+<td><code>500</code></td>
+<td><code>db_creation_failed</code></td>
+<td>Erreur création base de données PostgreSQL</td>
+</tr>
+<tr>
+<td><code>500</code></td>
+<td><code>UPDATE_FAILED</code></td>
+<td>Erreur mise à jour tenant</td>
+</tr>
+</tbody>
+</table>
+<p class="has-line-data" data-line-start="779" data-line-end="780"><strong>Note</strong> : Cette étape nécessite qu’une licence globale active existe pour le tenant.</p>
+<hr>
+<h3 class="code-line" data-line-start=783 data-line-end=784 ><a id="7_Dfinir_le_subdomain_783"></a>7. Définir le subdomain</h3>
+<p class="has-line-data" data-line-start="785" data-line-end="786">Configure le sous-domaine et initialise les tables tenant.</p>
+<h4 class="code-line" data-line-start=787 data-line-end=788 ><a id="Requte_787"></a>Requête</h4>
+<pre><code class="has-line-data" data-line-start="790" data-line-end="797" class="language-http">PATCH /tenant/12345/subdomain
+Content-Type: application/json
+
+{
+  "subdomain": "batix"
+}
+</code></pre>
+<h4 class="code-line" data-line-start=798 data-line-end=799 ><a id="Paramtres_Path_798"></a>Paramètres Path</h4>
+<table class="table table-striped table-bordered">
+<thead>
+<tr>
+<th>Paramètre</th>
+<th>Type</th>
+<th>Requis</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>guid</code></td>
+<td><code>integer</code></td>
+<td>Oui</td>
+<td>GUID du tenant</td>
+</tr>
+</tbody>
+</table>
+<h4 class="code-line" data-line-start=804 data-line-end=805 ><a id="Paramtres_Body_804"></a>Paramètres Body</h4>
+<table class="table table-striped table-bordered">
+<thead>
+<tr>
+<th>Champ</th>
+<th>Type</th>
+<th>Requis</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>subdomain</code></td>
+<td><code>string</code></td>
+<td>Oui</td>
+<td>Sous-domaine (lettres minuscules, chiffres, tirets)</td>
+</tr>
+</tbody>
+</table>
+<h4 class="code-line" data-line-start=810 data-line-end=811 ><a id="Rponse_Succs_200_OK_810"></a>Réponse Succès (200 OK)</h4>
+<pre><code class="has-line-data" data-line-start="813" data-line-end="821" class="language-json">{
+  "<span class="hljs-attribute">success</span>": <span class="hljs-value"><span class="hljs-literal">true</span></span>,
+  "<span class="hljs-attribute">data</span>": <span class="hljs-value">{
+    "<span class="hljs-attribute">message</span>": <span class="hljs-value"><span class="hljs-string">"Tenant subdomain has been set successfully"</span></span>,
+    "<span class="hljs-attribute">tenant_guid</span>": <span class="hljs-value"><span class="hljs-number">100001</span>
+  </span>}
+</span>}
+</code></pre>
+<h4 class="code-line" data-line-start=822 data-line-end=823 ><a id="Codes_dErreur_822"></a>Codes d’Erreur</h4>
+<table class="table table-striped table-bordered">
+<thead>
+<tr>
+<th>Code</th>
+<th>Message</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>400</code></td>
+<td><code>INVALID_GUID</code></td>
+<td>GUID invalide</td>
+</tr>
+<tr>
+<td><code>400</code></td>
+<td><code>SUBDOMAIN_INVALID</code></td>
+<td>Format de subdomain invalide</td>
+</tr>
+<tr>
+<td><code>404</code></td>
+<td><code>TENANT_NOT_FOUND</code></td>
+<td>Tenant introuvable</td>
+</tr>
+<tr>
+<td><code>404</code></td>
+<td><code>DATABASE_CONFIG_NOT_FOUND</code></td>
+<td>Configuration DB manquante (faire l’étape 21 d’abord)</td>
+</tr>
+<tr>
+<td><code>409</code></td>
+<td><code>SUBDOMAIN_INVALID</code></td>
+<td>Subdomain déjà utilisé</td>
+</tr>
+<tr>
+<td><code>500</code></td>
+<td><code>UPDATE_FAILED</code></td>
+<td>Erreur lors de la configuration</td>
+</tr>
+</tbody>
+</table>
+<p class="has-line-data" data-line-start="833" data-line-end="834"><strong>Note</strong> : Cette étape initialise automatiquement toutes les tables de la base tenant (<code>roles</code>,<code>users</code>, <code>sites</code>, <code>work_sessions</code>, etc.).</p>
+<hr>
+<h3 class="code-line" data-line-start=837 data-line-end=838 ><a id="8_Vrifier_ltat_du_systme_tenant_837"></a>8. Vérifier l’état du système tenant</h3>
+<p class="has-line-data" data-line-start="839" data-line-end="840">Vérifie si un tenant est configuré et opérationnel.</p>
+<h4 class="code-line" data-line-start=841 data-line-end=842 ><a id="Requte_841"></a>Requête</h4>
+<pre><code class="has-line-data" data-line-start="844" data-line-end="846" class="language-http">GET /tenant/100001/check
+</code></pre>
+<h4 class="code-line" data-line-start=847 data-line-end=848 ><a id="Paramtres_Path_847"></a>Paramètres Path</h4>
+<table class="table table-striped table-bordered">
+<thead>
+<tr>
+<th>Paramètre</th>
+<th>Type</th>
+<th>Requis</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>guid</code></td>
+<td><code>integer</code></td>
+<td>Oui</td>
+<td>GUID du tenant</td>
+</tr>
+</tbody>
+</table>
+<h4 class="code-line" data-line-start=853 data-line-end=854 ><a id="Rponse_Succs_200_OK_853"></a>Réponse Succès (200 OK)</h4>
+<pre><code class="has-line-data" data-line-start="856" data-line-end="869" class="language-json">{
+  "<span class="hljs-attribute">success</span>": <span class="hljs-value"><span class="hljs-literal">true</span></span>,
+  "<span class="hljs-attribute">data</span>": <span class="hljs-value">{
+    "<span class="hljs-attribute">message</span>": <span class="hljs-value"><span class="hljs-string">"System tenant BATIX SARL is active"</span></span>,
+    "<span class="hljs-attribute">tenant</span>": <span class="hljs-value">{
+      "<span class="hljs-attribute">guid</span>": <span class="hljs-value"><span class="hljs-number">100001</span></span>,
+      "<span class="hljs-attribute">name</span>": <span class="hljs-value"><span class="hljs-string">"BATIX SARL"</span></span>,
+      "<span class="hljs-attribute">status</span>": <span class="hljs-value"><span class="hljs-string">"ACTIVE"</span>
+    </span>}</span>,
+    "<span class="hljs-attribute">subdomain</span>": <span class="hljs-value"><span class="hljs-string">"batix.toke.cm"</span>
+  </span>}
+</span>}
+</code></pre>
+<h4 class="code-line" data-line-start=870 data-line-end=871 ><a id="Codes_dErreur_870"></a>Codes d’Erreur</h4>
+<table class="table table-striped table-bordered">
+<thead>
+<tr>
+<th>Code</th>
+<th>Message</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>400</code></td>
+<td><code>INVALID_GUID</code></td>
+<td>GUID invalide</td>
+</tr>
+<tr>
+<td><code>404</code></td>
+<td><code>TENANT_NOT_FOUND</code></td>
+<td>Tenant introuvable</td>
+</tr>
+<tr>
+<td><code>404</code></td>
+<td><code>DATABASE_CONFIG_NOT_FOUND</code></td>
+<td>Configuration DB manquante</td>
+</tr>
+</tbody>
+</table>
+<hr>
+<h3 class="code-line" data-line-start=880 data-line-end=881 ><a id="9_Recherche_par_email_880"></a>9. Recherche par email</h3>
+<p class="has-line-data" data-line-start="882" data-line-end="883">Recherche un tenant par email.</p>
+<h4 class="code-line" data-line-start=884 data-line-end=885 ><a id="Requte_884"></a>Requête</h4>
+<pre><code class="has-line-data" data-line-start="887" data-line-end="889" class="language-http">GET /tenant/:email
+</code></pre>
+<h4 class="code-line" data-line-start=890 data-line-end=891 ><a id="Paramtres_Path_890"></a>Paramètres Path</h4>
+<table class="table table-striped table-bordered">
+<thead>
+<tr>
+<th>Paramètre</th>
+<th>Type</th>
+<th>Requis</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>email</code></td>
+<td><code>string</code></td>
+<td></td>
+<td></td>
+</tr>
+</tbody>
+</table>
+<h4 class="code-line" data-line-start=896 data-line-end=897 ><a id="Rponse_Succs_200_OK_896"></a>Réponse Succès (200 OK)</h4>
+<pre><code class="has-line-data" data-line-start="899" data-line-end="911" class="language-json">{
+  "success": true,
+  "data": {
+    tenant: {
+    "guid": 100001,
+    "name": "BATIX SARL",
+    "status": "ACTIVE"
+    },
+    "subdomain": "batix.toke.cm"
+  },
+}
+</code></pre>
+<hr>
+<h2 class="code-line" data-line-start=913 data-line-end=914 ><a id="_Prochaine_Section_913"></a>🔗 Prochaine Section</h2>
+<p class="has-line-data" data-line-start="915" data-line-end="916">👉 <strong><a href="#">SYSTEME DE POINTAGE - Gestion des pointages des employés</a></strong></p>
+
+<script data-cfasync="false" src="/cdn-cgi/scripts/5c5dd728/cloudflare-static/email-decode.min.js"></script><script defer src="https://static.cloudflareinsights.com/beacon.min.js/vcd15cbe7772f49c399c6a5babf22c1241717689176015" integrity="sha512-ZpsOmlRQV6y907TI0dKBHq9Md29nnaEIPlkf84rnaERnq6zvWvPUqr2ft8M1aS28oN72PdrCzSjY4U6VaAw1EQ==" data-cf-beacon='{"version":"2024.11.0","token":"740eb3d0dfbc4d969cb53bbdc802ad63","r":1,"server_timing":{"name":{"cfCacheStatus":true,"cfEdge":true,"cfExtPri":true,"cfL4":true,"cfOrigin":true,"cfSpeedBrain":true},"location_startswith":null}}' crossorigin="anonymous"></script>
+</body></html>

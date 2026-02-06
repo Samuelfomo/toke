@@ -1,0 +1,232 @@
+ /* AssignmentList.css */
+
+    /* ===== HEADER ACTIONS ===== */
+.action-header {
+    display: flex;
+    justify-content: flex-end;
+    margin-bottom: var(--space-lg);
+}
+
+/* ===== ROTATION ASSIGNMENTS LIST ===== */
+.rotations-assignments-list {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-lg);
+}
+
+.rotation-assignment-card {
+    background-color: var(--bg-card);
+    border: 1px solid var(--border-light);
+    border-radius: var(--border-radius-lg);
+    padding: var(--space-lg);
+    transition: all var(--transition-base);
+}
+
+.rotation-assignment-card:hover {
+    box-shadow: var(--shadow-lg);
+    border-color: var(--border-medium);
+}
+
+.rotation-assignment-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: var(--space-lg);
+    padding-bottom: var(--space-lg);
+    border-bottom: 1px solid var(--border-light);
+}
+
+.rotation-assignment-info {
+    flex: 1;
+}
+
+.rotation-assignment-name {
+    font-size: var(--font-size-h5);
+    font-weight: var(--font-weight-bold);
+    color: var(--text-primary);
+    margin-bottom: var(--space-sm);
+}
+
+.rotation-assignment-meta {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-md);
+}
+
+.assignment-date,
+.assignment-count {
+    font-size: var(--font-size-body-sm);
+    color: var(--text-secondary);
+    display: flex;
+    align-items: center;
+    gap: var(--space-xs);
+}
+
+.rotation-assignment-status {
+    display: flex;
+    align-items: center;
+    gap: var(--space-sm);
+}
+
+.rotation-active-dot {
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    background-color: var(--text-muted);
+    transition: var(--transition-base);
+}
+
+.rotation-active-dot.active {
+    background-color: var(--color-success);
+    box-shadow: 0 0 8px rgba(40, 167, 69, 0.5);
+}
+
+.status-label {
+    font-size: var(--font-size-body-sm);
+    font-weight: var(--font-weight-semibold);
+    color: var(--text-secondary);
+}
+
+.rotation-active-dot.active + .status-label {
+    color: var(--color-success);
+}
+
+.rotation-assignment-schedules {
+    display: flex;
+    align-items: center;
+    gap: var(--space-md);
+    padding: var(--space-md);
+    background-color: var(--bg-secondary);
+    border-radius: var(--border-radius);
+    margin-bottom: var(--space-md);
+}
+
+.schedules-label {
+    font-size: var(--font-size-body-sm);
+    font-weight: var(--font-weight-semibold);
+    color: var(--text-primary);
+    white-space: nowrap;
+}
+
+.schedules-badges {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-xs);
+}
+
+.schedule-mini-badge {
+    padding: 6px 12px;
+    background: linear-gradient(135deg, var(--color-primary) 0%, #0066cc 100%);
+    color: white;
+    border-radius: 16px;
+    font-size: var(--font-size-caption);
+    font-weight: var(--font-weight-semibold);
+    box-shadow: 0 2px 6px rgba(0, 74, 173, 0.25);
+}
+
+.rotation-assignment-employees {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-sm);
+    margin-bottom: var(--space-md);
+}
+
+.employees-label {
+    font-size: var(--font-size-body-sm);
+    font-weight: var(--font-weight-semibold);
+    color: var(--text-primary);
+}
+
+.employees-chips {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-sm);
+}
+
+.employee-chip-compact {
+    display: flex;
+    align-items: center;
+    gap: var(--space-xs);
+    padding: 6px 12px;
+    background-color: white;
+    border: 1px solid var(--border-light);
+    border-radius: 20px;
+    transition: var(--transition-base);
+}
+
+.employee-chip-compact:hover {
+    border-color: var(--color-primary);
+    box-shadow: 0 2px 8px rgba(0, 74, 173, 0.15);
+}
+
+.employee-chip-avatar {
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, var(--color-warning) 0%, #ff8c1a 100%);
+    color: white;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: var(--font-weight-bold);
+    font-size: 10px;
+    flex-shrink: 0;
+}
+
+.employee-chip-name {
+    font-size: var(--font-size-body-sm);
+    font-weight: var(--font-weight-medium);
+    color: var(--text-primary);
+}
+
+/* ===== ACTIONS ===== */
+.rotation-assignment-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: var(--space-sm);
+    padding-top: var(--space-md);
+    border-top: 1px solid var(--border-light);
+}
+
+.btn-sm {
+    padding: 8px 16px;
+    font-size: var(--font-size-body-sm);
+}
+
+.btn-danger {
+    background-color: var(--color-error);
+    color: white;
+}
+
+.btn-danger:hover {
+    background-color: #c82333;
+    box-shadow: 0 4px 12px rgba(220, 53, 69, 0.3);
+}
+
+/* ===== MODAL DE CONFIRMATION ===== */
+.modal-small {
+    max-width: 500px;
+}
+
+.confirm-message {
+    font-size: var(--font-size-body);
+    color: var(--text-primary);
+    margin-bottom: var(--space-md);
+    line-height: 1.6;
+}
+
+.confirm-warning {
+    font-size: var(--font-size-body-sm);
+    color: var(--color-warning);
+    padding: var(--space-md);
+    background-color: rgba(255, 193, 7, 0.1);
+    border-left: 3px solid var(--color-warning);
+    border-radius: var(--border-radius);
+    line-height: 1.5;
+}
+
+.confirm-message strong,
+.confirm-warning strong {
+    font-weight: var(--font-weight-bold);
+    color: var(--color-error);
+}
