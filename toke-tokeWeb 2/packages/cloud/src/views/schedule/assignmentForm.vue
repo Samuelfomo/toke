@@ -359,7 +359,7 @@ interface Assignment {
 }
 
 const props = defineProps<{
-  assignment?: Assignment;
+  assignment?: Assignment | null;
   isEditMode: boolean;
   schedules: Schedule[];
   employees: Employee[];

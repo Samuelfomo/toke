@@ -238,7 +238,7 @@ interface DayOfWeek {
 }
 
 const props = defineProps<{
-  template?: SessionTemplate;
+  template?: SessionTemplate | null;
   isEditMode: boolean;
 }>();
 

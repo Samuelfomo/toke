@@ -1,1057 +1,676 @@
 <template>
-  <section v-if="loading" class="dashboard-hero-skeleton">
-    <div class="skeleton-header"></div>
-    <div class="stats-grid">
-      <div class="skeleton-card"></div>
-      <div class="skeleton-card"></div>
-      <div class="skeleton-card"></div>
-      <div class="skeleton-card"></div>
-    </div>
-  </section>
-
-  <section v-else class="dashboard-hero">
-    <!-- En-tête avec sélecteur de période -->
+  <section class="dashboard-hero">
+    <!-- ================= HEADER ================= -->
     <div class="hero-header">
-      <div class="header-left">
-        <h1 class="hero-title">Tableau de bord - {{ summary.total_team_members }} employés</h1>
-        <div class="period-info">
-          <svg class="icon-sm" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                  d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
-          </svg>
-          <span>{{ formattedPeriod }}</span>
-        </div>
+      <div class="hero-left">
+        <h1 class="hero-title">
+          Tableau de Bord
+          <span class="employee-count">
+            ({{ employeeCount }} employés)
+          </span>
+        </h1>
+
+        <span class="hero-date">
+          📅 {{ formattedRange }}
+        </span>
       </div>
 
-      <div class="period-selector">
-        <div class="date-range-picker">
-          <label for="startDate">Du</label>
-          <input
-            type="date"
-            id="startDate"
-            v-model="localStartDate"
-            :max="localEndDate"
-            @change="handlePeriodChange"
-          />
-
-          <label for="endDate">Au</label>
-          <input
-            type="date"
-            id="endDate"
-            v-model="localEndDate"
-            :min="localStartDate"
-            :max="today"
-            @change="handlePeriodChange"
-          />
-        </div>
-
-        <div class="quick-periods">
+      <!-- ================= FILTER BAR ================= -->
+      <div class="filter-bar">
+        <!-- 🔥 Mode Vue - Nouveau bouton -->
+        <div class="view-mode-switch">
           <button
-            v-for="preset in periodPresets"
-            :key="preset.key"
-            @click="applyPreset(preset.key)"
-            :class="['preset-btn', { active: activePreset === preset.key }]"
+            :class="{ active: selectedViewMode === 'normal' }"
+            @click="selectViewMode('normal')"
+            title="Vue normale avec statistiques du jour"
           >
-            {{ preset.label }}
+            <svg viewBox="0 0 24 24" fill="currentColor" class="mode-icon">
+              <path d="M3 13h8V3H3v10zm0 8h8v-6H3v6zm10 0h8V11h-8v10zm0-18v6h8V3h-8z"/>
+            </svg>
+            Normal
+          </button>
+          <button
+            :class="{ active: selectedViewMode === 'analytics' }"
+            @click="selectViewMode('analytics')"
+            title="Mode analytique avec évolution sur la période"
+          >
+            <svg viewBox="0 0 24 24" fill="currentColor" class="mode-icon">
+              <path d="M3.5 18.49l6-6.01 4 4L22 6.92l-1.41-1.41-7.09 7.97-4-4L2 16.99z"/>
+            </svg>
+            Analytique
           </button>
         </div>
-      </div>
-    </div>
 
-    <!-- Cartes de statistiques -->
-    <div class="stats-grid">
-      <!-- Présents à l'heure -->
-      <div class="stat-card stat-present">
-        <div class="stat-icon">
-          <svg class="icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                  d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
-          </svg>
+        <!-- 🔥 Type période -->
+        <div class="period-switch">
+          <button
+            v-for="p in periods"
+            :key="p.value"
+            :class="{ active: selectedPeriod === p.value }"
+            @click="selectPeriod(p.value)"
+            :title="p.description"
+          >
+            <svg v-html="p.icon" class="period-icon" viewBox="0 0 24 24" fill="currentColor" />
+            {{ p.label }}
+          </button>
         </div>
-        <div class="stat-content">
-          <div class="stat-number">{{ summary.total_present_on_time }}</div>
-          <div class="stat-label">Présents à l'heure</div>
-          <div class="stat-percentage">{{ attendanceRate }}%</div>
-        </div>
-      </div>
 
-      <!-- Retards -->
-      <div class="stat-card stat-warning" :class="{ 'has-issues': summary.total_late_arrivals > 0 }">
-        <div class="stat-icon">
-          <svg class="icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                  d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
-          </svg>
+        <!-- Date Picker - Simple pour Jour -->
+        <div v-if="selectedPeriod === 'day'" class="date-picker-container">
+          <label class="date-label">Date :</label>
+          <input
+            type="date"
+            v-model="selectedDate"
+            @change="emitFilters"
+            class="date-input"
+          />
         </div>
-        <div class="stat-content">
-          <div class="stat-number">{{ summary.total_late_arrivals }}</div>
-          <div class="stat-label">Retards</div>
-          <div class="stat-detail" v-if="summary.average_delay_minutes > 0">
-            Moy: {{ formatMinutes(summary.average_delay_minutes) }}
+
+        <!-- Date Picker - Plage personnalisée -->
+        <div v-else-if="selectedPeriod === 'custom'" class="custom-range">
+          <div class="date-picker-container">
+            <label class="date-label">Du :</label>
+            <input
+              type="date"
+              v-model="customStartDate"
+              @change="handleCustomDateChange"
+              :max="customEndDate"
+              class="date-input"
+            />
+          </div>
+          <span class="range-arrow">→</span>
+          <div class="date-picker-container">
+            <label class="date-label">Au :</label>
+            <input
+              type="date"
+              v-model="customEndDate"
+              @change="handleCustomDateChange"
+              :min="customStartDate"
+              class="date-input"
+            />
           </div>
         </div>
-      </div>
 
-      <!-- Absents -->
-      <div class="stat-card stat-error" :class="{ 'has-issues': summary.total_absences > 0 }">
-        <div class="stat-icon">
-          <svg class="icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                  d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
-          </svg>
-        </div>
-        <div class="stat-content">
-          <div class="stat-number">{{ summary.total_absences }}</div>
-          <div class="stat-label">Absences</div>
-          <div class="stat-detail">
-            Sur {{ summary.total_expected_workdays }} jours attendus
-          </div>
-        </div>
-      </div>
-
-      <!-- Jours de repos -->
-      <div class="stat-card stat-info">
-        <div class="stat-icon">
-          <svg class="icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                  d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
-          </svg>
-        </div>
-        <div class="stat-content">
-          <div class="stat-number">{{ summary.total_off_days }}</div>
-          <div class="stat-label">Jours de repos</div>
-          <div class="stat-detail">
-            Actifs: {{ summary.currently_active }}
-          </div>
+        <!-- Employé -->
+        <div class="employee-filter">
+          <select
+            v-model="selectedEmployee"
+            @change="emitFilters"
+            class="employee-select"
+          >
+            <option value="">👥 Tous les employés</option>
+            <option
+              v-for="emp in employees"
+              :key="emp.id"
+              :value="emp.id"
+            >
+              {{ emp.name }}
+            </option>
+          </select>
         </div>
       </div>
     </div>
 
-    <!-- Graphiques -->
-    <div class="charts-section">
-      <div class="chart-container">
-        <h3 class="chart-title">Évolution quotidienne</h3>
-        <canvas ref="dailyChart"></canvas>
-      </div>
-
-      <div class="chart-container">
-        <h3 class="chart-title">Répartition des statuts</h3>
-        <canvas ref="statusChart"></canvas>
-      </div>
-    </div>
-
-    <!-- Indicateurs de performance -->
-    <div class="performance-indicators">
-      <div class="indicator">
-        <div class="indicator-header">
-          <span class="indicator-label">Taux de présence</span>
-          <span class="indicator-value">{{ attendanceRate }}%</span>
-        </div>
-        <div class="progress-bar">
-          <div class="progress-fill" :style="{ width: attendanceRate + '%' }"></div>
-        </div>
-        <div class="indicator-benchmark">Objectif: 95%</div>
-      </div>
-
-      <div class="indicator">
-        <div class="indicator-header">
-          <span class="indicator-label">Taux de ponctualité</span>
-          <span class="indicator-value">{{ punctualityRate }}%</span>
-        </div>
-        <div class="progress-bar">
-          <div class="progress-fill progress-punctuality" :style="{ width: punctualityRate + '%' }"></div>
-        </div>
-        <div class="indicator-benchmark">Objectif: 90%</div>
-      </div>
-
-      <div class="indicator">
-        <div class="indicator-header">
-          <span class="indicator-label">Heures travaillées moyennes/jour</span>
-          <span class="indicator-value">{{ averageWorkHours }}h</span>
-        </div>
-        <div class="progress-bar">
-          <div class="progress-fill progress-hours" :style="{ width: (Number(averageWorkHours) / 8 * 100) + '%' }"></div>
-        </div>
-        <div class="indicator-benchmark">Objectif: 8h</div>
-      </div>
-    </div>
-
-    <!-- Actions rapides -->
-    <div class="quick-actions">
-      <button @click="exportData" class="action-btn">
-        <svg class="icon-sm" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
-        </svg>
-        <span>Exporter la période</span>
-      </button>
-
-      <button @click="$emit('refresh')" class="action-btn action-btn-secondary">
-        <svg class="icon-sm" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path>
-        </svg>
-        <span>Actualiser</span>
-      </button>
+    <!-- Indicateur de période active -->
+    <div v-if="hasActiveFilters" class="active-filters-indicator">
+      <svg viewBox="0 0 24 24" fill="currentColor" class="info-icon">
+        <circle cx="12" cy="12" r="10"/>
+        <path d="M12 16v-4M12 8h.01" stroke="white" stroke-width="2" stroke-linecap="round"/>
+      </svg>
+      <span>
+        <span v-if="selectedViewMode === 'analytics'">📊 Mode Analytique - </span>
+        Statistiques {{ periodLabel }}
+        <strong>{{ formattedRange }}</strong>
+        <span v-if="selectedEmployee" class="employee-filter-text">
+          pour {{ getEmployeeName(selectedEmployee) }}
+        </span>
+      </span>
     </div>
   </section>
 </template>
-
 <script setup lang="ts">
-import { ref, computed, onMounted, watch, nextTick } from 'vue'
-import Chart from 'chart.js/auto'
-import type { ChartConfiguration } from 'chart.js'
+import { ref, computed, watch } from 'vue'
+import type { Summary } from '@/service/UserService'
 
-interface DailyBreakdown {
-  date: string
-  day_of_week: string
-  expected_count: number
-  present: number
-  late: number
-  absent: number
-  off_day: number
-}
-
-interface PeriodSummary {
-  total_team_members: number
-  total_present_on_time: number
-  total_late_arrivals: number
-  total_absences: number
-  total_off_days: number
-  total_expected_workdays: number
-  attendance_rate: number
-  punctuality_rate: number
-  average_delay_minutes: number
-  total_work_hours: number
-  average_work_hours_per_day: number
-  currently_active: number
-  currently_on_pause: number
+interface Employee {
+  id: number | string
+  name: string
 }
 
 interface Props {
-  summary: PeriodSummary
-  dailyBreakdown: DailyBreakdown[]
-  periodStart: string
-  periodEnd: string
-  loading?: boolean
+  summary: Summary
+  date: string
+  employees: Employee[]
 }
 
-const props = withDefaults(defineProps<Props>(), {
-  loading: false
-})
+const props = defineProps<Props>()
 
 const emit = defineEmits<{
-  periodChange: [{ start: string; end: string }]
-  refresh: []
-  export: []
+  (e: 'filter-change', payload: {
+    startDate: string
+    endDate: string
+    employeeId: string | number | ''
+    period: string
+    viewMode: 'normal' | 'analytics'
+  }): void
 }>()
 
-// État local
-const localStartDate = ref(props.periodStart)
-const localEndDate = ref(props.periodEnd)
-const activePreset = ref<string | null>(null)
-const dailyChartInstance = ref<Chart | null>(null)
-const statusChartInstance = ref<Chart | null>(null)
-const dailyChart = ref<HTMLCanvasElement | null>(null)
-const statusChart = ref<HTMLCanvasElement | null>(null)
-
+/* ================= FILTER STATE ================= */
 const today = new Date().toISOString().split('T')[0]
 
-const periodPresets = [
-  { key: 'today', label: "Aujourd'hui" },
-  { key: 'week', label: '7 derniers jours' },
-  { key: 'month', label: '30 derniers jours' },
-  { key: 'custom', label: 'Personnalisé' }
+const selectedDate = ref(props.date || today)
+const selectedMonth = ref(getYearMonth(new Date(props.date || today)))
+const selectedEmployee = ref('')
+const selectedPeriod = ref<'day' | 'week' | 'month' | 'custom'>('day')
+const selectedViewMode = ref<'normal' | 'analytics'>('normal')
+
+// Pour la plage personnalisée
+const customStartDate = ref(today)
+const customEndDate = ref(today)
+
+const periods = [
+  {
+    label: 'Jour',
+    value: 'day',
+    description: 'Afficher les statistiques du jour sélectionné',
+    icon: '<path d="M8 2v4M16 2v4M3 10h18M5 4h14a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2z"/>'
+  },
+  {
+    label: 'Personnalisé',
+    value: 'custom',
+    description: 'Définir une plage de dates personnalisée',
+    icon: '<path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/>'
+  }
 ]
 
-// Computed
-const formattedPeriod = computed(() => {
-  const start = new Date(localStartDate.value)
-  const end = new Date(localEndDate.value)
+/* ================= HELPERS ================= */
+function getYearMonth(date: Date): string {
+  const year = date.getFullYear()
+  const month = String(date.getMonth() + 1).padStart(2, '0')
+  return `${year}-${month}`
+}
 
-  const options: Intl.DateTimeFormatOptions = { day: 'numeric', month: 'short', year: 'numeric' }
+const getStartOfWeek = (d: Date) => {
+  const date = new Date(d)
+  const day = date.getDay() || 7
+  if (day !== 1) date.setHours(-24 * (day - 1))
+  return date
+}
 
-  if (localStartDate.value === localEndDate.value) {
-    return start.toLocaleDateString('fr-FR', { ...options, weekday: 'long' })
+const getEndOfWeek = (d: Date) => {
+  const start = getStartOfWeek(d)
+  const end = new Date(start)
+  end.setDate(start.getDate() + 6)
+  return end
+}
+
+/* ================= DATE RANGE CALCUL ================= */
+const range = computed(() => {
+  if (selectedPeriod.value === 'custom') {
+    return {
+      start: new Date(customStartDate.value),
+      end: new Date(customEndDate.value)
+    }
   }
 
-  return `${start.toLocaleDateString('fr-FR', options)} - ${end.toLocaleDateString('fr-FR', options)}`
+  const base = new Date(selectedDate.value)
+
+  if (selectedPeriod.value === 'day') {
+    return { start: base, end: base }
+  }
+
+  if (selectedPeriod.value === 'week') {
+    return {
+      start: getStartOfWeek(base),
+      end: getEndOfWeek(base)
+    }
+  }
+
+  // month
+  return {
+    start: new Date(base.getFullYear(), base.getMonth(), 1),
+    end: new Date(base.getFullYear(), base.getMonth() + 1, 0)
+  }
 })
 
-const attendanceRate = computed(() => {
-  return Math.round(props.summary.attendance_rate)
+/* ================= EMIT ================= */
+const emitFilters = () => {
+  const start = range.value.start
+  const end = range.value.end
+
+  // Formater les dates en YYYY-MM-DD
+  const formatDate = (d: Date) => d.toISOString().split('T')[0]
+
+  emit('filter-change', {
+    startDate: formatDate(start),
+    endDate: formatDate(end),
+    employeeId: selectedEmployee.value,
+    period: selectedPeriod.value,
+    viewMode: selectedViewMode.value
+  })
+}
+
+const selectPeriod = (p: any) => {
+  selectedPeriod.value = p
+
+  // Si on passe en mode personnalisé, initialiser les dates
+  if (p === 'custom') {
+    customStartDate.value = selectedDate.value
+    customEndDate.value = selectedDate.value
+  }
+
+  emitFilters()
+}
+
+const selectViewMode = (mode: 'normal' | 'analytics') => {
+  selectedViewMode.value = mode
+  emitFilters()
+}
+
+const handleMonthChange = () => {
+  // Convertir le mois sélectionné en date
+  const [year, month] = selectedMonth.value.split('-')
+  selectedDate.value = `${year}-${month}-01`
+  emitFilters()
+}
+
+const handleCustomDateChange = () => {
+  // Vérifier que la date de début est avant la date de fin
+  if (new Date(customStartDate.value) > new Date(customEndDate.value)) {
+    customEndDate.value = customStartDate.value
+  }
+  emitFilters()
+}
+
+const resetFilters = () => {
+  selectedPeriod.value = 'day'
+  selectedDate.value = today
+  selectedEmployee.value = ''
+  selectedViewMode.value = 'normal'
+  customStartDate.value = today
+  customEndDate.value = today
+  emitFilters()
+}
+
+// Vérifier s'il y a des filtres actifs
+const hasActiveFilters = computed(() => {
+  return selectedPeriod.value !== 'day' ||
+    selectedDate.value !== today ||
+    selectedEmployee.value !== '' ||
+    selectedViewMode.value === 'analytics'
 })
 
-const punctualityRate = computed(() => {
-  return Math.round(props.summary.punctuality_rate)
+// Label de la période
+const periodLabel = computed(() => {
+  const period = periods.find(p => p.value === selectedPeriod.value)
+  return period ? `de ${period.label.toLowerCase()}` : ''
 })
 
-const averageWorkHours = computed(() => {
-  return props.summary.average_work_hours_per_day.toFixed(1)
+// Obtenir le nom de l'employé
+const getEmployeeName = (id: string | number) => {
+  const emp = props.employees.find(e => e.id === id)
+  return emp ? emp.name : ''
+}
+
+// Synchroniser avec les props
+watch(() => props.date, d => {
+  if (d) {
+    selectedDate.value = d
+    selectedMonth.value = getYearMonth(new Date(d))
+  }
 })
 
-// Méthodes
-const formatMinutes = (minutes: number): string => {
+/* ================= COMPUTED ================= */
+const formattedRange = computed(() => {
+  const opt: Intl.DateTimeFormatOptions = {
+    day: 'numeric',
+    month: 'short',
+    year: 'numeric'
+  }
+
+  if (selectedPeriod.value === 'day') {
+    return new Date(selectedDate.value).toLocaleDateString('fr-FR', opt)
+  }
+
+  const start = range.value.start.toLocaleDateString('fr-FR', opt)
+  const end = range.value.end.toLocaleDateString('fr-FR', opt)
+
+  return `du ${start} au ${end}`
+})
+
+const employeeCount = computed(() => props.summary.total_team_members)
+
+const attendancePercentage = computed(() => {
+  if (props.summary.total_expected_workdays === 0) return 0
+  return Math.round(
+    (props.summary.total_present_on_time / props.summary.total_expected_workdays) * 100
+  )
+})
+
+const absencePercentage = computed(() => {
+  if (props.summary.total_expected_workdays === 0) return 0
+  return Math.round(
+    (props.summary.total_absences / props.summary.total_expected_workdays) * 100
+  )
+})
+
+const formatDelay = (minutes: number): string => {
+  if (!minutes || minutes === 0) return '0 min'
+
   const hours = Math.floor(minutes / 60)
   const mins = Math.round(minutes % 60)
 
   if (hours > 0) {
-    return `${hours}h${mins > 0 ? mins.toString().padStart(2, '0') : ''}`
+    return `${hours}h${mins.toString().padStart(2, '0')}`
   }
-  return `${mins}min`
+  return `${mins} min`
 }
-
-const applyPreset = (preset: string) => {
-  activePreset.value = preset
-  const end = new Date()
-  let start = new Date()
-
-  switch (preset) {
-    case 'today':
-      start = new Date()
-      break
-    case 'week':
-      start.setDate(end.getDate() - 6)
-      break
-    case 'month':
-      start.setDate(end.getDate() - 29)
-      break
-    case 'custom':
-      return
-  }
-
-  localStartDate.value = start.toISOString().split('T')[0]
-  localEndDate.value = end.toISOString().split('T')[0]
-  handlePeriodChange()
-}
-
-const handlePeriodChange = () => {
-  activePreset.value = 'custom'
-  emit('periodChange', {
-    start: localStartDate.value,
-    end: localEndDate.value
-  })
-}
-
-const exportData = () => {
-  emit('export')
-}
-
-// Créer les graphiques
-const createDailyChart = () => {
-  if (!dailyChart.value || !props.dailyBreakdown.length) return
-
-  // Détruire l'ancien graphique s'il existe
-  if (dailyChartInstance.value) {
-    dailyChartInstance.value.destroy()
-  }
-
-  const labels = props.dailyBreakdown.map(d => {
-    const date = new Date(d.date)
-    return date.toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' })
-  })
-
-  const config: ChartConfiguration = {
-    type: 'line',
-    data: {
-      labels,
-      datasets: [
-        {
-          label: 'Présents',
-          data: props.dailyBreakdown.map(d => d.present),
-          borderColor: '#10b981',
-          backgroundColor: 'rgba(16, 185, 129, 0.1)',
-          tension: 0.4,
-          fill: true
-        },
-        {
-          label: 'Retards',
-          data: props.dailyBreakdown.map(d => d.late),
-          borderColor: '#f59e0b',
-          backgroundColor: 'rgba(245, 158, 11, 0.1)',
-          tension: 0.4,
-          fill: true
-        },
-        {
-          label: 'Absents',
-          data: props.dailyBreakdown.map(d => d.absent),
-          borderColor: '#ef4444',
-          backgroundColor: 'rgba(239, 68, 68, 0.1)',
-          tension: 0.4,
-          fill: true
-        }
-      ]
-    },
-    options: {
-      responsive: true,
-      maintainAspectRatio: false,
-      plugins: {
-        legend: {
-          position: 'bottom',
-          labels: {
-            usePointStyle: true,
-            padding: 15,
-            font: { size: 12, family: "'Inter', sans-serif" }
-          }
-        },
-        tooltip: {
-          backgroundColor: 'rgba(0, 0, 0, 0.8)',
-          padding: 12,
-          cornerRadius: 8,
-          titleFont: { size: 13, weight: 'bold' },
-          bodyFont: { size: 12 },
-          displayColors: true,
-          callbacks: {
-            title: (items: any) => {
-              const index = items[0].dataIndex
-              const breakdown = props.dailyBreakdown[index]
-              return `${breakdown.day_of_week} ${items[0].label}`
-            }
-          }
-        }
-      },
-      scales: {
-        y: {
-          beginAtZero: true,
-          ticks: { stepSize: 1 },
-          grid: { color: 'rgba(0, 0, 0, 0.05)' }
-        },
-        x: {
-          grid: { display: false }
-        }
-      }
-    }
-  }
-
-  dailyChartInstance.value = new Chart(dailyChart.value, config)
-}
-
-const createStatusChart = () => {
-  if (!statusChart.value) return
-
-  // Détruire l'ancien graphique s'il existe
-  if (statusChartInstance.value) {
-    statusChartInstance.value.destroy()
-  }
-
-  const config: ChartConfiguration = {
-    type: 'doughnut',
-    data: {
-      labels: ['Présents à l\'heure', 'Retards', 'Absences', 'Jours de repos'],
-      datasets: [{
-        data: [
-          props.summary.total_present_on_time,
-          props.summary.total_late_arrivals,
-          props.summary.total_absences,
-          props.summary.total_off_days
-        ],
-        backgroundColor: [
-          '#10b981',
-          '#f59e0b',
-          '#ef4444',
-          '#6366f1'
-        ],
-        borderWidth: 0
-      }]
-    },
-    options: {
-      responsive: true,
-      maintainAspectRatio: false,
-      plugins: {
-        legend: {
-          position: 'bottom',
-          labels: {
-            usePointStyle: true,
-            padding: 15,
-            font: { size: 12, family: "'Inter', sans-serif" }
-          }
-        },
-        tooltip: {
-          backgroundColor: 'rgba(0, 0, 0, 0.8)',
-          padding: 12,
-          cornerRadius: 8,
-          titleFont: { size: 13, weight: 'bold' },
-          bodyFont: { size: 12 },
-          callbacks: {
-            label: (context : any) => {
-              const label = context.label || ''
-              const value = context.parsed
-              const total = context.dataset.data.reduce((a: number, b: number) => a + b, 0) as number
-              const percentage = ((value / total) * 100).toFixed(1)
-              return `${label}: ${value} (${percentage}%)`
-            }
-          }
-        }
-      }
-    }
-  }
-
-  statusChartInstance.value = new Chart(statusChart.value, config)
-}
-
-// Lifecycle
-onMounted(() => {
-  nextTick(() => {
-    createDailyChart()
-    createStatusChart()
-  })
-})
-
-// Watchers
-watch(() => props.dailyBreakdown, () => {
-  nextTick(() => {
-    createDailyChart()
-    createStatusChart()
-  })
-}, { deep: true })
-
-watch([() => props.periodStart, () => props.periodEnd], () => {
-  localStartDate.value = props.periodStart
-  localEndDate.value = props.periodEnd
-})
 </script>
+
 
 <style scoped>
 .dashboard-hero {
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  border-radius: 16px;
-  padding: 2rem;
-  color: white;
-  margin-bottom: 2rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
 }
 
+/* ================= HEADER ================= */
 .hero-header {
   display: flex;
   justify-content: space-between;
   align-items: flex-start;
-  margin-bottom: 2rem;
-  gap: 2rem;
+  gap: 1.5rem;
   flex-wrap: wrap;
+  background: #ffffff;
+  padding: 1.5rem;
+  border-radius: 16px;
+  border: 1px solid #e2e8f0;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
 }
 
-.header-left {
-  flex: 1;
+.hero-left {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
 }
 
 .hero-title {
   font-size: 1.75rem;
   font-weight: 700;
-  margin: 0 0 0.5rem 0;
+  color: #0f172a;
+  display: flex;
+  align-items: baseline;
+  gap: 0.5rem;
 }
 
-.period-info {
+.employee-count {
+  font-size: 1rem;
+  font-weight: 500;
+  color: #94a3b8;
+}
+
+.hero-date {
+  font-size: 0.95rem;
+  color: #64748b;
+  font-weight: 500;
+}
+
+/* ================= FILTER BAR ================= */
+.filter-bar {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+
+/* View Mode Switch - Nouveau */
+.view-mode-switch {
+  display: flex;
+  gap: 0.25rem;
+  background: #f8fafc;
+  padding: 0.25rem;
+  border-radius: 10px;
+  border: 1px solid #e2e8f0;
+}
+
+.view-mode-switch button {
+  display: flex;
+  align-items: center;
+  gap: 0.375rem;
+  padding: 0.5rem 0.875rem;
+  background: transparent;
+  border: none;
+  border-radius: 8px;
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: #64748b;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  white-space: nowrap;
+}
+
+.view-mode-switch button:hover {
+  background: #e2e8f0;
+  color: #0f172a;
+}
+
+.view-mode-switch button.active {
+  background: linear-gradient(135deg, #6366f1 0%, #4f46e5 100%);
+  color: #ffffff;
+  box-shadow: 0 2px 4px rgba(99, 102, 241, 0.3);
+}
+
+.mode-icon {
+  width: 16px;
+  height: 16px;
+}
+
+/* Period Switch */
+.period-switch {
+  display: flex;
+  gap: 0.25rem;
+  background: #f8fafc;
+  padding: 0.25rem;
+  border-radius: 10px;
+  border: 1px solid #e2e8f0;
+}
+
+.period-switch button {
+  display: flex;
+  align-items: center;
+  gap: 0.375rem;
+  padding: 0.5rem 0.875rem;
+  background: transparent;
+  border: none;
+  border-radius: 8px;
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: #64748b;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  white-space: nowrap;
+}
+
+.period-switch button:hover {
+  background: #e2e8f0;
+  color: #0f172a;
+}
+
+.period-switch button.active {
+  background: #3b82f6;
+  color: #ffffff;
+  box-shadow: 0 2px 4px rgba(59, 130, 246, 0.3);
+}
+
+.period-icon {
+  width: 16px;
+  height: 16px;
+}
+
+/* Date Picker */
+.date-picker-container {
   display: flex;
   align-items: center;
   gap: 0.5rem;
-  opacity: 0.9;
-  font-size: 0.95rem;
 }
 
-.icon-sm {
-  width: 18px;
-  height: 18px;
+.date-label {
+  font-size: 0.875rem;
+  color: #64748b;
+  font-weight: 500;
+  white-space: nowrap;
 }
 
-/* Sélecteur de période */
-.period-selector {
-  background: rgba(255, 255, 255, 0.15);
-  backdrop-filter: blur(10px);
-  border-radius: 12px;
-  padding: 1rem;
-  display: flex;
-  flex-direction: column;
-  gap: 1rem;
+.date-input {
+  padding: 0.5rem 0.75rem;
+  border-radius: 8px;
+  border: 1px solid #e2e8f0;
+  background: white;
+  font-size: 0.875rem;
+  color: #0f172a;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
 }
 
-.date-range-picker {
+.date-input:hover {
+  border-color: #cbd5e1;
+}
+
+.date-input:focus {
+  outline: none;
+  border-color: #3b82f6;
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+}
+
+/* Custom Range */
+.custom-range {
   display: flex;
   align-items: center;
   gap: 0.75rem;
-  flex-wrap: wrap;
 }
 
-.date-range-picker label {
-  font-size: 0.875rem;
-  font-weight: 500;
+.range-arrow {
+  font-size: 1.25rem;
+  color: #94a3b8;
+  font-weight: 600;
 }
 
-.date-range-picker input[type="date"] {
+/* Employee Filter */
+.employee-filter {
+  display: flex;
+  align-items: center;
+}
+
+.employee-select {
   padding: 0.5rem 0.75rem;
-  border: 2px solid rgba(255, 255, 255, 0.3);
   border-radius: 8px;
-  background: rgba(255, 255, 255, 0.95);
-  color: #1f2937;
-  font-size: 0.875rem;
-  font-weight: 500;
-  transition: all 0.2s;
-  cursor: pointer;
-}
-
-.date-range-picker input[type="date"]:hover {
-  border-color: rgba(255, 255, 255, 0.5);
+  border: 1px solid #e2e8f0;
   background: white;
+  font-size: 0.875rem;
+  color: #0f172a;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  min-width: 180px;
 }
 
-.date-range-picker input[type="date"]:focus {
+.employee-select:hover {
+  border-color: #cbd5e1;
+}
+
+.employee-select:focus {
   outline: none;
-  border-color: white;
-  background: white;
+  border-color: #3b82f6;
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
 }
 
-.quick-periods {
-  display: flex;
-  gap: 0.5rem;
-  flex-wrap: wrap;
-}
-
-.preset-btn {
-  padding: 0.5rem 1rem;
-  border: 2px solid rgba(255, 255, 255, 0.3);
-  border-radius: 8px;
-  background: transparent;
-  color: white;
-  font-size: 0.875rem;
-  font-weight: 500;
-  cursor: pointer;
-  transition: all 0.2s;
-}
-
-.preset-btn:hover {
-  background: rgba(255, 255, 255, 0.15);
-  border-color: rgba(255, 255, 255, 0.5);
-}
-
-.preset-btn.active {
-  background: rgba(255, 255, 255, 0.25);
-  border-color: white;
-}
-
-/* Grille de statistiques */
-.stats-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-  gap: 1.5rem;
-  margin-bottom: 2rem;
-}
-
-.stat-card {
-  background: rgba(255, 255, 255, 0.15);
-  backdrop-filter: blur(10px);
-  border: 1px solid rgba(255, 255, 255, 0.2);
-  border-radius: 12px;
-  padding: 1.5rem;
-  display: flex;
-  gap: 1rem;
-  transition: all 0.3s;
-}
-
-.stat-card:hover {
-  background: rgba(255, 255, 255, 0.2);
-  transform: translateY(-2px);
-}
-
-.stat-card.has-issues {
-  box-shadow: 0 0 0 2px rgba(239, 68, 68, 0.5);
-}
-
-.stat-icon {
-  flex-shrink: 0;
-}
-
-.stat-icon .icon {
-  width: 48px;
-  height: 48px;
-  opacity: 0.9;
-}
-
-.stat-content {
-  flex: 1;
-}
-
-.stat-number {
-  font-size: 2rem;
-  font-weight: 700;
-  line-height: 1;
-  margin-bottom: 0.5rem;
-}
-
-.stat-label {
-  font-size: 0.875rem;
-  opacity: 0.9;
-  margin-bottom: 0.25rem;
-}
-
-.stat-percentage,
-.stat-detail {
-  font-size: 0.8rem;
-  opacity: 0.8;
-  font-weight: 500;
-}
-
-/* Section graphiques */
-.charts-section {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
-  gap: 2rem;
-  margin-bottom: 2rem;
-}
-
-.chart-container {
-  background: rgba(255, 255, 255, 0.15);
-  backdrop-filter: blur(10px);
-  border: 1px solid rgba(255, 255, 255, 0.2);
-  border-radius: 12px;
-  padding: 1.5rem;
-  height: 350px;
-}
-
-.chart-title {
-  font-size: 1rem;
-  font-weight: 600;
-  margin: 0 0 1rem 0;
-  opacity: 0.95;
-}
-
-canvas {
-  max-height: 280px !important;
-}
-
-/* Indicateurs de performance */
-.performance-indicators {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-  gap: 1.5rem;
-  margin-bottom: 2rem;
-}
-
-.indicator {
-  background: rgba(255, 255, 255, 0.15);
-  backdrop-filter: blur(10px);
-  border: 1px solid rgba(255, 255, 255, 0.2);
-  border-radius: 12px;
-  padding: 1.25rem;
-}
-
-.indicator-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 0.75rem;
-}
-
-.indicator-label {
-  font-size: 0.875rem;
-  opacity: 0.9;
-  font-weight: 500;
-}
-
-.indicator-value {
-  font-size: 1.5rem;
-  font-weight: 700;
-}
-
-.progress-bar {
-  height: 8px;
-  background: rgba(255, 255, 255, 0.2);
-  border-radius: 4px;
-  overflow: hidden;
-  margin-bottom: 0.5rem;
-}
-
-.progress-fill {
-  height: 100%;
-  background: linear-gradient(90deg, #10b981, #34d399);
-  border-radius: 4px;
-  transition: width 0.6s ease;
-}
-
-.progress-punctuality {
-  background: linear-gradient(90deg, #f59e0b, #fbbf24);
-}
-
-.progress-hours {
-  background: linear-gradient(90deg, #6366f1, #818cf8);
-}
-
-.indicator-benchmark {
-  font-size: 0.75rem;
-  opacity: 0.7;
-}
-
-/* Actions rapides */
-.quick-actions {
-  display: flex;
-  gap: 1rem;
-  flex-wrap: wrap;
-}
-
-.action-btn {
+/* ================= ACTIVE FILTERS INDICATOR ================= */
+.active-filters-indicator {
   display: flex;
   align-items: center;
-  gap: 0.5rem;
-  padding: 0.75rem 1.5rem;
-  background: rgba(255, 255, 255, 0.95);
-  color: #667eea;
-  border: none;
-  border-radius: 10px;
-  font-weight: 600;
-  cursor: pointer;
-  transition: all 0.2s;
-}
-
-.action-btn:hover {
-  background: white;
-  transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-}
-
-.action-btn-secondary {
-  background: rgba(255, 255, 255, 0.15);
-  color: white;
-  border: 2px solid rgba(255, 255, 255, 0.3);
-}
-
-.action-btn-secondary:hover {
-  background: rgba(255, 255, 255, 0.25);
-  border-color: white;
-}
-
-/* Skeleton */
-.dashboard-hero-skeleton {
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  border-radius: 16px;
-  padding: 2rem;
-  margin-bottom: 2rem;
-}
-
-.skeleton-header {
-  height: 60px;
-  background: rgba(255, 255, 255, 0.15);
-  border-radius: 8px;
-  margin-bottom: 2rem;
-  animation: pulse 1.5s ease-in-out infinite;
-}
-
-.skeleton-card {
-  height: 120px;
-  background: rgba(255, 255, 255, 0.15);
+  gap: 0.75rem;
+  padding: 1rem 1.25rem;
+  background: linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%);
+  border: 1px solid #bfdbfe;
   border-radius: 12px;
-  animation: pulse 1.5s ease-in-out infinite;
+  font-size: 0.875rem;
+  color: #1e40af;
+  font-weight: 500;
 }
 
-@keyframes pulse {
-  0%, 100% { opacity: 1; }
-  50% { opacity: 0.6; }
+.info-icon {
+  width: 20px;
+  height: 20px;
+  min-width: 20px;
+  color: #3b82f6;
 }
 
-/* Responsive */
-@media (max-width: 768px) {
-  .dashboard-hero {
-    padding: 1.5rem;
+.active-filters-indicator strong {
+  font-weight: 700;
+  color: #1e3a8a;
+}
+
+.employee-filter-text {
+  color: #1e40af;
+  font-style: italic;
+}
+
+/* ================= RESPONSIVE ================= */
+@media (max-width: 1200px) {
+  .stats-grid {
+    grid-template-columns: repeat(2, 1fr);
   }
+}
 
+@media (max-width: 900px) {
   .hero-header {
     flex-direction: column;
-    gap: 1.5rem;
+    align-items: stretch;
+  }
+
+  .filter-bar {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .view-mode-switch,
+  .period-switch {
+    justify-content: space-between;
+  }
+
+  .custom-range {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .range-arrow {
+    display: none;
+  }
+}
+
+@media (max-width: 640px) {
+  .stats-grid {
+    grid-template-columns: 1fr;
   }
 
   .hero-title {
     font-size: 1.5rem;
   }
 
-  .stats-grid {
-    grid-template-columns: 1fr;
-    gap: 1rem;
+  .value {
+    font-size: 1.75rem;
   }
 
-  .charts-section {
-    grid-template-columns: 1fr;
+  .view-mode-switch,
+  .period-switch {
+    flex-direction: column;
   }
 
-  .chart-container {
-    height: 300px;
-  }
-
-  .performance-indicators {
-    grid-template-columns: 1fr;
+  .view-mode-switch button,
+  .period-switch button {
+    justify-content: center;
   }
 }
 </style>
-
-
-<!--<template>-->
-<!--  <section v-if="loading" class="dashboard-hero-skeleton">-->
-<!--    <div class="skeleton-header"></div>-->
-<!--    <div class="stats-grid">-->
-<!--      <div class="skeleton-card"></div>-->
-<!--      <div class="skeleton-card"></div>-->
-<!--      <div class="skeleton-card"></div>-->
-<!--      <div class="skeleton-card"></div>-->
-<!--    </div>-->
-<!--  </section>-->
-
-<!--  <section v-else class="dashboard-hero">-->
-<!--    <div class="hero-header">-->
-<!--      <h1 class="hero-title">Tableau de bord - {{ statistics.total_team_members }}</h1>-->
-<!--      <div class="date-info">-->
-<!--        <div class="current-date">{{ formattedDate }}</div>-->
-<!--        <div class="last-update">Dernière mise à jour: {{ lastUpdate }}</div>-->
-<!--      </div>-->
-<!--    </div>-->
-
-<!--    <div class="stats-grid">-->
-<!--      &lt;!&ndash; Employés présents &ndash;&gt;-->
-<!--      <div class="stat-card stat-present">-->
-<!--        <div class="stat-icon">-->
-<!--          <svg class="icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">-->
-<!--            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"-->
-<!--                  d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>-->
-<!--          </svg>-->
-<!--        </div>-->
-<!--        <div class="stat-content">-->
-<!--          <div class="stat-number">-->
-<!--            {{ statistics.present_to_days }}-->
-<!--          </div>-->
-<!--          <div class="stat-label">Employés présents</div>-->
-<!--          <div class="stat-percentage">{{ presencePercentage }}%</div>-->
-<!--        </div>-->
-<!--      </div>-->
-
-<!--      &lt;!&ndash; Retards &ndash;&gt;-->
-<!--      <div class="stat-card stat-warning" :class="{ 'has-issues': statistics.late_arrivals > 0 }">-->
-<!--        <div class="stat-icon">-->
-<!--          <svg class="icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">-->
-<!--            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"-->
-<!--                  d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>-->
-<!--          </svg>-->
-<!--        </div>-->
-<!--        <div class="stat-content">-->
-<!--          <div class="stat-number">{{ statistics.late_arrivals }}</div>-->
-<!--          <div class="stat-label">Retards</div>-->
-<!--          <div class="stat-detail" v-if="statistics.average_work_hours">-->
-<!--            Moyenne: {{ statistics.average_work_hours }}-->
-<!--          </div>-->
-<!--        </div>-->
-<!--      </div>-->
-
-<!--      &lt;!&ndash; Absents &ndash;&gt;-->
-<!--      <div class="stat-card stat-error" :class="{ 'has-issues': statistics.absences > 0 }">-->
-<!--        <div class="stat-icon">-->
-<!--          <svg class="icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">-->
-<!--            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"-->
-<!--                  d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z"></path>-->
-<!--          </svg>-->
-<!--        </div>-->
-<!--        <div class="stat-content">-->
-<!--          <div class="stat-number">{{ statistics.absences }}</div>-->
-<!--          <div class="stat-label">Absents</div>-->
-<!--          <div class="stat-detail">-->
-<!--            Taux de présence: {{ statistics.attendance_rate }}-->
-<!--          </div>-->
-<!--        </div>-->
-<!--      </div>-->
-
-<!--      &lt;!&ndash; Jour de repos &ndash;&gt;-->
-<!--      <div class="stat-card stat-info">-->
-<!--        <div class="stat-icon">-->
-<!--          <svg class="icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">-->
-<!--            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"-->
-<!--                  d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path>-->
-<!--          </svg>-->
-<!--        </div>-->
-<!--        <div class="stat-content">-->
-<!--          <div class="stat-number">{{ statistics.off_day }}</div>-->
-<!--          <div class="stat-label">Jours de repos</div>-->
-<!--          <div class="stat-detail">-->
-<!--            Actifs: {{ statistics.currently_active }}-->
-<!--          </div>-->
-<!--        </div>-->
-<!--      </div>-->
-<!--    </div>-->
-
-<!--    <div class="quick-actions">-->
-<!--      <h3 class="actions-title">Actions rapides</h3>-->
-<!--      <div class="actions-grid">-->
-<!--        <a href="#" class="action-btn action-btn-compact">-->
-<!--          <svg class="icon-sm" fill="none" stroke="currentColor" viewBox="0 0 24 24">-->
-<!--            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"-->
-<!--                  d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>-->
-<!--          </svg>-->
-<!--          <span>Exporter le jour</span>-->
-<!--        </a>-->
-<!--      </div>-->
-<!--    </div>-->
-
-<!--    <div class="presence-progress">-->
-<!--      <div class="progress-header">-->
-<!--        <span class="progress-label">Taux de présence du jour</span>-->
-<!--        <span class="progress-value">{{ statistics.attendance_rate }}</span>-->
-<!--      </div>-->
-<!--      <div class="progress-bar">-->
-<!--        <div class="progress-fill" :style="{ width: progressWidth }"></div>-->
-<!--      </div>-->
-<!--      <div class="progress-benchmark">-->
-<!--        <span class="benchmark-text">Objectif: 95% | Ponctualité: {{ statistics.punctuality_rate }}</span>-->
-<!--      </div>-->
-<!--    </div>-->
-<!--  </section>-->
-<!--</template>-->
-
-<!--<script setup lang="ts">-->
-<!--import { computed } from 'vue'-->
-<!--import type { Statistics } from '@/utils/interfaces/team.interface'-->
-<!--import "../../assets/css/toke-dHero-03.css"-->
-
-<!--interface Props {-->
-<!--  statistics: Statistics-->
-<!--  date: string-->
-<!--  loading?: boolean-->
-<!--}-->
-
-<!--const props = withDefaults(defineProps<Props>(), {-->
-<!--  loading: false-->
-<!--})-->
-
-<!--const lastUpdate = computed(() => {-->
-<!--  const now = new Date()-->
-<!--  return now.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })-->
-<!--})-->
-
-<!--const formattedDate = computed(() => {-->
-<!--  const dateObj = new Date(props.date)-->
-<!--  return dateObj.toLocaleDateString('fr-FR', {-->
-<!--    weekday: 'long',-->
-<!--    year: 'numeric',-->
-<!--    month: 'long',-->
-<!--    day: 'numeric'-->
-<!--  })-->
-<!--})-->
-
-<!--const presencePercentage = computed(() => {-->
-<!--  if (props.statistics.total_team_members === 0) return 0-->
-<!--  return Math.round((props.statistics.present_to_days / props.statistics.total_team_members) * 100)-->
-<!--})-->
-
-<!--const progressWidth = computed(() => {-->
-<!--  const rate = props.statistics.attendance_rate-->
-<!--  if (rate === 'N/A') return '0%'-->
-<!--  return rate-->
-<!--})-->
-<!--</script>-->
-
-<!--<style scoped>-->
-<!--/* Centrer la date et l'heure à droite */-->
-<!--.date-info {-->
-<!--  display: flex;-->
-<!--  flex-direction: column;-->
-<!--  align-items: flex-end;-->
-<!--  text-align: right;-->
-<!--  margin-right: 0;-->
-<!--}-->
-
-<!--/* Réduire la largeur du bouton Exporter */-->
-<!--.action-btn-compact {-->
-<!--  width: auto;-->
-<!--  max-width: 200px;-->
-<!--}-->
-<!--</style>-->

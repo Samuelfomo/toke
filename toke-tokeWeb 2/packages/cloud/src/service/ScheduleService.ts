@@ -43,4 +43,15 @@ export default class scheduleService {
       return error;
     }
   }
+  static async deleteSchedule(guid: string): Promise<ApiResponse> {
+    try {
+      return await apiRequest<any>({
+        path: `${baseUrl}/${guid}`,
+        method: 'DELETE',
+      });
+    } catch (error: any) {
+      console.error('response error', error);
+      return error;
+    }
+  }
 }

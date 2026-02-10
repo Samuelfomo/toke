@@ -1,393 +1,463 @@
-<template>
+<template xmlns="http://www.w3.org/1999/html">
   <div class="dashboard-container">
     <Header />
 
-    <main class="dashboard-content">
-      <div class="content-container">
-        <!-- Afficher le skeleton pendant le chargement -->
-        <template v-if="loading">
-          <div class="dashboard-skeleton">
-            <div class="skeleton-hero">
-              <div class="skeleton-header"></div>
-              <div class="skeleton-stats-grid">
-                <div class="skeleton-stat"></div>
-                <div class="skeleton-stat"></div>
-                <div class="skeleton-stat"></div>
-                <div class="skeleton-stat"></div>
-              </div>
-            </div>
-            <div class="skeleton-list">
-              <div class="skeleton-filters"></div>
-              <div class="skeleton-cards"></div>
-            </div>
-          </div>
-        </template>
+    <main class="dashboard-main">
+      <!-- État de chargement -->
+      <div v-if="loading" class="loading-state">
+        <div class="spinner"></div>
+        <p>Chargement des données...</p>
+      </div>
 
-        <!-- Afficher le contenu une fois les données chargées -->
-        <template v-else-if="attendanceData">
-          <DashboardHero
-            :summary="attendanceData.summary"
-            :daily-breakdown="attendanceData.daily_breakdown"
-            :period-start="periodStart"
-            :period-end="periodEnd"
-            :loading="false"
-            @period-change="handlePeriodChange"
-            @refresh="loadData"
-            @export="exportData"
+      <!-- État d'erreur -->
+      <div v-else-if="error" class="error-state">
+        <svg class="error-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1-1.732-1-2.464 0L4.34 16c-.77 1.333.192 3 1.732 3z" />
+        </svg>
+        <h3>Erreur de chargement</h3>
+        <p>{{ error }}</p>
+        <button @click="loadDashboardData" class="retry-btn">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                  d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+          </svg>
+          <span>Réessayer</span>
+        </button>
+      </div>
+
+      <!-- Contenu du dashboard -->
+      <div v-else-if="dashboardData" class="dashboard-content">
+        <!-- Section Hero avec les cartes principales et filtres -->
+        <DashboardHero
+          :summary="dashboardData.summary"
+          :date="dashboardData.date"
+          :employees="allEmployees"
+          :all-employees="dashboardData.employees"
+          @filter-change="handleFilterChange"
+        />
+
+        <!-- Section Statistiques (affichée uniquement en mode normal) -->
+        <div v-if="!shouldShowAnalytics" class="stats-section">
+          <DashboardStats
+            :summary="dashboardData.summary"
+            :employees="dashboardData.employees"
           />
+        </div>
 
-          <EmployeeStatusList
-            :employees="attendanceData.employees as any"
-            :summary="attendanceData.summary"
-            :daily-breakdown="attendanceData.daily_breakdown"
-            @refresh-data="loadData"
-          />
-        </template>
+        <!-- Alertes et Insights (affichée uniquement en mode analytique) -->
+        <AttendanceEvolution
+          v-if="shouldShowAnalytics && filteredEmployees.length > 0"
+          :employees="filteredEmployees"
+          :period-label="periodLabel"
+          @employee-click="handleEmployeeClick"
+          @day-click="handleDayClick"
+        />
 
-        <!-- Message d'erreur si échec -->
-        <template v-else-if="error">
-          <div class="error-state">
-            <svg class="error-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                    d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
-            </svg>
-            <h3>Erreur de chargement</h3>
-            <p>{{ error }}</p>
-            <button @click="loadData" class="retry-btn">
-              <svg class="icon-sm" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                      d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path>
-              </svg>
-              Réessayer
-            </button>
+        <!-- Grid 2 colonnes pour liste employés + pointages (affichée uniquement en mode normal) -->
+        <div v-if="!shouldShowAnalytics" class="bottom-grid">
+          <!-- Colonne gauche : Liste des employés -->
+          <div class="employee-list-section">
+            <EmployeeList
+              :employees="displayedEmployees"
+              @employee-click="handleEmployeeClick"
+              @memo-click="handleMemoClick"
+            />
           </div>
-        </template>
+
+          <!-- Colonne droite : Pointages -->
+          <div class="pointage-section">
+            <EmployeeViewPointage
+              :employees="displayedEmployees"
+              :selectedEmployee="selectedEmployee"
+              @employee-click="handleEmployeeClick"
+              @close="closeEmployeePanel"
+            />
+          </div>
+        </div>
       </div>
     </main>
-
-    <!-- Footer -->
     <Footer />
   </div>
 </template>
 
 <script setup lang="ts">
-import { onMounted, ref } from 'vue'
-import { useUserStore } from '@/stores/userStore'
-import UserService from '@/service/UserService'
-import Header from '../components/header.vue'
-import DashboardHero from './dashboardHero.vue'
-import EmployeeStatusList from '../dashboard/employeeStatusList.vue'
-import Footer from '../components/footer.vue'
-import dashboardCss from "../../assets/css/toke-dMain-04.css?url"
-import footerCss from "../../assets/css/toke-footer-24.css?url"
-import HeadBuilder from '../../utils/HeadBuilder'
-import cardCss from "../../assets/css/tokt-employeeC-06.css?url"
+import { ref, computed } from 'vue';
+import { useUserStore } from '@/stores/userStore';
+import UserService from '../../service/UserService';
+import DashboardHero from '../dashboard/dashboardHero.vue';
+import DashboardStats from '../dashboard/dashboardStats.vue';
+import EmployeeList from '../dashboard/employeeList.vue';
+import EmployeeViewPointage from '../dashboard/employeeViewPointage.vue';
+import Header from '../components/header.vue';
+import Footer from '../components/footer.vue';
+import AttendanceEvolution from '../dashboard/attendanceEvolution.vue';
+import type {
+  DashboardData,
+  TransformedEmployee,
+} from '@/service/UserService';
 
-interface DailyBreakdown {
-  date: string
-  day_of_week: string
-  expected_count: number
-  present: number
-  late: number
-  absent: number
-  off_day: number
-}
+// Store et états
+const userStore = useUserStore();
+const loading = ref<boolean>(true);
+const error = ref<string | null>(null);
+const dashboardData = ref<DashboardData | null>(null);
+const selectedEmployee = ref<TransformedEmployee | null>(null);
 
-interface PeriodSummary {
-  total_team_members: number
-  total_present_on_time: number
-  total_late_arrivals: number
-  total_absences: number
-  total_off_days: number
-  total_expected_workdays: number
-  attendance_rate: number
-  punctuality_rate: number
-  average_delay_minutes: number
-  total_work_hours: number
-  average_work_hours_per_day: number
-  currently_active: number
-  currently_on_pause: number
-}
+// Filtres actifs
+const activeFilters = ref({
+  startDate: '',
+  endDate: '',
+  employeeId: '',
+  period: 'day',
+  viewMode: 'normal' as 'normal' | 'analytics'
+});
 
-interface Employee {
-  employee: {
-    guid: string
-    email: string
-    first_name: string
-    last_name: string
-    phone_number: string
-    employee_code: string
-    avatar_url: string | null
-    department: string
-    job_title: string
+// Flag pour savoir si on a appliqué des filtres
+const hasAppliedFilters = ref(false);
+
+// Tous les employés (pour les filtres)
+const allEmployees = computed(() => {
+  return dashboardData.value?.employees || [];
+});
+
+// Employés filtrés selon le filtre d'employé sélectionné
+const displayedEmployees = computed(() => {
+  if (!dashboardData.value) return [];
+
+  if (activeFilters.value.employeeId) {
+    return dashboardData.value.employees.filter(
+      emp => String(emp.guid) === String(activeFilters.value.employeeId)
+    );
   }
-  period_stats: any
-  daily_details: any[]
-}
 
-interface AttendanceData {
-  period: {
-    start: string
-    end: string
-    total_days: number
+  return dashboardData.value.employees;
+});
+
+// Employés pour l'évolution (peut être différent si on veut tout afficher)
+const filteredEmployees = computed(() => {
+  return displayedEmployees.value;
+});
+
+// Vérifier si on doit afficher l'évolution et les insights
+const shouldShowAnalytics = computed(() => {
+  // Afficher uniquement si on est en mode analytique
+  return activeFilters.value.viewMode === 'analytics'
+});
+
+// Label de la période pour l'évolution
+const periodLabel = computed(() => {
+  const period = activeFilters.value.period;
+
+  if (period === 'custom') {
+    const start = new Date(activeFilters.value.startDate).toLocaleDateString('fr-FR', {
+      day: '2-digit',
+      month: 'short'
+    });
+    const end = new Date(activeFilters.value.endDate).toLocaleDateString('fr-FR', {
+      day: '2-digit',
+      month: 'short'
+    });
+    return `du ${start} au ${end}`;
   }
-  summary: PeriodSummary
-  daily_breakdown: DailyBreakdown[]
-  employees: Employee[]
-}
 
-const userStore = useUserStore()
-const loading = ref(true)
-const error = ref<string | null>(null)
-const attendanceData = ref<AttendanceData | null>(null)
-const notificationCount = ref(2)
+  const labels: Record<string, string> = {
+    day: 'du jour',
+    week: 'de la semaine',
+    month: 'du mois'
+  };
 
-// Dates par défaut (aujourd'hui)
-const periodStart = ref(new Date().toISOString().split('T')[0])
-const periodEnd = ref(new Date().toISOString().split('T')[0])
+  return labels[period] || 'de la période sélectionnée';
+});
 
-const loadData = async () => {
+/**
+ * Gère le changement de filtres depuis le Hero
+ */
+const handleFilterChange = async (filters: {
+  startDate: string;
+  endDate: string;
+  employeeId: string | number | '';
+  period: string;
+  viewMode: 'normal' | 'analytics';
+}) => {
+  console.log('🔄 Filtres appliqués:', filters);
+
+  activeFilters.value = {
+    startDate: filters.startDate,
+    endDate: filters.endDate,
+    employeeId: String(filters.employeeId),
+    period: filters.period,
+    viewMode: filters.viewMode
+  };
+
+  // Marquer que des filtres ont été appliqués
+  hasAppliedFilters.value = true;
+
+  // Recharger les données uniquement si en mode analytique
+  if (filters.viewMode === 'analytics') {
+    await loadDashboardData(filters.startDate, filters.endDate);
+  }
+};
+
+/**
+ * Charge toutes les données du dashboard
+ */
+const loadDashboardData = async (startDate?: string, endDate?: string) => {
   try {
-    loading.value = true
-    error.value = null
+    loading.value = true;
+    error.value = null;
 
     // Vérifier que l'utilisateur est connecté
     if (!userStore.user?.guid) {
-      throw new Error('Utilisateur non connecté')
+      throw new Error('Utilisateur non connecté');
     }
 
-    // Construire l'URL avec les paramètres de période
-    const params = new URLSearchParams({
-      supervisor: userStore.user.guid,
-      start_date: periodStart.value,
-      end_date: periodEnd.value
-    })
+    console.log('🔄 Chargement des données du dashboard pour:', userStore.user.guid);
 
-    // Récupérer les données de l'API (adapter selon votre endpoint réel)
-    const response = await UserService.listAttendance(userStore.user.guid, params.toString())
+    // Récupérer les données via le service
+    const data = await UserService.getDashboardData(
+      userStore.user.guid,
+      startDate,
+      endDate
+    );
 
-    if (response.success && response.data?.data) {
-      // Adapter la structure de la réponse à notre format
-      const apiData = response.data.data
+    dashboardData.value = data;
 
-      attendanceData.value = {
-        period: apiData.period,
-        summary: apiData.summary,
-        daily_breakdown: apiData.daily_breakdown,
-        employees: apiData.employees
-      }
-    } else {
-      throw new Error('Format de réponse invalide')
-    }
+    console.log('✅ Dashboard chargé avec succès:', {
+      totalEmployees: data.employees.length,
+      present: data.presentEmployees.length,
+      absent: data.absentEmployees.length,
+      late: data.lateEmployees.length,
+      period: `${data.period.start} - ${data.period.end}`
+    });
   } catch (err: any) {
-    console.error('❌ Erreur lors du chargement:', err)
-    error.value = err.message || 'Impossible de charger les données d\'assiduité'
+    console.error('❌ Erreur lors du chargement du dashboard:', err);
+    error.value = err.message || 'Impossible de charger les données du dashboard';
   } finally {
-    loading.value = false
+    loading.value = false;
   }
-}
+};
 
-const handlePeriodChange = ({ start, end }: { start: string; end: string }) => {
-  periodStart.value = start
-  periodEnd.value = end
-  loadData()
-}
+/**
+ * Gère le clic sur un employé
+ */
+const handleEmployeeClick = (employee: TransformedEmployee) => {
+  console.log('👤 Employé sélectionné:', employee.name);
+  selectedEmployee.value = employee;
+};
 
-const exportData = async () => {
-  if (!attendanceData.value) return
+/**
+ * Gère le clic sur un jour critique
+ */
+const handleDayClick = (date: string) => {
+  console.log('📅 Jour critique cliqué:', date);
+  // Vous pouvez ajouter une logique pour filtrer par ce jour spécifique
+  // ou afficher un modal avec plus de détails
+};
 
-  try {
-    // Créer un CSV avec les données
-    const headers = [
-      'Date',
-      'Jour',
-      'Attendus',
-      'Présents',
-      'Retards',
-      'Absents',
-      'Repos'
-    ]
+/**
+ * Gère le clic sur le bouton mémo
+ */
+const handleMemoClick = (employee: TransformedEmployee) => {
+  console.log('📝 Mémo pour:', employee.name);
+  // Implémenter la logique pour ouvrir un mémo
+};
 
-    const rows = attendanceData.value.daily_breakdown.map(day => [
-      day.date,
-      day.day_of_week,
-      day.expected_count,
-      day.present,
-      day.late,
-      day.absent,
-      day.off_day
-    ])
+/**
+ * Ferme le panel de détails d'employé
+ */
+const closeEmployeePanel = () => {
+  selectedEmployee.value = null;
+};
 
-    const csvContent = [
-      headers.join(','),
-      ...rows.map(row => row.join(','))
-    ].join('\n')
+/**
+ * Rafraîchit les données du dashboard
+ */
+const refreshDashboard = () => {
+  loadDashboardData(
+    activeFilters.value.startDate || undefined,
+    activeFilters.value.endDate || undefined
+  );
+};
 
-    // Créer un blob et télécharger
-    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' })
-    const link = document.createElement('a')
-    const url = URL.createObjectURL(blob)
+// Chargement initial
+import { onMounted, onUnmounted } from 'vue';
 
-    link.setAttribute('href', url)
-    link.setAttribute('download', `attendance_${periodStart.value}_${periodEnd.value}.csv`)
-    link.style.visibility = 'hidden'
+let refreshInterval: number | undefined;
 
-    document.body.appendChild(link)
-    link.click()
-    document.body.removeChild(link)
+onMounted(() => {
+  loadDashboardData();
 
-    console.log('✅ Export réussi')
-  } catch (err) {
-    console.error('❌ Erreur lors de l\'export:', err)
-    error.value = 'Erreur lors de l\'export des données'
+  // Optionnel: rafraîchir automatiquement toutes les 5 minutes
+  refreshInterval = window.setInterval(() => {
+    refreshDashboard();
+  }, 5 * 60 * 1000);
+});
+
+onUnmounted(() => {
+  if (refreshInterval) {
+    clearInterval(refreshInterval);
   }
-}
+});
 
-onMounted(async () => {
-  HeadBuilder.apply({
-    title: 'Dashboard - Toké',
-    css: [dashboardCss, cardCss, footerCss],
-    meta: { viewport: "width=device-width, initial-scale=1.0" }
-  })
-
-  // Charger les données
-  await loadData()
-})
+// Exposer les méthodes pour usage externe si nécessaire
+defineExpose({
+  refreshDashboard,
+});
 </script>
 
 <style scoped>
+/* =========================
+   Layout global
+========================= */
+
 .dashboard-container {
-  min-height: 100vh;
-  background: #f3f4f6;
   display: flex;
   flex-direction: column;
+  min-height: 100vh;
 }
+
+/* Zone centrale */
+.dashboard-main {
+  flex: 1;
+  max-width: 1600px;
+  width: 100%;
+  margin: 0 auto;
+  padding: 2rem 2rem 4rem;
+}
+
+/* =========================
+   Contenu principal
+========================= */
 
 .dashboard-content {
-  flex: 1;
-  padding: 2rem;
-}
-
-.content-container {
-  max-width: 1400px;
-  margin: 0 auto;
-}
-
-/* Skeleton States */
-.dashboard-skeleton {
-  animation: fadeIn 0.3s ease;
-}
-
-.skeleton-hero {
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  border-radius: 16px;
-  padding: 2rem;
-  margin-bottom: 2rem;
-}
-
-.skeleton-header {
-  height: 80px;
-  background: rgba(255, 255, 255, 0.15);
-  border-radius: 8px;
-  margin-bottom: 2rem;
-  animation: pulse 1.5s ease-in-out infinite;
-}
-
-.skeleton-stats-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  display: flex;
+  flex-direction: column;
   gap: 1.5rem;
+  animation: fadeUp 0.4s ease-out;
 }
 
-.skeleton-stat {
-  height: 120px;
-  background: rgba(255, 255, 255, 0.15);
-  border-radius: 12px;
-  animation: pulse 1.5s ease-in-out infinite;
+/* Section statistiques - pleine largeur */
+.stats-section {
+  width: 100%;
 }
 
-.skeleton-list {
-  background: white;
-  border-radius: 16px;
-  padding: 2rem;
-}
-
-.skeleton-filters {
-  height: 50px;
-  background: #f3f4f6;
-  border-radius: 8px;
-  margin-bottom: 1.5rem;
-  animation: pulse 1.5s ease-in-out infinite;
-}
-
-.skeleton-cards {
+/* ⬇️ Grid 2 colonnes en bas */
+.bottom-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
-  gap: 1rem;
+  grid-template-columns: 1fr 1fr; /* 2 colonnes égales */
+  gap: 1.5rem;
+  width: 100%;
 }
 
-/* Error State */
+.employee-list-section {
+  width: 100%;
+}
+
+.pointage-section {
+  width: 100%;
+}
+
+/* =========================
+   États Loading / Error
+========================= */
+
+.loading-state,
 .error-state {
+  background: #ffffff;
+  border-radius: 20px;
+  box-shadow: 0 20px 40px rgba(15, 23, 42, 0.06);
+  min-height: 420px;
+  padding: 4rem 2rem;
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  padding: 4rem 2rem;
-  text-align: center;
-  background: white;
-  border-radius: 16px;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
 }
 
+.loading-state p {
+  margin-top: 1.2rem;
+  font-size: 1rem;
+  font-weight: 500;
+  color: #64748b;
+}
+
+/* Spinner */
+.spinner {
+  width: 56px;
+  height: 56px;
+  border: 4px solid #e5e7eb;
+  border-top-color: #6366f1;
+  border-radius: 50%;
+  animation: spin 0.9s linear infinite;
+}
+
+/* =========================
+   Erreur
+========================= */
+
 .error-icon {
-  width: 64px;
-  height: 64px;
+  width: 72px;
+  height: 72px;
   color: #ef4444;
-  margin-bottom: 1.5rem;
+  margin-bottom: 1.2rem;
 }
 
 .error-state h3 {
-  font-size: 1.5rem;
+  font-size: 1.6rem;
   font-weight: 700;
-  color: #1f2937;
-  margin: 0 0 0.5rem 0;
+  color: #0f172a;
 }
 
 .error-state p {
-  color: #6b7280;
-  margin: 0 0 2rem 0;
+  font-size: 1rem;
+  color: #64748b;
+  max-width: 420px;
+  text-align: center;
+  margin-top: 0.5rem;
 }
 
+/* Bouton retry */
 .retry-btn {
-  display: flex;
+  display: inline-flex;
   align-items: center;
-  gap: 0.5rem;
-  padding: 0.75rem 1.5rem;
-  background: #667eea;
-  color: white;
+  gap: 0.6rem;
+  padding: 0.85rem 1.6rem;
+  background: linear-gradient(135deg, #6366f1, #4f46e5);
+  color: #ffffff;
   border: none;
-  border-radius: 10px;
+  border-radius: 12px;
+  font-size: 0.95rem;
   font-weight: 600;
   cursor: pointer;
-  transition: all 0.2s;
+  transition: all 0.25s ease;
+  margin-top: 1.5rem;
 }
 
 .retry-btn:hover {
-  background: #5568d3;
   transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+  box-shadow: 0 10px 20px rgba(79, 70, 229, 0.35);
 }
 
-.icon-sm {
-  width: 18px;
-  height: 18px;
+.retry-btn svg {
+  width: 20px;
+  height: 20px;
 }
 
-/* Animations */
-@keyframes fadeIn {
+/* =========================
+   Animations
+========================= */
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@keyframes fadeUp {
   from {
     opacity: 0;
-    transform: translateY(10px);
+    transform: translateY(8px);
   }
   to {
     opacity: 1;
@@ -395,155 +465,39 @@ onMounted(async () => {
   }
 }
 
-@keyframes pulse {
-  0%, 100% {
-    opacity: 1;
-  }
-  50% {
-    opacity: 0.6;
+/* =========================
+   Responsive
+========================= */
+
+@media (max-width: 1200px) {
+  .bottom-grid {
+    grid-template-columns: 1fr; /* 1 colonne sur tablette */
   }
 }
 
-/* Responsive */
-@media (max-width: 768px) {
-  .dashboard-content {
-    padding: 1rem;
+@media (max-width: 1024px) {
+  .dashboard-main {
+    padding: 2rem 1.5rem 3rem;
   }
 
-  .skeleton-stats-grid {
-    grid-template-columns: 1fr;
+  .dashboard-content {
+    gap: 1.5rem;
+  }
+}
+
+@media (max-width: 768px) {
+  .dashboard-main {
+    padding: 1.5rem 1rem 2.5rem;
+  }
+
+  .dashboard-content {
+    gap: 1.25rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .dashboard-main {
+    padding: 1rem 0.75rem 2rem;
   }
 }
 </style>
-
-<!--<template>-->
-<!--  <div class="dashboard-container">-->
-<!--    <Header :notification-count="notificationCount" />-->
-
-<!--    <main class="dashboard-content">-->
-<!--      <div class="content-container">-->
-<!--        &lt;!&ndash; Afficher le skeleton pendant le chargement &ndash;&gt;-->
-<!--        <template v-if="loading">-->
-<!--          <div class="dashboard-skeleton">-->
-<!--            <div class="skeleton-hero">-->
-<!--              <div class="skeleton-header"></div>-->
-<!--              <div class="skeleton-stats-grid">-->
-<!--                <div class="skeleton-stat"></div>-->
-<!--                <div class="skeleton-stat"></div>-->
-<!--                <div class="skeleton-stat"></div>-->
-<!--                <div class="skeleton-stat"></div>-->
-<!--              </div>-->
-<!--            </div>-->
-<!--            <div class="skeleton-list">-->
-<!--              <div class="skeleton-filters"></div>-->
-<!--              <div class="skeleton-cards"></div>-->
-<!--            </div>-->
-<!--          </div>-->
-<!--        </template>-->
-
-<!--        &lt;!&ndash; Afficher le contenu une fois les données chargées &ndash;&gt;-->
-<!--        <template v-else-if="attendanceData">-->
-<!--          <DashboardHero-->
-<!--            :statistics="attendanceData.data.statistics"-->
-<!--            :date="attendanceData.data.date"-->
-<!--            :loading="false"-->
-<!--          />-->
-
-<!--          <EmployeeStatusList-->
-<!--            :employees="attendanceData.data.all_employees_status"-->
-<!--            :statistics="attendanceData.data.statistics"-->
-<!--            :present-employees="attendanceData.data.present_employees"-->
-<!--            :late-employees="attendanceData.data.late_employees"-->
-<!--            :absent-employees="attendanceData.data.absent_employees"-->
-<!--            :off-day-employees="attendanceData.data.off_day_employees"-->
-<!--            @refresh-data="loadData"-->
-<!--          />-->
-<!--        </template>-->
-
-<!--        &lt;!&ndash; Message d'erreur si échec &ndash;&gt;-->
-<!--        <template v-else-if="error">-->
-<!--          <div class="error-state">-->
-<!--            <svg class="error-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">-->
-<!--              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"-->
-<!--                    d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>-->
-<!--            </svg>-->
-<!--            <h3>Erreur de chargement</h3>-->
-<!--            <p>{{ error }}</p>-->
-<!--            <button @click="loadData" class="retry-btn">-->
-<!--              <svg class="icon-sm" fill="none" stroke="currentColor" viewBox="0 0 24 24">-->
-<!--                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"-->
-<!--                      d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path>-->
-<!--              </svg>-->
-<!--              Réessayer-->
-<!--            </button>-->
-<!--          </div>-->
-<!--        </template>-->
-<!--      </div>-->
-<!--    </main>-->
-
-<!--    &lt;!&ndash; Footer &ndash;&gt;-->
-<!--    <Footer />-->
-<!--  </div>-->
-<!--</template>-->
-
-<!--<script setup lang="ts">-->
-<!--import { onMounted, ref } from 'vue'-->
-<!--import { useUserStore } from '@/stores/userStore'-->
-<!--import UserService from '@/service/UserService'-->
-<!--import Header from '../components/header.vue'-->
-<!--import DashboardHero from './dashboardHero.vue'-->
-<!--import EmployeeStatusList from '../dashboard/employeeStatusList.vue'-->
-<!--import Footer from '../components/footer.vue'-->
-<!--import dashboardCss from "../../assets/css/toke-dMain-04.css?url"-->
-<!--import footerCss from "../../assets/css/toke-footer-24.css?url"-->
-<!--import HeadBuilder from '../../utils/HeadBuilder'-->
-<!--import type { Data } from '@/utils/interfaces/team.interface'-->
-<!--import cardCss from "../../assets/css/tokt-employeeC-06.css?url"-->
-
-<!--const userStore = useUserStore()-->
-<!--const loading = ref(true)-->
-<!--const error = ref<string | null>(null)-->
-<!--const attendanceData = ref<Data | null>(null)-->
-<!--const notificationCount = ref(2)-->
-
-<!--const loadData = async () => {-->
-<!--  try {-->
-<!--    loading.value = true-->
-<!--    error.value = null-->
-
-<!--    // Vérifier que l'utilisateur est connecté-->
-<!--    if (!userStore.user?.guid) {-->
-<!--      throw new Error('Utilisateur non connecté')-->
-<!--    }-->
-
-<!--    // Récupérer les données de l'API-->
-<!--    const response = await UserService.listAttendance(userStore.user.guid)-->
-
-<!--    if (response.data && response.success) {-->
-<!--      attendanceData.value = response.data as Data-->
-<!--    } else {-->
-<!--      throw new Error('Format de réponse invalide')-->
-<!--    }-->
-<!--  } catch (err: any) {-->
-<!--    console.error('❌ Erreur lors du chargement:', err)-->
-<!--    error.value = err.message || 'Impossible de charger les données d\'assiduité'-->
-<!--  } finally {-->
-<!--    loading.value = false-->
-<!--  }-->
-<!--}-->
-
-<!--onMounted(async () => {-->
-<!--  HeadBuilder.apply({-->
-<!--    title: 'Dashboard - Toké',-->
-<!--    css: [dashboardCss, cardCss, footerCss],-->
-<!--    meta: { viewport: "width=device-width, initial-scale=1.0" }-->
-<!--  })-->
-
-<!--  // Charger les données-->
-<!--  await loadData()-->
-<!--})-->
-<!--</script>-->
-
-<!--<style scoped>-->
-
-<!--</style>-->

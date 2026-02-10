@@ -6,9 +6,19 @@ const baseUrl = '/rotation-groups';
 export interface RotationPayload {
   name: string;
   cycle_length: number;
-  cycle_unit: 'day' | 'week' | 'month';
+  cycle_unit: 'day' | 'week';
   cycle_templates: string[];
   start_date: string;
+}
+
+interface ScheduleTemplate {
+  guid: string;
+  tenant: string;
+  name: string;
+  valid_from: string;
+  valid_to: string | null;
+  definition: any;
+  is_default: boolean;
 }
 
 export interface RotationGroup {
@@ -16,17 +26,10 @@ export interface RotationGroup {
   tenant: string;
   name: string;
   cycle_length: number;
-  cycle_unit: 'day' | 'week' | 'month';
+  cycle_unit: 'day' | 'week';
   start_date: string;
   active: boolean;
-  cycle_templates: {
-    guid: string;
-    name: string;
-    valid_from: string;
-    valid_to: string | null;
-    definition: any;
-    is_default: boolean;
-  }[];
+  cycle_templates: ScheduleTemplate[];
 }
 
 export default class Rotationservice {

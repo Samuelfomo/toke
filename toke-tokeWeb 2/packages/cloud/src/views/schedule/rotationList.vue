@@ -157,31 +157,7 @@
 <script setup lang="ts">
 import "../../assets/css/toke-schedule-21.css";
 import { ref } from "vue";
-
-/* =======================
-   Interfaces métier
-======================= */
-
-interface ScheduleTemplate {
-  guid: string;
-  tenant: string;
-  name: string;
-  valid_from: string;
-  valid_to: string | null;
-  definition: any;
-  is_default: boolean;
-}
-
-interface RotationGroup {
-  guid: string;
-  tenant: string;
-  name: string;
-  cycle_length: number;
-  cycle_unit: "day" | "week" | "month";
-  start_date: string;
-  active: boolean;
-  cycle_templates: ScheduleTemplate[];
-}
+import type { RotationGroup } from '@/service/rotationservice';
 
 /* =======================
    Props & emits
