@@ -238,7 +238,7 @@
 <script setup lang="ts">
 import { ref, reactive, onMounted } from 'vue';
 import { Country, POPULAR_CURRENCIES, CountryFormattingUtils } from '@toke/shared';
-import { useCountries } from '@/composables/useCountries';
+import { useCountries } from '@/stores/useCountries';
 import Header from "./components/layouts/header.vue";
 import Footer from "./components/layouts/footer.vue";
 import CountryFormModal from "./components/country/countryFormModal.vue";

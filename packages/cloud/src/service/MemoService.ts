@@ -1,48 +1,54 @@
-import axiosClient from '@/tools/Fetch.Client';
-import { apiRequest } from '@/tools/Fetch.Client';
 import {ApiResponse} from "@toke/shared";
 
-const baseUrl = '/uploads';
+import axiosClient, { apiRequest } from '@/tools/Fetch.Client';
+
+
+const baseUrl = '/memo';
 
 export interface UploadFileResponse {
-    success: boolean;
-    url: string;
-    type: 'image' | 'audio' | 'file';
-    filename: string;
+  success: boolean;
+  url: string;
+  type: 'image' | 'audio' | 'file';
+  filename: string;
+}
+
+export interface CreateMemo {
+  user_author: string;
+  target_user: string;
+  type: string;
+  title: string;
+  message: MessageContent[] ;
 }
 
 export interface MessageContent {
-    type: 'text' | 'link';
-    content: string;
+  type: 'text' | 'link';
+  content: string;
 }
 
 export interface SendReplyPayload {
-    user: string;
-    message: MessageContent[];
+  user: string;
+  message: MessageContent[];
 }
 
 export interface ValidateMemoPayload {
-    memo_guid: string;
-    action: 'approve' | 'reject';
-    message?: MessageContent[];
+  memo_guid: string;
+  action: 'approve' | 'reject';
+  message?: MessageContent[];
 }
 
 export interface UploadedAttachment {
-    originalName: string;
-    mimeType: string;
-    size: number;
-    url: string;
+  originalName: string;
+  mimeType: string;
+  size: number;
+  url: string;
 }
 
 export interface UploadMultipleResponse {
-    success: boolean;
-    attachments: UploadedAttachment[];
+  success: boolean;
+  attachments: UploadedAttachment[];
 }
 
-const API_BASE_URL = '/api'; // Ajustez selon votre config
 const MAX_FILES = 8;
-
-
 
 export default class MemoService {
 
@@ -55,152 +61,191 @@ export default class MemoService {
     return response.data; // ← Blob réel
   }
 
-    // /**
-    //  * Upload un fichier individuel
-    //  */
-    // static async uploadFile(file: File): Promise<UploadFileResponse> {
-    //     const formData = new FormData();
-    //     formData.append('file', file);
-    //
-    //     return await apiRequest<UploadFileResponse>({
-    //         path: `/memos/upload`, // ⚠️ pas besoin de remettre baseURL ici
-    //         method: 'POST',
-    //         data: formData,
-    //         headers: {
-    //             'Content-Type': 'multipart/form-data',
-    //         },
-    //     });
-    //
-    // }
+  static async uploadFile(file: File): Promise<UploadedAttachment> {
+    const formData = new FormData();
+    formData.append('files', file); // ⚠️ même pour 1 → "files"
 
-    static async uploadFile(file: File): Promise<UploadedAttachment> {
-        const formData = new FormData();
-        formData.append('files', file); // ⚠️ même pour 1 → "files"
+    const response = await apiRequest<UploadMultipleResponse>({
+      path: `${baseUrl}/attachments`,
+      method: 'POST',
+      data: formData,
+      headers: { 'Content-Type': 'multipart/form-data' },
+    });
 
-        const response = await apiRequest<UploadMultipleResponse>({
-            path: `${baseUrl}/attachments`,
-            method: 'POST',
-            data: formData,
-            headers: { 'Content-Type': 'multipart/form-data' },
-        });
+    return response.attachments[0];
+  }
 
-        return response.attachments[0];
+
+  /**
+   * Upload plusieurs fichiers en une requête
+   */
+  static async uploadMultipleFiles(files: File[]): Promise<UploadedAttachment[]> {
+    if (files.length === 0) return [];
+
+    if (files.length > MAX_FILES) {
+      throw new Error(`Maximum ${MAX_FILES} fichiers autorisés`);
     }
 
+    const formData = new FormData();
 
-    /**
-     * Upload plusieurs fichiers en une requête
-     */
-    static async uploadMultipleFiles(files: File[]): Promise<UploadedAttachment[]> {
-        if (files.length === 0) return [];
+    files.forEach(file => {
+      formData.append('files', file);
+    });
 
-        if (files.length > MAX_FILES) {
-            throw new Error(`Maximum ${MAX_FILES} fichiers autorisés`);
-        }
+    const response = await apiRequest<ApiResponse>({
+      path: `${baseUrl}/attachments`,
+      method: 'POST',
+      data: formData,
+      headers: {
+        'Content-Type': 'multipart/form-data',
+      },
+    });
 
-        const formData = new FormData();
+    if (!response.success) throw new Error(`Erreur lors de l'upload des fichiers : ' + response.data.error?.message || 'Aucun message d'erreur`)
 
-        files.forEach(file => {
-            formData.append('files', file);
-        });
+    return response.data.attachments;
+  }
 
-        const response = await apiRequest<ApiResponse>({
-            path: `${baseUrl}/attachments`,
-            method: 'POST',
-            data: formData,
-            headers: {
-                'Content-Type': 'multipart/form-data',
-            },
-        });
 
-        if (!response.success) throw new Error(`Erreur lors de l'upload des fichiers : ' + response.data.error?.message || 'Aucun message d'erreur`)
+  /**
+   * Construire le contenu du message avec texte et liens
+   */
+  static buildMessageContent(
+    textContent: string,
+    uploadedFiles: UploadedAttachment[]
+  ): MessageContent[] {
+    const messages: MessageContent[] = [];
 
-        return response.data.attachments;
+    // Ajouter le texte si présent
+    if (textContent.trim()) {
+      messages.push({
+        type: 'text',
+        content: textContent.trim()
+      });
     }
 
+    console.log('uploadedFiles', uploadedFiles);
 
-    /**
-     * Construire le contenu du message avec texte et liens
-     */
-    static buildMessageContent(
-        textContent: string,
-        uploadedFiles: UploadedAttachment[]
-    ): MessageContent[] {
-        const messages: MessageContent[] = [];
+    // Ajouter les liens des fichiers uploadés
+    uploadedFiles.forEach(file => {
+      messages.push({
+        type: 'link',
+        content: file.url
+      });
+    });
 
-        // Ajouter le texte si présent
-        if (textContent.trim()) {
-            messages.push({
-                type: 'text',
-                content: textContent.trim()
-            });
-        }
+    console.log('messages', messages);
 
-        console.log('uploadedFiles', uploadedFiles);
+    return messages;
+  }
 
-        // Ajouter les liens des fichiers uploadés
-        uploadedFiles.forEach(file => {
-            messages.push({
-                type: 'link',
-                content: file.url
-            });
-        });
-
-        console.log('messages', messages);
-
-        return messages;
+  /**
+   * Envoyer une réponse simple (sans validation)
+   */
+  static async sendReply(guid: string, payload: SendReplyPayload): Promise<any> {
+    try {
+      return await apiRequest<ApiResponse>({
+        path: `${baseUrl}/reply/${guid}`,
+        method: 'PATCH',
+        data: payload,
+      });
     }
-
-    /**
-     * Envoyer une réponse simple (sans validation)
-     */
-    static async sendReply(guid: string, payload: SendReplyPayload): Promise<any> {
-        try {
-            return await apiRequest<ApiResponse>({
-                path: `${baseUrl}/reply/${guid}`,
-                method: 'PATCH',
-                data: payload,
-            });
-        }
-        catch (error: any) {
-            return error;
-        }
+    catch (error: any) {
+      return error;
     }
+  }
 
-    /**
-     * Valider un mémo (approuver ou rejeter)
-     */
-    static async validateMemo(guid: string, user: string): Promise<any> {
-        try {
-            return await apiRequest<ApiResponse>({
-                path: `${baseUrl}/validate/${guid}`,
-                method: 'PATCH',
-                data: {validator_user: user},
-            });
+  /**
+   * Valider un mémo (approuver ou rejeter)
+   */
+  static async createMemo(memo: CreateMemo): Promise<any> {
+    try {
+      console.log('memo data', memo);
+      return await apiRequest<ApiResponse>({
+        path: `${baseUrl}/memo`,
+        method: 'POST',
+        data: {
+        author_user: memo.user_author,
+        target_user: memo.target_user,
+        memo_type: memo.type,
+        title: memo.title,
+        memo_content: [
+        {
+          user: memo.user_author,
+          message: memo.message
         }
-        catch (error: any) {
-            return error;
-        }
+      ]
+        },
+      });
     }
+    catch (error: any) {
+      return error;
+    }
+  }
 
-    static async rejetMemo(guid: string, user: string): Promise<any> {
-        try {
-            return await apiRequest<ApiResponse>({
-                path: `${baseUrl}/reject/${guid}`,
-                method: 'PATCH',
-                data: {validator_user: user},
-            });
-        }
-        catch (error: any) {
-            return error;
-        }
-    }
+  static async validateMemo(guid: string, user: string): Promise<ApiResponse> {
+    try {
+      // Appel normal de l'API
+      return await apiRequest<ApiResponse>({
+        path: `${baseUrl}/validate/${guid}`,
+        method: 'PATCH',
+        data: { validator_user: user },
+      });
+    } catch (error: any) {
+      console.error(
+        'recuperation Axios:',
+        error.response?.data?.error?.message, error.response?.data?.message, error.message
+      )
+      if (error.response && error.response.data) {
+        console.error('Erreur renvoyée par l’API:', error.response.data);
+        return error.response.data;
+      }
 
-    /**
-     * Upload audio (Blob) et retourner l'URL
-     */
-    static async uploadAudioBlob(audioBlob: Blob, filename: string = 'audio.webm'): Promise<UploadedAttachment> {
-        const file = new File([audioBlob], filename, { type: audioBlob.type });
-        return await MemoService.uploadFile(file);
+      // Si pas de réponse serveur
+      return {
+        success: false,
+        error: {
+          code: 'unknown_error',
+          message: error.message || 'Erreur inconnue'
+        }
+      };
     }
+  }
+
+
+
+  static async rejetMemo(guid: string, user: string): Promise<any> {
+    try {
+      return await apiRequest<ApiResponse>({
+        path: `${baseUrl}/rejet/${guid}`,
+        method: 'PATCH',
+        data: {validator_user: user},
+      });
+    }
+    catch (error: any) {
+      return error;
+    }
+  }
+
+  /**
+   * Upload audio (Blob) et retourner l'URL
+   */
+  static async uploadAudioBlob(audioBlob: Blob, filename: string = 'audio.webm'): Promise<UploadedAttachment> {
+    const file = new File([audioBlob], filename, { type: audioBlob.type });
+    return await MemoService.uploadFile(file);
+  }
+
+
+  static async listMemo(managerGuid: string): Promise<ApiResponse> {
+    try {
+      return await apiRequest<ApiResponse>({
+        path: `${baseUrl}/memo/list?supervisor=${managerGuid}`,
+        method: 'GET',
+      });
+    } catch (error: any) {
+      console.error('❌ Erreur lors de la récupération des subordonnés:', error);
+      throw error;
+    }
+  }
+
 }

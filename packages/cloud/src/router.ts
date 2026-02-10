@@ -13,16 +13,17 @@ import AssiduteDuJour from './views/AssiduteDuJour.vue'
 import Equipe from './views/equipe.vue'
 import MemoList from './views/memo/memoList.vue'
 import EmployeeDetails from './views/EmployeeDetails.vue'
-import Planning from './views/planning.vue'
+import Schedule from './views/schedule/schedule.vue'
 import Profile from './views/profile.vue'
 import EmployeeForm from './views/employeeForm.vue'
 import Setting from './views/setting.vue'
 import MemoDetails from './views/memo/memoDetails.vue';
+import ProfileCard from './views/profileCard.vue';
 import Site from './views/site/site.vue';
 import Edit from './views/site/siteForm.vue';
 import MapVue from './views/site/map.vue';
 
-import { useUserStore } from '@/composables/userStore'
+import { useUserStore } from '@/stores/userStore'
 
 
 const routes: RouteRecordRaw[] = [
@@ -79,28 +80,6 @@ const routes: RouteRecordRaw[] = [
     name: 'equipe',
     component: Equipe,
     meta: { requiresAuth: true },
-  },{
-    path: '/sites',
-    name: 'sites',
-    component: Site,
-    meta: { requiresAuth: true },
-  },{
-    path: '/sites/edit',
-    name: 'edit',
-    component: Edit,
-    meta: { requiresAuth: false },
-  },
-    {
-    path: '/sites/add',
-    name: 'add',
-    component: Edit,
-    meta: { requiresAuth: true },
-  },
-    {
-    path: '/sites/map',
-    name: 'map',
-    component: MapVue,
-    meta: { requiresAuth: true },
   },
   {
     path: '/memoList',
@@ -109,15 +88,15 @@ const routes: RouteRecordRaw[] = [
     meta: { requiresAuth: true },
   },
   {
-    path: '/memoDetails/:id',
+    path: '/memoDetails/:guid',
     name: 'memoDetails',
     component: MemoDetails,
     meta: { requiresAuth: true },
   },
   {
-    path: '/planning',
-    name: 'planning',
-    component: Planning,
+    path: '/schedule',
+    name: 'schedule',
+    component: Schedule,
     meta: { requiresAuth: true },
   },
   {
@@ -127,8 +106,8 @@ const routes: RouteRecordRaw[] = [
     meta: { requiresAuth: true },
   },
   {
-    path: '/equipe/:employeeId',
-    name: 'employee-details',
+    path: '/employeeDetails/:id',
+    name: 'employeeDetails',
     component: EmployeeDetails,
     meta: { requiresAuth: true },
   },
@@ -146,6 +125,37 @@ const routes: RouteRecordRaw[] = [
     meta: { requiresAuth: true },
 
   },
+  {
+    path: '/profileCard/:id',
+    name: 'profileCard',
+    component: ProfileCard,
+    meta: { requiresAuth: true },
+
+  },
+  {
+    path: '/sites',
+    name: 'sites',
+    component: Site,
+    meta: { requiresAuth: true },
+  },{
+    path: '/sites/edit',
+    name: 'edit',
+    component: Edit,
+    meta: { requiresAuth: false },
+  },
+  {
+    path: '/sites/add',
+    name: 'add',
+    component: Edit,
+    meta: { requiresAuth: true },
+  },
+  {
+    path: '/sites/map',
+    name: 'map',
+    component: MapVue,
+    meta: { requiresAuth: true },
+  },
+
 ]
 
 export const router = createRouter({
@@ -208,7 +218,7 @@ export default router
 // import MemoList from './views/memo/memoList.vue';
 // import MemoDetail from './views/memo/memoDetail.vue';
 // import EmployeeDetails from './views/EmployeeDetails.vue';
-// import Planning from './views/planning.vue';
+// import Schedule from './views/schedule.vue';
 // import employeeForm from './views/employeeForm.vue';
 //
 // // Typage explicite des routes
@@ -281,7 +291,7 @@ export default router
 //   {
 //     path: '/planning',
 //     name: 'planning',
-//     component: Planning
+//     component: Schedule
 //   },
 //   {
 //     path: '/employeeForm',

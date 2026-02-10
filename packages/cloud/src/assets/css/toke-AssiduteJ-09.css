@@ -262,15 +262,15 @@
 }
 
 .modal-action-memo:hover {
-    background-color: #003e8c;
+    background-color: var(--color-primary);
 }
 
 .modal-action-warn {
-    background-color: #ff8c00;
+    background-color: var(--color-warning);
 }
 
 .modal-action-warn:hover {
-    background-color: #e67e00;
+    background-color: var(--color-warning);
 }
 
 /* ========================================

@@ -1,10 +1,15 @@
 <template>
   <div class="modal-overlay-wrapper">
+    <!-- Bouton de retour -->
     <a href="/dashboard" @click.prevent="goBack" class="back-arrow-link">
       <IconArrowLeft />
     </a>
 
     <div class="modal-attendance-card">
+      <!-- Bouton de fermeture (croix) à l'intérieur du modal -->
+      <button @click="closeModal" class="modal-close-btn" aria-label="Fermer">
+        <IconX />
+      </button>
       <div class="modal-profile-summary">
         <div class="modal-header">
           <div v-if="employee.avatar"
@@ -27,7 +32,7 @@
       </div>
 
       <div class="modal-info-grid">
-        <!-- ======= EMPLOYÉ PRÉSENT OU EN RETARD ======= -->
+        <!-- EMPLOYÉ PRÉSENT OU EN RETARD -->
         <div v-if="employee.status === 'present' || employee.status === 'late'"
              class="modal-info-item modal-arrival-time">
           <IconClock class="modal-info-icon" />
@@ -39,7 +44,7 @@
           </div>
         </div>
 
-        <!-- ======= EMPLOYÉ EN RETARD ======= -->
+        <!-- EMPLOYÉ EN RETARD -->
         <div v-if="employee.status === 'late'"
              class="modal-info-item modal-late-detail">
           <IconAlertTriangle class="modal-info-icon" />
@@ -61,7 +66,7 @@
           </div>
         </div>
 
-        <!-- ======= EMPLOYÉ ABSENT ======= -->
+        <!-- EMPLOYÉ ABSENT -->
         <div v-if="employee.status === 'absent'"
              class="modal-info-item modal-absence-detail">
           <IconCalendarOff class="modal-info-icon" />
@@ -83,7 +88,7 @@
           </div>
         </div>
 
-        <!-- ======= JOUR DE REPOS ======= -->
+        <!-- JOUR DE REPOS -->
         <div v-if="employee.status === 'off-day'"
              class="modal-info-item modal-location-detail">
           <IconCalendarOff class="modal-info-icon" />
@@ -95,7 +100,7 @@
           </div>
         </div>
 
-        <!-- ======= EMPLOYÉ EN FORMATION/CONGÉ ======= -->
+        <!-- EMPLOYÉ EN FORMATION/CONGÉ -->
         <div v-if="employee.status === 'info' && employee.location"
              class="modal-info-item modal-location-detail">
           <IconMapPin class="modal-info-icon" />
@@ -126,7 +131,7 @@
       <hr class="modal-separator" />
 
       <div class="modal-quick-actions">
-        <!-- N'afficher "Justifier l'absence" QUE si l'absence n'est pas justifiée -->
+        <!-- Justifier l'absence -->
         <button v-if="employee.status === 'absent' && !employee.isJustified"
                 class="modal-action-btn modal-action-justify"
                 :disabled="actionLoading"
@@ -135,7 +140,7 @@
           {{ actionLoading ? 'Traitement...' : 'Justifier l\'absence' }}
         </button>
 
-        <!-- Afficher "Valider le retard" seulement si pas encore validé -->
+        <!-- Valider le retard -->
         <button v-if="employee.status === 'late' && !employee.isValidated"
                 class="modal-action-btn modal-action-validate"
                 :disabled="actionLoading"
@@ -144,14 +149,14 @@
           {{ actionLoading ? 'Validation...' : 'Valider le retard' }}
         </button>
 
-        <!-- Bouton Mémo toujours disponible -->
+        <!-- Bouton Mémo -->
         <button class="modal-action-btn modal-action-memo"
                 :disabled="actionLoading"
                 @click="handleAction('memo')">
           <IconMessage class="modal-btn-icon" /> Envoyer un mémo
         </button>
 
-        <!-- Avertir seulement pour les retards et absences non justifiées -->
+        <!-- Avertir -->
         <button v-if="(employee.status === 'late' && !employee.isValidated) ||
                        (employee.status === 'absent' && !employee.isJustified)"
                 class="modal-action-btn modal-action-warn"
@@ -189,7 +194,7 @@ import {
   IconMessage,
   IconAlertOctagon,
   IconMail,
-  // IconIdCard
+  IconX
 } from '@tabler/icons-vue'
 
 interface Employee {
@@ -212,6 +217,7 @@ interface Employee {
   email?: string
   position?: string
   avatar?: string
+  guid?: string
 }
 
 const router = useRouter()
@@ -249,13 +255,16 @@ const formatTime = (time?: string): string => {
 }
 
 const viewFullProfile = () => {
-  router.push({
-    name: 'employee-full-profile',
-    params: { employeeId: props.employee.id }
-  })
+  // Navigation vers la page de détails de l'employé
+  const employeeId = props.employee.guid || props.employee.id
+  router.push(`/employeeDetails/${employeeId}`)
 }
 
 const goBack = () => {
+  emit('close')
+}
+
+const closeModal = () => {
   emit('close')
 }
 
@@ -263,46 +272,47 @@ const handleAction = async (actionType: 'justify' | 'validate' | 'memo' | 'warn'
   actionLoading.value = true
 
   try {
-    // Simuler un délai d'API
-    await new Promise(resolve => setTimeout(resolve, 1000))
+    await new Promise(resolve => setTimeout(resolve, 500))
 
     switch (actionType) {
       case 'justify':
         console.log(`Justification de l'absence pour ${props.employee.name}`)
         // TODO: Appeler l'API pour justifier l'absence
-        // await AbsenceService.justify(props.employee.id, justificationData)
         break
 
       case 'validate':
         console.log(`Validation du retard pour ${props.employee.name}`)
         // TODO: Appeler l'API pour valider le retard
-        // await AttendanceService.validateLate(props.employee.id)
         break
 
       case 'memo':
-        console.log(`Ouverture du mémo pour ${props.employee.name}`)
+        console.log('📨 Envoi mémo pour:', props.employee.name, props.employee.id)
+        // Navigation vers la page de mémo avec les données de l'employé
         router.push({
-          name: 'memo',
-          params: { employeeId: props.employee.id }
+          name: 'memoNew',
+          params: {
+            employeeId: props.employee.id || props.employee.guid
+          },
+          query: {
+            employeeName: props.employee.name,
+            employeeEmail: props.employee.email
+          }
         })
-        break
+        return // Pas besoin de fermer le modal car on navigue
 
       case 'warn':
         console.log(`Avertissement pour ${props.employee.name}`)
         // TODO: Appeler l'API pour envoyer un avertissement
-        // await WarningService.send(props.employee.id)
         break
     }
 
     // Émettre l'événement pour rafraîchir les données si nécessaire
     emit('actionCompleted', actionType, props.employee.id)
 
-    // Fermer le modal après l'action (sauf pour le mémo qui navigue)
-    if (actionType !== 'memo') {
-      setTimeout(() => {
-        emit('close')
-      }, 500)
-    }
+    // Fermer le modal après l'action
+    setTimeout(() => {
+      emit('close')
+    }, 500)
   } catch (error) {
     console.error('Erreur lors de l\'action:', error)
     alert('Une erreur est survenue. Veuillez réessayer.')
@@ -328,7 +338,7 @@ const handleAction = async (actionType: 'justify' | 'validate' | 'memo' | 'warn'
   justify-content: center;
   font-size: 1.5rem;
   font-weight: 600;
-  background: #3b82f6;
+  background: var(--color-primary);
   color: white;
   background-size: cover;
   background-position: center;
@@ -384,193 +394,37 @@ const handleAction = async (actionType: 'justify' | 'validate' | 'memo' | 'warn'
 .modal-attendance-card {
   position: relative;
 }
+
+/* Bouton de fermeture (croix) - à l'intérieur du modal */
+.modal-close-btn {
+  position: absolute;
+  top: 1rem;
+  right: 1rem;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: #f3f4f6;
+  border: 1px solid #e5e7eb;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  z-index: 10;
+}
+
+.modal-close-btn:hover {
+  background: #e5e7eb;
+  border-color: #d1d5db;
+}
+
+.modal-close-btn:active {
+  transform: scale(0.95);
+}
+
+.modal-close-btn svg {
+  width: 20px;
+  height: 20px;
+  color: #6b7280;
+}
 </style>
-
-<!--<template>-->
-<!--  <div class="modal-overlay-wrapper">-->
-<!--    <a href="/dashboard" @click.prevent="goBack" class="back-arrow-link">-->
-<!--      <IconArrowLeft />-->
-<!--    </a>-->
-
-<!--    <div class="modal-attendance-card">-->
-<!--      <div class="modal-profile-summary">-->
-<!--        <div class="modal-header">-->
-<!--          <div class="modal-avatar">{{ employee.initials || employee.name.substring(0, 2) }}</div>-->
-<!--          <h3 class="modal-employee-name">{{ employee.name }}</h3>-->
-<!--        </div>-->
-<!--        <span :class="['modal-status-badge', 'status-' + employee.status]">-->
-<!--            {{ employee.statusText }}-->
-<!--          </span>-->
-<!--      </div>-->
-
-<!--      <div class="modal-info-grid">-->
-<!--        &lt;!&ndash; ======= EMPLOYÉ PRÉSENT OU EN RETARD ======= &ndash;&gt;-->
-<!--        <div v-if="employee.status === 'present' || employee.status === 'late'" class="modal-info-item modal-arrival-time">-->
-<!--          <IconClock class="modal-info-icon" />-->
-<!--          <div>-->
-<!--            <span class="modal-info-label">Heure d'arrivée</span>-->
-<!--            <span class="modal-info-value">{{ employee.checkInTime || employee.time || 'Non spécifiée' }}</span>-->
-<!--          </div>-->
-<!--        </div>-->
-
-<!--        &lt;!&ndash; ======= EMPLOYÉ EN RETARD ======= &ndash;&gt;-->
-<!--        <div v-if="employee.status === 'late'" class="modal-info-item modal-late-detail">-->
-<!--          <IconAlertTriangle class="modal-info-icon" />-->
-<!--          <div>-->
-<!--            <span class="modal-info-label">Durée du retard</span>-->
-<!--            <span class="modal-info-value modal-info-value-warning">{{ employee.lateDuration || employee.lateTime || 'N/A' }}</span>-->
-<!--          </div>-->
-<!--        </div>-->
-
-<!--        &lt;!&ndash; MOTIF DU RETARD &ndash;&gt;-->
-<!--        <div v-if="employee.status === 'late' && employee.motif" class="modal-info-item modal-location-detail">-->
-<!--          <IconNote class="modal-info-icon" />-->
-<!--          <div>-->
-<!--            <span class="modal-info-label">Motif du retard</span>-->
-<!--            <span class="modal-info-value">{{ employee.motif }}</span>-->
-<!--          </div>-->
-<!--        </div>-->
-
-<!--        &lt;!&ndash; ======= EMPLOYÉ ABSENT ======= &ndash;&gt;-->
-<!--        <div v-if="employee.status === 'absent'" class="modal-info-item modal-absence-detail">-->
-<!--          <IconCalendarOff class="modal-info-icon" />-->
-<!--          <div>-->
-<!--            <span class="modal-info-label">Motif de l'absence</span>-->
-<!--            <span class="modal-info-value modal-info-value-critical">-->
-<!--                {{ employee.absenceReason || employee.absenceType || 'Non justifiée' }}-->
-<!--              </span>-->
-<!--          </div>-->
-<!--        </div>-->
-
-<!--        &lt;!&ndash; ======= EMPLOYÉ EN FORMATION/CONGÉ ======= &ndash;&gt;-->
-<!--        <div v-if="employee.status === 'info' && employee.location" class="modal-info-item modal-location-detail">-->
-<!--          <IconMapPin class="modal-info-icon" />-->
-<!--          <div>-->
-<!--            <span class="modal-info-label">Détails</span>-->
-<!--            <span class="modal-info-value">{{ employee.location }}</span>-->
-<!--          </div>-->
-<!--        </div>-->
-<!--      </div>-->
-
-<!--      <hr class="modal-separator" />-->
-
-<!--      <div class="modal-quick-actions">-->
-<!--        &lt;!&ndash; N'afficher "Justifier l'absence" QUE si l'absence n'est pas justifiée &ndash;&gt;-->
-<!--        <button v-if="employee.status === 'absent' && !employee.isJustified"-->
-<!--                class="modal-action-btn modal-action-justify"-->
-<!--                @click="handleAction('justify')">-->
-<!--          <IconNote class="modal-btn-icon" /> Justifier l'absence-->
-<!--        </button>-->
-
-<!--        &lt;!&ndash; Afficher "Valider le retard" seulement si pas encore validé &ndash;&gt;-->
-<!--        <button v-if="employee.status === 'late' && !employee.isValidated"-->
-<!--                class="modal-action-btn modal-action-validate"-->
-<!--                @click="handleAction('validate')">-->
-<!--          <IconCheck class="modal-btn-icon" /> Valider le retard-->
-<!--        </button>-->
-
-<!--        &lt;!&ndash; Bouton Mémo toujours disponible &ndash;&gt;-->
-<!--        <button class="modal-action-btn modal-action-memo"-->
-<!--                @click="handleAction('memo')">-->
-<!--          <IconMessage class="modal-btn-icon" /> Envoyer un mémo-->
-<!--        </button>-->
-
-<!--        &lt;!&ndash; Avertir seulement pour les retards et absences non justifiées &ndash;&gt;-->
-<!--        <button v-if="(employee.status === 'late' && !employee.isValidated) || (employee.status === 'absent' && !employee.isJustified)"-->
-<!--                class="modal-action-btn modal-action-warn"-->
-<!--                @click="handleAction('warn')">-->
-<!--          <IconAlertOctagon class="modal-btn-icon" /> Avertir l'employé-->
-<!--        </button>-->
-<!--      </div>-->
-
-<!--      <button @click="viewFullProfile" class="modal-full-profile-link">-->
-<!--        <IconUserCircle class="modal-link-icon" /> Voir le profil complet-->
-<!--      </button>-->
-<!--    </div>-->
-<!--  </div>-->
-<!--</template>-->
-
-<!--<script setup lang="ts">-->
-<!--import { defineProps, ref } from 'vue';-->
-<!--import { useRouter } from 'vue-router';-->
-<!--import "../assets/css/toke-AssiduteJ-09.css";-->
-<!--import {-->
-<!--  IconArrowLeft,-->
-<!--  IconClock,-->
-<!--  IconAlertTriangle,-->
-<!--  IconMapPin,-->
-<!--  IconCalendarOff,-->
-<!--  IconCheck,-->
-<!--  IconNote,-->
-<!--  IconUserCircle,-->
-<!--  IconMessage,-->
-<!--  IconAlertOctagon-->
-<!--} from '@tabler/icons-vue';-->
-
-<!--interface Employee {-->
-<!--  id: number;-->
-<!--  name: string;-->
-<!--  status: 'absent' | 'late' | 'present' | 'info';-->
-<!--  statusText: string;-->
-<!--  time?: string;-->
-<!--  checkInTime?: string;-->
-<!--  lateTime?: string;-->
-<!--  lateDuration?: string;-->
-<!--  absenceType?: string;-->
-<!--  absenceReason?: string;-->
-<!--  motif?: string;-->
-<!--  isJustified?: boolean;-->
-<!--  isValidated?: boolean;-->
-<!--  initials?: string;-->
-<!--  location?: string;-->
-<!--  matricule?: string;-->
-<!--  email?: string;-->
-<!--  position?: string;-->
-<!--}-->
-
-<!--const router = useRouter();-->
-<!--const loading = ref(false);-->
-
-<!--const props = defineProps<{-->
-<!--  employee: Employee-->
-<!--}>();-->
-
-<!--const emit = defineEmits<{-->
-<!--  close: []-->
-<!--}>();-->
-
-<!--const viewFullProfile = () => {-->
-<!--  router.push({-->
-<!--    name: 'employee-full-profile',-->
-<!--    params: { employeeId: props.employee.id },-->
-<!--  });-->
-<!--};-->
-
-<!--const goBack = () => {-->
-<!--  emit('close');-->
-<!--};-->
-
-<!--const handleAction = (actionType: 'justify' | 'validate' | 'memo' | 'warn') => {-->
-<!--  switch (actionType) {-->
-<!--    case 'justify':-->
-<!--      alert(`Justification de l'absence pour ${props.employee.name} en cours...`);-->
-<!--      // Émettre un événement pour mettre à jour l'employé-->
-<!--      // emit('action-justified', props.employee.id);-->
-<!--      break;-->
-<!--    case 'validate':-->
-<!--      alert(`Retard de ${props.employee.name} validé !`);-->
-<!--      // emit('action-validated', props.employee.id);-->
-<!--      break;-->
-<!--    case 'memo':-->
-<!--      alert(`Ouverture de la fenêtre de mémo pour ${props.employee.name}...`);-->
-<!--      // router.push({ name: 'memo', params: { employeeId: props.employee.id } });-->
-<!--      break;-->
-<!--    case 'warn':-->
-<!--      alert(`Avertissement formel généré pour ${props.employee.name}.`);-->
-<!--      break;-->
-<!--  }-->
-<!--};-->
-<!--</script>-->
-
-<!--<style scoped>-->
-<!--</style>-->

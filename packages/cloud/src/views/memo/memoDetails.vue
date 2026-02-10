@@ -1,82 +1,5 @@
 <template>
-<!--  <div class="flex h-screen bg-gray-50 ">-->
-    <!-- SIDEBAR -->
-<!--    <div class="flex-shrink-0 w-[22rem] bg-white border-r flex transition-all">-->
-<!--      <div class="bg-transparent flex flex-col transition-all h-screen space-y-20">-->
-<!--        &lt;!&ndash; HEADER &ndash;&gt;-->
-<!--        <div class="p-3 scale-75 bg-gradient-to-r text-white">-->
-<!--            <div class="flex justify-between">-->
-<!--              <img :src="Logo" alt="Logo" class="w-16 h-16 object-cover"></img>-->
-<!--            </div>-->
-<!--        </div>-->
-
-<!--        &lt;!&ndash; LISTE EMPLOYÉS &ndash;&gt;-->
-<!--        <div class="grid grid-flow-row auto-rows-max p-2 space-y-2">-->
-<!--          <div class="flex flex-col justify-start items-center space-y-2 h-full">-->
-<!--            <div class="flex justify-center items-center rounded-2xl p-3 bg-blue-500/20">-->
-<!--              <IconUsers size="20" />-->
-<!--            </div>-->
-<!--          </div>-->
-<!--          <div class="flex flex-col justify-start items-center space-y-2 h-full">-->
-<!--            <div class="flex justify-center items-center rounded-2xl p-3 bg-blue-500/20">-->
-<!--              <IconBuildingCommunity size="20" />-->
-<!--            </div>-->
-<!--          </div>-->
-<!--          <div class="flex flex-col justify-start items-center space-y-2 h-full">-->
-<!--            <div class="flex justify-center items-center rounded-2xl p-3 bg-blue-500/20">-->
-<!--              <IconEye size="20" />-->
-<!--            </div>-->
-<!--          </div>-->
-<!--        </div>-->
-
-<!--      </div>-->
-<!--      <div :class="[sidebarCollapsed ? 'w-20' : 'w-[22rem]', 'rounded-xl bg-white border-l flex flex-col transition-all']">-->
-<!--        &lt;!&ndash; HEADER &ndash;&gt;-->
-<!--        <div class="p-4 border-b bg-gradient-to-r from-blue-900 to-blue-700 via-blue-800 text-white">-->
-<!--          <div v-if="!sidebarCollapsed">-->
-<!--            <div class="flex justify-between mb-3">-->
-<!--              <h1 class="text-xl font-bold">Mémos</h1>-->
-<!--              <IconDotsVertical class="cursor-pointer" @click="sidebarCollapsed = true" />-->
-<!--            </div>-->
-
-<!--            <div class="bg-white/10 rounded-lg p-3 mb-3 flex justify-between">-->
-<!--              <div class="flex gap-2 items-center">-->
-<!--                <IconClock size="18" /> En attente-->
-<!--              </div>-->
-<!--              <span class="text-xl font-bold">{{ totalMemosEnAttente }}</span>-->
-<!--            </div>-->
-
-<!--            <div class="relative">-->
-<!--              <IconSearch class="absolute left-3 top-1/2 -translate-y-1/2 opacity-60" size="18"/>-->
-<!--              <input v-model="searchTerm"-->
-<!--                     placeholder="Rechercher un employé..."-->
-<!--                     class="w-full pl-9 pr-3 py-2 rounded-lg bg-white/10 outline-none" />-->
-<!--            </div>-->
-<!--          </div>-->
-
-<!--          <IconUsers v-else class="mx-auto cursor-pointer" size="26" @click="sidebarCollapsed=false"/>-->
-<!--        </div>-->
-
-<!--        &lt;!&ndash; LISTE EMPLOYÉS &ndash;&gt;-->
-<!--        <div class="flex-1  overflow-y-auto">-->
-<!--          <div v-for="emp in employesFiltres" :key="emp.id"-->
-<!--               @click="employeSelectionne = emp"-->
-<!--               class="p-4 border-b hover:bg-gray-50 cursor-pointer">-->
-
-<!--            <div class="flex gap-3 items-center">-->
-<!--              <div class="w-10 h-10 rounded-full bg-blue-600 flex items-center justify-center text-white font-bold">-->
-<!--                {{ getInitiales(emp.nom) }}-->
-<!--              </div>-->
-<!--              <div v-if="!sidebarCollapsed">-->
-<!--                <p class="font-semibold">{{ emp.nom }}</p>-->
-<!--                <p class="text-xs text-gray-500">{{ emp.code }} • {{ emp.departement }}</p>-->
-<!--              </div>-->
-<!--            </div>-->
-<!--          </div>-->
-<!--        </div>-->
-<!--      </div>-->
-<!--    </div>-->
-  <div class="detail-memo-chat w-full">
+  <div class="detail-memo-chat">
     <!-- En-tête -->
     <div class="chat-header">
       <button @click="retourListe" class="btn-retour">
@@ -152,6 +75,7 @@
                 <span class="message-time">{{ formatDate(message.dateEnvoi) }}</span>
               </div>
               <div class="message-bubble" :class="message.type === 'validation' ? `validation-${memo.statut}` : ''">
+
                 <!-- En-tête pour les messages de validation -->
                 <div v-if="message.type === 'validation'" class="validation-header">
                   <span class="validation-icon">{{ memo.statut === 'approved' ? '✅' : '❌' }}</span>
@@ -220,11 +144,11 @@
 <!--                    </svg>-->
 <!--&lt;!&ndash;                    <span>Créé le {{ formatDateShort(memo.dateCreation) }}</span>&ndash;&gt;-->
 <!--                  </div>-->
-                  <div v-if="memo.incidentDateTime" class="meta-item">
+                  <div v-if="memo.dateIncident" class="meta-item">
                     <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" class="meta-icon">
                       <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
                     </svg>
-                    <span>Incident: {{ formatDateShort(memo.incidentDateTime) }}</span>
+                    <span>Incident: {{ formatDateShort(memo.dateIncident) }}</span>
                   </div>
               </div>
             </div>
@@ -482,29 +406,6 @@
           </button>
         </div>
       </div>
-      <!-- Indicateur de progression d'upload -->
-      <div v-if="isUploadingFiles && uploadProgress" class="upload-progress-container">
-        <div class="upload-progress-bar">
-          <div class="upload-progress-fill"
-               :style="{ width: `${(uploadProgress.current / uploadProgress.total) * 100}%` }">
-          </div>
-        </div>
-        <p class="upload-progress-text">
-          Upload en cours... {{ uploadProgress.current }} / {{ uploadProgress.total }} fichiers
-        </p>
-      </div>
-
-      <!-- Limite de fichiers dans la zone de saisie -->
-      <div v-if="peutValider" class="chat-input-area">
-        <div class="input-wrapper">
-          <!-- Badge compteur de fichiers -->
-          <div v-if="fichiers.length > 0 || audioBlob" class="files-counter-badge">
-            {{ fichiers.length + (audioBlob ? 1 : 0) }} / 8
-          </div>
-
-          <!-- ... reste du code existant ... -->
-        </div>
-      </div>
     </div>
 
     <!-- Modal pour voir les images -->
@@ -519,30 +420,20 @@
       </div>
     </div>
   </div>
-<!--  </div>-->
 </template>
 
 <script setup lang="ts">
 import { ref, computed, onMounted, onUnmounted, nextTick, reactive } from 'vue';
 import { useRoute } from 'vue-router';
-import { useUserStore } from '@/composables/userStore';
+import { useUserStore } from '@/stores/userStore';
 import HeadBuilder from '@/utils/HeadBuilder';
 import router from '@/router';
-import UserService from '../../service/UserService';
-import type { Status, Item2 as ApiMemo, MemoContent } from '@/utils/interfaces/team.interface';
 import AuthenticatedMedia from '../../views/memo/AuthenticatedMedia.vue';
-import memoDetailChatCss from "../../assets/css/toke-employee-detail13.css?url";
+import memoDetailChatCss from "../../assets/css/toke-memoDetails-19.css?url";
+import { useMemoStore, type Memo, type MemoContent } from '@/stores/memoStore';
 import MemoService, {
   MessageContent,
-  UploadedAttachment,
-  UploadFileResponse,
-  UploadMultipleResponse
 } from '@/service/MemoService';
-// import {IconClock, IconDotsVertical, IconSearch, IconUsers, IconBuildingCommunity, IconEye} from "@tabler/icons-vue";
-// import Logo from '@/assets/images/logo.png';
-// const logo = Logo;
-//
-// const sidebarCollapsed = ref(false)
 
 // Interfaces
 interface AttachedFile {
@@ -561,28 +452,6 @@ interface ConversationMessage {
   type: 'initial' | 'response' | 'validation';
 }
 
-interface Memo {
-  guid: string;
-  titre: string;
-  contenu: string;
-  type: string;
-  statut: string;
-  dateCreation: Date;
-  dateModification?: Date;
-  dateValidation?: Date;
-  createurId: string;
-  createurNom: string;
-  destinataireId: string;
-  destinataireNom: string;
-  estMemoGeneral: boolean;
-  fichiersAttaches: AttachedFile[];
-  commentaireValidation?: string;
-  incidentDateTime?: Date;
-  messagesCount: number;
-  autoGenerated: boolean;
-  memoContent: MemoContent[];
-}
-
 interface ReponseEnvoyee {
   contenu: string;
   fichiers: File[];
@@ -594,8 +463,9 @@ interface ReponseEnvoyee {
 
 // Route et Store
 const route = useRoute();
-const memoId = computed(() => route.params.id as string);
+const memoId = computed(() => route.params.guid as string);
 const userStore = useUserStore();
+const memoStore = useMemoStore();
 const managerGuid = computed(() => userStore.user?.guid || '');
 
 // État
@@ -820,43 +690,6 @@ const extractMemoContent = (memoContent: MemoContent[]): string => {
   return contenuParts.join('\n\n') || 'Aucun contenu textuel';
 };
 
-const transformApiMemo = (apiMemo: ApiMemo, employeeStatus: Status): Memo => {
-  const memoContent = apiMemo.memo_content || [];
-  const latestMessage = apiMemo.latest_message;
-
-  let commentaireValidation = '';
-  if (latestMessage && latestMessage.type === 'validation') {
-    commentaireValidation = latestMessage.message
-      .filter(msg => msg.type === 'text')
-      .map(msg => msg.content)
-      .join('\n');
-  }
-
-  return {
-    guid: apiMemo.guid,
-    titre: apiMemo.title,
-    contenu: extractMemoContent(memoContent),
-    type: apiMemo.memo_type,
-    statut: apiMemo.memo_status,
-    dateCreation: new Date(apiMemo.created_at),
-    dateModification: new Date(apiMemo.updated_at),
-    dateValidation: apiMemo.memo_status === 'approved' || apiMemo.memo_status === 'rejected'
-      ? new Date(apiMemo.updated_at)
-      : undefined,
-    createurId: apiMemo.author_user,
-    createurNom: `${employeeStatus.employee.first_name} ${employeeStatus.employee.last_name}`,
-    destinataireId: apiMemo.target_user,
-    destinataireNom: apiMemo.target_user,
-    estMemoGeneral: false,
-    fichiersAttaches: extractAttachedFiles(memoContent),
-    commentaireValidation: commentaireValidation || undefined,
-    incidentDateTime: apiMemo.incident_date_time ? new Date(apiMemo.incident_date_time) : undefined,
-    messagesCount: apiMemo.messages_count,
-    autoGenerated: apiMemo.auto_generated,
-    memoContent: memoContent
-  };
-};
-
 const chargerMemo = async () => {
   if (!memoId.value || !managerGuid.value) {
     errorMessage.value = 'Données manquantes';
@@ -867,29 +700,29 @@ const chargerMemo = async () => {
   isLoading.value = true;
 
   try {
-    const response = await UserService.listAttendance(managerGuid.value);
+    // 1. Charger tous les mémos si le cache n'est pas valide
+    if (!memoStore.isCacheValid) {
+      await memoStore.loadMemos(managerGuid.value);
+    }
 
-    let allEmployeesStatus = response?.data?.data?.data?.all_employees_status ||
-      response?.data?.data?.all_employees_status ||
-      response?.data?.all_employees_status;
+    // 2. Récupérer le mémo du store
+    const memoFromStore = memoStore.getMemoByGuid(memoId.value);
 
-    if (allEmployeesStatus && Array.isArray(allEmployeesStatus)) {
-      for (const status of allEmployeesStatus) {
-        if (status.memos && status.memos.items && Array.isArray(status.memos.items)) {
-          const foundMemo = status.memos.items.find((m: ApiMemo) => m.guid === memoId.value);
-          if (foundMemo) {
-            memo.value = transformApiMemo(foundMemo, status);
-            scrollToBottom();
-            break;
-          }
-        }
-      }
+    if (memoFromStore) {
+      // Transformer le mémo du store vers le format attendu par le template
+      memo.value = memoFromStore;
 
-      if (!memo.value) {
+      scrollToBottom();
+    } else {
+      // Si non trouvé dans le cache, forcer un refresh
+      const refreshedMemo = await memoStore.refreshMemo(managerGuid.value, memoId.value);
+
+      if (refreshedMemo) {
+        memo.value =refreshedMemo;
+        scrollToBottom();
+      } else {
         errorMessage.value = 'Mémo introuvable';
       }
-    } else {
-      errorMessage.value = 'Structure de données invalide';
     }
   } catch (error: any) {
     console.error('❌ Erreur chargement:', error);
@@ -1012,30 +845,6 @@ const getFormattedDuration = (fileId: string): string => {
   console.log(`🔄 getFormattedDuration appelé pour ${fileId}:`, duration);
   return formatDuration(duration);
 };
-
-// const getFormattedDuration = (fileId: string): string => {
-//   // Lire le trigger pour forcer Vue à recalculer
-//   const _ = audioDurations;
-//
-//   const duration = audioDurations[fileId];
-//   console.log(`🔄 getFormattedDuration appelé pour ${fileId}:`, duration);
-//   return formatDuration(duration);
-// };
-
-
-// Modifier aussi getAudioDuration pour récupérer la vraie durée
-// const getAudioDuration = (fichier: AttachedFile): string => {
-//   const duration = audioDurations.value.get(fichier.id);
-//   return formatDuration(duration);
-// };
-
-// // Gestion des fichiers
-// const ajouterFichiers = (event: Event) => {
-//   const target = event.target as HTMLInputElement;
-//   if (target.files) {
-//     fichiers.value.push(...Array.from(target.files));
-//   }
-// };
 
 const supprimerFichier = (index: number) => {
   fichiers.value.splice(index, 1);
@@ -1296,59 +1105,16 @@ const getWaveformHeight = (index: number, isActive: boolean): string => {
   return `${heights[index % heights.length]}px`;
 };
 
-// Envoyer une réponse
-// const envoyerReponse = async () => {
-//   if (!peutEnvoyerReponse.value || isSubmitting.value) return;
-//
-//   isSubmitting.value = true;
-//
-//   try {
-//     // TODO: Appel API pour envoyer la réponse
-//     await new Promise(resolve => setTimeout(resolve, 1000));
-//
-//     const now = new Date();
-//     const timeString = now.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' });
-//
-//     const audioURLToSave = audioBlob.value ? URL.createObjectURL(audioBlob.value) : null;
-//
-//     reponsesEnvoyees.value.push({
-//       contenu: reponseContenu.value,
-//       fichiers: [...fichiers.value],
-//       audioBlob: audioBlob.value,
-//       audioURL: audioURLToSave,
-//       duration: recordedDuration.value,
-//       timestamp: timeString
-//     });
-//     console.log(peutEnvoyerReponse.value, reponsesEnvoyees.value);
-//
-//     // Réinitialiser
-//     reponseContenu.value = '';
-//     fichiers.value = [];
-//     audioBlob.value = null;
-//     recordedDuration.value = '00:00';
-//     if (audioURL.value) {
-//       URL.revokeObjectURL(audioURL.value);
-//       audioURL.value = '';
-//     }
-//
-//     scrollToBottom();
-//   } catch (error: any) {
-//     console.error('❌ Erreur envoi réponse:', error);
-//     alert('Erreur lors de l\'envoi de la réponse');
-//   } finally {
-//     isSubmitting.value = false;
-//   }
-// };
 const collectAllFiles = async (): Promise<File[]> => {
   const allFiles: File[] = [...fichiers.value];
 
   if (audioBlob.value) {
     allFiles.push(
-        new File(
-            [audioBlob.value],
-            `audio-${Date.now()}.webm`,
-            { type: audioBlob.value.type }
-        )
+      new File(
+        [audioBlob.value],
+        `audio-${Date.now()}.webm`,
+        { type: audioBlob.value.type }
+      )
     );
   }
 
@@ -1376,15 +1142,15 @@ const envoyerReponse = async () => {
 
     // 2️⃣ Upload en une fois
     const uploadedFiles =
-        allFiles.length > 0
-            ? await MemoService.uploadMultipleFiles(allFiles)
-            : [];
+      allFiles.length > 0
+        ? await MemoService.uploadMultipleFiles(allFiles)
+        : [];
     isUploadingFiles.value = false;
 
     // 3️⃣ Construire le message
     const messageContent = MemoService.buildMessageContent(
-        reponseContenu.value,
-        uploadedFiles
+      reponseContenu.value,
+      uploadedFiles
     );
 
     console.log('messageContent', messageContent);
@@ -1424,7 +1190,10 @@ const envoyerReponse = async () => {
 
     scrollToBottom();
 
-    // 7. Recharger le mémo pour avoir les dernières données
+    // 7. Rafraîchir le mémo spécifique dans le store
+    await memoStore.refreshMemo(managerGuid.value, memo.value.guid);
+
+    // Puis recharger localement
     await chargerMemo();
 
   } catch (error: any) {
@@ -1440,7 +1209,7 @@ const envoyerReponse = async () => {
 const approuverMemo = async () => {
   if (!memo.value || isProcessing.value || !managerGuid.value) return;
 
-  if (!confirm('Êtes-vous sûr de vouloir approuver ce mémo ?')) return;
+  if (!confirm) return;
 
   isProcessing.value = true;
   actionType.value = 'approve';
@@ -1458,30 +1227,38 @@ const approuverMemo = async () => {
       const allFiles = await collectAllFiles();
 
       const uploadedFiles =
-          allFiles.length > 0
-              ? await MemoService.uploadMultipleFiles(allFiles)
-              : [];
+        allFiles.length > 0
+          ? await MemoService.uploadMultipleFiles(allFiles)
+          : [];
       messageContent = MemoService.buildMessageContent(
-          reponseContenu.value,
-          uploadedFiles
+        reponseContenu.value,
+        uploadedFiles
       );
     }
 
     isUploadingFiles.value = false;
 
 
-      const contentData = {
-        user: managerGuid.value,
-        message: messageContent
-      }
+    const contentData = {
+      user: managerGuid.value,
+      message: messageContent
+    }
+
+    console.log('Data', memo.value.guid, managerGuid.value);
 
     // Appel API d'approbation
-    const result = await MemoService.validateMemo(memo.value.guid, managerGuid.value);
+   const response = await MemoService.validateMemo(memo.value.guid, managerGuid.value);
+   if (!response.success) {
+     // alert(`Erreur: ${response.error?.message || 'Impossible d\'approuver le mémo'}`);
+     return;
+   }
+    await memoStore.refreshMemo(managerGuid.value, memo.value.guid);
 
     await chargerMemo()
 
-    // alert('Mémo approuvé avec succès !');
-    // retourListe();
+    setTimeout(() => {
+      router.push('/memoList');
+    }, 2500);
 
   } catch (error: any) {
     console.error('❌ Erreur approbation:', error);
@@ -1494,123 +1271,83 @@ const approuverMemo = async () => {
   }
 };
 
-// Remplacer rejeterMemo
-// const rejeterMemo = async () => {
-//   if (!memo.value || isProcessing.value) return;
-//
-//   // Vérifier qu'une réponse a été fournie
-//   if (!reponseContenu.value.trim() && fichiers.value.length === 0 && !audioBlob.value) {
-//     alert('Veuillez ajouter une réponse pour expliquer le rejet');
-//     showValidationPanel.value = false;
-//     return;
-//   }
-//
-//   const confirmer = confirm('Êtes-vous sûr de vouloir rejeter ce mémo ?');
-//   if (!confirmer) return;
-//
-//   isProcessing.value = true;
-//   actionType.value = 'reject';
-//   isUploadingFiles.value = true;
-//
-//   try {
-//     const totalFiles = fichiers.value.length + (audioBlob.value ? 1 : 0);
-//     if (totalFiles > 8) {
-//       throw new Error('Maximum 8 fichiers autorisés');
-//     }
-//
-//     const uploadedFiles: UploadedAttachment[] = [];
-//
-//     // Upload fichiers
-//     if (fichiers.value.length > 0) {
-//       uploadProgress.value = { current: 0, total: fichiers.value.length };
-//       for (let i = 0; i < fichiers.value.length; i++) {
-//         const uploaded = await MemoService.uploadFile(fichiers.value[i]);
-//         uploadedFiles.push(uploaded);
-//         uploadProgress.value.current = i + 1;
-//       }
-//     }
-//
-//     // Upload audio
-//     if (audioBlob.value) {
-//       const audioUploaded = await MemoService.uploadAudioBlob(
-//           audioBlob.value,
-//           `audio-${Date.now()}.webm`
-//       );
-//       uploadedFiles.push(audioUploaded);
-//     }
-//
-//     isUploadingFiles.value = false;
-//
-//     // Construire le message de rejet
-//     const messageContent = MemoService.buildMessageContent(
-//         reponseContenu.value,
-//         uploadedFiles
-//     );
-//
-//     // Appel API de rejet
-//     await MemoService.validateMemo({
-//       memo_guid: memo.value.guid,
-//       action: 'reject',
-//       message: messageContent
-//     });
-//
-//     alert('Mémo rejeté');
-//     retourListe();
-//
-//   } catch (error: any) {
-//     console.error('❌ Erreur rejet:', error);
-//     alert(`Erreur: ${error.message || 'Impossible de rejeter le mémo'}`);
-//   } finally {
-//     isProcessing.value = false;
-//     actionType.value = null;
-//     isUploadingFiles.value = false;
-//     uploadProgress.value = null;
-//   }
-// };
 const rejeterMemo = async () => {
   if (!memo.value || isProcessing.value || !managerGuid.value) return;
+  //
+  // if (!reponseContenu.value.trim() && !fichiers.value.length && !audioBlob.value) {
+  //   alert('Veuillez ajouter une réponse pour expliquer le rejet');
+  //   return;
+  // }
 
-  if (!reponseContenu.value.trim() && !fichiers.value.length && !audioBlob.value) {
-    alert('Veuillez ajouter une réponse pour expliquer le rejet');
-    return;
-  }
-
-  if (!confirm('Êtes-vous sûr de vouloir rejeter ce mémo ?')) return;
+  if (!confirm) return;
 
   isProcessing.value = true;
   actionType.value = 'reject';
   isUploadingFiles.value = true;
 
   try {
-    const totalFiles = fichiers.value.length + (audioBlob.value ? 1 : 0);
-    if (totalFiles > 8) throw new Error('Maximum 8 fichiers autorisés');
+    // const totalFiles = fichiers.value.length + (audioBlob.value ? 1 : 0);
+    // if (totalFiles > 8) throw new Error('Maximum 8 fichiers autorisés');
+    //
+    // const allFiles = await collectAllFiles();
+    //
+    // const uploadedFiles =
+    //   allFiles.length > 0
+    //     ? await MemoService.uploadMultipleFiles(allFiles)
+    //     : [];
+    //
+    // isUploadingFiles.value = false;
+    //
+    // const messageContent = MemoService.buildMessageContent(
+    //   reponseContenu.value,
+    //   uploadedFiles
+    // );
+    //
+    //
+    // const contentData = {
+    //   user: managerGuid.value,
+    //   message: messageContent
+    // }
 
-    const allFiles = await collectAllFiles();
+    let messageContent: MessageContent[] | undefined;
 
-    const uploadedFiles =
+    // Si une réponse a été ajoutée avant l'approbation
+    if (reponseContenu.value.trim() || fichiers.value.length > 0 || audioBlob.value) {
+      const totalFiles = fichiers.value.length + (audioBlob.value ? 1 : 0);
+      if (totalFiles > 8) {
+        throw new Error('Maximum 8 fichiers autorisés');
+      }
+      const allFiles = await collectAllFiles();
+
+      const uploadedFiles =
         allFiles.length > 0
-            ? await MemoService.uploadMultipleFiles(allFiles)
-            : [];
+          ? await MemoService.uploadMultipleFiles(allFiles)
+          : [];
+      messageContent = MemoService.buildMessageContent(
+        reponseContenu.value,
+        uploadedFiles
+      );
+    }
 
     isUploadingFiles.value = false;
 
-    const messageContent = MemoService.buildMessageContent(
-        reponseContenu.value,
-        uploadedFiles
-    );
 
-
-      const contentData = {
-        user: managerGuid.value,
-        message: messageContent
-      }
+    const contentData = {
+      user: managerGuid.value,
+      message: messageContent
+    }
 
     await MemoService.rejetMemo(memo.value.guid, managerGuid.value);
+
+    await memoStore.refreshMemo(managerGuid.value, memo.value.guid);
 
     await chargerMemo()
 
     // alert('Mémo rejeté');
     // retourListe();
+    setTimeout(() => {
+      router.push('/memoList');
+    }, 2000);
 
   } catch (error: any) {
     console.error('❌ Erreur rejet:', error);
@@ -1717,76 +1454,5 @@ onUnmounted(() => {
   max-width: 100%;
   max-height: 80vh;
   object-fit: contain;
-}
-.upload-progress-container {
-  padding: 12px 16px;
-  background: linear-gradient(to right, #f0f9ff, #e0f2fe);
-  border-radius: 8px;
-  margin-top: 12px;
-}
-
-.upload-progress-bar {
-  width: 100%;
-  height: 8px;
-  background-color: #e5e7eb;
-  border-radius: 9999px;
-  overflow: hidden;
-  margin-bottom: 8px;
-}
-
-.upload-progress-fill {
-  height: 100%;
-  background: linear-gradient(to right, #3b82f6, #2563eb);
-  transition: width 0.3s ease;
-  border-radius: 9999px;
-}
-
-.upload-progress-text {
-  font-size: 13px;
-  color: #1e40af;
-  text-align: center;
-  margin: 0;
-  font-weight: 500;
-}
-
-.files-counter-badge {
-  position: absolute;
-  top: -8px;
-  right: -8px;
-  background: linear-gradient(135deg, #3b82f6, #2563eb);
-  color: white;
-  font-size: 11px;
-  font-weight: 700;
-  padding: 2px 6px;
-  border-radius: 10px;
-  z-index: 10;
-  box-shadow: 0 2px 4px rgba(0,0,0,0.2);
-  min-width: 32px;
-  text-align: center;
-}
-
-/* Modifier .input-wrapper pour supporter le badge */
-.input-wrapper {
-  position: relative;
-}
-
-/* État désactivé si limite atteinte */
-.action-button:disabled {
-  opacity: 0.5;
-  cursor: not-allowed;
-}
-
-/* Animation de pulsation pour l'upload */
-@keyframes pulse-upload {
-  0%, 100% {
-    opacity: 1;
-  }
-  50% {
-    opacity: 0.6;
-  }
-}
-
-.upload-progress-container {
-  animation: pulse-upload 2s ease-in-out infinite;
 }
 </style>

@@ -7,7 +7,7 @@ const unusedImports = require('eslint-plugin-unused-imports');
 module.exports = [
   { ignores: ['dist/**', 'node_modules/**'] },
   {
-    files: ['**/*.ts', '**/*.tsx, **/*.vue'],
+    files: ['**/*.ts', '**/*.tsx'],
     languageOptions: {
       parser: tsParser,
       parserOptions: {

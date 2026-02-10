@@ -1,7 +1,7 @@
 // axiosClient.ts
 import axios, { AxiosInstance, AxiosRequestConfig } from "axios";
 
-import { useUserStore } from '@/composables/userStore'
+import { useUserStore } from '@/stores/userStore'
 
 
 // const baseURL = `${import.meta.env.VITE_LOCAL_URL}:${import.meta.env.VITE_LOCAL_PORT}`;

@@ -1,33 +1,35 @@
 <template>
-  <div class="settings-page">
-    <Header
-      :user-name="currentUser.name"
-      :company-name="currentUser.company"
-      :notification-count="notificationCount"
-    />
+  <div class="settings-app-container">
+    <!-- Top Header - Sticky -->
+    <div class="top-header">
+      <Header
+        :user-name="currentUser.name"
+        :company-name="currentUser.company"
+        :notification-count="notificationCount"
+      />
+    </div>
 
-    <div class="settings-container">
-      <div class="settings-header">
-        <!--      <h1>Paramètres</h1>-->
-        <!--      <p>Gérez les paramètres de votre compte et de votre entreprise</p>-->
-      </div>
-
-      <div class="settings-content">
-        <!-- Navigation des onglets -->
-        <div class="tabs-navigation">
+    <div class="settings-layout">
+      <!-- Sidebar Navigation -->
+      <aside class="settings-sidebar">
+        <nav class="settings-nav">
           <button
             v-for="tab in tabs"
             :key="tab.id"
-            :class="['tab-button', { active: activeTab === tab.id }]"
+            :class="['nav-settings-item', { active: activeTab === tab.id }]"
             @click="activeTab = tab.id"
           >
-            <span class="tab-icon">{{ tab.icon }}</span>
-            <span class="tab-label">{{ tab.label }}</span>
+            <span class="nav-settings-icon">{{ tab.icon }}</span>
+            <div class="nav-settings-content">
+              <span class="nav-settings-label">{{ tab.label }}</span>
+            </div>
           </button>
-        </div>
+        </nav>
+      </aside>
 
-        <!-- Contenu des onglets -->
-        <div class="tab-content">
+      <!-- Main Content Area -->
+      <main class="settings-main-content">
+        <div class="settings-content-wrapper">
           <!-- Onglet: Informations de l'entreprise -->
           <div v-if="activeTab === 'company'" class="tab-panel">
             <h2>Informations de l'entreprise</h2>
@@ -51,11 +53,6 @@
               <div class="form-group">
                 <label>Secteur d'activité</label>
                 <select v-model="userStore.department">
-<!--                  <option value="">Sélectionner...</option>-->
-<!--                  <option value="restaurant">Restaurant</option>-->
-<!--                  <option value="hotel">Hôtel</option>-->
-<!--                  <option value="cafe">Café</option>-->
-<!--                  <option value="autre">Autre</option>-->
                 </select>
               </div>
               <button type="submit" class="btn-primary">Enregistrer les modifications</button>
@@ -67,43 +64,30 @@
             <h2>Inviter un manager</h2>
             <p class="tab-description">
               Vous pouvez inviter un manager soit en sélectionnant un membre existant,
-              soit en envoyant un code d’invitation via WhatsApp.
+              soit en envoyant un code d'invitation via WhatsApp.
             </p>
 
-            <!-- Choix de la méthode -->
             <div class="form-group">
-              <label>Méthode d’invitation</label>
+              <label>Méthode d'invitation</label>
               <div class="invite-methods">
                 <label>
-                  <input
-                    type="radio"
-                    value="member"
-                    v-model="inviteMethod"
-                  />
-                  Sélectionner un membre de l’équipe
+                  <input type="radio" value="member" v-model="inviteMethod" />
+                  Sélectionner un membre de l'équipe
                 </label>
-
                 <label>
-                  <input
-                    type="radio"
-                    value="whatsapp"
-                    v-model="inviteMethod"
-                  />
+                  <input type="radio" value="whatsapp" v-model="inviteMethod" />
                   Envoyer un code via WhatsApp
                 </label>
               </div>
             </div>
 
-            <!-- ===================== -->
-            <!-- Invitation par membre -->
-            <!-- ===================== -->
             <form
               v-if="inviteMethod === 'member'"
               @submit.prevent="sendInvitationToMember"
               class="settings-form"
             >
               <div class="form-group">
-                <label>Membre de l’équipe</label>
+                <label>Membre de l'équipe</label>
                 <select v-model="invitation.memberId" required>
                   <option value="">Sélectionner un membre...</option>
                   <option
@@ -131,9 +115,6 @@
               </button>
             </form>
 
-            <!-- ========================= -->
-            <!-- Invitation via WhatsApp -->
-            <!-- ========================= -->
             <form
               v-if="inviteMethod === 'whatsapp'"
               @submit.prevent="generateWhatsappCode"
@@ -163,9 +144,6 @@
               </button>
             </form>
 
-            <!-- ================= -->
-            <!-- Invitations list -->
-            <!-- ================= -->
             <div class="invitations-list" v-if="invitationsList.length > 0">
               <h3>Invitations envoyées</h3>
               <div
@@ -179,8 +157,8 @@
                   <span v-if="inv.phone">{{ inv.phone }}</span>
                 </div>
                 <span :class="['invitation-status', inv.status]">
-        {{ inv.status }}
-      </span>
+                  {{ inv.status }}
+                </span>
               </div>
             </div>
           </div>
@@ -298,29 +276,30 @@
             </div>
           </div>
         </div>
-      </div>
+      </main>
     </div>
+
+    <!-- Footer -->
+    <Footer />
   </div>
 </template>
 
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue';
-import settingCss from "../assets/css/toke-setting-17.css?url"
-import HeadBuilder from '@/utils/HeadBuilder';
-import { useUserStore } from '@/composables/userStore';
-import dashboardCss from "../assets/css/toke-dMain-04.css?url"
+import { useUserStore } from '@/stores/userStore';
 import Header from '@/views/components/header.vue';
+import Footer from '@/views/components/footer.vue';
+import "../assets/css/toke-setting-17.css"
+import footerCss from "../assets/css/toke-footer-24.css?url"
+import HeadBuilder from '@/utils/HeadBuilder';
 
-// Stores (uniquement pour les infos utilisateur)
-const userStore = useUserStore()
+const userStore = useUserStore();
 
-// User data
 const currentUser = computed(() => ({
   name: userStore.fullName || 'Manager',
   company: userStore.tenantName || 'N/A'
-}))
-const notificationCount = ref(2)
-const activeEmployeeMenu = ref<number | null>(null)
+}));
+const notificationCount = ref(2);
 
 interface Tab {
   id: string;
@@ -360,7 +339,6 @@ interface InvitationItem {
   type: 'member' | 'whatsapp';
 }
 
-
 interface Payment {
   id: number;
   date: string;
@@ -390,7 +368,6 @@ const activeTab = ref<string>('company');
 
 const tabs = ref<Tab[]>([
   { id: 'company', label: 'Entreprise', icon: '🏢' },
-  { id: 'invite', label: 'Inviter', icon: '👥' },
   { id: 'payments', label: 'Paiements', icon: '💳' },
   { id: 'security', label: 'Sécurité', icon: '🔒' },
   { id: 'delete', label: 'Suppression', icon: '🗑️' }
@@ -404,25 +381,21 @@ const companyInfo = ref<CompanyInfo>({
   sector: 'restaurant'
 });
 
-// Méthode d’invitation
-const inviteMethod = ref<'member' | 'whatsapp'>('member')
+const inviteMethod = ref<'member' | 'whatsapp'>('member');
 
-// Membres de l’équipe (à remplacer plus tard par une API)
 const teamMembers = ref<TeamMember[]>([
   { id: 1, name: 'Jean Dupont', email: 'jean@exemple.com' },
   { id: 2, name: 'Marie Kouassi', email: 'marie@exemple.com' }
-])
+]);
 
-// Formulaire invitation
 const invitation = ref<InvitationForm>({
   memberId: '',
   role: '',
   phone: '',
   name: ''
-})
+});
 
-// Liste des invitations envoyées
-const invitationsList = ref<InvitationItem[]>([])
+const invitationsList = ref<InvitationItem[]>([]);
 
 const paymentFilter = ref<string>('all');
 
@@ -458,11 +431,6 @@ const saveCompanyInfo = () => {
   alert('Informations de l\'entreprise enregistrées !');
 };
 
-// const sendInvitation = () => {
-//   alert(`Invitation envoyée à ${invitation.value.email}`);
-//   invitation.value = { email: '', name: '', role: '' };
-// };
-
 const changePassword = () => {
   if (security.value.newPassword !== security.value.confirmPassword) {
     alert('Les mots de passe ne correspondent pas');
@@ -491,24 +459,9 @@ const deleteAccount = () => {
   }
 };
 
-const closeMenuOnClickOutside = (event: MouseEvent) => {
-  if (activeEmployeeMenu.value !== null) {
-    const target = event.target as HTMLElement
-    if (!target.closest('.employee-menu')) {
-      activeEmployeeMenu.value = null
-    }
-  }
-}
-
-/* ============================= */
-/* Invitation par membre équipe */
-/* ============================= */
 const sendInvitationToMember = () => {
-  const member = teamMembers.value.find(
-    m => m.id === invitation.value.memberId
-  )
-
-  if (!member || !invitation.value.role) return
+  const member = teamMembers.value.find(m => m.id === invitation.value.memberId);
+  if (!member || !invitation.value.role) return;
 
   invitationsList.value.push({
     id: Date.now(),
@@ -517,20 +470,16 @@ const sendInvitationToMember = () => {
     role: invitation.value.role,
     status: 'envoyée',
     type: 'member'
-  })
+  });
 
-  // Reset formulaire
-  invitation.value.memberId = ''
-  invitation.value.role = ''
-}
+  invitation.value.memberId = '';
+  invitation.value.role = '';
+};
 
-/* ============================= */
-/* Invitation via WhatsApp */
-/* ============================= */
 const generateWhatsappCode = () => {
-  if (!invitation.value.phone) return
+  if (!invitation.value.phone) return;
 
-  const code = generateCode()
+  const code = generateCode();
 
   invitationsList.value.push({
     id: Date.now(),
@@ -539,52 +488,31 @@ const generateWhatsappCode = () => {
     code,
     status: 'envoyée',
     type: 'whatsapp'
-  })
+  });
 
-  const message = `Bonjour, voici votre code d’invitation manager : ${code}`
-  const whatsappUrl = `https://wa.me/${formatPhone(
-    invitation.value.phone
-  )}?text=${encodeURIComponent(message)}`
+  const message = `Bonjour, voici votre code d'invitation manager : ${code}`;
+  const whatsappUrl = `https://wa.me/${formatPhone(invitation.value.phone)}?text=${encodeURIComponent(message)}`;
 
-  window.open(whatsappUrl, '_blank')
+  window.open(whatsappUrl, '_blank');
 
-  // Reset formulaire
-  invitation.value.phone = ''
-  invitation.value.name = ''
-}
+  invitation.value.phone = '';
+  invitation.value.name = '';
+};
 
-/* ============================= */
-/* Utils */
-/* ============================= */
 const generateCode = (): string => {
-  return Math.random().toString(36).substring(2, 8).toUpperCase()
-}
+  return Math.random().toString(36).substring(2, 8).toUpperCase();
+};
 
 const formatPhone = (phone: string): string => {
-  return phone.replace(/\D/g, '')
-}
-
+  return phone.replace(/\D/g, '');
+};
 
 // Lifecycle
-onMounted(async () => {
-  document.addEventListener('click', closeMenuOnClickOutside)
+onMounted(() => {
   HeadBuilder.apply({
-    title: 'Setting - Toké',
-    css: [dashboardCss, settingCss],
+    title: 'Paramètres - Toké',
+    css: [footerCss],
     meta: { viewport: "width=device-width, initial-scale=1.0" }
-  })
-})
+  });
+});
 </script>
-
-<style scoped>
-.settings-page {
-  min-height: 100vh;
-  background-color: rgba(195, 207, 226, 0.53);
-}
-
-.settings-container {
-  max-width: 1200px;
-  margin: 0 auto;
-  padding: 20px;
-}
-</style>

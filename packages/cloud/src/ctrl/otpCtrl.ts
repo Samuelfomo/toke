@@ -1,6 +1,6 @@
 import AuthService from '../service/AuthService';
 
-import { useUserStore } from '@/composables/userStore';
+import { useUserStore } from '@/stores/userStore';
 
 // Typage pour le résultat de la validation de l'OTP
 export interface OtpValidationResult {

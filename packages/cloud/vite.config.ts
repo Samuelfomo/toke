@@ -2,13 +2,21 @@ import { fileURLToPath, URL } from 'node:url';
 import { resolve } from 'path'; // https://vitejs.dev/config/
 
 import { defineConfig } from 'vite';
+
+//@ts-ignore
 import vue from '@vitejs/plugin-vue';
+// import { createHtmlPlugin } from 'vite-plugin-html'
+// import vueDevTools from 'vite-plugin-vue-devtools'
 
 // https://vitejs.dev/config/
 export default defineConfig({
-  plugins: [vue()],
+  plugins: [vue(),
+    // vueDevTools(),
+    // createHtmlPlugin({})
+    ],
   resolve: {
     alias: {
+      //@ts-ignore
       '@': fileURLToPath(new URL('./src', import.meta.url)),
       // '@': resolve(__dirname, 'src'),
       '@toke/shared': resolve(__dirname, '../shared/dist'),

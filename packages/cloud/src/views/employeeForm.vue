@@ -1,5 +1,5 @@
 <template>
-  <div class="employee-form-overlay" @click="closeForm">
+  <div class="employee-form-overlay" @click="closeForm" aria-label="Fermer">
     <div class="employee-form-container" @click.stop>
       <div class="form-header">
         <div class="header-content">
@@ -15,7 +15,7 @@
             <p class="form-subtitle">Remplissez tous les champs pour créer le profil</p>
           </div>
         </div>
-        <button @click="closeForm" class="close-button">
+        <button @click="closeForm" class="close-button" aria-label="Fermer">
           <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
           </svg>
@@ -105,7 +105,7 @@
             </div>
 
             <div class="form-group">
-              <label class="form-label required">Téléphone</label>
+              <label class="form-label required">Numéro WhatsApp</label>
               <input
                 v-model="formData.phone"
                 type="tel"
@@ -117,67 +117,67 @@
               <span v-if="errors.phone" class="error-message">{{ errors.phone }}</span>
             </div>
 
-            <div class="form-group">
-              <label class="form-label required">Date de naissance</label>
-              <input
-                v-model="formData.birthDate"
-                type="date"
-                class="form-input"
-                :class="{ 'error': errors.birthDate }"
-                required
-              >
-              <span v-if="errors.birthDate" class="error-message">{{ errors.birthDate }}</span>
-            </div>
+<!--            <div class="form-group">-->
+<!--              <label class="form-label required">Date de naissance</label>-->
+<!--              <input-->
+<!--                v-model="formData.birthDate"-->
+<!--                type="date"-->
+<!--                class="form-input"-->
+<!--                :class="{ 'error': errors.birthDate }"-->
+<!--                required-->
+<!--              >-->
+<!--              <span v-if="errors.birthDate" class="error-message">{{ errors.birthDate }}</span>-->
+<!--            </div>-->
 
-            <div class="form-group">
-              <label class="form-label required">Genre</label>
-              <select v-model="formData.gender" class="form-select" :class="{ 'error': errors.gender }" required>
-                <option value="">Sélectionner</option>
-                <option value="male">Masculin</option>
-                <option value="female">Feminin</option>
-              </select>
-              <span v-if="errors.gender" class="error-message">{{ errors.gender }}</span>
-            </div>
+<!--            <div class="form-group">-->
+<!--              <label class="form-label required">Genre</label>-->
+<!--              <select v-model="formData.gender" class="form-select" :class="{ 'error': errors.gender }" required>-->
+<!--                <option value="">Sélectionner</option>-->
+<!--                <option value="male">Masculin</option>-->
+<!--                <option value="female">Feminin</option>-->
+<!--              </select>-->
+<!--              <span v-if="errors.gender" class="error-message">{{ errors.gender }}</span>-->
+<!--            </div>-->
           </div>
         </div>
 
         <!-- Adresse -->
-        <div class="form-section">
-          <h3 class="section-title">
-            <svg class="section-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                    d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z">
-              </path>
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"></path>
-            </svg>
-            Adresse
-          </h3>
-          <div class="form-grid">
+<!--        <div class="form-section">-->
+<!--          <h3 class="section-title">-->
+<!--            <svg class="section-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">-->
+<!--              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"-->
+<!--                    d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z">-->
+<!--              </path>-->
+<!--              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"></path>-->
+<!--            </svg>-->
+<!--            Adresse-->
+<!--          </h3>-->
+<!--          <div class="form-grid">-->
 
-            <div class="form-group">
-              <label class="form-label required">Ville</label>
-              <input
-                v-model="formData.address.city"
-                type="text"
-                class="form-input"
-                placeholder="Douala"
-                required
-              >
-            </div>
+<!--&lt;!&ndash;            <div class="form-group">&ndash;&gt;-->
+<!--&lt;!&ndash;              <label class="form-label required">Ville</label>&ndash;&gt;-->
+<!--&lt;!&ndash;              <input&ndash;&gt;-->
+<!--&lt;!&ndash;                v-model="formData.address.city"&ndash;&gt;-->
+<!--&lt;!&ndash;                type="text"&ndash;&gt;-->
+<!--&lt;!&ndash;                class="form-input"&ndash;&gt;-->
+<!--&lt;!&ndash;                placeholder="Douala"&ndash;&gt;-->
+<!--&lt;!&ndash;                required&ndash;&gt;-->
+<!--&lt;!&ndash;              >&ndash;&gt;-->
+<!--&lt;!&ndash;            </div>&ndash;&gt;-->
 
-            <div class="form-group full-width">
-              <label class="form-label required">Pays</label>
-              <select v-model="formData.address.country" class="form-select" required>
-                <option value="">Sélectionner un pays</option>
-                <option value="FR">Cameroun</option>
-                <option value="BE">Congo</option>
-                <option value="CH">Cote d'ivoire</option>
-                <option value="CA">RDC</option>
-                <option value="LU">Tchad</option>
-              </select>
-            </div>
-          </div>
-        </div>
+<!--&lt;!&ndash;            <div class="form-group full-width">&ndash;&gt;-->
+<!--&lt;!&ndash;              <label class="form-label required">Pays</label>&ndash;&gt;-->
+<!--&lt;!&ndash;              <select v-model="formData.address.country" class="form-select" required>&ndash;&gt;-->
+<!--&lt;!&ndash;                <option value="">Sélectionner un pays</option>&ndash;&gt;-->
+<!--&lt;!&ndash;                <option value="FR">Cameroun</option>&ndash;&gt;-->
+<!--&lt;!&ndash;                <option value="BE">Congo</option>&ndash;&gt;-->
+<!--&lt;!&ndash;                <option value="CH">Cote d'ivoire</option>&ndash;&gt;-->
+<!--&lt;!&ndash;                <option value="CA">RDC</option>&ndash;&gt;-->
+<!--&lt;!&ndash;                <option value="LU">Tchad</option>&ndash;&gt;-->
+<!--&lt;!&ndash;              </select>&ndash;&gt;-->
+<!--&lt;!&ndash;            </div>&ndash;&gt;-->
+<!--          </div>-->
+<!--        </div>-->
 
         <!-- Informations professionnelles -->
         <div class="form-section">
@@ -191,7 +191,7 @@
           </h3>
           <div class="form-grid">
             <div class="form-group">
-              <label class="form-label required">Matricule</label>
+              <label class="form-label required">Code employe</label>
               <input
                 v-model="formData.employeeId"
                 type="text"
@@ -229,31 +229,31 @@
               <span v-if="errors.phone" class="error-message">{{ errors.phone }}</span>
             </div>
 
-            <div class="form-group">
-              <label class="form-label required">Site de travail</label>
-              <select v-model="formData.siteId" class="form-select" :class="{ 'error': errors.siteId }" required>
-                <option value="">Sélectionner un site</option>
-                <option v-for="site in sites" :key="site.id" :value="site.id">
-                  {{ site.name }}
-                </option>
-              </select>
-              <span v-if="errors.siteId" class="error-message">{{ errors.siteId }}</span>
-            </div>
+<!--            <div class="form-group">-->
+<!--              <label class="form-label required">Site de travail</label>-->
+<!--              <select v-model="formData.siteId" class="form-select" :class="{ 'error': errors.siteId }" required>-->
+<!--                <option value="">Sélectionner un site</option>-->
+<!--                <option v-for="site in sites" :key="site.id" :value="site.id">-->
+<!--                  {{ site.name }}-->
+<!--                </option>-->
+<!--              </select>-->
+<!--              <span v-if="errors.siteId" class="error-message">{{ errors.siteId }}</span>-->
+<!--            </div>-->
+
+<!--            <div class="form-group">-->
+<!--              <label class="form-label required">Type de contrat</label>-->
+<!--              <select v-model="formData.contractType" class="form-select" required>-->
+<!--                <option value="">Sélectionner</option>-->
+<!--                <option value="CDI">CDI</option>-->
+<!--                <option value="CDD">CDD</option>-->
+<!--                <option value="Alternance">Alternance</option>-->
+<!--                <option value="Stage">Stage</option>-->
+<!--                <option value="Freelance">Freelance</option>-->
+<!--              </select>-->
+<!--            </div>-->
 
             <div class="form-group">
-              <label class="form-label required">Type de contrat</label>
-              <select v-model="formData.contractType" class="form-select" required>
-                <option value="">Sélectionner</option>
-                <option value="CDI">CDI</option>
-                <option value="CDD">CDD</option>
-                <option value="Alternance">Alternance</option>
-                <option value="Stage">Stage</option>
-                <option value="Freelance">Freelance</option>
-              </select>
-            </div>
-
-            <div class="form-group">
-              <label class="form-label required">Date d'entrée</label>
+              <label class="form-label required">Date d'embauche</label>
               <input
                 v-model="formData.hireDate"
                 type="date"
@@ -264,15 +264,15 @@
               <span v-if="errors.hireDate" class="error-message">{{ errors.hireDate }}</span>
             </div>
 
-            <div class="form-group">
-              <label class="form-label">Manager</label>
-              <select v-model="formData.managerId" class="form-select">
-                <option value="">Aucun manager</option>
-                <option v-for="manager in managers" :key="manager.id" :value="manager.id">
-                  {{ manager.name }}
-                </option>
-              </select>
-            </div>
+<!--            <div class="form-group">-->
+<!--              <label class="form-label">Manager</label>-->
+<!--              <select v-model="formData.managerId" class="form-select">-->
+<!--                <option value="">Aucun manager</option>-->
+<!--                <option v-for="manager in managers" :key="manager.id" :value="manager.id">-->
+<!--                  {{ manager.name }}-->
+<!--                </option>-->
+<!--              </select>-->
+<!--            </div>-->
           </div>
         </div>
         <!-- Actions -->
@@ -324,7 +324,11 @@ const props = withDefaults(defineProps<Props>(), {
   ]
 });
 
-const emit = defineEmits(['close', 'submit']);
+const emit = defineEmits<{
+  (e: 'close'): void
+  (e: 'submit', data: any): void
+}>()
+
 
 const isEditing = computed(() => !!props.employee);
 const isSubmitting = ref(false);
@@ -473,6 +477,8 @@ const handleSubmit = async () => {
 };
 
 const closeForm = () => {
-  emit('close');
-};
+  console.log('🚪 EmployeeForm → close émis')
+  emit('close')
+}
+
 </script>

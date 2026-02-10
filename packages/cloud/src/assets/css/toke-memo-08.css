@@ -1,10 +1,42 @@
-/* Import des variables du design system */
 /* Container principal style chat */
 .creer-memo-chat {
     display: flex;
     flex-direction: column;
     height: 100vh;
     background-color: var(--bg-secondary);
+}
+.btn-terminer {
+    width: 100%;
+    padding: 12px 24px;
+    background: var(--color-primary);
+    color: white;
+    border: none;
+    border-radius: 8px;
+    font-weight: 600;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    transition: all 0.3s ease;
+}
+
+.btn-terminer:disabled {
+    background: #e5e7eb;
+    color: #9ca3af;
+    cursor: not-allowed;
+}
+
+.check-icon-btn {
+    width: 20px;
+    height: 20px;
+}
+
+.preview-titre-custom {
+    font-size: 14px;
+    color: #475569;
+    margin-bottom: 8px;
+    font-weight: 500;
 }
 
 /* En-tête style chat */

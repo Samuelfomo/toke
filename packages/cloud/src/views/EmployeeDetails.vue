@@ -1,169 +1,165 @@
 <template>
-  <div class="employee-details-container">
-    <div class="details-header">
-      <a href="/equipe" @click.prevent="goBack" class="back-arrow-link">
+  <div class="ed-container">
+    <div class="ed-header">
+      <a href="/profileCard" @click.prevent="goBack" class="ed-back-link">
         <IconArrowLeft />
       </a>
     </div>
 
-    <div v-if="loading" class="employee-profile-skeleton">
-      <div class="skeleton-profile-header">
-        <div class="skeleton-avatar"></div>
-        <div class="skeleton-main-info">
-          <div class="skeleton-name-large"></div>
-          <div class="skeleton-status-large"></div>
+    <div v-if="loading" class="ed-skeleton">
+      <div class="ed-skeleton-header">
+        <div class="ed-skeleton-avatar"></div>
+        <div class="ed-skeleton-info">
+          <div class="ed-skeleton-name"></div>
+          <div class="ed-skeleton-status"></div>
         </div>
       </div>
 
-      <div class="skeleton-details-sections">
-        <div v-for="n in 3" :key="'sec'+n" class="skeleton-info-section">
-          <div class="skeleton-section-title"></div>
-          <div class="skeleton-info-grid">
-            <div v-for="i in 4" :key="'item'+i" class="skeleton-info-item">
-              <div class="skeleton-label"></div>
-              <div class="skeleton-value"></div>
+      <div class="ed-skeleton-sections">
+        <div v-for="n in 3" :key="'sec'+n" class="ed-skeleton-section">
+          <div class="ed-skeleton-title"></div>
+          <div class="ed-skeleton-grid">
+            <div v-for="i in 4" :key="'item'+i" class="ed-skeleton-item">
+              <div class="ed-skeleton-label"></div>
+              <div class="ed-skeleton-value"></div>
             </div>
           </div>
         </div>
 
-        <div class="skeleton-info-section">
-          <div class="skeleton-section-title"></div>
-          <div class="stats-grid-skeleton">
-            <div v-for="s in 4" :key="'stat'+s" class="skeleton-stat-card"></div>
+        <div class="ed-skeleton-section">
+          <div class="ed-skeleton-title"></div>
+          <div class="ed-skeleton-stats">
+            <div v-for="s in 4" :key="'stat'+s" class="ed-skeleton-stat-card"></div>
           </div>
         </div>
       </div>
 
-      <div class="skeleton-details-actions">
-        <div class="skeleton-action-btn" v-for="a in 4" :key="'act'+a"></div>
+      <div class="ed-skeleton-actions">
+        <div class="ed-skeleton-btn" v-for="a in 2" :key="'act'+a"></div>
       </div>
     </div>
 
-    <div v-else-if="!employee" class="error-message">
+    <div v-else-if="!employee" class="ed-error">
       <p>Employé non trouvé</p>
-      <button @click="goBack" class="action-btn">Retour à l'équipe</button>
+      <button @click="goBack" class="ed-btn ed-btn-primary">Retour à l'accueil</button>
     </div>
 
-    <div v-else class="employee-profile-card">
-      <div class="profile-header">
-        <div class="profile-avatar">
-          <img v-if="employee.avatar" :src="employee.avatar" :alt="employee.name" class="avatar-large-img">
-          <div v-else class="avatar-large">{{ employee.initials }}</div>
+    <div v-else class="ed-profile-card">
+      <div class="ed-profile-header">
+        <div class="ed-avatar-wrapper">
+          <img v-if="employee.avatar" :src="employee.avatar" :alt="employee.name" class="ed-avatar ed-avatar-img">
+          <div v-else class="ed-avatar">{{ employee.initials }}</div>
         </div>
-        <div class="main-info">
-          <h2 class="employee-name-large">{{ employee.name }}</h2>
-          <span :class="['status-badge', employee.isActive ? 'status-present' : 'status-absent']">
+        <div class="ed-profile-info">
+          <h2 class="ed-employee-name">{{ employee.name }}</h2>
+          <span :class="['ed-status', employee.isActive ? 'ed-status-active' : 'ed-status-inactive']">
             {{ employee.isActive ? 'Actif' : 'Inactif' }}
           </span>
         </div>
       </div>
 
-      <div class="details-section">
-        <h3 class="section-title">Informations Générales</h3>
-        <div class="info-grid">
-          <div class="info-item">
-            <span class="info-label">Code Employé</span>
-            <span class="info-value">{{ employee.employeeCode || 'N/A' }}</span>
+      <div class="ed-section">
+        <h3 class="ed-section-title">Informations Générales</h3>
+        <div class="ed-info-grid">
+          <div class="ed-info-item">
+            <span class="ed-info-label">Code Employé</span>
+            <span class="ed-info-value">{{ employee.employeeCode || 'N/A' }}</span>
           </div>
-          <div class="info-item">
-            <span class="info-label">Poste</span>
-            <span class="info-value">{{ employee.position }}</span>
+          <div class="ed-info-item">
+            <span class="ed-info-label">Poste</span>
+            <span class="ed-info-value">{{ employee.position }}</span>
           </div>
-          <div class="info-item">
-            <span class="info-label">Département</span>
-            <span class="info-value">{{ employee.department || 'N/A' }}</span>
+          <div class="ed-info-item">
+            <span class="ed-info-label">Département</span>
+            <span class="ed-info-value">{{ employee.department || 'N/A' }}</span>
           </div>
-          <div class="info-item">
-            <span class="info-label">Date d'embauche</span>
-            <span class="info-value">{{ formatDate(employee.hireDate) }}</span>
+          <div class="ed-info-item">
+            <span class="ed-info-label">Date d'embauche</span>
+            <span class="ed-info-value">{{ formatDate(employee.hireDate) }}</span>
           </div>
         </div>
       </div>
 
-      <div class="details-section">
-        <h3 class="section-title">Contact</h3>
-        <div class="info-grid">
-          <div class="info-item">
-            <span class="info-label">Email</span>
-            <span class="info-value">{{ employee.email }}</span>
+      <div class="ed-section">
+        <h3 class="ed-section-title">Contact</h3>
+        <div class="ed-info-grid">
+          <div class="ed-info-item">
+            <span class="ed-info-label">Email</span>
+            <span class="ed-info-value">{{ employee.email }}</span>
           </div>
-          <div class="info-item">
-            <span class="info-label">Téléphone</span>
-            <span class="info-value">{{ employee.phone || 'N/A' }}</span>
+          <div class="ed-info-item">
+            <span class="ed-info-label">Téléphone</span>
+            <span class="ed-info-value">{{ employee.phone || 'N/A' }}</span>
           </div>
-          <div class="info-item">
-            <span class="info-label">Pays</span>
-            <span class="info-value">{{ employee.country || 'N/A' }}</span>
+          <div class="ed-info-item">
+            <span class="ed-info-label">Pays</span>
+            <span class="ed-info-value">{{ employee.country || 'N/A' }}</span>
           </div>
-<!--          <div class="info-item">-->
-<!--            <span class="info-label">GUID</span>-->
-<!--            <span class="info-value" style="font-size: 0.75rem;">{{ employee.id }}</span>-->
-<!--          </div>-->
         </div>
       </div>
 
-      <div class="details-section">
-        <h3 class="section-title">Rôles et Permissions</h3>
-        <div class="roles-container">
-          <div v-for="role in employee.roles" :key="role.guid" class="role-badge">
-            <span class="role-name">{{ role.name }}</span>
-            <span class="role-code">{{ role.code }}</span>
+      <div class="ed-section">
+        <h3 class="ed-section-title">Rôles et Permissions</h3>
+        <div class="ed-roles-container">
+          <div v-for="role in employee.roles" :key="role.guid" class="ed-role-badge">
+            <span class="ed-role-name">{{ role.name }}</span>
+            <span class="ed-role-code">{{ role.code }}</span>
           </div>
-          <div v-if="!employee.roles || employee.roles.length === 0" class="no-roles">
+          <div v-if="!employee.roles || employee.roles.length === 0" class="ed-no-roles">
             Aucun rôle assigné
           </div>
         </div>
       </div>
 
-      <div class="details-section">
-        <h3 class="section-title">Statistiques de Ponctualité - Mois en cours</h3>
-        <div class="stats-grid">
-          <div class="stat-card stat-present">
-            <div class="stat-number">{{ monthlyStats.present }}</div>
-            <div class="stat-label">Jours Présents</div>
+      <div class="ed-section">
+        <h3 class="ed-section-title">Statistiques de Ponctualité - Mois en cours</h3>
+        <div class="ed-stats-grid">
+          <div class="ed-stat-card ed-stat-present">
+            <div class="ed-stat-number">{{ monthlyStats.present }}</div>
+            <div class="ed-stat-label">Jours Présents</div>
           </div>
-          <div class="stat-card stat-late">
-            <div class="stat-number">{{ monthlyStats.late }}</div>
-            <div class="stat-label">Retards</div>
+          <div class="ed-stat-card ed-stat-late">
+            <div class="ed-stat-number">{{ monthlyStats.late }}</div>
+            <div class="ed-stat-label">Retards</div>
           </div>
-          <div class="stat-card stat-absent">
-            <div class="stat-number">{{ monthlyStats.absent }}</div>
-            <div class="stat-label">Absences</div>
+          <div class="ed-stat-card ed-stat-absent">
+            <div class="ed-stat-number">{{ monthlyStats.absent }}</div>
+            <div class="ed-stat-label">Absences</div>
           </div>
-          <div class="stat-card stat-rate">
-            <div class="stat-number">{{ employee.punctualityScore }}%</div>
-            <div class="stat-label">Taux de Ponctualité</div>
+          <div class="ed-stat-card ed-stat-rate">
+            <div class="ed-stat-number">{{ employee.punctualityScore }}%</div>
+            <div class="ed-stat-label">Taux de Ponctualité</div>
           </div>
         </div>
-        <div class="stats-summary">
+        <div class="ed-stats-summary">
           <p>Total de jours travaillés ce mois : {{ monthlyStats.totalDays }}</p>
           <p>Taux de présence : {{ attendanceRate }}%</p>
         </div>
       </div>
 
-      <div class="details-section" v-if="lastLogin">
-        <h3 class="section-title">Activité Récente</h3>
-        <div class="info-grid">
-          <div class="info-item">
-            <span class="info-label">Dernière connexion</span>
-            <span class="info-value">{{ lastLogin }}</span>
+      <div class="ed-section" v-if="lastLogin">
+        <h3 class="ed-section-title">Activité Récente</h3>
+        <div class="ed-info-grid">
+          <div class="ed-info-item">
+            <span class="ed-info-label">Dernière connexion</span>
+            <span class="ed-info-value">{{ lastLogin }}</span>
           </div>
-          <div class="info-item">
-            <span class="info-label">Statut du compte</span>
-            <span class="info-value" :class="employee.isActive ? 'status-present' : 'status-absent'">
+          <div class="ed-info-item">
+            <span class="ed-info-label">Statut du compte</span>
+            <span class="ed-info-value" :class="employee.isActive ? 'ed-status-active' : 'ed-status-inactive'">
               {{ employee.isActive ? 'Actif' : 'Inactif' }}
             </span>
           </div>
         </div>
       </div>
 
-      <div class="details-actions">
-        <button class="action-btn action-memo" @click="openMemoChat">
-          <IconMessage class="modal-btn-icon" /> Envoyer un mémo
-        </button>
-        <button class="action-btn action-edit" @click="editEmployee">
-          <IconEdit class="modal-btn-icon" /> Modifier les informations
-        </button>
+      <div class="ed-actions">
+<!--        <button class="ed-btn ed-btn-primary" @click="openMemoChat">-->
+<!--          <IconMessage class="ed-btn-icon" /> Envoyer un mémo-->
+<!--        </button>-->
+<!--        <button class="ed-btn ed-btn-secondary" @click="editEmployee">-->
+<!--          <IconEdit class="ed-btn-icon" /> Modifier les informations-->
+<!--        </button>-->
       </div>
     </div>
   </div>
@@ -175,9 +171,8 @@ import { useRoute, useRouter } from 'vue-router'
 import HeadBuilder from '@/utils/HeadBuilder'
 import detailsCss from "../assets/css/toke-employee-detail13.css?url"
 import { IconArrowLeft, IconMessage, IconEdit } from '@tabler/icons-vue'
-import UserService from '@/service/UserService'
 import EntriesService from '@/service/EntriesService'
-import { useUserStore } from '@/composables/userStore'
+import { useTeamStore } from '@/stores/teamStore'
 
 const route = useRoute()
 const router = useRouter()
@@ -185,6 +180,8 @@ const router = useRouter()
 const loading = ref(true)
 const employee = ref<any>(null)
 const entriesData = ref<any[]>([])
+
+const teamStore = useTeamStore()
 
 // Calculer les statistiques mensuelles à partir des entrées
 const monthlyStats = computed(() => {
@@ -260,83 +257,58 @@ const formatDate = (dateString: string) => {
 
 const fetchEmployeeDetails = async (employeeGuid: string) => {
   try {
-    console.log('🔍 Fetching employee with GUID:', employeeGuid)
     loading.value = true
 
-    // Récupérer le manager connecté depuis le userStore
-    const userStore = useUserStore()
-    const managerGuid = userStore.user?.guid
+    // Trouver l'employé dans la liste des subordonnés
+    const foundEmployee = teamStore.getEmployeeById(employeeGuid)
 
-    if (!managerGuid) {
-      console.error('❌ Manager GUID non disponible')
-      employee.value = null
-      loading.value = false
-      return
-    }
+    if (foundEmployee) {
+      // Calculer les initiales
+      const firstName = foundEmployee.firstName || ''
+      const lastName = foundEmployee.lastName || ''
+      const fullName = foundEmployee.name || `${firstName} ${lastName}`.trim()
+      const initials = firstName && lastName
+        ? `${firstName[0]}${lastName[0]}`.toUpperCase()
+        : fullName.split(' ').map((n: string) => n[0]).join('').toUpperCase().slice(0, 2)
 
-    // Récupérer tous les subordonnés
-    const response = await UserService.listSubordinates(managerGuid)
-
-    if (response.success && response.data?.hierarchy) {
-      // Trouver l'employé dans la liste des subordonnés
-      const foundEmployee = response.data.hierarchy.find((emp: any) => emp.user.guid === employeeGuid)
-
-      if (foundEmployee) {
-        const userData = foundEmployee.user
-
-        // Calculer les initiales
-        const firstName = userData.first_name || ''
-        const lastName = userData.last_name || ''
-        const fullName = foundEmployee.full_name || `${firstName} ${lastName}`.trim()
-        const initials = firstName && lastName
-          ? `${firstName[0]}${lastName[0]}`.toUpperCase()
-          : fullName.split(' ').map((n: string) => n[0]).join('').toUpperCase().slice(0, 2)
-
-        employee.value = {
-          // id: userData.guid,
-          name: fullName || 'N/A',
-          email: userData.email || 'N/A',
-          position: foundEmployee.roles?.[0]?.role || userData.job_title || 'N/A',
-          department: userData.department || 'N/A',
-          employeeCode: userData.employee_code || 'N/A',
-          hireDate: userData.hire_date || null,
-          country: userData.country || 'N/A',
-          phone: userData.phone_number || 'N/A',
-          avatar: userData.avatar_url || null,
-          initials: initials,
-          isActive: userData.active !== undefined ? userData.active : true,
-          lastLoginAt: userData.last_login_at || null,
-          roles: foundEmployee.roles || [],
-          punctualityScore: Math.floor(Math.random() * 30) + 70 // Mock - sera calculé avec les vraies entrées
-        }
-
-        console.log('✅ Employee loaded:', employee.value)
-
-        // Charger les entrées de l'employé
-        try {
-          const entriesResponse = await EntriesService.listEntries(employeeGuid)
-          if (entriesResponse.success && entriesResponse.data) {
-            entriesData.value = Array.isArray(entriesResponse.data)
-              ? entriesResponse.data
-              : []
-            console.log('✅ Entries loaded:', entriesData.value.length)
-
-            // Recalculer le score de ponctualité basé sur les vraies données
-            if (monthlyStats.value.totalDays > 0) {
-              employee.value.punctualityScore = attendanceRate.value
-            }
-          }
-        } catch (entriesError) {
-          console.warn('⚠️ Could not load entries:', entriesError)
-          entriesData.value = []
-        }
-
-      } else {
-        console.error('❌ Employé non trouvé dans la liste des subordonnés')
-        employee.value = null
+      employee.value = {
+        name: fullName || 'N/A',
+        email: foundEmployee.email || 'N/A',
+        position: foundEmployee.roles?.[0]?.role || foundEmployee.jobTitle || 'N/A',
+        department: foundEmployee.department || 'N/A',
+        employeeCode: foundEmployee.employeeCode || 'N/A',
+        hireDate: foundEmployee.hireDate || null,
+        country: foundEmployee.country || 'N/A',
+        phone: foundEmployee.phoneNumber || 'N/A',
+        avatar: foundEmployee.avatar || null,
+        initials: initials,
+        isActive: foundEmployee.isActive !== undefined ? foundEmployee.isActive : true,
+        roles: foundEmployee.roles || [],
+        punctualityScore: Math.floor(Math.random() * 30) + 70
       }
+
+
+      // Charger les entrées de l'employé
+      try {
+        const entriesResponse = await EntriesService.listEntries(employeeGuid)
+        if (entriesResponse.success && entriesResponse.data) {
+          entriesData.value = Array.isArray(entriesResponse.data)
+            ? entriesResponse.data
+            : []
+          console.log('✅ Entries loaded:', entriesData.value.length)
+
+          // Recalculer le score de ponctualité basé sur les vraies données
+          if (monthlyStats.value.totalDays > 0) {
+            employee.value.punctualityScore = attendanceRate.value
+          }
+        }
+      } catch (entriesError) {
+        console.warn('⚠️ Could not load entries:', entriesError)
+        entriesData.value = []
+      }
+
     } else {
-      console.error('❌ Erreur dans la réponse API')
+      console.error('❌ Employé non trouvé dans la liste des subordonnés')
       employee.value = null
     }
   } catch (error) {
@@ -348,12 +320,11 @@ const fetchEmployeeDetails = async (employeeGuid: string) => {
 }
 
 const goBack = () => {
-  router.push('/equipe')
+  router.push('/dashboard')
 }
 
 const openMemoChat = () => {
   if (employee.value) {
-    // Utiliser le GUID de l'employé (pas l'ID local)
     const employeeGuid = route.params.employeeId as string;
     console.log('📨 Envoi mémo pour:', employeeGuid);
 
@@ -373,20 +344,7 @@ const editEmployee = () => {
 }
 
 onMounted(() => {
-  const employeeIdParam = route.params.employeeId
-  console.log('🚀 EmployeeDetails mounted')
-  console.log('📝 Route params:', route.params)
-  console.log('📝 employeeId param:', employeeIdParam)
-
-  let employeeGuid: string
-
-  if (Array.isArray(employeeIdParam)) {
-    employeeGuid = employeeIdParam[0]
-  } else {
-    employeeGuid = employeeIdParam as string
-  }
-
-  console.log('🔢 Employee GUID:', employeeGuid)
+  const employeeGuid = route.params.id as string;
 
   fetchEmployeeDetails(employeeGuid)
 
@@ -399,132 +357,5 @@ onMounted(() => {
 </script>
 
 <style scoped>
-.status-badge {
-  display: inline-block;
-  padding: 0.25rem 0.75rem;
-  border-radius: 9999px;
-  font-size: 0.875rem;
-  font-weight: 500;
-  margin-top: 0.5rem;
-}
-
-.status-badge.status-present {
-  background-color: #d1fae5;
-  color: #065f46;
-}
-
-.status-badge.status-late {
-  background-color: #fef3c7;
-  color: #92400e;
-}
-
-.status-badge.status-absent {
-  background-color: #fee2e2;
-  color: #991b1b;
-}
-
-.status-badge.status-info {
-  background-color: #dbeafe;
-  color: #1e40af;
-}
-
-.error-message {
-  text-align: center;
-  padding: 2rem;
-}
-
-.error-message p {
-  font-size: 1.25rem;
-  color: #6b7280;
-  margin-bottom: 1rem;
-}
-
-.stats-summary {
-  margin-top: 1rem;
-  padding: 1rem;
-  background-color: #f9fafb;
-  border-radius: 0.5rem;
-  text-align: center;
-  color: #6b7280;
-}
-
-.stats-summary p {
-  margin: 0.25rem 0;
-}
-
-.avatar-large-img {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-  border-radius: 50%;
-}
-
-.roles-container {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.5rem;
-}
-
-.role-badge {
-  display: flex;
-  flex-direction: column;
-  padding: 0.75rem 1rem;
-  background-color: #eff6ff;
-  border: 1px solid #bfdbfe;
-  border-radius: 0.5rem;
-}
-
-.role-name {
-  font-weight: 600;
-  color: #1e40af;
-  font-size: 0.875rem;
-}
-
-.role-code {
-  font-size: 0.75rem;
-  color: #6b7280;
-  margin-top: 0.25rem;
-}
-
-.no-roles {
-  color: #9ca3af;
-  font-style: italic;
-  padding: 1rem;
-}
-
-.action-btn {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  padding: 0.75rem 1.5rem;
-  border-radius: 0.5rem;
-  font-weight: 500;
-  transition: all 0.2s;
-  border: none;
-  cursor: pointer;
-}
-
-.action-memo {
-  background-color: #3b82f6;
-  color: white;
-}
-
-.action-memo:hover {
-  background-color: #2563eb;
-}
-
-.action-edit {
-  background-color: #f3f4f6;
-  color: #374151;
-  border: 1px solid #d1d5db;
-}
-
-.action-edit:hover {
-  background-color: #e5e7eb;
-}
-
-.modal-btn-icon {
-  width: 1.25rem;
-  height: 1.25rem;
-}
+/* Les styles personnalisés peuvent être ajoutés ici si nécessaire */
 </style>

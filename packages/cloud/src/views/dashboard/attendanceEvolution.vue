@@ -35,9 +35,8 @@
           </svg>
         </div>
         <div class="metric-info">
-          <span class="metric-label">Présents</span>
+          <span class="metric-label">Présent(e)s</span>
           <span class="metric-percentage success">{{ totalPresent }}/{{ totalExpected }} à l'heure</span>
-<!--          <span class="metric-total">/ {{ totalExpected }}</span>-->
         </div>
       </div>
 
@@ -46,7 +45,6 @@
         <div class="metric-circle">
           <div class="circle-content">
             <span class="metric-value">{{ lateRate }}%</span>
-<!--            <span class="metric-total">/ {{ totalExpected }}</span>-->
           </div>
           <svg class="circle-svg" viewBox="0 0 120 120">
             <circle
@@ -74,7 +72,7 @@
         </div>
         <div class="metric-info">
           <span class="metric-label">En retard</span>
-          <span class="metric-percentage warning"> {{ totalLate }}/{{ totalExpected }} de retards</span>
+          <span class="metric-percentage warning"> {{ totalLate }}/{{ totalExpected }} en retards</span>
         </div>
       </div>
 
@@ -82,9 +80,7 @@
       <div class="metric-card absent">
         <div class="metric-circle">
           <div class="circle-content">
-            {{ absenceRate }}%
-            <span class="metric-value"></span>
-<!--            <span class="metric-total">/ {{ totalExpected }}</span>-->
+            <span class="metric-value">{{ absenceRate }}%</span>
           </div>
           <svg class="circle-svg" viewBox="0 0 120 120">
             <circle
@@ -112,7 +108,7 @@
         </div>
         <div class="metric-info">
           <span class="metric-label">Absents</span>
-          <span class="metric-percentage danger">{{ totalAbsences }}/{{ totalExpected }} d'absence</span>
+          <span class="metric-percentage danger">{{ totalAbsences }}/{{ totalExpected }} absent(e)s</span>
         </div>
       </div>
 
@@ -120,8 +116,8 @@
       <div class="metric-card rest">
         <div class="metric-circle">
           <div class="circle-content">
-            <span class="metric-value">{{ totalRest }}</span>
-            <span class="metric-total">/ {{ totalEmployees }}</span>
+
+            <span class="metric-value">{{ restRate }}%</span>
           </div>
           <svg class="circle-svg" viewBox="0 0 120 120">
             <circle
@@ -149,22 +145,7 @@
         </div>
         <div class="metric-info">
           <span class="metric-label">Au repos</span>
-          <span class="metric-percentage info">{{ restRate }}% en repos</span>
-        </div>
-      </div>
-
-      <!-- Retard Max -->
-      <div class="metric-card delay-max">
-        <div class="metric-icon">
-          <svg viewBox="0 0 24 24" fill="currentColor">
-            <circle cx="12" cy="12" r="10"/>
-            <polyline points="12 6 12 12 16 14" stroke="white" stroke-width="2" stroke-linecap="round" fill="none"/>
-          </svg>
-        </div>
-        <div class="metric-info">
-          <span class="metric-label">Retard max</span>
-          <span class="metric-value-text success" v-if="maxDelay === 0">Aucun</span>
-          <span class="metric-value-text warning" v-else>{{ formatDelay(maxDelay) }}</span>
+          <span class="metric-percentage info"> {{ totalRest }}/{{ totalEmployees }} en repos</span>
         </div>
       </div>
     </div>
@@ -330,7 +311,6 @@
         <div class="alert-icon-wrapper danger">
           <svg viewBox="0 0 24 24" fill="currentColor">
             <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 3c1.66 0 3 1.34 3 3s-1.34 3-3 3-3-1.34-3-3 1.34-3 3-3zm0 14.2c-2.5 0-4.71-1.28-6-3.22.03-1.99 4-3.08 6-3.08 1.99 0 5.97 1.09 6 3.08-1.29 1.94-3.5 3.22-6 3.22z"/>
-            <circle cx="18" cy="6" r="4" fill="#ef4444"/>
           </svg>
         </div>
         <div>
@@ -390,7 +370,7 @@
         <div class="alert-icon-wrapper danger">
           <svg viewBox="0 0 24 24" fill="currentColor">
             <path d="M8 2v4M16 2v4M3 10h18M5 4h14a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2z"/>
-            <circle cx="18" cy="6" r="4" fill="#ef4444"/>
+<!--            <circle cx="18" cy="6" r="4" fill="#ef4444"/>-->
           </svg>
         </div>
         <div>

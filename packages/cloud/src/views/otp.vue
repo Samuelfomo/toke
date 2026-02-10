@@ -7,9 +7,10 @@
     welcome-subtitle="Saisir le code de vérification envoyé à votre adresse email"
     submit-button-text="Vérifier"
     loading-text="Vérification..."
+    success-text="Code vérifié !"
     :default-fields="[]"
     :validation="validateOtp"
-    :back-link="{ url: '/', text: 'Reessayer' }"
+    :back-link="{ url: '/', text: 'Réessayer' }"
     @submit="handleOtpVerification"
   >
     <!-- Champs OTP personnalisés -->
@@ -28,9 +29,9 @@
             class="otp-input"
             placeholder="•"
             :class="{
-    filled: !!otpDigits[index],
-    error: hasError,
-    success: isVerified
+            filled: !!otpDigits[index],
+            error: hasError,
+            success: isVerified
   }"
             @input="(e) => handleInput(index, e, updateField)"
             @keydown="(e) => handleKeydown(index, e)"
@@ -110,7 +111,7 @@ const showHelp = ref(false)
 const email = ref<string>('')
 
 // Gestion du timer de l'OTP (5 minutes par défaut)
-const OTP_VALIDITY_DURATION = 5 * 60 // 5 minutes en secondes
+const OTP_VALIDITY_DURATION = 5 * 60
 const timeRemaining = ref(OTP_VALIDITY_DURATION)
 let otpTimer: number | null = null
 
@@ -129,12 +130,10 @@ const canSubmit = computed(() => isOtpComplete.value && !hasError.value && timeR
 
 // Validation OTP avec messages d'erreur
 const validateOtp = () => {
-  // Réinitialiser les messages
   errorMessage.value = ''
   successMessage.value = ''
   hasError.value = false
 
-  // Vérifier si le temps n'est pas écoulé
   if (timeRemaining.value <= 0) {
     errorMessage.value = '⏰ Code expiré. Demandez un nouveau code.'
     hasError.value = true
@@ -157,7 +156,6 @@ const stopOtpTimer = () => {
   }
 }
 
-// Démarrer le cooldown de renvoi
 const startResendCooldown = () => {
   stopResendCooldown()
   resendCooldown.value = RESEND_COOLDOWN
@@ -178,7 +176,6 @@ const stopResendCooldown = () => {
   }
 }
 
-// Focus automatique sur le premier champ
 onMounted(() => {
   email.value = route.query.email?.toString() || ''
   HeadBuilder.apply({
@@ -192,19 +189,16 @@ onMounted(() => {
   })
 })
 
-// Nettoyer les timers au démontage
 onUnmounted(() => {
   stopOtpTimer()
   stopResendCooldown()
 })
 
-// Gestion du focus
 const handleFocus = (index: number) => {
   nextTick(() => {
     inputRefs.value[index]?.select()
   })
 
-  // Réinitialiser les messages au focus (sauf si le code est expiré)
   if (hasError.value && timeRemaining.value > 0) {
     hasError.value = false
     errorMessage.value = ''
@@ -212,12 +206,10 @@ const handleFocus = (index: number) => {
   }
 }
 
-// Gestion de la saisie
 const handleInput = async (index: number, event: Event, updateField: Function) => {
   const target = event.target as HTMLInputElement
   const value = target.value
 
-  // Ne garder que les chiffres
   if (!/^\d*$/.test(value)) {
     otpDigits.value[index] = ''
     errorMessage.value = '⚠️ Veuillez saisir uniquement des chiffres'
@@ -232,28 +224,22 @@ const handleInput = async (index: number, event: Event, updateField: Function) =
   }
 
   otpDigits.value[index] = value
-
-  // Mettre à jour le formData du template
   updateField('otp', otpDigits.value.join(''))
 
-  // Réinitialiser les messages
   hasError.value = false
   errorMessage.value = ''
   successMessage.value = ''
 
-  // Passer au champ suivant
   if (value && index < 5) {
     await nextTick()
     inputRefs.value[index + 1]?.focus()
   }
 
-  // Si tous les champs sont remplis, afficher un message d'encouragement
   if (isOtpComplete.value && !hasError.value) {
-    successMessage.value = 'Code complet"'
+    successMessage.value = '"Code complet"'
   }
 }
 
-// Gestion des touches
 const handleKeydown = async (index: number, event: KeyboardEvent) => {
   if (event.key === 'Backspace') {
     event.preventDefault()
@@ -273,11 +259,11 @@ const handleKeydown = async (index: number, event: KeyboardEvent) => {
     event.preventDefault()
     inputRefs.value[index + 1]?.focus()
   } else if (event.key === 'Enter' && isOtpComplete.value) {
-    // Soumettre automatiquement si le code est complet
     event.preventDefault()
     handleOtpVerification({ otp: otpDigits.value.join('') })
   }
 }
+
 const handlePaste = async (event: ClipboardEvent, updateField: Function) => {
   event.preventDefault()
   const pastedData = event.clipboardData?.getData('text').replace(/\D/g, '') || ''
@@ -302,7 +288,6 @@ const handlePaste = async (event: ClipboardEvent, updateField: Function) => {
     return
   }
 
-  // Remplir les champs avec les données collées
   for (let i = 0; i < 6; i++) {
     otpDigits.value[i] = pastedData[i] || ''
   }
@@ -313,92 +298,111 @@ const handlePaste = async (event: ClipboardEvent, updateField: Function) => {
   const nextEmptyIndex = pastedData.length < 6 ? pastedData.length : 5
   inputRefs.value[nextEmptyIndex]?.focus()
 }
-// Gestion de la vérification
-const handleOtpVerification = async (formData: any) => {
-  const code = otpDigits.value.join('')
 
-  // Validation avant soumission
-  if (!validateOtp()) {
-    // Le message d'erreur est déjà défini par validateOtp()
-    return
-  }
+// ✅ MODIFICATION IMPORTANTE : Retourner une promesse
+const handleOtpVerification = (formData: any): Promise<void> => {
+  return new Promise(async (resolve, reject) => {
+    const code = otpDigits.value.join('')
 
-  try {
-    // Afficher un message de traitement
-    successMessage.value = '🔄 Vérification en cours...'
-    errorMessage.value = ''
-    hasError.value = false
+    // Validation avant soumission
+    if (!validateOtp()) {
+      reject(new Error('Code invalide'))
+      return
+    }
 
-    // Appel du contrôleur pour vérifier l'OTP
-    const result = await otpCtrl.verifyOtp(code)
+    try {
+      console.log('🔐 Vérification du code OTP...')
 
-    if (result.success) {
-      console.log('✅ Code vérifié avec succès')
+      // Appel du contrôleur pour vérifier l'OTP
+      const result = await otpCtrl.verifyOtp(code)
 
-      // Afficher message de succès
-      isVerified.value = true
-      successMessage.value = result.message || '🎉 Connexion réussie ! Redirection...'
-      hasError.value = false
-      errorMessage.value = ''
+      if (result.success) {
+        console.log('✅ Code vérifié avec succès')
 
-      // Arrêter le timer
-      stopOtpTimer()
+        // Afficher message de succès dans AuthForm
+        isVerified.value = true
+        if (authFormRef.value) {
+          authFormRef.value.setGlobalSuccess(result.message || '🎉 Code vérifié avec succès !')
+        }
 
-      // Stocker les infos utilisateur si nécessaire
-      if (result.user) {
-        localStorage.setItem('user', JSON.stringify(result.user))
+        // Arrêter le timer
+        stopOtpTimer()
+
+        // Stocker les infos utilisateur si nécessaire
+        if (result.user) {
+          localStorage.setItem('user', JSON.stringify(result.user))
+        }
+
+        // Réinitialiser le compteur de tentatives
+        failedAttempts.value = 0
+
+        // Attendre avant la redirection (AuthForm gère l'affichage du succès)
+        setTimeout(() => {
+          router.push('/dashboard')
+        }, 3500) // Temps total pour voir le loader + le message de succès
+
+        // Résoudre la promesse pour signaler le succès
+        resolve()
+
+      } else {
+        // Incrémenter le compteur de tentatives échouées
+        failedAttempts.value++
+
+        // Afficher les erreurs
+        hasError.value = true
+        isVerified.value = false
+        const errorMsg = result.message || '❌ Code incorrect. Veuillez réessayer.'
+
+        if (authFormRef.value) {
+          authFormRef.value.setGlobalError(errorMsg)
+        }
+
+        // Ajouter info sur les tentatives restantes
+        const attemptsLeft = MAX_ATTEMPTS - failedAttempts.value
+        if (attemptsLeft > 0 && attemptsLeft <= 2) {
+          const attemptsMsg = ` (${attemptsLeft} tentative${attemptsLeft > 1 ? 's' : ''} restante${attemptsLeft > 1 ? 's' : ''})`
+          if (authFormRef.value) {
+            authFormRef.value.setGlobalError(errorMsg + attemptsMsg)
+          }
+        }
+
+        // Si trop de tentatives, bloquer
+        if (failedAttempts.value >= MAX_ATTEMPTS) {
+          if (authFormRef.value) {
+            authFormRef.value.setGlobalError('🚫 Trop de tentatives échouées. Attendez 15 minutes ou demandez un nouveau code.')
+          }
+          showHelp.value = true
+        }
+
+        // Vider les champs et refocus
+        otpDigits.value = ['', '', '', '', '', '']
+        await nextTick()
+        inputRefs.value[0]?.focus()
+
+        reject(new Error(errorMsg))
       }
-
-      // Réinitialiser le compteur de tentatives
-      failedAttempts.value = 0
-
-      // Redirection vers le tableau de bord après un court délai
-      setTimeout(() => {
-        router.push('/dashboard')
-      }, 1500)
-
-    } else {
-      // Incrémenter le compteur de tentatives échouées
-      failedAttempts.value++
-
-      // Afficher les erreurs
+    } catch (error: any) {
       hasError.value = true
       isVerified.value = false
-      errorMessage.value = result.message || '❌ Code incorrect. Veuillez réessayer.'
-      successMessage.value = ''
+      const errorMsg = '⚠️ Erreur lors de la vérification. Vérifiez votre connexion et réessayez.'
 
-      // Ajouter info sur les tentatives restantes
-      const attemptsLeft = MAX_ATTEMPTS - failedAttempts.value
-      if (attemptsLeft > 0 && attemptsLeft <= 2) {
-        errorMessage.value += ` (${attemptsLeft} tentative${attemptsLeft > 1 ? 's' : ''} restante${attemptsLeft > 1 ? 's' : ''})`
+      if (authFormRef.value) {
+        authFormRef.value.setGlobalError(errorMsg)
       }
 
-      // Si trop de tentatives, bloquer
-      if (failedAttempts.value >= MAX_ATTEMPTS) {
-        errorMessage.value = '🚫 Trop de tentatives échouées. Attendez 15 minutes ou demandez un nouveau code.'
-        showHelp.value = true
-      }
+      console.error('Erreur lors de la vérification OTP:', error)
 
-      // Vider les champs et refocus
+      // Vider les champs en cas d'erreur
       otpDigits.value = ['', '', '', '', '', '']
       await nextTick()
       inputRefs.value[0]?.focus()
-    }
-  } catch (error) {
-    hasError.value = true
-    isVerified.value = false
-    errorMessage.value = '⚠️ Erreur lors de la vérification. Vérifiez votre connexion et réessayez.'
-    successMessage.value = ''
-    console.error('Erreur lors de la vérification OTP:', error)
 
-    // Vider les champs en cas d'erreur
-    otpDigits.value = ['', '', '', '', '', '']
-    await nextTick()
-    inputRefs.value[0]?.focus()
-  }
+      reject(error)
+    }
+  })
 }
 
-// Gestion du renvoi de l'OTP
+// Gestion du renvoi de l'OTP (reste identique)
 const handleResendOtp = async () => {
   if (resendCooldown.value > 0 || isResending.value) return
 
@@ -407,10 +411,8 @@ const handleResendOtp = async () => {
     errorMessage.value = ''
     successMessage.value = '📧 Envoi en cours...'
 
-    // TODO: Appel au service pour renvoyer l'OTP
     const response = await AuthService.retry(email.value)
 
-    // Simulation de succès pour l'instant
     await new Promise(resolve => setTimeout(resolve, 1000))
 
     if (response.success) {
@@ -418,25 +420,20 @@ const handleResendOtp = async () => {
       errorMessage.value = ''
       hasError.value = false
 
-      // Réinitialiser les champs et le compteur de tentatives
       otpDigits.value = ['', '', '', '', '', '']
       failedAttempts.value = 0
 
-      // Redémarrer les timers
-      // startOtpTimer()
       startResendCooldown()
 
-      // Refocus sur le premier champ
       await nextTick()
       inputRefs.value[0]?.focus()
 
-      // Cacher le message de succès après 4 secondes
       setTimeout(() => {
         if (successMessage.value.includes('Nouveau code')) {
           successMessage.value = ''
         }
       }, 4000)
-    }else {
+    } else {
       errorMessage.value = '⚠️ Impossible de renvoyer le code. Vérifiez votre connexion et réessayez.'
       successMessage.value = ''
       hasError.value = true

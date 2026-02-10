@@ -1,15 +1,16 @@
 <template>
   <AuthForm
     ref="authFormRef"
+    @submit="handleLogin"
     page-title="Connexion Employé - Toké"
     :css-file="authCss"
     welcome-message="Authentification"
     submit-button-text="Se connecter"
     loading-text="Connexion en cours..."
+    success-text="Connexion réussie !"
     :default-fields="loginFields"
     :validation="validateLogin"
     :back-link="{ url: '/tenant-selection', text: 'Changer de tenant' }"
-    @submit="handleLogin"
   >
     <template #fields="{ formData = {}, updateField, errors = {} }">
       <div class="login-fields">
@@ -72,72 +73,49 @@ import authCss from "../assets/css/toke-auth-01.css?url";
 import authCtrl from '../ctrl/authCtrl';
 import router from '@/router';
 
-// Référence au composant AuthForm
 const authFormRef = ref<any>(null);
 
-// ---------------------
-// DEFAULT FIELDS POUR AuthForm
-// ---------------------
 const loginFields = ref([
   { name: 'email', value: '' },
   { name: 'customer_code', value: '' }
 ] as any);
 
-// ---------------------
-// VALIDATION GLOBALE
-// ---------------------
 const validateLogin = (formData: any = {}) => {
   const emailValidationResult = authCtrl.validateEmail(formData.email || '');
   const customerCodeValidationResult = authCtrl.validateCustomerCode(formData.customer_code || '');
-
   return emailValidationResult.isValid && customerCodeValidationResult.isValid;
 };
 
-// ---------------------
-// VALIDATION EMAIL AU BLUR
-// ---------------------
 const handleEmailBlur = (email: string, updateField: Function) => {
   if (!email || email.trim() === '') return;
-
   const validation = authCtrl.validateEmail(email);
-  if (!validation.isValid) {
-    // Utiliser la méthode exposée du composant AuthForm pour définir l'erreur
-    if (authFormRef.value) {
-      authFormRef.value.setFieldError('email', authCtrl.getUserFriendlyErrorMessage(validation.errors));
-    }
+  if (!validation.isValid && authFormRef.value) {
+    authFormRef.value.setFieldError('email', authCtrl.getUserFriendlyErrorMessage(validation.errors));
   }
 };
 
-// ---------------------
-// VALIDATION CODE CLIENT AU BLUR
-// ---------------------
 const handleCustomerCodeBlur = (customerCode: string, updateField: Function) => {
   if (!customerCode || customerCode.trim() === '') return;
-
   const validation = authCtrl.validateCustomerCode(customerCode);
-  if (!validation.isValid) {
-    // Utiliser la méthode exposée du composant AuthForm pour définir l'erreur
-    if (authFormRef.value) {
-      authFormRef.value.setFieldError('customer_code', authCtrl.getUserFriendlyErrorMessage(validation.errors));
-    }
+  if (!validation.isValid && authFormRef.value) {
+    authFormRef.value.setFieldError('customer_code', authCtrl.getUserFriendlyErrorMessage(validation.errors));
   }
 };
 
-// ---------------------
-// SOUMISSION DU FORMULAIRE
-// ---------------------
+// ✅ MODIFICATION : Appel API immédiat et signalement des erreurs rapide
 const handleLogin = async (formData: any) => {
-  try {
-    // console.log('🚀 Début de la soumission du formulaire:', formData);
+  console.log('🎯 handleLogin appelé avec:', formData);
 
-    // Validation locale avant envoi
+  try {
+    // Validation locale
     const emailValidation = authCtrl.validateEmail(formData.email);
     if (!emailValidation.isValid) {
       const errorMsg = authCtrl.getUserFriendlyErrorMessage(emailValidation.errors);
       if (authFormRef.value) {
         authFormRef.value.setFieldError('email', errorMsg);
+        authFormRef.value.setGlobalError(errorMsg);
       }
-      throw new Error(errorMsg);
+      return; // ✅ Sortir immédiatement
     }
 
     const customerCodeValidation = authCtrl.validateCustomerCode(formData.customer_code);
@@ -145,66 +123,53 @@ const handleLogin = async (formData: any) => {
       const errorMsg = authCtrl.getUserFriendlyErrorMessage(customerCodeValidation.errors);
       if (authFormRef.value) {
         authFormRef.value.setFieldError('customer_code', errorMsg);
+        authFormRef.value.setGlobalError(errorMsg);
       }
-      throw new Error(errorMsg);
+      return; // ✅ Sortir immédiatement
     }
 
-    // console.log('✅ Validation réussie, appel à l\'API...');
+    console.log('📡 Appel à l\'API...');
 
-    // Appel au contrôleur pour gérer la connexion
+    // ✅ Appel au contrôleur - on attend la réponse
     const response = await authCtrl.requestLogin({
       email: formData.email,
       customer_code: formData.customer_code
     });
 
-    // console.log('📡 Réponse de l\'API:', response);
+    console.log('✅ Réponse reçue:', response);
 
     if (response && response.success) {
-      // console.log('✨ Connexion réussie!');
-
-      // Afficher un message de succès
+      // ✅ Succès - Afficher le message
       if (authFormRef.value) {
-        authFormRef.value.setGlobalSuccess(response.message || 'Code OTP envoyé avec succès! Redirection...');
+        authFormRef.value.setGlobalSuccess(response.message || 'Code OTP envoyé avec succès!');
       }
 
-      // Redirection vers la page OTP après un court délai
+      // ✅ Attendre que AuthForm finisse son animation (2s loader + 2s succès)
       setTimeout(() => {
-        // router.push('/otp');
         router.push({ path: '/otp', query: { email: formData.email } });
-      }, 2000);
+      }, 4500);
 
-
-
-
-      // return response;
     } else {
-      console.error('❌ Échec de la connexion:', response);
-
-      // Afficher l'erreur globale
+      // ✅ Erreur - Signaler immédiatement
       const errorMessage = authCtrl.formatResponseMessage(response);
       if (authFormRef.value) {
         authFormRef.value.setGlobalError(errorMessage);
       }
-
-      throw new Error(errorMessage);
+      console.error('❌ Erreur:', errorMessage);
     }
 
   } catch (error: any) {
-    console.error('💥 Erreur lors de la connexion:', error);
+    console.error('💥 Erreur capturée:', error);
 
-    // Afficher l'erreur à l'utilisateur
+    // ✅ Signaler l'erreur immédiatement
     if (authFormRef.value && !error.field) {
       authFormRef.value.setGlobalError(
         error.message || 'Une erreur est survenue lors de la connexion. Veuillez réessayer.'
       );
     }
-
-    // Re-throw pour que AuthForm gère aussi l'état isSubmitting
-    throw error;
   }
 };
 </script>
-
 <style scoped>
 .login-fields {
   display: flex;

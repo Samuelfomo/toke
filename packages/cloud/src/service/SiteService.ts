@@ -1,5 +1,5 @@
+import {CreateSite, Site, UpdateSite} from '@/utils/interfaces/site.interface';
 import { apiRequest } from '@/tools/Fetch.Client';
-import {CreateSite, Site, UpdateSite} from "@/utils/interfaces/site.interface";
 
 const baseUrl = '/site';
 

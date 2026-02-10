@@ -71,12 +71,19 @@
                 </router-link>
               </div>
             </slot>
+
             <button
               type="submit"
-              :disabled="isSubmitting || !isFormValid"
+              :disabled="isSubmitting || isSuccess || !isFormValid"
               class="auth-submit-btn"
+              :class="{
+                'is-loading': isSubmitting,
+                'is-success': isSuccess
+              }"
             >
-              {{ isSubmitting ? loadingText : submitButtonText }}
+              <span v-if="!isSubmitting && !isSuccess">{{ submitButtonText }}</span>
+              <span v-else-if="isSubmitting">{{ loadingText }}</span>
+              <span v-else-if="isSuccess">{{ successText }}</span>
             </button>
           </form>
           <slot name="footer">
@@ -91,7 +98,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, watch, onMounted} from 'vue';
+import { ref, computed, watch, onMounted } from 'vue';
 import { useRouter } from 'vue-router'
 import HeadBuilder from '../../../utils/HeadBuilder'
 import LazySvgImage from '../LazySvgImage.vue';
@@ -131,10 +138,10 @@ const props = defineProps({
     required: true
   },
 
-  // NOUVEAU : Type de skeleton
+  // Type de skeleton
   skeletonType: {
     type: String,
-    default: 'default', // 'default' | 'otp'
+    default: 'default',
     validator: (value: string) => ['default', 'otp'].includes(value)
   },
 
@@ -166,6 +173,10 @@ const props = defineProps({
   loadingText: {
     type: String,
     default: 'Chargement...'
+  },
+  successText: {
+    type: String,
+    default: 'Connexion réussie !'
   },
 
   // Footer
@@ -229,10 +240,18 @@ const emit = defineEmits(['submit', 'field-change', 'loading-complete'])
 
 // État local
 const isSubmitting = ref(false)
+const isSuccess = ref(false)
 const localFormData = ref({ ...props.initialData })
 const fieldErrors = ref<Record<string, string>>({})
 const globalError = ref('')
 const globalSuccess = ref('')
+
+// Texte du bouton dynamique
+const buttonText = computed(() => {
+  if (isSuccess.value) return props.successText
+  if (isSubmitting.value) return props.loadingText
+  return props.submitButtonText
+})
 
 // Computed pour la classe CSS du skeleton
 const skeletonContainerClass = computed(() => {
@@ -291,34 +310,68 @@ watch(() => props.initialData, (newData) => {
   localFormData.value = { ...newData }
 }, { deep: true })
 
-// Gestion de la soumission
+// Gestion de la soumission - Loader longue durée puis message de succès
 const handleSubmit = async () => {
-  if (!isFormValid.value) return
+  if (!isFormValid.value) {
+    console.log('❌ Formulaire invalide, soumission bloquée')
+    return
+  }
 
-  // Nettoyer les erreurs précédentes
+  console.log('🚀 Début de la soumission...')
+
+  // Nettoyer les erreurs précédentes et réinitialiser l'état de succès
   clearErrors()
+  isSuccess.value = false
+
+  // ÉTAPE 1 : Activer le loader (spinner)
   isSubmitting.value = true
+  console.log('⏳ Loader activé - Spinner visible...')
 
   try {
-    const result = await emit('submit', { ...localFormData.value })
+    console.log('📤 Émission de l\'événement submit...')
 
-    // Si une redirection est spécifiée et que tout s'est bien passé
+    // Émettre l'événement au parent
+    emit('submit', { ...localFormData.value })
+
+    // Attendre un délai pour le traitement de l'API
+    await new Promise(resolve => setTimeout(resolve, 2000))
+
+    // Vérifier si une erreur a été définie pendant le traitement
+    if (globalError.value) {
+      console.log('❌ Erreur détectée, arrêt du processus')
+      throw new Error(globalError.value)
+    }
+
+    console.log('✅ Traitement terminé avec succès')
+
+    // ÉTAPE 2 : Arrêter le loader et afficher "Connexion réussie"
+    isSubmitting.value = false
+    isSuccess.value = true
+    console.log('🎉 Affichage "Connexion réussie"')
+
+    // Garder le message de succès visible pendant 2 secondes
+    await new Promise(resolve => setTimeout(resolve, 2000))
+
+    console.log('🚀 Redirection...')
+
+    // Si une redirection est spécifiée
     if (props.redirectTo) {
       await router.push(props.redirectTo)
     }
   } catch (error: any) {
-    console.error('Erreur lors de la soumission:', error)
+    console.error('❌ Erreur lors de la soumission:', error)
+
+    // Réinitialiser les états en cas d'erreur
+    isSuccess.value = false
+    isSubmitting.value = false
 
     // Gestion des erreurs
     if (error.field) {
-      // Erreur spécifique à un champ
       setFieldError(error.field, error.message)
-    } else {
-      // Erreur globale
+    } else if (!globalError.value) {
+      // Ne définir l'erreur que si elle n'est pas déjà définie
       globalError.value = error.message || 'Une erreur est survenue lors de la soumission du formulaire'
     }
-  } finally {
-    isSubmitting.value = false
   }
 }
 
@@ -351,34 +404,5 @@ defineExpose({
 </script>
 
 <style scoped>
-.auth-global-error {
-  background-color: #fee;
-  border: 1px solid #fcc;
-  color: #c33;
-  padding: 12px;
-  border-radius: 4px;
-  margin-bottom: 16px;
-  font-size: 14px;
-}
 
-.auth-global-success {
-  background-color: #efe;
-  border: 1px solid #cfc;
-  color: #3c3;
-  padding: 12px;
-  border-radius: 4px;
-  margin-bottom: 16px;
-  font-size: 14px;
-}
-
-.error-message {
-  color: #c33;
-  font-size: 12px;
-  margin-top: 4px;
-  display: block;
-}
-
-.auth-input.error {
-  border-color: #c33;
-}
 </style>

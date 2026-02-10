@@ -209,14 +209,13 @@
     font-size: 16px;
     font-weight: 600;
     color: var(--text-primary);
-    margin-bottom: var(--space-xs);
+    margin-bottom: 0;
 }
 
 .employee-status {
     display: flex;
     align-items: center;
     gap: 6px;
-    margin-bottom: var(--space-xs);
 }
 
 .status-text {
@@ -242,7 +241,6 @@
     background: rgba(220, 53, 69, 0.1);
     padding: 6px var(--space-sm);
     border-radius: 6px;
-    margin-top: var(--space-xs);
 }
 
 .issue-text {

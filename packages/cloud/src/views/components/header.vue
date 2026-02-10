@@ -68,14 +68,14 @@
           >
             <div class="profile-menu-content">
               <div class="avatar">{{ userStore.userInitials }}</div>
-              <div class="user-info">
-                <span class="user-name">{{ userStore.fullName }}</span>
-                <span class="company-name">{{ userStore.tenantName }}</span>
-              </div>
+<!--              <div class="user-info">-->
+<!--                <span class="user-name">{{ userStore.fullName }}</span>-->
+<!--                <span class="company-name">{{ userStore.tenantName }}</span>-->
+<!--              </div>-->
             </div>
           </button>
           <transition name="dropdown">
-            <div v-if="showUserMenu" class="dropdown-menu user-dropdown" v-click-outside="closeUserMenu">
+            <div v-if="showUserMenu" class="dropdown-menu user-dropdown" v-click-outside="closeUserMenu" @click.stop>
               <div class="dropdown-body">
                 <a href="/profile" class="dropdown-link">
                   <svg class="link-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -113,56 +113,14 @@
 
   <nav class="main-navigation">
     <div class="nav-container" ref="navContainerRef">
-      <RouterLink
-          to="/dashboard"
-          class="nav-tab"
-          :class="{ active: activeTab === '/dashboard' }"
-          @click="setActiveTab('/dashboard')">
-        <svg class="tab-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
-        </svg>
-        <span class="tab-label">Aujourd'hui</span>
-      </RouterLink>
-      <RouterLink
-        to="/equipe"
+      <RouterLink v-for="(module, index) in modules" :key="index"
+        :to="module.path"
         class="nav-tab"
-        :class="{ active: activeTab === '/equipe' }"
-        @click="setActiveTab('/equipe')">
-        <svg class="tab-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"></path>
-        </svg>
-        <span class="tab-label">Équipe</span>
+        :class="{ active: activeTab === module.path }"
+        @click="setActiveTab(module.path)">
+        <component :is="module.icon" class="tab-icon" />
+        <span class="tab-label">{{module.title}}</span>
       </RouterLink>
-      <RouterLink
-        to="/sites"
-        class="nav-tab"
-        :class="{ active: activeTab === '/sites' }"
-        @click="setActiveTab('/sites')">
-        <IconMapPin />
-        <span class="tab-label">Site</span>
-      </RouterLink>
-      <RouterLink
-        to="#"
-        class="nav-tab"
-        :class="{ active: activeTab === '/analytics' }"
-        @click="setActiveTab('/analytics')">
-        <svg class="tab-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path>
-        </svg>
-        <span class="tab-label">Analytics</span>
-      </RouterLink>
-      <RouterLink
-        to="/setting"
-        class="nav-tab"
-        :class="{ active: activeTab === '/setting' }"
-        @click="setActiveTab('/setting')">
-        <svg class="tab-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"></path>
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
-        </svg>
-        <span class="tab-label">Paramètres</span>
-      </RouterLink>
-
       <div class="active-tab-indicator" :style="indicatorStyle"></div>
     </div>
   </nav>
@@ -170,9 +128,9 @@
 
 <script setup lang="ts">
 import { ref, onMounted, nextTick, onUnmounted } from 'vue'
-import { useUserStore } from '@/composables/userStore'
+import { useUserStore } from '@/stores/userStore'
 import toke from '../../../public/images/toke.svg'
-import { IconMapPin } from '@tabler/icons-vue';
+import { IconMapPin, IconEdit, IconBrandDaysCounter, IconCalendarWeek, IconUsers, IconSettings} from '@tabler/icons-vue';
 
 import dashboardCss from "@/assets/css/toke-dMain-04.css?url"
 
@@ -202,7 +160,43 @@ const userStore = useUserStore()
 
 const notificationsRef = ref<HTMLElement | null>(null)
 const userMenuRef = ref<HTMLElement | null>(null)
-
+const modules = ref([
+  {
+    title: "Aujourd'hui",
+    icon: IconBrandDaysCounter,
+    path: "/dashboard",
+  },
+  {
+    title: "Equipe",
+    icon: IconUsers,
+    path: "/equipe",
+  },
+  // {
+  //   title: "Analystics",
+  //   icon: "",
+  //   path: "#",
+  // },
+  {
+    title: "Sites",
+    icon: IconMapPin,
+    path: "/sites",
+  },
+  {
+    title: "Memos",
+    icon: IconEdit,
+    path: "/memoList",
+  },
+  {
+    title: "Planning",
+    icon: IconCalendarWeek,
+    path: "/schedule",
+  },
+  {
+    title: "Parametres",
+    icon: IconSettings,
+    path: "/setting",
+  },
+])
 
 // Menu states
 const showNotifications = ref(false)
@@ -292,7 +286,7 @@ const openMemo = (memo: Memo) => {
 }
 
 const logout = () => {
-   userStore.logout()
+  userStore.logout()
   router.push('/')
   console.log('Déconnexion')
 }
