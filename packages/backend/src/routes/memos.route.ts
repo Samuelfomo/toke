@@ -111,7 +111,7 @@ router.post(
       const client = (req as any).client.reference;
       const response = await UserService.sendMemoCreation(client, req.body);
       if (response.status !== HttpStatus.CREATED) {
-        return R.handleError(res, response.status, response.data);
+        return R.handleError(res, response.status, response.data.error);
       }
 
       return R.handleSuccess(res, response.data);
@@ -150,7 +150,7 @@ router.patch(
       }
       const response = await UserService.sendReply(client, guid, req.body);
       if (response.status !== HttpStatus.SUCCESS) {
-        return R.handleError(res, response.status, response.data);
+        return R.handleError(res, response.status, response.data.error);
       }
 
       return R.handleSuccess(res, response.data);
@@ -190,7 +190,7 @@ router.patch(
 
       const response = await UserService.validateMemo(client, guid, req.body);
       if (response.status !== HttpStatus.SUCCESS) {
-        return R.handleError(res, response.status, response.data);
+        return R.handleError(res, response.status, response.data.error);
       }
 
       return R.handleSuccess(res, response.data);
@@ -227,7 +227,7 @@ router.patch(
 
       const response = await UserService.rejetMemo(client, guid, req.body);
       if (response.status !== HttpStatus.SUCCESS) {
-        return R.handleError(res, response.status, response.data);
+        return R.handleError(res, response.status, response.data.error);
       }
 
       return R.handleSuccess(res, response.data);
@@ -264,7 +264,7 @@ router.get(
 
       const response = await UserService.listByManager(client, supervisor);
       if (response.status !== HttpStatus.SUCCESS) {
-        return R.handleError(res, response.status, response.data);
+        return R.handleError(res, response.status, response.data.error);
       }
 
       return R.handleSuccess(res, response.data);

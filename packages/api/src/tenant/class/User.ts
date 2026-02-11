@@ -14,6 +14,7 @@ import { TenantRevision } from '../../tools/revision.js';
 
 import RotationAssignment from './RotationAssignments.js';
 import ScheduleAssignments from './ScheduleAssignments.js';
+import Groups from './Groups';
 
 export default class User extends UserModel {
   // private sessionTemplateObjs: Map<number, SessionTemplate> = new Map();
@@ -33,12 +34,22 @@ export default class User extends UserModel {
   ): Promise<User | null> {
     return new User().load(identifier, byGuid, byEmail, byEmployeeCode, byPhoneNumber, byOtp);
   }
+  static _loadForRestore(identifier: string): Promise<User | null> {
+    return new User().loadForRestore(identifier);
+  }
 
   static _list(
     conditions: Record<string, any> = {},
     paginationOptions: { offset?: number; limit?: number } = {},
   ): Promise<User[] | null> {
     return new User().list(conditions, paginationOptions);
+  }
+
+  static _listDeleted(
+    conditions: Record<string, any> = {},
+    paginationOptions: { offset?: number; limit?: number } = {},
+  ): Promise<User[] | null> {
+    return new User().listDeleted(conditions, paginationOptions);
   }
 
   static _listByDepartment(
@@ -252,6 +263,12 @@ export default class User extends UserModel {
 
     const activeAssignments = await ScheduleAssignments._listForUserOnDate(this.id!, today);
 
+    const activeGroup = await Groups._load(this.getId(), false, true);
+    if (activeGroup) {
+      const activeAssignments2 = await activeGroup.getActiveScheduleAssignment();
+      console.log('activeAssignments2', activeAssignments2);
+    }
+
     // Retourner la plus récente active
     if (activeAssignments && activeAssignments.length > 0) {
       return activeAssignments.sort((a, b) => {
@@ -269,6 +286,12 @@ export default class User extends UserModel {
    */
   async getActiveRotationAssignment(): Promise<RotationAssignment | null> {
     const assignments = await RotationAssignment._listByUser(this.id!);
+
+    const activeGroup = await Groups._load(this.getId(), false, true);
+    if (activeGroup) {
+      const activeAssignments = await activeGroup.getActiveRotationAssignment();
+      console.log('activeAssignments', activeAssignments);
+    }
 
     // Il ne devrait y avoir qu'une seule rotation active par utilisateur
     return assignments && assignments.length > 0 ? assignments[0] : null;
@@ -794,11 +817,26 @@ export default class User extends UserModel {
     return this.hydrate(data);
   }
 
+  async loadForRestore(identifier: string): Promise<User | null> {
+    const data = await this.findForRestore(identifier);
+    if (!data) return null;
+    return this.hydrate(data);
+  }
+
   async list(
     conditions: Record<string, any> = {},
     paginationOptions: { offset?: number; limit?: number } = {},
   ): Promise<User[] | null> {
     const dataset = await this.listAll(conditions, paginationOptions);
+    if (!dataset || dataset.length === 0) return null;
+    return dataset.map((data) => new User().hydrate(data));
+  }
+
+  async listDeleted(
+    conditions: Record<string, any> = {},
+    paginationOptions: { offset?: number; limit?: number } = {},
+  ): Promise<User[] | null> {
+    const dataset = await this.listAllDeleted(conditions, paginationOptions);
     if (!dataset || dataset.length === 0) return null;
     return dataset.map((data) => new User().hydrate(data));
   }
@@ -837,6 +875,17 @@ export default class User extends UserModel {
     if (this.id !== undefined) {
       await W.isOccur(!this.id, `${G.identifierMissing.code}: User Delete`);
       return await this.trash(this.id);
+    }
+    return false;
+  }
+
+  /**
+   * ✅ MODIFIÉ : restore maintenant
+   */
+  async restoreUser(): Promise<boolean> {
+    if (this.id !== undefined) {
+      await W.isOccur(!this.id, `${G.identifierMissing.code}: User Restore`);
+      return await this.restore(this.id);
     }
     return false;
   }

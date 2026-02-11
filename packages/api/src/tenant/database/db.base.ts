@@ -56,11 +56,12 @@ export default abstract class BaseModel {
     tableName: string,
     where: Record<string, any> = {},
     paginationOptions: { offset?: number; limit?: number } = {},
+    options: any = {}, // ✅ options Sequelize (paranoid, order, include…),
   ): Promise<any[]> {
     await this.ensureInitialized();
     const model = TableInitializer.getModel(tableName);
 
-    const queryOptions: any = { where };
+    const queryOptions: any = { where, ...options };
 
     if (typeof paginationOptions.offset === 'number' && paginationOptions.offset >= 0) {
       queryOptions.offset = paginationOptions.offset;
@@ -77,10 +78,15 @@ export default abstract class BaseModel {
   /**
    * Mettre à jour un enregistrement
    */
-  protected async updateOne(tableName: string, data: any, where: any): Promise<number> {
+  protected async updateOne(
+    tableName: string,
+    data: any,
+    where: any,
+    options: any = {},
+  ): Promise<number> {
     await this.ensureInitialized();
     const model = TableInitializer.getModel(tableName);
-    const [affectedCount] = await model.update(data, { where });
+    const [affectedCount] = await model.update(data, { where, ...options });
     return affectedCount;
   }
 

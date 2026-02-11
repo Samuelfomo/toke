@@ -156,6 +156,14 @@ export default class UserModel extends BaseModel {
     return await this.findOne(this.db.tableName, conditions);
   }
 
+  protected async findForRestore(guid: string): Promise<any> {
+    return await this.findOne(
+      this.db.tableName,
+      { [this.db.guid]: guid, [this.db.deleted_at]: { [Op.ne]: null } },
+      { paranoid: false },
+    );
+  }
+
   protected async findByEmail(email: string, includeDeleted: boolean = false): Promise<any> {
     const conditions: any = { [this.db.email]: email.toLowerCase() };
 
@@ -251,6 +259,16 @@ export default class UserModel extends BaseModel {
     }
 
     return await this.findAll(this.db.tableName, conditions, paginationOptions);
+  }
+
+  protected async listAllDeleted(
+    conditions: Record<string, any> = {},
+    paginationOptions: { offset?: number; limit?: number } = {},
+  ): Promise<any[]> {
+    // ✅ Ne retourner que les éléments supprimés
+    conditions[this.db.deleted_at] = { [Op.ne]: null };
+    const options = { paranoid: false };
+    return await this.findAll(this.db.tableName, conditions, paginationOptions, options);
   }
 
   protected async listAllByOtpExpiresAt(
@@ -748,8 +766,10 @@ export default class UserModel extends BaseModel {
       this.db.tableName,
       {
         [this.db.deleted_at]: null,
+        [this.db.active]: true,
       },
       { [this.db.id]: id },
+      { paranoid: false },
     );
 
     return affected > 0;

@@ -891,7 +891,10 @@ router.get('/my-level', Ensure.get(), async (req: Request, res: Response) => {
         const roles = await UserRole.getUserRoles(peer.id);
         return {
           ...peer.toJSON(),
-          roles: roles ? roles.map((r) => r.toJSON()) : [],
+          roles: {
+            count: roles.length,
+            items: roles ? roles.map((r) => r.toJSON()) : [],
+          },
         };
       }),
     );

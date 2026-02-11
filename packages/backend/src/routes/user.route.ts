@@ -5,6 +5,7 @@ import {
   HttpStatus,
   ORG_HIERARCHY_CODES,
   ORG_HIERARCHY_ERRORS,
+  TimezoneConfigUtils,
   UsersValidationUtils,
 } from '@toke/shared';
 
@@ -47,12 +48,12 @@ router.get(
 );
 
 router.get(
-  '/attendance/today',
+  '/attendance/stat',
   TenantConfig.authenticate,
   Ensure.get(),
   async (req: Request, res: Response) => {
     try {
-      const { supervisor } = req.query;
+      const { supervisor, start_date, end_date } = req.query;
 
       // Vérification du GUID
       if (!supervisor || !UsersValidationUtils.validateGuid(String(supervisor))) {
@@ -63,8 +64,15 @@ router.get(
       }
 
       const client = (req as any).client.reference;
+      let start = start_date || TimezoneConfigUtils.getCurrentTime().toISOString().split('T')[0];
+      let end = end_date || TimezoneConfigUtils.getCurrentTime().toISOString().split('T')[0];
 
-      const result: any = await UserService.listAttendanceTeamManager(client, String(supervisor));
+      const result: any = await UserService.listAttendanceTeamManager(
+        client,
+        String(supervisor),
+        String(start),
+        String(end),
+      );
 
       if (result.status !== HttpStatus.SUCCESS) {
         return R.handleError(res, result.status, result.response);

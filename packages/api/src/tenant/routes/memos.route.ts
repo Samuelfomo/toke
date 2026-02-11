@@ -1482,6 +1482,15 @@ router.patch('/:guid/reject', Ensure.patch(), async (req: Request, res: Response
         details: validation.errors,
       });
     }
+
+    // Vérifier que le memo est en attente de validation
+    if (memoObj.getMemoStatus() !== MemoStatus.SUBMITTED) {
+      return R.handleError(res, HttpStatus.BAD_REQUEST, {
+        code: MEMOS_CODES.INVALID_STATUS_TRANSITION,
+        message: 'Memo is not submitted for validation',
+      });
+    }
+
     const validatedData = validation.data;
 
     const validatorObj = await User._load(validatedData.validator_user, true);

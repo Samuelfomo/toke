@@ -11,6 +11,10 @@ import timeEntriesRoute from './src/routes/time.entries.route.js';
 import memosRoute from './src/routes/memos.route.js';
 import siteRoute from './src/routes/site.route.js';
 import scheduleRoute from './src/routes/schedule.route.js';
+import rotationGroupsRoute from './src/routes/rotation.groups.route.js';
+import scheduleAssignmentsRoute from './src/routes/schedule.assignments.route.js';
+import rotationAssignmentsRoute from './src/routes/rotation.assignments.route.js';
+import groupsRoute from './src/routes/groups.route.js';
 
 dotenv.config();
 
@@ -162,8 +166,12 @@ export default class App {
     this.app.use('/user', userRoute);
     this.app.use('/time-entries', timeEntriesRoute);
     this.app.use('/site', siteRoute);
-    this.app.use('/uploads', memosRoute);
+    this.app.use('/memo', memosRoute);
     this.app.use('/session-templates', scheduleRoute);
+    this.app.use('/rotation-groups', rotationGroupsRoute);
+    this.app.use('/schedule-assignments', scheduleAssignmentsRoute);
+    this.app.use('/rotation-assignments', rotationAssignmentsRoute);
+    this.app.use('/groups', groupsRoute);
 
     // Route 404
     this.app.use((req, res) => {

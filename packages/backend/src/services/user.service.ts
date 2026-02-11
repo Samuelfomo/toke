@@ -49,10 +49,14 @@ export class UserService {
   static async listAttendanceTeamManager(
     reference: string,
     data: string,
+    start: string,
+    end: string,
   ): Promise<{ status: number; response: object }> {
     try {
       const api = await getApiClient(reference);
-      const response = await api.get(`${userBaseUrl}/attendance/stat?manager=${data}`);
+      const response = await api.get(
+        `${userBaseUrl}/attendance/stat?manager=${data}&start_date=${start}&end_date=${end}`,
+      );
 
       return {
         status: response.status,

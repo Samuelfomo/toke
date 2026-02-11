@@ -28,12 +28,7 @@ import R from '../../tools/response.js';
 import User from '../class/User.js';
 import UserRole from '../class/UserRole.js';
 import { TenantRevision } from '../../tools/revision.js';
-import {
-  responseStructure,
-  responseValue,
-  RoleValues,
-  tableName,
-} from '../../utils/response.model.js';
+import { responseStructure, responseValue, RoleValues, tableName, } from '../../utils/response.model.js';
 import Role from '../class/Role.js';
 import OrgHierarchy from '../class/OrgHierarchy.js';
 import { DatabaseEncryption } from '../../utils/encryption.js';
@@ -125,6 +120,31 @@ router.get('/list', Ensure.get(), async (req: Request, res: Response) => {
         limit: paginationOptions.limit || userEntries?.length || 0,
         count: userEntries?.length || 0,
       },
+      items: userEntries?.length ? await Promise.all(userEntries.map((user) => user.toJSON())) : [],
+    };
+
+    return R.handleSuccess(res, { users });
+  } catch (error: any) {
+    if (error.issues) {
+      return R.handleError(res, HttpStatus.BAD_REQUEST, {
+        code: USERS_CODES.PAGINATION_INVALID,
+        message: USERS_ERRORS.PAGINATION_INVALID,
+        details: error.issues,
+      });
+    } else {
+      return R.handleError(res, HttpStatus.INTERNAL_ERROR, {
+        code: USERS_CODES.LISTING_FAILED,
+        message: error.message,
+      });
+    }
+  }
+});
+
+router.get('/list/deleted', Ensure.get(), async (_req: Request, res: Response) => {
+  try {
+    const userEntries = await User._listDeleted();
+    const users = {
+      count: userEntries?.length || 0,
       items: userEntries?.length ? await Promise.all(userEntries.map((user) => user.toJSON())) : [],
     };
 
@@ -350,7 +370,12 @@ router.get('/unassigned-employees', Ensure.get(), async (req: Request, res: Resp
         const roles = await UserRole._listByUser(employee.getId()!);
         return {
           ...(await employee.toJSON(responseValue.FULL)),
-          roles: roles ? await Promise.all(roles.map((r) => r.toJSON(responseValue.MINIMAL))) : [],
+          roles: {
+            count: roles?.length,
+            items: roles
+              ? await Promise.all(roles.map((r) => r.toJSON(responseValue.MINIMAL)))
+              : [],
+          },
         };
       }),
     );
@@ -1298,6 +1323,42 @@ router.delete('/:guid', Ensure.delete(), async (req: Request, res: Response) => 
 
     await userObj.delete();
     return R.handleSuccess(res, { message: 'User deleted successfully' });
+  } catch (error: any) {
+    return R.handleError(res, HttpStatus.INTERNAL_ERROR, {
+      code: USERS_CODES.DELETE_FAILED,
+      message: error.message,
+    });
+  }
+});
+
+router.patch('/restore/:guid', Ensure.patch(), async (req: Request, res: Response) => {
+  try {
+    const validGuid = UsersValidationUtils.validateGuid(req.params.guid);
+    if (!validGuid) {
+      return R.handleError(res, HttpStatus.BAD_REQUEST, {
+        code: USERS_CODES.INVALID_GUID,
+        message: USERS_ERRORS.GUID_INVALID,
+      });
+    }
+
+    const userObj = await User._loadForRestore(req.params.guid);
+    if (!userObj) {
+      return R.handleError(res, HttpStatus.NOT_FOUND, {
+        code: USERS_CODES.USER_NOT_FOUND,
+        message: USERS_ERRORS.NOT_FOUND,
+      });
+    }
+
+    const roles = await UserRole.getUserRoles(userObj.getId()!);
+
+    await userObj.restoreUser();
+    return R.handleSuccess(res, {
+      message: 'User restore successfully',
+      user: {
+        ...(await userObj.toJSON()),
+        roles: roles.map((role) => role.toJSON()),
+      },
+    });
   } catch (error: any) {
     return R.handleError(res, HttpStatus.INTERNAL_ERROR, {
       code: USERS_CODES.DELETE_FAILED,
@@ -2835,8 +2896,21 @@ router.get('/attendance/stat', Ensure.get(), async (req: Request, res: Response)
     // ============================================
     // 3️⃣ CALCUL DES JOURS DE LA PÉRIODE
     // ============================================
+
+    const MS_PER_DAY = 1000 * 60 * 60 * 24;
+
+    // Dates de calcul (journées)
+    const startDateCalc = new Date(startOfPeriod);
+    startDateCalc.setHours(0, 0, 0, 0);
+
+    const endDateCalc = new Date(endOfPeriod);
+    endDateCalc.setHours(0, 0, 0, 0);
+
     const totalDays =
-      Math.ceil((endOfPeriod.getTime() - startOfPeriod.getTime()) / (1000 * 60 * 60 * 24)) + 1;
+      Math.round((endDateCalc.getTime() - startDateCalc.getTime()) / MS_PER_DAY) + 1;
+
+    // const totalDays =
+    //   Math.ceil((endOfPeriod.getTime() - startOfPeriod.getTime()) / (1000 * 60 * 60 * 24)) + 1;
 
     // ============================================
     // 4️⃣ ANALYSE PAR JOUR
@@ -2847,7 +2921,10 @@ router.get('/attendance/stat', Ensure.get(), async (req: Request, res: Response)
     const dayNames = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
 
     const analysisDate = new Date(startOfPeriod);
-    while (analysisDate <= endOfPeriod) {
+    const endOfCalculation = new Date(endOfPeriod);
+    endOfCalculation.setHours(0, 0, 0, 0);
+
+    while (analysisDate <= endOfCalculation) {
       const dateKey = analysisDate.toISOString().split('T')[0];
       const dayStart = new Date(analysisDate);
       dayStart.setHours(0, 0, 0, 0);

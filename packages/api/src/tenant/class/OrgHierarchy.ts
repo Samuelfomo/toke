@@ -357,7 +357,10 @@ export default class OrgHierarchy extends OrgHierarchyModel {
       const roles = await UserRole.getUserRoles(e.user.getId()!);
       return {
         ...(await e.user.toJSON(responseValue.FULL)),
-        roles: roles ? roles.map((r: any) => r.toJSON()) : [],
+        roles: {
+          count: roles.length,
+          items: roles ? roles.map((r: any) => r.toJSON()) : [],
+        },
       };
     };
 

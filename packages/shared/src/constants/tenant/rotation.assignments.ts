@@ -86,7 +86,7 @@ export const ROTATION_ASSIGNMENT_ERRORS = {
   GROUPS_INVALID: `Groups GUID must be between ${ROTATION_ASSIGNMENT_VALIDATION.GROUPS.MIN_LENGTH} and ${ROTATION_ASSIGNMENT_VALIDATION.GROUPS.MAX_LENGTH} characters`,
   GROUPS_NOT_FOUND: 'Rotation Groups not found',
 
-  USER_OR_GROUPS_REQUIRED: 'Either user or Groups must be specified',
+  USER_OR_GROUPS_REQUIRED: 'Either user or Group must be specified',
   ONLY_ONE_USER_OR_GROUPS_ALLOWED: 'Only one of user or Groups must be specified, not both',
 
   ROTATION_GROUP_REQUIRED: `${ROTATION_ASSIGNMENT_LABEL} rotation_group is required`,

@@ -196,8 +196,6 @@ export class TableInitializer {
     console.log(`🏗️ Définition des modèles pour tenant...`);
 
     this.defineRolesModelForInstance(instance);
-    this.defineDepartmentModelForInstance(instance);
-    this.definePosteModelForInstance(instance);
     this.defineUsersModelForInstance(instance);
     this.defineUserRolesModelForInstance(instance);
     this.defineOrgHierarchyModelForInstance(instance);
@@ -214,6 +212,8 @@ export class TableInitializer {
     this.defineRotationGroupsModelForInstance(instance);
     this.defineRotationAssignmentsModelForInstance(instance);
     this.defineScheduleExceptionsModelForInstance(instance);
+    this.defineDepartmentModelForInstance(instance);
+    this.definePosteModelForInstance(instance);
 
     console.log(`✅ ${instance.models.size} modèle(s) défini(s) pour cette instance`);
   }
