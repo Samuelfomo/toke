@@ -14,6 +14,7 @@ export default class SponsorModel extends BaseModel {
     country: 'country',
     status: 'status',
     metadata: 'metadata',
+    reference: 'reference',
   } as const;
   protected id?: number;
   protected guid?: string;
@@ -21,6 +22,7 @@ export default class SponsorModel extends BaseModel {
   protected country?: string;
   protected status?: InvitationStatus;
   protected metadata?: object;
+  protected reference?: string;
 
   protected constructor() {
     super();
@@ -44,8 +46,14 @@ export default class SponsorModel extends BaseModel {
   /**
    * Trouve un enregistrement par son PHONE_NUMBER
    */
-  protected async findByPhoneNumber(phone_number: string): Promise<any> {
-    return await this.findOne(this.db.tableName, { [this.db.phone_number]: phone_number });
+  protected async findByPhoneNumberAndTenant(
+    phone_number: string,
+    reference: string,
+  ): Promise<any> {
+    return await this.findOne(this.db.tableName, {
+      [this.db.phone_number]: phone_number,
+      [this.db.reference]: reference,
+    });
   }
 
   /**
@@ -56,6 +64,13 @@ export default class SponsorModel extends BaseModel {
     paginationOptions: { offset?: number; limit?: number } = {},
   ): Promise<any[]> {
     return await this.findAll(this.db.tableName, conditions, paginationOptions);
+  }
+
+  protected async listByPhoneNumber(
+    phone_number: string,
+    paginationOptions: { offset?: number; limit?: number } = {},
+  ): Promise<any[]> {
+    return await this.listAll({ [this.db.phone_number]: phone_number }, paginationOptions);
   }
 
   protected async listAllByStatus(
@@ -111,9 +126,11 @@ export default class SponsorModel extends BaseModel {
       throw new Error(`❌ Impossible de générer un GUID unique après ${maxAttempts} tentatives`);
     }
 
-    const existPhone = await this.findByPhoneNumber(this.phone_number!);
+    this.reference = (this.metadata as any).tenant.reference;
+
+    const existPhone = await this.findByPhoneNumberAndTenant(this.phone_number!, this.reference!);
     if (existPhone) {
-      throw new Error(`Invitation phone number already exists`);
+      throw new Error(`Invitation phone number already exists for this tenant`);
     }
 
     // ✅ NEW: Si user est fourni, vérifier qu'il n'a pas été invité avant
@@ -130,6 +147,7 @@ export default class SponsorModel extends BaseModel {
       [this.db.country]: this.country,
       [this.db.status]: InvitationStatus.PENDING,
       [this.db.metadata]: this.metadata,
+      [this.db.reference]: this.reference,
     });
 
     if (!lastID) {
@@ -157,6 +175,7 @@ export default class SponsorModel extends BaseModel {
     if (this.country !== undefined) updateData[this.db.country] = this.country;
     if (this.status !== undefined) updateData[this.db.status] = this.status;
     if (this.metadata !== undefined) updateData[this.db.metadata] = this.metadata;
+    if (this.reference !== undefined) updateData[this.db.reference] = this.reference;
 
     const affected = await this.updateOne(this.db.tableName, updateData, { [this.db.id]: this.id });
     if (!affected) {

@@ -103,7 +103,7 @@ export default class Sponsor extends SponsorModel {
     const data = byGuid
       ? await this.findByGuid(identifier)
       : byPhone
-        ? await this.findByPhoneNumber(identifier)
+        ? await this.findByPhoneNumberAndTenant(identifier.phone_number, identifier.reference)
         : await this.find(Number(identifier));
     if (!data) return null;
     return this.hydrate(data);

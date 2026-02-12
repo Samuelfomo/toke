@@ -14,7 +14,7 @@ import { TenantRevision } from '../../tools/revision.js';
 
 import RotationAssignment from './RotationAssignments.js';
 import ScheduleAssignments from './ScheduleAssignments.js';
-import Groups from './Groups';
+import Groups from './Groups.js';
 
 export default class User extends UserModel {
   // private sessionTemplateObjs: Map<number, SessionTemplate> = new Map();
@@ -254,47 +254,145 @@ export default class User extends UserModel {
   // MÉTHODES DE RÉSOLUTION DES ASSIGNATIONS
   // ============================================
 
+  // /**
+  //  * Récupère l'assignation d'horaire active pour cet utilisateur
+  //  * Priorité : Schedule Assignment > Rotation Assignment
+  //  */
+  // async getActiveScheduleAssignment(): Promise<ScheduleAssignments | null> {
+  //   const today = TimezoneConfigUtils.getCurrentTime().toISOString().split('T')[0];
+  //
+  //   const activeAssignments = await ScheduleAssignments._listForUserOnDate(this.id!, today);
+  //
+  //   const activeGroup = await Groups._load(this.getId(), false, true);
+  //   if (activeGroup) {
+  //     const activeAssignments2 = await activeGroup.getActiveScheduleAssignment();
+  //     console.log('activeAssignments2', activeAssignments2);
+  //   }
+  //
+  //   // Retourner la plus récente active
+  //   if (activeAssignments && activeAssignments.length > 0) {
+  //     return activeAssignments.sort((a, b) => {
+  //       const dateA = new Date(a.getStartDate()!).getTime();
+  //       const dateB = new Date(b.getStartDate()!).getTime();
+  //       return dateB - dateA; // Plus récent en premier
+  //     })[0];
+  //   }
+  //
+  //   return null;
+  // }
   /**
-   * Récupère l'assignation d'horaire active pour cet utilisateur
-   * Priorité : Schedule Assignment > Rotation Assignment
+   * Récupère l'assignation d'horaire active la plus récente
+   * (peut provenir du user ou du group)
    */
   async getActiveScheduleAssignment(): Promise<ScheduleAssignments | null> {
-    const today = TimezoneConfigUtils.getCurrentTime().toISOString().split('T')[0];
+    const active = await this.getActiveAssignment();
+    if (!active) return null;
 
-    const activeAssignments = await ScheduleAssignments._listForUserOnDate(this.id!, today);
+    return active.type === 'schedule' ? (active.assignment as ScheduleAssignments) : null;
+  }
 
-    const activeGroup = await Groups._load(this.getId(), false, true);
-    if (activeGroup) {
-      const activeAssignments2 = await activeGroup.getActiveScheduleAssignment();
-      console.log('activeAssignments2', activeAssignments2);
-    }
+  // /**
+  //  * Récupère l'assignation de rotation active pour cet utilisateur
+  //  */
+  // async getActiveRotationAssignment(): Promise<RotationAssignment | null> {
+  //   const assignments = await RotationAssignment._listByUser(this.id!);
+  //
+  //   const activeGroup = await Groups._load(this.getId(), false, true);
+  //   if (activeGroup) {
+  //     const activeAssignments = await activeGroup.getActiveRotationAssignment();
+  //     console.log('activeAssignments', activeAssignments);
+  //   }
+  //
+  //   // Il ne devrait y avoir qu'une seule rotation active par utilisateur
+  //   return assignments && assignments.length > 0 ? assignments[0] : null;
+  // }
 
-    // Retourner la plus récente active
-    if (activeAssignments && activeAssignments.length > 0) {
-      return activeAssignments.sort((a, b) => {
-        const dateA = new Date(a.getStartDate()!).getTime();
-        const dateB = new Date(b.getStartDate()!).getTime();
-        return dateB - dateA; // Plus récent en premier
-      })[0];
-    }
+  /**
+   * Récupère l'assignation de rotation active la plus récente
+   * (user ou group)
+   */
+  async getActiveRotationAssignment(): Promise<RotationAssignment | null> {
+    const active = await this.getActiveAssignment();
+    if (!active) return null;
 
-    return null;
+    return active.type === 'rotation' ? (active.assignment as RotationAssignment) : null;
   }
 
   /**
-   * Récupère l'assignation de rotation active pour cet utilisateur
+   * Retourne l'assignation active la plus récente
+   * (schedule ou rotation, user ou group)
    */
-  async getActiveRotationAssignment(): Promise<RotationAssignment | null> {
-    const assignments = await RotationAssignment._listByUser(this.id!);
+  async getActiveAssignment(): Promise<{
+    type: 'schedule' | 'rotation';
+    assignment: any;
+  } | null> {
+    const today = TimezoneConfigUtils.getCurrentTime().toISOString().split('T')[0];
 
-    const activeGroup = await Groups._load(this.getId(), false, true);
-    if (activeGroup) {
-      const activeAssignments = await activeGroup.getActiveRotationAssignment();
-      console.log('activeAssignments', activeAssignments);
+    const candidates: Array<{
+      type: 'schedule' | 'rotation';
+      assignedAt: Date;
+      assignment: any;
+    }> = [];
+
+    // 1️⃣ SCHEDULE USER
+    const userSchedules = await ScheduleAssignments._listForUserOnDate(this.id!, today);
+    if (userSchedules?.length) {
+      userSchedules.forEach((s) => {
+        candidates.push({
+          type: 'schedule',
+          assignedAt: s.getAssignedAt() || new Date(0),
+          assignment: s,
+        });
+      });
     }
 
-    // Il ne devrait y avoir qu'une seule rotation active par utilisateur
-    return assignments && assignments.length > 0 ? assignments[0] : null;
+    // 2️⃣ ROTATION USER
+    const userRotations = await RotationAssignment._listByUser(this.id!);
+    if (userRotations?.length) {
+      userRotations.forEach((r) => {
+        candidates.push({
+          type: 'rotation',
+          assignedAt: r.getAssignedAt() || new Date(0),
+          assignment: r,
+        });
+      });
+    }
+
+    // 3️⃣ GROUP
+    const activeGroup = await Groups._load(this.getId(), false, true);
+    if (activeGroup) {
+      const groupSchedule = await activeGroup.getActiveScheduleAssignment();
+      if (groupSchedule) {
+        candidates.push({
+          type: 'schedule',
+          assignedAt: groupSchedule.getAssignedAt() || new Date(0),
+          assignment: groupSchedule,
+        });
+      }
+
+      const groupRotation = await activeGroup.getActiveRotationAssignment();
+      if (groupRotation) {
+        candidates.push({
+          type: 'rotation',
+          assignedAt: groupRotation.getAssignedAt() || new Date(0),
+          assignment: groupRotation,
+        });
+      }
+    }
+
+    if (candidates.length === 0) {
+      return null;
+    }
+
+    // 4️⃣ Trier par assignedAt
+    candidates.sort((a, b) => b.assignedAt.getTime() - a.assignedAt.getTime());
+
+    const winner = candidates[0];
+
+    return {
+      type: winner.type,
+      assignment: winner.assignment,
+    };
   }
 
   /**
@@ -314,14 +412,18 @@ export default class User extends UserModel {
   /**
    * Détermine le type d'assignation en cours : 'schedule', 'rotation', ou 'none'
    */
+  // async getCurrentAssignmentType(): Promise<'schedule' | 'rotation' | 'none'> {
+  //   const scheduleAssignment = await this.getActiveScheduleAssignment();
+  //   if (scheduleAssignment) return 'schedule';
+  //
+  //   const rotationAssignment = await this.getActiveRotationAssignment();
+  //   if (rotationAssignment) return 'rotation';
+  //
+  //   return 'none';
+  // }
   async getCurrentAssignmentType(): Promise<'schedule' | 'rotation' | 'none'> {
-    const scheduleAssignment = await this.getActiveScheduleAssignment();
-    if (scheduleAssignment) return 'schedule';
-
-    const rotationAssignment = await this.getActiveRotationAssignment();
-    if (rotationAssignment) return 'rotation';
-
-    return 'none';
+    const active = await this.getActiveAssignment();
+    return active ? active.type : 'none';
   }
 
   // getAssignedSessions(): TI.AssignedSession[] {

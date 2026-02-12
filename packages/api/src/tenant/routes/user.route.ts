@@ -28,7 +28,12 @@ import R from '../../tools/response.js';
 import User from '../class/User.js';
 import UserRole from '../class/UserRole.js';
 import { TenantRevision } from '../../tools/revision.js';
-import { responseStructure, responseValue, RoleValues, tableName, } from '../../utils/response.model.js';
+import {
+  responseStructure,
+  responseValue,
+  RoleValues,
+  tableName,
+} from '../../utils/response.model.js';
 import Role from '../class/Role.js';
 import OrgHierarchy from '../class/OrgHierarchy.js';
 import { DatabaseEncryption } from '../../utils/encryption.js';
@@ -4429,6 +4434,7 @@ router.post('/share', Ensure.post(), async (req: Request, res: Response) => {
         affiliate: assignByObj.getGuid(),
         lead: lead,
         tenant: {
+          reference: tenant.config.reference,
           subdomain: tenant.subdomain,
           name: tenant.config.name,
           address: tenant.config.address,

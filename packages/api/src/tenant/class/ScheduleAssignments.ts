@@ -502,7 +502,7 @@ export default class ScheduleAssignments extends ScheduleAssignmentsModel {
       [RS.SESSION_TEMPLATE]: sessionTemplateObj
         ? sessionTemplateObj.toJSON(responseValue.FULL)
         : null,
-      [RS.CREATED_BY]: createdByObj ? await createdByObj.toJSON(responseValue.MINIMAL) : null,
+      [RS.CREATED_BY]: createdByObj ? await createdByObj.toJSON() : null,
     };
   }
 

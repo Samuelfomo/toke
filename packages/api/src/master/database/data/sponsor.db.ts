@@ -35,10 +35,10 @@ export const InvitationDbStructure = {
     phone_number: {
       type: DataTypes.STRING(50),
       allowNull: false,
-      unique: {
-        name: 'unique_invitation_phone_number',
-        msg: 'Invitation PHONE_NUMBER must be unique',
-      },
+      // unique: {
+      //   name: 'unique_invitation_phone_number',
+      //   msg: 'Invitation PHONE_NUMBER must be unique',
+      // },
       validate: {
         len: [5, 50],
         notEmpty: true,
@@ -54,6 +54,16 @@ export const InvitationDbStructure = {
         len: [2, 2],
       },
       comment: 'Country ISO 3166-1 alpha-2 code (2 capital letters, e.g. CM)',
+    },
+    reference: {
+      type: DataTypes.STRING(128),
+      allowNull: false,
+      validate: {
+        len: [1, 128],
+        notEmpty: true,
+        notNull: true,
+      },
+      comment: 'tenant reference (e.g. 123456789)',
     },
     status: {
       type: DataTypes.ENUM(...Object.values(InvitationStatus)),
@@ -106,7 +116,7 @@ export const InvitationDbStructure = {
           }
 
           // Vérifie d’autres champs requis dans tenant
-          const tenantRequiredFields = ['name', 'country', 'email', 'phone'];
+          const tenantRequiredFields = ['name', 'country', 'email', 'phone', 'reference'];
           for (const field of tenantRequiredFields) {
             if (!value.tenant[field]) {
               throw new Error(`Metadata.tenant.${field} is required`);
@@ -141,6 +151,15 @@ export const InvitationDbStructure = {
         name: 'idx_invitation_phone_status',
         fields: ['phone_number'],
         // comment: 'Index for searching active invitations by phone',
+      },
+      {
+        name: 'idx_invitation_reference',
+        fields: ['reference'],
+      },
+      {
+        name: 'idx_invitation_phone_reference',
+        fields: ['phone_number, reference'],
+        unique: true,
       },
       {
         name: 'idx_invitation_status',
