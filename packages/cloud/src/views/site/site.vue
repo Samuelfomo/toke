@@ -1,5 +1,5 @@
 <template>
-  <div class="flex min-h-screen bg-[var(--bg-secondary)]">
+  <div class="flex min-h-screen background: radial-gradient(circle, rgba(255,222,89,1) 0%, rgba(0,74,173,1) 100%)">
     <div class="flex flex-col w-full">
       <!-- Header -->
       <Header />

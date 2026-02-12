@@ -23,7 +23,10 @@ import Site from './views/site/site.vue';
 import Edit from './views/site/siteForm.vue';
 import MapVue from './views/site/map.vue';
 
+import EmployeeMemosView from "@/views/memo/EmployeeMemosView.vue";
 import { useUserStore } from '@/stores/userStore'
+import EmployeeSchedulesView from "@/views/schedule/employeeSchedulesView.vue";
+import EmployeeAttendanceView from "@/views/employeeAttendanceView.vue";
 
 
 const routes: RouteRecordRaw[] = [
@@ -137,7 +140,8 @@ const routes: RouteRecordRaw[] = [
     name: 'sites',
     component: Site,
     meta: { requiresAuth: true },
-  },{
+  },
+  {
     path: '/sites/edit',
     name: 'edit',
     component: Edit,
@@ -153,6 +157,24 @@ const routes: RouteRecordRaw[] = [
     path: '/sites/map',
     name: 'map',
     component: MapVue,
+    meta: { requiresAuth: true },
+  },
+  {
+    path: '/employeeMemosView/:id',
+    name: 'employeeMemosView',
+    component: EmployeeMemosView,
+    meta: { requiresAuth: true },
+  },
+  {
+    path: '/employeeSchedulesView/:id',
+    name: 'employeeSchedulesView',
+    component: EmployeeSchedulesView,
+    meta: { requiresAuth: true },
+  },
+  {
+    path: '/employeeAttendanceView/:id',
+    name: 'employeeAttendanceView',
+    component: EmployeeAttendanceView,
     meta: { requiresAuth: true },
   },
 

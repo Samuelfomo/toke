@@ -276,75 +276,284 @@ async function handleSave() {
 </script>
 
 <style scoped>
-.error-message {
-  color: var(--color-error, #dc3545);
-  font-size: var(--font-size-body-sm, 0.875rem);
-  margin-top: var(--space-xs, 0.25rem);
+/* =========================
+   OVERLAY (glass + blur)
+========================= */
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(10, 15, 25, 0.55);
+  backdrop-filter: blur(10px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 2rem;
+  z-index: 1000;
+}
+
+/* =========================
+   MODAL CARD
+========================= */
+.modal {
+  width: 100%;
+  max-width: 900px;
+  max-height: 92vh;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+
+  border-radius: 20px;
+  background: white;
+  box-shadow:
+      0 25px 60px rgba(0, 0, 0, 0.25),
+      0 8px 20px rgba(0, 0, 0, 0.12);
+
+  animation: modalEnter 0.25s ease;
+}
+
+@keyframes modalEnter {
+  from {
+    opacity: 0;
+    transform: translateY(12px) scale(0.98);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+/* =========================
+   HEADER
+========================= */
+.modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 1.5rem 2rem;
+  border-bottom: 1px solid var(--border-light, #e9ecef);
+}
+
+.modal-header h2 {
+  font-size: 1.25rem;
+  font-weight: 600;
+}
+
+/* Close */
+.btn-close {
+  font-size: 1.5rem;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  opacity: 0.6;
+  transition: 0.2s;
+}
+
+.btn-close:hover {
+  opacity: 1;
+  transform: scale(1.1);
+}
+
+/* =========================
+   BODY
+========================= */
+.modal-body {
+  overflow-y: auto;
+  padding: 2rem;
+  display: flex;
+  flex-direction: column;
+  gap: 2rem;
+}
+
+/* Sections */
+.form-section {
+  padding: 1.5rem;
+  border-radius: 16px;
+  background: var(--bg-secondary, #f8fafc);
+}
+
+.section-title {
+  font-size: 0.95rem;
+  font-weight: 600;
+  margin-bottom: 1.25rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  opacity: 0.7;
+}
+
+/* =========================
+   FORM
+========================= */
+.form-group {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  margin-bottom: 1.25rem;
+}
+
+.form-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1rem;
+}
+
+.form-label {
+  font-size: 0.85rem;
+  font-weight: 500;
+  color: var(--text-secondary, #6c757d);
+}
+
+/* Inputs modernisés */
+.form-input {
+  height: 44px;
+  padding: 0 14px;
+  border-radius: 12px;
+  border: 1px solid var(--border-medium, #dee2e6);
+  background: white;
+  font-size: 0.9rem;
+  transition: all 0.15s ease;
+}
+
+.form-input:focus {
+  outline: none;
+  border-color: var(--color-primary, #004aad);
+  box-shadow: 0 0 0 3px rgba(0, 74, 173, 0.15);
+}
+
+.form-input:hover {
+  border-color: #cfd4da;
+}
+
+/* Hint */
+.form-hint {
+  font-size: 0.85rem;
+  opacity: 0.7;
+}
+
+/* =========================
+   TEMPLATE CARDS
+========================= */
+.schedules-selector {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+  gap: 0.75rem;
 }
 
 .schedule-selector-item {
+  cursor: pointer;
+  border-radius: 14px;
+  border: 1px solid var(--border-light, #e0e0e0);
+  background: white;
+  padding: 0.9rem;
+  transition: all 0.15s ease;
   position: relative;
 }
 
-.schedule-order-badge {
-  position: absolute;
-  top: -8px;
-  left: -8px;
-  width: 24px;
-  height: 24px;
-  background: var(--color-primary, #004aad);
-  color: white;
-  border-radius: 50%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 0.75rem;
-  font-weight: 600;
-  z-index: 1;
+.schedule-selector-item:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 14px rgba(0, 0, 0, 0.08);
 }
 
+/* Selected */
+.schedule-selector-item.selected {
+  border-color: var(--color-primary, #004aad);
+  background: rgba(0, 74, 173, 0.05);
+}
+
+.schedule-selector-content {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.schedule-selector-check {
+  opacity: 0;
+  font-weight: bold;
+}
+
+.schedule-selector-item.selected .schedule-selector-check {
+  opacity: 1;
+  color: var(--color-primary, #004aad);
+}
+
+/* Badge count */
+.group-info-badge {
+  margin-top: 1rem;
+  font-size: 0.85rem;
+  opacity: 0.8;
+}
+
+/* =========================
+   PREVIEW
+========================= */
 .cycle-preview {
+  background: white;
+  border-radius: 14px;
+  padding: 1rem;
   display: flex;
   flex-wrap: wrap;
-  gap: var(--space-md, 1rem);
-  padding: var(--space-lg, 1.5rem);
-  background: var(--bg-secondary, #f8f9fa);
-  border-radius: var(--border-radius, 8px);
+  gap: 0.5rem;
 }
 
 .cycle-step {
-  display: flex;
-  align-items: center;
-  gap: var(--space-sm, 0.5rem);
-  padding: var(--space-sm, 0.5rem) var(--space-md, 1rem);
-  background: white;
-  border: 1px solid var(--border-light, #e0e0e0);
-  border-radius: var(--border-radius, 8px);
-}
-
-.cycle-step-number {
-  width: 28px;
-  height: 28px;
-  background: var(--color-primary, #004aad);
-  color: white;
-  border-radius: 50%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 0.875rem;
-  font-weight: 600;
-}
-
-.cycle-step-name {
-  font-size: var(--font-size-body, 0.875rem);
-  color: var(--text-primary, #212529);
+  padding: 0.4rem 0.8rem;
+  background: var(--bg-secondary, #f1f3f5);
+  border-radius: 999px;
+  font-size: 0.8rem;
   font-weight: 500;
 }
 
+/* =========================
+   FOOTER (sticky)
+========================= */
+.modal-footer {
+  padding: 1.25rem 2rem;
+  border-top: 1px solid var(--border-light, #e9ecef);
+  display: flex;
+  justify-content: flex-end;
+  gap: 1rem;
+  background: white;
+}
+
+/* Buttons modernisés */
+.btn {
+  height: 40px;
+  padding: 0 18px;
+  border-radius: 10px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: 0.15s ease;
+}
+
+.btn-primary {
+  background: var(--color-primary, #004aad);
+  color: white;
+}
+
+.btn-primary:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 6px 14px rgba(0, 74, 173, 0.25);
+}
+
+.btn-secondary {
+  background: #f1f3f5;
+}
+
+.btn-secondary:hover {
+  background: #e9ecef;
+}
+
+/* Errors */
+.error-message {
+  color: #dc3545;
+  font-size: 0.8rem;
+}
+
+/* Disabled */
 .btn:disabled {
   opacity: 0.6;
   cursor: not-allowed;
 }
+
 </style>
 
 <!--<template>-->

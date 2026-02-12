@@ -320,7 +320,7 @@ defineExpose({
   display: flex;
   flex-direction: column;
   min-height: 100vh;
-  background: radial-gradient(circle,rgba(255, 222, 89, 1) 0%, rgba(0, 74, 173, 1) 100%);
+  background: radial-gradient(circle,rgba(255, 222, 89, 1) 0%, rgba(6, 78, 171, 1) 90%);
 }
 
 /* Zone centrale */

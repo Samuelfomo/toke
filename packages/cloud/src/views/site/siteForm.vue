@@ -1,8 +1,7 @@
 <template>
-  <div class="flex min-h-screen bg-[var(--bg-secondary)]">
+  <div class="flex min-h-screen background: radial-gradient(circle, rgba(255,222,89,1) 0%, rgba(0,74,173,1) 100%)">
     <div class="flex flex-col w-full">
       <Header />
-
       <!-- Loader modernisé -->
       <div v-if="isLoading" class="fixed inset-0 flex flex-col items-center justify-center bg-black bg-opacity-60 backdrop-blur-sm z-50">
         <svg aria-hidden="true" role="status" class="w-16 h-16 text-gray-200 animate-spin"
@@ -26,20 +25,17 @@
           <!-- En-tête avec breadcrumb -->
           <div class="mb-8">
             <div class="flex items-center gap-2 text-[var(--font-size-body-sm)] text-[var(--text-secondary)] mb-3">
-              <button @click="goBack" class="hover:text-[var(--color-primary)] transition-colors">
+              <button @click="goBack" class="hover:text-white transition-colors">
                 Sites
               </button>
               <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
                 <path fill-rule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clip-rule="evenodd"/>
               </svg>
-              <span class="text-[var(--text-primary)]">{{ isEditMode ? 'Modifier' : 'Nouveau' }}</span>
+              <span class="text-white">{{ isEditMode ? 'Modifier' : 'Nouveau' }}</span>
             </div>
-
             <div class="flex items-center justify-between">
               <div>
-
               </div>
-
               <button @click="goBack"
                       class="h-[var(--btn-height)] px-6
                              bg-white border border-[var(--border-medium)]

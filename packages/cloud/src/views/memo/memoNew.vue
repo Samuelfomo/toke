@@ -173,8 +173,6 @@ interface MemoEnvoye {
 }
 
 // Route et Store
-const route = useRoute();
-const router = useRouter();
 const userStore = useUserStore();
 const teamStore = useTeamStore();
 const memoStore = useMemoStore();

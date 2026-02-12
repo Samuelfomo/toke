@@ -1,7 +1,7 @@
 <template>
   <section class="dashboard-stats">
     <h3 class="section-title">
-      📊 Statistiques de Présence Aujourd'hui
+      📊 Statistiques de Présence
     </h3>
 
     <div class="stats-grid">
@@ -173,7 +173,6 @@ const COLORS = {
   presentGlobal: '#3b82f6',  // Bleu pour présents (global)
   late: '#f59e0b',           // Orange pour retards
   absent: '#ef4444',         // Rouge pour absents
-  rest: '#94a3b8',           // Gris pour repos
 }
 
 /* ================= PREMIER DOUGHNUT - PRÉSENCE/ABSENCE ================= */
@@ -238,7 +237,7 @@ const doughnutOptions = {
 
 /* ================= LINE CHART DATA ================= */
 const lineChartData = computed(() => ({
-  labels: ['Présents à l\'heure', 'En retard', 'Absents', 'Repos'],
+  labels: ['Présents à l\'heure', 'En retard', 'Absents'],
   datasets: [
     {
       label: 'Évolution des statuts',
@@ -262,7 +261,7 @@ const lineChartData = computed(() => ({
         COLORS.present,
         COLORS.late,
         COLORS.absent,
-        COLORS.rest
+        // COLORS.rest
       ],
 
       /* ===== 🔥 MAGIE ICI - Chaque segment a sa propre couleur ===== */
@@ -272,9 +271,9 @@ const lineChartData = computed(() => ({
             COLORS.present,
             COLORS.late,
             COLORS.absent,
-            COLORS.rest
+            // COLORS.rest
           ]
-          return colors[ctx.p0DataIndex] || COLORS.rest
+          return colors[ctx.p0DataIndex]
         },
 
         backgroundColor: (ctx: any) => {
@@ -282,10 +281,10 @@ const lineChartData = computed(() => ({
             COLORS.present,
             COLORS.late,
             COLORS.absent,
-            COLORS.rest
+            // COLORS.rest
           ]
 
-          const color = colors[ctx.p0DataIndex] || COLORS.rest
+          const color = colors[ctx.p0DataIndex]
 
           return `${color}33` // ~20% opacity
         }
@@ -300,7 +299,7 @@ const lineChartOptions = computed(() => {
     props.summary.total_present_on_time,
     props.summary.total_late_arrivals,
     props.summary.total_absences,
-    props.summary.total_off_days,
+    // props.summary.total_off_days,
     1
   )
 

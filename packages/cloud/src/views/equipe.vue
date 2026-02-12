@@ -1,123 +1,25 @@
 <template>
   <section class="manager-team">
     <Header />
-
-<!--    <Header-->
-<!--      :user-name="currentUser.name"-->
-<!--      :company-name="currentUser.company"-->
-<!--      :notification-count="notificationCount"-->
-<!--    />-->
-
     <!-- Loading State - Seulement au chargement initial -->
     <div v-if="isLoadingEmployees" class="loading-container">
       <div class="loading-spinner"></div>
       <p>Chargement de votre équipe...</p>
     </div>
-
     <!-- Main Content - Toujours visible après le chargement -->
     <template v-else>
-<!--      <div class="presence-analytics">-->
-<!--        <div class="analytics-header">-->
-<!--          <h2 class="section-title">Analyse des présences - {{ currentDate }}</h2>-->
-<!--          <div class="date-selector">-->
-<!--            <button @click="changeDate(-1)" class="date-btn">-->
-<!--              <svg class="icon-sm" fill="none" stroke="currentColor" viewBox="0 0 24 24">-->
-<!--                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path>-->
-<!--              </svg>-->
-<!--            </button>-->
-<!--            <span class="current-date">{{ formatDate(selectedDate) }}</span>-->
-<!--            <button @click="changeDate(1)" class="date-btn" :disabled="isToday">-->
-<!--              <svg class="icon-sm" fill="none" stroke="currentColor" viewBox="0 0 24 24">-->
-<!--                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>-->
-<!--              </svg>-->
-<!--            </button>-->
-<!--          </div>-->
-<!--        </div>-->
-
-<!--        <div class="charts-container">-->
-<!--          <div class="main-chart">-->
-<!--            <div class="chart-with-axes">-->
-<!--              <h3 class="chart-title">Répartition des Présences/Absences</h3>-->
-<!--              <div class="chart-wrapper">-->
-<!--                <div class="y-axis">-->
-<!--                  <div class="y-axis-label">Nombre d'employés</div>-->
-<!--                  <div class="y-axis-ticks">-->
-<!--                    <div v-for="tick in yAxisTicks" :key="tick" class="y-tick">-->
-<!--                      <span class="tick-label">{{ tick }}</span>-->
-<!--                      <div class="tick-line"></div>-->
-<!--                    </div>-->
-<!--                  </div>-->
-<!--                </div>-->
-
-<!--                <div class="chart-area">-->
-<!--                  <div class="chart-grid">-->
-<!--                    <div v-for="tick in yAxisTicks" :key="tick" class="grid-line"-->
-<!--                         :style="{ bottom: `${(tick / maxEmployeeCount) * 100}%` }"></div>-->
-<!--                  </div>-->
-
-<!--                  <div class="bar-chart-new">-->
-<!--                    <div class="bar-item-new">-->
-<!--                      <div class="bar-new present"-->
-<!--                           :style="{ height: `${(dailyStats.present / maxEmployeeCount) * 100}%` }">-->
-<!--                        <span class="bar-value-new">{{ dailyStats.present }}</span>-->
-<!--                      </div>-->
-<!--                    </div>-->
-<!--                    <div class="bar-item-new">-->
-<!--                      <div class="bar-new absent"-->
-<!--                           :style="{ height: `${((dailyStats.late + dailyStats.absent) / maxEmployeeCount) * 100}%` }">-->
-<!--                        <span class="bar-value-new">{{ dailyStats.late + dailyStats.absent }}</span>-->
-<!--                      </div>-->
-<!--                    </div>-->
-<!--                  </div>-->
-<!--                </div>-->
-<!--              </div>-->
-<!--              <div class="x-axis">-->
-<!--                <div class="x-axis-ticks">-->
-<!--                  <div class="x-tick">-->
-<!--                    <span class="tick-label-x">Présents</span>-->
-<!--                  </div>-->
-<!--                  <div class="x-tick">-->
-<!--                    <span class="tick-label-x">Absents/Retards</span>-->
-<!--                  </div>-->
-<!--                </div>-->
-<!--              </div>-->
-<!--              <div class="attendance-rate">-->
-<!--                <span class="rate-value">{{ dailyAttendanceRate }}%</span>-->
-<!--                <span class="rate-label">Taux de présence</span>-->
-<!--              </div>-->
-<!--            </div>-->
-<!--          </div>-->
-
-<!--          <div class="timeline-chart">-->
-<!--            <h3 class="chart-subtitle">Arrivées par tranche horaire</h3>-->
-<!--            <div class="timeline-bars">-->
-<!--              <div v-for="interval in arrivalIntervals" :key="interval.range" class="time-interval">-->
-<!--                <div class="interval-bar">-->
-<!--                  <div-->
-<!--                    class="bar-fill"-->
-<!--                    :style="{ height: `${(interval.count / maxIntervalCount) * 100}%` }"-->
-<!--                  ></div>-->
-<!--                </div>-->
-<!--                <span class="interval-label">{{ interval.range }}</span>-->
-<!--                <span class="count-label">{{ interval.count }}</span>-->
-<!--              </div>-->
-<!--            </div>-->
-<!--          </div>-->
-<!--        </div>-->
-<!--      </div>-->
       <!-- Section Liste des Employés -->
       <div class="employees-table-section">
-        <div class="table-header">
-          <h2 class="section-title">Membres ({{ totalSubordinates }})</h2>
-          <button @click="navigateToEmployeeForm" class="btn-add-employee">
-            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" class="btn-icon">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                    d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z">
-              </path>
-            </svg>
-            Ajouter un employé
-          </button>
-        </div>
+        <h2 class="section-title">Membres ({{ totalSubordinates }})</h2>
+        <button @click="navigateToEmployeeForm" class="btn-add-employee">
+          <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" class="btn-icon">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                  d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z">
+            </path>
+          </svg>
+          Ajouter un employé
+        </button>
+
 
         <div class="search-bar-wrapper">
           <div class="search-container">
@@ -250,7 +152,6 @@
         </template>
       </div>
     </template>
-
     <!-- Footer -->
     <Footer />
   </section>
@@ -290,16 +191,6 @@ const teamEmployees = computed(() => teamStore.employees)
 const isLoadingEmployees = computed(() => teamStore.isLoading)
 const totalSubordinates = computed(() => teamStore.totalEmployees)
 
-// User data
-const currentUser = computed(() => ({
-  name: userStore.fullName || 'Manager',
-  company: userStore.tenantName || 'N/A'
-}))
-
-const currentManagerId = computed(() => userStore.user?.guid)
-const notificationCount = ref(2)
-
-
 // UI State
 const selectedDate = ref<Date>(new Date())
 const searchTerm = ref<string>('')
@@ -307,7 +198,6 @@ const sortBy = ref<string>('name')
 const currentPage = ref<number>(1)
 const itemsPerPage = 8
 const showAddEmployee = ref<boolean>(false)
-const showAddSite = ref<boolean>(false)
 const activeEmployeeMenu = ref<string | null>(null)
 
 
@@ -324,39 +214,9 @@ const loadTeamEmployees = async () => {
 }
 
 // Stats (mock pour l'instant - à implémenter avec vraies données)
-const dailyStats = computed(() => employeeStore.getDailyStats(selectedDate.value))
-
 const navigateToEmployeeForm = () => {
   showAddEmployee.value = true;
 };
-
-const dailyAttendanceRate = computed(() => {
-  const total = teamEmployees.value.length
-  if (total === 0) return 0
-  const presentAndLate = dailyStats.value.present + dailyStats.value.late
-  return Math.round((presentAndLate / total) * 100)
-})
-
-const maxEmployeeCount = computed(() => Math.max(teamEmployees.value.length, 10))
-
-const yAxisTicks = computed(() => {
-  const max = maxEmployeeCount.value
-  const step = Math.ceil(max / 5)
-  const ticks = []
-  for (let i = 0; i <= max; i += step) {
-    ticks.push(i)
-  }
-  return ticks
-})
-
-const isToday = computed(() => {
-  const today = new Date()
-  return selectedDate.value.toDateString() === today.toDateString()
-})
-
-const currentDate = computed(() => formatDate(selectedDate.value))
-const arrivalIntervals = computed(() => employeeStore.getArrivalIntervals(selectedDate.value))
-const maxIntervalCount = computed(() => Math.max(...arrivalIntervals.value.map(interval => interval.count), 1))
 
 // 🎯 FILTRAGE ET TRI DES EMPLOYÉS
 const filteredEmployees = computed(() => {
@@ -394,29 +254,15 @@ const paginatedEmployees = computed(() => {
 })
 
 // Functions
-const formatDate = (date: Date): string => {
-  return date.toLocaleDateString('fr-FR', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })
-}
-
 const viewEmployeeDetail = (employeeId: string) => {
   console.log('🔗 Navigation vers détails employé:', employeeId)
   router.push({ name: `profileCard`, params: { id: employeeId } })
-}
-
-const changeDate = (days: number) => {
-  const newDate = new Date(selectedDate.value)
-  newDate.setDate(newDate.getDate() + days)
-  selectedDate.value = newDate
 }
 
 const changePage = (page: number) => {
   if (page >= 1 && page <= totalPages.value) {
     currentPage.value = page
   }
-}
-
-const setSortBy = (field: string) => {
-  sortBy.value = field
 }
 
 const toggleEmployeeMenu = (employeeId: string) => {
@@ -426,11 +272,6 @@ const toggleEmployeeMenu = (employeeId: string) => {
 }
 
 // 🔄 ACTUALISER LA LISTE
-const refreshTeam = async () => {
-  console.log('🔄 Actualisation de l\'équipe...')
-  await loadTeamEmployees()
-}
-
 const editEmployee = (employee: any) => {
   alert(`Modifier les informations de ${employee.name}`)
   activeEmployeeMenu.value = null

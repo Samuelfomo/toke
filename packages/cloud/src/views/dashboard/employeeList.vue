@@ -1,6 +1,6 @@
 <template>
   <section class="absent-section">
-    <h3 class="section-title">Pointages des Employés</h3>
+    <h3 class="section-title">Employés non Pointés</h3>
 
     <!-- Header avec bouton toggle -->
     <div class="section-header">

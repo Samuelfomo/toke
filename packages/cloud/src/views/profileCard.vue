@@ -181,10 +181,10 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, computed } from 'vue'
+import { ref, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import "../assets/css/profileCard-toke-20.css"
-import { TeamEmployee, useTeamStore } from '@/stores/teamStore';
+import { useTeamStore } from '@/stores/teamStore';
 import Footer from '@/views/components/footer.vue';
 
 const route = useRoute()
@@ -266,7 +266,8 @@ const manageProfile = () => {
 
 const manageSchedule = () => {
   if (!employee.value?.guid) return
-  router.push({ name: 'schedule' })
+  const employeeId = employee.value.guid
+  router.push({ name: 'employeeSchedulesView', params: { id: employeeId } })
 }
 
 const generateAccessCode = () => {
@@ -275,15 +276,17 @@ const generateAccessCode = () => {
 
 const managePunches = () => {
   if (!employee.value?.guid) return
+  const employeeId = employee.value.guid
   router.push({
-    name: 'employeeD',
-    params: { employeeId: employee.value.guid }
+    name: 'employeeAttendanceView',
+    params: { id: employeeId }
   })
 }
 
 const manageMemos = () => {
   if (!employee.value?.guid) return
-  router.push({ name: 'memoList' })
+  const employeeId = employee.value.guid
+  router.push({ name: `employeeMemosView`, params: { id: employeeId } })
 }
 
 const viewTeam = () => {

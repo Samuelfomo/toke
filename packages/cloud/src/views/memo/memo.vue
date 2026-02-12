@@ -1,0 +1,743 @@
+<template>
+  <div class="memos-list-container">
+    <!-- État de chargement -->
+    <div v-if="isLoading" class="loading-state">
+      <div class="loader">
+        <div class="spinner"></div>
+        <div class="loading-text">
+          <p class="loading-title">Chargement en cours...</p>
+          <p class="loading-subtitle">Récupération des mémos</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- État d'erreur -->
+    <div v-else-if="error" class="error-state">
+      <div class="error-icon">⚠️</div>
+      <p class="error-message">{{ error }}</p>
+      <button v-if="onRetry" class="btn-retry" @click="onRetry">
+        🔄 Réessayer
+      </button>
+    </div>
+
+    <!-- Liste des mémos -->
+    <div v-else>
+      <!-- État vide -->
+      <div v-if="memosGroupes.length === 0" class="empty-state">
+        <div class="empty-illustration">
+          <div class="empty-icon">📝</div>
+          <div class="empty-circle"></div>
+        </div>
+        <h3 class="empty-title">{{ emptyTitle || 'Aucun mémo trouvé' }}</h3>
+        <p class="empty-description">
+          {{ emptyDescription || 'Aucun mémo ne correspond à vos critères' }}
+        </p>
+        <slot name="empty-action"></slot>
+      </div>
+
+      <!-- Liste des groupes de dates -->
+      <div v-for="groupe in memosGroupes" :key="groupe.date" class="groupe-date">
+        <!-- En-tête de date -->
+        <div
+            class="date-header-clickable"
+            @click="toggleDateGroupe(groupe.date)"
+            :class="{ expanded: datesExpanded[groupe.date] }"
+        >
+          <div class="date-header">
+            <div class="date-main">
+              <span class="dropdown-arrow" :class="{ expanded: datesExpanded[groupe.date] }">
+                ›
+              </span>
+              <div class="date-info">
+                <h2 class="date-title">{{ groupe.dateFormatee }}</h2>
+                <span class="date-badge">{{ getTotalMemosForDate(groupe) }}</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Contenu date -->
+        <transition name="smooth-expand">
+          <div v-show="datesExpanded[groupe.date]" class="date-content">
+            <div v-for="typeGroup in groupe.types" :key="typeGroup.type" class="type-group">
+              <!-- En-tête type -->
+              <div
+                  class="type-header-clickable"
+                  @click="toggleTypeGroupe(groupe.date, typeGroup.type)"
+                  :class="{ expanded: typesExpanded[`${groupe.date}-${typeGroup.type}`] }"
+              >
+                <div class="type-header">
+                  <span class="dropdown-arrow small" :class="{ expanded: typesExpanded[`${groupe.date}-${typeGroup.type}`] }">
+                    ›
+                  </span>
+                  <div class="type-info">
+                    <span class="type-icon">{{ getTypeIcon(typeGroup.type) }}</span>
+                    <h3 class="type-title">{{ getTypeLabel(typeGroup.type) }}</h3>
+                  </div>
+                  <span class="type-count">{{ typeGroup.memos.length }}</span>
+                </div>
+              </div>
+
+              <!-- Contenu type -->
+              <transition name="smooth-expand">
+                <div
+                    v-show="typesExpanded[`${groupe.date}-${typeGroup.type}`]"
+                    class="type-content"
+                >
+                  <div
+                      v-for="memo in typeGroup.memos"
+                      :key="memo.guid"
+                      class="memo-item"
+                      @click="handleMemoClick(memo)"
+                  >
+                    <!-- Carte mémo - slot personnalisable -->
+                    <slot name="memo-card" :memo="memo">
+                      <!-- Carte par défaut -->
+                      <div class="memo-card">
+                        <div class="memo-card-header">
+                          <div class="memo-user-info">
+                            <div class="user-avatar">
+                              {{ memo.createurNom.split(' ').map(n => n[0]).join('').toUpperCase() }}
+                            </div>
+                            <div class="user-details">
+                              <button
+                                  v-if="showEmployeeFilter"
+                                  class="user-name"
+                                  @click.stop="handleEmployeeFilter(memo.createurId)"
+                                  title="Filtrer par cet employé"
+                              >
+                                {{ memo.createurNom }}
+                              </button>
+                              <span v-else class="user-name-static">{{ memo.createurNom }}</span>
+                              <span class="user-code">{{ memo.createurCode }} • {{ memo.createurDepartement }}</span>
+                            </div>
+                          </div>
+                          <div class="memo-meta">
+                            <span class="memo-time">
+                              🕐 {{ formatHeure(memo.dateCreation) }}
+                            </span>
+                          </div>
+                        </div>
+
+                        <div class="memo-card-footer">
+                          <div class="memo-stats">
+                            <span class="stat-item">
+                              💬 {{ memo.messagesCount }} message{{ memo.messagesCount > 1 ? 's' : '' }}
+                            </span>
+                            <span v-if="memo.entriesAffectees.length > 0" class="stat-item">
+                              🔎 {{ memo.entriesAffectees.length }} entrée{{ memo.entriesAffectees.length > 1 ? 's' : '' }}
+                            </span>
+                          </div>
+                          <span class="view-arrow">→</span>
+                        </div>
+                      </div>
+                    </slot>
+                  </div>
+                </div>
+              </transition>
+            </div>
+          </div>
+        </transition>
+      </div>
+    </div>
+  </div>
+</template>
+
+<script setup lang="ts">
+import { computed, reactive } from 'vue';
+
+// ============ TYPES ============
+interface Memo {
+  guid: string;
+  type: string;
+  dateCreation: Date;
+  createurNom: string;
+  createurId: string;
+  createurCode: string;
+  createurDepartement: string;
+  messagesCount: number;
+  entriesAffectees: any[];
+  [key: string]: any;
+}
+
+interface TypeGroup {
+  type: string;
+  memos: Memo[];
+}
+
+interface DateGroup {
+  date: string;
+  dateFormatee: string;
+  types: TypeGroup[];
+}
+
+// ============ PROPS ============
+interface Props {
+  memos: Memo[];
+  isLoading?: boolean;
+  error?: string;
+  emptyTitle?: string;
+  emptyDescription?: string;
+  showEmployeeFilter?: boolean;
+  onRetry?: () => void;
+}
+
+const props = withDefaults(defineProps<Props>(), {
+  isLoading: false,
+  error: '',
+  emptyTitle: 'Aucun mémo trouvé',
+  emptyDescription: 'Aucun mémo ne correspond à vos critères',
+  showEmployeeFilter: true,
+  onRetry: undefined,
+});
+
+// ============ EMITS ============
+const emit = defineEmits<{
+  'memo-click': [memo: Memo];
+  'employee-filter': [employeeId: string];
+}>();
+
+// ============ STATE ============
+const datesExpanded = reactive<Record<string, boolean>>({});
+const typesExpanded = reactive<Record<string, boolean>>({});
+
+// ============ COMPUTED ============
+const memosGroupes = computed((): DateGroup[] => {
+  const groupes: Record<string, Record<string, Memo[]>> = {};
+
+  props.memos.forEach(memo => {
+    const dateKey = new Date(memo.dateCreation).toLocaleDateString('fr-FR');
+    groupes[dateKey] ??= {};
+    groupes[dateKey][memo.type] ??= [];
+    groupes[dateKey][memo.type].push(memo);
+  });
+
+  const result = Object.keys(groupes)
+      .sort((a, b) =>
+          new Date(b.split('/').reverse().join('-')).getTime() -
+          new Date(a.split('/').reverse().join('-')).getTime()
+      )
+      .map(date => ({
+        date,
+        dateFormatee: formatDateGroupe(date),
+        types: Object.keys(groupes[date]).map(type => ({
+          type,
+          memos: groupes[date][type]
+              .sort((a, b) => new Date(b.dateCreation).getTime() - new Date(a.dateCreation).getTime())
+        }))
+      }));
+
+  // Initialiser les états d'expansion
+  result.forEach(groupe => {
+    if (!(groupe.date in datesExpanded)) {
+      datesExpanded[groupe.date] = false;
+    }
+
+    groupe.types.forEach(typeGroup => {
+      const typeKey = `${groupe.date}-${typeGroup.type}`;
+      if (!(typeKey in typesExpanded)) {
+        typesExpanded[typeKey] = false;
+      }
+    });
+  });
+
+  return result;
+});
+
+// ============ METHODS ============
+const toggleDateGroupe = (date: string) => {
+  datesExpanded[date] = !datesExpanded[date];
+};
+
+const toggleTypeGroupe = (date: string, type: string) => {
+  const key = `${date}-${type}`;
+  typesExpanded[key] = !typesExpanded[key];
+};
+
+const getTotalMemosForDate = (groupe: DateGroup): number => {
+  return groupe.types.reduce((total, typeGroup) => total + typeGroup.memos.length, 0);
+};
+
+const getTypeIcon = (type: string): string => {
+  const icons: { [key: string]: string } = {
+    delay_justification: '⏰',
+    absence_justification: '🏥',
+    absence_notification: '📢',
+    session_closure: '🔒',
+    auto_generated: '🤖',
+    other: '📄'
+  };
+  return icons[type] || '📝';
+};
+
+const getTypeLabel = (type: string): string => {
+  const labels: { [key: string]: string } = {
+    delay_justification: 'Justification de retard',
+    absence_justification: "Justification d'absence",
+    absence_notification: "Notification d'absence",
+    session_closure: 'Clôture de session',
+    auto_generated: 'Généré automatiquement',
+    other: 'Autres'
+  };
+  return labels[type] || type.replace(/_/g, ' ');
+};
+
+const formatHeure = (date: Date): string => {
+  return new Date(date).toLocaleTimeString('fr-FR', {
+    hour: '2-digit',
+    minute: '2-digit'
+  });
+};
+
+const formatDateGroupe = (dateStr: string): string => {
+  const parts = dateStr.split('/');
+  const date = new Date(parseInt(parts[2]), parseInt(parts[1]) - 1, parseInt(parts[0]));
+  const aujourdhui = new Date();
+  aujourdhui.setHours(0, 0, 0, 0);
+  const hier = new Date(aujourdhui);
+  hier.setDate(hier.getDate() - 1);
+
+  date.setHours(0, 0, 0, 0);
+
+  if (date.getTime() === aujourdhui.getTime()) {
+    return "Aujourd'hui";
+  } else if (date.getTime() === hier.getTime()) {
+    return 'Hier';
+  } else {
+    return date.toLocaleDateString('fr-FR', {
+      weekday: 'long',
+      day: 'numeric',
+      month: 'long',
+      year: 'numeric'
+    });
+  }
+};
+
+const handleMemoClick = (memo: Memo) => {
+  emit('memo-click', memo);
+};
+
+const handleEmployeeFilter = (employeeId: string) => {
+  emit('employee-filter', employeeId);
+};
+</script>
+
+<style scoped>
+/* Reprise des styles du fichier CSS existant */
+/* Les styles sont identiques à ceux de toke-memoList-18.css */
+/* pour la section .memos-list-container et ses enfants */
+
+.memos-list-container {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+.loading-state {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 400px;
+  padding: 48px 24px;
+}
+
+.loader {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 24px;
+}
+
+.spinner {
+  width: 48px;
+  height: 48px;
+  border: 4px solid #f3f4f6;
+  border-top-color: #3b82f6;
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+.loading-text {
+  text-align: center;
+}
+
+.loading-title {
+  font-size: 18px;
+  font-weight: 600;
+  color: #1f2937;
+  margin-bottom: 8px;
+}
+
+.loading-subtitle {
+  font-size: 14px;
+  color: #6b7280;
+}
+
+.error-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 400px;
+  padding: 48px 24px;
+  text-align: center;
+}
+
+.error-icon {
+  font-size: 64px;
+  margin-bottom: 16px;
+}
+
+.error-message {
+  font-size: 16px;
+  color: #dc2626;
+  margin-bottom: 24px;
+}
+
+.btn-retry {
+  padding: 12px 24px;
+  background: #3b82f6;
+  color: white;
+  border: none;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.btn-retry:hover {
+  background: #2563eb;
+}
+
+.empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 400px;
+  padding: 48px 24px;
+  text-align: center;
+}
+
+.empty-illustration {
+  position: relative;
+  margin-bottom: 32px;
+}
+
+.empty-icon {
+  font-size: 80px;
+  position: relative;
+  z-index: 1;
+}
+
+.empty-circle {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 120px;
+  height: 120px;
+  background: linear-gradient(135deg, #dbeafe 0%, #e0e7ff 100%);
+  border-radius: 50%;
+  opacity: 0.3;
+}
+
+.empty-title {
+  font-size: 24px;
+  font-weight: 600;
+  color: #1f2937;
+  margin-bottom: 12px;
+}
+
+.empty-description {
+  font-size: 16px;
+  color: #6b7280;
+  margin-bottom: 24px;
+  max-width: 400px;
+}
+
+.groupe-date {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.date-header-clickable {
+  cursor: pointer;
+  user-select: none;
+}
+
+.date-header {
+  background: linear-gradient(135deg, #f9fafb 0%, #f3f4f6 100%);
+  border: 1px solid #e5e7eb;
+  border-radius: 12px;
+  padding: 16px 20px;
+  transition: all 0.2s;
+}
+
+.date-header-clickable:hover .date-header {
+  background: linear-gradient(135deg, #f3f4f6 0%, #e5e7eb 100%);
+  transform: translateY(-1px);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+}
+
+.date-main {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.dropdown-arrow {
+  font-size: 20px;
+  color: #6b7280;
+  transition: transform 0.3s ease;
+  display: inline-block;
+  font-weight: bold;
+}
+
+.dropdown-arrow.expanded {
+  transform: rotate(90deg);
+}
+
+.dropdown-arrow.small {
+  font-size: 16px;
+}
+
+.date-info {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex: 1;
+}
+
+.date-title {
+  font-size: 18px;
+  font-weight: 600;
+  color: #1f2937;
+  margin: 0;
+}
+
+.date-badge {
+  background: #3b82f6;
+  color: white;
+  padding: 4px 12px;
+  border-radius: 12px;
+  font-size: 13px;
+  font-weight: 500;
+}
+
+.date-content {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding-left: 20px;
+}
+
+.type-group {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.type-header-clickable {
+  cursor: pointer;
+  user-select: none;
+}
+
+.type-header {
+  background: white;
+  border: 1px solid #e5e7eb;
+  border-radius: 10px;
+  padding: 12px 16px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  transition: all 0.2s;
+}
+
+.type-header-clickable:hover .type-header {
+  background: #f9fafb;
+  border-color: #d1d5db;
+  transform: translateX(2px);
+}
+
+.type-info {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex: 1;
+}
+
+.type-icon {
+  font-size: 20px;
+}
+
+.type-title {
+  font-size: 15px;
+  font-weight: 500;
+  color: #374151;
+  margin: 0;
+}
+
+.type-count {
+  background: #f3f4f6;
+  color: #6b7280;
+  padding: 4px 10px;
+  border-radius: 10px;
+  font-size: 12px;
+  font-weight: 500;
+}
+
+.type-content {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding-left: 32px;
+}
+
+.memo-item {
+  cursor: pointer;
+  transition: transform 0.2s;
+}
+
+.memo-item:hover {
+  transform: translateX(4px);
+}
+
+.memo-card {
+  background: white;
+  border: 1px solid #e5e7eb;
+  border-radius: 12px;
+  padding: 16px;
+  transition: all 0.2s;
+}
+
+.memo-item:hover .memo-card {
+  border-color: #3b82f6;
+  box-shadow: 0 4px 12px rgba(59, 130, 246, 0.1);
+}
+
+.memo-card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 12px;
+}
+
+.memo-user-info {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+}
+
+.user-avatar {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #3b82f6, #8b5cf6);
+  color: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.user-details {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.user-name {
+  font-size: 14px;
+  font-weight: 600;
+  color: #1f2937;
+  background: none;
+  border: none;
+  padding: 0;
+  cursor: pointer;
+  text-align: left;
+  transition: color 0.2s;
+}
+
+.user-name:hover {
+  color: #3b82f6;
+  text-decoration: underline;
+}
+
+.user-name-static {
+  font-size: 14px;
+  font-weight: 600;
+  color: #1f2937;
+}
+
+.user-code {
+  font-size: 12px;
+  color: #6b7280;
+}
+
+.memo-meta {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 4px;
+}
+
+.memo-time {
+  font-size: 12px;
+  color: #6b7280;
+}
+
+.memo-card-footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding-top: 12px;
+  border-top: 1px solid #f3f4f6;
+}
+
+.memo-stats {
+  display: flex;
+  gap: 16px;
+}
+
+.stat-item {
+  font-size: 13px;
+  color: #6b7280;
+}
+
+.view-arrow {
+  font-size: 18px;
+  color: #9ca3af;
+  transition: all 0.2s;
+}
+
+.memo-item:hover .view-arrow {
+  color: #3b82f6;
+  transform: translateX(4px);
+}
+
+.smooth-expand-enter-active,
+.smooth-expand-leave-active {
+  transition: all 0.3s ease;
+  overflow: hidden;
+}
+
+.smooth-expand-enter-from,
+.smooth-expand-leave-to {
+  opacity: 0;
+  max-height: 0;
+}
+
+.smooth-expand-enter-to,
+.smooth-expand-leave-from {
+  opacity: 1;
+  max-height: 2000px;
+}
+</style>

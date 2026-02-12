@@ -125,10 +125,10 @@
             <span class="info-label">Date d'assignation:</span>
             <span class="info-value">{{ formatDate(assignment.assigned_at) }}</span>
           </div>
-          <div class="info-item">
-            <span class="info-label">GUID:</span>
-            <span class="info-value info-guid">{{ formatGuid(assignment.guid) }}</span>
-          </div>
+<!--          <div class="info-item">-->
+<!--            <span class="info-label">GUID:</span>-->
+<!--            <span class="info-value info-guid">{{ formatGuid(assignment.guid) }}</span>-->
+<!--          </div>-->
         </div>
 
         <!-- Actions -->

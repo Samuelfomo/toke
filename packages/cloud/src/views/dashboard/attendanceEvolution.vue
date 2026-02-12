@@ -113,41 +113,41 @@
       </div>
 
       <!-- Repos -->
-      <div class="metric-card rest">
-        <div class="metric-circle">
-          <div class="circle-content">
+<!--      <div class="metric-card rest">-->
+<!--        <div class="metric-circle">-->
+<!--          <div class="circle-content">-->
 
-            <span class="metric-value">{{ restRate }}%</span>
-          </div>
-          <svg class="circle-svg" viewBox="0 0 120 120">
-            <circle
-              class="circle-bg"
-              cx="60"
-              cy="60"
-              r="54"
-              fill="none"
-              stroke="#e0e7ff"
-              stroke-width="8"
-            />
-            <circle
-              class="circle-progress"
-              cx="60"
-              cy="60"
-              r="54"
-              fill="none"
-              stroke="#6366f1"
-              stroke-width="8"
-              :stroke-dasharray="circumference"
-              :stroke-dashoffset="restOffset"
-              transform="rotate(-90 60 60)"
-            />
-          </svg>
-        </div>
-        <div class="metric-info">
-          <span class="metric-label">Au repos</span>
-          <span class="metric-percentage info"> {{ totalRest }}/{{ totalEmployees }} en repos</span>
-        </div>
-      </div>
+<!--            <span class="metric-value">{{ restRate }}%</span>-->
+<!--          </div>-->
+<!--          <svg class="circle-svg" viewBox="0 0 120 120">-->
+<!--            <circle-->
+<!--              class="circle-bg"-->
+<!--              cx="60"-->
+<!--              cy="60"-->
+<!--              r="54"-->
+<!--              fill="none"-->
+<!--              stroke="#e0e7ff"-->
+<!--              stroke-width="8"-->
+<!--            />-->
+<!--            <circle-->
+<!--              class="circle-progress"-->
+<!--              cx="60"-->
+<!--              cy="60"-->
+<!--              r="54"-->
+<!--              fill="none"-->
+<!--              stroke="#6366f1"-->
+<!--              stroke-width="8"-->
+<!--              :stroke-dasharray="circumference"-->
+<!--              :stroke-dashoffset="restOffset"-->
+<!--              transform="rotate(-90 60 60)"-->
+<!--            />-->
+<!--          </svg>-->
+<!--        </div>-->
+<!--        <div class="metric-info">-->
+<!--          <span class="metric-label">Au repos</span>-->
+<!--          <span class="metric-percentage info"> {{ totalRest }}/{{ totalEmployees }} en repos</span>-->
+<!--        </div>-->
+<!--      </div>-->
     </div>
 
     <!-- ================= ÉVOLUTION SUR LA PÉRIODE ================= -->
@@ -175,10 +175,10 @@
           <div class="legend-dot danger" :class="{ disabled: !datasetsVisibility.absent }"></div>
           <span :class="{ disabled: !datasetsVisibility.absent }">Absents</span>
         </div>
-        <div class="legend-item" @click="toggleDataset('rest')">
-          <div class="legend-dot info" :class="{ disabled: !datasetsVisibility.rest }"></div>
-          <span :class="{ disabled: !datasetsVisibility.rest }">Repos</span>
-        </div>
+<!--        <div class="legend-item" @click="toggleDataset('rest')">-->
+<!--          <div class="legend-dot info" :class="{ disabled: !datasetsVisibility.rest }"></div>-->
+<!--          <span :class="{ disabled: !datasetsVisibility.rest }">Repos</span>-->
+<!--        </div>-->
       </div>
     </div>
 
@@ -238,17 +238,17 @@
                 </div>
               </div>
 
-              <div class="summary-card rest-card">
-                <div class="summary-icon">
-                  <svg viewBox="0 0 24 24" fill="currentColor">
-                    <path d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"/>
-                  </svg>
-                </div>
-                <div class="summary-info">
-                  <span class="summary-value">{{ selectedDayEmployees.rest.length }}</span>
-                  <span class="summary-label">Au repos</span>
-                </div>
-              </div>
+<!--              <div class="summary-card rest-card">-->
+<!--                <div class="summary-icon">-->
+<!--                  <svg viewBox="0 0 24 24" fill="currentColor">-->
+<!--                    <path d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"/>-->
+<!--                  </svg>-->
+<!--                </div>-->
+<!--                <div class="summary-info">-->
+<!--                  <span class="summary-value">{{ selectedDayEmployees.rest.length }}</span>-->
+<!--                  <span class="summary-label">Au repos</span>-->
+<!--                </div>-->
+<!--              </div>-->
             </div>
 
             <!-- Listes des employés par statut -->
@@ -412,10 +412,10 @@
                 <span class="stat-label">Absents</span>
                 <span class="stat-value danger">{{ day.absent }}</span>
               </div>
-              <div class="stat-group">
-                <span class="stat-label">Repos</span>
-                <span class="stat-value info">{{ day.rest }}</span>
-              </div>
+<!--              <div class="stat-group">-->
+<!--                <span class="stat-label">Repos</span>-->
+<!--                <span class="stat-value info">{{ day.rest }}</span>-->
+<!--              </div>-->
             </div>
           </div>
         </div>
@@ -485,7 +485,7 @@ const tabs = [
   { key: 'present' as const, label: 'Présents à l\'heure', badgeClass: 'success', emptyLabel: 'présent à l\'heure' },
   { key: 'late' as const, label: 'En retard', badgeClass: 'warning', emptyLabel: 'en retard' },
   { key: 'absent' as const, label: 'Absents', badgeClass: 'danger', emptyLabel: 'absent' },
-  { key: 'rest' as const, label: 'Au repos', badgeClass: 'info', emptyLabel: 'au repos' }
+  // { key: 'rest' as const, label: 'Au repos', badgeClass: 'info', emptyLabel: 'au repos' }
 ]
 
 // Métriques globales
@@ -559,7 +559,7 @@ const dailyData = computed(() => {
     present: number
     late: number
     absent: number
-    rest: number
+    // rest: number
   }>()
 
   props.employees.forEach(emp => {
@@ -571,7 +571,7 @@ const dailyData = computed(() => {
           present: 0,
           late: 0,
           absent: 0,
-          rest: 0
+          // rest: 0
         })
       }
 
@@ -584,7 +584,7 @@ const dailyData = computed(() => {
       if (day.status === 'present') data.present++
       else if (day.status === 'late') data.late++
       else if (day.status === 'absent') data.absent++
-      else if (day.status === 'off-day') data.rest++
+      // else if (day.status === 'off-day') data.rest++
     })
   })
 
@@ -605,7 +605,7 @@ const criticalDays = computed(() => {
 // Employés pour le jour sélectionné
 const selectedDayEmployees = computed(() => {
   if (!selectedDay.value) {
-    return { present: [], late: [], absent: [], rest: [] }
+    return { present: [], late: [], absent: []}
   }
 
   const date = selectedDay.value.date
@@ -613,12 +613,12 @@ const selectedDayEmployees = computed(() => {
     present: (TransformedEmployee & { dayDetail?: any })[]
     late: (TransformedEmployee & { dayDetail?: any })[]
     absent: (TransformedEmployee & { dayDetail?: any })[]
-    rest: (TransformedEmployee & { dayDetail?: any })[]
+    // rest: (TransformedEmployee & { dayDetail?: any })[]
   } = {
     present: [],
     late: [],
     absent: [],
-    rest: []
+    // rest: []
   }
 
   props.employees.forEach(emp => {
@@ -632,8 +632,6 @@ const selectedDayEmployees = computed(() => {
         result.late.push(empWithDetail)
       } else if (dayDetail.status === 'absent') {
         result.absent.push(empWithDetail)
-      } else if (dayDetail.status === 'off-day') {
-        result.rest.push(empWithDetail)
       }
     }
   })
@@ -700,22 +698,22 @@ const evolutionChartData = computed(() => {
     })
   }
 
-  if (datasetsVisibility.value.rest) {
-    datasets.push({
-      label: 'Repos',
-      data: dailyData.value.map(d => d.rest),
-      borderColor: '#6366f1',
-      backgroundColor: 'rgba(99, 102, 241, 0.1)',
-      borderWidth: 3,
-      fill: true,
-      tension: 0.4,
-      pointRadius: 6,
-      pointHoverRadius: 8,
-      pointBackgroundColor: '#6366f1',
-      pointBorderColor: '#fff',
-      pointBorderWidth: 2
-    })
-  }
+  // if (datasetsVisibility.value.rest) {
+  //   datasets.push({
+  //     label: 'Repos',
+  //     data: dailyData.value.map(d => d.rest),
+  //     borderColor: '#6366f1',
+  //     backgroundColor: 'rgba(99, 102, 241, 0.1)',
+  //     borderWidth: 3,
+  //     fill: true,
+  //     tension: 0.4,
+  //     pointRadius: 6,
+  //     pointHoverRadius: 8,
+  //     pointBackgroundColor: '#6366f1',
+  //     pointBorderColor: '#fff',
+  //     pointBorderWidth: 2
+  //   })
+  // }
 
   return {
     labels: dates,
@@ -803,6 +801,7 @@ const formatDelay = (minutes: number): string => {
   return `${mins} min`
 }
 
+
 const formatDate = (dateString: string): string => {
   const date = new Date(dateString)
   return date.toLocaleDateString('fr-FR', {
@@ -825,7 +824,7 @@ const closeDayDetails = () => {
   selectedDay.value = null
 }
 
-const toggleDataset = (type: 'present' | 'late' | 'absent' | 'rest') => {
+const toggleDataset = (type: 'present' | 'late' | 'absent') => {
   datasetsVisibility.value[type] = !datasetsVisibility.value[type]
 }
 </script>
