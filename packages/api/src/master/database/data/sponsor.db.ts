@@ -158,7 +158,7 @@ export const InvitationDbStructure = {
       },
       {
         name: 'idx_invitation_phone_reference',
-        fields: ['phone_number, reference'],
+        fields: ['phone_number', 'reference'],
         unique: true,
       },
       {

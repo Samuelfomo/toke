@@ -163,12 +163,12 @@ export class ScheduleAssignmentsValidationUtils {
       }
     }
 
-    if (cleaned.session_template !== undefined) {
-      cleaned.session_template = parseInt(cleaned.session_template, 10);
-      if (isNaN(cleaned.session_template)) {
-        throw new Error('Invalid session_template: must be a valid integer');
-      }
-    }
+    // if (cleaned.session_template !== undefined) {
+    //   cleaned.session_template = parseInt(cleaned.session_template, 10);
+    //   if (isNaN(cleaned.session_template)) {
+    //     throw new Error('Invalid session_template: must be a valid integer');
+    //   }
+    // }
 
     if (cleaned.created_by !== undefined && cleaned.created_by !== null) {
       cleaned.created_by = parseInt(cleaned.created_by, 10);

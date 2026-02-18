@@ -1,4 +1,4 @@
-import { SESSION_TEMPLATE_DEFAULTS, TimezoneConfigUtils, VALID_DAYS } from '@toke/shared';
+import { SESSION_TEMPLATE_DEFAULTS, VALID_DAYS } from '@toke/shared';
 
 import SessionTemplateModel from '../model/SessionTemplatesModel.js';
 import W from '../../tools/watcher.js';
@@ -35,13 +35,6 @@ export default class SessionTemplate extends SessionTemplateModel {
     return new SessionTemplate().list(conditions, paginationOptions);
   }
 
-  static _listValidAt(
-    date: Date,
-    paginationOptions: { offset?: number; limit?: number } = {},
-  ): Promise<SessionTemplate[] | null> {
-    return new SessionTemplate().listValidAt(date, paginationOptions);
-  }
-
   static async exportable(
     conditions: Record<string, any> = {},
     paginationOptions: { offset?: number; limit?: number } = {},
@@ -70,6 +63,10 @@ export default class SessionTemplate extends SessionTemplateModel {
   // GETTERS FLUENT
   // ============================================
 
+  static toObject(data: any): SessionTemplate {
+    return new SessionTemplate().hydrate(data);
+  }
+
   getId(): number | undefined {
     return this.id;
   }
@@ -86,47 +83,44 @@ export default class SessionTemplate extends SessionTemplateModel {
     return this.name;
   }
 
-  getValidFrom(): Date | undefined {
-    return this.valid_from;
-  }
-
-  getValidTo(): Date | null | undefined {
-    return this.valid_to;
-  }
-
   getDefinition(): any | undefined {
     return this.definition;
+  }
+
+  // ✅ NOUVEAU GETTER
+  getVersion(): number | undefined {
+    return this.version;
   }
 
   getDeletedAt(): Date | null | undefined {
     return this.deleted_at;
   }
 
-  isDefaultSessionTemplate(): boolean {
-    return this.defaults;
-  }
-
   // ============================================
   // SETTERS FLUENT
   // ============================================
+
+  isDefaultSessionTemplate(): boolean {
+    return this.defaults;
+  }
 
   setTenant(tenant: string): SessionTemplate {
     this.tenant = tenant;
     return this;
   }
 
+  // setValidFrom(validFrom: Date): SessionTemplate {
+  //   this.valid_from = validFrom;
+  //   return this;
+  // }
+  //
+  // setValidTo(validTo: Date | null): SessionTemplate {
+  //   this.valid_to = validTo;
+  //   return this;
+  // }
+
   setName(name: string): SessionTemplate {
     this.name = name;
-    return this;
-  }
-
-  setValidFrom(validFrom: Date): SessionTemplate {
-    this.valid_from = validFrom;
-    return this;
-  }
-
-  setValidTo(validTo: Date | null): SessionTemplate {
-    this.valid_to = validTo;
     return this;
   }
 
@@ -135,30 +129,13 @@ export default class SessionTemplate extends SessionTemplateModel {
     return this;
   }
 
-  setDefaultSessionTemplate(value: boolean): SessionTemplate {
-    this.defaults = value;
-    return this;
-  }
-
   // ============================================
   // MÉTHODES MÉTIER
   // ============================================
 
-  isNew(): boolean {
-    return this.id === undefined;
-  }
-
-  isValidAt(date: Date): boolean {
-    if (!this.valid_from) return false;
-
-    if (date < this.valid_from) return false;
-
-    return !(this.valid_to && date > this.valid_to);
-  }
-
-  hasExpired(): boolean {
-    if (!this.valid_to) return false;
-    return TimezoneConfigUtils.getCurrentTime() > this.valid_to;
+  setDefaultSessionTemplate(value: boolean): SessionTemplate {
+    this.defaults = value;
+    return this;
   }
 
   // getDaysWithWork(): string[] {
@@ -167,6 +144,15 @@ export default class SessionTemplate extends SessionTemplateModel {
   //   return Object.keys(this.definition).filter(
   //     (day) => this.definition[day] && this.definition[day].length > 0,
   //   );
+  // }
+
+  isNew(): boolean {
+    return this.id === undefined;
+  }
+
+  // hasWorkOnDay(day: string): boolean {
+  //   if (!this.definition || !this.definition[day]) return false;
+  //   return this.definition[day].length > 0;
   // }
 
   /**
@@ -182,11 +168,6 @@ export default class SessionTemplate extends SessionTemplateModel {
       return dayValue !== null && Array.isArray(dayValue) && dayValue.length > 0;
     });
   }
-
-  // hasWorkOnDay(day: string): boolean {
-  //   if (!this.definition || !this.definition[day]) return false;
-  //   return this.definition[day].length > 0;
-  // }
 
   /**
    * 🔧 MÉTHODE MODIFIÉE
@@ -209,6 +190,11 @@ export default class SessionTemplate extends SessionTemplateModel {
     return this.definition[day] === null;
   }
 
+  // getTotalWorkBlocksForDay(day: string): number {
+  //   if (!this.definition || !this.definition[day]) return 0;
+  //   return this.definition[day].length;
+  // }
+
   /**
    * 🔧 NOUVELLE MÉTHODE
    * Vérifie si un jour est un jour de repos ([] mais pas null)
@@ -217,23 +203,6 @@ export default class SessionTemplate extends SessionTemplateModel {
     if (!this.definition) return false;
     const dayValue = this.definition[day];
     return Array.isArray(dayValue) && dayValue.length === 0;
-  }
-
-  // getTotalWorkBlocksForDay(day: string): number {
-  //   if (!this.definition || !this.definition[day]) return 0;
-  //   return this.definition[day].length;
-  // }
-
-  /**
-   * 🔧 MÉTHODE MODIFIÉE
-   * Retourne le nombre de blocks pour un jour
-   */
-  getTotalWorkBlocksForDay(day: string): number {
-    if (!this.definition || !this.definition[day]) return 0;
-    const dayValue = this.definition[day];
-    // ✅ null = férié → 0 blocks
-    if (dayValue === null) return 0;
-    return Array.isArray(dayValue) ? dayValue.length : 0;
   }
 
   // getWorkHoursForDay(day: string): number {
@@ -264,6 +233,18 @@ export default class SessionTemplate extends SessionTemplateModel {
   //
   //   return totalMinutes / 60;
   // }
+
+  /**
+   * 🔧 MÉTHODE MODIFIÉE
+   * Retourne le nombre de blocks pour un jour
+   */
+  getTotalWorkBlocksForDay(day: string): number {
+    if (!this.definition || !this.definition[day]) return 0;
+    const dayValue = this.definition[day];
+    // ✅ null = férié → 0 blocks
+    if (dayValue === null) return 0;
+    return Array.isArray(dayValue) ? dayValue.length : 0;
+  }
 
   /**
    * 🔧 MÉTHODE MODIFIÉE
@@ -355,6 +336,10 @@ export default class SessionTemplate extends SessionTemplateModel {
     return stats;
   }
 
+  // ============================================
+  // CHARGEMENT ET LISTING
+  // ============================================
+
   async save(): Promise<void> {
     try {
       if (this.isNew()) {
@@ -366,10 +351,6 @@ export default class SessionTemplate extends SessionTemplateModel {
       throw new Error(error.message || error);
     }
   }
-
-  // ============================================
-  // CHARGEMENT ET LISTING
-  // ============================================
 
   async load(
     identifier: any,
@@ -393,20 +374,20 @@ export default class SessionTemplate extends SessionTemplateModel {
     return this.hydrate(data);
   }
 
+  // async listValidAt(
+  //   date: Date,
+  //   paginationOptions: { offset?: number; limit?: number } = {},
+  // ): Promise<SessionTemplate[] | null> {
+  //   const dataset = await this.listAllValidAt(date, paginationOptions);
+  //   if (!dataset || dataset.length === 0) return null;
+  //   return dataset.map((data) => new SessionTemplate().hydrate(data));
+  // }
+
   async list(
     conditions: Record<string, any> = {},
     paginationOptions: { offset?: number; limit?: number } = {},
   ): Promise<SessionTemplate[] | null> {
     const dataset = await this.listAll(conditions, paginationOptions);
-    if (!dataset || dataset.length === 0) return null;
-    return dataset.map((data) => new SessionTemplate().hydrate(data));
-  }
-
-  async listValidAt(
-    date: Date,
-    paginationOptions: { offset?: number; limit?: number } = {},
-  ): Promise<SessionTemplate[] | null> {
-    const dataset = await this.listAllValidAt(date, paginationOptions);
     if (!dataset || dataset.length === 0) return null;
     return dataset.map((data) => new SessionTemplate().hydrate(data));
   }
@@ -442,8 +423,8 @@ export default class SessionTemplate extends SessionTemplateModel {
       [RS.GUID]: this.guid,
       [RS.TENANT]: this.tenant,
       [RS.NAME]: this.name,
-      [RS.VALID_FROM]: this.valid_from,
-      [RS.VALID_TO]: this.valid_to,
+      // [RS.VALID_FROM]: this.valid_from,
+      // [RS.VALID_TO]: this.valid_to,
       [RS.DEFINITION]: this.definition,
       [RS.IS_DEFAULT]: this.defaults,
     };
@@ -467,11 +448,18 @@ export default class SessionTemplate extends SessionTemplateModel {
     this.guid = data.guid;
     this.tenant = data.tenant;
     this.name = data.name;
-    this.valid_from = data.valid_from;
-    this.valid_to = data.valid_to;
+    // this.valid_from = data.valid_from;
+    // this.valid_to = data.valid_to;
     this.definition = data.definition;
+    this.version = data.version;
     this.defaults = data.defaults;
     this.deleted_at = data.deleted_at;
+    return this;
+  }
+
+  // ✅ NOUVEAU SETTER (usage interne)
+  private setVersion(version: number): SessionTemplate {
+    this.version = version;
     return this;
   }
 }

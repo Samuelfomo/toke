@@ -214,6 +214,11 @@ export default class TenantModel extends BaseModel {
       throw new Error('Tenant tax number already exists');
     }
 
+    const existingBillingEmail = await this.findByEmail(this.billing_email!);
+    if (existingBillingEmail) {
+      throw new Error('Tenant billing email already exists');
+    }
+
     const lastID = await this.insertOne(this.db.tableName, {
       [this.db.guid]: guid,
       [this.db.name]: this.name,

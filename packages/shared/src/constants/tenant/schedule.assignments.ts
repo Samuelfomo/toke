@@ -132,6 +132,9 @@ export const SCHEDULE_ASSIGNMENTS_ERRORS = {
   GROUPS_EXCEPTION_ALREADY_ASSIGNED: 'Groups is already assigned to this session template',
   USER_ALREADY_HAS_ACTIVE_EXCEPTION: 'User already has an active schedule exception',
   GROUPS_ALREADY_HAS_ACTIVE_EXCEPTION: 'Groups already has an active schedule exception',
+  USER_TEMPLATE_VERSION_ALREADY_ASSIGNED: 'This template version is already assigned to this user',
+  GROUPS_TEMPLATE_VERSION_ALREADY_ASSIGNED:
+    'This template version is already assigned to this group',
 } as const;
 
 export const SCHEDULE_ASSIGNMENTS_MESSAGES = {

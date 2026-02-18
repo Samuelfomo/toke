@@ -1,5 +1,3 @@
-import { VALID_DAYS } from '@toke/shared';
-
 import SessionTemplate from '../tenant/class/SessionTemplates.js';
 import RotationGroup from '../tenant/class/RotationGroups.js';
 import User from '../tenant/class/User.js';
@@ -280,80 +278,6 @@ class ScheduleResolutionService {
     return this.parseTimeToMinutes(time2) - this.parseTimeToMinutes(time1);
   }
 
-  // /**
-  //  * Résolution depuis schedule_exceptions
-  //  */
-  // private async resolveFromException(
-  //   userId: number,
-  //   dateStr: string,
-  //   activeGroupId?: number,
-  // ): Promise<ApplicableSchedule | null> {
-  //   // Chercher exception utilisateur
-  //   const userException = await ScheduleAssignments._listForUserOnDate(userId, dateStr);
-  //
-  //   if (userException && userException.length > 0) {
-  //     const exception = userException[0];
-  //     return await this.buildScheduleFromTemplate(
-  //       exception.getSessionTemplate()!,
-  //       dateStr,
-  //       'exception',
-  //       {
-  //         exception_guid: exception.getGuid(),
-  //         reason: exception.getReason(),
-  //         start_date: exception.getStartDate(),
-  //         end_date: exception.getEndDate(),
-  //       },
-  //     );
-  //   }
-  //
-  //   if (activeGroupId) {
-  //     // TODO: Chercher exception groupe si pas d'exception utilisateur
-  //     const groupException = await ScheduleAssignments._listForGroupsOnDate(activeGroupId, dateStr);
-  //
-  //     if (groupException && groupException.length > 0) {
-  //       const exceptionGroup = groupException[0];
-  //       return await this.buildScheduleFromTemplate(
-  //         exceptionGroup.getSessionTemplate()!,
-  //         dateStr,
-  //         'exception',
-  //         {
-  //           exception_guid: exceptionGroup.getGuid(),
-  //           reason: exceptionGroup.getReason(),
-  //           start_date: exceptionGroup.getStartDate(),
-  //           end_date: exceptionGroup.getEndDate(),
-  //         },
-  //       );
-  //     }
-  //   }
-  //
-  //   return null;
-  // }
-  //
-  // // Checking direct template assignment
-  // private async resolveFromDefaultTemplate(
-  //   userId: number,
-  //   dateStr: string,
-  //   groupId?: number,
-  // ): Promise<ApplicableSchedule | null> {
-  //   const userObj = await User._load(userId);
-  //   const userSchedule = await (
-  //     await userObj?.getActiveScheduleAssignment()
-  //   )?.getSessionTemplateObj();
-  //   if (userSchedule) {
-  //     return await this.buildScheduleFromTemplate(userSchedule.getId()!, dateStr, 'default', {
-  //       session_guid: userSchedule.getGuid(),
-  //       name: userSchedule.getName(),
-  //       start_date: userSchedule.getValidFrom(),
-  //       end_date: userSchedule.getValidTo(),
-  //       definition: userSchedule.getDefinition(),
-  //     });
-  //   }
-  //
-  //   // TODO: Chercher le template du groupe si pas de template utilisateur
-  //   // const groupTemplate = await Groups._listForGroupOnDate(groupId, dateStr);
-  //   return null;
-  // }
-
   /**
    * Fallback sur horaire par défaut de l'entreprise
    */
@@ -365,19 +289,14 @@ class ScheduleResolutionService {
 
     const defaultSessionTemplate = await SessionTemplate._load({}, false, true);
     if (defaultSessionTemplate) {
-      return await this.buildScheduleFromTemplate(
-        defaultSessionTemplate.getId()!,
-        dayOfWeek,
-        'default',
-        {
-          session_guid: defaultSessionTemplate.getGuid(),
-          name: defaultSessionTemplate.getName(),
-          start_date: defaultSessionTemplate.getValidFrom(),
-          end_date: defaultSessionTemplate.getValidTo(),
-          definition: defaultSessionTemplate.getDefinition(),
-          user: userId,
-        },
-      );
+      return await this.buildScheduleFromTemplate(defaultSessionTemplate, dayOfWeek, 'default', {
+        session_guid: defaultSessionTemplate.getGuid(),
+        name: defaultSessionTemplate.getName(),
+        // start_date: defaultSessionTemplate.getValidFrom(),
+        // end_date: defaultSessionTemplate.getValidTo(),
+        definition: defaultSessionTemplate.getDefinition(),
+        user: userId,
+      });
     }
     return null;
   }
@@ -390,8 +309,7 @@ class ScheduleResolutionService {
     dateStr: string,
     resolutionPath: string[],
   ): Promise<ScheduleResolutionResult> {
-    const templateId = assignment.getSessionTemplate()!;
-    const template = await SessionTemplate._load(templateId);
+    const template = SessionTemplate.toObject(assignment.getSessionTemplate());
 
     if (!template) {
       resolutionPath.push('❌ Template not found');
@@ -403,7 +321,7 @@ class ScheduleResolutionService {
       };
     }
 
-    const applicableSchedule = await this.buildScheduleFromTemplate(templateId, dateStr, 'direct', {
+    const applicableSchedule = await this.buildScheduleFromTemplate(template, dateStr, 'direct', {
       assignment_guid: assignment.getGuid(),
       template_name: template.getName(),
       assigned_at: assignment.getAssignedAt(),
@@ -441,6 +359,7 @@ class ScheduleResolutionService {
 
     const offset = assignment.getOffset() || 0;
     const templateId = this.calculateRotationTemplateId(rotationGroup, targetDate, offset);
+    const template = await SessionTemplate._load(templateId);
 
     if (!templateId) {
       resolutionPath.push('❌ Could not calculate rotation template');
@@ -452,19 +371,24 @@ class ScheduleResolutionService {
       };
     }
 
-    const applicableSchedule = await this.buildScheduleFromTemplate(
-      templateId,
-      dateStr,
-      'rotation',
-      {
-        rotation_group_guid: rotationGroup.getGuid(),
-        rotation_group_name: rotationGroup.getName(),
-        assigned_at: assignment.getAssignedAt(),
-        cycle_length: rotationGroup.getCycleLength(),
-        cycle_unit: rotationGroup.getCycleUnit(),
-        offset: offset,
-      },
-    );
+    if (!template) {
+      resolutionPath.push('❌ template not found');
+      return {
+        success: false,
+        applicable_schedule: null,
+        resolution_path: resolutionPath,
+        error: 'template assign to rotation not found',
+      };
+    }
+
+    const applicableSchedule = await this.buildScheduleFromTemplate(template, dateStr, 'rotation', {
+      rotation_group_guid: rotationGroup.getGuid(),
+      rotation_group_name: rotationGroup.getName(),
+      assigned_at: assignment.getAssignedAt(),
+      cycle_length: rotationGroup.getCycleLength(),
+      cycle_unit: rotationGroup.getCycleUnit(),
+      offset: offset,
+    });
 
     return {
       success: true,
@@ -472,85 +396,6 @@ class ScheduleResolutionService {
       resolution_path: resolutionPath,
     };
   }
-
-  // /**
-  //  * Résolution depuis rotation_assignments + rotation_groups
-  //  */
-  // private async resolveFromRotation(
-  //   userId: number,
-  //   targetDate: Date,
-  //   activeGroupId?: number,
-  // ): Promise<ApplicableSchedule | null> {
-  //   // Récupérer l'assignation rotation de l'utilisateur
-  //   const assignments = await RotationAssignment._listByUser(userId);
-  //
-  //   let assignmentsGroup: RotationAssignment[] | null = null;
-  //   if (activeGroupId) {
-  //     assignmentsGroup = await RotationAssignment._listByGroups(activeGroupId);
-  //   }
-  //
-  //   if (assignments && assignments.length > 0) {
-  //     // Prendre la première assignation active
-  //     const assignment = assignments[0];
-  //     const rotationGroupId = assignment.getRotationGroup()!;
-  //     const offset = assignment.getOffset()!;
-  //
-  //     // Charger le groupe de rotation
-  //     const rotationGroup = await RotationGroup._load(rotationGroupId);
-  //
-  //     if (rotationGroup && rotationGroup.isActive()) {
-  //       // Calculer l'index du template à utiliser
-  //       const templateId = this.calculateRotationTemplateId(rotationGroup, targetDate, offset);
-  //
-  //       if (templateId) {
-  //         return await this.buildScheduleFromTemplate(
-  //           templateId,
-  //           this.formatDate(targetDate),
-  //           'rotation',
-  //           {
-  //             rotation_group_guid: rotationGroup.getGuid(),
-  //             rotation_group_name: rotationGroup.getName(),
-  //             cycle_length: rotationGroup.getCycleLength(),
-  //             cycle_unit: rotationGroup.getCycleUnit(),
-  //             offset: offset,
-  //           },
-  //         );
-  //       }
-  //     }
-  //   }
-  //
-  //   if (assignmentsGroup && assignmentsGroup.length > 0) {
-  //     // Prendre la première assignation active
-  //     const assignment = assignmentsGroup[0];
-  //     const rotationGroupId = assignment.getRotationGroup()!;
-  //     const offset = assignment.getOffset()!;
-  //
-  //     // Charger le groupe de rotation
-  //     const rotationGroup = await RotationGroup._load(rotationGroupId);
-  //
-  //     if (rotationGroup && rotationGroup.isActive()) {
-  //       // Calculer l'index du template à utiliser
-  //       const templateId = this.calculateRotationTemplateId(rotationGroup, targetDate, offset);
-  //
-  //       if (templateId) {
-  //         return await this.buildScheduleFromTemplate(
-  //           templateId,
-  //           this.formatDate(targetDate),
-  //           'rotation',
-  //           {
-  //             rotation_group_guid: rotationGroup.getGuid(),
-  //             rotation_group_name: rotationGroup.getName(),
-  //             cycle_length: rotationGroup.getCycleLength(),
-  //             cycle_unit: rotationGroup.getCycleUnit(),
-  //             offset: offset,
-  //           },
-  //         );
-  //       }
-  //     }
-  //   }
-  //
-  //   return null;
-  // }
 
   /**
    * Calcul de l'index du template dans une rotation
@@ -590,13 +435,11 @@ class ScheduleResolutionService {
    * Construction d'un ApplicableSchedule depuis un template_id
    */
   private async buildScheduleFromTemplate(
-    templateId: number,
+    template: SessionTemplate,
     dateStr: string,
     source: 'exception' | 'rotation' | 'direct' | 'default',
     sourceDetails: any,
   ): Promise<ApplicableSchedule | null> {
-    const template = await SessionTemplate._load(templateId);
-
     if (!template) {
       return null;
     }
@@ -605,9 +448,21 @@ class ScheduleResolutionService {
     const targetDate = new Date(dateStr);
     const dayOfWeek = this.getDayOfWeek(targetDate);
 
+    // 🔍 DEBUG - AJOUTEZ CES LOGS
+    console.log('🔍 DEBUG buildScheduleFromTemplate:');
+    console.log('   Date:', dateStr);
+    console.log('   Target date:', targetDate.toISOString());
+    console.log('   Day of week (calculated):', dayOfWeek);
+    console.log('   Template definition keys:', Object.keys(definition));
+    console.log('   Definition[dayOfWeek]:', definition[dayOfWeek]);
+    console.log('   Template definition:', JSON.stringify(definition, null, 2));
+
     // Récupérer les blocs de travail pour ce jour
     const dayBlocks = definition[dayOfWeek] || [];
     const isWorkDay = dayBlocks.length > 0;
+
+    console.log('   Day blocks:', dayBlocks);
+    console.log('   Is work day:', isWorkDay);
 
     return {
       template_id: template.getId()!,
@@ -648,9 +503,15 @@ class ScheduleResolutionService {
     return date.toISOString().split('T')[0];
   }
 
+  // private getDayOfWeek(date: Date): string {
+  //   // const days = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+  //   return VALID_DAYS[date.getDay()];
+  // }
   private getDayOfWeek(date: Date): string {
-    // const days = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
-    return VALID_DAYS[date.getDay()];
+    // ✅ HARDCODED pour éviter toute ambiguïté
+    const days = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+    const dayIndex = date.getDay(); // 0-6
+    return days[dayIndex];
   }
 }
 

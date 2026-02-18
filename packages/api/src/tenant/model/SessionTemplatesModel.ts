@@ -4,7 +4,6 @@ import {
   SessionTemplateValidationUtils,
   TimezoneConfigUtils,
 } from '@toke/shared';
-import { Op } from 'sequelize';
 
 import BaseModel from '../database/db.base.js';
 import { tableName } from '../../utils/response.model.js';
@@ -16,9 +15,8 @@ export default class SessionTemplateModel extends BaseModel {
     guid: 'guid',
     tenant: 'tenant',
     name: 'name',
-    valid_from: 'valid_from',
-    valid_to: 'valid_to',
     definition: 'definition',
+    version: 'version',
     defaults: 'defaults',
     deleted_at: 'deleted_at',
     created_at: 'created_at',
@@ -33,11 +31,12 @@ export default class SessionTemplateModel extends BaseModel {
   protected guid?: string;
   protected tenant?: string;
   protected name?: string;
-  protected valid_from?: Date;
-  protected valid_to?: Date | null;
   protected definition?: any;
+  protected version?: number;
   protected defaults: boolean = SESSION_TEMPLATE_DEFAULTS.IS_DEFAULT;
   protected deleted_at?: Date | null;
+
+  protected iniatialVersion: number = 1;
 
   protected constructor() {
     super();
@@ -109,18 +108,6 @@ export default class SessionTemplateModel extends BaseModel {
     return await this.findAll(this.db.tableName, conditions, paginationOptions);
   }
 
-  protected async listAllValidAt(
-    date: Date,
-    paginationOptions: { offset?: number; limit?: number } = {},
-  ): Promise<any[]> {
-    const conditions = {
-      [this.db.valid_from]: { [Op.lte]: date },
-      [Op.or]: [{ [this.db.valid_to]: null }, { [this.db.valid_to]: { [Op.gte]: date } }],
-    };
-
-    return await this.listAll(conditions, paginationOptions);
-  }
-
   // ============================================
   // STATISTIQUES
   // ============================================
@@ -156,13 +143,14 @@ export default class SessionTemplateModel extends BaseModel {
       throw new Error(SESSION_TEMPLATE_ERRORS.ACTIVE_DEFAULT_TEMPLATE_ALREADY_EXISTS);
     }
 
+    this.version = this.iniatialVersion;
+
     const lastID = await this.insertOne(this.db.tableName, {
       [this.db.guid]: guid,
       [this.db.tenant]: this.tenant,
       [this.db.name]: this.name,
-      [this.db.valid_from]: this.valid_from ?? TimezoneConfigUtils.getCurrentTime(),
-      [this.db.valid_to]: this.valid_to ?? null,
       [this.db.definition]: this.definition,
+      [this.db.version]: this.version,
       [this.db.defaults]: this.defaults || SESSION_TEMPLATE_DEFAULTS.IS_DEFAULT,
     });
 
@@ -189,14 +177,14 @@ export default class SessionTemplateModel extends BaseModel {
     if (this.name !== undefined) {
       updateData[this.db.name] = this.name;
     }
-    if (this.valid_from !== undefined) {
-      updateData[this.db.valid_from] = this.valid_from;
-    }
-    if (this.valid_to !== undefined) {
-      updateData[this.db.valid_to] = this.valid_to;
-    }
     if (this.definition !== undefined) {
       updateData[this.db.definition] = this.definition;
+    }
+    // ✅ Si définition modifiée, incrémenter la version
+    const current = await this.find(this.id);
+    if (current && JSON.stringify(current.definition) !== JSON.stringify(this.definition)) {
+      updateData[this.db.version] =
+        (current.version || this.iniatialVersion) + this.iniatialVersion;
     }
     if (this.defaults !== undefined) {
       updateData[this.db.defaults] = this.defaults;
@@ -270,18 +258,6 @@ export default class SessionTemplateModel extends BaseModel {
     if (!SessionTemplateValidationUtils.validateName(this.name)) {
       throw new Error(SESSION_TEMPLATE_ERRORS.NAME_INVALID);
     }
-
-    if (!this.valid_from) {
-      throw new Error(SESSION_TEMPLATE_ERRORS.VALID_FROM_REQUIRED);
-    }
-    if (!SessionTemplateValidationUtils.validateValidFrom(this.valid_from)) {
-      throw new Error(SESSION_TEMPLATE_ERRORS.VALID_FROM_INVALID);
-    }
-
-    if (this.valid_to && !SessionTemplateValidationUtils.validateValidTo(this.valid_to)) {
-      throw new Error(SESSION_TEMPLATE_ERRORS.VALID_TO_INVALID);
-    }
-
     if (!this.definition) {
       throw new Error(SESSION_TEMPLATE_ERRORS.DEFINITION_REQUIRED);
     }

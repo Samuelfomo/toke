@@ -14,9 +14,10 @@ import { TenantRevision } from '../../tools/revision.js';
 import SessionTemplate from './SessionTemplates.js';
 import User from './User.js';
 import Groups from './Groups.js';
+import ScheduleAssignmentsLog from './ScheduleAssignmentsLog.js';
 
 export default class ScheduleAssignments extends ScheduleAssignmentsModel {
-  private sessionTemplateObj?: SessionTemplate;
+  public initialVersion = 1;
   private userObj?: User;
   private groupsObj?: Groups;
   private createdByObj?: User;
@@ -122,6 +123,76 @@ export default class ScheduleAssignments extends ScheduleAssignmentsModel {
   // GETTERS FLUENT
   // ============================================
 
+  /**
+   * Créer un snapshot du template depuis un SessionTemplate
+   */
+  static async createTemplateSnapshot(sessionTemplate: SessionTemplate): Promise<any> {
+    return {
+      id: sessionTemplate.getId(),
+      guid: sessionTemplate.getGuid(),
+      name: sessionTemplate.getName(),
+      definition: sessionTemplate.getDefinition(),
+      version: sessionTemplate.getVersion(), // ✅ Version du template
+      is_default: sessionTemplate.isDefaultSessionTemplate(),
+      snapshot_date: new Date().toISOString(),
+    };
+  }
+
+  /**
+   * Assigner un template à partir d'un SessionTemplate
+   */
+  async assignFromSessionTemplate(
+    sessionTemplate: SessionTemplate,
+    createdBy: number,
+    reason?: string,
+  ): Promise<void> {
+    const templateSnapshot = await ScheduleAssignments.createTemplateSnapshot(sessionTemplate);
+    // this.setSessionTemplate(templateSnapshot);
+    this.setSessionTemplate(SessionTemplate);
+    this.setCreatedBy(createdBy);
+    if (reason) {
+      this.setReason(reason);
+    }
+  }
+
+  /**
+   * Mettre à jour le template et logger automatiquement
+   */
+  async updateSessionTemplate(
+    newTemplate: any,
+    modifiedBy: number,
+    reason?: string,
+  ): Promise<void> {
+    if (this.isNew()) {
+      throw new Error('Cannot update template on unsaved assignment');
+    }
+
+    // Sauvegarder l'ancien état
+    const previousTemplate = this.session_template;
+    const createdBy = this.created_by!;
+    const previousVersion = this.version || this.initialVersion;
+
+    // Mettre à jour le template et incrémenter la version
+    const newVersion = previousVersion + this.initialVersion;
+    this.setSessionTemplate(newTemplate);
+    this.setVersion(newVersion);
+    this.setCreatedBy(modifiedBy);
+
+    // Sauvegarder l'assignment
+    await this.updateDefinition();
+
+    // ✅ Logger automatiquement la modification
+    await this.logModification({
+      previousTemplate,
+      newTemplate,
+      previousVersion,
+      newVersion,
+      modifiedBy,
+      createdBy,
+      modificationReason: reason,
+    });
+  }
+
   getId(): number | undefined {
     return this.id;
   }
@@ -158,16 +229,16 @@ export default class ScheduleAssignments extends ScheduleAssignmentsModel {
     return this.groupsObj || null;
   }
 
-  getSessionTemplate(): number | undefined {
+  getSessionTemplate(): any | undefined {
     return this.session_template;
   }
 
-  async getSessionTemplateObj(): Promise<SessionTemplate | null> {
-    if (!this.session_template) return null;
-    if (!this.sessionTemplateObj) {
-      this.sessionTemplateObj = (await SessionTemplate._load(this.session_template)) || undefined;
-    }
-    return this.sessionTemplateObj || null;
+  getSessionTemplateId(): number | undefined {
+    return this.session_template.id;
+  }
+
+  getVersion(): number | undefined {
+    return this.version;
   }
 
   getStartDate(): string | undefined {
@@ -206,14 +277,14 @@ export default class ScheduleAssignments extends ScheduleAssignmentsModel {
     return this.deleted_at;
   }
 
-  // ============================================
-  // SETTERS FLUENT
-  // ============================================
-
   setTenant(tenant: string): ScheduleAssignments {
     this.tenant = tenant;
     return this;
   }
+
+  // ============================================
+  // SETTERS FLUENT
+  // ============================================
 
   setUser(userId: number | null): ScheduleAssignments {
     this.user = userId;
@@ -227,9 +298,8 @@ export default class ScheduleAssignments extends ScheduleAssignmentsModel {
     return this;
   }
 
-  setSessionTemplate(sessionTemplateId: number): ScheduleAssignments {
-    this.session_template = sessionTemplateId;
-    this.sessionTemplateObj = undefined; // Reset cache
+  setSessionTemplate(template: any): ScheduleAssignments {
+    this.session_template = template;
     return this;
   }
 
@@ -259,10 +329,6 @@ export default class ScheduleAssignments extends ScheduleAssignmentsModel {
     return this;
   }
 
-  // ============================================
-  // MÉTHODES MÉTIER
-  // ============================================
-
   isNew(): boolean {
     return this.id === undefined;
   }
@@ -270,15 +336,19 @@ export default class ScheduleAssignments extends ScheduleAssignmentsModel {
   /**
    * Vérifie si l'exception est pour un utilisateur spécifique
    */
-  isUserException(): boolean {
+  isForUser(): boolean {
     return this.user !== null && this.user !== undefined;
   }
+
+  // ============================================
+  // MÉTHODES MÉTIER
+  // ============================================
 
   /**
    * Vérifie si l'exception est pour une groups
    */
-  isGroupsException(): boolean {
-    return this.groups === null && this.groups === undefined;
+  isForGroup(): boolean {
+    return this.groups !== null && this.groups !== undefined;
   }
 
   /**
@@ -351,10 +421,6 @@ export default class ScheduleAssignments extends ScheduleAssignmentsModel {
     }
   }
 
-  // ============================================
-  // CHARGEMENT ET LISTING
-  // ============================================
-
   async load(identifier: any, byGuid: boolean = false): Promise<ScheduleAssignments | null> {
     let data = null;
 
@@ -385,6 +451,10 @@ export default class ScheduleAssignments extends ScheduleAssignmentsModel {
     if (!dataset || dataset.length === 0) return null;
     return dataset.map((data) => new ScheduleAssignments().hydrate(data));
   }
+
+  // ============================================
+  // CHARGEMENT ET LISTING
+  // ============================================
 
   async listByGroups(
     groupsId: number,
@@ -452,10 +522,20 @@ export default class ScheduleAssignments extends ScheduleAssignmentsModel {
     return false;
   }
 
+  /**
+   * Récupérer l'historique des modifications
+   */
+  async getHistory(
+    paginationOptions: { offset?: number; limit?: number } = {},
+  ): Promise<ScheduleAssignmentsLog[] | null> {
+    if (!this.id) return null;
+    return await ScheduleAssignmentsLog._listByAssignment(this.id, paginationOptions);
+  }
+
   async toJSON(view: ViewMode = responseValue.FULL): Promise<object> {
     const userObj = await this.getUserObj();
     const groupsObj = await this.getGroupsObj();
-    const sessionTemplateObj = await this.getSessionTemplateObj();
+    const sessionTemplateObj = SessionTemplate.toObject(this.session_template);
     const createdByObj = await this.getCreatedByObj();
 
     const baseData = {
@@ -489,7 +569,7 @@ export default class ScheduleAssignments extends ScheduleAssignmentsModel {
   }
 
   async toPUBLIC(): Promise<object> {
-    const sessionTemplateObj = await this.getSessionTemplateObj();
+    const sessionTemplateObj = SessionTemplate.toObject(this.session_template);
     const createdByObj = await this.getCreatedByObj();
 
     return {
@@ -506,12 +586,80 @@ export default class ScheduleAssignments extends ScheduleAssignmentsModel {
     };
   }
 
+  toObject(data: any): ScheduleAssignments {
+    return new ScheduleAssignments().hydrate(data);
+  }
+
+  /**
+   * Logger une modification
+   */
+  private async logModification(params: {
+    previousTemplate: any | null;
+    newTemplate: any;
+    previousVersion: number | null;
+    newVersion: number;
+    modifiedBy: number;
+    createdBy: number;
+    modificationReason?: string;
+  }): Promise<void> {
+    const log = new ScheduleAssignmentsLog()
+      .setAssignmentId(this.id!)
+      .setPreviousTemplate(params.previousTemplate)
+      .setNewTemplate(params.newTemplate)
+      .setPreviousVersion(params.previousVersion)
+      .setNewVersion(params.newVersion)
+      .setModifiedBy(params.modifiedBy)
+      .setOldCreator(params.createdBy)
+      .setModificationReason(params.modificationReason || null);
+
+    // Calculer les champs modifiés (optionnel)
+    if (params.previousTemplate && params.newTemplate) {
+      const changedFields = this.computeChangedFields(params.previousTemplate, params.newTemplate);
+      log.setChangedFields(changedFields);
+    }
+
+    await log.save();
+  }
+
+  /**
+   * Calculer les différences entre deux templates
+   */
+  private computeChangedFields(oldTemplate: any, newTemplate: any): any {
+    const changes: any = {};
+
+    // Comparaison des champs de base
+    if (oldTemplate.name !== newTemplate.name) {
+      changes.name = { old: oldTemplate.name, new: newTemplate.name };
+    }
+
+    // Comparaison de la définition
+    if (JSON.stringify(oldTemplate.definition) !== JSON.stringify(newTemplate.definition)) {
+      changes.definition_changed = true;
+
+      // Détailler les jours modifiés
+      const oldDays = Object.keys(oldTemplate.definition || {});
+      const newDays = Object.keys(newTemplate.definition || {});
+      const modifiedDays = oldDays.filter(
+        (day) =>
+          JSON.stringify(oldTemplate.definition[day]) !==
+          JSON.stringify(newTemplate.definition[day]),
+      );
+      if (modifiedDays.length > 0) {
+        changes.modified_days = modifiedDays;
+      }
+    }
+
+    return changes;
+  }
+
   // ============================================
   // MÉTHODES PRIVÉES
   // ============================================
 
-  toObject(data: any): ScheduleAssignments {
-    return new ScheduleAssignments().hydrate(data);
+  // ✅ NOUVEAU (usage interne uniquement)
+  private setVersion(version: number): ScheduleAssignments {
+    this.version = version;
+    return this;
   }
 
   private hydrate(data: any): ScheduleAssignments {

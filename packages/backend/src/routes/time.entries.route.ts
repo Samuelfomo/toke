@@ -36,6 +36,7 @@ router.get(
       if (result.status !== HttpStatus.SUCCESS) {
         return R.handleError(res, result.status, result.response);
       }
+      console.log('result.response', result.response);
       return R.handleSuccess(res, result.response);
     } catch (error: any) {
       return R.handleError(res, HttpStatus.INTERNAL_ERROR, {

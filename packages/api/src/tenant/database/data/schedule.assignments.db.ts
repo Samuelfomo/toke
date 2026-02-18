@@ -65,17 +65,35 @@ export const ScheduleAssignmentsDbStructure = {
       },
       comment: 'Reference to groups (nullable for user Assignments)',
     },
+    // session_template: {
+    //   type: DataTypes.INTEGER,
+    //   allowNull: false,
+    //   references: {
+    //     model: tableName.SESSION_TEMPLATES,
+    //     key: 'id',
+    //   },
+    //   validate: {
+    //     isInt: true,
+    //   },
+    //   comment: 'Reference to session template to apply',
+    // },
     session_template: {
+      type: DataTypes.JSONB,
+      allowNull: false,
+      validate: {
+        notEmpty: true,
+      },
+      comment: 'Complete copy of session template (JSONB)',
+    },
+    version: {
       type: DataTypes.INTEGER,
       allowNull: false,
-      references: {
-        model: tableName.SESSION_TEMPLATES,
-        key: 'id',
-      },
+      defaultValue: 1,
       validate: {
         isInt: true,
+        min: 1,
       },
-      comment: 'Reference to session template to apply',
+      comment: 'Version number of the assignment (incremented on each modification)',
     },
     start_date: {
       type: DataTypes.DATEONLY,
@@ -155,9 +173,18 @@ export const ScheduleAssignmentsDbStructure = {
         fields: ['groups'],
         name: 'idx_schedule_assignments_groups',
       },
+      // {
+      //   fields: ['session_template'],
+      //   name: 'idx_schedule_assignments_session_template',
+      // },
       {
         fields: ['session_template'],
         name: 'idx_schedule_assignments_session_template',
+        using: 'GIN',
+      },
+      {
+        fields: ['version'],
+        name: 'idx_schedule_assignments_version',
       },
       {
         fields: ['start_date'],
@@ -206,22 +233,6 @@ export const ScheduleAssignmentsDbStructure = {
           groups: { [Op.not]: null },
         },
       },
-      // {
-      //   unique: true,
-      //   fields: ['user', 'session_template', 'start_date', 'end_date'],
-      //   name: 'unique_user_schedule_assignments',
-      //   where: {
-      //     deleted_at: null,
-      //   },
-      // },
-      // {
-      //   unique: true,
-      //   fields: ['groups', 'session_template', 'start_date', 'end_date'],
-      //   name: 'unique_groups_schedule_assignments',
-      //   where: {
-      //     deleted_at: null,
-      //   },
-      // },
     ],
     validate: {
       eitherUserOrGroups() {

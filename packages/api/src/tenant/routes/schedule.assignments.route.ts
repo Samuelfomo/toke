@@ -7,6 +7,10 @@ import {
   SCHEDULE_ASSIGNMENTS_ERRORS,
   SCHEDULE_ASSIGNMENTS_MESSAGES,
   ScheduleAssignmentsValidationUtils,
+  SESSION_TEMPLATE_CODES,
+  SESSION_TEMPLATE_ERRORS,
+  SESSION_TEMPLATE_MESSAGES,
+  SessionTemplateValidationUtils,
   TimezoneConfigUtils,
   USERS_CODES,
   USERS_ERRORS,
@@ -111,10 +115,6 @@ router.get('/list', Ensure.get(), async (req: Request, res: Response) => {
       conditions.active = filters.active;
     }
 
-    if (filters.session_template) {
-      conditions.session_template = filters.session_template;
-    }
-
     if (filters.start_date_from || filters.start_date_to) {
       conditions.start_date = {};
 
@@ -141,19 +141,19 @@ router.get('/list', Ensure.get(), async (req: Request, res: Response) => {
       conditions.created_by = filters.created_by;
     }
 
-    const exceptionList = await ScheduleAssignments._list(conditions, paginationOptions);
-    const exceptions = {
+    const assignmentList = await ScheduleAssignments._list(conditions, paginationOptions);
+    const schedule_assignments = {
       pagination: {
         offset: paginationOptions.offset || 0,
-        limit: paginationOptions.limit || exceptionList?.length || 0,
-        count: exceptionList?.length || 0,
+        limit: paginationOptions.limit || assignmentList?.length || 0,
+        count: assignmentList?.length || 0,
       },
-      items: exceptionList
-        ? await Promise.all(exceptionList.map(async (e) => await e.toJSON(views)))
+      items: assignmentList
+        ? await Promise.all(assignmentList.map(async (e) => await e.toJSON(views)))
         : [],
     };
 
-    return R.handleSuccess(res, { schedule_assignments: exceptions });
+    return R.handleSuccess(res, { schedule_assignments });
   } catch (error: any) {
     if (error.code) {
       return R.handleError(res, HttpStatus.BAD_REQUEST, {
@@ -264,13 +264,22 @@ router.post('/', Ensure.post(), async (req: Request, res: Response) => {
 
     const tenant = req.tenant;
 
-    const exceptionObj = new ScheduleAssignments()
+    const assignmentObj = new ScheduleAssignments()
       .setTenant(tenant.config.reference)
-      .setSessionTemplate(templateObj.getId()!)
+      .setSessionTemplate(templateObj)
       .setCreatedBy(createdByObj.getId()!)
       .setStartDate(validatedData.start_date)
       .setEndDate(validatedData.end_date)
       .setActive(validatedData.active ?? SCHEDULE_ASSIGNMENTS_DEFAULTS.ACTIVE);
+    // // ✅ 3. Assigner le template (copie complète en JSONB avec version)
+    // await assignmentObj.assignFromSessionTemplate(
+    //   templateObj,
+    //   createdByObj.getId()!,
+    //   validatedData.reason ? validatedData.reason : undefined,
+    // );
+    if (validatedData.reason) {
+      assignmentObj.setReason(validatedData.reason);
+    }
 
     // Exception pour un utilisateur spécifique
     if (validatedData.user) {
@@ -281,7 +290,7 @@ router.post('/', Ensure.post(), async (req: Request, res: Response) => {
           message: USERS_ERRORS.NOT_FOUND,
         });
       }
-      exceptionObj.setUser(userObj.getId()!);
+      assignmentObj.setUser(userObj.getId()!);
     }
 
     // Exception pour une groups
@@ -293,18 +302,18 @@ router.post('/', Ensure.post(), async (req: Request, res: Response) => {
           message: SCHEDULE_ASSIGNMENTS_ERRORS.GROUPS_NOT_FOUND,
         });
       }
-      exceptionObj.setGroups(groupsObj.getId()!);
+      assignmentObj.setGroups(groupsObj.getId()!);
     }
 
     if (validatedData.reason) {
-      exceptionObj.setReason(validatedData.reason);
+      assignmentObj.setReason(validatedData.reason);
     }
 
-    await exceptionObj.save();
+    await assignmentObj.save();
 
     return R.handleCreated(res, {
       message: SCHEDULE_ASSIGNMENTS_MESSAGES.CREATED_SUCCESSFULLY,
-      schedule_assignments: await exceptionObj.toJSON(),
+      schedule_assignments: await assignmentObj.toJSON(),
     });
   } catch (error: any) {
     if (error.code) {
@@ -339,8 +348,8 @@ router.get('/:guid', Ensure.get(), async (req: Request, res: Response) => {
 
     const views = ValidationUtils.validateView(req.query.view, responseValue.FULL);
 
-    const exceptionObj = await ScheduleAssignments._load(req.params.guid, true);
-    if (!exceptionObj) {
+    const assignmentObj = await ScheduleAssignments._load(req.params.guid, true);
+    if (!assignmentObj) {
       return R.handleError(res, HttpStatus.NOT_FOUND, {
         code: SCHEDULE_ASSIGNMENTS_CODES.SCHEDULE_ASSIGNMENTS_NOT_FOUND,
         message: SCHEDULE_ASSIGNMENTS_ERRORS.NOT_FOUND,
@@ -348,7 +357,7 @@ router.get('/:guid', Ensure.get(), async (req: Request, res: Response) => {
     }
 
     return R.handleSuccess(res, {
-      schedule_assignments: await exceptionObj.toJSON(views),
+      schedule_assignments: await assignmentObj.toJSON(views),
     });
   } catch (error: any) {
     return R.handleError(res, HttpStatus.INTERNAL_ERROR, {
@@ -386,7 +395,7 @@ router.get('/user/:userGuid', Ensure.get(), async (req: Request, res: Response) 
     const paginationOptions = paginationSchema.parse(req.query);
     const views = ValidationUtils.validateView(req.query.view, responseValue.FULL);
 
-    const exceptionList = await ScheduleAssignments._listByUser(
+    const assignmentList = await ScheduleAssignments._listByUser(
       userObj.getId()!,
       paginationOptions,
     );
@@ -395,11 +404,11 @@ router.get('/user/:userGuid', Ensure.get(), async (req: Request, res: Response) 
       user: await userObj.toJSON(),
       pagination: {
         offset: paginationOptions.offset || 0,
-        limit: paginationOptions.limit || exceptionList?.length || 0,
-        count: exceptionList?.length || 0,
+        limit: paginationOptions.limit || assignmentList?.length || 0,
+        count: assignmentList?.length || 0,
       },
-      items: exceptionList
-        ? await Promise.all(exceptionList.map(async (e) => await e.toJSON(views)))
+      items: assignmentList
+        ? await Promise.all(assignmentList.map(async (e) => await e.toJSON(views)))
         : [],
     };
 
@@ -440,7 +449,7 @@ router.get('/user/:userGuid/on-date', Ensure.get(), async (req: Request, res: Re
     const paginationOptions = paginationSchema.parse(req.query);
     const views = ValidationUtils.validateView(req.query.view, responseValue.FULL);
 
-    const exceptionList = await ScheduleAssignments._listForUserOnDate(
+    const assignmentList = await ScheduleAssignments._listForUserOnDate(
       userObj.getId()!,
       date,
       paginationOptions,
@@ -451,11 +460,11 @@ router.get('/user/:userGuid/on-date', Ensure.get(), async (req: Request, res: Re
       date,
       pagination: {
         offset: paginationOptions.offset || 0,
-        limit: paginationOptions.limit || exceptionList?.length || 0,
-        count: exceptionList?.length || 0,
+        limit: paginationOptions.limit || assignmentList?.length || 0,
+        count: assignmentList?.length || 0,
       },
-      items: exceptionList
-        ? await Promise.all(exceptionList.map(async (e) => await e.toJSON(views)))
+      items: assignmentList
+        ? await Promise.all(assignmentList.map(async (e) => await e.toJSON(views)))
         : [],
     };
 
@@ -497,7 +506,7 @@ router.get('/groups/:groupsGuid', Ensure.get(), async (req: Request, res: Respon
     const paginationOptions = paginationSchema.parse(req.query);
     const views = ValidationUtils.validateView(req.query.view, responseValue.FULL);
 
-    const exceptionList = await ScheduleAssignments._listByGroups(
+    const assignmentList = await ScheduleAssignments._listByGroups(
       groupsObj.getId()!,
       paginationOptions,
     );
@@ -506,11 +515,11 @@ router.get('/groups/:groupsGuid', Ensure.get(), async (req: Request, res: Respon
       groups: await groupsObj.toJSON(responseValue.MINIMAL),
       pagination: {
         offset: paginationOptions.offset || 0,
-        limit: paginationOptions.limit || exceptionList?.length || 0,
-        count: exceptionList?.length || 0,
+        limit: paginationOptions.limit || assignmentList?.length || 0,
+        count: assignmentList?.length || 0,
       },
-      items: exceptionList
-        ? await Promise.all(exceptionList.map(async (e) => await e.toJSON(views)))
+      items: assignmentList
+        ? await Promise.all(assignmentList.map(async (e) => await e.toJSON(views)))
         : [],
     };
 
@@ -545,7 +554,7 @@ router.get('/date-range', Ensure.get(), async (req: Request, res: Response) => {
     const paginationOptions = paginationSchema.parse(req.query);
     const views = ValidationUtils.validateView(req.query.view, responseValue.FULL);
 
-    const exceptionList = await ScheduleAssignments._listByDateRange(
+    const assignmentList = await ScheduleAssignments._listByDateRange(
       start_date as string,
       end_date as string,
       paginationOptions,
@@ -558,11 +567,11 @@ router.get('/date-range', Ensure.get(), async (req: Request, res: Response) => {
       },
       pagination: {
         offset: paginationOptions.offset || 0,
-        limit: paginationOptions.limit || exceptionList?.length || 0,
-        count: exceptionList?.length || 0,
+        limit: paginationOptions.limit || assignmentList?.length || 0,
+        count: assignmentList?.length || 0,
       },
-      items: exceptionList
-        ? await Promise.all(exceptionList.map(async (e) => await e.toJSON(views)))
+      items: assignmentList
+        ? await Promise.all(assignmentList.map(async (e) => await e.toJSON(views)))
         : [],
     };
 
@@ -589,24 +598,24 @@ router.get('/active/current', Ensure.get(), async (req: Request, res: Response) 
     const views = ValidationUtils.validateView(req.query.view, responseValue.FULL);
 
     const today = TimezoneConfigUtils.getCurrentTime().toISOString().split('T')[0];
-    const exceptionList = await ScheduleAssignments._listByDateRange(
+    const assignmentList = await ScheduleAssignments._listByDateRange(
       today,
       today,
       paginationOptions,
     );
 
     // Filtrer uniquement les actives
-    const activeExceptions = exceptionList?.filter((e) => e.isActive() && e.isCurrentlyActive());
+    const activeAssignments = assignmentList?.filter((e) => e.isActive() && e.isCurrentlyActive());
 
     const assignments = {
       date: today,
       pagination: {
         offset: paginationOptions.offset || 0,
-        limit: paginationOptions.limit || activeExceptions?.length || 0,
-        count: activeExceptions?.length || 0,
+        limit: paginationOptions.limit || activeAssignments?.length || 0,
+        count: activeAssignments?.length || 0,
       },
-      items: activeExceptions
-        ? await Promise.all(activeExceptions.map(async (e) => await e.toJSON(views)))
+      items: activeAssignments
+        ? await Promise.all(activeAssignments.map(async (e) => await e.toJSON(views)))
         : [],
     };
 
@@ -636,8 +645,8 @@ router.put('/:guid', Ensure.put(), async (req: Request, res: Response) => {
       });
     }
 
-    const exceptionObj = await ScheduleAssignments._load(req.params.guid, true);
-    if (!exceptionObj) {
+    const assignmentObj = await ScheduleAssignments._load(req.params.guid, true);
+    if (!assignmentObj) {
       return R.handleError(res, HttpStatus.NOT_FOUND, {
         code: SCHEDULE_ASSIGNMENTS_CODES.SCHEDULE_ASSIGNMENTS_NOT_FOUND,
         message: SCHEDULE_ASSIGNMENTS_ERRORS.NOT_FOUND,
@@ -654,30 +663,118 @@ router.put('/:guid', Ensure.put(), async (req: Request, res: Response) => {
           message: SCHEDULE_ASSIGNMENTS_ERRORS.SESSION_TEMPLATE_NOT_FOUND,
         });
       }
-      exceptionObj.setSessionTemplate(templateObj.getId()!);
+      assignmentObj.setSessionTemplate(templateObj.getId()!);
     }
 
     if (validatedData.start_date !== undefined) {
-      exceptionObj.setStartDate(validatedData.start_date);
+      assignmentObj.setStartDate(validatedData.start_date);
     }
 
     if (validatedData.end_date !== undefined) {
-      exceptionObj.setEndDate(validatedData.end_date);
+      assignmentObj.setEndDate(validatedData.end_date);
     }
 
     if (validatedData.reason !== undefined) {
-      exceptionObj.setReason(validatedData.reason);
+      assignmentObj.setReason(validatedData.reason);
     }
 
     if (validatedData.active !== undefined) {
-      exceptionObj.setActive(validatedData.active);
+      assignmentObj.setActive(validatedData.active);
     }
 
-    await exceptionObj.save();
+    await assignmentObj.save();
 
     return R.handleSuccess(res, {
       message: SCHEDULE_ASSIGNMENTS_MESSAGES.UPDATED_SUCCESSFULLY,
-      schedule_assignments: await exceptionObj.toJSON(),
+      schedule_assignments: await assignmentObj.toJSON(),
+    });
+  } catch (error: any) {
+    if (error.code) {
+      return R.handleError(res, HttpStatus.BAD_REQUEST, {
+        code: error.code,
+        message: error.message,
+      });
+    }
+    return R.handleError(res, HttpStatus.INTERNAL_ERROR, {
+      code: SCHEDULE_ASSIGNMENTS_CODES.UPDATE_FAILED,
+      message: error.message,
+    });
+  }
+});
+
+/**
+ * PATCH /api/schedule-assignments/:guid/template
+ * ✅ Modifie le template d'un assignment (avec log automatique)
+ */
+router.patch('/template/:guid', Ensure.patch(), async (req: Request, res: Response) => {
+  try {
+    const { guid } = req.params;
+
+    if (!ScheduleAssignmentsValidationUtils.validateGuid(guid)) {
+      return R.handleError(res, HttpStatus.BAD_REQUEST, {
+        code: SCHEDULE_ASSIGNMENTS_CODES.INVALID_GUID,
+        message: SCHEDULE_ASSIGNMENTS_ERRORS.GUID_INVALID,
+      });
+    }
+
+    const assignment = await ScheduleAssignments._load(guid, true);
+    if (!assignment) {
+      return R.handleError(res, HttpStatus.NOT_FOUND, {
+        code: SCHEDULE_ASSIGNMENTS_CODES.SCHEDULE_ASSIGNMENTS_NOT_FOUND,
+        message: SCHEDULE_ASSIGNMENTS_ERRORS.NOT_FOUND,
+      });
+    }
+
+    const { new_definition, user, reason } = req.body;
+
+    if (!new_definition) {
+      return R.handleError(res, HttpStatus.BAD_REQUEST, {
+        code: SCHEDULE_ASSIGNMENTS_CODES.SESSION_TEMPLATE_REQUIRED,
+        message: 'New template is required',
+      });
+    }
+
+    if (!SessionTemplateValidationUtils.validateDefinition(new_definition)) {
+      return R.handleError(res, HttpStatus.BAD_REQUEST, {
+        code: SESSION_TEMPLATE_CODES.DEFINITION_INVALID,
+        message: SESSION_TEMPLATE_ERRORS.DEFINITION_INVALID,
+      });
+    }
+
+    if (!user) {
+      return R.handleError(res, HttpStatus.BAD_REQUEST, {
+        code: 'user_required',
+        message: 'User is required',
+      });
+    }
+
+    if (!UsersValidationUtils.validateGuid(user)) {
+      return R.handleError(res, HttpStatus.BAD_REQUEST, {
+        code: SCHEDULE_ASSIGNMENTS_CODES.USER_INVALID,
+        message: SCHEDULE_ASSIGNMENTS_ERRORS.USER_INVALID,
+      });
+    }
+
+    const currentUser = await User._load(user, true);
+    if (!currentUser) {
+      return R.handleError(res, HttpStatus.NOT_FOUND, {
+        code: SCHEDULE_ASSIGNMENTS_CODES.USER_NOT_FOUND,
+        message: SCHEDULE_ASSIGNMENTS_ERRORS.USER_NOT_FOUND,
+      });
+    }
+
+    const session_template = SessionTemplate.toObject(assignment.getSessionTemplate());
+
+    const normalizedDefinition = SessionTemplateValidationUtils.normalizeDefinition(new_definition);
+
+    session_template.setDefinition(normalizedDefinition);
+
+    // ✅ Mettre à jour le template (log automatique créé)
+    await assignment.updateSessionTemplate(session_template, currentUser.getId()!, reason);
+
+    return R.handleSuccess(res, {
+      message: SESSION_TEMPLATE_MESSAGES.UPDATED_SUCCESSFULLY,
+      assignment: await assignment.toJSON(),
     });
   } catch (error: any) {
     if (error.code) {
@@ -710,15 +807,15 @@ router.delete('/:guid', Ensure.delete(), async (req: Request, res: Response) => 
       });
     }
 
-    const exceptionObj = await ScheduleAssignments._load(req.params.guid, true);
-    if (!exceptionObj) {
+    const assignmentObj = await ScheduleAssignments._load(req.params.guid, true);
+    if (!assignmentObj) {
       return R.handleError(res, HttpStatus.NOT_FOUND, {
         code: SCHEDULE_ASSIGNMENTS_CODES.SCHEDULE_ASSIGNMENTS_NOT_FOUND,
         message: SCHEDULE_ASSIGNMENTS_ERRORS.NOT_FOUND,
       });
     }
 
-    await exceptionObj.delete();
+    await assignmentObj.delete();
 
     return R.handleSuccess(res, {
       message: SCHEDULE_ASSIGNMENTS_MESSAGES.DELETED_SUCCESSFULLY,
@@ -726,6 +823,55 @@ router.delete('/:guid', Ensure.delete(), async (req: Request, res: Response) => 
   } catch (error: any) {
     return R.handleError(res, HttpStatus.INTERNAL_ERROR, {
       code: SCHEDULE_ASSIGNMENTS_CODES.DELETE_FAILED,
+      message: error.message,
+    });
+  }
+});
+
+// ============================================
+// HISTORIQUE DES MODIFICATIONS
+// ============================================
+
+/**
+ * GET /api/schedule-assignments/:guid/history
+ * ✅ Récupère l'historique complet des modifications d'un assignment
+ */
+router.get('/:guid/history', Ensure.get(), async (req: Request, res: Response) => {
+  try {
+    const { guid } = req.params;
+    const paginationOptions = paginationSchema.parse(req.query);
+
+    if (!ScheduleAssignmentsValidationUtils.validateGuid(guid)) {
+      return R.handleError(res, HttpStatus.BAD_REQUEST, {
+        code: SCHEDULE_ASSIGNMENTS_CODES.INVALID_GUID,
+        message: SCHEDULE_ASSIGNMENTS_ERRORS.GUID_INVALID,
+      });
+    }
+
+    const assignment = await ScheduleAssignments._load(guid, true);
+    if (!assignment) {
+      return R.handleError(res, HttpStatus.NOT_FOUND, {
+        code: SCHEDULE_ASSIGNMENTS_CODES.SCHEDULE_ASSIGNMENTS_NOT_FOUND,
+        message: SCHEDULE_ASSIGNMENTS_ERRORS.NOT_FOUND,
+      });
+    }
+
+    const history = await assignment.getHistory(paginationOptions);
+
+    const historyData = {
+      assignment: assignment.toJSON(responseValue.MINIMAL),
+      pagination: {
+        offset: paginationOptions.offset || 0,
+        limit: paginationOptions.limit || history?.length || 0,
+        count: history?.length || 0,
+      },
+      logs: history ? history.map((log) => log.toJSON()) : [],
+    };
+
+    return R.handleSuccess(res, { history: historyData });
+  } catch (error: any) {
+    return R.handleError(res, HttpStatus.INTERNAL_ERROR, {
+      code: SCHEDULE_ASSIGNMENTS_CODES.RETRIEVAL_FAILED,
       message: error.message,
     });
   }
@@ -748,23 +894,23 @@ router.get('/:guid/statistics', Ensure.get(), async (req: Request, res: Response
       });
     }
 
-    const exceptionObj = await ScheduleAssignments._load(req.params.guid, true);
-    if (!exceptionObj) {
+    const assignmentObj = await ScheduleAssignments._load(req.params.guid, true);
+    if (!assignmentObj) {
       return R.handleError(res, HttpStatus.NOT_FOUND, {
         code: SCHEDULE_ASSIGNMENTS_CODES.SCHEDULE_ASSIGNMENTS_NOT_FOUND,
         message: SCHEDULE_ASSIGNMENTS_ERRORS.NOT_FOUND,
       });
     }
 
-    const user = await exceptionObj.getUserObj();
-    const groups = await exceptionObj.getGroupsObj();
-    const template = await exceptionObj.getSessionTemplateObj();
-    const createdBy = await exceptionObj.getCreatedByObj();
+    const user = await assignmentObj.getUserObj();
+    const groups = await assignmentObj.getGroupsObj();
+    const template = SessionTemplate.toObject(assignmentObj.getSessionTemplate());
+    const createdBy = await assignmentObj.getCreatedByObj();
 
     const statistics = {
-      assignments: await exceptionObj.toJSON(responseValue.MINIMAL),
-      type: exceptionObj.isUserException() ? 'user' : 'groups',
-      target: exceptionObj.isUserException()
+      assignments: await assignmentObj.toJSON(responseValue.MINIMAL),
+      type: assignmentObj.isForUser() ? 'user' : 'groups',
+      target: assignmentObj.isForUser()
         ? user
           ? await user.toJSON()
           : null
@@ -773,14 +919,14 @@ router.get('/:guid/statistics', Ensure.get(), async (req: Request, res: Response
           : null,
       template: template ? template.toJSON(responseValue.MINIMAL) : null,
       created_by: createdBy ? await createdBy.toJSON() : null,
-      duration_days: exceptionObj.getDurationInDays(),
-      is_single_day: exceptionObj.isSingleDay(),
-      is_active: exceptionObj.isActive(),
-      is_currently_active: exceptionObj.isCurrentlyActive(),
-      is_past: exceptionObj.isInPast(),
-      is_future: exceptionObj.isInFuture(),
-      has_reason: exceptionObj.hasReason(),
-      reason: exceptionObj.getReason(),
+      duration_days: assignmentObj.getDurationInDays(),
+      is_single_day: assignmentObj.isSingleDay(),
+      is_active: assignmentObj.isActive(),
+      is_currently_active: assignmentObj.isCurrentlyActive(),
+      is_past: assignmentObj.isInPast(),
+      is_future: assignmentObj.isInFuture(),
+      has_reason: assignmentObj.hasReason(),
+      reason: assignmentObj.getReason(),
     };
 
     return R.handleSuccess(res, { statistics });

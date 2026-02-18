@@ -94,22 +94,6 @@ router.get('/list', Ensure.get(), async (req: Request, res: Response) => {
       conditions.name = filters.name;
     }
 
-    if (filters.valid_at) {
-      const validAtDate = new Date(filters.valid_at);
-      const templateList = await SessionTemplate._listValidAt(validAtDate, paginationOptions);
-
-      const templates = {
-        pagination: {
-          offset: paginationOptions.offset || 0,
-          limit: paginationOptions.limit || templateList?.length || 0,
-          count: templateList?.length || 0,
-        },
-        items: templateList ? templateList.map((t) => t.toJSON(views)) : [],
-      };
-
-      return R.handleSuccess(res, { templates });
-    }
-
     const templateList = await SessionTemplate._list(conditions, paginationOptions);
     const templates = {
       pagination: {
@@ -152,20 +136,13 @@ router.post('/', Ensure.post(), async (req: Request, res: Response) => {
       validatedData.definition,
     );
 
-    console.log('normalizedDefinition', normalizedDefinition);
-
     const tenant = req.tenant;
 
     const templateObj = new SessionTemplate()
       .setTenant(tenant.config.reference)
       .setName(validatedData.name)
       .setDefinition(normalizedDefinition)
-      .setValidFrom(new Date(validatedData.valid_from))
       .setDefaultSessionTemplate(validatedData.default);
-
-    if (validatedData.valid_to) {
-      templateObj.setValidTo(new Date(validatedData.valid_to));
-    }
 
     await templateObj.save();
 
@@ -213,12 +190,7 @@ router.post('/holiday-week', Ensure.post(), async (req: Request, res: Response) 
       .setTenant(tenant.config.reference)
       .setName(name)
       .setDefinition(holidayDefinition)
-      .setValidFrom(valid_from ? new Date(valid_from) : TimezoneConfigUtils.getCurrentTime())
       .setDefaultSessionTemplate(SESSION_TEMPLATE_DEFAULTS.IS_DEFAULT);
-
-    if (valid_to) {
-      templateObj.setValidTo(new Date(valid_to));
-    }
 
     await templateObj.save();
 
@@ -315,13 +287,6 @@ router.put('/:guid', Ensure.put(), async (req: Request, res: Response) => {
       templateObj.setDefinition(normalizedDefinition);
     }
 
-    if (validatedData.valid_from !== undefined) {
-      templateObj.setValidFrom(new Date(validatedData.valid_from));
-    }
-
-    if (validatedData.valid_to !== undefined) {
-      templateObj.setValidTo(validatedData.valid_to ? new Date(validatedData.valid_to) : null);
-    }
     if (validatedData.default !== undefined) {
       templateObj.setDefaultSessionTemplate(validatedData.default);
     }
@@ -414,7 +379,6 @@ router.get('/:guid/statistics', Ensure.get(), async (req: Request, res: Response
       working_days: templateObj.getDaysWithWork(),
       total_working_days: templateObj.getDaysWithWork().length,
       weekly_hours: templateObj.getWeeklyWorkHours(),
-      is_expired: templateObj.hasExpired(),
       days_breakdown: {} as Record<string, any>,
     };
 

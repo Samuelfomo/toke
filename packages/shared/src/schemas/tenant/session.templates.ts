@@ -146,38 +146,6 @@ const definitionSchema = z
     }
   });
 
-// // Definition schema with day-based blocks
-// const definitionSchema = z.record(z.enum(VALID_DAYS), z.array(workBlockSchema)).refine(
-//   (definition) => {
-//     // Check for overlapping blocks on each day
-//     for (const [day, blocks] of Object.entries(definition)) {
-//       for (let i = 0; i < blocks.length; i++) {
-//         for (let j = i + 1; j < blocks.length; j++) {
-//           const block1 = blocks[i];
-//           const block2 = blocks[j];
-//
-//           const [start1Hour, start1Min] = block1!.work[0]!.split(':').map(Number);
-//           const [end1Hour, end1Min] = block1!.work[1]!.split(':').map(Number);
-//           const [start2Hour, start2Min] = block2!.work[0]!.split(':').map(Number);
-//           const [end2Hour, end2Min] = block2!.work[1]!.split(':').map(Number);
-//
-//           const start1 = start1Hour! * 60 + start1Min!;
-//           const end1 = end1Hour! * 60 + end1Min!;
-//           const start2 = start2Hour! * 60 + start2Min!;
-//           const end2 = end2Hour! * 60 + end2Min!;
-//
-//           // Check for overlap
-//           if (start1 < end2 && start2 < end1) {
-//             return false;
-//           }
-//         }
-//       }
-//     }
-//     return true;
-//   },
-//   { message: SESSION_TEMPLATE_ERRORS.OVERLAPPING_BLOCKS },
-// );
-
 // Base schema for common validations
 const baseSessionTemplateSchema = z.object({
   // tenant: z
@@ -199,30 +167,14 @@ const baseSessionTemplateSchema = z.object({
     .trim(),
 
   // valid_from: z
-  //   .string({
-  //     required_error: SESSION_TEMPLATE_ERRORS.VALID_FROM_REQUIRED,
-  //     invalid_type_error: SESSION_TEMPLATE_ERRORS.VALID_FROM_INVALID,
-  //   })
-  //   .datetime(SESSION_TEMPLATE_ERRORS.VALID_FROM_INVALID)
-  //   .or(z.date()),
-  valid_from: z
-    .union([z.string(), z.date()])
-    .refine((val) => !isNaN(new Date(val).getTime()), SESSION_TEMPLATE_ERRORS.VALID_FROM_INVALID),
-  valid_to: z
-    .union([z.string(), z.date(), z.null()])
-    .refine(
-      (val) => val === null || !isNaN(new Date(val).getTime()),
-      SESSION_TEMPLATE_ERRORS.VALID_TO_INVALID,
-    )
-    .optional(),
-
+  //   .union([z.string(), z.date()])
+  //   .refine((val) => !isNaN(new Date(val).getTime()), SESSION_TEMPLATE_ERRORS.VALID_FROM_INVALID),
   // valid_to: z
-  //   .string({
-  //     invalid_type_error: SESSION_TEMPLATE_ERRORS.VALID_TO_INVALID,
-  //   })
-  //   .datetime(SESSION_TEMPLATE_ERRORS.VALID_TO_INVALID)
-  //   .or(z.date())
-  //   .nullable()
+  //   .union([z.string(), z.date(), z.null()])
+  //   .refine(
+  //     (val) => val === null || !isNaN(new Date(val).getTime()),
+  //     SESSION_TEMPLATE_ERRORS.VALID_TO_INVALID,
+  //   )
   //   .optional(),
 
   definition: definitionSchema,
@@ -241,8 +193,8 @@ export const sessionTemplateFiltersSchema = z
   .object({
     tenant: z.string().optional(),
     name: z.string().optional(),
-    valid_from: z.string().datetime().optional(),
-    valid_to: z.string().datetime().optional(),
+    // valid_from: z.string().datetime().optional(),
+    // valid_to: z.string().datetime().optional(),
     valid_at: z.string().datetime().optional(),
   })
   .strict();
@@ -257,8 +209,8 @@ export const sessionTemplateGuidSchema = z
 const FIELD_TO_CODE_MAP: Record<string, SessionTemplateCode> = {
   tenant: SESSION_TEMPLATE_CODES.TENANT_INVALID,
   name: SESSION_TEMPLATE_CODES.NAME_INVALID,
-  valid_from: SESSION_TEMPLATE_CODES.VALID_FROM_INVALID,
-  valid_to: SESSION_TEMPLATE_CODES.VALID_TO_INVALID,
+  // valid_from: SESSION_TEMPLATE_CODES.VALID_FROM_INVALID,
+  // valid_to: SESSION_TEMPLATE_CODES.VALID_TO_INVALID,
   definition: SESSION_TEMPLATE_CODES.DEFINITION_INVALID,
 };
 

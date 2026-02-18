@@ -1,5 +1,3 @@
-import { TimezoneConfigUtils } from '../../utils/timezone.config.validation.js';
-
 export const SESSION_TEMPLATE_VALIDATION = {
   GUID: {
     MIN_LENGTH: 1,
@@ -20,7 +18,7 @@ export const SESSION_TEMPLATE_VALIDATION = {
 } as const;
 
 export const SESSION_TEMPLATE_DEFAULTS = {
-  VALID_FROM: TimezoneConfigUtils.getCurrentTime(),
+  // VALID_FROM: TimezoneConfigUtils.getCurrentTime(),
   IS_DEFAULT: false,
   PAGINATION: {
     OFFSET: 0,
@@ -80,9 +78,9 @@ export const SESSION_TEMPLATE_ERRORS = {
   NAME_REQUIRED: `${SESSION_TEMPLATE_LABEL} name is required`,
   NAME_INVALID: `Name must be between ${SESSION_TEMPLATE_VALIDATION.NAME.MIN_LENGTH} and ${SESSION_TEMPLATE_VALIDATION.NAME.MAX_LENGTH} characters`,
 
-  VALID_FROM_REQUIRED: `${SESSION_TEMPLATE_LABEL} valid_from is required`,
-  VALID_FROM_INVALID: 'valid_from must be a valid date',
-  VALID_TO_INVALID: 'valid_to must be a valid date',
+  // VALID_FROM_REQUIRED: `${SESSION_TEMPLATE_LABEL} valid_from is required`,
+  // VALID_FROM_INVALID: 'valid_from must be a valid date',
+  // VALID_TO_INVALID: 'valid_to must be a valid date',
 
   DEFINITION_REQUIRED: `${SESSION_TEMPLATE_LABEL} definition is required`,
   DEFINITION_INVALID: 'Definition must be a valid object',

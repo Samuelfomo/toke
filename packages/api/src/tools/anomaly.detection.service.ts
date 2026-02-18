@@ -66,7 +66,7 @@ export enum AnomalyType {
   MISSED_WORK_BLOCK = 'missed_work_block', // Bloc de travail manqué
   OFF_SCHEDULE_CLOCKING = 'off_schedule_clocking', // Pointage hors horaire
   WORK_ON_REST_DAY = 'work_on_rest_day', // Travail jour de repos
-  EARLY_ARRIVAL = 'early_arrival', // Arrivée très en avance (>1h)
+  // EARLY_ARRIVAL = 'early_arrival', // Arrivée très en avance (>1h)
   PAUSE_OUTSIDE_BLOCK = 'pause_outside_block', // Pause hors plage autorisée
 }
 
@@ -872,10 +872,7 @@ class AnomalyDetectionService {
       .setTargetUser(userId)
       // .setValidatorUser(validatorId)
       .setMemoType(memoType)
-      .setMemoStatus(
-        MemoStatus.PENDING,
-        // severity === AlertSeverity.CRITICAL ? MemoStatus.SUBMITTED : MemoStatus.PENDING,
-      )
+      .setMemoStatus(MemoStatus.PENDING)
       .setTitle(title)
       .setDetails(details)
       .setIncidentDatetime(entryObj.getClockedAt()!)
@@ -884,17 +881,11 @@ class AnomalyDetectionService {
         [
           {
             created_at: TimezoneConfigUtils.getCurrentTime().toISOString(),
-            user: userAuthor?.getGuid()!,
+            user: (await userAuthor?.getAssignedByObject())?.getGuid()!,
             message: anomalies.map((a) => ({
               type: MessageType.TEXT,
               content: a.type,
             })),
-            // message: [
-            // {
-            //   type: MessageType.TEXT,
-            //   content: `${anomalies.map((a) => a.type).join(', ')}`,
-            // },
-            // ],
           },
         ],
         // if (description) this.description = description;
@@ -1307,7 +1298,7 @@ ${
       anomalies.some(
         (a) =>
           a.type === AnomalyType.LATE_ARRIVAL ||
-          a.type === AnomalyType.EARLY_ARRIVAL ||
+          // a.type === AnomalyType.EARLY_ARRIVAL ||
           a.type === AnomalyType.TIMING_ABNORMAL,
       )
     ) {
@@ -1414,7 +1405,7 @@ ${
       [AnomalyType.MISSED_WORK_BLOCK]: AlertType.SCHEDULE_VIOLATION,
       [AnomalyType.OFF_SCHEDULE_CLOCKING]: AlertType.SCHEDULE_VIOLATION,
       [AnomalyType.WORK_ON_REST_DAY]: AlertType.SCHEDULE_VIOLATION,
-      [AnomalyType.EARLY_ARRIVAL]: AlertType.SUSPICIOUS_PATTERN,
+      // [AnomalyType.EARLY_ARRIVAL]: AlertType.SUSPICIOUS_PATTERN,
       [AnomalyType.PAUSE_OUTSIDE_BLOCK]: AlertType.SCHEDULE_VIOLATION,
     };
 
@@ -1474,20 +1465,20 @@ ${
         auto_correctable: false,
       });
     }
-    // Arrivée très en avance (>60 min)
-    else if (diffMinutes < -60) {
-      anomalies.push({
-        type: AnomalyType.EARLY_ARRIVAL,
-        severity: AlertSeverity.LOW,
-        description: `Arrivée en avance de ${Math.abs(diffMinutes)} minutes`,
-        technical_details: {
-          expected_start: expectedStartTime,
-          actual_start: clockedTime,
-          minutes_early: Math.abs(diffMinutes),
-        },
-        auto_correctable: false,
-      });
-    }
+    // // Arrivée très en avance (>60 min)
+    // else if (diffMinutes < -60) {
+    //   anomalies.push({
+    //     type: AnomalyType.EARLY_ARRIVAL,
+    //     severity: AlertSeverity.LOW,
+    //     description: `Arrivée en avance de ${Math.abs(diffMinutes)} minutes`,
+    //     technical_details: {
+    //       expected_start: expectedStartTime,
+    //       actual_start: clockedTime,
+    //       minutes_early: Math.abs(diffMinutes),
+    //     },
+    //     auto_correctable: false,
+    //   });
+    // }
 
     return anomalies;
   }

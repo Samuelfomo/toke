@@ -32,12 +32,7 @@ export default abstract class BaseModel {
   /**
    * Trouver un enregistrement
    */
-  // protected async findOne(tableName: string, where: any): Promise<any> {
-  //   await this.ensureInitialized();
-  //   const model = TableInitializer.getModel(tableName);
-  //   const result = await model.findOne({ where });
-  //   return result ? result.get() : null;
-  // }
+
   protected async findOne(
     tableName: string,
     where: any,
@@ -116,61 +111,6 @@ export default abstract class BaseModel {
     const count = await this.count(tableName, where);
     return count > 0;
   }
-
-  /**
-   * Compter les enregistrements avec groupement optionnel
-   */
-  // protected async countWithGroup(
-  //   tableName: string,
-  //   where: Record<string, any> = {},
-  //   groupBy?: string | string[],
-  // ): Promise<Record<string, number> | number> {
-  //   await this.ensureInitialized();
-  //   const model = TableInitializer.getModel(tableName);
-  //
-  //   if (!groupBy) {
-  //     // Comptage simple sans groupement
-  //     return await model.count({ where });
-  //   }
-  //
-  //   // Comptage avec groupement
-  //   const options: any = {
-  //     where,
-  //     group: Array.isArray(groupBy) ? groupBy : [groupBy],
-  //     attributes: [
-  //       ...(Array.isArray(groupBy) ? groupBy : [groupBy]),
-  //       [this.sequelize.fn('COUNT', '*'), 'count'],
-  //     ],
-  //     raw: true,
-  //   };
-  //
-  //   const results = (await model.findAll(options)) as any[];
-  //
-  //   // Si groupement sur un seul champ, retourner un objet simple
-  //   if (!Array.isArray(groupBy)) {
-  //     const counts: Record<string, number> = {};
-  //     results.forEach((row) => {
-  //       const key = row[groupBy];
-  //       if (key !== null && key !== undefined) {
-  //         counts[key] = parseInt(row.count, 10);
-  //       }
-  //     });
-  //     return counts;
-  //   }
-  //
-  //   // Si groupement sur plusieurs champs, retourner avec clés composites
-  //   const counts: Record<string, number> = {};
-  //   results.forEach((row) => {
-  //     const keyParts = groupBy
-  //       .map((field) => row[field])
-  //       .filter((val) => val !== null && val !== undefined);
-  //     if (keyParts.length === groupBy.length) {
-  //       const key = keyParts.join('|');
-  //       counts[key] = parseInt(row.count, 10);
-  //     }
-  //   });
-  //   return counts;
-  // }
 
   /**
    * Compter les enregistrements avec groupement

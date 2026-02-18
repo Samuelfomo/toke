@@ -2898,6 +2898,8 @@ router.get('/attendance/stat', Ensure.get(), async (req: Request, res: Response)
 
     const periodSessions = await WorkSessions._list(sessionConditions);
 
+    console.log('periodSessions', periodSessions);
+
     // ============================================
     // 3️⃣ CALCUL DES JOURS DE LA PÉRIODE
     // ============================================
@@ -2956,6 +2958,8 @@ router.get('/attendance/stat', Ensure.get(), async (req: Request, res: Response)
         );
         const expectedSchedule = scheduleResult.applicable_schedule;
         const isWorkDay = expectedSchedule?.is_work_day || false;
+
+        console.log('isWorkDay', isWorkDay);
 
         const userSession = daySessions?.find((s) => s.getUser() === userId);
 

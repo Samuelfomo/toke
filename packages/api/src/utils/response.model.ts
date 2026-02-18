@@ -330,6 +330,16 @@ export const responseStructure = {
   CUSTOM_GEOFENCE_RADIUS: 'custom_geofence_radius',
   LAST_SEEN_AT: 'last_seen_at',
   ASSIGNED_TO: 'assigned_to',
+
+  ASSIGNMENT: 'assignment',
+  PREVIOUS_TEMPLATE: 'previous_template',
+  NEW_TEMPLATE: 'new_template',
+  PREVIOUS_VERSION: 'previous_version',
+  NEW_VERSION: 'new_version',
+  MODIFIED_BY: 'modified_by',
+  OLD_CREATOR: 'old_creator',
+  MODIFICATION_REASON: 'modification_reason',
+  CHANGED_FIELDS: 'changed_fields',
 } as const;
 
 export const RT = {
@@ -388,6 +398,7 @@ export const tableName = {
   ROTATION_ASSIGNMENTS: `${G.tableAp}_rotation_assignments`,
   SCHEDULE_EXCEPTIONS: `${G.tableAp}_schedule_exceptions`,
   SCHEDULE_ASSIGNMENTS: `${G.tableAp}_schedule_assignments`,
+  SCHEDULE_ASSIGNMENTS_LOGS: `${G.tableAp}_schedule_assignments_logs`,
   GROUPS: `${G.tableAp}_groups`,
   DEVICE: `${G.tableAp}_device`,
 } as const;

@@ -18,6 +18,7 @@ export default class ScheduleAssignmentsModel extends BaseModel {
     user: 'user',
     groups: 'groups',
     session_template: 'session_template',
+    version: 'version',
     start_date: 'start_date',
     end_date: 'end_date',
     created_by: 'created_by',
@@ -37,13 +38,17 @@ export default class ScheduleAssignmentsModel extends BaseModel {
   protected tenant?: string;
   protected user?: number | null;
   protected groups?: number | null;
-  protected session_template?: number;
+  // protected session_template?: number;
+  protected session_template?: any; // ✅ JSONB (copie complète du template)
+  protected version?: number;
   protected start_date?: string;
   protected end_date?: string;
   protected created_by?: number | null;
   protected reason?: string | null;
   protected active?: boolean;
   protected deleted_at?: Date | null;
+
+  protected initialVersion = 1;
 
   protected constructor() {
     super();
@@ -73,14 +78,68 @@ export default class ScheduleAssignmentsModel extends BaseModel {
     return await this.findOne(this.db.tableName, conditions);
   }
 
-  protected async findByUserAndTemplate(
+  // protected async findByUserAndTemplate(
+  //   userId: number,
+  //   templateId: number,
+  //   includeDeleted: boolean = false,
+  // ): Promise<any> {
+  //   const conditions: any = {
+  //     [this.db.user]: userId,
+  //     [this.db.session_template]: templateId,
+  //   };
+  //
+  //   if (!includeDeleted) {
+  //     conditions[this.db.deleted_at] = null;
+  //   }
+  //
+  //   return await this.findOne(this.db.tableName, conditions);
+  // }
+  //
+  // protected async findByGroupsAndTemplate(
+  //   groupsId: number,
+  //   templateId: number,
+  //   includeDeleted: boolean = false,
+  // ): Promise<any> {
+  //   const conditions: any = {
+  //     [this.db.groups]: groupsId,
+  //     [this.db.session_template]: templateId,
+  //   };
+  //
+  //   if (!includeDeleted) {
+  //     conditions[this.db.deleted_at] = null;
+  //   }
+  //
+  //   return await this.findOne(this.db.tableName, conditions);
+  // }
+
+  // Dans ScheduleAssignmentsModel_v2.ts
+
+  /**
+   * ✅ Trouve un assignment par user, template ID et version
+   */
+  protected async findByUserTemplateIdAndVersion(
     userId: number,
     templateId: number,
+    templateVersion: number,
     includeDeleted: boolean = false,
   ): Promise<any> {
+    await this.init();
+
     const conditions: any = {
       [this.db.user]: userId,
-      [this.db.session_template]: templateId,
+      [Op.and]: [
+        this.sequelize.where(
+          this.sequelize.cast(this.sequelize.json(`${this.db.session_template}.id`), 'integer'),
+          templateId,
+        ),
+        this.sequelize.where(
+          this.sequelize.cast(
+            this.sequelize.json(`${this.db.session_template}.version`),
+            'integer',
+          ),
+          templateVersion,
+        ),
+      ],
     };
 
     if (!includeDeleted) {
@@ -90,14 +149,32 @@ export default class ScheduleAssignmentsModel extends BaseModel {
     return await this.findOne(this.db.tableName, conditions);
   }
 
-  protected async findByGroupsAndTemplate(
+  /**
+   * ✅ Trouve un assignment par groupe, template ID et version
+   */
+  protected async findByGroupsTemplateIdAndVersion(
     groupsId: number,
     templateId: number,
+    templateVersion: number,
     includeDeleted: boolean = false,
   ): Promise<any> {
+    await this.init();
+
     const conditions: any = {
       [this.db.groups]: groupsId,
-      [this.db.session_template]: templateId,
+      [Op.and]: [
+        this.sequelize.where(
+          this.sequelize.cast(this.sequelize.json(`${this.db.session_template}.id`), 'integer'),
+          templateId,
+        ),
+        this.sequelize.where(
+          this.sequelize.cast(
+            this.sequelize.json(`${this.db.session_template}.version`),
+            'integer',
+          ),
+          templateVersion,
+        ),
+      ],
     };
 
     if (!includeDeleted) {
@@ -128,6 +205,7 @@ export default class ScheduleAssignmentsModel extends BaseModel {
   ): Promise<any[]> {
     return await this.listAll({ [this.db.user]: userId }, paginationOptions);
   }
+
   protected async listAllByCreatedBy(
     manager: number,
     paginationOptions: { offset?: number; limit?: number } = {},
@@ -142,12 +220,12 @@ export default class ScheduleAssignmentsModel extends BaseModel {
     return await this.listAll({ [this.db.groups]: groupsId }, paginationOptions);
   }
 
-  protected async listAllBySessionTemplate(
-    sessionTemplateId: number,
-    paginationOptions: { offset?: number; limit?: number } = {},
-  ): Promise<any[]> {
-    return await this.listAll({ [this.db.session_template]: sessionTemplateId }, paginationOptions);
-  }
+  // protected async listAllBySessionTemplate(
+  //   sessionTemplateId: number,
+  //   paginationOptions: { offset?: number; limit?: number } = {},
+  // ): Promise<any[]> {
+  //   return await this.listAll({ [this.db.session_template]: sessionTemplateId }, paginationOptions);
+  // }
 
   protected async listAllByActiveStatus(
     isActive: boolean,
@@ -250,20 +328,31 @@ export default class ScheduleAssignmentsModel extends BaseModel {
     }
 
     // Vérification unicité user + session_template
-    if (this.user) {
-      const existing = await this.findByUserAndTemplate(this.user, this.session_template!);
+    if (this.user && this.session_template?.id && this.session_template?.version) {
+      const existing = await this.findByUserTemplateIdAndVersion(
+        this.user,
+        this.session_template.id,
+        this.session_template.version,
+      );
       if (existing) {
-        throw new Error(SCHEDULE_ASSIGNMENTS_ERRORS.USER_EXCEPTION_ALREADY_ASSIGNED);
+        throw new Error(SCHEDULE_ASSIGNMENTS_ERRORS.USER_TEMPLATE_VERSION_ALREADY_ASSIGNED);
       }
     }
 
     // Vérification unicité groups + session_template
-    if (this.groups) {
-      const existing = await this.findByGroupsAndTemplate(this.groups, this.session_template!);
+    if (this.groups && this.session_template?.id && this.session_template?.version) {
+      const existing = await this.findByGroupsTemplateIdAndVersion(
+        this.groups,
+        this.session_template.id,
+        this.session_template.version,
+      );
       if (existing) {
-        throw new Error(SCHEDULE_ASSIGNMENTS_ERRORS.GROUPS_EXCEPTION_ALREADY_ASSIGNED);
+        throw new Error(SCHEDULE_ASSIGNMENTS_ERRORS.GROUPS_TEMPLATE_VERSION_ALREADY_ASSIGNED);
       }
     }
+
+    // ✅ Version initiale = 1
+    this.version = this.initialVersion;
 
     const lastID = await this.insertOne(this.db.tableName, {
       [this.db.guid]: guid,
@@ -271,6 +360,7 @@ export default class ScheduleAssignmentsModel extends BaseModel {
       [this.db.user]: this.user ?? null,
       [this.db.groups]: this.groups ?? null,
       [this.db.session_template]: this.session_template,
+      [this.db.version]: this.version,
       [this.db.start_date]: this.start_date,
       [this.db.end_date]: this.end_date,
       [this.db.created_by]: this.created_by ?? null,
@@ -295,9 +385,9 @@ export default class ScheduleAssignmentsModel extends BaseModel {
 
     const updateData: Record<string, any> = {};
 
-    if (this.tenant !== undefined) {
-      updateData[this.db.tenant] = this.tenant;
-    }
+    // if (this.tenant !== undefined) {
+    //   updateData[this.db.tenant] = this.tenant;
+    // }
     // if (this.user !== undefined) {
     //   updateData[this.db.user] = this.user;
     // }
@@ -323,7 +413,46 @@ export default class ScheduleAssignmentsModel extends BaseModel {
     if (this.active !== undefined) {
       updateData[this.db.active] = this.active;
     }
+    // ✅ Mise à jour du template (si modifié)
+    if (this.session_template !== undefined) {
+      updateData[this.db.session_template] = this.session_template;
+    }
+    // ✅ Incrémenter la version (si template modifié)
+    if (this.version !== undefined) {
+      updateData[this.db.version] = this.version;
+    }
+    const updated = await this.updateOne(this.db.tableName, updateData, { [this.db.id]: this.id });
 
+    if (!updated) {
+      throw new Error(SCHEDULE_ASSIGNMENTS_ERRORS.UPDATE_FAILED);
+    }
+  }
+  protected async updateDefinition(): Promise<void> {
+    if (!this.id) {
+      throw new Error(SCHEDULE_ASSIGNMENTS_ERRORS.ID_REQUIRED);
+    }
+
+    const updateData: Record<string, any> = {};
+
+    if (this.created_by !== undefined) {
+      updateData[this.db.created_by] = this.created_by;
+    }
+
+    if (this.user !== undefined && this.user !== null) {
+      updateData[this.db.user] = this.user;
+    }
+    if (this.groups !== undefined && this.groups !== null) {
+      updateData[this.db.groups] = this.groups;
+    }
+
+    // ✅ Mise à jour du template (si modifié)
+    if (this.session_template !== undefined) {
+      updateData[this.db.session_template] = this.session_template;
+    }
+    // ✅ Incrémenter la version (si template modifié)
+    if (this.version !== undefined) {
+      updateData[this.db.version] = this.version;
+    }
     const updated = await this.updateOne(this.db.tableName, updateData, { [this.db.id]: this.id });
 
     if (!updated) {
@@ -389,6 +518,12 @@ export default class ScheduleAssignmentsModel extends BaseModel {
 
     if (!this.session_template) {
       throw new Error(SCHEDULE_ASSIGNMENTS_ERRORS.SESSION_TEMPLATE_REQUIRED);
+    }
+
+    // ✅ Valider que session_template est un objet valide
+    if (typeof this.session_template !== 'object') {
+      console.error('this.session_template', this.session_template);
+      throw new Error(SCHEDULE_ASSIGNMENTS_ERRORS.SESSION_TEMPLATE_INVALID);
     }
 
     if (!this.start_date) {

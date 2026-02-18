@@ -30,23 +30,23 @@ export class SessionTemplateValidationUtils {
     );
   }
 
-  /**
-   * Validates valid_from
-   */
-  static validateValidFrom(validFrom: any): boolean {
-    if (!validFrom) return false;
-    const date = new Date(validFrom);
-    return !isNaN(date.getTime());
-  }
-
-  /**
-   * Validates valid_to
-   */
-  static validateValidTo(validTo: any): boolean {
-    if (validTo === null || validTo === undefined) return true;
-    const date = new Date(validTo);
-    return !isNaN(date.getTime());
-  }
+  // /**
+  //  * Validates valid_from
+  //  */
+  // static validateValidFrom(validFrom: any): boolean {
+  //   if (!validFrom) return false;
+  //   const date = new Date(validFrom);
+  //   return !isNaN(date.getTime());
+  // }
+  //
+  // /**
+  //  * Validates valid_to
+  //  */
+  // static validateValidTo(validTo: any): boolean {
+  //   if (validTo === null || validTo === undefined) return true;
+  //   const date = new Date(validTo);
+  //   return !isNaN(date.getTime());
+  // }
 
   /**
    * Validates time format (HH:MM)
@@ -112,39 +112,6 @@ export class SessionTemplateValidationUtils {
       !Number.isInteger(block.tolerance)
     );
   }
-
-  // /**
-  //  * Validates definition object
-  //  */
-  // static validateDefinition(definition: any): boolean {
-  //   if (typeof definition !== 'object' || definition === null || Array.isArray(definition)) {
-  //     return false;
-  //   }
-  //
-  //   // Check for invalid day keys
-  //   for (const day of Object.keys(definition)) {
-  //     if (!VALID_DAYS.includes(day as any)) {
-  //       return false;
-  //     }
-  //   }
-  //
-  //   // Validate each day's blocks
-  //   for (const [day, blocks] of Object.entries(definition)) {
-  //     if (!Array.isArray(blocks)) return false;
-  //
-  //     // Validate each block
-  //     for (const block of blocks) {
-  //       if (!this.validateWorkBlock(block)) return false;
-  //     }
-  //
-  //     // Check for overlapping blocks
-  //     if (!this.validateNoOverlappingBlocks(blocks as any[])) {
-  //       return false;
-  //     }
-  //   }
-  //
-  //   return true;
-  // }
 
   /**
    * Validates definition object
@@ -241,14 +208,14 @@ export class SessionTemplateValidationUtils {
       cleaned.name = cleaned.name.toString().trim();
     }
 
-    // Convert dates
-    if (cleaned.valid_from !== undefined && cleaned.valid_from !== null) {
-      cleaned.valid_from = new Date(cleaned.valid_from).toISOString();
-    }
-
-    if (cleaned.valid_to !== undefined && cleaned.valid_to !== null) {
-      cleaned.valid_to = new Date(cleaned.valid_to).toISOString();
-    }
+    // // Convert dates
+    // if (cleaned.valid_from !== undefined && cleaned.valid_from !== null) {
+    //   cleaned.valid_from = new Date(cleaned.valid_from).toISOString();
+    // }
+    //
+    // if (cleaned.valid_to !== undefined && cleaned.valid_to !== null) {
+    //   cleaned.valid_to = new Date(cleaned.valid_to).toISOString();
+    // }
 
     // Clean definition
     if (cleaned.definition !== undefined && cleaned.definition !== null) {
@@ -261,18 +228,6 @@ export class SessionTemplateValidationUtils {
   /**
    * Cleans definition object
    */
-  // static cleanDefinition(definition: Record<string, any>): Record<string, any> {
-  //   const cleaned: Record<string, any> = {};
-  //
-  //   for (const [day, blocks] of Object.entries(definition)) {
-  //     if (Array.isArray(blocks)) {
-  //       cleaned[day] = blocks.map((block) => this.cleanWorkBlock(block));
-  //     }
-  //   }
-  //
-  //   return cleaned;
-  // }
-
   static cleanDefinition(definition: Record<string, any>): Record<string, any> {
     const cleaned: Record<string, any> = {};
 

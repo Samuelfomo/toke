@@ -480,7 +480,7 @@ Rayon Effectif: ${geofenceCheck.effective_radius}m
             .setUser(userId)
             .setDevice(deviceObj.getId()!)
             .setSite(siteObj.getId()!)
-            .setPointageType(PointageType.PAUSE_START)
+            .setPointageType(PointageType.PAUSE_END)
             .setClockedAt(new Date(validatedData.clocked_at))
             .setCoordinates(validatedData.latitude, validatedData.longitude);
 
@@ -521,6 +521,8 @@ Rayon Effectif: ${geofenceCheck.effective_radius}m
               userId,
             );
           }
+
+          console.log('test1 pause end', tempEntry.getPointageType());
 
           return R.handleCreated(res, {
             message: allAnomalies.length > 0 ? 'Pause terminée avec anomalies' : 'Pause ended',

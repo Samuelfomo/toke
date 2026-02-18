@@ -48,23 +48,23 @@ export const SessionTemplatesDbStructure = {
       },
       comment: 'Session name',
     },
-    valid_from: {
-      type: DataTypes.DATE,
-      allowNull: false,
-      defaultValue: DataTypes.NOW,
-      validate: {
-        isDate: true,
-      },
-      comment: 'Session valid from date',
-    },
-    valid_to: {
-      type: DataTypes.DATE,
-      allowNull: true,
-      validate: {
-        isDate: true,
-      },
-      comment: 'Session valid to date',
-    },
+    // valid_from: {
+    //   type: DataTypes.DATE,
+    //   allowNull: false,
+    //   defaultValue: DataTypes.NOW,
+    //   validate: {
+    //     isDate: true,
+    //   },
+    //   comment: 'Session valid from date',
+    // },
+    // valid_to: {
+    //   type: DataTypes.DATE,
+    //   allowNull: true,
+    //   validate: {
+    //     isDate: true,
+    //   },
+    //   comment: 'Session valid to date',
+    // },
     definition: {
       type: DataTypes.JSONB,
       allowNull: false,
@@ -339,6 +339,16 @@ export const SessionTemplatesDbStructure = {
       //   },
       // },
     },
+    version: {
+      type: DataTypes.INTEGER,
+      allowNull: false,
+      defaultValue: 1,
+      validate: {
+        isInt: true,
+        min: 1,
+      },
+      comment: 'Version number of the template (incremented on each modification)',
+    },
     defaults: {
       type: DataTypes.BOOLEAN,
       allowNull: false,
@@ -372,14 +382,14 @@ export const SessionTemplatesDbStructure = {
         fields: ['name'],
         name: 'idx_session_templates_name',
       },
-      {
-        fields: ['valid_from'],
-        name: 'idx_session_templates_valid_from',
-      },
-      {
-        fields: ['valid_to'],
-        name: 'idx_session_templates_valid_to',
-      },
+      // {
+      //   fields: ['valid_from'],
+      //   name: 'idx_session_templates_valid_from',
+      // },
+      // {
+      //   fields: ['valid_to'],
+      //   name: 'idx_session_templates_valid_to',
+      // },
       {
         fields: ['created_at'],
         name: 'idx_session_templates_created_at',
@@ -392,6 +402,10 @@ export const SessionTemplatesDbStructure = {
         fields: ['definition'],
         name: 'idx_session_templates_definition',
         using: 'GIN',
+      },
+      {
+        fields: ['version'],
+        name: 'idx_session_templates_version',
       },
       // 🚨 Index Unique et Partiel (ou Conditionnel) Ajouté
       {
@@ -408,10 +422,10 @@ export const SessionTemplatesDbStructure = {
         fields: ['defaults'],
         name: 'idx_session_templates_defaults',
       },
-      {
-        fields: ['definition', 'valid_to'],
-        name: 'idx_session_templates_definition_valid_to',
-      },
+      // {
+      //   fields: ['definition', 'valid_to'],
+      //   name: 'idx_session_templates_definition_valid_to',
+      // },
     ],
   } as ModelOptions,
 };
