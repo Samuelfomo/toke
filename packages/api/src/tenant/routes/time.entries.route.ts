@@ -820,44 +820,6 @@ Rayon Effectif: ${geofenceCheck.effective_radius}m
 
 // === SYNCHRONISATION BATCH OFFLINE ===
 
-// router.post('/sync/batch', Ensure.post(), async (req: Request, res: Response) => {
-//   try {
-//     const validatedData = validateBatchSync(req.body);
-//
-//     const userObj = await User._load(validatedData.user_guid, true);
-//     if (!userObj) {
-//       return R.handleError(res, HttpStatus.NOT_FOUND, {
-//         code: TIME_ENTRIES_CODES.USER_NOT_FOUND,
-//         message: 'User not found',
-//       });
-//     }
-//
-//     const syncResult = await TimeEntries.processBatchSynchronization(
-//       userObj.getId()!,
-//       validatedData.entries,
-//     );
-//
-//     return R.handleSuccess(res, {
-//       message: 'Batch synchronization completed',
-//       sync_result: syncResult,
-//       processed_at: TimezoneConfigUtils.getCurrentTime().toISOString(),
-//     });
-//   } catch (error: any) {
-//     if (error.issues) {
-//       return R.handleError(res, HttpStatus.BAD_REQUEST, {
-//         code: TIME_ENTRIES_CODES.VALIDATION_FAILED,
-//         message: TIME_ENTRIES_ERRORS.VALIDATION_FAILED,
-//         details: error.issues,
-//       });
-//     } else {
-//       return R.handleError(res, HttpStatus.INTERNAL_ERROR, {
-//         code: TIME_ENTRIES_CODES.SYNC_FAILED,
-//         message: error.message,
-//       });
-//     }
-//   }
-// });
-
 router.get('/requirement', Ensure.get(), async (req: Request, res: Response) => {
   try {
     return R.handleSuccess(res, {
@@ -2231,17 +2193,6 @@ router.get('/attendance/team', Ensure.get(), async (req: Request, res: Response)
     });
   }
 });
-
-// router.get('/team', Ensure.get(), async (req: Request, res: Response) => {
-//   try {
-//     const { manager, view } = req.query;
-//   } catch (error: any) {
-//     return R.handleError(res, HttpStatus.INTERNAL_ERROR, {
-//       code: TIME_ENTRIES_CODES.SEARCH_FAILED,
-//       message: error.message,
-//     });
-//   }
-// });
 
 // === RÉCUPÉRATION PAR GUID ===
 router.get('/:guid', Ensure.get(), async (req: Request, res: Response) => {

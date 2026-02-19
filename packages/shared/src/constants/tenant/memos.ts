@@ -65,6 +65,7 @@ export const MEMOS_VALIDATION = {
 
 export const MEMOS_DEFAULTS = {
   AUTO_GENERATED: false,
+  IS_MANAGER: true,
   PAGINATION: {
     OFFSET: 0,
     LIMIT: 50,
@@ -198,6 +199,7 @@ export const MEMOS_ERRORS = {
   INVALID_CONTENT: 'Message content must be text or array of links',
   INVALID_ATTACTMENT_LINK: 'Each link must be a valid URL',
   NOT_ALLOWED: 'This action is not permitted',
+  IS_CLIENT_MANAGER_STATUS_INVALID: 'Client status is invalid',
 };
 
 export const MEMOS_MESSAGES = {

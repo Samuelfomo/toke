@@ -30,6 +30,7 @@ export default class MemosModel extends BaseModel {
     incident_datetime: 'incident_datetime',
     affected_session: 'affected_session',
     affected_entries: 'affected_entries',
+    manager: 'manager',
     created_at: 'created_at',
     updated_at: 'updated_at',
   } as const;
@@ -48,6 +49,7 @@ export default class MemosModel extends BaseModel {
   protected incident_datetime?: Date;
   protected affected_session?: number;
   protected affected_entries?: number[];
+  protected manager: boolean = MEMOS_DEFAULTS.IS_MANAGER;
   protected created_at?: Date;
   protected updated_at?: Date;
 
@@ -78,6 +80,18 @@ export default class MemosModel extends BaseModel {
     );
   }
 
+  protected async listAllByAuthorAndClientStatus(
+    author_user: number,
+    is_manager: boolean,
+    paginationOptions: { offset?: number; limit?: number } = {},
+  ): Promise<any[]> {
+    return await this.findAll(
+      this.db.tableName,
+      { [this.db.author_user]: author_user, [this.db.manager]: is_manager },
+      paginationOptions,
+    );
+  }
+
   protected async listAllByTarget(
     target_user: number,
     paginationOptions: { offset?: number; limit?: number } = {},
@@ -86,6 +100,21 @@ export default class MemosModel extends BaseModel {
       this.db.tableName,
       {
         [this.db.target_user]: target_user,
+      },
+      paginationOptions,
+    );
+  }
+
+  protected async listAllByTargetAndClientStatus(
+    target_user: number,
+    is_manager: boolean,
+    paginationOptions: { offset?: number; limit?: number } = {},
+  ): Promise<any[]> {
+    return await this.findAll(
+      this.db.tableName,
+      {
+        [this.db.target_user]: target_user,
+        [this.db.manager]: is_manager,
       },
       paginationOptions,
     );
@@ -742,6 +771,7 @@ export default class MemosModel extends BaseModel {
       [this.db.affected_session]: this.affected_session,
       [this.db.affected_entries]: this.affected_entries,
       [this.db.memo_content]: this.memo_content, // ✅ NOUVEAU
+      [this.db.manager]: this.manager || MEMOS_DEFAULTS.IS_MANAGER,
     });
 
     if (!lastID) {

@@ -31,6 +31,7 @@ export default class ClientProfileModel extends BaseModel {
    */
   protected async findByName(name: string): Promise<any> {
     return await this.findOne(this.db.tableName, { [this.db.name]: name });
+    // return await this.findOne(this.db.tableName, { [this.db.name]: name.toUpperCase() });
   }
 
   protected async existAdmin(): Promise<boolean> {
@@ -66,6 +67,7 @@ export default class ClientProfileModel extends BaseModel {
     }
     const lastID = await this.insertOne(this.db.tableName, {
       [this.db.name]: this.name,
+      // [this.db.name]: this.name?.toUpperCase(),
       [this.db.root]: this.root,
       [this.db.description]: this.description,
     });

@@ -43,6 +43,15 @@ export default class TimeEntries extends TimeEntriesModel {
     return new TimeEntries().list(conditions, paginationOptions);
   }
 
+  static _listUserPeriodicEntries(
+    user: number,
+    startDate?: Date,
+    endDate?: Date,
+    paginationOptions: { offset?: number; limit?: number } = {},
+  ): Promise<TimeEntries[] | null> {
+    return new TimeEntries().listUserPeriodicEntries(user, startDate, endDate, paginationOptions);
+  }
+
   static _listBySession(
     session: number,
     paginationOptions: { offset?: number; limit?: number } = {},
@@ -795,6 +804,17 @@ export default class TimeEntries extends TimeEntriesModel {
     paginationOptions: { offset?: number; limit?: number } = {},
   ): Promise<TimeEntries[] | null> {
     const dataset = await this.listAll(conditions, paginationOptions);
+    if (!dataset || dataset.length === 0) return null;
+    return dataset.map((data) => new TimeEntries().hydrate(data));
+  }
+
+  async listUserPeriodicEntries(
+    user: number,
+    startDate?: Date,
+    endDate?: Date,
+    paginationOptions: { offset?: number; limit?: number } = {},
+  ): Promise<TimeEntries[] | null> {
+    const dataset = await this.getUserPeriodicEntries(user, startDate, endDate, paginationOptions);
     if (!dataset || dataset.length === 0) return null;
     return dataset.map((data) => new TimeEntries().hydrate(data));
   }

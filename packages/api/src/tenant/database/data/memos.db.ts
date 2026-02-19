@@ -177,37 +177,7 @@ export const MemosDbStructure = {
               throw new Error('Each content item must have: created_at, user, message');
             }
 
-            // // Check message structure
-            // if (typeof item.message !== 'object' || !item.message.type || !item.message.content) {
-            //   throw new Error('Message must be a valid object with type and content');
-            // }
-            // // Check message.type is valid enum value
-            // if (!Object.values(MessageType).includes(item.message.type)) {
-            //   throw new Error(`Invalid message type: ${item.message.type}`);
-            // }
-            // // Check content type
-            // const isValidContent =
-            //   typeof item.message.content === 'string' ||
-            //   (Array.isArray(item.message.content) &&
-            //     item.message.content.every((c: any) => typeof c === 'string'));
-            //
-            // if (!isValidContent) {
-            //   throw new Error('Message content must be a string or array of strings');
-            // }
-            //
-            // // Validate URL if type is LINK
-            // if (item.message.type === MessageType.LINK) {
-            //   const urls = Array.isArray(item.message.content)
-            //     ? item.message.content
-            //     : [item.message.content];
-            //
-            //   for (const url of urls) {
-            //     if (!/^https?:\/\/.+/.test(url)) {
-            //       throw new Error(`Invalid URL: ${url}`);
-            //     }
-            //   }
-            // }
-            // ✅ Normalisation: message peut être objet OU tableau d’objets
+            // Check message structure
             const messages = Array.isArray(item.message) ? item.message : [item.message];
             for (const msg of messages) {
               // ✅ Structure de chaque message
@@ -245,28 +215,15 @@ export const MemosDbStructure = {
         },
       },
     },
-
-    // attachments: {
-    //   type: DataTypes.JSONB,
-    //   allowNull: true,
-    //   defaultValue: [],
-    //   validate: {
-    //     isValidAttachments(value: any) {
-    //       if (!Array.isArray(value)) {
-    //         throw new Error('Attachments must be an array');
-    //       }
-    //       for (const item of value) {
-    //         if (!item.date || !item.user || !item.link) {
-    //           throw new Error('Each attachment must have: date, user, link');
-    //         }
-    //         if (!/^https?:\/\/.+/.test(item.link)) {
-    //           throw new Error(`Invalid URL: ${item.link}`);
-    //         }
-    //       }
-    //     },
-    //   },
-    //   comment: 'Attachments with metadata (date, user, link, title?)',
-    // },
+    manager: {
+      type: DataTypes.BOOLEAN,
+      allowNull: false,
+      defaultValue: true,
+      validate: {
+        isBoolean: true,
+      },
+      comment: 'Is manager',
+    },
   } as ModelAttributes,
   options: {
     tableName: tableName.MEMOS,
@@ -317,10 +274,6 @@ export const MemosDbStructure = {
         fields: ['affected_entries'],
         name: 'idx_memo_affected_entries',
       },
-      // {
-      //   fields: ['attachments'],
-      //   name: 'idx_memo_attachments',
-      // },
       {
         fields: ['auto_generated'],
         name: 'idx_memo_auto_generated',
@@ -352,6 +305,10 @@ export const MemosDbStructure = {
       {
         fields: ['memo_content'],
         name: 'idx_memo_content',
+      },
+      {
+        fields: ['manager'],
+        name: 'idx_memo_manager',
       },
     ],
   } as ModelOptions,

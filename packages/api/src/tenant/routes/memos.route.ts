@@ -3,6 +3,7 @@ import {
   HttpStatus,
   MemoContent,
   MEMOS_CODES,
+  MEMOS_DEFAULTS,
   MEMOS_ERRORS,
   MEMOS_MESSAGES,
   MemoStatus,
@@ -505,7 +506,8 @@ router.post('/', Ensure.post(), async (req: Request, res: Response) => {
       .setTitle(validatedData.title)
       .setMemoContent(validatedData.memo_content as MemoContent[])
       .setTargetUser(supervisorObj.getAssignedBy()!)
-      .setMemoStatus(MemoStatus.SUBMITTED);
+      .setMemoStatus(MemoStatus.SUBMITTED)
+      .setIsManager(!MEMOS_DEFAULTS.IS_MANAGER);
 
     // // Champs optionnels
     // if (validatedData.target_user) {
@@ -844,10 +846,18 @@ router.get('/my-memos', Ensure.get(), async (req: Request, res: Response) => {
       });
     }
 
+    const client = (req as any).client;
+
+    const isManager = client.name !== 'POINTAGE';
+
     // const memoEntries = await Memos._listByAuthor(userObj.getId()!);
     // const targetMemoEntries = await Memos._listByTarget(userObj.getId()!);
-    const memoEntries = (await Memos._listByAuthor(userObj.getId()!)) ?? [];
-    const targetMemoEntries = (await Memos._listByTarget(userObj.getId()!)) ?? [];
+    // let memoEntries: Memos[] = [];
+    // let targetMemoEntries: Memos[] = [];
+    const memoEntries =
+      (await Memos._listByAuthorAndClientStatus(userObj.getId()!, isManager)) ?? [];
+    const targetMemoEntries =
+      (await Memos._listByTargetAndClientStatus(userObj.getId()!, !isManager)) ?? [];
     const memos = {
       count: targetMemoEntries?.length + memoEntries?.length,
       items: [

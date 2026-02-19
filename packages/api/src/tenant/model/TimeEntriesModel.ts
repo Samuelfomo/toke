@@ -80,32 +80,39 @@ export default class TimeEntriesModel extends BaseModel {
     return await this.findOne(this.db.tableName, { [this.db.guid]: guid });
   }
 
+  protected async listAll(
+    conditions: Record<string, any> = {},
+    paginationOptions: { offset?: number; limit?: number } = {},
+  ): Promise<any[]> {
+    return await this.findAll(this.db.tableName, conditions, paginationOptions);
+  }
+
   protected async listAllBySession(
     session: number,
     paginationOptions: { offset?: number; limit?: number } = {},
   ): Promise<any[]> {
-    return await this.findAll(this.db.tableName, { [this.db.session]: session }, paginationOptions);
+    return await this.listAll({ [this.db.session]: session }, paginationOptions);
   }
 
   protected async listAllByUser(
     user: number,
     paginationOptions: { offset?: number; limit?: number } = {},
   ): Promise<any[]> {
-    return await this.findAll(this.db.tableName, { [this.db.user]: user }, paginationOptions);
+    return await this.listAll({ [this.db.user]: user }, paginationOptions);
   }
 
   protected async listAllByDevice(
     device: number,
     paginationOptions: { offset?: number; limit?: number } = {},
   ): Promise<any[]> {
-    return await this.findAll(this.db.tableName, { [this.db.device]: device }, paginationOptions);
+    return await this.listAll({ [this.db.device]: device }, paginationOptions);
   }
 
   protected async listAllBySite(
     site: number,
     paginationOptions: { offset?: number; limit?: number } = {},
   ): Promise<any[]> {
-    return await this.findAll(this.db.tableName, { [this.db.site]: site }, paginationOptions);
+    return await this.listAll({ [this.db.site]: site }, paginationOptions);
   }
 
   // === 2. GESTION OFFLINE/SYNC ===
@@ -114,8 +121,7 @@ export default class TimeEntriesModel extends BaseModel {
     user: number,
     paginationOptions: { offset?: number; limit?: number } = {},
   ): Promise<any[]> {
-    return await this.findAll(
-      this.db.tableName,
+    return await this.listAll(
       {
         [this.db.user]: user,
         [this.db.created_offline]: true,
@@ -164,8 +170,7 @@ export default class TimeEntriesModel extends BaseModel {
     conditions: Record<string, any> = {},
     paginationOptions: { offset?: number; limit?: number } = {},
   ): Promise<any[]> {
-    return await this.findAll(
-      this.db.tableName,
+    return await this.listAll(
       {
         [this.db.pointage_type]: pointage_type,
         ...conditions,
@@ -179,8 +184,7 @@ export default class TimeEntriesModel extends BaseModel {
     conditions: Record<string, any> = {},
     paginationOptions: { offset?: number; limit?: number } = {},
   ): Promise<any[]> {
-    return await this.findAll(
-      this.db.tableName,
+    return await this.listAll(
       {
         [this.db.pointage_status]: pointage_status,
         ...conditions,
@@ -192,8 +196,7 @@ export default class TimeEntriesModel extends BaseModel {
   protected async findPendingValidation(
     paginationOptions: { offset?: number; limit?: number } = {},
   ): Promise<any[]> {
-    return await this.findAll(
-      this.db.tableName,
+    return await this.listAll(
       {
         [this.db.pointage_status]: PointageStatus.PENDING,
       },
@@ -214,7 +217,7 @@ export default class TimeEntriesModel extends BaseModel {
     const endTime = new Date(clocked_at);
     endTime.setMinutes(endTime.getMinutes() + tolerance_minutes);
 
-    return await this.findAll(this.db.tableName, {
+    return await this.listAll({
       [this.db.user]: user,
       [this.db.clocked_at]: {
         [Op.between]: [startTime, endTime],
@@ -242,8 +245,7 @@ export default class TimeEntriesModel extends BaseModel {
     }
 
     // Trouver le pointage précédent du même utilisateur
-    const previousEntries = await this.findAll(
-      this.db.tableName,
+    const previousEntries = await this.listAll(
       {
         [this.db.user]: currentEntry.user,
         [this.db.clocked_at]: {
@@ -312,7 +314,7 @@ export default class TimeEntriesModel extends BaseModel {
     const thresholdDate = TimezoneConfigUtils.getCurrentTime();
     thresholdDate.setDate(thresholdDate.getDate() - days);
 
-    const entries = await this.findAll(this.db.tableName, {
+    const entries = await this.listAll({
       [this.db.user]: user,
       [this.db.server_received_at]: {
         [Op.gte]: thresholdDate,
@@ -391,11 +393,7 @@ export default class TimeEntriesModel extends BaseModel {
     const lastEntry = sessionEntries[sessionEntries.length - 1];
 
     // Impossible de clock-out si la dernière action est un début de pause
-    if (lastEntry.pointage_type === PointageType.PAUSE_START) {
-      return false;
-    }
-
-    return true;
+    return lastEntry.pointage_type !== PointageType.PAUSE_START;
   }
 
   protected async validateTimeLogic(clocked_at: Date, session_start: Date): Promise<boolean> {
@@ -499,12 +497,35 @@ export default class TimeEntriesModel extends BaseModel {
     const endOfDay = new Date(date);
     endOfDay.setHours(23, 59, 59, 999);
 
-    return await this.findAll(this.db.tableName, {
+    return await this.listAll({
       [this.db.user]: user,
       [this.db.clocked_at]: {
         [Op.between]: [startOfDay, endOfDay],
       },
     });
+  }
+
+  protected async getUserPeriodicEntries(
+    user: number,
+    start_date?: Date,
+    end_date?: Date,
+    paginationOptions: { offset?: number; limit?: number } = {},
+  ): Promise<any[]> {
+    const startOfDay = new Date(start_date || TimezoneConfigUtils.getCurrentTime());
+    startOfDay.setHours(0, 0, 0, 0);
+
+    const endOfDay = new Date(end_date || TimezoneConfigUtils.getCurrentTime());
+    endOfDay.setHours(23, 59, 59, 999);
+
+    return await this.listAll(
+      {
+        [this.db.user]: user,
+        [this.db.clocked_at]: {
+          [Op.between]: [startOfDay, endOfDay],
+        },
+      },
+      paginationOptions,
+    );
   }
 
   // === 8. BATCH PROCESSING ===
@@ -667,13 +688,6 @@ export default class TimeEntriesModel extends BaseModel {
 
   protected async trash(id: number): Promise<boolean> {
     return await this.deleteOne(this.db.tableName, { [this.db.id]: id });
-  }
-
-  protected async listAll(
-    conditions: Record<string, any> = {},
-    paginationOptions: { offset?: number; limit?: number } = {},
-  ): Promise<any[]> {
-    return await this.findAll(this.db.tableName, conditions, paginationOptions);
   }
 
   // === VALIDATION ===

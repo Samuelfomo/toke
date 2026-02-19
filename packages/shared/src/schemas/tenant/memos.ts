@@ -246,6 +246,11 @@ const baseMemosSchema = z.object({
 
   affected_entries: affectedEntriesSchema.optional().nullable(),
   memo_content: z.array(memoContentSchema),
+  // manager: z
+  //   .boolean({
+  //     invalid_type_error: MEMOS_ERRORS.IS_CLIENT_MANAGER_STATUS_INVALID,
+  //   })
+  //   .default(MEMOS_DEFAULTS.IS_MANAGER),
   // memo_content: z.array(memoContentSchema).optional().nullable(),
 });
 
