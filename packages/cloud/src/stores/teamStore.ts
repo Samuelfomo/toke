@@ -47,6 +47,7 @@ export const useTeamStore = defineStore('team', () => {
 
   // 🔄 Actions
   const loadTeam = async (managerGuid: string, forceRefresh = false) => {
+
     // Si cache valide et pas de force refresh, ne rien faire
     if (isCacheValid.value && !forceRefresh) {
       console.log('✅ Utilisation du cache')
@@ -142,7 +143,7 @@ function transformEmployee(emp: any): TeamEmployee {
     : lastName ? `${firstName[0]}${lastName[0]}`.toUpperCase() : firstName[0]?.toUpperCase() || 'U'
 
   const mainRole = emp.roles?.[0]?.name || 'N/A'
-  const isManager = emp.roles?.some((r: any) =>
+  const isManager = emp.roles.items?.some((r: any) =>
     r.name?.toLowerCase().includes('manager') ||
     r.code?.toLowerCase().includes('manager')
   ) || false

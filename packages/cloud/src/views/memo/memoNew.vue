@@ -1,27 +1,27 @@
 <template>
   <MemoChat
-    :header-title="headerTitle"
-    :header-subtitle="headerSubtitle"
-    :show-welcome="!memoEnvoye"
-    welcome-title="Nouveau mémo"
-    welcome-text="Configurez votre mémo et commencez à écrire"
-    :messages="messagesFormatted"
-    :input-text="formulaire.contenu"
-    :selected-files="fichiers"
-    :is-recording="isRecording"
-    :recording-time="recordingTime"
-    :has-recording="!!audioBlob"
-    :recorded-duration="recordedDuration"
-    @update:input-text="formulaire.contenu = $event"
-    @back="$router.back()"
-    @send="soumettreMemo"
-    @trigger-file-input="triggerFileInput"
-    @toggle-recording="toggleRecording"
-    @remove-file="removeFile"
-    @remove-recording="deleteRecording"
-    @toggle-panel="showConfigPanel = !showConfigPanel"
-    @toggle-audio-play="toggleAudioPlay"
-    @download-audio="downloadAudioFromMessage"
+      :header-title="headerTitle"
+      :header-subtitle="headerSubtitle"
+      :show-welcome="!memoEnvoye"
+      welcome-title="Nouveau mémo"
+      welcome-text="Configurez votre mémo et commencez à écrire"
+      :messages="messagesFormatted"
+      :input-text="formulaire.contenu"
+      :selected-files="fichiers"
+      :is-recording="isRecording"
+      :recording-time="recordingTime"
+      :has-recording="!!audioBlob"
+      :recorded-duration="recordedDuration"
+      @update:input-text="formulaire.contenu = $event"
+      @back="$router.back()"
+      @send="soumettreMemo"
+      @trigger-file-input="triggerFileInput"
+      @toggle-recording="toggleRecording"
+      @remove-file="removeFile"
+      @remove-recording="deleteRecording"
+      @toggle-panel="showConfigPanel = !showConfigPanel"
+      @toggle-audio-play="toggleAudioPlay"
+      @download-audio="downloadAudioFromMessage"
   >
     <!-- Avatar personnalisé dans l'en-tête -->
     <template #header-avatar>
@@ -74,9 +74,9 @@
               <div v-else>
                 <div v-if="typeDestinataire === 'individuel'" class="form-group">
                   <select
-                    v-model="formulaire.destinataireId"
-                    class="form-select"
-                    required
+                      v-model="formulaire.destinataireId"
+                      class="form-select"
+                      required
                   >
                     <option value="" disabled>Choisir un employé</option>
                     <option v-for="employe in employes" :key="employe.guid" :value="employe.guid">
@@ -93,9 +93,9 @@
               <select v-model="formulaire.type" class="form-select">
                 <option disabled value="">Sélectionner un type</option>
                 <option
-                  v-for="opt in memoTypeOptions"
-                  :key="opt.value"
-                  :value="opt.value"
+                    v-for="opt in memoTypeOptions"
+                    :key="opt.value"
+                    :value="opt.value"
                 >
                   {{ opt.label }}
                 </option>
@@ -106,20 +106,20 @@
             <div v-if="formulaire.type === MEMO_TYPE_OTHER" class="config-section">
               <h4 class="config-section-title">Titre du mémo *</h4>
               <input
-                v-model="formulaire.titre"
-                type="text"
-                placeholder="Entrez le titre du mémo..."
-                :class="{ 'input-error': formulaire.type === 'other' && !formulaire.titre.trim() }"
-                required
+                  v-model="formulaire.titre"
+                  type="text"
+                  placeholder="Entrez le titre du mémo..."
+                  :class="{ 'input-error': formulaire.type === 'other' && !formulaire.titre.trim() }"
+                  required
               />
             </div>
 
             <!-- Bouton Terminé -->
             <div class="config-section">
               <button
-                @click="terminerConfiguration"
-                :disabled="!configurationComplete"
-                class="btn-terminer"
+                  @click="terminerConfiguration"
+                  :disabled="!configurationComplete"
+                  class="btn-terminer"
               >
                 <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" class="check-icon-btn">
                   <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
@@ -135,12 +135,12 @@
 
   <!-- Input file caché -->
   <input
-    ref="fileInput"
-    type="file"
-    multiple
-    accept=".txt,.pdf,.jpg,.jpeg,.png,.mp3,.wav,.webm,.ogg"
-    @change="ajouterFichiers"
-    style="display: none"
+      ref="fileInput"
+      type="file"
+      multiple
+      accept=".txt,.pdf,.jpg,.jpeg,.png,.mp3,.wav,.webm,.ogg"
+      @change="ajouterFichiers"
+      style="display: none"
   />
 </template>
 
@@ -173,6 +173,7 @@ interface MemoEnvoye {
 }
 
 // Route et Store
+const route = useRoute();
 const userStore = useUserStore();
 const teamStore = useTeamStore();
 const memoStore = useMemoStore();
@@ -249,18 +250,18 @@ const getMemoTitle = (type: string): string => {
 };
 
 const memoTypeOptions = computed(() =>
-  Object.entries(memoTitles).map(([type, titre]) => ({
-    value: type,
-    label: titre,
-  }))
+    Object.entries(memoTitles).map(([type, titre]) => ({
+      value: type,
+      label: titre,
+    }))
 );
 
 const MEMO_TYPE_OTHER = 'other' as const;
 
 const configurationComplete = computed(() => {
   const aDestinataire =
-    typeDestinataire.value === 'general' ||
-    !!formulaire.value.destinataireId;
+      typeDestinataire.value === 'general' ||
+      !!formulaire.value.destinataireId;
 
   const aType = !!formulaire.value.type;
 
@@ -488,8 +489,8 @@ const soumettreMemo = async () => {
     }
 
     const messageContent = MemoService.buildMessageContent(
-      formulaire.value.contenu,
-      uploadedFiles
+        formulaire.value.contenu,
+        uploadedFiles
     );
 
     const memoPayload: CreateMemo = {
@@ -577,6 +578,30 @@ onUnmounted(() => {
 // Lifecycle
 onMounted(async () => {
   await chargerEmployes();
+
+  // Pré-remplir l'employé si on arrive depuis la fiche de pointage
+  const employeeGuid = route.query.employeeGuid as string | undefined
+  const employeeName = route.query.employeeName as string | undefined
+
+  if (employeeGuid && employeeName) {
+    // Chercher l'employé complet dans le store (chargé par chargerEmployes)
+    const employe = employes.value.find(e => e.id === employeeGuid || e.guid === employeeGuid)
+
+    if (employe) {
+      // Employé trouvé dans le store — utiliser l'objet complet
+      employePreselectionne.value = employe
+    } else {
+      // Fallback : construire un objet minimal avec les infos de la query
+      employePreselectionne.value = {
+        id: employeeGuid,
+        guid: employeeGuid,
+        name: employeeName,
+      } as any
+    }
+
+    // Pré-remplir le destinataireId pour que configurationComplete fonctionne
+    formulaire.value.destinataireId = employeeGuid
+  }
 });
 </script>
 

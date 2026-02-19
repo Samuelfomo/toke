@@ -1,10 +1,14 @@
 /* ===== CONTAINER PRINCIPAL ===== */
 .dashboard-container {
-    min-height: 100vh;
     display: flex;
     flex-direction: column;
-    background: var(--bg-secondary);
+    min-height: 100vh;
+    /*background: linear-gradient(*/
+    /*        to right,*/
+    /*        #0c3483,#a2b6df,#6b8cce)*/
+    background: linear-gradient(90deg, rgba(0, 74, 173, 0.85) 0%, rgba(166, 200, 239, 0.73) 30%, rgba(67, 136, 228, 0.93) 70%)
 }
+
 
 /* ===== HEADER DU DASHBOARD ===== */
 .dashboard-header {

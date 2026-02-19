@@ -93,7 +93,7 @@
         </div>
 
         <div class="chart-container">
-          <Line v-if="lineChartData" :data="lineChartData" :options="lineChartOptions" />
+          <Line v-if="lineChartData" :data="lineChartData" :options="lineChartOptions as any" />
         </div>
       </div>
 
@@ -372,7 +372,7 @@ const lineChartOptions = computed(() => {
 .section-title {
   font-size: 1.2rem;
   font-weight: 700;
-  color: #0f172a;
+  color: #FFFFFF;
   margin-bottom: 1.4rem;
 }
 

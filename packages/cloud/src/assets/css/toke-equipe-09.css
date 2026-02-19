@@ -1,8 +1,7 @@
 /* ===== BASE STYLES ===== */
 body {
     font-family: var(--font-primary);
-    background: radial-gradient(circle, rgba(255,222,89,1) 0%, rgba(0,74,173,1) 100%);
-    color: var(--text-primary);
+    background: linear-gradient(90deg, rgba(0, 74, 173, 0.85) 0%, rgba(166, 200, 239, 0.73) 30%, rgba(67, 136, 228, 0.93) 70%);
     line-height: var(--line-height-body);
     margin: 0;
     padding: 0;

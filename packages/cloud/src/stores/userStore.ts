@@ -3,6 +3,7 @@ import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
 
 import UserService, { SubordinateResponse } from '../service/UserService'
+import {useTeamStore} from "@/stores/teamStore";
 
 interface UserRole {
   guid: string
@@ -315,6 +316,10 @@ export const useUserStore = defineStore('user', () => {
     tenant.value = null
     isAuthenticated.value = false
     subordinates.value = []
+
+    const teamStore = useTeamStore()
+
+    teamStore.clearCache()
 
     localStorage.removeItem('authData')
     console.log('🔴 Store - Utilisateur déconnecté')

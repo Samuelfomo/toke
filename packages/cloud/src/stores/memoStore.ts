@@ -75,8 +75,43 @@ export const useMemoStore = defineStore('memo', () => {
   const rawData = ref<any>(null)
   const lastFetch = ref<number | null>(null)
   const isLoading = ref(false)
-  const CACHE_DURATION = 60 * 1000 // 24 heures
-  // const CACHE_DURATION = 24 * 60 * 60 * 1000 // 24 heures
+  const CACHE_DURATION = 60 * 1000
+  const POLLING_INTERVAL = 2 * 60 * 1000 // Vérification toutes les 2 minutes
+
+  // Référence interne au timer de polling (non réactif)
+  let _pollingTimer: ReturnType<typeof setInterval> | null = null
+  let _pollingManagerGuid: string | null = null
+
+  /**
+   * Set des GUIDs de mémos déjà lus — géré manuellement dans localStorage
+   * (hors Pinia persist) pour éviter les problèmes de sérialisation JSON.
+   */
+  const READ_GUIDS_KEY = 'memo-read-guids'
+
+  const _loadReadGuids = (): Set<string> => {
+    try {
+      const raw = localStorage.getItem(READ_GUIDS_KEY)
+      const parsed = raw ? JSON.parse(raw) : []
+      return new Set(Array.isArray(parsed) ? parsed : [])
+    } catch {
+      return new Set()
+    }
+  }
+
+  const _saveReadGuids = (set: Set<string>) => {
+    try {
+      localStorage.setItem(READ_GUIDS_KEY, JSON.stringify([...set]))
+    } catch { /* ignore */ }
+  }
+
+  // État interne — simple ref sur un Set, jamais exposé à Pinia persist
+  const _readGuids = ref<Set<string>>(_loadReadGuids())
+
+  // Computed publics (réactifs)
+  const unreadMemosCount = computed(() =>
+      memos.value.filter(memo => !_readGuids.value.has(memo.guid)).length
+  )
+  const hasUnreadMemos = computed(() => unreadMemosCount.value > 0)
 
   // 📊 Computed
   const totalMemos = computed(() => memos.value.length)
@@ -241,7 +276,7 @@ export const useMemoStore = defineStore('memo', () => {
 
   const getMemosByEmployee = (employeeGuid: string): Memo[] => {
     return memos.value.filter(
-      memo => memo.createurId === employeeGuid || memo.destinataireId === employeeGuid
+        memo => memo.createurId === employeeGuid || memo.destinataireId === employeeGuid
     )
   }
 
@@ -257,11 +292,30 @@ export const useMemoStore = defineStore('memo', () => {
     return employees.value.find(emp => emp.guid === guid)
   }
 
+  /**
+   * Marque un mémo individuel comme lu.
+   * Appelé lors de l'ouverture du détail d'un mémo.
+   */
+  const markMemoAsRead = (memoGuid: string) => {
+    _readGuids.value.add(memoGuid)
+    _saveReadGuids(_readGuids.value)
+    // Forcer la réactivité (Set est muté en place)
+    _readGuids.value = new Set(_readGuids.value)
+  }
+
+  const markAllMemosAsRead = () => {
+    memos.value.forEach(memo => _readGuids.value.add(memo.guid))
+    _saveReadGuids(_readGuids.value)
+    _readGuids.value = new Set(_readGuids.value)
+  }
+
   const clearCache = () => {
     memos.value = []
     employees.value = []
     rawData.value = null
     lastFetch.value = null
+    // On ne réinitialise pas readMemoGuids volontairement :
+    // l'historique des lectures reste valide même après un refresh du cache.
   }
 
   // Rafraîchir un mémo spécifique après modification
@@ -289,6 +343,67 @@ export const useMemoStore = defineStore('memo', () => {
   }
 
 
+  /**
+   * Démarre le polling en arrière-plan pour détecter les nouveaux mémos.
+   * À appeler dans le composant Header (toujours monté).
+   * Le polling compare les GUIDs connus avec ceux retournés par l'API —
+   * tout GUID absent de _readGuids ET absent de memos est un nouveau mémo.
+   */
+  /**
+   * Récupère les mémos depuis l'API et met à jour le store.
+   * Le badge se recalcule automatiquement via le computed unreadMemosCount
+   * qui compare memos.value avec _readGuids — tout mémo dont le GUID
+   * n'est pas dans _readGuids est considéré non lu.
+   */
+  const _runPollingCheck = async () => {
+    if (!_pollingManagerGuid) return
+    try {
+      const response = await MemoService.listMemo(_pollingManagerGuid)
+      let memosData: any = null
+
+      if (response?.data?.data?.memos) memosData = response.data.data.memos
+      else if (response?.data?.memos) memosData = response.data.memos
+
+      if (!memosData?.items || !Array.isArray(memosData.items)) return
+
+      const employesMap = new Map<string, MemoEmployee>()
+      memosData.items.forEach((memoApi: ApiMemo) => {
+        if (memoApi.author_user) employesMap.set(memoApi.author_user.guid, memoApi.author_user)
+        if (memoApi.target_user) employesMap.set(memoApi.target_user.guid, memoApi.target_user)
+      })
+      employees.value = Array.from(employesMap.values())
+      memos.value = memosData.items.map((memoApi: ApiMemo) => transformApiMemo(memoApi))
+      rawData.value = response.data
+      lastFetch.value = Date.now()
+
+      // unreadMemosCount se recalcule automatiquement :
+      // badge = mémos dont le guid n'est PAS dans _readGuids
+    } catch (err) {
+      console.warn('⚠️ Polling mémos échoué (silencieux):', err)
+    }
+  }
+
+  const startPolling = (managerGuid: string) => {
+    if (_pollingTimer !== null) return // déjà démarré
+    _pollingManagerGuid = managerGuid
+
+    // Premier check immédiat (pas d'attente du premier intervalle)
+    _runPollingCheck()
+
+    _pollingTimer = setInterval(_runPollingCheck, POLLING_INTERVAL)
+
+    console.log('🔁 Polling mémos démarré (intervalle: 2min)')
+  }
+
+  const stopPolling = () => {
+    if (_pollingTimer !== null) {
+      clearInterval(_pollingTimer)
+      _pollingTimer = null
+      _pollingManagerGuid = null
+      console.log('⏹️ Polling mémos arrêté')
+    }
+  }
+
   return {
     // State
     memos,
@@ -296,12 +411,13 @@ export const useMemoStore = defineStore('memo', () => {
     rawData,
     isLoading,
     lastFetch,
-
     // Computed
     totalMemos,
     isCacheValid,
     memosByType,
     memosByStatus,
+    unreadMemosCount,
+    hasUnreadMemos,
 
     // Actions
     loadMemos,
@@ -311,7 +427,11 @@ export const useMemoStore = defineStore('memo', () => {
     getMemosByStatus,
     getEmployeeByGuid,
     clearCache,
-    refreshMemo
+    refreshMemo,
+    markMemoAsRead,
+    markAllMemosAsRead,
+    startPolling,
+    stopPolling
   }
 }, {
   persist: {

@@ -8,70 +8,70 @@
       </div>
       <div class="header-actions">
         <!-- Notifications -->
-        <div class="action-item notifications-container" ref="notificationsRef">
-          <button
-            class="notification-btn"
-            :class="{ 'has-alerts': memos.length > 0 }"
-            @click.stop="toggleNotifications">
-            <svg class="icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"></path>
-            </svg>
-            <span v-if="memos.length > 0" class="alert-badge">{{ memos.length }}</span>
-          </button>
+        <!--        <div class="action-item notifications-container" ref="notificationsRef">-->
+        <!--          <button-->
+        <!--            class="notification-btn"-->
+        <!--            :class="{ 'has-alerts': memos.length > 0 }"-->
+        <!--            @click.stop="toggleNotifications">-->
+        <!--            <svg class="icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">-->
+        <!--              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"></path>-->
+        <!--            </svg>-->
+        <!--            <span v-if="memos.length > 0" class="alert-badge">{{ memos.length }}</span>-->
+        <!--          </button>-->
 
-          <transition name="dropdown">
-            <div v-if="showNotifications" class="dropdown-menu notification-dropdown">
-              <div class="dropdown-header">
-                <h3>Mémos reçus</h3>
-                <span class="notification-count">{{ memos.length }} nouveau(x)</span>
-              </div>
-              <div class="dropdown-body">
-                <div class="notification-list" v-if="memos.length > 0">
-                  <div
-                    v-for="memo in memos"
-                    :key="memo.id"
-                    class="notification-item"
-                    @click="openMemo(memo)">
-                    <div class="notification-icon" :class="getPriorityClass(memo.priority)">
-                      <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
-                        <path d="M2 5a2 2 0 012-2h7a2 2 0 012 2v4a2 2 0 01-2 2H9l-3 3v-3H4a2 2 0 01-2-2V5z"/>
-                        <path d="M15 7v2a4 4 0 01-4 4H9.828l-1.766 1.767c.28.149.599.233.938.233h2l3 3v-3h2a2 2 0 002-2V9a2 2 0 00-2-2h-1z"/>
-                      </svg>
-                    </div>
-                    <div class="notification-content">
-                      <p class="notification-title">{{ memo.subject }}</p>
-                      <p class="notification-sender">De: {{ memo.senderName }}</p>
-                      <p class="notification-time">{{ formatTime(memo.createdAt) }}</p>
-                    </div>
-                    <div v-if="!memo.isRead" class="unread-indicator"></div>
-                  </div>
-                </div>
-                <div v-else class="empty-state">
-                  <svg class="empty-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4"></path>
-                  </svg>
-                  <p>Aucun mémo pour le moment</p>
-                </div>
-              </div>
-              <div class="dropdown-footer" v-if="memos.length > 0">
-                <a href="/memos" class="view-all-link">Voir tous les mémos</a>
-              </div>
-            </div>
-          </transition>
-        </div>
+        <!--          <transition name="dropdown">-->
+        <!--            <div v-if="showNotifications" class="dropdown-menu notification-dropdown">-->
+        <!--              <div class="dropdown-header">-->
+        <!--                <h3>Mémos reçus</h3>-->
+        <!--                <span class="notification-count">{{ memos.length }} nouveau(x)</span>-->
+        <!--              </div>-->
+        <!--              <div class="dropdown-body">-->
+        <!--                <div class="notification-list" v-if="memos.length > 0">-->
+        <!--                  <div-->
+        <!--                    v-for="memo in memos"-->
+        <!--                    :key="memo.id"-->
+        <!--                    class="notification-item"-->
+        <!--                    @click="openMemo(memo)">-->
+        <!--                    <div class="notification-icon" :class="getPriorityClass(memo.priority)">-->
+        <!--                      <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">-->
+        <!--                        <path d="M2 5a2 2 0 012-2h7a2 2 0 012 2v4a2 2 0 01-2 2H9l-3 3v-3H4a2 2 0 01-2-2V5z"/>-->
+        <!--                        <path d="M15 7v2a4 4 0 01-4 4H9.828l-1.766 1.767c.28.149.599.233.938.233h2l3 3v-3h2a2 2 0 002-2V9a2 2 0 00-2-2h-1z"/>-->
+        <!--                      </svg>-->
+        <!--                    </div>-->
+        <!--                    <div class="notification-content">-->
+        <!--                      <p class="notification-title">{{ memo.subject }}</p>-->
+        <!--                      <p class="notification-sender">De: {{ memo.senderName }}</p>-->
+        <!--                      <p class="notification-time">{{ formatTime(memo.createdAt) }}</p>-->
+        <!--                    </div>-->
+        <!--                    <div v-if="!memo.isRead" class="unread-indicator"></div>-->
+        <!--                  </div>-->
+        <!--                </div>-->
+        <!--                <div v-else class="empty-state">-->
+        <!--                  <svg class="empty-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">-->
+        <!--                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4"></path>-->
+        <!--                  </svg>-->
+        <!--                  <p>Aucun mémo pour le moment</p>-->
+        <!--                </div>-->
+        <!--              </div>-->
+        <!--              <div class="dropdown-footer" v-if="memos.length > 0">-->
+        <!--                <a href="/memos" class="view-all-link">Voir tous les mémos</a>-->
+        <!--              </div>-->
+        <!--            </div>-->
+        <!--          </transition>-->
+        <!--        </div>-->
 
         <!-- User Profile -->
         <div class="action-item user-profile-container" ref="userMenuRef">
           <button
-            class="user-profile-btn"
-            @click.stop="toggleUserMenu"
+              class="user-profile-btn"
+              @click.stop="toggleUserMenu"
           >
             <div class="profile-menu-content">
               <div class="avatar">{{ userStore.userInitials }}</div>
-<!--              <div class="user-info">-->
-<!--                <span class="user-name">{{ userStore.fullName }}</span>-->
-<!--                <span class="company-name">{{ userStore.tenantName }}</span>-->
-<!--              </div>-->
+              <!--              <div class="user-info">-->
+              <!--                <span class="user-name">{{ userStore.fullName }}</span>-->
+              <!--                <span class="company-name">{{ userStore.tenantName }}</span>-->
+              <!--              </div>-->
             </div>
           </button>
           <transition name="dropdown">
@@ -114,12 +114,22 @@
   <nav class="main-navigation">
     <div class="nav-container" ref="navContainerRef">
       <RouterLink v-for="(module, index) in modules" :key="index"
-        :to="module.path"
-        class="nav-tab"
-        :class="{ active: activeTab === module.path }"
-        @click="setActiveTab(module.path)">
+                  :to="module.path"
+                  class="nav-tab"
+                  :class="{
+          active: activeTab === module.path,
+          'has-unread': module.path === '/memoList' && memoStore.hasUnreadMemos
+        }"
+                  @click="setActiveTab(module.path)">
         <component :is="module.icon" class="tab-icon" />
         <span class="tab-label">{{module.title}}</span>
+        <span
+            v-if="module.path === '/memoList' && memoStore.hasUnreadMemos"
+            class="unread-badge"
+            :title="`${memoStore.unreadMemosCount} mémo(s) non lu(s)`"
+        >
+          {{ memoStore.unreadMemosCount > 99 ? '99+' : memoStore.unreadMemosCount }}
+        </span>
       </RouterLink>
       <div class="active-tab-indicator" :style="indicatorStyle"></div>
     </div>
@@ -127,8 +137,9 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, nextTick, onUnmounted } from 'vue'
+import { ref, onMounted, nextTick, onUnmounted, watch } from 'vue'
 import { useUserStore } from '@/stores/userStore'
+import { useMemoStore } from '@/stores/memoStore'
 import toke from '../../../public/images/toke.svg'
 import { IconMapPin, IconEdit, IconBrandDaysCounter, IconCalendarWeek, IconUsers, IconSettings} from '@tabler/icons-vue';
 
@@ -157,6 +168,7 @@ withDefaults(defineProps<Props>(), {
 })
 
 const userStore = useUserStore()
+const memoStore = useMemoStore()
 
 const notificationsRef = ref<HTMLElement | null>(null)
 const userMenuRef = ref<HTMLElement | null>(null)
@@ -259,15 +271,15 @@ const handleClickOutside = (event: MouseEvent) => {
   const target = event.target as Node
 
   if (
-    notificationsRef.value &&
-    !notificationsRef.value.contains(target)
+      notificationsRef.value &&
+      !notificationsRef.value.contains(target)
   ) {
     showNotifications.value = false
   }
 
   if (
-    userMenuRef.value &&
-    !userMenuRef.value.contains(target)
+      userMenuRef.value &&
+      !userMenuRef.value.contains(target)
   ) {
     showUserMenu.value = false
   }
@@ -275,10 +287,28 @@ const handleClickOutside = (event: MouseEvent) => {
 
 onMounted(() => {
   document.addEventListener('click', handleClickOutside)
+
+  // Démarrer le polling dès que le guid du manager est disponible
+  const managerGuid = userStore.user?.guid
+  if (managerGuid) {
+    memoStore.startPolling(managerGuid)
+  } else {
+    // Attendre que le user soit chargé si pas encore disponible
+    const unwatch = watch(
+        () => userStore.user?.guid,
+        (guid) => {
+          if (guid) {
+            memoStore.startPolling(guid)
+            unwatch()
+          }
+        }
+    )
+  }
 })
 
 onUnmounted(() => {
   document.removeEventListener('click', handleClickOutside)
+  memoStore.stopPolling()
 })
 
 const openMemo = (memo: Memo) => {
@@ -367,6 +397,11 @@ onUnmounted(() => {
 </script>
 
 <style scoped>
+/* Positionnement de base pour l'onglet (nécessaire pour le badge) */
+.nav-tab {
+  position: relative;
+}
+
 /* Notification Button */
 .notification-btn {
   position: relative;
@@ -673,5 +708,47 @@ onUnmounted(() => {
   .tab-label {
     display: none;
   }
+}
+
+/* ─── Onglet Memos avec mémos non lus ─────────────────────────────── */
+
+/* Pas de background : seulement le texte/icône devient bleu */
+.nav-tab.has-unread {
+  color: #1d4ed8;
+  font-weight: 600;
+}
+
+.nav-tab.has-unread .tab-icon {
+  color: #1d4ed8;
+}
+
+.nav-tab.has-unread .tab-label {
+  color: #1d4ed8;
+}
+
+/* Badge rouge — en haut à droite de l'onglet Memos */
+.unread-badge {
+  position: absolute;
+  top: 2px;
+  right: 2px;
+  min-width: 18px;
+  height: 18px;
+  padding: 0 5px;
+  background: #ef4444;
+  color: #ffffff;
+  font-size: 0.62rem;
+  font-weight: 700;
+  line-height: 18px;
+  text-align: center;
+  border-radius: 9px;
+  white-space: nowrap;
+  box-shadow: 0 1px 4px rgba(239, 68, 68, 0.45);
+  pointer-events: none;
+  animation: badge-pop 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+@keyframes badge-pop {
+  from { transform: scale(0); opacity: 0; }
+  to   { transform: scale(1); opacity: 1; }
 }
 </style>

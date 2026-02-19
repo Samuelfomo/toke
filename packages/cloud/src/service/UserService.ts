@@ -1,4 +1,5 @@
 import { ApiResponse } from '@toke/shared';
+
 import type {
   EmployeeAttendanceHistory,
   GlobalAttendanceStats,
@@ -407,6 +408,8 @@ export default class UserService {
     const absenceRate = (summary.total_absences / summary.total_expected_workdays) * 100;
     return `${Math.round(absenceRate)}%`;
   }
+
+
   /**
    * Récupère l'historique complet des pointages d'un employé
    * @param managerGuid GUID du manager
@@ -1062,48 +1065,7 @@ export default class UserService {
     return JSON.stringify(exportData, null, 2);
   }
 
-  // ============================================
-  // UTILITAIRES
-  // ============================================
 
-//   /**
-//    * Formate le label d'un mois
-//    */
-//   static formatMonthLabel(monthKey: string): string {
-//     const [year, month] = monthKey.split('-');
-//     const date = new Date(parseInt(year), parseInt(month) - 1);
-//     return date.toLocaleDateString('fr-FR', { month: 'long', year: 'numeric' });
-//   }
-//
-// //   /**
-// //    * Retourne le label d'un statut
-// //    */
-//   static getStatusLabel(status: string): string {
-//     const statusMap: Record<string, string> = {
-//       'present': 'Présent',
-//       'late': 'En retard',
-//       'absent': 'Absent',
-//       'off-day': 'Repos',
-//       'on-pause': 'En pause',
-//       'active': 'Actif'
-//     };
-//     return statusMap[status] || status;
-//   }
-//
-// //   /**
-// //    * Formate les minutes en texte lisible
-// //    */
-//   static formatMinutesToText(minutes: number): string {
-//     if (minutes === 0) return '0 min';
-//     const hours = Math.floor(minutes / 60);
-//     const mins = minutes % 60;
-//
-//     if (hours > 0) {
-//       return `${hours}h${mins.toString().padStart(2, '0')}`;
-//     }
-//     return `${mins} min`;
-//   }
-//
 //   /**
 //    * Formate le label d'un mois
 //    */

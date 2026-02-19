@@ -27,24 +27,42 @@
           <p class="employee-code">Matricule: {{ employeeInfo.employee_code }}</p>
         </div>
       </div>
+
+      <!-- Skeleton header si employeeInfo pas encore chargé mais loading en cours -->
+      <div v-else-if="loading" class="employee-header skeleton-header">
+        <div class="avatar-placeholder skeleton-box"></div>
+        <div class="skeleton-info">
+          <div class="skeleton-line skeleton-name"></div>
+          <div class="skeleton-line skeleton-sub"></div>
+        </div>
+      </div>
     </div>
 
-    <!-- Loading -->
+    <!-- Loading global -->
     <div v-if="loading" class="loading-state">
       <div class="spinner"></div>
       <p>Chargement des emplois du temps...</p>
     </div>
 
-    <!-- Error -->
-    <div v-else-if="error" class="error-state">
+    <!-- Erreur globale -->
+    <div v-else-if="error.global" class="error-state">
       <span class="error-icon">⚠️</span>
-      <p>{{ error }}</p>
+      <p>{{ error.global }}</p>
       <button @click="loadEmployeeSchedules" class="retry-btn">Réessayer</button>
     </div>
 
-    <!-- Content -->
+    <!-- Contenu principal -->
     <div v-else class="page-content">
-      <!-- Tabs pour basculer entre horaires fixes et rotations -->
+
+      <!-- Alertes d'erreurs partielles (schedules ou rotations ont échoué, mais pas les deux) -->
+      <div v-if="error.schedules" class="partial-error-banner">
+        ⚠️ Impossible de charger les emplois du temps fixes. <button @click="reloadSchedules">Réessayer</button>
+      </div>
+      <div v-if="error.rotations" class="partial-error-banner">
+        ⚠️ Impossible de charger les rotations. <button @click="reloadRotations">Réessayer</button>
+      </div>
+
+      <!-- Tabs -->
       <div class="tabs-container">
         <button
             :class="['tab-btn', { active: activeTab === 'schedules' }]"
@@ -161,7 +179,7 @@
           >
             <div class="card-header">
               <div class="assignment-status">
-                <span class="status-badge active">Active</span>
+                <span class="status-badge status-active">Active</span>
               </div>
               <div class="assignment-actions">
                 <button
@@ -244,197 +262,238 @@ import { ref, computed, onMounted } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import { useUserStore } from '@/stores/userStore';
 import ScheduleAssignmentService, {
-  type ScheduleAssignment
+  type ScheduleAssignment,
 } from '@/service/scheduleAssignmentService';
 import RotationAssignmentService, {
-  type RotationAssignment
+  type RotationAssignment,
 } from '@/service/rotationAssignmentService';
+
+
+/* =======================
+   Types
+======================= */
+
+interface Employee {
+  guid: string;
+  first_name: string;
+  last_name: string;
+  email: string;
+  job_title: string;
+  department: string;
+  employee_code: string;
+  avatar_url?: string;
+}
+
+interface ErrorState {
+  global: string;
+  schedules: string;
+  rotations: string;
+}
+
+/* =======================
+   Setup
+======================= */
 
 const route = useRoute();
 const router = useRouter();
 const userStore = useUserStore();
 
-// Props depuis la route
+// L'identifiant de l'employé vient de l'URL (ex: /employees/:id/schedules)
 const employeeGuid = route.params.id as string;
 
-// État
+/* =======================
+   État réactif
+======================= */
+
 const loading = ref(true);
-const error = ref('');
+const error = ref<ErrorState>({ global: '', schedules: '', rotations: '' });
 const activeTab = ref<'schedules' | 'rotations'>('schedules');
 const scheduleAssignments = ref<ScheduleAssignment[]>([]);
 const rotationAssignments = ref<RotationAssignment[]>([]);
-const employeeInfo = ref<any>(null);
+const employeeInfo = ref<Employee | null>(null);
 
-// Computed
-const managerGuid = computed(() => userStore.user?.guid || '');
+/* =======================
+   Computed
+======================= */
 
-const sortedScheduleAssignments = computed(() => {
-  return [...scheduleAssignments.value].sort((a, b) => {
-    // Trier par date de début décroissante (plus récent en premier)
-    return new Date(b.start_date).getTime() - new Date(a.start_date).getTime();
-  });
-});
+const sortedScheduleAssignments = computed(() =>
+    [...scheduleAssignments.value].sort(
+        (a, b) => new Date(b.start_date).getTime() - new Date(a.start_date).getTime()
+    )
+);
 
-// Méthodes
+/* =======================
+   Chargement des données
+======================= */
+
+/**
+ * Charge en parallèle : le profil employé, ses emplois du temps fixes, et ses rotations.
+ * Chaque source est indépendante : un échec partiel n'empêche pas l'affichage des autres.
+ */
 const loadEmployeeSchedules = async () => {
-  if (!managerGuid.value) {
-    error.value = 'Vous devez être connecté';
-    loading.value = false;
-    return;
-  }
-
   loading.value = true;
-  error.value = '';
+  error.value = { global: '', schedules: '', rotations: '' };
 
   try {
-    // Charger les emplois du temps fixes
-    const scheduleResponse = await ScheduleAssignmentService.getUserAssignments(employeeGuid);
+    // Chargement en parallèle des schedules et rotations
+    const [scheduleResult, rotationResult] = await Promise.allSettled([
+      ScheduleAssignmentService.getUserAssignments(employeeGuid),
+      RotationAssignmentService.getUserAssignments(employeeGuid),
+    ]);
 
-    if (scheduleResponse.success && scheduleResponse.data) {
-      // Filtrer uniquement les assignations de cet employé
-      const allSchedules = Array.isArray(scheduleResponse.data)
-          ? scheduleResponse.data
-          : scheduleResponse.data.data || [];
-
-      scheduleAssignments.value = allSchedules.filter(
-          (assignment: ScheduleAssignment) => assignment.user?.guid === employeeGuid
-      );
-
-      // Extraire les infos de l'employé depuis la première assignation
-      if (scheduleAssignments.value.length > 0 && scheduleAssignments.value[0].user) {
-        employeeInfo.value = scheduleAssignments.value[0].user;
-      }
+    // Emplois du temps fixes
+    if (scheduleResult.status === 'fulfilled' && scheduleResult.value?.success) {
+      scheduleAssignments.value = scheduleResult.value.data ?? [];
+    } else {
+      error.value.schedules = 'Impossible de charger les emplois du temps fixes.';
     }
 
-    // Charger les rotations
-    const rotationResponse = await RotationAssignmentService.getUserAssignments(employeeGuid);
-
-    if (rotationResponse.success && rotationResponse.data) {
-      const allRotations = Array.isArray(rotationResponse.data)
-          ? rotationResponse.data
-          : rotationResponse.data.data || [];
-
-      rotationAssignments.value = allRotations.filter(
-          (assignment: RotationAssignment) => assignment.user?.guid === employeeGuid
-      );
-
-      // Si pas d'info employé via schedules, essayer via rotations
-      if (!employeeInfo.value && rotationAssignments.value.length > 0 && rotationAssignments.value[0].user) {
-        employeeInfo.value = rotationAssignments.value[0].user;
-      }
+    // Rotations
+    if (rotationResult.status === 'fulfilled' && rotationResult.value?.success) {
+      rotationAssignments.value = rotationResult.value.data ?? [];
+    } else {
+      error.value.rotations = 'Impossible de charger les rotations.';
     }
 
-    // Si aucune info trouvée, afficher une erreur
+    // Extraction du profil employé depuis les données reçues
+    // Priorité : schedules → rotations
+    if (scheduleAssignments.value.length > 0 && scheduleAssignments.value[0].user) {
+      employeeInfo.value = scheduleAssignments.value[0].user as Employee;
+    } else if (rotationAssignments.value.length > 0 && rotationAssignments.value[0].user) {
+      employeeInfo.value = rotationAssignments.value[0].user as Employee;
+    }
+
+    // Si aucune assignation ne contient le profil, c'est une erreur bloquante
     if (!employeeInfo.value) {
-      error.value = 'Impossible de récupérer les informations de l\'employé';
+      error.value.global = "Aucune donnée trouvée pour cet employé.";
     }
 
   } catch (err: any) {
-    console.error('Erreur chargement emplois du temps:', err);
-    error.value = err.message || 'Erreur lors du chargement des données';
+    console.error('Erreur inattendue lors du chargement:', err);
+    error.value.global = err.message || 'Une erreur inattendue est survenue.';
   } finally {
     loading.value = false;
   }
 };
 
+/** Recharge uniquement les emplois du temps fixes (après une erreur partielle) */
+const reloadSchedules = async () => {
+  error.value.schedules = '';
+  try {
+    const response = await ScheduleAssignmentService.getUserAssignments(employeeGuid);
+    if (response?.success) {
+      scheduleAssignments.value = response.data ?? [];
+    } else {
+      error.value.schedules = 'Impossible de charger les emplois du temps fixes.';
+    }
+  } catch {
+    error.value.schedules = 'Erreur lors du rechargement.';
+  }
+};
+
+/** Recharge uniquement les rotations (après une erreur partielle) */
+const reloadRotations = async () => {
+  error.value.rotations = '';
+  try {
+    const response = await RotationAssignmentService.getUserAssignments(employeeGuid);
+    if (response?.success) {
+      rotationAssignments.value = response.data ?? [];
+    } else {
+      error.value.rotations = 'Impossible de charger les rotations.';
+    }
+  } catch {
+    error.value.rotations = 'Erreur lors du rechargement.';
+  }
+};
+
+/* =======================
+   Helpers — statuts
+======================= */
+
 const isAssignmentActive = (assignment: ScheduleAssignment): boolean => {
   const today = new Date();
   today.setHours(0, 0, 0, 0);
-
   const startDate = new Date(assignment.start_date);
   const endDate = new Date(assignment.end_date);
-
   return assignment.active && today >= startDate && today <= endDate;
 };
 
 const getAssignmentStatus = (assignment: ScheduleAssignment): string => {
   if (!assignment.active) return 'Inactif';
-
   const today = new Date();
   today.setHours(0, 0, 0, 0);
-
   const startDate = new Date(assignment.start_date);
   const endDate = new Date(assignment.end_date);
-
   if (today < startDate) return 'À venir';
   if (today > endDate) return 'Terminé';
   return 'Actif';
 };
 
 const getAssignmentStatusClass = (assignment: ScheduleAssignment): string => {
-  const status = getAssignmentStatus(assignment);
-
-  switch (status) {
-    case 'Actif':
-      return 'status-active';
-    case 'À venir':
-      return 'status-upcoming';
-    case 'Terminé':
-      return 'status-ended';
-    case 'Inactif':
-      return 'status-inactive';
-    default:
-      return '';
-  }
+  const statusMap: Record<string, string> = {
+    'Actif': 'status-active',
+    'À venir': 'status-upcoming',
+    'Terminé': 'status-ended',
+    'Inactif': 'status-inactive',
+  };
+  return statusMap[getAssignmentStatus(assignment)] ?? '';
 };
 
-const formatDate = (dateString: string): string => {
-  return new Date(dateString).toLocaleDateString('fr-FR', {
-    day: '2-digit',
-    month: 'long',
-    year: 'numeric'
-  });
-};
+/* =======================
+   Helpers — formatage
+======================= */
+
+const formatDate = (dateString: string): string =>
+    new Date(dateString).toLocaleDateString('fr-FR', {
+      day: '2-digit',
+      month: 'long',
+      year: 'numeric',
+    });
 
 const calculateDuration = (startDate: string, endDate: string): string => {
-  const start = new Date(startDate);
-  const end = new Date(endDate);
-  const diffTime = Math.abs(end.getTime() - start.getTime());
-  const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24)) + 1;
+  const diffDays = Math.ceil(
+      Math.abs(new Date(endDate).getTime() - new Date(startDate).getTime()) / (1000 * 60 * 60 * 24)
+  ) + 1;
 
-  if (diffDays < 7) {
-    return `${diffDays} jour${diffDays > 1 ? 's' : ''}`;
-  } else if (diffDays < 30) {
-    const weeks = Math.floor(diffDays / 7);
-    return `${weeks} semaine${weeks > 1 ? 's' : ''}`;
-  } else if (diffDays < 365) {
-    const months = Math.floor(diffDays / 30);
-    return `${months} mois`;
-  } else {
-    const years = Math.floor(diffDays / 365);
-    return `${years} an${years > 1 ? 's' : ''}`;
-  }
+  if (diffDays < 7) return `${diffDays} jour${diffDays > 1 ? 's' : ''}`;
+  if (diffDays < 30) { const w = Math.floor(diffDays / 7); return `${w} semaine${w > 1 ? 's' : ''}`; }
+  if (diffDays < 365) { const m = Math.floor(diffDays / 30); return `${m} mois`; }
+  const y = Math.floor(diffDays / 365);
+  return `${y} an${y > 1 ? 's' : ''}`;
 };
 
-const getInitials = (user: any): string => {
-  if (!user) return '?';
-  const first = user.first_name?.charAt(0) || '';
-  const last = user.last_name?.charAt(0) || '';
+const getInitials = (user: Employee): string => {
+  const first = user.first_name?.charAt(0) ?? '';
+  const last = user.last_name?.charAt(0) ?? '';
   return `${first}${last}`.toUpperCase();
 };
 
+/* =======================
+   Helpers — navigation
+======================= */
+
 const viewScheduleDetails = (assignment: ScheduleAssignment) => {
-  console.log('Voir détails emploi du temps:', assignment);
-  // Navigation vers une page de détails ou modal
+  // Adapter selon ta configuration de routes
   // router.push({ name: 'scheduleDetails', params: { id: assignment.guid } });
+  console.log('Voir détails emploi du temps:', assignment);
 };
 
 const viewRotationDetails = (assignment: RotationAssignment) => {
-  console.log('Voir détails rotation:', assignment);
-  // Navigation vers une page de détails ou modal
   // router.push({ name: 'rotationDetails', params: { id: assignment.guid } });
+  console.log('Voir détails rotation:', assignment);
 };
 
-const goBack = () => {
-  router.back();
-};
+const goBack = () => router.back();
 
-// Lifecycle
+/* =======================
+   Lifecycle
+======================= */
+
 onMounted(() => {
   if (userStore.checkSession()) {
     loadEmployeeSchedules();
   } else {
-    error.value = 'Session expirée. Veuillez vous reconnecter.';
+    error.value.global = 'Session expirée. Veuillez vous reconnecter.';
     loading.value = false;
   }
 });
@@ -447,7 +506,9 @@ onMounted(() => {
   padding: 20px;
 }
 
-/* Header */
+/* ========================
+   Header
+======================== */
 .page-header {
   background: white;
   border-radius: 12px;
@@ -488,6 +549,7 @@ onMounted(() => {
   height: 80px;
   border-radius: 50%;
   overflow: hidden;
+  flex-shrink: 0;
 }
 
 .employee-avatar img {
@@ -528,7 +590,51 @@ onMounted(() => {
   color: #718096;
 }
 
-/* États */
+/* ========================
+   Skeleton loader (header)
+======================== */
+.skeleton-header {
+  align-items: center;
+}
+
+.skeleton-box {
+  background: linear-gradient(90deg, #e2e8f0 25%, #edf2f7 50%, #e2e8f0 75%);
+  background-size: 200% 100%;
+  animation: shimmer 1.5s infinite;
+}
+
+.skeleton-info {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  flex: 1;
+}
+
+.skeleton-line {
+  height: 14px;
+  border-radius: 6px;
+  background: linear-gradient(90deg, #e2e8f0 25%, #edf2f7 50%, #e2e8f0 75%);
+  background-size: 200% 100%;
+  animation: shimmer 1.5s infinite;
+}
+
+.skeleton-name {
+  width: 220px;
+  height: 22px;
+}
+
+.skeleton-sub {
+  width: 150px;
+}
+
+@keyframes shimmer {
+  0% { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
+}
+
+/* ========================
+   États globaux
+======================== */
 .loading-state,
 .error-state {
   display: flex;
@@ -552,9 +658,7 @@ onMounted(() => {
 }
 
 @keyframes spin {
-  to {
-    transform: rotate(360deg);
-  }
+  to { transform: rotate(360deg); }
 }
 
 .error-icon {
@@ -577,9 +681,49 @@ onMounted(() => {
   cursor: pointer;
   font-size: 14px;
   font-weight: 500;
+  transition: background 0.2s;
 }
 
-/* Tabs */
+.retry-btn:hover {
+  background: #5a67d8;
+}
+
+/* ========================
+   Bannières d'erreur partielle
+======================== */
+.partial-error-banner {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 16px;
+  background: #fff5f5;
+  border: 1px solid #fed7d7;
+  border-radius: 8px;
+  color: #c53030;
+  font-size: 14px;
+  margin-bottom: 16px;
+}
+
+.partial-error-banner button {
+  background: none;
+  border: 1px solid #c53030;
+  border-radius: 6px;
+  color: #c53030;
+  padding: 4px 10px;
+  cursor: pointer;
+  font-size: 13px;
+  font-weight: 500;
+  transition: all 0.2s;
+}
+
+.partial-error-banner button:hover {
+  background: #c53030;
+  color: white;
+}
+
+/* ========================
+   Tabs
+======================== */
 .tabs-container {
   display: flex;
   gap: 12px;
@@ -635,7 +779,9 @@ onMounted(() => {
   color: #667eea;
 }
 
-/* Empty state */
+/* ========================
+   Empty state
+======================== */
 .empty-state {
   display: flex;
   flex-direction: column;
@@ -666,7 +812,9 @@ onMounted(() => {
   color: #718096;
 }
 
-/* Assignments grid */
+/* ========================
+   Grille de cards
+======================== */
 .assignments-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
@@ -696,6 +844,9 @@ onMounted(() => {
   border-color: #4299e1;
 }
 
+/* ========================
+   Card header
+======================== */
 .card-header {
   display: flex;
   justify-content: space-between;
@@ -713,25 +864,10 @@ onMounted(() => {
   text-transform: uppercase;
 }
 
-.status-active {
-  background: #c6f6d5;
-  color: #22543d;
-}
-
-.status-upcoming {
-  background: #bee3f8;
-  color: #2c5282;
-}
-
-.status-ended {
-  background: #e2e8f0;
-  color: #4a5568;
-}
-
-.status-inactive {
-  background: #fed7d7;
-  color: #742a2a;
-}
+.status-active   { background: #c6f6d5; color: #22543d; }
+.status-upcoming { background: #bee3f8; color: #2c5282; }
+.status-ended    { background: #e2e8f0; color: #4a5568; }
+.status-inactive { background: #fed7d7; color: #742a2a; }
 
 .assignment-actions {
   display: flex;
@@ -757,14 +893,13 @@ onMounted(() => {
   border-color: #cbd5e0;
 }
 
+/* ========================
+   Card body
+======================== */
 .card-body {
   display: flex;
   flex-direction: column;
   gap: 16px;
-}
-
-.template-info {
-  margin-bottom: 8px;
 }
 
 .template-name {
@@ -796,20 +931,13 @@ onMounted(() => {
   font-size: 14px;
 }
 
-.date-label {
-  color: #718096;
-  font-weight: 500;
-}
-
-.date-value {
-  color: #1a202c;
-  font-weight: 600;
-}
-
 .date-item.duration {
   padding-top: 8px;
   border-top: 1px solid #e2e8f0;
 }
+
+.date-label, .info-label { color: #718096; font-weight: 500; }
+.date-value, .info-value { color: #1a202c; font-weight: 600; }
 
 .assignment-reason {
   padding: 12px;
@@ -831,7 +959,24 @@ onMounted(() => {
   color: #744210;
 }
 
-/* Rotation specific */
+.assignment-meta {
+  padding-top: 12px;
+  border-top: 1px solid #e2e8f0;
+}
+
+.meta-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 13px;
+}
+
+.meta-label { color: #718096; }
+.meta-value { color: #4a5568; font-weight: 500; }
+
+/* ========================
+   Rotation spécifique
+======================== */
 .rotation-info {
   display: flex;
   flex-direction: column;
@@ -848,15 +993,7 @@ onMounted(() => {
   font-size: 14px;
 }
 
-.info-label {
-  color: #2c5282;
-  font-weight: 500;
-}
-
-.info-value {
-  color: #1a202c;
-  font-weight: 600;
-}
+.info-label { color: #2c5282; }
 
 .rotation-templates {
   padding: 12px;
@@ -904,32 +1041,11 @@ onMounted(() => {
   color: #4299e1;
 }
 
-.chip-name {
-  color: #4a5568;
-}
+.chip-name { color: #4a5568; }
 
-.assignment-meta {
-  padding-top: 12px;
-  border-top: 1px solid #e2e8f0;
-}
-
-.meta-item {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  font-size: 13px;
-}
-
-.meta-label {
-  color: #718096;
-}
-
-.meta-value {
-  color: #4a5568;
-  font-weight: 500;
-}
-
-/* Responsive */
+/* ========================
+   Responsive
+======================== */
 @media (max-width: 768px) {
   .assignments-grid {
     grid-template-columns: 1fr;
@@ -937,6 +1053,10 @@ onMounted(() => {
 
   .tabs-container {
     flex-direction: column;
+  }
+
+  .employee-info h1 {
+    font-size: 20px;
   }
 }
 </style>

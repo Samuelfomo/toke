@@ -1,6 +1,7 @@
 import { ApiResponse } from '@toke/shared';
 
 import { apiRequest } from '@/tools/Fetch.Client';
+import type {PeriodAttendanceResponse} from "@/utils/interfaces/employeeAttendances";
 
 const baseUrl = '/time-entries';
 

@@ -107,9 +107,10 @@ const selectedViewMode = ref<'normal' | 'analytics'>('normal')
 const customStartDate = ref(today)
 const customEndDate = ref(today)
 
+// ✅ FIX: Typage strict avec 'as const' pour inférer les types littéraux
 const periods = [
-  { label: 'Jour', value: 'day' },
-  { label: 'Personnalisé', value: 'custom' }
+  { label: 'Jour', value: 'day' as const },
+  { label: 'Personnalisé', value: 'custom' as const }
 ]
 
 /* ================= RANGE ================= */

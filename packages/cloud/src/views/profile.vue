@@ -328,12 +328,17 @@ const closeMenuOnClickOutside = (event: MouseEvent) => {
   }
 };
 
+// Si vous devez transformer les données
 const loadTeamData = async () => {
   try {
-    const response = await UserService.listAttendance(userStore.user?.guid!);
-    if (response.data?.data) {
-      teamEmployees.value = response.data.data.statuses || [];
-    }
+    // const response = await UserService.listAttendance(userStore.user?.guid!);
+    // if (response.data?.data) {
+    //   // // Adapter selon la structure réelle de EmployeeAttendance
+    //   // teamEmployees.value = response.data.data.employees.map(emp => ({
+    //   //   employee: emp.employee, // ou la structure appropriée
+    //   //   // autres propriétés si nécessaire
+    //   // })) || [];
+    // }
   } catch (error) {
     console.error('Erreur lors du chargement des données de l\'équipe:', error);
   }

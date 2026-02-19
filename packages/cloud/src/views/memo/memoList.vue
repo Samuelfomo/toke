@@ -95,7 +95,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted } from 'vue';
+import { ref, computed, onMounted, onUnmounted, watch } from 'vue';
 import router from '@/router';
 import { useUserStore } from '@/stores/userStore';
 import { useMemoStore } from '@/stores/memoStore';
@@ -221,6 +221,8 @@ const naviguerCreerMemo = () => {
 };
 
 const voirDetailMemo = (memo: any) => {
+  // Marquer ce mémo comme lu avant d'ouvrir le détail
+  memoStore.markMemoAsRead(memo.guid);
   router.push({
     name: 'memoDetails',
     params: { guid: memo.guid }
@@ -248,6 +250,10 @@ const chargerMemos = async () => {
 };
 
 // ============ LIFECYCLE ============
+
+// Quand le manager est sur la liste, tout nouveau mémo chargé est marqué lu
+let stopWatcher: (() => void) | null = null
+
 onMounted(async () => {
   HeadBuilder.apply({
     title: 'Mémos - Toké',
@@ -256,10 +262,20 @@ onMounted(async () => {
   });
 
   await chargerMemos();
+
+  // Marquer les mémos actuels comme lus
+  memoStore.markAllMemosAsRead();
+
+  // Watcher : si de nouveaux mémos arrivent via le polling pendant que
+  // le manager est sur cette page, les marquer immédiatement comme lus
+  stopWatcher = watch(
+      () => memoStore.memos.length,
+      () => memoStore.markAllMemosAsRead()
+  )
+});
+
+onUnmounted(() => {
+  // Arrêter le watcher quand on quitte la liste
+  stopWatcher?.()
 });
 </script>
-
-<style scoped>
-/* Les styles de la sidebar et du header restent inchangés */
-/* Ils peuvent rester dans le fichier CSS toke-memoList-18.css */
-</style>

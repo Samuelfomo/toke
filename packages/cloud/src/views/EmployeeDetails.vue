@@ -291,6 +291,7 @@ const fetchEmployeeDetails = async (employeeGuid: string) => {
       // Charger les entrées de l'employé
       try {
         const entriesResponse = await EntriesService.listEntries(employeeGuid)
+        console.log(employeeGuid)
         if (entriesResponse.success && entriesResponse.data) {
           entriesData.value = Array.isArray(entriesResponse.data)
             ? entriesResponse.data
@@ -357,5 +358,4 @@ onMounted(() => {
 </script>
 
 <style scoped>
-/* Les styles personnalisés peuvent être ajoutés ici si nécessaire */
 </style>

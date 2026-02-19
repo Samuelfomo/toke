@@ -17,7 +17,7 @@
         </svg>
         <h3>Erreur de chargement</h3>
         <p>{{ error }}</p>
-        <button @click="loadDashboardData" class="retry-btn">
+        <button @click="handleRetryClick" class="retry-btn">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                   d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
@@ -32,7 +32,7 @@
         <DashboardHero
             :summary="dashboardData.summary"
             :date="dashboardData.date"
-            :employees="allEmployees"
+            :employees="employeesForFilter"
             :all-employees="dashboardData.employees"
             @filter-change="handleFilterChange"
         />
@@ -69,7 +69,7 @@
           <div class="pointage-section">
             <EmployeeViewPointage
                 :employees="displayedEmployees"
-                :selectedEmployee="selectedEmployee"
+                :selectedEmployee="selectedEmployee as any"
                 @employee-click="handleEmployeeClick"
                 @close="closeEmployeePanel"
             />
@@ -82,7 +82,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed } from 'vue';
+import {ref, computed, onMounted, onUnmounted} from 'vue';
 import { useUserStore } from '@/stores/userStore';
 import UserService from '../../service/UserService';
 import DashboardHero from '../dashboard/dashboardHero.vue';
@@ -97,11 +97,19 @@ import type {
   TransformedEmployee,
 } from '@/service/UserService';
 
+// Interface pour les employés dans le filtre (DashboardHero)
+interface EmployeeForFilter {
+  id: string | number;
+  name: string;
+}
+
 // Store et états
 const userStore = useUserStore();
 const loading = ref<boolean>(true);
 const error = ref<string | null>(null);
 const dashboardData = ref<DashboardData | null>(null);
+
+// ✅ FIX: Typer correctement selectedEmployee
 const selectedEmployee = ref<TransformedEmployee | null>(null);
 
 // Filtres actifs
@@ -115,6 +123,16 @@ const activeFilters = ref({
 
 // Flag pour savoir si on a appliqué des filtres
 const hasAppliedFilters = ref(false);
+
+// Transformer les employés pour le filtre avec la propriété 'id'
+const employeesForFilter = computed<EmployeeForFilter[]>(() => {
+  if (!dashboardData.value) return [];
+
+  return dashboardData.value.employees.map(emp => ({
+    id: emp.guid,
+    name: emp.name
+  }));
+});
 
 // Tous les employés (pour les filtres)
 const allEmployees = computed(() => {
@@ -140,7 +158,6 @@ const filteredEmployees = computed(() => {
 });
 
 // Vérifier si on doit afficher l'évolution et les insights
-// Affiche automatiquement quand viewMode === 'analytics' (période sélectionnée)
 const shouldShowAnalytics = computed(() => {
   return activeFilters.value.viewMode === 'analytics'
 });
@@ -172,7 +189,6 @@ const periodLabel = computed(() => {
 
 /**
  * Gère le changement de filtres depuis le Hero
- * L'affichage de l'évolution se fait automatiquement selon viewMode
  */
 const handleFilterChange = async (filters: {
   startDate: string;
@@ -192,10 +208,8 @@ const handleFilterChange = async (filters: {
     viewMode: filters.viewMode
   };
 
-  // Marquer que des filtres ont été appliqués
   hasAppliedFilters.value = true;
 
-  // Recharger les données uniquement si en mode analytique (période)
   if (filters.viewMode === 'analytics') {
     console.log('🔄 Rechargement des données pour la période...');
     await loadDashboardData(filters.startDate, filters.endDate);
@@ -212,14 +226,12 @@ const loadDashboardData = async (startDate?: string, endDate?: string) => {
     loading.value = true;
     error.value = null;
 
-    // Vérifier que l'utilisateur est connecté
     if (!userStore.user?.guid) {
       throw new Error('Utilisateur non connecté');
     }
 
     console.log('🔄 Chargement des données du dashboard pour:', userStore.user.guid);
 
-    // Récupérer les données via le service
     const data = await UserService.getDashboardData(
         userStore.user.guid,
         startDate,
@@ -243,11 +255,16 @@ const loadDashboardData = async (startDate?: string, endDate?: string) => {
   }
 };
 
+const handleRetryClick = () => {
+  loadDashboardData();
+};
+
 /**
- * Gère le clic sur un employé
+ * ✅ FIX: S'assurer que l'employé sélectionné a le bon type
  */
 const handleEmployeeClick = (employee: TransformedEmployee) => {
   console.log('👤 Employé sélectionné:', employee.name);
+  // Vérifier que l'employé a toutes les propriétés requises
   selectedEmployee.value = employee;
 };
 
@@ -256,8 +273,6 @@ const handleEmployeeClick = (employee: TransformedEmployee) => {
  */
 const handleDayClick = (date: string) => {
   console.log('📅 Jour critique cliqué:', date);
-  // Vous pouvez ajouter une logique pour filtrer par ce jour spécifique
-  // ou afficher un modal avec plus de détails
 };
 
 /**
@@ -265,7 +280,6 @@ const handleDayClick = (date: string) => {
  */
 const handleMemoClick = (employee: TransformedEmployee) => {
   console.log('📝 Mémo pour:', employee.name);
-  // Implémenter la logique pour ouvrir un mémo
 };
 
 /**
@@ -285,15 +299,11 @@ const refreshDashboard = () => {
   );
 };
 
-// Chargement initial
-import { onMounted, onUnmounted } from 'vue';
-
 let refreshInterval: number | undefined;
 
 onMounted(() => {
   loadDashboardData();
 
-  // Optionnel: rafraîchir automatiquement toutes les 5 minutes
   refreshInterval = window.setInterval(() => {
     refreshDashboard();
   }, 5 * 60 * 1000);
@@ -305,7 +315,6 @@ onUnmounted(() => {
   }
 });
 
-// Exposer les méthodes pour usage externe si nécessaire
 defineExpose({
   refreshDashboard,
 });
@@ -316,12 +325,12 @@ defineExpose({
    Layout global
 ========================= */
 
-.dashboard-container {
+/*.dashboard-container {
   display: flex;
   flex-direction: column;
   min-height: 100vh;
-  background: radial-gradient(circle,rgba(255, 222, 89, 1) 0%, rgba(6, 78, 171, 1) 90%);
-}
+  background: linear-gradient(90deg, rgba(0, 74, 173, 0.85) 0%, rgba(166, 200, 239, 0.73) 30%, rgba(67, 136, 228, 0.93) 70%)
+} */
 
 /* Zone centrale */
 .dashboard-main {

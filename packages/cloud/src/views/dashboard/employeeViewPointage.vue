@@ -4,8 +4,8 @@
     <!-- ================= HEADER ================= -->
     <div class="panel-header">
       <h3>
-        Pointages des Employés
-        <span class="count">({{ workingEmployees.length }})</span>
+        Pointages du jour
+        <span class="count">({{ presentEmployees.length }}/{{ totalEmployees }})</span>
       </h3>
     </div>
 
@@ -14,44 +14,40 @@
       ⏱ Mis à jour il y a {{ lastUpdateMinutes }} min
     </div>
 
-    <!-- ================= INFO MESSAGE (si des employés sont exclus) ================= -->
-    <div v-if="offDayEmployees.length > 0" class="info-banner">
-      ℹ️ {{ offDayEmployees.length }} employé(s) en repos aujourd'hui (non affiché{{ offDayEmployees.length > 1 ? 's' : '' }})
-    </div>
-
     <!-- ================= EMPTY STATE ================= -->
-    <div v-if="workingEmployees.length === 0" class="empty-state">
+    <div v-if="presentEmployees.length === 0" class="empty-state">
       <div class="empty-icon">📋</div>
-      <p class="empty-title">Aucun employé prévu aujourd'hui</p>
-      <p class="empty-text">Tous les employés sont en repos</p>
+      <p class="empty-title">Aucun employé présent</p>
+      <p class="empty-text">{{ loading ? 'Chargement...' : 'Aucun pointage enregistré aujourd\'hui' }}</p>
     </div>
 
     <!-- ================= LIST ================= -->
     <div v-else class="employee-list">
 
       <div
-        v-for="employee in sortedWorkingEmployees"
-        :key="employee.guid"
-        class="employee-item"
-        :class="{ expanded: selectedEmployee?.guid === employee.guid }"
+          v-for="employee in sortedPresentEmployees"
+          :key="employee.guid"
+          class="employee-item"
+          :class="{ expanded: selectedEmployee?.guid === employee.guid }"
       >
         <!-- ========== COMPACT ROW ========== -->
         <div class="employee-compact" @click="toggleEmployee(employee)">
           <div class="employee-left">
             <div class="avatar">
-              <img v-if="employee.avatar" :src="employee.avatar" />
+              <img v-if="employee.avatar" :src="employee.avatar" :alt="employee.name" />
               <span v-else class="initials">{{ employee.initials }}</span>
-              <span :class="['status-dot', `dot-${employee.statusColor}`]" />
+              <span :class="['status-dot', getStatusDotClass(employee.statusColor)]" />
             </div>
 
             <div class="employee-info">
               <strong class="name">{{ employee.name }}</strong>
+              <span class="department">{{ employee.department }}</span>
             </div>
           </div>
 
           <div class="employee-right">
             <span class="status-badge" :class="`badge-${employee.status}`">
-              {{ formatStatus(employee.status) }}
+              {{ employee.statusText }}
             </span>
 
             <button class="expand-btn" :class="{ rotated: selectedEmployee?.guid === employee.guid }">
@@ -64,12 +60,13 @@
         <transition name="expand">
           <div v-if="selectedEmployee?.guid === employee.guid" class="employee-details">
 
-            <div class="schedule-timeline">
+            <!-- Timeline seulement si l'employé a des événements -->
+            <div v-if="getEmployeeTimeline(employee).length > 0" class="schedule-timeline">
               <div
-                v-for="event in getEmployeeTimeline(employee)"
-                :key="event.type + event.time"
-                class="timeline-item"
-                :class="getStatusClass(event.type)"
+                  v-for="event in getEmployeeTimeline(employee)"
+                  :key="event.type + event.time"
+                  class="timeline-item"
+                  :class="getStatusClass(event.type)"
               >
                 <div class="timeline-icon">{{ getStatusIcon(event.type) }}</div>
                 <div class="timeline-content">
@@ -80,8 +77,19 @@
               </div>
             </div>
 
-            <div v-if="employee.delayText" class="delay-info">
-              ⚠ Retard de {{ employee.delayText }}
+            <!-- Message si aucun pointage -->
+            <div v-else class="no-timeline-info">
+              ℹ️ Aucun pointage enregistré pour aujourd'hui
+            </div>
+
+            <!-- Info retard si présent -->
+            <div v-if="employee.today?.delay_text" class="delay-info">
+              ⚠ Retard de {{ employee.today.delay_text }}
+            </div>
+
+            <!-- Durée de travail si disponible -->
+            <div v-if="employee.today?.work_hours" class="work-hours-info">
+              ⏰ Temps de travail: {{ formatWorkHours(employee.today.work_hours) }}
             </div>
 
           </div>
@@ -92,11 +100,24 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed } from 'vue'
-import type { TransformedEmployee } from '@/service/UserService'
+import { ref, computed, onMounted, onUnmounted } from 'vue'
+import { useRouter } from 'vue-router'
+import { useUserStore } from "@/stores/userStore"
+import EntriesService from "@/service/EntriesService"
+import type {
+  PeriodAttendanceResponse,
+  TransformedEmployee,
+} from '@/utils/interfaces/employeeAttendances'
+import {
+  transformApiResponse,
+  getPresentEmployees,
+  formatTime,
+} from '@/utils/interfaces/employeeAttendances'
+
+const userStore = useUserStore()
+const router = useRouter()
 
 interface Props {
-  employees: TransformedEmployee[]
   selectedEmployee?: TransformedEmployee | null
 }
 
@@ -104,63 +125,114 @@ const props = defineProps<Props>()
 const emit = defineEmits(['employee-click', 'close'])
 
 // ================== REACTIVES ==================
-const lastUpdateMinutes = ref(1)
+const employees = ref<TransformedEmployee[]>([])
+const loading = ref(false)
+const error = ref<string | null>(null)
+const lastUpdateMinutes = ref(0)
+let updateInterval: number | null = null
+let refreshInterval: number | null = null
 
 // ================== COMPUTEDS ==================
+const currentUserGuid = computed(() => userStore.user?.guid || '')
 
 /**
- * Filtre pour ne garder QUE les employés censés travailler aujourd'hui
- * (exclut ceux en "off-day" ou repos)
+ * Total des employés (tous statuts confondus)
  */
-const workingEmployees = computed(() => {
-  return props.employees.filter(emp => {
-    // Exclure les employés en jour de repos
-    return emp.status !== 'off-day'
-  })
-})
+const totalEmployees = computed(() => employees.value.length)
 
 /**
- * Employés en repos (pour afficher l'info banner)
+ * Filtre pour ne garder QUE les employés présents
+ * (present, active, late, on-pause, external-mission)
  */
-const offDayEmployees = computed(() => {
-  return props.employees.filter(emp => emp.status === 'off-day')
-})
+const presentEmployees = computed(() => getPresentEmployees(employees.value))
 
 /**
- * Liste triée alphabétiquement des employés qui travaillent
+ * Liste triée alphabétiquement des employés présents
  */
-const sortedWorkingEmployees = computed(() =>
-  [...workingEmployees.value].sort((a, b) => a.name.localeCompare(b.name))
+const sortedPresentEmployees = computed(() =>
+    [...presentEmployees.value].sort((a, b) => a.name.localeCompare(b.name, 'fr'))
 )
+
+console.log('Employés présents:', sortedPresentEmployees.value)
+
+// ================== DATA LOADING ==================
+
+/**
+ * Charge les données de présence depuis la nouvelle API
+ */
+const loadEmployeeData = async () => {
+  try {
+    loading.value = true
+    error.value = null
+
+    // Récupérer les données de présence depuis l'API
+    const response = await EntriesService.listEntries(
+        currentUserGuid.value
+    )
+
+    console.log("Raw API Response:", response)
+
+    // Vérifier la structure de la réponse
+    if (!response?.success) {
+      throw new Error('API returned unsuccessful response')
+    }
+
+    const apiResponse = response as PeriodAttendanceResponse
+
+    // Transformer les données de l'API
+    const transformedEmployees = transformApiResponse(apiResponse)
+
+    employees.value = transformedEmployees
+    console.log(`Successfully loaded ${transformedEmployees.length} employees`)
+    console.log(`Present employees: ${presentEmployees.value.length}`)
+
+    // Réinitialiser le compteur de mise à jour
+    lastUpdateMinutes.value = 0
+
+  } catch (err) {
+    error.value = err instanceof Error ? err.message : 'Erreur lors du chargement des données'
+    console.error('Failed to load employee data:', err)
+  } finally {
+    loading.value = false
+  }
+}
+
+/**
+ * Rafraîchit les données
+ */
+const refresh = async () => {
+  await loadEmployeeData()
+}
 
 // ================== HELPERS ==================
 const toggleEmployee = (employee: TransformedEmployee) =>
-  props.selectedEmployee?.guid === employee.guid
-    ? emit('close')
-    : emit('employee-click', employee)
-
-const formatStatus = (s: string) =>
-  ({
-    present: 'Présent',
-    late: 'Retard',
-    absent: 'Absent',
-    'on-pause': 'Pause',
-    active: 'Mission',
-    'off-day': 'Repos'
-  } as any)[s] || s
+    props.selectedEmployee?.guid === employee.guid
+        ? emit('close')
+        : emit('employee-click', employee)
 
 /**
- * Récupère le dernier temps significatif de l'employé
+ * Convertit la couleur hexadécimale en classe CSS
  */
-const getLastTime = (employee: TransformedEmployee): string => {
-  // Priorité: clock_out > mission_end > pause_end > mission_start > pause_start > clock_in
-  if (employee.clockOutTime) return employee.clockOutTime
-  if (employee.mission_end_time) return employee.mission_end_time
-  if (employee.pause_end_time) return employee.pause_end_time
-  if (employee.mission_start_time) return employee.mission_start_time
-  if (employee.pause_start_time) return employee.pause_start_time
-  if (employee.actualTime) return employee.actualTime
-  return employee.expectedTime
+const getStatusDotClass = (color: string): string => {
+  const colorMap: Record<string, string> = {
+    '#10b981': 'dot-green',   // present
+    '#3b82f6': 'dot-blue',    // active
+    '#f59e0b': 'dot-orange',  // late
+    '#ef4444': 'dot-red',     // absent
+    '#6b7280': 'dot-gray',    // off-day
+    '#8b5cf6': 'dot-purple',  // on-pause
+    '#06b6d4': 'dot-cyan',    // external-mission
+  }
+  return colorMap[color] || 'dot-gray'
+}
+
+/**
+ * Formate les heures de travail (nombre décimal vers texte)
+ */
+const formatWorkHours = (hours: number): string => {
+  const h = Math.floor(hours)
+  const m = Math.round((hours - h) * 60)
+  return `${h}h ${m}min`
 }
 
 /**
@@ -169,57 +241,66 @@ const getLastTime = (employee: TransformedEmployee): string => {
 const getEmployeeTimeline = (employee: TransformedEmployee) => {
   const timeline: Array<{ type: string; label: string; time: string | null }> = []
 
+  // Si pas de données today, retourner tableau vide
+  if (!employee.today) return timeline
+
   // Arrivée
-  if (employee.actualTime || employee.expectedTime) {
+  if (employee.today.clock_in_time) {
     timeline.push({
       type: 'arrivee',
-      label: employee.actualTime ? 'Arrivée' : 'Arrivée prévue',
-      time: employee.actualTime || employee.expectedTime
+      label: 'Arrivée',
+      time: formatTime(employee.today.clock_in_time)
+    })
+  } else if (employee.today.expected_time) {
+    timeline.push({
+      type: 'arrivee_prevue',
+      label: 'Arrivée prévue',
+      time: employee.today.expected_time
     })
   }
 
   // Pause début
-  if (employee.pause_start_time) {
+  if (employee.today.pause_start_time) {
     timeline.push({
       type: 'pause_start',
       label: 'Début pause',
-      time: employee.pause_start_time
+      time: formatTime(employee.today.pause_start_time)
     })
   }
 
   // Pause fin
-  if (employee.pause_end_time) {
+  if (employee.today.pause_end_time) {
     timeline.push({
       type: 'pause_end',
       label: 'Fin pause',
-      time: employee.pause_end_time
+      time: formatTime(employee.today.pause_end_time)
     })
   }
 
   // Mission début
-  if (employee.mission_start_time) {
+  if (employee.today.mission_start_time) {
     timeline.push({
       type: 'mission_start',
       label: 'Début mission',
-      time: employee.mission_start_time
+      time: formatTime(employee.today.mission_start_time)
     })
   }
 
   // Mission fin
-  if (employee.mission_end_time) {
+  if (employee.today.mission_end_time && employee.today.mission_start_time) {
     timeline.push({
       type: 'mission_end',
       label: 'Fin mission',
-      time: employee.mission_end_time
+      time: formatTime(employee.today.mission_end_time)
     })
   }
 
   // Départ
-  if (employee.clockOutTime) {
+  if (employee.today.clock_out_time) {
     timeline.push({
       type: 'depart',
       label: 'Départ',
-      time: employee.clockOutTime
+      time: formatTime(employee.today.clock_out_time)
     })
   }
 
@@ -230,17 +311,19 @@ const getEmployeeTimeline = (employee: TransformedEmployee) => {
 const getStatusIcon = (type: string) => {
   return {
     arrivee: '✅',
+    arrivee_prevue: '🕐',
     depart: '⏹',
     mission_start: '🚀',
     mission_end: '🏁',
-    pause_start: '💤',
-    pause_end: '▶'
+    pause_start: '☕',
+    pause_end: '▶️'
   }[type] || '❔'
 }
 
 const getStatusClass = (type: string) => {
   return {
     arrivee: 'success',
+    arrivee_prevue: 'info light',
     depart: 'neutral',
     mission_start: 'info',
     mission_end: 'info light',
@@ -250,13 +333,51 @@ const getStatusClass = (type: string) => {
 }
 
 // ================== MEMO ==================
-const openEmployeeMemo = (employee: TransformedEmployee) => {
-  alert(`Ajouter mémo pour ${employee.name}`)
+const openMemo = (employee: TransformedEmployee, event: any) => {
+  router.push({
+    path: '/memoNew',
+    query: {
+      employeeGuid: employee.guid,
+      employeeName: employee.name,
+    }
+  })
 }
 
-const openMemo = (employee: TransformedEmployee, event: any) => {
-  alert(`Ajouter mémo pour ${employee.name} - ${event.label}`)
+// ================== AUTO-REFRESH ==================
+const startAutoRefresh = () => {
+  // Rafraîchir les données toutes les 30 secondes
+  refreshInterval = window.setInterval(() => {
+    refresh()
+  }, 30000)
+
+  // Mettre à jour le compteur "dernière mise à jour" toutes les minutes
+  updateInterval = window.setInterval(() => {
+    lastUpdateMinutes.value++
+  }, 60000)
 }
+
+const stopAutoRefresh = () => {
+  if (refreshInterval) {
+    clearInterval(refreshInterval)
+    refreshInterval = null
+  }
+  if (updateInterval) {
+    clearInterval(updateInterval)
+    updateInterval = null
+  }
+}
+
+// ================== LIFECYCLE ==================
+onMounted(async () => {
+  console.log("Mounting employeeViewPointage component...")
+  await loadEmployeeData()
+  startAutoRefresh()
+})
+
+onUnmounted(() => {
+  console.log("Unmounting employeeViewPointage component...")
+  stopAutoRefresh()
+})
 </script>
 
 <style scoped>
@@ -297,20 +418,6 @@ const openMemo = (employee: TransformedEmployee, event: any) => {
   margin-bottom: 12px;
 }
 
-/* ================= INFO BANNER ================= */
-.info-banner {
-  background: #eff6ff;
-  border: 1px solid #bfdbfe;
-  border-radius: 8px;
-  padding: 10px 12px;
-  font-size: 12px;
-  color: #1e40af;
-  margin-bottom: 12px;
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
-
 /* ================= EMPTY STATE ================= */
 .empty-state {
   flex: 1;
@@ -339,6 +446,17 @@ const openMemo = (employee: TransformedEmployee, event: any) => {
   font-size: 0.875rem;
   color: #64748b;
   margin: 0;
+}
+
+/* ================= NO TIMELINE INFO ================= */
+.no-timeline-info {
+  background: #f1f5f9;
+  border: 1px solid #cbd5e1;
+  border-radius: 8px;
+  padding: 12px;
+  font-size: 12px;
+  color: #475569;
+  text-align: center;
 }
 
 /* ================= EMPLOYEE LIST ================= */
@@ -382,6 +500,8 @@ const openMemo = (employee: TransformedEmployee, event: any) => {
   display: flex;
   gap: 10px;
   align-items: center;
+  flex: 1;
+  min-width: 0;
 }
 
 .employee-right {
@@ -399,6 +519,7 @@ const openMemo = (employee: TransformedEmployee, event: any) => {
   align-items: center;
   justify-content: center;
   position: relative;
+  flex-shrink: 0;
 }
 
 .avatar img {
@@ -429,11 +550,33 @@ const openMemo = (employee: TransformedEmployee, event: any) => {
 .dot-red { background: #b91c1c; }
 .dot-blue { background: #3b82f6; }
 .dot-gray { background: #64748b; }
+.dot-purple { background: #8b5cf6; }
+.dot-cyan { background: #06b6d4; }
+
+.employee-info {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  flex: 1;
+  min-width: 0;
+}
 
 .employee-info .name {
   font-size: 14px;
   font-weight: 600;
   color: #0f172a;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.employee-info .department {
+  font-size: 12px;
+  color: #64748b;
+  font-weight: 500;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .status-badge {
@@ -449,6 +592,7 @@ const openMemo = (employee: TransformedEmployee, event: any) => {
 .badge-on-pause { background: #fef3c7; color: #92400e; }
 .badge-active { background: #dbeafe; color: #1e40af; }
 .badge-off-day { background: #f1f5f9; color: #475569; }
+.badge-external-mission { background: #cffafe; color: #0e7490; }
 
 .time {
   font-size: 12px;
@@ -495,6 +639,7 @@ const openMemo = (employee: TransformedEmployee, event: any) => {
   flex-direction: column;
   gap: 10px;
   padding-left: 18px;
+  margin-bottom: 10px;
 }
 
 .schedule-timeline::before {
@@ -525,11 +670,11 @@ const openMemo = (employee: TransformedEmployee, event: any) => {
 }
 
 .success .timeline-icon { background: #22c55e; }
+.neutral .timeline-icon { background: #94a3b8; }
 .warning .timeline-icon { background: #f59e0b; }
 .warning.light .timeline-icon { background: #fbbf24; }
 .info .timeline-icon { background: #3b82f6; }
 .info.light .timeline-icon { background: #60a5fa; }
-.neutral .timeline-icon { background: #94a3b8; }
 
 .timeline-content {
   display: flex;
@@ -563,6 +708,16 @@ const openMemo = (employee: TransformedEmployee, event: any) => {
   font-weight: 500;
 }
 
+.work-hours-info {
+  margin-top: 10px;
+  font-size: 12px;
+  background: #eff6ff;
+  color: #1e40af;
+  padding: 8px 10px;
+  border-radius: 8px;
+  font-weight: 500;
+}
+
 .expand-enter-active, .expand-leave-active {
   transition: all 0.3s ease;
   overflow: hidden;
@@ -574,5 +729,28 @@ const openMemo = (employee: TransformedEmployee, event: any) => {
 .expand-enter-to, .expand-leave-from {
   max-height: 500px;
   opacity: 1;
+}
+
+/* ================= RESPONSIVE ================= */
+@media (max-width: 768px) {
+  .pointage-panel {
+    padding: 1.25rem;
+  }
+
+  .panel-header h3 {
+    font-size: 1.1rem;
+  }
+
+  .employee-compact {
+    padding: 0.875rem;
+  }
+
+  .employee-info .name {
+    font-size: 13px;
+  }
+
+  .employee-info .department {
+    font-size: 11px;
+  }
 }
 </style>

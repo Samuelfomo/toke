@@ -1,5 +1,6 @@
 <template>
-  <section class="manager-team">
+  <section class="min-h-screen overflow-x-hidden">
+    <!--  <section class="manager-team">-->
     <Header />
     <!-- Loading State - Seulement au chargement initial -->
     <div v-if="isLoadingEmployees" class="loading-container">
@@ -8,32 +9,37 @@
     </div>
     <!-- Main Content - Toujours visible après le chargement -->
     <template v-else>
-      <!-- Section Liste des Employés -->
+
+
       <div class="employees-table-section">
         <h2 class="section-title">Membres ({{ totalSubordinates }})</h2>
-        <button @click="navigateToEmployeeForm" class="btn-add-employee">
-          <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" class="btn-icon">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                  d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z">
-            </path>
-          </svg>
-          Ajouter un employé
-        </button>
-
-
-        <div class="search-bar-wrapper">
-          <div class="search-container">
-            <svg class="search-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
-            </svg>
-            <input
-              type="text"
-              v-model="searchTerm"
-              placeholder="Rechercher un employé..."
-              class="search-input"
-            >
+        <div class="flex justify-between items-start">
+          <div class="search-bar-wrapper w-full">
+            <div class="search-container">
+              <svg class="search-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
+              </svg>
+              <input
+                  type="text"
+                  v-model="searchTerm"
+                  placeholder="Rechercher un employé..."
+                  class="search-input"
+              >
+            </div>
           </div>
+
+          <button @click="navigateToEmployeeForm" class="btn-add-employee max-w-xs">
+            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" class="btn-icon">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                    d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z">
+              </path>
+            </svg>
+            Ajouter un employé
+          </button>
+
         </div>
+        <!-- Section Liste des Employés -->
+
 
         <!-- Empty State - Uniquement pour le tableau -->
         <div v-if="teamEmployees.length === 0" class="table-empty-state">
@@ -67,10 +73,10 @@
             <table class="employees-table">
               <tbody>
               <tr
-                v-for="employee in paginatedEmployees"
-                :key="employee.id"
-                @click="viewEmployeeDetail(employee.id)"
-                class="employee-row"
+                  v-for="employee in paginatedEmployees"
+                  :key="employee.id"
+                  @click="viewEmployeeDetail(employee.id)"
+                  class="employee-row"
               >
                 <td class="avatar-cell">
                   <div class="employee-avatar">
@@ -86,15 +92,15 @@
                 <td class="memo-cell">
                   <div class="memo-badge">
                     <span class="memo-label">M</span>
-                    <span class="memo-count">{{  0 }}</span>
+                    <span class="memo-count">{{ getMemoCount(employee.id) }}</span>
                   </div>
                 </td>
                 <td class="actions-cell" @click.stop>
                   <div class="employee-menu">
                     <button
-                      @click="toggleEmployeeMenu(employee.id)"
-                      class="menu-trigger"
-                      :class="{ 'active': activeEmployeeMenu === employee.id }">
+                        @click="toggleEmployeeMenu(employee.id)"
+                        class="menu-trigger"
+                        :class="{ 'active': activeEmployeeMenu === employee.id }">
                       <svg viewBox="0 0 24 24" fill="currentColor" class="menu-dots" width="20" height="20">
                         <circle cx="12" cy="5" r="2"></circle>
                         <circle cx="12" cy="12" r="2"></circle>
@@ -132,9 +138,9 @@
           <!-- Pagination -->
           <div v-if="totalPages > 1" class="pagination">
             <button
-              @click="changePage(currentPage - 1)"
-              :disabled="currentPage === 1"
-              class="pagination-btn"
+                @click="changePage(currentPage - 1)"
+                :disabled="currentPage === 1"
+                class="pagination-btn"
             >
               Précédent
             </button>
@@ -142,9 +148,9 @@
               Page {{ currentPage }} sur {{ totalPages }}
             </span>
             <button
-              @click="changePage(currentPage + 1)"
-              :disabled="currentPage === totalPages"
-              class="pagination-btn"
+                @click="changePage(currentPage + 1)"
+                :disabled="currentPage === totalPages"
+                class="pagination-btn"
             >
               Suivant
             </button>
@@ -157,9 +163,9 @@
   </section>
 
   <EmployeeForm
-    v-if="showAddEmployee"
-    @close="showAddEmployee = false"
-    @submit="handleEmployeeAdded"
+      v-if="showAddEmployee"
+      @close="showAddEmployee = false"
+      @submit="handleEmployeeAdded"
   />
 </template>
 
@@ -176,12 +182,14 @@ import { useUserStore } from '@/stores/userStore';
 import { useEmployee } from '@/utils/useEmployee';
 import EmployeeForm from '@/views/employeeForm.vue';
 import { TeamEmployee, useTeamStore } from '@/stores/teamStore';
+import { useMemoStore } from '@/stores/memoStore';
 
 // Stores (uniquement pour les infos utilisateur)
 const userStore = useUserStore()
 const employeeStore = useEmployee()
 const router = useRouter()
 const teamStore = useTeamStore()
+const memoStore = useMemoStore()
 
 // ==========================================
 // 🎯 DONNÉES LOCALES DE LA VUE
@@ -190,6 +198,14 @@ const teamStore = useTeamStore()
 const teamEmployees = computed(() => teamStore.employees)
 const isLoadingEmployees = computed(() => teamStore.isLoading)
 const totalSubordinates = computed(() => teamStore.totalEmployees)
+
+/**
+ * Retourne le nombre de mémos liés à un employé (comme auteur ou destinataire).
+ * Utilise getMemosByEmployee du memoStore — logique déjà existante.
+ */
+const getMemoCount = (employeeId: string): number => {
+  return memoStore.getMemosByEmployee(employeeId).length
+}
 
 // UI State
 const selectedDate = ref<Date>(new Date())
@@ -222,8 +238,8 @@ const navigateToEmployeeForm = () => {
 const filteredEmployees = computed(() => {
   let filtered = teamEmployees.value.filter(employee => {
     const matchesSearch = employee.name.toLowerCase().includes(searchTerm.value.toLowerCase()) ||
-      employee.position.toLowerCase().includes(searchTerm.value.toLowerCase()) ||
-      employee.email.toLowerCase().includes(searchTerm.value.toLowerCase())
+        employee.position.toLowerCase().includes(searchTerm.value.toLowerCase()) ||
+        employee.email.toLowerCase().includes(searchTerm.value.toLowerCase())
 
     return matchesSearch
   })
@@ -268,7 +284,7 @@ const changePage = (page: number) => {
 const toggleEmployeeMenu = (employeeId: string) => {
   console.log('menu clicked', employeeId)
   activeEmployeeMenu.value =
-    activeEmployeeMenu.value === employeeId ? null : employeeId
+      activeEmployeeMenu.value === employeeId ? null : employeeId
 }
 
 // 🔄 ACTUALISER LA LISTE
@@ -279,22 +295,15 @@ const editEmployee = (employee: any) => {
 
 // Modifier la fonction sendMemo pour accepter l'employé en paramètre
 const sendMemo = (employee: any) => {
-  console.log('📨 Envoi mémo pour:', employee.name, employee.id);
-
-  // Naviguer vers la page de création de mémo avec le GUID de l'employé
   router.push({
-    name: 'memoNew',  // ou '/memo/new' selon votre configuration de routes
-    params: {
-      employeeId: employee.id  // Le GUID de l'employé
-    },
+    path: '/memoNew',
     query: {
-      employeeName: employee.name,  // Optionnel: passer le nom aussi
-      employeeEmail: employee.email  // Optionnel: passer l'email aussi
+      employeeGuid: employee.id,
+      employeeName: employee.name,
     }
-  });
-
-  activeEmployeeMenu.value = null;
-};
+  })
+  activeEmployeeMenu.value = null
+}
 
 const deleteEmployee = (employee: TeamEmployee) => {
   if (confirm(`Êtes-vous sûr de vouloir supprimer ${employee.name} de l'équipe ?`)) {

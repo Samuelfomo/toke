@@ -6,37 +6,35 @@
       <div class="metric-card present">
         <div class="metric-circle">
           <div class="circle-content">
-
             <span class="metric-value">{{ presentRate }}%</span>
-
           </div>
           <svg class="circle-svg" viewBox="0 0 120 120">
             <circle
-              class="circle-bg"
-              cx="60"
-              cy="60"
-              r="54"
-              fill="none"
-              stroke="#d1fae5"
-              stroke-width="8"
+                class="circle-bg"
+                cx="60"
+                cy="60"
+                r="54"
+                fill="none"
+                stroke="#d1fae5"
+                stroke-width="8"
             />
             <circle
-              class="circle-progress"
-              cx="60"
-              cy="60"
-              r="54"
-              fill="none"
-              stroke="#22c55e"
-              stroke-width="8"
-              :stroke-dasharray="circumference"
-              :stroke-dashoffset="presentOffset"
-              transform="rotate(-90 60 60)"
+                class="circle-progress"
+                cx="60"
+                cy="60"
+                r="54"
+                fill="none"
+                stroke="#22c55e"
+                stroke-width="8"
+                :stroke-dasharray="circumference"
+                :stroke-dashoffset="presentOffset"
+                transform="rotate(-90 60 60)"
             />
           </svg>
         </div>
         <div class="metric-info">
-          <span class="metric-label">Présent(e)s</span>
-          <span class="metric-percentage success">{{ totalPresent }}/{{ totalExpected }} à l'heure</span>
+          <span class="metric-label">Présence(s)</span>
+          <span class="metric-percentage success">sur {{ totalDaysInPeriod }} jours</span>
         </div>
       </div>
 
@@ -48,31 +46,31 @@
           </div>
           <svg class="circle-svg" viewBox="0 0 120 120">
             <circle
-              class="circle-bg"
-              cx="60"
-              cy="60"
-              r="54"
-              fill="none"
-              stroke="#fef3c7"
-              stroke-width="8"
+                class="circle-bg"
+                cx="60"
+                cy="60"
+                r="54"
+                fill="none"
+                stroke="#fef3c7"
+                stroke-width="8"
             />
             <circle
-              class="circle-progress"
-              cx="60"
-              cy="60"
-              r="54"
-              fill="none"
-              stroke="#f59e0b"
-              stroke-width="8"
-              :stroke-dasharray="circumference"
-              :stroke-dashoffset="lateOffset"
-              transform="rotate(-90 60 60)"
+                class="circle-progress"
+                cx="60"
+                cy="60"
+                r="54"
+                fill="none"
+                stroke="#f59e0b"
+                stroke-width="8"
+                :stroke-dasharray="circumference"
+                :stroke-dashoffset="lateOffset"
+                transform="rotate(-90 60 60)"
             />
           </svg>
         </div>
         <div class="metric-info">
-          <span class="metric-label">En retard</span>
-          <span class="metric-percentage warning"> {{ totalLate }}/{{ totalExpected }} en retards</span>
+          <span class="metric-label">retard(s)</span>
+          <span class="metric-percentage warning"> sur {{ totalDaysInPeriod }} jours</span>
         </div>
       </div>
 
@@ -84,77 +82,40 @@
           </div>
           <svg class="circle-svg" viewBox="0 0 120 120">
             <circle
-              class="circle-bg"
-              cx="60"
-              cy="60"
-              r="54"
-              fill="none"
-              stroke="#fee2e2"
-              stroke-width="8"
+                class="circle-bg"
+                cx="60"
+                cy="60"
+                r="54"
+                fill="none"
+                stroke="#fee2e2"
+                stroke-width="8"
             />
             <circle
-              class="circle-progress"
-              cx="60"
-              cy="60"
-              r="54"
-              fill="none"
-              stroke="#ef4444"
-              stroke-width="8"
-              :stroke-dasharray="circumference"
-              :stroke-dashoffset="absenceOffset"
-              transform="rotate(-90 60 60)"
+                class="circle-progress"
+                cx="60"
+                cy="60"
+                r="54"
+                fill="none"
+                stroke="#ef4444"
+                stroke-width="8"
+                :stroke-dasharray="circumference"
+                :stroke-dashoffset="absenceOffset"
+                transform="rotate(-90 60 60)"
             />
           </svg>
         </div>
         <div class="metric-info">
-          <span class="metric-label">Absents</span>
-          <span class="metric-percentage danger">{{ totalAbsences }}/{{ totalExpected }} absent(e)s</span>
+          <span class="metric-label">Absence(s)</span>
+          <span class="metric-percentage danger"> sur {{ totalDaysInPeriod }} jours</span>
         </div>
       </div>
-
-      <!-- Repos -->
-<!--      <div class="metric-card rest">-->
-<!--        <div class="metric-circle">-->
-<!--          <div class="circle-content">-->
-
-<!--            <span class="metric-value">{{ restRate }}%</span>-->
-<!--          </div>-->
-<!--          <svg class="circle-svg" viewBox="0 0 120 120">-->
-<!--            <circle-->
-<!--              class="circle-bg"-->
-<!--              cx="60"-->
-<!--              cy="60"-->
-<!--              r="54"-->
-<!--              fill="none"-->
-<!--              stroke="#e0e7ff"-->
-<!--              stroke-width="8"-->
-<!--            />-->
-<!--            <circle-->
-<!--              class="circle-progress"-->
-<!--              cx="60"-->
-<!--              cy="60"-->
-<!--              r="54"-->
-<!--              fill="none"-->
-<!--              stroke="#6366f1"-->
-<!--              stroke-width="8"-->
-<!--              :stroke-dasharray="circumference"-->
-<!--              :stroke-dashoffset="restOffset"-->
-<!--              transform="rotate(-90 60 60)"-->
-<!--            />-->
-<!--          </svg>-->
-<!--        </div>-->
-<!--        <div class="metric-info">-->
-<!--          <span class="metric-label">Au repos</span>-->
-<!--          <span class="metric-percentage info"> {{ totalRest }}/{{ totalEmployees }} en repos</span>-->
-<!--        </div>-->
-<!--      </div>-->
     </div>
 
     <!-- ================= ÉVOLUTION SUR LA PÉRIODE ================= -->
     <div class="evolution-card">
       <h3 class="evolution-title">
-        📊 Évolution sur la période
-        <span class="evolution-subtitle">Cliquez sur un jour pour voir le détail</span>
+        📊 {{ chartTitle }}
+        <span class="evolution-subtitle">{{ chartSubtitle }}</span>
       </h3>
 
       <div class="evolution-chart-container">
@@ -175,10 +136,6 @@
           <div class="legend-dot danger" :class="{ disabled: !datasetsVisibility.absent }"></div>
           <span :class="{ disabled: !datasetsVisibility.absent }">Absents</span>
         </div>
-<!--        <div class="legend-item" @click="toggleDataset('rest')">-->
-<!--          <div class="legend-dot info" :class="{ disabled: !datasetsVisibility.rest }"></div>-->
-<!--          <span :class="{ disabled: !datasetsVisibility.rest }">Repos</span>-->
-<!--        </div>-->
       </div>
     </div>
 
@@ -188,8 +145,20 @@
         <div class="modal-container" @click.stop>
           <div class="modal-header">
             <div>
-              <h3 class="modal-title">📅 Détails du {{ formatDate(selectedDay?.date || '') }}</h3>
-              <p class="modal-subtitle">{{ selectedDay?.expected }} employés attendus</p>
+              <h3 class="modal-title">
+                <span v-if="selectedTimeSlot">⏱ Pointages de {{ selectedTimeSlot }}</span>
+                <span v-else>📅 Détails du {{ formatDate(selectedDay?.date || '') }}</span>
+              </h3>
+              <p class="modal-subtitle">
+                <span v-if="selectedTimeSlot">
+                  {{ selectedDayEmployees.present.length + selectedDayEmployees.late.length }}
+                  employé{{ selectedDayEmployees.present.length + selectedDayEmployees.late.length > 1 ? 's' : '' }}
+                  arrivé{{ selectedDayEmployees.present.length + selectedDayEmployees.late.length > 1 ? 's' : '' }}
+                  à {{ selectedTimeSlot }}
+                  — <button class="link-btn" @click="selectedTimeSlot = null">Voir tous</button>
+                </span>
+                <span v-else>{{ selectedDay?.expected }} employés attendus</span>
+              </p>
             </div>
             <button class="modal-close" @click="closeDayDetails">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
@@ -237,28 +206,16 @@
                   <span class="summary-label">Absents</span>
                 </div>
               </div>
-
-<!--              <div class="summary-card rest-card">-->
-<!--                <div class="summary-icon">-->
-<!--                  <svg viewBox="0 0 24 24" fill="currentColor">-->
-<!--                    <path d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"/>-->
-<!--                  </svg>-->
-<!--                </div>-->
-<!--                <div class="summary-info">-->
-<!--                  <span class="summary-value">{{ selectedDayEmployees.rest.length }}</span>-->
-<!--                  <span class="summary-label">Au repos</span>-->
-<!--                </div>-->
-<!--              </div>-->
             </div>
 
             <!-- Listes des employés par statut -->
             <div class="employees-tabs">
               <button
-                v-for="tab in tabs"
-                :key="tab.key"
-                class="tab-button"
-                :class="{ active: activeTab === tab.key }"
-                @click="activeTab = tab.key"
+                  v-for="tab in tabs"
+                  :key="tab.key"
+                  class="tab-button"
+                  :class="{ active: activeTab === tab.key }"
+                  @click="activeTab = tab.key"
               >
                 <span class="tab-badge" :class="tab.badgeClass">
                   {{ selectedDayEmployees[tab.key].length }}
@@ -271,10 +228,11 @@
               <transition name="fade" mode="out-in">
                 <div :key="activeTab" class="employee-group">
                   <div
-                    v-for="emp in selectedDayEmployees[activeTab]"
-                    :key="emp.guid"
-                    class="employee-card"
-                    @click="$emit('employee-click', emp)"
+                      v-for="emp in selectedDayEmployees[activeTab]"
+                      :key="emp.guid"
+                      class="employee-card employee-card--clickable"
+                      @click="goToEmployeeDay(emp)"
+                      :title="`Voir les pointages de ${emp.name} pour ce jour`"
                   >
                     <div class="employee-avatar" :style="{ backgroundImage: emp.avatar ? `url(${emp.avatar})` : 'none' }">
                       {{ !emp.avatar ? emp.initials : '' }}
@@ -286,9 +244,10 @@
                     <div v-if="activeTab === 'late' && emp.dayDetail?.delay_minutes" class="delay-badge">
                       {{ formatDelay(emp.dayDetail.delay_minutes) }}
                     </div>
-                    <div v-if="activeTab === 'present' && emp.dayDetail?.check_in_time" class="time-badge">
-                      {{ emp.dayDetail.check_in_time }}
+                    <div v-if="activeTab === 'present' && emp.dayDetail?.clock_in_time" class="time-badge">
+                      {{ emp.dayDetail.clock_in_time }}
                     </div>
+                    <div class="nav-arrow">→</div>
                   </div>
 
                   <div v-if="selectedDayEmployees[activeTab].length === 0" class="empty-state">
@@ -330,10 +289,10 @@
       <transition name="slide-fade">
         <div v-show="!hideRiskEmployees" class="alert-content">
           <div
-            v-for="emp in atRiskEmployees"
-            :key="emp.guid"
-            class="risk-employee-item"
-            @click="$emit('employee-click', emp)"
+              v-for="emp in atRiskEmployees"
+              :key="emp.guid"
+              class="risk-employee-item"
+              @click="$emit('employee-click', emp)"
           >
             <div class="employee-avatar" :style="{ backgroundImage: emp.avatar ? `url(${emp.avatar})` : 'none' }">
               {{ !emp.avatar ? emp.initials : '' }}
@@ -370,7 +329,6 @@
         <div class="alert-icon-wrapper danger">
           <svg viewBox="0 0 24 24" fill="currentColor">
             <path d="M8 2v4M16 2v4M3 10h18M5 4h14a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2z"/>
-<!--            <circle cx="18" cy="6" r="4" fill="#ef4444"/>-->
           </svg>
         </div>
         <div>
@@ -390,10 +348,10 @@
       <transition name="slide-fade">
         <div v-show="!hideCriticalDays" class="alert-content">
           <div
-            v-for="day in criticalDays"
-            :key="day.date"
-            class="critical-day-item"
-            @click="handleDayClick(day)"
+              v-for="day in criticalDays"
+              :key="day.date"
+              class="critical-day-item"
+              @click="handleDayClick(day)"
           >
             <div class="day-date">
               <span class="date-text">{{ formatDate(day.date) }}</span>
@@ -412,10 +370,6 @@
                 <span class="stat-label">Absents</span>
                 <span class="stat-value danger">{{ day.absent }}</span>
               </div>
-<!--              <div class="stat-group">-->
-<!--                <span class="stat-label">Repos</span>-->
-<!--                <span class="stat-value info">{{ day.rest }}</span>-->
-<!--              </div>-->
             </div>
           </div>
         </div>
@@ -427,6 +381,7 @@
 
 <script setup lang="ts">
 import { ref, computed } from 'vue'
+import { useRouter } from 'vue-router'
 import type { TransformedEmployee } from '@/service/UserService'
 import {
   Chart as ChartJS,
@@ -437,19 +392,21 @@ import {
   Title,
   Tooltip,
   Legend,
-  Filler
+  Filler,
+  ScatterController,
 } from 'chart.js'
-import { Line } from 'vue-chartjs'
+import { Line, Scatter } from 'vue-chartjs'
 
 ChartJS.register(
-  CategoryScale,
-  LinearScale,
-  PointElement,
-  LineElement,
-  Title,
-  Tooltip,
-  Legend,
-  Filler
+    CategoryScale,
+    LinearScale,
+    PointElement,
+    LineElement,
+    Title,
+    Tooltip,
+    Legend,
+    Filler,
+    ScatterController,
 )
 
 interface Props {
@@ -466,18 +423,29 @@ const emit = defineEmits<{
   (e: 'day-click', date: string): void
 }>()
 
+const router = useRouter()
+
+// Navigation vers la page de détail des pointages d'un employé pour un jour précis
+const goToEmployeeDay = (emp: TransformedEmployee & { dayDetail?: any }) => {
+  const date = selectedDay.value?.date || ''
+  router.push({
+    name: 'employeeAttendanceView',
+    params: { id: emp.guid, query: date },
+    query: { date }
+  })
+}
+
 // États
 const hideRiskEmployees = ref(false)
 const hideCriticalDays = ref(false)
 const showDayDetailsModal = ref(false)
 const selectedDay = ref<any>(null)
-const activeTab = ref<'present' | 'late' | 'absent' | 'rest'>('present')
+const activeTab = ref<'present' | 'late' | 'absent'>('present')
 
 const datasetsVisibility = ref({
   present: true,
   late: true,
-  absent: true,
-  rest: true
+  absent: true
 })
 
 // Tabs configuration
@@ -485,26 +453,27 @@ const tabs = [
   { key: 'present' as const, label: 'Présents à l\'heure', badgeClass: 'success', emptyLabel: 'présent à l\'heure' },
   { key: 'late' as const, label: 'En retard', badgeClass: 'warning', emptyLabel: 'en retard' },
   { key: 'absent' as const, label: 'Absents', badgeClass: 'danger', emptyLabel: 'absent' },
-  // { key: 'rest' as const, label: 'Au repos', badgeClass: 'info', emptyLabel: 'au repos' }
 ]
 
 // Métriques globales
+// On utilise dailyData (qui résout les statuts active/on-pause) comme source de vérité
+// plutôt que period_stats qui peut ne pas inclure les employés avec session ouverte.
 const totalEmployees = computed(() => props.employees.length)
 
 const totalExpected = computed(() => {
-  return props.employees.reduce((sum, emp) => sum + emp.period_stats.work_days_expected, 0)
+  return dailyData.value.reduce((sum, d) => sum + d.expected, 0)
 })
 
 const totalPresent = computed(() => {
-  return props.employees.reduce((sum, emp) => sum + emp.period_stats.present_days, 0)
+  return dailyData.value.reduce((sum, d) => sum + d.present, 0)
 })
 
 const totalLate = computed(() => {
-  return props.employees.reduce((sum, emp) => sum + emp.period_stats.late_days, 0)
+  return dailyData.value.reduce((sum, d) => sum + d.late, 0)
 })
 
 const totalAbsences = computed(() => {
-  return props.employees.reduce((sum, emp) => sum + emp.period_stats.absent_days, 0)
+  return dailyData.value.reduce((sum, d) => sum + d.absent, 0)
 })
 
 const totalRest = computed(() => {
@@ -544,14 +513,57 @@ const lateOffset = computed(() => circumference * (1 - lateRate.value / 100))
 const absenceOffset = computed(() => circumference * (1 - absenceRate.value / 100))
 const restOffset = computed(() => circumference * (1 - restRate.value / 100))
 
-// Employés à risque (taux < 60%)
+// Calcule le taux de présence réel d'un employé à partir de ses daily_details,
+// en résolvant correctement les statuts 'active' et 'on-pause' comme des présences/retards.
+// Cela corrige l'attendance_rate de l'API qui traite ces statuts comme des absences.
+const computeRealAttendanceRate = (emp: TransformedEmployee): number => {
+  let workDaysExpected = 0
+  let daysPresent = 0
+
+  emp.daily_details.forEach(day => {
+    const resolved = resolveStatus(day)
+    if (resolved === 'off-day') return
+
+    workDaysExpected++
+    if (resolved === 'present' || resolved === 'late') {
+      daysPresent++
+    }
+  })
+
+  if (workDaysExpected === 0) return 0
+  return (daysPresent / workDaysExpected) * 100
+}
+
+// Employés à risque (taux de présence réel < 60%)
 const atRiskEmployees = computed(() => {
   return props.employees
-    .filter(emp => emp.period_stats.attendance_rate < 60 && emp.period_stats.work_days_expected > 0)
-    .sort((a, b) => a.period_stats.attendance_rate - b.period_stats.attendance_rate)
+      .filter(emp => {
+        if (emp.period_stats.work_days_expected === 0) return false
+        const realRate = computeRealAttendanceRate(emp)
+        return realRate < 60
+      })
+      .map(emp => ({
+        ...emp,
+        period_stats: {
+          ...emp.period_stats,
+          attendance_rate: computeRealAttendanceRate(emp)
+        }
+      }))
+      .sort((a, b) => a.period_stats.attendance_rate - b.period_stats.attendance_rate)
 })
 
-// Agrégation quotidienne
+// Résolution du statut réel pour un daily_detail:
+// 'active' et 'on-pause' indiquent que l'employé est présent (session ouverte).
+// On les traduit en 'present' ou 'late' selon delay_minutes, exactement comme
+// dans UserService.transformEmployee(), pour que les graphiques soient cohérents.
+const resolveStatus = (day: { status: string; delay_minutes: number | null }): string => {
+  if (day.status === 'active' || day.status === 'on-pause') {
+    return (day.delay_minutes ?? 0) > 0 ? 'late' : 'present'
+  }
+  return day.status
+}
+
+// Agrégation quotidienne — utilise les statuts résolus
 const dailyData = computed(() => {
   const dateMap = new Map<string, {
     date: string
@@ -559,7 +571,6 @@ const dailyData = computed(() => {
     present: number
     late: number
     absent: number
-    // rest: number
   }>()
 
   props.employees.forEach(emp => {
@@ -571,25 +582,24 @@ const dailyData = computed(() => {
           present: 0,
           late: 0,
           absent: 0,
-          // rest: 0
         })
       }
 
       const data = dateMap.get(day.date)!
+      const resolvedStatus = resolveStatus(day)
 
-      if (day.status !== 'off-day') {
+      if (resolvedStatus !== 'off-day') {
         data.expected++
       }
 
-      if (day.status === 'present') data.present++
-      else if (day.status === 'late') data.late++
-      else if (day.status === 'absent') data.absent++
-      // else if (day.status === 'off-day') data.rest++
+      if (resolvedStatus === 'present') data.present++
+      else if (resolvedStatus === 'late') data.late++
+      else if (resolvedStatus === 'absent') data.absent++
     })
   })
 
   return Array.from(dateMap.values()).sort((a, b) =>
-    new Date(a.date).getTime() - new Date(b.date).getTime()
+      new Date(a.date).getTime() - new Date(b.date).getTime()
   )
 })
 
@@ -602,55 +612,160 @@ const criticalDays = computed(() => {
   })
 })
 
-// Employés pour le jour sélectionné
+// Convertit un ISO string ou "HH:mm" en "HH:mm" UTC (réutilisé ici pour le filtre)
+const toHHMM = (timeStr: string | null): string | null => {
+  if (!timeStr) return null
+  if (timeStr.includes('T') || timeStr.includes('Z')) {
+    const d = new Date(timeStr)
+    return `${d.getUTCHours().toString().padStart(2, '0')}:${d.getUTCMinutes().toString().padStart(2, '0')}`
+  }
+  return timeStr.length >= 5 ? timeStr.slice(0, 5) : null
+}
+
+// Employés du jour — filtrés par créneau horaire si selectedTimeSlot est défini
 const selectedDayEmployees = computed(() => {
   if (!selectedDay.value) {
-    return { present: [], late: [], absent: []}
+    return { present: [], late: [], absent: [] }
   }
 
   const date = selectedDay.value.date
+  const timeFilter = selectedTimeSlot.value  // "HH:mm" ou null
+
   const result: {
     present: (TransformedEmployee & { dayDetail?: any })[]
     late: (TransformedEmployee & { dayDetail?: any })[]
     absent: (TransformedEmployee & { dayDetail?: any })[]
-    // rest: (TransformedEmployee & { dayDetail?: any })[]
-  } = {
-    present: [],
-    late: [],
-    absent: [],
-    // rest: []
-  }
+  } = { present: [], late: [], absent: [] }
 
   props.employees.forEach(emp => {
     const dayDetail = emp.daily_details.find(d => d.date === date)
-    if (dayDetail) {
-      const empWithDetail = { ...emp, dayDetail }
+    if (!dayDetail) return
 
-      if (dayDetail.status === 'present') {
-        result.present.push(empWithDetail)
-      } else if (dayDetail.status === 'late') {
-        result.late.push(empWithDetail)
-      } else if (dayDetail.status === 'absent') {
-        result.absent.push(empWithDetail)
-      }
+    // Si filtre horaire actif, ne garder que les employés arrivés à ce créneau exact
+    if (timeFilter !== null) {
+      const clockInHHMM = toHHMM(dayDetail.clock_in_time)
+      if (clockInHHMM !== timeFilter) return
     }
+
+    const empWithDetail = { ...emp, dayDetail }
+    const resolved = resolveStatus(dayDetail)
+
+    if (resolved === 'present') result.present.push(empWithDetail)
+    else if (resolved === 'late') result.late.push(empWithDetail)
+    else if (resolved === 'absent' && !timeFilter) result.absent.push(empWithDetail)
   })
 
   return result
 })
 
-// Données du graphique d'évolution
+// Alias utilisé par handleTimeSlotClick avant que selectedDay soit défini
+const selectedDayEmployeesByTime = selectedDayEmployees
+
+// ============ DONNÉES RÉELLES DE POINTAGE — JOUR UNIQUE ============
+// Construit les labels (vraies heures HH:mm) et pour chaque heure,
+// le nombre d'employés arrivés à ce moment précis (présents ou en retard).
+// Pas de cumul — chaque point = combien sont arrivés à cette heure exacte.
+const buildRealClockInData = () => {
+  const toHHMM = (timeStr: string | null): string | null => {
+    if (!timeStr) return null
+    if (timeStr.includes('T') || timeStr.includes('Z')) {
+      const d = new Date(timeStr)
+      return `${d.getUTCHours().toString().padStart(2, '0')}:${d.getUTCMinutes().toString().padStart(2, '0')}`
+    }
+    return timeStr.length >= 5 ? timeStr.slice(0, 5) : null
+  }
+
+  const todayStr = dailyData.value[0]?.date || ''
+
+  // Compter combien d'employés sont arrivés à chaque heure exacte
+  const presentByTime = new Map<string, number>()
+  const lateByTime = new Map<string, number>()
+
+  props.employees.forEach(emp => {
+    const dayDetail = emp.daily_details.find(d => d.date === todayStr)
+    if (!dayDetail) return
+
+    const resolved = resolveStatus(dayDetail)
+    if (resolved !== 'present' && resolved !== 'late') return
+
+    const hhmm = toHHMM(dayDetail.clock_in_time)
+    if (!hhmm) return
+
+    if (resolved === 'present') {
+      presentByTime.set(hhmm, (presentByTime.get(hhmm) || 0) + 1)
+    } else {
+      lateByTime.set(hhmm, (lateByTime.get(hhmm) || 0) + 1)
+    }
+  })
+
+  // Tous les créneaux horaires distincts, triés
+  const allTimes = [...new Set([...presentByTime.keys(), ...lateByTime.keys()])].sort()
+
+  if (allTimes.length === 0) {
+    return { labels: ['—'], presentData: [0], lateData: [0] }
+  }
+
+  const presentData = allTimes.map(t => presentByTime.get(t) || 0)
+  const lateData = allTimes.map(t => lateByTime.get(t) || 0)
+
+  return { labels: allTimes, presentData, lateData }
+}
+
+// Déterminer si on est sur un jour unique ou une période
+const isSingleDay = computed(() => dailyData.value.length === 1)
+
+const totalDaysInPeriod = computed(() => {
+  // Obtenir toutes les dates uniques des daily_details
+  const uniqueDates = new Set<string>()
+  props.employees.forEach(emp => {
+    emp.daily_details.forEach(day => {
+      uniqueDates.add(day.date)
+    })
+  })
+  const days = uniqueDates.size
+  console.log('📅 totalDaysInPeriod:', days, 'dates:', Array.from(uniqueDates).sort())
+  return days
+})
+
+// Titres et sous-titres adaptatifs
+const chartTitle = computed(() => {
+  return isSingleDay.value ? 'Évolution de la journée' : 'Évolution sur la période'
+})
+
+const chartSubtitle = computed(() => {
+  return isSingleDay.value
+      ? 'Heures de pointage — survoler un point pour voir qui est arrivé'
+      : 'Cliquer sur un jour pour voir le détail'
+})
+
+// Données du graphique d'évolution - UNIFIÉ avec support jour unique
 const evolutionChartData = computed(() => {
-  const dates = dailyData.value.map(d =>
-    new Date(d.date).toLocaleDateString('fr-FR', { day: '2-digit', month: 'short' })
-  )
+  let labels, presentValues, lateValues, absentValues
+
+  if (isSingleDay.value && dailyData.value.length > 0) {
+    // MODE JOUR UNIQUE : vraies heures de pointage cumulatives
+    const realData = buildRealClockInData()
+    labels = realData.labels
+    presentValues = realData.presentData
+    lateValues = realData.lateData
+    // Les absents n'ont pas d'heure de pointage → dataset absent non tracé en mode jour unique
+    absentValues = realData.labels.map(() => 0)
+  } else {
+    // MODE PÉRIODE : Données quotidiennes normales
+    labels = dailyData.value.map(d =>
+        new Date(d.date).toLocaleDateString('fr-FR', { day: '2-digit', month: 'short' })
+    )
+    presentValues = dailyData.value.map(d => d.present)
+    lateValues = dailyData.value.map(d => d.late)
+    absentValues = dailyData.value.map(d => d.absent)
+  }
 
   const datasets = []
 
   if (datasetsVisibility.value.present) {
     datasets.push({
       label: 'Présents',
-      data: dailyData.value.map(d => d.present),
+      data: presentValues,
       borderColor: '#22c55e',
       backgroundColor: 'rgba(34, 197, 94, 0.1)',
       borderWidth: 3,
@@ -667,7 +782,7 @@ const evolutionChartData = computed(() => {
   if (datasetsVisibility.value.late) {
     datasets.push({
       label: 'En retard',
-      data: dailyData.value.map(d => d.late),
+      data: lateValues,
       borderColor: '#f59e0b',
       backgroundColor: 'rgba(245, 158, 11, 0.1)',
       borderWidth: 3,
@@ -684,7 +799,7 @@ const evolutionChartData = computed(() => {
   if (datasetsVisibility.value.absent) {
     datasets.push({
       label: 'Absents',
-      data: dailyData.value.map(d => d.absent),
+      data: absentValues,
       borderColor: '#ef4444',
       backgroundColor: 'rgba(239, 68, 68, 0.1)',
       borderWidth: 3,
@@ -698,34 +813,25 @@ const evolutionChartData = computed(() => {
     })
   }
 
-  // if (datasetsVisibility.value.rest) {
-  //   datasets.push({
-  //     label: 'Repos',
-  //     data: dailyData.value.map(d => d.rest),
-  //     borderColor: '#6366f1',
-  //     backgroundColor: 'rgba(99, 102, 241, 0.1)',
-  //     borderWidth: 3,
-  //     fill: true,
-  //     tension: 0.4,
-  //     pointRadius: 6,
-  //     pointHoverRadius: 8,
-  //     pointBackgroundColor: '#6366f1',
-  //     pointBorderColor: '#fff',
-  //     pointBorderWidth: 2
-  //   })
-  // }
-
   return {
-    labels: dates,
+    labels,
     datasets
   }
 })
 
-const evolutionChartOptions = {
+// Options du graphique - adaptées pour un ou plusieurs jours
+const evolutionChartOptions = computed(() => ({
   responsive: true,
   maintainAspectRatio: false,
   onClick: (event: any, elements: any[]) => {
-    if (elements.length > 0) {
+    if (elements.length === 0) return
+
+    if (isSingleDay.value) {
+      // Mode jour unique : ouvrir le modal filtré par l'heure cliquée
+      const timeLabel = evolutionChartData.value.labels[elements[0].index] as string
+      handleTimeSlotClick(timeLabel)
+    } else {
+      // Mode période : ouvrir le modal du jour cliqué
       const index = elements[0].index
       const day = dailyData.value[index]
       handleDayClick(day)
@@ -747,17 +853,33 @@ const evolutionChartOptions = {
       },
       callbacks: {
         title: function(context: any) {
-          const index = context[0].dataIndex
-          const day = dailyData.value[index]
-          return formatDate(day.date)
+          if (isSingleDay.value) {
+            return `Pointages à ${context[0].label}`
+          } else {
+            const index = context[0].dataIndex
+            const day = dailyData.value[index]
+            return formatDate(day.date)
+          }
         },
         afterTitle: function(context: any) {
-          const index = context[0].dataIndex
-          const day = dailyData.value[index]
-          return `${day.expected} employés attendus`
+          if (isSingleDay.value) {
+            return `${dailyData.value[0].expected} employés attendus`
+          } else {
+            const index = context[0].dataIndex
+            const day = dailyData.value[index]
+            return `${day.expected} employés attendus`
+          }
         },
         label: function(context: any) {
-          return `${context.dataset.label}: ${context.parsed.y} employé${context.parsed.y > 1 ? 's' : ''}`
+          const count = context.parsed.y
+          if (count === 0) return ''
+          return `${context.dataset.label}: ${count} employé${count > 1 ? 's' : ''}`
+        },
+        footer: function(context: any) {
+          if (isSingleDay.value) {
+            return 'Cliquez pour voir la liste'
+          }
+          return ''
         }
       }
     }
@@ -770,7 +892,9 @@ const evolutionChartOptions = {
       ticks: {
         font: {
           size: 11
-        }
+        },
+        maxRotation: isSingleDay.value ? 45 : 0,
+        minRotation: isSingleDay.value ? 45 : 0,
       }
     },
     y: {
@@ -786,7 +910,7 @@ const evolutionChartOptions = {
       }
     }
   }
-}
+}))
 
 // Méthodes
 const formatDelay = (minutes: number): string => {
@@ -815,13 +939,29 @@ const formatDate = (dateString: string): string => {
 const handleDayClick = (day: any) => {
   console.log('📅 Jour cliqué:', day)
   selectedDay.value = day
+  selectedTimeSlot.value = null   // pas de filtre horaire
   showDayDetailsModal.value = true
   activeTab.value = 'present'
+}
+
+// Créneau horaire sélectionné (mode jour unique — clic sur un point)
+const selectedTimeSlot = ref<string | null>(null)
+
+const handleTimeSlotClick = (time: string) => {
+  const day = dailyData.value[0]
+  if (!day) return
+  selectedDay.value = day
+  selectedTimeSlot.value = time
+  showDayDetailsModal.value = true
+  // Ouvrir l'onglet le plus pertinent : en retard si des retardataires, sinon présents
+  const hasLate = selectedDayEmployeesByTime.value.late.length > 0
+  activeTab.value = hasLate ? 'late' : 'present'
 }
 
 const closeDayDetails = () => {
   showDayDetailsModal.value = false
   selectedDay.value = null
+  selectedTimeSlot.value = null
 }
 
 const toggleDataset = (type: 'present' | 'late' | 'absent') => {
@@ -839,7 +979,7 @@ const toggleDataset = (type: 'present' | 'late' | 'absent') => {
 /* ================= METRICS CARDS ================= */
 .metrics-cards {
   display: grid;
-  grid-template-columns: repeat(5, 1fr);
+  grid-template-columns: repeat(3, 1fr);
   gap: 1rem;
 }
 
@@ -899,28 +1039,6 @@ const toggleDataset = (type: 'present' | 'late' | 'absent') => {
   font-weight: 600;
 }
 
-/* Icônes métriques */
-.metric-icon {
-  width: 56px;
-  height: 56px;
-  min-width: 56px;
-  border-radius: 12px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  color: white;
-}
-
-.metric-card.delay-max .metric-icon {
-  background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
-}
-
-.metric-icon svg {
-  width: 28px;
-  height: 28px;
-}
-
-/* Info métriques */
 .metric-info {
   display: flex;
   flex-direction: column;
@@ -930,33 +1048,21 @@ const toggleDataset = (type: 'present' | 'late' | 'absent') => {
 
 .metric-label {
   font-size: 0.875rem;
+  font-weight: 600;
   color: #64748b;
-  font-weight: 500;
-}
-
-.metric-value-text {
-  font-size: 1.75rem;
-  font-weight: 700;
-}
-
-.metric-value-text.success {
-  color: #22c55e;
-}
-
-.metric-value-text.warning {
-  color: #f59e0b;
 }
 
 .metric-percentage {
   font-size: 0.75rem;
-  font-weight: 600;
+  font-weight: 700;
   padding: 0.25rem 0.5rem;
   border-radius: 6px;
+  width: fit-content;
 }
 
 .metric-percentage.success {
-  background: #d1fae5;
-  color: #059669;
+  background: #dcfce7;
+  color: #16a34a;
 }
 
 .metric-percentage.warning {
@@ -982,6 +1088,7 @@ const toggleDataset = (type: 'present' | 'late' | 'absent') => {
   right: 0;
   bottom: 0;
   background: rgba(0, 0, 0, 0.5);
+  backdrop-filter: blur(4px);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -992,52 +1099,66 @@ const toggleDataset = (type: 'present' | 'late' | 'absent') => {
 .modal-container {
   background: white;
   border-radius: 20px;
-  max-width: 1000px;
+  max-width: 900px;
   width: 100%;
   max-height: 90vh;
+  overflow: hidden;
+  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
   display: flex;
   flex-direction: column;
-  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
 }
 
 .modal-header {
   display: flex;
-  align-items: flex-start;
   justify-content: space-between;
+  align-items: flex-start;
   padding: 2rem;
-  border-bottom: 2px solid #f1f5f9;
+  border-bottom: 1px solid #e2e8f0;
 }
 
 .modal-title {
   font-size: 1.5rem;
-  font-weight: 700;
+  font-weight: 800;
   color: #0f172a;
-  margin: 0;
+  margin: 0 0 0.25rem;
 }
 
 .modal-subtitle {
   font-size: 0.875rem;
   color: #64748b;
-  margin: 0.5rem 0 0;
+  margin: 0;
+}
+
+.link-btn {
+  background: none;
+  border: none;
+  color: #3b82f6;
+  cursor: pointer;
+  font-size: inherit;
+  padding: 0;
+  text-decoration: underline;
+  font-weight: 600;
+}
+.link-btn:hover {
+  color: #1d4ed8;
 }
 
 .modal-close {
-  width: 40px;
-  height: 40px;
+  width: 36px;
+  height: 36px;
   border-radius: 10px;
-  border: 1px solid #e2e8f0;
-  background: white;
+  background: #f1f5f9;
+  border: none;
+  cursor: pointer;
   display: flex;
   align-items: center;
   justify-content: center;
-  cursor: pointer;
   transition: all 0.2s ease;
   flex-shrink: 0;
 }
 
 .modal-close:hover {
-  background: #f8fafc;
-  border-color: #cbd5e1;
+  background: #e2e8f0;
 }
 
 .modal-close svg {
@@ -1047,47 +1168,53 @@ const toggleDataset = (type: 'present' | 'late' | 'absent') => {
 }
 
 .modal-body {
-  flex: 1;
-  overflow-y: auto;
   padding: 2rem;
+  overflow-y: auto;
+  flex: 1;
 }
 
-/* Summary Cards */
+/* Résumé du jour */
 .day-summary {
   display: grid;
-  grid-template-columns: repeat(4, 1fr);
+  grid-template-columns: repeat(3, 1fr);
   gap: 1rem;
   margin-bottom: 2rem;
 }
 
 .summary-card {
-  padding: 1.5rem;
-  border-radius: 12px;
+  background: white;
+  border-radius: 14px;
+  padding: 1.25rem;
   display: flex;
   align-items: center;
   gap: 1rem;
+  border: 2px solid #e2e8f0;
 }
 
 .summary-card.present-card {
-  background: linear-gradient(135deg, #d1fae5 0%, #a7f3d0 100%);
+  border-color: #22c55e;
+  background: linear-gradient(135deg, #f0fdf4, white);
 }
 
 .summary-card.late-card {
-  background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%);
+  border-color: #f59e0b;
+  background: linear-gradient(135deg, #fffbeb, white);
 }
 
 .summary-card.absent-card {
-  background: linear-gradient(135deg, #fee2e2 0%, #fecaca 100%);
+  border-color: #ef4444;
+  background: linear-gradient(135deg, #fef2f2, white);
 }
 
 .summary-card.rest-card {
-  background: linear-gradient(135deg, #e0e7ff 0%, #c7d2fe 100%);
+  border-color: #6366f1;
+  background: linear-gradient(135deg, #eef2ff, white);
 }
 
 .summary-icon {
   width: 48px;
   height: 48px;
-  border-radius: 10px;
+  border-radius: 12px;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -1096,27 +1223,24 @@ const toggleDataset = (type: 'present' | 'late' | 'absent') => {
 
 .present-card .summary-icon {
   background: #22c55e;
-  color: white;
 }
 
 .late-card .summary-icon {
   background: #f59e0b;
-  color: white;
 }
 
 .absent-card .summary-icon {
   background: #ef4444;
-  color: white;
 }
 
 .rest-card .summary-icon {
   background: #6366f1;
-  color: white;
 }
 
 .summary-icon svg {
   width: 24px;
   height: 24px;
+  color: white;
 }
 
 .summary-info {
@@ -1126,7 +1250,7 @@ const toggleDataset = (type: 'present' | 'late' | 'absent') => {
 }
 
 .summary-value {
-  font-size: 2rem;
+  font-size: 1.75rem;
   font-weight: 800;
   color: #0f172a;
   line-height: 1;
@@ -1135,7 +1259,7 @@ const toggleDataset = (type: 'present' | 'late' | 'absent') => {
 .summary-label {
   font-size: 0.875rem;
   font-weight: 600;
-  color: #475569;
+  color: #64748b;
 }
 
 /* Tabs */
@@ -1143,33 +1267,31 @@ const toggleDataset = (type: 'present' | 'late' | 'absent') => {
   display: flex;
   gap: 0.5rem;
   margin-bottom: 1.5rem;
-  border-bottom: 2px solid #f1f5f9;
+  border-bottom: 2px solid #e2e8f0;
   padding-bottom: 0.5rem;
 }
 
 .tab-button {
-  padding: 0.75rem 1.25rem;
-  border: none;
-  background: transparent;
-  border-radius: 8px;
-  font-weight: 600;
-  font-size: 0.875rem;
-  color: #64748b;
-  cursor: pointer;
-  transition: all 0.2s ease;
   display: flex;
   align-items: center;
   gap: 0.5rem;
+  padding: 0.75rem 1rem;
+  border: none;
+  background: transparent;
+  border-radius: 10px;
+  cursor: pointer;
+  font-weight: 600;
+  color: #64748b;
+  transition: all 0.2s ease;
 }
 
 .tab-button:hover {
   background: #f8fafc;
-  color: #0f172a;
 }
 
 .tab-button.active {
-  background: #f1f5f9;
-  color: #0f172a;
+  background: linear-gradient(135deg, #3b82f6, #2563eb);
+  color: white;
 }
 
 .tab-badge {
@@ -1179,29 +1301,35 @@ const toggleDataset = (type: 'present' | 'late' | 'absent') => {
   font-weight: 700;
 }
 
-.tab-badge.success {
-  background: #22c55e;
+.tab-button:not(.active) .tab-badge.success {
+  background: #dcfce7;
+  color: #16a34a;
+}
+
+.tab-button:not(.active) .tab-badge.warning {
+  background: #fef3c7;
+  color: #d97706;
+}
+
+.tab-button:not(.active) .tab-badge.danger {
+  background: #fee2e2;
+  color: #dc2626;
+}
+
+.tab-button:not(.active) .tab-badge.info {
+  background: #e0e7ff;
+  color: #4f46e5;
+}
+
+.tab-button.active .tab-badge {
+  background: rgba(255, 255, 255, 0.2);
   color: white;
 }
 
-.tab-badge.warning {
-  background: #f59e0b;
-  color: white;
-}
-
-.tab-badge.danger {
-  background: #ef4444;
-  color: white;
-}
-
-.tab-badge.info {
-  background: #6366f1;
-  color: white;
-}
-
-/* Employees List */
+/* Liste des employés */
 .employees-list {
-  min-height: 300px;
+  max-height: 400px;
+  overflow-y: auto;
 }
 
 .employee-group {
@@ -1216,32 +1344,32 @@ const toggleDataset = (type: 'present' | 'late' | 'absent') => {
   gap: 1rem;
   padding: 1rem;
   background: #f8fafc;
-  border: 1px solid #e2e8f0;
   border-radius: 12px;
+  border: 1px solid #e2e8f0;
   cursor: pointer;
   transition: all 0.2s ease;
 }
 
 .employee-card:hover {
   background: white;
-  border-color: #cbd5e1;
+  border-color: #3b82f6;
   transform: translateX(4px);
 }
 
 .employee-avatar {
   width: 48px;
   height: 48px;
-  min-width: 48px;
-  border-radius: 50%;
-  background: linear-gradient(135deg, #6366f1 0%, #4f46e5 100%);
+  border-radius: 12px;
+  background: linear-gradient(135deg, #3b82f6, #2563eb);
   color: white;
   display: flex;
   align-items: center;
   justify-content: center;
   font-weight: 700;
-  font-size: 0.875rem;
+  font-size: 1.125rem;
   background-size: cover;
   background-position: center;
+  flex-shrink: 0;
 }
 
 .employee-details {
@@ -1249,18 +1377,43 @@ const toggleDataset = (type: 'present' | 'late' | 'absent') => {
   flex-direction: column;
   gap: 0.25rem;
   flex: 1;
-  min-width: 0;
+}
+
+.employee-card--clickable {
+  cursor: pointer;
+  transition: background 0.15s, transform 0.15s, box-shadow 0.15s;
+}
+.employee-card--clickable:hover {
+  background: #f0f7ff;
+  transform: translateX(3px);
+  box-shadow: 0 2px 8px rgba(59, 130, 246, 0.12);
+}
+.employee-card--clickable:hover .employee-name {
+  color: #2563eb;
+  text-decoration: underline;
+}
+.nav-arrow {
+  margin-left: auto;
+  font-size: 16px;
+  color: #94a3b8;
+  transition: color 0.15s, transform 0.15s;
+  flex-shrink: 0;
+}
+.employee-card--clickable:hover .nav-arrow {
+  color: #2563eb;
+  transform: translateX(3px);
 }
 
 .employee-name {
+  font-size: 0.9375rem;
   font-weight: 700;
-  font-size: 0.95rem;
   color: #0f172a;
 }
 
 .employee-position {
-  font-size: 0.8rem;
+  font-size: 0.8125rem;
   color: #64748b;
+  font-weight: 500;
 }
 
 .delay-badge,
@@ -1269,13 +1422,16 @@ const toggleDataset = (type: 'present' | 'late' | 'absent') => {
   border-radius: 8px;
   font-weight: 700;
   font-size: 0.875rem;
+}
+
+.delay-badge {
   background: #fef3c7;
   color: #d97706;
 }
 
 .time-badge {
-  background: #d1fae5;
-  color: #059669;
+  background: #dcfce7;
+  color: #16a34a;
 }
 
 .empty-state {
@@ -1283,7 +1439,7 @@ const toggleDataset = (type: 'present' | 'late' | 'absent') => {
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  padding: 3rem;
+  padding: 3rem 1rem;
   color: #94a3b8;
 }
 
@@ -1291,90 +1447,90 @@ const toggleDataset = (type: 'present' | 'late' | 'absent') => {
   width: 64px;
   height: 64px;
   margin-bottom: 1rem;
+  stroke-width: 1.5;
 }
 
 .empty-state p {
-  font-size: 1rem;
-  font-weight: 500;
+  font-size: 0.9375rem;
+  font-weight: 600;
+  margin: 0;
 }
 
 /* ================= ALERT CARDS ================= */
 .alert-card {
   background: white;
   border-radius: 18px;
+  padding: 1.5rem;
   border: 1px solid #e2e8f0;
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
-  overflow: hidden;
 }
 
 .alert-header {
   display: flex;
   align-items: center;
   gap: 1rem;
-  padding: 1.5rem;
-  border-bottom: 2px solid #f1f5f9;
+  margin-bottom: 1.5rem;
 }
 
 .alert-icon-wrapper {
-  width: 56px;
-  height: 56px;
-  min-width: 56px;
-  border-radius: 50%;
+  width: 48px;
+  height: 48px;
+  border-radius: 12px;
   display: flex;
   align-items: center;
   justify-content: center;
-  color: white;
+  flex-shrink: 0;
 }
 
 .alert-icon-wrapper.danger {
-  background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+  background: linear-gradient(135deg, #ef4444, #dc2626);
 }
 
 .alert-icon-wrapper svg {
-  width: 28px;
-  height: 28px;
+  width: 24px;
+  height: 24px;
+  color: white;
 }
 
 .alert-title {
   font-size: 1.125rem;
   font-weight: 700;
   color: #0f172a;
-  margin: 0;
+  margin: 0 0 0.25rem;
 }
 
 .alert-subtitle {
   font-size: 0.875rem;
   color: #64748b;
-  margin: 0.25rem 0 0;
+  margin: 0;
 }
 
 .close-btn {
   margin-left: auto;
-  width: 36px;
-  height: 36px;
+  width: 32px;
+  height: 32px;
   border-radius: 8px;
-  border: 1px solid #e2e8f0;
-  background: white;
+  background: #f1f5f9;
+  border: none;
+  cursor: pointer;
   display: flex;
   align-items: center;
   justify-content: center;
-  cursor: pointer;
   transition: all 0.2s ease;
+  flex-shrink: 0;
 }
 
 .close-btn:hover {
-  background: #f8fafc;
-  border-color: #cbd5e1;
+  background: #e2e8f0;
 }
 
 .close-btn svg {
-  width: 20px;
-  height: 20px;
+  width: 18px;
+  height: 18px;
   color: #64748b;
 }
 
 .alert-content {
-  padding: 1.5rem;
   display: flex;
   flex-direction: column;
   gap: 1rem;
@@ -1396,12 +1552,6 @@ const toggleDataset = (type: 'present' | 'late' | 'absent') => {
 .risk-employee-item:hover {
   background: #fee2e2;
   transform: translateX(4px);
-}
-
-.risk-employee-item .employee-avatar {
-  width: 56px;
-  height: 56px;
-  min-width: 56px;
 }
 
 .employee-stats {
