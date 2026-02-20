@@ -1,0 +1,19 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
+</head>
+<body>
+<script>
+  const socket = io('https://demo.toke.cm/qr-auth', {
+    query: { sessionId: 'cef770ab-bb18-45e7-af9d-622f4c51f424' },
+  });
+
+  socket.on('connect', () => console.log('✅ Connecté'));
+  socket.on('connected', (data) => console.log('📡 Session:', data));
+  socket.on('authenticated', (data) => console.log('🎉 Token:', data));
+  socket.on('error', (e) => console.log('❌', e));
+  socket.on('disconnect', () => console.log('🔌 Déconnecté'));
+</script>
+</body>
+</html>

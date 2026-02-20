@@ -655,16 +655,16 @@ router.put('/:guid', Ensure.put(), async (req: Request, res: Response) => {
 
     const validatedData = validateScheduleAssignmentsUpdate(req.body);
 
-    if (validatedData.session_template !== undefined) {
-      const templateObj = await SessionTemplate._load(validatedData.session_template, true);
-      if (!templateObj) {
-        return R.handleError(res, HttpStatus.NOT_FOUND, {
-          code: SCHEDULE_ASSIGNMENTS_CODES.SESSION_TEMPLATE_NOT_FOUND,
-          message: SCHEDULE_ASSIGNMENTS_ERRORS.SESSION_TEMPLATE_NOT_FOUND,
-        });
-      }
-      assignmentObj.setSessionTemplate(templateObj.getId()!);
-    }
+    // if (validatedData.session_template !== undefined) {
+    //   const templateObj = await SessionTemplate._load(validatedData.session_template, true);
+    //   if (!templateObj) {
+    //     return R.handleError(res, HttpStatus.NOT_FOUND, {
+    //       code: SCHEDULE_ASSIGNMENTS_CODES.SESSION_TEMPLATE_NOT_FOUND,
+    //       message: SCHEDULE_ASSIGNMENTS_ERRORS.SESSION_TEMPLATE_NOT_FOUND,
+    //     });
+    //   }
+    //   assignmentObj.setSessionTemplate(templateObj.getId()!);
+    // }
 
     if (validatedData.start_date !== undefined) {
       assignmentObj.setStartDate(validatedData.start_date);

@@ -13,8 +13,10 @@ export class SocketAuth {
         (headers['x-api-key'] as string) ||
         (headers['authorization'] as string)?.replace(/Bearer\s+/i, '');
 
+      console.log('ici aussi', token);
+
       if (!token) {
-        return next(new Error('AUTH_MISSING_API_KEY'));
+        return next(new Error('auth_missing_api_key'));
       }
 
       // 1️⃣ cache first
@@ -22,14 +24,14 @@ export class SocketAuth {
 
       if (!clientConfig) {
         if (!TableInitializer.isInitialized()) {
-          return next(new Error('SERVICE_INITIALIZING'));
+          return next(new Error('service_initializing'));
         }
 
         const { default: Client } = await import('../master/class/Client.js');
         const clientRecord = await Client._load(token, true);
 
         if (!clientRecord) {
-          return next(new Error('INVALID_API_KEY'));
+          return next(new Error('invalid_api_key'));
         }
 
         await ClientCacheService.setClientConfig(clientRecord);
@@ -37,7 +39,7 @@ export class SocketAuth {
       }
 
       if (!clientConfig?.active) {
-        return next(new Error('CLIENT_BLOCKED'));
+        return next(new Error('client_blocked'));
       }
 
       // 2️⃣ Signature (si pas root)
@@ -46,13 +48,13 @@ export class SocketAuth {
         const timestamp = headers['x-api-timestamp'] as string;
 
         if (!signature || !timestamp) {
-          return next(new Error('SIGNATURE_REQUIRED'));
+          return next(new Error('signature_required'));
         }
 
         const valid = ApiKeyManager.verify(signature, token, timestamp, clientConfig.secret);
 
         if (!valid) {
-          return next(new Error('INVALID_SIGNATURE'));
+          return next(new Error('invalid_signature'));
         }
       }
 
@@ -77,33 +79,3 @@ export class SocketAuth {
     }
   }
 }
-
-// import { Socket } from 'socket.io';
-//
-// import { ServerAuth } from '../middle/server-auth.js';
-//
-// import { RealtimeContext } from './realtime.context.js';
-//
-// export async function authenticateSocket(socket: Socket): Promise<void> {
-//   const token =
-//     socket.handshake.auth?.token || socket.handshake.headers?.authorization?.replace('Bearer ', '');
-//
-//   if (!token) {
-//     throw new Error('Missing auth token');
-//   }
-//
-//   // 🔥 Réutilisation de TA logique existante
-//   const authResult = await ServerAuth.verifyToken(token);
-//
-//   if (!authResult?.user) {
-//     throw new Error('Invalid token');
-//   }
-//
-//   const context: RealtimeContext = {
-//     userId: authResult.user.id,
-//     role: authResult.user.role,
-//     tenantId: authResult.tenant?.id,
-//   };
-//
-//   socket.data.context = context;
-// }

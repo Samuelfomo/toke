@@ -1,0 +1,11 @@
+{
+  "cache": {},
+  "lastUpdate": "2026-02-20T14:15:25.000Z",
+  "stats": {
+    "total": 0,
+    "pending": 0,
+    "authenticated": 0,
+    "expired": 0,
+    "rejected": 0
+  }
+}

@@ -1,0 +1,309 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <title>Test QR Auth - Socket.IO</title>
+  <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
+  <style>
+      body {
+          font-family: monospace;
+          padding: 20px;
+          background: #1a1a1a;
+          color: #00ff00;
+      }
+
+      h2 {
+          color: #fff;
+      }
+
+      button {
+          margin: 5px;
+          padding: 8px 16px;
+          cursor: pointer;
+          background: #333;
+          color: #fff;
+          border: 1px solid #555;
+          border-radius: 4px;
+      }
+
+      button:hover {
+          background: #555;
+      }
+
+      #log {
+          background: #000;
+          padding: 15px;
+          border-radius: 6px;
+          height: 400px;
+          overflow-y: auto;
+          border: 1px solid #333;
+      }
+
+      .log-entry {
+          margin: 3px 0;
+      }
+
+      .ok {
+          color: #00ff00;
+      }
+
+      .err {
+          color: #ff4444;
+      }
+
+      .inf {
+          color: #4488ff;
+      }
+
+      .warn {
+          color: #ffaa00;
+      }
+
+      input {
+          background: #333;
+          color: #fff;
+          border: 1px solid #555;
+          padding: 6px;
+          border-radius: 4px;
+          width: 100%;
+          margin: 4px 0;
+      }
+
+      label {
+          color: #aaa;
+          font-size: 12px;
+      }
+
+      .section {
+          background: #222;
+          padding: 12px;
+          border-radius: 6px;
+          margin: 10px 0;
+      }
+  </style>
+</head>
+<body>
+<h2>🔐 Test QR Auth - Socket.IO</h2>
+
+<div class="section">
+  <label>Base URL du serveur</label>
+  <input id="serverUrl" value="https://demo.toke.cm" />
+
+  <label>Session ID (depuis GET /auth/qr/init)</label>
+  <input id="sessionId" placeholder="Clique sur Init pour générer automatiquement" />
+
+  <label>Nonce (rempli automatiquement après Init)</label>
+  <input id="nonce" placeholder="Généré par Init" readonly />
+</div>
+
+<div class="section">
+  <label>User GUID (pour simuler le scan mobile)</label>
+  <input id="userGuid" placeholder="ex: xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx" />
+</div>
+
+<!-- Étape 1 -->
+<button onclick="initSession()">1️⃣ Init Session (GET /auth/qr/init)</button>
+<!-- Étape 2 -->
+<button onclick="connectSocket()">2️⃣ Connecter Socket (/qr-auth)</button>
+<!-- Étape 3 -->
+<button onclick="generateSignature()">3️⃣ Générer Signature</button>
+<!-- Étape 4 -->
+<button onclick="verifyQR()">4️⃣ Vérifier QR (POST /auth/qr/verify)</button>
+<button onclick="clearLog()" style="float:right; color:#888">🗑 Clear</button>
+
+<br><br>
+<div id="log"></div>
+
+<script>
+  let socket = null;
+  let currentSignature = null;
+
+  function log(msg, type = 'inf') {
+    const div = document.getElementById('log');
+    const time = new Date().toLocaleTimeString();
+    div.innerHTML += `<div class="log-entry ${type}">[${time}] ${msg}</div>`;
+    div.scrollTop = div.scrollHeight;
+  }
+
+  function clearLog() {
+    document.getElementById('log').innerHTML = '';
+  }
+
+  // ─── ÉTAPE 1 : Init Session ───────────────────────────────
+  async function initSession() {
+    const base = document.getElementById('serverUrl').value;
+    log('📡 GET ' + base + '/auth/qr/init ...', 'inf');
+    const API_KEY = '1759209902443128';
+    const API_SIGNATURE = '1759209902443128';
+    const API_TIMESTAMP = '1759209902443128';
+    try {
+      const res = await fetch(`${base}/auth/qr/init`, {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+          'x-api-key': API_KEY,
+          'x-api-signature': API_SIGNATURE,
+          'x-api-timestamp': API_TIMESTAMP,
+        },
+      });
+      const data = await res.json();
+      log('Réponse: ' + JSON.stringify(data), res.ok ? 'ok' : 'err');
+
+      if (data.data?.sessionId) {
+        document.getElementById('sessionId').value = data.data.sessionId;
+        document.getElementById('nonce').value = data.data.nonce;
+        log('✅ SessionId: ' + data.data.sessionId, 'ok');
+        log('✅ Nonce: ' + data.data.nonce, 'ok');
+      }
+    } catch (e) {
+      log('❌ Erreur: ' + e.message, 'err');
+    }
+  }
+
+  // ─── ÉTAPE 2 : Connecter Socket ───────────────────────────
+  function connectSocket() {
+    const base = document.getElementById('serverUrl').value;
+    const sessionId = document.getElementById('sessionId').value.trim();
+
+    if (!sessionId) {
+      log('⚠️ Fais d\'abord Init Session', 'warn');
+      return;
+    }
+
+    if (socket) {
+      socket.disconnect();
+      socket = null;
+      log('🔌 Ancienne connexion fermée', 'warn');
+    }
+
+    log(`🔌 Connexion sur ${base}/qr-auth avec sessionId=${sessionId}`, 'inf');
+
+    // ── METS TES CREDENTIALS ICI ──────────────────────────
+    const API_KEY = '1759209902443128';
+    const API_SIGNATURE = '1759209902443128';
+    const API_TIMESTAMP = '1759209902443128';
+    // ─────────────────────────────────────────────────────
+
+    socket = io(`${base}/qr-auth`, {
+      query: { sessionId },
+      transports: ['websocket', 'polling'],
+      headers: {                        // ← transmis côté serveur via socket.handshake.auth
+        'x-api-key': API_KEY,
+        'x-api-signature': API_SIGNATURE,
+        'x-api-timestamp': API_TIMESTAMP,
+      },
+    });
+
+    socket.on('connect', () => {
+      log('✅ Socket connecté ! ID: ' + socket.id, 'ok');
+    });
+
+    socket.on('connected', (data) => {
+      log('📡 Session confirmée: ' + JSON.stringify(data), 'ok');
+    });
+
+    socket.on('authenticated', (data) => {
+      log('🎉 AUTHENTIFIÉ ! Token: ' + JSON.stringify(data), 'ok');
+    });
+
+    socket.on('rejected', (data) => {
+      log('❌ Rejeté: ' + JSON.stringify(data), 'err');
+    });
+
+    socket.on('expired', (data) => {
+      log('⏰ Session expirée: ' + JSON.stringify(data), 'warn');
+    });
+
+    socket.on('timeout', (data) => {
+      log('⏰ Timeout: ' + JSON.stringify(data), 'warn');
+    });
+
+    socket.on('error', (e) => {
+      log('🚨 Erreur socket: ' + JSON.stringify(e), 'err');
+    });
+
+    socket.on('connect_error', (e) => {
+      log('🚨 Erreur connexion: ' + e.message, 'err');
+    });
+
+    socket.on('disconnect', (reason) => {
+      log('🔌 Déconnecté: ' + reason, 'warn');
+    });
+  }
+
+  // ─── ÉTAPE 3 : Générer Signature ─────────────────────────
+  async function generateSignature() {
+    const base = document.getElementById('serverUrl').value;
+    const sessionId = document.getElementById('sessionId').value.trim();
+    const nonce = document.getElementById('nonce').value.trim();
+    const userGuid = document.getElementById('userGuid').value.trim();
+
+    if (!sessionId || !nonce || !userGuid) {
+      log('⚠️ SessionId, Nonce et UserGuid requis', 'warn');
+      return;
+    }
+
+    log('🔑 POST /auth/qr/generate ...', 'inf');
+    try {
+      const API_KEY = '1759209902443128';
+      const API_SIGNATURE = '1759209902443128';
+      const API_TIMESTAMP = '1759209902443128';
+      const res = await fetch(`${base}/auth/qr/generate`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'x-api-key': API_KEY,
+          'x-api-signature': API_SIGNATURE,
+          'x-api-timestamp': API_TIMESTAMP,
+        },
+        body: JSON.stringify({ nonce, user: userGuid, sessionId }),
+      });
+      const data = await res.json();
+      log('Réponse: ' + JSON.stringify(data), res.ok ? 'ok' : 'err');
+      if (data.data?.signature) {
+        currentSignature = data.data.signature;
+        log('✅ Signature générée: ' + currentSignature, 'ok');
+      }
+    } catch (e) {
+      log('❌ Erreur: ' + e.message, 'err');
+    }
+  }
+
+  // ─── ÉTAPE 4 : Vérifier QR ───────────────────────────────
+  async function verifyQR() {
+    const base = document.getElementById('serverUrl').value;
+    const sessionId = document.getElementById('sessionId').value.trim();
+    const userGuid = document.getElementById('userGuid').value.trim();
+
+    if (!currentSignature) {
+      log('⚠️ Génère d\'abord la signature (étape 3)', 'warn');
+      return;
+    }
+
+    log('📲 POST /auth/qr/verify (simule le scan mobile)...', 'inf');
+    const API_KEY = '1759209902443128';
+    const API_SIGNATURE = '1759209902443128';
+    const API_TIMESTAMP = '1759209902443128';
+    try {
+      const res = await fetch(`${base}/auth/qr/verify`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'x-api-key': API_KEY,
+          'x-api-signature': API_SIGNATURE,
+          'x-api-timestamp': API_TIMESTAMP,
+        },
+        body: JSON.stringify({ sessionId, userId: userGuid, signature: currentSignature }),
+      });
+      const data = await res.json();
+      log('Réponse verify: ' + JSON.stringify(data), res.ok ? 'ok' : 'err');
+      if (res.ok) {
+        log('👆 Le socket devrait recevoir "authenticated" dans ~1 seconde...', 'inf');
+      }
+    } catch (e) {
+      log('❌ Erreur: ' + e.message, 'err');
+    }
+  }
+</script>
+</body>
+</html>

@@ -1,3 +1,4 @@
+// app.ts
 import http, { Server } from 'http';
 
 import cors from 'cors';
@@ -13,6 +14,7 @@ import { tenantMiddleware } from '../middle/tenant.middleware.js';
 import { ServerAuth } from '../middle/server-auth.js';
 import { TenantRevision } from '../tools/revision.js';
 import { tableName } from '../utils/response.model.js';
+import AuthCacheService from '../tools/auth.cache.service.js';
 
 import userRoute from './routes/user.route.js';
 import roleRoute from './routes/roles.route.js';
@@ -32,6 +34,7 @@ import rotationAssignmentsRoute from './routes/rotation.assignments.route.js';
 import scheduleAssignmentsRoute from './routes/schedule.assignments.route.js';
 import groupsRoute from './routes/groups.route.js';
 import deviceRoute from './routes/device.route.js';
+import authRoute from './routes/auth.route.js';
 
 interface AppConfig {
   port: number;
@@ -61,54 +64,99 @@ export default class App {
   /**
    * Démarrage du serveur
    */
+  // async start(): Promise<void> {
+  //   try {
+  //     if (this.isShuttingDown) {
+  //       throw new Error('Impossible de démarrer: arrêt en cours');
+  //     }
+  //
+  //     // Configurer les routes
+  //     await this.setupRoutes();
+  //
+  //     // Démarrer le serveur HTTP
+  //     console.log(`🚀 Démarrage serveur sur ${this.config.host}:${this.config.port}...`);
+  //
+  //     await new Promise<void>((resolve, reject) => {
+  //       // 1️⃣ Créer le serveur HTTP
+  //       this.httpServer = http.createServer(this.app);
+  //
+  //       // 2️⃣ Initialiser Socket.IO AVANT listen
+  //       SocketServer.init(this.httpServer);
+  //       // this.server = this.httpServer;
+  //
+  //       this.server = this.app.listen(
+  //         this.config.port,
+  //         // this.config.host,
+  //         () => {
+  //           console.log(`✅ Serveur actif sur http://${this.config.host}`);
+  //           console.log(`📊 Health check: http://${this.config.host}/health`);
+  //           console.log(`🔧 Environnement: ${process.env.NODE_ENV || 'development'}`);
+  //           console.log('🎉 Serveur prêt!');
+  //           resolve();
+  //         },
+  //       );
+  //
+  //       this.server?.on('error', (error: any) => {
+  //         if (error.code === 'EADDRINUSE') {
+  //           reject(new Error(`Port ${this.config.port} déjà utilisé`));
+  //         } else {
+  //           reject(error);
+  //         }
+  //       });
+  //     });
+  //
+  //     // Configurer l'arrêt gracieux
+  //     this.setupGracefulShutdown();
+  //   } catch (error) {
+  //     console.error('❌ Erreur démarrage serveur:', error);
+  //     throw error;
+  //   }
+  // }
+
   async start(): Promise<void> {
     try {
       if (this.isShuttingDown) {
         throw new Error('Impossible de démarrer: arrêt en cours');
       }
 
-      // Configurer les routes
-      this.setupRoutes();
+      await this.setupRoutes();
 
-      // Démarrer le serveur HTTP
       console.log(`🚀 Démarrage serveur sur ${this.config.host}:${this.config.port}...`);
 
       await new Promise<void>((resolve, reject) => {
-        // 1️⃣ Créer le serveur HTTP
+        // ✅ UN seul serveur HTTP
         this.httpServer = http.createServer(this.app);
 
-        // 2️⃣ Initialiser Socket.IO AVANT listen
+        // ✅ Socket.IO sur ce serveur
         SocketServer.init(this.httpServer);
 
-        this.server = this.app.listen(
-          this.config.port,
-          // this.config.host,
-          () => {
-            console.log(`✅ Serveur actif sur http://${this.config.host}`);
-            console.log(`📊 Health check: http://${this.config.host}/health`);
-            console.log(`🔧 Environnement: ${process.env.NODE_ENV || 'development'}`);
-            console.log('🎉 Serveur prêt!');
-            resolve();
-          },
-        );
+        // ✅ C'est CE serveur qui écoute (pas app.listen)
+        this.httpServer.listen(this.config.port, () => {
+          console.log(`✅ Serveur actif sur http://${this.config.host}:${this.config.port}`);
+          console.log(`📊 Health check: http://${this.config.host}:${this.config.port}/health`);
+          console.log(`🔧 Environnement: ${process.env.NODE_ENV || 'development'}`);
+          console.log('🎉 Serveur prêt!');
+          resolve();
+        });
 
-        this.server?.on('error', (error: any) => {
+        this.httpServer.on('error', (error: any) => {
           if (error.code === 'EADDRINUSE') {
             reject(new Error(`Port ${this.config.port} déjà utilisé`));
           } else {
             reject(error);
           }
         });
+
+        // ✅ Même référence pour stop() et shutdown()
+        this.server = this.httpServer;
       });
 
-      // Configurer l'arrêt gracieux
       this.setupGracefulShutdown();
     } catch (error) {
       console.error('❌ Erreur démarrage serveur:', error);
       throw error;
     }
   }
-
   /**
    * Arrêt forcé (pour tests)
    */
@@ -178,8 +226,13 @@ export default class App {
   /**
    * Configuration des routes
    */
-  private setupRoutes(): void {
+  private async setupRoutes(): Promise<void> {
     console.log('📍 Configuration des routes...');
+
+    await AuthCacheService.initialize();
+    console.log('✅ Auth Cache Service initialisé');
+
+    // Note: QRSocketService est déjà initialisé dans SocketServer.init()
 
     // Route de santé
     this.app.get(
@@ -239,6 +292,7 @@ export default class App {
     this.app.use('/schedule-assignments', scheduleAssignmentsRoute);
     this.app.use('/groups', groupsRoute);
     this.app.use('/devices', deviceRoute);
+    this.app.use('/auth', authRoute);
 
     // Route 404
     this.app.use((req, res) => {
@@ -292,6 +346,14 @@ export default class App {
       console.log(`\n📡 Signal ${signal} reçu. Arrêt gracieux...`);
 
       try {
+        // Arrêter Socket.IO (inclut QRSocketService)
+        SocketServer.shutdown();
+        console.log('✅ Socket.IO arrêté');
+
+        // Arrêter le cache
+        await AuthCacheService.shutdown();
+        console.log('✅ Cache arrêté');
+
         // 1. Fermer le serveur HTTP
         if (this.server) {
           console.log('🔌 Fermeture serveur HTTP...');
