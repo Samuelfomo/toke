@@ -8,74 +8,94 @@
           <span class="employee-count">({{ employeeCount }} employés)</span>
         </h1>
         <div class="date-bar">
-      <span class="date-badge">
-        📅 {{ displayedRange }}
-      </span>
+          <!-- Badge date : toujours visible, affiche aujourd'hui en normal, la période en analytique -->
+          <span class="date-badge">
+            📅 {{ displayedRange }}
+          </span>
+          <!-- Indicateur de mode actif -->
+          <span class="mode-badge" :class="isAnalyticsMode ? 'mode-analytics' : 'mode-normal'">
+            {{ isAnalyticsMode ? '📊 Analytique' : '📋 Normal' }}
+          </span>
         </div>
       </div>
 
       <!-- ================= FILTER BAR ================= -->
       <div class="filter-bar">
-        <!-- VIEW MODE -->
-        <div class="view-mode-switch">
-          <button
-              :class="{ active: selectedViewMode === 'normal' }"
-              @click="selectViewMode('normal')">
-            Normal
-          </button>
 
-          <!-- FIX: même style actif que Normal -->
-          <button
-              :class="{ active: selectedViewMode === 'analytics' }"
-              @click="selectViewMode('analytics')">
-            Analytique
-          </button>
-        </div>
+        <!-- GROUPE : hint + bouton Jour + champs dates -->
+        <div class="period-group">
+          <!-- INDICATION PÉRIODE -->
+          <div class="period-hint">
+            <p class="period-hint-text">📊 Personnalisez une période pour voir son analytique</p>
+            <p class="period-hint-nb">
+              <strong>N.B :</strong> Pour analyser un jour précis, sélectionnez la même date en début et en fin de période.
+            </p>
+          </div>
 
-        <!-- PERIOD -->
-        <div class="period-switch">
-          <button
-              v-for="p in periods"
-              :key="p.value"
-              :class="{ active: selectedPeriod === p.value }"
-              @click="selectPeriod(p.value)">
-            {{ p.label }}
-          </button>
-        </div>
+          <!-- CONTRÔLES : bouton Jour + champs dates -->
+          <div class="period-controls">
+            <!-- BOUTON JOUR : repasse en mode normal -->
+            <div class="period-switch">
+              <button
+                  :class="{ active: !isAnalyticsMode }"
+                  @click="switchToNormal"
+                  title="Revenir au mode normal (aujourd'hui)">
+                📋 Jour
+              </button>
+            </div>
 
-        <!-- DATE PICKERS -->
-        <div v-if="selectedPeriod === 'day'" class="date-picker-container">
-          <input type="date" v-model="selectedDate" @change="emitFilters" class="date-input" />
-        </div>
+            <!-- DATE DÉBUT (toujours visible) -->
+            <div class="date-range-inputs">
+              <div class="date-field">
+                <label class="date-field-label">Début</label>
+                <input
+                    type="date"
+                    v-model="customStartDate"
+                    :max="customEndDate || today"
+                    class="date-input"
+                    title="Date de début de la période analytique"
+                />
+              </div>
 
-        <div v-else-if="selectedPeriod === 'custom'" class="custom-range">
-          <input type="date" v-model="customStartDate" @change="handleCustomDateChange" class="date-input" />
-          <span class="range-arrow">→</span>
-          <input type="date" v-model="customEndDate" @change="handleCustomDateChange" class="date-input" />
-        </div>
+              <span class="range-arrow">→</span>
+
+              <!-- DATE FIN : déclenche le chargement -->
+              <div class="date-field">
+                <label class="date-field-label">Fin</label>
+                <input
+                    type="date"
+                    v-model="customEndDate"
+                    :min="customStartDate"
+                    :max="today"
+                    class="date-input"
+                    :disabled="!customStartDate"
+                    :class="{ 'input-ready': customStartDate && !customEndDate }"
+                    @change="onEndDateChange"
+                    title="Sélectionnez la date de fin pour lancer l'analyse"
+                />
+              </div>
+
+              <!-- Loader inline quand on attend -->
+              <div v-if="isLoading" class="inline-loader">
+                <span class="loader-dot"></span>
+                <span class="loader-dot"></span>
+                <span class="loader-dot"></span>
+              </div>
+            </div>
+          </div><!-- fin period-controls -->
+        </div><!-- fin period-group -->
 
         <!-- EMPLOYEE -->
-        <div class="employee-filter">
-          <select v-model="selectedEmployee" @change="emitFilters" class="employee-select">
-            <option value="">Tous les employés</option>
-            <option v-for="emp in employees" :key="emp.id" :value="emp.id">{{ emp.name }}</option>
-          </select>
-        </div>
+<!--        <div class="employee-filter">-->
+<!--          <select v-model="selectedEmployee" @change="emitFilters" class="employee-select">-->
+<!--            <option value="">Tous les employés</option>-->
+<!--            <option v-for="emp in employees" :key="emp.id" :value="emp.id">{{ emp.name }}</option>-->
+<!--          </select>-->
+<!--        </div>-->
       </div>
     </div>
 
-    <!-- ================= DATE BAR (NEW POSITION) ================= -->
-    <!-- Toujours visible + support période personnalisée -->
 
-    <!-- ACTIVE FILTERS -->
-    <transition name="slide-fade">
-      <div v-if="hasActiveFilters" class="active-filters-indicator">
-        <span class="indicator-text">
-          Statistiques {{ periodLabel }} <strong>{{ displayedRange }}</strong>
-        </span>
-        <button @click="resetFilters" class="reset-button">Réinitialiser</button>
-      </div>
-    </transition>
   </section>
 </template>
 
@@ -92,6 +112,9 @@ interface Props {
   summary: Summary
   date: string
   employees: Employee[]
+  activeStartDate?: string
+  activeEndDate?: string
+  activeViewMode?: 'normal' | 'analytics'
 }
 
 const props = defineProps<Props>()
@@ -99,156 +122,378 @@ const emit = defineEmits(['filter-change'])
 
 const today = new Date().toISOString().split('T')[0]
 
-const selectedDate = ref(props.date || today)
 const selectedEmployee = ref('')
-const selectedPeriod = ref<'day' | 'custom'>('day')
-const selectedViewMode = ref<'normal' | 'analytics'>('normal')
+const customStartDate  = ref('')
+const customEndDate    = ref('')
+const isLoading        = ref(false)
 
-const customStartDate = ref(today)
-const customEndDate = ref(today)
+// Mode analytique = true si le parent a confirmé une période valide
+// On utilise les props du parent comme source de vérité (résiste au rechargement des données)
+const isAnalyticsMode = computed(
+    () => props.activeViewMode === 'analytics'
+        || !!(customStartDate.value && customEndDate.value && customStartDate.value <= customEndDate.value)
+)
 
-// ✅ FIX: Typage strict avec 'as const' pour inférer les types littéraux
-const periods = [
-  { label: 'Jour', value: 'day' as const },
-  { label: 'Personnalisé', value: 'custom' as const }
-]
+// ─── Formatage ──────────────────────────────────────────────────────────────
+const fmtDate = (iso: string) =>
+    new Date(iso + 'T12:00:00').toLocaleDateString('fr-FR', {
+      day: '2-digit', month: 'long', year: 'numeric'
+    })
 
-/* ================= RANGE ================= */
-const range = computed(() => {
-  if (selectedPeriod.value === 'custom') {
-    return { start: new Date(customStartDate.value), end: new Date(customEndDate.value) }
+const displayedRange = computed(() => {
+  // Priorité aux props du parent (source de vérité après rechargement des données)
+  const start = props.activeStartDate || customStartDate.value
+  const end   = props.activeEndDate   || customEndDate.value
+
+  if (props.activeViewMode === 'analytics' && start && end) {
+    return `${fmtDate(start)} → ${fmtDate(end)}`
   }
-  const base = new Date(selectedDate.value)
-  return { start: base, end: base }
-})
+  // Fallback sur les refs locales (pendant la saisie, avant l'emit)
+  if (customStartDate.value && customEndDate.value) {
+    return `${fmtDate(customStartDate.value)} → ${fmtDate(customEndDate.value)}`
+  }
+  return fmtDate(today)
+});
 
-const format = (d: Date) => d.toISOString().split('T')[0]
+const employeeCount = computed(() => props.summary?.total_team_members ?? 0)
 
+// ─── Emit principal ──────────────────────────────────────────────────────────
 const emitFilters = () => {
+  // En mode analytique : utiliser les refs locales (saisie en cours)
+  // ou les props du parent comme fallback (après rechargement)
+  const startDate = isAnalyticsMode.value
+      ? (customStartDate.value || props.activeStartDate || today)
+      : today
+  const endDate = isAnalyticsMode.value
+      ? (customEndDate.value || props.activeEndDate || today)
+      : today
+
   emit('filter-change', {
-    startDate: format(range.value.start),
-    endDate: format(range.value.end),
+    startDate,
+    endDate,
     employeeId: selectedEmployee.value,
-    period: selectedPeriod.value,
-    viewMode: selectedViewMode.value
+    period:     isAnalyticsMode.value ? 'custom' : 'day',
+    viewMode:   isAnalyticsMode.value ? 'analytics' : 'normal',
   })
 }
 
-/* ================= ACTIONS ================= */
-const selectPeriod = (p: 'day' | 'custom') => {
-  selectedPeriod.value = p
+// ─── Déclenché UNIQUEMENT par la date de fin ─────────────────────────────────
+const onEndDateChange = async () => {
+  if (!customStartDate.value || !customEndDate.value) return
+  if (customEndDate.value < customStartDate.value) return
+
+  isLoading.value = true
+  // Petit délai pour laisser le DOM se mettre à jour (UX)
+  await new Promise(r => setTimeout(r, 120))
   emitFilters()
+  isLoading.value = false
 }
 
-const selectViewMode = (mode: 'normal' | 'analytics') => {
-  selectedViewMode.value = mode
-  emitFilters()
+// ─── Retour mode normal (bouton Jour) ────────────────────────────────────────
+const switchToNormal = () => {
+  customStartDate.value = ''
+  customEndDate.value   = ''
+  isLoading.value       = false
+  // Émettre directement avec today sans passer par emitFilters()
+  // car isAnalyticsMode est toujours true à cet instant (computed pas encore ré-évalué)
+  emit('filter-change', {
+    startDate:  today,
+    endDate:    today,
+    employeeId: selectedEmployee.value,
+    period:     'day',
+    viewMode:   'normal',
+  })
 }
 
-const handleCustomDateChange = () => emitFilters()
-
-const resetFilters = () => {
-  selectedPeriod.value = 'day'
-  selectedDate.value = today
-  selectedEmployee.value = ''
-  selectedViewMode.value = 'normal'
-  customStartDate.value = today
-  customEndDate.value = today
-  emitFilters()
-}
-
-/* ================= UI COMPUTED ================= */
-const hasActiveFilters = computed(() =>
-    selectedPeriod.value !== 'day' || selectedEmployee.value !== '' || selectedViewMode.value === 'analytics'
-)
-
-const periodLabel = computed(() => (selectedPeriod.value === 'day' ? 'du jour' : 'de la période'))
-
-/* ✅ FIX : support affichage range custom */
-/* ================= DISPLAYED RANGE (FIX PRINCIPAL) ================= */
-const displayedRange = computed(() => {
-  const f = (d: Date) =>
-      d.toLocaleDateString('fr-FR', {
-        day: '2-digit',
-        month: 'long',
-        year: 'numeric'
-      })
-
-  // 👉 priorité aux dates sélectionnées par l'utilisateur
-  if (selectedPeriod.value === 'custom') {
-    return `${f(range.value.start)} → ${f(range.value.end)}`
+// ─── Sync des champs avec les props du parent ────────────────────────────────
+// Quand le parent confirme les dates (après rechargement), on remet les valeurs
+// dans les champs pour qu'elles restent affichées
+watch(() => props.activeStartDate, (val) => {
+  if (val && val !== customStartDate.value) {
+    customStartDate.value = val
   }
-
-  if (selectedPeriod.value === 'day') {
-    return f(range.value.start)
-  }
-
-  // fallback backend
-  // if (props.summary?.period) {
-  //   return `${f(new Date(props.summary.period.start))} → ${f(new Date(props.summary.period.end))}`
-  // }
-
-  return ''
 })
 
+watch(() => props.activeEndDate, (val) => {
+  if (val && val !== customEndDate.value) {
+    customEndDate.value = val
+  }
+})
 
-const employeeCount = computed(() => props.summary.total_team_members)
-
-watch(() => props.date, d => d && (selectedDate.value = d))
+// Quand on revient en mode normal, vider les champs
+watch(() => props.activeViewMode, (val) => {
+  if (val === 'normal') {
+    customStartDate.value = ''
+    customEndDate.value   = ''
+  }
+})
 </script>
 
 <style scoped>
-.dashboard-hero { display: flex; flex-direction: column; gap: 1.4rem; }
+.dashboard-hero {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
 
+/* ── Header ── */
 .hero-header {
   display: grid;
   grid-template-columns: 1fr auto;
   gap: 1.5rem;
   padding: 1.75rem 2rem;
   border-radius: 20px;
-  background: linear-gradient(135deg,#ffffff,#f8fafc);
+  background: linear-gradient(135deg, #ffffff, #f8fafc);
   border: 1px solid #e2e8f0;
-  box-shadow: 0 12px 30px rgba(0,0,0,0.06);
+  box-shadow: 0 12px 30px rgba(0, 0, 0, 0.06);
+  align-items: center;
 }
 
-.hero-title { font-size: 2rem; font-weight: 800; margin: 0; }
-.employee-count { background:#eef2ff; padding:.2rem .6rem; border-radius:999px; font-size:.85rem; }
+.hero-title {
+  font-size: 2rem;
+  font-weight: 800;
+  margin: 0 0 10px;
+  color: #0f172a;
+}
+.employee-count {
+  background: #eef2ff;
+  padding: .2rem .6rem;
+  border-radius: 999px;
+  font-size: .82rem;
+  font-weight: 600;
+  color: #4f46e5;
+}
 
-/* ================= DATE BAR (NEW) ================= */
-.date-bar { display:flex; justify-content:flex-start; }
+/* ── Date bar ── */
+.date-bar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
 .date-badge {
-  background: linear-gradient(135deg,#3b82f6,#2563eb);
-  color:white;
-  padding:.5rem .9rem;
-  border-radius:999px;
-  font-weight:600;
-  font-size:.85rem;
-  box-shadow:0 6px 14px rgba(59,130,246,.35);
+  background: linear-gradient(135deg, #3b82f6, #2563eb);
+  color: white;
+  padding: .45rem .9rem;
+  border-radius: 999px;
+  font-weight: 600;
+  font-size: .82rem;
+  box-shadow: 0 4px 12px rgba(59, 130, 246, .3);
 }
 
-.filter-bar { display:flex; gap:.75rem; flex-wrap:wrap; justify-content:flex-end; }
+.mode-badge {
+  padding: .35rem .8rem;
+  border-radius: 999px;
+  font-size: .78rem;
+  font-weight: 700;
+  letter-spacing: .02em;
+  transition: all .3s ease;
+}
+.mode-normal    { background: #f1f5f9; color: #64748b; }
+.mode-analytics { background: linear-gradient(135deg, #f0fdf4, #dcfce7); color: #16a34a; border: 1px solid #bbf7d0; }
 
-.view-mode-switch, .period-switch, .date-picker-container, .custom-range, .employee-filter {
-  background:white; border:1px solid #e2e8f0; border-radius:14px; padding:.4rem; display:flex; align-items:center;
+/* ── Period group (hint + contrôles) ── */
+.period-group {
+  display: flex;
+  flex-direction: column;
+  gap: .45rem;
+  align-items: flex-start;
 }
 
-button { cursor:pointer; border:none; background:transparent; padding:.45rem .8rem; border-radius:10px; font-weight:600; }
-
-/* ✅ FIX : même couleur active pour tous */
-button.active {
-  background: linear-gradient(135deg,#3b82f6,#2563eb);
-  color:white;
-  box-shadow:0 4px 10px rgba(59,130,246,.35);
+.period-controls {
+  display: flex;
+  align-items: center;
+  gap: .75rem;
 }
 
-.employee-select, .date-input { border:none; background:transparent; font-weight:600; }
-
-.active-filters-indicator {
-  display:flex; justify-content:space-between; align-items:center; padding:1rem 1.4rem;
-  background:linear-gradient(135deg,#eef2ff,#dbeafe); border-radius:14px;
+/* ── Period hint ── */
+.period-hint {
+  background: #eff6ff;
+  border: 1px solid #bfdbfe;
+  border-radius: 10px;
+  padding: .5rem .85rem;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.period-hint-text {
+  margin: 0;
+  font-size: .8rem;
+  font-weight: 700;
+  color: #1d4ed8;
+}
+.period-hint-nb {
+  margin: 0;
+  font-size: .74rem;
+  color: #475569;
+}
+.period-hint-nb strong {
+  color: #1d4ed8;
 }
 
-.reset-button { background:#3b82f6; color:white; border-radius:10px; padding:.5rem .9rem; }
+/* ── Filter bar ── */
+.filter-bar {
+  display: flex;
+  gap: .75rem;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: flex-end;
+}
 
-@media(max-width:900px){ .hero-header{grid-template-columns:1fr;} .filter-bar{justify-content:flex-start;} }
+/* ── Bouton Jour ── */
+.period-switch {
+  background: white;
+  border: 1px solid #e2e8f0;
+  border-radius: 14px;
+  padding: .4rem;
+  display: flex;
+}
+
+.period-switch button {
+  cursor: pointer;
+  border: none;
+  background: transparent;
+  padding: .45rem .9rem;
+  border-radius: 10px;
+  font-weight: 600;
+  font-size: .85rem;
+  color: #64748b;
+  transition: all .2s;
+}
+.period-switch button:hover { background: #f1f5f9; }
+.period-switch button.active {
+  background: linear-gradient(135deg, #3b82f6, #2563eb);
+  color: white;
+  box-shadow: 0 4px 10px rgba(59, 130, 246, .35);
+}
+
+/* ── Date range inputs ── */
+.date-range-inputs {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: white;
+  border: 1px solid #e2e8f0;
+  border-radius: 14px;
+  padding: .5rem .9rem;
+  transition: border-color .25s, box-shadow .25s;
+}
+
+.date-range-inputs:focus-within {
+  border-color: #3b82f6;
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, .12);
+}
+
+.date-field {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.date-field-label {
+  font-size: .68rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: .05em;
+  color: #94a3b8;
+}
+
+.date-input {
+  border: none;
+  background: transparent;
+  font-weight: 600;
+  font-size: .84rem;
+  color: #0f172a;
+  cursor: pointer;
+  outline: none;
+  padding: 2px 0;
+}
+.date-input:disabled {
+  color: #cbd5e0;
+  cursor: not-allowed;
+}
+/* Pulsation quand on attend la date de fin */
+.date-input.input-ready {
+  animation: pulse-input 1.4s ease-in-out infinite;
+}
+@keyframes pulse-input {
+  0%, 100% { opacity: 1; }
+  50%       { opacity: .45; }
+}
+
+.range-arrow {
+  font-size: 1rem;
+  color: #94a3b8;
+  font-weight: 700;
+  padding: 0 2px;
+}
+
+/* ── Loader inline ── */
+.inline-loader {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding-left: 4px;
+}
+.loader-dot {
+  width: 5px; height: 5px;
+  background: #3b82f6;
+  border-radius: 50%;
+  animation: bounce-dot .8s ease-in-out infinite;
+}
+.loader-dot:nth-child(2) { animation-delay: .15s; }
+.loader-dot:nth-child(3) { animation-delay: .3s; }
+@keyframes bounce-dot {
+  0%, 100% { transform: translateY(0); opacity: .4; }
+  50%       { transform: translateY(-4px); opacity: 1; }
+}
+
+/* ── Employee filter ── */
+.employee-filter {
+  background: white;
+  border: 1px solid #e2e8f0;
+  border-radius: 14px;
+  padding: .4rem .7rem;
+  display: flex;
+  align-items: center;
+}
+.employee-select {
+  border: none;
+  background: transparent;
+  font-weight: 600;
+  font-size: .84rem;
+  color: #0f172a;
+  cursor: pointer;
+  outline: none;
+}
+
+
+
+/* ── Transitions ── */
+.slide-fade-enter-active { transition: all .3s cubic-bezier(.34, 1.56, .64, 1); }
+.slide-fade-leave-active { transition: all .2s ease; }
+.slide-fade-enter-from  { opacity: 0; transform: translateY(-8px); }
+.slide-fade-leave-to    { opacity: 0; transform: translateY(-6px); }
+
+.fade-badge-enter-active { transition: opacity .25s ease, transform .25s ease; }
+.fade-badge-leave-active { transition: opacity .2s ease, transform .2s ease; }
+.fade-badge-enter-from   { opacity: 0; transform: scale(.9); }
+.fade-badge-leave-to     { opacity: 0; transform: scale(.9); }
+
+/* Badge date dans le bandeau analytique */
+.date-badge-analytics {
+  background: white;
+  color: #166534;
+  border: 1px solid #86efac;
+  box-shadow: none;
+  font-size: .82rem;
+  font-weight: 700;
+  padding: .35rem .85rem;
+}
+
+/* ── Responsive ── */
+@media (max-width: 900px) {
+  .hero-header { grid-template-columns: 1fr; }
+  .filter-bar  { justify-content: flex-start; }
+  .date-range-inputs { flex-wrap: wrap; }
+}
 </style>

@@ -174,7 +174,7 @@ const notificationsRef = ref<HTMLElement | null>(null)
 const userMenuRef = ref<HTMLElement | null>(null)
 const modules = ref([
   {
-    title: "Aujourd'hui",
+    title: "Statistiques",
     icon: IconBrandDaysCounter,
     path: "/dashboard",
   },

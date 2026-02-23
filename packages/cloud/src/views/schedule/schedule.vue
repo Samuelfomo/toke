@@ -7,31 +7,15 @@
     </div>
 
     <!-- Loader -->
-    <div v-if="isLoading" class="fixed inset-0 flex flex-col items-center justify-center bg-gradient-to-tr from-black to-blue-600/20 bg-opacity-20 z-50">
-      <svg aria-hidden="true" role="status" class="w-40 h-40 text-gray-200 animate-spin dark:text-gray-600"
-           xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="#006FFF"
-           stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-        <path stroke="none" d="M0 0h24v24H0z" fill="none"/>
-        <path d="M12 6l0 -3" />
-        <path d="M16.25 7.75l2.15 -2.15" />
-        <path d="M18 12l3 0" />
-        <path d="M16.25 16.25l2.15 2.15" />
-        <path d="M12 18l0 3" />
-        <path d="M7.75 16.25l-2.15 2.15" />
-        <path d="M6 12l-3 0" />
-        <path d="M7.75 7.75l-2.15 -2.15" />
-      </svg>
-      <p class="mt-4 font-bold text-yellow-200 text-xl animate-pulse">Chargement...</p>
-    </div>
 
     <div class="schedule-layout">
       <!-- Sidebar Navigation -->
       <aside class="vertical-sidebar">
         <nav class="vertical-nav">
           <button
-            class="vertical-nav-item"
-            :class="{ 'active': activeTab === 'schedules' }"
-            @click="activeTab = 'schedules'"
+              class="vertical-nav-item"
+              :class="{ 'active': activeTab === 'schedules' }"
+              @click="activeTab = 'schedules'"
           >
             <span class="vertical-nav-icon">📅</span>
             <div class="vertical-nav-content">
@@ -40,9 +24,9 @@
             </div>
           </button>
           <button
-            class="vertical-nav-item"
-            :class="{ 'active': activeTab === 'rotations' }"
-            @click="activeTab = 'rotations'"
+              class="vertical-nav-item"
+              :class="{ 'active': activeTab === 'rotations' }"
+              @click="activeTab = 'rotations'"
           >
             <span class="vertical-nav-icon">🔄</span>
             <div class="vertical-nav-content">
@@ -51,9 +35,9 @@
             </div>
           </button>
           <button
-            class="vertical-nav-item"
-            :class="{ 'active': activeTab === 'schedule-assignments' }"
-            @click="activeTab = 'schedule-assignments'"
+              class="vertical-nav-item"
+              :class="{ 'active': activeTab === 'schedule-assignments' }"
+              @click="activeTab = 'schedule-assignments'"
           >
             <div class="vertical-nav-icon"><IconCalendarUser class="w-10" /></div>
             <div class="vertical-nav-content">
@@ -62,9 +46,9 @@
             </div>
           </button>
           <button
-            class="vertical-nav-item"
-            :class="{ 'active': activeTab === 'rotation-assignments' }"
-            @click="activeTab = 'rotation-assignments'"
+              class="vertical-nav-item"
+              :class="{ 'active': activeTab === 'rotation-assignments' }"
+              @click="activeTab = 'rotation-assignments'"
           >
             <span class="vertical-nav-icon">👥</span>
             <div class="vertical-nav-content">
@@ -81,33 +65,33 @@
         <header class="content-header">
           <div class="header-actions">
             <button
-              class="btn btn-primary"
-              @click="openCreateModal"
-              v-if="activeTab === 'schedules'"
+                class="btn btn-primary"
+                @click="openCreateModal"
+                v-if="activeTab === 'schedules'"
             >
               <span class="btn-icon">+</span>
               Créer un emploi du temps
             </button>
             <button
-              class="btn btn-primary"
-              @click="openRotationModal"
-              v-if="activeTab === 'rotations'"
+                class="btn btn-primary"
+                @click="openRotationModal"
+                v-if="activeTab === 'rotations'"
             >
               <span class="btn-icon">+</span>
               Créer une rotation
             </button>
             <button
-              class="btn btn-primary"
-              @click="openScheduleAssignModal"
-              v-if="activeTab === 'schedule-assignments'"
+                class="btn btn-primary"
+                @click="openScheduleAssignModal"
+                v-if="activeTab === 'schedule-assignments'"
             >
               <span class="btn-icon">+</span>
               Assigner un emplois de temps
             </button>
             <button
-              class="btn btn-primary"
-              @click="openRotationAssignModal"
-              v-if="activeTab === 'rotation-assignments'"
+                class="btn btn-primary"
+                @click="openRotationAssignModal"
+                v-if="activeTab === 'rotation-assignments'"
             >
               <span class="btn-icon">+</span>
               Assigner une rotation
@@ -115,50 +99,55 @@
 
             <div class="search-container">
               <input
-                type="text"
-                class="search-input"
-                placeholder="🔍 Rechercher..."
-                v-model="searchQuery"
+                  type="text"
+                  class="search-input"
+                  placeholder="🔍 Rechercher..."
+                  v-model="searchQuery"
               />
             </div>
           </div>
         </header>
 
         <!-- Content -->
-        <div class="content-wrapper">
+        <div v-if="isLoading" class="loading-state">
+          <div class="spinner"></div>
+          <p>Chargement des données...</p>
+        </div>
+
+        <div v-else class="content-wrapper">
           <!-- Content: Emplois du temps -->
           <ScheduleList
-            v-if="activeTab === 'schedules'"
-            :schedules="schedules"
-            :employees="employees"
-            @edit="editSchedule"
-            @duplicate="duplicateSchedule"
-            @deleteSchedule="deleteSchedule"
+              v-if="activeTab === 'schedules'"
+              :schedules="schedules"
+              :employees="employees"
+              @edit="editSchedule"
+              @duplicate="duplicateSchedule"
+              @deleteSchedule="deleteSchedule"
           />
 
           <!-- Content: Rotations -->
           <RotationList
-            v-if="activeTab === 'rotations'"
-            :rotations="rotations"
-            @edit="editRotation as any"
-            @view-calendar="viewRotationCalendar as any"
-            @deleteRotation="deleteRotation"
+              v-if="activeTab === 'rotations'"
+              :rotations="rotations"
+              @edit="editRotation as any"
+              @view-calendar="viewRotationCalendar as any"
+              @deleteRotation="deleteRotation"
           />
 
           <!-- Assignations emplois du temps -->
           <ScheduleAssignList
-            v-if="activeTab === 'schedule-assignments'"
-            :assignments="scheduleAssignments"
-            @edit="editScheduleAssignment"
-            @deleteAssignment="deleteScheduleAssignment"
+              v-if="activeTab === 'schedule-assignments'"
+              :assignments="scheduleAssignments"
+              @edit="editScheduleAssignment"
+              @deleteAssignment="deleteScheduleAssignment"
           />
 
           <!-- Assignations rotations -->
           <RotationAssignList
-            v-if="activeTab === 'rotation-assignments'"
-            :assignments="rotationAssignments"
-            @edit="editRotationAssignment"
-            @deleteAssignment="deleteRotationAssignment"
+              v-if="activeTab === 'rotation-assignments'"
+              :assignments="rotationAssignments"
+              @edit="editRotationAssignment"
+              @deleteAssignment="deleteRotationAssignment"
           />
         </div>
       </main>
@@ -166,70 +155,71 @@
 
     <!-- Modal Schedule Form -->
     <ScheduleForm
-      v-if="showModal"
-      :template="currentSchedule"
-      :is-edit-mode="isEditMode"
-      @save="saveSchedule"
-      @close="closeModal"
+        v-if="showModal"
+        :template="currentSchedule"
+        :is-edit-mode="isEditMode"
+        @save="saveSchedule"
+        @close="closeModal"
     />
 
     <!-- Modal Rotation Form -->
     <RotationForm
-      v-if="showRotationModal"
-      :rotation="currentRotation"
-      :is-edit-mode="isEditModeRotation"
-      :templates="schedules as any"
-      @save="saveRotation as any"
-      @close="closeRotationModal"
+        v-if="showRotationModal"
+        :rotation="currentRotation"
+        :is-edit-mode="isEditModeRotation"
+        :templates="schedules as any"
+        @save="saveRotation as any"
+        @close="closeRotationModal"
     />
 
     <!-- Modal Calendar -->
     <ScheduleCalendar
-      v-if="showCalendarModal"
-      :rotation="selectedRotation as any"
-      :schedules="schedules as any"
-      :employees="employees"
-      @close="closeCalendarModal"
+        v-if="showCalendarModal"
+        :rotation="selectedRotation as any"
+        :schedules="schedules as any"
+        :employees="employees"
+        @close="closeCalendarModal"
     />
 
     <!-- Modal Assignment Form (Ancien) -->
     <AssignmentForm
-      v-if="showAssignmentModal"
-      :assignment="currentAssignment"
-      :is-edit-mode="isEditModeAssignment"
-      :rotations="rotations as any"
-      :schedules="schedules as any"
-      :employees="employees"
-      @save="saveAssignment"
-      @close="closeAssignmentModal"
+        v-if="showAssignmentModal"
+        :assignment="currentAssignment"
+        :is-edit-mode="isEditModeAssignment"
+        :rotations="rotations as any"
+        :schedules="schedules as any"
+        :employees="employees"
+        @save="saveAssignment"
+        @close="closeAssignmentModal"
     />
 
     <!-- Modal assignation emploi du temps -->
     <ScheduleAssignForm
-      v-if="showScheduleAssignModal"
-      :assignment="currentScheduleAssignment"
-      :users="users"
-      :groups="groups"
-      :templates="schedules"
-      :current-user-guid="currentUserGuid"
-      :is-edit-mode="isEditModeScheduleAssign"
-      @save="saveScheduleAssignment"
-      @close="closeScheduleAssignModal"
+        v-if="showScheduleAssignModal"
+        :assignment="currentScheduleAssignment"
+        :users="users"
+        :groups="groups"
+        :templates="schedules"
+        :current-user-guid="currentUserGuid"
+        :is-edit-mode="isEditModeScheduleAssign"
+        @save="saveScheduleAssignment"
+        @close="closeScheduleAssignModal"
     />
 
     <!-- Modal assignation rotation -->
     <RotationAssignForm
-      v-if="showRotationAssignModal"
-      :assignment="currentRotationAssignment"
-      :users="users"
-      :groups="groups"
-      :rotations="rotations"
-      :current-user-guid="currentUserGuid"
-      :is-edit-mode="isEditModeRotationAssign"
-      @save="saveRotationAssignment"
-      @close="closeRotationAssignModal"
+        v-if="showRotationAssignModal"
+        :assignment="currentRotationAssignment"
+        :users="users"
+        :groups="groups"
+        :rotations="rotations"
+        :current-user-guid="currentUserGuid"
+        :is-edit-mode="isEditModeRotationAssign"
+        @save="saveRotationAssignment"
+        @close="closeRotationAssignModal"
     />
   </div>
+  <Footer />
 </template>
 
 <script setup lang="ts">
@@ -258,6 +248,7 @@ import ScheduleAssignmentService, { type ScheduleAssignment, type ScheduleAssign
 import RotationAssignmentService, { type RotationAssignment, type RotationAssignmentPayload } from '@/service/rotationAssignmentService';
 import { useTeamStore } from '@/stores/teamStore';
 import GroupService, { type Group } from '@/service/GroupService';
+import Footer from "@/views/components/footer.vue";
 
 
 // Types
@@ -367,8 +358,8 @@ const saveSchedule = async (scheduleData: SessionTemplate) => {
   try {
     if (isEditMode.value && currentSchedule.value?.guid) {
       const response = await scheduleService.updateSchedule(
-        currentSchedule.value.guid,
-        scheduleData
+          currentSchedule.value.guid,
+          scheduleData
       );
 
       if (response.success) {
@@ -429,8 +420,8 @@ const saveRotation = async (rotationData: RotationPayload) => {
   try {
     if (isEditModeRotation.value && currentRotation.value?.guid) {
       const response = await Rotationservice.updateRotation(
-        currentRotation.value.guid,
-        rotationData
+          currentRotation.value.guid,
+          rotationData
       );
 
       if (response.success) {
@@ -524,13 +515,13 @@ const saveScheduleAssignment = async (payload: ScheduleAssignmentPayload) => {
     if (isEditModeScheduleAssign.value && currentScheduleAssignment.value?.guid) {
       // Mise à jour
       const response = await ScheduleAssignmentService.updateAssignment(
-        currentScheduleAssignment.value.guid,
-        payload
+          currentScheduleAssignment.value.guid,
+          payload
       );
 
       if (response.success) {
         const index = scheduleAssignments.value.findIndex(
-          (a) => a.guid === currentScheduleAssignment.value!.guid
+            (a) => a.guid === currentScheduleAssignment.value!.guid
         );
         if (index !== -1) {
           scheduleAssignments.value[index] = response.data.schedule_assignment;
@@ -594,13 +585,13 @@ const saveRotationAssignment = async (payload: RotationAssignmentPayload) => {
     if (isEditModeRotationAssign.value && currentRotationAssignment.value?.guid) {
       // Mise à jour
       const response = await RotationAssignmentService.updateAssignment(
-        currentRotationAssignment.value.guid,
-        payload
+          currentRotationAssignment.value.guid,
+          payload
       );
 
       if (response.success) {
         const index = rotationAssignments.value.findIndex(
-          (a) => a.guid === currentRotationAssignment.value!.guid
+            (a) => a.guid === currentRotationAssignment.value!.guid
         );
         if (index !== -1) {
           rotationAssignments.value[index] = response.data.rotation_assignment;
@@ -737,6 +728,40 @@ onMounted(async () => {
 </script>
 
 <style scoped>
+/* ── Loader ── */
+.loading-state {
+  background: #ffffff;
+  border-radius: 20px;
+  box-shadow: 0 20px 40px rgba(15, 23, 42, 0.06);
+  width: 100%;
+  min-height: 500px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 1rem;
+}
+
+.loading-state p {
+  font-size: 1rem;
+  font-weight: 500;
+  color: #64748b;
+  margin: 0;
+}
+
+.spinner {
+  width: 56px;
+  height: 56px;
+  border: 4px solid #e5e7eb;
+  border-top-color: #6366f1;
+  border-radius: 50%;
+  animation: spin 0.9s linear infinite;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
 /* Container principal */
 .schedule-container {
   min-height: 100vh;

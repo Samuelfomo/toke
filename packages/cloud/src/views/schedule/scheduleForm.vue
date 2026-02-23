@@ -25,25 +25,6 @@
 
           <div class="form-row">
             <div class="form-group">
-              <label class="form-label">Valide du *</label>
-              <input
-                type="date"
-                class="form-input"
-                v-model="localTemplate.valid_from"
-              />
-            </div>
-            <div class="form-group">
-              <label class="form-label">Valide jusqu'au *</label>
-              <input
-                type="date"
-                class="form-input"
-                v-model="localTemplate.valid_to"
-              />
-            </div>
-          </div>
-
-          <div class="form-row">
-            <div class="form-group">
               <label class="form-label">Tolérance de retard par défaut</label>
               <select class="form-select" v-model="defaultTolerance">
                 <option :value="0">Aucune tolérance</option>

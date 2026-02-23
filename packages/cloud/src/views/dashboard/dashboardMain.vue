@@ -34,10 +34,13 @@
             :date="dashboardData.date"
             :employees="employeesForFilter"
             :all-employees="dashboardData.employees"
+            :active-start-date="activeFilters.startDate"
+            :active-end-date="activeFilters.endDate"
+            :active-view-mode="activeFilters.viewMode"
             @filter-change="handleFilterChange"
         />
 
-        <!-- Section Statistiques (affichée uniquement en mode normal - jour unique) -->
+        <!-- Section Statistiques : mode normal uniquement (vue jour) -->
         <div v-if="!shouldShowAnalytics" class="stats-section">
           <DashboardStats
               :summary="dashboardData.summary"
@@ -50,6 +53,8 @@
             v-if="shouldShowAnalytics && filteredEmployees.length > 0"
             :employees="filteredEmployees"
             :period-label="periodLabel"
+            :start-date="activeFilters.startDate"
+            :end-date="activeFilters.endDate"
             @employee-click="handleEmployeeClick"
             @day-click="handleDayClick"
         />
@@ -210,11 +215,13 @@ const handleFilterChange = async (filters: {
 
   hasAppliedFilters.value = true;
 
+  // Recharger dans tous les cas : analytics (période custom) ou normal (retour au jour)
   if (filters.viewMode === 'analytics') {
     console.log('🔄 Rechargement des données pour la période...');
     await loadDashboardData(filters.startDate, filters.endDate);
   } else {
-    console.log('📅 Mode jour - pas de rechargement nécessaire');
+    console.log('📅 Retour mode jour - rechargement avec la date du jour');
+    await loadDashboardData(filters.startDate, filters.endDate);
   }
 };
 

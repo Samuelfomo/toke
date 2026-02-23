@@ -3,13 +3,10 @@ import { createRouter, createWebHistory, RouteRecordRaw } from 'vue-router'
 
 // Views
 import Home from './views/home.vue'
-import Country from './views/country.vue'
 import Auth from './views/auth.vue'
 import Otp from './views/otp.vue'
 import DashboardMain from './views/dashboard/dashboardMain.vue'
 import MemoNew from './views/memo/memoNew.vue'
-import Module from './views/module.vue'
-import AssiduteDuJour from './views/AssiduteDuJour.vue'
 import Equipe from './views/equipe.vue'
 import MemoList from './views/memo/memoList.vue'
 import EmployeeDetails from './views/EmployeeDetails.vue'
@@ -41,11 +38,6 @@ const routes: RouteRecordRaw[] = [
     name: 'otp',
     component: Otp,
   },
-  {
-    path: '/country',
-    name: 'country',
-    component: Country,
-  },
 
   // ✅ PROTÉGÉES
   {
@@ -55,27 +47,9 @@ const routes: RouteRecordRaw[] = [
     meta: { requiresAuth: true },
   },
   {
-    path: '/home',
-    name: 'home',
-    component: Home,
-    meta: { requiresAuth: true },
-  },
-  {
     path: '/memoNew',
     name: 'memoNew',
     component: MemoNew,
-    meta: { requiresAuth: true },
-  },
-  {
-    path: '/module',
-    name: 'module',
-    component: Module,
-    meta: { requiresAuth: true },
-  },
-  {
-    path: '/employee/:employeeId/details',
-    name: 'employeeD',
-    component: AssiduteDuJour,
     meta: { requiresAuth: true },
   },
   {

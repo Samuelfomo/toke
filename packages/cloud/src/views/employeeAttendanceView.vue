@@ -66,11 +66,11 @@
           <input v-model="customEndDate" type="date" class="date-input" @change="onCustomDateChange" />
         </div>
 
-        <div class="view-toggle">
-          <button :class="['toggle-btn', { active: viewMode === 'list' }]" @click="viewMode = 'list'">
-            📋 Liste complète
-          </button>
-        </div>
+<!--        <div class="view-toggle">-->
+<!--          <button :class="['toggle-btn', { active: viewMode === 'list' }]" @click="viewMode = 'list'">-->
+<!--            📋 Liste complète-->
+<!--          </button>-->
+<!--        </div>-->
       </div>
 
       <!-- Statistiques globales -->
@@ -87,7 +87,7 @@
             <div class="stat-icon">✅</div>
             <div class="stat-content">
               <div class="stat-value">{{ attendanceHistory.globalStats.present_days }}</div>
-              <div class="stat-label">Jours présents</div>
+              <div class="stat-label">Jours présents a l'heure</div>
             </div>
           </div>
 
@@ -115,18 +115,6 @@
             </div>
           </div>
         </div>
-      </div>
-
-      <!-- Légende statuts -->
-      <div class="legend-bar">
-        <span class="legend-title">Légende :</span>
-        <span class="status-badge badge-present">Présent</span>
-        <span class="status-badge badge-late">Retard</span>
-        <span class="status-badge badge-absent">Absent</span>
-        <!--        <span class="status-badge badge-off-day">Repos</span>-->
-        <span class="status-badge badge-on-pause">En pause</span>
-        <span class="status-badge badge-mission">Mission</span>
-        <span class="status-badge badge-active">Actif</span>
       </div>
 
       <!-- Vue par mois -->
@@ -179,44 +167,7 @@
 
               <Transition name="expand">
                 <div v-if="expandedRows.has(detail.date)" class="card-body">
-                  <div class="time-info">
-                    <div class="time-row">
-                      <span class="time-label">⏰ Heure prévue</span>
-                      <span class="time-value">{{ detail.expected_time || '—' }}</span>
-                    </div>
-                    <div v-if="detail.clock_in_time" class="time-row">
-                      <span class="time-label">🟢 Arrivée</span>
-                      <span class="time-value arrival">{{ detail.clock_in_time }}</span>
-                    </div>
-                    <div v-if="detail.pause_start_time" class="time-row">
-                      <span class="time-label">🔵 Début pause</span>
-                      <span class="time-value pause">{{ detail.pause_start_time }}</span>
-                    </div>
-                    <div v-if="detail.pause_end_time" class="time-row">
-                      <span class="time-label">🔵 Fin pause</span>
-                      <span class="time-value pause">{{ detail.pause_end_time }}</span>
-                    </div>
-                    <div v-if="detail.mission_start_time" class="time-row">
-                      <span class="time-label">🟣 Début mission</span>
-                      <span class="time-value mission">{{ detail.mission_start_time }}</span>
-                    </div>
-                    <div v-if="detail.mission_end_time" class="time-row">
-                      <span class="time-label">🟣 Fin mission</span>
-                      <span class="time-value mission">{{ detail.mission_end_time }}</span>
-                    </div>
-                    <div v-if="detail.clock_out_time" class="time-row">
-                      <span class="time-label">🔴 Départ</span>
-                      <span class="time-value departure">{{ detail.clock_out_time }}</span>
-                    </div>
-                    <div v-if="detail.delay_minutes && detail.delay_minutes > 0" class="time-row delay">
-                      <span class="time-label">⚠️ Retard</span>
-                      <span class="time-value">{{ formatMinutes(detail.delay_minutes) }}</span>
-                    </div>
-                    <div v-if="detail.work_hours" class="time-row">
-                      <span class="time-label">⏳ Heures travaillées</span>
-                      <span class="time-value">{{ detail.work_hours }}h</span>
-                    </div>
-                  </div>
+                  <AttendanceDayTimeline :detail="detail" />
                 </div>
               </Transition>
             </div>
@@ -231,10 +182,7 @@
             <div class="col-date">Date</div>
             <div class="col-status">Statut</div>
             <div class="col-time">Heure prévue</div>
-            <div class="col-time">Arrivée</div>
-            <div class="col-time">Départ</div>
-            <div class="col-delay">Retard</div>
-            <div class="col-hours">Heures</div>
+            <div class="col-hours">Heures travailles</div>
             <div class="col-expand"></div>
           </div>
 
@@ -255,70 +203,24 @@
                 </span>
               </div>
               <div class="col-time">{{ detail.expected_time || '—' }}</div>
-              <div class="col-time clock-in">{{ detail.clock_in_time || '—' }}</div>
-              <div class="col-time clock-out">{{ detail.clock_out_time || '—' }}</div>
-              <div class="col-delay">
-                <span v-if="detail.delay_minutes" class="delay-value">
-                  {{ formatMinutes(detail.delay_minutes) }}
-                </span>
-                <span v-else>—</span>
-              </div>
+<!--              <div class="col-time clock-in">{{ detail.clock_in_time || '—' }}</div>-->
+<!--              <div class="col-time clock-out">{{ detail.clock_out_time || '—' }}</div>-->
+<!--              <div class="col-delay">-->
+<!--                <span v-if="detail.delay_minutes" class="delay-value">-->
+<!--                  {{ formatMinutes(detail.delay_minutes) }}-->
+<!--                </span>-->
+<!--                <span v-else>—</span>-->
+<!--              </div>-->
               <div class="col-hours">{{ detail.work_hours ? detail.work_hours + 'h' : '—' }}</div>
               <div class="col-expand">
                 <span class="expand-chevron" :class="{ rotated: expandedRows.has(detail.date) }">▾</span>
               </div>
             </div>
 
-            <!-- Panneau déroulant des pointages détaillés -->
+            <!-- Timeline serpentine au clic -->
             <Transition name="expand">
               <div v-if="expandedRows.has(detail.date)" class="detail-panel" :class="`panel-${detail.status}`">
-                <div class="detail-panel-title">
-                  📍 Détail des pointages — {{ formatFullDate(detail.date) }}
-                </div>
-                <div class="detail-items">
-                  <div class="detail-item" v-if="detail.clock_in_time">
-                    <span class="detail-dot dot-arrive"></span>
-                    <span class="detail-label">Arrivée</span>
-                    <span class="detail-value">{{ detail.clock_in_time }}</span>
-                  </div>
-                  <div class="detail-item" v-if="detail.pause_start_time">
-                    <span class="detail-dot dot-pause"></span>
-                    <span class="detail-label">Début pause</span>
-                    <span class="detail-value">{{ detail.pause_start_time }}</span>
-                  </div>
-                  <div class="detail-item" v-if="detail.pause_end_time">
-                    <span class="detail-dot dot-pause"></span>
-                    <span class="detail-label">Fin pause</span>
-                    <span class="detail-value">{{ detail.pause_end_time }}</span>
-                  </div>
-                  <div class="detail-item" v-if="detail.mission_start_time">
-                    <span class="detail-dot dot-mission"></span>
-                    <span class="detail-label">Début mission</span>
-                    <span class="detail-value">{{ detail.mission_start_time }}</span>
-                  </div>
-                  <div class="detail-item" v-if="detail.mission_end_time">
-                    <span class="detail-dot dot-mission"></span>
-                    <span class="detail-label">Fin mission</span>
-                    <span class="detail-value">{{ detail.mission_end_time }}</span>
-                  </div>
-                  <div class="detail-item" v-if="detail.clock_out_time">
-                    <span class="detail-dot dot-depart"></span>
-                    <span class="detail-label">Départ</span>
-                    <span class="detail-value">{{ detail.clock_out_time }}</span>
-                  </div>
-                  <div
-                      v-if="!detail.clock_in_time && !detail.pause_start_time && !detail.mission_start_time && !detail.clock_out_time"
-                      class="detail-empty"
-                  >
-                    Aucun pointage enregistré pour cette journée.
-                  </div>
-                </div>
-                <div class="detail-summary" v-if="detail.work_hours || (detail.delay_minutes && detail.delay_minutes > 0)">
-                  <span v-if="detail.work_hours">⏳ <strong>{{ detail.work_hours }}h</strong> travaillées</span>
-                  <span v-if="detail.delay_minutes && detail.delay_minutes > 0" class="summary-delay">
-                    ⚠️ Retard : <strong>{{ formatMinutes(detail.delay_minutes) }}</strong>
-                  </span>
-                </div>
+                <AttendanceDayTimeline :detail="detail" />
               </div>
             </Transition>
           </template>
@@ -327,6 +229,7 @@
 
     </div>
   </div>
+  <Footer />
 </template>
 
 <script setup lang="ts">
@@ -335,6 +238,8 @@ import { useRoute, useRouter } from 'vue-router';
 import { useUserStore } from '@/stores/userStore';
 import EntriesService from '@/service/EntriesService';
 import type { PointageEntry, User } from '@/utils/interfaces/employeeAttendances';
+import AttendanceDayTimeline from './Attendancedaytimeline.vue';
+import Footer from "../views/components/footer.vue";
 
 // ─── Types locaux ──────────────────────────────────────────────────────────
 interface DayDetail {
@@ -465,56 +370,133 @@ const calculateAttendanceRate = (): number => {
 // ─── Construction des données à partir des entries brutes ──────────────────
 
 /**
+ * Correspondance JS getDay() → clé de la définition du planning.
+ * 0 = Dimanche, 1 = Lundi … 6 = Samedi
+ */
+const JS_DAY_TO_SCHEDULE_KEY: Record<number, string> = {
+  0: 'Sun', 1: 'Mon', 2: 'Tue', 3: 'Wed', 4: 'Thu', 5: 'Fri', 6: 'Sat',
+};
+
+/**
+ * Extrait depuis l'entry clock_in :
+ *   - l'heure prévue d'arrivée  (ex. "16:30")
+ *   - la tolérance en minutes   (ex. 15)
+ * en lisant user.assignment_info.active_schedule_assignment.session_template.definition
+ *
+ * Retourne null si l'employé n'a pas de planning affecté pour ce jour.
+ */
+const getScheduleForEntry = (
+    entry: PointageEntry,
+    date: string,
+): { expectedTime: string; toleranceMin: number } | null => {
+  const asgn = entry.user?.assignment_info?.active_schedule_assignment as any;
+  if (!asgn || typeof asgn === 'string') return null;
+
+  const definition = asgn.session_template?.definition;
+  if (!definition) return null;
+
+  const dayOfWeek = new Date(date + 'T12:00:00').getDay();
+  const key       = JS_DAY_TO_SCHEDULE_KEY[dayOfWeek];
+  const slots     = definition[key];
+
+  if (!slots || slots.length === 0) return null;
+
+  const slot = slots[0];
+  const expectedTime  = slot.work?.[0] ?? null;
+  const toleranceMin  = slot.tolerance ?? 0;
+
+  if (!expectedTime) return null;
+  return { expectedTime, toleranceMin };
+};
+/**
+ * Convertit "HH:mm" en minutes depuis minuit.
+ */
+const hhmmToMins = (hhmm: string): number => {
+  const [h, m] = hhmm.split(':').map(Number);
+  return h * 60 + m;
+};
+
+/**
  * Transforme les PointageEntry d'un même jour en un DayDetail complet.
  * Les entries sont déjà triées chronologiquement.
+ *
  * Logique de statut :
  *   - Aucune entry clock_in → absent
- *   - clock_in présent + delay > 0 → late
- *   - clock_in présent → present
+ *   - clock_in présent, retard > tolérance → late  (delay_minutes = retard réel)
+ *   - clock_in présent, dans la tolérance  → present (delay_minutes = 0)
+ *
+ * L'heure prévue et la tolérance viennent de :
+ *   user.assignment_info.active_schedule_assignment.session_template.definition
  */
 const buildDayDetail = (date: string, entries: PointageEntry[]): DayDetail => {
   const get = (type: string) => entries.find(e => e.pointage_type === type)?.clocked_at ?? null;
-  // Pour external_mission on prend la première (start) et la dernière (end)
   const missionEntries = entries.filter(e => e.pointage_type === 'external_mission');
 
-  const clockIn  = get('clock_in');
-  const clockOut = get('clock_out');
-  const pauseStart = get('pause_start');
-  const pauseEnd   = get('pause_end');
+  const clockIn      = get('clock_in');
+  const clockOut     = get('clock_out');
+  const pauseStart   = get('pause_start');
+  const pauseEnd     = get('pause_end');
   const missionStart = missionEntries[0]?.clocked_at ?? null;
-  const missionEnd   = missionEntries.length > 1 ? missionEntries[missionEntries.length - 1].clocked_at : null;
+  const missionEnd   = missionEntries.length > 1
+      ? missionEntries[missionEntries.length - 1].clocked_at
+      : null;
 
-  // Calcul du retard si on a un clock_in et une expected_time
-  // L'expected_time vient du premier entry (session.session_start_at ou expected_time non dispo ici)
-  // On calcule depuis les minutes UTC
-  let delayMinutes: number | null = null;
+  // ── Calcul du retard ──────────────────────────────────────────────────────
+  let expectedTime:  string | null = null;
+  let delayMinutes:  number | null = null;
   let status = 'absent';
 
   if (clockIn) {
-    status = 'present';
-    // On ne peut pas calculer le retard sans l'heure prévue — on laisse null
-    // (l'API /attendance/stat fournit ces valeurs ; ici on affiche uniquement les timestamps)
+    // 1. Récupérer le planning du jour depuis la première entry clock_in
+    const clockInEntry   = entries.find(e => e.pointage_type === 'clock_in');
+    const schedule       = clockInEntry ? getScheduleForEntry(clockInEntry, date) : null;
+
+    // 2. Heure réelle d'arrivée en UTC → minutes depuis minuit
+    const clockInDate    = new Date(clockIn);
+    const clockInMins    = clockInDate.getUTCHours() * 60 + clockInDate.getUTCMinutes();
+
+    if (schedule) {
+      expectedTime         = schedule.expectedTime;
+      const expectedMins   = hhmmToMins(schedule.expectedTime);
+      const toleranceMins  = schedule.toleranceMin;
+      const limitMins      = expectedMins + toleranceMins; // seuil au-delà duquel c'est un retard
+
+      const rawDelay       = clockInMins - expectedMins;   // peut être négatif (arrivée en avance)
+
+      if (rawDelay > toleranceMins) {
+        // Retard réel = dépassement au-delà de la tolérance
+        delayMinutes = rawDelay;   // on garde le retard total (par rapport à l'heure prévue)
+        status       = 'late';
+      } else {
+        delayMinutes = 0;
+        status       = 'present';
+      }
+    } else {
+      // Pas de planning trouvé : on marque présent sans délai calculable
+      status       = 'present';
+      delayMinutes = null;
+    }
   }
 
-  // Calcul approximatif des heures travaillées (clock_out - clock_in - pauses)
+  // ── Heures travaillées ────────────────────────────────────────────────────
   let workHours: number | null = null;
   if (clockIn && clockOut) {
     const diffMs = new Date(clockOut).getTime() - new Date(clockIn).getTime();
-    workHours = Math.round((diffMs / 3600000) * 10) / 10;
+    workHours    = Math.round((diffMs / 3600000) * 10) / 10;
   }
 
   return {
     date,
     status,
-    expected_time: null, // non disponible via EntriesService
-    clock_in_time:       isoToHHMM(clockIn),
-    clock_out_time:      isoToHHMM(clockOut),
-    pause_start_time:    isoToHHMM(pauseStart),
-    pause_end_time:      isoToHHMM(pauseEnd),
-    mission_start_time:  isoToHHMM(missionStart),
-    mission_end_time:    isoToHHMM(missionEnd),
-    delay_minutes:       delayMinutes,
-    work_hours:          workHours,
+    expected_time:      expectedTime,
+    clock_in_time:      isoToHHMM(clockIn),
+    clock_out_time:     isoToHHMM(clockOut),
+    pause_start_time:   isoToHHMM(pauseStart),
+    pause_end_time:     isoToHHMM(pauseEnd),
+    mission_start_time: isoToHHMM(missionStart),
+    mission_end_time:   isoToHHMM(missionEnd),
+    delay_minutes:      delayMinutes,
+    work_hours:         workHours,
   };
 };
 
@@ -531,6 +513,9 @@ const groupByMonth = (details: DayDetail[]): Record<string, DayDetail[]> => {
 
 /** Calcule les stats globales depuis les DayDetails */
 const calcGlobalStats = (details: DayDetail[]) => {
+  // present_days = arrivés à l'heure (status 'present' strict)
+  // late_days    = arrivés mais en retard (status 'late')
+  // Les deux comptent comme "présent" pour le taux de présence
   const present_days = details.filter(d => d.status === 'present').length;
   const late_days    = details.filter(d => d.status === 'late').length;
   const absent_days  = details.filter(d => d.status === 'absent').length;
@@ -680,7 +665,7 @@ onMounted(() => {
 /* ===== Base ===== */
 .employee-attendance-history-page {
   min-height: 100vh;
-  background: #f0f4f8;
+  background: linear-gradient(90deg, rgba(0, 74, 173, 0.85) 0%, rgba(166, 200, 239, 0.73) 30%, rgba(67, 136, 228, 0.93) 70%);
   padding: 20px;
   font-family: 'Segoe UI', system-ui, sans-serif;
 }

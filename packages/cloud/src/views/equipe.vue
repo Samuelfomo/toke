@@ -1,5 +1,5 @@
 <template>
-  <section class="min-h-screen overflow-x-hidden">
+  <section class="min-h-screen overflow-x-hidden page-layout">
     <!--  <section class="manager-team">-->
     <Header />
     <!-- Loading State - Seulement au chargement initial -->
@@ -85,16 +85,24 @@
                 </td>
                 <td class="info-cell">
                   <div class="employee-info">
-                    <span class="employee-name">{{ employee.name }}</span>
+                    <div class="employee-name-row">
+                      <span class="employee-name">{{ employee.name }}</span>
+                      <span v-if="isManager(employee)" class="manager-badge">
+                        <svg viewBox="0 0 24 24" fill="currentColor" width="10" height="10">
+                          <path d="M12 2L9.19 8.63L2 9.24L7 13.47L5.82 20.16L12 16.56L18.18 20.16L17 13.47L22 9.24L14.81 8.63L12 2Z"/>
+                        </svg>
+                        Manager
+                      </span>
+                    </div>
                     <span class="employee-position">{{ employee.position }}</span>
                   </div>
                 </td>
-                <td class="memo-cell">
-                  <div class="memo-badge">
-                    <span class="memo-label">M</span>
-                    <span class="memo-count">{{ getMemoCount(employee.id) }}</span>
-                  </div>
-                </td>
+                <!--                <td class="memo-cell">-->
+                <!--                  <div class="memo-badge">-->
+                <!--                    <span class="memo-label">M</span>-->
+                <!--                    <span class="memo-count">{{ getMemoCount(employee.id) }}</span>-->
+                <!--                  </div>-->
+                <!--                </td>-->
                 <td class="actions-cell" @click.stop>
                   <div class="employee-menu">
                     <button
@@ -205,6 +213,13 @@ const totalSubordinates = computed(() => teamStore.totalEmployees)
  */
 const getMemoCount = (employeeId: string): number => {
   return memoStore.getMemosByEmployee(employeeId).length
+}
+
+// 🎯 Détecte si un employé est manager
+const isManager = (employee: TeamEmployee): boolean => {
+  const position = (employee.position || '').toLowerCase()
+  const managerKeywords = ['manager', 'responsable', 'directeur', 'chef', 'superviseur', 'lead', 'head']
+  return managerKeywords.some(kw => position.includes(kw))
 }
 
 // UI State
@@ -360,3 +375,27 @@ onUnmounted(() => {
   document.removeEventListener('click', closeMenuOnClickOutside)
 })
 </script>
+
+<style scoped>
+.employee-name-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.manager-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  background: linear-gradient(135deg, #f59e0b, #d97706);
+  color: #fff;
+  font-size: 10px;
+  font-weight: 600;
+  padding: 2px 7px;
+  border-radius: 99px;
+  letter-spacing: 0.3px;
+  white-space: nowrap;
+  box-shadow: 0 1px 3px rgba(217, 119, 6, 0.35);
+}
+</style>

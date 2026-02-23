@@ -1,33 +1,22 @@
 <template>
-  <div class="flex min-h-screen     background: linear-gradient(90deg, rgba(0, 74, 173, 0.85) 0%, rgba(166, 200, 239, 0.73) 30%, rgba(67, 136, 228, 0.93) 70%)
+  <div class="flex min-h-screen background: linear-gradient(90deg, rgba(0, 74, 173, 0.85) 0%, rgba(166, 200, 239, 0.73) 30%, rgba(67, 136, 228, 0.93) 70%);
 ">
     <div class="flex flex-col w-full">
       <!-- Header -->
       <Header />
 
-      <!-- Loader modernisé -->
-      <div v-if="isLoading" class="fixed inset-0 flex flex-col items-center justify-center bg-black bg-opacity-60 backdrop-blur-sm z-50">
-        <svg aria-hidden="true" role="status" class="w-16 h-16 text-gray-200 animate-spin"
-             xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="var(--color-primary)"
-             stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-          <path stroke="none" d="M0 0h24v24H0z" fill="none"/>
-          <path d="M12 6l0 -3" />
-          <path d="M16.25 7.75l2.15 -2.15" />
-          <path d="M18 12l3 0" />
-          <path d="M16.25 16.25l2.15 2.15" />
-          <path d="M12 18l0 3" />
-          <path d="M7.75 16.25l-2.15 2.15" />
-          <path d="M6 12l-3 0" />
-          <path d="M7.75 7.75l-2.15 -2.15" />
-        </svg>
-        <p class="mt-4 font-medium text-white text-lg animate-pulse">Chargement en cours...</p>
-      </div>
-
       <!-- Main Content Area -->
       <div class="flex-grow flex">
         <main class="flex-grow lg:pl-32 py-8 px-4 lg:px-8 w-full">
+
+          <!-- Loader -->
+          <div v-if="isLoading" class="loading-state">
+            <div class="spinner"></div>
+            <p>Chargement des données...</p>
+          </div>
+
           <!-- Carte principale -->
-          <div class="bg-[var(--bg-card)] rounded-[var(--border-radius-lg)] shadow-[var(--shadow-lg)] overflow-hidden">
+          <div v-else class="bg-[var(--bg-card)] rounded-[var(--border-radius-lg)] shadow-[var(--shadow-lg)] overflow-hidden">
             <!-- Barre d'actions -->
             <div class="p-6 border-b border-[var(--border-light)]">
               <div class="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-4">
@@ -82,34 +71,34 @@
             <!-- Tableau -->
             <div class="overflow-x-auto">
               <table class="min-w-full divide-y divide-[var(--border-light)]">
-<!--                <thead>-->
-<!--                <tr class="bg-[var(&#45;&#45;bg-secondary)]">-->
-<!--                  <th class="py-4 px-6 text-left text-[var(&#45;&#45;font-size-body-sm)] font-semibold text-[var(&#45;&#45;text-primary)] uppercase tracking-wider">-->
-<!--                    Site-->
-<!--                  </th>-->
-<!--                  <th class="py-4 px-6 text-left text-[var(&#45;&#45;font-size-body-sm)] font-semibold text-[var(&#45;&#45;text-primary)] uppercase tracking-wider">-->
-<!--                    Type-->
-<!--                  </th>-->
-<!--                  <th class="py-4 px-6 text-left text-[var(&#45;&#45;font-size-body-sm)] font-semibold text-[var(&#45;&#45;text-primary)] uppercase tracking-wider">-->
-<!--                    Ville-->
-<!--                  </th>-->
-<!--                  <th class="py-4 px-6 text-left text-[var(&#45;&#45;font-size-body-sm)] font-semibold text-[var(&#45;&#45;text-primary)] uppercase tracking-wider">-->
-<!--                    Localisation-->
-<!--                  </th>-->
-<!--                  <th class="py-4 px-6 text-center text-[var(&#45;&#45;font-size-body-sm)] font-semibold text-[var(&#45;&#45;text-primary)] uppercase tracking-wider">-->
-<!--                    Tolérance-->
-<!--                  </th>-->
-<!--                  <th class="py-4 px-6 text-left text-[var(&#45;&#45;font-size-body-sm)] font-semibold text-[var(&#45;&#45;text-primary)] uppercase tracking-wider">-->
-<!--                    Statut-->
-<!--                  </th>-->
-<!--                  <th class="py-4 px-6 text-left text-[var(&#45;&#45;font-size-body-sm)] font-semibold text-[var(&#45;&#45;text-primary)] uppercase tracking-wider">-->
-<!--                    Date-->
-<!--                  </th>-->
-<!--                  <th class="py-4 px-6 text-center text-[var(&#45;&#45;font-size-body-sm)] font-semibold text-[var(&#45;&#45;text-primary)] uppercase tracking-wider">-->
-<!--                    Actions-->
-<!--                  </th>-->
-<!--                </tr>-->
-<!--                </thead>-->
+                <thead>
+                <tr class="bg-[var(--bg-secondary)]">
+                  <th class="py-4 px-6 text-left text-[var(--font-size-body-sm)] font-semibold text-[var(--text-primary)] uppercase tracking-wider">
+                    Site
+                  </th>
+                  <th class="py-4 px-6 text-left text-[var(--font-size-body-sm)] font-semibold text-[var(--text-primary)] uppercase tracking-wider">
+                    Type
+                  </th>
+                  <th class="py-4 px-6 text-left text-[var(--font-size-body-sm)] font-semibold text-[var(--text-primary)] uppercase tracking-wider">
+                    Ville
+                  </th>
+                  <!--                  <th class="py-4 px-6 text-left text-[var(&#45;&#45;font-size-body-sm)] font-semibold text-[var(&#45;&#45;text-primary)] uppercase tracking-wider">-->
+                  <!--                    Localisation-->
+                  <!--                  </th>-->
+                  <th class="py-4 px-6 text-center text-[var(--font-size-body-sm)] font-semibold text-[var(--text-primary)] uppercase tracking-wider">
+                    Tolérance
+                  </th>
+                  <th class="py-4 px-6 text-left text-[var(--font-size-body-sm)] font-semibold text-[var(--text-primary)] uppercase tracking-wider">
+                    Statut
+                  </th>
+                  <th class="py-4 px-6 text-left text-[var(--font-size-body-sm)] font-semibold text-[var(--text-primary)] uppercase tracking-wider">
+                    Date
+                  </th>
+                  <th class="py-4 px-6 text-center text-[var(--font-size-body-sm)] font-semibold text-[var(--text-primary)] uppercase tracking-wider">
+                    Actions
+                  </th>
+                </tr>
+                </thead>
                 <tbody class="divide-y divide-[var(--border-light)]">
                 <tr v-for="site in paginatedSites"
                     :key="site.guid"
@@ -139,9 +128,9 @@
                     {{ site.address?.city || 'N/A' }}
                     ({{ site.address?.location || 'N/A' }})
                   </td>
-<!--                  <td class="py-4 px-6 text-[var(&#45;&#45;font-size-body)] text-[var(&#45;&#45;text-secondary)]">-->
-<!--                    {{ site.address?.location || 'N/A' }}-->
-<!--                  </td>-->
+                  <!--                  <td class="py-4 px-6 text-[var(&#45;&#45;font-size-body)] text-[var(&#45;&#45;text-secondary)]">-->
+                  <!--                    {{ site.address?.location || 'N/A' }}-->
+                  <!--                  </td>-->
                   <td class="py-4 px-6 text-center">
                       <span class="inline-flex items-center justify-center px-3 py-1 bg-[var(--bg-secondary)] rounded-[var(--border-radius-sm)]
                                    text-[var(--font-size-body-sm)] font-medium text-[var(--text-primary)]">
@@ -436,8 +425,8 @@ const filteredSites = computed(() => {
       site.address?.city,
       site.address?.location,
     ]
-      .filter(Boolean)
-      .some(field => field.toLowerCase().includes(term));
+        .filter(Boolean)
+        .some(field => field.toLowerCase().includes(term));
   });
 });
 
@@ -468,5 +457,36 @@ onMounted(() => {
 </script>
 
 <style scoped>
-/* Styles additionnels si nécessaire */
+.loading-state {
+  background: #ffffff;
+  border-radius: 20px;
+  box-shadow: 0 20px 40px rgba(15, 23, 42, 0.06);
+  width: 100%;
+  min-height: 600px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 1rem;
+}
+
+.loading-state p {
+  margin-top: 1.2rem;
+  font-size: 1rem;
+  font-weight: 500;
+  color: #64748b;
+}
+
+.spinner {
+  width: 56px;
+  height: 56px;
+  border: 4px solid #e5e7eb;
+  border-top-color: #6366f1;
+  border-radius: 50%;
+  animation: spin 0.9s linear infinite;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
 </style>

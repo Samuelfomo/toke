@@ -315,9 +315,9 @@
                 <span class="stat-value success">{{ emp.period_stats.present_days }}</span>
               </div>
             </div>
-            <div class="attendance-badge danger">
-              {{ Math.round(emp.period_stats.attendance_rate) }}%
-            </div>
+<!--            <div class="attendance-badge danger">-->
+<!--              {{ Math.round(emp.period_stats.attendance_rate) }}%-->
+<!--            </div>-->
           </div>
         </div>
       </transition>

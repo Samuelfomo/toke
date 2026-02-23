@@ -3,6 +3,7 @@ import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
 
 import UserService, { SubordinateResponse } from '../service/UserService'
+
 import {useTeamStore} from "@/stores/teamStore";
 
 interface UserRole {
@@ -155,7 +156,8 @@ export const useUserStore = defineStore('user', () => {
   // Sauvegarde
   const saveToStorage = (userData: User, tenantData: Tenant) => {
     try {
-      const expiresAt = Date.now() + 24 * 60 * 60 * 1000
+      // const expiresAt = Date.now() + 24 * 60 * 60 * 1000
+      const expiresAt = Date.now() + 24 * 7 * 60 * 60 * 1000
       const dataToStore: StoredData = {
         user: userData,
         tenant: tenantData,

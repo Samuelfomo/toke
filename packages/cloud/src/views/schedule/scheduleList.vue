@@ -18,17 +18,6 @@
         <div class="schedule-card-header">
           <div>
             <h3 class="schedule-name">{{ schedule.name }}</h3>
-            <div class="schedule-meta">
-              <span class="schedule-date-range">
-                📅 {{ formatDate(schedule.valid_from) }} → {{ formatDate(schedule.valid_to) }}
-              </span>
-              <span class="schedule-status" :class="getStatusClass(schedule)">
-                {{ getStatus(schedule) }}
-              </span>
-              <span class="schedule-employees">
-                👥 {{ getAssignedEmployeesCount(schedule.guid!) }} employé(s)
-              </span>
-            </div>
           </div>
           <div class="schedule-actions">
             <button class="btn-icon-action" @click="$emit('edit', schedule)" title="Modifier">
@@ -128,6 +117,7 @@
 <script setup lang="ts">
 import { ref } from 'vue';
 import "../../assets/css/toke-schedule-21.css"
+import Footer from "../components/footer.vue";
 
 interface Period {
   work: [string, string];

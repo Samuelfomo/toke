@@ -64,13 +64,13 @@ body {
 /* TOUT le contenu après le header (loading OU employees-table-section) */
 .loading-container,
 .employees-table-section {
-    margin-top: var(--space-xl, 2rem); /* ÉCART ICI */
+    margin-top: 2rem;       /* espace entre le header et le body */
+    margin-bottom: 2rem;    /* espace entre le body et le footer */
     padding: 0 var(--space-lg, 1.5rem);
     max-width: 1400px;
     width: 100%;
     margin-left: auto;
     margin-right: auto;
-    flex: 1;
 }
 
 .loading-container {
@@ -81,22 +81,13 @@ body {
     padding: var(--space-xl, 2rem);
 }
 
-/* Footer */
-.manager-team > :last-child {
-    margin-top: var(--space-xl, 2rem);
-    flex-shrink: 0;
-}
-
 /* Responsive */
 @media (max-width: 768px) {
     .loading-container,
     .employees-table-section {
-        margin-top: var(--space-lg, 1.5rem);
+        margin-top: 1.5rem;
+        margin-bottom: 1.5rem;
         padding: 0 var(--space-md, 1rem);
-    }
-
-    .manager-team > :last-child {
-        margin-top: var(--space-lg, 1.5rem);
     }
 }
 .chart-with-axes {
