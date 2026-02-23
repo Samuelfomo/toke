@@ -379,6 +379,8 @@ export default class ScheduleAssignmentsModel extends BaseModel {
   protected async update(): Promise<void> {
     await this.validate();
 
+    console.log('je suis ici 2');
+
     if (!this.id) {
       throw new Error(SCHEDULE_ASSIGNMENTS_ERRORS.ID_REQUIRED);
     }
@@ -509,6 +511,7 @@ export default class ScheduleAssignmentsModel extends BaseModel {
 
     // Vérifier qu'au moins user OU groups est défini
     if (!this.user && !this.groups) {
+      console.log('je suis ici 1');
       throw new Error(SCHEDULE_ASSIGNMENTS_ERRORS.USER_OR_GROUPS_REQUIRED);
     }
 

@@ -88,12 +88,10 @@
 <div class="section">
   <label>Base URL du serveur</label>
   <input id="serverUrl" value="https://demo.toke.cm" />
+  <input id="serverUrl2" value="https://m.toke.cm" />
 
   <label>Session ID (depuis GET /auth/qr/init)</label>
   <input id="sessionId" placeholder="Clique sur Init pour générer automatiquement" />
-
-  <label>Nonce (rempli automatiquement après Init)</label>
-  <input id="nonce" placeholder="Généré par Init" readonly />
 </div>
 
 <div class="section">
@@ -131,8 +129,8 @@
 
   // ─── ÉTAPE 1 : Init Session ───────────────────────────────
   async function initSession() {
-    const base = document.getElementById('serverUrl').value;
-    log('📡 GET ' + base + '/auth/qr/init ...', 'inf');
+    const base = document.getElementById('serverUrl2').value;
+    log('📡 GET ' + base + '/qr-auth/qr/init ...', 'inf');
     const API_KEY = '1759209902443128';
     const API_SIGNATURE = '1759209902443128';
     const API_TIMESTAMP = '1759209902443128';
@@ -149,11 +147,23 @@
       const data = await res.json();
       log('Réponse: ' + JSON.stringify(data), res.ok ? 'ok' : 'err');
 
-      if (data.data?.sessionId) {
-        document.getElementById('sessionId').value = data.data.sessionId;
-        document.getElementById('nonce').value = data.data.nonce;
-        log('✅ SessionId: ' + data.data.sessionId, 'ok');
-        log('✅ Nonce: ' + data.data.nonce, 'ok');
+      const res2 = await fetch(`${base}/auth/qr/decrypt`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'x-api-key': API_KEY,
+          'x-api-signature': API_SIGNATURE,
+          'x-api-timestamp': API_TIMESTAMP,
+        },
+        body: JSON.stringify({ signature: data.data?.qr_data }),
+      });
+
+      const data2 = await res2.json();
+      log('Réponse2: ' + JSON.stringify(data2), res.ok ? 'ok' : 'err');
+
+      if (data2.data?.qrGenerator?.sessionId) {
+        document.getElementById('sessionId').value = data2.data?.qrGenerator?.sessionId;
+        log('✅ SessionId: ' + data2.data?.qrGenerator?.sessionId, 'ok');
       }
     } catch (e) {
       log('❌ Erreur: ' + e.message, 'err');
@@ -162,7 +172,7 @@
 
   // ─── ÉTAPE 2 : Connecter Socket ───────────────────────────
   function connectSocket() {
-    const base = document.getElementById('serverUrl').value;
+    const base = document.getElementById('serverUrl2').value;
     const sessionId = document.getElementById('sessionId').value.trim();
 
     if (!sessionId) {
@@ -235,11 +245,10 @@
   async function generateSignature() {
     const base = document.getElementById('serverUrl').value;
     const sessionId = document.getElementById('sessionId').value.trim();
-    const nonce = document.getElementById('nonce').value.trim();
     const userGuid = document.getElementById('userGuid').value.trim();
 
-    if (!sessionId || !nonce || !userGuid) {
-      log('⚠️ SessionId, Nonce et UserGuid requis', 'warn');
+    if (!sessionId || !userGuid) {
+      log('⚠️ SessionId et UserGuid requis', 'warn');
       return;
     }
 
@@ -248,7 +257,7 @@
       const API_KEY = '1759209902443128';
       const API_SIGNATURE = '1759209902443128';
       const API_TIMESTAMP = '1759209902443128';
-      const res = await fetch(`${base}/auth/qr/generate`, {
+      const res = await fetch(`${base}/qr-auth/generate`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -256,7 +265,7 @@
           'x-api-signature': API_SIGNATURE,
           'x-api-timestamp': API_TIMESTAMP,
         },
-        body: JSON.stringify({ nonce, user: userGuid, sessionId }),
+        body: JSON.stringify({ user: userGuid, sessionId }),
       });
       const data = await res.json();
       log('Réponse: ' + JSON.stringify(data), res.ok ? 'ok' : 'err');
@@ -285,7 +294,7 @@
     const API_SIGNATURE = '1759209902443128';
     const API_TIMESTAMP = '1759209902443128';
     try {
-      const res = await fetch(`${base}/auth/qr/verify`, {
+      const res = await fetch(`${base}/qr-auth/verify`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

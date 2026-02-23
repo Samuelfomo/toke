@@ -21,6 +21,7 @@ export default class ScheduleAssignments extends ScheduleAssignmentsModel {
   private userObj?: User;
   private groupsObj?: Groups;
   private createdByObj?: User;
+  private new_template?: SessionTemplate;
 
   constructor() {
     super();
@@ -155,44 +156,6 @@ export default class ScheduleAssignments extends ScheduleAssignmentsModel {
     }
   }
 
-  /**
-   * Mettre à jour le template et logger automatiquement
-   */
-  async updateSessionTemplate(
-    newTemplate: any,
-    modifiedBy: number,
-    reason?: string,
-  ): Promise<void> {
-    if (this.isNew()) {
-      throw new Error('Cannot update template on unsaved assignment');
-    }
-
-    // Sauvegarder l'ancien état
-    const previousTemplate = this.session_template;
-    const createdBy = this.created_by!;
-    const previousVersion = this.version || this.initialVersion;
-
-    // Mettre à jour le template et incrémenter la version
-    const newVersion = previousVersion + this.initialVersion;
-    this.setSessionTemplate(newTemplate);
-    this.setVersion(newVersion);
-    this.setCreatedBy(modifiedBy);
-
-    // Sauvegarder l'assignment
-    await this.updateDefinition();
-
-    // ✅ Logger automatiquement la modification
-    await this.logModification({
-      previousTemplate,
-      newTemplate,
-      previousVersion,
-      newVersion,
-      modifiedBy,
-      createdBy,
-      modificationReason: reason,
-    });
-  }
-
   getId(): number | undefined {
     return this.id;
   }
@@ -300,6 +263,11 @@ export default class ScheduleAssignments extends ScheduleAssignmentsModel {
 
   setSessionTemplate(template: any): ScheduleAssignments {
     this.session_template = template;
+    return this;
+  }
+
+  setNewSessionTemplate(template: SessionTemplate): ScheduleAssignments {
+    this.new_template = template;
     return this;
   }
 
@@ -414,11 +382,73 @@ export default class ScheduleAssignments extends ScheduleAssignmentsModel {
       if (this.isNew()) {
         await this.create();
       } else {
+        const previousTemplate = this.session_template;
+        const newTemplate = this.new_template;
+        const previousVersion = this.version || this.initialVersion;
+
+        // Mettre à jour le template et incrémenter la version
+        const newVersion = previousVersion + this.initialVersion;
+        const modifiedBy = this.created_by!;
+        const createdBy = this.created_by!;
+        const reason = this.reason ? this.reason : undefined;
+
+        if (newTemplate) this.setSessionTemplate(newTemplate);
+
         await this.update();
+
+        // ✅ Logger automatiquement la modification
+        if (newTemplate)
+          await this.logModification({
+            previousTemplate,
+            newTemplate,
+            previousVersion,
+            newVersion,
+            modifiedBy,
+            createdBy,
+            modificationReason: reason,
+          });
       }
     } catch (error: any) {
       throw new Error(error.message || error);
     }
+  }
+
+  /**
+   * Mettre à jour le template et logger automatiquement
+   */
+  async updateSessionTemplate(
+    newTemplate: any,
+    modifiedBy: number,
+    reason?: string,
+  ): Promise<void> {
+    if (this.isNew()) {
+      throw new Error('Cannot update template on unsaved assignment');
+    }
+
+    // Sauvegarder l'ancien état
+    const previousTemplate = this.session_template;
+    const createdBy = this.created_by!;
+    const previousVersion = this.version || this.initialVersion;
+
+    // Mettre à jour le template et incrémenter la version
+    const newVersion = previousVersion + this.initialVersion;
+    this.setSessionTemplate(newTemplate);
+    this.setVersion(newVersion);
+    this.setCreatedBy(modifiedBy);
+
+    // Sauvegarder l'assignment
+    await this.updateDefinition();
+
+    // ✅ Logger automatiquement la modification
+    await this.logModification({
+      previousTemplate,
+      newTemplate,
+      previousVersion,
+      newVersion,
+      modifiedBy,
+      createdBy,
+      modificationReason: reason,
+    });
   }
 
   async load(identifier: any, byGuid: boolean = false): Promise<ScheduleAssignments | null> {

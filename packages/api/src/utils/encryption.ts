@@ -20,7 +20,7 @@ export class DatabaseEncryption {
    */
   static encrypt(data: string | object, customKey?: string): string {
     if (!data) return '';
- 
+
     // Si objet → convertir en string JSON
     const text = typeof data === 'string' ? data : JSON.stringify(data);
 
@@ -46,14 +46,18 @@ export class DatabaseEncryption {
   static decrypt(encrypted: string, customKey?: string): string {
     if (!encrypted || !encrypted.includes(':')) return encrypted;
 
-    const key = this.normalizeKey(customKey);
+    try {
+      const key = this.normalizeKey(customKey);
 
-    // const key = customKey ? Buffer.from(customKey, 'hex') : defaultKey;
-    const [ivHex, encryptedData] = encrypted.split(':');
-    const decipher = crypto.createDecipheriv(algorithm, key, Buffer.from(ivHex, 'hex'));
-    let decrypted = decipher.update(encryptedData, 'hex', 'utf8');
-    decrypted += decipher.final('utf8');
-    return decrypted;
+      // const key = customKey ? Buffer.from(customKey, 'hex') : defaultKey;
+      const [ivHex, encryptedData] = encrypted.split(':');
+      const decipher = crypto.createDecipheriv(algorithm, key, Buffer.from(ivHex, 'hex'));
+      let decrypted = decipher.update(encryptedData, 'hex', 'utf8');
+      decrypted += decipher.final('utf8');
+      return decrypted;
+    } catch {
+      throw new Error('decryption_failed');
+    }
   }
 
   // Déchiffre et parse en objet (optionnel)
@@ -62,7 +66,8 @@ export class DatabaseEncryption {
     try {
       return JSON.parse(decrypted);
     } catch {
-      return decrypted; // ce n'était pas un objet
+      // return decrypted; // ce n'était pas un objet
+      throw new Error('invalid_payload_format');
     }
   }
 

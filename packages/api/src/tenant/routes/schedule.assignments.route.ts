@@ -653,6 +653,8 @@ router.put('/:guid', Ensure.put(), async (req: Request, res: Response) => {
       });
     }
 
+    console.log('req.body', req.body);
+
     const validatedData = validateScheduleAssignmentsUpdate(req.body);
 
     // if (validatedData.session_template !== undefined) {
@@ -680,6 +682,47 @@ router.put('/:guid', Ensure.put(), async (req: Request, res: Response) => {
 
     if (validatedData.active !== undefined) {
       assignmentObj.setActive(validatedData.active);
+    }
+
+    if (validatedData.user !== undefined && validatedData.user !== null) {
+      const userObj = await User._load(validatedData.user, true);
+      if (!userObj) {
+        return R.handleError(res, HttpStatus.NOT_FOUND, {
+          code: SCHEDULE_ASSIGNMENTS_CODES.USER_NOT_FOUND,
+          message: SCHEDULE_ASSIGNMENTS_ERRORS.USER_NOT_FOUND,
+        });
+      }
+      assignmentObj.setUser(userObj.getId()!);
+    }
+
+    if (validatedData.groups !== undefined && validatedData.groups !== null) {
+      const groupsObj = await Groups._load(validatedData.groups, true);
+      if (!groupsObj) {
+        return R.handleError(res, HttpStatus.NOT_FOUND, {
+          code: SCHEDULE_ASSIGNMENTS_CODES.GROUPS_NOT_FOUND,
+          message: SCHEDULE_ASSIGNMENTS_ERRORS.GROUPS_NOT_FOUND,
+        });
+      }
+      assignmentObj.setGroups(groupsObj.getId()!);
+    }
+
+    const { new_definition } = req.body;
+    if (new_definition) {
+      if (!SessionTemplateValidationUtils.validateDefinition(new_definition)) {
+        return R.handleError(res, HttpStatus.BAD_REQUEST, {
+          code: SESSION_TEMPLATE_CODES.DEFINITION_INVALID,
+          message: SESSION_TEMPLATE_ERRORS.DEFINITION_INVALID,
+        });
+      }
+
+      const session_template = SessionTemplate.toObject(assignmentObj.getSessionTemplate());
+
+      const normalizedDefinition =
+        SessionTemplateValidationUtils.normalizeDefinition(new_definition);
+
+      session_template.setDefinition(normalizedDefinition);
+
+      assignmentObj.setNewSessionTemplate(session_template);
     }
 
     await assignmentObj.save();

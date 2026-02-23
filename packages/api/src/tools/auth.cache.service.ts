@@ -3,6 +3,8 @@ import path from 'path';
 
 import { TimezoneConfigUtils } from '@toke/shared';
 
+import User from '../tenant/class/User.js';
+
 /**
  * Structure d'une session QR en cache
  */
@@ -14,10 +16,7 @@ export interface QRAuthSession {
   expiresAt: string;
 
   // Données utilisateur (remplies après scan mobile)
-  userId?: string;
-  userGuid?: string;
-  email?: string;
-  phone?: string;
+  userData?: User;
 
   // JWT généré après validation
   token?: string;
@@ -138,15 +137,7 @@ export default class AuthCacheService {
    * @param userData - Données utilisateur
    * @returns boolean - true si mis à jour avec succès
    */
-  public static async authenticateSession(
-    sessionId: string,
-    userData: {
-      userId: string;
-      userGuid: string;
-      email?: string;
-      phone?: string;
-    },
-  ): Promise<boolean> {
+  public static async authenticateSession(sessionId: string, userData?: User): Promise<boolean> {
     try {
       const session = await this.getSession(sessionId);
 
@@ -164,15 +155,12 @@ export default class AuthCacheService {
       this.cache[sessionId] = {
         ...session,
         status: 'authenticated',
-        userId: userData.userId,
-        userGuid: userData.userGuid,
-        email: userData.email,
-        phone: userData.phone,
+        userData: userData,
       };
 
       await this.saveCacheToFile();
 
-      console.log(`✅ Session ${sessionId} authentifiée pour user ${userData.userGuid}`);
+      console.log(`✅ Session ${sessionId} authentifiée pour user ${userData?.getGuid()}`);
 
       return true;
     } catch (error: any) {

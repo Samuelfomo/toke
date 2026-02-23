@@ -104,7 +104,7 @@ export class QRSocketService {
 
     if (!sessionId || typeof sessionId !== 'string') {
       socket.emit('error', { message: 'sessionId required' });
-      socket.disconnect();
+      // socket.disconnect();
       return;
     }
 
@@ -112,7 +112,7 @@ export class QRSocketService {
     AuthCacheService.getSession(sessionId).then((session) => {
       if (!session) {
         socket.emit('error', { message: 'Invalid session' });
-        socket.disconnect();
+        // socket.disconnect();
         return;
       }
 
@@ -122,11 +122,22 @@ export class QRSocketService {
       console.log(`✅ Navigateur connecté pour session ${sessionId}`);
       console.log(`📊 Connexions QR actives: ${this.connections.size}`);
 
+      // socket.on('send-message', (data) => {
+      //   console.log('📩 Message reçu:', data)
+      //
+      //   // envoyer à tous les clients
+      //   socket.emit(sessionId, data)
+      // })
+
       // Envoyer confirmation
       socket.emit('connected', {
         sessionId,
         message: 'Waiting for mobile authentication',
       });
+      // socket.emit(sessionId, {
+      //   sessionId,
+      //   message: 'Waiting for mobile authentication',
+      // });
 
       // Gérer la déconnexion
       socket.on('disconnect', () => {
@@ -174,7 +185,7 @@ export class QRSocketService {
           socket.emit('expired', {
             message: 'QR code expired',
           });
-          socket.disconnect();
+          // socket.disconnect();
           this.handleDisconnect(sessionId);
           return;
         }
@@ -183,11 +194,7 @@ export class QRSocketService {
           // ✅ Session authentifiée !
           socket.emit('authenticated', {
             token: session.token,
-            user: {
-              guid: session.userGuid,
-              email: session.email,
-              phone: session.phone,
-            },
+            user: session.userData?.toJSON(),
           });
 
           // Nettoyer
@@ -200,7 +207,7 @@ export class QRSocketService {
           socket.emit('rejected', {
             message: 'Authentication rejected',
           });
-          socket.disconnect();
+          // socket.disconnect();
           this.handleDisconnect(sessionId);
         }
       } catch (error: any) {

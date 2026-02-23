@@ -1,9 +1,11 @@
-import { Server } from 'http';
+import http, { Server } from 'http';
 
 import cors from 'cors';
 import express from 'express';
 import { TimezoneConfigUtils } from '@toke/shared';
 
+import { SocketServer } from '../realtime/SocketServer.js';
+import AuthCacheService from '../tools/auth.cache.service.js';
 // import dotenv from 'dotenv';
 //
 // dotenv.config();
@@ -35,6 +37,7 @@ import BillingRoute from './routes/manager/billing.route.js';
 import FraudRoute from './routes/manager/fraud.route.js';
 import SponsorRoute from './routes/sponsor.route.js';
 import AppConfigRoute from './routes/app.config.route.js';
+import authRoute from './routes/auth.route.js';
 
 interface AppConfig {
   port: number;
@@ -75,7 +78,15 @@ export default class App {
       console.log(`🚀 Démarrage serveur sur ${this.config.host}:${this.config.port}...`);
 
       await new Promise<void>((resolve, reject) => {
-        this.server = this.app.listen(this.config.port, this.config.host, () => {
+        // ✅ Créer le serveur HTTP
+        const httpServer = http.createServer(this.app);
+
+        // ✅ Initialiser Socket.IO + QRSocketService
+        SocketServer.init(httpServer);
+
+        this.server = httpServer;
+
+        httpServer.listen(this.config.port, this.config.host, () => {
           console.log(`✅ Serveur actif sur http://${this.config.host}:${this.config.port}`);
           console.log(`📊 Health check: http://${this.config.host}:${this.config.port}/health`);
           console.log(`🔧 Environnement: ${process.env.NODE_ENV || 'development'}`);
@@ -269,6 +280,7 @@ export default class App {
     this.app.use(`/profile`, ProfileRoutes);
     this.app.use('/sponsors', SponsorRoute);
     this.app.use('/app', AppConfigRoute);
+    this.app.use('/auth', authRoute);
 
     // *** Manager Route ***//
     this.app.use(`/billing`, BillingRoute);
@@ -366,6 +378,14 @@ export default class App {
       console.log(`\n📡 Signal ${signal} reçu. Arrêt gracieux...`);
 
       try {
+        // Arrêter Socket.IO (inclut QRSocketService)
+        SocketServer.shutdown();
+        console.log('✅ Socket.IO arrêté');
+
+        // Arrêter le cache
+        await AuthCacheService.shutdown();
+        console.log('✅ Cache arrêté');
+
         // 1. Fermer le serveur HTTP
         if (this.server) {
           console.log('🔌 Fermeture serveur HTTP...');
