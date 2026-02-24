@@ -40,7 +40,7 @@
     "kill": "npm run kill --workspace=@toke/api",
     "status:api": "npm run status --workspace=@toke/api",
     "nuclear:api": "npm run nuclear-cleanup --workspace=@toke/api",
-    "build": "npm run build --workspace=@toke/shared && npm run build --workspace=@toke/api",
+    "build": "npm run build --workspace=@toke/shared && npm run build --workspace=@toke/api && npm run build --workspace=@toke/backend",
     "test": "npm run test --workspaces",
     "type-check": "npm run type-check --workspaces",
     "testCountry": "npm run testCountry --workspace=@toke/api",
@@ -52,7 +52,9 @@
     "migrate:dev:api": "npm run migrate:dev --workspace=@toke/api",
     "migrate:undo:api": "npm run migrate:undo --workspace=@toke/api",
     "status:migrate:api": "npm run status:migrate --workspace=@toke/api",
-    "structure": "tree -I 'node_modules|.*|tmp' > Project-structure.txt"
+    "structure": "tree -I 'node_modules|.*|tmp' > Project-structure.txt",
+    "autoStart:all": "npm run build && pm2 start ecosystem.config.cjs --env production",
+    "autoRestart:all": "npm run build && pm2 restart ecosystem.config.cjs --env production"
   },
   "devDependencies": {
     "concurrently": "^8.0.0",
@@ -64,6 +66,7 @@
     "firebase-admin": "^13.6.0",
     "glob": "^11.0.3",
     "pm2": "^6.0.8",
-    "rimraf": "^6.0.1"
+    "rimraf": "^6.0.1",
+    "socket.io-client": "^4.8.3"
   }
 }

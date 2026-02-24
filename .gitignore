@@ -13,3 +13,6 @@
 .idea/
 .vscode/
 packages/api/src/utils/prive/*.json
+
+**/.env
+.env

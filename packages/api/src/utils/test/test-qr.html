@@ -88,7 +88,9 @@
 <div class="section">
   <label>Base URL du serveur</label>
   <input id="serverUrl" value="https://demo.toke.cm" />
-  <input id="serverUrl2" value="https://m.toke.cm" />
+  <input id="serverUrl2" value="https://my.toke.cm/local" />
+  <input id="serverUrl3" value="https://m.toke.cm" />
+  <input id="serverUrl4" value="https://my.toke.cm" />
 
   <label>Session ID (depuis GET /auth/qr/init)</label>
   <input id="sessionId" placeholder="Clique sur Init pour générer automatiquement" />
@@ -130,6 +132,7 @@
   // ─── ÉTAPE 1 : Init Session ───────────────────────────────
   async function initSession() {
     const base = document.getElementById('serverUrl2').value;
+    const base1 = document.getElementById('serverUrl3').value;
     log('📡 GET ' + base + '/qr-auth/qr/init ...', 'inf');
     const API_KEY = '1759209902443128';
     const API_SIGNATURE = '1759209902443128';
@@ -139,15 +142,15 @@
         method: 'GET',
         headers: {
           'Content-Type': 'application/json',
-          'x-api-key': API_KEY,
-          'x-api-signature': API_SIGNATURE,
-          'x-api-timestamp': API_TIMESTAMP,
+          // 'x-api-key': API_KEY,
+          // 'x-api-signature': API_SIGNATURE,
+          // 'x-api-timestamp': API_TIMESTAMP,
         },
       });
       const data = await res.json();
       log('Réponse: ' + JSON.stringify(data), res.ok ? 'ok' : 'err');
 
-      const res2 = await fetch(`${base}/auth/qr/decrypt`, {
+      const res2 = await fetch(`${base1}/auth/qr/decrypt`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -187,21 +190,10 @@
     }
 
     log(`🔌 Connexion sur ${base}/qr-auth avec sessionId=${sessionId}`, 'inf');
-
-    // ── METS TES CREDENTIALS ICI ──────────────────────────
-    const API_KEY = '1759209902443128';
-    const API_SIGNATURE = '1759209902443128';
-    const API_TIMESTAMP = '1759209902443128';
-    // ─────────────────────────────────────────────────────
-
     socket = io(`${base}/qr-auth`, {
+      path: '/local/socket.io',
       query: { sessionId },
       transports: ['websocket', 'polling'],
-      headers: {                        // ← transmis côté serveur via socket.handshake.auth
-        'x-api-key': API_KEY,
-        'x-api-signature': API_SIGNATURE,
-        'x-api-timestamp': API_TIMESTAMP,
-      },
     });
 
     socket.on('connect', () => {

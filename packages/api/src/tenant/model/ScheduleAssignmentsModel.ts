@@ -379,8 +379,6 @@ export default class ScheduleAssignmentsModel extends BaseModel {
   protected async update(): Promise<void> {
     await this.validate();
 
-    console.log('je suis ici 2');
-
     if (!this.id) {
       throw new Error(SCHEDULE_ASSIGNMENTS_ERRORS.ID_REQUIRED);
     }
@@ -390,13 +388,13 @@ export default class ScheduleAssignmentsModel extends BaseModel {
     // if (this.tenant !== undefined) {
     //   updateData[this.db.tenant] = this.tenant;
     // }
-    // if (this.user !== undefined) {
-    //   updateData[this.db.user] = this.user;
-    // }
-    //
-    // if (this.groups !== undefined) {
-    //   updateData[this.db.groups] = this.groups;
-    // }
+    if (this.user !== undefined && this.user !== null) {
+      updateData[this.db.user] = this.user;
+    }
+
+    if (this.groups !== undefined && this.groups !== null) {
+      updateData[this.db.groups] = this.groups;
+    }
     // if (this.session_template !== undefined) {
     //   updateData[this.db.session_template] = this.session_template;
     // }

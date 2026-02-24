@@ -1,9 +1,10 @@
-import { Server } from 'http';
+import http, { Server } from 'http';
 
 import dotenv from 'dotenv';
 import express from 'express';
 import cors from 'cors';
 import { TimezoneConfigUtils } from '@toke/shared';
+import { Server as IOServer } from 'socket.io';
 
 import tenantRoute from './src/routes/tenant.route.js';
 import userRoute from './src/routes/user.route.js';
@@ -15,6 +16,8 @@ import rotationGroupsRoute from './src/routes/rotation.groups.route.js';
 import scheduleAssignmentsRoute from './src/routes/schedule.assignments.route.js';
 import rotationAssignmentsRoute from './src/routes/rotation.assignments.route.js';
 import groupsRoute from './src/routes/groups.route.js';
+import { QrSocketBridgeService } from './src/services/qr.socket.bridge.service.js';
+import authRoute from './src/routes/auth.route.js';
 
 dotenv.config();
 
@@ -59,7 +62,13 @@ export default class App {
       console.log(`🚀 Démarrage serveur sur ${this.config.host}:${this.config.port}...`);
 
       await new Promise<void>((resolve, reject) => {
-        this.server = this.app.listen(this.config.port, this.config.host, () => {
+        const httpServer = http.createServer(this.app);
+        const io = new IOServer(httpServer, { cors: { origin: '*' } });
+        QrSocketBridgeService.init(io);
+        this.server = httpServer;
+
+        httpServer.listen(this.config.port, this.config.host, () => {
+          // this.server = this.app.listen(this.config.port, this.config.host, () => {
           console.log(`✅ Serveur actif sur http://${this.config.host}:${this.config.port}`);
           console.log(`📊 Health check: http://${this.config.host}:${this.config.port}/health`);
           console.log(`🔧 Environnement: ${process.env.NODE_ENV || 'development'}`);
@@ -173,6 +182,8 @@ export default class App {
     this.app.use('/rotation-assignments', rotationAssignmentsRoute);
     this.app.use('/groups', groupsRoute);
 
+    this.app.use('/auth', authRoute);
+
     // Route 404
     this.app.use((req, res) => {
       res.status(404).json({
@@ -225,6 +236,7 @@ export default class App {
       console.log(`\n📡 Signal ${signal} reçu. Arrêt gracieux...`);
 
       try {
+        QrSocketBridgeService.shutdown();
         // 1. Fermer le serveur HTTP
         if (this.server) {
           console.log('🔌 Fermeture serveur HTTP...');

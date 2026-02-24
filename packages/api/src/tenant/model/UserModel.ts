@@ -90,6 +90,9 @@ export default class UserModel extends BaseModel {
   protected deleted_at?: Date;
   protected last_login_at?: Date;
 
+  protected created_at?: Date;
+  protected updated_at?: Date;
+
   protected constructor() {
     super();
   }

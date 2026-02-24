@@ -2619,28 +2619,26 @@ router.get('/attendance/stat', Ensure.get(), async (req: Request, res: Response)
     // 1️⃣ RÉCUPÉRATION DE L'ÉQUIPE
     // ============================================
     let teamMembers: number[] = [];
-    let managerObj: User | null = null;
+    // let managerObj: User | null = null;
     let siteObj: Site | null = null;
 
-    if (manager) {
-      if (!UsersValidationUtils.validateGuid(String(manager))) {
-        return R.handleError(res, HttpStatus.BAD_REQUEST, {
-          code: USERS_CODES.VALIDATION_FAILED,
-          message: USERS_ERRORS.GUID_INVALID,
-        });
-      }
-
-      managerObj = await User._load(String(manager), true);
-      if (!managerObj) {
-        return R.handleError(res, HttpStatus.NOT_FOUND, {
-          code: USERS_CODES.SUPERVISOR_NOT_FOUND,
-          message: USERS_ERRORS.SUPERVISOR_NOT_FOUND,
-        });
-      }
-
-      const teamData = await OrgHierarchy.getAllTeamMembers(managerObj.getId()!);
-      teamMembers = teamData.all_employees_flat.map((u) => u.getId()!);
+    if (!UsersValidationUtils.validateGuid(String(manager))) {
+      return R.handleError(res, HttpStatus.BAD_REQUEST, {
+        code: USERS_CODES.VALIDATION_FAILED,
+        message: USERS_ERRORS.GUID_INVALID,
+      });
     }
+
+    const managerObj = await User._load(String(manager), true);
+    if (!managerObj) {
+      return R.handleError(res, HttpStatus.NOT_FOUND, {
+        code: USERS_CODES.SUPERVISOR_NOT_FOUND,
+        message: USERS_ERRORS.SUPERVISOR_NOT_FOUND,
+      });
+    }
+
+    const teamData = await OrgHierarchy.getAllTeamMembers(managerObj.getId()!);
+    teamMembers = teamData.all_employees_flat.map((u) => u.getId()!);
 
     if (site) {
       if (!WorkSessionsValidationUtils.validateGuid(String(site))) {
@@ -2657,10 +2655,6 @@ router.get('/attendance/stat', Ensure.get(), async (req: Request, res: Response)
           message: SITES_ERRORS.NOT_FOUND,
         });
       }
-    }
-
-    if (teamMembers.length === 0 && !manager) {
-      // TODO: Implémenter selon votre logique métier
     }
 
     // ============================================
@@ -2681,8 +2675,6 @@ router.get('/attendance/stat', Ensure.get(), async (req: Request, res: Response)
     }
 
     const periodSessions = await WorkSessions._list(sessionConditions);
-
-    console.log('periodSessions', periodSessions);
 
     // ============================================
     // 3️⃣ CALCUL DES JOURS DE LA PÉRIODE

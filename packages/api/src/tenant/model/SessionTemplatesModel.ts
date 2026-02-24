@@ -200,14 +200,29 @@ export default class SessionTemplateModel extends BaseModel {
       }
     }
 
-    // const existingDefault = await this.findDefault();
-    // if (
-    //   existingDefault &&
-    //   existingDefault.id !== this.id &&
-    //   this.default === !SESSION_TEMPLATE_DEFAULTS.IS_DEFAULT
-    // ) {
-    //   throw new Error(SESSION_TEMPLATE_ERRORS.ACTIVE_DEFAULT_TEMPLATE_ALREADY_EXISTS);
-    // }
+    const updated = await this.updateOne(this.db.tableName, updateData, { [this.db.id]: this.id });
+
+    if (!updated) {
+      throw new Error(SESSION_TEMPLATE_ERRORS.UPDATE_FAILED);
+    }
+  }
+
+  protected async switchDefaultSchedule(is_default: boolean): Promise<void> {
+    if (!this.id) {
+      throw new Error(SESSION_TEMPLATE_ERRORS.ID_REQUIRED);
+    }
+
+    const updateData: Record<string, any> = {};
+
+    updateData[this.db.defaults] = is_default;
+
+    // 🚨 VÉRIFICATION D'UNICITÉ DU MODÈLE PAR DÉFAUT
+    const existingDefault = await this.findDefault();
+
+    // On vérifie s'il existe un modèle par défaut différent de celui en cours de modification.
+    if (existingDefault && existingDefault.id !== this.id) {
+      throw new Error(SESSION_TEMPLATE_ERRORS.ACTIVE_DEFAULT_TEMPLATE_ALREADY_EXISTS);
+    }
 
     const updated = await this.updateOne(this.db.tableName, updateData, { [this.db.id]: this.id });
 

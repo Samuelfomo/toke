@@ -218,6 +218,10 @@ export default class User extends UserModel {
     return this.department;
   }
 
+  getCreatedAt(): Date | undefined {
+    return this.created_at;
+  }
+
   getJobTitle(): string | undefined {
     return this.job_title;
   }
@@ -379,6 +383,15 @@ export default class User extends UserModel {
         });
       }
     }
+
+    // const existingDefault = await SessionTemplate._load({}, false, true);
+    // if (existingDefault) {
+    //   candidates.push(
+    //     type: 'schedule',
+    //     assignedAt: this.created_at || new Date(0),
+    //     ass
+    //   )
+    // }
 
     if (candidates.length === 0) {
       return null;
@@ -1117,6 +1130,8 @@ export default class User extends UserModel {
     this.active = data.active;
     this.last_login_at = data.last_login_at;
     this.device_token = data.device_token;
+    this.created_at = data.created_at;
+    this.updated_at = data.updated_at;
     // this.assigned_sessions = data.assigned_sessions || [];
     return this;
   }

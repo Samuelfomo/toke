@@ -349,6 +349,68 @@ router.delete('/:guid', Ensure.delete(), async (req: Request, res: Response) => 
   }
 });
 
+router.patch('/make-default/:guid', Ensure.patch(), async (req: Request, res: Response) => {
+  try {
+    const { guid } = req.params;
+    if (!SessionTemplateValidationUtils.validateGuid(guid)) {
+      return R.handleError(res, HttpStatus.BAD_REQUEST, {
+        code: SESSION_TEMPLATE_CODES.INVALID_GUID,
+        message: SESSION_TEMPLATE_ERRORS.GUID_INVALID,
+      });
+    }
+
+    const templateObj = await SessionTemplate._load(guid, true);
+    if (!templateObj) {
+      return R.handleError(res, HttpStatus.NOT_FOUND, {
+        code: SESSION_TEMPLATE_CODES.SESSION_TEMPLATE_NOT_FOUND,
+        message: SESSION_TEMPLATE_ERRORS.NOT_FOUND,
+      });
+    }
+
+    await templateObj.setDefault();
+
+    return R.handleSuccess(res, {
+      message: SESSION_TEMPLATE_MESSAGES.UPDATED_SUCCESSFULLY,
+    });
+  } catch (error: any) {
+    return R.handleError(res, HttpStatus.INTERNAL_ERROR, {
+      code: SESSION_TEMPLATE_CODES.DELETE_FAILED,
+      message: error.message,
+    });
+  }
+});
+
+router.patch('/disable-default/:guid', Ensure.patch(), async (req: Request, res: Response) => {
+  try {
+    const { guid } = req.params;
+    if (!SessionTemplateValidationUtils.validateGuid(guid)) {
+      return R.handleError(res, HttpStatus.BAD_REQUEST, {
+        code: SESSION_TEMPLATE_CODES.INVALID_GUID,
+        message: SESSION_TEMPLATE_ERRORS.GUID_INVALID,
+      });
+    }
+
+    const templateObj = await SessionTemplate._load(guid, true);
+    if (!templateObj) {
+      return R.handleError(res, HttpStatus.NOT_FOUND, {
+        code: SESSION_TEMPLATE_CODES.SESSION_TEMPLATE_NOT_FOUND,
+        message: SESSION_TEMPLATE_ERRORS.NOT_FOUND,
+      });
+    }
+
+    await templateObj.removeDefault();
+
+    return R.handleSuccess(res, {
+      message: SESSION_TEMPLATE_MESSAGES.UPDATED_SUCCESSFULLY,
+    });
+  } catch (error: any) {
+    return R.handleError(res, HttpStatus.INTERNAL_ERROR, {
+      code: SESSION_TEMPLATE_CODES.DELETE_FAILED,
+      message: error.message,
+    });
+  }
+});
+
 // ============================================
 // STATISTIQUES ET ANALYSES
 // ============================================

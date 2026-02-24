@@ -179,7 +179,6 @@ export const RotationAssignmentsDbStructure = {
     validate: {
       eitherUserOrGroups() {
         if (!this.user && !this.groups) {
-          console.log('je suis ici 3');
           throw new Error('Either user or groups must be specified');
         }
         if (this.user && this.groups) {

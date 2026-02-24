@@ -46,6 +46,8 @@ export class DatabaseEncryption {
   static decrypt(encrypted: string, customKey?: string): string {
     if (!encrypted || !encrypted.includes(':')) return encrypted;
 
+    console.log('decrypt', encrypted, customKey);
+
     try {
       const key = this.normalizeKey(customKey);
 

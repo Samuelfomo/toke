@@ -8,6 +8,7 @@ import R from '../../tools/response.js';
 import AuthCacheService from '../../tools/auth.cache.service.js';
 import { DatabaseEncryption } from '../../utils/encryption.js';
 import { ApiKeyManager } from '../../tools/api-key-manager.js';
+import { UserAuthenticationService } from '../../tools/user.authentication.service.js';
 
 const router = Router();
 
@@ -174,35 +175,35 @@ router.post('/qr/verify', async (req: Request, res: Response) => {
     // 3️⃣ VÉRIFIER LA SIGNATURE
     // ============================================
 
-    // let qrGenerator: any;
-    // try {
-    //   qrGenerator = DatabaseEncryption.decryptToObject(signature, session.nonce);
-    // } catch (err: any) {
-    //   await AuthCacheService.rejectSession(sessionId);
-    //   return R.handleError(res, HttpStatus.BAD_REQUEST, {
-    //     code: AUTH_QR_CODES.INVALID_SIGNATURE,
-    //     message:
-    //       err.message === 'decryption_failed'
-    //         ? 'Invalid signature — wrong key or corrupted data'
-    //         : 'Signature payload is not valid JSON',
-    //   });
-    // }
-    //
-    // // ============================================
-    // // 4️⃣ CHARGER L'UTILISATEUR
-    // // ============================================
-    //
-    // const auth = await UserAuthenticationService.recusiviteAuth(
-    //   qrGenerator.email,
-    //   qrGenerator.code,
-    // );
-    //
-    // const response: any = auth.response;
-    //
-    // if (auth.status !== HttpStatus.CREATED) {
-    //   await AuthCacheService.rejectSession(sessionId);
-    //   return R.handleError(res, auth.status, response.error);
-    // }
+    let qrGenerator: any;
+    try {
+      qrGenerator = DatabaseEncryption.decryptToObject(signature, session.nonce);
+    } catch (err: any) {
+      await AuthCacheService.rejectSession(sessionId);
+      return R.handleError(res, HttpStatus.BAD_REQUEST, {
+        code: AUTH_QR_CODES.INVALID_SIGNATURE,
+        message:
+          err.message === 'decryption_failed'
+            ? 'Invalid signature — wrong key or corrupted data'
+            : 'Signature payload is not valid JSON',
+      });
+    }
+
+    // ============================================
+    // 4️⃣ CHARGER L'UTILISATEUR
+    // ============================================
+
+    const auth = await UserAuthenticationService.recusiviteAuth(
+      qrGenerator.email,
+      qrGenerator.code,
+    );
+
+    const response: any = auth.response;
+
+    if (auth.status !== HttpStatus.CREATED) {
+      await AuthCacheService.rejectSession(sessionId);
+      return R.handleError(res, auth.status, response.error);
+    }
 
     // ============================================
     // 6️⃣ GÉNÉRER JWT
