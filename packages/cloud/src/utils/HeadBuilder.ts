@@ -9,8 +9,11 @@ type HeadOptions = {
 class HeadBuilder {
   static apply(options: HeadOptions): void {
     // Nettoyer les anciens tags dynamiques
-    document.querySelectorAll("head link[data-dynamic], head script[data-dynamic], head meta[data-dynamic]")
-      .forEach(el => el.remove());
+    document
+      .querySelectorAll(
+        'head link[data-dynamic], head script[data-dynamic], head meta[data-dynamic]',
+      )
+      .forEach((el) => el.remove());
 
     // Title
     document.title = options.title;
@@ -18,36 +21,35 @@ class HeadBuilder {
     // Meta
     if (options.meta) {
       Object.entries(options.meta).forEach(([name, content]) => {
-        const meta = document.createElement("meta");
-        meta.setAttribute("name", name);
-        meta.setAttribute("content", content);
-        meta.setAttribute("data-dynamic", "true");
+        const meta = document.createElement('meta');
+        meta.setAttribute('name', name);
+        meta.setAttribute('content', content);
+        meta.setAttribute('data-dynamic', 'true');
         document.head.appendChild(meta);
       });
     }
 
     // main.css
-    const mainCss = document.createElement("link");
-    mainCss.rel = "stylesheet";
-    mainCss.href = "main.css";
-    mainCss.setAttribute("data-dynamic", "true");
+    const mainCss = document.createElement('link');
+    mainCss.rel = 'stylesheet';
+    mainCss.href = 'main.css';
+    mainCss.setAttribute('data-dynamic', 'true');
     document.head.appendChild(mainCss);
 
     // CSS spécifiques
-    options.css?.forEach(file => {
-      const link = document.createElement("link");
-      link.rel = "stylesheet";
-      link.href = file
-      document.head.appendChild(link)
-
-    })
+    options.css?.forEach((file) => {
+      const link = document.createElement('link');
+      link.rel = 'stylesheet';
+      link.href = file;
+      document.head.appendChild(link);
+    });
 
     // Scripts externes
-    options.scripts?.forEach(src => {
-      const script = document.createElement("script");
+    options.scripts?.forEach((src) => {
+      const script = document.createElement('script');
       script.src = src;
       script.defer = true;
-      script.setAttribute("data-dynamic", "true");
+      script.setAttribute('data-dynamic', 'true');
       document.head.appendChild(script);
     });
   }

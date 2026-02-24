@@ -27,7 +27,7 @@ export default class authCtrl {
 
     // Vérifier si l'email est fourni
     if (!email || email.trim() === '') {
-      errors.push('L\'adresse email est requise');
+      errors.push("L'adresse email est requise");
       return { isValid: false, errors };
     }
 
@@ -36,17 +36,17 @@ export default class authCtrl {
     // Vérifier le format de l'email avec une regex plus stricte
     const emailRegex = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
     if (!emailRegex.test(trimmedEmail)) {
-      errors.push('Format d\'email invalide');
+      errors.push("Format d'email invalide");
     }
 
     // Vérifier la longueur de l'email
     if (trimmedEmail.length > 254) {
-      errors.push('L\'adresse email est trop longue (maximum 254 caractères)');
+      errors.push("L'adresse email est trop longue (maximum 254 caractères)");
     }
 
     // Vérifier la longueur minimale
     if (trimmedEmail.length < 5) {
-      errors.push('L\'adresse email est trop courte (minimum 5 caractères)');
+      errors.push("L'adresse email est trop courte (minimum 5 caractères)");
     }
 
     // Vérifier le domaine plus précisément
@@ -56,11 +56,16 @@ export default class authCtrl {
 
       // Vérifier la partie locale
       if (localPart.length === 0 || localPart.length > 64) {
-        errors.push('La partie locale de l\'email est invalide');
+        errors.push("La partie locale de l'email est invalide");
       }
 
       // Vérifier le domaine
-      if (domain.length < 3 || !domain.includes('.') || domain.startsWith('.') || domain.endsWith('.')) {
+      if (
+        domain.length < 3 ||
+        !domain.includes('.') ||
+        domain.startsWith('.') ||
+        domain.endsWith('.')
+      ) {
         errors.push('Domaine email invalide');
       }
 
@@ -74,7 +79,7 @@ export default class authCtrl {
 
     return {
       isValid: errors.length === 0,
-      errors
+      errors,
     };
   }
 
@@ -107,7 +112,7 @@ export default class authCtrl {
 
     return {
       isValid: errors.length === 0,
-      errors
+      errors,
     };
   }
 
@@ -131,7 +136,7 @@ export default class authCtrl {
 
     return {
       isValid: errors.length === 0,
-      errors
+      errors,
     };
   }
 
@@ -166,7 +171,7 @@ export default class authCtrl {
         return {
           success: false,
           message: 'Informations de connexion invalides',
-          error: this.getUserFriendlyErrorMessage(validation.errors)
+          error: this.getUserFriendlyErrorMessage(validation.errors),
         };
       }
 
@@ -191,8 +196,10 @@ export default class authCtrl {
 
         return {
           success: true,
-          message: response.message || 'Un email contenant un code OTP vous a été envoyé. Vérifiez votre boîte de réception.',
-          data: response.data
+          message:
+            response.message ||
+            'Un email contenant un code OTP vous a été envoyé. Vérifiez votre boîte de réception.',
+          data: response.data,
         };
       } else {
         // Gérer l'échec
@@ -201,8 +208,8 @@ export default class authCtrl {
 
         return {
           success: false,
-          message: response.message || 'Erreur lors de l\'envoi du code OTP',
-          error: response.error || 'Utilisateur non trouvé'
+          message: response.message || "Erreur lors de l'envoi du code OTP",
+          error: response.error || 'Utilisateur non trouvé',
         };
       }
     } catch (error: any) {
@@ -217,7 +224,7 @@ export default class authCtrl {
       return {
         success: false,
         message: errorMessage,
-        error: error.message || 'Erreur réseau'
+        error: error.message || 'Erreur réseau',
       };
     }
   }
@@ -293,20 +300,20 @@ export default class authCtrl {
     if (errors.length === 0) return '';
 
     // Prioriser les messages d'erreur les plus importants
-    if (errors.some(e => e.includes('requis'))) {
-      const field = errors.find(e => e.includes('email')) ? 'email' : 'code client';
+    if (errors.some((e) => e.includes('requis'))) {
+      const field = errors.find((e) => e.includes('email')) ? 'email' : 'code client';
       return `Veuillez saisir votre ${field}`;
     }
 
-    if (errors.some(e => e.includes('Format') || e.includes('invalide'))) {
+    if (errors.some((e) => e.includes('Format') || e.includes('invalide'))) {
       return 'Veuillez saisir une adresse email valide (ex: nom@exemple.com)';
     }
 
-    if (errors.some(e => e.includes('trop long'))) {
+    if (errors.some((e) => e.includes('trop long'))) {
       return 'Les informations saisies sont trop longues';
     }
 
-    if (errors.some(e => e.includes('trop court'))) {
+    if (errors.some((e) => e.includes('trop court'))) {
       return 'Les informations saisies sont trop courtes';
     }
 
@@ -320,7 +327,7 @@ export default class authCtrl {
   static validateMultipleEmails(emails: string[]): { [key: string]: LoginValidationResult } {
     const results: { [key: string]: LoginValidationResult } = {};
 
-    emails.forEach(email => {
+    emails.forEach((email) => {
       results[email] = this.validateEmail(email);
     });
 

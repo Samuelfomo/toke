@@ -24,7 +24,12 @@
 
         <div class="form-group">
           <label>Poste</label>
-          <input type="text" v-model="form.position" required placeholder="Ex : Développeur Frontend" />
+          <input
+            type="text"
+            v-model="form.position"
+            required
+            placeholder="Ex : Développeur Frontend"
+          />
         </div>
 
         <div class="form-group">
@@ -67,33 +72,33 @@
 </template>
 
 <script lang="ts">
-import { defineComponent } from 'vue'
+import { defineComponent } from 'vue';
 
 interface EmployeeForm {
-  name: string
-  email: string
-  phone: string
-  position: string
-  siteId: string | number
-  avatar: string
-  department: string
-  status: string
+  name: string;
+  email: string;
+  phone: string;
+  position: string;
+  siteId: string | number;
+  avatar: string;
+  department: string;
+  status: string;
 }
 
 interface Employee {
-  id: number
-  managerId: number
-  name: string
-  email: string
-  phone: string
-  position: string
-  siteId: string | number
-  avatar: string
-  department: string
-  status: string
-  punctualityScore: number
-  punctualityDetails: { onTime: number; totalDays: number }
-  initials: string
+  id: number;
+  managerId: number;
+  name: string;
+  email: string;
+  phone: string;
+  position: string;
+  siteId: string | number;
+  avatar: string;
+  department: string;
+  status: string;
+  punctualityScore: number;
+  punctualityDetails: { onTime: number; totalDays: number };
+  initials: string;
 }
 
 export default defineComponent({
@@ -102,8 +107,8 @@ export default defineComponent({
     managerId: { type: Number, required: true },
     availableSites: {
       type: Array as () => Array<{ id: number; name: string }>,
-      default: () => []
-    }
+      default: () => [],
+    },
   },
   data() {
     return {
@@ -115,13 +120,13 @@ export default defineComponent({
         siteId: '',
         avatar: '',
         department: '',
-        status: 'present'
-      }
-    }
+        status: 'present',
+      },
+    };
   },
   methods: {
     closeModal() {
-      this.$emit('close')
+      this.$emit('close');
     },
     submitForm() {
       const newEmployee = {
@@ -130,14 +135,18 @@ export default defineComponent({
         ...this.form,
         punctualityScore: 100,
         punctualityDetails: { onTime: 0, totalDays: 0 },
-        initials: this.getInitials(this.form.name)
-      }
-      this.$emit('employee-added', newEmployee)
-      this.closeModal()
+        initials: this.getInitials(this.form.name),
+      };
+      this.$emit('employee-added', newEmployee);
+      this.closeModal();
     },
     getInitials(name: string) {
-      return name.split(' ').map(n => n[0]?.toUpperCase() || '').join('').slice(0, 2)
-    }
-  }
-})
+      return name
+        .split(' ')
+        .map((n) => n[0]?.toUpperCase() || '')
+        .join('')
+        .slice(0, 2);
+    },
+  },
+});
 </script>

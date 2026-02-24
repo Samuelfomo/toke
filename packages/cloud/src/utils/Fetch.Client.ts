@@ -1,5 +1,5 @@
 // axiosClient.ts
-import axios, { AxiosInstance, AxiosRequestConfig } from "axios";
+import axios, { AxiosInstance, AxiosRequestConfig } from 'axios';
 const baseURL = `${import.meta.env.VITE_LOCAL_URL}:${import.meta.env.VITE_LOCAL_PORT}`;
 
 interface ApiRequestConfig extends AxiosRequestConfig {
@@ -13,14 +13,17 @@ const axiosClient: AxiosInstance = axios.create({
   baseURL,
   // withCredentials: true, // équivaut à credentials: "include"
   headers: {
-    "Content-Type": "application/json",
+    'Content-Type': 'application/json',
   },
 });
 
 /**
  * Requête générique
  */
-export const apiRequest = async <T = unknown>({ path, ...config }: ApiRequestConfig): Promise<T> => {
+export const apiRequest = async <T = unknown>({
+  path,
+  ...config
+}: ApiRequestConfig): Promise<T> => {
   try {
     const response = await axiosClient({
       url: path,

@@ -44,7 +44,6 @@ export default class AuthService {
     }
   }
 
-
   // /**
   //  * Vérification du code OTP
   //  */
@@ -291,7 +290,10 @@ export default class AuthService {
     let errorMessage = 'Une erreur est survenue. Veuillez réessayer plus tard.';
 
     if (error.message) {
-      if (error.message.includes('Failed to fetch') || error.message.includes('Impossible de joindre')) {
+      if (
+        error.message.includes('Failed to fetch') ||
+        error.message.includes('Impossible de joindre')
+      ) {
         errorMessage = 'Impossible de joindre le serveur. Vérifiez votre connexion internet.';
       } else if (error.message.includes('timeout')) {
         errorMessage = 'La requête a expiré. Veuillez réessayer.';

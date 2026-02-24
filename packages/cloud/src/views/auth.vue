@@ -26,9 +26,10 @@
             class="form-input"
             placeholder="Ex : CLT-20455"
             autocomplete="off"
-            :class="{ 'error': errors.customer_code }"
+            :class="{ error: errors.customer_code }"
             @input="updateField('customer_code', ($event.target as HTMLInputElement).value)"
-            @blur="handleCustomerCodeBlur(formData.customer_code, updateField)" />
+            @blur="handleCustomerCodeBlur(formData.customer_code, updateField)"
+          />
           <span v-if="errors.customer_code" class="error-message">
             {{ errors.customer_code }}
           </span>
@@ -46,22 +47,20 @@
             class="form-input"
             placeholder="votre.email@entreprise.com"
             autocomplete="email"
-            :class="{ 'error': errors.email }"
+            :class="{ error: errors.email }"
             @input="updateField('email', ($event.target as HTMLInputElement).value)"
             @blur="handleEmailBlur(formData.email, updateField)"
           />
 
           <span v-if="errors.email" class="error-message">{{ errors.email }}</span>
         </div>
-
-      </div>A-20251013190826-101
+      </div>
+      A-20251013190826-101
     </template>
 
     <template #footer>
       <div class="login-footer">
-        <small class="copyright">
-          Copyright Imediatis 2025 - Tous droits réservés
-        </small>
+        <small class="copyright"> Copyright Imediatis 2025 - Tous droits réservés </small>
       </div>
     </template>
   </AuthForm>
@@ -70,7 +69,7 @@
 <script setup lang="ts">
 import { ref } from 'vue';
 import AuthForm from './components/auth/authForm.vue';
-import authCss from "../assets/css/toke-auth-01.css?url";
+import authCss from '../assets/css/toke-auth-01.css?url';
 import authCtrl from '../ctrl/authCtrl';
 import router from '@/router';
 
@@ -82,7 +81,7 @@ const authFormRef = ref<any>(null);
 // ---------------------
 const loginFields = ref([
   { name: 'email', value: '' },
-  { name: 'customer_code', value: '' }
+  { name: 'customer_code', value: '' },
 ] as any);
 
 // ---------------------
@@ -105,7 +104,10 @@ const handleEmailBlur = (email: string, updateField: Function) => {
   if (!validation.isValid) {
     // Utiliser la méthode exposée du composant AuthForm pour définir l'erreur
     if (authFormRef.value) {
-      authFormRef.value.setFieldError('email', authCtrl.getUserFriendlyErrorMessage(validation.errors));
+      authFormRef.value.setFieldError(
+        'email',
+        authCtrl.getUserFriendlyErrorMessage(validation.errors),
+      );
     }
   }
 };
@@ -120,7 +122,10 @@ const handleCustomerCodeBlur = (customerCode: string, updateField: Function) => 
   if (!validation.isValid) {
     // Utiliser la méthode exposée du composant AuthForm pour définir l'erreur
     if (authFormRef.value) {
-      authFormRef.value.setFieldError('customer_code', authCtrl.getUserFriendlyErrorMessage(validation.errors));
+      authFormRef.value.setFieldError(
+        'customer_code',
+        authCtrl.getUserFriendlyErrorMessage(validation.errors),
+      );
     }
   }
 };
@@ -156,7 +161,7 @@ const handleLogin = async (formData: any) => {
     // Appel au contrôleur pour gérer la connexion
     const response = await authCtrl.requestLogin({
       email: formData.email,
-      customer_code: formData.customer_code
+      customer_code: formData.customer_code,
     });
 
     // console.log('📡 Réponse de l\'API:', response);
@@ -166,7 +171,9 @@ const handleLogin = async (formData: any) => {
 
       // Afficher un message de succès
       if (authFormRef.value) {
-        authFormRef.value.setGlobalSuccess(response.message || 'Code OTP envoyé avec succès! Redirection...');
+        authFormRef.value.setGlobalSuccess(
+          response.message || 'Code OTP envoyé avec succès! Redirection...',
+        );
       }
 
       // Stocker l'email pour la vérification OTP
@@ -190,14 +197,13 @@ const handleLogin = async (formData: any) => {
 
       throw new Error(errorMessage);
     }
-
   } catch (error: any) {
     // console.error('💥 Erreur lors de la connexion:', error);
 
     // Afficher l'erreur à l'utilisateur
     if (authFormRef.value && !error.field) {
       authFormRef.value.setGlobalError(
-        error.message || 'Une erreur est survenue lors de la connexion. Veuillez réessayer.'
+        error.message || 'Une erreur est survenue lors de la connexion. Veuillez réessayer.',
       );
     }
 
@@ -243,7 +249,7 @@ const handleLogin = async (formData: any) => {
 
 .form-input:focus {
   outline: none;
-  border-color: #4CAF50;
+  border-color: #4caf50;
   box-shadow: 0 0 0 3px rgba(76, 175, 80, 0.1);
 }
 

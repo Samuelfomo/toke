@@ -9,63 +9,67 @@
  * Contraste validé WCAG AAA pour l'accessibilité.
  * Ne pas modifier sans validation design.
  */
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
 
 /* ===== CSS CUSTOM PROPERTIES (VARIABLES) ===== */
 :root {
-  
   /* 🎨 COULEURS PRINCIPALES */
-  --color-primary: #004AAD;           /* Contraste sur blanc: 10.4:1 ✅ EXCELLENT */
-  --color-secondary: #FFDE59;         /* ⚠️ INTERDIT sur fond blanc (1.8:1) - Uniquement sur primary */
-  
+  --color-primary: #004aad; /* Contraste sur blanc: 10.4:1 ✅ EXCELLENT */
+  --color-secondary: #ffde59; /* ⚠️ INTERDIT sur fond blanc (1.8:1) - Uniquement sur primary */
+
   /* 🎨 COULEURS SYSTÈME */
-  --color-success: #28A745;           /* Contraste sur blanc: 3.4:1 ⚠️ Texte large uniquement */
-  --color-warning: #f67214;           /* Contraste sur blanc: 2.9:1 ⚠️ Texte large uniquement */
-  --color-error: #DC3545;             /* Contraste sur blanc: 5.9:1 ✅ BON */
-  --color-info: #17A2B8;              /* Contraste sur blanc: 3.4:1 ⚠️ Texte large uniquement */
-  
+  --color-success: #28a745; /* Contraste sur blanc: 3.4:1 ⚠️ Texte large uniquement */
+  --color-warning: #f67214; /* Contraste sur blanc: 2.9:1 ⚠️ Texte large uniquement */
+  --color-error: #dc3545; /* Contraste sur blanc: 5.9:1 ✅ BON */
+  --color-info: #17a2b8; /* Contraste sur blanc: 3.4:1 ⚠️ Texte large uniquement */
+
   /* 🎨 COULEURS TEXTE */
-  --text-primary: #212529;            /* Contraste sur blanc: 16.8:1 ✅ EXCELLENT */
-  --text-secondary: #6C757D;          /* Contraste sur blanc: 4.6:1 ✅ BON */
-  --text-muted: #ADB5BD;              /* Contraste sur blanc: 2.8:1 ❌ Non-critique uniquement */
-  --text-disabled: #CED4DA;           /* Contraste sur blanc: 2.2:1 ❌ Éléments désactivés */
-  
+  --text-primary: #212529; /* Contraste sur blanc: 16.8:1 ✅ EXCELLENT */
+  --text-secondary: #6c757d; /* Contraste sur blanc: 4.6:1 ✅ BON */
+  --text-muted: #adb5bd; /* Contraste sur blanc: 2.8:1 ❌ Non-critique uniquement */
+  --text-disabled: #ced4da; /* Contraste sur blanc: 2.2:1 ❌ Éléments désactivés */
+
   /* 🎨 COULEURS BACKGROUNDS */
-  --bg-primary: #FFFFFF;              /* Fond principal */
-  --bg-secondary: #F8F9FA;            /* Sections, sidebar */
-  --bg-card: #FFFFFF;                 /* Cartes, modals */
-  
+  --bg-primary: #ffffff; /* Fond principal */
+  --bg-secondary: #f8f9fa; /* Sections, sidebar */
+  --bg-card: #ffffff; /* Cartes, modals */
+
   /* 🎨 COULEURS BORDERS */
-  --border-light: #E9ECEF;            /* Séparateurs subtils */
-  --border-medium: #DEE2E6;           /* Contours visibles */
-  --border-dark: #ADB5BD;             /* Emphasis */
-  
+  --border-light: #e9ecef; /* Séparateurs subtils */
+  --border-medium: #dee2e6; /* Contours visibles */
+  --border-dark: #adb5bd; /* Emphasis */
+
   /* 🔤 TYPOGRAPHY - FONT FAMILY */
-  --font-primary: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
-  
+  --font-primary:
+    'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell,
+    sans-serif;
+
   /* 🔤 TYPOGRAPHY - FONT SIZES */
-  --font-size-h1: 48px;               /* Desktop - Responsive: 36px */
-  --font-size-h2: 40px;               /* Desktop - Responsive: 28px */
-  --font-size-h3: 32px;               /* Desktop - Responsive: 24px */
+  --font-size-h1: 48px; /* Desktop - Responsive: 36px */
+  --font-size-h2: 40px; /* Desktop - Responsive: 28px */
+  --font-size-h3: 32px; /* Desktop - Responsive: 24px */
   --font-size-h4: 24px;
   --font-size-h5: 20px;
   --font-size-h6: 18px;
-  
+
   --font-size-body-xl: 20px;
   --font-size-body-lg: 18px;
-  --font-size-body: 16px;             /* Base standard web */
+  --font-size-body: 16px; /* Base standard web */
   --font-size-body-sm: 14px;
-  --font-size-caption: 12px;          /* ⚠️ Minimum absolu */
-  
+  --font-size-caption: 12px; /* ⚠️ Minimum absolu */
+
   --font-size-btn-lg: 18px;
   --font-size-btn: 16px;
   --font-size-btn-sm: 14px;
-  
+
   /* 🔤 TYPOGRAPHY - FONT WEIGHTS */
   --font-weight-regular: 400;
   --font-weight-medium: 500;
   --font-weight-semibold: 600;
   --font-weight-bold: 700;
-  
+
   /* 🔤 TYPOGRAPHY - LINE HEIGHTS */
   --line-height-h1: 56px;
   --line-height-h2: 48px;
@@ -73,68 +77,68 @@
   --line-height-h4: 32px;
   --line-height-h5: 28px;
   --line-height-h6: 24px;
-  
+
   --line-height-body-xl: 32px;
   --line-height-body-lg: 28px;
   --line-height-body: 24px;
   --line-height-body-sm: 20px;
   --line-height-caption: 16px;
-  
+
   /* 📐 SPACING SYSTEM (8px) */
   /* Usage: margin, padding, gap */
   --space-xs: 4px;
   --space-sm: 8px;
-  --space-md: 16px;                   /* Standard - 80% des cas */
+  --space-md: 16px; /* Standard - 80% des cas */
   --space-lg: 24px;
   --space-xl: 32px;
   --space-2xl: 48px;
   --space-3xl: 64px;
   --space-4xl: 96px;
-  
+
   /* 📐 LAYOUT - BREAKPOINTS */
-  --breakpoint-sm: 576px;             /* Phones large */
-  --breakpoint-md: 768px;             /* Tablets */
-  --breakpoint-lg: 1024px;            /* Desktop */
-  --breakpoint-xl: 1200px;            /* Large desktop */
-  --breakpoint-2xl: 1440px;           /* Extra large */
-  
+  --breakpoint-sm: 576px; /* Phones large */
+  --breakpoint-md: 768px; /* Tablets */
+  --breakpoint-lg: 1024px; /* Desktop */
+  --breakpoint-xl: 1200px; /* Large desktop */
+  --breakpoint-2xl: 1440px; /* Extra large */
+
   /* 📐 LAYOUT - CONTAINER */
-  --container-max-width: 1200px;      /* ⚠️ Ne pas dépasser pour lisibilité */
+  --container-max-width: 1200px; /* ⚠️ Ne pas dépasser pour lisibilité */
   --container-padding-mobile: 16px;
   --container-padding-tablet: 24px;
   --container-padding-desktop: 32px;
-  
+
   /* 🎯 COMPONENTS - BORDERS */
   --border-radius-sm: 6px;
-  --border-radius: 8px;               /* Standard */
-  --border-radius-lg: 12px;           /* Cards, CTA */
+  --border-radius: 8px; /* Standard */
+  --border-radius-lg: 12px; /* Cards, CTA */
   --border-radius-xl: 16px;
-  
+
   /* 🎯 COMPONENTS - BUTTONS */
-  --btn-height: 48px;                 /* ⚠️ Minimum 44px accessibilité */
+  --btn-height: 48px; /* ⚠️ Minimum 44px accessibilité */
   --btn-height-lg: 52px;
   --btn-height-sm: 40px;
   --btn-padding-x: 24px;
   --btn-padding-x-lg: 32px;
   --btn-padding-x-sm: 16px;
-  
+
   /* 🎯 COMPONENTS - FORMS */
-  --input-height: 48px;               /* ⚠️ Minimum 44px accessibilité */
+  --input-height: 48px; /* ⚠️ Minimum 44px accessibilité */
   --input-padding-x: 16px;
   --input-border-width: 1px;
-  
+
   /* 🎯 COMPONENTS - NAVIGATION */
   --header-height: 72px;
   --logo-height: 40px;
   --sidebar-width: 280px;
   --sidebar-width-collapsed: 72px;
-  
+
   /* 🎯 SHADOWS */
   --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.12), 0 1px 2px rgba(0, 0, 0, 0.24);
   --shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
   --shadow-lg: 0 4px 16px rgba(0, 0, 0, 0.12);
   --shadow-xl: 0 8px 25px rgba(0, 0, 0, 0.15);
-  
+
   /* ⏱️ TRANSITIONS */
   --transition-fast: 0.15s ease;
   --transition-base: 0.2s ease;
@@ -149,7 +153,7 @@
     --font-size-h1: 36px;
     --font-size-h2: 28px;
     --font-size-h3: 24px;
-    
+
     --line-height-h1: 42px;
     --line-height-h2: 34px;
     --line-height-h3: 30px;
@@ -175,7 +179,7 @@
 
 /* Configuration de base du document */
 html {
-  font-size: 16px;                    /* Base pour rem calculations */
+  font-size: 16px; /* Base pour rem calculations */
   scroll-behavior: smooth;
 }
 
@@ -186,7 +190,7 @@ body {
   line-height: var(--line-height-body);
   color: var(--text-primary);
   background-color: var(--bg-primary);
-  
+
   /* Améliore le rendu des polices */
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
@@ -194,7 +198,8 @@ body {
 }
 
 /* Supprime les styles par défaut des listes */
-ul, ol {
+ul,
+ol {
   list-style: none;
 }
 
@@ -246,12 +251,24 @@ a {
 }
 
 /* Classes de texte utilitaires */
-.text-primary { color: var(--text-primary); }
-.text-secondary { color: var(--text-secondary); }
-.text-muted { color: var(--text-muted); }        /* ⚠️ Non-critique uniquement */
-.text-success { color: var(--color-success); }   /* ⚠️ Texte large uniquement */
-.text-warning { color: var(--color-warning); }   /* ⚠️ Texte large uniquement */
-.text-error { color: var(--color-error); }
+.text-primary {
+  color: var(--text-primary);
+}
+.text-secondary {
+  color: var(--text-secondary);
+}
+.text-muted {
+  color: var(--text-muted);
+} /* ⚠️ Non-critique uniquement */
+.text-success {
+  color: var(--color-success);
+} /* ⚠️ Texte large uniquement */
+.text-warning {
+  color: var(--color-warning);
+} /* ⚠️ Texte large uniquement */
+.text-error {
+  color: var(--color-error);
+}
 
 /* ===== COMMENTAIRES DÉVELOPPEUR ===== */
 /**

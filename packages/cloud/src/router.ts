@@ -36,6 +36,7 @@ import MemoDetail from './views/memo/memoDetail.vue';
 import EmployeeDetails from './views/EmployeeDetails.vue';
 import Planning from './views/planning.vue';
 import employeeForm from './views/employeeForm.vue';
+import QrCodeAuth from '@/views/QrCodeAuth.vue';
 
 // Typage explicite des routes
 const routes: RouteRecordRaw[] = [
@@ -45,10 +46,16 @@ const routes: RouteRecordRaw[] = [
     component: Home,
   },
   {
+    path: '/linked',
+    name: 'linked',
+    component: QrCodeAuth,
+  },
+  {
     path: '/country',
     name: 'country',
     component: Country,
-  },{
+  },
+  {
     path: '/',
     name: 'auth',
     component: Auth,
@@ -67,17 +74,30 @@ const routes: RouteRecordRaw[] = [
     path: '/memo',
     name: 'memo',
     component: Memo,
-    props: route => ({
+    props: (route) => ({
       employee: {
-        id: parseInt(Array.isArray(route.params.employeeId) ? route.params.employeeId[0] : (route.params.employeeId as string)),
-        name: Array.isArray(route.query.employeeName) ? route.query.employeeName[0] : (route.query.employeeName as string),
-        initials: Array.isArray(route.query.employeeInitials) ? route.query.employeeInitials[0] : (route.query.employeeInitials as string),
-        status: Array.isArray(route.query.employeeStatus) ? route.query.employeeStatus[0] : (route.query.employeeStatus as string),
-        statusText: Array.isArray(route.query.employeeStatusText) ? route.query.employeeStatusText[0] : (route.query.employeeStatusText as string),
-        location: Array.isArray(route.query.employeeLocation) ? route.query.employeeLocation[0] : (route.query.employeeLocation as string),
-      }
-    })
-
+        id: parseInt(
+          Array.isArray(route.params.employeeId)
+            ? route.params.employeeId[0]
+            : (route.params.employeeId as string),
+        ),
+        name: Array.isArray(route.query.employeeName)
+          ? route.query.employeeName[0]
+          : (route.query.employeeName as string),
+        initials: Array.isArray(route.query.employeeInitials)
+          ? route.query.employeeInitials[0]
+          : (route.query.employeeInitials as string),
+        status: Array.isArray(route.query.employeeStatus)
+          ? route.query.employeeStatus[0]
+          : (route.query.employeeStatus as string),
+        statusText: Array.isArray(route.query.employeeStatusText)
+          ? route.query.employeeStatusText[0]
+          : (route.query.employeeStatusText as string),
+        location: Array.isArray(route.query.employeeLocation)
+          ? route.query.employeeLocation[0]
+          : (route.query.employeeLocation as string),
+      },
+    }),
   },
   {
     path: '/module',
@@ -87,38 +107,38 @@ const routes: RouteRecordRaw[] = [
   {
     path: '/employee/:employeeId/details',
     name: 'employeeD',
-    component: AssiduteDuJour
+    component: AssiduteDuJour,
   },
   {
     path: '/equipe',
     name: 'equipe',
-    component: Equipe
+    component: Equipe,
   },
   {
     path: '/memoList',
     name: 'memoList',
-    component: MemoList
+    component: MemoList,
   },
   {
     path: '/memoDetail',
     name: 'memoDetail',
-    component: MemoDetail
+    component: MemoDetail,
   },
   {
     path: '/planning',
     name: 'planning',
-    component: Planning
+    component: Planning,
   },
   {
     path: '/employeeForm',
     name: 'employeeForm',
-    component: employeeForm
+    component: employeeForm,
   },
   {
-    path: '/equipe/:employeeId',  // ← IMPORTANT: :employeeId (avec deux points)
+    path: '/equipe/:employeeId', // ← IMPORTANT: :employeeId (avec deux points)
     name: 'employee-details',
-    component: EmployeeDetails
-  }
+    component: EmployeeDetails,
+  },
 ];
 
 export const router = createRouter({

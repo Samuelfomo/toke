@@ -1,19 +1,12 @@
 <template>
   <div class="lazy-image-container" ref="container">
     <div v-if="!loaded" class="skeleton"></div>
-    <img
-      v-if="isVisible"
-      :src="src"
-      :alt="alt"
-      @load="handleLoad"
-      :class="{ 'visible': loaded }"
-    />
+    <img v-if="isVisible" :src="src" :alt="alt" @load="handleLoad" :class="{ visible: loaded }" />
   </div>
 </template>
 
 <script setup lang="ts">
 import { ref, onMounted } from 'vue';
-
 
 const props = defineProps({
   src: {
@@ -47,7 +40,7 @@ onMounted(() => {
       },
       {
         threshold: 0.1,
-      }
+      },
     );
 
     if (container.value) {

@@ -1,6 +1,5 @@
 <template>
   <section class="planning-section">
-
     <div class="planning-container">
       <div class="planning-header">
         <h2 class="section-title">Planning de travail</h2>
@@ -8,13 +7,23 @@
           <div class="week-selector">
             <button @click="changeWeek(-1)" class="week-btn">
               <svg class="icon-sm" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path>
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  stroke-width="2"
+                  d="M15 19l-7-7 7-7"
+                ></path>
               </svg>
             </button>
             <span class="current-week">{{ currentWeekLabel }}</span>
             <button @click="changeWeek(1)" class="week-btn">
               <svg class="icon-sm" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  stroke-width="2"
+                  d="M9 5l7 7-7 7"
+                ></path>
               </svg>
             </button>
           </div>
@@ -29,14 +38,19 @@
       <div class="planning-filters">
         <div class="search-box">
           <svg class="search-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
+            ></path>
           </svg>
           <input
             type="text"
             v-model="searchEmployee"
             placeholder="Rechercher un employé..."
             class="search-input"
-          >
+          />
         </div>
         <select v-model="siteFilter" class="filter-select">
           <option value="">Tous les sites</option>
@@ -49,7 +63,12 @@
       <div class="planning-grid" v-if="viewMode === 'week'">
         <div class="grid-header">
           <div class="employee-column-header">Employé</div>
-          <div v-for="day in weekDays" :key="day.date" class="day-header" :class="{ 'today': isToday(day.date) }">
+          <div
+            v-for="day in weekDays"
+            :key="day.date"
+            class="day-header"
+            :class="{ today: isToday(day.date) }"
+          >
             <div class="day-name">{{ day.name }}</div>
             <div class="day-date">{{ formatDayDate(day.date) }}</div>
           </div>
@@ -59,7 +78,7 @@
           <div v-for="employee in filteredEmployees" :key="employee.id" class="employee-row">
             <div class="employee-info-cell">
               <div class="employee-avatar">
-                <img v-if="employee.avatar" :src="employee.avatar" :alt="employee.name">
+                <img v-if="employee.avatar" :src="employee.avatar" :alt="employee.name" />
                 <div v-else class="avatar-placeholder">{{ employee.initials }}</div>
               </div>
               <div class="employee-details">
@@ -68,13 +87,21 @@
               </div>
             </div>
 
-            <div v-for="day in weekDays" :key="`${employee.id}-${day.date}`"
-                 class="schedule-cell"
-                 :class="{ 'today': isToday(day.date) }"
-                 @click="editSchedule(employee, day)">
-              <div v-if="getSchedule(employee.id, day.date)" class="schedule-item" :class="getScheduleClass(employee.id, day.date)">
+            <div
+              v-for="day in weekDays"
+              :key="`${employee.id}-${day.date}`"
+              class="schedule-cell"
+              :class="{ today: isToday(day.date) }"
+              @click="editSchedule(employee, day)"
+            >
+              <div
+                v-if="getSchedule(employee.id, day.date)"
+                class="schedule-item"
+                :class="getScheduleClass(employee.id, day.date)"
+              >
                 <div class="schedule-time">
-                  {{ getSchedule(employee.id, day.date).startTime }} - {{ getSchedule(employee.id, day.date).endTime }}
+                  {{ getSchedule(employee.id, day.date).startTime }} -
+                  {{ getSchedule(employee.id, day.date).endTime }}
                 </div>
                 <div class="schedule-type">{{ getSchedule(employee.id, day.date).type }}</div>
               </div>
@@ -95,19 +122,24 @@
         </div>
         <div class="month-grid">
           <div v-for="week in monthWeeks" :key="week.weekNumber" class="month-week">
-            <div v-for="day in week.days" :key="day.date"
-                 class="month-day-cell"
-                 :class="{
-                   'other-month': !day.isCurrentMonth,
-                   'today': isToday(day.date)
-                 }">
+            <div
+              v-for="day in week.days"
+              :key="day.date"
+              class="month-day-cell"
+              :class="{
+                'other-month': !day.isCurrentMonth,
+                today: isToday(day.date),
+              }"
+            >
               <div class="day-number">{{ day.dayNumber }}</div>
               <div class="day-schedules">
-                <div v-for="schedule in getDaySchedules(day.date)" :key="schedule.employeeId"
-                     class="mini-schedule"
-                     :class="schedule.type"
-                     :title="`${schedule.employeeName}: ${schedule.startTime}-${schedule.endTime}`">
-                </div>
+                <div
+                  v-for="schedule in getDaySchedules(day.date)"
+                  :key="schedule.employeeId"
+                  class="mini-schedule"
+                  :class="schedule.type"
+                  :title="`${schedule.employeeName}: ${schedule.startTime}-${schedule.endTime}`"
+                ></div>
               </div>
             </div>
           </div>
@@ -151,11 +183,16 @@
         <div class="modal-body">
           <div class="form-group">
             <label>Employé</label>
-            <input type="text" :value="editingSchedule.employeeName" disabled class="form-input">
+            <input type="text" :value="editingSchedule.employeeName" disabled class="form-input" />
           </div>
           <div class="form-group">
             <label>Date</label>
-            <input type="text" :value="formatDate(editingSchedule.date)" disabled class="form-input">
+            <input
+              type="text"
+              :value="formatDate(editingSchedule.date)"
+              disabled
+              class="form-input"
+            />
           </div>
           <div class="form-group">
             <label>Type</label>
@@ -170,11 +207,11 @@
           <div class="form-row">
             <div class="form-group">
               <label>Heure début</label>
-              <input type="time" v-model="editingSchedule.startTime" class="form-input">
+              <input type="time" v-model="editingSchedule.startTime" class="form-input" />
             </div>
             <div class="form-group">
               <label>Heure fin</label>
-              <input type="time" v-model="editingSchedule.endTime" class="form-input">
+              <input type="time" v-model="editingSchedule.endTime" class="form-input" />
             </div>
           </div>
           <div class="form-group">
@@ -198,8 +235,8 @@
 import { ref, computed, onMounted } from 'vue';
 import { useEmployeeStore } from '../composables/useEmployeeStore';
 import HeadBuilder from '@/utils/HeadBuilder';
-import planningCss from "../assets/css/planning-toke-14.css?url";
-import dashboardCss from "../assets/css/toke-dMain-04.css?url";
+import planningCss from '../assets/css/planning-toke-14.css?url';
+import dashboardCss from '../assets/css/toke-dMain-04.css?url';
 
 // const currentUser = ref({
 //   name: 'Danielle',
@@ -218,7 +255,7 @@ const editingSchedule = ref<any>({});
 const sites = ref([
   { id: 1, name: 'Total Bedi' },
   { id: 2, name: 'Total energie' },
-  { id: 3, name: 'Total bonamoussadi' }
+  { id: 3, name: 'Total bonamoussadi' },
 ]);
 
 // Données de planning (à remplacer par des vraies données du store)
@@ -246,7 +283,7 @@ const weekDays = computed(() => {
     date.setDate(date.getDate() + i);
     days.push({
       name: dayNames[i],
-      date: formatDateKey(date)
+      date: formatDateKey(date),
     });
   }
   return days;
@@ -256,8 +293,16 @@ const monthDays = ['Lun', 'Mar', 'Mer', 'Jeu', 'Ven', 'Sam', 'Dim'];
 
 const monthWeeks = computed(() => {
   const weeks = [];
-  const firstDay = new Date(currentWeekStart.value.getFullYear(), currentWeekStart.value.getMonth(), 1);
-  const lastDay = new Date(currentWeekStart.value.getFullYear(), currentWeekStart.value.getMonth() + 1, 0);
+  const firstDay = new Date(
+    currentWeekStart.value.getFullYear(),
+    currentWeekStart.value.getMonth(),
+    1,
+  );
+  const lastDay = new Date(
+    currentWeekStart.value.getFullYear(),
+    currentWeekStart.value.getMonth() + 1,
+    0,
+  );
 
   let currentDate = getMonday(firstDay);
   let weekNumber = 0;
@@ -272,7 +317,7 @@ const monthWeeks = computed(() => {
       week.days.push({
         date: formatDateKey(date),
         dayNumber: date.getDate(),
-        isCurrentMonth: date.getMonth() === currentWeekStart.value.getMonth()
+        isCurrentMonth: date.getMonth() === currentWeekStart.value.getMonth(),
       });
     }
 
@@ -287,7 +332,7 @@ const monthWeeks = computed(() => {
 });
 
 const filteredEmployees = computed(() => {
-  return employeeStore.employees.value.filter(emp => {
+  return employeeStore.employees.value.filter((emp) => {
     const matchesSearch = emp.name.toLowerCase().includes(searchEmployee.value.toLowerCase());
     const matchesSite = siteFilter.value ? emp.siteId === siteFilter.value : true;
     return matchesSearch && matchesSite;
@@ -311,7 +356,12 @@ function formatShortDate(date: Date): string {
 
 function formatDate(dateStr: string): string {
   const date = new Date(dateStr);
-  return date.toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
+  return date.toLocaleDateString('fr-FR', {
+    weekday: 'long',
+    day: 'numeric',
+    month: 'long',
+    year: 'numeric',
+  });
 }
 
 function formatDayDate(dateStr: string): string {
@@ -326,7 +376,7 @@ function isToday(dateStr: string): boolean {
 
 function changeWeek(direction: number): void {
   const newDate = new Date(currentWeekStart.value);
-  newDate.setDate(newDate.getDate() + (direction * 7));
+  newDate.setDate(newDate.getDate() + direction * 7);
   currentWeekStart.value = newDate;
 }
 
@@ -335,7 +385,7 @@ function goToToday(): void {
 }
 
 function getSchedule(employeeId: number, dateStr: string): any {
-  return schedules.value.find(s => s.employeeId === employeeId && s.date === dateStr);
+  return schedules.value.find((s) => s.employeeId === employeeId && s.date === dateStr);
 }
 
 function getScheduleClass(employeeId: number, dateStr: string): string {
@@ -345,12 +395,12 @@ function getScheduleClass(employeeId: number, dateStr: string): string {
 
 function getDaySchedules(dateStr: string): any[] {
   return schedules.value
-    .filter(s => s.date === dateStr)
-    .map(s => {
-      const employee = employeeStore.employees.value.find(e => e.id === s.employeeId);
+    .filter((s) => s.date === dateStr)
+    .map((s) => {
+      const employee = employeeStore.employees.value.find((e) => e.id === s.employeeId);
       return {
         ...s,
-        employeeName: employee?.name || ''
+        employeeName: employee?.name || '',
       };
     });
 }
@@ -365,7 +415,7 @@ function editSchedule(employee: any, day: any): void {
     startTime: existingSchedule?.startTime || '09:00',
     endTime: existingSchedule?.endTime || '17:00',
     type: existingSchedule?.type || 'work',
-    notes: existingSchedule?.notes || ''
+    notes: existingSchedule?.notes || '',
   };
 
   showEditModal.value = true;
@@ -373,7 +423,8 @@ function editSchedule(employee: any, day: any): void {
 
 function saveSchedule(): void {
   const index = schedules.value.findIndex(
-    s => s.employeeId === editingSchedule.value.employeeId && s.date === editingSchedule.value.date
+    (s) =>
+      s.employeeId === editingSchedule.value.employeeId && s.date === editingSchedule.value.date,
   );
 
   const scheduleData = {
@@ -382,7 +433,7 @@ function saveSchedule(): void {
     startTime: editingSchedule.value.startTime,
     endTime: editingSchedule.value.endTime,
     type: editingSchedule.value.type,
-    notes: editingSchedule.value.notes
+    notes: editingSchedule.value.notes,
   };
 
   if (index !== -1) {
@@ -397,7 +448,8 @@ function saveSchedule(): void {
 function deleteSchedule(): void {
   if (confirm('Êtes-vous sûr de vouloir supprimer ce planning ?')) {
     const index = schedules.value.findIndex(
-      s => s.employeeId === editingSchedule.value.employeeId && s.date === editingSchedule.value.date
+      (s) =>
+        s.employeeId === editingSchedule.value.employeeId && s.date === editingSchedule.value.date,
     );
 
     if (index !== -1) {
@@ -417,7 +469,7 @@ onMounted(() => {
   HeadBuilder.apply({
     title: 'Planning - Toké',
     css: [dashboardCss, planningCss],
-    meta: { viewport: "width=device-width, initial-scale=1.0" }
+    meta: { viewport: 'width=device-width, initial-scale=1.0' },
   });
 
   employeeStore.initialize();

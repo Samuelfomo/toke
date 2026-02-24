@@ -67,7 +67,9 @@
             <h4 class="recipient-name">{{ getEmployeeName(memo.employeeId) }}</h4>
             <p class="recipient-role">{{ getEmployeeRole(memo.employeeId) }}</p>
             <div class="recipient-status">
-              <span :class="['status-indicator', 'status-' + getEmployeeStatus(memo.employeeId)]"></span>
+              <span
+                :class="['status-indicator', 'status-' + getEmployeeStatus(memo.employeeId)]"
+              ></span>
               {{ getEmployeeStatusText(memo.employeeId) }}
             </div>
           </div>
@@ -197,10 +199,10 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted } from 'vue'
-import { useRoute, useRouter } from 'vue-router'
-import HeadBuilder from '@/utils/HeadBuilder'
-import memoDetailCss from "../../assets/css/toke-memoDetail-11.css?url"
+import { ref, computed, onMounted } from 'vue';
+import { useRoute, useRouter } from 'vue-router';
+import HeadBuilder from '@/utils/HeadBuilder';
+import memoDetailCss from '../../assets/css/toke-memoDetail-11.css?url';
 
 import {
   IconArrowLeft,
@@ -220,114 +222,149 @@ import {
   IconFile,
   IconPhoto,
   IconFileText,
-  IconDownload
-} from '@tabler/icons-vue'
+  IconDownload,
+} from '@tabler/icons-vue';
 
 interface Employee {
-  id: number
-  name: string
-  initials: string
-  status: 'absent' | 'late' | 'present' | 'info'
-  statusText: string
-  role?: string
+  id: number;
+  name: string;
+  initials: string;
+  status: 'absent' | 'late' | 'present' | 'info';
+  statusText: string;
+  role?: string;
 }
 
 interface Memo {
-  id: string
-  subject: string
-  message: string
-  priority: 'low' | 'medium' | 'high'
-  employeeId: number
-  attachments: File[]
-  voiceNote?: Blob
-  createdAt: Date
-  status: 'draft' | 'sent'
+  id: string;
+  subject: string;
+  message: string;
+  priority: 'low' | 'medium' | 'high';
+  employeeId: number;
+  attachments: File[];
+  voiceNote?: Blob;
+  createdAt: Date;
+  status: 'draft' | 'sent';
 }
 
-const route = useRoute()
-const router = useRouter()
+const route = useRoute();
+const router = useRouter();
 
 // State
-const memo = ref<Memo | null>(null)
-const loading = ref(true)
-const error = ref<string>('')
+const memo = ref<Memo | null>(null);
+const loading = ref(true);
+const error = ref<string>('');
 
 // Mock employees data
 const employees = ref<Employee[]>([
-  { id: 1, name: 'Jean Dupont', initials: 'JD', status: 'present', statusText: 'Présent', role: 'Développeur Senior' },
-  { id: 2, name: 'Marie Martin', initials: 'MM', status: 'late', statusText: 'En retard', role: 'Designer UX/UI' },
-  { id: 3, name: 'Pierre Durand', initials: 'PD', status: 'absent', statusText: 'Absent', role: 'Chef de projet' },
-  { id: 4, name: 'Sophie Leblanc', initials: 'SL', status: 'present', statusText: 'Présent', role: 'Analyste Business' },
-  { id: 5, name: 'Lucas Bernard', initials: 'LB', status: 'present', statusText: 'Présent', role: 'Développeur Frontend' }
-])
+  {
+    id: 1,
+    name: 'Jean Dupont',
+    initials: 'JD',
+    status: 'present',
+    statusText: 'Présent',
+    role: 'Développeur Senior',
+  },
+  {
+    id: 2,
+    name: 'Marie Martin',
+    initials: 'MM',
+    status: 'late',
+    statusText: 'En retard',
+    role: 'Designer UX/UI',
+  },
+  {
+    id: 3,
+    name: 'Pierre Durand',
+    initials: 'PD',
+    status: 'absent',
+    statusText: 'Absent',
+    role: 'Chef de projet',
+  },
+  {
+    id: 4,
+    name: 'Sophie Leblanc',
+    initials: 'SL',
+    status: 'present',
+    statusText: 'Présent',
+    role: 'Analyste Business',
+  },
+  {
+    id: 5,
+    name: 'Lucas Bernard',
+    initials: 'LB',
+    status: 'present',
+    statusText: 'Présent',
+    role: 'Développeur Frontend',
+  },
+]);
 
 // Methods
 const loadMemo = async () => {
   try {
-    loading.value = true
-    error.value = ''
+    loading.value = true;
+    error.value = '';
 
-    const memoId = route.params.memoId as string
-    const savedMemos = localStorage.getItem('memos')
+    const memoId = route.params.memoId as string;
+    const savedMemos = localStorage.getItem('memos');
 
     if (!savedMemos) {
-      error.value = 'Aucun mémo trouvé'
-      return
+      error.value = 'Aucun mémo trouvé';
+      return;
     }
 
-    const memos: any[] = JSON.parse(savedMemos)
-    const foundMemo = memos.find(m => m.id === memoId)
+    const memos: any[] = JSON.parse(savedMemos);
+    const foundMemo = memos.find((m) => m.id === memoId);
 
     if (!foundMemo) {
-      error.value = 'Mémo introuvable'
-      return
+      error.value = 'Mémo introuvable';
+      return;
     }
 
     memo.value = {
       ...foundMemo,
-      createdAt: new Date(foundMemo.createdAt)
-    }
+      createdAt: new Date(foundMemo.createdAt),
+    };
   } catch (err) {
-    error.value = 'Erreur lors du chargement du mémo'
-    console.error('Erreur:', err)
+    error.value = 'Erreur lors du chargement du mémo';
+    console.error('Erreur:', err);
   } finally {
-    loading.value = false
+    loading.value = false;
   }
-}
+};
 
 const getEmployeeName = (employeeId: number): string => {
-  const employee = employees.value.find(emp => emp.id === employeeId)
-  return employee?.name || 'Employé inconnu'
-}
+  const employee = employees.value.find((emp) => emp.id === employeeId);
+  return employee?.name || 'Employé inconnu';
+};
 
 const getEmployeeInitials = (employeeId: number): string => {
-  const employee = employees.value.find(emp => emp.id === employeeId)
-  return employee?.initials || 'EI'
-}
+  const employee = employees.value.find((emp) => emp.id === employeeId);
+  return employee?.initials || 'EI';
+};
 
 const getEmployeeRole = (employeeId: number): string => {
-  const employee = employees.value.find(emp => emp.id === employeeId)
-  return employee?.role || 'Poste non défini'
-}
+  const employee = employees.value.find((emp) => emp.id === employeeId);
+  return employee?.role || 'Poste non défini';
+};
 
 const getEmployeeStatus = (employeeId: number): string => {
-  const employee = employees.value.find(emp => emp.id === employeeId)
-  return employee?.status || 'info'
-}
+  const employee = employees.value.find((emp) => emp.id === employeeId);
+  return employee?.status || 'info';
+};
 
 const getEmployeeStatusText = (employeeId: number): string => {
-  const employee = employees.value.find(emp => emp.id === employeeId)
-  return employee?.statusText || 'Statut inconnu'
-}
+  const employee = employees.value.find((emp) => emp.id === employeeId);
+  return employee?.statusText || 'Statut inconnu';
+};
 
 const getPriorityLabel = (priority: string): string => {
   const labels = {
     low: 'Faible',
     medium: 'Moyenne',
-    high: 'Élevée'
-  }
-  return labels[priority as keyof typeof labels] || priority
-}
+    high: 'Élevée',
+  };
+  return labels[priority as keyof typeof labels] || priority;
+};
 
 const formatFullDate = (date: Date): string => {
   return date.toLocaleDateString('fr-FR', {
@@ -336,50 +373,50 @@ const formatFullDate = (date: Date): string => {
     month: 'long',
     day: 'numeric',
     hour: '2-digit',
-    minute: '2-digit'
-  })
-}
+    minute: '2-digit',
+  });
+};
 
 const formatFileSize = (bytes: number): string => {
-  if (bytes === 0) return '0 Bytes'
-  const k = 1024
-  const sizes = ['Bytes', 'KB', 'MB', 'GB']
-  const i = Math.floor(Math.log(bytes) / Math.log(k))
-  return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i]
-}
+  if (bytes === 0) return '0 Bytes';
+  const k = 1024;
+  const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+  const i = Math.floor(Math.log(bytes) / Math.log(k));
+  return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+};
 
 const getFileType = (filename: string): 'document' | 'image' | 'other' => {
-  const ext = filename.split('.').pop()?.toLowerCase()
-  if (['jpg', 'jpeg', 'png', 'gif', 'svg'].includes(ext || '')) return 'image'
-  if (['pdf', 'doc', 'docx', 'txt'].includes(ext || '')) return 'document'
-  return 'other'
-}
+  const ext = filename.split('.').pop()?.toLowerCase();
+  if (['jpg', 'jpeg', 'png', 'gif', 'svg'].includes(ext || '')) return 'image';
+  if (['pdf', 'doc', 'docx', 'txt'].includes(ext || '')) return 'document';
+  return 'other';
+};
 
 const getVoiceNoteUrl = (blob: Blob): string => {
-  return URL.createObjectURL(blob)
-}
+  return URL.createObjectURL(blob);
+};
 
 const downloadAttachment = (file: File, index: number) => {
   // Create download link
-  const url = URL.createObjectURL(file)
-  const a = document.createElement('a')
-  a.href = url
-  a.download = file.name
-  document.body.appendChild(a)
-  a.click()
-  document.body.removeChild(a)
-  URL.revokeObjectURL(url)
-}
+  const url = URL.createObjectURL(file);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = file.name;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+};
 
 const editMemo = () => {
   router.push({
     name: 'memo-edit',
-    params: { memoId: memo.value?.id }
-  })
-}
+    params: { memoId: memo.value?.id },
+  });
+};
 
 const duplicateMemo = () => {
-  if (!memo.value) return
+  if (!memo.value) return;
 
   try {
     const newMemo = {
@@ -387,54 +424,54 @@ const duplicateMemo = () => {
       id: Date.now().toString(),
       subject: `Copie - ${memo.value.subject}`,
       status: 'draft' as const,
-      createdAt: new Date()
-    }
+      createdAt: new Date(),
+    };
 
-    const savedMemos = localStorage.getItem('memos')
-    const memos = savedMemos ? JSON.parse(savedMemos) : []
-    memos.unshift(newMemo)
-    localStorage.setItem('memos', JSON.stringify(memos))
+    const savedMemos = localStorage.getItem('memos');
+    const memos = savedMemos ? JSON.parse(savedMemos) : [];
+    memos.unshift(newMemo);
+    localStorage.setItem('memos', JSON.stringify(memos));
 
-    alert('Mémo dupliqué avec succès')
-    router.push('/memos')
+    alert('Mémo dupliqué avec succès');
+    router.push('/memos');
   } catch (err) {
-    console.error('Erreur lors de la duplication:', err)
-    alert('Erreur lors de la duplication')
+    console.error('Erreur lors de la duplication:', err);
+    alert('Erreur lors de la duplication');
   }
-}
+};
 
 const deleteMemo = () => {
-  if (!memo.value) return
+  if (!memo.value) return;
 
   if (confirm('Êtes-vous sûr de vouloir supprimer ce mémo ?')) {
     try {
-      const savedMemos = localStorage.getItem('memos')
+      const savedMemos = localStorage.getItem('memos');
       if (savedMemos) {
-        const memos = JSON.parse(savedMemos)
-        const filteredMemos = memos.filter((m: any) => m.id !== memo.value?.id)
-        localStorage.setItem('memos', JSON.stringify(filteredMemos))
+        const memos = JSON.parse(savedMemos);
+        const filteredMemos = memos.filter((m: any) => m.id !== memo.value?.id);
+        localStorage.setItem('memos', JSON.stringify(filteredMemos));
       }
 
-      alert('Mémo supprimé avec succès')
-      router.push('/memos')
+      alert('Mémo supprimé avec succès');
+      router.push('/memos');
     } catch (err) {
-      console.error('Erreur lors de la suppression:', err)
-      alert('Erreur lors de la suppression')
+      console.error('Erreur lors de la suppression:', err);
+      alert('Erreur lors de la suppression');
     }
   }
-}
+};
 
 const goBack = () => {
-  router.push('/memos')
-}
+  router.push('/memos');
+};
 
 onMounted(() => {
   HeadBuilder.apply({
     title: 'Détails du Mémo - Toké',
     css: [memoDetailCss],
-    meta: { viewport: "width=device-width, initial-scale=1.0" }
-  })
+    meta: { viewport: 'width=device-width, initial-scale=1.0' },
+  });
 
-  loadMemo()
-})
+  loadMemo();
+});
 </script>

@@ -1,5 +1,4 @@
 export class TokenHelper {
-
   static async generate(): Promise<string> {
     try {
       const secret: string = import.meta.env.VITE_API_SECRET;
@@ -13,7 +12,7 @@ export class TokenHelper {
 
       try {
         // Try base64
-        secretBytes = Uint8Array.from(atob(secret), c => c.charCodeAt(0));
+        secretBytes = Uint8Array.from(atob(secret), (c) => c.charCodeAt(0));
       } catch {
         // Fallback to UTF-8
         secretBytes = new TextEncoder().encode(secret);
@@ -21,34 +20,27 @@ export class TokenHelper {
 
       // HMAC key import — with explicit type
       const cryptoKey = await crypto.subtle.importKey(
-        "raw",
+        'raw',
         secretBytes as BufferSource,
         {
-          name: "HMAC",
-          hash: { name: "SHA-256" }
+          name: 'HMAC',
+          hash: { name: 'SHA-256' },
         } satisfies HmacImportParams,
         false,
-        ["sign"]
+        ['sign'],
       );
 
       // Sign the message
-      const signature = await crypto.subtle.sign(
-        "HMAC",
-        cryptoKey,
-        new TextEncoder().encode(code)
-      );
+      const signature = await crypto.subtle.sign('HMAC', cryptoKey, new TextEncoder().encode(code));
 
       const bytes = new Uint8Array(signature);
       return btoa(String.fromCharCode(...bytes));
-
     } catch (error: any) {
-      console.error("Token error:", error);
-      return "";
+      console.error('Token error:', error);
+      return '';
     }
   }
 }
-
-
 
 // import crypto from "crypto";
 // import fs from "fs";
@@ -87,7 +79,3 @@ export class TokenHelper {
 // fs.writeFileSync(path.resolve(__dirname, "./token.txt"), token);
 //
 // console.log("🎉 Token généré :", token);
-
-
-
-

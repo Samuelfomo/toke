@@ -3,19 +3,29 @@
     <div class="header-content">
       <div class="logo-section">
         <div class="logo">
-          <img :src="toke" alt="logo"/>
+          <img :src="toke" alt="logo" />
         </div>
       </div>
       <div class="header-actions">
         <button @click="goBack" class="back-btn">
           <svg class="icon-sm" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path>
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              d="M15 19l-7-7 7-7"
+            ></path>
           </svg>
           Retour
         </button>
         <button class="notification-btn" :class="{ 'has-alerts': notificationCount > 0 }">
           <svg class="icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-5 5-5-5h5v-8a3 3 0 10-6 0v8z"></path>
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              d="M15 17h5l-5 5-5-5h5v-8a3 3 0 10-6 0v8z"
+            ></path>
           </svg>
           <span v-if="notificationCount > 0" class="alert-badge">{{ notificationCount }}</span>
         </button>
@@ -32,22 +42,22 @@
 </template>
 
 <script setup lang="ts">
-import { computed, ref } from 'vue'
-import toke from '../../../public/images/toke.svg'
+import { computed, ref } from 'vue';
+import toke from '../../../public/images/toke.svg';
 import router from '@/router';
 
 // Props pour personnaliser le header
 interface Props {
-  userName?: string
-  companyName?: string
-  notificationCount?: number
+  userName?: string;
+  companyName?: string;
+  notificationCount?: number;
 }
 
 const props = withDefaults(defineProps<Props>(), {
   userName: 'Danielle',
   companyName: 'IMEDIATIS',
-  notificationCount: 0
-})
+  notificationCount: 0,
+});
 
 // Variable réactive pour suivre l'onglet actif
 const activeTab = ref('/dashboard'); // Initialise avec l'onglet par défaut
@@ -59,12 +69,11 @@ const setActiveTab = (path: string) => {
 
 // Computed pour récupérer la première lettre du nom d'utilisateur
 const userInitial = computed(() => {
-  return props.userName.charAt(0).toUpperCase()
-})
+  return props.userName.charAt(0).toUpperCase();
+});
 const goBack = () => {
-  router.push('/dashboard')
-}
-
+  router.push('/dashboard');
+};
 </script>
 
 <style scoped>

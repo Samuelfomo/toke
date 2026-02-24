@@ -12,13 +12,23 @@
         <div class="date-selector">
           <button @click="changeDate(-1)" class="date-btn">
             <svg class="icon-sm" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path>
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M15 19l-7-7 7-7"
+              ></path>
             </svg>
           </button>
           <span class="current-date">{{ formatDate(selectedDate) }}</span>
           <button @click="changeDate(1)" class="date-btn" :disabled="isToday">
             <svg class="icon-sm" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M9 5l7 7-7 7"
+              ></path>
             </svg>
           </button>
         </div>
@@ -41,20 +51,30 @@
 
               <div class="chart-area">
                 <div class="chart-grid">
-                  <div v-for="tick in yAxisTicks" :key="tick" class="grid-line"
-                       :style="{ bottom: `${(tick / maxEmployeeCount) * 100}%` }"></div>
+                  <div
+                    v-for="tick in yAxisTicks"
+                    :key="tick"
+                    class="grid-line"
+                    :style="{ bottom: `${(tick / maxEmployeeCount) * 100}%` }"
+                  ></div>
                 </div>
 
                 <div class="bar-chart-new">
                   <div class="bar-item-new">
-                    <div class="bar-new present"
-                         :style="{ height: `${(dailyStats.present / maxEmployeeCount) * 100}%` }">
+                    <div
+                      class="bar-new present"
+                      :style="{ height: `${(dailyStats.present / maxEmployeeCount) * 100}%` }"
+                    >
                       <span class="bar-value-new">{{ dailyStats.present }}</span>
                     </div>
                   </div>
                   <div class="bar-item-new">
-                    <div class="bar-new absent"
-                         :style="{ height: `${((dailyStats.late + dailyStats.absent) / maxEmployeeCount) * 100}%` }">
+                    <div
+                      class="bar-new absent"
+                      :style="{
+                        height: `${((dailyStats.late + dailyStats.absent) / maxEmployeeCount) * 100}%`,
+                      }"
+                    >
                       <span class="bar-value-new">{{ dailyStats.late + dailyStats.absent }}</span>
                     </div>
                   </div>
@@ -101,11 +121,15 @@
     <div class="manager-actions">
       <h2 class="section-title">Actions rapides</h2>
       <div class="actions-grid">
-
         <button @click="showAddEmployee = true" class="action-card primary">
           <div class="action-icon">
             <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z"></path>
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z"
+              ></path>
             </svg>
           </div>
           <a href="/employeeForm" class="action-link">
@@ -114,14 +138,23 @@
               <p class="action-description">Recruter un nouveau membre dans votre équipe</p>
             </div>
           </a>
-
         </button>
 
         <button @click="showAddSite = true" class="action-card secondary">
           <div class="action-icon">
             <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"></path>
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"></path>
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"
+              ></path>
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"
+              ></path>
             </svg>
           </div>
           <div class="action-content">
@@ -133,7 +166,12 @@
         <button class="action-card quaternary">
           <div class="action-icon">
             <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"
+              ></path>
             </svg>
           </div>
           <a href="/planning" class="action-link">
@@ -152,14 +190,19 @@
         <div class="table-controls">
           <div class="search-container">
             <svg class="search-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
+              ></path>
             </svg>
             <input
               type="text"
               v-model="searchTerm"
               placeholder="Rechercher par nom, poste, site..."
               class="search-input"
-            >
+            />
           </div>
           <select v-model="statusFilter" class="filter-select">
             <option value="">Tous les statuts</option>
@@ -170,9 +213,9 @@
           </select>
           <select v-model="siteFilter" class="filter-select">
             <option value="">Tous les sites</option>
-<!--            <option v-for="site in employeeStore.sites" :key="site.id" :value="site.id">-->
-<!--              {{ site.name }}-->
-<!--            </option>-->
+            <!--            <option v-for="site in employeeStore.sites" :key="site.id" :value="site.id">-->
+            <!--              {{ site.name }}-->
+            <!--            </option>-->
           </select>
         </div>
       </div>
@@ -180,120 +223,186 @@
       <div class="table-wrapper">
         <table class="employees-table">
           <thead>
-          <tr>
-            <th class="sortable" @click="setSortBy('name')">
-              Employé
-              <svg v-if="sortBy === 'name'" class="sort-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 15l7-7 7 7"></path>
-              </svg>
-            </th>
-            <th class="sortable" @click="setSortBy('position')">
-              Poste
-              <svg v-if="sortBy === 'position'" class="sort-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 15l7-7 7 7"></path>
-              </svg>
-            </th>
-            <th class="sortable" @click="setSortBy('site')">
-              Site
-              <svg v-if="sortBy === 'site'" class="sort-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 15l7-7 7 7"></path>
-              </svg>
-            </th>
-            <th class="sortable" @click="setSortBy('punctualityScore')">
-              Ponctualité ce mois
-              <svg v-if="sortBy === 'punctualityScore'" class="sort-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 15l7-7 7 7"></path>
-              </svg>
-            </th>
-            <th></th>
-          </tr>
+            <tr>
+              <th class="sortable" @click="setSortBy('name')">
+                Employé
+                <svg
+                  v-if="sortBy === 'name'"
+                  class="sort-icon"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    stroke-width="2"
+                    d="M5 15l7-7 7 7"
+                  ></path>
+                </svg>
+              </th>
+              <th class="sortable" @click="setSortBy('position')">
+                Poste
+                <svg
+                  v-if="sortBy === 'position'"
+                  class="sort-icon"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    stroke-width="2"
+                    d="M5 15l7-7 7 7"
+                  ></path>
+                </svg>
+              </th>
+              <th class="sortable" @click="setSortBy('site')">
+                Site
+                <svg
+                  v-if="sortBy === 'site'"
+                  class="sort-icon"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    stroke-width="2"
+                    d="M5 15l7-7 7 7"
+                  ></path>
+                </svg>
+              </th>
+              <th class="sortable" @click="setSortBy('punctualityScore')">
+                Ponctualité ce mois
+                <svg
+                  v-if="sortBy === 'punctualityScore'"
+                  class="sort-icon"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    stroke-width="2"
+                    d="M5 15l7-7 7 7"
+                  ></path>
+                </svg>
+              </th>
+              <th></th>
+            </tr>
           </thead>
           <tbody>
-          <tr v-for="employee in paginatedEmployees"
+            <tr
+              v-for="employee in paginatedEmployees"
               :key="employee.id"
               class="employee-row"
               @click="viewEmployeeDetail(employee.id)"
-              style="cursor: pointer;"
-             >
-            <td class="employee-cell">
-              <div class="employee-info">
-                <div class="employee-avatar-table">
-                  <img v-if="employee.avatar" :src="employee.avatar" :alt="employee.name">
-                  <div v-else class="avatar-placeholder">
-                    {{ employee.initials }}
+              style="cursor: pointer"
+            >
+              <td class="employee-cell">
+                <div class="employee-info">
+                  <div class="employee-avatar-table">
+                    <img v-if="employee.avatar" :src="employee.avatar" :alt="employee.name" />
+                    <div v-else class="avatar-placeholder">
+                      {{ employee.initials }}
+                    </div>
+                  </div>
+                  <div class="employee-details">
+                    <span class="employee-name">{{ employee.name }}</span>
+                    <span class="employee-email">{{ employee.email }}</span>
                   </div>
                 </div>
-                <div class="employee-details">
-                  <span class="employee-name">{{ employee.name }}</span>
-                  <span class="employee-email">{{ employee.email }}</span>
-                </div>
-              </div>
-            </td>
-            <td>{{ employee.position }}</td>
-            <td>
-              <div class="site-info">
-                <svg class="icon-xs" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"></path>
-                </svg>
-                {{ employeeStore.getSiteName(employee.siteId) }}
-              </div>
-            </td>
-            <td>
-              <div class="punctuality-cell">
-                <div class="punctuality-bar">
-                  <div
-                    class="punctuality-fill"
-                    :style="{ width: `${employee.punctualityScore}%` }"
-                    :class="{
-                        'excellent': employee.punctualityScore >= 95,
-                        'good': employee.punctualityScore >= 85 && employee.punctualityScore < 95,
-                        'average': employee.punctualityScore >= 70 && employee.punctualityScore < 85,
-                        'poor': employee.punctualityScore < 70
-                      }"
-                  ></div>
-                </div>
-                <span class="punctuality-score">{{ employee.punctualityScore }}%</span>
-<!--                <span class="punctuality-details">-->
-<!--                  ({{ employee.punctualityDetails.onTime }}/{{ employee.punctualityDetails.totalDays }} jours)-->
-<!--                </span>-->
-              </div>
-            </td>
-            <td class="actions-cell">
-              <div class="employee-menu" :class="{ 'visible': hoveredEmployee === employee.id }">
-                <button
-                  @click="toggleEmployeeMenu(employee.id)"
-                  class="menu-trigger"
-                  :class="{ 'active': activeEmployeeMenu === employee.id }">
-                  <svg viewBox="0 0 24 24" fill="currentColor" class="menu-dots">
-                    <circle cx="12" cy="5" r="2"></circle>
-                    <circle cx="12" cy="12" r="2"></circle>
-                    <circle cx="12" cy="19" r="2"></circle>
+              </td>
+              <td>{{ employee.position }}</td>
+              <td>
+                <div class="site-info">
+                  <svg class="icon-xs" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
+                      stroke-width="2"
+                      d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"
+                    ></path>
                   </svg>
-                </button>
-
-                <div v-if="activeEmployeeMenu === employee.id" class="employee-dropdown">
-                  <button @click="editEmployee(employee)" class="dropdown-item">
-                    <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" class="item-icon">
-                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path>
-                    </svg>
-                    Modifier
-                  </button>
-                  <button @click="sendMemo(employee)" class="dropdown-item">
-                    <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" class="item-icon">
-                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 8h10M7 12h4m1 8l-4-4H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-3l-4 4z"></path>
-                    </svg>
-                    mémo
-                  </button>
-                  <button @click="deleteEmployee(employee)" class="dropdown-item delete">
-                    <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" class="item-icon">
-                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path>
-                    </svg>
-                    Supprimer
-                  </button>
+                  {{ employeeStore.getSiteName(employee.siteId) }}
                 </div>
-              </div>
-            </td>
-          </tr>
+              </td>
+              <td>
+                <div class="punctuality-cell">
+                  <div class="punctuality-bar">
+                    <div
+                      class="punctuality-fill"
+                      :style="{ width: `${employee.punctualityScore}%` }"
+                      :class="{
+                        excellent: employee.punctualityScore >= 95,
+                        good: employee.punctualityScore >= 85 && employee.punctualityScore < 95,
+                        average: employee.punctualityScore >= 70 && employee.punctualityScore < 85,
+                        poor: employee.punctualityScore < 70,
+                      }"
+                    ></div>
+                  </div>
+                  <span class="punctuality-score">{{ employee.punctualityScore }}%</span>
+                  <!--                <span class="punctuality-details">-->
+                  <!--                  ({{ employee.punctualityDetails.onTime }}/{{ employee.punctualityDetails.totalDays }} jours)-->
+                  <!--                </span>-->
+                </div>
+              </td>
+              <td class="actions-cell">
+                <div class="employee-menu" :class="{ visible: hoveredEmployee === employee.id }">
+                  <button
+                    @click="toggleEmployeeMenu(employee.id)"
+                    class="menu-trigger"
+                    :class="{ active: activeEmployeeMenu === employee.id }"
+                  >
+                    <svg viewBox="0 0 24 24" fill="currentColor" class="menu-dots">
+                      <circle cx="12" cy="5" r="2"></circle>
+                      <circle cx="12" cy="12" r="2"></circle>
+                      <circle cx="12" cy="19" r="2"></circle>
+                    </svg>
+                  </button>
+
+                  <div v-if="activeEmployeeMenu === employee.id" class="employee-dropdown">
+                    <button @click="editEmployee(employee)" class="dropdown-item">
+                      <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" class="item-icon">
+                        <path
+                          stroke-linecap="round"
+                          stroke-linejoin="round"
+                          stroke-width="2"
+                          d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"
+                        ></path>
+                      </svg>
+                      Modifier
+                    </button>
+                    <button @click="sendMemo(employee)" class="dropdown-item">
+                      <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" class="item-icon">
+                        <path
+                          stroke-linecap="round"
+                          stroke-linejoin="round"
+                          stroke-width="2"
+                          d="M7 8h10M7 12h4m1 8l-4-4H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-3l-4 4z"
+                        ></path>
+                      </svg>
+                      mémo
+                    </button>
+                    <button @click="deleteEmployee(employee)" class="dropdown-item delete">
+                      <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" class="item-icon">
+                        <path
+                          stroke-linecap="round"
+                          stroke-linejoin="round"
+                          stroke-width="2"
+                          d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
+                        ></path>
+                      </svg>
+                      Supprimer
+                    </button>
+                  </div>
+                </div>
+              </td>
+            </tr>
           </tbody>
         </table>
       </div>
@@ -306,9 +415,7 @@
         >
           Précédent
         </button>
-        <span class="pagination-info">
-          Page {{ currentPage }} sur {{ totalPages }}
-        </span>
+        <span class="pagination-info"> Page {{ currentPage }} sur {{ totalPages }} </span>
         <button
           @click="changePage(currentPage + 1)"
           :disabled="currentPage === totalPages"
@@ -327,253 +434,271 @@
       :available-sites="employeeStore.sites"
     />
 
-
-<!--    <SiteModal-->
-<!--      v-if="showAddSite"-->
-<!--      @close="showAddSite = false"-->
-<!--      @site-added="handleSiteAdded"-->
-<!--      :manager-id="currentManager.id"-->
-<!--    />-->
+    <!--    <SiteModal-->
+    <!--      v-if="showAddSite"-->
+    <!--      @close="showAddSite = false"-->
+    <!--      @site-added="handleSiteAdded"-->
+    <!--      :manager-id="currentManager.id"-->
+    <!--    />-->
   </section>
 </template>
 
 <script setup lang="ts">
 import { ref, computed, onMounted, watch, onUnmounted } from 'vue';
-import equipeCss from "../assets/css/toke-equipe-09.css?url"
-import dashboardCss from "../assets/css/toke-dMain-04.css?url"
-import Header from '../views/components/header.vue'
+import equipeCss from '../assets/css/toke-equipe-09.css?url';
+import dashboardCss from '../assets/css/toke-dMain-04.css?url';
+import Header from '../views/components/header.vue';
 import HeadBuilder from '@/utils/HeadBuilder';
 import { useEmployeeStore } from '../composables/useEmployeeStore';
 import router from '@/router';
 
 interface Manager {
-  id: number
-  name: string
-  title: string
-  department: string
-  avatar?: string
-  email: string
+  id: number;
+  name: string;
+  title: string;
+  department: string;
+  avatar?: string;
+  email: string;
 }
 
 const currentUser = ref({
   name: 'Danielle',
-  company: 'IMEDIATIS'
-})
-const notificationCount = ref(2)
+  company: 'IMEDIATIS',
+});
+const notificationCount = ref(2);
 
 const currentManager = ref<Manager>({
   id: 1,
   name: 'Danielle',
   title: 'Manager IT',
   department: 'Département Informatique',
-  email: 'danielle@company.com'
-})
+  email: 'danielle@company.com',
+});
 
 // Utilisation du store partagé
-const employeeStore = useEmployeeStore()
+const employeeStore = useEmployeeStore();
 
-const selectedDate = ref<Date>(new Date())
-const searchTerm = ref<string>('')
-const statusFilter = ref<'present' | 'absent' | 'late' | 'info' | ''>('')
-const siteFilter = ref<number | ''>('')
-const sortBy = ref<string>('name')
-const currentPage = ref<number>(1)
-const itemsPerPage = 8
-const showAddEmployee = ref<boolean>(false)
-const showAddSite = ref<boolean>(false)
-const activeEmployeeMenu = ref<number | null>(null)
-const hoveredEmployee = ref<number | null>(null)
+const selectedDate = ref<Date>(new Date());
+const searchTerm = ref<string>('');
+const statusFilter = ref<'present' | 'absent' | 'late' | 'info' | ''>('');
+const siteFilter = ref<number | ''>('');
+const sortBy = ref<string>('name');
+const currentPage = ref<number>(1);
+const itemsPerPage = 8;
+const showAddEmployee = ref<boolean>(false);
+const showAddSite = ref<boolean>(false);
+const activeEmployeeMenu = ref<number | null>(null);
+const hoveredEmployee = ref<number | null>(null);
 
 // Statistiques journalières depuis le store
-const dailyStats = computed(() => employeeStore.getDailyStats(selectedDate.value))
+const dailyStats = computed(() => employeeStore.getDailyStats(selectedDate.value));
 
 // Taux de présence journalier
 const dailyAttendanceRate = computed(() => {
-  const total = employeeStore.employees.value.length
-  if (total === 0) return 0
-  const presentAndLate = dailyStats.value.present + dailyStats.value.late
-  return Math.round((presentAndLate / total) * 100)
-})
+  const total = employeeStore.employees.value.length;
+  if (total === 0) return 0;
+  const presentAndLate = dailyStats.value.present + dailyStats.value.late;
+  return Math.round((presentAndLate / total) * 100);
+});
 
 // Configuration de l'axe Y pour le graphique
 
 // 3. Pour maxEmployeeCount :
-const maxEmployeeCount = computed(() => Math.max(employeeStore.employees.value.length, 10))
+const maxEmployeeCount = computed(() => Math.max(employeeStore.employees.value.length, 10));
 
 const yAxisTicks = computed(() => {
-  const max = maxEmployeeCount.value
-  const step = Math.ceil(max / 5)
-  const ticks = []
+  const max = maxEmployeeCount.value;
+  const step = Math.ceil(max / 5);
+  const ticks = [];
   for (let i = 0; i <= max; i += step) {
-    ticks.push(i)
+    ticks.push(i);
   }
-  return ticks
-})
+  return ticks;
+});
 
 const isToday = computed(() => {
-  const today = new Date()
-  return selectedDate.value.toDateString() === today.toDateString()
-})
+  const today = new Date();
+  return selectedDate.value.toDateString() === today.toDateString();
+});
 
-const currentDate = computed(() => formatDate(selectedDate.value))
+const currentDate = computed(() => formatDate(selectedDate.value));
 
 // Intervalles d'arrivée depuis le store
-const arrivalIntervals = computed(() => employeeStore.getArrivalIntervals(selectedDate.value))
-const maxIntervalCount = computed(() => Math.max(...arrivalIntervals.value.map(interval => interval.count), 1))
+const arrivalIntervals = computed(() => employeeStore.getArrivalIntervals(selectedDate.value));
+const maxIntervalCount = computed(() =>
+  Math.max(...arrivalIntervals.value.map((interval) => interval.count), 1),
+);
 
 // 2. Dans le script, pour filteredEmployees :
 // APRÈS (✅ CORRECT):
 const filteredEmployees = computed(() => {
-  let filtered = employeeStore.employees.value.filter(employee => {
-    const matchesSearch = employee.name.toLowerCase().includes(searchTerm.value.toLowerCase()) ||
+  let filtered = employeeStore.employees.value.filter((employee) => {
+    const matchesSearch =
+      employee.name.toLowerCase().includes(searchTerm.value.toLowerCase()) ||
       employee.position.toLowerCase().includes(searchTerm.value.toLowerCase()) ||
-      employeeStore.getSiteName(employee.siteId).toLowerCase().includes(searchTerm.value.toLowerCase())
+      employeeStore
+        .getSiteName(employee.siteId)
+        .toLowerCase()
+        .includes(searchTerm.value.toLowerCase());
 
-    const dailyStatus = employeeStore.getEmployeeDailyStatus(employee.id, selectedDate.value).status
-    const matchesStatus = statusFilter.value ? dailyStatus === statusFilter.value : true
-    const matchesSite = siteFilter.value ? employee.siteId === siteFilter.value : true
+    const dailyStatus = employeeStore.getEmployeeDailyStatus(
+      employee.id,
+      selectedDate.value,
+    ).status;
+    const matchesStatus = statusFilter.value ? dailyStatus === statusFilter.value : true;
+    const matchesSite = siteFilter.value ? employee.siteId === siteFilter.value : true;
 
-    return matchesSearch && matchesStatus && matchesSite
-  })
+    return matchesSearch && matchesStatus && matchesSite;
+  });
 
   // Sorting
   filtered.sort((a, b) => {
     switch (sortBy.value) {
       case 'name':
-        return a.name.localeCompare(b.name)
+        return a.name.localeCompare(b.name);
       case 'position':
-        return a.position.localeCompare(b.position)
+        return a.position.localeCompare(b.position);
       case 'site':
-        return employeeStore.getSiteName(a.siteId).localeCompare(employeeStore.getSiteName(b.siteId))
+        return employeeStore
+          .getSiteName(a.siteId)
+          .localeCompare(employeeStore.getSiteName(b.siteId));
       case 'punctualityScore':
-        return b.punctualityScore - a.punctualityScore
+        return b.punctualityScore - a.punctualityScore;
       default:
-        return 0
+        return 0;
     }
-  })
+  });
 
-  return filtered
-})
+  return filtered;
+});
 
-const totalPages = computed(() => Math.ceil(filteredEmployees.value.length / itemsPerPage))
+const totalPages = computed(() => Math.ceil(filteredEmployees.value.length / itemsPerPage));
 
 const paginatedEmployees = computed(() => {
-  const start = (currentPage.value - 1) * itemsPerPage
-  const end = start + itemsPerPage
-  return filteredEmployees.value.slice(start, end)
-})
+  const start = (currentPage.value - 1) * itemsPerPage;
+  const end = start + itemsPerPage;
+  return filteredEmployees.value.slice(start, end);
+});
 
 // Fonctions
 const formatDate = (date: Date): string => {
-  return date.toLocaleDateString('fr-FR', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })
-}
+  return date.toLocaleDateString('fr-FR', {
+    weekday: 'long',
+    year: 'numeric',
+    month: 'long',
+    day: 'numeric',
+  });
+};
 
 const viewEmployeeDetail = (employeeId: number) => {
-  console.log('🔗 Navigating to employee details:', employeeId, 'Type:', typeof employeeId)
+  console.log('🔗 Navigating to employee details:', employeeId, 'Type:', typeof employeeId);
 
-  const allEmployees = employeeStore.employees.value
-  console.log('📊 Employees in store:', allEmployees)
-  console.log('✅ Employee exists in store:', Array.isArray(allEmployees) && allEmployees.some(e => e.id === employeeId))
+  const allEmployees = employeeStore.employees.value;
+  console.log('📊 Employees in store:', allEmployees);
+  console.log(
+    '✅ Employee exists in store:',
+    Array.isArray(allEmployees) && allEmployees.some((e) => e.id === employeeId),
+  );
 
   // S'assurer que l'ID est un nombre
-  const id = Number(employeeId)
+  const id = Number(employeeId);
 
   if (isNaN(id)) {
-    console.error('❌ Invalid employee ID:', employeeId)
-    return
+    console.error('❌ Invalid employee ID:', employeeId);
+    return;
   }
 
   // Navigation vers la page de détails avec l'ID de l'employé
   router.push({
-    path: `/equipe/${id}`
-  })
-}
+    path: `/equipe/${id}`,
+  });
+};
 
 const changeDate = (days: number) => {
-  const newDate = new Date(selectedDate.value)
-  newDate.setDate(newDate.getDate() + days)
-  selectedDate.value = newDate
-}
+  const newDate = new Date(selectedDate.value);
+  newDate.setDate(newDate.getDate() + days);
+  selectedDate.value = newDate;
+};
 
 const changePage = (page: number) => {
   if (page >= 1 && page <= totalPages.value) {
-    currentPage.value = page
+    currentPage.value = page;
   }
-}
+};
 
 const setSortBy = (field: string) => {
-  sortBy.value = field
-}
+  sortBy.value = field;
+};
 
 const toggleEmployeeMenu = (employeeId: number) => {
   if (activeEmployeeMenu.value === employeeId) {
-    activeEmployeeMenu.value = null
+    activeEmployeeMenu.value = null;
   } else {
-    activeEmployeeMenu.value = employeeId
+    activeEmployeeMenu.value = employeeId;
   }
-}
+};
 
 const editEmployee = (employee: any) => {
-  alert(`Modifier les informations de ${employee.name}`)
-  activeEmployeeMenu.value = null
-}
+  alert(`Modifier les informations de ${employee.name}`);
+  activeEmployeeMenu.value = null;
+};
 
 const sendMemo = (employee: any) => {
-  const memo = prompt(`Saisir le mémo à envoyer à ${employee.name}:`)
+  const memo = prompt(`Saisir le mémo à envoyer à ${employee.name}:`);
   if (memo) {
-    alert(`Mémo envoyé à ${employee.name}: "${memo}"`)
+    alert(`Mémo envoyé à ${employee.name}: "${memo}"`);
   }
-  activeEmployeeMenu.value = null
-}
+  activeEmployeeMenu.value = null;
+};
 
 const deleteEmployee = (employee: any) => {
   if (confirm(`Êtes-vous sûr de vouloir supprimer ${employee.name} de l'équipe ?`)) {
-    employeeStore.removeEmployee(employee.id)
-    alert(`${employee.name} a été supprimé de l'équipe.`)
+    employeeStore.removeEmployee(employee.id);
+    alert(`${employee.name} a été supprimé de l'équipe.`);
   }
-  activeEmployeeMenu.value = null
-}
+  activeEmployeeMenu.value = null;
+};
 
 // const manageSchedules = () => {
 // }
 
 const handleEmployeeAdded = (newEmployee: any) => {
-  employeeStore.addEmployee(newEmployee)
-}
+  employeeStore.addEmployee(newEmployee);
+};
 
 const handleSiteAdded = (newSite: any) => {
-  employeeStore.addSite(newSite)
-}
+  employeeStore.addSite(newSite);
+};
 
 // Fermer le menu au clic à l'extérieur
 const closeMenuOnClickOutside = (event: MouseEvent) => {
   if (activeEmployeeMenu.value !== null) {
-    const target = event.target as HTMLElement
+    const target = event.target as HTMLElement;
     if (!target.closest('.employee-menu')) {
-      activeEmployeeMenu.value = null
+      activeEmployeeMenu.value = null;
     }
   }
-}
+};
 
 // Watchers
 watch(filteredEmployees, () => {
-  currentPage.value = 1
-})
+  currentPage.value = 1;
+});
 
 // Lifecycle
 onMounted(() => {
-  document.addEventListener('click', closeMenuOnClickOutside)
+  document.addEventListener('click', closeMenuOnClickOutside);
   HeadBuilder.apply({
     title: 'Equipe - Toké',
     css: [dashboardCss, equipeCss],
-    meta: { viewport: "width=device-width, initial-scale=1.0" }
-  })
+    meta: { viewport: 'width=device-width, initial-scale=1.0' },
+  });
 
   // Initialiser le store
-  employeeStore.initialize()
-})
+  employeeStore.initialize();
+});
 
 onUnmounted(() => {
-  document.removeEventListener('click', closeMenuOnClickOutside)
-})
+  document.removeEventListener('click', closeMenuOnClickOutside);
+});
 </script>

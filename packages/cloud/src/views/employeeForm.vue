@@ -5,9 +5,12 @@
         <div class="header-content">
           <div class="header-icon">
             <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                    d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z">
-              </path>
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z"
+              ></path>
             </svg>
           </div>
           <div>
@@ -17,7 +20,12 @@
         </div>
         <button @click="closeForm" class="close-button">
           <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              d="M6 18L18 6M6 6l12 12"
+            ></path>
           </svg>
         </button>
       </div>
@@ -28,26 +36,37 @@
           <h3 class="section-title">Photo de profil</h3>
           <div class="photo-upload-area">
             <div class="avatar-preview" :class="{ 'has-image': formData.avatar }">
-              <img v-if="formData.avatar" :src="formData.avatar" alt="Avatar preview">
+              <img v-if="formData.avatar" :src="formData.avatar" alt="Avatar preview" />
               <div v-else class="avatar-placeholder">
                 <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                        d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z">
-                  </path>
+                  <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    stroke-width="2"
+                    d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"
+                  ></path>
                 </svg>
               </div>
             </div>
             <div class="upload-actions">
               <label class="upload-button">
-                <input type="file" @change="handleFileUpload" accept="image/*" hidden>
+                <input type="file" @change="handleFileUpload" accept="image/*" hidden />
                 <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                        d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12">
-                  </path>
+                  <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    stroke-width="2"
+                    d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"
+                  ></path>
                 </svg>
                 Téléverser une photo
               </label>
-              <button v-if="formData.avatar" type="button" @click="removePhoto" class="remove-button">
+              <button
+                v-if="formData.avatar"
+                type="button"
+                @click="removePhoto"
+                class="remove-button"
+              >
                 Supprimer
               </button>
             </div>
@@ -58,9 +77,12 @@
         <div class="form-section">
           <h3 class="section-title">
             <svg class="section-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                    d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z">
-              </path>
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"
+              ></path>
             </svg>
             Informations personnelles
           </h3>
@@ -71,10 +93,10 @@
                 v-model="formData.firstName"
                 type="text"
                 class="form-input"
-                :class="{ 'error': errors.firstName }"
+                :class="{ error: errors.firstName }"
                 placeholder="Jean"
                 required
-              >
+              />
               <span v-if="errors.firstName" class="error-message">{{ errors.firstName }}</span>
             </div>
 
@@ -84,10 +106,10 @@
                 v-model="formData.lastName"
                 type="text"
                 class="form-input"
-                :class="{ 'error': errors.lastName }"
+                :class="{ error: errors.lastName }"
                 placeholder="Tientcheu"
                 required
-              >
+              />
               <span v-if="errors.lastName" class="error-message">{{ errors.lastName }}</span>
             </div>
 
@@ -97,10 +119,10 @@
                 v-model="formData.email"
                 type="email"
                 class="form-input"
-                :class="{ 'error': errors.email }"
+                :class="{ error: errors.email }"
                 placeholder="jean.tientcheu@company.com"
                 required
-              >
+              />
               <span v-if="errors.email" class="error-message">{{ errors.email }}</span>
             </div>
 
@@ -110,10 +132,10 @@
                 v-model="formData.phone"
                 type="tel"
                 class="form-input"
-                :class="{ 'error': errors.phone }"
+                :class="{ error: errors.phone }"
                 placeholder="+237 6 93 46  94 62"
                 required
-              >
+              />
               <span v-if="errors.phone" class="error-message">{{ errors.phone }}</span>
             </div>
 
@@ -123,15 +145,20 @@
                 v-model="formData.birthDate"
                 type="date"
                 class="form-input"
-                :class="{ 'error': errors.birthDate }"
+                :class="{ error: errors.birthDate }"
                 required
-              >
+              />
               <span v-if="errors.birthDate" class="error-message">{{ errors.birthDate }}</span>
             </div>
 
             <div class="form-group">
               <label class="form-label required">Genre</label>
-              <select v-model="formData.gender" class="form-select" :class="{ 'error': errors.gender }" required>
+              <select
+                v-model="formData.gender"
+                class="form-select"
+                :class="{ error: errors.gender }"
+                required
+              >
                 <option value="">Sélectionner</option>
                 <option value="male">Masculin</option>
                 <option value="female">Feminin</option>
@@ -145,15 +172,22 @@
         <div class="form-section">
           <h3 class="section-title">
             <svg class="section-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                    d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z">
-              </path>
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"></path>
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"
+              ></path>
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"
+              ></path>
             </svg>
             Adresse
           </h3>
           <div class="form-grid">
-
             <div class="form-group">
               <label class="form-label required">Ville</label>
               <input
@@ -162,7 +196,7 @@
                 class="form-input"
                 placeholder="Douala"
                 required
-              >
+              />
             </div>
 
             <div class="form-group full-width">
@@ -183,9 +217,12 @@
         <div class="form-section">
           <h3 class="section-title">
             <svg class="section-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                    d="M21 13.255A23.931 23.931 0 0112 15c-3.183 0-6.22-.62-9-1.745M16 6V4a2 2 0 00-2-2h-4a2 2 0 00-2 2v2m4 6h.01M5 20h14a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z">
-              </path>
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M21 13.255A23.931 23.931 0 0112 15c-3.183 0-6.22-.62-9-1.745M16 6V4a2 2 0 00-2-2h-4a2 2 0 00-2 2v2m4 6h.01M5 20h14a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"
+              ></path>
             </svg>
             Informations professionnelles
           </h3>
@@ -196,10 +233,10 @@
                 v-model="formData.employeeId"
                 type="text"
                 class="form-input"
-                :class="{ 'error': errors.employeeId }"
+                :class="{ error: errors.employeeId }"
                 placeholder="EMP-2024-001"
                 required
-              >
+              />
               <span v-if="errors.employeeId" class="error-message">{{ errors.employeeId }}</span>
             </div>
 
@@ -209,10 +246,10 @@
                 v-model="formData.position"
                 type="text"
                 class="form-input"
-                :class="{ 'error': errors.position }"
+                :class="{ error: errors.position }"
                 placeholder="Développeur Full Stack"
                 required
-              >
+              />
               <span v-if="errors.position" class="error-message">{{ errors.position }}</span>
             </div>
 
@@ -222,16 +259,21 @@
                 v-model="formData.phone"
                 type="tel"
                 class="form-input"
-                :class="{ 'error': errors.phone }"
+                :class="{ error: errors.phone }"
                 placeholder="Informatique"
                 required
-              >
+              />
               <span v-if="errors.phone" class="error-message">{{ errors.phone }}</span>
             </div>
 
             <div class="form-group">
               <label class="form-label required">Site de travail</label>
-              <select v-model="formData.siteId" class="form-select" :class="{ 'error': errors.siteId }" required>
+              <select
+                v-model="formData.siteId"
+                class="form-select"
+                :class="{ error: errors.siteId }"
+                required
+              >
                 <option value="">Sélectionner un site</option>
                 <option v-for="site in sites" :key="site.id" :value="site.id">
                   {{ site.name }}
@@ -258,9 +300,9 @@
                 v-model="formData.hireDate"
                 type="date"
                 class="form-input"
-                :class="{ 'error': errors.hireDate }"
+                :class="{ error: errors.hireDate }"
                 required
-              >
+              />
               <span v-if="errors.hireDate" class="error-message">{{ errors.hireDate }}</span>
             </div>
 
@@ -277,20 +319,35 @@
         </div>
         <!-- Actions -->
         <div class="form-actions">
-          <button type="button" @click="closeForm" class="btn-cancel">
-            Annuler
-          </button>
+          <button type="button" @click="closeForm" class="btn-cancel">Annuler</button>
           <button type="submit" class="btn-submit" :disabled="isSubmitting">
             <span v-if="!isSubmitting">
               <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  stroke-width="2"
+                  d="M5 13l4 4L19 7"
+                ></path>
               </svg>
-              {{ isEditing ? 'Mettre à jour' : 'Créer l\'employé' }}
+              {{ isEditing ? 'Mettre à jour' : "Créer l'employé" }}
             </span>
             <span v-else class="loading-spinner">
               <svg class="spinner" viewBox="0 0 24 24">
-                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4" fill="none"></circle>
-                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                <circle
+                  class="opacity-25"
+                  cx="12"
+                  cy="12"
+                  r="10"
+                  stroke="currentColor"
+                  stroke-width="4"
+                  fill="none"
+                ></circle>
+                <path
+                  class="opacity-75"
+                  fill="currentColor"
+                  d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                ></path>
               </svg>
               Enregistrement...
             </span>
@@ -303,7 +360,7 @@
 
 <script setup lang="ts">
 import { ref, reactive, computed } from 'vue';
-import "../assets/css/employeeForm-toke-15.css"
+import '../assets/css/employeeForm-toke-15.css';
 interface Props {
   employee?: any;
   sites?: any[];
@@ -314,12 +371,12 @@ const props = withDefaults(defineProps<Props>(), {
   sites: () => [
     { id: 1, name: 'Total Makepe' },
     { id: 2, name: 'Total Bedi' },
-    { id: 3, name: 'Total Akwa' }
+    { id: 3, name: 'Total Akwa' },
   ],
   managers: () => [
     { id: 1, name: 'Danielle - Manager IT' },
-    { id: 2, name: 'Pierre - Manager RH' }
-  ]
+    { id: 2, name: 'Pierre - Manager RH' },
+  ],
 });
 
 const emit = defineEmits(['close', 'submit']);
@@ -339,7 +396,7 @@ const formData = reactive({
     street: props.employee?.address?.street || '',
     zipCode: props.employee?.address?.zipCode || '',
     city: props.employee?.address?.city || '',
-    country: props.employee?.address?.country || 'FR'
+    country: props.employee?.address?.country || 'FR',
   },
   employeeId: props.employee?.employeeId || '',
   position: props.employee?.position || '',
@@ -352,20 +409,26 @@ const formData = reactive({
   workSchedule: {
     startTime: props.employee?.workSchedule?.startTime || '09:00',
     endTime: props.employee?.workSchedule?.endTime || '17:00',
-    workDays: props.employee?.workSchedule?.workDays || ['monday', 'tuesday', 'wednesday', 'thursday', 'friday']
+    workDays: props.employee?.workSchedule?.workDays || [
+      'monday',
+      'tuesday',
+      'wednesday',
+      'thursday',
+      'friday',
+    ],
   },
   bankInfo: {
     iban: props.employee?.bankInfo?.iban || '',
     bic: props.employee?.bankInfo?.bic || '',
-    bankName: props.employee?.bankInfo?.bankName || ''
+    bankName: props.employee?.bankInfo?.bankName || '',
   },
   emergencyContact: {
     name: props.employee?.emergencyContact?.name || '',
     relationship: props.employee?.emergencyContact?.relationship || '',
-    phone: props.employee?.emergencyContact?.phone || ''
+    phone: props.employee?.emergencyContact?.phone || '',
   },
   skills: props.employee?.skills || '',
-  notes: props.employee?.notes || ''
+  notes: props.employee?.notes || '',
 });
 
 const errors = reactive({
@@ -379,7 +442,7 @@ const errors = reactive({
   position: '',
   department: '',
   siteId: '',
-  hireDate: ''
+  hireDate: '',
 });
 
 const handleFileUpload = (event: Event) => {
@@ -403,7 +466,7 @@ const validateForm = (): boolean => {
   let isValid = true;
 
   // Reset errors
-  Object.keys(errors).forEach(key => {
+  Object.keys(errors).forEach((key) => {
     errors[key as keyof typeof errors] = '';
   });
 
@@ -419,7 +482,7 @@ const validateForm = (): boolean => {
   }
 
   if (!formData.email.trim()) {
-    errors.email = 'L\'email est requis';
+    errors.email = "L'email est requis";
     isValid = false;
   } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) {
     errors.email = 'Email invalide';
@@ -453,13 +516,13 @@ const handleSubmit = async () => {
 
   try {
     // Simulate API call
-    await new Promise(resolve => setTimeout(resolve, 1500));
+    await new Promise((resolve) => setTimeout(resolve, 1500));
 
     emit('submit', {
       ...formData,
       id: props.employee?.id || Date.now(),
       name: `${formData.firstName} ${formData.lastName}`,
-      initials: `${formData.firstName[0]}${formData.lastName[0]}`.toUpperCase()
+      initials: `${formData.firstName[0]}${formData.lastName[0]}`.toUpperCase(),
     });
 
     closeForm();

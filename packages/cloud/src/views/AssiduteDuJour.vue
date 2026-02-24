@@ -11,17 +11,22 @@
           <h3 class="modal-employee-name">{{ employee.name }}</h3>
         </div>
         <span :class="['modal-status-badge', 'status-' + employee.status]">
-            {{ employee.statusText }}
-          </span>
+          {{ employee.statusText }}
+        </span>
       </div>
 
       <div class="modal-info-grid">
         <!-- ======= EMPLOYÉ PRÉSENT OU EN RETARD ======= -->
-        <div v-if="employee.status === 'present' || employee.status === 'late'" class="modal-info-item modal-arrival-time">
+        <div
+          v-if="employee.status === 'present' || employee.status === 'late'"
+          class="modal-info-item modal-arrival-time"
+        >
           <IconClock class="modal-info-icon" />
           <div>
             <span class="modal-info-label">Heure d'arrivée</span>
-            <span class="modal-info-value">{{ employee.checkInTime || employee.time || 'Non spécifiée' }}</span>
+            <span class="modal-info-value">{{
+              employee.checkInTime || employee.time || 'Non spécifiée'
+            }}</span>
           </div>
         </div>
 
@@ -30,12 +35,17 @@
           <IconAlertTriangle class="modal-info-icon" />
           <div>
             <span class="modal-info-label">Durée du retard</span>
-            <span class="modal-info-value modal-info-value-warning">{{ employee.lateDuration || employee.lateTime || 'N/A' }}</span>
+            <span class="modal-info-value modal-info-value-warning">{{
+              employee.lateDuration || employee.lateTime || 'N/A'
+            }}</span>
           </div>
         </div>
 
         <!-- MOTIF DU RETARD -->
-        <div v-if="employee.status === 'late' && employee.motif" class="modal-info-item modal-location-detail">
+        <div
+          v-if="employee.status === 'late' && employee.motif"
+          class="modal-info-item modal-location-detail"
+        >
           <IconNote class="modal-info-icon" />
           <div>
             <span class="modal-info-label">Motif du retard</span>
@@ -49,13 +59,16 @@
           <div>
             <span class="modal-info-label">Motif de l'absence</span>
             <span class="modal-info-value modal-info-value-critical">
-                {{ employee.absenceReason || employee.absenceType || 'Non justifiée' }}
-              </span>
+              {{ employee.absenceReason || employee.absenceType || 'Non justifiée' }}
+            </span>
           </div>
         </div>
 
         <!-- ======= EMPLOYÉ EN FORMATION/CONGÉ ======= -->
-        <div v-if="employee.status === 'info' && employee.location" class="modal-info-item modal-location-detail">
+        <div
+          v-if="employee.status === 'info' && employee.location"
+          class="modal-info-item modal-location-detail"
+        >
           <IconMapPin class="modal-info-icon" />
           <div>
             <span class="modal-info-label">Détails</span>
@@ -68,29 +81,37 @@
 
       <div class="modal-quick-actions">
         <!-- N'afficher "Justifier l'absence" QUE si l'absence n'est pas justifiée -->
-        <button v-if="employee.status === 'absent' && !employee.isJustified"
-                class="modal-action-btn modal-action-justify"
-                @click="handleAction('justify')">
+        <button
+          v-if="employee.status === 'absent' && !employee.isJustified"
+          class="modal-action-btn modal-action-justify"
+          @click="handleAction('justify')"
+        >
           <IconNote class="modal-btn-icon" /> Justifier l'absence
         </button>
 
         <!-- Afficher "Valider le retard" seulement si pas encore validé -->
-        <button v-if="employee.status === 'late' && !employee.isValidated"
-                class="modal-action-btn modal-action-validate"
-                @click="handleAction('validate')">
+        <button
+          v-if="employee.status === 'late' && !employee.isValidated"
+          class="modal-action-btn modal-action-validate"
+          @click="handleAction('validate')"
+        >
           <IconCheck class="modal-btn-icon" /> Valider le retard
         </button>
 
         <!-- Bouton Mémo toujours disponible -->
-        <button class="modal-action-btn modal-action-memo"
-                @click="handleAction('memo')">
+        <button class="modal-action-btn modal-action-memo" @click="handleAction('memo')">
           <IconMessage class="modal-btn-icon" /> Envoyer un mémo
         </button>
 
         <!-- Avertir seulement pour les retards et absences non justifiées -->
-        <button v-if="(employee.status === 'late' && !employee.isValidated) || (employee.status === 'absent' && !employee.isJustified)"
-                class="modal-action-btn modal-action-warn"
-                @click="handleAction('warn')">
+        <button
+          v-if="
+            (employee.status === 'late' && !employee.isValidated) ||
+            (employee.status === 'absent' && !employee.isJustified)
+          "
+          class="modal-action-btn modal-action-warn"
+          @click="handleAction('warn')"
+        >
           <IconAlertOctagon class="modal-btn-icon" /> Avertir l'employé
         </button>
       </div>
@@ -105,7 +126,7 @@
 <script setup lang="ts">
 import { defineProps, ref } from 'vue';
 import { useRouter } from 'vue-router';
-import "../assets/css/toke-AssiduteJ-09.css";
+import '../assets/css/toke-AssiduteJ-09.css';
 import {
   IconArrowLeft,
   IconClock,
@@ -116,7 +137,7 @@ import {
   IconNote,
   IconUserCircle,
   IconMessage,
-  IconAlertOctagon
+  IconAlertOctagon,
 } from '@tabler/icons-vue';
 
 interface Employee {
@@ -144,11 +165,11 @@ const router = useRouter();
 const loading = ref(false);
 
 const props = defineProps<{
-  employee: Employee
+  employee: Employee;
 }>();
 
 const emit = defineEmits<{
-  close: []
+  close: [];
 }>();
 
 const viewFullProfile = () => {
@@ -184,5 +205,4 @@ const handleAction = (actionType: 'justify' | 'validate' | 'memo' | 'warn') => {
 };
 </script>
 
-<style scoped>
-</style>
+<style scoped></style>
