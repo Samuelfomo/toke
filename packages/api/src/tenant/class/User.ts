@@ -384,15 +384,6 @@ export default class User extends UserModel {
       }
     }
 
-    // const existingDefault = await SessionTemplate._load({}, false, true);
-    // if (existingDefault) {
-    //   candidates.push(
-    //     type: 'schedule',
-    //     assignedAt: this.created_at || new Date(0),
-    //     ass
-    //   )
-    // }
-
     if (candidates.length === 0) {
       return null;
     }

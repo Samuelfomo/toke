@@ -457,6 +457,20 @@ export default class Memos extends MemosModel {
     }
   }
 
+  async revoke(author: number, authorGuid: string, message?: Message[]): Promise<Memos | null> {
+    if (!this.id) {
+      throw new Error('Cannot revoke memo without ID');
+    }
+
+    const success = await this.revokeMemo(this.id, author, authorGuid, message);
+
+    if (success) {
+      return await Memos._load(this.id);
+    } else {
+      throw new Error('Failed to revoke memo');
+    }
+  }
+
   async reject(
     validator: number,
     validatorGuid: string,

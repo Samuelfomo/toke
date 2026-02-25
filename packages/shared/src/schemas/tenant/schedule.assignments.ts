@@ -77,7 +77,7 @@ const baseScheduleAssignmentSchema = z.object({
 
   end_date: z
     .string({
-      required_error: SCHEDULE_ASSIGNMENTS_ERRORS.END_DATE_REQUIRED,
+      // required_error: SCHEDULE_ASSIGNMENTS_ERRORS.END_DATE_REQUIRED,
       invalid_type_error: SCHEDULE_ASSIGNMENTS_ERRORS.END_DATE_INVALID,
     })
     .regex(/^\d{4}-\d{2}-\d{2}$/, SCHEDULE_ASSIGNMENTS_ERRORS.END_DATE_INVALID)
@@ -87,7 +87,9 @@ const baseScheduleAssignmentSchema = z.object({
         return !isNaN(parsed.getTime());
       },
       { message: SCHEDULE_ASSIGNMENTS_ERRORS.END_DATE_INVALID },
-    ),
+    )
+    .optional()
+    .nullable(),
 
   created_by: z
     .string({
@@ -146,8 +148,11 @@ export const createScheduleAssignmentSchema = baseScheduleAssignmentSchema
     (data) => {
       // end_date must be after or equal to start_date
       const startDate = new Date(data.start_date);
-      const endDate = new Date(data.end_date);
-      return endDate >= startDate;
+      const endDate = data.end_date ? new Date(data.end_date) : null;
+      if (endDate !== null) {
+        return endDate >= startDate;
+      }
+      return true;
     },
     {
       message: SCHEDULE_ASSIGNMENTS_ERRORS.END_DATE_BEFORE_START,
@@ -173,8 +178,11 @@ export const updateScheduleAssignmentSchema = baseScheduleAssignmentSchema
     (data) => {
       // end_date must be after or equal to start_date
       const startDate = new Date(data.start_date!);
-      const endDate = new Date(data.end_date!);
-      return endDate >= startDate;
+      const endDate = data.end_date ? new Date(data.end_date) : null;
+      if (endDate !== null) {
+        return endDate >= startDate;
+      }
+      return true;
     },
     {
       message: SCHEDULE_ASSIGNMENTS_ERRORS.END_DATE_BEFORE_START,

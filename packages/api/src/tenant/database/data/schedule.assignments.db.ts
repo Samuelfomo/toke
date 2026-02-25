@@ -65,18 +65,6 @@ export const ScheduleAssignmentsDbStructure = {
       },
       comment: 'Reference to groups (nullable for user Assignments)',
     },
-    // session_template: {
-    //   type: DataTypes.INTEGER,
-    //   allowNull: false,
-    //   references: {
-    //     model: tableName.SESSION_TEMPLATES,
-    //     key: 'id',
-    //   },
-    //   validate: {
-    //     isInt: true,
-    //   },
-    //   comment: 'Reference to session template to apply',
-    // },
     session_template: {
       type: DataTypes.JSONB,
       allowNull: false,
@@ -173,10 +161,6 @@ export const ScheduleAssignmentsDbStructure = {
         fields: ['groups'],
         name: 'idx_schedule_assignments_groups',
       },
-      // {
-      //   fields: ['session_template'],
-      //   name: 'idx_schedule_assignments_session_template',
-      // },
       {
         fields: ['session_template'],
         name: 'idx_schedule_assignments_session_template',

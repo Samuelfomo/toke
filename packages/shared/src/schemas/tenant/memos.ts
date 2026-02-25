@@ -37,7 +37,6 @@ export const messageSchema = z.object({
 export const memoContentSchema = z.object({
   created_at: z
     .union([z.date(), z.string().datetime('Invalid datetime format')])
-    // .default(() => TimezoneConfigUtils.getCurrentTime().toISOString()),
     .default(() => TimezoneConfigUtils.getCurrentTime().toISOString()),
   user: z
     .string()
@@ -48,7 +47,7 @@ export const memoContentSchema = z.object({
       message: MEMOS_ERRORS.AUTHOR_USER_INVALID,
     }),
   message: z.array(messageSchema), //messageSchema.or(z.array(messageSchema)),
-  type: z.enum(['initial', 'response', 'validation', 'escalation']).optional(),
+  type: z.enum(['initial', 'response', 'validation', 'escalation', 'revocation']).optional(),
 });
 
 // ============================================================================
@@ -555,6 +554,7 @@ export const validateMemoStatusTransition = (currentStatus: MemoStatus, newStatu
     [MemoStatus.PENDING]: [MemoStatus.APPROVED, MemoStatus.REJECTED],
     [MemoStatus.APPROVED]: [], // Terminal state
     [MemoStatus.REJECTED]: [MemoStatus.PENDING], // Peut être refait
+    [MemoStatus.REVOKED]: [MemoStatus.PENDING], // Peut être refait
   };
 
   if (!validTransitions[currentStatus].includes(newStatus)) {

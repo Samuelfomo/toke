@@ -1,9 +1,4 @@
-import {
-  TimezoneConfigUtils,
-  USERS_DEFAULTS,
-  USERS_ERRORS,
-  UsersValidationUtils,
-} from '@toke/shared';
+import { TimezoneConfigUtils, USERS_DEFAULTS, USERS_ERRORS, UsersValidationUtils, } from '@toke/shared';
 import { Op } from 'sequelize';
 import * as bcrypt from 'bcrypt';
 
@@ -100,41 +95,6 @@ export default class UserModel extends BaseModel {
   // ============================================
   // MÉTHODES DE RECHERCHE AMÉLIORÉES
   // ============================================
-
-  // /**
-  //  * Recherche les utilisateurs avec une session template spécifique
-  //  */
-  // async listAllBySessionTemplate(
-  //   sessionTemplate: number,
-  //   paginationOptions: { offset?: number; limit?: number } = {},
-  // ): Promise<any[]> {
-  //   const conditions = {
-  //     [this.db.deleted_at]: null,
-  //   };
-  //
-  //   const allUsers = await this.listAll(conditions, paginationOptions);
-  //
-  //   return allUsers.filter((user) => {
-  //     const sessions = user.assigned_sessions || [];
-  //     return sessions.some(
-  //       (session: TI.AssignedSession) => session.session_template === sessionTemplate,
-  //     );
-  //   });
-  // }
-
-  // /**
-  //  * Recherche les utilisateurs ayant une session active
-  //  */
-  // protected async listAllWithActiveSession(
-  //   paginationOptions: { offset?: number; limit?: number } = {},
-  // ): Promise<any[]> {
-  //   const allUsers = await this.listAll({}, paginationOptions);
-  //
-  //   return allUsers.filter((user) => {
-  //     const sessions = user.assigned_sessions || [];
-  //     return sessions.some((session: TI.AssignedSession) => session.active === true);
-  //   });
-  // }
 
   /**
    * ✅ Exclure les utilisateurs supprimés par défaut

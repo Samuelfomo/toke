@@ -123,7 +123,7 @@ export default class ScheduleAssignmentsModel extends BaseModel {
     templateVersion: number,
     includeDeleted: boolean = false,
   ): Promise<any> {
-    await this.init();
+    // await this.init();
 
     const conditions: any = {
       [this.db.user]: userId,
@@ -158,7 +158,7 @@ export default class ScheduleAssignmentsModel extends BaseModel {
     templateVersion: number,
     includeDeleted: boolean = false,
   ): Promise<any> {
-    await this.init();
+    // await this.init();
 
     const conditions: any = {
       [this.db.groups]: groupsId,
@@ -267,7 +267,11 @@ export default class ScheduleAssignmentsModel extends BaseModel {
     const conditions = {
       [this.db.user]: userId,
       [this.db.start_date]: { [Op.lte]: date },
-      [this.db.end_date]: { [Op.gte]: date },
+      // [this.db.end_date]: { [Op.gte]: date },
+      [Op.or]: [
+        { [this.db.end_date]: { [Op.gte]: date } },
+        { [this.db.end_date]: { [Op.is]: null } },
+      ],
       [this.db.active]: true,
     };
 
@@ -282,7 +286,11 @@ export default class ScheduleAssignmentsModel extends BaseModel {
     const conditions = {
       [this.db.groups]: groupsId,
       [this.db.start_date]: { [Op.lte]: date },
-      [this.db.end_date]: { [Op.gte]: date },
+      // [this.db.end_date]: { [Op.gte]: date },
+      [Op.or]: [
+        { [this.db.end_date]: { [Op.gte]: date } },
+        { [this.db.end_date]: { [Op.is]: null } },
+      ],
       [this.db.active]: true,
     };
 
@@ -509,7 +517,6 @@ export default class ScheduleAssignmentsModel extends BaseModel {
 
     // Vérifier qu'au moins user OU groups est défini
     if (!this.user && !this.groups) {
-      console.log('je suis ici 1');
       throw new Error(SCHEDULE_ASSIGNMENTS_ERRORS.USER_OR_GROUPS_REQUIRED);
     }
 
@@ -523,7 +530,6 @@ export default class ScheduleAssignmentsModel extends BaseModel {
 
     // ✅ Valider que session_template est un objet valide
     if (typeof this.session_template !== 'object') {
-      console.error('this.session_template', this.session_template);
       throw new Error(SCHEDULE_ASSIGNMENTS_ERRORS.SESSION_TEMPLATE_INVALID);
     }
 
@@ -533,16 +539,16 @@ export default class ScheduleAssignmentsModel extends BaseModel {
     if (!ScheduleAssignmentsValidationUtils.validateStartDate(this.start_date)) {
       throw new Error(SCHEDULE_ASSIGNMENTS_ERRORS.START_DATE_INVALID);
     }
-
-    if (!this.end_date) {
-      throw new Error(SCHEDULE_ASSIGNMENTS_ERRORS.END_DATE_REQUIRED);
-    }
-    if (!ScheduleAssignmentsValidationUtils.validateEndDate(this.end_date)) {
+    //
+    // if (!this.end_date) {
+    //   throw new Error(SCHEDULE_ASSIGNMENTS_ERRORS.END_DATE_REQUIRED);
+    // }
+    if (this.end_date && !ScheduleAssignmentsValidationUtils.validateEndDate(this.end_date)) {
       throw new Error(SCHEDULE_ASSIGNMENTS_ERRORS.END_DATE_INVALID);
     }
 
     // Vérifier que start_date <= end_date
-    if (this.start_date > this.end_date) {
+    if (this.end_date && this.start_date > this.end_date) {
       throw new Error(SCHEDULE_ASSIGNMENTS_ERRORS.END_DATE_BEFORE_START);
     }
 

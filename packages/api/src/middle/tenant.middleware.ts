@@ -31,7 +31,11 @@ declare global {
   }
 }
 
-export const tenantMiddleware = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+export const tenantMiddleware = async (
+  req: Request,
+  res: Response,
+  next: NextFunction,
+): Promise<void> => {
   try {
     console.log(`🔍 Traitement requête: ${req.method} ${req.path}`);
 
@@ -52,7 +56,7 @@ export const tenantMiddleware = async (req: Request, res: Response, next: NextFu
         code: 'invalid_credentials',
         message: 'Credentials invalides',
         details: validation.errors,
-      })
+      });
     }
 
     const subdomain = credentials.subdomain!;
@@ -63,7 +67,7 @@ export const tenantMiddleware = async (req: Request, res: Response, next: NextFu
       return R.handleError(res, HttpStatus.NOT_FOUND, {
         code: 'tenant_not_found',
         message: `Tenant '${subdomain}' non trouvé ou inactif`,
-      })
+      });
     }
 
     // 4. Définir le tenant actuel dans TenantManager
@@ -95,56 +99,6 @@ export const tenantMiddleware = async (req: Request, res: Response, next: NextFu
       code: 'tenant_configuration_error',
       message: 'Impossible de configurer le tenant',
       details: error,
-    })
+    });
   }
 };
-
-// import { NextFunction, Request, Response } from 'express';
-//
-// import TenantManager from '../tenant/database/db.tenant-manager.js';
-//
-// declare global {
-//   namespace Express {
-//     interface Request {
-//       tenant: {
-//         subdomain: string;
-//         connection: any; // Sequelize instance if needed
-//       };
-//     }
-//   }
-// }
-//
-// export const tenantMiddleware = async (req: Request, res: Response, next: NextFunction) => {
-//   try {
-//     // Extraction du sous-domaine
-//     const hostname = req.hostname;
-//     const subdomain = hostname.split('.')[0];
-//
-//     // Validation du tenant
-//     if (!subdomain || subdomain === 'www') {
-//       return res.status(400).json({
-//         error: 'Tenant invalide. Utilisez un sous-domaine valide.',
-//       });
-//     }
-//
-//     // Définir le tenant actuel dans TenantManager
-//     TenantManager.setCurrentTenant(subdomain);
-//
-//     // Optionnel: pré-charger la connexion
-//     const connection = await TenantManager.getConnection();
-//
-//     // Ajouter les infos tenant à la requête
-//     req.tenant = {
-//       subdomain,
-//       connection,
-//     };
-//
-//     console.log(`🏢 Requête traitée pour tenant: ${subdomain}`);
-//     return next();
-//   } catch (error: any) {
-//     console.error('❌ Erreur middleware tenant:', error.message);
-//     return res.status(500).json({
-//       error: 'Impossible de se connecter à la base de données du tenant',
-//     });
-//   }
-// };

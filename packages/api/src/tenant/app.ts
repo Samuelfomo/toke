@@ -64,55 +64,6 @@ export default class App {
   /**
    * Démarrage du serveur
    */
-  // async start(): Promise<void> {
-  //   try {
-  //     if (this.isShuttingDown) {
-  //       throw new Error('Impossible de démarrer: arrêt en cours');
-  //     }
-  //
-  //     // Configurer les routes
-  //     await this.setupRoutes();
-  //
-  //     // Démarrer le serveur HTTP
-  //     console.log(`🚀 Démarrage serveur sur ${this.config.host}:${this.config.port}...`);
-  //
-  //     await new Promise<void>((resolve, reject) => {
-  //       // 1️⃣ Créer le serveur HTTP
-  //       this.httpServer = http.createServer(this.app);
-  //
-  //       // 2️⃣ Initialiser Socket.IO AVANT listen
-  //       SocketServer.init(this.httpServer);
-  //       // this.server = this.httpServer;
-  //
-  //       this.server = this.app.listen(
-  //         this.config.port,
-  //         // this.config.host,
-  //         () => {
-  //           console.log(`✅ Serveur actif sur http://${this.config.host}`);
-  //           console.log(`📊 Health check: http://${this.config.host}/health`);
-  //           console.log(`🔧 Environnement: ${process.env.NODE_ENV || 'development'}`);
-  //           console.log('🎉 Serveur prêt!');
-  //           resolve();
-  //         },
-  //       );
-  //
-  //       this.server?.on('error', (error: any) => {
-  //         if (error.code === 'EADDRINUSE') {
-  //           reject(new Error(`Port ${this.config.port} déjà utilisé`));
-  //         } else {
-  //           reject(error);
-  //         }
-  //       });
-  //     });
-  //
-  //     // Configurer l'arrêt gracieux
-  //     this.setupGracefulShutdown();
-  //   } catch (error) {
-  //     console.error('❌ Erreur démarrage serveur:', error);
-  //     throw error;
-  //   }
-  // }
-
   async start(): Promise<void> {
     try {
       if (this.isShuttingDown) {

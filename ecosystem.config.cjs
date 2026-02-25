@@ -21,6 +21,8 @@ module.exports = {
       autorestart: true,
       max_memory_restart: '512M',
       restart_delay: 5000,
+      min_uptime: '10s',
+      max_restarts: 5,
     },
 
     // =========================
@@ -44,6 +46,8 @@ module.exports = {
       autorestart: true,
       max_memory_restart: '512M',
       restart_delay: 5000,
+      min_uptime: '10s',
+      max_restarts: 5,
     },
 
     // =========================
@@ -66,6 +70,8 @@ module.exports = {
       autorestart: true,
       max_memory_restart: '512M',
       restart_delay: 5000,
+      min_uptime: '10s',
+      max_restarts: 5,
     },
   ],
 };

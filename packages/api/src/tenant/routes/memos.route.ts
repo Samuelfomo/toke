@@ -9,6 +9,7 @@ import {
   MemoStatus,
   MemosValidationUtils,
   MemoType,
+  Message,
   MessageType,
   paginationSchema,
   ROLES_CODES,
@@ -973,21 +974,16 @@ router.put('/:guid', Ensure.put(), async (req: Request, res: Response) => {
         message: MEMOS_ERRORS.NOT_FOUND,
       });
     }
-    // if (
-    //   memoObj.getMemoStatus() !== MemoStatus.DRAFT &&
-    //   memoObj.getMemoStatus() !== MemoStatus.SUBMITTED
-    // ) {
-    //   return R.handleError(res, HttpStatus.FORBIDDEN, {
-    //     code: MEMOS_CODES.CANNOT_MODIFY_PROCESSED_MEMO,
-    //     message:
-    //       MEMOS_ERRORS.CANNOT_MODIFY_PROCESSED_MEMO ||
-    //       'Prohibited action: the memo must be in DRAFT or SUBMITTED status.',
-    //   });
-    // }
 
     // Vérifier qu'on ne modifie pas un memo traité
-    const processedStatuses = [MemoStatus.APPROVED, MemoStatus.REJECTED];
-    if (processedStatuses.includes(memoObj.getMemoStatus()!)) {
+    // const processedStatuses = [MemoStatus.APPROVED, MemoStatus.REJECTED];
+    // if (processedStatuses.includes(memoObj.getMemoStatus()!)) {
+    //   return R.handleError(res, HttpStatus.BAD_REQUEST, {
+    //     code: MEMOS_CODES.CANNOT_MODIFY_PROCESSED_MEMO,
+    //     message: MEMOS_ERRORS.CANNOT_MODIFY_PROCESSED_MEMO,
+    //   });
+    // }
+    if (!MemosValidationUtils.canModifyMemo(memoObj.getMemoStatus()!)) {
       return R.handleError(res, HttpStatus.BAD_REQUEST, {
         code: MEMOS_CODES.CANNOT_MODIFY_PROCESSED_MEMO,
         message: MEMOS_ERRORS.CANNOT_MODIFY_PROCESSED_MEMO,
@@ -1245,14 +1241,6 @@ router.patch('/:guid/validate', Ensure.patch(), async (req: Request, res: Respon
       });
     }
 
-    // // Vérifier que le memo est en soumit de réponse
-    // if (memoObj.getMemoStatus() !== MemoStatus.SUBMITTED) {
-    //   return R.handleError(res, HttpStatus.BAD_REQUEST, {
-    //     code: MEMOS_CODES.INVALID_STATUS_TRANSITION,
-    //     message: 'Memo is not submitted response',
-    //   });
-    // }
-
     const validation = validateMemoValidation(req.body);
 
     if (!validation.success || !validation.data) {
@@ -1273,12 +1261,29 @@ router.patch('/:guid/validate', Ensure.patch(), async (req: Request, res: Respon
       });
     }
 
-    // Vérifier que le memo est en attente de validation
-    if (memoObj.getMemoStatus() !== MemoStatus.SUBMITTED) {
-      return R.handleError(res, HttpStatus.BAD_REQUEST, {
-        code: MEMOS_CODES.INVALID_STATUS_TRANSITION,
-        message: 'Memo is not submitted for validation',
+    // // Vérifier que le memo est en attente de validation
+    // if (memoObj.getMemoStatus() !== MemoStatus.SUBMITTED) {
+    //   return R.handleError(res, HttpStatus.BAD_REQUEST, {
+    //     code: MEMOS_CODES.INVALID_STATUS_TRANSITION,
+    //     message: 'Memo is not submitted for validation',
+    //   });
+    // }
+
+    // Vérifier que le memo peut être validé (employé doit avoir répondu si memo manager)
+    if (memoObj.isManager()) {
+      const canValidate = MemosValidationUtils.canValidateOrReject({
+        manager: memoObj.isManager(),
+        memo_content: memoObj.getMemoContent() || [],
+        target_user: (await memoObj.getTargetObj())?.getGuid()!,
+        memo_status: memoObj.getMemoStatus()!,
       });
+
+      if (!canValidate) {
+        return R.handleError(res, HttpStatus.BAD_REQUEST, {
+          code: MEMOS_CODES.VALIDATION_REQUIRES_USER_RESPONSE,
+          message: MEMOS_ERRORS.VALIDATION_REQUIRES_USER_RESPONSE,
+        });
+      }
     }
 
     // // Vérifier qu'on ne valide pas son propre memo
@@ -1493,12 +1498,29 @@ router.patch('/:guid/reject', Ensure.patch(), async (req: Request, res: Response
       });
     }
 
-    // Vérifier que le memo est en attente de validation
-    if (memoObj.getMemoStatus() !== MemoStatus.SUBMITTED) {
-      return R.handleError(res, HttpStatus.BAD_REQUEST, {
-        code: MEMOS_CODES.INVALID_STATUS_TRANSITION,
-        message: 'Memo is not submitted for validation',
+    // // Vérifier que le memo est en attente de validation
+    // if (memoObj.getMemoStatus() !== MemoStatus.SUBMITTED) {
+    //   return R.handleError(res, HttpStatus.BAD_REQUEST, {
+    //     code: MEMOS_CODES.INVALID_STATUS_TRANSITION,
+    //     message: 'Memo is not submitted for validation',
+    //   });
+    // }
+
+    // Vérifier que le memo peut être validé (employé doit avoir répondu si memo manager)
+    if (memoObj.isManager()) {
+      const canReject = MemosValidationUtils.canValidateOrReject({
+        manager: memoObj.isManager(),
+        memo_content: memoObj.getMemoContent() || [],
+        target_user: (await memoObj.getTargetObj())?.getGuid()!,
+        memo_status: memoObj.getMemoStatus()!,
       });
+
+      if (!canReject) {
+        return R.handleError(res, HttpStatus.BAD_REQUEST, {
+          code: MEMOS_CODES.REJECTION_REQUIRES_USER_RESPONSE,
+          message: MEMOS_ERRORS.REJECTION_REQUIRES_USER_RESPONSE,
+        });
+      }
     }
 
     const validatedData = validation.data;
@@ -1624,6 +1646,90 @@ router.patch('/:guid/escalate', Ensure.patch(), async (req: Request, res: Respon
   } catch (error: any) {
     return R.handleError(res, HttpStatus.INTERNAL_ERROR, {
       code: MEMOS_CODES.ESCALATION_FAILED,
+      message: error.message,
+    });
+  }
+});
+
+// 🔄 Revoke a manager-created memo before employee responds
+router.patch('/:guid/revoke', Ensure.patch(), async (req: Request, res: Response) => {
+  try {
+    const { guid } = req.params;
+
+    if (!MemosValidationUtils.validateGuid(guid)) {
+      return R.handleError(res, HttpStatus.BAD_REQUEST, {
+        code: MEMOS_CODES.INVALID_GUID,
+        message: MEMOS_ERRORS.GUID_INVALID,
+      });
+    }
+
+    const memoObj = await Memos._load(guid, true);
+    if (!memoObj) {
+      return R.handleError(res, HttpStatus.NOT_FOUND, {
+        code: MEMOS_CODES.MEMO_NOT_FOUND,
+        message: MEMOS_ERRORS.NOT_FOUND,
+      });
+    }
+
+    // Vérifier que c'est bien un memo manager
+    if (!memoObj.isManager()) {
+      return R.handleError(res, HttpStatus.FORBIDDEN, {
+        code: MEMOS_CODES.REVOCATION_NOT_ALLOWED,
+        message: MEMOS_ERRORS.REVOCATION_NOT_ALLOWED,
+      });
+    }
+
+    // Vérifier que le memo peut être révoqué
+    const canRevoke = MemosValidationUtils.canRevokeMemo({
+      manager: memoObj.isManager(),
+      memo_content: memoObj.getMemoContent() || [],
+      target_user: (await memoObj.getTargetObj())?.getGuid()!,
+      memo_status: memoObj.getMemoStatus()!,
+    });
+
+    if (!canRevoke) {
+      return R.handleError(res, HttpStatus.BAD_REQUEST, {
+        code: MEMOS_CODES.CANNOT_REVOKE_RESPONDED_MEMO,
+        message: MEMOS_ERRORS.CANNOT_REVOKE_RESPONDED_MEMO,
+      });
+    }
+
+    // Validation optionnelle pour ajouter une raison de révocation
+    const validation = validateAddMessage(req.body);
+    let revokeMessage: Message[] | undefined;
+
+    if (validation.success && validation.data) {
+      revokeMessage = validation.data.message;
+    }
+
+    // Révoquer le memo
+    const data = await memoObj.revoke(
+      memoObj.getAuthorUser()!,
+      (await memoObj.getAuthorObj())?.getGuid()!,
+      revokeMessage,
+    );
+
+    // Notification au target user
+    let notification: boolean = false;
+    const targetUser = await User._load(memoObj.getTargetUser()!);
+    if (targetUser?.getDeviceToken()) {
+      try {
+        await FCMService.sendToToken(targetUser.getDeviceToken()!);
+        notification = true;
+      } catch (error: any) {
+        notification = false;
+        console.error(error);
+      }
+    }
+
+    return R.handleSuccess(res, {
+      message: MEMOS_MESSAGES.REVOKED_SUCCESSFULLY,
+      memo: await data!.toJSON(),
+      notification,
+    });
+  } catch (error: any) {
+    return R.handleError(res, HttpStatus.INTERNAL_ERROR, {
+      code: MEMOS_CODES.REVOCATION_FAILED,
       message: error.message,
     });
   }

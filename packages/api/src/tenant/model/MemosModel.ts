@@ -520,6 +520,44 @@ export default class MemosModel extends BaseModel {
   }
 
   /**
+   * Révoquer un memo (annulation par le manager créateur)
+   */
+  protected async revokeMemo(
+    memo: number,
+    author: number,
+    authorGuid: string,
+    message?: Message[],
+  ): Promise<boolean> {
+    const memoData = await this.find(memo);
+    if (!memoData) return false;
+
+    // Vérification supplémentaire: seul le créateur peut révoquer
+    if (memoData.author_user !== author) {
+      throw new Error('Only the memo creator can revoke it');
+    }
+
+    // Ajouter un message de révocation si fourni
+    if (message) {
+      const contentAdded = await this.addMessageToContent(
+        memo,
+        authorGuid,
+        message,
+        'revocation' as any, // On étend le type
+      );
+      if (!contentAdded) return false;
+    }
+
+    // Mettre à jour le statut
+    const updates = {
+      [this.db.memo_status]: MemoStatus.REVOKED,
+    };
+
+    const affectedRows = await this.updateOne(this.db.tableName, updates, { [this.db.id]: memo });
+
+    return affectedRows > 0;
+  }
+
+  /**
    * Valider un memo avec commentaires (remplace validateMemo)
    */
   protected async validateMemoWithComments(

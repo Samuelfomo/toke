@@ -82,39 +82,6 @@ export class UserService {
     }
   }
 
-  // static async loadFiles(
-  //   reference: string,
-  //   data: string,
-  // ): Promise<{ status: number; response: any }> {
-  //   try {
-  //     const api = await getApiClient(reference);
-  //
-  //     const response = await api.get(`${data}`);
-  //
-  //     return {
-  //       status: response.status,
-  //       response: response.data,
-  //     };
-  //   } catch (error: any) {
-  //     if (error.response) {
-  //       return {
-  //         status: error.response.status,
-  //         response: error.response.data,
-  //       };
-  //     } else if (error.request) {
-  //       return {
-  //         status: HttpStatus.INTERNAL_ERROR,
-  //         response: { message: 'No response from server', details: error.message },
-  //       };
-  //     } else {
-  //       return {
-  //         status: HttpStatus.INTERNAL_ERROR,
-  //         response: { message: 'Unexpected error', details: error.message },
-  //       };
-  //     }
-  //   }
-  // }
-
   static async loadFiles(reference: string, data: string) {
     const api = await getApiClient(reference);
 
@@ -188,6 +155,73 @@ export class UserService {
       return await api.get(`${memoBaseUrl}/my-memos?author=${manager}`);
     } catch (error: any) {
       return error.response;
+    }
+  }
+
+  static async saveUser(
+    reference: string,
+    payload: any,
+  ): Promise<{ status: number; response: object }> {
+    try {
+      const api = await getApiClient(reference);
+
+      const response = await api.post(`${userBaseUrl}/`, payload);
+
+      return {
+        status: response.status,
+        response: response.data.data,
+      };
+    } catch (error: any) {
+      if (error.response) {
+        return {
+          status: error.response.status,
+          response: error.response.data,
+        };
+      } else if (error.request) {
+        return {
+          status: 500,
+          response: { message: 'No response from server', details: error.message },
+        };
+      } else {
+        return {
+          status: 500,
+          response: { message: 'Unexpected error', details: error.message },
+        };
+      }
+    }
+  }
+
+  static async updatedUser(
+    reference: string,
+    guid: string,
+    payload: any,
+  ): Promise<{ status: number; response: object }> {
+    try {
+      const api = await getApiClient(reference);
+
+      const response = await api.put(`${userBaseUrl}/${guid}`, payload);
+
+      return {
+        status: response.status,
+        response: response.data.data,
+      };
+    } catch (error: any) {
+      if (error.response) {
+        return {
+          status: error.response.status,
+          response: error.response.data,
+        };
+      } else if (error.request) {
+        return {
+          status: 500,
+          response: { message: 'No response from server', details: error.message },
+        };
+      } else {
+        return {
+          status: 500,
+          response: { message: 'Unexpected error', details: error.message },
+        };
+      }
     }
   }
 }

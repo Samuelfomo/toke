@@ -6,6 +6,7 @@ import {
   PointageType,
   ROLES_CODES,
   ROLES_ERRORS,
+  SCHEDULE_ASSIGNMENTS_DEFAULTS,
   SITES_ERRORS,
   TENANT_CODES,
   TimezoneConfigUtils,
@@ -28,12 +29,7 @@ import R from '../../tools/response.js';
 import User from '../class/User.js';
 import UserRole from '../class/UserRole.js';
 import { TenantRevision } from '../../tools/revision.js';
-import {
-  responseStructure,
-  responseValue,
-  RoleValues,
-  tableName,
-} from '../../utils/response.model.js';
+import { responseStructure, responseValue, RoleValues, tableName, } from '../../utils/response.model.js';
 import Role from '../class/Role.js';
 import OrgHierarchy from '../class/OrgHierarchy.js';
 import { DatabaseEncryption } from '../../utils/encryption.js';
@@ -49,6 +45,8 @@ import AnomalyDetectionService from '../../tools/anomaly.detection.service.js';
 import Groups from '../class/Groups.js';
 import TimeEntries from '../class/TimeEntries.js';
 import Memos from '../class/Memos.js';
+import SessionTemplate from '../class/SessionTemplates.js';
+import ScheduleAssignments from '../class/ScheduleAssignments.js';
 // import { AnomalyType } from '../../tools/anomaly.detection.service.js';
 // import { AnomalyType } from '../../tools/anomaly.detection.service.js';
 
@@ -412,14 +410,6 @@ router.post('/', Ensure.post(), async (req: Request, res: Response) => {
   try {
     const validatedData = validateUsersCreation(req.body);
 
-    // const existingRole = await Role._load(validatedData.role, true);
-    // if (!existingRole) {
-    //   return R.handleError(res, HttpStatus.NOT_FOUND, {
-    //     code: ROLES_CODES.ROLE_NOT_FOUND,
-    //     message: ROLES_ERRORS.NOT_FOUND,
-    //   });
-    // }
-
     if (!validatedData.supervisor) {
       return R.handleError(res, HttpStatus.BAD_REQUEST, {
         code: USERS_CODES.SUPERVISOR_REQUIRED,
@@ -466,17 +456,6 @@ router.post('/', Ensure.post(), async (req: Request, res: Response) => {
       userObj.setJobTitle(validatedData.job_title);
     }
 
-    // if (validatedData.session_template) {
-    //   const sessionTemplate = await SessionTemplate._load(validatedData.session_template, true);
-    //   if (!sessionTemplate) {
-    //     return R.handleError(res, HttpStatus.NOT_FOUND, {
-    //       code: SESSION_TEMPLATE_CODES.SESSION_TEMPLATE_NOT_FOUND,
-    //       message: SESSION_TEMPLATE_ERRORS.NOT_FOUND,
-    //     });
-    //   }
-    //   userObj.setSessionTemplate(sessionTemplate.getId()!);
-    // }
-
     // if (validatedData.active !== undefined) {
     //   userObj.setActive(validatedData.active);
     // }
@@ -513,6 +492,19 @@ router.post('/', Ensure.post(), async (req: Request, res: Response) => {
     }
 
     await userObj.save();
+
+    const defaultSessionTemplate = await SessionTemplate._load({}, false, true);
+    if (defaultSessionTemplate) {
+      const defaultContrat = new ScheduleAssignments()
+        .setTenant(tenant.config.reference)
+        .setSessionTemplate(defaultSessionTemplate)
+        .setCreatedBy(existingSupervisor.getId()!)
+        .setStartDate(TimezoneConfigUtils.getCurrentTime().toISOString())
+        .setActive(SCHEDULE_ASSIGNMENTS_DEFAULTS.ACTIVE)
+        .setUser(userObj.getId()!);
+
+      await defaultContrat.save();
+    }
 
     // 1-Creer une license employee
     const employeeLicense = {
@@ -694,6 +686,20 @@ router.post('/manager', Ensure.post(), async (req: Request, res: Response) => {
 
     // === 4️⃣ Sauvegarde du user ===
     await userObj.save();
+
+    const defaultSessionTemplate = await SessionTemplate._load({}, false, true);
+    if (defaultSessionTemplate && !isFirstUser) {
+      const defaultContrat = new ScheduleAssignments()
+        .setTenant(tenant.config.reference)
+        .setSessionTemplate(defaultSessionTemplate)
+        .setCreatedBy(supervisorObj?.getId()!)
+        .setStartDate(TimezoneConfigUtils.getCurrentTime().toISOString())
+        .setActive(SCHEDULE_ASSIGNMENTS_DEFAULTS.ACTIVE)
+        .setUser(userObj.getId()!)
+        .setReason('Company default contract');
+
+      await defaultContrat.save();
+    }
 
     // 1-Creer une license employee
     const employeeLicense = {

@@ -14,6 +14,7 @@ export enum MemoStatus {
   PENDING = 'pending',
   APPROVED = 'approved',
   REJECTED = 'rejected',
+  REVOKED = 'revoked',
 }
 
 export enum MessageType {
@@ -124,6 +125,12 @@ export const MEMOS_CODES = {
   CANNOT_RESPOND_TO_OWN_MEMO: 'cannot_respond_to_own_memo',
   ALREADY_RESPONDED: 'already_responded',
   ACTION_NOT_ALLOWED: 'action_not_allowed',
+
+  CANNOT_REVOKE_RESPONDED_MEMO: 'cannot_revoke_responded_memo',
+  REVOCATION_NOT_ALLOWED: 'revocation_not_allowed',
+  REVOCATION_FAILED: 'revocation_failed',
+  VALIDATION_REQUIRES_USER_RESPONSE: 'validation_requires_user_response',
+  REJECTION_REQUIRES_USER_RESPONSE: 'rejection_requires_user_response',
 } as const;
 
 const MEMOS_LABEL = 'Memo';
@@ -200,6 +207,12 @@ export const MEMOS_ERRORS = {
   INVALID_ATTACTMENT_LINK: 'Each link must be a valid URL',
   NOT_ALLOWED: 'This action is not permitted',
   IS_CLIENT_MANAGER_STATUS_INVALID: 'Client status is invalid',
+
+  CANNOT_REVOKE_RESPONDED_MEMO: 'Cannot revoke a memo that has already received a response',
+  REVOCATION_NOT_ALLOWED: 'Only the manager who created the memo can revoke it',
+  REVOCATION_FAILED: 'Failed to revoke memo',
+  VALIDATION_REQUIRES_USER_RESPONSE: 'Cannot approve memo: target user must respond first',
+  REJECTION_REQUIRES_USER_RESPONSE: 'Cannot reject memo: target user must respond first',
 };
 
 export const MEMOS_MESSAGES = {
@@ -208,6 +221,7 @@ export const MEMOS_MESSAGES = {
   REJECTED_SUCCESSFULLY: `${MEMOS_LABEL} rejected successfully`,
   RESPONDED_SUCCESSFULLY: `${MEMOS_LABEL} response submitted successfully`,
   SUBMITTED_SUCCESSFULLY: `${MEMOS_LABEL} submitted successfully`,
+  REVOKED_SUCCESSFULLY: `${MEMOS_LABEL} revoked successfully`,
 };
 
 export type MemoError = (typeof MEMOS_ERRORS)[keyof typeof MEMOS_ERRORS];

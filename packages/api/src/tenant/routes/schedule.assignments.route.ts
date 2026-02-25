@@ -269,8 +269,10 @@ router.post('/', Ensure.post(), async (req: Request, res: Response) => {
       .setSessionTemplate(templateObj)
       .setCreatedBy(createdByObj.getId()!)
       .setStartDate(validatedData.start_date)
-      .setEndDate(validatedData.end_date)
       .setActive(validatedData.active ?? SCHEDULE_ASSIGNMENTS_DEFAULTS.ACTIVE);
+    if (validatedData.end_date) {
+      assignmentObj.setEndDate(validatedData.end_date);
+    }
     // // ✅ 3. Assigner le template (copie complète en JSONB avec version)
     // await assignmentObj.assignFromSessionTemplate(
     //   templateObj,
@@ -672,7 +674,7 @@ router.put('/:guid', Ensure.put(), async (req: Request, res: Response) => {
       assignmentObj.setStartDate(validatedData.start_date);
     }
 
-    if (validatedData.end_date !== undefined) {
+    if (validatedData.end_date !== undefined && validatedData.end_date !== null) {
       assignmentObj.setEndDate(validatedData.end_date);
     }
 

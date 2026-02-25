@@ -31,6 +31,20 @@ export class MemosValidationUtils {
   }
 
   /**
+   * Vérifie si le target user a déjà répondu au memo
+   * Un memo a une réponse si memo_content contient au moins 2 entrées
+   * (la première du manager, la deuxième du target user)
+   */
+  static hasUserResponse(memoContent: MemoContent[], targetUser: string): boolean {
+    if (!Array.isArray(memoContent) || memoContent.length < 2) {
+      return false;
+    }
+
+    // Vérifier si au moins une entrée provient du target user
+    return memoContent.some((entry) => entry.user === targetUser);
+  }
+
+  /**
    * Validates author user
    */
   static validateAuthorUserId(authorUserId: string): boolean {
@@ -177,6 +191,61 @@ export class MemosValidationUtils {
   }
 
   /**
+   * Vérifie si un memo peut être révoqué
+   * Conditions:
+   * - Le memo doit avoir été créé par un manager (manager = true)
+   * - Le target user ne doit pas encore avoir répondu
+   * - Le statut doit être SUBMITTED ou PENDING
+   */
+  static canRevokeMemo(memo: {
+    manager: boolean;
+    memo_content: MemoContent[];
+    target_user: string;
+    memo_status: string;
+  }): boolean {
+    // Seul un memo créé par le manager peut être révoqué
+    if (!memo.manager) return false;
+
+    // Ne peut pas révoquer si déjà traité
+    if (
+      memo.memo_status === MemoStatus.APPROVED ||
+      memo.memo_status === MemoStatus.REJECTED ||
+      memo.memo_status === MemoStatus.REVOKED
+    ) {
+      return false;
+    }
+
+    // Ne peut pas révoquer si le target user a déjà répondu
+    return !this.hasUserResponse(memo.memo_content, memo.target_user);
+  }
+
+  /**
+   * Vérifie si un memo peut être validé ou rejeté
+   * Condition: Le target user doit avoir répondu (si le memo vient d'un manager)
+   */
+  static canValidateOrReject(memo: {
+    manager: boolean;
+    memo_content: MemoContent[];
+    target_user: string;
+    memo_status: string;
+  }): boolean {
+    // Si ce n'est pas un memo manager, pas de restriction
+    if (!memo.manager) return true;
+
+    // Ne peut pas valider/rejeter si déjà traité
+    if (
+      memo.memo_status === MemoStatus.APPROVED ||
+      memo.memo_status === MemoStatus.REJECTED ||
+      memo.memo_status === MemoStatus.REVOKED
+    ) {
+      return false;
+    }
+
+    // Pour un memo manager, le target user doit avoir répondu
+    return this.hasUserResponse(memo.memo_content, memo.target_user);
+  }
+
+  /**
    * Validates pagination parameters
    */
   static validatePaginationParams(offset: number, limit: number): boolean {
@@ -200,8 +269,11 @@ export class MemosValidationUtils {
    * Checks if memo can be modified
    */
   static canModifyMemo(status: string): boolean {
-    // Cannot modify processed (approved/rejected) memos
-    return status !== MemoStatus.APPROVED && status !== MemoStatus.REJECTED;
+    return (
+      status !== MemoStatus.APPROVED &&
+      status !== MemoStatus.REJECTED &&
+      status !== MemoStatus.REVOKED
+    );
   }
 
   /**

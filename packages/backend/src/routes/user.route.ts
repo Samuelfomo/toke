@@ -87,4 +87,59 @@ router.get(
   },
 );
 
+router.post('/', Ensure.post(), TenantConfig.authenticate, async (req: Request, res: Response) => {
+  try {
+    const client = (req as any).client.reference;
+
+    const result: any = await UserService.saveUser(client, req.body);
+
+    if (result.status !== HttpStatus.CREATED) {
+      return R.handleError(res, result.status, result.response);
+    }
+    return R.handleSuccess(res, result.response);
+  } catch (error: any) {
+    return R.handleError(res, HttpStatus.INTERNAL_ERROR, {
+      code: 'internal_error',
+      message: error.message,
+    });
+  }
+});
+
+router.put(
+  '/:guid',
+  TenantConfig.authenticate,
+  Ensure.put(),
+  async (req: Request, res: Response) => {
+    try {
+      const client = (req as any).client.reference;
+      const { guid } = req.params;
+      if (!guid) {
+        return R.handleError(res, HttpStatus.BAD_REQUEST, {
+          code: 'guid_required',
+          message: 'GUID is required',
+        });
+      }
+
+      if (!UsersValidationUtils.validateGuid(guid)) {
+        return R.handleError(res, HttpStatus.BAD_REQUEST, {
+          code: 'guid_invalid',
+          message: 'GUID is invalid',
+        });
+      }
+
+      const result: any = await UserService.updatedUser(client, guid, req.body);
+
+      if (result.status !== HttpStatus.SUCCESS) {
+        return R.handleError(res, result.status, result.response);
+      }
+      return R.handleSuccess(res, result.response);
+    } catch (error: any) {
+      return R.handleError(res, HttpStatus.INTERNAL_ERROR, {
+        code: 'internal_error',
+        message: error.message,
+      });
+    }
+  },
+);
+
 export default router;

@@ -9,13 +9,18 @@ import TenantManager from './db.tenant-manager.js';
 export default abstract class BaseModel {
   protected sequelize!: Sequelize;
 
-  protected constructor() {}
+  // protected constructor() {}
 
-  // Initialiser la connexion avec le tenant actuel
-  protected async init(): Promise<void> {
-    this.sequelize = await TenantManager.getConnection();
-    console.log(`📊 Modèle initialisé pour tenant: ${TenantManager.getCurrentTenant()}`);
+  protected constructor() {
+    // Init immédiate, pas d'async
+    this.sequelize = TenantManager.getConnectionSync();
   }
+
+  // // Initialiser la connexion avec le tenant actuel
+  // protected async init(): Promise<void> {
+  //   this.sequelize = await TenantManager.getConnection();
+  //   console.log(`📊 Modèle initialisé pour tenant: ${TenantManager.getCurrentTenant()}`);
+  // }
 
   // === MÉTHODES CRUD MODIFIÉES ===
 
@@ -23,7 +28,7 @@ export default abstract class BaseModel {
    * Créer un enregistrement
    */
   protected async insertOne(tableName: string, data: any): Promise<any> {
-    await this.ensureInitialized();
+    // await this.ensureInitialized();
     const model = TableInitializer.getModel(tableName);
     const result = await model.create(data);
     return result.get();
@@ -38,7 +43,7 @@ export default abstract class BaseModel {
     where: any,
     options: any = {}, // ✅ Ajouter support des options (order, etc.)
   ): Promise<any> {
-    await this.ensureInitialized();
+    // await this.ensureInitialized();
     const model = TableInitializer.getModel(tableName);
     const result = await model.findOne({ where, ...options });
     return result ? result.get() : null;
@@ -53,7 +58,7 @@ export default abstract class BaseModel {
     paginationOptions: { offset?: number; limit?: number } = {},
     options: any = {}, // ✅ options Sequelize (paranoid, order, include…),
   ): Promise<any[]> {
-    await this.ensureInitialized();
+    // await this.ensureInitialized();
     const model = TableInitializer.getModel(tableName);
 
     const queryOptions: any = { where, ...options };
@@ -79,7 +84,7 @@ export default abstract class BaseModel {
     where: any,
     options: any = {},
   ): Promise<number> {
-    await this.ensureInitialized();
+    // await this.ensureInitialized();
     const model = TableInitializer.getModel(tableName);
     const [affectedCount] = await model.update(data, { where, ...options });
     return affectedCount;
@@ -89,7 +94,7 @@ export default abstract class BaseModel {
    * Supprimer un enregistrement
    */
   protected async deleteOne(tableName: string, where: any): Promise<boolean> {
-    await this.ensureInitialized();
+    // await this.ensureInitialized();
     const model = TableInitializer.getModel(tableName);
     const deletedCount = await model.destroy({ where });
     return deletedCount > 0;
@@ -99,7 +104,7 @@ export default abstract class BaseModel {
    * Compter les enregistrements
    */
   protected async count(tableName: string, where: any = {}): Promise<number> {
-    await this.ensureInitialized();
+    // await this.ensureInitialized();
     const model = TableInitializer.getModel(tableName);
     return await model.count({ where });
   }
@@ -120,7 +125,7 @@ export default abstract class BaseModel {
     groupBy: string | string[],
     where: Record<string, any> = {},
   ): Promise<Record<string, number>> {
-    await this.ensureInitialized();
+    // await this.ensureInitialized();
     const model = TableInitializer.getModel(tableName);
 
     const options: any = {
@@ -166,7 +171,7 @@ export default abstract class BaseModel {
    */
   protected async findLastModification(tableName: string): Promise<Date | null> {
     try {
-      await this.ensureInitialized();
+      // await this.ensureInitialized();
       const model = TableInitializer.getModel(tableName);
 
       // if (!model) {
@@ -188,7 +193,7 @@ export default abstract class BaseModel {
    */
   protected async guidGenerator(tableName: string, length: number = 6): Promise<number | null> {
     try {
-      await this.ensureInitialized();
+      // await this.ensureInitialized();
       const model = TableInitializer.getModel(tableName);
 
       if (!model) {
@@ -227,7 +232,7 @@ export default abstract class BaseModel {
     size: number = 16,
   ): Promise<string | null> {
     try {
-      await this.ensureInitialized();
+      // await this.ensureInitialized();
       const model = TableInitializer.getModel(tableName);
 
       if (!model) {
@@ -280,7 +285,7 @@ export default abstract class BaseModel {
     prefix: string = 'A',
   ): Promise<string | null> {
     try {
-      await this.ensureInitialized();
+      // await this.ensureInitialized();
       const model = TableInitializer.getModel(tableName);
       if (!model) {
         console.error(`❌ Modèle '${tableName}' non trouvé pour génération token temporel`);
@@ -298,7 +303,7 @@ export default abstract class BaseModel {
 
   protected async uuidTokenGenerator(tableName: string): Promise<string | null> {
     try {
-      await this.ensureInitialized();
+      // await this.ensureInitialized();
 
       const query = 'SELECT gen_random_uuid()::text as uuid';
       const [results] = (await this.sequelize.query(query, {
@@ -325,12 +330,12 @@ export default abstract class BaseModel {
     }
   }
 
-  /**
-   * S'assurer que la connexion est initialisée pour le tenant actuel
-   */
-  private async ensureInitialized(): Promise<void> {
-    if (!this.sequelize) {
-      await this.init();
-    }
-  }
+  // /**
+  //  * S'assurer que la connexion est initialisée pour le tenant actuel
+  //  */
+  // private async ensureInitialized(): Promise<void> {
+  //   if (!this.sequelize) {
+  //     await this.init();
+  //   }
+  // }
 }
