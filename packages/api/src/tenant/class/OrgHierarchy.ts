@@ -267,16 +267,16 @@ export default class OrgHierarchy extends OrgHierarchyModel {
 
       result.all_employees_flat.push(userObj);
 
-      // 🔁 Si manager, ajouter sous-équipe
-      const isManager = await this.hasManagerRole(userId!);
-      if (isManager) {
-        const subTeam = await this.getAllTeamMembers(userId!);
-        result.sub_managers.push({
-          manager: userObj,
-          team: subTeam,
-        });
-        result.all_employees_flat.push(...subTeam.all_employees_flat);
-      }
+      // // 🔁 Si manager, ajouter sous-équipe
+      // const isManager = await this.hasManagerRole(userId!);
+      // if (isManager) {
+      //   const subTeam = await this.getAllTeamMembers(userId!);
+      //   result.sub_managers.push({
+      //     manager: userObj,
+      //     team: subTeam,
+      //   });
+      //   result.all_employees_flat.push(...subTeam.all_employees_flat);
+      // }
     }
 
     // -------- GROUP MEMBERS --------
@@ -308,16 +308,16 @@ export default class OrgHierarchy extends OrgHierarchyModel {
 
       result.all_employees_flat.push(userObj);
 
-      // 🔁 Si manager, ajouter sous-équipe
-      const isManager = await this.hasManagerRole(userId);
-      if (isManager) {
-        const subTeam = await this.getAllTeamMembers(userId);
-        result.sub_managers.push({
-          manager: userObj,
-          team: subTeam,
-        });
-        result.all_employees_flat.push(...subTeam.all_employees_flat);
-      }
+      // // 🔁 Si manager, ajouter sous-équipe
+      // const isManager = await this.hasManagerRole(userId);
+      // if (isManager) {
+      //   const subTeam = await this.getAllTeamMembers(userId);
+      //   result.sub_managers.push({
+      //     manager: userObj,
+      //     team: subTeam,
+      //   });
+      //   result.all_employees_flat.push(...subTeam.all_employees_flat);
+      // }
     }
 
     return result;
