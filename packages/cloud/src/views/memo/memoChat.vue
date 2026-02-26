@@ -19,7 +19,8 @@
           </div>
           <div class="destinataire-text">
             <h2 class="destinataire-nom">{{ headerTitle }}</h2>
-            <p class="memo-type-label">{{ headerSubtitle }}</p>
+            <p class="memo-type-label" v-if="headerSubtitle">{{ headerSubtitle }}</p>
+            <p class="memo-info-label" v-if="headerInfo">{{ headerInfo }}</p>
           </div>
         </div>
       </div>
@@ -61,10 +62,10 @@
         <!-- Liste des messages -->
         <div v-else class="messages-list">
           <div
-            v-for="(message, index) in messages"
-            :key="message.id || index"
-            class="message-item"
-            :class="[
+              v-for="(message, index) in messages"
+              :key="message.id || index"
+              class="message-item"
+              :class="[
               message.type === 'sent' ? 'sent' : message.type === 'received' ? 'received' : 'system',
               message.validationType ? `validation-${message.validationType}` : ''
             ]"
@@ -116,9 +117,9 @@
                     <!-- Player pour l'audio -->
                     <div v-if="isAudio(fichier)" class="audio-player-container">
                       <button
-                        @click="toggleAudioPlay(fichier.id || `${index}-${idx}`)"
-                        class="audio-play-btn"
-                        :class="{ 'playing': currentAudioId === (fichier.id || `${index}-${idx}`) && isAudioPlaying }"
+                          @click="toggleAudioPlay(fichier.id || `${index}-${idx}`)"
+                          class="audio-play-btn"
+                          :class="{ 'playing': currentAudioId === (fichier.id || `${index}-${idx}`) && isAudioPlaying }"
                       >
                         <svg v-if="currentAudioId !== (fichier.id || `${index}-${idx}`) || !isAudioPlaying" fill="currentColor" viewBox="0 0 20 20" class="play-icon">
                           <path d="M6.3 2.841A1.5 1.5 0 004 4.11V15.89a1.5 1.5 0 002.3 1.269l9.344-5.89a1.5 1.5 0 000-2.538L6.3 2.84z"></path>
@@ -139,10 +140,10 @@
                       </div>
 
                       <button
-                        v-if="showAudioDownload"
-                        @click="$emit('download-audio', fichier)"
-                        class="audio-download-btn"
-                        title="Télécharger"
+                          v-if="showAudioDownload"
+                          @click="$emit('download-audio', fichier)"
+                          class="audio-download-btn"
+                          title="Télécharger"
                       >
                         <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" class="download-icon">
                           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path>
@@ -195,9 +196,9 @@
       <div v-if="hasRecording" class="audio-preview">
         <div class="audio-player-container">
           <button
-            @click="togglePreviewPlay"
-            class="audio-play-btn"
-            :class="{ 'playing': isPreviewPlaying }"
+              @click="togglePreviewPlay"
+              class="audio-play-btn"
+              :class="{ 'playing': isPreviewPlaying }"
           >
             <svg v-if="!isPreviewPlaying" fill="currentColor" viewBox="0 0 20 20" class="play-icon">
               <path d="M6.3 2.841A1.5 1.5 0 004 4.11V15.89a1.5 1.5 0 002.3 1.269l9.344-5.89a1.5 1.5 0 000-2.538L6.3 2.84z"></path>
@@ -230,10 +231,10 @@
         <div class="input-actions-left">
           <!-- Bouton pièce jointe -->
           <button
-            @click="$emit('trigger-file-input')"
-            class="btn-action"
-            :disabled="inputDisabled"
-            title="Ajouter des fichiers"
+              @click="$emit('trigger-file-input')"
+              class="btn-action"
+              :disabled="inputDisabled"
+              title="Ajouter des fichiers"
           >
             <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" class="action-icon">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13"></path>
@@ -242,11 +243,11 @@
 
           <!-- Bouton microphone -->
           <button
-            @click="toggleRecording"
-            class="btn-action btn-microphone"
-            :class="{ 'recording': isRecording }"
-            :disabled="inputDisabled"
-            title="Enregistrer un message vocal"
+              @click="toggleRecording"
+              class="btn-action btn-microphone"
+              :class="{ 'recording': isRecording }"
+              :disabled="inputDisabled"
+              title="Enregistrer un message vocal"
           >
             <svg v-if="!isRecording" fill="none" stroke="currentColor" viewBox="0 0 24 24" class="action-icon">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z"></path>
@@ -262,23 +263,23 @@
 
         <!-- Champ de texte -->
         <textarea
-          ref="textareaRef"
-          :value="inputText"
-          @input="updateInputText"
-          @keydown.enter.exact.prevent="handleSend"
-          :placeholder="inputPlaceholder"
-          :disabled="inputDisabled || isRecording"
-          class="input-text"
-          rows="1"
+            ref="textareaRef"
+            :value="inputText"
+            @input="updateInputText"
+            @keydown.enter.exact.prevent="handleSend"
+            :placeholder="inputPlaceholder"
+            :disabled="inputDisabled || isRecording"
+            class="input-text"
+            rows="1"
         ></textarea>
 
         <!-- Bouton d'envoi -->
         <button
-          @click="handleSend"
-          :disabled="!canSend || inputDisabled"
-          class="btn-send"
-          :class="{ 'can-send': canSend }"
-          title="Envoyer"
+            @click="handleSend"
+            :disabled="!canSend || inputDisabled"
+            class="btn-send"
+            :class="{ 'can-send': canSend }"
+            title="Envoyer"
         >
           <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" class="send-icon">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"></path>
@@ -331,6 +332,8 @@ const props = withDefaults(defineProps<{
   // Header
   headerTitle: string;
   headerSubtitle?: string;
+  /** Troisième ligne : titre du mémo avec temps reformaté (ex: "Retard - 19 min") */
+  headerInfo?: string;
   statusBadge?: StatusBadge;
   showHeaderAction?: boolean;
 
@@ -627,6 +630,17 @@ defineExpose({
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+}
+
+.memo-info-label {
+  margin: 3px 0 0 0;
+  font-size: 12px;
+  color: rgba(255, 255, 255, 0.7);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  font-style: italic;
+  letter-spacing: 0.01em;
 }
 
 .header-actions {

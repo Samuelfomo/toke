@@ -56,7 +56,7 @@ export const useTeamStore = defineStore('team', () => {
 
     try {
       isLoading.value = true
-        console.log('🔄 Chargement de l\'équipe depuis l\'API...')
+      console.log('🔄 Chargement de l\'équipe depuis l\'API...')
 
       const response = await UserService.listSubordinates(managerGuid)
 
@@ -109,6 +109,15 @@ export const useTeamStore = defineStore('team', () => {
     lastFetch.value = null
   }
 
+  const addEmployee = (newEmployee: any) => {
+    const transformed = transformEmployee({
+      ...newEmployee,
+      groupName: 'Sans groupe',
+      groupGuid: null,
+    })
+    employees.value.unshift(transformed)
+  }
+
   return {
     // State
     employees,
@@ -123,6 +132,7 @@ export const useTeamStore = defineStore('team', () => {
     // Actions
     loadTeam,
     getEmployeeById,
+    addEmployee,
     clearCache
   }
 },{
@@ -139,13 +149,13 @@ function transformEmployee(emp: any): TeamEmployee {
   const lastName = emp.last_name || ''
   const nameParts = firstName.split(' ')
   const initials = nameParts.length > 1
-    ? `${nameParts[0][0]}${nameParts[1][0]}`.toUpperCase()
-    : lastName ? `${firstName[0]}${lastName[0]}`.toUpperCase() : firstName[0]?.toUpperCase() || 'U'
+      ? `${nameParts[0][0]}${nameParts[1][0]}`.toUpperCase()
+      : lastName ? `${firstName[0]}${lastName[0]}`.toUpperCase() : firstName[0]?.toUpperCase() || 'U'
 
   const mainRole = emp.roles?.[0]?.name || 'N/A'
   const isManager = emp.roles.items?.some((r: any) =>
-    r.name?.toLowerCase().includes('manager') ||
-    r.code?.toLowerCase().includes('manager')
+      r.name?.toLowerCase().includes('manager') ||
+      r.code?.toLowerCase().includes('manager')
   ) || false
 
   return {

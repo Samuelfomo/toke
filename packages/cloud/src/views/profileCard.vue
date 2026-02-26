@@ -183,9 +183,10 @@
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import "../assets/css/profileCard-toke-20.css"
+import profileCardCss from "../assets/css/profileCard-toke-20.css?url"
 import { useTeamStore } from '@/stores/teamStore';
 import Footer from '@/views/components/footer.vue';
+import HeadBuilder from "@/utils/HeadBuilder";
 
 const route = useRoute()
 const router = useRouter()
@@ -304,6 +305,11 @@ const goBack = () => router.push('/equipe')
 
 onMounted(() => {
   loadEmployeeData()
+  HeadBuilder.apply({
+    title: 'ProfileCard - Toké',
+    css: [profileCardCss],
+    meta: { viewport: "width=device-width, initial-scale=1.0" }
+  });
 })
 </script>
 

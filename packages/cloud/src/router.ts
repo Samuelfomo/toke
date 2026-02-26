@@ -2,7 +2,6 @@ import { createRouter, createWebHistory, RouteRecordRaw } from 'vue-router'
 
 
 // Views
-import Home from './views/home.vue'
 import Auth from './views/auth.vue'
 import Otp from './views/otp.vue'
 import DashboardMain from './views/dashboard/dashboardMain.vue'
@@ -24,14 +23,20 @@ import EmployeeMemosView from "@/views/memo/EmployeeMemosView.vue";
 import { useUserStore } from '@/stores/userStore'
 import EmployeeSchedulesView from "@/views/schedule/employeeSchedulesView.vue";
 import EmployeeAttendanceView from "@/views/employeeAttendanceView.vue";
+import QrCodeAuth from "@/views/QrCodeAuth.vue";
 
 
 const routes: RouteRecordRaw[] = [
   // ✅ PUBLIC
   {
-    path: '/',
+    path: '/auth',
     name: 'auth',
     component: Auth,
+  },
+  {
+    path: '/',
+    name: 'linked',
+    component: QrCodeAuth,
   },
   {
     path: '/otp',

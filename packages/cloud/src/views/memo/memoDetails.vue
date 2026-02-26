@@ -14,6 +14,7 @@
     <MemoChat
         :header-title="interlocuteurNom"
         :header-subtitle="getTypeLabel(memo?.type || '')"
+        :header-info="memoHeaderInfo"
         :status-badge="statusBadge"
         :show-header-action="!!peutValider"
         :messages="chatMessages"
@@ -257,6 +258,18 @@ const interlocuteurNom = computed(() => {
   }
   // Sinon, l'interlocuteur est le créateur (l'employé qui a soumis)
   return memo.value.createurNom || 'Employé';
+});
+
+/**
+ * Titre informatif affiché en 3ème ligne du header de MemoChat.
+ * Reprend le titre brut de l'API (ex: "delay Arrivee - 19 minutes")
+ * et reformate les durées pour l'affichage (ex: "delay Arrivee - 19 min").
+ * Non affiché pour les mémos de type "other" (titre libre déjà visible).
+ */
+const memoHeaderInfo = computed((): string => {
+  if (!memo.value?.titre || memo.value.titre === 'Sans titre') return '';
+  if (memo.value.type === 'other') return ''; // titre saisi par l'user, affiché ailleurs
+  return formatMinutesInContent(memo.value.titre);
 });
 
 const peutEnvoyerReponse = computed(() =>

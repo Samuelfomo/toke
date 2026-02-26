@@ -26,6 +26,15 @@
 
         <form @submit.prevent="handleSubmit" class="form-body">
 
+          <!-- Bandeau d'erreur API -->
+          <div v-if="apiError" class="api-error-banner">
+            <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                    d="M12 9v2m0 4h.01M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/>
+            </svg>
+            {{ apiError }}
+          </div>
+
           <!-- Avatar Section -->
           <div class="avatar-section">
             <div class="avatar-ring">
@@ -152,9 +161,10 @@
 
             <div class="field-group">
               <label class="field-label">Département <span class="req">*</span></label>
-              <div class="input-wrap">
+              <div class="input-wrap" :class="{ 'has-error': errors.department }">
                 <input v-model="formData.department" type="text" class="field-input" placeholder="Informatique"/>
               </div>
+              <p v-if="errors.department" class="field-error">{{ errors.department }}</p>
             </div>
 
             <div class="field-group">
@@ -201,8 +211,16 @@
 
 <script setup lang="ts">
 import { ref, reactive, computed } from 'vue';
+import UserService from '../service/UserService';
+
+// ─── Props ────────────────────────────────────────────────────────────────────
 
 interface Props {
+  /**
+   * GUID du manager connecté. Transmis par le composant parent (récupéré depuis le store auth).
+   * Requis pour relier l'employé créé à son superviseur.
+   */
+  supervisorGuid: string;
   employee?: any;
   sites?: any[];
   managers?: any[];
@@ -220,52 +238,93 @@ const props = withDefaults(defineProps<Props>(), {
   ]
 });
 
+// ─── Emits ────────────────────────────────────────────────────────────────────
+
 const emit = defineEmits<{
-  (e: 'close'): void
-  (e: 'submit', data: any): void
+  (e: 'close'): void;
+  /**
+   * Émis après une création réussie avec les données de l'employé
+   * renvoyées par l'API (pas les données brutes du formulaire).
+   */
+  (e: 'created', employee: any): void;
 }>();
+
+// ─── State ────────────────────────────────────────────────────────────────────
 
 const isEditing = computed(() => !!props.employee);
 const isSubmitting = ref(false);
+/** Message d'erreur venant de l'API (distinct des erreurs de validation locale) */
+const apiError = ref<string | null>(null);
 
 const formData = reactive({
-  avatar: props.employee?.avatar || '',
-  firstName: props.employee?.firstName || '',
-  lastName: props.employee?.lastName || '',
-  email: props.employee?.email || '',
-  phone: props.employee?.phone || '',
-  birthDate: props.employee?.birthDate || '',
-  gender: props.employee?.gender || '',
+  avatar:       props.employee?.avatar     || '',
+  firstName:    props.employee?.firstName  || '',
+  lastName:     props.employee?.lastName   || '',
+  email:        props.employee?.email      || '',
+  phone:        props.employee?.phone      || '',
+  employeeId:   props.employee?.employeeId || '',
+  position:     props.employee?.position   || '',
+  department:   props.employee?.department || '',
+  hireDate:     props.employee?.hireDate   || '',
   address: {
-    street: props.employee?.address?.street || '',
-    zipCode: props.employee?.address?.zipCode || '',
-    city: props.employee?.address?.city || '',
     country: props.employee?.address?.country || 'CM'
-  },
-  employeeId: props.employee?.employeeId || '',
-  position: props.employee?.position || '',
-  department: props.employee?.department || '',
-  siteId: props.employee?.siteId || '',
-  contractType: props.employee?.contractType || '',
-  hireDate: props.employee?.hireDate || '',
-  managerId: props.employee?.managerId || '',
-  salary: props.employee?.salary || '',
-  workSchedule: {
-    startTime: props.employee?.workSchedule?.startTime || '09:00',
-    endTime: props.employee?.workSchedule?.endTime || '17:00',
-    workDays: props.employee?.workSchedule?.workDays || ['monday', 'tuesday', 'wednesday', 'thursday', 'friday']
-  },
-  bankInfo: { iban: '', bic: '', bankName: '' },
-  emergencyContact: { name: '', relationship: '', phone: '' },
-  skills: props.employee?.skills || '',
-  notes: props.employee?.notes || ''
+  }
 });
 
 const errors = reactive({
   firstName: '', lastName: '', email: '', phone: '',
-  birthDate: '', gender: '', employeeId: '', position: '',
-  department: '', siteId: '', hireDate: ''
+  employeeId: '', position: '', department: '', hireDate: ''
 });
+
+// ─── Validation locale ────────────────────────────────────────────────────────
+
+const validateForm = (): boolean => {
+  // Réinitialiser toutes les erreurs
+  (Object.keys(errors) as Array<keyof typeof errors>).forEach(k => { errors[k] = ''; });
+  apiError.value = null;
+
+  let valid = true;
+
+  if (!formData.firstName.trim()) {
+    errors.firstName = 'Le prénom est requis';
+    valid = false;
+  }
+  if (!formData.lastName.trim()) {
+    errors.lastName = 'Le nom est requis';
+    valid = false;
+  }
+  if (!formData.email.trim()) {
+    errors.email = "L'email est requis";
+    valid = false;
+  } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) {
+    errors.email = 'Format email invalide';
+    valid = false;
+  }
+  if (!formData.phone.trim()) {
+    errors.phone = 'Le numéro de téléphone est requis';
+    valid = false;
+  }
+  if (!formData.employeeId.trim()) {
+    errors.employeeId = 'Le code employé est requis';
+    valid = false;
+  }
+  if (!formData.position.trim()) {
+    errors.position = 'Le poste est requis';
+    valid = false;
+  }
+  if (!formData.department.trim()) {
+    errors.department = 'Le département est requis';
+    valid = false;
+  }
+  if (!formData.hireDate) {
+    errors.hireDate = "La date d'embauche est requise";
+    valid = false;
+  }
+
+  return valid;
+};
+
+// ─── Handlers ─────────────────────────────────────────────────────────────────
 
 const handleFileUpload = (event: Event) => {
   const file = (event.target as HTMLInputElement).files?.[0];
@@ -278,49 +337,55 @@ const handleFileUpload = (event: Event) => {
 
 const removePhoto = () => { formData.avatar = ''; };
 
-const validateForm = (): boolean => {
-  let valid = true;
-  Object.keys(errors).forEach(k => errors[k as keyof typeof errors] = '');
-
-  if (!formData.firstName.trim()) { errors.firstName = 'Le prénom est requis'; valid = false; }
-  if (!formData.lastName.trim()) { errors.lastName = 'Le nom est requis'; valid = false; }
-  if (!formData.email.trim()) { errors.email = "L'email est requis"; valid = false; }
-  else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) { errors.email = 'Email invalide'; valid = false; }
-  if (!formData.phone.trim()) { errors.phone = 'Le téléphone est requis'; valid = false; }
-  if (!formData.employeeId.trim()) { errors.employeeId = 'Le matricule est requis'; valid = false; }
-  if (!formData.position.trim()) { errors.position = 'Le poste est requis'; valid = false; }
-
-  return valid;
-};
-
+/**
+ * Soumission du formulaire.
+ * 1. Validation locale → stop si invalide
+ * 2. Mapping formData → payload API via UserService.buildCreatePayload()
+ * 3. Appel UserService.createEmployee()
+ * 4. Émission de l'événement 'created' avec les données retournées par l'API
+ * 5. Gestion des erreurs API (affichage du message backend si disponible)
+ */
 const handleSubmit = async () => {
   if (!validateForm()) return;
+
   isSubmitting.value = true;
+  apiError.value = null;
+
   try {
-    await new Promise(resolve => setTimeout(resolve, 1500));
-    emit('submit', {
-      ...formData,
-      id: props.employee?.id || Date.now(),
-      name: `${formData.firstName} ${formData.lastName}`,
-      initials: `${formData.firstName[0]}${formData.lastName[0]}`.toUpperCase()
-    });
+    // Construire le payload propre via la méthode utilitaire du service
+    const payload = UserService.buildCreatePayload(formData, props.supervisorGuid);
+
+    // Appel API
+    const response = await UserService.createEmployee(payload);
+
+    if (!response.success) {
+      // L'API a retourné success: false avec un message
+      apiError.value = response.data?.message || "Une erreur est survenue lors de la création.";
+      return;
+    }
     closeForm();
-  } catch (e) {
-    console.error('Erreur soumission:', e);
+
+  } catch (error: any) {
+    // Erreur réseau ou erreur HTTP (4xx/5xx)
+    const message =
+        error?.response?.data?.message  // message backend structuré
+        || error?.message               // message JS générique
+        || "Impossible de créer l'employé. Vérifiez votre connexion.";
+
+    apiError.value = message;
+    console.error('❌ handleSubmit error:', error);
+
   } finally {
     isSubmitting.value = false;
   }
 };
 
 const closeForm = () => {
-  console.log('🚪 EmployeeForm → close émis');
   emit('close');
 };
 </script>
 
 <style scoped>
-@import url('https://fonts.googleapis.com/css2?family=Sora:wght@300;400;500;600;700&display=swap');
-
 * { box-sizing: border-box; margin: 0; padding: 0; }
 
 /* ─── Overlay ──────────────────────────────────────────────────────── */
@@ -410,6 +475,20 @@ const closeForm = () => {
   scrollbar-color: #e2e8f0 transparent;
 }
 
+/* ─── Bandeau erreur API ────────────────────────────────────────────── */
+.api-error-banner {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 16px;
+  background: #fef2f2;
+  border: 1px solid #fca5a5;
+  border-radius: 10px;
+  font-size: 13px;
+  font-weight: 500;
+  color: #dc2626;
+}
+
 /* ─── Avatar ───────────────────────────────────────────────────────── */
 .avatar-section {
   display: flex;
@@ -481,9 +560,7 @@ const closeForm = () => {
   cursor: pointer;
   transition: all 0.15s ease;
 }
-.btn-remove-photo:hover {
-  background: #fee2e2;
-}
+.btn-remove-photo:hover { background: #fee2e2; }
 
 /* ─── Section Divider ──────────────────────────────────────────────── */
 .section-divider {
@@ -539,9 +616,7 @@ const closeForm = () => {
   border-color: #004AAD;
   box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
 }
-.input-wrap.has-error {
-  border-color: #f87171;
-}
+.input-wrap.has-error { border-color: #f87171; }
 .input-wrap.has-error:focus-within {
   box-shadow: 0 0 0 3px rgba(248, 113, 113, 0.1);
 }
@@ -622,9 +697,7 @@ const closeForm = () => {
   cursor: pointer;
   transition: all 0.15s ease;
 }
-.btn-submit:hover:not(:disabled) {
-  background: #004AAD;
-}
+.btn-submit:hover:not(:disabled) { background: #004AAD; }
 .btn-submit:disabled {
   opacity: 0.6;
   cursor: not-allowed;

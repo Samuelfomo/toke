@@ -23,6 +23,7 @@
     "gsap": "^3.12.7",
     "pinia": "^3.0.3",
     "pinia-plugin-persistedstate": "^4.7.1",
+    "socket.io-client": "^4.8.3",
     "vue": "^3.5.18",
     "vue-axios": "^3.5.2",
     "vue-chartjs": "^5.3.3",
@@ -47,6 +48,7 @@
     "rimraf": "^6.0.1",
     "tailwindcss": "^3.3.3",
     "typescript": "~5.8.3",
+    "qrcode": "^1.5.4",
     "vite": "7.1.11",
     "vue-tsc": "^3.0.5"
   }

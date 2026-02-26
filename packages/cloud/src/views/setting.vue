@@ -2,11 +2,7 @@
   <div class="settings-app-container">
     <!-- Top Header - Sticky -->
     <div class="top-header">
-      <Header
-        :user-name="currentUser.name"
-        :company-name="currentUser.company"
-        :notification-count="notificationCount"
-      />
+      <Header/>
     </div>
 
     <div class="settings-layout">
@@ -289,17 +285,10 @@ import { ref, computed, onMounted } from 'vue';
 import { useUserStore } from '@/stores/userStore';
 import Header from '@/views/components/header.vue';
 import Footer from '@/views/components/footer.vue';
-import "../assets/css/toke-setting-17.css"
-import footerCss from "../assets/css/toke-footer-24.css?url"
+import settingCss from "../assets/css/toke-setting-17.css?url"
 import HeadBuilder from '@/utils/HeadBuilder';
 
 const userStore = useUserStore();
-
-const currentUser = computed(() => ({
-  name: userStore.fullName || 'Manager',
-  company: userStore.tenantName || 'N/A'
-}));
-const notificationCount = ref(2);
 
 interface Tab {
   id: string;
@@ -510,8 +499,8 @@ const formatPhone = (phone: string): string => {
 // Lifecycle
 onMounted(() => {
   HeadBuilder.apply({
-    title: 'Paramètres - Toké',
-    css: [footerCss],
+    title: 'Settings - Toké',
+    css: [settingCss],
     meta: { viewport: "width=device-width, initial-scale=1.0" }
   });
 });

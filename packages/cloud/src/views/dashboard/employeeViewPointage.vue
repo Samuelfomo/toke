@@ -36,7 +36,7 @@
             <div class="avatar">
               <img v-if="employee.avatar" :src="employee.avatar" :alt="employee.name" />
               <span v-else class="initials">{{ employee.initials }}</span>
-              <span :class="['status-dot', getStatusDotClass(employee.statusColor)]" />
+              <span :class="['status-dot', getEffectiveStatus(employee) === 'late' ? 'dot-orange' : getStatusDotClass(employee.statusColor)]" />
             </div>
 
             <div class="employee-info">
@@ -46,8 +46,8 @@
           </div>
 
           <div class="employee-right">
-            <span class="status-badge" :class="`badge-${employee.status}`">
-              {{ employee.statusText }}
+            <span class="status-badge" :class="`badge-${getEffectiveStatus(employee)}`">
+              {{ getEffectiveStatusText(employee) }}
             </span>
 
             <button class="expand-btn" :class="{ rotated: selectedEmployee?.guid === employee.guid }">
@@ -83,8 +83,8 @@
             </div>
 
             <!-- Info retard si présent -->
-            <div v-if="employee.today?.delay_text" class="delay-info">
-              ⚠ Retard de {{ employee.today.delay_text }}
+            <div v-if="getDelayText(employee)" class="delay-info">
+              ⚠ Retard de {{ getDelayText(employee) }}
             </div>
 
             <!-- Durée de travail si disponible -->
@@ -104,6 +104,7 @@ import { ref, computed, onMounted, onUnmounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { useUserStore } from "@/stores/userStore"
 import EntriesService from "@/service/EntriesService"
+import "../../assets/css/toke-EViewPointage-28.css"
 import type {
   PeriodAttendanceResponse,
   TransformedEmployee,
@@ -211,6 +212,106 @@ const toggleEmployee = (employee: TransformedEmployee) =>
         : emit('employee-click', employee)
 
 /**
+ * Vérifie si l'employé a une anomalie de type "late_arrival" signalée par l'API.
+ * Source de vérité principale : le champ `today.has_late_arrival` issu de la
+ * transformation de l'API (memo_content contenant "late_arrival").
+ */
+const hasLateArrivalAnomaly = (employee: TransformedEmployee): boolean => {
+  return employee.today?.is_late === true  // ✅ ce champ existe déjà
+}
+/**
+ * Calcule le retard en minutes entre l'heure réelle et l'heure prévue.
+ * Utilisé comme fallback si les données API d'anomalie ne sont pas disponibles.
+ * Retourne 0 si pas de retard ou données manquantes.
+ */
+const computeDelayMinutes = (employee: TransformedEmployee): number => {
+  const clockIn = employee.today?.clock_in_time
+  const expected = employee.today?.expected_time
+  if (!clockIn || !expected) return 0
+
+  const toMinutes = (timeStr: string): number => {
+    if (timeStr.includes('T')) {
+      const d = new Date(timeStr)
+      return d.getHours() * 60 + d.getMinutes()
+    }
+    const parts = timeStr.split(':')
+    return parseInt(parts[0]) * 60 + parseInt(parts[1])
+  }
+
+  const diff = toMinutes(clockIn) - toMinutes(expected)
+  return diff > 0 ? diff : 0
+}
+
+/**
+ * Retourne le texte du retard formaté, ou null si pas de retard.
+ * Priorité 1 : delay_text déjà calculé dans la transformation API
+ * Priorité 2 : delay_minutes issu des memos API
+ * Priorité 3 : calcul local (fallback)
+ */
+const getDelayText = (employee: TransformedEmployee): string | null => {
+  // Priorité 1 : texte déjà formaté par la transformation
+  if (employee.today?.delay_text) return employee.today.delay_text
+
+  // Priorité 2 : minutes de retard extraites des memos de l'API
+  const apiDelayMinutes = employee.today?.delay_minutes
+  if (apiDelayMinutes && apiDelayMinutes > 0) {
+    const h = Math.floor(apiDelayMinutes / 60)
+    const m = apiDelayMinutes % 60
+    return h > 0 ? `${h}h ${m > 0 ? m + 'min' : ''}`.trim() : `${m} min`
+  }
+
+  // Priorité 3 : calcul local via comparaison d'heures (fallback)
+  const minutes = computeDelayMinutes(employee)
+  if (minutes <= 0) return null
+
+  const h = Math.floor(minutes / 60)
+  const m = minutes % 60
+  return h > 0 ? `${h}h ${m > 0 ? m + 'min' : ''}`.trim() : `${m} min`
+}
+
+/**
+ * Retourne le statut effectif de l'employé.
+ *
+ * Règle de priorité (du plus fiable au moins fiable) :
+ *  1. Anomalie "late_arrival" confirmée par l'API → "late"
+ *  2. Calcul local positif (fallback si anomalie API non mappée) → "late"
+ *  3. Statut original de l'employé
+ *
+ * Cette approche évite qu'un employé en retard soit affiché "Présent"
+ * lorsque expected_time est null ou mal mappé.
+ */
+const getEffectiveStatus = (employee: TransformedEmployee): string => {
+  const isPresent = employee.status === 'active' || employee.status === 'present'
+
+  if (isPresent) {
+    // Source 1 : anomalie confirmée par l'API (la plus fiable)
+    if (hasLateArrivalAnomaly(employee)) return 'late'
+
+    // Source 2 : calcul local de fallback
+    if (computeDelayMinutes(employee) > 0) return 'late'
+  }
+
+  return employee.status
+}
+
+/**
+ * Retourne le texte du badge selon le statut effectif.
+ */
+const getEffectiveStatusText = (employee: TransformedEmployee): string => {
+  const status = getEffectiveStatus(employee)
+  const texts: Record<string, string> = {
+    present: 'Présent',
+    active: 'Actif',
+    late: 'En retard',
+    'on-pause': 'En pause',
+    'external-mission': 'Mission',
+    absent: 'Absent',
+    'off-day': 'Repos',
+  }
+  return texts[status] || employee.statusText
+}
+
+/**
  * Convertit la couleur hexadécimale en classe CSS
  */
 const getStatusDotClass = (color: string): string => {
@@ -246,9 +347,10 @@ const getEmployeeTimeline = (employee: TransformedEmployee) => {
 
   // Arrivée
   if (employee.today.clock_in_time) {
+    const isLate = computeDelayMinutes(employee) > 0
     timeline.push({
-      type: 'arrivee',
-      label: 'Arrivée',
+      type: isLate ? 'arrivee_tardive' : 'arrivee',
+      label: isLate ? 'Arrivée (en retard)' : 'Arrivée',
       time: formatTime(employee.today.clock_in_time)
     })
   } else if (employee.today.expected_time) {
@@ -311,6 +413,7 @@ const getEmployeeTimeline = (employee: TransformedEmployee) => {
 const getStatusIcon = (type: string) => {
   return {
     arrivee: '✅',
+    arrivee_tardive: '⚠️',
     arrivee_prevue: '🕐',
     depart: '⏹',
     mission_start: '🚀',
@@ -323,6 +426,7 @@ const getStatusIcon = (type: string) => {
 const getStatusClass = (type: string) => {
   return {
     arrivee: 'success',
+    arrivee_tardive: 'warning',
     arrivee_prevue: 'info light',
     depart: 'neutral',
     mission_start: 'info',
@@ -381,376 +485,5 @@ onUnmounted(() => {
 </script>
 
 <style scoped>
-.pointage-panel {
-  background: #fff;
-  border: 1px solid #e5e7eb;
-  border-radius: 18px;
-  padding: 18px;
-  display: flex;
-  flex-direction: column;
-  width: 100%;
-  max-height: none;
-  min-height: 420px;
-  box-shadow: 0 2px 6px rgba(0,0,0,0.04), 0 10px 28px rgba(0,0,0,0.06);
-}
 
-.panel-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 14px;
-}
-
-.panel-header h3 {
-  font-size: 1.2rem;
-  font-weight: 700;
-  color: #0f172a;
-}
-
-.count {
-  font-size: 12px;
-  color: #94a3b8;
-}
-
-.last-update {
-  font-size: 12px;
-  color: #94a3b8;
-  margin-bottom: 12px;
-}
-
-/* ================= EMPTY STATE ================= */
-.empty-state {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  padding: 3rem 1rem;
-  text-align: center;
-}
-
-.empty-icon {
-  font-size: 3rem;
-  margin-bottom: 1rem;
-  opacity: 0.5;
-}
-
-.empty-title {
-  font-size: 1rem;
-  font-weight: 600;
-  color: #0f172a;
-  margin: 0 0 0.5rem 0;
-}
-
-.empty-text {
-  font-size: 0.875rem;
-  color: #64748b;
-  margin: 0;
-}
-
-/* ================= NO TIMELINE INFO ================= */
-.no-timeline-info {
-  background: #f1f5f9;
-  border: 1px solid #cbd5e1;
-  border-radius: 8px;
-  padding: 12px;
-  font-size: 12px;
-  color: #475569;
-  text-align: center;
-}
-
-/* ================= EMPLOYEE LIST ================= */
-.employee-list {
-  flex: 1;
-  overflow-y: auto;
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-  padding-right: 4px;
-}
-
-.employee-list::-webkit-scrollbar {
-  width: 6px;
-}
-.employee-list::-webkit-scrollbar-thumb {
-  background: #cbd5e1;
-  border-radius: 6px;
-}
-
-.employee-item {
-  border: 1px solid #e5e7eb;
-  border-radius: 12px;
-  background: white;
-  transition: all .25s ease;
-}
-
-.employee-item:hover {
-  background: #f8fafc;
-  transform: translateY(-1px);
-}
-
-.employee-compact {
-  display: flex;
-  justify-content: space-between;
-  padding: 12px;
-  cursor: pointer;
-}
-
-.employee-left {
-  display: flex;
-  gap: 10px;
-  align-items: center;
-  flex: 1;
-  min-width: 0;
-}
-
-.employee-right {
-  display: flex;
-  gap: 8px;
-  align-items: center;
-}
-
-.avatar {
-  width: 36px;
-  height: 36px;
-  border-radius: 50%;
-  background: #e5e7eb;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  position: relative;
-  flex-shrink: 0;
-}
-
-.avatar img {
-  width: 100%;
-  height: 100%;
-  border-radius: 50%;
-  object-fit: cover;
-}
-
-.initials {
-  font-size: 14px;
-  font-weight: 600;
-  color: #475569;
-}
-
-.status-dot {
-  position: absolute;
-  bottom: 0;
-  right: 0;
-  width: 10px;
-  height: 10px;
-  border-radius: 50%;
-  border: 2px solid white;
-}
-
-.dot-green { background: #22c55e; }
-.dot-orange { background: #f59e0b; }
-.dot-red { background: #b91c1c; }
-.dot-blue { background: #3b82f6; }
-.dot-gray { background: #64748b; }
-.dot-purple { background: #8b5cf6; }
-.dot-cyan { background: #06b6d4; }
-
-.employee-info {
-  display: flex;
-  flex-direction: column;
-  gap: 0.25rem;
-  flex: 1;
-  min-width: 0;
-}
-
-.employee-info .name {
-  font-size: 14px;
-  font-weight: 600;
-  color: #0f172a;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-
-.employee-info .department {
-  font-size: 12px;
-  color: #64748b;
-  font-weight: 500;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-
-.status-badge {
-  font-size: 10px;
-  padding: 3px 8px;
-  border-radius: 999px;
-  font-weight: 700;
-}
-
-.badge-present { background: #dcfce7; color: #166534; }
-.badge-late { background: #fef2f2; color: #b91c1c; }
-.badge-absent { background: #f1f5f9; color: #64748b; }
-.badge-on-pause { background: #fef3c7; color: #92400e; }
-.badge-active { background: #dbeafe; color: #1e40af; }
-.badge-off-day { background: #f1f5f9; color: #475569; }
-.badge-external-mission { background: #cffafe; color: #0e7490; }
-
-.time {
-  font-size: 12px;
-  color: #64748b;
-  font-weight: 500;
-}
-
-.memo-icon {
-  background: transparent;
-  border: none;
-  cursor: pointer;
-  font-size: 14px;
-  padding: 4px;
-  opacity: 0.6;
-  transition: opacity 0.2s;
-}
-
-.memo-icon:hover {
-  opacity: 1;
-}
-
-.expand-btn {
-  background: transparent;
-  border: none;
-  cursor: pointer;
-  font-size: 12px;
-  transition: transform 0.3s;
-  color: #64748b;
-}
-
-.expand-btn.rotated {
-  transform: rotate(180deg);
-}
-
-.employee-details {
-  padding: 12px;
-  background: #f8fafc;
-  border-top: 1px solid #e2e8f0;
-}
-
-.schedule-timeline {
-  position: relative;
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-  padding-left: 18px;
-  margin-bottom: 10px;
-}
-
-.schedule-timeline::before {
-  content: "";
-  position: absolute;
-  left: 9px;
-  top: 0;
-  bottom: 0;
-  width: 2px;
-  background: #e2e8f0;
-}
-
-.timeline-item {
-  display: flex;
-  gap: 10px;
-  align-items: center;
-}
-
-.timeline-icon {
-  width: 20px;
-  height: 20px;
-  border-radius: 50%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 10px;
-  flex-shrink: 0;
-}
-
-.success .timeline-icon { background: #22c55e; }
-.neutral .timeline-icon { background: #94a3b8; }
-.warning .timeline-icon { background: #f59e0b; }
-.warning.light .timeline-icon { background: #fbbf24; }
-.info .timeline-icon { background: #3b82f6; }
-.info.light .timeline-icon { background: #60a5fa; }
-
-.timeline-content {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  width: 100%;
-  font-size: 12px;
-  gap: 8px;
-}
-
-.timeline-content .label {
-  color: #0f172a;
-  font-weight: 500;
-}
-
-.time-badge {
-  background: #e2e8f0;
-  padding: 2px 8px;
-  border-radius: 6px;
-  font-weight: 600;
-  color: #475569;
-}
-
-.delay-info {
-  margin-top: 10px;
-  font-size: 12px;
-  background: #fef2f2;
-  color: #b91c1c;
-  padding: 8px 10px;
-  border-radius: 8px;
-  font-weight: 500;
-}
-
-.work-hours-info {
-  margin-top: 10px;
-  font-size: 12px;
-  background: #eff6ff;
-  color: #1e40af;
-  padding: 8px 10px;
-  border-radius: 8px;
-  font-weight: 500;
-}
-
-.expand-enter-active, .expand-leave-active {
-  transition: all 0.3s ease;
-  overflow: hidden;
-}
-.expand-enter-from, .expand-leave-to {
-  max-height: 0;
-  opacity: 0;
-}
-.expand-enter-to, .expand-leave-from {
-  max-height: 500px;
-  opacity: 1;
-}
-
-/* ================= RESPONSIVE ================= */
-@media (max-width: 768px) {
-  .pointage-panel {
-    padding: 1.25rem;
-  }
-
-  .panel-header h3 {
-    font-size: 1.1rem;
-  }
-
-  .employee-compact {
-    padding: 0.875rem;
-  }
-
-  .employee-info .name {
-    font-size: 13px;
-  }
-
-  .employee-info .department {
-    font-size: 11px;
-  }
-}
 </style>

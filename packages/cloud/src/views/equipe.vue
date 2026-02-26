@@ -1,179 +1,181 @@
 <template>
-  <section class="min-h-screen overflow-x-hidden page-layout">
-    <!--  <section class="manager-team">-->
+  <div class="page-layout">
     <Header />
-    <!-- Loading State - Seulement au chargement initial -->
-    <div v-if="isLoadingEmployees" class="loading-container">
-      <div class="loading-spinner"></div>
-      <p>Chargement de votre équipe...</p>
-    </div>
-    <!-- Main Content - Toujours visible après le chargement -->
-    <template v-else>
+    <main class="page-main">
+      <!-- Loading State - Seulement au chargement initial -->
+      <div v-if="isLoadingEmployees" class="loading-container">
+        <div class="loading-spinner"></div>
+        <p>Chargement de votre équipe...</p>
+      </div>
+      <!-- Main Content - Toujours visible après le chargement -->
+      <template v-else>
 
 
-      <div class="employees-table-section">
-        <h2 class="section-title">Membres ({{ totalSubordinates }})</h2>
-        <div class="flex justify-between items-start">
-          <div class="search-bar-wrapper w-full">
-            <div class="search-container">
-              <svg class="search-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
-              </svg>
-              <input
-                  type="text"
-                  v-model="searchTerm"
-                  placeholder="Rechercher un employé..."
-                  class="search-input"
-              >
+        <div class="employees-table-section">
+          <h2 class="section-title">Membres ({{ totalSubordinates }})</h2>
+          <div class="flex justify-between items-start">
+            <div class="search-bar-wrapper w-full">
+              <div class="search-container">
+                <svg class="search-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
+                </svg>
+                <input
+                    type="text"
+                    v-model="searchTerm"
+                    placeholder="Rechercher un employé..."
+                    class="search-input"
+                >
+              </div>
             </div>
-          </div>
 
-          <button @click="navigateToEmployeeForm" class="btn-add-employee max-w-xs">
-            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" class="btn-icon">
+            <button @click="navigateToEmployeeForm" class="btn-add-employee max-w-xs">
+              <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" class="btn-icon">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                      d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z">
+                </path>
+              </svg>
+              Ajouter un employé
+            </button>
+
+          </div>
+          <!-- Section Liste des Employés -->
+
+
+          <!-- Empty State - Uniquement pour le tableau -->
+          <div v-if="teamEmployees.length === 0" class="table-empty-state">
+            <svg class="empty-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                    d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z">
+                    d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z">
               </path>
             </svg>
-            Ajouter un employé
-          </button>
+            <h3>Aucun employé trouvé</h3>
+            <p>Commencez par ajouter des membres à votre équipe</p>
+            <button @click="navigateToEmployeeForm" class="btn-primary">
+              Ajouter un employé
+            </button>
+          </div>
 
-        </div>
-        <!-- Section Liste des Employés -->
+          <!-- Empty State après recherche -->
+          <div v-else-if="filteredEmployees.length === 0" class="table-empty-state">
+            <svg class="empty-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
+            </svg>
+            <h3>Aucun résultat trouvé</h3>
+            <p>Aucun employé ne correspond à votre recherche "{{ searchTerm }}"</p>
+            <button @click="searchTerm = ''" class="btn-secondary">
+              Effacer la recherche
+            </button>
+          </div>
 
-
-        <!-- Empty State - Uniquement pour le tableau -->
-        <div v-if="teamEmployees.length === 0" class="table-empty-state">
-          <svg class="empty-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                  d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z">
-            </path>
-          </svg>
-          <h3>Aucun employé trouvé</h3>
-          <p>Commencez par ajouter des membres à votre équipe</p>
-          <button @click="navigateToEmployeeForm" class="btn-primary">
-            Ajouter un employé
-          </button>
-        </div>
-
-        <!-- Empty State après recherche -->
-        <div v-else-if="filteredEmployees.length === 0" class="table-empty-state">
-          <svg class="empty-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
-          </svg>
-          <h3>Aucun résultat trouvé</h3>
-          <p>Aucun employé ne correspond à votre recherche "{{ searchTerm }}"</p>
-          <button @click="searchTerm = ''" class="btn-secondary">
-            Effacer la recherche
-          </button>
-        </div>
-
-        <!-- Tableau des Membres -->
-        <template v-else>
-          <div class="table-wrapper">
-            <table class="employees-table">
-              <tbody>
-              <tr
-                  v-for="employee in paginatedEmployees"
-                  :key="employee.id"
-                  @click="viewEmployeeDetail(employee.id)"
-                  class="employee-row"
-              >
-                <td class="avatar-cell">
-                  <div class="employee-avatar">
-                    <span class="avatar-initials">{{ employee.initials }}</span>
-                  </div>
-                </td>
-                <td class="info-cell">
-                  <div class="employee-info">
-                    <div class="employee-name-row">
-                      <span class="employee-name">{{ employee.name }}</span>
-                      <span v-if="isManager(employee)" class="manager-badge">
+          <!-- Tableau des Membres -->
+          <template v-else>
+            <div class="table-wrapper">
+              <table class="employees-table">
+                <tbody>
+                <tr
+                    v-for="employee in paginatedEmployees"
+                    :key="employee.id"
+                    @click="viewEmployeeDetail(employee.id)"
+                    class="employee-row"
+                >
+                  <td class="avatar-cell">
+                    <div class="employee-avatar">
+                      <span class="avatar-initials">{{ employee.initials }}</span>
+                    </div>
+                  </td>
+                  <td class="info-cell">
+                    <div class="employee-info">
+                      <div class="employee-name-row">
+                        <span class="employee-name">{{ employee.name }}</span>
+                        <span v-if="isManager(employee)" class="manager-badge">
                         <svg viewBox="0 0 24 24" fill="currentColor" width="10" height="10">
                           <path d="M12 2L9.19 8.63L2 9.24L7 13.47L5.82 20.16L12 16.56L18.18 20.16L17 13.47L22 9.24L14.81 8.63L12 2Z"/>
                         </svg>
                         Manager
                       </span>
+                      </div>
+                      <span class="employee-position">{{ employee.position }}</span>
                     </div>
-                    <span class="employee-position">{{ employee.position }}</span>
-                  </div>
-                </td>
-                <!--                <td class="memo-cell">-->
-                <!--                  <div class="memo-badge">-->
-                <!--                    <span class="memo-label">M</span>-->
-                <!--                    <span class="memo-count">{{ getMemoCount(employee.id) }}</span>-->
-                <!--                  </div>-->
-                <!--                </td>-->
-                <td class="actions-cell" @click.stop>
-                  <div class="employee-menu">
-                    <button
-                        @click="toggleEmployeeMenu(employee.id)"
-                        class="menu-trigger"
-                        :class="{ 'active': activeEmployeeMenu === employee.id }">
-                      <svg viewBox="0 0 24 24" fill="currentColor" class="menu-dots" width="20" height="20">
-                        <circle cx="12" cy="5" r="2"></circle>
-                        <circle cx="12" cy="12" r="2"></circle>
-                        <circle cx="12" cy="19" r="2"></circle>
-                      </svg>
-                    </button>
+                  </td>
+                  <!--                <td class="memo-cell">-->
+                  <!--                  <div class="memo-badge">-->
+                  <!--                    <span class="memo-label">M</span>-->
+                  <!--                    <span class="memo-count">{{ getMemoCount(employee.id) }}</span>-->
+                  <!--                  </div>-->
+                  <!--                </td>-->
+                  <td class="actions-cell" @click.stop>
+                    <div class="employee-menu">
+                      <button
+                          @click="toggleEmployeeMenu(employee.id)"
+                          class="menu-trigger"
+                          :class="{ 'active': activeEmployeeMenu === employee.id }">
+                        <svg viewBox="0 0 24 24" fill="currentColor" class="menu-dots" width="20" height="20">
+                          <circle cx="12" cy="5" r="2"></circle>
+                          <circle cx="12" cy="12" r="2"></circle>
+                          <circle cx="12" cy="19" r="2"></circle>
+                        </svg>
+                      </button>
 
-                    <div v-if="activeEmployeeMenu === employee.id" class="employee-dropdown">
-                      <button @click="sendMemo(employee)" class="dropdown-item">
-                        <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" class="item-icon">
-                          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 8h10M7 12h4m1 8l-4-4H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-3l-4 4z"></path>
-                        </svg>
-                        Mémo
-                      </button>
-                      <button @click="editEmployee(employee)" class="dropdown-item">
-                        <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" class="item-icon">
-                          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path>
-                        </svg>
-                        Modifier
-                      </button>
-                      <button @click="deleteEmployee(employee)" class="dropdown-item delete">
-                        <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" class="item-icon">
-                          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path>
-                        </svg>
-                        Supprimer
-                      </button>
+                      <div v-if="activeEmployeeMenu === employee.id" class="employee-dropdown">
+                        <button @click="sendMemo(employee)" class="dropdown-item">
+                          <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" class="item-icon">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 8h10M7 12h4m1 8l-4-4H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-3l-4 4z"></path>
+                          </svg>
+                          Mémo
+                        </button>
+                        <button @click="editEmployee(employee)" class="dropdown-item">
+                          <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" class="item-icon">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path>
+                          </svg>
+                          Modifier
+                        </button>
+                        <button @click="deleteEmployee(employee)" class="dropdown-item delete">
+                          <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" class="item-icon">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path>
+                          </svg>
+                          Supprimer
+                        </button>
+                      </div>
                     </div>
-                  </div>
-                </td>
-              </tr>
-              </tbody>
-            </table>
-          </div>
+                  </td>
+                </tr>
+                </tbody>
+              </table>
+            </div>
 
-          <!-- Pagination -->
-          <div v-if="totalPages > 1" class="pagination">
-            <button
-                @click="changePage(currentPage - 1)"
-                :disabled="currentPage === 1"
-                class="pagination-btn"
-            >
-              Précédent
-            </button>
-            <span class="pagination-info">
+            <!-- Pagination -->
+            <div v-if="totalPages > 1" class="pagination">
+              <button
+                  @click="changePage(currentPage - 1)"
+                  :disabled="currentPage === 1"
+                  class="pagination-btn"
+              >
+                Précédent
+              </button>
+              <span class="pagination-info">
               Page {{ currentPage }} sur {{ totalPages }}
             </span>
-            <button
-                @click="changePage(currentPage + 1)"
-                :disabled="currentPage === totalPages"
-                class="pagination-btn"
-            >
-              Suivant
-            </button>
-          </div>
-        </template>
-      </div>
-    </template>
+              <button
+                  @click="changePage(currentPage + 1)"
+                  :disabled="currentPage === totalPages"
+                  class="pagination-btn"
+              >
+                Suivant
+              </button>
+            </div>
+          </template>
+        </div>
+      </template>
+    </main>
     <!-- Footer -->
     <Footer />
-  </section>
+  </div>
 
   <EmployeeForm
       v-if="showAddEmployee"
+      :supervisor-guid="userStore.user?.guid!"
       @close="showAddEmployee = false"
-      @submit="handleEmployeeAdded"
+      @created="handleEmployeeAdded"
   />
 </template>
 
@@ -329,8 +331,8 @@ const deleteEmployee = (employee: TeamEmployee) => {
 }
 
 const handleEmployeeAdded = (newEmployee: any) => {
-  // teamEmployees.value.push(newEmployee)
-  // totalSubordinates.value = teamEmployees.value.length
+  // Le store se charge de transformer les données (format API → TeamEmployee)
+  teamStore.addEmployee(newEmployee)
   showAddEmployee.value = false
 }
 

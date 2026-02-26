@@ -101,6 +101,8 @@ import type {
   DashboardData,
   TransformedEmployee,
 } from '@/service/UserService';
+import HeadBuilder from "@/utils/HeadBuilder";
+import statsCss from "../../assets/css/toke-dMain-04.css?url"
 
 // Interface pour les employés dans le filtre (DashboardHero)
 interface EmployeeForFilter {
@@ -314,6 +316,11 @@ onMounted(() => {
   refreshInterval = window.setInterval(() => {
     refreshDashboard();
   }, 5 * 60 * 1000);
+  HeadBuilder.apply({
+    title: 'Analystics - Toké',
+    css: [statsCss],
+    meta: { viewport: "width=device-width, initial-scale=1.0" }
+  });
 });
 
 onUnmounted(() => {
@@ -328,198 +335,5 @@ defineExpose({
 </script>
 
 <style scoped>
-/* =========================
-   Layout global
-========================= */
 
-/*.dashboard-container {
-  display: flex;
-  flex-direction: column;
-  min-height: 100vh;
-  background: linear-gradient(90deg, rgba(0, 74, 173, 0.85) 0%, rgba(166, 200, 239, 0.73) 30%, rgba(67, 136, 228, 0.93) 70%)
-} */
-
-/* Zone centrale */
-.dashboard-main {
-  flex: 1;
-  max-width: 1600px;
-  width: 100%;
-  margin: 0 auto;
-  padding: 2rem 2rem 4rem;
-}
-
-/* =========================
-   Contenu principal
-========================= */
-
-.dashboard-content {
-  display: flex;
-  flex-direction: column;
-  gap: 1.5rem;
-  animation: fadeUp 0.4s ease-out;
-}
-
-/* Section statistiques - pleine largeur */
-.stats-section {
-  width: 100%;
-}
-
-/* ⬇️ Grid 2 colonnes en bas */
-.bottom-grid {
-  display: grid;
-  grid-template-columns: 1fr 1fr; /* 2 colonnes égales */
-  gap: 1.5rem;
-  width: 100%;
-}
-
-.employee-list-section {
-  width: 100%;
-}
-
-.pointage-section {
-  width: 100%;
-}
-
-/* =========================
-   États Loading / Error
-========================= */
-
-.loading-state,
-.error-state {
-  background: #ffffff;
-  border-radius: 20px;
-  box-shadow: 0 20px 40px rgba(15, 23, 42, 0.06);
-  min-height: 420px;
-  padding: 4rem 2rem;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-}
-
-.loading-state p {
-  margin-top: 1.2rem;
-  font-size: 1rem;
-  font-weight: 500;
-  color: #64748b;
-}
-
-/* Spinner */
-.spinner {
-  width: 56px;
-  height: 56px;
-  border: 4px solid #e5e7eb;
-  border-top-color: #6366f1;
-  border-radius: 50%;
-  animation: spin 0.9s linear infinite;
-}
-
-/* =========================
-   Erreur
-========================= */
-
-.error-icon {
-  width: 72px;
-  height: 72px;
-  color: #ef4444;
-  margin-bottom: 1.2rem;
-}
-
-.error-state h3 {
-  font-size: 1.6rem;
-  font-weight: 700;
-  color: #0f172a;
-}
-
-.error-state p {
-  font-size: 1rem;
-  color: #64748b;
-  max-width: 420px;
-  text-align: center;
-  margin-top: 0.5rem;
-}
-
-/* Bouton retry */
-.retry-btn {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.6rem;
-  padding: 0.85rem 1.6rem;
-  background: #004AAD;
-  color: #ffffff;
-  border: none;
-  border-radius: 12px;
-  font-size: 0.95rem;
-  font-weight: 600;
-  cursor: pointer;
-  transition: all 0.25s ease;
-  margin-top: 1.5rem;
-}
-
-.retry-btn:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 10px 20px rgba(79, 70, 229, 0.35);
-}
-
-.retry-btn svg {
-  width: 20px;
-  height: 20px;
-}
-
-/* =========================
-   Animations
-========================= */
-
-@keyframes spin {
-  to {
-    transform: rotate(360deg);
-  }
-}
-
-@keyframes fadeUp {
-  from {
-    opacity: 0;
-    transform: translateY(8px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
-
-/* =========================
-   Responsive
-========================= */
-
-@media (max-width: 1200px) {
-  .bottom-grid {
-    grid-template-columns: 1fr; /* 1 colonne sur tablette */
-  }
-}
-
-@media (max-width: 1024px) {
-  .dashboard-main {
-    padding: 2rem 1.5rem 3rem;
-  }
-
-  .dashboard-content {
-    gap: 1.5rem;
-  }
-}
-
-@media (max-width: 768px) {
-  .dashboard-main {
-    padding: 1.5rem 1rem 2.5rem;
-  }
-
-  .dashboard-content {
-    gap: 1.25rem;
-  }
-}
-
-@media (max-width: 480px) {
-  .dashboard-main {
-    padding: 1rem 0.75rem 2rem;
-  }
-}
 </style>

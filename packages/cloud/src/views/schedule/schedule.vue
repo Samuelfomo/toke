@@ -236,9 +236,7 @@ import RotationAssignForm from '@/views/schedule/rotationAssignForm.vue';
 import ScheduleAssignForm from '@/views/schedule/scheduleAssignForm.vue';
 import Header from '@/views/components/header.vue';
 import { useUserStore } from '@/stores/userStore';
-import "../../assets/css/toke-schedule-21.css"
-import "../../assets/css/toke-dMain-04.css"
-import footerCss from "../../assets/css/toke-footer-24.css?url"
+import scheduleCss from "../../assets/css/toke-schedule-21.css?url"
 import HeadBuilder from '@/utils/HeadBuilder';
 import scheduleService from '@/service/ScheduleService';
 import { IconCalendarUser } from '@tabler/icons-vue';
@@ -701,8 +699,8 @@ const loadManagerGroups = async () => {
 // Lifecycle
 onMounted(async () => {
   HeadBuilder.apply({
-    title: 'Emplois du temps - Toké',
-    css: [footerCss],
+    title: 'Schedules - Toké',
+    css: [scheduleCss],
     meta: { viewport: "width=device-width, initial-scale=1.0" }
   });
   try {

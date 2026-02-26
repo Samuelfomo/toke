@@ -88,22 +88,10 @@
               {{ assignment.created_by.first_name }} {{ assignment.created_by.last_name }}
             </span>
           </div>
-          <div class="info-item">
-            <span class="info-label">GUID:</span>
-            <span class="info-value info-guid">{{ formatGuid(assignment.guid) }}</span>
-          </div>
         </div>
 
         <!-- Actions -->
         <div class="assignment-actions-bar">
-          <button
-            class="btn-action-compact"
-            @click="$emit('view-details', assignment)"
-            title="Voir les détails"
-          >
-            👁️ Détails
-          </button>
-
           <button
             class="btn-action-compact btn-action-edit"
             @click="$emit('edit', assignment)"
