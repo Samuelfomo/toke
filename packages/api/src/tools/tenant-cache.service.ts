@@ -109,22 +109,6 @@ export default class TenantCacheService {
     return Object.keys(this.cache);
   }
 
-  // /**
-  //  * Recherche une entrée dans le cache par une propriété spécifique des données
-  //  * @param searchFn - Fonction de recherche qui retourne true si l'entrée correspond
-  //  * @returns string | null - Le subdomain trouvé ou null
-  //  */
-  // public static findByData(searchFn: (data: TenantConfig) => boolean): string | null {
-  //   for (const [subdomain, cacheData] of Object.entries(this.cache)) {
-  //     // Appliquer la fonction de recherche sur l'objet complet
-  //     if (searchFn(cacheData)) {
-  //       return subdomain;
-  //     }
-  //   }
-  //
-  //   return null;
-  // }
-
   /**
    * Recherche une entrée dans le cache par une propriété spécifique des données
    * @param searchFn - Fonction de recherche qui retourne true si l'entrée correspond

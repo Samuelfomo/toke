@@ -67,7 +67,8 @@ export default class App {
         QrSocketBridgeService.init(io);
         this.server = httpServer;
 
-        httpServer.listen(this.config.port, this.config.host, () => {
+        httpServer.listen(this.config.port, () => {
+          // httpServer.listen(this.config.port, this.config.host, () => {
           // this.server = this.app.listen(this.config.port, this.config.host, () => {
           console.log(`✅ Serveur actif sur http://${this.config.host}:${this.config.port}`);
           console.log(`📊 Health check: http://${this.config.host}:${this.config.port}/health`);

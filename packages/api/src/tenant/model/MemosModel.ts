@@ -110,14 +110,14 @@ export default class MemosModel extends BaseModel {
     is_manager: boolean,
     paginationOptions: { offset?: number; limit?: number } = {},
   ): Promise<any[]> {
-    return await this.findAll(
-      this.db.tableName,
-      {
-        [this.db.target_user]: target_user,
-        [this.db.manager]: is_manager,
-      },
-      paginationOptions,
-    );
+    const conditions: Record<string, any> = {
+      [this.db.target_user]: target_user,
+      [this.db.manager]: is_manager,
+    };
+    if (!is_manager) {
+      conditions[this.db.memo_status] = { [Op.ne]: MemoStatus.REVOKED };
+    }
+    return await this.findAll(this.db.tableName, conditions, paginationOptions);
   }
 
   protected async listAllByValidator(

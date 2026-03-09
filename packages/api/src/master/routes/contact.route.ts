@@ -46,7 +46,7 @@ router.get('/tenant/:tenant', Ensure.get(), async (req: Request, res: Response) 
     const { tenant } = req.params;
     const paginationOptions = paginationSchema.parse(req.query);
 
-    const contactsData = await Contact._listByTenant(tenant, paginationOptions);
+    const contactsData = await Contact._listByTenant(tenant as any, paginationOptions);
 
     const contacts = {
       tenant,
@@ -76,7 +76,7 @@ router.get('/phone/:phone', Ensure.get(), async (req: Request, res: Response) =>
     const { phone } = req.params;
 
     // Validation du numéro avec libphonenumber-js
-    if (!isValidPhoneNumber(phone)) {
+    if (!isValidPhoneNumber(phone as any)) {
       return R.handleError(res, HttpStatus.BAD_REQUEST, {
         code: 'invalid_phone',
         message:
@@ -316,22 +316,24 @@ router.get('/:identifier', Ensure.get(), async (req: Request, res: Response) => 
     const { identifier } = req.params;
     let contact: Contact | null = null;
 
+    const identified: any = identifier;
+
     // Essayer différentes méthodes de recherche selon le format
-    if (/^\d+$/.test(identifier) && identifier.length <= 10) {
+    if (/^\d+$/.test(identified) && identified.length <= 10) {
       // Petit nombre : essayer par ID
-      const numericId = parseInt(identifier);
+      const numericId = parseInt(identified);
       contact = await Contact._load(numericId);
 
       // Si pas trouvé, essayer par GUID
-      if (!contact && identifier.length === 16) {
-        contact = await Contact._load(identifier, true);
+      if (!contact && identified.length === 16) {
+        contact = await Contact._load(identified, true);
       }
-    } else if (identifier.length === 16 && /^[a-zA-Z0-9]{16}$/.test(identifier)) {
+    } else if (identified.length === 16 && /^[a-zA-Z0-9]{16}$/.test(identified)) {
       // Format GUID
-      contact = await Contact._load(identifier, true);
-    } else if (/^\+?\d+$/.test(identifier)) {
+      contact = await Contact._load(identified, true);
+    } else if (/^\+?\d+$/.test(identified)) {
       // Format téléphone
-      contact = await Contact._load(identifier, false, true);
+      contact = await Contact._load(identified, false, true);
     }
 
     if (!contact) {

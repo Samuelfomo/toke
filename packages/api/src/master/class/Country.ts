@@ -24,7 +24,6 @@ export default class Country extends CountryModel {
     if (allCountries) {
       data = await Promise.all(allCountries.map((country) => country.toJSON()));
     }
-
     return {
       revision,
       pagination: {

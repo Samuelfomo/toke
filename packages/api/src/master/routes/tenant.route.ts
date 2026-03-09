@@ -426,13 +426,13 @@ router.post('/', Ensure.post(), async (req: Request, res: Response) => {
 
     await tenantObj.save();
 
-    const site = await AppConfig._load(responseStructure.APP_WEB, true);
-    if (!site) {
-      return R.handleError(res, HttpStatus.NOT_FOUND, {
-        code: 'url_not_found',
-        message: 'Site url not found',
-      });
-    }
+    // const site = await AppConfig._load(responseStructure.APP_WEB, true);
+    // if (!site) {
+    //   return R.handleError(res, HttpStatus.NOT_FOUND, {
+    //     code: 'url_not_found',
+    //     message: 'Site url not found',
+    //   });
+    // }
     // try {
     //   await EmailSender.licensePayment(
     //     tenantObj.getName()!,
@@ -772,6 +772,18 @@ router.patch('/:guid/subdomain', Ensure.patch(), async (req: Request, res: Respo
       });
     }
 
+    const { subdomain } = req.body;
+
+    if (!TenantValidationUtils.validateSubdomain(subdomain)) {
+      return R.handleError(res, HttpStatus.BAD_REQUEST, {
+        code: TENANT_CODES.SUBDOMAIN_INVALID,
+        message: TENANT_ERRORS.SUBDOMAIN_INVALID,
+      });
+    }
+
+    tenantObj.setSubdomain(subdomain);
+    await tenantObj.defineDbSubdomain();
+
     // ========== ÉTAPE 3: Configuration de la base de données (si pas déjà fait) ==========
     if (!tenantObj.getDatabaseName()) {
       const tenantConfig = await TenantConfig.generateTenantConfig(
@@ -803,19 +815,6 @@ router.patch('/:guid/subdomain', Ensure.patch(), async (req: Request, res: Respo
 
       console.log(`✅ Configuration DB définie pour tenant GUID: ${validGuid}`);
     }
-
-    // ========== ÉTAPE 4: Validation et définition du sous-domaine ==========
-    const { subdomain } = req.body;
-
-    if (!TenantValidationUtils.validateSubdomain(subdomain)) {
-      return R.handleError(res, HttpStatus.BAD_REQUEST, {
-        code: TENANT_CODES.SUBDOMAIN_INVALID,
-        message: TENANT_ERRORS.SUBDOMAIN_INVALID,
-      });
-    }
-
-    tenantObj.setSubdomain(subdomain);
-    await tenantObj.defineDbSubdomain();
 
     // ========== ÉTAPE 5: Mise en cache de la configuration du tenant ==========
     await TenantCacheService.setTenantConfig(tenantObj.getSubdomain()!, {

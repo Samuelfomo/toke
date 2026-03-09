@@ -77,15 +77,16 @@ router.get('/revision', Ensure.get(), async (_req: Request, res: Response) => {
  * GET /global-master/:global_license - Lister les cycles par licence globale
  */
 router.get('/global-license/:global_license', Ensure.get(), async (req: Request, res: Response) => {
+  const { global_license } = req.params;
   try {
-    if (!GlobalLicenseValidationUtils.validateGuid(req.params.global_license)) {
+    if (!GlobalLicenseValidationUtils.validateGuid(global_license as any)) {
       return R.handleError(res, HttpStatus.BAD_REQUEST, {
         code: GLOBAL_LICENSE_CODES.INVALID_GUID,
         message: GLOBAL_LICENSE_ERRORS.GUID_INVALID,
       });
     }
 
-    const globalLicense = parseInt(req.params.global_license, 10);
+    const globalLicense = parseInt(global_license, 10);
     const globalLicenseObj = await GlobalLicense._load(globalLicense, true);
     if (!globalLicenseObj) {
       return R.handleError(res, HttpStatus.NOT_FOUND, {
@@ -129,7 +130,7 @@ router.get('/global-license/:global_license', Ensure.get(), async (req: Request,
     } else {
       R.handleError(res, HttpStatus.INTERNAL_ERROR, {
         code: BILLING_CYCLE_CODES.SEARCH_FAILED,
-        message: `Failed to search cycles by global license: ${req.params.global_license}`,
+        message: `Failed to search cycles by global license: ${global_license}`,
       });
     }
   }
@@ -141,7 +142,7 @@ router.get('/global-license/:global_license', Ensure.get(), async (req: Request,
 router.get('/status/:status', Ensure.get(), async (req: Request, res: Response) => {
   try {
     const { status } = req.params;
-    const validStatus = status.toUpperCase() as BillingStatus;
+    const validStatus = (status as any).toUpperCase();
 
     if (!Object.values(BillingStatus).includes(validStatus)) {
       return R.handleError(res, HttpStatus.BAD_REQUEST, {
@@ -189,7 +190,7 @@ router.get('/status/:status', Ensure.get(), async (req: Request, res: Response) 
 router.get('/currency/:currency_code', Ensure.get(), async (req: Request, res: Response) => {
   try {
     const { currency_code } = req.params;
-    const validCurrency = currency_code.toUpperCase();
+    const validCurrency = (currency_code as any).toUpperCase();
 
     const validateCurrency = BillingCycleValidationUtils.validateCurrencyCode(validCurrency);
     if (!validateCurrency) {
@@ -273,9 +274,10 @@ router.get('/overdue', Ensure.get(), async (req: Request, res: Response) => {
  * GET /due-soon/:days - Lister les cycles avec échéance proche
  */
 router.get('/due-soon/:days', Ensure.get(), async (req: Request, res: Response) => {
+  const { days } = req.params;
   try {
-    const days = parseInt(req.params.days);
-    if (isNaN(days) || days < 1) {
+    const valueDays = parseInt(days as string, 10);
+    if (isNaN(valueDays) || valueDays < 1) {
       return R.handleError(res, HttpStatus.BAD_REQUEST, {
         code: BILLING_CYCLE_CODES.VALIDATION_FAILED,
         message: 'Days must be a positive number',
@@ -284,9 +286,9 @@ router.get('/due-soon/:days', Ensure.get(), async (req: Request, res: Response) 
 
     const paginationOptions = paginationSchema.parse(req.query);
 
-    const cyclesData = await BillingCycle._listDueSoon(days, paginationOptions);
+    const cyclesData = await BillingCycle._listDueSoon(valueDays, paginationOptions);
     const cycles = {
-      due_in_days: days,
+      due_in_days: valueDays,
       pagination: {
         offset: paginationOptions.offset || 0,
         limit: paginationOptions.limit || cyclesData?.length,
@@ -878,8 +880,8 @@ router.get('/:identifier', Ensure.get(), async (req: Request, res: Response) => 
     let cycle: BillingCycle | null = null;
 
     // Essayer différentes méthodes de recherche selon le format
-    if (/^\d+$/.test(identifier)) {
-      const numericId = parseInt(identifier);
+    if (/^\d+$/.test(identifier as any)) {
+      const numericId = parseInt(identifier as any, 10);
 
       // Essayer par ID d'abord
       cycle = await BillingCycle._load(numericId);

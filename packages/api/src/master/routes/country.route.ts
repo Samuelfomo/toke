@@ -69,7 +69,7 @@ router.get('/timezone/:timezone', Ensure.get(), async (req: Request, res: Respon
     const { timezone } = req.params;
 
     // Décoder l'URL pour gérer les fuseaux comme "Europe/Paris"
-    const decodedTimezone = decodeURIComponent(timezone);
+    const decodedTimezone = decodeURIComponent(timezone as any);
 
     const paginationOptions = paginationSchema.parse(req.query);
 
@@ -100,7 +100,7 @@ router.get('/timezone/:timezone', Ensure.get(), async (req: Request, res: Respon
 router.get('/currency/:currency_code', Ensure.get(), async (req: Request, res: Response) => {
   try {
     const { currency_code } = req.params;
-    const upperCurrencyCode = currency_code.toUpperCase();
+    const upperCurrencyCode = (currency_code as any).toUpperCase();
 
     const paginationOptions = paginationSchema.parse(req.query);
 
@@ -131,7 +131,7 @@ router.get('/currency/:currency_code', Ensure.get(), async (req: Request, res: R
 router.get('/language/:language_code', Ensure.get(), async (req: Request, res: Response) => {
   try {
     const { language_code } = req.params;
-    const lowerLanguageCode = language_code.toLowerCase();
+    const lowerLanguageCode = (language_code as any).toLowerCase();
 
     const paginationOptions = paginationSchema.parse(req.query);
 
@@ -162,7 +162,7 @@ router.get('/language/:language_code', Ensure.get(), async (req: Request, res: R
 router.get('/active/:status', Ensure.get(), async (req: Request, res: Response) => {
   try {
     const { status } = req.params;
-    const isActive = status.toLowerCase() === 'true' || status === '1';
+    const isActive = (status as any).toLowerCase() === 'true' || status === '1';
 
     const paginationOptions = paginationSchema.parse(req.query);
 
@@ -241,21 +241,23 @@ router.post('/', Ensure.post(), async (req: Request, res: Response) => {
  * PUT /:guid - Modifier un pays par GUID
  */
 router.put('/:guid', Ensure.put(), async (req: Request, res: Response) => {
+
+  const { guid } = req.params;
   try {
     // Validation du GUID avec le schéma partagé
-    if (!/^\d{6}$/.test(req.params.guid)) {
+    if (!/^\d{6}$/.test(guid as any)) {
       return R.handleError(res, HttpStatus.BAD_REQUEST, {
         code: ERROR_CODES.INVALID_GUID,
         message: COUNTRY_ERRORS.GUID_INVALID,
       });
     }
 
-    const guid = parseInt(req.params.guid);
+    const guidData = parseInt(guid);
 
     // Validation des données avec le schéma partagé
     const validatedData = validateCountryUpdate(req.body);
 
-    const country = await Country._load(guid, true);
+    const country = await Country._load(guidData, true);
     if (!country) {
       return R.handleError(res, HttpStatus.NOT_FOUND, {
         code: ERROR_CODES.COUNTRY_NOT_FOUND,
@@ -279,7 +281,7 @@ router.put('/:guid', Ensure.put(), async (req: Request, res: Response) => {
 
     await country.save();
 
-    console.log(`✅ Pays modifié: GUID ${guid}`);
+    console.log(`✅ Pays modifié: GUID ${guidData}`);
     return R.handleSuccess(res, country.toJSON());
   } catch (error: any) {
     console.error('❌ Erreur modification pays:', error);
@@ -365,19 +367,19 @@ router.get('/search/code/:code', Ensure.get(), async (req: Request, res: Respons
     const { code } = req.params;
 
     // Validation du format ISO
-    if (!/^[A-Z]{2}$/i.test(code)) {
+    if (typeof code !== 'string' || !/^[A-Z]{2}$/i.test(code as string)) {
       return R.handleError(res, HttpStatus.BAD_REQUEST, {
         code: 'invalid_code_format',
         message: 'Country code must be exactly 2 letters',
       });
     }
 
-    const country = await Country._load(code.toUpperCase(), false, true);
+    const country = await Country._load((code as string).toUpperCase(), false, true);
 
     if (!country) {
       return R.handleError(res, HttpStatus.NOT_FOUND, {
         code: 'country_not_found',
-        message: `Country with code '${code.toUpperCase()}' not found`,
+        message: `Country with code '${(code as string).toUpperCase()}' not found`,
       });
     }
 
@@ -400,8 +402,8 @@ router.get('/:identifier', Ensure.get(), async (req: Request, res: Response) => 
     let country: Country | null = null;
 
     // Essayer différentes méthodes de recherche selon le format
-    if (/^\d+$/.test(identifier)) {
-      const numericId = parseInt(identifier);
+    if (/^\d+$/.test(identifier as string)) {
+      const numericId = parseInt(identifier as string);
 
       // Essayer par ID d'abord
       country = await Country._load(numericId);
@@ -410,9 +412,9 @@ router.get('/:identifier', Ensure.get(), async (req: Request, res: Response) => 
       if (!country) {
         country = await Country._load(numericId, true);
       }
-    } else if (/^[A-Z]{2}$/i.test(identifier)) {
+    } else if (/^[A-Z]{2}$/i.test(identifier as string)) {
       // Recherche par code ISO
-      country = await Country._load(identifier.toUpperCase(), false, true);
+      country = await Country._load((identifier as string).toUpperCase(), false, true);
     }
 
     if (!country) {
@@ -436,8 +438,9 @@ router.get('/:identifier', Ensure.get(), async (req: Request, res: Response) => 
  * DELETE /:guid - Supprimer un pays par GUID
  */
 router.delete('/:guid', Ensure.delete(), async (req: Request, res: Response) => {
+  const { guid } = req.params;
   try {
-    const valideGuid = CountryValidationUtils.validateCountryGuid(req.params.guid);
+    const valideGuid = CountryValidationUtils.validateCountryGuid(guid as any);
     if (!valideGuid) {
       return R.handleError(res, HttpStatus.BAD_REQUEST, {
         code: ERROR_CODES.INVALID_GUID,
@@ -445,10 +448,10 @@ router.delete('/:guid', Ensure.delete(), async (req: Request, res: Response) => 
       });
     }
 
-    const guid = parseInt(req.params.guid, 10);
+    const guidData = parseInt(guid as string, 10);
 
     // Charger par GUID
-    const country = await Country._load(guid, true);
+    const country = await Country._load(guidData, true);
     if (!country) {
       return R.handleError(res, HttpStatus.NOT_FOUND, {
         code: ERROR_CODES.NOT_FOUND,
@@ -459,10 +462,10 @@ router.delete('/:guid', Ensure.delete(), async (req: Request, res: Response) => 
     const deleted = await country.delete();
 
     if (deleted) {
-      console.log(`✅ Pays supprimé: GUID ${guid} (${country.getCode()} - ${country.getNameEn()})`);
+      console.log(`✅ Pays supprimé: GUID ${guidData} (${country.getCode()} - ${country.getNameEn()})`);
       R.handleSuccess(res, {
         message: 'Country deleted successfully',
-        guid: guid,
+        guid: guidData,
         code: country.getCode(),
         name: country.getNameEn(),
       });

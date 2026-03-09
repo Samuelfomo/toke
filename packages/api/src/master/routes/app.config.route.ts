@@ -134,7 +134,7 @@ router.get('/list', Ensure.get(), async (req: Request, res: Response) => {
 router.get('/active/:status/list', Ensure.get(), async (req: Request, res: Response) => {
   try {
     const { status } = req.params;
-    const isActive = status.toLowerCase() === 'true' || status === '1';
+    const isActive = (status as any).toLowerCase() === 'true' || status === '1';
     const paginationOptions = paginationSchema.parse(req.query);
 
     const configEntries = await AppConfig._listByStatus(isActive, paginationOptions);

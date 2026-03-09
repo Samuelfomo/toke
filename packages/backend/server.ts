@@ -80,7 +80,7 @@ async function main(): Promise<void> {
 
     // Initialiser l'application
     appInstance = new App({
-      port: parseInt(process.env.LOCAL_PORT || '4891'),
+      port: parseInt(process.env.LOCAL_PORT || '4893'),
       host: process.env.HOST || '0.0.0.0',
     });
 

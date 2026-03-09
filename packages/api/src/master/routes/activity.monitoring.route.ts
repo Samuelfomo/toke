@@ -44,7 +44,7 @@ router.get('/:id', Ensure.get(), async (req: Request, res: Response) => {
 
     let validatedId: number;
     try {
-      validatedId = ActivityMonitoringValidationUtils.validateId(id);
+      validatedId = ActivityMonitoringValidationUtils.validateId(id as any);
     } catch (error: any) {
       return R.handleError(res, HttpStatus.BAD_REQUEST, {
         code: ACTIVITY_MONITORING_CODES.INVALID_ID,
@@ -83,8 +83,9 @@ router.get(
 
       let employeeLicenseId: number;
       try {
-        employeeLicenseId =
-          ActivityMonitoringValidationUtils.validateEmployeeLicense(employee_license);
+        employeeLicenseId = ActivityMonitoringValidationUtils.validateEmployeeLicense(
+          employee_license as any,
+        );
       } catch (error: any) {
         return R.handleError(res, HttpStatus.BAD_REQUEST, {
           code: ACTIVITY_MONITORING_CODES.INVALID_EMPLOYEE_LICENSE,
@@ -94,7 +95,7 @@ router.get(
 
       let date: Date;
       try {
-        date = ActivityMonitoringValidationUtils.validateDate(monitoring_date);
+        date = ActivityMonitoringValidationUtils.validateDate(monitoring_date as any);
       } catch (error: any) {
         return R.handleError(res, HttpStatus.BAD_REQUEST, {
           code: ACTIVITY_MONITORING_CODES.INVALID_DATE,
@@ -234,7 +235,10 @@ router.get(
 
       let start: Date, end: Date;
       try {
-        const dateRange = ActivityMonitoringValidationUtils.validateDateRange(startDate, endDate);
+        const dateRange = ActivityMonitoringValidationUtils.validateDateRange(
+          startDate as any,
+          endDate as any,
+        );
         start = dateRange.start;
         end = dateRange.end;
       } catch (error: any) {
@@ -442,7 +446,7 @@ router.put('/:id', Ensure.put(), async (req: Request, res: Response) => {
 
     let validatedId: number;
     try {
-      validatedId = ActivityMonitoringValidationUtils.validateId(id);
+      validatedId = ActivityMonitoringValidationUtils.validateId(id as any);
     } catch (error: any) {
       return R.handleError(res, HttpStatus.BAD_REQUEST, {
         code: ACTIVITY_MONITORING_CODES.INVALID_ID,
@@ -461,8 +465,9 @@ router.put('/:id', Ensure.put(), async (req: Request, res: Response) => {
     // Only allow status updates
     if (status_at_date !== undefined) {
       try {
-        const validatedStatus =
-          ActivityMonitoringValidationUtils.validateActivityStatus(status_at_date);
+        const validatedStatus = ActivityMonitoringValidationUtils.validateActivityStatus(
+          status_at_date as any,
+        );
         activityMonitoring.setStatusAtDate(validatedStatus);
       } catch (error: any) {
         return R.handleError(res, HttpStatus.BAD_REQUEST, {
@@ -501,8 +506,9 @@ router.get('/employee/:employee_license', Ensure.get(), async (req: Request, res
 
     let employeeLicenseId: number;
     try {
-      employeeLicenseId =
-        ActivityMonitoringValidationUtils.validateEmployeeLicense(employee_license);
+      employeeLicenseId = ActivityMonitoringValidationUtils.validateEmployeeLicense(
+        employee_license as any,
+      );
     } catch (error: any) {
       return R.handleError(res, HttpStatus.BAD_REQUEST, {
         code: ACTIVITY_MONITORING_CODES.INVALID_EMPLOYEE_LICENSE,
@@ -563,7 +569,7 @@ router.get('/status/:status', Ensure.get(), async (req: Request, res: Response) 
 
     let activityStatus: ActivityStatus;
     try {
-      activityStatus = ActivityMonitoringValidationUtils.validateActivityStatus(status);
+      activityStatus = ActivityMonitoringValidationUtils.validateActivityStatus(status as any);
     } catch (error: any) {
       return R.handleError(res, HttpStatus.BAD_REQUEST, {
         code: ACTIVITY_MONITORING_CODES.INVALID_STATUS,
@@ -624,7 +630,10 @@ router.get('/period/:startDate/:endDate', Ensure.get(), async (req: Request, res
 
     let start: Date, end: Date;
     try {
-      const dateRange = ActivityMonitoringValidationUtils.validateDateRange(startDate, endDate);
+      const dateRange = ActivityMonitoringValidationUtils.validateDateRange(
+        startDate as any,
+        endDate as any,
+      );
       start = dateRange.start;
       end = dateRange.end;
     } catch (error: any) {

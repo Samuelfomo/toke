@@ -851,10 +851,6 @@ router.get('/my-memos', Ensure.get(), async (req: Request, res: Response) => {
 
     const isManager = client.name !== 'POINTAGE';
 
-    // const memoEntries = await Memos._listByAuthor(userObj.getId()!);
-    // const targetMemoEntries = await Memos._listByTarget(userObj.getId()!);
-    // let memoEntries: Memos[] = [];
-    // let targetMemoEntries: Memos[] = [];
     const memoEntries =
       (await Memos._listByAuthorAndClientStatus(userObj.getId()!, isManager)) ?? [];
     const targetMemoEntries =
@@ -869,18 +865,6 @@ router.get('/my-memos', Ensure.get(), async (req: Request, res: Response) => {
           ? await Promise.all(targetMemoEntries.map(async (memo) => await memo.toJSON(views)))
           : []),
       ],
-      // my_created: {
-      //   count: memoEntries?.length || 0,
-      //   items: memoEntries
-      //     ? await Promise.all(memoEntries.map(async (memo) => await memo.toJSON(views)))
-      //     : [],
-      // },
-      // target_user: {
-      //   count: targetMemoEntries?.length || 0,
-      //   items: targetMemoEntries
-      //     ? await Promise.all(targetMemoEntries.map(async (memo) => await memo.toJSON(views)))
-      //     : [],
-      // },
     };
 
     return R.handleSuccess(res, { memos });

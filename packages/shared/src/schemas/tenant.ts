@@ -53,16 +53,16 @@ const baseTenantSchema = z.object({
     .transform((val) => val.trim())
     .optional(),
 
-  key: z
-    .string({
-      required_error: TENANT_ERRORS.KEY_REQUIRED,
-      invalid_type_error: TENANT_ERRORS.KEY_INVALID,
-    })
-    .min(TENANT_VALIDATION.KEY.MIN_LENGTH, TENANT_ERRORS.KEY_INVALID)
-    .max(TENANT_VALIDATION.KEY.MAX_LENGTH, TENANT_ERRORS.KEY_INVALID)
-    .regex(TENANT_VALIDATION.KEY.PATTERN, TENANT_ERRORS.KEY_INVALID)
-    .transform((val) => val.trim())
-    .optional(),
+  // key: z
+  //   .string({
+  //     required_error: TENANT_ERRORS.KEY_REQUIRED,
+  //     invalid_type_error: TENANT_ERRORS.KEY_INVALID,
+  //   })
+  //   .min(TENANT_VALIDATION.KEY.MIN_LENGTH, TENANT_ERRORS.KEY_INVALID)
+  //   .max(TENANT_VALIDATION.KEY.MAX_LENGTH, TENANT_ERRORS.KEY_INVALID)
+  //   .regex(TENANT_VALIDATION.KEY.PATTERN, TENANT_ERRORS.KEY_INVALID)
+  //   .transform((val) => val.trim())
+  //   .optional(),
 
   country_code: z
     .string({
