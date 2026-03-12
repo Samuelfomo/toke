@@ -216,7 +216,7 @@ router.get('/employee/all-subordinates', Ensure.get(), async (req: Request, res:
     }
 
     // ✅ NOUVELLE LOGIQUE COMPLÈTE
-    const teamData = await OrgHierarchy.getAllTeamMembers(supervisorObj.getId()!);
+    const teamData = await OrgHierarchy.getAllTeamMembers(supervisorObj.getId()!, true);
 
     const normalized = await OrgHierarchy.normalizeTeam(teamData, supervisorObj);
     return R.handleSuccess(res, normalized);
@@ -549,7 +549,7 @@ router.get('/supervisor/:userGuid/list', Ensure.get(), async (req: Request, res:
     // return R.handleSuccess(res, { hierarchies });
 
     // ✅ NOUVELLE LOGIQUE
-    const teamData = await OrgHierarchy.getAllTeamMembers(userObj.getId()!);
+    const teamData = await OrgHierarchy.getAllTeamMembers(userObj.getId()!, true);
     return R.handleSuccess(res, {
       supervisor: userObj.toPublicJSON(),
       summary: {
@@ -681,7 +681,7 @@ router.get(
       //
       // return R.handleSuccess(res, { subordinatesData });
 
-      const teamData = await OrgHierarchy.getAllTeamMembers(userObj.getId()!);
+      const teamData = await OrgHierarchy.getAllTeamMembers(userObj.getId()!, true);
 
       // Filtrer actifs
       const activeEmployees = teamData.direct_employees.filter((e) => e.user.isActive());

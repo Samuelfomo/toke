@@ -29,7 +29,12 @@ import R from '../../tools/response.js';
 import User from '../class/User.js';
 import UserRole from '../class/UserRole.js';
 import { TenantRevision } from '../../tools/revision.js';
-import { responseStructure, responseValue, RoleValues, tableName, } from '../../utils/response.model.js';
+import {
+  responseStructure,
+  responseValue,
+  RoleValues,
+  tableName,
+} from '../../utils/response.model.js';
 import Role from '../class/Role.js';
 import OrgHierarchy from '../class/OrgHierarchy.js';
 import { DatabaseEncryption } from '../../utils/encryption.js';
@@ -3216,6 +3221,9 @@ router.get('/attendance/stat', Ensure.get(), async (req: Request, res: Response)
  * GET /api/users/attendance/daily
  * 📊 Vue détaillée des pointages par employé sur la journée
  *
+ * Retourne les statistiques complètes de pointage d'une équipe basées sur l'emploi du temps
+ * de chaque employé. Trace toutes les entrées/sorties avec calcul précis des retards.
+ *
  * Query params:
  * - manager: string (GUID du manager, requis)
  * - date: string (YYYY-MM-DD, défaut: aujourd'hui)
@@ -3269,7 +3277,8 @@ router.get('/attendance/daily', Ensure.get(), async (req: Request, res: Response
 
     const dateStr = targetDate.toISOString().split('T')[0];
 
-    const includeHistory = String(include_history).toLowerCase() === 'true';
+    // ✅ AMÉLIORATION 1 : true par défaut (sauf si explicitement false)
+    const includeHistory = String(include_history).toLowerCase() !== 'false';
 
     // ============================================
     // 3️⃣ RÉCUPÉRATION DE L'ÉQUIPE
@@ -3397,8 +3406,10 @@ router.get('/attendance/daily', Ensure.get(), async (req: Request, res: Response
         scheduled_start: null,
         actual_start: null,
         delay_minutes: null,
+        delay_beyond_tolerance: null, // ✅ NOUVEAU
         is_within_tolerance: null,
         tolerance_minutes: null,
+        is_currently_working: false, // ✅ AMÉLIORATION 3
       };
 
       let workHours: any = {
@@ -3427,6 +3438,9 @@ router.get('/attendance/daily', Ensure.get(), async (req: Request, res: Response
 
         dailyStatus.actual_start = AnomalyDetectionService.formatTime(clockInTime);
 
+        // ✅ AMÉLIORATION 3 : Vérifier si actuellement au travail
+        dailyStatus.is_currently_working = userSessions.some((s) => s.isActive());
+
         // Calculer retard si schedule existe
         if (expectedSchedule && expectedSchedule.expected_blocks.length > 0) {
           const firstBlock = expectedSchedule.expected_blocks[0];
@@ -3441,7 +3455,10 @@ router.get('/attendance/daily', Ensure.get(), async (req: Request, res: Response
           );
 
           const delay = clockedMinutes - expectedMinutes;
-          dailyStatus.delay_minutes = delay > 0 ? delay : 0;
+
+          // ✅ AMÉLIORATION 2 : Retard total ET retard au-delà de la tolérance
+          dailyStatus.delay_minutes = delay > 0 ? delay : 0; // Retard total (ex: 30 min)
+          dailyStatus.delay_beyond_tolerance = Math.max(0, delay - dailyStatus.tolerance_minutes); // Retard sanctionnable (ex: 15 min)
           dailyStatus.is_within_tolerance = delay <= dailyStatus.tolerance_minutes;
 
           if (delay > dailyStatus.tolerance_minutes) {
@@ -3466,7 +3483,7 @@ router.get('/attendance/daily', Ensure.get(), async (req: Request, res: Response
         }
 
         // ========================================
-        // F. Calculer heures travaillées
+        // F. Calculer heures travaillées + punch_history
         // ========================================
         let totalWorkMinutes = 0;
         let totalPauseMinutes = 0;
@@ -3489,28 +3506,45 @@ router.get('/attendance/daily', Ensure.get(), async (req: Request, res: Response
           totalPauseMinutes += pauseMinutes;
 
           // ========================================
-          // G. Construire punch_history
+          // G. Construire punch_history (✅ CORRIGÉ)
           // ========================================
-
           if (includeHistory) {
-            // ✅ CORRECT : Chercher les TimeEntries qui référencent cette session
-
             const sessionEntries = await TimeEntries._listBySession(session.getId()!);
 
             if (sessionEntries && sessionEntries.length > 0) {
-              for (const entry of sessionEntries) {
+              // ✅ Boucle avec calcul de durée entre pointages
+              for (let i = 0; i < sessionEntries.length; i++) {
+                const entry = sessionEntries[i];
+                const nextEntry = sessionEntries[i + 1];
+
+                const currentTime = entry.getClockedAt();
+                const nextTime = nextEntry?.getClockedAt();
+
+                // Calculer durée jusqu'au prochain pointage
+                let durationUntilNextMinutes: number | null = null;
+                if (currentTime && nextTime) {
+                  durationUntilNextMinutes = Math.floor(
+                    (nextTime.getTime() - currentTime.getTime()) / 60000,
+                  );
+                }
+
+                const entrySite = await entry.getSiteObj();
+
                 punchHistory.push({
-                  timestamp: entry.getClockedAt()?.toISOString(),
+                  timestamp: currentTime?.toISOString(),
                   punch_type: entry.getPointageType(),
                   location: {
-                    name: (await entry.getSiteObj())?.getName(),
+                    name: entrySite?.getName() || 'Unknown',
                     latitude: entry.getLatitude(),
                     longitude: entry.getLongitude(),
                   },
+                  notes: null,
+                  // notes: entry.getNotes() || null,
+                  duration_until_next_minutes: durationUntilNextMinutes, // ✅ Temps jusqu'au prochain pointage
                 });
               }
             } else {
-              // Fallback si pas de TimeEntries enregistrées
+              // ⚠️ Fallback si pas de TimeEntries
               punchHistory.push({
                 timestamp: session.getSessionStartAt()!.toISOString(),
                 punch_type: PointageType.CLOCK_IN,
@@ -3519,6 +3553,8 @@ router.get('/attendance/daily', Ensure.get(), async (req: Request, res: Response
                   latitude: session.getStartLatitude(),
                   longitude: session.getStartLongitude(),
                 },
+                notes: 'Reconstructed from session data',
+                duration_until_next_minutes: null,
               });
 
               if (session.getSessionEndAt()) {
@@ -3530,6 +3566,8 @@ router.get('/attendance/daily', Ensure.get(), async (req: Request, res: Response
                     latitude: session.getEndLatitude(),
                     longitude: session.getEndLongitude(),
                   },
+                  notes: 'Reconstructed from session data',
+                  duration_until_next_minutes: null,
                 });
               }
             }
@@ -3608,7 +3646,7 @@ router.get('/attendance/daily', Ensure.get(), async (req: Request, res: Response
       // ========================================
       // K. Trier punch_history chronologiquement
       // ========================================
-      if (includeHistory) {
+      if (includeHistory && punchHistory.length > 0) {
         punchHistory.sort((a, b) => {
           return new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime();
         });
@@ -4426,7 +4464,7 @@ router.get(
       }
 
       // Charger l'employé
-      const employee = await User._load(guid, true);
+      const employee = await User._load(String(guid), true);
       if (!employee) {
         return R.handleError(res, HttpStatus.NOT_FOUND, {
           code: USERS_CODES.USER_NOT_FOUND,

@@ -171,7 +171,10 @@ export default class OrgHierarchy extends OrgHierarchyModel {
    * Récupère TOUTE l'équipe d'un manager en respectant les 3 sources
    * ✅ Un manager est AUSSI un employé de son supervisor
    */
-  static async getAllTeamMembers(managerId: number): Promise<{
+  static async getAllTeamMembers(
+    managerId: number,
+    includeSudTeam?: boolean,
+  ): Promise<{
     direct_employees: Array<{
       user: User;
       source: 'user_role' | 'group';
@@ -267,16 +270,18 @@ export default class OrgHierarchy extends OrgHierarchyModel {
 
       result.all_employees_flat.push(userObj);
 
-      // // 🔁 Si manager, ajouter sous-équipe
-      // const isManager = await this.hasManagerRole(userId!);
-      // if (isManager) {
-      //   const subTeam = await this.getAllTeamMembers(userId!);
-      //   result.sub_managers.push({
-      //     manager: userObj,
-      //     team: subTeam,
-      //   });
-      //   result.all_employees_flat.push(...subTeam.all_employees_flat);
-      // }
+      // 🔁 Si manager, ajouter sous-équipe
+      if (includeSudTeam) {
+        const isManager = await this.hasManagerRole(userId!);
+        if (isManager) {
+          const subTeam = await this.getAllTeamMembers(userId!, true);
+          result.sub_managers.push({
+            manager: userObj,
+            team: subTeam,
+          });
+          result.all_employees_flat.push(...subTeam.all_employees_flat);
+        }
+      }
     }
 
     // -------- GROUP MEMBERS --------
@@ -308,16 +313,18 @@ export default class OrgHierarchy extends OrgHierarchyModel {
 
       result.all_employees_flat.push(userObj);
 
-      // // 🔁 Si manager, ajouter sous-équipe
-      // const isManager = await this.hasManagerRole(userId);
-      // if (isManager) {
-      //   const subTeam = await this.getAllTeamMembers(userId);
-      //   result.sub_managers.push({
-      //     manager: userObj,
-      //     team: subTeam,
-      //   });
-      //   result.all_employees_flat.push(...subTeam.all_employees_flat);
-      // }
+      if (includeSudTeam) {
+        // 🔁 Si manager, ajouter sous-équipe
+        const isManager = await this.hasManagerRole(userId);
+        if (isManager) {
+          const subTeam = await this.getAllTeamMembers(userId, true);
+          result.sub_managers.push({
+            manager: userObj,
+            team: subTeam,
+          });
+          result.all_employees_flat.push(...subTeam.all_employees_flat);
+        }
+      }
     }
 
     return result;
