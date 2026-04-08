@@ -344,7 +344,7 @@ export default class User extends UserModel {
       userSchedules.forEach((s) => {
         candidates.push({
           type: 'schedule',
-          assignedAt: s.getAssignedAt() || new Date(0),
+          assignedAt: s.getCreatedAt() || new Date(0),
           assignment: s,
         });
       });
@@ -356,7 +356,7 @@ export default class User extends UserModel {
       userRotations.forEach((r) => {
         candidates.push({
           type: 'rotation',
-          assignedAt: r.getAssignedAt() || new Date(0),
+          assignedAt: r.getCreatedAt() || new Date(0),
           assignment: r,
         });
       });
@@ -369,7 +369,7 @@ export default class User extends UserModel {
       if (groupSchedule) {
         candidates.push({
           type: 'schedule',
-          assignedAt: groupSchedule.getAssignedAt() || new Date(0),
+          assignedAt: groupSchedule.getCreatedAt() || new Date(0),
           assignment: groupSchedule,
         });
       }
@@ -378,7 +378,7 @@ export default class User extends UserModel {
       if (groupRotation) {
         candidates.push({
           type: 'rotation',
-          assignedAt: groupRotation.getAssignedAt() || new Date(0),
+          assignedAt: groupRotation.getCreatedAt() || new Date(0),
           assignment: groupRotation,
         });
       }

@@ -38,7 +38,6 @@ export default class ScheduleAssignmentsModel extends BaseModel {
   protected tenant?: string;
   protected user?: number | null;
   protected groups?: number | null;
-  // protected session_template?: number;
   protected session_template?: any; // ✅ JSONB (copie complète du template)
   protected version?: number;
   protected start_date?: string;
@@ -47,6 +46,8 @@ export default class ScheduleAssignmentsModel extends BaseModel {
   protected reason?: string | null;
   protected active?: boolean;
   protected deleted_at?: Date | null;
+  protected created_at?: Date;
+  protected updated_at?: Date;
 
   protected initialVersion = 1;
 

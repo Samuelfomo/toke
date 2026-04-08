@@ -176,6 +176,17 @@ export default class RotationAssignment extends RotationAssignmentModel {
     return this.deleted_at;
   }
 
+  getCreatedAt(): Date | undefined {
+    return this.created_at;
+  }
+  getUpdatedAt(): Date | undefined {
+    return this.updated_at;
+  }
+
+  getLastCycleIndex(): number {
+    return this.last_cycle_index ?? 0;
+  }
+
   // ============================================
   // SETTERS FLUENT
   // ============================================
@@ -211,6 +222,11 @@ export default class RotationAssignment extends RotationAssignmentModel {
 
   setAssignedAt(assignedAt: Date): RotationAssignment {
     this.assigned_at = assignedAt;
+    return this;
+  }
+
+  setLastCycleIndex(index: number): RotationAssignment {
+    this.last_cycle_index = index;
     return this;
   }
 
@@ -425,6 +441,9 @@ export default class RotationAssignment extends RotationAssignmentModel {
     this.offset = data.offset;
     this.assigned_at = data.assigned_at;
     this.deleted_at = data.deleted_at;
+    this.created_at = data.created_at;
+    this.updated_at = data.updated_at;
+    this.last_cycle_index = data.last_cycle_index ?? 0;
     return this;
   }
 }

@@ -24,6 +24,7 @@ export default class RotationAssignmentModel extends BaseModel {
     deleted_at: 'deleted_at',
     created_at: 'created_at',
     updated_at: 'updated_at',
+    last_cycle_index: 'last_cycle_index',
   } as const;
 
   // ============================================
@@ -40,6 +41,9 @@ export default class RotationAssignmentModel extends BaseModel {
   protected offset?: number;
   protected assigned_at?: Date;
   protected deleted_at?: Date | null;
+  protected created_at?: Date;
+  protected updated_at?: Date;
+  protected last_cycle_index?: number;
 
   protected constructor() {
     super();
@@ -251,6 +255,9 @@ export default class RotationAssignmentModel extends BaseModel {
 
     if (this.offset !== undefined) {
       updateData[this.db.offset] = this.offset;
+    }
+    if (this.last_cycle_index !== undefined) {
+      updateData[this.db.last_cycle_index] = this.last_cycle_index;
     }
     if (this.active !== undefined) {
       updateData[this.db.active] = this.active;

@@ -50,9 +50,9 @@ import AnomalyDetectionService from '../../tools/anomaly.detection.service.js';
 import Groups from '../class/Groups.js';
 import SessionTemplate from '../class/SessionTemplates.js';
 import ScheduleAssignments from '../class/ScheduleAssignments.js';
+import TimeEntries from '../class/TimeEntries.js';
 
 import Statistique from './statistique.interface.js';
-import TimeEntries from '../class/TimeEntries.js';
 // import { AnomalyType } from '../../tools/anomaly.detection.service.js';
 // import { AnomalyType } from '../../tools/anomaly.detection.service.js';
 
@@ -808,7 +808,7 @@ router.post('/manager', Ensure.post(), async (req: Request, res: Response) => {
 
 router.get('/email/:email', Ensure.get(), async (req: Request, res: Response) => {
   try {
-    const validateEmail = UsersValidationUtils.validateEmail(req.params.email);
+    const validateEmail = UsersValidationUtils.validateEmail(req.params.email as string);
     if (!validateEmail) {
       return R.handleError(res, HttpStatus.BAD_REQUEST, {
         code: USERS_CODES.EMAIL_INVALID,
@@ -816,7 +816,8 @@ router.get('/email/:email', Ensure.get(), async (req: Request, res: Response) =>
       });
     }
 
-    const userObj = await User._load(req.params.email, false, true);
+    const userObj = await User._load(req.params.email as string, false, true);
+
     if (!userObj) {
       return R.handleError(res, HttpStatus.NOT_FOUND, {
         code: USERS_CODES.USER_NOT_FOUND,
@@ -959,11 +960,42 @@ router.get('/:token', Ensure.get(), async (req: Request, res: Response) => {
 
 router.put('/:guid', Ensure.put(), async (req: Request, res: Response) => {
   try {
+    const { manager } = req.query;
+    if (!manager) {
+      return R.handleError(res, HttpStatus.BAD_REQUEST, {
+        code: 'manager_required',
+        message: 'User manager is required',
+      });
+    }
+
+    if (!UsersValidationUtils.validateGuid(manager)) {
+      return R.handleError(res, HttpStatus.BAD_REQUEST, {
+        code: 'invalid_manager',
+        message: 'User manager is invalid',
+      });
+    }
+
     const validGuid = UsersValidationUtils.validateGuid(req.params.guid);
     if (!validGuid) {
       return R.handleError(res, HttpStatus.BAD_REQUEST, {
         code: USERS_CODES.INVALID_GUID,
         message: USERS_ERRORS.GUID_INVALID,
+      });
+    }
+
+    const managerObj = await User._load(manager, true);
+    if (!managerObj) {
+      return R.handleError(res, HttpStatus.NOT_FOUND, {
+        code: 'manager_not_found',
+        message: 'User manager not found',
+      });
+    }
+
+    const isManager = await OrgHierarchy.hasManagerRole(managerObj.getId()!);
+    if (!isManager) {
+      return R.handleError(res, HttpStatus.UNAUTHORIZED, {
+        code: USERS_CODES.AUTHORIZATION_FAILED,
+        message: USERS_ERRORS.AUTHORIZATION_FAILED,
       });
     }
 
@@ -977,66 +1009,50 @@ router.put('/:guid', Ensure.put(), async (req: Request, res: Response) => {
 
     const validatedData = validateUsersUpdate(req.body);
 
-    const Roles = await UserRole._listByUser(userObj.getId()!);
-    if (!Roles) {
-      return R.handleError(res, HttpStatus.NOT_ACCEPTABLE, {
-        code: USERS_CODES.AUTHORIZATION_FAILED,
-        message: USERS_ERRORS.AUTHORIZATION_FAILED,
-      });
-    }
-    // let assigns: string[] = [];
-    //
-    // await Promise.all(
-    //   Roles.map(async (role) => {
-    //     const assignByObj = await role.getAssignedByObject();
-    //     if (assignByObj) {
-    //       assigns.push(assignByObj.getGuid()!);
-    //     }
-    //   }),
-    // );
-
-    const assigns = (
-      await Promise.all(
-        Roles.map(async (role) => {
-          const assignByObj = await role.getAssignedByObject();
-          return assignByObj?.getGuid() ?? null;
-        }),
-      )
-    ).filter((guid): guid is string => guid !== null);
-
-    // const rolesID = (
+    // const Roles = await UserRole._listByUser(userObj.getId()!);
+    // if (!Roles) {
+    //   return R.handleError(res, HttpStatus.NOT_ACCEPTABLE, {
+    //     code: USERS_CODES.AUTHORIZATION_FAILED,
+    //     message: USERS_ERRORS.AUTHORIZATION_FAILED,
+    //   });
+    // }
+    // const assigns = (
     //   await Promise.all(
-    //     Roles.map(async (role) => role.getRole())
+    //     Roles.map(async (role) => {
+    //       const assignByObj = await role.getAssignedByObject();
+    //       return assignByObj?.getGuid() ?? null;
+    //     }),
     //   )
-    // ).filter((id): id is number => Boolean(id));
-
-    const rolesID = Roles.map((role) => role.getRole()).filter(Boolean) as number[];
-
-    // Charger les rôles requis
-    const [adminRole, managerRole] = await Promise.all([
-      Role._load(RoleValues.ADMIN, false, true),
-      Role._load(RoleValues.MANAGER, false, true),
-    ]);
-
-    if (!adminRole || !managerRole) {
-      return R.handleError(res, HttpStatus.NOT_FOUND, {
-        code: 'role_not_found',
-        message: 'One or more roles (admin/manager) are missing',
-      });
-    }
-
-    const isAssigned = assigns.includes(validatedData.supervisor!);
-    const isAdmin = rolesID.includes(adminRole.getId()!);
-    const isManager = rolesID.includes(managerRole.getId()!);
-
-    console.log(isAssigned, isAdmin, isManager);
-
-    if (!isAssigned && !isAdmin && !isManager) {
-      return R.handleError(res, HttpStatus.UNAUTHORIZED, {
-        code: USERS_CODES.AUTHORIZATION_FAILED,
-        message: USERS_ERRORS.AUTHORIZATION_FAILED,
-      });
-    }
+    // ).filter((guid): guid is string => guid !== null);
+    //
+    //
+    // const rolesID = Roles.map((role) => role.getRole()).filter(Boolean) as number[];
+    //
+    // // Charger les rôles requis
+    // const [adminRole, managerRole] = await Promise.all([
+    //   Role._load(RoleValues.ADMIN, false, true),
+    //   Role._load(RoleValues.MANAGER, false, true),
+    // ]);
+    //
+    // if (!adminRole || !managerRole) {
+    //   return R.handleError(res, HttpStatus.NOT_FOUND, {
+    //     code: 'role_not_found',
+    //     message: 'One or more roles (admin/manager) are missing',
+    //   });
+    // }
+    //
+    // const isAssigned = assigns.includes(validatedData.supervisor!);
+    // const isAdmin = rolesID.includes(adminRole.getId()!);
+    // const isManager = rolesID.includes(managerRole.getId()!);
+    //
+    // console.log(isAssigned, isAdmin, isManager);
+    //
+    // if (!isAssigned && !isAdmin && !isManager) {
+    //   return R.handleError(res, HttpStatus.UNAUTHORIZED, {
+    //     code: USERS_CODES.AUTHORIZATION_FAILED,
+    //     message: USERS_ERRORS.AUTHORIZATION_FAILED,
+    //   });
+    // }
 
     if (validatedData.email) {
       userObj.setEmail(validatedData.email);

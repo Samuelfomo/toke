@@ -163,7 +163,7 @@ class ScheduleResolutionService {
       if (userSchedule) {
         candidates.push({
           type: 'schedule',
-          assignedAt: userSchedule.getAssignedAt() || new Date(0),
+          assignedAt: userSchedule.getCreatedAt() || new Date(0),
           source: 'user',
           data: userSchedule,
         });
@@ -176,7 +176,7 @@ class ScheduleResolutionService {
       if (userRotation) {
         candidates.push({
           type: 'rotation',
-          assignedAt: userRotation.getAssignedAt() || new Date(0),
+          assignedAt: userRotation.getCreatedAt() || new Date(0),
           source: 'user',
           data: userRotation,
         });
@@ -190,7 +190,7 @@ class ScheduleResolutionService {
         if (groupSchedule) {
           candidates.push({
             type: 'schedule',
-            assignedAt: groupSchedule.getAssignedAt() || new Date(0),
+            assignedAt: groupSchedule.getCreatedAt() || new Date(0),
             source: 'group',
             data: groupSchedule,
           });
@@ -203,7 +203,7 @@ class ScheduleResolutionService {
         if (groupRotation) {
           candidates.push({
             type: 'rotation',
-            assignedAt: groupRotation.getAssignedAt() || new Date(0),
+            assignedAt: groupRotation.getCreatedAt() || new Date(0),
             source: 'group',
             data: groupRotation,
           });
@@ -324,7 +324,7 @@ class ScheduleResolutionService {
     const applicableSchedule = await this.buildScheduleFromTemplate(template, dateStr, 'direct', {
       assignment_guid: assignment.getGuid(),
       template_name: template.getName(),
-      assigned_at: assignment.getAssignedAt(),
+      assigned_at: assignment.getCreatedAt(),
       start_date: assignment.getStartDate(),
       end_date: assignment.getEndDate(),
     });
@@ -384,7 +384,7 @@ class ScheduleResolutionService {
     const applicableSchedule = await this.buildScheduleFromTemplate(template, dateStr, 'rotation', {
       rotation_group_guid: rotationGroup.getGuid(),
       rotation_group_name: rotationGroup.getName(),
-      assigned_at: assignment.getAssignedAt(),
+      assigned_at: assignment.getCreatedAt(),
       cycle_length: rotationGroup.getCycleLength(),
       cycle_unit: rotationGroup.getCycleUnit(),
       offset: offset,
@@ -448,14 +448,14 @@ class ScheduleResolutionService {
     const targetDate = new Date(dateStr);
     const dayOfWeek = this.getDayOfWeek(targetDate);
 
-    // 🔍 DEBUG - AJOUTEZ CES LOGS
-    console.log('🔍 DEBUG buildScheduleFromTemplate:');
-    console.log('   Date:', dateStr);
-    console.log('   Target date:', targetDate.toISOString());
-    console.log('   Day of week (calculated):', dayOfWeek);
-    console.log('   Template definition keys:', Object.keys(definition));
-    console.log('   Definition[dayOfWeek]:', definition[dayOfWeek]);
-    console.log('   Template definition:', JSON.stringify(definition, null, 2));
+    // // 🔍 DEBUG - AJOUTEZ CES LOGS
+    // console.log('🔍 DEBUG buildScheduleFromTemplate:');
+    // console.log('   Date:', dateStr);
+    // console.log('   Target date:', targetDate.toISOString());
+    // console.log('   Day of week (calculated):', dayOfWeek);
+    // console.log('   Template definition keys:', Object.keys(definition));
+    // console.log('   Definition[dayOfWeek]:', definition[dayOfWeek]);
+    // console.log('   Template definition:', JSON.stringify(definition, null, 2));
 
     // Récupérer les blocs de travail pour ce jour
     const dayBlocks = definition[dayOfWeek] || [];

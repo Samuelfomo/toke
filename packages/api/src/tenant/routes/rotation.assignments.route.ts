@@ -623,7 +623,7 @@ router.get('/:guid/statistics', Ensure.get(), async (req: Request, res: Response
       days_assigned: assignmentObj.getDaysAssigned(),
       is_recent: assignmentObj.isRecentAssignment(),
       offset: assignmentObj.getOffset(),
-      assigned_at: assignmentObj.getAssignedAt(),
+      assigned_at: assignmentObj.getCreatedAt(),
     };
 
     return R.handleSuccess(res, { statistics });

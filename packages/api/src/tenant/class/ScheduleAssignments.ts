@@ -240,6 +240,14 @@ export default class ScheduleAssignments extends ScheduleAssignmentsModel {
     return this.deleted_at;
   }
 
+  getCreatedAt(): Date | undefined {
+    return this.created_at;
+  }
+
+  getUpdatedAt(): Date | undefined {
+    return this.updated_at;
+  }
+
   setTenant(tenant: string): ScheduleAssignments {
     this.tenant = tenant;
     return this;
@@ -705,6 +713,8 @@ export default class ScheduleAssignments extends ScheduleAssignmentsModel {
     this.reason = data.reason;
     this.active = data.active;
     this.deleted_at = data.deleted_at;
+    this.created_at = data.created_at;
+    this.updated_at = data.updated_at;
     return this;
   }
 }

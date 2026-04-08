@@ -1,0 +1,650 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Statistiques de Pointage - MVP Simple (2h d’implémentation).md</title>
+  <style>
+  @import url("https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.9.0-alpha2/katex.min.css");
+
+  body {
+    font-family: Georgia, Cambria, serif;
+    font-size: 14px;
+    line-height: 1.7;
+    color: #373D49;
+    max-width: 800px;
+    margin: 0 auto;
+    padding: 2rem;
+  }
+  h1, h2, h3, h4, h5, h6 {
+    font-family: "Source Sans Pro", "Helvetica Neue", Helvetica, Arial, sans-serif;
+    font-weight: 600;
+    margin-top: 1.5em;
+    margin-bottom: 0.5em;
+  }
+  h1 { font-size: 2em; }
+  h2 { font-size: 1.5em; }
+  h3 { font-size: 1.25em; }
+  a { color: #35D7BB; text-decoration: none; }
+  a:hover { text-decoration: underline; }
+  code {
+    font-family: "Ubuntu Mono", Monaco, monospace;
+    background: #F5F7FA;
+    padding: 0.2em 0.4em;
+    border-radius: 3px;
+  }
+  pre {
+    background: #F5F7FA;
+    padding: 1em;
+    border-radius: 3px;
+    overflow-x: auto;
+  }
+  .hljs {
+    display: block;
+    overflow-x: auto;
+    padding: 0;
+    color: #333;
+  }
+  pre code { background: none; padding: 0; }
+  blockquote {
+    border-left: 3px solid #A0AABF;
+    padding-left: 1em;
+    margin-left: 0;
+    font-style: italic;
+    color: #666;
+  }
+  table {
+    border-collapse: collapse;
+    width: 100%;
+  }
+  th, td {
+    border: 1px solid #E8E8E8;
+    padding: 0.5em;
+    text-align: left;
+  }
+  th {
+    background: #F5F7FA;
+    font-weight: 600;
+  }
+  #preview .table {
+    width: auto;
+  }
+  img {
+    max-width: 100%;
+    height: auto;
+  }
+  .katex-display {
+    overflow-x: auto;
+    overflow-y: hidden;
+  }
+</style>
+</head>
+<body id="preview">
+<h1 class="code-line has-line-data" data-line-start="0" data-line-end="1"><a id="Statistiques_de_Pointage_MVP_Simple_2h_dimplmentation_0"></a>Statistiques de Pointage - MVP Simple (2h d’implémentation)</h1>
+<h2 class="code-line has-line-data" data-line-start="2" data-line-end="3"><a id="OBJECTIF_2"></a>🎯 OBJECTIF</h2>
+<p class="has-line-data" data-line-start="3" data-line-end="4">Enrichir les stats actuelles avec <strong>5 valeurs simples</strong> calculées à la volée, sans comparaison ni évaluation complexe.</p>
+<hr>
+<h2 class="code-line has-line-data" data-line-start="7" data-line-end="8"><a id="LES_5_VALEURS_AJOUTER_7"></a>📦 LES 5 VALEURS À AJOUTER</h2>
+<h3 class="code-line has-line-data" data-line-start="9" data-line-end="10"><a id="D_PRSENCE_EFFECTIVE_COUVERTURE_3_valeurs_9"></a><strong>D. PRÉSENCE EFFECTIVE &amp; COUVERTURE (3 valeurs)</strong></h3>
+<h4 class="code-line has-line-data" data-line-start="11" data-line-end="12"><a id="1_Temps_de_prsence_effectif_par_employ_11"></a>1️⃣ <strong>Temps de présence effectif par employé</strong></h4>
+<p class="has-line-data" data-line-start="12" data-line-end="13"><strong>Ce que ça montre</strong>: Combien de temps l’employé a réellement travaillé</p>
+<pre><code class="has-line-data language-json" data-line-start="15" data-line-end="24"><span class="hljs-punctuation">{</span>
+  <span class="hljs-attr">&quot;effective_presence&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-punctuation">{</span>
+    <span class="hljs-attr">&quot;total_work_hours&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-number">0</span><span class="hljs-punctuation">,</span>              <span class="hljs-comment">// Total heures travaillées sur période</span>
+    <span class="hljs-attr">&quot;total_pause_hours&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-number">0</span><span class="hljs-punctuation">,</span>             <span class="hljs-comment">// Total heures en pause</span>
+    <span class="hljs-attr">&quot;avg_daily_hours&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-number">0</span><span class="hljs-punctuation">,</span>               <span class="hljs-comment">// Moyenne par jour travaillé</span>
+    <span class="hljs-attr">&quot;net_work_ratio&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-number">0</span>                 <span class="hljs-comment">// % temps travail vs temps total</span>
+  <span class="hljs-punctuation">}</span>
+<span class="hljs-punctuation">}</span>
+</code></pre>
+<p class="has-line-data" data-line-start="25" data-line-end="26"><strong>Calcul (déjà presque fait)</strong>:</p>
+<pre><code class="has-line-data language-javascript" data-line-start="27" data-line-end="45"><span class="hljs-comment">// Dans la boucle employés existante, ajouter :</span>
+<span class="hljs-keyword">const</span> employeeData = {
+  <span class="hljs-attr">employee</span>: <span class="hljs-keyword">await</span> employee.<span class="hljs-title function_">toJSON</span>(responseValue.<span class="hljs-property">MINIMAL</span>),
+  <span class="hljs-attr">period_stats</span>: {
+    <span class="hljs-comment">// ... stats existantes</span>
+  },
+  
+  <span class="hljs-comment">// 🆕 AJOUT ICI</span>
+  <span class="hljs-attr">effective_presence</span>: {
+    <span class="hljs-attr">total_work_hours</span>: <span class="hljs-built_in">parseFloat</span>(totalWorkHours.<span class="hljs-title function_">toFixed</span>(<span class="hljs-number">2</span>)),
+    <span class="hljs-attr">total_pause_hours</span>: <span class="hljs-built_in">parseFloat</span>((totalPauseMinutes / <span class="hljs-number">60</span>).<span class="hljs-title function_">toFixed</span>(<span class="hljs-number">2</span>)),
+    <span class="hljs-attr">avg_daily_hours</span>: <span class="hljs-built_in">parseFloat</span>(averageWorkHours.<span class="hljs-title function_">toFixed</span>(<span class="hljs-number">2</span>)),
+    <span class="hljs-attr">net_work_ratio</span>: presentDays + lateDays &gt; <span class="hljs-number">0</span> 
+      ? <span class="hljs-built_in">parseFloat</span>(((totalWorkHours / ((presentDays + lateDays) * <span class="hljs-number">8</span>)) * <span class="hljs-number">100</span>).<span class="hljs-title function_">toFixed</span>(<span class="hljs-number">1</span>))
+      : <span class="hljs-number">0</span>
+  }
+};
+</code></pre>
+<p class="has-line-data" data-line-start="46" data-line-end="47"><strong>Où l’ajouter</strong>: Dans l’objet <code>employeeData</code> (ligne ~250 du endpoint)</p>
+<hr>
+<h4 class="code-line has-line-data" data-line-start="50" data-line-end="51"><a id="2_Couverture_dquipe_temps_rel_50"></a>2️⃣ <strong>Couverture d’équipe temps réel</strong></h4>
+<p class="has-line-data" data-line-start="51" data-line-end="52"><strong>Ce que ça montre</strong>: Combien d’employés présents maintenant vs attendu</p>
+<pre><code class="has-line-data language-json" data-line-start="54" data-line-end="65"><span class="hljs-punctuation">{</span>
+  <span class="hljs-attr">&quot;team_coverage&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-punctuation">{</span>
+    <span class="hljs-attr">&quot;timestamp&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-string">&quot;2026-02-26T14:30:00Z&quot;</span><span class="hljs-punctuation">,</span>
+    <span class="hljs-attr">&quot;currently_present&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-number">3</span><span class="hljs-punctuation">,</span>             <span class="hljs-comment">// Déjà calculé (currently_active)</span>
+    <span class="hljs-attr">&quot;currently_on_pause&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-number">0</span><span class="hljs-punctuation">,</span>            <span class="hljs-comment">// Déjà calculé</span>
+    <span class="hljs-attr">&quot;expected_today&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-number">5</span><span class="hljs-punctuation">,</span>                <span class="hljs-comment">// À calculer</span>
+    <span class="hljs-attr">&quot;coverage_rate&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-number">60</span><span class="hljs-punctuation">,</span>                <span class="hljs-comment">// % présents / attendus</span>
+    <span class="hljs-attr">&quot;missing_count&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-number">2</span>                  <span class="hljs-comment">// Absents + Retardataires</span>
+  <span class="hljs-punctuation">}</span>
+<span class="hljs-punctuation">}</span>
+</code></pre>
+<p class="has-line-data" data-line-start="66" data-line-end="67"><strong>Calcul</strong>:</p>
+<pre><code class="has-line-data language-javascript" data-line-start="68" data-line-end="97"><span class="hljs-comment">// Après le calcul de currently_active (ligne ~350), ajouter :</span>
+
+<span class="hljs-comment">// Compter combien devrait être présent aujourd&#x27;hui (work_days_expected &gt; 0)</span>
+<span class="hljs-keyword">const</span> expectedToday = employeesData.<span class="hljs-title function_">filter</span>(<span class="hljs-function"><span class="hljs-params">emp</span> =&gt;</span> 
+  emp.<span class="hljs-property">period_stats</span>.<span class="hljs-property">work_days_expected</span> &gt; <span class="hljs-number">0</span>
+).<span class="hljs-property">length</span>;
+
+<span class="hljs-comment">// Calculer couverture</span>
+<span class="hljs-keyword">const</span> coverageRate = expectedToday &gt; <span class="hljs-number">0</span> 
+  ? <span class="hljs-built_in">parseFloat</span>(((currentlyActive / expectedToday) * <span class="hljs-number">100</span>).<span class="hljs-title function_">toFixed</span>(<span class="hljs-number">1</span>))
+  : <span class="hljs-number">0</span>;
+
+<span class="hljs-keyword">const</span> missingCount = expectedToday - currentlyActive;
+
+<span class="hljs-comment">// Ajouter au summary</span>
+<span class="hljs-attr">summary</span>: {
+  <span class="hljs-comment">// ... stats existantes</span>
+  
+  <span class="hljs-comment">// 🆕 AJOUT ICI</span>
+  <span class="hljs-attr">team_coverage</span>: {
+    <span class="hljs-attr">timestamp</span>: <span class="hljs-title class_">TimezoneConfigUtils</span>.<span class="hljs-title function_">getCurrentTime</span>().<span class="hljs-title function_">toISOString</span>(),
+    <span class="hljs-attr">currently_present</span>: currentlyActive,
+    <span class="hljs-attr">currently_on_pause</span>: currentlyOnPause,
+    <span class="hljs-attr">expected_today</span>: expectedToday,
+    <span class="hljs-attr">coverage_rate</span>: coverageRate,
+    <span class="hljs-attr">missing_count</span>: <span class="hljs-title class_">Math</span>.<span class="hljs-title function_">max</span>(<span class="hljs-number">0</span>, missingCount)
+  }
+}
+</code></pre>
+<p class="has-line-data" data-line-start="98" data-line-end="99"><strong>Où l’ajouter</strong>: Dans l’objet <code>summary</code> (ligne ~350)</p>
+<hr>
+<h4 class="code-line has-line-data" data-line-start="102" data-line-end="103"><a id="3_Analyse_dure_sessions_102"></a>3️⃣ <strong>Analyse durée sessions</strong></h4>
+<p class="has-line-data" data-line-start="103" data-line-end="104"><strong>Ce que ça montre</strong>: Sessions trop courtes ou trop longues</p>
+<pre><code class="has-line-data language-json" data-line-start="106" data-line-end="121"><span class="hljs-punctuation">{</span>
+  <span class="hljs-attr">&quot;session_analysis&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-punctuation">{</span>
+    <span class="hljs-attr">&quot;total_sessions&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-number">2</span><span class="hljs-punctuation">,</span>
+    <span class="hljs-attr">&quot;avg_duration_hours&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-number">0</span><span class="hljs-punctuation">,</span>
+    <span class="hljs-attr">&quot;abnormal_sessions&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-punctuation">[</span>
+      <span class="hljs-punctuation">{</span>
+        <span class="hljs-attr">&quot;employee_guid&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-string">&quot;xxx&quot;</span><span class="hljs-punctuation">,</span>
+        <span class="hljs-attr">&quot;date&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-string">&quot;2026-02-26&quot;</span><span class="hljs-punctuation">,</span>
+        <span class="hljs-attr">&quot;duration_hours&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-number">0</span><span class="hljs-punctuation">,</span>
+        <span class="hljs-attr">&quot;status&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-string">&quot;incomplete&quot;</span>        <span class="hljs-comment">// incomplete, too_short, too_long</span>
+      <span class="hljs-punctuation">}</span>
+    <span class="hljs-punctuation">]</span>
+  <span class="hljs-punctuation">}</span>
+<span class="hljs-punctuation">}</span>
+</code></pre>
+<p class="has-line-data" data-line-start="122" data-line-end="123"><strong>Calcul</strong>:</p>
+<pre><code class="has-line-data language-javascript" data-line-start="124" data-line-end="186"><span class="hljs-comment">// Après la boucle employés, ajouter :</span>
+
+<span class="hljs-keyword">const</span> sessionAnalysis = {
+  <span class="hljs-attr">total_sessions</span>: <span class="hljs-number">0</span>,
+  <span class="hljs-attr">avg_duration_hours</span>: <span class="hljs-number">0</span>,
+  <span class="hljs-attr">abnormal_sessions</span>: []
+};
+
+<span class="hljs-keyword">let</span> totalDuration = <span class="hljs-number">0</span>;
+<span class="hljs-keyword">let</span> completedSessionsCount = <span class="hljs-number">0</span>;
+
+<span class="hljs-keyword">for</span> (<span class="hljs-keyword">const</span> emp <span class="hljs-keyword">of</span> employeesData) {
+  <span class="hljs-keyword">for</span> (<span class="hljs-keyword">const</span> day <span class="hljs-keyword">of</span> emp.<span class="hljs-property">daily_details</span> || []) {
+    <span class="hljs-keyword">if</span> (day.<span class="hljs-property">work_hours</span> !== <span class="hljs-literal">null</span> &amp;&amp; day.<span class="hljs-property">work_hours</span> !== <span class="hljs-literal">undefined</span>) {
+      sessionAnalysis.<span class="hljs-property">total_sessions</span>++;
+      totalDuration += day.<span class="hljs-property">work_hours</span>;
+      
+      <span class="hljs-keyword">if</span> (day.<span class="hljs-property">work_hours</span> &gt; <span class="hljs-number">0</span>) {
+        completedSessionsCount++;
+        
+        <span class="hljs-comment">// Détecter anomalies</span>
+        <span class="hljs-keyword">if</span> (day.<span class="hljs-property">work_hours</span> &lt; <span class="hljs-number">4</span>) {
+          sessionAnalysis.<span class="hljs-property">abnormal_sessions</span>.<span class="hljs-title function_">push</span>({
+            <span class="hljs-attr">employee_guid</span>: emp.<span class="hljs-property">employee</span>.<span class="hljs-property">guid</span>,
+            <span class="hljs-attr">date</span>: day.<span class="hljs-property">date</span>,
+            <span class="hljs-attr">duration_hours</span>: day.<span class="hljs-property">work_hours</span>,
+            <span class="hljs-attr">status</span>: <span class="hljs-string">&#x27;too_short&#x27;</span>
+          });
+        } <span class="hljs-keyword">else</span> <span class="hljs-keyword">if</span> (day.<span class="hljs-property">work_hours</span> &gt; <span class="hljs-number">12</span>) {
+          sessionAnalysis.<span class="hljs-property">abnormal_sessions</span>.<span class="hljs-title function_">push</span>({
+            <span class="hljs-attr">employee_guid</span>: emp.<span class="hljs-property">employee</span>.<span class="hljs-property">guid</span>,
+            <span class="hljs-attr">date</span>: day.<span class="hljs-property">date</span>,
+            <span class="hljs-attr">duration_hours</span>: day.<span class="hljs-property">work_hours</span>,
+            <span class="hljs-attr">status</span>: <span class="hljs-string">&#x27;too_long&#x27;</span>
+          });
+        }
+      }
+    } <span class="hljs-keyword">else</span> <span class="hljs-keyword">if</span> (day.<span class="hljs-property">clock_in_time</span> &amp;&amp; !day.<span class="hljs-property">clock_out_time</span>) {
+      <span class="hljs-comment">// Session non fermée</span>
+      sessionAnalysis.<span class="hljs-property">abnormal_sessions</span>.<span class="hljs-title function_">push</span>({
+        <span class="hljs-attr">employee_guid</span>: emp.<span class="hljs-property">employee</span>.<span class="hljs-property">guid</span>,
+        <span class="hljs-attr">date</span>: day.<span class="hljs-property">date</span>,
+        <span class="hljs-attr">duration_hours</span>: <span class="hljs-number">0</span>,
+        <span class="hljs-attr">status</span>: <span class="hljs-string">&#x27;incomplete&#x27;</span>
+      });
+    }
+  }
+}
+
+sessionAnalysis.<span class="hljs-property">avg_duration_hours</span> = completedSessionsCount &gt; <span class="hljs-number">0</span>
+  ? <span class="hljs-built_in">parseFloat</span>((totalDuration / completedSessionsCount).<span class="hljs-title function_">toFixed</span>(<span class="hljs-number">2</span>))
+  : <span class="hljs-number">0</span>;
+
+<span class="hljs-comment">// Ajouter au summary</span>
+<span class="hljs-attr">summary</span>: {
+  <span class="hljs-comment">// ... stats existantes</span>
+  <span class="hljs-attr">team_coverage</span>: { ... },
+  
+  <span class="hljs-comment">// 🆕 AJOUT ICI</span>
+  <span class="hljs-attr">session_analysis</span>: sessionAnalysis
+}
+</code></pre>
+<p class="has-line-data" data-line-start="187" data-line-end="188"><strong>Où l’ajouter</strong>: Dans l’objet <code>summary</code> (après team_coverage)</p>
+<hr>
+<h3 class="code-line has-line-data" data-line-start="191" data-line-end="192"><a id="E_CONTEXTE_JUSTIFICATIONS_2_valeurs_191"></a><strong>E. CONTEXTE &amp; JUSTIFICATIONS (2 valeurs)</strong></h3>
+<h4 class="code-line has-line-data" data-line-start="193" data-line-end="194"><a id="4_Absences_justifies_vs_non_justifies_193"></a>4️⃣ <strong>Absences justifiées vs non justifiées</strong></h4>
+<p class="has-line-data" data-line-start="194" data-line-end="195"><strong>Ce que ça montre</strong>: Qui a fourni une justification</p>
+<pre><code class="has-line-data language-json" data-line-start="197" data-line-end="208"><span class="hljs-punctuation">{</span>
+  <span class="hljs-attr">&quot;justification_status&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-punctuation">{</span>
+    <span class="hljs-attr">&quot;total_absences&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-number">3</span><span class="hljs-punctuation">,</span>
+    <span class="hljs-attr">&quot;with_memo&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-number">0</span><span class="hljs-punctuation">,</span>                     <span class="hljs-comment">// Ont créé un mémo</span>
+    <span class="hljs-attr">&quot;without_memo&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-number">3</span><span class="hljs-punctuation">,</span>                  <span class="hljs-comment">// Pas de mémo</span>
+    <span class="hljs-attr">&quot;pending_validation&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-number">0</span><span class="hljs-punctuation">,</span>            <span class="hljs-comment">// Mémos en attente</span>
+    <span class="hljs-attr">&quot;approved&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-number">0</span><span class="hljs-punctuation">,</span>                      <span class="hljs-comment">// Mémos approuvés</span>
+    <span class="hljs-attr">&quot;rejected&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-number">0</span>                       <span class="hljs-comment">// Mémos rejetés</span>
+  <span class="hljs-punctuation">}</span>
+<span class="hljs-punctuation">}</span>
+</code></pre>
+<p class="has-line-data" data-line-start="209" data-line-end="210"><strong>Calcul</strong>:</p>
+<pre><code class="has-line-data language-javascript" data-line-start="211" data-line-end="256"><span class="hljs-comment">// Après la boucle employés, ajouter :</span>
+
+<span class="hljs-keyword">const</span> justificationStatus = {
+  <span class="hljs-attr">total_absences</span>: totalAbsences,
+  <span class="hljs-attr">with_memo</span>: <span class="hljs-number">0</span>,
+  <span class="hljs-attr">without_memo</span>: <span class="hljs-number">0</span>,
+  <span class="hljs-attr">pending_validation</span>: <span class="hljs-number">0</span>,
+  <span class="hljs-attr">approved</span>: <span class="hljs-number">0</span>,
+  <span class="hljs-attr">rejected</span>: <span class="hljs-number">0</span>
+};
+
+<span class="hljs-comment">// Récupérer tous les mémos de la période</span>
+<span class="hljs-keyword">const</span> periodMemos = <span class="hljs-keyword">await</span> <span class="hljs-title class_">Memos</span>.<span class="hljs-title function_">_list</span>({
+  <span class="hljs-attr">target_user</span>: { [<span class="hljs-title class_">Op</span>.<span class="hljs-property">in</span>]: teamMembers },
+  <span class="hljs-attr">incident_datetime</span>: { [<span class="hljs-title class_">Op</span>.<span class="hljs-property">between</span>]: [startOfPeriod, endOfPeriod] },
+  <span class="hljs-attr">memo_type</span>: <span class="hljs-title class_">MemoType</span>.<span class="hljs-property">ABSENCE_JUSTIFICATION</span>
+});
+
+<span class="hljs-keyword">if</span> (periodMemos) {
+  justificationStatus.<span class="hljs-property">with_memo</span> = periodMemos.<span class="hljs-property">length</span>;
+  
+  <span class="hljs-keyword">for</span> (<span class="hljs-keyword">const</span> memo <span class="hljs-keyword">of</span> periodMemos) {
+    <span class="hljs-keyword">const</span> status = memo.<span class="hljs-title function_">getMemoStatus</span>();
+    <span class="hljs-keyword">if</span> (status === <span class="hljs-title class_">MemoStatus</span>.<span class="hljs-property">PENDING</span>) {
+      justificationStatus.<span class="hljs-property">pending_validation</span>++;
+    } <span class="hljs-keyword">else</span> <span class="hljs-keyword">if</span> (status === <span class="hljs-title class_">MemoStatus</span>.<span class="hljs-property">APPROVED</span>) {
+      justificationStatus.<span class="hljs-property">approved</span>++;
+    } <span class="hljs-keyword">else</span> <span class="hljs-keyword">if</span> (status === <span class="hljs-title class_">MemoStatus</span>.<span class="hljs-property">REJECTED</span>) {
+      justificationStatus.<span class="hljs-property">rejected</span>++;
+    }
+  }
+}
+
+justificationStatus.<span class="hljs-property">without_memo</span> = totalAbsences - justificationStatus.<span class="hljs-property">with_memo</span>;
+
+<span class="hljs-comment">// Ajouter au summary</span>
+<span class="hljs-attr">summary</span>: {
+  <span class="hljs-comment">// ... stats existantes</span>
+  <span class="hljs-attr">team_coverage</span>: { ... },
+  <span class="hljs-attr">session_analysis</span>: { ... },
+  
+  <span class="hljs-comment">// 🆕 AJOUT ICI</span>
+  <span class="hljs-attr">justification_status</span>: justificationStatus
+}
+</code></pre>
+<p class="has-line-data" data-line-start="257" data-line-end="258"><strong>Où l’ajouter</strong>: Dans l’objet <code>summary</code> (après session_analysis)</p>
+<hr>
+<h4 class="code-line has-line-data" data-line-start="261" data-line-end="262"><a id="5_Conformit_aux_horaires_attendus_261"></a>5️⃣ <strong>Conformité aux horaires attendus</strong></h4>
+<p class="has-line-data" data-line-start="262" data-line-end="263"><strong>Ce que ça montre</strong>: Qui arrive à l’heure selon son horaire assigné</p>
+<pre><code class="has-line-data language-json" data-line-start="265" data-line-end="275"><span class="hljs-punctuation">{</span>
+  <span class="hljs-attr">&quot;schedule_compliance&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-punctuation">{</span>
+    <span class="hljs-attr">&quot;total_clocked&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-number">2</span><span class="hljs-punctuation">,</span>                 <span class="hljs-comment">// Employés ayant pointé</span>
+    <span class="hljs-attr">&quot;on_time&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-number">0</span><span class="hljs-punctuation">,</span>                       <span class="hljs-comment">// Dans la tolérance</span>
+    <span class="hljs-attr">&quot;late&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-number">2</span><span class="hljs-punctuation">,</span>                          <span class="hljs-comment">// Hors tolérance</span>
+    <span class="hljs-attr">&quot;on_time_rate&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-number">0</span><span class="hljs-punctuation">,</span>                  <span class="hljs-comment">// % à l&#x27;heure</span>
+    <span class="hljs-attr">&quot;avg_deviation_minutes&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-number">97</span>         <span class="hljs-comment">// Écart moyen vs horaire</span>
+  <span class="hljs-punctuation">}</span>
+<span class="hljs-punctuation">}</span>
+</code></pre>
+<p class="has-line-data" data-line-start="276" data-line-end="277"><strong>Calcul</strong>:</p>
+<pre><code class="has-line-data language-javascript" data-line-start="278" data-line-end="354"><span class="hljs-comment">// Dans la boucle employés, enrichir daily_details avec info horaire</span>
+
+<span class="hljs-keyword">for</span> (<span class="hljs-keyword">const</span> [dateKey, dayData] <span class="hljs-keyword">of</span> dailyEmployeeData.<span class="hljs-title function_">entries</span>()) {
+  <span class="hljs-keyword">const</span> employeeDayData = dayData.<span class="hljs-title function_">get</span>(userId);
+  <span class="hljs-keyword">if</span> (!employeeDayData) <span class="hljs-keyword">continue</span>;
+
+  <span class="hljs-keyword">const</span> { status, delay_minutes, work_hours, expected_time, ...rest } = employeeDayData;
+
+  <span class="hljs-comment">// 🆕 AJOUT : Calculer conformité</span>
+  <span class="hljs-keyword">let</span> is_within_tolerance = <span class="hljs-literal">null</span>;
+  <span class="hljs-keyword">if</span> (status === <span class="hljs-string">&#x27;present&#x27;</span> || status === <span class="hljs-string">&#x27;late&#x27;</span>) {
+    <span class="hljs-comment">// expectedSchedule est déjà disponible dans la boucle</span>
+    <span class="hljs-keyword">const</span> tolerance = expectedSchedule?.<span class="hljs-property">expected_blocks</span>[<span class="hljs-number">0</span>]?.<span class="hljs-property">tolerance</span> || <span class="hljs-number">0</span>;
+    is_within_tolerance = delay_minutes ? delay_minutes &lt;= tolerance : <span class="hljs-literal">true</span>;
+  }
+
+  dailyDetails.<span class="hljs-title function_">push</span>({
+    <span class="hljs-attr">date</span>: dateKey,
+    status,
+    ...rest,
+    delay_minutes,
+    work_hours,
+    is_within_tolerance  <span class="hljs-comment">// 🆕 AJOUT</span>
+  });
+}
+
+<span class="hljs-comment">// Après la boucle employés, calculer compliance global</span>
+<span class="hljs-keyword">const</span> scheduleCompliance = {
+  <span class="hljs-attr">total_clocked</span>: <span class="hljs-number">0</span>,
+  <span class="hljs-attr">on_time</span>: <span class="hljs-number">0</span>,
+  <span class="hljs-attr">late</span>: <span class="hljs-number">0</span>,
+  <span class="hljs-attr">on_time_rate</span>: <span class="hljs-number">0</span>,
+  <span class="hljs-attr">avg_deviation_minutes</span>: <span class="hljs-number">0</span>
+};
+
+<span class="hljs-keyword">let</span> totalDeviation = <span class="hljs-number">0</span>;
+<span class="hljs-keyword">let</span> deviationCount = <span class="hljs-number">0</span>;
+
+<span class="hljs-keyword">for</span> (<span class="hljs-keyword">const</span> emp <span class="hljs-keyword">of</span> employeesData) {
+  <span class="hljs-keyword">for</span> (<span class="hljs-keyword">const</span> day <span class="hljs-keyword">of</span> emp.<span class="hljs-property">daily_details</span> || []) {
+    <span class="hljs-keyword">if</span> (day.<span class="hljs-property">status</span> === <span class="hljs-string">&#x27;present&#x27;</span> || day.<span class="hljs-property">status</span> === <span class="hljs-string">&#x27;late&#x27;</span>) {
+      scheduleCompliance.<span class="hljs-property">total_clocked</span>++;
+      
+      <span class="hljs-keyword">if</span> (day.<span class="hljs-property">is_within_tolerance</span> === <span class="hljs-literal">true</span>) {
+        scheduleCompliance.<span class="hljs-property">on_time</span>++;
+      } <span class="hljs-keyword">else</span> <span class="hljs-keyword">if</span> (day.<span class="hljs-property">is_within_tolerance</span> === <span class="hljs-literal">false</span>) {
+        scheduleCompliance.<span class="hljs-property">late</span>++;
+      }
+      
+      <span class="hljs-keyword">if</span> (day.<span class="hljs-property">delay_minutes</span> &gt; <span class="hljs-number">0</span>) {
+        totalDeviation += day.<span class="hljs-property">delay_minutes</span>;
+        deviationCount++;
+      }
+    }
+  }
+}
+
+scheduleCompliance.<span class="hljs-property">on_time_rate</span> = scheduleCompliance.<span class="hljs-property">total_clocked</span> &gt; <span class="hljs-number">0</span>
+  ? <span class="hljs-built_in">parseFloat</span>(((scheduleCompliance.<span class="hljs-property">on_time</span> / scheduleCompliance.<span class="hljs-property">total_clocked</span>) * <span class="hljs-number">100</span>).<span class="hljs-title function_">toFixed</span>(<span class="hljs-number">1</span>))
+  : <span class="hljs-number">0</span>;
+
+scheduleCompliance.<span class="hljs-property">avg_deviation_minutes</span> = deviationCount &gt; <span class="hljs-number">0</span>
+  ? <span class="hljs-built_in">parseFloat</span>((totalDeviation / deviationCount).<span class="hljs-title function_">toFixed</span>(<span class="hljs-number">1</span>))
+  : <span class="hljs-number">0</span>;
+
+<span class="hljs-comment">// Ajouter au summary</span>
+<span class="hljs-attr">summary</span>: {
+  <span class="hljs-comment">// ... stats existantes</span>
+  <span class="hljs-attr">team_coverage</span>: { ... },
+  <span class="hljs-attr">session_analysis</span>: { ... },
+  <span class="hljs-attr">justification_status</span>: { ... },
+  
+  <span class="hljs-comment">// 🆕 AJOUT ICI</span>
+  <span class="hljs-attr">schedule_compliance</span>: scheduleCompliance
+}
+</code></pre>
+<p class="has-line-data" data-line-start="355" data-line-end="356"><strong>Où l’ajouter</strong>: Dans l’objet <code>summary</code> (après justification_status)</p>
+<hr>
+<h2 class="code-line has-line-data" data-line-start="359" data-line-end="360"><a id="RSUM_DES_MODIFICATIONS_359"></a>📍 RÉSUMÉ DES MODIFICATIONS</h2>
+<h3 class="code-line has-line-data" data-line-start="361" data-line-end="362"><a id="Dans_lobjet_employeeData_par_employ_361"></a>Dans l’objet <code>employeeData</code> (par employé)</h3>
+<pre><code class="has-line-data language-javascript" data-line-start="363" data-line-end="385">{
+  <span class="hljs-attr">employee</span>: { ... },
+  <span class="hljs-attr">period_stats</span>: { ... },  <span class="hljs-comment">// Existant</span>
+  
+  <span class="hljs-comment">// 🆕 AJOUT</span>
+  <span class="hljs-attr">effective_presence</span>: {
+    <span class="hljs-attr">total_work_hours</span>: <span class="hljs-number">0</span>,
+    <span class="hljs-attr">total_pause_hours</span>: <span class="hljs-number">0</span>,
+    <span class="hljs-attr">avg_daily_hours</span>: <span class="hljs-number">0</span>,
+    <span class="hljs-attr">net_work_ratio</span>: <span class="hljs-number">0</span>
+  },
+  
+  <span class="hljs-attr">daily_details</span>: [
+    {
+      <span class="hljs-attr">date</span>: <span class="hljs-string">&quot;2026-02-26&quot;</span>,
+      <span class="hljs-attr">status</span>: <span class="hljs-string">&quot;late&quot;</span>,
+      <span class="hljs-comment">// ... existant</span>
+      <span class="hljs-attr">is_within_tolerance</span>: <span class="hljs-literal">false</span>  <span class="hljs-comment">// 🆕 AJOUT</span>
+    }
+  ]
+}
+</code></pre>
+<h3 class="code-line has-line-data" data-line-start="386" data-line-end="387"><a id="Dans_lobjet_summary_global_quipe_386"></a>Dans l’objet <code>summary</code> (global équipe)</h3>
+<pre><code class="has-line-data language-javascript" data-line-start="388" data-line-end="425">{
+  <span class="hljs-comment">// ... stats existantes (total_team_members, attendance_rate, etc.)</span>
+  
+  <span class="hljs-comment">// 🆕 AJOUTS</span>
+  <span class="hljs-attr">team_coverage</span>: {
+    <span class="hljs-attr">timestamp</span>: <span class="hljs-string">&quot;2026-02-26T14:30:00Z&quot;</span>,
+    <span class="hljs-attr">currently_present</span>: <span class="hljs-number">3</span>,
+    <span class="hljs-attr">currently_on_pause</span>: <span class="hljs-number">0</span>,
+    <span class="hljs-attr">expected_today</span>: <span class="hljs-number">5</span>,
+    <span class="hljs-attr">coverage_rate</span>: <span class="hljs-number">60</span>,
+    <span class="hljs-attr">missing_count</span>: <span class="hljs-number">2</span>
+  },
+  
+  <span class="hljs-attr">session_analysis</span>: {
+    <span class="hljs-attr">total_sessions</span>: <span class="hljs-number">2</span>,
+    <span class="hljs-attr">avg_duration_hours</span>: <span class="hljs-number">0</span>,
+    <span class="hljs-attr">abnormal_sessions</span>: [ ... ]
+  },
+  
+  <span class="hljs-attr">justification_status</span>: {
+    <span class="hljs-attr">total_absences</span>: <span class="hljs-number">3</span>,
+    <span class="hljs-attr">with_memo</span>: <span class="hljs-number">0</span>,
+    <span class="hljs-attr">without_memo</span>: <span class="hljs-number">3</span>,
+    <span class="hljs-attr">pending_validation</span>: <span class="hljs-number">0</span>,
+    <span class="hljs-attr">approved</span>: <span class="hljs-number">0</span>,
+    <span class="hljs-attr">rejected</span>: <span class="hljs-number">0</span>
+  },
+  
+  <span class="hljs-attr">schedule_compliance</span>: {
+    <span class="hljs-attr">total_clocked</span>: <span class="hljs-number">2</span>,
+    <span class="hljs-attr">on_time</span>: <span class="hljs-number">0</span>,
+    <span class="hljs-attr">late</span>: <span class="hljs-number">2</span>,
+    <span class="hljs-attr">on_time_rate</span>: <span class="hljs-number">0</span>,
+    <span class="hljs-attr">avg_deviation_minutes</span>: <span class="hljs-number">97</span>
+  }
+}
+</code></pre>
+<hr>
+<h2 class="code-line has-line-data" data-line-start="428" data-line-end="429"><a id="PLAN_DIMPLMENTATION_2h_max_428"></a>🚀 PLAN D’IMPLÉMENTATION (2h max)</h2>
+<h3 class="code-line has-line-data" data-line-start="430" data-line-end="431"><a id="tape_1_Imports_ncessaires_5_min_430"></a>Étape 1 - Imports nécessaires (5 min)</h3>
+<pre><code class="has-line-data language-javascript" data-line-start="432" data-line-end="436"><span class="hljs-comment">// En haut du fichier, ajouter si pas déjà présent :</span>
+<span class="hljs-keyword">import</span> <span class="hljs-title class_">Memos</span> <span class="hljs-keyword">from</span> <span class="hljs-string">&#x27;./Memos.js&#x27;</span>;
+<span class="hljs-keyword">import</span> { <span class="hljs-title class_">MemoType</span>, <span class="hljs-title class_">MemoStatus</span> } <span class="hljs-keyword">from</span> <span class="hljs-string">&#x27;@toke/shared&#x27;</span>;
+</code></pre>
+<h3 class="code-line has-line-data" data-line-start="437" data-line-end="438"><a id="tape_2_Valeur_1_Prsence_effective_15_min_437"></a>Étape 2 - Valeur 1 : Présence effective (15 min)</h3>
+<ul>
+<li class="has-line-data" data-line-start="438" data-line-end="439">Localiser la création de <code>employeeData</code></li>
+<li class="has-line-data" data-line-start="439" data-line-end="440">Ajouter le bloc <code>effective_presence</code></li>
+<li class="has-line-data" data-line-start="440" data-line-end="442">Utiliser les variables déjà calculées (<code>totalWorkHours</code>, <code>totalPauseMinutes</code>)</li>
+</ul>
+<h3 class="code-line has-line-data" data-line-start="442" data-line-end="443"><a id="tape_3_Valeur_2_Couverture_quipe_20_min_442"></a>Étape 3 - Valeur 2 : Couverture équipe (20 min)</h3>
+<ul>
+<li class="has-line-data" data-line-start="443" data-line-end="444">Localiser le calcul de <code>currentlyActive</code></li>
+<li class="has-line-data" data-line-start="444" data-line-end="445">Calculer <code>expectedToday</code> en comptant les <code>work_days_expected &gt; 0</code></li>
+<li class="has-line-data" data-line-start="445" data-line-end="447">Ajouter <code>team_coverage</code> au <code>summary</code></li>
+</ul>
+<h3 class="code-line has-line-data" data-line-start="447" data-line-end="448"><a id="tape_4_Valeur_3_Analyse_sessions_25_min_447"></a>Étape 4 - Valeur 3 : Analyse sessions (25 min)</h3>
+<ul>
+<li class="has-line-data" data-line-start="448" data-line-end="449">Après la boucle employés</li>
+<li class="has-line-data" data-line-start="449" data-line-end="450">Parcourir <code>daily_details</code> de chaque employé</li>
+<li class="has-line-data" data-line-start="450" data-line-end="451">Détecter sessions courtes (&lt;4h), longues (&gt;12h), incomplètes</li>
+<li class="has-line-data" data-line-start="451" data-line-end="453">Ajouter <code>session_analysis</code> au <code>summary</code></li>
+</ul>
+<h3 class="code-line has-line-data" data-line-start="453" data-line-end="454"><a id="tape_5_Valeur_4_Justifications_30_min_453"></a>Étape 5 - Valeur 4 : Justifications (30 min)</h3>
+<ul>
+<li class="has-line-data" data-line-start="454" data-line-end="455">Query <code>Memos._list()</code> pour la période</li>
+<li class="has-line-data" data-line-start="455" data-line-end="456">Filtrer par <code>MemoType.ABSENCE_JUSTIFICATION</code></li>
+<li class="has-line-data" data-line-start="456" data-line-end="457">Compter par <code>MemoStatus</code></li>
+<li class="has-line-data" data-line-start="457" data-line-end="459">Ajouter <code>justification_status</code> au <code>summary</code></li>
+</ul>
+<h3 class="code-line has-line-data" data-line-start="459" data-line-end="460"><a id="tape_6_Valeur_5_Conformit_horaire_30_min_459"></a>Étape 6 - Valeur 5 : Conformité horaire (30 min)</h3>
+<ul>
+<li class="has-line-data" data-line-start="460" data-line-end="461">Dans la boucle <code>daily_details</code>, ajouter <code>is_within_tolerance</code></li>
+<li class="has-line-data" data-line-start="461" data-line-end="462">Après la boucle employés, calculer agrégats</li>
+<li class="has-line-data" data-line-start="462" data-line-end="464">Ajouter <code>schedule_compliance</code> au <code>summary</code></li>
+</ul>
+<hr>
+<h2 class="code-line has-line-data" data-line-start="466" data-line-end="467"><a id="CHECKLIST_RAPIDE_466"></a>✅ CHECKLIST RAPIDE</h2>
+<ul>
+<li class="has-line-data" data-line-start="468" data-line-end="469"><input type="checkbox" id="checkbox0"><label for="checkbox0">Import </label><code>Memos</code> et types nécessaires</li>
+<li class="has-line-data" data-line-start="469" data-line-end="470"><input type="checkbox" id="checkbox1"><label for="checkbox1">Ajouter </label><code>effective_presence</code> dans <code>employeeData</code></li>
+<li class="has-line-data" data-line-start="470" data-line-end="471"><input type="checkbox" id="checkbox2"><label for="checkbox2">Calculer </label><code>expectedToday</code> pour <code>team_coverage</code></li>
+<li class="has-line-data" data-line-start="471" data-line-end="472"><input type="checkbox" id="checkbox3"><label for="checkbox3">Ajouter </label><code>team_coverage</code> au <code>summary</code></li>
+<li class="has-line-data" data-line-start="472" data-line-end="473"><input type="checkbox" id="checkbox4"><label for="checkbox4">Parcourir </label><code>daily_details</code> pour <code>session_analysis</code></li>
+<li class="has-line-data" data-line-start="473" data-line-end="474"><input type="checkbox" id="checkbox5"><label for="checkbox5">Ajouter </label><code>session_analysis</code> au <code>summary</code></li>
+<li class="has-line-data" data-line-start="474" data-line-end="475"><input type="checkbox" id="checkbox6"><label for="checkbox6">Query </label><code>Memos</code> pour <code>justification_status</code></li>
+<li class="has-line-data" data-line-start="475" data-line-end="476"><input type="checkbox" id="checkbox7"><label for="checkbox7">Ajouter </label><code>justification_status</code> au <code>summary</code></li>
+<li class="has-line-data" data-line-start="476" data-line-end="477"><input type="checkbox" id="checkbox8"><label for="checkbox8">Ajouter </label><code>is_within_tolerance</code> dans <code>daily_details</code></li>
+<li class="has-line-data" data-line-start="477" data-line-end="478"><input type="checkbox" id="checkbox9"><label for="checkbox9">Calculer agrégats pour </label><code>schedule_compliance</code></li>
+<li class="has-line-data" data-line-start="478" data-line-end="479"><input type="checkbox" id="checkbox10"><label for="checkbox10">Ajouter </label><code>schedule_compliance</code> au <code>summary</code></li>
+<li class="has-line-data" data-line-start="479" data-line-end="481"><input type="checkbox" id="checkbox11"><label for="checkbox11">Tester avec données existantes</label></li>
+</ul>
+<hr>
+<h2 class="code-line has-line-data" data-line-start="483" data-line-end="484"><a id="EXEMPLE_RPONSE_FINALE_483"></a>📊 EXEMPLE RÉPONSE FINALE</h2>
+<pre><code class="has-line-data language-json" data-line-start="486" data-line-end="575"><span class="hljs-punctuation">{</span>
+  <span class="hljs-attr">&quot;success&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-literal"><span class="hljs-keyword">true</span></span><span class="hljs-punctuation">,</span>
+  <span class="hljs-attr">&quot;data&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-punctuation">{</span>
+    <span class="hljs-attr">&quot;message&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-string">&quot;Period attendance retrieved successfully&quot;</span><span class="hljs-punctuation">,</span>
+    <span class="hljs-attr">&quot;data&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-punctuation">{</span>
+      <span class="hljs-attr">&quot;period&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-punctuation">{</span>
+        <span class="hljs-attr">&quot;start&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-string">&quot;2026-02-26&quot;</span><span class="hljs-punctuation">,</span>
+        <span class="hljs-attr">&quot;end&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-string">&quot;2026-02-26&quot;</span><span class="hljs-punctuation">,</span>
+        <span class="hljs-attr">&quot;total_days&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-number">1</span>
+      <span class="hljs-punctuation">}</span><span class="hljs-punctuation">,</span>
+      
+      <span class="hljs-attr">&quot;summary&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-punctuation">{</span>
+        <span class="hljs-attr">&quot;total_team_members&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-number">5</span><span class="hljs-punctuation">,</span>
+        <span class="hljs-attr">&quot;total_present_on_time&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-number">0</span><span class="hljs-punctuation">,</span>
+        <span class="hljs-attr">&quot;total_late_arrivals&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-number">2</span><span class="hljs-punctuation">,</span>
+        <span class="hljs-attr">&quot;total_absences&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-number">3</span><span class="hljs-punctuation">,</span>
+        <span class="hljs-attr">&quot;attendance_rate&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-number">40</span><span class="hljs-punctuation">,</span>
+        <span class="hljs-attr">&quot;punctuality_rate&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-number">0</span><span class="hljs-punctuation">,</span>
+        
+        <span class="hljs-comment">// 🆕 NOUVELLES STATS</span>
+        <span class="hljs-attr">&quot;team_coverage&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-punctuation">{</span>
+          <span class="hljs-attr">&quot;timestamp&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-string">&quot;2026-02-26T14:30:00Z&quot;</span><span class="hljs-punctuation">,</span>
+          <span class="hljs-attr">&quot;currently_present&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-number">3</span><span class="hljs-punctuation">,</span>
+          <span class="hljs-attr">&quot;currently_on_pause&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-number">0</span><span class="hljs-punctuation">,</span>
+          <span class="hljs-attr">&quot;expected_today&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-number">5</span><span class="hljs-punctuation">,</span>
+          <span class="hljs-attr">&quot;coverage_rate&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-number">60</span><span class="hljs-punctuation">,</span>
+          <span class="hljs-attr">&quot;missing_count&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-number">2</span>
+        <span class="hljs-punctuation">}</span><span class="hljs-punctuation">,</span>
+        
+        <span class="hljs-attr">&quot;session_analysis&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-punctuation">{</span>
+          <span class="hljs-attr">&quot;total_sessions&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-number">2</span><span class="hljs-punctuation">,</span>
+          <span class="hljs-attr">&quot;avg_duration_hours&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-number">0</span><span class="hljs-punctuation">,</span>
+          <span class="hljs-attr">&quot;abnormal_sessions&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-punctuation">[</span>
+            <span class="hljs-punctuation">{</span>
+              <span class="hljs-attr">&quot;employee_guid&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-string">&quot;7173056141612204&quot;</span><span class="hljs-punctuation">,</span>
+              <span class="hljs-attr">&quot;date&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-string">&quot;2026-02-26&quot;</span><span class="hljs-punctuation">,</span>
+              <span class="hljs-attr">&quot;duration_hours&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-number">0</span><span class="hljs-punctuation">,</span>
+              <span class="hljs-attr">&quot;status&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-string">&quot;incomplete&quot;</span>
+            <span class="hljs-punctuation">}</span>
+          <span class="hljs-punctuation">]</span>
+        <span class="hljs-punctuation">}</span><span class="hljs-punctuation">,</span>
+        
+        <span class="hljs-attr">&quot;justification_status&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-punctuation">{</span>
+          <span class="hljs-attr">&quot;total_absences&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-number">3</span><span class="hljs-punctuation">,</span>
+          <span class="hljs-attr">&quot;with_memo&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-number">0</span><span class="hljs-punctuation">,</span>
+          <span class="hljs-attr">&quot;without_memo&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-number">3</span><span class="hljs-punctuation">,</span>
+          <span class="hljs-attr">&quot;pending_validation&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-number">0</span><span class="hljs-punctuation">,</span>
+          <span class="hljs-attr">&quot;approved&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-number">0</span><span class="hljs-punctuation">,</span>
+          <span class="hljs-attr">&quot;rejected&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-number">0</span>
+        <span class="hljs-punctuation">}</span><span class="hljs-punctuation">,</span>
+        
+        <span class="hljs-attr">&quot;schedule_compliance&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-punctuation">{</span>
+          <span class="hljs-attr">&quot;total_clocked&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-number">2</span><span class="hljs-punctuation">,</span>
+          <span class="hljs-attr">&quot;on_time&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-number">0</span><span class="hljs-punctuation">,</span>
+          <span class="hljs-attr">&quot;late&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-number">2</span><span class="hljs-punctuation">,</span>
+          <span class="hljs-attr">&quot;on_time_rate&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-number">0</span><span class="hljs-punctuation">,</span>
+          <span class="hljs-attr">&quot;avg_deviation_minutes&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-number">97</span>
+        <span class="hljs-punctuation">}</span>
+      <span class="hljs-punctuation">}</span><span class="hljs-punctuation">,</span>
+      
+      <span class="hljs-attr">&quot;employees&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-punctuation">[</span>
+        <span class="hljs-punctuation">{</span>
+          <span class="hljs-attr">&quot;employee&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-punctuation">{</span> ... <span class="hljs-punctuation">}</span><span class="hljs-punctuation">,</span>
+          <span class="hljs-attr">&quot;period_stats&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-punctuation">{</span> ... <span class="hljs-punctuation">}</span><span class="hljs-punctuation">,</span>
+          
+          <span class="hljs-comment">// 🆕 NOUVELLE STAT</span>
+          <span class="hljs-attr">&quot;effective_presence&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-punctuation">{</span>
+            <span class="hljs-attr">&quot;total_work_hours&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-number">0</span><span class="hljs-punctuation">,</span>
+            <span class="hljs-attr">&quot;total_pause_hours&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-number">0</span><span class="hljs-punctuation">,</span>
+            <span class="hljs-attr">&quot;avg_daily_hours&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-number">0</span><span class="hljs-punctuation">,</span>
+            <span class="hljs-attr">&quot;net_work_ratio&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-number">0</span>
+          <span class="hljs-punctuation">}</span><span class="hljs-punctuation">,</span>
+          
+          <span class="hljs-attr">&quot;daily_details&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-punctuation">[</span>
+            <span class="hljs-punctuation">{</span>
+              <span class="hljs-attr">&quot;date&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-string">&quot;2026-02-26&quot;</span><span class="hljs-punctuation">,</span>
+              <span class="hljs-attr">&quot;status&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-string">&quot;late&quot;</span><span class="hljs-punctuation">,</span>
+              <span class="hljs-attr">&quot;clock_in_time&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-string">&quot;2026-02-26T09:56:25.360Z&quot;</span><span class="hljs-punctuation">,</span>
+              <span class="hljs-attr">&quot;expected_time&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-string">&quot;08:00&quot;</span><span class="hljs-punctuation">,</span>
+              <span class="hljs-attr">&quot;delay_minutes&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-number">116</span><span class="hljs-punctuation">,</span>
+              <span class="hljs-attr">&quot;is_within_tolerance&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-literal"><span class="hljs-keyword">false</span></span>  <span class="hljs-comment">// 🆕</span>
+            <span class="hljs-punctuation">}</span>
+          <span class="hljs-punctuation">]</span>
+        <span class="hljs-punctuation">}</span>
+      <span class="hljs-punctuation">]</span>
+    <span class="hljs-punctuation">}</span>
+  <span class="hljs-punctuation">}</span>
+<span class="hljs-punctuation">}</span>
+</code></pre>
+<hr>
+<h2 class="code-line has-line-data" data-line-start="578" data-line-end="579"><a id="NOTES_IMPORTANTES_578"></a>💡 NOTES IMPORTANTES</h2>
+<h3 class="code-line has-line-data" data-line-start="580" data-line-end="581"><a id="Ce_qui_est_SIMPLE_580"></a>Ce qui est SIMPLE ✅</h3>
+<ul>
+<li class="has-line-data" data-line-start="581" data-line-end="582">Toutes les données nécessaires sont déjà collectées</li>
+<li class="has-line-data" data-line-start="582" data-line-end="583">Pas besoin de nouvelles queries lourdes</li>
+<li class="has-line-data" data-line-start="583" data-line-end="584">Calculs basiques (sommes, moyennes, comptages)</li>
+<li class="has-line-data" data-line-start="584" data-line-end="586">Réutilisation des variables existantes</li>
+</ul>
+<h3 class="code-line has-line-data" data-line-start="586" data-line-end="587"><a id="Ce_qui_est_VIT_586"></a>Ce qui est ÉVITÉ ❌</h3>
+<ul>
+<li class="has-line-data" data-line-start="587" data-line-end="588">Pas de comparaison avec période précédente</li>
+<li class="has-line-data" data-line-start="588" data-line-end="589">Pas de calcul d’écart-type ou variance</li>
+<li class="has-line-data" data-line-start="589" data-line-end="590">Pas de scoring complexe</li>
+<li class="has-line-data" data-line-start="590" data-line-end="591">Pas de prédictions</li>
+<li class="has-line-data" data-line-start="591" data-line-end="592">Pas de patterns hebdomadaires</li>
+<li class="has-line-data" data-line-start="592" data-line-end="593">Pas de ranking</li>
+<li class="has-line-data" data-line-start="593" data-line-end="595">Pas de cache ou jobs async</li>
+</ul>
+<h3 class="code-line has-line-data" data-line-start="595" data-line-end="596"><a id="Performance_595"></a>Performance 🚀</h3>
+<ul>
+<li class="has-line-data" data-line-start="596" data-line-end="597">Ajout minimal de queries (1 seule pour Memos)</li>
+<li class="has-line-data" data-line-start="597" data-line-end="598">Calculs légers (boucles sur données déjà en mémoire)</li>
+<li class="has-line-data" data-line-start="598" data-line-end="599">Pas d’impact significatif sur temps de réponse</li>
+<li class="has-line-data" data-line-start="599" data-line-end="601">Fonctionne même avec 100+ employés</li>
+</ul>
+<hr>
+<h2 class="code-line has-line-data" data-line-start="603" data-line-end="604"><a id="RSULTAT_ATTENDU_603"></a>🎯 RÉSULTAT ATTENDU</h2>
+<p class="has-line-data" data-line-start="605" data-line-end="607"><strong>Avant</strong>: Stats basiques (présent/absent/retard)<br>
+<strong>Après</strong>: Stats enrichies avec contexte actionnable</p>
+<p class="has-line-data" data-line-start="608" data-line-end="609">Le manager peut maintenant répondre à :</p>
+<ul>
+<li class="has-line-data" data-line-start="609" data-line-end="610">✅ “Combien d’équipe est présente maintenant ?”</li>
+<li class="has-line-data" data-line-start="610" data-line-end="611">✅ “Qui a des sessions anormalement courtes/longues ?”</li>
+<li class="has-line-data" data-line-start="611" data-line-end="612">✅ “Combien d’absences sont justifiées ?”</li>
+<li class="has-line-data" data-line-start="612" data-line-end="613">✅ “Qui est vraiment à l’heure selon leur horaire ?”</li>
+<li class="has-line-data" data-line-start="613" data-line-end="615">✅ “Combien de temps effectif de travail par employé ?”</li>
+</ul>
+<p class="has-line-data" data-line-start="615" data-line-end="616"><strong>Tout ça en 2h d’implémentation max ! 🚀</strong></p>
+
+</body>
+</html>

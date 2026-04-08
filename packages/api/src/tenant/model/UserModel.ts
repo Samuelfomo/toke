@@ -1,4 +1,9 @@
-import { TimezoneConfigUtils, USERS_DEFAULTS, USERS_ERRORS, UsersValidationUtils, } from '@toke/shared';
+import {
+  TimezoneConfigUtils,
+  USERS_DEFAULTS,
+  USERS_ERRORS,
+  UsersValidationUtils,
+} from '@toke/shared';
 import { Op } from 'sequelize';
 import * as bcrypt from 'bcrypt';
 
@@ -134,7 +139,9 @@ export default class UserModel extends BaseModel {
       conditions[this.db.deleted_at] = null;
     }
 
-    return await this.findOne(this.db.tableName, conditions);
+    const result = await this.findOne(this.db.tableName, conditions);
+    console.log('result db', result);
+    return result;
   }
 
   protected async findByPhoneNumber(

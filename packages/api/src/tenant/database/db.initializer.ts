@@ -21,6 +21,7 @@ import { DeviceDbStructure } from './data/device.db.js';
 import { DepartmentDbStructure } from './data/department.db.js';
 import { PosteDbStructure } from './data/poste.db.js';
 import { ScheduleAssignmentsLogsDbStructure } from './data/schedule.assignments.logs.db.js';
+import { RotationAssignmentLogsDbStructure } from './data/rotation.assignment.log.db.js';
 
 interface TenantInstance {
   sequelize: Sequelize;
@@ -216,6 +217,7 @@ export class TableInitializer {
     this.defineDepartmentModelForInstance(instance);
     this.definePosteModelForInstance(instance);
     this.defineScheduleAssignmentsLogsModelForInstance(instance);
+    this.defineRotationAssignmentLogsModelForInstance(instance);
 
     console.log(`✅ ${instance.models.size} modèle(s) défini(s) pour cette instance`);
   }
@@ -443,6 +445,19 @@ export class TableInitializer {
     instance.models.set(ScheduleAssignmentsLogsDbStructure.tableName, model);
     console.log(
       `✅ Modèle Schedule Assignments Logs défini (${ScheduleAssignmentsLogsDbStructure.tableName})`,
+    );
+  }
+
+  private static defineRotationAssignmentLogsModelForInstance(instance: TenantInstance): void {
+    const model = instance.sequelize.define(
+      RotationAssignmentLogsDbStructure.tableName,
+      RotationAssignmentLogsDbStructure.attributes,
+      RotationAssignmentLogsDbStructure.options,
+    );
+
+    instance.models.set(RotationAssignmentLogsDbStructure.tableName, model);
+    console.log(
+      `✅ Modèle Rotation Assignment Logs défini (${RotationAssignmentLogsDbStructure.tableName})`,
     );
   }
 

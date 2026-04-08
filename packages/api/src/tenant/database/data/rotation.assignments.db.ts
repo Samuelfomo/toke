@@ -117,6 +117,12 @@ export const RotationAssignmentsDbStructure = {
       },
       comment: 'Soft delete timestamp',
     },
+    last_cycle_index: {
+      type: DataTypes.INTEGER,
+      allowNull: false,
+      defaultValue: 0,
+      comment: 'Index du dernier cycle complet traité par le cron',
+    },
   } as ModelAttributes,
   options: {
     tableName: tableName.ROTATION_ASSIGNMENTS,
@@ -174,6 +180,10 @@ export const RotationAssignmentsDbStructure = {
           deleted_at: null,
           groups: { [Op.not]: null }, // Éviter les conflits avec les users
         },
+      },
+      {
+        fields: ['last_cycle_index'],
+        name: 'idx_rotation_assignments_last_cycle_index',
       },
     ],
     validate: {

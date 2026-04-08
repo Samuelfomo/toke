@@ -340,6 +340,10 @@ export const responseStructure = {
   OLD_CREATOR: 'old_creator',
   MODIFICATION_REASON: 'modification_reason',
   CHANGED_FIELDS: 'changed_fields',
+  NEW_OFFSET: 'new_offset',
+  EXECUTED_AT: 'executed_at',
+  ROTATION_ASSIGNMENT: 'rotation_assignment',
+  PREVIOUS_OFFSET: 'previous_offset',
 } as const;
 
 export const RT = {
@@ -399,6 +403,7 @@ export const tableName = {
   SCHEDULE_EXCEPTIONS: `${G.tableAp}_schedule_exceptions`,
   SCHEDULE_ASSIGNMENTS: `${G.tableAp}_schedule_assignments`,
   SCHEDULE_ASSIGNMENTS_LOGS: `${G.tableAp}_schedule_assignments_logs`,
+  ROTATION_ASSIGNMENT_LOGS: `${G.tableAp}_rotation_assignment_log`,
   GROUPS: `${G.tableAp}_groups`,
   DEVICE: `${G.tableAp}_device`,
 } as const;
