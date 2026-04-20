@@ -1,5 +1,5 @@
-import { DataTypes, ModelAttributes, ModelOptions, Op } from 'sequelize';
-import { TimezoneConfigUtils } from '@toke/shared';
+import { DataTypes, ModelAttributes, ModelOptions } from 'sequelize';
+import { RAFamily } from '@toke/shared';
 
 import { tableName } from '../../../utils/response.model.js';
 
@@ -33,29 +33,22 @@ export const RotationAssignmentsDbStructure = {
       },
       comment: 'Unique, automatically generated digital GUID',
     },
-    user: {
-      type: DataTypes.INTEGER,
-      allowNull: true,
-      references: {
-        model: tableName.USERS,
-        key: 'id',
-      },
+    family: {
+      type: DataTypes.ENUM(...Object.values(RAFamily)),
+      allowNull: false,
       validate: {
-        isInt: true,
+        isIn: {
+          args: [Object.values(RAFamily)],
+          msg: 'Rotation assignments family must be one of: user, group',
+        },
       },
-      comment: 'Reference to user (nullable for groups rotation)',
+      comment: 'Type of assignment target: user or group',
     },
-    groups: {
-      type: DataTypes.INTEGER,
-      allowNull: true,
-      references: {
-        model: tableName.GROUPS,
-        key: 'id',
-      },
-      validate: {
-        isInt: true,
-      },
-      comment: 'Reference to groups (nullable for user rotation )',
+    related: {
+      type: DataTypes.STRING(255),
+      allowNull: false,
+      validate: { len: [1, 255], notEmpty: true },
+      comment: 'GUID of the related user or group (no FK)',
     },
     rotation_group: {
       type: DataTypes.INTEGER,
@@ -109,6 +102,14 @@ export const RotationAssignmentsDbStructure = {
       },
       comment: 'Date of assignment',
     },
+    last_advanced_date: {
+      type: DataTypes.DATEONLY,
+      allowNull: true,
+      comment:
+        'Date (YYYY-MM-DD) of the last cron-triggered offset advancement. ' +
+        'Used as idempotency guard: if the cron runs twice in the same day ' +
+        '(e.g. after a PM2 restart), the second run is skipped.',
+    },
     deleted_at: {
       type: DataTypes.DATE,
       allowNull: true,
@@ -116,12 +117,6 @@ export const RotationAssignmentsDbStructure = {
         isDate: true,
       },
       comment: 'Soft delete timestamp',
-    },
-    last_cycle_index: {
-      type: DataTypes.INTEGER,
-      allowNull: false,
-      defaultValue: 0,
-      comment: 'Index du dernier cycle complet traité par le cron',
     },
   } as ModelAttributes,
   options: {
@@ -139,10 +134,9 @@ export const RotationAssignmentsDbStructure = {
         fields: ['guid'],
         name: 'idx_rotation_assignments_guid',
       },
-      {
-        fields: ['user'],
-        name: 'idx_rotation_assignments_user',
-      },
+      { fields: ['family'], name: 'idx_rotation_assignments_family' },
+      { fields: ['related'], name: 'idx_rotation_assignments_related' },
+      { fields: ['family', 'related'], name: 'idx_rotation_assignments_family_related' },
       {
         fields: ['rotation_group'],
         name: 'idx_rotation_assignments_rotation_group',
@@ -160,58 +154,38 @@ export const RotationAssignmentsDbStructure = {
         name: 'idx_rotation_assignments_assigned_at',
       },
       {
+        fields: ['last_advanced_date'],
+        name: 'idx_rotation_assignments_last_advanced_date',
+      },
+      {
         fields: ['deleted_at'],
         name: 'idx_rotation_assignments_deleted_at',
       },
       {
         unique: true,
-        fields: ['user', 'rotation_group'],
-        name: 'unique_user_rotation',
-        where: {
-          deleted_at: null,
-          user: { [Op.not]: null }, // Éviter les conflits avec les groups
-        },
-      },
-      {
-        unique: true,
-        fields: ['groups', 'rotation_group'],
-        name: 'unique_groups_rotation',
-        where: {
-          deleted_at: null,
-          groups: { [Op.not]: null }, // Éviter les conflits avec les users
-        },
-      },
-      {
-        fields: ['last_cycle_index'],
-        name: 'idx_rotation_assignments_last_cycle_index',
+        fields: ['family', 'related', 'rotation_group'],
+        name: 'unique_related_rotation_group',
+        where: { deleted_at: null },
       },
     ],
     validate: {
-      eitherUserOrGroups() {
-        if (!this.user && !this.groups) {
-          throw new Error('Either user or groups must be specified');
-        }
-        if (this.user && this.groups) {
-          throw new Error('Only one of user or groups must be specified, not both');
-        }
-      },
-      dateNotTooFarInPast() {
-        if (this.assigned_at) {
-          const now = TimezoneConfigUtils.getCurrentTime();
-          const limit = new Date(now.getTime() - 5 * 60 * 1000); // -5 minutes
-
-          const assignedAtDate =
-            this.assigned_at instanceof Date
-              ? this.assigned_at
-              : new Date(this.assigned_at as string);
-
-          console.log('assignedAt', assignedAtDate, this.assigned_at);
-
-          if (assignedAtDate < limit) {
-            throw new Error('assigned_at is too far in the past');
-          }
-        }
-      },
+      // dateNotTooFarInPast() {
+      //   if (this.assigned_at) {
+      //     const now = TimezoneConfigUtils.getCurrentTime();
+      //     const limit = new Date(now.getTime() - 5 * 60 * 1000); // -5 minutes
+      //
+      //     const assignedAtDate =
+      //       this.assigned_at instanceof Date
+      //         ? this.assigned_at
+      //         : new Date(this.assigned_at as string);
+      //
+      //     console.log('assignedAt', assignedAtDate, this.assigned_at);
+      //
+      //     if (assignedAtDate < limit) {
+      //       throw new Error('assigned_at is too far in the past');
+      //     }
+      //   }
+      // },
       // dateNotInPast() {
       //   if (this.assigned_at && this.assigned_at < TimezoneConfigUtils.getCurrentTime()) {
       //     throw new Error('assigned_at cannot be in the past');

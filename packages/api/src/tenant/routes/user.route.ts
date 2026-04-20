@@ -6,6 +6,7 @@ import {
   PointageType,
   ROLES_CODES,
   ROLES_ERRORS,
+  SAFamily,
   SCHEDULE_ASSIGNMENTS_DEFAULTS,
   SITES_ERRORS,
   TENANT_CODES,
@@ -511,7 +512,8 @@ router.post('/', Ensure.post(), async (req: Request, res: Response) => {
         .setCreatedBy(existingSupervisor.getId()!)
         .setStartDate(TimezoneConfigUtils.getCurrentTime().toISOString().split('T')[0])
         .setActive(SCHEDULE_ASSIGNMENTS_DEFAULTS.ACTIVE)
-        .setUser(userObj.getId()!);
+        .setFamily(SAFamily.USER)
+        .setRelated(userObj.getGuid()!);
 
       await defaultContrat.save();
     }
@@ -705,7 +707,8 @@ router.post('/manager', Ensure.post(), async (req: Request, res: Response) => {
         .setCreatedBy(supervisorObj?.getId()!)
         .setStartDate(TimezoneConfigUtils.getCurrentTime().toISOString().split('T')[0])
         .setActive(SCHEDULE_ASSIGNMENTS_DEFAULTS.ACTIVE)
-        .setUser(userObj.getId()!)
+        .setFamily(SAFamily.USER)
+        .setRelated(userObj.getGuid()!)
         .setReason('Company default contract');
 
       await defaultContrat.save();

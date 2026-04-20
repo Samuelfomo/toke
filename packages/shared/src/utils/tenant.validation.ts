@@ -491,4 +491,83 @@ export class TenantValidationUtils {
     }
     return code.trim().toLowerCase();
   }
+
+  static getMaxCap(min: number): number {
+    if (min >= 100) return 1000;
+    if (min >= 50) return 500;
+    return 100;
+  }
+
+  static normalizeEmployeeCount([min, max]: [number, number | null]) {
+    if (max === null) {
+      return [min, TenantValidationUtils.getMaxCap(min)];
+    }
+    return [min, max];
+  }
+
+  // static normalizeEmployeeCountInput(req: any, res: any, next: any) {
+  //   const value = req.body.employee_count;
+  //
+  //   if (!Array.isArray(value)) return next();
+  //
+  //   if (value.length === 1) {
+  //     req.body.employee_count = [value[0], null];
+  //   }
+  //
+  //   next();
+  // }
+
+  static normalizeEmployeeCountInput(req: any, res: any, next: any) {
+    const value = req.body.employee_count;
+
+    // Si pas fourni → laisser Zod gérer (required)
+    if (value === undefined || value === null) {
+      return next();
+    }
+
+    // Doit être un array
+    if (!Array.isArray(value)) {
+      return res.status(400).json({
+        code: 'employee_count_invalid',
+        message: 'Employee_count must be an array [min, max]',
+      });
+    }
+
+    // Cas [min]
+    if (value.length === 1) {
+      const min = Number(value[0]);
+
+      if (!Number.isFinite(min)) {
+        return res.status(400).json({
+          code: 'employee_count_invalid',
+          message: 'Employee_count min must be a valid number',
+        });
+      }
+
+      req.body.employee_count = [min, null];
+      return next();
+    }
+
+    // Cas [min, max]
+    if (value.length === 2) {
+      const min = Number(value[0]);
+      const max = value[1] === null ? null : Number(value[1]);
+
+      if (!Number.isFinite(min) || (max !== null && !Number.isFinite(max))) {
+        return res.status(400).json({
+          code: 'employee_count_invalid',
+          message: 'Employee_count must contain valid numbers',
+        });
+      }
+
+      req.body.employee_count = [min, max];
+      return next();
+    }
+
+    // Cas invalide (trop d’éléments)
+    return res.status(400).json({
+      code: 'employee_count_invalid',
+      message: 'Employee_count must be [min, max] or [min]',
+    });
+  }
 }

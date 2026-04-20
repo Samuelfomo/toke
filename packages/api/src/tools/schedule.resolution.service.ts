@@ -1,3 +1,5 @@
+import { ROTATION_GROUP_DEFAULTS } from '@toke/shared';
+
 import SessionTemplate from '../tenant/class/SessionTemplates.js';
 import RotationGroup from '../tenant/class/RotationGroups.js';
 import User from '../tenant/class/User.js';
@@ -358,7 +360,7 @@ class ScheduleResolutionService {
     }
 
     const offset = assignment.getOffset() || 0;
-    const templateId = this.calculateRotationTemplateId(rotationGroup, targetDate, offset);
+    const templateId = await this.calculateRotationTemplateId(rotationGroup, targetDate, offset);
     const template = await SessionTemplate._load(templateId);
 
     if (!templateId) {
@@ -387,6 +389,9 @@ class ScheduleResolutionService {
       assigned_at: assignment.getCreatedAt(),
       cycle_length: rotationGroup.getCycleLength(),
       cycle_unit: rotationGroup.getCycleUnit(),
+      auto_advance: rotationGroup.getAutoAdvance(),
+      direction: rotationGroup.getDirection(),
+      rotation_step: rotationGroup.getRotationStep(),
       offset: offset,
     });
 
@@ -401,34 +406,55 @@ class ScheduleResolutionService {
    * Calcul de l'index du template dans une rotation
    * Implémente la logique: cycle_index = floor(diff(target_date, start_date, unit)) % cycle_length
    */
-  private calculateRotationTemplateId(
+  private async calculateRotationTemplateId(
     rotationGroup: RotationGroup,
     targetDate: Date,
     offset: number,
-  ): number | null {
-    const startDate = new Date(rotationGroup.getStartDate()!);
-    const cycleLength = rotationGroup.getCycleLength()!;
+  ): Promise<number | null> {
+    const startDateStr = new Date(rotationGroup.getStartDate()!);
+    const rotationStep = rotationGroup.getRotationStep() ?? ROTATION_GROUP_DEFAULTS.ROTATION_STEP;
     const cycleUnit = rotationGroup.getCycleUnit()!;
-    const cycleTemplates = rotationGroup.getCycleTemplates()!;
 
-    // Calculer différence en unités (jours ou semaines)
-    let diff: number;
+    if (!startDateStr || !cycleUnit) return null;
+
+    const startDate = new Date(startDateStr);
+
+    const slots = await rotationGroup.getCycleSlots();
+
+    // const cycleTemplates = slots.find((s) => s.getId());
+    const templateIds = slots.map((slot) => slot.getId()).filter((id): id is number => Boolean(id));
+
+    const templateCount = templateIds.length;
+    if (templateCount === 0) return null;
+
+    // ───────────────────────────────────────────
+    // 1. Calcul du temps écoulé
+    // ───────────────────────────────────────────
+    const diffMs = targetDate.getTime() - startDate.getTime();
+
+    let diffUnits: number;
+
     if (cycleUnit === 'day') {
-      diff = Math.floor((targetDate.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24));
+      diffUnits = Math.floor(diffMs / (1000 * 60 * 60 * 24));
     } else if (cycleUnit === 'week') {
-      diff = Math.floor((targetDate.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24 * 7));
+      diffUnits = Math.floor(diffMs / (1000 * 60 * 60 * 24 * 7));
     } else {
       return null;
     }
 
-    // Calculer position dans le cycle
-    const cycleIndex = Math.floor(diff) % cycleLength;
+    if (diffUnits < 0) return null;
 
-    // Appliquer l'offset utilisateur
-    const actualIndex = (cycleIndex + offset) % cycleLength;
+    // ───────────────────────────────────────────
+    // 2. Nombre de rotations effectuées
+    // ───────────────────────────────────────────
+    const rotationsPassed = Math.floor(diffUnits / rotationStep);
 
-    // Récupérer le template_id correspondant
-    return cycleTemplates[actualIndex] || null;
+    // ───────────────────────────────────────────
+    // 3. Position réelle dans le cycle
+    // ───────────────────────────────────────────
+    const index = (rotationsPassed + offset) % templateCount;
+
+    return templateIds[index] ?? null;
   }
 
   /**

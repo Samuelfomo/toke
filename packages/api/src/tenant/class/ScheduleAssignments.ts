@@ -1,4 +1,4 @@
-import { SCHEDULE_ASSIGNMENTS_DEFAULTS, TimezoneConfigUtils } from '@toke/shared';
+import { SAFamily, SCHEDULE_ASSIGNMENTS_DEFAULTS, TimezoneConfigUtils } from '@toke/shared';
 
 import ScheduleAssignmentsModel from '../model/ScheduleAssignmentsModel.js';
 import W from '../../tools/watcher.js';
@@ -18,8 +18,7 @@ import ScheduleAssignmentsLog from './ScheduleAssignmentsLog.js';
 
 export default class ScheduleAssignments extends ScheduleAssignmentsModel {
   public initialVersion = 1;
-  private userObj?: User;
-  private groupsObj?: Groups;
+  private relatedObj?: User | Groups;
   private createdByObj?: User;
   private new_template?: SessionTemplate;
 
@@ -42,18 +41,12 @@ export default class ScheduleAssignments extends ScheduleAssignmentsModel {
     return new ScheduleAssignments().list(conditions, paginationOptions);
   }
 
-  static _listByUser(
-    userId: number,
+  static _listByRelated(
+    family: SAFamily,
+    related: string,
     paginationOptions: { offset?: number; limit?: number } = {},
   ): Promise<ScheduleAssignments[] | null> {
-    return new ScheduleAssignments().listByUser(userId, paginationOptions);
-  }
-
-  static _listByGroups(
-    groupsId: number,
-    paginationOptions: { offset?: number; limit?: number } = {},
-  ): Promise<ScheduleAssignments[] | null> {
-    return new ScheduleAssignments().listByGroups(groupsId, paginationOptions);
+    return new ScheduleAssignments().listByRelated(family, related, paginationOptions);
   }
 
   static _listByCreatedBy(
@@ -78,20 +71,13 @@ export default class ScheduleAssignments extends ScheduleAssignmentsModel {
     return new ScheduleAssignments().listByDateRange(startDate, endDate, paginationOptions);
   }
 
-  static _listForUserOnDate(
-    userId: number,
+  static _listForRelatedOnDate(
+    family: SAFamily,
+    related: string,
     date: string,
     paginationOptions: { offset?: number; limit?: number } = {},
   ): Promise<ScheduleAssignments[] | null> {
-    return new ScheduleAssignments().listForUserOnDate(userId, date, paginationOptions);
-  }
-
-  static _listForGroupsOnDate(
-    groupsId: number,
-    date: string,
-    paginationOptions: { offset?: number; limit?: number } = {},
-  ): Promise<ScheduleAssignments[] | null> {
-    return new ScheduleAssignments().listForGroupsOnDate(groupsId, date, paginationOptions);
+    return new ScheduleAssignments().listForRelatedOnDate(family, related, date, paginationOptions);
   }
 
   static async exportable(
@@ -121,7 +107,7 @@ export default class ScheduleAssignments extends ScheduleAssignmentsModel {
   }
 
   // ============================================
-  // GETTERS FLUENT
+  // GETTERS
   // ============================================
 
   /**
@@ -133,27 +119,10 @@ export default class ScheduleAssignments extends ScheduleAssignmentsModel {
       guid: sessionTemplate.getGuid(),
       name: sessionTemplate.getName(),
       definition: sessionTemplate.getDefinition(),
-      version: sessionTemplate.getVersion(), // ✅ Version du template
+      version: sessionTemplate.getVersion(),
       is_default: sessionTemplate.isDefaultSessionTemplate(),
       snapshot_date: new Date().toISOString(),
     };
-  }
-
-  /**
-   * Assigner un template à partir d'un SessionTemplate
-   */
-  async assignFromSessionTemplate(
-    sessionTemplate: SessionTemplate,
-    createdBy: number,
-    reason?: string,
-  ): Promise<void> {
-    const templateSnapshot = await ScheduleAssignments.createTemplateSnapshot(sessionTemplate);
-    // this.setSessionTemplate(templateSnapshot);
-    this.setSessionTemplate(SessionTemplate);
-    this.setCreatedBy(createdBy);
-    if (reason) {
-      this.setReason(reason);
-    }
   }
 
   getId(): number | undefined {
@@ -168,28 +137,23 @@ export default class ScheduleAssignments extends ScheduleAssignmentsModel {
     return this.tenant;
   }
 
-  getUser(): number | null | undefined {
-    return this.user;
+  getFamily(): 'user' | 'group' | undefined {
+    return this.family;
   }
 
-  async getUserObj(): Promise<User | null> {
-    if (!this.user) return null;
-    if (!this.userObj) {
-      this.userObj = (await User._load(this.user)) || undefined;
+  getRelated(): string | undefined {
+    return this.related;
+  }
+
+  async getRelatedObj(): Promise<User | Groups | null> {
+    if (!this.related || !this.family) return null;
+    if (!this.relatedObj) {
+      this.relatedObj =
+        this.family === 'user'
+          ? (await User._load(this.related, true)) || undefined
+          : (await Groups._load(this.related, true)) || undefined;
     }
-    return this.userObj || null;
-  }
-
-  getGroups(): number | null | undefined {
-    return this.groups;
-  }
-
-  async getGroupsObj(): Promise<Groups | null> {
-    if (!this.groups) return null;
-    if (!this.groupsObj) {
-      this.groupsObj = (await Groups._load(this.groups)) || undefined;
-    }
-    return this.groupsObj || null;
+    return this.relatedObj || null;
   }
 
   getSessionTemplate(): any | undefined {
@@ -197,7 +161,7 @@ export default class ScheduleAssignments extends ScheduleAssignmentsModel {
   }
 
   getSessionTemplateId(): number | undefined {
-    return this.session_template.id;
+    return this.session_template?.id;
   }
 
   getVersion(): number | undefined {
@@ -244,6 +208,10 @@ export default class ScheduleAssignments extends ScheduleAssignmentsModel {
     return this.created_at;
   }
 
+  // ============================================
+  // SETTERS FLUENT
+  // ============================================
+
   getUpdatedAt(): Date | undefined {
     return this.updated_at;
   }
@@ -253,19 +221,14 @@ export default class ScheduleAssignments extends ScheduleAssignmentsModel {
     return this;
   }
 
-  // ============================================
-  // SETTERS FLUENT
-  // ============================================
-
-  setUser(userId: number | null): ScheduleAssignments {
-    this.user = userId;
-    this.userObj = undefined; // Reset cache
+  setFamily(family: SAFamily): ScheduleAssignments {
+    this.family = family;
     return this;
   }
 
-  setGroups(groupsId: number | null): ScheduleAssignments {
-    this.groups = groupsId;
-    this.groupsObj = undefined;
+  setRelated(related: string): ScheduleAssignments {
+    this.related = related;
+    this.relatedObj = undefined; // Reset cache
     return this;
   }
 
@@ -305,30 +268,30 @@ export default class ScheduleAssignments extends ScheduleAssignmentsModel {
     return this;
   }
 
+  // ============================================
+  // MÉTHODES MÉTIER
+  // ============================================
+
   isNew(): boolean {
     return this.id === undefined;
   }
 
   /**
-   * Vérifie si l'exception est pour un utilisateur spécifique
+   * Vérifie si l'assignment est pour un utilisateur
    */
   isForUser(): boolean {
-    return this.user !== null && this.user !== undefined;
+    return this.family === 'user';
   }
 
-  // ============================================
-  // MÉTHODES MÉTIER
-  // ============================================
-
   /**
-   * Vérifie si l'exception est pour une groups
+   * Vérifie si l'assignment est pour une group
    */
   isForGroup(): boolean {
-    return this.groups !== null && this.groups !== undefined;
+    return this.family === 'group';
   }
 
   /**
-   * Vérifie si une date est couverte par cette exception
+   * Vérifie si une date est couverte par cette assignment
    */
   coversDate(date: string): boolean {
     if (!this.start_date || !this.end_date) return false;
@@ -336,7 +299,7 @@ export default class ScheduleAssignments extends ScheduleAssignmentsModel {
   }
 
   /**
-   * Calcule la durée de l'exception en jours
+   * Calcule la durée de l'assignment en jours
    */
   getDurationInDays(): number {
     if (!this.start_date || !this.end_date) return 0;
@@ -344,38 +307,38 @@ export default class ScheduleAssignments extends ScheduleAssignmentsModel {
     const start = new Date(this.start_date);
     const end = new Date(this.end_date);
     const diffTime = end.getTime() - start.getTime();
-    return Math.ceil(diffTime / (1000 * 60 * 60 * 24)) + 1; // +1 pour inclure le dernier jour
+    return Math.ceil(diffTime / (1000 * 60 * 60 * 24)) + 1;
   }
 
   /**
-   * Vérifie si l'exception est dans le passé
+   * Vérifie si l'assignment est dans le passé
    */
   isInPast(): boolean {
     if (!this.end_date) return false;
     const today = TimezoneConfigUtils.getCurrentTime().toISOString().split('T')[0];
-    return this.end_date < today;
+    return this.end_date < today!;
   }
 
   /**
-   * Vérifie si l'exception est dans le futur
+   * Vérifie si l'assignment est dans le futur
    */
   isInFuture(): boolean {
     if (!this.start_date) return false;
     const today = TimezoneConfigUtils.getCurrentTime().toISOString().split('T')[0];
-    return this.start_date > today;
+    return this.start_date > today!;
   }
 
   /**
-   * Vérifie si l'exception est en cours
+   * Vérifie si l'assignment est en cours
    */
   isCurrentlyActive(): boolean {
     if (!this.active) return false;
     const today = TimezoneConfigUtils.getCurrentTime().toISOString().split('T')[0];
-    return this.coversDate(today);
+    return this.coversDate(today!);
   }
 
   /**
-   * Vérifie si l'exception est pour un seul jour
+   * Vérifie si l'assignment est pour un seul jour
    */
   isSingleDay(): boolean {
     return this.start_date === this.end_date;
@@ -383,6 +346,21 @@ export default class ScheduleAssignments extends ScheduleAssignmentsModel {
 
   hasReason(): boolean {
     return Boolean(this.reason && this.reason.trim().length > 0);
+  }
+
+  /**
+   * Assigner un template à partir d'un SessionTemplate
+   */
+  async assignFromSessionTemplate(
+    sessionTemplate: SessionTemplate,
+    createdBy: number,
+    reason?: string,
+  ): Promise<void> {
+    this.setSessionTemplate(SessionTemplate);
+    this.setCreatedBy(createdBy);
+    if (reason) {
+      this.setReason(reason);
+    }
   }
 
   async save(): Promise<void> {
@@ -394,7 +372,6 @@ export default class ScheduleAssignments extends ScheduleAssignmentsModel {
         const newTemplate = this.new_template;
         const previousVersion = this.version || this.initialVersion;
 
-        // Mettre à jour le template et incrémenter la version
         const newVersion = previousVersion + this.initialVersion;
         const modifiedBy = this.created_by!;
         const createdBy = this.created_by!;
@@ -404,7 +381,6 @@ export default class ScheduleAssignments extends ScheduleAssignmentsModel {
 
         await this.update();
 
-        // ✅ Logger automatiquement la modification
         if (newTemplate)
           await this.logModification({
             previousTemplate,
@@ -433,21 +409,17 @@ export default class ScheduleAssignments extends ScheduleAssignmentsModel {
       throw new Error('Cannot update template on unsaved assignment');
     }
 
-    // Sauvegarder l'ancien état
     const previousTemplate = this.session_template;
     const createdBy = this.created_by!;
     const previousVersion = this.version || this.initialVersion;
 
-    // Mettre à jour le template et incrémenter la version
     const newVersion = previousVersion + this.initialVersion;
     this.setSessionTemplate(newTemplate);
     this.setVersion(newVersion);
     this.setCreatedBy(modifiedBy);
 
-    // Sauvegarder l'assignment
     await this.updateDefinition();
 
-    // ✅ Logger automatiquement la modification
     await this.logModification({
       previousTemplate,
       newTemplate,
@@ -458,6 +430,10 @@ export default class ScheduleAssignments extends ScheduleAssignmentsModel {
       modificationReason: reason,
     });
   }
+
+  // ============================================
+  // CHARGEMENT ET LISTING
+  // ============================================
 
   async load(identifier: any, byGuid: boolean = false): Promise<ScheduleAssignments | null> {
     let data = null;
@@ -481,24 +457,12 @@ export default class ScheduleAssignments extends ScheduleAssignmentsModel {
     return dataset.map((data) => new ScheduleAssignments().hydrate(data));
   }
 
-  async listByUser(
-    userId: number,
+  async listByRelated(
+    family: SAFamily,
+    related: string,
     paginationOptions: { offset?: number; limit?: number } = {},
   ): Promise<ScheduleAssignments[] | null> {
-    const dataset = await this.listAllByUser(userId, paginationOptions);
-    if (!dataset || dataset.length === 0) return null;
-    return dataset.map((data) => new ScheduleAssignments().hydrate(data));
-  }
-
-  // ============================================
-  // CHARGEMENT ET LISTING
-  // ============================================
-
-  async listByGroups(
-    groupsId: number,
-    paginationOptions: { offset?: number; limit?: number } = {},
-  ): Promise<ScheduleAssignments[] | null> {
-    const dataset = await this.listAllByGroups(groupsId, paginationOptions);
+    const dataset = await this.listAllByRelated(family, related, paginationOptions);
     if (!dataset || dataset.length === 0) return null;
     return dataset.map((data) => new ScheduleAssignments().hydrate(data));
   }
@@ -532,22 +496,13 @@ export default class ScheduleAssignments extends ScheduleAssignmentsModel {
     return dataset.map((data) => new ScheduleAssignments().hydrate(data));
   }
 
-  async listForUserOnDate(
-    userId: number,
+  async listForRelatedOnDate(
+    family: SAFamily,
+    related: string,
     date: string,
     paginationOptions: { offset?: number; limit?: number } = {},
   ): Promise<ScheduleAssignments[] | null> {
-    const dataset = await this.listAllForUserOnDate(userId, date, paginationOptions);
-    if (!dataset || dataset.length === 0) return null;
-    return dataset.map((data) => new ScheduleAssignments().hydrate(data));
-  }
-
-  async listForGroupsOnDate(
-    groupsId: number,
-    date: string,
-    paginationOptions: { offset?: number; limit?: number } = {},
-  ): Promise<ScheduleAssignments[] | null> {
-    const dataset = await this.listAllForGroupsOnDate(groupsId, date, paginationOptions);
+    const dataset = await this.listAllForRelatedOnDate(family, related, date, paginationOptions);
     if (!dataset || dataset.length === 0) return null;
     return dataset.map((data) => new ScheduleAssignments().hydrate(data));
   }
@@ -571,14 +526,14 @@ export default class ScheduleAssignments extends ScheduleAssignmentsModel {
   }
 
   async toJSON(view: ViewMode = responseValue.FULL): Promise<object> {
-    const userObj = await this.getUserObj();
-    const groupsObj = await this.getGroupsObj();
+    const relatedObj = await this.getRelatedObj();
     const sessionTemplateObj = SessionTemplate.toObject(this.session_template);
     const createdByObj = await this.getCreatedByObj();
 
     const baseData = {
       [RS.GUID]: this.guid,
       [RS.TENANT]: this.tenant,
+      [RS.FAMILY]: this.family,
       [RS.START_DATE]: this.start_date,
       [RS.END_DATE]: this.end_date,
       [RS.REASON]: this.reason,
@@ -588,8 +543,11 @@ export default class ScheduleAssignments extends ScheduleAssignmentsModel {
     if (view === responseValue.MINIMAL) {
       return {
         ...baseData,
-        [RS.USER]: userObj ? userObj.getGuid() : null,
-        [RS.GROUP]: groupsObj ? groupsObj.getGuid() : null,
+        [RS.RELATED]: relatedObj
+          ? this.isForUser()
+            ? (relatedObj as User).getGuid()
+            : (relatedObj as Groups).getGuid()
+          : null,
         [RS.SESSION_TEMPLATE]: sessionTemplateObj ? sessionTemplateObj.getGuid() : null,
         [RS.CREATED_BY]: createdByObj ? createdByObj.getGuid() : null,
       };
@@ -597,12 +555,15 @@ export default class ScheduleAssignments extends ScheduleAssignmentsModel {
 
     return {
       ...baseData,
-      [RS.USER]: userObj ? await userObj.toJSON() : null,
-      [RS.GROUP]: groupsObj ? await groupsObj.toJSON(responseValue.FULL) : null,
-      [RS.SESSION_TEMPLATE]: sessionTemplateObj
-        ? sessionTemplateObj.toJSON(responseValue.FULL)
+      [RS.RELATED]: relatedObj
+        ? this.isForUser()
+          ? (relatedObj as User).toPublicJSON()
+          : await (relatedObj as Groups).toPublicJSON()
         : null,
-      [RS.CREATED_BY]: createdByObj ? await createdByObj.toJSON() : null,
+      [RS.SESSION_TEMPLATE]: sessionTemplateObj
+        ? await sessionTemplateObj.toJSON(responseValue.FULL)
+        : null,
+      [RS.CREATED_BY]: createdByObj ? createdByObj.toPublicJSON() : null,
     };
   }
 
@@ -613,12 +574,14 @@ export default class ScheduleAssignments extends ScheduleAssignmentsModel {
     return {
       [RS.GUID]: this.guid,
       [RS.TENANT]: this.tenant,
+      [RS.FAMILY]: this.family,
+      [RS.RELATED]: this.related,
       [RS.START_DATE]: this.start_date,
       [RS.END_DATE]: this.end_date,
       [RS.REASON]: this.reason,
       [RS.ACTIVE]: this.active,
       [RS.SESSION_TEMPLATE]: sessionTemplateObj
-        ? sessionTemplateObj.toJSON(responseValue.FULL)
+        ? await sessionTemplateObj.toJSON(responseValue.FULL)
         : null,
       [RS.CREATED_BY]: createdByObj ? await createdByObj.toJSON() : null,
     };
@@ -626,6 +589,34 @@ export default class ScheduleAssignments extends ScheduleAssignmentsModel {
 
   toObject(data: any): ScheduleAssignments {
     return new ScheduleAssignments().hydrate(data);
+  }
+
+  // ============================================
+  // MÉTHODES PRIVÉES
+  // ============================================
+
+  private setVersion(version: number): ScheduleAssignments {
+    this.version = version;
+    return this;
+  }
+
+  private hydrate(data: any): ScheduleAssignments {
+    this.id = data.id;
+    this.guid = data.guid;
+    this.tenant = data.tenant;
+    this.family = data.family;
+    this.related = data.related;
+    this.session_template = data.session_template;
+    this.version = data.version;
+    this.start_date = data.start_date;
+    this.end_date = data.end_date;
+    this.created_by = data.created_by;
+    this.reason = data.reason;
+    this.active = data.active;
+    this.deleted_at = data.deleted_at;
+    this.created_at = data.created_at;
+    this.updated_at = data.updated_at;
+    return this;
   }
 
   /**
@@ -650,7 +641,6 @@ export default class ScheduleAssignments extends ScheduleAssignmentsModel {
       .setOldCreator(params.createdBy)
       .setModificationReason(params.modificationReason || null);
 
-    // Calculer les champs modifiés (optionnel)
     if (params.previousTemplate && params.newTemplate) {
       const changedFields = this.computeChangedFields(params.previousTemplate, params.newTemplate);
       log.setChangedFields(changedFields);
@@ -665,18 +655,14 @@ export default class ScheduleAssignments extends ScheduleAssignmentsModel {
   private computeChangedFields(oldTemplate: any, newTemplate: any): any {
     const changes: any = {};
 
-    // Comparaison des champs de base
     if (oldTemplate.name !== newTemplate.name) {
       changes.name = { old: oldTemplate.name, new: newTemplate.name };
     }
 
-    // Comparaison de la définition
     if (JSON.stringify(oldTemplate.definition) !== JSON.stringify(newTemplate.definition)) {
       changes.definition_changed = true;
 
-      // Détailler les jours modifiés
       const oldDays = Object.keys(oldTemplate.definition || {});
-      const newDays = Object.keys(newTemplate.definition || {});
       const modifiedDays = oldDays.filter(
         (day) =>
           JSON.stringify(oldTemplate.definition[day]) !==
@@ -688,33 +674,5 @@ export default class ScheduleAssignments extends ScheduleAssignmentsModel {
     }
 
     return changes;
-  }
-
-  // ============================================
-  // MÉTHODES PRIVÉES
-  // ============================================
-
-  // ✅ NOUVEAU (usage interne uniquement)
-  private setVersion(version: number): ScheduleAssignments {
-    this.version = version;
-    return this;
-  }
-
-  private hydrate(data: any): ScheduleAssignments {
-    this.id = data.id;
-    this.guid = data.guid;
-    this.tenant = data.tenant;
-    this.user = data.user;
-    this.groups = data.groups;
-    this.session_template = data.session_template;
-    this.start_date = data.start_date;
-    this.end_date = data.end_date;
-    this.created_by = data.created_by;
-    this.reason = data.reason;
-    this.active = data.active;
-    this.deleted_at = data.deleted_at;
-    this.created_at = data.created_at;
-    this.updated_at = data.updated_at;
-    return this;
   }
 }

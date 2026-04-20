@@ -1,4 +1,4 @@
-import { CycleUnit, ROTATION_GROUP_DEFAULTS, TimezoneConfigUtils } from '@toke/shared';
+import { CycleUnit, Direction, ROTATION_GROUP_DEFAULTS, TimezoneConfigUtils } from '@toke/shared';
 
 import RotationGroupModel from '../model/RotationGroupsModel.js';
 import W from '../../tools/watcher.js';
@@ -10,11 +10,14 @@ import {
   ViewMode,
 } from '../../utils/response.model.js';
 import { TenantRevision } from '../../tools/revision.js';
+import { RotationTemplateSnapshot } from '../model/RotationGroupTemplateModel.js';
 
 import SessionTemplate from './SessionTemplates.js';
+import RotationGroupTemplate from './RotationGroupTemplate.js';
 
 export default class RotationGroup extends RotationGroupModel {
-  private sessionTemplatesObjs?: SessionTemplate[];
+  // Cache des slots du cycle — chargé à la demande
+  private cycleTemplatesObjs?: RotationGroupTemplate[];
 
   constructor() {
     super();
@@ -51,7 +54,7 @@ export default class RotationGroup extends RotationGroupModel {
 
   static async exportable(
     conditions: Record<string, any> = {
-      [RS.ACTIVE]: ROTATION_GROUP_DEFAULTS.ACTIVE,
+      active: ROTATION_GROUP_DEFAULTS.ACTIVE,
     },
     paginationOptions: { offset?: number; limit?: number } = {},
   ): Promise<{
@@ -82,57 +85,61 @@ export default class RotationGroup extends RotationGroupModel {
   getId(): number | undefined {
     return this.id;
   }
-
   getGuid(): string | undefined {
     return this.guid;
   }
-
   getTenant(): string | undefined {
     return this.tenant;
   }
-
   getName(): string | undefined {
     return this.name;
   }
-
   getCycleLength(): number | undefined {
     return this.cycle_length;
   }
-
   getCycleUnit(): CycleUnit | undefined {
     return this.cycle_unit;
   }
-
-  getCycleTemplates(): number[] | undefined {
-    return this.cycle_templates;
+  getDirection(): Direction | undefined {
+    return this.direction || ROTATION_GROUP_DEFAULTS.DIRECTION;
   }
-
-  async getSessionTemplates(): Promise<SessionTemplate[]> {
-    if (!this.cycle_templates || this.cycle_templates.length === 0) return [];
-
-    if (!this.sessionTemplatesObjs) {
-      this.sessionTemplatesObjs = [];
-      for (const templateId of this.cycle_templates) {
-        const template = await SessionTemplate._load(templateId);
-        if (template) {
-          this.sessionTemplatesObjs.push(template);
-        }
-      }
-    }
-
-    return this.sessionTemplatesObjs;
+  getAutoAdvance(): boolean | undefined {
+    return this.auto_advance ?? ROTATION_GROUP_DEFAULTS.AUTO_ADVANCE;
   }
-
+  getRotationStep(): number | undefined {
+    return this.rotation_step ?? ROTATION_GROUP_DEFAULTS.ROTATION_STEP;
+  }
   getStartDate(): string | undefined {
     return this.start_date;
   }
-
   isActive(): boolean | undefined {
     return this.active;
   }
-
   getDeletedAt(): Date | null | undefined {
     return this.deleted_at;
+  }
+
+  /**
+   * Retourne les slots du cycle (RotationGroupTemplate[]) triés par position.
+   * Les snapshots JSONB sont embarqués dans chaque slot.
+   * Résultat mis en cache pour la durée de vie de l'instance.
+   */
+  async getCycleSlots(): Promise<RotationGroupTemplate[]> {
+    if (!this.id) return [];
+    if (!this.cycleTemplatesObjs) {
+      this.cycleTemplatesObjs = (await RotationGroupTemplate._listByRotationGroup(this.id)) ?? [];
+    }
+    return this.cycleTemplatesObjs;
+  }
+
+  /**
+   * Retourne les snapshots bruts du cycle, triés par position.
+   * Pratique pour les calculs de rotation (getTemplateForDate, etc.)
+   * sans avoir besoin des métadonnées complètes du slot.
+   */
+  async getCycleSnapshots(): Promise<Omit<RotationTemplateSnapshot, 'id'>[]> {
+    const slots = await this.getCycleSlots();
+    return slots.map((slot) => slot.getTemplateSnapshot()!).filter(Boolean);
   }
 
   // ============================================
@@ -159,9 +166,16 @@ export default class RotationGroup extends RotationGroupModel {
     return this;
   }
 
-  setCycleTemplates(cycleTemplates: number[]): RotationGroup {
-    this.cycle_templates = cycleTemplates;
-    this.sessionTemplatesObjs = undefined; // Reset cache
+  setDirection(direction: Direction): RotationGroup {
+    this.direction = direction;
+    return this;
+  }
+  setAutoAdvance(autoAdvance: boolean): RotationGroup {
+    this.auto_advance = autoAdvance;
+    return this;
+  }
+  setRotationStep(rotationStep: number): RotationGroup {
+    this.rotation_step = rotationStep;
     return this;
   }
 
@@ -176,7 +190,7 @@ export default class RotationGroup extends RotationGroupModel {
   }
 
   // ============================================
-  // MÉTHODES MÉTIER
+  // MÉTHODES MÉTIER — GESTION DU CYCLE
   // ============================================
 
   isNew(): boolean {
@@ -184,31 +198,111 @@ export default class RotationGroup extends RotationGroupModel {
   }
 
   /**
-   * Calcule quel template appliquer pour un utilisateur à une date donnée
-   * @param offset Position de l'utilisateur dans le cycle (0, 1, 2, etc.)
-   * @param targetDate Date pour laquelle calculer le template
-   * @returns L'ID du template à appliquer
+   * Initialise les slots du cycle à partir d'une liste de GUIDs de SessionTemplate.
+   * Doit être appelé APRÈS save() (le RotationGroup doit avoir un id).
+   *
+   * C'est le point d'entrée principal lors de la CRÉATION d'un RotationGroup :
+   * le manager fournit les GUIDs des templates dans l'ordre souhaité, et cette
+   * méthode résout chaque template, prend un snapshot et crée un slot.
+   *
+   * @param templateGuids - GUIDs des SessionTemplates dans l'ordre du cycle
+   *
+   * Validation Zod alignée : cycle_templates est un array de strings (GUIDs),
+   * min 1 item, max 100 items, sans doublons — conforme au schéma Zod actuel.
    */
-  getTemplateForDate(offset: number, targetDate: Date): number | null {
-    if (!this.cycle_templates || this.cycle_templates.length === 0) return null;
-    if (!this.start_date) return null;
-
-    const startDate = new Date(this.start_date);
-    const diffTime = targetDate.getTime() - startDate.getTime();
-
-    let cyclesPassed: number;
-
-    if (this.cycle_unit === CycleUnit.DAY) {
-      const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
-      cyclesPassed = Math.floor(diffDays / this.cycle_length!);
-    } else {
-      // CycleUnit.WEEK
-      const diffWeeks = Math.floor(diffTime / (1000 * 60 * 60 * 24 * 7));
-      cyclesPassed = Math.floor(diffWeeks / this.cycle_length!);
+  async initializeCycleFromGuids(templateGuids: string[]): Promise<void> {
+    if (!this.id) {
+      throw new Error('RotationGroup must be saved before initializing cycle templates');
+    }
+    if (!templateGuids || templateGuids.length === 0) {
+      throw new Error('At least one template GUID is required to initialize the cycle');
     }
 
-    const position = (cyclesPassed + offset) % this.cycle_templates.length;
-    return this.cycle_templates[position];
+    const slots: RotationGroupTemplate[] = [];
+
+    for (let position = 0; position < templateGuids.length; position++) {
+      const guid = templateGuids[position]!;
+      const sessionTemplate = await SessionTemplate._load(guid, true /* byGuid */);
+
+      if (!sessionTemplate) {
+        throw new Error(`SessionTemplate not found for GUID: ${guid} (position ${position})`);
+      }
+
+      const snapshot = RotationGroupTemplate.createSnapshot(sessionTemplate);
+
+      const slot = new RotationGroupTemplate();
+      slot
+        .setRotationGroup(this.id)
+        .setPosition(position)
+        .setTemplateSnapshot(snapshot)
+        .setSourceTemplate(sessionTemplate.getId() ?? null, sessionTemplate.getGuid() ?? null);
+
+      await slot.save();
+      slots.push(slot);
+    }
+
+    // Invalide le cache pour forcer un rechargement à la prochaine lecture
+    this.cycleTemplatesObjs = slots;
+  }
+
+  /**
+   * Remplace le snapshot d'UN slot précis dans le cycle.
+   * Le manager choisit un nouveau SessionTemplate pour une position donnée.
+   * Un log d'audit est créé automatiquement dans RotationGroupTemplateLog.
+   *
+   * @param position          - Index (0-based) du slot à remplacer
+   * @param newTemplateGuid   - GUID du nouveau SessionTemplate source
+   * @param modifiedBy        - ID du manager qui effectue la modification
+   * @param reason            - Raison optionnelle de la modification
+   */
+  async replaceCycleSlot(
+    position: number,
+    newTemplateGuid: string,
+    modifiedBy: number,
+    reason?: string,
+  ): Promise<void> {
+    if (!this.id) {
+      throw new Error('RotationGroup must be saved before replacing a cycle slot');
+    }
+
+    const slots = await this.getCycleSlots();
+    const slot = slots.find((s) => s.getPosition() === position);
+
+    if (!slot) {
+      throw new Error(`No cycle slot found at position ${position}`);
+    }
+
+    const newSessionTemplate = await SessionTemplate._load(newTemplateGuid, true /* byGuid */);
+    if (!newSessionTemplate) {
+      throw new Error(`SessionTemplate not found for GUID: ${newTemplateGuid}`);
+    }
+
+    // replaceSnapshot() gère l'update DB + la création du log en une seule opération
+    await slot.replaceSnapshot(newSessionTemplate, modifiedBy, reason);
+
+    // Invalide le cache
+    this.cycleTemplatesObjs = undefined;
+  }
+
+  /**
+   * Retourne le snapshot applicable pour un offset donné.
+   *
+   * L'offset est la source de vérité — c'est le cron qui le maintient
+   * à jour chaque jour/semaine. Cette méthode lit simplement la position
+   * correspondante dans le cycle.
+   *
+   * Le modulo sûr ((x % n) + n) % n gère les offsets négatifs
+   * (cas direction=backward qui peut produire des valeurs négatives
+   * en transit si l'offset n'a pas encore été normalisé).
+   *
+   * @param offset - Position actuelle de l'assignation dans le cycle
+   */
+  async getSnapshotForDate(offset: number): Promise<Omit<RotationTemplateSnapshot, 'id'> | null> {
+    const snapshots = await this.getCycleSnapshots();
+    if (snapshots.length === 0) return null;
+
+    const position = ((offset % snapshots.length) + snapshots.length) % snapshots.length;
+    return snapshots[position] ?? null;
   }
 
   /**
@@ -221,35 +315,63 @@ export default class RotationGroup extends RotationGroupModel {
   }
 
   /**
-   * Calcule combien de cycles se sont écoulés depuis le début
+   * Nombre de cycles complets écoulés depuis start_date.
+   *
+   * Utilise rotation_step pour un calcul cohérent avec le cron :
+   * un "cycle complet" = templateCount × rotation_step unités de temps.
+   *
+   * Paramètre templateCount requis car cycle_length est décoratif
+   * et peut être null — la borne réelle vient des slots.
+   *
+   * @param templateCount - Nombre de slots dans le cycle
    */
-  getCyclesElapsed(): number {
-    if (!this.start_date) return 0;
+  getCyclesElapsed(templateCount: number): number {
+    if (!this.start_date || templateCount < 1) return 0;
 
     const startDate = new Date(this.start_date);
+    startDate.setHours(0, 0, 0, 0);
+
     const now = TimezoneConfigUtils.getCurrentTime();
-    const diffTime = now.getTime() - startDate.getTime();
+    now.setHours(0, 0, 0, 0);
 
-    if (diffTime < 0) return 0;
+    const diffMs = now.getTime() - startDate.getTime();
+    if (diffMs < 0) return 0;
 
+    const rotationStep = this.rotation_step ?? ROTATION_GROUP_DEFAULTS.ROTATION_STEP;
+
+    // Nombre d'avancements effectués = diffUnits / rotationStep
+    // Nombre de cycles complets = avancements / templateCount
     if (this.cycle_unit === CycleUnit.DAY) {
-      const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
-      return Math.floor(diffDays / this.cycle_length!);
-    } else {
-      const diffWeeks = Math.floor(diffTime / (1000 * 60 * 60 * 24 * 7));
-      return Math.floor(diffWeeks / this.cycle_length!);
+      const diffDays = Math.round(diffMs / (1000 * 60 * 60 * 24));
+      const advances = Math.floor(diffDays / rotationStep);
+      return Math.floor(advances / templateCount);
     }
+
+    // CycleUnit.WEEK
+    const diffWeeks = Math.round(diffMs / (1000 * 60 * 60 * 24 * 7));
+    const advances = Math.floor(diffWeeks / rotationStep);
+    return Math.floor(advances / templateCount);
   }
 
   /**
-   * Obtient la position actuelle dans le cycle (0, 1, 2, etc.)
+   * Position actuelle théorique dans le cycle (pour affichage/reporting).
+   * Ne remplace PAS l'offset de l'assignation comme source de vérité.
    */
-  getCurrentCyclePosition(): number {
-    if (!this.cycle_templates) return 0;
-    const cyclesElapsed = this.getCyclesElapsed();
-    return cyclesElapsed % this.cycle_templates.length;
+  async getCurrentCyclePosition(): Promise<number> {
+    const snapshots = await this.getCycleSnapshots();
+    if (snapshots.length === 0) return 0;
+    return this.getCyclesElapsed(snapshots.length) % snapshots.length;
   }
 
+  // ============================================
+  // PERSISTANCE
+  // ============================================
+
+  /**
+   * Sauvegarde le RotationGroup (métadonnées uniquement).
+   * Les slots du cycle sont gérés séparément via initializeCycleFromGuids()
+   * ou replaceCycleSlot().
+   */
   async save(): Promise<void> {
     try {
       if (this.isNew()) {
@@ -267,13 +389,7 @@ export default class RotationGroup extends RotationGroupModel {
   // ============================================
 
   async load(identifier: any, byGuid: boolean = false): Promise<RotationGroup | null> {
-    let data = null;
-
-    if (byGuid) {
-      data = await this.findByGuid(identifier);
-    } else {
-      data = await this.find(Number(identifier));
-    }
+    const data = byGuid ? await this.findByGuid(identifier) : await this.find(Number(identifier));
 
     if (!data) return null;
     return this.hydrate(data);
@@ -314,8 +430,17 @@ export default class RotationGroup extends RotationGroupModel {
     return false;
   }
 
+  // ============================================
+  // SÉRIALISATION
+  // ============================================
+
+  /**
+   * Retourne la représentation JSON du RotationGroup avec les templates du cycle embarqués.
+   * En FULL : chaque slot expose son snapshot complet + métadonnées.
+   * En MINIMAL : chaque slot expose uniquement position + snapshot.
+   */
   async toJSON(view: ViewMode = responseValue.FULL): Promise<object> {
-    const templates = await this.getSessionTemplates();
+    const slots = await this.getCycleSlots();
 
     const baseData = {
       [RS.GUID]: this.guid,
@@ -323,6 +448,9 @@ export default class RotationGroup extends RotationGroupModel {
       [RS.NAME]: this.name,
       [RS.CYCLE_LENGTH]: this.cycle_length,
       [RS.CYCLE_UNIT]: this.cycle_unit,
+      [RS.DIRECTION]: this.direction,
+      [RS.AUTO_ADVANCE]: this.auto_advance,
+      [RS.ROTATION_STEP]: this.rotation_step,
       [RS.START_DATE]: this.start_date,
       [RS.ACTIVE]: this.active,
     };
@@ -330,13 +458,16 @@ export default class RotationGroup extends RotationGroupModel {
     if (view === responseValue.MINIMAL) {
       return {
         ...baseData,
-        [RS.CYCLE_TEMPLATES]: templates.map((t) => t.getGuid()),
+        [RS.CYCLE_TEMPLATES]: slots.map((slot) => ({
+          [RS.POSITION]: slot.getPosition(),
+          [RS.TEMPLATE_SNAPSHOT]: slot.getTemplateSnapshot(),
+        })),
       };
     }
 
     return {
       ...baseData,
-      [RS.CYCLE_TEMPLATES]: await Promise.all(templates.map(async (t) => t.toJSON())),
+      [RS.CYCLE_TEMPLATES]: slots.map((slot) => slot.toJSON(responseValue.FULL)),
     };
   }
 
@@ -351,10 +482,14 @@ export default class RotationGroup extends RotationGroupModel {
     this.name = data.name;
     this.cycle_length = data.cycle_length;
     this.cycle_unit = data.cycle_unit;
-    this.cycle_templates = data.cycle_templates;
+    this.direction = data.direction;
+    this.auto_advance = data.auto_advance;
+    this.rotation_step = data.rotation_step;
     this.start_date = data.start_date;
     this.active = data.active;
     this.deleted_at = data.deleted_at;
+    // Invalide le cache des slots à chaque hydratation
+    this.cycleTemplatesObjs = undefined;
     return this;
   }
 }

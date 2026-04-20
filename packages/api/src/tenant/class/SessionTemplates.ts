@@ -11,7 +11,10 @@ import {
 } from '../../utils/response.model.js';
 import { TenantRevision } from '../../tools/revision.js';
 
+import SessionModel from './SessionModel.js';
+
 export default class SessionTemplate extends SessionTemplateModel {
+  private sessionModelObj?: SessionModel;
   constructor() {
     super();
   }
@@ -33,6 +36,13 @@ export default class SessionTemplate extends SessionTemplateModel {
     paginationOptions: { offset?: number; limit?: number } = {},
   ): Promise<SessionTemplate[] | null> {
     return new SessionTemplate().list(conditions, paginationOptions);
+  }
+
+  static _listForRotation(
+    rotation?: boolean,
+    paginationOptions: { offset?: number; limit?: number } = {},
+  ): Promise<SessionTemplate[] | null> {
+    return new SessionTemplate().listForRotation(rotation, paginationOptions);
   }
 
   static async exportable(
@@ -75,16 +85,24 @@ export default class SessionTemplate extends SessionTemplateModel {
     return this.guid;
   }
 
-  getTenant(): string | undefined {
-    return this.tenant;
-  }
-
   getName(): string | undefined {
     return this.name;
   }
 
   getDefinition(): any | undefined {
     return this.definition;
+  }
+
+  getSessionModel(): number | undefined {
+    return this.session_model;
+  }
+
+  async getSessionModelObj(): Promise<SessionModel | null> {
+    if (!this.session_model) return null;
+    if (!this.sessionModelObj) {
+      this.sessionModelObj = (await SessionModel._load(this.session_model)) || undefined;
+    }
+    return this.sessionModelObj || null;
   }
 
   // ✅ NOUVEAU GETTER
@@ -95,29 +113,21 @@ export default class SessionTemplate extends SessionTemplateModel {
   getDeletedAt(): Date | null | undefined {
     return this.deleted_at;
   }
-
-  // ============================================
-  // SETTERS FLUENT
-  // ============================================
-
   isDefaultSessionTemplate(): boolean {
     return this.defaults;
   }
 
-  setTenant(tenant: string): SessionTemplate {
-    this.tenant = tenant;
-    return this;
+  ForRotation(): boolean {
+    return this.for_rotation;
   }
 
-  // setValidFrom(validFrom: Date): SessionTemplate {
-  //   this.valid_from = validFrom;
-  //   return this;
-  // }
-  //
-  // setValidTo(validTo: Date | null): SessionTemplate {
-  //   this.valid_to = validTo;
-  //   return this;
-  // }
+  isCurrent(): boolean {
+    return this.current;
+  }
+
+  // ============================================
+  // SETTERS FLUENT
+  // ============================================
 
   setName(name: string): SessionTemplate {
     this.name = name;
@@ -129,12 +139,22 @@ export default class SessionTemplate extends SessionTemplateModel {
     return this;
   }
 
-  // ============================================
-  // MÉTHODES MÉTIER
-  // ============================================
-
   setDefaultSessionTemplate(value: boolean): SessionTemplate {
     this.defaults = value;
+    return this;
+  }
+  setForRotation(value: boolean): SessionTemplate {
+    this.for_rotation = value;
+    return this;
+  }
+
+  setCurrent(value: boolean): SessionTemplate {
+    this.current = value;
+    return this;
+  }
+
+  setSessionModel(value: number): SessionTemplate {
+    this.session_model = value;
     return this;
   }
 
@@ -149,6 +169,10 @@ export default class SessionTemplate extends SessionTemplateModel {
   isNew(): boolean {
     return this.id === undefined;
   }
+
+  // ============================================
+  // MÉTHODES MÉTIER
+  // ============================================
 
   // hasWorkOnDay(day: string): boolean {
   //   if (!this.definition || !this.definition[day]) return false;
@@ -362,32 +386,24 @@ export default class SessionTemplate extends SessionTemplateModel {
       : defaults
         ? await this.findDefault()
         : await this.find(Number(identifier));
-    // if (byGuid) {
-    //   data = await this.findByGuid(identifier);
-    // } else if (defaults) {
-    //   data = await this.findDefault();
-    // } else {
-    //   data = await this.find(Number(identifier));
-    // }
-
     if (!data) return null;
     return this.hydrate(data);
   }
-
-  // async listValidAt(
-  //   date: Date,
-  //   paginationOptions: { offset?: number; limit?: number } = {},
-  // ): Promise<SessionTemplate[] | null> {
-  //   const dataset = await this.listAllValidAt(date, paginationOptions);
-  //   if (!dataset || dataset.length === 0) return null;
-  //   return dataset.map((data) => new SessionTemplate().hydrate(data));
-  // }
 
   async list(
     conditions: Record<string, any> = {},
     paginationOptions: { offset?: number; limit?: number } = {},
   ): Promise<SessionTemplate[] | null> {
     const dataset = await this.listAll(conditions, paginationOptions);
+    if (!dataset || dataset.length === 0) return null;
+    return dataset.map((data) => new SessionTemplate().hydrate(data));
+  }
+
+  async listForRotation(
+    rotation?: boolean,
+    paginationOptions: { offset?: number; limit?: number } = {},
+  ): Promise<SessionTemplate[] | null> {
+    const dataset = await this.listAllForRotation(rotation, paginationOptions);
     if (!dataset || dataset.length === 0) return null;
     return dataset.map((data) => new SessionTemplate().hydrate(data));
   }
@@ -418,21 +434,26 @@ export default class SessionTemplate extends SessionTemplateModel {
     }
   }
 
-  toJSON(view: ViewMode = responseValue.FULL): object {
+  async toJSON(view: ViewMode = responseValue.FULL): Promise<object> {
+    const sessionModel = await this.getSessionModelObj();
     const baseData = {
       [RS.GUID]: this.guid,
-      [RS.TENANT]: this.tenant,
       [RS.NAME]: this.name,
-      // [RS.VALID_FROM]: this.valid_from,
-      // [RS.VALID_TO]: this.valid_to,
       [RS.DEFINITION]: this.definition,
       [RS.IS_DEFAULT]: this.defaults,
+      [RS.IS_CURRENT]: this.current,
+      [RS.FOR_ROTATION]: this.for_rotation,
+      [RS.SESSION_MODEL]: {
+        [RS.GUID]: sessionModel?.getGuid() || null,
+        [RS.NAME]: sessionModel?.getName() || null,
+      },
     };
 
     if (view === responseValue.MINIMAL) {
       return {
         [RS.GUID]: this.guid,
         [RS.NAME]: this.name,
+        [RS.SESSION_MODEL]: sessionModel?.getGuid() || null,
       };
     }
 
@@ -446,13 +467,13 @@ export default class SessionTemplate extends SessionTemplateModel {
   private hydrate(data: any): SessionTemplate {
     this.id = data.id;
     this.guid = data.guid;
-    this.tenant = data.tenant;
     this.name = data.name;
-    // this.valid_from = data.valid_from;
-    // this.valid_to = data.valid_to;
     this.definition = data.definition;
+    this.session_model = data.session_model;
     this.version = data.version;
     this.defaults = data.defaults;
+    this.current = data.current;
+    this.for_rotation = data.for_rotation;
     this.deleted_at = data.deleted_at;
     return this;
   }

@@ -37,10 +37,15 @@ const baseTenantSchema = z.object({
     .transform((val) => val.trim())
     .optional(),
 
+  // employee_count: z
+  //   .array(z.number())
+  //   .length(2, TENANT_ERRORS.EMPLOYEE_COUNT_INVALID)
+  //   .refine(([min, max]) => min! < max!, {
+  //     message: TENANT_ERRORS.EMPLOYEE_COUNT_INVALID,
+  //   }),
   employee_count: z
-    .array(z.number())
-    .length(2, TENANT_ERRORS.EMPLOYEE_COUNT_INVALID)
-    .refine(([min, max]) => min! < max!, {
+    .tuple([z.number().int().min(1), z.number().int().min(1).nullable()])
+    .refine(([min, max]) => max === null || min < max, {
       message: TENANT_ERRORS.EMPLOYEE_COUNT_INVALID,
     }),
 

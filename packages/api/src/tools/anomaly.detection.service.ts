@@ -192,7 +192,6 @@ class AnomalyDetectionService {
         type: AnomalyType.SESSION_ALREADY_OPEN,
         severity: AlertSeverity.MEDIUM, // 'medium',
         description: `Session already open since ${activeSession.getSessionStartAt()?.toLocaleString('en-US')}`,
-        // description: `Session déjà ouverte depuis ${activeSession.getSessionStartAt()?.toLocaleString('fr-FR')}`,
         technical_details: {
           existing_session_guid: activeSession.getGuid(),
           session_start: activeSession.getSessionStartAt(),

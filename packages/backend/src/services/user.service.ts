@@ -194,12 +194,13 @@ export class UserService {
   static async updatedUser(
     reference: string,
     guid: string,
+    manager: string,
     payload: any,
   ): Promise<{ status: number; response: object }> {
     try {
       const api = await getApiClient(reference);
 
-      const response = await api.put(`${userBaseUrl}/${guid}`, payload);
+      const response = await api.put(`${userBaseUrl}/${guid}?manager=${manager}`, payload);
 
       return {
         status: response.status,

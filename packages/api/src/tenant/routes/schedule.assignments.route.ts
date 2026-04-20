@@ -2,6 +2,7 @@ import { Request, Response, Router } from 'express';
 import {
   HttpStatus,
   paginationSchema,
+  SAFamily,
   SCHEDULE_ASSIGNMENTS_CODES,
   SCHEDULE_ASSIGNMENTS_DEFAULTS,
   SCHEDULE_ASSIGNMENTS_ERRORS,
@@ -101,14 +102,12 @@ router.get('/list', Ensure.get(), async (req: Request, res: Response) => {
     const filters = validateScheduleAssignmentsFilters(filtersQuery);
     const conditions: Record<string, any> = {};
 
-    if (filters.user) {
-      const userObj = await User._load(filters.user, true);
-      if (userObj) conditions.user = userObj.getId();
+    if (filters.family) {
+      conditions.family = filters.family;
     }
 
-    if (filters.groups) {
-      const groupsObj = await Groups._load(filters.groups, true);
-      if (groupsObj) conditions.groups = groupsObj.getId();
+    if (filters.related) {
+      conditions.related = filters.related;
     }
 
     if (filters.active !== undefined) {
@@ -168,6 +167,10 @@ router.get('/list', Ensure.get(), async (req: Request, res: Response) => {
   }
 });
 
+/**
+ * GET /api/schedule-assignments/:manager/list
+ * Liste les assignments créées par un manager
+ */
 router.get('/:manager/list', Ensure.get(), async (req: Request, res: Response) => {
   try {
     const { manager } = req.params;
@@ -191,8 +194,6 @@ router.get('/:manager/list', Ensure.get(), async (req: Request, res: Response) =
         message: USERS_ERRORS.AUTHORIZATION_FAILED,
       });
     }
-    // const paginationOptions = paginationSchema.parse(req.query);
-    // const views = ValidationUtils.validateView(req.query.view, responseValue.FULL);
 
     const scheduleAssignments = await ScheduleAssignments._listByCreatedBy(managerObj.getId()!);
     if (!scheduleAssignments || scheduleAssignments.length === 0) {
@@ -225,7 +226,7 @@ router.get('/:manager/list', Ensure.get(), async (req: Request, res: Response) =
 
 /**
  * POST /api/schedule-assignments
- * Crée une nouvelle assignments d'horaire
+ * Crée une nouvelle assignment d'horaire
  */
 router.post('/', Ensure.post(), async (req: Request, res: Response) => {
   try {
@@ -248,20 +249,6 @@ router.post('/', Ensure.post(), async (req: Request, res: Response) => {
       });
     }
 
-    if (validatedData.user && validatedData.groups) {
-      return R.handleError(res, HttpStatus.BAD_REQUEST, {
-        code: SCHEDULE_ASSIGNMENTS_CODES.VALIDATION_FAILED,
-        message: SCHEDULE_ASSIGNMENTS_ERRORS.BOTH_USER_AND_GROUPS,
-      });
-    }
-
-    if (!validatedData.user && !validatedData.groups) {
-      return R.handleError(res, HttpStatus.BAD_REQUEST, {
-        code: SCHEDULE_ASSIGNMENTS_CODES.VALIDATION_FAILED,
-        message: SCHEDULE_ASSIGNMENTS_ERRORS.USER_OR_GROUPS_REQUIRED,
-      });
-    }
-
     const tenant = req.tenant;
 
     const assignmentObj = new ScheduleAssignments()
@@ -270,45 +257,36 @@ router.post('/', Ensure.post(), async (req: Request, res: Response) => {
       .setCreatedBy(createdByObj.getId()!)
       .setStartDate(validatedData.start_date)
       .setActive(validatedData.active ?? SCHEDULE_ASSIGNMENTS_DEFAULTS.ACTIVE);
+
     if (validatedData.end_date) {
       assignmentObj.setEndDate(validatedData.end_date);
     }
-    // // ✅ 3. Assigner le template (copie complète en JSONB avec version)
-    // await assignmentObj.assignFromSessionTemplate(
-    //   templateObj,
-    //   createdByObj.getId()!,
-    //   validatedData.reason ? validatedData.reason : undefined,
-    // );
+
     if (validatedData.reason) {
       assignmentObj.setReason(validatedData.reason);
     }
 
-    // Exception pour un utilisateur spécifique
-    if (validatedData.user) {
-      const userObj = await User._load(validatedData.user, true);
+    // Résolution du related selon la family
+    const { family, related: relatedGuid } = validatedData;
+
+    if (family === SAFamily.USER) {
+      const userObj = await User._load(relatedGuid, true);
       if (!userObj) {
         return R.handleError(res, HttpStatus.NOT_FOUND, {
           code: USERS_CODES.USER_NOT_FOUND,
           message: USERS_ERRORS.NOT_FOUND,
         });
       }
-      assignmentObj.setUser(userObj.getId()!);
-    }
-
-    // Exception pour une groups
-    if (validatedData.groups) {
-      const groupsObj = await Groups._load(validatedData.groups, true);
+      assignmentObj.setFamily(SAFamily.USER).setRelated(userObj.getGuid()!);
+    } else {
+      const groupsObj = await Groups._load(relatedGuid, true);
       if (!groupsObj) {
         return R.handleError(res, HttpStatus.NOT_FOUND, {
           code: SCHEDULE_ASSIGNMENTS_CODES.GROUPS_NOT_FOUND,
           message: SCHEDULE_ASSIGNMENTS_ERRORS.GROUPS_NOT_FOUND,
         });
       }
-      assignmentObj.setGroups(groupsObj.getId()!);
-    }
-
-    if (validatedData.reason) {
-      assignmentObj.setReason(validatedData.reason);
+      assignmentObj.setFamily(SAFamily.GROUP).setRelated(groupsObj.getGuid()!);
     }
 
     await assignmentObj.save();
@@ -337,7 +315,7 @@ router.post('/', Ensure.post(), async (req: Request, res: Response) => {
 
 /**
  * GET /api/schedule-assignments/:guid
- * Récupère une assignments spécifique
+ * Récupère une assignment spécifique
  */
 router.get('/:guid', Ensure.get(), async (req: Request, res: Response) => {
   try {
@@ -397,8 +375,9 @@ router.get('/user/:userGuid', Ensure.get(), async (req: Request, res: Response) 
     const paginationOptions = paginationSchema.parse(req.query);
     const views = ValidationUtils.validateView(req.query.view, responseValue.FULL);
 
-    const assignmentList = await ScheduleAssignments._listByUser(
-      userObj.getId()!,
+    const assignmentList = await ScheduleAssignments._listByRelated(
+      SAFamily.USER,
+      userObj.getGuid()!,
       paginationOptions,
     );
 
@@ -451,9 +430,10 @@ router.get('/user/:userGuid/on-date', Ensure.get(), async (req: Request, res: Re
     const paginationOptions = paginationSchema.parse(req.query);
     const views = ValidationUtils.validateView(req.query.view, responseValue.FULL);
 
-    const assignmentList = await ScheduleAssignments._listForUserOnDate(
-      userObj.getId()!,
-      date,
+    const assignmentList = await ScheduleAssignments._listForRelatedOnDate(
+      SAFamily.USER,
+      userObj.getGuid()!,
+      date!,
       paginationOptions,
     );
 
@@ -485,7 +465,7 @@ router.get('/user/:userGuid/on-date', Ensure.get(), async (req: Request, res: Re
 
 /**
  * GET /api/schedule-assignments/groups/:groupsGuid
- * Liste toutes les assignments pour une groups
+ * Liste toutes les assignments pour une group
  */
 router.get('/groups/:groupsGuid', Ensure.get(), async (req: Request, res: Response) => {
   try {
@@ -508,8 +488,9 @@ router.get('/groups/:groupsGuid', Ensure.get(), async (req: Request, res: Respon
     const paginationOptions = paginationSchema.parse(req.query);
     const views = ValidationUtils.validateView(req.query.view, responseValue.FULL);
 
-    const assignmentList = await ScheduleAssignments._listByGroups(
-      groupsObj.getId()!,
+    const assignmentList = await ScheduleAssignments._listByRelated(
+      SAFamily.GROUP,
+      groupsObj.getGuid()!,
       paginationOptions,
     );
 
@@ -601,12 +582,11 @@ router.get('/active/current', Ensure.get(), async (req: Request, res: Response) 
 
     const today = TimezoneConfigUtils.getCurrentTime().toISOString().split('T')[0];
     const assignmentList = await ScheduleAssignments._listByDateRange(
-      today,
-      today,
+      today!,
+      today!,
       paginationOptions,
     );
 
-    // Filtrer uniquement les actives
     const activeAssignments = assignmentList?.filter((e) => e.isActive() && e.isCurrentlyActive());
 
     const assignments = {
@@ -636,7 +616,7 @@ router.get('/active/current', Ensure.get(), async (req: Request, res: Response) 
 
 /**
  * PUT /api/schedule-assignments/:guid
- * Met à jour une assignments
+ * Met à jour une assignment
  */
 router.put('/:guid', Ensure.put(), async (req: Request, res: Response) => {
   try {
@@ -659,17 +639,6 @@ router.put('/:guid', Ensure.put(), async (req: Request, res: Response) => {
 
     const validatedData = validateScheduleAssignmentsUpdate(req.body);
 
-    // if (validatedData.session_template !== undefined) {
-    //   const templateObj = await SessionTemplate._load(validatedData.session_template, true);
-    //   if (!templateObj) {
-    //     return R.handleError(res, HttpStatus.NOT_FOUND, {
-    //       code: SCHEDULE_ASSIGNMENTS_CODES.SESSION_TEMPLATE_NOT_FOUND,
-    //       message: SCHEDULE_ASSIGNMENTS_ERRORS.SESSION_TEMPLATE_NOT_FOUND,
-    //     });
-    //   }
-    //   assignmentObj.setSessionTemplate(templateObj.getId()!);
-    // }
-
     if (validatedData.start_date !== undefined) {
       assignmentObj.setStartDate(validatedData.start_date);
     }
@@ -686,26 +655,27 @@ router.put('/:guid', Ensure.put(), async (req: Request, res: Response) => {
       assignmentObj.setActive(validatedData.active);
     }
 
-    if (validatedData.user !== undefined && validatedData.user !== null) {
-      const userObj = await User._load(validatedData.user, true);
-      if (!userObj) {
-        return R.handleError(res, HttpStatus.NOT_FOUND, {
-          code: SCHEDULE_ASSIGNMENTS_CODES.USER_NOT_FOUND,
-          message: SCHEDULE_ASSIGNMENTS_ERRORS.USER_NOT_FOUND,
-        });
+    // Mise à jour du related si family + related fournis
+    if (validatedData.family !== undefined && validatedData.related !== undefined) {
+      if (validatedData.family === SAFamily.USER) {
+        const userObj = await User._load(validatedData.related, true);
+        if (!userObj) {
+          return R.handleError(res, HttpStatus.NOT_FOUND, {
+            code: USERS_CODES.USER_NOT_FOUND,
+            message: USERS_ERRORS.NOT_FOUND,
+          });
+        }
+        assignmentObj.setFamily(SAFamily.USER).setRelated(userObj.getGuid()!);
+      } else {
+        const groupsObj = await Groups._load(validatedData.related, true);
+        if (!groupsObj) {
+          return R.handleError(res, HttpStatus.NOT_FOUND, {
+            code: SCHEDULE_ASSIGNMENTS_CODES.GROUPS_NOT_FOUND,
+            message: SCHEDULE_ASSIGNMENTS_ERRORS.GROUPS_NOT_FOUND,
+          });
+        }
+        assignmentObj.setFamily(SAFamily.GROUP).setRelated(groupsObj.getGuid()!);
       }
-      assignmentObj.setUser(userObj.getId()!);
-    }
-
-    if (validatedData.groups !== undefined && validatedData.groups !== null) {
-      const groupsObj = await Groups._load(validatedData.groups, true);
-      if (!groupsObj) {
-        return R.handleError(res, HttpStatus.NOT_FOUND, {
-          code: SCHEDULE_ASSIGNMENTS_CODES.GROUPS_NOT_FOUND,
-          message: SCHEDULE_ASSIGNMENTS_ERRORS.GROUPS_NOT_FOUND,
-        });
-      }
-      assignmentObj.setGroups(groupsObj.getId()!);
     }
 
     const { new_definition } = req.body;
@@ -718,12 +688,9 @@ router.put('/:guid', Ensure.put(), async (req: Request, res: Response) => {
       }
 
       const session_template = SessionTemplate.toObject(assignmentObj.getSessionTemplate());
-
       const normalizedDefinition =
         SessionTemplateValidationUtils.normalizeDefinition(new_definition);
-
       session_template.setDefinition(normalizedDefinition);
-
       assignmentObj.setNewSessionTemplate(session_template);
     }
 
@@ -748,8 +715,8 @@ router.put('/:guid', Ensure.put(), async (req: Request, res: Response) => {
 });
 
 /**
- * PATCH /api/schedule-assignments/:guid/template
- * ✅ Modifie le template d'un assignment (avec log automatique)
+ * PATCH /api/schedule-assignments/template/:guid
+ * Modifie le template d'un assignment (avec log automatique)
  */
 router.patch('/template/:guid', Ensure.patch(), async (req: Request, res: Response) => {
   try {
@@ -795,26 +762,23 @@ router.patch('/template/:guid', Ensure.patch(), async (req: Request, res: Respon
 
     if (!UsersValidationUtils.validateGuid(user)) {
       return R.handleError(res, HttpStatus.BAD_REQUEST, {
-        code: SCHEDULE_ASSIGNMENTS_CODES.USER_INVALID,
-        message: SCHEDULE_ASSIGNMENTS_ERRORS.USER_INVALID,
+        code: SCHEDULE_ASSIGNMENTS_CODES.RELATED_INVALID,
+        message: SCHEDULE_ASSIGNMENTS_ERRORS.RELATED_INVALID,
       });
     }
 
     const currentUser = await User._load(user, true);
     if (!currentUser) {
       return R.handleError(res, HttpStatus.NOT_FOUND, {
-        code: SCHEDULE_ASSIGNMENTS_CODES.USER_NOT_FOUND,
-        message: SCHEDULE_ASSIGNMENTS_ERRORS.USER_NOT_FOUND,
+        code: SCHEDULE_ASSIGNMENTS_CODES.RELATED_NOT_FOUND,
+        message: SCHEDULE_ASSIGNMENTS_ERRORS.RELATED_NOT_FOUND,
       });
     }
 
     const session_template = SessionTemplate.toObject(assignment.getSessionTemplate());
-
     const normalizedDefinition = SessionTemplateValidationUtils.normalizeDefinition(new_definition);
-
     session_template.setDefinition(normalizedDefinition);
 
-    // ✅ Mettre à jour le template (log automatique créé)
     await assignment.updateSessionTemplate(session_template, currentUser.getId()!, reason);
 
     return R.handleSuccess(res, {
@@ -841,7 +805,7 @@ router.patch('/template/:guid', Ensure.patch(), async (req: Request, res: Respon
 
 /**
  * DELETE /api/schedule-assignments/:guid
- * Supprime une assignments
+ * Supprime une assignment
  */
 router.delete('/:guid', Ensure.delete(), async (req: Request, res: Response) => {
   try {
@@ -879,7 +843,7 @@ router.delete('/:guid', Ensure.delete(), async (req: Request, res: Response) => 
 
 /**
  * GET /api/schedule-assignments/:guid/history
- * ✅ Récupère l'historique complet des modifications d'un assignment
+ * Récupère l'historique complet des modifications d'un assignment
  */
 router.get('/:guid/history', Ensure.get(), async (req: Request, res: Response) => {
   try {
@@ -928,7 +892,7 @@ router.get('/:guid/history', Ensure.get(), async (req: Request, res: Response) =
 
 /**
  * GET /api/schedule-assignments/:guid/statistics
- * Statistiques sur une assignments
+ * Statistiques sur une assignment
  */
 router.get('/:guid/statistics', Ensure.get(), async (req: Request, res: Response) => {
   try {
@@ -947,22 +911,19 @@ router.get('/:guid/statistics', Ensure.get(), async (req: Request, res: Response
       });
     }
 
-    const user = await assignmentObj.getUserObj();
-    const groups = await assignmentObj.getGroupsObj();
+    const relatedObj = await assignmentObj.getRelatedObj();
     const template = SessionTemplate.toObject(assignmentObj.getSessionTemplate());
     const createdBy = await assignmentObj.getCreatedByObj();
 
     const statistics = {
       assignments: await assignmentObj.toJSON(responseValue.MINIMAL),
-      type: assignmentObj.isForUser() ? 'user' : 'groups',
-      target: assignmentObj.isForUser()
-        ? user
-          ? await user.toJSON()
-          : null
-        : groups
-          ? await groups.toJSON(responseValue.MINIMAL)
-          : null,
-      template: template ? template.toJSON(responseValue.MINIMAL) : null,
+      type: assignmentObj.getFamily(),
+      target: relatedObj
+        ? assignmentObj.isForUser()
+          ? await (relatedObj as User).toJSON()
+          : await (relatedObj as Groups).toJSON(responseValue.MINIMAL)
+        : null,
+      template: template ? await template.toJSON(responseValue.MINIMAL) : null,
       created_by: createdBy ? await createdBy.toJSON() : null,
       duration_days: assignmentObj.getDurationInDays(),
       is_single_day: assignmentObj.isSingleDay(),

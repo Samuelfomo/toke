@@ -6,21 +6,6 @@ import {
 } from '../../constants/tenant/session.templates.js';
 
 export class SessionTemplateValidationUtils {
-  // /**
-  //  * Validates tenant
-  //  */
-  // static validateTenant(tenant: any): boolean {
-  //   if (!tenant || typeof tenant !== 'string') return false;
-  //   const trimmed = tenant.trim();
-  //   return (
-  //     trimmed.length >= SESSION_TEMPLATE_VALIDATION.TENANT.MIN_LENGTH &&
-  //     trimmed.length <= SESSION_TEMPLATE_VALIDATION.TENANT.MAX_LENGTH
-  //   );
-  // }
-
-  /**
-   * Validates name
-   */
   static validateName(name: any): boolean {
     if (!name || typeof name !== 'string') return false;
     const trimmed = name.trim();
@@ -29,24 +14,6 @@ export class SessionTemplateValidationUtils {
       trimmed.length <= SESSION_TEMPLATE_VALIDATION.NAME.MAX_LENGTH
     );
   }
-
-  // /**
-  //  * Validates valid_from
-  //  */
-  // static validateValidFrom(validFrom: any): boolean {
-  //   if (!validFrom) return false;
-  //   const date = new Date(validFrom);
-  //   return !isNaN(date.getTime());
-  // }
-  //
-  // /**
-  //  * Validates valid_to
-  //  */
-  // static validateValidTo(validTo: any): boolean {
-  //   if (validTo === null || validTo === undefined) return true;
-  //   const date = new Date(validTo);
-  //   return !isNaN(date.getTime());
-  // }
 
   /**
    * Validates time format (HH:MM)
@@ -63,6 +30,118 @@ export class SessionTemplateValidationUtils {
     const [hours, minutes] = time.split(':').map(Number);
     return hours! * 60 + minutes!;
   }
+
+  /**
+   * Formats minutes to HH:MM
+   */
+  static minutesToTimeString(minutes: number): string {
+    const hours = Math.floor(minutes / 60);
+    const mins = minutes % 60;
+    return `${hours.toString().padStart(2, '0')}:${mins.toString().padStart(2, '0')}`;
+  }
+
+  /** Durée nette d'un bloc (travail - pause) en minutes */
+  static blockNetMinutes(block: { work: string[]; pause?: string[] | null }): number {
+    let duration = this.timeToMinutes(block.work[1]!) - this.timeToMinutes(block.work[0]!);
+    if (block.pause) {
+      duration -= this.timeToMinutes(block.pause[1]!) - this.timeToMinutes(block.pause[0]!);
+    }
+    return duration;
+  }
+
+  /** Durée nette d'une journée en minutes */
+  static dayNetMinutes(blocks: { work: string[]; pause?: string[] | null }[]): number {
+    return blocks.reduce((sum, b) => sum + this.blockNetMinutes(b), 0);
+  }
+
+  /** Durée nette de toute la définition en minutes */
+  static weekNetMinutes(definition: Record<string, any[] | null>): number {
+    return Object.values(definition).reduce((sum, blocks) => {
+      if (!blocks) return sum;
+      return sum + this.dayNetMinutes(blocks);
+    }, 0);
+  }
+
+  /**
+   * Normalise une définition partielle vers 7 jours.
+   * Jours absents → null (férié).
+   */
+  static normalizeDefinition(
+    input: Partial<Record<DayOfWeek, any[] | null>>,
+  ): Record<DayOfWeek, any[] | null> {
+    const out: Record<string, any[] | null> = {};
+    for (const day of VALID_DAYS) {
+      out[day] = day in input ? (input[day] ?? null) : null;
+    }
+    return out as Record<DayOfWeek, any[] | null>;
+  }
+
+  /** Nettoie les données brutes avant persistance */
+  static clean(data: Record<string, any>): Record<string, any> {
+    const out = { ...data };
+    if (out.name) out.name = String(out.name).trim();
+    if (out.definition) out.definition = this.cleanDefinition(out.definition);
+    return out;
+  }
+
+  /**
+   * Cleans definition object
+   */
+  static cleanDefinition(definition: Record<string, any>): Record<string, any> {
+    const cleaned: Record<string, any> = {};
+
+    for (const day of VALID_DAYS) {
+      const value = definition[day];
+
+      // Jour non envoyé → on laisse undefined (normalisé plus tard)
+      if (value === undefined) continue;
+
+      // Jour férié → on conserve null
+      if (value === null) {
+        cleaned[day] = null;
+        continue;
+      }
+
+      // Jour repos ou travaillé
+      if (Array.isArray(value)) {
+        cleaned[day] = value.map((block) => this.cleanWorkBlock(block));
+        // continue;
+      }
+
+      // Toute autre valeur est invalide → ignorée ou throw
+      // throw new Error(`Invalid definition value for day ${day}`);
+    }
+
+    return cleaned;
+  }
+
+  // /**
+  //  * 🔧 NOUVELLE FONCTION
+  //  * Normalise une définition partielle vers 7 jours complets
+  //  *
+  //  * @param input - Définition partielle reçue de l'API
+  //  * @returns Définition complète (7 jours)
+  //  */
+  // static normalizeDefinition(
+  //   input: Partial<Record<DayOfWeek, any[] | null>>,
+  // ): Record<DayOfWeek, any[] | null> {
+  //   const normalized: Record<string, any[] | null> = {};
+  //
+  //   for (const day of VALID_DAYS) {
+  //     if (day in input) {
+  //       // Le jour est défini → utiliser sa valeur (peut être null, [], ou [...])
+  //       normalized[day] = input[day] ?? null;
+  //     } else {
+  //       // ⚠️ DÉCISION MÉTIER : jour non défini = férié
+  //       normalized[day] = null;
+  //
+  //       // Alternative si tu préfères : jour non défini = repos
+  //       // normalized[day] = [];
+  //     }
+  //   }
+  //
+  //   return normalized as Record<DayOfWeek, any[] | null>;
+  // }
 
   /**
    * Validates work block
@@ -198,61 +277,12 @@ export class SessionTemplateValidationUtils {
    */
   static cleanSessionTemplateData(data: Record<string, any>): Record<string, any> {
     const cleaned = { ...data };
-
-    // Clean string fields
-    if (cleaned.tenant !== undefined && cleaned.tenant !== null) {
-      cleaned.tenant = cleaned.tenant.toString().trim();
-    }
-
     if (cleaned.name !== undefined && cleaned.name !== null) {
       cleaned.name = cleaned.name.toString().trim();
     }
-
-    // // Convert dates
-    // if (cleaned.valid_from !== undefined && cleaned.valid_from !== null) {
-    //   cleaned.valid_from = new Date(cleaned.valid_from).toISOString();
-    // }
-    //
-    // if (cleaned.valid_to !== undefined && cleaned.valid_to !== null) {
-    //   cleaned.valid_to = new Date(cleaned.valid_to).toISOString();
-    // }
-
-    // Clean definition
     if (cleaned.definition !== undefined && cleaned.definition !== null) {
       cleaned.definition = this.cleanDefinition(cleaned.definition);
     }
-
-    return cleaned;
-  }
-
-  /**
-   * Cleans definition object
-   */
-  static cleanDefinition(definition: Record<string, any>): Record<string, any> {
-    const cleaned: Record<string, any> = {};
-
-    for (const day of VALID_DAYS) {
-      const value = definition[day];
-
-      // Jour non envoyé → on laisse undefined (normalisé plus tard)
-      if (value === undefined) continue;
-
-      // Jour férié → on conserve null
-      if (value === null) {
-        cleaned[day] = null;
-        continue;
-      }
-
-      // Jour repos ou travaillé
-      if (Array.isArray(value)) {
-        cleaned[day] = value.map((block) => this.cleanWorkBlock(block));
-        // continue;
-      }
-
-      // Toute autre valeur est invalide → ignorée ou throw
-      // throw new Error(`Invalid definition value for day ${day}`);
-    }
-
     return cleaned;
   }
 
@@ -309,43 +339,6 @@ export class SessionTemplateValidationUtils {
     }
 
     return totalMinutes;
-  }
-
-  /**
-   * Formats minutes to HH:MM
-   */
-  static minutesToTimeString(minutes: number): string {
-    const hours = Math.floor(minutes / 60);
-    const mins = minutes % 60;
-    return `${hours.toString().padStart(2, '0')}:${mins.toString().padStart(2, '0')}`;
-  }
-
-  /**
-   * 🔧 NOUVELLE FONCTION
-   * Normalise une définition partielle vers 7 jours complets
-   *
-   * @param input - Définition partielle reçue de l'API
-   * @returns Définition complète (7 jours)
-   */
-  static normalizeDefinition(
-    input: Partial<Record<DayOfWeek, any[] | null>>,
-  ): Record<DayOfWeek, any[] | null> {
-    const normalized: Record<string, any[] | null> = {};
-
-    for (const day of VALID_DAYS) {
-      if (day in input) {
-        // Le jour est défini → utiliser sa valeur (peut être null, [], ou [...])
-        normalized[day] = input[day] ?? null;
-      } else {
-        // ⚠️ DÉCISION MÉTIER : jour non défini = férié
-        normalized[day] = null;
-
-        // Alternative si tu préfères : jour non défini = repos
-        // normalized[day] = [];
-      }
-    }
-
-    return normalized as Record<DayOfWeek, any[] | null>;
   }
 
   /**

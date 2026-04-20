@@ -22,6 +22,9 @@ import { DepartmentDbStructure } from './data/department.db.js';
 import { PosteDbStructure } from './data/poste.db.js';
 import { ScheduleAssignmentsLogsDbStructure } from './data/schedule.assignments.logs.db.js';
 import { RotationAssignmentLogsDbStructure } from './data/rotation.assignment.log.db.js';
+import { RotationGroupTemplateDbStructure } from './data/rotation.group.template.db.js';
+import { RotationGroupTemplateLogDbStructure } from './data/rotation.group.template.log.db.js';
+import { SessionModelDbStructure } from './data/session.model.db.js';
 
 interface TenantInstance {
   sequelize: Sequelize;
@@ -199,6 +202,7 @@ export class TableInitializer {
 
     this.defineRolesModelForInstance(instance);
     this.defineUsersModelForInstance(instance);
+    this.defineSessionModelForInstance(instance);
     this.defineUserRolesModelForInstance(instance);
     this.defineOrgHierarchyModelForInstance(instance);
     this.defineSitesModelForInstance(instance);
@@ -218,6 +222,8 @@ export class TableInitializer {
     this.definePosteModelForInstance(instance);
     this.defineScheduleAssignmentsLogsModelForInstance(instance);
     this.defineRotationAssignmentLogsModelForInstance(instance);
+    this.defineRotationGroupTemplateModelForInstance(instance);
+    this.defineRotationGroupTemplateLogModelForInstance(instance);
 
     console.log(`✅ ${instance.models.size} modèle(s) défini(s) pour cette instance`);
   }
@@ -264,6 +270,17 @@ export class TableInitializer {
 
     instance.models.set(UsersDbStructure.tableName, model);
     console.log(`✅ Modèle Users défini (${UsersDbStructure.tableName})`);
+  }
+
+  private static defineSessionModelForInstance(instance: TenantInstance): void {
+    const model = instance.sequelize.define(
+      SessionModelDbStructure.tableName,
+      SessionModelDbStructure.attributes,
+      SessionModelDbStructure.options,
+    );
+
+    instance.models.set(SessionModelDbStructure.tableName, model);
+    console.log(`✅ Modèle Session Model défini (${SessionModelDbStructure.tableName})`);
   }
 
   private static defineUserRolesModelForInstance(instance: TenantInstance): void {
@@ -458,6 +475,32 @@ export class TableInitializer {
     instance.models.set(RotationAssignmentLogsDbStructure.tableName, model);
     console.log(
       `✅ Modèle Rotation Assignment Logs défini (${RotationAssignmentLogsDbStructure.tableName})`,
+    );
+  }
+
+  private static defineRotationGroupTemplateModelForInstance(instance: TenantInstance): void {
+    const model = instance.sequelize.define(
+      RotationGroupTemplateDbStructure.tableName,
+      RotationGroupTemplateDbStructure.attributes,
+      RotationGroupTemplateDbStructure.options,
+    );
+
+    instance.models.set(RotationGroupTemplateDbStructure.tableName, model);
+    console.log(
+      `✅ Modèle Rotation Group Template défini (${RotationGroupTemplateDbStructure.tableName})`,
+    );
+  }
+
+  private static defineRotationGroupTemplateLogModelForInstance(instance: TenantInstance): void {
+    const model = instance.sequelize.define(
+      RotationGroupTemplateLogDbStructure.tableName,
+      RotationGroupTemplateLogDbStructure.attributes,
+      RotationGroupTemplateLogDbStructure.options,
+    );
+
+    instance.models.set(RotationGroupTemplateLogDbStructure.tableName, model);
+    console.log(
+      `✅ Modèle Rotation Group Template Log défini (${RotationGroupTemplateLogDbStructure.tableName})`,
     );
   }
 

@@ -1,12 +1,13 @@
+export enum SAFamily {
+  USER = 'user',
+  GROUP = 'group',
+}
+
 export const SCHEDULE_ASSIGNMENTS_VALIDATION = {
   GUID: {
     MIN_LENGTH: 1,
     MAX_LENGTH: 255,
   },
-  // TENANT: {
-  //   MIN_LENGTH: 1,
-  //   MAX_LENGTH: 128,
-  // },
   USER: {
     MIN_LENGTH: 1,
     MAX_LENGTH: 255,
@@ -29,6 +30,10 @@ export const SCHEDULE_ASSIGNMENTS_VALIDATION = {
     MIN_LENGTH: 1,
     MAX_LENGTH: 5000,
   },
+  FAMILY: {
+    VALUES: Object.values(SAFamily) as readonly string[],
+  },
+  RELATED: { MIN_LENGTH: 1, MAX_LENGTH: 255 },
 } as const;
 
 export const SCHEDULE_ASSIGNMENTS_DEFAULTS = {
@@ -46,12 +51,8 @@ export const SCHEDULE_ASSIGNMENTS_CODES = {
   INVALID_GUID: 'invalid_guid',
   TENANT_REQUIRED: 'tenant_required',
   TENANT_INVALID: 'tenant_invalid',
-  USER_INVALID: 'user_invalid',
-  USER_NOT_FOUND: 'user_not_found',
-  GROUPS_INVALID: 'groups_invalid',
-  GROUPS_NOT_FOUND: 'groups_not_found',
-  USER_OR_GROUPS_REQUIRED: 'user_or_groups_required',
-  BOTH_USER_AND_GROUPS: 'both_user_and_groups',
+  FAMILY_INVALID: 'family_invalid',
+  RELATED_INVALID: 'related_invalid',
   SESSION_TEMPLATE_REQUIRED: 'session_template_required',
   SESSION_TEMPLATE_INVALID: 'session_template_invalid',
   SESSION_TEMPLATE_NOT_FOUND: 'session_template_not_found',
@@ -77,23 +78,15 @@ export const SCHEDULE_ASSIGNMENTS_CODES = {
   REVISION_FAILED: 'revision_failed',
   STATISTICS_FAILED: 'statistics_failed',
   RETRIEVAL_FAILED: 'retrieval_failed',
+  RELATED_NOT_FOUND: 'related_not_found',
+  FAMILY_REQUIRED: 'family_required',
+  RELATED_REQUIRED: 'related_required',
+  GROUPS_NOT_FOUND: 'groups_not_found',
 } as const;
 
 const SCHEDULE_ASSIGNMENTS_LABEL = 'Schedule Assignments';
 export const SCHEDULE_ASSIGNMENTS_ERRORS = {
   SCHEDULE_ASSIGNMENTS: SCHEDULE_ASSIGNMENTS_LABEL,
-
-  // TENANT_REQUIRED: `${SCHEDULE_ASSIGNMENTS_LABEL} tenant is required`,
-  // TENANT_INVALID: `Tenant must be between ${SCHEDULE_ASSIGNMENTS_VALIDATION.TENANT.MIN_LENGTH} and ${SCHEDULE_ASSIGNMENTS_VALIDATION.TENANT.MAX_LENGTH} characters`,
-
-  USER_INVALID: `User GUID must be between ${SCHEDULE_ASSIGNMENTS_VALIDATION.USER.MIN_LENGTH} and ${SCHEDULE_ASSIGNMENTS_VALIDATION.USER.MAX_LENGTH} characters`,
-  USER_NOT_FOUND: 'User not found',
-
-  GROUPS_INVALID: `Groups GUID must be between ${SCHEDULE_ASSIGNMENTS_VALIDATION.GROUPS.MIN_LENGTH} and ${SCHEDULE_ASSIGNMENTS_VALIDATION.GROUPS.MAX_LENGTH} characters`,
-  GROUPS_NOT_FOUND: 'Rotation Groups not found',
-
-  USER_OR_GROUPS_REQUIRED: 'Either user or groups must be specified',
-  BOTH_USER_AND_GROUPS: 'Cannot specify both user and groups',
 
   SESSION_TEMPLATE_REQUIRED: `${SCHEDULE_ASSIGNMENTS_LABEL} session_template is required`,
   SESSION_TEMPLATE_INVALID: `Session Template GUID must be between ${SCHEDULE_ASSIGNMENTS_VALIDATION.SESSION_TEMPLATE.MIN_LENGTH} and ${SCHEDULE_ASSIGNMENTS_VALIDATION.SESSION_TEMPLATE.MAX_LENGTH} characters`,
@@ -135,6 +128,16 @@ export const SCHEDULE_ASSIGNMENTS_ERRORS = {
   USER_TEMPLATE_VERSION_ALREADY_ASSIGNED: 'This template version is already assigned to this user',
   GROUPS_TEMPLATE_VERSION_ALREADY_ASSIGNED:
     'This template version is already assigned to this group',
+  FAMILY_INVALID: 'Family must be either "user" or "group"',
+  FAMILY_REQUIRED: 'Family is required',
+  RELATED_REQUIRED: 'Related is required',
+  RELATED_INVALID: 'Related must be a valid GUID',
+  RELATED_NOT_FOUND: 'Related not found',
+  RELATED_ALREADY_ASSIGNED: 'Related is already assigned to this session template',
+  RELATED_ALREADY_ASSIGNED_TO_FAMILY: 'Related is already assigned to this family',
+  RELATED_ALREADY_ASSIGNED_TO_FAMILY_AND_TEMPLATE:
+    'Related is already assigned to this family and template',
+  GROUPS_NOT_FOUND: 'Groups not found',
 } as const;
 
 export const SCHEDULE_ASSIGNMENTS_MESSAGES = {

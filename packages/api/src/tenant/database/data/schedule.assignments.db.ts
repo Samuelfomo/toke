@@ -1,4 +1,5 @@
-import { DataTypes, ModelAttributes, ModelOptions, Op } from 'sequelize';
+import { DataTypes, ModelAttributes, ModelOptions } from 'sequelize';
+import { SAFamily } from '@toke/shared';
 
 import { tableName } from '../../../utils/response.model.js';
 
@@ -41,29 +42,22 @@ export const ScheduleAssignmentsDbStructure = {
       },
       comment: 'Tenant Reference',
     },
-    user: {
-      type: DataTypes.INTEGER,
-      allowNull: true,
-      references: {
-        model: tableName.USERS,
-        key: 'id',
-      },
+    family: {
+      type: DataTypes.ENUM(...Object.values(SAFamily)),
+      allowNull: false,
       validate: {
-        isInt: true,
+        isIn: {
+          args: [Object.values(SAFamily)],
+          msg: 'Schedule assignments family must be one of: user, group',
+        },
       },
-      comment: 'Reference to user (nullable for groups Assignments)',
+      comment: 'Type of assignment target: user or group',
     },
-    groups: {
-      type: DataTypes.INTEGER,
-      allowNull: true,
-      references: {
-        model: tableName.GROUPS,
-        key: 'id',
-      },
-      validate: {
-        isInt: true,
-      },
-      comment: 'Reference to groups (nullable for user Assignments)',
+    related: {
+      type: DataTypes.STRING(255),
+      allowNull: false,
+      validate: { len: [1, 255], notEmpty: true },
+      comment: 'GUID of the related user or group (no FK)',
     },
     session_template: {
       type: DataTypes.JSONB,
@@ -153,14 +147,9 @@ export const ScheduleAssignmentsDbStructure = {
         fields: ['tenant'],
         name: 'idx_schedule_assignments_tenant',
       },
-      {
-        fields: ['user'],
-        name: 'idx_schedule_assignments_user',
-      },
-      {
-        fields: ['groups'],
-        name: 'idx_schedule_assignments_groups',
-      },
+      { fields: ['family'], name: 'idx_schedule_assignments_family' },
+      { fields: ['related'], name: 'idx_schedule_assignments_related' },
+      { fields: ['family', 'related'], name: 'idx_schedule_assignments_family_related' },
       {
         fields: ['session_template'],
         name: 'idx_schedule_assignments_session_template',
@@ -195,38 +184,15 @@ export const ScheduleAssignmentsDbStructure = {
         name: 'idx_schedule_assignments_date_range',
       },
 
-      // ✅ NOUVELLE CONTRAINTE : UNE SEULE assignment active par user
+      // ✅ NOUVELLE CONTRAINTE : UNE SEULE assignment active par related pour une family
       {
         unique: true,
-        fields: ['user'],
-        name: 'unique_user_active_assignments',
-        where: {
-          deleted_at: null,
-          active: true,
-          user: { [Op.not]: null },
-        },
-      },
-      // ✅ NOUVELLE CONTRAINTE : UNE SEULE assignments active par groups
-      {
-        unique: true,
-        fields: ['groups'],
-        name: 'unique_groups_active_assignments',
-        where: {
-          deleted_at: null,
-          active: true,
-          groups: { [Op.not]: null },
-        },
+        fields: ['family', 'related'],
+        name: 'unique_related_active_assignment',
+        where: { deleted_at: null, active: true },
       },
     ],
     validate: {
-      eitherUserOrGroups() {
-        if (!this.user && !this.groups) {
-          throw new Error('Either user or groups must be specified');
-        }
-        if (this.user && this.groups) {
-          throw new Error('Only one of user or groups must be specified, not both');
-        }
-      },
       dateRangeValid() {
         if (this.start_date && this.end_date && this.start_date > this.end_date) {
           throw new Error('start_date must be before or equal to end_date');

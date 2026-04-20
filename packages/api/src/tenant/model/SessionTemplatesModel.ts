@@ -13,11 +13,13 @@ export default class SessionTemplateModel extends BaseModel {
     tableName: tableName.SESSION_TEMPLATES,
     id: 'id',
     guid: 'guid',
-    tenant: 'tenant',
     name: 'name',
     definition: 'definition',
+    session_model: 'session_model',
     version: 'version',
     defaults: 'defaults',
+    current: 'current',
+    for_rotation: 'for_rotation',
     deleted_at: 'deleted_at',
     created_at: 'created_at',
     updated_at: 'updated_at',
@@ -29,11 +31,13 @@ export default class SessionTemplateModel extends BaseModel {
 
   protected id?: number;
   protected guid?: string;
-  protected tenant?: string;
   protected name?: string;
   protected definition?: any;
+  protected session_model?: number;
   protected version?: number;
   protected defaults: boolean = SESSION_TEMPLATE_DEFAULTS.IS_DEFAULT;
+  protected current: boolean = SESSION_TEMPLATE_DEFAULTS.IS_CURRENT;
+  protected for_rotation: boolean = SESSION_TEMPLATE_DEFAULTS.FOR_ROTATION;
   protected deleted_at?: Date | null;
 
   protected iniatialVersion: number = 1;
@@ -76,23 +80,6 @@ export default class SessionTemplateModel extends BaseModel {
     return await this.findOne(this.db.tableName, conditions);
   }
 
-  // protected async findByName(
-  //   tenant: string,
-  //   name: string,
-  //   includeDeleted: boolean = false,
-  // ): Promise<any> {
-  //   const conditions: any = {
-  //     [this.db.tenant]: tenant,
-  //     [this.db.name]: name,
-  //   };
-  //
-  //   if (!includeDeleted) {
-  //     conditions[this.db.deleted_at] = null;
-  //   }
-  //
-  //   return await this.findOne(this.db.tableName, conditions);
-  // }
-
   // ============================================
   // MÉTHODES LISTAGE
   // ============================================
@@ -108,6 +95,36 @@ export default class SessionTemplateModel extends BaseModel {
     return await this.findAll(this.db.tableName, conditions, paginationOptions);
   }
 
+  protected async listAllForRotation(
+    rotation: boolean = true,
+    paginationOptions: { offset?: number; limit?: number } = {},
+  ): Promise<any[]> {
+    const conditions: any = {
+      [this.db.for_rotation]: rotation,
+    };
+    return await this.listAll(conditions, paginationOptions);
+  }
+
+  protected async listAllBySessionModel(
+    session_model: number,
+    paginationOptions: { offset?: number; limit?: number } = {},
+  ): Promise<any[]> {
+    const conditions: any = {
+      [this.db.session_model]: session_model,
+    };
+    return await this.listAll(conditions, paginationOptions);
+  }
+
+  protected async listAllCurrent(
+    current: boolean = true,
+    paginationOptions: { offset?: number; limit?: number } = {},
+  ): Promise<any[]> {
+    const conditions: any = {
+      [this.db.current]: current,
+    };
+    return await this.listAll(conditions, paginationOptions);
+  }
+
   // ============================================
   // STATISTIQUES
   // ============================================
@@ -117,7 +134,7 @@ export default class SessionTemplateModel extends BaseModel {
       [this.db.deleted_at]: null,
     };
 
-    return await this.countByGroup(this.db.tableName, this.db.tenant, where);
+    return await this.countByGroup(this.db.tableName, this.db.current, where);
   }
 
   // ============================================
@@ -132,12 +149,6 @@ export default class SessionTemplateModel extends BaseModel {
       throw new Error(SESSION_TEMPLATE_ERRORS.GUID_GENERATION_FAILED);
     }
 
-    // // Vérification unicité nom par tenant
-    // const existingName = await this.findByName(this.tenant!, this.name!);
-    // if (existingName) {
-    //   throw new Error(SESSION_TEMPLATE_ERRORS.NAME_ALREADY_EXISTS);
-    // }
-
     const existingDefault = await this.findDefault();
     if (existingDefault && this.defaults === !SESSION_TEMPLATE_DEFAULTS.IS_DEFAULT) {
       throw new Error(SESSION_TEMPLATE_ERRORS.ACTIVE_DEFAULT_TEMPLATE_ALREADY_EXISTS);
@@ -147,11 +158,13 @@ export default class SessionTemplateModel extends BaseModel {
 
     const lastID = await this.insertOne(this.db.tableName, {
       [this.db.guid]: guid,
-      [this.db.tenant]: this.tenant,
       [this.db.name]: this.name,
       [this.db.definition]: this.definition,
+      [this.db.session_model]: this.session_model,
       [this.db.version]: this.version,
       [this.db.defaults]: this.defaults || SESSION_TEMPLATE_DEFAULTS.IS_DEFAULT,
+      [this.db.current]: this.current || SESSION_TEMPLATE_DEFAULTS.IS_CURRENT,
+      [this.db.for_rotation]: this.for_rotation || SESSION_TEMPLATE_DEFAULTS.FOR_ROTATION,
     });
 
     if (!lastID) {
@@ -171,14 +184,15 @@ export default class SessionTemplateModel extends BaseModel {
 
     const updateData: Record<string, any> = {};
 
-    if (this.tenant !== undefined) {
-      updateData[this.db.tenant] = this.tenant;
-    }
     if (this.name !== undefined) {
       updateData[this.db.name] = this.name;
     }
     if (this.definition !== undefined) {
       updateData[this.db.definition] = this.definition;
+    }
+
+    if (this.session_model !== undefined) {
+      updateData[this.db.session_model] = this.session_model;
     }
     // ✅ Si définition modifiée, incrémenter la version
     const current = await this.find(this.id);
@@ -188,6 +202,14 @@ export default class SessionTemplateModel extends BaseModel {
     }
     if (this.defaults !== undefined) {
       updateData[this.db.defaults] = this.defaults;
+    }
+
+    if (this.current !== undefined) {
+      updateData[this.db.current] = this.current;
+    }
+
+    if (this.for_rotation !== undefined) {
+      updateData[this.db.for_rotation] = this.for_rotation;
     }
 
     // 🚨 VÉRIFICATION D'UNICITÉ DU MODÈLE PAR DÉFAUT
@@ -260,12 +282,7 @@ export default class SessionTemplateModel extends BaseModel {
   // ============================================
 
   private async validate(): Promise<void> {
-    // if (!this.tenant) {
-    //   throw new Error(SESSION_TEMPLATE_ERRORS.TENANT_REQUIRED);
-    // }
-    // if (!SessionTemplateValidationUtils.validateTenant(this.tenant)) {
-    //   throw new Error(SESSION_TEMPLATE_ERRORS.TENANT_INVALID);
-    // }
+    if (!this.session_model) throw new Error(SESSION_TEMPLATE_ERRORS.SESSION_MODEL_REQUIRED);
 
     if (!this.name) {
       throw new Error(SESSION_TEMPLATE_ERRORS.NAME_REQUIRED);

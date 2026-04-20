@@ -3,10 +3,6 @@ export const SESSION_TEMPLATE_VALIDATION = {
     MIN_LENGTH: 1,
     MAX_LENGTH: 255,
   },
-  // TENANT: {
-  //   MIN_LENGTH: 1,
-  //   MAX_LENGTH: 128,
-  // },
   NAME: {
     MIN_LENGTH: 1,
     MAX_LENGTH: 128,
@@ -18,8 +14,9 @@ export const SESSION_TEMPLATE_VALIDATION = {
 } as const;
 
 export const SESSION_TEMPLATE_DEFAULTS = {
-  // VALID_FROM: TimezoneConfigUtils.getCurrentTime(),
   IS_DEFAULT: false,
+  FOR_ROTATION: false,
+  IS_CURRENT: true,
   PAGINATION: {
     OFFSET: 0,
     LIMIT: 50,
@@ -34,13 +31,8 @@ export const SESSION_TEMPLATE_CODES = {
   SESSION_TEMPLATE_ALREADY_EXISTS: 'session_template_already_exists',
   SESSION_TEMPLATE_NOT_FOUND: 'session_template_not_found',
   INVALID_GUID: 'invalid_guid',
-  TENANT_REQUIRED: 'tenant_required',
-  TENANT_INVALID: 'tenant_invalid',
   NAME_REQUIRED: 'name_required',
   NAME_INVALID: 'name_invalid',
-  VALID_FROM_REQUIRED: 'valid_from_required',
-  VALID_FROM_INVALID: 'valid_from_invalid',
-  VALID_TO_INVALID: 'valid_to_invalid',
   DEFINITION_REQUIRED: 'definition_required',
   DEFINITION_INVALID: 'definition_invalid',
   INVALID_DAY_KEY: 'invalid_day_key',
@@ -56,6 +48,8 @@ export const SESSION_TEMPLATE_CODES = {
   TOLERANCE_REQUIRED: 'tolerance_required',
   TOLERANCE_INVALID: 'tolerance_invalid',
   OVERLAPPING_BLOCKS: 'overlapping_blocks',
+  SESSION_MODEL_REQUIRED: 'session_model_required',
+  SESSION_MODEL_INVALID: 'session_model_invalid',
   VALIDATION_FAILED: 'validation_failed',
   CREATION_FAILED: 'creation_failed',
   UPDATE_FAILED: 'update_failed',
@@ -66,68 +60,52 @@ export const SESSION_TEMPLATE_CODES = {
   PAGINATION_INVALID: 'pagination_invalid',
   REVISION_FAILED: 'revision_failed',
   STATISTICS_FAILED: 'statistics_failed',
+  SESSION_MODEL_NOT_FOUND: 'session_model_not_found',
+  SESSION_MODEL_CONFLICT: 'session_model_conflict',
 } as const;
 
-const SESSION_TEMPLATE_LABEL = 'Session Template';
+const LABEL = 'Session Template';
+
 export const SESSION_TEMPLATE_ERRORS = {
-  SESSION_TEMPLATE: SESSION_TEMPLATE_LABEL,
-
-  // TENANT_REQUIRED: `${SESSION_TEMPLATE_LABEL} tenant is required`,
-  // TENANT_INVALID: `Tenant must be between ${SESSION_TEMPLATE_VALIDATION.TENANT.MIN_LENGTH} and ${SESSION_TEMPLATE_VALIDATION.TENANT.MAX_LENGTH} characters`,
-
-  NAME_REQUIRED: `${SESSION_TEMPLATE_LABEL} name is required`,
+  NAME_REQUIRED: `${LABEL} name is required`,
   NAME_INVALID: `Name must be between ${SESSION_TEMPLATE_VALIDATION.NAME.MIN_LENGTH} and ${SESSION_TEMPLATE_VALIDATION.NAME.MAX_LENGTH} characters`,
-
-  // VALID_FROM_REQUIRED: `${SESSION_TEMPLATE_LABEL} valid_from is required`,
-  // VALID_FROM_INVALID: 'valid_from must be a valid date',
-  // VALID_TO_INVALID: 'valid_to must be a valid date',
-
-  DEFINITION_REQUIRED: `${SESSION_TEMPLATE_LABEL} definition is required`,
+  DEFINITION_REQUIRED: `${LABEL} definition is required`,
   DEFINITION_INVALID: 'Definition must be a valid object',
-
   INVALID_DAY_KEY: `Invalid day key. Must be one of: ${VALID_DAYS.join(', ')}`,
-  BLOCKS_MUST_BE_ARRAY: 'Each day must have an array of work blocks',
-
+  BLOCKS_MUST_BE_ARRAY: 'Each day must be null or an array of work blocks',
   WORK_REQUIRED: 'work field is required for each block',
   WORK_INVALID_FORMAT: 'work must be an array of 2 time strings [start, end]',
-  WORK_TIME_INVALID: 'work times must be in HH:MM format (e.g., "08:00", "18:00")',
+  WORK_TIME_INVALID: 'work times must be in HH:MM format',
   WORK_START_AFTER_END: 'work start time must be before end time',
-
   PAUSE_INVALID_FORMAT: 'pause must be null or an array of 2 time strings [start, end]',
   PAUSE_TIME_INVALID: 'pause times must be in HH:MM format',
   PAUSE_START_AFTER_END: 'pause start time must be before end time',
   PAUSE_OUTSIDE_WORK: 'pause must be within work block time range',
-
   TOLERANCE_REQUIRED: 'tolerance is required for each block',
-  TOLERANCE_INVALID: `Tolerance must be a positive integer between ${SESSION_TEMPLATE_VALIDATION.TOLERANCE.MIN} and ${SESSION_TEMPLATE_VALIDATION.TOLERANCE.MAX} minutes`,
-
+  TOLERANCE_INVALID: `Tolerance must be an integer between ${SESSION_TEMPLATE_VALIDATION.TOLERANCE.MIN} and ${SESSION_TEMPLATE_VALIDATION.TOLERANCE.MAX} minutes`,
   OVERLAPPING_BLOCKS: 'Work blocks cannot overlap on the same day',
-
+  SESSION_MODEL_REQUIRED: 'session_model is required',
+  SESSION_MODEL_INVALID: 'session_model must be a positive integer',
   GUID_INVALID: `GUID must be 1-${SESSION_TEMPLATE_VALIDATION.GUID.MAX_LENGTH} characters`,
-  NOT_FOUND: `${SESSION_TEMPLATE_LABEL} not found`,
-  VALIDATION_FAILED: `${SESSION_TEMPLATE_LABEL} validation failed`,
-
-  CREATION_FAILED: `Failed to create ${SESSION_TEMPLATE_LABEL}`,
-  UPDATE_FAILED: `Failed to update ${SESSION_TEMPLATE_LABEL}`,
-  DELETE_FAILED: `Failed to delete ${SESSION_TEMPLATE_LABEL}`,
-
-  DUPLICATE_ENTRY: `${SESSION_TEMPLATE_LABEL} already exists`,
+  GUID_GENERATION_FAILED: `Failed to generate GUID for ${LABEL}`,
+  NOT_FOUND: `${LABEL} not found`,
+  VALIDATION_FAILED: `${LABEL} validation failed`,
+  CREATION_FAILED: `Failed to create ${LABEL}`,
+  UPDATE_FAILED: `Failed to update ${LABEL}`,
+  DELETE_FAILED: `Failed to delete ${LABEL}`,
+  DUPLICATE_ENTRY: `${LABEL} already exists`,
   PAGINATION_INVALID: 'Invalid pagination parameters',
-  GUID_GENERATION_FAILED: `Failed to generate GUID for ${SESSION_TEMPLATE_LABEL}`,
-  ID_REQUIRED: `${SESSION_TEMPLATE_LABEL} id is required`,
-  ACTIVE_DEFAULT_TEMPLATE_ALREADY_EXISTS: `Active default ${SESSION_TEMPLATE_LABEL} already exists`,
+  ACTIVE_DEFAULT_TEMPLATE_ALREADY_EXISTS: `Active default ${LABEL} already exists`,
+  ID_REQUIRED: `${LABEL} id is required`,
+  SESSION_MODEL_NOT_FOUND: `Session model not found for ${LABEL}`,
+  SESSION_MODEL_ROTATION_NOT_ALLOWED: `Session model does not allow rotation`,
 } as const;
 
 export const SESSION_TEMPLATE_MESSAGES = {
-  CREATED_SUCCESSFULLY: `${SESSION_TEMPLATE_LABEL} created successfully`,
-  UPDATED_SUCCESSFULLY: `${SESSION_TEMPLATE_LABEL} updated successfully`,
-  DELETED_SUCCESSFULLY: `${SESSION_TEMPLATE_LABEL} deleted successfully`,
+  CREATED_SUCCESSFULLY: `${LABEL} created successfully`,
+  UPDATED_SUCCESSFULLY: `${LABEL} updated successfully`,
+  DELETED_SUCCESSFULLY: `${LABEL} deleted successfully`,
 } as const;
 
-export type SessionTemplateError =
-  (typeof SESSION_TEMPLATE_ERRORS)[keyof typeof SESSION_TEMPLATE_ERRORS];
-export type SessionTemplateMessage =
-  (typeof SESSION_TEMPLATE_MESSAGES)[keyof typeof SESSION_TEMPLATE_MESSAGES];
 export type SessionTemplateCode =
   (typeof SESSION_TEMPLATE_CODES)[keyof typeof SESSION_TEMPLATE_CODES];
-export type SessionTemplateValidation = typeof SESSION_TEMPLATE_VALIDATION;

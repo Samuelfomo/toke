@@ -55,6 +55,7 @@ export * from './constants/tenant/rotation.assignments.js';
 export * from './constants/tenant/schedule.assignments.js';
 export * from './constants/tenant/groups.js';
 export * from './constants/tenant/device.js';
+export * from './constants/tenant/session.model.js';
 
 // Export des schémas
 export * from './schemas/country.js';
@@ -94,6 +95,7 @@ export * from './schemas/tenant/rotation.assignments.js';
 export * from './schemas/tenant/schedule.assignments.js';
 export * from './schemas/tenant/groups.js';
 export * from './schemas/tenant/device.js';
+export * from './schemas/tenant/session.model.js';
 
 // Export des utilitaires
 export * from './utils/country.validation.js';
@@ -134,3 +136,4 @@ export * from './utils/tenant/rotation.assignments.validation.js';
 export * from './utils/tenant/schedule.assignments.validation.js';
 export * from './utils/tenant/groups.validation.js';
 export * from './utils/tenant/device.validation.js';
+export * from './utils/tenant/session.model.validation.js';

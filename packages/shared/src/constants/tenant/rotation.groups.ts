@@ -2,6 +2,10 @@ export enum CycleUnit {
   DAY = 'day',
   WEEK = 'week',
 }
+export enum Direction {
+  FORWARD = 'forward',
+  BACKWARD = 'backward',
+}
 
 export const ROTATION_GROUP_VALIDATION = {
   GUID: {
@@ -20,8 +24,13 @@ export const ROTATION_GROUP_VALIDATION = {
     MIN: 1,
     MAX: 365,
   },
+
+  ROTATION_STEP: {
+    MIN: 1,
+    MAX: 30,
+  },
   CYCLE_TEMPLATES: {
-    MIN_ITEMS: 1,
+    MIN_ITEMS: 2,
     MAX_ITEMS: 100,
   },
 } as const;
@@ -29,6 +38,9 @@ export const ROTATION_GROUP_VALIDATION = {
 export const ROTATION_GROUP_DEFAULTS = {
   ACTIVE: true,
   CYCLE_UNIT: CycleUnit.DAY,
+  AUTO_ADVANCE: false,
+  ROTATION_STEP: 1,
+  DIRECTION: Direction.BACKWARD,
   PAGINATION: {
     OFFSET: 0,
     LIMIT: 50,
@@ -71,6 +83,9 @@ export const ROTATION_GROUP_CODES = {
   TEMPLATE_NOT_FOUND: 'template_not_found',
   RETRIEVAL_FAILED: 'retrieval_failed',
   REVISION_FAILED: 'revision_failed',
+  DIRECTION_INVALID: 'direction_invalid',
+  AUTO_ADVANCE_INVALID: 'auto_advance_invalid',
+  ROTATION_STEP_INVALID: 'rotation_step_invalid',
 } as const;
 
 const ROTATION_GROUP_LABEL = 'Rotation Group';
@@ -85,6 +100,15 @@ export const ROTATION_GROUP_ERRORS = {
 
   CYCLE_LENGTH_REQUIRED: `${ROTATION_GROUP_LABEL} cycle_length is required`,
   CYCLE_LENGTH_INVALID: `Cycle length must be between ${ROTATION_GROUP_VALIDATION.CYCLE_LENGTH.MIN} and ${ROTATION_GROUP_VALIDATION.CYCLE_LENGTH.MAX}`,
+
+  DIRECTION_REQUIRED: `${ROTATION_GROUP_LABEL} direction is required`,
+  DIRECTION_INVALID: `Direction must be one of: ${Object.values(Direction).join(', ')}`,
+
+  AUTO_ADVANCE_INVALID: `Auto advance must be a boolean value (true or false)`,
+  AUTO_ADVANCE_REQUIRED: `${ROTATION_GROUP_LABEL} auto_advance is required`,
+
+  ROTATION_STEP_REQUIRED: `${ROTATION_GROUP_LABEL} rotation_step is required`,
+  ROTATION_STEP_INVALID: `Rotation step must be a positive integer`,
 
   CYCLE_UNIT_REQUIRED: `${ROTATION_GROUP_LABEL} cycle_unit is required`,
   CYCLE_UNIT_INVALID: `Cycle unit must be one of: ${Object.values(CycleUnit).join(', ')}`,

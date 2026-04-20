@@ -35,7 +35,7 @@ const router = Router();
 router.get('/', Ensure.get(), async (req: Request, res: Response) => {
   try {
     const paginationData = paginationSchema.parse(req.query);
-    const sites = await Site.exportable({}, paginationData);
+    const sites = await Site.exportable(paginationData);
 
     return R.handleSuccess(res, {
       sites,

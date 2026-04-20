@@ -20,8 +20,44 @@ import SessionTemplate from '../class/SessionTemplates.js';
 import { TenantRevision } from '../../tools/revision.js';
 import { responseValue, tableName } from '../../utils/response.model.js';
 import { ValidationUtils } from '../../utils/view.validator.js';
+import SessionModel from '../class/SessionModel.js';
 
 const router = Router();
+
+// ─── Helper : validation croisée SessionModel ↔ SessionTemplate definition ──
+
+function validateAgainstSessionModel(
+  definition: Record<string, any>,
+  forRotation: boolean,
+  sessionModelObj: InstanceType<typeof SessionModel>,
+): { valid: true } | { valid: false; code: string; message: string } {
+  const workdays = sessionModelObj.getWorkday() ?? [];
+
+  // 1. Les jours actifs du template doivent être dans les workdays du SessionModel
+  const activeDays = Object.entries(definition)
+    .filter(([, value]) => value !== null && Array.isArray(value) && value.length > 0)
+    .map(([day]) => day);
+
+  const forbiddenDays = activeDays.filter((day) => !workdays.includes(day));
+  if (forbiddenDays.length > 0) {
+    return {
+      valid: false,
+      code: SESSION_TEMPLATE_CODES.DEFINITION_INVALID,
+      message: `The following days are not allowed by the session model workday policy: ${forbiddenDays.join(', ')}`,
+    };
+  }
+
+  // 2. Si for_rotation=true, le SessionModel doit avoir rotation_allowed=true
+  if (forRotation && !sessionModelObj.isRotationAllowed()) {
+    return {
+      valid: false,
+      code: SESSION_TEMPLATE_CODES.SESSION_MODEL_CONFLICT,
+      message: SESSION_TEMPLATE_ERRORS.SESSION_MODEL_ROTATION_NOT_ALLOWED,
+    };
+  }
+
+  return { valid: true };
+}
 
 // ============================================
 // ROUTES DE LISTAGE GÉNÉRAL
@@ -93,6 +129,16 @@ router.get('/list', Ensure.get(), async (req: Request, res: Response) => {
     if (filters.name) {
       conditions.name = filters.name;
     }
+    if (filters.session_model) {
+      const sessionModelObj = await SessionModel._load(filters.session_model, true);
+      if (!sessionModelObj) {
+        return R.handleError(res, HttpStatus.NOT_FOUND, {
+          code: SESSION_TEMPLATE_CODES.SESSION_MODEL_NOT_FOUND,
+          message: SESSION_TEMPLATE_ERRORS.SESSION_MODEL_NOT_FOUND,
+        });
+      }
+      conditions.session_model = sessionModelObj.getId()!;
+    }
 
     const templateList = await SessionTemplate._list(conditions, paginationOptions);
     const templates = {
@@ -101,7 +147,49 @@ router.get('/list', Ensure.get(), async (req: Request, res: Response) => {
         limit: paginationOptions.limit || templateList?.length || 0,
         count: templateList?.length || 0,
       },
-      items: templateList ? templateList.map((t) => t.toJSON(views)) : [],
+      items: templateList ? await Promise.all(templateList.map(async (t) => t.toJSON(views))) : [],
+    };
+
+    return R.handleSuccess(res, { templates });
+  } catch (error: any) {
+    if (error.code) {
+      return R.handleError(res, HttpStatus.BAD_REQUEST, {
+        code: error.code,
+        message: error.message,
+      });
+    }
+    return R.handleError(res, HttpStatus.INTERNAL_ERROR, {
+      code: SESSION_TEMPLATE_CODES.LISTING_FAILED,
+      message: error.message,
+    });
+  }
+});
+
+router.get('/list/for-rotation/:rotation', Ensure.get(), async (req: Request, res: Response) => {
+  try {
+    const paginationOptions = paginationSchema.parse(req.query);
+    const views = ValidationUtils.validateView(req.query.view, responseValue.FULL);
+
+    const { rotation } = req.params;
+    let status: boolean = true;
+    if (rotation) {
+      if (typeof rotation !== 'boolean') {
+        return R.handleError(res, HttpStatus.BAD_REQUEST, {
+          code: SESSION_TEMPLATE_CODES.VALIDATION_FAILED,
+          message: 'Entries invalid',
+        });
+      }
+      status = rotation;
+    }
+
+    const templateList = await SessionTemplate._listForRotation(status, paginationOptions);
+    const templates = {
+      pagination: {
+        offset: paginationOptions.offset || 0,
+        limit: paginationOptions.limit || templateList?.length || 0,
+        count: templateList?.length || 0,
+      },
+      items: templateList ? await Promise.all(templateList.map(async (t) => t.toJSON(views))) : [],
     };
 
     return R.handleSuccess(res, { templates });
@@ -131,24 +219,45 @@ router.post('/', Ensure.post(), async (req: Request, res: Response) => {
   try {
     const validatedData = validateSessionTemplateCreation(req.body);
 
+    const sessionModelObj = await SessionModel._load(validatedData.session_model, true);
+    if (!sessionModelObj) {
+      return R.handleError(res, HttpStatus.NOT_FOUND, {
+        code: SESSION_TEMPLATE_CODES.SESSION_MODEL_NOT_FOUND,
+        message: SESSION_TEMPLATE_ERRORS.SESSION_MODEL_NOT_FOUND,
+      });
+    }
+
     // 🔧 AJOUT : Normaliser la définition AVANT de la passer au modèle
     const normalizedDefinition = SessionTemplateValidationUtils.normalizeDefinition(
       validatedData.definition,
     );
 
-    const tenant = req.tenant;
+    // ─── Validation croisée SessionModel ↔ définition ────────────────────
+    const check = validateAgainstSessionModel(
+      normalizedDefinition,
+      validatedData.for_rotation,
+      sessionModelObj,
+    );
+    if (!check.valid) {
+      return R.handleError(res, HttpStatus.UNPROCESSABLE_ENTITY, {
+        code: check.code,
+        message: check.message,
+      });
+    }
 
     const templateObj = new SessionTemplate()
-      .setTenant(tenant.config.reference)
       .setName(validatedData.name)
       .setDefinition(normalizedDefinition)
-      .setDefaultSessionTemplate(validatedData.default);
+      .setDefaultSessionTemplate(validatedData.default)
+      .setForRotation(validatedData.for_rotation)
+      .setSessionModel(sessionModelObj.getId()!)
+      .setCurrent(validatedData.current);
 
     await templateObj.save();
 
     return R.handleCreated(res, {
       message: SESSION_TEMPLATE_MESSAGES.CREATED_SUCCESSFULLY,
-      template: templateObj.toJSON(),
+      template: await templateObj.toJSON(),
     });
   } catch (error: any) {
     if (error.code) {
@@ -183,11 +292,9 @@ router.post('/holiday-week', Ensure.post(), async (req: Request, res: Response) 
       });
     }
 
-    const tenant = req.tenant;
     const holidayDefinition = SessionTemplateValidationUtils.createFullWeekHoliday();
 
     const templateObj = new SessionTemplate()
-      .setTenant(tenant.config.reference)
       .setName(name)
       .setDefinition(holidayDefinition)
       .setDefaultSessionTemplate(SESSION_TEMPLATE_DEFAULTS.IS_DEFAULT);
@@ -196,7 +303,7 @@ router.post('/holiday-week', Ensure.post(), async (req: Request, res: Response) 
 
     return R.handleCreated(res, {
       message: SESSION_TEMPLATE_MESSAGES.CREATED_SUCCESSFULLY,
-      template: templateObj.toJSON(),
+      template: await templateObj.toJSON(),
     });
   } catch (error: any) {
     return R.handleError(res, HttpStatus.INTERNAL_ERROR, {
@@ -234,7 +341,7 @@ router.get('/:guid', Ensure.get(), async (req: Request, res: Response) => {
     }
 
     return R.handleSuccess(res, {
-      template: templateObj.toJSON(views),
+      template: await templateObj.toJSON(views),
     });
   } catch (error: any) {
     return R.handleError(res, HttpStatus.INTERNAL_ERROR, {
@@ -272,6 +379,45 @@ router.put('/:guid', Ensure.put(), async (req: Request, res: Response) => {
 
     const validatedData = validateSessionTemplateUpdate(req.body);
 
+    // ─── Validation croisée si definition ou for_rotation est modifiée ────
+    const definitionChanged = validatedData.definition !== undefined;
+    const rotationChanged = validatedData.for_rotation !== undefined;
+
+    if (definitionChanged || rotationChanged) {
+      // Charger le SessionModel associé au template actuel
+      const sessionModelObj = await templateObj.getSessionModelObj();
+      if (!sessionModelObj) {
+        return R.handleError(res, HttpStatus.UNPROCESSABLE_ENTITY, {
+          code: SESSION_TEMPLATE_CODES.SESSION_MODEL_NOT_FOUND,
+          message: SESSION_TEMPLATE_ERRORS.SESSION_MODEL_NOT_FOUND,
+        });
+      }
+
+      const definitionToCheck = definitionChanged
+        ? SessionTemplateValidationUtils.normalizeDefinition(validatedData.definition!)
+        : templateObj.getDefinition();
+
+      const forRotationToCheck = rotationChanged
+        ? validatedData.for_rotation!
+        : templateObj.ForRotation();
+
+      const check = validateAgainstSessionModel(
+        definitionToCheck,
+        forRotationToCheck,
+        sessionModelObj,
+      );
+      if (!check.valid) {
+        return R.handleError(res, HttpStatus.UNPROCESSABLE_ENTITY, {
+          code: check.code,
+          message: check.message,
+        });
+      }
+
+      if (definitionChanged) {
+        templateObj.setDefinition(definitionToCheck);
+      }
+    }
+
     if (validatedData.name !== undefined) {
       templateObj.setName(validatedData.name);
     }
@@ -291,11 +437,15 @@ router.put('/:guid', Ensure.put(), async (req: Request, res: Response) => {
       templateObj.setDefaultSessionTemplate(validatedData.default);
     }
 
+    if (validatedData.for_rotation !== undefined) {
+      templateObj.setForRotation(validatedData.for_rotation);
+    }
+
     await templateObj.save();
 
     return R.handleSuccess(res, {
       message: SESSION_TEMPLATE_MESSAGES.UPDATED_SUCCESSFULLY,
-      template: templateObj.toJSON(),
+      template: await templateObj.toJSON(),
     });
   } catch (error: any) {
     if (error.code) {
@@ -437,7 +587,7 @@ router.get('/:guid/statistics', Ensure.get(), async (req: Request, res: Response
     }
 
     const statistics = {
-      template: templateObj.toJSON(responseValue.MINIMAL),
+      template: await templateObj.toJSON(responseValue.MINIMAL),
       working_days: templateObj.getDaysWithWork(),
       total_working_days: templateObj.getDaysWithWork().length,
       weekly_hours: templateObj.getWeeklyWorkHours(),

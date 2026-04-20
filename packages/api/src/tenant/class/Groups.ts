@@ -1,4 +1,4 @@
-import { GroupsValidationUtils, TI, TimezoneConfigUtils } from '@toke/shared';
+import { GroupsValidationUtils, RAFamily, SAFamily, TI, TimezoneConfigUtils } from '@toke/shared';
 
 import GroupsModel from '../model/GroupsModel.js';
 import {
@@ -236,7 +236,11 @@ export default class Groups extends GroupsModel {
   async getActiveScheduleAssignment(): Promise<ScheduleAssignments | null> {
     const today = TimezoneConfigUtils.getCurrentTime().toISOString().split('T')[0];
 
-    const activeAssignments = await ScheduleAssignments._listForGroupsOnDate(this.id!, today);
+    const activeAssignments = await ScheduleAssignments._listForRelatedOnDate(
+      SAFamily.GROUP,
+      this.guid!,
+      today,
+    );
 
     if (activeAssignments && activeAssignments.length > 0) {
       return activeAssignments.sort((a, b) => {
@@ -250,16 +254,16 @@ export default class Groups extends GroupsModel {
   }
 
   async getActiveRotationAssignment(): Promise<RotationAssignment | null> {
-    const assignments = await RotationAssignment._listByGroups(this.id!);
+    const assignments = await RotationAssignment._listByRelated(RAFamily.GROUP, this.guid!);
     return assignments && assignments.length > 0 ? assignments[0] : null;
   }
 
   async getAllScheduleAssignments(): Promise<ScheduleAssignments[]> {
-    return (await ScheduleAssignments._listByGroups(this.id!)) || [];
+    return (await ScheduleAssignments._listByRelated(SAFamily.GROUP, this.guid!)) || [];
   }
 
   async getAllRotationAssignments(): Promise<RotationAssignment[]> {
-    return (await RotationAssignment._listByGroups(this.id!)) || [];
+    return (await RotationAssignment._listByRelated(RAFamily.GROUP, this.guid!)) || [];
   }
 
   async getCurrentAssignmentType(): Promise<'schedule' | 'rotation' | 'none'> {

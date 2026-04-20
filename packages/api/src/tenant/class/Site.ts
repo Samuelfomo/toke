@@ -73,20 +73,17 @@ export default class Site extends SiteModel {
     return new Site().deactivateExpiredSites();
   }
 
-  static async exportable(
-    conditions: Record<string, any> = { ['active']: true },
-    paginationOptions: { offset?: number; limit?: number } = {},
-  ): Promise<{
+  static async exportable(paginationOptions: { offset?: number; limit?: number } = {}): Promise<{
     revision: string;
     pagination: { offset?: number; limit?: number; count?: number };
     items: any[];
   }> {
     let items: any[] = [];
+    const conditions: Record<string, any> = {};
+    conditions.active = true;
     const sites = await this._list(conditions, paginationOptions);
     if (sites) {
-      items = await Promise.all(
-        sites.map(async (site) => await site.toJSON(responseValue.MINIMAL)),
-      );
+      items = await Promise.all(sites.map((site) => site.toJSON(responseValue.MINIMAL)));
     }
     return {
       revision: await TenantRevision.getRevision(tableName.SITES),

@@ -2,6 +2,7 @@ import { z } from 'zod';
 
 // import TimezoneConfig from '@toke/api/dist/utils/timezone.config.js';
 import {
+  RAFamily,
   ROTATION_ASSIGNMENT_CODES,
   ROTATION_ASSIGNMENT_DEFAULTS,
   ROTATION_ASSIGNMENT_ERRORS,
@@ -12,15 +13,28 @@ import { TimezoneConfigUtils } from '../../utils/timezone.config.validation.js';
 
 // Base schema for common validations
 const baseRotationAssignmentSchema = z.object({
-  user: z
+  family: z
+    .nativeEnum(RAFamily, {
+      invalid_type_error: ROTATION_ASSIGNMENT_ERRORS.FAMILY_INVALID,
+    })
+    .refine((val) => val !== undefined, {
+      message: ROTATION_ASSIGNMENT_ERRORS.FAMILY_REQUIRED,
+    }),
+
+  related: z
     .string({
-      invalid_type_error: ROTATION_ASSIGNMENT_ERRORS.USER_INVALID,
+      required_error: ROTATION_ASSIGNMENT_ERRORS.RELATED_REQUIRED,
+      invalid_type_error: ROTATION_ASSIGNMENT_ERRORS.RELATED_INVALID,
     })
     .trim()
-    .min(ROTATION_ASSIGNMENT_VALIDATION.USER.MIN_LENGTH, ROTATION_ASSIGNMENT_ERRORS.USER_INVALID)
-    .max(ROTATION_ASSIGNMENT_VALIDATION.USER.MAX_LENGTH, ROTATION_ASSIGNMENT_ERRORS.USER_INVALID)
-    .nullable()
-    .optional(),
+    .min(
+      ROTATION_ASSIGNMENT_VALIDATION.RELATED.MIN_LENGTH,
+      ROTATION_ASSIGNMENT_ERRORS.RELATED_INVALID,
+    )
+    .max(
+      ROTATION_ASSIGNMENT_VALIDATION.RELATED.MAX_LENGTH,
+      ROTATION_ASSIGNMENT_ERRORS.RELATED_INVALID,
+    ),
 
   assigned_by: z
     .string({
@@ -36,22 +50,6 @@ const baseRotationAssignmentSchema = z.object({
       ROTATION_ASSIGNMENT_VALIDATION.ASSIGNED_BY.MAX_LENGTH,
       ROTATION_ASSIGNMENT_ERRORS.ASSIGNED_BY_INVALID,
     ),
-
-  group: z
-    .string({
-      invalid_type_error: ROTATION_ASSIGNMENT_ERRORS.GROUPS_INVALID,
-    })
-    .trim()
-    .min(
-      ROTATION_ASSIGNMENT_VALIDATION.GROUPS.MIN_LENGTH,
-      ROTATION_ASSIGNMENT_ERRORS.GROUPS_INVALID,
-    )
-    .max(
-      ROTATION_ASSIGNMENT_VALIDATION.GROUPS.MAX_LENGTH,
-      ROTATION_ASSIGNMENT_ERRORS.GROUPS_INVALID,
-    )
-    .nullable()
-    .optional(),
 
   rotation_group: z
     .string({
@@ -88,37 +86,17 @@ const baseRotationAssignmentSchema = z.object({
 });
 
 // Schema for creation - all fields required except defaults
-export const createRotationAssignmentSchema = baseRotationAssignmentSchema.refine(
-  (data) => {
-    // Either user or groups must be specified, but not both
-    const hasUser = data.user !== null && data.user !== undefined;
-    const hasGroups = data.group !== null && data.group !== undefined;
-    return hasUser !== hasGroups; // XOR: exactly one must be true
-  },
-  {
-    message: ROTATION_ASSIGNMENT_ERRORS.USER_OR_GROUPS_REQUIRED,
-  },
-);
+export const createRotationAssignmentSchema = baseRotationAssignmentSchema;
 
 // Schema for updates - all fields optional
-export const updateRotationAssignmentSchema = baseRotationAssignmentSchema.partial().refine(
-  (data) => {
-    // Either user or groups must be specified, but not both
-    const hasUser = data.user !== null && data.user !== undefined;
-    const hasGroups = data.group !== null && data.group !== undefined;
-    return hasUser !== hasGroups; // XOR: exactly one must be true
-  },
-  {
-    message: ROTATION_ASSIGNMENT_ERRORS.USER_OR_GROUPS_REQUIRED,
-  },
-);
+export const updateRotationAssignmentSchema = baseRotationAssignmentSchema.partial();
 
 // Schema for filters
 export const rotationAssignmentFiltersSchema = z
   .object({
-    user: z.number().int().optional(),
+    family: z.string().optional(),
+    related: z.string().optional(),
     assigned_by: z.number().int().optional(),
-    group: z.number().int().optional(),
     rotation_group: z.number().int().optional(),
     offset: z.number().int().optional(),
     assigned_at_from: z.string().datetime().optional(),
@@ -134,9 +112,9 @@ export const rotationAssignmentGuidSchema = z
 
 // Shared constant for field -> code mapping
 const FIELD_TO_CODE_MAP: Record<string, RotationAssignmentCode> = {
-  user: ROTATION_ASSIGNMENT_CODES.USER_INVALID,
+  family: ROTATION_ASSIGNMENT_CODES.FAMILY_INVALID,
+  related: ROTATION_ASSIGNMENT_CODES.RELATED_INVALID,
   assigned_by: ROTATION_ASSIGNMENT_CODES.ASSIGNED_BY_INVALID,
-  group: ROTATION_ASSIGNMENT_CODES.GROUPS_INVALID,
   rotation_group: ROTATION_ASSIGNMENT_CODES.ROTATION_GROUP_INVALID,
   offset: ROTATION_ASSIGNMENT_CODES.OFFSET_INVALID,
   assigned_at: ROTATION_ASSIGNMENT_CODES.ASSIGNED_AT_INVALID,

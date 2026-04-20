@@ -371,114 +371,122 @@ router.get('/email/:email', Ensure.get(), async (req: Request, res: Response) =>
 /**
  * POST / - Créer un nouveau tenant
  */
-router.post('/', Ensure.post(), async (req: Request, res: Response) => {
-  try {
-    const validatedData = TN.validateTenantCreation(req.body);
+router.post(
+  '/',
+  Ensure.post(),
+  TenantValidationUtils.normalizeEmployeeCountInput,
+  async (req: Request, res: Response) => {
+    try {
+      console.log('body: ', req.body);
+      const validatedData = TN.validateTenantCreation(req.body);
 
-    // // Normalisation du code pays
-    // const countryCode = validatedData.country_code?.toUpperCase();
-    //
-    // // Vérifie que le code pays existe bien dans libphonenumber-js
-    // const isCountryValid = countryCode && getCountries().includes(countryCode as CountryCode);
-    //
-    // if (
-    //   validatedData.billing_phone &&
-    //   (!isCountryValid ||
-    //     !isValidPhoneNumber(validatedData.billing_phone, countryCode as CountryCode))
-    // ) {
-    //   return R.handleError(res, HttpStatus.BAD_REQUEST, {
-    //     code: TENANT_CODES.BILLING_PHONE_INVALID,
-    //     message: TENANT_ERRORS.BILLING_PHONE_INVALID,
-    //   });
-    // }
+      // // Normalisation du code pays
+      // const countryCode = validatedData.country_code?.toUpperCase();
+      //
+      // // Vérifie que le code pays existe bien dans libphonenumber-js
+      // const isCountryValid = countryCode && getCountries().includes(countryCode as CountryCode);
+      //
+      // if (
+      //   validatedData.billing_phone &&
+      //   (!isCountryValid ||
+      //     !isValidPhoneNumber(validatedData.billing_phone, countryCode as CountryCode))
+      // ) {
+      //   return R.handleError(res, HttpStatus.BAD_REQUEST, {
+      //     code: TENANT_CODES.BILLING_PHONE_INVALID,
+      //     message: TENANT_ERRORS.BILLING_PHONE_INVALID,
+      //   });
+      // }
 
-    if (
-      validatedData.billing_phone &&
-      !CountryPhoneValidation.validatePhoneNumber(
-        validatedData.billing_phone,
-        validatedData.country_code,
-      )
-    ) {
-      return R.handleError(res, HttpStatus.BAD_REQUEST, {
-        code: TENANT_CODES.BILLING_PHONE_INVALID,
-        message: TENANT_ERRORS.BILLING_PHONE_INVALID,
-      });
+      if (
+        validatedData.billing_phone &&
+        !CountryPhoneValidation.validatePhoneNumber(
+          validatedData.billing_phone,
+          validatedData.country_code,
+        )
+      ) {
+        return R.handleError(res, HttpStatus.BAD_REQUEST, {
+          code: TENANT_CODES.BILLING_PHONE_INVALID,
+          message: TENANT_ERRORS.BILLING_PHONE_INVALID,
+        });
+      }
+      const tenantObj = new Tenant()
+        .setName(validatedData.name)
+        .setCountryCode(validatedData.country_code)
+        .setPrimaryCurrencyCode(validatedData.primary_currency_code)
+        .setBillingEmail(validatedData.billing_email)
+        .setBillingAddress(validatedData.billing_address)
+        .setEmployeeCount(
+          TenantValidationUtils.normalizeEmployeeCount(validatedData.employee_count),
+        )
+        .setTaxNumber(validatedData.tax_number);
+
+      if (validatedData.preferred_language_code)
+        tenantObj.setPreferredLanguageCode(validatedData.preferred_language_code);
+      if (validatedData.timezone) tenantObj.setTimezone(validatedData.timezone);
+      // if (validatedData.tax_number) tenantObj.setTaxNumber(validatedData.tax_number);
+      // if (validatedData.tax_exempt !== undefined) tenantObj.setTaxExempt(validatedData.tax_exempt);
+      // if (validatedData.billing_address) tenantObj.setBillingAddress(validatedData.billing_address);
+      if (validatedData.billing_phone) tenantObj.setBillingPhone(validatedData.billing_phone);
+      if (validatedData.short_name) tenantObj.setShortName(validatedData.short_name);
+      if (validatedData.registration_number)
+        tenantObj.setRegistrationNumber(validatedData.registration_number);
+
+      await tenantObj.save();
+
+      // const site = await AppConfig._load(responseStructure.APP_WEB, true);
+      // if (!site) {
+      //   return R.handleError(res, HttpStatus.NOT_FOUND, {
+      //     code: 'url_not_found',
+      //     message: 'Site url not found',
+      //   });
+      // }
+      // try {
+      //   await EmailSender.licensePayment(
+      //     tenantObj.getName()!,
+      //     tenantObj.getBillingEmail()!,
+      //     tenantObj.getGuid()!.toString(),
+      //     site.getLink()!,
+      //   );
+      // } catch (err) {
+      //   return R.handleError(res, HttpStatus.INTERNAL_ERROR, {
+      //     code: 'EMAIL_SENDING_FAILED',
+      //     message: (err as Error).message,
+      //   });
+      // }
+
+      console.log(
+        `✅ Tenant créé: ${validatedData.country_code} - ${validatedData.name} (GUID: ${tenantObj.getGuid()})`,
+      );
+      return R.handleCreated(res, tenantObj.toJSON());
+    } catch (error: any) {
+      console.error('⚠️ Erreur création tenant:', error.message);
+
+      if (error.issues) {
+        // Erreur Zod
+        return R.handleError(res, HttpStatus.BAD_REQUEST, {
+          code: TENANT_CODES.VALIDATION_FAILED,
+          message: 'Validation failed',
+          details: error.issues,
+        });
+      } else if (error.message.includes('already exists')) {
+        return R.handleError(res, HttpStatus.CONFLICT, {
+          code: TENANT_CODES.TENANT_ALREADY_EXISTS,
+          message: error.message,
+        });
+      } else if (error.message.includes('required')) {
+        return R.handleError(res, HttpStatus.BAD_REQUEST, {
+          code: TENANT_CODES.VALIDATION_FAILED,
+          message: error.message,
+        });
+      } else {
+        return R.handleError(res, HttpStatus.INTERNAL_ERROR, {
+          code: TENANT_CODES.CREATION_FAILED,
+          message: error.message,
+        });
+      }
     }
-    const tenantObj = new Tenant()
-      .setName(validatedData.name)
-      .setCountryCode(validatedData.country_code)
-      .setPrimaryCurrencyCode(validatedData.primary_currency_code)
-      .setBillingEmail(validatedData.billing_email)
-      .setBillingAddress(validatedData.billing_address)
-      .setEmployeeCount(validatedData.employee_count)
-      .setTaxNumber(validatedData.tax_number);
-
-    if (validatedData.preferred_language_code)
-      tenantObj.setPreferredLanguageCode(validatedData.preferred_language_code);
-    if (validatedData.timezone) tenantObj.setTimezone(validatedData.timezone);
-    // if (validatedData.tax_number) tenantObj.setTaxNumber(validatedData.tax_number);
-    // if (validatedData.tax_exempt !== undefined) tenantObj.setTaxExempt(validatedData.tax_exempt);
-    // if (validatedData.billing_address) tenantObj.setBillingAddress(validatedData.billing_address);
-    if (validatedData.billing_phone) tenantObj.setBillingPhone(validatedData.billing_phone);
-    if (validatedData.short_name) tenantObj.setShortName(validatedData.short_name);
-    if (validatedData.registration_number)
-      tenantObj.setRegistrationNumber(validatedData.registration_number);
-
-    await tenantObj.save();
-
-    // const site = await AppConfig._load(responseStructure.APP_WEB, true);
-    // if (!site) {
-    //   return R.handleError(res, HttpStatus.NOT_FOUND, {
-    //     code: 'url_not_found',
-    //     message: 'Site url not found',
-    //   });
-    // }
-    // try {
-    //   await EmailSender.licensePayment(
-    //     tenantObj.getName()!,
-    //     tenantObj.getBillingEmail()!,
-    //     tenantObj.getGuid()!.toString(),
-    //     site.getLink()!,
-    //   );
-    // } catch (err) {
-    //   return R.handleError(res, HttpStatus.INTERNAL_ERROR, {
-    //     code: 'EMAIL_SENDING_FAILED',
-    //     message: (err as Error).message,
-    //   });
-    // }
-
-    console.log(
-      `✅ Tenant créé: ${validatedData.country_code} - ${validatedData.name} (GUID: ${tenantObj.getGuid()})`,
-    );
-    return R.handleCreated(res, tenantObj.toJSON());
-  } catch (error: any) {
-    console.error('⚠️ Erreur création tenant:', error.message);
-
-    if (error.issues) {
-      // Erreur Zod
-      return R.handleError(res, HttpStatus.BAD_REQUEST, {
-        code: TENANT_CODES.VALIDATION_FAILED,
-        message: 'Validation failed',
-        details: error.issues,
-      });
-    } else if (error.message.includes('already exists')) {
-      return R.handleError(res, HttpStatus.CONFLICT, {
-        code: TENANT_CODES.TENANT_ALREADY_EXISTS,
-        message: error.message,
-      });
-    } else if (error.message.includes('required')) {
-      return R.handleError(res, HttpStatus.BAD_REQUEST, {
-        code: TENANT_CODES.VALIDATION_FAILED,
-        message: error.message,
-      });
-    } else {
-      return R.handleError(res, HttpStatus.INTERNAL_ERROR, {
-        code: TENANT_CODES.CREATION_FAILED,
-        message: error.message,
-      });
-    }
-  }
-});
+  },
+);
 
 /**
  * PUT /:guid - Modifier un tenant par GUID
@@ -519,7 +527,9 @@ router.put('/:guid', Ensure.put(), async (req: Request, res: Response) => {
     if (validateData.registration_number !== undefined)
       tenantObj.setRegistrationNumber(validateData.registration_number);
     if (validateData.employee_count !== undefined)
-      tenantObj.setEmployeeCount(validateData.employee_count);
+      tenantObj.setEmployeeCount(
+        TenantValidationUtils.normalizeEmployeeCount(validateData.employee_count),
+      );
 
     await tenantObj.save();
 

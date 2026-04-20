@@ -218,15 +218,15 @@ router.post(
 
       // 🆕 Log détaillé si rayon personnalisé utilisé
       if (geofenceCheck.custom_device_radius_applied) {
-        console.log(`
-⚡ RAYON PERSONNALISÉ DEVICE APPLIQUÉ
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-Device: ${deviceObj?.getName()}
-Rayon Site: ${geofenceCheck.site_radius}m
-Rayon Device: ${geofenceCheck.device_radius}m
-Rayon Effectif: ${geofenceCheck.effective_radius}m
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-        `);
+        //         console.log(`
+        // ⚡ RAYON PERSONNALISÉ DEVICE APPLIQUÉ
+        // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+        // Device: ${deviceObj?.getName()}
+        // Rayon Site: ${geofenceCheck.site_radius}m
+        // Rayon Device: ${geofenceCheck.device_radius}m
+        // Rayon Effectif: ${geofenceCheck.effective_radius}m
+        // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+        //         `);
       }
 
       // selon moi la mise a jours de la verification des habilitations a faire devrait se faire a ce niveau 👇
@@ -1363,57 +1363,6 @@ router.get('/:guid/last', Ensure.get(), async (req: Request, res: Response) => {
     });
   }
 });
-
-// === MISE À JOUR ===
-
-// router.put('/:guid', Ensure.put(), async (req: Request, res: Response) => {
-//   try {
-//     if (!TimeEntriesValidationUtils.validateGuid(req.params.guid)) {
-//       return R.handleError(res, HttpStatus.BAD_REQUEST, {
-//         code: TIME_ENTRIES_CODES.INVALID_GUID,
-//         message: TIME_ENTRIES_ERRORS.GUID_INVALID,
-//       });
-//     }
-//
-//     const entryObj = await TimeEntries._load(req.params.guid, true);
-//     if (!entryObj) {
-//       return R.handleError(res, HttpStatus.NOT_FOUND, {
-//         code: TIME_ENTRIES_CODES.TIME_ENTRY_NOT_FOUND,
-//         message: TIME_ENTRIES_ERRORS.NOT_FOUND,
-//       });
-//     }
-//
-//     const validatedData = validateTimeEntriesUpdate(req.body);
-//
-//     if (validatedData.pointage_status) {
-//       entryObj.setPointageStatus(validatedData.pointage_status);
-//     }
-//
-//     if (validatedData.memo) {
-//       entryObj.setMemo(validatedData.memo);
-//     }
-//
-//     if (validatedData.correction_reason) {
-//       entryObj.setCorrectionReason(validatedData.correction_reason);
-//     }
-//
-//     await entryObj.save();
-//     return R.handleSuccess(res, await entryObj.toJSON());
-//   } catch (error: any) {
-//     if (error.issues) {
-//       return R.handleError(res, HttpStatus.BAD_REQUEST, {
-//         code: TIME_ENTRIES_CODES.VALIDATION_FAILED,
-//         message: TIME_ENTRIES_ERRORS.VALIDATION_FAILED,
-//         details: error.issues,
-//       });
-//     } else {
-//       return R.handleError(res, HttpStatus.INTERNAL_ERROR, {
-//         code: TIME_ENTRIES_CODES.UPDATE_FAILED,
-//         message: error.message,
-//       });
-//     }
-//   }
-// });
 
 // === SUPPRESSION ===
 

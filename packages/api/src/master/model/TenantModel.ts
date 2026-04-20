@@ -353,6 +353,7 @@ export default class TenantModel extends BaseModel {
    * Valide les données avant création/mise à jour
    */
   private async validate(): Promise<void> {
+    console.log('this.employee_count', this.employee_count);
     // Valider le nom (obligatoire)
     if (!this.name) {
       throw new Error(TENANT_ERRORS.NAME_REQUIRED);
@@ -451,7 +452,7 @@ export default class TenantModel extends BaseModel {
       throw new Error(TENANT_ERRORS.EMPLOYEE_COUNT_REQUIRED);
     }
     if (!TenantValidationUtils.validateEmployeeCount(this.employee_count)) {
-      throw new Error(TENANT_ERRORS.EMPLOYEE_COUNT_INVALID);
+      throw new Error(`${TENANT_ERRORS.EMPLOYEE_COUNT_INVALID} : ${this.employee_count}`);
     }
     // // Nettoyer les données
     const cleaned = TenantValidationUtils.cleanTenantData(this);

@@ -2,6 +2,7 @@
 import { z } from 'zod';
 
 import {
+  SAFamily,
   SCHEDULE_ASSIGNMENTS_CODES,
   SCHEDULE_ASSIGNMENTS_DEFAULTS,
   SCHEDULE_ASSIGNMENTS_ERRORS,
@@ -11,40 +12,22 @@ import {
 
 // Base schema for common validations
 const baseScheduleAssignmentSchema = z.object({
-  // tenant: z
-  //   .string({
-  //     required_error: SCHEDULE_EXCEPTION_ERRORS.TENANT_REQUIRED,
-  //     invalid_type_error: SCHEDULE_EXCEPTION_ERRORS.TENANT_INVALID,
-  //   })
-  //   .min(SCHEDULE_EXCEPTION_VALIDATION.TENANT.MIN_LENGTH, SCHEDULE_EXCEPTION_ERRORS.TENANT_INVALID)
-  //   .max(SCHEDULE_EXCEPTION_VALIDATION.TENANT.MAX_LENGTH, SCHEDULE_EXCEPTION_ERRORS.TENANT_INVALID)
-  //   .trim(),
+  family: z
+    .nativeEnum(SAFamily, {
+      invalid_type_error: SCHEDULE_ASSIGNMENTS_ERRORS.FAMILY_INVALID,
+    })
+    .refine((val) => val !== undefined, {
+      message: SCHEDULE_ASSIGNMENTS_ERRORS.FAMILY_REQUIRED,
+    }),
 
-  user: z
+  related: z
     .string({
-      invalid_type_error: SCHEDULE_ASSIGNMENTS_ERRORS.USER_INVALID,
+      required_error: SCHEDULE_ASSIGNMENTS_ERRORS.RELATED_REQUIRED,
+      invalid_type_error: SCHEDULE_ASSIGNMENTS_ERRORS.RELATED_INVALID,
     })
     .trim()
-    .min(SCHEDULE_ASSIGNMENTS_VALIDATION.USER.MIN_LENGTH, SCHEDULE_ASSIGNMENTS_ERRORS.USER_INVALID)
-    .max(SCHEDULE_ASSIGNMENTS_VALIDATION.USER.MAX_LENGTH, SCHEDULE_ASSIGNMENTS_ERRORS.USER_INVALID)
-    .nullable()
-    .optional(),
-
-  groups: z
-    .string({
-      invalid_type_error: SCHEDULE_ASSIGNMENTS_ERRORS.GROUPS_INVALID,
-    })
-    .trim()
-    .min(
-      SCHEDULE_ASSIGNMENTS_VALIDATION.GROUPS.MIN_LENGTH,
-      SCHEDULE_ASSIGNMENTS_ERRORS.GROUPS_INVALID,
-    )
-    .max(
-      SCHEDULE_ASSIGNMENTS_VALIDATION.GROUPS.MAX_LENGTH,
-      SCHEDULE_ASSIGNMENTS_ERRORS.GROUPS_INVALID,
-    )
-    .nullable()
-    .optional(),
+    .min(1, SCHEDULE_ASSIGNMENTS_ERRORS.RELATED_INVALID)
+    .max(255, SCHEDULE_ASSIGNMENTS_ERRORS.RELATED_INVALID),
 
   session_template: z
     .string({
@@ -132,70 +115,42 @@ const baseScheduleAssignmentSchema = z.object({
 });
 
 // Schema for creation - all fields required
-export const createScheduleAssignmentSchema = baseScheduleAssignmentSchema
-  .refine(
-    (data) => {
-      // Either user or groups must be specified, but not both
-      const hasUser = data.user !== null && data.user !== undefined;
-      const hasGroups = data.groups !== null && data.groups !== undefined;
-      return hasUser !== hasGroups; // XOR: exactly one must be true
-    },
-    {
-      message: SCHEDULE_ASSIGNMENTS_ERRORS.USER_OR_GROUPS_REQUIRED,
-    },
-  )
-  .refine(
-    (data) => {
-      // end_date must be after or equal to start_date
-      const startDate = new Date(data.start_date);
-      const endDate = data.end_date ? new Date(data.end_date) : null;
-      if (endDate !== null) {
-        return endDate >= startDate;
-      }
-      return true;
-    },
-    {
-      message: SCHEDULE_ASSIGNMENTS_ERRORS.END_DATE_BEFORE_START,
-      path: ['end_date'],
-    },
-  );
+export const createScheduleAssignmentSchema = baseScheduleAssignmentSchema.refine(
+  (data) => {
+    // end_date must be after or equal to start_date
+    const startDate = new Date(data.start_date);
+    const endDate = data.end_date ? new Date(data.end_date) : null;
+    if (endDate !== null) {
+      return endDate >= startDate;
+    }
+    return true;
+  },
+  {
+    message: SCHEDULE_ASSIGNMENTS_ERRORS.END_DATE_BEFORE_START,
+    path: ['end_date'],
+  },
+);
 
 // Schema for updates - all fields optional
-export const updateScheduleAssignmentSchema = baseScheduleAssignmentSchema
-  .partial()
-  .refine(
-    (data) => {
-      // Either user or groups must be specified, but not both
-      const hasUser = data.user !== null && data.user !== undefined;
-      const hasGroups = data.groups !== null && data.groups !== undefined;
-      return hasUser !== hasGroups; // XOR: exactly one must be true
-    },
-    {
-      message: SCHEDULE_ASSIGNMENTS_ERRORS.USER_OR_GROUPS_REQUIRED,
-    },
-  )
-  .refine(
-    (data) => {
-      // end_date must be after or equal to start_date
-      const startDate = new Date(data.start_date!);
-      const endDate = data.end_date ? new Date(data.end_date) : null;
-      if (endDate !== null) {
-        return endDate >= startDate;
-      }
-      return true;
-    },
-    {
-      message: SCHEDULE_ASSIGNMENTS_ERRORS.END_DATE_BEFORE_START,
-      path: ['end_date'],
-    },
-  );
+export const updateScheduleAssignmentSchema = baseScheduleAssignmentSchema.partial().refine(
+  (data) => {
+    // end_date must be after or equal to start_date
+    const startDate = new Date(data.start_date!);
+    const endDate = data.end_date ? new Date(data.end_date) : null;
+    if (endDate !== null) {
+      return endDate >= startDate;
+    }
+    return true;
+  },
+  {
+    message: SCHEDULE_ASSIGNMENTS_ERRORS.END_DATE_BEFORE_START,
+    path: ['end_date'],
+  },
+);
 
 // Schema for filters
 export const scheduleAssignmentsFiltersSchema = z
   .object({
-    tenant: z.string().optional(),
-    user: z.number().int().optional(),
-    groups: z.number().int().optional(),
     session_template: z.number().int().optional(),
     active: z.boolean().optional(),
     start_date_from: z
@@ -215,6 +170,8 @@ export const scheduleAssignmentsFiltersSchema = z
       .regex(/^\d{4}-\d{2}-\d{2}$/)
       .optional(),
     created_by: z.number().int().optional(),
+    family: z.string().optional(),
+    related: z.string().optional(),
   })
   .strict();
 
@@ -226,9 +183,8 @@ export const scheduleAssignmentsGuidSchema = z
 
 // Shared constant for field -> code mapping
 const FIELD_TO_CODE_MAP: Record<string, ScheduleAssignmentsCode> = {
-  tenant: SCHEDULE_ASSIGNMENTS_CODES.TENANT_INVALID,
-  user: SCHEDULE_ASSIGNMENTS_CODES.USER_INVALID,
-  groups: SCHEDULE_ASSIGNMENTS_CODES.GROUPS_INVALID,
+  family: SCHEDULE_ASSIGNMENTS_CODES.FAMILY_INVALID,
+  related: SCHEDULE_ASSIGNMENTS_CODES.RELATED_INVALID,
   session_template: SCHEDULE_ASSIGNMENTS_CODES.SESSION_TEMPLATE_INVALID,
   start_date: SCHEDULE_ASSIGNMENTS_CODES.START_DATE_INVALID,
   end_date: SCHEDULE_ASSIGNMENTS_CODES.END_DATE_INVALID,

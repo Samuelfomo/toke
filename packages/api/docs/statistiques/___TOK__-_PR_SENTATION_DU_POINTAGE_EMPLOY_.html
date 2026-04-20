@@ -1,0 +1,886 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>📋 TOKÉ - PRÉSENTATION DU POINTAGE EMPLOYÉ.md</title>
+  <style>
+  @import url("https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.9.0-alpha2/katex.min.css");
+
+  body {
+    font-family: Georgia, Cambria, serif;
+    font-size: 14px;
+    line-height: 1.7;
+    color: #373D49;
+    max-width: 800px;
+    margin: 0 auto;
+    padding: 2rem;
+  }
+  h1, h2, h3, h4, h5, h6 {
+    font-family: "Source Sans Pro", "Helvetica Neue", Helvetica, Arial, sans-serif;
+    font-weight: 600;
+    margin-top: 1.5em;
+    margin-bottom: 0.5em;
+  }
+  h1 { font-size: 2em; }
+  h2 { font-size: 1.5em; }
+  h3 { font-size: 1.25em; }
+  a { color: #35D7BB; text-decoration: none; }
+  a:hover { text-decoration: underline; }
+  code {
+    font-family: "Ubuntu Mono", Monaco, monospace;
+    background: #F5F7FA;
+    padding: 0.2em 0.4em;
+    border-radius: 3px;
+  }
+  pre {
+    background: #F5F7FA;
+    padding: 1em;
+    border-radius: 3px;
+    overflow-x: auto;
+  }
+  .hljs {
+    display: block;
+    overflow-x: auto;
+    padding: 0;
+    color: #333;
+  }
+  pre code { background: none; padding: 0; }
+  blockquote {
+    border-left: 3px solid #A0AABF;
+    padding-left: 1em;
+    margin-left: 0;
+    font-style: italic;
+    color: #666;
+  }
+  table {
+    border-collapse: collapse;
+    width: 100%;
+  }
+  th, td {
+    border: 1px solid #E8E8E8;
+    padding: 0.5em;
+    text-align: left;
+  }
+  th {
+    background: #F5F7FA;
+    font-weight: 600;
+  }
+  #preview .table {
+    width: auto;
+  }
+  img {
+    max-width: 100%;
+    height: auto;
+  }
+  .katex-display {
+    overflow-x: auto;
+    overflow-y: hidden;
+  }
+</style>
+</head>
+<body id="preview">
+<h1 class="code-line has-line-data" data-line-start="0" data-line-end="1"><a id="TOK_PRSENTATION_DU_POINTAGE_EMPLOY_0"></a>📋 TOKÉ - PRÉSENTATION DU POINTAGE EMPLOYÉ</h1>
+<blockquote>
+<p class="has-line-data" data-line-start="2" data-line-end="5"><strong>Document de Référence Technique v2.0</strong><br>
+<strong>Système de Pointage 100% Smartphone pour l’Afrique Centrale</strong><br>
+<strong>Architecture Unifiée - Sessions de Travail - Anti-Fraude Intégré</strong></p>
+</blockquote>
+<hr>
+<h2 class="code-line has-line-data" data-line-start="8" data-line-end="9"><a id="CONCEPT_GNRAL_8"></a>🎯 CONCEPT GÉNÉRAL</h2>
+<h3 class="code-line has-line-data" data-line-start="10" data-line-end="11"><a id="Vision_Produit_10"></a>📱 Vision Produit</h3>
+<p class="has-line-data" data-line-start="11" data-line-end="12"><strong>Toké transforme le smartphone en badgeuse universelle</strong> permettant aux employés de pointer leur présence via QR Code + GPS, avec une approche <strong>“cancre-proof”</strong> adaptée au marché africain.</p>
+<h3 class="code-line has-line-data" data-line-start="13" data-line-end="14"><a id="Principe_Fondamental_SESSIONS_DE_POINTAGE_13"></a>🔑 Principe Fondamental : <strong>SESSIONS DE POINTAGE</strong></h3>
+<p class="has-line-data" data-line-start="14" data-line-end="15">Contrairement aux systèmes traditionnels basés sur des “journées”, Toké gère des <strong>sessions de travail</strong> :</p>
+<ul>
+<li class="has-line-data" data-line-start="15" data-line-end="16"><strong>Session = Clock-in → Clock-out</strong> avec pauses optionnelles entre</li>
+<li class="has-line-data" data-line-start="16" data-line-end="17"><strong>Un employé = Une session active maximum</strong> (cohérence garantie)</li>
+<li class="has-line-data" data-line-start="17" data-line-end="18"><strong>Calculs automatiques</strong> durées travail/pause par session</li>
+<li class="has-line-data" data-line-start="18" data-line-end="20"><strong>Gestion chevauchements</strong> jour/nuit (gardes, équipes de nuit)</li>
+</ul>
+<h3 class="code-line has-line-data" data-line-start="20" data-line-end="21"><a id="Scurit_AntiFraude_20"></a>🛡️ Sécurité Anti-Fraude</h3>
+<ul>
+<li class="has-line-data" data-line-start="21" data-line-end="22"><strong>QR Code + GPS obligatoires</strong> : Double validation présence</li>
+<li class="has-line-data" data-line-start="22" data-line-end="23"><strong>Géofencing intelligent</strong> : Polygones complexes par site</li>
+<li class="has-line-data" data-line-start="23" data-line-end="24"><strong>Détection patterns suspects</strong> : Vitesse, doublons, incohérences</li>
+<li class="has-line-data" data-line-start="24" data-line-end="26"><strong>Audit trail complet</strong> : Traçabilité légale toute modification</li>
+</ul>
+<hr>
+<h2 class="code-line has-line-data" data-line-start="28" data-line-end="29"><a id="ACTEURS_RLES_28"></a>👥 ACTEURS &amp; RÔLES</h2>
+<h3 class="code-line has-line-data" data-line-start="30" data-line-end="31"><a id="Architecture_Utilisateurs_Unifie_30"></a>🏗️ Architecture Utilisateurs Unifiée</h3>
+<p class="has-line-data" data-line-start="32" data-line-end="33">Toké utilise une <strong>table <code>users</code> unique</strong> avec système de <strong>rôles flexibles</strong> pour supporter tous cas organisationnels.</p>
+<h4 class="code-line has-line-data" data-line-start="34" data-line-end="35"><a id="Rles_Systme_Prdfinis_34"></a>📋 <strong>Rôles Système Prédéfinis</strong></h4>
+<table class="table table-striped table-bordered">
+<thead>
+<tr>
+<th>Rôle</th>
+<th>Code</th>
+<th>Permissions</th>
+<th>Cas d’Usage</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Employé</strong></td>
+<td><code>EMPLOYEE</code></td>
+<td>• Pointage<br/>• Création mémos<br/>• Consultation historique personnel</td>
+<td>Ouvriers, secrétaires, techniciens</td>
+</tr>
+<tr>
+<td><strong>Manager</strong></td>
+<td><code>MANAGER</code></td>
+<td>• Pointage personnel<br/>• Gestion équipe<br/>• Validation mémos<br/>• Création sites/QR</td>
+<td>Chefs d’équipe, responsables service</td>
+</tr>
+<tr>
+<td><strong>Manager Senior</strong></td>
+<td><code>MANAGER_SENIOR</code></td>
+<td>• Toutes permissions Manager<br/>• Supervision managers<br/>• Escalade mémos<br/>• Analytics avancées</td>
+<td>Directeurs, responsables région</td>
+</tr>
+<tr>
+<td><strong>Admin RH</strong></td>
+<td><code>HR_ADMIN</code></td>
+<td>• Accès tenant complet<br/>• Gestion utilisateurs<br/>• Configuration système</td>
+<td>Service RH, comptabilité</td>
+</tr>
+<tr>
+<td><strong>Auditeur</strong></td>
+<td><code>AUDITOR</code></td>
+<td>• Pointage multi-sites<br/>• Rapports audit<br/>• Missions temporaires</td>
+<td>Contrôleurs, inspecteurs</td>
+</tr>
+</tbody>
+</table>
+<h4 class="code-line has-line-data" data-line-start="44" data-line-end="45"><a id="Combinaisons_de_Rles_MultiRles_44"></a>🔄 <strong>Combinaisons de Rôles</strong> (Multi-Rôles)</h4>
+<pre><code class="has-line-data" data-line-start="47" data-line-end="55">Exemple : Pierre = Chef Chantier
+├── Rôle MANAGER : Gère 8 ouvriers + crée QR Chantier Nord
+└── Rôle EMPLOYEE : Pointe ses propres heures + manager = Directeur Travaux
+
+Exemple : Sophie = Responsable Région  
+├── Rôle MANAGER_SENIOR : Supervise 3 chefs d'agence
+└── Rôle EMPLOYEE : Employée du Directeur National
+</code></pre>
+<h3 class="code-line has-line-data" data-line-start="56" data-line-end="57"><a id="Hirarchie_Organisationnelle_56"></a>🏢 <strong>Hiérarchie Organisationnelle</strong></h3>
+<p class="has-line-data" data-line-start="58" data-line-end="59"><strong>Structure Flexible N-Niveaux</strong> via table <code>org_hierarchy</code> :</p>
+<pre><code class="has-line-data" data-line-start="61" data-line-end="81">TENANT : BATIX SARL
+│
+├── Directeur Général (HR_ADMIN + MANAGER_SENIOR)
+│   │
+│   ├── Directeur Travaux (MANAGER_SENIOR + EMPLOYEE)
+│   │   │
+│   │   ├── Chef Chantier Nord (MANAGER + EMPLOYEE)
+│   │   │   ├── Ouvrier 1 (EMPLOYEE)
+│   │   │   ├── Ouvrier 2 (EMPLOYEE)  
+│   │   │   └── Ouvrier 3 (EMPLOYEE)
+│   │   │
+│   │   └── Chef Chantier Sud (MANAGER + EMPLOYEE)
+│   │       ├── Ouvrier 4 (EMPLOYEE)
+│   │       └── Ouvrier 5 (EMPLOYEE)
+│   │
+│   └── Responsable Bureau (MANAGER + EMPLOYEE)
+│       ├── Secrétaire (EMPLOYEE)
+│       ├── Comptable (EMPLOYEE)
+│       └── Auditeur Mobile (AUDITOR + EMPLOYEE)
+</code></pre>
+<hr>
+<h2 class="code-line has-line-data" data-line-start="84" data-line-end="85"><a id="MODULES_FONCTIONNALITS_84"></a>🏗️ MODULES &amp; FONCTIONNALITÉS</h2>
+<h3 class="code-line has-line-data" data-line-start="86" data-line-end="87"><a id="Module_Pointage_Core_86"></a>📱 <strong>Module Pointage Core</strong></h3>
+<h4 class="code-line has-line-data" data-line-start="88" data-line-end="89"><a id="1_Authentification_Diffrencie_88"></a><strong>1. Authentification Différenciée</strong></h4>
+<ul>
+<li class="has-line-data" data-line-start="89" data-line-end="90"><strong>OTP Onboarding</strong> : Code 6 chiffres temporaire (première connexion)</li>
+<li class="has-line-data" data-line-start="90" data-line-end="91"><strong>PIN Employé</strong> : 4 chiffres + biométrie (usage quotidien pointage)</li>
+<li class="has-line-data" data-line-start="91" data-line-end="93"><strong>Password Manager</strong> : Email + mot de passe (gestion équipe)</li>
+</ul>
+<h4 class="code-line has-line-data" data-line-start="93" data-line-end="94"><a id="2_Types_de_Pointage_93"></a><strong>2. Types de Pointage</strong></h4>
+<table class="table table-striped table-bordered">
+<thead>
+<tr>
+<th>Type</th>
+<th>Description</th>
+<th>Impact Session</th>
+<th>Géofencing</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>clock_in</code></td>
+<td>Ouverture session travail</td>
+<td>Crée nouvelle session</td>
+<td>Obligatoire</td>
+</tr>
+<tr>
+<td><code>clock_out</code></td>
+<td>Fermeture session travail</td>
+<td>Ferme session active</td>
+<td>Obligatoire</td>
+</tr>
+<tr>
+<td><code>pause_start</code></td>
+<td>Début pause (déjeuner, etc.)</td>
+<td>Session reste ouverte</td>
+<td>Obligatoire</td>
+</tr>
+<tr>
+<td><code>pause_end</code></td>
+<td>Fin pause</td>
+<td>Session reste ouverte</td>
+<td>Obligatoire</td>
+</tr>
+<tr>
+<td><code>external_mission</code></td>
+<td>Mission externe site</td>
+<td>Session reste ouverte</td>
+<td>Flexibilité GPS</td>
+</tr>
+</tbody>
+</table>
+<h4 class="code-line has-line-data" data-line-start="102" data-line-end="103"><a id="3_Gestion_Sites_Flexible_102"></a><strong>3. Gestion Sites Flexible</strong></h4>
+<ul>
+<li class="has-line-data" data-line-start="103" data-line-end="104"><strong>Manager Sites</strong> : QR personnel manager (équipe dédiée)</li>
+<li class="has-line-data" data-line-start="104" data-line-end="105"><strong>Global Sites</strong> : Sites partagés (agences, bureaux communs)</li>
+<li class="has-line-data" data-line-start="105" data-line-end="106"><strong>Temporary Sites</strong> : Missions temporaires, chantiers courts</li>
+<li class="has-line-data" data-line-start="106" data-line-end="108"><strong>Public Sites</strong> : Gares, aéroports (cas auditeurs/commerciaux)</li>
+</ul>
+<h3 class="code-line has-line-data" data-line-start="108" data-line-end="109"><a id="Module_Synchronisation_Offline_108"></a>🔄 <strong>Module Synchronisation Offline</strong></h3>
+<h4 class="code-line has-line-data" data-line-start="110" data-line-end="111"><a id="Architecture_OfflineFirst_110"></a><strong>Architecture Offline-First</strong></h4>
+<ul>
+<li class="has-line-data" data-line-start="111" data-line-end="112"><strong>Stockage local SQLite</strong> : Pointages en attente sync</li>
+<li class="has-line-data" data-line-start="112" data-line-end="113"><strong>Conflict resolution</strong> : Timestamp serveur prime</li>
+<li class="has-line-data" data-line-start="113" data-line-end="114"><strong>Batch synchronisation</strong> : Upload multiple pointages offline</li>
+<li class="has-line-data" data-line-start="114" data-line-end="116"><strong>Auto-retry intelligent</strong> : Exponential backoff réseau instable</li>
+</ul>
+<h4 class="code-line has-line-data" data-line-start="116" data-line-end="117"><a id="Gestion_Conflits_116"></a><strong>Gestion Conflits</strong></h4>
+<pre><code class="has-line-data" data-line-start="118" data-line-end="124">Scénario Conflit :
+1. Employé pointe offline 8h00
+2. Manager corrige online 8h15  
+3. Sync employé : détection conflit
+4. Résolution auto si &lt;30min, sinon mémo review manager
+</code></pre>
+<h3 class="code-line has-line-data" data-line-start="125" data-line-end="126"><a id="Module_Mmos_Justifications_125"></a>📝 <strong>Module Mémos &amp; Justifications</strong></h3>
+<h4 class="code-line has-line-data" data-line-start="127" data-line-end="128"><a id="Types_de_Mmos_127"></a><strong>Types de Mémos</strong></h4>
+<ul>
+<li class="has-line-data" data-line-start="128" data-line-end="129"><strong>Préventifs</strong> : “Demain retard rdv médical” (avant incident)</li>
+<li class="has-line-data" data-line-start="129" data-line-end="130"><strong>Correctifs</strong> : “Oubli pointage sortie hier 17h” (après incident)</li>
+<li class="has-line-data" data-line-start="130" data-line-end="132"><strong>Auto-générés</strong> : Système détecte incohérence → mémo automatique</li>
+</ul>
+<h4 class="code-line has-line-data" data-line-start="132" data-line-end="133"><a id="Workflow_Validation_132"></a><strong>Workflow Validation</strong></h4>
+<pre><code class="has-line-data" data-line-start="134" data-line-end="138">Employé crée mémo → Manager validation (24h) → [Validé/Rejeté]
+                    ↓ (si délai dépassé)
+                  Escalade N+1 automatique
+</code></pre>
+<h4 class="code-line has-line-data" data-line-start="139" data-line-end="140"><a id="Pices_Jointes_139"></a><strong>Pièces Jointes</strong></h4>
+<ul>
+<li class="has-line-data" data-line-start="140" data-line-end="141"><strong>Photos</strong> : Justificatifs, tickets transport (max 5MB)</li>
+<li class="has-line-data" data-line-start="141" data-line-end="142"><strong>Audio</strong> : Explications 30s max (français local)</li>
+<li class="has-line-data" data-line-start="142" data-line-end="144"><strong>Métadonnées</strong> : GPS création, device info, timestamp légal</li>
+</ul>
+<h3 class="code-line has-line-data" data-line-start="144" data-line-end="145"><a id="Module_AntiFraude_144"></a>🚨 <strong>Module Anti-Fraude</strong></h3>
+<h4 class="code-line has-line-data" data-line-start="146" data-line-end="147"><a id="Dtections_Automatiques_146"></a><strong>Détections Automatiques</strong></h4>
+<ul>
+<li class="has-line-data" data-line-start="147" data-line-end="148"><strong>Géofencing violation</strong> : Pointage hors zone autorisée</li>
+<li class="has-line-data" data-line-start="148" data-line-end="149"><strong>Doublons temporels</strong> : &lt;15min même site même employé</li>
+<li class="has-line-data" data-line-start="149" data-line-end="150"><strong>Vitesse impossible</strong> : Déplacement irréaliste entre sites</li>
+<li class="has-line-data" data-line-start="150" data-line-end="151"><strong>GPS spoofing</strong> : Mock location Android détectée</li>
+<li class="has-line-data" data-line-start="151" data-line-end="153"><strong>Patterns suspects</strong> : Comportements récurrents anormaux</li>
+</ul>
+<h4 class="code-line has-line-data" data-line-start="153" data-line-end="154"><a id="Niveaux_dAlerte_153"></a><strong>Niveaux d’Alerte</strong></h4>
+<ul>
+<li class="has-line-data" data-line-start="154" data-line-end="155"><strong>Low</strong> : Logs système, pas de notification</li>
+<li class="has-line-data" data-line-start="155" data-line-end="156"><strong>Medium</strong> : Notification manager delayed</li>
+<li class="has-line-data" data-line-start="156" data-line-end="157"><strong>High</strong> : Notification manager immédiate</li>
+<li class="has-line-data" data-line-start="157" data-line-end="159"><strong>Critical</strong> : Blocage pointage + investigation manuelle</li>
+</ul>
+<hr>
+<h2 class="code-line has-line-data" data-line-start="161" data-line-end="162"><a id="WORKFLOWS_DTAILLS_161"></a>🔄 WORKFLOWS DÉTAILLÉS</h2>
+<h3 class="code-line has-line-data" data-line-start="163" data-line-end="164"><a id="Workflow_1_Onboarding_Employ_163"></a>📋 <strong>Workflow 1 : Onboarding Employé</strong></h3>
+<pre><code class="has-line-data language-mermaid" data-line-start="166" data-line-end="179">sequenceDiagram
+    participant M as Manager (App Manager)
+    participant S as Serveur Toké
+    participant E as Employé (App Pointage)
+    
+    M-&gt;&gt;S: Ajout employé + génération OTP
+    S-&gt;&gt;E: SMS/WhatsApp OTP (847392)
+    E-&gt;&gt;S: Installation app + saisie OTP
+    S-&gt;&gt;E: Authentification + liaison manager
+    E-&gt;&gt;E: Configuration PIN local + biométrie
+    E-&gt;&gt;S: Premier pointage test
+    S-&gt;&gt;M: Notification employé actif
+</code></pre>
+<h3 class="code-line has-line-data" data-line-start="180" data-line-end="181"><a id="Workflow_2_Session_Pointage_Standard_180"></a>⏰ <strong>Workflow 2 : Session Pointage Standard</strong></h3>
+<pre><code class="has-line-data language-mermaid" data-line-start="183" data-line-end="214">sequenceDiagram
+    participant E as Employé
+    participant A as App Pointage
+    participant S as Serveur
+    participant M as Manager
+    
+    Note over E,M: Matinée - Arrivée Chantier
+    E-&gt;&gt;A: Ouvre app (PIN/Touch)
+    A-&gt;&gt;A: Scan QR Code site
+    A-&gt;&gt;S: POST /pointage (clock_in + GPS)
+    S-&gt;&gt;S: Validation géofencing + création session
+    S-&gt;&gt;A: ✅ Session ouverte 8h15
+    S-&gt;&gt;M: 📱 Notification arrivée Pierre
+    
+    Note over E,M: Midi - Pause Déjeuner  
+    E-&gt;&gt;A: Bouton &quot;Pause Déj&quot;
+    A-&gt;&gt;S: POST /pointage (pause_start)
+    S-&gt;&gt;A: ✅ Pause débutée 12h00
+    
+    Note over E,M: 13h30 - Reprise Travail
+    E-&gt;&gt;A: Bouton &quot;Reprendre&quot;  
+    A-&gt;&gt;S: POST /pointage (pause_end)
+    S-&gt;&gt;A: ✅ Travail repris 13h32
+    
+    Note over E,M: Soir - Départ
+    E-&gt;&gt;A: Scan QR Code site
+    A-&gt;&gt;S: POST /pointage (clock_out + GPS)
+    S-&gt;&gt;S: Fermeture session + calcul durées
+    S-&gt;&gt;A: 🏠 Session fermée - 8h58 travaillées
+    S-&gt;&gt;M: 📊 Rapport journée Pierre
+</code></pre>
+<h3 class="code-line has-line-data" data-line-start="215" data-line-end="216"><a id="Workflow_3_Gestion_Exception_215"></a>🚨 <strong>Workflow 3 : Gestion Exception</strong></h3>
+<pre><code class="has-line-data language-mermaid" data-line-start="218" data-line-end="238">sequenceDiagram
+    participant E as Employé
+    participant A as App Pointage  
+    participant S as Serveur
+    participant M as Manager
+    
+    Note over E,M: Scénario : Employé oublie clock-out hier
+    E-&gt;&gt;A: Tentative clock-in ce matin
+    A-&gt;&gt;S: POST /pointage (clock_in)
+    S-&gt;&gt;S: ⚠️ Détection session non fermée
+    S-&gt;&gt;S: Auto-fermeture session précédente
+    S-&gt;&gt;S: Création mémo automatique
+    S-&gt;&gt;A: ✅ Nouveau clock-in + ⚠️ Mémo créé
+    S-&gt;&gt;M: 📝 Mémo auto &quot;Session non fermée&quot;
+    
+    Note over M: Manager traite mémo
+    M-&gt;&gt;S: Validation mémo
+    S-&gt;&gt;E: 📱 Mémo validé
+    S-&gt;&gt;S: Correction données pointage
+</code></pre>
+<h3 class="code-line has-line-data" data-line-start="239" data-line-end="240"><a id="Workflow_4_Synchronisation_Offline_239"></a>🔄 <strong>Workflow 4 : Synchronisation Offline</strong></h3>
+<pre><code class="has-line-data language-mermaid" data-line-start="242" data-line-end="261">sequenceDiagram
+    participant E as Employé
+    participant L as SQLite Local
+    participant A as App Pointage
+    participant S as Serveur
+    
+    Note over E,S: Mode Offline (pas de réseau)
+    E-&gt;&gt;A: Pointages multiples
+    A-&gt;&gt;L: Stockage local sécurisé
+    L-&gt;&gt;A: Queue sync (3 pointages en attente)
+    
+    Note over E,S: Connexion récupérée
+    A-&gt;&gt;A: Détection réseau
+    A-&gt;&gt;S: POST /pointage/batch (3 pointages)
+    S-&gt;&gt;S: Traitement séquentiel + validation
+    S-&gt;&gt;A: Résultats : 2 ✅ / 1 ❌ (conflit)
+    A-&gt;&gt;L: Nettoyage données synchronisées
+    A-&gt;&gt;E: 📱 Sync terminée - 1 conflit à résoudre
+</code></pre>
+<hr>
+<h2 class="code-line has-line-data" data-line-start="264" data-line-end="265"><a id="STRUCTURE_TABLES_SQL_264"></a>🗄️ STRUCTURE TABLES SQL</h2>
+<h3 class="code-line has-line-data" data-line-start="266" data-line-end="267"><a id="Tables_Core_Systme_266"></a>📊 <strong>Tables Core Système</strong></h3>
+<h4 class="code-line has-line-data" data-line-start="268" data-line-end="269"><a id="1_Utilisateurs_Unifis_268"></a><strong>1. Utilisateurs Unifiés</strong></h4>
+<pre><code class="has-line-data language-sql" data-line-start="270" data-line-end="306"><span class="hljs-comment">-- Table principale : tous utilisateurs (managers + employés)</span>
+<span class="hljs-keyword">CREATE TABLE</span> users (
+    id SERIAL <span class="hljs-keyword">PRIMARY KEY</span>,
+    user_guid UUID <span class="hljs-keyword">UNIQUE</span> <span class="hljs-keyword">NOT NULL</span> <span class="hljs-keyword">DEFAULT</span> gen_random_uuid(),
+    tenant_id <span class="hljs-type">INTEGER</span> <span class="hljs-keyword">REFERENCES</span> tenants(id) <span class="hljs-keyword">ON</span> <span class="hljs-keyword">DELETE</span> CASCADE,
+    
+    <span class="hljs-comment">-- Informations personnelles</span>
+    email <span class="hljs-type">VARCHAR</span>(<span class="hljs-number">255</span>) <span class="hljs-keyword">UNIQUE</span>,          <span class="hljs-comment">-- Obligatoire si manager</span>
+    first_name <span class="hljs-type">VARCHAR</span>(<span class="hljs-number">100</span>) <span class="hljs-keyword">NOT NULL</span>,
+    last_name <span class="hljs-type">VARCHAR</span>(<span class="hljs-number">100</span>) <span class="hljs-keyword">NOT NULL</span>,
+    phone_number <span class="hljs-type">VARCHAR</span>(<span class="hljs-number">20</span>) <span class="hljs-keyword">UNIQUE</span>,    <span class="hljs-comment">-- Obligatoire si employé</span>
+    employee_code <span class="hljs-type">VARCHAR</span>(<span class="hljs-number">20</span>) <span class="hljs-keyword">UNIQUE</span>,   <span class="hljs-comment">-- Auto-généré si employé</span>
+    
+    <span class="hljs-comment">-- Authentification différenciée</span>
+    pin_hash <span class="hljs-type">VARCHAR</span>(<span class="hljs-number">255</span>),              <span class="hljs-comment">-- PIN employé (pointage)</span>
+    password_hash <span class="hljs-type">VARCHAR</span>(<span class="hljs-number">255</span>),         <span class="hljs-comment">-- Password manager (gestion)</span>
+    otp_token <span class="hljs-type">VARCHAR</span>(<span class="hljs-number">10</span>),              <span class="hljs-comment">-- OTP temporaire onboarding</span>
+    otp_expires_at TIMESTAMPTZ,
+    
+    <span class="hljs-comment">-- QR Code personnel (si manager)</span>
+    qr_code_token <span class="hljs-type">VARCHAR</span>(<span class="hljs-number">255</span>) <span class="hljs-keyword">UNIQUE</span>,
+    qr_code_expires_at TIMESTAMPTZ,
+    
+    <span class="hljs-comment">-- Métadonnées</span>
+    avatar_url TEXT,
+    hire_date <span class="hljs-type">DATE</span>,
+    department <span class="hljs-type">VARCHAR</span>(<span class="hljs-number">100</span>),
+    job_title <span class="hljs-type">VARCHAR</span>(<span class="hljs-number">100</span>),
+    
+    <span class="hljs-comment">-- Statuts</span>
+    is_active <span class="hljs-type">BOOLEAN</span> <span class="hljs-keyword">DEFAULT</span> <span class="hljs-literal">TRUE</span>,
+    last_login_at TIMESTAMPTZ,
+    created_at TIMESTAMPTZ <span class="hljs-keyword">DEFAULT</span> NOW(),
+    updated_at TIMESTAMPTZ <span class="hljs-keyword">DEFAULT</span> NOW()
+);
+</code></pre>
+<h4 class="code-line has-line-data" data-line-start="307" data-line-end="308"><a id="2_Systme_de_Rles_307"></a><strong>2. Système de Rôles</strong></h4>
+<pre><code class="has-line-data language-sql" data-line-start="309" data-line-end="329"><span class="hljs-comment">-- Rôles système (permissions granulaires)</span>
+<span class="hljs-keyword">CREATE TABLE</span> roles (
+    id SERIAL <span class="hljs-keyword">PRIMARY KEY</span>,
+    role_code <span class="hljs-type">VARCHAR</span>(<span class="hljs-number">50</span>) <span class="hljs-keyword">UNIQUE</span> <span class="hljs-keyword">NOT NULL</span>,
+    role_name <span class="hljs-type">VARCHAR</span>(<span class="hljs-number">100</span>) <span class="hljs-keyword">NOT NULL</span>,
+    description TEXT,
+    permissions JSONB <span class="hljs-keyword">NOT NULL</span>,
+    is_system_role <span class="hljs-type">BOOLEAN</span> <span class="hljs-keyword">DEFAULT</span> <span class="hljs-literal">TRUE</span>
+);
+
+<span class="hljs-comment">-- Attribution rôles aux utilisateurs (many-to-many)</span>
+<span class="hljs-keyword">CREATE TABLE</span> user_roles (
+    id SERIAL <span class="hljs-keyword">PRIMARY KEY</span>,
+    user_id <span class="hljs-type">INTEGER</span> <span class="hljs-keyword">REFERENCES</span> users(id) <span class="hljs-keyword">ON</span> <span class="hljs-keyword">DELETE</span> CASCADE,
+    role_id <span class="hljs-type">INTEGER</span> <span class="hljs-keyword">REFERENCES</span> roles(id) <span class="hljs-keyword">ON</span> <span class="hljs-keyword">DELETE</span> CASCADE,
+    assigned_at TIMESTAMPTZ <span class="hljs-keyword">DEFAULT</span> NOW(),
+    assigned_by <span class="hljs-type">INTEGER</span> <span class="hljs-keyword">REFERENCES</span> users(id),
+    <span class="hljs-keyword">UNIQUE</span>(user_id, role_id)
+);
+</code></pre>
+<h4 class="code-line has-line-data" data-line-start="330" data-line-end="331"><a id="3_Hirarchie_Organisationnelle_330"></a><strong>3. Hiérarchie Organisationnelle</strong></h4>
+<pre><code class="has-line-data language-sql" data-line-start="332" data-line-end="352"><span class="hljs-comment">-- Relations hiérarchiques (n-levels, flexible)</span>
+<span class="hljs-keyword">CREATE TABLE</span> org_hierarchy (
+    id SERIAL <span class="hljs-keyword">PRIMARY KEY</span>,
+    subordinate_id <span class="hljs-type">INTEGER</span> <span class="hljs-keyword">REFERENCES</span> users(id) <span class="hljs-keyword">ON</span> <span class="hljs-keyword">DELETE</span> CASCADE,
+    supervisor_id <span class="hljs-type">INTEGER</span> <span class="hljs-keyword">REFERENCES</span> users(id) <span class="hljs-keyword">ON</span> <span class="hljs-keyword">DELETE</span> CASCADE,
+    
+    <span class="hljs-comment">-- Métadonnées relation</span>
+    relationship_type <span class="hljs-type">VARCHAR</span>(<span class="hljs-number">50</span>) <span class="hljs-keyword">DEFAULT</span> <span class="hljs-string">&#x27;direct_report&#x27;</span>,
+    effective_from <span class="hljs-type">DATE</span> <span class="hljs-keyword">NOT NULL</span> <span class="hljs-keyword">DEFAULT</span> <span class="hljs-built_in">CURRENT_DATE</span>,
+    effective_to <span class="hljs-type">DATE</span>, <span class="hljs-comment">-- NULL = relation active</span>
+    
+    <span class="hljs-comment">-- Contexte organisationnel</span>
+    department <span class="hljs-type">VARCHAR</span>(<span class="hljs-number">100</span>),
+    cost_center <span class="hljs-type">VARCHAR</span>(<span class="hljs-number">50</span>),
+    delegation_level <span class="hljs-type">INTEGER</span> <span class="hljs-keyword">DEFAULT</span> <span class="hljs-number">1</span>,
+    
+    created_at TIMESTAMPTZ <span class="hljs-keyword">DEFAULT</span> NOW(),
+    <span class="hljs-keyword">UNIQUE</span>(subordinate_id, supervisor_id, effective_from)
+);
+</code></pre>
+<h3 class="code-line has-line-data" data-line-start="353" data-line-end="354"><a id="Tables_Sites_Golocalisation_353"></a>🏢 <strong>Tables Sites &amp; Géolocalisation</strong></h3>
+<h4 class="code-line has-line-data" data-line-start="355" data-line-end="356"><a id="4_Sites_de_Travail_355"></a><strong>4. Sites de Travail</strong></h4>
+<pre><code class="has-line-data language-sql" data-line-start="357" data-line-end="391"><span class="hljs-keyword">CREATE TABLE</span> sites (
+    id SERIAL <span class="hljs-keyword">PRIMARY KEY</span>,
+    site_guid UUID <span class="hljs-keyword">UNIQUE</span> <span class="hljs-keyword">NOT NULL</span> <span class="hljs-keyword">DEFAULT</span> gen_random_uuid(),
+    tenant_id <span class="hljs-type">INTEGER</span> <span class="hljs-keyword">REFERENCES</span> tenants(id) <span class="hljs-keyword">ON</span> <span class="hljs-keyword">DELETE</span> CASCADE,
+    created_by_user_id <span class="hljs-type">INTEGER</span> <span class="hljs-keyword">REFERENCES</span> users(id) <span class="hljs-keyword">ON</span> <span class="hljs-keyword">DELETE</span> <span class="hljs-keyword">SET</span> <span class="hljs-keyword">NULL</span>,
+    
+    <span class="hljs-comment">-- Informations site</span>
+    site_name <span class="hljs-type">VARCHAR</span>(<span class="hljs-number">255</span>) <span class="hljs-keyword">NOT NULL</span>,
+    site_type site_type <span class="hljs-keyword">NOT NULL</span> <span class="hljs-keyword">DEFAULT</span> <span class="hljs-string">&#x27;manager_site&#x27;</span>,
+    address TEXT,
+    
+    <span class="hljs-comment">-- Géofencing (polygone complexe GeoJSON)</span>
+    geofence_polygon JSONB <span class="hljs-keyword">NOT NULL</span>,
+    geofence_radius <span class="hljs-type">INTEGER</span> <span class="hljs-keyword">DEFAULT</span> <span class="hljs-number">100</span>,
+    
+    <span class="hljs-comment">-- QR Code &amp; autorisations</span>
+    qr_reference_user_id <span class="hljs-type">INTEGER</span> <span class="hljs-keyword">REFERENCES</span> users(id),
+    qr_code_data JSONB <span class="hljs-keyword">NOT NULL</span>,
+    is_active <span class="hljs-type">BOOLEAN</span> <span class="hljs-keyword">DEFAULT</span> <span class="hljs-literal">TRUE</span>,
+    is_public <span class="hljs-type">BOOLEAN</span> <span class="hljs-keyword">DEFAULT</span> <span class="hljs-literal">FALSE</span>,
+    allowed_roles JSONB,
+    
+    created_at TIMESTAMPTZ <span class="hljs-keyword">DEFAULT</span> NOW(),
+    updated_at TIMESTAMPTZ <span class="hljs-keyword">DEFAULT</span> NOW()
+);
+
+<span class="hljs-comment">-- Types de sites</span>
+<span class="hljs-keyword">CREATE</span> TYPE site_type <span class="hljs-keyword">AS</span> ENUM (
+    <span class="hljs-string">&#x27;manager_site&#x27;</span>,     <span class="hljs-comment">-- Site créé par manager</span>
+    <span class="hljs-string">&#x27;global_site&#x27;</span>,      <span class="hljs-comment">-- Site partagé</span>
+    <span class="hljs-string">&#x27;temporary_site&#x27;</span>,   <span class="hljs-comment">-- Mission temporaire</span>
+    <span class="hljs-string">&#x27;public_site&#x27;</span>       <span class="hljs-comment">-- Accès libre (gares, etc.)</span>
+);
+</code></pre>
+<h3 class="code-line has-line-data" data-line-start="392" data-line-end="393"><a id="Tables_Pointages_Sessions_392"></a>⏰ <strong>Tables Pointages &amp; Sessions</strong></h3>
+<h4 class="code-line has-line-data" data-line-start="394" data-line-end="395"><a id="5_Sessions_de_Travail_394"></a><strong>5. Sessions de Travail</strong></h4>
+<pre><code class="has-line-data language-sql" data-line-start="396" data-line-end="436"><span class="hljs-comment">-- Sessions de travail (concept central)</span>
+<span class="hljs-keyword">CREATE TABLE</span> work_sessions (
+    id SERIAL <span class="hljs-keyword">PRIMARY KEY</span>,
+    session_guid UUID <span class="hljs-keyword">UNIQUE</span> <span class="hljs-keyword">NOT NULL</span> <span class="hljs-keyword">DEFAULT</span> gen_random_uuid(),
+    user_id <span class="hljs-type">INTEGER</span> <span class="hljs-keyword">REFERENCES</span> users(id) <span class="hljs-keyword">ON</span> <span class="hljs-keyword">DELETE</span> CASCADE,
+    site_id <span class="hljs-type">INTEGER</span> <span class="hljs-keyword">REFERENCES</span> sites(id) <span class="hljs-keyword">ON</span> <span class="hljs-keyword">DELETE</span> CASCADE,
+    session_status session_status <span class="hljs-keyword">DEFAULT</span> <span class="hljs-string">&#x27;open&#x27;</span>,
+    
+    <span class="hljs-comment">-- Timestamps session</span>
+    session_start_at TIMESTAMPTZ <span class="hljs-keyword">NOT NULL</span>,
+    session_end_at TIMESTAMPTZ,
+    
+    <span class="hljs-comment">-- Calculs automatiques</span>
+    total_work_duration <span class="hljs-type">INTERVAL</span>,
+    total_pause_duration <span class="hljs-type">INTERVAL</span>,
+    
+    <span class="hljs-comment">-- Géolocalisation</span>
+    start_latitude <span class="hljs-type">DECIMAL</span>(<span class="hljs-number">10</span>,<span class="hljs-number">8</span>),
+    start_longitude <span class="hljs-type">DECIMAL</span>(<span class="hljs-number">11</span>,<span class="hljs-number">8</span>),
+    end_latitude <span class="hljs-type">DECIMAL</span>(<span class="hljs-number">10</span>,<span class="hljs-number">8</span>),
+    end_longitude <span class="hljs-type">DECIMAL</span>(<span class="hljs-number">11</span>,<span class="hljs-number">8</span>),
+    
+    <span class="hljs-comment">-- Justification liée</span>
+    memo_id <span class="hljs-type">INTEGER</span> <span class="hljs-keyword">REFERENCES</span> memos(id) <span class="hljs-keyword">ON</span> <span class="hljs-keyword">DELETE</span> <span class="hljs-keyword">SET</span> <span class="hljs-keyword">NULL</span>,
+    
+    created_at TIMESTAMPTZ <span class="hljs-keyword">DEFAULT</span> NOW(),
+    updated_at TIMESTAMPTZ <span class="hljs-keyword">DEFAULT</span> NOW()
+);
+
+<span class="hljs-comment">-- Statuts de session</span>
+<span class="hljs-keyword">CREATE</span> TYPE session_status <span class="hljs-keyword">AS</span> ENUM (
+    <span class="hljs-string">&#x27;open&#x27;</span>,         <span class="hljs-comment">-- Session en cours</span>
+    <span class="hljs-string">&#x27;closed&#x27;</span>,       <span class="hljs-comment">-- Fermée normalement</span>
+    <span class="hljs-string">&#x27;abandoned&#x27;</span>,    <span class="hljs-comment">-- Non fermée (oubli)</span>
+    <span class="hljs-string">&#x27;corrected&#x27;</span>     <span class="hljs-comment">-- Corrigée manuellement</span>
+);
+
+<span class="hljs-comment">-- Partitionnement par mois (performance)</span>
+<span class="hljs-comment">-- Créé automatiquement par fonction maintenance</span>
+</code></pre>
+<h4 class="code-line has-line-data" data-line-start="437" data-line-end="438"><a id="6_Pointages_Individuels_437"></a><strong>6. Pointages Individuels</strong></h4>
+<pre><code class="has-line-data language-sql" data-line-start="439" data-line-end="499"><span class="hljs-comment">-- Pointages individuels (actions dans sessions)</span>
+<span class="hljs-keyword">CREATE TABLE</span> time_entries (
+    id SERIAL <span class="hljs-keyword">PRIMARY KEY</span>,
+    entry_guid UUID <span class="hljs-keyword">UNIQUE</span> <span class="hljs-keyword">NOT NULL</span> <span class="hljs-keyword">DEFAULT</span> gen_random_uuid(),
+    session_id <span class="hljs-type">INTEGER</span> <span class="hljs-keyword">REFERENCES</span> work_sessions(id) <span class="hljs-keyword">ON</span> <span class="hljs-keyword">DELETE</span> CASCADE,
+    user_id <span class="hljs-type">INTEGER</span> <span class="hljs-keyword">REFERENCES</span> users(id) <span class="hljs-keyword">ON</span> <span class="hljs-keyword">DELETE</span> CASCADE,
+    site_id <span class="hljs-type">INTEGER</span> <span class="hljs-keyword">REFERENCES</span> sites(id) <span class="hljs-keyword">ON</span> <span class="hljs-keyword">DELETE</span> CASCADE,
+    
+    <span class="hljs-comment">-- Type et statut pointage</span>
+    pointage_type pointage_type <span class="hljs-keyword">NOT NULL</span>,
+    pointage_status pointage_status <span class="hljs-keyword">DEFAULT</span> <span class="hljs-string">&#x27;pending&#x27;</span>,
+    
+    <span class="hljs-comment">-- Timestamps (déclaré vs réel si correction)</span>
+    clocked_at TIMESTAMPTZ <span class="hljs-keyword">NOT NULL</span>,
+    real_clocked_at TIMESTAMPTZ,
+    server_received_at TIMESTAMPTZ <span class="hljs-keyword">DEFAULT</span> NOW(),
+    
+    <span class="hljs-comment">-- Géolocalisation obligatoire</span>
+    latitude <span class="hljs-type">DECIMAL</span>(<span class="hljs-number">10</span>,<span class="hljs-number">8</span>) <span class="hljs-keyword">NOT NULL</span>,
+    longitude <span class="hljs-type">DECIMAL</span>(<span class="hljs-number">11</span>,<span class="hljs-number">8</span>) <span class="hljs-keyword">NOT NULL</span>,
+    gps_accuracy <span class="hljs-type">INTEGER</span>,
+    
+    <span class="hljs-comment">-- Métadonnées device (anti-fraude)</span>
+    device_info JSONB,
+    ip_address INET,
+    user_agent TEXT,
+    
+    <span class="hljs-comment">-- Gestion offline/sync</span>
+    created_offline <span class="hljs-type">BOOLEAN</span> <span class="hljs-keyword">DEFAULT</span> <span class="hljs-literal">FALSE</span>,
+    local_id <span class="hljs-type">VARCHAR</span>(<span class="hljs-number">50</span>),
+    sync_attempts <span class="hljs-type">INTEGER</span> <span class="hljs-keyword">DEFAULT</span> <span class="hljs-number">0</span>,
+    last_sync_attempt TIMESTAMPTZ,
+    
+    <span class="hljs-comment">-- Justification</span>
+    memo_id <span class="hljs-type">INTEGER</span> <span class="hljs-keyword">REFERENCES</span> memos(id) <span class="hljs-keyword">ON</span> <span class="hljs-keyword">DELETE</span> <span class="hljs-keyword">SET</span> <span class="hljs-keyword">NULL</span>,
+    correction_reason TEXT,
+    
+    created_at TIMESTAMPTZ <span class="hljs-keyword">DEFAULT</span> NOW(),
+    updated_at TIMESTAMPTZ <span class="hljs-keyword">DEFAULT</span> NOW()
+);
+
+<span class="hljs-comment">-- Types de pointage</span>
+<span class="hljs-keyword">CREATE</span> TYPE pointage_type <span class="hljs-keyword">AS</span> ENUM (
+    <span class="hljs-string">&#x27;clock_in&#x27;</span>,         <span class="hljs-comment">-- Ouverture session</span>
+    <span class="hljs-string">&#x27;clock_out&#x27;</span>,        <span class="hljs-comment">-- Fermeture session</span>
+    <span class="hljs-string">&#x27;pause_start&#x27;</span>,      <span class="hljs-comment">-- Début pause</span>
+    <span class="hljs-string">&#x27;pause_end&#x27;</span>,        <span class="hljs-comment">-- Fin pause</span>
+    <span class="hljs-string">&#x27;external_mission&#x27;</span>  <span class="hljs-comment">-- Mission externe</span>
+);
+
+<span class="hljs-comment">-- Statuts pointage</span>
+<span class="hljs-keyword">CREATE</span> TYPE pointage_status <span class="hljs-keyword">AS</span> ENUM (
+    <span class="hljs-string">&#x27;draft&#x27;</span>,        <span class="hljs-comment">-- Créé offline</span>
+    <span class="hljs-string">&#x27;pending&#x27;</span>,      <span class="hljs-comment">-- En attente validation</span>
+    <span class="hljs-string">&#x27;accepted&#x27;</span>,     <span class="hljs-comment">-- Validé automatiquement</span>
+    <span class="hljs-string">&#x27;corrected&#x27;</span>,    <span class="hljs-comment">-- Corrigé par manager</span>
+    <span class="hljs-string">&#x27;accounted&#x27;</span>,    <span class="hljs-comment">-- Pris en compte paie</span>
+    <span class="hljs-string">&#x27;rejected&#x27;</span>      <span class="hljs-comment">-- Rejeté (fraude)</span>
+);
+</code></pre>
+<h3 class="code-line has-line-data" data-line-start="500" data-line-end="501"><a id="Tables_Mmos_Justifications_500"></a>📝 <strong>Tables Mémos &amp; Justifications</strong></h3>
+<h4 class="code-line has-line-data" data-line-start="502" data-line-end="503"><a id="7_Mmos_502"></a><strong>7. Mémos</strong></h4>
+<pre><code class="has-line-data language-sql" data-line-start="504" data-line-end="556"><span class="hljs-comment">-- Mémos (justifications employés/managers)</span>
+<span class="hljs-keyword">CREATE TABLE</span> memos (
+    id SERIAL <span class="hljs-keyword">PRIMARY KEY</span>,
+    memo_guid UUID <span class="hljs-keyword">UNIQUE</span> <span class="hljs-keyword">NOT NULL</span> <span class="hljs-keyword">DEFAULT</span> gen_random_uuid(),
+    author_user_id <span class="hljs-type">INTEGER</span> <span class="hljs-keyword">REFERENCES</span> users(id) <span class="hljs-keyword">ON</span> <span class="hljs-keyword">DELETE</span> CASCADE,
+    target_user_id <span class="hljs-type">INTEGER</span> <span class="hljs-keyword">REFERENCES</span> users(id) <span class="hljs-keyword">ON</span> <span class="hljs-keyword">DELETE</span> CASCADE, <span class="hljs-comment">-- Si différent auteur</span>
+    validator_user_id <span class="hljs-type">INTEGER</span> <span class="hljs-keyword">REFERENCES</span> users(id) <span class="hljs-keyword">ON</span> <span class="hljs-keyword">DELETE</span> CASCADE,
+    
+    <span class="hljs-comment">-- Contenu mémo</span>
+    memo_type memo_type <span class="hljs-keyword">NOT NULL</span>,
+    memo_status memo_status <span class="hljs-keyword">DEFAULT</span> <span class="hljs-string">&#x27;draft&#x27;</span>,
+    title <span class="hljs-type">VARCHAR</span>(<span class="hljs-number">200</span>) <span class="hljs-keyword">NOT NULL</span>,
+    description TEXT <span class="hljs-keyword">NOT NULL</span>,
+    
+    <span class="hljs-comment">-- Incident concerné</span>
+    incident_datetime TIMESTAMPTZ,
+    affected_session_id <span class="hljs-type">INTEGER</span> <span class="hljs-keyword">REFERENCES</span> work_sessions(id),
+    affected_entries_ids <span class="hljs-type">INTEGER</span>[], <span class="hljs-comment">-- Array IDs pointages concernés</span>
+    
+    <span class="hljs-comment">-- Pièces jointes (URLs signées)</span>
+    attachments JSONB,
+    
+    <span class="hljs-comment">-- Traitement</span>
+    validator_comments TEXT,
+    processed_at TIMESTAMPTZ,
+    
+    <span class="hljs-comment">-- Auto-génération</span>
+    auto_generated <span class="hljs-type">BOOLEAN</span> <span class="hljs-keyword">DEFAULT</span> <span class="hljs-literal">FALSE</span>,
+    auto_reason <span class="hljs-type">VARCHAR</span>(<span class="hljs-number">255</span>),
+    
+    created_at TIMESTAMPTZ <span class="hljs-keyword">DEFAULT</span> NOW(),
+    updated_at TIMESTAMPTZ <span class="hljs-keyword">DEFAULT</span> NOW()
+);
+
+<span class="hljs-comment">-- Types de mémos</span>
+<span class="hljs-keyword">CREATE</span> TYPE memo_type <span class="hljs-keyword">AS</span> ENUM (
+    <span class="hljs-string">&#x27;delay_justification&#x27;</span>,      <span class="hljs-comment">-- Retard expliqué</span>
+    <span class="hljs-string">&#x27;absence_justification&#x27;</span>,    <span class="hljs-comment">-- Absence expliquée</span>
+    <span class="hljs-string">&#x27;correction_request&#x27;</span>,       <span class="hljs-comment">-- Demande correction</span>
+    <span class="hljs-string">&#x27;session_closure&#x27;</span>,          <span class="hljs-comment">-- Fermeture oubliée</span>
+    <span class="hljs-string">&#x27;auto_generated&#x27;</span>            <span class="hljs-comment">-- Mémo automatique</span>
+);
+
+<span class="hljs-comment">-- Statuts mémos</span>
+<span class="hljs-keyword">CREATE</span> TYPE memo_status <span class="hljs-keyword">AS</span> ENUM (
+    <span class="hljs-string">&#x27;draft&#x27;</span>,        <span class="hljs-comment">-- Brouillon local</span>
+    <span class="hljs-string">&#x27;submitted&#x27;</span>,    <span class="hljs-comment">-- Soumis validateur</span>
+    <span class="hljs-string">&#x27;pending&#x27;</span>,      <span class="hljs-comment">-- En attente traitement</span>
+    <span class="hljs-string">&#x27;approved&#x27;</span>,     <span class="hljs-comment">-- Approuvé</span>
+    <span class="hljs-string">&#x27;rejected&#x27;</span>      <span class="hljs-comment">-- Rejeté</span>
+);
+</code></pre>
+<h3 class="code-line has-line-data" data-line-start="557" data-line-end="558"><a id="Tables_Audit_Scurit_557"></a>🔍 <strong>Tables Audit &amp; Sécurité</strong></h3>
+<h4 class="code-line has-line-data" data-line-start="559" data-line-end="560"><a id="8_Audit_Trail_559"></a><strong>8. Audit Trail</strong></h4>
+<pre><code class="has-line-data language-sql" data-line-start="561" data-line-end="578"><span class="hljs-comment">-- Logs d&#x27;audit (toute modification tracée)</span>
+<span class="hljs-keyword">CREATE TABLE</span> audit_logs (
+    id SERIAL <span class="hljs-keyword">PRIMARY KEY</span>,
+    table_name <span class="hljs-type">VARCHAR</span>(<span class="hljs-number">50</span>) <span class="hljs-keyword">NOT NULL</span>,
+    record_id <span class="hljs-type">INTEGER</span> <span class="hljs-keyword">NOT NULL</span>,
+    record_guid UUID,
+    operation <span class="hljs-type">VARCHAR</span>(<span class="hljs-number">10</span>) <span class="hljs-keyword">NOT NULL</span>, <span class="hljs-comment">-- INSERT, UPDATE, DELETE</span>
+    old_values JSONB,
+    new_values JSONB,
+    changed_by_user_id <span class="hljs-type">INTEGER</span>,
+    changed_by_type <span class="hljs-type">VARCHAR</span>(<span class="hljs-number">20</span>), <span class="hljs-comment">-- &#x27;user&#x27;, &#x27;system&#x27;, &#x27;api&#x27;</span>
+    change_reason TEXT,
+    ip_address INET,
+    user_agent TEXT,
+    created_at TIMESTAMPTZ <span class="hljs-keyword">DEFAULT</span> NOW()
+);
+</code></pre>
+<h4 class="code-line has-line-data" data-line-start="579" data-line-end="580"><a id="9_Dtection_Fraude_579"></a><strong>9. Détection Fraude</strong></h4>
+<pre><code class="has-line-data language-sql" data-line-start="581" data-line-end="601"><span class="hljs-comment">-- Alertes fraude &amp; anomalies</span>
+<span class="hljs-keyword">CREATE TABLE</span> fraud_alerts (
+    id SERIAL <span class="hljs-keyword">PRIMARY KEY</span>,
+    alert_guid UUID <span class="hljs-keyword">UNIQUE</span> <span class="hljs-keyword">NOT NULL</span> <span class="hljs-keyword">DEFAULT</span> gen_random_uuid(),
+    user_id <span class="hljs-type">INTEGER</span> <span class="hljs-keyword">REFERENCES</span> users(id) <span class="hljs-keyword">ON</span> <span class="hljs-keyword">DELETE</span> CASCADE,
+    time_entry_id <span class="hljs-type">INTEGER</span> <span class="hljs-keyword">REFERENCES</span> time_entries(id) <span class="hljs-keyword">ON</span> <span class="hljs-keyword">DELETE</span> CASCADE,
+    
+    alert_type <span class="hljs-type">VARCHAR</span>(<span class="hljs-number">50</span>) <span class="hljs-keyword">NOT NULL</span>,
+    alert_severity <span class="hljs-type">VARCHAR</span>(<span class="hljs-number">20</span>) <span class="hljs-keyword">DEFAULT</span> <span class="hljs-string">&#x27;medium&#x27;</span>,
+    alert_description TEXT <span class="hljs-keyword">NOT NULL</span>,
+    alert_data JSONB, <span class="hljs-comment">-- Données détaillées</span>
+    
+    is_investigated <span class="hljs-type">BOOLEAN</span> <span class="hljs-keyword">DEFAULT</span> <span class="hljs-literal">FALSE</span>,
+    investigation_notes TEXT,
+    is_false_positive <span class="hljs-type">BOOLEAN</span> <span class="hljs-keyword">DEFAULT</span> <span class="hljs-literal">FALSE</span>,
+    
+    created_at TIMESTAMPTZ <span class="hljs-keyword">DEFAULT</span> NOW(),
+    investigated_at TIMESTAMPTZ
+);
+</code></pre>
+<h3 class="code-line has-line-data" data-line-start="602" data-line-end="603"><a id="Index_Performance_602"></a>📈 <strong>Index &amp; Performance</strong></h3>
+<h4 class="code-line has-line-data" data-line-start="604" data-line-end="605"><a id="Index_Principaux_604"></a><strong>Index Principaux</strong></h4>
+<pre><code class="has-line-data language-sql" data-line-start="606" data-line-end="645"><span class="hljs-comment">-- Index utilisateurs</span>
+<span class="hljs-keyword">CREATE</span> INDEX idx_users_tenant_id <span class="hljs-keyword">ON</span> users(tenant_id);
+<span class="hljs-keyword">CREATE</span> INDEX idx_users_phone <span class="hljs-keyword">ON</span> users(phone_number);
+<span class="hljs-keyword">CREATE</span> INDEX idx_users_email <span class="hljs-keyword">ON</span> users(email);
+<span class="hljs-keyword">CREATE</span> INDEX idx_users_employee_code <span class="hljs-keyword">ON</span> users(employee_code);
+
+<span class="hljs-comment">-- Index hiérarchie</span>
+<span class="hljs-keyword">CREATE</span> INDEX idx_org_hierarchy_subordinate <span class="hljs-keyword">ON</span> org_hierarchy(subordinate_id);
+<span class="hljs-keyword">CREATE</span> INDEX idx_org_hierarchy_supervisor <span class="hljs-keyword">ON</span> org_hierarchy(supervisor_id);
+<span class="hljs-keyword">CREATE</span> INDEX idx_org_hierarchy_active <span class="hljs-keyword">ON</span> org_hierarchy(supervisor_id, subordinate_id) 
+<span class="hljs-keyword">WHERE</span> effective_to <span class="hljs-keyword">IS</span> <span class="hljs-keyword">NULL</span>;
+
+<span class="hljs-comment">-- Index sessions (requêtes fréquentes)</span>
+<span class="hljs-keyword">CREATE</span> INDEX idx_work_sessions_user_id <span class="hljs-keyword">ON</span> work_sessions(user_id);
+<span class="hljs-keyword">CREATE</span> INDEX idx_work_sessions_site_id <span class="hljs-keyword">ON</span> work_sessions(site_id);
+<span class="hljs-keyword">CREATE</span> INDEX idx_work_sessions_status <span class="hljs-keyword">ON</span> work_sessions(session_status);
+<span class="hljs-keyword">CREATE</span> INDEX idx_work_sessions_start_date <span class="hljs-keyword">ON</span> work_sessions(session_start_at);
+<span class="hljs-keyword">CREATE</span> INDEX idx_work_sessions_user_start <span class="hljs-keyword">ON</span> work_sessions(user_id, session_start_at <span class="hljs-keyword">DESC</span>);
+
+<span class="hljs-comment">-- Index pointages (volume important)</span>
+<span class="hljs-keyword">CREATE</span> INDEX idx_time_entries_session_id <span class="hljs-keyword">ON</span> time_entries(session_id);
+<span class="hljs-keyword">CREATE</span> INDEX idx_time_entries_user_id <span class="hljs-keyword">ON</span> time_entries(user_id);
+<span class="hljs-keyword">CREATE</span> INDEX idx_time_entries_site_id <span class="hljs-keyword">ON</span> time_entries(site_id);
+<span class="hljs-keyword">CREATE</span> INDEX idx_time_entries_clocked_at <span class="hljs-keyword">ON</span> time_entries(clocked_at);
+<span class="hljs-keyword">CREATE</span> INDEX idx_time_entries_status <span class="hljs-keyword">ON</span> time_entries(pointage_status);
+<span class="hljs-keyword">CREATE</span> INDEX idx_time_entries_user_date <span class="hljs-keyword">ON</span> time_entries(user_id, clocked_at <span class="hljs-keyword">DESC</span>);
+
+<span class="hljs-comment">-- Index géospatial (géofencing)</span>
+<span class="hljs-keyword">CREATE</span> INDEX idx_time_entries_location <span class="hljs-keyword">ON</span> time_entries 
+<span class="hljs-keyword">USING</span> GIST(ST_Point(longitude, latitude));
+<span class="hljs-keyword">CREATE</span> INDEX idx_sites_geofence <span class="hljs-keyword">ON</span> sites <span class="hljs-keyword">USING</span> GIN(geofence_polygon);
+
+<span class="hljs-comment">-- Index mémos</span>
+<span class="hljs-keyword">CREATE</span> INDEX idx_memos_author_user_id <span class="hljs-keyword">ON</span> memos(author_user_id);
+<span class="hljs-keyword">CREATE</span> INDEX idx_memos_validator_user_id <span class="hljs-keyword">ON</span> memos(validator_user_id);
+<span class="hljs-keyword">CREATE</span> INDEX idx_memos_status <span class="hljs-keyword">ON</span> memos(memo_status);
+<span class="hljs-keyword">CREATE</span> INDEX idx_memos_type <span class="hljs-keyword">ON</span> memos(memo_type);
+<span class="hljs-keyword">CREATE</span> INDEX idx_memos_session_id <span class="hljs-keyword">ON</span> memos(affected_session_id);
+</code></pre>
+<h4 class="code-line has-line-data" data-line-start="646" data-line-end="647"><a id="Contraintes_Mtier_646"></a><strong>Contraintes Métier</strong></h4>
+<pre><code class="has-line-data language-sql" data-line-start="648" data-line-end="668"><span class="hljs-comment">-- Un utilisateur ne peut avoir qu&#x27;une session ouverte</span>
+<span class="hljs-keyword">CREATE</span> <span class="hljs-keyword">UNIQUE</span> INDEX idx_unique_open_session 
+<span class="hljs-keyword">ON</span> work_sessions(user_id) 
+<span class="hljs-keyword">WHERE</span> session_status <span class="hljs-operator">=</span> <span class="hljs-string">&#x27;open&#x27;</span>;
+
+<span class="hljs-comment">-- Pointage offline unique par local_id</span>
+<span class="hljs-keyword">CREATE</span> <span class="hljs-keyword">UNIQUE</span> INDEX idx_unique_offline_entry
+<span class="hljs-keyword">ON</span> time_entries(user_id, local_id)
+<span class="hljs-keyword">WHERE</span> local_id <span class="hljs-keyword">IS</span> <span class="hljs-keyword">NOT NULL</span>;
+
+<span class="hljs-comment">-- QR code manager unique</span>
+<span class="hljs-keyword">CREATE</span> <span class="hljs-keyword">UNIQUE</span> INDEX idx_unique_manager_qr 
+<span class="hljs-keyword">ON</span> users(qr_code_token) 
+<span class="hljs-keyword">WHERE</span> qr_code_token <span class="hljs-keyword">IS</span> <span class="hljs-keyword">NOT NULL</span>;
+
+<span class="hljs-comment">-- OTP temporaire unique actif</span>
+<span class="hljs-keyword">CREATE</span> <span class="hljs-keyword">UNIQUE</span> INDEX idx_unique_active_otp
+<span class="hljs-keyword">ON</span> users(otp_token)
+<span class="hljs-keyword">WHERE</span> otp_token <span class="hljs-keyword">IS</span> <span class="hljs-keyword">NOT NULL</span> <span class="hljs-keyword">AND</span> otp_expires_at <span class="hljs-operator">&gt;</span> NOW();
+</code></pre>
+<hr>
+<h2 class="code-line has-line-data" data-line-start="671" data-line-end="672"><a id="FONCTIONS_MTIER_CLS_671"></a>🔧 FONCTIONS MÉTIER CLÉS</h2>
+<h3 class="code-line has-line-data" data-line-start="673" data-line-end="674"><a id="Procdures_Pointage_673"></a>📋 <strong>Procédures Pointage</strong></h3>
+<h4 class="code-line has-line-data" data-line-start="675" data-line-end="676"><a id="1_Authentification_Employ_675"></a><strong>1. Authentification Employé</strong></h4>
+<pre><code class="has-line-data language-sql" data-line-start="677" data-line-end="690"><span class="hljs-keyword">CREATE</span> <span class="hljs-keyword">OR</span> REPLACE <span class="hljs-keyword">FUNCTION</span> authenticate_user(
+    p_otp <span class="hljs-type">VARCHAR</span>(<span class="hljs-number">10</span>) <span class="hljs-keyword">DEFAULT</span> <span class="hljs-keyword">NULL</span>,
+    p_phone <span class="hljs-type">VARCHAR</span>(<span class="hljs-number">20</span>) <span class="hljs-keyword">DEFAULT</span> <span class="hljs-keyword">NULL</span>,
+    p_pin_hash <span class="hljs-type">VARCHAR</span>(<span class="hljs-number">255</span>) <span class="hljs-keyword">DEFAULT</span> <span class="hljs-keyword">NULL</span>
+) <span class="hljs-keyword">RETURNS</span> <span class="hljs-keyword">TABLE</span> (
+    user_guid UUID,
+    employee_code <span class="hljs-type">VARCHAR</span>(<span class="hljs-number">20</span>),
+    full_name TEXT,
+    roles TEXT[],
+    tenant_guid UUID,
+    is_first_login <span class="hljs-type">BOOLEAN</span>
+);
+</code></pre>
+<h4 class="code-line has-line-data" data-line-start="691" data-line-end="692"><a id="2_Traitement_Pointage_691"></a><strong>2. Traitement Pointage</strong></h4>
+<pre><code class="has-line-data language-sql" data-line-start="693" data-line-end="711"><span class="hljs-keyword">CREATE</span> <span class="hljs-keyword">OR</span> REPLACE <span class="hljs-keyword">FUNCTION</span> process_pointage(
+    p_user_guid UUID,
+    p_site_guid UUID,
+    p_pointage_type pointage_type,
+    p_clocked_at TIMESTAMPTZ,
+    p_latitude <span class="hljs-type">DECIMAL</span>(<span class="hljs-number">10</span>,<span class="hljs-number">8</span>),
+    p_longitude <span class="hljs-type">DECIMAL</span>(<span class="hljs-number">11</span>,<span class="hljs-number">8</span>),
+    p_device_info JSONB <span class="hljs-keyword">DEFAULT</span> <span class="hljs-keyword">NULL</span>,
+    p_local_id <span class="hljs-type">VARCHAR</span>(<span class="hljs-number">50</span>) <span class="hljs-keyword">DEFAULT</span> <span class="hljs-keyword">NULL</span>,
+    p_created_offline <span class="hljs-type">BOOLEAN</span> <span class="hljs-keyword">DEFAULT</span> <span class="hljs-literal">FALSE</span>
+) <span class="hljs-keyword">RETURNS</span> <span class="hljs-keyword">TABLE</span> (
+    success <span class="hljs-type">BOOLEAN</span>,
+    entry_guid UUID,
+    session_guid UUID,
+    message TEXT,
+    auto_memo_created <span class="hljs-type">BOOLEAN</span>
+);
+</code></pre>
+<h4 class="code-line has-line-data" data-line-start="712" data-line-end="713"><a id="3_Synchronisation_Batch_712"></a><strong>3. Synchronisation Batch</strong></h4>
+<pre><code class="has-line-data language-sql" data-line-start="714" data-line-end="724"><span class="hljs-keyword">CREATE</span> <span class="hljs-keyword">OR</span> REPLACE <span class="hljs-keyword">FUNCTION</span> process_batch_pointages(
+    p_user_guid UUID,
+    p_pointages JSONB <span class="hljs-comment">-- Array pointages offline</span>
+) <span class="hljs-keyword">RETURNS</span> <span class="hljs-keyword">TABLE</span> (
+    processed_count <span class="hljs-type">INTEGER</span>,
+    success_count <span class="hljs-type">INTEGER</span>,
+    error_count <span class="hljs-type">INTEGER</span>,
+    results JSONB
+);
+</code></pre>
+<h3 class="code-line has-line-data" data-line-start="725" data-line-end="726"><a id="Fonctions_Hirarchie_725"></a>🏢 <strong>Fonctions Hiérarchie</strong></h3>
+<h4 class="code-line has-line-data" data-line-start="727" data-line-end="728"><a id="4_Rcupration_Subordins_Rcursive_727"></a><strong>4. Récupération Subordinés Récursive</strong></h4>
+<pre><code class="has-line-data language-sql" data-line-start="729" data-line-end="738"><span class="hljs-keyword">CREATE</span> <span class="hljs-keyword">OR</span> REPLACE <span class="hljs-keyword">FUNCTION</span> get_all_subordinates(p_supervisor_id <span class="hljs-type">INTEGER</span>)
+<span class="hljs-keyword">RETURNS</span> <span class="hljs-keyword">TABLE</span>(
+    subordinate_id <span class="hljs-type">INTEGER</span>,
+    subordinate_guid UUID,
+    full_name TEXT,
+    level_depth <span class="hljs-type">INTEGER</span>,
+    relationship_path TEXT[]
+);
+</code></pre>
+<h4 class="code-line has-line-data" data-line-start="739" data-line-end="740"><a id="5_Validation_Autorisation_Site_739"></a><strong>5. Validation Autorisation Site</strong></h4>
+<pre><code class="has-line-data language-sql" data-line-start="741" data-line-end="746"><span class="hljs-keyword">CREATE</span> <span class="hljs-keyword">OR</span> REPLACE <span class="hljs-keyword">FUNCTION</span> can_user_point_at_site(
+    p_user_id <span class="hljs-type">INTEGER</span>,
+    p_site_id <span class="hljs-type">INTEGER</span>
+) <span class="hljs-keyword">RETURNS</span> <span class="hljs-type">BOOLEAN</span>;
+</code></pre>
+<h4 class="code-line has-line-data" data-line-start="747" data-line-end="748"><a id="6_Rsolution_Validateur_Mmo_747"></a><strong>6. Résolution Validateur Mémo</strong></h4>
+<pre><code class="has-line-data language-sql" data-line-start="749" data-line-end="752"><span class="hljs-keyword">CREATE</span> <span class="hljs-keyword">OR</span> REPLACE <span class="hljs-keyword">FUNCTION</span> get_memo_validator(p_user_id <span class="hljs-type">INTEGER</span>)
+<span class="hljs-keyword">RETURNS</span> <span class="hljs-type">INTEGER</span>;
+</code></pre>
+<hr>
+<h2 class="code-line has-line-data" data-line-start="755" data-line-end="756"><a id="POINTS_CLS_ARCHITECTURE_755"></a>🎯 POINTS CLÉS ARCHITECTURE</h2>
+<h3 class="code-line has-line-data" data-line-start="757" data-line-end="758"><a id="Avantages_Systme_757"></a>✅ <strong>Avantages Système</strong></h3>
+<h4 class="code-line has-line-data" data-line-start="759" data-line-end="760"><a id="Flexibilit_Organisationnelle_759"></a><strong>Flexibilité Organisationnelle</strong></h4>
+<ul>
+<li class="has-line-data" data-line-start="760" data-line-end="761"><strong>Multi-rôles</strong> : Manager qui pointe ses propres heures</li>
+<li class="has-line-data" data-line-start="761" data-line-end="762"><strong>Hiérarchie n-niveaux</strong> : Support organisations complexes</li>
+<li class="has-line-data" data-line-start="762" data-line-end="763"><strong>Sites adaptatifs</strong> : Manager, global, temporaire, public</li>
+<li class="has-line-data" data-line-start="763" data-line-end="765"><strong>Délégations</strong> : Missions, intérims, restructurations</li>
+</ul>
+<h4 class="code-line has-line-data" data-line-start="765" data-line-end="766"><a id="Robustesse_Technique_765"></a><strong>Robustesse Technique</strong></h4>
+<ul>
+<li class="has-line-data" data-line-start="766" data-line-end="767"><strong>Sessions cohérentes</strong> : Impossible d’être “pointé” sans contrôle</li>
+<li class="has-line-data" data-line-start="767" data-line-end="768"><strong>Offline-first</strong> : Fonctionne 7 jours sans connexion</li>
+<li class="has-line-data" data-line-start="768" data-line-end="769"><strong>Anti-fraude intégré</strong> : GPS + QR + patterns analysis</li>
+<li class="has-line-data" data-line-start="769" data-line-end="771"><strong>Audit trail complet</strong> : Conformité légale Cameroun</li>
+</ul>
+<h4 class="code-line has-line-data" data-line-start="771" data-line-end="772"><a id="Performance_Optimise_771"></a><strong>Performance Optimisée</strong></h4>
+<ul>
+<li class="has-line-data" data-line-start="772" data-line-end="773"><strong>Partitionnement</strong> : Tables pointages par mois</li>
+<li class="has-line-data" data-line-start="773" data-line-end="774"><strong>Indexation</strong> : Requêtes sub-seconde même gros volumes</li>
+<li class="has-line-data" data-line-start="774" data-line-end="775"><strong>Batch processing</strong> : Sync offline intelligente</li>
+<li class="has-line-data" data-line-start="775" data-line-end="777"><strong>Cache stratégique</strong> : Sites fréquents, hiérarchie</li>
+</ul>
+<h3 class="code-line has-line-data" data-line-start="777" data-line-end="778"><a id="volutivit_Future_777"></a>🚀 <strong>Évolutivité Future</strong></h3>
+<h4 class="code-line has-line-data" data-line-start="779" data-line-end="780"><a id="Intgrations_Prvues_779"></a><strong>Intégrations Prévues</strong></h4>
+<ul>
+<li class="has-line-data" data-line-start="780" data-line-end="781"><strong>SIRH existants</strong> : Sage, Cegid, SAP (APIs standard)</li>
+<li class="has-line-data" data-line-start="781" data-line-end="782"><strong>Biométrie</strong> : Empreintes, reconnaissance faciale</li>
+<li class="has-line-data" data-line-start="782" data-line-end="783"><strong>IoT Hybride</strong> : Badgeuses + QR + biométrie</li>
+<li class="has-line-data" data-line-start="783" data-line-end="785"><strong>Analytics IA</strong> : Détection fraude sophistiquée</li>
+</ul>
+<h4 class="code-line has-line-data" data-line-start="785" data-line-end="786"><a id="MultiPays_785"></a><strong>Multi-Pays</strong></h4>
+<ul>
+<li class="has-line-data" data-line-start="786" data-line-end="787"><strong>Timezone dynamique</strong> : TIMESTAMPTZ partout</li>
+<li class="has-line-data" data-line-start="787" data-line-end="788"><strong>Conformité légale</strong> : Horodatage selon pays</li>
+<li class="has-line-data" data-line-start="788" data-line-end="789"><strong>Multi-devises</strong> : Calculs paie localisés</li>
+<li class="has-line-data" data-line-start="789" data-line-end="791"><strong>Langues</strong> : i18n français/anglais/arabe</li>
+</ul>
+<hr>
+<h2 class="code-line has-line-data" data-line-start="793" data-line-end="794"><a id="CONCLUSION_793"></a>📋 CONCLUSION</h2>
+<h3 class="code-line has-line-data" data-line-start="795" data-line-end="796"><a id="Systme_Complet_volutif_795"></a>🎯 <strong>Système Complet &amp; Évolutif</strong></h3>
+<p class="has-line-data" data-line-start="797" data-line-end="798">Le système de pointage employé Toké offre une <strong>architecture unifiée robuste</strong> qui :</p>
+<p class="has-line-data" data-line-start="799" data-line-end="803">✅ <strong>Répond aux besoins métier</strong> : Tous types d’organisations, de l’artisan à la multinationale<br>
+✅ <strong>Garantit la sécurité</strong> : Anti-fraude multi-couches, audit trail complet<br>
+✅ <strong>Assure la performance</strong> : Optimisé smartphones low-end, offline-first<br>
+✅ <strong>Facilite l’évolution</strong> : Rôles flexibles, hiérarchie adaptable, intégrations futures</p>
+<h3 class="code-line has-line-data" data-line-start="804" data-line-end="805"><a id="Prt_Production_804"></a>🚀 <strong>Prêt Production</strong></h3>
+<p class="has-line-data" data-line-start="806" data-line-end="807">Cette présentation constitue la <strong>référence technique complète</strong> pour :</p>
+<ul>
+<li class="has-line-data" data-line-start="807" data-line-end="808"><strong>Équipe développement</strong> : Structure SQL, fonctions métier, workflows</li>
+<li class="has-line-data" data-line-start="808" data-line-end="809"><strong>Product Owners</strong> : Cas d’usage, acteurs, modules fonctionnels</li>
+<li class="has-line-data" data-line-start="809" data-line-end="810"><strong>Architectes</strong> : Décisions techniques, patterns, évolutivité</li>
+<li class="has-line-data" data-line-start="810" data-line-end="812"><strong>QA/Tests</strong> : Scénarios validation, contraintes métier</li>
+</ul>
+<p class="has-line-data" data-line-start="812" data-line-end="813"><strong>Le système de pointage Toké est prêt à révolutionner la gestion RH en Afrique centrale ! 🎯</strong></p>
+
+</body>
+</html>

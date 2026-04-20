@@ -1,37 +1,38 @@
-import { ROTATION_ASSIGNMENT_VALIDATION } from '../../constants/tenant/rotation.assignments.js';
+import {
+  RAFamily,
+  ROTATION_ASSIGNMENT_VALIDATION,
+} from '../../constants/tenant/rotation.assignments.js';
 import { TimezoneConfigUtils } from '../timezone.config.validation.js';
 
 export class RotationAssignmentValidationUtils {
   /**
-   * Validates user
+   * Validates family
    */
-  static validateUser(user: any): boolean {
-    if (typeof user !== 'string') return false;
+  static validateFamily(family: any): family is RAFamily {
+    return Object.values(RAFamily).includes(family);
+  }
+
+  /**
+   * Validates related (GUID string)
+   */
+  static validateRelated(related: any): boolean {
+    if (!related || typeof related !== 'string') return false;
     return (
-      user.length >= ROTATION_ASSIGNMENT_VALIDATION.USER.MIN_LENGTH &&
-      user.length <= ROTATION_ASSIGNMENT_VALIDATION.USER.MAX_LENGTH
+      related.length >= ROTATION_ASSIGNMENT_VALIDATION.RELATED.MIN_LENGTH &&
+      related.length <= ROTATION_ASSIGNMENT_VALIDATION.RELATED.MAX_LENGTH
     );
   }
 
   /**
-   * Validates groups
+   * Validates assigned_by
    */
-  static validateGroups(groups: any): boolean {
-    if (groups === null || groups === undefined) return true;
-    if (typeof groups !== 'string') return false;
+  static validateAssignedBy(assignedBy: any): boolean {
+    if (assignedBy === null || assignedBy === undefined) return false;
+    if (typeof assignedBy !== 'string') return false;
     return (
-      groups.length >= ROTATION_ASSIGNMENT_VALIDATION.GROUPS.MIN_LENGTH &&
-      groups.length <= ROTATION_ASSIGNMENT_VALIDATION.GROUPS.MAX_LENGTH
+      assignedBy.length >= ROTATION_ASSIGNMENT_VALIDATION.ASSIGNED_BY.MIN_LENGTH &&
+      assignedBy.length <= ROTATION_ASSIGNMENT_VALIDATION.ASSIGNED_BY.MAX_LENGTH
     );
-  }
-
-  /**
-   * Validates that either user or groups is specified (XOR)
-   */
-  static validateUserOrGroups(user: any, groups: any): boolean {
-    const hasUser = user !== null && user !== undefined;
-    const hasGroups = groups !== null && groups !== undefined;
-    return hasUser !== hasGroups; // XOR: exactly one must be true
   }
 
   /**
@@ -83,45 +84,36 @@ export class RotationAssignmentValidationUtils {
   static cleanRotationAssignmentData(data: Record<string, any>): Record<string, any> {
     const cleaned = { ...data };
 
-    // Convert user to number
-    if (cleaned.user !== undefined) {
-      cleaned.user = parseInt(cleaned.user, 10);
-      if (isNaN(cleaned.user)) {
-        throw new Error('Invalid user: must be a valid integer');
-      }
+    // Trim string fields
+    if (cleaned.family !== undefined && cleaned.family !== null) {
+      cleaned.family = cleaned.family.toString().trim();
     }
 
-    if (cleaned.assigned_by !== undefined) {
+    if (cleaned.related !== undefined && cleaned.related !== null) {
+      cleaned.related = cleaned.related.toString().trim();
+    }
+
+    if (cleaned.assigned_by !== undefined && cleaned.assigned_by !== null) {
       cleaned.assigned_by = parseInt(cleaned.assigned_by, 10);
       if (isNaN(cleaned.assigned_by)) {
         throw new Error('Invalid assigned_by: must be a valid integer');
       }
     }
 
-    if (cleaned.groups !== undefined && cleaned.groups !== null) {
-      cleaned.groups = parseInt(cleaned.groups, 10);
-      if (isNaN(cleaned.groups)) {
-        throw new Error('Invalid groups: must be a valid integer');
-      }
-    }
-
-    // Convert rotation_group to number
-    if (cleaned.rotation_group !== undefined) {
+    if (cleaned.rotation_group !== undefined && cleaned.rotation_group !== null) {
       cleaned.rotation_group = parseInt(cleaned.rotation_group, 10);
       if (isNaN(cleaned.rotation_group)) {
         throw new Error('Invalid rotation_group: must be a valid integer');
       }
     }
 
-    // Convert offset to number
-    if (cleaned.offset !== undefined) {
+    if (cleaned.offset !== undefined && cleaned.offset !== null) {
       cleaned.offset = parseInt(cleaned.offset, 10);
       if (isNaN(cleaned.offset)) {
         throw new Error('Invalid offset: must be a valid integer');
       }
     }
 
-    // Convert assigned_at to ISO string
     if (cleaned.assigned_at !== undefined && cleaned.assigned_at !== null) {
       if (cleaned.assigned_at instanceof Date) {
         cleaned.assigned_at = cleaned.assigned_at.toISOString();
@@ -158,9 +150,9 @@ export class RotationAssignmentValidationUtils {
   }
 
   /**
-   * Calculates which template a user should follow on a specific date
+   * Calculates which template a related entity should follow on a specific date
    */
-  static getUserTemplateForDate(
+  static getRelatedTemplateForDate(
     rotationStartDate: string,
     offset: number,
     cycleLength: number,
@@ -179,11 +171,9 @@ export class RotationAssignmentValidationUtils {
     if (cycleUnit === 'day') {
       diffUnits = Math.floor(diffTime / (1000 * 60 * 60 * 24));
     } else {
-      // week
       diffUnits = Math.floor(diffTime / (1000 * 60 * 60 * 24 * 7));
     }
 
-    // Handle negative offset (before effective start date)
     if (diffUnits < 0) {
       return cycleTemplates[0]!;
     }
@@ -200,9 +190,9 @@ export class RotationAssignmentValidationUtils {
   }
 
   /**
-   * Generates a schedule preview for a user
+   * Generates a schedule preview for a related entity
    */
-  static generateUserSchedulePreview(
+  static generateSchedulePreview(
     rotationStartDate: string,
     offset: number,
     cycleLength: number,
@@ -217,7 +207,7 @@ export class RotationAssignmentValidationUtils {
       const currentDate = new Date(effectiveStart);
       currentDate.setDate(currentDate.getDate() + i);
 
-      const templateId = this.getUserTemplateForDate(
+      const templateId = this.getRelatedTemplateForDate(
         rotationStartDate,
         offset,
         cycleLength,
@@ -226,7 +216,6 @@ export class RotationAssignmentValidationUtils {
         currentDate,
       );
 
-      // Calculate cycle day
       const diffTime = currentDate.getTime() - effectiveStart.getTime();
       let diffUnits: number;
       if (cycleUnit === 'day') {
@@ -247,14 +236,15 @@ export class RotationAssignmentValidationUtils {
   }
 
   /**
-   * Checks if a user assignment conflicts with another
+   * Checks if two assignments conflict (same related + same rotation_group)
    */
   static checkAssignmentConflict(
-    assignment1: { user: number; rotation_group: number },
-    assignment2: { user: number; rotation_group: number },
+    assignment1: { family: RAFamily; related: string; rotation_group: number },
+    assignment2: { family: RAFamily; related: string; rotation_group: number },
   ): boolean {
     return (
-      assignment1.user === assignment2.user &&
+      assignment1.family === assignment2.family &&
+      assignment1.related === assignment2.related &&
       assignment1.rotation_group === assignment2.rotation_group
     );
   }
@@ -267,16 +257,25 @@ export class RotationAssignmentValidationUtils {
   }
 
   /**
-   * Gets all users assigned to a rotation group
+   * Groups assignments by rotation_group
    */
   static groupAssignmentsByRotationGroup(
-    assignments: Array<{ user: number; rotation_group: number; offset: number }>,
-  ): Map<number, Array<{ user: number; offset: number }>> {
-    const grouped = new Map<number, Array<{ user: number; offset: number }>>();
+    assignments: Array<{
+      family: RAFamily;
+      related: string;
+      rotation_group: number;
+      offset: number;
+    }>,
+  ): Map<number, Array<{ family: RAFamily; related: string; offset: number }>> {
+    const grouped = new Map<number, Array<{ family: RAFamily; related: string; offset: number }>>();
 
     for (const assignment of assignments) {
       const group = grouped.get(assignment.rotation_group) || [];
-      group.push({ user: assignment.user, offset: assignment.offset });
+      group.push({
+        family: assignment.family,
+        related: assignment.related,
+        offset: assignment.offset,
+      });
       grouped.set(assignment.rotation_group, group);
     }
 
@@ -284,25 +283,31 @@ export class RotationAssignmentValidationUtils {
   }
 
   /**
-   * Gets all rotation groups for a user
+   * Gets all rotation groups for a related entity (by family + related)
    */
-  static getRotationGroupsForUser(
-    assignments: Array<{ user: number; rotation_group: number; offset: number }>,
-    userId: number,
+  static getRotationGroupsForRelated(
+    assignments: Array<{
+      family: RAFamily;
+      related: string;
+      rotation_group: number;
+      offset: number;
+    }>,
+    family: RAFamily,
+    related: string,
   ): Array<{ rotation_group: number; offset: number }> {
     return assignments
-      .filter((a) => a.user === userId)
+      .filter((a) => a.family === family && a.related === related)
       .map((a) => ({ rotation_group: a.rotation_group, offset: a.offset }));
   }
 
   /**
-   * Calculates optimal offset distribution for multiple users
+   * Calculates optimal offset distribution for multiple entities
    */
-  static calculateOptimalOffsets(numberOfUsers: number, cycleLength: number): number[] {
+  static calculateOptimalOffsets(numberOfEntities: number, cycleLength: number): number[] {
     const offsets: number[] = [];
-    const step = Math.floor(cycleLength / numberOfUsers);
+    const step = Math.floor(cycleLength / numberOfEntities);
 
-    for (let i = 0; i < numberOfUsers; i++) {
+    for (let i = 0; i < numberOfEntities; i++) {
       offsets.push((i * step) % cycleLength);
     }
 

@@ -34,6 +34,7 @@ import rotationAssignmentsRoute from './routes/rotation.assignments.route.js';
 import scheduleAssignmentsRoute from './routes/schedule.assignments.route.js';
 import groupsRoute from './routes/groups.route.js';
 import deviceRoute from './routes/device.route.js';
+import sessionModelRoute from './routes/session.model.route.js';
 import authRoute from './routes/auth.route.js';
 
 interface AppConfig {
@@ -243,6 +244,7 @@ export default class App {
     this.app.use('/schedule-assignments', scheduleAssignmentsRoute);
     this.app.use('/groups', groupsRoute);
     this.app.use('/devices', deviceRoute);
+    this.app.use('/session-model', sessionModelRoute);
     this.app.use('/auth', authRoute);
 
     // Route 404

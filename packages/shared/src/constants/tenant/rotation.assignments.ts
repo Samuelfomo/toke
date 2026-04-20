@@ -1,11 +1,12 @@
 import { TimezoneConfigUtils } from '../../utils/timezone.config.validation.js';
 
+export enum RAFamily {
+  USER = 'user',
+  GROUP = 'group',
+}
+
 export const ROTATION_ASSIGNMENT_VALIDATION = {
   GUID: {
-    MIN_LENGTH: 1,
-    MAX_LENGTH: 255,
-  },
-  USER: {
     MIN_LENGTH: 1,
     MAX_LENGTH: 255,
   },
@@ -13,10 +14,10 @@ export const ROTATION_ASSIGNMENT_VALIDATION = {
     MIN_LENGTH: 1,
     MAX_LENGTH: 255,
   },
-  GROUPS: {
-    MIN_LENGTH: 1,
-    MAX_LENGTH: 255,
+  FAMILY: {
+    VALUES: Object.values(RAFamily) as readonly string[],
   },
+  RELATED: { MIN_LENGTH: 1, MAX_LENGTH: 255 },
   ROTATION_GROUP: {
     MIN_LENGTH: 1,
     MAX_LENGTH: 255,
@@ -42,15 +43,16 @@ export const ROTATION_ASSIGNMENT_CODES = {
   ROTATION_ASSIGNMENT_ALREADY_EXISTS: 'rotation_assignment_already_exists',
   ROTATION_ASSIGNMENT_NOT_FOUND: 'rotation_assignment_not_found',
   INVALID_GUID: 'invalid_guid',
-  USER_INVALID: 'user_invalid',
+  FAMILY_REQUIRED: 'family_required',
+  FAMILY_INVALID: 'family_invalid',
+  RELATED_REQUIRED: 'related_required',
+  RELATED_INVALID: 'related_invalid',
+  RELATED_NOT_FOUND: 'related_not_found',
   USER_NOT_FOUND: 'user_not_found',
   ASSIGNED_BY_REQUIRED: 'assigned_by_required',
   ASSIGNED_BY_INVALID: 'assigned_by_invalid',
   ASSIGNED_BY_NOT_FOUND: 'assigned_by_not_found',
-  GROUPS_INVALID: 'groups_invalid',
   GROUPS_NOT_FOUND: 'groups_not_found',
-  USER_OR_GROUPS_REQUIRED: 'user_or_groups_required',
-  BOTH_USER_AND_GROUPS: 'both_user_and_groups',
   ROTATION_GROUP_REQUIRED: 'rotation_group_required',
   ROTATION_GROUP_INVALID: 'rotation_group_invalid',
   ROTATION_GROUP_NOT_FOUND: 'rotation_group_not_found',
@@ -76,18 +78,21 @@ const ROTATION_ASSIGNMENT_LABEL = 'Rotation Assignment';
 export const ROTATION_ASSIGNMENT_ERRORS = {
   ROTATION_ASSIGNMENT: ROTATION_ASSIGNMENT_LABEL,
 
-  USER_INVALID: `User GUID must be between ${ROTATION_ASSIGNMENT_VALIDATION.USER.MIN_LENGTH} and ${ROTATION_ASSIGNMENT_VALIDATION.USER.MAX_LENGTH} letters or numbers`,
+  FAMILY_REQUIRED: 'family is required (user or group)',
+  FAMILY_INVALID: 'family must be either "user" or "group"',
+
+  RELATED_REQUIRED: 'related GUID is required',
+  RELATED_INVALID: `related must be a valid GUID (${ROTATION_ASSIGNMENT_VALIDATION.RELATED.MIN_LENGTH}-${ROTATION_ASSIGNMENT_VALIDATION.RELATED.MAX_LENGTH} characters)`,
+  RELATED_NOT_FOUND: 'Related user or group not found',
+
   USER_NOT_FOUND: 'User not found',
+  GROUPS_NOT_FOUND: 'Rotation Groups not found',
+  USER_ALREADY_ASSIGNED: 'User is already assigned to this rotation group',
+  GROUPS_ALREADY_ASSIGNED: 'Groups is already assigned to this rotation group',
 
   ASSIGNED_BY_INVALID: `Assigned_by GUID must be between ${ROTATION_ASSIGNMENT_VALIDATION.ASSIGNED_BY.MIN_LENGTH} and ${ROTATION_ASSIGNMENT_VALIDATION.ASSIGNED_BY.MAX_LENGTH} letters or numbers`,
   ASSIGNED_BY_NOT_FOUND: 'Assigned_by not found',
   ASSIGNED_BY_REQUIRED: 'Assigned_by not found',
-
-  GROUPS_INVALID: `Groups GUID must be between ${ROTATION_ASSIGNMENT_VALIDATION.GROUPS.MIN_LENGTH} and ${ROTATION_ASSIGNMENT_VALIDATION.GROUPS.MAX_LENGTH} characters`,
-  GROUPS_NOT_FOUND: 'Rotation Groups not found',
-
-  USER_OR_GROUPS_REQUIRED: 'Either user or Group must be specified',
-  ONLY_ONE_USER_OR_GROUPS_ALLOWED: 'Only one of user or Groups must be specified, not both',
 
   ROTATION_GROUP_REQUIRED: `${ROTATION_ASSIGNMENT_LABEL} rotation_group is required`,
   ROTATION_GROUP_INVALID: `Rotation Group GUID must be between ${ROTATION_ASSIGNMENT_VALIDATION.ROTATION_GROUP.MIN_LENGTH} and ${ROTATION_ASSIGNMENT_VALIDATION.ROTATION_GROUP.MAX_LENGTH} letters or numbers`,
@@ -110,8 +115,6 @@ export const ROTATION_ASSIGNMENT_ERRORS = {
   PAGINATION_INVALID: 'Invalid pagination parameters',
   GUID_GENERATION_FAILED: `Failed to generate GUID for ${ROTATION_ASSIGNMENT_LABEL}`,
   ID_REQUIRED: `${ROTATION_ASSIGNMENT_LABEL} id is required`,
-  USER_ALREADY_ASSIGNED: 'User is already assigned to this rotation group',
-  GROUPS_ALREADY_ASSIGNED: 'Groups is already assigned to this rotation group',
 } as const;
 
 export const ROTATION_ASSIGNMENT_MESSAGES = {

@@ -1,5 +1,6 @@
 import {
   CycleUnit,
+  Direction,
   ROTATION_GROUP_DEFAULTS,
   ROTATION_GROUP_ERRORS,
   RotationGroupValidationUtils,
@@ -19,7 +20,9 @@ export default class RotationGroupModel extends BaseModel {
     name: 'name',
     cycle_length: 'cycle_length',
     cycle_unit: 'cycle_unit',
-    cycle_templates: 'cycle_templates',
+    direction: 'direction',
+    auto_advance: 'auto_advance',
+    rotation_step: 'rotation_step',
     start_date: 'start_date',
     active: 'active',
     deleted_at: 'deleted_at',
@@ -37,7 +40,9 @@ export default class RotationGroupModel extends BaseModel {
   protected name?: string;
   protected cycle_length?: number;
   protected cycle_unit?: CycleUnit;
-  protected cycle_templates?: number[];
+  protected direction?: Direction;
+  protected auto_advance: boolean = ROTATION_GROUP_DEFAULTS.AUTO_ADVANCE;
+  protected rotation_step: number = ROTATION_GROUP_DEFAULTS.ROTATION_STEP;
   protected start_date?: string;
   protected active?: boolean;
   protected deleted_at?: Date | null;
@@ -150,9 +155,10 @@ export default class RotationGroupModel extends BaseModel {
       [this.db.guid]: guid,
       [this.db.tenant]: this.tenant,
       [this.db.name]: this.name,
-      [this.db.cycle_length]: this.cycle_length,
       [this.db.cycle_unit]: this.cycle_unit,
-      [this.db.cycle_templates]: this.cycle_templates,
+      [this.db.direction]: this.direction || ROTATION_GROUP_DEFAULTS.DIRECTION,
+      [this.db.auto_advance]: this.auto_advance || ROTATION_GROUP_DEFAULTS.AUTO_ADVANCE,
+      [this.db.rotation_step]: this.rotation_step || ROTATION_GROUP_DEFAULTS.ROTATION_STEP,
       [this.db.start_date]: this.start_date,
       [this.db.active]: this.active ?? ROTATION_GROUP_DEFAULTS.ACTIVE,
     });
@@ -180,14 +186,17 @@ export default class RotationGroupModel extends BaseModel {
     if (this.name !== undefined) {
       updateData[this.db.name] = this.name;
     }
-    if (this.cycle_length !== undefined) {
-      updateData[this.db.cycle_length] = this.cycle_length;
-    }
     if (this.cycle_unit !== undefined) {
       updateData[this.db.cycle_unit] = this.cycle_unit;
     }
-    if (this.cycle_templates !== undefined) {
-      updateData[this.db.cycle_templates] = this.cycle_templates;
+    if (this.direction !== undefined) {
+      updateData[this.db.direction] = this.direction;
+    }
+    if (this.auto_advance !== undefined) {
+      updateData[this.db.auto_advance] = this.auto_advance;
+    }
+    if (this.rotation_step !== undefined) {
+      updateData[this.db.rotation_step] = this.rotation_step;
     }
     if (this.start_date !== undefined) {
       updateData[this.db.start_date] = this.start_date;
@@ -233,13 +242,6 @@ export default class RotationGroupModel extends BaseModel {
   // ============================================
 
   private async validate(): Promise<void> {
-    // if (!this.tenant) {
-    //   throw new Error(ROTATION_GROUP_ERRORS.TENANT_REQUIRED);
-    // }
-    // if (!RotationGroupValidationUtils.validateTenant(this.tenant)) {
-    //   throw new Error(ROTATION_GROUP_ERRORS.TENANT_INVALID);
-    // }
-
     if (!this.name) {
       throw new Error(ROTATION_GROUP_ERRORS.NAME_REQUIRED);
     }
@@ -247,11 +249,22 @@ export default class RotationGroupModel extends BaseModel {
       throw new Error(ROTATION_GROUP_ERRORS.NAME_INVALID);
     }
 
-    if (!this.cycle_length) {
-      throw new Error(ROTATION_GROUP_ERRORS.CYCLE_LENGTH_REQUIRED);
+    if (!this.direction) {
+      throw new Error(ROTATION_GROUP_ERRORS.DIRECTION_REQUIRED);
     }
-    if (!RotationGroupValidationUtils.validateCycleLength(this.cycle_length)) {
-      throw new Error(ROTATION_GROUP_ERRORS.CYCLE_LENGTH_INVALID);
+    if (!RotationGroupValidationUtils.validateDirection(this.direction)) {
+      throw new Error(ROTATION_GROUP_ERRORS.DIRECTION_INVALID);
+    }
+
+    if (this.auto_advance && !RotationGroupValidationUtils.validateAutoAdvance(this.auto_advance)) {
+      throw new Error(ROTATION_GROUP_ERRORS.AUTO_ADVANCE_INVALID);
+    }
+
+    if (!this.rotation_step) {
+      throw new Error(ROTATION_GROUP_ERRORS.ROTATION_STEP_REQUIRED);
+    }
+    if (!RotationGroupValidationUtils.validateRotationStep(this.rotation_step)) {
+      throw new Error(ROTATION_GROUP_ERRORS.ROTATION_STEP_INVALID);
     }
 
     if (!this.cycle_unit) {
@@ -260,13 +273,6 @@ export default class RotationGroupModel extends BaseModel {
     if (!RotationGroupValidationUtils.validateCycleUnit(this.cycle_unit)) {
       throw new Error(ROTATION_GROUP_ERRORS.CYCLE_UNIT_INVALID);
     }
-
-    if (!this.cycle_templates || this.cycle_templates.length === 0) {
-      throw new Error(ROTATION_GROUP_ERRORS.CYCLE_TEMPLATES_REQUIRED);
-    }
-    // if (!RotationGroupValidationUtils.validateCycleTemplates(this.cycle_templates)) {
-    //   throw new Error(ROTATION_GROUP_ERRORS.CYCLE_TEMPLATES_INVALID);
-    // }
 
     if (!this.start_date) {
       throw new Error(ROTATION_GROUP_ERRORS.START_DATE_REQUIRED);

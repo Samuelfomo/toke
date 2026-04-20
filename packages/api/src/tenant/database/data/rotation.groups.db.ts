@@ -1,5 +1,5 @@
 import { DataTypes, ModelAttributes, ModelOptions } from 'sequelize';
-import { CycleUnit } from '@toke/shared';
+import { CycleUnit, Direction } from '@toke/shared';
 
 import { tableName } from '../../../utils/response.model.js';
 
@@ -53,12 +53,12 @@ export const RotationGroupsDbStructure = {
     },
     cycle_length: {
       type: DataTypes.INTEGER,
-      allowNull: false,
+      allowNull: true,
       validate: {
         isInt: true,
         min: 1,
       },
-      comment: 'Number of cycles in the rotation',
+      comment: 'Computed duration of a full rotation cycle (informational only)',
     },
     cycle_unit: {
       type: DataTypes.ENUM(...Object.values(CycleUnit)),
@@ -71,13 +71,36 @@ export const RotationGroupsDbStructure = {
       },
       comment: 'Unit of the cycle: day or week',
     },
-    cycle_templates: {
-      type: DataTypes.ARRAY(DataTypes.INTEGER),
+    direction: {
+      type: DataTypes.ENUM(...Object.values(Direction)),
       allowNull: false,
+      defaultValue: Direction.BACKWARD,
       validate: {
-        notEmpty: true,
+        isIn: {
+          args: [Object.values(Direction)],
+          msg: 'Rotation groups direction must be one of: forward, backward',
+        },
       },
-      comment: 'Ordered array of session_template IDs',
+      comment: 'Direction of the rotation: forward or backward',
+    },
+    auto_advance: {
+      type: DataTypes.BOOLEAN,
+      allowNull: false,
+      defaultValue: false,
+      validate: {
+        isBoolean: true,
+      },
+      comment: 'Automatic advancement of the rotation',
+    },
+    rotation_step: {
+      type: DataTypes.INTEGER,
+      allowNull: false,
+      defaultValue: 1,
+      validate: {
+        isInt: true,
+        min: 1,
+      },
+      comment: 'Number of time units before advancing the rotation (e.g. every 2 days)',
     },
     start_date: {
       type: DataTypes.DATEONLY,
@@ -121,20 +144,20 @@ export const RotationGroupsDbStructure = {
         name: 'idx_rotation_groups_guid',
       },
       {
-        fields: ['tenant'],
-        name: 'idx_rotation_groups_tenant',
-      },
-      {
-        fields: ['name'],
-        name: 'idx_rotation_groups_name',
-      },
-      {
         fields: ['start_date'],
         name: 'idx_rotation_groups_start_date',
       },
       {
         fields: ['active'],
         name: 'idx_rotation_groups_active',
+      },
+      {
+        fields: ['active', 'auto_advance', 'deleted_at'],
+        name: 'idx_rotation_groups_cron_filter',
+      },
+      {
+        fields: ['start_date', 'active'],
+        name: 'idx_rotation_groups_start_active',
       },
       {
         fields: ['deleted_at'],

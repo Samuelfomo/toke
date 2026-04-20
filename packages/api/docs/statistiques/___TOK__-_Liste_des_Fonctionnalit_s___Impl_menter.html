@@ -1,0 +1,336 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>🚀 TOKÉ - Liste des Fonctionnalités à Implémenter.md</title>
+  <style>
+  @import url("https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.9.0-alpha2/katex.min.css");
+
+  body {
+    font-family: Georgia, Cambria, serif;
+    font-size: 14px;
+    line-height: 1.7;
+    color: #373D49;
+    max-width: 800px;
+    margin: 0 auto;
+    padding: 2rem;
+  }
+  h1, h2, h3, h4, h5, h6 {
+    font-family: "Source Sans Pro", "Helvetica Neue", Helvetica, Arial, sans-serif;
+    font-weight: 600;
+    margin-top: 1.5em;
+    margin-bottom: 0.5em;
+  }
+  h1 { font-size: 2em; }
+  h2 { font-size: 1.5em; }
+  h3 { font-size: 1.25em; }
+  a { color: #35D7BB; text-decoration: none; }
+  a:hover { text-decoration: underline; }
+  code {
+    font-family: "Ubuntu Mono", Monaco, monospace;
+    background: #F5F7FA;
+    padding: 0.2em 0.4em;
+    border-radius: 3px;
+  }
+  pre {
+    background: #F5F7FA;
+    padding: 1em;
+    border-radius: 3px;
+    overflow-x: auto;
+  }
+  .hljs {
+    display: block;
+    overflow-x: auto;
+    padding: 0;
+    color: #333;
+  }
+  pre code { background: none; padding: 0; }
+  blockquote {
+    border-left: 3px solid #A0AABF;
+    padding-left: 1em;
+    margin-left: 0;
+    font-style: italic;
+    color: #666;
+  }
+  table {
+    border-collapse: collapse;
+    width: 100%;
+  }
+  th, td {
+    border: 1px solid #E8E8E8;
+    padding: 0.5em;
+    text-align: left;
+  }
+  th {
+    background: #F5F7FA;
+    font-weight: 600;
+  }
+  #preview .table {
+    width: auto;
+  }
+  img {
+    max-width: 100%;
+    height: auto;
+  }
+  .katex-display {
+    overflow-x: auto;
+    overflow-y: hidden;
+  }
+</style>
+</head>
+<body id="preview">
+<h1 class="code-line has-line-data" data-line-start="0" data-line-end="1"><a id="TOK_Liste_des_Fonctionnalits_Implmenter_0"></a>🚀 TOKÉ - Liste des Fonctionnalités à Implémenter</h1>
+<h2 class="code-line has-line-data" data-line-start="2" data-line-end="3"><a id="CONCEPT_GNRAL_2"></a>🎯 CONCEPT GÉNÉRAL</h2>
+<ul>
+<li class="has-line-data" data-line-start="3" data-line-end="4"><strong>Vision</strong> : Transformer le smartphone en badgeuse universelle</li>
+<li class="has-line-data" data-line-start="4" data-line-end="5"><strong>Principe</strong> : Gestion par sessions de travail (Clock-in → Clock-out)</li>
+<li class="has-line-data" data-line-start="5" data-line-end="7"><strong>Sécurité</strong> : QR Code + GPS obligatoires avec système anti-fraude</li>
+</ul>
+<h2 class="code-line has-line-data" data-line-start="7" data-line-end="8"><a id="GESTION_DES_UTILISATEURS_7"></a>👥 GESTION DES UTILISATEURS</h2>
+<h3 class="code-line has-line-data" data-line-start="9" data-line-end="10"><a id="Authentification_MultiNiveaux_9"></a>🔐 Authentification Multi-Niveaux</h3>
+<ul>
+<li class="has-line-data" data-line-start="10" data-line-end="11"><strong>OTP Onboarding</strong> : Code 6 chiffres pour première connexion</li>
+<li class="has-line-data" data-line-start="11" data-line-end="12"><strong>PIN Employé</strong> : 4 chiffres + biométrie pour pointage quotidien</li>
+<li class="has-line-data" data-line-start="12" data-line-end="14"><strong>Password Manager</strong> : Email + mot de passe pour gestion équipe</li>
+</ul>
+<h3 class="code-line has-line-data" data-line-start="14" data-line-end="15"><a id="Systme_de_Rles_Flexibles_14"></a>🏗️ Système de Rôles Flexibles</h3>
+<ul>
+<li class="has-line-data" data-line-start="15" data-line-end="16"><strong>EMPLOYEE</strong> : Pointage personnel, création mémos, consultation historique</li>
+<li class="has-line-data" data-line-start="16" data-line-end="17"><strong>MANAGER</strong> : + Gestion équipe, validation mémos, création sites/QR</li>
+<li class="has-line-data" data-line-start="17" data-line-end="18"><strong>MANAGER_SENIOR</strong> : + Supervision managers, escalade, analytics</li>
+<li class="has-line-data" data-line-start="18" data-line-end="19"><strong>HR_ADMIN</strong> : Accès tenant complet, gestion utilisateurs, config système</li>
+<li class="has-line-data" data-line-start="19" data-line-end="20"><strong>AUDITOR</strong> : Pointage multi-sites, rapports audit, missions temporaires</li>
+<li class="has-line-data" data-line-start="20" data-line-end="22"><strong>Multi-rôles</strong> : Combinaisons possibles (ex: Manager qui pointe aussi)</li>
+</ul>
+<h3 class="code-line has-line-data" data-line-start="22" data-line-end="23"><a id="Hirarchie_Organisationnelle_22"></a>🏢 Hiérarchie Organisationnelle</h3>
+<ul>
+<li class="has-line-data" data-line-start="23" data-line-end="24"><strong>Structure N-niveaux</strong> : Hiérarchie flexible et évolutive</li>
+<li class="has-line-data" data-line-start="24" data-line-end="25"><strong>Relations superviseur-subordonné</strong> : Avec dates d’effectivité</li>
+<li class="has-line-data" data-line-start="25" data-line-end="27"><strong>Délégations</strong> : Gestion missions temporaires et intérims</li>
+</ul>
+<h2 class="code-line has-line-data" data-line-start="27" data-line-end="28"><a id="MODULE_POINTAGE_CORE_27"></a>📱 MODULE POINTAGE CORE</h2>
+<h3 class="code-line has-line-data" data-line-start="29" data-line-end="30"><a id="Types_de_Pointage_29"></a>⏰ Types de Pointage</h3>
+<ul>
+<li class="has-line-data" data-line-start="30" data-line-end="31"><strong>clock_in</strong> : Ouverture session de travail</li>
+<li class="has-line-data" data-line-start="31" data-line-end="32"><strong>clock_out</strong> : Fermeture session de travail</li>
+<li class="has-line-data" data-line-start="32" data-line-end="33"><strong>pause_start</strong> : Début pause (déjeuner, etc.)</li>
+<li class="has-line-data" data-line-start="33" data-line-end="34"><strong>pause_end</strong> : Fin de pause</li>
+<li class="has-line-data" data-line-start="34" data-line-end="36"><strong>external_mission</strong> : Mission externe au site principal</li>
+</ul>
+<h3 class="code-line has-line-data" data-line-start="36" data-line-end="37"><a id="Gestion_Sites_Flexible_36"></a>🏢 Gestion Sites Flexible</h3>
+<ul>
+<li class="has-line-data" data-line-start="37" data-line-end="38"><strong>Manager Sites</strong> : QR personnel du manager pour son équipe</li>
+<li class="has-line-data" data-line-start="38" data-line-end="39"><strong>Global Sites</strong> : Sites partagés (bureaux, agences communes)</li>
+<li class="has-line-data" data-line-start="39" data-line-end="40"><strong>Temporary Sites</strong> : Missions courtes, chantiers temporaires</li>
+<li class="has-line-data" data-line-start="40" data-line-end="42"><strong>Public Sites</strong> : Lieux publics (gares, aéroports) pour commerciaux/auditeurs</li>
+</ul>
+<h3 class="code-line has-line-data" data-line-start="42" data-line-end="43"><a id="Gofencing_Intelligent_42"></a>🗺️ Géofencing Intelligent</h3>
+<ul>
+<li class="has-line-data" data-line-start="43" data-line-end="44"><strong>Polygones complexes</strong> : Zones géographiques précises par site</li>
+<li class="has-line-data" data-line-start="44" data-line-end="45"><strong>Validation obligatoire</strong> : GPS + QR Code pour chaque pointage</li>
+<li class="has-line-data" data-line-start="45" data-line-end="47"><strong>Flexibilité missions</strong> : Assouplissement GPS pour missions externes</li>
+</ul>
+<h2 class="code-line has-line-data" data-line-start="47" data-line-end="48"><a id="MODULE_SYNCHRONISATION_OFFLINE_47"></a>🔄 MODULE SYNCHRONISATION OFFLINE</h2>
+<h3 class="code-line has-line-data" data-line-start="49" data-line-end="50"><a id="Architecture_OfflineFirst_49"></a>📱 Architecture Offline-First</h3>
+<ul>
+<li class="has-line-data" data-line-start="50" data-line-end="51"><strong>Stockage local SQLite</strong> : Pointages en attente de synchronisation</li>
+<li class="has-line-data" data-line-start="51" data-line-end="52"><strong>Fonctionnement 7 jours</strong> : Sans connexion réseau</li>
+<li class="has-line-data" data-line-start="52" data-line-end="53"><strong>Sync intelligente</strong> : Upload automatique à la reconnexion</li>
+<li class="has-line-data" data-line-start="53" data-line-end="55"><strong>Auto-retry</strong> : Tentatives multiples avec backoff exponentiel</li>
+</ul>
+<h3 class="code-line has-line-data" data-line-start="55" data-line-end="56"><a id="Gestion_Conflits_55"></a>⚔️ Gestion Conflits</h3>
+<ul>
+<li class="has-line-data" data-line-start="56" data-line-end="57"><strong>Détection automatique</strong> : Conflits entre données locale/serveur</li>
+<li class="has-line-data" data-line-start="57" data-line-end="58"><strong>Résolution auto</strong> : Si écart &lt; 30min</li>
+<li class="has-line-data" data-line-start="58" data-line-end="59"><strong>Escalade manager</strong> : Pour conflits complexes</li>
+<li class="has-line-data" data-line-start="59" data-line-end="61"><strong>Timestamp serveur</strong> : Fait autorité en cas de conflit</li>
+</ul>
+<h2 class="code-line has-line-data" data-line-start="61" data-line-end="62"><a id="MODULE_MMOS_JUSTIFICATIONS_61"></a>📝 MODULE MÉMOS &amp; JUSTIFICATIONS</h2>
+<h3 class="code-line has-line-data" data-line-start="63" data-line-end="64"><a id="Types_de_Mmos_63"></a>📋 Types de Mémos</h3>
+<ul>
+<li class="has-line-data" data-line-start="64" data-line-end="65"><strong>Préventifs</strong> : Anticipation retard/absence (“Demain rdv médical”)</li>
+<li class="has-line-data" data-line-start="65" data-line-end="66"><strong>Correctifs</strong> : Justification après incident (“Oubli pointage hier”)</li>
+<li class="has-line-data" data-line-start="66" data-line-end="68"><strong>Auto-générés</strong> : Système détecte anomalie et crée mémo automatique</li>
+</ul>
+<h3 class="code-line has-line-data" data-line-start="68" data-line-end="69"><a id="Workflow_Validation_68"></a>✅ Workflow Validation</h3>
+<ul>
+<li class="has-line-data" data-line-start="69" data-line-end="70"><strong>Délai 24h</strong> : Manager a 24h pour valider/rejeter</li>
+<li class="has-line-data" data-line-start="70" data-line-end="71"><strong>Escalade automatique</strong> : Si délai dépassé, remonte au N+1</li>
+<li class="has-line-data" data-line-start="71" data-line-end="73"><strong>Statuts</strong> : draft → submitted → pending → approved/rejected</li>
+</ul>
+<h3 class="code-line has-line-data" data-line-start="73" data-line-end="74"><a id="Pices_Jointes_73"></a>📎 Pièces Jointes</h3>
+<ul>
+<li class="has-line-data" data-line-start="74" data-line-end="75"><strong>Photos</strong> : Justificatifs, tickets transport (max 5MB)</li>
+<li class="has-line-data" data-line-start="75" data-line-end="76"><strong>Audio</strong> : Explications vocales 30s max</li>
+<li class="has-line-data" data-line-start="76" data-line-end="78"><strong>Métadonnées</strong> : GPS, device info, timestamp légal</li>
+</ul>
+<h2 class="code-line has-line-data" data-line-start="78" data-line-end="79"><a id="MODULE_ANTIFRAUDE_78"></a>🚨 MODULE ANTI-FRAUDE</h2>
+<h3 class="code-line has-line-data" data-line-start="80" data-line-end="81"><a id="Dtections_Automatiques_80"></a>🔍 Détections Automatiques</h3>
+<ul>
+<li class="has-line-data" data-line-start="81" data-line-end="82"><strong>Géofencing violation</strong> : Pointage hors zone autorisée</li>
+<li class="has-line-data" data-line-start="82" data-line-end="83"><strong>Doublons temporels</strong> : Même site/employé &lt; 15min</li>
+<li class="has-line-data" data-line-start="83" data-line-end="84"><strong>Vitesse impossible</strong> : Déplacements irréalistes entre sites</li>
+<li class="has-line-data" data-line-start="84" data-line-end="85"><strong>GPS spoofing</strong> : Détection mock location Android</li>
+<li class="has-line-data" data-line-start="85" data-line-end="87"><strong>Patterns suspects</strong> : Comportements récurrents anormaux</li>
+</ul>
+<h3 class="code-line has-line-data" data-line-start="87" data-line-end="88"><a id="Niveaux_dAlerte_87"></a>⚠️ Niveaux d’Alerte</h3>
+<ul>
+<li class="has-line-data" data-line-start="88" data-line-end="89"><strong>Low</strong> : Logs système uniquement</li>
+<li class="has-line-data" data-line-start="89" data-line-end="90"><strong>Medium</strong> : Notification manager différée</li>
+<li class="has-line-data" data-line-start="90" data-line-end="91"><strong>High</strong> : Notification manager immédiate</li>
+<li class="has-line-data" data-line-start="91" data-line-end="93"><strong>Critical</strong> : Blocage pointage + investigation manuelle</li>
+</ul>
+<h2 class="code-line has-line-data" data-line-start="93" data-line-end="94"><a id="FONCTIONNALITS_SESSIONS_DE_TRAVAIL_93"></a>📊 FONCTIONNALITÉS SESSIONS DE TRAVAIL</h2>
+<h3 class="code-line has-line-data" data-line-start="95" data-line-end="96"><a id="Gestion_Sessions_95"></a>🕐 Gestion Sessions</h3>
+<ul>
+<li class="has-line-data" data-line-start="96" data-line-end="97"><strong>Session unique</strong> : Un employé = une session active maximum</li>
+<li class="has-line-data" data-line-start="97" data-line-end="98"><strong>Calculs automatiques</strong> : Durée travail/pause par session</li>
+<li class="has-line-data" data-line-start="98" data-line-end="99"><strong>Sessions chevauchantes</strong> : Gestion équipes de nuit (jour J → jour J+1)</li>
+<li class="has-line-data" data-line-start="99" data-line-end="101"><strong>Fermeture automatique</strong> : Si oubli détecté au prochain pointage</li>
+</ul>
+<h3 class="code-line has-line-data" data-line-start="101" data-line-end="102"><a id="Calculs_Rapports_101"></a>📈 Calculs &amp; Rapports</h3>
+<ul>
+<li class="has-line-data" data-line-start="102" data-line-end="103"><strong>Durées automatiques</strong> : Temps travaillé/pause calculé en temps réel</li>
+<li class="has-line-data" data-line-start="103" data-line-end="104"><strong>Rapports journaliers</strong> : Envoyés automatiquement aux managers</li>
+<li class="has-line-data" data-line-start="104" data-line-end="105"><strong>Historique complet</strong> : Consultation données par employé/période</li>
+<li class="has-line-data" data-line-start="105" data-line-end="107"><strong>Export paie</strong> : Données formatées pour SIRH externes</li>
+</ul>
+<h2 class="code-line has-line-data" data-line-start="107" data-line-end="108"><a id="ADMINISTRATION_CONFIGURATION_107"></a>🛠️ ADMINISTRATION &amp; CONFIGURATION</h2>
+<h3 class="code-line has-line-data" data-line-start="109" data-line-end="110"><a id="Gestion_Utilisateurs_109"></a>👥 Gestion Utilisateurs</h3>
+<ul>
+<li class="has-line-data" data-line-start="110" data-line-end="111"><strong>Onboarding employé</strong> : Manager ajoute → OTP envoyé → App installée</li>
+<li class="has-line-data" data-line-start="111" data-line-end="112"><strong>Attribution rôles</strong> : Assignment flexible multi-rôles</li>
+<li class="has-line-data" data-line-start="112" data-line-end="113"><strong>Cycle de vie</strong> : Activation, suspension, suppression utilisateurs</li>
+<li class="has-line-data" data-line-start="113" data-line-end="115"><strong>Import/Export</strong> : Données utilisateurs en masse</li>
+</ul>
+<h3 class="code-line has-line-data" data-line-start="115" data-line-end="116"><a id="Configuration_Sites_115"></a>🏢 Configuration Sites</h3>
+<ul>
+<li class="has-line-data" data-line-start="116" data-line-end="117"><strong>Création QR codes</strong> : Génération automatique par manager</li>
+<li class="has-line-data" data-line-start="117" data-line-end="118"><strong>Définition géofences</strong> : Interface cartographique</li>
+<li class="has-line-data" data-line-start="118" data-line-end="119"><strong>Paramétrage permissions</strong> : Qui peut pointer où</li>
+<li class="has-line-data" data-line-start="119" data-line-end="121"><strong>Sites temporaires</strong> : Création/expiration automatique</li>
+</ul>
+<h3 class="code-line has-line-data" data-line-start="121" data-line-end="122"><a id="Paramtres_Systme_121"></a>⚙️ Paramètres Système</h3>
+<ul>
+<li class="has-line-data" data-line-start="122" data-line-end="123"><strong>Règles métier</strong> : Durées mini/maxi, pauses obligatoires</li>
+<li class="has-line-data" data-line-start="123" data-line-end="124"><strong>Seuils anti-fraude</strong> : Personnalisation détections</li>
+<li class="has-line-data" data-line-start="124" data-line-end="125"><strong>Notifications</strong> : Configuration alertes par rôle</li>
+<li class="has-line-data" data-line-start="125" data-line-end="127"><strong>Intégrations</strong> : APIs SIRH, webhooks, exports</li>
+</ul>
+<h2 class="code-line has-line-data" data-line-start="127" data-line-end="128"><a id="APPLICATIONS_MOBILES_127"></a>📱 APPLICATIONS MOBILES</h2>
+<h3 class="code-line has-line-data" data-line-start="129" data-line-end="130"><a id="App_Employ_Pointage_129"></a>👷 App Employé (Pointage)</h3>
+<ul>
+<li class="has-line-data" data-line-start="130" data-line-end="131"><strong>Interface simple</strong> : Scan QR + validation GPS</li>
+<li class="has-line-data" data-line-start="131" data-line-end="132"><strong>Authentification rapide</strong> : PIN + biométrie</li>
+<li class="has-line-data" data-line-start="132" data-line-end="133"><strong>Mode offline</strong> : Fonctionnement sans réseau</li>
+<li class="has-line-data" data-line-start="133" data-line-end="134"><strong>Mémos</strong> : Création/suivi justifications</li>
+<li class="has-line-data" data-line-start="134" data-line-end="136"><strong>Historique personnel</strong> : Consultation pointages</li>
+</ul>
+<h3 class="code-line has-line-data" data-line-start="136" data-line-end="137"><a id="App_Manager_Gestion_136"></a>👔 App Manager (Gestion)</h3>
+<ul>
+<li class="has-line-data" data-line-start="137" data-line-end="138"><strong>Dashboard équipe</strong> : Vue temps réel présences</li>
+<li class="has-line-data" data-line-start="138" data-line-end="139"><strong>Gestion mémos</strong> : Validation/rejet justifications</li>
+<li class="has-line-data" data-line-start="139" data-line-end="140"><strong>Création sites</strong> : QR codes, géofences</li>
+<li class="has-line-data" data-line-start="140" data-line-end="141"><strong>Rapports</strong> : Analytics équipe, exports</li>
+<li class="has-line-data" data-line-start="141" data-line-end="143"><strong>Notifications</strong> : Alertes temps réel</li>
+</ul>
+<h3 class="code-line has-line-data" data-line-start="143" data-line-end="144"><a id="Interface_Web_Admin_143"></a>💼 Interface Web (Admin)</h3>
+<ul>
+<li class="has-line-data" data-line-start="144" data-line-end="145"><strong>Administration complète</strong> : Gestion utilisateurs, rôles, sites</li>
+<li class="has-line-data" data-line-start="145" data-line-end="146"><strong>Analytics avancées</strong> : Tableaux de bord, KPIs</li>
+<li class="has-line-data" data-line-start="146" data-line-end="147"><strong>Configuration système</strong> : Paramètres globaux</li>
+<li class="has-line-data" data-line-start="147" data-line-end="149"><strong>Audit &amp; compliance</strong> : Logs, traçabilité légale</li>
+</ul>
+<h2 class="code-line has-line-data" data-line-start="149" data-line-end="150"><a id="APIs_INTGRATIONS_149"></a>🔧 APIs &amp; INTÉGRATIONS</h2>
+<h3 class="code-line has-line-data" data-line-start="151" data-line-end="152"><a id="API_REST_151"></a>📡 API REST</h3>
+<ul>
+<li class="has-line-data" data-line-start="152" data-line-end="153"><strong>Authentification JWT</strong> : Sécurisée et performante</li>
+<li class="has-line-data" data-line-start="153" data-line-end="154"><strong>Endpoints pointage</strong> : CRUD sessions/pointages</li>
+<li class="has-line-data" data-line-start="154" data-line-end="155"><strong>Synchronisation batch</strong> : Upload multiple pointages</li>
+<li class="has-line-data" data-line-start="155" data-line-end="157"><strong>Webhooks</strong> : Notifications temps réel vers systèmes externes</li>
+</ul>
+<h3 class="code-line has-line-data" data-line-start="157" data-line-end="158"><a id="Intgrations_SIRH_157"></a>🔗 Intégrations SIRH</h3>
+<ul>
+<li class="has-line-data" data-line-start="158" data-line-end="159"><strong>Export paie</strong> : Formats standards (CSV, XML, JSON)</li>
+<li class="has-line-data" data-line-start="159" data-line-end="160"><strong>APIs tierces</strong> : Sage, Cegid, SAP</li>
+<li class="has-line-data" data-line-start="160" data-line-end="162"><strong>Synchronisation bidirectionnelle</strong> : Utilisateurs, règles métier</li>
+</ul>
+<h2 class="code-line has-line-data" data-line-start="162" data-line-end="163"><a id="ANALYTICS_REPORTING_162"></a>📊 ANALYTICS &amp; REPORTING</h2>
+<h3 class="code-line has-line-data" data-line-start="164" data-line-end="165"><a id="Tableaux_de_Bord_164"></a>📈 Tableaux de Bord</h3>
+<ul>
+<li class="has-line-data" data-line-start="165" data-line-end="166"><strong>Temps réel</strong> : Présences actuelles, alertes en cours</li>
+<li class="has-line-data" data-line-start="166" data-line-end="167"><strong>KPIs</strong> : Ponctualité, absentéisme, productivité</li>
+<li class="has-line-data" data-line-start="167" data-line-end="168"><strong>Trends</strong> : Évolution sur périodes, comparaisons</li>
+<li class="has-line-data" data-line-start="168" data-line-end="170"><strong>Personnalisables</strong> : Par rôle et besoins métier</li>
+</ul>
+<h3 class="code-line has-line-data" data-line-start="170" data-line-end="171"><a id="Rapports_Automatiss_170"></a>📋 Rapports Automatisés</h3>
+<ul>
+<li class="has-line-data" data-line-start="171" data-line-end="172"><strong>Journaliers</strong> : Synthèse équipe envoyée aux managers</li>
+<li class="has-line-data" data-line-start="172" data-line-end="173"><strong>Hebdomadaires</strong> : Récap détaillé avec anomalies</li>
+<li class="has-line-data" data-line-start="173" data-line-end="174"><strong>Mensuels</strong> : Données paie prêtes pour comptabilité</li>
+<li class="has-line-data" data-line-start="174" data-line-end="176"><strong>Audit</strong> : Conformité légale, traçabilité complète</li>
+</ul>
+<h2 class="code-line has-line-data" data-line-start="176" data-line-end="177"><a id="SCURIT_CONFORMIT_176"></a>🛡️ SÉCURITÉ &amp; CONFORMITÉ</h2>
+<h3 class="code-line has-line-data" data-line-start="178" data-line-end="179"><a id="Scurit_Technique_178"></a>🔐 Sécurité Technique</h3>
+<ul>
+<li class="has-line-data" data-line-start="179" data-line-end="180"><strong>Chiffrement bout-en-bout</strong> : Données sensibles protégées</li>
+<li class="has-line-data" data-line-start="180" data-line-end="181"><strong>Audit trail complet</strong> : Traçabilité toute modification</li>
+<li class="has-line-data" data-line-start="181" data-line-end="182"><strong>Sauvegarde automatique</strong> : Données critiques protégées</li>
+<li class="has-line-data" data-line-start="182" data-line-end="184"><strong>Tests pénétration</strong> : Sécurité régulièrement auditée</li>
+</ul>
+<h3 class="code-line has-line-data" data-line-start="184" data-line-end="185"><a id="Conformit_Lgale_184"></a>⚖️ Conformité Légale</h3>
+<ul>
+<li class="has-line-data" data-line-start="185" data-line-end="186"><strong>RGPD/CCPA</strong> : Protection données personnelles</li>
+<li class="has-line-data" data-line-start="186" data-line-end="187"><strong>Code travail local</strong> : Respect réglementations Afrique Centrale</li>
+<li class="has-line-data" data-line-start="187" data-line-end="188"><strong>Horodatage légal</strong> : Timestamps certifiés</li>
+<li class="has-line-data" data-line-start="188" data-line-end="190"><strong>Droit à l’oubli</strong> : Suppression données sur demande</li>
+</ul>
+<h2 class="code-line has-line-data" data-line-start="190" data-line-end="191"><a id="VOLUTIVIT_FUTURE_190"></a>🚀 ÉVOLUTIVITÉ FUTURE</h2>
+<h3 class="code-line has-line-data" data-line-start="192" data-line-end="193"><a id="Fonctionnalits_Prvues_192"></a>🔮 Fonctionnalités Prévues</h3>
+<ul>
+<li class="has-line-data" data-line-start="193" data-line-end="194"><strong>Biométrie avancée</strong> : Empreintes, reconnaissance faciale</li>
+<li class="has-line-data" data-line-start="194" data-line-end="195"><strong>IoT hybride</strong> : Badgeuses physiques + QR</li>
+<li class="has-line-data" data-line-start="195" data-line-end="196"><strong>IA anti-fraude</strong> : Détection patterns sophistiqués</li>
+<li class="has-line-data" data-line-start="196" data-line-end="198"><strong>Multi-pays</strong> : Support timezones, devises, langues</li>
+</ul>
+<h3 class="code-line has-line-data" data-line-start="198" data-line-end="199"><a id="Scalabilit_198"></a>🌍 Scalabilité</h3>
+<ul>
+<li class="has-line-data" data-line-start="199" data-line-end="200"><strong>Architecture cloud</strong> : Support croissance utilisateurs</li>
+<li class="has-line-data" data-line-start="200" data-line-end="201"><strong>Multi-tenant</strong> : Isolation données par organisation</li>
+<li class="has-line-data" data-line-start="201" data-line-end="202"><strong>Performance</strong> : Optimisé smartphones low-end Afrique</li>
+<li class="has-line-data" data-line-start="202" data-line-end="204"><strong>Disponibilité</strong> : 99.9% uptime garanti</li>
+</ul>
+<hr>
+<h2 class="code-line has-line-data" data-line-start="206" data-line-end="207"><a id="RCAPITULATIF_PRIORITS_DVELOPPEMENT_206"></a>✅ RÉCAPITULATIF PRIORITÉS DÉVELOPPEMENT</h2>
+<h3 class="code-line has-line-data" data-line-start="208" data-line-end="209"><a id="Phase_1_MVP_Core_3_mois_208"></a>🥇 <strong>Phase 1 - MVP Core (3 mois)</strong></h3>
+<ol>
+<li class="has-line-data" data-line-start="209" data-line-end="210">Authentification multi-niveaux (OTP, PIN, Password)</li>
+<li class="has-line-data" data-line-start="210" data-line-end="211">Pointages de base (clock_in/out, pause_start/end)</li>
+<li class="has-line-data" data-line-start="211" data-line-end="212">Sessions de travail avec calculs automatiques</li>
+<li class="has-line-data" data-line-start="212" data-line-end="213">Géofencing QR Code + GPS basique</li>
+<li class="has-line-data" data-line-start="213" data-line-end="214">App employé simple (scan → pointage)</li>
+<li class="has-line-data" data-line-start="214" data-line-end="216">Interface manager basique (validation pointages)</li>
+</ol>
+<h3 class="code-line has-line-data" data-line-start="216" data-line-end="217"><a id="Phase_2_Fonctionnalits_Avances_3_mois_216"></a>🥈 <strong>Phase 2 - Fonctionnalités Avancées (3 mois)</strong></h3>
+<ol>
+<li class="has-line-data" data-line-start="217" data-line-end="218">Système complet mémos/justifications</li>
+<li class="has-line-data" data-line-start="218" data-line-end="219">Synchronisation offline robuste</li>
+<li class="has-line-data" data-line-start="219" data-line-end="220">Anti-fraude automatisé (détections patterns)</li>
+<li class="has-line-data" data-line-start="220" data-line-end="221">Hiérarchie organisationnelle flexible</li>
+<li class="has-line-data" data-line-start="221" data-line-end="222">Sites multiples (manager, global, temporaire)</li>
+<li class="has-line-data" data-line-start="222" data-line-end="224">Analytics et rapports de base</li>
+</ol>
+<h3 class="code-line has-line-data" data-line-start="224" data-line-end="225"><a id="Phase_3_Finalisation_volutivit_2_mois_224"></a>🥉 <strong>Phase 3 - Finalisation &amp; Évolutivité (2 mois)</strong></h3>
+<ol>
+<li class="has-line-data" data-line-start="225" data-line-end="226">Interface web administration complète</li>
+<li class="has-line-data" data-line-start="226" data-line-end="227">APIs et intégrations SIRH</li>
+<li class="has-line-data" data-line-start="227" data-line-end="228">Audit trail et conformité légale</li>
+<li class="has-line-data" data-line-start="228" data-line-end="229">Performance et scalabilité</li>
+<li class="has-line-data" data-line-start="229" data-line-end="230">Tests complets et sécurité</li>
+<li class="has-line-data" data-line-start="230" data-line-end="232">Documentation et formation</li>
+</ol>
+<p class="has-line-data" data-line-start="232" data-line-end="233"><strong>Total estimé : 8 mois pour version production complète</strong></p>
+
+</body>
+</html>

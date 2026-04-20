@@ -113,6 +113,7 @@ router.put(
     try {
       const client = (req as any).client.reference;
       const { guid } = req.params;
+      const { manager } = req.query;
       if (!guid) {
         return R.handleError(res, HttpStatus.BAD_REQUEST, {
           code: 'guid_required',
@@ -126,8 +127,21 @@ router.put(
           message: 'GUID is invalid',
         });
       }
+      if (!manager) {
+        return R.handleError(res, HttpStatus.BAD_REQUEST, {
+          code: 'guid_required',
+          message: 'Manager GUID is required',
+        });
+      }
 
-      const result: any = await UserService.updatedUser(client, guid, req.body);
+      if (!UsersValidationUtils.validateGuid(manager)) {
+        return R.handleError(res, HttpStatus.BAD_REQUEST, {
+          code: 'guid_invalid',
+          message: 'Manager GUID is invalid',
+        });
+      }
+
+      const result: any = await UserService.updatedUser(client, guid, manager as string, req.body);
 
       if (result.status !== HttpStatus.SUCCESS) {
         return R.handleError(res, result.status, result.response);

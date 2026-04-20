@@ -116,9 +116,9 @@ cron.schedule(
 );
 
 // cron.schedule(
-//   '*/5 * * * *',
+//   '*/1 * * * *',
 //   async () => {
-//     console.log('[Automate] ⏰ Déclenchement rotation (TEST 5min)');
+//     console.log('[Automate] ⏰ Déclenchement rotation (TEST 1min)');
 //     await runForAllTenants();
 //   },
 //   { timezone: 'Africa/Douala' },

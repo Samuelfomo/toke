@@ -1,4 +1,4 @@
-import { TimezoneConfigUtils, USERS_DEFAULTS } from '@toke/shared';
+import { RAFamily, SAFamily, TimezoneConfigUtils, USERS_DEFAULTS } from '@toke/shared';
 
 import UserModel from '../model/UserModel.js';
 import W from '../../tools/watcher.js';
@@ -339,7 +339,11 @@ export default class User extends UserModel {
     }> = [];
 
     // 1️⃣ SCHEDULE USER
-    const userSchedules = await ScheduleAssignments._listForUserOnDate(this.id!, today);
+    const userSchedules = await ScheduleAssignments._listForRelatedOnDate(
+      SAFamily.USER,
+      this.guid!,
+      today,
+    );
     if (userSchedules?.length) {
       userSchedules.forEach((s) => {
         candidates.push({
@@ -351,7 +355,7 @@ export default class User extends UserModel {
     }
 
     // 2️⃣ ROTATION USER
-    const userRotations = await RotationAssignment._listByUser(this.id!);
+    const userRotations = await RotationAssignment._listByRelated(RAFamily.USER, this.guid!);
     if (userRotations?.length) {
       userRotations.forEach((r) => {
         candidates.push({
@@ -403,14 +407,14 @@ export default class User extends UserModel {
    * Récupère toutes les assignations d'horaire (historique complet)
    */
   async getAllScheduleAssignments(): Promise<ScheduleAssignments[]> {
-    return (await ScheduleAssignments._listByUser(this.id!)) || [];
+    return (await ScheduleAssignments._listByRelated(SAFamily.USER, this.guid!)) || [];
   }
 
   /**
    * Récupère toutes les assignations de rotation
    */
   async getAllRotationAssignments(): Promise<RotationAssignment[]> {
-    return (await RotationAssignment._listByUser(this.id!)) || [];
+    return (await RotationAssignment._listByRelated(RAFamily.USER, this.guid!)) || [];
   }
 
   /**

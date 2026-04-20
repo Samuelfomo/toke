@@ -1,51 +1,18 @@
 // utils/schedule_exceptions.validation.ts
-import { SCHEDULE_ASSIGNMENTS_VALIDATION } from '../../constants/tenant/schedule.assignments.js';
+import {
+  SAFamily,
+  SCHEDULE_ASSIGNMENTS_VALIDATION,
+} from '../../constants/tenant/schedule.assignments.js';
 import { TimezoneConfigUtils } from '../timezone.config.validation.js';
 
 export class ScheduleAssignmentsValidationUtils {
-  // /**
-  //  * Validates tenant
-  //  */
-  // static validateTenant(tenant: any): boolean {
-  //   if (!tenant || typeof tenant !== 'string') return false;
-  //   const trimmed = tenant.trim();
-  //   return (
-  //     trimmed.length >= SCHEDULE_EXCEPTION_VALIDATION.TENANT.MIN_LENGTH &&
-  //     trimmed.length <= SCHEDULE_EXCEPTION_VALIDATION.TENANT.MAX_LENGTH
-  //   );
-  // }
-
-  /**
-   * Validates user
-   */
-  static validateUser(user: any): boolean {
-    if (user === null || user === undefined) return true;
-    if (typeof user !== 'string') return false;
-    return (
-      user.length >= SCHEDULE_ASSIGNMENTS_VALIDATION.USER.MIN_LENGTH &&
-      user.length <= SCHEDULE_ASSIGNMENTS_VALIDATION.USER.MAX_LENGTH
-    );
+  static validateFamily(family: any): family is SAFamily {
+    return Object.values(SAFamily).includes(family);
   }
 
-  /**
-   * Validates groups
-   */
-  static validateGroups(groups: any): boolean {
-    if (groups === null || groups === undefined) return true;
-    if (typeof groups !== 'string') return false;
-    return (
-      groups.length >= SCHEDULE_ASSIGNMENTS_VALIDATION.GROUPS.MIN_LENGTH &&
-      groups.length <= SCHEDULE_ASSIGNMENTS_VALIDATION.GROUPS.MAX_LENGTH
-    );
-  }
-
-  /**
-   * Validates that either user or groups is specified (XOR)
-   */
-  static validateUserOrGroups(user: any, groups: any): boolean {
-    const hasUser = user !== null && user !== undefined;
-    const hasGroups = groups !== null && groups !== undefined;
-    return hasUser !== hasGroups; // XOR: exactly one must be true
+  static validateRelated(related: any): boolean {
+    if (!related || typeof related !== 'string') return false;
+    return related.length >= 1 && related.length <= 255;
   }
 
   /**
@@ -148,27 +115,12 @@ export class ScheduleAssignmentsValidationUtils {
       cleaned.tenant = cleaned.tenant.toString().trim();
     }
 
-    // Convert numeric fields
-    if (cleaned.user !== undefined && cleaned.user !== null) {
-      cleaned.user = parseInt(cleaned.user, 10);
-      if (isNaN(cleaned.user)) {
-        throw new Error('Invalid user: must be a valid integer');
-      }
+    if (cleaned.family !== undefined) {
+      cleaned.family = cleaned.family.toString().trim();
     }
-
-    if (cleaned.groups !== undefined && cleaned.groups !== null) {
-      cleaned.groups = parseInt(cleaned.groups, 10);
-      if (isNaN(cleaned.groups)) {
-        throw new Error('Invalid groups: must be a valid integer');
-      }
+    if (cleaned.related !== undefined && cleaned.related !== null) {
+      cleaned.related = cleaned.related.toString().trim();
     }
-
-    // if (cleaned.session_template !== undefined) {
-    //   cleaned.session_template = parseInt(cleaned.session_template, 10);
-    //   if (isNaN(cleaned.session_template)) {
-    //     throw new Error('Invalid session_template: must be a valid integer');
-    //   }
-    // }
 
     if (cleaned.created_by !== undefined && cleaned.created_by !== null) {
       cleaned.created_by = parseInt(cleaned.created_by, 10);
@@ -270,139 +222,9 @@ export class ScheduleAssignmentsValidationUtils {
   }
 
   /**
-   * Gets exceptions that apply to a specific date
-   */
-  static getExceptionsForDate(
-    exceptions: Array<{
-      start_date: string;
-      end_date: string;
-      active: boolean;
-      user?: number | null;
-      groups?: number | null;
-      session_template: number;
-    }>,
-    targetDate: Date,
-    userId?: number,
-    groupsId?: number,
-  ): Array<{
-    start_date: string;
-    end_date: string;
-    session_template: number;
-  }> {
-    return exceptions
-      .filter((ex) => {
-        // Must be active
-        if (!ex.active) return false;
-
-        // Must be within date range
-        if (!this.isDateInException(targetDate, ex.start_date, ex.end_date)) return false;
-
-        // Filter by user or groups if specified
-        if (userId !== undefined && ex.user !== userId) return false;
-        return !(groupsId !== undefined && ex.groups !== groupsId);
-      })
-      .map((ex) => ({
-        start_date: ex.start_date,
-        end_date: ex.end_date,
-        session_template: ex.session_template,
-      }));
-  }
-
-  /**
    * Formats date to YYYY-MM-DD
    */
   static formatDate(date: Date): string {
     return date.toISOString().split('T')[0]!;
-  }
-
-  /**
-   * Groups exceptions by user or groups
-   */
-  static groupsExceptions(
-    exceptions: Array<{
-      user?: number | null;
-      groups?: number | null;
-      start_date: string;
-      end_date: string;
-      session_template: number;
-    }>,
-  ): {
-    byUser: Map<number, Array<{ start_date: string; end_date: string; session_template: number }>>;
-    byGroups: Map<
-      number,
-      Array<{ start_date: string; end_date: string; session_template: number }>
-    >;
-  } {
-    const byUser = new Map<
-      number,
-      Array<{ start_date: string; end_date: string; session_template: number }>
-    >();
-    const byGroups = new Map<
-      number,
-      Array<{ start_date: string; end_date: string; session_template: number }>
-    >();
-
-    for (const exception of exceptions) {
-      const exData = {
-        start_date: exception.start_date,
-        end_date: exception.end_date,
-        session_template: exception.session_template,
-      };
-
-      if (exception.user) {
-        const userExceptions = byUser.get(exception.user) || [];
-        userExceptions.push(exData);
-        byUser.set(exception.user, userExceptions);
-      }
-
-      if (exception.groups) {
-        const groupsExceptions = byGroups.get(exception.groups) || [];
-        groupsExceptions.push(exData);
-        byGroups.set(exception.groups, groupsExceptions);
-      }
-    }
-
-    return { byUser, byGroups };
-  }
-
-  /**
-   * Validates that an exception doesn't conflict with existing exceptions
-   */
-  static validateNoConflict(
-    newException: {
-      start_date: string;
-      end_date: string;
-      user?: number | null;
-      groups?: number | null;
-    },
-    existingExceptions: Array<{
-      start_date: string;
-      end_date: string;
-      user?: number | null;
-      groups?: number | null;
-    }>,
-  ): boolean {
-    for (const existing of existingExceptions) {
-      // Check if they apply to the same user or groups
-      const sameTarget =
-        (newException.user && existing.user && newException.user === existing.user) ||
-        (newException.groups && existing.groups && newException.groups === existing.groups);
-
-      if (sameTarget) {
-        // Check if date ranges overlap
-        if (
-          this.checkDateRangeOverlap(
-            newException.start_date,
-            newException.end_date,
-            existing.start_date,
-            existing.end_date,
-          )
-        ) {
-          return false;
-        }
-      }
-    }
-
-    return true;
   }
 }
