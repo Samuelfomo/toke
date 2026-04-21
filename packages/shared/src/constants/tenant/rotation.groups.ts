@@ -38,7 +38,7 @@ export const ROTATION_GROUP_VALIDATION = {
 export const ROTATION_GROUP_DEFAULTS = {
   ACTIVE: true,
   CYCLE_UNIT: CycleUnit.DAY,
-  AUTO_ADVANCE: false,
+  AUTO_ADVANCE: true,
   ROTATION_STEP: 1,
   DIRECTION: Direction.BACKWARD,
   PAGINATION: {

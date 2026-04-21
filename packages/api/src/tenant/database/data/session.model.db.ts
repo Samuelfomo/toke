@@ -43,7 +43,7 @@ export const SessionModelDbStructure = {
     },
 
     workday: {
-      type: DataTypes.JSON,
+      type: DataTypes.JSONB,
       allowNull: false,
       comment: 'Working days of the company — e.g. ["Mon","Tue","Wed","Thu","Fri"]',
       validate: {

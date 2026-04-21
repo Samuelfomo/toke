@@ -48,7 +48,7 @@ export const SESSION_MODEL_DEFAULTS = {
   ROTATION_ALLOWED: false,
   EXTRA_ALLOWED: false,
   EARLY_LEAVE_ALLOWED: false,
-  LEAVE_IS_OPTIONAL: false,
+  LEAVE_IS_OPTIONAL: true,
   PAGINATION: {
     OFFSET: 0,
     LIMIT: 50,

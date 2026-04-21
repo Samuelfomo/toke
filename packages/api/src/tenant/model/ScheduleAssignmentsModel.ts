@@ -263,6 +263,8 @@ export default class ScheduleAssignmentsModel extends BaseModel {
     // Version initiale = 1
     this.version = this.initialVersion;
 
+    console.log('this.session_template', this.session_template);
+
     const lastID = await this.insertOne(this.db.tableName, {
       [this.db.guid]: guid,
       [this.db.tenant]: this.tenant,

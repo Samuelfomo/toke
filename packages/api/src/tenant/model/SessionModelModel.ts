@@ -183,7 +183,7 @@ export class SessionModelModel extends BaseModel {
     if (this.leave_is_optional !== undefined) {
       updateData[this.db.leave_is_optional] = this.leave_is_optional;
     }
-    const affected = await this.updateOne(this.db.tableName, { [this.db.id]: this.id }, updateData);
+    const affected = await this.updateOne(this.db.tableName, updateData, { [this.db.id]: this.id });
     if (!affected) {
       throw new Error('Failed to update Session');
     }

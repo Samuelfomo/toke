@@ -241,6 +241,9 @@ router.post('/', Ensure.post(), async (req: Request, res: Response) => {
       });
     }
 
+    // ✅ CORRECTION : créer un snapshot plain object avant de le stocker
+    const templateSnapshot = await ScheduleAssignments.createTemplateSnapshot(templateObj);
+
     const createdByObj = await User._load(validatedData.created_by, true);
     if (!createdByObj) {
       return R.handleError(res, HttpStatus.NOT_FOUND, {
@@ -253,7 +256,7 @@ router.post('/', Ensure.post(), async (req: Request, res: Response) => {
 
     const assignmentObj = new ScheduleAssignments()
       .setTenant(tenant.config.reference)
-      .setSessionTemplate(templateObj)
+      .setSessionTemplate(templateSnapshot)
       .setCreatedBy(createdByObj.getId()!)
       .setStartDate(validatedData.start_date)
       .setActive(validatedData.active ?? SCHEDULE_ASSIGNMENTS_DEFAULTS.ACTIVE);

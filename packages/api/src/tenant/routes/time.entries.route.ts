@@ -216,20 +216,18 @@ router.post(
         deviceObj.getId(),
       );
 
-      // 🆕 Log détaillé si rayon personnalisé utilisé
-      if (geofenceCheck.custom_device_radius_applied) {
-        //         console.log(`
-        // ⚡ RAYON PERSONNALISÉ DEVICE APPLIQUÉ
-        // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-        // Device: ${deviceObj?.getName()}
-        // Rayon Site: ${geofenceCheck.site_radius}m
-        // Rayon Device: ${geofenceCheck.device_radius}m
-        // Rayon Effectif: ${geofenceCheck.effective_radius}m
-        // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-        //         `);
-      }
-
-      // selon moi la mise a jours de la verification des habilitations a faire devrait se faire a ce niveau 👇
+      // // 🆕 Log détaillé si rayon personnalisé utilisé
+      // if (geofenceCheck.custom_device_radius_applied) {
+      //           console.log(`
+      //   ⚡ RAYON PERSONNALISÉ DEVICE APPLIQUÉ
+      //   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+      //   Device: ${deviceObj?.getName()}
+      //   Rayon Site: ${geofenceCheck.site_radius}m
+      //   Rayon Device: ${geofenceCheck.device_radius}m
+      //   Rayon Effectif: ${geofenceCheck.effective_radius}m
+      //   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+      //           `);
+      // }
 
       // TODO le qr_code est obligatoire car le pointage gps n'est pas encore implementé
       if (!validatedData.qr_code) {

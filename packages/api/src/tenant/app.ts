@@ -36,6 +36,7 @@ import groupsRoute from './routes/groups.route.js';
 import deviceRoute from './routes/device.route.js';
 import sessionModelRoute from './routes/session.model.route.js';
 import authRoute from './routes/auth.route.js';
+import attendanceStatRoute from './routes/attendance.stat.route.js';
 
 interface AppConfig {
   port: number;
@@ -246,6 +247,7 @@ export default class App {
     this.app.use('/devices', deviceRoute);
     this.app.use('/session-model', sessionModelRoute);
     this.app.use('/auth', authRoute);
+    this.app.use('/statistique', attendanceStatRoute);
 
     // Route 404
     this.app.use((req, res) => {

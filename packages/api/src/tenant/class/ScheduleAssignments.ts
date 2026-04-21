@@ -114,6 +114,7 @@ export default class ScheduleAssignments extends ScheduleAssignmentsModel {
    * Créer un snapshot du template depuis un SessionTemplate
    */
   static async createTemplateSnapshot(sessionTemplate: SessionTemplate): Promise<any> {
+    // const sessionModel = await sessionTemplate.getSessionModelObj();
     return {
       id: sessionTemplate.getId(),
       guid: sessionTemplate.getGuid(),
@@ -122,6 +123,12 @@ export default class ScheduleAssignments extends ScheduleAssignmentsModel {
       version: sessionTemplate.getVersion(),
       is_default: sessionTemplate.isDefaultSessionTemplate(),
       snapshot_date: new Date().toISOString(),
+      session_model: sessionTemplate.getSessionModel(),
+      // session_model: {
+      //   id: sessionModel?.getId(),
+      //   guid: sessionModel?.getGuid(),
+      //   name: sessionModel?.getName(),
+      // },
     };
   }
 
@@ -472,7 +479,6 @@ export default class ScheduleAssignments extends ScheduleAssignmentsModel {
     paginationOptions: { offset?: number; limit?: number } = {},
   ): Promise<ScheduleAssignments[] | null> {
     const dataset = await this.listAllByCreatedBy(manager, paginationOptions);
-    console.log('dataset', dataset);
     if (!dataset || dataset.length === 0) return null;
     return dataset.map((data) => new ScheduleAssignments().hydrate(data));
   }

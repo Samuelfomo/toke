@@ -107,7 +107,7 @@ const baseSchema = z.object({
     )
     .optional(),
 
-  leave_is_optional: z.boolean().default(false),
+  leave_is_optional: z.boolean().default(true),
 
   created_by: z
     .string({
@@ -168,20 +168,22 @@ const applyRefinements = (data: any, ctx: z.RefinementCtx) => {
     }
   }
   if (data.pause_allowed === false) {
-    if (data.pause_duration !== undefined) {
-      ctx.addIssue({
-        path: ['pause_duration'],
-        code: z.ZodIssueCode.custom,
-        message: 'pause_duration must not be provided when pause is disabled',
-      });
-    }
-    if (data.pause_count !== undefined) {
-      ctx.addIssue({
-        path: ['pause_count'],
-        code: z.ZodIssueCode.custom,
-        message: 'pause_count must not be provided when pause is disabled',
-      });
-    }
+    data.pause_duration = undefined;
+    data.pause_count = undefined;
+    // if (data.pause_duration !== undefined) {
+    //   ctx.addIssue({
+    //     path: ['pause_duration'],
+    //     code: z.ZodIssueCode.custom,
+    //     message: 'pause_duration must not be provided when pause is disabled',
+    //   });
+    // }
+    // if (data.pause_count !== undefined) {
+    //   ctx.addIssue({
+    //     path: ['pause_count'],
+    //     code: z.ZodIssueCode.custom,
+    //     message: 'pause_count must not be provided when pause is disabled',
+    //   });
+    // }
   }
 
   // extra cohérence
@@ -193,11 +195,12 @@ const applyRefinements = (data: any, ctx: z.RefinementCtx) => {
     });
   }
   if (data.extra_allowed === false && data.extra_max !== undefined) {
-    ctx.addIssue({
-      path: ['extra_max'],
-      code: z.ZodIssueCode.custom,
-      message: 'extra_max must not be provided when extra is disabled',
-    });
+    data.extra_max = undefined;
+    // ctx.addIssue({
+    //   path: ['extra_max'],
+    //   code: z.ZodIssueCode.custom,
+    //   message: 'extra_max must not be provided when extra is disabled',
+    // });
   }
 
   // leave cohérence
@@ -209,11 +212,13 @@ const applyRefinements = (data: any, ctx: z.RefinementCtx) => {
     });
   }
   if (data.leave_allowed === false && data.leave_eligibility_after_session !== undefined) {
-    ctx.addIssue({
-      path: ['leave_eligibility_after_session'],
-      code: z.ZodIssueCode.custom,
-      message: 'leave_eligibility_after_session must not be provided when early leave is disabled',
-    });
+    data.leave_eligibility_after_session = undefined;
+    data.leave_is_optional = true;
+    // ctx.addIssue({
+    //   path: ['leave_eligibility_after_session'],
+    //   code: z.ZodIssueCode.custom,
+    //   message: 'leave_eligibility_after_session must not be provided when early leave is disabled',
+    // });
   }
 
   // tolerance vs normal session

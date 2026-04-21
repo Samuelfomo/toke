@@ -157,7 +157,7 @@ export default class RotationGroupModel extends BaseModel {
       [this.db.name]: this.name,
       [this.db.cycle_unit]: this.cycle_unit,
       [this.db.direction]: this.direction || ROTATION_GROUP_DEFAULTS.DIRECTION,
-      [this.db.auto_advance]: this.auto_advance || ROTATION_GROUP_DEFAULTS.AUTO_ADVANCE,
+      [this.db.auto_advance]: this.auto_advance,
       [this.db.rotation_step]: this.rotation_step || ROTATION_GROUP_DEFAULTS.ROTATION_STEP,
       [this.db.start_date]: this.start_date,
       [this.db.active]: this.active ?? ROTATION_GROUP_DEFAULTS.ACTIVE,
