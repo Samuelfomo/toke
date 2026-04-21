@@ -1,4 +1,4 @@
-<template>
+``<template>
   <section class="alerts-insights-section">
     <!-- ================= CARDS MÉTRIQUES RAPIDES AMÉLIORÉES ================= -->
     <div class="metrics-cards">

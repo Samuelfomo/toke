@@ -5,6 +5,7 @@ import { useUserStore } from '@/stores/userStore'
 
 
 // const baseURL = `${import.meta.env.VITE_LOCAL_URL}:${import.meta.env.VITE_LOCAL_PORT}`;
+// const baseURL = `http://${import.meta.env.VITE_URL}`;
 const baseURL = `https://${import.meta.env.VITE_URL}`;
 
 interface ApiRequestConfig extends AxiosRequestConfig {
@@ -44,8 +45,8 @@ export const apiRequest = async <T = unknown>({ path, ...config }: ApiRequestCon
   } catch (error: any) {
     // Gestion d'erreur identique au fetch
     const status = error?.response?.status;
-    const message = error?.response?.data ?? error.message;
-    throw new Error(`HTTP ${status} - ${JSON.stringify(message)}`);
+    const message = error?.response?.data.error.message ?? error.message;
+    throw new Error(`HTTP ${status} - ${message}`);
   }
 };
 

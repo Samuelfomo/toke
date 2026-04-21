@@ -138,8 +138,8 @@
           <!-- Professional Info Grid -->
           <div class="fields-grid">
             <div class="field-group">
-              <label class="field-label">Code employé <span class="req">*</span></label>
-              <div class="input-wrap" :class="{ 'has-error': errors.employeeId }">
+              <label class="field-label">Code employé <span class="optional">(optionnel)</span></label>
+              <div class="input-wrap">
                 <span class="input-icon">
                   <svg width="15" height="15" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
@@ -160,16 +160,16 @@
             </div>
 
             <div class="field-group">
-              <label class="field-label">Département <span class="req">*</span></label>
-              <div class="input-wrap" :class="{ 'has-error': errors.department }">
+              <label class="field-label">Département <span class="optional">(optionnel)</span></label>
+              <div class="input-wrap">
                 <input v-model="formData.department" type="text" class="field-input" placeholder="Informatique"/>
               </div>
               <p v-if="errors.department" class="field-error">{{ errors.department }}</p>
             </div>
 
             <div class="field-group">
-              <label class="field-label">Date d'embauche <span class="req">*</span></label>
-              <div class="input-wrap" :class="{ 'has-error': errors.hireDate }">
+              <label class="field-label">Date d'embauche <span class="optional">(optionnel)</span></label>
+              <div class="input-wrap">
                 <span class="input-icon">
                   <svg width="15" height="15" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
@@ -210,8 +210,11 @@
 </template>
 
 <script setup lang="ts">
-import { ref, reactive, computed } from 'vue';
+import { ref, reactive, computed, watch } from 'vue';
 import UserService from '../service/UserService';
+import {useUserStore} from '@/stores/userStore'
+
+const useStore = useUserStore()
 
 // ─── Props ────────────────────────────────────────────────────────────────────
 
@@ -242,11 +245,8 @@ const props = withDefaults(defineProps<Props>(), {
 
 const emit = defineEmits<{
   (e: 'close'): void;
-  /**
-   * Émis après une création réussie avec les données de l'employé
-   * renvoyées par l'API (pas les données brutes du formulaire).
-   */
   (e: 'created', employee: any): void;
+  (e: 'updated', employee: any): void;
 }>();
 
 // ─── State ────────────────────────────────────────────────────────────────────
@@ -257,19 +257,37 @@ const isSubmitting = ref(false);
 const apiError = ref<string | null>(null);
 
 const formData = reactive({
-  avatar:       props.employee?.avatar     || '',
-  firstName:    props.employee?.firstName  || '',
-  lastName:     props.employee?.lastName   || '',
-  email:        props.employee?.email      || '',
-  phone:        props.employee?.phone      || '',
-  employeeId:   props.employee?.employeeId || '',
-  position:     props.employee?.position   || '',
-  department:   props.employee?.department || '',
-  hireDate:     props.employee?.hireDate   || '',
-  address: {
-    country: props.employee?.address?.country || 'CM'
-  }
+  avatar:     '',
+  firstName:  '',
+  lastName:   '',
+  email:      '',
+  phone:      '',
+  employeeId: '',
+  position:   '',
+  department: '',
+  hireDate:   '',
+  address: { country: 'CM' }
 });
+
+// Remplit (ou vide) le formulaire chaque fois que props.employee change.
+// Indispensable : reactive({}) n'est évalué qu'une seule fois au montage,
+// donc sans ce watch le formulaire ne se mettrait jamais à jour.
+watch(
+    () => props.employee,
+    (emp) => {
+      formData.avatar     = emp?.avatar      || emp?.avatar_url   || '';
+      formData.firstName  = emp?.firstName   || emp?.first_name   || '';
+      formData.lastName   = emp?.lastName    || emp?.last_name    || '';
+      formData.email      = emp?.email       || '';
+      formData.phone      = emp?.phone       || emp?.phoneNumber  || emp?.phone_number  || '';
+      formData.employeeId = emp?.employeeId  || emp?.employeeCode || emp?.employee_code || '';
+      formData.position   = emp?.position    || emp?.jobTitle     || emp?.job_title     || '';
+      formData.department = emp?.department  || '';
+      formData.hireDate   = emp?.hireDate    || emp?.hire_date    || '';
+      formData.address.country = emp?.address?.country || emp?.country || 'CM';
+    },
+    { immediate: true }  // s'exécute aussi au montage → remplace l'ancienne init statique
+);
 
 const errors = reactive({
   firstName: '', lastName: '', email: '', phone: '',
@@ -304,23 +322,10 @@ const validateForm = (): boolean => {
     errors.phone = 'Le numéro de téléphone est requis';
     valid = false;
   }
-  if (!formData.employeeId.trim()) {
-    errors.employeeId = 'Le code employé est requis';
-    valid = false;
-  }
   if (!formData.position.trim()) {
     errors.position = 'Le poste est requis';
     valid = false;
   }
-  if (!formData.department.trim()) {
-    errors.department = 'Le département est requis';
-    valid = false;
-  }
-  if (!formData.hireDate) {
-    errors.hireDate = "La date d'embauche est requise";
-    valid = false;
-  }
-
   return valid;
 };
 
@@ -352,25 +357,40 @@ const handleSubmit = async () => {
   apiError.value = null;
 
   try {
-    // Construire le payload propre via la méthode utilitaire du service
     const payload = UserService.buildCreatePayload(formData, props.supervisorGuid);
 
-    // Appel API
-    const response = await UserService.createEmployee(payload);
+    if (isEditing.value) {
 
-    if (!response.success) {
-      // L'API a retourné success: false avec un message
-      apiError.value = response.data?.message || "Une erreur est survenue lors de la création.";
-      return;
+      if (!useStore.user?.guid) return;
+      // ── MODE ÉDITION ──────────────────────────────────────
+      const response = await UserService.updateEmployee(props.employee.guid, useStore.user?.guid, payload);
+
+      if (!response.success) {
+        apiError.value = response.data?.message || "Erreur lors de la mise à jour.";
+        return;
+      }
+
+      emit('updated', { ...props.employee, ...payload, guid: props.employee.guid });
+
+    } else {
+      // ── MODE CRÉATION ──────────────────────────────────────
+      const response = await UserService.createEmployee(payload);
+
+      if (!response.success) {
+        apiError.value = response.data?.message || "Erreur lors de la création.";
+        return;
+      }
+
+      emit('created', response.data?.employee);
     }
+
     closeForm();
 
   } catch (error: any) {
-    // Erreur réseau ou erreur HTTP (4xx/5xx)
     const message =
-        error?.response?.data?.message  // message backend structuré
-        || error?.message               // message JS générique
-        || "Impossible de créer l'employé. Vérifiez votre connexion.";
+        error?.response?.data?.message
+        || error?.message
+        || "Une erreur est survenue. Vérifiez votre connexion.";
 
     apiError.value = message;
     console.error('❌ handleSubmit error:', error);
@@ -604,6 +624,7 @@ const closeForm = () => {
 }
 
 .req { color: #004AAD; }
+.optional { color: #94a3b8; font-weight: 400; font-size: 11px; }
 
 .input-wrap {
   position: relative;

@@ -35,7 +35,7 @@
           <div class="employee-left">
             <div class="avatar">
               <img v-if="employee.avatar" :src="employee.avatar" :alt="employee.name" />
-              <span v-else class="initials">{{ employee.initials }}</span>
+              <span v-else class="initial">{{ employee.initials }}</span>
               <span :class="['status-dot', getEffectiveStatus(employee) === 'late' ? 'dot-orange' : getStatusDotClass(employee.statusColor)]" />
             </div>
 

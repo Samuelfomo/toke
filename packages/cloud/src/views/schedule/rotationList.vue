@@ -410,7 +410,7 @@ function formatDate(dateString: string): string {
   border-radius: var(--border-radius, 8px);
   font-size: var(--font-size-body-sm, 0.875rem);
   font-weight: var(--font-weight-medium, 500);
-  color: var(--text-primary, #1f2937);
+  color: #FFFFFF;
   transition: all var(--transition-fast, 0.15s ease);
 }
 

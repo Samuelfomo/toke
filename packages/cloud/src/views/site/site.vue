@@ -1,6 +1,5 @@
 <template>
-  <div class="flex min-h-screen background: linear-gradient(90deg, rgba(0, 74, 173, 0.85) 0%, rgba(166, 200, 239, 0.73) 30%, rgba(67, 136, 228, 0.93) 70%);
-">
+  <div class="flex min-h-screen" style="background: linear-gradient(90deg, rgba(0, 74, 173, 0.85) 0%, rgba(166, 200, 239, 0.73) 30%, rgba(67, 136, 228, 0.93) 70%);">
     <div class="flex flex-col w-full">
       <!-- Header -->
       <Header />
@@ -15,8 +14,9 @@
             <p>Chargement des données...</p>
           </div>
 
-          <!-- Carte principale -->
-          <div v-else class="bg-[var(--bg-card)] rounded-[var(--border-radius-lg)] shadow-[var(--shadow-lg)] overflow-hidden">
+          <!-- Carte principale — overflow-hidden retiré pour ne pas couper les dropdowns -->
+          <div v-else class="bg-[var(--bg-card)] rounded-[var(--border-radius-lg)] shadow-[var(--shadow-lg)]">
+
             <!-- Barre d'actions -->
             <div class="p-6 border-b border-[var(--border-light)]">
               <div class="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-4">
@@ -68,7 +68,7 @@
               </div>
             </div>
 
-            <!-- Tableau -->
+            <!-- Tableau — overflow-x-auto conservé mais le dropdown s'échappe via Teleport -->
             <div class="overflow-x-auto">
               <table class="min-w-full divide-y divide-[var(--border-light)]">
                 <thead>
@@ -82,9 +82,6 @@
                   <th class="py-4 px-6 text-left text-[var(--font-size-body-sm)] font-semibold text-[var(--text-primary)] uppercase tracking-wider">
                     Ville
                   </th>
-                  <!--                  <th class="py-4 px-6 text-left text-[var(&#45;&#45;font-size-body-sm)] font-semibold text-[var(&#45;&#45;text-primary)] uppercase tracking-wider">-->
-                  <!--                    Localisation-->
-                  <!--                  </th>-->
                   <th class="py-4 px-6 text-center text-[var(--font-size-body-sm)] font-semibold text-[var(--text-primary)] uppercase tracking-wider">
                     Tolérance
                   </th>
@@ -128,9 +125,6 @@
                     {{ site.address?.city || 'N/A' }}
                     ({{ site.address?.location || 'N/A' }})
                   </td>
-                  <!--                  <td class="py-4 px-6 text-[var(&#45;&#45;font-size-body)] text-[var(&#45;&#45;text-secondary)]">-->
-                  <!--                    {{ site.address?.location || 'N/A' }}-->
-                  <!--                  </td>-->
                   <td class="py-4 px-6 text-center">
                       <span class="inline-flex items-center justify-center px-3 py-1 bg-[var(--bg-secondary)] rounded-[var(--border-radius-sm)]
                                    text-[var(--font-size-body-sm)] font-medium text-[var(--text-primary)]">
@@ -150,57 +144,18 @@
                   <td class="py-4 px-6 text-[var(--font-size-body-sm)] text-[var(--text-secondary)]">
                     {{ formatDate(site.created_at!) }}
                   </td>
+
+                  <!-- Cellule Actions — plus de "relative" nécessaire, le dropdown via Teleport -->
                   <td class="py-4 px-6 text-center">
-                    <div class="relative inline-block">
-                      <button @click.stop="toggleMenu(site.guid!)"
+                    <div class="inline-block">
+                      <button @click.stop="toggleMenu(site.guid!, $event)"
                               class="p-2 hover:bg-[var(--bg-secondary)] rounded-[var(--border-radius)]
-                                       transition-colors duration-[var(--transition-fast)]">
+                                     transition-colors duration-[var(--transition-fast)]">
                         <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-[var(--text-secondary)]"
                              viewBox="0 0 20 20" fill="currentColor">
                           <path d="M10 6a2 2 0 110-4 2 2 0 010 4zM10 12a2 2 0 110-4 2 2 0 010 4zM10 18a2 2 0 110-4 2 2 0 010 4z"/>
                         </svg>
                       </button>
-                      <div v-if="activeMenu === site.guid"
-                           class="absolute right-0 mt-2 w-56 rounded-[var(--border-radius-lg)]
-                                    shadow-[var(--shadow-xl)] bg-white border border-[var(--border-light)] z-50
-                                    overflow-hidden">
-                        <div class="py-2">
-                          <button @click="viewSiteMap(site.guid!)"
-                                  class="flex items-center w-full px-4 py-3 text-[var(--font-size-body-sm)]
-                                           text-[var(--text-primary)] hover:bg-[var(--bg-secondary)]
-                                           transition-colors duration-[var(--transition-fast)]">
-                            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-3 text-[var(--color-info)]"
-                                 fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                    d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4m0 0L9 7"/>
-                            </svg>
-                            Voir sur la carte
-                          </button>
-                          <button @click="editSite(site.guid!)"
-                                  class="flex items-center w-full px-4 py-3 text-[var(--font-size-body-sm)]
-                                           text-[var(--text-primary)] hover:bg-[var(--bg-secondary)]
-                                           transition-colors duration-[var(--transition-fast)]">
-                            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-3 text-[var(--color-primary)]"
-                                 fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                    d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/>
-                            </svg>
-                            Modifier
-                          </button>
-                          <div class="border-t border-[var(--border-light)] my-2"></div>
-                          <button @click="deleteSite(site.guid!)"
-                                  class="flex items-center w-full px-4 py-3 text-[var(--font-size-body-sm)]
-                                           text-[var(--color-error)] hover:bg-red-50
-                                           transition-colors duration-[var(--transition-fast)]">
-                            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-3" fill="none"
-                                 viewBox="0 0 24 24" stroke="currentColor">
-                              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                    d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/>
-                            </svg>
-                            Supprimer
-                          </button>
-                        </div>
-                      </div>
                     </div>
                   </td>
                 </tr>
@@ -226,7 +181,7 @@
 
             <!-- Pagination -->
             <div v-if="filteredSites.length > 0"
-                 class="px-6 py-4 border-t border-[var(--border-light)] bg-[var(--bg-secondary)]">
+                 class="px-6 py-4 border-t border-[var(--border-light)] bg-[var(--bg-secondary)] rounded-b-[var(--border-radius-lg)]">
               <div class="flex flex-col sm:flex-row justify-between items-center gap-4">
                 <div class="text-[var(--font-size-body-sm)] text-[var(--text-secondary)]">
                   Page <span class="font-medium text-[var(--text-primary)]">{{ currentPage }}</span>
@@ -264,6 +219,53 @@
       <!-- Footer -->
       <Footer />
 
+      <!-- ✅ DROPDOWN TELEPORTÉ dans le <body> — échappe à tous les overflow parents -->
+      <Teleport to="body">
+        <div v-if="activeMenu !== null"
+             :style="menuPosition"
+             class="fixed w-56 rounded-[var(--border-radius-lg)]
+                    shadow-[var(--shadow-xl)] bg-white border border-[var(--border-light)]
+                    overflow-hidden"
+             style="z-index: 9999;">
+          <div class="py-2">
+            <button @click="viewSiteMap(activeMenu!)"
+                    class="flex items-center w-full px-4 py-3 text-[var(--font-size-body-sm)]
+                           text-[var(--text-primary)] hover:bg-[var(--bg-secondary)]
+                           transition-colors duration-[var(--transition-fast)]">
+              <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-3 text-[var(--color-info)]"
+                   fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                      d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4m0 0L9 7"/>
+              </svg>
+              Voir sur la carte
+            </button>
+            <button @click="editSite(activeMenu!)"
+                    class="flex items-center w-full px-4 py-3 text-[var(--font-size-body-sm)]
+                           text-[var(--text-primary)] hover:bg-[var(--bg-secondary)]
+                           transition-colors duration-[var(--transition-fast)]">
+              <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-3 text-[var(--color-primary)]"
+                   fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                      d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/>
+              </svg>
+              Modifier
+            </button>
+            <div class="border-t border-[var(--border-light)] my-2"></div>
+            <button @click="deleteSite(activeMenu!)"
+                    class="flex items-center w-full px-4 py-3 text-[var(--font-size-body-sm)]
+                           text-[var(--color-error)] hover:bg-red-50
+                           transition-colors duration-[var(--transition-fast)]">
+              <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-3" fill="none"
+                   viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                      d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/>
+              </svg>
+              Supprimer
+            </button>
+          </div>
+        </div>
+      </Teleport>
+
       <!-- Message de notification -->
       <div ref="successMessage"
            :class="[
@@ -288,7 +290,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, computed, watch } from "vue";
+import { ref, onMounted, onBeforeUnmount, computed, watch } from "vue";
 import { useRouter } from 'vue-router';
 import gsap from "gsap";
 
@@ -296,7 +298,7 @@ import Header from "@/views/components/header.vue";
 import Footer from "@/views/components/footer.vue";
 import HeadBuilder from "@/utils/HeadBuilder";
 import SiteService from "@/service/SiteService";
-import {Site, Sites, SitesResponse} from "@/utils/interfaces/site.interface";
+import { Site, Sites, SitesResponse } from "@/utils/interfaces/site.interface";
 
 const router = useRouter();
 const isLoading = ref(false);
@@ -304,16 +306,25 @@ const sites = ref<Site[]>([]);
 const currentPage = ref(1);
 const entriesPerPage = ref(10);
 const searchTerm = ref('');
-const activeMenu = ref<any>(null);
+
+// ✅ activeMenu stocke le guid du site dont le menu est ouvert (null = fermé)
+const activeMenu = ref<string | null>(null);
+
+// ✅ Position calculée dynamiquement via getBoundingClientRect
+const menuPosition = ref<Record<string, string>>({});
+
 const successMessage = ref(null);
 const messageType = ref('success');
 const messageText = ref('');
+
+// ─── Navigation ────────────────────────────────────────────────────────────────
 
 const goToAddSite = () => {
   router.push('/sites/add');
 };
 
 const editSite = (guid: string) => {
+  activeMenu.value = null;
   router.push({
     name: 'edit',
     query: { guid: guid.toString() },
@@ -321,15 +332,50 @@ const editSite = (guid: string) => {
 };
 
 const viewSiteMap = (guid: string) => {
+  activeMenu.value = null;
   router.push({
     name: 'map',
     query: { guid: guid.toString() },
   });
 };
 
-const toggleMenu = (siteGuid: string) => {
-  activeMenu.value = activeMenu.value === siteGuid ? null : siteGuid;
+// ─── Menu contextuel ───────────────────────────────────────────────────────────
+
+/**
+ * Ouvre/ferme le menu contextuel en calculant sa position depuis le bouton cliqué.
+ * On utilise getBoundingClientRect() pour obtenir les coordonnées absolues dans
+ * la fenêtre, indépendamment de tout scroll ou overflow parent.
+ */
+const toggleMenu = (siteGuid: string, event: MouseEvent) => {
+  if (activeMenu.value === siteGuid) {
+    activeMenu.value = null;
+    return;
+  }
+
+  const btn = event.currentTarget as HTMLElement;
+  const rect = btn.getBoundingClientRect();
+
+  // Positionner le menu sous le bouton, aligné à droite
+  menuPosition.value = {
+    top: `${rect.bottom + 8}px`,
+    right: `${window.innerWidth - rect.right}px`,
+  };
+
+  activeMenu.value = siteGuid;
 };
+
+// ─── Fermeture au clic extérieur ───────────────────────────────────────────────
+
+const handleOutsideClick = (e: MouseEvent) => {
+  if (!activeMenu.value) return;
+  const target = e.target as HTMLElement;
+  // Ferme si le clic n'est pas sur un bouton d'action du tableau ni dans le dropdown
+  if (!target.closest('[data-menu-trigger]') && !target.closest('[data-menu-dropdown]')) {
+    activeMenu.value = null;
+  }
+};
+
+// ─── Utilitaires ───────────────────────────────────────────────────────────────
 
 const formatDate = (dateString: string) => {
   const date = new Date(dateString);
@@ -341,10 +387,10 @@ const formatDate = (dateString: string) => {
 };
 
 const deleteSite = async (guid: string) => {
+  activeMenu.value = null;
   if (!confirm('Êtes-vous sûr de vouloir supprimer ce site ?')) return;
 
   try {
-    // API call to delete site
     // await api.deleteSite(guid);
     messageType.value = 'success';
     messageText.value = 'Site supprimé avec succès';
@@ -375,6 +421,8 @@ const showMessage = () => {
   });
 };
 
+// ─── Chargement des données ────────────────────────────────────────────────────
+
 const loadSites = async () => {
   isLoading.value = true;
   try {
@@ -394,6 +442,8 @@ const loadSites = async () => {
   }
 };
 
+// ─── Lifecycle ────────────────────────────────────────────────────────────────
+
 onMounted(async () => {
   HeadBuilder.apply({
     title: 'Site - Toké',
@@ -402,17 +452,16 @@ onMounted(async () => {
   });
 
   await loadSites();
+
+  // Fermeture au clic en dehors du menu
+  document.addEventListener('click', handleOutsideClick);
 });
 
-const totalPages = computed(() => {
-  return Math.ceil(filteredSites.value.length / entriesPerPage.value);
+onBeforeUnmount(() => {
+  document.removeEventListener('click', handleOutsideClick);
 });
 
-const paginatedSites = computed(() => {
-  const startIndex = (currentPage.value - 1) * entriesPerPage.value;
-  const endIndex = startIndex + entriesPerPage.value;
-  return filteredSites.value.slice(startIndex, endIndex);
-});
+// ─── Computed ─────────────────────────────────────────────────────────────────
 
 const filteredSites = computed(() => {
   const term = searchTerm.value.toLowerCase();
@@ -426,9 +475,21 @@ const filteredSites = computed(() => {
       site.address?.location,
     ]
         .filter(Boolean)
-        .some(field => field.toLowerCase().includes(term));
+        .some((field: string) => field.toLowerCase().includes(term));
   });
 });
+
+const totalPages = computed(() => {
+  return Math.ceil(filteredSites.value.length / entriesPerPage.value);
+});
+
+const paginatedSites = computed(() => {
+  const startIndex = (currentPage.value - 1) * entriesPerPage.value;
+  const endIndex = startIndex + entriesPerPage.value;
+  return filteredSites.value.slice(startIndex, endIndex);
+});
+
+// ─── Pagination ───────────────────────────────────────────────────────────────
 
 function nextPage() {
   if (currentPage.value < totalPages.value) {
@@ -444,15 +505,6 @@ function prevPage() {
 
 watch([searchTerm, entriesPerPage], () => {
   currentPage.value = 1;
-});
-
-// Fermer le menu au clic extérieur
-onMounted(() => {
-  document.addEventListener('click', (e) => {
-    if (activeMenu.value && !(e.target as HTMLElement).closest('.relative')) {
-      activeMenu.value = null;
-    }
-  });
 });
 </script>
 

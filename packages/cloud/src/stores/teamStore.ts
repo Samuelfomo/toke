@@ -110,12 +110,21 @@ export const useTeamStore = defineStore('team', () => {
   }
 
   const addEmployee = (newEmployee: any) => {
-    const transformed = transformEmployee({
+    employees.value.unshift(transformEmployee({
       ...newEmployee,
       groupName: 'Sans groupe',
       groupGuid: null,
-    })
-    employees.value.unshift(transformed)
+    }))
+  }
+
+  const updateEmployee = (updatedEmployee: any) => {
+    const index = employees.value.findIndex(emp => emp.guid === updatedEmployee.guid)
+    if (index !== -1) {
+      employees.value[index] = transformEmployee({
+        ...employees.value[index],
+        ...updatedEmployee,
+      })
+    }
   }
 
   return {
@@ -133,6 +142,7 @@ export const useTeamStore = defineStore('team', () => {
     loadTeam,
     getEmployeeById,
     addEmployee,
+    updateEmployee,
     clearCache
   }
 },{

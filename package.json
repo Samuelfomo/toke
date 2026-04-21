@@ -26,6 +26,7 @@
     "file-saver": "^2.0.5",
     "glob": "^11.0.3",
     "pm2": "^6.0.8",
+    "qrcode.vue": "^3.8.1",
     "rimraf": "^6.0.1",
     "vite-plugin-html": "^3.2.2",
     "vite-plugin-vue-devtools": "^8.0.6",

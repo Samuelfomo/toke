@@ -19,7 +19,7 @@
           >
             <span class="vertical-nav-icon">📅</span>
             <div class="vertical-nav-content">
-              <span class="vertical-nav-label">Emplois du temps</span>
+              <span class="vertical-nav-label">Model d'emplois du temps</span>
               <span class="vertical-nav-badge">{{ schedules.length }}</span>
             </div>
           </button>
@@ -41,7 +41,7 @@
           >
             <div class="vertical-nav-icon"><IconCalendarUser class="w-10" /></div>
             <div class="vertical-nav-content">
-              <span class="vertical-nav-label">Assigner un emplois de temps</span>
+              <span class="vertical-nav-label">Assigner un model</span>
               <span class="vertical-nav-badge">{{ scheduleAssignments.length }}</span>
             </div>
           </button>
@@ -70,7 +70,7 @@
                 v-if="activeTab === 'schedules'"
             >
               <span class="btn-icon">+</span>
-              Créer un emploi du temps
+              Créer un model
             </button>
             <button
                 class="btn btn-primary"
@@ -86,7 +86,7 @@
                 v-if="activeTab === 'schedule-assignments'"
             >
               <span class="btn-icon">+</span>
-              Assigner un emplois de temps
+              Assigner un model emplois de temps
             </button>
             <button
                 class="btn btn-primary"

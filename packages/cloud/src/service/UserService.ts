@@ -1,8 +1,10 @@
 import { ApiResponse } from '@toke/shared';
 
 import { apiRequest } from '@/tools/Fetch.Client';
+import {UpdateSite} from "@/utils/interfaces/site.interface";
 
 const baseUrl = '/user';
+
 
 // ============================================
 // INTERFACE : CRÉATION D'EMPLOYÉ
@@ -217,26 +219,6 @@ export default class UserService {
   // CRÉATION D'UN EMPLOYÉ
   // ============================================
 
-  /**
-   * Crée un nouvel employé.
-   *
-   * @param payload - Les données du formulaire mappées au format attendu par l'API.
-   * @returns La réponse de l'API contenant les infos de l'employé créé.
-   *
-   * @example
-   * const result = await UserService.createEmployee({
-   *   supervisor: managerGuid,
-   *   email: 'jean.fomo@company.cm',
-   *   first_name: 'Jean',
-   *   last_name: 'Fomo',
-   *   phone_number: '651721536',
-   *   employee_code: 'EMP-2024-001',
-   *   hire_date: '2024-09-12',
-   *   department: 'INFO',
-   *   job_title: 'Développeur',
-   *   country: 'CM',
-   * });
-   */
   static async createEmployee(
       payload: CreateEmployeePayload
   ): Promise<ApiResponse<CreateEmployeeResponse['data']>> {
@@ -246,11 +228,33 @@ export default class UserService {
         method: 'POST',
         data: payload,
       });
-
-      console.log('✅ Employé créé avec succès:', response);
       return response;
     } catch (error: any) {
       console.error('❌ Erreur lors de la création de l\'employé:', error);
+      throw error;
+    }
+  }
+
+  // ============================================
+  // MODIFICATION D'UN EMPLOYE
+  // ============================================
+
+  static async updateEmployee(
+      employeeGuid: string,
+      manager: string,
+      payload: Partial<CreateEmployeePayload>
+  ): Promise<ApiResponse> {
+    try {
+
+      const response = await apiRequest<ApiResponse>({
+        path: `${baseUrl}/${employeeGuid}?manager=${manager}`,
+        method: 'PUT',
+        data: payload,
+      });
+      console.log('✅ Employé mis à jour:', response);
+      return response;
+    } catch (error: any) {
+      console.error('❌ Erreur lors de la mise à jour de l\'employé:', error);
       throw error;
     }
   }
