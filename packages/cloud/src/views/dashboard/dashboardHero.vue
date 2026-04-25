@@ -1,107 +1,504 @@
 <template>
-  <section class="dashboard-hero">
-    <!-- ================= HEADER ================= -->
-    <div class="hero-header">
-      <div class="hero-left">
-        <h1 class="hero-title">
-          Tableau de Bord
-          <span class="employee-count">({{ employeeCount }} employés)</span>
-        </h1>
-        <div class="date-bar">
-          <!-- Badge date : toujours visible, affiche aujourd'hui en normal, la période en analytique -->
-          <span class="date-badge">
-            📅 {{ displayedRange }}
-          </span>
-          <!-- Indicateur de mode actif -->
-          <span class="mode-badge" :class="isAnalyticsMode ? 'mode-analytics' : 'mode-normal'">
-            {{ isAnalyticsMode ? '📊 Analytique' : '📋 Normal' }}
-          </span>
+  <section class="flex flex-col gap-6 py-5">
+
+    <!-- ═══════════════════════ HEADER + FILTRES ═══════════════════════ -->
+    <div class="flex items-center gap-4 bg-white shadow-md rounded-md
+            px-5 py-3.5">
+
+      <!-- Logo + titre + badge -->
+      <div class="flex items-center gap-3 shrink-0">
+        <div class="w-9 h-9 bg-blue-50 rounded-xl flex items-center justify-center shrink-0">
+          <svg viewBox="0 0 24 24" fill="blue" class="w-5 h-5">
+            <rect x="2" y="12" width="4" height="10" rx="1"/><rect x="9" y="7" width="4" height="15" rx="1"/>
+            <rect x="16" y="2" width="4" height="20" rx="1"/>
+          </svg>
+        </div>
+        <span class="text-xl font-bold text-slate-900 tracking-tight">Tableau de Bord</span>
+        <span class="text-xs font-semibold text-blue-600 bg-blue-50 border border-blue-100
+                 px-2.5 py-1 rounded-full">
+      {{ employeeCount }} employés
+    </span>
+      </div>
+
+      <!-- Séparateur -->
+      <div class="hidden md:block w-px h-8 bg-slate-200 shrink-0"></div>
+
+      <div class="flex items-center gap-2">
+
+        <!-- JOUR -->
+        <button
+            @click="selectPreset('day')"
+            :class="chipClass('day')"
+        >
+          📅 Jour
+        </button>
+
+        <!-- SEMAINE -->
+        <button
+            @click="selectPreset('week')"
+            :class="chipClass('week')"
+        >
+          📊 Semaine
+        </button>
+
+        <!-- PERSONNALISÉ -->
+        <button
+            @click="selectPreset('custom')"
+            :class="chipClass('custom')"
+        >
+          🗓️ Période
+        </button>
+
+      </div>
+      <div class="justify-between items-center gap-2">
+
+        <!-- Date range -->
+        <div
+            v-if="selectedPreset === 'custom'"
+            class="flex items-center gap-2 bg-white border border-slate-200 rounded-xl
+                      px-3.5 py-2 focus-within:border-blue-400
+                      focus-within:ring-2 focus-within:ring-blue-100 transition-all">
+          <div class="flex flex-col gap-0.5">
+            <label class="text-[0.65rem] font-bold uppercase tracking-wider text-slate-400">Début</label>
+            <input
+                type="date"
+                v-model="customStartDate"
+                :max="customEndDate || today"
+                class="border-none bg-transparent text-sm font-semibold text-slate-900
+                       outline-none cursor-pointer w-32"
+            />
+          </div>
+          <span class="text-slate-300 font-bold">→</span>
+          <div class="flex flex-col gap-0.5">
+            <label class="text-[0.65rem] font-bold uppercase tracking-wider text-slate-400">Fin</label>
+            <input
+                type="date"
+                v-model="customEndDate"
+                :min="customStartDate"
+                :max="today"
+                :disabled="!customStartDate"
+                :class="[
+                  'border-none bg-transparent text-sm font-semibold text-slate-900 outline-none cursor-pointer w-32',
+                  !customStartDate ? 'opacity-40 cursor-not-allowed' : '',
+                  customStartDate && !customEndDate ? 'animate-pulse' : ''
+                ]"
+                @change="onEndDateChange"
+            />
+          </div>
+          <!-- Loader inline -->
+          <div v-if="isLoading" class="flex items-center gap-1 pl-1">
+              <span v-for="i in 3" :key="i"
+                    class="w-1.5 h-1.5 bg-blue-500 rounded-full animate-bounce"
+                    :style="{ animationDelay: `${(i - 1) * 0.15}s` }"
+              />
+          </div>
         </div>
       </div>
 
-      <!-- ================= FILTER BAR ================= -->
-      <div class="filter-bar">
-
-        <!-- GROUPE : hint + bouton Jour + champs dates -->
-        <div class="period-group">
-          <!-- INDICATION PÉRIODE -->
-          <div class="period-hint">
-            <p class="period-hint-text">📊 Personnalisez une période pour voir son analytique</p>
-            <p class="period-hint-nb">
-              <strong>N.B :</strong> Pour analyser un jour précis, sélectionnez la même date en début et en fin de période.
-            </p>
+      <!-- Picker dates (dropdown inline) -->
+      <transition name="slide-fade">
+        <div
+            v-if="showPeriodPicker"
+            class="absolute top-full mt-2 left-0 z-50 bg-white border border-slate-200
+             rounded-2xl shadow-xl p-4 flex flex-col gap-3 min-w-[280px]"
+        >
+          <!-- Bouton Aujourd'hui -->
+          <button
+              class="w-full text-left text-xs font-semibold px-3 py-2 rounded-xl transition-colors"
+              :class="!isAnalyticsMode
+          ? 'bg-blue-600 text-white'
+          : 'bg-slate-50 text-slate-700 hover:bg-slate-100'"
+              @click="switchToNormal"
+          >
+            📋 Aujourd'hui
+          </button>
+          <!-- Inputs dates -->
+          <div class="flex items-center gap-2">
+            <div class="flex flex-col gap-0.5 flex-1">
+              <label class="text-[0.6rem] font-bold uppercase tracking-widest text-slate-400">Début</label>
+              <input type="date" v-model="customStartDate" :max="customEndDate || today"
+                     class="border border-slate-200 rounded-lg px-2 py-1.5 text-sm font-semibold
+                        text-slate-800 outline-none focus:border-blue-400 w-full" />
+            </div>
+            <span class="text-slate-300 font-bold mt-4">→</span>
+            <div class="flex flex-col gap-0.5 flex-1">
+              <label class="text-[0.6rem] font-bold uppercase tracking-widest text-slate-400">Fin</label>
+              <input type="date" v-model="customEndDate" :min="customStartDate" :max="today"
+                     :disabled="!customStartDate"
+                     class="border border-slate-200 rounded-lg px-2 py-1.5 text-sm font-semibold
+                        text-slate-800 outline-none focus:border-blue-400 w-full
+                        disabled:opacity-40 disabled:cursor-not-allowed"
+                     @change="onEndDateChange" />
+            </div>
           </div>
+          <!-- Loader -->
+          <div v-if="isLoading" class="flex justify-center gap-1 py-1">
+        <span v-for="i in 3" :key="i"
+              class="w-1.5 h-1.5 bg-blue-500 rounded-full animate-bounce"
+              :style="{ animationDelay: `${(i-1)*0.15}s` }" />
+          </div>
+        </div>
+      </transition>
 
-          <!-- CONTRÔLES : bouton Jour + champs dates -->
-          <div class="period-controls">
-            <!-- BOUTON JOUR : repasse en mode normal -->
-            <div class="period-switch">
-              <button
-                  :class="{ active: !isAnalyticsMode }"
-                  @click="switchToNormal"
-                  title="Revenir au mode normal (aujourd'hui)">
-                📋 Jour
-              </button>
-            </div>
+      <!-- Séparateur -->
+      <div class="hidden md:block w-px h-8 bg-slate-200 shrink-0"></div>
 
-            <!-- DATE DÉBUT (toujours visible) -->
-            <div class="date-range-inputs">
-              <div class="date-field">
-                <label class="date-field-label">Début</label>
-                <input
-                    type="date"
-                    v-model="customStartDate"
-                    :max="customEndDate || today"
-                    class="date-input"
-                    title="Date de début de la période analytique"
-                />
-              </div>
-
-              <span class="range-arrow">→</span>
-
-              <!-- DATE FIN : déclenche le chargement -->
-              <div class="date-field">
-                <label class="date-field-label">Fin</label>
-                <input
-                    type="date"
-                    v-model="customEndDate"
-                    :min="customStartDate"
-                    :max="today"
-                    class="date-input"
-                    :disabled="!customStartDate"
-                    :class="{ 'input-ready': customStartDate && !customEndDate }"
-                    @change="onEndDateChange"
-                    title="Sélectionnez la date de fin pour lancer l'analyse"
-                />
-              </div>
-
-              <!-- Loader inline quand on attend -->
-              <div v-if="isLoading" class="inline-loader">
-                <span class="loader-dot"></span>
-                <span class="loader-dot"></span>
-                <span class="loader-dot"></span>
-              </div>
-            </div>
-          </div><!-- fin period-controls -->
-        </div><!-- fin period-group -->
-
-        <!-- EMPLOYEE -->
-<!--        <div class="employee-filter">-->
-<!--          <select v-model="selectedEmployee" @change="emitFilters" class="employee-select">-->
-<!--            <option value="">Tous les employés</option>-->
-<!--            <option v-for="emp in employees" :key="emp.id" :value="emp.id">{{ emp.name }}</option>-->
-<!--          </select>-->
-<!--        </div>-->
+      <!-- Sélecteur SITES -->
+      <div class="flex items-center gap-2.5 border border-slate-200 rounded-xl px-4 py-2.5
+              hover:border-blue-300 transition-colors cursor-pointer">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+             class="w-4 h-4 text-slate-400 shrink-0">
+          <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/>
+          <circle cx="12" cy="10" r="3"/>
+        </svg>
+        <div class="flex flex-col min-w-0">
+          <span class="text-[0.6rem] font-bold uppercase tracking-widest text-slate-400">Sites</span>
+          <span class="text-sm font-semibold text-slate-800">Tous les sites</span>
+        </div>
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+             class="w-4 h-4 text-slate-400 shrink-0">
+          <polyline points="6 9 12 15 18 9"/>
+        </svg>
       </div>
+
+      <!-- Spacer -->
+      <div class="flex-1"></div>
+
+      <!-- Bouton Exporter -->
+      <button
+          class="flex items-center gap-2 border border-slate-200 rounded-xl px-4 py-2.5
+           text-sm font-semibold text-white bg-blue-600 transition-colors shrink-0"
+          @click="$emit('export')"
+      >
+        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"
+             fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
+             class="w-4 h-4 text-slate-100"
+        >
+          <path stroke="none" d="M0 0h24v24H0z" fill="none" />
+          <path d="M14 3v4a1 1 0 0 0 1 1h4" />
+          <path d="M11.5 21h-4.5a2 2 0 0 1 -2 -2v-14a2 2 0 0 1 2 -2h7l5 5v5m-5 6h7m-3 -3l3 3l-3 3" />
+        </svg>
+        Exporter le rapport
+      </button>
+
     </div>
 
+    <!-- ═══════════════════════ KPI CARDS (6) ═══════════════════════ -->
+    <div class="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-6 gap-3">
+
+      <!-- 1 · Taux de présence -->
+      <div class="relative flex flex-col gap-3 bg-[#F5FCF8] border border-slate-200 rounded-md p-4
+              shadow-sm hover:shadow-md hover:-translate-y-0.5 transition-all duration-200">
+        <div class="flex items-start justify-between">
+          <div class="flex items-center gap-3">
+            <div class="w-10 h-10 rounded-xl bg-emerald-100 text-emerald-600 flex items-center justify-center shrink-0">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="w-5 h-5">
+                <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
+                <circle cx="9" cy="7" r="4"/>
+                <path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/>
+              </svg>
+            </div>
+            <span class="text-sm font-semibold text-slate-600">Taux de présence</span>
+          </div>
+          <button class="text-slate-600 hover:text-slate-900 transition-colors">
+            <svg viewBox="0 0 24 24" fill="currentColor" class="w-6 h-6">
+              <circle cx="5" cy="12" r="1.5"/><circle cx="12" cy="12" r="1.5"/>
+              <circle cx="19" cy="12" r="1.5"/>
+            </svg>
+          </button>
+        </div>
+        <p class="text-3xl font-extrabold text-slate-900 tracking-tight leading-none text-center">
+          {{ attendanceRate }}<span class="text-xl">%</span>
+        </p>
+        <div class="flex items-center gap-1.5">
+      <span
+          class="flex items-center gap-0.5 text-xs font-bold px-1.5 py-0.5 rounded-md"
+          :class="attendanceRate >= 80
+          ? 'bg-emerald-50 text-emerald-700'
+          : 'bg-red-50 text-red-600'"
+      >
+        {{ attendanceRate >= 80 ? '↑' : '↓' }} {{ Math.abs(attendanceRate - 80) }}%
+      </span>
+          <span class="text-xs text-slate-400">vs période précédente</span>
+        </div>
+      </div>
+
+      <!-- 2 · Ponctualité -->
+      <div class="relative flex flex-col gap-3 bg-[#FFFEFC] border border-slate-200 rounded-md p-4
+              shadow-sm hover:shadow-md hover:-translate-y-0.5 transition-all duration-200">
+        <div class="flex items-start justify-between">
+          <div class="flex items-center gap-3">
+            <div class="w-10 h-10 rounded-xl bg-amber-50 text-amber-500 flex items-center justify-center shrink-0">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="w-5 h-5">
+                <circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/>
+              </svg>
+            </div>
+            <span class="text-sm font-semibold text-slate-600">Ponctualité</span>
+          </div>
+          <button class="text-slate-600 hover:text-slate-900 transition-colors">
+            <svg viewBox="0 0 24 24" fill="currentColor" class="w-6 h-6">
+              <circle cx="5" cy="12" r="1.5"/><circle cx="12" cy="12" r="1.5"/>
+              <circle cx="19" cy="12" r="1.5"/>
+            </svg>
+          </button>
+        </div>
+        <p class="text-3xl font-extrabold text-slate-900 tracking-tight leading-none text-center">
+          {{ punctualityRate }}<span class="text-xl">%</span>
+        </p>
+        <div class="flex items-center gap-1.5">
+      <span class="flex items-center gap-0.5 text-xs font-bold px-1.5 py-0.5 rounded-md
+                   bg-red-50 text-red-600">
+        ↓ {{ Math.round(summary.average_delay_minutes) }} min
+      </span>
+          <span class="text-xs text-slate-400">retard moyen</span>
+        </div>
+      </div>
+
+      <!-- 3 · Absences -->
+      <div
+          class="relative flex flex-col gap-3 bg-[linear-gradient(90deg,_rgba(245,245,245,1)_0%,_rgba(242,242,242,1)_87%,_rgba(245,245,245,1)_100%)] rounded-md p-4 shadow-sm
+           hover:shadow-md hover:-translate-y-0.5 transition-all duration-200"
+          :class="summary.total_absences > 0
+      ? 'border border-red-200'
+      : 'border border-slate-200'"
+      >
+        <div class="flex items-start justify-between">
+          <div class="flex items-center gap-3">
+            <div
+                class="w-10 h-10 rounded-xl flex items-center justify-center shrink-0"
+                :class="summary.total_absences > 0 ? 'bg-red-100 text-red-500' : 'bg-slate-50 text-slate-400'"
+            >
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="w-5 h-5">
+                <circle cx="12" cy="12" r="10"/>
+                <line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/>
+              </svg>
+            </div>
+            <span class="text-sm font-semibold text-slate-600">Absences</span>
+          </div>
+          <button class="text-slate-600 hover:text-slate-900 transition-colors">
+            <svg viewBox="0 0 24 24" fill="currentColor" class="w-6 h-6">
+              <circle cx="5" cy="12" r="1.5"/><circle cx="12" cy="12" r="1.5"/>
+              <circle cx="19" cy="12" r="1.5"/>
+            </svg>
+          </button>
+        </div>
+        <p class="text-3xl font-extrabold tracking-tight leading-none text-center"
+           :class="summary.total_absences > 0 ? 'text-red-600' : 'text-slate-900'">
+          {{ summary.total_absences }}
+        </p>
+        <div class="flex items-center gap-1.5">
+      <span
+          v-if="summary.total_absences > 0"
+          class="flex items-center gap-0.5 text-xs font-bold px-1.5 py-0.5 rounded-md
+               bg-red-50 text-red-600"
+      >
+        ↓ {{ summary.justification_status?.without_memo ?? 0 }} sans mémo
+      </span>
+          <span v-else class="flex items-center gap-0.5 text-xs font-bold px-1.5 py-0.5 rounded-md
+                          bg-emerald-50 text-emerald-700">
+        ✓ Équipe complète
+      </span>
+        </div>
+      </div>
+      <!-- 4 · Présences hors planning -->
+      <div
+          class="relative flex flex-col gap-3 bg-[#FAFAFA] rounded-md p-4 shadow-sm
+           hover:shadow-md hover:-translate-y-0.5 transition-all duration-200"
+          :class="summary.total_anomaly_off_days > 0
+      ? 'ring-1 ring-orange-200'
+      : ''"
+      >
+        <div class="flex items-start justify-between">
+          <div class="flex items-center gap-3">
+            <div
+                class="w-10 h-10 rounded-xl flex items-center justify-center shrink-0"
+                :class="summary.total_anomaly_off_days > 0 ? 'bg-red-50 text-red-500' : 'bg-slate-200 text-slate-400'"
+            >
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="w-5 h-5">
+                <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/>
+                <line x1="12" y1="9" x2="12" y2="13"/>
+                <line x1="12" y1="17" x2="12.01" y2="17"/>
+              </svg>
+            </div>
+            <span class="text-sm font-semibold text-slate-600">Hors planning</span>
+          </div>
+          <button class="text-slate-600 hover:text-slate-900 transition-colors">
+            <svg viewBox="0 0 24 24" fill="currentColor" class="w-6 h-6">
+              <circle cx="5" cy="12" r="1.5"/><circle cx="12" cy="12" r="1.5"/>
+              <circle cx="19" cy="12" r="1.5"/>
+            </svg>
+          </button>
+        </div>
+        <div class="flex items-center gap-1.5 justify-center">
+          <p class="text-3xl font-extrabold tracking-tight leading-none"
+             :class="summary.total_anomaly_off_days > 0 ? 'text-warning' : 'text-slate-500'">
+            {{ summary.total_anomaly_off_days }}
+          </p>
+          <p class="text-xs text-slate-400">Anomalies détectées</p>
+        </div>
+        <div
+            class="text-xs font-semibold px-2 py-1 rounded-lg"
+            :class="(summary.total_anomaly_off_days ?? 0) > 0 ? 'bg-red-50 text-red-700' : 'bg-emerald-50 text-emerald-700'"
+        >
+          {{ summary.unexpected_presence?.employees_concerned ?? 0 }} employé(s)
+        </div>
+      </div>
+
+      <!-- 5 · Couverture équipe -->
+      <div class="relative flex flex-col gap-3 bg-[radial-gradient(circle,_rgba(215,230,245,1)_100%,_rgba(252,252,252,1)_100%,_rgba(215,230,245,1)_100%)] border border-slate-200 rounded-md p-4
+              shadow-sm hover:shadow-md hover:-translate-y-0.5 transition-all duration-200">
+        <div class="flex items-start justify-between">
+          <div class="flex items-center gap-3">
+            <div class="w-10 h-10 rounded-xl bg-blue-50 text-blue-500 flex items-center justify-center shrink-0">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="w-5 h-5">
+                <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
+                <circle cx="9" cy="7" r="4"/>
+                <path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/>
+              </svg>
+            </div>
+            <span class="text-sm font-semibold text-slate-600">Couverture équipe</span>
+          </div>
+          <button class="text-slate-600 hover:text-slate-900 transition-colors">
+            <svg viewBox="0 0 24 24" fill="currentColor" class="w-6 h-6">
+              <circle cx="5" cy="12" r="1.5"/><circle cx="12" cy="12" r="1.5"/>
+              <circle cx="19" cy="12" r="1.5"/>
+            </svg>
+          </button>
+        </div>
+        <p class="text-3xl font-extrabold text-slate-900 tracking-tight leading-none text-center">
+          {{ coverageRate }}<span class="text-xl">%</span>
+        </p>
+        <div class="flex items-center gap-1.5">
+      <span
+          class="flex items-center gap-0.5 text-xs font-bold px-1.5 py-0.5 rounded-md"
+          :class="(summary.team_coverage?.missing_count ?? 0) > 0
+          ? 'bg-red-50 text-red-600'
+          : 'bg-emerald-50 text-emerald-700'"
+      >
+        {{ (summary.team_coverage?.missing_count ?? 0) > 0 ? '↓' : '✓' }}
+        {{ summary.team_coverage?.missing_count ?? 0 }} manquant(s)
+      </span>
+        </div>
+      </div>
+
+      <!-- 6 · Heures travaillées -->
+      <div class="relative flex flex-col gap-3 bg-[radial-gradient(circle,_rgba(248,245,250,1)_100%,_rgba(252,252,252,1)_100%,_rgba(248,245,250,1)_100%)] border border-slate-200 rounded-md p-4
+              shadow-sm hover:shadow-md hover:-translate-y-0.5 transition-all duration-200">
+        <div class="flex items-start justify-between">
+          <div class="flex items-center gap-3">
+            <div class="w-10 h-10 rounded-xl bg-violet-100 text-violet-500 flex items-center justify-center shrink-0">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="w-5 h-5">
+                <rect x="3" y="4" width="18" height="18" rx="2" ry="2"/>
+                <line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/>
+                <line x1="3" y1="10" x2="21" y2="10"/>
+              </svg>
+            </div>
+            <span class="text-sm font-semibold text-slate-600">Heures travaillées</span>
+          </div>
+          <button class="text-slate-600 hover:text-slate-900 transition-colors">
+            <svg viewBox="0 0 24 24" fill="currentColor" class="w-6 h-6">
+              <circle cx="5" cy="12" r="1.5"/><circle cx="12" cy="12" r="1.5"/>
+              <circle cx="19" cy="12" r="1.5"/>
+            </svg>
+          </button>
+        </div>
+        <p class="text-3xl font-extrabold text-slate-900 tracking-tight leading-none text-center">
+          {{ formattedWorkHours }}
+        </p>
+        <span class="text-xs text-slate-400">
+      Moy. {{ summary.average_work_hours_per_day?.toFixed(1) ?? '0.0' }}h/jour
+    </span>
+      </div>
+
+    </div>
+
+    <!-- ═══════════════════════ BANNIÈRE ANOMALIE ═══════════════════════ -->
+    <transition name="slide-fade">
+      <div
+          v-if="showAnomalyBanner"
+          class="flex flex-col sm:flex-row sm:items-center gap-4
+               bg-red-50 border border-red-200 rounded-2xl px-5 py-4"
+      >
+        <!-- Icône + texte -->
+        <div class="flex items-center gap-3 shrink-0">
+          <div class="w-9 h-9 bg-red-100 text-red-600 rounded-xl flex items-center justify-center shrink-0">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="w-5 h-5">
+              <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/>
+              <line x1="12" y1="9" x2="12" y2="13"/>
+              <line x1="12" y1="17" x2="12.01" y2="17"/>
+            </svg>
+          </div>
+          <div>
+            <p class="text-sm font-bold text-red-800">Anomalies détectées</p>
+            <p class="text-xs text-red-600">
+              {{ summary.total_anomaly_off_days }} présence(s) hors planning sur la période
+            </p>
+          </div>
+        </div>
+
+        <!-- Avatars des employés concernés -->
+        <div class="flex items-center gap-2 flex-wrap">
+          <div
+              v-for="occ in (summary.unexpected_presence?.occurrences ?? []).slice(0, 3)"
+              :key="occ.employee_guid + occ.date"
+              class="w-8 h-8 rounded-full bg-red-200 text-red-800 text-xs font-bold
+                   flex items-center justify-center border-2 border-white shadow-sm"
+              :title="occ.employee_name"
+          >
+            {{ occ.employee_name.split(' ').map((n: string) => n[0]).join('').toUpperCase().slice(0, 2) }}
+          </div>
+          <span
+              v-if="(summary.unexpected_presence?.occurrences?.length ?? 0) > 3"
+              class="text-xs font-bold text-red-600 bg-red-100 px-2 py-1 rounded-full"
+          >
+            +{{ (summary.unexpected_presence?.occurrences?.length ?? 0) - 3 }}
+          </span>
+        </div>
+
+        <!-- Dernière anomalie -->
+        <div
+            v-if="summary.unexpected_presence?.occurrences?.[0]"
+            class="flex items-center gap-2 flex-wrap text-xs"
+        >
+          <span class="text-slate-400">Dernière anomalie :</span>
+          <span class="font-semibold text-slate-800">
+            {{ summary.unexpected_presence.occurrences[0].employee_name }}
+          </span>
+          <span class="bg-slate-100 text-slate-600 px-2 py-0.5 rounded-full font-semibold">
+            Jour OFF
+          </span>
+          <span class="text-slate-500 flex items-center gap-1">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="w-3 h-3">
+              <circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/>
+            </svg>
+            {{ formatAnomalyDate(summary.unexpected_presence.occurrences[0].date) }}
+            à {{ summary.unexpected_presence.occurrences[0].clock_in_time?.slice(0, 5) ?? '—' }}
+          </span>
+          <span class="text-orange-600 font-semibold">Présence non prévue</span>
+        </div>
+
+        <!-- CTA -->
+        <a
+            :href="summary.unexpected_presence?.action?.deep_link ?? '#'"
+            class="ml-auto shrink-0 flex items-center gap-1.5 text-sm font-semibold
+                 text-red-700 bg-white border border-red-200 px-4 py-2 rounded-xl
+                 hover:bg-red-700 hover:text-white transition-all"
+        >
+          Voir toutes les anomalies
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="w-4 h-4">
+            <line x1="5" y1="12" x2="19" y2="12"/>
+            <polyline points="12 5 19 12 12 19"/>
+          </svg>
+        </a>
+      </div>
+    </transition>
 
   </section>
 </template>
 
 <script setup lang="ts">
-import { ref, computed, watch } from 'vue'
-import type { Summary } from '@/service/UserService'
+import {computed, ref, watch} from 'vue'
+import type {Summary} from '@/utils/interfaces/stat.interface'
 
 interface Employee {
   id: number | string
@@ -118,49 +515,104 @@ interface Props {
 }
 
 const props = defineProps<Props>()
-const emit = defineEmits(['filter-change'])
+const emit = defineEmits(['filter-change', 'export'])
 
 const today = new Date().toISOString().split('T')[0]
-
 const selectedEmployee = ref('')
 const customStartDate  = ref('')
 const customEndDate    = ref('')
 const isLoading        = ref(false)
+const showPeriodPicker = ref(false)
+const togglePeriodPicker = () => { showPeriodPicker.value = !showPeriodPicker.value }
 
-// Mode analytique = true si le parent a confirmé une période valide
-// On utilise les props du parent comme source de vérité (résiste au rechargement des données)
+const selectedPreset = ref<'day' | 'week' | 'custom'>('day')
+
+const chipClass = (type: string) => {
+  return [
+    'px-3 py-1.5 rounded-xl text-sm font-semibold transition-all border',
+    selectedPreset.value === type
+        ? 'bg-blue-600 text-white border-blue-600 shadow-sm'
+        : 'bg-white text-slate-600 border-slate-200 hover:border-blue-300'
+  ]
+}
+
+// ─── KPI Computeds ────────────────────────────────────────────────────────────
+const attendanceRate = computed(() => {
+  const expected = props.summary?.total_expected_workdays ?? 0
+  if (expected === 0) return 0
+  const present = (props.summary?.total_present_on_time ?? 0) + (props.summary?.total_late_arrivals ?? 0)
+  return Math.round((present / expected) * 100)
+})
+
+const punctualityRate = computed(() => {
+  const total = (props.summary?.total_present_on_time ?? 0) + (props.summary?.total_late_arrivals ?? 0)
+  if (total === 0) return 0
+  return Math.round(((props.summary?.total_present_on_time ?? 0) / total) * 100)
+})
+
+const periodLabel = computed(() => {
+  const start = customStartDate.value
+  const end = customEndDate.value
+
+  if (!start && !end) return 'Jour'
+
+  if (start && end) {
+    return start === end ? 'Jour' : 'Période'
+  }
+
+  return 'Période'
+})
+
+const coverageRate = computed(() => props.summary?.team_coverage?.coverage_rate ?? 0)
+
+const employeeCount = computed(() => props.summary?.total_team_members ?? 0)
+
+/** Heures : affichage "156h 30m" */
+const formattedWorkHours = computed(() => {
+  const total = props.summary?.total_work_hours ?? 0
+  const h = Math.floor(total)
+  const m = Math.round((total - h) * 60)
+  if (m === 0) return `${h}h`
+  return `${h}h ${m}m`
+})
+
+const showAnomalyBanner = computed(() =>
+    (props.summary?.unexpected_presence?.status === 'critical' ||
+        props.summary?.unexpected_presence?.status === 'warning') &&
+    (props.summary?.total_anomaly_off_days ?? 0) > 0
+)
+
+// ─── Mode analytique ──────────────────────────────────────────────────────────
 const isAnalyticsMode = computed(
     () => props.activeViewMode === 'analytics'
         || !!(customStartDate.value && customEndDate.value && customStartDate.value <= customEndDate.value)
 )
 
-// ─── Formatage ──────────────────────────────────────────────────────────────
+// ─── Formatage ────────────────────────────────────────────────────────────────
 const fmtDate = (iso: string) =>
     new Date(iso + 'T12:00:00').toLocaleDateString('fr-FR', {
       day: '2-digit', month: 'long', year: 'numeric'
     })
 
+const formatAnomalyDate = (iso: string) =>
+    new Date(iso + 'T12:00:00').toLocaleDateString('fr-FR', {
+      day: '2-digit', month: 'long', year: 'numeric'
+    })
+
 const displayedRange = computed(() => {
-  // Priorité aux props du parent (source de vérité après rechargement des données)
   const start = props.activeStartDate || customStartDate.value
   const end   = props.activeEndDate   || customEndDate.value
-
   if (props.activeViewMode === 'analytics' && start && end) {
     return `${fmtDate(start)} → ${fmtDate(end)}`
   }
-  // Fallback sur les refs locales (pendant la saisie, avant l'emit)
   if (customStartDate.value && customEndDate.value) {
     return `${fmtDate(customStartDate.value)} → ${fmtDate(customEndDate.value)}`
   }
   return fmtDate(today)
-});
+})
 
-const employeeCount = computed(() => props.summary?.total_team_members ?? 0)
-
-// ─── Emit principal ──────────────────────────────────────────────────────────
+// ─── Emit principal ───────────────────────────────────────────────────────────
 const emitFilters = () => {
-  // En mode analytique : utiliser les refs locales (saisie en cours)
-  // ou les props du parent comme fallback (après rechargement)
   const startDate = isAnalyticsMode.value
       ? (customStartDate.value || props.activeStartDate || today)
       : today
@@ -177,25 +629,19 @@ const emitFilters = () => {
   })
 }
 
-// ─── Déclenché UNIQUEMENT par la date de fin ─────────────────────────────────
 const onEndDateChange = async () => {
   if (!customStartDate.value || !customEndDate.value) return
   if (customEndDate.value < customStartDate.value) return
-
   isLoading.value = true
-  // Petit délai pour laisser le DOM se mettre à jour (UX)
   await new Promise(r => setTimeout(r, 120))
   emitFilters()
   isLoading.value = false
 }
 
-// ─── Retour mode normal (bouton Jour) ────────────────────────────────────────
 const switchToNormal = () => {
   customStartDate.value = ''
   customEndDate.value   = ''
   isLoading.value       = false
-  // Émettre directement avec today sans passer par emitFilters()
-  // car isAnalyticsMode est toujours true à cet instant (computed pas encore ré-évalué)
   emit('filter-change', {
     startDate:  today,
     endDate:    today,
@@ -205,295 +651,79 @@ const switchToNormal = () => {
   })
 }
 
-// ─── Sync des champs avec les props du parent ────────────────────────────────
-// Quand le parent confirme les dates (après rechargement), on remet les valeurs
-// dans les champs pour qu'elles restent affichées
-watch(() => props.activeStartDate, (val) => {
-  if (val && val !== customStartDate.value) {
-    customStartDate.value = val
+const selectPreset = (preset: 'day' | 'week' | 'custom') => {
+  selectedPreset.value = preset
+
+  const todayDate = new Date().toISOString().split('T')[0]
+
+  if (preset === 'day') {
+    customStartDate.value = todayDate
+    customEndDate.value = todayDate
+    emitFilters()
   }
+
+  if (preset === 'week') {
+    const now = new Date()
+    const start = new Date()
+    start.setDate(now.getDate() - 7)
+
+    customStartDate.value = start.toISOString().split('T')[0]
+    customEndDate.value = todayDate
+
+    emitFilters()
+  }
+
+  if (preset === 'custom') {
+    // ne déclenche rien tant que l'utilisateur ne choisit pas les dates
+  }
+}
+
+const detectPresetFromDates = (start?: string, end?: string) => {
+  if (!start || !end) return 'day'
+
+  const todayDate = new Date().toISOString().split('T')[0]
+
+  // Jour
+  if (start === todayDate && end === todayDate) {
+    return 'day'
+  }
+
+  // Semaine (7 derniers jours)
+  const now = new Date()
+  const weekStart = new Date()
+  weekStart.setDate(now.getDate() - 7)
+
+  const startStr = weekStart.toISOString().split('T')[0]
+
+  if (start === startStr && end === todayDate) {
+    return 'week'
+  }
+
+  // Sinon → custom
+  return 'custom'
+}
+
+watch(
+    () => [props.activeStartDate, props.activeEndDate],
+    ([start, end]) => {
+      selectedPreset.value = detectPresetFromDates(start, end)
+    },
+    { immediate: true }
+)
+
+watch(() => props.activeStartDate, (val) => {
+  if (val !== undefined) customStartDate.value = val || ''
 })
 
 watch(() => props.activeEndDate, (val) => {
-  if (val && val !== customEndDate.value) {
-    customEndDate.value = val
-  }
+  if (val !== undefined) customEndDate.value = val || ''
 })
 
-// Quand on revient en mode normal, vider les champs
 watch(() => props.activeViewMode, (val) => {
-  if (val === 'normal') {
+  if (val === 'normal' && !props.activeStartDate && !props.activeEndDate) {
     customStartDate.value = ''
     customEndDate.value   = ''
   }
 })
+
 </script>
-
-<style scoped>
-.dashboard-hero {
-  display: flex;
-  flex-direction: column;
-  gap: 1rem;
-}
-
-/* ── Header ── */
-.hero-header {
-  display: grid;
-  grid-template-columns: 1fr auto;
-  gap: 1.5rem;
-  padding: 1.75rem 2rem;
-  border-radius: 20px;
-  background: linear-gradient(135deg, #ffffff, #f8fafc);
-  border: 1px solid #e2e8f0;
-  box-shadow: 0 12px 30px rgba(0, 0, 0, 0.06);
-  align-items: center;
-}
-
-.hero-title {
-  font-size: 2rem;
-  font-weight: 800;
-  margin: 0 0 10px;
-  color: #0f172a;
-}
-.employee-count {
-  background: #eef2ff;
-  padding: .2rem .6rem;
-  border-radius: 999px;
-  font-size: .82rem;
-  font-weight: 600;
-  color: #4f46e5;
-}
-
-/* ── Date bar ── */
-.date-bar {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
-
-.date-badge {
-  background: linear-gradient(135deg, #3b82f6, #2563eb);
-  color: white;
-  padding: .45rem .9rem;
-  border-radius: 999px;
-  font-weight: 600;
-  font-size: .82rem;
-  box-shadow: 0 4px 12px rgba(59, 130, 246, .3);
-}
-
-.mode-badge {
-  padding: .35rem .8rem;
-  border-radius: 999px;
-  font-size: .78rem;
-  font-weight: 700;
-  letter-spacing: .02em;
-  transition: all .3s ease;
-}
-.mode-normal    { background: #f1f5f9; color: #64748b; }
-.mode-analytics { background: linear-gradient(135deg, #f0fdf4, #dcfce7); color: #16a34a; border: 1px solid #bbf7d0; }
-
-/* ── Period group (hint + contrôles) ── */
-.period-group {
-  display: flex;
-  flex-direction: column;
-  gap: .45rem;
-  align-items: flex-start;
-}
-
-.period-controls {
-  display: flex;
-  align-items: center;
-  gap: .75rem;
-}
-
-/* ── Period hint ── */
-.period-hint {
-  background: #eff6ff;
-  border: 1px solid #bfdbfe;
-  border-radius: 10px;
-  padding: .5rem .85rem;
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
-}
-.period-hint-text {
-  margin: 0;
-  font-size: .8rem;
-  font-weight: 700;
-  color: #1d4ed8;
-}
-.period-hint-nb {
-  margin: 0;
-  font-size: .74rem;
-  color: #475569;
-}
-.period-hint-nb strong {
-  color: #1d4ed8;
-}
-
-/* ── Filter bar ── */
-.filter-bar {
-  display: flex;
-  gap: .75rem;
-  flex-wrap: wrap;
-  align-items: center;
-  justify-content: flex-end;
-}
-
-/* ── Bouton Jour ── */
-.period-switch {
-  background: white;
-  border: 1px solid #e2e8f0;
-  border-radius: 14px;
-  padding: .4rem;
-  display: flex;
-}
-
-.period-switch button {
-  cursor: pointer;
-  border: none;
-  background: transparent;
-  padding: .45rem .9rem;
-  border-radius: 10px;
-  font-weight: 600;
-  font-size: .85rem;
-  color: #64748b;
-  transition: all .2s;
-}
-.period-switch button:hover { background: #f1f5f9; }
-.period-switch button.active {
-  background: linear-gradient(135deg, #3b82f6, #2563eb);
-  color: white;
-  box-shadow: 0 4px 10px rgba(59, 130, 246, .35);
-}
-
-/* ── Date range inputs ── */
-.date-range-inputs {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  background: white;
-  border: 1px solid #e2e8f0;
-  border-radius: 14px;
-  padding: .5rem .9rem;
-  transition: border-color .25s, box-shadow .25s;
-}
-
-.date-range-inputs:focus-within {
-  border-color: #3b82f6;
-  box-shadow: 0 0 0 3px rgba(59, 130, 246, .12);
-}
-
-.date-field {
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
-}
-.date-field-label {
-  font-size: .68rem;
-  font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: .05em;
-  color: #94a3b8;
-}
-
-.date-input {
-  border: none;
-  background: transparent;
-  font-weight: 600;
-  font-size: .84rem;
-  color: #0f172a;
-  cursor: pointer;
-  outline: none;
-  padding: 2px 0;
-}
-.date-input:disabled {
-  color: #cbd5e0;
-  cursor: not-allowed;
-}
-/* Pulsation quand on attend la date de fin */
-.date-input.input-ready {
-  animation: pulse-input 1.4s ease-in-out infinite;
-}
-@keyframes pulse-input {
-  0%, 100% { opacity: 1; }
-  50%       { opacity: .45; }
-}
-
-.range-arrow {
-  font-size: 1rem;
-  color: #94a3b8;
-  font-weight: 700;
-  padding: 0 2px;
-}
-
-/* ── Loader inline ── */
-.inline-loader {
-  display: flex;
-  align-items: center;
-  gap: 4px;
-  padding-left: 4px;
-}
-.loader-dot {
-  width: 5px; height: 5px;
-  background: #3b82f6;
-  border-radius: 50%;
-  animation: bounce-dot .8s ease-in-out infinite;
-}
-.loader-dot:nth-child(2) { animation-delay: .15s; }
-.loader-dot:nth-child(3) { animation-delay: .3s; }
-@keyframes bounce-dot {
-  0%, 100% { transform: translateY(0); opacity: .4; }
-  50%       { transform: translateY(-4px); opacity: 1; }
-}
-
-/* ── Employee filter ── */
-.employee-filter {
-  background: white;
-  border: 1px solid #e2e8f0;
-  border-radius: 14px;
-  padding: .4rem .7rem;
-  display: flex;
-  align-items: center;
-}
-.employee-select {
-  border: none;
-  background: transparent;
-  font-weight: 600;
-  font-size: .84rem;
-  color: #0f172a;
-  cursor: pointer;
-  outline: none;
-}
-
-
-
-/* ── Transitions ── */
-.slide-fade-enter-active { transition: all .3s cubic-bezier(.34, 1.56, .64, 1); }
-.slide-fade-leave-active { transition: all .2s ease; }
-.slide-fade-enter-from  { opacity: 0; transform: translateY(-8px); }
-.slide-fade-leave-to    { opacity: 0; transform: translateY(-6px); }
-
-.fade-badge-enter-active { transition: opacity .25s ease, transform .25s ease; }
-.fade-badge-leave-active { transition: opacity .2s ease, transform .2s ease; }
-.fade-badge-enter-from   { opacity: 0; transform: scale(.9); }
-.fade-badge-leave-to     { opacity: 0; transform: scale(.9); }
-
-/* Badge date dans le bandeau analytique */
-.date-badge-analytics {
-  background: white;
-  color: #166534;
-  border: 1px solid #86efac;
-  box-shadow: none;
-  font-size: .82rem;
-  font-weight: 700;
-  padding: .35rem .85rem;
-}
-
-/* ── Responsive ── */
-@media (max-width: 900px) {
-  .hero-header { grid-template-columns: 1fr; }
-  .filter-bar  { justify-content: flex-start; }
-  .date-range-inputs { flex-wrap: wrap; }
-}
-</style>

@@ -2,7 +2,7 @@
  * Interfaces pour la gestion des pointages et de l'historique
  */
 
-import type { DailyDetail, PeriodStats, EmployeeInfo } from '@/service/UserService';
+import type { DailyDetail, PeriodStats, EmployeeInfo } from './stat.interface';
 
 // ============================================
 // HISTORIQUE DES POINTAGES

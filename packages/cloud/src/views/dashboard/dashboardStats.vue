@@ -1,99 +1,320 @@
 <template>
-  <section class="dashboard-stats">
-    <h3 class="section-title">
-      📊 Statistiques de Présence
-    </h3>
+  <section class="flex flex-col gap-4 py-5">
 
-    <div class="stats-grid">
+    <!-- ═══════════════════ ROW 1 : Doughnut + Line chart ═══════════════════ -->
+    <div class="grid grid-cols-1 xl:grid-cols-3 gap-4">
 
-      <!-- ================= PREMIER DOUGHNUT - PRÉSENTS/ABSENTS ================= -->
-      <div class="stats-card">
-        <h4 class="card-title">Présence vs Absence</h4>
-        <div class="absence-wrapper">
-          <div class="doughnut-box">
-            <Doughnut :data="presenceAbsenceData" :options="doughnutOptions" />
-            <div class="center-text">
-              <strong>{{ totalWorkingDay }}</strong>
-              <span>Au travail</span>
+      <!-- ── Répartition des statuts (doughnut unique) ── -->
+      <div class="bg-white border border-slate-200 rounded-md p-5 shadow-sm
+                  hover:-translate-y-0.5 hover:shadow-md transition-all duration-200">
+
+        <h4 class="text-sm font-bold text-slate-800 mb-4">Répartition des statuts</h4>
+
+        <div class="flex items-center gap-5">
+          <!-- Doughnut -->
+          <div class="relative w-[160px] h-[160px] shrink-0">
+            <Doughnut :data="statusDistributionData" :options="doughnutOptions" />
+            <div class="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
+              <span class="text-2xl font-extrabold text-slate-900">{{ totalMembers }}</span>
+              <span class="text-xs text-slate-400 font-medium">Employés</span>
             </div>
           </div>
 
-          <div class="absence-legend">
-            <div class="legend-item">
-              <span class="dot present-global"></span>
-              <div class="legend-text">
-                <span class="legend-label">Présents</span>
-                <strong>{{ totalPresent }}</strong>
+          <!-- Légende -->
+          <div class="flex flex-col gap-2 flex-1 min-w-0">
+
+            <!-- À l'heure -->
+            <div class="flex items-center justify-between gap-2 bg-emerald-50 rounded-xl px-3 py-2">
+              <div class="flex items-center gap-2">
+                <span class="w-2.5 h-2.5 rounded-full bg-emerald-500 shrink-0"></span>
+                <span class="text-xs font-medium text-slate-600">À l'heure</span>
               </div>
+              <span class="text-xs font-bold text-slate-800">
+                {{ summary.total_present_on_time }}
+                <span class="text-slate-400 font-normal">({{ percent(summary.total_present_on_time) }}%)</span>
+              </span>
             </div>
-            <div class="legend-item">
-              <span class="dot absent"></span>
-              <div class="legend-text">
-                <span class="legend-label">Absents</span>
-                <strong>{{ props.summary.total_absences }}</strong>
+
+            <!-- En retard -->
+            <div class="flex items-center justify-between gap-2 bg-amber-50 rounded-xl px-3 py-2">
+              <div class="flex items-center gap-2">
+                <span class="w-2.5 h-2.5 rounded-full bg-amber-500 shrink-0"></span>
+                <span class="text-xs font-medium text-slate-600">En retard</span>
               </div>
+              <span class="text-xs font-bold text-slate-800">
+                {{ summary.total_late_arrivals }}
+                <span class="text-slate-400 font-normal">({{ percent(summary.total_late_arrivals) }}%)</span>
+              </span>
             </div>
+
+            <!-- Absents -->
+            <div class="flex items-center justify-between gap-2 bg-red-50 rounded-xl px-3 py-2">
+              <div class="flex items-center gap-2">
+                <span class="w-2.5 h-2.5 rounded-full bg-red-500 shrink-0"></span>
+                <span class="text-xs font-medium text-slate-600">Absents</span>
+              </div>
+              <span class="text-xs font-bold text-slate-800">
+                {{ summary.total_absences }}
+                <span class="text-slate-400 font-normal">({{ percent(summary.total_absences) }}%)</span>
+              </span>
+            </div>
+
+            <!-- Jour OFF -->
+            <div class="flex items-center justify-between gap-2 bg-slate-50 rounded-xl px-3 py-2">
+              <div class="flex items-center gap-2">
+                <span class="w-2.5 h-2.5 rounded-full bg-slate-300 shrink-0"></span>
+                <span class="text-xs font-medium text-slate-600">Jour OFF</span>
+              </div>
+              <span class="text-xs font-bold text-slate-800">
+                {{ summary.total_off_days }}
+                <span class="text-slate-400 font-normal">({{ percent(summary.total_off_days) }}%)</span>
+              </span>
+            </div>
+
+            <!-- Anomalies (si présent) -->
+            <div
+                v-if="(summary.total_anomaly_off_days ?? 0) > 0"
+                class="flex items-center justify-between gap-2 bg-orange-50 rounded-xl px-3 py-2"
+            >
+              <div class="flex items-center gap-2">
+                <span class="w-2.5 h-2.5 rounded-full bg-orange-500 shrink-0"></span>
+                <span class="text-xs font-medium text-slate-600">Hors planning</span>
+              </div>
+              <span class="text-xs font-bold text-orange-700">
+                {{ summary.total_anomaly_off_days }}
+              </span>
+            </div>
+
           </div>
+        </div>
+
+        <!-- Insight actionable ponctualité -->
+        <div
+            v-if="summary.average_delay_minutes > 0"
+            class="mt-4 flex items-start gap-2 bg-amber-50 border border-amber-100
+                 rounded-xl px-3 py-2.5"
+        >
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+               class="w-4 h-4 text-amber-600 shrink-0 mt-0.5">
+            <circle cx="12" cy="12" r="10"/>
+            <polyline points="12 6 12 12 16 14"/>
+          </svg>
+          <span class="text-xs text-amber-800">
+            Retard moyen :
+            <strong>{{ Math.round(summary.average_delay_minutes) }} min</strong>
+            — Envisager un rappel matinal
+          </span>
         </div>
       </div>
 
-      <!-- ================= DEUXIÈME DOUGHNUT - PONCTUALITÉ ================= -->
-      <div class="stats-card">
-        <h4 class="card-title">Ponctualité</h4>
-        <div class="absence-wrapper">
-          <div class="doughnut-box">
-            <Doughnut :data="punctualityData" :options="doughnutOptions" />
-            <div class="center-text">
-              <strong>{{ totalPresent }}</strong>
-              <span>Présents</span>
-            </div>
-          </div>
+      <!-- ── Évolution quotidienne (line chart) ── -->
+      <div class="xl:col-span-2 bg-white border border-slate-200 rounded-md p-5 shadow-sm
+                  hover:-translate-y-0.5 hover:shadow-md transition-all duration-200">
 
-          <div class="absence-legend">
-            <div class="legend-item">
-              <span class="dot present"></span>
-              <div class="legend-text">
-                <span class="legend-label">À l'heure</span>
-                <strong>{{ props.summary.total_present_on_time }}</strong>
-              </div>
+        <div class="flex flex-wrap items-start justify-between gap-3 mb-4">
+          <h4 class="text-sm font-bold text-slate-800">Évolution quotidienne de la présence</h4>
+
+          <!-- Mini-résumé en ligne -->
+          <div class="flex flex-wrap gap-3">
+            <div class="flex flex-col items-end">
+              <span class="text-[0.65rem] font-semibold uppercase tracking-wide text-slate-400">Présence</span>
+              <strong class="text-sm font-extrabold text-emerald-600">{{ attendanceRate }}%</strong>
             </div>
-            <div class="legend-item">
-              <span class="dot late"></span>
-              <div class="legend-text">
-                <span class="legend-label">En retard</span>
-                <strong>{{ props.summary.total_late_arrivals }}</strong>
-              </div>
+            <div class="flex flex-col items-end">
+              <span class="text-[0.65rem] font-semibold uppercase tracking-wide text-slate-400">Ponctualité</span>
+              <strong class="text-sm font-extrabold text-blue-600">{{ punctualityRate }}%</strong>
+            </div>
+            <div class="flex flex-col items-end">
+              <span class="text-[0.65rem] font-semibold uppercase tracking-wide text-slate-400">Absences</span>
+              <strong class="text-sm font-extrabold text-red-500">{{ summary.total_absences }}</strong>
+            </div>
+            <div class="flex flex-col items-end">
+              <span class="text-[0.65rem] font-semibold uppercase tracking-wide text-slate-400">Anomalies</span>
+              <strong
+                  class="text-sm font-extrabold"
+                  :class="(summary.total_anomaly_off_days ?? 0) > 0 ? 'text-orange-500' : 'text-slate-300'"
+              >
+                {{ summary.total_anomaly_off_days ?? 0 }}
+              </strong>
+            </div>
+            <div class="flex flex-col items-end">
+              <span class="text-[0.65rem] font-semibold uppercase tracking-wide text-slate-400">Jours ouvrés</span>
+              <strong class="text-sm font-extrabold text-slate-700">{{ workdayCount }}</strong>
             </div>
           </div>
         </div>
-      </div>
 
-      <!-- ================= LINE CHART ================= -->
-      <div class="stats-card wide">
-        <h4 class="card-title">Répartition des Employés par Statut</h4>
-
-        <!-- Résumé rapide -->
-        <div class="quick-summary">
-          <div class="summary-item">
-            <span class="summary-label">Total équipe:</span>
-            <strong>{{ totalEmployees }}</strong>
-          </div>
-          <div class="summary-item">
-            <span class="summary-label">Devraient travailler:</span>
-            <strong>{{ props.summary.total_expected_workdays }}</strong>
-          </div>
-          <div class="summary-item">
-            <span class="summary-label">Taux de présence:</span>
-            <strong class="text-success">{{ attendanceRate }}%</strong>
-          </div>
-          <div class="summary-item">
-            <span class="summary-label">Taux de ponctualité:</span>
-            <strong class="text-info">{{ punctualityRate }}%</strong>
-          </div>
-        </div>
-
-        <div class="chart-container">
+        <!-- Line chart -->
+        <div class="h-[200px]">
           <Line v-if="lineChartData" :data="lineChartData" :options="lineChartOptions as any" />
+        </div>
+
+        <!-- Insight absences actionable -->
+        <div
+            v-if="(summary.justification_status?.without_memo ?? 0) > 0"
+            class="mt-3 flex items-start gap-2 bg-red-50 border border-red-100
+                 rounded-xl px-3 py-2.5"
+        >
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+               class="w-4 h-4 text-red-600 shrink-0 mt-0.5">
+            <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/>
+            <line x1="12" y1="9" x2="12" y2="13"/>
+            <line x1="12" y1="17" x2="12.01" y2="17"/>
+          </svg>
+          <span class="text-xs text-red-800">
+            <strong>{{ summary.justification_status.without_memo }}</strong>
+            absence(s) sans mémo sur
+            <strong>{{ summary.total_absences }}</strong> au total —
+            <strong>{{ summary.justification_status.pending_validation }}</strong> en attente de validation.
+          </span>
+        </div>
+      </div>
+    </div>
+
+    <!-- ═══════════════════ ROW 2 : Absents + Anomalies (conditionnels) ═══════════════════ -->
+    <div
+        v-if="absentEmployees.length > 0 || (summary.total_anomaly_off_days ?? 0) > 0"
+        class="grid grid-cols-1 md:grid-cols-2 gap-4"
+    >
+
+      <!-- ── Absents du jour ── -->
+      <div
+          v-if="absentEmployees.length > 0"
+          class="bg-white border border-red-50 rounded-md p-5 shadow-sm"
+      >
+        <div class="flex items-center justify-between mb-4">
+          <h4 class="text-sm font-bold text-slate-800 flex items-center gap-2">
+            <span class="w-2 h-2 rounded-full bg-red-500"></span>
+            Absents
+            <span class="bg-red-100 text-red-700 text-xs font-bold px-2 py-0.5 rounded-full">
+              {{ absentEmployees.length }}
+            </span>
+          </h4>
+          <!-- Alerte 50%+ -->
+          <span
+              v-if="absentEmployees.length >= Math.ceil(summary.total_team_members / 2)"
+              class="text-xs font-bold text-red-600 bg-red-50 border border-red-200
+                   px-2 py-1 rounded-lg"
+          >
+            ⚠ +50% absents
+          </span>
+        </div>
+
+        <div class="flex flex-col gap-2">
+          <div
+              v-for="emp in absentEmployees"
+              :key="emp.guid"
+              class="flex items-center gap-3 p-2.5 rounded-xl bg-slate-50
+                   hover:bg-red-50 cursor-pointer transition-colors"
+              @click="$emit('employee-click', emp)"
+          >
+            <!-- Avatar -->
+            <div class="w-8 h-8 rounded-full bg-red-100 text-red-700 text-xs font-bold
+                        flex items-center justify-center shrink-0">
+              {{ emp.initials }}
+            </div>
+            <!-- Info -->
+            <div class="flex flex-col min-w-0 flex-1">
+              <span class="text-xs font-semibold text-slate-800 truncate">{{ emp.name }}</span>
+              <span class="text-xs text-slate-400 truncate">{{ emp.job_title }}</span>
+            </div>
+            <!-- Badge -->
+            <span class="text-xs font-semibold text-red-700 bg-red-100 px-2 py-0.5 rounded-full shrink-0">
+              Absent
+            </span>
+          </div>
+        </div>
+
+        <!-- Insight critique -->
+        <div
+            v-if="absentEmployees.length >= Math.ceil(summary.total_team_members / 2)"
+            class="mt-3 flex items-start gap-2 bg-red-50 border border-red-100
+                 rounded-xl px-3 py-2.5"
+        >
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+               class="w-4 h-4 text-red-600 shrink-0 mt-0.5">
+            <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/>
+          </svg>
+          <span class="text-xs text-red-800 font-medium">
+            Plus de 50% d'absents — vérifier les justificatifs
+          </span>
+        </div>
+      </div>
+
+      <!-- ── Présences hors planning ── -->
+      <div
+          v-if="(summary.total_anomaly_off_days ?? 0) > 0"
+          class="bg-white border border-orange-50 rounded-md p-5 shadow-sm"
+      >
+        <div class="flex items-center justify-between mb-4">
+          <h4 class="text-sm font-bold text-slate-800 flex items-center gap-2">
+            <span class="w-2 h-2 rounded-full bg-orange-500"></span>
+            Présences hors planning
+            <span class="bg-orange-100 text-orange-700 text-xs font-bold px-2 py-0.5 rounded-full">
+              {{ summary.total_anomaly_off_days }}
+            </span>
+          </h4>
+          <span
+              v-if="summary.unexpected_presence?.status === 'critical'"
+              class="text-xs font-bold text-orange-700 bg-orange-50 border border-orange-200
+                   px-2 py-1 rounded-lg"
+          >
+            🔴 Critique
+          </span>
+          <span
+              v-else-if="summary.unexpected_presence?.status === 'warning'"
+              class="text-xs font-bold text-amber-700 bg-amber-50 border border-amber-200
+                   px-2 py-1 rounded-lg"
+          >
+            🟡 Attention
+          </span>
+        </div>
+
+        <div class="flex flex-col gap-2">
+          <div
+              v-for="occ in (summary.unexpected_presence?.occurrences ?? []).slice(0, 5)"
+              :key="occ.employee_guid + occ.date"
+              class="flex items-center gap-3 p-2.5 rounded-xl bg-slate-50"
+          >
+            <!-- Avatar -->
+            <div class="w-8 h-8 rounded-full bg-orange-100 text-orange-700 text-xs font-bold
+                        flex items-center justify-center shrink-0">
+              {{ occ.employee_name.split(' ').map((n: string) => n[0]).join('').toUpperCase().slice(0, 2) }}
+            </div>
+            <!-- Info -->
+            <div class="flex flex-col min-w-0 flex-1">
+              <span class="text-xs font-semibold text-slate-800 truncate">{{ occ.employee_name }}</span>
+              <span class="text-xs text-slate-400">{{ formatDateShort(occ.date) }}</span>
+            </div>
+            <!-- Badge + heures -->
+            <div class="flex flex-col items-end gap-0.5 shrink-0">
+              <span class="text-xs font-semibold text-orange-700 bg-orange-100 px-2 py-0.5 rounded-full">
+                OFF Day
+              </span>
+              <span class="text-[0.65rem] text-slate-400" v-if="occ.clock_in_time">
+                {{ occ.clock_in_time?.slice(0, 5) }} →
+                {{ occ.clock_out_time?.slice(0, 5) ?? '—' }}
+              </span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Insight actionable -->
+        <div
+            v-if="summary.unexpected_presence?.status === 'critical'"
+            class="mt-3 flex items-start gap-2 bg-orange-50 border border-orange-100
+                 rounded-xl px-3 py-2.5"
+        >
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+               class="w-4 h-4 text-orange-600 shrink-0 mt-0.5">
+            <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/>
+            <line x1="12" y1="9" x2="12" y2="13"/>
+            <line x1="12" y1="17" x2="12.01" y2="17"/>
+          </svg>
+          <span class="text-xs text-orange-800 font-medium">
+            Statut <strong>critique</strong> —
+            {{ summary.unexpected_presence?.action?.label }}
+          </span>
         </div>
       </div>
 
@@ -104,473 +325,214 @@
 
 <script setup lang="ts">
 import { computed } from 'vue'
-import type { Summary, TransformedEmployee } from '@/service/UserService'
+import type { Summary, TransformedEmployee } from '@/utils/interfaces/stat.interface'
 import {
   Chart as ChartJS,
   Title,
   Tooltip,
   Legend,
   LineElement,
+  PointElement,
   CategoryScale,
   LinearScale,
   ArcElement,
-  PointElement,
   Filler,
 } from 'chart.js'
 import { Line, Doughnut } from 'vue-chartjs'
 
 ChartJS.register(
-  Title,
-  Tooltip,
-  Legend,
-  LineElement,
-  CategoryScale,
-  LinearScale,
-  ArcElement,
-  PointElement,
-  Filler
+    Title, Tooltip, Legend,
+    LineElement, PointElement,
+    CategoryScale, LinearScale,
+    ArcElement, Filler
 )
+
+interface DailyBreakdown {
+  date: string
+  day_of_week: string
+  expected_count: number
+  present: number
+  late: number
+  absent: number
+  off_day: number
+  anomaly_off_day: number
+}
 
 interface Props {
   summary: Summary
   employees: TransformedEmployee[]
+  dailyBreakdown?: DailyBreakdown[]
 }
 
 const props = defineProps<Props>()
+const emit  = defineEmits<{ 'employee-click': [employee: TransformedEmployee] }>()
 
-/* ================= CALCULS ================= */
+// ── Helpers ──────────────────────────────────────────────────────────────────
+const formatDateShort = (iso: string) =>
+    new Date(iso + 'T12:00:00').toLocaleDateString('fr-FR', { day: '2-digit', month: 'short' })
 
-// Total d'employés
-const totalEmployees = computed(() => props.summary.total_team_members)
+// ── Calculs ───────────────────────────────────────────────────────────────────
+const totalMembers = computed(() => props.summary.total_team_members)
 
-// Total présents (à l'heure + en retard)
 const totalPresent = computed(() =>
-  props.summary.total_present_on_time + props.summary.total_late_arrivals
+    (props.summary.total_present_on_time ?? 0) + (props.summary.total_late_arrivals ?? 0)
 )
 
-// Total qui devraient travailler (présents + absents, sans les repos)
-const totalWorkingDay = computed(() =>
-  props.summary.total_expected_workdays
-)
-
-// Taux de présence (parmi ceux qui devraient travailler)
 const attendanceRate = computed(() => {
-  if (props.summary.total_expected_workdays === 0) return 0
-  const presentAndLate = props.summary.total_present_on_time + props.summary.total_late_arrivals
-  return Math.round((presentAndLate / props.summary.total_expected_workdays) * 100)
+  const exp = props.summary.total_expected_workdays
+  if (!exp) return 0
+  return Math.round((totalPresent.value / exp) * 100)
 })
 
-// Taux de ponctualité (parmi ceux qui sont présents)
 const punctualityRate = computed(() => {
-  const totalPres = props.summary.total_present_on_time + props.summary.total_late_arrivals
-  if (totalPres === 0) return 0
-  return Math.round((props.summary.total_present_on_time / totalPres) * 100)
+  if (!totalPresent.value) return 0
+  return Math.round(((props.summary.total_present_on_time ?? 0) / totalPresent.value) * 100)
 })
 
-/* ================= COLORS ================= */
-const COLORS = {
-  present: '#22c55e',        // Vert pour présents à l'heure
-  presentGlobal: '#3b82f6',  // Bleu pour présents (global)
-  late: '#f59e0b',           // Orange pour retards
-  absent: '#ef4444',         // Rouge pour absents
+const workdayCount = computed(() =>
+    (props.dailyBreakdown ?? []).filter(d => d.expected_count > 0).length
+)
+
+const absentEmployees = computed(() =>
+    props.employees.filter(e => e.status === 'absent')
+)
+
+// Dénominateur : tous les statuts pour les pourcentages
+const totalAll = computed(() =>
+    (props.summary.total_present_on_time ?? 0) +
+    (props.summary.total_late_arrivals   ?? 0) +
+    (props.summary.total_absences        ?? 0) +
+    (props.summary.total_off_days        ?? 0)
+)
+const percent = (value: number) => {
+  if (!totalAll.value) return 0
+  return Math.round((value / totalAll.value) * 100)
 }
 
-/* ================= PREMIER DOUGHNUT - PRÉSENCE/ABSENCE ================= */
-const presenceAbsenceData = computed(() => ({
-  labels: ['Présents', 'Absents'],
-  datasets: [
-    {
-      data: [
-        totalPresent.value,
-        props.summary.total_absences
-      ],
-      backgroundColor: [
-        COLORS.presentGlobal,
-        COLORS.absent
-      ],
-      borderWidth: 0,
-      hoverOffset: 8
-    }
-  ]
+// ── Couleurs communes ──────────────────────────────────────────────────────────
+const C = {
+  present : '#22c55e',
+  late    : '#f59e0b',
+  absent  : '#ef4444',
+  anomaly : '#f97316',
+  rest    : '#cbd5e1',
+}
+
+// ── Doughnut : répartition complète (1 seul) ──────────────────────────────────
+const statusDistributionData = computed(() => ({
+  labels: ['À l\'heure', 'En retard', 'Absents', 'Jour OFF'],
+  datasets: [{
+    data: [
+      props.summary.total_present_on_time,
+      props.summary.total_late_arrivals,
+      props.summary.total_absences,
+      props.summary.total_off_days,
+    ],
+    backgroundColor: [C.present, C.late, C.absent, C.rest],
+    borderWidth: 0,
+    hoverOffset: 6,
+  }],
 }))
 
-/* ================= DEUXIÈME DOUGHNUT - PONCTUALITÉ ================= */
-const punctualityData = computed(() => ({
-  labels: ['À l\'heure', 'En retard'],
-  datasets: [
-    {
-      data: [
-        props.summary.total_present_on_time,
-        props.summary.total_late_arrivals
-      ],
-      backgroundColor: [
-        COLORS.present,
-        COLORS.late
-      ],
-      borderWidth: 0,
-      hoverOffset: 8
-    }
-  ]
-}))
-
-/* ================= OPTIONS COMMUNES DOUGHNUT ================= */
 const doughnutOptions = {
-  cutout: '70%',
+  cutout: '72%',
+  plugins: {
+    legend: { display: false },
+    tooltip: {
+      backgroundColor: '#0f172a',
+      padding: 10,
+      callbacks: {
+        label: (ctx: any) => {
+          const val   = ctx.parsed
+          const total = ctx.dataset.data.reduce((a: number, b: number) => a + b, 0)
+          const pct   = total > 0 ? Math.round((val / total) * 100) : 0
+          return `${ctx.label}: ${val} (${pct}%)`
+        },
+      },
+    },
+  },
+}
+
+// ── Line chart : évolution quotidienne ───────────────────────────────────────
+const lineChartData = computed(() => {
+  // Jours ouvrables seulement, limité aux 20 derniers
+  const workdays = (props.dailyBreakdown ?? [])
+      .filter(d => d.expected_count > 0)
+      .slice(-20)
+
+  const labels = workdays.map(d =>
+      new Date(d.date + 'T12:00:00').toLocaleDateString('fr-FR', { day: '2-digit', month: 'short' })
+  )
+
+  return {
+    labels,
+    datasets: [
+      {
+        label: 'Présents',
+        data: workdays.map(d => d.present + d.late), // présents à l'heure + retards
+        borderColor   : C.present,
+        backgroundColor: 'rgba(34,197,94,0.08)',
+        fill          : true,
+        tension       : 0.4,
+        pointRadius   : 4,
+        pointHoverRadius: 6,
+        borderWidth   : 2,
+      },
+      {
+        label: 'En retard',
+        data: workdays.map(d => d.late),
+        borderColor   : C.late,
+        backgroundColor: 'transparent',
+        fill          : false,
+        tension       : 0.4,
+        pointRadius   : 4,
+        pointHoverRadius: 6,
+        borderWidth   : 2,
+        borderDash    : [4, 3],
+      },
+      {
+        label: 'Anomalies',
+        data: workdays.map(d => d.anomaly_off_day),
+        borderColor   : C.anomaly,
+        backgroundColor: 'transparent',
+        fill          : false,
+        tension       : 0.4,
+        pointRadius   : 4,
+        pointHoverRadius: 6,
+        borderWidth   : 2,
+        borderDash    : [2, 3],
+      },
+    ],
+  }
+})
+
+const lineChartOptions = {
+  responsive         : true,
+  maintainAspectRatio: false,
   plugins: {
     legend: {
-      display: false
+      display : true,
+      position: 'top' as const,
+      labels  : { usePointStyle: true, pointStyle: 'circle', font: { size: 11 }, boxWidth: 8 },
     },
     tooltip: {
       backgroundColor: '#0f172a',
-      padding: 12,
-      callbacks: {
-        label: function(context: any) {
-          const value = context.parsed
-          const total = context.dataset.data.reduce((a: number, b: number) => a + b, 0)
-          const percentage = total > 0 ? Math.round((value / total) * 100) : 0
-          return `${context.label}: ${value} (${percentage}%)`
-        }
-      }
-    }
-  }
-}
-
-/* ================= LINE CHART DATA ================= */
-const lineChartData = computed(() => ({
-  labels: ['Présents à l\'heure', 'En retard', 'Absents'],
-  datasets: [
-    {
-      label: 'Évolution des statuts',
-      data: [
-        props.summary.total_present_on_time,
-        props.summary.total_late_arrivals,
-        props.summary.total_absences,
-        props.summary.total_off_days
-      ],
-
-      tension: 0.4,
-      borderWidth: 3,
-      fill: 'origin',
-
-      /* ===== POINTS ===== */
-      pointRadius: 6,
-      pointHoverRadius: 8,
-      pointBorderColor: '#fff',
-      pointBorderWidth: 2,
-      pointBackgroundColor: [
-        COLORS.present,
-        COLORS.late,
-        COLORS.absent,
-        // COLORS.rest
-      ],
-
-      /* ===== 🔥 MAGIE ICI - Chaque segment a sa propre couleur ===== */
-      segment: {
-        borderColor: (ctx: any) => {
-          const colors = [
-            COLORS.present,
-            COLORS.late,
-            COLORS.absent,
-            // COLORS.rest
-          ]
-          return colors[ctx.p0DataIndex]
-        },
-
-        backgroundColor: (ctx: any) => {
-          const colors = [
-            COLORS.present,
-            COLORS.late,
-            COLORS.absent,
-            // COLORS.rest
-          ]
-
-          const color = colors[ctx.p0DataIndex]
-
-          return `${color}33` // ~20% opacity
-        }
-      }
-    }
-  ]
-}))
-
-
-const lineChartOptions = computed(() => {
-  const maxValue = Math.max(
-    props.summary.total_present_on_time,
-    props.summary.total_late_arrivals,
-    props.summary.total_absences,
-    // props.summary.total_off_days,
-    1
-  )
-
-  const suggestedMax = Math.ceil(maxValue / 2) * 2
-
-  return {
-    responsive: true,
-    maintainAspectRatio: false,
-    plugins: {
-      legend: {
-        display: false
+      padding        : 10,
+      callbacks      : {
+        label: (ctx: any) => `${ctx.dataset.label} : ${ctx.parsed.y}`,
       },
-      tooltip: {
-        backgroundColor: '#0f172a',
-        padding: 12,
-        titleFont: {
-          size: 14,
-          weight: 'bold'
-        },
-        bodyFont: {
-          size: 13
-        },
-        callbacks: {
-          label: function(context: any) {
-            const value = context.parsed.y
-            const total = props.summary.total_team_members
-            const percentage = total > 0 ? Math.round((value / total) * 100) : 0
-            return `${value} employé${value > 1 ? 's' : ''} (${percentage}%)`
-          }
-        }
-      }
     },
-    scales: {
-      x: {
-        grid: {
-          display: false
-        },
-        ticks: {
-          font: {
-            size: 12,
-            weight: '600'
-          }
-        }
-      },
-      y: {
-        beginAtZero: true,
-        suggestedMax: suggestedMax,
-        ticks: {
-          precision: 0,
-          stepSize: 1,
-          font: {
-            size: 12
-          }
-        },
-        grid: {
-          color: '#f1f5f9'
-        }
-      }
-    }
-  }
-})
-
+  },
+  scales: {
+    x: {
+      grid : { display: false },
+      ticks: { font: { size: 11 }, color: '#94a3b8' },
+    },
+    y: {
+      beginAtZero: true,
+      ticks: { precision: 0, stepSize: 1, font: { size: 11 }, color: '#94a3b8' },
+      grid : { color: '#f1f5f9' },
+    },
+  },
+}
 </script>
-
-<style scoped>
-.dashboard-stats {
-  margin-bottom: 1.5rem;
-}
-
-.section-title {
-  font-size: 1.2rem;
-  font-weight: 700;
-  color: #FFFFFF;
-  margin-bottom: 1.4rem;
-}
-
-/* ⬇️ Grid avec 2 doughnuts plus larges */
-.stats-grid {
-  display: grid;
-  grid-template-columns: repeat(2, 1fr); /* 2 colonnes égales */
-  gap: 1.5rem;
-}
-
-.stats-card {
-  background: #fff;
-  border-radius: 18px;
-  padding: 2rem;
-  border: 1px solid #e2e8f0;
-  box-shadow: 0 1px 2px rgba(0,0,0,0.04), 0 6px 16px rgba(0,0,0,0.06);
-  transition: 0.25s ease;
-}
-
-.stats-card:hover {
-  transform: translateY(-3px);
-  box-shadow: 0 8px 20px rgba(0,0,0,0.08);
-}
-
-/* ⬇️ Le line chart prend toute la largeur */
-.stats-card.wide {
-  padding: 2rem;
-  grid-column: span 2;
-}
-
-.card-title {
-  font-size: 1.1rem;
-  font-weight: 700;
-  margin-bottom: 1.5rem;
-  color: #0f172a;
-}
-
-/* ⬇️ Doughnut plus grand */
-.absence-wrapper {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 2rem;
-}
-
-.doughnut-box {
-  position: relative;
-  width: 280px;  /* Augmenté de 200px à 280px */
-  height: 280px; /* Augmenté de 200px à 280px */
-}
-
-.center-text {
-  position: absolute;
-  inset: 0;
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
-  align-items: center;
-  pointer-events: none;
-}
-
-.center-text strong {
-  font-size: 2.5rem; /* Augmenté */
-  font-weight: 800;
-  color: #0f172a;
-}
-
-.center-text span {
-  font-size: 1rem; /* Augmenté */
-  color: #94a3b8;
-  font-weight: 500;
-}
-
-/* Légende améliorée */
-.absence-legend {
-  display: grid;
-  grid-template-columns: repeat(2, 1fr);
-  gap: 1rem;
-  width: 100%;
-  max-width: 350px;
-}
-
-.legend-item {
-  display: flex;
-  align-items: center;
-  gap: 0.75rem;
-  padding: 0.75rem;
-  border-radius: 10px;
-  background: #f8fafc;
-}
-
-.legend-text {
-  display: flex;
-  flex-direction: column;
-  gap: 0.2rem;
-}
-
-.legend-label {
-  font-size: 0.875rem; /* Augmenté */
-  color: #64748b;
-  font-weight: 500;
-}
-
-.legend-item strong {
-  font-size: 1.25rem; /* Augmenté */
-  color: #0f172a;
-  font-weight: 700;
-}
-
-.dot {
-  width: 16px;  /* Augmenté */
-  height: 16px; /* Augmenté */
-  border-radius: 50%;
-  min-width: 16px;
-}
-
-.dot.present { background: #22c55e; }
-.dot.present-global { background: #3b82f6; }
-.dot.late { background: #f59e0b; }
-.dot.absent { background: #ef4444; }
-.dot.rest { background: #94a3b8; }
-
-/* Résumé rapide */
-.quick-summary {
-  display: grid;
-  grid-template-columns: repeat(4, 1fr);
-  gap: 1rem;
-  margin-bottom: 1rem;
-  padding: 1rem;
-  background: #f8fafc;
-  border-radius: 12px;
-}
-
-.summary-item {
-  display: flex;
-  flex-direction: column;
-  gap: 0.25rem;
-}
-
-.summary-label {
-  font-size: 0.75rem;
-  color: #64748b;
-  font-weight: 500;
-}
-
-.summary-item strong {
-  font-size: 1.25rem;
-  color: #0f172a;
-  font-weight: 700;
-}
-
-.text-success {
-  color: #22c55e !important;
-}
-
-.text-info {
-  color: #3b82f6 !important;
-}
-
-/* Chart */
-.chart-container {
-  height: 300px;
-}
-
-/* Responsive */
-@media (max-width: 1400px) {
-  .stats-grid {
-    grid-template-columns: 1fr;
-  }
-
-  .stats-card.wide {
-    grid-column: span 1;
-  }
-}
-
-@media (max-width: 1200px) {
-  .quick-summary {
-    grid-template-columns: repeat(2, 1fr);
-  }
-
-  .doughnut-box {
-    width: 240px;
-    height: 240px;
-  }
-}
-
-@media (max-width: 768px) {
-  .absence-legend {
-    grid-template-columns: 1fr;
-  }
-
-  .quick-summary {
-    grid-template-columns: 1fr;
-  }
-
-  .doughnut-box {
-    width: 200px;
-    height: 200px;
-  }
-}
-</style>

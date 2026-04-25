@@ -1,576 +1,294 @@
 <template>
-  <section class="absent-section">
-    <div class="section-title">
-      <h3>
-        Employé(s) absent(s)
-        <span class="text-base font-medium text-neutral-500">({{ absentEmployees.length }})</span>
-      </h3>
-    </div>
+  <div class="bg-white border border-slate-200 shadow-sm overflow-hidden">
 
-    <!-- Header avec bouton toggle -->
-    <div class="section-header">
-      <button class="toggle-btn" @click="toggleSection">
-        <svg
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            stroke-width="2"
-            :class="{ rotated: !isExpanded }"
-        >
-          <polyline points="6 9 12 15 18 9"/>
+    <!-- ── Header ── -->
+    <div class="flex items-center justify-between px-5 py-4 border-b border-slate-100">
+      <h4 class="text-sm font-bold text-slate-800 flex items-center gap-2">
+        Équipe
+        <span class="bg-slate-100 text-slate-500 text-xs font-semibold px-2 py-0.5 rounded-full">
+          {{ employees.length }}
+        </span>
+      </h4>
+
+      <!-- Lien vers vue complète -->
+      <button
+          class="flex items-center gap-1 text-xs font-semibold text-blue-600
+               hover:text-blue-800 transition-colors"
+          @click="$emit('view-all')"
+      >
+        Voir toute l'équipe
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+             class="w-3.5 h-3.5">
+          <line x1="5" y1="12" x2="19" y2="12"/>
+          <polyline points="12 5 19 12 12 19"/>
         </svg>
       </button>
     </div>
 
-    <!-- Liste des absents -->
-    <transition name="expand">
-      <div v-if="isExpanded" class="absent-list">
-        <div
-            v-for="employee in absentEmployees"
-            :key="employee.guid"
-            class="absent-card"
-            @click="$emit('employee-click', employee)"
+    <!-- ── Table ── -->
+    <div class="overflow-x-auto">
+      <table class="w-full text-xs">
+
+        <!-- En-têtes -->
+        <thead>
+        <tr class="bg-slate-50 border-b border-slate-100">
+          <th class="text-left px-4 py-3 text-slate-500 font-semibold w-52">Employé</th>
+          <th class="text-center px-3 py-3 text-slate-500 font-semibold">Statut moyen</th>
+          <th class="text-center px-3 py-3 text-slate-500 font-semibold">
+            <span class="hidden sm:inline">Jours planifiés</span>
+            <span class="sm:hidden">Plan.</span>
+          </th>
+          <th class="text-center px-3 py-3 text-slate-500 font-semibold">
+            <span class="hidden sm:inline">À l'heure</span>
+            <span class="sm:hidden">Prés.</span>
+          </th>
+          <th class="text-center px-3 py-3 text-slate-500 font-semibold">Retards</th>
+          <th class="text-center px-3 py-3 text-slate-500 font-semibold">Absences</th>
+          <th class="text-center px-3 py-3 text-slate-500 font-semibold">Anomalies</th>
+          <th class="text-center px-3 py-3 text-slate-500 font-semibold">
+            <span class="hidden sm:inline">Heures travaillées</span>
+            <span class="sm:hidden">Heures</span>
+          </th>
+          <th class="px-3 py-3"></th>
+        </tr>
+        </thead>
+
+        <!-- Lignes -->
+        <tbody class="divide-y divide-slate-50">
+        <tr
+            v-for="emp in sortedEmployees"
+            :key="emp.guid"
+            class="hover:bg-slate-50 cursor-pointer transition-colors group"
+            @click="$emit('employee-click', emp)"
         >
-          <div class="left">
-            <div class="avatar">
-              <img v-if="employee.avatar" :src="employee.avatar" :alt="employee.name" />
-              <span v-else class="initials">{{ employee.initials }}</span>
-              <span class="status-dot dot-absent"></span>
+          <!-- Employé (avatar + nom + poste) -->
+          <td class="px-4 py-3">
+            <div class="flex items-center gap-3">
+              <div class="relative shrink-0">
+                <div
+                    class="w-8 h-8 rounded-full flex items-center justify-center
+                           text-xs font-bold border-2 border-white shadow-sm"
+                    :class="avatarColorClass(emp.status)"
+                >
+                  <img
+                      v-if="emp.avatar"
+                      :src="emp.avatar"
+                      :alt="emp.name"
+                      class="w-full h-full rounded-full object-cover"
+                  />
+                  <span v-else>{{ emp.initials }}</span>
+                </div>
+                <!-- Point de statut -->
+                <span
+                    class="absolute -bottom-0.5 -right-0.5 w-2.5 h-2.5 rounded-full
+                           border-2 border-white"
+                    :class="statusDotClass(emp.status)"
+                ></span>
+              </div>
+              <div class="flex flex-col min-w-0">
+                  <span class="font-semibold text-slate-800 truncate leading-tight">
+                    {{ emp.name }}
+                  </span>
+                <span class="text-slate-400 truncate leading-tight">{{ emp.job_title }}</span>
+              </div>
             </div>
+          </td>
 
-            <div class="info">
-              <strong>{{ employee.name }}</strong>
-              <span>{{ employee.job_title }}</span>
+          <!-- Statut moyen -->
+          <td class="px-3 py-3 text-center">
+            <div class="flex items-center justify-center gap-1.5">
+              <span class="w-2 h-2 rounded-full shrink-0" :class="statusDotClass(emp.status)"></span>
+              <span class="font-medium" :class="statusTextClass(emp.status)">
+                  {{ emp.statusText }}
+                </span>
             </div>
-          </div>
+          </td>
 
-          <div class="right">
-            <span class="status absent">Absent</span>
-            <button class="memo-btn" @click.stop="ouvrirMemo(employee)">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <rect x="3" y="3" width="18" height="18" rx="2" ry="2"/>
-                <line x1="9" y1="9" x2="15" y2="9"/>
-                <line x1="9" y1="13" x2="15" y2="13"/>
-              </svg>
-              Mémo
-            </button>
-          </div>
-        </div>
+          <!-- Jours planifiés -->
+          <td class="px-3 py-3 text-center">
+              <span class="font-semibold text-slate-700">
+                {{ emp.period_stats?.work_days_expected ?? 0 }}
+              </span>
+          </td>
 
-        <!-- Message si aucun absent -->
-        <div v-if="absentEmployees.length === 0" class="empty-state">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <path d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
-          </svg>
-          <p>Aucun employé absent aujourd'hui</p>
-        </div>
-      </div>
-    </transition>
-  </section>
+          <!-- Présences -->
+          <td class="px-3 py-3 text-center">
+              <span class="font-semibold text-emerald-600">
+                {{ emp.period_stats?.present_days ?? 0 }}
+              </span>
+          </td>
+
+          <!-- Retards -->
+          <td class="px-3 py-3 text-center">
+              <span
+                  class="font-semibold"
+                  :class="(emp.period_stats?.late_days ?? 0) > 0
+                  ? 'text-amber-600'
+                  : 'text-slate-300'"
+              >
+                {{ emp.period_stats?.late_days ?? 0 }}
+              </span>
+          </td>
+
+          <!-- Absences -->
+          <td class="px-3 py-3 text-center">
+              <span
+                  class="font-semibold"
+                  :class="(emp.period_stats?.absent_days ?? 0) > 0
+                  ? 'text-red-600'
+                  : 'text-slate-300'"
+              >
+                {{ emp.period_stats?.absent_days ?? 0 }}
+              </span>
+          </td>
+
+          <!-- Anomalies -->
+          <td class="px-3 py-3 text-center">
+              <span
+                  class="font-semibold"
+                  :class="(emp.period_stats?.anomaly_off_days ?? 0) > 0
+                  ? 'text-orange-500'
+                  : 'text-slate-300'"
+              >
+                {{ emp.period_stats?.anomaly_off_days ?? 0 }}
+              </span>
+          </td>
+
+          <!-- Heures travaillées -->
+          <td class="px-3 py-3 text-center">
+              <span class="font-semibold text-slate-700">
+                {{ formatHours(emp.period_stats?.total_work_hours ?? 0) }}
+              </span>
+          </td>
+
+          <!-- Actions (mémo + menu) -->
+          <td class="px-3 py-3">
+            <div class="flex items-center justify-end gap-1 opacity-0 group-hover:opacity-100
+                          transition-opacity">
+              <!-- Bouton mémo (absents uniquement) -->
+              <button
+                  v-if="emp.status === 'absent'"
+                  class="flex items-center gap-1 text-xs font-semibold text-slate-500
+                         bg-slate-100 hover:bg-slate-200 px-2 py-1 rounded-lg transition-colors"
+                  @click.stop="$emit('memo-click', emp)"
+                  title="Créer un mémo"
+              >
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                     class="w-3.5 h-3.5">
+                  <rect x="3" y="3" width="18" height="18" rx="2"/>
+                  <line x1="9" y1="9" x2="15" y2="9"/>
+                  <line x1="9" y1="13" x2="15" y2="13"/>
+                </svg>
+                Mémo
+              </button>
+
+              <!-- Menu contextuel (3 points) -->
+              <button
+                  class="w-7 h-7 flex items-center justify-center text-slate-400
+                         hover:text-slate-700 hover:bg-slate-100 rounded-lg transition-colors"
+                  @click.stop="$emit('action-click', emp)"
+                  title="Actions"
+              >
+                <svg viewBox="0 0 24 24" fill="currentColor" class="w-4 h-4">
+                  <circle cx="12" cy="5" r="1.5"/>
+                  <circle cx="12" cy="12" r="1.5"/>
+                  <circle cx="12" cy="19" r="1.5"/>
+                </svg>
+              </button>
+            </div>
+          </td>
+        </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <!-- ── Empty state ── -->
+    <div v-if="employees.length === 0"
+         class="flex flex-col items-center justify-center py-12 text-slate-400">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"
+           class="w-10 h-10 mb-3 text-slate-200">
+        <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
+        <circle cx="9" cy="7" r="4"/>
+      </svg>
+      <p class="text-sm font-medium">Aucun employé trouvé</p>
+    </div>
+
+  </div>
 </template>
 
 <script setup lang="ts">
-import { computed, ref } from 'vue';
-import { useRouter } from 'vue-router';
-import type { TransformedEmployee } from '@/service/UserService';
-import "../../assets/css/toke-employeeList-28.css"
+import { computed }  from 'vue'
+import { useRouter } from 'vue-router'
+import type { TransformedEmployee } from '@/utils/interfaces/stat.interface'
 
 interface Props {
-  employees: TransformedEmployee[];
+  employees: TransformedEmployee[]
 }
 
-const props = defineProps<Props>();
-const emit = defineEmits<{
-  'employee-click': [employee: TransformedEmployee];
-}>();
+const props = defineProps<Props>()
+const emit  = defineEmits<{
+  'employee-click': [employee: TransformedEmployee]
+  'memo-click'    : [employee: TransformedEmployee]
+  'action-click'  : [employee: TransformedEmployee]
+  'view-all'      : []
+}>()
 
 const router = useRouter()
-const isExpanded = ref(true);
 
-const ouvrirMemo = (employee: TransformedEmployee) => {
-  router.push({
-    path: '/memoNew',
-    query: {
-      employeeGuid: employee.guid,
-      employeeName: employee.name,
-    }
-  })
+// ── Tri : absents en premier (plus critique), puis retards, puis présents, puis OFF ──
+const STATUS_PRIORITY: Record<string, number> = {
+  absent          : 0,
+  anomaly_off_day : 1,
+  late            : 2,
+  active          : 3,
+  present         : 3,
+  'on-pause'      : 4,
+  'off-day'       : 5,
 }
 
-// Filtrer uniquement les employés absents
-const absentEmployees = computed(() =>
-    props.employees
-        .filter(e => e.status === 'absent')
-        .sort((a, b) => a.name.localeCompare(b.name, 'fr'))
-);
+const sortedEmployees = computed(() =>
+    [...props.employees].sort((a, b) => {
+      const pa = STATUS_PRIORITY[a.status] ?? 9
+      const pb = STATUS_PRIORITY[b.status] ?? 9
+      if (pa !== pb) return pa - pb
+      return a.name.localeCompare(b.name, 'fr')
+    })
+)
 
-const toggleSection = () => {
-  isExpanded.value = !isExpanded.value;
-};
+// ── Formatage heures : "32h 15m" ──────────────────────────────────────────────
+const formatHours = (total: number) => {
+  const h = Math.floor(total)
+  const m = Math.round((total - h) * 60)
+  if (h === 0 && m === 0) return '0h 00m'
+  if (m === 0) return `${h}h 00m`
+  return `${h}h ${String(m).padStart(2, '0')}m`
+}
+
+// ── Classes dynamiques ────────────────────────────────────────────────────────
+const statusDotClass = (status: string) => ({
+  'bg-emerald-500' : status === 'present' || status === 'active',
+  'bg-amber-500'   : status === 'late',
+  'bg-red-500'     : status === 'absent',
+  'bg-orange-500'  : status === 'anomaly_off_day',
+  'bg-blue-400'    : status === 'on-pause',
+  'bg-slate-300'   : status === 'off-day',
+})
+
+const statusTextClass = (status: string) => ({
+  'text-emerald-600' : status === 'present' || status === 'active',
+  'text-amber-600'   : status === 'late',
+  'text-red-600'     : status === 'absent',
+  'text-orange-600'  : status === 'anomaly_off_day',
+  'text-blue-500'    : status === 'on-pause',
+  'text-slate-400'   : status === 'off-day',
+})
+
+const avatarColorClass = (status: string) => ({
+  'bg-emerald-100 text-emerald-700' : status === 'present' || status === 'active',
+  'bg-amber-100 text-amber-700'     : status === 'late',
+  'bg-red-100 text-red-700'         : status === 'absent',
+  'bg-orange-100 text-orange-700'   : status === 'anomaly_off_day',
+  'bg-blue-100 text-blue-600'       : status === 'on-pause',
+  'bg-slate-100 text-slate-500'     : status === 'off-day',
+})
 </script>
-
-<style scoped>
-
-</style>
-
-<!--<template>-->
-<!--  <section class="absent-section">-->
-<!--    <div class="section-title">-->
-<!--      <h3>-->
-<!--        Employé(s) absent(s)-->
-<!--        <span class="text-base font-medium text-neutral-500">({{ absentEmployees.length }})</span>-->
-<!--      </h3>-->
-<!--    </div>-->
-
-<!--    &lt;!&ndash; Header avec bouton toggle &ndash;&gt;-->
-<!--    <div class="section-header">-->
-<!--      <button class="toggle-btn" @click="toggleSection">-->
-<!--        <svg-->
-<!--            viewBox="0 0 24 24"-->
-<!--            fill="none"-->
-<!--            stroke="currentColor"-->
-<!--            stroke-width="2"-->
-<!--            :class="{ rotated: !isExpanded }"-->
-<!--        >-->
-<!--          <polyline points="6 9 12 15 18 9"/>-->
-<!--        </svg>-->
-<!--      </button>-->
-<!--    </div>-->
-
-<!--    &lt;!&ndash; Liste des absents &ndash;&gt;-->
-<!--    <transition name="expand">-->
-<!--      <div v-if="isExpanded" class="absent-list">-->
-<!--        <div-->
-<!--            v-for="employee in absentEmployees"-->
-<!--            :key="employee.guid"-->
-<!--            class="absent-card"-->
-<!--            @click="$emit('employee-click', employee)"-->
-<!--        >-->
-<!--          <div class="left">-->
-<!--            <div class="avatar">-->
-<!--              <img v-if="employee.avatar" :src="employee.avatar" :alt="employee.name" />-->
-<!--              <span v-else class="initials">{{ employee.initials }}</span>-->
-<!--              <span class="status-dot dot-absent"></span>-->
-<!--            </div>-->
-
-<!--            <div class="info">-->
-<!--              <strong>{{ employee.name }}</strong>-->
-<!--              <span>{{ employee.job_title }}</span>-->
-<!--            </div>-->
-<!--          </div>-->
-
-<!--          <div class="right">-->
-<!--            &lt;!&ndash;            <span v-if="employee.today.expected_time" class="time">&ndash;&gt;-->
-<!--            &lt;!&ndash;              Attendu à {{ employee.today.expected_time }}&ndash;&gt;-->
-<!--            &lt;!&ndash;            </span>&ndash;&gt;-->
-<!--            <span class="status absent">Absent</span>-->
-<!--            <button class="memo-btn" @click.stop="$emit('memo-click', employee)">-->
-<!--              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">-->
-<!--                <rect x="3" y="3" width="18" height="18" rx="2" ry="2"/>-->
-<!--                <line x1="9" y1="9" x2="15" y2="9"/>-->
-<!--                <line x1="9" y1="13" x2="15" y2="13"/>-->
-<!--              </svg>-->
-<!--              Mémo-->
-<!--            </button>-->
-<!--          </div>-->
-<!--        </div>-->
-
-<!--        &lt;!&ndash; Message si aucun absent &ndash;&gt;-->
-<!--        <div v-if="absentEmployees.length === 0" class="empty-state">-->
-<!--          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">-->
-<!--            <path d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>-->
-<!--          </svg>-->
-<!--          <p>Aucun employé absent aujourd'hui</p>-->
-<!--        </div>-->
-<!--      </div>-->
-<!--    </transition>-->
-<!--  </section>-->
-<!--</template>-->
-
-<!--<script setup lang="ts">-->
-<!--import { computed, ref } from 'vue';-->
-<!--import type { TransformedEmployee } from '@/service/UserService';-->
-
-<!--interface Props {-->
-<!--  employees: TransformedEmployee[];-->
-<!--}-->
-
-<!--const props = defineProps<Props>();-->
-<!--const emit = defineEmits<{-->
-<!--  'employee-click': [employee: TransformedEmployee];-->
-<!--  'memo-click': [employee: TransformedEmployee];-->
-<!--}>();-->
-
-<!--const isExpanded = ref(true);-->
-
-<!--// Filtrer uniquement les employés absents-->
-<!--const absentEmployees = computed(() =>-->
-<!--    props.employees-->
-<!--        .filter(e => e.status === 'absent')-->
-<!--        .sort((a, b) => a.name.localeCompare(b.name, 'fr'))-->
-<!--);-->
-
-<!--const toggleSection = () => {-->
-<!--  isExpanded.value = !isExpanded.value;-->
-<!--};-->
-<!--</script>-->
-
-<!--<style scoped>-->
-<!--/* =========================-->
-<!--   Section principale-->
-<!--========================= */-->
-
-<!--.absent-section {-->
-<!--  background: #fff;-->
-<!--  border: 1px solid #e5e7eb;-->
-<!--  border-radius: 18px;-->
-<!--  padding: 1.5rem;-->
-<!--  box-shadow: 0 2px 6px rgba(0,0,0,0.04), 0 10px 28px rgba(0,0,0,0.06);-->
-<!--  display: flex;-->
-<!--  flex-direction: column;-->
-<!--  min-height: 420px;-->
-<!--  max-height: 700px;-->
-<!--}-->
-
-<!--.section-title {-->
-<!--  font-size: 1.2rem;-->
-<!--  font-weight: 700;-->
-<!--  color: #0f172a;-->
-<!--  margin-bottom: 1rem;-->
-<!--}-->
-
-<!--.section-title h3 {-->
-<!--  display: flex;-->
-<!--  align-items: center;-->
-<!--  gap: 0.5rem;-->
-<!--}-->
-
-<!--/* =========================-->
-<!--   Header avec toggle-->
-<!--========================= */-->
-
-<!--.section-header {-->
-<!--  display: flex;-->
-<!--  justify-content: flex-end;-->
-<!--  margin-bottom: 1rem;-->
-<!--}-->
-
-<!--.toggle-btn {-->
-<!--  width: 36px;-->
-<!--  height: 36px;-->
-<!--  border-radius: 10px;-->
-<!--  border: 1px solid #e2e8f0;-->
-<!--  background: #f8fafc;-->
-<!--  display: flex;-->
-<!--  align-items: center;-->
-<!--  justify-content: center;-->
-<!--  cursor: pointer;-->
-<!--  transition: all 0.25s ease;-->
-<!--}-->
-
-<!--.toggle-btn:hover {-->
-<!--  background: #e2e8f0;-->
-<!--  border-color: #cbd5e1;-->
-<!--}-->
-
-<!--.toggle-btn svg {-->
-<!--  width: 20px;-->
-<!--  height: 20px;-->
-<!--  color: #64748b;-->
-<!--  transition: transform 0.3s ease;-->
-<!--}-->
-
-<!--.toggle-btn svg.rotated {-->
-<!--  transform: rotate(-180deg);-->
-<!--}-->
-
-<!--/* =========================-->
-<!--   Liste des employés-->
-<!--========================= */-->
-
-<!--.absent-list {-->
-<!--  flex: 1;-->
-<!--  overflow-y: auto;-->
-<!--  display: flex;-->
-<!--  flex-direction: column;-->
-<!--  gap: 0.75rem;-->
-<!--  padding-right: 4px;-->
-<!--}-->
-
-<!--/* Scrollbar moderne */-->
-<!--.absent-list::-webkit-scrollbar {-->
-<!--  width: 6px;-->
-<!--}-->
-
-<!--.absent-list::-webkit-scrollbar-thumb {-->
-<!--  background: #cbd5e1;-->
-<!--  border-radius: 6px;-->
-<!--}-->
-
-<!--.absent-list::-webkit-scrollbar-thumb:hover {-->
-<!--  background: #94a3b8;-->
-<!--}-->
-
-<!--/* =========================-->
-<!--   Carte employé-->
-<!--========================= */-->
-
-<!--.absent-card {-->
-<!--  display: flex;-->
-<!--  justify-content: space-between;-->
-<!--  align-items: center;-->
-<!--  padding: 1rem;-->
-<!--  border: 1px solid #e5e7eb;-->
-<!--  border-radius: 12px;-->
-<!--  background: #ffffff;-->
-<!--  cursor: pointer;-->
-<!--  transition: all 0.25s ease;-->
-<!--}-->
-
-<!--.absent-card:hover {-->
-<!--  background: #f8fafc;-->
-<!--  border-color: #cbd5e1;-->
-<!--  transform: translateY(-2px);-->
-<!--  box-shadow: 0 4px 12px rgba(0,0,0,0.08);-->
-<!--}-->
-
-<!--/* =========================-->
-<!--   Partie gauche-->
-<!--========================= */-->
-
-<!--.left {-->
-<!--  display: flex;-->
-<!--  align-items: center;-->
-<!--  gap: 0.875rem;-->
-<!--  flex: 1;-->
-<!--}-->
-
-<!--.avatar {-->
-<!--  position: relative;-->
-<!--  width: 40px;-->
-<!--  height: 40px;-->
-<!--  border-radius: 50%;-->
-<!--  background: #e5e7eb;-->
-<!--  display: flex;-->
-<!--  align-items: center;-->
-<!--  justify-content: center;-->
-<!--  flex-shrink: 0;-->
-<!--}-->
-
-<!--.avatar img {-->
-<!--  width: 100%;-->
-<!--  height: 100%;-->
-<!--  border-radius: 50%;-->
-<!--  object-fit: cover;-->
-<!--}-->
-
-<!--.initials {-->
-<!--  font-size: 14px;-->
-<!--  font-weight: 600;-->
-<!--  color: #475569;-->
-<!--  text-transform: uppercase;-->
-<!--}-->
-
-<!--.status-dot {-->
-<!--  position: absolute;-->
-<!--  bottom: 0;-->
-<!--  right: 0;-->
-<!--  width: 11px;-->
-<!--  height: 11px;-->
-<!--  border-radius: 50%;-->
-<!--  border: 2px solid white;-->
-<!--}-->
-
-<!--.dot-absent {-->
-<!--  background: #ef4444;-->
-<!--}-->
-
-<!--/* Info employé */-->
-<!--.info {-->
-<!--  display: flex;-->
-<!--  flex-direction: column;-->
-<!--  gap: 0.25rem;-->
-<!--  flex: 1;-->
-<!--  min-width: 0;-->
-<!--}-->
-
-<!--.info strong {-->
-<!--  font-size: 14px;-->
-<!--  font-weight: 600;-->
-<!--  color: #0f172a;-->
-<!--  white-space: nowrap;-->
-<!--  overflow: hidden;-->
-<!--  text-overflow: ellipsis;-->
-<!--}-->
-
-<!--.info span {-->
-<!--  font-size: 12px;-->
-<!--  color: #64748b;-->
-<!--  font-weight: 500;-->
-<!--  white-space: nowrap;-->
-<!--  overflow: hidden;-->
-<!--  text-overflow: ellipsis;-->
-<!--}-->
-
-<!--/* =========================-->
-<!--   Partie droite-->
-<!--========================= */-->
-
-<!--.right {-->
-<!--  display: flex;-->
-<!--  align-items: center;-->
-<!--  gap: 0.75rem;-->
-<!--  flex-shrink: 0;-->
-<!--}-->
-
-<!--.time {-->
-<!--  font-size: 12px;-->
-<!--  font-weight: 600;-->
-<!--  color: #475569;-->
-<!--  min-width: 100px;-->
-<!--  text-align: right;-->
-<!--}-->
-
-<!--/* Badge status */-->
-<!--.status {-->
-<!--  font-size: 11px;-->
-<!--  font-weight: 700;-->
-<!--  padding: 4px 10px;-->
-<!--  border-radius: 999px;-->
-<!--  white-space: nowrap;-->
-<!--}-->
-
-<!--.status.absent {-->
-<!--  background: #fef2f2;-->
-<!--  color: #b91c1c;-->
-<!--}-->
-
-<!--/* Bouton mémo */-->
-<!--.memo-btn {-->
-<!--  display: inline-flex;-->
-<!--  align-items: center;-->
-<!--  gap: 0.4rem;-->
-<!--  padding: 6px 10px;-->
-<!--  background: #f1f5f9;-->
-<!--  border: 1px solid #e2e8f0;-->
-<!--  border-radius: 8px;-->
-<!--  font-size: 11px;-->
-<!--  font-weight: 600;-->
-<!--  color: #475569;-->
-<!--  cursor: pointer;-->
-<!--  transition: all 0.2s ease;-->
-<!--}-->
-
-<!--.memo-btn:hover {-->
-<!--  background: #e2e8f0;-->
-<!--  border-color: #cbd5e1;-->
-<!--  color: #0f172a;-->
-<!--}-->
-
-<!--.memo-btn svg {-->
-<!--  width: 14px;-->
-<!--  height: 14px;-->
-<!--}-->
-
-<!--/* =========================-->
-<!--   État vide-->
-<!--========================= */-->
-
-<!--.empty-state {-->
-<!--  display: flex;-->
-<!--  flex-direction: column;-->
-<!--  align-items: center;-->
-<!--  justify-content: center;-->
-<!--  padding: 3rem 1rem;-->
-<!--  text-align: center;-->
-<!--  color: #64748b;-->
-<!--  gap: 1rem;-->
-<!--}-->
-
-<!--.empty-state svg {-->
-<!--  width: 48px;-->
-<!--  height: 48px;-->
-<!--  color: #10b981;-->
-<!--}-->
-
-<!--.empty-state p {-->
-<!--  font-size: 14px;-->
-<!--  font-weight: 500;-->
-<!--}-->
-
-<!--/* =========================-->
-<!--   Animation expand-->
-<!--========================= */-->
-
-<!--.expand-enter-active,-->
-<!--.expand-leave-active {-->
-<!--  transition: all 0.3s ease;-->
-<!--  overflow: hidden;-->
-<!--}-->
-
-<!--.expand-enter-from,-->
-<!--.expand-leave-to {-->
-<!--  max-height: 0;-->
-<!--  opacity: 0;-->
-<!--}-->
-
-<!--.expand-enter-to,-->
-<!--.expand-leave-from {-->
-<!--  max-height: 1000px;-->
-<!--  opacity: 1;-->
-<!--}-->
-
-<!--/* =========================-->
-<!--   Responsive-->
-<!--========================= */-->
-
-<!--@media (max-width: 1024px) {-->
-<!--  .absent-card {-->
-<!--    flex-direction: column;-->
-<!--    align-items: flex-start;-->
-<!--    gap: 0.75rem;-->
-<!--  }-->
-
-<!--  .right {-->
-<!--    width: 100%;-->
-<!--    justify-content: space-between;-->
-<!--  }-->
-<!--}-->
-
-<!--@media (max-width: 768px) {-->
-<!--  .absent-section {-->
-<!--    padding: 1.25rem;-->
-<!--  }-->
-
-<!--  .section-title {-->
-<!--    font-size: 1.1rem;-->
-<!--  }-->
-
-<!--  .absent-card {-->
-<!--    padding: 0.875rem;-->
-<!--  }-->
-
-<!--  .info strong {-->
-<!--    font-size: 13px;-->
-<!--  }-->
-
-<!--  .info span {-->
-<!--    font-size: 11px;-->
-<!--  }-->
-<!--}-->
-
-<!--@media (max-width: 480px) {-->
-<!--  .memo-btn span {-->
-<!--    display: none;-->
-<!--  }-->
-
-<!--  .memo-btn {-->
-<!--    padding: 6px;-->
-<!--  }-->
-
-<!--  .time {-->
-<!--    font-size: 11px;-->
-<!--    min-width: 80px;-->
-<!--  }-->
-<!--}-->
-<!--</style>-->

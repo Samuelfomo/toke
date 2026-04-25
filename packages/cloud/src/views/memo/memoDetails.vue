@@ -16,11 +16,11 @@
         :header-subtitle="getTypeLabel(memo?.type || '')"
         :header-info="memoHeaderInfo"
         :status-badge="statusBadge"
-        :show-header-action="!!peutValider"
+        :show-header-action="peutAgir"
         :messages="chatMessages"
         :loading="isLoading"
         loading-text="Chargement du mémo..."
-        :show-input="!!peutValider"
+        :show-input="peutRepondre"
         v-model:input-text="reponseContenu"
         input-placeholder="Écrire une réponse..."
         :selected-files="fichiers"
@@ -50,9 +50,9 @@
       <!-- Panneau de validation dans le slot side-panel -->
       <template #side-panel>
         <transition name="slide">
-          <div v-if="peutValider && showValidationPanel" class="validation-panel">
+          <div v-if="peutAgir && showValidationPanel" class="validation-panel">
             <div class="validation-panel-header">
-              <h3>Actions de validation</h3>
+              <h3>Actions</h3>
               <button @click="showValidationPanel = false" class="btn-close-panel">
                 <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" class="close-icon">
                   <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
@@ -65,7 +65,7 @@
                 <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" class="info-icon">
                   <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
                 </svg>
-                <p>Vous pouvez ajouter une réponse avant de valider ou rejeter le mémo.</p>
+                <p>Vous pouvez ajouter une réponse avant de prendre une décision.</p>
               </div>
 
               <div class="validation-actions-section">
@@ -80,7 +80,7 @@
                       <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
                     </svg>
                     <div class="action-text">
-                      <span class="action-title">Approuver le mémo</span>
+                      <span class="action-title">Approuver</span>
                       <span class="action-subtitle">Le mémo sera marqué comme validé</span>
                     </div>
                     <div v-if="isProcessing && actionType === 'approve'" class="spinner-small"></div>
@@ -95,10 +95,25 @@
                       <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
                     </svg>
                     <div class="action-text">
-                      <span class="action-title">Rejeter le mémo</span>
+                      <span class="action-title">Rejeter</span>
                       <span class="action-subtitle">Ajoutez une réponse pour expliquer</span>
                     </div>
                     <div v-if="isProcessing && actionType === 'reject'" class="spinner-small"></div>
+                  </button>
+
+                  <button
+                      class="btn-action-full btn-revoke-full"
+                      @click="revoquerMemo"
+                      :disabled="isProcessing"
+                  >
+                    <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" class="action-icon">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636"></path>
+                    </svg>
+                    <div class="action-text">
+                      <span class="action-title">Révoquer</span>
+                      <span class="action-subtitle">Annuler ce mémo définitivement</span>
+                    </div>
+                    <div v-if="isProcessing && actionType === 'revoke'" class="spinner-small"></div>
                   </button>
                 </div>
               </div>
@@ -174,7 +189,7 @@ const managerGuid = computed(() => userStore.user?.guid || '');
 const memo = ref<Memo | null>(null);
 const isLoading = ref(true);
 const isProcessing = ref(false);
-const actionType = ref<'approve' | 'reject' | null>(null);
+const actionType = ref<'approve' | 'reject' | 'revoke' | null>(null);
 const imageModalUrl = ref<string | null>(null);
 const errorMessage = ref<string>('');
 const showValidationPanel = ref(false);
@@ -236,11 +251,13 @@ const memoCreeParlEmploye = computed(() => {
   return memo.value.createurId !== managerGuid.value;
 });
 
-const peutValider = computed(() =>
-    memo.value &&
-    memoCreeParlEmploye.value &&
-    (memo.value.statut === 'pending' || memo.value.statut === 'submitted')
+// Panneau d'actions visible si le memo est pending, quel que soit le createur
+const peutAgir = computed(() =>
+    !!memo.value && (memo.value.statut === 'pending' || memo.value.statut === 'submitted')
 );
+
+// Repondre est toujours possible, quel que soit le statut
+const peutRepondre = computed(() => !!memo.value);
 
 /**
  * Nom affiché dans le header = l'interlocuteur du manager.
@@ -377,6 +394,12 @@ const chatMessages = computed(() => {
 
   return result;
 });
+
+const peutValider = computed(() =>
+    memo.value &&
+    memoCreeParlEmploye.value &&
+    (memo.value.statut === 'pending' || memo.value.statut === 'submitted')
+);
 
 // ============ COMPUTED - CONVERSATION MESSAGES (logique métier) ============
 
@@ -996,6 +1019,45 @@ const envoyerReponse = async () => {
 };
 
 const approuverMemo = async () => {
+  if (!memo.value || isProcessing.value || !managerGuid.value) return;
+  if (!confirm) return;
+
+  isProcessing.value = true;
+  actionType.value = 'approve';
+  isUploadingFiles.value = true;
+
+  try {
+    let messageContent: MessageContent[] | undefined;
+    if (reponseContenu.value.trim() || fichiers.value.length > 0 || audioBlob.value) {
+      const totalFiles = fichiers.value.length + (audioBlob.value ? 1 : 0);
+      if (totalFiles > 8) throw new Error('Maximum 8 fichiers autorisés');
+      const allFiles = await collectAllFiles();
+      const uploadedFiles = allFiles.length > 0 ? await MemoService.uploadMultipleFiles(allFiles) : [];
+      messageContent = MemoService.buildMessageContent(reponseContenu.value, uploadedFiles);
+    }
+
+    isUploadingFiles.value = false;
+
+    const response = await MemoService.validateMemo(memo.value.guid, managerGuid.value);
+    if (!response.success) return;
+
+    await memoStore.refreshMemo(managerGuid.value, memo.value.guid);
+    await chargerMemo();
+
+    setTimeout(() => router.push('/memoList'), 2500);
+
+  } catch (error: any) {
+    console.error('❌ Erreur approbation:', error);
+    alert(`Erreur: ${error.message || "Impossible d'approuver le mémo"}`);
+  } finally {
+    isProcessing.value = false;
+    actionType.value = null;
+    isUploadingFiles.value = false;
+    uploadProgress.value = null;
+  }
+};
+
+const revoquerMemo = async () => {
   if (!memo.value || isProcessing.value || !managerGuid.value) return;
   if (!confirm) return;
 

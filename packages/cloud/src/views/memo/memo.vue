@@ -1,189 +1,203 @@
 <template>
-  <div class="memos-list-container">
-    <!-- État de chargement -->
-    <div v-if="isLoading" class="loading-state">
-      <div class="loader">
-        <div class="spinner"></div>
-        <div class="loading-text">
-          <p class="loading-title">Chargement en cours...</p>
-          <p class="loading-subtitle">Récupération des mémos</p>
-        </div>
+  <!-- État de chargement -->
+  <div v-if="isLoading" class="flex flex-col items-center justify-center py-20 gap-3">
+    <div class="w-8 h-8 border-4 border-blue-200 border-t-blue-600 rounded-full animate-spin"></div>
+    <p class="text-sm text-gray-500">Chargement des mémos...</p>
+  </div>
+
+  <!-- État d'erreur -->
+  <div v-else-if="error" class="flex flex-col items-center justify-center py-20 gap-3">
+    <span class="text-4xl">⚠️</span>
+    <p class="text-gray-600">{{ error }}</p>
+    <button v-if="onRetry" @click="onRetry"
+            class="px-4 py-2 text-sm bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors">
+      Réessayer
+    </button>
+  </div>
+
+  <!-- Liste ou état vide -->
+  <div v-else>
+    <!-- Résultat count + per-page -->
+    <div class="flex items-center justify-between mb-4">
+      <div class="flex items-center gap-2 text-sm text-gray-600">
+        <span class="text-lg">📋</span>
+        <span class="font-medium">{{ memos.length }} mémo{{ memos.length > 1 ? 's' : '' }} trouvé{{ memos.length > 1 ? 's' : '' }}</span>
       </div>
+      <select
+          v-model="perPage"
+          class="border border-gray-200 rounded-lg px-2 py-1 text-sm text-gray-600 focus:outline-none focus:ring-2 focus:ring-blue-500"
+      >
+        <option :value="10">10 par page</option>
+        <option :value="25">25 par page</option>
+        <option :value="50">50 par page</option>
+      </select>
     </div>
 
-    <!-- État d'erreur -->
-    <div v-else-if="error" class="error-state">
-      <div class="error-icon">⚠️</div>
-      <p class="error-message">{{ error }}</p>
-      <button v-if="onRetry" class="btn-retry" @click="onRetry">
-        🔄 Réessayer
-      </button>
+    <!-- État vide -->
+    <div v-if="memos.length === 0" class="flex flex-col items-center justify-center py-20 gap-3">
+      <div class="relative">
+        <span class="text-6xl">📝</span>
+        <div class="absolute inset-0 bg-blue-100 rounded-full opacity-20 scale-150"></div>
+      </div>
+      <h3 class="text-lg font-semibold text-gray-800">{{ emptyTitle }}</h3>
+      <p class="text-sm text-gray-500 max-w-xs text-center">{{ emptyDescription }}</p>
+      <slot name="empty-action" />
     </div>
 
     <!-- Liste des mémos -->
-    <div v-else>
-      <!-- État vide -->
-      <div v-if="memosGroupes.length === 0" class="empty-state">
-        <div class="empty-illustration">
-          <div class="empty-icon">📝</div>
-          <div class="empty-circle"></div>
-        </div>
-        <h3 class="empty-title">{{ emptyTitle || 'Aucun mémo trouvé' }}</h3>
-        <p class="empty-description">
-          {{ emptyDescription || 'Aucun mémo ne correspond à vos critères' }}
-        </p>
-        <slot name="empty-action"></slot>
-      </div>
+    <div v-else class="flex flex-col gap-2">
+      <div
+          v-for="memo in memosPagines"
+          :key="memo.guid"
+          @click="handleMemoClick(memo)"
+          class="bg-white border border-gray-100 rounded-xl cursor-pointer hover:shadow-md transition-all duration-200 hover:-translate-y-px group"
+      >
+        <!-- Bordure gauche colorée par statut -->
+        <div class="flex items-stretch">
+          <div :class="['w-1 rounded-l-xl flex-shrink-0', statusBorderColor(memo.statut)]"></div>
 
-      <!-- Liste des groupes de dates -->
-      <div v-for="groupe in memosGroupes" :key="groupe.date" class="groupe-date">
-        <!-- En-tête de date -->
-        <div
-            class="date-header-clickable"
-            @click="toggleDateGroupe(groupe.date)"
-            :class="{ expanded: datesExpanded[groupe.date] }"
-        >
-          <div class="date-header">
-            <div class="date-main">
-              <span class="dropdown-arrow" :class="{ expanded: datesExpanded[groupe.date] }">
-                ›
+          <div class="flex items-center gap-4 px-4 py-3.5 flex-1 min-w-0">
+
+            <!-- Icône type -->
+            <div :class="['w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0 text-lg', typeIconBg(memo.type)]">
+              {{ getTypeIcon(memo.type) }}
+            </div>
+
+            <!-- Titre + ID -->
+            <div class="flex flex-col min-w-0 w-44 flex-shrink-0">
+              <span class="text-sm font-semibold text-gray-900 truncate">{{ memo.titre }}</span>
+              <span class="text-xs text-gray-400 truncate">ID: {{ memo.guid?.slice(-13) }}</span>
+            </div>
+
+            <!-- Avatar + Interlocuteur -->
+            <div class="flex items-center gap-2.5 flex-1 min-w-0">
+              <div class="w-8 h-8 rounded-full bg-gray-200 flex items-center justify-center flex-shrink-0 overflow-hidden">
+                <span v-if="memo.autoGenerated" class="text-sm">🤖</span>
+                <span v-else class="text-xs font-semibold text-gray-600">
+                  {{ initials(memo.interlocuteurNom) }}
+                </span>
+              </div>
+              <div class="flex flex-col min-w-0">
+                <span class="text-sm font-medium text-gray-800 truncate">
+                  {{ memo.autoGenerated ? 'System' : (memo.interlocuteurNom || '—') }}
+                </span>
+                <span class="text-xs text-gray-400 truncate">
+                  {{ memo.interlocuteurCode || 'Auto' }} · {{ memo.interlocuteurDepartement || '' }}
+                </span>
+              </div>
+            </div>
+
+            <!-- Badge type -->
+            <div class="hidden sm:flex flex-shrink-0">
+              <span :class="['px-2.5 py-1 rounded-full text-xs font-medium', typeBadgeClass(memo.type)]">
+                {{ getTypeLabel(memo.type) }}
               </span>
-              <div class="date-info">
-                <h2 class="date-title">{{ groupe.dateFormatee }}</h2>
-                <span class="date-badge">{{ getTotalMemosForDate(groupe) }}</span>
+            </div>
+
+            <!-- Statut -->
+            <div class="flex-shrink-0">
+              <span :class="['px-2.5 py-1 rounded-full text-xs font-semibold', statusBadgeClass(memo.statut)]">
+                {{ getStatusLabel(memo.statut) }}
+              </span>
+            </div>
+
+            <!-- Date incident -->
+            <div class="hidden md:flex flex-col items-start flex-shrink-0 w-36">
+              <div class="flex items-center gap-1 text-xs text-gray-500">
+                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <rect x="3" y="4" width="18" height="18" rx="2" ry="2" stroke-width="2"/>
+                  <line x1="16" y1="2" x2="16" y2="6" stroke-width="2"/>
+                  <line x1="8" y1="2" x2="8" y2="6" stroke-width="2"/>
+                  <line x1="3" y1="10" x2="21" y2="10" stroke-width="2"/>
+                </svg>
+                <span>{{ formatDate(memo.dateIncident || memo.dateCreation) }}</span>
               </div>
             </div>
+
+            <!-- Messages count -->
+            <div class="flex items-center gap-1 text-gray-400 flex-shrink-0 ml-auto">
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                      d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"/>
+              </svg>
+              <span class="text-xs">{{ memo.messagesCount }}</span>
+              <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none"
+                   stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
+                   class="w-4 h-4 hover:w-5 hover:h-5 transition-all duration-500 hover:text-black"
+              >
+                <path stroke="none" d="M0 0h24v24H0z" fill="none" />
+                <path d="M9 6l6 6l-6 6" />
+              </svg>
+            </div>
+
           </div>
         </div>
-
-        <!-- Contenu date -->
-        <transition name="smooth-expand">
-          <div v-show="datesExpanded[groupe.date]" class="date-content">
-            <div v-for="typeGroup in groupe.types" :key="typeGroup.type" class="type-group">
-              <!-- En-tête type -->
-              <div
-                  class="type-header-clickable"
-                  @click="toggleTypeGroupe(groupe.date, typeGroup.type)"
-                  :class="{ expanded: typesExpanded[`${groupe.date}-${typeGroup.type}`] }"
-              >
-                <div class="type-header">
-                  <span class="dropdown-arrow small" :class="{ expanded: typesExpanded[`${groupe.date}-${typeGroup.type}`] }">
-                    ›
-                  </span>
-                  <div class="type-info">
-                    <span class="type-icon">{{ getTypeIcon(typeGroup.type) }}</span>
-                    <h3 class="type-title">{{ getTypeLabel(typeGroup.type) }}</h3>
-                  </div>
-                  <span class="type-count">{{ typeGroup.memos.length }}</span>
-                </div>
-              </div>
-
-              <!-- Contenu type -->
-              <transition name="smooth-expand">
-                <div
-                    v-show="typesExpanded[`${groupe.date}-${typeGroup.type}`]"
-                    class="type-content"
-                >
-                  <div
-                      v-for="memo in typeGroup.memos"
-                      :key="memo.guid"
-                      class="memo-item"
-                      @click="handleMemoClick(memo)"
-                  >
-                    <!-- Carte mémo - slot personnalisable -->
-                    <slot name="memo-card" :memo="memo">
-                      <!-- Carte par défaut -->
-                      <div class="memo-card" :class="{ 'memo-card--auto': memo.autoGenerated }">
-
-                        <!-- Ligne heure + badge auto -->
-                        <div class="memo-card-topbar">
-                          <span class="memo-time">🕐 {{ formatHeure(memo.dateCreation) }}</span>
-                          <span v-if="memo.autoGenerated" class="memo-badge-auto">🤖 Auto</span>
-                        </div>
-
-                        <!-- Interlocuteur (personne concernée) -->
-                        <div class="memo-interlocuteur">
-                          <div class="interlocuteur-avatar">
-                            <span v-if="memo.autoGenerated && !memo.interlocuteurNom">🤖</span>
-                            <span v-else>
-                              {{ (memo.interlocuteurNom || '?').split(' ').map((n: string) => n[0]).join('').slice(0, 2).toUpperCase() }}
-                            </span>
-                          </div>
-                          <div class="interlocuteur-details">
-                            <span class="interlocuteur-nom">{{ memo.interlocuteurNom || '—' }}</span>
-                            <span
-                                v-if="memo.interlocuteurCode || memo.interlocuteurDepartement"
-                                class="interlocuteur-sub"
-                            >
-                              <template v-if="memo.interlocuteurCode">{{ memo.interlocuteurCode }}</template>
-                              <template v-if="memo.interlocuteurCode && memo.interlocuteurDepartement"> • </template>
-                              <template v-if="memo.interlocuteurDepartement">{{ memo.interlocuteurDepartement }}</template>
-                            </span>
-                          </div>
-                        </div>
-
-                        <!-- Footer stats -->
-                        <div class="memo-card-footer">
-                          <div class="memo-stats">
-                            <span class="stat-item">
-                              💬 {{ memo.messagesCount }} message{{ memo.messagesCount > 1 ? 's' : '' }}
-                            </span>
-                            <span v-if="memo.entriesAffectees && memo.entriesAffectees.length > 0" class="stat-item">
-                              🔎 {{ memo.entriesAffectees.length }} entrée{{ memo.entriesAffectees.length > 1 ? 's' : '' }}
-                            </span>
-                          </div>
-                          <span class="view-arrow">›</span>
-                        </div>
-                      </div>
-                    </slot>
-                  </div>
-                </div>
-              </transition>
-            </div>
-          </div>
-        </transition>
       </div>
+    </div>
+
+    <!-- Pagination -->
+    <div v-if="totalPages > 1" class="flex items-center justify-center gap-1 mt-6">
+      <button
+          @click="currentPage--"
+          :disabled="currentPage === 1"
+          class="w-8 h-8 rounded-lg flex items-center justify-center text-black hover:bg-white disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+      >
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/>
+        </svg>
+      </button>
+
+      <div class="flex bg-white rounded-sm overflow-hidden items-center justify-center p-1">
+        <template v-for="page in paginationPages" :key="page">
+          <button
+              v-if="page !== '...'"
+              @click="currentPage = +page"
+              :class="['w-7 h-7 rounded-lg text-sm font-medium transition-colors',
+            currentPage === +page ? 'bg-blue-600 text-white' : 'text-gray-600 hover:bg-gray-200']"
+          >{{ page }}</button>
+          <span v-else class="w-8 h-8 flex items-center justify-center text-gray-400 text-sm">...</span>
+        </template>
+      </div>
+
+
+
+      <button
+          @click="currentPage++"
+          :disabled="currentPage === totalPages"
+          class="w-8 h-8 rounded-lg flex items-center justify-center text-black hover:bg-white disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+      >
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
+        </svg>
+      </button>
     </div>
   </div>
 </template>
 
 <script setup lang="ts">
-import { computed, reactive } from 'vue';
+import { ref, computed, watch } from 'vue';
 
-// ============ TYPES ============
 interface Memo {
   guid: string;
+  titre: string;
   type: string;
+  statut: string;
   dateCreation: Date;
-  createurNom: string;
-  createurId: string;
-  createurCode: string;
-  createurDepartement: string;
+  dateIncident?: Date | null;
+  interlocuteurNom?: string;
+  interlocuteurCode?: string;
+  interlocuteurDepartement?: string;
+  autoGenerated: boolean;
   messagesCount: number;
-  entriesAffectees: any[];
   [key: string]: any;
 }
 
-interface TypeGroup {
-  type: string;
-  memos: Memo[];
-}
-
-interface DateGroup {
-  date: string;
-  dateFormatee: string;
-  types: TypeGroup[];
-}
-
-// ============ PROPS ============
 interface Props {
   memos: Memo[];
   isLoading?: boolean;
   error?: string;
   emptyTitle?: string;
   emptyDescription?: string;
-  showEmployeeFilter?: boolean;
-  showDirection?: boolean;
   onRetry?: () => void;
 }
 
@@ -192,564 +206,114 @@ const props = withDefaults(defineProps<Props>(), {
   error: '',
   emptyTitle: 'Aucun mémo trouvé',
   emptyDescription: 'Aucun mémo ne correspond à vos critères',
-  showEmployeeFilter: true,
-  showDirection: true,
   onRetry: undefined,
 });
 
-// ============ EMITS ============
 const emit = defineEmits<{
   'memo-click': [memo: Memo];
-  'employee-filter': [employeeId: string];
 }>();
 
-// ============ STATE ============
-const datesExpanded = reactive<Record<string, boolean>>({});
-const typesExpanded = reactive<Record<string, boolean>>({});
+// ── State ──────────────────────────────────────
+const currentPage = ref(1);
+const perPage = ref(10);
 
-// ============ COMPUTED ============
-const memosGroupes = computed((): DateGroup[] => {
-  const groupes: Record<string, Record<string, Memo[]>> = {};
+// ── Pagination ─────────────────────────────────
+const totalPages = computed(() => Math.max(1, Math.ceil(props.memos.length / perPage.value)));
 
-  props.memos.forEach(memo => {
-    const dateKey = new Date(memo.dateCreation).toLocaleDateString('fr-FR');
-    groupes[dateKey] ??= {};
-    groupes[dateKey][memo.type] ??= [];
-    groupes[dateKey][memo.type].push(memo);
-  });
+// Reset page quand perPage ou la liste change
+watch([perPage, () => props.memos.length], () => { currentPage.value = 1; });
 
-  const result = Object.keys(groupes)
-      .sort((a, b) =>
-          new Date(b.split('/').reverse().join('-')).getTime() -
-          new Date(a.split('/').reverse().join('-')).getTime()
-      )
-      .map(date => ({
-        date,
-        dateFormatee: formatDateGroupe(date),
-        types: Object.keys(groupes[date]).map(type => ({
-          type,
-          memos: groupes[date][type]
-              .sort((a, b) => new Date(b.dateCreation).getTime() - new Date(a.dateCreation).getTime())
-        }))
-      }));
-
-  // Initialiser les états d'expansion
-  result.forEach(groupe => {
-    if (!(groupe.date in datesExpanded)) {
-      datesExpanded[groupe.date] = false;
-    }
-
-    groupe.types.forEach(typeGroup => {
-      const typeKey = `${groupe.date}-${typeGroup.type}`;
-      if (!(typeKey in typesExpanded)) {
-        typesExpanded[typeKey] = false;
-      }
-    });
-  });
-
-  return result;
+const memosPagines = computed(() => {
+  const start = (currentPage.value - 1) * perPage.value;
+  return props.memos.slice(start, start + perPage.value);
 });
 
-// ============ METHODS ============
-const toggleDateGroupe = (date: string) => {
-  datesExpanded[date] = !datesExpanded[date];
+const paginationPages = computed(() => {
+  const total = totalPages.value;
+  const cur = currentPage.value;
+  const pages: (number | '...')[] = [];
+
+  if (total <= 7) {
+    for (let i = 1; i <= total; i++) pages.push(i);
+    return pages;
+  }
+  pages.push(1);
+  if (cur > 3) pages.push('...');
+  for (let i = Math.max(2, cur - 1); i <= Math.min(total - 1, cur + 1); i++) pages.push(i);
+  if (cur < total - 2) pages.push('...');
+  pages.push(total);
+  return pages;
+});
+
+// ── Helpers ────────────────────────────────────
+const handleMemoClick = (memo: Memo) => emit('memo-click', memo);
+
+const initials = (name?: string): string => {
+  if (!name) return '?';
+  return name.split(' ').map(n => n[0]).join('').slice(0, 2).toUpperCase();
 };
 
-const toggleTypeGroupe = (date: string, type: string) => {
-  const key = `${date}-${type}`;
-  typesExpanded[key] = !typesExpanded[key];
-};
-
-const getTotalMemosForDate = (groupe: DateGroup): number => {
-  return groupe.types.reduce((total, typeGroup) => total + typeGroup.memos.length, 0);
-};
-
-const getTypeIcon = (type: string): string => {
-  const icons: { [key: string]: string } = {
-    delay_justification: '⏰',
-    absence_justification: '🏥',
-    absence_notification: '📢',
-    session_closure: '🔒',
-    auto_generated: '🤖',
-    other: '📄'
-  };
-  return icons[type] || '📝';
-};
-
-const getTypeLabel = (type: string): string => {
-  const labels: { [key: string]: string } = {
-    delay_justification: 'Justification de retard',
-    absence_justification: "Justification d'absence",
-    absence_notification: "Notification d'absence",
-    session_closure: 'Clôture de session',
-    auto_generated: 'Généré automatiquement',
-    other: 'Autres'
-  };
-  return labels[type] || type.replace(/_/g, ' ');
-};
-
-const formatHeure = (date: Date): string => {
-  return new Date(date).toLocaleTimeString('fr-FR', {
-    hour: '2-digit',
-    minute: '2-digit'
+const formatDate = (date: Date | string | null | undefined): string => {
+  if (!date) return '—';
+  return new Date(date).toLocaleDateString('fr-FR', {
+    day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit'
   });
 };
 
-const formatDateGroupe = (dateStr: string): string => {
-  const parts = dateStr.split('/');
-  const date = new Date(parseInt(parts[2]), parseInt(parts[1]) - 1, parseInt(parts[0]));
-  const aujourdhui = new Date();
-  aujourdhui.setHours(0, 0, 0, 0);
-  const hier = new Date(aujourdhui);
-  hier.setDate(hier.getDate() - 1);
+const getTypeIcon = (type: string): string => ({
+  delay_justification: '⏱',
+  absence_justification: '🏥',
+  absence_notification: '📢',
+  session_closure: '🔒',
+  auto_generated: '🤖',
+  correction_request: '✏️',
+}[type] ?? '📝');
 
-  date.setHours(0, 0, 0, 0);
+const getTypeLabel = (type: string): string => ({
+  delay_justification: 'delay_justification',
+  absence_justification: 'absence_justification',
+  absence_notification: 'absence_notification',
+  session_closure: 'session_closure',
+  auto_generated: 'auto_generated',
+  correction_request: 'correction_request',
+}[type] ?? type);
 
-  if (date.getTime() === aujourdhui.getTime()) {
-    return "Aujourd'hui";
-  } else if (date.getTime() === hier.getTime()) {
-    return 'Hier';
-  } else {
-    return date.toLocaleDateString('fr-FR', {
-      weekday: 'long',
-      day: 'numeric',
-      month: 'long',
-      year: 'numeric'
-    });
-  }
-};
+const getStatusLabel = (status: string): string => ({
+  pending: 'En attente',
+  submitted: 'En attente',
+  approved: 'Approuvé',
+  rejected: 'Rejeté',
+}[status] ?? status);
 
-const handleMemoClick = (memo: Memo) => {
-  emit('memo-click', memo);
-};
+const typeIconBg = (type: string): string => ({
+  delay_justification: 'bg-blue-50 text-blue-600',
+  absence_justification: 'bg-yellow-50 text-yellow-600',
+  session_closure: 'bg-red-50 text-red-600',
+  auto_generated: 'bg-purple-50 text-purple-600',
+  correction_request: 'bg-red-50 text-red-600',
+  absence_notification: 'bg-orange-50 text-orange-600',
+}[type] ?? 'bg-gray-50 text-gray-600');
 
-const handleEmployeeFilter = (employeeId: string) => {
-  emit('employee-filter', employeeId);
-};
+const typeBadgeClass = (type: string): string => ({
+  delay_justification: 'bg-blue-50 text-blue-700',
+  absence_justification: 'bg-yellow-50 text-yellow-700',
+  session_closure: 'bg-gray-100 text-gray-600',
+  auto_generated: 'bg-purple-50 text-purple-700',
+  correction_request: 'bg-red-50 text-red-700',
+  absence_notification: 'bg-orange-50 text-orange-700',
+}[type] ?? 'bg-gray-100 text-gray-600');
+
+const statusBadgeClass = (status: string): string => ({
+  pending: 'bg-orange-50 text-orange-600',
+  submitted: 'bg-orange-50 text-orange-600',
+  approved: 'bg-green-50 text-green-700',
+  rejected: 'bg-red-50 text-red-600',
+}[status] ?? 'bg-gray-100 text-gray-600');
+
+const statusBorderColor = (status: string): string => ({
+  pending: 'bg-orange-400',
+  submitted: 'bg-orange-400',
+  approved: 'bg-green-500',
+  rejected: 'bg-red-400',
+}[status] ?? 'bg-gray-300');
 </script>
-
-<style scoped>
-/* Reprise des styles du fichier CSS existant */
-/* Les styles sont identiques à ceux de toke-memoList-18.css */
-/* pour la section .memos-list-container et ses enfants */
-
-.memos-list-container {
-  display: flex;
-  flex-direction: column;
-  gap: 24px;
-}
-
-.loading-state {
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  min-height: 400px;
-  padding: 48px 24px;
-}
-
-.loader {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 24px;
-}
-
-.spinner {
-  width: 48px;
-  height: 48px;
-  border: 4px solid #f3f4f6;
-  border-top-color: #3b82f6;
-  border-radius: 50%;
-  animation: spin 0.8s linear infinite;
-}
-
-@keyframes spin {
-  to { transform: rotate(360deg); }
-}
-
-.loading-text {
-  text-align: center;
-}
-
-.loading-title {
-  font-size: 18px;
-  font-weight: 600;
-  color: #1f2937;
-  margin-bottom: 8px;
-}
-
-.loading-subtitle {
-  font-size: 14px;
-  color: #6b7280;
-}
-
-.error-state {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  min-height: 400px;
-  padding: 48px 24px;
-  text-align: center;
-}
-
-.error-icon {
-  font-size: 64px;
-  margin-bottom: 16px;
-}
-
-.error-message {
-  font-size: 16px;
-  color: #dc2626;
-  margin-bottom: 24px;
-}
-
-.btn-retry {
-  padding: 12px 24px;
-  background: #3b82f6;
-  color: white;
-  border: none;
-  border-radius: 8px;
-  font-size: 14px;
-  font-weight: 500;
-  cursor: pointer;
-  transition: background 0.2s;
-}
-
-.btn-retry:hover {
-  background: #2563eb;
-}
-
-.empty-state {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  min-height: 400px;
-  padding: 48px 24px;
-  text-align: center;
-}
-
-.empty-illustration {
-  position: relative;
-  margin-bottom: 32px;
-}
-
-.empty-icon {
-  font-size: 80px;
-  position: relative;
-  z-index: 1;
-}
-
-.empty-circle {
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%);
-  width: 120px;
-  height: 120px;
-  background: linear-gradient(135deg, #dbeafe 0%, #e0e7ff 100%);
-  border-radius: 50%;
-  opacity: 0.3;
-}
-
-.empty-title {
-  font-size: 24px;
-  font-weight: 600;
-  color: #1f2937;
-  margin-bottom: 12px;
-}
-
-.empty-description {
-  font-size: 16px;
-  color: #6b7280;
-  margin-bottom: 24px;
-  max-width: 400px;
-}
-
-.groupe-date {
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-}
-
-.date-header-clickable {
-  cursor: pointer;
-  user-select: none;
-}
-
-.date-header {
-  background: white;
-  border: 1px solid #004AAD;
-  border-radius: 12px;
-  padding: 16px 20px;
-  transition: all 0.2s;
-}
-
-.date-header-clickable.expanded .date-header {
-  background: var(--color-primary);
-  border-color: var(--color-primary);
-}
-
-.date-header-clickable.expanded .date-title {
-  color: white;
-}
-
-.date-header-clickable.expanded .dropdown-arrow {
-  color: white;
-}
-
-.date-main {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-}
-
-.dropdown-arrow {
-  font-size: 20px;
-  color: #6b7280;
-  transition: transform 0.3s ease;
-  display: inline-block;
-  font-weight: bold;
-}
-
-.dropdown-arrow.expanded {
-  transform: rotate(90deg);
-}
-
-.dropdown-arrow.small {
-  font-size: 16px;
-}
-
-.date-info {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  flex: 1;
-}
-
-.date-title {
-  font-size: 18px;
-  font-weight: 600;
-  color: #1f2937;
-  margin: 0;
-}
-
-.date-badge {
-  background: var(--color-primary);
-  color: white;
-  padding: 4px 12px;
-  border-radius: 12px;
-  font-size: 13px;
-  font-weight: 500;
-}
-
-.date-content {
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-  padding-left: 20px;
-}
-
-.type-group {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-}
-
-.type-header-clickable {
-  cursor: pointer;
-  user-select: none;
-}
-
-.type-header {
-  background: white;
-  border: 1px solid #e5e7eb;
-  border-radius: 10px;
-  padding: 12px 16px;
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  transition: all 0.2s;
-}
-
-.type-header-clickable:hover .type-header {
-  background: #f9fafb;
-  border-color: #d1d5db;
-  transform: translateX(2px);
-}
-
-.type-info {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  flex: 1;
-}
-
-.type-icon {
-  font-size: 20px;
-}
-
-.type-title {
-  font-size: 15px;
-  font-weight: 500;
-  color: #374151;
-  margin: 0;
-}
-
-.type-count {
-  background: #f3f4f6;
-  color: #6b7280;
-  padding: 4px 10px;
-  border-radius: 10px;
-  font-size: 12px;
-  font-weight: 500;
-}
-
-.type-content {
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-  padding-left: 32px;
-}
-
-.memo-item {
-  cursor: pointer;
-  transition: transform 0.2s;
-}
-
-.memo-item:hover {
-  transform: translateX(4px);
-}
-
-.memo-card {
-  background: white;
-  border: 1px solid #e5e7eb;
-  border-radius: 12px;
-  padding: 16px;
-  transition: all 0.2s;
-}
-
-.memo-item:hover .memo-card {
-  border-color: #3b82f6;
-  box-shadow: 0 4px 12px rgba(59, 130, 246, 0.1);
-}
-
-.memo-card-topbar {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  margin-bottom: 8px;
-}
-
-.memo-time {
-  font-size: 12px;
-  color: #6b7280;
-}
-
-.memo-badge-auto {
-  font-size: 11px;
-  font-weight: 600;
-  color: #7c3aed;
-  background: #ede9fe;
-  padding: 2px 8px;
-  border-radius: 10px;
-}
-
-.memo-interlocuteur {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  margin-bottom: 14px;
-}
-
-.interlocuteur-avatar {
-  width: 36px;
-  height: 36px;
-  min-width: 36px;
-  border-radius: 50%;
-  background: linear-gradient(135deg, #3b82f6, #8b5cf6);
-  color: white;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 13px;
-  font-weight: 600;
-}
-
-.interlocuteur-details {
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
-  min-width: 0;
-}
-
-.interlocuteur-nom {
-  font-size: 13px;
-  font-weight: 600;
-  color: #1f2937;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-
-.interlocuteur-sub {
-  font-size: 11px;
-  color: #9ca3af;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-
-.memo-card-footer {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding-top: 12px;
-  border-top: 1px solid #f3f4f6;
-}
-
-.memo-stats {
-  display: flex;
-  gap: 16px;
-}
-
-.stat-item {
-  font-size: 13px;
-  color: #6b7280;
-}
-
-.view-arrow {
-  font-size: 18px;
-  color: #9ca3af;
-  transition: all 0.2s;
-}
-
-.memo-item:hover .view-arrow {
-  color: #3b82f6;
-  transform: translateX(4px);
-}
-
-/* ===== Carte mémo ===== */
-.memo-card--auto {
-  border-left: 3px solid #8b5cf6;
-}
-/* ====================== */
-
-.smooth-expand-leave-active {
-  transition: all 0.3s ease;
-  overflow: hidden;
-}
-
-.smooth-expand-enter-from,
-.smooth-expand-leave-to {
-  opacity: 0;
-  max-height: 0;
-}
-
-.smooth-expand-enter-to,
-.smooth-expand-leave-from {
-  opacity: 1;
-  max-height: 2000px;
-}
-</style>
