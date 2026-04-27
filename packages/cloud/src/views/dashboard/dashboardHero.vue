@@ -2,7 +2,7 @@
   <section class="flex flex-col gap-6 py-5">
 
     <!-- ═══════════════════════ HEADER + FILTRES ═══════════════════════ -->
-    <div class="flex items-center gap-4 bg-white shadow-md rounded-md
+    <div class="flex flex-col  md:flex-row items-center gap-4 bg-white shadow-md rounded-md
             px-5 py-3.5">
 
       <!-- Logo + titre + badge -->

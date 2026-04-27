@@ -2,7 +2,7 @@
 import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
 
-import UserService, { SubordinateResponse } from '../service/UserService'
+import UserService from '../service/UserService'
 
 import {useTeamStore} from "@/stores/teamStore";
 
@@ -170,28 +170,28 @@ export const useUserStore = defineStore('user', () => {
     }
   }
 
-  // 🎯 NOUVELLE FONCTION: Transformer les données API en format Subordinate
-  const transformSubordinate = (apiData: SubordinateResponse): Subordinate => {
-    const firstName = apiData.first_name || ''
-    const lastName = apiData.last_name || ''
-    const name = `${firstName} ${lastName}`.trim() || apiData.name || 'N/A'
-
-    const firstInitial = firstName.charAt(0) || name.charAt(0) || '?'
-    const lastInitial = lastName.charAt(0) || name.charAt(1) || '?'
-    const initials = `${firstInitial}${lastInitial}`.toUpperCase()
-
-    return {
-      id: apiData.id,
-      guid: apiData.guid,
-      name,
-      email: apiData.email || '',
-      position: apiData.job_title || apiData.position || 'N/A',
-      siteId: apiData.siteId || apiData.department || 'default',
-      punctualityScore: apiData.punctualityScore || 0,
-      avatar: apiData.avatar,
-      initials
-    }
-  }
+  // // 🎯 NOUVELLE FONCTION: Transformer les données API en format Subordinate
+  // const transformSubordinate = (apiData: SubordinateResponse): Subordinate => {
+  //   const firstName = apiData.first_name || ''
+  //   const lastName = apiData.last_name || ''
+  //   const name = `${firstName} ${lastName}`.trim() || apiData.name || 'N/A'
+  //
+  //   const firstInitial = firstName.charAt(0) || name.charAt(0) || '?'
+  //   const lastInitial = lastName.charAt(0) || name.charAt(1) || '?'
+  //   const initials = `${firstInitial}${lastInitial}`.toUpperCase()
+  //
+  //   return {
+  //     id: apiData.id,
+  //     guid: apiData.guid,
+  //     name,
+  //     email: apiData.email || '',
+  //     position: apiData.job_title || apiData.position || 'N/A',
+  //     siteId: apiData.siteId || apiData.department || 'default',
+  //     punctualityScore: apiData.punctualityScore || 0,
+  //     avatar: apiData.avatar,
+  //     initials
+  //   }
+  // }
 
   // 🎯 NOUVELLE FONCTION: Charger les subordonnés depuis l'API
 

@@ -7,8 +7,8 @@ import Otp from './views/otp.vue'
 import DashboardMain from './views/dashboard/dashboardMain.vue'
 import MemoNew from './views/memo/memoNew.vue'
 import Equipe from './views/equipe.vue'
-// import MemoList from './views/memo/employeeMemosUnified.vue'
-import MemoList from './views/memo/memoList.vue'
+import MemoList from './views/memo/new/memosView.vue'
+import MemoList1 from './views/memo/memoList.vue'
 import EmployeeDetails from './views/EmployeeDetails.vue'
 import Schedule from './views/schedule/schedule.vue'
 import Profile from './views/profile.vue'
@@ -68,6 +68,12 @@ const routes: RouteRecordRaw[] = [
     path: '/memoList',
     name: 'memoList',
     component: MemoList,
+    meta: { requiresAuth: true },
+  },
+    {
+    path: '/MemoList1',
+    name: 'MemoList1',
+    component: MemoList1,
     meta: { requiresAuth: true },
   },
   {

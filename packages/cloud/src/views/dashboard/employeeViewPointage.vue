@@ -186,11 +186,11 @@
                       </span>
 
                       <span v-if="entry.device" class="flex items-center gap-1">
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="w-3.5 h-3.5">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="w-3.5 h-3.5 text-blue-600">
                           <rect x="5" y="2" width="14" height="20" rx="2" ry="2"/>
                           <line x1="12" y1="18" x2="12.01" y2="18"/>
                         </svg>
-                        {{ entry.device.device_type }}
+                        {{ entry.device.name }}
                       </span>
 
                       <span
@@ -397,18 +397,42 @@ watch(() => props.selectedEmployee, async (newEmployee) => {
 /**
  * Formater la période affichée
  */
+// const formatPeriod = () => {
+//   const dates = Object.keys(groupedByDay.value).sort()
+//   if (dates.length === 0) return 'Aucune période'
+//
+//   const start = new Date(dates[0] + 'T12:00:00')
+//   const end = new Date(dates[dates.length - 1] + 'T12:00:00')
+//
+//   const options: Intl.DateTimeFormatOptions = { day: 'numeric', month: 'short' }
+//
+//   if (start.getFullYear() === end.getFullYear() &&
+//       start.getMonth() === end.getMonth() &&
+//       start.getDate() === end.getDate()) {
+//     return start.toLocaleDateString('fr-FR', { ...options, year: 'numeric' })
+//   }
+//
+//   return `${start.toLocaleDateString('fr-FR', options)} - ${end.toLocaleDateString('fr-FR', { ...options, year: 'numeric' })}`
+// }
+
 const formatPeriod = () => {
   const dates = Object.keys(groupedByDay.value).sort()
-  if (dates.length === 0) return 'Aucune période'
+
+  const options: Intl.DateTimeFormatOptions = { day: 'numeric', month: 'short' }
+
+  if (dates.length === 0) {
+    const today = new Date()
+    return today.toLocaleDateString('fr-FR', { ...options, year: 'numeric' })
+  }
 
   const start = new Date(dates[0] + 'T12:00:00')
   const end = new Date(dates[dates.length - 1] + 'T12:00:00')
 
-  const options: Intl.DateTimeFormatOptions = { day: 'numeric', month: 'short' }
-
-  if (start.getFullYear() === end.getFullYear() &&
+  if (
+      start.getFullYear() === end.getFullYear() &&
       start.getMonth() === end.getMonth() &&
-      start.getDate() === end.getDate()) {
+      start.getDate() === end.getDate()
+  ) {
     return start.toLocaleDateString('fr-FR', { ...options, year: 'numeric' })
   }
 

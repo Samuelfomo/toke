@@ -227,6 +227,18 @@ export default class MemoService {
     }
   }
 
+    static async revokeMemo(guid: string, user: string): Promise<any> {
+        try {
+            return await apiRequest<ApiResponse>({
+                path: `${baseUrl}/revoke/${guid}`,
+                method: 'PATCH',
+                data: { validator_user: user },
+            });
+        } catch (error: any) {
+            return error;
+        }
+    }
+
   /**
    * Upload audio (Blob) et retourner l'URL
    */
