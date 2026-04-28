@@ -6,82 +6,88 @@
 
     <main class="flex-1 flex overflow-hidden pb-4 max-w-[1600px] mx-auto rounded-md w-full bg-white/70 m-5">
 
-      <!-- Sidebar gauche (header + liste) : toujours visible sur md+, caché sur mobile si un mémo est sélectionné -->
-      <div :class="[
-        'flex flex-col border-r border-gray-200 transition-all duration-300',
-        memoSelectionneGuid ? 'hidden md:flex' : 'flex w-full md:w-auto'
-      ]">
-        <div class="grid grid-cols-1 gap-4 items-start justify-between pt-4">
-          <!-- Page Header -->
-          <div class="flex items-center justify-between flex-shrink-0 p-4 space-x-4 border-b border-gray-200">
-            <div>
-              <h1 class="text-2xl font-bold text-gray-900">Mémos</h1>
-              <p class="text-sm text-gray-500 mt-0.5">Gérez tous les mémos du système</p>
-            </div>
-            <button
-                @click="naviguerCreerMemo"
-                class="flex items-center gap-2 px-2.5 py-2.5 bg-blue-600 text-white text-sm font-semibold rounded-xl hover:bg-blue-700 active:scale-95 transition-all shadow-sm"
-            >
-              <span class="text-lg leading-none">+</span>
-              <span>Nouveau mémo</span>
-            </button>
+      <div :class="['grid grid-cols-1 gap-4 items-start justify-between border-r border-gray-200 pt-4 transition-all duration-300', mode !== 'idle' ? 'hidden md:grid' : '']">
+        <!-- Page Header -->
+        <div class="flex items-center justify-between flex-shrink-0 p-4 space-x-4 border-b border-gray-200">
+          <div>
+            <h1 class="text-2xl font-bold text-gray-900">Mémos</h1>
+            <p class="text-sm text-gray-500 mt-0.5">Gérez tous les mémos du système</p>
           </div>
-
-          <!-- Colonne gauche : sidebar liste -->
-          <div class="flex-shrink-0 flex flex-col min-h-0 px-4">
-            <MemoSidebar
-                :memos="memosFiltres"
-                :is-loading="memoStore.isLoading"
-                :error="erreur"
-                :selected-guid="memoSelectionneGuid"
-                :filtres="filtres"
-                :recherche="recherche"
-                :tri="tri"
-                :memo-types="memoTypes"
-                :memo-statuts="memoStatuts"
-                :employes-options="employesFiltreOptions"
-                @select="selectionnerMemo"
-                @nouveau="naviguerCreerMemo"
-                @update:filtres="filtres = $event"
-                @update:recherche="recherche = $event"
-                @update:tri="tri = $event"
-                @reinitialiser="reinitialiserFiltres"
-            />
-          </div>
+          <button
+              @click="naviguerCreerMemo"
+              class="flex items-center gap-2 px-2.5 py-2.5 bg-blue-600 text-white text-sm font-semibold rounded-xl hover:bg-blue-700 active:scale-95 transition-all shadow-sm"
+          >
+            <span class="text-lg leading-none">+</span>
+            <span>Nouveau mémo</span>
+          </button>
         </div>
-      </div>
 
-      <!-- Zone centrale + droite : cachée sur mobile si aucun mémo sélectionné -->
-      <div :class="[
-        'flex gap-3 flex-1 min-h-0 transition-all duration-300',
-        !memoSelectionneGuid ? 'hidden md:flex' : 'flex'
-      ]">
-        <!-- Colonne centrale : chat -->
-        <div class="flex-1 min-w-0 flex flex-col min-h-0 bg-white shadow-sm overflow-hidden">
-          <!-- État vide (desktop seulement) -->
-          <div v-if="!memoSelectionneGuid" class="hidden md:flex flex-1 flex-col items-center justify-center gap-4 text-gray-400">
-            <svg class="w-16 h-16 opacity-30" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"
-                    d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"/>
-            </svg>
-            <p class="text-sm font-medium">Sélectionnez un mémo pour voir la conversation</p>
-          </div>
-
-          <!-- Detail mémo -->
-          <MemoDetailChat
-              v-if="memoSelectionneGuid"
-              :key="memoSelectionneGuid"
-              :memo-guid="memoSelectionneGuid"
-              :manager-guid="managerGuid"
-              @action-done="onActionDone"
-              @back="memoSelectionneGuid = ''"
+        <!-- Colonne gauche : sidebar liste -->
+        <div class=" flex-shrink-0 flex flex-col min-h-0 px-4">
+          <MemoSidebar
+              :memos="memosFiltres"
+              :is-loading="memoStore.isLoading"
+              :error="erreur"
+              :selected-guid="memoSelectionneGuid"
+              :filtres="filtres"
+              :recherche="recherche"
+              :tri="tri"
+              :memo-types="memoTypes"
+              :memo-statuts="memoStatuts"
+              :employes-options="employesFiltreOptions"
+              @select="selectionnerMemo"
+              @nouveau="naviguerCreerMemo"
+              @update:filtres="filtres = $event"
+              @update:recherche="recherche = $event"
+              @update:tri="tri = $event"
+              @reinitialiser="reinitialiserFiltres"
           />
         </div>
       </div>
 
-      <!-- Panel droit : caché sur mobile et tablette, visible sur lg+ -->
-      <div class="hidden lg:flex gap-3 min-h-0">
-        <!-- Colonne droite : panel infos + actions -->
+      <!-- Layout 2 colonnes -->
+      <div class="flex gap-3 flex-1 min-h-0">
+        <!-- Colonne centrale : chat -->
+        <div class="flex-1 min-w-0 flex flex-col min-h-0 bg-white shadow-sm overflow-hidden">
+          <!-- Bouton retour mobile -->
+          <div v-if="mode !== 'idle'" class="flex md:hidden items-center gap-2 px-4 py-2 border-b border-gray-100 flex-shrink-0">
+            <button @click="mode = 'idle'; memoSelectionneGuid = ''" class="flex items-center gap-1.5 text-sm text-blue-600 font-medium">
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/>
+              </svg>
+              Retour
+            </button>
+          </div>
+
+          <!-- Mode idle : invitation (desktop seulement) -->
+          <div v-if="mode === 'idle'" class="hidden md:flex flex-1 flex-col items-center justify-center gap-4 text-gray-400">
+            <svg class="w-16 h-16 opacity-30" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"
+                    d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"/>
+            </svg>
+            <p class="text-sm font-medium">Sélectionnez un mémo ou créez-en un nouveau</p>
+          </div>
+
+          <!-- Mode create : formulaire création inline -->
+          <MemoCreateChat
+              v-else-if="mode === 'create'"
+              @created="onMemoCreated"
+              @cancel="mode = 'idle'"
+          />
+
+          <!-- Mode detail : conversation -->
+          <MemoDetailChat
+              v-else-if="mode === 'detail' && memoSelectionneGuid"
+              :key="memoSelectionneGuid"
+              :memo-guid="memoSelectionneGuid"
+              :manager-guid="managerGuid"
+              @action-done="onActionDone"
+          />
+        </div>
+      </div>
+
+      <!-- Panel droit : visible uniquement en mode detail sur lg+ -->
+      <div v-if="mode === 'detail'" class="hidden lg:flex gap-3 min-h-0">
         <div class="w-[280px] flex-shrink-0 flex flex-col min-h-0">
           <MemoDetailPanel
               v-if="memoSelectionne"
@@ -113,6 +119,7 @@ import Footer from '@/views/components/footer.vue';
 import MemoSidebar from './memoSidebar.vue';
 import MemoDetailChat from './memoDetailChat.vue';
 import MemoDetailPanel from './memoDetailPanel.vue';
+import MemoCreateChat from './memoCreateChat.vue';
 import HeadBuilder from '@/utils/HeadBuilder';
 import footerCss from '../../../assets/css/toke-footer-24.css?url';
 
@@ -120,6 +127,12 @@ const router = useRouter();
 const userStore = useUserStore();
 const memoStore = useMemoStore();
 const managerGuid = computed(() => userStore.user?.guid ?? '');
+
+// ── Mode ───────────────────────────────────────
+// 'idle'   : rien de sélectionné (desktop : message d'accueil)
+// 'create' : formulaire de création inline
+// 'detail' : consultation d'un mémo existant
+const mode = ref<'idle' | 'create' | 'detail'>('idle');
 
 // ── Sélection ──────────────────────────────────
 const memoSelectionneGuid = ref<string>('');
@@ -259,16 +272,29 @@ const revoquerMemo = async () => {
 const selectionnerMemo = (memo: Memo) => {
   memoStore.markMemoAsRead(memo.guid);
   memoSelectionneGuid.value = memo.guid;
+  mode.value = 'detail';
 };
 
 const onActionDone = async () => {
-  // Après une réponse dans le chat, rafraîchir le mémo sélectionné
   if (memoSelectionneGuid.value) {
     await memoStore.refreshMemo(managerGuid.value, memoSelectionneGuid.value);
   }
 };
 
-const naviguerCreerMemo = () => router.push('/memoNew');
+const naviguerCreerMemo = () => {
+  memoSelectionneGuid.value = '';
+  mode.value = 'create';
+};
+
+const onMemoCreated = async (newGuid: string) => {
+  await memoStore.loadMemos(managerGuid.value, true);
+  if (newGuid) {
+    memoSelectionneGuid.value = newGuid;
+    mode.value = 'detail';
+  } else {
+    mode.value = 'idle';
+  }
+};
 
 const reinitialiserFiltres = () => {
   filtres.value = { employeId: '', type: '', statut: '' };
@@ -311,85 +337,95 @@ onUnmounted(() => stopWatcher?.());
 
 <!--    <main class="flex-1 flex overflow-hidden pb-4 max-w-[1600px] mx-auto rounded-md w-full bg-white/70 m-5">-->
 
-<!--      <div class="grid grid-cols-1 gap-4 items-start justify-between border-r border-gray-200 pt-4">-->
-<!--        &lt;!&ndash; Page Header &ndash;&gt;-->
-<!--        <div class="flex items-center justify-between flex-shrink-0 p-4 space-x-4 border-b border-gray-200">-->
-<!--          <div>-->
-<!--            <h1 class="text-2xl font-bold text-gray-900">Mémos</h1>-->
-<!--            <p class="text-sm text-gray-500 mt-0.5">Gérez tous les mémos du système</p>-->
+<!--      &lt;!&ndash; Sidebar gauche (header + liste) : toujours visible sur md+, caché sur mobile si un mémo est sélectionné &ndash;&gt;-->
+<!--      <div :class="[-->
+<!--        'flex flex-col border-r border-gray-200 transition-all duration-300',-->
+<!--        memoSelectionneGuid ? 'hidden md:flex' : 'flex w-full md:w-auto'-->
+<!--      ]">-->
+<!--        <div class="grid grid-cols-1 gap-4 items-start justify-between pt-4">-->
+<!--          &lt;!&ndash; Page Header &ndash;&gt;-->
+<!--          <div class="flex items-center justify-between flex-shrink-0 p-4 space-x-4 border-b border-gray-200">-->
+<!--            <div>-->
+<!--              <h1 class="text-2xl font-bold text-gray-900">Mémos</h1>-->
+<!--              <p class="text-sm text-gray-500 mt-0.5">Gérez tous les mémos du système</p>-->
+<!--            </div>-->
+<!--            <button-->
+<!--                @click="naviguerCreerMemo"-->
+<!--                class="flex items-center gap-2 px-2.5 py-2.5 bg-blue-600 text-white text-sm font-semibold rounded-xl hover:bg-blue-700 active:scale-95 transition-all shadow-sm"-->
+<!--            >-->
+<!--              <span class="text-lg leading-none">+</span>-->
+<!--              <span>Nouveau mémo</span>-->
+<!--            </button>-->
 <!--          </div>-->
-<!--          <button-->
-<!--              @click="naviguerCreerMemo"-->
-<!--              class="flex items-center gap-2 px-2.5 py-2.5 bg-blue-600 text-white text-sm font-semibold rounded-xl hover:bg-blue-700 active:scale-95 transition-all shadow-sm"-->
-<!--          >-->
-<!--            <span class="text-lg leading-none">+</span>-->
-<!--            <span>Nouveau mémo</span>-->
-<!--          </button>-->
-<!--        </div>-->
 
-<!--        &lt;!&ndash; Colonne gauche : sidebar liste &ndash;&gt;-->
-<!--        <div class=" flex-shrink-0 flex flex-col min-h-0 px-4">-->
-<!--          <MemoSidebar-->
-<!--              :memos="memosFiltres"-->
-<!--              :is-loading="memoStore.isLoading"-->
-<!--              :error="erreur"-->
-<!--              :selected-guid="memoSelectionneGuid"-->
-<!--              :filtres="filtres"-->
-<!--              :recherche="recherche"-->
-<!--              :tri="tri"-->
-<!--              :memo-types="memoTypes"-->
-<!--              :memo-statuts="memoStatuts"-->
-<!--              :employes-options="employesFiltreOptions"-->
-<!--              @select="selectionnerMemo as any"-->
-<!--              @nouveau="naviguerCreerMemo"-->
-<!--              @update:filtres="filtres = $event"-->
-<!--              @update:recherche="recherche = $event"-->
-<!--              @update:tri="tri = $event as any"-->
-<!--              @reinitialiser="reinitialiserFiltres"-->
-<!--          />-->
+<!--          &lt;!&ndash; Colonne gauche : sidebar liste &ndash;&gt;-->
+<!--          <div class="flex-shrink-0 flex flex-col min-h-0 px-4">-->
+<!--            <MemoSidebar-->
+<!--                :memos="memosFiltres"-->
+<!--                :is-loading="memoStore.isLoading"-->
+<!--                :error="erreur"-->
+<!--                :selected-guid="memoSelectionneGuid"-->
+<!--                :filtres="filtres"-->
+<!--                :recherche="recherche"-->
+<!--                :tri="tri"-->
+<!--                :memo-types="memoTypes"-->
+<!--                :memo-statuts="memoStatuts"-->
+<!--                :employes-options="employesFiltreOptions"-->
+<!--                @select="selectionnerMemo"-->
+<!--                @nouveau="naviguerCreerMemo"-->
+<!--                @update:filtres="filtres = $event"-->
+<!--                @update:recherche="recherche = $event"-->
+<!--                @update:tri="tri = $event"-->
+<!--                @reinitialiser="reinitialiserFiltres"-->
+<!--            />-->
+<!--          </div>-->
 <!--        </div>-->
 <!--      </div>-->
 
-<!--      &lt;!&ndash; Layout 2 colonnes &ndash;&gt;-->
-<!--      <div class="flex gap-3 flex-1 min-h-0">-->
+<!--      &lt;!&ndash; Zone centrale + droite : cachée sur mobile si aucun mémo sélectionné &ndash;&gt;-->
+<!--      <div :class="[-->
+<!--        'flex gap-3 flex-1 min-h-0 transition-all duration-300',-->
+<!--        !memoSelectionneGuid ? 'hidden md:flex' : 'flex'-->
+<!--      ]">-->
 <!--        &lt;!&ndash; Colonne centrale : chat &ndash;&gt;-->
 <!--        <div class="flex-1 min-w-0 flex flex-col min-h-0 bg-white shadow-sm overflow-hidden">-->
-<!--          &lt;!&ndash; État vide &ndash;&gt;-->
-<!--          <div v-if="!memoSelectionneGuid" class="flex-1 flex flex-col items-center justify-center gap-4 text-gray-400">-->
+<!--          &lt;!&ndash; État vide (desktop seulement) &ndash;&gt;-->
+<!--          <div v-if="!memoSelectionneGuid" class="hidden md:flex flex-1 flex-col items-center justify-center gap-4 text-gray-400">-->
 <!--            <svg class="w-16 h-16 opacity-30" fill="none" stroke="currentColor" viewBox="0 0 24 24">-->
 <!--              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"-->
-<!--                d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"/>-->
+<!--                    d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"/>-->
 <!--            </svg>-->
 <!--            <p class="text-sm font-medium">Sélectionnez un mémo pour voir la conversation</p>-->
 <!--          </div>-->
 
 <!--          &lt;!&ndash; Detail mémo &ndash;&gt;-->
 <!--          <MemoDetailChat-->
-<!--            v-else-->
-<!--            :key="memoSelectionneGuid"-->
-<!--            :memo-guid="memoSelectionneGuid"-->
-<!--            :manager-guid="managerGuid"-->
-<!--            @action-done="onActionDone"-->
+<!--              v-if="memoSelectionneGuid"-->
+<!--              :key="memoSelectionneGuid"-->
+<!--              :memo-guid="memoSelectionneGuid"-->
+<!--              :manager-guid="managerGuid"-->
+<!--              @action-done="onActionDone"-->
+<!--              @back="memoSelectionneGuid = ''"-->
 <!--          />-->
 <!--        </div>-->
 <!--      </div>-->
-<!--      <div class="flex gap-3 min-h-0">-->
 
+<!--      &lt;!&ndash; Panel droit : caché sur mobile et tablette, visible sur lg+ &ndash;&gt;-->
+<!--      <div class="hidden lg:flex gap-3 min-h-0">-->
 <!--        &lt;!&ndash; Colonne droite : panel infos + actions &ndash;&gt;-->
 <!--        <div class="w-[280px] flex-shrink-0 flex flex-col min-h-0">-->
 <!--          <MemoDetailPanel-->
-<!--            v-if="memoSelectionne"-->
-<!--            :memo="memoSelectionne"-->
-<!--            :manager-guid="managerGuid"-->
-<!--            :is-processing="isProcessing"-->
-<!--            :action-type="actionType"-->
-<!--            @approuver="approuverMemo"-->
-<!--            @rejeter="rejeterMemo"-->
-<!--            @revoquer="revoquerMemo"-->
+<!--              v-if="memoSelectionne"-->
+<!--              :memo="memoSelectionne"-->
+<!--              :manager-guid="managerGuid"-->
+<!--              :is-processing="isProcessing"-->
+<!--              :action-type="actionType"-->
+<!--              @approuver="approuverMemo"-->
+<!--              @rejeter="rejeterMemo"-->
+<!--              @revoquer="revoquerMemo"-->
 <!--          />-->
 <!--          <div v-else class="flex-1 bg-white/60 rounded-2xl" />-->
 <!--        </div>-->
-
 <!--      </div>-->
 <!--    </main>-->
 
@@ -419,7 +455,7 @@ onUnmounted(() => stopWatcher?.());
 <!--// ── Sélection ──────────────────────────────────-->
 <!--const memoSelectionneGuid = ref<string>('');-->
 <!--const memoSelectionne = computed(() =>-->
-<!--  memoSelectionneGuid.value ? memoStore.getMemoByGuid(memoSelectionneGuid.value) ?? null : null-->
+<!--    memoSelectionneGuid.value ? memoStore.getMemoByGuid(memoSelectionneGuid.value) ?? null : null-->
 <!--);-->
 
 <!--// ── Filtres ────────────────────────────────────-->
@@ -481,9 +517,9 @@ onUnmounted(() => stopWatcher?.());
 <!--  if (recherche.value.trim()) {-->
 <!--    const q = recherche.value.toLowerCase();-->
 <!--    result = result.filter(m =>-->
-<!--      m.titre?.toLowerCase().includes(q) ||-->
-<!--      m.destinataireNom?.toLowerCase().includes(q) ||-->
-<!--      m.contenu?.toLowerCase().includes(q)-->
+<!--        m.titre?.toLowerCase().includes(q) ||-->
+<!--        m.destinataireNom?.toLowerCase().includes(q) ||-->
+<!--        m.contenu?.toLowerCase().includes(q)-->
 <!--    );-->
 <!--  }-->
 <!--  result.sort((a, b) => {-->
