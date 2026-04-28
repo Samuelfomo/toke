@@ -90,7 +90,7 @@
           <div class="relative">
             <select
               :value="tri"
-              @change="$emit('update:tri', ($event.target as HTMLSelectElement).value)"
+              @change="$emit('update:tri', ($event.target as HTMLSelectElement).value as  TriType)"
               class="appearance-none pl-2 pr-5 py-1 border border-gray-200 rounded-md text-xs text-gray-600 bg-white focus:outline-none focus:ring-1 focus:ring-blue-500 cursor-pointer"
             >
               <option value="recent">Plus récent</option>
@@ -205,8 +205,9 @@
 
 <script setup lang="ts">
 import { ref, computed, watch } from 'vue';
+type TriType = 'recent' | 'oldest' | 'name'
 
-interface MemoItem {
+export interface MemoItem {
   guid: string;
   titre: string;
   type: string;
@@ -226,7 +227,7 @@ const props = defineProps<{
   selectedGuid: string;
   filtres: { employeId: string; type: string; statut: string };
   recherche: string;
-  tri: string;
+  tri: TriType;
   memoTypes: { value: string; label: string }[];
   memoStatuts: { value: string; label: string }[];
   employesOptions: { guid: string; nom: string }[];
@@ -237,7 +238,8 @@ defineEmits<{
   nouveau: [];
   'update:filtres': [v: { employeId: string; type: string; statut: string }];
   'update:recherche': [v: string];
-  'update:tri': [v: string];
+  // 'update:tri': [v: string];
+  'update:tri': [v: TriType];
   reinitialiser: [];
 }>();
 

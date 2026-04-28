@@ -130,8 +130,8 @@ import { useUserStore } from '@/stores/userStore';
 import { TeamEmployee, useTeamStore } from '@/stores/teamStore';
 import MemoService, { CreateMemo, UploadedAttachment } from '@/service/MemoService';
 import { useMemoStore } from '@/stores/memoStore';
-import MemoChat from '../../memo/memoChat.vue';
-import '../../../assets/css/toke-memo-08.css';
+import MemoChat from './memoChat.vue';
+import '../../assets/css/toke-memo-08.css';
 
 interface FormulaireMemo {
   destinataireId: string;

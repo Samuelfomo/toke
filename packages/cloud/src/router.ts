@@ -5,26 +5,23 @@ import { createRouter, createWebHistory, RouteRecordRaw } from 'vue-router'
 import Auth from './views/auth.vue'
 import Otp from './views/otp.vue'
 import DashboardMain from './views/dashboard/dashboardMain.vue'
-import MemoNew from './views/memo/memoNew.vue'
 import Equipe from './views/equipe.vue'
-import MemoList from './views/memo/new/memosView.vue'
-import MemoList1 from './views/memo/memoList.vue'
+import MemoList from './views/memo/memosView.vue'
 import EmployeeDetails from './views/EmployeeDetails.vue'
 import Schedule from './views/schedule/schedule.vue'
 import Profile from './views/profile.vue'
 import EmployeeForm from './views/employeeForm.vue'
 import Setting from './views/setting.vue'
-import MemoDetails from './views/memo/memoDetails.vue';
 import ProfileCard from './views/profileCard.vue';
 import Site from './views/site/site.vue';
 import Edit from './views/site/siteForm.vue';
 import MapVue from './views/site/map.vue';
 
-import EmployeeMemosView from "@/views/memo/EmployeeMemosView.vue";
 import { useUserStore } from '@/stores/userStore'
 import EmployeeSchedulesView from "@/views/schedule/employeeSchedulesView.vue";
 import EmployeeAttendanceView from "@/views/employeeAttendanceView.vue";
 import QrCodeAuth from "@/views/QrCodeAuth.vue";
+import Rotation from "@/views/planning/dashboard/appLayout.vue";
 
 
 const routes: RouteRecordRaw[] = [
@@ -53,12 +50,6 @@ const routes: RouteRecordRaw[] = [
     meta: { requiresAuth: true },
   },
   {
-    path: '/memoNew',
-    name: 'memoNew',
-    component: MemoNew,
-    meta: { requiresAuth: true },
-  },
-  {
     path: '/equipe',
     name: 'equipe',
     component: Equipe,
@@ -68,18 +59,6 @@ const routes: RouteRecordRaw[] = [
     path: '/memoList',
     name: 'memoList',
     component: MemoList,
-    meta: { requiresAuth: true },
-  },
-    {
-    path: '/MemoList1',
-    name: 'MemoList1',
-    component: MemoList1,
-    meta: { requiresAuth: true },
-  },
-  {
-    path: '/memoDetails/:guid',
-    name: 'memoDetails',
-    component: MemoDetails,
     meta: { requiresAuth: true },
   },
   {
@@ -146,12 +125,6 @@ const routes: RouteRecordRaw[] = [
     meta: { requiresAuth: true },
   },
   {
-    path: '/employeeMemosView/:id',
-    name: 'employeeMemosView',
-    component: EmployeeMemosView,
-    meta: { requiresAuth: true },
-  },
-  {
     path: '/employeeSchedulesView/:id',
     name: 'employeeSchedulesView',
     component: EmployeeSchedulesView,
@@ -161,6 +134,12 @@ const routes: RouteRecordRaw[] = [
     path: '/employeeAttendanceView/:id',
     name: 'employeeAttendanceView',
     component: EmployeeAttendanceView,
+    meta: { requiresAuth: true },
+  },
+    {
+    path: '/rotation',
+    name: 'rotation',
+    component: Rotation,
     meta: { requiresAuth: true },
   },
 
@@ -197,125 +176,5 @@ router.beforeEach((to, from, next) => {
   next()
 })
 
-// /* ✅✅✅ GARDE L’ACCÈS COMME AVANT (VERSION TS PROPRE) ✅✅✅ */
-// router.beforeEach((to, from, next) => {
-//   const userStore = useUserStore()
-//
-//   if (to.meta.requiresAuth && !userStore.checkSession()) {
-//     console.warn('⛔ Accès refusé, redirection login')
-//     next('/')
-//   } else {
-//     next()
-//   }
-// })
 
 export default router
-
-
-// import { createRouter, createWebHistory, RouteRecordRaw } from 'vue-router';
-//
-// import Home from './views/home.vue';
-// import Country from './views/country.vue';
-// import Auth from './views/auth.vue';
-// import Otp from './views/otp.vue';
-// import DashboardMain from './views/dashboard/dashboardMain.vue';
-// import MemoNew from './views/memo/memoNew.vue';
-// import Module from './views/module.vue';
-// import AssiduteDuJour from './views/AssiduteDuJour.vue';
-// import Equipe from './views/equipe.vue';
-// import MemoList from './views/memo/memoList.vue';
-// import MemoDetail from './views/memo/memoDetail.vue';
-// import EmployeeDetails from './views/EmployeeDetails.vue';
-// import Schedule from './views/schedule.vue';
-// import employeeForm from './views/employeeForm.vue';
-//
-// // Typage explicite des routes
-// const routes: RouteRecordRaw[] = [
-//   {
-//     path: '/home',
-//     name: 'home',
-//     component: Home,
-//   },
-//   {
-//     path: '/country',
-//     name: 'country',
-//     component: Country,
-//   },{
-//     path: '/',
-//     name: 'auth',
-//     component: Auth,
-//   },
-//   {
-//     path: '/otp',
-//     name: 'otp',
-//     component: Otp,
-//   },
-//   {
-//     path: '/dashboard',
-//     name: 'dashboard',
-//     component: DashboardMain,
-//   },
-//   {
-//     path: '/memo',
-//     name: 'memo',
-//     component: MemoNew,
-//     props: route => ({
-//       employee: {
-//         id: parseInt(Array.isArray(route.params.employeeId) ? route.params.employeeId[0] : (route.params.employeeId as string)),
-//         name: Array.isArray(route.query.employeeName) ? route.query.employeeName[0] : (route.query.employeeName as string),
-//         initials: Array.isArray(route.query.employeeInitials) ? route.query.employeeInitials[0] : (route.query.employeeInitials as string),
-//         status: Array.isArray(route.query.employeeStatus) ? route.query.employeeStatus[0] : (route.query.employeeStatus as string),
-//         statusText: Array.isArray(route.query.employeeStatusText) ? route.query.employeeStatusText[0] : (route.query.employeeStatusText as string),
-//         location: Array.isArray(route.query.employeeLocation) ? route.query.employeeLocation[0] : (route.query.employeeLocation as string),
-//       }
-//     })
-//
-//   },
-//   {
-//     path: '/module',
-//     name: 'module',
-//     component: Module,
-//   },
-//   {
-//     path: '/employee/:employeeId/details',
-//     name: 'employeeD',
-//     component: AssiduteDuJour
-//   },
-//   {
-//     path: '/equipe',
-//     name: 'equipe',
-//     component: Equipe
-//   },
-//   {
-//     path: '/memoList',
-//     name: 'memoList',
-//     component: MemoList
-//   },
-//   {
-//     path: '/memoDetail',
-//     name: 'memoDetail',
-//     component: MemoDetail
-//   },
-//   {
-//     path: '/planning',
-//     name: 'planning',
-//     component: Schedule
-//   },
-//   {
-//     path: '/employeeForm',
-//     name: 'employeeForm',
-//     component: employeeForm
-//   },
-//   {
-//     path: '/equipe/:employeeId',  // ← IMPORTANT: :employeeId (avec deux points)
-//     name: 'employee-details',
-//     component: EmployeeDetails
-//   }
-// ];
-//
-// export const router = createRouter({
-//   history: createWebHistory(),
-//   routes,
-// });
-//
-// export default router;
