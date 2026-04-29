@@ -8,7 +8,7 @@
         :style="{ width: SIDEBAR_WIDTH }"
     >
     <!-- Background with subtle gradient -->
-    <div class="absolute inset-0 bg-black/90 pointer-events-none" />
+    <div class="absolute inset-0 bg-blue-950 pointer-events-none" />
     <div
         class="absolute inset-0 bg-gradient-to-b from-blue-950/70 via-transparent to-blue-950/50 pointer-events-none"
     />

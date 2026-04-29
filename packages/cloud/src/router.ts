@@ -22,6 +22,9 @@ import EmployeeSchedulesView from "@/views/schedule/employeeSchedulesView.vue";
 import EmployeeAttendanceView from "@/views/employeeAttendanceView.vue";
 import QrCodeAuth from "@/views/QrCodeAuth.vue";
 import Rotation from "@/views/planning/dashboard/appLayout.vue";
+import RessionModel from "@/views/planning/session_model/sessionModelList.vue";
+import AppLayout from "@/views/planning/dashboard/appLayout.vue";
+import SessionModelList from "@/views/planning/session_model/sessionModelList.vue";
 
 
 const routes: RouteRecordRaw[] = [
@@ -135,13 +138,39 @@ const routes: RouteRecordRaw[] = [
     name: 'employeeAttendanceView',
     component: EmployeeAttendanceView,
     meta: { requiresAuth: true },
-  },
-    {
-    path: '/rotation',
-    name: 'rotation',
+  }, {
+    path: '/session-template',
+    name: 'session-template',
+    component: Rotation,
+    meta: { requiresAuth: true },
+  }, {
+    path: '/rotation-group',
+    name: 'rotation-group',
+    component: Rotation,
+    meta: { requiresAuth: true },
+  }, {
+    path: '/schedule-assignment',
+    name: 'schedule-assignment',
+    component: Rotation,
+    meta: { requiresAuth: true },
+  }, {
+    path: '/rotation-assignment',
+    name: 'rotation-assignment',
     component: Rotation,
     meta: { requiresAuth: true },
   },
+    {
+        path: '/planning',  // ou '/', selon ton setup
+        component: AppLayout,  // layout parent
+        children: [
+            {
+                path: 'session-model',
+                name: 'session-model',
+                component: SessionModelList,
+            },
+            // ... les autres routes du NAV_GROUPS
+        ],
+    },
 
 ]
 
