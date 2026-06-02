@@ -181,12 +181,19 @@ const isPending = computed(() =>
  * memoContent[0] est le message initial — si l'auteur du content
  * correspond au destinataire du mémo, l'employé a répondu.
  */
+// const employeARepondu = computed(() => {
+//   if (!props.memo.memoContent || props.memo.memoContent.length === 0) return false;
+//   // On cherche un content dont l'user n'est pas le manager (= c'est l'employé)
+//   // Le champ content.user contient l'email ; on vérifie juste qu'il y a plus d'un message
+//   // ou que le premier message vient du destinataire
+//   return props.memo.memoContent.length > 1 || props.memo.statut === 'submitted';
+// });
+
 const employeARepondu = computed(() => {
   if (!props.memo.memoContent || props.memo.memoContent.length === 0) return false;
-  // On cherche un content dont l'user n'est pas le manager (= c'est l'employé)
-  // Le champ content.user contient l'email ; on vérifie juste qu'il y a plus d'un message
-  // ou que le premier message vient du destinataire
-  return props.memo.memoContent.length > 1 || props.memo.statut === 'submitted';
+  return props.memo.memoContent.some(
+      content => content.user !== props.managerGuid
+  );
 });
 
 const peutApprouverRejeter = computed(() =>

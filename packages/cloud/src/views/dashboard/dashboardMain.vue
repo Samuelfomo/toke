@@ -1,9 +1,9 @@
 <template>
-  <div class="min-h-screen bg-gradient-to-br from-[#9cbdf6] via-[#f5f9ff] to-[#dbcdef]">
+  <div class="min-h-screen flex flex-col bg-gradient-to-br from-[#9cbdf6] via-[#f5f9ff] to-[#dbcdef]">
 <!--  <div class="min-h-screen bg-gradient-to-br from-[#9cbdf6] via-[#e0daf6] to-[#dbcdef]">-->
     <Header />
 
-    <main class="max-w-screen-2xl mx-auto px-4 sm:px-6 py-6 space-y-4">
+    <main class="flex-1 max-w-screen-2xl mx-auto px-4 sm:px-6 py-6 space-y-4">
 
       <!-- ══════════════════ LOADING ══════════════════ -->
       <div v-if="loading" class="flex flex-col items-center justify-center py-32 gap-4">
@@ -93,7 +93,10 @@
 
         <!-- 4. Insights rapides (Insights panel) -->
         <div class="bg-white border border-slate-200 rounded-md p-5 shadow-sm">
-          <h4 class="text-sm font-bold text-slate-800 mb-4">Insights rapides</h4>
+          <div class="mb-4">
+            <h4 class="text-sm font-bold text-slate-800">Insights rapides</h4>
+            <p class="text-xs text-slate-400 mt-0.5">Résumé des points d'attention sur la période</p>
+          </div>
           <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
 
             <!-- Insight 1 : Anomalies -->

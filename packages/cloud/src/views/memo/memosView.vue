@@ -1,8 +1,8 @@
 <template>
   <div class="min-h-screen flex flex-col bg-gradient-to-r from-[#d0e8f7] via-[#f0e4f5] to-[#d0e8f7]">
-    <div class="top-header">
+<!--    <div class="top-header">-->
       <Header />
-    </div>
+<!--    </div>-->
 
     <main class="flex-1 flex overflow-hidden pb-4 max-w-[1600px] mx-auto rounded-md w-full bg-white/70 m-5">
 
@@ -46,7 +46,7 @@
       </div>
 
       <!-- Layout 2 colonnes -->
-      <div class="flex gap-3 flex-1 min-h-0">
+      <div class="flex gap-3 flex-1 min-h-0 z-50">
         <!-- Colonne centrale : chat -->
         <div class="flex-1 min-w-0 flex flex-col min-h-0 bg-white shadow-sm overflow-hidden">
           <!-- Mode idle : invitation (desktop seulement) -->
@@ -63,6 +63,8 @@
               v-else-if="mode === 'create'"
               @created="onMemoCreated"
               @cancel="mode = 'idle'"
+              :preselected-employee-guid="getQueryString(route.query.employeeGuid)"
+              :preselected-employee-name="getQueryString(route.query.employeeName)"
           />
 
           <!-- Mode detail : conversation -->
@@ -119,6 +121,9 @@ const router = useRouter();
 const userStore = useUserStore();
 const memoStore = useMemoStore();
 const managerGuid = computed(() => userStore.user?.guid ?? '');
+
+import { useRoute } from 'vue-router'
+const route = useRoute()
 
 // ── Mode ───────────────────────────────────────
 // 'idle'   : rien de sélectionné (desktop : message d'accueil)
@@ -282,8 +287,14 @@ const onActionDone = async () => {
   }
 };
 
+// const naviguerCreerMemo = () => {
+//   memoSelectionneGuid.value = '';
+//   mode.value = 'create';
+// };
+
 const naviguerCreerMemo = () => {
   memoSelectionneGuid.value = '';
+  router.replace({ name: 'memoList' }); // nettoie les query params sans recharger la page
   mode.value = 'create';
 };
 
@@ -313,6 +324,12 @@ const chargerMemos = async () => {
   }
 };
 
+const getQueryString = (value: unknown): string => {
+  if (typeof value === 'string') return value
+  if (Array.isArray(value)) return value[0] || ''
+  return ''
+}
+
 // ── Lifecycle ──────────────────────────────────
 let stopWatcher: (() => void) | null = null;
 
@@ -325,7 +342,15 @@ onMounted(async () => {
   await chargerMemos();
   memoStore.markAllMemosAsRead();
   stopWatcher = watch(() => memoStore.memos.length, () => memoStore.markAllMemosAsRead());
+
+  // Ajouter dans onMounted, après chargerMemos()
+  const { action, employeeGuid, employeeName, entryGuid, date } = route.query
+  if (action === 'create') {
+    mode.value = 'create'
+    // Si memoCreateChat accepte des props pré-remplies, tu peux les stocker dans un ref ici
+  }
 });
+
 
 onUnmounted(() => stopWatcher?.());
 </script>

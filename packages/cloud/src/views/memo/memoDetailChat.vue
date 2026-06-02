@@ -96,6 +96,7 @@ interface ReponseEnvoyee {
   audioURL: string | null;
   duration: string;
   timestamp: string;
+  status: 'sending' | 'sent' | 'error'
 }
 
 // ── Props & Emits ──────────────────────────────
@@ -259,7 +260,8 @@ const chatMessages = computed(() => {
       id: `local-${index}`, type: 'sent',
       senderName: 'Vous (Manager)', senderInitials: userInitials.value,
       timestamp: reponse.timestamp, content: reponse.contenu || undefined,
-      attachments: attachments.length > 0 ? attachments : undefined
+      attachments: attachments.length > 0 ? attachments : undefined,
+      status: reponse.status
     });
   });
 
@@ -273,7 +275,10 @@ const chargerMemo = async () => {
   try {
     if (!memoStore.isCacheValid) await memoStore.loadMemos(props.managerGuid);
     const fromStore = memoStore.getMemoByGuid(props.memoGuid);
-    if (fromStore) memo.value = fromStore;
+    if (fromStore) {
+      memo.value = fromStore;
+      reponsesEnvoyees.value = reponsesEnvoyees.value.filter(r => r.status !== 'sent') // ✅ garde les "error"
+    }
     else {
       const refreshed = await memoStore.refreshMemo(props.managerGuid, props.memoGuid);
       memo.value = refreshed ?? null;
@@ -301,43 +306,91 @@ const collectAllFiles = (): File[] => {
   return all;
 };
 
+// const envoyerReponse = async () => {
+//   if (!peutEnvoyerReponse.value || isSubmitting.value || !memo.value) return;
+//   isSubmitting.value = true;
+//   isUploadingFiles.value = true;
+//   try {
+//     const allFiles = collectAllFiles();
+//     const uploaded = allFiles.length > 0 ? await MemoService.uploadMultipleFiles(allFiles) : [];
+//     isUploadingFiles.value = false;
+//     const content = MemoService.buildMessageContent(reponseContenu.value, uploaded);
+//     await MemoService.sendReply(memo.value.guid, { user: props.managerGuid, message: content });
+//
+//     const time = new Date().toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' });
+//     reponsesEnvoyees.value.push({
+//       contenu: reponseContenu.value,
+//       fichiers: [...fichiers.value],
+//       audioBlob: audioBlob.value,
+//       audioURL: audioBlob.value ? URL.createObjectURL(audioBlob.value) : null,
+//       duration: recordedDuration.value,
+//       timestamp: time
+//     });
+//
+//     reponseContenu.value = '';
+//     fichiers.value = [];
+//     audioBlob.value = null;
+//     recordedDuration.value = '00:00';
+//     if (audioURL.value) { URL.revokeObjectURL(audioURL.value); audioURL.value = ''; }
+//
+//     await memoStore.refreshMemo(props.managerGuid, memo.value.guid);
+//     await chargerMemo();
+//     emit('action-done');
+//   } catch (e: any) {
+//     alert(`Erreur: ${e.message || "Impossible d'envoyer"}`);
+//   } finally {
+//     isSubmitting.value = false;
+//     isUploadingFiles.value = false;
+//   }
+// };
 const envoyerReponse = async () => {
   if (!peutEnvoyerReponse.value || isSubmitting.value || !memo.value) return;
   isSubmitting.value = true;
   isUploadingFiles.value = true;
+
+  const time = new Date().toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })
+
+  // ✅ Push immédiat avec status "sending"
+  const index = reponsesEnvoyees.value.push({
+    contenu: reponseContenu.value,
+    fichiers: [...fichiers.value],
+    audioBlob: audioBlob.value,
+    audioURL: audioBlob.value ? URL.createObjectURL(audioBlob.value) : null,
+    duration: recordedDuration.value,
+    timestamp: time,
+    status: 'sending'   // ✅
+  }) - 1
+
+  // Vider le formulaire immédiatement
+  reponseContenu.value = ''
+  fichiers.value = []
+  audioBlob.value = null
+  recordedDuration.value = '00:00'
+  if (audioURL.value) { URL.revokeObjectURL(audioURL.value); audioURL.value = '' }
+
   try {
-    const allFiles = collectAllFiles();
-    const uploaded = allFiles.length > 0 ? await MemoService.uploadMultipleFiles(allFiles) : [];
-    isUploadingFiles.value = false;
-    const content = MemoService.buildMessageContent(reponseContenu.value, uploaded);
-    await MemoService.sendReply(memo.value.guid, { user: props.managerGuid, message: content });
+    const allFiles = collectAllFiles();  // ⚠️ collectAllFiles() doit être appelé AVANT le reset — déplace-le avant le push
+    const uploaded = allFiles.length > 0 ? await MemoService.uploadMultipleFiles(allFiles) : []
+    isUploadingFiles.value = false
+    const content = MemoService.buildMessageContent(reponsesEnvoyees.value[index].contenu, uploaded)
+    await MemoService.sendReply(memo.value.guid, { user: props.managerGuid, message: content })
 
-    const time = new Date().toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' });
-    reponsesEnvoyees.value.push({
-      contenu: reponseContenu.value,
-      fichiers: [...fichiers.value],
-      audioBlob: audioBlob.value,
-      audioURL: audioBlob.value ? URL.createObjectURL(audioBlob.value) : null,
-      duration: recordedDuration.value,
-      timestamp: time
-    });
+    // ✅ Marquer comme envoyé
+    reponsesEnvoyees.value[index].status = 'sent'
 
-    reponseContenu.value = '';
-    fichiers.value = [];
-    audioBlob.value = null;
-    recordedDuration.value = '00:00';
-    if (audioURL.value) { URL.revokeObjectURL(audioURL.value); audioURL.value = ''; }
-
-    await memoStore.refreshMemo(props.managerGuid, memo.value.guid);
-    await chargerMemo();
-    emit('action-done');
+    await memoStore.refreshMemo(props.managerGuid, memo.value.guid)
+    await chargerMemo()  // ✅ Vide reponsesEnvoyees après rechargement (voir point 3)
+    emit('action-done')
   } catch (e: any) {
-    alert(`Erreur: ${e.message || "Impossible d'envoyer"}`);
+    // ✅ Marquer en erreur sans supprimer le message
+    reponsesEnvoyees.value[index].status = 'error'
+    alert(`Erreur: ${e.message || "Impossible d'envoyer"}`)
   } finally {
-    isSubmitting.value = false;
-    isUploadingFiles.value = false;
+    isSubmitting.value = false
+    isUploadingFiles.value = false
   }
-};
+}
+
 
 const voirImage = (url: string) => { imageModalUrl.value = url; };
 

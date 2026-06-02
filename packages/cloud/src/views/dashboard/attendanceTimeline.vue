@@ -4,6 +4,10 @@
     <!-- ── Header ── -->
     <div class="flex items-center justify-between px-5 py-4 border-b border-slate-100">
       <h4 class="text-sm font-bold text-slate-800">Timeline des arrivées</h4>
+<!--      <div>-->
+<!--        <h4 class="text-sm font-bold text-slate-800">Timeline des arrivées</h4>-->
+<!--        <p class="text-xs text-slate-400 mt-0.5">Historique des pointages sur les 7 derniers jours</p>-->
+<!--      </div>-->
       <button
           class="flex items-center gap-1 text-xs font-semibold text-blue-600
                hover:text-blue-800 transition-colors"
@@ -47,7 +51,7 @@
           <div
               v-for="entry in group.entries"
               :key="entry.employeeGuid + group.date"
-              class="flex items-center gap-3 px-5 py-3 hover:bg-slate-50
+              class="flex items-center gap-3 px-5 py-3 hover:bg-blue-100
                    cursor-pointer transition-colors"
               @click="$emit('employee-click', entry.employee)"
           >

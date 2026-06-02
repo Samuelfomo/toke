@@ -2,23 +2,24 @@
   <div class="flex flex-col h-full">
 
     <!-- ── Header ── -->
-    <div class="relative overflow-hidden px-8 py-6 flex-shrink-0">
+    <div class="relative overflow-hidden px-4 sm:px-6 lg:px-8 py-6 flex-shrink-0">
       <div class="absolute inset-0 pointer-events-none" />
 
-      <div class="relative flex items-start justify-between gap-4">
+      <div class="relative flex items-start justify-between gap-4 4 flex-col sm:flex-row">
         <div>
           <div class="flex items-center gap-2 text-slate-700 text-xs mb-1.5">
             <IconShieldCheck :size="12" />
             <span>Planning & Rotations</span>
             <IconChevronRight :size="12" />
-            <span class="text-white/90">Session Model</span>
+            <span class="text-white">Session Model</span>
           </div>
           <h1 class="text-2xl font-bold text-white tracking-tight">Session Model</h1>
           <p class="text-slate-600 text-sm mt-1">Définissez les normes de travail applicables aux emplois du temps.</p>
         </div>
         <button
             @click="openCreate"
-            class="flex items-center gap-2 px-4 py-2.5 bg-gradient-to-br from-blue-500 to-blue-600 hover:from-blue-400 hover:to-blue-500 text-white text-sm font-semibold rounded-xl shadow-lg shadow-blue-600/30 transition-all duration-200 flex-shrink-0"
+            class="flex items-center gap-2 px-4 py-2.5 bg-gradient-to-br from-blue-500 to-blue-600 hover:from-blue-400 hover:to-blue-500
+            text-white text-sm font-semibold rounded-xl shadow-lg shadow-blue-600/30 transition-all duration-200 flex-shrink-0"
         >
           <IconPlus :size="16" />
           Nouvelle norme
@@ -27,7 +28,7 @@
     </div>
 
     <!-- ── Body ── -->
-    <div class="flex-1 overflow-y-auto px-8 py-6 flex flex-col gap-4">
+    <div class="flex-1 overflow-y-auto px-4 sm:px-6 lg:px-8 py-6 flex flex-col gap-4">
 
       <!-- ── Toolbar ── -->
       <div class="flex items-center gap-3 flex-wrap bg-white p-4">
@@ -50,7 +51,7 @@
         </div>
 
         <!-- Statut -->
-        <select v-model="filterActive" @change="resetAndLoad" class="input-base w-auto cursor-pointer">
+        <select v-model="filterActive" @change="resetAndLoad" class="input-base w-auto cursor-pointer sm:w-auto">
           <option value="">Statut : Tous</option>
           <option value="true">Actif</option>
           <option value="false">Inactif</option>
@@ -84,160 +85,9 @@
           </select>
         </div>
       </div>
-
-      <!-- ── Table ── -->
-<!--      <div class="bg-black border border-white/10 rounded-2xl overflow-hidden flex flex-col hidden">-->
-<!--        <div class="overflow-x-auto">-->
-<!--          <table class="w-full min-w-[860px] border-collapse">-->
-
-<!--            &lt;!&ndash; Head &ndash;&gt;-->
-<!--            <thead>-->
-<!--            <tr class="border-b text-[10.5px] font-bold tracking-widest uppercase text-slate-500">-->
-<!--              <th class="px-5 py-3 text-left">Nom</th>-->
-<!--              <th class="px-4 py-3 text-left">Jours ouvrés</th>-->
-<!--              <th class="px-4 py-3 text-left">Normal</th>-->
-<!--              <th class="px-4 py-3 text-left">Min / Max</th>-->
-<!--              <th class="px-4 py-3 text-left">Pause</th>-->
-<!--              <th class="px-4 py-3 text-left">Rotation</th>-->
-<!--              <th class="px-4 py-3 text-left">Extra</th>-->
-<!--              <th class="px-4 py-3 text-left">Statut</th>-->
-<!--              <th class="px-4 py-3 text-right">Actions</th>-->
-<!--            </tr>-->
-<!--            </thead>-->
-
-<!--            &lt;!&ndash; Loading &ndash;&gt;-->
-<!--            <tbody v-if="loading">-->
-<!--            <tr>-->
-<!--              <td colspan="9" class="py-20 text-center">-->
-<!--                <div class="flex items-center justify-center gap-3 text-slate-400">-->
-<!--                  <IconLoader2 :size="20" class="animate-spin" />-->
-<!--                  <span class="text-sm">Chargement...</span>-->
-<!--                </div>-->
-<!--              </td>-->
-<!--            </tr>-->
-<!--            </tbody>-->
-
-<!--            &lt;!&ndash; Empty &ndash;&gt;-->
-<!--            <tbody v-else-if="items.length === 0">-->
-<!--            <tr>-->
-<!--              <td colspan="9" class="py-20 text-center">-->
-<!--                <div class="flex flex-col items-center gap-3 text-slate-500">-->
-<!--                  <IconShieldCheck :size="40" class="opacity-15" />-->
-<!--                  <p class="text-sm">Aucune norme trouvée</p>-->
-<!--                  <button @click="openCreate" class="text-xs text-blue-400 hover:text-blue-300 transition">-->
-<!--                    Créer la première norme →-->
-<!--                  </button>-->
-<!--                </div>-->
-<!--              </td>-->
-<!--            </tr>-->
-<!--            </tbody>-->
-
-<!--            &lt;!&ndash; Rows &ndash;&gt;-->
-<!--            <tbody v-else>-->
-<!--            <tr-->
-<!--                v-for="item in items"-->
-<!--                :key="item.guid"-->
-<!--                class="border-b border-white/5 last:border-0 hover:bg-white/5 transition group"-->
-<!--            >-->
-<!--              &lt;!&ndash; Nom &ndash;&gt;-->
-<!--              <td class="px-5 py-3.5">-->
-<!--                <p class="text-sm font-semibold text-white">{{ item.name }}</p>-->
-<!--                <p class="text-[10px] text-slate-600 mt-0.5 font-mono">{{ item.guid }}</p>-->
-<!--              </td>-->
-
-<!--              &lt;!&ndash; Jours &ndash;&gt;-->
-<!--              <td class="px-4 py-3.5">-->
-<!--                <div class="flex flex-wrap gap-1">-->
-<!--                    <span-->
-<!--                        v-for="day in item.workday"-->
-<!--                        :key="day"-->
-<!--                        class="px-1.5 py-0.5 rounded-md text-[10px] font-semibold bg-blue-500/10 text-blue-300"-->
-<!--                    >{{ DAY_FR[day] ?? day }}</span>-->
-<!--                </div>-->
-<!--              </td>-->
-
-<!--              &lt;!&ndash; Normal &ndash;&gt;-->
-<!--              <td class="px-4 py-3.5 text-sm font-medium text-white">{{ fmt(item.normal_session_time) }}</td>-->
-
-<!--              &lt;!&ndash; Min / Max &ndash;&gt;-->
-<!--              <td class="px-4 py-3.5 text-xs">-->
-<!--                <span class="text-emerald-400">↓ {{ fmt(item.min_working_time) }}</span>-->
-<!--                <span class="mx-1 text-slate-600">/</span>-->
-<!--                <span class="text-amber-400">↑ {{ fmt(item.max_working_time) }}</span>-->
-<!--              </td>-->
-
-<!--              &lt;!&ndash; Pause &ndash;&gt;-->
-<!--              <td class="px-4 py-3.5">-->
-<!--                  <span v-if="item.pause_allowed"-->
-<!--                        class="inline-flex items-center gap-1 text-[11px] font-medium px-2 py-0.5 rounded-full bg-emerald-500/15 text-emerald-400"-->
-<!--                  >-->
-<!--                    <IconCheck :size="10" /> {{ item.pause_count }}x · {{ fmt(item.pause_duration) }}-->
-<!--                  </span>-->
-<!--                <span v-else class="inline-flex items-center gap-1 text-[11px] px-2 py-0.5 rounded-full bg-slate-500/10 text-slate-500">-->
-<!--                    <IconMinus :size="10" /> Non-->
-<!--                  </span>-->
-<!--              </td>-->
-
-<!--              &lt;!&ndash; Rotation &ndash;&gt;-->
-<!--              <td class="px-4 py-3.5">-->
-<!--                  <span-->
-<!--                      class="inline-flex items-center gap-1 text-[11px] font-medium px-2 py-0.5 rounded-full"-->
-<!--                      :class="item.rotation_allowed ? 'bg-violet-500/15 text-violet-400' : 'bg-slate-500/10 text-slate-500'"-->
-<!--                  >-->
-<!--                    <IconCheck v-if="item.rotation_allowed" :size="10" />-->
-<!--                    <IconMinus v-else :size="10" />-->
-<!--                    {{ item.rotation_allowed ? 'Oui' : 'Non' }}-->
-<!--                  </span>-->
-<!--              </td>-->
-
-<!--              &lt;!&ndash; Extra &ndash;&gt;-->
-<!--              <td class="px-4 py-3.5">-->
-<!--                  <span v-if="item.extra_allowed"-->
-<!--                        class="inline-flex items-center gap-1 text-[11px] font-medium px-2 py-0.5 rounded-full bg-amber-500/15 text-amber-400"-->
-<!--                  >-->
-<!--                    <IconCheck :size="10" /> {{ fmt(item.extra_max) }}-->
-<!--                  </span>-->
-<!--                <span v-else class="inline-flex items-center gap-1 text-[11px] px-2 py-0.5 rounded-full bg-slate-500/10 text-slate-500">-->
-<!--                    <IconMinus :size="10" /> Non-->
-<!--                  </span>-->
-<!--              </td>-->
-
-<!--              &lt;!&ndash; Statut &ndash;&gt;-->
-<!--              <td class="px-4 py-3.5">-->
-<!--                  <span-->
-<!--                      class="inline-flex items-center gap-1.5 text-[11px] font-semibold px-2.5 py-1 rounded-full"-->
-<!--                      :class="item.active ? 'bg-emerald-500/15 text-emerald-400' : 'bg-slate-500/10 text-slate-400'"-->
-<!--                  >-->
-<!--                    <span class="w-1.5 h-1.5 rounded-full" :class="item.active ? 'bg-emerald-400' : 'bg-slate-500'" />-->
-<!--                    {{ item.active ? 'Actif' : 'Inactif' }}-->
-<!--                  </span>-->
-<!--              </td>-->
-
-<!--              &lt;!&ndash; Actions &ndash;&gt;-->
-<!--              <td class="px-4 py-3.5">-->
-<!--                <div class="flex items-center justify-end gap-1.5 opacity-0 group-hover:opacity-100 transition">-->
-<!--                  <button @click="openEdit(item)"-->
-<!--                          class="w-8 h-8 rounded-lg flex items-center justify-center text-slate-400 hover:text-blue-400 hover:bg-blue-500/10 transition"-->
-<!--                          title="Modifier"-->
-<!--                  >-->
-<!--                    <IconPencil :size="15" />-->
-<!--                  </button>-->
-<!--                  <button @click="confirmDelete(item)"-->
-<!--                          class="w-8 h-8 rounded-lg flex items-center justify-center text-slate-400 hover:text-red-400 hover:bg-red-500/10 transition"-->
-<!--                          title="Supprimer"-->
-<!--                  >-->
-<!--                    <IconTrash :size="15" />-->
-<!--                  </button>-->
-<!--                </div>-->
-<!--              </td>-->
-<!--            </tr>-->
-<!--            </tbody>-->
-<!--          </table>-->
-<!--        </div>-->
-<!--      </div>-->
-      <div class="bg-white border border-gray-200 overflow-hidden flex flex-col">
+      <div class="bg-white w-full min-w-[80rem] border border-gray-200 overflow-hidden flex flex-col">
         <div class="overflow-x-auto">
-          <table class="w-full min-w-[860px] border-collapse">
+          <table class="w-full border-collapse">
 
             <!-- Head -->
             <thead>

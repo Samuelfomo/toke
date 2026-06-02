@@ -2,7 +2,7 @@
   <div class="min-h-screen flex flex-col bg-gradient-to-br from-[#9cbdf6] via-[#f5f9ff] to-[#dbcdef]">
 <!--  <div class="min-h-screen flex flex-col bg-gradient-to-tr from-[#E1EFF7] via-[#E1EFF7] to-[#E3B9F0]">-->
 
-    <div class="sticky top-0 z-50">
+    <div class="sticky top-0 z-50 top-header">
       <Header />
     </div>
 

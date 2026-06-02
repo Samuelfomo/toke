@@ -163,14 +163,14 @@
 
           <!-- Actions (mémo + menu) -->
           <td class="px-3 py-3">
-            <div class="flex items-center justify-end gap-1 opacity-0 group-hover:opacity-100
+            <div class="flex items-center justify-end gap-1
                           transition-opacity">
               <!-- Bouton mémo (absents uniquement) -->
               <button
                   v-if="emp.status === 'absent'"
                   class="flex items-center gap-1 text-xs font-semibold text-slate-500
                          bg-slate-100 hover:bg-slate-200 px-2 py-1 rounded-lg transition-colors"
-                  @click.stop="$emit('memo-click', emp)"
+                      @click.stop="createdMemos(emp.guid)"
                   title="Créer un mémo"
               >
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
@@ -254,6 +254,10 @@ const sortedEmployees = computed(() =>
       return a.name.localeCompare(b.name, 'fr')
     })
 )
+
+const createdMemos = (employee: string) => {
+  router.push({ name: 'memo-create', params: { employee } });
+}
 
 // ── Formatage heures : "32h 15m" ──────────────────────────────────────────────
 const formatHours = (total: number) => {

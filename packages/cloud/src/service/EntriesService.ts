@@ -17,4 +17,15 @@ export default class EntriesService {
       return error;
     }
   }
+  // static async listMyEntries(manager: string): Promise<ApiResponse> {
+  //   try {
+  //     return await apiRequest<ApiResponse>({
+  //       path: `${baseUrl}/attendance/team?manager=${manager}`,
+  //       method: 'GET',
+  //     });
+  //   } catch (error: any) {
+  //     console.error('response error', error);
+  //     return error;
+  //   }
+  // }
 }

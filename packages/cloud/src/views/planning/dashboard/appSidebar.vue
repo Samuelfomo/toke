@@ -4,7 +4,7 @@
 <!--      :style="{ width: SIDEBAR_WIDTH }"-->
 <!--  >-->
     <aside
-        class="app-sidebar sticky top-0 self-start h-screen left-0 z-40 flex flex-col flex-shrink-0"
+        class="app-sidebar sticky top-0 self-start h-screen left-0 z-40 hidden md:flex flex-col flex-shrink-0"
         :style="{ width: SIDEBAR_WIDTH }"
     >
     <!-- Background with subtle gradient -->

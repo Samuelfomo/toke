@@ -45,6 +45,14 @@ export const NAV_GROUPS: NavGroup[] = [
                 routeName: 'rotation-assignment',
                 group: 'planning',
             },
+            {
+                id: 'assignment-history',
+                label: 'Historique',
+                sublabel: 'Historique des assignations',
+                icon: 'IconCalendarSmile',
+                routeName: 'assignment-history',
+                group: 'planning',
+            },
         ],
     },
 ]
