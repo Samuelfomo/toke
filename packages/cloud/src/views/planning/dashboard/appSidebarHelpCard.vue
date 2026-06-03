@@ -5,7 +5,10 @@
       <span class="w-5 h-5 rounded-full bg-violet-500/30 flex items-center justify-center flex-shrink-0">
         <IconInfoCircle :size="12" class="text-violet-300" />
       </span>
-      <span class="text-[12px] font-semibold text-slate-300">Aide rapide</span>
+      <div class="flex flex-col leading-relaxed">
+        <span class="text-[12px] font-semibold text-slate-300">Aide rapide</span>
+        <span class="text-[12px] font-semibold text-slate-300">{{ manager }}</span>
+      </div>
     </div>
 
     <!-- Dynamic slot content -->
@@ -19,4 +22,8 @@
 
 <script setup lang="ts">
 import { IconInfoCircle } from '@tabler/icons-vue'
+
+import {useUserStore} from "@/stores/userStore";
+const userStore = useUserStore()
+const manager = userStore.fullName
 </script>

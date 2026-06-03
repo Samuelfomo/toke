@@ -28,6 +28,7 @@ import SessionModelList from "@/views/planning/session_model/sessionModelList.vu
 import SessionTemplateList from "@/views/planning/session_template/sessionTemplateList.vue";
 import RotationGroupList from "@/views/planning/rotation_group/rotationGroupList.vue";
 import ScheduleAssignmentList from "@/views/planning/schedule_assignment/scheduleAssignmentList.vue";
+import RotationAssignment from "@/views/planning/rotation_assignment/rotationAssignment.vue";
 
 
 const routes: RouteRecordRaw[] = [
@@ -148,14 +149,6 @@ const routes: RouteRecordRaw[] = [
     meta: { requiresAuth: true },
   },
     {
-        path: '/rotation-assignment',
-        name: 'rotation-assignment',
-        component: Rotation,
-        meta: { requiresAuth: true },
-        beforeEnter: (to, from, next) => {
-            next(false)
-        }
-    },{
         path: '/assignment-history',
         name: 'assignment-history',
         component: Rotation,
@@ -186,6 +179,11 @@ const routes: RouteRecordRaw[] = [
                 path: 'schedule-assignment',
                 name: 'schedule-assignment',
                 component: ScheduleAssignmentList,
+            },
+            {
+                path: 'rotation-assignment',
+                name: 'rotation-assignment',
+                component: RotationAssignment,
             },
             // ... les autres routes du NAV_GROUPS
         ],

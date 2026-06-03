@@ -1,5 +1,5 @@
 <template>
-  <div class="flex flex-col h-full bg-slate-50 w-full min-w-[80rem]">
+  <div class="flex flex-col h-full bg-slate-50 w-full min-w-[80rem] max-w-[1300px]">
 
     <!-- ── Header ── -->
     <div class="bg-white border-b border-slate-200 px-8 py-5 flex-shrink-0">

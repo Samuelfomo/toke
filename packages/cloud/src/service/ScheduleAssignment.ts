@@ -14,6 +14,17 @@ export interface IExportParams {
     assignmentGuid:  string
 }
 
+export interface ICreateScheduleAssignmentPayload {
+    session_template: string
+    created_by:       string
+    start_date:       string
+    related:         string
+    family:        'user' | 'group'
+    end_date?:        string | null
+    reason?:          string
+    active?:          boolean
+}
+
 // ── Service ────────────────────────────────────────────────────────────────
 
 export default class ScheduleAssignmentService {
@@ -68,15 +79,9 @@ export default class ScheduleAssignmentService {
         }
     }
 
-    static async create(payload: {
-        session_template: string
-        start_date:       string
-        user_id?:         string
-        group_id?:        string
-        end_date?:        string | null
-        reason?:          string
-    }): Promise<ApiResponse> {
+    static async create(payload: ICreateScheduleAssignmentPayload): Promise<ApiResponse> {
         try {
+            console.log('ScheduleAssignmentService.create', payload);
             return await apiRequest<any>({ path: `${baseUrl}/`, method: 'POST', data: payload })
         } catch (error: any) {
             console.error('ScheduleAssignmentService.create', error)

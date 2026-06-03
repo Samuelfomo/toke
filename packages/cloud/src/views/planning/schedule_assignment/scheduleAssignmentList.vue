@@ -1,5 +1,5 @@
 <template>
-  <div class="flex flex-col h-full bg-white/70 px-8">
+  <div class="flex flex-col h-full bg-white/70 px-8 max-w-[1300px]">
 
     <div class="py-5 flex-shrink-0">
       <div class="flex items-center justify-between gap-4">
@@ -564,11 +564,11 @@ const PlanningCell = defineComponent({
       }
       return h('div', { class: 'flex flex-col gap-0.5' }, [
         h('span', {
-          class: 'inline-block text-[10px] font-semibold text-blue-700 bg-blue-50 rounded p-1 leading-tight',
+          class: 'inline-block text-[11px] font-semibold text-blue-700 bg-blue-50 rounded px-1 py-2 leading-tight',
         }, d.work),
         d.pause
             ? h('span', {
-              class: 'inline-block text-[10px] font-medium text-amber-600 bg-amber-50 rounded p-1 leading-tight',
+              class: 'inline-block text-[11px] font-medium text-amber-600 bg-amber-50 rounded px-1 py-2 leading-tight',
             }, d.pause)
             : null,
       ])

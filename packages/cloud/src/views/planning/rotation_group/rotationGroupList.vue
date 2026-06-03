@@ -1,12 +1,11 @@
 <template>
-  <div class="flex h-full bg-slate-50 overflow-hidden min-w-[80rem]">
+  <div class="flex h-full bg-slate-50 overflow-hidden min-w-[80rem] max-w-[1300px]">
 
     <!-- ══════════════════════════════════════════
-         PANNEAU GAUCHE — liste des groupes
+         PANNEAU GAUCHE — liste des groupes :class="selected ? 'w-80' : 'w-96'"
     ══════════════════════════════════════════ -->
     <div
-        class="flex flex-col border-r border-slate-200 bg-white transition-all duration-300 flex-shrink-0"
-        :class="selected ? 'w-80' : 'flex-1'"
+        class="flex flex-col border-r border-slate-200 bg-white transition-all duration-300 flex-shrink-0 w-96"
     >
       <!-- Header -->
       <div class="px-5 pt-5 pb-4 border-b border-slate-100">
@@ -23,7 +22,7 @@
           </div>
           <button
               @click="openCreate"
-              class="flex items-center gap-1.5 px-3 py-1.5 bg-indigo-500 hover:bg-indigo-600 text-white text-xs font-bold rounded-lg shadow-sm shadow-indigo-200 transition flex-shrink-0"
+              class="flex items-center gap-1.5 px-3 py-2 bg-indigo-500 hover:bg-indigo-600 text-white text-xs font-bold rounded-lg shadow-sm shadow-indigo-200 transition flex-shrink-0"
           >
             <IconPlus :size="13" /> Nouveau
           </button>

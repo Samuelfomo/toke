@@ -113,7 +113,7 @@
                       class="field cursor-pointer" :class="{ 'field-error': errors.target_guid }"
               >
                 <option value="">Rechercher et sélectionner...</option>
-                <option v-for="t in availableTargets" :key="t.guid" :value="t.guid">
+                <option v-for="t in availableTargets.filter(x => x.type === form.target_type)" :key="t.guid" :value="t.guid">
                   {{ t.name }}{{ t.member_count ? ` (${t.member_count} membres)` : '' }}
                 </option>
               </select>
@@ -300,17 +300,24 @@ import {
   IconAlertTriangle, IconCheck, IconCalendarEvent,
   IconChevronLeft, IconChevronRight, IconUser, IconUsers,
 } from '@tabler/icons-vue'
-import ScheduleAssignmentService from '@/service/ScheduleAssignment'
+import ScheduleAssignmentService, {ICreateScheduleAssignmentPayload} from '@/service/ScheduleAssignment'
 import SessionTemplateService    from '@/service/SessionTemplate'
 import type { IScheduleAssignment } from './type'
 import type { ISessionTemplate } from '../session_template/type'
 import { isGroupAssignment, getTargetName } from './type'
+import {TeamEmployee, useTeamStore} from "@/stores/teamStore";
+import GroupService, {type Group} from "@/service/GroupService";
+import {useUserStore} from "@/stores/userStore";
 
 // ── Props / emits ──────────────────────────────────────────────────────────
 const props = defineProps<{ assignment?: IScheduleAssignment | null }>()
 const emit  = defineEmits<{ close: []; saved: [] }>()
 
 const isEdit = computed(() => !!props.assignment?.guid)
+const userStore = useUserStore()
+const teamStore = useTeamStore()
+const currentUserGuid = computed(() => userStore.user?.guid || '');
+
 
 // ── Constants ──────────────────────────────────────────────────────────────
 const STEPS = [
@@ -393,24 +400,25 @@ function templateDaysSummary(tpl: ISessionTemplate): string {
 // ── Load data ──────────────────────────────────────────────────────────────
 async function loadTemplates() {
   const res = await SessionTemplateService.list({ active: true, current: true, limit: 200 })
-  if (res?.success) sessionTemplates.value = res.data.session_templates.items
+  console.log('sessionTemplates', res.data)
+  if (res?.success) sessionTemplates.value = res.data.templates.items
 }
+
+const employePreselectionne = ref<TeamEmployee | null>(null);
 
 async function loadTargets() {
   try {
     const [usersRes, groupsRes] = await Promise.all([
-      fetch('/api/users/list?limit=200').then((r) => r.json()).catch(() => null),
-      fetch('/api/groups/list?limit=200').then((r) => r.json()).catch(() => null),
+      computed(() => teamStore.employees || []),
+      GroupService.listGroups(currentUserGuid.value),
     ])
     const targets: typeof availableTargets.value = []
-    if (usersRes?.success) {
-      usersRes.data.users?.items?.forEach((u: any) =>
-          targets.push({ guid: u.guid, name: `${u.first_name} ${u.last_name}`, type: 'user' })
+      usersRes.value.forEach((u: TeamEmployee) =>
+          targets.push({ guid: u.guid, name: u.name, type: 'user' })
       )
-    }
     if (groupsRes?.success) {
-      groupsRes.data.groups?.items?.forEach((g: any) =>
-          targets.push({ guid: g.guid, name: g.name, type: 'group', member_count: g.members?.count })
+      groupsRes.data.groups?.items?.forEach((g: Group) =>
+          targets.push({ guid: g.guid!, name: g.name, type: 'group', member_count: g.members?.count })
       )
     }
     availableTargets.value = targets
@@ -445,23 +453,28 @@ async function submit() {
   if (!validateAll()) return
   saving.value = true
 
-  const payload: Record<string, any> = {
+  const payload: Partial<ICreateScheduleAssignmentPayload> = {
     session_template: form.session_template_guid,
+    created_by:       currentUserGuid.value,
     start_date:       form.start_date,
   }
 
   if (!isEdit.value) {
-    if (form.target_type === 'user')  payload.user_id  = form.target_guid
-    if (form.target_type === 'group') payload.group_id = form.target_guid
+    payload.family = form.target_type;
+    payload.related = form.target_guid;
   }
 
-  if (form.end_date) payload.end_date = form.end_date
-  if (form.reason)   payload.reason   = form.reason
+  if (form.end_date?.trim()) payload.end_date = form.end_date
+  if (form.reason?.trim()) {
+    payload.reason = form.reason.trim()
+  }
+
+
   if (isEdit.value)  payload.active   = form.active
 
   const res = isEdit.value
       ? await ScheduleAssignmentService.update(props.assignment!.guid, payload)
-      : await ScheduleAssignmentService.create(payload as any)
+      : await ScheduleAssignmentService.create(payload as ICreateScheduleAssignmentPayload)
 
   saving.value = false
 
