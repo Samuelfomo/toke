@@ -6,12 +6,12 @@ import Auth from './views/auth.vue'
 import Otp from './views/otp.vue'
 import DashboardMain from './views/dashboard/dashboardMain.vue'
 import Equipe from './views/equipe.vue'
+import EmployeeForm from './views/employeeForm.vue'
 import MemoList from './views/memo/memosView.vue'
 import MemoCreated from './views/memo/memoCreateChat.vue'
 import EmployeeDetails from './views/EmployeeDetails.vue'
 import Schedule from './views/schedule/schedule.vue'
 import Profile from './views/profile.vue'
-import EmployeeForm from './views/employeeForm.vue'
 import Setting from './views/setting.vue'
 import ProfileCard from './views/profileCard.vue';
 import Site from './views/site/site.vue';
@@ -61,13 +61,32 @@ const routes: RouteRecordRaw[] = [
     name: 'equipe',
     component: Equipe,
     meta: { requiresAuth: true },
+  },{
+    path: '/employeeCreate',
+    name: 'employeeCreate',
+    component: EmployeeForm,
+    meta: { requiresAuth: true },
   },
+    {
+        path: '/employeeEdit/:id',
+        name: 'employeeEdit',
+        component: EmployeeForm,
+        meta: { requiresAuth: true },
+    },
   {
     path: '/memoList',
-    name: 'memo-create',
+    name: 'memoList',
     component: MemoList,
     meta: { requiresAuth: true },
-  }, {
+  },
+  //   {
+  //   path: '/memoList',
+  //   name: 'memo-create',
+  //   component: MemoList,
+  //   meta: { requiresAuth: true },
+  // },
+  //
+    {
     path: '/MemoCreated',
     name: 'MemoCreated',
     component: MemoCreated,
@@ -79,12 +98,12 @@ const routes: RouteRecordRaw[] = [
     component: Schedule,
     meta: { requiresAuth: true },
   },
-  {
-    path: '/employeeForm',
-    name: 'employeeForm',
-    component: EmployeeForm,
-    meta: { requiresAuth: true },
-  },
+  // {
+  //   path: '/employeeForm',
+  //   name: 'employeeForm',
+  //   component: EmployeeForm,
+  //   meta: { requiresAuth: true },
+  // },
   {
     path: '/employeeDetails/:id',
     name: 'employeeDetails',

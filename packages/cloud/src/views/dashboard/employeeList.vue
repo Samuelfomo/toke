@@ -256,7 +256,8 @@ const sortedEmployees = computed(() =>
 )
 
 const createdMemos = (employee: string) => {
-  router.push({ name: 'memo-create', params: { employee } });
+  router.push({ name: 'memoList', params: { employee } });
+  // router.push({ name: 'memo-create', params: { employee } });
 }
 
 // ── Formatage heures : "32h 15m" ──────────────────────────────────────────────

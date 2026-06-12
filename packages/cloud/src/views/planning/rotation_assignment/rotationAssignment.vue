@@ -824,6 +824,8 @@ import type {
 } from './type'
 import { useUserStore } from '@/stores/userStore'
 
+import { exportRotationCSV, exportRotationExcel } from '@/utils/exports/rotationAssignment.export'
+
 const userStore = useUserStore()
 
 // ── Composant inline RotationCell ─────────────────────────────────────────────
@@ -1228,32 +1230,52 @@ async function handleExportPDF() {
   } finally { exportLoading.value = null }
 }
 
+// async function handleExportExcel() {
+//   if (!canExport.value) return
+//   exportLoading.value = 'excel'; exportDropdownOpen.value = false
+//   try {
+//     await RotationAssignmentService.exportExcel({
+//       targetGuid: selectedMemberGuid.value,
+//       targetType: 'group',
+//       periodFrom: periodFrom.value,
+//       periodTo:   periodTo.value,
+//       rotationGroupGuid: selectedRotationGroupGuid.value,
+//     })
+//   } finally { exportLoading.value = null }
+// }
+
+// async function handleExportCSV() {
+//   if (!canExport.value) return
+//   exportLoading.value = 'csv'; exportDropdownOpen.value = false
+//   try {
+//     await RotationAssignmentService.exportCSV({
+//       targetGuid: selectedMemberGuid.value,
+//       targetType: 'group',
+//       periodFrom: periodFrom.value,
+//       periodTo:   periodTo.value,
+//       rotationGroupGuid: selectedRotationGroupGuid.value,
+//     })
+//   } finally { exportLoading.value = null }
+// }
+
 async function handleExportExcel() {
-  if (!canExport.value) return
-  exportLoading.value = 'excel'; exportDropdownOpen.value = false
-  try {
-    await RotationAssignmentService.exportExcel({
-      targetGuid: selectedMemberGuid.value,
-      targetType: 'group',
-      periodFrom: periodFrom.value,
-      periodTo:   periodTo.value,
-      rotationGroupGuid: selectedRotationGroupGuid.value,
-    })
-  } finally { exportLoading.value = null }
+  exportRotationExcel({
+    assignments: filteredAssignments.value,
+    periodFrom:  periodFrom.value,
+    periodTo:    periodTo.value,
+    generatedBy: `${userStore.user?.first_name} ${userStore.user?.last_name}`.trim(),
+    tenantName:  userStore.tenant?.name,
+  })
 }
 
 async function handleExportCSV() {
-  if (!canExport.value) return
-  exportLoading.value = 'csv'; exportDropdownOpen.value = false
-  try {
-    await RotationAssignmentService.exportCSV({
-      targetGuid: selectedMemberGuid.value,
-      targetType: 'group',
-      periodFrom: periodFrom.value,
-      periodTo:   periodTo.value,
-      rotationGroupGuid: selectedRotationGroupGuid.value,
-    })
-  } finally { exportLoading.value = null }
+  exportRotationCSV({
+    assignments: filteredAssignments.value,
+    periodFrom:  periodFrom.value,
+    periodTo:    periodTo.value,
+    generatedBy: `${userStore.user?.first_name} ${userStore.user?.last_name}`.trim(),
+    tenantName:  userStore.tenant?.name,
+  })
 }
 
 function handlePrint() {

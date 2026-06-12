@@ -1,0 +1,325 @@
+/*
+ * ╔══════════════════════════════════════════════════════════════╗
+ * ║  TimeFlow — Design Tokens & Shared Utilities                ║
+ * ║  À importer dans le fichier CSS global (ex: main.css)       ║
+ * ╚══════════════════════════════════════════════════════════════╝
+ *
+ * USAGE dans les composants Vue :
+ *   @apply tf-field;        → champ de formulaire standard
+ *   @apply tf-btn-primary;  → bouton primaire
+ *   @apply tf-card;         → carte blanche avec ombre légère
+ *   etc.
+ */
+
+/* ─── 1. Tokens CSS (accessibles dans tout le projet) ────────────────── */
+:root {
+    /* Brand */
+    --tf-blue-50:    #eff6ff;
+    --tf-blue-100:   #dbeafe;
+    --tf-blue-500:   #3b82f6;
+    --tf-blue-600:   #2563eb;
+    --tf-blue-950:   #172554;
+
+    /* Accents sémantiques */
+    --tf-success:    #10b981;   /* emerald-500 */
+    --tf-warning:    #f59e0b;   /* amber-500   */
+    --tf-danger:     #ef4444;   /* red-500     */
+    --tf-violet:     #8b5cf6;   /* violet-500  */
+
+    /* Neutres */
+    --tf-surface:    #ffffff;
+    --tf-bg:         #f8fafc;   /* slate-50 */
+    --tf-border:     #e2e8f0;   /* slate-200 */
+    --tf-border-md:  #cbd5e1;   /* slate-300 */
+    --tf-text-base:  #1e293b;   /* slate-800 */
+    --tf-text-muted: #64748b;   /* slate-500 */
+    --tf-text-faint: #94a3b8;   /* slate-400 */
+
+    /* Drawer / Bottom sheet */
+    --tf-drawer-width-sm: 100%;
+    --tf-drawer-width-md: 480px;
+    --tf-drawer-width-lg: 560px;
+
+    /* Sidebar (doit correspondre à Navigation.ts) */
+    --tf-sidebar-w: 240px;
+
+    /* Transitions */
+    --tf-ease: cubic-bezier(0.4, 0, 0.2, 1);
+    --tf-duration: 220ms;
+}
+
+/* ─── 2. Reset utilitaire ─────────────────────────────────────────────── */
+*,
+*::before,
+*::after { box-sizing: border-box; }
+
+/* ─── 3. Layout applicatif ───────────────────────────────────────────── */
+
+/*
+ * .tf-page  → wrapper de page (flex column, hauteur totale, overflow géré)
+ */
+.tf-page {
+    @apply flex flex-col h-full min-h-0;
+}
+
+/*
+ * .tf-page-header  → zone de titre en haut, ne scroll pas
+ */
+.tf-page-header {
+    @apply flex-shrink-0 px-4 py-5
+    sm:px-6 sm:py-6
+    flex flex-col gap-3
+    sm:flex-row sm:items-center sm:justify-between;
+}
+
+/*
+ * .tf-page-body  → zone scrollable principale
+ */
+.tf-page-body {
+    @apply flex-1 overflow-y-auto min-h-0
+    px-4 pb-8
+    sm:px-6;
+}
+
+/* ─── 4. Breadcrumb ──────────────────────────────────────────────────── */
+.tf-breadcrumb {
+    @apply flex items-center gap-1.5 text-xs text-slate-400 mb-1;
+}
+
+/* ─── 5. Toolbar (barre de filtres) ─────────────────────────────────── */
+.tf-toolbar {
+    @apply flex flex-wrap items-center gap-2
+    bg-white border border-[--tf-border] rounded-xl
+    px-4 py-3 mb-4;
+}
+
+/* ─── 6. Champs de formulaire ────────────────────────────────────────── */
+.tf-field-group {
+    @apply flex flex-col gap-1;
+}
+
+.tf-label {
+    @apply text-[11px] font-semibold uppercase tracking-wide text-slate-500;
+}
+
+.tf-field {
+    @apply w-full px-3 py-2
+    bg-white border border-[--tf-border] rounded-lg
+    text-sm text-slate-800 placeholder-slate-300
+    focus:outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-100
+    transition;
+}
+
+.tf-field-error {
+    @apply border-red-400 focus:border-red-400 focus:ring-red-100;
+}
+
+.tf-field-hint {
+    @apply text-[11px] text-slate-400;
+}
+
+.tf-err {
+    @apply text-[11px] text-red-500;
+}
+
+/* select hérite du même style */
+.tf-select {
+    @apply tf-field cursor-pointer;
+}
+
+/* ─── 7. Boutons ─────────────────────────────────────────────────────── */
+.tf-btn {
+    @apply inline-flex items-center justify-center gap-2
+    px-4 py-2 rounded-xl text-sm font-semibold
+    transition disabled:opacity-50 disabled:cursor-not-allowed
+    focus:outline-none focus:ring-2 focus:ring-offset-1;
+}
+
+.tf-btn-primary {
+    @apply tf-btn
+    bg-blue-600 hover:bg-blue-500 text-white
+    shadow-sm shadow-blue-500/30
+    focus:ring-blue-400;
+}
+
+.tf-btn-secondary {
+    @apply tf-btn
+    bg-white hover:bg-slate-50 text-slate-700
+    border border-[--tf-border]
+    focus:ring-slate-300;
+}
+
+.tf-btn-danger {
+    @apply tf-btn
+    bg-red-500 hover:bg-red-400 text-white
+    focus:ring-red-300;
+}
+
+.tf-btn-ghost {
+    @apply tf-btn
+    text-slate-500 hover:text-slate-800 hover:bg-slate-100
+    focus:ring-slate-200;
+}
+
+.tf-btn-sm {
+    @apply !px-3 !py-1.5 !text-xs;
+}
+
+/* ─── 8. Badges / Pills ──────────────────────────────────────────────── */
+.tf-badge {
+    @apply inline-flex items-center gap-1 text-[11px] font-medium
+    px-2.5 py-0.5 rounded-full;
+}
+
+.tf-badge-green  { @apply tf-badge bg-emerald-50  text-emerald-700; }
+.tf-badge-gray   { @apply tf-badge bg-slate-100   text-slate-500;  }
+.tf-badge-blue   { @apply tf-badge bg-blue-50     text-blue-700;   }
+.tf-badge-violet { @apply tf-badge bg-violet-50   text-violet-700; }
+.tf-badge-amber  { @apply tf-badge bg-amber-50    text-amber-700;  }
+.tf-badge-red    { @apply tf-badge bg-red-50      text-red-600;    }
+
+/* dot de statut dans les badges */
+.tf-dot {
+    @apply w-1.5 h-1.5 rounded-full flex-shrink-0;
+}
+
+/* ─── 9. Table desktop ───────────────────────────────────────────────── */
+.tf-table-wrap {
+    @apply hidden sm:block bg-white border border-[--tf-border] rounded-xl overflow-hidden;
+}
+
+.tf-table {
+    @apply w-full border-collapse text-sm;
+}
+
+.tf-table thead tr {
+    @apply border-b border-[--tf-border]
+    text-[10.5px] font-bold tracking-widest uppercase
+    text-white bg-blue-950;
+}
+
+.tf-table thead th {
+    @apply px-4 py-3 text-left whitespace-nowrap;
+}
+
+.tf-table thead th:last-child {
+    @apply text-right;
+}
+
+.tf-table tbody tr {
+    @apply border-b border-[--tf-border] last:border-0
+    hover:bg-slate-50 transition;
+}
+
+.tf-table tbody td {
+    @apply px-4 py-3 align-middle;
+}
+
+/* ─── 10. Cards mobile ───────────────────────────────────────────────── */
+.tf-cards-wrap {
+    @apply sm:hidden flex flex-col gap-3;
+}
+
+.tf-card {
+    @apply bg-white border border-[--tf-border] rounded-xl p-4 shadow-sm;
+}
+
+/* ─── 11. Pagination ─────────────────────────────────────────────────── */
+.tf-pg-btn {
+    @apply h-8 min-w-[32px] px-2 flex items-center justify-center
+    rounded-lg border border-slate-200 text-slate-500 text-xs font-semibold
+    hover:bg-slate-100 hover:text-slate-800
+    disabled:opacity-30 disabled:cursor-not-allowed
+    transition;
+}
+
+.tf-pg-btn-active {
+    @apply !bg-blue-600 !border-blue-600 !text-white;
+}
+
+/* ─── 12. Drawer / Bottom sheet ──────────────────────────────────────── */
+
+/*
+ * Structure attendue dans le template :
+ *
+ * <Teleport to="body">
+ *   <div v-if="open" class="tf-drawer-backdrop" @click.self="close">
+ *     <div class="tf-drawer">          ← panneau lui-même
+ *       <div class="tf-drawer-header"> … </div>
+ *       <div class="tf-drawer-body">   … </div>
+ *       <div class="tf-drawer-footer"> … </div>
+ *     </div>
+ *   </div>
+ * </Teleport>
+ */
+
+.tf-drawer-backdrop {
+    @apply fixed inset-0 z-50 bg-black/40 backdrop-blur-sm
+    flex items-end sm:items-stretch sm:justify-end;
+}
+
+.tf-drawer {
+    /* Mobile : bottom sheet pleine largeur */
+    @apply w-full max-h-[92dvh] rounded-t-2xl
+    flex flex-col bg-white shadow-2xl overflow-hidden
+        /* Desktop : drawer latéral */
+    sm:w-[480px] sm:max-h-full sm:h-full sm:rounded-none sm:rounded-l-2xl;
+}
+
+.tf-drawer-header {
+    @apply flex-shrink-0 flex items-center justify-between
+    px-5 py-4 border-b border-[--tf-border];
+}
+
+.tf-drawer-body {
+    @apply flex-1 overflow-y-auto px-5 py-5;
+}
+
+.tf-drawer-footer {
+    @apply flex-shrink-0 flex items-center justify-end gap-3
+    px-5 py-4 border-t border-[--tf-border] bg-slate-50;
+}
+
+/* ─── 13. Section card (dans formulaires) ────────────────────────────── */
+.tf-section-card {
+    @apply rounded-xl border border-[--tf-border] bg-slate-50 p-4 flex flex-col gap-3;
+}
+
+.tf-section-card-row {
+    @apply flex items-center justify-between gap-4;
+}
+
+/* ─── 14. Toggle switch ──────────────────────────────────────────────── */
+/* Utilisé en JS render function ou composant dédié */
+/* Dimensions fixes pour ne pas dépendre du font-size parent */
+.tf-toggle-track {
+    @apply relative w-10 h-[22px] rounded-full transition-colors duration-200 flex-shrink-0;
+}
+
+.tf-toggle-thumb {
+    @apply absolute top-[2px] left-[2px]
+    w-[18px] h-[18px] bg-white rounded-full shadow
+    transition-transform duration-200;
+}
+
+/* ─── 15. Skeleton loader ────────────────────────────────────────────── */
+.tf-skeleton {
+    @apply bg-slate-200 rounded animate-pulse;
+}
+
+/* ─── 16. Empty state ────────────────────────────────────────────────── */
+.tf-empty {
+    @apply flex flex-col items-center justify-center gap-3
+    py-20 text-slate-400;
+}
+
+/* ─── 17. Overlay de confirmation de suppression ─────────────────────── */
+.tf-confirm-overlay {
+    @apply fixed inset-0 z-[60] bg-black/50 backdrop-blur-sm
+    flex items-center justify-center p-4;
+}
+
+.tf-confirm-box {
+    @apply bg-slate-900 text-white rounded-2xl p-6 w-full max-w-sm
+    shadow-2xl flex flex-col gap-4;
+}

@@ -416,6 +416,9 @@ async function loadTargets() {
       usersRes.value.forEach((u: TeamEmployee) =>
           targets.push({ guid: u.guid, name: u.name, type: 'user' })
       )
+
+    console.log('usersRes', usersRes.value);
+
     if (groupsRes?.success) {
       groupsRes.data.groups?.items?.forEach((g: Group) =>
           targets.push({ guid: g.guid!, name: g.name, type: 'group', member_count: g.members?.count })

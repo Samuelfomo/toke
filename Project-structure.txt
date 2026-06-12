@@ -1,172 +1,508 @@
 .
 ├── Project-structure.txt
 ├── README.md
-└── packages
-    ├── api
-    │   ├── README.md
-    │   ├── ecosystem.config.js
-    │   ├── eslint.config.cjs
-    │   └── src
-    │       ├── app.ts
-    │       ├── license
-    │       │   ├── class
-    │       │   │   ├── Country.ts
-    │       │   │   ├── Currency.ts
-    │       │   │   ├── ExchangeRate.ts
-    │       │   │   ├── Language.ts
-    │       │   │   ├── TaxRule.ts
-    │       │   │   └── Tenant.ts
-    │       │   ├── database
-    │       │   │   ├── data
-    │       │   │   │   ├── activity.monitoring.db.ts
-    │       │   │   │   ├── billing.cycle.db.ts
-    │       │   │   │   ├── country.db.ts
-    │       │   │   │   ├── currency.db.ts
-    │       │   │   │   ├── employee.license.db.ts
-    │       │   │   │   ├── exchange.rate.db.ts
-    │       │   │   │   ├── fraud.detection.log.db.ts
-    │       │   │   │   ├── global.license.db.ts
-    │       │   │   │   ├── language.db.ts
-    │       │   │   │   ├── license.adjustment.db.ts
-    │       │   │   │   ├── payment.method.db.ts
-    │       │   │   │   ├── payment.transaction.db.ts
-    │       │   │   │   ├── tax.rule.db.ts
-    │       │   │   │   └── tenant.db.ts
-    │       │   │   ├── db.base.ts
-    │       │   │   ├── db.config.ts
-    │       │   │   └── db.initializer.ts
-    │       │   ├── middle
-    │       │   │   └── ensured-routes.ts
-    │       │   ├── model
-    │       │   │   ├── CountryModel.ts
-    │       │   │   ├── CurrencyModel.ts
-    │       │   │   ├── ExchangeRateModel.ts
-    │       │   │   ├── GlobalLicenseModel.ts
-    │       │   │   ├── LanguageModel.ts
-    │       │   │   ├── TaxRuleModel.ts
-    │       │   │   └── TenantModel.ts
-    │       │   └── routes
-    │       │       ├── country.route.ts
-    │       │       ├── currency.route.ts
-    │       │       ├── exchange.rate.route.ts
-    │       │       ├── language.route.ts
-    │       │       ├── tax.rule.route.ts
-    │       │       └── tenant.route.ts
-    │       ├── server.ts
-    │       ├── tools
-    │       │   ├── glossary.ts
-    │       │   ├── http-status.ts
-    │       │   ├── response.ts
-    │       │   ├── revision.ts
-    │       │   └── watcher.ts
-    │       └── utils
-    │           ├── extract.query.params.ts
-    │           ├── regex.validator.ts
-    │           └── response.model.ts
-    ├── cloud
-    │   ├── README.md
-    │   ├── index.html
-    │   ├── postcss.config.js
-    │   ├── src
-    │   │   ├── App.vue
-    │   │   ├── assets
-    │   │   │   ├── images
-    │   │   │   │   └── toké-icon-01.svg
-    │   │   │   └── main.css
-    │   │   ├── composables
-    │   │   │   ├── useCountries.ts
-    │   │   │   └── useNotifications.ts
-    │   │   ├── env.d.ts
-    │   │   ├── main.ts
-    │   │   ├── router.ts
-    │   │   ├── services
-    │   │   │   ├── api.service.ts
-    │   │   │   └── countries.service.ts
-    │   │   ├── stores
-    │   │   └── views
-    │   │       ├── components
-    │   │       │   ├── country
-    │   │       │   │   ├── ConfirmDeleteModal.vue
-    │   │       │   │   └── countryFormModal.vue
-    │   │       │   └── layouts
-    │   │       │       ├── dashboard.vue
-    │   │       │       ├── footer.vue
-    │   │       │       └── header.vue
-    │   │       ├── country.vue
-    │   │       └── home.vue
-    │   ├── tailwind.config.js
-    │   └── vite.config.ts
-    └── shared
-        ├── README.md
-        ├── dist
-        │   ├── constants
-        │   │   ├── api.constant.d.ts
-        │   │   ├── api.constant.d.ts.map
-        │   │   ├── api.constant.js
-        │   │   ├── api.constant.js.map
-        │   │   ├── country.constants.d.ts
-        │   │   ├── country.constants.d.ts.map
-        │   │   ├── country.constants.js
-        │   │   ├── country.constants.js.map
-        │   │   ├── index.d.ts
-        │   │   ├── index.d.ts.map
-        │   │   ├── index.js
-        │   │   └── index.js.map
-        │   ├── index.d.ts
-        │   ├── index.d.ts.map
-        │   ├── index.js
-        │   ├── index.js.map
-        │   ├── schemas
-        │   │   ├── country.schema.d.ts
-        │   │   ├── country.schema.d.ts.map
-        │   │   ├── country.schema.js
-        │   │   ├── country.schema.js.map
-        │   │   ├── index.d.ts
-        │   │   ├── index.d.ts.map
-        │   │   ├── index.js
-        │   │   └── index.js.map
-        │   ├── types
-        │   │   ├── common.types.d.ts
-        │   │   ├── common.types.d.ts.map
-        │   │   ├── common.types.js
-        │   │   ├── common.types.js.map
-        │   │   ├── country.types.d.ts
-        │   │   ├── country.types.d.ts.map
-        │   │   ├── country.types.js
-        │   │   ├── country.types.js.map
-        │   │   ├── index.js.d.ts
-        │   │   ├── index.js.d.ts.map
-        │   │   ├── index.js.js
-        │   │   └── index.js.js.map
-        │   └── utils
-        │       ├── formatting.utils.d.ts
-        │       ├── formatting.utils.d.ts.map
-        │       ├── formatting.utils.js
-        │       ├── formatting.utils.js.map
-        │       ├── index.d.ts
-        │       ├── index.d.ts.map
-        │       ├── index.js
-        │       ├── index.js.map
-        │       ├── validation.utils.d.ts
-        │       ├── validation.utils.d.ts.map
-        │       ├── validation.utils.js
-        │       └── validation.utils.js.map
-        └── src
-            ├── constants
-            │   ├── api.constant.ts
-            │   ├── country.constants.ts
-            │   └── index.ts
-            ├── index.ts
-            ├── schemas
-            │   ├── country.schema.ts
-            │   └── index.ts
-            ├── types
-            │   ├── common.types.ts
-            │   ├── country.types.ts
-            │   └── index.js.ts
-            └── utils
-                ├── formatting.utils.ts
-                ├── index.ts
-                └── validation.utils.ts
+├── docs
+│   └── toke-web-design-system.md
+├── eslint.config.cjs
+├── package-lock.json
+├── package.json
+├── packages
+│   ├── api
+│   │   ├── README.md
+│   │   ├── cache
+│   │   │   ├── clients.json
+│   │   │   └── tenants.json
+│   │   ├── docs
+│   │   │   ├── Fonctionnement du Paiement et Renouvellement des Licences TOKÉ.md.html
+│   │   │   ├── Guide_integration_Envoie_de_code_OTP.pdf
+│   │   │   ├── Rest doc API
+│   │   │   │   ├── 📘 Documentation API REST - TOKÉ.md (2).html
+│   │   │   │   ├── 📘 Documentation API REST - TOKÉ.md.html
+│   │   │   │   ├── 📘 Documentation API REST - TOKÉ1.md.html
+│   │   │   │   ├── 📘 TOKÉ API - LICENCES EMPLOYÉS4.md.html
+│   │   │   │   ├── 📘 TOKÉ API - LICENCES GLOBALES3.md.html
+│   │   │   │   └── 📘 TOKÉ API - TENANTS.md2.html
+│   │   │   ├── automatique migration avis .pdf
+│   │   │   ├── config smtp server(postfix).md.html
+│   │   │   ├── invitation
+│   │   │   │   └── invitation-toke-integration-guide.md
+│   │   │   ├── migrations
+│   │   │   │   ├── files
+│   │   │   │   │   ├── DEPLOYMENT_CHECKLIST.md
+│   │   │   │   │   ├── EXECUTIVE_SUMMARY.md
+│   │   │   │   │   ├── GlobalLicenseModel_FIXED.js
+│   │   │   │   │   ├── GlobalLicenseModel_FIXED.ts
+│   │   │   │   │   ├── GlobalLicense_FIXED.js
+│   │   │   │   │   ├── GlobalLicense_FIXED.ts
+│   │   │   │   │   ├── INDEX.md
+│   │   │   │   │   ├── PACKAGE_INFO.md
+│   │   │   │   │   ├── QUICK_REFERENCE.md
+│   │   │   │   │   ├── README.md
+│   │   │   │   │   ├── diagnostic_generated_columns.sh
+│   │   │   │   │   ├── fix_generated_columns.md
+│   │   │   │   │   └── test_guide_after_fix.md
+│   │   │   │   └── files.zip
+│   │   │   ├── toke API.postman_collection.json
+│   │   │   ├── toke-app-manager-api-guide.html
+│   │   │   ├── toke-pointage-employee-doc.html
+│   │   │   ├── toke-pointage-employee-doc.md
+│   │   │   ├── toke-syst-gestion-licences.html
+│   │   │   ├── 📋 Comportements Attendus du Système de Licence TOKÉ.md.html
+│   │   │   └── 🚀 Toké App Manager API.postman_collection.json
+│   │   ├── ecosystem.config.cjs
+│   │   ├── express.d.ts
+│   │   ├── migrations
+│   │   │   ├── 20250909094204-add-computed-billing-status.cjs
+│   │   │   ├── 20250909100827-add-generated-columns-global-license.cjs
+│   │   │   ├── 20250912113219-create-fraud-detection-log.cjs
+│   │   │   ├── 20250912113257-add-fraud-detection-triggers.cjs
+│   │   │   ├── 20250912163734-create-activity-monitoring.cjs
+│   │   │   └── 20250912164045-add-activity-monitoring-triggers.cjs
+│   │   ├── package.json
+│   │   ├── scripts
+│   │   │   ├── appConfigManager.js
+│   │   │   ├── appConfigManager.ts
+│   │   │   ├── countryManager.js
+│   │   │   ├── countryManager.ts
+│   │   │   ├── currencyManager.js
+│   │   │   ├── currencyManager.ts
+│   │   │   ├── kill.js
+│   │   │   ├── manageClient.js
+│   │   │   ├── manageClient.ts
+│   │   │   ├── manageProfile.js
+│   │   │   ├── manageProfile.ts
+│   │   │   ├── nuclear-cleanup.js
+│   │   │   ├── status.js
+│   │   │   ├── stop.js
+│   │   │   ├── test.js
+│   │   │   ├── test.ts
+│   │   │   ├── testTokenGeneration.js
+│   │   │   └── testTokenGeneration.ts
+│   │   ├── src
+│   │   │   ├── master
+│   │   │   │   ├── Project-structure.txt
+│   │   │   │   ├── app.ts
+│   │   │   │   ├── class
+│   │   │   │   │   ├── ActivityMonitoring.ts
+│   │   │   │   │   ├── AppConfig.ts
+│   │   │   │   │   ├── BillingCycle.ts
+│   │   │   │   │   ├── Client.ts
+│   │   │   │   │   ├── ClientProfile.ts
+│   │   │   │   │   ├── Contact.ts
+│   │   │   │   │   ├── Country.ts
+│   │   │   │   │   ├── Currency.ts
+│   │   │   │   │   ├── EmployeeLicense.ts
+│   │   │   │   │   ├── Endpoint.ts
+│   │   │   │   │   ├── ExchangeRate.ts
+│   │   │   │   │   ├── FraudDetectionLog.ts
+│   │   │   │   │   ├── GlobalLicense.ts
+│   │   │   │   │   ├── Language.ts
+│   │   │   │   │   ├── Lexicon.ts
+│   │   │   │   │   ├── LicenseAdjustment.ts
+│   │   │   │   │   ├── PaymentMethod.ts
+│   │   │   │   │   ├── PaymentTransaction.ts
+│   │   │   │   │   ├── Permission.ts
+│   │   │   │   │   ├── Sponsor.ts
+│   │   │   │   │   ├── TaxRule.ts
+│   │   │   │   │   └── Tenant.ts
+│   │   │   │   ├── database
+│   │   │   │   │   ├── data
+│   │   │   │   │   │   ├── activity.monitoring.db.ts
+│   │   │   │   │   │   ├── app.config.db.ts
+│   │   │   │   │   │   ├── billing.cycle.db.ts
+│   │   │   │   │   │   ├── client.db.ts
+│   │   │   │   │   │   ├── client.profile.db.ts
+│   │   │   │   │   │   ├── contact.db.ts
+│   │   │   │   │   │   ├── country.db.ts
+│   │   │   │   │   │   ├── currency.db.ts
+│   │   │   │   │   │   ├── employee.license.db.ts
+│   │   │   │   │   │   ├── endpoint.db.ts
+│   │   │   │   │   │   ├── exchange.rate.db.ts
+│   │   │   │   │   │   ├── fraud.detection.log.db.ts
+│   │   │   │   │   │   ├── global.license.db.ts
+│   │   │   │   │   │   ├── language.db.ts
+│   │   │   │   │   │   ├── lexicon.db.ts
+│   │   │   │   │   │   ├── license.adjustment.db.ts
+│   │   │   │   │   │   ├── payment.method.db.ts
+│   │   │   │   │   │   ├── payment.transaction.db.ts
+│   │   │   │   │   │   ├── permission.db.ts
+│   │   │   │   │   │   ├── sponsor.db.ts
+│   │   │   │   │   │   ├── tax.rule.db.ts
+│   │   │   │   │   │   └── tenant.db.ts
+│   │   │   │   │   ├── db.base.ts
+│   │   │   │   │   ├── db.config.ts
+│   │   │   │   │   ├── db.initializer.ts
+│   │   │   │   │   └── migration.config.cjs
+│   │   │   │   ├── model
+│   │   │   │   │   ├── ActivityMonitoringModel.ts
+│   │   │   │   │   ├── AppConfigModel.ts
+│   │   │   │   │   ├── BillingCycleModel.ts
+│   │   │   │   │   ├── ClientModel.ts
+│   │   │   │   │   ├── ClientProfileModel.ts
+│   │   │   │   │   ├── ContactModel.ts
+│   │   │   │   │   ├── CountryModel.ts
+│   │   │   │   │   ├── CurrencyModel.ts
+│   │   │   │   │   ├── EmployeeLicenseModel.ts
+│   │   │   │   │   ├── EndpointModel.ts
+│   │   │   │   │   ├── ExchangeRateModel.ts
+│   │   │   │   │   ├── FraudDetectionLogModel.ts
+│   │   │   │   │   ├── GlobalLicenseModel.ts
+│   │   │   │   │   ├── LanguageModel.ts
+│   │   │   │   │   ├── LexiconModel.ts
+│   │   │   │   │   ├── LicenseAdjustmentModel.ts
+│   │   │   │   │   ├── PaymentMethodModel.ts
+│   │   │   │   │   ├── PaymentTransactionModel.ts
+│   │   │   │   │   ├── PermissionModel.ts
+│   │   │   │   │   ├── SponsorModel.ts
+│   │   │   │   │   ├── TaxRuleModel.ts
+│   │   │   │   │   └── TenantModel.ts
+│   │   │   │   ├── routes
+│   │   │   │   │   ├── activity.monitoring.route.ts
+│   │   │   │   │   ├── app.config.route.ts
+│   │   │   │   │   ├── billing.cycle.route.ts
+│   │   │   │   │   ├── contact.route.ts
+│   │   │   │   │   ├── country.route.ts
+│   │   │   │   │   ├── currency.route.ts
+│   │   │   │   │   ├── employee.license.route.ts
+│   │   │   │   │   ├── endpoint.route.ts
+│   │   │   │   │   ├── exchange.rate.route.ts
+│   │   │   │   │   ├── fraud.detection.log.route.ts
+│   │   │   │   │   ├── global.license.route.ts
+│   │   │   │   │   ├── language.route.ts
+│   │   │   │   │   ├── lexicon.route.ts
+│   │   │   │   │   ├── license.adjustment.route.ts
+│   │   │   │   │   ├── manager
+│   │   │   │   │   │   ├── billing.route.ts
+│   │   │   │   │   │   └── fraud.route.ts
+│   │   │   │   │   ├── payment.method.route.ts
+│   │   │   │   │   ├── payment.transaction.route.ts
+│   │   │   │   │   ├── permission.route.ts
+│   │   │   │   │   ├── sponsor.route.ts
+│   │   │   │   │   ├── tax.rule.route.ts
+│   │   │   │   │   └── tenant.route.ts
+│   │   │   │   └── server.ts
+│   │   │   ├── middle
+│   │   │   │   ├── ensured-routes.ts
+│   │   │   │   ├── server-auth.ts
+│   │   │   │   ├── tenant.middleware.ts
+│   │   │   │   └── user-auth.ts
+│   │   │   ├── temporaire_route
+│   │   │   │   ├── client.routes.ts
+│   │   │   │   └── profile.routes.ts
+│   │   │   ├── tenant
+│   │   │   │   ├── app.ts
+│   │   │   │   ├── class
+│   │   │   │   │   ├── AuditLogs.ts
+│   │   │   │   │   ├── FraudAlerts.ts
+│   │   │   │   │   ├── Memos.ts
+│   │   │   │   │   ├── OrgHierarchy.ts
+│   │   │   │   │   ├── QrCodeGeneration.ts
+│   │   │   │   │   ├── Role.ts
+│   │   │   │   │   ├── Site.ts
+│   │   │   │   │   ├── TimeEntries.ts
+│   │   │   │   │   ├── User.ts
+│   │   │   │   │   ├── UserRole.ts
+│   │   │   │   │   └── WorkSessions.ts
+│   │   │   │   ├── database
+│   │   │   │   │   ├── data
+│   │   │   │   │   │   ├── audit.logs.db.ts
+│   │   │   │   │   │   ├── fraud.alerts.db.ts
+│   │   │   │   │   │   ├── memos.db.ts
+│   │   │   │   │   │   ├── org.hierarchy.db.ts
+│   │   │   │   │   │   ├── qr.code.generation.db.ts
+│   │   │   │   │   │   ├── roles.db.ts
+│   │   │   │   │   │   ├── sites.db.ts
+│   │   │   │   │   │   ├── time.entries.db.ts
+│   │   │   │   │   │   ├── user.roles.db.ts
+│   │   │   │   │   │   ├── users.db.ts
+│   │   │   │   │   │   └── work.sessions.db.ts
+│   │   │   │   │   ├── db.base.ts
+│   │   │   │   │   ├── db.config.ts
+│   │   │   │   │   ├── db.initializer.ts
+│   │   │   │   │   └── db.tenant-manager.ts
+│   │   │   │   ├── model
+│   │   │   │   │   ├── AuditLogsModel.ts
+│   │   │   │   │   ├── FraudAlertsModel.ts
+│   │   │   │   │   ├── MemosModel.ts
+│   │   │   │   │   ├── OrgHierarchyModel.ts
+│   │   │   │   │   ├── QrCodeGenerationModel.ts
+│   │   │   │   │   ├── RoleModel.ts
+│   │   │   │   │   ├── SiteModel.ts
+│   │   │   │   │   ├── TimeEntriesModel.ts
+│   │   │   │   │   ├── UserModel.ts
+│   │   │   │   │   ├── UserRoleModel.ts
+│   │   │   │   │   └── WorkSessionsModel.ts
+│   │   │   │   ├── routes
+│   │   │   │   │   ├── audit.logs.route.ts
+│   │   │   │   │   ├── fraud.alerts.route.ts
+│   │   │   │   │   ├── memos.route.ts
+│   │   │   │   │   ├── org.hierarchy.route.ts
+│   │   │   │   │   ├── qr.code.route.ts
+│   │   │   │   │   ├── roles.route.ts
+│   │   │   │   │   ├── sites.route.ts
+│   │   │   │   │   ├── time.entries.route.ts
+│   │   │   │   │   ├── upload.route.ts
+│   │   │   │   │   ├── user.role.route.ts
+│   │   │   │   │   ├── user.route.ts
+│   │   │   │   │   └── work.sessions.route.ts
+│   │   │   │   └── server.ts
+│   │   │   ├── tools
+│   │   │   │   ├── anomaly.detection.service.ts
+│   │   │   │   ├── api-key-manager.ts
+│   │   │   │   ├── cache.data.service.ts
+│   │   │   │   ├── client.cache.service.ts
+│   │   │   │   ├── country.phone.validation.ts
+│   │   │   │   ├── credential-extractor.service.ts
+│   │   │   │   ├── employee.license.service.ts
+│   │   │   │   ├── glossary.ts
+│   │   │   │   ├── http-status.ts
+│   │   │   │   ├── otp-cache.service.ts
+│   │   │   │   ├── response.ts
+│   │   │   │   ├── revision.ts
+│   │   │   │   ├── send.email.service.ts
+│   │   │   │   ├── send.otp.service.ts
+│   │   │   │   ├── spondor.service.ts
+│   │   │   │   ├── tenant-cache.service.ts
+│   │   │   │   ├── tenant.otp.manager.ts
+│   │   │   │   ├── user.authentication.service.ts
+│   │   │   │   └── watcher.ts
+│   │   │   └── utils
+│   │   │       ├── axios.config.ts
+│   │   │       ├── docs
+│   │   │       │   └── Liste des Fonctionnalités à Implémenter.odt
+│   │   │       ├── encryption.ts
+│   │   │       ├── extract.query.params.ts
+│   │   │       ├── generate.database.ts
+│   │   │       ├── generate.otp.ts
+│   │   │       ├── generate.tenant.config.ts
+│   │   │       ├── geo.utils.ts
+│   │   │       ├── regex.validator.ts
+│   │   │       ├── response.model.ts
+│   │   │       ├── timezone.config.ts
+│   │   │       ├── token.generator.ts
+│   │   │       ├── upload.ts
+│   │   │       └── view.validator.ts
+│   │   ├── tsconfig.json
+│   │   └── uploads
+│   │       └── attachments
+│   │           ├── 1760353177410-995450632.mp4
+│   │           ├── 1760354160498-653431053.mp4
+│   │           └── 1760354337659-848553890.png
+│   ├── cloud
+│   │   ├── README.md
+│   │   ├── index.html
+│   │   ├── package.json
+│   │   ├── postcss.config.js
+│   │   ├── public
+│   │   │   └── images
+│   │   │       ├── apps_store.png
+│   │   │       ├── apps_stores.webp
+│   │   │       ├── img.png
+│   │   │       ├── play_store.png
+│   │   │       ├── reload.svg
+│   │   │       ├── toke-main-logo.svg
+│   │   │       ├── toke-white-logo.svg
+│   │   │       ├── toke-white.svg
+│   │   │       └── toke.svg
+│   │   ├── src
+│   │   │   ├── App.vue
+│   │   │   ├── assets
+│   │   │   │   └── css
+│   │   │   │       ├── employeeForm-toke-15.css
+│   │   │   │       ├── main.css
+│   │   │   │       ├── planning-toke-14.css
+│   │   │   │       ├── profileCard-toke-20.css
+│   │   │   │       ├── toke-AssiduteJ-09.css
+│   │   │   │       ├── toke-AttendanceDetails-26.css
+│   │   │   │       ├── toke-AttendanceEvolution-27.css
+│   │   │   │       ├── toke-EViewPointage-28.css
+│   │   │   │       ├── toke-assignmentForm-24.css
+│   │   │   │       ├── toke-assignmentList-25.css
+│   │   │   │       ├── toke-auth-01.css
+│   │   │   │       ├── toke-dHero-03.css
+│   │   │   │       ├── toke-dMain-04.css
+│   │   │   │       ├── toke-employee-detail13.css
+│   │   │   │       ├── toke-employeeList-28.css
+│   │   │   │       ├── toke-employeeModal-12.css
+│   │   │   │       ├── toke-equipe-09.css
+│   │   │   │       ├── toke-footer-24.css
+│   │   │   │       ├── toke-groupForm-23.css
+│   │   │   │       ├── toke-groupList-22.css
+│   │   │   │       ├── toke-memo-08.css
+│   │   │   │       ├── toke-memoDetails-19.css
+│   │   │   │       ├── toke-memoList-18.css
+│   │   │   │       ├── toke-memoValidate-20.css
+│   │   │   │       ├── toke-module-07.css
+│   │   │   │       ├── toke-otp-02.css
+│   │   │   │       ├── toke-profile-16.css
+│   │   │   │       ├── toke-schedule-21.css
+│   │   │   │       ├── toke-setting-17.css
+│   │   │   │       ├── tokt-employeeC-06.css
+│   │   │   │       └── tokt-employeeS-05.css
+│   │   │   ├── ctrl
+│   │   │   │   ├── authCtrl.ts
+│   │   │   │   └── otpCtrl.ts
+│   │   │   ├── directives
+│   │   │   │   └── clickOutside.ts
+│   │   │   ├── env.d.ts
+│   │   │   ├── main.ts
+│   │   │   ├── pinia.d.ts
+│   │   │   ├── router.ts
+│   │   │   ├── service
+│   │   │   │   ├── AuthService.ts
+│   │   │   │   ├── EntriesService.ts
+│   │   │   │   ├── GroupService.ts
+│   │   │   │   ├── MemoService.ts
+│   │   │   │   ├── QrCodeAuthService.ts
+│   │   │   │   ├── RotationAssignment.ts
+│   │   │   │   ├── RotationGroup.ts
+│   │   │   │   ├── ScheduleAssignment.ts
+│   │   │   │   ├── ScheduleService.ts
+│   │   │   │   ├── SessionModelService.ts
+│   │   │   │   ├── SessionTemplate.ts
+│   │   │   │   ├── SiteService.ts
+│   │   │   │   ├── UserService.ts
+│   │   │   │   ├── rotationAssignmentService.ts
+│   │   │   │   ├── rotationservice.ts
+│   │   │   │   └── scheduleAssignmentService.ts
+│   │   │   ├── services
+│   │   │   │   ├── api.service.ts
+│   │   │   │   └── countries.service.ts
+│   │   │   ├── stores
+│   │   │   │   ├── memoStore.ts
+│   │   │   │   ├── teamStore.ts
+│   │   │   │   ├── useCountries.ts
+│   │   │   │   ├── useNotifications.ts
+│   │   │   │   ├── userAuthenticateFile.ts
+│   │   │   │   └── userStore.ts
+│   │   │   ├── tools
+│   │   │   │   └── Fetch.Client.ts
+│   │   │   ├── utils
+│   │   │   │   ├── HeadBuilder.ts
+│   │   │   │   ├── TokenGenarate.ts
+│   │   │   │   ├── interfaces
+│   │   │   │   │   ├── attendance.interface.ts
+│   │   │   │   │   ├── employeeAttendances.ts
+│   │   │   │   │   ├── equipe.interface.ts
+│   │   │   │   │   ├── schedule.interface.ts
+│   │   │   │   │   ├── site.interface.ts
+│   │   │   │   │   ├── stat.interface.ts
+│   │   │   │   │   └── team.interface.ts
+│   │   │   │   ├── token.txt
+│   │   │   │   └── useEmployee.ts
+│   │   │   └── views
+│   │   │       ├── Attendancedaytimeline.vue
+│   │   │       ├── EmployeeDetails.vue
+│   │   │       ├── QrCodeAuth.vue
+│   │   │       ├── auth.vue
+│   │   │       ├── components
+│   │   │       │   ├── LazySvgImage.vue
+│   │   │       │   ├── auth
+│   │   │       │   │   └── authForm.vue
+│   │   │       │   ├── barChart.vue
+│   │   │       │   ├── employeeModal.vue
+│   │   │       │   ├── footer.vue
+│   │   │       │   └── header.vue
+│   │   │       ├── dashboard
+│   │   │       │   ├── attendanceTimeline.vue
+│   │   │       │   ├── dashboardHero.vue
+│   │   │       │   ├── dashboardMain.vue
+│   │   │       │   ├── dashboardStats.vue
+│   │   │       │   ├── employeeList.vue
+│   │   │       │   └── employeeViewPointage.vue
+│   │   │       ├── employeeAttendanceView.vue
+│   │   │       ├── employeeForm.vue
+│   │   │       ├── equipe.vue
+│   │   │       ├── memo
+│   │   │       │   ├── AuthenticatedMedia.vue
+│   │   │       │   ├── memoChat.vue
+│   │   │       │   ├── memoCreateChat.vue
+│   │   │       │   ├── memoDetailChat.vue
+│   │   │       │   ├── memoDetailPanel.vue
+│   │   │       │   ├── memoSidebar.vue
+│   │   │       │   └── memosView.vue
+│   │   │       ├── otp.vue
+│   │   │       ├── planning
+│   │   │       │   ├── composables
+│   │   │       │   │   ├── Navigation.ts
+│   │   │       │   │   ├── navigation.type.ts
+│   │   │       │   │   └── useNavigation.ts
+│   │   │       │   ├── dashboard
+│   │   │       │   │   ├── appLayout.vue
+│   │   │       │   │   ├── appSidebar.vue
+│   │   │       │   │   ├── appSidebarHelpCard.vue
+│   │   │       │   │   └── appSidebarNavItem.vue
+│   │   │       │   ├── dashboard.vue
+│   │   │       │   ├── rotation_assignment
+│   │   │       │   │   ├── rotationAssignment.vue
+│   │   │       │   │   ├── rotationAssignmentForm.vue
+│   │   │       │   │   └── type.ts
+│   │   │       │   ├── rotation_group
+│   │   │       │   │   ├── rotationGroupForm.vue
+│   │   │       │   │   ├── rotationGroupList.vue
+│   │   │       │   │   └── type.ts
+│   │   │       │   ├── schedule_assignment
+│   │   │       │   │   ├── scheduleAssignmentForm.vue
+│   │   │       │   │   ├── scheduleAssignmentList.vue
+│   │   │       │   │   └── type.ts
+│   │   │       │   ├── session_model
+│   │   │       │   │   ├── sessionModelForm.vue
+│   │   │       │   │   ├── sessionModelList.vue
+│   │   │       │   │   └── type.ts
+│   │   │       │   └── session_template
+│   │   │       │       ├── sessionTemplateForm.vue
+│   │   │       │       ├── sessionTemplateList.vue
+│   │   │       │       └── type.ts
+│   │   │       ├── profile.vue
+│   │   │       ├── profileCard.vue
+│   │   │       ├── schedule
+│   │   │       │   ├── assignmentForm.vue
+│   │   │       │   ├── assignmentList.vue
+│   │   │       │   ├── employeeSchedulesView.vue
+│   │   │       │   ├── groupForm.vue
+│   │   │       │   ├── groupList.vue
+│   │   │       │   ├── rotationAssignForm.vue
+│   │   │       │   ├── rotationAssignList.vue
+│   │   │       │   ├── rotationForm.vue
+│   │   │       │   ├── rotationList.vue
+│   │   │       │   ├── schedule.vue
+│   │   │       │   ├── scheduleAssignForm.vue
+│   │   │       │   ├── scheduleAssignList.vue
+│   │   │       │   ├── scheduleCalendar.vue
+│   │   │       │   ├── scheduleForm.vue
+│   │   │       │   └── scheduleList.vue
+│   │   │       ├── setting.vue
+│   │   │       └── site
+│   │   │           ├── map.vue
+│   │   │           ├── site.vue
+│   │   │           ├── siteForm.vue
+│   │   │           └── ymaps.d.ts
+│   │   ├── tailwind.config.js
+│   │   ├── tsconfig.json
+│   │   └── vite.config.ts
+│   ├── shared
+│   │   ├── README.md
+│   │   ├── package.json
+│   │   ├── src
+│   │   │   ├── constants
+│   │   │   │   ├── api.constant.ts
+│   │   │   │   ├── country.constants.ts
+│   │   │   │   ├── http.status.ts
+│   │   │   │   └── index.ts
+│   │   │   ├── index.ts
+│   │   │   ├── schemas
+│   │   │   │   ├── country.schema.ts
+│   │   │   │   └── index.ts
+│   │   │   ├── types
+│   │   │   │   ├── common.types.ts
+│   │   │   │   ├── country.types.ts
+│   │   │   │   └── index.js.ts
+│   │   │   └── utils
+│   │   │       ├── formatting.utils.ts
+│   │   │       ├── index.ts
+│   │   │       └── validation.utils.ts
+│   │   └── tsconfig.json
+│   └── test.js
+└── tsconfig.json
 
-35 directories, 135 files
+68 directories, 438 files

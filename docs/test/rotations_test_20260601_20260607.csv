@@ -1,0 +1,47 @@
+﻿EXPORT DES ROTATIONS — TOKÉ
+IMEDIATIS SARL
+Période : 01/06/2026 → 07/06/2026
+Généré le : 04/06/2026 13:54:47   |   Par : Manfred MOUKATE
+
+GROUPE DE ROTATION
+Nom,Test
+Cycle,2 jour(s)
+Direction,Arrière (Backward)
+Auto-avance,Non
+Rotation step,1
+Début,21/04/2026
+
+TEMPLATES DU CYCLE
+Position,Nom,Horaires,Pause,Tolérance
+1,Morning Shift Template,08:00 – 12:00,—,15 min
+2,Pour teste,08:00 – 16:00,11:00 – 12:00,15 min
+
+CALENDRIER DE ROTATION
+
+Matricule,Nom,Département,Lun 01/06,,Mar 02/06,,Mer 03/06,,Jeu 04/06,,Ven 05/06,,Sam 06/06,,Dim 07/06,
+,,,Template,Horaires,Template,Horaires,Template,Horaires,Template,Horaires,Template,Horaires,Template,Horaires,Template,Horaires
+23GLO001IU,Abdouraman Ali Avatar,Service Technique,Pour teste,08:00 – 16:00,—,,Pour teste,08:00 – 16:00,Morning Shift Template,08:00 – 12:00,Pour teste,08:00 – 16:00,—,,—,
+IME-8070,Danielle Myrtille,INFORMATIQUE,Pour teste,08:00 – 16:00,—,,Pour teste,08:00 – 16:00,Morning Shift Template,08:00 – 12:00,Pour teste,08:00 – 16:00,—,,—,
+24I01192,Nathan KAMGO,Service Technique,Pour teste,08:00 – 16:00,—,,Pour teste,08:00 – 16:00,Morning Shift Template,08:00 – 12:00,Pour teste,08:00 – 16:00,—,,—,
+24GLO53IU,Samuel Steve ONDJOCK NOPPO,Service Technique,Pour teste,08:00 – 16:00,—,,Pour teste,08:00 – 16:00,Morning Shift Template,08:00 – 12:00,Pour teste,08:00 – 16:00,—,,—,
+
+HISTORIQUE DES ASSIGNATIONS
+
+Cible,Type,Rotation Group,Offset,Assignée par,Date d'assignation,Statut
+Danielle Myrtille,Employé,Tu,1,Manfred MOUKATE,03/06/2026 22:09,Active
+Danielle Myrtille,Employé,Test,2,Manfred MOUKATE,03/06/2026 22:10,Active
+Samuel Steve ONDJOCK NOPPO,Employé,Test,1,Manfred MOUKATE,21/04/2026 17:43,Active
+Nathan KAMGO,Employé,Test,1,Manfred MOUKATE,21/04/2026 17:42,Active
+Stagiaire 2026,Groupe,Test,1,Manfred MOUKATE,21/04/2026 17:43,Active
+
+RÉCAPITULATIF PÉRIODE
+Jours travaillés (au moins 1 shift),4
+Jours off (aucun shift),3
+"Heures totales (nettes, estimation)",25h00
+Moyenne par jour,06h15
+Membres concernés,4
+
+RÉPARTITION PAR TEMPLATE
+Template,Jours,% de la période
+Pour teste,3,43 %
+Morning Shift Template,1,14 %

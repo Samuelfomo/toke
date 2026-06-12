@@ -7,16 +7,16 @@
  * Tous les champs correspondent exactement aux clés attendues par le backend.
  */
 export interface CreateEmployeePayload {
-    supervisor: string;       // GUID du manager connecté
-    email: string;
-    first_name: string;
+    supervisor: string;
+    email?: string;
+    first_name?: string;
     last_name: string;
     phone_number: string;
-    employee_code: string;
-    hire_date: string;        // Format ISO : "YYYY-MM-DD"
-    department: string;
-    job_title: string;
-    country: string;          // Code ISO 2 lettres, ex: "CM"
+    employee_code?: string;
+    hire_date?: string;
+    department?: string;
+    job_title?: string;
+    country: string;
 }
 
 /**

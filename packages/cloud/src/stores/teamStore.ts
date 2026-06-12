@@ -50,7 +50,7 @@ export const useTeamStore = defineStore('team', () => {
 
     // Si cache valide et pas de force refresh, ne rien faire
     if (isCacheValid.value && !forceRefresh) {
-      console.log('✅ Utilisation du cache')
+      console.log('✅ Utilisation du cache', employees.value)
       return employees.value
     }
 
