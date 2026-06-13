@@ -1,6 +1,6 @@
 <template>
   <div class="flex flex-col h-full bg-white/70 px-8 max-w-[1300px]">
-
+<!--  <div class="flex flex-col h-full bg-white/70 px-4 sm:px-8 max-w-[1300px]">-->
     <!-- ── Header ── -->
     <div class="py-5 flex-shrink-0">
       <div class="flex items-center justify-between gap-4">
@@ -21,7 +21,7 @@
         </div>
 
         <!-- Actions export -->
-        <div class="flex items-center gap-2 flex-shrink-0">
+        <div class="flex items-center gap-2 flex-shrink-0 flex-wrap justify-end">
           <!-- Exporter dropdown -->
           <div class="relative" ref="exportDropdownRef">
             <button @click="exportDropdownOpen = !exportDropdownOpen"
@@ -56,12 +56,11 @@
             Imprimer
           </button>
 
-          <!-- Générer PDF / Excel -->
           <button @click="handleExportExcel" :disabled="!canExport || exportLoading === 'excel'"
                   class="flex items-center gap-2 px-4 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-bold rounded-xl shadow-sm shadow-indigo-200 transition disabled:opacity-40 disabled:cursor-not-allowed">
             <IconLoader2 v-if="exportLoading === 'excel'" :size="14" class="animate-spin" />
             <IconTable v-else :size="14" />
-            Générer PDF / Excel
+            Exporter Excel
           </button>
 
           <!-- Nouvelle assignation -->
@@ -130,18 +129,18 @@
 
       <!-- Membres concernés -->
       <div class="flex flex-col gap-1 min-w-[200px]">
-        <span class="text-[10px] text-gray-400 font-bold uppercase tracking-wide">Membres concernés</span>
+        <span class="text-[10px] text-gray-400 font-bold uppercase tracking-wide">
+          Membres concernés
+          <span v-if="allMembers.length" class="normal-case font-normal text-gray-400">({{ allMembers.length }})</span>
+        </span>
         <div class="relative">
           <IconUsers :size="13" class="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" />
           <select v-model="selectedMemberGuid"
                   class="w-full pl-8 pr-3 py-1.5 bg-white border border-gray-200 rounded-lg text-sm text-gray-700
                    focus:outline-none focus:border-violet-400 focus:ring-2 focus:ring-violet-100 transition cursor-pointer">
             <option value="">Tous les membres</option>
-            <option v-if="primaryGroupAssignment" :value="'__group__'">
-              Groupe : {{ primaryGroupName }} ({{ primaryGroupMemberCount }})
-            </option>
             <option v-for="m in allMembers" :key="m.guid" :value="m.guid">
-              {{ m.name }} · {{ m.code }}
+              {{ m.name }}{{ m.code ? ' · ' + m.code : '' }}{{ m.groupName ? ' (' + m.groupName + ')' : '' }}
             </option>
           </select>
         </div>
@@ -468,7 +467,8 @@
                     <td v-for="day in calendarDays" :key="day.iso"
                         class="p-1 text-center align-middle"
                         :class="day.isWeekend ? 'bg-gray-50/50' : ''">
-                      <RotationCell :data="getRotationCell(day)" />
+                      <RotationCell :data="getRotationCell(day, member)" />
+<!--                      <RotationCell :data="getRotationCell(day)" />-->
                     </td>
                   </tr>
                   </tbody>
@@ -825,6 +825,7 @@ import type {
 import { useUserStore } from '@/stores/userStore'
 
 import { exportRotationCSV, exportRotationExcel } from '@/utils/exports/rotationAssignment.export'
+import {exportRotationPDF} from "@/utils/exports/exportRotationPDF";
 
 const userStore = useUserStore()
 
@@ -934,12 +935,35 @@ const availableManagers = computed(() => {
 })
 
 // ── Computed : assignations filtrées ─────────────────────────────────────────
+// const filteredAssignments = computed(() => {
+//   return allAssignments.value.filter((a) => {
+//     if (selectedRotationGroupGuid.value && a.rotation_group.guid !== selectedRotationGroupGuid.value) return false
+//     if (filterStatus.value === 'active'   && !a.active) return false
+//     if (filterStatus.value === 'inactive' &&  a.active) return false
+//     if (filterManagerGuid.value && a.assigned_by.guid !== filterManagerGuid.value) return false
+//     return true
+//   })
+// })
+
 const filteredAssignments = computed(() => {
+  // Réinitialiser la pagination à chaque changement de filtre
+  listPage.value = 1
+
+  const pTo   = new Date(periodTo.value)
+
   return allAssignments.value.filter((a) => {
     if (selectedRotationGroupGuid.value && a.rotation_group.guid !== selectedRotationGroupGuid.value) return false
     if (filterStatus.value === 'active'   && !a.active) return false
     if (filterStatus.value === 'inactive' &&  a.active) return false
     if (filterManagerGuid.value && a.assigned_by.guid !== filterManagerGuid.value) return false
+
+    // Filtre période : l'assignation doit avoir été faite avant la fin de la période
+    // Les rotations n'ont pas de end_date — on inclut si assigned_at <= periodTo
+    if (a.assigned_at) {
+      const assignedAt = new Date(a.assigned_at)
+      if (assignedAt > pTo) return false
+    }
+
     return true
   })
 })
@@ -959,38 +983,55 @@ const primaryGroupName = computed(() => {
   return primaryGroupAssignment.value.related.name
 })
 
-const primaryGroupMemberCount = computed(() => {
-  if (!primaryGroupAssignment.value || !isGroupRotationAssignment(primaryGroupAssignment.value)) return 0
-  return primaryGroupAssignment.value.related.members.count
+// ── Computed : tous les membres ───────────────────────────────────────────────
+const allMembers = computed<{ guid: string; name: string; code: string; active: boolean; groupName: string }[]>(() => {
+  const seen = new Set<string>()
+  const result: { guid: string; name: string; code: string; active: boolean; groupName: string }[] = []
+
+  for (const a of filteredAssignments.value) {
+    if (isGroupRotationAssignment(a)) {
+      for (const m of a.related.members.items) {
+        if (!seen.has(m.user.guid)) {
+          seen.add(m.user.guid)
+          result.push({
+            guid:      m.user.guid,
+            name:      `${m.user.first_name} ${m.user.last_name}`.trim(),
+            code:      m.user.employee_code ?? '',
+            active:    m.user.active,
+            groupName: a.related.name,
+          })
+        }
+      }
+    } else if (isUserRotationAssignment(a)) {
+      if (!seen.has(a.related.guid)) {
+        seen.add(a.related.guid)
+        result.push({
+          guid:      a.related.guid,
+          name:      `${a.related.first_name} ${a.related.last_name}`.trim(),
+          code:      a.related.employee_code ?? '',
+          active:    a.related.active,
+          groupName: '',
+        })
+      }
+    }
+  }
+
+  return result.sort((a, b) => a.name.localeCompare(b.name, 'fr'))
 })
 
-// ── Computed : tous les membres ───────────────────────────────────────────────
-const allMembers = computed<{ guid: string; name: string; code: string; active: boolean }[]>(() => {
-  if (!primaryGroupAssignment.value || !isGroupRotationAssignment(primaryGroupAssignment.value)) {
-    // fallback : membres issus des assignations user
-    return filteredAssignments.value
-        .filter((a) => a.family === 'user' && isUserRotationAssignment(a))
-        .map((a) => {
-          const u = (a as any).related
-          return { guid: u.guid, name: `${u.first_name} ${u.last_name}`.trim(), code: u.employee_code ?? '', active: u.active }
-        })
-  }
-  return primaryGroupAssignment.value.related.members.items.map((m) => ({
-    guid:   m.user.guid,
-    name:   `${m.user.first_name} ${m.user.last_name}`.trim(),
-    code:   m.user.employee_code ?? '',
-    active: m.user.active,
-  }))
-})
 
 // Membres filtrés par recherche + sélection
 const displayedMembers = computed(() => {
   let list = allMembers.value
   if (memberSearch.value) {
     const q = memberSearch.value.toLowerCase()
-    list = list.filter((m) => m.name.toLowerCase().includes(q) || m.code.toLowerCase().includes(q))
+    list = list.filter((m) =>
+        m.name.toLowerCase().includes(q) ||
+        m.code.toLowerCase().includes(q) ||
+        m.groupName.toLowerCase().includes(q)
+    )
   }
-  if (selectedMemberGuid.value && selectedMemberGuid.value !== '__group__') {
+  if (selectedMemberGuid.value) {
     list = list.filter((m) => m.guid === selectedMemberGuid.value)
   }
   return list
@@ -1076,14 +1117,84 @@ const periodKPIs = computed(() => {
 })
 
 // ── Helpers grille rotation ───────────────────────────────────────────────────
-function getRotationCell(day: { iso: string; jsDay: number }): RotationCellData | null {
-  const rg = resolvedRotationGroup.value
-  const a  = primaryGroupAssignment.value
+// function getRotationCell(day: { iso: string; jsDay: number }): RotationCellData | null {
+//   const rg = resolvedRotationGroup.value
+//   const a  = primaryGroupAssignment.value
+//   if (!rg || !a) return null
+//
+//   const position = resolveTemplatePosition(
+//       rg.start_date, day.iso, a.offset, rg.cycle_length, rg.direction, rg.rotation_step
+//   )
+//
+//   const ct = rg.cycle_templates.find((t) => t.position === position)
+//   if (!ct) return { templateName: '', work: '', colorIndex: 0, isEmpty: true, isOffDay: true }
+//
+//   const key    = JS_DAY_TO_KEY[day.jsDay] as keyof typeof ct.template_snapshot.definition
+//   const blocks = ct.template_snapshot.definition[key]
+//
+//   if (!blocks || !Array.isArray(blocks) || blocks.length === 0) {
+//     return { templateName: ct.template_snapshot.name, work: '', colorIndex: ct.position, isEmpty: false, isOffDay: true }
+//   }
+//
+//   const b = blocks[0]
+//   return {
+//     templateName: ct.template_snapshot.name,
+//     work:         `${b.work[0]}\n${b.work[1]}`,
+//     pause:        b.pause ? `${b.pause[0]}-${b.pause[1]}` : undefined,
+//     colorIndex:   ct.position,
+//     isEmpty:      false,
+//     isOffDay:     false,
+//   }
+// }
+
+function getRotationCell(
+    day:    { iso: string; jsDay: number },
+member: { guid: string } | null = null,
+): RotationCellData | null {
+  // Trouver l'assignation du membre (user direct ou via groupe)
+  let a: IRotationAssignment | null = null
+  let rg: IRotationGroupFull | null = null
+
+  if (member) {
+    // Chercher d'abord une assignation user directe pour ce membre
+    const userAssignment = filteredAssignments.value.find(
+        (x) => x.family === 'user' && isUserRotationAssignment(x) && x.related.guid === member.guid
+    )
+    if (userAssignment) {
+      a  = userAssignment
+      rg = resolveRotationGroup(userAssignment)
+    } else {
+      // Chercher dans les assignations groupe dont ce membre fait partie
+      const groupAssignment = filteredAssignments.value.find(
+          (x) => x.family === 'group'
+              && isGroupRotationAssignment(x)
+              && x.related.members.items.some((m) => m.user.guid === member.guid)
+      )
+      if (groupAssignment) {
+        a  = groupAssignment
+        rg = resolveRotationGroup(groupAssignment)
+      }
+    }
+  } else {
+    // Fallback : utiliser primaryGroupAssignment (vue sans membre sélectionné)
+    a  = primaryGroupAssignment.value
+    rg = resolvedRotationGroup.value
+  }
+
   if (!rg || !a) return null
+
+  // Garde contre start_date absent ou invalide
+  if (!rg.start_date || isNaN(new Date(rg.start_date).getTime())) {
+    return { templateName: '—', work: '', colorIndex: 0, isEmpty: true, isOffDay: true }
+  }
 
   const position = resolveTemplatePosition(
       rg.start_date, day.iso, a.offset, rg.cycle_length, rg.direction, rg.rotation_step
   )
+
+  if (isNaN(position)) {
+    return { templateName: '—', work: '', colorIndex: 0, isEmpty: true, isOffDay: true }
+  }
 
   const ct = rg.cycle_templates.find((t) => t.position === position)
   if (!ct) return { templateName: '', work: '', colorIndex: 0, isEmpty: true, isOffDay: true }
@@ -1169,7 +1280,11 @@ async function load() {
   if (!userStore.user?.guid) return
   try {
     loading.value = true
-    const filters: Record<string, any> = { limit: 200 }
+    const filters: Record<string, any> = {
+      limit:     200,
+      date_from: periodFrom.value,
+      date_to:   periodTo.value,
+    }
     if (selectedRotationGroupGuid.value) filters.rotation_group = selectedRotationGroupGuid.value
     const res = await RotationAssignmentService.list(userStore.user.guid, filters)
     if (res?.success) {
@@ -1216,47 +1331,35 @@ async function doDelete() {
 function onSaved() { showForm.value = false; load() }
 
 // ── Export ────────────────────────────────────────────────────────────────────
+// async function handleExportPDF() {
+//   if (!canExport.value) return
+//   exportLoading.value = 'pdf'; exportDropdownOpen.value = false
+//   try {
+//     await RotationAssignmentService.exportPDF({
+//       targetGuid: selectedMemberGuid.value,
+//       targetType: 'group',
+//       periodFrom: periodFrom.value,
+//       periodTo:   periodTo.value,
+//       rotationGroupGuid: selectedRotationGroupGuid.value,
+//     })
+//   } finally { exportLoading.value = null }
+// }
+
 async function handleExportPDF() {
   if (!canExport.value) return
   exportLoading.value = 'pdf'; exportDropdownOpen.value = false
   try {
-    await RotationAssignmentService.exportPDF({
-      targetGuid: selectedMemberGuid.value,
-      targetType: 'group',
-      periodFrom: periodFrom.value,
-      periodTo:   periodTo.value,
-      rotationGroupGuid: selectedRotationGroupGuid.value,
+    exportRotationPDF({
+      assignments: filteredAssignments.value,
+      periodFrom:  periodFrom.value,
+      periodTo:    periodTo.value,
+      generatedBy: `${userStore.user?.first_name} ${userStore.user?.last_name}`.trim(),
+      tenantName:  userStore.tenant?.name,
     })
-  } finally { exportLoading.value = null }
+  } finally {
+    exportLoading.value = null
+  }
 }
-
-// async function handleExportExcel() {
-//   if (!canExport.value) return
-//   exportLoading.value = 'excel'; exportDropdownOpen.value = false
-//   try {
-//     await RotationAssignmentService.exportExcel({
-//       targetGuid: selectedMemberGuid.value,
-//       targetType: 'group',
-//       periodFrom: periodFrom.value,
-//       periodTo:   periodTo.value,
-//       rotationGroupGuid: selectedRotationGroupGuid.value,
-//     })
-//   } finally { exportLoading.value = null }
-// }
-
-// async function handleExportCSV() {
-//   if (!canExport.value) return
-//   exportLoading.value = 'csv'; exportDropdownOpen.value = false
-//   try {
-//     await RotationAssignmentService.exportCSV({
-//       targetGuid: selectedMemberGuid.value,
-//       targetType: 'group',
-//       periodFrom: periodFrom.value,
-//       periodTo:   periodTo.value,
-//       rotationGroupGuid: selectedRotationGroupGuid.value,
-//     })
-//   } finally { exportLoading.value = null }
-// }
 
 async function handleExportExcel() {
   exportRotationExcel({
@@ -1278,8 +1381,11 @@ async function handleExportCSV() {
   })
 }
 
+// function handlePrint() {
+//   RotationAssignmentService.printCurrent()
+// }
 function handlePrint() {
-  RotationAssignmentService.printCurrent()
+  window.print()
 }
 
 function onDocumentClick(e: MouseEvent) {

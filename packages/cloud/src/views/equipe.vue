@@ -843,10 +843,21 @@ const viewEmployee = (guid?: string) => {
   router.push({ name: 'profileCard', params: { id: guid } })
 }
 
+// const sendMemoToEmployee = (emp: Employee | EmployeesWithoutGroup | EmployeesWithoutGroup2) => {
+//   router.push({
+//     path: '/memoNew',
+//     query: {
+//       employeeGuid: emp.guid,
+//       employeeName: `${emp.first_name} ${emp.last_name}`.trim()
+//     }
+//   })
+// }
+
 const sendMemoToEmployee = (emp: Employee | EmployeesWithoutGroup | EmployeesWithoutGroup2) => {
   router.push({
-    path: '/memoNew',
+    name: 'memoList',
     query: {
+      action: 'create',
       employeeGuid: emp.guid,
       employeeName: `${emp.first_name} ${emp.last_name}`.trim()
     }

@@ -170,7 +170,7 @@
                   v-if="emp.status === 'absent'"
                   class="flex items-center gap-1 text-xs font-semibold text-slate-500
                          bg-slate-100 hover:bg-slate-200 px-2 py-1 rounded-lg transition-colors"
-                      @click.stop="createdMemos(emp.guid)"
+                      @click.stop="createdMemos(emp)"
                   title="Créer un mémo"
               >
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
@@ -255,8 +255,18 @@ const sortedEmployees = computed(() =>
     })
 )
 
-const createdMemos = (employee: string) => {
-  router.push({ name: 'memoList', params: { employee } });
+const createdMemos = (emp: TransformedEmployee) => {
+
+  router.push({
+    name: 'memoList',
+    query: {
+      action: 'create',
+      employeeGuid: emp.guid,
+      employeeName: `${emp.name}`.trim()
+    }
+  })
+
+  // router.push({ name: 'memoList', params: { employee } });
   // router.push({ name: 'memo-create', params: { employee } });
 }
 

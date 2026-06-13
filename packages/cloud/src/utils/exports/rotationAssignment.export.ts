@@ -60,7 +60,7 @@ interface MemberRow {
  * Cherche le premier rotation_group complet dans la liste des assignations.
  * Il est disponible uniquement sur les items family === 'group'.
  */
-function resolveFirstFullGroup(assignments: IRotationAssignment[]): IRotationGroupFull | null {
+export function resolveFirstFullGroup(assignments: IRotationAssignment[]): IRotationGroupFull | null {
     for (const a of assignments) {
         const rg = resolveRotationGroup(a)
         if (rg) return rg
@@ -70,7 +70,7 @@ function resolveFirstFullGroup(assignments: IRotationAssignment[]): IRotationGro
 
 // ── Construction des membres ──────────────────────────────────────────────────
 
-function buildMemberRows(assignments: IRotationAssignment[]): MemberRow[] {
+export function buildMemberRows(assignments: IRotationAssignment[]): MemberRow[] {
     const rows: MemberRow[] = []
     const seen = new Set<string>()
 
@@ -118,7 +118,7 @@ interface RotationDayCell {
     position:     number
 }
 
-function resolveRotationDayCell(
+export function resolveRotationDayCell(
     rg:         IRotationGroupFull,
     assignment: IRotationAssignment,
     day:        PeriodDay,
@@ -162,7 +162,7 @@ interface RotationKPIs {
     templateDistrib:    Record<string, number>
 }
 
-function computeRotationKPIs(
+export function computeRotationKPIs(
     members:     MemberRow[],
     days:        PeriodDay[],
     rg:          IRotationGroupFull | null,
