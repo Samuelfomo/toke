@@ -1,5 +1,5 @@
 <template>
-  <div class="flex flex-col h-full bg-white/70 px-4 sm:px-8">
+  <div class="flex flex-col h-full overflow-hidden bg-white/70 pb-5 px-4 sm:px-8">
 
     <!-- ── En-tête ── -->
     <div class="py-5 flex-shrink-0">
@@ -14,7 +14,6 @@
           <h1 class="text-xl font-bold text-gray-900 tracking-tight">Planning standard</h1>
           <p class="text-gray-400 text-sm mt-0.5">Visualisez le planning par blocs horaires sur la période sélectionnée.</p>
         </div>
-
         <div class="flex items-center gap-2 flex-shrink-0 flex-wrap">
           <div class="relative" ref="exportDropdownRef">
             <button @click="exportDropdownOpen = !exportDropdownOpen"
@@ -57,6 +56,33 @@
         </div>
       </div>
     </div>
+
+    <!-- Contenu : grille OU suggestion -->
+    <SuggestionPreview
+        v-if="activeSuggestion"
+        :suggestion="activeSuggestion"
+        :calendar-days="calendarDays"
+        :available-templates="availableTemplates"
+        @close="activeSuggestion = null"
+        @approved="onSuggestionApproved"
+        @rejected="onSuggestionRejected"
+        @regenerate="onRegenerateSuggestion"
+        @item-patched="onSuggestionItemPatched"
+    />
+
+    <div v-else class="flex-1 min-h-0 overflow-y-auto">
+
+      <div class="w-full pb-4 flex lg:justify-end items-center flex-shrink-0">
+        <button
+            @click="handleGenerateSuggestion"
+            :disabled="suggestionLoading"
+            class="flex items-center gap-2 px-4 py-2.5 bg-[#004aad] hover:bg-[#003a8c] text-white text-sm font-bold rounded-xl shadow-sm shadow-blue-200 transition disabled:opacity-50"
+        >
+          <IconLoader2 v-if="suggestionLoading" :size="14" class="animate-spin" />
+          <IconSparkles v-else :size="14" />
+          Générer suggestion
+        </button>
+      </div>
 
     <!-- ── Barre de filtres ── -->
     <div class="bg-white border border-gray-100 px-2 py-3 flex items-center gap-4 flex-wrap flex-shrink-0">
@@ -449,14 +475,18 @@
         @close="showForm = false"
         @saved="onSaved"
     />
+
   </div>
+  </div>
+
+
 </template>
 <script setup lang="ts">
 import { ref, computed, onMounted, onBeforeUnmount, defineComponent, h, watch } from 'vue'
 import {
   IconCalendarStats, IconChevronRight, IconPlus, IconLoader2,
   IconUser, IconUsers, IconFilter, IconSearch, IconArrowRight,
-  IconPower, IconAlertTriangle,
+  IconPower, IconAlertTriangle, IconSparkles,
   IconUpload, IconChevronDown, IconEye, IconTable,
   IconFile, IconFileText, IconClock,
 } from '@tabler/icons-vue'
@@ -470,6 +500,10 @@ import type { IScheduleAssignment } from './type'
 import { useUserStore } from '@/stores/userStore'
 import { exportScheduleCSV, exportScheduleExcel } from '@/utils/exports/scheduleAssignment.export'
 import {exportSchedulePDF} from "@/utils/exports/exportSchedulePDF";
+import SuggestionPreview from './suggestionPreview.vue'
+import ScheduleSuggestionService from '@/service/ScheduleSuggestionService'
+import type { ISuggestion, ISuggestionItem } from '@/service/ScheduleSuggestionService'
+import SessionTemplateService from '@/service/SessionTemplate'
 
 const userStore = useUserStore()
 
@@ -1006,6 +1040,56 @@ function onDocumentClick(e: MouseEvent) {
   if (exportDropdownRef.value && !exportDropdownRef.value.contains(e.target as Node)) {
     exportDropdownOpen.value = false
   }
+}
+
+// Suggestion add
+const activeSuggestion    = ref<ISuggestion | null>(null)
+const suggestionLoading   = ref(false)
+const availableTemplates  = ref<{ guid: string; name: string, definition?: any }[]>([])
+
+async function handleGenerateSuggestion() {
+  if (!userStore.user?.guid) return
+  suggestionLoading.value = true
+  try {
+    // Charger les templates disponibles si pas encore chargés
+    if (!availableTemplates.value.length) {
+      const tRes = await SessionTemplateService.list()
+      if (tRes?.success) {
+        availableTemplates.value = tRes.data.templates.items.map((t: any) => ({
+          guid: t.guid, name: t.name, definition: t.definition ?? null,
+        }))
+      }
+    }
+    const res = await ScheduleSuggestionService.generate(userStore.user.guid, {
+      period_from: periodFrom.value,
+      period_to:   periodTo.value,
+    })
+    if (res?.success) activeSuggestion.value = res.data.suggestion
+  } finally {
+    suggestionLoading.value = false
+  }
+}
+
+function onSuggestionItemPatched(updatedItem: ISuggestionItem) {
+  if (!activeSuggestion.value?.items) return
+  const idx = activeSuggestion.value.items.findIndex((i) => i.guid === updatedItem.guid)
+  if (idx !== -1) activeSuggestion.value.items[idx] = updatedItem
+}
+
+async function onRegenerateSuggestion() {
+  if (!activeSuggestion.value) return
+  await ScheduleSuggestionService.delete(activeSuggestion.value.guid)
+  activeSuggestion.value = null
+  await handleGenerateSuggestion()
+}
+
+function onSuggestionApproved() {
+  activeSuggestion.value = null
+  load() // recharge la grille avec les nouveaux assignments
+}
+
+function onSuggestionRejected() {
+  activeSuggestion.value = null
 }
 
 onMounted(() => { load(); document.addEventListener('click', onDocumentClick) })
