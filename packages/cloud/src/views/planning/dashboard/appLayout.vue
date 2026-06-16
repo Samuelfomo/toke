@@ -14,7 +14,7 @@
         </template>
       </AppSidebar>
 
-      <main class="flex-1 flex flex-col overflow-y-auto">
+      <main class="flex-1 flex flex-col overflow-y-auto lg:min-w-[1222px]">
         <RouterView />
         <!--        <slot />-->
       </main>

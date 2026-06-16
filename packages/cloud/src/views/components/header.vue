@@ -129,7 +129,7 @@ import { ref, onMounted, nextTick, onUnmounted, watch } from 'vue'
 import { useUserStore } from '@/stores/userStore'
 import { useMemoStore } from '@/stores/memoStore'
 import toke from '../../../public/images/toke.svg'
-import { IconMapPin, IconEdit, IconBrandDaysCounter, IconCalendarWeek, IconUsers, IconSettings } from '@tabler/icons-vue'
+import { IconMapPin, IconEdit, IconBrandDaysCounter, IconCalendarWeek, IconUsers, IconSettings, IconCalendarClock } from '@tabler/icons-vue'
 import dashboardCss from "@/assets/css/toke-dMain-04.css?url"
 import { useRouter } from 'vue-router'
 import HeadBuilder from "@/utils/HeadBuilder"
@@ -157,6 +157,7 @@ const modules = ref([
   { title: "Memos",        icon: IconEdit,             path: "/memoList"  },
   { title: "Planning",     icon: IconCalendarWeek,     path: "/planning"  },
   { title: "Parametres",   icon: IconSettings,         path: "/setting"   },
+  { title: "Pointages",   icon: IconCalendarClock,     path: "#"   },
 ])
 
 const showUserMenu    = ref(false)
@@ -168,6 +169,7 @@ const getActiveTab = (path: string) => {
   if (path.startsWith('/dashboard')) return '/dashboard'
   if (path.startsWith('/setting'))   return '/setting'
   if (path.startsWith('/planning'))  return '/planning'
+  if (path.startsWith('/Pointages'))  return '#'
   return path
 }
 

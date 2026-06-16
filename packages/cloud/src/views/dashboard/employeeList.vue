@@ -14,7 +14,7 @@
       <button
           class="flex items-center gap-1 text-xs font-semibold text-blue-600
                hover:text-blue-800 transition-colors"
-          @click="$emit('view-all')"
+          @click="teamView"
       >
         Voir toute l'équipe
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
@@ -56,7 +56,7 @@
         <!-- Lignes -->
         <tbody class="divide-y divide-slate-50">
         <tr
-            v-for="emp in sortedEmployees"
+            v-for="emp in paginatedEmployees"
             :key="emp.guid"
             class="hover:bg-slate-50 cursor-pointer transition-colors group"
             @click="$emit('employee-click', emp)"
@@ -163,14 +163,13 @@
 
           <!-- Actions (mémo + menu) -->
           <td class="px-3 py-3">
-            <div class="flex items-center justify-end gap-1
-                          transition-opacity">
+            <div class="flex items-center justify-end gap-1 transition-opacity">
               <!-- Bouton mémo (absents uniquement) -->
               <button
                   v-if="emp.status === 'absent'"
                   class="flex items-center gap-1 text-xs font-semibold text-slate-500
                          bg-slate-100 hover:bg-slate-200 px-2 py-1 rounded-lg transition-colors"
-                      @click.stop="createdMemos(emp)"
+                  @click.stop="createdMemos(emp)"
                   title="Créer un mémo"
               >
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
@@ -213,20 +212,134 @@
       <p class="text-sm font-medium">Aucun employé trouvé</p>
     </div>
 
+    <!-- ── Pagination ── -->
+    <div
+        v-if="employees.length > 0"
+        class="flex items-center justify-between px-5 py-3 border-t border-slate-100 bg-slate-50"
+    >
+      <!-- Info + sélecteur lignes par page -->
+      <div class="flex items-center gap-3">
+        <span class="text-xs text-slate-500">
+          {{ rangeStart }}–{{ rangeEnd }} sur {{ sortedEmployees.length }} employé{{ sortedEmployees.length > 1 ? 's' : '' }}
+        </span>
+        <div class="flex items-center gap-1.5">
+          <span class="text-xs text-slate-400">Lignes :</span>
+          <select
+              v-model="pageSize"
+              class="text-xs text-slate-600 font-semibold bg-white border border-slate-200
+                     rounded-md px-2 py-1 cursor-pointer hover:border-slate-300
+                     focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-0
+                     transition-colors"
+          >
+            <option v-for="opt in pageSizeOptions" :key="opt" :value="opt">{{ opt }}</option>
+          </select>
+        </div>
+      </div>
+
+      <!-- Boutons de navigation -->
+      <div class="flex items-center gap-1">
+        <!-- Première page -->
+        <button
+            class="w-7 h-7 flex items-center justify-center rounded-md text-slate-400
+                   hover:text-slate-700 hover:bg-white border border-transparent
+                   hover:border-slate-200 transition-all disabled:opacity-30
+                   disabled:pointer-events-none"
+            :disabled="currentPage === 1"
+            @click="currentPage = 1"
+            title="Première page"
+        >
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="w-3.5 h-3.5">
+            <polyline points="11 17 6 12 11 7"/>
+            <polyline points="18 17 13 12 18 7"/>
+          </svg>
+        </button>
+
+        <!-- Page précédente -->
+        <button
+            class="w-7 h-7 flex items-center justify-center rounded-md text-slate-400
+                   hover:text-slate-700 hover:bg-white border border-transparent
+                   hover:border-slate-200 transition-all disabled:opacity-30
+                   disabled:pointer-events-none"
+            :disabled="currentPage === 1"
+            @click="currentPage--"
+            title="Page précédente"
+        >
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="w-3.5 h-3.5">
+            <polyline points="15 18 9 12 15 6"/>
+          </svg>
+        </button>
+
+        <!-- Numéros de pages -->
+        <template v-for="page in visiblePages" :key="page">
+          <span
+              v-if="page === '...'"
+              class="w-7 h-7 flex items-center justify-center text-xs text-slate-400"
+          >…</span>
+          <button
+              v-else
+              class="w-7 h-7 flex items-center justify-center rounded-md text-xs font-semibold
+                     transition-all border"
+              :class="page === currentPage
+                ? 'bg-blue-600 text-white border-blue-600 shadow-sm'
+                : 'text-slate-600 border-transparent hover:bg-white hover:border-slate-200'"
+              @click="currentPage = page as number"
+          >
+            {{ page }}
+          </button>
+        </template>
+
+        <!-- Page suivante -->
+        <button
+            class="w-7 h-7 flex items-center justify-center rounded-md text-slate-400
+                   hover:text-slate-700 hover:bg-white border border-transparent
+                   hover:border-slate-200 transition-all disabled:opacity-30
+                   disabled:pointer-events-none"
+            :disabled="currentPage === totalPages"
+            @click="currentPage++"
+            title="Page suivante"
+        >
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="w-3.5 h-3.5">
+            <polyline points="9 18 15 12 9 6"/>
+          </svg>
+        </button>
+
+        <!-- Dernière page -->
+        <button
+            class="w-7 h-7 flex items-center justify-center rounded-md text-slate-400
+                   hover:text-slate-700 hover:bg-white border border-transparent
+                   hover:border-slate-200 transition-all disabled:opacity-30
+                   disabled:pointer-events-none"
+            :disabled="currentPage === totalPages"
+            @click="currentPage = totalPages"
+            title="Dernière page"
+        >
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="w-3.5 h-3.5">
+            <polyline points="13 17 18 12 13 7"/>
+            <polyline points="6 17 11 12 6 7"/>
+          </svg>
+        </button>
+      </div>
+    </div>
+
   </div>
 </template>
 
 <script setup lang="ts">
-import { computed }  from 'vue'
-import { useRouter } from 'vue-router'
+import { computed, ref, watch } from 'vue'
+import { useRouter }            from 'vue-router'
 import type { TransformedEmployee } from '@/utils/interfaces/stat.interface'
 
+// ── Props & Emits ─────────────────────────────────────────────────────────────
 interface Props {
   employees: TransformedEmployee[]
+  defaultPageSize?: number
 }
 
-const props = defineProps<Props>()
-const emit  = defineEmits<{
+const props = withDefaults(defineProps<Props>(), {
+  defaultPageSize: 10,
+})
+
+const emit = defineEmits<{
   'employee-click': [employee: TransformedEmployee]
   'memo-click'    : [employee: TransformedEmployee]
   'action-click'  : [employee: TransformedEmployee]
@@ -255,22 +368,73 @@ const sortedEmployees = computed(() =>
     })
 )
 
-const createdMemos = (emp: TransformedEmployee) => {
+// ── Pagination ────────────────────────────────────────────────────────────────
+const pageSizeOptions = [10, 25, 50] as const
+const pageSize        = ref<number>(props.defaultPageSize)
+const currentPage     = ref(1)
 
-  router.push({
-    name: 'memoList',
-    query: {
-      action: 'create',
-      employeeGuid: emp.guid,
-      employeeName: `${emp.name}`.trim()
-    }
-  })
+// Reset à la page 1 si la liste change ou si on change le nb de lignes
+watch(() => props.employees.length, () => { currentPage.value = 1 })
+watch(pageSize, ()                 => { currentPage.value = 1 })
 
-  // router.push({ name: 'memoList', params: { employee } });
-  // router.push({ name: 'memo-create', params: { employee } });
+const totalPages = computed(() =>
+    Math.max(1, Math.ceil(sortedEmployees.value.length / pageSize.value))
+)
+
+const rangeStart = computed(() =>
+    sortedEmployees.value.length === 0 ? 0 : (currentPage.value - 1) * pageSize.value + 1
+)
+
+const rangeEnd = computed(() =>
+    Math.min(currentPage.value * pageSize.value, sortedEmployees.value.length)
+)
+
+const paginatedEmployees = computed(() => {
+  const start = (currentPage.value - 1) * pageSize.value
+  return sortedEmployees.value.slice(start, start + pageSize.value)
+})
+
+// Numéros de pages visibles avec ellipsis
+const visiblePages = computed<(number | '...')[]>(() => {
+  const total   = totalPages.value
+  const current = currentPage.value
+
+  if (total <= 7) {
+    return Array.from({ length: total }, (_, i) => i + 1)
+  }
+
+  const pages: (number | '...')[] = [1]
+
+  if (current > 3) pages.push('...')
+
+  const start = Math.max(2, current - 1)
+  const end   = Math.min(total - 1, current + 1)
+
+  for (let i = start; i <= end; i++) pages.push(i)
+
+  if (current < total - 2) pages.push('...')
+
+  pages.push(total)
+  return pages
+})
+
+// ── Navigation ────────────────────────────────────────────────────────────────
+const teamView = () => {
+  router.push({ name: 'equipe' })
 }
 
-// ── Formatage heures : "32h 15m" ──────────────────────────────────────────────
+const createdMemos = (emp: TransformedEmployee) => {
+  router.push({
+    name : 'memoList',
+    query: {
+      action      : 'create',
+      employeeGuid: emp.guid,
+      employeeName: `${emp.name}`.trim(),
+    },
+  })
+}
+
+// ── Formatage heures ──────────────────────────────────────────────────────────
 const formatHours = (total: number) => {
   const h = Math.floor(total)
   const m = Math.round((total - h) * 60)

@@ -723,16 +723,6 @@ onMounted(() => {
       form.phone_number = rawPhone.startsWith(country.dialCode)
           ? rawPhone.slice(country.dialCode.length).trim()
           : rawPhone
-
-      // form.phone_number = emp.phoneNumber === 'N/A' ? '' : emp.phoneNumber
-      // form.country = emp.country ?? 'CM'
-      // form.employee_code = emp.employeeCode === 'N/A' ? '' : emp.employeeCode
-      // form.hire_date = emp.hireDate ?? ''
-      // form.department = emp.department === 'N/A' ? '' : emp.department
-      // form.job_title = emp.jobTitle === 'N/A' ? '' : emp.jobTitle
-      // avatarPreview.value = emp.avatar
-      // const country = countries.find(c => c.code === emp.country)
-      // if (country) selectedCountry.value = country
     }
   }
 })
