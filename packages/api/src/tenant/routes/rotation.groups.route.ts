@@ -338,7 +338,7 @@ router.patch('/:guid/cycle/:position', Ensure.put(), async (req: Request, res: R
       });
     }
 
-    const position = parseInt(req.params.position, 10);
+    const position = parseInt(req.params.position as string, 10);
     if (isNaN(position) || position < 0) {
       return R.handleError(res, HttpStatus.BAD_REQUEST, {
         code: ROTATION_GROUP_CODES.VALIDATION_FAILED,
@@ -438,7 +438,7 @@ router.get('/:guid/cycle/:position/logs', Ensure.get(), async (req: Request, res
       });
     }
 
-    const position = parseInt(req.params.position, 10);
+    const position = parseInt(req.params.position as string, 10);
     if (isNaN(position) || position < 0) {
       return R.handleError(res, HttpStatus.BAD_REQUEST, {
         code: ROTATION_GROUP_CODES.VALIDATION_FAILED,

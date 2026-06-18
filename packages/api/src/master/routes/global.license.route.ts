@@ -81,13 +81,13 @@ router.get('/revision', Ensure.get(), async (_req: Request, res: Response) => {
 router.get('/tenant/:tenant', Ensure.get(), async (req: Request, res: Response) => {
   try {
     // const validTenant = TenantValidationUtils.validateTenantGuid(req.params.tenant);
-    if (!TenantValidationUtils.validateTenantGuid(req.params.tenant)) {
+    if (!TenantValidationUtils.validateTenantGuid(req.params.tenant as string)) {
       return R.handleError(res, HttpStatus.BAD_REQUEST, {
         code: TENANT_CODES.INVALID_GUID,
         message: TENANT_ERRORS.GUID_INVALID,
       });
     }
-    const tenant = parseInt(req.params.tenant, 10);
+    const tenant = parseInt(req.params.tenant as string, 10);
     const tenantObj = await Tenant._load(tenant, true);
     if (!tenantObj) {
       return R.handleError(res, HttpStatus.NOT_FOUND, {
@@ -139,7 +139,7 @@ router.get('/tenant/:tenant', Ensure.get(), async (req: Request, res: Response) 
 router.get('/type/:license_type', Ensure.get(), async (req: Request, res: Response) => {
   try {
     const { license_type } = req.params;
-    const validType = license_type.toUpperCase() as Type;
+    const validType = (license_type as string).toUpperCase() as Type;
 
     if (!Object.values(Type).includes(validType)) {
       return R.handleError(res, HttpStatus.BAD_REQUEST, {
@@ -184,7 +184,7 @@ router.get('/type/:license_type', Ensure.get(), async (req: Request, res: Respon
  */
 router.get('/billing-cycle/:months', Ensure.get(), async (req: Request, res: Response) => {
   try {
-    const months = parseInt(req.params.months, 10);
+    const months = parseInt(req.params.months as string, 10);
 
     if (isNaN(months) || !BILLING_CYCLES.includes(months as BillingCycle)) {
       return R.handleError(res, HttpStatus.BAD_REQUEST, {
@@ -233,7 +233,7 @@ router.get('/billing-cycle/:months', Ensure.get(), async (req: Request, res: Res
 router.get('/status/:status', Ensure.get(), async (req: Request, res: Response) => {
   try {
     const { status } = req.params;
-    const validStatus = status.toUpperCase() as LicenseStatus;
+    const validStatus = (status as string).toUpperCase() as LicenseStatus;
 
     if (!Object.values(LicenseStatus).includes(validStatus)) {
       return R.handleError(res, HttpStatus.BAD_REQUEST, {
@@ -278,7 +278,7 @@ router.get('/status/:status', Ensure.get(), async (req: Request, res: Response) 
  */
 router.get('/expiring/:days', Ensure.get(), async (req: Request, res: Response) => {
   try {
-    const days = parseInt(req.params.days);
+    const days = parseInt(req.params.days as string);
     if (isNaN(days) || days < 1) {
       return R.handleError(res, HttpStatus.BAD_REQUEST, {
         code: GLOBAL_LICENSE_CODES.VALIDATION_FAILED,
@@ -619,8 +619,8 @@ router.get('/:identifier', Ensure.get(), async (req: Request, res: Response) => 
     let license: GlobalLicense | null = null;
 
     // Essayer différentes méthodes de recherche selon le format
-    if (/^\d+$/.test(identifier)) {
-      const numericId = parseInt(identifier);
+    if (/^\d+$/.test(identifier as string)) {
+      const numericId = parseInt(identifier as string);
 
       // Essayer par ID d'abord
       license = await GlobalLicense._load(numericId);

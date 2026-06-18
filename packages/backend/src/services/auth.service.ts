@@ -7,9 +7,11 @@ dotenv.config();
 const baseUrl: string = '/auth';
 const inDev = process.env.NODE_ENV === 'development';
 
-const masterUrl = inDev
-  ? `https://${process.env.MST_HOST}`
-  : `http://${process.env.HOST}:${process.env.MST_PORT}`;
+// const masterUrl = inDev
+//   ? `https://${process.env.MST_HOST}`
+//   : `http://${process.env.HOST}:${process.env.MST_PORT}`;
+
+const masterUrl = `http://${process.env.HOST}:${process.env.MST_PORT}`;
 
 const api = createApiClient(masterUrl, process.env.SECRET_KEY, process.env.API_KEY);
 

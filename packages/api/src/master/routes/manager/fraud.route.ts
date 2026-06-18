@@ -92,7 +92,7 @@ router.get('/patterns/:reference', Ensure.get(), async (req: Request, res: Respo
     const paginationOptions = paginationSchema.parse(req.query);
 
     // Récupérer les alertes concernant cet employé
-    const employeeAlerts = await FraudDetectionLog._listByEmployee(reference);
+    const employeeAlerts = await FraudDetectionLog._listByEmployee(reference as string);
     if (!employeeAlerts || employeeAlerts.length === 0) {
       return R.handleError(res, HttpStatus.NOT_FOUND, {
         code: FRAUD_DETECTION_CODES.FRAUD_LOG_NOT_FOUND,
@@ -100,7 +100,7 @@ router.get('/patterns/:reference', Ensure.get(), async (req: Request, res: Respo
       });
     }
 
-    const employeeObj = await EmployeeLicense._loadByEmployee(reference);
+    const employeeObj = await EmployeeLicense._loadByEmployee(reference as string);
     let activityPatterns;
     let activityHistory;
     if (employeeObj) {

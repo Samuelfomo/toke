@@ -4,6 +4,18 @@ import { Op } from 'sequelize';
 import Memos from '../class/Memos.js';
 
 // ─────────────────────────────────────────────────────────────────────────────
+// TYPE CENTRAL — Statut d'un jour employé
+//
+// Règle de priorité (immuable) :
+//   SESSION EXISTE ?
+//   ├── OUI + is_work_day = true  → 'present' | 'late'
+//   ├── OUI + is_work_day = false → 'anomaly_off_day'  ← jamais ignoré
+//   └── NON + is_work_day = true  → 'absent'
+//       NON + is_work_day = false → 'off-day'
+// ─────────────────────────────────────────────────────────────────────────────
+export type DayStatus = 'present' | 'late' | 'absent' | 'off-day' | 'anomaly_off_day';
+
+// ─────────────────────────────────────────────────────────────────────────────
 // INTERFACES
 // ─────────────────────────────────────────────────────────────────────────────
 
@@ -13,9 +25,7 @@ export interface EffectivePresence {
   avg_daily_hours: number;
   /**
    * Ratio heures nettes travaillées / (jours_présents × 8h contrat)
-   * Exprimé en %, ex: 94.5
-   * REQUIERT totalPauseMinutes renseigné — sinon retourne null pour signaler
-   * que la donnée est incomplète plutôt que de retourner 0 trompeur.
+   * Retourne null si totalPauseMinutes non collecté — afficher "—" en frontend.
    */
   net_work_ratio: number | null;
 }
@@ -24,9 +34,7 @@ export interface TeamCoverage {
   timestamp: string;
   currently_present: number;
   currently_on_pause: number;
-  /** Employés attendus AUJOURD'HUI (jours de travail selon planning) */
   expected_today: number;
-  /** currently_present / expected_today × 100 */
   coverage_rate: number;
   missing_count: number;
 }
@@ -61,6 +69,49 @@ export interface ScheduleCompliance {
   avg_deviation_minutes: number;
 }
 
+/**
+ * KPI dédié aux présences hors planning.
+ *
+ * Un employé présent un jour OFF n'est ni une bonne présence, ni une absence.
+ * Ce n'est pas un edge case — c'est une anomalie métier critique :
+ *   - Heures supplémentaires non planifiées
+ *   - Erreur de planning
+ *   - Fraude / pointage falsifié
+ *
+ * Ce KPI est SÉPARÉ de attendance_rate intentionnellement :
+ *   → Ne pas polluer le taux de présence normal
+ *   → Exposer une action concrète au manager (review)
+ *
+ * Seuils : ok = 0 | warning = 1-2 | critical = 3+
+ */
+export interface UnexpectedPresence {
+  total_anomaly_off_days: number;
+  /**
+   * total_anomaly_off_days / (total_days × team_size) × 100
+   * Proportion des jours-OFF où quelqu'un était quand même présent.
+   */
+  unexpected_presence_rate: number;
+  employees_concerned: number;
+  /** Détail par occurrence — max 50 pour ne pas exploser le payload */
+  occurrences: UnexpectedPresenceOccurrence[];
+  status: 'ok' | 'warning' | 'critical';
+  action: {
+    type: 'review';
+    label: string;
+    deep_link: string;
+    count: number;
+  } | null;
+}
+
+export interface UnexpectedPresenceOccurrence {
+  employee_guid: string;
+  employee_name: string;
+  date: string;
+  clock_in_time: string;
+  clock_out_time: string | null;
+  work_hours: number | null;
+}
+
 // ─────────────────────────────────────────────────────────────────────────────
 // CLASSE
 // ─────────────────────────────────────────────────────────────────────────────
@@ -70,16 +121,6 @@ export default class Statistique {
   // KPI 1 — Présence effective
   // ───────────────────────────────────────────────────────────────────────────
 
-  /**
-   * Calcule la présence effective d'un employé sur la période.
-   *
-   * @param totalWorkHours    Heures brutes de travail (clock_in → clock_out)
-   * @param totalPauseMinutes Temps de pause total en minutes.
-   *                          Passer null si la donnée n'est pas disponible :
-   *                          net_work_ratio sera null au lieu de 0.
-   * @param presentDays       Jours présents à l'heure
-   * @param lateDays          Jours présents en retard
-   */
   static calculateEffectivePresence(
     totalWorkHours: number,
     totalPauseMinutes: number | null,
@@ -88,8 +129,6 @@ export default class Statistique {
   ): EffectivePresence {
     const workingDays = presentDays + lateDays;
 
-    // BUG CORRIGÉ : si totalPauseMinutes est null (non collecté), on ne ment
-    // pas en retournant 0. On retourne null pour que le frontend affiche "—".
     let net_work_ratio: number | null = null;
     let total_pause_hours = 0;
 
@@ -112,19 +151,6 @@ export default class Statistique {
   // KPI 2 — Couverture équipe temps réel
   // ───────────────────────────────────────────────────────────────────────────
 
-  /**
-   * BUG CORRIGÉ : l'ancienne version comptait les employés avec
-   * work_days_expected > 0 sur TOUTE la période, ce qui surestimait
-   * expected_today (ex: un employé présent lundi mais absent vendredi était
-   * quand même compté comme "attendu aujourd'hui").
-   *
-   * La nouvelle version reçoit directement expectedToday calculé dans la route
-   * à partir du schedule du jour courant — source de vérité fiable.
-   *
-   * @param expectedToday     Nombre d'employés dont is_work_day = true AUJOURD'HUI
-   * @param currentlyActive   Sessions actives (clock_out IS NULL) à l'instant T
-   * @param currentlyOnPause  Parmi les actives, celles en pause
-   */
   static calculateTeamCoverage(
     expectedToday: number,
     currentlyActive: number,
@@ -145,23 +171,16 @@ export default class Statistique {
 
   // ───────────────────────────────────────────────────────────────────────────
   // KPI 3 — Analyse durée des sessions
+  //
+  // Les anomaly_off_day sont INCLUS : ils représentent du travail réel,
+  // même hors planning. Ne pas les analyser serait ignorer des données critiques.
   // ───────────────────────────────────────────────────────────────────────────
 
-  /**
-   * BUG CORRIGÉ : l'ancienne version crashait silencieusement quand
-   * emp.daily_details était undefined (cas exclude=daily_details).
-   * On accepte maintenant un tableau de raw day-data pour éviter
-   * cette dépendance fragile.
-   *
-   * @param allDayData  Tableau plat de { employee_guid, date, status,
-   *                    clock_in_time, clock_out_time, work_hours }
-   *                    Construit dans la route AVANT de tronquer daily_details.
-   */
   static analyzeSessionDurations(
     allDayData: Array<{
       employee_guid: string;
       date: string;
-      status: string;
+      status: DayStatus;
       clock_in_time: string | null;
       clock_out_time: string | null;
       work_hours: number | null;
@@ -177,8 +196,11 @@ export default class Statistique {
     let completedCount = 0;
 
     for (const day of allDayData) {
-      // On ne compte que les jours où l'employé était attendu et a pointé
-      if (day.status !== 'present' && day.status !== 'late') continue;
+      // present, late ET anomaly_off_day ont une session réelle
+      const hasSession =
+        day.status === 'present' || day.status === 'late' || day.status === 'anomaly_off_day';
+
+      if (!hasSession) continue;
 
       result.total_sessions++;
 
@@ -202,7 +224,6 @@ export default class Statistique {
           });
         }
       } else if (day.clock_in_time && !day.clock_out_time) {
-        // Session ouverte — incomplète
         result.abnormal_sessions.push({
           employee_guid: day.employee_guid,
           date: day.date,
@@ -231,7 +252,7 @@ export default class Statistique {
     const result: JustificationStatus = {
       total_absences: totalAbsences,
       with_memo: 0,
-      without_memo: totalAbsences, // valeur par défaut si requête échoue
+      without_memo: totalAbsences,
       pending_validation: 0,
       approved: 0,
       rejected: 0,
@@ -248,7 +269,6 @@ export default class Statistique {
 
       if (periodMemos && periodMemos.length > 0) {
         result.with_memo = periodMemos.length;
-
         for (const memo of periodMemos) {
           const status = memo.getMemoStatus();
           if (status === MemoStatus.PENDING) result.pending_validation++;
@@ -260,7 +280,6 @@ export default class Statistique {
       result.without_memo = Math.max(0, totalAbsences - result.with_memo);
     } catch (error) {
       console.error('[Statistique] analyzeJustifications error:', error);
-      // On retourne le résultat partiel — ne pas faire crasher la route entière
     }
 
     return result;
@@ -268,15 +287,14 @@ export default class Statistique {
 
   // ───────────────────────────────────────────────────────────────────────────
   // KPI 5 — Conformité aux horaires
+  //
+  // Les anomaly_off_day sont EXCLUS : pas d'horaire prévu, donc le concept
+  // de conformité ne s'applique pas. Ils ont leur propre KPI (#6).
   // ───────────────────────────────────────────────────────────────────────────
 
-  /**
-   * BUG CORRIGÉ : même correction que analyzeSessionDurations —
-   * on accepte le tableau plat au lieu de dépendre de emp.daily_details.
-   */
   static calculateScheduleCompliance(
     allDayData: Array<{
-      status: string;
+      status: DayStatus;
       is_within_tolerance: boolean | null;
       delay_minutes: number | null;
     }>,
@@ -293,6 +311,7 @@ export default class Statistique {
     let deviationCount = 0;
 
     for (const day of allDayData) {
+      // anomaly_off_day exclu intentionnellement
       if (day.status !== 'present' && day.status !== 'late') continue;
 
       result.total_clocked++;
@@ -318,342 +337,95 @@ export default class Statistique {
   }
 
   // ───────────────────────────────────────────────────────────────────────────
+  // KPI 6 — Présences hors planning (NOUVEAU)
+  //
+  // Règle d'or : un KPI sans action = un slogan.
+  // Ce KPI expose TOUJOURS une action concrète si total > 0.
+  //
+  // Seuils business :
+  //   ok       → 0 occurrence  (planning correct)
+  //   warning  → 1-2 (à surveiller — peut être légitime)
+  //   critical → 3+  (pattern suspect — action requise)
+  // ───────────────────────────────────────────────────────────────────────────
+
+  static calculateUnexpectedPresence(
+    allDayData: Array<{
+      employee_guid: string;
+      employee_name: string;
+      date: string;
+      status: DayStatus;
+      clock_in_time: string | null;
+      clock_out_time: string | null;
+      work_hours: number | null;
+    }>,
+    totalDaysInPeriod: number,
+    teamSize: number,
+  ): UnexpectedPresence {
+    const occurrences: UnexpectedPresenceOccurrence[] = [];
+    const employeesSet = new Set<string>();
+
+    for (const day of allDayData) {
+      if (day.status !== 'anomaly_off_day') continue;
+      if (!day.clock_in_time) continue;
+
+      employeesSet.add(day.employee_guid);
+
+      if (occurrences.length < 50) {
+        occurrences.push({
+          employee_guid: day.employee_guid,
+          employee_name: day.employee_name,
+          date: day.date,
+          clock_in_time: day.clock_in_time,
+          clock_out_time: day.clock_out_time,
+          work_hours: day.work_hours,
+        });
+      }
+    }
+
+    const total = occurrences.length;
+    const concerned = employeesSet.size;
+
+    // Dénominateur : jours-OFF théoriques (total_days × team_size)
+    const totalPossibleOffDays = totalDaysInPeriod * teamSize;
+    const rate =
+      totalPossibleOffDays > 0 ? parseFloat(((total / totalPossibleOffDays) * 100).toFixed(2)) : 0;
+
+    const status: UnexpectedPresence['status'] =
+      total === 0 ? 'ok' : total <= 2 ? 'warning' : 'critical';
+
+    return {
+      total_anomaly_off_days: total,
+      unexpected_presence_rate: rate,
+      employees_concerned: concerned,
+      occurrences,
+      status,
+      action:
+        total > 0
+          ? {
+              type: 'review',
+              label: `Examiner ${total} présence${total > 1 ? 's' : ''} hors planning`,
+              deep_link: `/manager/anomalies?type=off_day_presence`,
+              count: total,
+            }
+          : null,
+    };
+  }
+
+  // ───────────────────────────────────────────────────────────────────────────
   // UTILITAIRE — Enrichissement d'un jour individuel
   // ───────────────────────────────────────────────────────────────────────────
 
-  /**
-   * BUG CORRIGÉ : la version précédente recalculait is_within_tolerance
-   * depuis tolerance et delay_minutes qui étaient DÉJÀ disponibles dans
-   * employeeDayData. On n'a pas besoin de re-passer expectedSchedule ici.
-   *
-   * Le seul ajout réel est de normaliser la structure de sortie.
-   * Le calcul de is_within_tolerance doit être fait UNE SEULE FOIS
-   * dans la boucle principale (voir la route corrigée).
-   */
   static enrichDailyDetail(employeeDayData: any): any {
-    const {
-      status,
-      delay_minutes,
-      work_hours,
-      expected_time,
-      clock_in_time,
-      clock_out_time,
-      date,
-      is_within_tolerance,
-      tolerance_minutes,
-    } = employeeDayData;
-
     return {
-      date,
-      status,
-      clock_in_time: clock_in_time ?? null,
-      clock_out_time: clock_out_time ?? null,
-      expected_time: expected_time ?? null,
-      delay_minutes: delay_minutes ?? null,
-      tolerance_minutes: tolerance_minutes ?? null,
-      work_hours: work_hours ?? null,
-      is_within_tolerance: is_within_tolerance ?? null,
+      date: employeeDayData.date,
+      status: employeeDayData.status,
+      clock_in_time: employeeDayData.clock_in_time ?? null,
+      clock_out_time: employeeDayData.clock_out_time ?? null,
+      expected_time: employeeDayData.expected_time ?? null,
+      delay_minutes: employeeDayData.delay_minutes ?? null,
+      tolerance_minutes: employeeDayData.tolerance_minutes ?? null,
+      work_hours: employeeDayData.work_hours ?? null,
+      is_within_tolerance: employeeDayData.is_within_tolerance ?? null,
     };
   }
 }
-
-// import { MemoStatus, MemoType, TimezoneConfigUtils } from '@toke/shared';
-// import { Op } from 'sequelize';
-//
-// import Memos from '../class/Memos.js';
-//
-// /**
-//  * À ajouter dans l'objet employeeData (ligne ~250)
-//  * Calcul du temps de présence effectif et des ratios
-//  */
-// export interface EffectivePresence {
-//   total_work_hours: number;
-//   total_pause_hours: number;
-//   avg_daily_hours: number;
-//   net_work_ratio: number;
-// }
-//
-// /**
-//  * À ajouter dans l'objet summary (ligne ~350)
-//  * Montre combien d'employés présents vs attendu
-//  */
-// export interface TeamCoverage {
-//   timestamp: string;
-//   currently_present: number;
-//   currently_on_pause: number;
-//   expected_today: number;
-//   coverage_rate: number;
-//   missing_count: number;
-// }
-//
-// /**
-//  * À ajouter dans l'objet summary (après team_coverage)
-//  * Détecte les sessions anormalement courtes ou longues
-//  */
-// export interface SessionAnalysis {
-//   total_sessions: number;
-//   avg_duration_hours: number;
-//   abnormal_sessions: AbnormalSession[];
-// }
-//
-// export interface AbnormalSession {
-//   employee_guid: string;
-//   date: string;
-//   duration_hours: number;
-//   status: 'incomplete' | 'too_short' | 'too_long';
-// }
-//
-// /**
-//  * À ajouter dans l'objet summary (après session_analysis)
-//  * Compare absences avec mémos de justification
-//  */
-// export interface JustificationStatus {
-//   total_absences: number;
-//   with_memo: number;
-//   without_memo: number;
-//   pending_validation: number;
-//   approved: number;
-//   rejected: number;
-// }
-//
-// /**
-//  * À ajouter:
-//  * 1. Dans daily_details: champ is_within_tolerance
-//  * 2. Dans summary: schedule_compliance
-//  */
-// export interface ScheduleCompliance {
-//   total_clocked: number;
-//   on_time: number;
-//   late: number;
-//   on_time_rate: number;
-//   avg_deviation_minutes: number;
-// }
-//
-// export default class Statistique {
-//   static calculateEffectivePresence(
-//     totalWorkHours: number,
-//     totalPauseMinutes: number,
-//     presentDays: number,
-//     lateDays: number,
-//   ): EffectivePresence {
-//     const totalPauseHours = totalPauseMinutes / 60;
-//     const workingDays = presentDays + lateDays;
-//
-//     return {
-//       total_work_hours: parseFloat(totalWorkHours.toFixed(2)),
-//       total_pause_hours: parseFloat(totalPauseHours.toFixed(2)),
-//       avg_daily_hours: workingDays > 0 ? parseFloat((totalWorkHours / workingDays).toFixed(2)) : 0,
-//       net_work_ratio:
-//         workingDays > 0 ? parseFloat(((totalWorkHours / (workingDays * 8)) * 100).toFixed(1)) : 0,
-//     };
-//   }
-//
-//   static async calculateTeamCoverage(
-//     employeesData: any[],
-//     currentlyActive: number,
-//     currentlyOnPause: number,
-//   ): Promise<TeamCoverage> {
-//     // Compter combien devrait être présent aujourd'hui
-//     const expectedToday = employeesData.filter(
-//       (emp) => emp.period_stats.work_days_expected > 0,
-//     ).length;
-//
-//     const coverageRate =
-//       expectedToday > 0 ? parseFloat(((currentlyActive / expectedToday) * 100).toFixed(1)) : 0;
-//
-//     const missingCount = Math.max(0, expectedToday - currentlyActive);
-//
-//     return {
-//       timestamp: TimezoneConfigUtils.getCurrentTime().toISOString(),
-//       currently_present: currentlyActive,
-//       currently_on_pause: currentlyOnPause,
-//       expected_today: expectedToday,
-//       coverage_rate: coverageRate,
-//       missing_count: missingCount,
-//     };
-//   }
-//
-//   static async analyzeSessionDurations(employeesData: any[]): Promise<SessionAnalysis> {
-//     const sessionAnalysis: SessionAnalysis = {
-//       total_sessions: 0,
-//       avg_duration_hours: 0,
-//       abnormal_sessions: [],
-//     };
-//
-//     let totalDuration = 0;
-//     let completedSessionsCount = 0;
-//
-//     for (const emp of employeesData) {
-//       for (const day of emp.daily_details || []) {
-//         // Compter toutes les sessions
-//         if (day.work_hours !== null && day.work_hours !== undefined) {
-//           sessionAnalysis.total_sessions++;
-//           totalDuration += day.work_hours;
-//
-//           if (day.work_hours > 0) {
-//             completedSessionsCount++;
-//
-//             // Détecter sessions trop courtes (<4h)
-//             if (day.work_hours < 4) {
-//               sessionAnalysis.abnormal_sessions.push({
-//                 employee_guid: emp.employee.guid,
-//                 date: day.date,
-//                 duration_hours: day.work_hours,
-//                 status: 'too_short',
-//               });
-//             }
-//             // Détecter sessions trop longues (>12h)
-//             else if (day.work_hours > 12) {
-//               sessionAnalysis.abnormal_sessions.push({
-//                 employee_guid: emp.employee.guid,
-//                 date: day.date,
-//                 duration_hours: day.work_hours,
-//                 status: 'too_long',
-//               });
-//             }
-//           }
-//         }
-//         // Détecter sessions non fermées (clock_in sans clock_out)
-//         else if (day.clock_in_time && !day.clock_out_time) {
-//           sessionAnalysis.abnormal_sessions.push({
-//             employee_guid: emp.employee.guid,
-//             date: day.date,
-//             duration_hours: 0,
-//             status: 'incomplete',
-//           });
-//         }
-//       }
-//     }
-//
-//     // Calculer moyenne
-//     sessionAnalysis.avg_duration_hours =
-//       completedSessionsCount > 0
-//         ? parseFloat((totalDuration / completedSessionsCount).toFixed(2))
-//         : 0;
-//
-//     return sessionAnalysis;
-//   }
-//
-//   static async analyzeJustifications(
-//     totalAbsences: number,
-//     teamMembers: number[],
-//     startOfPeriod: Date,
-//     endOfPeriod: Date,
-//   ): Promise<JustificationStatus> {
-//     const justificationStatus: JustificationStatus = {
-//       total_absences: totalAbsences,
-//       with_memo: 0,
-//       without_memo: 0,
-//       pending_validation: 0,
-//       approved: 0,
-//       rejected: 0,
-//     };
-//
-//     try {
-//       // Récupérer tous les mémos d'absence de la période
-//       const periodMemos = await Memos._list({
-//         target_user: { [Op.in]: teamMembers },
-//         incident_datetime: { [Op.between]: [startOfPeriod, endOfPeriod] },
-//         memo_type: MemoType.ABSENCE_JUSTIFICATION,
-//       });
-//
-//       if (periodMemos && periodMemos.length > 0) {
-//         justificationStatus.with_memo = periodMemos.length;
-//
-//         // Compter par statut
-//         for (const memo of periodMemos) {
-//           const status = memo.getMemoStatus();
-//
-//           if (status === MemoStatus.PENDING) {
-//             justificationStatus.pending_validation++;
-//           } else if (status === MemoStatus.APPROVED) {
-//             justificationStatus.approved++;
-//           } else if (status === MemoStatus.REJECTED) {
-//             justificationStatus.rejected++;
-//           }
-//         }
-//       }
-//
-//       // Calculer absences non justifiées
-//       justificationStatus.without_memo = totalAbsences - justificationStatus.with_memo;
-//     } catch (error) {
-//       console.error('Error analyzing justifications:', error);
-//     }
-//
-//     return justificationStatus;
-//   }
-//
-//   static calculateScheduleCompliance(employeesData: any[]): ScheduleCompliance {
-//     const scheduleCompliance: ScheduleCompliance = {
-//       total_clocked: 0,
-//       on_time: 0,
-//       late: 0,
-//       on_time_rate: 0,
-//       avg_deviation_minutes: 0,
-//     };
-//
-//     let totalDeviation = 0;
-//     let deviationCount = 0;
-//
-//     for (const emp of employeesData) {
-//       for (const day of emp.daily_details || []) {
-//         // Compter uniquement les jours où l'employé a pointé
-//         if (day.status === 'present' || day.status === 'late') {
-//           scheduleCompliance.total_clocked++;
-//
-//           // Utiliser le champ is_within_tolerance
-//           if (day.is_within_tolerance === true) {
-//             scheduleCompliance.on_time++;
-//           } else if (day.is_within_tolerance === false) {
-//             scheduleCompliance.late++;
-//           }
-//
-//           // Calculer déviation moyenne
-//           if (day.delay_minutes && day.delay_minutes > 0) {
-//             totalDeviation += day.delay_minutes;
-//             deviationCount++;
-//           }
-//         }
-//       }
-//     }
-//
-//     // Calculer taux de ponctualité
-//     scheduleCompliance.on_time_rate =
-//       scheduleCompliance.total_clocked > 0
-//         ? parseFloat(
-//             ((scheduleCompliance.on_time / scheduleCompliance.total_clocked) * 100).toFixed(1),
-//           )
-//         : 0;
-//
-//     // Calculer déviation moyenne
-//     scheduleCompliance.avg_deviation_minutes =
-//       deviationCount > 0 ? parseFloat((totalDeviation / deviationCount).toFixed(1)) : 0;
-//
-//     return scheduleCompliance;
-//   }
-//
-//   /**
-//    * À intégrer dans la boucle qui construit daily_details
-//    * Ajoute le champ is_within_tolerance
-//    */
-//   static enrichDailyDetail(employeeDayData: any, expectedSchedule: any): any {
-//     const { status, delay_minutes, work_hours, expected_time, ...rest } = employeeDayData;
-//
-//     // Calculer conformité horaire
-//     let is_within_tolerance: boolean | null = null;
-//
-//     if (status === 'present' || status === 'late') {
-//       const tolerance = expectedSchedule?.expected_blocks[0]?.tolerance || 0;
-//       is_within_tolerance = delay_minutes ? delay_minutes <= tolerance : true;
-//     }
-//
-//     return {
-//       date: employeeDayData.date,
-//       status,
-//       ...rest,
-//       delay_minutes,
-//       work_hours,
-//       is_within_tolerance, // 🆕 Nouveau champ
-//     };
-//   }
-// }

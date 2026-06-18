@@ -1,6 +1,7 @@
 import {
   PointageStatus,
   PointageType,
+  TIME_ENTRIES_DEFAULTS,
   TIME_ENTRIES_ERRORS,
   TimeEntriesValidationUtils,
   TimezoneConfigUtils,
@@ -38,6 +39,9 @@ export default class TimeEntriesModel extends BaseModel {
     memo: 'memo',
     correction_reason: 'correction_reason',
     updated_at: 'updated_at',
+    site_name: 'site_name',
+    is_fallback_checkin: 'is_fallback_checkin',
+    image_url: 'image_url',
   } as const;
 
   protected id?: number;
@@ -65,6 +69,10 @@ export default class TimeEntriesModel extends BaseModel {
   protected memo?: number;
   protected correction_reason?: string;
   protected updated_at?: Date;
+  protected is_fallback_checkin: boolean = TIME_ENTRIES_DEFAULTS.IS_FALLBACK_CHECKIN;
+  protected image_url?: string;
+
+  protected site_name?: string;
 
   protected constructor() {
     super();
@@ -83,8 +91,9 @@ export default class TimeEntriesModel extends BaseModel {
   protected async listAll(
     conditions: Record<string, any> = {},
     paginationOptions: { offset?: number; limit?: number } = {},
+    options: any = {},
   ): Promise<any[]> {
-    return await this.findAll(this.db.tableName, conditions, paginationOptions);
+    return await this.findAll(this.db.tableName, conditions, paginationOptions, options);
   }
 
   protected async listAllBySession(
@@ -199,6 +208,24 @@ export default class TimeEntriesModel extends BaseModel {
     return await this.listAll(
       {
         [this.db.pointage_status]: PointageStatus.PENDING,
+      },
+      paginationOptions,
+    );
+  }
+
+  protected async findFallbackCheckin(
+    device: number,
+    startDate: Date,
+    endDate: Date,
+    paginationOptions: { offset?: number; limit?: number } = {},
+  ): Promise<any[]> {
+    return await this.listAll(
+      {
+        [this.db.is_fallback_checkin]: !TIME_ENTRIES_DEFAULTS.IS_FALLBACK_CHECKIN,
+        [this.db.device]: device,
+        [this.db.clocked_at]: {
+          [Op.between]: [startDate, endDate],
+        },
       },
       paginationOptions,
     );
@@ -379,6 +406,8 @@ export default class TimeEntriesModel extends BaseModel {
         const lastEntry = sessionEntries[sessionEntries.length - 1];
         return lastEntry && lastEntry.pointage_type === PointageType.EXTERNAL_MISSION;
       },
+
+      [PointageType.WAYPOINT]: () => sessionEntries.length === 0,
     };
 
     return rules[pointage_type] ? rules[pointage_type]() : false;
@@ -624,7 +653,7 @@ export default class TimeEntriesModel extends BaseModel {
     }
 
     const now = TimezoneConfigUtils.getCurrentTime();
-    const nowInDouala = new Date(now.toLocaleString('en-US', { timeZone: 'Africa/Douala' }));
+    // const nowInDouala = new Date(now.toLocaleString('en-US', { timeZone: 'Africa/Douala' }));
 
     const lastID = await this.insertOne(this.db.tableName, {
       [this.db.guid]: guid,
@@ -636,7 +665,7 @@ export default class TimeEntriesModel extends BaseModel {
       [this.db.pointage_status]: this.pointage_status || PointageStatus.PENDING,
       [this.db.clocked_at]: this.clocked_at,
       [this.db.real_clocked_at]: this.real_clocked_at,
-      [this.db.server_received_at]: nowInDouala,
+      [this.db.server_received_at]: now,
       [this.db.latitude]: this.latitude,
       [this.db.longitude]: this.longitude,
       [this.db.gps_accuracy]: this.gps_accuracy,
@@ -650,6 +679,8 @@ export default class TimeEntriesModel extends BaseModel {
       [this.db.last_sync_attempt]: this.last_sync_attempt,
       [this.db.memo]: this.memo,
       [this.db.correction_reason]: this.correction_reason,
+      [this.db.is_fallback_checkin]: this.is_fallback_checkin,
+      [this.db.image_url]: this.image_url,
     });
 
     if (!lastID) {
@@ -662,6 +693,7 @@ export default class TimeEntriesModel extends BaseModel {
 
   protected async update(): Promise<void> {
     await this.validate();
+
     if (!this.id) {
       throw new Error(TIME_ENTRIES_ERRORS?.ID_REQUIRED);
     }
@@ -688,6 +720,44 @@ export default class TimeEntriesModel extends BaseModel {
 
   protected async trash(id: number): Promise<boolean> {
     return await this.deleteOne(this.db.tableName, { [this.db.id]: id });
+  }
+
+  protected async createWaypoint(): Promise<void> {
+    const guid = await this.randomGuidGenerator(this.db.tableName);
+    if (!guid) {
+      throw Error(TIME_ENTRIES_ERRORS?.GUID_GENERATION_FAILED);
+    }
+
+    const now = TimezoneConfigUtils.getCurrentTime();
+
+    const lastID = await this.insertOne(this.db.tableName, {
+      [this.db.guid]: guid,
+      [this.db.user]: this.user,
+      [this.db.device]: this.device,
+      [this.db.site]: this.site ?? null,
+      [this.db.site_name]: this.site_name ?? null,
+      [this.db.pointage_type]: PointageType.WAYPOINT,
+      [this.db.pointage_status]: PointageStatus.ACCEPTED,
+      [this.db.clocked_at]: this.clocked_at,
+      [this.db.real_clocked_at]: this.real_clocked_at,
+      [this.db.server_received_at]: now,
+      [this.db.latitude]: this.latitude,
+      [this.db.longitude]: this.longitude,
+      [this.db.gps_accuracy]: this.gps_accuracy,
+      [this.db.device_info]: this.device_info,
+      [this.db.ip_address]: this.ip_address,
+      [this.db.user_agent]: this.user_agent,
+      [this.db.created_offline]: this.created_offline || false,
+      [this.db.local_id]: this.local_id,
+      [this.db.sync_attempts]: this.sync_attempts || 0,
+      [this.db.last_sync_attempt]: this.last_sync_attempt,
+      [this.db.correction_reason]: this.correction_reason,
+      [this.db.is_fallback_checkin]: this.is_fallback_checkin,
+      [this.db.image_url]: this.image_url,
+    });
+
+    this.id = typeof lastID === 'object' ? lastID.id : lastID;
+    this.guid = guid;
   }
 
   // === VALIDATION ===

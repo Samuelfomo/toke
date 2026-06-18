@@ -369,6 +369,68 @@ export const respondToMemoSchema = z.object({
   memo_content: z.array(memoContentSchema),
 });
 
+export const timeCorrectionSchema = z
+  .object({
+    entry_guid: z
+      .string()
+      .min(MEMOS_VALIDATION.AFFECTED_ENTRIES.MIN_LENGTH)
+      .max(MEMOS_VALIDATION.AFFECTED_ENTRIES.MAX_LENGTH)
+      .trim()
+      .optional(),
+
+    session_guid: z
+      .string()
+      .min(MEMOS_VALIDATION.AFFECTED_SESSION.MIN_LENGTH)
+      .max(MEMOS_VALIDATION.AFFECTED_SESSION.MAX_LENGTH)
+      .trim()
+      .optional(),
+
+    clocked_at: z
+      .string()
+      .datetime({ message: 'clocked_at must be a valid ISO datetime' })
+      .optional(),
+
+    session_start_at: z
+      .string()
+      .datetime({ message: 'session_start_at must be a valid ISO datetime' })
+      .optional(),
+
+    session_end_at: z
+      .string()
+      .datetime({ message: 'session_end_at must be a valid ISO datetime' })
+      .optional(),
+  })
+  .refine((data) => data.entry_guid || data.session_guid, {
+    message: 'Each correction must target at least one entry_guid or session_guid',
+  })
+  .refine((data) => data.clocked_at || data.session_start_at || data.session_end_at, {
+    message: 'Each correction must provide at least one time field to correct',
+  });
+
+export const revokeMemoSchema = z.object({
+  user: z
+    .string({
+      required_error: MEMOS_ERRORS.AUTHOR_USER_REQUIRED,
+      invalid_type_error: MEMOS_ERRORS.AUTHOR_USER_INVALID,
+    })
+    .min(MEMOS_VALIDATION.AUTHOR_USER.MIN_LENGTH, {
+      message: MEMOS_ERRORS.AUTHOR_USER_INVALID,
+    })
+    .max(MEMOS_VALIDATION.AUTHOR_USER.MAX_LENGTH, {
+      message: MEMOS_ERRORS.AUTHOR_USER_INVALID,
+    })
+    .trim()
+    .optional(), // optionnel car on peut le déduire du memoObj.getAuthorUser()
+
+  message: z.array(messageSchema).optional(),
+
+  // Même logique que validate : absent = auto par planning, présent = manuel
+  time_corrections: z
+    .array(timeCorrectionSchema)
+    .min(1, { message: 'time_corrections must contain at least one correction if provided' })
+    .optional(),
+});
+
 // Schema pour valider un memo (manager valide la réponse)
 export const validateMemoSchema = z.object({
   validator_user: z
@@ -401,7 +463,25 @@ export const validateMemoSchema = z.object({
   // ),
 
   content_type: z.enum(['initial', 'response', 'validation', 'escalation']).optional(),
+
+  time_corrections: z
+    .array(timeCorrectionSchema)
+    .min(1, { message: 'time_corrections must contain at least one correction if provided' })
+    .optional(),
 });
+
+export const validateRevokeMemo = (data: any) => {
+  const result = revokeMemoSchema.safeParse(data);
+  if (!result.success) {
+    const errors = result.error.errors.map((err) => ({
+      field: err.path.join('.'),
+      message: err.message,
+      code: MEMOS_CODES.VALIDATION_FAILED,
+    }));
+    return { success: false, errors };
+  }
+  return { success: true, data: result.data };
+};
 
 // ============================================================================
 // SCHEMAS DE FILTRES
@@ -615,5 +695,7 @@ export type CreateSystemMemoInput = z.infer<typeof createSystemMemoSchema>;
 export type CreateMemosInput = z.infer<typeof createMemosSchema>;
 export type UpdateMemosInput = z.infer<typeof updateMemosSchema>;
 export type RespondToMemoInput = z.infer<typeof respondToMemoSchema>;
+export type TimeCorrectionInput = z.infer<typeof timeCorrectionSchema>;
 export type ValidateMemoInput = z.infer<typeof validateMemoSchema>;
 export type MemosFilters = z.infer<typeof memosFiltersSchema>;
+export type RevokeMemoInput = z.infer<typeof revokeMemoSchema>;

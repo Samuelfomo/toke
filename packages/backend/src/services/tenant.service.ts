@@ -29,12 +29,6 @@ export class TenantService {
     response: object;
   }> {
     try {
-      // const api = createApiClient(
-      //   `https://${process.env.MST_HOST}`,
-      //   process.env.SECRET_KEY,
-      //   process.env.API_KEY,
-      // );
-
       const response = await api.post(`${baseUrl}/auth`, {
         email: data.email,
         code: data.code,

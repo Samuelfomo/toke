@@ -11,6 +11,7 @@ import {
   TimeEntryCode,
 } from '../../constants/tenant/time.entries.js';
 import { TimezoneConfigUtils } from '../../utils/timezone.config.validation.js';
+import { paginationSchema } from '../country.js';
 
 // Schema pour valider les adresses IP (IPv4 et IPv6)
 const ipAddressSchema = z.string().refine((ip) => {
@@ -201,6 +202,28 @@ const baseTimeEntriesSchema = z.object({
     .trim()
     .optional()
     .nullable(),
+
+  image_url: z
+    .string({
+      invalid_type_error: TIME_ENTRIES_ERRORS.IMAGE_URL_INVALID,
+    })
+    .min(
+      TIME_ENTRIES_VALIDATION.IMAGE_URL.MIN_LENGTH,
+      TIME_ENTRIES_ERRORS.IMAGE_URL_INVALID,
+    )
+    .max(
+      TIME_ENTRIES_VALIDATION.IMAGE_URL.MAX_LENGTH,
+      TIME_ENTRIES_ERRORS.IMAGE_URL_INVALID,
+    )
+    .trim()
+    .optional()
+    .nullable(),
+
+  is_fallback_checkin: z
+    .boolean({
+      invalid_type_error: TIME_ENTRIES_ERRORS.IS_FALLBACK_CHECKIN,
+    })
+    .default(TIME_ENTRIES_DEFAULTS.IS_FALLBACK_CHECKIN),
 });
 
 // Schema avec validations métier complexes
@@ -224,6 +247,11 @@ export const createTimeEntriesSchema = timeEntriesWithValidation;
 // Schema pour les mises à jour - tous les champs optionnels
 export const updateTimeEntriesSchema = baseTimeEntriesSchema.partial();
 // export const updateTimeEntriesSchema = timeEntriesWithValidation.partial();
+
+export const fallbackCheckinQuerySchema = paginationSchema.extend({
+  start_date: z.coerce.date().optional(),
+  end_date: z.coerce.date().optional(),
+});
 
 // Schema pour les filtres
 export const timeEntriesFiltersSchema = z
@@ -403,6 +431,129 @@ export const timeEntriesResponseSchema = baseTimeEntriesSchema.extend({
   created_at: z.string().datetime(),
   updated_at: z.string().datetime(),
 });
+
+export const createWaypointSchema = z.object({
+  // === IDENTIFICATION ===
+  user: z
+    .string()
+    .min(TIME_ENTRIES_VALIDATION.USER.MIN_LENGTH)
+    .max(TIME_ENTRIES_VALIDATION.USER.MAX_LENGTH)
+    .trim(),
+
+  device: z
+    .string()
+    .min(TIME_ENTRIES_VALIDATION.DEVICE.MIN_LENGTH)
+    .max(TIME_ENTRIES_VALIDATION.DEVICE.MAX_LENGTH)
+    .trim(),
+
+  // === TYPE RESTREINT ===
+  pointage_type: z.literal(PointageType.WAYPOINT, {
+    required_error: 'pointage_type is required and must be "waypoint"',
+    invalid_type_error: 'pointage_type must be "waypoint" for this endpoint',
+  }),
+
+  // === SITE OPTIONNEL ===
+  site: z
+    .string()
+    .min(TIME_ENTRIES_VALIDATION.SITE.MIN_LENGTH)
+    .max(TIME_ENTRIES_VALIDATION.SITE.MAX_LENGTH)
+    .trim()
+    .optional()
+    .nullable(),
+
+  // === LIBELLÉ LIBRE DU LIEU ===
+  site_name: z
+    .string()
+    .min(1, 'Label must be at least 1 character')
+    .max(255, 'Label must be at most 255 characters')
+    .trim()
+    .optional()
+    .nullable(),
+
+  // === HORODATAGE ===
+  clocked_at: z
+    .union([z.date(), z.string().transform((val) => new Date(val))], {
+      required_error: 'clocked_at is required',
+      invalid_type_error: 'clocked_at must be a valid date',
+    })
+    .refine((date) => {
+      const nowInDouala = TimezoneConfigUtils.getCurrentTime();
+      // const nowInDouala = new Date(
+      //   TimezoneConfigUtils.getCurrentTime().toLocaleString('en-US', {
+      //     timeZone: 'Africa/Douala',
+      //   }),
+      // );
+      return date <= nowInDouala;
+    }, 'clocked_at cannot be in the future'),
+
+  // === GPS (requis) ===
+  latitude: z
+    .number({ required_error: 'latitude is required', invalid_type_error: 'latitude must be a number' })
+    .min(TIME_ENTRIES_VALIDATION.LATITUDE.MIN)
+    .max(TIME_ENTRIES_VALIDATION.LATITUDE.MAX),
+
+  longitude: z
+    .number({ required_error: 'longitude is required', invalid_type_error: 'longitude must be a number' })
+    .min(TIME_ENTRIES_VALIDATION.LONGITUDE.MIN)
+    .max(TIME_ENTRIES_VALIDATION.LONGITUDE.MAX),
+
+  gps_accuracy: z
+    .number({ invalid_type_error: 'gps_accuracy must be an integer' })
+    .int()
+    .min(TIME_ENTRIES_VALIDATION.GPS_ACCURACY.MIN)
+    .max(TIME_ENTRIES_VALIDATION.GPS_ACCURACY.MAX)
+    .optional()
+    .nullable(),
+
+  // === DEVICE INFO ===
+  device_info: deviceInfoSchema.optional().nullable(),
+
+  // === RÉSEAU ===
+  ip_address: ipAddressSchema.optional().nullable(),
+
+  // === OFFLINE ===
+  created_offline: z.boolean({ invalid_type_error: 'created_offline must be a boolean' }).default(false),
+
+  local_id: z
+    .string({ invalid_type_error: 'local_id must be a string' })
+    .min(TIME_ENTRIES_VALIDATION.LOCAL_ID.MIN_LENGTH)
+    .max(TIME_ENTRIES_VALIDATION.LOCAL_ID.MAX_LENGTH)
+    .trim()
+    .optional()
+    .nullable(),
+
+  sync_attempts: z
+    .number({ invalid_type_error: 'sync_attempts must be an integer' })
+    .int()
+    .min(TIME_ENTRIES_VALIDATION.SYNC_ATTEMPTS.MIN)
+    .max(TIME_ENTRIES_VALIDATION.SYNC_ATTEMPTS.MAX)
+    .default(0),
+
+  last_sync_attempt: z
+    .union([z.date(), z.string().transform((val) => new Date(val))], {
+      invalid_type_error: 'last_sync_attempt must be a valid date',
+    })
+    .optional()
+    .nullable(),
+});
+
+// === FONCTION DE VALIDATION ===
+
+export const validateWaypointCreation = (data: any) => {
+  const result = createWaypointSchema.safeParse(data);
+
+  if (!result.success) {
+    const firstError = result.error.issues[0]!;
+    const error: any = new Error(firstError.message);
+    error.code = `waypoint_${firstError.path[0] ?? 'validation'}_invalid`;
+    throw error;
+  }
+
+  return result.data;
+};
+
+// === TYPES TS ===
+export type CreateWaypointInput = z.infer<typeof createWaypointSchema>;
 
 // Export groupé pour faciliter les imports
 export const timeEntriesSchemas = {

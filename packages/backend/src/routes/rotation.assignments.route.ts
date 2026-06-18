@@ -30,7 +30,10 @@ router.get(
         });
       }
 
-      const result: any = await RotationAssignmentService.listRotationAssignments(client, manager);
+      const result: any = await RotationAssignmentService.listRotationAssignments(
+        client,
+        manager as string,
+      );
 
       if (result.status !== HttpStatus.SUCCESS) {
         return R.handleError(res, result.status, result.response);
@@ -87,7 +90,7 @@ router.put(
 
       const result: any = await RotationAssignmentService.updatedRotationAssignment(
         client,
-        guid,
+        guid as string,
         req.body,
       );
 

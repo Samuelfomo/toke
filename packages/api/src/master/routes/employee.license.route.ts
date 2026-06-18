@@ -414,14 +414,14 @@ router.get('/employee/:employee', Ensure.get(), async (req: Request, res: Respon
   try {
     const { employee } = req.params;
 
-    if (!EmployeeLicenseValidationUtils.validateEmployee(employee)) {
+    if (!EmployeeLicenseValidationUtils.validateEmployee(employee as string)) {
       return R.handleError(res, HttpStatus.BAD_REQUEST, {
         code: EMPLOYEE_LICENSE_CODES.EMPLOYEE_INVALID,
         message: EMPLOYEE_LICENSE_ERRORS.EMPLOYEE_INVALID,
       });
     }
 
-    const employeeLicense = await EmployeeLicense._loadByEmployee(employee);
+    const employeeLicense = await EmployeeLicense._loadByEmployee(employee as string);
     if (!employeeLicense) {
       return R.handleError(res, HttpStatus.NOT_FOUND, {
         code: EMPLOYEE_LICENSE_CODES.EMPLOYEE_LICENSE_NOT_FOUND,
@@ -446,14 +446,14 @@ router.get('/code/:employeeCode', Ensure.get(), async (req: Request, res: Respon
   try {
     const { employeeCode } = req.params;
 
-    if (!EmployeeLicenseValidationUtils.validateEmployeeCode(employeeCode)) {
+    if (!EmployeeLicenseValidationUtils.validateEmployeeCode(employeeCode as string)) {
       return R.handleError(res, HttpStatus.BAD_REQUEST, {
         code: EMPLOYEE_LICENSE_CODES.EMPLOYEE_CODE_INVALID,
         message: EMPLOYEE_LICENSE_ERRORS.EMPLOYEE_CODE_INVALID,
       });
     }
 
-    const employeeLicense = await EmployeeLicense._loadByEmployeeCode(employeeCode);
+    const employeeLicense = await EmployeeLicense._loadByEmployeeCode(employeeCode as string);
     if (!employeeLicense) {
       return R.handleError(res, HttpStatus.NOT_FOUND, {
         code: EMPLOYEE_LICENSE_CODES.EMPLOYEE_LICENSE_NOT_FOUND,
@@ -479,7 +479,7 @@ router.get('/global/:globalLicense', Ensure.get(), async (req: Request, res: Res
     const { globalLicense } = req.params;
     const { offset, limit } = req.query;
 
-    const globalLicenseGuid = parseInt(globalLicense);
+    const globalLicenseGuid = parseInt(globalLicense as string);
     if (!EmployeeLicenseValidationUtils.validateGlobalLicenseId(globalLicenseGuid)) {
       return R.handleError(res, HttpStatus.BAD_REQUEST, {
         code: EMPLOYEE_LICENSE_CODES.GLOBAL_LICENSE_INVALID,
@@ -539,7 +539,7 @@ router.get('/stats/billing/:globalLicenseId', Ensure.get(), async (req: Request,
   try {
     const { globalLicenseId } = req.params;
 
-    const globalLicense = parseInt(globalLicenseId);
+    const globalLicense = parseInt(globalLicenseId as string);
     if (!EmployeeLicenseValidationUtils.validateGlobalLicenseId(globalLicense)) {
       return R.handleError(res, HttpStatus.BAD_REQUEST, {
         code: EMPLOYEE_LICENSE_CODES.GLOBAL_LICENSE_INVALID,
@@ -569,7 +569,7 @@ router.patch('/activity/:employee', Ensure.patch(), async (req: Request, res: Re
     const { employee } = req.params;
     const { activity_date } = req.body;
 
-    if (!EmployeeLicenseValidationUtils.validateEmployee(employee)) {
+    if (!EmployeeLicenseValidationUtils.validateEmployee(employee as string)) {
       return R.handleError(res, HttpStatus.BAD_REQUEST, {
         code: EMPLOYEE_LICENSE_CODES.EMPLOYEE_INVALID,
         message: EMPLOYEE_LICENSE_ERRORS.EMPLOYEE_INVALID,
@@ -587,7 +587,7 @@ router.patch('/activity/:employee', Ensure.patch(), async (req: Request, res: Re
       }
     }
 
-    const success = await EmployeeLicense._updateActivity(employee, activityDate);
+    const success = await EmployeeLicense._updateActivity(employee as string, activityDate);
     if (!success) {
       return R.handleError(res, HttpStatus.NOT_FOUND, {
         code: EMPLOYEE_LICENSE_CODES.EMPLOYEE_LICENSE_NOT_FOUND,
@@ -616,7 +616,7 @@ router.patch('/long-leave/:employee', Ensure.patch(), async (req: Request, res: 
     const { employee } = req.params;
     const { declared_by, leave_type, reason } = req.body;
 
-    if (!EmployeeLicenseValidationUtils.validateEmployee(employee)) {
+    if (!EmployeeLicenseValidationUtils.validateEmployee(employee as string)) {
       return R.handleError(res, HttpStatus.BAD_REQUEST, {
         code: EMPLOYEE_LICENSE_CODES.EMPLOYEE_INVALID,
         message: EMPLOYEE_LICENSE_ERRORS.EMPLOYEE_INVALID,
@@ -645,7 +645,7 @@ router.patch('/long-leave/:employee', Ensure.patch(), async (req: Request, res: 
     }
 
     const success = await EmployeeLicense._declareLongLeave(
-      employee,
+      employee as string,
       declared_by,
       leave_type.toUpperCase() as LeaveType,
       reason,
@@ -681,14 +681,14 @@ router.delete('/long-leave/:employee', Ensure.delete(), async (req: Request, res
   try {
     const { employee } = req.params;
 
-    if (!EmployeeLicenseValidationUtils.validateEmployee(employee)) {
+    if (!EmployeeLicenseValidationUtils.validateEmployee(employee as string)) {
       return R.handleError(res, HttpStatus.BAD_REQUEST, {
         code: EMPLOYEE_LICENSE_CODES.EMPLOYEE_INVALID,
         message: EMPLOYEE_LICENSE_ERRORS.EMPLOYEE_INVALID,
       });
     }
 
-    const success = await EmployeeLicense._cancelLongLeave(employee);
+    const success = await EmployeeLicense._cancelLongLeave(employee as string);
     if (!success) {
       return R.handleError(res, HttpStatus.NOT_FOUND, {
         code: EMPLOYEE_LICENSE_CODES.EMPLOYEE_LICENSE_NOT_FOUND,
@@ -715,14 +715,14 @@ router.patch('/deactivate/:employee', Ensure.patch(), async (req: Request, res: 
   try {
     const { employee } = req.params;
 
-    if (!EmployeeLicenseValidationUtils.validateEmployee(employee)) {
+    if (!EmployeeLicenseValidationUtils.validateEmployee(employee as string)) {
       return R.handleError(res, HttpStatus.BAD_REQUEST, {
         code: EMPLOYEE_LICENSE_CODES.EMPLOYEE_INVALID,
         message: EMPLOYEE_LICENSE_ERRORS.EMPLOYEE_INVALID,
       });
     }
 
-    const success = await EmployeeLicense._deactivateEmployee(employee);
+    const success = await EmployeeLicense._deactivateEmployee(employee as string);
     if (!success) {
       return R.handleError(res, HttpStatus.NOT_FOUND, {
         code: EMPLOYEE_LICENSE_CODES.EMPLOYEE_LICENSE_NOT_FOUND,
@@ -750,14 +750,14 @@ router.patch('/reactivate/:employee', Ensure.patch(), async (req: Request, res: 
   try {
     const { employee } = req.params;
 
-    if (!EmployeeLicenseValidationUtils.validateEmployee(employee)) {
+    if (!EmployeeLicenseValidationUtils.validateEmployee(employee as string)) {
       return R.handleError(res, HttpStatus.BAD_REQUEST, {
         code: EMPLOYEE_LICENSE_CODES.EMPLOYEE_INVALID,
         message: EMPLOYEE_LICENSE_ERRORS.EMPLOYEE_INVALID,
       });
     }
 
-    const success = await EmployeeLicense._reactivateEmployee(employee);
+    const success = await EmployeeLicense._reactivateEmployee(employee as string);
     if (!success) {
       return R.handleError(res, HttpStatus.NOT_FOUND, {
         code: EMPLOYEE_LICENSE_CODES.EMPLOYEE_LICENSE_NOT_FOUND,

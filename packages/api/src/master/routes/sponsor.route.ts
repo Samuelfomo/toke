@@ -174,7 +174,7 @@ router.get('/phone/:phone', Ensure.get(), async (req: Request, res: Response) =>
   try {
     const { phone } = req.params;
 
-    if (!validatePhoneNumber(phone)) {
+    if (!validatePhoneNumber(phone as string)) {
       return R.handleError(res, HttpStatus.BAD_REQUEST, {
         code: 'invalid_phone',
         message: 'Phone number must be between 5 and 50 characters',
@@ -298,14 +298,14 @@ router.put('/:guid', Ensure.put(), async (req: Request, res: Response) => {
   try {
     const { guid } = req.params;
 
-    if (!validateGuid(guid)) {
+    if (!validateGuid(guid as string)) {
       return R.handleError(res, HttpStatus.BAD_REQUEST, {
         code: 'invalid_guid',
         message: 'GUID must be exactly 6 digits',
       });
     }
 
-    const invitation = await Sponsor._load(parseInt(guid), true);
+    const invitation = await Sponsor._load(parseInt(guid as string), true);
 
     if (!invitation) {
       return R.handleError(res, HttpStatus.NOT_FOUND, {
@@ -423,14 +423,14 @@ router.delete('/:guid', Ensure.delete(), async (req: Request, res: Response) => 
   try {
     const { guid } = req.params;
 
-    if (!validateGuid(guid)) {
+    if (!validateGuid(guid as string)) {
       return R.handleError(res, HttpStatus.BAD_REQUEST, {
         code: 'invalid_guid',
         message: 'GUID must be exactly 6 digits',
       });
     }
 
-    const invitation = await Sponsor._load(parseInt(guid), true);
+    const invitation = await Sponsor._load(parseInt(guid as string), true);
 
     if (!invitation) {
       return R.handleError(res, HttpStatus.NOT_FOUND, {

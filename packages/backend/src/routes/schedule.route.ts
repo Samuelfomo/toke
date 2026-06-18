@@ -1,7 +1,12 @@
 import { Request, Response, Router } from 'express';
 import Ensure from '@toke/api/dist/middle/ensured-routes.js';
 import R from '@toke/api/dist/tools/response.js';
-import { HttpStatus, SessionTemplateValidationUtils } from '@toke/shared';
+import {
+  HttpStatus,
+  SESSION_TEMPLATE_CODES,
+  SESSION_TEMPLATE_ERRORS,
+  SessionTemplateValidationUtils,
+} from '@toke/shared';
 
 import { TenantConfig } from '../tools/tenant.config.js';
 import { ScheduleService } from '../services/schedule.service.js';
@@ -25,6 +30,36 @@ router.get(
     } catch (error: any) {
       return R.handleError(res, HttpStatus.INTERNAL_ERROR, {
         code: 'search_failed',
+        message: error.message,
+      });
+    }
+  },
+);
+
+router.get(
+  '/:guid',
+  TenantConfig.authenticate,
+  Ensure.get(),
+  async (req: Request, res: Response) => {
+    try {
+      if (!SessionTemplateValidationUtils.validateGuid(req.params.guid)) {
+        return R.handleError(res, HttpStatus.BAD_REQUEST, {
+          code: SESSION_TEMPLATE_CODES.INVALID_GUID,
+          message: SESSION_TEMPLATE_ERRORS.GUID_INVALID,
+        });
+      }
+
+      const client = (req as any).client.reference;
+
+      const result = await ScheduleService.getByGuid(req.params.guid as string, client);
+
+      if (result.status !== HttpStatus.SUCCESS) {
+        return R.handleError(res, result.status, result.response);
+      }
+      return R.handleSuccess(res, result.response);
+    } catch (error: any) {
+      return R.handleError(res, HttpStatus.INTERNAL_ERROR, {
+        code: SESSION_TEMPLATE_CODES.SEARCH_FAILED,
         message: error.message,
       });
     }
@@ -71,7 +106,7 @@ router.put(
         });
       }
 
-      const result: any = await ScheduleService.updatedSchedule(client, guid, req.body);
+      const result: any = await ScheduleService.updatedSchedule(client, guid as string, req.body);
 
       if (result.status !== HttpStatus.SUCCESS) {
         return R.handleError(res, result.status, result.response);

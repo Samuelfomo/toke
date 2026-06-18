@@ -1,6 +1,4 @@
 import axios, { AxiosInstance } from 'axios';
-// import type { AxiosInstance } from 'axios';
-// import axios from 'axios';
 import dotenv from 'dotenv';
 
 import { ApiKeyManager } from '../tools/api-key-manager.js';
@@ -13,50 +11,54 @@ dotenv.config();
  * @param secret
  * @param key
  */
+// export function createApiClient(
+//   customBaseURL?: string,
+//   secret: string = process.env.API_SECRET!,
+//   key: string = process.env.API_KEY!,
+// ): AxiosInstance {
+//   // const baseURL = customBaseURL ?? process.env.SITE_URL!;
+//   const baseURL = customBaseURL;
+//
+//   const signature = ApiKeyManager.generate(secret, key);
+//
+//   return axios.create({
+//     baseURL,
+//     headers: {
+//       'Content-Type': 'application/json',
+//       'X-Api-Key': key,
+//       'X-Api-Timestamp': Math.floor(Date.now() / 1000).toString(),
+//       'X-Api-Signature': signature,
+//     },
+//   });
+// }
+
 export function createApiClient(
   customBaseURL?: string,
   secret: string = process.env.API_SECRET!,
   key: string = process.env.API_KEY!,
 ): AxiosInstance {
-  // const baseURL = customBaseURL ?? process.env.SITE_URL!;
-  const baseURL = customBaseURL;
-
-  const signature = ApiKeyManager.generate(secret, key);
-
-  return axios.create({
-    baseURL,
+  const instance = axios.create({
+    baseURL: customBaseURL,
     headers: {
       'Content-Type': 'application/json',
-      'X-Api-Key': key,
-      'X-Api-Timestamp': Math.floor(Date.now() / 1000).toString(),
-      'X-Api-Signature': signature,
     },
   });
+
+  // Headers régénérés à chaque requête
+  instance.interceptors.request.use((config) => {
+    const timestamp = Math.floor(Date.now() / 1000).toString();
+    const signature = ApiKeyManager.generate(secret, key, timestamp);
+
+    config.headers['X-Api-Key'] = key;
+    config.headers['X-Api-Timestamp'] = timestamp;
+    config.headers['X-Api-Signature'] = signature;
+
+    return config;
+  });
+
+  return instance;
 }
 
 // client par défaut (utilise SITE_URL)
 const api = createApiClient();
 export default api;
-
-// import axios from 'axios';
-// import dotenv from 'dotenv';
-//
-// import { ApiKeyManager } from '../tools/api-key-manager.js';
-//
-// dotenv.config();
-//
-// const baseURL = process.env.SITE_URL;
-//
-// const signature = ApiKeyManager.generate(process.env.API_SECRET!, process.env.API_KEY!);
-//
-// const api = axios.create({
-//   baseURL,
-//   headers: {
-//     'Content-Type': 'application/json',
-//     'X-Api-Key': process.env.API_KEY,
-//     'X-Api-Timestamp': Math.floor(Date.now() / 1000).toString(),
-//     'X-Api-Signature': signature,
-//   },
-// });
-//
-// export default api;

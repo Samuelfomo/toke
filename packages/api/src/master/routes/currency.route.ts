@@ -78,7 +78,7 @@ router.get('/revision', Ensure.get(), async (req: Request, res: Response) => {
 router.get('/active/:status', Ensure.get(), async (req: Request, res: Response) => {
   try {
     const { status } = req.params;
-    const isActive = status.toLowerCase() === 'true' || status === '1';
+    const isActive = (status as string).toLowerCase() === 'true' || status === '1';
 
     const paginationOptions = paginationSchema.parse(req.query);
 
@@ -237,14 +237,14 @@ router.put('/:guid', Ensure.put(), async (req: Request, res: Response) => {
 router.delete('/:guid', Ensure.delete(), async (req: Request, res: Response) => {
   try {
     // ✅ Validation du GUID avec utilitaire shared
-    if (!CurrencyValidationUtils.validateCurrencyGuid(req.params.guid)) {
+    if (!CurrencyValidationUtils.validateCurrencyGuid(req.params.guid as string)) {
       return R.handleError(res, HttpStatus.BAD_REQUEST, {
         code: ERROR_CODES.INVALID_GUID,
         message: CURRENCY_ERRORS.GUID_INVALID,
       });
     }
 
-    const guid = parseInt(req.params.guid);
+    const guid = parseInt(req.params.guid as string);
 
     // Charger par GUID
     const currency = await Currency._load(guid, true);
@@ -345,18 +345,18 @@ router.get('/search/code/:code', Ensure.get(), async (req: Request, res: Respons
     const { code } = req.params;
 
     // ✅ Validation avec utilitaire shared
-    if (!CurrencyValidationUtils.validateCurrencyCode(code)) {
+    if (!CurrencyValidationUtils.validateCurrencyCode(code as string)) {
       return R.handleError(res, HttpStatus.BAD_REQUEST, {
         code: ERROR_CODES.CURRENCY_CODE_INVALID,
         message: CURRENCY_ERRORS.CODE_INVALID,
       });
     }
 
-    const currency = await Currency._load(code.toUpperCase(), false, true);
+    const currency = await Currency._load((code as string).toUpperCase(), false, true);
     if (!currency) {
       return R.handleError(res, HttpStatus.NOT_FOUND, {
         code: ERROR_CODES.CURRENCY_NOT_FOUND,
-        message: `Currency with code '${code.toUpperCase()}' not found`,
+        message: `Currency with code '${(code as string).toUpperCase()}' not found`,
       });
     }
 
@@ -379,8 +379,8 @@ router.get('/:identifier', Ensure.get(), async (req: Request, res: Response) => 
     let currency: Currency | null = null;
 
     // Essayer différentes méthodes de recherche selon le format
-    if (/^\d+$/.test(identifier)) {
-      const numericId = parseInt(identifier);
+    if (/^\d+$/.test(identifier as string)) {
+      const numericId = parseInt(identifier as string);
 
       // Essayer par ID d'abord
       currency = await Currency._load(numericId);
@@ -389,9 +389,9 @@ router.get('/:identifier', Ensure.get(), async (req: Request, res: Response) => 
       if (!currency && CurrencyValidationUtils.validateCurrencyGuid(numericId)) {
         currency = await Currency._load(numericId, true);
       }
-    } else if (CurrencyValidationUtils.validateCurrencyCode(identifier)) {
+    } else if (CurrencyValidationUtils.validateCurrencyCode(identifier as string)) {
       // Recherche par code ISO 4217
-      currency = await Currency._load(identifier.toUpperCase(), false, true);
+      currency = await Currency._load((identifier as string).toUpperCase(), false, true);
     }
 
     if (!currency) {

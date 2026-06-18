@@ -112,11 +112,10 @@ router.put(
           message: SITES_ERRORS.GUID_INVALID,
         });
       }
-      console.log('body', req.body.created_by, guid);
       const client = (req as any).client.reference;
       const validatedData = validateSitesUpdate(req.body);
 
-      const result = await SiteService.updateSite(client, guid, validatedData);
+      const result = await SiteService.updateSite(client, guid as string, validatedData);
       if (result.status !== HttpStatus.SUCCESS) {
         return R.handleError(res, result.status, result.response);
       }

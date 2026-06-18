@@ -1,0 +1,2513 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>TOKE_SPEC_PLANNING_CC_v1.md</title>
+  <style>
+  @import url("https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.9.0-alpha2/katex.min.css");
+
+  body {
+    font-family: Georgia, Cambria, serif;
+    font-size: 14px;
+    line-height: 1.7;
+    color: #373D49;
+    max-width: 800px;
+    margin: 0 auto;
+    padding: 2rem;
+  }
+  h1, h2, h3, h4, h5, h6 {
+    font-family: "Source Sans Pro", "Helvetica Neue", Helvetica, Arial, sans-serif;
+    font-weight: 600;
+    margin-top: 1.5em;
+    margin-bottom: 0.5em;
+  }
+  h1 { font-size: 2em; }
+  h2 { font-size: 1.5em; }
+  h3 { font-size: 1.25em; }
+  a { color: #00659D; text-decoration: none; }
+  a:hover { text-decoration: underline; }
+  code {
+    font-family: "Ubuntu Mono", Monaco, monospace;
+    background: #F5F7FA;
+    padding: 0.2em 0.4em;
+    border-radius: 3px;
+  }
+  pre {
+    background: #F5F7FA;
+    padding: 1em;
+    border-radius: 3px;
+    overflow-x: auto;
+  }
+  .hljs {
+    display: block;
+    overflow-x: auto;
+    padding: 0;
+    color: #333;
+  }
+  pre code { background: none; padding: 0; }
+  blockquote {
+    border-left: 3px solid #A0AABF;
+    padding-left: 1em;
+    margin-left: 0;
+    font-style: italic;
+    color: #666;
+  }
+  table {
+    border-collapse: collapse;
+    width: 100%;
+  }
+  th, td {
+    border: 1px solid #E8E8E8;
+    padding: 0.5em;
+    text-align: left;
+  }
+  th {
+    background: #F5F7FA;
+    font-weight: 600;
+  }
+  #preview .table {
+    width: auto;
+  }
+  img {
+    max-width: 100%;
+    height: auto;
+  }
+  .katex-display {
+    overflow-x: auto;
+    overflow-y: hidden;
+  }
+</style>
+</head>
+<body id="preview">
+<h1 class="code-line has-line-data" data-line-start="0" data-line-end="1"><a id="Tok_Spcification_Fonctionnelle_0"></a>Toké — Spécification Fonctionnelle</h1>
+<h2 class="code-line has-line-data" data-line-start="1" data-line-end="2"><a id="Modules_Planning_Centre_dAppels_1"></a>Modules Planning &amp; Centre d’Appels</h2>
+<blockquote>
+<p class="has-line-data" data-line-start="3" data-line-end="4"><strong>Version</strong> : 1.0 — Document de référence pour le Comité de Direction LMT et l’équipe technique Toké</p>
+<p class="has-line-data" data-line-start="5" data-line-end="6"><strong>Statut</strong> : Spécification fonctionnelle pour validation. Ne contient pas de code, mais définit le périmètre, l’architecture cible, les user stories, les contrats d’intégration et le ROI attendu.</p>
+<p class="has-line-data" data-line-start="7" data-line-end="8"><strong>Public visé</strong> : Décideur LMT, sponsor Toké, équipe produit, équipe d’ingénierie.</p>
+<p class="has-line-data" data-line-start="9" data-line-end="10"><strong>Document préparé sur la base</strong> : Collections Postman Toké, document <code>TOKE_INTEGRATION_REFERENCE.md</code>, plannings Excel LMT semaine S20 2026 (<code>Plannings_LMT_S20_2026.xlsx</code> + <code>PLANNINGS_AE_DA_BO_S20_2026.xlsm</code>).</p>
+</blockquote>
+<hr>
+<h2 class="code-line has-line-data" data-line-start="13" data-line-end="14"><a id="Sommaire_13"></a>Sommaire</h2>
+<ul>
+<li class="has-line-data" data-line-start="15" data-line-end="16"><a href="#executive-summary">Executive Summary</a></li>
+<li class="has-line-data" data-line-start="16" data-line-end="17"><a href="#1-vision-produit">1. Vision produit</a></li>
+<li class="has-line-data" data-line-start="17" data-line-end="18"><a href="#2-cas-dusage-et-personas">2. Cas d’usage et personas</a></li>
+<li class="has-line-data" data-line-start="18" data-line-end="19"><a href="#3-architecture-cible">3. Architecture cible</a></li>
+<li class="has-line-data" data-line-start="19" data-line-end="20"><a href="#4-mod%C3%A8le-de-donn%C3%A9es">4. Modèle de données</a></li>
+<li class="has-line-data" data-line-start="20" data-line-end="21"><a href="#5-user-stories-par-release">5. User stories par release</a></li>
+<li class="has-line-data" data-line-start="21" data-line-end="22"><a href="#6-wireframes-textuels">6. Wireframes textuels</a></li>
+<li class="has-line-data" data-line-start="22" data-line-end="23"><a href="#7-int%C3%A9gration-tok%C3%A9-core--extension">7. Intégration Toké Core ↔ Extension</a></li>
+<li class="has-line-data" data-line-start="23" data-line-end="24"><a href="#8-plan-de-migration-depuis-excel-lmt">8. Plan de migration depuis Excel LMT</a></li>
+<li class="has-line-data" data-line-start="24" data-line-end="25"><a href="#9-kpis-et-mesure-du-roi">9. KPIs et mesure du ROI</a></li>
+<li class="has-line-data" data-line-start="25" data-line-end="26"><a href="#10-risques-arbitrages-et-hypoth%C3%A8ses">10. Risques, arbitrages et hypothèses</a></li>
+<li class="has-line-data" data-line-start="26" data-line-end="28"><a href="#annexes">Annexes</a></li>
+</ul>
+<hr>
+<h2 class="code-line has-line-data" data-line-start="30" data-line-end="31"><a id="Executive_Summary_30"></a>Executive Summary</h2>
+<h3 class="code-line has-line-data" data-line-start="32" data-line-end="33"><a id="Le_problme_32"></a>Le problème</h3>
+<p class="has-line-data" data-line-start="34" data-line-end="35">Les entreprises camerounaises qui gèrent des équipes à horaires variables — centres d’appels, usines, hôtels, sociétés de sécurité, hôpitaux, retail — produisent encore leurs plannings hebdomadaires manuellement dans Excel. Ce processus mobilise plusieurs personnes 10 à 20 heures par semaine, génère des erreurs récurrentes, ne se boucle pas avec la présence réelle des employés, et empêche toute mesure d’efficacité.</p>
+<p class="has-line-data" data-line-start="36" data-line-end="37">Le cas pilote <strong>LMT</strong> (Light Management Technology) en est un exemple emblématique. LMT gère environ <strong>250 agents</strong> répartis sur <strong>15+ files d’attente</strong> clients (ENEO, BUCREP, UPOWA, PAM, VERICAM, et plusieurs autres). Leur planification s’appuie sur deux fichiers Excel : un calculateur Erlang C importé de Call Centre Helper, et un planning nominatif construit à la main. Les deux fichiers ne sont jamais synchronisés automatiquement et le shrinkage (taux d’absence/inactivité) est estimé “au doigt mouillé” parce qu’aucune donnée de présence réelle ne remonte vers le planning.</p>
+<h3 class="code-line has-line-data" data-line-start="38" data-line-end="39"><a id="La_solution_38"></a>La solution</h3>
+<p class="has-line-data" data-line-start="40" data-line-end="41">Toké, dans son état actuel, est une plateforme robuste de pointage géofencé, mémos validés et hiérarchie organisationnelle. Elle est commercialisable telle quelle pour des entreprises classiques. Pour adresser les besoins des entreprises à horaires variables, nous proposons d’ajouter <strong>deux nouveaux modules empilables</strong> :</p>
+<ol>
+<li class="has-line-data" data-line-start="42" data-line-end="43"><strong>Module Planning</strong> (horizontal, vendable indépendamment) : gestion des shifts prévisionnels, calendrier mobile employé, contraintes RH, boucle pointage vs prévu. Adresse usines, hôtels, hôpitaux, retail, sécurité.</li>
+<li class="has-line-data" data-line-start="43" data-line-end="45"><strong>Module Centre d’Appels</strong> (vertical, dépend du Module Planning) : forecasting via CSV standardisé, dimensionnement Erlang C, scheduling semi-automatique, dashboard temps réel d’adhérence, prédiction du niveau de service. Adresse les centres d’appels et services de relation client.</li>
+</ol>
+<p class="has-line-data" data-line-start="45" data-line-end="46">Le Module Planning est conçu comme une <strong>brique générique</strong> qui transforme Toké d’une plateforme de pointage en plateforme <strong>WFM (Workforce Management)</strong> complète. Le Module CC est l’instance verticale qui sert LMT comme client pilote.</p>
+<h3 class="code-line has-line-data" data-line-start="47" data-line-end="48"><a id="Phasage_et_dure_47"></a>Phasage et durée</h3>
+<table class="table table-striped table-bordered">
+<thead>
+<tr>
+<th>Phase</th>
+<th>Durée</th>
+<th>Périmètre</th>
+<th>Bénéficiaire</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>P0</strong></td>
+<td>6-8 sem</td>
+<td>Fondations transverses Toké (webhooks, OpenAPI, signature documentée, pagination, push notif)</td>
+<td>Tous modules futurs</td>
+</tr>
+<tr>
+<td><strong>P1</strong></td>
+<td>10-12 sem</td>
+<td>Module Planning v1 (manuel assisté + mobile)</td>
+<td>Toute entreprise avec horaires variables</td>
+</tr>
+<tr>
+<td><strong>P2</strong></td>
+<td>12-14 sem</td>
+<td>Module CC v1 (Erlang C + scheduling semi-auto + RTA)</td>
+<td>LMT et centres d’appels</td>
+</tr>
+<tr>
+<td><strong>P3</strong></td>
+<td>12-16 sem</td>
+<td>CC avancé : multi-skill simulation + scheduling par solveur + forecasting ML</td>
+<td>Centres d’appels exigeants</td>
+</tr>
+</tbody>
+</table>
+<p class="has-line-data" data-line-start="56" data-line-end="57"><strong>Premier livrable utilisable chez LMT : ~7-8 mois</strong> (fin de P2).</p>
+<h3 class="code-line has-line-data" data-line-start="58" data-line-end="59"><a id="ROI_estim_pour_LMT_ordres_de_grandeur_58"></a>ROI estimé pour LMT (ordres de grandeur)</h3>
+<table class="table table-striped table-bordered">
+<thead>
+<tr>
+<th>Levier</th>
+<th>Estimation annualisée</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Temps WFM économisé (production hebdo planning)</td>
+<td>700-1000 h/an</td>
+</tr>
+<tr>
+<td>Sur-staffing évité grâce à la mesure réelle du shrinkage</td>
+<td>15-24 M FCFA/an</td>
+</tr>
+<tr>
+<td>Amélioration du Service Level → réduction des pénalités contractuelles</td>
+<td>5-10% du chiffre d’affaires sur les contrats à SLA</td>
+</tr>
+<tr>
+<td>Gain de productivité par mesure de l’adhérence</td>
+<td>5-10% sur les premiers trimestres</td>
+</tr>
+<tr>
+<td>Conformité légale renforcée (mémos horodatés, valeur probante)</td>
+<td>Non chiffré, risque réduit</td>
+</tr>
+</tbody>
+</table>
+<h3 class="code-line has-line-data" data-line-start="68" data-line-end="69"><a id="Modle_commercial_68"></a>Modèle commercial</h3>
+<p class="has-line-data" data-line-start="70" data-line-end="71">Toké est commercialisé en <strong>licences modulaires</strong> :</p>
+<ul>
+<li class="has-line-data" data-line-start="72" data-line-end="73"><strong>Toké Core</strong> : licence par siège (employé actif), prix de base.</li>
+<li class="has-line-data" data-line-start="73" data-line-end="74"><strong>Module Planning</strong> : option additionnelle par siège.</li>
+<li class="has-line-data" data-line-start="74" data-line-end="76"><strong>Module CC</strong> : option additionnelle par siège, exclusivement disponible avec le Module Planning.</li>
+</ul>
+<p class="has-line-data" data-line-start="76" data-line-end="77">LMT consommerait les trois niveaux. Une usine ou un hôtel consommerait Core + Planning.</p>
+<hr>
+<h2 class="code-line has-line-data" data-line-start="80" data-line-end="81"><a id="1_Vision_produit_80"></a>1. Vision produit</h2>
+<h3 class="code-line has-line-data" data-line-start="82" data-line-end="83"><a id="11_De_Tok_Core_Tok_Platform_82"></a>1.1 De Toké Core à Toké Platform</h3>
+<p class="has-line-data" data-line-start="84" data-line-end="85">Toké a été initialement conçu comme une <strong>solution de pointage géofencé</strong> pour les entreprises camerounaises et africaines. Le produit existant adresse parfaitement les entreprises où chaque employé pointe son heure d’arrivée et de départ, où les mémos justifient les écarts, et où la hiérarchie supervise par périmètre.</p>
+<p class="has-line-data" data-line-start="86" data-line-end="87">Le constat fait sur LMT — et qui s’applique à des dizaines de milliers d’autres entreprises sur le continent — est que <strong>dès qu’on sort du modèle “horaires fixes 8h-17h”</strong>, le besoin change radicalement. Les équipes tournent, les shifts varient, les compétences se croisent, et il faut <strong>planifier à l’avance</strong> ce que chaque employé doit faire à chaque heure de la semaine.</p>
+<p class="has-line-data" data-line-start="88" data-line-end="89">Ce besoin n’est pas un cas particulier. Il est partagé par :</p>
+<ul>
+<li class="has-line-data" data-line-start="90" data-line-end="91">Les <strong>centres d’appels</strong> (LMT, et tous les BPO)</li>
+<li class="has-line-data" data-line-start="91" data-line-end="92">Les <strong>usines</strong> avec rotations 3×8 ou 2×12</li>
+<li class="has-line-data" data-line-start="92" data-line-end="93">Les <strong>hôtels et restaurants</strong> (front desk, salle, cuisine, sécurité, étages)</li>
+<li class="has-line-data" data-line-start="93" data-line-end="94">Les <strong>hôpitaux et cliniques</strong> (gardes médicales et paramédicales, astreintes)</li>
+<li class="has-line-data" data-line-start="94" data-line-end="95">Les <strong>sociétés de sécurité privée</strong> (vacations sur sites multiples)</li>
+<li class="has-line-data" data-line-start="95" data-line-end="96">Les <strong>chaînes de magasins</strong> (rotations vendeurs, ouvertures/fermetures)</li>
+<li class="has-line-data" data-line-start="96" data-line-end="97">Les <strong>sociétés de nettoyage</strong> (équipes tournantes sur sites clients)</li>
+<li class="has-line-data" data-line-start="97" data-line-end="99">Les <strong>transporteurs</strong> (chauffeurs, équipes de quai)</li>
+</ul>
+<p class="has-line-data" data-line-start="99" data-line-end="100">La proposition est donc d’évoluer Toké d’une <strong>solution de pointage</strong> vers une <strong>plateforme WFM</strong> (Workforce Management) modulaire, dont l’usage de base reste inchangé pour les entreprises classiques, mais qui peut être enrichie par des modules pour les contextes plus exigeants.</p>
+<h3 class="code-line has-line-data" data-line-start="101" data-line-end="102"><a id="12_Modle_dempilement_modulaire_101"></a>1.2 Modèle d’empilement modulaire</h3>
+<pre><code class="has-line-data" data-line-start="104" data-line-end="137">┌─────────────────────────────────────────────────────────────┐
+│                                                             │
+│  ┌──────────────────────────────────────────────────────┐   │
+│  │  MODULE CENTRE D'APPELS (vertical)                    │  │
+│  │  • Forecasting volumes (import CSV)                   │  │
+│  │  • Erlang C sizing par queue                          │  │
+│  │  • Scheduling semi-automatique multi-queue            │  │
+│  │  • RTA Dashboard + prédiction Service Level           │  │
+│  │  • Reporting adhérence, productivité, shrinkage réel  │  │
+│  │  • Codes campagne, files, skills, AHT                 │  │
+│  └──────────────────────────────────────────────────────┘   │
+│                          ↓ s'appuie sur                     │
+│  ┌──────────────────────────────────────────────────────┐   │
+│  │  MODULE PLANNING (horizontal)                         │  │
+│  │  • Templates de shifts                                │  │
+│  │  • Assignation manuelle drag-and-drop                 │  │
+│  │  • Calendrier mobile employé                          │  │
+│  │  • Contraintes RH (repos, max heures, équité)         │  │
+│  │  • Codes congés / absences / formations               │  │
+│  │  • Boucle pointage réel vs prévu                      │  │
+│  └──────────────────────────────────────────────────────┘   │
+│                          ↓ s'appuie sur                     │
+│  ┌──────────────────────────────────────────────────────┐   │
+│  │  TOKÉ CORE (existant, commercialisé tel quel)         │  │
+│  │  • Pointage géofencé + QR code                        │  │
+│  │  • Mémos validés (valeur probante légale)             │  │
+│  │  • Hiérarchie organisationnelle                       │  │
+│  │  • Sites, géofencing, allowed roles                   │  │
+│  │  • Multi-tenant, licences, facturation                │  │
+│  └──────────────────────────────────────────────────────┘   │
+│                                                             │
+└─────────────────────────────────────────────────────────────┘
+</code></pre>
+<p class="has-line-data" data-line-start="138" data-line-end="139"><strong>Règles de composition</strong> :</p>
+<ul>
+<li class="has-line-data" data-line-start="140" data-line-end="141"><strong>Toké Core</strong> est commercialisable seul.</li>
+<li class="has-line-data" data-line-start="141" data-line-end="142"><strong>Module Planning</strong> nécessite Toké Core.</li>
+<li class="has-line-data" data-line-start="142" data-line-end="143"><strong>Module CC</strong> nécessite Module Planning + Toké Core.</li>
+<li class="has-line-data" data-line-start="143" data-line-end="144">Aucun client n’est obligé de consommer un module qu’il n’utilise pas.</li>
+<li class="has-line-data" data-line-start="144" data-line-end="146">L’UI mobile et web s’adapte au sous-ensemble des modules activés (pas de menus mort).</li>
+</ul>
+<h3 class="code-line has-line-data" data-line-start="146" data-line-end="147"><a id="13_Stratgie_commerciale_par_module_146"></a>1.3 Stratégie commerciale par module</h3>
+<table class="table table-striped table-bordered">
+<thead>
+<tr>
+<th>Module</th>
+<th>Marché cible</th>
+<th>Argumentaire de vente</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Toké Core</strong></td>
+<td>TPE/PME à horaires fixes (commerces, bureaux, ateliers, écoles)</td>
+<td>Pointage moderne, conforme légalement, mobile-first, géofencé</td>
+</tr>
+<tr>
+<td><strong>+ Module Planning</strong></td>
+<td>Usines, hôtels, hôpitaux, sécurité, retail, nettoyage, transport</td>
+<td>Planning digital, boucle réelle, fin du chaos Excel</td>
+</tr>
+<tr>
+<td><strong>+ Module CC</strong></td>
+<td>Centres d’appels BPO, services relation client internalisés</td>
+<td>Erlang C, RTA, prédiction SLA, optimisation des coûts agents</td>
+</tr>
+</tbody>
+</table>
+<p class="has-line-data" data-line-start="154" data-line-end="155">Cette stratégie permet de <strong>monétiser 3 niveaux de complexité</strong> sans dévaloriser l’offre de base. LMT consommerait les trois ; une usine cimentière consommerait Core + Planning ; une boutique de quartier consommerait Core seul.</p>
+<h3 class="code-line has-line-data" data-line-start="156" data-line-end="157"><a id="14_Positionnement_par_rapport_aux_concurrents_156"></a>1.4 Positionnement par rapport aux concurrents</h3>
+<p class="has-line-data" data-line-start="158" data-line-end="159">Les solutions WFM internationales (NICE, Verint, Calabrio, Genesys, Aspect, Injixo) sont :</p>
+<ul>
+<li class="has-line-data" data-line-start="160" data-line-end="161"><strong>Tarifées en dollars</strong> (200-500 USD/agent/mois côté outils CC)</li>
+<li class="has-line-data" data-line-start="161" data-line-end="162"><strong>Conçues pour des structures &gt; 500 agents</strong></li>
+<li class="has-line-data" data-line-start="162" data-line-end="163"><strong>Découplées de la badgeuse / pointage</strong> (qu’on doit acheter à part)</li>
+<li class="has-line-data" data-line-start="163" data-line-end="165"><strong>Lourdes à déployer</strong> (intégrateur externe nécessaire, 6-12 mois de mise en route)</li>
+</ul>
+<p class="has-line-data" data-line-start="165" data-line-end="166">Toké + Modules occupe un <strong>espace vide</strong> sur le marché africain francophone :</p>
+<ul>
+<li class="has-line-data" data-line-start="167" data-line-end="168"><strong>Tarifé en FCFA</strong>, économiquement accessible aux PME</li>
+<li class="has-line-data" data-line-start="168" data-line-end="169"><strong>Conçu pour 50 à 2000 employés</strong> (sweet spot des entreprises africaines)</li>
+<li class="has-line-data" data-line-start="169" data-line-end="170"><strong>Pointage + planning + CC dans la même plateforme</strong> (pas d’intégration tierce)</li>
+<li class="has-line-data" data-line-start="170" data-line-end="171"><strong>Mobile-first</strong>, adapté aux smartphones Android low-end</li>
+<li class="has-line-data" data-line-start="171" data-line-end="172"><strong>Déploiement en semaines</strong>, pas en années</li>
+<li class="has-line-data" data-line-start="172" data-line-end="174"><strong>Hébergement local possible</strong> (souveraineté des données)</li>
+</ul>
+<hr>
+<h2 class="code-line has-line-data" data-line-start="176" data-line-end="177"><a id="2_Cas_dusage_et_personas_176"></a>2. Cas d’usage et personas</h2>
+<h3 class="code-line has-line-data" data-line-start="178" data-line-end="179"><a id="21_Personas_178"></a>2.1 Personas</h3>
+<h4 class="code-line has-line-data" data-line-start="180" data-line-end="181"><a id="Persona_1_WFM_Analyst_Workforce_Management_Analyst_180"></a>Persona 1 — WFM Analyst (Workforce Management Analyst)</h4>
+<ul>
+<li class="has-line-data" data-line-start="182" data-line-end="183"><strong>Profil type chez LMT</strong> : Analyste avec compétences Excel avancées, parfois statisticien junior.</li>
+<li class="has-line-data" data-line-start="183" data-line-end="184"><strong>Rôle</strong> : Construit le planning hebdomadaire à partir des prévisions de volume. Maintient les paramètres Erlang. Ajuste manuellement les shifts.</li>
+<li class="has-line-data" data-line-start="184" data-line-end="185"><strong>Outils actuels</strong> : Excel (calculateur Erlang Call Centre Helper + planning nominatif).</li>
+<li class="has-line-data" data-line-start="185" data-line-end="186"><strong>Temps consacré</strong> : 12-20h par semaine.</li>
+<li class="has-line-data" data-line-start="186" data-line-end="188"><strong>Frustrations</strong> : double saisie Excel, pas de visibilité sur la présence réelle, impossible d’évaluer si le planning est bon avant la semaine suivante.</li>
+</ul>
+<h4 class="code-line has-line-data" data-line-start="188" data-line-end="189"><a id="Persona_2_RTA_Supervisor_RealTime_Adherence_188"></a>Persona 2 — RTA Supervisor (Real-Time Adherence)</h4>
+<ul>
+<li class="has-line-data" data-line-start="190" data-line-end="191"><strong>Profil type chez LMT</strong> : Superviseur opérationnel temps réel, chef d’équipe expérimenté.</li>
+<li class="has-line-data" data-line-start="191" data-line-end="192"><strong>Rôle</strong> : Surveille la présence en cours de journée. Détecte les retards, absences imprévues, agents en pause excessive. Ré-affecte les agents en intra-day.</li>
+<li class="has-line-data" data-line-start="192" data-line-end="193"><strong>Outils actuels</strong> : Inexistant. Présence visuelle, appels managers, tableau mural au mieux.</li>
+<li class="has-line-data" data-line-start="193" data-line-end="195"><strong>Frustrations</strong> : aveugle entre 8h et 22h, pas d’alerte précoce, dépend des signalements terrain.</li>
+</ul>
+<h4 class="code-line has-line-data" data-line-start="195" data-line-end="196"><a id="Persona_3_Superviseur_dquipe_Manager_195"></a>Persona 3 — Superviseur d’équipe / Manager</h4>
+<ul>
+<li class="has-line-data" data-line-start="197" data-line-end="198"><strong>Profil type chez LMT</strong> : Manager de 8 à 15 agents sur une campagne client (AMANA, ASSISTANCE, AUDACITY, etc.).</li>
+<li class="has-line-data" data-line-start="198" data-line-end="199"><strong>Rôle</strong> : Valide les mémos de ses subordonnés. Gère les ajustements ponctuels (échange de shifts, congés). Coache son équipe.</li>
+<li class="has-line-data" data-line-start="199" data-line-end="200"><strong>Outils actuels</strong> : Application Toké Manager (mobile) déjà disponible.</li>
+<li class="has-line-data" data-line-start="200" data-line-end="202"><strong>Frustrations</strong> : ne voit pas le planning prévisionnel dans Toké, doit consulter le S&amp;E Excel reçu par mail.</li>
+</ul>
+<h4 class="code-line has-line-data" data-line-start="202" data-line-end="203"><a id="Persona_4_Agent_CC_employ_pointeur_202"></a>Persona 4 — Agent CC (employé pointeur)</h4>
+<ul>
+<li class="has-line-data" data-line-start="204" data-line-end="205"><strong>Profil type chez LMT</strong> : Téléconseiller, prend les appels selon ses skills (FR, EN, PIG, FFD).</li>
+<li class="has-line-data" data-line-start="205" data-line-end="206"><strong>Rôle</strong> : Pointe en arrivée, prend des appels, justifie les retards via mémo.</li>
+<li class="has-line-data" data-line-start="206" data-line-end="207"><strong>Outils actuels</strong> : Application Toké Pointage (mobile). Reçoit son planning hebdo par mail/WhatsApp.</li>
+<li class="has-line-data" data-line-start="207" data-line-end="209"><strong>Frustrations</strong> : son planning n’est pas dans l’app, doit se rappeler de ses shifts par d’autres canaux.</li>
+</ul>
+<h4 class="code-line has-line-data" data-line-start="209" data-line-end="210"><a id="Persona_5_DRH_Direction_209"></a>Persona 5 — DRH / Direction</h4>
+<ul>
+<li class="has-line-data" data-line-start="211" data-line-end="212"><strong>Profil type chez LMT</strong> : Directeur RH, Directeur des Opérations, voire DG.</li>
+<li class="has-line-data" data-line-start="212" data-line-end="213"><strong>Rôle</strong> : Pilote la masse salariale, négocie les contrats clients, mesure la productivité globale.</li>
+<li class="has-line-data" data-line-start="213" data-line-end="214"><strong>Outils actuels</strong> : Rapports Excel mensuels, KPIs partiels, beaucoup d’opacité.</li>
+<li class="has-line-data" data-line-start="214" data-line-end="216"><strong>Frustrations</strong> : pas de vue consolidée, ROI des décisions difficile à évaluer, conformité légale à prouver.</li>
+</ul>
+<h3 class="code-line has-line-data" data-line-start="216" data-line-end="217"><a id="22_Cas_dusage_cls_par_persona_216"></a>2.2 Cas d’usage clés par persona</h3>
+<h4 class="code-line has-line-data" data-line-start="218" data-line-end="219"><a id="Pour_le_WFM_Analyst_218"></a>Pour le WFM Analyst</h4>
+<table class="table table-striped table-bordered">
+<thead>
+<tr>
+<th>Cas d’usage</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>CU-WFM-1</strong></td>
+<td>Importer un fichier CSV de volumes prévisionnels (calls × queue × tranche 30 min) pour la semaine à venir</td>
+</tr>
+<tr>
+<td><strong>CU-WFM-2</strong></td>
+<td>Lancer le calcul Erlang C : pour chaque tranche × queue, l’outil calcule les agents requis</td>
+</tr>
+<tr>
+<td><strong>CU-WFM-3</strong></td>
+<td>Visualiser la matrice “Agents requis” et la comparer à la capacité disponible (agents éligibles à chaque queue)</td>
+</tr>
+<tr>
+<td><strong>CU-WFM-4</strong></td>
+<td>Lancer la génération semi-automatique de planning : l’outil propose des shifts qui couvrent la matrice</td>
+</tr>
+<tr>
+<td><strong>CU-WFM-5</strong></td>
+<td>Ajuster manuellement le planning par drag-and-drop</td>
+</tr>
+<tr>
+<td><strong>CU-WFM-6</strong></td>
+<td>Publier le planning : push vers les calendriers employés de Toké</td>
+</tr>
+<tr>
+<td><strong>CU-WFM-7</strong></td>
+<td>Ajuster les paramètres : shrinkage cible, AHT par queue, niveau de service cible</td>
+</tr>
+<tr>
+<td><strong>CU-WFM-8</strong></td>
+<td>Consulter le shrinkage réel mesuré sur les semaines passées et l’utiliser pour ajuster les semaines à venir</td>
+</tr>
+</tbody>
+</table>
+<h4 class="code-line has-line-data" data-line-start="231" data-line-end="232"><a id="Pour_le_RTA_Supervisor_231"></a>Pour le RTA Supervisor</h4>
+<table class="table table-striped table-bordered">
+<thead>
+<tr>
+<th>Cas d’usage</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>CU-RTA-1</strong></td>
+<td>Voir le dashboard temps réel : qui devait être présent, qui l’est, écarts</td>
+</tr>
+<tr>
+<td><strong>CU-RTA-2</strong></td>
+<td>Recevoir des alertes proactives (retard &gt; 5 min, absence non justifiée, oubli de clock-out, sous-effectif &gt; 15%)</td>
+</tr>
+<tr>
+<td><strong>CU-RTA-3</strong></td>
+<td>Visualiser le Service Level en cours par queue, comparé à la cible</td>
+</tr>
+<tr>
+<td><strong>CU-RTA-4</strong></td>
+<td>Lancer une ré-affectation rapide (déplacer un agent d’une queue à une autre)</td>
+</tr>
+<tr>
+<td><strong>CU-RTA-5</strong></td>
+<td>Demander un mémo à un agent dont le pointage présente une anomalie</td>
+</tr>
+<tr>
+<td><strong>CU-RTA-6</strong></td>
+<td>Voir la projection du SL pour la fin de journée à partir des données du matin</td>
+</tr>
+</tbody>
+</table>
+<h4 class="code-line has-line-data" data-line-start="242" data-line-end="243"><a id="Pour_le_Manager_Superviseur_dquipe_242"></a>Pour le Manager / Superviseur d’équipe</h4>
+<table class="table table-striped table-bordered">
+<thead>
+<tr>
+<th>Cas d’usage</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>CU-MAN-1</strong></td>
+<td>Consulter le planning de son équipe dans l’app mobile Toké</td>
+</tr>
+<tr>
+<td><strong>CU-MAN-2</strong></td>
+<td>Valider les demandes d’échange de shift entre deux agents</td>
+</tr>
+<tr>
+<td><strong>CU-MAN-3</strong></td>
+<td>Valider les mémos qui affectent le planning (retards justifiés, congés, formations)</td>
+</tr>
+<tr>
+<td><strong>CU-MAN-4</strong></td>
+<td>Comparer adhérence prévue vs réelle de chaque membre de son équipe</td>
+</tr>
+<tr>
+<td><strong>CU-MAN-5</strong></td>
+<td>Demander une modification au WFM Analyst (volume imprévu, demande client)</td>
+</tr>
+</tbody>
+</table>
+<h4 class="code-line has-line-data" data-line-start="252" data-line-end="253"><a id="Pour_lAgent_252"></a>Pour l’Agent</h4>
+<table class="table table-striped table-bordered">
+<thead>
+<tr>
+<th>Cas d’usage</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>CU-AGT-1</strong></td>
+<td>Consulter son planning de la semaine dans l’app mobile</td>
+</tr>
+<tr>
+<td><strong>CU-AGT-2</strong></td>
+<td>Recevoir une notification push 1h avant son shift</td>
+</tr>
+<tr>
+<td><strong>CU-AGT-3</strong></td>
+<td>Demander un échange de shift avec un collègue</td>
+</tr>
+<tr>
+<td><strong>CU-AGT-4</strong></td>
+<td>Pointer arrivée / pause / départ comme aujourd’hui dans Toké Core</td>
+</tr>
+<tr>
+<td><strong>CU-AGT-5</strong></td>
+<td>Justifier un retard ou une absence via mémo</td>
+</tr>
+</tbody>
+</table>
+<h4 class="code-line has-line-data" data-line-start="262" data-line-end="263"><a id="Pour_la_DRH_Direction_262"></a>Pour la DRH / Direction</h4>
+<table class="table table-striped table-bordered">
+<thead>
+<tr>
+<th>Cas d’usage</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>CU-DIR-1</strong></td>
+<td>Consulter le rapport hebdomadaire d’adhérence par équipe et par campagne</td>
+</tr>
+<tr>
+<td><strong>CU-DIR-2</strong></td>
+<td>Comparer Service Level prédit vs réel par campagne</td>
+</tr>
+<tr>
+<td><strong>CU-DIR-3</strong></td>
+<td>Mesurer le shrinkage réel et son évolution dans le temps</td>
+</tr>
+<tr>
+<td><strong>CU-DIR-4</strong></td>
+<td>Exporter les heures de présence vers le système de paie (CSV ou API)</td>
+</tr>
+<tr>
+<td><strong>CU-DIR-5</strong></td>
+<td>Auditer l’historique de planning et d’adhérence pour la conformité légale</td>
+</tr>
+</tbody>
+</table>
+<h3 class="code-line has-line-data" data-line-start="272" data-line-end="273"><a id="23_Parcours_utilisateur_principal_production_du_planning_hebdo_272"></a>2.3 Parcours utilisateur principal (production du planning hebdo)</h3>
+<pre><code class="has-line-data" data-line-start="275" data-line-end="306">LUNDI N-1                    MARDI N-1                    MERCREDI N-1
+───────────                  ───────────                  ─────────────
+WFM Analyst                  WFM Analyst                  WFM Analyst
+Importe le CSV      ────→   Lance Erlang C      ────→   Génère planning
+volumes prévus               + ajuste params              semi-automatique
+                                                                │
+                                                                ↓
+JEUDI N-1                    VENDREDI N-1                 SAMEDI N-1
+─────────                    ────────────                 ───────────
+WFM + Managers               WFM Analyst                  Système Toké
+Revue + ajustements ────→   Publication finale ────→    Pousse calendriers
++ validation                 + notifications              + push agents
+                                                                │
+                                                                ↓
+                            ═══════════════════════════════════════
+                                  SEMAINE N — EXÉCUTION
+                            ═══════════════════════════════════════
+                                                                │
+                                                                ↓
+LUN-DIM (toute la semaine)
+─────────────────────────
+RTA Supervisor surveille en temps réel
+Agents pointent dans Toké
+Mémos justifient les écarts
+                                                                │
+                                                                ↓
+LUNDI N+1
+─────────
+Rapport hebdo d'adhérence livré à la Direction
+Shrinkage réel injecté dans le sizing de la semaine N+2
+</code></pre>
+<hr>
+<h2 class="code-line has-line-data" data-line-start="309" data-line-end="310"><a id="3_Architecture_cible_309"></a>3. Architecture cible</h2>
+<h3 class="code-line has-line-data" data-line-start="311" data-line-end="312"><a id="31_Vue_densemble_311"></a>3.1 Vue d’ensemble</h3>
+<pre><code class="has-line-data" data-line-start="314" data-line-end="361">┌──────────────────────────────────────────────────────────────────────────┐
+│                       UTILISATEURS                                       │
+│  Agent CC  ──  Manager  ──  WFM Analyst  ──  RTA Supervisor  ──  DRH     │
+└─────┬──────────────┬──────────────┬──────────────┬──────────────┬────────┘
+      │              │              │              │              │
+      ↓              ↓              ↓              ↓              ↓
+┌────────────────────┐    ┌──────────────────────────────────────────────┐
+│  APP MOBILE TOKÉ   │    │       EXTENSION WEB TOKÉ                     │
+│  (Pointage +       │    │       (Module Planning + Module CC)          │
+│   Manager +        │    │                                              │
+│   Mon Planning)    │    │  ┌─────────┐ ┌─────────┐ ┌─────────┐         │
+│                    │    │  │Forecast │ │Sizing   │ │Schedule │         │
+│  • Voir planning   │    │  │CSV In   │ │Erlang C │ │Builder  │         │
+│  • Notif shifts    │    │  └─────────┘ └─────────┘ └─────────┘         │
+│  • Demande swap    │    │                                              │
+│  • Pointage        │    │  ┌─────────┐ ┌─────────┐ ┌─────────┐         │
+│                    │    │  │RTA Live │ │Adherence│ │Reports  │         │
+│                    │    │  │Dashboard│ │Tracker  │ │&amp; Export │         │
+│                    │    │  └─────────┘ └─────────┘ └─────────┘         │
+└─────────┬──────────┘    └──────────────────┬───────────────────────────┘
+          │                                  │
+          │     API REST signée Toké         │
+          └──────────────┬───────────────────┘
+                         │
+                         ↓
+┌───────────────────────────────────────────────────────────────────────────┐
+│                          TOKÉ BACKEND                                     │
+│                                                                           │
+│  ┌─────────────────┐  ┌──────────────────┐  ┌──────────────────────────┐  │
+│  │  Toké Core      │  │  Module Planning │  │  Module CC               │  │
+│  │  (existant)     │  │  (nouveau)       │  │  (nouveau)               │  │
+│  │                 │  │                  │  │                          │  │
+│  │ Users           │  │ ShiftTemplate    │  │ Queue                    │  │
+│  │ Sites           │  │ PlannedShift     │  │ Skill / AgentSkill       │  │
+│  │ TimeEntry       │  │ ShiftConstraint  │  │ VolumeForecast           │  │
+│  │ WorkSession     │  │ ShiftSwapReq     │  │ StaffingRequirement      │  │
+│  │ Memo            │  │ AbsenceCode      │  │ AdherenceRecord          │  │
+│  │ OrgHierarchy    │  │                  │  │ ServiceLevelRecord       │  │
+│  │ Tenant/License  │  │                  │  │                          │  │
+│  └─────────────────┘  └──────────────────┘  └──────────────────────────┘  │
+│                                                                           │
+│  ┌──────────────────────────────────────────────────────────────────────┐ │
+│  │  Bus d'événements (webhooks sortants + queue interne)                │ │
+│  │  time_entry.created │ memo.validated │ shift.published │ ...         │ │
+│  └──────────────────────────────────────────────────────────────────────┘ │
+└───────────────────────────────────────────────────────────────────────────┘
+</code></pre>
+<h3 class="code-line has-line-data" data-line-start="362" data-line-end="363"><a id="32_Composants_et_responsabilits_362"></a>3.2 Composants et responsabilités</h3>
+<table class="table table-striped table-bordered">
+<thead>
+<tr>
+<th>Composant</th>
+<th>Responsabilité</th>
+<th>Statut</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Toké Core</strong></td>
+<td>Pointage, mémos, hiérarchie, sites, multi-tenant</td>
+<td>Existant — évolutions ciblées en P0</td>
+</tr>
+<tr>
+<td><strong>Module Planning</strong></td>
+<td>Shifts prévisionnels, calendrier agent, contraintes RH, codes absence</td>
+<td>Nouveau — P1</td>
+</tr>
+<tr>
+<td><strong>Module CC</strong></td>
+<td>Forecasting, Erlang C, scheduling, RTA, reporting WFM</td>
+<td>Nouveau — P2/P3</td>
+</tr>
+<tr>
+<td><strong>App Mobile Toké</strong></td>
+<td>UI agent + manager, calendrier intégré</td>
+<td>Existant — extension UI en P1</td>
+</tr>
+<tr>
+<td><strong>Extension Web Toké</strong></td>
+<td>Console WFM (forecasting, scheduling, RTA, reporting)</td>
+<td>Nouveau — P1/P2</td>
+</tr>
+<tr>
+<td><strong>Bus d’événements</strong></td>
+<td>Webhooks sortants vers extensions et intégrateurs</td>
+<td>Nouveau — P0</td>
+</tr>
+</tbody>
+</table>
+<h3 class="code-line has-line-data" data-line-start="373" data-line-end="374"><a id="33_Flux_de_donnes_critiques_373"></a>3.3 Flux de données critiques</h3>
+<h4 class="code-line has-line-data" data-line-start="375" data-line-end="376"><a id="Flux_1_Cration_et_publication_dun_planning_375"></a>Flux 1 — Création et publication d’un planning</h4>
+<pre><code class="has-line-data" data-line-start="378" data-line-end="411">[WFM Analyst]
+     │
+     │ 1. Importe CSV volumes
+     ↓
+[Extension Web - Forecasting]
+     │
+     │ 2. Stocke en VolumeForecast (Module CC)
+     ↓
+[Extension Web - Sizing Erlang]
+     │
+     │ 3. Calcule et stocke StaffingRequirement (Module CC)
+     │ 4. Lit shrinkage réel des 4 dernières semaines (depuis Toké Core)
+     ↓
+[Extension Web - Schedule Builder]
+     │
+     │ 5. Génère shifts candidats (heuristique semi-auto)
+     │ 6. Lit AgentSkill, ShiftConstraint, AbsenceCode (mémos validés)
+     ↓
+[WFM Analyst]
+     │
+     │ 7. Ajuste manuellement
+     │ 8. Valide
+     ↓
+[Extension Web - Publication]
+     │
+     │ 9. POST /planning/shifts (création PlannedShift)
+     │10. Trigger webhook shift.published
+     ↓
+[App Mobile - Agents]
+     │
+     │11. Reçoit push notification &quot;Votre planning S20 est disponible&quot;
+     │12. Affiche planning dans l'app
+</code></pre>
+<h4 class="code-line has-line-data" data-line-start="412" data-line-end="413"><a id="Flux_2_Boucle_Tok_Planning_mesure_adhrence_412"></a>Flux 2 — Boucle Toké → Planning (mesure adhérence)</h4>
+<pre><code class="has-line-data" data-line-start="415" data-line-end="439">[Agent]
+     │
+     │ 1. Pointe arrivée dans app Toké
+     ↓
+[Toké Core - TimeEntry]
+     │
+     │ 2. Crée TimeEntry + ouvre WorkSession
+     │ 3. Émet webhook time_entry.created
+     ↓
+[Bus d'événements]
+     │
+     │ 4. Diffuse vers abonnés
+     ↓
+[Extension Web - Adherence Tracker]
+     │
+     │ 5. Récupère le PlannedShift de l'agent pour ce jour
+     │ 6. Compare clocked_at vs scheduled_start
+     │ 7. Si retard &gt; 5 min : alerte RTA + suggestion de mémo
+     │ 8. Met à jour AdherenceRecord (Module CC)
+     ↓
+[Extension Web - RTA Dashboard]
+     │
+     │ 9. Affiche en temps réel: agent attendu, agent arrivé, écart
+</code></pre>
+<h4 class="code-line has-line-data" data-line-start="440" data-line-end="441"><a id="Flux_3_Boucle_mmo_valid_planning_440"></a>Flux 3 — Boucle mémo validé → planning</h4>
+<pre><code class="has-line-data" data-line-start="443" data-line-end="463">[Manager]
+     │
+     │ 1. Valide un mémo &quot;unplanned_absence&quot; via Toké Manager
+     ↓
+[Toké Core - Memo]
+     │
+     │ 2. Change le memo_status à 'validated'
+     │ 3. Émet webhook memo.validated
+     ↓
+[Bus d'événements]
+     │
+     │ 4. Diffuse
+     ↓
+[Extension Web - Schedule Sync]
+     │
+     │ 5. Identifie le PlannedShift impacté
+     │ 6. Marque le shift comme &quot;covered by absence&quot;
+     │ 7. Met à jour le shrinkage observé
+     │ 8. Si la semaine est en cours : alerte RTA pour sous-couverture
+</code></pre>
+<h3 class="code-line has-line-data" data-line-start="464" data-line-end="465"><a id="34_Stack_technique_recommande_464"></a>3.4 Stack technique recommandée</h3>
+<blockquote>
+<p class="has-line-data" data-line-start="466" data-line-end="467">Cette section donne des recommandations indicatives. L’architecture détaillée sera précisée lors de la phase de conception technique.</p>
+</blockquote>
+<table class="table table-striped table-bordered">
+<thead>
+<tr>
+<th>Couche</th>
+<th>Recommandation</th>
+<th>Justification</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Backend Toké</strong></td>
+<td>Stack existante (à compléter selon contraintes équipe)</td>
+<td>Continuité, expertise interne</td>
+</tr>
+<tr>
+<td><strong>Extension Web</strong></td>
+<td>React + TypeScript en frontend, Node.js / Python en backend</td>
+<td>Standard ouvert, recrutement facile</td>
+</tr>
+<tr>
+<td><strong>Moteur Erlang C</strong></td>
+<td>Python (mpmath pour la précision arbitraire) ou JS pur</td>
+<td>Erlang C est une formule, pas besoin de stack lourde</td>
+</tr>
+<tr>
+<td><strong>Moteur de scheduling P2</strong></td>
+<td>Python avec heuristique de bin packing</td>
+<td>Itération rapide, lisibilité</td>
+</tr>
+<tr>
+<td><strong>Moteur de scheduling P3</strong></td>
+<td>Python + OR-Tools (Google) ou solveur dédié</td>
+<td>Optimisation MILP, gratuit, mature</td>
+</tr>
+<tr>
+<td><strong>Base de données</strong></td>
+<td>PostgreSQL (existant Toké présumé)</td>
+<td>ACID, transactions, JSONB pour memo_context</td>
+</tr>
+<tr>
+<td><strong>Bus d’événements</strong></td>
+<td>Postgres LISTEN/NOTIFY pour démarrer, Redis Streams ou RabbitMQ si volume</td>
+<td>Simplicité d’abord, scale au besoin</td>
+</tr>
+<tr>
+<td><strong>Webhooks sortants</strong></td>
+<td>Petit service worker avec retry exponentiel</td>
+<td>Pattern standard</td>
+</tr>
+<tr>
+<td><strong>Cache temps réel</strong></td>
+<td>Redis pour les états RTA (TTL court)</td>
+<td>Lecture intensive du dashboard RTA</td>
+</tr>
+<tr>
+<td><strong>Notifications push</strong></td>
+<td>Firebase Cloud Messaging (FCM)</td>
+<td>Gratuit, standard Android</td>
+</tr>
+<tr>
+<td><strong>Stockage CSV imports</strong></td>
+<td>Bucket S3-compatible (MinIO en self-hosted)</td>
+<td>Historique audit</td>
+</tr>
+</tbody>
+</table>
+<h3 class="code-line has-line-data" data-line-start="482" data-line-end="483"><a id="35_Topologie_de_dploiement_482"></a>3.5 Topologie de déploiement</h3>
+<pre><code class="has-line-data" data-line-start="485" data-line-end="532">┌────────────────────────────────────────────────────────────────┐
+│                     INTERNET                                   │
+└──────────────────────────────┬─────────────────────────────────┘
+                               │
+                  ┌────────────┴────────────┐
+                  │                         │
+                  ↓                         ↓
+            ┌──────────┐              ┌──────────┐
+            │  Mobile  │              │   Web    │
+            │   App    │              │   App    │
+            │ (Android)│              │  (React) │
+            └─────┬────┘              └─────┬────┘
+                  │                         │
+                  └────────────┬────────────┘
+                               │ HTTPS + signed requests
+                               ↓
+                  ┌─────────────────────────┐
+                  │      API Gateway        │
+                  │  (auth, rate limit)     │
+                  └────────┬────────────────┘
+                           │
+              ┌────────────┼────────────┐
+              ↓            ↓            ↓
+        ┌─────────┐  ┌──────────┐  ┌──────────┐
+        │  Toké   │  │  Module  │  │  Module  │
+        │  Core   │  │  Planning│  │   CC     │
+        │  API    │  │   API    │  │   API    │
+        └────┬────┘  └─────┬────┘  └─────┬────┘
+             │             │              │
+             └─────────────┼──────────────┘
+                           │
+                  ┌────────┴────────┐
+                  │                 │
+                  ↓                 ↓
+          ┌──────────────┐  ┌──────────────┐
+          │  PostgreSQL  │  │    Redis     │
+          │  (principal) │  │ (cache RTA)  │
+          └──────────────┘  └──────────────┘
+                  ↑
+                  │
+          ┌───────┴───────┐
+          │  Workers      │
+          │ (webhooks,    │
+          │  scheduling,  │
+          │  reporting)   │
+          └───────────────┘
+</code></pre>
+<hr>
+<h2 class="code-line has-line-data" data-line-start="535" data-line-end="536"><a id="4_Modle_de_donnes_535"></a>4. Modèle de données</h2>
+<h3 class="code-line has-line-data" data-line-start="537" data-line-end="538"><a id="41_Tok_Core_existant_rappel_537"></a>4.1 Toké Core (existant — rappel)</h3>
+<table class="table table-striped table-bordered">
+<thead>
+<tr>
+<th>Entité</th>
+<th>Rôle</th>
+<th>Clé</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>Tenant</code></td>
+<td>Une entreprise cliente</td>
+<td><code>guid</code>, <code>subdomain</code></td>
+</tr>
+<tr>
+<td><code>User</code></td>
+<td>Tout être humain (agent, manager, WFM, RH, etc.)</td>
+<td><code>guid</code>, <code>email</code></td>
+</tr>
+<tr>
+<td><code>Site</code></td>
+<td>Lieu de pointage avec géofence</td>
+<td><code>guid</code>, <code>tenant_guid</code></td>
+</tr>
+<tr>
+<td><code>TimeEntry</code></td>
+<td>Événement atomique de pointage</td>
+<td><code>guid</code>, <code>user_guid</code></td>
+</tr>
+<tr>
+<td><code>WorkSession</code></td>
+<td>Groupement clock_in/clock_out</td>
+<td><code>guid</code>, <code>user_guid</code></td>
+</tr>
+<tr>
+<td><code>Memo</code></td>
+<td>Document de justification</td>
+<td><code>guid</code>, <code>target_user_guid</code></td>
+</tr>
+<tr>
+<td><code>OrgHierarchy</code></td>
+<td>Relation supervisor → subordinate</td>
+<td><code>(subordinate_guid, supervisor_guid)</code></td>
+</tr>
+<tr>
+<td><code>Role</code></td>
+<td>EMPLOYEE, MANAGER, HR_ADMIN, AUDITOR, etc.</td>
+<td><code>code</code></td>
+</tr>
+</tbody>
+</table>
+<h3 class="code-line has-line-data" data-line-start="550" data-line-end="551"><a id="42_Module_Planning_nouveau_550"></a>4.2 Module Planning (nouveau)</h3>
+<table class="table table-striped table-bordered">
+<thead>
+<tr>
+<th>Entité</th>
+<th>Rôle</th>
+<th>Champs clés</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>ShiftTemplate</code></td>
+<td>Gabarit réutilisable de shift</td>
+<td><code>guid</code>, <code>tenant_guid</code>, <code>code</code> (07h-16h, NUIT, etc.), <code>start_time</code>, <code>end_time</code>, <code>break_pattern</code>, <code>expected_hours</code></td>
+</tr>
+<tr>
+<td><code>PlannedShift</code></td>
+<td>Shift assigné à un agent un jour donné</td>
+<td><code>guid</code>, <code>user_guid</code>, <code>template_guid</code>, <code>date</code>, <code>start_at</code>, <code>end_at</code>, <code>breaks[]</code>, <code>site_guid</code>, <code>assigned_skill</code>, <code>status</code> (draft/published/in_progress/completed/missed)</td>
+</tr>
+<tr>
+<td><code>ShiftConstraint</code></td>
+<td>Règles RH applicables à un user ou tenant</td>
+<td><code>guid</code>, <code>scope</code> (user/team/tenant), <code>rule_type</code> (max_weekly_hours, min_rest_between_shifts, max_consecutive_nights, etc.), <code>value</code></td>
+</tr>
+<tr>
+<td><code>ShiftSwapRequest</code></td>
+<td>Demande d’échange entre 2 agents</td>
+<td><code>guid</code>, <code>from_shift_guid</code>, <code>to_shift_guid</code>, <code>requester</code>, <code>target</code>, <code>status</code> (pending/approved/rejected)</td>
+</tr>
+<tr>
+<td><code>AbsenceCode</code></td>
+<td>Codes typés (CA, CM, FERIE, FORM, etc.)</td>
+<td><code>code</code>, <code>label</code>, <code>affects_planning</code>, <code>affects_payroll</code>, <code>requires_memo</code></td>
+</tr>
+<tr>
+<td><code>WeeklyPlan</code></td>
+<td>Conteneur méta d’un planning hebdo</td>
+<td><code>guid</code>, <code>tenant_guid</code>, <code>iso_week</code>, <code>year</code>, <code>status</code> (draft/published/closed), <code>published_at</code>, <code>published_by</code></td>
+</tr>
+</tbody>
+</table>
+<h3 class="code-line has-line-data" data-line-start="561" data-line-end="562"><a id="43_Module_CC_nouveau_561"></a>4.3 Module CC (nouveau)</h3>
+<table class="table table-striped table-bordered">
+<thead>
+<tr>
+<th>Entité</th>
+<th>Rôle</th>
+<th>Champs clés</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>Queue</code></td>
+<td>File d’attente client / type de demande</td>
+<td><code>guid</code>, <code>tenant_guid</code>, <code>code</code> (FR, EN, KAABU, etc.), <code>label</code>, <code>client_name</code>, <code>target_service_level</code>, <code>target_answer_time_sec</code>, <code>default_aht_sec</code></td>
+</tr>
+<tr>
+<td><code>Skill</code></td>
+<td>Compétence d’agent</td>
+<td><code>guid</code>, <code>tenant_guid</code>, <code>code</code> (FFD, FRE, ENG, BU, etc.), <code>label</code></td>
+</tr>
+<tr>
+<td><code>QueueSkillRequirement</code></td>
+<td>Compétences requises pour une queue</td>
+<td><code>(queue_guid, skill_guid, required)</code></td>
+</tr>
+<tr>
+<td><code>AgentSkill</code></td>
+<td>Compétences détenues par un agent</td>
+<td><code>(user_guid, skill_guid, level)</code></td>
+</tr>
+<tr>
+<td><code>VolumeForecast</code></td>
+<td>Volume prévu pour une queue, une tranche</td>
+<td><code>guid</code>, <code>queue_guid</code>, <code>forecast_date</code>, <code>time_slot_start</code>, <code>interval_minutes</code>, <code>predicted_calls</code>, <code>predicted_aht_sec</code>, <code>source</code> (csv_import/manual/ml), <code>imported_at</code></td>
+</tr>
+<tr>
+<td><code>StaffingRequirement</code></td>
+<td>Agents requis (sortie Erlang)</td>
+<td><code>guid</code>, <code>queue_guid</code>, <code>target_date</code>, <code>time_slot_start</code>, <code>agents_required</code>, <code>service_level_target</code>, <code>shrinkage_applied</code>, <code>max_occupancy</code>, <code>calculated_at</code></td>
+</tr>
+<tr>
+<td><code>ShiftSkillAssignment</code></td>
+<td>Skill effective d’un shift</td>
+<td><code>(planned_shift_guid, skill_guid)</code></td>
+</tr>
+<tr>
+<td><code>AdherenceRecord</code></td>
+<td>Mesure d’adhérence agent</td>
+<td><code>guid</code>, <code>user_guid</code>, <code>date</code>, <code>planned_shift_guid</code>, <code>planned_minutes</code>, <code>actual_minutes</code>, <code>adherence_pct</code>, <code>late_minutes</code>, <code>early_leave_minutes</code></td>
+</tr>
+<tr>
+<td><code>ServiceLevelRecord</code></td>
+<td>SL prédit vs réel par tranche</td>
+<td><code>guid</code>, <code>queue_guid</code>, <code>time_slot_start</code>, <code>predicted_sl</code>, <code>actual_sl</code>, <code>calls_handled</code>, <code>calls_offered</code>, <code>recorded_at</code></td>
+</tr>
+<tr>
+<td><code>ForecastImport</code></td>
+<td>Trace audit d’un import CSV</td>
+<td><code>guid</code>, <code>imported_by</code>, <code>imported_at</code>, <code>file_name</code>, <code>rows_processed</code>, <code>rows_failed</code>, <code>validation_report</code></td>
+</tr>
+</tbody>
+</table>
+<h3 class="code-line has-line-data" data-line-start="576" data-line-end="577"><a id="44_Diagramme_entits_vue_simplifie_576"></a>4.4 Diagramme entités (vue simplifiée)</h3>
+<pre><code class="has-line-data" data-line-start="579" data-line-end="608">                         Tenant
+                            │
+        ┌───────────────────┼───────────────────────┐
+        ↓                   ↓                       ↓
+       User              Site               Queue (CC)
+        │                                          │
+        │                                  ┌───────┴──────┐
+        │                                  ↓              ↓
+        │                          VolumeForecast  Staffing
+        │                                          Requirement
+        │
+        ├─→ AgentSkill (CC)
+        │      ↓
+        │     Skill (CC)
+        │
+        ├─→ PlannedShift (Planning) ──→ ShiftTemplate
+        │     │
+        │     ├─→ ShiftSkillAssignment (CC) ──→ Skill
+        │     │
+        │     ├─→ AdherenceRecord (CC)
+        │     │
+        │     └─→ ShiftSwapRequest
+        │
+        ├─→ TimeEntry (Core) ──→ WorkSession
+        │
+        ├─→ Memo (Core)
+        │
+        └─→ OrgHierarchy ─→ User (supervisor)
+</code></pre>
+<hr>
+<h2 class="code-line has-line-data" data-line-start="611" data-line-end="612"><a id="5_User_stories_par_release_611"></a>5. User stories par release</h2>
+<h3 class="code-line has-line-data" data-line-start="613" data-line-end="614"><a id="51_Notation_613"></a>5.1 Notation</h3>
+<ul>
+<li class="has-line-data" data-line-start="615" data-line-end="616"><strong>Format</strong> : <em>En tant que [persona], je veux [action], afin de [bénéfice].</em></li>
+<li class="has-line-data" data-line-start="616" data-line-end="617"><strong>Priorité</strong> : ⭐⭐⭐ (incontournable) / ⭐⭐ (important) / ⭐ (nice-to-have)</li>
+<li class="has-line-data" data-line-start="617" data-line-end="619"><strong>Étiquettes</strong> : <code>[Core]</code> <code>[Planning]</code> <code>[CC]</code> <code>[Mobile]</code> <code>[Web]</code> <code>[API]</code></li>
+</ul>
+<h3 class="code-line has-line-data" data-line-start="619" data-line-end="620"><a id="52_P0_Fondations_Tok_68_semaines_619"></a>5.2 P0 — Fondations Toké (6-8 semaines)</h3>
+<p class="has-line-data" data-line-start="621" data-line-end="622">Ces évolutions sont des <strong>prérequis bloquants</strong> pour les modules P1 et P2. Elles bénéficient également à toute intégration tierce future.</p>
+<table class="table table-striped table-bordered">
+<thead>
+<tr>
+<th>#</th>
+<th>Story</th>
+<th>Priorité</th>
+<th>Étiquettes</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>P0-1</td>
+<td>En tant qu’intégrateur, je veux recevoir des webhooks sortants signés (HMAC) sur les événements clés (<code>time_entry.created</code>, <code>memo.validated</code>, <code>work_session.closed</code>, <code>shift.published</code>, <code>shift.updated</code>) afin de réagir sans polling</td>
+<td>⭐⭐⭐</td>
+<td><code>[Core]</code> <code>[API]</code></td>
+</tr>
+<tr>
+<td>P0-2</td>
+<td>En tant qu’intégrateur, je veux une documentation OpenAPI 3.0 publique de l’API Toké afin de générer des SDK et de connaître les contrats</td>
+<td>⭐⭐⭐</td>
+<td><code>[Core]</code> <code>[API]</code></td>
+</tr>
+<tr>
+<td>P0-3</td>
+<td>En tant qu’intégrateur, je veux la documentation publique de l’algorithme <code>x-api-signature</code> (canonical request, secret, hash) afin de coder un client signataire</td>
+<td>⭐⭐⭐</td>
+<td><code>[Core]</code> <code>[API]</code></td>
+</tr>
+<tr>
+<td>P0-4</td>
+<td>En tant que développeur, je veux une pagination standardisée cursor-based sur tous les endpoints de listing afin d’éviter de saturer les requêtes sur grand tenant</td>
+<td>⭐⭐⭐</td>
+<td><code>[Core]</code> <code>[API]</code></td>
+</tr>
+<tr>
+<td>P0-5</td>
+<td>En tant qu’agent, je veux recevoir des notifications push (FCM) sur mon mobile pour les événements qui me concernent</td>
+<td>⭐⭐⭐</td>
+<td><code>[Core]</code> <code>[Mobile]</code></td>
+</tr>
+<tr>
+<td>P0-6</td>
+<td>En tant qu’admin Toké, je veux pouvoir activer/désactiver des modules par tenant (Planning, CC) afin que l’UI s’adapte</td>
+<td>⭐⭐⭐</td>
+<td><code>[Core]</code> <code>[Web]</code></td>
+</tr>
+<tr>
+<td>P0-7</td>
+<td>En tant qu’intégrateur, je veux un endpoint d’export en masse au format CSV/Parquet pour les périodes longues (mois) afin d’éviter N requêtes</td>
+<td>⭐⭐</td>
+<td><code>[Core]</code> <code>[API]</code></td>
+</tr>
+<tr>
+<td>P0-8</td>
+<td>En tant qu’admin, je veux un endpoint de health check et de version de l’API afin de monitorer les déploiements</td>
+<td>⭐⭐</td>
+<td><code>[Core]</code> <code>[API]</code></td>
+</tr>
+</tbody>
+</table>
+<h3 class="code-line has-line-data" data-line-start="634" data-line-end="635"><a id="53_P1_Module_Planning_v1_1012_semaines_634"></a>5.3 P1 — Module Planning v1 (10-12 semaines)</h3>
+<table class="table table-striped table-bordered">
+<thead>
+<tr>
+<th>#</th>
+<th>Story</th>
+<th>Priorité</th>
+<th>Étiquettes</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>P1-1</td>
+<td>En tant qu’administrateur, je veux définir des templates de shifts (07h-16h, 13h-22h, NUIT, 09h-18h…) afin de standardiser les types de service</td>
+<td>⭐⭐⭐</td>
+<td><code>[Planning]</code> <code>[Web]</code></td>
+</tr>
+<tr>
+<td>P1-2</td>
+<td>En tant qu’administrateur, je veux définir des contraintes RH (max heures/semaine, repos hebdo, repos inter-shifts, max nuits consécutives) par tenant ou par employé</td>
+<td>⭐⭐⭐</td>
+<td><code>[Planning]</code> <code>[Web]</code></td>
+</tr>
+<tr>
+<td>P1-3</td>
+<td>En tant que WFM Analyst, je veux ouvrir une semaine de planification et voir un calendrier vide à remplir agent × jour</td>
+<td>⭐⭐⭐</td>
+<td><code>[Planning]</code> <code>[Web]</code></td>
+</tr>
+<tr>
+<td>P1-4</td>
+<td>En tant que WFM Analyst, je veux assigner un shift à un agent un jour donné par drag-and-drop depuis la palette de templates</td>
+<td>⭐⭐⭐</td>
+<td><code>[Planning]</code> <code>[Web]</code></td>
+</tr>
+<tr>
+<td>P1-5</td>
+<td>En tant que WFM Analyst, je veux voir des alertes en temps réel si une contrainte RH est violée par mon assignation (max heures dépassé, repos non respecté, etc.)</td>
+<td>⭐⭐⭐</td>
+<td><code>[Planning]</code> <code>[Web]</code></td>
+</tr>
+<tr>
+<td>P1-6</td>
+<td>En tant que WFM Analyst, je veux saisir des codes d’absence (CA, CM, FERIE, FORM) sur des cellules, qui sont automatiquement reliés aux mémos Toké correspondants</td>
+<td>⭐⭐⭐</td>
+<td><code>[Planning]</code> <code>[Web]</code></td>
+</tr>
+<tr>
+<td>P1-7</td>
+<td>En tant que WFM Analyst, je veux publier le planning d’une semaine, ce qui le verrouille en lecture et déclenche les notifications agents</td>
+<td>⭐⭐⭐</td>
+<td><code>[Planning]</code> <code>[Web]</code></td>
+</tr>
+<tr>
+<td>P1-8</td>
+<td>En tant qu’agent, je veux voir mon planning de la semaine et des 2 semaines suivantes dans l’app mobile Toké</td>
+<td>⭐⭐⭐</td>
+<td><code>[Planning]</code> <code>[Mobile]</code></td>
+</tr>
+<tr>
+<td>P1-9</td>
+<td>En tant qu’agent, je veux recevoir une notification push 1h avant mon shift</td>
+<td>⭐⭐</td>
+<td><code>[Planning]</code> <code>[Mobile]</code></td>
+</tr>
+<tr>
+<td>P1-10</td>
+<td>En tant qu’agent, je veux pouvoir demander un échange de shift avec un collègue éligible</td>
+<td>⭐⭐</td>
+<td><code>[Planning]</code> <code>[Mobile]</code></td>
+</tr>
+<tr>
+<td>P1-11</td>
+<td>En tant que manager, je veux valider ou refuser les demandes d’échange de shift de mon équipe</td>
+<td>⭐⭐</td>
+<td><code>[Planning]</code> <code>[Mobile]</code></td>
+</tr>
+<tr>
+<td>P1-12</td>
+<td>En tant que manager, je veux comparer dans une vue hebdomadaire les shifts prévus de mon équipe et leur pointage effectif</td>
+<td>⭐⭐⭐</td>
+<td><code>[Planning]</code> <code>[Mobile]</code> <code>[Web]</code></td>
+</tr>
+<tr>
+<td>P1-13</td>
+<td>En tant que WFM Analyst, je veux dupliquer le planning d’une semaine vers une nouvelle semaine afin de gagner du temps quand l’activité est répétitive</td>
+<td>⭐⭐</td>
+<td><code>[Planning]</code> <code>[Web]</code></td>
+</tr>
+<tr>
+<td>P1-14</td>
+<td>En tant que DRH, je veux exporter le planning au format CSV pour la paie et l’archivage</td>
+<td>⭐⭐⭐</td>
+<td><code>[Planning]</code> <code>[Web]</code></td>
+</tr>
+</tbody>
+</table>
+<h3 class="code-line has-line-data" data-line-start="653" data-line-end="654"><a id="54_P2_Module_CC_v1_1214_semaines_653"></a>5.4 P2 — Module CC v1 (12-14 semaines)</h3>
+<table class="table table-striped table-bordered">
+<thead>
+<tr>
+<th>#</th>
+<th>Story</th>
+<th>Priorité</th>
+<th>Étiquettes</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>P2-1</td>
+<td>En tant qu’administrateur CC, je veux configurer mes files d’attente (FR, EN, PIG, KAABU, EMAIL, etc.) avec leurs cibles SL et AHT par défaut</td>
+<td>⭐⭐⭐</td>
+<td><code>[CC]</code> <code>[Web]</code></td>
+</tr>
+<tr>
+<td>P2-2</td>
+<td>En tant qu’administrateur CC, je veux définir les compétences (skills) et associer mes agents à un ou plusieurs skills</td>
+<td>⭐⭐⭐</td>
+<td><code>[CC]</code> <code>[Web]</code></td>
+</tr>
+<tr>
+<td>P2-3</td>
+<td>En tant qu’administrateur CC, je veux définir quelles compétences sont requises pour traiter quelle queue</td>
+<td>⭐⭐⭐</td>
+<td><code>[CC]</code> <code>[Web]</code></td>
+</tr>
+<tr>
+<td>P2-4</td>
+<td>En tant que WFM Analyst, je veux importer un CSV de volumes prévisionnels (queue × date × tranche 30 min × calls × AHT)</td>
+<td>⭐⭐⭐</td>
+<td><code>[CC]</code> <code>[Web]</code></td>
+</tr>
+<tr>
+<td>P2-5</td>
+<td>En tant que WFM Analyst, je veux que le système me signale les erreurs du CSV (queue inconnue, dates manquantes, valeurs négatives) avant import</td>
+<td>⭐⭐⭐</td>
+<td><code>[CC]</code> <code>[Web]</code></td>
+</tr>
+<tr>
+<td>P2-6</td>
+<td>En tant que WFM Analyst, je veux lancer le calcul Erlang C pour la semaine et voir la matrice d’agents requis par queue × tranche × jour</td>
+<td>⭐⭐⭐</td>
+<td><code>[CC]</code> <code>[Web]</code></td>
+</tr>
+<tr>
+<td>P2-7</td>
+<td>En tant que WFM Analyst, je veux ajuster les paramètres globaux (shrinkage cible, max occupancy, niveau de service) et voir l’impact sur les agents requis</td>
+<td>⭐⭐⭐</td>
+<td><code>[CC]</code> <code>[Web]</code></td>
+</tr>
+<tr>
+<td>P2-8</td>
+<td>En tant que WFM Analyst, je veux que le shrinkage proposé par défaut soit calculé automatiquement depuis les 4 dernières semaines de pointages réels</td>
+<td>⭐⭐⭐</td>
+<td><code>[CC]</code> <code>[Web]</code></td>
+</tr>
+<tr>
+<td>P2-9</td>
+<td>En tant que WFM Analyst, je veux lancer la génération semi-automatique de planning qui couvre la matrice d’agents requis</td>
+<td>⭐⭐⭐</td>
+<td><code>[CC]</code> <code>[Web]</code></td>
+</tr>
+<tr>
+<td>P2-10</td>
+<td>En tant que WFM Analyst, je veux voir un score de couverture par tranche après génération (vert/orange/rouge)</td>
+<td>⭐⭐⭐</td>
+<td><code>[CC]</code> <code>[Web]</code></td>
+</tr>
+<tr>
+<td>P2-11</td>
+<td>En tant que WFM Analyst, je veux pouvoir corriger manuellement le planning généré (drag-and-drop, ajout d’agents, etc.)</td>
+<td>⭐⭐⭐</td>
+<td><code>[CC]</code> <code>[Web]</code></td>
+</tr>
+<tr>
+<td>P2-12</td>
+<td>En tant que RTA Supervisor, je veux un dashboard temps réel par queue : agents prévus, agents présents, écart, SL prédit pour la suite de la journée</td>
+<td>⭐⭐⭐</td>
+<td><code>[CC]</code> <code>[Web]</code></td>
+</tr>
+<tr>
+<td>P2-13</td>
+<td>En tant que RTA Supervisor, je veux recevoir des alertes proactives : retards &gt; 5 min, absences non justifiées, sous-effectif &gt; 15%</td>
+<td>⭐⭐⭐</td>
+<td><code>[CC]</code> <code>[Web]</code></td>
+</tr>
+<tr>
+<td>P2-14</td>
+<td>En tant que RTA Supervisor, je veux pouvoir réaffecter un agent d’une queue à une autre en cours de journée</td>
+<td>⭐⭐</td>
+<td><code>[CC]</code> <code>[Web]</code></td>
+</tr>
+<tr>
+<td>P2-15</td>
+<td>En tant que manager, je veux voir l’adhérence quotidienne de chacun de mes agents (% temps planifié effectivement présent)</td>
+<td>⭐⭐⭐</td>
+<td><code>[CC]</code> <code>[Mobile]</code> <code>[Web]</code></td>
+</tr>
+<tr>
+<td>P2-16</td>
+<td>En tant que DRH, je veux un rapport hebdomadaire d’adhérence par campagne et par équipe</td>
+<td>⭐⭐⭐</td>
+<td><code>[CC]</code> <code>[Web]</code></td>
+</tr>
+<tr>
+<td>P2-17</td>
+<td>En tant que DRH, je veux un rapport SL prédit vs SL réel par campagne afin d’évaluer la qualité de mon dimensionnement</td>
+<td>⭐⭐⭐</td>
+<td><code>[CC]</code> <code>[Web]</code></td>
+</tr>
+<tr>
+<td>P2-18</td>
+<td>En tant que DRH, je veux voir l’évolution du shrinkage réel dans le temps afin d’ajuster mes pratiques</td>
+<td>⭐⭐</td>
+<td><code>[CC]</code> <code>[Web]</code></td>
+</tr>
+</tbody>
+</table>
+<h3 class="code-line has-line-data" data-line-start="676" data-line-end="677"><a id="55_P3_CC_avanc_1216_semaines_676"></a>5.5 P3 — CC avancé (12-16 semaines)</h3>
+<table class="table table-striped table-bordered">
+<thead>
+<tr>
+<th>#</th>
+<th>Story</th>
+<th>Priorité</th>
+<th>Étiquettes</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>P3-1</td>
+<td>En tant que WFM Analyst, je veux que le sizing prenne en compte le multi-skill via simulation discrète : un agent FRE+ENG est crédité comme ressource partielle sur la queue FR et la queue EN selon le routing prioritaire</td>
+<td>⭐⭐⭐</td>
+<td><code>[CC]</code> <code>[Web]</code></td>
+</tr>
+<tr>
+<td>P3-2</td>
+<td>En tant que WFM Analyst, je veux que le scheduling soit optimisé par solveur (OR-Tools) sous contraintes : minimiser le sur-staffing, respecter toutes les contraintes RH dures, équilibrer les nuits et dimanches</td>
+<td>⭐⭐⭐</td>
+<td><code>[CC]</code> <code>[Web]</code></td>
+</tr>
+<tr>
+<td>P3-3</td>
+<td>En tant que WFM Analyst, je veux des suggestions automatiques d’amélioration : “si vous ajoutez un shift 11h-20h le mercredi, votre SL passe de 73% à 81%”</td>
+<td>⭐⭐</td>
+<td><code>[CC]</code> <code>[Web]</code></td>
+</tr>
+<tr>
+<td>P3-4</td>
+<td>En tant que WFM Analyst, je veux un mode forecasting ML : à partir de 12+ semaines d’historique de volumes, le système prédit les volumes des 4 prochaines semaines (Holt-Winters ou Prophet)</td>
+<td>⭐⭐</td>
+<td><code>[CC]</code> <code>[Web]</code></td>
+</tr>
+<tr>
+<td>P3-5</td>
+<td>En tant que RTA Supervisor, je veux une suggestion automatique de ré-affectation intra-day quand un agent est absent : “Marie peut couvrir la queue FR de 10h à 14h, voulez-vous l’affecter ?”</td>
+<td>⭐⭐</td>
+<td><code>[CC]</code> <code>[Web]</code></td>
+</tr>
+<tr>
+<td>P3-6</td>
+<td>En tant que WFM Analyst, je veux pouvoir simuler des scénarios “what-if” : “que se passe-t-il si la queue EN voit +30% de volume mardi ?”</td>
+<td>⭐⭐</td>
+<td><code>[CC]</code> <code>[Web]</code></td>
+</tr>
+<tr>
+<td>P3-7</td>
+<td>En tant que DRH, je veux des KPIs benchmark anonymisés entre tenants (mon adhérence vs la moyenne du secteur)</td>
+<td>⭐</td>
+<td><code>[CC]</code> <code>[Web]</code></td>
+</tr>
+</tbody>
+</table>
+<hr>
+<h2 class="code-line has-line-data" data-line-start="690" data-line-end="691"><a id="6_Wireframes_textuels_690"></a>6. Wireframes textuels</h2>
+<h3 class="code-line has-line-data" data-line-start="692" data-line-end="693"><a id="61_Dashboard_WFM_page_daccueil_vue_web_692"></a>6.1 Dashboard WFM (page d’accueil — vue web)</h3>
+<pre><code class="has-line-data" data-line-start="695" data-line-end="730">┌────────────────────────────────────────────────────────────────────────────┐
+│ TOKÉ WFM        [LMT - demo.toke.cm]              [WFM Analyst ▼] [🔔 3]   │
+├────────────────────────────────────────────────────────────────────────────┤
+│                                                                            │
+│  📅 Semaine en cours : S20 (11/05 - 17/05)        Statut : ✅ Publiée      │
+│                                                                            │
+│  ┌──────────────────┐ ┌──────────────────┐ ┌──────────────────┐            │
+│  │ Adhérence semaine│ │ Service Level    │ │ Shrinkage observé│            │
+│  │      87.3%       │ │   78.5% / 80%    │ │    18.2% / 20%   │            │
+│  │  ▲ +2.1pt vs S19 │ │  ▼ -1.5pt        │ │  ▼ -1.8pt        │            │
+│  └──────────────────┘ └──────────────────┘ └──────────────────┘            │
+│                                                                            │
+│  Prochaine semaine à planifier : S21 (18/05 - 24/05)                       │
+│                                                                            │
+│  ┌───────────────────────────────────────────────────────────────────────┐ │
+│  │  Étape 1 : Volumes prévisionnels                                      │ │
+│  │  [ Importer CSV ]   ✅ 14 queues importées le 13/05 à 09h22           │ │
+│  ├───────────────────────────────────────────────────────────────────────┤ │
+│  │  Étape 2 : Sizing Erlang C                                            │ │
+│  │  [ Calculer ]   ✅ Matrice calculée — 4 287 cellules                  │ │
+│  │  Shrinkage appliqué : 18.5% (auto, basé sur S16-S19)                  │ │
+│  ├───────────────────────────────────────────────────────────────────────┤ │
+│  │  Étape 3 : Génération du planning                                     │ │
+│  │  [ Générer ]   ⚠️  Brouillon — couverture 91.3% (12 trous identifiés) │ │
+│  ├───────────────────────────────────────────────────────────────────────┤ │
+│  │  Étape 4 : Revue et publication                                       │ │
+│  │  [ Ouvrir l'éditeur ]   [ Publier ]                                   │ │
+│  └───────────────────────────────────────────────────────────────────────┘ │
+│                                                                            │
+│  Alertes :                                                                 │
+│  ⚠️  Mardi 21/05 - Queue KAABU : sous-effectif prévu de 14h à 16h          │
+│  ⚠️  Mercredi 22/05 : Marc N. dépasse 35h/sem dans le brouillon            │
+│  ℹ️  3 demandes d'échange de shift en attente de validation                │
+└────────────────────────────────────────────────────────────────────────────┘
+</code></pre>
+<h3 class="code-line has-line-data" data-line-start="731" data-line-end="732"><a id="62_diteur_de_planning_vue_semaine_web_731"></a>6.2 Éditeur de planning (vue semaine — web)</h3>
+<pre><code class="has-line-data" data-line-start="734" data-line-end="760">┌────────────────────────────────────────────────────────────────────────────────────┐
+│ Planning S21 - Brouillon                       [Sauvegarder] [Publier] [Annuler]   │
+├────────────────────────────────────────────────────────────────────────────────────┤
+│  Filtres : [Tous skills ▼] [Toutes équipes ▼]            🔍 Recherche agent...     │
+│  Affichage : [Vue agent ▼]   [Vue queue ▼]   [Vue couverture ▼]                    │
+├──┬──────────────────┬───────┬───────┬───────┬───────┬───────┬───────┬───────┬──────┤
+│# │ Agent            │ Skill │ Lun18 │ Mar19 │ Mer20 │ Jeu21 │ Ven22 │ Sam23 │ Dim24│
+├──┼──────────────────┼───────┼───────┼───────┼───────┼───────┼───────┼───────┼──────┤
+│1 │ AMINATOU HAM     │ FFD   │ 10-20 │ 08-16 │ 12-21 │ OFF   │ OFF   │ 10-19 │08-17 │
+│2 │ ABDOUR RAHIM     │ FFD   │ OFF   │ OFF   │ 07-17 │ 13-22 │ 07-16 │ OFF   │OFF   │
+│3 │ MAMAH FOTSIN     │ FRE   │ 12-21 │ 10-19 │ 12-21 │ 13-22 │ OFF   │ OFF   │CA    │
+│4 │ APKEH CARINE     │ FRE   │ 13-22 │ OFF   │ OFF   │ 08-17 │ 13-22 │ 13-22 │OFF   │
+│5 │ BANENLA CLAUD    │ ENG   │ 07-16 │ 07-16 │ ⚠️ -  │ 07-16 │ 12-21 │ OFF   │OFF   │
+│6 │ MESSI MESSI      │ FRE   │ NUIT  │ NUIT  │ OFF   │ OFF   │ NUIT  │ NUIT  │OFF   │
+│  │ ...              │       │       │       │       │       │       │       │      │
+│  │ (249 agents)     │       │       │       │       │       │       │       │      │
+├──┼──────────────────┼───────┼───────┼───────┼───────┼───────┼───────┼───────┼──────┤
+│  │ Couverture FR    │       │  ✅   │  ✅   │  ✅   │  ⚠️   │  ✅  │  ✅   │  ✅  │
+│  │ Couverture EN    │       │  ✅   │  ⚠️   │  ❌   │  ✅   │  ✅  │  ⚠️   │  ✅  │
+│  │ Couverture KAABU │       │  ✅   │  ✅   │  ❌   │  ❌   │  ⚠️  │  ✅   │  ✅  │
+└──┴──────────────────┴───────┴───────┴───────┴───────┴───────┴───────┴───────┴──────┘
+  Palette templates : [07-16] [08-17] [09-18] [10-19] [11-20] [12-21] [13-22] [NUIT]
+                     [OFF] [CA] [CM] [FERIE] [FORM] [TT]
+  Cellule sélectionnée : Banenla Claud / Mercredi 20 → Conflit : skill ENG manquant
+                          [Suggérer un remplacement] [Ignorer] [Lever conflit]
+</code></pre>
+<h3 class="code-line has-line-data" data-line-start="761" data-line-end="762"><a id="63_RTA_Dashboard_temps_rel_web_761"></a>6.3 RTA Dashboard (temps réel — web)</h3>
+<pre><code class="has-line-data" data-line-start="764" data-line-end="798">┌────────────────────────────────────────────────────────────────────────────┐
+│ RTA Live      Mardi 14/05/2026  10:42                       ●  EN DIRECT   │
+├────────────────────────────────────────────────────────────────────────────┤
+│                                                                            │
+│ Vue globale (toutes queues) :                                              │
+│   Agents prévus à cette heure : 87       Agents présents : 79              │
+│   Écart : -8 agents (-9.2%)              Adhérence cumulée jour : 91.4%    │
+│                                                                            │
+│ ┌──────────────────────────────────────────────────────────────────────┐   │
+│ │ Queue       │ Prévu │ Présent │ Écart │ SL en cours │ SL prédit fin  │   │
+│ ├─────────────┼───────┼─────────┼───────┼─────────────┼────────────────┤   │
+│ │ FR          │  32   │   30    │  -2   │   82.1%  ✅ │   79.8%  ✅    │   │
+│ │ EN          │  12   │   10    │  -2   │   71.4%  ⚠️ │   68.2%  ⚠️    │   │
+│ │ KAABU       │   8   │    8    │   0   │   89.5%  ✅ │   85.0%  ✅    │   │
+│ │ EMAIL       │   6   │    6    │   0   │   95.0%  ✅ │   92.0%  ✅    │   │
+│ │ DA Chat C   │   4   │    3    │  -1   │   67.5%  ❌ │   62.0%  ❌    │   │
+│ │ ...                                                                  │   │
+│ └──────────────────────────────────────────────────────────────────────┘   │
+│                                                                            │
+│ 🚨 Alertes actives (3) :                                                   │
+│  ❌ DA Chat C sous le seuil de SL 70% depuis 18 min                        │
+│     → Réaffecter Marie L. (FRE, libre depuis 10h30) [Action]               │
+│                                                                            │
+│  ⚠️  3 agents absents non justifiés : Y.B., A.K., D.E.                     │
+│     → Notifier les superviseurs concernés [Action]                         │
+│                                                                            │
+│  ⚠️  Aïssatou N. en pause depuis 47 min (limite 30 min)                    │
+│     → Envoyer un ping mobile [Action]                                      │
+│                                                                            │
+│ Projections :                                                              │
+│   SL global prévu à 22h00 : 76.8% (cible 80%)                              │
+│   Recommandation : réaffecter 2 agents FRE de FR vers EN entre 11h et 14h  │
+└────────────────────────────────────────────────────────────────────────────┘
+</code></pre>
+<h3 class="code-line has-line-data" data-line-start="799" data-line-end="800"><a id="64_Mobile_employ_Mon_planning_799"></a>6.4 Mobile employé — Mon planning</h3>
+<pre><code class="has-line-data" data-line-start="802" data-line-end="837">┌──────────────────────────┐
+│  Toké       Mon planning │
+├──────────────────────────┤
+│  Cette semaine — S20     │
+│                          │
+│  ─── Lundi 11/05 ───     │
+│  🟢 13h00 → 22h00        │
+│     Skill : FRE          │
+│     Site : Bonanjo       │
+│     Pause : 16h-17h      │
+│                          │
+│  ─── Mardi 12/05 ───     │
+│  🟢 13h00 → 22h00        │
+│                          │
+│  ─── Mercredi 13/05 ───  │
+│  🟢 13h00 → 22h00        │
+│                          │
+│  ─── Jeudi 14/05 ───     │
+│  🟠 FERIE (Ascension)    │
+│                          │
+│  ─── Vendredi 15/05 ───  │
+│  ⚪ OFF                  │
+│                          │
+│  ─── Samedi 16/05 ───    │
+│  ⚪ OFF                  │
+│                          │
+│  ─── Dimanche 17/05 ──   │
+│  🟢 07h00 → 16h00        │
+│                          │
+│ ──────────────────────── │
+│ [Demander un échange]    │
+│ [Demander un congé]      │
+│ [Voir semaine suivante]  │
+└──────────────────────────┘
+</code></pre>
+<h3 class="code-line has-line-data" data-line-start="838" data-line-end="839"><a id="65_Vue_manager_Adhrence_de_mon_quipe_838"></a>6.5 Vue manager — Adhérence de mon équipe</h3>
+<pre><code class="has-line-data" data-line-start="841" data-line-end="871">┌────────────────────────────────────────────────┐
+│  Toké Manager     Équipe AUDACITY              │
+├────────────────────────────────────────────────┤
+│  Semaine S20 — 9 agents                        │
+│                                                │
+│  Adhérence équipe : 89.4% ▲ (cible 90%)        │
+│                                                │
+│  ┌──────────────────┬────────┬─────────────┐   │
+│  │ Agent            │ Prévu  │ Adhérence   │   │
+│  ├──────────────────┼────────┼─────────────┤   │
+│  │ Mamah Fotsin     │ 40h    │  95.2%  🟢  │   │
+│  │ Apkeh Carine     │ 40h    │  91.0%  🟢  │   │
+│  │ Lantoum Moussa   │ 40h    │  87.5%  🟡  │   │
+│  │ Koumba Émilie    │ 40h    │  82.3%  🟡  │   │
+│  │ Nkoumou Anyo     │ 40h    │  78.1%  🔴  │   │
+│  │ Alima Marie      │ 40h    │  93.4%  🟢  │   │
+│  │ Sidje Mbougu     │ 40h    │  88.9%  🟡  │   │
+│  │ Moung Essomb     │ 40h    │  90.1%  🟢  │   │
+│  │ Messina Régine   │ 40h    │  N/A    BU  │   │
+│  └──────────────────┴────────┴─────────────┘   │
+│                                                │
+│  En attente de validation :                    │
+│  • Mémo retard - Nkoumou Anyo (08h12 au lieu   │
+│    de 08h00 mardi)                  [Voir]     │
+│  • Demande échange - Lantoum ↔ Sidje samedi    │
+│                                     [Voir]     │
+│                                                │
+│  [Rapport hebdo PDF]   [Exporter CSV]          │
+└────────────────────────────────────────────────┘
+</code></pre>
+<hr>
+<h2 class="code-line has-line-data" data-line-start="874" data-line-end="875"><a id="7_Intgration_Tok_Core_Extension_874"></a>7. Intégration Toké Core ↔ Extension</h2>
+<h3 class="code-line has-line-data" data-line-start="876" data-line-end="877"><a id="71_Endpoints_Tok_Core_utiliss_par_lextension_existants_876"></a>7.1 Endpoints Toké Core utilisés par l’extension (existants)</h3>
+<table class="table table-striped table-bordered">
+<thead>
+<tr>
+<th>Méthode</th>
+<th>Endpoint</th>
+<th>Utilisation par l’extension</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>GET</code></td>
+<td><code>/tenant/:identifier</code></td>
+<td>Résolution du subdomain → guid tenant</td>
+</tr>
+<tr>
+<td><code>GET</code></td>
+<td><code>/user/:guid</code></td>
+<td>Détails agent (skill, équipe)</td>
+</tr>
+<tr>
+<td><code>GET</code></td>
+<td><code>/org-hierarchy/supervisor/:userGuid/list</code></td>
+<td>Liste des subordonnés d’un manager</td>
+</tr>
+<tr>
+<td><code>GET</code></td>
+<td><code>/site</code></td>
+<td>Liste des sites pour assigner un shift</td>
+</tr>
+<tr>
+<td><code>POST</code></td>
+<td><code>/time-entries</code></td>
+<td>Ne pas appeler depuis l’extension — c’est l’agent qui pointe</td>
+</tr>
+<tr>
+<td><code>GET</code></td>
+<td><code>/time-entries/user/:userGuid/list</code></td>
+<td>Récupération des pointages pour calcul d’adhérence</td>
+</tr>
+<tr>
+<td><code>GET</code></td>
+<td><code>/time-entries/attendance/history</code></td>
+<td>Historique batch pour reporting</td>
+</tr>
+<tr>
+<td><code>GET</code></td>
+<td><code>/time-entries/attendance/statistics</code></td>
+<td>Stats agrégées pour KPIs WFM</td>
+</tr>
+<tr>
+<td><code>GET</code></td>
+<td><code>/user/attendance/active-sessions</code></td>
+<td>Vue RTA temps réel — qui est au travail</td>
+</tr>
+<tr>
+<td><code>GET</code></td>
+<td><code>/user/attendance/today</code></td>
+<td>Synthèse présence du jour</td>
+</tr>
+<tr>
+<td><code>GET</code></td>
+<td><code>/memo/my-created?author=X&amp;status=validated</code></td>
+<td>Récupération des mémos validés (absences, congés)</td>
+</tr>
+<tr>
+<td><code>GET</code></td>
+<td><code>/memo/auto-generated</code></td>
+<td>Lecture des mémos auto-générés (oublis clock-out, etc.)</td>
+</tr>
+<tr>
+<td><code>GET</code></td>
+<td><code>/work-sessions/...</code></td>
+<td>Sessions reconstituées par Toké</td>
+</tr>
+</tbody>
+</table>
+<h3 class="code-line has-line-data" data-line-start="894" data-line-end="895"><a id="72_Nouveaux_endpoints_crer_Module_Planning_894"></a>7.2 Nouveaux endpoints à créer (Module Planning)</h3>
+<table class="table table-striped table-bordered">
+<thead>
+<tr>
+<th>Méthode</th>
+<th>Endpoint</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>POST</code></td>
+<td><code>/planning/shift-templates</code></td>
+<td>Créer un template de shift</td>
+</tr>
+<tr>
+<td><code>GET</code></td>
+<td><code>/planning/shift-templates</code></td>
+<td>Lister les templates du tenant</td>
+</tr>
+<tr>
+<td><code>POST</code></td>
+<td><code>/planning/weekly-plans</code></td>
+<td>Créer un brouillon de plan hebdo</td>
+</tr>
+<tr>
+<td><code>GET</code></td>
+<td><code>/planning/weekly-plans?week=YYYY-Www</code></td>
+<td>Récupérer un plan</td>
+</tr>
+<tr>
+<td><code>PATCH</code></td>
+<td><code>/planning/weekly-plans/:guid/publish</code></td>
+<td>Publier (verrouiller + notifier)</td>
+</tr>
+<tr>
+<td><code>POST</code></td>
+<td><code>/planning/shifts</code></td>
+<td>Créer un shift assigné</td>
+</tr>
+<tr>
+<td><code>GET</code></td>
+<td><code>/planning/shifts/user/:userGuid?from=&amp;to=</code></td>
+<td>Planning d’un agent (mobile)</td>
+</tr>
+<tr>
+<td><code>GET</code></td>
+<td><code>/planning/shifts/team/:managerGuid?from=&amp;to=</code></td>
+<td>Planning d’une équipe (manager)</td>
+</tr>
+<tr>
+<td><code>PATCH</code></td>
+<td><code>/planning/shifts/:guid</code></td>
+<td>Modifier un shift (brouillon)</td>
+</tr>
+<tr>
+<td><code>DELETE</code></td>
+<td><code>/planning/shifts/:guid</code></td>
+<td>Supprimer un shift (brouillon)</td>
+</tr>
+<tr>
+<td><code>POST</code></td>
+<td><code>/planning/shift-swaps</code></td>
+<td>Demander un échange</td>
+</tr>
+<tr>
+<td><code>PATCH</code></td>
+<td><code>/planning/shift-swaps/:guid/approve</code></td>
+<td>Approuver</td>
+</tr>
+<tr>
+<td><code>POST</code></td>
+<td><code>/planning/constraints</code></td>
+<td>Définir une contrainte RH</td>
+</tr>
+<tr>
+<td><code>GET</code></td>
+<td><code>/planning/constraints?scope=&amp;user=</code></td>
+<td>Lister contraintes</td>
+</tr>
+</tbody>
+</table>
+<h3 class="code-line has-line-data" data-line-start="913" data-line-end="914"><a id="73_Nouveaux_endpoints_crer_Module_CC_913"></a>7.3 Nouveaux endpoints à créer (Module CC)</h3>
+<table class="table table-striped table-bordered">
+<thead>
+<tr>
+<th>Méthode</th>
+<th>Endpoint</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>POST</code></td>
+<td><code>/cc/queues</code></td>
+<td>Créer une file</td>
+</tr>
+<tr>
+<td><code>GET</code></td>
+<td><code>/cc/queues</code></td>
+<td>Lister les files du tenant</td>
+</tr>
+<tr>
+<td><code>POST</code></td>
+<td><code>/cc/skills</code></td>
+<td>Créer un skill</td>
+</tr>
+<tr>
+<td><code>POST</code></td>
+<td><code>/cc/agent-skills</code></td>
+<td>Associer agent ↔ skills</td>
+</tr>
+<tr>
+<td><code>POST</code></td>
+<td><code>/cc/forecasts/import-csv</code></td>
+<td>Import CSV de volumes (multipart)</td>
+</tr>
+<tr>
+<td><code>GET</code></td>
+<td><code>/cc/forecasts?queue=&amp;from=&amp;to=</code></td>
+<td>Récupérer volumes</td>
+</tr>
+<tr>
+<td><code>POST</code></td>
+<td><code>/cc/staffing/calculate</code></td>
+<td>Lancer Erlang C</td>
+</tr>
+<tr>
+<td><code>GET</code></td>
+<td><code>/cc/staffing/requirements?queue=&amp;date=</code></td>
+<td>Matrice agents requis</td>
+</tr>
+<tr>
+<td><code>POST</code></td>
+<td><code>/cc/scheduling/generate</code></td>
+<td>Générer planning candidat</td>
+</tr>
+<tr>
+<td><code>GET</code></td>
+<td><code>/cc/rta/live?queue=</code></td>
+<td>RTA temps réel par queue</td>
+</tr>
+<tr>
+<td><code>GET</code></td>
+<td><code>/cc/adherence?user=&amp;from=&amp;to=</code></td>
+<td>Adhérence par agent</td>
+</tr>
+<tr>
+<td><code>GET</code></td>
+<td><code>/cc/service-level?queue=&amp;from=&amp;to=</code></td>
+<td>SL prédit vs réel</td>
+</tr>
+<tr>
+<td><code>GET</code></td>
+<td><code>/cc/reports/weekly?week=</code></td>
+<td>Rapport hebdo consolidé</td>
+</tr>
+</tbody>
+</table>
+<h3 class="code-line has-line-data" data-line-start="931" data-line-end="932"><a id="74_Webhooks_sortants_crer_en_P0_931"></a>7.4 Webhooks sortants (à créer en P0)</h3>
+<table class="table table-striped table-bordered">
+<thead>
+<tr>
+<th>Événement</th>
+<th>Payload (extrait)</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>time_entry.created</code></td>
+<td><code>{guid, user, site, pointage_type, real_clocked_at, qr_code}</code></td>
+</tr>
+<tr>
+<td><code>time_entry.corrected</code></td>
+<td><code>{guid, original_values, new_values, corrected_by}</code></td>
+</tr>
+<tr>
+<td><code>work_session.opened</code></td>
+<td><code>{guid, user, start_at, site}</code></td>
+</tr>
+<tr>
+<td><code>work_session.closed</code></td>
+<td><code>{guid, user, end_at, total_minutes}</code></td>
+</tr>
+<tr>
+<td><code>work_session.force_closed</code></td>
+<td><code>{guid, user, closed_by, reason}</code></td>
+</tr>
+<tr>
+<td><code>memo.submitted</code></td>
+<td><code>{guid, author, target, memo_type, incident_datetime}</code></td>
+</tr>
+<tr>
+<td><code>memo.validated</code></td>
+<td><code>{guid, validator, validated_at}</code></td>
+</tr>
+<tr>
+<td><code>memo.rejected</code></td>
+<td><code>{guid, validator, reason}</code></td>
+</tr>
+<tr>
+<td><code>memo.escalated</code></td>
+<td><code>{guid, new_validator, reason}</code></td>
+</tr>
+<tr>
+<td><code>shift.published</code></td>
+<td><code>{shift_guid, user, date, start_at, end_at, site}</code></td>
+</tr>
+<tr>
+<td><code>shift.swap_requested</code></td>
+<td><code>{from_shift, to_shift, requester, target}</code></td>
+</tr>
+<tr>
+<td><code>shift.swap_approved</code></td>
+<td><code>{from_shift, to_shift, approved_by}</code></td>
+</tr>
+<tr>
+<td><code>adherence_alert.raised</code></td>
+<td><code>{user, planned_start, actual_start_or_null, lateness_minutes, type}</code></td>
+</tr>
+<tr>
+<td><code>service_level.below_threshold</code></td>
+<td><code>{queue, current_sl, target_sl, time_slot}</code></td>
+</tr>
+<tr>
+<td><code>fraud_alert.created</code></td>
+<td><code>{user, pattern_type, severity}</code></td>
+</tr>
+</tbody>
+</table>
+<p class="has-line-data" data-line-start="951" data-line-end="952"><strong>Caractéristiques techniques</strong> :</p>
+<ul>
+<li class="has-line-data" data-line-start="952" data-line-end="953">Signature HMAC SHA-256 dans le header <code>x-toke-signature</code></li>
+<li class="has-line-data" data-line-start="953" data-line-end="954">Retry exponentiel : 1 min, 5 min, 30 min, 2h, 12h, 24h (puis abandon)</li>
+<li class="has-line-data" data-line-start="954" data-line-end="955">Endpoint d’abonnement configurable par tenant : <code>POST /webhooks/subscriptions</code></li>
+<li class="has-line-data" data-line-start="955" data-line-end="956">Possibilité de filtrer les événements souscrits par tenant</li>
+<li class="has-line-data" data-line-start="956" data-line-end="958">Idempotence garantie via <code>event_id</code> unique dans le payload</li>
+</ul>
+<h3 class="code-line has-line-data" data-line-start="958" data-line-end="959"><a id="75_Format_CSV_dimport_des_volumes_Module_CC_958"></a>7.5 Format CSV d’import des volumes (Module CC)</h3>
+<pre><code class="has-line-data language-csv" data-line-start="961" data-line-end="970">queue_code,date,time_slot_start,predicted_calls,predicted_aht_seconds
+FR,2026-05-18,08:00,45,210
+FR,2026-05-18,08:30,67,215
+FR,2026-05-18,09:00,89,220
+EN,2026-05-18,08:00,12,250
+EN,2026-05-18,08:30,18,255
+KAABU,2026-05-18,08:00,8,180
+...
+</code></pre>
+<p class="has-line-data" data-line-start="971" data-line-end="972"><strong>Règles de validation à l’import</strong> :</p>
+<ul>
+<li class="has-line-data" data-line-start="973" data-line-end="974"><code>queue_code</code> doit exister dans le tenant (sinon erreur ligne par ligne)</li>
+<li class="has-line-data" data-line-start="974" data-line-end="975"><code>date</code> au format ISO 8601 (<code>YYYY-MM-DD</code>)</li>
+<li class="has-line-data" data-line-start="975" data-line-end="976"><code>time_slot_start</code> au format <code>HH:MM</code>, doit être multiple de 30 minutes (ou de l’intervalle configuré)</li>
+<li class="has-line-data" data-line-start="976" data-line-end="977"><code>predicted_calls</code> entier ≥ 0</li>
+<li class="has-line-data" data-line-start="977" data-line-end="978"><code>predicted_aht_seconds</code> entier &gt; 0 (typiquement entre 60 et 600)</li>
+<li class="has-line-data" data-line-start="978" data-line-end="979">Pas de doublon (queue, date, time_slot) — sinon erreur explicite</li>
+<li class="has-line-data" data-line-start="979" data-line-end="981">Couverture continue de la journée recommandée mais pas obligatoire</li>
+</ul>
+<p class="has-line-data" data-line-start="981" data-line-end="982"><strong>Réponse de l’API</strong> : rapport de validation avec <code>rows_processed</code>, <code>rows_failed</code>, et un détail des erreurs ligne par ligne.</p>
+<h3 class="code-line has-line-data" data-line-start="983" data-line-end="984"><a id="76_Authentification_et_permissions_983"></a>7.6 Authentification et permissions</h3>
+<p class="has-line-data" data-line-start="985" data-line-end="986">L’extension s’authentifie auprès de Toké Core comme un <strong>service de confiance</strong> :</p>
+<ul>
+<li class="has-line-data" data-line-start="987" data-line-end="988"><strong>Server-to-server</strong> : <code>x-api-key</code> dédiée à l’extension + signature <code>x-api-signature</code></li>
+<li class="has-line-data" data-line-start="988" data-line-end="989"><strong>Permissions étendues</strong> : compte de service avec rôle <code>WFM_SERVICE</code> (nouveau rôle à créer)</li>
+<li class="has-line-data" data-line-start="989" data-line-end="991">Les utilisateurs (WFM, RTA) s’authentifient auprès de l’extension via les mécanismes Toké (PIN/password/SSO selon évolution)</li>
+</ul>
+<p class="has-line-data" data-line-start="991" data-line-end="992"><strong>Périmètre de visibilité</strong> : le compte de service voit l’ensemble du tenant. Les permissions UI sont appliquées côté extension selon le rôle de l’utilisateur loggé.</p>
+<hr>
+<h2 class="code-line has-line-data" data-line-start="995" data-line-end="996"><a id="8_Plan_de_migration_depuis_Excel_LMT_995"></a>8. Plan de migration depuis Excel LMT</h2>
+<h3 class="code-line has-line-data" data-line-start="997" data-line-end="998"><a id="81_Audit_des_Excel_existants_ralis_997"></a>8.1 Audit des Excel existants (réalisé)</h3>
+<table class="table table-striped table-bordered">
+<thead>
+<tr>
+<th>Fichier</th>
+<th>Contenu</th>
+<th>Statut</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>PLANNINGS_AE_DA_BO_S20_2026.xlsm</code></td>
+<td>Erlang Calculator Call Centre Helper v6.0 + 14 feuilles par queue + planning nominatif</td>
+<td>Source du sizing actuel</td>
+</tr>
+<tr>
+<td><code>Plannings_LMT_S20_2026.xlsx</code></td>
+<td>Synthèse S&amp;E + 11 feuilles par campagne client</td>
+<td>Source de la diffusion actuelle</td>
+</tr>
+</tbody>
+</table>
+<h3 class="code-line has-line-data" data-line-start="1004" data-line-end="1005"><a id="82_Mapping_vers_le_modle_Tok_1004"></a>8.2 Mapping vers le modèle Toké</h3>
+<table class="table table-striped table-bordered">
+<thead>
+<tr>
+<th>Concept Excel</th>
+<th>Entité Toké cible</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Feuille par queue (FR, EN, PIG, FFD, KAABU, EMAIL, 8911, 8900, DA TD, DA TR, DA Chat C, EN_PIG, Global LMT)</td>
+<td><code>Queue</code> (Module CC)</td>
+</tr>
+<tr>
+<td>Codes Compétences (FFD, FRE, ENG, BU)</td>
+<td><code>Skill</code> (Module CC)</td>
+</tr>
+<tr>
+<td>TEAM (AMANA, ASSISTANCE, AUDACITY, BURAL, etc.)</td>
+<td><code>OrgHierarchy</code> + libellé équipe</td>
+</tr>
+<tr>
+<td>Code shift (07h-16h, 13h-22h, NUIT)</td>
+<td><code>ShiftTemplate</code></td>
+</tr>
+<tr>
+<td>Cellule agent × jour avec heures</td>
+<td><code>PlannedShift</code></td>
+</tr>
+<tr>
+<td>Codes OFF, CA, CM, FERIE</td>
+<td><code>AbsenceCode</code> + lien <code>Memo</code> validé</td>
+</tr>
+<tr>
+<td>Volumes Incoming calls par tranche</td>
+<td><code>VolumeForecast</code></td>
+</tr>
+<tr>
+<td>Agents req</td>
+<td><code>StaffingRequirement</code></td>
+</tr>
+<tr>
+<td>Paramètres Max Occupancy, SL, Shrinkage</td>
+<td>Configuration tenant + queue</td>
+</tr>
+<tr>
+<td>AHT (DMT Prévue)</td>
+<td><code>Queue.default_aht_sec</code> + <code>VolumeForecast.predicted_aht_sec</code></td>
+</tr>
+</tbody>
+</table>
+<h3 class="code-line has-line-data" data-line-start="1019" data-line-end="1020"><a id="83_tapes_de_migration_1019"></a>8.3 Étapes de migration</h3>
+<pre><code class="has-line-data" data-line-start="1022" data-line-end="1052">ÉTAPE 1 — Configuration initiale (1 semaine)
+├─ Création des 14 Queues dans Toké pour LMT
+├─ Création des 4 Skills (FFD, FRE, ENG, BU)
+├─ Association des QueueSkillRequirement
+└─ Création des ShiftTemplates standards (07h-16h, 08h-17h, 09h-18h, 11h-20h, 13h-22h, NUIT, etc.)
+
+ÉTAPE 2 — Référentiel agents (1 semaine)
+├─ Vérification que tous les agents sont déjà dans Toké (User existant)
+├─ Saisie des AgentSkill (extraction depuis colonne Compétences des Excel)
+└─ Saisie des ShiftConstraint par profil (35h, 40h, autorisation nuit, etc.)
+
+ÉTAPE 3 — Backfill historique (1-2 semaines)
+├─ Import des volumes historiques 12 dernières semaines (CSV reconstruit depuis ACD si possible, sinon depuis les .xlsm passés)
+├─ Recalcul du shrinkage observé sur ces 12 semaines (utilise pointages Toké si disponibles, sinon estimation manuelle)
+└─ Validation du shrinkage par le WFM Analyst de LMT
+
+ÉTAPE 4 — Production parallèle (4-6 semaines)
+├─ Pendant 4-6 semaines, LMT produit son planning hebdo dans l'outil ET dans Excel
+├─ Comparaison côte à côte des deux résultats
+├─ Calibrage des paramètres (shrinkage, AHT par queue, SL cibles)
+└─ Formation des équipes WFM et superviseurs
+
+ÉTAPE 5 — Bascule (1 semaine)
+├─ Arrêt de la production Excel
+├─ Production officielle dans Toké
+├─ Diffusion via app mobile + export CSV pour archivage
+└─ Monitoring renforcé pendant 2 semaines
+
+TOTAL : 8-11 semaines pour une bascule complète sereine
+</code></pre>
+<h3 class="code-line has-line-data" data-line-start="1053" data-line-end="1054"><a id="84_Validation_et_rollback_1053"></a>8.4 Validation et rollback</h3>
+<p class="has-line-data" data-line-start="1055" data-line-end="1056"><strong>Critères de validation avant bascule</strong> :</p>
+<ul>
+<li class="has-line-data" data-line-start="1056" data-line-end="1057">Adhérence mesurée dans Toké à ±2 points de l’adhérence estimée par LMT</li>
+<li class="has-line-data" data-line-start="1057" data-line-end="1058">Shrinkage mesuré à ±3 points du shrinkage utilisé en Excel</li>
+<li class="has-line-data" data-line-start="1058" data-line-end="1059">SL prédit par Toké à ±5 points du SL réel mesuré</li>
+<li class="has-line-data" data-line-start="1059" data-line-end="1061">WFM Analyst capable de produire le planning hebdo en &lt; 4h dans Toké (vs 12-20h en Excel)</li>
+</ul>
+<p class="has-line-data" data-line-start="1061" data-line-end="1062"><strong>Plan de rollback</strong> : pendant les 4 premières semaines après bascule, l’export CSV vers le format Excel original reste disponible. En cas de défaillance majeure, LMT peut reprendre la production Excel sous 48h.</p>
+<hr>
+<h2 class="code-line has-line-data" data-line-start="1065" data-line-end="1066"><a id="9_KPIs_et_mesure_du_ROI_1065"></a>9. KPIs et mesure du ROI</h2>
+<h3 class="code-line has-line-data" data-line-start="1067" data-line-end="1068"><a id="91_KPIs_produit_sant_technique_1067"></a>9.1 KPIs produit (santé technique)</h3>
+<table class="table table-striped table-bordered">
+<thead>
+<tr>
+<th>KPI</th>
+<th>Cible</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Disponibilité de l’extension web</td>
+<td>≥ 99.5% mensuel</td>
+</tr>
+<tr>
+<td>Temps de réponse p95 dashboards RTA</td>
+<td>&lt; 2 secondes</td>
+</tr>
+<tr>
+<td>Temps de réponse p95 endpoints API</td>
+<td>&lt; 500 ms</td>
+</tr>
+<tr>
+<td>Erreur de calcul Erlang C</td>
+<td>&lt; 0.1% (vs implémentation de référence)</td>
+</tr>
+<tr>
+<td>Délai entre pointage et reflet dans RTA</td>
+<td>&lt; 30 secondes</td>
+</tr>
+<tr>
+<td>Taux de succès des webhooks</td>
+<td>≥ 99.9%</td>
+</tr>
+</tbody>
+</table>
+<h3 class="code-line has-line-data" data-line-start="1078" data-line-end="1079"><a id="92_KPIs_mtier_impact_LMT_1078"></a>9.2 KPIs métier (impact LMT)</h3>
+<table class="table table-striped table-bordered">
+<thead>
+<tr>
+<th>KPI</th>
+<th>Baseline LMT</th>
+<th>Cible à 6 mois</th>
+<th>Cible à 12 mois</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Temps de production du planning hebdo</td>
+<td>15h</td>
+<td>5h</td>
+<td>3h</td>
+</tr>
+<tr>
+<td>Adhérence mesurée (% temps prévu effectivement présent)</td>
+<td>non mesuré</td>
+<td>≥ 85%</td>
+<td>≥ 90%</td>
+</tr>
+<tr>
+<td>Service Level moyen (toutes queues)</td>
+<td>70-75% (estimé)</td>
+<td>78%</td>
+<td>82%</td>
+</tr>
+<tr>
+<td>Shrinkage estimé vs réel — écart</td>
+<td>±10pts</td>
+<td>±3pts</td>
+<td>±2pts</td>
+</tr>
+<tr>
+<td>Nombre d’agents pour couvrir le même volume</td>
+<td>baseline N</td>
+<td>N - 5%</td>
+<td>N - 10%</td>
+</tr>
+<tr>
+<td>Taux de pénalités contractuelles sur SLA</td>
+<td>baseline</td>
+<td>-30%</td>
+<td>-50%</td>
+</tr>
+<tr>
+<td>Taux de mémos validés dans les 24h</td>
+<td>non mesuré</td>
+<td>≥ 90%</td>
+<td>≥ 95%</td>
+</tr>
+</tbody>
+</table>
+<h3 class="code-line has-line-data" data-line-start="1090" data-line-end="1091"><a id="93_Estimation_chiffre_du_ROI_LMT_1090"></a>9.3 Estimation chiffrée du ROI (LMT)</h3>
+<p class="has-line-data" data-line-start="1092" data-line-end="1093"><strong>Hypothèses prudentes</strong> :</p>
+<ul>
+<li class="has-line-data" data-line-start="1093" data-line-end="1094">250 agents</li>
+<li class="has-line-data" data-line-start="1094" data-line-end="1095">Salaire moyen chargé : 130 000 FCFA / mois</li>
+<li class="has-line-data" data-line-start="1095" data-line-end="1096">Masse salariale agents : 250 × 130 000 × 12 = <strong>390 M FCFA / an</strong></li>
+<li class="has-line-data" data-line-start="1096" data-line-end="1098">WFM Analysts : 2 ETP × 12 mois × 600 000 FCFA = <strong>14.4 M FCFA / an</strong></li>
+</ul>
+<table class="table table-striped table-bordered">
+<thead>
+<tr>
+<th>Gain</th>
+<th>Calcul</th>
+<th>Estimation annuelle</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Temps WFM économisé</td>
+<td>2 ETP × 12h/sem × 52 sem × 0.5 (réduction) × 600k/(160h×12) ≈</td>
+<td><strong>4.7 M FCFA</strong></td>
+</tr>
+<tr>
+<td>Sur-staffing évité (5%)</td>
+<td>390 M × 5%</td>
+<td><strong>19.5 M FCFA</strong></td>
+</tr>
+<tr>
+<td>Réduction pénalités SLA (5% sur contrats à pénalité, hypothèse 40% du CA concerné, marge 8%)</td>
+<td>À chiffrer avec LMT</td>
+<td><strong>~10-30 M FCFA</strong></td>
+</tr>
+<tr>
+<td>Conformité légale (réduction risque prud’homal)</td>
+<td>Non chiffré directement</td>
+<td><strong>Risque réduit</strong></td>
+</tr>
+<tr>
+<td><strong>Total estimé</strong></td>
+<td></td>
+<td><strong>~35-55 M FCFA / an</strong></td>
+</tr>
+</tbody>
+</table>
+<p class="has-line-data" data-line-start="1106" data-line-end="1107"><strong>Investissement Toké</strong> (côté LMT) :</p>
+<ul>
+<li class="has-line-data" data-line-start="1107" data-line-end="1108">Licence Core + Planning + CC : à définir par Toké, hypothèse de l’ordre de <strong>3-5 M FCFA / an</strong> (250 sièges)</li>
+<li class="has-line-data" data-line-start="1108" data-line-end="1110">Coût de mise en route (intégration, formation, paramétrage) : ponctuel, <strong>2-4 M FCFA</strong></li>
+</ul>
+<p class="has-line-data" data-line-start="1110" data-line-end="1111"><strong>Retour sur investissement</strong> : positif dès l’année 1, ratio ROI estimé ≥ 7x au régime de croisière.</p>
+<h3 class="code-line has-line-data" data-line-start="1112" data-line-end="1113"><a id="94_Plan_de_mesure_dans_le_temps_1112"></a>9.4 Plan de mesure dans le temps</h3>
+<pre><code class="has-line-data" data-line-start="1115" data-line-end="1133">S0 (avant déploiement)
+├─ Mesure baseline : interview WFM, audit Excel, sondage adhérence empirique
+└─ Définition des cibles avec LMT (validation chiffrée)
+
+S+1 (lancement)
+├─ Mise en place du dashboard Direction
+└─ Mesures quotidiennes des KPIs
+
+S+1 à S+12 (phase pilote)
+├─ Revue hebdo des KPIs vs cibles
+├─ Ajustements paramétrage
+└─ Revue mensuelle Toké ↔ LMT
+
+S+12 (bilan)
+├─ Rapport de performance vs cibles
+├─ Bilan ROI chiffré et présenté à la direction
+└─ Roadmap pour P3 (CC avancé) si pertinent
+</code></pre>
+<hr>
+<h2 class="code-line has-line-data" data-line-start="1136" data-line-end="1137"><a id="10_Risques_arbitrages_et_hypothses_1136"></a>10. Risques, arbitrages et hypothèses</h2>
+<h3 class="code-line has-line-data" data-line-start="1138" data-line-end="1139"><a id="101_Risques_techniques_1138"></a>10.1 Risques techniques</h3>
+<table class="table table-striped table-bordered">
+<thead>
+<tr>
+<th>Risque</th>
+<th>Probabilité</th>
+<th>Impact</th>
+<th>Mitigation</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Sous-estimation de la complexité du scheduling semi-auto P2</td>
+<td>Moyenne</td>
+<td>Moyen</td>
+<td>Prototyper l’heuristique sur 2 semaines de données LMT avant engagement final ; prévoir une option de fallback “manuel pur”</td>
+</tr>
+<tr>
+<td>Performance dégradée du RTA à grande échelle (1000+ agents)</td>
+<td>Moyenne</td>
+<td>Moyen</td>
+<td>Architecture cache Redis dès P2 ; tests de charge sur des datasets simulés</td>
+</tr>
+<tr>
+<td>Webhooks non fiables (perte d’événements)</td>
+<td>Faible</td>
+<td>Élevé</td>
+<td>Stockage local des événements + endpoint de reprise par polling ; signature et idempotence dès P0</td>
+</tr>
+<tr>
+<td>Dérive de la précision Erlang C</td>
+<td>Faible</td>
+<td>Faible</td>
+<td>Tests unitaires comparés à des outils de référence (<a href="http://callcentrehelper.com">callcentrehelper.com</a>, Erlang-Online) sur 200 cas</td>
+</tr>
+<tr>
+<td>Compatibilité mobile Android low-end</td>
+<td>Moyenne</td>
+<td>Moyen</td>
+<td>Tests sur appareils Android 7+ représentatifs du marché ; UI dégradée prévue</td>
+</tr>
+</tbody>
+</table>
+<h3 class="code-line has-line-data" data-line-start="1148" data-line-end="1149"><a id="102_Risques_mtier_1148"></a>10.2 Risques métier</h3>
+<table class="table table-striped table-bordered">
+<thead>
+<tr>
+<th>Risque</th>
+<th>Probabilité</th>
+<th>Impact</th>
+<th>Mitigation</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>LMT change d’avis sur la portée du projet</td>
+<td>Moyenne</td>
+<td>Élevé</td>
+<td>Spec validée par écrit avant développement ; livrables intermédiaires démontrables</td>
+</tr>
+<tr>
+<td>Résistance au changement (WFM, agents)</td>
+<td>Élevée</td>
+<td>Élevé</td>
+<td>Phase de production parallèle 4-6 semaines ; formation dédiée ; coaching superviseurs</td>
+</tr>
+<tr>
+<td>Données historiques de volumes inexploitables</td>
+<td>Moyenne</td>
+<td>Moyen</td>
+<td>Plan de backfill manuel à partir des Excel passés ; option de démarrage sur paramètres estimés</td>
+</tr>
+<tr>
+<td>ROI moins élevé que prévu</td>
+<td>Faible</td>
+<td>Moyen</td>
+<td>KPIs mesurés dès semaine 1 ; ajustement paramètres ; report quarterly avec direction</td>
+</tr>
+<tr>
+<td>Concurrence d’un éditeur international entrant sur l’Afrique</td>
+<td>Faible</td>
+<td>Élevé</td>
+<td>Avantage prix-en-FCFA + ancrage local + intégration native pointage</td>
+</tr>
+</tbody>
+</table>
+<h3 class="code-line has-line-data" data-line-start="1158" data-line-end="1159"><a id="103_Hypothses_fortes_valider_1158"></a>10.3 Hypothèses fortes (à valider)</h3>
+<ol>
+<li class="has-line-data" data-line-start="1160" data-line-end="1161"><strong>LMT donne accès à 12 semaines d’historique de volumes</strong> pour le calibrage initial du Module CC (par export ACD ou reconstitution depuis Excel passés).</li>
+<li class="has-line-data" data-line-start="1161" data-line-end="1162"><strong>Tous les agents LMT ont déjà un compte Toké actif</strong> au moment du démarrage du Module CC. Sinon, prévoir une phase d’onboarding préalable.</li>
+<li class="has-line-data" data-line-start="1162" data-line-end="1163"><strong>L’équipe technique Toké a la capacité d’absorber les évolutions P0</strong> (webhooks, OpenAPI, push) en 6-8 semaines parallèles. Si non, ajouter 1-2 développeurs sur cette phase.</li>
+<li class="has-line-data" data-line-start="1163" data-line-end="1164"><strong>Le décideur LMT s’engage sur 4-6 semaines de production parallèle Excel/Toké</strong>. Sans ce filet de sécurité, le risque de rejet par les équipes est élevé.</li>
+<li class="has-line-data" data-line-start="1164" data-line-end="1166"><strong>Le format CSV d’import des volumes est acceptable pour LMT</strong> comme entrée. Si LMT veut un connecteur direct à son ACD, c’est un développement supplémentaire à chiffrer.</li>
+</ol>
+<h3 class="code-line has-line-data" data-line-start="1166" data-line-end="1167"><a id="104_Dcisions_darchitecture_restantes_arbitrer_en_phase_de_conception_technique_1166"></a>10.4 Décisions d’architecture restantes (à arbitrer en phase de conception technique)</h3>
+<table class="table table-striped table-bordered">
+<thead>
+<tr>
+<th>Décision</th>
+<th>Options</th>
+<th>Recommandation à valider</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Hébergement de l’extension</td>
+<td>Mutualisé avec Toké Core / dédié</td>
+<td>Mutualisé pour simplicité, isolé par tenant via SaaS</td>
+</tr>
+<tr>
+<td>Base de données Module Planning et CC</td>
+<td>Mêmes schémas que Core (PostgreSQL partagé) / schéma séparé</td>
+<td>Partagée pour la cohérence transactionnelle</td>
+</tr>
+<tr>
+<td>Solveur P3</td>
+<td>OR-Tools (Google, gratuit) / Gurobi (payant) / fait maison</td>
+<td>OR-Tools en premier, Gurobi si limites observées</td>
+</tr>
+<tr>
+<td>Modèle de tarification facturée à LMT</td>
+<td>Pour 250 sièges</td>
+<td>À définir avec direction commerciale Toké</td>
+</tr>
+<tr>
+<td>SSO entreprise pour l’extension web</td>
+<td>Oui dès P1 / plus tard</td>
+<td>Plus tard sauf demande explicite LMT</td>
+</tr>
+</tbody>
+</table>
+<hr>
+<h2 class="code-line has-line-data" data-line-start="1178" data-line-end="1179"><a id="Annexes_1178"></a>Annexes</h2>
+<h3 class="code-line has-line-data" data-line-start="1180" data-line-end="1181"><a id="Annexe_A_Glossaire_WFM_1180"></a>Annexe A — Glossaire WFM</h3>
+<table class="table table-striped table-bordered">
+<thead>
+<tr>
+<th>Terme</th>
+<th>Définition</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>ACD</strong></td>
+<td>Automatic Call Distributor — système téléphonique qui distribue les appels aux agents</td>
+</tr>
+<tr>
+<td><strong>AHT</strong></td>
+<td>Average Handling Time — temps moyen de traitement d’un appel (durée appel + travail post-appel)</td>
+</tr>
+<tr>
+<td><strong>Adhérence</strong></td>
+<td>Rapport entre temps prévu et temps effectivement passé en activité conforme au planning</td>
+</tr>
+<tr>
+<td><strong>BPO</strong></td>
+<td>Business Process Outsourcing — externalisation de processus, dont les centres d’appels</td>
+</tr>
+<tr>
+<td><strong>Erlang C</strong></td>
+<td>Formule mathématique calculant la probabilité qu’un appel doive attendre, et déduisant le nombre d’agents nécessaires pour atteindre un Service Level cible</td>
+</tr>
+<tr>
+<td><strong>Erlang A</strong></td>
+<td>Extension d’Erlang C tenant compte de l’abandon (impatience client)</td>
+</tr>
+<tr>
+<td><strong>Multi-skill</strong></td>
+<td>Agents capables de traiter plusieurs queues, dont l’affectation dynamique est routée par l’ACD</td>
+</tr>
+<tr>
+<td><strong>Occupancy</strong></td>
+<td>Taux d’occupation : % du temps de présence agent passé en appel</td>
+</tr>
+<tr>
+<td><strong>Routing</strong></td>
+<td>Règles de distribution des appels d’une queue aux agents disponibles</td>
+</tr>
+<tr>
+<td><strong>RTA</strong></td>
+<td>Real-Time Adherence — surveillance temps réel de la conformité au planning</td>
+</tr>
+<tr>
+<td><strong>Service Level (SL)</strong></td>
+<td>% d’appels répondus dans le délai cible (ex : “80/20” = 80% des appels en moins de 20 secondes)</td>
+</tr>
+<tr>
+<td><strong>Shrinkage</strong></td>
+<td>% de temps de présence agent perdu en activités non productives (pauses, formations, absences, etc.)</td>
+</tr>
+<tr>
+<td><strong>WFM</strong></td>
+<td>Workforce Management — discipline de gestion des effectifs en horaires variables</td>
+</tr>
+</tbody>
+</table>
+<h3 class="code-line has-line-data" data-line-start="1198" data-line-end="1199"><a id="Annexe_B_Format_CSV_de_rfrence_volumes_prvisionnels_1198"></a>Annexe B — Format CSV de référence — volumes prévisionnels</h3>
+<pre><code class="has-line-data" data-line-start="1201" data-line-end="1212">queue_code,date,time_slot_start,predicted_calls,predicted_aht_seconds
+FR,2026-05-18,00:00,5,200
+FR,2026-05-18,00:30,3,200
+FR,2026-05-18,01:00,2,200
+...
+FR,2026-05-18,08:00,45,210
+FR,2026-05-18,08:30,67,215
+...
+EN,2026-05-18,00:00,1,250
+...
+</code></pre>
+<p class="has-line-data" data-line-start="1213" data-line-end="1214"><strong>Convention</strong> :</p>
+<ul>
+<li class="has-line-data" data-line-start="1214" data-line-end="1215">En-tête obligatoire en première ligne</li>
+<li class="has-line-data" data-line-start="1215" data-line-end="1216">UTF-8 sans BOM</li>
+<li class="has-line-data" data-line-start="1216" data-line-end="1217">Séparateur virgule</li>
+<li class="has-line-data" data-line-start="1217" data-line-end="1218">Encodage des heures sur 24h</li>
+<li class="has-line-data" data-line-start="1218" data-line-end="1220">Couverture continue recommandée mais pas obligatoire (les tranches manquantes seront considérées comme 0 appel prévu)</li>
+</ul>
+<h3 class="code-line has-line-data" data-line-start="1220" data-line-end="1221"><a id="Annexe_C_Exemple_de_configuration_LMT_extrait_1220"></a>Annexe C — Exemple de configuration LMT (extrait)</h3>
+<pre><code class="has-line-data" data-line-start="1223" data-line-end="1254">Tenant : LMT
+Subdomain : lmt.toke.cm
+Modules activés : Core + Planning + CC
+
+Queues configurées :
+  FR        - Français standard         - SL 80/20  - AHT 240s
+  EN        - Anglais                   - SL 80/20  - AHT 240s
+  PIG       - Pidgin                    - SL 80/20  - AHT 220s
+  FFD       - French Full Day           - SL 80/20  - AHT 250s
+  8911      - Service 8911              - SL 80/30  - AHT 200s
+  8900      - Service 8900              - SL 80/30  - AHT 200s
+  KAABU     - Kaabu                     - SL 80/30  - AHT 180s
+  EMAIL     - Email                     - SL 90/60  - AHT 600s
+  DA TD     - DA technique direct       - SL 80/20  - AHT 280s
+  DA TR     - DA technique relais       - SL 80/20  - AHT 320s
+  DA Chat C - DA chat client            - SL 80/30  - AHT 400s
+  EN_PIG    - Anglais/Pidgin            - SL 80/20  - AHT 230s
+
+Skills :
+  FFD - French Full Day
+  FRE - Français
+  ENG - English
+  BU  - Back-Up (multi-queue)
+
+Contraintes par défaut :
+  Max heures/semaine : 35h (CDI standard) ou 40h (CDI forfait)
+  Repos hebdo minimum : 35h consécutives
+  Repos inter-shift : 11h minimum
+  Max nuits consécutives : 4
+  Max jours consécutifs travaillés : 6
+</code></pre>
+<h3 class="code-line has-line-data" data-line-start="1255" data-line-end="1256"><a id="Annexe_D_Comparaison_avec_les_outils_existants_1255"></a>Annexe D — Comparaison avec les outils existants</h3>
+<table class="table table-striped table-bordered">
+<thead>
+<tr>
+<th>Capacité</th>
+<th>Excel LMT actuel</th>
+<th>Toké + modules</th>
+<th>NICE / Calabrio / Genesys</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Forecasting</td>
+<td>Manuel</td>
+<td>CSV + Erlang C (P2) + ML (P3)</td>
+<td>ML mature</td>
+</tr>
+<tr>
+<td>Sizing Erlang C</td>
+<td>Oui (par queue)</td>
+<td>Oui (par queue, P2)</td>
+<td>Oui multi-skill simulation</td>
+</tr>
+<tr>
+<td>Multi-skill</td>
+<td>Non</td>
+<td>P3 (simulation)</td>
+<td>Oui mature</td>
+</tr>
+<tr>
+<td>Scheduling</td>
+<td>Manuel</td>
+<td>Semi-auto (P2) + solveur (P3)</td>
+<td>Solveur mature</td>
+</tr>
+<tr>
+<td>RTA</td>
+<td>Inexistant</td>
+<td>Oui (P2)</td>
+<td>Oui mature</td>
+</tr>
+<tr>
+<td>Mobile employé</td>
+<td>Aucun</td>
+<td>Natif</td>
+<td>Souvent payant</td>
+</tr>
+<tr>
+<td>Pointage géofencé</td>
+<td>Aucun</td>
+<td>Natif Toké Core</td>
+<td>Aucun (intégration tierce)</td>
+</tr>
+<tr>
+<td>Mémos / valeur probante</td>
+<td>Excel</td>
+<td>Natif Toké Core</td>
+<td>Aucun</td>
+</tr>
+<tr>
+<td>Tarification</td>
+<td>Gratuit (coût caché : temps)</td>
+<td>FCFA, abordable PME</td>
+<td>USD, structures grandes</td>
+</tr>
+<tr>
+<td>Marché cible</td>
+<td>LMT</td>
+<td>TPE/PME à grandes entreprises africaines</td>
+<td>Grandes entreprises mondiales</td>
+</tr>
+<tr>
+<td>Souveraineté données</td>
+<td>Locale</td>
+<td>Locale possible</td>
+<td>Cloud étranger</td>
+</tr>
+</tbody>
+</table>
+<hr>
+<h2 class="code-line has-line-data" data-line-start="1273" data-line-end="1274"><a id="Synthse_et_prochaines_tapes_1273"></a>Synthèse et prochaines étapes</h2>
+<p class="has-line-data" data-line-start="1275" data-line-end="1276">Ce document constitue la <strong>base de référence</strong> pour le développement des Modules Planning et Centre d’Appels de Toké. Il a été conçu pour :</p>
+<ol>
+<li class="has-line-data" data-line-start="1277" data-line-end="1278"><strong>Aligner toutes les parties prenantes</strong> sur la vision produit et le périmètre</li>
+<li class="has-line-data" data-line-start="1278" data-line-end="1279"><strong>Documenter les décisions d’architecture</strong> déjà prises</li>
+<li class="has-line-data" data-line-start="1279" data-line-end="1280"><strong>Fournir un plan d’exécution réaliste</strong> en 4 phases (P0 à P3)</li>
+<li class="has-line-data" data-line-start="1280" data-line-end="1281"><strong>Quantifier le ROI</strong> attendu pour le client pilote LMT</li>
+<li class="has-line-data" data-line-start="1281" data-line-end="1283"><strong>Identifier les risques</strong> et les hypothèses à valider</li>
+</ol>
+<h3 class="code-line has-line-data" data-line-start="1283" data-line-end="1284"><a id="tapes_immdiates_recommandes_1283"></a>Étapes immédiates recommandées</h3>
+<ol>
+<li class="has-line-data" data-line-start="1285" data-line-end="1286"><strong>Validation de la spec</strong> par le sponsor Toké et le décideur LMT (semaine +0 à +2)</li>
+<li class="has-line-data" data-line-start="1286" data-line-end="1287"><strong>Audit technique interne Toké</strong> pour confirmer les estimations P0 (semaine +2 à +4)</li>
+<li class="has-line-data" data-line-start="1287" data-line-end="1288"><strong>Atelier de cadrage avec LMT</strong> : validation du modèle CC LMT, du calendrier de bascule, des KPIs cibles chiffrés (semaine +4)</li>
+<li class="has-line-data" data-line-start="1288" data-line-end="1289"><strong>Démarrage P0</strong> dès validation budgétaire (semaine +6)</li>
+<li class="has-line-data" data-line-start="1289" data-line-end="1291"><strong>Présentation publique</strong> du Module Planning auprès d’autres prospects (usines, hôtels) en parallèle de P1 (semaine +14)</li>
+</ol>
+<h3 class="code-line has-line-data" data-line-start="1291" data-line-end="1292"><a id="Documents_complmentaires_produire_1291"></a>Documents complémentaires à produire</h3>
+<ul>
+<li class="has-line-data" data-line-start="1293" data-line-end="1294">Spec technique détaillée P0 (à produire avant le démarrage P0)</li>
+<li class="has-line-data" data-line-start="1294" data-line-end="1295">Modèle de données détaillé avec migrations DB</li>
+<li class="has-line-data" data-line-start="1295" data-line-end="1296">Plan de tests d’acceptation utilisateur</li>
+<li class="has-line-data" data-line-start="1296" data-line-end="1297">Plan de formation des équipes LMT</li>
+<li class="has-line-data" data-line-start="1297" data-line-end="1299">Document commercial Module Planning (one-pager) pour la prospection hors LMT</li>
+</ul>
+<hr>
+<p class="has-line-data" data-line-start="1301" data-line-end="1302"><em>Document préparé en avril-mai 2026. Version 1.0. À réviser après chaque revue trimestrielle de roadmap.</em></p>
+
+</body>
+</html>

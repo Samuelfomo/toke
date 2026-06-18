@@ -21,43 +21,9 @@ import { TenantRevision } from '../../tools/revision.js';
 import { responseValue, tableName } from '../../utils/response.model.js';
 import { ValidationUtils } from '../../utils/view.validator.js';
 import SessionModel from '../class/SessionModel.js';
+import { validateAgainstSessionModel } from '../../utils/session.model.validation.js';
 
 const router = Router();
-
-// ─── Helper : validation croisée SessionModel ↔ SessionTemplate definition ──
-
-function validateAgainstSessionModel(
-  definition: Record<string, any>,
-  forRotation: boolean,
-  sessionModelObj: InstanceType<typeof SessionModel>,
-): { valid: true } | { valid: false; code: string; message: string } {
-  const workdays = sessionModelObj.getWorkday() ?? [];
-
-  // 1. Les jours actifs du template doivent être dans les workdays du SessionModel
-  const activeDays = Object.entries(definition)
-    .filter(([, value]) => value !== null && Array.isArray(value) && value.length > 0)
-    .map(([day]) => day);
-
-  const forbiddenDays = activeDays.filter((day) => !workdays.includes(day));
-  if (forbiddenDays.length > 0) {
-    return {
-      valid: false,
-      code: SESSION_TEMPLATE_CODES.DEFINITION_INVALID,
-      message: `The following days are not allowed by the session model workday policy: ${forbiddenDays.join(', ')}`,
-    };
-  }
-
-  // 2. Si for_rotation=true, le SessionModel doit avoir rotation_allowed=true
-  if (forRotation && !sessionModelObj.isRotationAllowed()) {
-    return {
-      valid: false,
-      code: SESSION_TEMPLATE_CODES.SESSION_MODEL_CONFLICT,
-      message: SESSION_TEMPLATE_ERRORS.SESSION_MODEL_ROTATION_NOT_ALLOWED,
-    };
-  }
-
-  return { valid: true };
-}
 
 // ============================================
 // ROUTES DE LISTAGE GÉNÉRAL
@@ -129,6 +95,8 @@ router.get('/list', Ensure.get(), async (req: Request, res: Response) => {
     if (filters.name) {
       conditions.name = filters.name;
     }
+    if (filters.for_rotation) conditions.for_rotation = filters.for_rotation;
+    if (filters.current) conditions.current = filters.current;
     if (filters.session_model) {
       const sessionModelObj = await SessionModel._load(filters.session_model, true);
       if (!sessionModelObj) {
@@ -420,17 +388,6 @@ router.put('/:guid', Ensure.put(), async (req: Request, res: Response) => {
 
     if (validatedData.name !== undefined) {
       templateObj.setName(validatedData.name);
-    }
-
-    // if (validatedData.definition !== undefined) {
-    //   templateObj.setDefinition(validatedData.definition);
-    // }
-    // 🔧 AJOUT : Normaliser si definition est fournie
-    if (validatedData.definition !== undefined) {
-      const normalizedDefinition = SessionTemplateValidationUtils.normalizeDefinition(
-        validatedData.definition,
-      );
-      templateObj.setDefinition(normalizedDefinition);
     }
 
     if (validatedData.default !== undefined) {

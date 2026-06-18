@@ -1,4 +1,3 @@
-// src/server.ts
 import { existsSync, unlinkSync, writeFileSync } from 'fs';
 import { join } from 'path';
 

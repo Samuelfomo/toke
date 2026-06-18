@@ -151,48 +151,6 @@ router.get('/active', Ensure.get(), async (req: Request, res: Response) => {
   }
 });
 
-// // === 🔍 Get complete hierarchical list of all employees under manager's responsibility (recursive) === //
-// router.get('/employee/all-subordinates', Ensure.get(), async (req: Request, res: Response) => {
-//   try {
-//     const { supervisor } = req.query;
-//
-//     // Vérification du GUID
-//     if (!supervisor || !UsersValidationUtils.validateGuid(String(supervisor))) {
-//       return R.handleError(res, HttpStatus.BAD_REQUEST, {
-//         code: ORG_HIERARCHY_CODES.INVALID_GUID,
-//         message: ORG_HIERARCHY_ERRORS.GUID_INVALID,
-//       });
-//     }
-//
-//     // Chargement du superviseur
-//     const supervisorObj = await User._load(String(supervisor), true);
-//     if (!supervisorObj) {
-//       return R.handleError(res, HttpStatus.NOT_FOUND, {
-//         code: USERS_CODES.USER_NOT_FOUND,
-//         message: USERS_ERRORS.NOT_FOUND,
-//       });
-//     }
-//
-//     // Appel de la méthode récursive
-//     const allSubordinates = await OrgHierarchy._getAllSubordinates(supervisorObj.getId()!);
-//
-//     const allRoles = await Promise.all(
-//       allSubordinates.map(async (user) => await UserRole._listByUser(user.getId()!)),
-//     );
-//
-//     return R.handleSuccess(res, {
-//       supervisor: supervisorObj.toPublicJSON(),
-//       total: allSubordinates.length,
-//       allSubordinates: allSubordinates.map((s) => s.toPublicJSON()),
-//     });
-//   } catch (error: any) {
-//     return R.handleError(res, HttpStatus.INTERNAL_ERROR, {
-//       code: ORG_HIERARCHY_CODES.LISTING_FAILED,
-//       message: error.message,
-//     });
-//   }
-// });
-
 // === 🔍 Get complete hierarchical list of all employees under manager's responsibility (recursive) === //
 router.get('/employee/all-subordinates', Ensure.get(), async (req: Request, res: Response) => {
   try {
@@ -313,7 +271,7 @@ router.post('/', Ensure.post(), async (req: Request, res: Response) => {
 
 router.get('/:guid', Ensure.get(), async (req: Request, res: Response) => {
   try {
-    if (!OrgHierarchyValidationUtils.validateGuid(req.params.guid)) {
+    if (!OrgHierarchyValidationUtils.validateGuid(req.params.guid as string)) {
       return R.handleError(res, HttpStatus.BAD_REQUEST, {
         code: ORG_HIERARCHY_CODES.INVALID_GUID,
         message: ORG_HIERARCHY_ERRORS.GUID_INVALID,
@@ -343,7 +301,7 @@ router.get('/:guid', Ensure.get(), async (req: Request, res: Response) => {
 
 router.put('/:guid', Ensure.put(), async (req: Request, res: Response) => {
   try {
-    if (!OrgHierarchyValidationUtils.validateGuid(req.params.guid)) {
+    if (!OrgHierarchyValidationUtils.validateGuid(req.params.guid as string)) {
       return R.handleError(res, HttpStatus.BAD_REQUEST, {
         code: ORG_HIERARCHY_CODES.INVALID_GUID,
         message: ORG_HIERARCHY_ERRORS.GUID_INVALID,
@@ -428,7 +386,7 @@ router.put('/:guid', Ensure.put(), async (req: Request, res: Response) => {
 
 router.delete('/:guid', Ensure.delete(), async (req: Request, res: Response) => {
   try {
-    if (!OrgHierarchyValidationUtils.validateGuid(req.params.guid)) {
+    if (!OrgHierarchyValidationUtils.validateGuid(req.params.guid as string)) {
       return R.handleError(res, HttpStatus.BAD_REQUEST, {
         code: ORG_HIERARCHY_CODES.INVALID_GUID,
         message: ORG_HIERARCHY_ERRORS.GUID_INVALID,
@@ -460,7 +418,7 @@ router.delete('/:guid', Ensure.delete(), async (req: Request, res: Response) => 
 // === Liste des relations où cet utilisateur est le subordonné ===
 router.get('/subordinate/:userGuid/list', Ensure.get(), async (req: Request, res: Response) => {
   try {
-    if (!OrgHierarchyValidationUtils.validateGuid(req.params.userGuid)) {
+    if (!OrgHierarchyValidationUtils.validateGuid(req.params.userGuid as string)) {
       return R.handleError(res, HttpStatus.BAD_REQUEST, {
         code: ORG_HIERARCHY_CODES.INVALID_GUID,
         message: ORG_HIERARCHY_ERRORS.GUID_INVALID,
@@ -509,7 +467,7 @@ router.get('/subordinate/:userGuid/list', Ensure.get(), async (req: Request, res
 // === Liste les subordonnés immédiats d’un superviseur (1er niveau seulement). ===
 router.get('/supervisor/:userGuid/list', Ensure.get(), async (req: Request, res: Response) => {
   try {
-    if (!OrgHierarchyValidationUtils.validateGuid(req.params.userGuid)) {
+    if (!OrgHierarchyValidationUtils.validateGuid(req.params.userGuid as string)) {
       return R.handleError(res, HttpStatus.BAD_REQUEST, {
         code: ORG_HIERARCHY_CODES.INVALID_GUID,
         message: ORG_HIERARCHY_ERRORS.GUID_INVALID,
@@ -584,7 +542,7 @@ router.get(
   Ensure.get(),
   async (req: Request, res: Response) => {
     try {
-      if (!OrgHierarchyValidationUtils.validateGuid(req.params.userGuid)) {
+      if (!OrgHierarchyValidationUtils.validateGuid(req.params.userGuid as string)) {
         return R.handleError(res, HttpStatus.BAD_REQUEST, {
           code: ORG_HIERARCHY_CODES.INVALID_GUID,
           message: ORG_HIERARCHY_ERRORS.GUID_INVALID,
@@ -643,7 +601,7 @@ router.get(
   Ensure.get(),
   async (req: Request, res: Response) => {
     try {
-      if (!OrgHierarchyValidationUtils.validateGuid(req.params.userGuid)) {
+      if (!OrgHierarchyValidationUtils.validateGuid(req.params.userGuid as string)) {
         return R.handleError(res, HttpStatus.BAD_REQUEST, {
           code: ORG_HIERARCHY_CODES.INVALID_GUID,
           message: ORG_HIERARCHY_ERRORS.GUID_INVALID,
@@ -787,7 +745,7 @@ router.get('/department/:department/list', Ensure.get(), async (req: Request, re
     const { department } = req.params;
     const paginationOptions = paginationSchema.parse(req.query);
 
-    const hierarchyEntries = await OrgHierarchy._listByDepartment(department);
+    const hierarchyEntries = await OrgHierarchy._listByDepartment(department as string);
 
     // Application de la pagination
     const offset = paginationOptions.offset || 0;

@@ -61,6 +61,11 @@ export default abstract class BaseModel {
     // await this.ensureInitialized();
     const model = TableInitializer.getModel(tableName);
 
+    // ✅ ORDER BY default : created_at DESC (sauf si options.order déjà fourni)
+    if (!options.order) {
+      options = { order: [['id', 'DESC']], ...options };
+    }
+
     const queryOptions: any = { where, ...options };
 
     if (typeof paginationOptions.offset === 'number' && paginationOptions.offset >= 0) {

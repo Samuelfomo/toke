@@ -99,7 +99,7 @@ router.get('/search', Ensure.get(), async (req: Request, res: Response) => {
 
 router.get('/:guid', Ensure.get(), async (req: Request, res: Response) => {
   try {
-    if (!AuditLogsValidationUtils.validateGuid(req.params.guid)) {
+    if (!AuditLogsValidationUtils.validateGuid(req.params.guid as string)) {
       return R.handleError(res, HttpStatus.BAD_REQUEST, {
         code: AUDIT_LOGS_CODES.INVALID_GUID,
         message: AUDIT_LOGS_ERRORS.GUID_INVALID,
@@ -131,7 +131,7 @@ router.get('/table/:tableName/list', Ensure.get(), async (req: Request, res: Res
   try {
     const { tableName } = req.params;
 
-    if (!AuditLogsValidationUtils.validateTableName(tableName)) {
+    if (!AuditLogsValidationUtils.validateTableName(tableName as string)) {
       return R.handleError(res, HttpStatus.BAD_REQUEST, {
         code: AUDIT_LOGS_CODES.TABLE_NAME_INVALID,
         message: AUDIT_LOGS_ERRORS.TABLE_NAME_INVALID,
@@ -139,7 +139,7 @@ router.get('/table/:tableName/list', Ensure.get(), async (req: Request, res: Res
     }
 
     const paginationOptions = paginationSchema.parse(req.query);
-    const logs = await AuditLogs._listByTable(tableName);
+    const logs = await AuditLogs._listByTable(tableName as string);
 
     // Pagination manuelle
     const offset = paginationOptions.offset || 0;
@@ -172,7 +172,7 @@ router.get('/table/:tableName/list', Ensure.get(), async (req: Request, res: Res
 
 router.get('/user/:userGuid/list', Ensure.get(), async (req: Request, res: Response) => {
   try {
-    if (!AuditLogsValidationUtils.validateGuid(req.params.userGuid)) {
+    if (!AuditLogsValidationUtils.validateGuid(req.params.userGuid as string)) {
       return R.handleError(res, HttpStatus.BAD_REQUEST, {
         code: AUDIT_LOGS_CODES.INVALID_GUID,
         message: AUDIT_LOGS_ERRORS.GUID_INVALID,
@@ -223,7 +223,7 @@ router.get('/record/:recordGuid/history', Ensure.get(), async (req: Request, res
     const { recordGuid } = req.params;
     const { table_name } = req.query;
 
-    if (!AuditLogsValidationUtils.validateGuid(recordGuid)) {
+    if (!AuditLogsValidationUtils.validateGuid(recordGuid as string)) {
       return R.handleError(res, HttpStatus.BAD_REQUEST, {
         code: AUDIT_LOGS_CODES.INVALID_GUID,
         message: AUDIT_LOGS_ERRORS.GUID_INVALID,
@@ -237,7 +237,7 @@ router.get('/record/:recordGuid/history', Ensure.get(), async (req: Request, res
       });
     }
 
-    const logs = await AuditLogs.getModificationHistory(table_name as string, recordGuid);
+    const logs = await AuditLogs.getModificationHistory(table_name as string, recordGuid as string);
 
     const items = logs ? await Promise.all(logs.map(async (log) => await log.toJSON())) : [];
 
@@ -259,7 +259,7 @@ router.get('/record/:recordGuid/history', Ensure.get(), async (req: Request, res
 
 router.get('/user/:userGuid/activity-report', Ensure.get(), async (req: Request, res: Response) => {
   try {
-    if (!AuditLogsValidationUtils.validateGuid(req.params.userGuid)) {
+    if (!AuditLogsValidationUtils.validateGuid(req.params.userGuid as string)) {
       return R.handleError(res, HttpStatus.BAD_REQUEST, {
         code: AUDIT_LOGS_CODES.INVALID_GUID,
         message: AUDIT_LOGS_ERRORS.GUID_INVALID,
@@ -359,7 +359,7 @@ router.get('/performance/analyze', Ensure.get(), async (req: Request, res: Respo
 
 router.get('/gdpr/report/:userGuid', Ensure.get(), async (req: Request, res: Response) => {
   try {
-    if (!AuditLogsValidationUtils.validateGuid(req.params.userGuid)) {
+    if (!AuditLogsValidationUtils.validateGuid(req.params.userGuid as string)) {
       return R.handleError(res, HttpStatus.BAD_REQUEST, {
         code: AUDIT_LOGS_CODES.INVALID_GUID,
         message: AUDIT_LOGS_ERRORS.GUID_INVALID,
@@ -393,7 +393,7 @@ router.get(
   Ensure.get(),
   async (req: Request, res: Response) => {
     try {
-      if (!AuditLogsValidationUtils.validateGuid(req.params.userGuid)) {
+      if (!AuditLogsValidationUtils.validateGuid(req.params.userGuid as string)) {
         return R.handleError(res, HttpStatus.BAD_REQUEST, {
           code: AUDIT_LOGS_CODES.INVALID_GUID,
           message: AUDIT_LOGS_ERRORS.GUID_INVALID,

@@ -73,25 +73,6 @@ export default class User extends UserModel {
     return new User().listByActiveStatus(isActive, paginationOptions);
   }
 
-  // /**
-  //  * Liste les utilisateurs par session template
-  //  */
-  // static async _listBySessionTemplate(
-  //   sessionTemplate: number,
-  //   paginationOptions: { offset?: number; limit?: number } = {},
-  // ): Promise<User[] | null> {
-  //   return new User().listBySessionTemplate(sessionTemplate, paginationOptions);
-  // }
-  //
-  // /**
-  //  * Liste les utilisateurs avec session active
-  //  */
-  // static async _listWithActiveSession(
-  //   paginationOptions: { offset?: number; limit?: number } = {},
-  // ): Promise<User[] | null> {
-  //   return new User().listWithActiveSession(paginationOptions);
-  // }
-
   static async exportable(
     conditions: Record<string, any> = {
       ['active']: USERS_DEFAULTS.ACTIVE,
@@ -258,32 +239,6 @@ export default class User extends UserModel {
   // MÉTHODES DE RÉSOLUTION DES ASSIGNATIONS
   // ============================================
 
-  // /**
-  //  * Récupère l'assignation d'horaire active pour cet utilisateur
-  //  * Priorité : Schedule Assignment > Rotation Assignment
-  //  */
-  // async getActiveScheduleAssignment(): Promise<ScheduleAssignments | null> {
-  //   const today = TimezoneConfigUtils.getCurrentTime().toISOString().split('T')[0];
-  //
-  //   const activeAssignments = await ScheduleAssignments._listForUserOnDate(this.id!, today);
-  //
-  //   const activeGroup = await Groups._load(this.getId(), false, true);
-  //   if (activeGroup) {
-  //     const activeAssignments2 = await activeGroup.getActiveScheduleAssignment();
-  //     console.log('activeAssignments2', activeAssignments2);
-  //   }
-  //
-  //   // Retourner la plus récente active
-  //   if (activeAssignments && activeAssignments.length > 0) {
-  //     return activeAssignments.sort((a, b) => {
-  //       const dateA = new Date(a.getStartDate()!).getTime();
-  //       const dateB = new Date(b.getStartDate()!).getTime();
-  //       return dateB - dateA; // Plus récent en premier
-  //     })[0];
-  //   }
-  //
-  //   return null;
-  // }
   /**
    * Récupère l'assignation d'horaire active la plus récente
    * (peut provenir du user ou du group)
@@ -294,22 +249,6 @@ export default class User extends UserModel {
 
     return active.type === 'schedule' ? (active.assignment as ScheduleAssignments) : null;
   }
-
-  // /**
-  //  * Récupère l'assignation de rotation active pour cet utilisateur
-  //  */
-  // async getActiveRotationAssignment(): Promise<RotationAssignment | null> {
-  //   const assignments = await RotationAssignment._listByUser(this.id!);
-  //
-  //   const activeGroup = await Groups._load(this.getId(), false, true);
-  //   if (activeGroup) {
-  //     const activeAssignments = await activeGroup.getActiveRotationAssignment();
-  //     console.log('activeAssignments', activeAssignments);
-  //   }
-  //
-  //   // Il ne devrait y avoir qu'une seule rotation active par utilisateur
-  //   return assignments && assignments.length > 0 ? assignments[0] : null;
-  // }
 
   /**
    * Récupère l'assignation de rotation active la plus récente
@@ -420,33 +359,10 @@ export default class User extends UserModel {
   /**
    * Détermine le type d'assignation en cours : 'schedule', 'rotation', ou 'none'
    */
-  // async getCurrentAssignmentType(): Promise<'schedule' | 'rotation' | 'none'> {
-  //   const scheduleAssignment = await this.getActiveScheduleAssignment();
-  //   if (scheduleAssignment) return 'schedule';
-  //
-  //   const rotationAssignment = await this.getActiveRotationAssignment();
-  //   if (rotationAssignment) return 'rotation';
-  //
-  //   return 'none';
-  // }
   async getCurrentAssignmentType(): Promise<'schedule' | 'rotation' | 'none'> {
     const active = await this.getActiveAssignment();
     return active ? active.type : 'none';
   }
-
-  // getAssignedSessions(): TI.AssignedSession[] {
-  //   return this.assigned_sessions || [];
-  // }
-  //
-  // async getSessionTemplateObjs(template: number): Promise<SessionTemplate | null> {
-  //   if (!this.sessionTemplateObjs.has(template)) {
-  //     const templateObj = await SessionTemplate._load(template);
-  //     if (templateObj) {
-  //       this.sessionTemplateObjs.set(template, templateObj);
-  //     }
-  //   }
-  //   return this.sessionTemplateObjs.get(template) || null;
-  // }
 
   // ============================================
   // SETTERS FLUENT
@@ -552,11 +468,6 @@ export default class User extends UserModel {
     return this;
   }
 
-  // setAssignedSessions(sessions: TI.AssignedSession[]): User {
-  //   this.assigned_sessions = sessions;
-  //   return this;
-  // }
-
   // ============================================
   // MÉTHODES DE GESTION DES TOKENS
   // ============================================
@@ -611,98 +522,6 @@ export default class User extends UserModel {
 
     return this;
   }
-
-  // /**
-  //  * Assigner une nouvelle session template
-  //  */
-  // assignSession(sessionTemplate: number, assignAt?: Date, active: boolean = true): User {
-  //   const newSession: TI.AssignedSession = {
-  //     session_template: sessionTemplate,
-  //     assign_at: assignAt || TimezoneConfigUtils.getCurrentTime(),
-  //     active,
-  //   };
-  //
-  //   this.assigned_sessions = GroupsValidationUtils.assignSession(
-  //     this.assigned_sessions,
-  //     newSession,
-  //   );
-  //   return this;
-  // }
-  //
-  // /**
-  //  * Activer une session template spécifique
-  //  */
-  // activateSession(sessionTemplate: number): User {
-  //   this.assigned_sessions = GroupsValidationUtils.activateSession(
-  //     this.assigned_sessions,
-  //     sessionTemplate,
-  //   );
-  //   return this;
-  // }
-  //
-  // /**
-  //  * Récupérer la session active
-  //  */
-  // getActiveSession(): TI.AssignedSession | null {
-  //   return GroupsValidationUtils.getActiveSession(this.assigned_sessions);
-  // }
-  //
-  // /**
-  //  * Vérifier si une session est active
-  //  */
-  // hasActiveSession(): boolean {
-  //   return this.getActiveSession() !== null;
-  // }
-  //
-  // /**
-  //  * Désactiver toutes les sessions
-  //  */
-  // deactivateAllSessions(): User {
-  //   this.assigned_sessions = GroupsValidationUtils.deactivateAllSessions(this.assigned_sessions);
-  //   return this;
-  // }
-  //
-  // /**
-  //  * Retirer une session template
-  //  */
-  // removeSession(sessionTemplate: number): User {
-  //   this.assigned_sessions = this.assigned_sessions.filter(
-  //     (session) => session.session_template !== sessionTemplate,
-  //   );
-  //   return this;
-  // }
-  //
-  // /**
-  //  * Vérifier si une session template est assignée
-  //  */
-  // hasSessionTemplate(sessionTemplate: number): boolean {
-  //   return this.assigned_sessions.some((session) => session.session_template === sessionTemplate);
-  // }
-  //
-  // /**
-  //  * Obtenir l'historique complet des sessions
-  //  */
-  // getSessionHistory(): TI.AssignedSession[] {
-  //   return [...this.assigned_sessions].sort((a, b) => {
-  //     const dateA = new Date(a.assign_at!).getTime();
-  //     const dateB = new Date(b.assign_at!).getTime();
-  //     return dateB - dateA; // Plus récent en premier
-  //   });
-  // }
-  //
-  // /**
-  //  * Compter le nombre de sessions assignées
-  //  */
-  // countAssignedSessions(): number {
-  //   return this.assigned_sessions.length;
-  // }
-  //
-  // /**
-  //  * Obtenir toutes les sessions inactives
-  //  */
-  // getInactiveSessions(): TI.AssignedSession[] {
-  //   return this.assigned_sessions.filter((session) => session.active === false);
-  // }
 
   /**
    * ✅ Reset OTP en mémoire
@@ -784,34 +603,6 @@ export default class User extends UserModel {
     // return await bcrypt.compare(password, this.password_hash);
     return await super.verifyPassword(password, this.password_hash);
   }
-
-  // async listBySessionTemplate(
-  //   sessionTemplate: number,
-  //   paginationOptions: { offset?: number; limit?: number } = {},
-  // ): Promise<User[] | null> {
-  //   const dataset = await this.listAllBySessionTemplate(sessionTemplate, paginationOptions);
-  //   if (!dataset || dataset.length === 0) return null;
-  //   return dataset.map((data) => new User().hydrate(data));
-  // }
-
-  // async listWithActiveSession(
-  //   paginationOptions: { offset?: number; limit?: number } = {},
-  // ): Promise<User[] | null> {
-  //   const dataset = await this.listAllWithActiveSession(paginationOptions);
-  //   if (!dataset || dataset.length === 0) return null;
-  //   return dataset.map((data) => new User().hydrate(data));
-  // }
-
-  // async updateLastLogin(): Promise<void> {
-  //   this.last_login_at = TimezoneConfigUtils.getCurrentTime();
-  //   if (this.id) {
-  //     await this.updateOne(
-  //       this.db.tableName,
-  //       { [this.db.id]: this.id },
-  //       { [this.db.last_login_at]: this.last_login_at },
-  //     );
-  //   }
-  // }
 
   // ============================================
   // MÉTHODES MÉTIER
@@ -1007,13 +798,6 @@ export default class User extends UserModel {
     }
     return false;
   }
-  // async addSessionTemplate(): Promise<boolean> {
-  //   if (this.id !== undefined) {
-  //     await W.isOccur(!this.id, `${G.identifierMissing.code}: User Add Session Template`);
-  //     return await this.definedSessionTemplate(this.id, this.session_template!);
-  //   }
-  //   return false;
-  // }
 
   async toJSON(view: ViewMode = responseValue.FULL): Promise<object> {
     // const activeSession = this.getActiveSession();
@@ -1050,18 +834,6 @@ export default class User extends UserModel {
       };
     }
 
-    // Mode FULL
-    // const enrichedSessions = await Promise.all(
-    //   this.assigned_sessions.map(async (session) => {
-    //     const templateObj = await this.getSessionTemplateObjs(session.session_template);
-    //     return {
-    //       session_template: templateObj ? templateObj.toJSON() : null,
-    //       assign_at: session.assign_at,
-    //       active: session.active,
-    //     };
-    //   }),
-    // );
-
     return {
       ...baseModel,
       assignment_info: {
@@ -1069,15 +841,6 @@ export default class User extends UserModel {
         active_schedule_assignment: activeSchedule ? await activeSchedule.toPUBLIC() : null,
         active_rotation_assignment: activeRotation ? await activeRotation.toPUBLIC() : null,
       },
-      // Historique complet si nécessaire (peut être coûteux)
-      // all_schedule_assignments: {
-      //   count: allSchedules.length,
-      //   items: await Promise.all(allSchedules.map(s => s.toJSON(responseValue.MINIMAL)))
-      // },
-      // all_rotation_assignments: {
-      //   count: allRotations.length,
-      //   items: await Promise.all(allRotations.map(r => r.toJSON(responseValue.MINIMAL)))
-      // }
     };
   }
 

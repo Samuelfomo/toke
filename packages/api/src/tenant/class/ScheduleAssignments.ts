@@ -80,6 +80,15 @@ export default class ScheduleAssignments extends ScheduleAssignmentsModel {
     return new ScheduleAssignments().listForRelatedOnDate(family, related, date, paginationOptions);
   }
 
+  static _listForRelatedOnPeriod(
+    family: SAFamily,
+    related: string,
+    from: string,
+    to: string,
+  ): Promise<ScheduleAssignments[] | null> {
+    return new ScheduleAssignments().listForRelatedOnPeriod(family, related, from, to);
+  }
+
   static async exportable(
     conditions: Record<string, any> = {
       ['active']: SCHEDULE_ASSIGNMENTS_DEFAULTS.ACTIVE,
@@ -513,6 +522,17 @@ export default class ScheduleAssignments extends ScheduleAssignmentsModel {
     return dataset.map((data) => new ScheduleAssignments().hydrate(data));
   }
 
+  async listForRelatedOnPeriod(
+    family: SAFamily,
+    related: string,
+    from: string,
+    to: string,
+  ): Promise<ScheduleAssignments[] | null> {
+    const dataset = await this.listAllByRelatedOnPeriod(family, related, from, to);
+    if (!dataset || dataset.length === 0) return null;
+    return dataset.map((data) => new ScheduleAssignments().hydrate(data));
+  }
+
   async delete(): Promise<boolean> {
     if (this.id !== undefined) {
       await W.isOccur(!this.id, `${G.identifierMissing.code}: ScheduleException Delete`);
@@ -536,7 +556,7 @@ export default class ScheduleAssignments extends ScheduleAssignmentsModel {
     const sessionTemplateObj = SessionTemplate.toObject(this.session_template);
     const createdByObj = await this.getCreatedByObj();
 
-    const baseData = {
+    return {
       [RS.GUID]: this.guid,
       [RS.TENANT]: this.tenant,
       [RS.FAMILY]: this.family,
@@ -544,32 +564,24 @@ export default class ScheduleAssignments extends ScheduleAssignmentsModel {
       [RS.END_DATE]: this.end_date,
       [RS.REASON]: this.reason,
       [RS.ACTIVE]: this.active,
-    };
 
-    if (view === responseValue.MINIMAL) {
-      return {
-        ...baseData,
-        [RS.RELATED]: relatedObj
-          ? this.isForUser()
-            ? (relatedObj as User).getGuid()
-            : (relatedObj as Groups).getGuid()
-          : null,
-        [RS.SESSION_TEMPLATE]: sessionTemplateObj ? sessionTemplateObj.getGuid() : null,
-        [RS.CREATED_BY]: createdByObj ? createdByObj.getGuid() : null,
-      };
-    }
-
-    return {
-      ...baseData,
       [RS.RELATED]: relatedObj
         ? this.isForUser()
-          ? (relatedObj as User).toPublicJSON()
-          : await (relatedObj as Groups).toPublicJSON()
+          ? await (relatedObj as User).toJSON()
+          : await (relatedObj as Groups).toJSON()
         : null,
       [RS.SESSION_TEMPLATE]: sessionTemplateObj
-        ? await sessionTemplateObj.toJSON(responseValue.FULL)
+        ? {
+            [RS.NAME]: sessionTemplateObj?.getName(),
+            [RS.GUID]: sessionTemplateObj?.getGuid(),
+          }
         : null,
-      [RS.CREATED_BY]: createdByObj ? createdByObj.toPublicJSON() : null,
+      [RS.CREATED_BY]: createdByObj
+        ? {
+            [RS.NAME]: createdByObj.getFullName(),
+            [RS.GUID]: createdByObj.getGuid(),
+          }
+        : null,
     };
   }
 

@@ -30,7 +30,7 @@ router.get(
         });
       }
 
-      const result: any = await GroupsService.listManagerGroups(client, manager);
+      const result: any = await GroupsService.listManagerGroups(client, manager as string);
 
       if (result.status !== HttpStatus.SUCCESS) {
         return R.handleError(res, result.status, result.response);
@@ -85,7 +85,7 @@ router.put(
         });
       }
 
-      const result: any = await GroupsService.updatedManagerGroup(client, guid, req.body);
+      const result: any = await GroupsService.updatedManagerGroup(client, guid as string, req.body);
 
       if (result.status !== HttpStatus.SUCCESS) {
         return R.handleError(res, result.status, result.response);

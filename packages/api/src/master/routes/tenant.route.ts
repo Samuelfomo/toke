@@ -95,7 +95,7 @@ router.get('/revision', Ensure.get(), async (req: Request, res: Response) => {
 router.get('/country/:country_code', Ensure.get(), async (req: Request, res: Response) => {
   try {
     const { country_code } = req.params;
-    const validCountryCode = TenantValidationUtils.normalizeCountryCode(country_code);
+    const validCountryCode = TenantValidationUtils.normalizeCountryCode(country_code as string);
 
     const paginationOptions = paginationSchema.parse(req.query);
 
@@ -133,7 +133,7 @@ router.get('/country/:country_code', Ensure.get(), async (req: Request, res: Res
 router.get('/currency/:currency_code', Ensure.get(), async (req: Request, res: Response) => {
   try {
     const { currency_code } = req.params;
-    const validCurrencyCode = TenantValidationUtils.normalizeCurrencyCode(currency_code);
+    const validCurrencyCode = TenantValidationUtils.normalizeCurrencyCode(currency_code as string);
 
     const paginationOptions = paginationSchema.parse(req.query);
 
@@ -171,7 +171,7 @@ router.get('/currency/:currency_code', Ensure.get(), async (req: Request, res: R
 router.get('/language/:language_code', Ensure.get(), async (req: Request, res: Response) => {
   try {
     const { language_code } = req.params;
-    const lowerLanguageCode = TenantValidationUtils.normalizeLanguageCode(language_code);
+    const lowerLanguageCode = TenantValidationUtils.normalizeLanguageCode(language_code as string);
 
     const paginationOptions = paginationSchema.parse(req.query);
 
@@ -211,7 +211,7 @@ router.get('/timezone/:timezone', Ensure.get(), async (req: Request, res: Respon
     const { timezone } = req.params;
 
     // Décoder l'URL pour gérer les fuseaux comme "Europe/Paris"
-    const decodedTimezone = decodeURIComponent(timezone);
+    const decodedTimezone = decodeURIComponent(timezone as string);
 
     const paginationOptions = paginationSchema.parse(req.query);
 
@@ -249,7 +249,7 @@ router.get('/timezone/:timezone', Ensure.get(), async (req: Request, res: Respon
 router.get('/tax-exempt/:status', Ensure.get(), async (req: Request, res: Response) => {
   try {
     const { status } = req.params;
-    const isTaxExempt = status.toLowerCase() === 'true' || status === '1';
+    const isTaxExempt = (status as string).toLowerCase() === 'true' || status === '1';
 
     const paginationOptions = paginationSchema.parse(req.query);
 
@@ -290,7 +290,7 @@ router.get('/status/:status', Ensure.get(), async (req: Request, res: Response) 
     const { status } = req.params;
 
     // Validation du statut
-    const validStatus = TenantValidationUtils.validateStatus(status);
+    const validStatus = TenantValidationUtils.validateStatus(status as string);
     if (!validStatus) {
       return R.handleError(res, HttpStatus.BAD_REQUEST, {
         code: TENANT_CODES.STATUS_INVALID,
@@ -336,14 +336,20 @@ router.get('/email/:email', Ensure.get(), async (req: Request, res: Response) =>
   try {
     const { email } = req.params;
 
-    if (!TenantValidationUtils.validateBillingEmail(email)) {
+    if (!TenantValidationUtils.validateBillingEmail(email as string)) {
       return R.handleError(res, HttpStatus.BAD_REQUEST, {
         code: TENANT_CODES.BILLING_EMAIL_INVALID,
         message: TENANT_ERRORS.BILLING_EMAIL_INVALID,
       });
     }
 
-    const tenantObj = await Tenant._load(email.toLowerCase(), false, false, false, true);
+    const tenantObj = await Tenant._load(
+      (email as string).toLowerCase(),
+      false,
+      false,
+      false,
+      true,
+    );
     if (!tenantObj) {
       return R.handleError(res, HttpStatus.NOT_FOUND, {
         code: 'tenant_not_found',
@@ -562,200 +568,6 @@ router.put('/:guid', Ensure.put(), async (req: Request, res: Response) => {
   }
 });
 
-// /**
-//  * PATCH /:guid/database - Définir la configuration de base de données d'un tenant
-//  */
-// router.patch('/:guid/database', Ensure.patch(), async (req: Request, res: Response) => {
-//   try {
-//     const validGuid = TN.validateTenantGuid(req.params.guid);
-//
-//     // Charger le tenant par GUID
-//     const tenantObj = await Tenant._load(validGuid, true);
-//     if (!tenantObj) {
-//       return R.handleError(res, HttpStatus.NOT_FOUND, {
-//         code: TENANT_CODES.TENANT_NOT_FOUND,
-//         message: TENANT_ERRORS.NOT_FOUND,
-//       });
-//     }
-//
-//     const validGlobalLicense = await GlobalLicense._load(tenantObj.getId()!, false, true);
-//
-//     if (!validGlobalLicense || validGlobalLicense.getLicenseStatus() !== LicenseStatus.ACTIVE) {
-//       return R.handleError(res, HttpStatus.NOT_FOUND, {
-//         code: GLOBAL_LICENSE_CODES.GLOBAL_LICENSE_NOT_FOUND,
-//         message: GLOBAL_LICENSE_ERRORS.NOT_FOUND,
-//       });
-//     }
-//
-//     const tenantConfig = await TenantConfig.generateTenantConfig(
-//       tenantObj.getName()!,
-//       tenantObj.getGuid()!,
-//     );
-//
-//     // Définir la configuration
-//     tenantObj.setDatabaseConfig(
-//       tenantConfig.database_name,
-//       tenantConfig.database_username,
-//       tenantConfig.database_password,
-//     );
-//     await tenantObj.defineDatabaseConfig();
-//
-//     const createDb = await ManageTenantDatabase.createDatabase(
-//       tenantObj.getDatabaseName()!,
-//       tenantObj.getDatabaseUsername()!,
-//       tenantObj.getDatabasePassword()!,
-//     );
-//     if (!createDb.success) {
-//       return R.handleError(res, HttpStatus.INTERNAL_ERROR, {
-//         code: 'db_creation_failed',
-//         message: createDb.error, // 💡 renvoie l’erreur PostgreSQL réelle
-//       });
-//     }
-//
-//     console.log(`✅ Configuration DB définie pour tenant GUID: ${validGuid}`);
-//
-//     return R.handleSuccess(res, {
-//       message: 'Database configuration defined successfully',
-//       tenant_guid: validGuid,
-//       // database_name: tenantConfig.database_name,
-//       // database_username: tenantConfig.database_username,
-//       // database_password: tenantConfig.database_password,
-//     });
-//   } catch (error: any) {
-//     console.error('⚠️ Erreur définition config DB:', error);
-//
-//     if (error.issues) {
-//       return R.handleError(res, HttpStatus.BAD_REQUEST, {
-//         code: TENANT_CODES.INVALID_GUID,
-//         message: TENANT_ERRORS.GUID_INVALID,
-//       });
-//     } else if (error.message.includes('already exists')) {
-//       return R.handleError(res, HttpStatus.CONFLICT, {
-//         code: TENANT_CODES.SUBDOMAIN_INVALID,
-//         message: error.message,
-//       });
-//     } else {
-//       return R.handleError(res, HttpStatus.INTERNAL_ERROR, {
-//         code: TENANT_CODES.UPDATE_FAILED,
-//         message: error.message,
-//       });
-//     }
-//   }
-// });
-//
-// router.patch('/:guid/subdomain', Ensure.patch(), async (req: Request, res: Response) => {
-//   try {
-//     const validGuid = TN.validateTenantGuid(req.params.guid);
-//
-//     const tenantObj = await Tenant._load(validGuid, true);
-//     if (!tenantObj) {
-//       return R.handleError(res, HttpStatus.NOT_FOUND, {
-//         code: TENANT_CODES.TENANT_NOT_FOUND,
-//         message: TENANT_ERRORS.NOT_FOUND,
-//       });
-//     }
-//     if (!tenantObj.getDatabaseName()) {
-//       return R.handleError(res, HttpStatus.NOT_FOUND, {
-//         code: TENANT_CODES.DATABASE_CONFIG_NOT_FOUND,
-//         message: TENANT_ERRORS.DATABASE_CONFIG_NOT_FOUND,
-//       });
-//     }
-//
-//     const { subdomain } = req.body;
-//
-//     // Validation avec les utilitaires existants
-//     if (!TenantValidationUtils.validateSubdomain(subdomain)) {
-//       return R.handleError(res, HttpStatus.BAD_REQUEST, {
-//         code: TENANT_CODES.SUBDOMAIN_INVALID,
-//         message: TENANT_ERRORS.SUBDOMAIN_INVALID,
-//       });
-//     }
-//
-//     const validGlobalLicense = await GlobalLicense._load(tenantObj.getId()!, false, true);
-//
-//     if (!validGlobalLicense || validGlobalLicense.getLicenseStatus() !== LicenseStatus.ACTIVE) {
-//       return R.handleError(res, HttpStatus.NOT_FOUND, {
-//         code: GLOBAL_LICENSE_CODES.GLOBAL_LICENSE_NOT_FOUND,
-//         message: GLOBAL_LICENSE_ERRORS.NOT_FOUND,
-//       });
-//     }
-//
-//     tenantObj.setSubdomain(subdomain);
-//
-//     await tenantObj.defineDbSubdomain();
-//
-//     await TenantCacheService.setTenantConfig(tenantObj.getSubdomain()!, {
-//       host: process.env.DB_HOST || tenantObj.getSubdomain()!,
-//       port: parseInt(process.env.DB_PORT ? process.env.DB_PORT : '5432'),
-//       username: tenantObj.getDatabaseUsername()!,
-//       password: tenantObj.getDatabasePassword()!,
-//       database: tenantObj.getDatabaseName()!,
-//       active: tenantObj.isActive(),
-//       reference: tenantObj.getGuid()!.toString(),
-//       name: tenantObj.getName()!,
-//       address: tenantObj.getBillingAddress()!,
-//       country: tenantObj.getCountryCode()!,
-//       email: tenantObj.getBillingEmail()!,
-//       phone: tenantObj.getBillingPhone()!,
-//       global_license: validGlobalLicense.getGuid()!.toString(),
-//     });
-//
-//     // 3. Récupérer la configuration du tenant depuis le cache
-//     const tenantConfig = await TenantCacheService.getTenantConfig(subdomain);
-//     if (!tenantConfig) {
-//       return R.handleError(res, HttpStatus.NOT_FOUND, {
-//         code: 'tenant_not_found',
-//         message: `Tenant parameter system not found`,
-//       });
-//     }
-//
-//     // 4. Définir le tenant actuel dans TenantManager
-//     TenantManager.setCurrentTenant(subdomain);
-//     // await ManageTenantDatabase.initializeDatabase()
-//
-//     // 5. Initialiser la connexion DB pour ce tenant
-//     const connection = await TenantManager.getConnectionForTenant(subdomain, {
-//       host: tenantConfig.host,
-//       port: tenantConfig.port,
-//       username: tenantConfig.username,
-//       password: tenantConfig.password,
-//       database: tenantConfig.database,
-//     });
-//
-//     // 2. Initialiser toutes les tables (statique)
-//     await TableInitializer.initialize(connection);
-//
-//     return R.handleSuccess(res, {
-//       message: 'Tenant subdomain has been set successfully',
-//       tenant_guid: validGuid,
-//       // subdomain: tenantObj.getSubdomain()!,
-//       // database_name: tenantObj.getDatabaseName()!,
-//       // database_username: tenantObj.getDatabaseUsername()!,
-//       // database_password: tenantObj.getDatabasePassword()!,
-//     });
-//   } catch (error: any) {
-//     console.error('⚠️ Erreur définition config DB:', error);
-//
-//     if (error.issues) {
-//       return R.handleError(res, HttpStatus.BAD_REQUEST, {
-//         code: TENANT_CODES.INVALID_GUID,
-//         message: TENANT_ERRORS.GUID_INVALID,
-//       });
-//     } else if (error.message.includes('already exists')) {
-//       return R.handleError(res, HttpStatus.CONFLICT, {
-//         code: TENANT_CODES.SUBDOMAIN_INVALID,
-//         message: error.message,
-//       });
-//     } else {
-//       return R.handleError(res, HttpStatus.INTERNAL_ERROR, {
-//         code: TENANT_CODES.UPDATE_FAILED,
-//         message: error.message,
-//         details: error,
-//       });
-//     }
-//   }
-// });
-
 /**
  * PATCH /:guid/subdomain - Définir la configuration de base de données ET le sous-domaine d'un tenant
  */
@@ -945,13 +757,13 @@ router.delete('/:guid', Ensure.delete(), async (req: Request, res: Response) => 
 router.get('/:guid/check', Ensure.get(), async (req: Request, res: Response) => {
   try {
     const { guid } = req.params;
-    if (!TenantValidationUtils.validateTenantGuid(guid)) {
+    if (!TenantValidationUtils.validateTenantGuid(guid as string)) {
       return R.handleError(res, HttpStatus.BAD_REQUEST, {
         code: TENANT_CODES.INVALID_GUID,
         message: TENANT_ERRORS.GUID_INVALID,
       });
     }
-    const tenant = await Tenant._load(parseInt(guid, 10), true);
+    const tenant = await Tenant._load(parseInt(guid as string, 10), true);
     if (!tenant) {
       return R.handleError(res, HttpStatus.NOT_FOUND, {
         code: TENANT_CODES.TENANT_NOT_FOUND,
@@ -1047,7 +859,7 @@ router.get('/search/key/:key', Ensure.get(), async (req: Request, res: Response)
   try {
     const { key } = req.params;
 
-    if (!TenantValidationUtils.validateKey(key)) {
+    if (!TenantValidationUtils.validateKey(key as string)) {
       return R.handleError(res, HttpStatus.BAD_REQUEST, {
         code: TENANT_CODES.KEY_INVALID,
         message: TENANT_ERRORS.KEY_INVALID,
@@ -1078,13 +890,13 @@ router.get('/search/key/:key', Ensure.get(), async (req: Request, res: Response)
 router.get('/search/subdomain/:subdomain', Ensure.get(), async (req: Request, res: Response) => {
   try {
     const { subdomain } = req.params;
-    if (!TenantValidationUtils.validateSubdomain(subdomain)) {
+    if (!TenantValidationUtils.validateSubdomain(subdomain as string)) {
       return R.handleError(res, HttpStatus.BAD_REQUEST, {
         code: TENANT_CODES.SUBDOMAIN_INVALID,
         message: TENANT_ERRORS.SUBDOMAIN_INVALID,
       });
     }
-    const tenant = await Tenant._load(subdomain.toLowerCase(), false, false, true);
+    const tenant = await Tenant._load((subdomain as string).toLowerCase(), false, false, true);
     if (!tenant) {
       return R.handleError(res, HttpStatus.NOT_FOUND, {
         code: TENANT_CODES.TENANT_NOT_FOUND,
@@ -1111,8 +923,8 @@ router.get('/:identifier', Ensure.get(), async (req: Request, res: Response) => 
     let tenant: Tenant | null = null;
 
     // Essayer différentes méthodes de recherche selon le format
-    if (/^\d+$/.test(identifier)) {
-      const numericId = parseInt(identifier);
+    if (/^\d+$/.test(identifier as string)) {
+      const numericId = parseInt(identifier as string);
       tenant = await Tenant._load(numericId, true);
     } else {
       // 1️⃣ Essayer par clé
@@ -1120,7 +932,7 @@ router.get('/:identifier', Ensure.get(), async (req: Request, res: Response) => 
 
       // 2️⃣ Si pas trouvé → sous-domaine
       if (!tenant) {
-        tenant = await Tenant._load(identifier.toLowerCase(), false, false, true);
+        tenant = await Tenant._load((identifier as string).toLowerCase(), false, false, true);
       }
 
       // 3️⃣ Si toujours pas trouvé → email
@@ -1386,7 +1198,7 @@ router.get('/find/:otp', Ensure.get(), async (req: Request, res: Response) => {
     }
 
     // Valider le format de l'OTP (6 chiffres)
-    if (!/^\d{6}$/.test(otp)) {
+    if (!/^\d{6}$/.test(otp as string)) {
       return R.handleError(res, HttpStatus.BAD_REQUEST, {
         code: 'otp_invalid_format',
         message: 'OTP must be 6 digits',
@@ -1394,7 +1206,7 @@ router.get('/find/:otp', Ensure.get(), async (req: Request, res: Response) => {
     }
 
     // Récupérer les données depuis le cache
-    const cachedData = await OTPCacheService.retrieve(otp);
+    const cachedData = await OTPCacheService.retrieve(otp as string);
     if (!cachedData) {
       return R.handleError(res, HttpStatus.UNAUTHORIZED, {
         code: 'otp_invalid_or_expired',
@@ -1404,7 +1216,7 @@ router.get('/find/:otp', Ensure.get(), async (req: Request, res: Response) => {
 
     const tenant = await Tenant._load(cachedData.reference, false, false, false, true);
     // Supprimer l'OTP du cache après utilisation (usage unique)
-    await OTPCacheService.deleteOTP(otp);
+    await OTPCacheService.deleteOTP(otp as string);
 
     if (!tenant) {
       return R.handleError(res, HttpStatus.NOT_FOUND, {
@@ -1683,7 +1495,7 @@ router.get('/verify-otp/:otp', Ensure.get(), async (req: Request, res: Response)
     }
 
     // Valider le format de l'OTP (6 chiffres)
-    if (!/^\d{6}$/.test(otp)) {
+    if (!/^\d{6}$/.test(otp as string)) {
       return R.handleError(res, HttpStatus.BAD_REQUEST, {
         code: 'otp_invalid_format',
         message: 'OTP must be 6 digits',
@@ -1695,7 +1507,7 @@ router.get('/verify-otp/:otp', Ensure.get(), async (req: Request, res: Response)
       email: string;
       user: any;
       tenant: string;
-    }>(otp);
+    }>(otp as string);
 
     if (!cachedData) {
       return R.handleError(res, HttpStatus.UNAUTHORIZED, {
@@ -1705,7 +1517,7 @@ router.get('/verify-otp/:otp', Ensure.get(), async (req: Request, res: Response)
     }
 
     // Supprimer l'OTP du cache après utilisation (usage unique)
-    await GenericCacheService.delete(otp);
+    await GenericCacheService.delete(otp as string);
 
     return R.handleSuccess(res, {
       message: 'Authentication successful',

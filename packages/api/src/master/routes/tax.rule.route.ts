@@ -73,7 +73,7 @@ router.get('/revision', Ensure.get(), async (_req: Request, res: Response) => {
 router.get('/active/:status', Ensure.get(), async (req: Request, res: Response) => {
   try {
     const { status } = req.params;
-    const isActive = status.toLowerCase() === 'true' || status === '1';
+    const isActive = (status as string).toLowerCase() === 'true' || status === '1';
 
     const paginationOptions = paginationSchema.parse(req.query);
 
@@ -267,14 +267,14 @@ router.put('/:guid', Ensure.put(), async (req: Request, res: Response) => {
 router.delete('/:guid', Ensure.delete(), async (req: Request, res: Response) => {
   try {
     // Validation du GUID avec utilitaire shared
-    if (!TaxRuleValidationUtils.validateTaxRuleGuid(req.params.guid)) {
+    if (!TaxRuleValidationUtils.validateTaxRuleGuid(req.params.guid as string)) {
       return R.handleError(res, HttpStatus.BAD_REQUEST, {
         code: TAX_RULE_CODES.INVALID_GUID,
         message: TAX_RULE_ERRORS.GUID_INVALID,
       });
     }
 
-    const guid = parseInt(req.params.guid, 10);
+    const guid = parseInt(req.params.guid as string, 10);
 
     // Charger par GUID
     const taxRule = await TaxRule._load(guid, true);
@@ -373,14 +373,14 @@ router.get('/search/country/:code', Ensure.get(), async (req: Request, res: Resp
     const { code } = req.params;
 
     // Validation avec utilitaire shared
-    if (!TaxRuleValidationUtils.validateCountryCode(code)) {
+    if (!TaxRuleValidationUtils.validateCountryCode(code as string)) {
       return R.handleError(res, HttpStatus.BAD_REQUEST, {
         code: TAX_RULE_CODES.COUNTRY_CODE_INVALID,
         message: TAX_RULE_ERRORS.COUNTRY_CODE_INVALID,
       });
     }
 
-    const normalizedCode = TaxRuleValidationUtils.normalizeCountryCode(code);
+    const normalizedCode = TaxRuleValidationUtils.normalizeCountryCode(code as string);
     const paginationOptions = paginationSchema.parse(req.query);
     const taxRulesData = await TaxRule._listByCountryCode(normalizedCode, paginationOptions);
 
@@ -419,7 +419,7 @@ router.get('/search/type/:type', Ensure.get(), async (req: Request, res: Respons
     const { type } = req.params;
 
     // Validation avec utilitaire shared
-    if (!TaxRuleValidationUtils.validateTaxType(type)) {
+    if (!TaxRuleValidationUtils.validateTaxType(type as string)) {
       return R.handleError(res, HttpStatus.BAD_REQUEST, {
         code: TAX_RULE_CODES.TAX_TYPE_INVALID,
         message: TAX_RULE_ERRORS.TAX_TYPE_INVALID,
@@ -427,7 +427,7 @@ router.get('/search/type/:type', Ensure.get(), async (req: Request, res: Respons
     }
 
     const paginationOptions = paginationSchema.parse(req.query);
-    const taxRulesData = await TaxRule._listByTaxType(type, paginationOptions);
+    const taxRulesData = await TaxRule._listByTaxType(type as string, paginationOptions);
 
     if (!taxRulesData || taxRulesData.length === 0) {
       return R.handleError(res, HttpStatus.NOT_FOUND, {
@@ -463,7 +463,7 @@ router.get('/search/applies-to/:value', Ensure.get(), async (req: Request, res: 
   try {
     const { value } = req.params;
     // Validation avec utilitaire shared
-    if (!TaxRuleValidationUtils.validateAppliesTo(value)) {
+    if (!TaxRuleValidationUtils.validateAppliesTo(value as string)) {
       return R.handleError(res, HttpStatus.BAD_REQUEST, {
         code: TAX_RULE_CODES.APPLIES_TO_INVALID,
         message: TAX_RULE_ERRORS.APPLIES_TO_INVALID,
@@ -472,7 +472,7 @@ router.get('/search/applies-to/:value', Ensure.get(), async (req: Request, res: 
 
     const paginationOptions = paginationSchema.parse(req.query);
 
-    const taxRulesData = await TaxRule._listByAppliesTo(value, paginationOptions);
+    const taxRulesData = await TaxRule._listByAppliesTo(value as string, paginationOptions);
 
     if (!taxRulesData || taxRulesData.length === 0) {
       return R.handleError(res, HttpStatus.NOT_FOUND, {
@@ -509,7 +509,7 @@ router.get(
     try {
       const { value } = req.params;
       // const required = value.toLowerCase() === 'true' || value === '1';
-      const required = value.toLowerCase() === 'true' || value === '1';
+      const required = (value as string).toLowerCase() === 'true' || value === '1';
       const paginationOptions = paginationSchema.parse(req.query);
       // const paginationOptions = await ExtractQueryParams.extractPaginationFromQuery(req.query);
       const taxRulesData = await TaxRule._listByRequiredTaxNumber(required, paginationOptions);

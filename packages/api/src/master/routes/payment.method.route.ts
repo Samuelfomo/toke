@@ -73,7 +73,7 @@ router.get('/revision', Ensure.get(), async (_req: Request, res: Response) => {
 router.get('/active/:active', Ensure.get(), async (req: Request, res: Response) => {
   try {
     const { active } = req.params;
-    const isActive = active.toLowerCase() === 'true';
+    const isActive = (active as string).toLowerCase() === 'true';
 
     const paginationOptions = paginationSchema.parse(req.query);
 
@@ -119,7 +119,7 @@ router.get('/active/:active', Ensure.get(), async (req: Request, res: Response) 
 router.get('/method-type/:method_type', Ensure.get(), async (req: Request, res: Response) => {
   try {
     const { method_type } = req.params;
-    const validMethodType = method_type.toUpperCase();
+    const validMethodType = (method_type as string).toUpperCase();
 
     const paginationOptions = paginationSchema.parse(req.query);
 
@@ -165,7 +165,7 @@ router.get('/method-type/:method_type', Ensure.get(), async (req: Request, res: 
 router.get('/currency/:currency', Ensure.get(), async (req: Request, res: Response) => {
   try {
     const { currency } = req.params;
-    const validCurrency = currency.toUpperCase();
+    const validCurrency = (currency as string).toUpperCase();
 
     if (!PaymentMethodValidationUtils.validateCurrencyCode(validCurrency)) {
       return R.handleError(res, HttpStatus.BAD_REQUEST, {
@@ -220,7 +220,7 @@ router.get('/currency/:currency', Ensure.get(), async (req: Request, res: Respon
  */
 router.get('/amount/:amount', Ensure.get(), async (req: Request, res: Response) => {
   try {
-    const amount = parseFloat(req.params.amount);
+    const amount = parseFloat(req.params.amount as string);
     if (isNaN(amount) || amount < 0) {
       return R.handleError(res, HttpStatus.BAD_REQUEST, {
         code: PAYMENT_METHOD_CODES.VALIDATION_FAILED,
@@ -716,8 +716,8 @@ router.get('/:identifier', Ensure.get(), async (req: Request, res: Response) => 
     let method: PaymentMethod | null = null;
 
     // Essayer différentes méthodes de recherche selon le format
-    if (/^\d+$/.test(identifier)) {
-      const numericId = parseInt(identifier);
+    if (/^\d+$/.test(identifier as string)) {
+      const numericId = parseInt(identifier as string);
 
       // Essayer par ID d'abord
       method = await PaymentMethod._load(numericId);

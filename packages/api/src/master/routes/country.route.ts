@@ -252,7 +252,7 @@ router.put('/:guid', Ensure.put(), async (req: Request, res: Response) => {
       });
     }
 
-    const guidData = parseInt(guid);
+    const guidData = parseInt(guid as string);
 
     // Validation des données avec le schéma partagé
     const validatedData = validateCountryUpdate(req.body);

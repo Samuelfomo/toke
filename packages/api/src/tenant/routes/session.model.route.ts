@@ -119,6 +119,10 @@ router.get('/list', Ensure.get(), async (req: Request, res: Response) => {
       conditions.created_by = userObj.getId();
     }
 
+    console.log('paginationOptions', paginationOptions);
+    console.log('conditions', conditions);
+    console.log('filters', filters);
+
     const modelList = await SessionModel._list(conditions, paginationOptions);
     const session_models = {
       pagination: {

@@ -1,22 +1,10 @@
-import {
-  ClockInData,
-  ClockOutData,
-  PauseData,
-  PointageType,
-  SessionStatus,
-  TimezoneConfigUtils,
-} from '@toke/shared';
+import { ClockInData, ClockOutData, PauseData, PointageType, SessionStatus, TimezoneConfigUtils, } from '@toke/shared';
 import { Op } from 'sequelize';
 
 import WorkSessionsModel from '../model/WorkSessionsModel.js';
 import W from '../../tools/watcher.js';
 import G from '../../tools/glossary.js';
-import {
-  responseStructure as RS,
-  responseValue,
-  tableName,
-  ViewMode,
-} from '../../utils/response.model.js';
+import { responseStructure as RS, responseValue, tableName, ViewMode, } from '../../utils/response.model.js';
 import { calculateDistance } from '../../utils/geo.utils.js';
 import { TenantRevision } from '../../tools/revision.js';
 
@@ -463,6 +451,16 @@ ${isCustomRadiusUsed ? '⚡ Rayon personnalisé device appliqué' : ''}
     return this;
   }
 
+  setTotalWorkDuration(duration: string): WorkSessions {
+    this.total_work_duration = duration;
+    return this;
+  }
+
+  setTotalPauseDuration(duration: string): WorkSessions {
+    this.total_pause_duration = duration;
+    return this;
+  }
+
   // === MÉTHODES MÉTIER - POINTAGE ===
 
   setStartCoordinates(latitude: number, longitude: number): WorkSessions {
@@ -815,6 +813,16 @@ ${isCustomRadiusUsed ? '⚡ Rayon personnalisé device appliqué' : ''}
     }
   }
 
+  async saveTimeCorrection(fields: {
+    session_start_at?: Date;
+    session_end_at?: Date;
+    session_status?: SessionStatus;
+    total_work_duration?: string;
+    total_pause_duration?: string;
+  }): Promise<void> {
+    await this.updateTimeFields(fields);
+  }
+
   async load(identifier: any, byGuid: boolean = false): Promise<WorkSessions | null> {
     let data = null;
 
@@ -937,10 +945,10 @@ ${isCustomRadiusUsed ? '⚡ Rayon personnalisé device appliqué' : ''}
     this.session_end_at = data.session_end_at;
     this.total_work_duration = data.total_work_duration;
     this.total_pause_duration = data.total_pause_duration;
-    this.start_latitude = data.start_latitude;
-    this.start_longitude = data.start_longitude;
-    this.end_latitude = data.end_latitude;
-    this.end_longitude = data.end_longitude;
+    this.start_latitude = Number(data.start_latitude);
+    this.start_longitude = Number(data.start_longitude);
+    this.end_latitude = Number(data.end_latitude);
+    this.end_longitude = Number(data.end_longitude);
     // this.memo = data.memo;
     this.created_at = data.created_at;
     this.updated_at = data.updated_at;

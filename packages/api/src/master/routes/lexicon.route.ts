@@ -100,14 +100,14 @@ router.get(
 router.get('/:lang', Ensure.get(), async (req: Request, res: Response) => {
   try {
     const { lang } = req.params;
-    if (!LexiconValidationUtils.validateLanguageCode(lang)) {
+    if (!LexiconValidationUtils.validateLanguageCode(lang as string)) {
       return R.handleError(res, HttpStatus.BAD_REQUEST, {
         code: LEXICON_CODES.LANGUAGE_CODE_INVALID,
         message: LEXICON_ERRORS.LANGUAGE_CODE_INVALID,
       });
     }
 
-    const exportData = await Lexicon.exportable(lang);
+    const exportData = await Lexicon.exportable(lang as string);
 
     // Headers pour optimisation cache client
     res.setHeader('X-Lexicon-Revision', exportData.revision);
@@ -213,7 +213,7 @@ router.put(
   // UserAuth.authenticate,
   async (req: Request, res: Response) => {
     try {
-      const valideGuid = LexiconValidationUtils.validateLexiconGuid(req.params.guid);
+      const valideGuid = LexiconValidationUtils.validateLexiconGuid(req.params.guid as string);
       if (!valideGuid) {
         return R.handleError(res, HttpStatus.BAD_REQUEST, {
           code: LEXICON_CODES.INVALID_GUID,
@@ -221,7 +221,7 @@ router.put(
         });
       }
 
-      const guid = parseInt(req.params.guid, 10);
+      const guid = parseInt(req.params.guid as string, 10);
 
       // Charger par GUID
       const lexicon = await Lexicon._load(guid, true);
@@ -305,7 +305,7 @@ router.delete(
   // UserAuth.authenticate,
   async (req: Request, res: Response) => {
     try {
-      const validateGuid = LexiconValidationUtils.validateLexiconGuid(req.params.guid);
+      const validateGuid = LexiconValidationUtils.validateLexiconGuid(req.params.guid as string);
       if (!validateGuid) {
         return R.handleError(res, HttpStatus.BAD_REQUEST, {
           code: LEXICON_CODES.INVALID_GUID,
@@ -313,7 +313,7 @@ router.delete(
         });
       }
 
-      const guid = parseInt(req.params.guid, 10);
+      const guid = parseInt(req.params.guid as string, 10);
 
       // Charger par GUID
       const lexicon = await Lexicon._load(guid, true);
@@ -361,7 +361,7 @@ router.get(
   // ServerAuth.requirePermission(E.postLexicon),
   async (req: Request, res: Response) => {
     try {
-      const validateRef = LexiconValidationUtils.validateReference(req.params.reference);
+      const validateRef = LexiconValidationUtils.validateReference(req.params.reference as string);
       if (!validateRef) {
         return R.handleError(res, HttpStatus.BAD_REQUEST, {
           code: LEXICON_CODES.REFERENCE_INVALID,
@@ -398,7 +398,7 @@ router.patch(
   // UserAuth.authenticate,
   async (req: Request, res: Response) => {
     try {
-      const validateGuid = LexiconValidationUtils.validateLexiconGuid(req.params.guid);
+      const validateGuid = LexiconValidationUtils.validateLexiconGuid(req.params.guid as string);
       if (!validateGuid) {
         return R.handleError(res, HttpStatus.BAD_REQUEST, {
           code: LEXICON_CODES.INVALID_GUID,
@@ -406,7 +406,7 @@ router.patch(
         });
       }
 
-      const guid = parseInt(req.params.guid, 10);
+      const guid = parseInt(req.params.guid as string, 10);
 
       const lexicon = await Lexicon._load(guid, true);
       if (!lexicon) {

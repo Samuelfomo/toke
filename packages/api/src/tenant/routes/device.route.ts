@@ -129,7 +129,7 @@ router.get('/type/:deviceType/list', Ensure.get(), async (req: Request, res: Res
       });
     }
 
-    const deviceEntries = await Device._listByType(deviceType);
+    const deviceEntries = await Device._listByType(deviceType as string);
     const devices = {
       device_type: deviceType,
       items: deviceEntries

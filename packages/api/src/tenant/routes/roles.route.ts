@@ -63,6 +63,7 @@ router.get('/revision', Ensure.get(), async (_req: Request, res: Response) => {
 
 router.post('/', Ensure.post(), async (req: Request, res: Response) => {
   try {
+    console.log('data' + JSON.stringify(req.body));
     const validatedData = validateRolesCreation(req.body);
     const roleObj = new Role()
       .setCode(validatedData.code)
@@ -112,7 +113,7 @@ router.post('/', Ensure.post(), async (req: Request, res: Response) => {
 router.put('/:guid', Ensure.put(), async (req: Request, res: Response) => {
   try {
     const { guid } = req.params;
-    const validGuid = RolesValidationUtils.validateGuid(guid);
+    const validGuid = RolesValidationUtils.validateGuid(guid as string);
     if (!validGuid) {
       return R.handleError(res, HttpStatus.BAD_REQUEST, {
         code: ROLES_CODES.INVALID_GUID,
@@ -254,7 +255,7 @@ router.get('/system', Ensure.get(), async (req: Request, res: Response) => {
 router.delete('/:guid', Ensure.delete(), async (req: Request, res: Response) => {
   try {
     const { guid } = req.params;
-    const validGuid = RolesValidationUtils.validateGuid(guid);
+    const validGuid = RolesValidationUtils.validateGuid(guid as string);
     if (!validGuid) {
       return R.handleError(res, HttpStatus.BAD_REQUEST, {
         code: ROLES_CODES.INVALID_GUID,

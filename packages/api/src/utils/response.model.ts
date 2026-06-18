@@ -223,6 +223,7 @@ export const responseStructure = {
   REAL_CLOCKED_AT: 'real_clocked_at',
   LATITUDE: 'latitude',
   LONGITUDE: 'longitude',
+  SITE_NAME: 'site_name',
   GPS_ACCURACY: 'gps_accuracy',
   DEVICE_INFO: 'device_info',
   IP_ADDRESS: 'ip_address',
@@ -231,6 +232,8 @@ export const responseStructure = {
   SYNC_ATTEMPTS: 'sync_attempts',
   LAST_SYNC_ATTEMPT: 'last_sync_attempt',
   CORRECTION_REASON: 'correction_reason',
+  IS_FALLBACK_CHECKIN: 'is_fallback_checkin',
+  IMAGE_URL: 'image_url',
   IS_VALID: 'is_valid',
   REQUIRES_VALIDATION: 'requires_validation',
   WITHIN_GEOFENCE: 'within_geofence',
@@ -377,6 +380,16 @@ export const responseStructure = {
   WORKDAY: 'workday',
   LEAVE_ELIGIBILITY_AFTER_SESSION: 'leave_eligibility_after_session',
   LEAVE_IS_OPTIONAL: 'leave_is_optional',
+  SCHEDULE: 'schedule',
+  REASONS: 'reasons',
+  PERIOD_FROM: 'period_from',
+  PERIOD_TO: 'period_to',
+  CONFORMITY_SCORE: 'conformity_score',
+  HISTORY_WEEKS: 'history_weeks',
+  GENERATED_AT: 'generated_at',
+  APPROVED_AT: 'approved_at',
+  REJECTED_AT: 'rejected_at',
+  ITEMS: 'items',
 } as const;
 
 export const RT = {
@@ -443,6 +456,8 @@ export const tableName = {
   DEVICE: `${G.tableAp}_device`,
   ROTATION_GROUP_TEMPLATE: `${G.tableAp}_rotation_group_template`,
   ROTATION_GROUP_TEMPLATE_LOG: `${G.tableAp}_rotation_group_template_log`,
+  SCHEDULE_SUGGESTION: `${G.tableAp}_schedule_suggestion`,
+  SCHEDULE_SUGGESTION_ITEM: `${G.tableAp}_schedule_suggestion_item`,
 } as const;
 
 export const EntityRoute = {

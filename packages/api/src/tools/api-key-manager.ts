@@ -7,12 +7,13 @@ export class ApiKeyManager {
    * Génère un UUID signé avec une signature HMAC
    * @param secret - Clé secrète pour la signature
    * @param key
+   * @param timestamp
    * @returns UUID signé au format: token.signature
    */
-  public static generate(secret: string, key: string): string {
+  public static generate(secret: string, key: string, timestamp?: string): string {
     try {
-      const timestamp: string = Math.floor(Date.now() / 1000).toString();
-      const code = key + timestamp;
+      const ts = timestamp ?? Math.floor(Date.now() / 1000).toString();
+      const code = key + ts;
 
       // secret en base64
       const secretBytes = Buffer.from(secret, 'base64');

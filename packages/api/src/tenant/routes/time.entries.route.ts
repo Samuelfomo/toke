@@ -1,5 +1,6 @@
 import { Request, Response, Router } from 'express';
 import {
+  fallbackCheckinQuerySchema,
   HttpStatus,
   paginationSchema,
   PointageStatus,
@@ -16,6 +17,7 @@ import {
   UsersValidationUtils,
   validateTimeEntriesCreation,
   validateTimeEntriesFilters,
+  validateWaypointCreation,
   WORK_SESSIONS_CODES,
   WORK_SESSIONS_ERRORS,
   WorkSessionsValidationUtils,
@@ -289,10 +291,14 @@ router.post(
             .setSite(siteObj.getId()!)
             .setPointageType(PointageType.CLOCK_IN)
             .setClockedAt(new Date(validatedData.clocked_at))
+            .setFallbackCheckIn(validatedData.is_fallback_checkin)
             .setCoordinates(validatedData.latitude, validatedData.longitude);
 
           if (validatedData.device_info) {
             entryObj.setDeviceInfo(validatedData.device_info);
+          }
+          if (validatedData.image_url) {
+            entryObj.setImageUrl(validatedData.image_url);
           }
           await entryObj.save();
           await entryObj.accept(); // ✅ Toujours accepté
@@ -397,7 +403,12 @@ router.post(
             .setSite(siteObj.getId()!)
             .setPointageType(PointageType.PAUSE_START)
             .setClockedAt(new Date(validatedData.clocked_at))
+            .setFallbackCheckIn(validatedData.is_fallback_checkin)
             .setCoordinates(validatedData.latitude, validatedData.longitude);
+
+          if (validatedData.image_url) {
+            tempEntry.setImageUrl(validatedData.image_url);
+          }
 
           if (!activeSession && allAnomalies.some((a) => a.auto_correctable)) {
             sessionToUse = await AnomalyDetectionService.createRetroactiveSession(
@@ -480,7 +491,12 @@ router.post(
             .setSite(siteObj.getId()!)
             .setPointageType(PointageType.PAUSE_END)
             .setClockedAt(new Date(validatedData.clocked_at))
+            .setFallbackCheckIn(validatedData.is_fallback_checkin)
             .setCoordinates(validatedData.latitude, validatedData.longitude);
+
+          if (validatedData.image_url) {
+            tempEntry.setImageUrl(validatedData.image_url);
+          }
 
           // ✅ CRÉER SESSION RÉTROACTIVE SI NÉCESSAIRE
           let sessionToUse = activeSession;
@@ -572,7 +588,12 @@ router.post(
             .setSite(siteObj.getId()!)
             .setPointageType(PointageType.CLOCK_OUT)
             .setClockedAt(new Date(validatedData.clocked_at))
+            .setFallbackCheckIn(validatedData.is_fallback_checkin)
             .setCoordinates(validatedData.latitude, validatedData.longitude);
+
+          if (validatedData.image_url) {
+            entryObj.setImageUrl(validatedData.image_url);
+          }
 
           await entryObj.save();
           await entryObj.accept();
@@ -588,6 +609,15 @@ router.post(
               );
 
             durations = await activeSession.calculateDurations();
+
+            console.log('test2 durations', durations);
+
+            if (durations.total_work_duration) {
+              activeSession.setTotalWorkDuration(durations.total_work_duration);
+            }
+            if (durations.total_pause_duration) {
+              activeSession.setTotalPauseDuration(durations.total_pause_duration);
+            }
             await activeSession.save();
           }
 
@@ -676,10 +706,15 @@ router.post(
             .setSite(siteObj.getId()!)
             .setPointageType(PointageType.EXTERNAL_MISSION)
             .setClockedAt(new Date(validatedData.clocked_at))
+            .setFallbackCheckIn(validatedData.is_fallback_checkin)
             .setCoordinates(validatedData.latitude, validatedData.longitude);
 
           if (validatedData.device_info) {
             entryObj.setDeviceInfo(validatedData.device_info);
+          }
+
+          if (validatedData.image_url) {
+            entryObj.setImageUrl(validatedData.image_url);
           }
 
           await entryObj.save();
@@ -747,10 +782,15 @@ router.post(
             .setSite(siteObj.getId()!)
             .setPointageType(PointageType.EXTERNAL_MISSION_END)
             .setClockedAt(new Date(validatedData.clocked_at))
+            .setFallbackCheckIn(validatedData.is_fallback_checkin)
             .setCoordinates(validatedData.latitude, validatedData.longitude);
 
           if (validatedData.device_info) {
             entryObj.setDeviceInfo(validatedData.device_info);
+          }
+
+          if (validatedData.image_url) {
+            entryObj.setImageUrl(validatedData.image_url);
           }
 
           await entryObj.save();
@@ -800,6 +840,126 @@ router.post(
             message: TIME_ENTRIES_ERRORS.POINTAGE_TYPE_INVALID,
           });
       }
+    } catch (error: any) {
+      if (error.code) {
+        return R.handleError(res, HttpStatus.BAD_REQUEST, {
+          code: error.code,
+          message: error.message,
+        });
+      }
+
+      return R.handleError(res, HttpStatus.INTERNAL_ERROR, {
+        code: TIME_ENTRIES_CODES.CREATION_FAILED,
+        message: error.message,
+      });
+    }
+  },
+);
+
+/**
+ * POST /time-entries/waypoint
+ *
+ * Pointage libre sur un lieu inconnu ou connu, sans QR code.
+ * - Pas de géofencing
+ * - Pas de détection d'anomalies
+ * - Pas de session liée
+ * - Site optionnel (GUID si connu du système)
+ * - Label optionnel (libellé libre du lieu)
+ * - Statut fixe : PENDING (validation manager requise)
+ */
+router.post(
+  '/waypoint',
+  Ensure.post(),
+  UserAuth.timeEntriesAuthenticate,
+  async (req: Request, res: Response) => {
+    try {
+      // === 1. MÉTADONNÉES RÉSEAU ===
+      const ip =
+        (req.headers['x-forwarded-for'] as string)?.split(',')[0].trim() ||
+        req.socket.remoteAddress ||
+        req.ip;
+      const userAgent = req.headers['user-agent'] || '';
+
+      const bodyWithMetadata = {
+        ...req.body,
+        pointage_type: PointageType.WAYPOINT,
+        ip_address: ip,
+        user_agent: userAgent,
+      };
+
+      // === 2. VALIDATION SCHEMA ===
+      const validatedData = validateWaypointCreation(bodyWithMetadata);
+      const userId = (req as any).userId;
+
+      // === 3. VÉRIFICATION DEVICE (toujours requis) ===
+      const deviceObj = await Device._load(validatedData.device, true);
+      if (!deviceObj) {
+        return R.handleError(res, HttpStatus.NOT_FOUND, {
+          code: TIME_ENTRIES_CODES.DEVICE_NOT_FOUND,
+          message: TIME_ENTRIES_ERRORS.DEVICE_NOT_FOUND,
+        });
+      }
+
+      // === 4. SITE OPTIONNEL ===
+      let siteId: number | null = null;
+      let siteName: string | null = null;
+
+      if (validatedData.site) {
+        const siteObj = await Site._load(validatedData.site, true);
+        if (!siteObj) {
+          return R.handleError(res, HttpStatus.NOT_FOUND, {
+            code: TIME_ENTRIES_CODES.SITE_NOT_FOUND,
+            message: SITES_ERRORS.NOT_FOUND,
+          });
+        }
+        siteId = siteObj.getId()!;
+        siteName = siteObj.getName()!;
+      }
+
+      // === 5. CONSTRUCTION DE L'ENTRY ===
+      const entryObj = new TimeEntries()
+        .setUser(userId)
+        .setDevice(deviceObj.getId()!)
+        .setPointageType(PointageType.WAYPOINT)
+        .setClockedAt(new Date(validatedData.clocked_at))
+        .setCoordinates(validatedData.latitude, validatedData.longitude);
+
+      if (validatedData.gps_accuracy) {
+        entryObj.setGpsAccuracy(validatedData.gps_accuracy);
+      }
+
+      if (siteId) {
+        entryObj.setSite(siteId);
+        entryObj.setWaypointLabel(siteName!);
+      }
+
+      if (validatedData.site_name) {
+        entryObj.setWaypointLabel(validatedData.site_name);
+      }
+
+      if (validatedData.device_info) {
+        entryObj.setDeviceInfo({
+          ...validatedData.device_info,
+          waypoint_label: validatedData.site_name || siteName || null,
+        });
+      }
+
+      if (validatedData.ip_address) {
+        entryObj.setIpAddress(ip!);
+      }
+
+      entryObj.setUserAgent(userAgent);
+
+      if (validatedData.created_offline && validatedData.local_id) {
+        entryObj.setOfflineData(validatedData.local_id);
+      }
+
+      await entryObj.save();
+
+      return R.handleCreated(res, {
+        message: 'Waypoint recorded — pending manager validation',
+        entry: await entryObj.toJSON(),
+      });
     } catch (error: any) {
       if (error.code) {
         return R.handleError(res, HttpStatus.BAD_REQUEST, {
@@ -957,6 +1117,59 @@ router.get('/user/:userGuid/offline', Ensure.get(), async (req: Request, res: Re
         ? await Promise.all(offlineEntries.map(async (entry) => await entry.toJSON(views)))
         : [],
       count: offlineEntries?.length || 0,
+    };
+
+    return R.handleSuccess(res, { entries });
+  } catch (error: any) {
+    return R.handleError(res, HttpStatus.INTERNAL_ERROR, {
+      code: TIME_ENTRIES_CODES.LISTING_FAILED,
+      message: error.message,
+    });
+  }
+});
+
+router.get('/fall-back-checkin/:device', Ensure.get(), async (req: Request, res: Response) => {
+  try {
+    const { offset, limit, start_date, end_date } = fallbackCheckinQuerySchema.parse(req.query);
+
+    const paginationOptions = { offset, limit };
+
+    // const paginationOptions = paginationSchema.parse(req.query);
+    const { device } = req.params;
+    if (!TimeEntriesValidationUtils.validateGuid(device)) {
+      return R.handleError(res, HttpStatus.BAD_REQUEST, {
+        code: TIME_ENTRIES_CODES.USER_INVALID,
+        message: TIME_ENTRIES_ERRORS.USER_INVALID,
+      });
+    }
+
+    const views = ValidationUtils.validateView(req.query.view, responseValue.FULL);
+
+    const deviceObj = await Device._load(device, true);
+    if (!deviceObj) {
+      return R.handleError(res, HttpStatus.NOT_FOUND, {
+        code: TIME_ENTRIES_CODES.DEVICE_NOT_FOUND,
+        message: 'Device not found',
+      });
+    }
+
+    const startOfDay = new Date(start_date || TimezoneConfigUtils.getCurrentTime());
+    startOfDay.setHours(0, 0, 0, 0);
+
+    const endOfDay = new Date(end_date || TimezoneConfigUtils.getCurrentTime());
+    endOfDay.setHours(23, 59, 59, 999);
+
+    const fallbackCheckin = await TimeEntries._findAllFallbackCheckin(
+      deviceObj.getId()!,
+      startOfDay,
+      endOfDay,
+      paginationOptions,
+    );
+    const entries = {
+      fall_back_checkin: fallbackCheckin
+        ? await Promise.all(fallbackCheckin.map(async (entry) => await entry.toJSON(views)))
+        : [],
+      count: fallbackCheckin?.length || 0,
     };
 
     return R.handleSuccess(res, { entries });
@@ -2039,9 +2252,11 @@ router.get('/attendance/statistics', Ensure.get(), async (req: Request, res: Res
 router.get('/attendance/team', Ensure.get(), async (req: Request, res: Response) => {
   try {
     const { manager, start_date, end_date, pointage_type, status, site } = req.query;
-    const paginationOptions = paginationSchema.parse(req.query);
+    // const paginationOptions = paginationSchema.parse(req.query);
 
-    // Validation: manager est requis
+    // =========================
+    // VALIDATION MANAGER
+    // =========================
     if (!manager) {
       return R.handleError(res, HttpStatus.BAD_REQUEST, {
         code: 'manager_required',
@@ -2049,7 +2264,6 @@ router.get('/attendance/team', Ensure.get(), async (req: Request, res: Response)
       });
     }
 
-    // Charger le manager
     const managerObj = await User._load(String(manager), true);
     if (!managerObj) {
       return R.handleError(res, HttpStatus.NOT_FOUND, {
@@ -2058,15 +2272,18 @@ router.get('/attendance/team', Ensure.get(), async (req: Request, res: Response)
       });
     }
 
-    // Récupérer tous les subordonnés du manager
+    // =========================
+    // TEAM MEMBERS
+    // =========================
     const userRolesSub = await UserRole._listByAssignedBy(managerObj.getId()!);
+
     if (!userRolesSub || userRolesSub.length === 0) {
       return R.handleSuccess(res, {
         message: 'No team members found for this manager',
         data: {
           pagination: {
-            offset: paginationOptions.offset || 0,
-            limit: paginationOptions.limit || 0,
+            offset: 0,
+            limit: 0,
             count: 0,
           },
           entries: [],
@@ -2074,43 +2291,75 @@ router.get('/attendance/team', Ensure.get(), async (req: Request, res: Response)
       });
     }
 
-    // Extraire les IDs des subordonnés
     const subordinateIds = userRolesSub
       .map((ur) => ur.getUser())
       .filter((id): id is number => id !== undefined);
 
-    // Construire les conditions de recherche
+    // =========================
+    // DATE RANGE FIX (30 DAYS DEFAULT + TODAY INCLUDED)
+    // =========================
+    const now = TimezoneConfigUtils.getCurrentTime();
+
+    const defaultStartDate = new Date(now);
+    defaultStartDate.setDate(now.getDate() - 30);
+    defaultStartDate.setHours(0, 0, 0, 0);
+
+    const defaultEndDate = new Date(now);
+    defaultEndDate.setHours(23, 59, 59, 999);
+
     const conditions: Record<string, any> = {
       user: { [Op.in]: subordinateIds },
+      clocked_at: {},
     };
 
-    // Filtres temporels
-    if (start_date || end_date) {
-      conditions.clocked_at = {};
-      if (start_date) conditions.clocked_at[Op.gte] = new Date(start_date as string);
-      if (end_date) conditions.clocked_at[Op.lte] = new Date(end_date as string);
+    const hasCustomDateFilter = start_date || end_date;
+
+    if (hasCustomDateFilter) {
+      if (start_date) {
+        const start = new Date(start_date as string);
+        start.setHours(0, 0, 0, 0);
+        conditions.clocked_at[Op.gte] = start;
+      } else {
+        conditions.clocked_at[Op.gte] = defaultStartDate;
+      }
+
+      if (end_date) {
+        const end = new Date(end_date as string);
+        end.setHours(23, 59, 59, 999);
+        conditions.clocked_at[Op.lte] = end;
+      }
+    } else {
+      conditions.clocked_at[Op.gte] = defaultStartDate;
+      conditions.clocked_at[Op.lte] = defaultEndDate;
     }
 
-    // Filtre par type de pointage
+    // =========================
+    // FILTERS
+    // =========================
     if (pointage_type) {
       conditions.pointage_type = pointage_type;
     }
 
-    // Filtre par statut
     if (status) {
       conditions.pointage_status = status;
     }
 
-    // Filtre par site
     if (site) {
       const siteObj = await Site._load(String(site), true);
       if (siteObj) conditions.site = siteObj.getId();
     }
 
-    // Récupérer les entries
-    const entries = await TimeEntries._list(conditions, paginationOptions);
+    // =========================
+    // QUERY
+    // =========================
+    const entries = await TimeEntries._list(
+      conditions,
+      {},
+      {
+        order: [['real_clocked_at', 'ASC']], // 👈 ICI
+      },
+    );
 
-    // Enrichir et calculer les statistiques
     const enrichedEntries: any[] = [];
 
     if (entries) {
@@ -2124,10 +2373,149 @@ router.get('/attendance/team', Ensure.get(), async (req: Request, res: Response)
     return R.handleSuccess(res, {
       message: 'Team time entries retrieved successfully',
       data: {
-        // manager: managerObj.toJSON(),
         pagination: {
-          offset: paginationOptions.offset || 0,
-          limit: paginationOptions.limit || enrichedEntries.length,
+          offset: 0,
+          limit: enrichedEntries.length,
+          count: enrichedEntries.length,
+        },
+        entries: enrichedEntries,
+      },
+    });
+  } catch (error: any) {
+    return R.handleError(res, HttpStatus.INTERNAL_ERROR, {
+      code: 'team_time_entries_retrieval_failed',
+      message: error.message || 'Failed to retrieve team time entries',
+    });
+  }
+});
+
+router.get('/attendance/v2/team', Ensure.get(), async (req: Request, res: Response) => {
+  try {
+    const { manager, start_date, end_date, pointage_type, status, site } = req.query;
+    // const paginationOptions = paginationSchema.parse(req.query);
+
+    // =========================
+    // VALIDATION MANAGER
+    // =========================
+    if (!manager) {
+      return R.handleError(res, HttpStatus.BAD_REQUEST, {
+        code: 'manager_required',
+        message: 'Manager Guid is required',
+      });
+    }
+
+    const managerObj = await User._load(String(manager), true);
+    if (!managerObj) {
+      return R.handleError(res, HttpStatus.NOT_FOUND, {
+        code: 'manager_not_found',
+        message: 'Manager not found',
+      });
+    }
+
+    // =========================
+    // TEAM MEMBERS
+    // =========================
+    const userRolesSub = await UserRole._listByAssignedBy(managerObj.getId()!);
+
+    if (!userRolesSub || userRolesSub.length === 0) {
+      return R.handleSuccess(res, {
+        message: 'No team members found for this manager',
+        data: {
+          pagination: {
+            offset: 0,
+            limit: 0,
+            count: 0,
+          },
+          entries: [],
+        },
+      });
+    }
+
+    const subordinateIds = userRolesSub
+      .map((ur) => ur.getUser())
+      .filter((id): id is number => id !== undefined);
+
+    // =========================
+    // DATE RANGE FIX (30 DAYS DEFAULT + TODAY INCLUDED)
+    // =========================
+    const now = TimezoneConfigUtils.getCurrentTime();
+
+    const defaultStartDate = new Date(now);
+    defaultStartDate.setDate(now.getDate() - 30);
+    defaultStartDate.setHours(0, 0, 0, 0);
+
+    const defaultEndDate = new Date(now);
+    defaultEndDate.setHours(23, 59, 59, 999);
+
+    const conditions: Record<string, any> = {
+      user: { [Op.in]: subordinateIds },
+      clocked_at: {},
+    };
+
+    const hasCustomDateFilter = start_date || end_date;
+
+    if (hasCustomDateFilter) {
+      if (start_date) {
+        const start = new Date(start_date as string);
+        start.setHours(0, 0, 0, 0);
+        conditions.clocked_at[Op.gte] = start;
+      } else {
+        conditions.clocked_at[Op.gte] = defaultStartDate;
+      }
+
+      if (end_date) {
+        const end = new Date(end_date as string);
+        end.setHours(23, 59, 59, 999);
+        conditions.clocked_at[Op.lte] = end;
+      }
+    } else {
+      conditions.clocked_at[Op.gte] = defaultStartDate;
+      conditions.clocked_at[Op.lte] = defaultEndDate;
+    }
+
+    // =========================
+    // FILTERS
+    // =========================
+    if (pointage_type) {
+      conditions.pointage_type = pointage_type;
+    }
+
+    if (status) {
+      conditions.pointage_status = status;
+    }
+
+    if (site) {
+      const siteObj = await Site._load(String(site), true);
+      if (siteObj) conditions.site = siteObj.getId();
+    }
+
+    // =========================
+    // QUERY
+    // =========================
+    const entries = await TimeEntries._list(
+      conditions,
+      {},
+      {
+        order: [['real_clocked_at', 'ASC']], // 👈 ICI
+      },
+    );
+
+    const enrichedEntries: any[] = [];
+
+    if (entries) {
+      await Promise.all(
+        entries.map(async (entry) => {
+          enrichedEntries.push(await entry.toJSONMIN(responseValue.FULL));
+        }),
+      );
+    }
+
+    return R.handleSuccess(res, {
+      message: 'Team time entries retrieved successfully',
+      data: {
+        pagination: {
+          offset: 0,
+          limit: enrichedEntries.length,
           count: enrichedEntries.length,
         },
         entries: enrichedEntries,

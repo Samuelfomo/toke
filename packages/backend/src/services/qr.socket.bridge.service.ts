@@ -52,7 +52,12 @@ export class QrSocketBridgeService {
     console.log(`🔌 Client web connecté pour session ${sessionId}`);
 
     // Générer les credentials pour s'authentifier auprès du master
-    const signature = ApiKeyManager.generate(process.env.SECRET_KEY!, process.env.API_KEY!);
+    const timestamp = Math.floor(Date.now() / 1000).toString();
+    const signature = ApiKeyManager.generate(
+      process.env.SECRET_KEY!,
+      process.env.API_KEY!,
+      timestamp,
+    );
 
     // Connexion au master AVEC les credentials — le client web ne voit jamais ça
     const masterSocket: ClientSocket = ioClient(`${masterUrl}/qr-auth`, {
@@ -60,7 +65,7 @@ export class QrSocketBridgeService {
       extraHeaders: {
         'x-api-key': process.env.API_KEY!,
         'x-api-signature': signature,
-        'x-api-timestamp': Math.floor(Date.now() / 1000).toString(),
+        'x-api-timestamp': timestamp,
       },
       transports: ['websocket'],
     });

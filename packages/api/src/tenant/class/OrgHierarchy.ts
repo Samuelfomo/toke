@@ -230,8 +230,8 @@ export default class OrgHierarchy extends OrgHierarchyModel {
             guid: group.getGuid()!,
             assignment_info: {
               current_type: assignmentType,
-              active_schedule_assignment: activeSchedule ? await activeSchedule.toPUBLIC() : null,
-              active_rotation_assignment: activeRotation ? await activeRotation.toPUBLIC() : null,
+              active_schedule_assignment: activeSchedule ? await activeSchedule.toJSON() : null,
+              active_rotation_assignment: activeRotation ? await activeRotation.toJSON() : null,
             },
           });
         }

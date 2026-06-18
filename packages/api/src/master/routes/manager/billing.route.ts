@@ -46,13 +46,13 @@ const router = Router();
 router.get('/current-license/:tenant', Ensure.get(), async (req: Request, res: Response) => {
   try {
     // const validTenant = TenantValidationUtils.validateTenantGuid(req.params.tenant);
-    if (!TenantValidationUtils.validateTenantGuid(req.params.tenant)) {
+    if (!TenantValidationUtils.validateTenantGuid(req.params.tenant as string)) {
       return R.handleError(res, HttpStatus.BAD_REQUEST, {
         code: TENANT_CODES.INVALID_GUID,
         message: TENANT_ERRORS.GUID_INVALID,
       });
     }
-    const tenant = parseInt(req.params.tenant, 10);
+    const tenant = parseInt(req.params.tenant as string, 10);
     const tenantObj = await Tenant._load(tenant, true);
     if (!tenantObj) {
       return R.handleError(res, HttpStatus.NOT_FOUND, {
@@ -96,7 +96,7 @@ router.get(
       const { globalLicense } = req.params;
       const { offset, limit } = req.query;
 
-      const globalLicenseGuid = parseInt(globalLicense);
+      const globalLicenseGuid = parseInt(globalLicense as string);
       if (!EmployeeLicenseValidationUtils.validateGlobalLicenseId(globalLicenseGuid)) {
         return R.handleError(res, HttpStatus.BAD_REQUEST, {
           code: EMPLOYEE_LICENSE_CODES.GLOBAL_LICENSE_INVALID,
@@ -156,7 +156,7 @@ router.get(
 router.get('/current-cost/:tenant', Ensure.get(), async (req: Request, res: Response) => {
   try {
     const { tenant } = req.params;
-    const tenantGuid = parseInt(tenant);
+    const tenantGuid = parseInt(tenant as string);
 
     // 1. Vérif GUID tenant
     if (!TenantValidationUtils.validateTenantGuid(tenantGuid)) {
@@ -257,7 +257,7 @@ router.get('/current-cost/:tenant', Ensure.get(), async (req: Request, res: Resp
 router.get('/period-preview/:tenant', Ensure.get(), async (req: Request, res: Response) => {
   try {
     const { tenant } = req.params;
-    const tenantGuid = parseInt(tenant);
+    const tenantGuid = parseInt(tenant as string);
 
     if (!TenantValidationUtils.validateTenantGuid(tenantGuid)) {
       return R.handleError(res, HttpStatus.BAD_REQUEST, {
@@ -359,7 +359,7 @@ router.get('/period-preview/:tenant', Ensure.get(), async (req: Request, res: Re
 router.get('/pending-adjustments/:tenant', Ensure.get(), async (req: Request, res: Response) => {
   try {
     const { tenant } = req.params;
-    const tenantGuid = parseInt(tenant);
+    const tenantGuid = parseInt(tenant as string);
 
     if (!TenantValidationUtils.validateTenantGuid(tenantGuid)) {
       return R.handleError(res, HttpStatus.BAD_REQUEST, {
@@ -478,7 +478,7 @@ router.get('/adjustment/:guid', Ensure.get(), async (req: Request, res: Response
         message: LICENSE_ADJUSTMENT_ERRORS.GUID_INVALID,
       });
     }
-    const adjustmentGuid = parseInt(guid, 10);
+    const adjustmentGuid = parseInt(guid as string, 10);
 
     const adjustment = await LicenseAdjustment._load(adjustmentGuid, true);
     if (!adjustment) {
@@ -748,13 +748,13 @@ router.get('/payment-history/:tenant', Ensure.get(), async (req: Request, res: R
     const { tenant } = req.params;
     const paginationOptions = paginationSchema.parse(req.query);
 
-    if (!TenantValidationUtils.validateTenantGuid(tenant)) {
+    if (!TenantValidationUtils.validateTenantGuid(tenant as string)) {
       return R.handleError(res, HttpStatus.BAD_REQUEST, {
         code: TENANT_CODES.INVALID_GUID,
         message: TENANT_ERRORS.GUID_INVALID,
       });
     }
-    const tenantGuid = parseInt(tenant, 10);
+    const tenantGuid = parseInt(tenant as string, 10);
 
     const tenantObj = await Tenant._load(tenantGuid, true);
     if (!tenantObj) {

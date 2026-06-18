@@ -39,8 +39,9 @@ export default class TimeEntries extends TimeEntriesModel {
   static _list(
     conditions: Record<string, any> = {},
     paginationOptions: { offset?: number; limit?: number } = {},
+    options: any = {},
   ): Promise<TimeEntries[] | null> {
-    return new TimeEntries().list(conditions, paginationOptions);
+    return new TimeEntries().list(conditions, paginationOptions, options);
   }
 
   static _listUserPeriodicEntries(
@@ -84,6 +85,15 @@ export default class TimeEntries extends TimeEntriesModel {
     paginationOptions: { offset?: number; limit?: number } = {},
   ): Promise<TimeEntries[] | null> {
     return new TimeEntries().findAllPendingValidation(paginationOptions);
+  }
+
+  static _findAllFallbackCheckin(
+    device: number,
+    startDate: Date,
+    endDate: Date,
+    paginationOptions: { offset?: number; limit?: number } = {},
+  ): Promise<TimeEntries[] | null> {
+    return new TimeEntries().findAllFallbackCheckin(device, startDate, endDate, paginationOptions);
   }
 
   static _findOfflineEntries(
@@ -203,6 +213,18 @@ export default class TimeEntries extends TimeEntriesModel {
     return this.siteObj || null;
   }
 
+  IsFallbackCheckIn(): boolean {
+    return this.is_fallback_checkin;
+  }
+
+  getImageUrl(): string | undefined {
+    return this.image_url;
+  }
+
+  async getSiteName(): Promise<string | undefined> {
+    return this.site_name;
+  }
+
   getPointageType(): PointageType | undefined {
     return this.pointage_type;
   }
@@ -317,6 +339,11 @@ export default class TimeEntries extends TimeEntriesModel {
     return this;
   }
 
+  setWaypointLabel(site_name: string): TimeEntries {
+    this.site_name = site_name;
+    return this;
+  }
+
   setPointageType(type: PointageType): TimeEntries {
     this.pointage_type = type;
     return this;
@@ -376,6 +403,16 @@ export default class TimeEntries extends TimeEntriesModel {
 
   setMemo(memo: number): TimeEntries {
     this.memo = memo;
+    return this;
+  }
+
+  setFallbackCheckIn(IsFallbackCheckIn: boolean): TimeEntries {
+    this.is_fallback_checkin = IsFallbackCheckIn;
+    return this;
+  }
+
+  setImageUrl(image_url: string): TimeEntries {
+    this.image_url = image_url;
     return this;
   }
 
@@ -766,11 +803,24 @@ export default class TimeEntries extends TimeEntriesModel {
 
   async save(): Promise<void> {
     try {
-      if (this.isNew()) {
-        await this.create();
+      if (this.pointage_type === PointageType.WAYPOINT) {
+        if (this.isNew()) {
+          await this.createWaypoint();
+        } else {
+          await this.update();
+        }
       } else {
-        await this.update();
+        if (this.isNew()) {
+          await this.create();
+        } else {
+          await this.update();
+        }
       }
+      // if (this.isNew()) {
+      //   await this.create();
+      // } else {
+      //   await this.update();
+      // }
     } catch (error: any) {
       throw new Error(error.message || error);
     }
@@ -802,8 +852,9 @@ export default class TimeEntries extends TimeEntriesModel {
   async list(
     conditions: Record<string, any> = {},
     paginationOptions: { offset?: number; limit?: number } = {},
+    options: any = {},
   ): Promise<TimeEntries[] | null> {
-    const dataset = await this.listAll(conditions, paginationOptions);
+    const dataset = await this.listAll(conditions, paginationOptions, options);
     if (!dataset || dataset.length === 0) return null;
     return dataset.map((data) => new TimeEntries().hydrate(data));
   }
@@ -863,6 +914,17 @@ export default class TimeEntries extends TimeEntriesModel {
     return dataset.map((data) => new TimeEntries().hydrate(data));
   }
 
+  async findAllFallbackCheckin(
+    device: number,
+    startDate: Date,
+    endDate: Date,
+    paginationOptions: { offset?: number; limit?: number } = {},
+  ): Promise<TimeEntries[] | null> {
+    const dataset = await this.findFallbackCheckin(device, startDate, endDate, paginationOptions);
+    if (!dataset || dataset.length === 0) return null;
+    return dataset.map((data) => new TimeEntries().hydrate(data));
+  }
+
   async findOffline(
     user: number,
     paginationOptions: { offset?: number; limit?: number } = {},
@@ -903,9 +965,12 @@ export default class TimeEntries extends TimeEntriesModel {
       [RS.COORDINATES]:
         this.latitude && this.longitude ? `${this.latitude},${this.longitude}` : null,
       [RS.GPS_ACCURACY]: this.gps_accuracy,
+      [RS.SITE_NAME]: this.site_name,
 
       // [RS.MEMO]: this.memo,
       [RS.CORRECTION_REASON]: this.correction_reason,
+      [RS.IS_FALLBACK_CHECKIN]: this.is_fallback_checkin,
+      [RS.IMAGE_URL]: this.image_url,
     };
 
     if (view === responseValue.MINIMAL) {
@@ -940,6 +1005,70 @@ export default class TimeEntries extends TimeEntriesModel {
       // [RS.GPS_ACCURACY]: this.gps_accuracy,
       // [RS.MEMO]: this.memo,
       // [RS.CORRECTION_REASON]: this.correction_reason,
+      // Informations calculées
+      [RS.IS_VALID]: await this.isValid(),
+      [RS.REQUIRES_VALIDATION]: await this.requiresManagerValidation(),
+      [RS.WITHIN_GEOFENCE]: await this.isWithinGeofence(),
+      [RS.HAS_ANOMALIES]: await this.hasAnomalies(),
+      [RS.FRAUD_SCORE]: await this.getFraudScore(),
+    };
+  }
+
+  async toJSONMIN(view: ViewMode = responseValue.FULL): Promise<object> {
+    const user = await this.getUserObj();
+    const device = await this.getDeviceObj();
+    const site = await this.getSiteObj();
+    const session = await this.getSessionObj();
+
+    const memo = await this.getMemoObj();
+
+    const baseData = {
+      [RS.GUID]: this.guid,
+      [RS.POINTAGE_TYPE]: this.pointage_type,
+      [RS.POINTAGE_STATUS]: this.pointage_status,
+      [RS.CLOCKED_AT]: this.clocked_at,
+      [RS.SERVER_RECEIVED_AT]: this.server_received_at,
+      [RS.REAL_CLOCKED_AT]: this.real_clocked_at,
+      [RS.CREATED_OFFLINE]: this.created_offline,
+      [RS.COORDINATES]:
+        this.latitude && this.longitude ? `${this.latitude},${this.longitude}` : null,
+      [RS.GPS_ACCURACY]: this.gps_accuracy,
+      [RS.SITE_NAME]: this.site_name,
+
+      // [RS.MEMO]: this.memo,
+      [RS.CORRECTION_REASON]: this.correction_reason,
+      [RS.IS_FALLBACK_CHECKIN]: this.is_fallback_checkin,
+      [RS.IMAGE_URL]: this.image_url,
+    };
+
+    if (view === responseValue.MINIMAL) {
+      return {
+        ...baseData,
+        [RS.USER]: user?.getGuid(),
+        [RS.DEVICE]: device?.getGuid(),
+        [RS.SITE]: site?.getGuid(),
+        [RS.SESSION]: session?.getGuid(),
+        [RS.MEMO]: memo?.getGuid(),
+      };
+    }
+
+    return {
+      ...baseData,
+      [RS.USER]: user ? { guid: user.getGuid(), name: user.getFullName() } : null,
+      [RS.DEVICE]: device ? { guid: device.getGuid(), name: device.getName() } : null,
+      [RS.SITE]: site ? { guid: site.getGuid(), name: site.getName() } : null,
+      [RS.SESSION]: session
+        ? { guid: session.getGuid(), duration: session.getTotalWorkDuration() }
+        : null,
+      [RS.MEMO]: memo ? { guid: memo.getGuid(), title: memo.getTitle() } : null,
+      [RS.DEVICE_INFO]: this.device_info,
+      [RS.IP_ADDRESS]: this.ip_address,
+      [RS.USER_AGENT]: this.user_agent,
+      [RS.LOCAL_ID]: this.local_id,
+      [RS.SYNC_ATTEMPTS]: this.sync_attempts,
+      [RS.LAST_SYNC_ATTEMPT]: this.last_sync_attempt,
+      [RS.UPDATED_AT]: this.updated_at,
+
       // Informations calculées
       [RS.IS_VALID]: await this.isValid(),
       [RS.REQUIRES_VALIDATION]: await this.requiresManagerValidation(),
@@ -1015,9 +1144,9 @@ export default class TimeEntries extends TimeEntriesModel {
     this.clocked_at = data.clocked_at;
     this.real_clocked_at = data.real_clocked_at;
     this.server_received_at = data.server_received_at;
-    this.latitude = data.latitude;
-    this.longitude = data.longitude;
-    this.gps_accuracy = data.gps_accuracy;
+    this.latitude = Number(data.latitude);
+    this.longitude = Number(data.longitude);
+    this.gps_accuracy = Number(data.gps_accuracy);
     this.qr_code = data.qr_code;
     this.device_info = data.device_info;
     this.ip_address = data.ip_address;
@@ -1029,6 +1158,9 @@ export default class TimeEntries extends TimeEntriesModel {
     this.memo = data.memo;
     this.correction_reason = data.correction_reason;
     this.updated_at = data.updated_at;
+    this.site_name = data.site_name;
+    this.is_fallback_checkin = data.is_fallback_checkin;
+    this.image_url = data.image_url;
     return this;
   }
 }

@@ -7,6 +7,7 @@ export enum PointageType {
   PAUSE_END = 'pause_end',
   EXTERNAL_MISSION = 'external_mission',
   EXTERNAL_MISSION_END = 'external_mission_end',
+  WAYPOINT = 'waypoint',
 }
 
 export enum PointageStatus {
@@ -80,11 +81,16 @@ export const TIME_ENTRIES_VALIDATION = {
     MIN_LENGTH: 10,
     MAX_LENGTH: 500,
   },
+  IMAGE_URL: {
+    MIN_LENGTH: 10,
+    MAX_LENGTH: 255,
+  },
 } as const;
 
 export const TIME_ENTRIES_DEFAULTS = {
   POINTAGE_STATUS: PointageStatus.PENDING,
   CREATED_OFFLINE: false,
+  IS_FALLBACK_CHECKIN: false,
   SYNC_ATTEMPTS: 0,
   PAGINATION: {
     OFFSET: 0,
@@ -226,6 +232,7 @@ export const TIME_ENTRIES_ERRORS = {
 
   CORRECTION_REASON_REQUIRED: 'Correction reason is required for corrected entries',
   CORRECTION_REASON_INVALID: `Correction reason must be between ${TIME_ENTRIES_VALIDATION.CORRECTION_REASON.MIN_LENGTH} and ${TIME_ENTRIES_VALIDATION.CORRECTION_REASON.MAX_LENGTH} characters`,
+  IMAGE_URL_INVALID: `User image url must be between ${TIME_ENTRIES_VALIDATION.IMAGE_URL.MIN_LENGTH} and ${TIME_ENTRIES_VALIDATION.IMAGE_URL.MAX_LENGTH} characters`,
 
   DUPLICATE_POINTAGE: 'Duplicate pointage detected for the same time period',
   INVALID_POINTAGE_SEQUENCE: 'Invalid pointage sequence - check clock in/out order',
@@ -249,6 +256,7 @@ export const TIME_ENTRIES_ERRORS = {
   PAGINATION_INVALID: 'Invalid pagination parameters',
   GUID_GENERATION_FAILED: `Failed to generate GUID for ${TIME_ENTRIES_LABEL}`,
   ID_REQUIRED: `${TIME_ENTRIES_LABEL} id is required`,
+  IS_FALLBACK_CHECKIN: `IsFallbackCheckIn status must be a boolean value (true or false)`,
 } as const;
 
 export const TIME_ENTRIES_MESSAGES = {

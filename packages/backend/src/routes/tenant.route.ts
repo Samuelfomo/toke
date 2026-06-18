@@ -41,13 +41,13 @@ router.post('/auth', Ensure.post(), async (req: Request, res: Response) => {
       code,
     };
 
-    console.log(data);
-
     const result: any = await TenantService.authenticate(data);
-    console.log(result);
 
     if (result.status !== HttpStatus.CREATED) {
-      return R.handleError(res, result.status, result.response.error);
+      return R.handleError(res, result.status, {
+        result: result.response.error,
+        response: result,
+      });
     }
     return R.handleCreated(res, result.response);
   } catch (error: any) {
@@ -77,7 +77,6 @@ router.post('/retry', Ensure.post(), async (req: Request, res: Response) => {
     }
 
     const result: any = await TenantService.retryAuthenticate(email);
-    console.log(result);
 
     if (result.status !== HttpStatus.CREATED) {
       return R.handleError(res, result.status, result.response.error);
@@ -103,14 +102,14 @@ router.get('/verify-otp/:otp', Ensure.get(), async (req: Request, res: Response)
     }
 
     // Valider le format de l'OTP (6 chiffres)
-    if (!/^\d{6}$/.test(otp)) {
+    if (!/^\d{6}$/.test(otp as string)) {
       return R.handleError(res, HttpStatus.BAD_REQUEST, {
         code: 'otp_invalid_format',
         message: 'OTP must be 6 digits',
       });
     }
 
-    const result: any = await TenantService.loadTenant(otp);
+    const result: any = await TenantService.loadTenant(otp as string);
 
     if (result.status !== HttpStatus.SUCCESS) {
       return R.handleError(res, result.status, result.response.error);

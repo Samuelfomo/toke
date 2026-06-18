@@ -86,7 +86,7 @@ router.get('/global-license/:global_license', Ensure.get(), async (req: Request,
       });
     }
 
-    const globalLicense = parseInt(global_license, 10);
+    const globalLicense = parseInt(global_license as string, 10);
     const globalLicenseObj = await GlobalLicense._load(globalLicense, true);
     if (!globalLicenseObj) {
       return R.handleError(res, HttpStatus.NOT_FOUND, {

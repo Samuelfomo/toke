@@ -1119,49 +1119,6 @@ class AnomalyDetectionService {
     return AlertSeverity.LOW;
   }
 
-  //   private generateMemoDescription(
-  //     entryObj: TimeEntries,
-  //     anomalies: Anomaly[],
-  //     corrections: any[],
-  //   ): string {
-  //     const correctionsList =
-  //       corrections.length > 0
-  //         ? corrections.map((c) => `• ${c.action}`).join('\n')
-  //         : 'Aucune correction automatique appliquée';
-  //
-  //     return `
-  // ⚠️ MÉMO AUTO-GÉNÉRÉ - Anomalies Détectées
-  //
-  // 📍 POINTAGE:
-  // - Type: ${entryObj.getPointageType()}
-  // - Date/Heure: ${entryObj.getClockedAt()?.toLocaleString('fr-FR')}
-  // - GPS: ${entryObj.getLatitude()}, ${entryObj.getLongitude()}
-  // - Précision: ${entryObj.getGpsAccuracy()}m
-  //
-  // 🔍 ANOMALIES DÉTECTÉES (${anomalies.length}):
-  // ${anomalies
-  //   .map(
-  //     (a, i) => `
-  // ${i + 1}. [${a.severity.toUpperCase()}] ${a.type}
-  //    ${a.description}
-  //    ${a.technical_details ? JSON.stringify(a.technical_details, null, 2) : ''}
-  //    ${a.auto_correction_applied ? '✅ Correction automatique appliquée' : ''}
-  // `,
-  //   )
-  //   .join('\n')}
-  //
-  // ✅ CORRECTIONS AUTOMATIQUES:
-  // ${correctionsList}
-  //
-  // ⏳ VALIDATION REQUISE:
-  // ${
-  //   anomalies.some((a) => !a.auto_correctable)
-  //     ? 'Ce mémo nécessite validation manager sous 24h.'
-  //     : 'Corrections automatiques appliquées. Validation recommandée.'
-  // }
-  //     `.trim();
-  //   }
-
   private generateMemoTitle(
     pointageType: PointageType,
     anomalies: Anomaly[],
@@ -1182,6 +1139,7 @@ class AnomalyDetectionService {
       [PointageType.PAUSE_END]: 'Fin pause',
       [PointageType.EXTERNAL_MISSION]: 'Mission externe',
       [PointageType.EXTERNAL_MISSION_END]: 'Fin mission',
+      [PointageType.WAYPOINT]: 'Point de repère',
     }[pointageType];
 
     // 🆕 Titre spécifique selon type d'anomalie principale
@@ -1205,20 +1163,6 @@ class AnomalyDetectionService {
 
     return `${icon} ${typeLabel} anomaly - ${anomalies.length} incident(s)`;
   }
-
-  // private mapAnomalyToMemoType(anomalies: Anomaly[]): MemoType {
-  //   if (anomalies.some((a) => a.type === AnomalyType.SESSION_NOT_FOUND)) {
-  //     return MemoType.SESSION_CLOSURE;
-  //   }
-  //   if (
-  //     anomalies.some((a) =>
-  //       [AnomalyType.TIMING_ABNORMAL, AnomalyType.SESSION_TOO_LONG].includes(a.type),
-  //     )
-  //   ) {
-  //     return MemoType.DELAY_JUSTIFICATION;
-  //   }
-  //   return MemoType.CORRECTION_REQUEST;
-  // }
 
   /**
    * 🆕 DESCRIPTION MÉMO ENRICHIE avec contexte horaire
@@ -1464,20 +1408,6 @@ ${
         auto_correctable: false,
       });
     }
-    // // Arrivée très en avance (>60 min)
-    // else if (diffMinutes < -60) {
-    //   anomalies.push({
-    //     type: AnomalyType.EARLY_ARRIVAL,
-    //     severity: AlertSeverity.LOW,
-    //     description: `Arrivée en avance de ${Math.abs(diffMinutes)} minutes`,
-    //     technical_details: {
-    //       expected_start: expectedStartTime,
-    //       actual_start: clockedTime,
-    //       minutes_early: Math.abs(diffMinutes),
-    //     },
-    //     auto_correctable: false,
-    //   });
-    // }
 
     return anomalies;
   }

@@ -82,7 +82,7 @@ router.get('/revision', Ensure.get(), async (_req: Request, res: Response) => {
 router.get('/status/:status', Ensure.get(), async (req: Request, res: Response) => {
   try {
     const { status } = req.params;
-    const transactionStatus = status.toUpperCase() as PaymentTransactionStatus;
+    const transactionStatus = (status as string).toUpperCase() as PaymentTransactionStatus;
 
     if (!Object.values(PaymentTransactionStatus).includes(transactionStatus)) {
       return R.handleError(res, HttpStatus.BAD_REQUEST, {
@@ -140,7 +140,7 @@ router.get('/status/:status', Ensure.get(), async (req: Request, res: Response) 
  */
 router.get('/payment-method/:payment_method', Ensure.get(), async (req: Request, res: Response) => {
   try {
-    const paymentMethod = parseInt(req.params.payment_method);
+    const paymentMethod = parseInt(req.params.payment_method as string);
     if (isNaN(paymentMethod)) {
       return R.handleError(res, HttpStatus.BAD_REQUEST, {
         code: PAYMENT_TRANSACTION_CODES.VALIDATION_FAILED,
@@ -197,7 +197,7 @@ router.get('/payment-method/:payment_method', Ensure.get(), async (req: Request,
  */
 router.get('/billing-cycle/:billing_cycle', Ensure.get(), async (req: Request, res: Response) => {
   try {
-    const billingCycle = parseInt(req.params.billing_cycle);
+    const billingCycle = parseInt(req.params.billing_cycle as string);
     if (isNaN(billingCycle)) {
       return R.handleError(res, HttpStatus.BAD_REQUEST, {
         code: PAYMENT_TRANSACTION_CODES.VALIDATION_FAILED,
@@ -255,7 +255,7 @@ router.get('/billing-cycle/:billing_cycle', Ensure.get(), async (req: Request, r
 router.get('/currency/:currency', Ensure.get(), async (req: Request, res: Response) => {
   try {
     const { currency } = req.params;
-    const validCurrency = currency.toUpperCase();
+    const validCurrency = (currency as string).toUpperCase();
 
     const paginationOptions = paginationSchema.parse(req.query);
 
@@ -1090,8 +1090,8 @@ router.get('/:identifier', Ensure.get(), async (req: Request, res: Response) => 
     let transaction: PaymentTransaction | null = null;
 
     // Essayer différentes méthodes de recherche selon le format
-    if (/^\d+$/.test(identifier)) {
-      const numericId = parseInt(identifier);
+    if (/^\d+$/.test(identifier as string)) {
+      const numericId = parseInt(identifier as string);
 
       // Essayer par ID d'abord
       transaction = await PaymentTransaction._load(numericId);

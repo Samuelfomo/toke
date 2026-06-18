@@ -75,7 +75,7 @@ router.get('/revision', Ensure.get(), async (_req: Request, res: Response) => {
  */
 router.get('/global-license/:global_license', Ensure.get(), async (req: Request, res: Response) => {
   try {
-    const globalLicense = parseInt(req.params.global_license);
+    const globalLicense = parseInt(req.params.global_license as string);
     if (isNaN(globalLicense)) {
       return R.handleError(res, HttpStatus.BAD_REQUEST, {
         code: LICENSE_ADJUSTMENT_CODES.VALIDATION_FAILED,
@@ -132,7 +132,7 @@ router.get('/global-license/:global_license', Ensure.get(), async (req: Request,
 router.get('/payment-status/:status', Ensure.get(), async (req: Request, res: Response) => {
   try {
     const { status } = req.params;
-    const paymentStatus = status.toUpperCase() as PaymentTransactionStatus;
+    const paymentStatus = (status as string).toUpperCase() as PaymentTransactionStatus;
 
     if (!Object.values(PaymentTransactionStatus).includes(paymentStatus)) {
       return R.handleError(res, HttpStatus.BAD_REQUEST, {
@@ -190,7 +190,7 @@ router.get('/payment-status/:status', Ensure.get(), async (req: Request, res: Re
 router.get('/currency/:currency', Ensure.get(), async (req: Request, res: Response) => {
   try {
     const { currency } = req.params;
-    const validCurrency = currency.toUpperCase();
+    const validCurrency = (currency as string).toUpperCase();
 
     const paginationOptions = paginationSchema.parse(req.query);
 
@@ -820,8 +820,8 @@ router.get('/:identifier', Ensure.get(), async (req: Request, res: Response) => 
     let adjustment: LicenseAdjustment | null = null;
 
     // Essayer différentes méthodes de recherche selon le format
-    if (/^\d+$/.test(identifier)) {
-      const numericId = parseInt(identifier);
+    if (/^\d+$/.test(identifier as string)) {
+      const numericId = parseInt(identifier as string);
 
       // Essayer par ID d'abord
       adjustment = await LicenseAdjustment._load(numericId);

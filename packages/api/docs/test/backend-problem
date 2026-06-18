@@ -1,0 +1,452 @@
+Voici un résumé structuré complet de notre diagnostic et des corrections appliquées sur ton infrastructure PM2 / Node.js.
+
+---
+
+# Contexte du problème
+
+Le service :
+
+```txt id="o8f4fi"
+api-backend
+```
+
+était :
+
+* `online` dans PM2
+* mais devenait dysfonctionnel après 2-3 jours
+
+Erreur frontend :
+
+```txt id="awz4rw"
+GET /local/auth/qr/init 401 (Unauthorized)
+
+{
+  "success": false,
+  "error": {
+    "code": "authentication_failed",
+    "message": "Authentication failed!"
+  }
+}
+```
+
+Le problème était temporairement corrigé avec :
+
+```bash id="xwtqqq"
+pm2 reload api-backend
+```
+
+---
+
+# Observations importantes
+
+## PM2 list
+
+Le process avait :
+
+* beaucoup de restarts
+* mémoire élevée
+
+Exemple :
+
+```txt id="mgho4z"
+api-backend ↺ 110
+```
+
+---
+
+# Analyse des logs
+
+Commande utilisée :
+
+```bash id="b8rw5h"
+pm2 logs api-backend --lines 200
+```
+
+Constat :
+
+* aucun vrai log erreur
+* fichier `err.log` vide
+* énormément de logs massifs dans `out.log`
+
+Exemple :
+
+```js id="p4xb9k"
+console.log(result.response)
+```
+
+avec :
+
+* gros objets
+* gros tableaux
+* `[Object]`
+* réponses API complètes
+
+et énormément de logs répétitifs :
+
+```txt id="r7e5qf"
+🔍 Recherche du tenant avec la référence: 100014
+```
+
+---
+
+# Diagnostic principal
+
+Le backend souffrait probablement de :
+
+## combinaison de :
+
+* logs massifs
+* sérialisation énorme d’objets
+* pression mémoire V8
+* garbage collector agressif
+* dégradation progressive du process
+* auth middleware devenant instable
+
+Ce qui provoquait ensuite :
+
+```txt id="m6vxg9"
+401 Authentication failed
+```
+
+sans que le process Node ne crash réellement.
+
+---
+
+# Vérification mémoire PM2
+
+Commande :
+
+```bash id="6ow96u"
+pm2 show api-backend
+```
+
+Avant correction :
+
+```txt id="uqb1fx"
+Used Heap Size : 103.80 MiB
+Heap Usage : 96.98 %
+Heap Size : 107 MiB
+
+HTTP P95 Latency : 7545 ms
+```
+
+Conclusion :
+
+* heap quasiment saturé
+* backend fortement dégradé
+* latence énorme
+
+---
+
+# Corrections appliquées
+
+## 1. Suppression des gros console.log
+
+Suppression des logs du type :
+
+```js id="ly6yt7"
+console.log(result.response)
+console.log(bigObject)
+console.log(JSON.stringify(hugeData))
+```
+
+Remplacement conseillé :
+
+```js id="7f5vsd"
+console.log({
+  message: result.response?.message,
+  count: result.response?.data?.pagination?.count
+});
+```
+
+ou :
+
+```js id="pgrrzm"
+console.log(`Entries count: ${entries.length}`);
+```
+
+---
+
+# 2. Rebuild backend
+
+Commande :
+
+```bash id="9tcrn7"
+npm run build
+```
+
+---
+
+# 3. Reload PM2
+
+Commande :
+
+```bash id="tx3owk"
+pm2 reload api-backend
+```
+
+---
+
+# 4. Flush logs PM2
+
+Commande :
+
+```bash id="ud6h8q"
+pm2 flush
+```
+
+---
+
+# Résultat après correction
+
+Nouvelle métrique :
+
+```txt id="3c0b26"
+Used Heap Size : 25 MiB
+```
+
+au lieu de :
+
+```txt id="6i6svz"
+103 MiB
+```
+
+Le backend est devenu :
+
+* beaucoup plus léger
+* plus stable
+* plus réactif
+
+---
+
+# Installation logrotate PM2
+
+Installation :
+
+```bash id="hn66d5"
+pm2 install pm2-logrotate
+```
+
+Configuration :
+
+```bash id="f17m1w"
+pm2 set pm2-logrotate:max_size 10M
+pm2 set pm2-logrotate:retain 7
+pm2 set pm2-logrotate:compress true
+```
+
+Objectif :
+
+* éviter accumulation monstrueuse des logs
+* protéger le disque
+* stabiliser PM2
+
+---
+
+# Analyse finale mémoire
+
+Après stabilisation :
+
+```txt id="48qpt6"
+api-backend : ~100mb
+api-master : ~118mb
+api-tenant : ~119mb
+```
+
+Considéré comme normal pour des APIs Node.js en production.
+
+---
+
+# Recommandations importantes conservées
+
+## Ajouter node_args
+
+Dans `ecosystem.config.cjs` :
+
+```js id="8n9s25"
+node_args: '--max-old-space-size=512',
+```
+
+---
+
+# Ajouter protections PM2
+
+Recommandation :
+
+```js id="g77zyz"
+merge_logs: true,
+time: true,
+log_date_format: 'YYYY-MM-DD HH:mm:ss Z',
+kill_timeout: 5000,
+exp_backoff_restart_delay: 100,
+```
+
+---
+
+# Ajouter limite mémoire PM2
+
+Déjà présent :
+
+```js id="u0ty7x"
+max_memory_restart: '512M'
+```
+
+Très bon point.
+
+---
+
+# Recommandation Node.js
+
+Tu utilisais :
+
+```txt id="59twmu"
+Node 22.21.0
+```
+
+Recommandation forte :
+
+## passer à :
+
+```txt id="6h4m32"
+Node 20 LTS
+```
+
+car :
+
+* beaucoup plus stable en production
+* meilleur support PM2/libs backend
+* moins de surprises mémoire
+
+---
+
+# Points encore à surveiller
+
+## 1. Le retour des 401
+
+Si le bug revient :
+
+IMMÉDIATEMENT :
+
+```bash id="mt7vhg"
+pm2 show api-backend
+```
+
+avant tout reload.
+
+---
+
+# 2. Évolution du heap
+
+Commande utile :
+
+```bash id="tr95m6"
+watch -n 10 'pm2 show api-backend'
+```
+
+Surveiller :
+
+* Used Heap Size
+* Heap Usage
+* Latency
+
+---
+
+# 3. Vérifier les polling/timers
+
+Chercher dans le code :
+
+```js id="3sh9jw"
+setInterval(
+setTimeout(
+```
+
+et :
+
+* websocket reconnect loops
+* polling QR
+* refresh tenant
+
+---
+
+# 4. Vérifier les listeners
+
+Chercher :
+
+```js id="oc5o0n"
+.on(
+addListener(
+```
+
+pour éviter memory leaks.
+
+---
+
+# 5. Surveiller le système QR/auth
+
+Endpoint concerné :
+
+```txt id="x2h4ww"
+/local/auth/qr/init
+```
+
+Très probable source sensible :
+
+* websocket
+* cache
+* auth state
+* sessions
+
+---
+
+# 6. Ajouter monitoring mémoire
+
+Suggestion :
+
+```js id="h9d36g"
+setInterval(() => {
+  const used = process.memoryUsage();
+
+  console.log({
+    rss: Math.round(used.rss / 1024 / 1024) + 'MB',
+    heapUsed: Math.round(used.heapUsed / 1024 / 1024) + 'MB',
+    heapTotal: Math.round(used.heapTotal / 1024 / 1024) + 'MB',
+  });
+}, 60000);
+```
+
+sans logs massifs.
+
+---
+
+# Conclusion finale
+
+La cause principale identifiée était très probablement :
+
+## combinaison de :
+
+* logs géants
+* sérialisation massive d’objets
+* pression mémoire
+* dégradation progressive du heap V8
+* backend toujours “online” mais fonctionnellement dégradé
+
+Ce qui provoquait :
+
+* ralentissements
+* auth failures
+* erreurs 401
+
+Les corrections déjà appliquées ont :
+
+* réduit drastiquement la mémoire
+* stabilisé le backend
+* amélioré les performances
+* sécurisé les logs avec logrotate
+
+Le prochain vrai test est maintenant :
+
+* 24h
+* 48h
+* 72h
+
+pour vérifier si les `401` disparaissent définitivement.

@@ -1514,7 +1514,7 @@ router.get('/:guid/current-assignment', Ensure.get(), async (req: Request, res: 
       });
     }
 
-    const groupObj = await Groups._load(guid, true);
+    const groupObj = await Groups._load(guid as string, true);
     if (!groupObj) {
       return R.handleError(res, HttpStatus.NOT_FOUND, {
         code: GROUPS_CODES.GROUPS_NOT_FOUND,

@@ -446,7 +446,7 @@ export default class RotationGroup extends RotationGroupModel {
       [RS.GUID]: this.guid,
       [RS.TENANT]: this.tenant,
       [RS.NAME]: this.name,
-      [RS.CYCLE_LENGTH]: this.cycle_length,
+      [RS.CYCLE_LENGTH]: this.cycle_length || slots.length,
       [RS.CYCLE_UNIT]: this.cycle_unit,
       [RS.DIRECTION]: this.direction,
       [RS.AUTO_ADVANCE]: this.auto_advance,

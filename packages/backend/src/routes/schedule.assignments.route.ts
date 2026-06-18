@@ -30,7 +30,10 @@ router.get(
         });
       }
 
-      const result: any = await ScheduleAssignmentService.listScheduleAssignments(client, manager);
+      const result: any = await ScheduleAssignmentService.listScheduleAssignments(
+        client,
+        manager as string,
+      );
 
       if (result.status !== HttpStatus.SUCCESS) {
         return R.handleError(res, result.status, result.response);
@@ -87,7 +90,7 @@ router.put(
 
       const result: any = await ScheduleAssignmentService.updatedScheduleAssignment(
         client,
-        guid,
+        guid as string,
         req.body,
       );
 

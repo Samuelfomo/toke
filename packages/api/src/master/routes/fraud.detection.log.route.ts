@@ -292,7 +292,7 @@ router.get('/tenant/:tenantId', Ensure.get(), async (req: Request, res: Response
     const { tenantId } = req.params;
     const { offset, limit } = req.query;
 
-    const tenant = parseInt(tenantId);
+    const tenant = parseInt(tenantId as string);
     if (!FraudDetectionValidationUtils.validateTenantId(tenant)) {
       return R.handleError(res, HttpStatus.BAD_REQUEST, {
         code: FRAUD_DETECTION_CODES.TENANT_INVALID,
@@ -520,7 +520,7 @@ router.get('/employee/:employeeId', Ensure.get(), async (req: Request, res: Resp
     const { employeeId } = req.params;
     const { offset, limit } = req.query;
 
-    if (!FraudDetectionValidationUtils.validateEmployee(employeeId)) {
+    if (!FraudDetectionValidationUtils.validateEmployee(employeeId as string)) {
       return R.handleError(res, HttpStatus.BAD_REQUEST, {
         code: FRAUD_DETECTION_CODES.EMPLOYEE_INVALID,
         message: FRAUD_DETECTION_ERRORS.EMPLOYEE_LICENSES_AFFECTED_INVALID,
@@ -534,7 +534,10 @@ router.get('/employee/:employeeId', Ensure.get(), async (req: Request, res: Resp
         : FRAUD_DETECTION_DEFAULTS.PAGINATION.LIMIT,
     };
 
-    const fraudLogs = await FraudDetectionLog._listByEmployee(employeeId, paginationOptions);
+    const fraudLogs = await FraudDetectionLog._listByEmployee(
+      employeeId as string,
+      paginationOptions,
+    );
 
     if (!fraudLogs) {
       return R.handleSuccess(res, {
@@ -566,7 +569,7 @@ router.get('/stats/summary/:tenantId', Ensure.get(), async (req: Request, res: R
   try {
     const { tenantId } = req.params;
 
-    const tenant = parseInt(tenantId);
+    const tenant = parseInt(tenantId as string);
     if (!FraudDetectionValidationUtils.validateTenantId(tenant)) {
       return R.handleError(res, HttpStatus.BAD_REQUEST, {
         code: FRAUD_DETECTION_CODES.TENANT_INVALID,

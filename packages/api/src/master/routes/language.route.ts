@@ -73,7 +73,7 @@ router.get('/revision', Ensure.get(), async (req: Request, res: Response) => {
 router.get('/active/:status', Ensure.get(), async (req: Request, res: Response) => {
   try {
     const { status } = req.params;
-    const isActive = status.toLowerCase() === 'true' || status === '1';
+    const isActive = (status as string).toLowerCase() === 'true' || status === '1';
 
     const paginationOptions = paginationSchema.parse(req.query);
 
@@ -236,14 +236,14 @@ router.put('/:guid', Ensure.put(), async (req: Request, res: Response) => {
 router.delete('/:guid', Ensure.delete(), async (req: Request, res: Response) => {
   try {
     // Validation du GUID avec utilitaire shared
-    if (!LanguageValidationUtils.validateLanguageGuid(req.params.guid)) {
+    if (!LanguageValidationUtils.validateLanguageGuid(req.params.guid as string)) {
       return R.handleError(res, HttpStatus.BAD_REQUEST, {
         code: LANGUAGE_CODES.INVALID_GUID,
         message: LANGUAGE_ERRORS.GUID_INVALID,
       });
     }
 
-    const guid = parseInt(req.params.guid, 10);
+    const guid = parseInt(req.params.guid as string, 10);
 
     // Charger par GUID
     const language = await Language._load(guid, true);
@@ -338,13 +338,13 @@ router.get('/search/code/:code', Ensure.get(), async (req: Request, res: Respons
     const { code } = req.params;
 
     // Validation avec utilitaire shared
-    if (!LanguageValidationUtils.validateCode(code)) {
+    if (!LanguageValidationUtils.validateCode(code as string)) {
       return R.handleError(res, HttpStatus.BAD_REQUEST, {
         code: LANGUAGE_CODES.CODE_INVALID,
         message: LANGUAGE_ERRORS.CODE_INVALID,
       });
     }
-    const normalizedCode = LanguageValidationUtils.normalizeLanguageCode(code);
+    const normalizedCode = LanguageValidationUtils.normalizeLanguageCode(code as string);
     const language = await Language._load(normalizedCode, false, true);
 
     if (!language) {
@@ -374,7 +374,9 @@ router.get('/:identifier', Ensure.get(), async (req: Request, res: Response) => 
 
     // Utiliser l'utilitaire pour identifier le type
     try {
-      const { type, value } = LanguageValidationUtils.extractLanguageIdentifier(identifier);
+      const { type, value } = LanguageValidationUtils.extractLanguageIdentifier(
+        identifier as string,
+      );
 
       if (type === 'numeric') {
         const numericId = parseInt(value);

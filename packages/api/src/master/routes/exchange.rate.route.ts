@@ -72,7 +72,7 @@ router.get('/revision', Ensure.get(), async (_req: Request, res: Response) => {
 router.get('/current/:status', Ensure.get(), async (req: Request, res: Response) => {
   try {
     const { status } = req.params;
-    const isCurrent = status.toLowerCase() === 'true' || status === '1';
+    const isCurrent = (status as string).toLowerCase() === 'true' || status === '1';
 
     const paginationOptions = paginationSchema.parse(req.query);
 
@@ -116,22 +116,22 @@ router.get(
       const { from_currency, to_currency } = req.params;
 
       // Validation avec utilitaires shared
-      if (!ExchangeRateValidationUtils.validateFromCurrencyCode(from_currency)) {
+      if (!ExchangeRateValidationUtils.validateFromCurrencyCode(from_currency as string)) {
         return R.handleError(res, HttpStatus.BAD_REQUEST, {
           code: ERROR_CODES.CURRENCY_CODE_INVALID,
           message: EXCHANGE_RATE_ERRORS.FROM_CURRENCY_CODE_INVALID,
         });
       }
 
-      if (!ExchangeRateValidationUtils.validateToCurrencyCode(to_currency)) {
+      if (!ExchangeRateValidationUtils.validateToCurrencyCode(to_currency as string)) {
         return R.handleError(res, HttpStatus.BAD_REQUEST, {
           code: ERROR_CODES.CURRENCY_CODE_INVALID,
           message: EXCHANGE_RATE_ERRORS.TO_CURRENCY_CODE_INVALID,
         });
       }
 
-      const fromCode = from_currency.toUpperCase();
-      const toCode = to_currency.toUpperCase();
+      const fromCode = (from_currency as string).toUpperCase();
+      const toCode = (to_currency as string).toUpperCase();
 
       if (!ExchangeRateValidationUtils.validateCurrencyPair(fromCode, toCode)) {
         return R.handleError(res, HttpStatus.BAD_REQUEST, {
@@ -190,7 +190,7 @@ router.get(
 router.get('/currency/:currency_code', Ensure.get(), async (req: Request, res: Response) => {
   try {
     const { currency_code } = req.params;
-    const currencyCode = currency_code.toUpperCase();
+    const currencyCode = (currency_code as string).toUpperCase();
 
     // Validation du code de devise
     if (!/^[A-Z]{3}$/.test(currencyCode)) {
@@ -380,14 +380,14 @@ router.put('/:guid', Ensure.put(), async (req: Request, res: Response) => {
 router.delete('/:guid', Ensure.delete(), async (req: Request, res: Response) => {
   try {
     // Validation du GUID avec utilitaire shared
-    if (!ExchangeRateValidationUtils.validateExchangeRateGuid(req.params.guid)) {
+    if (!ExchangeRateValidationUtils.validateExchangeRateGuid(req.params.guid as string)) {
       return R.handleError(res, HttpStatus.BAD_REQUEST, {
         code: ERROR_CODES.INVALID_GUID,
         message: EXCHANGE_RATE_ERRORS.GUID_INVALID,
       });
     }
 
-    const guid = parseInt(req.params.guid, 10);
+    const guid = parseInt(req.params.guid as string, 10);
 
     // Charger par GUID
     const exchangeRate = await ExchangeRate._load(guid, true);
@@ -568,8 +568,8 @@ router.get('/:identifier', Ensure.get(), async (req: Request, res: Response) => 
     let exchangeRate: ExchangeRate | null = null;
 
     // Essayer différentes méthodes de recherche selon le format
-    if (/^\d+$/.test(identifier)) {
-      const numericId = parseInt(identifier);
+    if (/^\d+$/.test(identifier as string)) {
+      const numericId = parseInt(identifier as string);
 
       // Essayer par ID d'abord
       exchangeRate = await ExchangeRate._load(numericId);

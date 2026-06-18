@@ -1,4 +1,9 @@
-import { TimezoneConfigUtils, USERS_DEFAULTS, USERS_ERRORS, UsersValidationUtils, } from '@toke/shared';
+import {
+  TimezoneConfigUtils,
+  USERS_DEFAULTS,
+  USERS_ERRORS,
+  UsersValidationUtils,
+} from '@toke/shared';
 import { Op } from 'sequelize';
 import * as bcrypt from 'bcrypt';
 
@@ -554,7 +559,7 @@ export default class UserModel extends BaseModel {
       // 🔁 Essayer de générer un EMPLOYEE_CODE unique jusqu’à 10 fois
       while (attempt < maxAttempts) {
         attempt++;
-        const newEmployeeCode = await TokenManager.tokenGenerator(8);
+        const newEmployeeCode = await TokenManager.tokenGenerator(6);
 
         if (!newEmployeeCode) {
           console.warn(`⚠️ Tentative ${attempt}: échec de génération du EMPLOYEE_CODE`);

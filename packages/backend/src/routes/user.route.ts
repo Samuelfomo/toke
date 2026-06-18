@@ -141,7 +141,12 @@ router.put(
         });
       }
 
-      const result: any = await UserService.updatedUser(client, guid, manager as string, req.body);
+      const result: any = await UserService.updatedUser(
+        client,
+        guid as string,
+        manager as string,
+        req.body,
+      );
 
       if (result.status !== HttpStatus.SUCCESS) {
         return R.handleError(res, result.status, result.response);

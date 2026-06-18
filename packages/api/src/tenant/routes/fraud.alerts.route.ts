@@ -131,7 +131,7 @@ router.get('/critical', Ensure.get(), async (req: Request, res: Response) => {
 
 router.get('/:guid', Ensure.get(), async (req: Request, res: Response) => {
   try {
-    if (!FraudAlertsValidationUtils.validateGuid(req.params.guid)) {
+    if (!FraudAlertsValidationUtils.validateGuid(req.params.guid as string)) {
       return R.handleError(res, HttpStatus.BAD_REQUEST, {
         code: FRAUD_ALERTS_CODES.INVALID_GUID,
         message: FRAUD_ALERTS_ERRORS.GUID_INVALID,
@@ -163,7 +163,7 @@ router.get('/:guid', Ensure.get(), async (req: Request, res: Response) => {
 
 router.get('/user/:userGuid/list', Ensure.get(), async (req: Request, res: Response) => {
   try {
-    if (!FraudAlertsValidationUtils.validateGuid(req.params.userGuid)) {
+    if (!FraudAlertsValidationUtils.validateGuid(req.params.userGuid as string)) {
       return R.handleError(res, HttpStatus.BAD_REQUEST, {
         code: FRAUD_ALERTS_CODES.INVALID_GUID,
         message: FRAUD_ALERTS_ERRORS.GUID_INVALID,
@@ -213,7 +213,7 @@ router.get('/user/:userGuid/list', Ensure.get(), async (req: Request, res: Respo
 
 router.get('/time-entry/:entryGuid/list', Ensure.get(), async (req: Request, res: Response) => {
   try {
-    if (!FraudAlertsValidationUtils.validateGuid(req.params.entryGuid)) {
+    if (!FraudAlertsValidationUtils.validateGuid(req.params.entryGuid as string)) {
       return R.handleError(res, HttpStatus.BAD_REQUEST, {
         code: FRAUD_ALERTS_CODES.INVALID_GUID,
         message: FRAUD_ALERTS_ERRORS.GUID_INVALID,
@@ -252,7 +252,7 @@ router.get('/time-entry/:entryGuid/list', Ensure.get(), async (req: Request, res
 
 router.patch('/:guid/investigate', Ensure.patch(), async (req: Request, res: Response) => {
   try {
-    if (!FraudAlertsValidationUtils.validateGuid(req.params.guid)) {
+    if (!FraudAlertsValidationUtils.validateGuid(req.params.guid as string)) {
       return R.handleError(res, HttpStatus.BAD_REQUEST, {
         code: FRAUD_ALERTS_CODES.INVALID_GUID,
         message: FRAUD_ALERTS_ERRORS.GUID_INVALID,
@@ -300,7 +300,7 @@ router.patch('/:guid/investigate', Ensure.patch(), async (req: Request, res: Res
 
 router.patch('/:guid/false-positive', Ensure.patch(), async (req: Request, res: Response) => {
   try {
-    if (!FraudAlertsValidationUtils.validateGuid(req.params.guid)) {
+    if (!FraudAlertsValidationUtils.validateGuid(req.params.guid as string)) {
       return R.handleError(res, HttpStatus.BAD_REQUEST, {
         code: FRAUD_ALERTS_CODES.INVALID_GUID,
         message: FRAUD_ALERTS_ERRORS.GUID_INVALID,
@@ -403,7 +403,7 @@ router.get(
   Ensure.get(),
   async (req: Request, res: Response) => {
     try {
-      if (!FraudAlertsValidationUtils.validateGuid(req.params.userGuid)) {
+      if (!FraudAlertsValidationUtils.validateGuid(req.params.userGuid as string)) {
         return R.handleError(res, HttpStatus.BAD_REQUEST, {
           code: FRAUD_ALERTS_CODES.INVALID_GUID,
           message: FRAUD_ALERTS_ERRORS.GUID_INVALID,
@@ -440,7 +440,7 @@ router.get(
 
 router.delete('/:guid', Ensure.delete(), async (req: Request, res: Response) => {
   try {
-    if (!FraudAlertsValidationUtils.validateGuid(req.params.guid)) {
+    if (!FraudAlertsValidationUtils.validateGuid(req.params.guid as string)) {
       return R.handleError(res, HttpStatus.BAD_REQUEST, {
         code: FRAUD_ALERTS_CODES.INVALID_GUID,
         message: FRAUD_ALERTS_ERRORS.GUID_INVALID,

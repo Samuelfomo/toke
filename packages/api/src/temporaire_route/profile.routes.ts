@@ -67,7 +67,7 @@ router.get('/', Ensure.get(), async (req: Request, res: Response) => {
  */
 router.get('/:id', Ensure.get(), async (req: Request, res: Response) => {
   try {
-    const id = parseInt(req.params.id);
+    const id = parseInt(req.params.id as string);
     if (!id || isNaN(id)) {
       return R.handleError(res, HttpStatus.BAD_REQUEST, {
         code: 'invalid_profile_id',
@@ -197,7 +197,7 @@ router.post('/', Ensure.post(), async (req: Request, res: Response) => {
  */
 router.put('/:id', Ensure.put(), async (req: Request, res: Response) => {
   try {
-    const id = parseInt(req.params.id);
+    const id = parseInt(req.params.id as string);
     if (!id || isNaN(id)) {
       return R.handleError(res, HttpStatus.BAD_REQUEST, {
         code: 'invalid_profile_id',
@@ -275,7 +275,7 @@ router.put('/:id', Ensure.put(), async (req: Request, res: Response) => {
  */
 router.delete('/:id', Ensure.delete(), async (req: Request, res: Response) => {
   try {
-    const id = parseInt(req.params.id);
+    const id = parseInt(req.params.id as string);
     if (!id || isNaN(id)) {
       return R.handleError(res, HttpStatus.BAD_REQUEST, {
         code: 'invalid_profile_id',

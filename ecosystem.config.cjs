@@ -57,6 +57,9 @@ module.exports = {
       name: 'api-backend',
       cwd: './packages/backend',
       script: 'dist/server.js',
+
+      node_args: '--max-old-space-size=512',
+
       instances: 1,
       exec_mode: 'fork',
 
@@ -67,9 +70,20 @@ module.exports = {
 
       error_file: './logs/backend-pm2-err.log',
       out_file: './logs/backend-pm2-out.log',
+
+      log_date_format: 'YYYY-MM-DD HH:mm:ss Z',
+      merge_logs: true,
+      time: true,
+
       autorestart: true,
+
       max_memory_restart: '512M',
+
       restart_delay: 5000,
+      exp_backoff_restart_delay: 100,
+
+      kill_timeout: 5000,
+
       min_uptime: '10s',
       max_restarts: 5,
     },

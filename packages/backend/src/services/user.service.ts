@@ -5,6 +5,7 @@ import { getApiClient } from '../tools/api.factory.js';
 
 const baseUrl: string = '/org-hierarchy';
 const userBaseUrl: string = '/user';
+const statBaseUrl: string = '/statistique';
 
 const memoBaseUrl = '/memo';
 const fileBaseUrl = '/upload';
@@ -15,10 +16,7 @@ export class UserService {
     data: string,
   ): Promise<{ status: number; response: object }> {
     try {
-      console.log('🚀 Démarrage listTeamManager avec référence:', reference);
       const api = await getApiClient(reference);
-
-      console.log('✅ Client API créé');
 
       const response = await api.get(`${baseUrl}/employee/all-subordinates?supervisor=${data}`);
 
@@ -55,7 +53,7 @@ export class UserService {
     try {
       const api = await getApiClient(reference);
       const response = await api.get(
-        `${userBaseUrl}/attendance/stat?manager=${data}&start_date=${start}&end_date=${end}`,
+        `${statBaseUrl}/attendance/stat?manager=${data}&start_date=${start}&end_date=${end}`,
       );
 
       return {
@@ -134,8 +132,17 @@ export class UserService {
     try {
       const api = await getApiClient(reference);
 
-      console.log('requete', `${memoBaseUrl}/${guid}/validate`, payload);
       return await api.patch(`${memoBaseUrl}/${guid}/validate`, payload);
+    } catch (error: any) {
+      return error.response;
+    }
+  }
+
+  static async revokeMemo(reference: string, guid: string, payload: any) {
+    try {
+      const api = await getApiClient(reference);
+
+      return await api.patch(`${memoBaseUrl}/${guid}/revoke`, payload);
     } catch (error: any) {
       return error.response;
     }

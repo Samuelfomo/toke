@@ -25,6 +25,8 @@ import { RotationAssignmentLogsDbStructure } from './data/rotation.assignment.lo
 import { RotationGroupTemplateDbStructure } from './data/rotation.group.template.db.js';
 import { RotationGroupTemplateLogDbStructure } from './data/rotation.group.template.log.db.js';
 import { SessionModelDbStructure } from './data/session.model.db.js';
+import { ScheduleSuggestionDbStructure } from './data/schedule.suggestion.db.js';
+import { ScheduleSuggestionItemDbStructure } from './data/schedule.suggestion.item.db.js';
 
 interface TenantInstance {
   sequelize: Sequelize;
@@ -224,6 +226,9 @@ export class TableInitializer {
     this.defineRotationAssignmentLogsModelForInstance(instance);
     this.defineRotationGroupTemplateModelForInstance(instance);
     this.defineRotationGroupTemplateLogModelForInstance(instance);
+
+    this.defineScheduleSuggestionModelForInstance(instance);
+    this.defineScheduleSuggestionItemModelForInstance(instance);
 
     console.log(`✅ ${instance.models.size} modèle(s) défini(s) pour cette instance`);
   }
@@ -501,6 +506,31 @@ export class TableInitializer {
     instance.models.set(RotationGroupTemplateLogDbStructure.tableName, model);
     console.log(
       `✅ Modèle Rotation Group Template Log défini (${RotationGroupTemplateLogDbStructure.tableName})`,
+    );
+  }
+
+  private static defineScheduleSuggestionModelForInstance(instance: TenantInstance): void {
+    const model = instance.sequelize.define(
+      ScheduleSuggestionDbStructure.tableName,
+      ScheduleSuggestionDbStructure.attributes,
+      ScheduleSuggestionDbStructure.options,
+    );
+
+    instance.models.set(ScheduleSuggestionDbStructure.tableName, model);
+    console.log(
+      `✅ Modèle Schedule Suggestion défini (${ScheduleSuggestionDbStructure.tableName})`,
+    );
+  }
+  private static defineScheduleSuggestionItemModelForInstance(instance: TenantInstance): void {
+    const model = instance.sequelize.define(
+      ScheduleSuggestionItemDbStructure.tableName,
+      ScheduleSuggestionItemDbStructure.attributes,
+      ScheduleSuggestionItemDbStructure.options,
+    );
+
+    instance.models.set(ScheduleSuggestionItemDbStructure.tableName, model);
+    console.log(
+      `✅ Modèle Schedule Suggestion Item défini (${ScheduleSuggestionItemDbStructure.tableName})`,
     );
   }
 

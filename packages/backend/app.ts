@@ -18,6 +18,8 @@ import rotationAssignmentsRoute from './src/routes/rotation.assignments.route.js
 import groupsRoute from './src/routes/groups.route.js';
 import { QrSocketBridgeService } from './src/services/qr.socket.bridge.service.js';
 import authRoute from './src/routes/auth.route.js';
+import SessionModelRoute from './src/routes/session.model.route.js';
+import scheduleSuggestionRoute from './src/routes/schedule.suggestion.route.js';
 
 dotenv.config();
 
@@ -177,11 +179,13 @@ export default class App {
     this.app.use('/time-entries', timeEntriesRoute);
     this.app.use('/site', siteRoute);
     this.app.use('/memo', memosRoute);
+    this.app.use('/session-model', SessionModelRoute);
     this.app.use('/session-templates', scheduleRoute);
     this.app.use('/rotation-groups', rotationGroupsRoute);
     this.app.use('/schedule-assignments', scheduleAssignmentsRoute);
     this.app.use('/rotation-assignments', rotationAssignmentsRoute);
     this.app.use('/groups', groupsRoute);
+    this.app.use('/schedule-suggestion', scheduleSuggestionRoute);
 
     this.app.use('/auth', authRoute);
 

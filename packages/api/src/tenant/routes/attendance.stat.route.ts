@@ -24,28 +24,22 @@ import ScheduleResolutionService from '../../tools/schedule.resolution.service.j
 import AnomalyDetectionService from '../../tools/anomaly.detection.service.js';
 import Memos from '../class/Memos.js';
 
-import Statistique from './statistique.interface.js';
+import Statistique, { DayStatus } from './statistique.interface.js';
 
 const router = Router();
 
 /**
  * GET /api/users/attendance/stat
  *
- * Vue d'ensemble de la présence sur une période — Version corrigée
+ * Vue d'ensemble de la présence sur une période — v2.1
  *
- * CORRECTIONS APPLIQUÉES :
- *  1. N+1 éliminé — les schedules sont préchargés en une passe par employé
- *     avant la double boucle jour × employé.
- *  2. totalPauseMinutes réellement calculé depuis les sessions chargées.
- *  3. enrichDailyDetail ne re-appelle plus getApplicableSchedule.
- *  4. allDayData (tableau plat) alimenté en parallèle de dailyEmployeeData
- *     pour que analyzeSessionDurations et calculateScheduleCompliance
- *     fonctionnent même quand exclude=daily_details.
- *  5. currently_active calculé depuis periodSessions (déjà en mémoire)
- *     au lieu d'une 2e requête WorkSessions._list.
- *  6. expected_today calculé depuis le schedule du jour courant (et non
- *     work_days_expected > 0 sur toute la période).
- *  7. calculateTeamCoverage reçoit maintenant expectedToday direct.
+ * CORRECTIONS v2.1 (anomaly_off_day) :
+ *  6. La présence prime TOUJOURS sur le planning.
+ *     is_work_day = false + session → 'anomaly_off_day' (jamais 'off-day' pur)
+ *  7. Compteur anomaly_off_day dans daily_breakdown.
+ *  8. KPI unexpected_presence dans summary (séparé de attendance_rate).
+ *  9. allDayData enrichi de employee_name pour le KPI calcUnexpectedPresence.
+ * 10. Employé individuel : anomaly_days comptabilisé dans period_stats.
  */
 router.get('/attendance/stat', Ensure.get(), async (req: Request, res: Response) => {
   try {
@@ -75,7 +69,7 @@ router.get('/attendance/stat', Ensure.get(), async (req: Request, res: Response)
     }
 
     // ══════════════════════════════════════════════════════════════════════════
-    // ÉTAPE 1 — SCOPE (manager + site)
+    // ÉTAPE 1 — SCOPE
     // ══════════════════════════════════════════════════════════════════════════
 
     if (!UsersValidationUtils.validateGuid(String(manager))) {
@@ -96,6 +90,13 @@ router.get('/attendance/stat', Ensure.get(), async (req: Request, res: Response)
     const teamData = await OrgHierarchy.getAllTeamMembers(managerObj.getId()!);
     const teamMembers: number[] = teamData.all_employees_flat.map((u) => u.getId()!);
 
+    // Map id → nom complet — utile pour UnexpectedPresence occurrences
+    const employeeNameMap = new Map<number, string>();
+    for (const u of teamData.all_employees_flat) {
+      const name = `${u.getFirstName() ?? ''} ${u.getLastName() ?? ''}`.trim();
+      employeeNameMap.set(u.getId()!, name);
+    }
+
     let siteObj: Site | null = null;
     if (site) {
       if (!WorkSessionsValidationUtils.validateGuid(String(site))) {
@@ -114,7 +115,7 @@ router.get('/attendance/stat', Ensure.get(), async (req: Request, res: Response)
     }
 
     // ══════════════════════════════════════════════════════════════════════════
-    // ÉTAPE 2 — UNE SEULE REQUÊTE SESSIONS pour toute la période
+    // ÉTAPE 2 — UNE SEULE REQUÊTE SESSIONS
     // ══════════════════════════════════════════════════════════════════════════
 
     const sessionConditions: Record<string, any> = {
@@ -130,16 +131,7 @@ router.get('/attendance/stat', Ensure.get(), async (req: Request, res: Response)
     const periodSessions = (await WorkSessions._list(sessionConditions)) ?? [];
 
     // ══════════════════════════════════════════════════════════════════════════
-    // ÉTAPE 3 — PRÉCHARGEMENT DES SCHEDULES (CORRECTION N+1)
-    //
-    // Avant la double boucle, on résout UNE FOIS le schedule de chaque
-    // employé pour CHAQUE jour de la période.
-    // Structure : scheduleCache[userId][dateStr] = ApplicableSchedule | null
-    //
-    // Cela remplace les 750 appels séquentiels (30j × 25 employés) par
-    // 750 appels parallèles regroupés par employé.
-    // Si ScheduleResolutionService propose un jour une API batch, on pourra
-    // réduire encore — pour l'instant Promise.all est le bon compromis.
+    // ÉTAPE 3 — PRÉCHARGEMENT SCHEDULES (anti N+1)
     // ══════════════════════════════════════════════════════════════════════════
 
     const MS_PER_DAY = 1000 * 60 * 60 * 24;
@@ -150,10 +142,9 @@ router.get('/attendance/stat', Ensure.get(), async (req: Request, res: Response)
     const totalDays =
       Math.round((endDateCalc.getTime() - startDateCalc.getTime()) / MS_PER_DAY) + 1;
 
-    // Générer la liste des dates de la période
     const periodDates: Date[] = [];
     const cursor = new Date(startOfPeriod);
-    cursor.setHours(12, 0, 0, 0); // midi pour éviter les problèmes DST
+    cursor.setHours(12, 0, 0, 0);
     const periodEnd = new Date(endOfPeriod);
     periodEnd.setHours(12, 0, 0, 0);
     while (cursor <= periodEnd) {
@@ -161,8 +152,6 @@ router.get('/attendance/stat', Ensure.get(), async (req: Request, res: Response)
       cursor.setDate(cursor.getDate() + 1);
     }
 
-    // Précharger en parallèle par employé (Promise.all par employé,
-    // chaque employé résout ses dates en séquence pour éviter surcharge BDD)
     type ScheduleCache = Map<
       string,
       Awaited<ReturnType<typeof ScheduleResolutionService.getApplicableSchedule>>
@@ -182,11 +171,7 @@ router.get('/attendance/stat', Ensure.get(), async (req: Request, res: Response)
     );
 
     // ══════════════════════════════════════════════════════════════════════════
-    // ÉTAPE 4 — CALCUL DU TEMPS DE PAUSE PAR SESSION (CORRECTION totalPause)
-    //
-    // On précalcule les pauses depuis les sessions déjà en mémoire.
-    // Map : sessionId → pauseMinutes
-    // On évite N appels getPauseStatusDetailed() dans la boucle par employé.
+    // ÉTAPE 4 — PRÉCHARGEMENT PAUSES
     // ══════════════════════════════════════════════════════════════════════════
 
     const sessionPauseMinutes = new Map<number, number>();
@@ -199,21 +184,22 @@ router.get('/attendance/stat', Ensure.get(), async (req: Request, res: Response)
 
     // ══════════════════════════════════════════════════════════════════════════
     // ÉTAPE 5 — DOUBLE BOUCLE JOUR × EMPLOYÉ
+    //
+    // RÈGLE CENTRALE (immuable) :
+    //   La présence prime toujours sur le planning.
+    //   if (session && !isWorkDay) → anomaly_off_day
+    //   On ne doit JAMAIS ignorer une session existante.
     // ══════════════════════════════════════════════════════════════════════════
 
     const dayNames = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
     const dailyBreakdown: Array<any> = [];
-
-    // dailyEmployeeData[dateStr][userId] = détail du jour pour cet employé
     const dailyEmployeeData = new Map<string, Map<number, any>>();
 
-    // allDayData — tableau plat alimenté EN MÊME TEMPS que dailyEmployeeData.
-    // Sert à analyzeSessionDurations et calculateScheduleCompliance sans
-    // dépendre de daily_details (qui peut être exclu).
     const allDayData: Array<{
       employee_guid: string;
+      employee_name: string;
       date: string;
-      status: string;
+      status: DayStatus;
       clock_in_time: string | null;
       clock_out_time: string | null;
       work_hours: number | null;
@@ -237,18 +223,17 @@ router.get('/attendance/stat', Ensure.get(), async (req: Request, res: Response)
       let lateCount = 0;
       let absentCount = 0;
       let offDayCount = 0;
+      let anomalyOffCount = 0; // ← nouveau compteur
 
       const dayEmployeeAnalysis = new Map<number, any>();
 
       for (const userId of teamMembers) {
-        // Lecture depuis le cache — 0 requête SQL supplémentaire
         const scheduleResult = scheduleCache.get(userId)?.get(dateKey);
         const expectedSchedule = scheduleResult?.applicable_schedule ?? null;
         const isWorkDay = expectedSchedule?.is_work_day ?? false;
-
         const userSession = daySessions.find((s) => s.getUser() === userId) ?? null;
 
-        let status: 'present' | 'late' | 'absent' | 'off-day' = 'absent';
+        let status: DayStatus = 'absent';
         let delayMinutes = 0;
         let isWithinTolerance: boolean | null = null;
         let toleranceMinutes: number | null = null;
@@ -256,14 +241,11 @@ router.get('/attendance/stat', Ensure.get(), async (req: Request, res: Response)
         let clockOutTime: Date | null = null;
         let workHours = 0;
 
-        if (!isWorkDay) {
-          status = 'off-day';
-          offDayCount++;
-        } else if (userSession) {
+        // ── RÈGLE PRIORITÉ : session avant planning ──────────────────────────
+        if (userSession) {
           clockInTime = userSession.getSessionStartAt() ?? null;
           clockOutTime = userSession.getSessionEndAt() ?? null;
 
-          // Heures travaillées depuis la durée enregistrée en base
           const rawDuration = userSession.getTotalWorkDuration();
           if (rawDuration) {
             const matches = rawDuration.match(/(\d+)\s*hours?\s*(\d+)?\s*minutes?/);
@@ -272,42 +254,55 @@ router.get('/attendance/stat', Ensure.get(), async (req: Request, res: Response)
             }
           }
 
-          if (expectedSchedule && expectedSchedule.expected_blocks.length > 0) {
-            const firstBlock = expectedSchedule.expected_blocks[0];
-            const expectedStartTime = firstBlock.work[0];
-            toleranceMinutes = firstBlock.tolerance ?? 0;
+          if (!isWorkDay) {
+            // ─── CAS CRITIQUE : présent un jour OFF ─────────────────────────
+            status = 'anomaly_off_day';
+            anomalyOffCount++;
+            // Pas de calcul retard — il n'y a pas d'horaire prévu
+            isWithinTolerance = null;
+            toleranceMinutes = null;
+          } else {
+            // ─── Jour travaillé normal ───────────────────────────────────────
+            if (expectedSchedule && expectedSchedule.expected_blocks.length > 0) {
+              const firstBlock = expectedSchedule.expected_blocks[0];
+              const expectedStartTime = firstBlock.work[0];
+              toleranceMinutes = firstBlock.tolerance ?? 0;
 
-            const clockedTime = AnomalyDetectionService.formatTime(clockInTime!);
-            const clockedMin = ScheduleResolutionService.parseTimeToMinutes(clockedTime);
-            const expectedMin = ScheduleResolutionService.parseTimeToMinutes(expectedStartTime);
+              const clockedTime = AnomalyDetectionService.formatTime(clockInTime!);
+              const clockedMin = ScheduleResolutionService.parseTimeToMinutes(clockedTime);
+              const expectedMin = ScheduleResolutionService.parseTimeToMinutes(expectedStartTime);
 
-            delayMinutes = clockedMin - expectedMin;
-            isWithinTolerance = delayMinutes <= toleranceMinutes;
+              delayMinutes = clockedMin - expectedMin;
+              isWithinTolerance = delayMinutes <= toleranceMinutes;
 
-            if (delayMinutes > toleranceMinutes) {
-              status = 'late';
-              lateCount++;
+              if (delayMinutes > toleranceMinutes) {
+                status = 'late';
+                lateCount++;
+              } else {
+                status = 'present';
+                presentCount++;
+              }
             } else {
               status = 'present';
+              isWithinTolerance = true;
               presentCount++;
             }
-          } else {
-            status = 'present';
-            isWithinTolerance = true;
-            presentCount++;
           }
+        } else if (!isWorkDay) {
+          // ─── Pas de session + jour OFF = off-day pur ──────────────────────
+          status = 'off-day';
+          offDayCount++;
         } else {
-          // is_work_day = true mais aucune session → absent
+          // ─── Pas de session + jour travaillé = absent ─────────────────────
           status = 'absent';
           absentCount++;
         }
 
-        // Stocker dans le cache jour/employé (utilisé pour daily_details)
         const dayEntry = {
           status,
           clock_in_time: clockInTime ? clockInTime.toISOString() : null,
           clock_out_time: clockOutTime ? clockOutTime.toISOString() : null,
-          expected_time: expectedSchedule?.expected_blocks[0]?.work[0] ?? null,
+          expected_time: isWorkDay ? (expectedSchedule?.expected_blocks[0]?.work[0] ?? null) : null,
           delay_minutes: delayMinutes > 0 ? delayMinutes : null,
           tolerance_minutes: toleranceMinutes,
           work_hours: workHours > 0 ? workHours : null,
@@ -316,20 +311,21 @@ router.get('/attendance/stat', Ensure.get(), async (req: Request, res: Response)
         };
         dayEmployeeAnalysis.set(userId, dayEntry);
 
-        // Alimenter le tableau plat (indépendant de l'option exclude)
-        const employee = teamData.all_employees_flat.find((u) => u.getId() === userId);
-        if (employee) {
-          allDayData.push({
-            employee_guid: employee.getGuid()!,
-            date: dateKey,
-            status,
-            clock_in_time: dayEntry.clock_in_time,
-            clock_out_time: dayEntry.clock_out_time,
-            work_hours: workHours > 0 ? workHours : null,
-            is_within_tolerance: isWithinTolerance,
-            delay_minutes: delayMinutes > 0 ? delayMinutes : null,
-          });
-        }
+        const empName = employeeNameMap.get(userId) ?? '';
+        const empGuid =
+          teamData.all_employees_flat.find((u) => u.getId() === userId)?.getGuid() ?? '';
+
+        allDayData.push({
+          employee_guid: empGuid,
+          employee_name: empName,
+          date: dateKey,
+          status,
+          clock_in_time: dayEntry.clock_in_time,
+          clock_out_time: dayEntry.clock_out_time,
+          work_hours: workHours > 0 ? workHours : null,
+          is_within_tolerance: isWithinTolerance,
+          delay_minutes: delayMinutes > 0 ? delayMinutes : null,
+        });
       }
 
       dailyEmployeeData.set(dateKey, dayEmployeeAnalysis);
@@ -337,11 +333,12 @@ router.get('/attendance/stat', Ensure.get(), async (req: Request, res: Response)
       dailyBreakdown.push({
         date: dateKey,
         day_of_week: dayNames[analysisDate.getDay()],
-        expected_count: teamMembers.length - offDayCount,
+        expected_count: teamMembers.length - offDayCount - anomalyOffCount,
         present: presentCount,
         late: lateCount,
         absent: absentCount,
         off_day: offDayCount,
+        anomaly_off_day: anomalyOffCount, // ← visible dans le breakdown
       });
     }
 
@@ -360,12 +357,12 @@ router.get('/attendance/stat', Ensure.get(), async (req: Request, res: Response)
       let lateDays = 0;
       let absentDays = 0;
       let offDays = 0;
+      let anomalyDays = 0; // ← nouveau
       let totalDelayMinutes = 0;
       let maxDelayMinutes = 0;
       let totalWorkHours = 0;
-
-      // CORRECTION : collecter les pauses depuis les sessions de cet employé
       let totalPauseMinutes = 0;
+
       const userSessions = periodSessions.filter((s) => s.getUser() === userId);
       for (const session of userSessions) {
         totalPauseMinutes += sessionPauseMinutes.get(session.getId()!) ?? 0;
@@ -373,7 +370,7 @@ router.get('/attendance/stat', Ensure.get(), async (req: Request, res: Response)
 
       const dailyDetailsRaw: Array<any> = [];
 
-      for (const [dateKey, dayData] of dailyEmployeeData.entries()) {
+      for (const [, dayData] of dailyEmployeeData.entries()) {
         const dayEntry = dayData.get(userId);
         if (!dayEntry) continue;
 
@@ -394,14 +391,13 @@ router.get('/attendance/stat', Ensure.get(), async (req: Request, res: Response)
           workDaysExpected++;
         } else if (status === 'off-day') {
           offDays++;
+        } else if (status === 'anomaly_off_day') {
+          // Ne compte PAS dans workDaysExpected — pas un jour planifié
+          anomalyDays++;
         }
 
-        if (dayEntry.work_hours) {
-          totalWorkHours += dayEntry.work_hours;
-        }
+        if (dayEntry.work_hours) totalWorkHours += dayEntry.work_hours;
 
-        // Toujours construire dailyDetailsRaw pour allDayData
-        // L'exclusion du payload se fait APRÈS (voir ci-dessous)
         dailyDetailsRaw.push(Statistique.enrichDailyDetail(dayEntry));
       }
 
@@ -413,9 +409,6 @@ router.get('/attendance/stat', Ensure.get(), async (req: Request, res: Response)
 
       const averageDelayMinutes = lateDays > 0 ? totalDelayMinutes / lateDays : 0;
 
-      const averageWorkHours =
-        presentDays + lateDays > 0 ? totalWorkHours / (presentDays + lateDays) : 0;
-
       const employeeData: any = {
         employee: await employee.toJSON(responseValue.MINIMAL),
 
@@ -425,25 +418,23 @@ router.get('/attendance/stat', Ensure.get(), async (req: Request, res: Response)
           late_days: lateDays,
           absent_days: absentDays,
           off_days: offDays,
+          anomaly_off_days: anomalyDays, // ← exposé
           total_delay_minutes: totalDelayMinutes,
           average_delay_minutes: parseFloat(averageDelayMinutes.toFixed(1)),
           max_delay_minutes: maxDelayMinutes,
           total_work_hours: parseFloat(totalWorkHours.toFixed(2)),
-          average_work_hours_per_day: parseFloat(averageWorkHours.toFixed(2)),
           attendance_rate: parseFloat(attendanceRate.toFixed(2)),
           punctuality_rate: parseFloat(punctualityRate.toFixed(2)),
         },
 
-        // CORRECTION : totalPauseMinutes réel transmis
         effective_presence: Statistique.calculateEffectivePresence(
           totalWorkHours,
-          totalPauseMinutes,
+          totalPauseMinutes > 0 ? totalPauseMinutes : null,
           presentDays,
           lateDays,
         ),
       };
 
-      // Inclure daily_details sauf si explicitement exclu
       if (exclude !== 'daily_details') {
         employeeData.daily_details = dailyDetailsRaw;
       }
@@ -459,6 +450,7 @@ router.get('/attendance/stat', Ensure.get(), async (req: Request, res: Response)
     let totalLateArrivals = 0;
     let totalAbsences = 0;
     let totalOffDays = 0;
+    let totalAnomalyOffDays = 0;
     let totalDelayMinutes = 0;
     let totalWorkHours = 0;
 
@@ -467,6 +459,7 @@ router.get('/attendance/stat', Ensure.get(), async (req: Request, res: Response)
       totalLateArrivals += emp.period_stats.late_days;
       totalAbsences += emp.period_stats.absent_days;
       totalOffDays += emp.period_stats.off_days;
+      totalAnomalyOffDays += emp.period_stats.anomaly_off_days;
       totalDelayMinutes += emp.period_stats.total_delay_minutes;
       totalWorkHours += emp.period_stats.total_work_hours;
     }
@@ -493,32 +486,25 @@ router.get('/attendance/stat', Ensure.get(), async (req: Request, res: Response)
         ? totalWorkHours / (totalPresentOnTime + totalLateArrivals)
         : 0;
 
-    // ── Sessions actives (CORRECTION : depuis periodSessions déjà en mémoire)
-    // On filtre les sessions sans clock_out — pas besoin de nouvelle requête BDD
-    const today = TimezoneConfigUtils.getCurrentTime();
-    const todayStart = new Date(today);
+    // ── Sessions actives en ce moment (depuis periodSessions, sans requête) ──
+
+    const now = TimezoneConfigUtils.getCurrentTime();
+    const todayStart = new Date(now);
     todayStart.setHours(0, 0, 0, 0);
 
     const todaySessions = periodSessions.filter((s) => {
       const start = s.getSessionStartAt();
       return start && start >= todayStart && s.isActive();
     });
-
     const currentlyActive = todaySessions.length;
 
-    // Pauses actives — on lit depuis le cache déjà calculé
     let currentlyOnPause = 0;
     for (const session of todaySessions) {
-      const pauseMin = sessionPauseMinutes.get(session.getId()!);
-      // Si des pauses existent et la session est toujours ouverte,
-      // on vérifie via getPauseStatusDetailed (limité aux sessions du jour)
       const pauseStatus = await session.getPauseStatusDetailed();
       if (pauseStatus?.is_on_pause) currentlyOnPause++;
     }
 
-    // ── expected_today : depuis le cache schedule du jour courant
-    // CORRECTION : on compte les employés dont is_work_day = true AUJOURD'HUI
-    const todayKey = today.toISOString().split('T')[0];
+    const todayKey = now.toISOString().split('T')[0];
     let expectedToday = 0;
     for (const userId of teamMembers) {
       const todaySchedule = scheduleCache.get(userId)?.get(todayKey);
@@ -526,29 +512,29 @@ router.get('/attendance/stat', Ensure.get(), async (req: Request, res: Response)
     }
 
     // ══════════════════════════════════════════════════════════════════════════
-    // ÉTAPE 8 — KPIs ENRICHIS (utilise allDayData — indépendant de exclude)
+    // ÉTAPE 8 — KPIs ENRICHIS
     // ══════════════════════════════════════════════════════════════════════════
 
-    // CORRECTION : on passe expectedToday (calculé ci-dessus) au lieu de
-    // laisser calculateTeamCoverage dériver une valeur approximative
     const team_coverage = Statistique.calculateTeamCoverage(
       expectedToday,
       currentlyActive,
       currentlyOnPause,
     );
-
-    // CORRECTION : allDayData passé directement — fonctionne avec ou sans daily_details
     const session_analysis = Statistique.analyzeSessionDurations(allDayData);
-
     const justification_status = await Statistique.analyzeJustifications(
       totalAbsences,
       teamMembers,
       startOfPeriod,
       endOfPeriod,
     );
-
-    // CORRECTION : allDayData passé directement
     const schedule_compliance = Statistique.calculateScheduleCompliance(allDayData);
+
+    // ── KPI 6 : présences hors planning ──────────────────────────────────────
+    const unexpected_presence = Statistique.calculateUnexpectedPresence(
+      allDayData,
+      totalDays,
+      teamMembers.length,
+    );
 
     // ══════════════════════════════════════════════════════════════════════════
     // RÉPONSE FINALE
@@ -569,12 +555,12 @@ router.get('/attendance/stat', Ensure.get(), async (req: Request, res: Response)
         },
 
         summary: {
-          // ── Stats existantes (inchangées)
           total_team_members: teamMembers.length,
           total_present_on_time: totalPresentOnTime,
           total_late_arrivals: totalLateArrivals,
           total_absences: totalAbsences,
           total_off_days: totalOffDays,
+          total_anomaly_off_days: totalAnomalyOffDays, // ← exposé au niveau global
           total_expected_workdays: totalExpectedWorkdays,
           attendance_rate: parseFloat(attendanceRate.toFixed(2)),
           punctuality_rate: parseFloat(punctualityRate.toFixed(2)),
@@ -584,11 +570,12 @@ router.get('/attendance/stat', Ensure.get(), async (req: Request, res: Response)
           currently_active: currentlyActive,
           currently_on_pause: currentlyOnPause,
 
-          // ── Stats enrichies (corrigées)
+          // KPIs enrichis
           team_coverage,
           session_analysis,
           justification_status,
           schedule_compliance,
+          unexpected_presence, // ← KPI 6, séparé de attendance_rate
         },
 
         daily_breakdown: dailyBreakdown,
@@ -607,17 +594,14 @@ router.get('/attendance/stat', Ensure.get(), async (req: Request, res: Response)
 /**
  * GET /dashboard/manager-pulse
  *
- * 📱 Vue temps réel pour App Manager mobile — Snapshot instantané
- * Objectifs : < 5 KB payload, < 300 ms latence, pas de drill-down complexe.
+ * 📱 Snapshot temps réel pour App Manager mobile — v2.1
  *
- * Retourne :
- * - KPI coverage (qui est présent EN CE MOMENT)
- * - Compteur mémos en attente
- * - Compteur alertes fraude (V2)
- * - Liste des absents cliquable (max 10)
- *
- * Pattern : manager voir son équipe maintenant, pas de rapports périodiques.
+ * NOUVEAUTÉ v2.1 :
+ *  KPI anomaly_off_day_today — Employés présents aujourd'hui alors qu'ils
+ *  ne devraient pas travailler. Exposé avec liste nominative pour action
+ *  immédiate du manager (appel, vérification).
  */
+
 router.get('/dashboard/manager-pulse', Ensure.get(), async (req: Request, res: Response) => {
   try {
     const { manager, site } = req.query;
@@ -641,21 +625,13 @@ router.get('/dashboard/manager-pulse', Ensure.get(), async (req: Request, res: R
       });
     }
 
-    // ══════════════════════════════════════════════════════════════════════════
-    // SCOPE — Équipe du manager
-    // ══════════════════════════════════════════════════════════════════════════
-
     const teamData = await OrgHierarchy.getAllTeamMembers(managerObj.getId()!);
     const teamMembers = teamData.all_employees_flat.map((u) => u.getId()!);
 
     if (teamMembers.length === 0) {
       return R.handleSuccess(res, {
         computed_at: TimezoneConfigUtils.getCurrentTime().toISOString(),
-        scope: {
-          manager_guid: managerObj.getGuid(),
-          team_size: 0,
-          site_guid: site || null,
-        },
+        scope: { manager_guid: managerObj.getGuid(), team_size: 0, site_guid: null },
         kpis: [],
         missing_today: [],
       });
@@ -679,70 +655,104 @@ router.get('/dashboard/manager-pulse', Ensure.get(), async (req: Request, res: R
     }
 
     // ══════════════════════════════════════════════════════════════════════════
-    // 1. KPI TEAM_COVERAGE — Qui est présent MAINTENANT
+    // DONNÉES DU JOUR — 1 SEULE REQUÊTE SESSIONS
     // ══════════════════════════════════════════════════════════════════════════
 
     const now = TimezoneConfigUtils.getCurrentTime();
     const todayStart = new Date(now);
     todayStart.setHours(0, 0, 0, 0);
 
-    // Sessions actives (clock_out IS NULL) — UNE SEULE REQUÊTE
     const sessionConditions: Record<string, any> = {
       user: { [Op.in]: teamMembers },
-      session_end_at: null, // Sessions non fermées
-      session_start_at: { [Op.gte]: todayStart }, // Sessions du jour
+      session_end_at: null,
+      session_start_at: { [Op.gte]: todayStart },
     };
-    if (siteObj) {
-      sessionConditions.site = siteObj.getId();
-    }
+    if (siteObj) sessionConditions.site = siteObj.getId();
 
     const activeSessions = (await WorkSessions._list(sessionConditions)) ?? [];
     const currentlyActive = activeSessions.filter((s) => s.isActive()).length;
 
-    // Pauses — limité aux sessions actives déjà chargées
     let currentlyOnPause = 0;
     for (const session of activeSessions) {
       const pauseStatus = await session.getPauseStatusDetailed();
       if (pauseStatus?.is_on_pause) currentlyOnPause++;
     }
 
-    // Expected today — pour chaque employé, vérifier s'il est attendu aujourd'hui
+    // ══════════════════════════════════════════════════════════════════════════
+    // CLASSIFICATION : pour chaque employé, résoudre son statut du jour
+    //
+    // RÈGLE : session prime sur planning
+    //   session + is_work_day = false → anomaly_off_day
+    //   session + is_work_day = true  → present (ou late)
+    //   no session + is_work_day = true  → missing
+    //   no session + is_work_day = false → off-day (ignoré)
+    // ══════════════════════════════════════════════════════════════════════════
+
     let expectedToday = 0;
-    const missingEmployees: Array<{
+
+    const missingToday: Array<{
       guid: string;
       name: string;
       phone: string;
-      phone_clean: string; // format international pour deep link
+      call_deep_link: string;
+    }> = [];
+
+    const anomalyToday: Array<{
+      guid: string;
+      name: string;
+      phone: string;
+      clock_in_time: string;
+      call_deep_link: string;
     }> = [];
 
     for (const userId of teamMembers) {
       const scheduleResult = await ScheduleResolutionService.getApplicableSchedule(userId, now);
       const isWorkDay = scheduleResult.applicable_schedule?.is_work_day ?? false;
+      const hasSession = activeSessions.some((s) => s.getUser() === userId);
 
-      if (!isWorkDay) continue;
-      expectedToday++;
+      const employee = teamData.all_employees_flat.find((u) => u.getId() === userId);
+      if (!employee) continue;
 
-      // Vérifier si présent
-      const isPresent = activeSessions.some((s) => s.getUser() === userId);
-      if (!isPresent) {
-        const employee = await User._load(userId);
-        if (employee) {
-          // Normaliser le numéro pour deep link
-          const phone = employee.getPhoneNumber() ?? '';
-          const phoneClean = phone.replace(/\D/g, ''); // enlever tous les caractères non-chiffres
+      const name = `${employee.getFirstName() ?? ''} ${employee.getLastName() ?? ''}`.trim();
+      const phone = employee.getPhoneNumber() ?? '';
+      const phoneClean = phone.replace(/\D/g, '');
+      const callLink = `tel:${phoneClean}`;
 
-          missingEmployees.push({
-            guid: employee.getGuid()!,
-            name: `${employee.getFirstName() ?? ''} ${employee.getLastName() ?? ''}`.trim(),
-            phone,
-            phone_clean: phoneClean,
-          });
-        }
+      if (hasSession && !isWorkDay) {
+        // ─── ANOMALIE : présent un jour OFF ──────────────────────────────────
+        const session = activeSessions.find((s) => s.getUser() === userId);
+        const clockIn = session?.getSessionStartAt()?.toISOString() ?? now.toISOString();
+
+        anomalyToday.push({
+          guid: employee.getGuid()!,
+          name,
+          phone,
+          clock_in_time: clockIn,
+          call_deep_link: callLink,
+        });
+      } else if (!hasSession && isWorkDay) {
+        // ─── MANQUANT : attendu mais absent ──────────────────────────────────
+        expectedToday++;
+
+        missingToday.push({
+          guid: employee.getGuid()!,
+          name,
+          phone,
+          call_deep_link: callLink,
+        });
+      } else if (isWorkDay) {
+        // ─── PRÉSENT un jour de travail normal ───────────────────────────────
+        expectedToday++;
       }
+      // off-day pur (no session + !isWorkDay) → ignoré silencieusement
     }
 
     const coverageRate =
       expectedToday > 0 ? parseFloat(((currentlyActive / expectedToday) * 100).toFixed(1)) : 0;
+
+    // ══════════════════════════════════════════════════════════════════════════
+    // KPI 1 — Couverture équipe
+    // ══════════════════════════════════════════════════════════════════════════
 
     const kpi_team_coverage = {
       code: 'team_coverage',
@@ -750,28 +760,23 @@ router.get('/dashboard/manager-pulse', Ensure.get(), async (req: Request, res: R
       value: currentlyActive,
       unit: 'count',
       status: coverageRate >= 90 ? 'ok' : coverageRate >= 70 ? 'warning' : 'critical',
-      thresholds: {
-        warning: 70,
-        critical: 50,
-        direction: 'higher_is_better',
-      },
+      thresholds: { warning: 70, critical: 50, direction: 'higher_is_better' },
       context: `${currentlyActive} présents sur ${expectedToday} attendus (${coverageRate}%)`,
       action:
-        missingEmployees.length > 0
+        missingToday.length > 0
           ? {
               type: 'drill_down',
-              label: `Voir les ${missingEmployees.length} absents`,
+              label: `Voir les ${missingToday.length} absents`,
               deep_link: `/manager/today/missing`,
-              count: missingEmployees.length,
+              count: missingToday.length,
             }
           : null,
     };
 
     // ══════════════════════════════════════════════════════════════════════════
-    // 2. KPI PENDING_MEMOS — Mémos en attente de validation
+    // KPI 2 — Mémos en attente
     // ══════════════════════════════════════════════════════════════════════════
 
-    // Mémos assignés à ce manager EN ATTENTE
     const pendingMemos = await Memos._list({
       validator_id: managerObj.getId(),
       memo_status: MemoStatus.PENDING,
@@ -779,10 +784,9 @@ router.get('/dashboard/manager-pulse', Ensure.get(), async (req: Request, res: R
 
     const pendingCount = pendingMemos?.length ?? 0;
     const oldestMemo = pendingMemos?.[0];
-    const memoAge =
-      oldestMemo && oldestMemo.getCreatedAt()
-        ? Math.floor((now.getTime() - oldestMemo.getCreatedAt()!.getTime()) / (1000 * 60 * 60))
-        : 0;
+    const memoAgeHours = oldestMemo?.getCreatedAt()
+      ? Math.floor((now.getTime() - oldestMemo.getCreatedAt()!.getTime()) / (1000 * 60 * 60))
+      : 0;
 
     const kpi_pending_memos = {
       code: 'pending_memos',
@@ -790,17 +794,13 @@ router.get('/dashboard/manager-pulse', Ensure.get(), async (req: Request, res: R
       value: pendingCount,
       unit: 'count',
       status: pendingCount === 0 ? 'ok' : pendingCount <= 3 ? 'warning' : 'critical',
-      thresholds: {
-        warning: 3,
-        critical: 5,
-        direction: 'lower_is_better',
-      },
+      thresholds: { warning: 3, critical: 5, direction: 'lower_is_better' },
       context:
         pendingCount === 0
           ? 'Aucun mémo en attente'
-          : memoAge <= 1
-            ? `${pendingCount} mémos — plus ancien: ${memoAge}h`
-            : `${pendingCount} mémos — plus ancien: ${Math.floor(memoAge / 24)}j`,
+          : memoAgeHours < 24
+            ? `${pendingCount} mémos — plus ancien: ${memoAgeHours}h`
+            : `${pendingCount} mémos — plus ancien: ${Math.floor(memoAgeHours / 24)}j`,
       action:
         pendingCount > 0
           ? {
@@ -813,52 +813,74 @@ router.get('/dashboard/manager-pulse', Ensure.get(), async (req: Request, res: R
     };
 
     // ══════════════════════════════════════════════════════════════════════════
-    // 3. KPI ACTIVE_ALERTS — Alertes fraude (V2 only)
+    // KPI 3 — Présences hors planning AUJOURD'HUI (NOUVEAU)
+    //
+    // Spécifique au pulse : on signale les anomalies du jour courant
+    // avec liste nominative pour action immédiate (appel, vérification).
     // ══════════════════════════════════════════════════════════════════════════
 
-    // À implémenter en V2 avec la table fraud_alerts
-    // Pour maintenant, placeholder
+    const kpi_anomaly_today = {
+      code: 'anomaly_off_day_today',
+      label: 'Présences hors planning',
+      value: anomalyToday.length,
+      unit: 'count',
+      status: anomalyToday.length === 0 ? 'ok' : anomalyToday.length <= 1 ? 'warning' : 'critical',
+      thresholds: { ok: 0, warning: 1, direction: 'lower_is_better' },
+      context:
+        anomalyToday.length === 0
+          ? 'Aucune présence hors planning'
+          : `${anomalyToday.length} employé${anomalyToday.length > 1 ? 's' : ''} présent${anomalyToday.length > 1 ? 's' : ''} un jour non travaillé`,
+      action:
+        anomalyToday.length > 0
+          ? {
+              type: 'review',
+              label: `Vérifier ${anomalyToday.length} présence${anomalyToday.length > 1 ? 's' : ''} anormale${anomalyToday.length > 1 ? 's' : ''}`,
+              deep_link: `/manager/anomalies?date=today&type=off_day_presence`,
+              count: anomalyToday.length,
+            }
+          : null,
+    };
+
+    // ══════════════════════════════════════════════════════════════════════════
+    // KPI 4 — Alertes fraude (V2 placeholder)
+    // ══════════════════════════════════════════════════════════════════════════
+
     const kpi_active_alerts = {
       code: 'active_alerts',
       label: 'Alertes actives',
       value: 0,
       unit: 'count',
       status: 'ok',
-      thresholds: {
-        warning: 0,
-        critical: 1,
-        direction: 'lower_is_better',
-      },
+      thresholds: { warning: 0, critical: 1, direction: 'lower_is_better' },
       context: 'Aucune alerte fraude détectée',
       action: null,
     };
 
     // ══════════════════════════════════════════════════════════════════════════
-    // CONSTRUCTION DU PAYLOAD
+    // RÉPONSE FINALE
     // ══════════════════════════════════════════════════════════════════════════
 
-    const kpis = [kpi_team_coverage, kpi_pending_memos, kpi_active_alerts].filter(
-      (kpi) => kpi !== null,
-    );
-
-    // Limiter la liste des absents à 10 pour garder le payload < 5 KB
-    const missingTodayReduced = missingEmployees.slice(0, 10).map((emp) => ({
-      employee_guid: emp.guid,
-      name: emp.name,
-      phone: emp.phone,
-      phone_clean: emp.phone_clean,
-      call_deep_link: `tel:${emp.phone_clean}`, // Permettre l'appel direct
-    }));
-
     return R.handleSuccess(res, {
-      computed_at: TimezoneConfigUtils.getCurrentTime().toISOString(),
+      computed_at: now.toISOString(),
+
       scope: {
         manager_guid: managerObj.getGuid(),
         team_size: teamMembers.length,
         site_guid: siteObj?.getGuid() ?? null,
       },
-      kpis,
-      missing_today: missingTodayReduced,
+
+      kpis: [
+        kpi_team_coverage,
+        kpi_pending_memos,
+        kpi_anomaly_today, // ← KPI 3
+        kpi_active_alerts,
+      ],
+
+      // Absents attendus (max 10)
+      missing_today: missingToday.slice(0, 10),
+
+      // Présences anormales (max 10, avec heure de pointage)
+      anomalies_today: anomalyToday.slice(0, 10),
     });
   } catch (error: any) {
     console.error('[Manager Pulse] Error:', error);
@@ -872,29 +894,21 @@ router.get('/dashboard/manager-pulse', Ensure.get(), async (req: Request, res: R
 /**
  * GET /dashboard/employee-stats/:guid
  *
- * 👤 Vue personnelle d'un employé sur ses statistiques de présence
+ * 👤 Vue personnelle d'un employé — v2.1
  *
- * Utilisateurs :
- * - L'employé lui-même (voir ses propres stats dans l'App Employé)
- * - Son manager (drill-down depuis HR Analytics)
- * - HR_ADMIN (voir toute l'équipe)
- *
- * Permissions :
- * - EMPLOYEE token → voir uniquement son GUID
- * - MANAGER token → voir seulement les GUIDs dans getAllTeamMembers()
- * - HR_ADMIN → voir tout le tenant
- *
- * Paramètres :
- * - period=7d|30d|90d|custom (défaut: 30d)
- * - start/end si custom
+ * NOUVEAUTÉ v2.1 :
+ *  anomaly_off_day détecté dans la boucle jour (présence prime sur planning).
+ *  period_stats.anomaly_off_days exposé.
+ *  KPI individuel anomaly_off_days dans le tableau kpis.
  */
+
 router.get('/dashboard/employee-stats/:guid', Ensure.get(), async (req: Request, res: Response) => {
   try {
     const { guid } = req.params;
     const { period = '30d', start_date, end_date, requester } = req.query;
 
     // ══════════════════════════════════════════════════════════════════════════
-    // 1. VALIDATION & CHARGEMENT DE L'EMPLOYÉ
+    // 1. VALIDATION & CHARGEMENT
     // ══════════════════════════════════════════════════════════════════════════
 
     if (!UsersValidationUtils.validateGuid(guid)) {
@@ -914,25 +928,13 @@ router.get('/dashboard/employee-stats/:guid', Ensure.get(), async (req: Request,
 
     // ══════════════════════════════════════════════════════════════════════════
     // 2. CONTRÔLE D'ACCÈS
-    //
-    // Qui peut voir ces stats ?
-    // - L'employé lui-même (EMPLOYEE token avec son guid)
-    // - Son manager direct (MANAGER token → vérifier dans getAllTeamMembers)
-    // - Un rôle HR (HR_ADMIN, AUDITOR)
     // ══════════════════════════════════════════════════════════════════════════
 
-    // Extract requester ID from token (à adapter selon votre context JWT)
-    // Pour l'instant, on suppose que req.user est disponible via le middleware auth
-    const requesterId = (req as any).user?.id;
     const requesterGuid = (req as any).user?.guid;
 
-    // Cas 1 : Employé visionne ses propres stats (guid du token = guid du param)
     if (requesterGuid === guid && requesterGuid) {
-      // OK — accès personnel
-    }
-    // Cas 2 : Manager cherche à voir un subordonné
-    else if (requester) {
-      // Utiliser le param requester comme manager_guid
+      // OK — employé voit ses propres stats
+    } else if (requester) {
       const managerObj = await User._load(String(requester), true);
       if (!managerObj) {
         return R.handleError(res, HttpStatus.FORBIDDEN, {
@@ -940,7 +942,6 @@ router.get('/dashboard/employee-stats/:guid', Ensure.get(), async (req: Request,
           message: 'Requester not found',
         });
       }
-
       const isInTeam = await OrgHierarchy.isUserInHierarchy(
         employeeObj.getId()!,
         managerObj.getId()!,
@@ -952,7 +953,6 @@ router.get('/dashboard/employee-stats/:guid', Ensure.get(), async (req: Request,
         });
       }
     } else {
-      // Cas 3 : Aucune permission explicite
       return R.handleError(res, HttpStatus.FORBIDDEN, {
         code: USERS_CODES.AUTHORIZATION_FAILED,
         message: 'Insufficient permissions to view employee stats',
@@ -984,23 +984,15 @@ router.get('/dashboard/employee-stats/:guid', Ensure.get(), async (req: Request,
       const now = TimezoneConfigUtils.getCurrentTime();
       endOfPeriod = new Date(now);
       endOfPeriod.setHours(23, 59, 59, 999);
-
       startOfPeriod = new Date(now);
-
-      if (period === '7d') {
-        startOfPeriod.setDate(startOfPeriod.getDate() - 7);
-      } else if (period === '90d') {
-        startOfPeriod.setDate(startOfPeriod.getDate() - 90);
-      } else {
-        // 30d par défaut
-        startOfPeriod.setDate(startOfPeriod.getDate() - 30);
-      }
-
+      if (period === '7d') startOfPeriod.setDate(startOfPeriod.getDate() - 7);
+      else if (period === '90d') startOfPeriod.setDate(startOfPeriod.getDate() - 90);
+      else startOfPeriod.setDate(startOfPeriod.getDate() - 30);
       startOfPeriod.setHours(0, 0, 0, 0);
     }
 
     // ══════════════════════════════════════════════════════════════════════════
-    // 4. SESSIONS DE LA PÉRIODE
+    // 4. SESSIONS
     // ══════════════════════════════════════════════════════════════════════════
 
     const periodSessions = await WorkSessions._list({
@@ -1009,14 +1001,14 @@ router.get('/dashboard/employee-stats/:guid', Ensure.get(), async (req: Request,
     });
 
     // ══════════════════════════════════════════════════════════════════════════
-    // 5. RÉSOLUTION D'ASSIGNATION ACTUELLE
+    // 5. ASSIGNATION ACTUELLE
     // ══════════════════════════════════════════════════════════════════════════
 
     const assignmentType = await employeeObj.getCurrentAssignmentType();
     const activeSchedule = await employeeObj.getActiveScheduleAssignment();
     const activeRotation = await employeeObj.getActiveRotationAssignment();
 
-    let assignmentInfo: any = {
+    const assignmentInfo: any = {
       current_type: assignmentType,
       schedule_name: null,
       schedule_guid: null,
@@ -1026,11 +1018,9 @@ router.get('/dashboard/employee-stats/:guid', Ensure.get(), async (req: Request,
 
     if (activeSchedule) {
       const template = await activeSchedule.getSessionTemplate();
-      // const template = await activeSchedule.getSessionTemplateObj();
       assignmentInfo.schedule_name = template?.getName();
       assignmentInfo.schedule_guid = template?.getGuid();
     }
-
     if (activeRotation) {
       const rotGroup = await activeRotation.getRotationGroupObj();
       assignmentInfo.rotation_group_name = rotGroup?.getName();
@@ -1038,10 +1028,13 @@ router.get('/dashboard/employee-stats/:guid', Ensure.get(), async (req: Request,
     }
 
     // ══════════════════════════════════════════════════════════════════════════
-    // 6. STATISTIQUES DE PÉRIODE
+    // 6. BOUCLE JOUR PAR JOUR
     //
-    // Périmètre réduit (1 employé) → N+1 acceptable
-    // On fait un appel getApplicableSchedule par jour (ex: 30 appels max)
+    // RÈGLE : session prime sur planning.
+    //   session + !isWorkDay → anomaly_off_day
+    //   session + isWorkDay  → present | late
+    //   no session + isWorkDay  → absent
+    //   no session + !isWorkDay → off-day
     // ══════════════════════════════════════════════════════════════════════════
 
     const dayNames = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
@@ -1050,6 +1043,7 @@ router.get('/dashboard/employee-stats/:guid', Ensure.get(), async (req: Request,
     let lateDays = 0;
     let absentDays = 0;
     let offDays = 0;
+    let anomalyDays = 0; // ← nouveau
     let totalDelayMinutes = 0;
     let maxDelayMinutes = 0;
     let totalWorkHours = 0;
@@ -1057,9 +1051,8 @@ router.get('/dashboard/employee-stats/:guid', Ensure.get(), async (req: Request,
 
     const dailyDetailsArray: Array<any> = [];
 
-    // Itérer jour par jour
     const cursor = new Date(startOfPeriod);
-    cursor.setHours(12, 0, 0, 0); // midi pour DST
+    cursor.setHours(12, 0, 0, 0);
     const periodEnd = new Date(endOfPeriod);
     periodEnd.setHours(12, 0, 0, 0);
 
@@ -1070,7 +1063,6 @@ router.get('/dashboard/employee-stats/:guid', Ensure.get(), async (req: Request,
       const dayEnd = new Date(cursor);
       dayEnd.setHours(23, 59, 59, 999);
 
-      // Résoudre le schedule pour ce jour
       const scheduleResult = await ScheduleResolutionService.getApplicableSchedule(
         employeeObj.getId()!,
         cursor,
@@ -1078,13 +1070,12 @@ router.get('/dashboard/employee-stats/:guid', Ensure.get(), async (req: Request,
       const expectedSchedule = scheduleResult.applicable_schedule;
       const isWorkDay = expectedSchedule?.is_work_day ?? false;
 
-      // Chercher la session de ce jour
       const daySession = periodSessions?.find((s) => {
         const start = s.getSessionStartAt();
         return start && start >= dayStart && start <= dayEnd;
       });
 
-      let status: 'present' | 'late' | 'absent' | 'off-day' = 'absent';
+      let status: DayStatus = 'absent';
       let clockInTime: Date | null = null;
       let clockOutTime: Date | null = null;
       let delayMinutes = 0;
@@ -1093,14 +1084,10 @@ router.get('/dashboard/employee-stats/:guid', Ensure.get(), async (req: Request,
       let dayWorkHours = 0;
       let dayPauseMinutes = 0;
 
-      if (!isWorkDay) {
-        status = 'off-day';
-        offDays++;
-      } else if (daySession) {
+      if (daySession) {
         clockInTime = daySession.getSessionStartAt() ?? null;
         clockOutTime = daySession.getSessionEndAt() ?? null;
 
-        // Heures travaillées
         const rawDuration = daySession.getTotalWorkDuration();
         if (rawDuration) {
           const matches = rawDuration.match(/(\d+)\s*hours?\s*(\d+)?\s*minutes?/);
@@ -1109,43 +1096,53 @@ router.get('/dashboard/employee-stats/:guid', Ensure.get(), async (req: Request,
           }
         }
 
-        // Pauses
         dayPauseMinutes = await daySession.getTotalPauseTime();
 
-        // Statut retard
-        if (expectedSchedule && expectedSchedule.expected_blocks.length > 0) {
-          const firstBlock = expectedSchedule.expected_blocks[0];
-          const expectedStartTime = firstBlock.work[0];
-          toleranceMinutes = firstBlock.tolerance ?? 0;
+        if (!isWorkDay) {
+          // ─── ANOMALIE : présent un jour OFF ──────────────────────────────
+          status = 'anomaly_off_day';
+          anomalyDays++;
+          // Pas de calcul retard — pas d'horaire prévu
+          isWithinTolerance = null;
+          toleranceMinutes = null;
+        } else {
+          // ─── Jour travaillé normal ────────────────────────────────────────
+          workDaysExpected++;
 
-          const clockedTime = AnomalyDetectionService.formatTime(clockInTime!);
-          const clockedMin = ScheduleResolutionService.parseTimeToMinutes(clockedTime);
-          const expectedMin = ScheduleResolutionService.parseTimeToMinutes(expectedStartTime);
+          if (expectedSchedule && expectedSchedule.expected_blocks.length > 0) {
+            const firstBlock = expectedSchedule.expected_blocks[0];
+            const expectedStartTime = firstBlock.work[0];
+            toleranceMinutes = firstBlock.tolerance ?? 0;
 
-          delayMinutes = clockedMin - expectedMin;
-          isWithinTolerance = delayMinutes <= toleranceMinutes;
+            const clockedTime = AnomalyDetectionService.formatTime(clockInTime!);
+            const clockedMin = ScheduleResolutionService.parseTimeToMinutes(clockedTime);
+            const expectedMin = ScheduleResolutionService.parseTimeToMinutes(expectedStartTime);
 
-          if (delayMinutes > toleranceMinutes) {
-            status = 'late';
-            lateDays++;
+            delayMinutes = clockedMin - expectedMin;
+            isWithinTolerance = delayMinutes <= toleranceMinutes;
+
+            if (delayMinutes > toleranceMinutes) {
+              status = 'late';
+              lateDays++;
+            } else {
+              status = 'present';
+              presentDays++;
+            }
           } else {
             status = 'present';
+            isWithinTolerance = true;
             presentDays++;
           }
-        } else {
-          status = 'present';
-          isWithinTolerance = true;
-          presentDays++;
-        }
 
-        workDaysExpected++;
-
-        if (delayMinutes > 0) {
-          totalDelayMinutes += delayMinutes;
-          maxDelayMinutes = Math.max(maxDelayMinutes, delayMinutes);
+          if (delayMinutes > 0) {
+            totalDelayMinutes += delayMinutes;
+            maxDelayMinutes = Math.max(maxDelayMinutes, delayMinutes);
+          }
         }
+      } else if (!isWorkDay) {
+        status = 'off-day';
+        offDays++;
       } else {
-        // is_work_day = true, aucune session
         status = 'absent';
         absentDays++;
         workDaysExpected++;
@@ -1154,14 +1151,13 @@ router.get('/dashboard/employee-stats/:guid', Ensure.get(), async (req: Request,
       totalWorkHours += dayWorkHours;
       totalPauseMinutes += dayPauseMinutes;
 
-      // Construire daily detail
       dailyDetailsArray.push({
         date: dateKey,
         day_of_week: dayNames[cursor.getDay()],
         status,
         clock_in_time: clockInTime ? clockInTime.toISOString() : null,
         clock_out_time: clockOutTime ? clockOutTime.toISOString() : null,
-        expected_time: expectedSchedule?.expected_blocks[0]?.work[0] ?? null,
+        expected_time: isWorkDay ? (expectedSchedule?.expected_blocks[0]?.work[0] ?? null) : null,
         delay_minutes: delayMinutes > 0 ? delayMinutes : null,
         tolerance_minutes: toleranceMinutes,
         work_hours: dayWorkHours > 0 ? dayWorkHours : null,
@@ -1174,6 +1170,8 @@ router.get('/dashboard/employee-stats/:guid', Ensure.get(), async (req: Request,
 
     // ══════════════════════════════════════════════════════════════════════════
     // 7. CALCUL DES TAUX
+    //
+    // anomaly_off_days exclus de attendance_rate — pas un jour planifié.
     // ══════════════════════════════════════════════════════════════════════════
 
     const attendanceRate =
@@ -1186,11 +1184,8 @@ router.get('/dashboard/employee-stats/:guid', Ensure.get(), async (req: Request,
 
     const averageDelayMinutes = lateDays > 0 ? totalDelayMinutes / lateDays : 0;
 
-    const averageWorkHours =
-      presentDays + lateDays > 0 ? totalWorkHours / (presentDays + lateDays) : 0;
-
     // ══════════════════════════════════════════════════════════════════════════
-    // 8. MÉMOS DE LA PÉRIODE
+    // 8. MÉMOS
     // ══════════════════════════════════════════════════════════════════════════
 
     const periodMemos = await Memos._list({
@@ -1198,20 +1193,18 @@ router.get('/dashboard/employee-stats/:guid', Ensure.get(), async (req: Request,
       incident_datetime: { [Op.between]: [startOfPeriod, endOfPeriod] },
     });
 
-    const memosData = await Promise.all(
-      (periodMemos ?? []).map(async (memo) => ({
-        date: memo.getIncidentDatetime()?.toISOString().split('T')[0],
-        type: memo.getMemoType(),
-        status: memo.getMemoStatus(),
-        content: memo.getMemoContent() ?? null,
-        created_at: memo.getCreatedAt()?.toISOString(),
-        last_update: memo.getUpdatedAt()?.toISOString() ?? null,
-        guid: memo.getGuid(),
-      })),
-    );
+    const memosData = (periodMemos ?? []).map((memo) => ({
+      date: memo.getIncidentDatetime()?.toISOString().split('T')[0],
+      type: memo.getMemoType(),
+      status: memo.getMemoStatus(),
+      content: memo.getMemoContent() ?? null,
+      created_at: memo.getCreatedAt()?.toISOString(),
+      last_operation: memo.getUpdatedAt()?.toISOString() ?? null,
+      guid: memo.getGuid(),
+    }));
 
     // ══════════════════════════════════════════════════════════════════════════
-    // 9. KPIs INDIVIDUELS (format standard)
+    // 9. KPIs INDIVIDUELS
     // ══════════════════════════════════════════════════════════════════════════
 
     const kpis = [
@@ -1222,7 +1215,7 @@ router.get('/dashboard/employee-stats/:guid', Ensure.get(), async (req: Request,
         unit: 'percent',
         status: attendanceRate >= 95 ? 'ok' : attendanceRate >= 85 ? 'warning' : 'critical',
         thresholds: { ok: 95, warning: 85, direction: 'higher_is_better' },
-        context: `${Math.round(attendanceRate)}% de présence sur la période`,
+        context: `${Math.round(attendanceRate)}% sur les jours planifiés`,
       },
       {
         code: 'punctuality_rate',
@@ -1231,7 +1224,7 @@ router.get('/dashboard/employee-stats/:guid', Ensure.get(), async (req: Request,
         unit: 'percent',
         status: punctualityRate >= 90 ? 'ok' : punctualityRate >= 75 ? 'warning' : 'critical',
         thresholds: { ok: 90, warning: 75, direction: 'higher_is_better' },
-        context: `${Math.round(presentDays)} jours à l'heure sur ${presentDays + lateDays} présences`,
+        context: `${presentDays} jours à l'heure sur ${presentDays + lateDays} présences`,
       },
       {
         code: 'absenteeism_rate',
@@ -1260,9 +1253,9 @@ router.get('/dashboard/employee-stats/:guid', Ensure.get(), async (req: Request,
         label: 'Heures travaillées',
         value: parseFloat(totalWorkHours.toFixed(2)),
         unit: 'hours',
-        status: 'ok',
-        thresholds: { ok: 0, direction: 'higher_is_better' },
-        context: `${totalWorkHours.toFixed(1)}h travaillées (${averageWorkHours.toFixed(1)}h/jour)`,
+        status: 'info',
+        thresholds: { direction: 'higher_is_better' },
+        context: `${totalWorkHours.toFixed(1)}h total (jours planifiés + hors planning)`,
       },
       {
         code: 'net_work_ratio',
@@ -1278,7 +1271,7 @@ router.get('/dashboard/employee-stats/:guid', Ensure.get(), async (req: Request,
         unit: 'percent',
         status: 'info',
         thresholds: { ok: 85, direction: 'higher_is_better' },
-        context: `${(totalWorkHours * 60 - totalPauseMinutes).toFixed(0)} min de travail net (${totalPauseMinutes} min de pauses)`,
+        context: `${totalPauseMinutes} min de pauses sur la période`,
       },
       {
         code: 'memo_count',
@@ -1286,8 +1279,29 @@ router.get('/dashboard/employee-stats/:guid', Ensure.get(), async (req: Request,
         value: periodMemos?.length ?? 0,
         unit: 'count',
         status: 'info',
-        thresholds: { warning: 3, direction: 'lower_is_better' },
         context: `${periodMemos?.length ?? 0} justificatifs sur la période`,
+      },
+      // ── KPI anomalie — séparé, actionnable ────────────────────────────────
+      {
+        code: 'anomaly_off_days',
+        label: 'Présences hors planning',
+        value: anomalyDays,
+        unit: 'count',
+        status: anomalyDays === 0 ? 'ok' : anomalyDays <= 1 ? 'warning' : 'critical',
+        thresholds: { ok: 0, warning: 1, direction: 'lower_is_better' },
+        context:
+          anomalyDays === 0
+            ? 'Aucune présence hors planning'
+            : `${anomalyDays} jour${anomalyDays > 1 ? 's' : ''} travaillé${anomalyDays > 1 ? 's' : ''} hors planning`,
+        action:
+          anomalyDays > 0
+            ? {
+                type: 'review',
+                label: 'Voir les détails dans daily_details (status: anomaly_off_day)',
+                deep_link: `/employee/${guid}/anomalies`,
+                count: anomalyDays,
+              }
+            : null,
       },
     ];
 
@@ -1326,6 +1340,7 @@ router.get('/dashboard/employee-stats/:guid', Ensure.get(), async (req: Request,
         late_days: lateDays,
         absent_days: absentDays,
         off_days: offDays,
+        anomaly_off_days: anomalyDays, // ← exposé
         total_work_hours: parseFloat(totalWorkHours.toFixed(2)),
         total_pause_minutes: totalPauseMinutes,
         total_delay_minutes: totalDelayMinutes,
@@ -1340,7 +1355,7 @@ router.get('/dashboard/employee-stats/:guid', Ensure.get(), async (req: Request,
         lateDays,
       ),
 
-      daily_details: dailyDetailsArray,
+      daily_details: dailyDetailsArray, // contient les entrées status='anomaly_off_day'
 
       memos: memosData,
     });

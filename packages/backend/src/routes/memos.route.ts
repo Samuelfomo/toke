@@ -22,7 +22,6 @@ router.get('/', TenantConfig.authenticate, Ensure.get(), async (req: Request, re
   try {
     const { url } = req.query;
 
-    console.log(url);
     if (!url) {
       return R.handleError(res, HttpStatus.BAD_REQUEST, {
         code: MEMOS_CODES.AUTHOR_USER_REQUIRED,
@@ -40,10 +39,13 @@ router.get('/', TenantConfig.authenticate, Ensure.get(), async (req: Request, re
     // return R.handleSuccess(res, result.response);
 
     // 🔥 TRANSFERT DES HEADERS
-    res.setHeader('Content-Type', response.headers['content-type'] || 'application/octet-stream');
+    res.setHeader(
+      'Content-Type',
+      String(response.headers['content-type'] || 'application/octet-stream'),
+    );
 
     if (response.headers['content-length']) {
-      res.setHeader('Content-Length', response.headers['content-length']);
+      res.setHeader('Content-Length', String(response.headers['content-length']));
     }
 
     // 🔥 STREAM DIRECT
@@ -90,7 +92,6 @@ router.post(
       return res.status(response.status).json(response.data);
       // return R.handleCreated(res, response.data);
     } catch (error: any) {
-      console.error('❌ UPLOAD PROXY ERROR:', error.message);
       return R.handleError(res, HttpStatus.INTERNAL_ERROR, {
         code: 'upload_proxy_failed',
         message: error.message,
@@ -142,13 +143,13 @@ router.patch(
           message: 'Memo GUID required.',
         });
       }
-      if (!MemosValidationUtils.validateGuid(guid)) {
+      if (!MemosValidationUtils.validateGuid(guid as string)) {
         return R.handleError(res, HttpStatus.BAD_REQUEST, {
           code: MEMOS_CODES.INVALID_GUID,
           message: MEMOS_ERRORS.GUID_INVALID,
         });
       }
-      const response = await UserService.sendReply(client, guid, req.body);
+      const response = await UserService.sendReply(client, guid as string, req.body);
       if (response.status !== HttpStatus.SUCCESS) {
         return R.handleError(res, response.status, response.data.error);
       }
@@ -181,20 +182,59 @@ router.patch(
           message: 'Memo GUID required.',
         });
       }
-      if (!MemosValidationUtils.validateGuid(guid)) {
+      if (!MemosValidationUtils.validateGuid(guid as string)) {
         return R.handleError(res, HttpStatus.BAD_REQUEST, {
           code: MEMOS_CODES.INVALID_GUID,
           message: MEMOS_ERRORS.GUID_INVALID,
         });
       }
 
-      const response = await UserService.validateMemo(client, guid, req.body);
+      const response = await UserService.validateMemo(client, guid as string, req.body);
       if (response.status !== HttpStatus.SUCCESS) {
         return R.handleError(res, response.status, response.data.error);
       }
 
       return R.handleSuccess(res, response.data);
       // return res.status(response.status).json(response.data);
+    } catch (error: any) {
+      return R.handleError(res, HttpStatus.INTERNAL_ERROR, {
+        code: 'validation_failed',
+        message: error.message,
+      });
+    }
+  },
+);
+
+/**
+ * ✅❌ VALIDATE MEMO
+ */
+router.patch(
+  '/revoke/:guid',
+  TenantConfig.authenticate,
+  Ensure.patch(),
+  async (req: Request, res: Response) => {
+    try {
+      const client = (req as any).client.reference;
+      const { guid } = req.params;
+      if (!guid) {
+        return R.handleError(res, HttpStatus.BAD_REQUEST, {
+          code: 'guid_required',
+          message: 'Memo GUID required.',
+        });
+      }
+      if (!MemosValidationUtils.validateGuid(guid as string)) {
+        return R.handleError(res, HttpStatus.BAD_REQUEST, {
+          code: MEMOS_CODES.INVALID_GUID,
+          message: MEMOS_ERRORS.GUID_INVALID,
+        });
+      }
+
+      const response = await UserService.revokeMemo(client, guid as string, req.body);
+      if (response.status !== HttpStatus.SUCCESS) {
+        return R.handleError(res, response.status, response.data.error);
+      }
+
+      return R.handleSuccess(res, response.data);
     } catch (error: any) {
       return R.handleError(res, HttpStatus.INTERNAL_ERROR, {
         code: 'validation_failed',
@@ -218,14 +258,14 @@ router.patch(
           message: 'Memo GUID required.',
         });
       }
-      if (!MemosValidationUtils.validateGuid(guid)) {
+      if (!MemosValidationUtils.validateGuid(guid as string)) {
         return R.handleError(res, HttpStatus.BAD_REQUEST, {
           code: MEMOS_CODES.INVALID_GUID,
           message: MEMOS_ERRORS.GUID_INVALID,
         });
       }
 
-      const response = await UserService.rejetMemo(client, guid, req.body);
+      const response = await UserService.rejetMemo(client, guid as string, req.body);
       if (response.status !== HttpStatus.SUCCESS) {
         return R.handleError(res, response.status, response.data.error);
       }

@@ -139,7 +139,7 @@ router.get('/type/:siteType/list', Ensure.get(), async (req: Request, res: Respo
       });
     }
 
-    const siteEntries = await Site._listByType(siteType);
+    const siteEntries = await Site._listByType(siteType as string);
     const sites = {
       site_type: siteType,
       items: siteEntries

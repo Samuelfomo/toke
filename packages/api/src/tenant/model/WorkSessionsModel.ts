@@ -447,6 +447,7 @@ export default class WorkSessionsModel extends BaseModel {
 
   protected async update(): Promise<void> {
     await this.validate();
+
     if (!this.id) {
       throw new Error(WORK_SESSIONS_ERRORS?.ID_REQUIRED);
     }
@@ -468,6 +469,53 @@ export default class WorkSessionsModel extends BaseModel {
     if (!updated) {
       throw new Error(WORK_SESSIONS_ERRORS?.UPDATE_FAILED || 'Session update failed');
     }
+  }
+
+  /**
+   * Mise à jour ciblée de champs temporels uniquement,
+   * sans revalider l'ensemble de l'instance.
+   * Réservé aux corrections managériales depuis MemoCorrectionService.
+   */
+  protected async updateTimeFields(fields: {
+    session_start_at?: Date;
+    session_end_at?: Date;
+    session_status?: SessionStatus;
+    total_work_duration?: string;
+    total_pause_duration?: string;
+  }): Promise<void> {
+    if (!this.id) {
+      throw new Error(WORK_SESSIONS_ERRORS?.ID_REQUIRED);
+    }
+
+    const updateData: Record<string, any> = {};
+
+    if (fields.session_start_at !== undefined)
+      updateData[this.db.session_start_at] = fields.session_start_at;
+    if (fields.session_end_at !== undefined)
+      updateData[this.db.session_end_at] = fields.session_end_at;
+    if (fields.session_status !== undefined)
+      updateData[this.db.session_status] = fields.session_status;
+    if (fields.total_work_duration !== undefined)
+      updateData[this.db.total_work_duration] = fields.total_work_duration;
+    if (fields.total_pause_duration !== undefined)
+      updateData[this.db.total_pause_duration] = fields.total_pause_duration;
+
+    if (Object.keys(updateData).length === 0) return;
+
+    const updated = await this.updateOne(this.db.tableName, updateData, { [this.db.id]: this.id });
+
+    if (!updated) {
+      throw new Error(WORK_SESSIONS_ERRORS?.UPDATE_FAILED || 'Session time fields update failed');
+    }
+
+    // Mettre à jour l'instance en mémoire
+    if (fields.session_start_at !== undefined) this.session_start_at = fields.session_start_at;
+    if (fields.session_end_at !== undefined) this.session_end_at = fields.session_end_at;
+    if (fields.session_status !== undefined) this.session_status = fields.session_status;
+    if (fields.total_work_duration !== undefined)
+      this.total_work_duration = fields.total_work_duration;
+    if (fields.total_pause_duration !== undefined)
+      this.total_pause_duration = fields.total_pause_duration;
   }
 
   protected async trash(id: number): Promise<boolean> {
@@ -526,7 +574,6 @@ export default class WorkSessionsModel extends BaseModel {
         this.session_end_at,
       )
     ) {
-      console.log(this.session_start_at, this.session_end_at);
       throw new Error(WORK_SESSIONS_ERRORS.SESSION_DATES_LOGIC_INVALID);
     }
 

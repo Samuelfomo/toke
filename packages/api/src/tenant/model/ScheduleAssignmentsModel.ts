@@ -200,6 +200,38 @@ export default class ScheduleAssignmentsModel extends BaseModel {
     return await this.listAll(conditions, paginationOptions);
   }
 
+  protected async listAllByRelatedOnPeriod(
+    family: SAFamily,
+    related: string,
+    from: string,
+    to: string,
+  ): Promise<any[]> {
+    const conditions = {
+      [this.db.family]: family,
+      [this.db.related]: related,
+      [this.db.active]: true,
+      [Op.or]: [
+        // Le début du bloc est dans la période existante
+        { [this.db.start_date]: { [Op.between]: [from, to] } },
+        // La fin du bloc est dans la période existante
+        { [this.db.end_date]: { [Op.between]: [from, to] } },
+        // Le bloc englobe entièrement la période existante
+        {
+          [Op.and]: [
+            { [this.db.start_date]: { [Op.lte]: from } },
+            {
+              [Op.or]: [
+                { [this.db.end_date]: { [Op.gte]: to } },
+                { [this.db.end_date]: { [Op.is]: null } },
+              ],
+            },
+          ],
+        },
+      ],
+    };
+    return await this.listAll(conditions);
+  }
+
   // ============================================
   // STATISTIQUES
   // ============================================

@@ -36,7 +36,44 @@ router.get(
       if (result.status !== HttpStatus.SUCCESS) {
         return R.handleError(res, result.status, result.response);
       }
-      console.log('result.response', result.response);
+      return R.handleSuccess(res, result.response);
+    } catch (error: any) {
+      return R.handleError(res, HttpStatus.INTERNAL_ERROR, {
+        code: 'search_failed',
+        message: error.message,
+      });
+    }
+  },
+);
+
+router.get(
+  '/attendance/v2/team',
+  TenantConfig.authenticate,
+  Ensure.get(),
+  async (req: Request, res: Response) => {
+    try {
+      const { manager, start_date, end_date } = req.query;
+
+      // Vérification du GUID
+      if (!manager || !UsersValidationUtils.validateGuid(String(manager))) {
+        return R.handleError(res, HttpStatus.BAD_REQUEST, {
+          code: ORG_HIERARCHY_CODES.INVALID_GUID,
+          message: ORG_HIERARCHY_ERRORS.GUID_INVALID,
+        });
+      }
+
+      const client = (req as any).client.reference;
+
+      const result: any = await TimeEntriesService.listEntriesTeamManagerV2(
+        client,
+        String(manager),
+        start_date ? String(start_date) : undefined,
+        end_date ? String(end_date) : undefined,
+      );
+
+      if (result.status !== HttpStatus.SUCCESS) {
+        return R.handleError(res, result.status, result.response);
+      }
       return R.handleSuccess(res, result.response);
     } catch (error: any) {
       return R.handleError(res, HttpStatus.INTERNAL_ERROR, {

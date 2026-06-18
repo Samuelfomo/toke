@@ -29,7 +29,7 @@ export const TimeEntriesDbStructure = {
     },
     session: {
       type: DataTypes.INTEGER,
-      allowNull: false,
+      allowNull: true,
       references: {
         model: tableName.WORK_SESSIONS,
         key: 'id',
@@ -61,7 +61,7 @@ export const TimeEntriesDbStructure = {
     },
     site: {
       type: DataTypes.INTEGER,
-      allowNull: false,
+      allowNull: true,
       references: {
         model: tableName.SITES,
         key: 'id',
@@ -74,6 +74,14 @@ export const TimeEntriesDbStructure = {
       // onUpdate: 'CASCADE',
       onDelete: 'CASCADE',
       comment: 'Sites',
+    },
+    site_name: {
+      type: DataTypes.STRING(255),
+      allowNull: true,
+      validate: {
+        len: [1, 255],
+      },
+      comment: 'Visited Site name',
     },
     pointage_type: {
       type: DataTypes.ENUM(...Object.values(PointageType)),
@@ -117,7 +125,7 @@ export const TimeEntriesDbStructure = {
     },
     // server_received_at: {
     //   type: DataTypes.DATE,
-    //   allowNull: true,
+    //   allowNull: false,
     //   defaultValue: DataTypes.NOW,
     //   validate: {
     //     isDate: true,
@@ -194,6 +202,23 @@ export const TimeEntriesDbStructure = {
         isBoolean: true,
       },
       comment: 'Created offline',
+    },
+    is_fallback_checkin: {
+      type: DataTypes.BOOLEAN,
+      allowNull: false,
+      defaultValue: false,
+      validate: {
+        isBoolean: true,
+      },
+      comment: 'Is fallback checkin',
+    },
+    image_url: {
+      type: DataTypes.STRING(255),
+      allowNull: true,
+      validate: {
+        isUrl: true,
+      },
+      comment: 'Image URL',
     },
     local_id: {
       type: DataTypes.STRING(50),
@@ -323,6 +348,10 @@ export const TimeEntriesDbStructure = {
       {
         fields: ['gps_accuracy'],
         name: 'idx_time_entry_gps_accuracy',
+      },
+      {
+        fields: ['is_fallback_checkin'],
+        name: 'idx_time_entry_is_fallback_checkin',
       },
       {
         fields: ['device_info'],

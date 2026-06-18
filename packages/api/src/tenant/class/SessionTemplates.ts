@@ -453,7 +453,10 @@ export default class SessionTemplate extends SessionTemplateModel {
       return {
         [RS.GUID]: this.guid,
         [RS.NAME]: this.name,
-        [RS.SESSION_MODEL]: sessionModel?.getGuid() || null,
+        [RS.SESSION_MODEL]: {
+          [RS.GUID]: sessionModel?.getGuid() || null,
+          [RS.NAME]: sessionModel?.getName() || null,
+        },
       };
     }
 

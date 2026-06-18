@@ -13,6 +13,15 @@
 │   │   │   ├── clients.json
 │   │   │   └── tenants.json
 │   │   ├── dist
+│   │   │   ├── automate
+│   │   │   │   ├── automate.d.ts
+│   │   │   │   ├── automate.d.ts.map
+│   │   │   │   ├── automate.js
+│   │   │   │   ├── automate.js.map
+│   │   │   │   ├── rotation.cron.d.ts
+│   │   │   │   ├── rotation.cron.d.ts.map
+│   │   │   │   ├── rotation.cron.js
+│   │   │   │   └── rotation.cron.js.map
 │   │   │   ├── master
 │   │   │   │   ├── app.d.ts
 │   │   │   │   ├── app.d.ts.map
@@ -466,6 +475,10 @@
 │   │   │   │   │   ├── Device.d.ts.map
 │   │   │   │   │   ├── Device.js
 │   │   │   │   │   ├── Device.js.map
+│   │   │   │   │   ├── EventLog.d.ts
+│   │   │   │   │   ├── EventLog.d.ts.map
+│   │   │   │   │   ├── EventLog.js
+│   │   │   │   │   ├── EventLog.js.map
 │   │   │   │   │   ├── FraudAlerts.d.ts
 │   │   │   │   │   ├── FraudAlerts.d.ts.map
 │   │   │   │   │   ├── FraudAlerts.js
@@ -494,10 +507,22 @@
 │   │   │   │   │   ├── Role.d.ts.map
 │   │   │   │   │   ├── Role.js
 │   │   │   │   │   ├── Role.js.map
+│   │   │   │   │   ├── RotationAssignmentLog.d.ts
+│   │   │   │   │   ├── RotationAssignmentLog.d.ts.map
+│   │   │   │   │   ├── RotationAssignmentLog.js
+│   │   │   │   │   ├── RotationAssignmentLog.js.map
 │   │   │   │   │   ├── RotationAssignments.d.ts
 │   │   │   │   │   ├── RotationAssignments.d.ts.map
 │   │   │   │   │   ├── RotationAssignments.js
 │   │   │   │   │   ├── RotationAssignments.js.map
+│   │   │   │   │   ├── RotationGroupTemplate.d.ts
+│   │   │   │   │   ├── RotationGroupTemplate.d.ts.map
+│   │   │   │   │   ├── RotationGroupTemplate.js
+│   │   │   │   │   ├── RotationGroupTemplate.js.map
+│   │   │   │   │   ├── RotationGroupTemplateLog.d.ts
+│   │   │   │   │   ├── RotationGroupTemplateLog.d.ts.map
+│   │   │   │   │   ├── RotationGroupTemplateLog.js
+│   │   │   │   │   ├── RotationGroupTemplateLog.js.map
 │   │   │   │   │   ├── RotationGroups.d.ts
 │   │   │   │   │   ├── RotationGroups.d.ts.map
 │   │   │   │   │   ├── RotationGroups.js
@@ -510,6 +535,10 @@
 │   │   │   │   │   ├── ScheduleAssignmentsLog.d.ts.map
 │   │   │   │   │   ├── ScheduleAssignmentsLog.js
 │   │   │   │   │   ├── ScheduleAssignmentsLog.js.map
+│   │   │   │   │   ├── SessionModel.d.ts
+│   │   │   │   │   ├── SessionModel.d.ts.map
+│   │   │   │   │   ├── SessionModel.js
+│   │   │   │   │   ├── SessionModel.js.map
 │   │   │   │   │   ├── SessionTemplates.d.ts
 │   │   │   │   │   ├── SessionTemplates.d.ts.map
 │   │   │   │   │   ├── SessionTemplates.js
@@ -548,6 +577,10 @@
 │   │   │   │   │   │   ├── device.db.d.ts.map
 │   │   │   │   │   │   ├── device.db.js
 │   │   │   │   │   │   ├── device.db.js.map
+│   │   │   │   │   │   ├── event.log.db.d.ts
+│   │   │   │   │   │   ├── event.log.db.d.ts.map
+│   │   │   │   │   │   ├── event.log.db.js
+│   │   │   │   │   │   ├── event.log.db.js.map
 │   │   │   │   │   │   ├── fraud.alerts.db.d.ts
 │   │   │   │   │   │   ├── fraud.alerts.db.d.ts.map
 │   │   │   │   │   │   ├── fraud.alerts.db.js
@@ -576,10 +609,22 @@
 │   │   │   │   │   │   ├── roles.db.d.ts.map
 │   │   │   │   │   │   ├── roles.db.js
 │   │   │   │   │   │   ├── roles.db.js.map
+│   │   │   │   │   │   ├── rotation.assignment.log.db.d.ts
+│   │   │   │   │   │   ├── rotation.assignment.log.db.d.ts.map
+│   │   │   │   │   │   ├── rotation.assignment.log.db.js
+│   │   │   │   │   │   ├── rotation.assignment.log.db.js.map
 │   │   │   │   │   │   ├── rotation.assignments.db.d.ts
 │   │   │   │   │   │   ├── rotation.assignments.db.d.ts.map
 │   │   │   │   │   │   ├── rotation.assignments.db.js
 │   │   │   │   │   │   ├── rotation.assignments.db.js.map
+│   │   │   │   │   │   ├── rotation.group.template.db.d.ts
+│   │   │   │   │   │   ├── rotation.group.template.db.d.ts.map
+│   │   │   │   │   │   ├── rotation.group.template.db.js
+│   │   │   │   │   │   ├── rotation.group.template.db.js.map
+│   │   │   │   │   │   ├── rotation.group.template.log.db.d.ts
+│   │   │   │   │   │   ├── rotation.group.template.log.db.d.ts.map
+│   │   │   │   │   │   ├── rotation.group.template.log.db.js
+│   │   │   │   │   │   ├── rotation.group.template.log.db.js.map
 │   │   │   │   │   │   ├── rotation.groups.db.d.ts
 │   │   │   │   │   │   ├── rotation.groups.db.d.ts.map
 │   │   │   │   │   │   ├── rotation.groups.db.js
@@ -592,6 +637,10 @@
 │   │   │   │   │   │   ├── schedule.assignments.logs.db.d.ts.map
 │   │   │   │   │   │   ├── schedule.assignments.logs.db.js
 │   │   │   │   │   │   ├── schedule.assignments.logs.db.js.map
+│   │   │   │   │   │   ├── session.model.db.d.ts
+│   │   │   │   │   │   ├── session.model.db.d.ts.map
+│   │   │   │   │   │   ├── session.model.db.js
+│   │   │   │   │   │   ├── session.model.db.js.map
 │   │   │   │   │   │   ├── session.templates.db.d.ts
 │   │   │   │   │   │   ├── session.templates.db.d.ts.map
 │   │   │   │   │   │   ├── session.templates.db.js
@@ -645,6 +694,10 @@
 │   │   │   │   │   ├── DeviceModel.d.ts.map
 │   │   │   │   │   ├── DeviceModel.js
 │   │   │   │   │   ├── DeviceModel.js.map
+│   │   │   │   │   ├── EventLogModel.d.ts
+│   │   │   │   │   ├── EventLogModel.d.ts.map
+│   │   │   │   │   ├── EventLogModel.js
+│   │   │   │   │   ├── EventLogModel.js.map
 │   │   │   │   │   ├── FraudAlertsModel.d.ts
 │   │   │   │   │   ├── FraudAlertsModel.d.ts.map
 │   │   │   │   │   ├── FraudAlertsModel.js
@@ -673,10 +726,22 @@
 │   │   │   │   │   ├── RoleModel.d.ts.map
 │   │   │   │   │   ├── RoleModel.js
 │   │   │   │   │   ├── RoleModel.js.map
+│   │   │   │   │   ├── RotationAssignmentLogModel.d.ts
+│   │   │   │   │   ├── RotationAssignmentLogModel.d.ts.map
+│   │   │   │   │   ├── RotationAssignmentLogModel.js
+│   │   │   │   │   ├── RotationAssignmentLogModel.js.map
 │   │   │   │   │   ├── RotationAssignmentsModel.d.ts
 │   │   │   │   │   ├── RotationAssignmentsModel.d.ts.map
 │   │   │   │   │   ├── RotationAssignmentsModel.js
 │   │   │   │   │   ├── RotationAssignmentsModel.js.map
+│   │   │   │   │   ├── RotationGroupTemplateLogModel.d.ts
+│   │   │   │   │   ├── RotationGroupTemplateLogModel.d.ts.map
+│   │   │   │   │   ├── RotationGroupTemplateLogModel.js
+│   │   │   │   │   ├── RotationGroupTemplateLogModel.js.map
+│   │   │   │   │   ├── RotationGroupTemplateModel.d.ts
+│   │   │   │   │   ├── RotationGroupTemplateModel.d.ts.map
+│   │   │   │   │   ├── RotationGroupTemplateModel.js
+│   │   │   │   │   ├── RotationGroupTemplateModel.js.map
 │   │   │   │   │   ├── RotationGroupsModel.d.ts
 │   │   │   │   │   ├── RotationGroupsModel.d.ts.map
 │   │   │   │   │   ├── RotationGroupsModel.js
@@ -689,6 +754,10 @@
 │   │   │   │   │   ├── ScheduleAssignmentsModel.d.ts.map
 │   │   │   │   │   ├── ScheduleAssignmentsModel.js
 │   │   │   │   │   ├── ScheduleAssignmentsModel.js.map
+│   │   │   │   │   ├── SessionModelModel.d.ts
+│   │   │   │   │   ├── SessionModelModel.d.ts.map
+│   │   │   │   │   ├── SessionModelModel.js
+│   │   │   │   │   ├── SessionModelModel.js.map
 │   │   │   │   │   ├── SessionTemplatesModel.d.ts
 │   │   │   │   │   ├── SessionTemplatesModel.d.ts.map
 │   │   │   │   │   ├── SessionTemplatesModel.js
@@ -714,6 +783,10 @@
 │   │   │   │   │   ├── WorkSessionsModel.js
 │   │   │   │   │   └── WorkSessionsModel.js.map
 │   │   │   │   ├── routes
+│   │   │   │   │   ├── attendance.stat.route.d.ts
+│   │   │   │   │   ├── attendance.stat.route.d.ts.map
+│   │   │   │   │   ├── attendance.stat.route.js
+│   │   │   │   │   ├── attendance.stat.route.js.map
 │   │   │   │   │   ├── audit.logs.route.d.ts
 │   │   │   │   │   ├── audit.logs.route.d.ts.map
 │   │   │   │   │   ├── audit.logs.route.js
@@ -770,6 +843,10 @@
 │   │   │   │   │   ├── schedule.assignments.route.d.ts.map
 │   │   │   │   │   ├── schedule.assignments.route.js
 │   │   │   │   │   ├── schedule.assignments.route.js.map
+│   │   │   │   │   ├── session.model.route.d.ts
+│   │   │   │   │   ├── session.model.route.d.ts.map
+│   │   │   │   │   ├── session.model.route.js
+│   │   │   │   │   ├── session.model.route.js.map
 │   │   │   │   │   ├── session.templates.route.d.ts
 │   │   │   │   │   ├── session.templates.route.d.ts.map
 │   │   │   │   │   ├── session.templates.route.js
@@ -851,6 +928,10 @@
 │   │   │   │   ├── http-status.d.ts.map
 │   │   │   │   ├── http-status.js
 │   │   │   │   ├── http-status.js.map
+│   │   │   │   ├── memo.correction.service.d.ts
+│   │   │   │   ├── memo.correction.service.d.ts.map
+│   │   │   │   ├── memo.correction.service.js
+│   │   │   │   ├── memo.correction.service.js.map
 │   │   │   │   ├── notification.service.d.ts
 │   │   │   │   ├── notification.service.d.ts.map
 │   │   │   │   ├── notification.service.js
@@ -934,7 +1015,8 @@
 │   │   │       ├── geo.utils.js.map
 │   │   │       ├── prive
 │   │   │       │   ├── GoogleService-Info.plist
-│   │   │       │   └── google-services.json
+│   │   │       │   ├── google-services.json
+│   │   │       │   └── tokenotification-firebase-adminsdk-fbsvc-6b764c3800.json
 │   │   │       ├── regex.validator.d.ts
 │   │   │       ├── regex.validator.d.ts.map
 │   │   │       ├── regex.validator.js
@@ -960,6 +1042,8 @@
 │   │   │   ├── Fonctionnement du Paiement et Renouvellement des Licences TOKÉ.md.html
 │   │   │   ├── Guide_integration_Envoie_de_code_OTP.pdf
 │   │   │   ├── Rest doc API
+│   │   │   │   ├── mermaid-diagram.png
+│   │   │   │   ├── toke_planning_class_diagram.svg
 │   │   │   │   ├── 📘 Documentation API REST - TOKÉ.md (2).html
 │   │   │   │   ├── 📘 Documentation API REST - TOKÉ.md.html
 │   │   │   │   ├── 📘 Documentation API REST - TOKÉ1.md.html
@@ -967,6 +1051,16 @@
 │   │   │   │   ├── 📘 TOKÉ API - LICENCES GLOBALES3.md.html
 │   │   │   │   └── 📘 TOKÉ API - TENANTS.md2.html
 │   │   │   ├── automatique migration avis .pdf
+│   │   │   ├── client
+│   │   │   │   ├── TOKE_INTEGRATION_REFERENCE.md
+│   │   │   │   ├── TOKE_SPEC_PLANNING_CC_v1.html
+│   │   │   │   ├── TOKE_Section0_Existant.docx
+│   │   │   │   └── lmt
+│   │   │   │       ├── PLANNINGS AE_DA_BO_S20_2026.xlsm
+│   │   │   │       ├── Plannings_LMT_S20_2026.xlsx
+│   │   │   │       ├── WhatsApp Image 2026-04-13 at 15.27.48.jpeg
+│   │   │   │       ├── toke.jpeg
+│   │   │   │       └── toké-main-logo.svg
 │   │   │   ├── config smtp server(postfix).md.html
 │   │   │   ├── gestion contracts.html
 │   │   │   ├── gestion des contracts de travails.html
@@ -989,8 +1083,17 @@
 │   │   │   │   │   └── test_guide_after_fix.md
 │   │   │   │   └── files.zip
 │   │   │   ├── mise en place de pgBouncer outils postgrsql d'optimisation des pools de connexion.md
+│   │   │   ├── rapport
+│   │   │   │   └── 02_Toke_App_Manager.docx
 │   │   │   ├── rotation_assignments_versioning_doc.docx
+│   │   │   ├── statistiques
+│   │   │   │   ├── Statistiques_de_Pointage_-_MVP_Simple__2h_d_impl_mentation_.html
+│   │   │   │   ├── Toke_Referentiel_KPIs.docx
+│   │   │   │   ├── ___TOK__-_Liste_des_Fonctionnalit_s___Impl_menter.html
+│   │   │   │   └── ___TOK__-_PR_SENTATION_DU_POINTAGE_EMPLOY_.html
 │   │   │   ├── tenant.sql
+│   │   │   ├── test
+│   │   │   │   └── backend-problem
 │   │   │   ├── toke API.postman_collection.json
 │   │   │   ├── toke-app-manager-api-guide.html
 │   │   │   ├── toke-pointage-employee-doc.html
@@ -998,6 +1101,7 @@
 │   │   │   ├── toke-syst-gestion-licences.html
 │   │   │   ├── toke_contract_SFD_developer.md
 │   │   │   ├── toke_contract_SFD_developer_fr.md
+│   │   │   ├── toke_planning_documentation.docx
 │   │   │   ├── 📋 Comportements Attendus du Système de Licence TOKÉ.md.html
 │   │   │   └── 🚀 Toké App Manager API.postman_collection.json
 │   │   ├── ecosystem.config.cjs
@@ -1034,6 +1138,9 @@
 │   │   │   ├── testTokenGeneration.js
 │   │   │   └── testTokenGeneration.ts
 │   │   ├── src
+│   │   │   ├── automate
+│   │   │   │   ├── automate.ts
+│   │   │   │   └── rotation.cron.ts
 │   │   │   ├── master
 │   │   │   │   ├── Project-structure.txt
 │   │   │   │   ├── app.ts
@@ -1159,6 +1266,7 @@
 │   │   │   │   │   ├── AuditLogs.ts
 │   │   │   │   │   ├── Department.ts
 │   │   │   │   │   ├── Device.ts
+│   │   │   │   │   ├── EventLog.ts
 │   │   │   │   │   ├── FraudAlerts.ts
 │   │   │   │   │   ├── Groups.ts
 │   │   │   │   │   ├── Memos.ts
@@ -1166,10 +1274,14 @@
 │   │   │   │   │   ├── Poste.ts
 │   │   │   │   │   ├── QrCodeGeneration.ts
 │   │   │   │   │   ├── Role.ts
+│   │   │   │   │   ├── RotationAssignmentLog.ts
 │   │   │   │   │   ├── RotationAssignments.ts
+│   │   │   │   │   ├── RotationGroupTemplate.ts
+│   │   │   │   │   ├── RotationGroupTemplateLog.ts
 │   │   │   │   │   ├── RotationGroups.ts
 │   │   │   │   │   ├── ScheduleAssignments.ts
 │   │   │   │   │   ├── ScheduleAssignmentsLog.ts
+│   │   │   │   │   ├── SessionModel.ts
 │   │   │   │   │   ├── SessionTemplates.ts
 │   │   │   │   │   ├── Site.ts
 │   │   │   │   │   ├── TimeEntries.ts
@@ -1181,6 +1293,7 @@
 │   │   │   │   │   │   ├── audit.logs.db.ts
 │   │   │   │   │   │   ├── department.db.ts
 │   │   │   │   │   │   ├── device.db.ts
+│   │   │   │   │   │   ├── event.log.db.ts
 │   │   │   │   │   │   ├── fraud.alerts.db.ts
 │   │   │   │   │   │   ├── groups.db.ts
 │   │   │   │   │   │   ├── memos.db.ts
@@ -1188,10 +1301,14 @@
 │   │   │   │   │   │   ├── poste.db.ts
 │   │   │   │   │   │   ├── qr.code.generation.db.ts
 │   │   │   │   │   │   ├── roles.db.ts
+│   │   │   │   │   │   ├── rotation.assignment.log.db.ts
 │   │   │   │   │   │   ├── rotation.assignments.db.ts
+│   │   │   │   │   │   ├── rotation.group.template.db.ts
+│   │   │   │   │   │   ├── rotation.group.template.log.db.ts
 │   │   │   │   │   │   ├── rotation.groups.db.ts
 │   │   │   │   │   │   ├── schedule.assignments.db.ts
 │   │   │   │   │   │   ├── schedule.assignments.logs.db.ts
+│   │   │   │   │   │   ├── session.model.db.ts
 │   │   │   │   │   │   ├── session.templates.db.ts
 │   │   │   │   │   │   ├── sites.db.ts
 │   │   │   │   │   │   ├── time.entries.db.ts
@@ -1206,6 +1323,7 @@
 │   │   │   │   │   ├── AuditLogsModel.ts
 │   │   │   │   │   ├── DepartmentModel.ts
 │   │   │   │   │   ├── DeviceModel.ts
+│   │   │   │   │   ├── EventLogModel.ts
 │   │   │   │   │   ├── FraudAlertsModel.ts
 │   │   │   │   │   ├── GroupsModel.ts
 │   │   │   │   │   ├── MemosModel.ts
@@ -1213,10 +1331,14 @@
 │   │   │   │   │   ├── PosteModel.ts
 │   │   │   │   │   ├── QrCodeGenerationModel.ts
 │   │   │   │   │   ├── RoleModel.ts
+│   │   │   │   │   ├── RotationAssignmentLogModel.ts
 │   │   │   │   │   ├── RotationAssignmentsModel.ts
+│   │   │   │   │   ├── RotationGroupTemplateLogModel.ts
+│   │   │   │   │   ├── RotationGroupTemplateModel.ts
 │   │   │   │   │   ├── RotationGroupsModel.ts
 │   │   │   │   │   ├── ScheduleAssignmentsLogModel.ts
 │   │   │   │   │   ├── ScheduleAssignmentsModel.ts
+│   │   │   │   │   ├── SessionModelModel.ts
 │   │   │   │   │   ├── SessionTemplatesModel.ts
 │   │   │   │   │   ├── SiteModel.ts
 │   │   │   │   │   ├── TimeEntriesModel.ts
@@ -1224,6 +1346,7 @@
 │   │   │   │   │   ├── UserRoleModel.ts
 │   │   │   │   │   └── WorkSessionsModel.ts
 │   │   │   │   ├── routes
+│   │   │   │   │   ├── attendance.stat.route.ts
 │   │   │   │   │   ├── audit.logs.route.ts
 │   │   │   │   │   ├── auth.route.ts
 │   │   │   │   │   ├── department.route.ts
@@ -1238,6 +1361,7 @@
 │   │   │   │   │   ├── rotation.assignments.route.ts
 │   │   │   │   │   ├── rotation.groups.route.ts
 │   │   │   │   │   ├── schedule.assignments.route.ts
+│   │   │   │   │   ├── session.model.route.ts
 │   │   │   │   │   ├── session.templates.route.ts
 │   │   │   │   │   ├── sites.route.ts
 │   │   │   │   │   ├── statistique.interface.ts
@@ -1259,6 +1383,7 @@
 │   │   │   │   ├── employee.license.service.ts
 │   │   │   │   ├── glossary.ts
 │   │   │   │   ├── http-status.ts
+│   │   │   │   ├── memo.correction.service.ts
 │   │   │   │   ├── notification.service.ts
 │   │   │   │   ├── otp-cache.service.ts
 │   │   │   │   ├── response.ts
@@ -1341,6 +1466,10 @@
 │   │   │       │   ├── schedule.route.d.ts.map
 │   │   │       │   ├── schedule.route.js
 │   │   │       │   ├── schedule.route.js.map
+│   │   │       │   ├── session.model.route.d.ts
+│   │   │       │   ├── session.model.route.d.ts.map
+│   │   │       │   ├── session.model.route.js
+│   │   │       │   ├── session.model.route.js.map
 │   │   │       │   ├── site.route.d.ts
 │   │   │       │   ├── site.route.d.ts.map
 │   │   │       │   ├── site.route.js
@@ -1386,6 +1515,10 @@
 │   │   │       │   ├── schedule.service.d.ts.map
 │   │   │       │   ├── schedule.service.js
 │   │   │       │   ├── schedule.service.js.map
+│   │   │       │   ├── session.model.d.ts
+│   │   │       │   ├── session.model.d.ts.map
+│   │   │       │   ├── session.model.js
+│   │   │       │   ├── session.model.js.map
 │   │   │       │   ├── site.service.d.ts
 │   │   │       │   ├── site.service.d.ts.map
 │   │   │       │   ├── site.service.js
@@ -1422,6 +1555,7 @@
 │   │   │   │   ├── rotation.groups.route.ts
 │   │   │   │   ├── schedule.assignments.route.ts
 │   │   │   │   ├── schedule.route.ts
+│   │   │   │   ├── session.model.route.ts
 │   │   │   │   ├── site.route.ts
 │   │   │   │   ├── tenant.route.ts
 │   │   │   │   ├── time.entries.route.ts
@@ -1434,6 +1568,7 @@
 │   │   │   │   ├── rotation.group.service.ts
 │   │   │   │   ├── schedule.assignment.service.ts
 │   │   │   │   ├── schedule.service.ts
+│   │   │   │   ├── session.model.ts
 │   │   │   │   ├── site.service.ts
 │   │   │   │   ├── tenant.service.ts
 │   │   │   │   ├── time.entries.service.ts
@@ -1491,10 +1626,6 @@
 │   │   ├── README.md
 │   │   ├── dist
 │   │   │   ├── constants
-│   │   │   │   ├── App config.d.ts
-│   │   │   │   ├── App config.d.ts.map
-│   │   │   │   ├── App config.js
-│   │   │   │   ├── App config.js.map
 │   │   │   │   ├── activity.monitoring.d.ts
 │   │   │   │   ├── activity.monitoring.d.ts.map
 │   │   │   │   ├── activity.monitoring.js
@@ -1572,10 +1703,6 @@
 │   │   │   │   │   ├── audit.logs.d.ts.map
 │   │   │   │   │   ├── audit.logs.js
 │   │   │   │   │   ├── audit.logs.js.map
-│   │   │   │   │   ├── departement.d.ts
-│   │   │   │   │   ├── departement.d.ts.map
-│   │   │   │   │   ├── departement.js
-│   │   │   │   │   ├── departement.js.map
 │   │   │   │   │   ├── department.d.ts
 │   │   │   │   │   ├── department.d.ts.map
 │   │   │   │   │   ├── department.js
@@ -1624,10 +1751,10 @@
 │   │   │   │   │   ├── schedule.assignments.d.ts.map
 │   │   │   │   │   ├── schedule.assignments.js
 │   │   │   │   │   ├── schedule.assignments.js.map
-│   │   │   │   │   ├── schedule.exceptions.d.ts
-│   │   │   │   │   ├── schedule.exceptions.d.ts.map
-│   │   │   │   │   ├── schedule.exceptions.js
-│   │   │   │   │   ├── schedule.exceptions.js.map
+│   │   │   │   │   ├── session.model.d.ts
+│   │   │   │   │   ├── session.model.d.ts.map
+│   │   │   │   │   ├── session.model.js
+│   │   │   │   │   ├── session.model.js.map
 │   │   │   │   │   ├── session.templates.d.ts
 │   │   │   │   │   ├── session.templates.d.ts.map
 │   │   │   │   │   ├── session.templates.js
@@ -1636,10 +1763,6 @@
 │   │   │   │   │   ├── sites.d.ts.map
 │   │   │   │   │   ├── sites.js
 │   │   │   │   │   ├── sites.js.map
-│   │   │   │   │   ├── teams.d.ts
-│   │   │   │   │   ├── teams.d.ts.map
-│   │   │   │   │   ├── teams.js
-│   │   │   │   │   ├── teams.js.map
 │   │   │   │   │   ├── time.entries.d.ts
 │   │   │   │   │   ├── time.entries.d.ts.map
 │   │   │   │   │   ├── time.entries.js
@@ -1782,10 +1905,10 @@
 │   │   │   │   │   ├── schedule.assignments.d.ts.map
 │   │   │   │   │   ├── schedule.assignments.js
 │   │   │   │   │   ├── schedule.assignments.js.map
-│   │   │   │   │   ├── schedule.exceptions.d.ts
-│   │   │   │   │   ├── schedule.exceptions.d.ts.map
-│   │   │   │   │   ├── schedule.exceptions.js
-│   │   │   │   │   ├── schedule.exceptions.js.map
+│   │   │   │   │   ├── session.model.d.ts
+│   │   │   │   │   ├── session.model.d.ts.map
+│   │   │   │   │   ├── session.model.js
+│   │   │   │   │   ├── session.model.js.map
 │   │   │   │   │   ├── session.templates.d.ts
 │   │   │   │   │   ├── session.templates.d.ts.map
 │   │   │   │   │   ├── session.templates.js
@@ -1794,10 +1917,6 @@
 │   │   │   │   │   ├── sites.d.ts.map
 │   │   │   │   │   ├── sites.js
 │   │   │   │   │   ├── sites.js.map
-│   │   │   │   │   ├── teams.d.ts
-│   │   │   │   │   ├── teams.d.ts.map
-│   │   │   │   │   ├── teams.js
-│   │   │   │   │   ├── teams.js.map
 │   │   │   │   │   ├── time.entries.d.ts
 │   │   │   │   │   ├── time.entries.d.ts.map
 │   │   │   │   │   ├── time.entries.js
@@ -1813,11 +1932,7 @@
 │   │   │   │   │   ├── work.sessions.d.ts
 │   │   │   │   │   ├── work.sessions.d.ts.map
 │   │   │   │   │   ├── work.sessions.js
-│   │   │   │   │   ├── work.sessions.js.map
-│   │   │   │   │   ├── work_sessions.d.ts
-│   │   │   │   │   ├── work_sessions.d.ts.map
-│   │   │   │   │   ├── work_sessions.js
-│   │   │   │   │   └── work_sessions.js.map
+│   │   │   │   │   └── work.sessions.js.map
 │   │   │   │   ├── tenant.d.ts
 │   │   │   │   ├── tenant.d.ts.map
 │   │   │   │   ├── tenant.js
@@ -1872,10 +1987,6 @@
 │   │   │   │   │   ├── site.d.ts.map
 │   │   │   │   │   ├── site.js
 │   │   │   │   │   ├── site.js.map
-│   │   │   │   │   ├── teams.d.ts
-│   │   │   │   │   ├── teams.d.ts.map
-│   │   │   │   │   ├── teams.js
-│   │   │   │   │   ├── teams.js.map
 │   │   │   │   │   ├── work.sessions.d.ts
 │   │   │   │   │   ├── work.sessions.d.ts.map
 │   │   │   │   │   ├── work.sessions.js
@@ -1998,10 +2109,10 @@
 │   │   │       │   ├── schedule.assignments.validation.d.ts.map
 │   │   │       │   ├── schedule.assignments.validation.js
 │   │   │       │   ├── schedule.assignments.validation.js.map
-│   │   │       │   ├── schedule.exceptions.validation.d.ts
-│   │   │       │   ├── schedule.exceptions.validation.d.ts.map
-│   │   │       │   ├── schedule.exceptions.validation.js
-│   │   │       │   ├── schedule.exceptions.validation.js.map
+│   │   │       │   ├── session.model.validation.d.ts
+│   │   │       │   ├── session.model.validation.d.ts.map
+│   │   │       │   ├── session.model.validation.js
+│   │   │       │   ├── session.model.validation.js.map
 │   │   │       │   ├── session.templates.validation.d.ts
 │   │   │       │   ├── session.templates.validation.d.ts.map
 │   │   │       │   ├── session.templates.validation.js
@@ -2010,10 +2121,6 @@
 │   │   │       │   ├── sites.validation.d.ts.map
 │   │   │       │   ├── sites.validation.js
 │   │   │       │   ├── sites.validation.js.map
-│   │   │       │   ├── teams.validation.d.ts
-│   │   │       │   ├── teams.validation.d.ts.map
-│   │   │       │   ├── teams.validation.js
-│   │   │       │   ├── teams.validation.js.map
 │   │   │       │   ├── time.entries.validation.d.ts
 │   │   │       │   ├── time.entries.validation.d.ts.map
 │   │   │       │   ├── time.entries.validation.js
@@ -2073,6 +2180,7 @@
 │   │   │   │   │   ├── rotation.assignments.ts
 │   │   │   │   │   ├── rotation.groups.ts
 │   │   │   │   │   ├── schedule.assignments.ts
+│   │   │   │   │   ├── session.model.ts
 │   │   │   │   │   ├── session.templates.ts
 │   │   │   │   │   ├── sites.ts
 │   │   │   │   │   ├── time.entries.ts
@@ -2112,6 +2220,7 @@
 │   │   │   │   │   ├── rotation.assignments.ts
 │   │   │   │   │   ├── rotation.groups.ts
 │   │   │   │   │   ├── schedule.assignments.ts
+│   │   │   │   │   ├── session.model.ts
 │   │   │   │   │   ├── session.templates.ts
 │   │   │   │   │   ├── sites.ts
 │   │   │   │   │   ├── time.entries.ts
@@ -2165,6 +2274,7 @@
 │   │   │       │   ├── rotation.assignments.validation.ts
 │   │   │       │   ├── rotation.groups.validation.ts
 │   │   │       │   ├── schedule.assignments.validation.ts
+│   │   │       │   ├── session.model.validation.ts
 │   │   │       │   ├── session.templates.validation.ts
 │   │   │       │   ├── sites.validation.ts
 │   │   │       │   ├── time.entries.validation.ts
@@ -2177,4 +2287,4 @@
 │   └── test.js
 └── tsconfig.json
 
-98 directories, 2080 files
+105 directories, 2183 files
