@@ -191,22 +191,22 @@
           </div>
         </div>
 
-        <!-- 5. Détail pointage employé sélectionné (panel latéral conditionnel) -->
-        <transition name="slide-up">
-          <div
-              v-if="selectedEmployee"
-              class="fixed bottom-0 left-0 right-0 z-50 bg-white border-t border-slate-200
-                   shadow-2xl rounded-t-2xl max-h-[70vh] overflow-y-auto
-                   xl:static xl:rounded-2xl xl:shadow-sm xl:border xl:max-h-none xl:overflow-visible"
-          >
-            <EmployeeViewPointage
-                :employees="displayedEmployees"
-                :selected-employee="selectedEmployee as any"
-                @employee-click="handleEmployeeClick"
-                @close="closeEmployeePanel"
-            />
-          </div>
-        </transition>
+<!--        &lt;!&ndash; 5. Détail pointage employé sélectionné (panel latéral conditionnel) &ndash;&gt;-->
+<!--        <transition name="slide-up">-->
+<!--          <div-->
+<!--              v-if="selectedEmployee"-->
+<!--              class="fixed bottom-0 left-0 right-0 z-50 bg-white border-t border-slate-200-->
+<!--                   shadow-2xl rounded-t-2xl max-h-[70vh] overflow-y-auto-->
+<!--                   xl:static xl:rounded-2xl xl:shadow-sm xl:border xl:max-h-none xl:overflow-visible"-->
+<!--          >-->
+<!--            <EmployeeViewPointage-->
+<!--                :employees="displayedEmployees"-->
+<!--                :selected-employee="selectedEmployee as any"-->
+<!--                @employee-click="handleEmployeeClick"-->
+<!--                @close="closeEmployeePanel"-->
+<!--            />-->
+<!--          </div>-->
+<!--        </transition>-->
 
       </template>
     </main>
@@ -223,7 +223,7 @@ import DashboardHero       from '../dashboard/dashboardHero.vue'
 import DashboardStats      from '../dashboard/dashboardStats.vue'
 import EmployeeList        from '../dashboard/employeeList.vue'
 import AttendanceTimeline  from '../dashboard/attendanceTimeline.vue'
-import EmployeeViewPointage from '../dashboard/employeeViewPointage.vue'
+// import EmployeeViewPointage from '../dashboard/employeeViewPointage.vue'
 import Header from '../components/header.vue'
 import Footer from '../components/footer.vue'
 import type {
@@ -232,6 +232,9 @@ import type {
 } from '@/utils/interfaces/stat.interface'
 import HeadBuilder from '@/utils/HeadBuilder'
 import statsCss    from '../../assets/css/toke-dMain-04.css?url'
+
+import { useRouter } from 'vue-router'
+const router = useRouter()
 
 // ── Interface locale filtre ───────────────────────────────────────────────────
 interface EmployeeForFilter {
@@ -331,9 +334,11 @@ const handleFilterChange = async (filters: {
 }
 
 const handleEmployeeClick = (employee: TransformedEmployee) => {
-  // Toggle : re-cliquer ferme le panel
-  selectedEmployee.value =
-      selectedEmployee.value?.guid === employee.guid ? null : employee
+  // // Toggle : re-cliquer ferme le panel
+  // selectedEmployee.value =
+  //     selectedEmployee.value?.guid === employee.guid ? null : employee
+
+  router.push(`/pointages?employee=${employee.guid}`)
 }
 
 const handleMemoClick = (employee: TransformedEmployee) => {

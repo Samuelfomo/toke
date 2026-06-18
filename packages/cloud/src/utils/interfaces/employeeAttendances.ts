@@ -45,6 +45,9 @@ export interface PointageEntry {
     within_geofence: boolean;
     has_anomalies: boolean;
     fraud_score: number;
+    site_name: string | null;
+    is_fallback_checkin: boolean;
+    image_url: string | null;
 }
 
 export interface User {

@@ -61,7 +61,6 @@
     <SuggestionPreview
         v-if="activeSuggestion"
         :suggestion="activeSuggestion"
-        :calendar-days="calendarDays"
         :available-templates="availableTemplates"
         @close="activeSuggestion = null"
         @approved="onSuggestionApproved"
@@ -82,6 +81,10 @@
           <IconSparkles v-else :size="14" />
           Générer suggestion
         </button>
+        <p v-if="suggestionError" class="text-xs text-red-500 mt-2 flex items-center gap-1.5">
+          <IconAlertCircle :size="12" class="flex-shrink-0" />
+          {{ suggestionError }}
+        </p>
       </div>
 
     <!-- ── Barre de filtres ── -->
@@ -487,8 +490,8 @@ import {
   IconCalendarStats, IconChevronRight, IconPlus, IconLoader2,
   IconUser, IconUsers, IconFilter, IconSearch, IconArrowRight,
   IconPower, IconAlertTriangle, IconSparkles,
-  IconUpload, IconChevronDown, IconEye, IconTable,
-  IconFile, IconFileText, IconClock,
+  IconUpload, IconChevronDown, IconTable,
+  IconFile, IconFileText, IconAlertCircle,
 } from '@tabler/icons-vue'
 
 import ScheduleAssignmentService from '@/service/ScheduleAssignment'
@@ -629,18 +632,6 @@ const programmeTitre = computed(() => {
 })
 
 // ── Cibles disponibles ─────────────────────────────────────────────────────
-// const availableTargets = computed(() => {
-//   const map = new Map<string, string>()
-//   for (const a of allAssignments.value) {
-//     if (a.family !== filterType.value) continue
-//     if (!map.has(a.related.guid)) map.set(a.related.guid, getTargetName(a))
-//   }
-//   return Array.from(map.entries())
-//       .map(([guid, name]) => ({ guid, name }))
-//       .filter((t) => !searchQuery.value || t.name.toLowerCase().includes(searchQuery.value.toLowerCase()))
-//       .sort((a, b) => a.name.localeCompare(b.name))
-// })
-
 function isInActivePeriod(a: IScheduleAssignment): boolean {
   const aStart = new Date(a.start_date)
   const aEnd   = a.end_date ? new Date(a.end_date) : new Date('2099-12-31')
@@ -694,19 +685,6 @@ const availableTargets = computed(() => {
 })
 
 // ── Affectations filtrées ──────────────────────────────────────────────────
-// const filteredAssignments = computed(() => {
-//   return allAssignments.value.filter((a) => {
-//     if (a.family !== filterType.value) return false
-//     if (selectedTargetGuid.value && a.related.guid !== selectedTargetGuid.value) return false
-//     if (filterStatus.value === 'active'   && !a.active) return false
-//     if (filterStatus.value === 'inactive' &&  a.active) return false
-//     const aStart = new Date(a.start_date)
-//     const aEnd   = a.end_date ? new Date(a.end_date) : new Date('2099-12-31')
-//     const pFrom  = new Date(periodFrom.value)
-//     const pTo    = new Date(periodTo.value)
-//     return aStart <= pTo && aEnd >= pFrom
-//   })
-// })
 const filteredAssignments = computed(() => {
   return allAssignments.value.filter((a) => {
     // Filtre statut actif/inactif
@@ -744,54 +722,6 @@ interface FlatMember {
   groupName: string | null   // null = employé direct, sinon nom du groupe
   schedule:  Record<string, { work: [string, string]; pause?: [string, string] }[]>
 }
-
-// const allFlatMembers = computed<FlatMember[]>(() => {
-//   const result: FlatMember[] = []
-//   const seen = new Set<string>()
-//
-//   for (const a of filteredAssignments.value) {
-//     const tpl = resolveFullTemplate(a)
-//     const schedule: FlatMember['schedule'] = {}
-//     if (tpl?.definition) {
-//       for (const key of DAY_ORDER) {
-//         const blocks = tpl.definition[key]
-//         if (blocks && Array.isArray(blocks) && blocks.length > 0) {
-//           schedule[key] = blocks.map((b: any) => ({
-//             work:  [b.work[0], b.work[1]] as [string, string],
-//             pause: b.pause ? [b.pause[0], b.pause[1]] as [string, string] : undefined,
-//           }))
-//         }
-//       }
-//     }
-//
-//     if (isGroupAssignment(a)) {
-//       for (const m of a.related.members.items) {
-//         if (!seen.has(m.user.guid)) {
-//           seen.add(m.user.guid)
-//           result.push({
-//             guid: m.user.guid,
-//             name: `${m.user.first_name} ${m.user.last_name}`.trim(),
-//             code: m.user.employee_code ?? '',
-//             groupName: a.related.name,
-//             schedule,
-//           })
-//         }
-//       }
-//     } else if (isUserAssignment(a)) {
-//       if (!seen.has(a.related.guid)) {
-//         seen.add(a.related.guid)
-//         result.push({
-//           guid: a.related.guid,
-//           name: `${a.related.first_name} ${a.related.last_name}`.trim(),
-//           code: a.related.employee_code ?? '',
-//           groupName: null,
-//           schedule,
-//         })
-//       }
-//     }
-//   }
-//   return result.sort((a, b) => a.name.localeCompare(b.name, 'fr'))
-// })
 
 const allFlatMembers = computed<FlatMember[]>(() => {
   const result: FlatMember[] = []
@@ -990,18 +920,6 @@ async function doDeactivate() {
 
 function onSaved() { showForm.value = false; load() }
 
-// async function handleExportPDF() {
-//   if (!canExport.value) return
-//   exportLoading.value = 'pdf'; exportDropdownOpen.value = false
-//   try {
-//     await ScheduleAssignmentService.exportPDF({
-//       targetGuid: selectedTargetGuid.value, targetType: filterType.value,
-//       periodFrom: periodFrom.value, periodTo: periodTo.value,
-//       assignmentGuid: filteredAssignments.value[0]?.guid ?? '',
-//     })
-//   } finally { exportLoading.value = null }
-// }
-
 async function handleExportPDF() {
   if (!canExport.value) return
   exportLoading.value = 'pdf'; exportDropdownOpen.value = false
@@ -1046,12 +964,13 @@ function onDocumentClick(e: MouseEvent) {
 const activeSuggestion    = ref<ISuggestion | null>(null)
 const suggestionLoading   = ref(false)
 const availableTemplates  = ref<{ guid: string; name: string, definition?: any }[]>([])
+const suggestionError = ref<string | null>(null)
 
 async function handleGenerateSuggestion() {
   if (!userStore.user?.guid) return
   suggestionLoading.value = true
+  suggestionError.value   = null
   try {
-    // Charger les templates disponibles si pas encore chargés
     if (!availableTemplates.value.length) {
       const tRes = await SessionTemplateService.list()
       if (tRes?.success) {
@@ -1064,7 +983,12 @@ async function handleGenerateSuggestion() {
       period_from: periodFrom.value,
       period_to:   periodTo.value,
     })
-    if (res?.success) activeSuggestion.value = res.data.suggestion
+    activeSuggestion.value = res.data.suggestion
+  } catch (error: any) {
+    // Extraire le message lisible depuis "HTTP 422 - Aucun employé..."
+    const raw = error?.message ?? ''
+    const msg = raw.includes(' - ') ? raw.split(' - ').slice(1).join(' - ') : raw
+    suggestionError.value = msg || 'Une erreur est survenue lors de la génération.'
   } finally {
     suggestionLoading.value = false
   }
@@ -1078,9 +1002,16 @@ function onSuggestionItemPatched(updatedItem: ISuggestionItem) {
 
 async function onRegenerateSuggestion() {
   if (!activeSuggestion.value) return
-  await ScheduleSuggestionService.delete(activeSuggestion.value.guid)
-  activeSuggestion.value = null
-  await handleGenerateSuggestion()
+  suggestionError.value = null
+  try {
+    await ScheduleSuggestionService.delete(activeSuggestion.value.guid)
+    activeSuggestion.value = null
+    await handleGenerateSuggestion()
+  } catch (error: any) {
+    const raw = error?.message ?? ''
+    const msg = raw.includes(' - ') ? raw.split(' - ').slice(1).join(' - ') : raw
+    suggestionError.value = msg || 'Erreur lors de la regénération.'
+  }
 }
 
 function onSuggestionApproved() {

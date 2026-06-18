@@ -5,6 +5,7 @@ import { createRouter, createWebHistory, RouteRecordRaw } from 'vue-router'
 import Auth from './views/auth.vue'
 import Otp from './views/otp.vue'
 import DashboardMain from './views/dashboard/dashboardMain.vue'
+import PointageMain from './views/pointages/pointagesMain.vue'
 import Equipe from './views/equipe.vue'
 import EmployeeForm from './views/employeeForm.vue'
 import MemoList from './views/memo/memosView.vue'
@@ -54,6 +55,12 @@ const routes: RouteRecordRaw[] = [
     path: '/dashboard',
     name: 'dashboard',
     component: DashboardMain,
+    meta: { requiresAuth: true },
+  },
+    {
+    path: '/pointages',
+    name: 'Pointages',
+    component: PointageMain,
     meta: { requiresAuth: true },
   },
   {
@@ -178,7 +185,7 @@ const routes: RouteRecordRaw[] = [
     },
     {
         path: '/planning',  // ou '/', selon ton setup
-        component: AppLayout,  // layout parent
+        component: AppLayout,  // l00ayout parent
         meta: { requiresAuth: true },
         redirect: '/planning/session-model',
         children: [

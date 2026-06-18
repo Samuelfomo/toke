@@ -88,15 +88,10 @@ export default class ScheduleSuggestionService {
      * Liste les suggestions d'un manager (sans les items).
      */
     static async list(managerGuid: string): Promise<ApiResponse> {
-        try {
-            return await apiRequest<any>({
-                path:   `${baseUrl}/${managerGuid}/list`,
-                method: 'GET',
-            })
-        } catch (error: any) {
-            console.error('ScheduleSuggestionService.list', error)
-            return error
-        }
+        return await apiRequest<any>({
+            path:   `${baseUrl}/${managerGuid}/list`,
+            method: 'GET',
+        })
     }
 
     /**
@@ -104,15 +99,10 @@ export default class ScheduleSuggestionService {
      * Charge une suggestion complète avec ses items (pour la prévisualisation).
      */
     static async get(guid: string): Promise<ApiResponse> {
-        try {
-            return await apiRequest<any>({
-                path:   `${baseUrl}/${guid}`,
-                method: 'GET',
-            })
-        } catch (error: any) {
-            console.error('ScheduleSuggestionService.get', error)
-            return error
-        }
+        return await apiRequest<any>({
+            path:   `${baseUrl}/${guid}`,
+            method: 'GET',
+        })
     }
 
     // ── Modification d'une cellule ────────────────────────────────────────────
@@ -127,16 +117,11 @@ export default class ScheduleSuggestionService {
         itemGuid:       string,
         payload:        IPatchSuggestionItemPayload,
     ): Promise<ApiResponse> {
-        try {
-            return await apiRequest<any>({
-                path:   `${baseUrl}/${suggestionGuid}/item/${itemGuid}`,
-                method: 'PATCH',
-                data:   payload,
-            })
-        } catch (error: any) {
-            console.error('ScheduleSuggestionService.patchItem', error)
-            return error
-        }
+        return await apiRequest<any>({
+            path:   `${baseUrl}/${suggestionGuid}/item/${itemGuid}`,
+            method: 'PATCH',
+            data:   payload,
+        })
     }
 
     // ── Cycle de vie ──────────────────────────────────────────────────────────
@@ -146,15 +131,10 @@ export default class ScheduleSuggestionService {
      * Valide la suggestion → crée les ScheduleAssignments en base.
      */
     static async approve(guid: string): Promise<ApiResponse> {
-        try {
-            return await apiRequest<any>({
-                path:   `${baseUrl}/${guid}/approve`,
-                method: 'POST',
-            })
-        } catch (error: any) {
-            console.error('ScheduleSuggestionService.approve', error)
-            return error
-        }
+        return await apiRequest<any>({
+            path:   `${baseUrl}/${guid}/approve`,
+            method: 'POST',
+        })
     }
 
     /**
@@ -162,15 +142,10 @@ export default class ScheduleSuggestionService {
      * Rejette la suggestion — aucun assignment créé.
      */
     static async reject(guid: string): Promise<ApiResponse> {
-        try {
-            return await apiRequest<any>({
-                path:   `${baseUrl}/${guid}/reject`,
-                method: 'POST',
-            })
-        } catch (error: any) {
-            console.error('ScheduleSuggestionService.reject', error)
-            return error
-        }
+        return await apiRequest<any>({
+            path:   `${baseUrl}/${guid}/reject`,
+            method: 'POST',
+        })
     }
 
     /**
@@ -179,14 +154,21 @@ export default class ScheduleSuggestionService {
      * Utilisé lors du "Regénérer" pour nettoyer l'ancienne suggestion draft.
      */
     static async delete(guid: string): Promise<ApiResponse> {
-        try {
-            return await apiRequest<any>({
-                path:   `${baseUrl}/${guid}`,
-                method: 'DELETE',
-            })
-        } catch (error: any) {
-            console.error('ScheduleSuggestionService.delete', error)
-            return error
-        }
+        return await apiRequest<any>({
+            path:   `${baseUrl}/${guid}`,
+            method: 'DELETE',
+        })
+    }
+
+    /**
+     * DELETE /schedule-suggestions/:guid/item/:itemGuid
+     * Supprime un item de suggestion (retire un employé).
+     * Ne fonctionne que si la suggestion est encore en draft.
+     */
+    static async deleteItem(suggestionGuid: string, itemGuid: string): Promise<ApiResponse> {
+        return await apiRequest<any>({
+            path:   `${baseUrl}/${suggestionGuid}/item/${itemGuid}`,
+            method: 'DELETE',
+        })
     }
 }
