@@ -1,682 +1,1125 @@
 // ─────────────────────────────────────────────────────────────────────────────
-// suggestion.engine.ts — V1.5
+// suggestion.engine.ts — V2.2 avec FILL_REMAINING
 //
-// Moteur de suggestion de planning.
-// Principe : maintenir la couverture historique par créneau,
-//            faire tourner équitablement les employés,
-//            protéger les habitudes fortes.
+// Le moteur ne déduit plus la couverture depuis l'historique.
+// Sources de vérité :
+//   1. configuration active ;
+//   2. besoins de couverture par jour et SessionTemplate ;
+//   3. profils FIXED / ROTATING / EXCLUDED.
 //
-// Pur TypeScript — aucune dépendance Express ou Sequelize.
+// L'historique ne sert qu'à l'équité à long terme.
+// Aucune dépendance Express, Sequelize ou classe métier.
 // ─────────────────────────────────────────────────────────────────────────────
 
-export const HISTORY_WEEKS        = 8
-const STRONG_HABIT_THRESHOLD      = 0.75  // 6/8 semaines → habitude forte
-const DAY_KEYS = ['Mon','Tue','Wed','Thu','Fri','Sat','Sun'] as const
-type DayKey    = (typeof DAY_KEYS)[number]
+const DAY_KEYS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'] as const;
 
-// ── Types publics ─────────────────────────────────────────────────────────────
+export type DayKey = (typeof DAY_KEYS)[number];
+export type PlanningMode = 'FIXED' | 'ROTATING' | 'EXCLUDED';
+export type PlanningServiceType = 'STANDARD' | 'GUARD';
+export type PlanningAllocationMode = 'EXACT' | 'RANGE' | 'FILL_REMAINING';
+export type HistoricalServiceType = PlanningServiceType | 'GUARD_CONTINUATION';
+export type ViolationSeverity = 'HARD' | 'WARNING';
 
-export interface HistoricalAssignment {
-  userGuid:     string
-  startDate:    string   // YYYY-MM-DD
-  endDate:      string   // YYYY-MM-DD
-  templateGuid: string
-  templateName: string
-  definition:   Record<string, any>  // { Mon: [...] | null, ... }
+export interface WorkBlock {
+  work: [string, string];
+  pause?: [string, string] | null;
+  tolerance: number;
 }
 
-export interface TargetEmployee {
-  guid: string
-  name: string
-  code: string
+export type SessionDefinition = Partial<Record<DayKey, WorkBlock[] | null>>;
+
+export interface EngineConfig {
+  minRestDaysPerWeek: number;
+  maxConsecutiveWorkDays: number;
+  maxWeeklyMinutes: number | null;
+  minRestMinutesBetweenShifts: number;
+  maxConsecutiveGuards: number;
+  restAfterGuardRequired: boolean;
+  fairnessWindowWeeks: number;
+  strictCoverage: boolean;
+}
+
+export interface EngineTemplate {
+  guid: string;
+  name: string;
+  definition: SessionDefinition;
+}
+
+export interface PlanningRequirementInput {
+  guid: string;
+  dayOfWeek: DayKey;
+  serviceType: PlanningServiceType;
+  minEmployees: number;
+  targetEmployees: number;
+  maxEmployees: number | null;
+  priority: number;
+  allocationMode: PlanningAllocationMode;
+  template: EngineTemplate;
+  continuationTemplate: EngineTemplate | null;
+  continuationDayOffset: number;
+}
+
+export interface PlanningEmployeeInput {
+  guid: string;
+  name: string;
+  code: string;
+  mode: PlanningMode;
+  rotationOrder: number | null;
+  maxWeeklyMinutes: number | null;
+  fixedTemplate: EngineTemplate | null;
+}
+
+export interface HistoricalAssignment {
+  userGuid: string;
+  startDate: string;
+  endDate: string;
+  templateGuid: string;
+  templateName: string;
+  definition: SessionDefinition;
+  serviceType?: HistoricalServiceType;
 }
 
 export interface DayReason {
-  templateName: string
-  templateGuid: string | null
-  confidence:   number     // 0–100
-  factors:      string[]
+  templateName: string;
+  templateGuid: string | null;
+  confidence: number;
+  factors: string[];
+  source?: 'FIXED' | 'GENERATED' | 'FILL_REMAINING' | 'GUARD_CONTINUATION' | 'REST';
 }
 
 export interface EmployeeSuggestionResult {
-  userGuid: string
-  schedule: Record<string, string | null>      // { 'YYYY-MM-DD': templateGuid|null }
-  reasons:  Record<string, DayReason | null>
+  userGuid: string;
+  schedule: Record<string, string | null>;
+  reasons: Record<string, DayReason | null>;
+}
+
+export interface PlanningViolation {
+  severity: ViolationSeverity;
+  code:
+    | 'INVALID_REQUIREMENT_TEMPLATE'
+    | 'INVALID_GUARD_CONTINUATION'
+    | 'INVALID_ALLOCATION_CONFIGURATION'
+    | 'FIXED_EMPLOYEE_CONSTRAINT'
+    | 'MIN_COVERAGE_NOT_REACHED'
+    | 'TARGET_COVERAGE_NOT_REACHED'
+    | 'MAX_COVERAGE_EXCEEDED'
+    | 'NO_ROTATING_EMPLOYEES'
+    | 'UNCONFIGURED_EMPLOYEE';
+  date?: string;
+  employeeGuid?: string;
+  requirementGuid?: string;
+  message: string;
+  details?: Record<string, unknown>;
+}
+
+export interface CoverageResult {
+  date: string;
+  dayOfWeek: DayKey;
+  requirementGuid: string;
+  allocationMode: PlanningAllocationMode;
+  templateGuid: string;
+  templateName: string;
+  minimum: number;
+  target: number;
+  maximum: number | null;
+  assigned: number;
+  status: 'COVERED' | 'BELOW_TARGET' | 'BELOW_MINIMUM' | 'ABOVE_MAXIMUM';
+}
+
+export interface EngineDiagnostics {
+  violations: PlanningViolation[];
+  coverage: CoverageResult[];
+  fairnessScore: number;
+  coverageScore: number;
 }
 
 export interface EngineResult {
-  items:           EmployeeSuggestionResult[]
-  conformityScore: number   // 0–100
+  items: EmployeeSuggestionResult[];
+
+  /**
+   * Conservé pour compatibilité avec ScheduleSuggestion.conformity_score.
+   * En V2, ce score mesure la qualité du planning, pas la conformité historique.
+   */
+  conformityScore: number;
+
+  diagnostics: EngineDiagnostics;
 }
 
-// ── Helpers date ──────────────────────────────────────────────────────────────
+export class PlanningInfeasibleError extends Error {
+  public readonly code = 'PLANNING_SUGGESTION_INFEASIBLE';
 
-function addDays(iso: string, n: number): string {
-  const d = new Date(iso + 'T00:00:00')
-  d.setDate(d.getDate() + n)
-  return d.toISOString().split('T')[0]
+  constructor(
+    message: string,
+    public readonly diagnostics: EngineDiagnostics,
+  ) {
+    super(message);
+    this.name = 'PlanningInfeasibleError';
+  }
 }
 
-function isoToDayKey(iso: string): DayKey {
-  const map: DayKey[] = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat']
-  return map[new Date(iso + 'T00:00:00').getDay()]
+interface DateInterval {
+  start: number;
+  end: number;
+}
+
+interface EmployeeFairnessStats {
+  shifts: number;
+  guards: number;
+  weekends: number;
+  workedMinutes: number;
+  byTemplate: Map<string, number>;
+  lastTemplateDate: Map<string, string>;
+}
+
+interface EmployeeState {
+  workDates: Set<string>;
+  guardDates: Set<string>;
+  forcedRestDates: Set<string>;
+  intervals: DateInterval[];
+  minutesByWeek: Map<string, number>;
+  plannedShifts: number;
+  plannedGuards: number;
+  plannedWeekends: number;
+  plannedMinutes: number;
+  plannedByTemplate: Map<string, number>;
+}
+
+interface CandidateEvaluation {
+  eligible: boolean;
+  blockers: string[];
+  fairnessScore: number;
+  factors: string[];
+}
+
+function parseDate(iso: string): Date {
+  return new Date(`${iso}T00:00:00.000Z`);
+}
+
+function addDays(iso: string, amount: number): string {
+  const date = parseDate(iso);
+  date.setUTCDate(date.getUTCDate() + amount);
+  return date.toISOString().slice(0, 10);
 }
 
 function periodDates(from: string, to: string): string[] {
-  const dates: string[] = []
-  let cur = from
-  while (cur <= to) { dates.push(cur); cur = addDays(cur, 1) }
-  return dates
+  const dates: string[] = [];
+  for (let date = from; date <= to; date = addDays(date, 1)) {
+    dates.push(date);
+  }
+  return dates;
 }
 
-/** Vrai si iso est dans [start, end] */
-function covers(iso: string, start: string, end: string): boolean {
-  return iso >= start && iso <= end
+function isoToDayKey(iso: string): DayKey {
+  const map: DayKey[] = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+  return map[parseDate(iso).getUTCDay()]!;
 }
 
-/** Template actif pour un employé à une date donnée. Null si repos. */
-function getTemplateOnDate(
+function isWeekend(iso: string): boolean {
+  const day = isoToDayKey(iso);
+  return day === 'Sat' || day === 'Sun';
+}
+
+function mondayOfWeek(iso: string): string {
+  const day = parseDate(iso).getUTCDay();
+  const offset = day === 0 ? -6 : 1 - day;
+  return addDays(iso, offset);
+}
+
+function toMinutes(time: string): number {
+  const [hours, minutes] = time.split(':').map(Number);
+  return hours! * 60 + minutes!;
+}
+
+function dayBlocks(template: EngineTemplate, iso: string): WorkBlock[] {
+  const value = template.definition[isoToDayKey(iso)];
+  return Array.isArray(value) ? value : [];
+}
+
+function templateHasWork(template: EngineTemplate, iso: string): boolean {
+  return dayBlocks(template, iso).length > 0;
+}
+
+function blockDurationMinutes(block: WorkBlock): number {
+  const start = toMinutes(block.work[0]);
+  let end = toMinutes(block.work[1]);
+
+  // Prépare le moteur aux blocs traversant minuit.
+  if (end <= start) end += 24 * 60;
+
+  let total = end - start;
+
+  if (block.pause) {
+    const pauseStart = toMinutes(block.pause[0]);
+    let pauseEnd = toMinutes(block.pause[1]);
+    if (pauseEnd <= pauseStart) pauseEnd += 24 * 60;
+    total -= pauseEnd - pauseStart;
+  }
+
+  return Math.max(0, total);
+}
+
+function templateMinutes(template: EngineTemplate, iso: string): number {
+  return dayBlocks(template, iso).reduce((total, block) => total + blockDurationMinutes(block), 0);
+}
+
+function templateIntervals(template: EngineTemplate, iso: string): DateInterval[] {
+  const base = parseDate(iso).getTime();
+
+  return dayBlocks(template, iso)
+    .map((block) => {
+      const startMinutes = toMinutes(block.work[0]);
+      let endMinutes = toMinutes(block.work[1]);
+
+      if (endMinutes <= startMinutes) endMinutes += 24 * 60;
+
+      return {
+        start: base + startMinutes * 60_000,
+        end: base + endMinutes * 60_000,
+      };
+    })
+    .sort((a, b) => a.start - b.start);
+}
+
+function activeHistoricalAssignment(
   assignments: HistoricalAssignment[],
-  userGuid:    string,
-  iso:         string,
-): { templateGuid: string; templateName: string; hasWork: boolean } | null {
-  for (const a of assignments) {
-    if (a.userGuid !== userGuid) continue
-    if (!covers(iso, a.startDate, a.endDate)) continue
-    const dayKey  = isoToDayKey(iso)
-    const blocks  = a.definition[dayKey]
-    const hasWork = Array.isArray(blocks) && blocks.length > 0
-    return { templateGuid: a.templateGuid, templateName: a.templateName, hasWork }
+  userGuid: string,
+  iso: string,
+): HistoricalAssignment | null {
+  const candidates = assignments
+    .filter(
+      (assignment) =>
+        assignment.userGuid === userGuid &&
+        assignment.startDate <= iso &&
+        assignment.endDate >= iso,
+    )
+    .sort((a, b) => b.startDate.localeCompare(a.startDate));
+
+  return candidates[0] ?? null;
+}
+
+function createEmptyState(): EmployeeState {
+  return {
+    workDates: new Set(),
+    guardDates: new Set(),
+    forcedRestDates: new Set(),
+    intervals: [],
+    minutesByWeek: new Map(),
+    plannedShifts: 0,
+    plannedGuards: 0,
+    plannedWeekends: 0,
+    plannedMinutes: 0,
+    plannedByTemplate: new Map(),
+  };
+}
+
+function createFairnessStats(): EmployeeFairnessStats {
+  return {
+    shifts: 0,
+    guards: 0,
+    weekends: 0,
+    workedMinutes: 0,
+    byTemplate: new Map(),
+    lastTemplateDate: new Map(),
+  };
+}
+
+function buildHistoricalState(
+  employees: PlanningEmployeeInput[],
+  assignments: HistoricalAssignment[],
+  periodFrom: string,
+  fairnessWindowWeeks: number,
+): {
+  fairness: Map<string, EmployeeFairnessStats>;
+  states: Map<string, EmployeeState>;
+} {
+  const fairness = new Map<string, EmployeeFairnessStats>();
+  const states = new Map<string, EmployeeState>();
+
+  for (const employee of employees) {
+    fairness.set(employee.guid, createFairnessStats());
+    states.set(employee.guid, createEmptyState());
   }
-  return null
+
+  const from = addDays(periodFrom, -(fairnessWindowWeeks * 7));
+  const to = addDays(periodFrom, -1);
+
+  for (const iso of periodDates(from, to)) {
+    for (const employee of employees) {
+      const assignment = activeHistoricalAssignment(assignments, employee.guid, iso);
+      if (!assignment) continue;
+
+      const template: EngineTemplate = {
+        guid: assignment.templateGuid,
+        name: assignment.templateName,
+        definition: assignment.definition,
+      };
+
+      if (!templateHasWork(template, iso)) continue;
+
+      const stats = fairness.get(employee.guid)!;
+      const state = states.get(employee.guid)!;
+      const minutes = templateMinutes(template, iso);
+
+      stats.workedMinutes += minutes;
+      state.intervals.push(...templateIntervals(template, iso));
+      state.minutesByWeek.set(
+        mondayOfWeek(iso),
+        (state.minutesByWeek.get(mondayOfWeek(iso)) ?? 0) + minutes,
+      );
+
+      if (assignment.serviceType === 'GUARD_CONTINUATION') {
+        state.forcedRestDates.add(iso);
+        continue;
+      }
+
+      stats.shifts++;
+      stats.byTemplate.set(template.guid, (stats.byTemplate.get(template.guid) ?? 0) + 1);
+      stats.lastTemplateDate.set(template.guid, iso);
+
+      if (isWeekend(iso)) {
+        stats.weekends++;
+      }
+
+      if (assignment.serviceType === 'GUARD') {
+        stats.guards++;
+        state.guardDates.add(iso);
+      }
+
+      state.workDates.add(iso);
+    }
+  }
+
+  return { fairness, states };
 }
 
-// ── Étape 1 : Couverture cible par (dayKey × templateGuid) ───────────────────
-// Pour chaque (lundi, matin) : combien de personnes y étaient en moyenne
-// sur les N semaines passées ?
+function countConsecutiveBefore(dates: Set<string>, iso: string): number {
+  let count = 0;
+  let cursor = addDays(iso, -1);
 
-interface SlotCoverage {
-  templateGuid: string
-  templateName: string
-  targetCount:  number   // médiane arrondie
+  while (dates.has(cursor)) {
+    count++;
+    cursor = addDays(cursor, -1);
+  }
+
+  return count;
 }
 
-function computeHistoricalCoverage(
-  assignments:  HistoricalAssignment[],
-  employees:    TargetEmployee[],
-  periodFrom:   string,
-  historyWeeks: number,
-): Map<DayKey, SlotCoverage[]> {
-  // Pour chaque (dayKey, templateGuid), collecter le nombre de personnes
-  // par semaine historique
-  const weekCounts = new Map<string, number[]>()  // key = `${dayKey}::${templateGuid}`
+function countConsecutiveAfter(dates: Set<string>, iso: string): number {
+  let count = 0;
+  let cursor = addDays(iso, 1);
 
-  for (let w = 0; w < historyWeeks; w++) {
-    const weekStart = addDays(periodFrom, -(w + 1) * 7)
-    const weekEnd   = addDays(weekStart, 6)
-    const weekDates = periodDates(weekStart, weekEnd)
+  while (dates.has(cursor)) {
+    count++;
+    cursor = addDays(cursor, 1);
+  }
 
-    // Compter par (dayKey, templateGuid) ce que les employés faisaient cette semaine
-    const weekSlotCount = new Map<string, number>()
+  return count;
+}
 
-    for (const iso of weekDates) {
-      const dk = isoToDayKey(iso)
-      for (const emp of employees) {
-        const match = getTemplateOnDate(assignments, emp.guid, iso)
-        if (!match || !match.hasWork) continue
-        const k = `${dk}::${match.templateGuid}::${match.templateName}`
-        weekSlotCount.set(k, (weekSlotCount.get(k) ?? 0) + 1)
+function hasEnoughRestBetweenIntervals(
+  existing: DateInterval[],
+  candidate: DateInterval[],
+  minimumRestMinutes: number,
+): boolean {
+  const minimumGap = minimumRestMinutes * 60_000;
+
+  for (const candidateInterval of candidate) {
+    for (const existingInterval of existing) {
+      const overlaps =
+        candidateInterval.start < existingInterval.end &&
+        existingInterval.start < candidateInterval.end;
+
+      if (overlaps) return false;
+
+      const candidateAfterExisting =
+        candidateInterval.start >= existingInterval.end &&
+        candidateInterval.start - existingInterval.end < minimumGap;
+
+      const existingAfterCandidate =
+        existingInterval.start >= candidateInterval.end &&
+        existingInterval.start - candidateInterval.end < minimumGap;
+
+      if (candidateAfterExisting || existingAfterCandidate) return false;
+    }
+  }
+
+  return true;
+}
+
+function allocationConfigurationError(requirement: PlanningRequirementInput): string | null {
+  if (requirement.targetEmployees < requirement.minEmployees) {
+    return 'targetEmployees must be greater than or equal to minEmployees';
+  }
+
+  if (requirement.maxEmployees !== null && requirement.maxEmployees < requirement.targetEmployees) {
+    return 'maxEmployees must be greater than or equal to targetEmployees';
+  }
+
+  if (requirement.allocationMode === 'EXACT') {
+    if (requirement.maxEmployees === null) {
+      return 'EXACT requires maxEmployees';
+    }
+
+    if (
+      requirement.minEmployees !== requirement.targetEmployees ||
+      requirement.targetEmployees !== requirement.maxEmployees
+    ) {
+      return 'EXACT requires minEmployees, targetEmployees and maxEmployees to be equal';
+    }
+  }
+
+  if (requirement.allocationMode === 'FILL_REMAINING' && requirement.serviceType !== 'STANDARD') {
+    return 'FILL_REMAINING is only allowed for a STANDARD service';
+  }
+
+  return null;
+}
+
+function evaluateCandidate(
+  employee: PlanningEmployeeInput,
+  state: EmployeeState,
+  historical: EmployeeFairnessStats,
+  requirement: PlanningRequirementInput,
+  iso: string,
+  config: EngineConfig,
+): CandidateEvaluation {
+  const blockers: string[] = [];
+  const template = requirement.template;
+  const continuationDate =
+    requirement.serviceType === 'GUARD' ? addDays(iso, requirement.continuationDayOffset) : null;
+  const continuationTemplate =
+    requirement.serviceType === 'GUARD' ? requirement.continuationTemplate : null;
+
+  const maximumWorkedDaysInWeek = 7 - config.minRestDaysPerWeek;
+  const maxWeeklyMinutes = employee.maxWeeklyMinutes ?? config.maxWeeklyMinutes;
+
+  if (state.workDates.has(iso)) {
+    blockers.push('Déjà affecté à un service ce jour');
+  }
+
+  if (state.forcedRestDates.has(iso)) {
+    blockers.push('Repos ou récupération obligatoire ce jour');
+  }
+
+  if (!templateHasWork(template, iso)) {
+    blockers.push('Le template principal ne contient aucun bloc de travail pour ce jour');
+  }
+
+  if (requirement.serviceType === 'GUARD') {
+    if (!continuationTemplate || continuationDate === null) {
+      blockers.push('La garde ne possède aucun template de continuation');
+    } else {
+      if (requirement.continuationDayOffset !== 1) {
+        blockers.push('Le décalage de continuation de garde doit être égal à 1');
+      }
+
+      if (!templateHasWork(continuationTemplate, continuationDate)) {
+        blockers.push(
+          'Le template de continuation ne contient aucun bloc de travail pour le lendemain',
+        );
+      }
+
+      if (state.workDates.has(continuationDate) || state.forcedRestDates.has(continuationDate)) {
+        blockers.push('Le lendemain est déjà occupé ou réservé au repos');
       }
     }
-
-    // Ajouter les comptes de cette semaine dans les séries
-    for (const [k, count] of weekSlotCount.entries()) {
-      if (!weekCounts.has(k)) weekCounts.set(k, [])
-      weekCounts.get(k)!.push(count)
-    }
   }
 
-  // Calculer la médiane pour chaque slot
-  const result = new Map<DayKey, SlotCoverage[]>()
+  const primaryWeek = mondayOfWeek(iso);
+  const workDaysInPrimaryWeek = [...state.workDates].filter(
+    (date) => mondayOfWeek(date) === primaryWeek,
+  ).length;
 
-  for (const [k, counts] of weekCounts.entries()) {
-    const [dk, templateGuid, templateName] = k.split('::')
-    const dayKey = dk as DayKey
-
-    const sorted      = [...counts].sort((a, b) => a - b)
-    const mid         = Math.floor(sorted.length / 2)
-    const median      = sorted.length % 2 === 0
-      ? Math.round((sorted[mid - 1] + sorted[mid]) / 2)
-      : sorted[mid]
-    const targetCount = Math.max(1, median)
-
-    if (!result.has(dayKey)) result.set(dayKey, [])
-    result.get(dayKey)!.push({ templateGuid, templateName, targetCount })
+  if (workDaysInPrimaryWeek + 1 > maximumWorkedDaysInWeek) {
+    blockers.push(`Minimum de ${config.minRestDaysPerWeek} jour(s) de repos hebdomadaire`);
   }
 
-  return result
-}
+  const consecutiveWorkDays =
+    countConsecutiveBefore(state.workDates, iso) + 1 + countConsecutiveAfter(state.workDates, iso);
 
-// ── Étape 2 : Habitudes fortes par employé ───────────────────────────────────
-// Un employé a une habitude forte sur (dayKey, templateGuid) si il y était
-// dans >= STRONG_HABIT_THRESHOLD des semaines historiques
+  if (consecutiveWorkDays > config.maxConsecutiveWorkDays) {
+    blockers.push(`Maximum de ${config.maxConsecutiveWorkDays} jour(s) consécutif(s)`);
+  }
 
-interface StrongHabit {
-  userGuid:     string
-  dayKey:       DayKey
-  templateGuid: string
-  templateName: string
-  frequency:    number  // 0–1
-}
+  const candidateMinutesByWeek = new Map<string, number>();
 
-function detectStrongHabits(
-  assignments:  HistoricalAssignment[],
-  employees:    TargetEmployee[],
-  periodFrom:   string,
-  historyWeeks: number,
-): StrongHabit[] {
-  const habits: StrongHabit[] = []
+  const addCandidateMinutes = (date: string, candidateTemplate: EngineTemplate): void => {
+    const week = mondayOfWeek(date);
+    candidateMinutesByWeek.set(
+      week,
+      (candidateMinutesByWeek.get(week) ?? 0) + templateMinutes(candidateTemplate, date),
+    );
+  };
 
-  for (const emp of employees) {
-    // Pour chaque dayKey, compter les occurrences de chaque template
-    const counts = new Map<string, { templateName: string; count: number }>()
+  addCandidateMinutes(iso, template);
 
-    for (let w = 0; w < historyWeeks; w++) {
-      const weekStart = addDays(periodFrom, -(w + 1) * 7)
-      const weekDates = periodDates(weekStart, addDays(weekStart, 6))
+  if (continuationTemplate && continuationDate !== null) {
+    addCandidateMinutes(continuationDate, continuationTemplate);
+  }
 
-      for (const iso of weekDates) {
-        const dk    = isoToDayKey(iso)
-        const match = getTemplateOnDate(assignments, emp.guid, iso)
-        if (!match || !match.hasWork) continue
-        const k = `${dk}::${match.templateGuid}`
-        if (!counts.has(k)) counts.set(k, { templateName: match.templateName, count: 0 })
-        counts.get(k)!.count++
-      }
-    }
-
-    // Un dayKey apparaît 1 fois par semaine → max possible = historyWeeks
-    for (const [k, { templateName, count }] of counts.entries()) {
-      const [dk, templateGuid] = k.split('::')
-      const frequency = count / historyWeeks
-      if (frequency >= STRONG_HABIT_THRESHOLD) {
-        habits.push({
-          userGuid:     emp.guid,
-          dayKey:       dk as DayKey,
-          templateGuid,
-          templateName,
-          frequency,
-        })
+  if (maxWeeklyMinutes !== null) {
+    for (const [week, candidateMinutes] of candidateMinutesByWeek.entries()) {
+      if ((state.minutesByWeek.get(week) ?? 0) + candidateMinutes > maxWeeklyMinutes) {
+        blockers.push(`Durée hebdomadaire maximale de ${maxWeeklyMinutes} minutes`);
+        break;
       }
     }
   }
 
-  return habits
+  const candidateIntervals = [
+    ...templateIntervals(template, iso),
+    ...(continuationTemplate && continuationDate !== null
+      ? templateIntervals(continuationTemplate, continuationDate)
+      : []),
+  ];
+
+  if (
+    !hasEnoughRestBetweenIntervals(
+      state.intervals,
+      candidateIntervals,
+      config.minRestMinutesBetweenShifts,
+    )
+  ) {
+    blockers.push(`Repos minimum de ${config.minRestMinutesBetweenShifts} minutes entre services`);
+  }
+
+  if (
+    requirement.serviceType === 'GUARD' &&
+    countConsecutiveBefore(state.guardDates, iso) + 1 > config.maxConsecutiveGuards
+  ) {
+    blockers.push(`Maximum de ${config.maxConsecutiveGuards} garde(s) consécutive(s)`);
+  }
+
+  if (config.restAfterGuardRequired && state.guardDates.has(addDays(iso, -1))) {
+    blockers.push('Repos obligatoire le lendemain d’une garde');
+  }
+
+  const historicalTemplateCount = historical.byTemplate.get(template.guid) ?? 0;
+  const plannedTemplateCount = state.plannedByTemplate.get(template.guid) ?? 0;
+
+  const guardLoad =
+    requirement.serviceType === 'GUARD' ? (historical.guards + state.plannedGuards) * 120 : 0;
+
+  const weekendLoad = isWeekend(iso) ? (historical.weekends + state.plannedWeekends) * 60 : 0;
+
+  const fairnessScore =
+    (historicalTemplateCount + plannedTemplateCount) * 100 +
+    guardLoad +
+    weekendLoad +
+    (historical.shifts + state.plannedShifts) * 10 +
+    (historical.workedMinutes + state.plannedMinutes) / 480 +
+    (employee.rotationOrder ?? 0) / 10_000;
+
+  const lastDate = historical.lastTemplateDate.get(template.guid);
+
+  const factors =
+    requirement.allocationMode === 'FILL_REMAINING'
+      ? [
+          'Mode FILL_REMAINING : affectation au service principal après les besoins prioritaires',
+          `Créneau déjà effectué ${historicalTemplateCount + plannedTemplateCount} fois dans la fenêtre d’équité`,
+          lastDate
+            ? `Dernière affectation à ce créneau : ${lastDate}`
+            : 'Aucune affectation récente à ce créneau',
+        ]
+      : [
+          `Besoin configuré : minimum ${requirement.minEmployees}, cible ${requirement.targetEmployees}`,
+          `Créneau déjà effectué ${historicalTemplateCount + plannedTemplateCount} fois dans la fenêtre d’équité`,
+          lastDate
+            ? `Dernière affectation à ce créneau : ${lastDate}`
+            : 'Aucune affectation récente à ce créneau',
+        ];
+
+  if (requirement.serviceType === 'GUARD' && continuationDate) {
+    factors.push(`Continuation automatique réservée le ${continuationDate}`);
+    factors.push(`Gardes comptabilisées : ${historical.guards + state.plannedGuards}`);
+  }
+
+  if (isWeekend(iso)) {
+    factors.push(`Week-ends comptabilisés : ${historical.weekends + state.plannedWeekends}`);
+  }
+
+  return {
+    eligible: blockers.length === 0,
+    blockers,
+    fairnessScore,
+    factors,
+  };
 }
 
-// ── Étape 3 : Score de rotation ──────────────────────────────────────────────
-// Pour un employé sur un (dayKey, templateGuid), calculer quand il a fait
-// ce créneau pour la dernière fois. Plus c'est loin, plus le score est élevé.
+function applyAssignment(
+  state: EmployeeState,
+  template: EngineTemplate,
+  serviceType: PlanningServiceType,
+  iso: string,
+): void {
+  const minutes = templateMinutes(template, iso);
+  const week = mondayOfWeek(iso);
 
-function computeRotationScore(
-  assignments:  HistoricalAssignment[],
-  userGuid:     string,
-  templateGuid: string,
-  dayKey:       DayKey,
-  periodFrom:   string,
-  historyWeeks: number,
+  state.workDates.add(iso);
+  state.intervals.push(...templateIntervals(template, iso));
+  state.minutesByWeek.set(week, (state.minutesByWeek.get(week) ?? 0) + minutes);
+  state.plannedShifts++;
+  state.plannedMinutes += minutes;
+  state.plannedByTemplate.set(template.guid, (state.plannedByTemplate.get(template.guid) ?? 0) + 1);
+
+  if (isWeekend(iso)) {
+    state.plannedWeekends++;
+  }
+
+  if (serviceType === 'GUARD') {
+    state.guardDates.add(iso);
+    state.plannedGuards++;
+  }
+}
+
+function applyGuardContinuation(state: EmployeeState, template: EngineTemplate, iso: string): void {
+  const minutes = templateMinutes(template, iso);
+  const week = mondayOfWeek(iso);
+
+  state.forcedRestDates.add(iso);
+  state.intervals.push(...templateIntervals(template, iso));
+  state.minutesByWeek.set(week, (state.minutesByWeek.get(week) ?? 0) + minutes);
+  state.plannedMinutes += minutes;
+}
+
+function countAssignedToRequirement(
+  employees: PlanningEmployeeInput[],
+  schedules: Map<string, Record<string, string | null>>,
+  reasons: Map<string, Record<string, DayReason | null>>,
+  iso: string,
+  requirement: PlanningRequirementInput,
 ): number {
-  let lastOccurrence = -1   // semaines depuis la dernière occurrence, -1 = jamais
-
-  for (let w = 0; w < historyWeeks; w++) {
-    const weekStart = addDays(periodFrom, -(w + 1) * 7)
-    const weekDates = periodDates(weekStart, addDays(weekStart, 6))
-
-    for (const iso of weekDates) {
-      if (isoToDayKey(iso) !== dayKey) continue
-      const match = getTemplateOnDate(assignments, userGuid, iso)
-      if (match?.templateGuid === templateGuid && match.hasWork) {
-        if (lastOccurrence === -1) lastOccurrence = w + 1
-        break
-      }
+  return employees.filter((employee) => {
+    if (schedules.get(employee.guid)?.[iso] !== requirement.template.guid) {
+      return false;
     }
-    if (lastOccurrence !== -1) break
-  }
 
-  // Jamais fait → score max (1.0), fait il y a 1 semaine → score bas (1/N)
-  if (lastOccurrence === -1) return 1.0
-  return lastOccurrence / historyWeeks
+    if (requirement.serviceType !== 'GUARD') {
+      return true;
+    }
+
+    return reasons.get(employee.guid)?.[iso]?.source === 'GENERATED';
+  }).length;
 }
 
-// ── Moteur principal ──────────────────────────────────────────────────────────
+function fairnessQuality(
+  rotatingEmployees: PlanningEmployeeInput[],
+  states: Map<string, EmployeeState>,
+): number {
+  if (rotatingEmployees.length <= 1) return 100;
+
+  const loads = rotatingEmployees.map((employee) => {
+    const state = states.get(employee.guid)!;
+    return state.plannedShifts + state.plannedGuards * 2 + state.plannedWeekends;
+  });
+
+  const spread = Math.max(...loads) - Math.min(...loads);
+  return Math.max(0, Math.round(100 - spread * 12.5));
+}
+
+function coverageQuality(coverage: CoverageResult[]): number {
+  if (coverage.length === 0) return 0;
+
+  const total = coverage.reduce((sum, slot) => {
+    if (slot.target === 0) return sum + 1;
+    return sum + Math.min(1, slot.assigned / slot.target);
+  }, 0);
+
+  return Math.round((total / coverage.length) * 100);
+}
 
 export function generateSuggestion(
-  employees:    TargetEmployee[],
-  assignments:  HistoricalAssignment[],
-  periodFrom:   string,
-  periodTo:     string,
-  historyWeeks: number = HISTORY_WEEKS,
+  employees: PlanningEmployeeInput[],
+  requirements: PlanningRequirementInput[],
+  historicalAssignments: HistoricalAssignment[],
+  periodFrom: string,
+  periodTo: string,
+  config: EngineConfig,
 ): EngineResult {
+  const dates = periodDates(periodFrom, periodTo);
+  const violations: PlanningViolation[] = [];
+  const coverage: CoverageResult[] = [];
 
-  // Pré-calculs
-  const coverage   = computeHistoricalCoverage(assignments, employees, periodFrom, historyWeeks)
-  const habits     = detectStrongHabits(assignments, employees, periodFrom, historyWeeks)
+  const includedEmployees = employees.filter((employee) => employee.mode !== 'EXCLUDED');
+  const rotatingEmployees = includedEmployees.filter((employee) => employee.mode === 'ROTATING');
+  const fixedEmployees = includedEmployees.filter((employee) => employee.mode === 'FIXED');
 
-  // Résultats par employé — initialisés à repos partout
-  const schedules  = new Map<string, Record<string, string | null>>()
-  const reasons    = new Map<string, Record<string, DayReason | null>>()
+  const { fairness, states } = buildHistoricalState(
+    includedEmployees,
+    historicalAssignments,
+    periodFrom,
+    config.fairnessWindowWeeks,
+  );
 
-  for (const emp of employees) {
-    schedules.set(emp.guid, {})
-    reasons.set(emp.guid, {})
+  const schedules = new Map<string, Record<string, string | null>>();
+  const reasons = new Map<string, Record<string, DayReason | null>>();
+
+  for (const employee of includedEmployees) {
+    schedules.set(employee.guid, {});
+    reasons.set(employee.guid, {});
   }
 
-  const dates = periodDates(periodFrom, periodTo)
-
-  // Tracker des assignations déjà faites pour chaque date
-  // (un employé ne peut être affecté qu'à un seul template par jour)
-  const assignedOnDate = new Map<string, Set<string>>()  // iso → Set<userGuid>
-  for (const iso of dates) assignedOnDate.set(iso, new Set())
-
-  // ── Passe 1 : placer les habitudes fortes ─────────────────────────────────
-  for (const iso of dates) {
-    const dk = isoToDayKey(iso)
-
-    for (const emp of employees) {
-      const habit = habits.find(h => h.userGuid === emp.guid && h.dayKey === dk)
-      if (!habit) continue
-
-      // Vérifier que ce slot existe dans la couverture historique
-      const slots = coverage.get(dk) ?? []
-      const slot  = slots.find(s => s.templateGuid === habit.templateGuid)
-      if (!slot) continue
-
-      // Placer l'employé sur son habitude forte
-      schedules.get(emp.guid)![iso] = habit.templateGuid
-      reasons.get(emp.guid)![iso]   = {
-        templateGuid: habit.templateGuid,
-        templateName: habit.templateName,
-        confidence:   Math.round(habit.frequency * 100),
-        factors:      [
-          `Habitude forte : ${Math.round(habit.frequency * historyWeeks)}/${historyWeeks} semaines`,
-          'Priorité maximale — position conservée',
-        ],
-      }
-      assignedOnDate.get(iso)!.add(emp.guid)
+  // ── Passe 1 : planning fixe ───────────────────────────────────────────────
+  for (const employee of fixedEmployees) {
+    if (!employee.fixedTemplate) {
+      violations.push({
+        severity: 'HARD',
+        code: 'FIXED_EMPLOYEE_CONSTRAINT',
+        employeeGuid: employee.guid,
+        message: `L’employé fixe ${employee.name} ne possède aucun template fixe`,
+      });
+      continue;
     }
-  }
 
-  // ── Passe 2 : remplir les créneaux par rotation équitable ────────────────
-  for (const iso of dates) {
-    const dk    = isoToDayKey(iso)
-    const slots = coverage.get(dk) ?? []
+    for (const iso of dates) {
+      const template = employee.fixedTemplate;
 
-    for (const slot of slots) {
-      // Compter combien d'employés sont déjà sur ce slot (via habitudes fortes)
-      const alreadyOnSlot = employees.filter(
-        emp => schedules.get(emp.guid)?.[iso] === slot.templateGuid
-      ).length
-
-      const needed = slot.targetCount - alreadyOnSlot
-      if (needed <= 0) continue
-
-      // Employés disponibles : non encore assignés ce jour
-      const available = employees.filter(emp => !assignedOnDate.get(iso)!.has(emp.guid))
-      if (available.length === 0) continue
-
-      // Classer par score de rotation décroissant
-      const ranked = available
-        .map(emp => ({
-          emp,
-          score: computeRotationScore(assignments, emp.guid, slot.templateGuid, dk, periodFrom, historyWeeks),
-        }))
-        .sort((a, b) => b.score - a.score)
-
-      // Sélectionner les N premiers
-      const toAssign = ranked.slice(0, needed)
-
-      for (const { emp, score } of toAssign) {
-        schedules.get(emp.guid)![iso] = slot.templateGuid
-        reasons.get(emp.guid)![iso]   = {
-          templateGuid: slot.templateGuid,
-          templateName: slot.templateName,
-          confidence:   Math.round(score * 100),
-          factors: [
-            `Couverture cible : ${slot.targetCount} personne(s) sur ce créneau`,
-            score === 1.0
-              ? 'Jamais effectué ce créneau récemment — priorité rotation maximale'
-              : `Dernier passage il y a ~${Math.round(score * historyWeeks)} semaine(s)`,
-          ],
-        }
-        assignedOnDate.get(iso)!.add(emp.guid)
-      }
-    }
-  }
-
-  // ── Passe 3 : marquer repos les employés non assignés ─────────────────────
-  for (const iso of dates) {
-    for (const emp of employees) {
-      if (schedules.get(emp.guid)![iso] === undefined) {
-        schedules.get(emp.guid)![iso] = null
-        reasons.get(emp.guid)![iso]   = {
+      if (!templateHasWork(template, iso)) {
+        schedules.get(employee.guid)![iso] = null;
+        reasons.get(employee.guid)![iso] = {
           templateGuid: null,
           templateName: 'Repos',
-          confidence:   60,
-          factors:      ['Couverture cible atteinte — repos proposé ce jour'],
+          confidence: 100,
+          source: 'FIXED',
+          factors: ['Repos défini par le template fixe de l’employé'],
+        };
+        continue;
+      }
+
+      const evaluation = evaluateCandidate(
+        employee,
+        states.get(employee.guid)!,
+        fairness.get(employee.guid)!,
+        {
+          guid: `fixed:${employee.guid}:${iso}`,
+          dayOfWeek: isoToDayKey(iso),
+          serviceType: 'STANDARD',
+          minEmployees: 0,
+          targetEmployees: 0,
+          maxEmployees: null,
+          priority: 0,
+          allocationMode: 'RANGE',
+          template,
+          continuationTemplate: null,
+          continuationDayOffset: 0,
+        },
+        iso,
+        config,
+      );
+
+      if (!evaluation.eligible) {
+        violations.push({
+          severity: 'HARD',
+          code: 'FIXED_EMPLOYEE_CONSTRAINT',
+          date: iso,
+          employeeGuid: employee.guid,
+          message: `Le planning fixe de ${employee.name} viole la configuration`,
+          details: { blockers: evaluation.blockers },
+        });
+      }
+
+      schedules.get(employee.guid)![iso] = template.guid;
+      reasons.get(employee.guid)![iso] = {
+        templateGuid: template.guid,
+        templateName: template.name,
+        confidence: 100,
+        source: 'FIXED',
+        factors: [
+          'Planning fixe défini dans le profil de l’employé',
+          ...evaluation.blockers.map((blocker) => `Attention : ${blocker}`),
+        ],
+      };
+
+      applyAssignment(states.get(employee.guid)!, template, 'STANDARD', iso);
+    }
+  }
+
+  // ── Passe 2 : besoins configurés et rotation ──────────────────────────────
+  for (const iso of dates) {
+    const dayOfWeek = isoToDayKey(iso);
+
+    const dailyRequirements = requirements
+      .filter((requirement) => requirement.dayOfWeek === dayOfWeek)
+      .sort(
+        (a, b) =>
+          Number(a.allocationMode === 'FILL_REMAINING') -
+            Number(b.allocationMode === 'FILL_REMAINING') ||
+          a.priority - b.priority ||
+          Number(b.serviceType === 'GUARD') - Number(a.serviceType === 'GUARD'),
+      );
+
+    for (const requirement of dailyRequirements) {
+      const allocationError = allocationConfigurationError(requirement);
+
+      if (allocationError) {
+        violations.push({
+          severity: 'HARD',
+          code: 'INVALID_ALLOCATION_CONFIGURATION',
+          date: iso,
+          requirementGuid: requirement.guid,
+          message: `Configuration d’allocation invalide pour ${requirement.template.name}: ${allocationError}`,
+          details: {
+            allocationMode: requirement.allocationMode,
+            minimum: requirement.minEmployees,
+            target: requirement.targetEmployees,
+            maximum: requirement.maxEmployees,
+          },
+        });
+        continue;
+      }
+
+      if (
+        requirement.serviceType === 'GUARD' &&
+        (!requirement.continuationTemplate || requirement.continuationDayOffset !== 1)
+      ) {
+        violations.push({
+          severity: 'HARD',
+          code: 'INVALID_GUARD_CONTINUATION',
+          date: iso,
+          requirementGuid: requirement.guid,
+          message: `La garde ${requirement.template.name} ne possède pas une continuation valide au jour suivant`,
+        });
+        continue;
+      }
+
+      if (!templateHasWork(requirement.template, iso)) {
+        violations.push({
+          severity: 'HARD',
+          code: 'INVALID_REQUIREMENT_TEMPLATE',
+          date: iso,
+          requirementGuid: requirement.guid,
+          message: `Le template ${requirement.template.name} ne contient aucun horaire de travail pour ${dayOfWeek}`,
+        });
+        continue;
+      }
+
+      let assigned = countAssignedToRequirement(
+        includedEmployees,
+        schedules,
+        reasons,
+        iso,
+        requirement,
+      );
+
+      const targetNeeded = Math.max(0, requirement.targetEmployees - assigned);
+
+      if (targetNeeded > 0 && rotatingEmployees.length === 0) {
+        violations.push({
+          severity: assigned < requirement.minEmployees ? 'HARD' : 'WARNING',
+          code: 'NO_ROTATING_EMPLOYEES',
+          date: iso,
+          requirementGuid: requirement.guid,
+          message: `Aucun employé rotatif disponible pour compléter ${requirement.template.name}`,
+        });
+      }
+
+      const ranked = rotatingEmployees
+        .filter((employee) => schedules.get(employee.guid)?.[iso] === undefined)
+        .map((employee) => ({
+          employee,
+          evaluation: evaluateCandidate(
+            employee,
+            states.get(employee.guid)!,
+            fairness.get(employee.guid)!,
+            requirement,
+            iso,
+            config,
+          ),
+        }))
+        .filter((candidate) => candidate.evaluation.eligible)
+        .sort(
+          (a, b) =>
+            a.evaluation.fairnessScore - b.evaluation.fairnessScore ||
+            a.employee.guid.localeCompare(b.employee.guid),
+        );
+
+      const selectionCount =
+        requirement.allocationMode === 'FILL_REMAINING'
+          ? requirement.maxEmployees === null
+            ? ranked.length
+            : Math.max(0, Math.min(ranked.length, requirement.maxEmployees - assigned))
+          : Math.min(ranked.length, targetNeeded);
+
+      for (const candidate of ranked.slice(0, selectionCount)) {
+        const { employee, evaluation } = candidate;
+
+        schedules.get(employee.guid)![iso] = requirement.template.guid;
+        reasons.get(employee.guid)![iso] = {
+          templateGuid: requirement.template.guid,
+          templateName: requirement.template.name,
+          confidence: 90,
+          source: requirement.allocationMode === 'FILL_REMAINING' ? 'FILL_REMAINING' : 'GENERATED',
+          factors: [
+            ...evaluation.factors,
+            requirement.allocationMode === 'FILL_REMAINING'
+              ? 'Employé encore disponible après les gardes et créneaux prioritaires'
+              : 'Toutes les contraintes obligatoires ont été vérifiées',
+          ],
+        };
+
+        applyAssignment(
+          states.get(employee.guid)!,
+          requirement.template,
+          requirement.serviceType,
+          iso,
+        );
+
+        if (requirement.serviceType === 'GUARD' && requirement.continuationTemplate) {
+          const continuationDate = addDays(iso, requirement.continuationDayOffset);
+
+          schedules.get(employee.guid)![continuationDate] = requirement.continuationTemplate.guid;
+
+          reasons.get(employee.guid)![continuationDate] = {
+            templateGuid: requirement.continuationTemplate.guid,
+            templateName: requirement.continuationTemplate.name,
+            confidence: 100,
+            source: 'GUARD_CONTINUATION',
+            factors: [
+              `Suite automatique de la garde commencée le ${iso}`,
+              'Aucun autre service autorisé pendant cette journée de récupération',
+            ],
+          };
+
+          applyGuardContinuation(
+            states.get(employee.guid)!,
+            requirement.continuationTemplate,
+            continuationDate,
+          );
         }
       }
+
+      assigned = countAssignedToRequirement(
+        includedEmployees,
+        schedules,
+        reasons,
+        iso,
+        requirement,
+      );
+
+      let status: CoverageResult['status'] = 'COVERED';
+
+      if (assigned < requirement.minEmployees) {
+        status = 'BELOW_MINIMUM';
+        violations.push({
+          severity: 'HARD',
+          code: 'MIN_COVERAGE_NOT_REACHED',
+          date: iso,
+          requirementGuid: requirement.guid,
+          message: `Couverture minimale non atteinte pour ${requirement.template.name}`,
+          details: {
+            minimum: requirement.minEmployees,
+            target: requirement.targetEmployees,
+            assigned,
+          },
+        });
+      } else if (assigned < requirement.targetEmployees) {
+        status = 'BELOW_TARGET';
+        violations.push({
+          severity: 'WARNING',
+          code: 'TARGET_COVERAGE_NOT_REACHED',
+          date: iso,
+          requirementGuid: requirement.guid,
+          message: `Couverture cible non atteinte pour ${requirement.template.name}`,
+          details: {
+            target: requirement.targetEmployees,
+            assigned,
+          },
+        });
+      }
+
+      if (requirement.maxEmployees !== null && assigned > requirement.maxEmployees) {
+        status = 'ABOVE_MAXIMUM';
+        violations.push({
+          severity: 'HARD',
+          code: 'MAX_COVERAGE_EXCEEDED',
+          date: iso,
+          requirementGuid: requirement.guid,
+          message: `Couverture maximale dépassée pour ${requirement.template.name}`,
+          details: {
+            maximum: requirement.maxEmployees,
+            assigned,
+          },
+        });
+      }
+
+      coverage.push({
+        date: iso,
+        dayOfWeek,
+        requirementGuid: requirement.guid,
+        allocationMode: requirement.allocationMode,
+        templateGuid: requirement.template.guid,
+        templateName: requirement.template.name,
+        minimum: requirement.minEmployees,
+        target: requirement.targetEmployees,
+        maximum: requirement.maxEmployees,
+        assigned,
+        status,
+      });
     }
   }
 
-  // ── Score de conformité global ────────────────────────────────────────────
-  // = % de jours où l'employé est sur son créneau habituel (ou repos habituel)
-  let total = 0; let matches = 0
+  // ── Passe 3 : repos explicite pour les rotatifs non affectés ──────────────
+  for (const employee of rotatingEmployees) {
+    for (const iso of dates) {
+      if (schedules.get(employee.guid)![iso] !== undefined) continue;
 
-  for (const iso of dates) {
-    const dk = isoToDayKey(iso)
-    for (const emp of employees) {
-      total++
-      const proposed = schedules.get(emp.guid)?.[iso] ?? null
+      const forced = states.get(employee.guid)!.forcedRestDates.has(iso);
 
-      // Chercher ce que l'employé faisait habituellement ce dayKey
-      const lastMatch = getTemplateOnDate(
-        assignments.filter(a => {
-          // Trouver un assignment qui correspond à ce dayKey dans l'historique
-          const refDate = addDays(periodFrom, -7)
-          return covers(refDate, a.startDate, a.endDate) && a.userGuid === emp.guid
-        }),
-        emp.guid,
-        addDays(periodFrom, -7 + (DAY_KEYS.indexOf(dk) + 1)),
-      )
-
-      const expectedGuid = lastMatch?.hasWork ? lastMatch.templateGuid : null
-      if (proposed === expectedGuid) matches++
+      schedules.get(employee.guid)![iso] = null;
+      reasons.get(employee.guid)![iso] = {
+        templateGuid: null,
+        templateName: 'Repos',
+        confidence: 100,
+        source: 'REST',
+        factors: [
+          forced
+            ? 'Repos obligatoire après une garde'
+            : 'Aucun besoin de couverture restant compatible avec les contraintes',
+        ],
+      };
     }
   }
 
-  const conformityScore = total > 0 ? Math.round((matches / total) * 100) : 0
+  const fairnessScore = fairnessQuality(rotatingEmployees, states);
+  const coverageScore = coverageQuality(coverage);
 
-  // ── Assembler les résultats ────────────────────────────────────────────────
-  const items: EmployeeSuggestionResult[] = employees.map(emp => ({
-    userGuid: emp.guid,
-    schedule: schedules.get(emp.guid) ?? {},
-    reasons:  reasons.get(emp.guid)  ?? {},
-  }))
+  const diagnostics: EngineDiagnostics = {
+    violations,
+    coverage,
+    fairnessScore,
+    coverageScore,
+  };
 
-  return { items, conformityScore }
+  const hardViolations = violations.filter((violation) => violation.severity === 'HARD');
+
+  const blockingViolations = hardViolations.filter(
+    (violation) => violation.code !== 'MIN_COVERAGE_NOT_REACHED' || config.strictCoverage,
+  );
+
+  if (blockingViolations.length > 0) {
+    throw new PlanningInfeasibleError(
+      `Aucune solution valide : ${blockingViolations.length} contrainte(s) obligatoire(s) non satisfaite(s)`,
+      diagnostics,
+    );
+  }
+
+  const warningPenalty = Math.min(
+    20,
+    violations.filter((violation) => violation.severity === 'WARNING').length * 2,
+  );
+
+  const conformityScore = Math.max(
+    0,
+    Math.round(coverageScore * 0.75 + fairnessScore * 0.25 - warningPenalty),
+  );
+
+  return {
+    items: includedEmployees.map((employee) => ({
+      userGuid: employee.guid,
+      schedule: schedules.get(employee.guid) ?? {},
+      reasons: reasons.get(employee.guid) ?? {},
+    })),
+    conformityScore,
+    diagnostics,
+  };
 }
-
-// // ─────────────────────────────────────────────────────────────────────────────
-// // suggestion.engine.ts
-// //
-// // Moteur de génération de suggestion de planning.
-// // Pur TypeScript — aucune dépendance Express ou Sequelize.
-// // Entrée  : historique des assignments + liste des employés cibles
-// // Sortie  : SuggestionResult par employé (schedule + reasons)
-// // ─────────────────────────────────────────────────────────────────────────────
-//
-// export const HISTORY_WEEKS = 8;
-// export const WEIGHT_HABIT = 0.7;
-// export const WEIGHT_EQUITY = 0.3;
-//
-// const DAY_KEYS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'] as const;
-// type DayKey = (typeof DAY_KEYS)[number];
-//
-// // ── Types internes ────────────────────────────────────────────────────────────
-//
-// export interface HistoricalAssignment {
-//   userGuid: string;
-//   startDate: string; // YYYY-MM-DD
-//   endDate: string; // YYYY-MM-DD (2099-12-31 si ouvert)
-//   templateGuid: string;
-//   templateName: string;
-//   definition: Record<string, any>; // { Mon: [...], Tue: null, Wed: [], ... }
-// }
-//
-// export interface TargetEmployee {
-//   guid: string;
-//   name: string;
-//   code: string;
-// }
-//
-// export interface DayReason {
-//   templateName: string;
-//   templateGuid: string | null;
-//   confidence: number; // 0–100
-//   factors: string[];
-// }
-//
-// export interface EmployeeSuggestionResult {
-//   userGuid: string;
-//   schedule: Record<string, string | null>; // { Mon: templateGuid|null, ... }
-//   reasons: Record<string, DayReason | null>; // { Mon: DayReason|null, ... }
-// }
-//
-// export interface EngineResult {
-//   items: EmployeeSuggestionResult[];
-//   conformityScore: number; // 0–100 moyenne des confidences
-// }
-//
-// // ── Helpers date ──────────────────────────────────────────────────────────────
-//
-// function addDays(dateStr: string, n: number): string {
-//   const d = new Date(dateStr + 'T00:00:00');
-//   d.setDate(d.getDate() + n);
-//   return d.toISOString().split('T')[0];
-// }
-//
-// function diffDays(a: string, b: string): number {
-//   return Math.round(
-//     (new Date(b + 'T00:00:00').getTime() - new Date(a + 'T00:00:00').getTime()) / 86400000,
-//   );
-// }
-//
-// /** Retourne le dayKey (Mon, Tue, ...) pour une date ISO */
-// function isoToDayKey(iso: string): DayKey {
-//   const jsDay = new Date(iso + 'T00:00:00').getDay(); // 0=Sun … 6=Sat
-//   const map: DayKey[] = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
-//   return map[jsDay];
-// }
-//
-// /** Liste toutes les dates ISO entre from et to inclus */
-// function periodDates(from: string, to: string): string[] {
-//   const dates: string[] = [];
-//   let cur = from;
-//   while (cur <= to) {
-//     dates.push(cur);
-//     cur = addDays(cur, 1);
-//   }
-//   return dates;
-// }
-//
-// /**
-//  * Retourne le templateGuid actif pour un employé à une date donnée
-//  * dans l'historique, ou null si repos.
-//  */
-// function getTemplateOnDate(
-//   assignments: HistoricalAssignment[],
-//   userGuid: string,
-//   iso: string,
-// ): { templateGuid: string; templateName: string; hasWork: boolean } | null {
-//   const userAssignments = assignments.filter((a) => a.userGuid === userGuid);
-//
-//   for (const a of userAssignments) {
-//     if (iso >= a.startDate && iso <= a.endDate) {
-//       const dayKey = isoToDayKey(iso);
-//       const blocks = a.definition[dayKey];
-//       // null = férié, [] = repos, [...] = travail
-//       const hasWork = blocks !== null && Array.isArray(blocks) && blocks.length > 0;
-//       return {
-//         templateGuid: a.templateGuid,
-//         templateName: a.templateName,
-//         hasWork,
-//       };
-//     }
-//   }
-//   return null;
-// }
-//
-// // ── Scoring par fréquence ─────────────────────────────────────────────────────
-//
-// interface FrequencyMap {
-//   // templateGuid → { count, templateName }
-//   [templateGuid: string]: { count: number; templateName: string };
-// }
-//
-// /**
-//  * Pour un employé et un dayKey donné, compte la fréquence de chaque template
-//  * sur les N semaines d'historique précédant periodFrom.
-//  */
-// function buildFrequencyMap(
-//   assignments: HistoricalAssignment[],
-//   userGuid: string,
-//   dayKey: DayKey,
-//   periodFrom: string,
-//   historyWeeks: number,
-// ): { freqMap: FrequencyMap; restCount: number; totalObs: number } {
-//   const historyFrom = addDays(periodFrom, -historyWeeks * 7);
-//   const historyTo = addDays(periodFrom, -1);
-//
-//   const freqMap: FrequencyMap = {};
-//   let restCount = 0;
-//   let totalObs = 0;
-//
-//   // Parcourir chaque semaine de l'historique, trouver le jour correspondant au dayKey
-//   let cur = historyFrom;
-//   while (cur <= historyTo) {
-//     if (isoToDayKey(cur) === dayKey) {
-//       totalObs++;
-//       const match = getTemplateOnDate(assignments, userGuid, cur);
-//       if (!match || !match.hasWork) {
-//         restCount++;
-//       } else {
-//         if (!freqMap[match.templateGuid]) {
-//           freqMap[match.templateGuid] = { count: 0, templateName: match.templateName };
-//         }
-//         freqMap[match.templateGuid].count++;
-//       }
-//     }
-//     cur = addDays(cur, 1);
-//   }
-//
-//   return { freqMap, restCount, totalObs };
-// }
-//
-// // ── Score équité ──────────────────────────────────────────────────────────────
-//
-// /**
-//  * Compte combien de fois un template a déjà été proposé pour cet employé
-//  * dans la suggestion courante (pour pénaliser les répétitions excessives).
-//  */
-// function countTemplateInSuggestion(
-//   schedule: Record<string, string | null>,
-//   templateGuid: string,
-// ): number {
-//   return Object.values(schedule).filter((g) => g === templateGuid).length;
-// }
-//
-// // ── Moteur principal ──────────────────────────────────────────────────────────
-//
-// export function generateSuggestion(
-//   employees: TargetEmployee[],
-//   assignments: HistoricalAssignment[],
-//   periodFrom: string,
-//   periodTo: string,
-//   historyWeeks: number = HISTORY_WEEKS,
-// ): EngineResult {
-//   const allConfidences: number[] = [];
-//   const items: EmployeeSuggestionResult[] = [];
-//
-//   for (const emp of employees) {
-//     const schedule: Record<string, string | null> = {};
-//     const reasons: Record<string, DayReason | null> = {};
-//
-//     const dates = periodDates(periodFrom, periodTo);
-//
-//     for (const iso of dates) {
-//       const dayKey = isoToDayKey(iso);
-//
-//       const { freqMap, restCount, totalObs } = buildFrequencyMap(
-//         assignments,
-//         emp.guid,
-//         dayKey,
-//         periodFrom,
-//         historyWeeks,
-//       );
-//
-//       // Cas : aucun historique pour cet employé ce jour
-//       if (totalObs === 0) {
-//         schedule[iso] = null;
-//         reasons[iso] = {
-//           templateGuid: null,
-//           templateName: 'Repos',
-//           confidence: 0,
-//           factors: ['Aucun historique disponible pour ce jour'],
-//         };
-//         allConfidences.push(0);
-//         continue;
-//       }
-//
-//       // Trouver le template le plus fréquent (score habitude)
-//       let bestGuid: string | null = null;
-//       let bestName: string = 'Repos';
-//       let bestHabitScore: number = restCount / totalObs; // score repos par défaut
-//       let bestIsRest: boolean = true;
-//
-//       for (const [tGuid, { count, templateName }] of Object.entries(freqMap)) {
-//         const habitScore = count / totalObs;
-//         if (habitScore > bestHabitScore) {
-//           bestHabitScore = habitScore;
-//           bestGuid = tGuid;
-//           bestName = templateName;
-//           bestIsRest = false;
-//         }
-//       }
-//
-//       // Score équité : pénaliser si déjà trop présent dans la suggestion courante
-//       let equityScore = 1.0;
-//       if (bestGuid) {
-//         const alreadyCount = countTemplateInSuggestion(schedule, bestGuid);
-//         const totalDays = diffDays(periodFrom, periodTo) + 1;
-//         // Pénalité progressive si le template dépasse 60% des jours suggérés
-//         const ratio = alreadyCount / Math.max(totalDays, 1);
-//         if (ratio > 0.6) equityScore = Math.max(0, 1 - (ratio - 0.6) * 2.5);
-//       }
-//
-//       // Score final
-//       const finalScore = WEIGHT_HABIT * bestHabitScore + WEIGHT_EQUITY * equityScore;
-//       const confidence = Math.round(finalScore * 100);
-//
-//       // Facteurs explicatifs
-//       const factors: string[] = [];
-//       if (totalObs > 0) {
-//         const freq = bestIsRest ? restCount : (freqMap[bestGuid!]?.count ?? 0);
-//         factors.push(`Historique : ${freq}/${totalObs} occurrences sur ${historyWeeks} semaines`);
-//       }
-//       if (equityScore < 1) {
-//         factors.push('Légère pénalité équité (template déjà fréquent sur la période)');
-//       }
-//       if (bestIsRest) {
-//         factors.push("Repos proposé (majoritaire dans l'historique)");
-//       }
-//
-//       schedule[iso] = bestGuid;
-//       reasons[iso] = {
-//         templateGuid: bestGuid,
-//         templateName: bestName,
-//         confidence,
-//         factors,
-//       };
-//       allConfidences.push(confidence);
-//     }
-//
-//     items.push({ userGuid: emp.guid, schedule, reasons });
-//   }
-//
-//   // Conformité globale = moyenne des confidences non nulles
-//   const nonZero = allConfidences.filter((c) => c > 0);
-//   const conformityScore =
-//     nonZero.length > 0 ? Math.round(nonZero.reduce((a, b) => a + b, 0) / nonZero.length) : 0;
-//
-//   return { items, conformityScore };
-// }

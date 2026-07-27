@@ -111,5 +111,46 @@ module.exports = {
       min_uptime: '10s',
       max_restarts: 3, // moins tolérant : si ça crash 3x, c'est un bug à corriger
     },
+
+    // =========================
+    // OR-TOOLS PLANNING SOLVER
+    // =========================
+    {
+      name: 'toke-planning-ortools',
+
+      cwd: './packages/planning-ortools',
+
+      script: '.venv/bin/python',
+
+      args: ['-m', 'uvicorn', 'app.main:app', '--host', '127.0.0.1', '--port', '8090'],
+
+      interpreter: 'none',
+
+      instances: 1,
+      exec_mode: 'fork',
+
+      env_production: {
+        PYTHONUNBUFFERED: '1',
+        TZ: 'Africa/Douala',
+      },
+
+      error_file: './logs/ortools-pm2-err.log',
+      out_file: './logs/ortools-pm2-out.log',
+
+      log_date_format: 'YYYY-MM-DD HH:mm:ss Z',
+      merge_logs: true,
+      time: true,
+
+      autorestart: true,
+      max_memory_restart: '768M',
+
+      restart_delay: 5000,
+      exp_backoff_restart_delay: 100,
+
+      kill_timeout: 10000,
+
+      min_uptime: '10s',
+      max_restarts: 5,
+    },
   ],
 };

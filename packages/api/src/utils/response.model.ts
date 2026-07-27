@@ -442,6 +442,9 @@ export const tableName = {
   QR_CODE_GENERATION: `${G.tableAp}_qr_code`,
   DEPARTMENT: `${G.tableAp}_department`,
   POSTE: `${G.tableAp}_poste`,
+  PLANNING_SUGGESTION_CONFIG: `${G.tableAp}_planning_suggestion_config`,
+  PLANNING_SUGGESTION_REQUIREMENT: `${G.tableAp}_planning_suggestion_requirement`,
+  EMPLOYEE_PLANNING_PROFILE: `${G.tableAp}_employee_planning_profile`,
 
   SESSION_TEMPLATES: `${G.tableAp}_session_templates`,
   SESSION_MODEL: `${G.tableAp}_session_model`,

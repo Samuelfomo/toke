@@ -551,15 +551,25 @@ router.post('/', Ensure.post(), async (req: Request, res: Response) => {
     };
 
     // Envoyer l'OTP via WhatsApp
-    const result = await WapService.sendInvitation(
+    await WapService.sendInvitation(
       userObj.getOtpToken()!,
       validatedData.phone_number,
       validatedData.country,
       buttons,
     );
-    if (result.status !== HttpStatus.SUCCESS) {
-      return R.handleError(res, result.status, result.response);
+
+    if (userObj.getEmail()) {
+      // Envoi par email
+      await EmailSender.sender(userObj.getOtpToken()!, userObj.getEmail()!);
     }
+    // if (result.status !== HttpStatus.SUCCESS) {
+    //   if (userObj.getEmail()) {
+    //     // Envoi par email
+    //     await EmailSender.sender(userObj.getOtpToken()!, userObj.getEmail()!);
+    //   } else {
+    //     return R.handleError(res, result.status, result.response);
+    //   }
+    // }
 
     return R.handleCreated(res, {
       message: 'User created and OTP sent successfully',

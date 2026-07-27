@@ -131,4 +131,37 @@ export class ScheduleService {
       }
     }
   }
+
+  static async delete(
+    guid: string,
+    reference: string,
+  ): Promise<{ status: number; response: object }> {
+    try {
+      const api = await getApiClient(reference);
+
+      const response = await api.delete(`${baseUrl}/${guid}`);
+
+      return {
+        status: response.status,
+        response: response.data.data,
+      };
+    } catch (error: any) {
+      if (error.response) {
+        return {
+          status: error.response.status,
+          response: error.response.data,
+        };
+      } else if (error.request) {
+        return {
+          status: 500,
+          response: { message: 'No response from server', details: error.message },
+        };
+      } else {
+        return {
+          status: 500,
+          response: { message: 'Unexpected error', details: error.message },
+        };
+      }
+    }
+  }
 }

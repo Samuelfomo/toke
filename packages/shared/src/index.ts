@@ -96,6 +96,9 @@ export * from './schemas/tenant/schedule.assignments.js';
 export * from './schemas/tenant/groups.js';
 export * from './schemas/tenant/device.js';
 export * from './schemas/tenant/session.model.js';
+export * from './schemas/tenant/planning.suggestion.config.js';
+export * from './schemas/tenant/planning.suggestion.requirement.js';
+export * from './schemas/tenant/employee.planning.profile.js';
 
 // Export des utilitaires
 export * from './utils/country.validation.js';

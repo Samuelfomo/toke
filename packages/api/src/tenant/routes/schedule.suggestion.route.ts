@@ -1,22 +1,21 @@
 import { Request, Response, Router } from 'express';
-import { HttpStatus, paginationSchema, SAFamily, UsersValidationUtils } from '@toke/shared';
+import { HttpStatus, paginationSchema, UsersValidationUtils } from '@toke/shared';
 
 import Ensure from '../../middle/ensured-routes.js';
 import R from '../../tools/response.js';
 import ScheduleSuggestion from '../class/ScheduleSuggestion.js';
 import ScheduleSuggestionItem from '../class/ScheduleSuggestionItem.js';
-import ScheduleAssignments from '../class/ScheduleAssignments.js';
 import SessionTemplate from '../class/SessionTemplates.js';
 import User from '../class/User.js';
-import OrgHierarchy from '../class/OrgHierarchy.js';
 import {
-  generateSuggestion,
-  HistoricalAssignment,
-  HISTORY_WEEKS,
-  TargetEmployee,
-} from '../../utils/suggestion.engine.js';
+  generateConfiguredSuggestion,
+  SuggestionGenerationError,
+} from '../../utils/schedule.suggestion.generation.service.js';
 import { responseValue } from '../../utils/response.model.js';
-import Groups from '../class/Groups.js';
+import {
+  approveScheduleSuggestion,
+  SuggestionApprovalError,
+} from '../../tools/schedule.suggestion.approval.service.js';
 
 const router = Router();
 
@@ -27,6 +26,8 @@ const CODES = {
   INVALID_PAYLOAD: 'SUGGESTION_INVALID_PAYLOAD',
   NOT_FOUND: 'SUGGESTION_NOT_FOUND',
   ITEM_NOT_FOUND: 'SUGGESTION_ITEM_NOT_FOUND',
+  TEMPLATE_NOT_FOUND: 'SUGGESTION_TEMPLATE_NOT_FOUND',
+  TEMPLATE_DAY_INVALID: 'SUGGESTION_TEMPLATE_DAY_INVALID',
   MANAGER_NOT_FOUND: 'SUGGESTION_MANAGER_NOT_FOUND',
   NOT_A_MANAGER: 'SUGGESTION_NOT_A_MANAGER',
   ALREADY_RESOLVED: 'SUGGESTION_ALREADY_RESOLVED',
@@ -73,16 +74,9 @@ function isValidDate(v: any): v is string {
 
 router.post('/:manager/generate', Ensure.post(), async (req: Request, res: Response) => {
   try {
-    const { manager: managerGuid } = req.params;
-    const { period_from, period_to, employee_guids } = req.body ?? {};
+    const { manager } = req.params;
+    const { period_from, period_to } = req.body ?? {};
 
-    // ── Validation ──────────────────────────────────────────────────────────
-    if (!UsersValidationUtils.validateGuid(managerGuid)) {
-      return R.handleError(res, HttpStatus.BAD_REQUEST, {
-        code: CODES.INVALID_GUID,
-        message: ERRORS.INVALID_GUID,
-      });
-    }
     if (!isValidDate(period_from) || !isValidDate(period_to) || period_from > period_to) {
       return R.handleError(res, HttpStatus.BAD_REQUEST, {
         code: CODES.INVALID_PAYLOAD,
@@ -91,255 +85,28 @@ router.post('/:manager/generate', Ensure.post(), async (req: Request, res: Respo
       });
     }
 
-    // ── Manager ─────────────────────────────────────────────────────────────
-    const managerObj = await User._load(managerGuid, true);
-    if (!managerObj) {
-      return R.handleError(res, HttpStatus.NOT_FOUND, {
-        code: CODES.MANAGER_NOT_FOUND,
-        message: ERRORS.MANAGER_NOT_FOUND,
-      });
-    }
-    const isManager = await OrgHierarchy.hasManagerRole(managerObj.getId()!);
-    if (!isManager) {
-      return R.handleError(res, HttpStatus.FORBIDDEN, {
-        code: CODES.NOT_A_MANAGER,
-        message: ERRORS.NOT_A_MANAGER,
-      });
-    }
-
-    // // ── Employés ciblés ─────────────────────────────────────────────────────
-    // // Si employee_guids fourni → valider et charger uniquement ceux-là
-    // // Sinon → tous les employés ayant au moins un schedule assignment créé par ce manager
-    // let targetEmployees: TargetEmployee[] = [];
-    //
-    // if (Array.isArray(employee_guids) && employee_guids.length > 0) {
-    //   for (const guid of employee_guids) {
-    //     if (!UsersValidationUtils.validateGuid(guid)) continue;
-    //     const u = await User._load(guid, true);
-    //     if (u) {
-    //       targetEmployees.push({
-    //         guid: u.getGuid()!,
-    //         name: u.getFullName(),
-    //         code: (u as any).getEmployeeCode?.() ?? '',
-    //       });
-    //     }
-    //   }
-    // }
-    // else {
-    //   // Charger tous les employés ayant un schedule assignment family:'user'
-    //   // créé par ce manager (scope équipe)
-    //   const allAssignments = await ScheduleAssignments._listByCreatedBy(managerObj.getId()!);
-    //   const seenGuids = new Set<string>();
-    //   if (allAssignments) {
-    //     for (const a of allAssignments) {
-    //       if (a.getFamily() === SAFamily.USER) {
-    //         const relatedGuid = a.getRelated();
-    //         if (relatedGuid && !seenGuids.has(relatedGuid)) {
-    //           seenGuids.add(relatedGuid);
-    //           const u = await User._load(relatedGuid, true);
-    //           if (u) {
-    //             targetEmployees.push({
-    //               guid: u.getGuid()!,
-    //               name: u.getFullName(),
-    //               code: (u as any).getEmployeeCode?.() ?? '',
-    //             });
-    //           }
-    //         }
-    //       }
-    //     }
-    //   }
-    // }
-
-    // ── Employés ciblés ─────────────────────────────────────────────────────
-    // Source 1 : membres actuels de l'équipe (vérité RH)
-    // Source 2 : employés ayant un historique créé par ce manager
-    // Éligibles : intersection des deux sources
-    // Si employee_guids fourni : filtrer dans l'intersection
-
-    // Source 1 — équipe active (directs uniquement, sans sous-équipes)
-    const teamResult = await OrgHierarchy.getAllTeamMembers(managerObj.getId()!, false);
-    const activeTeamGuids = new Set<string>(
-      teamResult.all_employees_flat.map((u) => u.getGuid()).filter((g): g is string => !!g),
-    );
-
-    if (activeTeamGuids.size === 0) {
-      return R.handleError(res, HttpStatus.UNPROCESSABLE_ENTITY, {
-        code: CODES.NO_EMPLOYEES,
-        message: "Aucun employé actif dans l'équipe de ce manager.",
-      });
-    }
-
-    // Source 2 — assignments créés par ce manager (directs ET via groupe)
-    // Cas 1 : family:'user'  → l'employé est directement ciblé
-    // Cas 2 : family:'group' → les membres ACTIFS du groupe héritent du planning
-    const allAssignments = await ScheduleAssignments._listByCreatedBy(managerObj.getId()!);
-    const assignedGuids = new Set<string>();
-
-    if (allAssignments) {
-      for (const a of allAssignments) {
-        if (a.getFamily() === SAFamily.USER) {
-          // Cas 1 — direct
-          const g = a.getRelated();
-          if (g) assignedGuids.add(g);
-        } else if (a.getFamily() === SAFamily.GROUP) {
-          // Cas 2 — via groupe : charger uniquement les membres actifs
-          const groupGuid = a.getRelated();
-          if (!groupGuid) continue;
-          const group = await Groups._load(groupGuid, true);
-          if (!group) continue;
-          const activeMembers = await group.getDirectMembers(true); // activeOnly = true
-          for (const member of activeMembers) {
-            const memberGuid = member.getGuid();
-            if (memberGuid) assignedGuids.add(memberGuid);
-          }
-        }
-      }
-    }
-
-    // Intersection
-    const eligibleGuids = [...activeTeamGuids].filter((g) => assignedGuids.has(g));
-
-    if (eligibleGuids.length === 0) {
-      return R.handleError(res, HttpStatus.UNPROCESSABLE_ENTITY, {
-        code: CODES.NO_EMPLOYEES,
-        message: "Aucun employé de l'équipe n'a encore de planning historique à analyser.",
-      });
-    }
-
-    // Filtre optionnel par employee_guids
-    const requestedGuids =
-      Array.isArray(employee_guids) && employee_guids.length > 0
-        ? new Set<string>(
-            employee_guids.filter((g: string) => UsersValidationUtils.validateGuid(g)),
-          )
-        : null;
-
-    const finalGuids = requestedGuids
-      ? eligibleGuids.filter((g) => requestedGuids.has(g))
-      : eligibleGuids;
-
-    if (finalGuids.length === 0) {
-      return R.handleError(res, HttpStatus.UNPROCESSABLE_ENTITY, {
-        code: CODES.NO_EMPLOYEES,
-        message: requestedGuids
-          ? "Aucun des employés sélectionnés n'est éligible (pas dans l'équipe active ou sans historique de planning)."
-          : ERRORS.NO_EMPLOYEES,
-      });
-    }
-
-    // Construire les TargetEmployee
-    const targetEmployees: TargetEmployee[] = [];
-    for (const guid of finalGuids) {
-      const u = await User._load(guid, true);
-      if (!u) continue;
-      targetEmployees.push({
-        guid: u.getGuid()!,
-        name: u.getFullName(),
-        code: (u as any).getEmployeeCode?.() ?? '',
-      });
-    }
-
-    if (targetEmployees.length === 0) {
-      return R.handleError(res, HttpStatus.UNPROCESSABLE_ENTITY, {
-        code: CODES.NO_EMPLOYEES,
-        message: ERRORS.NO_EMPLOYEES,
-      });
-    }
-
-    // ── Historique des assignments ───────────────────────────────────────────
-    // Charger les N semaines précédant period_from pour tous les employés ciblés
-    const historyFrom = new Date(period_from + 'T00:00:00');
-    historyFrom.setDate(historyFrom.getDate() - HISTORY_WEEKS * 7);
-    const historyFromStr = historyFrom.toISOString().split('T')[0];
-
-    const historicalRaw = await ScheduleAssignments._listByDateRange(historyFromStr, period_from);
-    const historical: HistoricalAssignment[] = [];
-
-    const targetGuids = new Set(targetEmployees.map((e) => e.guid));
-
-    if (historicalRaw) {
-      for (const a of historicalRaw) {
-        const snapshot = a.getSessionTemplate();
-        if (!snapshot?.definition) continue;
-
-        if (a.getFamily() === SAFamily.USER) {
-          // Cas 1 — assignment direct : ajouter si l'employé est ciblé
-          const relatedGuid = a.getRelated();
-          if (!relatedGuid || !targetGuids.has(relatedGuid)) continue;
-
-          historical.push({
-            userGuid: relatedGuid,
-            startDate: a.getStartDate()!,
-            endDate: a.getEndDate() ?? '2099-12-31',
-            templateGuid: snapshot.guid,
-            templateName: snapshot.name,
-            definition: snapshot.definition,
-          });
-        } else if (a.getFamily() === SAFamily.GROUP) {
-          // Cas 2 — assignment groupe : propager à chaque membre actif ciblé
-          const groupGuid = a.getRelated();
-          if (!groupGuid) continue;
-          const group = await Groups._load(groupGuid, true);
-          if (!group) continue;
-          const activeMembers = await group.getDirectMembers(true);
-
-          for (const member of activeMembers) {
-            const memberGuid = member.getGuid();
-            if (!memberGuid || !targetGuids.has(memberGuid)) continue;
-
-            historical.push({
-              userGuid: memberGuid,
-              startDate: a.getStartDate()!,
-              endDate: a.getEndDate() ?? '2099-12-31',
-              templateGuid: snapshot.guid,
-              templateName: snapshot.name,
-              definition: snapshot.definition,
-            });
-          }
-        }
-      }
-    }
-
-    // ── Moteur de génération ─────────────────────────────────────────────────
-    const engineResult = generateSuggestion(
-      targetEmployees,
-      historical,
-      period_from,
-      period_to,
-      HISTORY_WEEKS,
-    );
-
-    // ── Persistance ──────────────────────────────────────────────────────────
-    const suggestion = new ScheduleSuggestion()
-      .setTenant(managerObj.getTenant?.() ?? '')
-      .setManager(managerObj.getId()!)
-      .setPeriodFrom(period_from)
-      .setPeriodTo(period_to)
-      .setHistoryWeeks(HISTORY_WEEKS)
-      .setConformityScore(engineResult.conformityScore);
-
-    await suggestion.save();
-
-    // Persister les items
-    for (const empResult of engineResult.items) {
-      const userObj = await User._load(empResult.userGuid, true);
-      if (!userObj) continue;
-
-      const item = new ScheduleSuggestionItem()
-        .setSuggestion(suggestion.getId()!)
-        .setUser(userObj.getId()!)
-        .setSchedule(empResult.schedule)
-        .setReasons(empResult.reasons);
-
-      await item.save();
-    }
+    const result = await generateConfiguredSuggestion(manager as string, period_from, period_to);
 
     return R.handleCreated(res, {
-      suggestion: await suggestion.toJSON(responseValue.FULL, true),
-      conformity_score: engineResult.conformityScore,
-      employee_count: targetEmployees.length,
+      suggestion: await result.suggestion.toJSON(responseValue.FULL, true),
+      conformity_score: result.engineResult.conformityScore,
+      planning_quality_score: result.engineResult.conformityScore,
+      employee_count: result.employeeCount,
+      configuration: {
+        guid: result.configGuid,
+        version: result.configVersion,
+      },
+      diagnostics: result.engineResult.diagnostics,
     });
   } catch (error: any) {
+    if (error instanceof SuggestionGenerationError) {
+      return R.handleError(res, error.status as any, {
+        code: error.code,
+        message: error.message,
+        details: error.details,
+      });
+    }
+
     return R.handleError(res, HttpStatus.INTERNAL_ERROR, {
       code: CODES.GENERATION_FAILED,
       message: error.message,
@@ -451,12 +218,14 @@ router.patch('/:guid/item/:itemGuid', Ensure.patch(), async (req: Request, res: 
         message: ERRORS.INVALID_GUID,
       });
     }
+
     if (!isValidDate(iso)) {
       return R.handleError(res, HttpStatus.BAD_REQUEST, {
         code: CODES.INVALID_PAYLOAD,
         message: 'iso must be a valid date (YYYY-MM-DD).',
       });
     }
+
     if (template_guid !== null && !UsersValidationUtils.validateGuid(template_guid)) {
       return R.handleError(res, HttpStatus.BAD_REQUEST, {
         code: CODES.INVALID_PAYLOAD,
@@ -464,14 +233,18 @@ router.patch('/:guid/item/:itemGuid', Ensure.patch(), async (req: Request, res: 
       });
     }
 
-    // Vérifier que la suggestion existe et est encore en draft
+    // Vér R.handleError(res, HttpStatus.BAD_REQUEST, {
+    // code: CODESifier que la suggestion existe
     const suggestion = await ScheduleSuggestion._load(guid as string);
+
     if (!suggestion) {
       return R.handleError(res, HttpStatus.NOT_FOUND, {
         code: CODES.NOT_FOUND,
         message: ERRORS.NOT_FOUND,
       });
     }
+
+    // Une suggestion résolue ne peut plus être modifiée
     if (!suggestion.isDraft()) {
       return R.handleError(res, HttpStatus.CONFLICT, {
         code: CODES.ALREADY_RESOLVED,
@@ -481,6 +254,7 @@ router.patch('/:guid/item/:itemGuid', Ensure.patch(), async (req: Request, res: 
 
     // Charger l'item
     const item = await ScheduleSuggestionItem._load(itemGuid as string);
+
     if (!item) {
       return R.handleError(res, HttpStatus.NOT_FOUND, {
         code: CODES.ITEM_NOT_FOUND,
@@ -488,18 +262,58 @@ router.patch('/:guid/item/:itemGuid', Ensure.patch(), async (req: Request, res: 
       });
     }
 
-    // Construire la raison manuelle
-    let reason: Record<string, any> | null = null;
-    if (template_guid) {
+    // L'item doit obligatoirement appartenir à la suggestion demandée
+    if (item.getSuggestion() !== suggestion.getId()) {
+      return R.handleError(res, HttpStatus.NOT_FOUND, {
+        code: CODES.ITEM_NOT_FOUND,
+        message: ERRORS.ITEM_NOT_FOUND,
+      });
+    }
+
+    // La date modifiée doit appartenir à la période de la suggestion
+    if (iso < suggestion.getPeriodFrom()! || iso > suggestion.getPeriodTo()!) {
+      return R.handleError(res, HttpStatus.UNPROCESSABLE_ENTITY, {
+        code: CODES.INVALID_PAYLOAD,
+        message: 'The modified date is outside the suggestion period.',
+      });
+    }
+
+    let reason: Record<string, any>;
+
+    if (template_guid !== null) {
       const tpl = await SessionTemplate._load(template_guid, true);
+
+      // Le template doit exister et être encore courant
+      if (!tpl || !tpl.isCurrent()) {
+        return R.handleError(res, HttpStatus.NOT_FOUND, {
+          code: CODES.TEMPLATE_NOT_FOUND,
+          message: 'Session template not found or no longer current.',
+        });
+      }
+
+      // Vérifier que le template contient des blocs pour le jour modifié
+      const days = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+      const day = days[new Date(`${iso}T00:00:00.000Z`).getUTCDay()]!;
+
+      const blocks = tpl.getDefinition()?.[day];
+
+      if (!Array.isArray(blocks) || blocks.length === 0) {
+        return R.handleError(res, HttpStatus.UNPROCESSABLE_ENTITY, {
+          code: CODES.TEMPLATE_DAY_INVALID,
+          message: `The selected template contains no work block for ${day}.`,
+        });
+      }
+
       reason = {
+        source: 'MANUAL',
         templateGuid: template_guid,
-        templateName: tpl?.getName() ?? '—',
+        templateName: tpl.getName() ?? '—',
         confidence: 100,
         factors: ['Modifié manuellement par le manager'],
       };
     } else {
       reason = {
+        source: 'MANUAL',
         templateGuid: null,
         templateName: 'Repos',
         confidence: 100,
@@ -526,7 +340,6 @@ router.patch('/:guid/item/:itemGuid', Ensure.patch(), async (req: Request, res: 
 // Valide la suggestion → bulk-create des ScheduleAssignments.
 // Un assignment par employé par bloc continu de même template.
 // ─────────────────────────────────────────────────────────────────────────────
-
 router.post('/:guid/approve', Ensure.post(), async (req: Request, res: Response) => {
   try {
     const { guid } = req.params;
@@ -538,118 +351,25 @@ router.post('/:guid/approve', Ensure.post(), async (req: Request, res: Response)
       });
     }
 
-    const suggestion = await ScheduleSuggestion._load(guid as string);
-    if (!suggestion) {
-      return R.handleError(res, HttpStatus.NOT_FOUND, {
-        code: CODES.NOT_FOUND,
-        message: ERRORS.NOT_FOUND,
-      });
-    }
-    if (!suggestion.isDraft()) {
-      return R.handleError(res, HttpStatus.CONFLICT, {
-        code: CODES.ALREADY_RESOLVED,
-        message: ERRORS.ALREADY_RESOLVED,
-      });
-    }
-
-    const items = await suggestion.getItems();
-    const managerId = suggestion.getManagerId()!;
-    let createdCount = 0;
-
-    for (const item of items) {
-      const schedule = item.getSchedule() ?? {};
-      const userObj = await item.getUserObj();
-      if (!userObj) continue;
-
-      // Regrouper les jours consécutifs de même template en blocs
-      // { templateGuid → [{ from, to }] }
-      const sortedDates = Object.keys(schedule).sort();
-      const blocks: { templateGuid: string; from: string; to: string }[] = [];
-
-      let currentGuid: string | null = null;
-      let blockStart: string | null = null;
-      let blockEnd: string | null = null;
-
-      for (const iso of sortedDates) {
-        const tGuid = schedule[iso]; // string | null
-
-        if (tGuid === null) {
-          // Repos — fermer le bloc en cours si existant
-          if (currentGuid && blockStart && blockEnd) {
-            blocks.push({ templateGuid: currentGuid, from: blockStart, to: blockEnd });
-          }
-          currentGuid = null;
-          blockStart = null;
-          blockEnd = null;
-          continue;
-        }
-
-        if (tGuid === currentGuid) {
-          // Même template → étendre le bloc
-          blockEnd = iso;
-        } else {
-          // Nouveau template → fermer l'ancien bloc
-          if (currentGuid && blockStart && blockEnd) {
-            blocks.push({ templateGuid: currentGuid, from: blockStart, to: blockEnd });
-          }
-          currentGuid = tGuid;
-          blockStart = iso;
-          blockEnd = iso;
-        }
-      }
-      // Fermer le dernier bloc
-      if (currentGuid && blockStart && blockEnd) {
-        blocks.push({ templateGuid: currentGuid, from: blockStart, to: blockEnd });
-      }
-
-      // Créer un ScheduleAssignment par bloc
-      for (const block of blocks) {
-        const tpl = await SessionTemplate._load(block.templateGuid, true);
-        if (!tpl) continue;
-
-        // Vérifier s'il existe déjà un assignment actif pour cet employé
-        // chevauchant la période du bloc
-        const existing = await ScheduleAssignments._listForRelatedOnPeriod(
-          SAFamily.USER,
-          userObj.getGuid()!,
-          block.from,
-          block.to,
-        );
-
-        if (existing && existing.length > 0) {
-          // Désactiver les assignments existants qui chevauchent avant de créer
-          // (le nouveau planning remplace l'ancien sur cette période)
-          for (const ex of existing) {
-            ex.setActive(false);
-          }
-        }
-
-        const snapshot = await ScheduleAssignments.createTemplateSnapshot(tpl);
-
-        const assignment = new ScheduleAssignments();
-        assignment
-          .setFamily(SAFamily.USER)
-          .setRelated(userObj.getGuid()!)
-          .setSessionTemplate(snapshot)
-          .setStartDate(block.from)
-          .setEndDate(block.to)
-          .setCreatedBy(managerId)
-          .setActive(true)
-          .setReason(`Généré depuis suggestion ${guid}`);
-
-        await assignment.save();
-        createdCount++;
-      }
-    }
-
-    // Marquer la suggestion comme approuvée
-    await suggestion.approve();
+    const result = await approveScheduleSuggestion(guid as string);
 
     return R.handleSuccess(res, {
-      suggestion: await suggestion.toJSON(responseValue.FULL, false),
-      created_count: createdCount,
+      message: 'Schedule suggestion approved successfully.',
+      suggestion_guid: result.suggestionGuid,
+      created_count: result.createdCount,
+      deactivated_count: result.deactivatedCount,
+      preserved_fragment_count: result.preservedFragmentCount,
+      employee_count: result.employeeCount,
     });
   } catch (error: any) {
+    if (error instanceof SuggestionApprovalError) {
+      return R.handleError(res, error.status as any, {
+        code: error.code,
+        message: error.message,
+        details: error.details,
+      });
+    }
+
     return R.handleError(res, HttpStatus.INTERNAL_ERROR, {
       code: CODES.APPROVAL_FAILED,
       message: error.message,

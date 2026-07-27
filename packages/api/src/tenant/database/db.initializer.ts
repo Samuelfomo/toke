@@ -27,6 +27,9 @@ import { RotationGroupTemplateLogDbStructure } from './data/rotation.group.templ
 import { SessionModelDbStructure } from './data/session.model.db.js';
 import { ScheduleSuggestionDbStructure } from './data/schedule.suggestion.db.js';
 import { ScheduleSuggestionItemDbStructure } from './data/schedule.suggestion.item.db.js';
+import { PlanningSuggestionConfigDbStructure } from './data/planning.suggestion.config.db.js';
+import { EmployeePlanningProfileDbStructure } from './data/employee.planning.profile.db.js';
+import { PlanningSuggestionRequirementDbStructure } from './data/planning.suggestion.requirement.bd.js';
 
 interface TenantInstance {
   sequelize: Sequelize;
@@ -227,8 +230,11 @@ export class TableInitializer {
     this.defineRotationGroupTemplateModelForInstance(instance);
     this.defineRotationGroupTemplateLogModelForInstance(instance);
 
+    this.definePlanningSuggestionConfigModelForInstance(instance);
     this.defineScheduleSuggestionModelForInstance(instance);
     this.defineScheduleSuggestionItemModelForInstance(instance);
+    this.defineEmployeePlanningProfileModelForInstance(instance);
+    this.definePlanningSuggestionRequirementModelForInstance(instance);
 
     console.log(`✅ ${instance.models.size} modèle(s) défini(s) pour cette instance`);
   }
@@ -509,6 +515,19 @@ export class TableInitializer {
     );
   }
 
+  private static definePlanningSuggestionConfigModelForInstance(instance: TenantInstance): void {
+    const model = instance.sequelize.define(
+      PlanningSuggestionConfigDbStructure.tableName,
+      PlanningSuggestionConfigDbStructure.attributes,
+      PlanningSuggestionConfigDbStructure.options,
+    );
+
+    instance.models.set(PlanningSuggestionConfigDbStructure.tableName, model);
+    console.log(
+      `✅ Modèle Planning Suggestion Config défini (${PlanningSuggestionConfigDbStructure.tableName})`,
+    );
+  }
+
   private static defineScheduleSuggestionModelForInstance(instance: TenantInstance): void {
     const model = instance.sequelize.define(
       ScheduleSuggestionDbStructure.tableName,
@@ -531,6 +550,34 @@ export class TableInitializer {
     instance.models.set(ScheduleSuggestionItemDbStructure.tableName, model);
     console.log(
       `✅ Modèle Schedule Suggestion Item défini (${ScheduleSuggestionItemDbStructure.tableName})`,
+    );
+  }
+
+  private static defineEmployeePlanningProfileModelForInstance(instance: TenantInstance): void {
+    const model = instance.sequelize.define(
+      EmployeePlanningProfileDbStructure.tableName,
+      EmployeePlanningProfileDbStructure.attributes,
+      EmployeePlanningProfileDbStructure.options,
+    );
+
+    instance.models.set(EmployeePlanningProfileDbStructure.tableName, model);
+    console.log(
+      `✅ Modèle Employee Planning Profile défini (${EmployeePlanningProfileDbStructure.tableName})`,
+    );
+  }
+
+  private static definePlanningSuggestionRequirementModelForInstance(
+    instance: TenantInstance,
+  ): void {
+    const model = instance.sequelize.define(
+      PlanningSuggestionRequirementDbStructure.tableName,
+      PlanningSuggestionRequirementDbStructure.attributes,
+      PlanningSuggestionRequirementDbStructure.options,
+    );
+
+    instance.models.set(PlanningSuggestionRequirementDbStructure.tableName, model);
+    console.log(
+      `✅ Modèle Planning Suggestion Requirement défini (${PlanningSuggestionRequirementDbStructure.tableName})`,
     );
   }
 

@@ -475,6 +475,10 @@
 │   │   │   │   │   ├── Device.d.ts.map
 │   │   │   │   │   ├── Device.js
 │   │   │   │   │   ├── Device.js.map
+│   │   │   │   │   ├── EmployeePlanningProfile.d.ts
+│   │   │   │   │   ├── EmployeePlanningProfile.d.ts.map
+│   │   │   │   │   ├── EmployeePlanningProfile.js
+│   │   │   │   │   ├── EmployeePlanningProfile.js.map
 │   │   │   │   │   ├── EventLog.d.ts
 │   │   │   │   │   ├── EventLog.d.ts.map
 │   │   │   │   │   ├── EventLog.js
@@ -495,6 +499,14 @@
 │   │   │   │   │   ├── OrgHierarchy.d.ts.map
 │   │   │   │   │   ├── OrgHierarchy.js
 │   │   │   │   │   ├── OrgHierarchy.js.map
+│   │   │   │   │   ├── PlanningSuggestionConfig.d.ts
+│   │   │   │   │   ├── PlanningSuggestionConfig.d.ts.map
+│   │   │   │   │   ├── PlanningSuggestionConfig.js
+│   │   │   │   │   ├── PlanningSuggestionConfig.js.map
+│   │   │   │   │   ├── PlanningSuggestionRequirement.d.ts
+│   │   │   │   │   ├── PlanningSuggestionRequirement.d.ts.map
+│   │   │   │   │   ├── PlanningSuggestionRequirement.js
+│   │   │   │   │   ├── PlanningSuggestionRequirement.js.map
 │   │   │   │   │   ├── Poste.d.ts
 │   │   │   │   │   ├── Poste.d.ts.map
 │   │   │   │   │   ├── Poste.js
@@ -535,6 +547,14 @@
 │   │   │   │   │   ├── ScheduleAssignmentsLog.d.ts.map
 │   │   │   │   │   ├── ScheduleAssignmentsLog.js
 │   │   │   │   │   ├── ScheduleAssignmentsLog.js.map
+│   │   │   │   │   ├── ScheduleSuggestion.d.ts
+│   │   │   │   │   ├── ScheduleSuggestion.d.ts.map
+│   │   │   │   │   ├── ScheduleSuggestion.js
+│   │   │   │   │   ├── ScheduleSuggestion.js.map
+│   │   │   │   │   ├── ScheduleSuggestionItem.d.ts
+│   │   │   │   │   ├── ScheduleSuggestionItem.d.ts.map
+│   │   │   │   │   ├── ScheduleSuggestionItem.js
+│   │   │   │   │   ├── ScheduleSuggestionItem.js.map
 │   │   │   │   │   ├── SessionModel.d.ts
 │   │   │   │   │   ├── SessionModel.d.ts.map
 │   │   │   │   │   ├── SessionModel.js
@@ -577,6 +597,10 @@
 │   │   │   │   │   │   ├── device.db.d.ts.map
 │   │   │   │   │   │   ├── device.db.js
 │   │   │   │   │   │   ├── device.db.js.map
+│   │   │   │   │   │   ├── employee.planning.profile.db.d.ts
+│   │   │   │   │   │   ├── employee.planning.profile.db.d.ts.map
+│   │   │   │   │   │   ├── employee.planning.profile.db.js
+│   │   │   │   │   │   ├── employee.planning.profile.db.js.map
 │   │   │   │   │   │   ├── event.log.db.d.ts
 │   │   │   │   │   │   ├── event.log.db.d.ts.map
 │   │   │   │   │   │   ├── event.log.db.js
@@ -597,6 +621,14 @@
 │   │   │   │   │   │   ├── org.hierarchy.db.d.ts.map
 │   │   │   │   │   │   ├── org.hierarchy.db.js
 │   │   │   │   │   │   ├── org.hierarchy.db.js.map
+│   │   │   │   │   │   ├── planning.suggestion.config.db.d.ts
+│   │   │   │   │   │   ├── planning.suggestion.config.db.d.ts.map
+│   │   │   │   │   │   ├── planning.suggestion.config.db.js
+│   │   │   │   │   │   ├── planning.suggestion.config.db.js.map
+│   │   │   │   │   │   ├── planning.suggestion.requirement.bd.d.ts
+│   │   │   │   │   │   ├── planning.suggestion.requirement.bd.d.ts.map
+│   │   │   │   │   │   ├── planning.suggestion.requirement.bd.js
+│   │   │   │   │   │   ├── planning.suggestion.requirement.bd.js.map
 │   │   │   │   │   │   ├── poste.db.d.ts
 │   │   │   │   │   │   ├── poste.db.d.ts.map
 │   │   │   │   │   │   ├── poste.db.js
@@ -637,6 +669,14 @@
 │   │   │   │   │   │   ├── schedule.assignments.logs.db.d.ts.map
 │   │   │   │   │   │   ├── schedule.assignments.logs.db.js
 │   │   │   │   │   │   ├── schedule.assignments.logs.db.js.map
+│   │   │   │   │   │   ├── schedule.suggestion.db.d.ts
+│   │   │   │   │   │   ├── schedule.suggestion.db.d.ts.map
+│   │   │   │   │   │   ├── schedule.suggestion.db.js
+│   │   │   │   │   │   ├── schedule.suggestion.db.js.map
+│   │   │   │   │   │   ├── schedule.suggestion.item.db.d.ts
+│   │   │   │   │   │   ├── schedule.suggestion.item.db.d.ts.map
+│   │   │   │   │   │   ├── schedule.suggestion.item.db.js
+│   │   │   │   │   │   ├── schedule.suggestion.item.db.js.map
 │   │   │   │   │   │   ├── session.model.db.d.ts
 │   │   │   │   │   │   ├── session.model.db.d.ts.map
 │   │   │   │   │   │   ├── session.model.db.js
@@ -694,6 +734,10 @@
 │   │   │   │   │   ├── DeviceModel.d.ts.map
 │   │   │   │   │   ├── DeviceModel.js
 │   │   │   │   │   ├── DeviceModel.js.map
+│   │   │   │   │   ├── EmployeePlanningProfileModel.d.ts
+│   │   │   │   │   ├── EmployeePlanningProfileModel.d.ts.map
+│   │   │   │   │   ├── EmployeePlanningProfileModel.js
+│   │   │   │   │   ├── EmployeePlanningProfileModel.js.map
 │   │   │   │   │   ├── EventLogModel.d.ts
 │   │   │   │   │   ├── EventLogModel.d.ts.map
 │   │   │   │   │   ├── EventLogModel.js
@@ -714,6 +758,14 @@
 │   │   │   │   │   ├── OrgHierarchyModel.d.ts.map
 │   │   │   │   │   ├── OrgHierarchyModel.js
 │   │   │   │   │   ├── OrgHierarchyModel.js.map
+│   │   │   │   │   ├── PlanningSuggestionConfigModel.d.ts
+│   │   │   │   │   ├── PlanningSuggestionConfigModel.d.ts.map
+│   │   │   │   │   ├── PlanningSuggestionConfigModel.js
+│   │   │   │   │   ├── PlanningSuggestionConfigModel.js.map
+│   │   │   │   │   ├── PlanningSuggestionRequirementModel.d.ts
+│   │   │   │   │   ├── PlanningSuggestionRequirementModel.d.ts.map
+│   │   │   │   │   ├── PlanningSuggestionRequirementModel.js
+│   │   │   │   │   ├── PlanningSuggestionRequirementModel.js.map
 │   │   │   │   │   ├── PosteModel.d.ts
 │   │   │   │   │   ├── PosteModel.d.ts.map
 │   │   │   │   │   ├── PosteModel.js
@@ -754,6 +806,14 @@
 │   │   │   │   │   ├── ScheduleAssignmentsModel.d.ts.map
 │   │   │   │   │   ├── ScheduleAssignmentsModel.js
 │   │   │   │   │   ├── ScheduleAssignmentsModel.js.map
+│   │   │   │   │   ├── ScheduleSuggestionItemModel.d.ts
+│   │   │   │   │   ├── ScheduleSuggestionItemModel.d.ts.map
+│   │   │   │   │   ├── ScheduleSuggestionItemModel.js
+│   │   │   │   │   ├── ScheduleSuggestionItemModel.js.map
+│   │   │   │   │   ├── ScheduleSuggestionModel.d.ts
+│   │   │   │   │   ├── ScheduleSuggestionModel.d.ts.map
+│   │   │   │   │   ├── ScheduleSuggestionModel.js
+│   │   │   │   │   ├── ScheduleSuggestionModel.js.map
 │   │   │   │   │   ├── SessionModelModel.d.ts
 │   │   │   │   │   ├── SessionModelModel.d.ts.map
 │   │   │   │   │   ├── SessionModelModel.js
@@ -803,6 +863,10 @@
 │   │   │   │   │   ├── device.route.d.ts.map
 │   │   │   │   │   ├── device.route.js
 │   │   │   │   │   ├── device.route.js.map
+│   │   │   │   │   ├── employee.planning.profile.route.d.ts
+│   │   │   │   │   ├── employee.planning.profile.route.d.ts.map
+│   │   │   │   │   ├── employee.planning.profile.route.js
+│   │   │   │   │   ├── employee.planning.profile.route.js.map
 │   │   │   │   │   ├── fraud.alerts.route.d.ts
 │   │   │   │   │   ├── fraud.alerts.route.d.ts.map
 │   │   │   │   │   ├── fraud.alerts.route.js
@@ -819,6 +883,18 @@
 │   │   │   │   │   ├── org.hierarchy.route.d.ts.map
 │   │   │   │   │   ├── org.hierarchy.route.js
 │   │   │   │   │   ├── org.hierarchy.route.js.map
+│   │   │   │   │   ├── planing.pdf.route.d.ts
+│   │   │   │   │   ├── planing.pdf.route.d.ts.map
+│   │   │   │   │   ├── planing.pdf.route.js
+│   │   │   │   │   ├── planing.pdf.route.js.map
+│   │   │   │   │   ├── planning.suggestion.config.route.d.ts
+│   │   │   │   │   ├── planning.suggestion.config.route.d.ts.map
+│   │   │   │   │   ├── planning.suggestion.config.route.js
+│   │   │   │   │   ├── planning.suggestion.config.route.js.map
+│   │   │   │   │   ├── planning.suggestion.requirement.route.d.ts
+│   │   │   │   │   ├── planning.suggestion.requirement.route.d.ts.map
+│   │   │   │   │   ├── planning.suggestion.requirement.route.js
+│   │   │   │   │   ├── planning.suggestion.requirement.route.js.map
 │   │   │   │   │   ├── poste.route.d.ts
 │   │   │   │   │   ├── poste.route.d.ts.map
 │   │   │   │   │   ├── poste.route.js
@@ -843,6 +919,10 @@
 │   │   │   │   │   ├── schedule.assignments.route.d.ts.map
 │   │   │   │   │   ├── schedule.assignments.route.js
 │   │   │   │   │   ├── schedule.assignments.route.js.map
+│   │   │   │   │   ├── schedule.suggestion.route.d.ts
+│   │   │   │   │   ├── schedule.suggestion.route.d.ts.map
+│   │   │   │   │   ├── schedule.suggestion.route.js
+│   │   │   │   │   ├── schedule.suggestion.route.js.map
 │   │   │   │   │   ├── session.model.route.d.ts
 │   │   │   │   │   ├── session.model.route.d.ts.map
 │   │   │   │   │   ├── session.model.route.js
@@ -940,6 +1020,19 @@
 │   │   │   │   ├── otp-cache.service.d.ts.map
 │   │   │   │   ├── otp-cache.service.js
 │   │   │   │   ├── otp-cache.service.js.map
+│   │   │   │   ├── pdf
+│   │   │   │   │   ├── rotationAssignment.d.ts
+│   │   │   │   │   ├── rotationAssignment.d.ts.map
+│   │   │   │   │   ├── rotationAssignment.js
+│   │   │   │   │   ├── rotationAssignment.js.map
+│   │   │   │   │   ├── scheduleAssignment.d.ts
+│   │   │   │   │   ├── scheduleAssignment.d.ts.map
+│   │   │   │   │   ├── scheduleAssignment.js
+│   │   │   │   │   ├── scheduleAssignment.js.map
+│   │   │   │   │   ├── service.d.ts
+│   │   │   │   │   ├── service.d.ts.map
+│   │   │   │   │   ├── service.js
+│   │   │   │   │   └── service.js.map
 │   │   │   │   ├── response.d.ts
 │   │   │   │   ├── response.d.ts.map
 │   │   │   │   ├── response.js
@@ -952,6 +1045,10 @@
 │   │   │   │   ├── schedule.resolution.service.d.ts.map
 │   │   │   │   ├── schedule.resolution.service.js
 │   │   │   │   ├── schedule.resolution.service.js.map
+│   │   │   │   ├── schedule.suggestion.approval.service.d.ts
+│   │   │   │   ├── schedule.suggestion.approval.service.d.ts.map
+│   │   │   │   ├── schedule.suggestion.approval.service.js
+│   │   │   │   ├── schedule.suggestion.approval.service.js.map
 │   │   │   │   ├── send.email.service.d.ts
 │   │   │   │   ├── send.email.service.d.ts.map
 │   │   │   │   ├── send.email.service.js
@@ -1025,6 +1122,35 @@
 │   │   │       ├── response.model.d.ts.map
 │   │   │       ├── response.model.js
 │   │   │       ├── response.model.js.map
+│   │   │       ├── schedule.suggestion.generation.service.d.ts
+│   │   │       ├── schedule.suggestion.generation.service.d.ts.map
+│   │   │       ├── schedule.suggestion.generation.service.js
+│   │   │       ├── schedule.suggestion.generation.service.js.map
+│   │   │       ├── session.model.validation.d.ts
+│   │   │       ├── session.model.validation.d.ts.map
+│   │   │       ├── session.model.validation.js
+│   │   │       ├── session.model.validation.js.map
+│   │   │       ├── solver
+│   │   │       │   ├── greedy.planning.solver.d.ts
+│   │   │       │   ├── greedy.planning.solver.d.ts.map
+│   │   │       │   ├── greedy.planning.solver.js
+│   │   │       │   ├── greedy.planning.solver.js.map
+│   │   │       │   ├── ortools.planning.solver.d.ts
+│   │   │       │   ├── ortools.planning.solver.d.ts.map
+│   │   │       │   ├── ortools.planning.solver.js
+│   │   │       │   ├── ortools.planning.solver.js.map
+│   │   │       │   ├── planning.solver.d.ts
+│   │   │       │   ├── planning.solver.d.ts.map
+│   │   │       │   ├── planning.solver.factory.d.ts
+│   │   │       │   ├── planning.solver.factory.d.ts.map
+│   │   │       │   ├── planning.solver.factory.js
+│   │   │       │   ├── planning.solver.factory.js.map
+│   │   │       │   ├── planning.solver.js
+│   │   │       │   └── planning.solver.js.map
+│   │   │       ├── suggestion.engine.d.ts
+│   │   │       ├── suggestion.engine.d.ts.map
+│   │   │       ├── suggestion.engine.js
+│   │   │       ├── suggestion.engine.js.map
 │   │   │       ├── token.generator.d.ts
 │   │   │       ├── token.generator.d.ts.map
 │   │   │       ├── token.generator.js
@@ -1096,6 +1222,7 @@
 │   │   │   │   └── backend-problem
 │   │   │   ├── toke API.postman_collection.json
 │   │   │   ├── toke-app-manager-api-guide.html
+│   │   │   ├── toke-fiche-collecte-glt.pdf
 │   │   │   ├── toke-pointage-employee-doc.html
 │   │   │   ├── toke-pointage-employee-doc.md
 │   │   │   ├── toke-syst-gestion-licences.html
@@ -1266,11 +1393,14 @@
 │   │   │   │   │   ├── AuditLogs.ts
 │   │   │   │   │   ├── Department.ts
 │   │   │   │   │   ├── Device.ts
+│   │   │   │   │   ├── EmployeePlanningProfile.ts
 │   │   │   │   │   ├── EventLog.ts
 │   │   │   │   │   ├── FraudAlerts.ts
 │   │   │   │   │   ├── Groups.ts
 │   │   │   │   │   ├── Memos.ts
 │   │   │   │   │   ├── OrgHierarchy.ts
+│   │   │   │   │   ├── PlanningSuggestionConfig.ts
+│   │   │   │   │   ├── PlanningSuggestionRequirement.ts
 │   │   │   │   │   ├── Poste.ts
 │   │   │   │   │   ├── QrCodeGeneration.ts
 │   │   │   │   │   ├── Role.ts
@@ -1281,6 +1411,8 @@
 │   │   │   │   │   ├── RotationGroups.ts
 │   │   │   │   │   ├── ScheduleAssignments.ts
 │   │   │   │   │   ├── ScheduleAssignmentsLog.ts
+│   │   │   │   │   ├── ScheduleSuggestion.ts
+│   │   │   │   │   ├── ScheduleSuggestionItem.ts
 │   │   │   │   │   ├── SessionModel.ts
 │   │   │   │   │   ├── SessionTemplates.ts
 │   │   │   │   │   ├── Site.ts
@@ -1293,11 +1425,14 @@
 │   │   │   │   │   │   ├── audit.logs.db.ts
 │   │   │   │   │   │   ├── department.db.ts
 │   │   │   │   │   │   ├── device.db.ts
+│   │   │   │   │   │   ├── employee.planning.profile.db.ts
 │   │   │   │   │   │   ├── event.log.db.ts
 │   │   │   │   │   │   ├── fraud.alerts.db.ts
 │   │   │   │   │   │   ├── groups.db.ts
 │   │   │   │   │   │   ├── memos.db.ts
 │   │   │   │   │   │   ├── org.hierarchy.db.ts
+│   │   │   │   │   │   ├── planning.suggestion.config.db.ts
+│   │   │   │   │   │   ├── planning.suggestion.requirement.bd.ts
 │   │   │   │   │   │   ├── poste.db.ts
 │   │   │   │   │   │   ├── qr.code.generation.db.ts
 │   │   │   │   │   │   ├── roles.db.ts
@@ -1308,6 +1443,8 @@
 │   │   │   │   │   │   ├── rotation.groups.db.ts
 │   │   │   │   │   │   ├── schedule.assignments.db.ts
 │   │   │   │   │   │   ├── schedule.assignments.logs.db.ts
+│   │   │   │   │   │   ├── schedule.suggestion.db.ts
+│   │   │   │   │   │   ├── schedule.suggestion.item.db.ts
 │   │   │   │   │   │   ├── session.model.db.ts
 │   │   │   │   │   │   ├── session.templates.db.ts
 │   │   │   │   │   │   ├── sites.db.ts
@@ -1323,11 +1460,14 @@
 │   │   │   │   │   ├── AuditLogsModel.ts
 │   │   │   │   │   ├── DepartmentModel.ts
 │   │   │   │   │   ├── DeviceModel.ts
+│   │   │   │   │   ├── EmployeePlanningProfileModel.ts
 │   │   │   │   │   ├── EventLogModel.ts
 │   │   │   │   │   ├── FraudAlertsModel.ts
 │   │   │   │   │   ├── GroupsModel.ts
 │   │   │   │   │   ├── MemosModel.ts
 │   │   │   │   │   ├── OrgHierarchyModel.ts
+│   │   │   │   │   ├── PlanningSuggestionConfigModel.ts
+│   │   │   │   │   ├── PlanningSuggestionRequirementModel.ts
 │   │   │   │   │   ├── PosteModel.ts
 │   │   │   │   │   ├── QrCodeGenerationModel.ts
 │   │   │   │   │   ├── RoleModel.ts
@@ -1338,6 +1478,8 @@
 │   │   │   │   │   ├── RotationGroupsModel.ts
 │   │   │   │   │   ├── ScheduleAssignmentsLogModel.ts
 │   │   │   │   │   ├── ScheduleAssignmentsModel.ts
+│   │   │   │   │   ├── ScheduleSuggestionItemModel.ts
+│   │   │   │   │   ├── ScheduleSuggestionModel.ts
 │   │   │   │   │   ├── SessionModelModel.ts
 │   │   │   │   │   ├── SessionTemplatesModel.ts
 │   │   │   │   │   ├── SiteModel.ts
@@ -1351,16 +1493,21 @@
 │   │   │   │   │   ├── auth.route.ts
 │   │   │   │   │   ├── department.route.ts
 │   │   │   │   │   ├── device.route.ts
+│   │   │   │   │   ├── employee.planning.profile.route.ts
 │   │   │   │   │   ├── fraud.alerts.route.ts
 │   │   │   │   │   ├── groups.route.ts
 │   │   │   │   │   ├── memos.route.ts
 │   │   │   │   │   ├── org.hierarchy.route.ts
+│   │   │   │   │   ├── planing.pdf.route.ts
+│   │   │   │   │   ├── planning.suggestion.config.route.ts
+│   │   │   │   │   ├── planning.suggestion.requirement.route.ts
 │   │   │   │   │   ├── poste.route.ts
 │   │   │   │   │   ├── qr.code.route.ts
 │   │   │   │   │   ├── roles.route.ts
 │   │   │   │   │   ├── rotation.assignments.route.ts
 │   │   │   │   │   ├── rotation.groups.route.ts
 │   │   │   │   │   ├── schedule.assignments.route.ts
+│   │   │   │   │   ├── schedule.suggestion.route.ts
 │   │   │   │   │   ├── session.model.route.ts
 │   │   │   │   │   ├── session.templates.route.ts
 │   │   │   │   │   ├── sites.route.ts
@@ -1386,9 +1533,14 @@
 │   │   │   │   ├── memo.correction.service.ts
 │   │   │   │   ├── notification.service.ts
 │   │   │   │   ├── otp-cache.service.ts
+│   │   │   │   ├── pdf
+│   │   │   │   │   ├── rotationAssignment.ts
+│   │   │   │   │   ├── scheduleAssignment.ts
+│   │   │   │   │   └── service.ts
 │   │   │   │   ├── response.ts
 │   │   │   │   ├── revision.ts
 │   │   │   │   ├── schedule.resolution.service.ts
+│   │   │   │   ├── schedule.suggestion.approval.service.ts
 │   │   │   │   ├── send.email.service.ts
 │   │   │   │   ├── send.otp.service.ts
 │   │   │   │   ├── spondor.service.ts
@@ -1413,6 +1565,14 @@
 │   │   │       │   └── tokenotification-firebase-adminsdk-fbsvc-6b764c3800.json
 │   │   │       ├── regex.validator.ts
 │   │   │       ├── response.model.ts
+│   │   │       ├── schedule.suggestion.generation.service.ts
+│   │   │       ├── session.model.validation.ts
+│   │   │       ├── solver
+│   │   │       │   ├── greedy.planning.solver.ts
+│   │   │       │   ├── ortools.planning.solver.ts
+│   │   │       │   ├── planning.solver.factory.ts
+│   │   │       │   └── planning.solver.ts
+│   │   │       ├── suggestion.engine.ts
 │   │   │       ├── test
 │   │   │       │   ├── test-qr.html
 │   │   │       │   └── test.html
@@ -1466,6 +1626,10 @@
 │   │   │       │   ├── schedule.route.d.ts.map
 │   │   │       │   ├── schedule.route.js
 │   │   │       │   ├── schedule.route.js.map
+│   │   │       │   ├── schedule.suggestion.route.d.ts
+│   │   │       │   ├── schedule.suggestion.route.d.ts.map
+│   │   │       │   ├── schedule.suggestion.route.js
+│   │   │       │   ├── schedule.suggestion.route.js.map
 │   │   │       │   ├── session.model.route.d.ts
 │   │   │       │   ├── session.model.route.d.ts.map
 │   │   │       │   ├── session.model.route.js
@@ -1515,6 +1679,10 @@
 │   │   │       │   ├── schedule.service.d.ts.map
 │   │   │       │   ├── schedule.service.js
 │   │   │       │   ├── schedule.service.js.map
+│   │   │       │   ├── schedule.suggestion.service.d.ts
+│   │   │       │   ├── schedule.suggestion.service.d.ts.map
+│   │   │       │   ├── schedule.suggestion.service.js
+│   │   │       │   ├── schedule.suggestion.service.js.map
 │   │   │       │   ├── session.model.d.ts
 │   │   │       │   ├── session.model.d.ts.map
 │   │   │       │   ├── session.model.js
@@ -1555,6 +1723,7 @@
 │   │   │   │   ├── rotation.groups.route.ts
 │   │   │   │   ├── schedule.assignments.route.ts
 │   │   │   │   ├── schedule.route.ts
+│   │   │   │   ├── schedule.suggestion.route.ts
 │   │   │   │   ├── session.model.route.ts
 │   │   │   │   ├── site.route.ts
 │   │   │   │   ├── tenant.route.ts
@@ -1568,6 +1737,7 @@
 │   │   │   │   ├── rotation.group.service.ts
 │   │   │   │   ├── schedule.assignment.service.ts
 │   │   │   │   ├── schedule.service.ts
+│   │   │   │   ├── schedule.suggestion.service.ts
 │   │   │   │   ├── session.model.ts
 │   │   │   │   ├── site.service.ts
 │   │   │   │   ├── tenant.service.ts
@@ -1622,6 +1792,16 @@
 │   │   ├── tsconfig.json
 │   │   ├── vite.config.js
 │   │   └── vite.config.ts
+│   ├── planning-ortools
+│   │   ├── AUDIT.md
+│   │   ├── README.md
+│   │   ├── app
+│   │   │   ├── __init__.py
+│   │   │   ├── main.py
+│   │   │   ├── schemas.py
+│   │   │   └── solver.py
+│   │   ├── ecosystem.ortools.config.cjs
+│   │   └── requirements.txt
 │   ├── shared
 │   │   ├── README.md
 │   │   ├── dist
@@ -1865,6 +2045,10 @@
 │   │   │   │   │   ├── device.d.ts.map
 │   │   │   │   │   ├── device.js
 │   │   │   │   │   ├── device.js.map
+│   │   │   │   │   ├── employee.planning.profile.d.ts
+│   │   │   │   │   ├── employee.planning.profile.d.ts.map
+│   │   │   │   │   ├── employee.planning.profile.js
+│   │   │   │   │   ├── employee.planning.profile.js.map
 │   │   │   │   │   ├── fraud.alerts.d.ts
 │   │   │   │   │   ├── fraud.alerts.d.ts.map
 │   │   │   │   │   ├── fraud.alerts.js
@@ -1881,6 +2065,14 @@
 │   │   │   │   │   ├── org.hierarchy.d.ts.map
 │   │   │   │   │   ├── org.hierarchy.js
 │   │   │   │   │   ├── org.hierarchy.js.map
+│   │   │   │   │   ├── planning.suggestion.config.d.ts
+│   │   │   │   │   ├── planning.suggestion.config.d.ts.map
+│   │   │   │   │   ├── planning.suggestion.config.js
+│   │   │   │   │   ├── planning.suggestion.config.js.map
+│   │   │   │   │   ├── planning.suggestion.requirement.d.ts
+│   │   │   │   │   ├── planning.suggestion.requirement.d.ts.map
+│   │   │   │   │   ├── planning.suggestion.requirement.js
+│   │   │   │   │   ├── planning.suggestion.requirement.js.map
 │   │   │   │   │   ├── poste.d.ts
 │   │   │   │   │   ├── poste.d.ts.map
 │   │   │   │   │   ├── poste.js
@@ -2210,10 +2402,13 @@
 │   │   │   │   │   ├── audit.logs.ts
 │   │   │   │   │   ├── department.ts
 │   │   │   │   │   ├── device.ts
+│   │   │   │   │   ├── employee.planning.profile.ts
 │   │   │   │   │   ├── fraud.alerts.ts
 │   │   │   │   │   ├── groups.ts
 │   │   │   │   │   ├── memos.ts
 │   │   │   │   │   ├── org.hierarchy.ts
+│   │   │   │   │   ├── planning.suggestion.config.ts
+│   │   │   │   │   ├── planning.suggestion.requirement.ts
 │   │   │   │   │   ├── poste.ts
 │   │   │   │   │   ├── qr.code.generation.ts
 │   │   │   │   │   ├── roles.ts
@@ -2284,7 +2479,8 @@
 │   │   │       ├── tenant.validation.ts
 │   │   │       └── timezone.config.validation.ts
 │   │   └── tsconfig.json
-│   └── test.js
+│   ├── test.js
+│   └── toke-planning-ortools-step9.zip
 └── tsconfig.json
 
-105 directories, 2183 files
+111 directories, 2373 files

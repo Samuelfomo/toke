@@ -38,6 +38,9 @@ import sessionModelRoute from './routes/session.model.route.js';
 import authRoute from './routes/auth.route.js';
 import attendanceStatRoute from './routes/attendance.stat.route.js';
 import scheduleSuggestionRoute from './routes/schedule.suggestion.route.js';
+import employeePlanningProfileRoute from './routes/employee.planning.profile.route.js';
+import planningSuggestionConfigRoute from './routes/planning.suggestion.config.route.js';
+import planningSuggestionRequirementRoute from './routes/planning.suggestion.requirement.route.js';
 
 interface AppConfig {
   port: number;
@@ -250,6 +253,9 @@ export default class App {
     this.app.use('/auth', authRoute);
     this.app.use('/statistique', attendanceStatRoute);
     this.app.use('/schedule-suggestion', scheduleSuggestionRoute);
+    this.app.use('/planning-profile', employeePlanningProfileRoute);
+    this.app.use('/planning-config', planningSuggestionConfigRoute);
+    this.app.use('/planning-requirement', planningSuggestionRequirementRoute);
 
     // Route 404
     this.app.use((req, res) => {

@@ -16,3 +16,6 @@ packages/api/src/utils/prive/*.json
 
 **/.env
 .env
+.venv/
+__pycache__/
+logs/

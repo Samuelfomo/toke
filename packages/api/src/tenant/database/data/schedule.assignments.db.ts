@@ -183,13 +183,12 @@ export const ScheduleAssignmentsDbStructure = {
         fields: ['start_date', 'end_date'],
         name: 'idx_schedule_assignments_date_range',
       },
-
-      // ✅ NOUVELLE CONTRAINTE : UNE SEULE assignment active par related pour une family
       {
-        unique: true,
-        fields: ['family', 'related'],
-        name: 'unique_related_active_assignment',
-        where: { deleted_at: null, active: true },
+        fields: ['family', 'related', 'active', 'start_date', 'end_date'],
+        name: 'idx_schedule_assignments_related_active_period',
+        where: {
+          deleted_at: null,
+        },
       },
     ],
     validate: {

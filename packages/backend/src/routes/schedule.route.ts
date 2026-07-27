@@ -121,4 +121,34 @@ router.put(
   },
 );
 
+router.delete(
+  '/:guid',
+  TenantConfig.authenticate,
+  Ensure.delete(),
+  async (req: Request, res: Response) => {
+    try {
+      if (!SessionTemplateValidationUtils.validateGuid(req.params.guid)) {
+        return R.handleError(res, HttpStatus.BAD_REQUEST, {
+          code: SESSION_TEMPLATE_CODES.INVALID_GUID,
+          message: SESSION_TEMPLATE_ERRORS.GUID_INVALID,
+        });
+      }
+
+      const client = (req as any).client.reference;
+
+      const result = await ScheduleService.delete(req.params.guid as string, client);
+
+      if (result.status !== HttpStatus.SUCCESS) {
+        return R.handleError(res, result.status, result.response);
+      }
+      return R.handleSuccess(res, result.response);
+    } catch (error: any) {
+      return R.handleError(res, HttpStatus.INTERNAL_ERROR, {
+        code: SESSION_TEMPLATE_CODES.SEARCH_FAILED,
+        message: error.message,
+      });
+    }
+  },
+);
+
 export default router;

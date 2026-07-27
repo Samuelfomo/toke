@@ -270,27 +270,27 @@ export default class ScheduleAssignmentsModel extends BaseModel {
       throw new Error(SCHEDULE_ASSIGNMENTS_ERRORS.GUID_GENERATION_FAILED);
     }
 
-    // Vérification unicité related + session_template + version
-    if (
-      this.family &&
-      this.related &&
-      this.session_template?.id &&
-      this.session_template?.version
-    ) {
-      const existing = await this.findByRelatedTemplateIdAndVersion(
-        this.family,
-        this.related,
-        this.session_template.id,
-        this.session_template.version,
-      );
-      if (existing) {
-        throw new Error(
-          this.family === 'user'
-            ? SCHEDULE_ASSIGNMENTS_ERRORS.USER_TEMPLATE_VERSION_ALREADY_ASSIGNED
-            : SCHEDULE_ASSIGNMENTS_ERRORS.GROUPS_TEMPLATE_VERSION_ALREADY_ASSIGNED,
-        );
-      }
-    }
+    // // Vérification unicité related + session_template + version
+    // if (
+    //   this.family &&
+    //   this.related &&
+    //   this.session_template?.id &&
+    //   this.session_template?.version
+    // ) {
+    //   const existing = await this.findByRelatedTemplateIdAndVersion(
+    //     this.family,
+    //     this.related,
+    //     this.session_template.id,
+    //     this.session_template.version,
+    //   );
+    //   if (existing) {
+    //     throw new Error(
+    //       this.family === 'user'
+    //         ? SCHEDULE_ASSIGNMENTS_ERRORS.USER_TEMPLATE_VERSION_ALREADY_ASSIGNED
+    //         : SCHEDULE_ASSIGNMENTS_ERRORS.GROUPS_TEMPLATE_VERSION_ALREADY_ASSIGNED,
+    //     );
+    //   }
+    // }
 
     // Version initiale = 1
     this.version = this.initialVersion;
@@ -418,17 +418,17 @@ export default class ScheduleAssignmentsModel extends BaseModel {
     return affected > 0;
   }
 
-  protected async hasActiveException(family: SAFamily, related: string): Promise<boolean> {
-    const conditions: any = {
-      [this.db.deleted_at]: null,
-      [this.db.active]: true,
-      [this.db.family]: family,
-      [this.db.related]: related,
-    };
-
-    const count = await this.count(this.db.tableName, conditions);
-    return count > 0;
-  }
+  // protected async hasActiveException(family: SAFamily, related: string): Promise<boolean> {
+  //   const conditions: any = {
+  //     [this.db.deleted_at]: null,
+  //     [this.db.active]: true,
+  //     [this.db.family]: family,
+  //     [this.db.related]: related,
+  //   };
+  //
+  //   const count = await this.count(this.db.tableName, conditions);
+  //   return count > 0;
+  // }
 
   // ============================================
   // VALIDATION
@@ -485,28 +485,28 @@ export default class ScheduleAssignmentsModel extends BaseModel {
       throw new Error(SCHEDULE_ASSIGNMENTS_ERRORS.ACTIVE_INVALID);
     }
 
-    // Vérifier unicité de l'assignment active pour ce related
-    if (this.active) {
-      const hasActive = await this.hasActiveException(this.family, this.related);
-      if (hasActive) {
-        if (this.id) {
-          const existing = await this.find(this.id);
-          if (!existing || existing.related !== this.related) {
-            throw new Error(
-              this.family === 'user'
-                ? SCHEDULE_ASSIGNMENTS_ERRORS.USER_ALREADY_HAS_ACTIVE_EXCEPTION
-                : SCHEDULE_ASSIGNMENTS_ERRORS.GROUPS_ALREADY_HAS_ACTIVE_EXCEPTION,
-            );
-          }
-        } else {
-          throw new Error(
-            this.family === 'user'
-              ? SCHEDULE_ASSIGNMENTS_ERRORS.USER_ALREADY_HAS_ACTIVE_EXCEPTION
-              : SCHEDULE_ASSIGNMENTS_ERRORS.GROUPS_ALREADY_HAS_ACTIVE_EXCEPTION,
-          );
-        }
-      }
-    }
+    // // Vérifier unicité de l'assignment active pour ce related
+    // if (this.active) {
+    //   const hasActive = await this.hasActiveException(this.family, this.related);
+    //   if (hasActive) {
+    //     if (this.id) {
+    //       const existing = await this.find(this.id);
+    //       if (!existing || existing.related !== this.related) {
+    //         throw new Error(
+    //           this.family === 'user'
+    //             ? SCHEDULE_ASSIGNMENTS_ERRORS.USER_ALREADY_HAS_ACTIVE_EXCEPTION
+    //             : SCHEDULE_ASSIGNMENTS_ERRORS.GROUPS_ALREADY_HAS_ACTIVE_EXCEPTION,
+    //         );
+    //       }
+    //     } else {
+    //       throw new Error(
+    //         this.family === 'user'
+    //           ? SCHEDULE_ASSIGNMENTS_ERRORS.USER_ALREADY_HAS_ACTIVE_EXCEPTION
+    //           : SCHEDULE_ASSIGNMENTS_ERRORS.GROUPS_ALREADY_HAS_ACTIVE_EXCEPTION,
+    //       );
+    //     }
+    //   }
+    // }
 
     const cleaned = ScheduleAssignmentsValidationUtils.cleanScheduleAssignmentsData(this);
     Object.assign(this, cleaned);

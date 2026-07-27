@@ -1,4 +1,4 @@
-import { ROTATION_GROUP_DEFAULTS } from '@toke/shared';
+import { RAFamily, ROTATION_GROUP_DEFAULTS, SAFamily } from '@toke/shared';
 
 import SessionTemplate from '../tenant/class/SessionTemplates.js';
 import RotationGroup from '../tenant/class/RotationGroups.js';
@@ -59,76 +59,128 @@ class ScheduleResolutionService {
 
       const activeGroup = await Groups._load(userId, false, true);
 
-      // 2️⃣ Récupérer toutes les assignations actives (user + group)
+      // 2️⃣ Récupérer toutes les assignations applicables
+      // à la date demandée.
       const candidates: Array<{
         type: 'schedule' | 'rotation';
         assignedAt: Date;
         source: 'user' | 'group';
+        priority: number;
         data: any;
       }> = [];
 
-      // Schedule User
-      resolutionPath.push('Checking user schedule assignment');
-      const userSchedule = await userObj.getActiveScheduleAssignment();
-      if (userSchedule) {
+      const userGuid = userObj.getGuid();
+      if (!userGuid) {
+        throw new Error('User GUID is missing');
+      }
+
+      // ─────────────────────────────────────────────
+      // 1. PLANNINGS INDIVIDUELS
+      // Priorité maximale : 400
+      // ─────────────────────────────────────────────
+
+      resolutionPath.push(`Checking user schedule assignments applicable on ${dateStr}`);
+
+      const userSchedules = await ScheduleAssignments._listForRelatedOnDate(
+        SAFamily.USER,
+        userGuid,
+        dateStr,
+      );
+
+      for (const schedule of userSchedules ?? []) {
         candidates.push({
           type: 'schedule',
-          assignedAt: userSchedule.getCreatedAt() || new Date(0),
+          assignedAt: schedule.getCreatedAt() ?? new Date(0),
           source: 'user',
-          data: userSchedule,
+          priority: 400,
+          data: schedule,
         });
-        resolutionPath.push(`✅ User schedule found: ${userSchedule.getGuid()}`);
+
+        resolutionPath.push(`✅ User schedule found: ${schedule.getGuid()}`);
       }
 
-      // Rotation User
-      resolutionPath.push('Checking user rotation assignment');
-      const userRotation = await userObj.getActiveRotationAssignment();
-      if (userRotation) {
+      // ─────────────────────────────────────────────
+      // 2. ROTATIONS INDIVIDUELLES
+      // Priorité : 300
+      // ─────────────────────────────────────────────
+
+      resolutionPath.push('Checking user rotation assignments');
+
+      const userRotations = await RotationAssignment._listByRelated(RAFamily.USER, userGuid);
+
+      for (const rotation of userRotations ?? []) {
         candidates.push({
           type: 'rotation',
-          assignedAt: userRotation.getCreatedAt() || new Date(0),
+          assignedAt: rotation.getCreatedAt() ?? new Date(0),
           source: 'user',
-          data: userRotation,
+          priority: 300,
+          data: rotation,
         });
-        resolutionPath.push(`✅ User rotation found: ${userRotation.getGuid()}`);
+
+        resolutionPath.push(`✅ User rotation found: ${rotation.getGuid()}`);
       }
 
-      // Schedule Group
+      // ─────────────────────────────────────────────
+      // 3. ASSIGNATIONS DU GROUPE ACTIF
+      // ─────────────────────────────────────────────
+
       if (activeGroup) {
-        resolutionPath.push('Checking group schedule assignment');
-        const groupSchedule = await activeGroup.getActiveScheduleAssignment();
-        if (groupSchedule) {
+        const groupGuid = activeGroup.getGuid();
+
+        if (!groupGuid) {
+          throw new Error('Active group GUID is missing');
+        }
+
+        // Planning de groupe : priorité 200
+        resolutionPath.push(`Checking group schedule assignments applicable on ${dateStr}`);
+
+        const groupSchedules = await ScheduleAssignments._listForRelatedOnDate(
+          SAFamily.GROUP,
+          groupGuid,
+          dateStr,
+        );
+
+        for (const schedule of groupSchedules ?? []) {
           candidates.push({
             type: 'schedule',
-            assignedAt: groupSchedule.getCreatedAt() || new Date(0),
+            assignedAt: schedule.getCreatedAt() ?? new Date(0),
             source: 'group',
-            data: groupSchedule,
+            priority: 200,
+            data: schedule,
           });
-          resolutionPath.push(`✅ Group schedule found: ${groupSchedule.getGuid()}`);
+
+          resolutionPath.push(`✅ Group schedule found: ${schedule.getGuid()}`);
         }
 
-        // Rotation Group
-        resolutionPath.push('Checking group rotation assignment');
-        const groupRotation = await activeGroup.getActiveRotationAssignment();
-        if (groupRotation) {
+        // Rotation de groupe : priorité 100
+        resolutionPath.push('Checking group rotation assignments');
+
+        const groupRotations = await RotationAssignment._listByRelated(RAFamily.GROUP, groupGuid);
+
+        for (const rotation of groupRotations ?? []) {
           candidates.push({
             type: 'rotation',
-            assignedAt: groupRotation.getCreatedAt() || new Date(0),
+            assignedAt: rotation.getCreatedAt() ?? new Date(0),
             source: 'group',
-            data: groupRotation,
+            priority: 100,
+            data: rotation,
           });
-          resolutionPath.push(`✅ Group rotation found: ${groupRotation.getGuid()}`);
+
+          resolutionPath.push(`✅ Group rotation found: ${rotation.getGuid()}`);
         }
       }
 
-      // 3️⃣ Trier par date (plus récent en premier)
-      candidates.sort((a, b) => b.assignedAt.getTime() - a.assignedAt.getTime());
+      // 3️⃣ Priorité métier, puis assignation la plus récente
+      candidates.sort(
+        (a, b) => b.priority - a.priority || b.assignedAt.getTime() - a.assignedAt.getTime(),
+      );
 
       // 4️⃣ Appliquer le plus récent
       if (candidates.length > 0) {
         const winner = candidates[0];
         resolutionPath.push(
-          `🏆 Winner: ${winner.type} from ${winner.source} (assigned: ${winner.assignedAt.toISOString()})`,
+          `🏆 Winner: ${winner.type} from ${winner.source} ` +
+            `(priority: ${winner.priority}, assigned: ${winner.assignedAt.toISOString()})`,
         );
 
         if (winner.type === 'schedule') {
