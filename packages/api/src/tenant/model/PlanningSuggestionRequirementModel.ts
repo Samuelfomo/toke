@@ -24,6 +24,7 @@ export default class PlanningSuggestionRequirementModel extends BaseModel {
     min_employees: 'min_employees',
     target_employees: 'target_employees',
     max_employees: 'max_employees',
+    credited_minutes: 'credited_minutes',
     priority: 'priority',
     active: 'active',
     deleted_at: 'deleted_at',
@@ -43,6 +44,7 @@ export default class PlanningSuggestionRequirementModel extends BaseModel {
   protected min_employees: number = 0;
   protected target_employees: number = 0;
   protected max_employees?: number | null;
+  protected credited_minutes?: number | null;
   protected priority: number = 100;
   protected active: boolean = true;
   protected deleted_at?: Date | null;
@@ -169,6 +171,7 @@ export default class PlanningSuggestionRequirementModel extends BaseModel {
       [this.db.min_employees]: this.min_employees,
       [this.db.target_employees]: this.target_employees,
       [this.db.max_employees]: this.max_employees ?? null,
+      [this.db.credited_minutes]: this.credited_minutes ?? null,
       [this.db.priority]: this.priority,
       [this.db.active]: this.active,
     });
@@ -219,6 +222,7 @@ export default class PlanningSuggestionRequirementModel extends BaseModel {
         [this.db.min_employees]: this.min_employees,
         [this.db.target_employees]: this.target_employees,
         [this.db.max_employees]: this.max_employees ?? null,
+        [this.db.credited_minutes]: this.credited_minutes ?? null,
         [this.db.priority]: this.priority,
         [this.db.active]: this.active,
       },
@@ -274,6 +278,14 @@ export default class PlanningSuggestionRequirementModel extends BaseModel {
       this.max_employees < this.target_employees
     ) {
       throw new Error('max_employees must be greater than or equal to target_employees');
+    }
+
+    if (
+      this.credited_minutes !== null &&
+      this.credited_minutes !== undefined &&
+      (this.credited_minutes < 1 || this.credited_minutes > 10080)
+    ) {
+      throw new Error('credited_minutes must be between 1 and 10080');
     }
 
     if (this.priority < 1) {

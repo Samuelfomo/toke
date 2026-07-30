@@ -128,15 +128,30 @@ class OrToolsPlanner:
         self.solver = cp_model.CpSolver()
 
         self.dates = period_dates(request.periodFrom, request.periodTo)
-        self.rotating = [
+        self.included = [
             employee
             for employee in request.employees
+            if employee.mode != "EXCLUDED"
+        ]
+        self.rotating = [
+            employee
+            for employee in self.included
             if employee.mode == "ROTATING"
         ]
         self.fixed = [
             employee
-            for employee in request.employees
+            for employee in self.included
             if employee.mode == "FIXED"
+        ]
+        self.fixed_rotating_rest = [
+            employee
+            for employee in self.fixed
+            if employee.fixedRestDayMode == "ROTATING"
+        ]
+        self.fixed_template_rest = [
+            employee
+            for employee in self.fixed
+            if employee.fixedRestDayMode == "TEMPLATE"
         ]
 
         self.slots: list[RequirementSlot] = []
@@ -148,6 +163,7 @@ class OrToolsPlanner:
 
         # x[(employee_guid, date, requirement_guid)] = selected requirement.
         self.x: dict[tuple[str, str, str], cp_model.IntVar] = {}
+        self.fixed_work: dict[tuple[str, str], cp_model.IntVar] = {}
 
         # Work activity includes a normal assignment or guard continuation.
         self.work_day: dict[tuple[str, str], cp_model.IntVar] = {}
@@ -169,11 +185,13 @@ class OrToolsPlanner:
         self._build_history()
         self._build_fixed_counts()
         self._build_variables()
+        self._build_fixed_work_variables()
         self._apply_one_assignment_per_day()
         self._apply_guard_continuations()
         self._build_work_days()
         self._apply_coverage()
         self._apply_weekly_rest()
+        self._apply_daily_rest_capacity()
         self._apply_max_consecutive_work_days()
         self._apply_weekly_minutes()
         self._apply_max_consecutive_guards()
@@ -201,7 +219,7 @@ class OrToolsPlanner:
                         f"{continuation_date}"
                     )
 
-        for employee in self.fixed:
+        for employee in self.fixed_template_rest:
             assert employee.fixedTemplate is not None
             for iso in self.dates:
                 # A fixed template is allowed to define rest on some dates.
@@ -250,11 +268,14 @@ class OrToolsPlanner:
                 current += timedelta(days=1)
 
     def _build_fixed_counts(self) -> None:
-        for employee in self.fixed:
+        for employee in self.fixed_template_rest:
             assert employee.fixedTemplate is not None
+
             for iso in self.dates:
                 if template_has_work(employee.fixedTemplate, iso):
-                    self.fixed_counts[(iso, employee.fixedTemplate.guid)] += 1
+                    self.fixed_counts[
+                        (iso, employee.fixedTemplate.guid)
+                    ] += 1
 
     def _build_variables(self) -> None:
         for employee in self.rotating:
@@ -263,6 +284,23 @@ class OrToolsPlanner:
                 self.x[key] = self.model.NewBoolVar(
                     f"x_{employee.guid}_{slot.iso}_{slot.requirement.guid}"
                 )
+
+    def _build_fixed_work_variables(self) -> None:
+        for employee in self.fixed_rotating_rest:
+            assert employee.fixedTemplate is not None
+            for iso in self.dates:
+                variable = self.model.NewBoolVar(
+                    f"fixed_work_{employee.guid}_{iso}"
+                )
+                self.fixed_work[(employee.guid, iso)] = variable
+                if not template_has_work(employee.fixedTemplate, iso):
+                    self.model.Add(variable == 0)
+
+    def _fixed_work_term(self, employee, iso: str):
+        if employee.fixedRestDayMode == "ROTATING":
+            return self.fixed_work[(employee.guid, iso)]
+        assert employee.fixedTemplate is not None
+        return 1 if template_has_work(employee.fixedTemplate, iso) else 0
 
     def _slot_var(self, employee_guid: str, slot: RequirementSlot):
         return self.x[(employee_guid, slot.iso, slot.requirement.guid)]
@@ -313,6 +351,23 @@ class OrToolsPlanner:
                         guard_var
                     )
 
+                if self.request.config.restAfterGuardRequired:
+                    for offset in range(
+                        1,
+                        self.request.config.postGuardRestDays + 1,
+                    ):
+                        rest_date = add_days(continuation_date, offset)
+                        if rest_date not in self.dates:
+                            continue
+                        rest_variables = [
+                            self._slot_var(employee.guid, next_slot)
+                            for next_slot in self._daily_slots(rest_date)
+                        ]
+                        if rest_variables:
+                            self.model.Add(
+                                sum(rest_variables) == 0
+                            ).OnlyEnforceIf(guard_var)
+
     def _build_work_days(self) -> None:
         for employee in self.rotating:
             for iso in self.dates:
@@ -353,6 +408,16 @@ class OrToolsPlanner:
                 else:
                     self.model.Add(guard_variable == 0)
 
+        for employee in self.fixed_rotating_rest:
+            for iso in self.dates:
+                variable = self.fixed_work[(employee.guid, iso)]
+                self.work_day[(employee.guid, iso)] = variable
+                guard_variable = self.model.NewBoolVar(
+                    f"guard_day_{employee.guid}_{iso}"
+                )
+                self.guard_day[(employee.guid, iso)] = guard_variable
+                self.model.Add(guard_variable == 0)
+
     def _apply_coverage(self) -> None:
         for slot in self.slots:
             requirement = slot.requirement
@@ -363,7 +428,13 @@ class OrToolsPlanner:
             fixed_count = self.fixed_counts[
                 (slot.iso, requirement.template.guid)
             ]
-            total = sum(variables) + fixed_count
+            variable_fixed_terms = [
+                self.fixed_work[(employee.guid, slot.iso)]
+                for employee in self.fixed_rotating_rest
+                if employee.fixedTemplate is not None
+                and employee.fixedTemplate.guid == requirement.template.guid
+            ]
+            total = sum(variables) + sum(variable_fixed_terms) + fixed_count
 
             if requirement.allocationMode == "EXACT":
                 self.model.Add(total == requirement.targetEmployees)
@@ -397,6 +468,10 @@ class OrToolsPlanner:
     def _apply_weekly_rest(self) -> None:
         for employee in self.rotating:
             for _, dates in self._week_groups().items():
+
+                if len(dates) < 7:
+                    continue
+
                 allowed_work_days = max(
                     0,
                     len(dates) - self.request.config.minRestDaysPerWeek,
@@ -409,12 +484,63 @@ class OrToolsPlanner:
                     <= allowed_work_days
                 )
 
+        for employee in self.fixed_rotating_rest:
+            assert employee.fixedTemplate is not None
+            for _, dates in self._week_groups().items():
+                if len(dates) < 7:
+                    continue
+
+                potential_dates = [
+                    iso
+                    for iso in dates
+                    if template_has_work(employee.fixedTemplate, iso)
+                ]
+                required_rest = min(
+                    self.request.config.minRestDaysPerWeek,
+                    len(potential_dates),
+                )
+                required_work = len(potential_dates) - required_rest
+                self.model.Add(
+                    sum(
+                        self.fixed_work[(employee.guid, iso)]
+                        for iso in potential_dates
+                    )
+                    == required_work
+                )
+
+    def _apply_daily_rest_capacity(self) -> None:
+        maximum = self.request.config.maxRestingEmployeesPerDay
+        if maximum is None:
+            return
+
+        for iso in self.dates:
+            resting_terms = []
+            constant_resting = 0
+
+            for employee in self.rotating + self.fixed_rotating_rest:
+                resting = self.model.NewBoolVar(
+                    f"resting_{employee.guid}_{iso}"
+                )
+                self.model.Add(
+                    resting + self.work_day[(employee.guid, iso)] == 1
+                )
+                resting_terms.append(resting)
+
+            for employee in self.fixed_template_rest:
+                assert employee.fixedTemplate is not None
+                if not template_has_work(employee.fixedTemplate, iso):
+                    constant_resting += 1
+
+            self.model.Add(
+                sum(resting_terms) + constant_resting <= maximum
+            )
+
     def _apply_max_consecutive_work_days(self) -> None:
         size = self.request.config.maxConsecutiveWorkDays + 1
         if size > len(self.dates):
             return
 
-        for employee in self.rotating:
+        for employee in self.rotating + self.fixed_rotating_rest:
             for index in range(0, len(self.dates) - size + 1):
                 window = self.dates[index : index + size]
                 self.model.Add(
@@ -425,49 +551,53 @@ class OrToolsPlanner:
                     <= self.request.config.maxConsecutiveWorkDays
                 )
 
-    def _minutes_for_slot(self, slot: RequirementSlot) -> int:
-        total = template_minutes(slot.requirement.template, slot.iso)
+    def _credited_minutes_by_date(
+        self,
+        slot: RequirementSlot,
+    ) -> dict[str, int]:
+        requirement = slot.requirement
+        main_actual = template_minutes(requirement.template, slot.iso)
+
         if (
-            slot.requirement.serviceType == "GUARD"
-            and slot.requirement.continuationTemplate is not None
+            requirement.serviceType != "GUARD"
+            or requirement.continuationTemplate is None
         ):
-            continuation_date = add_days(
-                slot.iso, slot.requirement.continuationDayOffset
-            )
-            total += template_minutes(
-                slot.requirement.continuationTemplate,
-                continuation_date,
-            )
-        return total
+            return {
+                slot.iso: requirement.creditedMinutes or main_actual,
+            }
+
+        continuation_date = add_days(
+            slot.iso,
+            requirement.continuationDayOffset,
+        )
+        continuation_actual = template_minutes(
+            requirement.continuationTemplate,
+            continuation_date,
+        )
+        total_actual = main_actual + continuation_actual
+        credited = requirement.creditedMinutes or total_actual
+
+        if total_actual <= 0:
+            return {slot.iso: credited, continuation_date: 0}
+
+        main_credited = round(
+            credited * (main_actual / total_actual)
+        )
+        return {
+            slot.iso: main_credited,
+            continuation_date: credited - main_credited,
+        }
 
     def _slot_minutes_in_dates(
         self,
         slot: RequirementSlot,
         date_set: set[str],
     ) -> int:
-        total = 0
-
-        if slot.iso in date_set:
-            total += template_minutes(
-                slot.requirement.template,
-                slot.iso,
-            )
-
-        if (
-            slot.requirement.serviceType == "GUARD"
-            and slot.requirement.continuationTemplate is not None
-        ):
-            continuation_date = add_days(
-                slot.iso,
-                slot.requirement.continuationDayOffset,
-            )
-            if continuation_date in date_set:
-                total += template_minutes(
-                    slot.requirement.continuationTemplate,
-                    continuation_date,
-                )
-
-        return total
+        return sum(
+            minutes
+            for iso, minutes in self._credited_minutes_by_date(slot).items()
+            if iso in date_set
+        )
 
     def _apply_weekly_minutes(self) -> None:
         for employee in self.rotating:
@@ -497,9 +627,27 @@ class OrToolsPlanner:
                     )
 
                 if terms:
-                    self.model.Add(
-                        sum(terms) <= maximum
-                    )
+                    self.model.Add(sum(terms) <= maximum)
+
+        for employee in self.fixed_rotating_rest:
+            assert employee.fixedTemplate is not None
+            maximum = (
+                employee.maxWeeklyMinutes
+                if employee.maxWeeklyMinutes is not None
+                else self.request.config.maxWeeklyMinutes
+            )
+            if maximum is None:
+                continue
+
+            for _, dates in self._week_groups().items():
+                terms = [
+                    template_minutes(employee.fixedTemplate, iso)
+                    * self.fixed_work[(employee.guid, iso)]
+                    for iso in dates
+                    if template_has_work(employee.fixedTemplate, iso)
+                ]
+                if terms:
+                    self.model.Add(sum(terms) <= maximum)
 
     def _apply_max_consecutive_guards(self) -> None:
         size = self.request.config.maxConsecutiveGuards + 1
@@ -644,7 +792,10 @@ class OrToolsPlanner:
     def solve(self) -> SolverResponse:
         self.build()
 
-        self.solver.parameters.max_time_in_seconds = 20.0
+        self.solver.parameters.max_time_in_seconds = max(
+            1.0,
+            float(self.request.solverTimeoutSeconds) - 1.0,
+        )
         self.solver.parameters.num_search_workers = 8
         self.solver.parameters.random_seed = 42
 
@@ -693,11 +844,16 @@ class OrToolsPlanner:
             schedules[employee.guid] = {}
             reasons[employee.guid] = {}
 
-        # Fixed profiles are authoritative.
+        # Fixed profiles keep their shift; the rest day may be template-based or solved.
         for employee in self.fixed:
             assert employee.fixedTemplate is not None
             for iso in self.dates:
-                if template_has_work(employee.fixedTemplate, iso):
+                works = (
+                    bool(self.solver.Value(self.fixed_work[(employee.guid, iso)]))
+                    if employee.fixedRestDayMode == "ROTATING"
+                    else template_has_work(employee.fixedTemplate, iso)
+                )
+                if works:
                     schedules[employee.guid][iso] = employee.fixedTemplate.guid
                     reasons[employee.guid][iso] = DayReason(
                         templateName=employee.fixedTemplate.name,
@@ -705,7 +861,7 @@ class OrToolsPlanner:
                         confidence=100,
                         source="FIXED",
                         factors=[
-                            "Planning fixe défini dans le profil de l’employé"
+                            "Horaire fixe défini dans le profil de l’employé"
                         ],
                     )
                 else:
@@ -715,11 +871,18 @@ class OrToolsPlanner:
                         templateGuid=None,
                         confidence=100,
                         source="FIXED",
-                        factors=["Repos défini par le template fixe"],
+                        factors=[
+                            "Jour de repos choisi par CP-SAT pour l’horaire fixe"
+                            if employee.fixedRestDayMode == "ROTATING"
+                            else "Repos défini par le template fixe"
+                        ],
                     )
 
         for employee in self.rotating:
             for iso in self.dates:
+                if iso in schedules[employee.guid]:
+                    continue
+
                 selected = None
                 for slot in self._daily_slots(iso):
                     if self.solver.Value(self._slot_var(employee.guid, slot)):
@@ -776,9 +939,27 @@ class OrToolsPlanner:
                         source="GUARD_CONTINUATION",
                         factors=[
                             f"Suite automatique de la garde commencée le {iso}",
-                            "Aucun autre service autorisé pendant cette journée de récupération",
+                            "Aucun autre service autorisé pendant cette journée de continuation",
                         ],
                     )
+
+                    if self.request.config.restAfterGuardRequired:
+                        for offset in range(
+                            1,
+                            self.request.config.postGuardRestDays + 1,
+                        ):
+                            rest_date = add_days(continuation_date, offset)
+                            schedules[employee.guid][rest_date] = None
+                            reasons[employee.guid][rest_date] = DayReason(
+                                templateName="Repos post-garde",
+                                templateGuid=None,
+                                confidence=100,
+                                source="POST_GUARD_REST",
+                                factors=[
+                                    f"Repos complet après la garde commencée le {iso}",
+                                    f"Jour {offset} sur {self.request.config.postGuardRestDays} de récupération post-garde",
+                                ],
+                            )
 
         coverage: list[CoverageResult] = []
         violations: list[PlanningViolation] = []
@@ -790,6 +971,13 @@ class OrToolsPlanner:
             ] + sum(
                 self.solver.Value(self._slot_var(employee.guid, slot))
                 for employee in self.rotating
+            ) + sum(
+                self.solver.Value(
+                    self.fixed_work[(employee.guid, slot.iso)]
+                )
+                for employee in self.fixed_rotating_rest
+                if employee.fixedTemplate is not None
+                and employee.fixedTemplate.guid == requirement.template.guid
             )
 
             status = "COVERED"

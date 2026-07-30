@@ -4,7 +4,7 @@ import { PlanningSolver, PlanningSolverInput } from './planning.solver.js';
 
 export default class GreedyPlanningSolver implements PlanningSolver {
   readonly type = 'GREEDY' as const;
-  readonly version = 'greedy-v2.2-fill-remaining';
+  readonly version = 'greedy-v2.3-pharmacy-final';
 
   async solve(input: PlanningSolverInput) {
     return generateSuggestion(

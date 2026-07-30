@@ -26,6 +26,8 @@ const createBaseSchema = z
 
     max_employees: z.number().int().min(0).nullable().optional(),
 
+    credited_minutes: z.number().int().min(1).max(10080).nullable().optional(),
+
     priority: z.number().int().min(1).max(1000).default(100),
 
     active: z.boolean().default(true),
@@ -143,6 +145,8 @@ export const updatePlanningSuggestionRequirementSchema = z
     target_employees: z.number().int().min(0).optional(),
 
     max_employees: z.number().int().min(0).nullable().optional(),
+
+    credited_minutes: z.number().int().min(1).max(10080).nullable().optional(),
 
     priority: z.number().int().min(1).max(1000).optional(),
 

@@ -73,6 +73,14 @@ export default class PlanningSuggestionConfig extends PlanningSuggestionConfigMo
     return this.rest_after_guard_required;
   }
 
+  getPostGuardRestDays(): number {
+    return this.post_guard_rest_days;
+  }
+
+  getMaxRestingEmployeesPerDay(): number | null | undefined {
+    return this.max_resting_employees_per_day;
+  }
+
   getFairnessWindowWeeks(): number {
     return this.fairness_window_weeks;
   }
@@ -142,6 +150,16 @@ export default class PlanningSuggestionConfig extends PlanningSuggestionConfigMo
 
   setRestAfterGuardRequired(value: boolean): this {
     this.rest_after_guard_required = value;
+    return this;
+  }
+
+  setPostGuardRestDays(value: number): this {
+    this.post_guard_rest_days = value;
+    return this;
+  }
+
+  setMaxRestingEmployeesPerDay(value: number | null): this {
+    this.max_resting_employees_per_day = value;
     return this;
   }
 
@@ -225,6 +243,8 @@ export default class PlanningSuggestionConfig extends PlanningSuggestionConfigMo
         min_rest_minutes_between_shifts: this.min_rest_minutes_between_shifts,
         max_consecutive_guards: this.max_consecutive_guards,
         rest_after_guard_required: this.rest_after_guard_required,
+        post_guard_rest_days: this.post_guard_rest_days,
+        max_resting_employees_per_day: this.max_resting_employees_per_day ?? null,
         fairness_window_weeks: this.fairness_window_weeks,
         strict_coverage: this.strict_coverage,
       },
@@ -256,6 +276,8 @@ export default class PlanningSuggestionConfig extends PlanningSuggestionConfigMo
     this.min_rest_minutes_between_shifts = data.min_rest_minutes_between_shifts ?? 660;
     this.max_consecutive_guards = data.max_consecutive_guards ?? 1;
     this.rest_after_guard_required = data.rest_after_guard_required ?? true;
+    this.post_guard_rest_days = data.post_guard_rest_days ?? 0;
+    this.max_resting_employees_per_day = data.max_resting_employees_per_day ?? null;
     this.fairness_window_weeks = data.fairness_window_weeks ?? 8;
     this.strict_coverage = data.strict_coverage ?? true;
     this.solver_type = data.solver_type ?? 'GREEDY';

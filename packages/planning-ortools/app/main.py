@@ -8,7 +8,7 @@ from app.solver import solve_planning
 
 app = FastAPI(
     title="Toké Planning OR-Tools",
-    version="1.0.0",
+    version="1.1.0",
 )
 
 
@@ -17,7 +17,7 @@ def health():
     return {
         "success": True,
         "service": "toke-planning-ortools",
-        "solverVersion": "ortools-cp-sat-v1",
+        "solverVersion": "ortools-cp-sat-v1.1",
     }
 
 

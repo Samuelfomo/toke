@@ -19,6 +19,8 @@ export default class PlanningSuggestionConfigModel extends BaseModel {
     min_rest_minutes_between_shifts: 'min_rest_minutes_between_shifts',
     max_consecutive_guards: 'max_consecutive_guards',
     rest_after_guard_required: 'rest_after_guard_required',
+    post_guard_rest_days: 'post_guard_rest_days',
+    max_resting_employees_per_day: 'max_resting_employees_per_day',
     fairness_window_weeks: 'fairness_window_weeks',
     strict_coverage: 'strict_coverage',
     solver_type: 'solver_type',
@@ -41,6 +43,8 @@ export default class PlanningSuggestionConfigModel extends BaseModel {
   protected min_rest_minutes_between_shifts: number = 660;
   protected max_consecutive_guards: number = 1;
   protected rest_after_guard_required: boolean = true;
+  protected post_guard_rest_days: number = 0;
+  protected max_resting_employees_per_day?: number | null;
   protected fairness_window_weeks: number = 8;
   protected strict_coverage: boolean = true;
   protected solver_type: PlanningSolverType = 'GREEDY';
@@ -110,6 +114,8 @@ export default class PlanningSuggestionConfigModel extends BaseModel {
       [this.db.min_rest_minutes_between_shifts]: this.min_rest_minutes_between_shifts,
       [this.db.max_consecutive_guards]: this.max_consecutive_guards,
       [this.db.rest_after_guard_required]: this.rest_after_guard_required,
+      [this.db.post_guard_rest_days]: this.post_guard_rest_days,
+      [this.db.max_resting_employees_per_day]: this.max_resting_employees_per_day ?? null,
       [this.db.fairness_window_weeks]: this.fairness_window_weeks,
       [this.db.strict_coverage]: this.strict_coverage,
       [this.db.solver_type]: this.solver_type,
@@ -152,6 +158,8 @@ export default class PlanningSuggestionConfigModel extends BaseModel {
         [this.db.min_rest_minutes_between_shifts]: this.min_rest_minutes_between_shifts,
         [this.db.max_consecutive_guards]: this.max_consecutive_guards,
         [this.db.rest_after_guard_required]: this.rest_after_guard_required,
+        [this.db.post_guard_rest_days]: this.post_guard_rest_days,
+        [this.db.max_resting_employees_per_day]: this.max_resting_employees_per_day ?? null,
         [this.db.fairness_window_weeks]: this.fairness_window_weeks,
         [this.db.strict_coverage]: this.strict_coverage,
         [this.db.solver_type]: this.solver_type,
@@ -215,6 +223,16 @@ export default class PlanningSuggestionConfigModel extends BaseModel {
     }
     if (this.max_consecutive_guards < 0) {
       throw new Error('max_consecutive_guards cannot be negative');
+    }
+    if (this.post_guard_rest_days < 0 || this.post_guard_rest_days > 31) {
+      throw new Error('post_guard_rest_days must be between 0 and 31');
+    }
+    if (
+      this.max_resting_employees_per_day !== null &&
+      this.max_resting_employees_per_day !== undefined &&
+      this.max_resting_employees_per_day < 1
+    ) {
+      throw new Error('max_resting_employees_per_day must be greater than 0');
     }
     if (this.fairness_window_weeks < 1 || this.fairness_window_weeks > 52) {
       throw new Error('fairness_window_weeks must be between 1 and 52');

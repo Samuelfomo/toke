@@ -24,7 +24,7 @@ export interface OrToolsPlanningSolverOptions {
 
 export default class OrToolsPlanningSolver implements PlanningSolver {
   readonly type = 'ORTOOLS' as const;
-  readonly version = 'ortools-cp-sat-v1';
+  readonly version = 'ortools-cp-sat-v1.1';
 
   constructor(private readonly options: OrToolsPlanningSolverOptions) {}
 

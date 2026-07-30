@@ -20,6 +20,9 @@ import { QrSocketBridgeService } from './src/services/qr.socket.bridge.service.j
 import authRoute from './src/routes/auth.route.js';
 import SessionModelRoute from './src/routes/session.model.route.js';
 import scheduleSuggestionRoute from './src/routes/schedule.suggestion.route.js';
+import employeePlanningProfileRoute from './src/routes/employee.planning.profile.route.js';
+import planningSuggestionConfigRoute from './src/routes/planning.suggestion.config.route.js';
+import planningSuggestionRequirementRoute from './src/routes/planning.suggestion.requirement.route.js';
 
 dotenv.config();
 
@@ -186,6 +189,9 @@ export default class App {
     this.app.use('/rotation-assignments', rotationAssignmentsRoute);
     this.app.use('/groups', groupsRoute);
     this.app.use('/schedule-suggestion', scheduleSuggestionRoute);
+    this.app.use('/planning-profile', employeePlanningProfileRoute);
+    this.app.use('/planning-config', planningSuggestionConfigRoute);
+    this.app.use('/planning-requirement', planningSuggestionRequirementRoute);
 
     this.app.use('/auth', authRoute);
 

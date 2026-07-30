@@ -30,7 +30,7 @@ import R from '../../tools/response.js';
 import User from '../class/User.js';
 import UserRole from '../class/UserRole.js';
 import { TenantRevision } from '../../tools/revision.js';
-import { responseStructure, responseValue, RoleValues, tableName, } from '../../utils/response.model.js';
+import { responseValue, RoleValues, tableName } from '../../utils/response.model.js';
 import Role from '../class/Role.js';
 import OrgHierarchy from '../class/OrgHierarchy.js';
 import { DatabaseEncryption } from '../../utils/encryption.js';
@@ -47,12 +47,7 @@ import Groups from '../class/Groups.js';
 import SessionTemplate from '../class/SessionTemplates.js';
 import ScheduleAssignments from '../class/ScheduleAssignments.js';
 import TimeEntries from '../class/TimeEntries.js';
-// import { AnomalyType } from '../../tools/anomaly.detection.service.js';
-// import { AnomalyType } from '../../tools/anomaly.detection.service.js';
-
-// import { MemoType, MemoStatus } from '@toke/shared';
-//
-// import Memos from '../class/Memos.js';
+import OtpDeliveryService from '../../tools/otp.delivery.service.js';
 
 const router = Router();
 
@@ -460,32 +455,10 @@ router.post('/', Ensure.post(), async (req: Request, res: Response) => {
       userObj.setJobTitle(validatedData.job_title);
     }
 
-    // if (validatedData.active !== undefined) {
-    //   userObj.setActive(validatedData.active);
-    // }
-
     // Génération OTP pour nouvel utilisateur
-    // if (validatedData.otp_token) {
     await userObj.generateUniqueOtpToken(
       parseInt(validatedData.otp_expires_at?.toDateString()!, 10) || 1440,
-    ); // 24h par défaut
-    // }
-
-    // const { country } = req.body;
-    // if (!CountryValidationUtils.validateIsoCode(country)) {
-    //   return R.handleError(res, HttpStatus.BAD_REQUEST, {
-    //     code: 'country_code_invalid',
-    //     message: COUNTRY_ERRORS.CODE_INVALID,
-    //   });
-    // }
-
-    // const existingCountry = await Country._load(country, false, true);
-    // if (!existingCountry) {
-    //   return R.handleError(res, HttpStatus.NOT_FOUND, {
-    //     code: 'country_not_found',
-    //     message: COUNTRY_ERRORS.NOT_FOUND,
-    //   });
-    // }
+    );
 
     const existingDefaultRole = await Role._load(RoleValues.EMPLOYEE, false, true);
     if (!existingDefaultRole) {
@@ -499,14 +472,18 @@ router.post('/', Ensure.post(), async (req: Request, res: Response) => {
 
     const defaultSessionTemplate = await SessionTemplate._load({}, false, true);
     if (defaultSessionTemplate) {
+      const templateSnapshot =
+        await ScheduleAssignments.createTemplateSnapshot(defaultSessionTemplate);
+
       const defaultContrat = new ScheduleAssignments()
         .setTenant(tenant.config.reference)
-        .setSessionTemplate(defaultSessionTemplate)
+        .setSessionTemplate(templateSnapshot)
         .setCreatedBy(existingSupervisor.getId()!)
         .setStartDate(TimezoneConfigUtils.getCurrentTime().toISOString().split('T')[0])
         .setActive(SCHEDULE_ASSIGNMENTS_DEFAULTS.ACTIVE)
         .setFamily(SAFamily.USER)
-        .setRelated(userObj.getGuid()!);
+        .setRelated(userObj.getGuid()!)
+        .setReason('Company default contract');
 
       await defaultContrat.save();
     }
@@ -529,52 +506,20 @@ router.post('/', Ensure.post(), async (req: Request, res: Response) => {
       .setUser(userObj.getId()!)
       .setAssignedBy(existingSupervisor.getId()!);
 
-    // const orgHierarchyObj = new OrgHierarchy()
-    //   .setSubordinate(userObj.getId()!)
-    //   .setSupervisor(existingSupervisor.getId()!)
-    //   .setDepartment(userObj.getDepartment()!)
-    //   .setEffectiveFrom(ORG_HIERARCHY_DEFAULTS.EFFECTIVE_FROM);
-
     await userRoleObj.save();
 
-    // await orgHierarchyObj.save();
-
-    // TODO a revoir
-    const android: any = await InvitationService.findEmployeeLink(
-      responseStructure.EMPLOYEE_ANDROID_APP,
-    );
-
-    const ios: any = await InvitationService.findEmployeeLink(responseStructure.EMPLOYEE_IOS_APP);
-    const buttons = {
-      android_link: android.response.link,
-      ios_link: ios.response.link,
-    };
-
-    // Envoyer l'OTP via WhatsApp
-    await WapService.sendInvitation(
-      userObj.getOtpToken()!,
-      validatedData.phone_number,
-      validatedData.country,
-      buttons,
-    );
-
-    if (userObj.getEmail()) {
-      // Envoi par email
-      await EmailSender.sender(userObj.getOtpToken()!, userObj.getEmail()!);
-    }
-    // if (result.status !== HttpStatus.SUCCESS) {
-    //   if (userObj.getEmail()) {
-    //     // Envoi par email
-    //     await EmailSender.sender(userObj.getOtpToken()!, userObj.getEmail()!);
-    //   } else {
-    //     return R.handleError(res, result.status, result.response);
-    //   }
-    // }
+    const delivery = await OtpDeliveryService.sendEmployeeOtp({
+      otp: userObj.getOtpToken()!,
+      phoneNumber: userObj.getPhoneNumber()!,
+      country: userObj.getCountry()!,
+      email: userObj.getEmail(),
+    });
 
     return R.handleCreated(res, {
       message: 'User created and OTP sent successfully',
       ...(await userObj.toJSON()),
       role: existingDefaultRole.toJSON(),
+      otp_delivery: delivery,
     });
   } catch (error: any) {
     if (error.issues) {
@@ -704,9 +649,12 @@ router.post('/manager', Ensure.post(), async (req: Request, res: Response) => {
 
     const defaultSessionTemplate = await SessionTemplate._load({}, false, true);
     if (defaultSessionTemplate && !isFirstUser) {
+      const templateSnapshot =
+        await ScheduleAssignments.createTemplateSnapshot(defaultSessionTemplate);
+
       const defaultContrat = new ScheduleAssignments()
         .setTenant(tenant.config.reference)
-        .setSessionTemplate(defaultSessionTemplate)
+        .setSessionTemplate(templateSnapshot)
         .setCreatedBy(supervisorObj?.getId()!)
         .setStartDate(TimezoneConfigUtils.getCurrentTime().toISOString().split('T')[0])
         .setActive(SCHEDULE_ASSIGNMENTS_DEFAULTS.ACTIVE)
@@ -1166,6 +1114,7 @@ router.put('/:guid', Ensure.put(), async (req: Request, res: Response) => {
 router.patch('/:guid/generate-otp', Ensure.patch(), async (req: Request, res: Response) => {
   try {
     const userObj = await User._load(req.params.guid, true);
+
     if (!userObj) {
       return R.handleError(res, HttpStatus.NOT_FOUND, {
         code: USERS_CODES.USER_NOT_FOUND,
@@ -1173,73 +1122,38 @@ router.patch('/:guid/generate-otp', Ensure.patch(), async (req: Request, res: Re
       });
     }
 
-    const { expiration_minutes = 1440, email } = req.body; // 24h par défaut
+    const expirationMinutes = Number(req.body.expiration_minutes ?? 1440);
 
-    // if (!CountryValidationUtils.validateIsoCode(country)) {
-    //   return R.handleError(res, HttpStatus.BAD_REQUEST, {
-    //     code: 'country_code_invalid',
-    //     message: COUNTRY_ERRORS.CODE_INVALID,
-    //   });
-    // }
-
-    // const otp = GenerateOtp.generateOTP(6);
-    // const expiresAt = new Date(Date.now() + expiration_minutes * 60 * 1000);
-
-    // userObj.setOtpToken(otp);
-    // userObj.setOtpExpiresAt(expiresAt);
-    await userObj.generateUniqueOtpToken(expiration_minutes);
-    // userObj.generateOtpToken(expiration_minutes);
-    await userObj.defineOtpToken();
-
-    let sendOtp;
-    let emailData = email || 'princefomo49@gmail.com';
-    // 🔹 Envoi du code OTP selon le canal choisi
-    if (emailData) {
-      let value = userObj.getEmail();
-      if (UsersValidationUtils.validateEmail(emailData)) {
-        // return R.handleError(res, HttpStatus.BAD_REQUEST, {
-        //   code: USERS_CODES.EMAIL_INVALID,
-        //   message: USERS_ERRORS.EMAIL_INVALID,
-        // });
-        value = emailData;
-      }
-      // Envoi par email
-      await EmailSender.sender(
-        userObj.getOtpToken()!,
-        value!,
-        // expiration_minutes,
-      );
-    } else if (!email) {
-      // Envoi via WhatsApp
-      sendOtp = await WapService.sendOtp(
-        userObj.getOtpToken()!,
-        userObj.getPhoneNumber()!,
-        userObj.getCountry()!,
-      );
-
-      if (sendOtp.status !== HttpStatus.SUCCESS) {
-        return R.handleError(res, sendOtp.status, sendOtp.response);
-      }
+    if (!Number.isInteger(expirationMinutes) || expirationMinutes <= 0) {
+      return R.handleError(res, HttpStatus.BAD_REQUEST, {
+        code: USERS_CODES.VALIDATION_FAILED,
+        message: 'Expiration minutes must be a positive integer',
+      });
     }
 
-    // const sendOtp = await WapService.sendOtp(
-    //   userObj.getOtpToken()!,
-    //   userObj.getPhoneNumber()!,
-    //   country,
-    // );
+    await userObj.generateUniqueOtpToken(expirationMinutes);
+    await userObj.defineOtpToken();
 
-    // if (sendOtp.status !== HttpStatus.SUCCESS) {
-    //   return R.handleError(res, sendOtp.status, sendOtp.response);
-    // }
+    const delivery = await OtpDeliveryService.sendEmployeeOtp({
+      otp: userObj.getOtpToken()!,
+      phoneNumber: userObj.getPhoneNumber()!,
+      country: userObj.getCountry()!,
+      email: userObj.getEmail(),
+    });
 
     return R.handleSuccess(res, {
-      message: 'OTP generated and sent successfully',
+      message:
+        delivery.status === 'sent'
+          ? 'OTP generated and sent successfully'
+          : 'OTP generated successfully, but delivery was incomplete',
+
       otp_expires_at: userObj.getOtpExpiresAt(),
+      otp_delivery: delivery,
     });
-  } catch (error: any) {
+  } catch (error: unknown) {
     return R.handleError(res, HttpStatus.INTERNAL_ERROR, {
       code: USERS_CODES.OTP_GENERATION_FAILED,
-      message: error.message,
+      message: error instanceof Error ? error.message : 'OTP generation failed',
     });
   }
 });

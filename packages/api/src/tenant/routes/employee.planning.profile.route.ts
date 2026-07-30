@@ -127,6 +127,7 @@ router.post('/', Ensure.post(), async (req: Request, res: Response) => {
       .setUser(user.getId()!)
       .setPlanningMode(data.planning_mode)
       .setFixedSessionTemplate(fixedTemplateId)
+      .setFixedRestDayMode(data.fixed_rest_day_mode)
       .setRotationOrder(data.rotation_order ?? null)
       .setMaxWeeklyMinutes(data.max_weekly_minutes ?? null)
       .setActive(data.active);
@@ -175,6 +176,10 @@ router.put('/:guid', Ensure.put(), async (req: Request, res: Response) => {
         }
         profile.setFixedSessionTemplate(template.getId()!);
       }
+    }
+
+    if (data.fixed_rest_day_mode !== undefined) {
+      profile.setFixedRestDayMode(data.fixed_rest_day_mode);
     }
 
     if (data.rotation_order !== undefined) {

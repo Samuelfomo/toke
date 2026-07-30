@@ -78,6 +78,10 @@ export default class PlanningSuggestionRequirement extends PlanningSuggestionReq
     return this.max_employees;
   }
 
+  getCreditedMinutes(): number | null | undefined {
+    return this.credited_minutes;
+  }
+
   getPriority(): number {
     return this.priority;
   }
@@ -151,6 +155,11 @@ export default class PlanningSuggestionRequirement extends PlanningSuggestionReq
 
   setMaxEmployees(value: number | null): this {
     this.max_employees = value;
+    return this;
+  }
+
+  setCreditedMinutes(value: number | null): this {
+    this.credited_minutes = value;
     return this;
   }
 
@@ -270,6 +279,7 @@ export default class PlanningSuggestionRequirement extends PlanningSuggestionReq
       min_employees: this.min_employees,
       target_employees: this.target_employees,
       max_employees: this.max_employees ?? null,
+      credited_minutes: this.credited_minutes ?? null,
       priority: this.priority,
       active: this.active,
       created_at: this.created_at,
@@ -290,6 +300,7 @@ export default class PlanningSuggestionRequirement extends PlanningSuggestionReq
     this.min_employees = data.min_employees ?? 0;
     this.target_employees = data.target_employees ?? 0;
     this.max_employees = data.max_employees ?? null;
+    this.credited_minutes = data.credited_minutes ?? null;
     this.priority = data.priority ?? 100;
     this.active = data.active ?? true;
     this.deleted_at = data.deleted_at ?? null;

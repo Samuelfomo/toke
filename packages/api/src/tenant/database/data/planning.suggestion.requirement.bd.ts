@@ -108,6 +108,12 @@ export const PlanningSuggestionRequirementDbStructure = {
       validate: { isInt: true, min: 0 },
       comment: 'Optional hard maximum coverage',
     },
+    credited_minutes: {
+      type: DataTypes.INTEGER,
+      allowNull: true,
+      validate: { isInt: true, min: 1, max: 10080 },
+      comment: 'Optional credited duration for this requirement; guards may use 960 minutes',
+    },
     priority: {
       type: DataTypes.INTEGER,
       allowNull: false,

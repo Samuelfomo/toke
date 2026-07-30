@@ -7,8 +7,10 @@ from pydantic import BaseModel, ConfigDict, Field, model_validator
 
 DayKey = Literal["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"]
 PlanningMode = Literal["FIXED", "ROTATING", "EXCLUDED"]
+FixedRestDayMode = Literal["TEMPLATE", "ROTATING"]
 ServiceType = Literal["STANDARD", "GUARD"]
 AllocationMode = Literal["EXACT", "RANGE", "FILL_REMAINING"]
+HistoricalServiceType = Literal["STANDARD","GUARD","GUARD_CONTINUATION",]
 
 
 class WorkBlock(BaseModel):
@@ -37,11 +39,16 @@ class PlanningEmployeeInput(BaseModel):
     rotationOrder: int | None = None
     maxWeeklyMinutes: int | None = Field(default=None, ge=1)
     fixedTemplate: EngineTemplate | None = None
+    fixedRestDayMode: FixedRestDayMode = "TEMPLATE"
 
     @model_validator(mode="after")
     def validate_fixed_employee(self) -> "PlanningEmployeeInput":
         if self.mode == "FIXED" and self.fixedTemplate is None:
             raise ValueError("A FIXED employee requires fixedTemplate")
+        if self.mode != "FIXED" and self.fixedRestDayMode != "TEMPLATE":
+            raise ValueError(
+                "fixedRestDayMode ROTATING is only valid for FIXED employees"
+            )
         return self
 
 
@@ -59,6 +66,7 @@ class PlanningRequirementInput(BaseModel):
     template: EngineTemplate
     continuationTemplate: EngineTemplate | None = None
     continuationDayOffset: int = Field(default=0, ge=0, le=1)
+    creditedMinutes: int | None = Field(default=None, ge=1, le=10080)
 
     @model_validator(mode="after")
     def validate_requirement(self) -> "PlanningRequirementInput":
@@ -106,7 +114,7 @@ class HistoricalAssignment(BaseModel):
     templateGuid: str
     templateName: str
     definition: dict[DayKey, list[WorkBlock] | None]
-    serviceType: ServiceType = "STANDARD"
+    serviceType: HistoricalServiceType
 
 
 class EngineConfig(BaseModel):
@@ -118,6 +126,8 @@ class EngineConfig(BaseModel):
     minRestMinutesBetweenShifts: int = Field(ge=0)
     maxConsecutiveGuards: int = Field(ge=1, le=31)
     restAfterGuardRequired: bool
+    postGuardRestDays: int = Field(default=0, ge=0, le=31)
+    maxRestingEmployeesPerDay: int | None = Field(default=None, ge=1)
     fairnessWindowWeeks: int = Field(ge=1, le=52)
     strictCoverage: bool
 
@@ -131,6 +141,7 @@ class PlanningSolverInput(BaseModel):
     periodFrom: str
     periodTo: str
     config: EngineConfig
+    solverTimeoutSeconds: int = Field(default=20, ge=1, le=300)
 
 
 class DayReason(BaseModel):
@@ -143,6 +154,7 @@ class DayReason(BaseModel):
         "GENERATED",
         "FILL_REMAINING",
         "GUARD_CONTINUATION",
+        "POST_GUARD_REST",
         "REST",
     ]
 
@@ -198,7 +210,7 @@ class EngineResult(BaseModel):
 class SolverResponse(BaseModel):
     success: bool
     status: Literal["OPTIMAL", "FEASIBLE", "INFEASIBLE", "UNKNOWN"]
-    solverVersion: str = "ortools-cp-sat-v1"
+    solverVersion: str = "ortools-cp-sat-v1.1"
     result: EngineResult | None = None
     diagnostics: EngineDiagnostics | None = None
     message: str | None = None

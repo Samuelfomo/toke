@@ -4,6 +4,7 @@ import BaseModel from '../database/db.base.js';
 import { tableName } from '../../utils/response.model.js';
 
 export type EmployeePlanningMode = 'FIXED' | 'ROTATING' | 'EXCLUDED';
+export type FixedRestDayMode = 'TEMPLATE' | 'ROTATING';
 
 export default class EmployeePlanningProfileModel extends BaseModel {
   public readonly db = {
@@ -13,6 +14,7 @@ export default class EmployeePlanningProfileModel extends BaseModel {
     user: 'user',
     planning_mode: 'planning_mode',
     fixed_session_template: 'fixed_session_template',
+    fixed_rest_day_mode: 'fixed_rest_day_mode',
     rotation_order: 'rotation_order',
     max_weekly_minutes: 'max_weekly_minutes',
     active: 'active',
@@ -26,6 +28,7 @@ export default class EmployeePlanningProfileModel extends BaseModel {
   protected user?: number;
   protected planning_mode: EmployeePlanningMode = 'ROTATING';
   protected fixed_session_template?: number | null;
+  protected fixed_rest_day_mode: FixedRestDayMode = 'TEMPLATE';
   protected rotation_order?: number | null;
   protected max_weekly_minutes?: number | null;
   protected active: boolean = true;
@@ -97,6 +100,7 @@ export default class EmployeePlanningProfileModel extends BaseModel {
       [this.db.user]: this.user,
       [this.db.planning_mode]: this.planning_mode,
       [this.db.fixed_session_template]: this.fixed_session_template ?? null,
+      [this.db.fixed_rest_day_mode]: this.fixed_rest_day_mode,
       [this.db.rotation_order]: this.rotation_order ?? null,
       [this.db.max_weekly_minutes]: this.max_weekly_minutes ?? null,
       [this.db.active]: this.active,
@@ -123,6 +127,7 @@ export default class EmployeePlanningProfileModel extends BaseModel {
         [this.db.user]: this.user,
         [this.db.planning_mode]: this.planning_mode,
         [this.db.fixed_session_template]: this.fixed_session_template ?? null,
+        [this.db.fixed_rest_day_mode]: this.fixed_rest_day_mode,
         [this.db.rotation_order]: this.rotation_order ?? null,
         [this.db.max_weekly_minutes]: this.max_weekly_minutes ?? null,
         [this.db.active]: this.active,
@@ -154,6 +159,10 @@ export default class EmployeePlanningProfileModel extends BaseModel {
 
     if (this.planning_mode !== 'FIXED' && this.fixed_session_template) {
       throw new Error('fixed_session_template is only allowed for a FIXED employee');
+    }
+
+    if (this.planning_mode !== 'FIXED' && this.fixed_rest_day_mode !== 'TEMPLATE') {
+      throw new Error('fixed_rest_day_mode ROTATING is only allowed for a FIXED employee');
     }
 
     if (

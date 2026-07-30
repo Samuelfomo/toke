@@ -19,6 +19,10 @@ const basePlanningSuggestionConfigSchema = z.object({
 
   rest_after_guard_required: z.boolean().default(true),
 
+  post_guard_rest_days: z.number().int().min(0).max(31).default(0),
+
+  max_resting_employees_per_day: z.number().int().min(1).nullable().optional(),
+
   fairness_window_weeks: z.number().int().min(1).max(52).default(8),
 
   strict_coverage: z.boolean().default(true),

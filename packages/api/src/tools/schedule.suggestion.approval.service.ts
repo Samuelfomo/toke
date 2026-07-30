@@ -108,28 +108,56 @@ function buildBlocks(
   return blocks;
 }
 
-function isAuthorizedGuardContinuation(item: any, iso: string, periodTo: string): boolean {
-  const allowedDate = addDays(periodTo, 1);
+interface ScheduleReason {
+  source?: string;
+  templateGuid?: string | null;
+}
 
+function getAuthorizedSpilloverDates(item: any, periodTo: string): string[] {
   const schedule = item.schedule as Record<string, ScheduleValue>;
+  const reasons = (item.reasons ?? {}) as Record<string, ScheduleReason | null>;
 
-  const reasons = (item.reasons ?? {}) as Record<
-    string,
-    {
-      source?: string;
-      templateGuid?: string | null;
-    } | null
-  >;
+  const dates: string[] = [];
+  let previousReason = reasons[periodTo];
+  let continuationAlreadySeen = previousReason?.source === 'GUARD_CONTINUATION';
 
-  const reason = reasons[iso];
+  // Une garde peut se terminer dans la période ou à periodTo + 1.
+  // Les repos post-garde doivent former une chaîne consécutive.
+  for (let offset = 1; offset <= 32; offset++) {
+    const iso = addDays(periodTo, offset);
 
-  return (
-    iso === allowedDate &&
-    schedule[iso] !== null &&
-    schedule[iso] !== undefined &&
-    reason?.source === 'GUARD_CONTINUATION' &&
-    reason.templateGuid === schedule[iso]
-  );
+    if (!(iso in schedule)) {
+      break;
+    }
+
+    const reason = reasons[iso];
+    const value = schedule[iso];
+
+    const validContinuation =
+      !continuationAlreadySeen &&
+      offset === 1 &&
+      value !== null &&
+      value !== undefined &&
+      reason?.source === 'GUARD_CONTINUATION' &&
+      reason.templateGuid === value;
+
+    const validPostGuardRest =
+      value === null &&
+      reason?.source === 'POST_GUARD_REST' &&
+      (reason.templateGuid === null || reason.templateGuid === undefined) &&
+      (previousReason?.source === 'GUARD_CONTINUATION' ||
+        previousReason?.source === 'POST_GUARD_REST');
+
+    if (!validContinuation && !validPostGuardRest) {
+      break;
+    }
+
+    dates.push(iso);
+    continuationAlreadySeen = continuationAlreadySeen || validContinuation;
+    previousReason = reason;
+  }
+
+  return dates;
 }
 
 function makeRestSnapshot(): TemplateSnapshot {
@@ -293,14 +321,11 @@ export async function approveScheduleSuggestion(
         }
 
         const scheduleDates = Object.keys(schedule);
-
         const missingDates = expectedDates.filter((iso) => !(iso in schedule));
-
         const extraDates = scheduleDates.filter((iso) => !expectedDateSet.has(iso));
-
-        const invalidExtraDates = extraDates.filter(
-          (iso) => !isAuthorizedGuardContinuation(item, iso, periodTo),
-        );
+        const authorizedSpilloverDates = getAuthorizedSpilloverDates(item, periodTo);
+        const authorizedSpilloverSet = new Set(authorizedSpilloverDates);
+        const invalidExtraDates = extraDates.filter((iso) => !authorizedSpilloverSet.has(iso));
 
         if (missingDates.length > 0 || invalidExtraDates.length > 0) {
           throw new SuggestionApprovalError(
@@ -312,7 +337,7 @@ export async function approveScheduleSuggestion(
               missing_dates: missingDates,
               extra_dates: extraDates,
               invalid_extra_dates: invalidExtraDates,
-              allowed_guard_continuation_date: addDays(periodTo, 1),
+              authorized_spillover_dates: authorizedSpilloverDates,
             },
           );
         }
@@ -398,21 +423,9 @@ export async function approveScheduleSuggestion(
         const user = usersById.get(item.user);
         const userGuid = user.guid as string;
         const schedule = item.schedule as Record<string, ScheduleValue>;
-
-        const continuationDate = addDays(periodTo, 1);
-
-        const hasGuardContinuation = isAuthorizedGuardContinuation(
-          item,
-          continuationDate,
-          periodTo,
-        );
-
-        const itemDates = hasGuardContinuation
-          ? [...expectedDates, continuationDate]
-          : [...expectedDates];
-
+        const spilloverDates = getAuthorizedSpilloverDates(item, periodTo);
+        const itemDates = [...expectedDates, ...spilloverDates];
         const itemPeriodTo = itemDates[itemDates.length - 1]!;
-
         const blocks = buildBlocks(schedule, itemDates);
 
         const existingInstances = await AssignmentModel.findAll({

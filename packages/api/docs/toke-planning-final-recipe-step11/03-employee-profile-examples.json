@@ -1,0 +1,38 @@
+{
+  "expected_active_profile_count": 13,
+  "notes": [
+    "Créer un profil actif pour chacun des 13 employés.",
+    "FIXED exige fixed_session_template.",
+    "ROTATING et EXCLUDED doivent avoir fixed_session_template = null.",
+    "Ne pas envoyer employee_guids à la génération pour utiliser tout le scope du manager."
+  ],
+  "examples": {
+    "fixed_with_rotating_rest": {
+      "user": "<USER_GUID>",
+      "planning_mode": "FIXED",
+      "fixed_session_template": "7808474948857602",
+      "fixed_rest_day_mode": "ROTATING",
+      "rotation_order": null,
+      "max_weekly_minutes": null,
+      "active": true
+    },
+    "rotating": {
+      "user": "<USER_GUID>",
+      "planning_mode": "ROTATING",
+      "fixed_session_template": null,
+      "fixed_rest_day_mode": "TEMPLATE",
+      "rotation_order": 1,
+      "max_weekly_minutes": null,
+      "active": true
+    },
+    "excluded": {
+      "user": "<USER_GUID>",
+      "planning_mode": "EXCLUDED",
+      "fixed_session_template": null,
+      "fixed_rest_day_mode": "TEMPLATE",
+      "rotation_order": null,
+      "max_weekly_minutes": null,
+      "active": true
+    }
+  }
+}

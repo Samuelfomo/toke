@@ -1,0 +1,29 @@
+{
+  "name": "Pharmacie du Plateau — congé hebdomadaire tournant",
+  "active": false,
+  "min_rest_days_per_week": 0,
+  "max_consecutive_work_days": null,
+  "max_weekly_minutes": null,
+  "min_rest_minutes_between_shifts": 660,
+  "max_consecutive_guards": 1,
+  "rest_after_guard_required": true,
+  "post_guard_rest_days": 1,
+  "max_resting_employees_per_day": null,
+  "fairness_window_weeks": 13,
+  "strict_coverage": true,
+  "weekly_leave_mode": "TEAM_ROTATION",
+  "weekly_leave_employees_per_week": 1,
+  "weekly_leave_allowed_days": [
+    "Wed",
+    "Thu",
+    "Fri",
+    "Sat",
+    "Sun"
+  ],
+  "weekly_leave_rotation_anchor_date": "2026-08-03",
+  "weekly_leave_complete_weeks_only": true,
+  "post_guard_rest_counts_as_weekly_leave": false,
+  "solver_type": "ORTOOLS",
+  "solver_timeout_seconds": 30,
+  "fallback_to_greedy": false
+}

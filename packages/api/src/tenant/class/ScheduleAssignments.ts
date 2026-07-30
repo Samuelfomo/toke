@@ -123,7 +123,6 @@ export default class ScheduleAssignments extends ScheduleAssignmentsModel {
    * Créer un snapshot du template depuis un SessionTemplate
    */
   static async createTemplateSnapshot(sessionTemplate: SessionTemplate): Promise<any> {
-    // const sessionModel = await sessionTemplate.getSessionModelObj();
     return {
       id: sessionTemplate.getId(),
       guid: sessionTemplate.getGuid(),
@@ -133,11 +132,6 @@ export default class ScheduleAssignments extends ScheduleAssignmentsModel {
       is_default: sessionTemplate.isDefaultSessionTemplate(),
       snapshot_date: new Date().toISOString(),
       session_model: sessionTemplate.getSessionModel(),
-      // session_model: {
-      //   id: sessionModel?.getId(),
-      //   guid: sessionModel?.getGuid(),
-      //   name: sessionModel?.getName(),
-      // },
     };
   }
 
@@ -372,7 +366,9 @@ export default class ScheduleAssignments extends ScheduleAssignmentsModel {
     createdBy: number,
     reason?: string,
   ): Promise<void> {
-    this.setSessionTemplate(SessionTemplate);
+    const snapshot = await ScheduleAssignments.createTemplateSnapshot(sessionTemplate);
+
+    this.setSessionTemplate(snapshot);
     this.setCreatedBy(createdBy);
     if (reason) {
       this.setReason(reason);
@@ -393,7 +389,10 @@ export default class ScheduleAssignments extends ScheduleAssignmentsModel {
         const createdBy = this.created_by!;
         const reason = this.reason ? this.reason : undefined;
 
-        if (newTemplate) this.setSessionTemplate(newTemplate);
+        if (newTemplate) {
+          const snapshot = await ScheduleAssignments.createTemplateSnapshot(newTemplate);
+          this.setSessionTemplate(snapshot);
+        }
 
         await this.update();
 

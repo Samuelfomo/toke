@@ -56,6 +56,13 @@ export const EmployeePlanningProfileDbStructure = {
       validate: { isInt: true, min: 1 },
       comment: 'Required for FIXED employees',
     },
+    fixed_rest_day_mode: {
+      type: DataTypes.ENUM('TEMPLATE', 'ROTATING'),
+      allowNull: false,
+      defaultValue: 'TEMPLATE',
+      comment:
+        'TEMPLATE keeps template rest days; ROTATING lets the solver choose weekly rest while keeping the fixed shift',
+    },
     rotation_order: {
       type: DataTypes.INTEGER,
       allowNull: true,
@@ -113,6 +120,12 @@ export const EmployeePlanningProfileDbStructure = {
 
         if (this.planning_mode !== 'FIXED' && this.fixed_session_template) {
           throw new Error('fixed_session_template is only allowed when planning_mode is FIXED');
+        }
+
+        if (this.planning_mode !== 'FIXED' && this.fixed_rest_day_mode !== 'TEMPLATE') {
+          throw new Error(
+            'fixed_rest_day_mode ROTATING is only allowed when planning_mode is FIXED',
+          );
         }
       },
     },

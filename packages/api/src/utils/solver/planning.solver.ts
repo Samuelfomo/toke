@@ -16,6 +16,7 @@ export interface PlanningSolverInput {
   periodFrom: string;
   periodTo: string;
   config: EngineConfig;
+  solverTimeoutSeconds?: number;
 }
 
 export interface PlanningSolverExecutionMetadata {

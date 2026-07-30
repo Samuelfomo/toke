@@ -1,5 +1,6 @@
 import EmployeePlanningProfileModel, {
   EmployeePlanningMode,
+  FixedRestDayMode,
 } from '../model/EmployeePlanningProfileModel.js';
 
 import SessionTemplate from './SessionTemplates.js';
@@ -52,6 +53,10 @@ export default class EmployeePlanningProfile extends EmployeePlanningProfileMode
     return this.fixed_session_template;
   }
 
+  getFixedRestDayMode(): FixedRestDayMode {
+    return this.fixed_rest_day_mode;
+  }
+
   getRotationOrder(): number | null | undefined {
     return this.rotation_order;
   }
@@ -87,6 +92,7 @@ export default class EmployeePlanningProfile extends EmployeePlanningProfileMode
 
     if (value !== 'FIXED') {
       this.fixed_session_template = null;
+      this.fixed_rest_day_mode = 'TEMPLATE';
       this.fixedSessionTemplateObj = undefined;
     }
 
@@ -96,6 +102,11 @@ export default class EmployeePlanningProfile extends EmployeePlanningProfileMode
   setFixedSessionTemplate(value: number | null): this {
     this.fixed_session_template = value;
     this.fixedSessionTemplateObj = undefined;
+    return this;
+  }
+
+  setFixedRestDayMode(value: FixedRestDayMode): this {
+    this.fixed_rest_day_mode = value;
     return this;
   }
 
@@ -170,6 +181,7 @@ export default class EmployeePlanningProfile extends EmployeePlanningProfileMode
             definition: fixedTemplate.getDefinition(),
           }
         : null,
+      fixed_rest_day_mode: this.fixed_rest_day_mode,
       rotation_order: this.rotation_order ?? null,
       max_weekly_minutes: this.max_weekly_minutes ?? null,
       active: this.active,
@@ -184,6 +196,7 @@ export default class EmployeePlanningProfile extends EmployeePlanningProfileMode
     this.user = data.user;
     this.planning_mode = data.planning_mode ?? 'ROTATING';
     this.fixed_session_template = data.fixed_session_template ?? null;
+    this.fixed_rest_day_mode = data.fixed_rest_day_mode ?? 'TEMPLATE';
     this.rotation_order = data.rotation_order ?? null;
     this.max_weekly_minutes = data.max_weekly_minutes ?? null;
     this.active = data.active ?? true;

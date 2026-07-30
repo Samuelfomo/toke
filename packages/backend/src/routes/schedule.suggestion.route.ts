@@ -1,212 +1,143 @@
 import { Request, Response, Router } from 'express';
 import Ensure from '@toke/api/dist/middle/ensured-routes.js';
-import R from '@toke/api/dist/tools/response.js';
-import { HttpStatus, UsersValidationUtils } from '@toke/shared';
 
 import { TenantConfig } from '../tools/tenant.config.js';
+import {
+  handleBffRouteError,
+  relayTenantApiResponse,
+  tenantReference,
+} from '../tools/bff.proxy.response.js';
 import { ScheduleSuggestionService } from '../services/schedule.suggestion.service.js';
 
 const router = Router();
-
-const CODES = {
-  INVALID_GUID: 'SUGGESTION_INVALID_GUID',
-  GENERATE_FAILED: 'SUGGESTION_GENERATE_FAILED',
-  LIST_FAILED: 'SUGGESTION_LIST_FAILED',
-  LOAD_FAILED: 'SUGGESTION_LOAD_FAILED',
-  PATCH_FAILED: 'SUGGESTION_PATCH_FAILED',
-  APPROVE_FAILED: 'SUGGESTION_APPROVE_FAILED',
-  REJECT_FAILED: 'SUGGESTION_REJECT_FAILED',
-  DELETE_FAILED: 'SUGGESTION_DELETE_FAILED',
-} as const;
-
-function validateGuid(res: Response, guid: string): boolean {
-  if (!UsersValidationUtils.validateGuid(guid)) {
-    R.handleError(res, HttpStatus.BAD_REQUEST, {
-      code: CODES.INVALID_GUID,
-      message: 'Invalid GUID format.',
-    });
-    return false;
-  }
-  return true;
-}
-
-// ── POST /:manager/generate ───────────────────────────────────────────────────
 
 router.post(
   '/:manager/generate',
   TenantConfig.authenticate,
   Ensure.post(),
-  async (req: Request, res: Response) => {
+  async (req: Request, res: Response): Promise<void> => {
     try {
-      const { manager } = req.params;
-      if (!validateGuid(res, manager as string)) return;
-
-      const client = (req as any).client.reference;
-      const response = await ScheduleSuggestionService.generate(
-        client,
-        manager as string,
+      const result = await ScheduleSuggestionService.generate(
+        tenantReference(req),
+        req.params.manager as string,
         req.body,
       );
 
-      return res.status(response.status).json(response.data);
-    } catch (error: any) {
-      return R.handleError(res, HttpStatus.INTERNAL_ERROR, {
-        code: CODES.GENERATE_FAILED,
-        message: error.message,
-      });
+      relayTenantApiResponse(res, result);
+    } catch (error: unknown) {
+      handleBffRouteError(res, error, 'BFF_SUGGESTION_GENERATE_FAILED');
     }
   },
 );
-
-// ── GET /:manager/list ────────────────────────────────────────────────────────
 
 router.get(
   '/:manager/list',
   TenantConfig.authenticate,
   Ensure.get(),
-  async (req: Request, res: Response) => {
+  async (req: Request, res: Response): Promise<void> => {
     try {
-      const { manager } = req.params;
-      if (!validateGuid(res, manager as string)) return;
+      const result = await ScheduleSuggestionService.list(
+        tenantReference(req),
+        req.params.manager as string,
+        req.query,
+      );
 
-      const client = (req as any).client.reference;
-      const response = await ScheduleSuggestionService.list(client, manager as string);
-
-      return res.status(response.status).json(response.data);
-    } catch (error: any) {
-      return R.handleError(res, HttpStatus.INTERNAL_ERROR, {
-        code: CODES.LIST_FAILED,
-        message: error.message,
-      });
+      relayTenantApiResponse(res, result);
+    } catch (error: unknown) {
+      handleBffRouteError(res, error, 'BFF_SUGGESTION_LIST_FAILED');
     }
   },
 );
-
-// ── GET /:guid ────────────────────────────────────────────────────────────────
 
 router.get(
   '/:guid',
   TenantConfig.authenticate,
   Ensure.get(),
-  async (req: Request, res: Response) => {
+  async (req: Request, res: Response): Promise<void> => {
     try {
-      const { guid } = req.params;
-      if (!validateGuid(res, guid as string)) return;
+      const result = await ScheduleSuggestionService.get(
+        tenantReference(req),
+        req.params.guid as string,
+      );
 
-      const client = (req as any).client.reference;
-      const response = await ScheduleSuggestionService.load(client, guid as string);
-
-      return res.status(response.status).json(response.data);
-    } catch (error: any) {
-      return R.handleError(res, HttpStatus.INTERNAL_ERROR, {
-        code: CODES.LOAD_FAILED,
-        message: error.message,
-      });
+      relayTenantApiResponse(res, result);
+    } catch (error: unknown) {
+      handleBffRouteError(res, error, 'BFF_SUGGESTION_GET_FAILED');
     }
   },
 );
-
-// ── PATCH /:guid/item/:itemGuid ───────────────────────────────────────────────
 
 router.patch(
   '/:guid/item/:itemGuid',
   TenantConfig.authenticate,
   Ensure.patch(),
-  async (req: Request, res: Response) => {
+  async (req: Request, res: Response): Promise<void> => {
     try {
-      const { guid, itemGuid } = req.params;
-      if (!validateGuid(res, guid as string) || !validateGuid(res, itemGuid as string)) return;
-
-      const client = (req as any).client.reference;
-      const response = await ScheduleSuggestionService.patchItem(
-        client,
-        guid as string,
-        itemGuid as string,
+      const result = await ScheduleSuggestionService.patchItem(
+        tenantReference(req),
+        req.params.guid as string,
+        req.params.itemGuid as string,
         req.body,
       );
 
-      return res.status(response.status).json(response.data);
-    } catch (error: any) {
-      return R.handleError(res, HttpStatus.INTERNAL_ERROR, {
-        code: CODES.PATCH_FAILED,
-        message: error.message,
-      });
+      relayTenantApiResponse(res, result);
+    } catch (error: unknown) {
+      handleBffRouteError(res, error, 'BFF_SUGGESTION_ITEM_PATCH_FAILED');
     }
   },
 );
-
-// ── POST /:guid/approve ───────────────────────────────────────────────────────
 
 router.post(
   '/:guid/approve',
   TenantConfig.authenticate,
   Ensure.post(),
-  async (req: Request, res: Response) => {
+  async (req: Request, res: Response): Promise<void> => {
     try {
-      const { guid } = req.params;
-      if (!validateGuid(res, guid as string)) return;
+      const result = await ScheduleSuggestionService.approve(
+        tenantReference(req),
+        req.params.guid as string,
+      );
 
-      const client = (req as any).client.reference;
-      const response = await ScheduleSuggestionService.approve(client, guid as string);
-
-      return res.status(response.status).json(response.data);
-    } catch (error: any) {
-      return R.handleError(res, HttpStatus.INTERNAL_ERROR, {
-        code: CODES.APPROVE_FAILED,
-        message: error.message,
-      });
+      relayTenantApiResponse(res, result);
+    } catch (error: unknown) {
+      handleBffRouteError(res, error, 'BFF_SUGGESTION_APPROVE_FAILED');
     }
   },
 );
-
-// ── POST /:guid/reject ────────────────────────────────────────────────────────
 
 router.post(
   '/:guid/reject',
   TenantConfig.authenticate,
   Ensure.post(),
-  async (req: Request, res: Response) => {
+  async (req: Request, res: Response): Promise<void> => {
     try {
-      const { guid } = req.params;
-      if (!validateGuid(res, guid as string)) return;
+      const result = await ScheduleSuggestionService.reject(
+        tenantReference(req),
+        req.params.guid as string,
+      );
 
-      const client = (req as any).client.reference;
-      const response = await ScheduleSuggestionService.reject(client, guid as string);
-
-      return res.status(response.status).json(response.data);
-    } catch (error: any) {
-      return R.handleError(res, HttpStatus.INTERNAL_ERROR, {
-        code: CODES.REJECT_FAILED,
-        message: error.message,
-      });
+      relayTenantApiResponse(res, result);
+    } catch (error: unknown) {
+      handleBffRouteError(res, error, 'BFF_SUGGESTION_REJECT_FAILED');
     }
   },
 );
-
-// ── DELETE /:guid ─────────────────────────────────────────────────────────────
 
 router.delete(
   '/:guid/item/:itemGuid',
   TenantConfig.authenticate,
   Ensure.delete(),
-  async (req: Request, res: Response) => {
+  async (req: Request, res: Response): Promise<void> => {
     try {
-      const { guid, itemGuid } = req.params;
-      if (!validateGuid(res, guid as string) || !validateGuid(res, itemGuid as string)) return;
-
-      const client = (req as any).client.reference;
-      const response = await ScheduleSuggestionService.removeItem(
-        client,
-        guid as string,
-        itemGuid as string,
+      const result = await ScheduleSuggestionService.deleteItem(
+        tenantReference(req),
+        req.params.guid as string,
+        req.params.itemGuid as string,
       );
 
-      return res.status(response.status).json(response.data);
-    } catch (error: any) {
-      return R.handleError(res, HttpStatus.INTERNAL_ERROR, {
-        code: CODES.DELETE_FAILED,
-        message: error.message,
-      });
+      relayTenantApiResponse(res, result);
+    } catch (error: unknown) {
+      handleBffRouteError(res, error, 'BFF_SUGGESTION_ITEM_DELETE_FAILED');
     }
   },
 );
@@ -215,20 +146,16 @@ router.delete(
   '/:guid',
   TenantConfig.authenticate,
   Ensure.delete(),
-  async (req: Request, res: Response) => {
+  async (req: Request, res: Response): Promise<void> => {
     try {
-      const { guid } = req.params;
-      if (!validateGuid(res, guid as string)) return;
+      const result = await ScheduleSuggestionService.delete(
+        tenantReference(req),
+        req.params.guid as string,
+      );
 
-      const client = (req as any).client.reference;
-      const response = await ScheduleSuggestionService.remove(client, guid as string);
-
-      return res.status(response.status).json(response.data);
-    } catch (error: any) {
-      return R.handleError(res, HttpStatus.INTERNAL_ERROR, {
-        code: CODES.DELETE_FAILED,
-        message: error.message,
-      });
+      relayTenantApiResponse(res, result);
+    } catch (error: unknown) {
+      handleBffRouteError(res, error, 'BFF_SUGGESTION_DELETE_FAILED');
     }
   },
 );

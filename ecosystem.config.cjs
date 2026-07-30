@@ -39,6 +39,7 @@ module.exports = {
         NODE_ENV: 'production',
         PORT: 4892,
         API_TYPE: 'tenant',
+        PLANNING_ORTOOLS_URL: 'http://127.0.0.1:8090',
       },
 
       error_file: './logs/tenant-pm2-err.log',
@@ -117,7 +118,6 @@ module.exports = {
     // =========================
     {
       name: 'toke-planning-ortools',
-
       cwd: './packages/planning-ortools',
 
       script: '.venv/bin/python',
@@ -137,18 +137,10 @@ module.exports = {
       error_file: './logs/ortools-pm2-err.log',
       out_file: './logs/ortools-pm2-out.log',
 
-      log_date_format: 'YYYY-MM-DD HH:mm:ss Z',
-      merge_logs: true,
-      time: true,
-
       autorestart: true,
       max_memory_restart: '768M',
-
       restart_delay: 5000,
-      exp_backoff_restart_delay: 100,
-
       kill_timeout: 10000,
-
       min_uptime: '10s',
       max_restarts: 5,
     },

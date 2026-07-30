@@ -1,5 +1,5 @@
 // ─────────────────────────────────────────────────────────────────────────────
-// suggestion.engine.ts — V2.2 avec FILL_REMAINING
+// suggestion.engine.ts — V2.3 garde et repos configurables
 //
 // Le moteur ne déduit plus la couverture depuis l'historique.
 // Sources de vérité :
@@ -15,6 +15,7 @@ const DAY_KEYS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'] as const;
 
 export type DayKey = (typeof DAY_KEYS)[number];
 export type PlanningMode = 'FIXED' | 'ROTATING' | 'EXCLUDED';
+export type FixedRestDayMode = 'TEMPLATE' | 'ROTATING';
 export type PlanningServiceType = 'STANDARD' | 'GUARD';
 export type PlanningAllocationMode = 'EXACT' | 'RANGE' | 'FILL_REMAINING';
 export type HistoricalServiceType = PlanningServiceType | 'GUARD_CONTINUATION';
@@ -35,6 +36,8 @@ export interface EngineConfig {
   minRestMinutesBetweenShifts: number;
   maxConsecutiveGuards: number;
   restAfterGuardRequired: boolean;
+  postGuardRestDays: number;
+  maxRestingEmployeesPerDay: number | null;
   fairnessWindowWeeks: number;
   strictCoverage: boolean;
 }
@@ -57,6 +60,7 @@ export interface PlanningRequirementInput {
   template: EngineTemplate;
   continuationTemplate: EngineTemplate | null;
   continuationDayOffset: number;
+  creditedMinutes: number | null;
 }
 
 export interface PlanningEmployeeInput {
@@ -67,6 +71,7 @@ export interface PlanningEmployeeInput {
   rotationOrder: number | null;
   maxWeeklyMinutes: number | null;
   fixedTemplate: EngineTemplate | null;
+  fixedRestDayMode: FixedRestDayMode;
 }
 
 export interface HistoricalAssignment {
@@ -84,7 +89,13 @@ export interface DayReason {
   templateGuid: string | null;
   confidence: number;
   factors: string[];
-  source?: 'FIXED' | 'GENERATED' | 'FILL_REMAINING' | 'GUARD_CONTINUATION' | 'REST';
+  source?:
+    | 'FIXED'
+    | 'GENERATED'
+    | 'FILL_REMAINING'
+    | 'GUARD_CONTINUATION'
+    | 'POST_GUARD_REST'
+    | 'REST';
 }
 
 export interface EmployeeSuggestionResult {
@@ -104,7 +115,8 @@ export interface PlanningViolation {
     | 'TARGET_COVERAGE_NOT_REACHED'
     | 'MAX_COVERAGE_EXCEEDED'
     | 'NO_ROTATING_EMPLOYEES'
-    | 'UNCONFIGURED_EMPLOYEE';
+    | 'UNCONFIGURED_EMPLOYEE'
+    | 'DAILY_REST_CAP_EXCEEDED';
   date?: string;
   employeeGuid?: string;
   requirementGuid?: string;
@@ -260,6 +272,47 @@ function blockDurationMinutes(block: WorkBlock): number {
 
 function templateMinutes(template: EngineTemplate, iso: string): number {
   return dayBlocks(template, iso).reduce((total, block) => total + blockDurationMinutes(block), 0);
+}
+
+function requirementMinutesByDate(
+  requirement: PlanningRequirementInput,
+  iso: string,
+): Map<string, number> {
+  const result = new Map<string, number>();
+  const mainActual = templateMinutes(requirement.template, iso);
+
+  if (requirement.serviceType !== 'GUARD' || !requirement.continuationTemplate) {
+    result.set(iso, requirement.creditedMinutes ?? mainActual);
+    return result;
+  }
+
+  const continuationDate = addDays(iso, requirement.continuationDayOffset);
+  const continuationActual = templateMinutes(requirement.continuationTemplate, continuationDate);
+  const totalActual = mainActual + continuationActual;
+  const credited = requirement.creditedMinutes ?? totalActual;
+
+  if (totalActual <= 0) {
+    result.set(iso, credited);
+    result.set(continuationDate, 0);
+    return result;
+  }
+
+  const mainCredited = Math.round(credited * (mainActual / totalActual));
+
+  result.set(iso, mainCredited);
+  result.set(continuationDate, credited - mainCredited);
+  return result;
+}
+
+function weekDates(dates: string[]): Map<string, string[]> {
+  const result = new Map<string, string[]>();
+  for (const iso of dates) {
+    const week = mondayOfWeek(iso);
+    const current = result.get(week) ?? [];
+    current.push(iso);
+    result.set(week, current);
+  }
+  return result;
 }
 
 function templateIntervals(template: EngineTemplate, iso: string): DateInterval[] {
@@ -522,6 +575,15 @@ function evaluateCandidate(
       if (state.workDates.has(continuationDate) || state.forcedRestDates.has(continuationDate)) {
         blockers.push('Le lendemain est déjà occupé ou réservé au repos');
       }
+
+      if (config.restAfterGuardRequired) {
+        for (let offset = 1; offset <= config.postGuardRestDays; offset++) {
+          const restDate = addDays(continuationDate, offset);
+          if (state.workDates.has(restDate) || state.forcedRestDates.has(restDate)) {
+            blockers.push(`Le repos post-garde du ${restDate} est déjà occupé`);
+          }
+        }
+      }
     }
   }
 
@@ -551,10 +613,9 @@ function evaluateCandidate(
     );
   };
 
-  addCandidateMinutes(iso, template);
-
-  if (continuationTemplate && continuationDate !== null) {
-    addCandidateMinutes(continuationDate, continuationTemplate);
+  for (const [date, minutes] of requirementMinutesByDate(requirement, iso)) {
+    const week = mondayOfWeek(date);
+    candidateMinutesByWeek.set(week, (candidateMinutesByWeek.get(week) ?? 0) + minutes);
   }
 
   if (maxWeeklyMinutes !== null) {
@@ -590,9 +651,8 @@ function evaluateCandidate(
     blockers.push(`Maximum de ${config.maxConsecutiveGuards} garde(s) consécutive(s)`);
   }
 
-  if (config.restAfterGuardRequired && state.guardDates.has(addDays(iso, -1))) {
-    blockers.push('Repos obligatoire le lendemain d’une garde');
-  }
+  // La continuation et les jours de repos post-garde sont déjà
+  // représentés dans forcedRestDates. Aucun comportement métier caché ici.
 
   const historicalTemplateCount = historical.byTemplate.get(template.guid) ?? 0;
   const plannedTemplateCount = state.plannedByTemplate.get(template.guid) ?? 0;
@@ -651,8 +711,9 @@ function applyAssignment(
   template: EngineTemplate,
   serviceType: PlanningServiceType,
   iso: string,
+  creditedMinutes?: number | null,
 ): void {
-  const minutes = templateMinutes(template, iso);
+  const minutes = creditedMinutes ?? templateMinutes(template, iso);
   const week = mondayOfWeek(iso);
 
   state.workDates.add(iso);
@@ -672,8 +733,13 @@ function applyAssignment(
   }
 }
 
-function applyGuardContinuation(state: EmployeeState, template: EngineTemplate, iso: string): void {
-  const minutes = templateMinutes(template, iso);
+function applyGuardContinuation(
+  state: EmployeeState,
+  template: EngineTemplate,
+  iso: string,
+  creditedMinutes?: number | null,
+): void {
+  const minutes = creditedMinutes ?? templateMinutes(template, iso);
   const week = mondayOfWeek(iso);
 
   state.forcedRestDates.add(iso);
@@ -728,6 +794,55 @@ function coverageQuality(coverage: CoverageResult[]): number {
   return Math.round((total / coverage.length) * 100);
 }
 
+function chooseFixedRotatingRestDates(
+  employee: PlanningEmployeeInput,
+  dates: string[],
+  config: EngineConfig,
+  restCounts: Map<string, number>,
+): Set<string> {
+  const result = new Set<string>();
+  if (
+    employee.fixedRestDayMode !== 'ROTATING' ||
+    !employee.fixedTemplate ||
+    config.minRestDaysPerWeek <= 0
+  ) {
+    return result;
+  }
+
+  const employeeSeed = [...employee.guid].reduce((sum, char) => sum + char.charCodeAt(0), 0);
+
+  for (const [week, datesInWeek] of weekDates(dates)) {
+    const candidates = datesInWeek.filter((iso) => templateHasWork(employee.fixedTemplate!, iso));
+    const required = Math.min(config.minRestDaysPerWeek, candidates.length);
+
+    const weekSeed =
+      Number(week.replaceAll('-', '')) + employeeSeed + (employee.rotationOrder ?? 0);
+
+    candidates.sort((a, b) => {
+      const countDiff = (restCounts.get(a) ?? 0) - (restCounts.get(b) ?? 0);
+      if (countDiff !== 0) return countDiff;
+
+      const aRank = (parseDate(a).getUTCDay() + weekSeed) % 7;
+      const bRank = (parseDate(b).getUTCDay() + weekSeed) % 7;
+      return aRank - bRank || a.localeCompare(b);
+    });
+
+    let selectedThisWeek = 0;
+    for (const iso of candidates) {
+      if (selectedThisWeek >= required) break;
+      const maximum = config.maxRestingEmployeesPerDay;
+      if (maximum !== null && (restCounts.get(iso) ?? 0) >= maximum) {
+        continue;
+      }
+      result.add(iso);
+      selectedThisWeek++;
+      restCounts.set(iso, (restCounts.get(iso) ?? 0) + 1);
+    }
+  }
+
+  return result;
+}
+
 export function generateSuggestion(
   employees: PlanningEmployeeInput[],
   requirements: PlanningRequirementInput[],
@@ -753,10 +868,23 @@ export function generateSuggestion(
 
   const schedules = new Map<string, Record<string, string | null>>();
   const reasons = new Map<string, Record<string, DayReason | null>>();
+  const restCounts = new Map<string, number>();
 
   for (const employee of includedEmployees) {
     schedules.set(employee.guid, {});
     reasons.set(employee.guid, {});
+  }
+
+  for (const employee of fixedEmployees) {
+    if (employee.fixedRestDayMode !== 'TEMPLATE' || !employee.fixedTemplate) {
+      continue;
+    }
+
+    for (const iso of dates) {
+      if (!templateHasWork(employee.fixedTemplate, iso)) {
+        restCounts.set(iso, (restCounts.get(iso) ?? 0) + 1);
+      }
+    }
   }
 
   // ── Passe 1 : planning fixe ───────────────────────────────────────────────
@@ -771,17 +899,23 @@ export function generateSuggestion(
       continue;
     }
 
+    const rotatingRestDates = chooseFixedRotatingRestDates(employee, dates, config, restCounts);
+
     for (const iso of dates) {
       const template = employee.fixedTemplate;
 
-      if (!templateHasWork(template, iso)) {
+      if (!templateHasWork(template, iso) || rotatingRestDates.has(iso)) {
         schedules.get(employee.guid)![iso] = null;
         reasons.get(employee.guid)![iso] = {
           templateGuid: null,
           templateName: 'Repos',
           confidence: 100,
           source: 'FIXED',
-          factors: ['Repos défini par le template fixe de l’employé'],
+          factors: [
+            rotatingRestDates.has(iso)
+              ? 'Jour de repos choisi équitablement pour cet horaire fixe'
+              : 'Repos défini par le template fixe de l’employé',
+          ],
         };
         continue;
       }
@@ -802,6 +936,7 @@ export function generateSuggestion(
           template,
           continuationTemplate: null,
           continuationDayOffset: 0,
+          creditedMinutes: null,
         },
         iso,
         config,
@@ -957,11 +1092,14 @@ export function generateSuggestion(
           ],
         };
 
+        const creditedByDate = requirementMinutesByDate(requirement, iso);
+
         applyAssignment(
           states.get(employee.guid)!,
           requirement.template,
           requirement.serviceType,
           iso,
+          creditedByDate.get(iso),
         );
 
         if (requirement.serviceType === 'GUARD' && requirement.continuationTemplate) {
@@ -984,7 +1122,32 @@ export function generateSuggestion(
             states.get(employee.guid)!,
             requirement.continuationTemplate,
             continuationDate,
+            creditedByDate.get(continuationDate),
           );
+
+          if (config.restAfterGuardRequired) {
+            for (let offset = 1; offset <= config.postGuardRestDays; offset++) {
+              const postGuardRestDate = addDays(continuationDate, offset);
+
+              states.get(employee.guid)!.forcedRestDates.add(postGuardRestDate);
+
+              schedules.get(employee.guid)![postGuardRestDate] = null;
+              reasons.get(employee.guid)![postGuardRestDate] = {
+                templateGuid: null,
+                templateName: 'Repos post-garde',
+                confidence: 100,
+                source: 'POST_GUARD_REST',
+                factors: [
+                  `Repos complet obligatoire après la garde commencée le ${iso}`,
+                  `Jour ${offset} sur ${config.postGuardRestDays} de récupération post-garde`,
+                ],
+              };
+
+              if (dates.includes(postGuardRestDate)) {
+                restCounts.set(postGuardRestDate, (restCounts.get(postGuardRestDate) ?? 0) + 1);
+              }
+            }
+          }
         }
       }
 
@@ -1073,14 +1236,36 @@ export function generateSuggestion(
         source: 'REST',
         factors: [
           forced
-            ? 'Repos obligatoire après une garde'
+            ? 'Repos obligatoire après une garde ou une récupération'
             : 'Aucun besoin de couverture restant compatible avec les contraintes',
         ],
       };
+      restCounts.set(iso, (restCounts.get(iso) ?? 0) + 1);
     }
   }
 
   const fairnessScore = fairnessQuality(rotatingEmployees, states);
+  if (config.maxRestingEmployeesPerDay !== null) {
+    for (const iso of dates) {
+      const resting = includedEmployees.filter(
+        (employee) => schedules.get(employee.guid)?.[iso] === null,
+      ).length;
+
+      if (resting > config.maxRestingEmployeesPerDay) {
+        violations.push({
+          severity: 'HARD',
+          code: 'DAILY_REST_CAP_EXCEEDED',
+          date: iso,
+          message: `Maximum quotidien de ${config.maxRestingEmployeesPerDay} employé(s) au repos dépassé`,
+          details: {
+            maximum: config.maxRestingEmployeesPerDay,
+            resting,
+          },
+        });
+      }
+    }
+  }
+
   const coverageScore = coverageQuality(coverage);
 
   const diagnostics: EngineDiagnostics = {

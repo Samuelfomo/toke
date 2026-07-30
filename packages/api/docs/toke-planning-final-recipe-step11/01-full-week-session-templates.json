@@ -1,0 +1,382 @@
+{
+  "fixed_morning": {
+    "guid": "7808474948857602",
+    "name": "Fixed Morning Test",
+    "definition": {
+      "Mon": [
+        {
+          "work": [
+            "08:00",
+            "16:00"
+          ],
+          "pause": null,
+          "tolerance": 0
+        }
+      ],
+      "Tue": [
+        {
+          "work": [
+            "08:00",
+            "16:00"
+          ],
+          "pause": null,
+          "tolerance": 0
+        }
+      ],
+      "Wed": [
+        {
+          "work": [
+            "08:00",
+            "16:00"
+          ],
+          "pause": null,
+          "tolerance": 0
+        }
+      ],
+      "Thu": [
+        {
+          "work": [
+            "08:00",
+            "16:00"
+          ],
+          "pause": null,
+          "tolerance": 0
+        }
+      ],
+      "Fri": [
+        {
+          "work": [
+            "08:00",
+            "16:00"
+          ],
+          "pause": null,
+          "tolerance": 0
+        }
+      ],
+      "Sat": [
+        {
+          "work": [
+            "08:00",
+            "16:00"
+          ],
+          "pause": null,
+          "tolerance": 0
+        }
+      ],
+      "Sun": [
+        {
+          "work": [
+            "08:00",
+            "16:00"
+          ],
+          "pause": null,
+          "tolerance": 0
+        }
+      ]
+    }
+  },
+  "rotating_morning": {
+    "guid": "9565631348489403",
+    "name": "Rotating Morning Test",
+    "definition": {
+      "Mon": [
+        {
+          "work": [
+            "08:00",
+            "16:00"
+          ],
+          "pause": null,
+          "tolerance": 0
+        }
+      ],
+      "Tue": [
+        {
+          "work": [
+            "08:00",
+            "16:00"
+          ],
+          "pause": null,
+          "tolerance": 0
+        }
+      ],
+      "Wed": [
+        {
+          "work": [
+            "08:00",
+            "16:00"
+          ],
+          "pause": null,
+          "tolerance": 0
+        }
+      ],
+      "Thu": [
+        {
+          "work": [
+            "08:00",
+            "16:00"
+          ],
+          "pause": null,
+          "tolerance": 0
+        }
+      ],
+      "Fri": [
+        {
+          "work": [
+            "08:00",
+            "16:00"
+          ],
+          "pause": null,
+          "tolerance": 0
+        }
+      ],
+      "Sat": [
+        {
+          "work": [
+            "08:00",
+            "16:00"
+          ],
+          "pause": null,
+          "tolerance": 0
+        }
+      ],
+      "Sun": [
+        {
+          "work": [
+            "08:00",
+            "16:00"
+          ],
+          "pause": null,
+          "tolerance": 0
+        }
+      ]
+    }
+  },
+  "special": {
+    "guid": "7719227120554504",
+    "name": "Special Shift Test",
+    "definition": {
+      "Mon": [
+        {
+          "work": [
+            "10:30",
+            "18:30"
+          ],
+          "pause": null,
+          "tolerance": 0
+        }
+      ],
+      "Tue": [
+        {
+          "work": [
+            "10:30",
+            "18:30"
+          ],
+          "pause": null,
+          "tolerance": 0
+        }
+      ],
+      "Wed": [
+        {
+          "work": [
+            "10:30",
+            "18:30"
+          ],
+          "pause": null,
+          "tolerance": 0
+        }
+      ],
+      "Thu": [
+        {
+          "work": [
+            "10:30",
+            "18:30"
+          ],
+          "pause": null,
+          "tolerance": 0
+        }
+      ],
+      "Fri": [
+        {
+          "work": [
+            "10:30",
+            "18:30"
+          ],
+          "pause": null,
+          "tolerance": 0
+        }
+      ],
+      "Sat": [
+        {
+          "work": [
+            "10:30",
+            "18:30"
+          ],
+          "pause": null,
+          "tolerance": 0
+        }
+      ],
+      "Sun": [
+        {
+          "work": [
+            "10:30",
+            "18:30"
+          ],
+          "pause": null,
+          "tolerance": 0
+        }
+      ]
+    }
+  },
+  "guard_start": {
+    "guid": "8458796316720205",
+    "name": "Guard Start Test",
+    "definition": {
+      "Mon": [
+        {
+          "work": [
+            "16:00",
+            "23:59"
+          ],
+          "pause": null,
+          "tolerance": 0
+        }
+      ],
+      "Tue": [
+        {
+          "work": [
+            "16:00",
+            "23:59"
+          ],
+          "pause": null,
+          "tolerance": 0
+        }
+      ],
+      "Wed": [
+        {
+          "work": [
+            "16:00",
+            "23:59"
+          ],
+          "pause": null,
+          "tolerance": 0
+        }
+      ],
+      "Thu": [
+        {
+          "work": [
+            "16:00",
+            "23:59"
+          ],
+          "pause": null,
+          "tolerance": 0
+        }
+      ],
+      "Fri": [
+        {
+          "work": [
+            "16:00",
+            "23:59"
+          ],
+          "pause": null,
+          "tolerance": 0
+        }
+      ],
+      "Sat": [
+        {
+          "work": [
+            "16:00",
+            "23:59"
+          ],
+          "pause": null,
+          "tolerance": 0
+        }
+      ],
+      "Sun": [
+        {
+          "work": [
+            "16:00",
+            "23:59"
+          ],
+          "pause": null,
+          "tolerance": 0
+        }
+      ]
+    }
+  },
+  "guard_end": {
+    "guid": "1971539537938306",
+    "name": "Guard End Test",
+    "definition": {
+      "Mon": [
+        {
+          "work": [
+            "00:01",
+            "08:00"
+          ],
+          "pause": null,
+          "tolerance": 0
+        }
+      ],
+      "Tue": [
+        {
+          "work": [
+            "00:01",
+            "08:00"
+          ],
+          "pause": null,
+          "tolerance": 0
+        }
+      ],
+      "Wed": [
+        {
+          "work": [
+            "00:01",
+            "08:00"
+          ],
+          "pause": null,
+          "tolerance": 0
+        }
+      ],
+      "Thu": [
+        {
+          "work": [
+            "00:01",
+            "08:00"
+          ],
+          "pause": null,
+          "tolerance": 0
+        }
+      ],
+      "Fri": [
+        {
+          "work": [
+            "00:01",
+            "08:00"
+          ],
+          "pause": null,
+          "tolerance": 0
+        }
+      ],
+      "Sat": [
+        {
+          "work": [
+            "00:01",
+            "08:00"
+          ],
+          "pause": null,
+          "tolerance": 0
+        }
+      ],
+      "Sun": [
+        {
+          "work": [
+            "00:01",
+            "08:00"
+          ],
+          "pause": null,
+          "tolerance": 0
+        }
+      ]
+    }
+  }
+}

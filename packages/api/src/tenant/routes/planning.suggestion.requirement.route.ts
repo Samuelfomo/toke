@@ -212,6 +212,7 @@ router.post('/config/:configGuid', Ensure.post(), async (req: Request, res: Resp
       .setMinEmployees(data.min_employees)
       .setTargetEmployees(data.target_employees)
       .setMaxEmployees(data.max_employees ?? null)
+      .setCreditedMinutes(data.credited_minutes ?? null)
       .setPriority(data.priority)
       .setActive(data.active);
 
@@ -306,6 +307,10 @@ router.put('/:guid', Ensure.put(), async (req: Request, res: Response) => {
 
     if (data.max_employees !== undefined) {
       requirement.setMaxEmployees(data.max_employees ?? null);
+    }
+
+    if (data.credited_minutes !== undefined) {
+      requirement.setCreditedMinutes(data.credited_minutes ?? null);
     }
 
     if (data.priority !== undefined) {

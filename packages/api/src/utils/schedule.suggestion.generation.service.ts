@@ -1,4 +1,4 @@
-import { SAFamily, UsersValidationUtils } from '@toke/shared';
+import { HttpStatus, SAFamily, UsersValidationUtils } from '@toke/shared';
 
 import EmployeePlanningProfile from '../tenant/class/EmployeePlanningProfile.js';
 import Groups from '../tenant/class/Groups.js';
@@ -73,7 +73,7 @@ export async function generateConfiguredSuggestion(
     throw new SuggestionGenerationError(
       'The specified user does not have manager privileges',
       'SUGGESTION_NOT_A_MANAGER',
-      403,
+      HttpStatus.FORBIDDEN,
     );
   }
 
@@ -82,7 +82,7 @@ export async function generateConfiguredSuggestion(
     throw new SuggestionGenerationError(
       'No active planning suggestion configuration',
       'PLANNING_SUGGESTION_CONFIG_REQUIRED',
-      422,
+      HttpStatus.PAYMENT_REQUIRED,
     );
   }
 
@@ -92,7 +92,7 @@ export async function generateConfiguredSuggestion(
     throw new SuggestionGenerationError(
       'The active configuration has no coverage requirements',
       'PLANNING_SUGGESTION_REQUIREMENTS_REQUIRED',
-      422,
+      HttpStatus.PAYMENT_REQUIRED,
     );
   }
 
@@ -108,7 +108,7 @@ export async function generateConfiguredSuggestion(
     throw new SuggestionGenerationError(
       'No active employee in the manager team',
       'SUGGESTION_NO_EMPLOYEES',
-      422,
+      HttpStatus.PAYMENT_REQUIRED,
     );
   }
 
@@ -132,7 +132,7 @@ export async function generateConfiguredSuggestion(
     throw new SuggestionGenerationError(
       'Every active employee must have a planning profile before generation',
       'EMPLOYEE_PLANNING_PROFILE_INCOMPLETE',
-      422,
+      HttpStatus.PAYMENT_REQUIRED,
       {
         employees: unconfiguredEmployees.map((employee) => ({
           guid: employee.getGuid(),
@@ -154,7 +154,7 @@ export async function generateConfiguredSuggestion(
       throw new SuggestionGenerationError(
         `Fixed employee ${user.getFullName()} has no fixed template`,
         'FIXED_EMPLOYEE_TEMPLATE_REQUIRED',
-        422,
+        HttpStatus.PAYMENT_REQUIRED,
       );
     }
 
@@ -165,6 +165,7 @@ export async function generateConfiguredSuggestion(
       mode: profile.getPlanningMode(),
       rotationOrder: profile.getRotationOrder() ?? null,
       maxWeeklyMinutes: profile.getMaxWeeklyMinutes() ?? null,
+      fixedRestDayMode: profile.getFixedRestDayMode(),
       fixedTemplate: fixedTemplate
         ? {
             guid: fixedTemplate.getGuid()!,
@@ -179,7 +180,7 @@ export async function generateConfiguredSuggestion(
     throw new SuggestionGenerationError(
       'No employee is eligible for automatic planning',
       'SUGGESTION_NO_EMPLOYEES',
-      422,
+      HttpStatus.PAYMENT_REQUIRED,
     );
   }
 
@@ -192,7 +193,7 @@ export async function generateConfiguredSuggestion(
       throw new SuggestionGenerationError(
         `Requirement ${requirement.getGuid()} references an unavailable template`,
         'PLANNING_SUGGESTION_TEMPLATE_NOT_FOUND',
-        422,
+        HttpStatus.PAYMENT_REQUIRED,
       );
     }
 
@@ -207,7 +208,7 @@ export async function generateConfiguredSuggestion(
       throw new SuggestionGenerationError(
         `Guard requirement ${requirement.getGuid()} has no continuation template`,
         'PLANNING_SUGGESTION_GUARD_CONTINUATION_REQUIRED',
-        422,
+        HttpStatus.PAYMENT_REQUIRED,
       );
     }
 
@@ -237,6 +238,7 @@ export async function generateConfiguredSuggestion(
           }
         : null,
       continuationDayOffset: requirement.getContinuationDayOffset(),
+      creditedMinutes: requirement.getCreditedMinutes() ?? null,
     });
   }
 
@@ -302,6 +304,8 @@ export async function generateConfiguredSuggestion(
     minRestMinutesBetweenShifts: config.getMinRestMinutesBetweenShifts(),
     maxConsecutiveGuards: config.getMaxConsecutiveGuards(),
     restAfterGuardRequired: config.isRestAfterGuardRequired(),
+    postGuardRestDays: config.getPostGuardRestDays(),
+    maxRestingEmployeesPerDay: config.getMaxRestingEmployeesPerDay() ?? null,
     fairnessWindowWeeks: config.getFairnessWindowWeeks(),
     strictCoverage: config.isStrictCoverage(),
   };
@@ -313,6 +317,7 @@ export async function generateConfiguredSuggestion(
     periodFrom,
     periodTo,
     config: engineConfig,
+    solverTimeoutSeconds: config.getSolverTimeoutSeconds(),
   };
 
   let engineResult: EngineResult;

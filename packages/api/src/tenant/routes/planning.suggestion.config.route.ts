@@ -109,6 +109,8 @@ router.post('/:manager', Ensure.post(), async (req: Request, res: Response) => {
       .setMinRestMinutesBetweenShifts(data.min_rest_minutes_between_shifts)
       .setMaxConsecutiveGuards(data.max_consecutive_guards)
       .setRestAfterGuardRequired(data.rest_after_guard_required)
+      .setPostGuardRestDays(data.post_guard_rest_days)
+      .setMaxRestingEmployeesPerDay(data.max_resting_employees_per_day ?? null)
       .setFairnessWindowWeeks(data.fairness_window_weeks)
       .setStrictCoverage(data.strict_coverage)
       .setSolverType(data.solver_type)
@@ -162,6 +164,12 @@ router.put('/:guid', Ensure.put(), async (req: Request, res: Response) => {
     }
     if (data.rest_after_guard_required !== undefined) {
       config.setRestAfterGuardRequired(data.rest_after_guard_required);
+    }
+    if (data.post_guard_rest_days !== undefined) {
+      config.setPostGuardRestDays(data.post_guard_rest_days);
+    }
+    if (data.max_resting_employees_per_day !== undefined) {
+      config.setMaxRestingEmployeesPerDay(data.max_resting_employees_per_day ?? null);
     }
     if (data.fairness_window_weeks !== undefined) {
       config.setFairnessWindowWeeks(data.fairness_window_weeks);
