@@ -6,6 +6,7 @@ import Auth from './views/auth.vue'
 import Otp from './views/otp.vue'
 import DashboardMain from './views/dashboard/dashboardMain.vue'
 import PointageMain from './views/pointages/pointagesMain.vue'
+import PointagesPrint from './views/pointages/pointagesPrint.vue'
 import Equipe from './views/equipe.vue'
 import EmployeeForm from './views/employeeForm.vue'
 import MemoList from './views/memo/memosView.vue'
@@ -30,7 +31,7 @@ import SessionTemplateList from "@/views/planning/session_template/sessionTempla
 import RotationGroupList from "@/views/planning/rotation_group/rotationGroupList.vue";
 import ScheduleAssignmentList from "@/views/planning/schedule_assignment/scheduleAssignmentList.vue";
 import RotationAssignment from "@/views/planning/rotation_assignment/rotationAssignment.vue";
-
+import { planningSuggestionRoutes } from '@/router/planning-suggestion'
 
 const routes: RouteRecordRaw[] = [
   // ✅ PUBLIC
@@ -63,6 +64,12 @@ const routes: RouteRecordRaw[] = [
     component: PointageMain,
     meta: { requiresAuth: true },
   },
+    {
+        path: '/pointages/print',
+        name: 'PointagesPrint',
+        component: PointagesPrint,
+        meta: { requiresAuth: true },
+    },
   {
     path: '/equipe',
     name: 'equipe',
@@ -105,12 +112,6 @@ const routes: RouteRecordRaw[] = [
     component: Schedule,
     meta: { requiresAuth: true },
   },
-  // {
-  //   path: '/employeeForm',
-  //   name: 'employeeForm',
-  //   component: EmployeeForm,
-  //   meta: { requiresAuth: true },
-  // },
   {
     path: '/employeeDetails/:id',
     name: 'employeeDetails',
@@ -187,8 +188,12 @@ const routes: RouteRecordRaw[] = [
         path: '/planning',  // ou '/', selon ton setup
         component: AppLayout,  // l00ayout parent
         meta: { requiresAuth: true },
-        redirect: '/planning/session-model',
+        redirect: {
+            name: 'planning-suggestion-dashboard',
+        },
+        // redirect: '/planning/session-model',
         children: [
+            planningSuggestionRoutes,
             {
                 path: 'session-model',
                 name: 'session-model',
@@ -201,7 +206,8 @@ const routes: RouteRecordRaw[] = [
                 path: 'rotation-group',
                 name: 'rotation-group',
                 component: RotationGroupList,
-            },{
+            },
+            {
                 path: 'schedule-assignment',
                 name: 'schedule-assignment',
                 component: ScheduleAssignmentList,

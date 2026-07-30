@@ -1,53 +1,84 @@
-// axiosClient.ts
-import axios, { AxiosInstance, AxiosRequestConfig } from "axios";
+import axios, {AxiosInstance, AxiosRequestConfig} from "axios";
 
-import { useUserStore } from '@/stores/userStore'
+import {useUserStore} from '@/stores/userStore'
 
-
-// const baseURL = `${import.meta.env.VITE_LOCAL_URL}:${import.meta.env.VITE_LOCAL_PORT}`;
-// const baseURL = `http://${import.meta.env.VITE_URL}`;
 const baseURL = `https://${import.meta.env.VITE_URL}`;
 
 interface ApiRequestConfig extends AxiosRequestConfig {
-  path: string; // endpoint relatif
+    path: string;
 }
 
-/**
- * Client Axios préconfiguré
- */
+export class ApiClientError<TDetails = unknown> extends Error {
+    readonly status?: number;
+    readonly code: string;
+    readonly details?: TDetails;
+    readonly payload?: unknown;
+
+    constructor(options: {
+        message: string;
+        code?: string;
+        status?: number;
+        details?: TDetails;
+        payload?: unknown;
+    }) {
+        super(options.message);
+        this.name = 'ApiClientError';
+        this.status = options.status;
+        this.code = options.code ?? 'request_failed';
+        this.details = options.details;
+        this.payload = options.payload;
+    }
+}
+
 const axiosClient: AxiosInstance = axios.create({
-  baseURL,
-  // withCredentials: true, // équivaut à credentials: "include"
-  headers: {
-    "Content-Type": "application/json",
-  },
+    baseURL,
+    headers: {
+        "Content-Type": "application/json",
+    },
 });
 
-// 🟢 Interceptor exécuté avant chaque requête
 axiosClient.interceptors.request.use((config) => {
-  const userStore = useUserStore(); // store maintenant disponible
-  if (userStore.tenant?.guid) {
-    config.headers["x-api-client"] = userStore.tenant.guid;
-  }
-  return config;
+    const userStore = useUserStore();
+
+    if (userStore.tenant?.guid) {
+        config.headers["x-api-client"] = userStore.tenant.guid;
+    }
+
+    return config;
 });
 
-/**
- * Requête générique
- */
-export const apiRequest = async <T = unknown>({ path, ...config }: ApiRequestConfig): Promise<T> => {
-  try {
-    const response = await axiosClient({
-      url: path,
-      ...config,
-    });
-    return response.data;
-  } catch (error: any) {
-    // Gestion d'erreur identique au fetch
-    const status = error?.response?.status;
-    const message = error?.response?.data.error.message ?? error.message;
-    throw new Error(`HTTP ${status} - ${message}`);
-  }
+const extractApiError = (payload: any) => {
+    const nestedError = payload?.error?.error;
+    const directError = payload?.error;
+    const apiError = nestedError ?? directError ?? payload;
+    return {
+        code: apiError?.code ?? 'request_failed',
+        message: apiError?.message ?? payload?.message ?? 'Une erreur inattendue est survenue.',
+        details: apiError?.details,
+    };
+};
+
+export const apiRequest = async <T = unknown>({path, ...config}: ApiRequestConfig): Promise<T> => {
+    try {
+        const response = await axiosClient({
+            url: path,
+            ...config,
+        });
+
+        return response.data;
+    } catch (error: any) {
+        const status = error?.response?.status;
+        const payload = error?.response?.data;
+        const apiError = extractApiError(payload);
+
+        throw new ApiClientError({
+            status,
+            code: apiError.code,
+            message: apiError.message || error?.message || 'Erreur réseau.',
+            details: apiError.details,
+            payload,
+        });
+    }
 };
 
 export default axiosClient;

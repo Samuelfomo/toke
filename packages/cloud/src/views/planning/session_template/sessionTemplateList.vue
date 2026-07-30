@@ -1,135 +1,197 @@
 <template>
-  <div class="flex flex-col h-full bg-slate-50">
-
-    <!-- ── Header ── -->
-    <div class="bg-white border-b border-slate-200 px-4 sm:px-8 py-5 flex-shrink-0">
-      <div class="flex items-start justify-between gap-4 flex-col sm:flex-row">
+  <div class="flex h-full flex-col bg-slate-50">
+    <header class="flex-shrink-0 border-b border-slate-200 bg-white px-4 py-5 sm:px-8">
+      <div class="flex flex-col items-start justify-between gap-4 sm:flex-row sm:items-center">
         <div>
-          <div class="flex items-center gap-1.5 text-slate-400 text-xs mb-1.5">
-            <IconCalendarEvent :size="12" />
-            <span>Planning & Rotations</span>
-            <IconChevronRight :size="12" />
-            <span class="text-slate-600 font-medium">Session Template</span>
+          <div class="mb-1.5 flex items-center gap-1.5 text-xs text-slate-400">
+            <IconCalendarEvent :size="12"/>
+            <span>Planning et rotations</span>
+            <IconChevronRight :size="12"/>
+            <span class="font-medium text-slate-600">Modèles d’horaires</span>
           </div>
-          <h1 class="text-xl font-bold text-slate-800">Session Template</h1>
-          <p class="text-slate-400 text-sm mt-0.5">
-            Créez et gérez les emplois du temps standards réutilisables.
+          <h1 class="text-xl font-bold text-slate-800">Modèles d’horaires</h1>
+          <p class="mt-0.5 text-sm text-slate-400">
+            Configurez les horaires réutilisables affectés aux employés et aux rotations.
           </p>
         </div>
+
         <button
+            type="button"
+            class="flex flex-shrink-0 items-center gap-2 rounded-xl bg-blue-600 px-4 py-2.5 text-sm font-semibold text-white shadow-sm shadow-blue-200 transition hover:bg-blue-700"
             @click="openCreate"
-            class="flex items-center gap-2 px-4 py-2 bg-blue-500 hover:bg-blue-600 text-white text-sm font-semibold rounded-xl shadow-sm shadow-blue-200 transition flex-shrink-0 self-start sm:self-auto"
         >
-          <IconPlus :size="15" />
-          Nouveau modèle
+          <IconPlus :size="15"/>
+          Créer un horaire
         </button>
       </div>
-    </div>
+    </header>
 
-    <!-- ── Body ── -->
-    <div class="flex-1 overflow-y-auto px-4 sm:px-8 py-5 flex flex-col gap-4">
+    <main class="flex min-h-0 flex-1 flex-col gap-4 overflow-y-auto px-4 py-5 sm:px-8">
+      <!-- Indicateurs -->
+      <section class="grid grid-cols-2 gap-3 xl:grid-cols-4">
+        <article class="metric-card">
+          <div class="metric-icon bg-blue-50 text-blue-600">
+            <IconCalendarEvent :size="17"/>
+          </div>
+          <div>
+            <p class="metric-label">Total des modèles</p>
+            <p class="metric-value">{{ pagination.count }}</p>
+            <p class="metric-hint">dans les résultats</p>
+          </div>
+        </article>
 
-      <!-- ── Toolbar ── -->
-      <div class="flex items-center gap-3 flex-wrap">
+        <article class="metric-card">
+          <div class="metric-icon bg-emerald-50 text-emerald-600">
+            <IconCircleCheck :size="17"/>
+          </div>
+          <div>
+            <p class="metric-label">Modèles actifs</p>
+            <p class="metric-value">{{ activeCount }}</p>
+            <p class="metric-hint">{{ metricScopeLabel }}</p>
+          </div>
+        </article>
 
-        <!-- Search -->
-        <div class="relative flex-1 min-w-[180px] max-w-sm">
-          <button @click="applySearch" class="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-blue-500 transition">
-            <IconSearch :size="14" />
-          </button>
-          <input
-              v-model="searchInput"
-              @keyup.enter="applySearch"
-              type="text"
-              placeholder="Rechercher un modèle..."
-              class="input-base !pl-9 !pr-8 w-full"
-          />
-          <button v-if="searchInput" @click="clearSearch"
-                  class="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 transition"
-          >
-            <IconX :size="13" />
-          </button>
-        </div>
+        <article class="metric-card">
+          <div class="metric-icon bg-violet-50 text-violet-600">
+            <IconRefresh :size="17"/>
+          </div>
+          <div>
+            <p class="metric-label">Pour rotation</p>
+            <p class="metric-value">{{ rotationCount }}</p>
+            <p class="metric-hint">{{ metricScopeLabel }}</p>
+          </div>
+        </article>
 
-        <!-- Norme -->
-        <select v-model="filterModel" @change="resetAndLoad" class="input-base w-auto cursor-pointer">
-          <option value="">Norme : Toutes</option>
-          <option v-for="sm in sessionModels" :key="sm.guid" :value="sm.guid">
-            {{ sm.name }}
-          </option>
-        </select>
+        <article class="metric-card">
+          <div class="metric-icon bg-amber-50 text-amber-600">
+            <IconStar :size="17"/>
+          </div>
+          <div>
+            <p class="metric-label">Par défaut</p>
+            <p class="metric-value">{{ defaultCount }}</p>
+            <p class="metric-hint">{{ metricScopeLabel }}</p>
+          </div>
+        </article>
+      </section>
 
-        <!-- Statut -->
-        <select v-model="filterActive" @change="resetAndLoad" class="input-base w-auto cursor-pointer">
-          <option value="">Statut : Tous</option>
-          <option value="true">Actif</option>
-          <option value="false">Inactif</option>
-        </select>
+      <!-- Filtres -->
+      <section class="rounded-2xl border border-slate-200 bg-white p-3 shadow-sm">
+        <div class="flex flex-wrap items-center gap-3">
+          <div class="relative min-w-[210px] flex-1 sm:max-w-sm">
+            <button
+                type="button"
+                class="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 transition hover:text-blue-600"
+                @click="applySearch"
+            >
+              <IconSearch :size="14"/>
+            </button>
+            <input
+                v-model="searchInput"
+                type="text"
+                placeholder="Rechercher un modèle…"
+                class="input-base w-full !pl-9 !pr-8"
+                @keyup.enter="applySearch"
+            />
+            <button
+                v-if="searchInput"
+                type="button"
+                class="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-700"
+                @click="clearSearch"
+            >
+              <IconX :size="13"/>
+            </button>
+          </div>
 
-        <!-- Rotation -->
-        <select v-model="filterRotation" @change="resetAndLoad" class="input-base w-auto cursor-pointer">
-          <option value="">Type : Tous</option>
-          <option value="true">Pour rotation</option>
-          <option value="false">Standard</option>
-        </select>
-
-        <div class="flex-1" />
-
-        <!-- Per page — masqué sur mobile -->
-        <div class="hidden sm:flex items-center gap-2 text-slate-400 text-xs">
-          <span>Lignes :</span>
-          <select
-              :value="pagination.limit"
-              @change="changePerPage(Number(($event.target as HTMLSelectElement).value))"
-              class="input-base w-auto cursor-pointer text-xs py-1.5"
-          >
-            <option v-for="n in [5, 10, 20, 50]" :key="n" :value="n">{{ n }}</option>
+          <select v-model="filterModel" class="input-base w-auto cursor-pointer" @change="resetAndLoad">
+            <option value="">Toutes les normes</option>
+            <option v-for="model in sessionModels" :key="model.guid" :value="model.guid">
+              {{ model.name }}
+            </option>
           </select>
+
+          <select v-model="filterActive" class="input-base w-auto cursor-pointer" @change="resetAndLoad">
+            <option value="">Tous les statuts</option>
+            <option value="true">Actifs</option>
+            <option value="false">Inactifs</option>
+          </select>
+
+          <select v-model="filterRotation" class="input-base w-auto cursor-pointer" @change="resetAndLoad">
+            <option value="">Tous les usages</option>
+            <option value="true">Pour rotation</option>
+            <option value="false">Standard</option>
+          </select>
+
+          <button
+              v-if="hasActiveFilters"
+              type="button"
+              class="inline-flex items-center gap-1.5 rounded-xl border border-slate-200 px-3 py-2 text-xs font-medium text-slate-600 transition hover:border-blue-200 hover:bg-blue-50 hover:text-blue-600"
+              @click="resetFilters"
+          >
+            <IconFilterOff :size="14"/>
+            Réinitialiser
+          </button>
+
+          <div class="flex-1"/>
+
+          <div class="hidden items-center gap-2 text-xs text-slate-400 sm:flex">
+            <span>Lignes :</span>
+            <select
+                :value="pagination.limit"
+                class="input-base w-auto cursor-pointer py-1.5 text-xs"
+                @change="changePerPage(Number(($event.target as HTMLSelectElement).value))"
+            >
+              <option v-for="value in [5, 10, 20, 50]" :key="value" :value="value">{{ value }}</option>
+            </select>
+          </div>
         </div>
+      </section>
+
+      <div
+          v-if="loadError"
+          class="flex items-start justify-between gap-4 rounded-2xl border border-red-200 bg-red-50 p-4 text-sm text-red-700"
+      >
+        <div class="flex items-start gap-2">
+          <IconAlertTriangle :size="16" class="mt-0.5 flex-shrink-0"/>
+          <span>{{ loadError }}</span>
+        </div>
+        <button type="button" class="text-xs font-semibold underline" @click="load">Réessayer</button>
       </div>
 
-      <!-- ══════════════════════════════════════════════════════════ -->
-      <!-- Table — desktop uniquement (≥ md)                         -->
-      <!-- ══════════════════════════════════════════════════════════ -->
-      <div class="hidden md:block bg-white border border-slate-200 rounded-2xl overflow-hidden shadow-sm">
+      <!-- Tableau desktop -->
+      <section class="hidden overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm md:block">
         <div class="overflow-x-auto">
           <table class="w-full border-collapse">
-
             <thead>
-            <tr class="border-b border-slate-100 text-[10.5px] font-bold tracking-widest uppercase text-slate-400">
+            <tr class="border-b border-slate-100 text-[10.5px] font-bold uppercase tracking-widest text-slate-400">
               <th class="px-5 py-3 text-left">Modèle</th>
-              <th class="px-4 py-3 text-left">Norme associée</th>
-              <th class="px-4 py-3 text-left">Jours travaillés</th>
-              <th class="px-4 py-3 text-left">Horaire type</th>
-              <th class="px-4 py-3 text-left">Rotation</th>
+              <th class="px-4 py-3 text-left">Norme</th>
+              <th class="px-4 py-3 text-left">Semaine</th>
+              <th class="px-4 py-3 text-left">Horaires configurés</th>
+              <th class="px-4 py-3 text-left">Utilisation</th>
               <th class="px-4 py-3 text-left">Statut</th>
               <th class="px-4 py-3 text-right">Actions</th>
             </tr>
             </thead>
 
-            <!-- Loading -->
             <tbody v-if="loading">
             <tr>
               <td colspan="7" class="py-20 text-center">
                 <div class="flex items-center justify-center gap-2 text-slate-400">
-                  <IconLoader2 :size="18" class="animate-spin" />
-                  <span class="text-sm">Chargement...</span>
+                  <IconLoader2 :size="18" class="animate-spin"/>
+                  <span class="text-sm">Chargement…</span>
                 </div>
               </td>
             </tr>
             </tbody>
 
-            <!-- Empty -->
             <tbody v-else-if="items.length === 0">
             <tr>
               <td colspan="7" class="py-20 text-center">
-                <div class="flex flex-col items-center gap-3 text-slate-400">
-                  <IconCalendarEvent :size="36" class="opacity-20" />
-                  <p class="text-sm">Aucun modèle trouvé</p>
-                  <button @click="openCreate" class="text-xs text-blue-500 hover:text-blue-600 transition">
-                    Créer le premier modèle →
-                  </button>
-                </div>
+                <EmptyState
+                    :filtered="hasActiveFilters"
+                    @create="openCreate"
+                    @reset="resetFilters"
+                />
               </td>
             </tr>
             </tbody>
@@ -138,79 +200,118 @@
             <tr
                 v-for="item in items"
                 :key="item.guid"
-                class="border-b border-slate-50 last:border-0 hover:bg-slate-50 transition group"
+                class="border-b border-slate-50 transition last:border-0 hover:bg-slate-50"
             >
-              <!-- Nom -->
               <td class="px-5 py-3.5">
                 <div class="flex items-center gap-2.5">
-                  <div class="w-7 h-7 rounded-lg bg-blue-50 flex items-center justify-center flex-shrink-0">
-                    <IconCalendarEvent :size="14" class="text-blue-500" />
+                  <div class="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-lg bg-blue-50">
+                    <IconCalendarEvent :size="14" class="text-blue-600"/>
                   </div>
-                  <p class="text-sm font-semibold text-slate-800">{{ item.name }}</p>
+                  <div class="min-w-0">
+                    <p class="max-w-[220px] truncate text-sm font-semibold text-slate-800">{{ item.name }}</p>
+                    <div class="mt-1 flex flex-wrap gap-1">
+                      <span v-if="isDefault(item)" class="badge bg-amber-50 text-amber-700">Par défaut</span>
+                      <span v-if="item.for_rotation" class="badge bg-violet-50 text-violet-700">Rotation</span>
+                    </div>
+                  </div>
                 </div>
               </td>
 
-              <!-- Norme -->
               <td class="px-4 py-3.5">
-                <span class="inline-flex items-center gap-1.5 text-xs font-medium text-slate-600 bg-slate-100 px-2 py-1 rounded-lg">
-                  <IconShieldCheck :size="11" class="text-slate-400" />
-                  {{ item.session_model.name ?? '—' }}
-                </span>
+                  <span
+                      class="inline-flex items-center gap-1.5 rounded-lg bg-slate-100 px-2 py-1 text-xs font-medium text-slate-600">
+                    <IconShieldCheck :size="11" class="text-slate-400"/>
+                    {{ sessionModelName(item) }}
+                  </span>
               </td>
 
-              <!-- Jours travaillés -->
               <td class="px-4 py-3.5">
                 <div class="flex flex-wrap gap-1">
-                  <span
-                      v-for="day in workedDays(item.definition)"
-                      :key="day"
-                      class="px-1.5 py-0.5 rounded-md text-[10px] font-semibold bg-blue-50 text-blue-500"
-                  >{{ DAY_FR[day] ?? day }}</span>
-                  <span v-if="workedDays(item.definition).length === 0" class="text-slate-300 text-xs">—</span>
+                    <span
+                        v-for="day in DAY_ORDER"
+                        :key="`${item.guid}-${day}`"
+                        class="flex h-6 w-7 items-center justify-center rounded-md text-[10px] font-semibold"
+                        :class="dayBadgeClass(item.definition, day)"
+                        :title="dayTitle(item.definition, day)"
+                    >
+                      {{ DAY_FR[day] }}
+                    </span>
                 </div>
               </td>
 
-              <!-- Horaire type -->
-              <td class="px-4 py-3.5 text-xs text-slate-600">
-                {{ firstScheduleSummary(item.definition) }}
+              <td class="max-w-[270px] px-4 py-3.5">
+                <p class="line-clamp-2 text-xs leading-5 text-slate-600" :title="fullScheduleSummary(item.definition)">
+                  {{ fullScheduleSummary(item.definition) }}
+                </p>
               </td>
 
-              <!-- Rotation -->
               <td class="px-4 py-3.5">
-                <span
-                    class="inline-flex items-center gap-1 text-[11px] font-medium px-2 py-0.5 rounded-full"
-                    :class="item.for_rotation ? 'bg-violet-50 text-violet-600' : 'bg-slate-100 text-slate-400'"
+                <button
+                    type="button"
+                    class="group inline-flex items-center gap-2 text-left"
+                    @click="openUsage(item)"
                 >
-                  <IconCheck v-if="item.for_rotation" :size="10" />
-                  <IconMinus v-else :size="10" />
-                  {{ item.for_rotation ? 'Oui' : 'Non' }}
-                </span>
+                    <span
+                        class="flex h-8 w-8 items-center justify-center rounded-lg bg-slate-100 text-slate-500 group-hover:bg-blue-50 group-hover:text-blue-600">
+                      <IconUsers :size="14"/>
+                    </span>
+                  <span>
+                      <span class="block text-xs font-semibold text-slate-700">{{ usageLabel(item) }}</span>
+                      <span class="block text-[10px] text-slate-400">Voir le détail</span>
+                    </span>
+                </button>
               </td>
 
-              <!-- Statut -->
               <td class="px-4 py-3.5">
-                <span
-                    class="inline-flex items-center gap-1.5 text-[11px] font-semibold px-2.5 py-1 rounded-full"
-                    :class="item.is_current ? 'bg-emerald-50 text-emerald-600' : 'bg-slate-100 text-slate-400'"
+                  <span
+                      class="inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[11px] font-semibold"
+                      :class="isCurrent(item) ? 'bg-emerald-50 text-emerald-700' : 'bg-slate-100 text-slate-400'"
+                  >
+                    <span class="h-1.5 w-1.5 rounded-full"
+                          :class="isCurrent(item) ? 'bg-emerald-500' : 'bg-slate-300'"/>
+                    {{ isCurrent(item) ? 'Actif' : 'Inactif' }}
+                  </span>
+              </td>
+
+              <td class="relative px-4 py-3.5 text-right">
+                <button
+                    type="button"
+                    class="inline-flex h-8 w-8 items-center justify-center rounded-lg text-slate-400 transition hover:bg-slate-100 hover:text-slate-700"
+                    title="Actions"
+                    @click.stop="toggleMenu(item.guid)"
                 >
-                  <span class="w-1.5 h-1.5 rounded-full"
-                        :class="item.is_current ? 'bg-emerald-400' : 'bg-slate-300'" />
-                  {{ item.is_current ? 'Actif' : 'Inactif' }}
-                </span>
-              </td>
+                  <IconDotsVertical :size="16"/>
+                </button>
 
-              <!-- Actions -->
-              <td class="px-4 py-3.5">
-                <div class="flex items-center justify-end gap-1.5 transition">
-                  <button @click="openEdit(item)"
-                          class="w-8 h-8 rounded-lg flex items-center justify-center bg-blue-50 text-slate-400 hover:text-blue-500 hover:bg-blue-100 transition"
-                          title="Modifier">
-                    <IconPencil :size="14" />
+                <div
+                    v-if="openMenuGuid === item.guid"
+                    class="absolute right-4 top-11 z-20 w-48 overflow-hidden rounded-xl border border-slate-200 bg-white py-1 text-left shadow-xl"
+                    @click.stop
+                >
+                  <button type="button" class="menu-item" @click="openDetail(item)">
+                    <IconEye :size="14"/>
+                    Consulter
                   </button>
-                  <button @click="confirmDelete(item)"
-                          class="w-8 h-8 rounded-lg flex items-center justify-center bg-red-50 text-slate-400 hover:text-red-500 hover:bg-red-100 transition"
-                          title="Supprimer">
-                    <IconTrash :size="14" />
+                  <button type="button" class="menu-item" @click="openEdit(item)">
+                    <IconPencil :size="14"/>
+                    Modifier
+                  </button>
+                  <button type="button" class="menu-item" @click="openDuplicate(item)">
+                    <IconCopy :size="14"/>
+                    Dupliquer
+                  </button>
+                  <button type="button" class="menu-item" @click="openUsage(item)">
+                    <IconUsers :size="14"/>
+                    Voir les utilisations
+                  </button>
+                  <button type="button" class="menu-item" @click="toggleCurrent(item)">
+                    <IconPower :size="14"/>
+                    {{ isCurrent(item) ? 'Désactiver' : 'Activer' }}
+                  </button>
+                  <div class="my-1 border-t border-slate-100"/>
+                  <button type="button" class="menu-item !text-red-600 hover:!bg-red-50" @click="confirmDelete(item)">
+                    <IconTrash :size="14"/>
+                    Supprimer
                   </button>
                 </div>
               </td>
@@ -218,821 +319,764 @@
             </tbody>
           </table>
         </div>
-      </div>
+      </section>
 
-      <!-- ══════════════════════════════════════════════════════════ -->
-      <!-- Cards — mobile uniquement (< md)                          -->
-      <!-- ══════════════════════════════════════════════════════════ -->
-      <div class="md:hidden flex flex-col gap-3">
-
-        <!-- Loading -->
-        <div v-if="loading" class="flex items-center justify-center gap-2 text-slate-400 py-16">
-          <IconLoader2 :size="18" class="animate-spin" />
-          <span class="text-sm">Chargement...</span>
+      <!-- Cartes mobile -->
+      <section class="space-y-3 md:hidden">
+        <div v-if="loading" class="flex items-center justify-center gap-2 py-16 text-slate-400">
+          <IconLoader2 :size="18" class="animate-spin"/>
+          <span class="text-sm">Chargement…</span>
         </div>
 
-        <!-- Empty -->
-        <div v-else-if="items.length === 0" class="flex flex-col items-center gap-3 text-slate-400 py-16">
-          <IconCalendarEvent :size="36" class="opacity-20" />
-          <p class="text-sm">Aucun modèle trouvé</p>
-          <button @click="openCreate" class="text-xs text-blue-500 hover:text-blue-600 transition">
-            Créer le premier modèle →
-          </button>
-        </div>
+        <EmptyState
+            v-else-if="items.length === 0"
+            :filtered="hasActiveFilters"
+            @create="openCreate"
+            @reset="resetFilters"
+        />
 
-        <!-- Cards -->
-        <div
-            v-else
-            v-for="item in items"
-            :key="item.guid"
-            class="bg-white border border-slate-200 rounded-2xl p-4 shadow-sm"
-        >
-          <!-- Ligne 1 : icône + nom + statut -->
-          <div class="flex items-start justify-between gap-3 mb-3">
-            <div class="flex items-center gap-2.5">
-              <div class="w-8 h-8 rounded-lg bg-blue-50 flex items-center justify-center flex-shrink-0">
-                <IconCalendarEvent :size="15" class="text-blue-500" />
+        <template v-else>
+          <article
+              v-for="item in items"
+              :key="item.guid"
+              class="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm"
+          >
+            <div class="flex items-start justify-between gap-3">
+              <div class="flex min-w-0 items-center gap-2.5">
+                <div class="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-xl bg-blue-50">
+                  <IconCalendarEvent :size="16" class="text-blue-600"/>
+                </div>
+                <button type="button" class="min-w-0 text-left" @click="openDetail(item)">
+                  <p class="truncate text-sm font-semibold text-slate-800">{{ item.name }}</p>
+                  <p class="mt-0.5 truncate text-xs text-slate-400">{{ sessionModelName(item) }}</p>
+                </button>
               </div>
-              <p class="text-sm font-semibold text-slate-800">{{ item.name }}</p>
+              <span
+                  class="inline-flex flex-shrink-0 items-center gap-1.5 rounded-full px-2.5 py-1 text-[11px] font-semibold"
+                  :class="isCurrent(item) ? 'bg-emerald-50 text-emerald-700' : 'bg-slate-100 text-slate-400'"
+              >
+              {{ isCurrent(item) ? 'Actif' : 'Inactif' }}
+            </span>
             </div>
+
+            <div class="mt-4 flex flex-wrap gap-1">
             <span
-                class="inline-flex items-center gap-1.5 text-[11px] font-semibold px-2.5 py-1 rounded-full flex-shrink-0"
-                :class="item.is_current ? 'bg-emerald-50 text-emerald-600' : 'bg-slate-100 text-slate-400'"
+                v-for="day in DAY_ORDER"
+                :key="`${item.guid}-mobile-${day}`"
+                class="flex h-7 w-8 items-center justify-center rounded-lg text-[10px] font-semibold"
+                :class="dayBadgeClass(item.definition, day)"
             >
-              <span class="w-1.5 h-1.5 rounded-full" :class="item.is_current ? 'bg-emerald-400' : 'bg-slate-300'" />
-              {{ item.is_current ? 'Actif' : 'Inactif' }}
+              {{ DAY_FR[day] }}
             </span>
-          </div>
+            </div>
 
-          <!-- Ligne 2 : norme + horaire -->
-          <div class="flex flex-wrap items-center gap-2 mb-3">
-            <span class="inline-flex items-center gap-1.5 text-xs font-medium text-slate-600 bg-slate-100 px-2 py-1 rounded-lg">
-              <IconShieldCheck :size="11" class="text-slate-400" />
-              {{ item.session_model.name ?? '—' }}
-            </span>
-            <span class="text-xs text-slate-500">{{ firstScheduleSummary(item.definition) }}</span>
-          </div>
+            <div class="mt-3 rounded-xl bg-slate-50 p-3">
+              <p class="text-[10px] font-semibold uppercase tracking-wide text-slate-400">Horaires configurés</p>
+              <p class="mt-1 text-xs leading-5 text-slate-600">{{ fullScheduleSummary(item.definition) }}</p>
+            </div>
 
-          <!-- Ligne 3 : jours travaillés -->
-          <div class="flex flex-wrap gap-1 mb-3">
-            <span
-                v-for="day in workedDays(item.definition)"
-                :key="day"
-                class="px-1.5 py-0.5 rounded-md text-[10px] font-semibold bg-blue-50 text-blue-500"
-            >{{ DAY_FR[day] ?? day }}</span>
-            <span v-if="workedDays(item.definition).length === 0" class="text-slate-300 text-xs">—</span>
-          </div>
+            <div class="mt-3 flex items-center justify-between gap-3 text-xs">
+              <button type="button" class="inline-flex items-center gap-1.5 text-slate-500" @click="openUsage(item)">
+                <IconUsers :size="14"/>
+                {{ usageLabel(item) }}
+              </button>
+              <div class="flex gap-1">
+                <span v-if="isDefault(item)" class="badge bg-amber-50 text-amber-700">Par défaut</span>
+                <span v-if="item.for_rotation" class="badge bg-violet-50 text-violet-700">Rotation</span>
+              </div>
+            </div>
 
-          <!-- Ligne 4 : badge rotation -->
-          <div class="mb-4">
-            <span
-                class="inline-flex items-center gap-1 text-[11px] font-medium px-2 py-0.5 rounded-full"
-                :class="item.for_rotation ? 'bg-violet-50 text-violet-600' : 'bg-slate-100 text-slate-400'"
-            >
-              <IconCheck v-if="item.for_rotation" :size="10" />
-              <IconMinus v-else :size="10" />
-              Rotation {{ item.for_rotation ? 'Oui' : 'Non' }}
-            </span>
-          </div>
+            <div class="mt-4 grid grid-cols-4 gap-2 border-t border-slate-100 pt-3">
+              <button type="button" class="mobile-action text-blue-600" @click="openEdit(item)">
+                <IconPencil :size="13"/>
+                Modifier
+              </button>
+              <button type="button" class="mobile-action text-violet-600" @click="openDuplicate(item)">
+                <IconCopy :size="13"/>
+                Dupliquer
+              </button>
+              <button type="button" class="mobile-action text-slate-600" @click="toggleCurrent(item)">
+                <IconPower :size="13"/>
+                {{ isCurrent(item) ? 'Désact.' : 'Activer' }}
+              </button>
+              <button type="button" class="mobile-action text-red-600" @click="confirmDelete(item)">
+                <IconTrash :size="13"/>
+                Supprimer
+              </button>
+            </div>
+          </article>
+        </template>
+      </section>
 
-          <!-- Ligne 5 : actions -->
-          <div class="flex gap-2 pt-3 border-t border-slate-100">
-            <button
-                @click="openEdit(item)"
-                class="flex-1 flex items-center justify-center gap-1.5 py-2 rounded-lg text-xs font-semibold text-blue-600 bg-blue-50 hover:bg-blue-100 transition"
-            >
-              <IconPencil :size="13" /> Modifier
-            </button>
-            <button
-                @click="confirmDelete(item)"
-                class="flex-1 flex items-center justify-center gap-1.5 py-2 rounded-lg text-xs font-semibold text-red-500 bg-red-50 hover:bg-red-100 transition"
-            >
-              <IconTrash :size="13" /> Supprimer
-            </button>
-          </div>
-        </div>
-      </div>
-
-      <!-- ── Pagination ── -->
-      <div
+      <!-- Pagination -->
+      <section
           v-if="pagination.count > 0"
-          class="flex items-center justify-between flex-wrap gap-3 text-xs text-slate-500"
+          class="flex flex-wrap items-center justify-between gap-3 text-xs text-slate-500"
       >
         <span>
           {{ rangeStart }}–{{ rangeEnd }} sur
-          <span class="text-slate-700 font-semibold">{{ pagination.count }}</span>
+          <strong class="text-slate-700">{{ pagination.count }}</strong>
           résultat{{ pagination.count > 1 ? 's' : '' }}
         </span>
 
         <div class="flex items-center gap-1">
-          <button @click="goToPage(1)" :disabled="currentPage === 1" class="pg-btn">
-            <IconChevronsLeft :size="13" />
+          <button type="button" class="pg-btn" :disabled="currentPage === 1" @click="goToPage(1)">
+            <IconChevronsLeft :size="13"/>
           </button>
-          <button @click="prevPage" :disabled="currentPage === 1" class="pg-btn">
-            <IconChevronLeft :size="13" />
+          <button type="button" class="pg-btn" :disabled="currentPage === 1" @click="prevPage">
+            <IconChevronLeft :size="13"/>
           </button>
 
-          <template v-for="p in visiblePages" :key="`pg-${p}`">
-            <span v-if="p === '...'" class="px-1.5 text-slate-300 select-none">…</span>
+          <template v-for="page in visiblePages" :key="`page-${page}`">
+            <span v-if="page === '...'" class="select-none px-1.5 text-slate-300">…</span>
             <button
                 v-else
-                @click="goToPage(Number(p))"
+                type="button"
                 class="pg-btn min-w-[30px]"
-                :class="currentPage === Number(p) ? '!bg-blue-500 !text-white !border-blue-500' : ''"
-            >{{ p }}</button>
+                :class="currentPage === Number(page) ? '!border-blue-600 !bg-blue-600 !text-white' : ''"
+                @click="goToPage(Number(page))"
+            >
+              {{ page }}
+            </button>
           </template>
 
-          <button @click="nextPage" :disabled="currentPage === totalPages" class="pg-btn">
-            <IconChevronRight :size="13" />
+          <button type="button" class="pg-btn" :disabled="currentPage === totalPages" @click="nextPage">
+            <IconChevronRight :size="13"/>
           </button>
-          <button @click="goToPage(totalPages)" :disabled="currentPage === totalPages" class="pg-btn">
-            <IconChevronsRight :size="13" />
+          <button type="button" class="pg-btn" :disabled="currentPage === totalPages" @click="goToPage(totalPages)">
+            <IconChevronsRight :size="13"/>
           </button>
         </div>
-      </div>
-    </div>
+      </section>
+    </main>
 
-    <!-- ── Delete modal ── -->
+    <!-- Suppression -->
     <Teleport to="body">
-      <div v-if="deleteTarget" class="fixed inset-0 z-50 flex items-center justify-center p-4" @click.self="deleteTarget = null">
-        <div class="absolute inset-0 bg-black/30 backdrop-blur-sm" />
-        <div class="relative bg-white border border-slate-200 rounded-2xl p-6 w-full max-w-sm shadow-xl">
-          <div class="flex items-center gap-3 mb-4">
-            <div class="w-10 h-10 rounded-xl bg-red-50 flex items-center justify-center flex-shrink-0">
-              <IconAlertTriangle :size="20" class="text-red-500" />
+      <div v-if="deleteTarget" class="fixed inset-0 z-50 flex items-center justify-center p-4">
+        <button type="button" class="absolute inset-0 bg-black/30 backdrop-blur-sm" @click="deleteTarget = null"/>
+        <section class="relative w-full max-w-sm rounded-2xl border border-slate-200 bg-white p-6 shadow-xl">
+          <div class="mb-4 flex items-center gap-3">
+            <div class="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-xl bg-red-50">
+              <IconAlertTriangle :size="20" class="text-red-500"/>
             </div>
             <div>
-              <p class="text-slate-800 font-semibold text-sm">Supprimer le modèle</p>
-              <p class="text-slate-400 text-xs mt-0.5">Cette action est irréversible</p>
+              <p class="text-sm font-semibold text-slate-800">Supprimer le modèle</p>
+              <p class="mt-0.5 text-xs text-slate-400">Cette action est irréversible.</p>
             </div>
           </div>
-          <p class="text-slate-600 text-sm mb-6">
-            Voulez-vous supprimer <span class="text-slate-800 font-semibold">« {{ deleteTarget.name }} »</span> ?
+
+          <p class="mb-6 text-sm leading-6 text-slate-600">
+            Voulez-vous supprimer <strong class="text-slate-800">« {{ deleteTarget.name }} »</strong> ?
+            Vérifiez d’abord qu’il n’est plus utilisé dans un planning.
           </p>
+
           <div class="flex gap-3">
-            <button @click="deleteTarget = null"
-                    class="flex-1 px-4 py-2 rounded-xl border border-slate-200 text-slate-600 text-sm hover:bg-slate-50 transition"
-            >Annuler</button>
-            <button @click="doDelete" :disabled="deleteLoading"
-                    class="flex-1 px-4 py-2 rounded-xl bg-red-500 hover:bg-red-600 text-white text-sm font-semibold transition disabled:opacity-60"
-            >{{ deleteLoading ? 'Suppression...' : 'Supprimer' }}</button>
+            <button type="button" class="flex-1 rounded-xl border border-slate-200 px-4 py-2 text-sm text-slate-600"
+                    @click="deleteTarget = null">
+              Annuler
+            </button>
+            <button
+                type="button"
+                class="flex-1 rounded-xl bg-red-500 px-4 py-2 text-sm font-semibold text-white transition hover:bg-red-600 disabled:opacity-60"
+                :disabled="deleteLoading"
+                @click="doDelete"
+            >
+              {{ deleteLoading ? 'Suppression…' : 'Supprimer' }}
+            </button>
           </div>
-        </div>
+        </section>
       </div>
     </Teleport>
 
-    <!-- ── Form drawer ── -->
+    <!-- Consultation -->
+    <Teleport to="body">
+      <div v-if="detailTarget" class="fixed inset-0 z-50 flex items-center justify-center p-4">
+        <button type="button" class="absolute inset-0 bg-black/30 backdrop-blur-sm" @click="detailTarget = null"/>
+        <section
+            class="relative max-h-[90dvh] w-full max-w-2xl overflow-y-auto rounded-2xl border border-slate-200 bg-white p-5 shadow-xl">
+          <div class="flex items-start justify-between gap-4">
+            <div>
+              <div class="flex flex-wrap items-center gap-2">
+                <h3 class="text-base font-semibold text-slate-800">{{ detailTarget.name }}</h3>
+                <span v-if="isDefault(detailTarget)" class="badge bg-amber-50 text-amber-700">Par défaut</span>
+                <span v-if="detailTarget.for_rotation" class="badge bg-violet-50 text-violet-700">Rotation</span>
+              </div>
+              <p class="mt-1 text-xs text-slate-400">{{ sessionModelName(detailTarget) }}</p>
+            </div>
+            <button type="button" class="text-slate-400 hover:text-slate-700" @click="detailTarget = null">
+              <IconX :size="17"/>
+            </button>
+          </div>
+
+          <div class="mt-5 grid gap-3 sm:grid-cols-3">
+            <div class="usage-stat">
+              <IconCircleCheck :size="17" class="text-emerald-600"/>
+              <strong>{{ isCurrent(detailTarget) ? 'Actif' : 'Inactif' }}</strong>
+              <span>Statut</span>
+            </div>
+            <div class="usage-stat">
+              <IconCalendarEvent :size="17" class="text-blue-600"/>
+              <strong>{{ workedDays(detailTarget.definition).length }}</strong>
+              <span>Jours travaillés</span>
+            </div>
+            <div class="usage-stat">
+              <IconUsers :size="17" class="text-violet-600"/>
+              <strong>{{ usageDetails(detailTarget).total ?? '—' }}</strong>
+              <span>Utilisations</span>
+            </div>
+          </div>
+
+          <div class="mt-5 rounded-xl border border-slate-200 p-4">
+            <p class="text-[10px] font-semibold uppercase tracking-wide text-slate-400">Description</p>
+            <p class="mt-2 text-sm leading-6 text-slate-600">
+              {{ detailTarget.description || 'Aucune description renseignée.' }}</p>
+          </div>
+
+          <div class="mt-4 rounded-xl border border-slate-200 p-4">
+            <p class="text-[10px] font-semibold uppercase tracking-wide text-slate-400">Semaine configurée</p>
+            <div class="mt-3 space-y-2">
+              <div
+                  v-for="day in DAY_ORDER"
+                  :key="`detail-${day}`"
+                  class="flex items-start gap-3 rounded-lg bg-slate-50 px-3 py-2"
+              >
+                <span class="w-9 text-xs font-bold text-slate-500">{{ DAY_FR[day] }}</span>
+                <span class="min-w-0 flex-1 text-xs leading-5 text-slate-600">{{
+                    dayTitle(detailTarget.definition, day)
+                  }}</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="mt-5 flex justify-end gap-2">
+            <button type="button" class="rounded-xl border border-slate-200 px-4 py-2 text-sm text-slate-600"
+                    @click="detailTarget = null">
+              Fermer
+            </button>
+            <button type="button" class="rounded-xl bg-blue-600 px-4 py-2 text-sm font-semibold text-white"
+                    @click="editDetailTarget">
+              Modifier
+            </button>
+          </div>
+        </section>
+      </div>
+    </Teleport>
+
+    <!-- Utilisations -->
+    <Teleport to="body">
+      <div v-if="usageTarget" class="fixed inset-0 z-50 flex items-center justify-center p-4">
+        <button type="button" class="absolute inset-0 bg-black/30 backdrop-blur-sm" @click="usageTarget = null"/>
+        <section class="relative w-full max-w-md rounded-2xl border border-slate-200 bg-white p-5 shadow-xl">
+          <div class="flex items-start justify-between gap-4">
+            <div>
+              <h3 class="text-sm font-semibold text-slate-800">Utilisations du modèle</h3>
+              <p class="mt-1 text-xs text-slate-400">{{ usageTarget.name }}</p>
+            </div>
+            <button type="button" class="text-slate-400 hover:text-slate-700" @click="usageTarget = null">
+              <IconX :size="17"/>
+            </button>
+          </div>
+
+          <div class="mt-5 grid grid-cols-3 gap-3">
+            <div class="usage-stat">
+              <IconUsers :size="17" class="text-blue-600"/>
+              <strong>{{ usageDetails(usageTarget).employees ?? '—' }}</strong>
+              <span>Employés</span>
+            </div>
+            <div class="usage-stat">
+              <IconUsersGroup :size="17" class="text-violet-600"/>
+              <strong>{{ usageDetails(usageTarget).groups ?? '—' }}</strong>
+              <span>Groupes</span>
+            </div>
+            <div class="usage-stat">
+              <IconCalendarEvent :size="17" class="text-emerald-600"/>
+              <strong>{{ usageDetails(usageTarget).total ?? '—' }}</strong>
+              <span>Total</span>
+            </div>
+          </div>
+
+          <div
+              v-if="usageDetails(usageTarget).total === null"
+              class="mt-4 rounded-xl border border-amber-200 bg-amber-50 p-3 text-xs leading-5 text-amber-700"
+          >
+            L’API de liste ne retourne pas encore les compteurs d’utilisation. L’interface est prête à les afficher via
+            <code>usage.total</code>, <code>usage.employees</code> et <code>usage.groups</code>.
+          </div>
+
+          <button
+              type="button"
+              class="mt-5 w-full rounded-xl border border-slate-200 px-4 py-2 text-sm font-medium text-slate-600 hover:bg-slate-50"
+              @click="usageTarget = null"
+          >
+            Fermer
+          </button>
+        </section>
+      </div>
+    </Teleport>
+
     <SessionTemplateForm
         v-if="showForm"
-        :template="editTarget"
+        :template="formTarget"
         :session-models="sessionModels"
-        @close="showForm = false"
+        :mode="formMode"
+        @close="closeForm"
         @saved="onSaved"
     />
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted } from 'vue'
+import {computed, defineComponent, h, onBeforeUnmount, onMounted, ref} from 'vue'
 import {
-  IconCalendarEvent, IconPlus, IconSearch, IconLoader2, IconX,
-  IconPencil, IconTrash, IconCheck, IconMinus, IconShieldCheck,
-  IconChevronLeft, IconChevronRight,
-  IconChevronsLeft, IconChevronsRight,
   IconAlertTriangle,
+  IconCalendarEvent,
+  IconChevronLeft,
+  IconChevronRight,
+  IconChevronsLeft,
+  IconChevronsRight,
+  IconCircleCheck,
+  IconCopy,
+  IconDotsVertical,
+  IconEye,
+  IconFilterOff,
+  IconLoader2,
+  IconPencil,
+  IconPlus,
+  IconPower,
+  IconRefresh,
+  IconSearch,
+  IconShieldCheck,
+  IconStar,
+  IconTrash,
+  IconUsers,
+  IconUsersGroup,
+  IconX,
 } from '@tabler/icons-vue'
 import SessionTemplateService from '@/service/SessionTemplate'
-import SessionModelService    from '@/service/SessionModelService'
-import SessionTemplateForm    from './sessionTemplateForm.vue'
-import type { ISessionTemplate, IDefinition } from './type'
-import { IPagination, ISessionModel } from '../session_model/type'
+import SessionModelService from '@/service/SessionModelService'
+import SessionTemplateForm from './sessionTemplateForm.vue'
+import type {IDayBlock, IDefinition, ISessionTemplate} from './type'
+import type {IPagination} from '../session_model/type'
 
-// ── Constants ──────────────────────────────────────────────────────────────
+type FormMode = 'create' | 'edit' | 'duplicate'
+type ListSummary = { active?: number; rotation?: number; default?: number }
+type SessionModelOption = {
+  guid: string
+  name: string
+  workday: string[]
+  pause_allowed: boolean
+  rotation_allowed: boolean
+  [key: string]: unknown
+}
+
 const DAY_FR: Record<string, string> = {
   Mon: 'Lun', Tue: 'Mar', Wed: 'Mer', Thu: 'Jeu', Fri: 'Ven', Sat: 'Sam', Sun: 'Dim',
 }
-const DAY_ORDER = ['Mon','Tue','Wed','Thu','Fri','Sat','Sun']
+const DAY_ORDER = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']
 
-// ── State ──────────────────────────────────────────────────────────────────
-const items          = ref<ISessionTemplate[]>([])
-const sessionModels  = ref<ISessionModel[]>([])
-const loading        = ref(false)
+const EmptyState = defineComponent({
+  props: {filtered: Boolean},
+  emits: ['create', 'reset'],
+  setup(props, {emit}) {
+    return () => h('div', {class: 'flex flex-col items-center gap-3 py-10 text-center text-slate-400'}, [
+      h(IconCalendarEvent, {size: 38, class: 'opacity-20'}),
+      h('div', {}, [
+        h('p', {class: 'text-sm font-medium text-slate-600'}, props.filtered ? 'Aucun modèle ne correspond aux filtres' : 'Aucun modèle d’horaires créé'),
+        h('p', {class: 'mt-1 text-xs text-slate-400'}, props.filtered
+            ? 'Modifiez ou réinitialisez les critères de recherche.'
+            : 'Créez votre premier horaire réutilisable.'),
+      ]),
+      h('button', {
+        type: 'button',
+        class: 'text-xs font-semibold text-blue-600 hover:text-blue-700',
+        onClick: () => emit(props.filtered ? 'reset' : 'create'),
+      }, props.filtered ? 'Réinitialiser les filtres' : 'Créer le premier horaire →'),
+    ])
+  },
+})
 
-const searchInput    = ref('')
-const searchActive   = ref('')
-const filterModel    = ref('')
-const filterActive   = ref('')
+const items = ref<ISessionTemplate[]>([])
+const sessionModels = ref<SessionModelOption[]>([])
+const loading = ref(false)
+const loadError = ref('')
+const listSummary = ref<ListSummary | null>(null)
+
+const searchInput = ref('')
+const searchActive = ref('')
+const filterModel = ref('')
+const filterActive = ref('')
 const filterRotation = ref('')
+const pagination = ref<IPagination>({offset: 0, limit: 10, count: 0})
 
-const pagination = ref<IPagination>({ offset: 0, limit: 10, count: 0 })
-
-const showForm      = ref(false)
-const editTarget    = ref<ISessionTemplate | null>(null)
-const deleteTarget  = ref<ISessionTemplate | null>(null)
+const showForm = ref(false)
+const formMode = ref<FormMode>('create')
+const formTarget = ref<ISessionTemplate | null>(null)
+const deleteTarget = ref<ISessionTemplate | null>(null)
 const deleteLoading = ref(false)
+const usageTarget = ref<ISessionTemplate | null>(null)
+const detailTarget = ref<ISessionTemplate | null>(null)
+const openMenuGuid = ref<string | null>(null)
 
-// ── Computed ───────────────────────────────────────────────────────────────
-const currentPage = computed(() =>
-    Math.floor(pagination.value.offset / pagination.value.limit) + 1
-)
-const totalPages = computed(() =>
-    Math.max(1, Math.ceil(pagination.value.count / pagination.value.limit))
-)
-const rangeStart = computed(() =>
-    pagination.value.count === 0 ? 0 : pagination.value.offset + 1
-)
-const rangeEnd = computed(() =>
-    Math.min(pagination.value.offset + pagination.value.limit, pagination.value.count)
-)
+const currentPage = computed(() => Math.floor(pagination.value.offset / pagination.value.limit) + 1)
+const totalPages = computed(() => Math.max(1, Math.ceil(pagination.value.count / pagination.value.limit)))
+const rangeStart = computed(() => pagination.value.count === 0 ? 0 : pagination.value.offset + 1)
+const rangeEnd = computed(() => Math.min(pagination.value.offset + pagination.value.limit, pagination.value.count))
 const visiblePages = computed<(number | '...')[]>(() => {
   const total = totalPages.value
-  const cur   = currentPage.value
-  if (total <= 7) return Array.from({ length: total }, (_, i) => i + 1)
+  const current = currentPage.value
+  if (total <= 7) return Array.from({length: total}, (_, index) => index + 1)
+
   const result: (number | '...')[] = [1]
-  if (cur > 3) result.push('...')
-  for (let i = Math.max(2, cur - 1); i <= Math.min(total - 1, cur + 1); i++) result.push(i)
-  if (cur < total - 2) result.push('...')
+  if (current > 3) result.push('...')
+  for (let page = Math.max(2, current - 1); page <= Math.min(total - 1, current + 1); page++) result.push(page)
+  if (current < total - 2) result.push('...')
   result.push(total)
   return result
 })
 
-// ── Helpers ────────────────────────────────────────────────────────────────
-function workedDays(def: IDefinition): string[] {
-  return DAY_ORDER.filter((d) => def[d] && Array.isArray(def[d]) && (def[d] as any[]).length > 0)
+const hasActiveFilters = computed(() => Boolean(
+    searchActive.value || searchInput.value || filterModel.value || filterActive.value || filterRotation.value,
+))
+const metricScopeLabel = computed(() => listSummary.value ? 'au total' : 'sur cette page')
+const activeCount = computed(() => listSummary.value?.active ?? items.value.filter(isCurrent).length)
+const rotationCount = computed(() => listSummary.value?.rotation ?? items.value.filter((item) => item.for_rotation).length)
+const defaultCount = computed(() => listSummary.value?.default ?? items.value.filter(isDefault).length)
+
+function isCurrent(item: ISessionTemplate): boolean {
+  return item.current ?? item.is_current ?? false
 }
 
-function firstScheduleSummary(def: IDefinition): string {
-  for (const day of DAY_ORDER) {
-    const blocks = def[day]
-    if (blocks && Array.isArray(blocks) && blocks.length > 0) {
-      const b = blocks[0]
-      return `${b.work[0]} – ${b.work[1]}`
-    }
+function isDefault(item: ISessionTemplate): boolean {
+  return item.default ?? item.is_default ?? false
+}
+
+function sessionModelName(item: ISessionTemplate): string {
+  if (!item.session_model) return '—'
+  return typeof item.session_model === 'string' ? item.session_model : item.session_model.name ?? '—'
+}
+
+function workedDays(definition: IDefinition): string[] {
+  return DAY_ORDER.filter((day) => Array.isArray(definition[day]) && (definition[day] as IDayBlock[]).length > 0)
+}
+
+function dayBadgeClass(definition: IDefinition, day: string): string {
+  const value = definition[day]
+  if (Array.isArray(value) && value.length > 0) return 'bg-blue-50 text-blue-600'
+  if (Array.isArray(value) && value.length === 0) return 'bg-amber-50 text-amber-600'
+  if (value === null) return 'bg-slate-200 text-slate-500'
+  return 'bg-slate-100 text-slate-300'
+}
+
+function dayTitle(definition: IDefinition, day: string): string {
+  const value = definition[day]
+  if (Array.isArray(value) && value.length > 0) {
+    return value.map((block) => `${block.work[0]}–${block.work[1]}`).join(', ')
   }
-  return '—'
+  if (Array.isArray(value)) return 'Repos'
+  if (value === null) return 'Fermé'
+  return 'Non configuré'
 }
 
-// ── Load ───────────────────────────────────────────────────────────────────
+function fullScheduleSummary(definition: IDefinition): string {
+  const groups = new Map<string, string[]>()
+
+  for (const day of DAY_ORDER) {
+    const value = definition[day]
+    let label = 'Non configuré'
+    if (Array.isArray(value) && value.length > 0) {
+      label = value.map((block) => `${block.work[0]}–${block.work[1]}`).join(' + ')
+    } else if (Array.isArray(value)) {
+      label = 'Repos'
+    } else if (value === null) {
+      label = 'Fermé'
+    }
+
+    const days = groups.get(label) ?? []
+    days.push(DAY_FR[day])
+    groups.set(label, days)
+  }
+
+  return Array.from(groups.entries())
+      .map(([schedule, days]) => `${days.join(', ')} : ${schedule}`)
+      .join(' · ')
+}
+
+function usageDetails(item: ISessionTemplate): {
+  total: number | null;
+  employees: number | null;
+  groups: number | null
+} {
+  const usage = item.usage
+  const employees = usage?.employees ?? item.employee_count ?? null
+  const groups = usage?.groups ?? item.group_count ?? null
+  const total = usage?.total ?? item.usage_count ?? (
+      employees !== null || groups !== null ? (employees ?? 0) + (groups ?? 0) : null
+  )
+  return {total, employees, groups}
+}
+
+function usageLabel(item: ISessionTemplate): string {
+  const total = usageDetails(item).total
+  if (total === null) return 'Utilisation non renseignée'
+  if (total === 0) return 'Non utilisé'
+  return `${total} utilisation${total > 1 ? 's' : ''}`
+}
+
+function normalizeListData(response: any): {
+  items: ISessionTemplate[];
+  pagination: Partial<IPagination>;
+  summary: ListSummary | null
+} {
+  const data = response?.data ?? {}
+  const sessionTemplates = data.session_templates ?? {}
+  const templates = data.templates ?? {}
+  const rawItems = sessionTemplates.items ?? templates.items ?? []
+
+  return {
+    items: Array.isArray(rawItems) ? rawItems : [],
+    pagination: sessionTemplates.pagination ?? templates.pagination ?? {},
+    summary: data.summary ?? sessionTemplates.summary ?? templates.summary ?? null,
+  }
+}
+
 async function load() {
+  loading.value = true
+  loadError.value = ''
+
   try {
-    loading.value = true
     const filters: Record<string, any> = {
       offset: pagination.value.offset,
-      limit:  pagination.value.limit,
+      limit: pagination.value.limit,
     }
-    if (searchActive.value)    filters.search        = searchActive.value
-    if (filterModel.value)     filters.session_model = filterModel.value
-    if (filterActive.value)    filters.active        = filterActive.value === 'true'
-    if (filterRotation.value)  filters.for_rotation  = filterRotation.value === 'true'
+    if (searchActive.value) filters.search = searchActive.value
+    if (filterModel.value) filters.session_model = filterModel.value
+    if (filterActive.value) filters.active = filterActive.value === 'true'
+    if (filterRotation.value) filters.for_rotation = filterRotation.value === 'true'
 
-    const res = await SessionTemplateService.list(filters)
-    if (res?.success) {
-      items.value      = res.data.templates.items
-      pagination.value = { ...pagination.value, ...res.data.session_templates.pagination }
+    const response = await SessionTemplateService.list(filters)
+    if (!response?.success) {
+      throw new Error(response?.error?.message ?? 'Impossible de charger les modèles d’horaires.')
     }
-  } catch (e) {
-    console.error(e)
+
+    const normalized = normalizeListData(response)
+    items.value = normalized.items
+    pagination.value = {...pagination.value, ...normalized.pagination}
+    listSummary.value = normalized.summary
+  } catch (error: any) {
+    items.value = []
+    loadError.value = error?.message ?? 'Impossible de charger les modèles d’horaires.'
   } finally {
     loading.value = false
   }
 }
 
 async function loadSessionModels() {
-  const res = await SessionModelService.list({ active: true, limit: 100 })
-  if (res?.success) sessionModels.value = res.data.session_models.items
+  try {
+    const response = await SessionModelService.list({active: true, limit: 100})
+    if (response?.success) sessionModels.value = response.data?.session_models?.items ?? []
+  } catch (error) {
+    console.error('Unable to load session models', error)
+  }
 }
 
-// ── Search / Filters ───────────────────────────────────────────────────────
 function applySearch() {
   searchActive.value = searchInput.value.trim()
   pagination.value.offset = 0
   load()
 }
-function clearSearch() {
-  searchInput.value = ''; searchActive.value = ''
-  pagination.value.offset = 0; load()
-}
-function resetAndLoad() { pagination.value.offset = 0; load() }
-function changePerPage(v: number) { pagination.value.limit = v; pagination.value.offset = 0; load() }
 
-// ── Pagination ─────────────────────────────────────────────────────────────
+function clearSearch() {
+  searchInput.value = ''
+  searchActive.value = ''
+  pagination.value.offset = 0
+  load()
+}
+
+function resetFilters() {
+  searchInput.value = ''
+  searchActive.value = ''
+  filterModel.value = ''
+  filterActive.value = ''
+  filterRotation.value = ''
+  pagination.value.offset = 0
+  load()
+}
+
+function resetAndLoad() {
+  pagination.value.offset = 0
+  load()
+}
+
+function changePerPage(value: number) {
+  pagination.value.limit = value
+  pagination.value.offset = 0
+  load()
+}
+
 function goToPage(page: number) {
   if (page < 1 || page > totalPages.value || page === currentPage.value) return
   pagination.value.offset = (page - 1) * pagination.value.limit
   load()
 }
-function prevPage() { goToPage(currentPage.value - 1) }
-function nextPage() { goToPage(currentPage.value + 1) }
 
-// ── CRUD ───────────────────────────────────────────────────────────────────
-function openCreate() { editTarget.value = null; showForm.value = true }
-function openEdit(item: ISessionTemplate) { editTarget.value = item; showForm.value = true }
-function confirmDelete(item: ISessionTemplate) { deleteTarget.value = item }
+function prevPage() {
+  goToPage(currentPage.value - 1)
+}
+
+function nextPage() {
+  goToPage(currentPage.value + 1)
+}
+
+function openCreate() {
+  formMode.value = 'create'
+  formTarget.value = null
+  showForm.value = true
+  openMenuGuid.value = null
+}
+
+function openEdit(item: ISessionTemplate) {
+  formMode.value = 'edit'
+  formTarget.value = item
+  showForm.value = true
+  detailTarget.value = null
+  openMenuGuid.value = null
+}
+
+function openDuplicate(item: ISessionTemplate) {
+  formMode.value = 'duplicate'
+  formTarget.value = item
+  showForm.value = true
+  detailTarget.value = null
+  openMenuGuid.value = null
+}
+
+function closeForm() {
+  showForm.value = false
+  formTarget.value = null
+}
+
+function confirmDelete(item: ISessionTemplate) {
+  deleteTarget.value = item
+  openMenuGuid.value = null
+}
+
+function openDetail(item: ISessionTemplate) {
+  detailTarget.value = item
+  openMenuGuid.value = null
+}
+
+function editDetailTarget() {
+  if (detailTarget.value) openEdit(detailTarget.value)
+}
+
+function openUsage(item: ISessionTemplate) {
+  usageTarget.value = item
+  openMenuGuid.value = null
+}
+
+function toggleMenu(guid: string) {
+  openMenuGuid.value = openMenuGuid.value === guid ? null : guid
+}
+
+async function toggleCurrent(item: ISessionTemplate) {
+  openMenuGuid.value = null
+  const next = !isCurrent(item)
+
+  try {
+    const response = await SessionTemplateService.update(item.guid, {current: next})
+    if (!response?.success) throw new Error(response?.error?.message ?? 'La mise à jour du statut a échoué.')
+    await load()
+  } catch (error: any) {
+    loadError.value = error?.message ?? 'La mise à jour du statut a échoué.'
+  }
+}
 
 async function doDelete() {
   if (!deleteTarget.value) return
+  deleteLoading.value = true
+
   try {
-    deleteLoading.value = true
-    await SessionTemplateService.delete(deleteTarget.value.guid)
+    const response = await SessionTemplateService.delete(deleteTarget.value.guid)
+    if (!response?.success) throw new Error(response?.error?.message ?? 'La suppression a échoué.')
     deleteTarget.value = null
     await load()
+  } catch (error: any) {
+    loadError.value = error?.message ?? 'La suppression a échoué.'
   } finally {
     deleteLoading.value = false
   }
 }
-function onSaved() { showForm.value = false; load() }
 
-// ── Init ───────────────────────────────────────────────────────────────────
-onMounted(() => { loadSessionModels(); load() })
+function onSaved() {
+  closeForm()
+  load()
+}
+
+function closeMenus() {
+  openMenuGuid.value = null
+}
+
+onMounted(() => {
+  document.addEventListener('click', closeMenus)
+  loadSessionModels()
+  load()
+})
+
+onBeforeUnmount(() => document.removeEventListener('click', closeMenus))
 </script>
 
 <style scoped>
 .input-base {
-  @apply px-3 py-2 bg-white border border-slate-200 rounded-xl text-sm text-slate-700
-  placeholder-slate-400 focus:outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-100 transition;
+  @apply rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm text-slate-700 placeholder-slate-400
+  transition focus:border-blue-400 focus:outline-none focus:ring-2 focus:ring-blue-100;
 }
+
+.metric-card {
+  @apply flex items-center gap-3 rounded-2xl border border-slate-200 bg-white p-4 shadow-sm;
+}
+
+.metric-icon {
+  @apply flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-xl;
+}
+
+.metric-label {
+  @apply text-[10px] font-semibold uppercase tracking-wide text-slate-400;
+}
+
+.metric-value {
+  @apply mt-0.5 text-xl font-bold text-slate-800;
+}
+
+.metric-hint {
+  @apply text-[10px] text-slate-400;
+}
+
+.badge {
+  @apply inline-flex rounded-md px-1.5 py-0.5 text-[9px] font-semibold;
+}
+
+.menu-item {
+  @apply flex w-full items-center gap-2 px-3 py-2 text-xs text-slate-600 transition hover:bg-slate-50 hover:text-slate-800;
+}
+
+.mobile-action {
+  @apply flex items-center justify-center gap-1 rounded-lg bg-slate-50 px-2 py-2 text-[11px] font-semibold;
+}
+
+.usage-stat {
+  @apply flex flex-col items-center rounded-xl border border-slate-100 bg-slate-50 p-3 text-center;
+}
+
+.usage-stat strong {
+  @apply mt-1 text-lg font-bold text-slate-800;
+}
+
+.usage-stat span {
+  @apply text-[10px] text-slate-400;
+}
+
 .pg-btn {
-  @apply h-7 px-2 min-w-[28px] flex items-center justify-center rounded-lg
-  border border-slate-200 text-slate-500
-  hover:bg-slate-50 hover:text-slate-700
-  disabled:opacity-30 disabled:cursor-not-allowed
-  transition text-xs font-semibold;
+  @apply flex h-7 min-w-[28px] items-center justify-center rounded-lg border border-slate-200 px-2 text-xs font-semibold
+  text-slate-500 transition hover:bg-slate-50 hover:text-slate-700 disabled:cursor-not-allowed disabled:opacity-30;
 }
 </style>
-
-
-<!--<template>-->
-<!--  <div class="flex flex-col h-full bg-slate-50 w-full min-w-[80rem] max-w-[1300px]">-->
-
-<!--    &lt;!&ndash; ── Header ── &ndash;&gt;-->
-<!--    <div class="bg-white border-b border-slate-200 px-8 py-5 flex-shrink-0">-->
-<!--      <div class="flex items-start justify-between gap-4">-->
-<!--        <div>-->
-<!--          <div class="flex items-center gap-1.5 text-slate-400 text-xs mb-1.5">-->
-<!--            <IconCalendarEvent :size="12" />-->
-<!--            <span>Planning & Rotations</span>-->
-<!--            <IconChevronRight :size="12" />-->
-<!--            <span class="text-slate-600 font-medium">Session Template</span>-->
-<!--          </div>-->
-<!--          <h1 class="text-xl font-bold text-slate-800">Session Template</h1>-->
-<!--          <p class="text-slate-400 text-sm mt-0.5">-->
-<!--            Créez et gérez les emplois du temps standards réutilisables.-->
-<!--          </p>-->
-<!--        </div>-->
-<!--        <button-->
-<!--            @click="openCreate"-->
-<!--            class="flex items-center gap-2 px-4 py-2 bg-blue-500 hover:bg-blue-600 text-white text-sm font-semibold rounded-xl shadow-sm shadow-blue-200 transition flex-shrink-0"-->
-<!--        >-->
-<!--          <IconPlus :size="15" />-->
-<!--          Nouveau modèle-->
-<!--        </button>-->
-<!--      </div>-->
-<!--    </div>-->
-
-<!--    &lt;!&ndash; ── Body ── &ndash;&gt;-->
-<!--    <div class="flex-1 overflow-y-auto px-8 py-5 flex flex-col gap-4">-->
-
-<!--      &lt;!&ndash; ── Toolbar ── &ndash;&gt;-->
-<!--      <div class="flex items-center gap-3 flex-wrap">-->
-
-<!--        &lt;!&ndash; Search &ndash;&gt;-->
-<!--        <div class="relative flex-1 min-w-[220px] max-w-sm">-->
-<!--          <button @click="applySearch" class="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-blue-500 transition">-->
-<!--            <IconSearch :size="14" />-->
-<!--          </button>-->
-<!--          <input-->
-<!--              v-model="searchInput"-->
-<!--              @keyup.enter="applySearch"-->
-<!--              type="text"-->
-<!--              placeholder="Rechercher un modèle..."-->
-<!--              class="input-base !pl-9 !pr-8 w-full"-->
-<!--          />-->
-<!--          <button v-if="searchInput" @click="clearSearch"-->
-<!--                  class="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 transition"-->
-<!--          >-->
-<!--            <IconX :size="13" />-->
-<!--          </button>-->
-<!--        </div>-->
-
-<!--        &lt;!&ndash; Norme &ndash;&gt;-->
-<!--        <select v-model="filterModel" @change="resetAndLoad" class="input-base w-auto cursor-pointer">-->
-<!--          <option value="">Norme : Toutes</option>-->
-<!--          <option v-for="sm in sessionModels" :key="sm.guid" :value="sm.guid">-->
-<!--            {{ sm.name }}-->
-<!--          </option>-->
-<!--        </select>-->
-
-<!--        &lt;!&ndash; Statut &ndash;&gt;-->
-<!--        <select v-model="filterActive" @change="resetAndLoad" class="input-base w-auto cursor-pointer">-->
-<!--          <option value="">Statut : Tous</option>-->
-<!--          <option value="true">Actif</option>-->
-<!--          <option value="false">Inactif</option>-->
-<!--        </select>-->
-
-<!--        &lt;!&ndash; Rotation &ndash;&gt;-->
-<!--        <select v-model="filterRotation" @change="resetAndLoad" class="input-base w-auto cursor-pointer">-->
-<!--          <option value="">Type : Tous</option>-->
-<!--          <option value="true">Pour rotation</option>-->
-<!--          <option value="false">Standard</option>-->
-<!--        </select>-->
-
-<!--        <div class="flex-1" />-->
-
-<!--        &lt;!&ndash; Per page &ndash;&gt;-->
-<!--        <div class="flex items-center gap-2 text-slate-400 text-xs">-->
-<!--          <span>Lignes :</span>-->
-<!--          <select-->
-<!--              :value="pagination.limit"-->
-<!--              @change="changePerPage(Number(($event.target as HTMLSelectElement).value))"-->
-<!--              class="input-base w-auto cursor-pointer text-xs py-1.5"-->
-<!--          >-->
-<!--            <option v-for="n in [5, 10, 20, 50]" :key="n" :value="n">{{ n }}</option>-->
-<!--          </select>-->
-<!--        </div>-->
-<!--      </div>-->
-
-<!--      &lt;!&ndash; ── Table ── &ndash;&gt;-->
-<!--      <div class="bg-white border border-slate-200 rounded-2xl overflow-hidden shadow-sm">-->
-<!--        <div class="overflow-x-auto">-->
-<!--          <table class="w-full min-w-[780px] border-collapse">-->
-
-<!--            <thead>-->
-<!--            <tr class="border-b border-slate-100 text-[10.5px] font-bold tracking-widest uppercase text-slate-400">-->
-<!--              <th class="px-5 py-3 text-left">Modèle</th>-->
-<!--              <th class="px-4 py-3 text-left">Norme associée</th>-->
-<!--              <th class="px-4 py-3 text-left">Jours travaillés</th>-->
-<!--              <th class="px-4 py-3 text-left">Horaire type</th>-->
-<!--              <th class="px-4 py-3 text-left">Rotation</th>-->
-<!--              <th class="px-4 py-3 text-left">Statut</th>-->
-<!--              <th class="px-4 py-3 text-right">Actions</th>-->
-<!--            </tr>-->
-<!--            </thead>-->
-
-<!--            &lt;!&ndash; Loading &ndash;&gt;-->
-<!--            <tbody v-if="loading">-->
-<!--            <tr>-->
-<!--              <td colspan="7" class="py-20 text-center">-->
-<!--                <div class="flex items-center justify-center gap-2 text-slate-400">-->
-<!--                  <IconLoader2 :size="18" class="animate-spin" />-->
-<!--                  <span class="text-sm">Chargement...</span>-->
-<!--                </div>-->
-<!--              </td>-->
-<!--            </tr>-->
-<!--            </tbody>-->
-
-<!--            &lt;!&ndash; Empty &ndash;&gt;-->
-<!--            <tbody v-else-if="items.length === 0">-->
-<!--            <tr>-->
-<!--              <td colspan="7" class="py-20 text-center">-->
-<!--                <div class="flex flex-col items-center gap-3 text-slate-400">-->
-<!--                  <IconCalendarEvent :size="36" class="opacity-20" />-->
-<!--                  <p class="text-sm">Aucun modèle trouvé</p>-->
-<!--                  <button @click="openCreate" class="text-xs text-blue-500 hover:text-blue-600 transition">-->
-<!--                    Créer le premier modèle →-->
-<!--                  </button>-->
-<!--                </div>-->
-<!--              </td>-->
-<!--            </tr>-->
-<!--            </tbody>-->
-
-<!--            <tbody v-else>-->
-<!--            <tr-->
-<!--                v-for="item in items"-->
-<!--                :key="item.guid"-->
-<!--                class="border-b border-slate-50 last:border-0 hover:bg-slate-50 transition group"-->
-<!--            >-->
-<!--              &lt;!&ndash; Nom &ndash;&gt;-->
-<!--              <td class="px-5 py-3.5">-->
-<!--                <div class="flex items-center gap-2.5">-->
-<!--                  <div class="w-7 h-7 rounded-lg bg-blue-50 flex items-center justify-center flex-shrink-0">-->
-<!--                    <IconCalendarEvent :size="14" class="text-blue-500" />-->
-<!--                  </div>-->
-<!--                  <div>-->
-<!--                    <p class="text-sm font-semibold text-slate-800">{{ item.name }}</p>-->
-<!--                  </div>-->
-<!--                </div>-->
-<!--              </td>-->
-
-<!--              &lt;!&ndash; Norme &ndash;&gt;-->
-<!--              <td class="px-4 py-3.5">-->
-<!--                  <span class="inline-flex items-center gap-1.5 text-xs font-medium text-slate-600 bg-slate-100 px-2 py-1 rounded-lg">-->
-<!--                    <IconShieldCheck :size="11" class="text-slate-400" />-->
-<!--                    {{ item.session_model.name ?? '—' }}-->
-<!--                  </span>-->
-<!--              </td>-->
-
-<!--              &lt;!&ndash; Jours travaillés &ndash;&gt;-->
-<!--              <td class="px-4 py-3.5">-->
-<!--                <div class="flex flex-wrap gap-1">-->
-<!--                    <span-->
-<!--                        v-for="day in workedDays(item.definition)"-->
-<!--                        :key="day"-->
-<!--                        class="px-1.5 py-0.5 rounded-md text-[10px] font-semibold bg-blue-50 text-blue-500"-->
-<!--                    >{{ DAY_FR[day] ?? day }}</span>-->
-<!--                  <span v-if="workedDays(item.definition).length === 0" class="text-slate-300 text-xs">—</span>-->
-<!--                </div>-->
-<!--              </td>-->
-
-<!--              &lt;!&ndash; Horaire type (premier bloc lundi ou premier jour disponible) &ndash;&gt;-->
-<!--              <td class="px-4 py-3.5 text-xs text-slate-600">-->
-<!--                {{ firstScheduleSummary(item.definition) }}-->
-<!--              </td>-->
-
-<!--              &lt;!&ndash; Rotation &ndash;&gt;-->
-<!--              <td class="px-4 py-3.5">-->
-<!--                  <span-->
-<!--                      class="inline-flex items-center gap-1 text-[11px] font-medium px-2 py-0.5 rounded-full"-->
-<!--                      :class="item.for_rotation-->
-<!--                      ? 'bg-violet-50 text-violet-600'-->
-<!--                      : 'bg-slate-100 text-slate-400'"-->
-<!--                  >-->
-<!--                    <IconCheck v-if="item.for_rotation" :size="10" />-->
-<!--                    <IconMinus v-else :size="10" />-->
-<!--                    {{ item.for_rotation ? 'Oui' : 'Non' }}-->
-<!--                  </span>-->
-<!--              </td>-->
-
-<!--              &lt;!&ndash; Statut &ndash;&gt;-->
-<!--              <td class="px-4 py-3.5">-->
-<!--                  <span-->
-<!--                      class="inline-flex items-center gap-1.5 text-[11px] font-semibold px-2.5 py-1 rounded-full"-->
-<!--                      :class="item.is_current-->
-<!--                      ? 'bg-emerald-50 text-emerald-600'-->
-<!--                      : 'bg-slate-100 text-slate-400'"-->
-<!--                  >-->
-<!--                    <span class="w-1.5 h-1.5 rounded-full"-->
-<!--                          :class="item.is_current ? 'bg-emerald-400' : 'bg-slate-300'" />-->
-<!--                    {{ item.is_current ? 'Actif' : 'Inactif' }}-->
-<!--                  </span>-->
-<!--              </td>-->
-
-<!--              &lt;!&ndash; Actions &ndash;&gt;-->
-<!--              <td class="px-4 py-3.5">-->
-<!--                <div class="flex items-center justify-end gap-1.5 opacity-100 transition">-->
-<!--                  <button @click="openEdit(item)"-->
-<!--                          class="w-8 h-8 rounded-lg flex items-center justify-center bg-blue-50 text-slate-400 hover:text-blue-500 hover:bg-blue-100 transition"-->
-<!--                          title="Modifier"-->
-<!--                  >-->
-<!--                    <IconPencil :size="14" />-->
-<!--                  </button>-->
-<!--                  <button @click="confirmDelete(item)"-->
-<!--                          class="w-8 h-8 rounded-lg flex items-center justify-center bg-red-50 text-slate-400 hover:text-red-500 hover:bg-red-100 transition"-->
-<!--                          title="Supprimer"-->
-<!--                  >-->
-<!--                    <IconTrash :size="14" />-->
-<!--                  </button>-->
-<!--                </div>-->
-<!--              </td>-->
-<!--            </tr>-->
-<!--            </tbody>-->
-<!--          </table>-->
-<!--        </div>-->
-<!--      </div>-->
-
-<!--      &lt;!&ndash; ── Pagination ── &ndash;&gt;-->
-<!--      <div-->
-<!--          v-if="pagination.count > 0"-->
-<!--          class="flex items-center justify-between flex-wrap gap-3 text-xs text-slate-500"-->
-<!--      >-->
-<!--        <span>-->
-<!--          {{ rangeStart }}–{{ rangeEnd }} sur-->
-<!--          <span class="text-slate-700 font-semibold">{{ pagination.count }}</span>-->
-<!--          résultat{{ pagination.count > 1 ? 's' : '' }}-->
-<!--        </span>-->
-
-<!--        <div class="flex items-center gap-1">-->
-<!--          <button @click="goToPage(1)" :disabled="currentPage === 1" class="pg-btn">-->
-<!--            <IconChevronsLeft :size="13" />-->
-<!--          </button>-->
-<!--          <button @click="prevPage" :disabled="currentPage === 1" class="pg-btn">-->
-<!--            <IconChevronLeft :size="13" />-->
-<!--          </button>-->
-
-<!--          <template v-for="p in visiblePages" :key="`pg-${p}`">-->
-<!--            <span v-if="p === '...'" class="px-1.5 text-slate-300 select-none">…</span>-->
-<!--            <button-->
-<!--                v-else-->
-<!--                @click="goToPage(Number(p))"-->
-<!--                class="pg-btn min-w-[30px]"-->
-<!--                :class="currentPage === Number(p) ? '!bg-blue-500 !text-white !border-blue-500' : ''"-->
-<!--            >{{ p }}</button>-->
-<!--          </template>-->
-
-<!--          <button @click="nextPage" :disabled="currentPage === totalPages" class="pg-btn">-->
-<!--            <IconChevronRight :size="13" />-->
-<!--          </button>-->
-<!--          <button @click="goToPage(totalPages)" :disabled="currentPage === totalPages" class="pg-btn">-->
-<!--            <IconChevronsRight :size="13" />-->
-<!--          </button>-->
-<!--        </div>-->
-<!--      </div>-->
-<!--    </div>-->
-
-<!--    &lt;!&ndash; ── Delete modal ── &ndash;&gt;-->
-<!--    <Teleport to="body">-->
-<!--      <div v-if="deleteTarget" class="fixed inset-0 z-50 flex items-center justify-center p-4" @click.self="deleteTarget = null">-->
-<!--        <div class="absolute inset-0 bg-black/30 backdrop-blur-sm" />-->
-<!--        <div class="relative bg-white border border-slate-200 rounded-2xl p-6 w-full max-w-sm shadow-xl">-->
-<!--          <div class="flex items-center gap-3 mb-4">-->
-<!--            <div class="w-10 h-10 rounded-xl bg-red-50 flex items-center justify-center flex-shrink-0">-->
-<!--              <IconAlertTriangle :size="20" class="text-red-500" />-->
-<!--            </div>-->
-<!--            <div>-->
-<!--              <p class="text-slate-800 font-semibold text-sm">Supprimer le modèle</p>-->
-<!--              <p class="text-slate-400 text-xs mt-0.5">Cette action est irréversible</p>-->
-<!--            </div>-->
-<!--          </div>-->
-<!--          <p class="text-slate-600 text-sm mb-6">-->
-<!--            Voulez-vous supprimer <span class="text-slate-800 font-semibold">« {{ deleteTarget.name }} »</span> ?-->
-<!--          </p>-->
-<!--          <div class="flex gap-3">-->
-<!--            <button @click="deleteTarget = null"-->
-<!--                    class="flex-1 px-4 py-2 rounded-xl border border-slate-200 text-slate-600 text-sm hover:bg-slate-50 transition"-->
-<!--            >Annuler</button>-->
-<!--            <button @click="doDelete" :disabled="deleteLoading"-->
-<!--                    class="flex-1 px-4 py-2 rounded-xl bg-red-500 hover:bg-red-600 text-white text-sm font-semibold transition disabled:opacity-60"-->
-<!--            >{{ deleteLoading ? 'Suppression...' : 'Supprimer' }}</button>-->
-<!--          </div>-->
-<!--        </div>-->
-<!--      </div>-->
-<!--    </Teleport>-->
-
-<!--    &lt;!&ndash; ── Form modal ── &ndash;&gt;-->
-<!--    <SessionTemplateForm-->
-<!--        v-if="showForm"-->
-<!--        :template="editTarget"-->
-<!--        :session-models="sessionModels"-->
-<!--        @close="showForm = false"-->
-<!--        @saved="onSaved"-->
-<!--    />-->
-<!--  </div>-->
-<!--</template>-->
-
-<!--<script setup lang="ts">-->
-<!--import { ref, computed, onMounted } from 'vue'-->
-<!--import {-->
-<!--  IconCalendarEvent, IconPlus, IconSearch, IconLoader2, IconX,-->
-<!--  IconPencil, IconTrash, IconCheck, IconMinus, IconShieldCheck,-->
-<!--  IconChevronLeft, IconChevronRight,-->
-<!--  IconChevronsLeft, IconChevronsRight,-->
-<!--  IconAlertTriangle,-->
-<!--} from '@tabler/icons-vue'-->
-<!--import SessionTemplateService from '@/service/SessionTemplate'-->
-<!--import SessionModelService    from '@/service/SessionModelService'-->
-<!--import SessionTemplateForm    from './sessionTemplateForm.vue'-->
-<!--import type { ISessionTemplate, IDefinition } from './type'-->
-<!--import {IPagination, ISessionModel} from '../session_model/type'-->
-
-<!--// ── Constants ──────────────────────────────────────────────────────────────-->
-<!--const DAY_FR: Record<string, string> = {-->
-<!--  Mon: 'Lun', Tue: 'Mar', Wed: 'Mer', Thu: 'Jeu', Fri: 'Ven', Sat: 'Sam', Sun: 'Dim',-->
-<!--}-->
-<!--const DAY_ORDER = ['Mon','Tue','Wed','Thu','Fri','Sat','Sun']-->
-
-<!--// ── State ──────────────────────────────────────────────────────────────────-->
-<!--const items          = ref<ISessionTemplate[]>([])-->
-<!--const sessionModels  = ref<ISessionModel[]>([])-->
-<!--// const sessionModels  = ref<{ guid: string; name: string; workday: string[]; pause_allowed: boolean }[]>([])-->
-<!--const loading        = ref(false)-->
-
-<!--const searchInput    = ref('')-->
-<!--const searchActive   = ref('')-->
-<!--const filterModel    = ref('')-->
-<!--const filterActive   = ref('')-->
-<!--const filterRotation = ref('')-->
-
-<!--const pagination = ref<IPagination>({ offset: 0, limit: 10, count: 0 })-->
-
-<!--const showForm      = ref(false)-->
-<!--const editTarget    = ref<ISessionTemplate | null>(null)-->
-<!--const deleteTarget  = ref<ISessionTemplate | null>(null)-->
-<!--const deleteLoading = ref(false)-->
-
-<!--// ── Computed ───────────────────────────────────────────────────────────────-->
-<!--const currentPage = computed(() =>-->
-<!--    Math.floor(pagination.value.offset / pagination.value.limit) + 1-->
-<!--)-->
-<!--const totalPages = computed(() =>-->
-<!--    Math.max(1, Math.ceil(pagination.value.count / pagination.value.limit))-->
-<!--)-->
-<!--const rangeStart = computed(() =>-->
-<!--    pagination.value.count === 0 ? 0 : pagination.value.offset + 1-->
-<!--)-->
-<!--const rangeEnd = computed(() =>-->
-<!--    Math.min(pagination.value.offset + pagination.value.limit, pagination.value.count)-->
-<!--)-->
-<!--const visiblePages = computed<(number | '...')[]>(() => {-->
-<!--  const total = totalPages.value-->
-<!--  const cur   = currentPage.value-->
-<!--  if (total <= 7) return Array.from({ length: total }, (_, i) => i + 1)-->
-<!--  const result: (number | '...')[] = [1]-->
-<!--  if (cur > 3) result.push('...')-->
-<!--  for (let i = Math.max(2, cur - 1); i <= Math.min(total - 1, cur + 1); i++) result.push(i)-->
-<!--  if (cur < total - 2) result.push('...')-->
-<!--  result.push(total)-->
-<!--  return result-->
-<!--})-->
-
-<!--// ── Helpers ────────────────────────────────────────────────────────────────-->
-<!--function workedDays(def: IDefinition): string[] {-->
-<!--  return DAY_ORDER.filter((d) => def[d] && Array.isArray(def[d]) && (def[d] as any[]).length > 0)-->
-<!--}-->
-
-<!--function firstScheduleSummary(def: IDefinition): string {-->
-<!--  for (const day of DAY_ORDER) {-->
-<!--    const blocks = def[day]-->
-<!--    if (blocks && Array.isArray(blocks) && blocks.length > 0) {-->
-<!--      const b = blocks[0]-->
-<!--      return `${b.work[0]} – ${b.work[1]}`-->
-<!--    }-->
-<!--  }-->
-<!--  return '—'-->
-<!--}-->
-
-<!--// ── Load ───────────────────────────────────────────────────────────────────-->
-<!--async function load() {-->
-<!--  try {-->
-<!--    loading.value = true-->
-<!--    const filters: Record<string, any> = {-->
-<!--      offset: pagination.value.offset,-->
-<!--      limit:  pagination.value.limit,-->
-<!--    }-->
-<!--    if (searchActive.value)    filters.search        = searchActive.value-->
-<!--    if (filterModel.value)     filters.session_model = filterModel.value-->
-<!--    if (filterActive.value)    filters.active        = filterActive.value === 'true'-->
-<!--    if (filterRotation.value)  filters.for_rotation  = filterRotation.value === 'true'-->
-
-<!--    const res = await SessionTemplateService.list(filters)-->
-<!--    if (res?.success) {-->
-<!--      items.value      = res.data.templates.items-->
-<!--      pagination.value = { ...pagination.value, ...res.data.session_templates.pagination }-->
-<!--    }-->
-<!--  } catch (e) {-->
-<!--    console.error(e)-->
-<!--  } finally {-->
-<!--    loading.value = false-->
-<!--  }-->
-<!--}-->
-
-<!--async function loadSessionModels() {-->
-<!--  const res = await SessionModelService.list({ active: true, limit: 100 })-->
-<!--  if (res?.success) sessionModels.value = res.data.session_models.items-->
-<!--}-->
-
-<!--// ── Search / Filters ───────────────────────────────────────────────────────-->
-<!--function applySearch() {-->
-<!--  searchActive.value = searchInput.value.trim()-->
-<!--  pagination.value.offset = 0-->
-<!--  load()-->
-<!--}-->
-<!--function clearSearch() {-->
-<!--  searchInput.value = ''; searchActive.value = ''-->
-<!--  pagination.value.offset = 0; load()-->
-<!--}-->
-<!--function resetAndLoad() { pagination.value.offset = 0; load() }-->
-<!--function changePerPage(v: number) { pagination.value.limit = v; pagination.value.offset = 0; load() }-->
-
-<!--// ── Pagination ─────────────────────────────────────────────────────────────-->
-<!--function goToPage(page: number) {-->
-<!--  if (page < 1 || page > totalPages.value || page === currentPage.value) return-->
-<!--  pagination.value.offset = (page - 1) * pagination.value.limit-->
-<!--  load()-->
-<!--}-->
-<!--function prevPage() { goToPage(currentPage.value - 1) }-->
-<!--function nextPage() { goToPage(currentPage.value + 1) }-->
-
-<!--// ── CRUD ───────────────────────────────────────────────────────────────────-->
-<!--function openCreate() { editTarget.value = null; showForm.value = true }-->
-<!--function openEdit(item: ISessionTemplate) { editTarget.value = item; showForm.value = true }-->
-<!--function confirmDelete(item: ISessionTemplate) { deleteTarget.value = item }-->
-
-<!--async function doDelete() {-->
-<!--  if (!deleteTarget.value) return-->
-<!--  try {-->
-<!--    deleteLoading.value = true-->
-<!--    await SessionTemplateService.delete(deleteTarget.value.guid)-->
-<!--    deleteTarget.value = null-->
-<!--    await load()-->
-<!--  } finally {-->
-<!--    deleteLoading.value = false-->
-<!--  }-->
-<!--}-->
-<!--function onSaved() { showForm.value = false; load() }-->
-
-<!--// ── Init ───────────────────────────────────────────────────────────────────-->
-<!--onMounted(() => { loadSessionModels(); load() })-->
-<!--</script>-->
-
-<!--<style scoped>-->
-<!--.input-base {-->
-<!--  @apply px-3 py-2 bg-white border border-slate-200 rounded-xl text-sm text-slate-700-->
-<!--  placeholder-slate-400 focus:outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-100 transition;-->
-<!--}-->
-<!--.pg-btn {-->
-<!--  @apply h-7 px-2 min-w-[28px] flex items-center justify-center rounded-lg-->
-<!--  border border-slate-200 text-slate-500-->
-<!--  hover:bg-slate-50 hover:text-slate-700-->
-<!--  disabled:opacity-30 disabled:cursor-not-allowed-->
-<!--  transition text-xs font-semibold;-->
-<!--}-->
-<!--</style>-->

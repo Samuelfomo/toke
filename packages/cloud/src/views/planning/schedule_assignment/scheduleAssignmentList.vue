@@ -48,6 +48,12 @@
             Générer Excel
           </button>
 
+          <button @click="openPlanningSuggestionModule"
+                  class="flex items-center gap-2 px-4 py-2.5 border border-blue-200 bg-blue-50 hover:bg-blue-100 text-blue-700 text-sm font-bold rounded-xl transition">
+            <IconSparkles :size="15" />
+            Planification assistée
+          </button>
+
           <button @click="openCreate"
                   class="flex items-center gap-2 px-4 py-2.5 bg-teal-500 hover:bg-teal-600 text-white text-sm font-bold rounded-xl shadow-sm shadow-teal-200 transition">
             <IconPlus :size="15" />
@@ -57,200 +63,172 @@
       </div>
     </div>
 
-    <!-- Contenu : grille OU suggestion -->
-    <SuggestionPreview
-        v-if="activeSuggestion"
-        :suggestion="activeSuggestion"
-        :available-templates="availableTemplates"
-        @close="activeSuggestion = null"
-        @approved="onSuggestionApproved"
-        @rejected="onSuggestionRejected"
-        @regenerate="onRegenerateSuggestion"
-        @item-patched="onSuggestionItemPatched"
-    />
+    <div class="flex-1 min-h-0 overflow-y-auto">
 
-    <div v-else class="flex-1 min-h-0 overflow-y-auto">
+      <!-- ── Barre de filtres ── -->
+      <div class="bg-white border border-gray-100 px-2 py-3 flex items-center gap-4 flex-wrap flex-shrink-0">
 
-      <div class="w-full pb-4 flex lg:justify-end items-center flex-shrink-0">
-        <button
-            @click="handleGenerateSuggestion"
-            :disabled="suggestionLoading"
-            class="flex items-center gap-2 px-4 py-2.5 bg-[#004aad] hover:bg-[#003a8c] text-white text-sm font-bold rounded-xl shadow-sm shadow-blue-200 transition disabled:opacity-50"
-        >
-          <IconLoader2 v-if="suggestionLoading" :size="14" class="animate-spin" />
-          <IconSparkles v-else :size="14" />
-          Générer suggestion
-        </button>
-        <p v-if="suggestionError" class="text-xs text-red-500 mt-2 flex items-center gap-1.5">
-          <IconAlertCircle :size="12" class="flex-shrink-0" />
-          {{ suggestionError }}
-        </p>
-      </div>
-
-    <!-- ── Barre de filtres ── -->
-    <div class="bg-white border border-gray-100 px-2 py-3 flex items-center gap-4 flex-wrap flex-shrink-0">
-
-      <div class="flex flex-col gap-1">
-        <span class="text-[10px] text-gray-400 font-bold uppercase tracking-wide">Type</span>
-        <div class="flex rounded-lg border border-gray-200 overflow-hidden">
-          <button @click="setTargetType('user')"
-                  class="px-3 py-1.5 text-xs font-semibold transition"
-                  :class="filterType === 'user' ? 'bg-teal-500 text-white' : 'bg-white text-gray-500 hover:bg-gray-50'"
-          >Employé</button>
-          <button @click="setTargetType('group')"
-                  class="px-3 py-1.5 text-xs font-semibold transition border-l border-gray-200"
-                  :class="filterType === 'group' ? 'bg-teal-500 text-white' : 'bg-white text-gray-500 hover:bg-gray-50'"
-          >Groupe</button>
+        <div class="flex flex-col gap-1">
+          <span class="text-[10px] text-gray-400 font-bold uppercase tracking-wide">Type</span>
+          <div class="flex rounded-lg border border-gray-200 overflow-hidden">
+            <button @click="setTargetType('user')"
+                    class="px-3 py-1.5 text-xs font-semibold transition"
+                    :class="filterType === 'user' ? 'bg-teal-500 text-white' : 'bg-white text-gray-500 hover:bg-gray-50'"
+            >Employé</button>
+            <button @click="setTargetType('group')"
+                    class="px-3 py-1.5 text-xs font-semibold transition border-l border-gray-200"
+                    :class="filterType === 'group' ? 'bg-teal-500 text-white' : 'bg-white text-gray-500 hover:bg-gray-50'"
+            >Groupe</button>
+          </div>
         </div>
-      </div>
 
-      <div class="flex flex-col gap-1 min-w-[220px]">
+        <div class="flex flex-col gap-1 min-w-[220px]">
         <span class="text-[10px] text-gray-400 font-bold uppercase tracking-wide">
           {{ filterType === 'group' ? 'Groupe' : 'Employé' }}
         </span>
-        <div class="relative">
-          <IconUsers v-if="filterType === 'group'" :size="13" class="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" />
-          <IconUser  v-else                         :size="13" class="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" />
-          <select v-model="selectedTargetGuid"
-                  class="w-full pl-8 pr-3 py-1.5 bg-white border border-gray-200 rounded-lg text-sm text-gray-700 focus:outline-none focus:border-teal-400 focus:ring-2 focus:ring-teal-100 transition cursor-pointer">
-            <option value="">{{ filterType === 'group' ? 'Tous les groupes' : 'Tous les employés' }}</option>
-            <option v-for="t in availableTargets" :key="t.guid" :value="t.guid">{{ t.name }}</option>
-          </select>
-        </div>
-      </div>
-
-      <div class="flex flex-col gap-1">
-        <span class="text-[10px] text-gray-400 font-bold uppercase tracking-wide">Période</span>
-        <div class="flex items-center gap-1.5">
-          <input type="date" v-model="periodFrom" class="filter-input text-xs py-1.5 cursor-pointer" />
-          <IconArrowRight :size="12" class="text-gray-300 flex-shrink-0" />
-          <input type="date" v-model="periodTo" :min="periodFrom" class="filter-input text-xs py-1.5 cursor-pointer" />
-        </div>
-      </div>
-
-      <div class="flex flex-col gap-1">
-        <span class="text-[10px] text-gray-400 font-bold uppercase tracking-wide">Vue</span>
-        <div class="flex rounded-lg border border-gray-200 overflow-hidden">
-          <button @click="setViewMode('week')"
-                  class="px-3 py-1.5 text-xs font-semibold transition"
-                  :class="viewMode === 'week' ? 'bg-teal-500 text-white' : 'bg-white text-gray-500 hover:bg-gray-50'"
-          >Semaine</button>
-          <button @click="setViewMode('month')"
-                  class="px-3 py-1.5 text-xs font-semibold transition border-l border-gray-200"
-                  :class="viewMode === 'month' ? 'bg-teal-500 text-white' : 'bg-white text-gray-500 hover:bg-gray-50'"
-          >Mois</button>
-          <button @click="setViewMode('programme')"
-                  class="px-3 py-1.5 text-xs font-semibold transition border-l border-gray-200"
-                  :class="viewMode === 'programme' ? 'bg-teal-500 text-white' : 'bg-white text-gray-500 hover:bg-gray-50'"
-          >Programme</button>
-        </div>
-      </div>
-
-      <!-- Sélecteur nb employés (masqué en vue programme) -->
-      <div v-if="viewMode !== 'programme'" class="flex flex-col gap-1">
-        <span class="text-[10px] text-gray-400 font-bold uppercase tracking-wide">Afficher</span>
-        <select v-model="employeesPerPage"
-                class="border border-gray-200 rounded-lg px-2 py-1.5 text-xs bg-white focus:outline-none focus:border-teal-400 transition cursor-pointer">
-          <option :value="10">10 employés</option>
-          <option :value="15">15 employés</option>
-          <option :value="25">25 employés</option>
-          <option :value="50">50 employés</option>
-        </select>
-      </div>
-
-      <div class="flex-1" />
-
-      <button @click="advancedFiltersOpen = !advancedFiltersOpen"
-              class="flex items-center gap-1.5 px-3 py-1.5 border border-gray-200 rounded-lg text-xs font-semibold text-gray-500 hover:bg-gray-50 transition"
-              :class="advancedFiltersOpen ? 'bg-gray-50 border-teal-300 text-teal-600' : ''">
-        <IconFilter :size="12" />
-        Filtres avancés
-      </button>
-    </div>
-
-    <!-- ── Filtres avancés ── -->
-    <Transition name="slide-down">
-      <div v-if="advancedFiltersOpen"
-           class="bg-white border border-gray-100 px-2 py-3 flex items-center gap-3 flex-shrink-0">
-        <div class="flex items-center gap-2">
-          <span class="text-xs text-gray-500 font-medium">Statut :</span>
-          <select v-model="filterStatus" class="filter-input text-xs py-1.5 cursor-pointer">
-            <option value="">Tous</option>
-            <option value="active">Actif uniquement</option>
-            <option value="inactive">Inactif uniquement</option>
-          </select>
-        </div>
-        <div class="flex items-center gap-2">
-          <span class="text-xs text-gray-500 font-medium">Recherche :</span>
           <div class="relative">
-            <IconSearch :size="12" class="absolute left-2.5 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" />
-            <input v-model="searchQuery" type="text" placeholder="Nom, code..."
-                   class="filter-input !pl-7 text-base py-1.5 w-44" />
+            <IconUsers v-if="filterType === 'group'" :size="13" class="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" />
+            <IconUser  v-else                         :size="13" class="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" />
+            <select v-model="selectedTargetGuid"
+                    class="w-full pl-8 pr-3 py-1.5 bg-white border border-gray-200 rounded-lg text-sm text-gray-700 focus:outline-none focus:border-teal-400 focus:ring-2 focus:ring-teal-100 transition cursor-pointer">
+              <option value="">{{ filterType === 'group' ? 'Tous les groupes' : 'Tous les employés' }}</option>
+              <option v-for="t in availableTargets" :key="t.guid" :value="t.guid">{{ t.name }}</option>
+            </select>
           </div>
         </div>
-        <button @click="resetFilters" class="text-xs text-purple-500 hover:text-purple-600 font-semibold transition ml-2">
-          Réinitialiser
+
+        <div class="flex flex-col gap-1">
+          <span class="text-[10px] text-gray-400 font-bold uppercase tracking-wide">Période</span>
+          <div class="flex items-center gap-1.5">
+            <input type="date" v-model="periodFrom" class="filter-input text-xs py-1.5 cursor-pointer" />
+            <IconArrowRight :size="12" class="text-gray-300 flex-shrink-0" />
+            <input type="date" v-model="periodTo" :min="periodFrom" class="filter-input text-xs py-1.5 cursor-pointer" />
+          </div>
+        </div>
+
+        <div class="flex flex-col gap-1">
+          <span class="text-[10px] text-gray-400 font-bold uppercase tracking-wide">Vue</span>
+          <div class="flex rounded-lg border border-gray-200 overflow-hidden">
+            <button @click="setViewMode('week')"
+                    class="px-3 py-1.5 text-xs font-semibold transition"
+                    :class="viewMode === 'week' ? 'bg-teal-500 text-white' : 'bg-white text-gray-500 hover:bg-gray-50'"
+            >Semaine</button>
+            <button @click="setViewMode('month')"
+                    class="px-3 py-1.5 text-xs font-semibold transition border-l border-gray-200"
+                    :class="viewMode === 'month' ? 'bg-teal-500 text-white' : 'bg-white text-gray-500 hover:bg-gray-50'"
+            >Mois</button>
+            <button @click="setViewMode('programme')"
+                    class="px-3 py-1.5 text-xs font-semibold transition border-l border-gray-200"
+                    :class="viewMode === 'programme' ? 'bg-teal-500 text-white' : 'bg-white text-gray-500 hover:bg-gray-50'"
+            >Programme</button>
+          </div>
+        </div>
+
+        <!-- Sélecteur nb employés (masqué en vue programme) -->
+        <div v-if="viewMode !== 'programme'" class="flex flex-col gap-1">
+          <span class="text-[10px] text-gray-400 font-bold uppercase tracking-wide">Afficher</span>
+          <select v-model="employeesPerPage"
+                  class="border border-gray-200 rounded-lg px-2 py-1.5 text-xs bg-white focus:outline-none focus:border-teal-400 transition cursor-pointer">
+            <option :value="10">10 employés</option>
+            <option :value="15">15 employés</option>
+            <option :value="25">25 employés</option>
+            <option :value="50">50 employés</option>
+          </select>
+        </div>
+
+        <div class="flex-1" />
+
+        <button @click="advancedFiltersOpen = !advancedFiltersOpen"
+                class="flex items-center gap-1.5 px-3 py-1.5 border border-gray-200 rounded-lg text-xs font-semibold text-gray-500 hover:bg-gray-50 transition"
+                :class="advancedFiltersOpen ? 'bg-gray-50 border-teal-300 text-teal-600' : ''">
+          <IconFilter :size="12" />
+          Filtres avancés
         </button>
       </div>
-    </Transition>
 
-    <!-- ── Contenu principal ── -->
-    <div class="flex-1 overflow-y-auto py-6">
-
-      <div v-if="loading" class="flex items-center justify-center h-64 gap-2 text-gray-400">
-        <IconLoader2 :size="20" class="animate-spin text-teal-500" />
-        <span class="text-sm">Chargement du planning...</span>
-      </div>
-
-      <div v-else-if="allFlatMembers.length === 0" class="flex flex-col items-center justify-center h-64 gap-4 text-gray-400">
-        <div class="w-16 h-16 rounded-2xl bg-blue-50 flex items-center justify-center">
-          <IconAlertTriangle :size="28" class="text-amber-500" />
-        </div>
-        <div class="text-center">
-          <p class="text-sm font-semibold text-gray-600">Aucune affectation active</p>
-          <p class="text-xs text-gray-400 mt-0.5">Aucun planning standard trouvé sur la période sélectionnée.</p>
-        </div>
-        <button @click="openCreate" class="text-xs font-semibold text-blue-500 hover:text-blue-600 transition">
-          + Créer une affectation
-        </button>
-      </div>
-
-      <template v-else>
-
-        <!-- ── Vue Semaine / Mois ─────────────────────────────────────── -->
-        <template v-if="viewMode !== 'programme'">
-          <div class="space-y-6">
-            <!-- Indicateur employés cachés -->
-            <div v-if="hiddenCount > 0"
-                 class="flex items-center gap-2 px-4 py-2.5 bg-amber-50 border border-amber-200 rounded-xl text-xs text-amber-700 font-medium">
-              <IconChevronDown :size="14" />
-              {{ hiddenCount }} employé(s) supplémentaire(s) non affiché(s). Augmentez la limite d'affichage pour les voir.
+      <!-- ── Filtres avancés ── -->
+      <Transition name="slide-down">
+        <div v-if="advancedFiltersOpen"
+             class="bg-white border border-gray-100 px-2 py-3 flex items-center gap-3 flex-shrink-0">
+          <div class="flex items-center gap-2">
+            <span class="text-xs text-gray-500 font-medium">Statut :</span>
+            <select v-model="filterStatus" class="filter-input text-xs py-1.5 cursor-pointer">
+              <option value="">Tous</option>
+              <option value="active">Actif uniquement</option>
+              <option value="inactive">Inactif uniquement</option>
+            </select>
+          </div>
+          <div class="flex items-center gap-2">
+            <span class="text-xs text-gray-500 font-medium">Recherche :</span>
+            <div class="relative">
+              <IconSearch :size="12" class="absolute left-2.5 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" />
+              <input v-model="searchQuery" type="text" placeholder="Nom, code..."
+                     class="filter-input !pl-7 text-base py-1.5 w-44" />
             </div>
+          </div>
+          <button @click="resetFilters" class="text-xs text-purple-500 hover:text-purple-600 font-semibold transition ml-2">
+            Réinitialiser
+          </button>
+        </div>
+      </Transition>
 
-            <!-- Légende -->
-            <div class="flex items-center gap-4 text-[11px] text-gray-400 px-1">
-              <div class="flex items-center gap-1.5">
-                <div class="w-5 h-5 rounded-md bg-green-100 border border-green-200 flex items-center justify-center">
-                  <div class="w-1.5 h-1.5 rounded-full bg-green-500" />
-                </div>
-                <span>Présent</span>
-              </div>
-              <div class="flex items-center gap-1.5">
-                <div class="w-5 h-5 rounded-md bg-amber-50 border border-amber-200 flex items-center justify-center">
-<!--                  <span class="text-[9px] text-amber-500 font-bold">P</span>-->
-                  <div class="w-1.5 h-1.5 rounded-full bg-amber-500" />
-                </div>
-                <span>Pause</span>
-              </div>
-              <div class="flex items-center gap-1.5">
-                <div class="w-5 h-5 rounded-md bg-gray-100 border border-gray-200 flex items-center justify-center">
-                  <span class="text-gray-400 text-sm font-medium">—</span>
-                </div>
-                <span>Absent / repos</span>
-              </div>
-            </div>
+      <!-- ── Contenu principal ── -->
+      <div class="flex-1 overflow-y-auto py-6">
 
-            <!-- Un tableau par jour -->
+        <div v-if="loading" class="flex items-center justify-center h-64 gap-2 text-gray-400">
+          <IconLoader2 :size="20" class="animate-spin text-teal-500" />
+          <span class="text-sm">Chargement du planning...</span>
+        </div>
+
+        <div v-else-if="allFlatMembers.length === 0" class="flex flex-col items-center justify-center h-64 gap-4 text-gray-400">
+          <div class="w-16 h-16 rounded-2xl bg-blue-50 flex items-center justify-center">
+            <IconAlertTriangle :size="28" class="text-amber-500" />
+          </div>
+          <div class="text-center">
+            <p class="text-sm font-semibold text-gray-600">Aucune affectation active</p>
+            <p class="text-xs text-gray-400 mt-0.5">Aucun planning standard trouvé sur la période sélectionnée.</p>
+          </div>
+          <button @click="openCreate" class="text-xs font-semibold text-blue-500 hover:text-blue-600 transition">
+            + Créer une affectation
+          </button>
+        </div>
+
+        <template v-else>
+
+          <!-- ── Vue Semaine / Mois ─────────────────────────────────────── -->
+          <template v-if="viewMode !== 'programme'">
+            <div class="space-y-6">
+              <!-- Indicateur employés cachés -->
+              <div v-if="hiddenCount > 0"
+                   class="flex items-center gap-2 px-4 py-2.5 bg-amber-50 border border-amber-200 rounded-xl text-xs text-amber-700 font-medium">
+                <IconChevronDown :size="14" />
+                {{ hiddenCount }} employé(s) supplémentaire(s) non affiché(s). Augmentez la limite d'affichage pour les voir.
+              </div>
+
+              <!-- Légende -->
+              <div class="flex items-center gap-4 text-[11px] text-gray-400 px-1">
+                <div class="flex items-center gap-1.5">
+                  <div class="w-5 h-5 rounded-md bg-green-100 border border-green-200 flex items-center justify-center">
+                    <div class="w-1.5 h-1.5 rounded-full bg-green-500" />
+                  </div>
+                  <span>Présent</span>
+                </div>
+                <div class="flex items-center gap-1.5">
+                  <div class="w-5 h-5 rounded-md bg-amber-50 border border-amber-200 flex items-center justify-center">
+                    <!--                  <span class="text-[9px] text-amber-500 font-bold">P</span>-->
+                    <div class="w-1.5 h-1.5 rounded-full bg-amber-500" />
+                  </div>
+                  <span>Pause</span>
+                </div>
+                <div class="flex items-center gap-1.5">
+                  <div class="w-5 h-5 rounded-md bg-gray-100 border border-gray-200 flex items-center justify-center">
+                    <span class="text-gray-400 text-sm font-medium">—</span>
+                  </div>
+                  <span>Absent / repos</span>
+                </div>
+              </div>
+
+              <!-- Un tableau par jour -->
               <div
                   v-for="section in daySections"
                   :key="section.day.iso"
@@ -326,172 +304,173 @@
                   Aucun employé planifié ce jour.
                 </div>
               </div>
-          </div>
-        </template>
-
-        <!-- ── Vue Programme ──────────────────────────────────────────── -->
-        <template v-else>
-          <div class="space-y-6">
-
-            <!-- Titre -->
-            <div class="flex items-center justify-between flex-wrap gap-2 px-1">
-              <h2 class="text-sm font-bold text-gray-800 tracking-wide">{{ programmeTitre }}</h2>
-              <p class="text-[11px] text-gray-400">{{ periodLabel }} · {{ allFlatMembers.length }} employé(s)</p>
             </div>
+          </template>
 
-            <!-- Légende -->
-            <div class="flex items-center gap-4 text-[11px] text-gray-400 px-1">
-              <div class="flex items-center gap-1.5">
-                <div class="w-5 h-5 rounded-md bg-blue-100 border border-blue-200 flex items-center justify-center">
-                  <div class="w-1.5 h-1.5 rounded-full bg-blue-500" />
-                </div>
-                <span>Présent</span>
-              </div>
-              <div class="flex items-center gap-1.5">
-                <div class="w-5 h-5 rounded-md bg-amber-50 border border-amber-200 flex items-center justify-center">
-                  <span class="text-[9px] text-amber-500 font-bold">P</span>
-                </div>
-                <span>Pause</span>
-              </div>
-            </div>
+          <!-- ── Vue Programme ──────────────────────────────────────────── -->
+          <template v-else>
+            <div class="space-y-6">
 
-            <!-- Un tableau par jour (tous les membres) -->
-            <div
-                v-for="section in programmeDaySections"
-                :key="section.day.iso"
-                class="overflow-hidden border rounded-xl bg-white shadow-sm"
-                :class="section.day.isToday ? 'border-teal-300' : 'border-gray-200'"
-            >
-              <!-- En-tête jour -->
-              <div class="px-4 py-3 border-b flex items-center justify-between"
-                   :class="section.day.isToday ? 'bg-teal-50 border-teal-200' : section.day.isWeekend ? 'bg-gray-50 border-gray-100' : 'bg-white border-gray-100'">
-                <div class="flex items-center gap-2">
+              <!-- Titre -->
+              <div class="flex items-center justify-between flex-wrap gap-2 px-1">
+                <h2 class="text-sm font-bold text-gray-800 tracking-wide">{{ programmeTitre }}</h2>
+                <p class="text-[11px] text-gray-400">{{ periodLabel }} · {{ allFlatMembers.length }} employé(s)</p>
+              </div>
+
+              <!-- Légende -->
+              <div class="flex items-center gap-4 text-[11px] text-gray-400 px-1">
+                <div class="flex items-center gap-1.5">
+                  <div class="w-5 h-5 rounded-md bg-blue-100 border border-blue-200 flex items-center justify-center">
+                    <div class="w-1.5 h-1.5 rounded-full bg-blue-500" />
+                  </div>
+                  <span>Présent</span>
+                </div>
+                <div class="flex items-center gap-1.5">
+                  <div class="w-5 h-5 rounded-md bg-amber-50 border border-amber-200 flex items-center justify-center">
+                    <span class="text-[9px] text-amber-500 font-bold">P</span>
+                  </div>
+                  <span>Pause</span>
+                </div>
+              </div>
+
+              <!-- Un tableau par jour (tous les membres) -->
+              <div
+                  v-for="section in programmeDaySections"
+                  :key="section.day.iso"
+                  class="overflow-hidden border rounded-xl bg-white shadow-sm"
+                  :class="section.day.isToday ? 'border-teal-300' : 'border-gray-200'"
+              >
+                <!-- En-tête jour -->
+                <div class="px-4 py-3 border-b flex items-center justify-between"
+                     :class="section.day.isToday ? 'bg-teal-50 border-teal-200' : section.day.isWeekend ? 'bg-gray-50 border-gray-100' : 'bg-white border-gray-100'">
+                  <div class="flex items-center gap-2">
                   <span class="text-xs font-bold uppercase tracking-wide"
                         :class="section.day.isToday ? 'text-teal-600' : 'text-gray-500'">
                     {{ section.day.dayLabel }}
                   </span>
-                  <span class="text-sm font-bold"
-                        :class="section.day.isToday ? 'text-teal-700' : 'text-gray-800'">
+                    <span class="text-sm font-bold"
+                          :class="section.day.isToday ? 'text-teal-700' : 'text-gray-800'">
                     {{ section.day.dayNum }}/{{ section.day.monthNum }}
                   </span>
-                  <span v-if="section.day.isToday"
-                        class="text-[10px] px-1.5 py-0.5 bg-teal-500 text-white rounded-full font-bold">
+                    <span v-if="section.day.isToday"
+                          class="text-[10px] px-1.5 py-0.5 bg-teal-500 text-white rounded-full font-bold">
                     Aujourd'hui
                   </span>
+                  </div>
+                  <span v-if="section.blocks.length === 0" class="text-[11px] text-gray-400 italic">Jour de repos</span>
+                  <span v-else class="text-[11px] text-gray-400">{{ section.blocks.length }} bloc(s) · {{ allFlatMembers.length }} employé(s)</span>
                 </div>
-                <span v-if="section.blocks.length === 0" class="text-[11px] text-gray-400 italic">Jour de repos</span>
-                <span v-else class="text-[11px] text-gray-400">{{ section.blocks.length }} bloc(s) · {{ allFlatMembers.length }} employé(s)</span>
-              </div>
 
-              <div v-if="section.blocks.length > 0" class="overflow-x-auto">
-                <table class="border-collapse w-full">
-                  <thead>
-                  <tr class="bg-gray-50 border-b border-gray-100">
-                    <th class="px-4 py-2.5 text-left text-[11px] font-bold text-gray-500 w-52 sticky left-0 bg-gray-50 z-10 border-r border-gray-100">
-                      Employé
-                    </th>
-                    <th class="px-3 py-2.5 text-left text-[11px] font-bold text-gray-500 w-36 border-l border-gray-100">
-                      Groupe
-                    </th>
-                    <th v-for="block in section.blocks" :key="block.label"
-                        class="px-3 py-2.5 text-center text-[11px] font-bold text-gray-500 min-w-[90px] border-l border-gray-100">
-                      {{ block.label }}
-                    </th>
-                  </tr>
-                  </thead>
-                  <tbody>
-                  <tr v-for="member in allFlatMembers" :key="member.guid"
-                      class="border-b border-gray-100 last:border-0 bg-white hover:bg-gray-50/40 transition">
-                    <td class="px-4 py-2.5 sticky left-0 bg-inherit border-r border-gray-100 z-10">
-                      <div class="flex items-center gap-2.5">
-                        <div class="w-7 h-7 rounded-full bg-teal-100 flex items-center justify-center text-[10px] font-bold text-teal-700 flex-shrink-0">
-                          {{ initials(member.name) }}
+                <div v-if="section.blocks.length > 0" class="overflow-x-auto">
+                  <table class="border-collapse w-full">
+                    <thead>
+                    <tr class="bg-gray-50 border-b border-gray-100">
+                      <th class="px-4 py-2.5 text-left text-[11px] font-bold text-gray-500 w-52 sticky left-0 bg-gray-50 z-10 border-r border-gray-100">
+                        Employé
+                      </th>
+                      <th class="px-3 py-2.5 text-left text-[11px] font-bold text-gray-500 w-36 border-l border-gray-100">
+                        Groupe
+                      </th>
+                      <th v-for="block in section.blocks" :key="block.label"
+                          class="px-3 py-2.5 text-center text-[11px] font-bold text-gray-500 min-w-[90px] border-l border-gray-100">
+                        {{ block.label }}
+                      </th>
+                    </tr>
+                    </thead>
+                    <tbody>
+                    <tr v-for="member in allFlatMembers" :key="member.guid"
+                        class="border-b border-gray-100 last:border-0 bg-white hover:bg-gray-50/40 transition">
+                      <td class="px-4 py-2.5 sticky left-0 bg-inherit border-r border-gray-100 z-10">
+                        <div class="flex items-center gap-2.5">
+                          <div class="w-7 h-7 rounded-full bg-teal-100 flex items-center justify-center text-[10px] font-bold text-teal-700 flex-shrink-0">
+                            {{ initials(member.name) }}
+                          </div>
+                          <div class="min-w-0">
+                            <p class="text-xs font-semibold text-gray-800 leading-tight truncate max-w-[130px]">{{ member.name }}</p>
+                            <p v-if="member.code" class="text-[10px] text-gray-400">{{ member.code }}</p>
+                          </div>
                         </div>
-                        <div class="min-w-0">
-                          <p class="text-xs font-semibold text-gray-800 leading-tight truncate max-w-[130px]">{{ member.name }}</p>
-                          <p v-if="member.code" class="text-[10px] text-gray-400">{{ member.code }}</p>
-                        </div>
-                      </div>
-                    </td>
-                    <td class="px-3 py-2.5 border-l border-gray-100">
+                      </td>
+                      <td class="px-3 py-2.5 border-l border-gray-100">
                       <span v-if="member.groupName"
                             class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-violet-50 text-violet-700 text-[10px] font-semibold">
                         <IconUsers :size="9" />
                         {{ member.groupName }}
                       </span>
-                      <span v-else class="text-[10px] text-gray-400 italic">Sans groupe</span>
-                    </td>
-                    <td v-for="block in section.blocks" :key="block.label"
-                        class="px-2 py-2 text-center border-l border-gray-100">
-                      <BlockCell :status="section.matrix[member.guid]?.[block.label] ?? 'absent'" />
-                    </td>
-                  </tr>
-                  </tbody>
-                </table>
-              </div>
+                        <span v-else class="text-[10px] text-gray-400 italic">Sans groupe</span>
+                      </td>
+                      <td v-for="block in section.blocks" :key="block.label"
+                          class="px-2 py-2 text-center border-l border-gray-100">
+                        <BlockCell :status="section.matrix[member.guid]?.[block.label] ?? 'absent'" />
+                      </td>
+                    </tr>
+                    </tbody>
+                  </table>
+                </div>
 
-              <div v-else class="px-4 py-3 text-xs text-gray-400 italic">
-                Aucun employé planifié ce jour.
+                <div v-else class="px-4 py-3 text-xs text-gray-400 italic">
+                  Aucun employé planifié ce jour.
+                </div>
               </div>
             </div>
-          </div>
+          </template>
+
         </template>
+      </div>
 
-      </template>
-    </div>
-
-    <!-- ── Modal désactivation ── -->
-    <Teleport to="body">
-      <div v-if="deactivateTarget" class="fixed inset-0 z-50 flex items-center justify-center p-4" @click.self="deactivateTarget = null">
-        <div class="absolute inset-0 bg-black/25 backdrop-blur-sm" />
-        <div class="relative bg-white border border-gray-200 rounded-2xl p-6 w-full max-w-sm shadow-xl">
-          <div class="flex items-center gap-3 mb-4">
-            <div class="w-10 h-10 rounded-xl bg-amber-50 flex items-center justify-center flex-shrink-0">
-              <IconPower :size="18" class="text-amber-500" />
+      <!-- ── Modal désactivation ── -->
+      <Teleport to="body">
+        <div v-if="deactivateTarget" class="fixed inset-0 z-50 flex items-center justify-center p-4" @click.self="deactivateTarget = null">
+          <div class="absolute inset-0 bg-black/25 backdrop-blur-sm" />
+          <div class="relative bg-white border border-gray-200 rounded-2xl p-6 w-full max-w-sm shadow-xl">
+            <div class="flex items-center gap-3 mb-4">
+              <div class="w-10 h-10 rounded-xl bg-amber-50 flex items-center justify-center flex-shrink-0">
+                <IconPower :size="18" class="text-amber-500" />
+              </div>
+              <div>
+                <p class="text-gray-800 font-bold text-sm">Désactiver l'affectation</p>
+                <p class="text-gray-400 text-xs mt-0.5">L'affectation sera marquée inactive</p>
+              </div>
             </div>
-            <div>
-              <p class="text-gray-800 font-bold text-sm">Désactiver l'affectation</p>
-              <p class="text-gray-400 text-xs mt-0.5">L'affectation sera marquée inactive</p>
+            <p class="text-gray-600 text-sm mb-5">
+              Désactiver l'affectation de
+              <span class="font-semibold text-gray-800">{{ getTargetName(deactivateTarget) }}</span> ?
+            </p>
+            <div class="flex gap-2">
+              <button @click="deactivateTarget = null"
+                      class="flex-1 px-4 py-2 rounded-xl border border-gray-200 text-gray-600 text-sm hover:bg-gray-50 transition">
+                Annuler
+              </button>
+              <button @click="doDeactivate" :disabled="actionLoading"
+                      class="flex-1 px-4 py-2 rounded-xl bg-amber-500 hover:bg-amber-600 text-white text-sm font-bold transition disabled:opacity-60">
+                {{ actionLoading ? '...' : 'Désactiver' }}
+              </button>
             </div>
-          </div>
-          <p class="text-gray-600 text-sm mb-5">
-            Désactiver l'affectation de
-            <span class="font-semibold text-gray-800">{{ getTargetName(deactivateTarget) }}</span> ?
-          </p>
-          <div class="flex gap-2">
-            <button @click="deactivateTarget = null"
-                    class="flex-1 px-4 py-2 rounded-xl border border-gray-200 text-gray-600 text-sm hover:bg-gray-50 transition">
-              Annuler
-            </button>
-            <button @click="doDeactivate" :disabled="actionLoading"
-                    class="flex-1 px-4 py-2 rounded-xl bg-amber-500 hover:bg-amber-600 text-white text-sm font-bold transition disabled:opacity-60">
-              {{ actionLoading ? '...' : 'Désactiver' }}
-            </button>
           </div>
         </div>
-      </div>
-    </Teleport>
+      </Teleport>
 
-    <ScheduleAssignmentForm
-        v-if="showForm"
-        :assignment="editTarget"
-        @close="showForm = false"
-        @saved="onSaved"
-    />
+      <ScheduleAssignmentForm
+          v-if="showForm"
+          :assignment="editTarget"
+          @close="showForm = false"
+          @saved="onSaved"
+      />
 
-  </div>
+    </div>
   </div>
 
 
 </template>
 <script setup lang="ts">
 import { ref, computed, onMounted, onBeforeUnmount, defineComponent, h, watch } from 'vue'
+import { useRouter } from 'vue-router'
 import {
   IconCalendarStats, IconChevronRight, IconPlus, IconLoader2,
   IconUser, IconUsers, IconFilter, IconSearch, IconArrowRight,
   IconPower, IconAlertTriangle, IconSparkles,
   IconUpload, IconChevronDown, IconTable,
-  IconFile, IconFileText, IconAlertCircle,
+  IconFile, IconFileText,
 } from '@tabler/icons-vue'
 
 import ScheduleAssignmentService from '@/service/ScheduleAssignment'
@@ -503,12 +482,9 @@ import type { IScheduleAssignment } from './type'
 import { useUserStore } from '@/stores/userStore'
 import { exportScheduleCSV, exportScheduleExcel } from '@/utils/exports/scheduleAssignment.export'
 import {exportSchedulePDF} from "@/utils/exports/exportSchedulePDF";
-import SuggestionPreview from './suggestionPreview.vue'
-import ScheduleSuggestionService from '@/service/ScheduleSuggestionService'
-import type { ISuggestion, ISuggestionItem } from '@/service/ScheduleSuggestionService'
-import SessionTemplateService from '@/service/SessionTemplate'
 
 const userStore = useUserStore()
+const router = useRouter()
 
 // ── Composant inline BlockCell ─────────────────────────────────────────────
 const BlockCell = defineComponent({
@@ -537,7 +513,6 @@ const BlockCell = defineComponent({
 })
 
 // ── Constants ──────────────────────────────────────────────────────────────
-const DAY_ORDER = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'] as const
 const DAY_FR: Record<string, string> = {
   Mon: 'Lun', Tue: 'Mar', Wed: 'Mer', Thu: 'Jeu', Fri: 'Ven', Sat: 'Sam', Sun: 'Dim',
 }
@@ -553,7 +528,7 @@ const filterType          = ref<'user' | 'group'>('user')
 const selectedTargetGuid  = ref('')
 const viewMode            = ref<'week' | 'month' | 'programme'>('week')
 const advancedFiltersOpen = ref(false)
-const filterStatus        = ref('')
+const filterStatus        = ref('active')
 const searchQuery         = ref('')
 const exportDropdownOpen  = ref(false)
 const exportDropdownRef   = ref<HTMLElement | null>(null)
@@ -575,8 +550,10 @@ const deactivateTarget = ref<IScheduleAssignment | null>(null)
 const actionLoading    = ref(false)
 
 watch(
-    [filterType, selectedTargetGuid, filterStatus, searchQuery, periodFrom, periodTo, employeesPerPage],
-    () => { /* filters changed */ }
+    [periodFrom, periodTo],
+    ([from, to]) => {
+      if (from && to && from <= to) load()
+    },
 )
 
 // ── Helpers horaires ───────────────────────────────────────────────────────
@@ -633,11 +610,8 @@ const programmeTitre = computed(() => {
 
 // ── Cibles disponibles ─────────────────────────────────────────────────────
 function isInActivePeriod(a: IScheduleAssignment): boolean {
-  const aStart = new Date(a.start_date)
-  const aEnd   = a.end_date ? new Date(a.end_date) : new Date('2099-12-31')
-  const pFrom  = new Date(periodFrom.value)
-  const pTo    = new Date(periodTo.value)
-  return aStart <= pTo && aEnd >= pFrom
+  return a.start_date <= periodTo.value
+      && (a.end_date === null || a.end_date >= periodFrom.value)
 }
 
 const availableTargets = computed(() => {
@@ -714,78 +688,171 @@ const filteredAssignments = computed(() => {
   })
 })
 
-// ── Membres plats ──────────────────────────────────────────────────────────
+// ── Membres plats et résolution par date ──────────────────────────────────
+type ScheduleSlot = {
+  work: [string, string]
+  pause?: [string, string]
+}
+
 interface FlatMember {
-  guid:      string
-  name:      string
-  code:      string
-  groupName: string | null   // null = employé direct, sinon nom du groupe
-  schedule:  Record<string, { work: [string, string]; pause?: [string, string] }[]>
+  guid: string
+  name: string
+  code: string
+  groupName: string | null
+
+  /** Vérité d'affichage : planning résolu pour chaque date ISO. */
+  scheduleByDate: Record<string, ScheduleSlot[]>
+
+  /** Conservé uniquement pour compatibilité avec les exports existants. */
+  schedule: Record<string, ScheduleSlot[]>
+}
+
+interface MemberAccumulator {
+  guid: string
+  name: string
+  code: string
+  groupName: string | null
+  directAssignments: IScheduleAssignment[]
+  groupAssignments: IScheduleAssignment[]
+}
+
+function assignmentCoversIso(assignment: IScheduleAssignment, iso: string): boolean {
+  return assignment.start_date <= iso && (assignment.end_date === null || assignment.end_date >= iso)
+}
+
+function dayKeyFromIso(iso: string): string {
+  return JS_DAY_TO_KEY[new Date(`${iso}T00:00:00.000Z`).getUTCDay()]
+}
+
+function assignmentSlotsForIso(
+    assignment: IScheduleAssignment,
+    iso: string,
+): ScheduleSlot[] {
+  const template = resolveFullTemplate(assignment)
+  if (!template?.definition) return []
+
+  const key = dayKeyFromIso(iso) as keyof typeof template.definition
+  const blocks = template.definition[key]
+  if (!Array.isArray(blocks)) return []
+
+  return blocks.map((block) => ({
+    work: [block.work[0], block.work[1]],
+    pause: block.pause ? [block.pause[0], block.pause[1]] : undefined,
+  }))
+}
+
+function newestApplicableAssignment(
+    assignments: IScheduleAssignment[],
+    iso: string,
+): IScheduleAssignment | null {
+  return assignments
+      .filter((assignment) => assignmentCoversIso(assignment, iso))
+      .sort((a, b) =>
+          b.start_date.localeCompare(a.start_date)
+          || b.guid.localeCompare(a.guid),
+      )[0] ?? null
 }
 
 const allFlatMembers = computed<FlatMember[]>(() => {
+  const members = new Map<string, MemberAccumulator>()
+
+  const ensureMember = (
+      guid: string,
+      name: string,
+      code: string,
+      groupName: string | null,
+  ): MemberAccumulator => {
+    const existing = members.get(guid)
+    if (existing) {
+      if (!existing.groupName && groupName) existing.groupName = groupName
+      return existing
+    }
+
+    const created: MemberAccumulator = {
+      guid,
+      name,
+      code,
+      groupName,
+      directAssignments: [],
+      groupAssignments: [],
+    }
+    members.set(guid, created)
+    return created
+  }
+
+  for (const assignment of filteredAssignments.value) {
+    if (isUserAssignment(assignment)) {
+      const member = ensureMember(
+          assignment.related.guid,
+          `${assignment.related.first_name} ${assignment.related.last_name}`.trim(),
+          assignment.related.employee_code ?? '',
+          null,
+      )
+      member.directAssignments.push(assignment)
+      continue
+    }
+
+    if (isGroupAssignment(assignment)) {
+      for (const groupMember of assignment.related.members.items) {
+        if (!groupMember.active) continue
+        if (
+            filterType.value === 'user'
+            && selectedTargetGuid.value
+            && groupMember.user.guid !== selectedTargetGuid.value
+        ) continue
+
+        const member = ensureMember(
+            groupMember.user.guid,
+            `${groupMember.user.first_name} ${groupMember.user.last_name}`.trim(),
+            groupMember.user.employee_code ?? '',
+            assignment.related.name,
+        )
+        member.groupAssignments.push(assignment)
+      }
+    }
+  }
+
   const result: FlatMember[] = []
-  const seen = new Set<string>()
 
-  // Helper : construire le schedule depuis le template d'un assignment
-  function buildSchedule(a: IScheduleAssignment): FlatMember['schedule'] {
-    const tpl = resolveFullTemplate(a)
-    const schedule: FlatMember['schedule'] = {}
-    if (tpl?.definition) {
-      for (const key of DAY_ORDER) {
-        const blocks = tpl.definition[key as keyof typeof tpl.definition]
-        if (blocks && Array.isArray(blocks) && blocks.length > 0) {
-          schedule[key] = blocks.map((b: any) => ({
-            work:  [b.work[0], b.work[1]] as [string, string],
-            pause: b.pause ? [b.pause[0], b.pause[1]] as [string, string] : undefined,
-          }))
-        }
-      }
+  for (const member of members.values()) {
+    const scheduleByDate: Record<string, ScheduleSlot[]> = {}
+    const legacySchedule: Record<string, ScheduleSlot[]> = {}
+
+    for (const day of calendarDays.value) {
+      // La règle de résolution métier est la même que côté backend :
+      // une affectation directe utilisateur gagne sur une affectation de groupe.
+      const winner =
+          newestApplicableAssignment(member.directAssignments, day.iso)
+          ?? newestApplicableAssignment(member.groupAssignments, day.iso)
+
+      if (!winner) continue
+
+      const slots = assignmentSlotsForIso(winner, day.iso)
+      scheduleByDate[day.iso] = slots
+
+      // Compatibilité temporaire avec les exports actuels.
+      const key = dayKeyFromIso(day.iso)
+      if (!(key in legacySchedule)) legacySchedule[key] = slots
     }
-    return schedule
+
+    result.push({
+      guid: member.guid,
+      name: member.name,
+      code: member.code,
+      groupName: member.groupName,
+      scheduleByDate,
+      schedule: legacySchedule,
+    })
   }
 
-  for (const a of filteredAssignments.value) {
-    if (isGroupAssignment(a)) {
-      // En mode Employé avec filtre individuel : n'inclure que le membre ciblé
-      const schedule = buildSchedule(a)
-      for (const m of a.related.members.items) {
-        if (filterType.value === 'user' && selectedTargetGuid.value && m.user.guid !== selectedTargetGuid.value) continue
-        if (seen.has(m.user.guid)) continue
-        seen.add(m.user.guid)
-        result.push({
-          guid:      m.user.guid,
-          name:      `${m.user.first_name} ${m.user.last_name}`.trim(),
-          code:      m.user.employee_code ?? '',
-          groupName: a.related.name,   // toujours renseigné, même en mode Employé
-          schedule,
-        })
-      }
-    } else if (isUserAssignment(a)) {
-      if (seen.has(a.related.guid)) continue
-      seen.add(a.related.guid)
-      result.push({
-        guid:      a.related.guid,
-        name:      `${a.related.first_name} ${a.related.last_name}`.trim(),
-        code:      a.related.employee_code ?? '',
-        groupName: null,   // "Sans groupe"
-        schedule:  buildSchedule(a),
-      })
-    }
-  }
-
-  // Tri :
-  // - Mode Employé → alphabétique simple
-  // - Mode Groupe  → grouper par groupe (alphabétique), "Sans groupe" en dernier, puis alpha dans chaque groupe
   if (filterType.value === 'user') {
     return result.sort((a, b) => a.name.localeCompare(b.name, 'fr'))
   }
 
-  // Mode Groupe : tri par groupName (null = "Sans groupe" → dernier), puis par name
   return result.sort((a, b) => {
-    const ga = a.groupName ?? '\uFFFF'  // null → "Sans groupe" → sort en dernier
-    const gb = b.groupName ?? '\uFFFF'
-    if (ga !== gb) return ga.localeCompare(gb, 'fr')
+    const groupA = a.groupName ?? '\uFFFF'
+    const groupB = b.groupName ?? '\uFFFF'
+    if (groupA !== groupB) return groupA.localeCompare(groupB, 'fr')
     return a.name.localeCompare(b.name, 'fr')
   })
 })
@@ -798,10 +865,10 @@ const canExport      = computed(() => allFlatMembers.value.length > 0)
 // ── Algorithme blocs horaires par jour ────────────────────────────────────
 interface TimeBlock { start: string; end: string; label: string }
 
-function computeDayBlocks(members: FlatMember[], dayKey: string): TimeBlock[] {
+function computeDayBlocks(members: FlatMember[], iso: string): TimeBlock[] {
   const points = new Set<number>()
   for (const m of members) {
-    const slots = m.schedule[dayKey]
+    const slots = m.scheduleByDate[iso]
     if (!slots) continue
     for (const s of slots) {
       points.add(timeToMin(s.work[0]))
@@ -820,8 +887,8 @@ function computeDayBlocks(members: FlatMember[], dayKey: string): TimeBlock[] {
   })
 }
 
-function getMemberBlockStatus(member: FlatMember, dayKey: string, block: TimeBlock): 'work' | 'pause' | 'absent' {
-  const slots = member.schedule[dayKey]
+function getMemberBlockStatus(member: FlatMember, iso: string, block: TimeBlock): 'work' | 'pause' | 'absent' {
+  const slots = member.scheduleByDate[iso]
   if (!slots) return 'absent'
   const bStart = timeToMin(block.start)
   const bEnd   = timeToMin(block.end)
@@ -849,13 +916,12 @@ interface DaySection {
 
 function buildDaySections(members: FlatMember[]): DaySection[] {
   return calendarDays.value.map((day) => {
-    const dayKey = JS_DAY_TO_KEY[day.jsDay]
-    const blocks = computeDayBlocks(members, dayKey)
+    const blocks = computeDayBlocks(members, day.iso)
     const matrix: DaySection['matrix'] = {}
     for (const m of members) {
       matrix[m.guid] = {}
       for (const b of blocks) {
-        matrix[m.guid][b.label] = getMemberBlockStatus(m, dayKey, b)
+        matrix[m.guid][b.label] = getMemberBlockStatus(m, day.iso, b)
       }
     }
     return { day, blocks, matrix }
@@ -902,7 +968,7 @@ function setViewMode(mode: 'week' | 'month' | 'programme') {
   load()
 }
 
-function resetFilters() { filterStatus.value = ''; searchQuery.value = '' }
+function resetFilters() { filterStatus.value = 'active'; searchQuery.value = '' }
 
 function openCreate() { editTarget.value = null; showForm.value = true }
 function openEdit(item: IScheduleAssignment) { editTarget.value = item; showForm.value = true }
@@ -960,67 +1026,8 @@ function onDocumentClick(e: MouseEvent) {
   }
 }
 
-// Suggestion add
-const activeSuggestion    = ref<ISuggestion | null>(null)
-const suggestionLoading   = ref(false)
-const availableTemplates  = ref<{ guid: string; name: string, definition?: any }[]>([])
-const suggestionError = ref<string | null>(null)
-
-async function handleGenerateSuggestion() {
-  if (!userStore.user?.guid) return
-  suggestionLoading.value = true
-  suggestionError.value   = null
-  try {
-    if (!availableTemplates.value.length) {
-      const tRes = await SessionTemplateService.list()
-      if (tRes?.success) {
-        availableTemplates.value = tRes.data.templates.items.map((t: any) => ({
-          guid: t.guid, name: t.name, definition: t.definition ?? null,
-        }))
-      }
-    }
-    const res = await ScheduleSuggestionService.generate(userStore.user.guid, {
-      period_from: periodFrom.value,
-      period_to:   periodTo.value,
-    })
-    activeSuggestion.value = res.data.suggestion
-  } catch (error: any) {
-    // Extraire le message lisible depuis "HTTP 422 - Aucun employé..."
-    const raw = error?.message ?? ''
-    const msg = raw.includes(' - ') ? raw.split(' - ').slice(1).join(' - ') : raw
-    suggestionError.value = msg || 'Une erreur est survenue lors de la génération.'
-  } finally {
-    suggestionLoading.value = false
-  }
-}
-
-function onSuggestionItemPatched(updatedItem: ISuggestionItem) {
-  if (!activeSuggestion.value?.items) return
-  const idx = activeSuggestion.value.items.findIndex((i) => i.guid === updatedItem.guid)
-  if (idx !== -1) activeSuggestion.value.items[idx] = updatedItem
-}
-
-async function onRegenerateSuggestion() {
-  if (!activeSuggestion.value) return
-  suggestionError.value = null
-  try {
-    await ScheduleSuggestionService.delete(activeSuggestion.value.guid)
-    activeSuggestion.value = null
-    await handleGenerateSuggestion()
-  } catch (error: any) {
-    const raw = error?.message ?? ''
-    const msg = raw.includes(' - ') ? raw.split(' - ').slice(1).join(' - ') : raw
-    suggestionError.value = msg || 'Erreur lors de la regénération.'
-  }
-}
-
-function onSuggestionApproved() {
-  activeSuggestion.value = null
-  load() // recharge la grille avec les nouveaux assignments
-}
-
-function onSuggestionRejected() {
-  activeSuggestion.value = null
+function openPlanningSuggestionModule(): void {
+  router.push({ name: 'planning-suggestion-dashboard' })
 }
 
 onMounted(() => { load(); document.addEventListener('click', onDocumentClick) })

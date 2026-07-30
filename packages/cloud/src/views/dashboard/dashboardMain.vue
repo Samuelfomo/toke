@@ -56,6 +56,7 @@
             :active-end-date="activeFilters.endDate"
             :active-view-mode="activeFilters.viewMode"
             @filter-change="handleFilterChange"
+            @export="handleExport"
         />
 
         <!-- 2. Stats : doughnut répartition + line chart évolution + absents + anomalies -->
@@ -223,7 +224,6 @@ import DashboardHero       from '../dashboard/dashboardHero.vue'
 import DashboardStats      from '../dashboard/dashboardStats.vue'
 import EmployeeList        from '../dashboard/employeeList.vue'
 import AttendanceTimeline  from '../dashboard/attendanceTimeline.vue'
-// import EmployeeViewPointage from '../dashboard/employeeViewPointage.vue'
 import Header from '../components/header.vue'
 import Footer from '../components/footer.vue'
 import type {
@@ -232,6 +232,8 @@ import type {
 } from '@/utils/interfaces/stat.interface'
 import HeadBuilder from '@/utils/HeadBuilder'
 import statsCss    from '../../assets/css/toke-dMain-04.css?url'
+
+import { exportStatistiquesPDF } from '@/utils/exports/exportStatistiquesPDF'
 
 import { useRouter } from 'vue-router'
 const router = useRouter()
@@ -360,6 +362,19 @@ const refreshDashboard = () => {
       activeFilters.value.startDate || undefined,
       activeFilters.value.endDate   || undefined
   )
+}
+
+const handleExport = () => {
+  if (!dashboardData.value) return
+  exportStatistiquesPDF({
+    summary       : dashboardData.value.summary,
+    employees     : dashboardData.value.employees,
+    dailyBreakdown: dashboardData.value.daily_breakdown,
+    periodFrom    : activeFilters.value.startDate || new Date().toISOString().split('T')[0],
+    periodTo      : activeFilters.value.endDate   || new Date().toISOString().split('T')[0],
+    generatedBy   : userStore.fullName ?? 'Manager',
+    tenantName    : (userStore).tenantName ?? undefined,
+  })
 }
 
 // ── Lifecycle ─────────────────────────────────────────────────────────────────

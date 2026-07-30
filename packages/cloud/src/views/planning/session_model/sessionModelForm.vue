@@ -13,10 +13,12 @@
               <IconShieldCheck :size="17" class="text-blue-500" />
             </div>
             <div>
-              <h2 class="text-slate-800 font-semibold text-sm">
-                {{ isEdit ? 'Modifier la norme' : 'Nouvelle norme' }}
+              <h2 class="font-medium text-lg">
+                {{ isEdit ? 'Modifier le modèle de session' : 'Créer un modèle de session' }}
               </h2>
-              <p class="text-slate-400 text-xs">Session Model</p>
+              <p class="text-slate-500 text-xs">
+                Définissez les règles de durée, de pause et de congé applicables aux sessions.
+              </p>
             </div>
           </div>
           <button @click="$emit('close')"
@@ -140,26 +142,58 @@
               </div>
             </div>
 
-            <!-- Sortie anticipée -->
+            <!-- Congés -->
             <div class="rounded-xl border border-slate-200 bg-slate-50 p-4 flex flex-col gap-3">
               <div class="flex items-center justify-between">
                 <div>
-                  <p class="text-sm font-semibold text-slate-700">Sortie anticipée</p>
-                  <p class="text-xs text-slate-400">Permettre de partir avant la fin de session</p>
+                  <p class="text-sm font-semibold text-slate-700">
+                    Congés autorisés
+                  </p>
+
+                  <p class="text-xs text-slate-400">
+                    Définir après combien de sessions un employé devient éligible à un congé
+                  </p>
                 </div>
-                <Toggle v-model="form.early_leave_allowed" color="emerald" />
+
+                <Toggle v-model="form.leave_allowed" color="emerald" />
               </div>
-              <div v-if="form.early_leave_allowed" class="flex items-end gap-4">
+
+              <div v-if="form.leave_allowed" class="flex items-end gap-4">
                 <div class="field-group flex-1">
-                  <label class="field-label">Sessions avant éligibilité <span class="text-red-500">*</span></label>
-                  <input v-model.number="form.leave_eligibility_after_session" type="number" min="1" placeholder="5"
-                         class="field bg-white" :class="{ 'field-error': errors.leave_eligibility_after_session }" />
-                  <p v-if="errors.leave_eligibility_after_session" class="err">{{ errors.leave_eligibility_after_session }}</p>
+                  <label class="field-label">
+                    Nombre de sessions avant éligibilité
+                    <span class="text-red-500">*</span>
+                  </label>
+
+                  <input
+                      v-model.number="form.leave_eligibility_after_session"
+                      type="number"
+                      min="1"
+                      placeholder="5"
+                      class="field bg-white"
+                      :class="{
+          'field-error': errors.leave_eligibility_after_session
+        }"
+                  />
+
+                  <p
+                      v-if="errors.leave_eligibility_after_session"
+                      class="err"
+                  >
+                    {{ errors.leave_eligibility_after_session }}
+                  </p>
                 </div>
+
                 <div class="field-group flex-shrink-0">
-                  <label class="field-label">Congé optionnel</label>
+                  <label class="field-label">
+                    Congé facultatif
+                  </label>
+
                   <div class="flex items-center h-[38px]">
-                    <Toggle v-model="form.leave_is_optional" color="emerald" />
+                    <Toggle
+                        v-model="form.leave_is_optional"
+                        color="emerald"
+                    />
                   </div>
                 </div>
               </div>
@@ -186,11 +220,19 @@
             Annuler
           </button>
           <button @click="submit" :disabled="saving"
-                  class="flex items-center gap-2 px-5 py-2 bg-blue-500 hover:bg-blue-600 text-white text-sm font-semibold rounded-xl transition disabled:opacity-60 shadow-sm shadow-blue-200"
+              class="flex items-center gap-2 px-4 py-2 bg-blue-500 hover:bg-blue-600 text-white text-sm font-semibold rounded-xl transition disabled:opacity-60"
           >
-            <IconLoader2 v-if="saving" :size="14" class="animate-spin" />
-            <IconDeviceFloppy v-else :size="14" />
-            {{ saving ? 'Enregistrement...' : 'Enregistrer' }}
+            <IconLoader2 v-if="saving" :size="14" class="animate-spin"/>
+            <IconDeviceFloppy v-else :size="14"/>
+            <template v-if="saving">
+              <span class="sm:hidden">Patientez...</span>
+              <span class="hidden sm:inline">Enregistrement...</span>
+            </template>
+
+            <template v-else>
+              <span class="sm:hidden">{{ isEdit ? 'Enregistrer' : 'Créer' }}</span>
+              <span class="hidden sm:inline">{{ isEdit ? 'Enregistrer' : 'Créer le modèle' }}</span>
+            </template>
           </button>
         </div>
       </div>
@@ -277,7 +319,7 @@ const form = reactive({
   rotation_allowed:                props.model?.rotation_allowed                ?? false,
   extra_allowed:                   props.model?.extra_allowed                   ?? false,
   extra_max:                       props.model?.extra_max                       ?? null as number | null,
-  early_leave_allowed:             props.model?.leave_allowed                   ?? false,
+  leave_allowed:                   props.model?.leave_allowed                   ?? false,
   leave_eligibility_after_session: props.model?.leave_eligibility_after_session ?? null as number | null,
   leave_is_optional:               props.model?.leave_is_optional               ?? true,
 })
@@ -327,8 +369,8 @@ function validate(): boolean {
   if (form.extra_allowed && !form.extra_max)
   { errors.extra_max = 'Requis'; ok = false }
 
-  if (form.early_leave_allowed && !form.leave_eligibility_after_session)
-  { errors.leave_eligibility_after_session = 'Requis'; ok = false }
+  if (form.leave_allowed && !form.leave_eligibility_after_session)
+  { errors.leave_eligibility_after_session = 'Indiquez le nombre de sessions requis'; ok = false }
 
   return ok
 }
@@ -348,7 +390,7 @@ async function submit() {
     pause_allowed:       form.pause_allowed,
     rotation_allowed:    form.rotation_allowed,
     extra_allowed:       form.extra_allowed,
-    early_leave_allowed: form.early_leave_allowed,
+    early_leave_allowed: form.leave_allowed,
     leave_is_optional:   form.leave_is_optional,
     created_by:          userStore.user?.guid!
   }
@@ -356,7 +398,7 @@ async function submit() {
   if (form.allowed_tolerance)               payload.allowed_tolerance               = form.allowed_tolerance
   if (form.pause_allowed)                   { payload.pause_duration = form.pause_duration || undefined ; payload.pause_count = form.pause_count || undefined  }
   if (form.extra_allowed)                   payload.extra_max                       = form.extra_max || undefined
-  if (form.early_leave_allowed)             payload.leave_eligibility_after_session = form.leave_eligibility_after_session || undefined
+  if (form.leave_allowed)                   payload.leave_eligibility_after_session = form.leave_eligibility_after_session || undefined
 
   const res = isEdit
       ? await SessionModelService.update(props.model!.guid, payload)

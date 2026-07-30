@@ -6,6 +6,14 @@ export const NAV_GROUPS: NavGroup[] = [
         label: 'PLANNING & ROTATIONS',
         items: [
             {
+                id: 'planning-suggestion',
+                label: 'Planification assistée',
+                sublabel: 'Configurer et générer les plannings',
+                icon: 'IconSparkles',
+                routeName: 'planning-suggestion-dashboard',
+                group: 'planning',
+            },
+            {
                 id: 'session-model',
                 label: 'Session Model',
                 sublabel: 'Normes de l\'entreprise',
@@ -32,7 +40,7 @@ export const NAV_GROUPS: NavGroup[] = [
             {
                 id: 'schedule-assignment',
                 label: 'Schedule Assignment',
-                sublabel: 'Affectation des emplois du temps',
+                sublabel: 'Plannings officiellement publiés',
                 icon: 'IconCalendarStats',
                 routeName: 'schedule-assignment',
                 group: 'planning',
@@ -57,5 +65,4 @@ export const NAV_GROUPS: NavGroup[] = [
     },
 ]
 
-// ── Constants ──────────────────────────────────────────────────────────────
 export const SIDEBAR_WIDTH = '220px'

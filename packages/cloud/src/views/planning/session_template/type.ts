@@ -1,27 +1,40 @@
 import type { IUserMini, IPagination } from '../session_model/type'
 
-// Un bloc de travail pour un jour donné
 export interface IDayBlock {
-    work: [string, string]        // ["08:00", "17:00"]
+    work: [string, string]
     pause: [string, string] | null
     tolerance: number
+    end_day_offset?: number
 }
 
-// Définition complète : clé = jour (Mon/Tue/...), valeur = blocs | [] | null
-export type IDefinition = {
-    [day: string]: IDayBlock[] | [] | null
+export type IDefinition = Record<string, IDayBlock[] | [] | null | undefined>
+
+export interface SessionModelRef {
+    guid: string
+    name: string
+}
+
+export interface SessionTemplateUsage {
+    total?: number | null
+    employees?: number | null
+    groups?: number | null
 }
 
 export interface ISessionTemplate {
     guid: string
     name: string
     description: string | null
-    session_model: SessionModel        // guid de la norme
+    session_model: SessionModelRef | string
     definition: IDefinition
     for_rotation: boolean
-    default: boolean
-    current: boolean
-    is_current: boolean
+    default?: boolean
+    is_default?: boolean
+    current?: boolean
+    is_current?: boolean
+    usage?: SessionTemplateUsage | null
+    usage_count?: number | null
+    employee_count?: number | null
+    group_count?: number | null
     created_by: IUserMini
     created_at: string
     updated_at: string
@@ -30,10 +43,13 @@ export interface ISessionTemplate {
 export interface ISessionTemplateCollection {
     pagination: IPagination
     items: ISessionTemplate[]
+    summary?: {
+        active?: number
+        rotation?: number
+        default?: number
+    }
 }
 
 export interface ISessionTemplateResponseData {
     session_templates: ISessionTemplateCollection
 }
-
-export interface SessionModel { guid: string, name: string }

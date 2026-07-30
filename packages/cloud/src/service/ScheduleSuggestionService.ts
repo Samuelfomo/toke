@@ -1,79 +1,28 @@
 import type { ApiResponse } from '@toke/shared'
 
 import { apiRequest } from '@/tools/Fetch.Client'
+import type {
+    GenerateSuggestionPayload,
+} from '@/views/planning/suggestion/planningSuggestion.type'
 
 const baseUrl = '/schedule-suggestion'
 
-// ── Types ──────────────────────────────────────────────────────────────────────
-
-export type SuggestionStatus = 'draft' | 'approved' | 'rejected'
-
-export interface ISuggestionDayReason {
-    templateGuid: string | null
-    templateName: string
-    confidence:   number       // 0–100
-    factors:      string[]
+type ScheduleSuggestionFilters = {
+    offset?: number
+    limit?: number
+    status?: string[]
 }
-
-export interface ISuggestionItem {
-    guid:     string
-    user: {
-        guid:          string
-        name:          string
-        employee_code: string | null
-    }
-    schedule: Record<string, string | null>               // { 'YYYY-MM-DD': templateGuid|null }
-    reasons:  Record<string, ISuggestionDayReason | null>
-}
-
-export interface ISuggestion {
-    guid:             string
-    period_from:      string
-    period_to:        string
-    status:           SuggestionStatus
-    conformity_score: number | null
-    history_weeks:    number
-    generated_at?:    string
-    approved_at:      string | null
-    rejected_at:      string | null
-    manager: {
-        guid: string
-        name: string
-    } | null
-    items?: ISuggestionItem[]
-}
-
-export interface IGenerateSuggestionPayload {
-    period_from:     string       // YYYY-MM-DD
-    period_to:       string       // YYYY-MM-DD
-    employee_guids?: string[]     // optionnel — scope réduit
-}
-
-export interface IPatchSuggestionItemPayload {
-    iso:           string         // YYYY-MM-DD
-    template_guid: string | null  // null = repos
-}
-
-// ── Service ───────────────────────────────────────────────────────────────────
 
 export default class ScheduleSuggestionService {
-
-    // ── Génération ────────────────────────────────────────────────────────────
-
-    /**
-     * POST /schedule-suggestions/:manager/generate
-     * Génère une suggestion de planning pour les employés éligibles du manager.
-     * Retourne la suggestion complète avec ses items.
-     */
     static async generate(
         managerGuid: string,
-        payload: IGenerateSuggestionPayload,
+        payload: GenerateSuggestionPayload,
     ): Promise<ApiResponse> {
         try {
             return await apiRequest<any>({
-                path:   `${baseUrl}/${managerGuid}/generate`,
+                path: `${baseUrl}/${managerGuid}/generate`,
                 method: 'POST',
-                data:   payload,
+                data: payload,
             })
         } catch (error: any) {
             console.error('ScheduleSuggestionService.generate', error)
@@ -81,94 +30,103 @@ export default class ScheduleSuggestionService {
         }
     }
 
-    // ── Lecture ───────────────────────────────────────────────────────────────
 
-    /**
-     * GET /schedule-suggestions/:manager/list
-     * Liste les suggestions d'un manager (sans les items).
-     */
-    static async list(managerGuid: string): Promise<ApiResponse> {
-        return await apiRequest<any>({
-            path:   `${baseUrl}/${managerGuid}/list`,
-            method: 'GET',
-        })
-    }
-
-    /**
-     * GET /schedule-suggestions/:guid
-     * Charge une suggestion complète avec ses items (pour la prévisualisation).
-     */
-    static async get(guid: string): Promise<ApiResponse> {
-        return await apiRequest<any>({
-            path:   `${baseUrl}/${guid}`,
-            method: 'GET',
-        })
-    }
-
-    // ── Modification d'une cellule ────────────────────────────────────────────
-
-    /**
-     * PATCH /schedule-suggestions/:guid/item/:itemGuid
-     * Modifie le template suggéré pour un jour donné d'un employé.
-     * Body : { iso: 'YYYY-MM-DD', template_guid: string|null }
-     */
-    static async patchItem(
-        suggestionGuid: string,
-        itemGuid:       string,
-        payload:        IPatchSuggestionItemPayload,
+    static async list(
+        managerGuid: string,
+        filters: ScheduleSuggestionFilters = {},
     ): Promise<ApiResponse> {
-        return await apiRequest<any>({
-            path:   `${baseUrl}/${suggestionGuid}/item/${itemGuid}`,
-            method: 'PATCH',
-            data:   payload,
-        })
+        try {
+            const params = new URLSearchParams()
+
+            if (filters.offset !== undefined) {
+                params.set('offset', String(filters.offset))
+            }
+
+            if (filters.limit !== undefined) {
+                params.set('limit', String(filters.limit))
+            }
+
+            filters.status?.forEach(status => {
+                params.append('status', status)
+            })
+            // if (filters.status?.length) {
+            //     params.set('status', filters.status.join(','))
+            // }
+
+            const query = params.toString()
+
+            return await apiRequest<any>({
+                path: `${baseUrl}/${managerGuid}/list${query ? `?${query}` : ''}`,
+                method: 'GET',
+            })
+        } catch (error: any) {
+            console.error('ScheduleSuggestionService.list', error)
+            throw error
+        }
     }
 
-    // ── Cycle de vie ──────────────────────────────────────────────────────────
+    static async getByGuid(guid: string): Promise<ApiResponse> {
+        try {
+            return await apiRequest<any>({
+                path: `${baseUrl}/${guid}`,
+                method: 'GET',
+            })
+        } catch (error: any) {
+            console.error('ScheduleSuggestionService.getByGuid', error)
+            return error
+        }
+    }
 
-    /**
-     * POST /schedule-suggestions/:guid/approve
-     * Valide la suggestion → crée les ScheduleAssignments en base.
-     */
+    static async patchCell(
+        suggestionGuid: string,
+        itemGuid: string,
+        payload: { iso: string; template_guid: string | null },
+    ): Promise<ApiResponse> {
+        try {
+            return await apiRequest<any>({
+                path: `${baseUrl}/${suggestionGuid}/item/${itemGuid}`,
+                method: 'PATCH',
+                data: payload,
+            })
+        } catch (error: any) {
+            console.error('ScheduleSuggestionService.patchCell', error)
+            return error
+        }
+    }
+
     static async approve(guid: string): Promise<ApiResponse> {
-        return await apiRequest<any>({
-            path:   `${baseUrl}/${guid}/approve`,
-            method: 'POST',
-        })
+        try {
+            return await apiRequest<any>({
+                path: `${baseUrl}/${guid}/approve`,
+                method: 'POST',
+            })
+        } catch (error: any) {
+            console.error('ScheduleSuggestionService.approve', error)
+            return error
+        }
     }
 
-    /**
-     * POST /schedule-suggestions/:guid/reject
-     * Rejette la suggestion — aucun assignment créé.
-     */
     static async reject(guid: string): Promise<ApiResponse> {
-        return await apiRequest<any>({
-            path:   `${baseUrl}/${guid}/reject`,
-            method: 'POST',
-        })
+        try {
+            return await apiRequest<any>({
+                path: `${baseUrl}/${guid}/reject`,
+                method: 'POST',
+            })
+        } catch (error: any) {
+            console.error('ScheduleSuggestionService.reject', error)
+            return error
+        }
     }
 
-    /**
-     * DELETE /schedule-suggestions/:guid
-     * Suppression douce d'une suggestion et de ses items.
-     * Utilisé lors du "Regénérer" pour nettoyer l'ancienne suggestion draft.
-     */
     static async delete(guid: string): Promise<ApiResponse> {
-        return await apiRequest<any>({
-            path:   `${baseUrl}/${guid}`,
-            method: 'DELETE',
-        })
-    }
-
-    /**
-     * DELETE /schedule-suggestions/:guid/item/:itemGuid
-     * Supprime un item de suggestion (retire un employé).
-     * Ne fonctionne que si la suggestion est encore en draft.
-     */
-    static async deleteItem(suggestionGuid: string, itemGuid: string): Promise<ApiResponse> {
-        return await apiRequest<any>({
-            path:   `${baseUrl}/${suggestionGuid}/item/${itemGuid}`,
-            method: 'DELETE',
-        })
+        try {
+            return await apiRequest<any>({
+                path: `${baseUrl}/${guid}`,
+                method: 'DELETE',
+            })
+        } catch (error: any) {
+            console.error('ScheduleSuggestionService.delete', error)
+            return error
+        }
     }
 }

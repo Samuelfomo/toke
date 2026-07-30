@@ -406,26 +406,69 @@ async function loadTemplates() {
 
 const employePreselectionne = ref<TeamEmployee | null>(null);
 
+// async function loadTargets() {
+//   try {
+//     const [usersRes, groupsRes] = await Promise.all([
+//       computed(() => teamStore.employees || []),
+//       GroupService.listGroups(currentUserGuid.value),
+//     ])
+//     const targets: typeof availableTargets.value = []
+//       usersRes.value.forEach((u: TeamEmployee) =>
+//           targets.push({ guid: u.guid, name: u.name, type: 'user' })
+//       )
+//
+//     console.log('usersRes', usersRes.value);
+//
+//     if (groupsRes?.success) {
+//       groupsRes.data.groups?.items?.forEach((g: Group) =>
+//           targets.push({ guid: g.guid!, name: g.name, type: 'group', member_count: g.members?.count })
+//       )
+//     }
+//     availableTargets.value = targets
+//   } catch {}
+// }
+
 async function loadTargets() {
   try {
+    if (!currentUserGuid.value) {
+      throw new Error('GUID du manager indisponible')
+    }
+
     const [usersRes, groupsRes] = await Promise.all([
-      computed(() => teamStore.employees || []),
+      teamStore.loadTeam(currentUserGuid.value, true),
       GroupService.listGroups(currentUserGuid.value),
     ])
-    const targets: typeof availableTargets.value = []
-      usersRes.value.forEach((u: TeamEmployee) =>
-          targets.push({ guid: u.guid, name: u.name, type: 'user' })
-      )
 
-    console.log('usersRes', usersRes.value);
+    const targets: typeof availableTargets.value = []
+
+    // loadTeam retourne directement TeamEmployee[]
+    usersRes?.forEach((user: TeamEmployee) => {
+      targets.push({
+        guid: user.guid,
+        name: user.name,
+        type: 'user',
+      })
+    })
 
     if (groupsRes?.success) {
-      groupsRes.data.groups?.items?.forEach((g: Group) =>
-          targets.push({ guid: g.guid!, name: g.name, type: 'group', member_count: g.members?.count })
-      )
+      groupsRes.data.groups?.items?.forEach((group: Group) => {
+        targets.push({
+          guid: group.guid!,
+          name: group.name,
+          type: 'group',
+          member_count: group.members?.count,
+        })
+      })
     }
+
     availableTargets.value = targets
-  } catch {}
+
+    console.log('Employés rechargés :', usersRes)
+    console.log('Cibles disponibles :', targets)
+  } catch (error) {
+    console.error('Erreur pendant le chargement des cibles :', error)
+    availableTargets.value = []
+  }
 }
 
 // ── Wizard navigation ──────────────────────────────────────────────────────

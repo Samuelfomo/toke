@@ -30,11 +30,17 @@
             />
           </div>
           <!-- Export -->
-          <button class="flex items-center gap-2 px-4 py-2.5 bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold rounded-lg transition-colors shadow-sm">
+          <button
+              @click="handleExportPDF"
+              :disabled="exportLoading || filteredEntries.length === 0"
+              class="flex items-center gap-2 px-4 py-2.5 bg-blue-600 hover:bg-blue-700 disabled:opacity-50 text-white text-sm font-semibold rounded-lg transition-colors shadow-sm"
+          >
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="w-4 h-4">
-              <path stroke-linecap="round" stroke-linejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/>
+              <polyline points="6 9 6 2 18 2 18 9"/>
+              <path d="M6 18H4a2 2 0 01-2-2v-5a2 2 0 012-2h16a2 2 0 012 2v5a2 2 0 01-2 2h-2"/>
+              <rect x="6" y="14" width="12" height="8"/>
             </svg>
-            Exporter
+            {{ exportLoading ? 'Génération...' : 'Exporter PDF' }}
           </button>
         </div>
       </div>
@@ -651,6 +657,8 @@ import EntriesService from '@/service/EntriesService'
 import Header from "@/views/components/header.vue";
 import Footer from "@/views/components/footer.vue";
 
+import { exportPointagesPDF, type PointagesExportOptions } from '@/utils/exports/exportPointagesPDF'
+
 // ─── Types ───────────────────────────────────────────────────────────────────
 
 export interface PeriodAttendanceResponse {
@@ -826,8 +834,10 @@ const getFraudScoreClass = (score: number) => {
 const formatDate = (iso: string) =>
     new Date(iso).toLocaleDateString('fr-FR', { day: '2-digit', month: '2-digit', year: 'numeric' })
 
-const formatTime = (iso: string) =>
-    new Date(iso).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })
+// const formatTime = (iso: string) =>
+//      new Date(iso).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })
+
+const formatTime = (iso: string) => iso.substring(11, 16)
 
 const getInitials = (name?: string) => {
   if (!name) return '?'
@@ -960,6 +970,34 @@ const loadEntries = async () => {
     error.value = err instanceof Error ? err.message : 'Erreur lors du chargement'
   } finally {
     loading.value = false
+  }
+}
+
+const exportLoading = ref(false)
+
+const handleExportPDF = () => {
+  if (exportLoading.value) return
+  exportLoading.value = true
+
+  try {
+    const options: PointagesExportOptions = {
+      entries      : filteredEntries.value,
+      periodFrom   : filterStartDate.value,
+      periodTo     : filterEndDate.value,
+      generatedBy  : userStore.fullName ?? 'Manager',
+      tenantName   : (userStore).tenantName ?? undefined,
+      reportRef    : `ATT-${new Date().toISOString().slice(0,10).replace(/-/g,'')}` +
+          `-${String(Math.floor(Math.random()*999999)).padStart(6,'0')}`,
+      activeFilters: [
+        filterNature.value   ? `Nature : ${filterNature.value}`   : '',
+        filterType.value     ? `Type : ${filterType.value}`       : '',
+        filterPhoto.value    ? `Photo : ${filterPhoto.value}`     : '',
+        filterStatus.value   ? `Statut : ${filterStatus.value}`   : '',
+      ].filter(Boolean).join(' · ') || 'Aucun filtre supplémentaire',
+    }
+    exportPointagesPDF(options)
+  } finally {
+    exportLoading.value = false
   }
 }
 

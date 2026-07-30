@@ -183,8 +183,24 @@ export interface IScheduleAssignmentResponseData {
  * La definition est dans related.assignment_info.active_schedule_assignment.session_template
  */
 export function resolveFullTemplate(
-    a: IScheduleAssignment
+    assignment: IScheduleAssignment,
 ): ISessionTemplateInline | undefined {
-    const info = a.related.assignment_info
-    return info?.active_schedule_assignment?.session_template ?? undefined
+    if (assignment.session_template?.definition) {
+        return assignment.session_template
+    }
+    return assignment.related.assignment_info?.active_schedule_assignment?.session_template
+}
+
+
+/**
+ * Vérifier la période réelle de l’affectation pour chaque date ISO.
+ */
+export function assignmentCoversDate(
+    assignment: IScheduleAssignment,
+    iso: string,
+): boolean {
+    if (!assignment.active) return false
+    if (assignment.start_date > iso) return false
+    return !(assignment.end_date && assignment.end_date < iso);
+
 }

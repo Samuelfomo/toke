@@ -25,11 +25,13 @@ export interface CreateEmployeePayload {
  */
 export interface CreateEmployeeResponse {
     success: boolean;
-    data: {
-        message: string;
-        employee: EmployeeInfo;
-    };
+    data: EmployeeInfo
+    //     {
+    //     message: string;
+    //     employee: EmployeeInfo;
+    // };
 }
+
 
 // ============================================
 // INTERFACES EXISTANTES (inchangées)
@@ -49,6 +51,15 @@ export interface SubordinateResponse {
     job_title?: string;
     employee_code?: string;
     department?: string;
+}
+
+export interface Role {
+    guid: string;
+    tenant: string;
+    name: string;
+    description: string;
+    permissions: string[];
+    system_role: boolean;
 }
 
 export interface EmployeeInfo {
@@ -71,6 +82,7 @@ export interface EmployeeInfo {
         active_schedule_assignment: string | null;
         active_rotation_assignment: string | null;
     };
+    role: Role,
 }
 
 export interface PeriodStats {
@@ -158,6 +170,21 @@ export interface JustificationStatus {
     rejected: number;
 }
 
+export type AbnormalSessionStatus = | 'too_short' | 'too_long' | 'incomplete'
+
+export interface AbnormalSession {
+    employee_guid: string
+    date: string
+    duration_hours: number
+    status: AbnormalSessionStatus
+}
+
+export interface SessionAnalysis {
+    total_sessions: number
+    avg_duration_hours: number
+    abnormal_sessions: AbnormalSession[]
+}
+
 export interface Summary {
     // Membres & présence globale
     total_team_members: number;
@@ -179,6 +206,7 @@ export interface Summary {
     currently_on_pause: number;
     // Objets enrichis
     team_coverage: TeamCoverage;
+    session_analysis: SessionAnalysis
     unexpected_presence: UnexpectedPresence;
     schedule_compliance: ScheduleCompliance;
     justification_status: JustificationStatus;

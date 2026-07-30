@@ -11,6 +11,31 @@ import {
 const baseUrl = '/user';
 
 
+export type OtpDeliveryStatus = 'sent' | 'partial_failure' | 'failed';
+
+export interface OtpChannelDelivery {
+    sent: boolean;
+    skipped?: boolean;
+    error?: string;
+    reason?: string;
+}
+
+export interface OtpDeliveryResult {
+    status: OtpDeliveryStatus;
+    all_sent: boolean;
+    sent_channels: string[];
+    failed_channels: string[];
+    warning: string | null;
+    whatsapp: OtpChannelDelivery;
+    email: OtpChannelDelivery;
+}
+
+export type CreatedEmployeeData = CreateEmployeeResponse['data'] & {
+    otp_delivery?: OtpDeliveryResult;
+    warning?: string | null;
+};
+
+
 export default class UserService {
 
     // ============================================
@@ -19,9 +44,9 @@ export default class UserService {
 
     static async createEmployee(
         payload: CreateEmployeePayload
-    ): Promise<ApiResponse<CreateEmployeeResponse['data']>> {
+    ): Promise<ApiResponse<CreatedEmployeeData>> {
         try {
-            return await apiRequest<ApiResponse<CreateEmployeeResponse['data']>>({
+            return await apiRequest<ApiResponse<CreatedEmployeeData>>({
                 path: `${baseUrl}/`,
                 method: 'POST',
                 data: payload,

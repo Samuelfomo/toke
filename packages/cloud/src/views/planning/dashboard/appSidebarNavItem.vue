@@ -50,7 +50,8 @@ import {
   IconRefresh,
   IconCalendarStats,
   IconArrowsLeftRight,
-  IconCalendarSmile
+  IconCalendarSmile,
+  IconSparkles
 } from '@tabler/icons-vue'
 import type { NavItem } from '../composables/navigation.type'
 
@@ -60,7 +61,8 @@ const ICON_MAP: Record<string, unknown> = {
   IconRefresh,
   IconCalendarStats,
   IconArrowsLeftRight,
-  IconCalendarSmile
+  IconCalendarSmile,
+  IconSparkles
 }
 
 const props = defineProps<{

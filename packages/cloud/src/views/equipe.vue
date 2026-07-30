@@ -36,6 +36,50 @@
           </div>
         </div>
 
+        <div
+            v-if="teamStore.flash"
+            role="status"
+            aria-live="polite"
+            class="mb-6 flex items-start gap-3 rounded-2xl border p-4 shadow-sm"
+            :class="{
+              'bg-emerald-50 border-emerald-200 text-emerald-800': teamStore.flash.type === 'success',
+              'bg-amber-50 border-amber-200 text-amber-900': teamStore.flash.type === 'warning',
+              'bg-rose-50 border-rose-200 text-rose-800': teamStore.flash.type === 'error',
+            }"
+        >
+          <svg
+              width="18"
+              height="18"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+              class="shrink-0 mt-0.5"
+          >
+            <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                :d="teamStore.flash.type === 'success'
+                  ? 'M5 13l4 4L19 7'
+                  : 'M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z'"
+            />
+          </svg>
+
+          <div class="flex-1">
+            <p class="text-sm font-bold">{{ teamStore.flash.title }}</p>
+            <p class="text-sm mt-0.5 opacity-90">{{ teamStore.flash.message }}</p>
+          </div>
+
+          <button
+              type="button"
+              class="text-current opacity-60 hover:opacity-100"
+              aria-label="Fermer la notification"
+              @click="teamStore.clearFlash()"
+          >
+            ×
+          </button>
+        </div>
+
         <!-- ══ KPI Cards ════════════════════════════════════════════ -->
         <div class="grid grid-cols-2 lg:grid-cols-5 gap-4 mb-8">
           <!-- Équipes -->
@@ -988,8 +1032,17 @@ onMounted(async () => {
   employeeStore.initialize()
   try {
     await teamStore.loadTeam(userStore.user?.guid!, true)
-  } catch (e) {
+  } catch (e: any) {
     console.error('❌ Erreur chargement équipe:', e)
+    teamStore.setFlash({
+      type: 'error',
+      title: 'Chargement impossible',
+      message: e?.message ?? 'Impossible de charger la liste des collaborateurs.',
+    })
+  }
+
+  if (teamStore.flash?.type !== 'error') {
+    window.setTimeout(() => teamStore.clearFlash(), 10000)
   }
 })
 

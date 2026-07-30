@@ -90,18 +90,6 @@
   <!-- NAVIGATION -->
   <nav class="bg-white border-b border-gray-200 sticky top-16 z-[99]">
     <div class="max-w-full mx-auto container flex gap-6 relative" ref="navContainerRef">
-
-<!--      <RouterLink-->
-<!--          v-for="(module, index) in modules"-->
-<!--          :key="index"-->
-<!--          :to="module.path"-->
-<!--          class="relative flex items-center gap-2 px-6 py-4 border-b-[3px] border-transparent text-gray-500 text-base font-medium cursor-pointer transition-all duration-200 no-underline hover:text-blue-600 hover:bg-blue-600/5"-->
-<!--          active-class="!text-blue-600 !border-b-blue-500 bg-blue-600/5 font-semibold"-->
-<!--          :class="{-->
-<!--          'text-blue-700 font-semibold [&_.tab-icon]:text-blue-700 [&_.tab-label]:text-blue-700': module.path === '/memoList' && memoStore.hasUnreadMemos-->
-<!--        }"-->
-<!--          @click="setActiveTab(module.path)"-->
-<!--      >-->
       <RouterLink
           v-for="(module, index) in modules"
           :key="index"
@@ -167,12 +155,12 @@ const navContainerRef = ref<HTMLElement | null>(null)
 
 const modules = ref([
   { title: "Statistiques", icon: IconBrandDaysCounter, path: "/dashboard" },
+  { title: "Pointages",    icon: IconCalendarClock,    path: "/pointages" },
   { title: "Equipe",       icon: IconUsers,            path: "/equipe"    },
   { title: "Sites",        icon: IconMapPin,           path: "/sites"     },
   { title: "Memos",        icon: IconEdit,             path: "/memoList"  },
   { title: "Planning",     icon: IconCalendarWeek,     path: "/planning"  },
   { title: "Parametres",   icon: IconSettings,         path: "/setting"   },
-  { title: "Pointages", icon: IconCalendarClock, path: "/pointages" },
 ])
 
 const showUserMenu    = ref(false)

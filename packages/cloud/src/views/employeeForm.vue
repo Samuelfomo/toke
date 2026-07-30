@@ -48,6 +48,29 @@
         </div>
       </div>
 
+      <div
+          v-if="submitError"
+          role="alert"
+          aria-live="assertive"
+          class="mb-6 flex items-start gap-3 p-4 bg-rose-50 border border-rose-200 rounded-2xl shadow-sm"
+      >
+        <svg width="16" height="16" fill="none" stroke="#ef4444" viewBox="0 0 24 24" class="shrink-0 mt-0.5">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+        </svg>
+        <div class="flex-1">
+          <p class="text-sm font-semibold text-rose-800">L'opération a échoué</p>
+          <p class="text-sm text-rose-700 mt-0.5">{{ submitError }}</p>
+        </div>
+        <button
+            type="button"
+            class="text-rose-400 hover:text-rose-700"
+            aria-label="Fermer le message"
+            @click="submitError = ''"
+        >
+          ×
+        </button>
+      </div>
+
       <!-- ══ 3-Column Layout ════════════════════════════════════════ -->
       <div class="grid grid-cols-[260px_1fr_280px] gap-6 items-start">
 
@@ -78,12 +101,12 @@
                     <path v-else-if="step.id === 'section-extra'" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/>
                   </svg>
                 </div>
-<!--                <div-->
-<!--                    :class="activeSection === step.id ? 'bg-[#004AAD] text-white' : 'bg-slate-100 text-slate-500'"-->
-<!--                    class="w-7 h-7 rounded-lg flex items-center justify-center shrink-0 transition-colors"-->
-<!--                >-->
-<!--                  <component :is="step.icon" />-->
-<!--                </div>-->
+                <!--                <div-->
+                <!--                    :class="activeSection === step.id ? 'bg-[#004AAD] text-white' : 'bg-slate-100 text-slate-500'"-->
+                <!--                    class="w-7 h-7 rounded-lg flex items-center justify-center shrink-0 transition-colors"-->
+                <!--                >-->
+                <!--                  <component :is="step.icon" />-->
+                <!--                </div>-->
                 {{ step.label }}
               </button>
             </nav>
@@ -393,14 +416,6 @@
             </div>
           </section>
 
-          <!-- Error global -->
-          <div v-if="submitError" class="flex items-start gap-3 p-4 bg-rose-50 border border-rose-200 rounded-2xl">
-            <svg width="16" height="16" fill="none" stroke="#ef4444" viewBox="0 0 24 24" class="shrink-0 mt-0.5">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
-            </svg>
-            <p class="text-sm text-rose-700">{{ submitError }}</p>
-          </div>
-
         </div>
 
         <!-- ── Col 3 : Panneau Aperçu ────────────────────────────── -->
@@ -506,7 +521,7 @@ import Header from '../views/components/header.vue'
 import Footer from '../views/components/footer.vue'
 import { useUserStore } from '@/stores/userStore'
 import { useTeamStore } from '@/stores/teamStore'
-import UserService from '@/service/UserService'
+import UserService, { type OtpDeliveryResult } from '@/service/UserService'
 
 const router = useRouter()
 const route = useRoute()
@@ -637,6 +652,42 @@ const validate = (): boolean => {
   return valid
 }
 
+const channelLabel = (channel: string): string => {
+  if (channel === 'whatsapp') return 'WhatsApp'
+  if (channel === 'email') return 'email'
+  return channel
+}
+
+const buildCreationFlash = (
+    employeeName: string,
+    delivery?: OtpDeliveryResult,
+) => {
+  if (!delivery || delivery.status === 'sent') {
+    return {
+      type: 'success' as const,
+      title: 'Employé créé',
+      message: `${employeeName} a été créé et son OTP a été envoyé avec succès.`,
+    }
+  }
+
+  const sent = delivery.sent_channels.map(channelLabel).join(' et ')
+  const failed = delivery.failed_channels.map(channelLabel).join(' et ')
+
+  if (delivery.status === 'partial_failure') {
+    return {
+      type: 'warning' as const,
+      title: 'Employé créé — envoi partiel',
+      message: `Le compte de ${employeeName} a été créé. OTP envoyé par ${sent || 'un canal disponible'}, mais échec sur ${failed}.`,
+    }
+  }
+
+  return {
+    type: 'warning' as const,
+    title: 'Employé créé — invitation non envoyée',
+    message: `Le compte de ${employeeName} a été créé, mais l'OTP n'a pu être envoyé par aucun canal. Vous pourrez le régénérer depuis son profil.`,
+  }
+}
+
 // ── Submit ────────────────────────────────────────────────────────────
 const handleSubmit = async () => {
   submitError.value = ''
@@ -671,12 +722,30 @@ const handleSubmit = async () => {
       }
     } else {
       const response = await UserService.createEmployee(payload)
+
       if (response.success && response.data) {
-        console.log('response', response.data)
-        teamStore.addEmployee(response.data)
-        await router.push({name: 'equipe'})
+        const employee = response.data
+        const employeeName =
+            [employee.first_name, employee.last_name].filter(Boolean).join(' ') ||
+            'Le collaborateur'
+
+        teamStore.addEmployee({
+          ...employee,
+          roles: {
+            count: employee.role ? 1 : 0,
+            items: employee.role ? [employee.role] : [],
+          },
+        })
+
+        teamStore.setFlash(
+            buildCreationFlash(employeeName, employee.otp_delivery),
+        )
+
+        await router.push({ name: 'equipe' })
       } else {
-        submitError.value = 'Une erreur est survenue lors de la création.'
+        submitError.value =
+            (response as any)?.error?.message ??
+            'Une erreur est survenue lors de la création.'
       }
     }
   } catch (e: any) {

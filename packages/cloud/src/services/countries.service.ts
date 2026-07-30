@@ -10,9 +10,8 @@ import {
     API_ROUTES,
     createCountrySchema,
     updateCountrySchema,
-    countrySchema,
-    countryListResponseSchema
 } from '@toke/shared';
+
 import { apiService } from './api.service';
 
 export class CountriesService {

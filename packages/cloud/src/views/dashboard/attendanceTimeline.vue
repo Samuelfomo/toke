@@ -4,10 +4,6 @@
     <!-- ── Header ── -->
     <div class="flex items-center justify-between px-5 py-4 border-b border-slate-100">
       <h4 class="text-sm font-bold text-slate-800">Timeline des arrivées</h4>
-<!--      <div>-->
-<!--        <h4 class="text-sm font-bold text-slate-800">Timeline des arrivées</h4>-->
-<!--        <p class="text-xs text-slate-400 mt-0.5">Historique des pointages sur les 7 derniers jours</p>-->
-<!--      </div>-->
       <button
           class="flex items-center gap-1 text-xs font-semibold text-blue-600
                hover:text-blue-800 transition-colors"
@@ -155,7 +151,8 @@ const groupedEntries = computed<TimelineGroup[]>(() => {
         employeeGuid : emp.guid,
         name         : emp.name,
         clockIn      : detail.clock_in_time
-            ? detail.clock_in_time.slice(0, 5)
+            ? formatTimeISO(detail.clock_in_time)
+                // ? detail.clock_in_time.slice(0, 5)
             : null,
         status       : detail.status,
         delayMinutes : detail.delay_minutes ?? null,
@@ -188,6 +185,17 @@ const formatGroupDate = (iso: string) => {
   if (iso === today) return 'Aujourd\'hui'
   if (iso === yest)  return 'Hier'
   return d.toLocaleDateString('fr-FR', { day: '2-digit', month: 'short' }).toUpperCase()
+}
+
+
+function formatTimeISO(value?: string | null): string {
+  if (!value) return '—'
+
+  const match = value.match(/(?:T|^)(\d{2}):(\d{2})/)
+
+  if (!match) return '—'
+
+  return `${match[1]}:${match[2]}`
 }
 
 // ── Classes dynamiques ────────────────────────────────────────────────────────
