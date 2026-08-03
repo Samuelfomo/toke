@@ -1,13 +1,33 @@
 import { z } from 'zod';
 
-const dayKeySchema = z.enum(['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']);
+const dayKeySchema = z.enum([
+  'Mon',
+  'Tue',
+  'Wed',
+  'Thu',
+  'Fri',
+  'Sat',
+  'Sun',
+]);
 
 const solverTypeSchema = z.enum(['GREEDY', 'ORTOOLS']);
-const weeklyLeaveModeSchema = z.enum(['NONE', 'PER_EMPLOYEE', 'TEAM_ROTATION']);
-const guardTeamModeSchema = z.enum(['DAILY_FLEXIBLE', 'WEEKLY_POOL']);
-const guardTeamSelectionModeSchema = z.enum(['ROTATION_ORDER', 'OPTIMIZED']);
+const weeklyLeaveModeSchema = z.enum([
+  'NONE',
+  'PER_EMPLOYEE',
+  'TEAM_ROTATION',
+]);
+const guardTeamModeSchema = z.enum([
+  'DAILY_FLEXIBLE',
+  'WEEKLY_POOL',
+]);
+const guardTeamSelectionModeSchema = z.enum([
+  'ROTATION_ORDER',
+  'OPTIMIZED',
+]);
 
-const isoDateSchema = z.string().regex(/^\d{4}-\d{2}-\d{2}$/, 'Expected a YYYY-MM-DD date');
+const isoDateSchema = z
+  .string()
+  .regex(/^\d{4}-\d{2}-\d{2}$/, 'Expected a YYYY-MM-DD date');
 
 const baseObject = z.object({
   name: z.string().trim().min(2).max(128),
@@ -18,7 +38,13 @@ const baseObject = z.object({
 
   // null disables this rule. Plateau uses null because employees who are not
   // selected for weekly leave may work seven consecutive days or more.
-  max_consecutive_work_days: z.number().int().min(1).max(366).nullable().default(6),
+  max_consecutive_work_days: z
+    .number()
+    .int()
+    .min(1)
+    .max(366)
+    .nullable()
+    .default(6),
 
   max_weekly_minutes: z.number().int().min(1).max(10080).nullable().optional(),
   min_rest_minutes_between_shifts: z.number().int().min(0).max(2880).default(660),
@@ -54,9 +80,13 @@ const baseObject = z.object({
   fallback_to_greedy: z.boolean().default(true),
 });
 
-function validatePolicy(data: z.infer<typeof baseObject>, ctx: z.RefinementCtx): void {
+function validatePolicy(
+  data: z.infer<typeof baseObject>,
+  ctx: z.RefinementCtx,
+): void {
   const requiresOrTools =
-    data.weekly_leave_mode === 'TEAM_ROTATION' || data.guard_team_mode === 'WEEKLY_POOL';
+    data.weekly_leave_mode === 'TEAM_ROTATION' ||
+    data.guard_team_mode === 'WEEKLY_POOL';
 
   if (data.weekly_leave_mode === 'TEAM_ROTATION') {
     if (!data.weekly_leave_rotation_anchor_date) {
@@ -98,11 +128,14 @@ function validatePolicy(data: z.infer<typeof baseObject>, ctx: z.RefinementCtx):
   }
 }
 
-export const createPlanningSuggestionConfigSchema = baseObject.superRefine(validatePolicy);
+export const createPlanningSuggestionConfigSchema =
+  baseObject.superRefine(validatePolicy);
 
-export const updatePlanningSuggestionConfigSchema = baseObject.partial();
+export const updatePlanningSuggestionConfigSchema =
+  baseObject.partial();
 
-export const planningSuggestionConfigGuidSchema = z.string().trim().min(1).max(255);
+export const planningSuggestionConfigGuidSchema =
+  z.string().trim().min(1).max(255);
 
 export function validatePlanningSuggestionConfigCreation(data: unknown) {
   const result = createPlanningSuggestionConfigSchema.safeParse(data);
@@ -129,7 +162,9 @@ export function validatePlanningSuggestionConfigUpdate(data: unknown) {
 export function validatePlanningSuggestionConfigGuid(data: unknown) {
   const result = planningSuggestionConfigGuidSchema.safeParse(data);
   if (!result.success) {
-    const error: any = new Error('Invalid planning suggestion configuration GUID');
+    const error: any = new Error(
+      'Invalid planning suggestion configuration GUID',
+    );
     error.code = 'PLANNING_SUGGESTION_CONFIG_INVALID_GUID';
     throw error;
   }

@@ -254,7 +254,9 @@ export default class PlanningSuggestionConfig extends PlanningSuggestionConfigMo
     return this;
   }
 
-  setGuardTeamSelectionMode(value: PlanningGuardTeamSelectionMode): this {
+  setGuardTeamSelectionMode(
+    value: PlanningGuardTeamSelectionMode,
+  ): this {
     this.guard_team_selection_mode = value;
     return this;
   }
@@ -284,17 +286,23 @@ export default class PlanningSuggestionConfig extends PlanningSuggestionConfigMo
     return this;
   }
 
-  setSolverType(value: PlanningSolverType): this {
+  setSolverType(
+    value: PlanningSolverType,
+  ): this {
     this.solver_type = value;
     return this;
   }
 
-  setSolverTimeoutSeconds(value: number): this {
+  setSolverTimeoutSeconds(
+    value: number,
+  ): this {
     this.solver_timeout_seconds = value;
     return this;
   }
 
-  setFallbackToGreedy(value: boolean): this {
+  setFallbackToGreedy(
+    value: boolean,
+  ): this {
     this.fallback_to_greedy = value;
     return this;
   }
@@ -355,30 +363,42 @@ export default class PlanningSuggestionConfig extends PlanningSuggestionConfigMo
         max_consecutive_guards: this.max_consecutive_guards,
         rest_after_guard_required: this.rest_after_guard_required,
         post_guard_rest_days: this.post_guard_rest_days,
-        max_resting_employees_per_day: this.max_resting_employees_per_day ?? null,
+        max_resting_employees_per_day:
+          this.max_resting_employees_per_day ?? null,
         weekly_leave_policy: {
           mode: this.weekly_leave_mode,
-          employees_per_week: this.weekly_leave_employees_per_week,
+          employees_per_week:
+            this.weekly_leave_employees_per_week,
           allowed_days: this.weekly_leave_allowed_days,
-          rotation_anchor_date: this.weekly_leave_rotation_anchor_date ?? null,
-          complete_weeks_only: this.weekly_leave_complete_weeks_only,
-          post_guard_rest_counts_as_leave: this.post_guard_rest_counts_as_weekly_leave,
+          rotation_anchor_date:
+            this.weekly_leave_rotation_anchor_date ?? null,
+          complete_weeks_only:
+            this.weekly_leave_complete_weeks_only,
+          post_guard_rest_counts_as_leave:
+            this.post_guard_rest_counts_as_weekly_leave,
         },
         guard_team_policy: {
           mode: this.guard_team_mode,
-          employees_per_week: this.guard_team_employees_per_week,
-          selection_mode: this.guard_team_selection_mode,
-          rotation_anchor_date: this.guard_team_rotation_anchor_date ?? null,
-          complete_weeks_only: this.guard_team_complete_weeks_only,
-          require_participation: this.guard_team_require_participation,
+          employees_per_week:
+            this.guard_team_employees_per_week,
+          selection_mode:
+            this.guard_team_selection_mode,
+          rotation_anchor_date:
+            this.guard_team_rotation_anchor_date ?? null,
+          complete_weeks_only:
+            this.guard_team_complete_weeks_only,
+          require_participation:
+            this.guard_team_require_participation,
         },
         fairness_window_weeks: this.fairness_window_weeks,
         strict_coverage: this.strict_coverage,
       },
       solver: {
         type: this.solver_type,
-        timeout_seconds: this.solver_timeout_seconds,
-        fallback_to_greedy: this.fallback_to_greedy,
+        timeout_seconds:
+          this.solver_timeout_seconds,
+        fallback_to_greedy:
+          this.fallback_to_greedy,
       },
       created_by: createdBy
         ? {
@@ -399,33 +419,50 @@ export default class PlanningSuggestionConfig extends PlanningSuggestionConfigMo
     this.active = data.active ?? false;
     this.min_rest_days_per_week = data.min_rest_days_per_week ?? 1;
     this.max_consecutive_work_days =
-      data.max_consecutive_work_days === undefined ? 6 : data.max_consecutive_work_days;
+      data.max_consecutive_work_days === undefined
+        ? 6
+        : data.max_consecutive_work_days;
     this.max_weekly_minutes = data.max_weekly_minutes ?? null;
     this.min_rest_minutes_between_shifts = data.min_rest_minutes_between_shifts ?? 660;
     this.max_consecutive_guards = data.max_consecutive_guards ?? 1;
     this.rest_after_guard_required = data.rest_after_guard_required ?? true;
     this.post_guard_rest_days = data.post_guard_rest_days ?? 0;
-    this.max_resting_employees_per_day = data.max_resting_employees_per_day ?? null;
-    this.weekly_leave_mode = data.weekly_leave_mode ?? 'PER_EMPLOYEE';
-    this.weekly_leave_employees_per_week = data.weekly_leave_employees_per_week ?? 1;
-    this.weekly_leave_allowed_days = Array.isArray(data.weekly_leave_allowed_days)
-      ? data.weekly_leave_allowed_days
-      : ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
-    this.weekly_leave_rotation_anchor_date = data.weekly_leave_rotation_anchor_date ?? null;
-    this.weekly_leave_complete_weeks_only = data.weekly_leave_complete_weeks_only ?? true;
+    this.max_resting_employees_per_day =
+      data.max_resting_employees_per_day ?? null;
+    this.weekly_leave_mode =
+      data.weekly_leave_mode ?? 'PER_EMPLOYEE';
+    this.weekly_leave_employees_per_week =
+      data.weekly_leave_employees_per_week ?? 1;
+    this.weekly_leave_allowed_days =
+      Array.isArray(data.weekly_leave_allowed_days)
+        ? data.weekly_leave_allowed_days
+        : ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+    this.weekly_leave_rotation_anchor_date =
+      data.weekly_leave_rotation_anchor_date ?? null;
+    this.weekly_leave_complete_weeks_only =
+      data.weekly_leave_complete_weeks_only ?? true;
     this.post_guard_rest_counts_as_weekly_leave =
       data.post_guard_rest_counts_as_weekly_leave ?? false;
-    this.guard_team_mode = data.guard_team_mode ?? 'DAILY_FLEXIBLE';
-    this.guard_team_employees_per_week = data.guard_team_employees_per_week ?? 1;
-    this.guard_team_selection_mode = data.guard_team_selection_mode ?? 'ROTATION_ORDER';
-    this.guard_team_rotation_anchor_date = data.guard_team_rotation_anchor_date ?? null;
-    this.guard_team_complete_weeks_only = data.guard_team_complete_weeks_only ?? true;
-    this.guard_team_require_participation = data.guard_team_require_participation ?? true;
+    this.guard_team_mode =
+      data.guard_team_mode ?? 'DAILY_FLEXIBLE';
+    this.guard_team_employees_per_week =
+      data.guard_team_employees_per_week ?? 1;
+    this.guard_team_selection_mode =
+      data.guard_team_selection_mode ?? 'ROTATION_ORDER';
+    this.guard_team_rotation_anchor_date =
+      data.guard_team_rotation_anchor_date ?? null;
+    this.guard_team_complete_weeks_only =
+      data.guard_team_complete_weeks_only ?? true;
+    this.guard_team_require_participation =
+      data.guard_team_require_participation ?? true;
     this.fairness_window_weeks = data.fairness_window_weeks ?? 8;
     this.strict_coverage = data.strict_coverage ?? true;
-    this.solver_type = data.solver_type ?? 'GREEDY';
-    this.solver_timeout_seconds = data.solver_timeout_seconds ?? 20;
-    this.fallback_to_greedy = data.fallback_to_greedy ?? true;
+    this.solver_type =
+      data.solver_type ?? 'GREEDY';
+    this.solver_timeout_seconds =
+      data.solver_timeout_seconds ?? 20;
+    this.fallback_to_greedy =
+      data.fallback_to_greedy ?? true;
     this.created_by = data.created_by;
     this.deleted_at = data.deleted_at ?? null;
     this.created_at = data.created_at;

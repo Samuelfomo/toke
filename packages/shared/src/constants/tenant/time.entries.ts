@@ -1,5 +1,3 @@
-// constants/time.entries.ts
-
 export enum PointageType {
   CLOCK_IN = 'clock_in',
   CLOCK_OUT = 'clock_out',
@@ -23,6 +21,10 @@ export const TIME_ENTRIES_VALIDATION = {
   GUID: {
     MIN_LENGTH: 1,
     MAX_LENGTH: 128,
+  },
+  EXTERNAL_ID: {
+    MIN_LENGTH: 26,
+    MAX_LENGTH: 26,
   },
   SESSION: {
     MIN: 1,
@@ -101,6 +103,9 @@ export const TIME_ENTRIES_DEFAULTS = {
 
 export const TIME_ENTRIES_CODES = {
   TIME_ENTRY_ALREADY_EXISTS: 'time_entry_already_exists',
+  EXTERNAL_ID_REQUIRED: 'external_id_required',
+  EXTERNAL_ID_INVALID: 'external_id_invalid',
+  EXTERNAL_ID_CONFLICT: 'external_id_conflict',
   TIME_ENTRY_NOT_FOUND: 'time_entry_not_found',
   INVALID_GUID: 'invalid_guid',
   SESSION_REQUIRED: 'session_required',
@@ -175,6 +180,10 @@ export const TIME_ENTRIES_CODES = {
 const TIME_ENTRIES_LABEL = 'Time Entry';
 export const TIME_ENTRIES_ERRORS = {
   TIME_ENTRY: TIME_ENTRIES_LABEL,
+
+  EXTERNAL_ID_REQUIRED: `${TIME_ENTRIES_LABEL} external_id is required`,
+  EXTERNAL_ID_INVALID: 'external_id must be a valid 26-character ULID',
+  EXTERNAL_ID_CONFLICT: 'external_id is already associated with a different pointage',
 
   SESSION_REQUIRED: `${TIME_ENTRIES_LABEL} session is required`,
   SESSION_INVALID: `Session ID must be between ${TIME_ENTRIES_VALIDATION.SESSION.MIN} and ${TIME_ENTRIES_VALIDATION.SESSION.MAX}`,
@@ -261,6 +270,7 @@ export const TIME_ENTRIES_ERRORS = {
 
 export const TIME_ENTRIES_MESSAGES = {
   CREATED_SUCCESSFULLY: `${TIME_ENTRIES_LABEL} created successfully`,
+  IDEMPOTENT_REPLAY: `${TIME_ENTRIES_LABEL} already synchronized`,
   DELETED_SUCCESSFULLY: `${TIME_ENTRIES_LABEL} deleted successfully`,
   CLOCK_IN_SUCCESS: `${TIME_ENTRIES_LABEL} clock-in successful`,
 };

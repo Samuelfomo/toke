@@ -9,6 +9,7 @@ import {
 import { Op } from 'sequelize';
 
 import BaseModel from '../database/db.base.js';
+import { resolveTimeEntryExternalId, type TimeEntryExternalIdContext, } from '../../utils/time.entry.external-id.js';
 import { tableName } from '../../utils/response.model.js';
 
 export default class TimeEntriesModel extends BaseModel {
@@ -16,6 +17,7 @@ export default class TimeEntriesModel extends BaseModel {
     tableName: tableName.TIME_ENTRIES,
     id: 'id',
     guid: 'guid',
+    external_id: 'external_id',
     session: 'session',
     user: 'user',
     site: 'site',
@@ -46,6 +48,7 @@ export default class TimeEntriesModel extends BaseModel {
 
   protected id?: number;
   protected guid?: string;
+  protected external_id?: string;
   protected session?: number;
   protected user?: number;
   protected device?: number;
@@ -78,6 +81,20 @@ export default class TimeEntriesModel extends BaseModel {
     super();
   }
 
+  protected getExternalIdContext(): TimeEntryExternalIdContext {
+    return {
+      user: this.user,
+      local_id: this.local_id,
+      device: this.device,
+      site: this.site,
+      qr_code: this.qr_code,
+      pointage_type: this.pointage_type,
+      clocked_at: this.clocked_at,
+      latitude: this.latitude,
+      longitude: this.longitude,
+    };
+  }
+
   // === 1. RECHERCHES DE BASE ===
 
   protected async find(id: number): Promise<any> {
@@ -86,6 +103,13 @@ export default class TimeEntriesModel extends BaseModel {
 
   protected async findByGuid(guid: string): Promise<any> {
     return await this.findOne(this.db.tableName, { [this.db.guid]: guid });
+  }
+
+  protected async findByExternalId(user: number, external_id: string): Promise<any> {
+    return await this.findOne(this.db.tableName, {
+      [this.db.user]: user,
+      [this.db.external_id]: external_id,
+    });
   }
 
   protected async listAll(
@@ -575,37 +599,69 @@ export default class TimeEntriesModel extends BaseModel {
     let conflicts = 0;
 
     for (const entryData of entries_array) {
+      let externalId: string | undefined;
+
       try {
-        // Vérifier si existe déjà (conflit)
-        const existing = await this.findByLocalId(user, entryData.local_id);
+        externalId = resolveTimeEntryExternalId(entryData.external_id, {
+          user,
+          local_id: entryData.local_id,
+          device: entryData.device,
+          site: entryData.site,
+          qr_code: entryData.qr_code,
+          pointage_type: entryData.pointage_type,
+          clocked_at: entryData.clocked_at,
+          latitude: entryData.latitude,
+          longitude: entryData.longitude,
+        });
+
+        // An identical retry is a successful idempotent replay, not a new entry.
+        const existing = await this.findByExternalId(user, externalId);
 
         if (existing) {
           conflicts++;
           results.push({
+            external_id: externalId,
             local_id: entryData.local_id,
-            status: 'conflict',
-            message: 'Entry already exists',
+            status: 'already_synchronized',
+            idempotent_replay: true,
             existing_id: existing.id,
           });
           continue;
         }
 
-        // Créer l'entrée
         const newEntry = await this.insertOne(this.db.tableName, {
           ...entryData,
+          [this.db.external_id]: externalId,
           [this.db.user]: user,
           [this.db.created_offline]: true,
         });
 
         success++;
         results.push({
+          external_id: externalId,
           local_id: entryData.local_id,
           status: 'success',
-          entry_id: newEntry.id,
+          entry_id: typeof newEntry === 'object' ? newEntry.id : newEntry,
         });
       } catch (error: any) {
+        if (error?.name === 'SequelizeUniqueConstraintError' && externalId) {
+          const existing = await this.findByExternalId(user, externalId);
+          if (existing) {
+            conflicts++;
+            results.push({
+              external_id: externalId,
+              local_id: entryData.local_id,
+              status: 'already_synchronized',
+              idempotent_replay: true,
+              existing_id: existing.id,
+            });
+            continue;
+          }
+        }
+
         errors++;
         results.push({
+          external_id: externalId || null,
           local_id: entryData.local_id,
           status: 'error',
           message: error.message,
@@ -657,6 +713,7 @@ export default class TimeEntriesModel extends BaseModel {
 
     const lastID = await this.insertOne(this.db.tableName, {
       [this.db.guid]: guid,
+      [this.db.external_id]: this.external_id,
       [this.db.session]: this.session,
       [this.db.user]: this.user,
       [this.db.device]: this.device,
@@ -723,6 +780,8 @@ export default class TimeEntriesModel extends BaseModel {
   }
 
   protected async createWaypoint(): Promise<void> {
+    this.validateExternalIdForCreation();
+
     const guid = await this.randomGuidGenerator(this.db.tableName);
     if (!guid) {
       throw Error(TIME_ENTRIES_ERRORS?.GUID_GENERATION_FAILED);
@@ -732,6 +791,7 @@ export default class TimeEntriesModel extends BaseModel {
 
     const lastID = await this.insertOne(this.db.tableName, {
       [this.db.guid]: guid,
+      [this.db.external_id]: this.external_id,
       [this.db.user]: this.user,
       [this.db.device]: this.device,
       [this.db.site]: this.site ?? null,
@@ -762,7 +822,14 @@ export default class TimeEntriesModel extends BaseModel {
 
   // === VALIDATION ===
 
+  private validateExternalIdForCreation(): void {
+    this.external_id = resolveTimeEntryExternalId(this.external_id, this.getExternalIdContext());
+  }
+
   private async validate(): Promise<void> {
+    if (!this.id) {
+      this.validateExternalIdForCreation();
+    }
     // Validation champs obligatoires
     if (!this.session) {
       throw new Error(TIME_ENTRIES_ERRORS.SESSION_REQUIRED);

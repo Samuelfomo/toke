@@ -3,13 +3,22 @@ import { TimezoneConfigUtils } from '@toke/shared';
 import BaseModel from '../database/db.base.js';
 import { tableName } from '../../utils/response.model.js';
 
-export type PlanningSolverType = 'GREEDY' | 'ORTOOLS';
+export type PlanningSolverType =
+  | 'GREEDY'
+  | 'ORTOOLS';
 
-export type PlanningWeeklyLeaveMode = 'NONE' | 'PER_EMPLOYEE' | 'TEAM_ROTATION';
+export type PlanningWeeklyLeaveMode =
+  | 'NONE'
+  | 'PER_EMPLOYEE'
+  | 'TEAM_ROTATION';
 
-export type PlanningGuardTeamMode = 'DAILY_FLEXIBLE' | 'WEEKLY_POOL';
+export type PlanningGuardTeamMode =
+  | 'DAILY_FLEXIBLE'
+  | 'WEEKLY_POOL';
 
-export type PlanningGuardTeamSelectionMode = 'ROTATION_ORDER' | 'OPTIMIZED';
+export type PlanningGuardTeamSelectionMode =
+  | 'ROTATION_ORDER'
+  | 'OPTIMIZED';
 
 export default class PlanningSuggestionConfigModel extends BaseModel {
   public readonly db = {
@@ -26,24 +35,37 @@ export default class PlanningSuggestionConfigModel extends BaseModel {
     max_consecutive_guards: 'max_consecutive_guards',
     rest_after_guard_required: 'rest_after_guard_required',
     post_guard_rest_days: 'post_guard_rest_days',
-    max_resting_employees_per_day: 'max_resting_employees_per_day',
+    max_resting_employees_per_day:
+      'max_resting_employees_per_day',
     weekly_leave_mode: 'weekly_leave_mode',
-    weekly_leave_employees_per_week: 'weekly_leave_employees_per_week',
-    weekly_leave_allowed_days: 'weekly_leave_allowed_days',
-    weekly_leave_rotation_anchor_date: 'weekly_leave_rotation_anchor_date',
-    weekly_leave_complete_weeks_only: 'weekly_leave_complete_weeks_only',
-    post_guard_rest_counts_as_weekly_leave: 'post_guard_rest_counts_as_weekly_leave',
+    weekly_leave_employees_per_week:
+      'weekly_leave_employees_per_week',
+    weekly_leave_allowed_days:
+      'weekly_leave_allowed_days',
+    weekly_leave_rotation_anchor_date:
+      'weekly_leave_rotation_anchor_date',
+    weekly_leave_complete_weeks_only:
+      'weekly_leave_complete_weeks_only',
+    post_guard_rest_counts_as_weekly_leave:
+      'post_guard_rest_counts_as_weekly_leave',
     guard_team_mode: 'guard_team_mode',
-    guard_team_employees_per_week: 'guard_team_employees_per_week',
-    guard_team_selection_mode: 'guard_team_selection_mode',
-    guard_team_rotation_anchor_date: 'guard_team_rotation_anchor_date',
-    guard_team_complete_weeks_only: 'guard_team_complete_weeks_only',
-    guard_team_require_participation: 'guard_team_require_participation',
+    guard_team_employees_per_week:
+      'guard_team_employees_per_week',
+    guard_team_selection_mode:
+      'guard_team_selection_mode',
+    guard_team_rotation_anchor_date:
+      'guard_team_rotation_anchor_date',
+    guard_team_complete_weeks_only:
+      'guard_team_complete_weeks_only',
+    guard_team_require_participation:
+      'guard_team_require_participation',
     fairness_window_weeks: 'fairness_window_weeks',
     strict_coverage: 'strict_coverage',
     solver_type: 'solver_type',
-    solver_timeout_seconds: 'solver_timeout_seconds',
-    fallback_to_greedy: 'fallback_to_greedy',
+    solver_timeout_seconds:
+      'solver_timeout_seconds',
+    fallback_to_greedy:
+      'fallback_to_greedy',
     created_by: 'created_by',
     deleted_at: 'deleted_at',
     created_at: 'created_at',
@@ -65,21 +87,27 @@ export default class PlanningSuggestionConfigModel extends BaseModel {
   protected max_resting_employees_per_day?: number | null;
   protected weekly_leave_mode: PlanningWeeklyLeaveMode = 'PER_EMPLOYEE';
   protected weekly_leave_employees_per_week: number = 1;
-  protected weekly_leave_allowed_days: string[] = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+  protected weekly_leave_allowed_days: string[] = [
+    'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun',
+  ];
   protected weekly_leave_rotation_anchor_date?: string | null;
   protected weekly_leave_complete_weeks_only: boolean = true;
   protected post_guard_rest_counts_as_weekly_leave: boolean = false;
   protected guard_team_mode: PlanningGuardTeamMode = 'DAILY_FLEXIBLE';
   protected guard_team_employees_per_week: number = 1;
-  protected guard_team_selection_mode: PlanningGuardTeamSelectionMode = 'ROTATION_ORDER';
+  protected guard_team_selection_mode:
+    PlanningGuardTeamSelectionMode = 'ROTATION_ORDER';
   protected guard_team_rotation_anchor_date?: string | null;
   protected guard_team_complete_weeks_only: boolean = true;
   protected guard_team_require_participation: boolean = true;
   protected fairness_window_weeks: number = 8;
   protected strict_coverage: boolean = true;
-  protected solver_type: PlanningSolverType = 'GREEDY';
-  protected solver_timeout_seconds: number = 20;
-  protected fallback_to_greedy: boolean = true;
+  protected solver_type:
+    PlanningSolverType = 'GREEDY';
+  protected solver_timeout_seconds:
+    number = 20;
+  protected fallback_to_greedy:
+    boolean = true;
   protected created_by?: number;
   protected deleted_at?: Date | null;
   protected created_at?: Date;
@@ -145,24 +173,38 @@ export default class PlanningSuggestionConfigModel extends BaseModel {
       [this.db.max_consecutive_guards]: this.max_consecutive_guards,
       [this.db.rest_after_guard_required]: this.rest_after_guard_required,
       [this.db.post_guard_rest_days]: this.post_guard_rest_days,
-      [this.db.max_resting_employees_per_day]: this.max_resting_employees_per_day ?? null,
+      [this.db.max_resting_employees_per_day]:
+        this.max_resting_employees_per_day ?? null,
       [this.db.weekly_leave_mode]: this.weekly_leave_mode,
-      [this.db.weekly_leave_employees_per_week]: this.weekly_leave_employees_per_week,
-      [this.db.weekly_leave_allowed_days]: this.weekly_leave_allowed_days,
-      [this.db.weekly_leave_rotation_anchor_date]: this.weekly_leave_rotation_anchor_date ?? null,
-      [this.db.weekly_leave_complete_weeks_only]: this.weekly_leave_complete_weeks_only,
-      [this.db.post_guard_rest_counts_as_weekly_leave]: this.post_guard_rest_counts_as_weekly_leave,
+      [this.db.weekly_leave_employees_per_week]:
+        this.weekly_leave_employees_per_week,
+      [this.db.weekly_leave_allowed_days]:
+        this.weekly_leave_allowed_days,
+      [this.db.weekly_leave_rotation_anchor_date]:
+        this.weekly_leave_rotation_anchor_date ?? null,
+      [this.db.weekly_leave_complete_weeks_only]:
+        this.weekly_leave_complete_weeks_only,
+      [this.db.post_guard_rest_counts_as_weekly_leave]:
+        this.post_guard_rest_counts_as_weekly_leave,
       [this.db.guard_team_mode]: this.guard_team_mode,
-      [this.db.guard_team_employees_per_week]: this.guard_team_employees_per_week,
-      [this.db.guard_team_selection_mode]: this.guard_team_selection_mode,
-      [this.db.guard_team_rotation_anchor_date]: this.guard_team_rotation_anchor_date ?? null,
-      [this.db.guard_team_complete_weeks_only]: this.guard_team_complete_weeks_only,
-      [this.db.guard_team_require_participation]: this.guard_team_require_participation,
+      [this.db.guard_team_employees_per_week]:
+        this.guard_team_employees_per_week,
+      [this.db.guard_team_selection_mode]:
+        this.guard_team_selection_mode,
+      [this.db.guard_team_rotation_anchor_date]:
+        this.guard_team_rotation_anchor_date ?? null,
+      [this.db.guard_team_complete_weeks_only]:
+        this.guard_team_complete_weeks_only,
+      [this.db.guard_team_require_participation]:
+        this.guard_team_require_participation,
       [this.db.fairness_window_weeks]: this.fairness_window_weeks,
       [this.db.strict_coverage]: this.strict_coverage,
-      [this.db.solver_type]: this.solver_type,
-      [this.db.solver_timeout_seconds]: this.solver_timeout_seconds,
-      [this.db.fallback_to_greedy]: this.fallback_to_greedy,
+      [this.db.solver_type]:
+        this.solver_type,
+      [this.db.solver_timeout_seconds]:
+        this.solver_timeout_seconds,
+      [this.db.fallback_to_greedy]:
+        this.fallback_to_greedy,
       [this.db.created_by]: this.created_by,
     });
 
@@ -201,25 +243,38 @@ export default class PlanningSuggestionConfigModel extends BaseModel {
         [this.db.max_consecutive_guards]: this.max_consecutive_guards,
         [this.db.rest_after_guard_required]: this.rest_after_guard_required,
         [this.db.post_guard_rest_days]: this.post_guard_rest_days,
-        [this.db.max_resting_employees_per_day]: this.max_resting_employees_per_day ?? null,
+        [this.db.max_resting_employees_per_day]:
+          this.max_resting_employees_per_day ?? null,
         [this.db.weekly_leave_mode]: this.weekly_leave_mode,
-        [this.db.weekly_leave_employees_per_week]: this.weekly_leave_employees_per_week,
-        [this.db.weekly_leave_allowed_days]: this.weekly_leave_allowed_days,
-        [this.db.weekly_leave_rotation_anchor_date]: this.weekly_leave_rotation_anchor_date ?? null,
-        [this.db.weekly_leave_complete_weeks_only]: this.weekly_leave_complete_weeks_only,
+        [this.db.weekly_leave_employees_per_week]:
+          this.weekly_leave_employees_per_week,
+        [this.db.weekly_leave_allowed_days]:
+          this.weekly_leave_allowed_days,
+        [this.db.weekly_leave_rotation_anchor_date]:
+          this.weekly_leave_rotation_anchor_date ?? null,
+        [this.db.weekly_leave_complete_weeks_only]:
+          this.weekly_leave_complete_weeks_only,
         [this.db.post_guard_rest_counts_as_weekly_leave]:
           this.post_guard_rest_counts_as_weekly_leave,
         [this.db.guard_team_mode]: this.guard_team_mode,
-        [this.db.guard_team_employees_per_week]: this.guard_team_employees_per_week,
-        [this.db.guard_team_selection_mode]: this.guard_team_selection_mode,
-        [this.db.guard_team_rotation_anchor_date]: this.guard_team_rotation_anchor_date ?? null,
-        [this.db.guard_team_complete_weeks_only]: this.guard_team_complete_weeks_only,
-        [this.db.guard_team_require_participation]: this.guard_team_require_participation,
+        [this.db.guard_team_employees_per_week]:
+          this.guard_team_employees_per_week,
+        [this.db.guard_team_selection_mode]:
+          this.guard_team_selection_mode,
+        [this.db.guard_team_rotation_anchor_date]:
+          this.guard_team_rotation_anchor_date ?? null,
+        [this.db.guard_team_complete_weeks_only]:
+          this.guard_team_complete_weeks_only,
+        [this.db.guard_team_require_participation]:
+          this.guard_team_require_participation,
         [this.db.fairness_window_weeks]: this.fairness_window_weeks,
         [this.db.strict_coverage]: this.strict_coverage,
-        [this.db.solver_type]: this.solver_type,
-        [this.db.solver_timeout_seconds]: this.solver_timeout_seconds,
-        [this.db.fallback_to_greedy]: this.fallback_to_greedy,
+        [this.db.solver_type]:
+          this.solver_type,
+        [this.db.solver_timeout_seconds]:
+          this.solver_timeout_seconds,
+        [this.db.fallback_to_greedy]:
+          this.fallback_to_greedy,
       },
       { [this.db.id]: this.id },
     );
@@ -268,9 +323,12 @@ export default class PlanningSuggestionConfigModel extends BaseModel {
     if (
       this.max_consecutive_work_days !== null &&
       this.max_consecutive_work_days !== undefined &&
-      (this.max_consecutive_work_days < 1 || this.max_consecutive_work_days > 366)
+      (this.max_consecutive_work_days < 1 ||
+        this.max_consecutive_work_days > 366)
     ) {
-      throw new Error('max_consecutive_work_days must be null or between 1 and 366');
+      throw new Error(
+        'max_consecutive_work_days must be null or between 1 and 366',
+      );
     }
     if (this.max_weekly_minutes !== null && this.max_weekly_minutes !== undefined) {
       if (this.max_weekly_minutes < 1 || this.max_weekly_minutes > 10080) {
@@ -283,72 +341,126 @@ export default class PlanningSuggestionConfigModel extends BaseModel {
     if (this.max_consecutive_guards < 0) {
       throw new Error('max_consecutive_guards cannot be negative');
     }
-    if (this.post_guard_rest_days < 0 || this.post_guard_rest_days > 31) {
-      throw new Error('post_guard_rest_days must be between 0 and 31');
+    if (
+      this.post_guard_rest_days < 0 ||
+      this.post_guard_rest_days > 31
+    ) {
+      throw new Error(
+        'post_guard_rest_days must be between 0 and 31',
+      );
     }
     if (
       this.max_resting_employees_per_day !== null &&
       this.max_resting_employees_per_day !== undefined &&
       this.max_resting_employees_per_day < 1
     ) {
-      throw new Error('max_resting_employees_per_day must be greater than 0');
+      throw new Error(
+        'max_resting_employees_per_day must be greater than 0',
+      );
     }
-    if (!['NONE', 'PER_EMPLOYEE', 'TEAM_ROTATION'].includes(this.weekly_leave_mode)) {
-      throw new Error('weekly_leave_mode must be NONE, PER_EMPLOYEE or TEAM_ROTATION');
+    if (
+      !['NONE', 'PER_EMPLOYEE', 'TEAM_ROTATION'].includes(
+        this.weekly_leave_mode,
+      )
+    ) {
+      throw new Error(
+        'weekly_leave_mode must be NONE, PER_EMPLOYEE or TEAM_ROTATION',
+      );
     }
     if (this.weekly_leave_employees_per_week < 1) {
-      throw new Error('weekly_leave_employees_per_week must be greater than 0');
+      throw new Error(
+        'weekly_leave_employees_per_week must be greater than 0',
+      );
     }
-    const allowedDays = new Set(['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']);
+    const allowedDays = new Set([
+      'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun',
+    ]);
     if (
       !Array.isArray(this.weekly_leave_allowed_days) ||
       this.weekly_leave_allowed_days.length === 0 ||
       this.weekly_leave_allowed_days.some((day) => !allowedDays.has(day)) ||
-      new Set(this.weekly_leave_allowed_days).size !== this.weekly_leave_allowed_days.length
+      new Set(this.weekly_leave_allowed_days).size !==
+        this.weekly_leave_allowed_days.length
     ) {
       throw new Error('weekly_leave_allowed_days is invalid');
     }
-    if (this.weekly_leave_mode === 'TEAM_ROTATION' && !this.weekly_leave_rotation_anchor_date) {
-      throw new Error('TEAM_ROTATION requires weekly_leave_rotation_anchor_date');
+    if (
+      this.weekly_leave_mode === 'TEAM_ROTATION' &&
+      !this.weekly_leave_rotation_anchor_date
+    ) {
+      throw new Error(
+        'TEAM_ROTATION requires weekly_leave_rotation_anchor_date',
+      );
     }
     if (
       this.weekly_leave_mode === 'TEAM_ROTATION' &&
       (this.solver_type !== 'ORTOOLS' || this.fallback_to_greedy)
     ) {
-      throw new Error('TEAM_ROTATION requires ORTOOLS with fallback_to_greedy=false');
+      throw new Error(
+        'TEAM_ROTATION requires ORTOOLS with fallback_to_greedy=false',
+      );
     }
 
-    if (!['DAILY_FLEXIBLE', 'WEEKLY_POOL'].includes(this.guard_team_mode)) {
-      throw new Error('guard_team_mode must be DAILY_FLEXIBLE or WEEKLY_POOL');
+    if (
+      !['DAILY_FLEXIBLE', 'WEEKLY_POOL'].includes(
+        this.guard_team_mode,
+      )
+    ) {
+      throw new Error(
+        'guard_team_mode must be DAILY_FLEXIBLE or WEEKLY_POOL',
+      );
     }
     if (this.guard_team_employees_per_week < 1) {
-      throw new Error('guard_team_employees_per_week must be greater than 0');
+      throw new Error(
+        'guard_team_employees_per_week must be greater than 0',
+      );
     }
-    if (!['ROTATION_ORDER', 'OPTIMIZED'].includes(this.guard_team_selection_mode)) {
-      throw new Error('guard_team_selection_mode must be ROTATION_ORDER or OPTIMIZED');
+    if (
+      !['ROTATION_ORDER', 'OPTIMIZED'].includes(
+        this.guard_team_selection_mode,
+      )
+    ) {
+      throw new Error(
+        'guard_team_selection_mode must be ROTATION_ORDER or OPTIMIZED',
+      );
     }
     if (
       this.guard_team_mode === 'WEEKLY_POOL' &&
       this.guard_team_selection_mode === 'ROTATION_ORDER' &&
       !this.guard_team_rotation_anchor_date
     ) {
-      throw new Error('WEEKLY_POOL with ROTATION_ORDER requires guard_team_rotation_anchor_date');
+      throw new Error(
+        'WEEKLY_POOL with ROTATION_ORDER requires guard_team_rotation_anchor_date',
+      );
     }
     if (
       this.guard_team_mode === 'WEEKLY_POOL' &&
       (this.solver_type !== 'ORTOOLS' || this.fallback_to_greedy)
     ) {
-      throw new Error('WEEKLY_POOL requires ORTOOLS with fallback_to_greedy=false');
+      throw new Error(
+        'WEEKLY_POOL requires ORTOOLS with fallback_to_greedy=false',
+      );
     }
 
     if (this.fairness_window_weeks < 1 || this.fairness_window_weeks > 52) {
       throw new Error('fairness_window_weeks must be between 1 and 52');
     }
-    if (!['GREEDY', 'ORTOOLS'].includes(this.solver_type)) {
-      throw new Error('solver_type must be GREEDY or ORTOOLS');
+    if (
+      !['GREEDY', 'ORTOOLS'].includes(
+        this.solver_type,
+      )
+    ) {
+      throw new Error(
+        'solver_type must be GREEDY or ORTOOLS',
+      );
     }
-    if (this.solver_timeout_seconds < 1 || this.solver_timeout_seconds > 300) {
-      throw new Error('solver_timeout_seconds must be between 1 and 300');
+    if (
+      this.solver_timeout_seconds < 1 ||
+      this.solver_timeout_seconds > 300
+    ) {
+      throw new Error(
+        'solver_timeout_seconds must be between 1 and 300',
+      );
     }
   }
 }

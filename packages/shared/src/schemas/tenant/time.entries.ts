@@ -1,4 +1,3 @@
-// schemas/time.entries.ts
 import { z } from 'zod';
 
 import {
@@ -45,8 +44,26 @@ const validatedDataSchema = z.object({
   mission_data: missionDataSchema.optional().nullable(),
 });
 
+const persistedExternalIdSchema = z
+  .string({
+    invalid_type_error: TIME_ENTRIES_ERRORS.EXTERNAL_ID_INVALID,
+  })
+  .trim()
+  .regex(/^[0-9A-HJKMNP-TV-Z]{26}$/i, TIME_ENTRIES_ERRORS.EXTERNAL_ID_INVALID)
+  .transform((value) => value.toUpperCase());
+
+// Compatibilité temporaire avec les clients déjà déployés :
+// undefined, null et chaîne vide sont acceptés. L'API générera alors un ULID.
+const externalIdInputSchema = z
+  .preprocess(
+    (value) => (typeof value === 'string' && value.trim() === '' ? undefined : value),
+    persistedExternalIdSchema.optional().nullable(),
+  )
+  .transform((value) => value ?? undefined);
+
 // Base schema pour les validations communes
 const baseTimeEntriesSchema = z.object({
+  external_id: externalIdInputSchema,
 
   user: z
     .string({
@@ -94,7 +111,9 @@ const baseTimeEntriesSchema = z.object({
     // .refine((date) => date <= TimezoneConfigUtils.getCurrentTime(), TIME_ENTRIES_ERRORS.FUTURE_POINTAGE),
     .refine((date) => {
       // Obtenir l'heure actuelle en timezone Africa/Douala
-      const nowInDouala = new Date(TimezoneConfigUtils.getCurrentTime().toLocaleString('en-US', { timeZone: 'Africa/Douala' }));
+      const nowInDouala = new Date(
+        TimezoneConfigUtils.getCurrentTime().toLocaleString('en-US', { timeZone: 'Africa/Douala' }),
+      );
       return date <= nowInDouala;
     }, TIME_ENTRIES_ERRORS.FUTURE_POINTAGE),
 
@@ -207,14 +226,8 @@ const baseTimeEntriesSchema = z.object({
     .string({
       invalid_type_error: TIME_ENTRIES_ERRORS.IMAGE_URL_INVALID,
     })
-    .min(
-      TIME_ENTRIES_VALIDATION.IMAGE_URL.MIN_LENGTH,
-      TIME_ENTRIES_ERRORS.IMAGE_URL_INVALID,
-    )
-    .max(
-      TIME_ENTRIES_VALIDATION.IMAGE_URL.MAX_LENGTH,
-      TIME_ENTRIES_ERRORS.IMAGE_URL_INVALID,
-    )
+    .min(TIME_ENTRIES_VALIDATION.IMAGE_URL.MIN_LENGTH, TIME_ENTRIES_ERRORS.IMAGE_URL_INVALID)
+    .max(TIME_ENTRIES_VALIDATION.IMAGE_URL.MAX_LENGTH, TIME_ENTRIES_ERRORS.IMAGE_URL_INVALID)
     .trim()
     .optional()
     .nullable(),
@@ -246,7 +259,6 @@ export const createTimeEntriesSchema = timeEntriesWithValidation;
 
 // Schema pour les mises à jour - tous les champs optionnels
 export const updateTimeEntriesSchema = baseTimeEntriesSchema.partial();
-// export const updateTimeEntriesSchema = timeEntriesWithValidation.partial();
 
 export const fallbackCheckinQuerySchema = paginationSchema.extend({
   start_date: z.coerce.date().optional(),
@@ -297,10 +309,11 @@ const FIELD_TO_CODE_MAP: Record<string, TimeEntryCode> = {
   real_clocked_at: TIME_ENTRIES_CODES.REAL_CLOCKED_AT_INVALID,
   pointage_status: TIME_ENTRIES_CODES.POINTAGE_STATUS_INVALID,
   created_offline: TIME_ENTRIES_CODES.CREATED_OFFLINE_INVALID,
+  external_id: TIME_ENTRIES_CODES.EXTERNAL_ID_INVALID,
   local_id: TIME_ENTRIES_CODES.LOCAL_ID_INVALID,
   sync_attempts: TIME_ENTRIES_CODES.SYNC_ATTEMPTS_INVALID,
   last_sync_attempt: TIME_ENTRIES_CODES.LAST_SYNC_ATTEMPT_INVALID,
-  memo: TIME_ENTRIES_CODES.MEMO_INVALID, 
+  memo: TIME_ENTRIES_CODES.MEMO_INVALID,
 };
 
 // Fonction de validation pour la création
@@ -426,6 +439,7 @@ export const validatePointageSequence = (
 
 // Schema complet pour les réponses (avec métadonnées)
 export const timeEntriesResponseSchema = baseTimeEntriesSchema.extend({
+  external_id: persistedExternalIdSchema.optional().nullable(),
   id: z.number().int().positive(),
   guid: z.string(),
   created_at: z.string().datetime(),
@@ -433,6 +447,7 @@ export const timeEntriesResponseSchema = baseTimeEntriesSchema.extend({
 });
 
 export const createWaypointSchema = z.object({
+  external_id: externalIdInputSchema,
   // === IDENTIFICATION ===
   user: z
     .string()
@@ -478,22 +493,23 @@ export const createWaypointSchema = z.object({
     })
     .refine((date) => {
       const nowInDouala = TimezoneConfigUtils.getCurrentTime();
-      // const nowInDouala = new Date(
-      //   TimezoneConfigUtils.getCurrentTime().toLocaleString('en-US', {
-      //     timeZone: 'Africa/Douala',
-      //   }),
-      // );
       return date <= nowInDouala;
     }, 'clocked_at cannot be in the future'),
 
   // === GPS (requis) ===
   latitude: z
-    .number({ required_error: 'latitude is required', invalid_type_error: 'latitude must be a number' })
+    .number({
+      required_error: 'latitude is required',
+      invalid_type_error: 'latitude must be a number',
+    })
     .min(TIME_ENTRIES_VALIDATION.LATITUDE.MIN)
     .max(TIME_ENTRIES_VALIDATION.LATITUDE.MAX),
 
   longitude: z
-    .number({ required_error: 'longitude is required', invalid_type_error: 'longitude must be a number' })
+    .number({
+      required_error: 'longitude is required',
+      invalid_type_error: 'longitude must be a number',
+    })
     .min(TIME_ENTRIES_VALIDATION.LONGITUDE.MIN)
     .max(TIME_ENTRIES_VALIDATION.LONGITUDE.MAX),
 
@@ -512,7 +528,9 @@ export const createWaypointSchema = z.object({
   ip_address: ipAddressSchema.optional().nullable(),
 
   // === OFFLINE ===
-  created_offline: z.boolean({ invalid_type_error: 'created_offline must be a boolean' }).default(false),
+  created_offline: z
+    .boolean({ invalid_type_error: 'created_offline must be a boolean' })
+    .default(false),
 
   local_id: z
     .string({ invalid_type_error: 'local_id must be a string' })
@@ -544,8 +562,12 @@ export const validateWaypointCreation = (data: any) => {
 
   if (!result.success) {
     const firstError = result.error.issues[0]!;
+    const field = firstError.path[0] as string;
     const error: any = new Error(firstError.message);
-    error.code = `waypoint_${firstError.path[0] ?? 'validation'}_invalid`;
+    error.code =
+      field === 'external_id'
+        ? TIME_ENTRIES_CODES.EXTERNAL_ID_INVALID
+        : `waypoint_${field || 'validation'}_invalid`;
     throw error;
   }
 
@@ -575,4 +597,3 @@ export type UpdateTimeEntriesInput = z.infer<typeof updateTimeEntriesSchema>;
 export type TimeEntriesData = z.infer<typeof timeEntriesResponseSchema>;
 export type TimeEntriesFilters = z.infer<typeof timeEntriesFiltersSchema>;
 export type DeviceInfo = z.infer<typeof deviceInfoSchema>;
-// export type ValidatedData = z.infer<typeof validatedDataSchema>;

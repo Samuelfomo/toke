@@ -19,13 +19,15 @@ import {
   PlanningInfeasibleError,
   PlanningRequirementInput,
 } from './suggestion.engine.js';
-import PlanningSolverFactory from './solver/planning.solver.factory.js';
+
+import PlanningSolverFactory from './planning.solver.factory.js';
+
 import {
   PlanningSolverExecutionMetadata,
   PlanningSolverInput,
   PlanningSolverTechnicalError,
   withSolverDiagnostics,
-} from './solver/planning.solver.js';
+} from './planning.solver.js';
 
 function addDays(iso: string, amount: number): string {
   const date = new Date(`${iso}T00:00:00.000Z`);
@@ -60,12 +62,20 @@ export async function generateConfiguredSuggestion(
   periodTo: string,
 ): Promise<GeneratedSuggestionPayload> {
   if (!UsersValidationUtils.validateGuid(managerGuid)) {
-    throw new SuggestionGenerationError('Invalid manager GUID', 'SUGGESTION_INVALID_GUID', 400);
+    throw new SuggestionGenerationError(
+      'Invalid manager GUID',
+      'SUGGESTION_INVALID_GUID',
+      400,
+    );
   }
 
   const manager = await User._load(managerGuid, true);
   if (!manager) {
-    throw new SuggestionGenerationError('Manager not found', 'SUGGESTION_MANAGER_NOT_FOUND', 404);
+    throw new SuggestionGenerationError(
+      'Manager not found',
+      'SUGGESTION_MANAGER_NOT_FOUND',
+      404,
+    );
   }
 
   const isManager = await OrgHierarchy.hasManagerRole(manager.getId()!);
@@ -86,7 +96,8 @@ export async function generateConfiguredSuggestion(
     );
   }
 
-  const requirements = await PlanningSuggestionRequirement._listByConfig(config.getId()!, true);
+  const requirements =
+    await PlanningSuggestionRequirement._listByConfig(config.getId()!, true);
 
   if (!requirements?.length) {
     throw new SuggestionGenerationError(
@@ -115,7 +126,9 @@ export async function generateConfiguredSuggestion(
   const allProfiles = await EmployeePlanningProfile._listActive();
   const teamProfiles =
     allProfiles?.filter(
-      (profile) => profile.getUser() !== undefined && activeTeamIds.has(profile.getUser()!),
+      (profile) =>
+        profile.getUser() !== undefined &&
+        activeTeamIds.has(profile.getUser()!),
     ) ?? [];
 
   const configuredUserIds = new Set(
@@ -148,7 +161,9 @@ export async function generateConfiguredSuggestion(
     const user = await profile.getUserObj();
     if (!user || profile.isExcluded()) continue;
 
-    const fixedTemplate = profile.isFixed() ? await profile.getFixedSessionTemplateObj() : null;
+    const fixedTemplate = profile.isFixed()
+      ? await profile.getFixedSessionTemplateObj()
+      : null;
 
     if (profile.isFixed() && !fixedTemplate) {
       throw new SuggestionGenerationError(
@@ -185,7 +200,10 @@ export async function generateConfiguredSuggestion(
   }
 
   if (config.getWeeklyLeaveMode() === 'TEAM_ROTATION') {
-    if (config.getSolverType() !== 'ORTOOLS' || config.shouldFallbackToGreedy()) {
+    if (
+      config.getSolverType() !== 'ORTOOLS' ||
+      config.shouldFallbackToGreedy()
+    ) {
       throw new SuggestionGenerationError(
         'TEAM_ROTATION requires ORTOOLS and fallback_to_greedy=false',
         'TEAM_WEEKLY_LEAVE_REQUIRES_ORTOOLS',
@@ -194,7 +212,9 @@ export async function generateConfiguredSuggestion(
     }
 
     const missingRotationOrder = employees.filter(
-      (employee) => employee.rotationOrder === null || employee.rotationOrder < 1,
+      (employee) =>
+        employee.rotationOrder === null ||
+        employee.rotationOrder < 1,
     );
     if (missingRotationOrder.length > 0) {
       throw new SuggestionGenerationError(
@@ -210,7 +230,9 @@ export async function generateConfiguredSuggestion(
       );
     }
 
-    const rotationOrders = employees.map((employee) => employee.rotationOrder!);
+    const rotationOrders = employees.map(
+      (employee) => employee.rotationOrder!,
+    );
     if (new Set(rotationOrders).size !== rotationOrders.length) {
       throw new SuggestionGenerationError(
         'rotation_order must be unique for TEAM_ROTATION',
@@ -219,7 +241,10 @@ export async function generateConfiguredSuggestion(
       );
     }
 
-    if (config.getWeeklyLeaveEmployeesPerWeek() > employees.length) {
+    if (
+      config.getWeeklyLeaveEmployeesPerWeek() >
+      employees.length
+    ) {
       throw new SuggestionGenerationError(
         'weekly_leave_employees_per_week exceeds included employees',
         'TEAM_WEEKLY_LEAVE_EMPLOYEE_COUNT_INVALID',
@@ -229,7 +254,10 @@ export async function generateConfiguredSuggestion(
   }
 
   if (config.getGuardTeamMode() === 'WEEKLY_POOL') {
-    if (config.getSolverType() !== 'ORTOOLS' || config.shouldFallbackToGreedy()) {
+    if (
+      config.getSolverType() !== 'ORTOOLS' ||
+      config.shouldFallbackToGreedy()
+    ) {
       throw new SuggestionGenerationError(
         'WEEKLY_POOL requires ORTOOLS and fallback_to_greedy=false',
         'WEEKLY_GUARD_POOL_REQUIRES_ORTOOLS',
@@ -237,9 +265,14 @@ export async function generateConfiguredSuggestion(
       );
     }
 
-    const rotatingEmployees = employees.filter((employee) => employee.mode === 'ROTATING');
+    const rotatingEmployees = employees.filter(
+      (employee) => employee.mode === 'ROTATING',
+    );
 
-    if (config.getGuardTeamEmployeesPerWeek() > rotatingEmployees.length) {
+    if (
+      config.getGuardTeamEmployeesPerWeek() >
+      rotatingEmployees.length
+    ) {
       throw new SuggestionGenerationError(
         'guard_team_employees_per_week exceeds ROTATING employees',
         'WEEKLY_GUARD_POOL_EMPLOYEE_COUNT_INVALID',
@@ -253,7 +286,9 @@ export async function generateConfiguredSuggestion(
 
     if (config.getGuardTeamSelectionMode() === 'ROTATION_ORDER') {
       const missingRotationOrder = rotatingEmployees.filter(
-        (employee) => employee.rotationOrder === null || employee.rotationOrder < 1,
+        (employee) =>
+          employee.rotationOrder === null ||
+          employee.rotationOrder < 1,
       );
       if (missingRotationOrder.length > 0) {
         throw new SuggestionGenerationError(
@@ -269,7 +304,9 @@ export async function generateConfiguredSuggestion(
         );
       }
 
-      const rotationOrders = rotatingEmployees.map((employee) => employee.rotationOrder!);
+      const rotationOrders = rotatingEmployees.map(
+        (employee) => employee.rotationOrder!,
+      );
       if (new Set(rotationOrders).size !== rotationOrders.length) {
         throw new SuggestionGenerationError(
           'rotation_order must be unique among ROTATING employees for guard pool rotation',
@@ -294,7 +331,10 @@ export async function generateConfiguredSuggestion(
     }
 
     const templateGuid = template.getGuid()!;
-    serviceTypeByTemplateGuid.set(templateGuid, requirement.getServiceType());
+    serviceTypeByTemplateGuid.set(
+      templateGuid,
+      requirement.getServiceType(),
+    );
 
     const continuationTemplate = requirement.isGuard()
       ? await requirement.getContinuationTemplateObj()
@@ -309,7 +349,10 @@ export async function generateConfiguredSuggestion(
     }
 
     if (continuationTemplate) {
-      serviceTypeByTemplateGuid.set(continuationTemplate.getGuid()!, 'GUARD_CONTINUATION');
+      serviceTypeByTemplateGuid.set(
+        continuationTemplate.getGuid()!,
+        'GUARD_CONTINUATION',
+      );
     }
 
     engineRequirements.push({
@@ -320,7 +363,8 @@ export async function generateConfiguredSuggestion(
       targetEmployees: requirement.getTargetEmployees(),
       maxEmployees: requirement.getMaxEmployees() ?? null,
       priority: requirement.getPriority(),
-      allocationMode: requirement.getAllocationMode(),
+      allocationMode:
+        requirement.getAllocationMode(),
       template: {
         guid: templateGuid,
         name: template.getName()!,
@@ -333,8 +377,10 @@ export async function generateConfiguredSuggestion(
             definition: continuationTemplate.getDefinition(),
           }
         : null,
-      continuationDayOffset: requirement.getContinuationDayOffset(),
-      creditedMinutes: requirement.getCreditedMinutes() ?? null,
+      continuationDayOffset:
+        requirement.getContinuationDayOffset(),
+      creditedMinutes:
+        requirement.getCreditedMinutes() ?? null,
     });
   }
 
@@ -342,7 +388,9 @@ export async function generateConfiguredSuggestion(
   const historyFrom = addDays(periodFrom, -(historyWeeks * 7));
   if (
     config.getGuardTeamMode() === 'WEEKLY_POOL' &&
-    !engineRequirements.some((requirement) => requirement.serviceType === 'GUARD')
+    !engineRequirements.some(
+      (requirement) => requirement.serviceType === 'GUARD',
+    )
   ) {
     throw new SuggestionGenerationError(
       'WEEKLY_POOL requires at least one active GUARD requirement',
@@ -352,7 +400,8 @@ export async function generateConfiguredSuggestion(
   }
 
   const historyTo = addDays(periodFrom, -1);
-  const historicalRaw = await ScheduleAssignments._listByDateRange(historyFrom, historyTo);
+  const historicalRaw =
+    await ScheduleAssignments._listByDateRange(historyFrom, historyTo);
 
   const employeeGuids = new Set(employees.map((employee) => employee.guid));
   const historicalAssignments: HistoricalAssignment[] = [];
@@ -368,7 +417,8 @@ export async function generateConfiguredSuggestion(
         templateGuid: snapshot.guid,
         templateName: snapshot.name ?? '—',
         definition: snapshot.definition,
-        serviceType: serviceTypeByTemplateGuid.get(snapshot.guid) ?? 'STANDARD',
+        serviceType:
+          serviceTypeByTemplateGuid.get(snapshot.guid) ?? 'STANDARD',
       } as const;
 
       if (assignment.getFamily() === SAFamily.USER) {
@@ -406,30 +456,42 @@ export async function generateConfiguredSuggestion(
 
   const engineConfig: EngineConfig = {
     minRestDaysPerWeek: config.getMinRestDaysPerWeek(),
-    maxConsecutiveWorkDays: config.getMaxConsecutiveWorkDays() ?? null,
+    maxConsecutiveWorkDays: config.getMaxConsecutiveWorkDays(),
     maxWeeklyMinutes: config.getMaxWeeklyMinutes() ?? null,
-    minRestMinutesBetweenShifts: config.getMinRestMinutesBetweenShifts(),
+    minRestMinutesBetweenShifts:
+      config.getMinRestMinutesBetweenShifts(),
     maxConsecutiveGuards: config.getMaxConsecutiveGuards(),
     restAfterGuardRequired: config.isRestAfterGuardRequired(),
     postGuardRestDays: config.getPostGuardRestDays(),
-    maxRestingEmployeesPerDay: config.getMaxRestingEmployeesPerDay() ?? null,
+    maxRestingEmployeesPerDay:
+      config.getMaxRestingEmployeesPerDay() ?? null,
     fairnessWindowWeeks: config.getFairnessWindowWeeks(),
     strictCoverage: config.isStrictCoverage(),
     weeklyLeavePolicy: {
       mode: config.getWeeklyLeaveMode(),
-      employeesPerWeek: config.getWeeklyLeaveEmployeesPerWeek(),
-      allowedDays: config.getWeeklyLeaveAllowedDays() as any,
-      rotationAnchorDate: config.getWeeklyLeaveRotationAnchorDate() ?? null,
-      completeWeeksOnly: config.isWeeklyLeaveCompleteWeeksOnly(),
-      postGuardRestCountsAsLeave: config.doesPostGuardRestCountAsWeeklyLeave(),
+      employeesPerWeek:
+        config.getWeeklyLeaveEmployeesPerWeek(),
+      allowedDays:
+        config.getWeeklyLeaveAllowedDays() as any,
+      rotationAnchorDate:
+        config.getWeeklyLeaveRotationAnchorDate() ?? null,
+      completeWeeksOnly:
+        config.isWeeklyLeaveCompleteWeeksOnly(),
+      postGuardRestCountsAsLeave:
+        config.doesPostGuardRestCountAsWeeklyLeave(),
     },
     guardTeamPolicy: {
       mode: config.getGuardTeamMode(),
-      employeesPerWeek: config.getGuardTeamEmployeesPerWeek(),
-      selectionMode: config.getGuardTeamSelectionMode(),
-      rotationAnchorDate: config.getGuardTeamRotationAnchorDate() ?? null,
-      completeWeeksOnly: config.isGuardTeamCompleteWeeksOnly(),
-      requireParticipation: config.doesGuardTeamRequireParticipation(),
+      employeesPerWeek:
+        config.getGuardTeamEmployeesPerWeek(),
+      selectionMode:
+        config.getGuardTeamSelectionMode(),
+      rotationAnchorDate:
+        config.getGuardTeamRotationAnchorDate() ?? null,
+      completeWeeksOnly:
+        config.isGuardTeamCompleteWeeksOnly(),
+      requireParticipation:
+        config.doesGuardTeamRequireParticipation(),
     },
   };
 
@@ -440,35 +502,66 @@ export async function generateConfiguredSuggestion(
     periodFrom,
     periodTo,
     config: engineConfig,
-    solverTimeoutSeconds: config.getSolverTimeoutSeconds(),
+    solverTimeoutSeconds:
+      config.getSolverTimeoutSeconds(),
   };
 
   let engineResult: EngineResult;
-  let solverMetadata: PlanningSolverExecutionMetadata;
+  let solverMetadata:
+    PlanningSolverExecutionMetadata;
 
   try {
-    const execution = await PlanningSolverFactory.solve(solverInput, {
-      solverType: config.getSolverType(),
-      timeoutSeconds: config.getSolverTimeoutSeconds(),
-      fallbackToGreedy: config.shouldFallbackToGreedy(),
-      ortoolsEndpoint: (globalThis as any).process?.env?.PLANNING_ORTOOLS_URL,
-    });
+    const execution =
+      await PlanningSolverFactory.solve(
+        solverInput,
+        {
+          solverType:
+            config.getSolverType(),
+          timeoutSeconds:
+            config.getSolverTimeoutSeconds(),
+          fallbackToGreedy:
+            config.shouldFallbackToGreedy(),
+          ortoolsEndpoint:
+            (globalThis as any).process?.env
+              ?.PLANNING_ORTOOLS_URL,
+        },
+      );
 
     engineResult = execution.result;
     solverMetadata = execution.metadata;
   } catch (error) {
-    if (error instanceof PlanningInfeasibleError) {
-      throw new SuggestionGenerationError(error.message, error.code, 422, error.diagnostics);
+    if (
+      error instanceof
+      PlanningInfeasibleError
+    ) {
+      throw new SuggestionGenerationError(
+        error.message,
+        error.code,
+        422,
+        error.diagnostics,
+      );
     }
 
-    if (error instanceof PlanningSolverTechnicalError) {
-      throw new SuggestionGenerationError(error.message, error.code, 503, error.details);
+    if (
+      error instanceof
+      PlanningSolverTechnicalError
+    ) {
+      throw new SuggestionGenerationError(
+        error.message,
+        error.code,
+        503,
+        error.details,
+      );
     }
 
     throw error;
   }
 
-  const persistedDiagnostics = withSolverDiagnostics(engineResult.diagnostics, solverMetadata);
+  const persistedDiagnostics =
+    withSolverDiagnostics(
+      engineResult.diagnostics,
+      solverMetadata,
+    );
 
   const suggestion = new ScheduleSuggestion()
     .setTenant(manager.getTenant?.() ?? '')
@@ -476,10 +569,16 @@ export async function generateConfiguredSuggestion(
     .setPeriodFrom(periodFrom)
     .setPeriodTo(periodTo)
     .setHistoryWeeks(historyWeeks)
-    .setConformityScore(engineResult.conformityScore)
+    .setConformityScore(
+      engineResult.conformityScore,
+    )
     .setConfig(config.getId()!)
-    .setEngineVersion(solverMetadata.solverVersion)
-    .setDiagnostics(persistedDiagnostics);
+    .setEngineVersion(
+      solverMetadata.solverVersion,
+    )
+    .setDiagnostics(
+      persistedDiagnostics,
+    );
 
   await suggestion.save();
 

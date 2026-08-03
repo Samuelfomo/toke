@@ -176,9 +176,9 @@ export default class EmployeePlanningProfileModel extends BaseModel {
     if (
       this.rotation_order !== null &&
       this.rotation_order !== undefined &&
-      this.rotation_order < 0
+      this.rotation_order < 1
     ) {
-      throw new Error('rotation_order cannot be negative');
+      throw new Error('rotation_order must be a positive integer');
     }
   }
 }

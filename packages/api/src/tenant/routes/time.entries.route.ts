@@ -31,6 +31,7 @@ import Site from '../class/Site.js';
 import WorkSessions from '../class/WorkSessions.js';
 import TimeEntries from '../class/TimeEntries.js';
 import { TenantRevision } from '../../tools/revision.js';
+import { resolveTimeEntryExternalId } from '../../utils/time.entry.external-id.js';
 import { responseValue, tableName } from '../../utils/response.model.js';
 import { UserAuth } from '../../middle/user-auth.js';
 import UserRole from '../class/UserRole.js';
@@ -38,6 +39,8 @@ import { ValidationUtils } from '../../utils/view.validator.js';
 import AnomalyDetectionService, { AnomalyType } from '../../tools/anomaly.detection.service.js';
 import QrCodeGeneration from '../class/QrCodeGeneration.js';
 import Device from '../class/Device.js';
+import { findTimeEntryIdempotentReplay } from '../../utils/time.entry.idempotency.js';
+import { respondToTimeEntryIdempotentReplay } from '../../utils/time.entry.idempotency.response.js';
 
 const router = Router();
 
@@ -175,6 +178,8 @@ router.post(
   Ensure.post(),
   UserAuth.timeEntriesAuthenticate,
   async (req: Request, res: Response) => {
+    let resolvedExternalId: string | undefined;
+
     try {
       // Récupération métadonnées headers
       const ip =
@@ -209,6 +214,57 @@ router.post(
         });
       }
 
+      // TODO le qr_code est obligatoire car le pointage GPS n'est pas encore implémenté.
+      if (!validatedData.qr_code) {
+        return R.handleError(res, HttpStatus.BAD_REQUEST, {
+          code: TIME_ENTRIES_CODES.QR_CODE_REQUIRED,
+          message: TIME_ENTRIES_ERRORS.QR_CODE_REQUIRED,
+        });
+      }
+
+      const qrCodeObj = await QrCodeGeneration._load(validatedData.qr_code, true);
+      if (!qrCodeObj) {
+        return R.handleError(res, HttpStatus.NOT_FOUND, {
+          code: TIME_ENTRIES_CODES.QR_CODE_NOT_FOUND,
+          message: TIME_ENTRIES_ERRORS.QR_CODE_NOT_FOUND,
+        });
+      }
+
+      const externalIdWasProvided = Boolean(validatedData.external_id);
+      const externalId = resolveTimeEntryExternalId(validatedData.external_id, {
+        user: userId,
+        local_id: validatedData.local_id,
+        device: deviceObj.getId(),
+        site: siteObj.getId(),
+        qr_code: qrCodeObj.getId(),
+        pointage_type: validatedData.pointage_type,
+        clocked_at: validatedData.clocked_at,
+        latitude: validatedData.latitude,
+        longitude: validatedData.longitude,
+      });
+      resolvedExternalId = externalId;
+
+      res.setHeader('X-Time-Entry-External-Id', externalId);
+      res.setHeader(
+        'X-Time-Entry-External-Id-Source',
+        externalIdWasProvided ? 'client' : 'server-compatibility',
+      );
+
+      // Check idempotency before geofencing, anomaly detection or session mutation.
+      const replay = await findTimeEntryIdempotentReplay(userId, externalId, {
+        pointage_type: validatedData.pointage_type,
+        clocked_at: new Date(validatedData.clocked_at),
+        latitude: validatedData.latitude,
+        longitude: validatedData.longitude,
+        site_id: siteObj.getId() ?? null,
+        device_id: deviceObj.getId()!,
+        qr_code_id: qrCodeObj.getId() ?? null,
+      });
+
+      if (replay) {
+        return respondToTimeEntryIdempotentReplay(res, replay);
+      }
+
       // === ⚠️ GÉOFENCING VERIFICATION ===
       const geofenceCheck = await WorkSessions.validateGeofencing(
         siteObj.getId()!,
@@ -230,22 +286,6 @@ router.post(
       //   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
       //           `);
       // }
-
-      // TODO le qr_code est obligatoire car le pointage gps n'est pas encore implementé
-      if (!validatedData.qr_code) {
-        return R.handleError(res, HttpStatus.BAD_REQUEST, {
-          code: TIME_ENTRIES_CODES.QR_CODE_REQUIRED,
-          message: TIME_ENTRIES_ERRORS.QR_CODE_REQUIRED,
-        });
-      }
-
-      const qrCodeObj = await QrCodeGeneration._load(validatedData.qr_code, true);
-      if (!qrCodeObj) {
-        return R.handleError(res, HttpStatus.NOT_FOUND, {
-          code: TIME_ENTRIES_CODES.QR_CODE_NOT_FOUND,
-          message: TIME_ENTRIES_ERRORS.QR_CODE_NOT_FOUND,
-        });
-      }
 
       const { anomalies: qrAnomalies, corrections: qrCorrections } =
         await AnomalyDetectionService.detectAccessAnomalies(userId, qrCodeObj);
@@ -287,8 +327,10 @@ router.post(
           const entryObj = new TimeEntries()
             .setSession(sessionObj.getId()!)
             .setUser(userId)
+            .setExternalId(externalId)
             .setDevice(deviceObj.getId()!)
             .setSite(siteObj.getId()!)
+            .setQrCode(qrCodeObj.getId()!)
             .setPointageType(PointageType.CLOCK_IN)
             .setClockedAt(new Date(validatedData.clocked_at))
             .setFallbackCheckIn(validatedData.is_fallback_checkin)
@@ -399,8 +441,10 @@ router.post(
 
           const tempEntry = new TimeEntries()
             .setUser(userId)
+            .setExternalId(externalId)
             .setDevice(deviceObj.getId()!)
             .setSite(siteObj.getId()!)
+            .setQrCode(qrCodeObj.getId()!)
             .setPointageType(PointageType.PAUSE_START)
             .setClockedAt(new Date(validatedData.clocked_at))
             .setFallbackCheckIn(validatedData.is_fallback_checkin)
@@ -487,8 +531,10 @@ router.post(
 
           const tempEntry = new TimeEntries()
             .setUser(userId)
+            .setExternalId(externalId)
             .setDevice(deviceObj.getId()!)
             .setSite(siteObj.getId()!)
+            .setQrCode(qrCodeObj.getId()!)
             .setPointageType(PointageType.PAUSE_END)
             .setClockedAt(new Date(validatedData.clocked_at))
             .setFallbackCheckIn(validatedData.is_fallback_checkin)
@@ -584,8 +630,10 @@ router.post(
           const entryObj = new TimeEntries()
             .setSession(activeSession?.getId()!)
             .setUser(userId)
+            .setExternalId(externalId)
             .setDevice(deviceObj.getId()!)
             .setSite(siteObj.getId()!)
+            .setQrCode(qrCodeObj.getId()!)
             .setPointageType(PointageType.CLOCK_OUT)
             .setClockedAt(new Date(validatedData.clocked_at))
             .setFallbackCheckIn(validatedData.is_fallback_checkin)
@@ -702,8 +750,10 @@ router.post(
           const entryObj = new TimeEntries()
             .setSession(activeSession?.getId()!)
             .setUser(userId)
+            .setExternalId(externalId)
             .setDevice(deviceObj.getId()!)
             .setSite(siteObj.getId()!)
+            .setQrCode(qrCodeObj.getId()!)
             .setPointageType(PointageType.EXTERNAL_MISSION)
             .setClockedAt(new Date(validatedData.clocked_at))
             .setFallbackCheckIn(validatedData.is_fallback_checkin)
@@ -778,8 +828,10 @@ router.post(
           const entryObj = new TimeEntries()
             .setSession(activeSession?.getId()!)
             .setUser(userId)
+            .setExternalId(externalId)
             .setDevice(deviceObj.getId()!)
             .setSite(siteObj.getId()!)
+            .setQrCode(qrCodeObj.getId()!)
             .setPointageType(PointageType.EXTERNAL_MISSION_END)
             .setClockedAt(new Date(validatedData.clocked_at))
             .setFallbackCheckIn(validatedData.is_fallback_checkin)
@@ -841,6 +893,21 @@ router.post(
           });
       }
     } catch (error: any) {
+      if (error?.name === 'SequelizeUniqueConstraintError') {
+        const userId = (req as any).userId;
+        const externalId = resolvedExternalId || req.body?.external_id;
+        if (userId && externalId) {
+          const existing = await TimeEntries._loadByExternalId(userId, externalId);
+          if (existing) {
+            return R.handleSuccess(res, {
+              message: TIME_ENTRIES_MESSAGES.IDEMPOTENT_REPLAY,
+              entry: await existing.toJSON(),
+              idempotent_replay: true,
+            });
+          }
+        }
+      }
+
       if (error.code) {
         return R.handleError(res, HttpStatus.BAD_REQUEST, {
           code: error.code,
@@ -872,6 +939,8 @@ router.post(
   Ensure.post(),
   UserAuth.timeEntriesAuthenticate,
   async (req: Request, res: Response) => {
+    let resolvedExternalId: string | undefined;
+
     try {
       // === 1. MÉTADONNÉES RÉSEAU ===
       const ip =
@@ -916,9 +985,44 @@ router.post(
         siteName = siteObj.getName()!;
       }
 
+      const externalIdWasProvided = Boolean(validatedData.external_id);
+      const externalId = resolveTimeEntryExternalId(validatedData.external_id, {
+        user: userId,
+        local_id: validatedData.local_id,
+        device: deviceObj.getId(),
+        site: siteId,
+        qr_code: null,
+        pointage_type: validatedData.pointage_type,
+        clocked_at: validatedData.clocked_at,
+        latitude: validatedData.latitude,
+        longitude: validatedData.longitude,
+      });
+      resolvedExternalId = externalId;
+
+      res.setHeader('X-Time-Entry-External-Id', externalId);
+      res.setHeader(
+        'X-Time-Entry-External-Id-Source',
+        externalIdWasProvided ? 'client' : 'server-compatibility',
+      );
+
+      const replay = await findTimeEntryIdempotentReplay(userId, externalId, {
+        pointage_type: validatedData.pointage_type,
+        clocked_at: new Date(validatedData.clocked_at),
+        latitude: validatedData.latitude,
+        longitude: validatedData.longitude,
+        site_id: siteId,
+        device_id: deviceObj.getId()!,
+        qr_code_id: null,
+      });
+
+      if (replay) {
+        return respondToTimeEntryIdempotentReplay(res, replay);
+      }
+
       // === 5. CONSTRUCTION DE L'ENTRY ===
       const entryObj = new TimeEntries()
         .setUser(userId)
+        .setExternalId(externalId)
         .setDevice(deviceObj.getId()!)
         .setPointageType(PointageType.WAYPOINT)
         .setClockedAt(new Date(validatedData.clocked_at))
@@ -961,6 +1065,21 @@ router.post(
         entry: await entryObj.toJSON(),
       });
     } catch (error: any) {
+      if (error?.name === 'SequelizeUniqueConstraintError') {
+        const userId = (req as any).userId;
+        const externalId = resolvedExternalId || req.body?.external_id;
+        if (userId && externalId) {
+          const existing = await TimeEntries._loadByExternalId(userId, externalId);
+          if (existing) {
+            return R.handleSuccess(res, {
+              message: TIME_ENTRIES_MESSAGES.IDEMPOTENT_REPLAY,
+              entry: await existing.toJSON(),
+              idempotent_replay: true,
+            });
+          }
+        }
+      }
+
       if (error.code) {
         return R.handleError(res, HttpStatus.BAD_REQUEST, {
           code: error.code,

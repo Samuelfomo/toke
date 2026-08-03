@@ -1,16 +1,16 @@
 import { Request, Response, Router } from 'express';
-import {
-  HttpStatus,
-  UsersValidationUtils,
-  validatePlanningSuggestionConfigCreation,
-  validatePlanningSuggestionConfigGuid,
-  validatePlanningSuggestionConfigUpdate,
-} from '@toke/shared';
+import { HttpStatus, UsersValidationUtils } from '@toke/shared';
 
 import Ensure from '../../middle/ensured-routes.js';
 import R from '../../tools/response.js';
 import PlanningSuggestionConfig from '../class/PlanningSuggestionConfig.js';
 import User from '../class/User.js';
+
+import {
+  validatePlanningSuggestionConfigCreation,
+  validatePlanningSuggestionConfigGuid,
+  validatePlanningSuggestionConfigUpdate,
+} from '@toke/shared';
 
 const router = Router();
 
@@ -30,7 +30,9 @@ router.get('/', Ensure.get(), async (_req: Request, res: Response) => {
     return R.handleSuccess(res, {
       planning_suggestion_configs: {
         count: configs?.length ?? 0,
-        items: configs ? await Promise.all(configs.map((config) => config.toJSON())) : [],
+        items: configs
+          ? await Promise.all(configs.map((config) => config.toJSON()))
+          : [],
       },
     });
   } catch (error: any) {
@@ -72,10 +74,14 @@ router.get('/:guid', Ensure.get(), async (req: Request, res: Response) => {
       planning_suggestion_config: await config.toJSON(),
     });
   } catch (error: any) {
-    return R.handleError(res, error.code ? HttpStatus.BAD_REQUEST : HttpStatus.INTERNAL_ERROR, {
-      code: error.code ?? CODES.LISTING_FAILED,
-      message: error.message,
-    });
+    return R.handleError(
+      res,
+      error.code ? HttpStatus.BAD_REQUEST : HttpStatus.INTERNAL_ERROR,
+      {
+        code: error.code ?? CODES.LISTING_FAILED,
+        message: error.message,
+      },
+    );
   }
 });
 
@@ -110,24 +116,50 @@ router.post('/:manager', Ensure.post(), async (req: Request, res: Response) => {
       .setMaxConsecutiveGuards(data.max_consecutive_guards)
       .setRestAfterGuardRequired(data.rest_after_guard_required)
       .setPostGuardRestDays(data.post_guard_rest_days)
-      .setMaxRestingEmployeesPerDay(data.max_resting_employees_per_day ?? null)
+      .setMaxRestingEmployeesPerDay(
+        data.max_resting_employees_per_day ?? null,
+      )
       .setWeeklyLeaveMode(data.weekly_leave_mode)
-      .setWeeklyLeaveEmployeesPerWeek(data.weekly_leave_employees_per_week)
-      .setWeeklyLeaveAllowedDays(data.weekly_leave_allowed_days)
-      .setWeeklyLeaveRotationAnchorDate(data.weekly_leave_rotation_anchor_date ?? null)
-      .setWeeklyLeaveCompleteWeeksOnly(data.weekly_leave_complete_weeks_only)
-      .setPostGuardRestCountsAsWeeklyLeave(data.post_guard_rest_counts_as_weekly_leave)
+      .setWeeklyLeaveEmployeesPerWeek(
+        data.weekly_leave_employees_per_week,
+      )
+      .setWeeklyLeaveAllowedDays(
+        data.weekly_leave_allowed_days,
+      )
+      .setWeeklyLeaveRotationAnchorDate(
+        data.weekly_leave_rotation_anchor_date ?? null,
+      )
+      .setWeeklyLeaveCompleteWeeksOnly(
+        data.weekly_leave_complete_weeks_only,
+      )
+      .setPostGuardRestCountsAsWeeklyLeave(
+        data.post_guard_rest_counts_as_weekly_leave,
+      )
       .setGuardTeamMode(data.guard_team_mode)
-      .setGuardTeamEmployeesPerWeek(data.guard_team_employees_per_week)
-      .setGuardTeamSelectionMode(data.guard_team_selection_mode)
-      .setGuardTeamRotationAnchorDate(data.guard_team_rotation_anchor_date ?? null)
-      .setGuardTeamCompleteWeeksOnly(data.guard_team_complete_weeks_only)
-      .setGuardTeamRequireParticipation(data.guard_team_require_participation)
+      .setGuardTeamEmployeesPerWeek(
+        data.guard_team_employees_per_week,
+      )
+      .setGuardTeamSelectionMode(
+        data.guard_team_selection_mode,
+      )
+      .setGuardTeamRotationAnchorDate(
+        data.guard_team_rotation_anchor_date ?? null,
+      )
+      .setGuardTeamCompleteWeeksOnly(
+        data.guard_team_complete_weeks_only,
+      )
+      .setGuardTeamRequireParticipation(
+        data.guard_team_require_participation,
+      )
       .setFairnessWindowWeeks(data.fairness_window_weeks)
       .setStrictCoverage(data.strict_coverage)
       .setSolverType(data.solver_type)
-      .setSolverTimeoutSeconds(data.solver_timeout_seconds)
-      .setFallbackToGreedy(data.fallback_to_greedy)
+      .setSolverTimeoutSeconds(
+        data.solver_timeout_seconds,
+      )
+      .setFallbackToGreedy(
+        data.fallback_to_greedy,
+      )
       .setCreatedBy(manager.getId()!);
 
     await config.save();
@@ -137,10 +169,14 @@ router.post('/:manager', Ensure.post(), async (req: Request, res: Response) => {
       planning_suggestion_config: await config.toJSON(),
     });
   } catch (error: any) {
-    return R.handleError(res, error.code ? HttpStatus.BAD_REQUEST : HttpStatus.INTERNAL_ERROR, {
-      code: error.code ?? CODES.CREATION_FAILED,
-      message: error.message,
-    });
+    return R.handleError(
+      res,
+      error.code ? HttpStatus.BAD_REQUEST : HttpStatus.INTERNAL_ERROR,
+      {
+        code: error.code ?? CODES.CREATION_FAILED,
+        message: error.message,
+      },
+    );
   }
 });
 
@@ -163,7 +199,9 @@ router.put('/:guid', Ensure.put(), async (req: Request, res: Response) => {
       config.setMinRestDaysPerWeek(data.min_rest_days_per_week);
     }
     if (data.max_consecutive_work_days !== undefined) {
-      config.setMaxConsecutiveWorkDays(data.max_consecutive_work_days ?? null);
+      config.setMaxConsecutiveWorkDays(
+        data.max_consecutive_work_days ?? null,
+      );
     }
     if (data.max_weekly_minutes !== undefined) {
       config.setMaxWeeklyMinutes(data.max_weekly_minutes ?? null);
@@ -180,45 +218,69 @@ router.put('/:guid', Ensure.put(), async (req: Request, res: Response) => {
     if (data.post_guard_rest_days !== undefined) {
       config.setPostGuardRestDays(data.post_guard_rest_days);
     }
-    if (data.max_resting_employees_per_day !== undefined) {
-      config.setMaxRestingEmployeesPerDay(data.max_resting_employees_per_day ?? null);
+    if (
+      data.max_resting_employees_per_day !== undefined
+    ) {
+      config.setMaxRestingEmployeesPerDay(
+        data.max_resting_employees_per_day ?? null,
+      );
     }
     if (data.weekly_leave_mode !== undefined) {
       config.setWeeklyLeaveMode(data.weekly_leave_mode);
     }
     if (data.weekly_leave_employees_per_week !== undefined) {
-      config.setWeeklyLeaveEmployeesPerWeek(data.weekly_leave_employees_per_week);
+      config.setWeeklyLeaveEmployeesPerWeek(
+        data.weekly_leave_employees_per_week,
+      );
     }
     if (data.weekly_leave_allowed_days !== undefined) {
-      config.setWeeklyLeaveAllowedDays(data.weekly_leave_allowed_days);
+      config.setWeeklyLeaveAllowedDays(
+        data.weekly_leave_allowed_days,
+      );
     }
     if (data.weekly_leave_rotation_anchor_date !== undefined) {
-      config.setWeeklyLeaveRotationAnchorDate(data.weekly_leave_rotation_anchor_date ?? null);
+      config.setWeeklyLeaveRotationAnchorDate(
+        data.weekly_leave_rotation_anchor_date ?? null,
+      );
     }
     if (data.weekly_leave_complete_weeks_only !== undefined) {
-      config.setWeeklyLeaveCompleteWeeksOnly(data.weekly_leave_complete_weeks_only);
+      config.setWeeklyLeaveCompleteWeeksOnly(
+        data.weekly_leave_complete_weeks_only,
+      );
     }
     if (data.post_guard_rest_counts_as_weekly_leave !== undefined) {
-      config.setPostGuardRestCountsAsWeeklyLeave(data.post_guard_rest_counts_as_weekly_leave);
+      config.setPostGuardRestCountsAsWeeklyLeave(
+        data.post_guard_rest_counts_as_weekly_leave,
+      );
     }
 
     if (data.guard_team_mode !== undefined) {
       config.setGuardTeamMode(data.guard_team_mode);
     }
     if (data.guard_team_employees_per_week !== undefined) {
-      config.setGuardTeamEmployeesPerWeek(data.guard_team_employees_per_week);
+      config.setGuardTeamEmployeesPerWeek(
+        data.guard_team_employees_per_week,
+      );
     }
     if (data.guard_team_selection_mode !== undefined) {
-      config.setGuardTeamSelectionMode(data.guard_team_selection_mode);
+      config.setGuardTeamSelectionMode(
+        data.guard_team_selection_mode,
+      );
     }
     if (data.guard_team_rotation_anchor_date !== undefined) {
-      config.setGuardTeamRotationAnchorDate(data.guard_team_rotation_anchor_date ?? null);
+      config.setGuardTeamRotationAnchorDate(
+        data.guard_team_rotation_anchor_date ?? null,
+      );
     }
     if (data.guard_team_complete_weeks_only !== undefined) {
-      config.setGuardTeamCompleteWeeksOnly(data.guard_team_complete_weeks_only);
+      config.setGuardTeamCompleteWeeksOnly(
+        data.guard_team_complete_weeks_only,
+      );
     }
     if (data.guard_team_require_participation !== undefined) {
-      config.setGuardTeamRequireParticipation(data.guard_team_require_participation);
+      config.setGuardTeamRequireParticipation(
+        data.guard_team_require_participation,
+      );
     }
 
     if (data.fairness_window_weeks !== undefined) {
@@ -230,11 +292,21 @@ router.put('/:guid', Ensure.put(), async (req: Request, res: Response) => {
     if (data.solver_type !== undefined) {
       config.setSolverType(data.solver_type);
     }
-    if (data.solver_timeout_seconds !== undefined) {
-      config.setSolverTimeoutSeconds(data.solver_timeout_seconds);
+    if (
+      data.solver_timeout_seconds !==
+      undefined
+    ) {
+      config.setSolverTimeoutSeconds(
+        data.solver_timeout_seconds,
+      );
     }
-    if (data.fallback_to_greedy !== undefined) {
-      config.setFallbackToGreedy(data.fallback_to_greedy);
+    if (
+      data.fallback_to_greedy !==
+      undefined
+    ) {
+      config.setFallbackToGreedy(
+        data.fallback_to_greedy,
+      );
     }
 
     await config.save();
@@ -244,10 +316,14 @@ router.put('/:guid', Ensure.put(), async (req: Request, res: Response) => {
       planning_suggestion_config: await config.toJSON(),
     });
   } catch (error: any) {
-    return R.handleError(res, error.code ? HttpStatus.BAD_REQUEST : HttpStatus.INTERNAL_ERROR, {
-      code: error.code ?? CODES.UPDATE_FAILED,
-      message: error.message,
-    });
+    return R.handleError(
+      res,
+      error.code ? HttpStatus.BAD_REQUEST : HttpStatus.INTERNAL_ERROR,
+      {
+        code: error.code ?? CODES.UPDATE_FAILED,
+        message: error.message,
+      },
+    );
   }
 });
 

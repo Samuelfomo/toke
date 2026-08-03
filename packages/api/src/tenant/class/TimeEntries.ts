@@ -36,6 +36,11 @@ export default class TimeEntries extends TimeEntriesModel {
     return new TimeEntries().load(identifier, byGuid);
   }
 
+  static async _loadByExternalId(user: number, external_id: string): Promise<TimeEntries | null> {
+    const data = await new TimeEntries().findByExternalId(user, external_id.trim().toUpperCase());
+    return data ? TimeEntries._toObject(data) : null;
+  }
+
   static _list(
     conditions: Record<string, any> = {},
     paginationOptions: { offset?: number; limit?: number } = {},
@@ -163,6 +168,10 @@ export default class TimeEntries extends TimeEntriesModel {
 
   getGuid(): string | undefined {
     return this.guid;
+  }
+
+  getExternalId(): string | undefined {
+    return this.external_id;
   }
 
   getSession(): number | undefined {
@@ -317,6 +326,11 @@ export default class TimeEntries extends TimeEntriesModel {
 
   getUpdatedAt(): Date | undefined {
     return this.updated_at;
+  }
+
+  setExternalId(external_id: string): TimeEntries {
+    this.external_id = external_id.trim().toUpperCase();
+    return this;
   }
 
   setSession(session: number): TimeEntries {
@@ -788,8 +802,7 @@ export default class TimeEntries extends TimeEntriesModel {
     }
 
     // Anomalies détectées
-    const hasAnomalies = await this.hasAnomalies();
-    return hasAnomalies;
+    return await this.hasAnomalies();
   }
 
   isNew(): boolean {
@@ -816,11 +829,6 @@ export default class TimeEntries extends TimeEntriesModel {
           await this.update();
         }
       }
-      // if (this.isNew()) {
-      //   await this.create();
-      // } else {
-      //   await this.update();
-      // }
     } catch (error: any) {
       throw new Error(error.message || error);
     }
@@ -956,6 +964,7 @@ export default class TimeEntries extends TimeEntriesModel {
 
     const baseData = {
       [RS.GUID]: this.guid,
+      external_id: this.external_id,
       [RS.POINTAGE_TYPE]: this.pointage_type,
       [RS.POINTAGE_STATUS]: this.pointage_status,
       [RS.CLOCKED_AT]: this.clocked_at,
@@ -1078,63 +1087,12 @@ export default class TimeEntries extends TimeEntriesModel {
     };
   }
 
-  // async toJSON(view: ViewMode = responseValue.FULL): Promise<object> {
-  //   const user = await this.getUserObj();
-  //   const site = await this.getSiteObj();
-  //   const session = await this.getSessionObj();
-  //
-  //   const baseData = {
-  //     [RS.GUID]: this.guid,
-  //     [RS.USER]: user?.getGuid(),
-  //     [RS.SITE]: site?.getGuid(),
-  //     [RS.SESSION]: session?.getGuid(),
-  //     [RS.POINTAGE_TYPE]: this.pointage_type,
-  //     [RS.POINTAGE_STATUS]: this.pointage_status,
-  //     [RS.CLOCKED_AT]: this.clocked_at,
-  //     [RS.SERVER_RECEIVED_AT]: this.server_received_at,
-  //     [RS.CREATED_OFFLINE]: this.created_offline,
-  //   };
-  //
-  //   if (view === responseValue.MINIMAL) {
-  //     return {
-  //       ...baseData,
-  //       [RS.COORDINATES]:
-  //         this.latitude && this.longitude ? `${this.latitude},${this.longitude}` : null,
-  //     };
-  //   }
-  //
-  //   return {
-  //     ...baseData,
-  //     [RS.USER]: user ? user.toJSON() : null,
-  //     [RS.SITE]: site ? await site.toJSON(responseValue.MINIMAL) : null,
-  //     [RS.SESSION]: session ? await session.toJSON(responseValue.MINIMAL) : null,
-  //     [RS.REAL_CLOCKED_AT]: this.real_clocked_at,
-  //     [RS.LATITUDE]: this.latitude,
-  //     [RS.LONGITUDE]: this.longitude,
-  //     [RS.GPS_ACCURACY]: this.gps_accuracy,
-  //     [RS.DEVICE_INFO]: this.device_info,
-  //     [RS.IP_ADDRESS]: this.ip_address,
-  //     [RS.USER_AGENT]: this.user_agent,
-  //     [RS.LOCAL_ID]: this.local_id,
-  //     [RS.SYNC_ATTEMPTS]: this.sync_attempts,
-  //     [RS.LAST_SYNC_ATTEMPT]: this.last_sync_attempt,
-  //     [RS.MEMO]: this.memo,
-  //     [RS.CORRECTION_REASON]: this.correction_reason,
-  //     [RS.UPDATED_AT]: this.updated_at,
-  //     // Informations calculées
-  //     [RS.IS_VALID]: await this.isValid(),
-  //     [RS.REQUIRES_VALIDATION]: await this.requiresManagerValidation(),
-  //     [RS.WITHIN_GEOFENCE]: await this.isWithinGeofence(),
-  //     [RS.HAS_ANOMALIES]: await this.hasAnomalies(),
-  //     [RS.FRAUD_SCORE]: await this.getFraudScore(),
-  //   };
-  // }
-
   // === MÉTHODE PRIVÉE ===
 
   private hydrate(data: any): TimeEntries {
     this.id = data.id;
     this.guid = data.guid;
+    this.external_id = data.external_id;
     this.session = data.session;
     this.user = data.user;
     this.device = data.device;

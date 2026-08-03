@@ -1,0 +1,13 @@
+{
+  "guard_team_mode": "WEEKLY_POOL",
+  "guard_team_employees_per_week": 6,
+  "guard_team_selection_mode": "ROTATION_ORDER",
+  "guard_team_rotation_anchor_date": "2026-08-03",
+  "guard_team_complete_weeks_only": true,
+  "guard_team_require_participation": true,
+  "max_consecutive_guards": 1,
+  "rest_after_guard_required": true,
+  "post_guard_rest_days": 0,
+  "solver_type": "ORTOOLS",
+  "fallback_to_greedy": false
+}

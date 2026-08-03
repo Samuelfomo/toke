@@ -10,7 +10,7 @@ const baseEmployeePlanningProfileSchema = z
 
     fixed_rest_day_mode: z.enum(['TEMPLATE', 'ROTATING']).default('TEMPLATE'),
 
-    rotation_order: z.number().int().min(0).nullable().optional(),
+    rotation_order: z.number().int().min(1).nullable().optional(),
 
     max_weekly_minutes: z.number().int().min(1).max(10080).nullable().optional(),
 
@@ -49,7 +49,7 @@ export const updateEmployeePlanningProfileSchema = z
     planning_mode: z.enum(['FIXED', 'ROTATING', 'EXCLUDED']).optional(),
     fixed_session_template: z.string().trim().min(1).max(255).nullable().optional(),
     fixed_rest_day_mode: z.enum(['TEMPLATE', 'ROTATING']).optional(),
-    rotation_order: z.number().int().min(0).nullable().optional(),
+    rotation_order: z.number().int().min(1).nullable().optional(),
     max_weekly_minutes: z.number().int().min(1).max(10080).nullable().optional(),
     active: z.boolean().optional(),
   })

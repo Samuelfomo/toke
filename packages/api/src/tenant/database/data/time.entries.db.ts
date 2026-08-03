@@ -17,6 +17,14 @@ export const TimeEntriesDbStructure = {
       },
       comment: 'Time entry ID',
     },
+    external_id: {
+      type: DataTypes.STRING(26),
+      allowNull: false,
+      validate: {
+        is: /^[0-9A-HJKMNP-TV-Z]{26}$/i,
+      },
+      comment: 'ULID used as the idempotency key; client-generated or temporary server fallback',
+    },
     guid: {
       type: DataTypes.STRING(128),
       allowNull: false,
@@ -123,15 +131,6 @@ export const TimeEntriesDbStructure = {
       },
       comment: 'Real clocked date',
     },
-    // server_received_at: {
-    //   type: DataTypes.DATE,
-    //   allowNull: false,
-    //   defaultValue: DataTypes.NOW,
-    //   validate: {
-    //     isDate: true,
-    //   },
-    //   comment: 'Server received date',
-    // },
     latitude: {
       type: DataTypes.DECIMAL(10, 8),
       allowNull: false,
@@ -297,6 +296,11 @@ export const TimeEntriesDbStructure = {
     freezeTableName: true,
     comment: 'Time entries table with validation information',
     indexes: [
+      {
+        unique: true,
+        fields: ['user', 'external_id'],
+        name: 'uq_time_entries_user_external_id',
+      },
       {
         fields: ['guid'],
         name: 'idx_time_entry_guid',

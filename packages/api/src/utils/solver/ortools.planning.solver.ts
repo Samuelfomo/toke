@@ -12,7 +12,7 @@ interface OrToolsApiResponse {
   success?: boolean;
   status: OrToolsStatus;
   result?: EngineResult;
-  diagnostics?: EngineDiagnostics;
+  diagnostics?: Partial<EngineDiagnostics>;
   message?: string;
   solverVersion?: string;
 }
@@ -22,9 +22,29 @@ export interface OrToolsPlanningSolverOptions {
   timeoutSeconds: number;
 }
 
+function emptyDiagnostics(): EngineDiagnostics {
+  return {
+    violations: [],
+    coverage: [],
+    guardPools: [],
+    fairnessScore: 0,
+    coverageScore: 0,
+  };
+}
+
+function normalizeDiagnostics(diagnostics?: Partial<EngineDiagnostics> | null): EngineDiagnostics {
+  return {
+    violations: diagnostics?.violations ?? [],
+    coverage: diagnostics?.coverage ?? [],
+    guardPools: diagnostics?.guardPools ?? [],
+    fairnessScore: diagnostics?.fairnessScore ?? 0,
+    coverageScore: diagnostics?.coverageScore ?? 0,
+  };
+}
+
 export default class OrToolsPlanningSolver implements PlanningSolver {
   readonly type = 'ORTOOLS' as const;
-  readonly version = 'ortools-cp-sat-v1.1';
+  readonly version = 'ortools-cp-sat-v1.3-weekly-guard-pool';
 
   constructor(private readonly options: OrToolsPlanningSolverOptions) {}
 
@@ -46,12 +66,15 @@ export default class OrToolsPlanningSolver implements PlanningSolver {
     }
 
     const controller = new AbortController();
+
     const timeout = setTimeout(() => controller.abort(), this.options.timeoutSeconds * 1000);
 
     let response: any;
 
     try {
-      response = await fetchFn(`${this.options.endpoint.replace(/\/+$/, '')}/solve`, {
+      const endpoint = this.options.endpoint.replace(/\/+$/, '');
+
+      response = await fetchFn(`${endpoint}/solve`, {
         method: 'POST',
         headers: {
           'content-type': 'application/json',
@@ -88,7 +111,11 @@ export default class OrToolsPlanningSolver implements PlanningSolver {
       try {
         body = await response.json();
       } catch {
-        body = await response.text?.();
+        try {
+          body = await response.text();
+        } catch {
+          body = null;
+        }
       }
 
       throw new PlanningSolverTechnicalError(
@@ -118,12 +145,7 @@ export default class OrToolsPlanningSolver implements PlanningSolver {
     if (payload.status === 'INFEASIBLE') {
       throw new PlanningInfeasibleError(
         payload.message ?? 'OR-Tools proved that the planning is infeasible',
-        payload.diagnostics ?? {
-          violations: [],
-          coverage: [],
-          fairnessScore: 0,
-          coverageScore: 0,
-        },
+        payload.diagnostics ? normalizeDiagnostics(payload.diagnostics) : emptyDiagnostics(),
       );
     }
 
@@ -144,6 +166,9 @@ export default class OrToolsPlanningSolver implements PlanningSolver {
       );
     }
 
-    return payload.result;
+    return {
+      ...payload.result,
+      diagnostics: normalizeDiagnostics(payload.result.diagnostics),
+    };
   }
 }
