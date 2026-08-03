@@ -1,10 +1,31 @@
 export type PlanningMode = 'FIXED' | 'ROTATING' | 'EXCLUDED'
 export type FixedRestDayMode = 'TEMPLATE' | 'ROTATING'
-export type PlanningDayKey = 'Mon' | 'Tue' | 'Wed' | 'Thu' | 'Fri' | 'Sat' | 'Sun'
+export type PlanningDayKey =
+    | 'Mon'
+    | 'Tue'
+    | 'Wed'
+    | 'Thu'
+    | 'Fri'
+    | 'Sat'
+    | 'Sun'
+
 export type PlanningServiceType = 'STANDARD' | 'GUARD'
 export type AllocationMode = 'EXACT' | 'RANGE' | 'FILL_REMAINING'
 export type PlanningSolverType = 'GREEDY' | 'ORTOOLS'
 export type SuggestionStatus = 'draft' | 'approved' | 'rejected'
+
+export type WeeklyLeaveMode =
+    | 'NONE'
+    | 'PER_EMPLOYEE'
+    | 'TEAM_ROTATION'
+
+export type GuardTeamMode =
+    | 'DAILY_FLEXIBLE'
+    | 'WEEKLY_POOL'
+
+export type GuardTeamSelectionMode =
+    | 'ROTATION_ORDER'
+    | 'OPTIMIZED'
 
 export type SuggestionReasonSource =
     | 'FIXED'
@@ -12,6 +33,9 @@ export type SuggestionReasonSource =
     | 'FILL_REMAINING'
     | 'GUARD_CONTINUATION'
     | 'POST_GUARD_REST'
+    | 'WEEKLY_LEAVE'
+    | 'TEMPLATE_REST'
+    | 'UNASSIGNED'
     | 'REST'
 
 export interface PlanningWorkBlock {
@@ -68,15 +92,39 @@ export interface EmployeePlanningProfileUpdatePayload {
     active: boolean
 }
 
+export interface WeeklyLeavePolicy {
+    mode: WeeklyLeaveMode
+    employees_per_week: number
+    allowed_days: PlanningDayKey[]
+    rotation_anchor_date: string | null
+    complete_weeks_only: boolean
+    post_guard_rest_counts_as_leave: boolean
+}
+
+export interface GuardTeamPolicy {
+    mode: GuardTeamMode
+    employees_per_week: number
+    selection_mode: GuardTeamSelectionMode
+    rotation_anchor_date: string | null
+    complete_weeks_only: boolean
+    require_participation: boolean
+}
+
 export interface PlanningSuggestionRules {
+    /** Utilisé uniquement lorsque weekly_leave_policy.mode = PER_EMPLOYEE. */
     min_rest_days_per_week: number
-    max_consecutive_work_days: number
+
+    /** null désactive la règle. */
+    max_consecutive_work_days: number | null
+
     max_weekly_minutes: number | null
     min_rest_minutes_between_shifts: number
     max_consecutive_guards: number
     rest_after_guard_required: boolean
     post_guard_rest_days: number
     max_resting_employees_per_day: number | null
+    weekly_leave_policy: WeeklyLeavePolicy
+    guard_team_policy: GuardTeamPolicy
     fairness_window_weeks: number
     strict_coverage: boolean
 }
@@ -103,8 +151,9 @@ export interface PlanningSuggestionConfig {
 export interface PlanningSuggestionConfigPayload {
     name: string
     active: boolean
+
     min_rest_days_per_week: number
-    max_consecutive_work_days: number
+    max_consecutive_work_days: number | null
     max_weekly_minutes: number | null
     min_rest_minutes_between_shifts: number
     max_consecutive_guards: number
@@ -113,6 +162,21 @@ export interface PlanningSuggestionConfigPayload {
     max_resting_employees_per_day: number | null
     fairness_window_weeks: number
     strict_coverage: boolean
+
+    weekly_leave_mode: WeeklyLeaveMode
+    weekly_leave_employees_per_week: number
+    weekly_leave_allowed_days: PlanningDayKey[]
+    weekly_leave_rotation_anchor_date: string | null
+    weekly_leave_complete_weeks_only: boolean
+    post_guard_rest_counts_as_weekly_leave: boolean
+
+    guard_team_mode: GuardTeamMode
+    guard_team_employees_per_week: number
+    guard_team_selection_mode: GuardTeamSelectionMode
+    guard_team_rotation_anchor_date: string | null
+    guard_team_complete_weeks_only: boolean
+    guard_team_require_participation: boolean
+
     solver_type: PlanningSolverType
     solver_timeout_seconds: number
     fallback_to_greedy: boolean
@@ -198,12 +262,26 @@ export interface SuggestionCoverage {
     target: number
     maximum: number | null
     assigned: number
-    status: 'COVERED' | 'BELOW_TARGET' | 'BELOW_MINIMUM' | 'ABOVE_MAXIMUM'
+    status:
+        | 'COVERED'
+        | 'BELOW_TARGET'
+        | 'BELOW_MINIMUM'
+        | 'ABOVE_MAXIMUM'
+}
+
+export interface SuggestionGuardPool {
+    weekFrom: string
+    weekTo: string
+    employeeGuids: string[]
+    mode: 'WEEKLY_POOL'
+    // mode: GuardTeamMode
+    selectionMode: GuardTeamSelectionMode
 }
 
 export interface SuggestionDiagnostics {
     violations: SuggestionViolation[]
     coverage: SuggestionCoverage[]
+    guardPools?: SuggestionGuardPool[]
     fairnessScore: number
     coverageScore: number
     solver?: {
@@ -250,7 +328,12 @@ export interface GenerateSuggestionPayload {
 }
 
 export interface PlanningReadinessItem {
-    id: 'profiles' | 'configuration' | 'requirements' | 'manager'
+    id:
+        | 'profiles'
+        | 'weekly_leave'
+        | 'configuration'
+        | 'requirements'
+        | 'manager'
     label: string
     description: string
     ready: boolean

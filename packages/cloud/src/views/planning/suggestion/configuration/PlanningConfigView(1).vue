@@ -25,7 +25,7 @@
             class="inline-flex items-center gap-2 rounded-xl bg-indigo-600 px-4 py-2.5 text-xs font-bold text-white shadow-sm hover:bg-indigo-700"
             @click="showForm = true"
         >
-          <IconPencil :size="16"/>
+          <IconPencil :size="16" />
           Modifier les règles
         </button>
       </template>
@@ -72,7 +72,7 @@
           class="mt-5 inline-flex items-center gap-2 rounded-xl bg-indigo-600 px-4 py-2.5 text-xs font-bold text-white hover:bg-indigo-700"
           @click="showForm = true"
       >
-        <IconPlus :size="16"/>
+        <IconPlus :size="16" />
         Créer une configuration
       </button>
     </div>
@@ -82,7 +82,7 @@
         <div class="flex flex-col gap-4 bg-emerald-50/70 px-5 py-5 sm:flex-row sm:items-center sm:justify-between">
           <div class="flex gap-3">
             <div class="flex h-10 w-10 items-center justify-center rounded-xl bg-emerald-100 text-emerald-700">
-              <IconCircleCheck :size="21"/>
+              <IconCircleCheck :size="21" />
             </div>
             <div>
               <div class="flex flex-wrap items-center gap-2">
@@ -118,7 +118,7 @@
         <div class="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
           <div class="flex items-start gap-3">
             <div class="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-rose-100 text-rose-700">
-              <IconCalendarPause :size="20"/>
+              <IconCalendarPause :size="20" />
             </div>
             <div>
               <p class="text-[10px] font-bold uppercase tracking-[0.12em] text-rose-500">
@@ -172,76 +172,6 @@
         </div>
       </section>
 
-      <section class="rounded-2xl border border-amber-100 bg-amber-50/30 p-5 shadow-sm">
-        <div class="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
-          <div class="flex items-start gap-3">
-            <div class="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-amber-100 text-amber-700">
-              <IconShieldStar :size="20"/>
-            </div>
-            <div>
-              <p class="text-[10px] font-bold uppercase tracking-[0.12em] text-amber-600">
-                Gardes
-              </p>
-              <h2 class="mt-1 text-base font-bold text-slate-900">
-                {{ guardTeamPolicyModeLabel }}
-              </h2>
-              <p class="mt-1 max-w-2xl text-xs leading-5 text-slate-600">
-                {{ guardTeamPolicyDescription }}
-              </p>
-            </div>
-          </div>
-
-          <div class="rounded-xl border border-amber-100 bg-white px-4 py-3 lg:text-right">
-            <p class="text-[9px] font-bold uppercase tracking-[0.12em] text-slate-400">
-              Sélection
-            </p>
-            <p class="mt-1 text-sm font-bold text-slate-900">
-              {{ guardSelectionModeLabel }}
-            </p>
-          </div>
-        </div>
-
-        <div
-            v-if="guardTeamPolicy"
-            class="mt-5 grid gap-3 sm:grid-cols-2 lg:grid-cols-3"
-        >
-          <ConfigValue
-              label="Collaborateurs autorisés"
-              :value="`${guardTeamPolicy.employees_per_week} collaborateur(s) ROTATING par semaine`"
-              help="Nombre de collaborateurs ROTATING autorisés à prendre les gardes sur la semaine."
-          />
-          <ConfigValue
-              label="Mode de sélection"
-              :value="guardSelectionModeLabel"
-              help="Détermine comment les collaborateurs autorisés sont sélectionnés."
-          />
-          <ConfigValue
-              v-if="guardTeamPolicy.selection_mode === 'ROTATION_ORDER'"
-              label="Début de la rotation"
-              :value="formatDate(guardTeamPolicy.rotation_anchor_date)"
-              help="Date d’ancrage utilisée pour calculer l’ordre de rotation."
-          />
-          <ConfigValue
-              label="Semaines complètes uniquement"
-              :value="yesNo(guardTeamPolicy.complete_weeks_only)"
-              help="Indique si la politique s’applique uniquement aux semaines complètes."
-          />
-          <ConfigValue
-              label="Participation obligatoire"
-              :value="yesNo(guardTeamPolicy.require_participation)"
-              help="Indique si les collaborateurs éligibles doivent participer à la garde."
-          />
-        </div>
-
-        <PlanningInfoPanel
-            v-else
-            class="mt-5"
-            tone="warning"
-            title="Politique de garde non configurée"
-            description="La réponse active ne contient pas rules.guard_team_policy."
-        />
-      </section>
-
       <div class="grid gap-4 lg:grid-cols-2">
         <PlanningRuleCard
             title="Jours consécutifs maximum"
@@ -262,9 +192,11 @@
 
         <PlanningRuleCard
             title="Récupération après garde"
-            :value="postGuardRestValue"
-            :description="postGuardRestDescription"
-            :example="postGuardRestExample"
+            :value="config.rules.rest_after_guard_required
+                        ? `${config.rules.post_guard_rest_days} jour(s)`
+                        : 'Désactivée'"
+            description="Bloque les journées complètes après la fin de garde."
+            example="Garde lundi, fin mardi, repos mercredi avec une valeur de 1."
             :icon="IconMoonStars"
             accent="violet"
         />
@@ -402,90 +334,6 @@ const loading = ref(false)
 const errorMessage = ref('')
 const config = ref<PlanningSuggestionConfig | null>(null)
 const showForm = ref(false)
-
-type GuardTeamPolicy = {
-  mode: 'DAILY_FLEXIBLE' | 'WEEKLY_POOL'
-  employees_per_week: number
-  selection_mode: 'ROTATION_ORDER' | 'OPTIMIZED_CHOICE' | 'OPTIMIZED'
-  rotation_anchor_date: string | null
-  complete_weeks_only: boolean
-  require_participation: boolean
-}
-
-type PlanningRulesWithGuardPolicy = PlanningSuggestionConfig['rules'] & {
-  guard_team_policy?: GuardTeamPolicy | null
-}
-
-const guardTeamPolicy = computed<GuardTeamPolicy | null>(() => {
-  const rules = config.value?.rules as PlanningRulesWithGuardPolicy | undefined
-  return rules?.guard_team_policy ?? null
-})
-
-const guardTeamPolicyModeLabel = computed(() => {
-  if (!guardTeamPolicy.value) return 'Politique non configurée'
-
-  return guardTeamPolicy.value.mode === 'DAILY_FLEXIBLE'
-      ? 'Affectation quotidienne flexible'
-      : 'Pool hebdomadaire de garde'
-})
-
-const guardTeamPolicyDescription = computed(() => {
-  if (!guardTeamPolicy.value) {
-    return 'La configuration active ne fournit aucune politique d’équipe pour les gardes.'
-  }
-
-  if (guardTeamPolicy.value.mode === 'DAILY_FLEXIBLE') {
-    return 'Les collaborateurs autorisés peuvent être affectés aux gardes au fil des journées, selon les besoins du planning.'
-  }
-
-  return 'Un pool de collaborateurs ROTATING est constitué pour prendre les gardes sur chaque semaine.'
-})
-
-const guardSelectionModeLabel = computed(() => {
-  if (!guardTeamPolicy.value) return '—'
-
-  return guardTeamPolicy.value.selection_mode === 'ROTATION_ORDER'
-      ? 'Ordre de rotation'
-      : 'Choix optimisé'
-})
-
-const postGuardRestValue = computed(() => {
-  if (!config.value?.rules.rest_after_guard_required) return 'Désactivée'
-
-  if (config.value.rules.post_guard_rest_days === 0) {
-    return 'Aucun jour calendaire complet ajouté'
-  }
-
-  return `${config.value.rules.post_guard_rest_days} jour(s) calendaire(s) complet(s)`
-})
-
-const postGuardRestDescription = computed(() => {
-  if (!config.value?.rules.rest_after_guard_required) {
-    return 'Aucune journée complète supplémentaire n’est bloquée après la fin de garde.'
-  }
-
-  if (config.value.rules.post_guard_rest_days === 0) {
-    return 'Aucun jour calendaire complet n’est ajouté après la continuation. La continuation de 00h à 08h reste indisponible pour un service de journée.'
-  }
-
-  return 'Bloque le nombre configuré de journées calendaires complètes après la journée de continuation.'
-})
-
-const postGuardRestExample = computed(() => {
-  if (!config.value?.rules.rest_after_guard_required) {
-    return 'La fin de garde et les autres contraintes de repos restent néanmoins appliquées.'
-  }
-
-  if (config.value.rules.post_guard_rest_days === 0) {
-    return 'Après une continuation de 00h à 08h, aucun jour complet supplémentaire n’est bloqué, mais cette journée ne peut pas recevoir un service de journée.'
-  }
-
-  return 'Avec une valeur de 1, le premier jour calendaire complet après la continuation est bloqué.'
-})
-
-function yesNo(value: boolean): 'Oui' | 'Non' {
-  return value ? 'Oui' : 'Non'
-}
 
 const policy = computed<WeeklyLeavePolicy>(() =>
         config.value?.rules.weekly_leave_policy ?? {
