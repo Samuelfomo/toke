@@ -487,14 +487,43 @@ function yesNo(value: boolean): 'Oui' | 'Non' {
   return value ? 'Oui' : 'Non'
 }
 
+// const policy = computed<WeeklyLeavePolicy>(() =>
+//         config.value?.rules.weekly_leave_policy ?? {
+//           mode: 'PER_EMPLOYEE',
+//           employees_per_week: 1,
+//           allowed_days: DEFAULT_WEEKLY_LEAVE_DAYS,
+//           rotation_anchor_date: null,
+//           complete_weeks_only: true,
+//           post_guard_rest_counts_as_leave: false,
+//         },
+// )
+
 const policy = computed<WeeklyLeavePolicy>(() =>
         config.value?.rules.weekly_leave_policy ?? {
           mode: 'PER_EMPLOYEE',
           employees_per_week: 1,
-          allowed_days: DEFAULT_WEEKLY_LEAVE_DAYS,
+          allowed_days: [...DEFAULT_WEEKLY_LEAVE_DAYS],
           rotation_anchor_date: null,
           complete_weeks_only: true,
           post_guard_rest_counts_as_leave: false,
+
+          selector: {
+            planning_modes: ['ROTATING'],
+            guard_pool_relation: 'ANY',
+          },
+
+          days_per_employee: 1,
+          count_mode: 'MINIMUM',
+          max_employees_per_day: null,
+          require_work_on_other_days: false,
+
+          service_scope: {
+            mode: 'ANY',
+            service_types: [],
+            template_guids: [],
+            requirement_guids: [],
+            exclusive: false,
+          },
         },
 )
 
