@@ -323,7 +323,7 @@ class ClientManager {
             console.log("4. Changer le statut d'un client");
             console.log('5. Supprimer un client');
             console.log('6. Tester la connexion DB');
-            console.log('0. Retour au menu principal');
+            console.log('7. Retour au menu principal');
             const choice = yield this.question('\nVotre choix (1-7): ');
             switch (choice) {
                 case '1':

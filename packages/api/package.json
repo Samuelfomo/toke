@@ -70,7 +70,8 @@
     "migrate:undo": "npx sequelize-cli db:migrate:undo:all --env production",
     "status:migrate": "npx sequelize-cli db:migrate:status --env production",
     "migration:create": "npx sequelize-cli migration:create",
-    "migration:generate": "npx sequelize-cli migration:generate"
+    "migration:generate": "npx sequelize-cli migration:generate",
+    "structure": "tree -I 'node_modules|.*|tmp|automate|master|middle|realtime|temporaire_route' > Project-structure.txt"
   },
   "keywords": [],
   "author": "",

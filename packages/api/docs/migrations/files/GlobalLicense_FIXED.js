@@ -218,7 +218,7 @@ class GlobalLicense extends GlobalLicenseModel_js_1.default {
     isExpired() {
         if (!this.current_period_end)
             return false;
-        return new Date() > new Date(this.current_period_end);
+        return TimezoneConfigUtils.getCurrentTime() > new Date(this.current_period_end);
     }
     /**
      * Vérifie si la licence expire bientôt
@@ -226,7 +226,7 @@ class GlobalLicense extends GlobalLicenseModel_js_1.default {
     isExpiringSoon(days = 30) {
         if (!this.current_period_end)
             return false;
-        const warningDate = new Date();
+        const warningDate = TimezoneConfigUtils.getCurrentTime();
         warningDate.setDate(warningDate.getDate() + days);
         return new Date(this.current_period_end) <= warningDate && !this.isExpired();
     }
@@ -254,7 +254,7 @@ class GlobalLicense extends GlobalLicenseModel_js_1.default {
     getDaysRemaining() {
         if (!this.current_period_end)
             return 0;
-        const now = new Date();
+        const now = TimezoneConfigUtils.getCurrentTime();
         const end = new Date(this.current_period_end);
         const diffTime = end.getTime() - now.getTime();
         return Math.max(0, Math.ceil(diffTime / (1000 * 60 * 60 * 24)));

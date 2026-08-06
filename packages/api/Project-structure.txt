@@ -1,0 +1,1059 @@
+.
+├── Project-structure.txt
+├── README.md
+├── cache
+│   ├── auth-qr-cache.json
+│   ├── clients.json
+│   └── tenants.json
+├── dist
+│   ├── tenant
+│   │   ├── app.d.ts
+│   │   ├── app.d.ts.map
+│   │   ├── app.js
+│   │   ├── app.js.map
+│   │   ├── class
+│   │   │   ├── AuditLogs.d.ts
+│   │   │   ├── AuditLogs.d.ts.map
+│   │   │   ├── AuditLogs.js
+│   │   │   ├── AuditLogs.js.map
+│   │   │   ├── Department.d.ts
+│   │   │   ├── Department.d.ts.map
+│   │   │   ├── Department.js
+│   │   │   ├── Department.js.map
+│   │   │   ├── Device.d.ts
+│   │   │   ├── Device.d.ts.map
+│   │   │   ├── Device.js
+│   │   │   ├── Device.js.map
+│   │   │   ├── EmployeePlanningProfile.d.ts
+│   │   │   ├── EmployeePlanningProfile.d.ts.map
+│   │   │   ├── EmployeePlanningProfile.js
+│   │   │   ├── EmployeePlanningProfile.js.map
+│   │   │   ├── EventLog.d.ts
+│   │   │   ├── EventLog.d.ts.map
+│   │   │   ├── EventLog.js
+│   │   │   ├── EventLog.js.map
+│   │   │   ├── FraudAlerts.d.ts
+│   │   │   ├── FraudAlerts.d.ts.map
+│   │   │   ├── FraudAlerts.js
+│   │   │   ├── FraudAlerts.js.map
+│   │   │   ├── Groups.d.ts
+│   │   │   ├── Groups.d.ts.map
+│   │   │   ├── Groups.js
+│   │   │   ├── Groups.js.map
+│   │   │   ├── Memos.d.ts
+│   │   │   ├── Memos.d.ts.map
+│   │   │   ├── Memos.js
+│   │   │   ├── Memos.js.map
+│   │   │   ├── OrgHierarchy.d.ts
+│   │   │   ├── OrgHierarchy.d.ts.map
+│   │   │   ├── OrgHierarchy.js
+│   │   │   ├── OrgHierarchy.js.map
+│   │   │   ├── PlanningSuggestionConfig.d.ts
+│   │   │   ├── PlanningSuggestionConfig.d.ts.map
+│   │   │   ├── PlanningSuggestionConfig.js
+│   │   │   ├── PlanningSuggestionConfig.js.map
+│   │   │   ├── PlanningSuggestionRequirement.d.ts
+│   │   │   ├── PlanningSuggestionRequirement.d.ts.map
+│   │   │   ├── PlanningSuggestionRequirement.js
+│   │   │   ├── PlanningSuggestionRequirement.js.map
+│   │   │   ├── Poste.d.ts
+│   │   │   ├── Poste.d.ts.map
+│   │   │   ├── Poste.js
+│   │   │   ├── Poste.js.map
+│   │   │   ├── QrCodeGeneration.d.ts
+│   │   │   ├── QrCodeGeneration.d.ts.map
+│   │   │   ├── QrCodeGeneration.js
+│   │   │   ├── QrCodeGeneration.js.map
+│   │   │   ├── Role.d.ts
+│   │   │   ├── Role.d.ts.map
+│   │   │   ├── Role.js
+│   │   │   ├── Role.js.map
+│   │   │   ├── RotationAssignmentLog.d.ts
+│   │   │   ├── RotationAssignmentLog.d.ts.map
+│   │   │   ├── RotationAssignmentLog.js
+│   │   │   ├── RotationAssignmentLog.js.map
+│   │   │   ├── RotationAssignments.d.ts
+│   │   │   ├── RotationAssignments.d.ts.map
+│   │   │   ├── RotationAssignments.js
+│   │   │   ├── RotationAssignments.js.map
+│   │   │   ├── RotationGroupTemplate.d.ts
+│   │   │   ├── RotationGroupTemplate.d.ts.map
+│   │   │   ├── RotationGroupTemplate.js
+│   │   │   ├── RotationGroupTemplate.js.map
+│   │   │   ├── RotationGroupTemplateLog.d.ts
+│   │   │   ├── RotationGroupTemplateLog.d.ts.map
+│   │   │   ├── RotationGroupTemplateLog.js
+│   │   │   ├── RotationGroupTemplateLog.js.map
+│   │   │   ├── RotationGroups.d.ts
+│   │   │   ├── RotationGroups.d.ts.map
+│   │   │   ├── RotationGroups.js
+│   │   │   ├── RotationGroups.js.map
+│   │   │   ├── ScheduleAssignments.d.ts
+│   │   │   ├── ScheduleAssignments.d.ts.map
+│   │   │   ├── ScheduleAssignments.js
+│   │   │   ├── ScheduleAssignments.js.map
+│   │   │   ├── ScheduleAssignmentsLog.d.ts
+│   │   │   ├── ScheduleAssignmentsLog.d.ts.map
+│   │   │   ├── ScheduleAssignmentsLog.js
+│   │   │   ├── ScheduleAssignmentsLog.js.map
+│   │   │   ├── ScheduleSuggestion.d.ts
+│   │   │   ├── ScheduleSuggestion.d.ts.map
+│   │   │   ├── ScheduleSuggestion.js
+│   │   │   ├── ScheduleSuggestion.js.map
+│   │   │   ├── ScheduleSuggestionItem.d.ts
+│   │   │   ├── ScheduleSuggestionItem.d.ts.map
+│   │   │   ├── ScheduleSuggestionItem.js
+│   │   │   ├── ScheduleSuggestionItem.js.map
+│   │   │   ├── SessionModel.d.ts
+│   │   │   ├── SessionModel.d.ts.map
+│   │   │   ├── SessionModel.js
+│   │   │   ├── SessionModel.js.map
+│   │   │   ├── SessionTemplates.d.ts
+│   │   │   ├── SessionTemplates.d.ts.map
+│   │   │   ├── SessionTemplates.js
+│   │   │   ├── SessionTemplates.js.map
+│   │   │   ├── Site.d.ts
+│   │   │   ├── Site.d.ts.map
+│   │   │   ├── Site.js
+│   │   │   ├── Site.js.map
+│   │   │   ├── TimeEntries.d.ts
+│   │   │   ├── TimeEntries.d.ts.map
+│   │   │   ├── TimeEntries.js
+│   │   │   ├── TimeEntries.js.map
+│   │   │   ├── User.d.ts
+│   │   │   ├── User.d.ts.map
+│   │   │   ├── User.js
+│   │   │   ├── User.js.map
+│   │   │   ├── UserRole.d.ts
+│   │   │   ├── UserRole.d.ts.map
+│   │   │   ├── UserRole.js
+│   │   │   ├── UserRole.js.map
+│   │   │   ├── WorkSessions.d.ts
+│   │   │   ├── WorkSessions.d.ts.map
+│   │   │   ├── WorkSessions.js
+│   │   │   └── WorkSessions.js.map
+│   │   ├── database
+│   │   │   ├── data
+│   │   │   │   ├── audit.logs.db.d.ts
+│   │   │   │   ├── audit.logs.db.d.ts.map
+│   │   │   │   ├── audit.logs.db.js
+│   │   │   │   ├── audit.logs.db.js.map
+│   │   │   │   ├── department.db.d.ts
+│   │   │   │   ├── department.db.d.ts.map
+│   │   │   │   ├── department.db.js
+│   │   │   │   ├── department.db.js.map
+│   │   │   │   ├── device.db.d.ts
+│   │   │   │   ├── device.db.d.ts.map
+│   │   │   │   ├── device.db.js
+│   │   │   │   ├── device.db.js.map
+│   │   │   │   ├── employee.planning.profile.db.d.ts
+│   │   │   │   ├── employee.planning.profile.db.d.ts.map
+│   │   │   │   ├── employee.planning.profile.db.js
+│   │   │   │   ├── employee.planning.profile.db.js.map
+│   │   │   │   ├── event.log.db.d.ts
+│   │   │   │   ├── event.log.db.d.ts.map
+│   │   │   │   ├── event.log.db.js
+│   │   │   │   ├── event.log.db.js.map
+│   │   │   │   ├── fraud.alerts.db.d.ts
+│   │   │   │   ├── fraud.alerts.db.d.ts.map
+│   │   │   │   ├── fraud.alerts.db.js
+│   │   │   │   ├── fraud.alerts.db.js.map
+│   │   │   │   ├── groups.db.d.ts
+│   │   │   │   ├── groups.db.d.ts.map
+│   │   │   │   ├── groups.db.js
+│   │   │   │   ├── groups.db.js.map
+│   │   │   │   ├── memos.db.d.ts
+│   │   │   │   ├── memos.db.d.ts.map
+│   │   │   │   ├── memos.db.js
+│   │   │   │   ├── memos.db.js.map
+│   │   │   │   ├── org.hierarchy.db.d.ts
+│   │   │   │   ├── org.hierarchy.db.d.ts.map
+│   │   │   │   ├── org.hierarchy.db.js
+│   │   │   │   ├── org.hierarchy.db.js.map
+│   │   │   │   ├── planning.suggestion.config.db.d.ts
+│   │   │   │   ├── planning.suggestion.config.db.d.ts.map
+│   │   │   │   ├── planning.suggestion.config.db.js
+│   │   │   │   ├── planning.suggestion.config.db.js.map
+│   │   │   │   ├── planning.suggestion.requirement.bd.d.ts
+│   │   │   │   ├── planning.suggestion.requirement.bd.d.ts.map
+│   │   │   │   ├── planning.suggestion.requirement.bd.js
+│   │   │   │   ├── planning.suggestion.requirement.bd.js.map
+│   │   │   │   ├── poste.db.d.ts
+│   │   │   │   ├── poste.db.d.ts.map
+│   │   │   │   ├── poste.db.js
+│   │   │   │   ├── poste.db.js.map
+│   │   │   │   ├── qr.code.generation.db.d.ts
+│   │   │   │   ├── qr.code.generation.db.d.ts.map
+│   │   │   │   ├── qr.code.generation.db.js
+│   │   │   │   ├── qr.code.generation.db.js.map
+│   │   │   │   ├── roles.db.d.ts
+│   │   │   │   ├── roles.db.d.ts.map
+│   │   │   │   ├── roles.db.js
+│   │   │   │   ├── roles.db.js.map
+│   │   │   │   ├── rotation.assignment.log.db.d.ts
+│   │   │   │   ├── rotation.assignment.log.db.d.ts.map
+│   │   │   │   ├── rotation.assignment.log.db.js
+│   │   │   │   ├── rotation.assignment.log.db.js.map
+│   │   │   │   ├── rotation.assignments.db.d.ts
+│   │   │   │   ├── rotation.assignments.db.d.ts.map
+│   │   │   │   ├── rotation.assignments.db.js
+│   │   │   │   ├── rotation.assignments.db.js.map
+│   │   │   │   ├── rotation.group.template.db.d.ts
+│   │   │   │   ├── rotation.group.template.db.d.ts.map
+│   │   │   │   ├── rotation.group.template.db.js
+│   │   │   │   ├── rotation.group.template.db.js.map
+│   │   │   │   ├── rotation.group.template.log.db.d.ts
+│   │   │   │   ├── rotation.group.template.log.db.d.ts.map
+│   │   │   │   ├── rotation.group.template.log.db.js
+│   │   │   │   ├── rotation.group.template.log.db.js.map
+│   │   │   │   ├── rotation.groups.db.d.ts
+│   │   │   │   ├── rotation.groups.db.d.ts.map
+│   │   │   │   ├── rotation.groups.db.js
+│   │   │   │   ├── rotation.groups.db.js.map
+│   │   │   │   ├── schedule.assignments.db.d.ts
+│   │   │   │   ├── schedule.assignments.db.d.ts.map
+│   │   │   │   ├── schedule.assignments.db.js
+│   │   │   │   ├── schedule.assignments.db.js.map
+│   │   │   │   ├── schedule.assignments.logs.db.d.ts
+│   │   │   │   ├── schedule.assignments.logs.db.d.ts.map
+│   │   │   │   ├── schedule.assignments.logs.db.js
+│   │   │   │   ├── schedule.assignments.logs.db.js.map
+│   │   │   │   ├── schedule.suggestion.db.d.ts
+│   │   │   │   ├── schedule.suggestion.db.d.ts.map
+│   │   │   │   ├── schedule.suggestion.db.js
+│   │   │   │   ├── schedule.suggestion.db.js.map
+│   │   │   │   ├── schedule.suggestion.item.db.d.ts
+│   │   │   │   ├── schedule.suggestion.item.db.d.ts.map
+│   │   │   │   ├── schedule.suggestion.item.db.js
+│   │   │   │   ├── schedule.suggestion.item.db.js.map
+│   │   │   │   ├── session.model.db.d.ts
+│   │   │   │   ├── session.model.db.d.ts.map
+│   │   │   │   ├── session.model.db.js
+│   │   │   │   ├── session.model.db.js.map
+│   │   │   │   ├── session.templates.db.d.ts
+│   │   │   │   ├── session.templates.db.d.ts.map
+│   │   │   │   ├── session.templates.db.js
+│   │   │   │   ├── session.templates.db.js.map
+│   │   │   │   ├── sites.db.d.ts
+│   │   │   │   ├── sites.db.d.ts.map
+│   │   │   │   ├── sites.db.js
+│   │   │   │   ├── sites.db.js.map
+│   │   │   │   ├── time.entries.db.d.ts
+│   │   │   │   ├── time.entries.db.d.ts.map
+│   │   │   │   ├── time.entries.db.js
+│   │   │   │   ├── time.entries.db.js.map
+│   │   │   │   ├── user.roles.db.d.ts
+│   │   │   │   ├── user.roles.db.d.ts.map
+│   │   │   │   ├── user.roles.db.js
+│   │   │   │   ├── user.roles.db.js.map
+│   │   │   │   ├── users.db.d.ts
+│   │   │   │   ├── users.db.d.ts.map
+│   │   │   │   ├── users.db.js
+│   │   │   │   ├── users.db.js.map
+│   │   │   │   ├── work.sessions.db.d.ts
+│   │   │   │   ├── work.sessions.db.d.ts.map
+│   │   │   │   ├── work.sessions.db.js
+│   │   │   │   └── work.sessions.db.js.map
+│   │   │   ├── db.base.d.ts
+│   │   │   ├── db.base.d.ts.map
+│   │   │   ├── db.base.js
+│   │   │   ├── db.base.js.map
+│   │   │   ├── db.config.d.ts
+│   │   │   ├── db.config.d.ts.map
+│   │   │   ├── db.config.js
+│   │   │   ├── db.config.js.map
+│   │   │   ├── db.initializer.d.ts
+│   │   │   ├── db.initializer.d.ts.map
+│   │   │   ├── db.initializer.js
+│   │   │   ├── db.initializer.js.map
+│   │   │   ├── db.tenant-manager.d.ts
+│   │   │   ├── db.tenant-manager.d.ts.map
+│   │   │   ├── db.tenant-manager.js
+│   │   │   └── db.tenant-manager.js.map
+│   │   ├── model
+│   │   │   ├── AuditLogsModel.d.ts
+│   │   │   ├── AuditLogsModel.d.ts.map
+│   │   │   ├── AuditLogsModel.js
+│   │   │   ├── AuditLogsModel.js.map
+│   │   │   ├── DepartmentModel.d.ts
+│   │   │   ├── DepartmentModel.d.ts.map
+│   │   │   ├── DepartmentModel.js
+│   │   │   ├── DepartmentModel.js.map
+│   │   │   ├── DeviceModel.d.ts
+│   │   │   ├── DeviceModel.d.ts.map
+│   │   │   ├── DeviceModel.js
+│   │   │   ├── DeviceModel.js.map
+│   │   │   ├── EmployeePlanningProfileModel.d.ts
+│   │   │   ├── EmployeePlanningProfileModel.d.ts.map
+│   │   │   ├── EmployeePlanningProfileModel.js
+│   │   │   ├── EmployeePlanningProfileModel.js.map
+│   │   │   ├── EventLogModel.d.ts
+│   │   │   ├── EventLogModel.d.ts.map
+│   │   │   ├── EventLogModel.js
+│   │   │   ├── EventLogModel.js.map
+│   │   │   ├── FraudAlertsModel.d.ts
+│   │   │   ├── FraudAlertsModel.d.ts.map
+│   │   │   ├── FraudAlertsModel.js
+│   │   │   ├── FraudAlertsModel.js.map
+│   │   │   ├── GroupsModel.d.ts
+│   │   │   ├── GroupsModel.d.ts.map
+│   │   │   ├── GroupsModel.js
+│   │   │   ├── GroupsModel.js.map
+│   │   │   ├── MemosModel.d.ts
+│   │   │   ├── MemosModel.d.ts.map
+│   │   │   ├── MemosModel.js
+│   │   │   ├── MemosModel.js.map
+│   │   │   ├── OrgHierarchyModel.d.ts
+│   │   │   ├── OrgHierarchyModel.d.ts.map
+│   │   │   ├── OrgHierarchyModel.js
+│   │   │   ├── OrgHierarchyModel.js.map
+│   │   │   ├── PlanningSuggestionConfigModel.d.ts
+│   │   │   ├── PlanningSuggestionConfigModel.d.ts.map
+│   │   │   ├── PlanningSuggestionConfigModel.js
+│   │   │   ├── PlanningSuggestionConfigModel.js.map
+│   │   │   ├── PlanningSuggestionRequirementModel.d.ts
+│   │   │   ├── PlanningSuggestionRequirementModel.d.ts.map
+│   │   │   ├── PlanningSuggestionRequirementModel.js
+│   │   │   ├── PlanningSuggestionRequirementModel.js.map
+│   │   │   ├── PosteModel.d.ts
+│   │   │   ├── PosteModel.d.ts.map
+│   │   │   ├── PosteModel.js
+│   │   │   ├── PosteModel.js.map
+│   │   │   ├── QrCodeGenerationModel.d.ts
+│   │   │   ├── QrCodeGenerationModel.d.ts.map
+│   │   │   ├── QrCodeGenerationModel.js
+│   │   │   ├── QrCodeGenerationModel.js.map
+│   │   │   ├── RoleModel.d.ts
+│   │   │   ├── RoleModel.d.ts.map
+│   │   │   ├── RoleModel.js
+│   │   │   ├── RoleModel.js.map
+│   │   │   ├── RotationAssignmentLogModel.d.ts
+│   │   │   ├── RotationAssignmentLogModel.d.ts.map
+│   │   │   ├── RotationAssignmentLogModel.js
+│   │   │   ├── RotationAssignmentLogModel.js.map
+│   │   │   ├── RotationAssignmentsModel.d.ts
+│   │   │   ├── RotationAssignmentsModel.d.ts.map
+│   │   │   ├── RotationAssignmentsModel.js
+│   │   │   ├── RotationAssignmentsModel.js.map
+│   │   │   ├── RotationGroupTemplateLogModel.d.ts
+│   │   │   ├── RotationGroupTemplateLogModel.d.ts.map
+│   │   │   ├── RotationGroupTemplateLogModel.js
+│   │   │   ├── RotationGroupTemplateLogModel.js.map
+│   │   │   ├── RotationGroupTemplateModel.d.ts
+│   │   │   ├── RotationGroupTemplateModel.d.ts.map
+│   │   │   ├── RotationGroupTemplateModel.js
+│   │   │   ├── RotationGroupTemplateModel.js.map
+│   │   │   ├── RotationGroupsModel.d.ts
+│   │   │   ├── RotationGroupsModel.d.ts.map
+│   │   │   ├── RotationGroupsModel.js
+│   │   │   ├── RotationGroupsModel.js.map
+│   │   │   ├── ScheduleAssignmentsLogModel.d.ts
+│   │   │   ├── ScheduleAssignmentsLogModel.d.ts.map
+│   │   │   ├── ScheduleAssignmentsLogModel.js
+│   │   │   ├── ScheduleAssignmentsLogModel.js.map
+│   │   │   ├── ScheduleAssignmentsModel.d.ts
+│   │   │   ├── ScheduleAssignmentsModel.d.ts.map
+│   │   │   ├── ScheduleAssignmentsModel.js
+│   │   │   ├── ScheduleAssignmentsModel.js.map
+│   │   │   ├── ScheduleSuggestionItemModel.d.ts
+│   │   │   ├── ScheduleSuggestionItemModel.d.ts.map
+│   │   │   ├── ScheduleSuggestionItemModel.js
+│   │   │   ├── ScheduleSuggestionItemModel.js.map
+│   │   │   ├── ScheduleSuggestionModel.d.ts
+│   │   │   ├── ScheduleSuggestionModel.d.ts.map
+│   │   │   ├── ScheduleSuggestionModel.js
+│   │   │   ├── ScheduleSuggestionModel.js.map
+│   │   │   ├── SessionModelModel.d.ts
+│   │   │   ├── SessionModelModel.d.ts.map
+│   │   │   ├── SessionModelModel.js
+│   │   │   ├── SessionModelModel.js.map
+│   │   │   ├── SessionTemplatesModel.d.ts
+│   │   │   ├── SessionTemplatesModel.d.ts.map
+│   │   │   ├── SessionTemplatesModel.js
+│   │   │   ├── SessionTemplatesModel.js.map
+│   │   │   ├── SiteModel.d.ts
+│   │   │   ├── SiteModel.d.ts.map
+│   │   │   ├── SiteModel.js
+│   │   │   ├── SiteModel.js.map
+│   │   │   ├── TimeEntriesModel.d.ts
+│   │   │   ├── TimeEntriesModel.d.ts.map
+│   │   │   ├── TimeEntriesModel.js
+│   │   │   ├── TimeEntriesModel.js.map
+│   │   │   ├── UserModel.d.ts
+│   │   │   ├── UserModel.d.ts.map
+│   │   │   ├── UserModel.js
+│   │   │   ├── UserModel.js.map
+│   │   │   ├── UserRoleModel.d.ts
+│   │   │   ├── UserRoleModel.d.ts.map
+│   │   │   ├── UserRoleModel.js
+│   │   │   ├── UserRoleModel.js.map
+│   │   │   ├── WorkSessionsModel.d.ts
+│   │   │   ├── WorkSessionsModel.d.ts.map
+│   │   │   ├── WorkSessionsModel.js
+│   │   │   └── WorkSessionsModel.js.map
+│   │   ├── routes
+│   │   │   ├── attendance.stat.route.d.ts
+│   │   │   ├── attendance.stat.route.d.ts.map
+│   │   │   ├── attendance.stat.route.js
+│   │   │   ├── attendance.stat.route.js.map
+│   │   │   ├── audit.logs.route.d.ts
+│   │   │   ├── audit.logs.route.d.ts.map
+│   │   │   ├── audit.logs.route.js
+│   │   │   ├── audit.logs.route.js.map
+│   │   │   ├── auth.route.d.ts
+│   │   │   ├── auth.route.d.ts.map
+│   │   │   ├── auth.route.js
+│   │   │   ├── auth.route.js.map
+│   │   │   ├── department.route.d.ts
+│   │   │   ├── department.route.d.ts.map
+│   │   │   ├── department.route.js
+│   │   │   ├── department.route.js.map
+│   │   │   ├── device.route.d.ts
+│   │   │   ├── device.route.d.ts.map
+│   │   │   ├── device.route.js
+│   │   │   ├── device.route.js.map
+│   │   │   ├── employee.planning.profile.route.d.ts
+│   │   │   ├── employee.planning.profile.route.d.ts.map
+│   │   │   ├── employee.planning.profile.route.js
+│   │   │   ├── employee.planning.profile.route.js.map
+│   │   │   ├── fraud.alerts.route.d.ts
+│   │   │   ├── fraud.alerts.route.d.ts.map
+│   │   │   ├── fraud.alerts.route.js
+│   │   │   ├── fraud.alerts.route.js.map
+│   │   │   ├── groups.route.d.ts
+│   │   │   ├── groups.route.d.ts.map
+│   │   │   ├── groups.route.js
+│   │   │   ├── groups.route.js.map
+│   │   │   ├── memos.route.d.ts
+│   │   │   ├── memos.route.d.ts.map
+│   │   │   ├── memos.route.js
+│   │   │   ├── memos.route.js.map
+│   │   │   ├── org.hierarchy.route.d.ts
+│   │   │   ├── org.hierarchy.route.d.ts.map
+│   │   │   ├── org.hierarchy.route.js
+│   │   │   ├── org.hierarchy.route.js.map
+│   │   │   ├── planing.pdf.route.d.ts
+│   │   │   ├── planing.pdf.route.d.ts.map
+│   │   │   ├── planing.pdf.route.js
+│   │   │   ├── planing.pdf.route.js.map
+│   │   │   ├── planning.suggestion.config.route.d.ts
+│   │   │   ├── planning.suggestion.config.route.d.ts.map
+│   │   │   ├── planning.suggestion.config.route.js
+│   │   │   ├── planning.suggestion.config.route.js.map
+│   │   │   ├── planning.suggestion.requirement.route.d.ts
+│   │   │   ├── planning.suggestion.requirement.route.d.ts.map
+│   │   │   ├── planning.suggestion.requirement.route.js
+│   │   │   ├── planning.suggestion.requirement.route.js.map
+│   │   │   ├── poste.route.d.ts
+│   │   │   ├── poste.route.d.ts.map
+│   │   │   ├── poste.route.js
+│   │   │   ├── poste.route.js.map
+│   │   │   ├── qr.code.route.d.ts
+│   │   │   ├── qr.code.route.d.ts.map
+│   │   │   ├── qr.code.route.js
+│   │   │   ├── qr.code.route.js.map
+│   │   │   ├── roles.route.d.ts
+│   │   │   ├── roles.route.d.ts.map
+│   │   │   ├── roles.route.js
+│   │   │   ├── roles.route.js.map
+│   │   │   ├── rotation.assignments.route.d.ts
+│   │   │   ├── rotation.assignments.route.d.ts.map
+│   │   │   ├── rotation.assignments.route.js
+│   │   │   ├── rotation.assignments.route.js.map
+│   │   │   ├── rotation.groups.route.d.ts
+│   │   │   ├── rotation.groups.route.d.ts.map
+│   │   │   ├── rotation.groups.route.js
+│   │   │   ├── rotation.groups.route.js.map
+│   │   │   ├── schedule.assignments.route.d.ts
+│   │   │   ├── schedule.assignments.route.d.ts.map
+│   │   │   ├── schedule.assignments.route.js
+│   │   │   ├── schedule.assignments.route.js.map
+│   │   │   ├── schedule.suggestion.route.d.ts
+│   │   │   ├── schedule.suggestion.route.d.ts.map
+│   │   │   ├── schedule.suggestion.route.js
+│   │   │   ├── schedule.suggestion.route.js.map
+│   │   │   ├── session.model.route.d.ts
+│   │   │   ├── session.model.route.d.ts.map
+│   │   │   ├── session.model.route.js
+│   │   │   ├── session.model.route.js.map
+│   │   │   ├── session.templates.route.d.ts
+│   │   │   ├── session.templates.route.d.ts.map
+│   │   │   ├── session.templates.route.js
+│   │   │   ├── session.templates.route.js.map
+│   │   │   ├── sites.route.d.ts
+│   │   │   ├── sites.route.d.ts.map
+│   │   │   ├── sites.route.js
+│   │   │   ├── sites.route.js.map
+│   │   │   ├── statistique.interface.d.ts
+│   │   │   ├── statistique.interface.d.ts.map
+│   │   │   ├── statistique.interface.js
+│   │   │   ├── statistique.interface.js.map
+│   │   │   ├── time.entries.route.d.ts
+│   │   │   ├── time.entries.route.d.ts.map
+│   │   │   ├── time.entries.route.js
+│   │   │   ├── time.entries.route.js.map
+│   │   │   ├── upload.route.d.ts
+│   │   │   ├── upload.route.d.ts.map
+│   │   │   ├── upload.route.js
+│   │   │   ├── upload.route.js.map
+│   │   │   ├── user.role.route.d.ts
+│   │   │   ├── user.role.route.d.ts.map
+│   │   │   ├── user.role.route.js
+│   │   │   ├── user.role.route.js.map
+│   │   │   ├── user.route.d.ts
+│   │   │   ├── user.route.d.ts.map
+│   │   │   ├── user.route.js
+│   │   │   ├── user.route.js.map
+│   │   │   ├── work.sessions.route.d.ts
+│   │   │   ├── work.sessions.route.d.ts.map
+│   │   │   ├── work.sessions.route.js
+│   │   │   └── work.sessions.route.js.map
+│   │   ├── server.d.ts
+│   │   ├── server.d.ts.map
+│   │   ├── server.js
+│   │   └── server.js.map
+│   ├── tools
+│   │   ├── absence.detection.service.d.ts
+│   │   ├── absence.detection.service.d.ts.map
+│   │   ├── absence.detection.service.js
+│   │   ├── absence.detection.service.js.map
+│   │   ├── anomaly.detection.service.d.ts
+│   │   ├── anomaly.detection.service.d.ts.map
+│   │   ├── anomaly.detection.service.js
+│   │   ├── anomaly.detection.service.js.map
+│   │   ├── api-key-manager.d.ts
+│   │   ├── api-key-manager.d.ts.map
+│   │   ├── api-key-manager.js
+│   │   ├── api-key-manager.js.map
+│   │   ├── auth.cache.service.d.ts
+│   │   ├── auth.cache.service.d.ts.map
+│   │   ├── auth.cache.service.js
+│   │   ├── auth.cache.service.js.map
+│   │   ├── cache.data.service.d.ts
+│   │   ├── cache.data.service.d.ts.map
+│   │   ├── cache.data.service.js
+│   │   ├── cache.data.service.js.map
+│   │   ├── client.cache.service.d.ts
+│   │   ├── client.cache.service.d.ts.map
+│   │   ├── client.cache.service.js
+│   │   ├── client.cache.service.js.map
+│   │   ├── country.phone.validation.d.ts
+│   │   ├── country.phone.validation.d.ts.map
+│   │   ├── country.phone.validation.js
+│   │   ├── country.phone.validation.js.map
+│   │   ├── credential-extractor.service.d.ts
+│   │   ├── credential-extractor.service.d.ts.map
+│   │   ├── credential-extractor.service.js
+│   │   ├── credential-extractor.service.js.map
+│   │   ├── employee.license.service.d.ts
+│   │   ├── employee.license.service.d.ts.map
+│   │   ├── employee.license.service.js
+│   │   ├── employee.license.service.js.map
+│   │   ├── glossary.d.ts
+│   │   ├── glossary.d.ts.map
+│   │   ├── glossary.js
+│   │   ├── glossary.js.map
+│   │   ├── http-status.d.ts
+│   │   ├── http-status.d.ts.map
+│   │   ├── http-status.js
+│   │   ├── http-status.js.map
+│   │   ├── memo.correction.service.d.ts
+│   │   ├── memo.correction.service.d.ts.map
+│   │   ├── memo.correction.service.js
+│   │   ├── memo.correction.service.js.map
+│   │   ├── notification.service.d.ts
+│   │   ├── notification.service.d.ts.map
+│   │   ├── notification.service.js
+│   │   ├── notification.service.js.map
+│   │   ├── otp-cache.service.d.ts
+│   │   ├── otp-cache.service.d.ts.map
+│   │   ├── otp-cache.service.js
+│   │   ├── otp-cache.service.js.map
+│   │   ├── otp.delivery.service.d.ts
+│   │   ├── otp.delivery.service.d.ts.map
+│   │   ├── otp.delivery.service.js
+│   │   ├── otp.delivery.service.js.map
+│   │   ├── pdf
+│   │   │   ├── rotationAssignment.d.ts
+│   │   │   ├── rotationAssignment.d.ts.map
+│   │   │   ├── rotationAssignment.js
+│   │   │   ├── rotationAssignment.js.map
+│   │   │   ├── scheduleAssignment.d.ts
+│   │   │   ├── scheduleAssignment.d.ts.map
+│   │   │   ├── scheduleAssignment.js
+│   │   │   ├── scheduleAssignment.js.map
+│   │   │   ├── service.d.ts
+│   │   │   ├── service.d.ts.map
+│   │   │   ├── service.js
+│   │   │   └── service.js.map
+│   │   ├── response.d.ts
+│   │   ├── response.d.ts.map
+│   │   ├── response.js
+│   │   ├── response.js.map
+│   │   ├── revision.d.ts
+│   │   ├── revision.d.ts.map
+│   │   ├── revision.js
+│   │   ├── revision.js.map
+│   │   ├── schedule.resolution.service.d.ts
+│   │   ├── schedule.resolution.service.d.ts.map
+│   │   ├── schedule.resolution.service.js
+│   │   ├── schedule.resolution.service.js.map
+│   │   ├── schedule.suggestion.approval.service.d.ts
+│   │   ├── schedule.suggestion.approval.service.d.ts.map
+│   │   ├── schedule.suggestion.approval.service.js
+│   │   ├── schedule.suggestion.approval.service.js.map
+│   │   ├── send.email.service.d.ts
+│   │   ├── send.email.service.d.ts.map
+│   │   ├── send.email.service.js
+│   │   ├── send.email.service.js.map
+│   │   ├── send.otp.service.d.ts
+│   │   ├── send.otp.service.d.ts.map
+│   │   ├── send.otp.service.js
+│   │   ├── send.otp.service.js.map
+│   │   ├── spondor.service.d.ts
+│   │   ├── spondor.service.d.ts.map
+│   │   ├── spondor.service.js
+│   │   ├── spondor.service.js.map
+│   │   ├── tenant-cache.service.d.ts
+│   │   ├── tenant-cache.service.d.ts.map
+│   │   ├── tenant-cache.service.js
+│   │   ├── tenant-cache.service.js.map
+│   │   ├── tenant.otp.manager.d.ts
+│   │   ├── tenant.otp.manager.d.ts.map
+│   │   ├── tenant.otp.manager.js
+│   │   ├── tenant.otp.manager.js.map
+│   │   ├── user.authentication.service.d.ts
+│   │   ├── user.authentication.service.d.ts.map
+│   │   ├── user.authentication.service.js
+│   │   ├── user.authentication.service.js.map
+│   │   ├── watcher.d.ts
+│   │   ├── watcher.d.ts.map
+│   │   ├── watcher.js
+│   │   └── watcher.js.map
+│   └── utils
+│       ├── axios.config.d.ts
+│       ├── axios.config.d.ts.map
+│       ├── axios.config.js
+│       ├── axios.config.js.map
+│       ├── encryption.d.ts
+│       ├── encryption.d.ts.map
+│       ├── encryption.js
+│       ├── encryption.js.map
+│       ├── extract.query.params.d.ts
+│       ├── extract.query.params.d.ts.map
+│       ├── extract.query.params.js
+│       ├── extract.query.params.js.map
+│       ├── firebase.config.d.ts
+│       ├── firebase.config.d.ts.map
+│       ├── firebase.config.js
+│       ├── firebase.config.js.map
+│       ├── generate.database.d.ts
+│       ├── generate.database.d.ts.map
+│       ├── generate.database.js
+│       ├── generate.database.js.map
+│       ├── generate.otp.d.ts
+│       ├── generate.otp.d.ts.map
+│       ├── generate.otp.js
+│       ├── generate.otp.js.map
+│       ├── generate.tenant.config.d.ts
+│       ├── generate.tenant.config.d.ts.map
+│       ├── generate.tenant.config.js
+│       ├── generate.tenant.config.js.map
+│       ├── geo.utils.d.ts
+│       ├── geo.utils.d.ts.map
+│       ├── geo.utils.js
+│       ├── geo.utils.js.map
+│       ├── prive
+│       │   ├── GoogleService-Info.plist
+│       │   ├── google-services.json
+│       │   └── tokenotification-firebase-adminsdk-fbsvc-6b764c3800.json
+│       ├── regex.validator.d.ts
+│       ├── regex.validator.d.ts.map
+│       ├── regex.validator.js
+│       ├── regex.validator.js.map
+│       ├── response.model.d.ts
+│       ├── response.model.d.ts.map
+│       ├── response.model.js
+│       ├── response.model.js.map
+│       ├── schedule.suggestion.generation.service.d.ts
+│       ├── schedule.suggestion.generation.service.d.ts.map
+│       ├── schedule.suggestion.generation.service.js
+│       ├── schedule.suggestion.generation.service.js.map
+│       ├── session.model.validation.d.ts
+│       ├── session.model.validation.d.ts.map
+│       ├── session.model.validation.js
+│       ├── session.model.validation.js.map
+│       ├── solver
+│       │   ├── greedy.planning.solver.d.ts
+│       │   ├── greedy.planning.solver.d.ts.map
+│       │   ├── greedy.planning.solver.js
+│       │   ├── greedy.planning.solver.js.map
+│       │   ├── ortools.planning.solver.d.ts
+│       │   ├── ortools.planning.solver.d.ts.map
+│       │   ├── ortools.planning.solver.js
+│       │   ├── ortools.planning.solver.js.map
+│       │   ├── planning.solver.d.ts
+│       │   ├── planning.solver.d.ts.map
+│       │   ├── planning.solver.factory.d.ts
+│       │   ├── planning.solver.factory.d.ts.map
+│       │   ├── planning.solver.factory.js
+│       │   ├── planning.solver.factory.js.map
+│       │   ├── planning.solver.js
+│       │   └── planning.solver.js.map
+│       ├── suggestion.engine.d.ts
+│       ├── suggestion.engine.d.ts.map
+│       ├── suggestion.engine.js
+│       ├── suggestion.engine.js.map
+│       ├── time.entry.external-id.d.ts
+│       ├── time.entry.external-id.d.ts.map
+│       ├── time.entry.external-id.js
+│       ├── time.entry.external-id.js.map
+│       ├── time.entry.idempotency.d.ts
+│       ├── time.entry.idempotency.d.ts.map
+│       ├── time.entry.idempotency.js
+│       ├── time.entry.idempotency.js.map
+│       ├── time.entry.idempotency.response.d.ts
+│       ├── time.entry.idempotency.response.d.ts.map
+│       ├── time.entry.idempotency.response.js
+│       ├── time.entry.idempotency.response.js.map
+│       ├── token.generator.d.ts
+│       ├── token.generator.d.ts.map
+│       ├── token.generator.js
+│       ├── token.generator.js.map
+│       ├── upload.d.ts
+│       ├── upload.d.ts.map
+│       ├── upload.js
+│       ├── upload.js.map
+│       ├── view.validator.d.ts
+│       ├── view.validator.d.ts.map
+│       ├── view.validator.js
+│       └── view.validator.js.map
+├── docs
+│   ├── Comment fonctionne la gestion des horaires dans Toké - Expliqué simplement.md
+│   ├── Fonctionnement du Paiement et Renouvellement des Licences TOKÉ.md.html
+│   ├── Guide_integration_Envoie_de_code_OTP.pdf
+│   ├── Rest doc API
+│   │   ├── mermaid-diagram.png
+│   │   ├── toke_planning_class_diagram.svg
+│   │   ├── 📘 Documentation API REST - TOKÉ.md (2).html
+│   │   ├── 📘 Documentation API REST - TOKÉ.md.html
+│   │   ├── 📘 Documentation API REST - TOKÉ1.md.html
+│   │   ├── 📘 TOKÉ API - LICENCES EMPLOYÉS4.md.html
+│   │   ├── 📘 TOKÉ API - LICENCES GLOBALES3.md.html
+│   │   └── 📘 TOKÉ API - TENANTS.md2.html
+│   ├── automatique migration avis .pdf
+│   ├── client
+│   │   ├── TOKE_INTEGRATION_REFERENCE.md
+│   │   ├── TOKE_SPEC_PLANNING_CC_v1.html
+│   │   ├── TOKE_Section0_Existant.docx
+│   │   └── lmt
+│   │       ├── PLANNINGS AE_DA_BO_S20_2026.xlsm
+│   │       ├── Plannings_LMT_S20_2026.xlsx
+│   │       ├── WhatsApp Image 2026-04-13 at 15.27.48.jpeg
+│   │       ├── toke.jpeg
+│   │       └── toké-main-logo.svg
+│   ├── config smtp server(postfix).md.html
+│   ├── gestion contracts.html
+│   ├── gestion des contracts de travails.html
+│   ├── invitation
+│   │   └── invitation-toke-integration-guide.md
+│   ├── migrations
+│   │   ├── files
+│   │   │   ├── DEPLOYMENT_CHECKLIST.md
+│   │   │   ├── EXECUTIVE_SUMMARY.md
+│   │   │   ├── GlobalLicenseModel_FIXED.js
+│   │   │   ├── GlobalLicenseModel_FIXED.ts
+│   │   │   ├── GlobalLicense_FIXED.js
+│   │   │   ├── GlobalLicense_FIXED.ts
+│   │   │   ├── INDEX.md
+│   │   │   ├── PACKAGE_INFO.md
+│   │   │   ├── QUICK_REFERENCE.md
+│   │   │   ├── README.md
+│   │   │   ├── diagnostic_generated_columns.sh
+│   │   │   ├── fix_generated_columns.md
+│   │   │   └── test_guide_after_fix.md
+│   │   └── files.zip
+│   ├── mise en place de pgBouncer outils postgrsql d'optimisation des pools de connexion.md
+│   ├── rapport
+│   │   └── 02_Toke_App_Manager.docx
+│   ├── rotation_assignments_versioning_doc.docx
+│   ├── statistiques
+│   │   ├── Statistiques_de_Pointage_-_MVP_Simple__2h_d_impl_mentation_.html
+│   │   ├── Toke_Referentiel_KPIs.docx
+│   │   ├── ___TOK__-_Liste_des_Fonctionnalit_s___Impl_menter.html
+│   │   └── ___TOK__-_PR_SENTATION_DU_POINTAGE_EMPLOY_.html
+│   ├── tenant.sql
+│   ├── test
+│   │   └── backend-problem
+│   ├── toke API.postman_collection.json
+│   ├── toke-app-manager-api-guide.html
+│   ├── toke-fiche-collecte-glt.pdf
+│   ├── toke-planning-final-recipe-step11
+│   │   ├── 01-full-week-session-templates.json
+│   │   ├── 02-missing-requirements-thu-sun.json
+│   │   ├── 03-employee-profile-examples.json
+│   │   ├── 04-validate-final-suggestion.py
+│   │   └── README.md
+│   ├── toke-planning-final-recipe-step11.zip
+│   ├── toke-planning-final-step10.zip
+│   ├── toke-pointage-employee-doc.html
+│   ├── toke-pointage-employee-doc.md
+│   ├── toke-syst-gestion-licences.html
+│   ├── toke_contract_SFD_developer.md
+│   ├── toke_contract_SFD_developer_fr.md
+│   ├── toke_planning_documentation.docx
+│   ├── 📋 Comportements Attendus du Système de Licence TOKÉ.md.html
+│   └── 🚀 Toké App Manager API.postman_collection.json
+├── ecosystem.config.cjs
+├── express.d.ts
+├── migrations
+│   ├── 20250909094204-add-computed-billing-status.cjs
+│   ├── 20250909100827-add-generated-columns-global-license.cjs
+│   ├── 20250912113219-create-fraud-detection-log.cjs
+│   ├── 20250912113257-add-fraud-detection-triggers.cjs
+│   ├── 20250912163734-create-activity-monitoring.cjs
+│   └── 20250912164045-add-activity-monitoring-triggers.cjs
+├── package.json
+├── scripts
+│   ├── appConfigManager.js
+│   ├── appConfigManager.ts
+│   ├── countryManager.js
+│   ├── countryManager.ts
+│   ├── currencyManager.js
+│   ├── currencyManager.ts
+│   ├── kill.js
+│   ├── manageClient.js
+│   ├── manageClient.ts
+│   ├── manageEndpoint.js
+│   ├── manageEndpoint.ts
+│   ├── managePermission.js
+│   ├── managePermission.ts
+│   ├── manageProfile.js
+│   ├── manageProfile.ts
+│   ├── nuclear-cleanup.js
+│   ├── status.js
+│   ├── stop.js
+│   ├── test.js
+│   ├── test.ts
+│   ├── testTokenGeneration.js
+│   └── testTokenGeneration.ts
+├── src
+│   ├── tenant
+│   │   ├── app.ts
+│   │   ├── class
+│   │   │   ├── AuditLogs.ts
+│   │   │   ├── Department.ts
+│   │   │   ├── Device.ts
+│   │   │   ├── EmployeePlanningProfile.ts
+│   │   │   ├── EventLog.ts
+│   │   │   ├── FraudAlerts.ts
+│   │   │   ├── Groups.ts
+│   │   │   ├── Memos.ts
+│   │   │   ├── OrgHierarchy.ts
+│   │   │   ├── PlanningSuggestionConfig.ts
+│   │   │   ├── PlanningSuggestionRequirement.ts
+│   │   │   ├── Poste.ts
+│   │   │   ├── QrCodeGeneration.ts
+│   │   │   ├── Role.ts
+│   │   │   ├── RotationAssignmentLog.ts
+│   │   │   ├── RotationAssignments.ts
+│   │   │   ├── RotationGroupTemplate.ts
+│   │   │   ├── RotationGroupTemplateLog.ts
+│   │   │   ├── RotationGroups.ts
+│   │   │   ├── ScheduleAssignments.ts
+│   │   │   ├── ScheduleAssignmentsLog.ts
+│   │   │   ├── ScheduleSuggestion.ts
+│   │   │   ├── ScheduleSuggestionItem.ts
+│   │   │   ├── SessionModel.ts
+│   │   │   ├── SessionTemplates.ts
+│   │   │   ├── Site.ts
+│   │   │   ├── TimeEntries.ts
+│   │   │   ├── User.ts
+│   │   │   ├── UserRole.ts
+│   │   │   └── WorkSessions.ts
+│   │   ├── database
+│   │   │   ├── data
+│   │   │   │   ├── audit.logs.db.ts
+│   │   │   │   ├── department.db.ts
+│   │   │   │   ├── device.db.ts
+│   │   │   │   ├── employee.planning.profile.db.ts
+│   │   │   │   ├── event.log.db.ts
+│   │   │   │   ├── fraud.alerts.db.ts
+│   │   │   │   ├── groups.db.ts
+│   │   │   │   ├── memos.db.ts
+│   │   │   │   ├── org.hierarchy.db.ts
+│   │   │   │   ├── planning.suggestion.config.db.ts
+│   │   │   │   ├── planning.suggestion.requirement.bd.ts
+│   │   │   │   ├── poste.db.ts
+│   │   │   │   ├── qr.code.generation.db.ts
+│   │   │   │   ├── roles.db.ts
+│   │   │   │   ├── rotation.assignment.log.db.ts
+│   │   │   │   ├── rotation.assignments.db.ts
+│   │   │   │   ├── rotation.group.template.db.ts
+│   │   │   │   ├── rotation.group.template.log.db.ts
+│   │   │   │   ├── rotation.groups.db.ts
+│   │   │   │   ├── schedule.assignments.db.ts
+│   │   │   │   ├── schedule.assignments.logs.db.ts
+│   │   │   │   ├── schedule.suggestion.db.ts
+│   │   │   │   ├── schedule.suggestion.item.db.ts
+│   │   │   │   ├── session.model.db.ts
+│   │   │   │   ├── session.templates.db.ts
+│   │   │   │   ├── sites.db.ts
+│   │   │   │   ├── time.entries.db.ts
+│   │   │   │   ├── user.roles.db.ts
+│   │   │   │   ├── users.db.ts
+│   │   │   │   └── work.sessions.db.ts
+│   │   │   ├── db.base.ts
+│   │   │   ├── db.config.ts
+│   │   │   ├── db.initializer.ts
+│   │   │   └── db.tenant-manager.ts
+│   │   ├── model
+│   │   │   ├── AuditLogsModel.ts
+│   │   │   ├── DepartmentModel.ts
+│   │   │   ├── DeviceModel.ts
+│   │   │   ├── EmployeePlanningProfileModel.ts
+│   │   │   ├── EventLogModel.ts
+│   │   │   ├── FraudAlertsModel.ts
+│   │   │   ├── GroupsModel.ts
+│   │   │   ├── MemosModel.ts
+│   │   │   ├── OrgHierarchyModel.ts
+│   │   │   ├── PlanningSuggestionConfigModel.ts
+│   │   │   ├── PlanningSuggestionRequirementModel.ts
+│   │   │   ├── PosteModel.ts
+│   │   │   ├── QrCodeGenerationModel.ts
+│   │   │   ├── RoleModel.ts
+│   │   │   ├── RotationAssignmentLogModel.ts
+│   │   │   ├── RotationAssignmentsModel.ts
+│   │   │   ├── RotationGroupTemplateLogModel.ts
+│   │   │   ├── RotationGroupTemplateModel.ts
+│   │   │   ├── RotationGroupsModel.ts
+│   │   │   ├── ScheduleAssignmentsLogModel.ts
+│   │   │   ├── ScheduleAssignmentsModel.ts
+│   │   │   ├── ScheduleSuggestionItemModel.ts
+│   │   │   ├── ScheduleSuggestionModel.ts
+│   │   │   ├── SessionModelModel.ts
+│   │   │   ├── SessionTemplatesModel.ts
+│   │   │   ├── SiteModel.ts
+│   │   │   ├── TimeEntriesModel.ts
+│   │   │   ├── UserModel.ts
+│   │   │   ├── UserRoleModel.ts
+│   │   │   └── WorkSessionsModel.ts
+│   │   ├── modules
+│   │   │   └── attendance-statistics
+│   │   │       ├── README.md
+│   │   │       ├── application
+│   │   │       │   ├── attendance-overview.test.ts
+│   │   │       │   ├── attendance-overview.ts
+│   │   │       │   └── attendance-overview.types.ts
+│   │   │       ├── docs
+│   │   │       │   └── attendance-overview.contract.md
+│   │   │       ├── domain
+│   │   │       │   ├── attendance-day.test.ts
+│   │   │       │   ├── attendance-day.ts
+│   │   │       │   └── attendance-day.types.ts
+│   │   │       └── examples
+│   │   │           └── attendance-overview.response.json
+│   │   ├── routes
+│   │   │   ├── attendance.stat.route.ts
+│   │   │   ├── audit.logs.route.ts
+│   │   │   ├── auth.route.ts
+│   │   │   ├── department.route.ts
+│   │   │   ├── device.route.ts
+│   │   │   ├── employee.planning.profile.route.ts
+│   │   │   ├── fraud.alerts.route.ts
+│   │   │   ├── groups.route.ts
+│   │   │   ├── memos.route.ts
+│   │   │   ├── org.hierarchy.route.ts
+│   │   │   ├── planing.pdf.route.ts
+│   │   │   ├── planning.suggestion.config.route.ts
+│   │   │   ├── planning.suggestion.requirement.route.ts
+│   │   │   ├── poste.route.ts
+│   │   │   ├── qr.code.route.ts
+│   │   │   ├── roles.route.ts
+│   │   │   ├── rotation.assignments.route.ts
+│   │   │   ├── rotation.groups.route.ts
+│   │   │   ├── schedule.assignments.route.ts
+│   │   │   ├── schedule.suggestion.route.ts
+│   │   │   ├── session.model.route.ts
+│   │   │   ├── session.templates.route.ts
+│   │   │   ├── sites.route.ts
+│   │   │   ├── statistique.interface.ts
+│   │   │   ├── time.entries.route.ts
+│   │   │   ├── upload.route.ts
+│   │   │   ├── user.role.route.ts
+│   │   │   ├── user.route.ts
+│   │   │   └── work.sessions.route.ts
+│   │   └── server.ts
+│   ├── tools
+│   │   ├── absence.detection.service.ts
+│   │   ├── anomaly.detection.service.ts
+│   │   ├── api-key-manager.ts
+│   │   ├── auth.cache.service.ts
+│   │   ├── cache.data.service.ts
+│   │   ├── client.cache.service.ts
+│   │   ├── country.phone.validation.ts
+│   │   ├── credential-extractor.service.ts
+│   │   ├── employee.license.service.ts
+│   │   ├── glossary.ts
+│   │   ├── http-status.ts
+│   │   ├── memo.correction.service.ts
+│   │   ├── notification.service.ts
+│   │   ├── otp-cache.service.ts
+│   │   ├── otp.delivery.service.ts
+│   │   ├── pdf
+│   │   │   ├── rotationAssignment.ts
+│   │   │   ├── scheduleAssignment.ts
+│   │   │   └── service.ts
+│   │   ├── response.ts
+│   │   ├── revision.ts
+│   │   ├── schedule.resolution.service.ts
+│   │   ├── schedule.suggestion.approval.service.ts
+│   │   ├── send.email.service.ts
+│   │   ├── send.otp.service.ts
+│   │   ├── spondor.service.ts
+│   │   ├── tenant-cache.service.ts
+│   │   ├── tenant.otp.manager.ts
+│   │   ├── user.authentication.service.ts
+│   │   └── watcher.ts
+│   └── utils
+│       ├── axios.config.ts
+│       ├── docs
+│       │   └── Liste des Fonctionnalités à Implémenter.odt
+│       ├── encryption.ts
+│       ├── extract.query.params.ts
+│       ├── firebase.config.ts
+│       ├── generate.database.ts
+│       ├── generate.otp.ts
+│       ├── generate.tenant.config.ts
+│       ├── geo.utils.ts
+│       ├── prive
+│       │   ├── GoogleService-Info.plist
+│       │   ├── google-services.json
+│       │   └── tokenotification-firebase-adminsdk-fbsvc-6b764c3800.json
+│       ├── regex.validator.ts
+│       ├── response.model.ts
+│       ├── schedule.suggestion.generation.service.ts
+│       ├── session.model.validation.ts
+│       ├── solver
+│       │   ├── greedy.planning.solver.ts
+│       │   ├── ortools.planning.solver.ts
+│       │   ├── planning.solver.factory.ts
+│       │   └── planning.solver.ts
+│       ├── suggestion.engine.ts
+│       ├── test
+│       │   ├── test-qr.html
+│       │   └── test.html
+│       ├── time.entry.external-id.ts
+│       ├── time.entry.idempotency.response.ts
+│       ├── time.entry.idempotency.ts
+│       ├── token.generator.ts
+│       ├── upload.ts
+│       └── view.validator.ts
+├── tsconfig.json
+└── uploads
+    └── attachments
+        ├── 1760353177410-995450632.mp4
+        ├── 1760354160498-653431053.mp4
+        └── 1760354337659-848553890.png
+
+49 directories, 1008 files

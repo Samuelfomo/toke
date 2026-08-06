@@ -386,10 +386,10 @@ process.on('uncaughtException', (error) => {
     process.exit(1);
 });
 // Démarrage
-if (require.main === module) {
-    const manager = new EndpointManager();
-    manager.start().catch((error) => {
-        console.error('❌ Erreur de démarrage:', error);
-        process.exit(1);
-    });
-}
+// if (require.main === module) {
+const manager = new EndpointManager();
+manager.start().catch((error) => {
+    console.error('❌ Erreur de démarrage:', error);
+    process.exit(1);
+});
+// }

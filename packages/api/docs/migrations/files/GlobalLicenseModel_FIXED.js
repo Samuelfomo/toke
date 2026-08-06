@@ -210,9 +210,9 @@ class GlobalLicenseModel extends db_base_js_1.default {
      */
     listAllExpiringSoon() {
         return __awaiter(this, arguments, void 0, function* (days = 30, paginationOptions = {}) {
-            const futureDate = new Date();
+            const futureDate = TimezoneConfigUtils.getCurrentTime();
             futureDate.setDate(futureDate.getDate() + days);
-            const now = new Date();
+            const now = TimezoneConfigUtils.getCurrentTime();
             const params = [futureDate, now];
             let paramIndex = 3;
             const limitClause = paginationOptions.limit ? `LIMIT $${paramIndex}` : '';
@@ -244,7 +244,7 @@ class GlobalLicenseModel extends db_base_js_1.default {
      */
     listAllExpired() {
         return __awaiter(this, arguments, void 0, function* (paginationOptions = {}) {
-            const now = new Date();
+            const now = TimezoneConfigUtils.getCurrentTime();
             const params = [now];
             let paramIndex = 2;
             const limitClause = paginationOptions.limit ? `LIMIT $${paramIndex}` : '';
