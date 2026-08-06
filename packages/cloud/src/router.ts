@@ -24,17 +24,9 @@ import { useUserStore } from '@/stores/userStore'
 import EmployeeSchedulesView from "@/views/schedule/employeeSchedulesView.vue";
 import EmployeeAttendanceView from "@/views/employeeAttendanceView.vue";
 import QrCodeAuth from "@/views/QrCodeAuth.vue";
-import Rotation from "@/views/planning/dashboard/appLayout.vue";
-import AppLayout from "@/views/planning/dashboard/appLayout.vue";
-import SessionModelList from "@/views/planning/session_model/sessionModelList.vue";
-import SessionTemplateList from "@/views/planning/session_template/sessionTemplateList.vue";
-import RotationGroupList from "@/views/planning/rotation_group/rotationGroupList.vue";
-import ScheduleAssignmentList from "@/views/planning/schedule_assignment/scheduleAssignmentList.vue";
-import RotationAssignment from "@/views/planning/rotation_assignment/rotationAssignment.vue";
-import { planningSuggestionRoutes } from '@/router/planning-suggestion'
+import { planningRoutes } from '@/router/planning'
 
 const routes: RouteRecordRaw[] = [
-  // ✅ PUBLIC
   {
     path: '/auth',
     name: 'auth',
@@ -51,7 +43,6 @@ const routes: RouteRecordRaw[] = [
     component: Otp,
   },
 
-  // ✅ PROTÉGÉES
   {
     path: '/dashboard',
     name: 'dashboard',
@@ -75,7 +66,8 @@ const routes: RouteRecordRaw[] = [
     name: 'equipe',
     component: Equipe,
     meta: { requiresAuth: true },
-  },{
+  },
+    {
     path: '/employeeCreate',
     name: 'employeeCreate',
     component: EmployeeForm,
@@ -93,13 +85,6 @@ const routes: RouteRecordRaw[] = [
     component: MemoList,
     meta: { requiresAuth: true },
   },
-  //   {
-  //   path: '/memoList',
-  //   name: 'memo-create',
-  //   component: MemoList,
-  //   meta: { requiresAuth: true },
-  // },
-  //
     {
     path: '/MemoCreated',
     name: 'MemoCreated',
@@ -175,52 +160,7 @@ const routes: RouteRecordRaw[] = [
     component: EmployeeAttendanceView,
     meta: { requiresAuth: true },
   },
-    {
-        path: '/assignment-history',
-        name: 'assignment-history',
-        component: Rotation,
-        meta: { requiresAuth: true },
-        beforeEnter: (to, from, next) => {
-            next(false)
-        }
-    },
-    {
-        path: '/planning',  // ou '/', selon ton setup
-        component: AppLayout,  // l00ayout parent
-        meta: { requiresAuth: true },
-        redirect: {
-            name: 'planning-suggestion-dashboard',
-        },
-        // redirect: '/planning/session-model',
-        children: [
-            planningSuggestionRoutes,
-            {
-                path: 'session-model',
-                name: 'session-model',
-                component: SessionModelList,
-            },{
-                path: 'session-template',
-                name: 'session-template',
-                component: SessionTemplateList,
-            },{
-                path: 'rotation-group',
-                name: 'rotation-group',
-                component: RotationGroupList,
-            },
-            {
-                path: 'schedule-assignment',
-                name: 'schedule-assignment',
-                component: ScheduleAssignmentList,
-            },
-            {
-                path: 'rotation-assignment',
-                name: 'rotation-assignment',
-                component: RotationAssignment,
-            },
-            // ... les autres routes du NAV_GROUPS
-        ],
-    },
-
+    planningRoutes,
 ]
 
 export const router = createRouter({

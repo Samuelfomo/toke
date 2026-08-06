@@ -1,27 +1,26 @@
 <template>
-  <div class="min-h-screen flex flex-col bg-gradient-to-br from-[#9cbdf6] via-[#f5f9ff] to-[#dbcdef]">
+  <div
+      class="planning-shell flex h-[100dvh] min-h-0 flex-col overflow-hidden bg-gradient-to-r from-[#d0e8f7] via-[#f0e4f5] to-[#d0e8f7 text-slate-900"
+  >
 
-    <div class="sticky top-0 z-50 top-header">
+    <header class="relative z-50 shrink-0">
       <Header />
-    </div>
+    </header>
 
-    <div class="flex flex-1 mx-auto">
+    <!-- Navigation compacte conservée sur mobile -->
+    <PlanningMobileBar class="md:hidden" />
 
-      <AppSidebar>
-        <template #help-text>
-          <slot name="sidebar-help" />
-        </template>
-      </AppSidebar>
-
-      <main class="flex-1 flex flex-col overflow-y-auto lg:min-w-[1222px]">
-        <RouterView />
-      </main>
-
-    </div>
+    <main
+        id="planning-main-content"
+        tabindex="-1"
+        class="min-h-0 min-w-0 flex-1 overflow-y-auto overscroll-contain focus:outline-none mx-auto lg:min-w-[1200px]"
+    >
+      <RouterView />
+    </main>
   </div>
 </template>
 
 <script setup lang="ts">
-import AppSidebar from './appSidebar.vue'
-import Header from "@/views/components/header.vue";
+import Header from '@/views/components/header.vue'
+import PlanningMobileBar from './PlanningMobileBar.vue'
 </script>

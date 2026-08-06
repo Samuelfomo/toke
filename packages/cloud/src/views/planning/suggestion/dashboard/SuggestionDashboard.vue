@@ -21,10 +21,10 @@
         <button
             class="inline-flex items-center gap-2 rounded-xl px-4 py-2.5 text-xs font-bold text-white shadow-sm"
             :class="ready
-                        ? 'bg-indigo-600 hover:bg-indigo-700'
+                        ? 'bg-blue-600 hover:bg-blue-700'
                         : 'cursor-not-allowed bg-slate-300'"
             :disabled="!ready"
-            @click="goTo('planning-suggestion-list')"
+            @click="showGenerate = true"
         >
           <IconSparkles :size="16" />
           Générer un planning
@@ -88,7 +88,7 @@
                         ? 'border-emerald-200'
                         : 'border-amber-200'"
         >
-          <p class="text-[10px] font-bold uppercase tracking-[0.14em] text-slate-400">
+          <p class="text-xs font-bold uppercase tracking-[0.14em] text-slate-400">
             Préparation
           </p>
           <p class="mt-0.5 text-xl font-bold text-slate-900">
@@ -183,7 +183,7 @@
               class="group flex w-full items-start gap-3 rounded-xl p-3 text-left hover:bg-slate-50"
               @click="goTo(step.routeName)"
           >
-            <div class="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-slate-900 text-[11px] font-bold text-white">
+            <div class="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-slate-900 text-xs font-bold text-white">
               {{ index + 1 }}
             </div>
             <div class="min-w-0 flex-1">
@@ -202,6 +202,13 @@
         </div>
       </section>
     </div>
+
+    <GenerateSuggestionModal
+        :open="showGenerate"
+        :manager-guid="managerGuid"
+        @close="showGenerate = false"
+        @generated="onGenerated"
+    />
   </div>
 </template>
 
@@ -232,6 +239,7 @@ import PlanningInfoPanel from '../components/PlanningInfoPanel.vue'
 import PlanningMetricCard from '../components/PlanningMetricCard.vue'
 import PlanningPageHeader from '../components/PlanningPageHeader.vue'
 import ReadinessChecklist from '../components/ReadinessChecklist.vue'
+import GenerateSuggestionModal from '../suggestions/GenerateSuggestionModal.vue'
 import {
   responseData,
   responseError,
@@ -255,6 +263,7 @@ const profiles = ref<EmployeePlanningProfile[]>([])
 const requirements = ref<PlanningRequirement[]>([])
 const suggestions = ref<ScheduleSuggestionListItem[]>([])
 const activeConfig = ref<PlanningSuggestionConfig | null>(null)
+const showGenerate = ref(false)
 
 const managerGuid = computed(() => userStore.user?.guid ?? '')
 const activeEmployees = computed<any[]>(() =>
@@ -508,6 +517,14 @@ async function loadDashboard(): Promise<void> {
 
 function goTo(routeName: string): void {
   router.push({ name: routeName })
+}
+
+function onGenerated(suggestion: { guid: string }): void {
+  showGenerate.value = false
+  router.push({
+    name: 'planning-suggestion-preview',
+    params: { guid: suggestion.guid },
+  })
 }
 
 onMounted(loadDashboard)

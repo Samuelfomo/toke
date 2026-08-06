@@ -1,14 +1,15 @@
 <template>
   <Teleport to="body">
     <div class="fixed inset-0 z-50 flex items-center justify-center p-0 sm:p-6">
-      <button
-          type="button"
+      <div
           class="absolute inset-0 bg-black/35 backdrop-blur-sm"
-          aria-label="Fermer"
-          @click="requestClose"
+          aria-hidden="true"
       />
 
       <section
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="session-template-form-title"
           class="relative flex h-[100dvh] w-full flex-col overflow-hidden bg-white shadow-2xl sm:h-[94dvh] sm:max-w-6xl sm:rounded-2xl sm:border sm:border-slate-200"
       >
         <header class="flex-shrink-0 border-b border-slate-100 px-4 py-4 sm:px-6">
@@ -18,7 +19,7 @@
                 <IconCalendarEvent :size="18" class="text-blue-600"/>
               </div>
               <div class="min-w-0">
-                <h2 class="truncate text-base font-semibold text-slate-800">
+                <h2 id="session-template-form-title" class="truncate text-base font-semibold text-slate-800">
                   {{ formTitle }}
                 </h2>
                 <p class="text-xs text-slate-400">Configuration d’un modèle d’horaires réutilisable</p>
@@ -28,13 +29,15 @@
             <div class="flex items-center gap-2">
               <span
                   v-if="draftStatus"
-                  class="hidden rounded-full bg-emerald-50 px-2.5 py-1 text-[11px] font-medium text-emerald-700 sm:inline-flex"
+                  class="hidden rounded-full bg-emerald-50 px-2.5 py-1 text-xs font-medium text-emerald-700 sm:inline-flex"
               >
                 {{ draftStatus }}
               </span>
               <button
                   type="button"
-                  class="flex h-9 w-9 items-center justify-center rounded-xl text-slate-400 transition hover:bg-slate-100 hover:text-slate-700"
+                  class="flex h-9 w-9 items-center justify-center rounded-xl text-slate-400 transition hover:bg-slate-100 hover:text-slate-700 disabled:cursor-not-allowed disabled:opacity-50"
+                  :disabled="saving"
+                  aria-label="Fermer"
                   @click="requestClose"
               >
                 <IconX :size="17"/>
@@ -56,7 +59,7 @@
                 @click="navigateToStep(step.value)"
             >
               <span
-                  class="flex h-6 w-6 flex-shrink-0 items-center justify-center rounded-full text-[11px] font-bold"
+                  class="flex h-6 w-6 flex-shrink-0 items-center justify-center rounded-full text-xs font-bold"
                   :class="activeStep === step.value
                   ? 'bg-blue-600 text-white'
                   : activeStep > step.value
@@ -68,13 +71,13 @@
               </span>
               <span class="min-w-0">
                 <span class="block truncate text-xs font-semibold">{{ step.label }}</span>
-                <span class="hidden truncate text-[10px] opacity-70 lg:block">{{ step.description }}</span>
+                <span class="hidden truncate text-xs opacity-70 lg:block">{{ step.description }}</span>
               </span>
             </button>
           </nav>
         </header>
 
-        <main class="min-h-0 flex-1 overflow-y-auto bg-slate-50/60">
+        <div class="min-h-0 flex-1 overflow-y-auto bg-slate-50/60">
           <!-- Étape 1 : informations -->
           <div v-if="activeStep === 1" class="mx-auto grid max-w-5xl gap-5 p-4 sm:p-6 lg:grid-cols-[1.15fr_.85fr]">
             <section class="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm sm:p-5">
@@ -126,7 +129,7 @@
                   <article class="option-card">
                     <div>
                       <p class="text-xs font-semibold text-slate-700">Rotation</p>
-                      <p class="mt-0.5 text-[11px] leading-4 text-slate-400">Disponible pour les plannings rotatifs.</p>
+                      <p class="mt-0.5 text-xs leading-4 text-slate-400">Disponible pour les plannings rotatifs.</p>
                     </div>
                     <FormToggle
                         v-model="form.for_rotation"
@@ -138,7 +141,7 @@
                   <article class="option-card">
                     <div>
                       <p class="text-xs font-semibold text-slate-700">Par défaut</p>
-                      <p class="mt-0.5 text-[11px] leading-4 text-slate-400">Proposé automatiquement aux managers.</p>
+                      <p class="mt-0.5 text-xs leading-4 text-slate-400">Proposé automatiquement aux managers.</p>
                     </div>
                     <FormToggle v-model="form.is_default" color="blue"/>
                   </article>
@@ -146,7 +149,7 @@
                   <article class="option-card">
                     <div>
                       <p class="text-xs font-semibold text-slate-700">Actif</p>
-                      <p class="mt-0.5 text-[11px] leading-4 text-slate-400">Utilisable dans les affectations
+                      <p class="mt-0.5 text-xs leading-4 text-slate-400">Utilisable dans les affectations
                         courantes.</p>
                     </div>
                     <FormToggle v-model="form.current" color="emerald"/>
@@ -174,7 +177,7 @@
                       <span
                           v-for="day in selectedModel.workday"
                           :key="day"
-                          class="rounded-md bg-blue-50 px-1.5 py-0.5 text-[10px] font-semibold text-blue-600"
+                          class="rounded-md bg-blue-50 px-1.5 py-0.5 text-xs font-semibold text-blue-600"
                       >
                         {{ DAY_FR_SHORT[day] ?? day }}
                       </span>
@@ -286,7 +289,7 @@
                           :key="opt.value"
                           type="button"
                           :disabled="!isDayAllowed(day.value)"
-                          class="rounded-md px-2.5 py-1.5 text-[11px] font-semibold transition disabled:cursor-not-allowed"
+                          class="rounded-md px-2.5 py-1.5 text-xs font-semibold transition disabled:cursor-not-allowed"
                           :class="getDayState(day.value) === opt.value
                           ? 'bg-white text-slate-700 shadow-sm'
                           : 'text-slate-400 hover:text-slate-600'"
@@ -371,7 +374,7 @@
                                 class="time-field w-full pr-10"
                             />
                             <span
-                                class="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-[11px] text-slate-400">min</span>
+                                class="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-xs text-slate-400">min</span>
                           </div>
                         </div>
 
@@ -445,7 +448,7 @@
                         :key="`preview-${day.value}`"
                         class="flex items-center gap-3 rounded-xl border border-slate-100 px-3 py-2"
                     >
-                      <span class="w-8 text-[11px] font-bold text-slate-500">{{ day.label }}</span>
+                      <span class="w-8 text-xs font-bold text-slate-500">{{ day.label }}</span>
                       <span
                           class="h-2 w-2 flex-shrink-0 rounded-full"
                           :class="previewDotClass(day.value)"
@@ -554,7 +557,7 @@
                     <span class="w-8 text-xs font-bold text-slate-600">{{ day.label }}</span>
                     <span class="min-w-0 flex-1">
                       <span class="block truncate text-xs font-medium text-slate-700">{{ dayPreview(day.value) }}</span>
-                      <span v-if="dayErrors[day.value]?.length" class="mt-1 block text-[11px] text-red-600">
+                      <span v-if="dayErrors[day.value]?.length" class="mt-1 block text-xs text-red-600">
                         {{ dayErrors[day.value].length }} erreur{{ dayErrors[day.value].length > 1 ? 's' : '' }}
                       </span>
                     </span>
@@ -583,13 +586,14 @@
               </div>
             </section>
           </div>
-        </main>
+        </div>
 
         <footer
             class="flex flex-shrink-0 items-center justify-between gap-3 border-t border-slate-100 bg-white px-4 py-3 sm:px-6">
           <button
               type="button"
-              class="rounded-xl border border-slate-200 px-4 py-2 text-sm text-slate-600 transition hover:bg-slate-50"
+              class="rounded-xl border border-slate-200 px-4 py-2 text-sm text-slate-600 transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50"
+              :disabled="saving"
               @click="requestClose"
           >
             Fermer
@@ -633,11 +637,17 @@
 
     <!-- Copier / appliquer à plusieurs jours -->
     <div v-if="bulkCopyOpen" class="fixed inset-0 z-[60] flex items-center justify-center p-4">
-      <button type="button" class="absolute inset-0 bg-black/30" aria-label="Fermer" @click="bulkCopyOpen = false"/>
-      <section class="relative w-full max-w-md rounded-2xl border border-slate-200 bg-white p-5 shadow-2xl">
+      <div class="absolute inset-0 bg-black/30" aria-hidden="true"/>
+      <section
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="bulk-copy-dialog-title"
+          class="relative w-full max-w-md rounded-2xl border border-slate-200 bg-white p-5 shadow-2xl"
+      >
         <div class="flex items-start justify-between gap-4">
           <div>
-            <h3 class="text-sm font-semibold text-slate-800">Appliquer un jour à plusieurs jours</h3>
+            <h3 id="bulk-copy-dialog-title" class="text-sm font-semibold text-slate-800">Appliquer un jour à plusieurs
+              jours</h3>
             <p class="mt-1 text-xs text-slate-400">Les horaires, pauses et tolérances seront copiés.</p>
           </div>
           <button type="button" class="text-slate-400 hover:text-slate-700" @click="bulkCopyOpen = false">
@@ -723,6 +733,7 @@ import {
   IconX,
 } from '@tabler/icons-vue'
 import SessionTemplateService from '@/service/SessionTemplate'
+import {useBodyScrollLock} from '@/views/planning/composables/useBodyScrollLock'
 import type {IDayBlock, IDefinition, ISessionTemplate} from './type'
 
 type FormMode = 'create' | 'edit' | 'duplicate'
@@ -841,6 +852,8 @@ const errors = reactive<Record<string, string>>({})
 const dayErrors = reactive<Record<string, string[]>>({})
 const globalError = ref('')
 const saving = ref(false)
+
+useBodyScrollLock(true)
 const reviewValid = ref(false)
 const draftRestored = ref(false)
 const draftStatus = ref('')
@@ -1237,6 +1250,7 @@ function clearDraft() {
 }
 
 function requestClose() {
+  if (saving.value) return
   if (draftTimer) clearTimeout(draftTimer)
   saveDraftNow()
   emit('close')
@@ -1253,7 +1267,7 @@ type SessionTemplatePayload = {
 }
 
 async function submit() {
-  if (!validateAll()) return
+  if (saving.value || !validateAll()) return
   saving.value = true
   globalError.value = ''
 
@@ -1333,7 +1347,7 @@ onBeforeUnmount(() => {
 }
 
 .field-label {
-  @apply text-[10.5px] font-bold uppercase tracking-wide text-slate-500;
+  @apply text-xs font-bold uppercase tracking-wide text-slate-500;
 }
 
 .field {
@@ -1346,7 +1360,7 @@ onBeforeUnmount(() => {
 }
 
 .err {
-  @apply text-[11px] text-red-500;
+  @apply text-xs text-red-500;
 }
 
 .time-field {
@@ -1371,7 +1385,7 @@ onBeforeUnmount(() => {
 }
 
 .day-action-btn {
-  @apply inline-flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-[11px] font-medium text-slate-500 transition hover:bg-slate-100 hover:text-slate-700;
+  @apply inline-flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-xs font-medium text-slate-500 transition hover:bg-slate-100 hover:text-slate-700;
 }
 
 .summary-stat {
@@ -1379,7 +1393,7 @@ onBeforeUnmount(() => {
 }
 
 .summary-stat span {
-  @apply text-[10px] font-medium uppercase tracking-wide text-slate-400;
+  @apply text-xs font-medium uppercase tracking-wide text-slate-400;
 }
 
 .summary-stat strong {

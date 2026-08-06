@@ -26,7 +26,7 @@
       </div>
     </header>
 
-    <main class="flex min-h-0 flex-1 flex-col gap-4 overflow-y-auto px-4 py-5 sm:px-8">
+    <div class="flex min-h-0 flex-1 flex-col gap-4 overflow-y-auto px-4 py-5 sm:px-8">
       <!-- Indicateurs -->
       <section class="grid grid-cols-2 gap-3 xl:grid-cols-4">
         <article class="metric-card">
@@ -162,7 +162,7 @@
         <div class="overflow-x-auto">
           <table class="w-full border-collapse">
             <thead>
-            <tr class="border-b border-slate-100 text-[10.5px] font-bold uppercase tracking-widest text-slate-400">
+            <tr class="border-b border-slate-100 text-xs font-bold uppercase tracking-widest text-slate-400">
               <th class="px-5 py-3 text-left">Modèle</th>
               <th class="px-4 py-3 text-left">Norme</th>
               <th class="px-4 py-3 text-left">Semaine</th>
@@ -230,7 +230,7 @@
                     <span
                         v-for="day in DAY_ORDER"
                         :key="`${item.guid}-${day}`"
-                        class="flex h-6 w-7 items-center justify-center rounded-md text-[10px] font-semibold"
+                        class="flex h-6 w-7 items-center justify-center rounded-md text-xs font-semibold"
                         :class="dayBadgeClass(item.definition, day)"
                         :title="dayTitle(item.definition, day)"
                     >
@@ -257,14 +257,14 @@
                     </span>
                   <span>
                       <span class="block text-xs font-semibold text-slate-700">{{ usageLabel(item) }}</span>
-                      <span class="block text-[10px] text-slate-400">Voir le détail</span>
+                      <span class="block text-xs text-slate-400">Voir le détail</span>
                     </span>
                 </button>
               </td>
 
               <td class="px-4 py-3.5">
                   <span
-                      class="inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[11px] font-semibold"
+                      class="inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-semibold"
                       :class="isCurrent(item) ? 'bg-emerald-50 text-emerald-700' : 'bg-slate-100 text-slate-400'"
                   >
                     <span class="h-1.5 w-1.5 rounded-full"
@@ -352,7 +352,7 @@
                 </button>
               </div>
               <span
-                  class="inline-flex flex-shrink-0 items-center gap-1.5 rounded-full px-2.5 py-1 text-[11px] font-semibold"
+                  class="inline-flex flex-shrink-0 items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-semibold"
                   :class="isCurrent(item) ? 'bg-emerald-50 text-emerald-700' : 'bg-slate-100 text-slate-400'"
               >
               {{ isCurrent(item) ? 'Actif' : 'Inactif' }}
@@ -363,7 +363,7 @@
             <span
                 v-for="day in DAY_ORDER"
                 :key="`${item.guid}-mobile-${day}`"
-                class="flex h-7 w-8 items-center justify-center rounded-lg text-[10px] font-semibold"
+                class="flex h-7 w-8 items-center justify-center rounded-lg text-xs font-semibold"
                 :class="dayBadgeClass(item.definition, day)"
             >
               {{ DAY_FR[day] }}
@@ -371,7 +371,7 @@
             </div>
 
             <div class="mt-3 rounded-xl bg-slate-50 p-3">
-              <p class="text-[10px] font-semibold uppercase tracking-wide text-slate-400">Horaires configurés</p>
+              <p class="text-xs font-semibold uppercase tracking-wide text-slate-400">Horaires configurés</p>
               <p class="mt-1 text-xs leading-5 text-slate-600">{{ fullScheduleSummary(item.definition) }}</p>
             </div>
 
@@ -448,19 +448,19 @@
           </button>
         </div>
       </section>
-    </main>
+    </div>
 
     <!-- Suppression -->
     <Teleport to="body">
       <div v-if="deleteTarget" class="fixed inset-0 z-50 flex items-center justify-center p-4">
-        <button type="button" class="absolute inset-0 bg-black/30 backdrop-blur-sm" @click="deleteTarget = null"/>
-        <section class="relative w-full max-w-sm rounded-2xl border border-slate-200 bg-white p-6 shadow-xl">
+        <div class="absolute inset-0 bg-black/30 backdrop-blur-sm" aria-hidden="true"/>
+        <section role="alertdialog" aria-modal="true" aria-labelledby="delete-session-template-title" class="relative w-full max-w-sm rounded-2xl border border-slate-200 bg-white p-6 shadow-xl">
           <div class="mb-4 flex items-center gap-3">
             <div class="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-xl bg-red-50">
               <IconAlertTriangle :size="20" class="text-red-500"/>
             </div>
             <div>
-              <p class="text-sm font-semibold text-slate-800">Supprimer le modèle</p>
+              <p id="delete-session-template-title" class="text-sm font-semibold text-slate-800">Supprimer le modèle</p>
               <p class="mt-0.5 text-xs text-slate-400">Cette action est irréversible.</p>
             </div>
           </div>
@@ -471,8 +471,8 @@
           </p>
 
           <div class="flex gap-3">
-            <button type="button" class="flex-1 rounded-xl border border-slate-200 px-4 py-2 text-sm text-slate-600"
-                    @click="deleteTarget = null">
+            <button type="button" class="flex-1 rounded-xl border border-slate-200 px-4 py-2 text-sm text-slate-600 disabled:cursor-not-allowed disabled:opacity-50"
+                    :disabled="deleteLoading" @click="deleteTarget = null">
               Annuler
             </button>
             <button
@@ -491,13 +491,16 @@
     <!-- Consultation -->
     <Teleport to="body">
       <div v-if="detailTarget" class="fixed inset-0 z-50 flex items-center justify-center p-4">
-        <button type="button" class="absolute inset-0 bg-black/30 backdrop-blur-sm" @click="detailTarget = null"/>
+        <div class="absolute inset-0 bg-black/30 backdrop-blur-sm" aria-hidden="true"/>
         <section
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="session-template-detail-title"
             class="relative max-h-[90dvh] w-full max-w-2xl overflow-y-auto rounded-2xl border border-slate-200 bg-white p-5 shadow-xl">
           <div class="flex items-start justify-between gap-4">
             <div>
               <div class="flex flex-wrap items-center gap-2">
-                <h3 class="text-base font-semibold text-slate-800">{{ detailTarget.name }}</h3>
+                <h3 id="session-template-detail-title" class="text-base font-semibold text-slate-800">{{ detailTarget.name }}</h3>
                 <span v-if="isDefault(detailTarget)" class="badge bg-amber-50 text-amber-700">Par défaut</span>
                 <span v-if="detailTarget.for_rotation" class="badge bg-violet-50 text-violet-700">Rotation</span>
               </div>
@@ -527,13 +530,13 @@
           </div>
 
           <div class="mt-5 rounded-xl border border-slate-200 p-4">
-            <p class="text-[10px] font-semibold uppercase tracking-wide text-slate-400">Description</p>
+            <p class="text-xs font-semibold uppercase tracking-wide text-slate-400">Description</p>
             <p class="mt-2 text-sm leading-6 text-slate-600">
               {{ detailTarget.description || 'Aucune description renseignée.' }}</p>
           </div>
 
           <div class="mt-4 rounded-xl border border-slate-200 p-4">
-            <p class="text-[10px] font-semibold uppercase tracking-wide text-slate-400">Semaine configurée</p>
+            <p class="text-xs font-semibold uppercase tracking-wide text-slate-400">Semaine configurée</p>
             <div class="mt-3 space-y-2">
               <div
                   v-for="day in DAY_ORDER"
@@ -565,11 +568,11 @@
     <!-- Utilisations -->
     <Teleport to="body">
       <div v-if="usageTarget" class="fixed inset-0 z-50 flex items-center justify-center p-4">
-        <button type="button" class="absolute inset-0 bg-black/30 backdrop-blur-sm" @click="usageTarget = null"/>
-        <section class="relative w-full max-w-md rounded-2xl border border-slate-200 bg-white p-5 shadow-xl">
+        <div class="absolute inset-0 bg-black/30 backdrop-blur-sm" aria-hidden="true"/>
+        <section role="dialog" aria-modal="true" aria-labelledby="session-template-usage-title" class="relative w-full max-w-md rounded-2xl border border-slate-200 bg-white p-5 shadow-xl">
           <div class="flex items-start justify-between gap-4">
             <div>
-              <h3 class="text-sm font-semibold text-slate-800">Utilisations du modèle</h3>
+              <h3 id="session-template-usage-title" class="text-sm font-semibold text-slate-800">Utilisations du modèle</h3>
               <p class="mt-1 text-xs text-slate-400">{{ usageTarget.name }}</p>
             </div>
             <button type="button" class="text-slate-400 hover:text-slate-700" @click="usageTarget = null">
@@ -655,6 +658,7 @@ import {
 import SessionTemplateService from '@/service/SessionTemplate'
 import SessionModelService from '@/service/SessionModelService'
 import SessionTemplateForm from './sessionTemplateForm.vue'
+import {useBodyScrollLock} from '@/views/planning/composables/useBodyScrollLock'
 import type {IDayBlock, IDefinition, ISessionTemplate} from './type'
 import type {IPagination} from '../session_model/type'
 
@@ -715,6 +719,9 @@ const deleteTarget = ref<ISessionTemplate | null>(null)
 const deleteLoading = ref(false)
 const usageTarget = ref<ISessionTemplate | null>(null)
 const detailTarget = ref<ISessionTemplate | null>(null)
+
+const inlineOverlayOpen = computed(() => Boolean(deleteTarget.value || detailTarget.value || usageTarget.value))
+useBodyScrollLock(inlineOverlayOpen)
 const openMenuGuid = ref<string | null>(null)
 
 const currentPage = computed(() => Math.floor(pagination.value.offset / pagination.value.limit) + 1)
@@ -1040,7 +1047,7 @@ onBeforeUnmount(() => document.removeEventListener('click', closeMenus))
 }
 
 .metric-label {
-  @apply text-[10px] font-semibold uppercase tracking-wide text-slate-400;
+  @apply text-xs font-semibold uppercase tracking-wide text-slate-400;
 }
 
 .metric-value {
@@ -1048,11 +1055,11 @@ onBeforeUnmount(() => document.removeEventListener('click', closeMenus))
 }
 
 .metric-hint {
-  @apply text-[10px] text-slate-400;
+  @apply text-xs text-slate-400;
 }
 
 .badge {
-  @apply inline-flex rounded-md px-1.5 py-0.5 text-[9px] font-semibold;
+  @apply inline-flex rounded-md px-1.5 py-0.5 text-xs font-semibold;
 }
 
 .menu-item {
@@ -1060,7 +1067,7 @@ onBeforeUnmount(() => document.removeEventListener('click', closeMenus))
 }
 
 .mobile-action {
-  @apply flex items-center justify-center gap-1 rounded-lg bg-slate-50 px-2 py-2 text-[11px] font-semibold;
+  @apply flex items-center justify-center gap-1 rounded-lg bg-slate-50 px-2 py-2 text-xs font-semibold;
 }
 
 .usage-stat {
@@ -1072,7 +1079,7 @@ onBeforeUnmount(() => document.removeEventListener('click', closeMenus))
 }
 
 .usage-stat span {
-  @apply text-[10px] text-slate-400;
+  @apply text-xs text-slate-400;
 }
 
 .pg-btn {

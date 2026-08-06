@@ -6,7 +6,7 @@
       <div class="flex h-11 w-11 items-center justify-center rounded-2xl" :class="accentClasses.icon">
         <component :is="icon" :size="22" stroke-width="1.8"/>
       </div>
-      <span class="rounded-full px-2.5 py-1 text-[10px] font-bold uppercase tracking-wide"
+      <span class="rounded-full px-2.5 py-1 text-xs font-bold uppercase tracking-wide"
             :class="statusReady ? 'bg-emerald-50 text-emerald-700' : 'bg-amber-50 text-amber-700'">
                 {{ statusReady ? 'Prêt' : 'À compléter' }}
             </span>
@@ -42,7 +42,7 @@ const props = withDefaults(defineProps<{
 }>(), {accent: 'indigo'})
 defineEmits<{ open: [] }>()
 const accentClasses = computed(() => ({
-  indigo: {icon: 'bg-indigo-50 text-indigo-700', bar: 'bg-indigo-500'},
+  indigo: {icon: 'bg-blue-50 text-blue-700', bar: 'bg-blue-500'},
   emerald: {icon: 'bg-emerald-50 text-emerald-700', bar: 'bg-emerald-500'},
   amber: {icon: 'bg-amber-50 text-amber-700', bar: 'bg-amber-500'},
   violet: {icon: 'bg-violet-50 text-violet-700', bar: 'bg-violet-500'},

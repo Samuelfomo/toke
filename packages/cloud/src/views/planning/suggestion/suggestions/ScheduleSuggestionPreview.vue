@@ -16,25 +16,6 @@
           Retour
         </button>
 
-        <template v-if="suggestion?.status === 'draft'">
-          <button
-              class="danger-button"
-              @click="confirmAction = 'reject'"
-          >
-            <IconX :size="16" />
-            Rejeter
-          </button>
-
-          <button
-              class="primary-button disabled:cursor-not-allowed disabled:opacity-50"
-              :disabled="!canApprove"
-              :title="approveBlocker || 'Valider et publier'"
-              @click="confirmAction = 'approve'"
-          >
-            <IconCircleCheck :size="16" />
-            Valider et publier
-          </button>
-        </template>
       </template>
     </PlanningPageHeader>
 
@@ -59,18 +40,32 @@
     </div>
 
     <template v-else-if="suggestion">
+      <SuggestionIssueSummary
+          :hard-count="hardViolations.length"
+          :below-minimum-count="belowMinimumCoverage.length"
+          :warning-count="warningViolations.length"
+          :manual-count="manualCellCount"
+          :unassigned-count="unassignedCellCount"
+          @open="activeTab = $event"
+          @filter-manual="activateManualFilter"
+          @filter-unassigned="activateUnassignedFilter"
+      />
+
       <section class="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
         <div class="grid gap-px bg-slate-100 sm:grid-cols-2 xl:grid-cols-5">
           <Score
               label="Conformité globale"
+              description="Synthèse des objectifs et contraintes respectés."
               :value="suggestion.conformity_score"
           />
           <Score
               label="Couverture"
+              description="Niveau d’atteinte des effectifs demandés."
               :value="suggestion.diagnostics.coverageScore"
           />
           <Score
               label="Équité"
+              description="Répartition des contraintes entre collaborateurs."
               :value="suggestion.diagnostics.fairnessScore"
           />
           <Info
@@ -94,7 +89,7 @@
               <IconUsersGroup :size="20" />
             </div>
             <div>
-              <p class="text-[10px] font-bold uppercase tracking-[0.12em] text-violet-500">
+              <p class="text-xs font-bold uppercase tracking-[0.12em] text-violet-500">
                 Gardes
               </p>
               <h2 class="mt-1 text-base font-bold text-slate-900">
@@ -107,7 +102,7 @@
             </div>
           </div>
 
-          <span class="w-fit rounded-full bg-violet-100 px-3 py-1 text-[10px] font-bold text-violet-700">
+          <span class="w-fit rounded-full bg-violet-100 px-3 py-1 text-xs font-bold text-violet-700">
             {{ guardPools.length }} semaine(s)
           </span>
         </div>
@@ -120,7 +115,7 @@
           >
             <div class="flex flex-wrap items-start justify-between gap-3">
               <div>
-                <p class="text-[9px] font-bold uppercase tracking-[0.12em] text-slate-400">
+                <p class="text-xs font-bold uppercase tracking-[0.12em] text-slate-400">
                   Semaine
                 </p>
                 <p class="mt-1 text-sm font-bold text-slate-900">
@@ -130,10 +125,10 @@
               </div>
 
               <div class="flex flex-wrap gap-2">
-                <span class="rounded-full bg-violet-50 px-2.5 py-1 text-[9px] font-bold text-violet-700">
+                <span class="rounded-full bg-violet-50 px-2.5 py-1 text-xs font-bold text-violet-700">
                   Pool hebdomadaire
                 </span>
-                <span class="rounded-full bg-slate-100 px-2.5 py-1 text-[9px] font-bold text-slate-600">
+                <span class="rounded-full bg-slate-100 px-2.5 py-1 text-xs font-bold text-slate-600">
                   {{ pool.selectionModeLabel }}
                 </span>
               </div>
@@ -146,7 +141,7 @@
                   class="flex items-center gap-3 rounded-lg bg-slate-50 px-3 py-2.5"
               >
                 <div
-                    class="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg text-[10px] font-bold"
+                    class="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg text-xs font-bold"
                     :class="employee.resolved
                             ? 'bg-slate-900 text-white'
                             : 'bg-amber-100 text-amber-700'"
@@ -163,7 +158,7 @@
                   >
                     {{ employee.name }}
                   </p>
-                  <p class="mt-0.5 truncate text-[10px] text-slate-400">
+                  <p class="mt-0.5 truncate text-xs text-slate-400">
                     {{ employee.employeeCode ?? employee.guid }}
                   </p>
                 </div>
@@ -171,7 +166,7 @@
 
               <p
                   v-if="!pool.employees.length"
-                  class="rounded-lg border border-dashed border-slate-200 px-3 py-4 text-center text-[10px] text-slate-400"
+                  class="rounded-lg border border-dashed border-slate-200 px-3 py-4 text-center text-xs text-slate-400"
               >
                 Aucun collaborateur dans ce pool.
               </p>
@@ -218,18 +213,34 @@
         </div>
       </section>
 
+      <SuggestionFilters
+          v-if="activeTab === 'planning'"
+          :search="employeeSearch"
+          :manual-only="manualOnly"
+          :guard-only="guardOnly"
+          :unassigned-only="unassignedOnly"
+          :manual-count="manualCellCount"
+          :guard-count="guardCellCount"
+          :unassigned-count="unassignedCellCount"
+          @update:search="employeeSearch = $event"
+          @update:manualOnly="manualOnly = $event"
+          @update:guardOnly="guardOnly = $event"
+          @update:unassignedOnly="unassignedOnly = $event"
+          @reset="resetPlanningFilters"
+      />
+
       <section
           v-if="activeTab === 'planning'"
           class="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm"
       >
-        <div class="overflow-auto">
+        <div class="tf-scroll-area overflow-auto">
           <table
               class="border-collapse"
               style="min-width: max-content; width: 100%"
           >
             <thead class="sticky top-0 z-20">
             <tr class="border-b border-slate-200 bg-slate-50">
-              <th class="sticky left-0 z-30 min-w-[220px] border-r border-slate-200 bg-slate-50 px-4 py-3 text-left text-[10px] font-bold uppercase tracking-[0.1em] text-slate-400">
+              <th class="sticky left-0 z-30 min-w-[220px] border-r border-slate-200 bg-slate-50 px-4 py-3 text-left text-xs font-bold uppercase tracking-[0.1em] text-slate-400">
                 Collaborateur
               </th>
 
@@ -244,19 +255,19 @@
                                             : ''"
               >
                 <p
-                    class="text-[10px] font-bold uppercase"
+                    class="text-xs font-bold uppercase"
                     :class="day.outsidePeriod
                                             ? 'text-amber-700'
                                             : 'text-slate-500'"
                 >
                   {{ day.shortLabel }}
                 </p>
-                <p class="mt-0.5 text-[10px] text-slate-400">
+                <p class="mt-0.5 text-xs text-slate-400">
                   {{ day.dayMonth }}
                 </p>
                 <p
                     v-if="day.outsidePeriod"
-                    class="mt-1 text-[8px] font-bold uppercase text-amber-600"
+                    class="mt-1 text-xs font-bold uppercase text-amber-600"
                 >
                   suite
                 </p>
@@ -266,7 +277,7 @@
 
             <tbody>
             <tr
-                v-for="item in suggestion.items"
+                v-for="item in filteredItems"
                 :key="item.guid"
                 class="border-b border-slate-100 last:border-0"
             >
@@ -279,7 +290,7 @@
                     <p class="max-w-[150px] truncate text-xs font-bold text-slate-800">
                       {{ item.user.name }}
                     </p>
-                    <p class="mt-0.5 text-[10px] text-slate-400">
+                    <p class="mt-0.5 text-xs text-slate-400">
                       {{ item.user.employee_code ?? 'Sans code' }}
                     </p>
                   </div>
@@ -299,10 +310,10 @@
                     :disabled="suggestion.status !== 'draft' || !(day.iso in item.schedule)"
                     @click="openCell(item, day.iso)"
                 >
-                                        <span class="block truncate text-[10px] font-bold">
+                                        <span class="block truncate text-xs font-bold">
                                             {{ cellLabel(item, day.iso) }}
                                         </span>
-                  <span class="mt-1 block truncate text-[9px] opacity-70">
+                  <span class="mt-1 block truncate text-xs opacity-70">
                                             {{ cellTime(item, day.iso) }}
                                         </span>
                   <span
@@ -310,6 +321,12 @@
                       class="absolute right-1 top-1 h-1.5 w-1.5 rounded-full bg-orange-500"
                   />
                 </button>
+              </td>
+            </tr>
+            <tr v-if="filteredItems.length === 0">
+              <td :colspan="calendarDays.length + 1" class="px-6 py-14 text-center">
+                <p class="text-sm font-bold text-slate-700">Aucun collaborateur ne correspond aux filtres</p>
+                <p class="mt-1 text-xs text-slate-500">Réinitialisez la recherche ou les filtres de contrôle.</p>
               </td>
             </tr>
             </tbody>
@@ -321,10 +338,10 @@
           v-else-if="activeTab === 'coverage'"
           class="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm"
       >
-        <div class="overflow-x-auto">
+        <div class="tf-scroll-area overflow-x-auto">
           <table class="w-full min-w-[850px]">
             <thead class="bg-slate-50">
-            <tr class="text-left text-[10px] font-bold uppercase text-slate-400">
+            <tr class="text-left text-xs font-bold uppercase text-slate-400">
               <th class="px-5 py-3">Date</th>
               <th class="px-4 py-3">Service</th>
               <th class="px-4 py-3">Mode</th>
@@ -337,7 +354,7 @@
 
             <tbody class="divide-y divide-slate-100">
             <tr
-                v-for="coverage in suggestion.diagnostics.coverage"
+                v-for="coverage in sortedCoverage"
                 :key="`${coverage.date}-${coverage.requirementGuid}`"
             >
               <td class="px-5 py-3 text-xs font-semibold text-slate-700">
@@ -360,10 +377,8 @@
               </td>
               <td class="px-5 py-3">
                                     <span
-                                        class="rounded-full px-2 py-1 text-[9px] font-bold"
-                                        :class="coverage.status === 'COVERED'
-                                            ? 'bg-emerald-50 text-emerald-700'
-                                            : 'bg-red-50 text-red-700'"
+                                        class="rounded-full px-2 py-1 text-xs font-bold"
+                                        :class="coverageClass(coverage.status)"
                                     >
                                         {{ coverageLabel(coverage.status) }}
                                     </span>
@@ -383,7 +398,7 @@
         />
 
         <article
-            v-for="violation in suggestion.diagnostics.violations"
+            v-for="violation in sortedViolations"
             :key="`${violation.code}-${violation.date}-${violation.employeeGuid}`"
             class="rounded-2xl border p-4"
             :class="violation.severity === 'HARD'
@@ -403,12 +418,12 @@
                   {{ violation.code }}
                 </p>
                 <span
-                    class="text-[9px] font-bold uppercase"
+                    class="text-xs font-bold uppercase"
                     :class="violation.severity === 'HARD'
                                         ? 'text-red-700'
                                         : 'text-amber-700'"
                 >
-                                    {{ violation.severity }}
+                                    {{ severityLabel(violation.severity) }}
                                 </span>
               </div>
               <p class="mt-1 text-xs leading-5 text-slate-600">
@@ -416,7 +431,7 @@
               </p>
               <p
                   v-if="violation.date"
-                  class="mt-1 text-[10px] text-slate-400"
+                  class="mt-1 text-xs text-slate-400"
               >
                 {{ formatDate(violation.date) }}
               </p>
@@ -425,6 +440,15 @@
         </article>
       </section>
     </template>
+
+    <SuggestionPublicationBar
+        v-if="suggestion?.status === 'draft'"
+        :can-approve="canApprove"
+        :blocker="approveBlocker"
+        :loading="actionLoading"
+        @approve="confirmAction = 'approve'"
+        @reject="confirmAction = 'reject'"
+    />
 
     <SuggestionCellEditor
         :open="cellEditorOpen"
@@ -470,9 +494,7 @@ import { useRoute, useRouter } from 'vue-router'
 import {
   IconAlertTriangle,
   IconArrowLeft,
-  IconCircleCheck,
   IconUsersGroup,
-  IconX,
 } from '@tabler/icons-vue'
 
 import SessionTemplateService from '@/service/SessionTemplate'
@@ -482,6 +504,9 @@ import PlanningConfirmDialog from '../components/PlanningConfirmDialog.vue'
 import PlanningInfoPanel from '../components/PlanningInfoPanel.vue'
 import PlanningPageHeader from '../components/PlanningPageHeader.vue'
 import SuggestionCellEditor from './SuggestionCellEditor.vue'
+import SuggestionFilters from './SuggestionFilters.vue'
+import SuggestionIssueSummary from './SuggestionIssueSummary.vue'
+import SuggestionPublicationBar from './SuggestionPublicationBar.vue'
 import {
   ALLOCATION_LABELS,
   formatDate,
@@ -512,6 +537,10 @@ const selectedItem = ref<ScheduleSuggestionItem | null>(null)
 const selectedIso = ref('')
 const confirmAction = ref<'approve' | 'reject' | null>(null)
 const actionLoading = ref(false)
+const employeeSearch = ref('')
+const manualOnly = ref(false)
+const guardOnly = ref(false)
+const unassignedOnly = ref(false)
 
 const dayKeys: PlanningDayKey[] = [
   'Sun',
@@ -595,6 +624,32 @@ const belowMinimumCoverage = computed(() =>
     ) ?? [],
 )
 
+const warningViolations = computed(() =>
+    suggestion.value?.diagnostics.violations.filter(
+        (violation) => violation.severity === 'WARNING',
+    ) ?? [],
+)
+
+const sortedCoverage = computed(() =>
+    [...(suggestion.value?.diagnostics.coverage ?? [])].sort((left, right) => {
+      const priority: Record<string, number> = {
+        BELOW_MINIMUM: 0,
+        ABOVE_MAXIMUM: 1,
+        BELOW_TARGET: 2,
+        COVERED: 3,
+      }
+      return (priority[left.status] ?? 9) - (priority[right.status] ?? 9)
+        || left.date.localeCompare(right.date)
+    }),
+)
+
+const sortedViolations = computed(() =>
+    [...(suggestion.value?.diagnostics.violations ?? [])].sort((left, right) => {
+      if (left.severity !== right.severity) return left.severity === 'HARD' ? -1 : 1
+      return (left.date ?? '').localeCompare(right.date ?? '')
+    }),
+)
+
 const canApprove = computed(
     () =>
         Boolean(suggestion.value) &&
@@ -659,6 +714,41 @@ const calendarDays = computed(() => {
   }
 
   return result
+})
+
+const manualCellCount = computed(() =>
+    suggestion.value?.items.reduce(
+        (count, item) => count + Object.keys(item.schedule).filter((iso) => isManual(item, iso)).length,
+        0,
+    ) ?? 0,
+)
+
+const guardCellCount = computed(() =>
+    suggestion.value?.items.reduce(
+        (count, item) => count + Object.keys(item.schedule).filter((iso) => isGuard(item, iso)).length,
+        0,
+    ) ?? 0,
+)
+
+const unassignedCellCount = computed(() =>
+    suggestion.value?.items.reduce(
+        (count, item) => count + Object.keys(item.schedule).filter((iso) => item.schedule[iso] === null).length,
+        0,
+    ) ?? 0,
+)
+
+const filteredItems = computed(() => {
+  const query = employeeSearch.value.trim().toLocaleLowerCase('fr')
+  return (suggestion.value?.items ?? []).filter((item) => {
+    const matchesSearch = !query || [item.user.name, item.user.employee_code]
+        .filter(Boolean)
+        .some((value) => String(value).toLocaleLowerCase('fr').includes(query))
+    const dates = Object.keys(item.schedule)
+    const matchesManual = !manualOnly.value || dates.some((iso) => isManual(item, iso))
+    const matchesGuard = !guardOnly.value || dates.some((iso) => isGuard(item, iso))
+    const matchesUnassigned = !unassignedOnly.value || dates.some((iso) => item.schedule[iso] === null)
+    return matchesSearch && matchesManual && matchesGuard && matchesUnassigned
+  })
 })
 
 async function load(): Promise<void> {
@@ -749,12 +839,12 @@ function cellClasses(
       SuggestionReasonSource | 'MANUAL',
       string
   > = {
-    FIXED: 'border-indigo-100 bg-indigo-50 text-indigo-800',
+    FIXED: 'border-blue-100 bg-blue-50 text-blue-800',
     GENERATED: isGuard(item, iso)
         ? 'border-violet-100 bg-violet-50 text-violet-800'
         : 'border-blue-100 bg-blue-50 text-blue-800',
     FILL_REMAINING:
-        'border-cyan-100 bg-cyan-50 text-cyan-800',
+        'border-blue-100 bg-blue-50 text-blue-800',
     GUARD_CONTINUATION:
         'border-violet-200 bg-violet-100 text-violet-900',
     POST_GUARD_REST:
@@ -830,6 +920,27 @@ function cellTime(
       : 'Horaire'
 }
 
+function resetPlanningFilters(): void {
+  employeeSearch.value = ''
+  manualOnly.value = false
+  guardOnly.value = false
+  unassignedOnly.value = false
+}
+
+function activateManualFilter(): void {
+  activeTab.value = 'planning'
+  manualOnly.value = true
+  guardOnly.value = false
+  unassignedOnly.value = false
+}
+
+function activateUnassignedFilter(): void {
+  activeTab.value = 'planning'
+  unassignedOnly.value = true
+  manualOnly.value = false
+  guardOnly.value = false
+}
+
 function openCell(
     item: ScheduleSuggestionItem,
     iso: string,
@@ -898,9 +1009,23 @@ function coverageLabel(status: string): string {
   }[status] ?? status
 }
 
+function coverageClass(status: string): string {
+  return {
+    COVERED: 'bg-emerald-50 text-emerald-700',
+    BELOW_TARGET: 'bg-amber-50 text-amber-700',
+    BELOW_MINIMUM: 'bg-red-50 text-red-700',
+    ABOVE_MAXIMUM: 'bg-orange-50 text-orange-700',
+  }[status] ?? 'bg-slate-100 text-slate-600'
+}
+
+function severityLabel(severity: 'HARD' | 'WARNING'): string {
+  return severity === 'HARD' ? 'Bloquant' : 'Avertissement'
+}
+
 const Score = defineComponent({
   props: {
     label: String,
+    description: String,
     value: Number,
   },
   setup(props) {
@@ -909,7 +1034,7 @@ const Score = defineComponent({
           h(
               'p',
               {
-                class: 'text-[9px] font-bold uppercase tracking-[0.12em] text-slate-400',
+                class: 'text-xs font-bold uppercase tracking-[0.12em] text-slate-400',
               },
               props.label,
           ),
@@ -920,6 +1045,13 @@ const Score = defineComponent({
               },
               `${props.value ?? 0}%`,
           ),
+          props.description
+              ? h(
+                  'p',
+                  { class: 'mt-1 text-xs leading-4 text-slate-400' },
+                  props.description,
+                )
+              : null,
         ])
   },
 })
@@ -935,7 +1067,7 @@ const Info = defineComponent({
           h(
               'p',
               {
-                class: 'text-[9px] font-bold uppercase tracking-[0.12em] text-slate-400',
+                class: 'text-xs font-bold uppercase tracking-[0.12em] text-slate-400',
               },
               props.label,
           ),
@@ -957,7 +1089,7 @@ const Legend = defineComponent({
   },
   setup(props) {
     const colors: Record<string, string> = {
-      indigo: 'bg-indigo-500',
+      indigo: 'bg-blue-500',
       blue: 'bg-blue-500',
       violet: 'bg-violet-500',
       rose: 'bg-rose-500',
@@ -970,7 +1102,7 @@ const Legend = defineComponent({
         h(
             'span',
             {
-              class: 'inline-flex items-center gap-2 text-[10px] font-semibold text-slate-500',
+              class: 'inline-flex items-center gap-2 text-xs font-semibold text-slate-500',
             },
             [
               h('span', {
@@ -996,12 +1128,12 @@ onMounted(load)
   gap: 0.45rem;
   border-radius: 0.75rem;
   padding: 0.65rem 0.9rem;
-  font-size: 0.72rem;
+  font-size: 0.75rem;
   font-weight: 700;
 }
 
 .primary-button {
-  background: #4f46e5;
+  background: #1d4ed8;
   color: #fff;
 }
 
@@ -1020,7 +1152,7 @@ onMounted(load)
 .tab-button {
   border-radius: 0.55rem;
   padding: 0.5rem 0.75rem;
-  font-size: 0.68rem;
+  font-size: 0.75rem;
   font-weight: 700;
   color: #64748b;
 }

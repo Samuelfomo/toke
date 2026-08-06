@@ -2,7 +2,7 @@
   <div class="space-y-6">
     <PlanningPageHeader
         eyebrow="Étape 3"
-        title="Règles du moteur de planification"
+        title="Règles de planification"
         description="Ces paramètres définissent les contraintes obligatoires et les préférences utilisées pour produire un planning acceptable."
     >
       <template #actions>
@@ -22,8 +22,8 @@
         <button
             v-if="config"
             type="button"
-            class="inline-flex items-center gap-2 rounded-xl bg-indigo-600 px-4 py-2.5 text-xs font-bold text-white shadow-sm hover:bg-indigo-700"
-            @click="showForm = true"
+            class="inline-flex items-center gap-2 rounded-xl bg-blue-600 px-4 py-2.5 text-xs font-bold text-white shadow-sm hover:bg-blue-700"
+            @click="openEditor"
         >
           <IconPencil :size="16"/>
           Modifier les règles
@@ -69,8 +69,8 @@
       </p>
       <button
           type="button"
-          class="mt-5 inline-flex items-center gap-2 rounded-xl bg-indigo-600 px-4 py-2.5 text-xs font-bold text-white hover:bg-indigo-700"
-          @click="showForm = true"
+          class="mt-5 inline-flex items-center gap-2 rounded-xl bg-blue-600 px-4 py-2.5 text-xs font-bold text-white hover:bg-blue-700"
+          @click="openEditor"
       >
         <IconPlus :size="16"/>
         Créer une configuration
@@ -89,7 +89,7 @@
                 <h2 class="text-sm font-bold text-emerald-950">
                   {{ config.name }}
                 </h2>
-                <span class="rounded-full bg-emerald-100 px-2 py-0.5 text-[9px] font-bold uppercase text-emerald-700">
+                <span class="rounded-full bg-emerald-100 px-2 py-0.5 text-xs font-bold uppercase text-emerald-700">
                                     Active
                                 </span>
               </div>
@@ -101,13 +101,13 @@
           </div>
 
           <div class="rounded-xl border border-emerald-200 bg-white/70 px-4 py-3">
-            <p class="text-[9px] font-bold uppercase text-emerald-500">
+            <p class="text-xs font-bold uppercase text-emerald-500">
               Solveur
             </p>
             <p class="mt-1 text-sm font-bold text-slate-900">
               {{ config.solver.type }}
             </p>
-            <p class="text-[10px] text-slate-500">
+            <p class="text-xs text-slate-500">
               Timeout {{ config.solver.timeout_seconds }} s
             </p>
           </div>
@@ -121,7 +121,7 @@
               <IconCalendarPause :size="20"/>
             </div>
             <div>
-              <p class="text-[10px] font-bold uppercase tracking-[0.12em] text-rose-500">
+              <p class="text-xs font-bold uppercase tracking-[0.12em] text-rose-500">
                 Politique de congé
               </p>
               <h2 class="mt-1 text-base font-bold text-slate-900">
@@ -134,7 +134,7 @@
           </div>
 
           <div class="rounded-xl border border-rose-100 bg-white px-4 py-3 lg:text-right">
-            <p class="text-[9px] font-bold uppercase tracking-[0.12em] text-slate-400">
+            <p class="text-xs font-bold uppercase tracking-[0.12em] text-slate-400">
               Valeur principale
             </p>
             <p class="mt-1 text-sm font-bold text-slate-900">
@@ -179,7 +179,7 @@
               <IconShieldStar :size="20"/>
             </div>
             <div>
-              <p class="text-[10px] font-bold uppercase tracking-[0.12em] text-amber-600">
+              <p class="text-xs font-bold uppercase tracking-[0.12em] text-amber-600">
                 Gardes
               </p>
               <h2 class="mt-1 text-base font-bold text-slate-900">
@@ -192,7 +192,7 @@
           </div>
 
           <div class="rounded-xl border border-amber-100 bg-white px-4 py-3 lg:text-right">
-            <p class="text-[9px] font-bold uppercase tracking-[0.12em] text-slate-400">
+            <p class="text-xs font-bold uppercase tracking-[0.12em] text-slate-400">
               Sélection
             </p>
             <p class="mt-1 text-sm font-bold text-slate-900">
@@ -343,13 +343,6 @@
         </div>
       </section>
     </template>
-
-    <PlanningConfigForm
-        :open="showForm"
-        :config="config"
-        @close="showForm = false"
-        @saved="onConfigSaved"
-    />
   </div>
 </template>
 
@@ -376,12 +369,12 @@ import {
   IconTargetArrow,
 } from '@tabler/icons-vue'
 
+import { useRouter } from 'vue-router'
 import PlanningSuggestionConfigService from '@/service/PlanningSuggestionConfigService'
 
 import PlanningInfoPanel from '../components/PlanningInfoPanel.vue'
 import PlanningPageHeader from '../components/PlanningPageHeader.vue'
 import PlanningRuleCard from '../components/PlanningRuleCard.vue'
-import PlanningConfigForm from './PlanningConfigForm.vue'
 import {
   DAY_LABELS,
   formatDate,
@@ -401,7 +394,7 @@ import type {
 const loading = ref(false)
 const errorMessage = ref('')
 const config = ref<PlanningSuggestionConfig | null>(null)
-const showForm = ref(false)
+const router = useRouter()
 
 type GuardTeamPolicy = {
   mode: 'DAILY_FLEXIBLE' | 'WEEKLY_POOL'
@@ -536,6 +529,10 @@ const weeklyLeaveTitle = computed(() => {
     return 'Repos minimum par collaborateur'
   }
 
+  if (policy.value.mode === 'PER_ELIGIBLE_EMPLOYEE') {
+    return 'Repos ciblé par collaborateur éligible'
+  }
+
   return 'Aucun congé hebdomadaire automatique'
 })
 
@@ -550,6 +547,10 @@ const weeklyLeaveValue = computed(() => {
     return `${config.value.rules.min_rest_days_per_week} jour(s) par collaborateur`
   }
 
+  if (policy.value.mode === 'PER_ELIGIBLE_EMPLOYEE') {
+    return `${policy.value.days_per_employee} jour(s) par employé éligible`
+  }
+
   return 'Désactivé'
 })
 
@@ -560,6 +561,10 @@ const weeklyLeaveDescription = computed(() => {
 
   if (policy.value.mode === 'PER_EMPLOYEE') {
     return 'Chaque collaborateur inclus reçoit individuellement le nombre de jours de repos indiqué sur une semaine complète.'
+  }
+
+  if (policy.value.mode === 'PER_ELIGIBLE_EMPLOYEE') {
+    return 'Le repos est appliqué à une population ciblée selon le mode de planning, la relation au pool de garde et le périmètre de service.'
   }
 
   return 'Le moteur ne force aucun congé hebdomadaire. Les jours non travaillés peuvent toutefois provenir des templates ou des gardes.'
@@ -589,9 +594,12 @@ async function load(): Promise<void> {
   }
 }
 
-function onConfigSaved(value: PlanningSuggestionConfig): void {
-  config.value = value
-  showForm.value = false
+function openEditor(): void {
+  void router.push({
+    name: config.value
+      ? 'planning-suggestion-configuration-edit'
+      : 'planning-suggestion-configuration-new',
+  })
 }
 
 const ConfigValue = defineComponent({
@@ -620,7 +628,7 @@ const ConfigValue = defineComponent({
               h(
                   'p',
                   {
-                    class: 'text-[9px] font-bold uppercase tracking-[0.12em] text-slate-400',
+                    class: 'text-xs font-bold uppercase tracking-[0.12em] text-slate-400',
                   },
                   props.label,
               ),
@@ -634,7 +642,7 @@ const ConfigValue = defineComponent({
               h(
                   'p',
                   {
-                    class: 'mt-1 text-[10px] leading-4 text-slate-500',
+                    class: 'mt-1 text-xs leading-4 text-slate-500',
                   },
                   props.help,
               ),

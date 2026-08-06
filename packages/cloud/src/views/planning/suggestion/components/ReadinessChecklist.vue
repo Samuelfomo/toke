@@ -24,7 +24,7 @@
         <div class="min-w-0 flex-1">
           <div class="flex items-center justify-between gap-3">
             <p class="text-sm font-semibold text-slate-800">{{ item.label }}</p>
-            <span class="shrink-0 text-[11px] font-semibold"
+            <span class="shrink-0 text-xs font-semibold"
                   :class="item.ready ? 'text-emerald-600' : 'text-amber-700'">{{
                 item.ready ? 'Validé' : item.actionLabel
               }}</span>

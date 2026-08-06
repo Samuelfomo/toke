@@ -8,7 +8,7 @@
     </div>
     <h3 class="mt-4 text-sm font-bold text-slate-900">{{ title }}</h3>
     <p class="mt-1.5 text-xs leading-5 text-slate-500">{{ description }}</p>
-    <div class="mt-4 rounded-xl border border-slate-100 bg-slate-50 px-3 py-2.5 text-[11px] leading-4 text-slate-600">
+    <div class="mt-4 rounded-xl border border-slate-100 bg-slate-50 px-3 py-2.5 text-xs leading-4 text-slate-600">
       <strong class="text-slate-700">Exemple : </strong>{{ example }}
     </div>
   </article>
@@ -25,7 +25,7 @@ const props = withDefaults(defineProps<{
   accent?: 'indigo' | 'emerald' | 'violet' | 'amber'
 }>(), {accent: 'indigo'})
 const accentClass = computed(() => ({
-  indigo: 'bg-indigo-50 text-indigo-700',
+  indigo: 'bg-blue-50 text-blue-700',
   emerald: 'bg-emerald-50 text-emerald-700',
   violet: 'bg-violet-50 text-violet-700',
   amber: 'bg-amber-50 text-amber-700',

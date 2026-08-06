@@ -61,13 +61,13 @@ const classes = computed(() => {
     dot: 'bg-amber-500',
   }
   return {
-    wrapper: 'border-indigo-200 bg-indigo-50/60',
-    orb: 'bg-indigo-100',
-    icon: 'bg-indigo-100 text-indigo-700',
-    title: 'text-indigo-950',
-    text: 'text-indigo-800/80',
-    important: 'border-indigo-200 text-indigo-900',
-    dot: 'bg-indigo-500',
+    wrapper: 'border-blue-200 bg-blue-50/60',
+    orb: 'bg-blue-100',
+    icon: 'bg-blue-100 text-blue-700',
+    title: 'text-blue-950',
+    text: 'text-blue-800/80',
+    important: 'border-blue-200 text-blue-900',
+    dot: 'bg-blue-500',
   }
 })
 </script>
