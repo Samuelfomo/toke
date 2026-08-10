@@ -1,9 +1,10 @@
-import {CreateSite, Site, UpdateSite} from '@/utils/interfaces/site.interface';
+import {CreateSite, UpdateSite} from '@/utils/interfaces/site.interface';
 import { apiRequest } from '@/tools/Fetch.Client';
 
 const baseUrl = '/site';
 
 export default class SiteService {
+
     static async listSites(): Promise<any> {
         try {
             return await apiRequest<any>({
@@ -15,6 +16,19 @@ export default class SiteService {
             return error;
         }
     }
+
+    static async listSitesByManager(manager: string): Promise<any> {
+        try {
+            return await apiRequest<any>({
+                path: `${baseUrl}/list/${manager}`,
+                method: 'GET',
+            });
+        } catch (error: any) {
+            console.error('response error', error);
+            return error;
+        }
+    }
+
     static async getSite(guid: string): Promise<any> {
         try {
             return await apiRequest<any>({

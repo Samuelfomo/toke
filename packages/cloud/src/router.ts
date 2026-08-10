@@ -25,6 +25,7 @@ import EmployeeSchedulesView from "@/views/schedule/employeeSchedulesView.vue";
 import EmployeeAttendanceView from "@/views/employeeAttendanceView.vue";
 import QrCodeAuth from "@/views/QrCodeAuth.vue";
 import { planningRoutes } from '@/router/planning'
+import  AttendanceStatisticsOverview from '@/views/dashboard/AttendanceStatisticsRouteView.vue'
 
 const routes: RouteRecordRaw[] = [
   {
@@ -158,6 +159,12 @@ const routes: RouteRecordRaw[] = [
     path: '/employeeAttendanceView/:id',
     name: 'employeeAttendanceView',
     component: EmployeeAttendanceView,
+    meta: { requiresAuth: true },
+  },
+    {
+    path: '/at',
+    name: 'at',
+    component: AttendanceStatisticsOverview,
     meta: { requiresAuth: true },
   },
     planningRoutes,

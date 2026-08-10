@@ -448,7 +448,7 @@ const journey = [
     routeName: 'planning-suggestion-requirements',
   },
   {
-    title: 'Valider les règles du moteur',
+    title: 'Valider les règles de planification',
     description:
         'Contrôler congés, gardes, limites et solveur.',
     routeName: 'planning-suggestion-configuration',

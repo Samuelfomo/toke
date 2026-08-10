@@ -1,0 +1,159 @@
+<script setup lang="ts">
+import type {
+  AttendanceEmployeeListFilters,
+  AttendanceEmployeeSort,
+  AttendanceEmployeeSortKey,
+  AttendanceEmployeeStatusFilter,
+  AttendanceEmployeeIssueFilter,
+} from '@/views/modules/attendance-statistics';
+import { ATTENDANCE_STATUS_PRESENTATION } from '../utils/attendance-status.js';
+import { ATTENDANCE_STATUSES } from '@/views/modules/attendance-statistics';
+
+interface Props {
+  filters: AttendanceEmployeeListFilters;
+  sort: AttendanceEmployeeSort;
+  resultCount: number;
+  totalCount: number;
+}
+
+const props = defineProps<Props>();
+const emit = defineEmits<{
+  'update:filters': [filters: AttendanceEmployeeListFilters];
+  'update:sort': [sort: AttendanceEmployeeSort];
+  reset: [];
+}>();
+
+const sortOptions: Array<{ value: AttendanceEmployeeSortKey; label: string }> = [
+  { value: 'employee_name', label: 'Nom' },
+  { value: 'expected_days', label: 'Jours attendus' },
+  { value: 'attendance_rate', label: 'Taux de présence' },
+  { value: 'punctuality_rate', label: 'Ponctualité' },
+  { value: 'absence_days', label: 'Absences' },
+  { value: 'late_days', label: 'Retards' },
+  { value: 'issue_count', label: 'Éléments à examiner' },
+  { value: 'net_minutes', label: 'Durée nette' },
+];
+
+function updateQuery(event: Event): void {
+  const query = (event.target as HTMLInputElement).value;
+  emit('update:filters', { ...props.filters, query });
+}
+
+function updateStatus(event: Event): void {
+  const status = (event.target as HTMLSelectElement).value as AttendanceEmployeeStatusFilter;
+  emit('update:filters', { ...props.filters, status });
+}
+
+function updateIssueFilter(event: Event): void {
+  const issues = (event.target as HTMLSelectElement).value as AttendanceEmployeeIssueFilter;
+  emit('update:filters', { ...props.filters, issues });
+}
+
+function updateSortKey(event: Event): void {
+  const key = (event.target as HTMLSelectElement).value as AttendanceEmployeeSortKey;
+  emit('update:sort', {
+    key,
+    direction: key === 'employee_name' ? 'asc' : 'desc',
+  });
+}
+
+function toggleDirection(): void {
+  emit('update:sort', {
+    ...props.sort,
+    direction: props.sort.direction === 'asc' ? 'desc' : 'asc',
+  });
+}
+</script>
+
+<template>
+  <div class="border-b border-slate-200 px-4 py-4 sm:px-5">
+    <div class="flex flex-col gap-4 xl:flex-row xl:items-end xl:justify-between">
+      <div class="grid min-w-0 flex-1 gap-3 sm:grid-cols-2 xl:grid-cols-[minmax(260px,1.5fr)_minmax(170px,1fr)_minmax(190px,1fr)]">
+        <label class="block">
+          <span class="mb-1.5 block text-xs font-bold uppercase tracking-wide text-slate-500">Rechercher</span>
+          <div class="relative">
+            <svg class="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true">
+              <circle cx="11" cy="11" r="7" />
+              <path d="m20 20-3.5-3.5" />
+            </svg>
+            <input
+              type="search"
+              :value="filters.query"
+              placeholder="Nom ou GUID employé"
+              class="h-11 w-full rounded-xl border border-slate-300 bg-white pl-9 pr-3 text-sm text-slate-900 outline-none transition placeholder:text-slate-400 focus:border-indigo-500 focus:ring-4 focus:ring-indigo-100"
+              @input="updateQuery"
+            />
+          </div>
+        </label>
+
+        <label class="block">
+          <span class="mb-1.5 block text-xs font-bold uppercase tracking-wide text-slate-500">Statut observé</span>
+          <select
+            :value="filters.status"
+            class="h-11 w-full rounded-xl border border-slate-300 bg-white px-3 text-sm text-slate-900 outline-none focus:border-indigo-500 focus:ring-4 focus:ring-indigo-100"
+            @change="updateStatus"
+          >
+            <option value="ALL">Tous les statuts</option>
+            <option v-for="status in ATTENDANCE_STATUSES" :key="status" :value="status">
+              {{ ATTENDANCE_STATUS_PRESENTATION[status].label }}
+            </option>
+          </select>
+        </label>
+
+        <label class="block">
+          <span class="mb-1.5 block text-xs font-bold uppercase tracking-wide text-slate-500">Anomalies</span>
+          <select
+            :value="filters.issues"
+            class="h-11 w-full rounded-xl border border-slate-300 bg-white px-3 text-sm text-slate-900 outline-none focus:border-indigo-500 focus:ring-4 focus:ring-indigo-100"
+            @change="updateIssueFilter"
+          >
+            <option value="all">Tous les employés</option>
+            <option value="with_issues">Avec éléments à examiner</option>
+            <option value="without_issues">Sans élément à examiner</option>
+          </select>
+        </label>
+      </div>
+
+      <div class="flex flex-wrap items-end gap-2">
+        <label class="block min-w-[190px]">
+          <span class="mb-1.5 block text-xs font-bold uppercase tracking-wide text-slate-500">Trier par</span>
+          <select
+            :value="sort.key"
+            class="h-11 w-full rounded-xl border border-slate-300 bg-white px-3 text-sm text-slate-900 outline-none focus:border-indigo-500 focus:ring-4 focus:ring-indigo-100"
+            @change="updateSortKey"
+          >
+            <option v-for="option in sortOptions" :key="option.value" :value="option.value">
+              {{ option.label }}
+            </option>
+          </select>
+        </label>
+
+        <button
+          type="button"
+          class="inline-flex h-11 items-center gap-2 rounded-xl border border-slate-300 bg-white px-3 text-sm font-semibold text-slate-700 transition hover:border-slate-400 hover:bg-slate-50"
+          :aria-label="sort.direction === 'asc' ? 'Tri croissant' : 'Tri décroissant'"
+          @click="toggleDirection"
+        >
+          <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true">
+            <path v-if="sort.direction === 'asc'" d="m7 17 5-5 5 5M12 12V3" />
+            <path v-else d="m7 7 5 5 5-5M12 12v9" />
+          </svg>
+          {{ sort.direction === 'asc' ? 'Croissant' : 'Décroissant' }}
+        </button>
+
+        <button
+          type="button"
+          class="h-11 rounded-xl px-3 text-sm font-semibold text-indigo-700 transition hover:bg-indigo-50"
+          @click="emit('reset')"
+        >
+          Réinitialiser
+        </button>
+      </div>
+    </div>
+
+    <p class="mt-3 text-xs text-slate-500">
+      {{ resultCount }} employé{{ resultCount > 1 ? 's' : '' }} affichable{{ resultCount > 1 ? 's' : '' }} sur {{ totalCount }}.
+      Les taux servent à explorer les données de présence, pas à établir un classement global de performance.
+    </p>
+  </div>
+</template>

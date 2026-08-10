@@ -1,3 +1,5 @@
+// vue avec design ajuste
+
 <template>
   <PlanningDrawer
       :open="open"

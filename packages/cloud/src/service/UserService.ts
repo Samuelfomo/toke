@@ -145,7 +145,8 @@ export default class UserService {
     static async listAttendance(
         managerGuid: string,
         startDate?: string,
-        endDate?: string
+        endDate?: string,
+        site?: string
     ): Promise<ApiResponse<AttendanceApiResponse['data']>> {
         try {
             let start = startDate || new Date().toISOString().split('T')[0];
@@ -155,6 +156,7 @@ export default class UserService {
             params.append('supervisor', managerGuid);
             params.append('start_date', start);
             params.append('end_date', end);
+            if (site?.trim()) params.append('site', site);
 
             const response = await apiRequest<ApiResponse<AttendanceApiResponse['data']>>({
                 path: `${baseUrl}/attendance/stat?${params.toString()}`,
@@ -279,10 +281,11 @@ export default class UserService {
     static async getDashboardData(
         managerGuid: string,
         startDate?: string,
-        endDate?: string
+        endDate?: string,
+        site?: string
     ): Promise<DashboardData> {
         try {
-            const response = await this.listAttendance(managerGuid, startDate, endDate);
+            const response = await this.listAttendance(managerGuid, startDate, endDate, site);
 
             if (!response.success || !response.data?.data) {
                 throw new Error('Format de réponse invalide');

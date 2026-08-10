@@ -1,3 +1,5 @@
+// vue avec design ajuste
+
 <template>
   <div class="space-y-5">
     <header class="rounded-2xl border border-slate-200 bg-white px-5 py-5 shadow-sm sm:px-6">

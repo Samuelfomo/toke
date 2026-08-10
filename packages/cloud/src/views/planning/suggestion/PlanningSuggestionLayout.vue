@@ -97,7 +97,7 @@ const navigation = [
   {label: 'Vue d’ensemble', routeName: 'planning-suggestion-dashboard', icon: IconChartDots3},
   {label: 'Profils employés', routeName: 'planning-suggestion-profiles', icon: IconUsersGroup},
   {label: 'Besoins & couverture', routeName: 'planning-suggestion-requirements', icon: IconTargetArrow},
-  {label: 'Règles du moteur', routeName: 'planning-suggestion-configuration', icon: IconSettings},
+  {label: 'Règles de planification', routeName: 'planning-suggestion-configuration', icon: IconSettings},
   {label: 'Suggestions', routeName: 'planning-suggestion-list', icon: IconWand},
 ]
 
