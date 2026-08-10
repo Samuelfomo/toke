@@ -23,6 +23,7 @@ import scheduleSuggestionRoute from './src/routes/schedule.suggestion.route.js';
 import employeePlanningProfileRoute from './src/routes/employee.planning.profile.route.js';
 import planningSuggestionConfigRoute from './src/routes/planning.suggestion.config.route.js';
 import planningSuggestionRequirementRoute from './src/routes/planning.suggestion.requirement.route.js';
+import attendanceRoute from './src/routes/attendance.route.js';
 
 dotenv.config();
 
@@ -192,6 +193,7 @@ export default class App {
     this.app.use('/planning-profile', employeePlanningProfileRoute);
     this.app.use('/planning-config', planningSuggestionConfigRoute);
     this.app.use('/planning-requirement', planningSuggestionRequirementRoute);
+    this.app.use('/attendance', attendanceRoute);
 
     this.app.use('/auth', authRoute);
 

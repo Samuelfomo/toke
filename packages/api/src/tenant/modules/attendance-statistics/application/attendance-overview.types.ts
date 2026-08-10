@@ -1,127 +1,131 @@
-import type { AttendanceDay, BusinessDate } from '../domain/attendance-day.types.js';
+import type {
+  AttendanceDay,
+  AttendanceIssue,
+  AttendanceStatus,
+  BusinessDate,
+} from '../domain/attendance-day.types.js';
 
-export type OverviewAttendanceStatus = 'COMPUTABLE' | 'PARTIAL' | 'NOT_COMPUTABLE';
-
-export type AttendanceUnavailabilityReason =
-  | 'NO_EMPLOYEE_DAY'
-  | 'INSUFFICIENT_SCHEDULE_DATA'
-  | 'NO_FINALIZED_EXPECTED_WORK_DAY';
-
-export type DataQualityStatus = 'RELIABLE' | 'PARTIAL' | 'INSUFFICIENT';
-
-export type DurationCoverageStatus =
-  | 'COMPLETE'
-  | 'PARTIAL'
-  | 'UNAVAILABLE'
-  | 'NOT_APPLICABLE';
-
-export type DataQualityReason =
-  | 'NO_EMPLOYEE_DAY'
-  | 'MISSING_SCHEDULE'
-  | 'INVALID_SCHEDULE'
-  | 'HISTORICAL_SCHEDULE_UNAVAILABLE'
-  | 'AMBIGUOUS_SCHEDULE'
-  | 'OPEN_SESSION'
-  | 'INCOMPLETE_SESSION'
-  | 'MISSING_DURATION';
-
-export interface BuildAttendanceOverviewInput {
-  period: {
-    startDate: BusinessDate;
-    endDate: BusinessDate;
-  };
-  managerGuid: string;
-  generatedAt: string;
-  businessTimezone: string;
-  days: readonly AttendanceDay[];
+export interface AttendanceOverviewEmployeeIdentity {
+  id: number;
+  guid: string;
+  name: string;
 }
 
-/**
- * Contrat métier retourné dans `data` par
- * GET /attendance/statistics/overview.
- *
- * Les noms sont volontairement en snake_case : il s'agit du DTO HTTP, et non
- * du modèle interne de calcul.
- */
-export interface AttendanceStatisticsOverview {
-  period: {
-    start_date: BusinessDate;
-    end_date: BusinessDate;
-    generated_at: string;
-    business_timezone: string;
+export interface AttendanceOverviewPeriod {
+  startDate: BusinessDate;
+  endDate: BusinessDate;
+  dayCount: number;
+}
+
+export interface AttendanceOverviewScope {
+  managerGuid: string;
+  siteGuid: string | null;
+  teamSize: number;
+  employees: Array<{
+    guid: string;
+    name: string;
+  }>;
+}
+
+export type AttendanceStatusTotals = Record<AttendanceStatus, number>;
+
+export interface AttendanceRateMetrics {
+  employeeWorkingDaysExpected: number;
+  attendedWorkingDays: number;
+  onTimeWorkingDays: number;
+  lateWorkingDays: number;
+  attendanceRate: number | null;
+  punctualityRate: number | null;
+}
+
+export interface AttendanceDurationMetrics {
+  grossMinutes: number;
+  pauseMinutes: number;
+  netMinutes: number;
+  daysWithKnownGrossDuration: number;
+  daysWithKnownPauseDuration: number;
+  daysWithKnownNetDuration: number;
+  daysWithMissingDuration: number;
+}
+
+export interface AttendanceIssueOccurrence {
+  employeeGuid: string;
+  employeeName: string;
+  date: BusinessDate;
+  status: AttendanceStatus;
+}
+
+export interface AttendanceIssueSummary {
+  issue: AttendanceIssue;
+  count: number;
+  employeesConcerned: number;
+  occurrences: AttendanceIssueOccurrence[];
+}
+
+export interface AttendanceDailyOverview {
+  date: BusinessDate;
+  teamSize: number;
+  statusTotals: AttendanceStatusTotals;
+  rates: AttendanceRateMetrics;
+  issueCount: number;
+}
+
+export interface AttendanceEmployeeDayOverview {
+  date: BusinessDate;
+  status: AttendanceStatus;
+  rateEligible: boolean;
+  delayMinutes: number | null;
+  firstClockIn: string | null;
+  lastClockOut: string | null;
+  grossMinutes: number | null;
+  pauseMinutes: number | null;
+  netMinutes: number | null;
+  issues: AttendanceIssue[];
+}
+
+export interface AttendanceEmployeeOverview {
+  employeeGuid: string;
+  employeeName: string;
+  statusTotals: AttendanceStatusTotals;
+  rates: AttendanceRateMetrics;
+  durations: AttendanceDurationMetrics;
+  issueCount: number;
+  days: AttendanceEmployeeDayOverview[];
+}
+
+export interface AttendanceDataQuality {
+  unresolvedScheduleDays: number;
+  presenceWithoutScheduleDays: number;
+  openSessionDays: number;
+  incompleteSessionDays: number;
+  missingDurationDays: number;
+  reliableForAttendanceRate: boolean;
+  notes: string[];
+}
+
+export interface AttendanceOverview {
+  generatedAt: string;
+  period: AttendanceOverviewPeriod;
+  scope: AttendanceOverviewScope;
+  summary: {
+    statusTotals: AttendanceStatusTotals;
+    rates: AttendanceRateMetrics;
+    durations: AttendanceDurationMetrics;
+    issueCount: number;
   };
+  daily: AttendanceDailyOverview[];
+  employees: AttendanceEmployeeOverview[];
+  issues: AttendanceIssueSummary[];
+  dataQuality: AttendanceDataQuality;
+}
 
-  scope: {
-    manager_guid: string;
-    employees_evaluated: number;
-    employee_days_evaluated: number;
-  };
-
-  attendance: {
-    status: OverviewAttendanceStatus;
-    unavailability_reason: AttendanceUnavailabilityReason | null;
-
-    /** Dénominateur officiel des taux de présence et d'absence. */
-    employee_working_days_expected: number;
-    present_employee_days: number;
-    late_employee_days: number;
-    absent_employee_days: number;
-
-    attendance_rate: number | null;
-    absence_rate: number | null;
-    punctuality_rate: number | null;
-
-    total_delay_minutes: number;
-    average_delay_minutes: number | null;
-  };
-
-  recorded_activity: {
-    employees_with_activity: number;
-    employee_days_with_activity: number;
-
-    sessions: {
-      total: number;
-      open: number;
-      incomplete: number;
-    };
-
-    /**
-     * Sommes fondées uniquement sur les journées dont les durées sont
-     * complètes. En couverture partielle, elles ne représentent donc pas le
-     * total réel de toute la période.
-     */
-    durations: {
-      known_gross_minutes: number | null;
-      known_pause_minutes: number | null;
-      known_net_minutes: number | null;
-    };
-  };
-
-  signals: {
-    presence_on_rest_day_employee_days: number;
-    presence_without_schedule_employee_days: number;
-  };
-
-  data_quality: {
-    status: DataQualityStatus;
-    reasons: DataQualityReason[];
-
-    schedule: {
-      resolved_employee_days: number;
-      unresolved_employee_days: number;
-      missing_schedule_employee_days: number;
-      invalid_schedule_employee_days: number;
-      historical_schedule_unavailable_employee_days: number;
-      ambiguous_schedule_employee_days: number;
-      coverage_rate: number | null;
-    };
-
-    duration: {
-      status: DurationCoverageStatus;
-      employee_days_with_activity: number;
-      complete_employee_days: number;
-      incomplete_employee_days: number;
-      coverage_rate: number | null;
-    };
-  };
+export interface BuildAttendanceOverviewInput {
+  generatedAt: string;
+  managerGuid: string;
+  siteGuid: string | null;
+  startDate: BusinessDate;
+  endDate: BusinessDate;
+  dates: readonly BusinessDate[];
+  employees: readonly AttendanceOverviewEmployeeIdentity[];
+  days: readonly AttendanceDay[];
 }

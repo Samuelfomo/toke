@@ -257,27 +257,65 @@ export default class WorkSessionsModel extends BaseModel {
     return await this.findSessionsByDateRange(null, site, start_date, end_date);
   }
 
-  protected async getPausesHistory(session: number): Promise<any[]> {
-    // Récupérer les time_entries de type pause_start/pause_end
-    const pauses = await this.findAll(tableName.TIME_ENTRIES, {
-      session: session,
-      pointage_type: {
-        [Op.in]: [PointageType.PAUSE_START, PointageType.PAUSE_END],
-      },
-    });
+  // protected async getPausesHistory(session: number): Promise<any[]> {
+  //   // Récupérer les time_entries de type pause_start/pause_end
+  //   const pauses = await this.findAll(tableName.TIME_ENTRIES, {
+  //     session: session,
+  //     pointage_type: {
+  //       [Op.in]: [PointageType.PAUSE_START, PointageType.PAUSE_END],
+  //     },
+  //   });
+  //
+  //   // Grouper par paires start/end
+  //   const pausePairs: any[] = [];
+  //   for (let i = 0; i < pauses.length; i += 2) {
+  //     if (pauses[i + 1]) {
+  //       pausePairs.push({
+  //         pause_start: pauses[i].clocked_at,
+  //         pause_end: pauses[i + 1].clocked_at,
+  //         duration_minutes: this.calculatePauseDuration(
+  //           pauses[i].clocked_at,
+  //           pauses[i + 1].clocked_at,
+  //         ),
+  //       });
+  //     }
+  //   }
+  //
+  //   return pausePairs;
+  // }
 
-    // Grouper par paires start/end
+  protected async getPausesHistory(session: number): Promise<any[]> {
+    const pauses = await this.findAll(
+      tableName.TIME_ENTRIES,
+      {
+        session,
+        pointage_type: {
+          [Op.in]: [PointageType.PAUSE_START, PointageType.PAUSE_END],
+        },
+      },
+      {},
+      {
+        order: [['clocked_at', 'ASC']],
+      },
+    );
+
     const pausePairs: any[] = [];
-    for (let i = 0; i < pauses.length; i += 2) {
-      if (pauses[i + 1]) {
+    let pauseStart: any = null;
+
+    for (const pause of pauses) {
+      if (pause.pointage_type === PointageType.PAUSE_START) {
+        pauseStart = pause;
+        continue;
+      }
+
+      if (pause.pointage_type === PointageType.PAUSE_END && pauseStart) {
         pausePairs.push({
-          pause_start: pauses[i].clocked_at,
-          pause_end: pauses[i + 1].clocked_at,
-          duration_minutes: this.calculatePauseDuration(
-            pauses[i].clocked_at,
-            pauses[i + 1].clocked_at,
-          ),
+          pause_start: pauseStart.clocked_at,
+          pause_end: pause.clocked_at,
+          duration_minutes: this.calculatePauseDuration(pauseStart.clocked_at, pause.clocked_at),
         });
+
+        pauseStart = null;
       }
     }
 

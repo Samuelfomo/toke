@@ -1,103 +1,113 @@
-# Contrat — `GET /attendance/statistics/overview`
+# Contrat métier — `GET /attendance/statistics/overview`
 
-## Intention métier
+## Principe
 
-Répondre à la question : **quelle est la situation globale de présence de
-l'équipe sur la période ?**
+La réponse est fondée sur une matrice exhaustive :
 
-Cet endpoint ne retourne ni les sessions détaillées, ni les événements bruts,
-ni une conformité par site. Le site du QR code appartient à l'activité
-enregistrée et ne permet pas de définir une population attendue sur ce site.
+```text
+membres actuels de l’équipe × dates de la période
+```
 
-## Réponse HTTP
+Chaque cellule est classée une seule fois par `createAttendanceDay`.
 
-Le contrôleur conserve l'enveloppe commune de l'API :
+## Statuts journaliers
 
-```json
-{
-  "success": true,
-  "message": "Attendance statistics overview retrieved successfully",
-  "data": {}
+| Statut | Définition | Entre dans le taux ? |
+|---|---|---:|
+| `PRESENT` | Présence sur journée travaillée, arrivée dans la tolérance | Oui, seulement si la journée attendue est terminée |
+| `LATE` | Présence sur journée travaillée, arrivée au-delà de la tolérance | Oui, seulement si la journée attendue est terminée |
+| `ABSENT` | Aucune activité sur journée travaillée valide et terminée | Oui |
+| `PENDING` | Journée travaillée encore en cours, sans activité finalisée | Non |
+| `REST_DAY` | Aucun travail attendu | Non |
+| `UNDETERMINED` | Planning manquant ou invalide | Non |
+
+## Issues
+
+| Issue | Signification | Action recommandée |
+|---|---|---|
+| `PRESENCE_ON_REST_DAY` | Activité enregistrée un jour de repos | Vérifier planning, heures supplémentaires ou erreur de pointage |
+| `PRESENCE_WITHOUT_SCHEDULE` | Activité enregistrée sans planning exploitable | Corriger le planning avant toute comparaison de performance |
+| `MISSING_SCHEDULE` | Aucun planning résolu | Corriger les assignations ou le planning par défaut |
+| `INVALID_SCHEDULE` | Planning résolu mais blocs invalides | Corriger la structure du template |
+| `OPEN_SESSION` | Une session est encore ouverte | Fermer ou corriger la session |
+| `INCOMPLETE_SESSION` | Session non ouverte mais sans sortie complète | Corriger les données de session |
+| `MISSING_DURATION` | Activité finalisée sans durée exploitable | Réparer la durée ; ne pas interpréter comme 0 minute |
+
+## Formules
+
+### Jours de travail attendus éligibles
+
+```text
+employeeWorkingDaysExpected = PRESENT éligibles + LATE éligibles + ABSENT
+```
+
+Les journées courantes non terminées, les repos et les plannings indéterminés sont exclus.
+
+### Taux de présence
+
+```text
+attendanceRate = (PRESENT éligibles + LATE éligibles)
+                 / employeeWorkingDaysExpected × 100
+```
+
+Valeur `null` si le dénominateur vaut zéro.
+
+### Ponctualité
+
+```text
+punctualityRate = PRESENT éligibles
+                  / (PRESENT éligibles + LATE éligibles) × 100
+```
+
+Valeur `null` si aucune présence éligible n’existe.
+
+### Durées
+
+```text
+grossMinutes = somme des durées brutes connues
+pauseMinutes = somme des pauses connues
+netMinutes   = somme des durées nettes connues
+```
+
+Une durée manquante n’est jamais remplacée par zéro dans le détail. Les compteurs de couverture précisent le nombre de journées dont les durées sont connues. Les durées décrivent toute activité enregistrée, y compris sur repos ou sans planning ; elles ne constituent donc pas à elles seules une mesure de conformité au planning.
+
+## Structure de réponse
+
+```ts
+interface AttendanceOverview {
+  generatedAt: string;
+  period: {
+    startDate: string;
+    endDate: string;
+    dayCount: number;
+  };
+  scope: {
+    managerGuid: string;
+    siteGuid: string | null;
+    teamSize: number;
+    employees: Array<{ guid: string; name: string }>;
+  };
+  summary: {
+    statusTotals: Record<AttendanceStatus, number>;
+    rates: AttendanceRateMetrics;
+    durations: AttendanceDurationMetrics;
+    issueCount: number;
+  };
+  daily: AttendanceDailyOverview[];
+  employees: AttendanceEmployeeOverview[];
+  issues: AttendanceIssueSummary[];
+  dataQuality: AttendanceDataQuality;
 }
 ```
 
-La propriété `data` respecte l'interface `AttendanceStatisticsOverview`.
+Les occurrences détaillées d’une issue sont limitées aux 100 premières entrées ; le compteur `count` reste calculé sur l’ensemble de la période.
 
-## Définitions des taux
+## Risques d’interprétation
 
-```text
-employee_working_days_expected
-= present_employee_days + late_employee_days + absent_employee_days
-
-attendance_rate
-= (present_employee_days + late_employee_days)
-  / employee_working_days_expected × 100
-
-absence_rate
-= absent_employee_days / employee_working_days_expected × 100
-
-punctuality_rate
-= present_employee_days
-  / (present_employee_days + late_employee_days) × 100
-```
-
-Règles :
-
-- seuls les jours de travail valides et terminés entrent dans les deux premiers
-  dénominateurs ;
-- `PENDING`, `REST_DAY` et `UNDETERMINED` sont exclus ;
-- les présences encore en cours de journée restent visibles dans
-  `recorded_activity`, mais n'entrent pas encore dans les taux ;
-- un dénominateur nul produit `null`, jamais `0` ;
-- les pourcentages sont arrondis à deux décimales ;
-- la moyenne du retard porte uniquement sur les journées classées `LATE` et
-  vaut `null` lorsqu'aucun retard n'existe.
-
-## Interprétation du statut de présence
-
-| Statut | Signification |
-|---|---|
-| `COMPUTABLE` | Le dénominateur existe et tous les plannings évalués sont résolus. |
-| `PARTIAL` | Le dénominateur existe, mais certaines journées ont un planning non résolu. |
-| `NOT_COMPUTABLE` | Aucun jour de travail attendu et finalisé ne fournit de dénominateur. |
-
-`unavailability_reason` explique toujours un statut `NOT_COMPUTABLE`.
-
-Un taux `PARTIAL` reste mathématiquement calculé sur les seules journées
-résolues et finalisées. Il ne doit pas être présenté comme représentatif de
-toute la population sans afficher la couverture des plannings.
-
-## Qualité de résolution du planning
-
-Les journées non résolues sont exclues des taux et réparties par cause :
-
-| Cause | Signification | Action manager |
-|---|---|---|
-| `MISSING_SCHEDULE` | Aucune affectation exploitable n'est trouvée. | Affecter ou vérifier le planning. |
-| `INVALID_SCHEDULE` | Le snapshot est vide, mal formé ou incohérent. | Corriger le template ou l'affectation. |
-| `HISTORICAL_SCHEDULE_UNAVAILABLE` | L'état applicable à cette date ne peut pas être prouvé avec les données courantes. | Consulter/restaurer l'historique des affectations. |
-| `AMBIGUOUS_SCHEDULE` | Deux affectations ont la même priorité. | Corriger le conflit d'affectations. |
-
-`resolved_employee_days + unresolved_employee_days` doit toujours être égal à
-`employee_days_evaluated`.
-
-## Durées
-
-Les champs `known_*_minutes` additionnent uniquement les journées actives dont
-les sessions sont finalisées et dont les durées brute et de pause sont connues.
-
-- avec une couverture `COMPLETE`, ils représentent toute l'activité ;
-- avec une couverture `PARTIAL`, ils représentent seulement la partie connue ;
-- avec une couverture `UNAVAILABLE`, ils valent `null` ;
-- sans activité, ils valent `0` et la couverture est `NOT_APPLICABLE`.
-
-Cette convention empêche une somme partielle d'être présentée comme le total
-réel de la période.
-
-## Invariants exigés du service appelant
-
-1. Fournir exactement un objet `AttendanceDay` par couple `employé × date`.
-2. Inclure les journées sans pointage, sinon les absences seraient invisibles.
-3. Résoudre le planning applicable à la date analysée.
-4. Regrouper toutes les sessions quotidiennes avant l'agrégation.
-5. Ne jamais filtrer l'overview par site en l'absence d'affectation employé-site.
+1. Un taux élevé n’implique pas que les durées sont complètes.
+2. Une présence sur repos n’améliore pas le taux de présence.
+3. Un planning manquant ne doit pas devenir une absence.
+4. Une journée en cours ne doit pas fausser le taux.
+5. Le filtre site porte sur les sessions observées ; il ne modifie pas le planning attendu de l’employé.
+6. La réponse décrit l’équipe actuelle, pas une reconstitution historique du périmètre d’équipe.
+7. Les sessions traversant minuit sont rattachées à la journée de démarrage tant qu’aucune règle métier différente n’est validée.

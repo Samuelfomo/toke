@@ -66,22 +66,16 @@ describe('createAttendanceDay', () => {
 
   it('considère la limite exacte de tolérance comme PRESENT', () => {
     const day = createAttendanceDay(
-      makeInput({
-        activity: { ...finalizedActivity, firstClockIn: '08:10' },
-      }),
+      makeInput({ activity: { ...finalizedActivity, firstClockIn: '08:10' } }),
     );
-
     assert.equal(day.result.status, 'PRESENT');
     assert.equal(day.result.delayMinutes, 10);
   });
 
   it('classe LATE uniquement au-delà de la tolérance', () => {
     const day = createAttendanceDay(
-      makeInput({
-        activity: { ...finalizedActivity, firstClockIn: '08:11' },
-      }),
+      makeInput({ activity: { ...finalizedActivity, firstClockIn: '08:11' } }),
     );
-
     assert.equal(day.result.status, 'LATE');
     assert.equal(day.result.delayMinutes, 11);
     assert.equal(day.result.rateEligible, true);
@@ -89,11 +83,8 @@ describe('createAttendanceDay', () => {
 
   it('conserve un retard connu de zéro pour une arrivée anticipée', () => {
     const day = createAttendanceDay(
-      makeInput({
-        activity: { ...finalizedActivity, firstClockIn: '07:45' },
-      }),
+      makeInput({ activity: { ...finalizedActivity, firstClockIn: '07:45' } }),
     );
-
     assert.equal(day.result.status, 'PRESENT');
     assert.equal(day.result.delayMinutes, 0);
   });
@@ -102,7 +93,6 @@ describe('createAttendanceDay', () => {
     const day = createAttendanceDay(
       makeInput({ activity: noActivity, hasExpectedWorkDayEnded: false }),
     );
-
     assert.deepEqual(day.result, {
       status: 'PENDING',
       delayMinutes: null,
@@ -112,7 +102,6 @@ describe('createAttendanceDay', () => {
 
   it('classe ABSENT uniquement après la fin d’une journée de travail valide', () => {
     const day = createAttendanceDay(makeInput({ activity: noActivity }));
-
     assert.deepEqual(day.result, {
       status: 'ABSENT',
       delayMinutes: null,
@@ -122,7 +111,6 @@ describe('createAttendanceDay', () => {
 
   it('exclut du taux une présence enregistrée pendant une journée non terminée', () => {
     const day = createAttendanceDay(makeInput({ hasExpectedWorkDayEnded: false }));
-
     assert.equal(day.result.status, 'PRESENT');
     assert.equal(day.result.rateEligible, false);
   });
@@ -133,9 +121,7 @@ describe('createAttendanceDay', () => {
       source: 'DIRECT',
       expectedBlocks: [],
     };
-
     const day = createAttendanceDay(makeInput({ schedule: restSchedule }));
-
     assert.equal(day.result.status, 'REST_DAY');
     assert.equal(day.result.rateEligible, false);
     assert.deepEqual(day.issues, ['PRESENCE_ON_REST_DAY']);
@@ -147,11 +133,9 @@ describe('createAttendanceDay', () => {
       source: 'ROTATION',
       expectedBlocks: [],
     };
-
     const day = createAttendanceDay(
       makeInput({ schedule: restSchedule, activity: noActivity }),
     );
-
     assert.equal(day.result.status, 'REST_DAY');
     assert.deepEqual(day.issues, []);
   });
@@ -163,11 +147,9 @@ describe('createAttendanceDay', () => {
       expectedBlocks: [],
       issue: 'MISSING_SCHEDULE',
     };
-
     const day = createAttendanceDay(
       makeInput({ schedule: unresolvedSchedule, activity: noActivity }),
     );
-
     assert.equal(day.result.status, 'UNDETERMINED');
     assert.equal(day.result.rateEligible, false);
     assert.deepEqual(day.issues, ['MISSING_SCHEDULE']);
@@ -180,9 +162,7 @@ describe('createAttendanceDay', () => {
       expectedBlocks: [],
       issue: 'MISSING_SCHEDULE',
     };
-
     const day = createAttendanceDay(makeInput({ schedule: unresolvedSchedule }));
-
     assert.equal(day.result.status, 'UNDETERMINED');
     assert.deepEqual(day.issues, ['MISSING_SCHEDULE', 'PRESENCE_WITHOUT_SCHEDULE']);
   });
@@ -193,11 +173,9 @@ describe('createAttendanceDay', () => {
       source: 'DIRECT',
       expectedBlocks: [],
     };
-
     const day = createAttendanceDay(
       makeInput({ schedule: invalidSchedule, activity: noActivity }),
     );
-
     assert.deepEqual(day.schedule, {
       state: 'UNRESOLVED',
       source: 'DIRECT',
@@ -214,16 +192,10 @@ describe('createAttendanceDay', () => {
       state: 'WORK_DAY',
       source: 'ROTATION',
       expectedBlocks: [
-        {
-          startTime: '25:00',
-          endTime: '17:00',
-          toleranceMinutes: 10,
-        },
+        { startTime: '25:00', endTime: '17:00', toleranceMinutes: 10 },
       ],
     };
-
     const day = createAttendanceDay(makeInput({ schedule: invalidSchedule }));
-
     assert.equal(day.result.status, 'UNDETERMINED');
     assert.deepEqual(day.issues, ['INVALID_SCHEDULE', 'PRESENCE_WITHOUT_SCHEDULE']);
   });
@@ -243,7 +215,6 @@ describe('createAttendanceDay', () => {
         },
       }),
     );
-
     assert.equal(day.result.status, 'PRESENT');
     assert.equal(day.activity.netMinutes, null);
     assert.deepEqual(day.issues, ['OPEN_SESSION']);
@@ -252,14 +223,9 @@ describe('createAttendanceDay', () => {
   it('signale une durée manquante sur une session finalisée', () => {
     const day = createAttendanceDay(
       makeInput({
-        activity: {
-          ...finalizedActivity,
-          grossMinutes: null,
-          pauseMinutes: null,
-        },
+        activity: { ...finalizedActivity, grossMinutes: null, pauseMinutes: null },
       }),
     );
-
     assert.equal(day.result.status, 'PRESENT');
     assert.deepEqual(day.issues, ['MISSING_DURATION']);
   });
@@ -268,12 +234,7 @@ describe('createAttendanceDay', () => {
     assert.throws(
       () =>
         createAttendanceDay(
-          makeInput({
-            activity: {
-              ...noActivity,
-              sessionCount: 1,
-            },
-          }),
+          makeInput({ activity: { ...noActivity, sessionCount: 1 } }),
         ),
       AttendanceDayInvariantError,
     );

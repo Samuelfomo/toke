@@ -1,0 +1,68 @@
+{
+  "success": true,
+  "message": "Attendance statistics overview retrieved successfully",
+  "data": {
+    "period": {
+      "start_date": "2026-07-01",
+      "end_date": "2026-07-31",
+      "generated_at": "2026-07-31T18:00:00+01:00",
+      "business_timezone": "Africa/Douala"
+    },
+    "scope": {
+      "manager_guid": "manager-guid",
+      "employees_evaluated": 3,
+      "employee_days_evaluated": 6
+    },
+    "attendance": {
+      "status": "PARTIAL",
+      "unavailability_reason": null,
+      "employee_working_days_expected": 3,
+      "present_employee_days": 1,
+      "late_employee_days": 1,
+      "absent_employee_days": 1,
+      "attendance_rate": 66.67,
+      "absence_rate": 33.33,
+      "punctuality_rate": 50,
+      "total_delay_minutes": 20,
+      "average_delay_minutes": 20
+    },
+    "recorded_activity": {
+      "employees_with_activity": 2,
+      "employee_days_with_activity": 3,
+      "sessions": {
+        "total": 3,
+        "open": 0,
+        "incomplete": 0
+      },
+      "durations": {
+        "known_gross_minutes": 1620,
+        "known_pause_minutes": 180,
+        "known_net_minutes": 1440
+      }
+    },
+    "signals": {
+      "presence_on_rest_day_employee_days": 0,
+      "presence_without_schedule_employee_days": 1
+    },
+    "data_quality": {
+      "status": "PARTIAL",
+      "reasons": ["MISSING_SCHEDULE"],
+      "schedule": {
+        "resolved_employee_days": 5,
+        "unresolved_employee_days": 1,
+        "missing_schedule_employee_days": 1,
+        "invalid_schedule_employee_days": 0,
+        "historical_schedule_unavailable_employee_days": 0,
+        "ambiguous_schedule_employee_days": 0,
+        "coverage_rate": 83.33
+      },
+      "duration": {
+        "status": "COMPLETE",
+        "employee_days_with_activity": 3,
+        "complete_employee_days": 3,
+        "incomplete_employee_days": 0,
+        "coverage_rate": 100
+      }
+    }
+  }
+}

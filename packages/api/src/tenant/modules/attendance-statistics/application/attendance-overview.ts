@@ -1,15 +1,39 @@
-import type { AttendanceDay, AttendanceIssue } from '../domain/attendance-day.types.js';
 import type {
-  AttendanceStatisticsOverview,
-  AttendanceUnavailabilityReason,
+  AttendanceDay,
+  AttendanceIssue,
+  AttendanceStatus,
+} from '../domain/attendance-day.types.js';
+import type {
+  AttendanceDataQuality,
+  AttendanceDurationMetrics,
+  AttendanceEmployeeOverview,
+  AttendanceIssueOccurrence,
+  AttendanceIssueSummary,
+  AttendanceOverview,
+  AttendanceOverviewEmployeeIdentity,
+  AttendanceRateMetrics,
+  AttendanceStatusTotals,
   BuildAttendanceOverviewInput,
-  DataQualityReason,
-  DataQualityStatus,
-  DurationCoverageStatus,
-  OverviewAttendanceStatus,
 } from './attendance-overview.types.js';
 
-const BUSINESS_DATE_PATTERN = /^\d{4}-(0[1-9]|1[0-2])-([0-2]\d|3[01])$/;
+const ATTENDANCE_STATUSES: readonly AttendanceStatus[] = [
+  'PRESENT',
+  'LATE',
+  'ABSENT',
+  'REST_DAY',
+  'UNDETERMINED',
+  'PENDING',
+];
+
+const ATTENDANCE_ISSUES: readonly AttendanceIssue[] = [
+  'PRESENCE_ON_REST_DAY',
+  'PRESENCE_WITHOUT_SCHEDULE',
+  'MISSING_SCHEDULE',
+  'INVALID_SCHEDULE',
+  'OPEN_SESSION',
+  'INCOMPLETE_SESSION',
+  'MISSING_DURATION',
+];
 
 export class AttendanceOverviewInvariantError extends Error {
   constructor(message: string) {
@@ -19,390 +43,305 @@ export class AttendanceOverviewInvariantError extends Error {
 }
 
 /**
- * Agrège une collection déjà normalisée de `AttendanceDay`.
- *
- * Cette fonction ne lit ni la base de données ni les sessions brutes et ne
- * résout aucun planning. Elle ne fait aucune conversion de date ou de fuseau.
+ * Agrège les AttendanceDay déjà classifiés. Aucun accès DB ni aucune résolution
+ * de planning n'est autorisé ici.
  */
 export function buildAttendanceOverview(
   input: BuildAttendanceOverviewInput,
-): AttendanceStatisticsOverview {
+): AttendanceOverview {
   validateInput(input);
-  validateDays(input.days, input.period.startDate, input.period.endDate);
 
-  const employeesEvaluated = new Set<number>();
-  const employeesWithActivity = new Set<number>();
+  const employeeById = new Map<number, AttendanceOverviewEmployeeIdentity>(
+    input.employees.map((employee) => [employee.id, employee]),
+  );
+  const daysByEmployee = groupDaysByEmployee(input.days, employeeById);
 
-  let expectedEmployeeWorkingDays = 0;
-  let presentEmployeeDays = 0;
-  let lateEmployeeDays = 0;
-  let absentEmployeeDays = 0;
-  let totalDelayMinutes = 0;
+  const employees = input.employees.map((employee) =>
+    buildEmployeeOverview(employee, daysByEmployee.get(employee.id) ?? []),
+  );
 
-  let employeeDaysWithActivity = 0;
-  let totalSessions = 0;
-  let openSessions = 0;
-  let incompleteSessions = 0;
+  const statusTotals = countStatuses(input.days);
+  const rates = calculateRates(input.days);
+  const durations = calculateDurations(input.days);
+  const issues = buildIssueSummaries(input.days, employeeById);
 
-  let resolvedScheduleDays = 0;
-  let unresolvedScheduleDays = 0;
-  let missingScheduleDays = 0;
-  let invalidScheduleDays = 0;
-  let historicalScheduleUnavailableDays = 0;
-  let ambiguousScheduleDays = 0;
+  const daily = input.dates.map((date) => {
+    const dateDays = input.days.filter((day) => day.date === date);
+    return {
+      date,
+      teamSize: input.employees.length,
+      statusTotals: countStatuses(dateDays),
+      rates: calculateRates(dateDays),
+      issueCount: dateDays.reduce((total, day) => total + day.issues.length, 0),
+    };
+  });
 
-  let presenceOnRestDayDays = 0;
-  let presenceWithoutScheduleDays = 0;
+  return {
+    generatedAt: input.generatedAt,
+    period: {
+      startDate: input.startDate,
+      endDate: input.endDate,
+      dayCount: input.dates.length,
+    },
+    scope: {
+      managerGuid: input.managerGuid,
+      siteGuid: input.siteGuid,
+      teamSize: input.employees.length,
+      employees: input.employees.map((employee) => ({
+        guid: employee.guid,
+        name: employee.name,
+      })),
+    },
+    summary: {
+      statusTotals,
+      rates,
+      durations,
+      issueCount: input.days.reduce((total, day) => total + day.issues.length, 0),
+    },
+    daily,
+    employees,
+    issues,
+    dataQuality: buildDataQuality(input.days),
+  };
+}
 
-  let completeDurationDays = 0;
-  let knownGrossMinutes = 0;
-  let knownPauseMinutes = 0;
-  let knownNetMinutes = 0;
+function buildEmployeeOverview(
+  employee: AttendanceOverviewEmployeeIdentity,
+  days: readonly AttendanceDay[],
+): AttendanceEmployeeOverview {
+  const sortedDays = [...days].sort((a, b) => a.date.localeCompare(b.date));
 
-  for (const day of input.days) {
-    employeesEvaluated.add(day.employeeId);
+  return {
+    employeeGuid: employee.guid,
+    employeeName: employee.name,
+    statusTotals: countStatuses(sortedDays),
+    rates: calculateRates(sortedDays),
+    durations: calculateDurations(sortedDays),
+    issueCount: sortedDays.reduce((total, day) => total + day.issues.length, 0),
+    days: sortedDays.map((day) => ({
+      date: day.date,
+      status: day.result.status,
+      rateEligible: day.result.rateEligible,
+      delayMinutes: day.result.delayMinutes,
+      firstClockIn: day.activity.firstClockIn,
+      lastClockOut: day.activity.lastClockOut,
+      grossMinutes: day.activity.grossMinutes,
+      pauseMinutes: day.activity.pauseMinutes,
+      netMinutes: day.activity.netMinutes,
+      issues: [...day.issues],
+    })),
+  };
+}
 
-    if (day.schedule.state === 'UNRESOLVED') {
-      unresolvedScheduleDays += 1;
-      if (day.schedule.issue === 'MISSING_SCHEDULE') missingScheduleDays += 1;
-      if (day.schedule.issue === 'INVALID_SCHEDULE') invalidScheduleDays += 1;
-      if (day.schedule.issue === 'HISTORICAL_SCHEDULE_UNAVAILABLE') {
-        historicalScheduleUnavailableDays += 1;
-      }
-      if (day.schedule.issue === 'AMBIGUOUS_SCHEDULE') ambiguousScheduleDays += 1;
-    } else {
-      resolvedScheduleDays += 1;
+function calculateRates(days: readonly AttendanceDay[]): AttendanceRateMetrics {
+  const eligibleDays = days.filter((day) => day.result.rateEligible);
+  const presentDays = eligibleDays.filter((day) => day.result.status === 'PRESENT').length;
+  const lateDays = eligibleDays.filter((day) => day.result.status === 'LATE').length;
+  const absentDays = eligibleDays.filter((day) => day.result.status === 'ABSENT').length;
+  const expected = presentDays + lateDays + absentDays;
+  const attended = presentDays + lateDays;
+
+  return {
+    employeeWorkingDaysExpected: expected,
+    attendedWorkingDays: attended,
+    onTimeWorkingDays: presentDays,
+    lateWorkingDays: lateDays,
+    attendanceRate: expected > 0 ? roundOne((attended / expected) * 100) : null,
+    punctualityRate: attended > 0 ? roundOne((presentDays / attended) * 100) : null,
+  };
+}
+
+function calculateDurations(days: readonly AttendanceDay[]): AttendanceDurationMetrics {
+  let grossMinutes = 0;
+  let pauseMinutes = 0;
+  let netMinutes = 0;
+  let knownGross = 0;
+  let knownPause = 0;
+  let knownNet = 0;
+  let missing = 0;
+
+  for (const day of days) {
+    if (!day.activity.hasActivity) continue;
+
+    const hasCompleteDuration =
+      day.activity.grossMinutes !== null &&
+      day.activity.pauseMinutes !== null &&
+      day.activity.netMinutes !== null;
+
+    if (!hasCompleteDuration) missing++;
+
+    if (day.activity.grossMinutes !== null) {
+      grossMinutes += day.activity.grossMinutes;
+      knownGross++;
     }
 
-    if (day.result.rateEligible) {
-      expectedEmployeeWorkingDays += 1;
-
-      if (day.result.status === 'PRESENT') presentEmployeeDays += 1;
-      if (day.result.status === 'LATE') {
-        lateEmployeeDays += 1;
-        totalDelayMinutes += requiredDelay(day);
-      }
-      if (day.result.status === 'ABSENT') absentEmployeeDays += 1;
+    if (day.activity.pauseMinutes !== null) {
+      pauseMinutes += day.activity.pauseMinutes;
+      knownPause++;
     }
 
-    if (day.activity.hasActivity) {
-      employeesWithActivity.add(day.employeeId);
-      employeeDaysWithActivity += 1;
-      totalSessions += day.activity.sessionCount;
-      openSessions += day.activity.openSessionCount;
-      incompleteSessions += day.activity.incompleteSessionCount;
-
-      if (hasCompleteDuration(day)) {
-        completeDurationDays += 1;
-        knownGrossMinutes += day.activity.grossMinutes;
-        knownPauseMinutes += day.activity.pauseMinutes;
-        knownNetMinutes += day.activity.netMinutes;
-      }
-    }
-
-    if (day.issues.includes('PRESENCE_ON_REST_DAY')) {
-      presenceOnRestDayDays += 1;
-    }
-    if (day.issues.includes('PRESENCE_WITHOUT_SCHEDULE')) {
-      presenceWithoutScheduleDays += 1;
+    if (day.activity.netMinutes !== null) {
+      netMinutes += day.activity.netMinutes;
+      knownNet++;
     }
   }
 
-  assertAttendanceIdentity(
-    expectedEmployeeWorkingDays,
-    presentEmployeeDays,
-    lateEmployeeDays,
-    absentEmployeeDays,
-  );
+  return {
+    grossMinutes,
+    pauseMinutes,
+    netMinutes,
+    daysWithKnownGrossDuration: knownGross,
+    daysWithKnownPauseDuration: knownPause,
+    daysWithKnownNetDuration: knownNet,
+    daysWithMissingDuration: missing,
+  };
+}
 
-  const attendedEmployeeDays = presentEmployeeDays + lateEmployeeDays;
-  const incompleteDurationDays = employeeDaysWithActivity - completeDurationDays;
+function countStatuses(days: readonly AttendanceDay[]): AttendanceStatusTotals {
+  const totals = createEmptyStatusTotals();
+  for (const day of days) totals[day.result.status]++;
+  return totals;
+}
 
-  const attendanceStatus = resolveAttendanceStatus(
-    input.days.length,
-    expectedEmployeeWorkingDays,
-    unresolvedScheduleDays,
-  );
-  const unavailabilityReason = resolveUnavailabilityReason(
-    input.days.length,
-    expectedEmployeeWorkingDays,
-    resolvedScheduleDays,
-  );
-  const durationStatus = resolveDurationStatus(
-    employeeDaysWithActivity,
-    completeDurationDays,
-  );
-  const qualityReasons = collectQualityReasons(input.days);
-  const dataQualityStatus = resolveDataQualityStatus(
-    input.days.length,
-    resolvedScheduleDays,
-    qualityReasons,
-  );
+function createEmptyStatusTotals(): AttendanceStatusTotals {
+  return {
+    PRESENT: 0,
+    LATE: 0,
+    ABSENT: 0,
+    REST_DAY: 0,
+    UNDETERMINED: 0,
+    PENDING: 0,
+  };
+}
+
+function buildIssueSummaries(
+  days: readonly AttendanceDay[],
+  employeeById: ReadonlyMap<number, AttendanceOverviewEmployeeIdentity>,
+): AttendanceIssueSummary[] {
+  return ATTENDANCE_ISSUES.map((issue) => {
+    const occurrences: AttendanceIssueOccurrence[] = [];
+    const employees = new Set<string>();
+
+    for (const day of days) {
+      if (!day.issues.includes(issue)) continue;
+      const employee = employeeById.get(day.employeeId);
+      if (!employee) continue;
+
+      employees.add(employee.guid);
+      if (occurrences.length < 100) {
+        occurrences.push({
+          employeeGuid: employee.guid,
+          employeeName: employee.name,
+          date: day.date,
+          status: day.result.status,
+        });
+      }
+    }
+
+    return {
+      issue,
+      count: days.reduce(
+        (total, day) => total + (day.issues.includes(issue) ? 1 : 0),
+        0,
+      ),
+      employeesConcerned: employees.size,
+      occurrences,
+    };
+  }).filter((summary) => summary.count > 0);
+}
+
+function buildDataQuality(days: readonly AttendanceDay[]): AttendanceDataQuality {
+  const countIssue = (issue: AttendanceIssue): number =>
+    days.reduce((total, day) => total + (day.issues.includes(issue) ? 1 : 0), 0);
+
+  const unresolvedScheduleDays =
+    countIssue('MISSING_SCHEDULE') + countIssue('INVALID_SCHEDULE');
+  const presenceWithoutScheduleDays = countIssue('PRESENCE_WITHOUT_SCHEDULE');
+  const openSessionDays = countIssue('OPEN_SESSION');
+  const incompleteSessionDays = countIssue('INCOMPLETE_SESSION');
+  const missingDurationDays = countIssue('MISSING_DURATION');
+
+  const notes: string[] = [];
+  if (unresolvedScheduleDays > 0) {
+    notes.push(
+      `${unresolvedScheduleDays} journée(s) sans planning exploitable sont exclues du taux de présence.`,
+    );
+  }
+  if (openSessionDays + incompleteSessionDays > 0) {
+    notes.push(
+      `${openSessionDays + incompleteSessionDays} journée(s) contiennent une session ouverte ou incomplète.`,
+    );
+  }
+  if (missingDurationDays > 0) {
+    notes.push(
+      `${missingDurationDays} journée(s) avec présence n'ont pas de durée complète et ne doivent pas être interprétées comme 0 minute.`,
+    );
+  }
 
   return {
-    period: {
-      start_date: input.period.startDate,
-      end_date: input.period.endDate,
-      generated_at: input.generatedAt,
-      business_timezone: input.businessTimezone,
-    },
-    scope: {
-      manager_guid: input.managerGuid,
-      employees_evaluated: employeesEvaluated.size,
-      employee_days_evaluated: input.days.length,
-    },
-    attendance: {
-      status: attendanceStatus,
-      unavailability_reason: unavailabilityReason,
-      employee_working_days_expected: expectedEmployeeWorkingDays,
-      present_employee_days: presentEmployeeDays,
-      late_employee_days: lateEmployeeDays,
-      absent_employee_days: absentEmployeeDays,
-      attendance_rate: percentage(attendedEmployeeDays, expectedEmployeeWorkingDays),
-      absence_rate: percentage(absentEmployeeDays, expectedEmployeeWorkingDays),
-      punctuality_rate: percentage(presentEmployeeDays, attendedEmployeeDays),
-      total_delay_minutes: totalDelayMinutes,
-      average_delay_minutes:
-        lateEmployeeDays === 0 ? null : round(totalDelayMinutes / lateEmployeeDays, 2),
-    },
-    recorded_activity: {
-      employees_with_activity: employeesWithActivity.size,
-      employee_days_with_activity: employeeDaysWithActivity,
-      sessions: {
-        total: totalSessions,
-        open: openSessions,
-        incomplete: incompleteSessions,
-      },
-      durations: {
-        known_gross_minutes: durationValue(
-          employeeDaysWithActivity,
-          completeDurationDays,
-          knownGrossMinutes,
-        ),
-        known_pause_minutes: durationValue(
-          employeeDaysWithActivity,
-          completeDurationDays,
-          knownPauseMinutes,
-        ),
-        known_net_minutes: durationValue(
-          employeeDaysWithActivity,
-          completeDurationDays,
-          knownNetMinutes,
-        ),
-      },
-    },
-    signals: {
-      presence_on_rest_day_employee_days: presenceOnRestDayDays,
-      presence_without_schedule_employee_days: presenceWithoutScheduleDays,
-    },
-    data_quality: {
-      status: dataQualityStatus,
-      reasons: qualityReasons,
-      schedule: {
-        resolved_employee_days: resolvedScheduleDays,
-        unresolved_employee_days: unresolvedScheduleDays,
-        missing_schedule_employee_days: missingScheduleDays,
-        invalid_schedule_employee_days: invalidScheduleDays,
-        historical_schedule_unavailable_employee_days:
-          historicalScheduleUnavailableDays,
-        ambiguous_schedule_employee_days: ambiguousScheduleDays,
-        coverage_rate: percentage(resolvedScheduleDays, input.days.length),
-      },
-      duration: {
-        status: durationStatus,
-        employee_days_with_activity: employeeDaysWithActivity,
-        complete_employee_days: completeDurationDays,
-        incomplete_employee_days: incompleteDurationDays,
-        coverage_rate: percentage(completeDurationDays, employeeDaysWithActivity),
-      },
-    },
+    unresolvedScheduleDays,
+    presenceWithoutScheduleDays,
+    openSessionDays,
+    incompleteSessionDays,
+    missingDurationDays,
+    reliableForAttendanceRate: unresolvedScheduleDays === 0,
+    notes,
   };
+}
+
+function groupDaysByEmployee(
+  days: readonly AttendanceDay[],
+  employeeById: ReadonlyMap<number, AttendanceOverviewEmployeeIdentity>,
+): Map<number, AttendanceDay[]> {
+  const result = new Map<number, AttendanceDay[]>();
+  for (const day of days) {
+    if (!employeeById.has(day.employeeId)) {
+      throw new AttendanceOverviewInvariantError(
+        `La journée ${day.employeeId}:${day.date} appartient à un employé hors périmètre`,
+      );
+    }
+    const employeeDays = result.get(day.employeeId) ?? [];
+    employeeDays.push(day);
+    result.set(day.employeeId, employeeDays);
+  }
+  return result;
 }
 
 function validateInput(input: BuildAttendanceOverviewInput): void {
-  if (!isBusinessDate(input.period.startDate) || !isBusinessDate(input.period.endDate)) {
+  const employeeIds = new Set<number>();
+  const employeeGuids = new Set<string>();
+  for (const employee of input.employees) {
+    if (employeeIds.has(employee.id)) {
+      throw new AttendanceOverviewInvariantError(`Employé dupliqué : id=${employee.id}`);
+    }
+    if (employeeGuids.has(employee.guid)) {
+      throw new AttendanceOverviewInvariantError(`Employé dupliqué : guid=${employee.guid}`);
+    }
+    employeeIds.add(employee.id);
+    employeeGuids.add(employee.guid);
+  }
+
+  const expectedDayCount = input.employees.length * input.dates.length;
+  if (input.days.length !== expectedDayCount) {
     throw new AttendanceOverviewInvariantError(
-      'La période doit utiliser le format métier YYYY-MM-DD',
+      `Matrice incomplète : ${input.days.length} journée(s) reçue(s), ${expectedDayCount} attendue(s)`,
     );
   }
 
-  if (input.period.startDate > input.period.endDate) {
-    throw new AttendanceOverviewInvariantError('startDate doit précéder ou égaler endDate');
-  }
-
-  if (input.managerGuid.trim().length === 0) {
-    throw new AttendanceOverviewInvariantError('managerGuid est obligatoire');
-  }
-
-  if (input.generatedAt.trim().length === 0) {
-    throw new AttendanceOverviewInvariantError('generatedAt est obligatoire');
-  }
-
-  if (input.businessTimezone.trim().length === 0) {
-    throw new AttendanceOverviewInvariantError('businessTimezone est obligatoire');
-  }
-}
-
-function validateDays(
-  days: readonly AttendanceDay[],
-  startDate: string,
-  endDate: string,
-): void {
-  const keys = new Set<string>();
-
-  for (const day of days) {
-    if (day.date < startDate || day.date > endDate) {
-      throw new AttendanceOverviewInvariantError(
-        `La journée ${day.employeeId} × ${day.date} est hors période`,
-      );
-    }
-
+  const uniqueDayKeys = new Set<string>();
+  for (const day of input.days) {
     const key = `${day.employeeId}:${day.date}`;
-    if (keys.has(key)) {
-      throw new AttendanceOverviewInvariantError(
-        `Journée employé dupliquée : ${day.employeeId} × ${day.date}`,
-      );
+    if (uniqueDayKeys.has(key)) {
+      throw new AttendanceOverviewInvariantError(`Journée dupliquée : ${key}`);
     }
-    keys.add(key);
+    uniqueDayKeys.add(key);
+  }
 
-    if (
-      day.result.rateEligible &&
-      day.result.status !== 'PRESENT' &&
-      day.result.status !== 'LATE' &&
-      day.result.status !== 'ABSENT'
-    ) {
-      throw new AttendanceOverviewInvariantError(
-        `Le statut ${day.result.status} ne peut pas entrer dans les taux`,
-      );
-    }
-
-    if (day.result.status === 'LATE' && day.result.rateEligible) {
-      requiredDelay(day);
-    }
+  for (const status of ATTENDANCE_STATUSES) {
+    if (!status) throw new AttendanceOverviewInvariantError('Statut invalide');
   }
 }
 
-function requiredDelay(day: AttendanceDay): number {
-  const delay = day.result.delayMinutes;
-  if (delay === null || !Number.isFinite(delay) || delay < 0) {
-    throw new AttendanceOverviewInvariantError(
-      `Un jour LATE doit posséder un delayMinutes valide : ${day.employeeId} × ${day.date}`,
-    );
-  }
-  return delay;
-}
-
-function hasCompleteDuration(
-  day: AttendanceDay,
-): day is AttendanceDay & {
-  activity: AttendanceDay['activity'] & {
-    grossMinutes: number;
-    pauseMinutes: number;
-    netMinutes: number;
-  };
-} {
-  return (
-    day.activity.hasActivity &&
-    day.activity.openSessionCount === 0 &&
-    day.activity.incompleteSessionCount === 0 &&
-    day.activity.grossMinutes !== null &&
-    day.activity.pauseMinutes !== null &&
-    day.activity.netMinutes !== null
-  );
-}
-
-function collectQualityReasons(days: readonly AttendanceDay[]): DataQualityReason[] {
-  if (days.length === 0) return ['NO_EMPLOYEE_DAY'];
-
-  const issueOrder: readonly DataQualityReason[] = [
-    'MISSING_SCHEDULE',
-    'INVALID_SCHEDULE',
-    'HISTORICAL_SCHEDULE_UNAVAILABLE',
-    'AMBIGUOUS_SCHEDULE',
-    'OPEN_SESSION',
-    'INCOMPLETE_SESSION',
-    'MISSING_DURATION',
-  ];
-
-  return issueOrder.filter((issue) => days.some((day) => hasIssue(day.issues, issue)));
-}
-
-function hasIssue(issues: readonly AttendanceIssue[], issue: DataQualityReason): boolean {
-  if (issue === 'NO_EMPLOYEE_DAY') return false;
-  return issues.includes(issue);
-}
-
-function resolveAttendanceStatus(
-  totalDays: number,
-  expectedDays: number,
-  unresolvedDays: number,
-): OverviewAttendanceStatus {
-  if (totalDays === 0 || expectedDays === 0) return 'NOT_COMPUTABLE';
-  return unresolvedDays > 0 ? 'PARTIAL' : 'COMPUTABLE';
-}
-
-function resolveUnavailabilityReason(
-  totalDays: number,
-  expectedDays: number,
-  resolvedScheduleDays: number,
-): AttendanceUnavailabilityReason | null {
-  if (expectedDays > 0) return null;
-  if (totalDays === 0) return 'NO_EMPLOYEE_DAY';
-  if (resolvedScheduleDays === 0) return 'INSUFFICIENT_SCHEDULE_DATA';
-  return 'NO_FINALIZED_EXPECTED_WORK_DAY';
-}
-
-function resolveDurationStatus(
-  activityDays: number,
-  completeDays: number,
-): DurationCoverageStatus {
-  if (activityDays === 0) return 'NOT_APPLICABLE';
-  if (completeDays === 0) return 'UNAVAILABLE';
-  if (completeDays === activityDays) return 'COMPLETE';
-  return 'PARTIAL';
-}
-
-function resolveDataQualityStatus(
-  totalDays: number,
-  resolvedScheduleDays: number,
-  reasons: readonly DataQualityReason[],
-): DataQualityStatus {
-  if (totalDays === 0 || resolvedScheduleDays === 0) return 'INSUFFICIENT';
-  return reasons.length === 0 ? 'RELIABLE' : 'PARTIAL';
-}
-
-function assertAttendanceIdentity(
-  expectedDays: number,
-  presentDays: number,
-  lateDays: number,
-  absentDays: number,
-): void {
-  if (expectedDays !== presentDays + lateDays + absentDays) {
-    throw new AttendanceOverviewInvariantError(
-      'Invariant violé : expected = present + late + absent',
-    );
-  }
-}
-
-function durationValue(
-  activityDays: number,
-  completeDays: number,
-  knownMinutes: number,
-): number | null {
-  if (activityDays === 0) return 0;
-  return completeDays === 0 ? null : knownMinutes;
-}
-
-function percentage(numerator: number, denominator: number): number | null {
-  if (denominator === 0) return null;
-  return round((numerator / denominator) * 100, 2);
-}
-
-function round(value: number, decimals: number): number {
-  const factor = 10 ** decimals;
-  return Math.round((value + Number.EPSILON) * factor) / factor;
-}
-
-function isBusinessDate(value: string): boolean {
-  return BUSINESS_DATE_PATTERN.test(value);
+function roundOne(value: number): number {
+  return Number(value.toFixed(1));
 }

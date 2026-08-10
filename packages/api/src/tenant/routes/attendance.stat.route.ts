@@ -23,10 +23,24 @@ import Site from '../class/Site.js';
 import ScheduleResolutionService from '../../tools/schedule.resolution.service.js';
 import AnomalyDetectionService from '../../tools/anomaly.detection.service.js';
 import Memos from '../class/Memos.js';
+import { createAttendanceStatisticsController } from '../modules/attendance-statistics/http/attendance-statistics.controller.js';
 
 import Statistique, { DayStatus } from './statistique.interface.js';
 
 const router = Router();
+
+const controller = createAttendanceStatisticsController();
+
+/**
+ * GET /attendance/statistics/overview
+ *
+ * Query :
+ * - manager      : GUID obligatoire
+ * - site         : GUID optionnel
+ * - start_date   : YYYY-MM-DD, optionnel avec end_date
+ * - end_date     : YYYY-MM-DD, optionnel avec start_date
+ */
+router.get('/overview', Ensure.get(), controller.overview);
 
 /**
  * GET /api/users/attendance/stat

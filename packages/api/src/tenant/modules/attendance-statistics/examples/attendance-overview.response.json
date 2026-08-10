@@ -1,68 +1,238 @@
 {
   "success": true,
-  "message": "Attendance statistics overview retrieved successfully",
   "data": {
+    "generatedAt": "2026-08-05T18:00:00.000Z",
     "period": {
-      "start_date": "2026-07-01",
-      "end_date": "2026-07-31",
-      "generated_at": "2026-07-31T18:00:00+01:00",
-      "business_timezone": "Africa/Douala"
+      "startDate": "2026-08-04",
+      "endDate": "2026-08-05",
+      "dayCount": 2
     },
     "scope": {
-      "manager_guid": "manager-guid",
-      "employees_evaluated": 3,
-      "employee_days_evaluated": 6
+      "managerGuid": "1234567890123456",
+      "siteGuid": null,
+      "teamSize": 2,
+      "employees": [
+        {
+          "guid": "1111111111111111",
+          "name": "Alice Exemple"
+        },
+        {
+          "guid": "2222222222222222",
+          "name": "Bob Exemple"
+        }
+      ]
     },
-    "attendance": {
-      "status": "PARTIAL",
-      "unavailability_reason": null,
-      "employee_working_days_expected": 3,
-      "present_employee_days": 1,
-      "late_employee_days": 1,
-      "absent_employee_days": 1,
-      "attendance_rate": 66.67,
-      "absence_rate": 33.33,
-      "punctuality_rate": 50,
-      "total_delay_minutes": 20,
-      "average_delay_minutes": 20
-    },
-    "recorded_activity": {
-      "employees_with_activity": 2,
-      "employee_days_with_activity": 3,
-      "sessions": {
-        "total": 3,
-        "open": 0,
-        "incomplete": 0
+    "summary": {
+      "statusTotals": {
+        "PRESENT": 1,
+        "LATE": 1,
+        "ABSENT": 0,
+        "REST_DAY": 1,
+        "UNDETERMINED": 0,
+        "PENDING": 1
+      },
+      "rates": {
+        "employeeWorkingDaysExpected": 2,
+        "attendedWorkingDays": 2,
+        "onTimeWorkingDays": 1,
+        "lateWorkingDays": 1,
+        "attendanceRate": 100,
+        "punctualityRate": 50
       },
       "durations": {
-        "known_gross_minutes": 1620,
-        "known_pause_minutes": 180,
-        "known_net_minutes": 1440
-      }
-    },
-    "signals": {
-      "presence_on_rest_day_employee_days": 0,
-      "presence_without_schedule_employee_days": 1
-    },
-    "data_quality": {
-      "status": "PARTIAL",
-      "reasons": ["MISSING_SCHEDULE"],
-      "schedule": {
-        "resolved_employee_days": 5,
-        "unresolved_employee_days": 1,
-        "missing_schedule_employee_days": 1,
-        "invalid_schedule_employee_days": 0,
-        "historical_schedule_unavailable_employee_days": 0,
-        "ambiguous_schedule_employee_days": 0,
-        "coverage_rate": 83.33
+        "grossMinutes": 1135,
+        "pauseMinutes": 60,
+        "netMinutes": 1075,
+        "daysWithKnownGrossDuration": 3,
+        "daysWithKnownPauseDuration": 3,
+        "daysWithKnownNetDuration": 3,
+        "daysWithMissingDuration": 0
       },
-      "duration": {
-        "status": "COMPLETE",
-        "employee_days_with_activity": 3,
-        "complete_employee_days": 3,
-        "incomplete_employee_days": 0,
-        "coverage_rate": 100
+      "issueCount": 1
+    },
+    "daily": [
+      {
+        "date": "2026-08-04",
+        "teamSize": 2,
+        "statusTotals": {
+          "PRESENT": 1,
+          "LATE": 1,
+          "ABSENT": 0,
+          "REST_DAY": 0,
+          "UNDETERMINED": 0,
+          "PENDING": 0
+        },
+        "rates": {
+          "employeeWorkingDaysExpected": 2,
+          "attendedWorkingDays": 2,
+          "onTimeWorkingDays": 1,
+          "lateWorkingDays": 1,
+          "attendanceRate": 100,
+          "punctualityRate": 50
+        },
+        "issueCount": 0
+      },
+      {
+        "date": "2026-08-05",
+        "teamSize": 2,
+        "statusTotals": {
+          "PRESENT": 0,
+          "LATE": 0,
+          "ABSENT": 0,
+          "REST_DAY": 1,
+          "UNDETERMINED": 0,
+          "PENDING": 1
+        },
+        "rates": {
+          "employeeWorkingDaysExpected": 0,
+          "attendedWorkingDays": 0,
+          "onTimeWorkingDays": 0,
+          "lateWorkingDays": 0,
+          "attendanceRate": null,
+          "punctualityRate": null
+        },
+        "issueCount": 1
       }
+    ],
+    "employees": [
+      {
+        "employeeGuid": "1111111111111111",
+        "employeeName": "Alice Exemple",
+        "statusTotals": {
+          "PRESENT": 1,
+          "LATE": 0,
+          "ABSENT": 0,
+          "REST_DAY": 0,
+          "UNDETERMINED": 0,
+          "PENDING": 1
+        },
+        "rates": {
+          "employeeWorkingDaysExpected": 1,
+          "attendedWorkingDays": 1,
+          "onTimeWorkingDays": 1,
+          "lateWorkingDays": 0,
+          "attendanceRate": 100,
+          "punctualityRate": 100
+        },
+        "durations": {
+          "grossMinutes": 535,
+          "pauseMinutes": 60,
+          "netMinutes": 475,
+          "daysWithKnownGrossDuration": 1,
+          "daysWithKnownPauseDuration": 1,
+          "daysWithKnownNetDuration": 1,
+          "daysWithMissingDuration": 0
+        },
+        "issueCount": 0,
+        "days": [
+          {
+            "date": "2026-08-04",
+            "status": "PRESENT",
+            "rateEligible": true,
+            "delayMinutes": 5,
+            "firstClockIn": "08:05:00",
+            "lastClockOut": "17:00:00",
+            "grossMinutes": 535,
+            "pauseMinutes": 60,
+            "netMinutes": 475,
+            "issues": []
+          },
+          {
+            "date": "2026-08-05",
+            "status": "PENDING",
+            "rateEligible": false,
+            "delayMinutes": null,
+            "firstClockIn": null,
+            "lastClockOut": null,
+            "grossMinutes": null,
+            "pauseMinutes": null,
+            "netMinutes": null,
+            "issues": []
+          }
+        ]
+      },
+      {
+        "employeeGuid": "2222222222222222",
+        "employeeName": "Bob Exemple",
+        "statusTotals": {
+          "PRESENT": 0,
+          "LATE": 1,
+          "ABSENT": 0,
+          "REST_DAY": 1,
+          "UNDETERMINED": 0,
+          "PENDING": 0
+        },
+        "rates": {
+          "employeeWorkingDaysExpected": 1,
+          "attendedWorkingDays": 1,
+          "onTimeWorkingDays": 0,
+          "lateWorkingDays": 1,
+          "attendanceRate": 100,
+          "punctualityRate": 0
+        },
+        "durations": {
+          "grossMinutes": 600,
+          "pauseMinutes": 0,
+          "netMinutes": 600,
+          "daysWithKnownGrossDuration": 2,
+          "daysWithKnownPauseDuration": 2,
+          "daysWithKnownNetDuration": 2,
+          "daysWithMissingDuration": 0
+        },
+        "issueCount": 1,
+        "days": [
+          {
+            "date": "2026-08-04",
+            "status": "LATE",
+            "rateEligible": true,
+            "delayMinutes": 20,
+            "firstClockIn": "08:20:00",
+            "lastClockOut": "16:20:00",
+            "grossMinutes": 480,
+            "pauseMinutes": 0,
+            "netMinutes": 480,
+            "issues": []
+          },
+          {
+            "date": "2026-08-05",
+            "status": "REST_DAY",
+            "rateEligible": false,
+            "delayMinutes": null,
+            "firstClockIn": "10:00:00",
+            "lastClockOut": "12:00:00",
+            "grossMinutes": 120,
+            "pauseMinutes": 0,
+            "netMinutes": 120,
+            "issues": [
+              "PRESENCE_ON_REST_DAY"
+            ]
+          }
+        ]
+      }
+    ],
+    "issues": [
+      {
+        "issue": "PRESENCE_ON_REST_DAY",
+        "count": 1,
+        "employeesConcerned": 1,
+        "occurrences": [
+          {
+            "employeeGuid": "2222222222222222",
+            "employeeName": "Bob Exemple",
+            "date": "2026-08-05",
+            "status": "REST_DAY"
+          }
+        ]
+      }
+    ],
+    "dataQuality": {
+      "unresolvedScheduleDays": 0,
+      "presenceWithoutScheduleDays": 0,
+      "openSessionDays": 0,
+      "incompleteSessionDays": 0,
+      "missingDurationDays": 0,
+      "reliableForAttendanceRate": true,
+      "notes": []
     }
   }
 }

@@ -10,11 +10,7 @@ export type ScheduleState = 'WORK_DAY' | 'REST_DAY' | 'UNRESOLVED';
 
 export type ScheduleSource = 'DIRECT' | 'ROTATION' | 'DEFAULT' | 'EXCEPTION';
 
-export type ScheduleResolutionIssue =
-  | 'MISSING_SCHEDULE'
-  | 'INVALID_SCHEDULE'
-  | 'HISTORICAL_SCHEDULE_UNAVAILABLE'
-  | 'AMBIGUOUS_SCHEDULE';
+export type ScheduleResolutionIssue = 'MISSING_SCHEDULE' | 'INVALID_SCHEDULE';
 
 export type AttendanceIssue =
   | 'PRESENCE_ON_REST_DAY'
