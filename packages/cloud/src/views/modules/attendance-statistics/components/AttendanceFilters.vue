@@ -103,9 +103,9 @@ function submit(): void {
         <h2 id="attendance-filters-title" class="text-base font-bold text-slate-950">
           Période et périmètre
         </h2>
-        <p id="attendance-filter-help" class="mt-1 text-sm text-slate-500">
-          Les dates sont envoyées à l'API au format métier YYYY-MM-DD.
-        </p>
+<!--        <p id="attendance-filter-help" class="mt-1 text-sm text-slate-500">-->
+<!--          Les dates sont envoyées à l'API au format métier YYYY-MM-DD.-->
+<!--        </p>-->
       </div>
     </div>
 

@@ -36,14 +36,21 @@ const netDuration = computed(() => {
 
 <template>
   <Teleport to="body">
+
     <div v-if="open && employee" class="fixed inset-0 z-50" role="presentation">
-      <button
-        type="button"
-        class="absolute inset-0 bg-slate-950/45 backdrop-blur-[1px]"
-        aria-label="Fermer le détail de l’employé"
-        tabindex="-1"
-        @click="emit('close')"
+      <div
+          class="absolute inset-0 bg-slate-950/45 backdrop-blur-[1px]"
+          aria-hidden="true"
       />
+
+<!--    <div v-if="open && employee" class="fixed inset-0 z-50" role="presentation">-->
+<!--      <button-->
+<!--        type="button"-->
+<!--        class="absolute inset-0 bg-slate-950/45 backdrop-blur-[1px]"-->
+<!--        aria-label="Fermer le détail de l’employé"-->
+<!--        tabindex="-1"-->
+<!--        @click="emit('close')"-->
+<!--      />-->
 
       <aside
         ref="dialogRef"

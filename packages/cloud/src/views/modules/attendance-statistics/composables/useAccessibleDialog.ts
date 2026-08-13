@@ -36,11 +36,11 @@ export function useAccessibleDialog(options: AccessibleDialogOptions): void {
   function handleKeydown(event: KeyboardEvent): void {
     if (!options.open.value) return;
 
-    if (event.key === 'Escape') {
-      event.preventDefault();
-      options.close();
-      return;
-    }
+    // if (event.key === 'Escape') {
+    //   event.preventDefault();
+    //   options.close();
+    //   return;
+    // }
 
     if (event.key !== 'Tab') return;
     const focusable = getFocusableElements();

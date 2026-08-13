@@ -1,6 +1,6 @@
 <template>
-  <div class="min-h-full bg-slate-50/40">
-    <div class="mx-auto w-full max-w-[1500px] px-4 py-6 sm:px-6 lg:px-8 lg:py-8">
+  <div class="min-h-full">
+    <div class="mx-auto w-full max-w-screen-2xl px-4 py-6 sm:px-6 lg:px-8 lg:py-8">
       <header class="relative overflow-hidden rounded-3xl bg-blue-700 px-6 py-7 text-white shadow-xl shadow-slate-950/10 sm:px-8 sm:py-8 lg:px-10">
         <div class="pointer-events-none absolute inset-0" aria-hidden="true">
           <div class="absolute -right-20 -top-28 h-72 w-72 rounded-full bg-white/10 blur-3xl" />

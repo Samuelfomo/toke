@@ -5,7 +5,7 @@ import type {
     PlanningRequirementPayload,
 } from '@/views/planning/suggestion/planningSuggestion.type'
 
-const baseUrl = '/planning-suggestion-requirements'
+const baseUrl = '/planning-requirement'
 
 export default class PlanningSuggestionRequirementService {
     static async listByConfig(configGuid: string): Promise<ApiResponse> {
