@@ -1,7 +1,12 @@
 import jsPDF from 'jspdf'
 import autoTable from 'jspdf-autotable'
 
-import {computeDayBlocks, getMemberBlockStatus, ScheduleExportOptions} from "./scheduleAssignment.export";
+import {
+    computeDayBlocks,
+    getMemberBlockStatus,
+    ScheduleExportOptions,
+    shouldShowScheduleGroupColumn,
+} from "./scheduleAssignment.export";
 import {buildPeriodDays, buildPeriodLabel, JS_DAY_TO_KEY} from "./export.helpers";
 
 // ── Palette ───────────────────────────────────────────────────────────────────
@@ -48,6 +53,7 @@ const RECAP_MIN_H  = 20   // mm : si moins de place, nouvelle page pour le réca
 
 export function exportSchedulePDF(options: ScheduleExportOptions): void {
     const { members, periodFrom, periodTo, generatedBy, tenantName } = options
+    const showGroupColumn = shouldShowScheduleGroupColumn(members)
 
     const doc   = new jsPDF({ orientation: 'landscape', unit: 'mm', format: 'a4' })
     const pageW = doc.internal.pageSize.getWidth()    // 297 mm
@@ -149,16 +155,20 @@ export function exportSchedulePDF(options: ScheduleExportOptions): void {
     // ── Colonnes tableau ──────────────────────────────────────────────────────
 
     function buildColumnStyles(blockCount: number): Record<number, object> {
-        const fixedW   = 42 + 18 + 28
-        const blockW   = Math.max(14, Math.min(22, Math.floor((CONTENT - fixedW) / Math.max(blockCount, 1))))
+        const fixedW = 42 + 18 + (showGroupColumn ? 28 : 0)
+        const blockW = Math.max(14, Math.min(22, Math.floor((CONTENT - fixedW) / Math.max(blockCount, 1))))
         const leftover = CONTENT - fixedW - blockW * blockCount
         const colStyles: Record<number, object> = {
             0: { cellWidth: 42 + leftover, overflow: 'ellipsize' },
             1: { cellWidth: 18, halign: 'center' },
-            2: { cellWidth: 28, overflow: 'ellipsize' },
+        }
+        let blockStartIndex = 2
+        if (showGroupColumn) {
+            colStyles[2] = { cellWidth: 28, overflow: 'ellipsize' }
+            blockStartIndex = 3
         }
         for (let i = 0; i < blockCount; i++) {
-            colStyles[3 + i] = { cellWidth: blockW, halign: 'center' }
+            colStyles[blockStartIndex + i] = { cellWidth: blockW, halign: 'center' }
         }
         return colStyles
     }
@@ -170,7 +180,7 @@ export function exportSchedulePDF(options: ScheduleExportOptions): void {
             const row: (string | { content: string; styles: object })[] = [
                 m.name,
                 m.code || '—',
-                m.groupName ?? 'Sans groupe',
+                ...(showGroupColumn ? [m.groupName ?? 'Sans groupe'] : []),
             ]
             for (const b of blocks) {
                 const status = getMemberBlockStatus(m, dayKey, b)
@@ -237,7 +247,11 @@ export function exportSchedulePDF(options: ScheduleExportOptions): void {
             doc.text('Aucun bloc horaire planifié — jour de repos.', MARGIN + 3, curY + 4)
             curY += 8
         } else {
-            const head        = ['Employé', 'Matricule', 'Groupe', ...blocks.map(b => b.label)]
+            const head = [
+                'Employé', 'Matricule',
+                ...(showGroupColumn ? ['Groupe'] : []),
+                ...blocks.map(b => b.label),
+            ]
             const body        = buildTableBody(dayKey, blocks)
             const colStyles   = buildColumnStyles(blocks.length)
 
@@ -305,13 +319,21 @@ export function exportSchedulePDF(options: ScheduleExportOptions): void {
                 const slots = m.schedule[d.dayKey]
                 if (slots && slots.length > 0) worked++; else rest++
             }
-            return [m.name, m.code || '—', m.groupName ?? 'Sans groupe', String(worked), String(rest)]
+            return [
+                m.name, m.code || '—',
+                ...(showGroupColumn ? [m.groupName ?? 'Sans groupe'] : []),
+                String(worked), String(rest),
+            ]
         })
 
         autoTable(doc, {
             startY: curY,
             margin: { left: MARGIN, right: MARGIN },
-            head:   [['Employé', 'Matricule', 'Groupe', 'Jours travaillés', 'Jours de repos']],
+            head: [[
+                'Employé', 'Matricule',
+                ...(showGroupColumn ? ['Groupe'] : []),
+                'Jours travaillés', 'Jours de repos',
+            ]],
             body:   recapBody,
             theme:  'grid',
             styles: {
@@ -329,13 +351,20 @@ export function exportSchedulePDF(options: ScheduleExportOptions): void {
                 fontSize:  8,
             },
             alternateRowStyles: { fillColor: C.rowAlt },
-            columnStyles: {
-                0: { cellWidth: 55 },
-                1: { cellWidth: 28, halign: 'center' },
-                2: { cellWidth: 40 },
-                3: { cellWidth: 35, halign: 'center' },
-                4: { cellWidth: 35, halign: 'center' },
-            },
+            columnStyles: showGroupColumn
+                ? {
+                    0: { cellWidth: 55 },
+                    1: { cellWidth: 28, halign: 'center' },
+                    2: { cellWidth: 40 },
+                    3: { cellWidth: 35, halign: 'center' },
+                    4: { cellWidth: 35, halign: 'center' },
+                }
+                : {
+                    0: { cellWidth: 70 },
+                    1: { cellWidth: 35, halign: 'center' },
+                    2: { cellWidth: 45, halign: 'center' },
+                    3: { cellWidth: 45, halign: 'center' },
+                },
         })
     }
 

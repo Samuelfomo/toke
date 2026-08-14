@@ -42,6 +42,39 @@
             </Transition>
           </div>
 
+          <!-- Export simplifié : format mural inspiré du planning manuel du client -->
+          <div class="relative" ref="simpleExportDropdownRef">
+            <button @click="simpleExportDropdownOpen = !simpleExportDropdownOpen"
+                    class="flex items-center gap-2 px-4 py-2.5 border border-emerald-200 bg-emerald-50 hover:bg-emerald-100 text-emerald-700 text-sm font-semibold rounded-xl transition">
+              <IconFileText :size="14"/>
+              Export simplifié
+              <IconChevronDown :size="13" class="text-emerald-500"/>
+            </button>
+            <Transition name="dropdown">
+              <div v-if="simpleExportDropdownOpen"
+                   class="absolute right-0 top-full mt-1.5 w-52 bg-white border border-slate-200 rounded-xl shadow-lg z-20 overflow-hidden">
+                <button @click="handleSimpleExportPDF" :disabled="!canExport || simpleExportLoading === 'pdf'"
+                        class="w-full flex items-center gap-2.5 px-4 py-2.5 text-sm text-slate-700 hover:bg-slate-50 transition disabled:opacity-40 disabled:cursor-not-allowed">
+                  <IconFile :size="15" class="text-red-500"/>
+                  <span>PDF pour affichage</span>
+                  <IconLoader2 v-if="simpleExportLoading === 'pdf'" :size="12" class="ml-auto animate-spin text-slate-400"/>
+                </button>
+                <button @click="handleSimpleExportExcel" :disabled="!canExport || simpleExportLoading === 'excel'"
+                        class="w-full flex items-center gap-2.5 px-4 py-2.5 text-sm text-slate-700 hover:bg-slate-50 transition disabled:opacity-40 disabled:cursor-not-allowed">
+                  <IconTable :size="15" class="text-blue-500"/>
+                  <span>Excel simplifié</span>
+                  <IconLoader2 v-if="simpleExportLoading === 'excel'" :size="12" class="ml-auto animate-spin text-slate-400"/>
+                </button>
+                <button @click="handleSimpleExportCSV" :disabled="!canExport || simpleExportLoading === 'csv'"
+                        class="w-full flex items-center gap-2.5 px-4 py-2.5 text-sm text-slate-700 hover:bg-slate-50 transition disabled:opacity-40 disabled:cursor-not-allowed">
+                  <IconFileText :size="15" class="text-green-500"/>
+                  <span>CSV simplifié</span>
+                  <IconLoader2 v-if="simpleExportLoading === 'csv'" :size="12" class="ml-auto animate-spin text-slate-400"/>
+                </button>
+              </div>
+            </Transition>
+          </div>
+
           <button @click="handleExportExcel" :disabled="!canExport || exportLoading === 'excel'"
                   class="flex items-center gap-2 px-4 py-2.5 bg-blue-600 hover:bg-blue-700 text-white text-sm font-bold rounded-xl shadow-sm shadow-blue-200 transition disabled:opacity-40 disabled:cursor-not-allowed">
             <IconLoader2 v-if="exportLoading === 'excel'" :size="14" class="animate-spin"/>
@@ -525,6 +558,11 @@ import type {
 import {useUserStore} from '@/stores/userStore'
 import {exportScheduleCSV, exportScheduleExcel} from '@/utils/exports/scheduleAssignment.export'
 import {exportSchedulePDF} from "@/utils/exports/exportSchedulePDF";
+import {
+  exportScheduleSimpleCSV,
+  exportScheduleSimpleExcel,
+} from '@/utils/exports/scheduleAssignment.simple.export'
+import {exportScheduleSimplePDF} from '@/utils/exports/exportScheduleSimplePDF'
 
 const userStore = useUserStore()
 const router = useRouter()
@@ -577,6 +615,9 @@ const searchQuery = ref('')
 const exportDropdownOpen = ref(false)
 const exportDropdownRef = ref<HTMLElement | null>(null)
 const exportLoading = ref<'pdf' | 'excel' | 'csv' | null>(null)
+const simpleExportDropdownOpen = ref(false)
+const simpleExportDropdownRef = ref<HTMLElement | null>(null)
+const simpleExportLoading = ref<'pdf' | 'excel' | 'csv' | null>(null)
 const employeesPerPage = ref<number>(10)
 
 const today = new Date()
@@ -773,11 +814,16 @@ type ScheduleSlot = {
 interface FlatMember {
   guid: string
   name: string
+  firstName: string
+  lastName: string
   code: string
   groupName: string | null
 
   /** Vérité d'affichage : planning résolu pour chaque date ISO. */
   scheduleByDate: Record<string, ScheduleSlot[]>
+
+  /** Repos explicite publié — ne pas confondre avec une absence d'affectation. */
+  restByDate: Record<string, boolean>
 
   /** Conservé uniquement pour compatibilité avec les exports existants. */
   schedule: Record<string, ScheduleSlot[]>
@@ -786,6 +832,8 @@ interface FlatMember {
 interface MemberAccumulator {
   guid: string
   name: string
+  firstName: string
+  lastName: string
   code: string
   groupName: string | null
   directAssignments: IScheduleAssignment[]
@@ -841,6 +889,8 @@ const allFlatMembers = computed<FlatMember[]>(() => {
   const ensureMember = (
       guid: string,
       name: string,
+      firstName: string,
+      lastName: string,
       code: string,
       groupName: string | null,
   ): MemberAccumulator => {
@@ -853,6 +903,8 @@ const allFlatMembers = computed<FlatMember[]>(() => {
     const created: MemberAccumulator = {
       guid,
       name,
+      firstName,
+      lastName,
       code,
       groupName,
       directAssignments: [],
@@ -867,6 +919,8 @@ const allFlatMembers = computed<FlatMember[]>(() => {
       const member = ensureMember(
           assignment.related.guid,
           `${assignment.related.first_name} ${assignment.related.last_name}`.trim(),
+          assignment.related.first_name ?? '',
+          assignment.related.last_name ?? '',
           assignment.related.employee_code ?? '',
           null,
       )
@@ -886,6 +940,8 @@ const allFlatMembers = computed<FlatMember[]>(() => {
         const member = ensureMember(
             groupMember.user.guid,
             `${groupMember.user.first_name} ${groupMember.user.last_name}`.trim(),
+            groupMember.user.first_name ?? '',
+            groupMember.user.last_name ?? '',
             groupMember.user.employee_code ?? '',
             assignment.related.name,
         )
@@ -898,6 +954,7 @@ const allFlatMembers = computed<FlatMember[]>(() => {
 
   for (const member of members.values()) {
     const scheduleByDate: Record<string, ScheduleSlot[]> = {}
+    const restByDate: Record<string, boolean> = {}
     const legacySchedule: Record<string, ScheduleSlot[]> = {}
 
     for (const day of calendarDays.value) {
@@ -911,6 +968,7 @@ const allFlatMembers = computed<FlatMember[]>(() => {
 
       const slots = assignmentSlotsForIso(winner, day.iso)
       scheduleByDate[day.iso] = slots
+      restByDate[day.iso] = isPlannedRestAssignment(winner)
 
       // Compatibilité temporaire avec les exports actuels.
       const key = dayKeyFromIso(day.iso)
@@ -920,9 +978,12 @@ const allFlatMembers = computed<FlatMember[]>(() => {
     result.push({
       guid: member.guid,
       name: member.name,
+      firstName: member.firstName,
+      lastName: member.lastName,
       code: member.code,
       groupName: member.groupName,
       scheduleByDate,
+      restByDate,
       schedule: legacySchedule,
     })
   }
@@ -1121,6 +1182,49 @@ function onSaved() {
   load()
 }
 
+function simpleExportOptions() {
+  return {
+    members: allFlatMembers.value,
+    periodFrom: periodFrom.value,
+    periodTo: periodTo.value,
+    generatedBy: `${userStore.user?.first_name} ${userStore.user?.last_name}`.trim(),
+    tenantName: userStore.tenant?.name,
+  }
+}
+
+async function handleSimpleExportPDF() {
+  if (!canExport.value) return
+  simpleExportLoading.value = 'pdf'
+  simpleExportDropdownOpen.value = false
+  try {
+    exportScheduleSimplePDF(simpleExportOptions())
+  } finally {
+    simpleExportLoading.value = null
+  }
+}
+
+async function handleSimpleExportExcel() {
+  if (!canExport.value) return
+  simpleExportLoading.value = 'excel'
+  simpleExportDropdownOpen.value = false
+  try {
+    exportScheduleSimpleExcel(simpleExportOptions())
+  } finally {
+    simpleExportLoading.value = null
+  }
+}
+
+async function handleSimpleExportCSV() {
+  if (!canExport.value) return
+  simpleExportLoading.value = 'csv'
+  simpleExportDropdownOpen.value = false
+  try {
+    exportScheduleSimpleCSV(simpleExportOptions())
+  } finally {
+    simpleExportLoading.value = null
+  }
+}
+
 async function handleExportPDF() {
   if (!canExport.value) return
   exportLoading.value = 'pdf';
@@ -1159,6 +1263,9 @@ async function handleExportCSV() {
 function onDocumentClick(e: MouseEvent) {
   if (exportDropdownRef.value && !exportDropdownRef.value.contains(e.target as Node)) {
     exportDropdownOpen.value = false
+  }
+  if (simpleExportDropdownRef.value && !simpleExportDropdownRef.value.contains(e.target as Node)) {
+    simpleExportDropdownOpen.value = false
   }
 }
 
