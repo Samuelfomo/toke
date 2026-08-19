@@ -1,4 +1,14 @@
 <template>
+  <div class="mx-auto w-full max-w-[1500px] py-6 flex justify-end">
+    <RouterLink
+        :to="{ name: 'planning-menu' }"
+        class="inline-flex items-center gap-2 bg-slate-50/15 rounded-md hover:bg-slate-50/30 p-1 text-sm font-semibold text-slate-600 no-underline transition hover:text-blue-700"
+    >
+      <IconArrowLeft :size="18"/>
+      Retour aux outils de planification
+    </RouterLink>
+  </div>
+
   <div class="mx-auto flex h-full w-full max-w-[1500px] flex-col bg-slate-50 px-4 sm:px-6 lg:px-8">
     <!-- ── Header ── -->
     <div class="py-5 flex-shrink-0">
@@ -821,7 +831,7 @@ import {
   IconInfoCircle, IconPower, IconAlertTriangle, IconLayoutGrid,
   IconChartBar, IconUpload, IconChevronDown, IconTable, IconFile,
   IconFileText, IconClock, IconCoffee, IconRotate, IconCalendar,
-  IconList, IconRefresh, IconPencil, IconTrash, IconHash, IconPrinter,
+  IconList, IconRefresh, IconPencil, IconTrash, IconHash, IconPrinter, IconArrowLeft,
 } from '@tabler/icons-vue'
 
 // Icône Timeline (non dispo dans toutes versions de tabler, fallback sur IconGitBranch)

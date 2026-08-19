@@ -3,7 +3,7 @@ import type {
   AttendanceOverview,
   AttendanceIssueOccurrence,
   BusinessDate,
-} from '@/views/modules/attendance-statistics';
+} from '../types/attendance-statistics.types.js';
 
 export const ATTENDANCE_EMPLOYEE_DAY_PAGE_SIZES = [14, 31, 62] as const;
 export type AttendanceEmployeeDayPageSize = (typeof ATTENDANCE_EMPLOYEE_DAY_PAGE_SIZES)[number];

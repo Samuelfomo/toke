@@ -1,6 +1,6 @@
 <script setup lang="ts">
-import type { AttendanceEmployeeOverview } from '@/views/modules/attendance-statistics';
-import type { AttendanceEmployeeSort, AttendanceEmployeeSortKey } from '@/views/modules/attendance-statistics';
+import type { AttendanceEmployeeOverview } from '../types/attendance-statistics.types.js';
+import type { AttendanceEmployeeSort, AttendanceEmployeeSortKey } from '../types/attendance-statistics.ui.types.js';
 import { formatDurationMinutes } from '../utils/duration.js';
 import { formatPercentage } from '../utils/percentage.js';
 

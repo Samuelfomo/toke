@@ -13,14 +13,14 @@ import AttendanceOverviewHeader from '../components/AttendanceOverviewHeader.vue
 import AttendanceOverviewScopeCard from '../components/AttendanceOverviewScopeCard.vue';
 import AttendanceOverviewSkeleton from '../components/AttendanceOverviewSkeleton.vue';
 import AttendanceVisualizations from '../components/AttendanceVisualizations.vue';
-import type {AttendanceStatisticsService} from '@/views/modules/attendance-statistics';
-import type {BusinessDate} from '@/views/modules/attendance-statistics';
+import type {AttendanceStatisticsService} from '../services/attendance-statistics.service.js';
+import type {BusinessDate} from '../types/attendance-statistics.types.js';
 import type {AttendanceIssueTarget} from '../utils/attendance-issues.js';
 import type {
   AttendancePeriodPreset,
   AttendanceSiteOption,
-} from '@/views/modules/attendance-statistics';
-import {useAttendanceOverviewPage} from '@/views/modules/attendance-statistics';
+} from '../types/attendance-statistics.ui.types.js';
+import {useAttendanceOverviewPage} from '../composables/useAttendanceOverviewPage.js';
 import {getAttendancePeriodForPreset} from '../utils/attendance-period.js';
 
 interface Props {
@@ -80,7 +80,7 @@ const liveMessage = computed(() => {
 </script>
 
 <template>
-  <div class="min-h-screen px-4 py-5 sm:px-6 sm:py-7 lg:px-8">
+  <div class="min-h-screen bg-slate-50 px-4 py-5 sm:px-6 sm:py-7 lg:px-8">
     <nav aria-label="Accès rapide au contenu" class="sr-only focus-within:not-sr-only">
       <div class="fixed left-4 top-4 z-[70] flex flex-wrap gap-2 rounded-xl bg-white p-2 shadow-xl">
         <a href="#attendance-main-content"
@@ -132,9 +132,8 @@ const liveMessage = computed(() => {
         </button>
       </div>
 
-      <section id="attendance-main-content" tabindex="-1" class="outline-none">
-        <AttendanceOverviewSkeleton v-if="page.pageState.value === 'loading'"
-                                    :class="page.pageState.value === 'loading' ? 'bg-slate-50' : ''"/>
+      <main id="attendance-main-content" tabindex="-1" class="outline-none">
+        <AttendanceOverviewSkeleton v-if="page.pageState.value === 'loading'"/>
 
         <AttendanceOverviewErrorState
             v-else-if="page.pageState.value === 'error'"
@@ -178,7 +177,7 @@ const liveMessage = computed(() => {
             </div>
           </slot>
         </template>
-      </section>
+      </main>
     </div>
   </div>
 </template>

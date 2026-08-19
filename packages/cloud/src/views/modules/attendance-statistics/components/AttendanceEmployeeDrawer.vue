@@ -1,8 +1,8 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue';
 
-import { useAccessibleDialog } from '@/views/modules/attendance-statistics';
-import type { AttendanceEmployeeOverview, BusinessDate } from '@/views/modules/attendance-statistics';
+import { useAccessibleDialog } from '../composables/useAccessibleDialog.js';
+import type { AttendanceEmployeeOverview, BusinessDate } from '../types/attendance-statistics.types.js';
 import { formatDurationMinutes } from '../utils/duration.js';
 import { formatPercentage } from '../utils/percentage.js';
 import AttendanceEmployeeDaysTable from './AttendanceEmployeeDaysTable.vue';
@@ -36,21 +36,14 @@ const netDuration = computed(() => {
 
 <template>
   <Teleport to="body">
-
     <div v-if="open && employee" class="fixed inset-0 z-50" role="presentation">
-      <div
-          class="absolute inset-0 bg-slate-950/45 backdrop-blur-[1px]"
-          aria-hidden="true"
+      <button
+        type="button"
+        class="absolute inset-0 bg-slate-950/45 backdrop-blur-[1px]"
+        aria-label="Fermer le détail de l’employé"
+        tabindex="-1"
+        @click="emit('close')"
       />
-
-<!--    <div v-if="open && employee" class="fixed inset-0 z-50" role="presentation">-->
-<!--      <button-->
-<!--        type="button"-->
-<!--        class="absolute inset-0 bg-slate-950/45 backdrop-blur-[1px]"-->
-<!--        aria-label="Fermer le détail de l’employé"-->
-<!--        tabindex="-1"-->
-<!--        @click="emit('close')"-->
-<!--      />-->
 
       <aside
         ref="dialogRef"

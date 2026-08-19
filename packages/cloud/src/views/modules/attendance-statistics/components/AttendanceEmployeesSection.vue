@@ -1,12 +1,12 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue';
 
-import type { AttendanceEmployeeOverview, BusinessDate } from '@/views/modules/attendance-statistics';
+import type { AttendanceEmployeeOverview, BusinessDate } from '../types/attendance-statistics.types.js';
 import type {
   AttendanceEmployeeListFilters,
   AttendanceEmployeeSort,
   AttendanceEmployeeSortKey,
-} from '@/views/modules/attendance-statistics';
+} from '../types/attendance-statistics.ui.types.js';
 import {
   buildAttendanceEmployeeListModel,
   DEFAULT_ATTENDANCE_EMPLOYEE_FILTERS,

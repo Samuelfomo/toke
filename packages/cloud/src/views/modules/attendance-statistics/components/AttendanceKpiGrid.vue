@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed } from 'vue';
 
-import type { AttendanceOverview } from '@/views/modules/attendance-statistics';
+import type { AttendanceOverview } from '../types/attendance-statistics.types.js';
 import { buildAttendanceKpis } from '../utils/attendance-kpis.js';
 import AttendanceKpiCard from './AttendanceKpiCard.vue';
 

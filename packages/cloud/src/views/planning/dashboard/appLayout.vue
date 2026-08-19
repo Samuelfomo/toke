@@ -6,8 +6,8 @@
       <Header />
     </header>
 
-    <!-- Navigation compacte conservée sur mobile -->
-    <PlanningMobileBar class="md:hidden" />
+<!--    &lt;!&ndash; Navigation compacte conservée sur mobile &ndash;&gt;-->
+<!--    <PlanningMobileBar class="md:hidden" />-->
 
     <main
         id="planning-main-content"

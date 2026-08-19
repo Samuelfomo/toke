@@ -1,12 +1,11 @@
-import { ATTENDANCE_STATUS_PRESENTATION } from './attendance-status.js';
-import { formatBusinessDate } from './business-date.js';
-import { getAttendanceDailyChartPointSpacing } from './attendance-volume.js';
-
 import type {
   AttendanceDailyOverview,
   AttendanceOverview,
   AttendanceStatus,
-} from '@/views/modules/attendance-statistics';
+} from '../types/attendance-statistics.types.js';
+import { ATTENDANCE_STATUS_PRESENTATION } from './attendance-status.js';
+import { formatBusinessDate } from './business-date.js';
+import { getAttendanceDailyChartPointSpacing } from './attendance-volume.js';
 
 export type AttendanceStatusDistributionGroupId = 'rate_eligible' | 'rate_excluded';
 

@@ -1,5 +1,3 @@
-import { validateAttendanceStatisticsFilters } from '../utils/business-date.js';
-
 import type {
   ApiErrorEnvelope,
   ApiErrorPayload,
@@ -8,7 +6,8 @@ import type {
   AttendanceStatisticsFilters,
   AttendanceStatisticsQueryParams,
   BusinessDate,
-} from '@/views/modules/attendance-statistics';
+} from '../types/attendance-statistics.types.js';
+import { validateAttendanceStatisticsFilters } from '../utils/business-date.js';
 
 export interface HttpGetOptions {
   params?: Record<string, string>;

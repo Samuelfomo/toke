@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed } from 'vue';
 
-import type { AttendanceDailyOverview } from '@/views/modules/attendance-statistics';
+import type { AttendanceDailyOverview } from '../types/attendance-statistics.types.js';
 import { ATTENDANCE_STATUS_PRESENTATION } from '../utils/attendance-status.js';
 import { formatBusinessDate } from '../utils/business-date.js';
 import { formatPercentage } from '../utils/percentage.js';

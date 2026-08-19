@@ -338,11 +338,19 @@
 
                 <!-- Responsable col -->
                 <div class="flex items-center gap-2.5 min-w-0">
-                  <div v-if="row.managerAvatar" class="w-8 h-8 rounded-lg overflow-hidden shrink-0">
+                  <div
+                      v-if="row.managerAvatar"
+                      class="w-8 h-8 rounded-lg overflow-hidden shrink-0 border-2"
+                      :style="employeePhotoStyle(row.managerColor)"
+                  >
                     <img :src="row.managerAvatar" :alt="row.managerName" class="w-full h-full object-cover"/>
                   </div>
-                  <div v-else-if="row.managerName" class="w-8 h-8 rounded-lg bg-slate-200 flex items-center justify-center shrink-0">
-                    <span class="text-[10px] font-bold text-slate-600">{{ row.managerInitials }}</span>
+                  <div
+                      v-else-if="row.managerName"
+                      class="w-8 h-8 rounded-lg border-2 flex items-center justify-center shrink-0"
+                      :style="employeeAvatarStyle(row.managerColor)"
+                  >
+                    <span class="text-[10px] font-bold">{{ row.managerInitials }}</span>
                   </div>
                   <div v-if="row.managerName" class="min-w-0">
                     <p class="text-sm font-semibold text-slate-800 truncate">{{ row.managerName }}</p>
@@ -447,11 +455,19 @@
                 >
                   <!-- Employé -->
                   <div class="flex items-center gap-3 min-w-0">
-                    <div v-if="emp.avatar_url" class="w-8 h-8 rounded-lg overflow-hidden shrink-0 ring-2 ring-white shadow-sm">
+                    <div
+                        v-if="emp.avatar_url"
+                        class="w-8 h-8 rounded-lg overflow-hidden shrink-0 border-2 shadow-sm"
+                        :style="employeePhotoStyle(employeeColorOf(emp))"
+                    >
                       <img :src="emp.avatar_url" :alt="emp.first_name" class="w-full h-full object-cover"/>
                     </div>
-                    <div v-else class="w-8 h-8 rounded-lg bg-gradient-to-br from-[#004AAD]/15 to-[#004AAD]/30 flex items-center justify-center shrink-0 ring-2 ring-white shadow-sm">
-                      <span class="text-[10px] font-bold text-[#004AAD]">{{ initials(emp.first_name, emp.last_name) }}</span>
+                    <div
+                        v-else
+                        class="w-8 h-8 rounded-lg border-2 flex items-center justify-center shrink-0 shadow-sm"
+                        :style="employeeAvatarStyle(employeeColorOf(emp))"
+                    >
+                      <span class="text-[10px] font-bold">{{ initials(emp.first_name, emp.last_name) }}</span>
                     </div>
                     <div class="min-w-0">
                       <p class="text-sm font-semibold text-slate-800 truncate">{{ emp.first_name }} {{ emp.last_name }}</p>
@@ -630,6 +646,7 @@ import HeadBuilder from '@/utils/HeadBuilder'
 import { useUserStore } from '@/stores/userStore'
 import { useEmployee } from '@/utils/useEmployee'
 import { useTeamStore } from '@/stores/teamStore'
+import { employeeAvatarStyle, employeePhotoStyle, normalizeEmployeeColor } from '@/utils/employeeColor'
 import type { Employee, EmployeesWithoutGroup, EmployeesWithoutGroup2 } from '@/utils/interfaces/equipe.interface'
 
 // ── Stores ────────────────────────────────────────────────────────────
@@ -719,6 +736,9 @@ const rowMenuPosition = ref<Record<string, string>>({})
 const initials = (first: string, last: string) =>
     `${(first?.[0] ?? '').toUpperCase()}${(last?.[0] ?? '').toUpperCase()}`
 
+const employeeColorOf = (employee: unknown): string | null =>
+    normalizeEmployeeColor((employee as any)?.employee_color ?? (employee as any)?.employeeColor)
+
 const planningLabel = (type?: string) => {
   if (type === 'rotation') return 'Rotation'
   if (type === 'schedule') return 'Fixe'
@@ -743,6 +763,7 @@ interface TableRow {
   managerName?: string
   managerInitials?: string
   managerAvatar?: string | null
+  managerColor?: string | null
   managerTitle?: string
   structureLabel?: string
   structureClass?: string
@@ -815,6 +836,7 @@ const allRows = computed((): TableRow[] => {
           ? initials(managerEmp.first_name, managerEmp.last_name)
           : '—',
       managerAvatar: managerEmp?.avatar_url ?? null,
+      managerColor: employeeColorOf(managerEmp),
       managerTitle: managerEmp?.job_title ?? '—',
       structureLabel: 'Groupe',
       structureClass: 'bg-indigo-50 text-indigo-700',
@@ -879,6 +901,7 @@ const allRows = computed((): TableRow[] => {
       managerName,
       managerInitials: managerInitialsVal,
       managerAvatar: resolvedManager?.avatar ?? null,
+      managerColor: resolvedManager?.employeeColor ?? null,
       managerTitle: resolvedManager?.jobTitle ?? '—',
       structureLabel: 'Sous-équipe',
       structureClass: 'bg-orange-50 text-orange-700',

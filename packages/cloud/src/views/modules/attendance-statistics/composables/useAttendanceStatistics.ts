@@ -1,18 +1,17 @@
 import { computed, onScopeDispose, ref, shallowRef, type ComputedRef, type Ref } from 'vue';
 
-import { getAttendanceDataQualityLevel } from '../utils/attendance-status.js';
-
 import type {
   AttendanceDataQualityLevel,
   AttendanceEmployeeOverview,
   AttendanceOverview,
   AttendanceStatisticsFilters,
   BusinessDate,
-} from '@/views/modules/attendance-statistics';
+} from '../types/attendance-statistics.types.js';
 import {
   AttendanceStatisticsService,
   AttendanceStatisticsServiceError,
-} from '@/views/modules/attendance-statistics';
+} from '../services/attendance-statistics.service.js';
+import { getAttendanceDataQualityLevel } from '../utils/attendance-status.js';
 
 export interface UseAttendanceStatisticsOptions {
   service: AttendanceStatisticsService;

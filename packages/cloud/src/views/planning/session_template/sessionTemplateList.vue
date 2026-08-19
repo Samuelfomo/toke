@@ -1,5 +1,15 @@
 <template>
-  <div class="flex h-full flex-col bg-slate-50">
+  <div class="mx-auto w-full max-w-[1500px] py-6 flex justify-end">
+    <RouterLink
+        :to="{ name: 'planning-menu' }"
+        class="inline-flex items-center gap-2 bg-slate-50/15 rounded-md hover:bg-slate-50/30 p-1 text-sm font-semibold text-slate-600 no-underline transition hover:text-blue-700"
+    >
+      <IconArrowLeft :size="18"/>
+      Retour aux outils de planification
+    </RouterLink>
+  </div>
+  <div class="mx-auto flex h-full w-full max-w-[1500px] flex-col bg-slate-50">
+<!--  <div class="flex h-full flex-col bg-slate-50">-->
     <header class="flex-shrink-0 border-b border-slate-200 bg-white px-4 py-5 sm:px-8">
       <div class="flex flex-col items-start justify-between gap-4 sm:flex-row sm:items-center">
         <div>
@@ -631,7 +641,7 @@
 <script setup lang="ts">
 import {computed, defineComponent, h, onBeforeUnmount, onMounted, ref} from 'vue'
 import {
-  IconAlertTriangle,
+  IconAlertTriangle, IconArrowLeft,
   IconCalendarEvent,
   IconChevronLeft,
   IconChevronRight,

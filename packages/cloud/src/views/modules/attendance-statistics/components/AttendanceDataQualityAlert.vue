@@ -1,8 +1,8 @@
 <script setup lang="ts">
 import { computed } from 'vue';
 
-import type { AttendanceDataQuality } from '@/views/modules/attendance-statistics';
-import { buildAttendanceDataQualityPresentation } from '@/views/modules/attendance-statistics';
+import type { AttendanceDataQuality } from '../types/attendance-statistics.types.js';
+import { buildAttendanceDataQualityPresentation } from '../utils/attendance-data-quality.js';
 
 interface Props {
   quality: AttendanceDataQuality;

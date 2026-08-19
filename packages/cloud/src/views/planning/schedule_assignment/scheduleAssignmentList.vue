@@ -1,4 +1,13 @@
 <template>
+  <div class="mx-auto w-full max-w-[1500px] py-6 flex justify-end">
+    <RouterLink
+        :to="{ name: 'planning-menu' }"
+        class="inline-flex items-center gap-2 bg-slate-50/15 rounded-md hover:bg-slate-50/30 p-1 text-sm font-semibold text-slate-600 no-underline transition hover:text-blue-700"
+    >
+      <IconArrowLeft :size="18"/>
+      Retour aux outils de planification
+    </RouterLink>
+  </div>
   <div class="mx-auto flex h-full w-full max-w-[1500px] flex-col overflow-hidden bg-slate-50 px-4 pb-5 sm:px-6 lg:px-8">
 
     <!-- ── En-tête ── -->
@@ -57,22 +66,53 @@
                         class="w-full flex items-center gap-2.5 px-4 py-2.5 text-sm text-slate-700 hover:bg-slate-50 transition disabled:opacity-40 disabled:cursor-not-allowed">
                   <IconFile :size="15" class="text-red-500"/>
                   <span>PDF pour affichage</span>
-                  <IconLoader2 v-if="simpleExportLoading === 'pdf'" :size="12" class="ml-auto animate-spin text-slate-400"/>
+                  <IconLoader2 v-if="simpleExportLoading === 'pdf'" :size="12"
+                               class="ml-auto animate-spin text-slate-400"/>
                 </button>
                 <button @click="handleSimpleExportExcel" :disabled="!canExport || simpleExportLoading === 'excel'"
                         class="w-full flex items-center gap-2.5 px-4 py-2.5 text-sm text-slate-700 hover:bg-slate-50 transition disabled:opacity-40 disabled:cursor-not-allowed">
                   <IconTable :size="15" class="text-blue-500"/>
                   <span>Excel simplifié</span>
-                  <IconLoader2 v-if="simpleExportLoading === 'excel'" :size="12" class="ml-auto animate-spin text-slate-400"/>
+                  <IconLoader2 v-if="simpleExportLoading === 'excel'" :size="12"
+                               class="ml-auto animate-spin text-slate-400"/>
                 </button>
                 <button @click="handleSimpleExportCSV" :disabled="!canExport || simpleExportLoading === 'csv'"
                         class="w-full flex items-center gap-2.5 px-4 py-2.5 text-sm text-slate-700 hover:bg-slate-50 transition disabled:opacity-40 disabled:cursor-not-allowed">
                   <IconFileText :size="15" class="text-green-500"/>
                   <span>CSV simplifié</span>
-                  <IconLoader2 v-if="simpleExportLoading === 'csv'" :size="12" class="ml-auto animate-spin text-slate-400"/>
+                  <IconLoader2 v-if="simpleExportLoading === 'csv'" :size="12"
+                               class="ml-auto animate-spin text-slate-400"/>
                 </button>
               </div>
             </Transition>
+          </div>
+
+          <!-- Planning optimisé : choix explicite de la stratégie de couleur du PDF -->
+          <div class="flex items-stretch rounded-xl border border-indigo-200 bg-white overflow-hidden">
+            <label class="sr-only" for="optimized-pdf-mode">Type de PDF optimisé</label>
+            <select
+                id="optimized-pdf-mode"
+                v-model="optimizedPdfMode"
+                :disabled="optimizedExportLoading"
+                class="min-w-[180px] bg-white px-3 py-2.5 text-xs font-semibold text-slate-700 outline-none border-r border-indigo-100 disabled:opacity-50"
+                title="Choisir la représentation des couleurs dans le PDF optimisé"
+            >
+              <option value="personalized">PDF personnalisé</option>
+              <option value="generalized">PDF généralisé · services</option>
+            </select>
+
+            <button
+                @click="handleOptimizedExportPDF"
+                :disabled="!canExport || optimizedExportLoading"
+                class="flex items-center gap-2 px-4 py-2.5 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 text-sm font-semibold transition disabled:opacity-40 disabled:cursor-not-allowed"
+                :title="optimizedPdfMode === 'personalized'
+                  ? 'Les couleurs représentent les employés'
+                  : 'Les couleurs représentent les services'"
+            >
+              <IconLoader2 v-if="optimizedExportLoading" :size="14" class="animate-spin"/>
+              <IconCalendarStats v-else :size="14"/>
+              Générer PDF
+            </button>
           </div>
 
           <button @click="handleExportExcel" :disabled="!canExport || exportLoading === 'excel'"
@@ -138,35 +178,82 @@
         <div class="flex flex-col gap-1">
           <span class="text-xs text-slate-400 font-bold uppercase tracking-wide">Période</span>
           <div class="flex items-center gap-1.5">
-            <input type="date" v-model="periodFrom" class="filter-input text-xs py-1.5 cursor-pointer"/>
+            <input
+                type="date"
+                v-model="draftPeriodFrom"
+                class="filter-input text-xs py-1.5 cursor-pointer"
+            />
             <IconArrowRight :size="12" class="text-slate-300 flex-shrink-0"/>
-            <input type="date" v-model="periodTo" :min="periodFrom" class="filter-input text-xs py-1.5 cursor-pointer"/>
+            <input
+                type="date"
+                v-model="draftPeriodTo"
+                :min="draftPeriodFrom"
+                class="filter-input text-xs py-1.5 cursor-pointer"
+            />
+            <button
+                type="button"
+                @click="applyPeriod"
+                :disabled="!canApplyPeriod || loading"
+                class="ml-1 flex items-center gap-1.5 rounded-lg bg-blue-500 px-3 py-1.5 text-xs font-bold text-white transition hover:bg-blue-600 disabled:cursor-not-allowed disabled:opacity-40"
+                :title="periodValidationError || (hasPendingPeriodChange ? 'Appliquer la période sélectionnée' : 'Période déjà appliquée')"
+            >
+              <IconLoader2 v-if="loading" :size="12" class="animate-spin"/>
+              <IconSearch v-else :size="12"/>
+              Rechercher
+            </button>
+          </div>
+          <p v-if="periodValidationError" class="text-[10px] font-medium text-red-500">
+            {{ periodValidationError }}
+          </p>
+          <p v-else-if="hasPendingPeriodChange" class="text-[10px] font-medium text-blue-500">
+            Période modifiée — cliquez sur Rechercher pour l'appliquer.
+          </p>
+        </div>
+
+        <div class="flex flex-col gap-1">
+          <span class="text-xs text-slate-400 font-bold uppercase tracking-wide">Affichage</span>
+          <div class="flex rounded-lg border border-slate-200 overflow-hidden">
+            <button
+                @click="displayMode = 'detailed'"
+                class="px-3 py-1.5 text-xs font-semibold transition"
+                :class="displayMode === 'detailed' ? 'bg-blue-500 text-white' : 'bg-white text-slate-500 hover:bg-slate-50'"
+            >Détaillé
+            </button>
+            <button
+                @click="displayMode = 'simple'"
+                class="px-3 py-1.5 text-xs font-semibold transition border-l border-slate-200"
+                :class="displayMode === 'simple' ? 'bg-emerald-500 text-white' : 'bg-white text-slate-500 hover:bg-slate-50'"
+            >Simplifié
+            </button>
+            <button
+                @click="displayMode = 'optimized'"
+                class="px-3 py-1.5 text-xs font-semibold transition border-l border-slate-200"
+                :class="displayMode === 'optimized' ? 'bg-indigo-500 text-white' : 'bg-white text-slate-500 hover:bg-slate-50'"
+            >Optimisé
+            </button>
           </div>
         </div>
 
         <div class="flex flex-col gap-1">
-          <span class="text-xs text-slate-400 font-bold uppercase tracking-wide">Vue</span>
+          <span class="text-xs text-slate-400 font-bold uppercase tracking-wide">Période rapide</span>
           <div class="flex rounded-lg border border-slate-200 overflow-hidden">
-            <button @click="setViewMode('week')"
-                    class="px-3 py-1.5 text-xs font-semibold transition"
-                    :class="viewMode === 'week' ? 'bg-blue-500 text-white' : 'bg-white text-slate-500 hover:bg-slate-50'"
-            >Semaine
+            <button @click="setPeriodRange('week')"
+                    class="px-3 py-1.5 text-xs font-semibold text-slate-500 bg-white hover:bg-slate-50 transition">
+              Semaine
             </button>
-            <button @click="setViewMode('month')"
-                    class="px-3 py-1.5 text-xs font-semibold transition border-l border-slate-200"
-                    :class="viewMode === 'month' ? 'bg-blue-500 text-white' : 'bg-white text-slate-500 hover:bg-slate-50'"
-            >Mois
+            <button @click="setPeriodRange('month')"
+                    class="px-3 py-1.5 text-xs font-semibold text-slate-500 bg-white hover:bg-slate-50 transition border-l border-slate-200">
+              Mois
             </button>
-            <button @click="setViewMode('programme')"
-                    class="px-3 py-1.5 text-xs font-semibold transition border-l border-slate-200"
-                    :class="viewMode === 'programme' ? 'bg-blue-500 text-white' : 'bg-white text-slate-500 hover:bg-slate-50'"
-            >Programme
+            <button v-if="displayMode === 'optimized'" @click="setPeriodRange('sixMonths')"
+                    class="px-3 py-1.5 text-xs font-semibold text-indigo-600 bg-indigo-50 hover:bg-indigo-100 transition border-l border-slate-200">
+              6 mois
             </button>
           </div>
         </div>
 
-        <!-- Sélecteur nb employés (masqué en vue programme) -->
-        <div v-if="viewMode !== 'programme'" class="flex flex-col gap-1">
+        <!-- La limite d'employés concerne uniquement la grille détaillée. -->
+        <div v-if="displayMode === 'detailed'" class="flex flex-col gap-1">
           <span class="text-xs text-slate-400 font-bold uppercase tracking-wide">Afficher</span>
           <select v-model="employeesPerPage"
                   class="border border-slate-200 rounded-lg px-2 py-1.5 text-xs bg-white focus:outline-none focus:border-blue-400 transition cursor-pointer">
@@ -217,268 +304,51 @@
       <!-- ── Contenu principal ── -->
       <div class="flex-1 overflow-y-auto py-6">
 
-        <div v-if="loading" class="flex items-center justify-center h-64 gap-2 text-slate-400">
-          <IconLoader2 :size="20" class="animate-spin text-blue-500"/>
-          <span class="text-sm">Chargement du planning...</span>
-        </div>
-
-        <div
-            v-else-if="unresolvedTemplateGuids.length > 0"
-            class="mb-4 flex items-start gap-3 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-amber-800"
-        >
-          <IconAlertTriangle :size="18" class="mt-0.5 flex-shrink-0 text-amber-500"/>
-          <div>
-            <p class="text-sm font-bold">Certains modèles horaires sont introuvables</p>
-            <p class="mt-0.5 text-xs text-amber-700">
-              Les affectations existent, mais {{ unresolvedTemplateGuids.length }} modèle(s) ne peuvent pas être résolus :
-              {{ unresolvedTemplateGuids.join(', ') }}.
-            </p>
-          </div>
-        </div>
-
-        <div v-if="!loading && allFlatMembers.length === 0"
-             class="flex flex-col items-center justify-center h-64 gap-4 text-slate-400">
-          <div class="w-16 h-16 rounded-2xl bg-blue-50 flex items-center justify-center">
-            <IconAlertTriangle :size="28" class="text-amber-500"/>
-          </div>
-          <div class="text-center">
-            <p class="text-sm font-semibold text-slate-600">Aucune affectation active</p>
-            <p class="text-xs text-slate-400 mt-0.5">Aucun planning standard trouvé sur la période sélectionnée.</p>
-          </div>
-          <button @click="openCreate" class="text-xs font-semibold text-blue-500 hover:text-blue-600 transition">
-            + Créer une affectation
-          </button>
-        </div>
+        <!--
+          IMPORTANT : une seule branche de rendu à la fois.
+          L'ancien template permettait au loader ET à la vue active d'être visibles simultanément.
+        -->
+        <PlanningLoadingState
+            v-if="loading"
+            :mode="displayMode"
+            :refreshing="hasLoadedOnce"
+        />
 
         <template v-else>
-
-          <!-- ── Vue Semaine / Mois ─────────────────────────────────────── -->
-          <template v-if="viewMode !== 'programme'">
-            <div class="space-y-6">
-              <!-- Indicateur employés cachés -->
-              <div v-if="hiddenCount > 0"
-                   class="flex items-center gap-2 px-4 py-2.5 bg-amber-50 border border-amber-200 rounded-xl text-xs text-amber-700 font-medium">
-                <IconChevronDown :size="14"/>
-                {{ hiddenCount }} employé(s) supplémentaire(s) non affiché(s). Augmentez la limite d'affichage pour les
-                voir.
-              </div>
-
-              <!-- Légende -->
-              <div class="flex items-center gap-4 text-xs text-slate-400 px-1">
-                <div class="flex items-center gap-1.5">
-                  <div class="w-5 h-5 rounded-md bg-green-100 border border-green-200 flex items-center justify-center">
-                    <div class="w-1.5 h-1.5 rounded-full bg-green-500"/>
-                  </div>
-                  <span>Présent</span>
-                </div>
-                <div class="flex items-center gap-1.5">
-                  <div class="w-5 h-5 rounded-md bg-amber-50 border border-amber-200 flex items-center justify-center">
-                    <!--                  <span class="text-xs text-amber-500 font-bold">P</span>-->
-                    <div class="w-1.5 h-1.5 rounded-full bg-amber-500"/>
-                  </div>
-                  <span>Pause</span>
-                </div>
-                <div class="flex items-center gap-1.5">
-                  <div class="w-5 h-5 rounded-md bg-slate-100 border border-slate-200 flex items-center justify-center">
-                    <span class="text-slate-400 text-sm font-medium">—</span>
-                  </div>
-                  <span>Absent / repos</span>
-                </div>
-              </div>
-
-              <!-- Un tableau par jour -->
-              <div
-                  v-for="section in daySections"
-                  :key="section.day.iso"
-                  class="overflow-hidden border rounded-xl bg-white shadow-sm"
-                  :class="section.day.isToday ? 'border-blue-300' : 'border-slate-200'"
-              >
-                <!-- En-tête jour -->
-                <div class="px-4 py-3 border-b flex items-center justify-between"
-                     :class="section.day.isToday ? 'bg-blue-50 border-blue-200' : section.day.isWeekend ? 'bg-slate-50 border-slate-100' : 'bg-white border-slate-100'">
-                  <div class="flex items-center gap-2">
-                  <span class="text-xs font-bold uppercase tracking-wide"
-                        :class="section.day.isToday ? 'text-blue-600' : 'text-slate-500'">
-                    {{ section.day.dayLabel }}
-                  </span>
-                    <span class="text-sm font-bold"
-                          :class="section.day.isToday ? 'text-blue-700' : 'text-slate-800'">
-                    {{ section.day.dayNum }}/{{ section.day.monthNum }}
-                  </span>
-                    <span v-if="section.day.isToday"
-                          class="text-xs px-1.5 py-0.5 bg-blue-500 text-white rounded-full font-bold">
-                    Aujourd'hui
-                  </span>
-                    <span v-if="section.day.isWeekend && !section.day.isToday"
-                          class="text-xs text-slate-400 italic">Week-end</span>
-                  </div>
-                  <span v-if="section.blocks.length === 0" class="text-xs text-slate-400 italic">Jour de repos</span>
-                  <span v-else class="text-xs text-slate-400">{{ section.blocks.length }} bloc(s) horaire(s)</span>
-                </div>
-
-                <!-- Tableau blocs si des blocs existent -->
-                <div v-if="section.blocks.length > 0" class="overflow-x-auto">
-                  <table class="border-collapse w-full">
-                    <thead>
-                    <tr class="bg-slate-50 border-b border-slate-100">
-                      <!-- Colonne employé -->
-                      <th class="px-4 py-2.5 text-left text-xs font-bold text-slate-500 w-48 sticky left-0 bg-slate-50 z-10 border-r border-slate-100">
-                        Employé
-                      </th>
-                      <!-- Colonnes blocs horaires -->
-                      <th v-for="block in section.blocks" :key="block.label"
-                          class="px-3 py-2.5 text-center text-xs font-bold text-slate-500 min-w-[90px] border-l border-slate-100">
-                        {{ block.label }}
-                      </th>
-                    </tr>
-                    </thead>
-                    <tbody>
-                    <tr v-for="member in visibleMembers" :key="member.guid"
-                        class="border-b border-slate-100 last:border-0 bg-white hover:bg-slate-50/40 transition">
-                      <!-- Colonne employé -->
-                      <td class="px-4 py-2.5 sticky left-0 bg-inherit border-r border-slate-100 z-10">
-                        <div class="flex items-center gap-2.5">
-                          <div
-                              class="w-7 h-7 rounded-full bg-blue-100 flex items-center justify-center text-xs font-bold text-blue-700 flex-shrink-0">
-                            {{ initials(member.name) }}
-                          </div>
-                          <div class="min-w-0">
-                            <p class="text-xs font-semibold text-slate-800 leading-tight truncate max-w-[120px]">
-                              {{ member.name }}</p>
-                            <p v-if="member.code" class="text-xs text-slate-400">{{ member.code }}</p>
-                          </div>
-                        </div>
-                      </td>
-                      <!-- Cellules blocs -->
-                      <td v-for="block in section.blocks" :key="block.label"
-                          class="px-2 py-2 text-center border-l border-slate-100">
-                        <BlockCell :status="section.matrix[member.guid]?.[block.label] ?? 'absent'"/>
-                      </td>
-                    </tr>
-                    </tbody>
-                  </table>
-                </div>
-
-                <!-- Jour de repos : pas de tableau -->
-                <div v-else class="px-4 py-3 text-xs text-slate-400 italic">
-                  Aucun employé planifié ce jour.
-                </div>
-              </div>
+          <div
+              v-if="unresolvedTemplateGuids.length > 0"
+              class="mb-4 flex items-start gap-3 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-amber-800"
+          >
+            <IconAlertTriangle :size="18" class="mt-0.5 flex-shrink-0 text-amber-500"/>
+            <div>
+              <p class="text-sm font-bold">Certains modèles horaires sont introuvables</p>
+              <p class="mt-0.5 text-xs text-amber-700">
+                Les affectations existent, mais {{ unresolvedTemplateGuids.length }} modèle(s) ne peuvent pas être
+                résolus :
+                {{ unresolvedTemplateGuids.join(', ') }}.
+              </p>
             </div>
-          </template>
+          </div>
 
-          <!-- ── Vue Programme ──────────────────────────────────────────── -->
-          <template v-else>
-            <div class="space-y-6">
-
-              <!-- Titre -->
-              <div class="flex items-center justify-between flex-wrap gap-2 px-1">
-                <h2 class="text-sm font-bold text-slate-800 tracking-wide">{{ programmeTitre }}</h2>
-                <p class="text-xs text-slate-400">{{ periodLabel }} · {{ allFlatMembers.length }} employé(s)</p>
-              </div>
-
-              <!-- Légende -->
-              <div class="flex items-center gap-4 text-xs text-slate-400 px-1">
-                <div class="flex items-center gap-1.5">
-                  <div class="w-5 h-5 rounded-md bg-blue-100 border border-blue-200 flex items-center justify-center">
-                    <div class="w-1.5 h-1.5 rounded-full bg-blue-500"/>
-                  </div>
-                  <span>Présent</span>
-                </div>
-                <div class="flex items-center gap-1.5">
-                  <div class="w-5 h-5 rounded-md bg-amber-50 border border-amber-200 flex items-center justify-center">
-                    <span class="text-xs text-amber-500 font-bold">P</span>
-                  </div>
-                  <span>Pause</span>
-                </div>
-              </div>
-
-              <!-- Un tableau par jour (tous les membres) -->
-              <div
-                  v-for="section in programmeDaySections"
-                  :key="section.day.iso"
-                  class="overflow-hidden border rounded-xl bg-white shadow-sm"
-                  :class="section.day.isToday ? 'border-blue-300' : 'border-slate-200'"
-              >
-                <!-- En-tête jour -->
-                <div class="px-4 py-3 border-b flex items-center justify-between"
-                     :class="section.day.isToday ? 'bg-blue-50 border-blue-200' : section.day.isWeekend ? 'bg-slate-50 border-slate-100' : 'bg-white border-slate-100'">
-                  <div class="flex items-center gap-2">
-                  <span class="text-xs font-bold uppercase tracking-wide"
-                        :class="section.day.isToday ? 'text-blue-600' : 'text-slate-500'">
-                    {{ section.day.dayLabel }}
-                  </span>
-                    <span class="text-sm font-bold"
-                          :class="section.day.isToday ? 'text-blue-700' : 'text-slate-800'">
-                    {{ section.day.dayNum }}/{{ section.day.monthNum }}
-                  </span>
-                    <span v-if="section.day.isToday"
-                          class="text-xs px-1.5 py-0.5 bg-blue-500 text-white rounded-full font-bold">
-                    Aujourd'hui
-                  </span>
-                  </div>
-                  <span v-if="section.blocks.length === 0" class="text-xs text-slate-400 italic">Jour de repos</span>
-                  <span v-else class="text-xs text-slate-400">{{
-                      section.blocks.length
-                    }} bloc(s) · {{ allFlatMembers.length }} employé(s)</span>
-                </div>
-
-                <div v-if="section.blocks.length > 0" class="overflow-x-auto">
-                  <table class="border-collapse w-full">
-                    <thead>
-                    <tr class="bg-slate-50 border-b border-slate-100">
-                      <th class="px-4 py-2.5 text-left text-xs font-bold text-slate-500 w-52 sticky left-0 bg-slate-50 z-10 border-r border-slate-100">
-                        Employé
-                      </th>
-                      <th class="px-3 py-2.5 text-left text-xs font-bold text-slate-500 w-36 border-l border-slate-100">
-                        Groupe
-                      </th>
-                      <th v-for="block in section.blocks" :key="block.label"
-                          class="px-3 py-2.5 text-center text-xs font-bold text-slate-500 min-w-[90px] border-l border-slate-100">
-                        {{ block.label }}
-                      </th>
-                    </tr>
-                    </thead>
-                    <tbody>
-                    <tr v-for="member in allFlatMembers" :key="member.guid"
-                        class="border-b border-slate-100 last:border-0 bg-white hover:bg-slate-50/40 transition">
-                      <td class="px-4 py-2.5 sticky left-0 bg-inherit border-r border-slate-100 z-10">
-                        <div class="flex items-center gap-2.5">
-                          <div
-                              class="w-7 h-7 rounded-full bg-blue-100 flex items-center justify-center text-xs font-bold text-blue-700 flex-shrink-0">
-                            {{ initials(member.name) }}
-                          </div>
-                          <div class="min-w-0">
-                            <p class="text-xs font-semibold text-slate-800 leading-tight truncate max-w-[130px]">
-                              {{ member.name }}</p>
-                            <p v-if="member.code" class="text-xs text-slate-400">{{ member.code }}</p>
-                          </div>
-                        </div>
-                      </td>
-                      <td class="px-3 py-2.5 border-l border-slate-100">
-                      <span v-if="member.groupName"
-                            class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-violet-50 text-violet-700 text-xs font-semibold">
-                        <IconUsers :size="9"/>
-                        {{ member.groupName }}
-                      </span>
-                        <span v-else class="text-xs text-slate-400 italic">Sans groupe</span>
-                      </td>
-                      <td v-for="block in section.blocks" :key="block.label"
-                          class="px-2 py-2 text-center border-l border-slate-100">
-                        <BlockCell :status="section.matrix[member.guid]?.[block.label] ?? 'absent'"/>
-                      </td>
-                    </tr>
-                    </tbody>
-                  </table>
-                </div>
-
-                <div v-else class="px-4 py-3 text-xs text-slate-400 italic">
-                  Aucun employé planifié ce jour.
-                </div>
-              </div>
+          <div v-if="allFlatMembers.length === 0"
+               class="flex flex-col items-center justify-center h-64 gap-4 text-slate-400">
+            <div class="w-16 h-16 rounded-2xl bg-blue-50 flex items-center justify-center">
+              <IconAlertTriangle :size="28" class="text-amber-500"/>
             </div>
-          </template>
+            <div class="text-center">
+              <p class="text-sm font-semibold text-slate-600">Aucune affectation active</p>
+              <p class="text-xs text-slate-400 mt-0.5">Aucun planning standard trouvé sur la période sélectionnée.</p>
+            </div>
+            <button @click="openCreate" class="text-xs font-semibold text-blue-500 hover:text-blue-600 transition">
+              + Créer une affectation
+            </button>
+          </div>
 
+          <component
+              v-else
+              :is="activePlanningView"
+              v-bind="activeViewProps"
+          />
         </template>
       </div>
 
@@ -526,22 +396,30 @@
     </div>
   </div>
 
-
 </template>
 <script setup lang="ts">
-import {ref, computed, onMounted, onBeforeUnmount, defineComponent, h, watch} from 'vue'
+import {ref, computed, onMounted, onBeforeUnmount} from 'vue'
 import {useRouter} from 'vue-router'
 import {
   IconCalendarStats, IconChevronRight, IconPlus, IconLoader2,
   IconUser, IconUsers, IconFilter, IconSearch, IconArrowRight,
   IconPower, IconAlertTriangle, IconSparkles,
   IconUpload, IconChevronDown, IconTable,
-  IconFile, IconFileText,
+  IconFile, IconFileText, IconArrowLeft,
 } from '@tabler/icons-vue'
 
 import ScheduleAssignmentService from '@/service/ScheduleAssignment'
 import SessionTemplateService from '@/service/SessionTemplate'
 import ScheduleAssignmentForm from './scheduleAssignmentForm.vue'
+import ScheduleDetailedView from './components/views/ScheduleDetailedView.vue'
+import ScheduleSimpleView from './components/views/ScheduleSimpleView.vue'
+import ScheduleOptimizedView from './components/views/ScheduleOptimizedView.vue'
+import PlanningLoadingState from './components/states/PlanningLoadingState.vue'
+import type {
+  PlanningDisplayMode,
+  SchedulePlanningMember,
+  SchedulePlanningSlot,
+} from './components/views/schedulePlanningView.types'
 import {useBodyScrollLock} from '@/views/planning/composables/useBodyScrollLock'
 import {
   getTargetName,
@@ -556,6 +434,8 @@ import type {
   ISessionTemplateInline,
 } from './type'
 import {useUserStore} from '@/stores/userStore'
+import {useTeamStore} from '@/stores/teamStore'
+import {normalizeEmployeeColor} from '@/utils/employeeColor'
 import {exportScheduleCSV, exportScheduleExcel} from '@/utils/exports/scheduleAssignment.export'
 import {exportSchedulePDF} from "@/utils/exports/exportSchedulePDF";
 import {
@@ -563,35 +443,12 @@ import {
   exportScheduleSimpleExcel,
 } from '@/utils/exports/scheduleAssignment.simple.export'
 import {exportScheduleSimplePDF} from '@/utils/exports/exportScheduleSimplePDF'
+import {exportScheduleOptimizedPDF} from '@/utils/exports/exportScheduleOptimizedPDF'
+import type {OptimizedPdfMode} from '@/utils/exports/scheduleAssignment.optimized.export'
 
 const userStore = useUserStore()
+const teamStore = useTeamStore()
 const router = useRouter()
-
-// ── Composant inline BlockCell ─────────────────────────────────────────────
-const BlockCell = defineComponent({
-  props: {status: {type: String as () => 'work' | 'pause' | 'absent', default: 'absent'}},
-  setup(props) {
-    return () => {
-      if (props.status === 'work') {
-        return h('div', {
-          class: 'w-full px-3 py-1.5 rounded-lg bg-green-50 border border-green-100 flex items-center justify-center gap-1.5',
-        }, [
-          h('div', {class: 'w-2 h-2 rounded-full bg-green-500 flex-shrink-0'}),
-          h('span', {class: 'text-xs font-semibold text-green-700'}, 'Présent'),
-        ])
-      }
-      if (props.status === 'pause') {
-        return h('div', {
-          class: 'w-full px-3 py-1.5 rounded-lg bg-amber-50 border border-amber-100 flex items-center justify-center gap-1.5',
-        }, [
-          h('div', {class: 'w-2 h-2 rounded-full bg-amber-400 flex-shrink-0'}),
-          h('span', {class: 'text-xs font-semibold text-amber-600'}, 'Pause'),
-        ])
-      }
-      return h('span', {class: 'text-slate-300 text-sm font-medium'}, '—')
-    }
-  },
-})
 
 // ── Constants ──────────────────────────────────────────────────────────────
 const DAY_FR: Record<string, string> = {
@@ -605,10 +462,12 @@ const JS_DAY_TO_KEY: Record<number, string> = {
 const allAssignments = ref<IScheduleAssignment[]>([])
 const sessionTemplates = ref<ISessionTemplateInline[]>([])
 const loading = ref(false)
+const hasLoadedOnce = ref(false)
+let loadRequestSequence = 0
 
 const filterType = ref<'user' | 'group'>('user')
 const selectedTargetGuid = ref('')
-const viewMode = ref<'week' | 'month' | 'programme'>('week')
+const displayMode = ref<PlanningDisplayMode>('detailed')
 const advancedFiltersOpen = ref(false)
 const filterStatus = ref('active')
 const searchQuery = ref('')
@@ -618,6 +477,8 @@ const exportLoading = ref<'pdf' | 'excel' | 'csv' | null>(null)
 const simpleExportDropdownOpen = ref(false)
 const simpleExportDropdownRef = ref<HTMLElement | null>(null)
 const simpleExportLoading = ref<'pdf' | 'excel' | 'csv' | null>(null)
+const optimizedExportLoading = ref(false)
+const optimizedPdfMode = ref<OptimizedPdfMode>('personalized')
 const employeesPerPage = ref<number>(10)
 
 const today = new Date()
@@ -626,8 +487,33 @@ monday.setDate(today.getDate() - ((today.getDay() + 6) % 7))
 const sunday = new Date(monday)
 sunday.setDate(monday.getDate() + 6)
 
+// Période appliquée : seule source utilisée par la grille et les appels API.
 const periodFrom = ref(monday.toISOString().split('T')[0])
 const periodTo = ref(sunday.toISOString().split('T')[0])
+
+// Période en cours de saisie : modifier ces valeurs ne déclenche aucun appel API.
+const draftPeriodFrom = ref(periodFrom.value)
+const draftPeriodTo = ref(periodTo.value)
+
+const hasPendingPeriodChange = computed(
+    () =>
+        draftPeriodFrom.value !== periodFrom.value
+        || draftPeriodTo.value !== periodTo.value,
+)
+
+const periodValidationError = computed(() => {
+  if (!draftPeriodFrom.value || !draftPeriodTo.value) {
+    return 'Sélectionnez une date de début et une date de fin.'
+  }
+  if (draftPeriodFrom.value > draftPeriodTo.value) {
+    return 'La date de fin doit être postérieure ou égale à la date de début.'
+  }
+  return ''
+})
+
+const canApplyPeriod = computed(
+    () => hasPendingPeriodChange.value && !periodValidationError.value,
+)
 
 const showForm = ref(false)
 const editTarget = ref<IScheduleAssignment | null>(null)
@@ -642,32 +528,6 @@ const templatesByGuid = computed<ReadonlyMap<string, ISessionTemplateInline>>(
         sessionTemplates.value.map((template) => [template.guid, template]),
     ),
 )
-
-watch(
-    [periodFrom, periodTo],
-    ([from, to]) => {
-      if (from && to && from <= to) load()
-    },
-)
-
-// ── Helpers horaires ───────────────────────────────────────────────────────
-function timeToMin(t: string): number {
-  const [h, m] = t.split(':').map(Number)
-  return h * 60 + (m ?? 0)
-}
-
-function minToTime(m: number): string {
-  return `${String(Math.floor(m / 60)).padStart(2, '0')}:${String(m % 60).padStart(2, '0')}`
-}
-
-function initials(name: string): string {
-  return name.split(' ').slice(0, 2).map((w) => w[0]).join('').toUpperCase()
-}
-
-function formatDate(d?: string | null): string {
-  if (!d) return '—'
-  return new Date(d).toLocaleDateString('fr-FR', {day: '2-digit', month: 'short', year: 'numeric'})
-}
 
 // ── Computed : jours calendrier ────────────────────────────────────────────
 const calendarDays = computed(() => {
@@ -693,24 +553,6 @@ const calendarDays = computed(() => {
     cursor.setDate(cursor.getDate() + 1)
   }
   return days
-})
-
-const periodLabel = computed(() => {
-  const fmt = (s: string) => new Date(s + 'T00:00:00').toLocaleDateString('fr-FR', {
-    day: '2-digit',
-    month: 'short',
-    year: 'numeric'
-  })
-  return `${fmt(periodFrom.value)} → ${fmt(periodTo.value)}`
-})
-
-const programmeTitre = computed(() => {
-  const fmt = (s: string) => new Date(s + 'T00:00:00').toLocaleDateString('fr-FR', {
-    day: '2-digit',
-    month: '2-digit',
-    year: '2-digit'
-  })
-  return `PROGRAMME DU ${fmt(periodFrom.value)} AU ${fmt(periodTo.value)}`
 })
 
 // ── Cibles disponibles ─────────────────────────────────────────────────────
@@ -806,28 +648,8 @@ const unresolvedTemplateGuids = computed(() => {
 })
 
 // ── Membres plats et résolution par date ──────────────────────────────────
-type ScheduleSlot = {
-  work: [string, string]
-  pause?: [string, string]
-}
-
-interface FlatMember {
-  guid: string
-  name: string
-  firstName: string
-  lastName: string
-  code: string
-  groupName: string | null
-
-  /** Vérité d'affichage : planning résolu pour chaque date ISO. */
-  scheduleByDate: Record<string, ScheduleSlot[]>
-
-  /** Repos explicite publié — ne pas confondre avec une absence d'affectation. */
-  restByDate: Record<string, boolean>
-
-  /** Conservé uniquement pour compatibilité avec les exports existants. */
-  schedule: Record<string, ScheduleSlot[]>
-}
+type ScheduleSlot = SchedulePlanningSlot
+type FlatMember = SchedulePlanningMember
 
 interface MemberAccumulator {
   guid: string
@@ -835,6 +657,7 @@ interface MemberAccumulator {
   firstName: string
   lastName: string
   code: string
+  employeeColor: string | null
   groupName: string | null
   directAssignments: IScheduleAssignment[]
   groupAssignments: IScheduleAssignment[]
@@ -883,6 +706,17 @@ function newestApplicableAssignment(
       )[0] ?? null
 }
 
+function resolveEmployeeColor(
+    guid: string,
+    inlineColor?: string | null,
+): string | null {
+  return (
+      normalizeEmployeeColor(inlineColor)
+      ?? teamStore.getEmployeeById(guid)?.employeeColor
+      ?? null
+  )
+}
+
 const allFlatMembers = computed<FlatMember[]>(() => {
   const members = new Map<string, MemberAccumulator>()
 
@@ -892,11 +726,13 @@ const allFlatMembers = computed<FlatMember[]>(() => {
       firstName: string,
       lastName: string,
       code: string,
+      employeeColor: string | null,
       groupName: string | null,
   ): MemberAccumulator => {
     const existing = members.get(guid)
     if (existing) {
       if (!existing.groupName && groupName) existing.groupName = groupName
+      if (!existing.employeeColor && employeeColor) existing.employeeColor = employeeColor
       return existing
     }
 
@@ -906,6 +742,7 @@ const allFlatMembers = computed<FlatMember[]>(() => {
       firstName,
       lastName,
       code,
+      employeeColor,
       groupName,
       directAssignments: [],
       groupAssignments: [],
@@ -922,6 +759,10 @@ const allFlatMembers = computed<FlatMember[]>(() => {
           assignment.related.first_name ?? '',
           assignment.related.last_name ?? '',
           assignment.related.employee_code ?? '',
+          resolveEmployeeColor(
+              assignment.related.guid,
+              assignment.related.employee_color,
+          ),
           null,
       )
       member.directAssignments.push(assignment)
@@ -943,6 +784,10 @@ const allFlatMembers = computed<FlatMember[]>(() => {
             groupMember.user.first_name ?? '',
             groupMember.user.last_name ?? '',
             groupMember.user.employee_code ?? '',
+            resolveEmployeeColor(
+                groupMember.user.guid,
+                groupMember.user.employee_color,
+            ),
             assignment.related.name,
         )
         member.groupAssignments.push(assignment)
@@ -981,6 +826,7 @@ const allFlatMembers = computed<FlatMember[]>(() => {
       firstName: member.firstName,
       lastName: member.lastName,
       code: member.code,
+      employeeColor: member.employeeColor,
       groupName: member.groupName,
       scheduleByDate,
       restByDate,
@@ -1005,93 +851,63 @@ const visibleMembers = computed(() => allFlatMembers.value.slice(0, employeesPer
 const hiddenCount = computed(() => Math.max(0, allFlatMembers.value.length - employeesPerPage.value))
 const canExport = computed(() => allFlatMembers.value.length > 0)
 
-// ── Algorithme blocs horaires par jour ────────────────────────────────────
-interface TimeBlock {
-  start: string;
-  end: string;
-  label: string
-}
+const activePlanningView = computed(() => {
+  switch (displayMode.value) {
+    case 'simple':
+      return ScheduleSimpleView
+    case 'optimized':
+      return ScheduleOptimizedView
+    default:
+      return ScheduleDetailedView
+  }
+})
 
-function computeDayBlocks(members: FlatMember[], iso: string): TimeBlock[] {
-  const points = new Set<number>()
-  for (const m of members) {
-    const slots = m.scheduleByDate[iso]
-    if (!slots) continue
-    for (const s of slots) {
-      points.add(timeToMin(s.work[0]))
-      points.add(timeToMin(s.work[1]))
-      if (s.pause) {
-        points.add(timeToMin(s.pause[0]))
-        points.add(timeToMin(s.pause[1]))
-      }
+const activeViewProps = computed(() => {
+  if (displayMode.value === 'simple') {
+    return {
+      members: allFlatMembers.value,
+      periodFrom: periodFrom.value,
+      periodTo: periodTo.value,
     }
   }
-  const sorted = Array.from(points).sort((a, b) => a - b)
-  return sorted.slice(0, -1).map((pt, i) => {
-    const start = minToTime(pt)
-    const end = minToTime(sorted[i + 1])
-    return {start, end, label: `${start} – ${end}`}
-  })
-}
 
-function getMemberBlockStatus(member: FlatMember, iso: string, block: TimeBlock): 'work' | 'pause' | 'absent' {
-  const slots = member.scheduleByDate[iso]
-  if (!slots) return 'absent'
-  const bStart = timeToMin(block.start)
-  const bEnd = timeToMin(block.end)
-  for (const s of slots) {
-    const wStart = timeToMin(s.work[0])
-    const wEnd = timeToMin(s.work[1])
-    if (wStart < bEnd && wEnd > bStart) {
-      if (s.pause) {
-        const pStart = timeToMin(s.pause[0])
-        const pEnd = timeToMin(s.pause[1])
-        if (pStart < bEnd && pEnd > bStart) return 'pause'
-      }
-      return 'work'
+  if (displayMode.value === 'optimized') {
+    return {
+      members: allFlatMembers.value,
+      periodFrom: periodFrom.value,
+      periodTo: periodTo.value,
     }
   }
-  return 'absent'
-}
 
-// ── Sections par jour ──────────────────────────────────────────────────────
-interface DaySection {
-  day: {
-    iso: string;
-    dayLabel: string;
-    dayNum: string;
-    monthNum: string;
-    isWeekend: boolean;
-    isToday: boolean;
-    jsDay: number
+  return {
+    members: visibleMembers.value,
+    days: calendarDays.value,
+    hiddenCount: hiddenCount.value,
   }
-  blocks: TimeBlock[]
-  matrix: Record<string, Record<string, 'work' | 'pause' | 'absent'>>
-}
-
-function buildDaySections(members: FlatMember[]): DaySection[] {
-  return calendarDays.value.map((day) => {
-    const blocks = computeDayBlocks(members, day.iso)
-    const matrix: DaySection['matrix'] = {}
-    for (const m of members) {
-      matrix[m.guid] = {}
-      for (const b of blocks) {
-        matrix[m.guid][b.label] = getMemberBlockStatus(m, day.iso, b)
-      }
-    }
-    return {day, blocks, matrix}
-  })
-}
-
-const daySections = computed(() => buildDaySections(visibleMembers.value))
-const programmeDaySections = computed(() => buildDaySections(allFlatMembers.value))
+})
 
 // ── Load ───────────────────────────────────────────────────────────────────
 async function load() {
   if (!userStore.user?.guid) return
 
+  // Seule la requête la plus récente a le droit de mettre à jour l'écran.
+  // Cela évite qu'un changement rapide de période affiche une ancienne réponse.
+  const requestId = ++loadRequestSequence
+  loading.value = true
+
   try {
-    loading.value = true
+    // Les templates sont structurels et ne dépendent pas de la période.
+    // On les charge au premier passage uniquement (ou on retente si le chargement
+    // précédent n'a rien retourné). Les recherches suivantes ne rappellent donc
+    // que l'endpoint des affectations.
+    const shouldLoadTemplates = sessionTemplates.value.length === 0
+
+    const teamPromise = teamStore
+        .loadTeam(userStore.user.guid)
+        .catch((error) => {
+          console.warn('Couleurs employés indisponibles dans le planning', error)
+          return []
+        })
 
     const [assignmentResponse, templateResponse] = await Promise.all([
       ScheduleAssignmentService.list(userStore.user.guid, {
@@ -1099,30 +915,42 @@ async function load() {
         date_from: periodFrom.value,
         date_to: periodTo.value,
       }),
-      SessionTemplateService.list({
-        active: true,
-        current: true,
-        limit: 250,
-      }),
+      shouldLoadTemplates
+          ? SessionTemplateService.list({
+            active: true,
+            current: true,
+            limit: 250,
+          })
+          : Promise.resolve(null),
+      teamPromise,
     ])
+
+    if (requestId !== loadRequestSequence) return
 
     allAssignments.value = assignmentResponse?.success
         ? assignmentResponse.data?.schedule_assignments?.items ?? []
         : []
 
-    const rawTemplates = templateResponse?.success
-        ? templateResponse.data?.templates?.items
-        ?? templateResponse.data?.session_templates?.items
-        ?? []
-        : []
+    if (templateResponse) {
+      const rawTemplates = templateResponse?.success
+          ? templateResponse.data?.templates?.items
+          ?? templateResponse.data?.session_templates?.items
+          ?? []
+          : []
 
-    sessionTemplates.value = rawTemplates.filter(hasTemplateDefinition)
+      sessionTemplates.value = rawTemplates.filter(hasTemplateDefinition)
+    }
   } catch (error: unknown) {
+    if (requestId !== loadRequestSequence) return
+
     console.error('Impossible de charger le planning standard', error)
     allAssignments.value = []
     sessionTemplates.value = []
   } finally {
-    loading.value = false
+    if (requestId === loadRequestSequence) {
+      hasLoadedOnce.value = true
+      loading.value = false
+    }
   }
 }
 
@@ -1132,18 +960,35 @@ function setTargetType(type: 'user' | 'group') {
   selectedTargetGuid.value = ''
 }
 
-function setViewMode(mode: 'week' | 'month' | 'programme') {
-  viewMode.value = mode
-  const from = new Date(periodFrom.value)
-  if (mode === 'week' || mode === 'programme') {
-    const end = new Date(from);
+function setPeriodRange(mode: 'week' | 'month' | 'sixMonths') {
+  if (!draftPeriodFrom.value) return
+
+  const from = new Date(`${draftPeriodFrom.value}T00:00:00`)
+  const end = new Date(from)
+
+  if (mode === 'week') {
     end.setDate(from.getDate() + 6)
-    periodTo.value = end.toISOString().split('T')[0]
+  } else if (mode === 'month') {
+    end.setMonth(from.getMonth() + 1, 0)
   } else {
-    const end = new Date(from.getFullYear(), from.getMonth() + 1, 0)
-    periodTo.value = end.toISOString().split('T')[0]
+    // De la date choisie jusqu'à la fin du 6e mois inclus.
+    end.setMonth(from.getMonth() + 6, 0)
   }
-  load()
+
+  draftPeriodTo.value = [
+    end.getFullYear(),
+    String(end.getMonth() + 1).padStart(2, '0'),
+    String(end.getDate()).padStart(2, '0'),
+  ].join('-')
+}
+
+async function applyPeriod(): Promise<void> {
+  if (!canApplyPeriod.value || loading.value) return
+
+  periodFrom.value = draftPeriodFrom.value
+  periodTo.value = draftPeriodTo.value
+
+  await load()
 }
 
 function resetFilters() {
@@ -1222,6 +1067,27 @@ async function handleSimpleExportCSV() {
     exportScheduleSimpleCSV(simpleExportOptions())
   } finally {
     simpleExportLoading.value = null
+  }
+}
+
+function optimizedExportOptions() {
+  return {
+    members: allFlatMembers.value,
+    periodFrom: periodFrom.value,
+    periodTo: periodTo.value,
+    generatedBy: `${userStore.user?.first_name} ${userStore.user?.last_name}`.trim(),
+    tenantName: userStore.tenant?.name,
+    pdfMode: optimizedPdfMode.value,
+  }
+}
+
+async function handleOptimizedExportPDF() {
+  if (!canExport.value) return
+  optimizedExportLoading.value = true
+  try {
+    exportScheduleOptimizedPDF(optimizedExportOptions())
+  } finally {
+    optimizedExportLoading.value = false
   }
 }
 

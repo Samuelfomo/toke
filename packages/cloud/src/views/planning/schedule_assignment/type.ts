@@ -52,6 +52,7 @@ export interface IUserMini {
     phone_number: string
     country: string
     employee_code: string
+    employee_color?: string | null
     hire_date: string | null
 }
 

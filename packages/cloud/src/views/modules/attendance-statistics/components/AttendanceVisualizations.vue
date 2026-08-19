@@ -1,8 +1,8 @@
 <script setup lang="ts">
 import { computed, ref, watch } from 'vue';
 
-import type { AttendanceOverview } from '@/views/modules/attendance-statistics';
-import { findAttendanceDailyOverview } from '@/views/modules/attendance-statistics';
+import type { AttendanceOverview } from '../types/attendance-statistics.types.js';
+import { findAttendanceDailyOverview } from '../utils/attendance-visualizations.js';
 import AttendanceDailyTrend from './AttendanceDailyTrend.vue';
 import AttendanceDayDetailsPanel from './AttendanceDayDetailsPanel.vue';
 import AttendanceStatusDistribution from './AttendanceStatusDistribution.vue';

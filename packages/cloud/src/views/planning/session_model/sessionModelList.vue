@@ -1,4 +1,14 @@
 <template>
+  <div class="mx-auto w-full max-w-[1500px] py-6 flex justify-end">
+    <RouterLink
+        :to="{ name: 'planning-menu' }"
+        class="inline-flex items-center gap-2 bg-slate-50/15 rounded-md hover:bg-slate-50/30 p-1 text-sm font-semibold text-slate-600 no-underline transition hover:text-blue-700"
+    >
+      <IconArrowLeft :size="18"/>
+      Retour aux outils de planification
+    </RouterLink>
+  </div>
+
   <div class="mx-auto flex h-full w-full max-w-[1500px] flex-col bg-slate-50">
 
     <!-- ── Header ── -->
@@ -432,7 +442,7 @@ import {
   IconPencil, IconTrash, IconCheck, IconMinus,
   IconChevronLeft, IconChevronRight,
   IconChevronsLeft, IconChevronsRight,
-  IconAlertTriangle,
+  IconAlertTriangle, IconArrowLeft,
 } from '@tabler/icons-vue'
 import SessionModelService from '@/service/SessionModelService'
 import SessionModelForm from './sessionModelForm.vue'

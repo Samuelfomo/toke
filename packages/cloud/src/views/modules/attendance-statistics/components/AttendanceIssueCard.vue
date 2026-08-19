@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed, ref, watch } from 'vue';
 
-import type { AttendanceIssueSummary } from '@/views/modules/attendance-statistics';
+import type { AttendanceIssueSummary } from '../types/attendance-statistics.types.js';
 import type { AttendanceIssueTarget } from '../utils/attendance-issues.js';
 import {
   getHiddenAttendanceOccurrenceCount,

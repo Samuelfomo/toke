@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import type { AttendanceOverview } from '@/views/modules/attendance-statistics';
+import type { AttendanceOverview } from '../types/attendance-statistics.types.js';
 
 interface Props {
   title?: string;

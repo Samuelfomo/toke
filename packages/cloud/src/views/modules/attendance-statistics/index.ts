@@ -43,3 +43,4 @@ export * from './utils/attendance-volume.js';
 export * from './composables/useAccessibleDialog.js';
 export { default as AttendanceLargeDatasetNotice } from './components/AttendanceLargeDatasetNotice.vue';
 export { default as AttendanceCompactPagination } from './components/AttendanceCompactPagination.vue';
+export * from './integration/attendance-statistics.runtime.js';

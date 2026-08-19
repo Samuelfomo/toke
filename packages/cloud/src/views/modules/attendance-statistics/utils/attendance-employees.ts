@@ -1,7 +1,7 @@
 import type {
   AttendanceEmployeeOverview,
   AttendanceStatus,
-} from '@/views/modules/attendance-statistics';
+} from '../types/attendance-statistics.types.js';
 import type {
   AttendanceEmployeeIssueFilter,
   AttendanceEmployeeListFilters,
@@ -10,7 +10,7 @@ import type {
   AttendanceEmployeeSortKey,
   AttendanceEmployeeStatusFilter,
   AttendanceSortDirection,
-} from '@/views/modules/attendance-statistics';
+} from '../types/attendance-statistics.ui.types.js';
 
 export interface AttendanceEmployeeListModel {
   rows: AttendanceEmployeeOverview[];

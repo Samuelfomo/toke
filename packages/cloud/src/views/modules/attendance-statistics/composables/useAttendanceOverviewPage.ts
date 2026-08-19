@@ -1,21 +1,19 @@
 import { computed, onMounted, ref, type ComputedRef, type Ref } from 'vue';
 
-import { describeAttendancePeriod } from '../utils/attendance-period.js';
-
-import { useAttendanceStatistics } from './useAttendanceStatistics.js';
-
-import type { AttendanceStatisticsServiceError } from '@/views/modules/attendance-statistics';
-import { resolveAttendanceOverviewPageState } from '@/views/modules/attendance-statistics';
-import type {
-  AttendanceFiltersSubmission,
-  AttendanceOverviewPageState,
-  AttendancePeriodPreset,
-} from '@/views/modules/attendance-statistics';
 import type {
   AttendanceOverview,
   AttendanceStatisticsFilters,
   BusinessDate,
-} from '@/views/modules/attendance-statistics';
+} from '../types/attendance-statistics.types.js';
+import type {
+  AttendanceFiltersSubmission,
+  AttendanceOverviewPageState,
+  AttendancePeriodPreset,
+} from '../types/attendance-statistics.ui.types.js';
+import type { AttendanceStatisticsServiceError } from '../services/attendance-statistics.service.js';
+import { useAttendanceStatistics } from './useAttendanceStatistics.js';
+import { describeAttendancePeriod } from '../utils/attendance-period.js';
+import { resolveAttendanceOverviewPageState } from '../utils/attendance-overview-state.js';
 
 export interface UseAttendanceOverviewPageOptions {
   service: import('../services/attendance-statistics.service.js').AttendanceStatisticsService;

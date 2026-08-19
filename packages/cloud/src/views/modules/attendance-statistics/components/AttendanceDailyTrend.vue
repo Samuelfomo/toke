@@ -1,8 +1,8 @@
 <script setup lang="ts">
 import { computed } from 'vue';
 
-import type { AttendanceDailyOverview, BusinessDate } from '@/views/modules/attendance-statistics';
-import { buildAttendanceDailyChartModel } from '@/views/modules/attendance-statistics';
+import type { AttendanceDailyOverview, BusinessDate } from '../types/attendance-statistics.types.js';
+import { buildAttendanceDailyChartModel } from '../utils/attendance-visualizations.js';
 import { buildAttendanceDateNavigationWindow } from '../utils/attendance-volume.js';
 
 interface Props {

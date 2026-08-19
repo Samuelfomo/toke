@@ -1,10 +1,9 @@
-import { ATTENDANCE_ISSUE_PRESENTATION } from './attendance-status.js';
-
 import type {
   AttendanceIssue,
   AttendanceIssueOccurrence,
   AttendanceIssueSummary,
-} from '@/views/modules/attendance-statistics';
+} from '../types/attendance-statistics.types.js';
+import { ATTENDANCE_ISSUE_PRESENTATION } from './attendance-status.js';
 
 export const ATTENDANCE_ISSUE_FAMILY_FILTERS = [
   'all',

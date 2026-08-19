@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue';
 
-import type { AttendanceIssueSummary } from '@/views/modules/attendance-statistics';
+import type { AttendanceIssueSummary } from '../types/attendance-statistics.types.js';
 import type {
   AttendanceIssueListFilters,
   AttendanceIssueTarget,

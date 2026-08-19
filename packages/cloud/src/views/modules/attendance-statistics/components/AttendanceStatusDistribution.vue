@@ -1,8 +1,8 @@
 <script setup lang="ts">
 import { computed } from 'vue';
 
-import type { AttendanceOverview } from '@/views/modules/attendance-statistics';
-import { buildAttendanceStatusDistribution } from '@/views/modules/attendance-statistics';
+import type { AttendanceOverview } from '../types/attendance-statistics.types.js';
+import { buildAttendanceStatusDistribution } from '../utils/attendance-visualizations.js';
 
 interface Props {
   overview: AttendanceOverview;

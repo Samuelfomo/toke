@@ -3,7 +3,7 @@ import type {
   AttendanceDataQualityLevel,
   AttendanceIssue,
   AttendanceStatus,
-} from '@/views/modules/attendance-statistics';
+} from '../types/attendance-statistics.types.js';
 
 export interface AttendanceStatusPresentation {
   label: string;

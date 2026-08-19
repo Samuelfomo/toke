@@ -5,9 +5,9 @@ import type {
   AttendanceEmployeeSortKey,
   AttendanceEmployeeStatusFilter,
   AttendanceEmployeeIssueFilter,
-} from '@/views/modules/attendance-statistics';
+} from '../types/attendance-statistics.ui.types.js';
 import { ATTENDANCE_STATUS_PRESENTATION } from '../utils/attendance-status.js';
-import { ATTENDANCE_STATUSES } from '@/views/modules/attendance-statistics';
+import { ATTENDANCE_STATUSES } from '../types/attendance-statistics.types.js';
 
 interface Props {
   filters: AttendanceEmployeeListFilters;

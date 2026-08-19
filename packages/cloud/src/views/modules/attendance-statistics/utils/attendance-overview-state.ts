@@ -1,4 +1,4 @@
-import type { AttendanceOverviewPageState } from '@/views/modules/attendance-statistics';
+import type { AttendanceOverviewPageState } from '../types/attendance-statistics.ui.types.js';
 
 export interface AttendanceOverviewStateInput {
   hasData: boolean;

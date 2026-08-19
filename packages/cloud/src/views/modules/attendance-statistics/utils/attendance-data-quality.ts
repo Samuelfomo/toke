@@ -1,9 +1,8 @@
-import { getAttendanceDataQualityLevel } from './attendance-status.js';
-
 import type {
   AttendanceDataQuality,
   AttendanceDataQualityLevel,
-} from '@/views/modules/attendance-statistics';
+} from '../types/attendance-statistics.types.js';
+import { getAttendanceDataQualityLevel } from './attendance-status.js';
 
 export type AttendanceDataQualityMetricId =
   | 'unresolved_schedule'

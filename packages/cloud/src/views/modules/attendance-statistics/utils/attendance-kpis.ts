@@ -1,5 +1,4 @@
-import type { AttendanceOverview } from '@/views/modules/attendance-statistics';
-
+import type { AttendanceOverview } from '../types/attendance-statistics.types.js';
 import { formatDurationMinutes } from './duration.js';
 import { formatPercentage } from './percentage.js';
 

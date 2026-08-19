@@ -1,10 +1,16 @@
 <template>
-  <!--
-    Layout responsif :
-    • Desktop (≥ md) : panneau liste (w-96) + panneau détail côte à côte — identique à l'original
-    • Mobile (< md)  : vue liste OU vue détail, navigation par état `mobileView`
-  -->
-  <div class="flex h-full bg-slate-50 overflow-hidden">
+  <div class="mx-auto w-full max-w-[1500px] py-6 flex justify-end">
+    <RouterLink
+        :to="{ name: 'planning-menu' }"
+        class="inline-flex items-center gap-2 bg-slate-50/15 rounded-md hover:bg-slate-50/30 p-1 text-sm font-semibold text-slate-600 no-underline transition hover:text-blue-700"
+    >
+      <IconArrowLeft :size="18"/>
+      Retour aux outils de planification
+    </RouterLink>
+  </div>
+
+  <div class="mx-auto flex h-full w-full max-w-[1500px] flex-col bg-slate-50">
+<!--  <div class="flex h-full bg-slate-50 overflow-hidden">-->
 
     <!-- ══════════════════════════════════════════════════════════════
          PANNEAU GAUCHE — liste des groupes
@@ -12,7 +18,7 @@
          Mobile  : visible seulement si mobileView === 'list'
     ══════════════════════════════════════════════════════════════════ -->
     <div
-        class="flex flex-col border-r border-slate-200 bg-white transition-all duration-300 flex-shrink-0
+        class="flex flex-col border-r min-h-full border-slate-200 bg-white transition-all duration-300 flex-shrink-0
                w-full md:w-96"
         :class="mobileView === 'detail' ? 'hidden md:flex' : 'flex'"
     >
@@ -480,7 +486,7 @@ import {
   IconRefresh, IconPlus, IconSearch, IconLoader2, IconX,
   IconPencil, IconTrash, IconChevronLeft, IconChevronRight,
   IconAlertTriangle, IconArrowRight, IconCalendar,
-  IconStack, IconChevronRight as IconChevronRightNav,
+  IconStack, IconChevronRight as IconChevronRightNav, IconArrowLeft,
 } from '@tabler/icons-vue'
 import RotationGroupService from '@/service/RotationGroup'
 import SessionTemplateService from '@/service/SessionTemplate'

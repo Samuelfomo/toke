@@ -2,6 +2,7 @@ import {defineStore} from 'pinia'
 import {ref, computed} from 'vue'
 
 import UserService from '@/service/UserService'
+import { normalizeEmployeeColor } from '@/utils/employeeColor'
 import type {Data, Employee, EmployeesWithoutGroup} from '@/utils/interfaces/equipe.interface'
 
 export type TeamFlashType = 'success' | 'warning' | 'error';
@@ -21,6 +22,7 @@ export interface TeamEmployee {
     position: string
     email: string
     avatar: string | null
+    employeeColor: string | null
     country: string | null
     initials: string
     punctualityScore: number
@@ -49,9 +51,17 @@ export const useTeamStore = defineStore('team', () => {
     // 📊 Computed
     const totalEmployees = computed(() => employees.value.length)
 
+    const hasEmployeeColorCoverage = computed(() =>
+        employees.value.length === 0
+        || employees.value.every((employee) => Boolean(employee.employeeColor)),
+    )
+
     const isCacheValid = computed(() => {
         if (!lastFetch.value) return false
-        return Date.now() - lastFetch.value < CACHE_DURATION
+        return (
+            Date.now() - lastFetch.value < CACHE_DURATION
+            && hasEmployeeColorCoverage.value
+        )
     })
 
     // 🔄 Actions
@@ -167,7 +177,7 @@ export const useTeamStore = defineStore('team', () => {
     }
 }, {
     persist: {
-        key: 'team-store',
+        key: 'team-store-v2-employee-color',
         storage: localStorage, // ou sessionStorage
         paths: ['employees', 'rawData', 'lastFetch'] // Ne persiste que ces données
     }
@@ -200,7 +210,8 @@ function transformEmployee(emp: any): TeamEmployee {
         lastName,
         position: emp.job_title || mainRole,
         email: emp.email || 'N/A',
-        avatar: emp.avatar_url || null,
+        avatar: emp.avatar_url ?? emp.avatar ?? null,
+        employeeColor: normalizeEmployeeColor(emp.employee_color ?? emp.employeeColor),
         country: emp.country || 'N/A',
         initials,
         punctualityScore: Math.floor(Math.random() * 30) + 70,

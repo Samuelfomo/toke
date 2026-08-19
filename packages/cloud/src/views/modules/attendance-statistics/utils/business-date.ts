@@ -2,7 +2,7 @@ import type {
   AttendanceStatisticsFilters,
   AttendanceStatisticsValidationError,
   BusinessDate,
-} from '@/views/modules/attendance-statistics';
+} from '../types/attendance-statistics.types.js';
 
 const BUSINESS_DATE_PATTERN = /^\d{4}-\d{2}-\d{2}$/;
 export const MAX_ATTENDANCE_PERIOD_DAYS = 366;

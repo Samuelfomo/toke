@@ -1,10 +1,9 @@
-import { isValidBusinessDate } from './business-date.js';
-
-import type { BusinessDate } from '@/views/modules/attendance-statistics';
+import type { BusinessDate } from '../types/attendance-statistics.types.js';
 import type {
   AttendancePeriodPreset,
   AttendancePeriodRange,
-} from '@/views/modules/attendance-statistics';
+} from '../types/attendance-statistics.ui.types.js';
+import { isValidBusinessDate } from './business-date.js';
 
 const DAY_MS = 86_400_000;
 
