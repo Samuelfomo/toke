@@ -90,6 +90,18 @@ export const UsersDbStructure = {
       },
       comment: 'User employee code',
     },
+    employee_color: {
+      type: DataTypes.STRING(7),
+      allowNull: false,
+      unique: {
+        name: 'unique_user_employee_color',
+        msg: 'Employee color must be unique for each employee.',
+      },
+      validate: {
+        is: /^#[0-9A-F]{6}$/,
+      },
+      comment: 'Stable employee identity color used by planning views and exports',
+    },
     pin_hash: {
       type: DataTypes.STRING(255), //-- PIN employé (pointage)
       allowNull: true,

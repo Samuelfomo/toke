@@ -283,6 +283,9 @@ export const validateUsersGuid = (guid: any) => {
 export const usersResponseSchema = baseUsersSchema.extend({
   id: z.number().int().positive(),
   guid: z.string().uuid(),
+  employee_color: z
+    .string()
+    .regex(USERS_VALIDATION.EMPLOYEE_COLOR.PATTERN, USERS_ERRORS.EMPLOYEE_COLOR_INVALID),
   created_at: z.string().datetime(),
   updated_at: z.string().datetime(),
 });

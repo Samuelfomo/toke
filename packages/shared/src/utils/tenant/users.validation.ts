@@ -96,6 +96,17 @@ export class UsersValidationUtils {
   }
 
   /**
+   * Validates the persistent employee color.
+   * Canonical format: #RRGGBB.
+   */
+  static validateEmployeeColor(employeeColor: any): boolean {
+    if (employeeColor === null || employeeColor === undefined) return true;
+    if (typeof employeeColor !== 'string') return false;
+
+    return USERS_VALIDATION.EMPLOYEE_COLOR.PATTERN.test(employeeColor.trim().toUpperCase());
+  }
+
+  /**
    * Validates PIN hash
    */
   static validatePinHash(pinHash: any): boolean {
@@ -314,15 +325,23 @@ export class UsersValidationUtils {
     if (cleaned.country !== undefined && cleaned.country !== null) {
       cleaned.country = cleaned.country.toString().trim().toUpperCase();
     }
+    if (cleaned.employee_color !== undefined && cleaned.employee_color !== null) {
+      cleaned.employee_color = cleaned.employee_color.toString().trim().toUpperCase();
+    }
 
     // Clean optional string fields
-    ['phone_number', 'employee_code', 'otp_token', 'qr_code_token', 'avatar_url'].forEach(
-      (field) => {
-        if (cleaned[field] !== undefined && cleaned[field] !== null) {
-          cleaned[field] = cleaned[field].toString().trim();
-        }
-      },
-    );
+    [
+      'phone_number',
+      'employee_code',
+      'employee_color',
+      'otp_token',
+      'qr_code_token',
+      'avatar_url',
+    ].forEach((field) => {
+      if (cleaned[field] !== undefined && cleaned[field] !== null) {
+        cleaned[field] = cleaned[field].toString().trim();
+      }
+    });
 
     // Convert dates
     // ['hire_date', 'last_login_at', 'otp_expires_at', 'qr_code_expires_at'].forEach((field) => {

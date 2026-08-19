@@ -253,7 +253,6 @@ export const PlanningSuggestionRequirementDbStructure = {
 };
 
 
-
 // import { DataTypes, ModelAttributes, ModelOptions } from 'sequelize';
 //
 // import { tableName } from '../../../utils/response.model.js';

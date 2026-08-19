@@ -11,6 +11,7 @@ import BaseModel from '../database/db.base.js';
 import { tableName } from '../../utils/response.model.js';
 import CountryPhoneValidation from '../../tools/country.phone.validation.js';
 import TokenManager from '../../utils/token.generator.js';
+import EmployeeColorUtils from '../../utils/employee.color.js';
 
 export default class UserModel extends BaseModel {
   public readonly db = {
@@ -27,6 +28,7 @@ export default class UserModel extends BaseModel {
     phone_number: 'phone_number',
     country: 'country',
     employee_code: 'employee_code',
+    employee_color: 'employee_color',
 
     // Authentification
     pin_hash: 'pin_hash',
@@ -70,6 +72,7 @@ export default class UserModel extends BaseModel {
   protected phone_number?: string;
   protected country?: string;
   protected employee_code?: string;
+  protected employee_color?: string;
   protected device_token?: string;
 
   // protected assigned_sessions: TI.AssignedSession[] = [];
@@ -166,6 +169,29 @@ export default class UserModel extends BaseModel {
     }
 
     return await this.findOne(this.db.tableName, conditions);
+  }
+
+  /**
+   * employee colors stay reserved even when an employee is soft-deleted.
+   * This avoids reusing a historical identity color for a new employee.
+   */
+  protected async findByEmployeeColor(
+    employeeColor: string,
+    includeDeleted: boolean = true,
+  ): Promise<any> {
+    const conditions: any = {
+      [this.db.employee_color]: EmployeeColorUtils.normalize(employeeColor),
+    };
+
+    if (!includeDeleted) {
+      conditions[this.db.deleted_at] = null;
+    }
+
+    return await this.findOne(
+      this.db.tableName,
+      conditions,
+      includeDeleted ? { paranoid: false } : undefined,
+    );
   }
 
   protected async findByQrCodeToken(qr_code_token: string): Promise<any> {
@@ -515,10 +541,6 @@ export default class UserModel extends BaseModel {
     return await bcrypt.compare(password, storedHash);
   }
 
-  // ============================================
-  // CRUD OPTIMISÉ
-  // ============================================
-
   /**
    * ✅ Création (Sequelize hache automatiquement)
    */
@@ -585,6 +607,16 @@ export default class UserModel extends BaseModel {
       this.employee_code = employeeCode;
     }
 
+    if (this.employee_color) {
+      this.employee_color = EmployeeColorUtils.normalize(this.employee_color);
+      const existingEmployeeColor = await this.findByEmployeeColor(this.employee_color, true);
+      if (existingEmployeeColor) {
+        throw new Error(USERS_ERRORS.EMPLOYEE_COLOR_ALREADY_EXISTS);
+      }
+    } else {
+      this.employee_color = await this.generateUniqueEmployeeColor();
+    }
+
     // ⚠️ PAS DE HACHAGE ICI : Sequelize le fait automatiquement via set()
     const lastID = await this.insertOne(this.db.tableName, {
       [this.db.guid]: guid,
@@ -595,6 +627,7 @@ export default class UserModel extends BaseModel {
       [this.db.phone_number]: this.phone_number ? this.phone_number : null,
       [this.db.country]: this.country?.toUpperCase(),
       [this.db.employee_code]: this.employee_code ? this.employee_code : null,
+      [this.db.employee_color]: this.employee_color,
       // [this.db.pin_hash]: this.pin_hash, // Sequelize hache via set()
       // [this.db.password_hash]: this.password_hash, // Sequelize hache via set()
       [this.db.otp_token]: this.otp_token,
@@ -619,6 +652,10 @@ export default class UserModel extends BaseModel {
     this.id = typeof lastID === 'object' ? lastID.id : lastID;
     this.guid = guid;
   }
+
+  // ============================================
+  // CRUD OPTIMISÉ
+  // ============================================
 
   /**
    * ✅ Update (Sequelize hache automatiquement si modifié)
@@ -649,6 +686,17 @@ export default class UserModel extends BaseModel {
     }
     if (this.employee_code !== undefined) {
       updateData[this.db.employee_code] = this.employee_code;
+    }
+    if (this.employee_color !== undefined) {
+      const normalizedEmployeeColor = EmployeeColorUtils.normalize(this.employee_color);
+      const existingEmployeeColor = await this.findByEmployeeColor(normalizedEmployeeColor, true);
+
+      if (existingEmployeeColor && existingEmployeeColor.id !== this.id) {
+        throw new Error(USERS_ERRORS.EMPLOYEE_COLOR_ALREADY_EXISTS);
+      }
+
+      this.employee_color = normalizedEmployeeColor;
+      updateData[this.db.employee_color] = normalizedEmployeeColor;
     }
     //
     // // ⚠️ PAS DE HACHAGE ICI : Sequelize le fait via set()
@@ -755,6 +803,22 @@ export default class UserModel extends BaseModel {
     return affected > 0;
   }
 
+  /**
+   * Assigns the first available stable employee color in this tenant database.
+   * DB uniqueness remains the final source of truth.
+   */
+  private async generateUniqueEmployeeColor(): Promise<string> {
+    const maxCandidates = 2048;
+
+    for (let index = 0; index < maxCandidates; index++) {
+      const candidate = EmployeeColorUtils.candidate(index);
+      const existing = await this.findByEmployeeColor(candidate, true);
+      if (!existing) return candidate;
+    }
+
+    throw new Error(USERS_ERRORS.EMPLOYEE_COLOR_GENERATION_FAILED);
+  }
+
   // protected async definedSessionTemplate(id: number, session_template: number): Promise<boolean> {
   //   const affected = await this.updateOne(
   //     this.db.tableName,
@@ -806,6 +870,10 @@ export default class UserModel extends BaseModel {
 
     if (this.employee_code && !UsersValidationUtils.validateEmployeeCode(this.employee_code)) {
       throw new Error(USERS_ERRORS.EMPLOYEE_CODE_INVALID);
+    }
+
+    if (this.employee_color && !UsersValidationUtils.validateEmployeeColor(this.employee_color)) {
+      throw new Error(USERS_ERRORS.EMPLOYEE_COLOR_INVALID);
     }
 
     // // ✅ Validation PIN/Password AVANT hachage Sequelize

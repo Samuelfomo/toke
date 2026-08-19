@@ -187,6 +187,10 @@ export default class User extends UserModel {
     return this.employee_code;
   }
 
+  getEmployeeColor(): string | undefined {
+    return this.employee_color;
+  }
+
   getAvatarUrl(): string | undefined {
     return this.avatar_url;
   }
@@ -400,6 +404,15 @@ export default class User extends UserModel {
 
   setEmployeeCode(employeeCode: string): User {
     this.employee_code = employeeCode;
+    return this;
+  }
+
+  /**
+   * Internal/server-side setter.
+   * The normal user creation/update routes do not expose this field.
+   */
+  setEmployeeColor(employeeColor: string): User {
+    this.employee_color = employeeColor.trim().toUpperCase();
     return this;
   }
 
@@ -810,6 +823,7 @@ export default class User extends UserModel {
       [RS.PHONE_NUMBER]: this.phone_number,
       [RS.COUNTRY]: this.country,
       [RS.EMPLOYEE_CODE]: this.employee_code,
+      [RS.EMPLOYEE_COLOR]: this.employee_color,
       [RS.AVATAR_URL]: this.avatar_url,
       [RS.HIRE_DATE]: this.hire_date,
       [RS.DEPARTMENT]: this.department,
@@ -857,6 +871,7 @@ export default class User extends UserModel {
       [RS.PHONE_NUMBER]: this.phone_number,
       [RS.COUNTRY]: this.country,
       [RS.EMPLOYEE_CODE]: this.employee_code,
+      [RS.EMPLOYEE_COLOR]: this.employee_color,
       [RS.HIRE_DATE]: this.hire_date,
     };
   }
@@ -875,6 +890,7 @@ export default class User extends UserModel {
     this.phone_number = data.phone_number;
     this.country = data.country;
     this.employee_code = data.employee_code;
+    this.employee_color = data.employee_color;
     this.pin_hash = data.pin_hash;
     this.password_hash = data.password_hash;
     this.otp_token = data.otp_token;

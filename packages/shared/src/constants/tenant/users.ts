@@ -38,6 +38,10 @@ export const USERS_VALIDATION = {
     MAX_LENGTH: 20,
     PATTERN: /^[a-zA-Z0-9_\-]{5,20}$/,
   },
+  EMPLOYEE_COLOR: {
+    LENGTH: 7,
+    PATTERN: /^#[0-9A-F]{6}$/,
+  },
   PIN: {
     MIN_LENGTH: 4,
     MAX_LENGTH: 6,
@@ -106,6 +110,9 @@ export const USERS_CODES = {
   PHONE_NUMBER_ALREADY_EXISTS: 'phone_number_already_exists',
   EMPLOYEE_CODE_INVALID: 'employee_code_invalid',
   EMPLOYEE_CODE_ALREADY_EXISTS: 'employee_code_already_exists',
+  EMPLOYEE_COLOR_INVALID: 'employee_color_invalid',
+  EMPLOYEE_COLOR_ALREADY_EXISTS: 'employee_color_already_exists',
+  EMPLOYEE_COLOR_GENERATION_FAILED: 'employee_color_generation_failed',
   PIN_INVALID: 'pin_invalid',
   PIN_UPDATE_FAILED: 'pin_update_failed',
   PASSWORD_INVALID: 'password_invalid',
@@ -164,6 +171,10 @@ export const USERS_ERRORS = {
 
   EMPLOYEE_CODE_INVALID: `Employee code must be alphanumeric/underscore/dash, ${USERS_VALIDATION.EMPLOYEE_CODE.MIN_LENGTH}-${USERS_VALIDATION.EMPLOYEE_CODE.MAX_LENGTH} characters`,
   EMPLOYEE_CODE_ALREADY_EXISTS: 'Employee code is already in use',
+
+  EMPLOYEE_COLOR_INVALID: 'Employee color must use #RRGGBB hexadecimal format',
+  EMPLOYEE_COLOR_ALREADY_EXISTS: 'Employee color is already assigned to another employee',
+  EMPLOYEE_COLOR_GENERATION_FAILED: 'Unable to generate a unique employee color for employee',
 
   PIN_INVALID: `PIN must be ${USERS_VALIDATION.PIN.MIN_LENGTH} to ${USERS_VALIDATION.PIN.MAX_LENGTH} digits`,
   CURRENT_PIN_REQUIRED: 'Current PIN and new PIN are required',
