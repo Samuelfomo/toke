@@ -5,7 +5,9 @@ import {
     AttendanceApiResponse,
     CreateEmployeePayload,
     CreateEmployeeResponse,
-    DashboardData, EmployeeAttendance, TransformedEmployee
+    DashboardData,
+    EmployeeAttendance,
+    TransformedEmployee
 } from "@/utils/interfaces/stat.interface";
 
 const baseUrl = '/user';
@@ -34,7 +36,6 @@ export type CreatedEmployeeData = CreateEmployeeResponse['data'] & {
     otp_delivery?: OtpDeliveryResult;
     warning?: string | null;
 };
-
 
 export default class UserService {
 
@@ -68,13 +69,11 @@ export default class UserService {
     ): Promise<ApiResponse> {
         try {
 
-            const response = await apiRequest<ApiResponse>({
+            return await apiRequest<ApiResponse>({
                 path: `${baseUrl}/${employeeGuid}?manager=${manager}`,
                 method: 'PUT',
                 data: payload,
             });
-            console.log('✅ Employé mis à jour:', response);
-            return response;
         } catch (error: any) {
             console.error('❌ Erreur lors de la mise à jour de l\'employé:', error);
             throw error;
@@ -99,6 +98,7 @@ export default class UserService {
             email: string;
             phone: string;
             employeeId: string;
+            employeeColor?: string;
             position: string;
             department: string;
             hireDate: string;
@@ -107,16 +107,19 @@ export default class UserService {
         supervisorGuid: string
     ): CreateEmployeePayload {
         return {
-            supervisor:     supervisorGuid,
-            email:          formData.email.trim().toLowerCase(),
-            first_name:     formData.firstName.trim(),
-            last_name:      formData.lastName.trim(),
-            phone_number:   formData.phone.trim(),
-            employee_code:  formData.employeeId.trim().toUpperCase(),
-            hire_date:      formData.hireDate,           // déjà au format YYYY-MM-DD (input type="date")
-            department:     formData.department.trim().toUpperCase(),
-            job_title:      formData.position.trim().toUpperCase(),
-            country:        formData.address?.country?.trim().toUpperCase() || 'CM',
+            supervisor: supervisorGuid,
+            email: formData.email.trim().toLowerCase(),
+            first_name: formData.firstName.trim(),
+            last_name: formData.lastName.trim(),
+            phone_number: formData.phone.trim(),
+            employee_code: formData.employeeId.trim().toUpperCase(),
+            ...(formData.employeeColor?.trim()
+                ? {employee_color: formData.employeeColor.trim().toUpperCase()}
+                : {}),
+            hire_date: formData.hireDate,           // déjà au format YYYY-MM-DD (input type="date")
+            department: formData.department.trim().toUpperCase(),
+            job_title: formData.position.trim().toUpperCase(),
+            country: formData.address?.country?.trim().toUpperCase() || 'CM',
         };
     }
 
@@ -176,7 +179,7 @@ export default class UserService {
      * Utilise le dernier jour de la période comme statut courant.
      */
     static transformEmployee(employeeData: EmployeeAttendance): TransformedEmployee {
-        const { employee, period_stats, daily_details } = employeeData;
+        const {employee, period_stats, daily_details} = employeeData;
 
         // Le statut courant = le dernier détail de la période (pas forcément [0])
         const sortedDetails = [...daily_details].sort(
