@@ -360,6 +360,9 @@ class EngineConfig(BaseModel):
     strictCoverage: bool
     weeklyLeavePolicy: WeeklyLeavePolicy = Field(default_factory=WeeklyLeavePolicy)
     guardTeamPolicy: GuardTeamPolicy = Field(default_factory=GuardTeamPolicy)
+    # Step 17: keep physical/business constraints HARD while treating rotation
+    # and guard-pool fairness as preferences. Set false only for legacy strict mode.
+    resilientAssistantMode: bool = True
 
 
 class PlanningSolverInput(BaseModel):
@@ -455,6 +458,7 @@ class EngineDiagnostics(BaseModel):
     weeklyLeaveGroups: list[WeeklyLeaveGroupResult] = Field(default_factory=list)
     fairnessScore: int
     coverageScore: int
+    relaxationsApplied: list[str] = Field(default_factory=list)
 
 
 class EngineResult(BaseModel):
@@ -474,12 +478,11 @@ class SolverStats(BaseModel):
 class SolverResponse(BaseModel):
     success: bool
     status: Literal["OPTIMAL", "FEASIBLE", "INFEASIBLE", "UNKNOWN"]
-    solverVersion: str = "ortools-cp-sat-v1.6-continuation-workday"
+    solverVersion: str = "ortools-cp-sat-v1.7-resilient-assistant"
     solverStats: SolverStats | None = None
     result: EngineResult | None = None
     diagnostics: EngineDiagnostics | None = None
     message: str | None = None
-
 
 
 # from __future__ import annotations

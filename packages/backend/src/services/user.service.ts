@@ -159,9 +159,64 @@ export class UserService {
   static async listByManager(reference: string, manager: string) {
     try {
       const api = await getApiClient(reference);
-      return await api.get(`${memoBaseUrl}/my-memos?author=${manager}`);
+      return await api.get(`${memoBaseUrl}/list?supervisor=${encodeURIComponent(manager)}`);
+    } catch (error: any) {
+      return (
+        error.response ?? {
+          status: HttpStatus.INTERNAL_ERROR,
+          data: {
+            success: false,
+            error: {
+              code: 'memo_list_proxy_failed',
+              message: error.message,
+            },
+          },
+        }
+      );
+    }
+  }
+
+  static async getSummary(reference: string, manager: string) {
+    try {
+      const api = await getApiClient(reference);
+      return await api.get(`${memoBaseUrl}/summary?supervisor=${manager}`);
     } catch (error: any) {
       return error.response;
+    }
+  }
+
+  static async getMemo(reference: string, guid: string) {
+    try {
+      const api = await getApiClient(reference);
+      return await api.get(`${memoBaseUrl}/${guid}`);
+    } catch (error: any) {
+      return error.response;
+    }
+  }
+
+  /**
+   * Demande à l'API tenant un ticket Socket.IO court pour un utilisateur.
+   * Le ticket API reste côté BFF : il n'est jamais exposé au navigateur.
+   */
+  static async createMemoRealtimeTicket(reference: string, userGuid: string) {
+    try {
+      const api = await getApiClient(reference);
+      return await api.post(`${memoBaseUrl}/realtime-ticket`, {
+        user_guid: userGuid,
+      });
+    } catch (error: any) {
+      return (
+        error.response ?? {
+          status: HttpStatus.INTERNAL_ERROR,
+          data: {
+            success: false,
+            error: {
+              code: 'memo_realtime_ticket_proxy_failed',
+              message: error.message,
+            },
+          },
+        }
+      );
     }
   }
 

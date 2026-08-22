@@ -32,7 +32,7 @@ export interface PlanningSolverInput {
   requestedPeriodFrom?: string;
   requestedPeriodTo?: string;
   config: EngineConfig;
-  solverTimeoutSeconds?: number;
+  // solverTimeoutSeconds?: number;
 }
 
 export interface PlanningSolverHorizonMetadata {

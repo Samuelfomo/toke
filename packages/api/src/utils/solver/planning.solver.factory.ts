@@ -10,7 +10,7 @@ import {
 
 export interface PlanningSolverFactoryOptions {
   solverType: PlanningSolverType;
-  timeoutSeconds: number;
+  // timeoutSeconds: number;
   fallbackToGreedy: boolean;
   ortoolsEndpoint?: string;
 }
@@ -74,12 +74,10 @@ export default class PlanningSolverFactory {
     return new OrToolsPlanningSolver({
       endpoint:
         options.ortoolsEndpoint ?? (globalThis as any).process?.env?.PLANNING_ORTOOLS_URL ?? '',
-      timeoutSeconds: options.timeoutSeconds,
+      // timeoutSeconds: options.timeoutSeconds,
     });
   }
 }
-
-
 
 // import GreedyPlanningSolver from './greedy.planning.solver.js';
 // import OrToolsPlanningSolver from './ortools.planning.solver.js';

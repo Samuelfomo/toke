@@ -407,10 +407,6 @@ export default class User extends UserModel {
     return this;
   }
 
-  /**
-   * Internal/server-side setter.
-   * The normal user creation/update routes do not expose this field.
-   */
   setEmployeeColor(employeeColor: string): User {
     this.employee_color = employeeColor.trim().toUpperCase();
     return this;

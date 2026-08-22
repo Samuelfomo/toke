@@ -30,8 +30,8 @@ from app.schemas import (
 
 
 DAY_KEYS = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"]
+PLANNING_SOLVER_MAX_SECONDS = 30 * 60
 logger = logging.getLogger("uvicorn.error")
-
 
 @dataclass(frozen=True)
 class RequirementSlot:
@@ -229,6 +229,8 @@ class OrToolsPlanner:
         self.fill_vars: list[cp_model.IntVar] = []
         self.optional_leave_vars: list[cp_model.IntVar] = []
         self.guard_pool_balance_terms: list = []
+        self.guard_pool_rotation_terms: list = []
+        self.guard_pool_consecutive_terms: list = []
         self.objective_terms: list = []
 
     def build(self) -> None:
@@ -1069,9 +1071,20 @@ class OrToolsPlanner:
                     pool_terms.append(pool)
 
                 if policy.selectionMode == "ROTATION_ORDER":
-                    self.model.Add(
-                        pool == (1 if employee.guid in selected_guids else 0)
-                    )
+                    expected = 1 if employee.guid in selected_guids else 0
+                    if self.request.config.resilientAssistantMode:
+                        # Rotation order is the preferred pool, not a reason to fail
+                        # an otherwise valid planning. Penalize deviations heavily.
+                        deviation = self.model.NewBoolVar(
+                            f"guard_pool_rotation_deviation_{employee.guid}_{week_monday}"
+                        )
+                        if expected:
+                            self.model.Add(deviation + pool == 1)
+                        else:
+                            self.model.Add(deviation == pool)
+                        self.guard_pool_rotation_terms.append(400 * deviation)
+                    else:
+                        self.model.Add(pool == expected)
 
                 employee_guard_terms = [
                     self._slot_var(employee.guid, slot)
@@ -1116,9 +1129,17 @@ class OrToolsPlanner:
             if maximum_consecutive is not None:
                 size = maximum_consecutive + 1
                 for index in range(0, len(terms) - size + 1):
-                    self.model.Add(
-                        sum(terms[index:index + size]) <= maximum_consecutive
-                    )
+                    window = terms[index:index + size]
+                    if self.request.config.resilientAssistantMode:
+                        # Excess membership is allowed only as a last resort and
+                        # receives a high objective penalty.
+                        excess = self.model.NewIntVar(
+                            0, 1, f"guard_pool_consecutive_excess_{employee.guid}_{index}"
+                        )
+                        self.model.Add(excess >= sum(window) - maximum_consecutive)
+                        self.guard_pool_consecutive_terms.append(600 * excess)
+                    else:
+                        self.model.Add(sum(window) <= maximum_consecutive)
 
         if membership_counts and policy.balance.mode in {"SOFT", "STRICT"}:
             maximum = self.model.NewIntVar(
@@ -1132,9 +1153,18 @@ class OrToolsPlanner:
             spread = maximum - minimum
 
             if policy.balance.mode == "STRICT":
-                self.model.Add(
-                    spread <= (policy.balance.maxMembershipSpread or 0)
-                )
+                limit = policy.balance.maxMembershipSpread or 0
+                if self.request.config.resilientAssistantMode:
+                    excess = self.model.NewIntVar(
+                        0, len(active_weeks), "guard_pool_membership_spread_excess"
+                    )
+                    self.model.Add(excess >= spread - limit)
+                    # Keep the normal spread pressure and strongly penalize only
+                    # the part exceeding the configured preference.
+                    self.guard_pool_balance_terms.append(250 * spread)
+                    self.guard_pool_balance_terms.append(800 * excess)
+                else:
+                    self.model.Add(spread <= limit)
             else:
                 self.guard_pool_balance_terms.append(250 * spread)
 
@@ -1483,6 +1513,8 @@ class OrToolsPlanner:
         # from creating arbitrary additional leave days.
         objective.extend(100 * variable for variable in self.optional_leave_vars)
         objective.extend(self.guard_pool_balance_terms)
+        objective.extend(self.guard_pool_rotation_terms)
+        objective.extend(self.guard_pool_consecutive_terms)
 
         if self.rotating:
             maximum_historical_shifts = max(
@@ -1677,11 +1709,13 @@ class OrToolsPlanner:
         self.build()
         self._log_pre_solve_diagnostics()
 
-        self.solver.parameters.max_time_in_seconds = max(
-            1.0,
-            float(self.request.solverTimeoutSeconds) - 1.0,
-        )
-        self.solver.parameters.num_search_workers = 8
+#         self.solver.parameters.max_time_in_seconds = max(
+#             1.0,
+#             float(self.request.solverTimeoutSeconds) - 1.0,
+#         )
+        self.solver.parameters.max_time_in_seconds = PLANNING_SOLVER_MAX_SECONDS
+        self.solver.parameters.num_search_workers = 4
+#         self.solver.parameters.num_search_workers = 8
         self.solver.parameters.random_seed = 42
 
         status = self.solver.Solve(self.model)
@@ -2053,6 +2087,90 @@ class OrToolsPlanner:
                         )
                     )
 
+        relaxations_applied: list[str] = []
+        policy = self.request.config.guardTeamPolicy
+        if (
+            self.request.config.resilientAssistantMode
+            and policy.mode == "WEEKLY_POOL"
+        ):
+            active_weeks = [
+                (week_monday, dates)
+                for week_monday, dates in self._week_groups().items()
+                if (not policy.completeWeeksOnly or len(dates) == 7)
+                and any(
+                    slot.iso in dates and slot.requirement.serviceType == "GUARD"
+                    for slot in self.slots
+                )
+            ]
+
+            if policy.selectionMode == "ROTATION_ORDER":
+                for week_monday, _ in active_weeks:
+                    expected = {
+                        employee.guid
+                        for employee in self._guard_pool_selected_employees(week_monday)
+                    }
+                    actual = {
+                        employee.guid
+                        for employee in self.rotating
+                        if (employee.guid, week_monday) in self.weekly_guard_pool
+                        and self.solver.Value(self.weekly_guard_pool[(employee.guid, week_monday)])
+                    }
+                    if actual != expected:
+                        code = "GUARD_ROTATION_ORDER_RELAXED"
+                        relaxations_applied.append(code)
+                        violations.append(PlanningViolation(
+                            severity="WARNING",
+                            code=code,
+                            date=week_monday,
+                            message="Le groupe de garde prévu par l'ordre de rotation a été ajusté pour conserver un planning faisable.",
+                            details={"expected": sorted(expected), "actual": sorted(actual)},
+                        ))
+
+            counts: dict[str, int] = {}
+            memberships_by_employee: dict[str, list[int]] = {}
+            for employee in self.rotating:
+                values = [
+                    int(self.solver.Value(self.weekly_guard_pool[(employee.guid, week_monday)]))
+                    for week_monday, _ in active_weeks
+                    if (employee.guid, week_monday) in self.weekly_guard_pool
+                ]
+                memberships_by_employee[employee.guid] = values
+                counts[employee.guid] = sum(values)
+
+            if counts and policy.balance.mode == "STRICT":
+                spread = max(counts.values()) - min(counts.values())
+                limit = policy.balance.maxMembershipSpread or 0
+                if spread > limit:
+                    code = "GUARD_MEMBERSHIP_SPREAD_RELAXED"
+                    relaxations_applied.append(code)
+                    violations.append(PlanningViolation(
+                        severity="WARNING",
+                        code=code,
+                        message="L'équilibre idéal des semaines de garde a été relâché pour produire un planning faisable.",
+                        details={"configuredMaximumSpread": limit, "actualSpread": spread, "membershipCounts": counts},
+                    ))
+
+            maximum_consecutive = policy.balance.maxConsecutiveMembershipWeeks
+            if maximum_consecutive is not None:
+                for employee_guid, values in memberships_by_employee.items():
+                    streak = 0
+                    longest = 0
+                    for value in values:
+                        streak = streak + 1 if value else 0
+                        longest = max(longest, streak)
+                    if longest > maximum_consecutive:
+                        code = "GUARD_CONSECUTIVE_MEMBERSHIP_RELAXED"
+                        relaxations_applied.append(code)
+                        violations.append(PlanningViolation(
+                            severity="WARNING",
+                            code=code,
+                            employeeGuid=employee_guid,
+                            message="La limite préférentielle de semaines consécutives dans le pool de garde a été dépassée pour conserver la faisabilité.",
+                            details={"configuredMaximum": maximum_consecutive, "actualMaximum": longest},
+                        ))
+
+        relaxations_applied = sorted(set(relaxations_applied))
+
         coverage_score = self._coverage_score(coverage)
         fairness_score = self._fairness_score()
         conformity = round(coverage_score * 0.75 + fairness_score * 0.25)
@@ -2064,6 +2182,7 @@ class OrToolsPlanner:
             weeklyLeaveGroups=weekly_leave_groups,
             fairnessScore=fairness_score,
             coverageScore=coverage_score,
+            relaxationsApplied=relaxations_applied,
         )
 
         return EngineResult(

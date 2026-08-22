@@ -131,6 +131,20 @@ export default class MemosModel extends BaseModel {
     );
   }
 
+  /**
+   * Compte uniquement les mémos visibles/concernant un utilisateur.
+   * Utilisé par le endpoint /summary pour éviter de charger les lignes complètes.
+   */
+  protected async countForUser(user_id: number): Promise<number> {
+    return await this.count(this.db.tableName, {
+      [Op.or]: [
+        { [this.db.author_user]: user_id },
+        { [this.db.target_user]: user_id },
+        { [this.db.validator_user]: user_id },
+      ],
+    });
+  }
+
   // ============================================================================
   // 2. RECHERCHES PAR TYPE/STATUT
   // ============================================================================

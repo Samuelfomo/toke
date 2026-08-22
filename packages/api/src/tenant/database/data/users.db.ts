@@ -95,7 +95,7 @@ export const UsersDbStructure = {
       allowNull: false,
       unique: {
         name: 'unique_user_employee_color',
-        msg: 'Employee color must be unique for each employee.',
+        msg: 'Employee color must be unique.',
       },
       validate: {
         is: /^#[0-9A-F]{6}$/,

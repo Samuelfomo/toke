@@ -174,7 +174,7 @@ export const USERS_ERRORS = {
 
   EMPLOYEE_COLOR_INVALID: 'Employee color must use #RRGGBB hexadecimal format',
   EMPLOYEE_COLOR_ALREADY_EXISTS: 'Employee color is already assigned to another employee',
-  EMPLOYEE_COLOR_GENERATION_FAILED: 'Unable to generate a unique employee color for employee',
+  EMPLOYEE_COLOR_GENERATION_FAILED: 'Unable to generate a unique employee color',
 
   PIN_INVALID: `PIN must be ${USERS_VALIDATION.PIN.MIN_LENGTH} to ${USERS_VALIDATION.PIN.MAX_LENGTH} digits`,
   CURRENT_PIN_REQUIRED: 'Current PIN and new PIN are required',

@@ -92,6 +92,19 @@ const baseUsersSchema = z.object({
     .optional()
     .nullable(),
 
+  employee_color: z
+    .string({
+      invalid_type_error: USERS_ERRORS.EMPLOYEE_COLOR_INVALID,
+    })
+    .trim()
+    .transform((value) => value.toUpperCase())
+    .refine(
+      (value) => USERS_VALIDATION.EMPLOYEE_COLOR.PATTERN.test(value),
+      USERS_ERRORS.EMPLOYEE_COLOR_INVALID,
+    )
+    .optional()
+    .nullable(),
+
   pin_hash: z
     .string({
       invalid_type_error: USERS_ERRORS.PIN_INVALID,
@@ -221,6 +234,14 @@ export const usersFiltersSchema = z
     phone_number: z.string().optional(),
     country: z.string().optional(),
     employee_code: z.string().optional(),
+    employee_color: z
+      .string()
+      .transform((value) => value.trim().toUpperCase())
+      .refine(
+        (value) => USERS_VALIDATION.EMPLOYEE_COLOR.PATTERN.test(value),
+        USERS_ERRORS.EMPLOYEE_COLOR_INVALID,
+      )
+      .optional(),
     department: z.string().optional(),
     job_title: z.string().optional(),
     active: z.boolean().optional(),
@@ -283,9 +304,6 @@ export const validateUsersGuid = (guid: any) => {
 export const usersResponseSchema = baseUsersSchema.extend({
   id: z.number().int().positive(),
   guid: z.string().uuid(),
-  employee_color: z
-    .string()
-    .regex(USERS_VALIDATION.EMPLOYEE_COLOR.PATTERN, USERS_ERRORS.EMPLOYEE_COLOR_INVALID),
   created_at: z.string().datetime(),
   updated_at: z.string().datetime(),
 });

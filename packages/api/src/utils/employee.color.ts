@@ -40,6 +40,7 @@ function componentToHex(value: number): string {
 function hslToHex(hue: number, saturation: number, lightness: number): string {
   const s = saturation / 100;
   const l = lightness / 100;
+
   const c = (1 - Math.abs(2 * l - 1)) * s;
   const h = (((hue % 360) + 360) % 360) / 60;
   const x = c * (1 - Math.abs((h % 2) - 1));
@@ -56,7 +57,13 @@ function hslToHex(hue: number, saturation: number, lightness: number): string {
   else [r1, g1, b1] = [c, 0, x];
 
   const m = l - c / 2;
-  return `#${componentToHex((r1 + m) * 255)}${componentToHex((g1 + m) * 255)}${componentToHex((b1 + m) * 255)}`;
+
+  return (
+    '#' +
+    componentToHex((r1 + m) * 255) +
+    componentToHex((g1 + m) * 255) +
+    componentToHex((b1 + m) * 255)
+  );
 }
 
 export default class EmployeeColorUtils {
@@ -71,20 +78,68 @@ export default class EmployeeColorUtils {
   }
 
   /**
-   * Retourne une suite déterministe de couleurs visuellement espacées.
-   * Les 32 premières proviennent d'une palette contrôlée.
-   * Au-delà, on utilise l'angle d'or pour répartir les teintes.
+   * Retourne une suite déterministe de couleurs.
+   *
+   * Les premières couleurs sont contrôlées manuellement.
+   * Ensuite les couleurs sont générées grâce à l'angle d'or.
    */
   static candidate(index: number): string {
+    if (!Number.isInteger(index) || index < 0) {
+      throw new Error('Invalid employee color index');
+    }
+
     if (index < BASE_EMPLOYEE_COLORS.length) {
       return BASE_EMPLOYEE_COLORS[index]!;
     }
 
     const fallbackIndex = index - BASE_EMPLOYEE_COLORS.length;
+
     const hue = (fallbackIndex * 137.50776405) % 360;
+
     const saturation = [68, 74, 80][fallbackIndex % 3]!;
+
     const lightness = [42, 50, 46, 55][Math.floor(fallbackIndex / 3) % 4]!;
 
     return hslToHex(hue, saturation, lightness);
   }
 }
+
+
+// import { randomBytes } from 'crypto';
+//
+// export default class EmployeeColorUtils {
+//   static readonly PATTERN = /^#[0-9A-F]{6}$/;
+//
+//   static normalize(value: string): string {
+//     return value.trim().toUpperCase();
+//   }
+//
+//   static isValid(value: unknown): value is string {
+//     return typeof value === 'string' && this.PATTERN.test(this.normalize(value));
+//   }
+//
+//   /**
+//    * Génère une couleur RGB non prédéfinie.
+//    * On évite seulement les couleurs presque blanches/noires et les gris trop neutres
+//    * afin que l'identité visuelle reste exploitable dans les avatars.
+//    */
+//   static generateCandidate(): string {
+//     for (let attempt = 0; attempt < 100; attempt++) {
+//       const [r, g, b] = randomBytes(3);
+//       const brightness = 0.299 * r + 0.587 * g + 0.114 * b;
+//       const chroma = Math.max(r, g, b) - Math.min(r, g, b);
+//
+//       if (brightness < 55 || brightness > 210 || chroma < 38) {
+//         continue;
+//       }
+//
+//       return `#${[r, g, b]
+//         .map((component) => component.toString(16).padStart(2, '0'))
+//         .join('')
+//         .toUpperCase()}`;
+//     }
+//
+//     // Fallback extrêmement improbable : format toujours valide.
+//     return `#${randomBytes(3).toString('hex').toUpperCase()}`;
+//   }
+// }

@@ -41,10 +41,99 @@ import TimeEntries from '../class/TimeEntries.js';
 import UserRole from '../class/UserRole.js';
 import Role from '../class/Role.js';
 import { FCMService } from '../../tools/notification.service.js';
-import { MemoEventsService } from '../../realtime/MemoEventsService.js';
+import { MemoEventsService, type MemoRealtimeAction } from '../../realtime/MemoEventsService.js';
 import MemoCorrectionService from '../../tools/memo.correction.service.js';
 
 const router = Router();
+
+const getMemoParticipantGuids = async (
+  memoObj: Memos,
+  extraGuids: string[] = [],
+): Promise<string[]> => {
+  const [author, target, validator] = await Promise.all([
+    memoObj.getAuthorObj(),
+    memoObj.getTargetObj(),
+    memoObj.getValidatorObj(),
+  ]);
+
+  return [author?.getGuid(), target?.getGuid(), validator?.getGuid(), ...extraGuids].filter(
+    (guid): guid is string => Boolean(guid),
+  );
+};
+
+const emitMemoRealtimeChange = async (
+  req: Request,
+  memoObj: Memos,
+  action: MemoRealtimeAction,
+  extraGuids: string[] = [],
+  actorUserGuid?: string,
+): Promise<void> => {
+  const clientId = (req as any).client?.id;
+  const guid = memoObj.getGuid();
+  if (!clientId || !guid) return;
+
+  const affectedUserGuids = await getMemoParticipantGuids(memoObj, extraGuids);
+  MemoEventsService.emitMemoChanged(clientId, {
+    guid,
+    action,
+    affectedUserGuids,
+    actorUserGuid,
+    occurredAt: TimezoneConfigUtils.getCurrentTime().toISOString(),
+  });
+};
+
+// === TEMPS RÉEL MÉMOS ===
+
+router.post('/realtime-ticket', Ensure.post(), async (req: Request, res: Response) => {
+  try {
+    const userGuid = String(req.body?.user_guid || '');
+    if (!userGuid || !MemosValidationUtils.validateGuid(userGuid)) {
+      return R.handleError(res, HttpStatus.BAD_REQUEST, {
+        code: MEMOS_CODES.VALIDATION_FAILED,
+        message: 'user_guid is required and must be a valid GUID',
+      });
+    }
+
+    // Garantit que le GUID appartient bien au tenant courant avant d'ouvrir la room socket.
+    const userObj = await User._load(userGuid, true);
+    if (!userObj || !userObj.isActive()) {
+      return R.handleError(res, HttpStatus.UNAUTHORIZED, {
+        code: USERS_CODES.USER_NOT_FOUND,
+        message: USERS_ERRORS.NOT_FOUND,
+      });
+    }
+
+    const client = (req as any).client;
+    if (!client?.id) {
+      return R.handleError(res, HttpStatus.UNAUTHORIZED, {
+        code: MEMOS_CODES.VALIDATION_FAILED,
+        message: 'Client context unavailable',
+      });
+    }
+
+    const realtime = MemoEventsService.createRealtimeTicket(
+      {
+        id: client.id,
+        name: client.name,
+        token: client.token,
+        active: client.active,
+        profile: client.profile,
+        isRoot: client.isRoot,
+      },
+      userGuid,
+    );
+
+    return R.handleSuccess(res, {
+      realtime_ticket: realtime.ticket,
+      expires_at: realtime.expiresAt,
+    });
+  } catch (error: any) {
+    return R.handleError(res, HttpStatus.INTERNAL_ERROR, {
+      code: MEMOS_CODES.RETRIEVAL_FAILED,
+      message: error.message,
+    });
+  }
+});
 
 // === ROUTES DE LISTAGE GÉNÉRAL ===
 
@@ -52,7 +141,7 @@ router.get('/', Ensure.get(), async (req: Request, res: Response) => {
   try {
     const paginationData = paginationSchema.parse(req.query);
 
-    const views = ValidationUtils.validateView(req.query.view, responseValue.MINIMAL);
+    const views = ValidationUtils.validateView(req.query.view, responseValue.FULL);
 
     const memos = await Memos.exportable({}, paginationData, views);
 
@@ -93,7 +182,7 @@ router.get('/revision', Ensure.get(), async (_req: Request, res: Response) => {
 
 router.get('/list', Ensure.get(), async (req: Request, res: Response) => {
   try {
-    const { offset, limit, ...filterQuery } = req.query;
+    const { offset, limit, supervisor, ...filterQuery } = req.query;
     const filtersValidation = validateMemosFilters(filterQuery);
     if (!filtersValidation.success) {
       return R.handleError(res, HttpStatus.BAD_REQUEST, {
@@ -106,6 +195,31 @@ router.get('/list', Ensure.get(), async (req: Request, res: Response) => {
     const paginationOptions = paginationSchema.parse(req.query);
     const filters = filtersValidation.data;
     const conditions: Record<string, any> = {};
+
+    if (supervisor !== undefined) {
+      const supervisorGuid = String(supervisor);
+      if (!MemosValidationUtils.validateGuid(supervisorGuid)) {
+        return R.handleError(res, HttpStatus.BAD_REQUEST, {
+          code: MEMOS_CODES.VALIDATION_FAILED,
+          message: 'supervisor must be a valid GUID',
+        });
+      }
+
+      const supervisorObj = await User._load(supervisorGuid, true);
+      if (!supervisorObj) {
+        return R.handleError(res, HttpStatus.NOT_FOUND, {
+          code: USERS_CODES.USER_NOT_FOUND,
+          message: USERS_ERRORS.NOT_FOUND,
+        });
+      }
+
+      // Un manager voit les mémos qu'il a créés, reçus ou qu'il doit valider.
+      (conditions as any)[Op.or] = [
+        { author_user: supervisorObj.getId() },
+        { target_user: supervisorObj.getId() },
+        { validator_user: supervisorObj.getId() },
+      ];
+    }
 
     if (filters?.memo_type) {
       conditions.memo_type = filters.memo_type;
@@ -141,7 +255,7 @@ router.get('/list', Ensure.get(), async (req: Request, res: Response) => {
       conditions.my_memos_only = filters.my_memos_only;
     }
 
-    const views = ValidationUtils.validateView(req.query.view, responseValue.MINIMAL);
+    const views = ValidationUtils.validateView(req.query.view, responseValue.FULL);
 
     const memoEntries = await Memos._list(conditions, paginationOptions);
     const memos = {
@@ -185,7 +299,7 @@ router.get('/type/:memoType/list', Ensure.get(), async (req: Request, res: Respo
       });
     }
 
-    const views = ValidationUtils.validateView(req.query.view, responseValue.MINIMAL);
+    const views = ValidationUtils.validateView(req.query.view, responseValue.FULL);
 
     const memoEntries = await Memos._findByType(memoType as MemoType);
     const memos = {
@@ -218,7 +332,7 @@ router.get('/status/:memoStatus/list', Ensure.get(), async (req: Request, res: R
       });
     }
     // const paginationOptions = paginationSchema.parse(req.query);
-    const views = ValidationUtils.validateView(req.query.view, responseValue.MINIMAL);
+    const views = ValidationUtils.validateView(req.query.view, responseValue.FULL);
 
     const memoEntries = await Memos._findByStatus(memoStatus as MemoStatus, {});
     const memos = {
@@ -251,7 +365,7 @@ router.get('/pending', Ensure.get(), async (req: Request, res: Response) => {
       ? memoEntries?.slice(offset, offset + limit)
       : memoEntries?.slice(offset);
 
-    const views = ValidationUtils.validateView(req.query.view, responseValue.MINIMAL);
+    const views = ValidationUtils.validateView(req.query.view, responseValue.FULL);
 
     const memos = {
       pagination: {
@@ -312,7 +426,7 @@ router.get('/pending-validation', Ensure.get(), async (req: Request, res: Respon
       paginationOptions,
     );
 
-    const views = ValidationUtils.validateView(req.query.view, responseValue.MINIMAL);
+    const views = ValidationUtils.validateView(req.query.view, responseValue.FULL);
 
     const memos = {
       pagination: {
@@ -367,7 +481,7 @@ router.get('/escalated-to-me', Ensure.get(), async (req: Request, res: Response)
       // Filtre pour n'avoir que les escaladés (validator_comments contient "Escaladed:")
     });
 
-    const views = ValidationUtils.validateView(req.query.view, responseValue.MINIMAL);
+    const views = ValidationUtils.validateView(req.query.view, responseValue.FULL);
 
     const memos = {
       items: memoEntries
@@ -396,7 +510,7 @@ router.get('/escalated-to-me', Ensure.get(), async (req: Request, res: Response)
 router.get('/auto-generated', Ensure.get(), async (req: Request, res: Response) => {
   try {
     const memoEntries = await Memos._findAutoGenerated();
-    const views = ValidationUtils.validateView(req.query.view, responseValue.MINIMAL);
+    const views = ValidationUtils.validateView(req.query.view, responseValue.FULL);
     const memos = {
       items: memoEntries
         ? await Promise.all(memoEntries.map(async (memo) => await memo.toJSON(views)))
@@ -418,7 +532,7 @@ router.get('/auto-generated', Ensure.get(), async (req: Request, res: Response) 
 router.get('/urgent', Ensure.get(), async (req: Request, res: Response) => {
   try {
     const memoEntries = await Memos._findUrgentMemos();
-    const views = ValidationUtils.validateView(req.query.view, responseValue.MINIMAL);
+    const views = ValidationUtils.validateView(req.query.view, responseValue.FULL);
     const memos = {
       items: memoEntries
         ? await Promise.all(
@@ -592,16 +706,8 @@ router.post('/', Ensure.post(), async (req: Request, res: Response) => {
       });
     }
 
-    // 🔔 Notification realtime (non bloquante)
-    MemoEventsService.emitToClient(
-      (req as any).client.id, // room client
-      'memo:new', // nom de l'événement WS
-      {
-        memo: await memoObj.toJSON(),
-        targetUserId: supervisorObj.getAssignedBy()!,
-        authorUserId: authorObj.getId()!,
-      },
-    );
+    // 🔔 Temps réel : payload léger, envoyé uniquement aux utilisateurs concernés.
+    await emitMemoRealtimeChange(req, memoObj, 'created', [], authorObj.getGuid());
 
     const supervisorData = await User._load(supervisorObj.getAssignedBy());
     let notification: boolean = false;
@@ -743,6 +849,8 @@ router.post('/manager', Ensure.post(), async (req: Request, res: Response) => {
       });
     }
 
+    await emitMemoRealtimeChange(req, memoObj, 'created', [], authorUser.getGuid());
+
     let notification: boolean = false;
     if (targetUser.getDeviceToken()) {
       try {
@@ -783,7 +891,7 @@ router.get('/my-created', Ensure.get(), async (req: Request, res: Response) => {
       });
     }
     // const paginationOptions = paginationSchema.parse(req.query);
-    const views = ValidationUtils.validateView(view, responseValue.MINIMAL);
+    const views = ValidationUtils.validateView(view, responseValue.FULL);
 
     // // 🔹 2. Validation du paramètre "view"
     // const { view } = req.query;
@@ -1007,6 +1115,13 @@ router.put('/:guid', Ensure.put(), async (req: Request, res: Response) => {
       memoObj.setIncidentDatetime(new Date(validatedData.incident_datetime));
     }
     await memoObj.save();
+    await emitMemoRealtimeChange(
+      req,
+      memoObj,
+      'updated',
+      [],
+      (await memoObj.getAuthorObj())?.getGuid(),
+    );
     return R.handleSuccess(res, await memoObj.toJSON());
   } catch (error: any) {
     if (error.issues) {
@@ -1043,7 +1158,20 @@ router.delete('/:guid', Ensure.delete(), async (req: Request, res: Response) => 
       });
     }
 
+    const affectedUserGuids = await getMemoParticipantGuids(memoObj);
+    const deletedGuid = memoObj.getGuid()!;
     await memoObj.delete();
+
+    const clientId = (req as any).client?.id;
+    if (clientId) {
+      MemoEventsService.emitMemoChanged(clientId, {
+        guid: deletedGuid,
+        action: 'deleted',
+        affectedUserGuids,
+        occurredAt: TimezoneConfigUtils.getCurrentTime().toISOString(),
+      });
+    }
+
     return R.handleSuccess(res, {
       message: MEMOS_MESSAGES.DELETED_SUCCESSFULLY,
     });
@@ -1096,6 +1224,7 @@ router.patch('/:guid/manager-respond', Ensure.patch(), async (req: Request, res:
     //   content: validatedData.message_content,
     // };
     const data = await memoObj.submitMemosForResponse(validatedData.user, validatedData.message);
+    if (data) await emitMemoRealtimeChange(req, data, 'responded', [], validatedData.user);
 
     let notification: boolean = false;
     const targetUser = await User._load(memoObj.getTargetUser()!);
@@ -1180,6 +1309,7 @@ router.patch('/:guid/respond', Ensure.patch(), async (req: Request, res: Respons
     // };
 
     const data = await memoObj.submitMemosForValidation(validatedData.user, validatedData.message);
+    if (data) await emitMemoRealtimeChange(req, data, 'responded', [], validatedData.user);
 
     let notification: boolean = false;
     const targetUser = await User._load(memoObj.getTargetUser()!);
@@ -1286,6 +1416,8 @@ router.patch('/:guid/validate', Ensure.patch(), async (req: Request, res: Respon
       validatedData.validator_user,
       validatedData.message,
     );
+    if (data)
+      await emitMemoRealtimeChange(req, data, 'validated', [], validatedData.validator_user);
 
     // ========================================================================
     // NOTIFICATION
@@ -1425,11 +1557,19 @@ router.patch('/validate-all', Ensure.patch(), async (req: Request, res: Response
           });
         }
 
-        await memoObj.approve(
+        const approvedMemo = await memoObj.approve(
           validatorObj.getId()!,
           validatedData.validator_user,
           validatedData.message,
         );
+        if (approvedMemo)
+          await emitMemoRealtimeChange(
+            req,
+            approvedMemo,
+            'validated',
+            [],
+            validatedData.validator_user,
+          );
       }),
     );
 
@@ -1531,6 +1671,7 @@ router.patch('/:guid/reject', Ensure.patch(), async (req: Request, res: Response
       validatedData.validator_user,
       validatedData.message,
     );
+    if (data) await emitMemoRealtimeChange(req, data, 'rejected', [], validatedData.validator_user);
 
     let notification: boolean = false;
     const targetUser = await User._load(memoObj.getTargetUser()!);
@@ -1618,6 +1759,15 @@ router.patch('/:guid/escalate', Ensure.patch(), async (req: Request, res: Respon
       newValidatorObj.getId()!,
       validatedData.message,
     );
+    if (data) {
+      await emitMemoRealtimeChange(
+        req,
+        data,
+        'escalated',
+        [newValidatorObj.getGuid()!],
+        validatedData.escalator,
+      );
+    }
 
     let notification: boolean = false;
     if (newValidatorObj.getDeviceToken()) {
@@ -1718,6 +1868,14 @@ router.patch('/:guid/revoke', Ensure.patch(), async (req: Request, res: Response
       (await memoObj.getAuthorObj())?.getGuid()!,
       revokeMessage,
     );
+    if (data)
+      await emitMemoRealtimeChange(
+        req,
+        data,
+        'revoked',
+        [],
+        (await memoObj.getAuthorObj())?.getGuid(),
+      );
 
     // =====================================================================
     // NOTIFICATION
@@ -1773,7 +1931,7 @@ router.get('/target/:userGuid/list', Ensure.get(), async (req: Request, res: Res
       });
     }
 
-    const views = ValidationUtils.validateView(req.query.view, responseValue.MINIMAL);
+    const views = ValidationUtils.validateView(req.query.view, responseValue.FULL);
 
     const memoEntries = await Memos._listByTarget(userObj.getId()!);
     const memos = {
@@ -1811,7 +1969,7 @@ router.get('/validator/:userGuid/list', Ensure.get(), async (req: Request, res: 
       });
     }
 
-    const views = ValidationUtils.validateView(req.query.view, responseValue.MINIMAL);
+    const views = ValidationUtils.validateView(req.query.view, responseValue.FULL);
 
     const memoEntries = await Memos._listByValidator(userObj.getId()!);
     const memos = {
@@ -1853,9 +2011,7 @@ router.get('/session/:sessionGuid/list', Ensure.get(), async (req: Request, res:
     const memos = {
       session: await sessionObj.toJSON(responseValue.MINIMAL),
       memos: memoEntries
-        ? await Promise.all(
-            memoEntries.map(async (memo) => await memo.toJSON(responseValue.MINIMAL)),
-          )
+        ? await Promise.all(memoEntries.map(async (memo) => await memo.toJSON(responseValue.FULL)))
         : [],
       count: memoEntries?.length || 0,
     };
@@ -1899,9 +2055,7 @@ router.get('/date-range', Ensure.get(), async (req: Request, res: Response) => {
         end: endDate.toISOString(),
       },
       items: memoEntries
-        ? await Promise.all(
-            memoEntries.map(async (memo) => await memo.toJSON(responseValue.MINIMAL)),
-          )
+        ? await Promise.all(memoEntries.map(async (memo) => await memo.toJSON(responseValue.FULL)))
         : [],
       count: memoEntries?.length || 0,
     };
@@ -1941,7 +2095,7 @@ router.get('/preventive/list', Ensure.get(), async (req: Request, res: Response)
       items: memoEntries
         ? await Promise.all(
             memoEntries.map(async (memo) => ({
-              ...(await memo.toJSON(responseValue.MINIMAL)),
+              ...(await memo.toJSON(responseValue.FULL)),
               is_preventive: memo.isPreventive(),
             })),
           )
@@ -1984,7 +2138,7 @@ router.get('/corrective/list', Ensure.get(), async (req: Request, res: Response)
       items: memoEntries
         ? await Promise.all(
             memoEntries.map(async (memo) => ({
-              ...(await memo.toJSON(responseValue.MINIMAL)),
+              ...(await memo.toJSON(responseValue.FULL)),
               is_corrective: memo.isCorrective(),
             })),
           )
@@ -2056,7 +2210,7 @@ router.patch('/:guid/content', Ensure.patch(), async (req: Request, res: Respons
 
     return R.handleSuccess(res, {
       message: 'Attachment added successfully',
-      memo: await data?.toJSON(responseValue.MINIMAL),
+      memo: await data?.toJSON(responseValue.FULL),
     });
   } catch (error: any) {
     return R.handleError(res, HttpStatus.INTERNAL_ERROR, {
@@ -2095,7 +2249,7 @@ router.delete('/:guid/attachments/:index', Ensure.delete(), async (req: Request,
 
     return R.handleSuccess(res, {
       message: 'Attachment removed successfully',
-      memo: await memoObj.toJSON(responseValue.MINIMAL),
+      memo: await memoObj.toJSON(responseValue.FULL),
     });
   } catch (error: any) {
     return R.handleError(res, HttpStatus.INTERNAL_ERROR, {

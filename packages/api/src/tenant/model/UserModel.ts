@@ -171,10 +171,6 @@ export default class UserModel extends BaseModel {
     return await this.findOne(this.db.tableName, conditions);
   }
 
-  /**
-   * employee colors stay reserved even when an employee is soft-deleted.
-   * This avoids reusing a historical identity color for a new employee.
-   */
   protected async findByEmployeeColor(
     employeeColor: string,
     includeDeleted: boolean = true,
@@ -192,6 +188,38 @@ export default class UserModel extends BaseModel {
       conditions,
       includeDeleted ? { paranoid: false } : undefined,
     );
+  }
+
+  /**
+   * Génère une couleur non utilisée dans la base du tenant.
+   * La contrainte UNIQUE de la DB reste l'autorité finale.
+   */
+  // protected async generateUniqueEmployeeColor(): Promise<string> {
+  //   const maxAttempts = 100;
+  //
+  //   for (let attempt = 0; attempt < maxAttempts; attempt++) {
+  //     const candidate = EmployeeColorUtils.generateCandidate();
+  //     const exists = await this.findByEmployeeColor(candidate, true);
+  //     if (!exists) return candidate;
+  //   }
+  //
+  //   throw new Error(USERS_ERRORS.EMPLOYEE_COLOR_GENERATION_FAILED);
+  // }
+
+  protected async generateUniqueEmployeeColor(): Promise<string> {
+    const maxCandidates = 1000;
+
+    for (let index = 0; index < maxCandidates; index++) {
+      const candidate = EmployeeColorUtils.candidate(index);
+
+      const exists = await this.findByEmployeeColor(candidate, true);
+
+      if (!exists) {
+        return candidate;
+      }
+    }
+
+    throw new Error(USERS_ERRORS.EMPLOYEE_COLOR_GENERATION_FAILED);
   }
 
   protected async findByQrCodeToken(qr_code_token: string): Promise<any> {
@@ -541,6 +569,10 @@ export default class UserModel extends BaseModel {
     return await bcrypt.compare(password, storedHash);
   }
 
+  // ============================================
+  // CRUD OPTIMISÉ
+  // ============================================
+
   /**
    * ✅ Création (Sequelize hache automatiquement)
    */
@@ -609,6 +641,7 @@ export default class UserModel extends BaseModel {
 
     if (this.employee_color) {
       this.employee_color = EmployeeColorUtils.normalize(this.employee_color);
+
       const existingEmployeeColor = await this.findByEmployeeColor(this.employee_color, true);
       if (existingEmployeeColor) {
         throw new Error(USERS_ERRORS.EMPLOYEE_COLOR_ALREADY_EXISTS);
@@ -652,10 +685,6 @@ export default class UserModel extends BaseModel {
     this.id = typeof lastID === 'object' ? lastID.id : lastID;
     this.guid = guid;
   }
-
-  // ============================================
-  // CRUD OPTIMISÉ
-  // ============================================
 
   /**
    * ✅ Update (Sequelize hache automatiquement si modifié)
@@ -801,22 +830,6 @@ export default class UserModel extends BaseModel {
     );
 
     return affected > 0;
-  }
-
-  /**
-   * Assigns the first available stable employee color in this tenant database.
-   * DB uniqueness remains the final source of truth.
-   */
-  private async generateUniqueEmployeeColor(): Promise<string> {
-    const maxCandidates = 2048;
-
-    for (let index = 0; index < maxCandidates; index++) {
-      const candidate = EmployeeColorUtils.candidate(index);
-      const existing = await this.findByEmployeeColor(candidate, true);
-      if (!existing) return candidate;
-    }
-
-    throw new Error(USERS_ERRORS.EMPLOYEE_COLOR_GENERATION_FAILED);
   }
 
   // protected async definedSessionTemplate(id: number, session_template: number): Promise<boolean> {

@@ -611,14 +611,61 @@ export async function generateConfiguredSuggestion(
     NonNullable<PlanningSolverInput['boundaryState']>['guardContinuations'][number]
   >();
 
-  // A continuation on solveFrom must come from a GUARD that actually STARTED
-  // on the previous day. This is important when an overnight guard is persisted
-  // as two schedule fragments (Start of the shift + End of shift): the 00:00-08:00
-  // fragment must never create another continuation.
+  const planningDiagnosticsEnabled =
+    (globalThis as any).process?.env?.PLANNING_DIAGNOSTICS === 'true';
+
+  if (planningDiagnosticsEnabled) {
+    const boundaryCandidates = historicalAssignments
+      .filter((assignment) => assignment.serviceType === 'GUARD')
+      .filter((assignment) => assignment.startDate === boundaryGuardDate)
+      .map((assignment) => ({
+        employeeGuid: assignment.userGuid,
+        startDate: assignment.startDate,
+        endDate: assignment.endDate,
+        templateGuid: assignment.templateGuid,
+        templateName: assignment.templateName,
+        serviceType: assignment.serviceType,
+      }));
+
+    console.info('[PLANNING_DIAG][BOUNDARY_GUARD_CANDIDATES]', {
+      solveFrom: horizon.solveFrom,
+      boundaryGuardDate,
+      candidateCount: boundaryCandidates.length,
+      candidates: boundaryCandidates,
+    });
+
+    console.info('[PLANNING_DIAG][CONFIG_PAYLOAD]', {
+      // policySchemaVersion: engineConfig.policySchemaVersion,
+      weeklyLeavePolicy: engineConfig.weeklyLeavePolicy,
+      guardTeamPolicy: engineConfig.guardTeamPolicy,
+      minRestMinutesBetweenShifts: engineConfig.minRestMinutesBetweenShifts,
+      maxConsecutiveGuards: engineConfig.maxConsecutiveGuards,
+      restAfterGuardRequired: engineConfig.restAfterGuardRequired,
+      postGuardRestDays: engineConfig.postGuardRestDays,
+    });
+
+    console.info(
+      '[PLANNING_DIAG][REQUIREMENTS]',
+      engineRequirements.map((requirement) => ({
+        guid: requirement.guid,
+        serviceType: requirement.serviceType,
+        templateGuid: requirement.template.guid,
+        minEmployees: requirement.minEmployees,
+        targetEmployees: requirement.targetEmployees,
+        maxEmployees: requirement.maxEmployees,
+        guardPoolRelation: requirement.eligibility.guardPoolRelation,
+      })),
+    );
+  }
+
   for (const assignment of historicalAssignments) {
     if (assignment.serviceType !== 'GUARD') continue;
+
+    // LOT 16.1: only a guard assignment that actually STARTS on the day
+    // immediately before solveFrom can create a boundary continuation.
+    // A historical fragment merely covering that date must not be promoted
+    // to a new guard start.
     if (assignment.startDate !== boundaryGuardDate) continue;
-    if (assignment.endDate < boundaryGuardDate) continue;
 
     const guardRequirement = engineRequirements.find(
       (requirement) =>
@@ -657,17 +704,32 @@ export async function generateConfiguredSuggestion(
     guardContinuations: [...boundaryContinuationsByEmployee.values()],
   };
 
+  if (planningDiagnosticsEnabled) {
+    console.info('[PLANNING_DIAG][BOUNDARY_STATE_FINAL]', {
+      continuationCount: boundaryState.guardContinuations.length,
+      continuations: boundaryState.guardContinuations.map((item) => ({
+        employeeGuid: item.employeeGuid,
+        guardDate: item.guardDate,
+        continuationDate: item.continuationDate,
+        continuationTemplateGuid: item.continuationTemplate.guid,
+        creditedMinutes: item.creditedMinutes,
+      })),
+    });
+  }
+
   const solverInput: PlanningSolverInput = {
     employees,
     requirements: engineRequirements,
-    historicalAssignments,
-    boundaryState,
+    historicalAssignments: [],
+    boundaryState: {
+      guardContinuations: [],
+    },
     periodFrom: horizon.solveFrom,
     periodTo: horizon.solveTo,
     requestedPeriodFrom: periodFrom,
     requestedPeriodTo: periodTo,
     config: engineConfig,
-    solverTimeoutSeconds: config.getSolverTimeoutSeconds(),
+    // solverTimeoutSeconds: config.getSolverTimeoutSeconds(),
   };
 
   let engineResult: EngineResult;
@@ -676,7 +738,7 @@ export async function generateConfiguredSuggestion(
   try {
     const execution = await PlanningSolverFactory.solve(solverInput, {
       solverType: config.getSolverType(),
-      timeoutSeconds: config.getSolverTimeoutSeconds(),
+      // timeoutSeconds: config.getSolverTimeoutSeconds(),
       fallbackToGreedy: config.shouldFallbackToGreedy(),
       ortoolsEndpoint: (globalThis as any).process?.env?.PLANNING_ORTOOLS_URL,
     });

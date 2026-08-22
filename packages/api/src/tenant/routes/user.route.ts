@@ -443,6 +443,10 @@ router.post('/', Ensure.post(), async (req: Request, res: Response) => {
       userObj.setEmployeeCode(validatedData.employee_code);
     }
 
+    if (validatedData.employee_color) {
+      userObj.setEmployeeColor(validatedData.employee_color);
+    }
+
     if (validatedData.hire_date) {
       userObj.setHireDate(new Date(validatedData.hire_date));
     }
@@ -527,6 +531,11 @@ router.post('/', Ensure.post(), async (req: Request, res: Response) => {
         code: USERS_CODES.VALIDATION_FAILED,
         message: USERS_ERRORS.VALIDATION_FAILED,
         details: error.issues,
+      });
+    } else if (error.message === USERS_ERRORS.EMPLOYEE_COLOR_ALREADY_EXISTS) {
+      return R.handleError(res, HttpStatus.CONFLICT, {
+        code: USERS_CODES.EMPLOYEE_COLOR_ALREADY_EXISTS,
+        message: USERS_ERRORS.EMPLOYEE_COLOR_ALREADY_EXISTS,
       });
     } else if (error.message.includes('already exists')) {
       return R.handleError(res, HttpStatus.CONFLICT, {
@@ -628,6 +637,7 @@ router.post('/manager', Ensure.post(), async (req: Request, res: Response) => {
       if (data.first_name) user.setFirstName(data.first_name);
       if (data.email) user.setEmail(data.email);
       if (data.employee_code) user.setEmployeeCode(data.employee_code);
+      if (data.employee_color) user.setEmployeeColor(data.employee_color);
       if (data.hire_date) user.setHireDate(new Date(data.hire_date));
       if (data.department) user.setDepartment(data.department);
       if (data.job_title) user.setJobTitle(data.job_title);
@@ -740,6 +750,11 @@ router.post('/manager', Ensure.post(), async (req: Request, res: Response) => {
         code: USERS_CODES.VALIDATION_FAILED,
         message: USERS_ERRORS.VALIDATION_FAILED,
         details: error.issues,
+      });
+    } else if (error.message === USERS_ERRORS.EMPLOYEE_COLOR_ALREADY_EXISTS) {
+      return R.handleError(res, HttpStatus.CONFLICT, {
+        code: USERS_CODES.EMPLOYEE_COLOR_ALREADY_EXISTS,
+        message: USERS_ERRORS.EMPLOYEE_COLOR_ALREADY_EXISTS,
       });
     } else if (error.message.includes('already exists')) {
       return R.handleError(res, HttpStatus.CONFLICT, {
@@ -1014,6 +1029,10 @@ router.put('/:guid', Ensure.put(), async (req: Request, res: Response) => {
     if (validatedData.employee_code) {
       userObj.setEmployeeCode(validatedData.employee_code);
     }
+
+    if (validatedData.employee_color) {
+      userObj.setEmployeeColor(validatedData.employee_color);
+    }
     if (validatedData.hire_date) {
       userObj.setHireDate(new Date(validatedData.hire_date));
     }
@@ -1049,6 +1068,11 @@ router.put('/:guid', Ensure.put(), async (req: Request, res: Response) => {
         code: USERS_CODES.VALIDATION_FAILED,
         message: USERS_ERRORS.VALIDATION_FAILED,
         details: error.issues,
+      });
+    } else if (error.message === USERS_ERRORS.EMPLOYEE_COLOR_ALREADY_EXISTS) {
+      return R.handleError(res, HttpStatus.CONFLICT, {
+        code: USERS_CODES.EMPLOYEE_COLOR_ALREADY_EXISTS,
+        message: USERS_ERRORS.EMPLOYEE_COLOR_ALREADY_EXISTS,
       });
     } else if (error.message.includes('already exists')) {
       return R.handleError(res, HttpStatus.CONFLICT, {

@@ -1,5 +1,11 @@
+import { Agent, fetch } from 'undici';
+
 import { EngineDiagnostics, EngineResult, PlanningInfeasibleError } from '../suggestion.engine.js';
 
+import {
+  PLANNING_SOLVER_HTTP_TIMEOUT_MS,
+  PLANNING_SOLVER_MAX_SECONDS,
+} from './planning.solver.constants.js';
 import {
   PlanningSolver,
   PlanningSolverInput,
@@ -28,7 +34,7 @@ interface OrToolsApiResponse {
 
 export interface OrToolsPlanningSolverOptions {
   endpoint: string;
-  timeoutSeconds: number;
+  // timeoutSeconds: number;
 }
 
 function normalizeDiagnostics(diagnostics?: Partial<EngineDiagnostics> | null): EngineDiagnostics {
@@ -42,6 +48,12 @@ function normalizeDiagnostics(diagnostics?: Partial<EngineDiagnostics> | null): 
   };
 }
 
+const solverDispatcher = new Agent({
+  headersTimeout: 0,
+  bodyTimeout: 0,
+  connectTimeout: 10_000,
+});
+
 export default class OrToolsPlanningSolver implements PlanningSolver {
   readonly type = 'ORTOOLS' as const;
   readonly version = 'ortools-cp-sat-v1.6-continuation-workday';
@@ -49,14 +61,14 @@ export default class OrToolsPlanningSolver implements PlanningSolver {
   constructor(private readonly options: OrToolsPlanningSolverOptions) {}
 
   async solve(input: PlanningSolverInput): Promise<EngineResult> {
-    const fetchFn = (globalThis as any).fetch;
-
-    if (typeof fetchFn !== 'function') {
-      throw new PlanningSolverTechnicalError(
-        'Global fetch is unavailable in this Node.js runtime',
-        'PLANNING_SOLVER_UNAVAILABLE',
-      );
-    }
+    // const fetchFn = (globalThis as any).fetch;
+    //
+    // if (typeof fetchFn !== 'function') {
+    //   throw new PlanningSolverTechnicalError(
+    //     'Global fetch is unavailable in this Node.js runtime',
+    //     'PLANNING_SOLVER_UNAVAILABLE',
+    //   );
+    // }
 
     if (!this.options.endpoint?.trim()) {
       throw new PlanningSolverTechnicalError(
@@ -65,25 +77,45 @@ export default class OrToolsPlanningSolver implements PlanningSolver {
       );
     }
 
+    // const controller = new AbortController();
+    // const timeout = setTimeout(() => controller.abort(), this.options.timeoutSeconds * 1000);
+
     const controller = new AbortController();
-    const timeout = setTimeout(() => controller.abort(), this.options.timeoutSeconds * 1000);
+
+    const timeout = setTimeout(() => controller.abort(), PLANNING_SOLVER_HTTP_TIMEOUT_MS);
 
     let response: any;
 
     try {
       const endpoint = this.options.endpoint.replace(/\/+$/, '');
-      response = await fetchFn(`${endpoint}/solve`, {
+      // response = await fetchFn(`${endpoint}/solve`, {
+      //   method: 'POST',
+      //   headers: { 'content-type': 'application/json' },
+      //   body: JSON.stringify(input),
+      //   signal: controller.signal,
+      // });
+
+      response = await fetch(`${endpoint}/solve`, {
         method: 'POST',
-        headers: { 'content-type': 'application/json' },
+        headers: {
+          'content-type': 'application/json',
+        },
         body: JSON.stringify(input),
         signal: controller.signal,
+        dispatcher: solverDispatcher,
       });
     } catch (error: any) {
       if (error?.name === 'AbortError' || controller.signal.aborted) {
         throw new PlanningSolverTechnicalError(
-          `OR-Tools solver exceeded ${this.options.timeoutSeconds} second(s)`,
+          // `OR-Tools solver exceeded ${this.options.timeoutSeconds} second(s)`,
+          `OR-Tools solver exceeded the fixed execution window of ${PLANNING_SOLVER_MAX_SECONDS} second(s)`,
           'PLANNING_SOLVER_TIMEOUT',
-          { timeout_seconds: this.options.timeoutSeconds },
+          {
+            solver_timeout_seconds: PLANNING_SOLVER_MAX_SECONDS,
+            http_timeout_ms: PLANNING_SOLVER_HTTP_TIMEOUT_MS,
+            timeout_source: 'CODE_FIXED',
+          },
+          // { timeout_seconds: this.options.timeoutSeconds },
         );
       }
 
@@ -92,8 +124,19 @@ export default class OrToolsPlanningSolver implements PlanningSolver {
         'PLANNING_SOLVER_UNAVAILABLE',
         {
           message: error?.message,
+          name: error?.name,
+          cause_name: error?.cause?.name,
+          cause_message: error?.cause?.message,
+          cause_code: error?.cause?.code,
           endpoint: this.options.endpoint,
+          aborted: controller.signal.aborted,
+          solver_timeout_seconds: PLANNING_SOLVER_MAX_SECONDS,
+          http_timeout_ms: PLANNING_SOLVER_HTTP_TIMEOUT_MS,
         },
+        // {
+        //   message: error?.message,
+        //   endpoint: this.options.endpoint,
+        // },
       );
     } finally {
       clearTimeout(timeout);

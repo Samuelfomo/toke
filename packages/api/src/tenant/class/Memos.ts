@@ -64,6 +64,14 @@ export default class Memos extends MemosModel {
     return new Memos().listByValidator(validator_id);
   }
 
+  /**
+   * Compteur léger utilisé par le polling frontend.
+   * Ne sérialise aucun mémo et ne charge ni contenu ni pièces jointes.
+   */
+  static _countForUser(user_id: number): Promise<number> {
+    return new Memos().countForUser(user_id);
+  }
+
   static _findPendingValidation(): Promise<Memos[] | null> {
     return new Memos().findAllSubmit();
   }
@@ -760,9 +768,9 @@ export default class Memos extends MemosModel {
     }
     return {
       ...baseData,
-      [RS.AUTHOR_USER]: author ? await author.toJSON() : null,
-      [RS.TARGET_USER]: target ? await target.toJSON() : null,
-      [RS.VALIDATOR_USER]: validator ? await validator.toJSON() : null,
+      [RS.AUTHOR_USER]: author ? author.toPublicJSON() : null,
+      [RS.TARGET_USER]: target ? target.toPublicJSON() : null,
+      [RS.VALIDATOR_USER]: validator ? validator.toPublicJSON() : null,
       [RS.AFFECTED_SESSION]: session ? await session.toJSON(responseValue.MINIMAL) : null,
       [RS.DETAILS]: this.details,
     };

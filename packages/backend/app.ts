@@ -17,6 +17,7 @@ import scheduleAssignmentsRoute from './src/routes/schedule.assignments.route.js
 import rotationAssignmentsRoute from './src/routes/rotation.assignments.route.js';
 import groupsRoute from './src/routes/groups.route.js';
 import { QrSocketBridgeService } from './src/services/qr.socket.bridge.service.js';
+import { MemoSocketBridgeService } from './src/services/memo.socket.bridge.service.js';
 import authRoute from './src/routes/auth.route.js';
 import SessionModelRoute from './src/routes/session.model.route.js';
 import scheduleSuggestionRoute from './src/routes/schedule.suggestion.route.js';
@@ -71,6 +72,7 @@ export default class App {
         const httpServer = http.createServer(this.app);
         const io = new IOServer(httpServer, { cors: { origin: '*' } });
         QrSocketBridgeService.init(io);
+        MemoSocketBridgeService.init(io);
         this.server = httpServer;
 
         httpServer.listen(this.config.port, () => {
@@ -249,6 +251,7 @@ export default class App {
       console.log(`\n📡 Signal ${signal} reçu. Arrêt gracieux...`);
 
       try {
+        MemoSocketBridgeService.shutdown();
         QrSocketBridgeService.shutdown();
         // 1. Fermer le serveur HTTP
         if (this.server) {
