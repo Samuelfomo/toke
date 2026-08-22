@@ -1,8 +1,8 @@
 <template>
   <div class="min-h-screen flex flex-col bg-gradient-to-r from-[#d0e8f7] via-[#f0e4f5] to-[#d0e8f7]">
-<!--    <div class="top-header">-->
-      <Header />
-<!--    </div>-->
+    <!--    <div class="top-header">-->
+    <Header />
+    <!--    </div>-->
 
     <main class="flex-1 flex overflow-hidden pb-4 max-w-[1600px] mx-auto rounded-md w-full bg-white/70 m-5">
 
@@ -102,7 +102,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted, onUnmounted, watch } from 'vue';
+import { ref, computed, onMounted } from 'vue';
 import { useRouter } from 'vue-router';
 import { useUserStore } from '@/stores/userStore';
 import { useMemoStore, type Memo } from '@/stores/memoStore';
@@ -282,9 +282,8 @@ const selectionnerMemo = (memo: MemoItem) => {
 };
 
 const onActionDone = async () => {
-  if (memoSelectionneGuid.value) {
-    await memoStore.refreshMemo(managerGuid.value, memoSelectionneGuid.value);
-  }
+  // Le composant détail a déjà rafraîchi le mémo concerné.
+  // L'événement Socket.IO synchronise les autres sessions.
 };
 
 // const naviguerCreerMemo = () => {
@@ -299,8 +298,10 @@ const naviguerCreerMemo = () => {
 };
 
 const onMemoCreated = async (newGuid: string) => {
-  await memoStore.loadMemos(managerGuid.value, true);
   if (newGuid) {
+    // Une seule requête ciblée au lieu de recharger toute la liste.
+    await memoStore.refreshMemo(managerGuid.value, newGuid);
+    memoStore.markMemoAsRead(newGuid);
     memoSelectionneGuid.value = newGuid;
     mode.value = 'detail';
   } else {
@@ -331,8 +332,6 @@ const getQueryString = (value: unknown): string => {
 }
 
 // ── Lifecycle ──────────────────────────────────
-let stopWatcher: (() => void) | null = null;
-
 onMounted(async () => {
   HeadBuilder.apply({
     title: 'Mémos - Toké',
@@ -340,8 +339,6 @@ onMounted(async () => {
     meta: { viewport: 'width=device-width, initial-scale=1.0' }
   });
   await chargerMemos();
-  memoStore.markAllMemosAsRead();
-  stopWatcher = watch(() => memoStore.memos.length, () => memoStore.markAllMemosAsRead());
 
   // Ajouter dans onMounted, après chargerMemos()
   const { action, employeeGuid, employeeName, entryGuid, date } = route.query
@@ -351,6 +348,4 @@ onMounted(async () => {
   }
 });
 
-
-onUnmounted(() => stopWatcher?.());
 </script>

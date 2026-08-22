@@ -129,7 +129,6 @@ import { ref, computed, watch, onMounted, onUnmounted } from 'vue';
 import { useUserStore } from '@/stores/userStore';
 import { TeamEmployee, useTeamStore } from '@/stores/teamStore';
 import MemoService, { CreateMemo, UploadedAttachment } from '@/service/MemoService';
-import { useMemoStore } from '@/stores/memoStore';
 import MemoChat from './memoChat.vue';
 import '../../assets/css/toke-memo-08.css';
 
@@ -172,7 +171,6 @@ const emit = defineEmits<{
 // ── Stores ─────────────────────────────────────
 const userStore = useUserStore();
 const teamStore = useTeamStore();
-const memoStore = useMemoStore();
 
 // ── State ──────────────────────────────────────
 const employes = computed(() => teamStore.employees);
@@ -403,8 +401,8 @@ const soumettreMemo = async () => {
     recordedDuration.value = '00:00';
     if (audioURL.value) { URL.revokeObjectURL(audioURL.value); audioURL.value = ''; }
 
-    // Rafraîchir le store + notifier le parent
-    await memoStore.loadMemos(userStore.user?.guid!, true);
+    // Le parent rafraîchit uniquement le nouveau mémo. Le socket fera la même
+    // invalidation pour les autres sessions sans recharger toute la collection.
     emit('created', response.data?.guid ?? response.data?.data?.guid ?? '');
 
   } catch (error: any) {

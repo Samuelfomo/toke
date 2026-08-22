@@ -39,11 +39,20 @@
         @toggle-recording="toggleRecording"
         @remove-recording="deleteRecording"
         @toggle-preview-play="togglePreviewPlay"
-        @view-image="(f: any) => voirImage(f.url)"
+        @view-image="(f: any) => f?.url && voirImage(f.url)"
         @toggle-audio-play="handleToggleAudioPlay as any"
     >
       <template #image-preview="{ fichier }">
-        <AuthenticatedMedia :url="fichier.url ?? ''" />
+        <AuthenticatedMedia
+            v-if="fichier?.url"
+            :url="fichier.url"
+        />
+        <div
+            v-else
+            class="mt-2 flex h-24 items-center justify-center rounded-lg bg-gray-100 px-3 text-xs text-gray-500"
+        >
+          Aperçu disponible après envoi
+        </div>
       </template>
     </MemoChat>
 
@@ -349,6 +358,8 @@ const envoyerReponse = async () => {
   isUploadingFiles.value = true;
 
   const time = new Date().toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })
+  // Capturer les fichiers AVANT de vider le formulaire.
+  const allFiles = collectAllFiles()
 
   // ✅ Push immédiat avec status "sending"
   const index = reponsesEnvoyees.value.push({
@@ -369,7 +380,6 @@ const envoyerReponse = async () => {
   if (audioURL.value) { URL.revokeObjectURL(audioURL.value); audioURL.value = '' }
 
   try {
-    const allFiles = collectAllFiles();  // ⚠️ collectAllFiles() doit être appelé AVANT le reset — déplace-le avant le push
     const uploaded = allFiles.length > 0 ? await MemoService.uploadMultipleFiles(allFiles) : []
     isUploadingFiles.value = false
     const content = MemoService.buildMessageContent(reponsesEnvoyees.value[index].contenu, uploaded)
@@ -379,7 +389,7 @@ const envoyerReponse = async () => {
     reponsesEnvoyees.value[index].status = 'sent'
 
     await memoStore.refreshMemo(props.managerGuid, memo.value.guid)
-    await chargerMemo()  // ✅ Vide reponsesEnvoyees après rechargement (voir point 3)
+    await chargerMemo()
     emit('action-done')
   } catch (e: any) {
     // ✅ Marquer en erreur sans supprimer le message
