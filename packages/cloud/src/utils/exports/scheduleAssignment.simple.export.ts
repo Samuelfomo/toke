@@ -50,12 +50,20 @@ export interface SimplifiedWeek {
     dates: string[]
 }
 
+export interface SimplifiedScheduleMemberRef {
+    guid: string
+    name: string
+}
+
 export interface SimplifiedScheduleRow {
     iso: string
     dateLabel: string
     groupName: string | null
     namesByStart: Record<string, string[]>
     restNames: string[]
+    /** Données supplémentaires utilisées uniquement par la vue interactive. */
+    membersByStart: Record<string, SimplifiedScheduleMemberRef[]>
+    restMembers: SimplifiedScheduleMemberRef[]
 }
 
 const DAY_FR_LONG = [
@@ -79,39 +87,41 @@ function addDays(iso: string, amount: number): string {
     return toIsoUtc(date)
 }
 
+
+/**
+ * Format court d'un nom d'employé :
+ * - premier prénom conservé en entier ;
+ * - chaque mot suivant est réduit à son initiale.
+ *
+ * Exemples :
+ * - Aïcha KOTTINE         → Aïcha K.
+ * - Melanie Patricia NGAH → Melanie P. N.
+ * - Jeanne YAMENI FOYANG  → Jeanne Y. F.
+ * - Christine Odrée KAMDEU → Christine O. K.
+ */
 export function formatEmployeeShortName(
     firstName?: string,
     lastName?: string,
     fallbackName?: string,
 ): string {
-    const first = firstName?.trim().split(/\s+/)[0]
-    const last = lastName?.trim().split(/\s+/)[0]
+    const explicitName = [firstName?.trim(), lastName?.trim()]
+        .filter(Boolean)
+        .join(' ')
+        .trim()
 
-    if (first) {
-        const firstUpper = first.toLocaleUpperCase('fr-FR')
-
-        if (!last) return firstUpper
-
-        const lastInitial = last
-            .charAt(0)
-            .toLocaleUpperCase('fr-FR')
-
-        return `${firstUpper} ${lastInitial}.`
-    }
-
-    const parts = fallbackName?.trim().split(/\s+/).filter(Boolean) ?? []
+    const fullName = explicitName || fallbackName?.trim() || ''
+    const parts = fullName.split(/\s+/).filter(Boolean)
 
     if (parts.length === 0) return '—'
+    if (parts.length === 1) return parts[0]
 
-    const fallbackFirst = parts[0].toLocaleUpperCase('fr-FR')
+    const first = parts[0]
+    const initials = parts
+        .slice(1)
+        .map((part) => `${part.charAt(0).toLocaleUpperCase('fr-FR')}.`)
+        .join(' ')
 
-    if (parts.length === 1) return fallbackFirst
-
-    const fallbackInitial = parts[1]
-        .charAt(0)
-        .toLocaleUpperCase('fr-FR')
-
-    return `${fallbackFirst} ${fallbackInitial}.`
+    return `${first} ${initials}`
 }
 
 function buildMemberLabels(members: SimplifiedScheduleMember[]): Map<string, string> {
@@ -226,7 +236,11 @@ export function buildSimplifiedRows(
             const namesByStart: Record<string, string[]> = Object.fromEntries(
                 startTimes.map((start) => [start, []]),
             )
+            const membersByStart: Record<string, SimplifiedScheduleMemberRef[]> = Object.fromEntries(
+                startTimes.map((start) => [start, []]),
+            )
             const restNames: string[] = []
+            const restMembers: SimplifiedScheduleMemberRef[] = []
 
             for (const member of members) {
                 if (showGroupColumn && groupKey(member) !== group) continue
@@ -240,18 +254,25 @@ export function buildSimplifiedRows(
 
                 for (const start of startsForMember) {
                     if (!namesByStart[start]) namesByStart[start] = []
+                    if (!membersByStart[start]) membersByStart[start] = []
                     namesByStart[start].push(label)
+                    membersByStart[start].push({guid: member.guid, name: label})
                 }
 
                 if (member.restByDate?.[iso] === true) {
                     restNames.push(label)
+                    restMembers.push({guid: member.guid, name: label})
                 }
             }
 
             for (const names of Object.values(namesByStart)) {
                 names.sort((a, b) => a.localeCompare(b, 'fr'))
             }
+            for (const refs of Object.values(membersByStart)) {
+                refs.sort((a, b) => a.name.localeCompare(b.name, 'fr'))
+            }
             restNames.sort((a, b) => a.localeCompare(b, 'fr'))
+            restMembers.sort((a, b) => a.name.localeCompare(b.name, 'fr'))
 
             // Avec plusieurs groupes, on évite les lignes 100 % vides qui
             // augmenteraient inutilement le nombre de pages.
@@ -267,6 +288,8 @@ export function buildSimplifiedRows(
                 groupName: showGroupColumn ? displayGroupName(group) : null,
                 namesByStart,
                 restNames,
+                membersByStart,
+                restMembers,
             })
         }
     }

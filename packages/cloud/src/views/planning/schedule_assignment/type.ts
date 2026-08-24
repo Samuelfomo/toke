@@ -34,6 +34,8 @@ export interface ISessionTemplateSummary {
 export interface ISessionTemplateInline extends ISessionTemplateSummary {
     definition: ISessionTemplateDefinition
     session_model?: ISessionModelMini
+    version?: number
+    adjustment?: IScheduleAdjustmentMeta | null
 }
 
 export type IScheduleAssignmentTemplate =
@@ -133,6 +135,22 @@ export interface ICycleTemplate {
     updated_at: string
 }
 
+
+export interface IScheduleAdjustmentMeta {
+    manual_override: true
+    source?: string
+    operation_id: string
+    service_key: string
+    service_label: string
+    service_date: string
+    component: 'service' | 'guard_start' | 'guard_continuation'
+    spans_next_day?: boolean
+    source_template_guid?: string
+    continuation_of_date?: string
+    modified_by?: string
+    created_at?: string
+}
+
 // ── Entité principale ──────────────────────────────────────────────────────
 
 export interface IScheduleAssignment {
@@ -157,6 +175,7 @@ export interface IScheduleAssignment {
     active: boolean
 
     created_by: ICreatedByMini
+    adjustment?: IScheduleAdjustmentMeta | null
 }
 
 // ── Helpers de narrowing ───────────────────────────────────────────────────
@@ -207,6 +226,31 @@ export function isPlannedRestAssignment(
     assignment: IScheduleAssignment,
 ): boolean {
     return assignment.session_template.guid === 'planned-rest'
+}
+
+
+export function isManualOverrideAssignment(
+    assignment: IScheduleAssignment,
+): boolean {
+    return assignment.adjustment?.manual_override === true
+        || (
+            'adjustment' in assignment.session_template
+            && assignment.session_template.adjustment?.manual_override === true
+        )
+}
+
+export function isGuardContinuationAssignment(
+    assignment: IScheduleAssignment,
+): boolean {
+    const adjustment = assignment.adjustment
+        ?? (
+            'adjustment' in assignment.session_template
+                ? assignment.session_template.adjustment
+                : null
+        )
+
+    return adjustment?.manual_override === true
+        && adjustment.component === 'guard_continuation'
 }
 
 /**

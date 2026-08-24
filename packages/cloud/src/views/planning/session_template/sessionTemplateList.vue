@@ -2,7 +2,7 @@
   <div class="mx-auto w-full max-w-[1500px] py-6 flex justify-end">
     <RouterLink
         :to="{ name: 'planning-menu' }"
-        class="inline-flex items-center gap-2 bg-slate-50/15 rounded-md hover:bg-slate-50/30 p-1 text-sm font-semibold text-slate-600 no-underline transition hover:text-blue-700"
+        class="inline-flex items-center gap-2 bg-slate-50/30 rounded-md hover:bg-slate-50 p-2 text-sm font-semibold text-slate-600 no-underline transition hover:text-blue-700"
     >
       <IconArrowLeft :size="18"/>
       Retour aux outils de planification

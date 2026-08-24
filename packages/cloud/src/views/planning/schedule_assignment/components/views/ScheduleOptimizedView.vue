@@ -12,13 +12,16 @@
           >
             {{ visualMode === 'personalized' ? 'Personnalisé' : 'Généralisé · services' }}
           </span>
+          <span class="rounded-full border border-indigo-200 bg-white px-2 py-0.5 text-[10px] font-bold text-indigo-700">
+            {{ monthsPerPage }} mois/page
+          </span>
         </div>
         <p class="mt-0.5 text-xs text-indigo-700/80">
           <template v-if="visualMode === 'personalized'">
-            Jusqu'à 6 mois par bloc. La couleur du mini-avatar identifie l'employé ; le repère horaire identifie le service.
+            {{ monthsPerPage }} mois maximum par bloc. La couleur du mini-avatar identifie l'employé ; le repère horaire identifie le service.
           </template>
           <template v-else>
-            Jusqu'à 6 mois par bloc. La couleur du mini-avatar représente le service ; les employés restent identifiés par leurs initiales.
+            {{ monthsPerPage }} mois maximum par bloc. La couleur du mini-avatar représente le service ; les employés restent identifiés par leurs initiales.
           </template>
         </p>
       </div>
@@ -45,7 +48,7 @@
         <span class="text-xs text-slate-400">Bloc {{ pageIndex + 1 }} · {{ page.months.length }} mois</span>
       </div>
 
-      <div class="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3">
+      <div class="grid gap-4" :class="monthPageGridClass">
         <article
             v-for="month in page.months"
             :key="month.key"
@@ -63,8 +66,8 @@
             <div
                 v-for="(cell, index) in monthCells(month)"
                 :key="`${month.key}-${index}`"
-                class="min-h-[76px] bg-white p-1"
-                :class="cell?.inPeriod === false ? 'opacity-40' : ''"
+                class="bg-white p-1"
+                :class="[dayCellHeightClass, cell?.inPeriod === false ? 'opacity-40' : '']"
             >
               <template v-if="cell">
                 <div class="mb-1 flex items-center justify-between">
@@ -87,15 +90,25 @@
                     </span>
 
                     <div class="flex min-w-0 flex-wrap gap-[2px]">
-                      <OptimizedEmployeeAvatar
+                      <button
                           v-for="employee in line.employees"
                           :key="`${cell.iso}-${line.kind}-${employee.guid}`"
-                          :code="employee.code"
-                          :color="employee.employeeColor"
-                          :mode="visualMode"
-                          :kind="line.kind"
-                          :title="employeeTitle(employee.code, line.kind, line.label)"
-                      />
+                          type="button"
+                          class="rounded-full transition"
+                          :class="canAdjust(cell.iso)
+                            ? 'cursor-pointer hover:ring-2 hover:ring-blue-300 focus:outline-none focus:ring-2 focus:ring-blue-400'
+                            : 'cursor-default'"
+                          :disabled="!canAdjust(cell.iso)"
+                          @click="requestAdjustment(employee.guid, cell.iso)"
+                      >
+                        <OptimizedEmployeeAvatar
+                            :code="employee.code"
+                            :color="employee.employeeColor"
+                            :mode="visualMode"
+                            :kind="line.kind"
+                            :title="employeeTitle(employee.code, line.kind, line.label)"
+                        />
+                      </button>
                     </div>
                   </div>
                 </div>
@@ -137,22 +150,64 @@ import {
   formatMonthTitle,
   splitPeriodIntoMonthPages,
   type OptimizedMonth,
+  type OptimizedMonthsPerPage,
   type OptimizedPdfMode,
   type OptimizedShiftKind,
 } from '@/utils/exports/scheduleAssignment.optimized.export'
 import OptimizedEmployeeAvatar from './OptimizedEmployeeAvatar.vue'
-import type { SchedulePlanningMember } from './schedulePlanningView.types'
+import type {
+  ScheduleDayAdjustmentTarget,
+  SchedulePlanningMember,
+} from './schedulePlanningView.types'
 
 const props = withDefaults(defineProps<{
   members: SchedulePlanningMember[]
   periodFrom: string
   periodTo: string
   visualMode?: OptimizedPdfMode
+  monthsPerPage?: OptimizedMonthsPerPage
 }>(), {
   visualMode: 'personalized',
+  monthsPerPage: 6,
 })
 
+const emit = defineEmits<{
+  adjust: [target: ScheduleDayAdjustmentTarget]
+}>()
+
+const todayIso = new Date().toISOString().slice(0, 10)
+
+function canAdjust(iso: string): boolean {
+  return iso >= todayIso
+}
+
+function requestAdjustment(memberGuid: string, date: string): void {
+  if (!canAdjust(date)) return
+  const member = props.members.find((candidate) => candidate.guid === memberGuid)
+  if (!member) return
+  emit('adjust', {member, date})
+}
+
 const DAY_HEADERS = ['L', 'M', 'M', 'J', 'V', 'S', 'D'] as const
+
+const monthPageGridClass = computed(() => {
+  switch (props.monthsPerPage) {
+    case 1: return 'grid-cols-1'
+    case 2: return 'grid-cols-1 lg:grid-cols-2'
+    case 3: return 'grid-cols-1 md:grid-cols-2 xl:grid-cols-3'
+    case 4: return 'grid-cols-1 md:grid-cols-2'
+    default: return 'grid-cols-1 md:grid-cols-2 xl:grid-cols-3'
+  }
+})
+
+const dayCellHeightClass = computed(() => {
+  switch (props.monthsPerPage) {
+    case 1: return 'min-h-[128px]'
+    case 2:
+    case 3: return 'min-h-[100px]'
+    default: return 'min-h-[76px]'
+  }
+})
 
 const LegendItem = defineComponent({
   props: {
@@ -174,7 +229,11 @@ const daysByIso = computed(() => buildOptimizedDays(
     props.periodTo,
     codesByGuid.value,
 ))
-const pages = computed(() => splitPeriodIntoMonthPages(props.periodFrom, props.periodTo))
+const pages = computed(() => splitPeriodIntoMonthPages(
+    props.periodFrom,
+    props.periodTo,
+    props.monthsPerPage,
+))
 
 const employeeLegend = computed(() =>
     [...props.members]
@@ -274,14 +333,28 @@ function formatRange(from: string, to: string): string {
 }
 </script>
 
-
 <!--<template>-->
 <!--  <div class="space-y-6">-->
 <!--    <div class="flex flex-wrap items-start justify-between gap-4 rounded-xl border border-indigo-100 bg-indigo-50 px-4 py-3">-->
 <!--      <div>-->
-<!--        <p class="text-sm font-bold text-indigo-800">Vue optimisée longue période</p>-->
+<!--        <div class="flex flex-wrap items-center gap-2">-->
+<!--          <p class="text-sm font-bold text-indigo-800">Vue optimisée longue période</p>-->
+<!--          <span-->
+<!--              class="rounded-full border px-2 py-0.5 text-[10px] font-bold"-->
+<!--              :class="visualMode === 'personalized'-->
+<!--                ? 'border-indigo-200 bg-white text-indigo-700'-->
+<!--                : 'border-slate-200 bg-white text-slate-600'"-->
+<!--          >-->
+<!--            {{ visualMode === 'personalized' ? 'Personnalisé' : 'Généralisé · services' }}-->
+<!--          </span>-->
+<!--        </div>-->
 <!--        <p class="mt-0.5 text-xs text-indigo-700/80">-->
-<!--          Jusqu'à 6 mois par bloc. La couleur du mini-avatar identifie l'employé ; la couleur du repère horaire identifie le service.-->
+<!--          <template v-if="visualMode === 'personalized'">-->
+<!--            Jusqu'à 6 mois par bloc. La couleur du mini-avatar identifie l'employé ; le repère horaire identifie le service.-->
+<!--          </template>-->
+<!--          <template v-else>-->
+<!--            Jusqu'à 6 mois par bloc. La couleur du mini-avatar représente le service ; les employés restent identifiés par leurs initiales.-->
+<!--          </template>-->
 <!--        </p>-->
 <!--      </div>-->
 
@@ -349,13 +422,25 @@ function formatRange(from: string, to: string): string {
 <!--                    </span>-->
 
 <!--                    <div class="flex min-w-0 flex-wrap gap-[2px]">-->
-<!--                      <OptimizedEmployeeAvatar-->
+<!--                      <button-->
 <!--                          v-for="employee in line.employees"-->
 <!--                          :key="`${cell.iso}-${line.kind}-${employee.guid}`"-->
-<!--                          :code="employee.code"-->
-<!--                          :color="employee.employeeColor"-->
-<!--                          :title="employeeTitle(employee.code, line.kind, line.label)"-->
-<!--                      />-->
+<!--                          type="button"-->
+<!--                          class="rounded-full transition"-->
+<!--                          :class="canAdjust(cell.iso)-->
+<!--                            ? 'cursor-pointer hover:ring-2 hover:ring-blue-300 focus:outline-none focus:ring-2 focus:ring-blue-400'-->
+<!--                            : 'cursor-default'"-->
+<!--                          :disabled="!canAdjust(cell.iso)"-->
+<!--                          @click="requestAdjustment(employee.guid, cell.iso)"-->
+<!--                      >-->
+<!--                        <OptimizedEmployeeAvatar-->
+<!--                            :code="employee.code"-->
+<!--                            :color="employee.employeeColor"-->
+<!--                            :mode="visualMode"-->
+<!--                            :kind="line.kind"-->
+<!--                            :title="employeeTitle(employee.code, line.kind, line.label)"-->
+<!--                        />-->
+<!--                      </button>-->
 <!--                    </div>-->
 <!--                  </div>-->
 <!--                </div>-->
@@ -376,6 +461,8 @@ function formatRange(from: string, to: string): string {
 <!--            <OptimizedEmployeeAvatar-->
 <!--                :code="employee.code"-->
 <!--                :color="employee.employeeColor"-->
+<!--                :mode="visualMode"-->
+<!--                :neutral="visualMode === 'generalized'"-->
 <!--                :title="employee.name"-->
 <!--            />-->
 <!--            <span>{{ employee.name }}</span>-->
@@ -395,16 +482,40 @@ function formatRange(from: string, to: string): string {
 <!--  formatMonthTitle,-->
 <!--  splitPeriodIntoMonthPages,-->
 <!--  type OptimizedMonth,-->
+<!--  type OptimizedPdfMode,-->
 <!--  type OptimizedShiftKind,-->
 <!--} from '@/utils/exports/scheduleAssignment.optimized.export'-->
 <!--import OptimizedEmployeeAvatar from './OptimizedEmployeeAvatar.vue'-->
-<!--import type { SchedulePlanningMember } from './schedulePlanningView.types'-->
+<!--import type {-->
+<!--  ScheduleDayAdjustmentTarget,-->
+<!--  SchedulePlanningMember,-->
+<!--} from './schedulePlanningView.types'-->
 
-<!--const props = defineProps<{-->
+<!--const props = withDefaults(defineProps<{-->
 <!--  members: SchedulePlanningMember[]-->
 <!--  periodFrom: string-->
 <!--  periodTo: string-->
+<!--  visualMode?: OptimizedPdfMode-->
+<!--}>(), {-->
+<!--  visualMode: 'personalized',-->
+<!--})-->
+
+<!--const emit = defineEmits<{-->
+<!--  adjust: [target: ScheduleDayAdjustmentTarget]-->
 <!--}>()-->
+
+<!--const todayIso = new Date().toISOString().slice(0, 10)-->
+
+<!--function canAdjust(iso: string): boolean {-->
+<!--  return iso >= todayIso-->
+<!--}-->
+
+<!--function requestAdjustment(memberGuid: string, date: string): void {-->
+<!--  if (!canAdjust(date)) return-->
+<!--  const member = props.members.find((candidate) => candidate.guid === memberGuid)-->
+<!--  if (!member) return-->
+<!--  emit('adjust', {member, date})-->
+<!--}-->
 
 <!--const DAY_HEADERS = ['L', 'M', 'M', 'J', 'V', 'S', 'D'] as const-->
 

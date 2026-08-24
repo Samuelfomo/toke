@@ -44,26 +44,34 @@
               {{ row.groupName ?? 'Sans groupe' }}
             </td>
             <td v-for="start in week.startTimes" :key="start" class="border-r border-slate-100 px-3 py-3 align-top">
-              <div v-if="row.namesByStart[start]?.length" class="flex flex-wrap gap-1.5">
-                  <span
-                      v-for="name in row.namesByStart[start]"
-                      :key="name"
-                      class="rounded-md border border-blue-100 bg-blue-50 px-2 py-1 text-[11px] font-semibold text-blue-700"
-                  >
-                    {{ name }}
-                  </span>
+              <div v-if="row.membersByStart[start]?.length" class="flex flex-wrap gap-1.5">
+                <button
+                    v-for="employee in row.membersByStart[start]"
+                    :key="employee.guid"
+                    type="button"
+                    class="rounded-md border border-blue-100 bg-blue-50 px-2 py-1 text-[11px] font-semibold text-blue-700 transition"
+                    :class="canAdjust(row.iso) ? 'hover:border-blue-300 hover:bg-blue-100' : 'cursor-default opacity-70'"
+                    :disabled="!canAdjust(row.iso)"
+                    @click="requestAdjustment(employee.guid, row.iso)"
+                >
+                  {{ employee.name }}
+                </button>
               </div>
               <span v-else class="text-xs text-slate-300">—</span>
             </td>
             <td class="bg-slate-50/60 px-3 py-3 align-top">
-              <div v-if="row.restNames.length" class="flex flex-wrap gap-1.5">
-                  <span
-                      v-for="name in row.restNames"
-                      :key="name"
-                      class="rounded-md border border-slate-200 bg-white px-2 py-1 text-[11px] font-semibold text-slate-600"
-                  >
-                    {{ name }}
-                  </span>
+              <div v-if="row.restMembers.length" class="flex flex-wrap gap-1.5">
+                <button
+                    v-for="employee in row.restMembers"
+                    :key="employee.guid"
+                    type="button"
+                    class="rounded-md border border-slate-200 bg-white px-2 py-1 text-[11px] font-semibold text-slate-600 transition"
+                    :class="canAdjust(row.iso) ? 'hover:border-blue-200 hover:bg-blue-50 hover:text-blue-700' : 'cursor-default opacity-70'"
+                    :disabled="!canAdjust(row.iso)"
+                    @click="requestAdjustment(employee.guid, row.iso)"
+                >
+                  {{ employee.name }}
+                </button>
               </div>
               <span v-else class="text-xs text-slate-300">—</span>
             </td>
@@ -83,13 +91,33 @@ import {
   formatCompactTime,
   splitPeriodIntoWeeks,
 } from '@/utils/exports/scheduleAssignment.simple.export'
-import type { SchedulePlanningMember } from './schedulePlanningView.types'
+import type {
+  ScheduleDayAdjustmentTarget,
+  SchedulePlanningMember,
+} from './schedulePlanningView.types'
 
 const props = defineProps<{
   members: SchedulePlanningMember[]
   periodFrom: string
   periodTo: string
 }>()
+
+const emit = defineEmits<{
+  adjust: [target: ScheduleDayAdjustmentTarget]
+}>()
+
+const todayIso = new Date().toISOString().slice(0, 10)
+
+function canAdjust(iso: string): boolean {
+  return iso >= todayIso
+}
+
+function requestAdjustment(memberGuid: string, date: string): void {
+  if (!canAdjust(date)) return
+  const member = props.members.find((candidate) => candidate.guid === memberGuid)
+  if (!member) return
+  emit('adjust', {member, date})
+}
 
 function normalizeTime(value: string): string {
   const match = value.trim().match(/^(\d{1,2}):(\d{2})/)

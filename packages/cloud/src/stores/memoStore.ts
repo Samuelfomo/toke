@@ -385,6 +385,9 @@ export const useMemoStore = defineStore(
         const startPolling = (managerGuid: string) => startRealtime(managerGuid);
         const stopPolling = () => stopRealtime();
 
+        const isMemoRead = (memoGuid: string): boolean =>
+            _readGuids.value.has(memoGuid);
+
         return {
             memos,
             employees,
@@ -413,6 +416,7 @@ export const useMemoStore = defineStore(
             stopRealtime,
             startPolling,
             stopPolling,
+            isMemoRead,
         };
     },
     {

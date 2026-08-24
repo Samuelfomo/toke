@@ -43,6 +43,34 @@ export interface IUpdateScheduleAssignmentPayload {
     reason?: string | null
 }
 
+
+export type AdjustmentServiceKind = 'rest' | 'template' | 'guard'
+
+export interface IAdjustmentServiceComponent {
+    template_guid: string
+    date_offset: 0 | 1
+    role: 'service' | 'guard_start' | 'guard_continuation'
+}
+
+export interface IAdjustmentServiceOption {
+    key: string
+    kind: AdjustmentServiceKind
+    label: string
+    source_name?: string
+    start_time: string | null
+    end_time: string | null
+    spans_next_day: boolean
+    components: IAdjustmentServiceComponent[]
+}
+
+export interface IApplyScheduleDayAdjustmentPayload {
+    manager: string
+    employee: string
+    date: string
+    service_key: string
+    reason?: string | null
+}
+
 // ── Service ────────────────────────────────────────────────────────────────
 
 export default class ScheduleAssignmentService {
@@ -109,6 +137,34 @@ export default class ScheduleAssignmentService {
             })
         } catch (error: unknown) {
             console.error('ScheduleAssignmentService.create', error)
+            return error as ApiResponse
+        }
+    }
+
+    static async getAdjustmentServices(date: string): Promise<ApiResponse> {
+        try {
+            const params = new URLSearchParams({date})
+            return await apiRequest({
+                path: `${baseUrl}/adjustments/services?${params.toString()}`,
+                method: 'GET',
+            })
+        } catch (error: unknown) {
+            console.error('ScheduleAssignmentService.getAdjustmentServices', error)
+            return error as ApiResponse
+        }
+    }
+
+    static async applyDayAdjustment(
+        payload: IApplyScheduleDayAdjustmentPayload,
+    ): Promise<ApiResponse> {
+        try {
+            return await apiRequest({
+                path: `${baseUrl}/adjustments`,
+                method: 'POST',
+                data: payload,
+            })
+        } catch (error: unknown) {
+            console.error('ScheduleAssignmentService.applyDayAdjustment', error)
             return error as ApiResponse
         }
     }

@@ -421,7 +421,7 @@ onMounted(loadSuggestions)
 }
 
 .tab-button.active {
-  background: #0f172a;
+  background: #004aad;
   color: #fff;
 }
 

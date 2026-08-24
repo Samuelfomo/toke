@@ -217,7 +217,7 @@ const memosFiltres = computed(() => {
   });
   return result.map(m => {
     const i = getInterlocuteur(m);
-    return { ...m, interlocuteurNom: i.nom, interlocuteurCode: i.code, interlocuteurDepartement: i.departement };
+    return { ...m, interlocuteurNom: i.nom, interlocuteurCode: i.code, interlocuteurDepartement: i.departement, isRead: memoStore.isMemoRead(m.guid) };
   });
 });
 

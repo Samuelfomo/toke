@@ -1,9 +1,9 @@
 <template>
-  <div class="min-h-full bg-slate-50">
-    <div class="mx-auto w-full max-w-[1500px] px-4 py-5 sm:px-6 lg:px-8">
+  <div class="min-h-full">
+    <div class="mx-auto w-full max-w-[1500px] px-4 py-5 sm:px-6 lg:px-8 bg-slate-50/30">
       <RouterLink
           :to="{ name: 'planning-menu' }"
-          class="mb-4 inline-flex min-h-11 items-center gap-2 rounded-xl px-2 text-sm font-semibold text-slate-600 no-underline transition hover:bg-white hover:text-blue-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500"
+          class="mb-4 inline-flex min-h-11 items-center gap-2 bg-white/70 rounded-xl px-2 text-sm font-semibold text-slate-600 no-underline transition hover:bg-white hover:text-blue-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500"
       >
         <IconArrowLeft :size="18"/>
         Retour aux outils de planification

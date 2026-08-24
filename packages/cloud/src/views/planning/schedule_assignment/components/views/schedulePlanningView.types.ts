@@ -28,3 +28,9 @@ export interface ScheduleCalendarDay {
 }
 
 export type PlanningDisplayMode = 'detailed' | 'simple' | 'optimized'
+
+
+export interface ScheduleDayAdjustmentTarget {
+    member: SchedulePlanningMember
+    date: string
+}
