@@ -32,6 +32,11 @@ import { responseValue, tableName } from '../../utils/response.model.js';
 import { ValidationUtils } from '../../utils/view.validator.js';
 import Groups from '../class/Groups.js';
 import OrgHierarchy from '../class/OrgHierarchy.js';
+import {
+  applyScheduleDayAdjustment,
+  listScheduleAdjustmentServices,
+  ScheduleAdjustmentError,
+} from '../../tools/schedule.assignment.adjustment.service.js';
 
 const router = Router();
 
@@ -305,6 +310,174 @@ router.post('/', Ensure.post(), async (req: Request, res: Response) => {
     }
     return R.handleError(res, HttpStatus.INTERNAL_ERROR, {
       code: SCHEDULE_ASSIGNMENTS_CODES.CREATION_FAILED,
+      message: error.message,
+    });
+  }
+});
+
+// ============================================
+// AJUSTEMENTS PONCTUELS DU PLANNING
+// ============================================
+
+/**
+ * GET /api/schedule-assignments/adjustments/services?date=YYYY-MM-DD
+ *
+ * Catalogue métier utilisé par le manager.
+ * Les fragments techniques d'une garde (16h→23h59 + 00h→08h)
+ * sont regroupés en une seule option "Garde".
+ */
+router.get('/adjustments/services', Ensure.get(), async (req: Request, res: Response) => {
+  try {
+    const date = String(req.query.date || '').trim();
+
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) {
+      return R.handleError(res, HttpStatus.BAD_REQUEST, {
+        code: 'schedule_adjustment_date_invalid',
+        message: 'A valid date (YYYY-MM-DD) is required',
+      });
+    }
+
+    const services = await listScheduleAdjustmentServices(date);
+
+    return R.handleSuccess(res, {
+      date,
+      services,
+    });
+  } catch (error: any) {
+    if (error instanceof ScheduleAdjustmentError) {
+      return R.handleError(res, error.status as any, {
+        code: error.code,
+        message: error.message,
+        details: error.details,
+      });
+    }
+
+    return R.handleError(res, HttpStatus.INTERNAL_ERROR, {
+      code: 'schedule_adjustment_services_failed',
+      message: error.message,
+    });
+  }
+});
+
+/**
+ * POST /api/schedule-assignments/adjustments
+ *
+ * Crée une exception individuelle pour un jour, sans modifier
+ * l'affectation d'origine ni le Session Template.
+ *
+ * Les anomalies métier sont uniquement informatives côté UI ;
+ * cet endpoint ne bloque que les erreurs techniques / d'autorisation / date passée.
+ */
+router.post('/adjustments', Ensure.post(), async (req: Request, res: Response) => {
+  try {
+    const { manager, employee, date, service_key, reason } = req.body ?? {};
+
+    if (!manager || !UsersValidationUtils.validateGuid(String(manager))) {
+      return R.handleError(res, HttpStatus.BAD_REQUEST, {
+        code: USERS_CODES.INVALID_GUID,
+        message: 'Manager GUID is invalid',
+      });
+    }
+
+    if (!employee || !UsersValidationUtils.validateGuid(String(employee))) {
+      return R.handleError(res, HttpStatus.BAD_REQUEST, {
+        code: USERS_CODES.INVALID_GUID,
+        message: 'Employee GUID is invalid',
+      });
+    }
+
+    if (!date || !/^\d{4}-\d{2}-\d{2}$/.test(String(date))) {
+      return R.handleError(res, HttpStatus.BAD_REQUEST, {
+        code: 'schedule_adjustment_date_invalid',
+        message: 'A valid date (YYYY-MM-DD) is required',
+      });
+    }
+
+    if (!service_key || typeof service_key !== 'string') {
+      return R.handleError(res, HttpStatus.BAD_REQUEST, {
+        code: 'schedule_adjustment_service_required',
+        message: 'A service must be selected',
+      });
+    }
+
+    const today = TimezoneConfigUtils.getCurrentTime().toISOString().slice(0, 10);
+    if (String(date) < today) {
+      return R.handleError(res, HttpStatus.UNPROCESSABLE_ENTITY, {
+        code: 'schedule_adjustment_past_date',
+        message: 'Past days cannot be adjusted from this view',
+      });
+    }
+
+    const managerObj = await User._load(String(manager), true);
+    if (!managerObj) {
+      return R.handleError(res, HttpStatus.NOT_FOUND, {
+        code: USERS_CODES.USER_NOT_FOUND,
+        message: 'Manager not found',
+      });
+    }
+
+    const isManager = await OrgHierarchy.hasManagerRole(managerObj.getId()!);
+    if (!isManager) {
+      return R.handleError(res, HttpStatus.FORBIDDEN, {
+        code: USERS_CODES.AUTHORIZATION_FAILED,
+        message: 'Only a manager can adjust an employee schedule',
+      });
+    }
+
+    const employeeObj = await User._load(String(employee), true);
+    if (!employeeObj) {
+      return R.handleError(res, HttpStatus.NOT_FOUND, {
+        code: USERS_CODES.USER_NOT_FOUND,
+        message: USERS_ERRORS.NOT_FOUND,
+      });
+    }
+
+    // Les employés ordinaires ne sont pas nécessairement enregistrés dans
+    // OrgHierarchy. La source métier de l'équipe est getAllTeamMembers(), qui
+    // fusionne notamment les affectations via UserRole et les membres de Groups.
+    const managerTeam = await OrgHierarchy.getAllTeamMembers(managerObj.getId()!, true);
+    const isBusinessTeamMember = managerTeam.all_employees_flat.some(
+      (member) => member.getId() === employeeObj.getId(),
+    );
+
+    // OrgHierarchy reste utile pour les sous-managers réellement présents dans
+    // la hiérarchie. On accepte l'une OU l'autre des deux sources.
+    const isHierarchyMember = isBusinessTeamMember
+      ? false
+      : await OrgHierarchy.isUserInHierarchy(employeeObj.getId()!, managerObj.getId()!);
+
+    if (!isBusinessTeamMember && !isHierarchyMember) {
+      return R.handleError(res, HttpStatus.FORBIDDEN, {
+        code: USERS_CODES.AUTHORIZATION_FAILED,
+        message: 'Employee is not in manager team',
+      });
+    }
+
+    const result = await applyScheduleDayAdjustment({
+      tenantReference: req.tenant.config.reference,
+      managerId: managerObj.getId()!,
+      managerGuid: managerObj.getGuid()!,
+      employeeGuid: employeeObj.getGuid()!,
+      date: String(date),
+      serviceKey: service_key,
+      reason: typeof reason === 'string' ? reason : null,
+    });
+
+    return R.handleCreated(res, {
+      message: 'Planning adjusted successfully',
+      adjustment: result,
+    });
+  } catch (error: any) {
+    if (error instanceof ScheduleAdjustmentError) {
+      return R.handleError(res, error.status as any, {
+        code: error.code,
+        message: error.message,
+        details: error.details,
+      });
+    }
+
+    return R.handleError(res, HttpStatus.INTERNAL_ERROR, {
+      code: 'schedule_adjustment_failed',
       message: error.message,
     });
   }

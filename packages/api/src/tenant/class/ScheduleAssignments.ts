@@ -570,11 +570,21 @@ export default class ScheduleAssignments extends ScheduleAssignmentsModel {
           : await (relatedObj as Groups).toJSON()
         : null,
       [RS.SESSION_TEMPLATE]: sessionTemplateObj
-        ? {
-            [RS.NAME]: sessionTemplateObj?.getName(),
-            [RS.GUID]: sessionTemplateObj?.getGuid(),
-          }
+        ? this.session_template?.adjustment?.manual_override === true
+          ? {
+              [RS.NAME]: sessionTemplateObj?.getName(),
+              [RS.GUID]: sessionTemplateObj?.getGuid(),
+              definition: this.session_template?.definition,
+              version: this.session_template?.version,
+              session_model: this.session_template?.session_model,
+              adjustment: this.session_template?.adjustment,
+            }
+          : {
+              [RS.NAME]: sessionTemplateObj?.getName(),
+              [RS.GUID]: sessionTemplateObj?.getGuid(),
+            }
         : null,
+      adjustment: this.session_template?.adjustment ?? null,
       [RS.CREATED_BY]: createdByObj
         ? {
             [RS.NAME]: createdByObj.getFullName(),
@@ -598,8 +608,11 @@ export default class ScheduleAssignments extends ScheduleAssignmentsModel {
       [RS.REASON]: this.reason,
       [RS.ACTIVE]: this.active,
       [RS.SESSION_TEMPLATE]: sessionTemplateObj
-        ? await sessionTemplateObj.toJSON(responseValue.FULL)
+        ? this.session_template?.adjustment?.manual_override === true
+          ? this.session_template
+          : await sessionTemplateObj.toJSON(responseValue.FULL)
         : null,
+      adjustment: this.session_template?.adjustment ?? null,
       [RS.CREATED_BY]: createdByObj ? await createdByObj.toJSON() : null,
     };
   }
