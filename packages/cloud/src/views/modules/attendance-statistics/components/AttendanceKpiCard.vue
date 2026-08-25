@@ -3,22 +3,40 @@ import type { AttendanceKpiViewModel } from '../utils/attendance-kpis.js';
 
 interface Props {
   card: AttendanceKpiViewModel;
+  selected?: boolean;
+  interactive?: boolean;
 }
 
-defineProps<Props>();
+withDefaults(defineProps<Props>(), {
+  selected: false,
+  interactive: true,
+});
+
+defineEmits<{ activate: [id: AttendanceKpiViewModel['id']] }>();
 </script>
 
 <template>
-  <article
-    class="group relative overflow-hidden rounded-2xl border bg-white p-5 shadow-sm transition duration-200 hover:-translate-y-0.5 hover:shadow-md"
-    :class="{
-      'border-indigo-200': card.tone === 'indigo',
-      'border-sky-200': card.tone === 'sky',
-      'border-rose-200': card.tone === 'rose',
-      'border-amber-200': card.tone === 'amber',
-      'border-orange-200': card.tone === 'orange',
-      'border-slate-200': card.tone === 'slate',
-    }"
+  <component
+    :is="interactive ? 'button' : 'article'"
+    :type="interactive ? 'button' : undefined"
+    class="group relative w-full overflow-hidden rounded-2xl border bg-white p-5 text-left shadow-sm transition duration-200"
+    :class="[
+      interactive
+        ? 'cursor-pointer hover:-translate-y-0.5 hover:shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 focus-visible:ring-offset-2'
+        : '',
+      selected ? 'ring-2 ring-indigo-500 ring-offset-2' : '',
+      {
+        'border-indigo-200': card.tone === 'indigo',
+        'border-sky-200': card.tone === 'sky',
+        'border-rose-200': card.tone === 'rose',
+        'border-amber-200': card.tone === 'amber',
+        'border-orange-200': card.tone === 'orange',
+        'border-slate-200': card.tone === 'slate',
+      },
+    ]"
+    :aria-pressed="interactive ? selected : undefined"
+    :aria-label="interactive ? `${card.label} : ${card.value}. Voir pourquoi.` : undefined"
+    @click="interactive && $emit('activate', card.id)"
   >
     <div
       class="absolute inset-x-0 top-0 h-1"
@@ -56,34 +74,21 @@ defineProps<Props>();
         }"
         aria-hidden="true"
       >
-        <svg v-if="card.icon === 'attendance'" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" class="h-5 w-5">
-          <path d="M4 19V9M10 19V5M16 19v-7M22 19H2" />
-        </svg>
-        <svg v-else-if="card.icon === 'punctuality'" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" class="h-5 w-5">
-          <circle cx="12" cy="12" r="9" />
-          <path d="M12 7v5l3 2" />
-        </svg>
-        <svg v-else-if="card.icon === 'absence'" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" class="h-5 w-5">
-          <circle cx="9" cy="8" r="3" />
-          <path d="M3 20a6 6 0 0 1 12 0M17 9l5 5M22 9l-5 5" />
-        </svg>
-        <svg v-else-if="card.icon === 'late'" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" class="h-5 w-5">
-          <path d="M12 8v5l3 2" />
-          <path d="M5.5 5.5A9 9 0 1 0 18.5 5.5" />
-          <path d="M3 3v5h5" />
-        </svg>
-        <svg v-else-if="card.icon === 'issue'" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" class="h-5 w-5">
-          <path d="M12 3 2.8 19h18.4L12 3Z" />
-          <path d="M12 9v4M12 16h.01" />
-        </svg>
-        <svg v-else viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" class="h-5 w-5">
-          <circle cx="12" cy="12" r="9" />
-          <path d="M12 7v5h4" />
-        </svg>
+        <svg v-if="card.icon === 'attendance'" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" class="h-5 w-5"><path d="M4 19V9M10 19V5M16 19v-7M22 19H2" /></svg>
+        <svg v-else-if="card.icon === 'punctuality'" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" class="h-5 w-5"><circle cx="12" cy="12" r="9" /><path d="M12 7v5l3 2" /></svg>
+        <svg v-else-if="card.icon === 'absence'" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" class="h-5 w-5"><circle cx="9" cy="8" r="3" /><path d="M3 20a6 6 0 0 1 12 0M17 9l5 5M22 9l-5 5" /></svg>
+        <svg v-else-if="card.icon === 'late'" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" class="h-5 w-5"><path d="M12 8v5l3 2" /><path d="M5.5 5.5A9 9 0 1 0 18.5 5.5" /><path d="M3 3v5h5" /></svg>
+        <svg v-else-if="card.icon === 'issue'" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" class="h-5 w-5"><path d="M12 3 2.8 19h18.4L12 3Z" /><path d="M12 9v4M12 16h.01" /></svg>
+        <svg v-else viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" class="h-5 w-5"><circle cx="12" cy="12" r="9" /><path d="M12 7v5h4" /></svg>
       </div>
     </div>
 
     <p class="mt-4 text-sm font-medium leading-5 text-slate-700">{{ card.helper }}</p>
-    <p class="mt-2 text-xs leading-5 text-slate-500">{{ card.detail }}</p>
-  </article>
+    <div class="mt-2 flex items-end justify-between gap-3">
+      <p class="text-xs leading-5 text-slate-500">{{ card.detail }}</p>
+      <span v-if="interactive" class="shrink-0 text-xs font-bold text-indigo-700 group-hover:underline">
+        Voir pourquoi →
+      </span>
+    </div>
+  </component>
 </template>

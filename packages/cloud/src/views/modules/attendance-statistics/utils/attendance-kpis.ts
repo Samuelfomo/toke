@@ -114,6 +114,16 @@ export function buildAttendanceKpis(overview: AttendanceOverview): AttendanceKpi
   ];
 }
 
+export function buildPrimaryAttendanceKpis(overview: AttendanceOverview): AttendanceKpiViewModel[] {
+  return buildAttendanceKpis(overview).filter((card) => card.id !== 'net_duration');
+}
+
+export function buildAttendanceDurationInsight(overview: AttendanceOverview): AttendanceKpiViewModel {
+  const duration = buildAttendanceKpis(overview).find((card) => card.id === 'net_duration');
+  if (!duration) throw new Error('Durée nette introuvable dans le modèle KPI');
+  return duration;
+}
+
 function formatCount(value: number): string {
   return new Intl.NumberFormat('fr-FR', { maximumFractionDigits: 0 }).format(value);
 }

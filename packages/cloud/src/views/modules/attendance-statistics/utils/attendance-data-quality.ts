@@ -1,6 +1,7 @@
 import type {
   AttendanceDataQuality,
   AttendanceDataQualityLevel,
+  AttendanceIssue,
 } from '../types/attendance-statistics.types.js';
 import { getAttendanceDataQualityLevel } from './attendance-status.js';
 
@@ -16,6 +17,28 @@ export interface AttendanceDataQualityMetric {
   label: string;
   value: number;
   description: string;
+}
+
+
+export type AttendanceDataQualityNavigationTarget =
+  | { type: 'issue'; issue: AttendanceIssue; label: string }
+  | { type: 'family'; family: 'planning' | 'session' | 'duration'; label: string };
+
+export function getAttendanceDataQualityNavigationTarget(
+  metricId: AttendanceDataQualityMetricId,
+): AttendanceDataQualityNavigationTarget {
+  switch (metricId) {
+    case 'unresolved_schedule':
+      return { type: 'family', family: 'planning', label: 'Examiner les problèmes de planning' };
+    case 'presence_without_schedule':
+      return { type: 'issue', issue: 'PRESENCE_WITHOUT_SCHEDULE', label: 'Examiner les présences sans planning' };
+    case 'open_session':
+      return { type: 'issue', issue: 'OPEN_SESSION', label: 'Examiner les sessions ouvertes' };
+    case 'incomplete_session':
+      return { type: 'issue', issue: 'INCOMPLETE_SESSION', label: 'Examiner les sessions incomplètes' };
+    case 'missing_duration':
+      return { type: 'issue', issue: 'MISSING_DURATION', label: 'Examiner les durées manquantes' };
+  }
 }
 
 export interface AttendanceDataQualityPresentation {

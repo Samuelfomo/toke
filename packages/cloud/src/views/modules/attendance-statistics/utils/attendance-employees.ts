@@ -1,6 +1,7 @@
 import type {
   AttendanceEmployeeOverview,
   AttendanceStatus,
+  BusinessDate,
 } from '../types/attendance-statistics.types.js';
 import type {
   AttendanceEmployeeIssueFilter,
@@ -27,6 +28,7 @@ export const DEFAULT_ATTENDANCE_EMPLOYEE_FILTERS: AttendanceEmployeeListFilters 
   query: '',
   status: 'ALL',
   issues: 'all',
+  date: null,
 };
 
 export const DEFAULT_ATTENDANCE_EMPLOYEE_SORT: AttendanceEmployeeSort = {
@@ -59,6 +61,19 @@ export function employeeHasStatus(
   return employee.statusTotals[status] > 0;
 }
 
+
+export function employeeMatchesDateStatus(
+  employee: AttendanceEmployeeOverview,
+  date: BusinessDate | null,
+  status: AttendanceEmployeeStatusFilter,
+): boolean {
+  if (!date) return employeeHasStatus(employee, status);
+
+  const day = employee.days.find((item) => item.date === date);
+  if (!day) return false;
+  return status === 'ALL' || day.status === status;
+}
+
 export function employeeMatchesIssueFilter(
   employee: AttendanceEmployeeOverview,
   issueFilter: AttendanceEmployeeIssueFilter,
@@ -82,7 +97,7 @@ export function filterAttendanceEmployees(
     }
 
     return (
-      employeeHasStatus(employee, filters.status) &&
+      employeeMatchesDateStatus(employee, filters.date, filters.status) &&
       employeeMatchesIssueFilter(employee, filters.issues)
     );
   });

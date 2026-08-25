@@ -8,6 +8,7 @@ import type {
 } from '../types/attendance-statistics.ui.types.js';
 import { ATTENDANCE_STATUS_PRESENTATION } from '../utils/attendance-status.js';
 import { ATTENDANCE_STATUSES } from '../types/attendance-statistics.types.js';
+import { formatBusinessDate } from '../utils/business-date.js';
 
 interface Props {
   filters: AttendanceEmployeeListFilters;
@@ -47,6 +48,11 @@ function updateStatus(event: Event): void {
 function updateIssueFilter(event: Event): void {
   const issues = (event.target as HTMLSelectElement).value as AttendanceEmployeeIssueFilter;
   emit('update:filters', { ...props.filters, issues });
+}
+
+
+function clearContextDate(): void {
+  emit('update:filters', { ...props.filters, date: null });
 }
 
 function updateSortKey(event: Event): void {
@@ -149,6 +155,13 @@ function toggleDirection(): void {
           Réinitialiser
         </button>
       </div>
+    </div>
+
+    <div v-if="filters.date" class="mt-3 flex flex-wrap items-center gap-2 rounded-xl border border-indigo-100 bg-indigo-50 px-3 py-2 text-xs text-indigo-900">
+      <span class="font-bold">Contexte du graphique :</span>
+      <span>{{ formatBusinessDate(filters.date, 'fr-FR', { weekday: 'long', day: '2-digit', month: 'long' }) }}</span>
+      <span v-if="filters.status !== 'ALL'" class="rounded-full bg-white px-2 py-0.5 font-bold">{{ ATTENDANCE_STATUS_PRESENTATION[filters.status].label }}</span>
+      <button type="button" class="ml-auto font-bold underline underline-offset-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500" @click="clearContextDate">Retirer la date</button>
     </div>
 
     <p class="mt-3 text-xs text-slate-500">

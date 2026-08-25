@@ -1,8 +1,9 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue';
 
-import type { AttendanceIssueSummary } from '../types/attendance-statistics.types.js';
+import type { AttendanceIssue, AttendanceIssueSummary } from '../types/attendance-statistics.types.js';
 import type {
+  AttendanceIssueFamilyFilter,
   AttendanceIssueListFilters,
   AttendanceIssueTarget,
 } from '../utils/attendance-issues.js';
@@ -26,6 +27,27 @@ const model = computed(() => buildAttendanceIssueListModel({ issues: props.issue
 function reset(): void {
   filters.value = { ...DEFAULT_ATTENDANCE_ISSUE_FILTERS };
 }
+
+function scrollToSection(): void {
+  document.getElementById('attendance-issues')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+
+function focusSection(): void {
+  reset();
+  scrollToSection();
+}
+
+function focusIssue(issue: AttendanceIssue): void {
+  filters.value = { query: issue, family: 'all' };
+  scrollToSection();
+}
+
+function focusFamily(family: Exclude<AttendanceIssueFamilyFilter, 'all'>): void {
+  filters.value = { query: '', family };
+  scrollToSection();
+}
+
+defineExpose({ focusSection, focusIssue, focusFamily, reset });
 </script>
 
 <template>

@@ -23,6 +23,7 @@ interface Props {
 }
 
 const props = defineProps<Props>();
+const emit = defineEmits<{ manualFilterChange: [] }>();
 
 const filters = ref<AttendanceEmployeeListFilters>({ ...DEFAULT_ATTENDANCE_EMPLOYEE_FILTERS });
 const sort = ref<AttendanceEmployeeSort>({ ...DEFAULT_ATTENDANCE_EMPLOYEE_SORT });
@@ -43,6 +44,7 @@ const list = computed(() =>
 function updateFilters(next: AttendanceEmployeeListFilters): void {
   filters.value = next;
   page.value = 1;
+  emit('manualFilterChange');
 }
 
 function updateSort(next: AttendanceEmployeeSort): void {
@@ -59,6 +61,7 @@ function reset(): void {
   filters.value = { ...DEFAULT_ATTENDANCE_EMPLOYEE_FILTERS };
   sort.value = { ...DEFAULT_ATTENDANCE_EMPLOYEE_SORT };
   page.value = 1;
+  emit('manualFilterChange');
 }
 
 function updatePageSize(value: number): void {
@@ -84,7 +87,63 @@ function closeEmployee(): void {
   selectedFocusDate.value = null;
 }
 
-defineExpose({ openEmployee });
+function applyStatusFilter(status: AttendanceEmployeeListFilters['status']): void {
+  filters.value = { ...filters.value, status, date: null };
+  page.value = 1;
+  document.getElementById('attendance-employees')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+
+
+function applyDayStatusFilter(
+  date: BusinessDate,
+  status: Extract<AttendanceEmployeeListFilters['status'], 'ABSENT' | 'LATE'>,
+): void {
+  filters.value = { query: '', status, issues: 'all', date };
+  page.value = 1;
+  document.getElementById('attendance-employees')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+
+function applyIssuesFilter(issues: AttendanceEmployeeListFilters['issues']): void {
+  filters.value = { ...filters.value, issues };
+  page.value = 1;
+  document.getElementById('attendance-employees')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+
+function focusSection(): void {
+  document.getElementById('attendance-employees')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+
+
+function clearDateFilter(): void {
+  filters.value = { ...filters.value, date: null };
+  page.value = 1;
+}
+
+function clearStatusFilter(): void {
+  filters.value = { ...filters.value, status: 'ALL' };
+  page.value = 1;
+}
+
+function resetAnalysisFilters(): void {
+  filters.value = {
+    ...filters.value,
+    status: 'ALL',
+    issues: 'all',
+    date: null,
+  };
+  page.value = 1;
+}
+
+defineExpose({
+  openEmployee,
+  applyStatusFilter,
+  applyDayStatusFilter,
+  applyIssuesFilter,
+  focusSection,
+  clearDateFilter,
+  clearStatusFilter,
+  resetAnalysisFilters,
+});
 </script>
 
 <template>

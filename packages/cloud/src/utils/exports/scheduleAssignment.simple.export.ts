@@ -17,27 +17,13 @@ import {
     rowsToCsvBlob,
 } from './export.helpers'
 
-export interface SimplifiedScheduleSlot {
-    work: [string, string]
-    pause?: [string, string]
-}
-
-export interface SimplifiedScheduleMember {
-    guid: string
-    name: string
-    code: string
-    groupName: string | null
-    /** Facultatif mais recommandé pour produire un nom court fiable. */
-    firstName?: string
-    lastName?: string
-    /** Planning exact par date ISO — ne pas utiliser un simple jour de semaine. */
-    scheduleByDate: Record<string, SimplifiedScheduleSlot[]>
-    /** Vrai uniquement si la date correspond explicitement à un repos publié. */
-    restByDate?: Record<string, boolean>
-}
+import {
+    formatEmployeeLegendName,
+    OptimizedScheduleMember
+} from "@/utils/exports/scheduleAssignment.optimized.export.js";
 
 export interface SimplifiedScheduleExportOptions {
-    members: SimplifiedScheduleMember[]
+    members: OptimizedScheduleMember[]
     periodFrom: string
     periodTo: string
     generatedBy: string
@@ -87,50 +73,13 @@ function addDays(iso: string, amount: number): string {
     return toIsoUtc(date)
 }
 
-
-/**
- * Format court d'un nom d'employé :
- * - premier prénom conservé en entier ;
- * - chaque mot suivant est réduit à son initiale.
- *
- * Exemples :
- * - Aïcha KOTTINE         → Aïcha K.
- * - Melanie Patricia NGAH → Melanie P. N.
- * - Jeanne YAMENI FOYANG  → Jeanne Y. F.
- * - Christine Odrée KAMDEU → Christine O. K.
- */
-export function formatEmployeeShortName(
-    firstName?: string,
-    lastName?: string,
-    fallbackName?: string,
-): string {
-    const explicitName = [firstName?.trim(), lastName?.trim()]
-        .filter(Boolean)
-        .join(' ')
-        .trim()
-
-    const fullName = explicitName || fallbackName?.trim() || ''
-    const parts = fullName.split(/\s+/).filter(Boolean)
-
-    if (parts.length === 0) return '—'
-    if (parts.length === 1) return parts[0]
-
-    const first = parts[0]
-    const initials = parts
-        .slice(1)
-        .map((part) => `${part.charAt(0).toLocaleUpperCase('fr-FR')}.`)
-        .join(' ')
-
-    return `${first} ${initials}`
-}
-
-function buildMemberLabels(members: SimplifiedScheduleMember[]): Map<string, string> {
+function buildMemberLabels(members: OptimizedScheduleMember[]): Map<string, string> {
     const labels = new Map<string, string>()
 
     for (const member of members) {
         labels.set(
             member.guid,
-            formatEmployeeShortName(member.firstName, member.lastName, member.name),
+            formatEmployeeLegendName(member),
         )
     }
 
@@ -180,7 +129,7 @@ export function splitPeriodIntoWeeks(periodFrom: string, periodTo: string): Simp
 }
 
 export function shouldShowGroupColumn(
-    members: Pick<SimplifiedScheduleMember, 'groupName'>[],
+    members: Pick<OptimizedScheduleMember, 'groupName'>[],
 ): boolean {
     const groups = new Set(
         members.map((member) => member.groupName?.trim() || NO_GROUP_KEY),
@@ -188,7 +137,7 @@ export function shouldShowGroupColumn(
     return groups.size > 1
 }
 
-function groupKey(member: Pick<SimplifiedScheduleMember, 'groupName'>): string {
+function groupKey(member: Pick<OptimizedScheduleMember, 'groupName'>): string {
     return member.groupName?.trim() || NO_GROUP_KEY
 }
 
@@ -197,7 +146,7 @@ function displayGroupName(key: string): string {
 }
 
 export function collectStartTimes(
-    members: SimplifiedScheduleMember[],
+    members: OptimizedScheduleMember[],
     dates: string[],
 ): string[] {
     const starts = new Set<string>()
@@ -219,7 +168,7 @@ export function collectStartTimes(
  * produite par date + groupe et la colonne Groupe devient visible.
  */
 export function buildSimplifiedRows(
-    members: SimplifiedScheduleMember[],
+    members: OptimizedScheduleMember[],
     dates: string[],
     startTimes: string[],
 ): { showGroupColumn: boolean; rows: SimplifiedScheduleRow[] } {

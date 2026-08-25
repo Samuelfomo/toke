@@ -3,12 +3,14 @@ import { computed } from 'vue';
 
 import type { AttendanceDataQuality } from '../types/attendance-statistics.types.js';
 import { buildAttendanceDataQualityPresentation } from '../utils/attendance-data-quality.js';
+import type { AttendanceDataQualityMetricId } from '../utils/attendance-data-quality.js';
 
 interface Props {
   quality: AttendanceDataQuality;
 }
 
 const props = defineProps<Props>();
+const emit = defineEmits<{ exploreMetric: [metricId: AttendanceDataQualityMetricId] }>();
 const presentation = computed(() => buildAttendanceDataQualityPresentation(props.quality));
 </script>
 
@@ -64,12 +66,18 @@ const presentation = computed(() => buildAttendanceDataQualityPresentation(props
       </div>
 
       <div class="grid shrink-0 grid-cols-2 gap-2 sm:grid-cols-3 xl:grid-cols-5">
-        <div
+        <button
           v-for="metric in presentation.metrics"
           :key="metric.id"
-          class="min-w-[118px] rounded-xl border bg-white/80 px-3 py-2.5"
-          :class="metric.value > 0 ? 'border-slate-300' : 'border-white/90'"
+          type="button"
+          class="group/quality min-w-[118px] rounded-xl border bg-white/80 px-3 py-2.5 text-left transition"
+          :class="metric.value > 0
+            ? 'cursor-pointer border-slate-300 hover:border-indigo-300 hover:bg-white hover:shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 focus-visible:ring-offset-2'
+            : 'cursor-default border-white/90'"
           :title="metric.description"
+          :disabled="metric.value <= 0"
+          :aria-label="metric.value > 0 ? `${metric.label} : ${metric.value}. Examiner les éléments concernés.` : `${metric.label} : aucune occurrence.`"
+          @click="metric.value > 0 && emit('exploreMetric', metric.id)"
         >
           <p class="text-[11px] font-medium leading-4 text-slate-500">{{ metric.label }}</p>
           <p
@@ -78,7 +86,9 @@ const presentation = computed(() => buildAttendanceDataQualityPresentation(props
           >
             {{ metric.value }}
           </p>
-        </div>
+          <span v-if="metric.value > 0" class="mt-1 inline-flex text-[11px] font-bold text-indigo-700 group-hover/quality:underline">Examiner →</span>
+          <span v-else class="mt-1 inline-flex text-[11px] font-medium text-slate-400">Aucun signal</span>
+        </button>
       </div>
     </div>
 

@@ -2,6 +2,7 @@ import type {
   AttendanceDailyOverview,
   AttendanceOverview,
   AttendanceStatus,
+  BusinessDate,
 } from '../types/attendance-statistics.types.js';
 import { ATTENDANCE_STATUS_PRESENTATION } from './attendance-status.js';
 import { formatBusinessDate } from './business-date.js';
@@ -14,8 +15,11 @@ export interface AttendanceStatusDistributionItem {
   label: string;
   description: string;
   count: number;
+  employeesConcerned: number;
   visualSharePercent: number;
   tone: 'positive' | 'warning' | 'danger' | 'neutral' | 'info';
+  actionLabel: string;
+  intent: 'explain' | 'investigate';
 }
 
 export interface AttendanceStatusDistributionGroup {
@@ -36,13 +40,16 @@ export const ATTENDANCE_DAILY_TREND_SERIES = [
 export type AttendanceDailyTrendSeriesId = (typeof ATTENDANCE_DAILY_TREND_SERIES)[number];
 
 export interface AttendanceDailyTrendPoint {
-  date: string;
+  date: BusinessDate;
   dateLabel: string;
   expected: number;
   attended: number;
+  present: number;
   absent: number;
   late: number;
   issues: number;
+  attendanceRate: number | null;
+  punctualityRate: number | null;
 }
 
 export interface AttendanceDailyTrendSeries {
@@ -57,6 +64,14 @@ export interface AttendanceDailyTrendSeries {
 export interface AttendanceDailyTrendTick {
   value: number;
   y: number;
+}
+
+export interface AttendanceDailyTrendInteraction {
+  date: BusinessDate;
+  seriesId: AttendanceDailyTrendSeriesId;
+  mode: 'select_day' | 'filter_day_status';
+  status: Extract<AttendanceStatus, 'ABSENT' | 'LATE'> | null;
+  label: string;
 }
 
 export interface AttendanceDailyChartModel {
@@ -118,9 +133,12 @@ export function buildAttendanceDailyTrendPoints(
       }),
       expected: day.rates.employeeWorkingDaysExpected,
       attended: day.rates.attendedWorkingDays,
+      present: day.statusTotals.PRESENT,
       absent: day.statusTotals.ABSENT,
       late: day.statusTotals.LATE,
       issues: day.issueCount,
+      attendanceRate: day.rates.attendanceRate,
+      punctualityRate: day.rates.punctualityRate,
     }));
 }
 
@@ -218,6 +236,39 @@ export function buildAttendanceDailyChartModel(
   };
 }
 
+export function buildAttendanceDailyTrendInteraction(
+  date: BusinessDate,
+  seriesId: AttendanceDailyTrendSeriesId,
+): AttendanceDailyTrendInteraction {
+  if (seriesId === 'absent') {
+    return {
+      date,
+      seriesId,
+      mode: 'filter_day_status',
+      status: 'ABSENT',
+      label: 'Voir les employés absents ce jour',
+    };
+  }
+
+  if (seriesId === 'late') {
+    return {
+      date,
+      seriesId,
+      mode: 'filter_day_status',
+      status: 'LATE',
+      label: 'Voir les employés en retard ce jour',
+    };
+  }
+
+  return {
+    date,
+    seriesId,
+    mode: 'select_day',
+    status: null,
+    label: 'Sélectionner cette journée',
+  };
+}
+
 export function findAttendanceDailyOverview(
   daily: readonly AttendanceDailyOverview[],
   date: string | null,
@@ -247,8 +298,11 @@ function buildDistributionGroup(
         label: presentation.label,
         description: presentation.description,
         count,
+        employeesConcerned: overview.employees.filter((employee) => employee.statusTotals[status] > 0).length,
         visualSharePercent: total > 0 ? round((count / total) * 100) : 0,
         tone: presentation.tone,
+        actionLabel: getAttendanceStatusExploreLabel(status),
+        intent: getAttendanceStatusExploreIntent(status),
         order: presentation.order,
       };
     })
@@ -256,6 +310,29 @@ function buildDistributionGroup(
     .map(({ order: _order, ...item }) => item);
 
   return { id, label, description, total, items };
+}
+
+export function getAttendanceStatusExploreIntent(
+  status: AttendanceStatus,
+): AttendanceStatusDistributionItem['intent'] {
+  return status === 'PRESENT' || status === 'REST_DAY' ? 'explain' : 'investigate';
+}
+
+export function getAttendanceStatusExploreLabel(status: AttendanceStatus): string {
+  switch (status) {
+    case 'PRESENT':
+      return 'Voir les employés présents';
+    case 'LATE':
+      return 'Voir les employés en retard';
+    case 'ABSENT':
+      return 'Voir les employés absents';
+    case 'PENDING':
+      return 'Voir les journées en attente';
+    case 'REST_DAY':
+      return 'Voir les jours de repos';
+    case 'UNDETERMINED':
+      return 'Voir les cas indéterminés';
+  }
 }
 
 function uniqueSortedNumbers(values: readonly number[]): number[] {

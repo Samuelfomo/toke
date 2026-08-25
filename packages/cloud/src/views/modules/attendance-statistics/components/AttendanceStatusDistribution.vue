@@ -1,15 +1,24 @@
 <script setup lang="ts">
 import { computed } from 'vue';
 
-import type { AttendanceOverview } from '../types/attendance-statistics.types.js';
+import type { AttendanceOverview, AttendanceStatus } from '../types/attendance-statistics.types.js';
 import { buildAttendanceStatusDistribution } from '../utils/attendance-visualizations.js';
 
 interface Props {
   overview: AttendanceOverview;
+  activeStatus?: AttendanceStatus | null;
 }
 
 const props = defineProps<Props>();
+const emit = defineEmits<{
+  exploreStatus: [status: AttendanceStatus];
+}>();
 const groups = computed(() => buildAttendanceStatusDistribution(props.overview));
+
+function exploreStatus(status: AttendanceStatus, count: number): void {
+  if (count <= 0) return;
+  emit('exploreStatus', status);
+}
 </script>
 
 <template>
@@ -20,7 +29,7 @@ const groups = computed(() => buildAttendanceStatusDistribution(props.overview))
         Répartition des journées-employés
       </h2>
       <p class="mt-2 text-sm leading-6 text-slate-600">
-        Les journées qui participent au taux sont volontairement séparées des journées exclues du calcul.
+        Les journées qui participent au taux sont séparées des journées exclues du calcul. Sélectionnez un statut pour voir immédiatement les collaborateurs concernés.
       </p>
     </div>
 
@@ -41,8 +50,21 @@ const groups = computed(() => buildAttendanceStatusDistribution(props.overview))
           </span>
         </div>
 
-        <div class="mt-5 space-y-4">
-          <div v-for="item in group.items" :key="item.status">
+        <div class="mt-5 space-y-3">
+          <button
+            v-for="item in group.items"
+            :key="item.status"
+            type="button"
+            class="group/status block w-full rounded-xl border border-transparent p-3 text-left transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 focus-visible:ring-offset-2"
+            :class="[
+              item.count > 0 ? 'cursor-pointer hover:border-slate-200 hover:bg-white hover:shadow-sm' : 'cursor-default opacity-60',
+              activeStatus === item.status ? 'border-indigo-300 bg-white shadow-sm ring-2 ring-indigo-100' : '',
+            ]"
+            :disabled="item.count <= 0"
+            :aria-pressed="activeStatus === item.status"
+            :aria-label="`${item.label} : ${item.count} journée${item.count > 1 ? 's' : ''}, ${item.employeesConcerned} employé${item.employeesConcerned > 1 ? 's' : ''} concerné${item.employeesConcerned > 1 ? 's' : ''}. ${item.count > 0 ? item.actionLabel : 'Aucune occurrence.'}`"
+            @click="exploreStatus(item.status, item.count)"
+          >
             <div class="flex items-center justify-between gap-3 text-sm">
               <div class="flex min-w-0 items-center gap-2">
                 <span
@@ -60,6 +82,7 @@ const groups = computed(() => buildAttendanceStatusDistribution(props.overview))
               </div>
               <span class="font-bold tabular-nums text-slate-950">{{ item.count }}</span>
             </div>
+
             <div class="mt-2 h-2 overflow-hidden rounded-full bg-white ring-1 ring-slate-200/70">
               <div
                 class="h-full rounded-full transition-[width] duration-300"
@@ -74,8 +97,18 @@ const groups = computed(() => buildAttendanceStatusDistribution(props.overview))
                 aria-hidden="true"
               />
             </div>
-            <p class="mt-1.5 text-xs leading-5 text-slate-500">{{ item.description }}</p>
-          </div>
+
+            <div class="mt-2 flex flex-wrap items-center justify-between gap-x-3 gap-y-1">
+              <p class="text-xs leading-5 text-slate-500">{{ item.description }}</p>
+              <span v-if="item.count > 0" class="inline-flex items-center gap-1 text-xs font-bold text-indigo-700">
+                {{ item.employeesConcerned }} employé{{ item.employeesConcerned > 1 ? 's' : '' }} · {{ item.actionLabel }}
+                <svg class="h-3.5 w-3.5 transition-transform group-hover/status:translate-x-0.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                  <path d="m9 18 6-6-6-6" />
+                </svg>
+              </span>
+              <span v-else class="text-xs font-medium text-slate-400">Aucune occurrence</span>
+            </div>
+          </button>
         </div>
       </article>
     </div>

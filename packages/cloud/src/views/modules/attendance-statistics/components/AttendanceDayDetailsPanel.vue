@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed } from 'vue';
 
-import type { AttendanceDailyOverview } from '../types/attendance-statistics.types.js';
+import type { AttendanceDailyOverview, AttendanceStatus, BusinessDate } from '../types/attendance-statistics.types.js';
 import { ATTENDANCE_STATUS_PRESENTATION } from '../utils/attendance-status.js';
 import { formatBusinessDate } from '../utils/business-date.js';
 import { formatPercentage } from '../utils/percentage.js';
@@ -11,6 +11,9 @@ interface Props {
 }
 
 const props = defineProps<Props>();
+const emit = defineEmits<{
+  exploreStatus: [payload: { date: BusinessDate; status: Extract<AttendanceStatus, 'ABSENT' | 'LATE'> }];
+}>();
 const statusRows = computed(() => {
   if (!props.day) return [];
   return Object.entries(props.day.statusTotals)
@@ -59,6 +62,25 @@ const statusRows = computed(() => {
             <span class="font-bold tabular-nums text-slate-950">{{ row.count }}</span>
           </li>
         </ul>
+      </div>
+
+      <div v-if="day.statusTotals.ABSENT > 0 || day.statusTotals.LATE > 0" class="mt-5 flex flex-wrap gap-2">
+        <button
+          v-if="day.statusTotals.ABSENT > 0"
+          type="button"
+          class="rounded-xl border border-rose-200 bg-rose-50 px-3 py-2 text-xs font-bold text-rose-800 transition hover:bg-rose-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-500"
+          @click="emit('exploreStatus', { date: day.date, status: 'ABSENT' })"
+        >
+          Voir {{ day.statusTotals.ABSENT }} absence{{ day.statusTotals.ABSENT > 1 ? 's' : '' }} →
+        </button>
+        <button
+          v-if="day.statusTotals.LATE > 0"
+          type="button"
+          class="rounded-xl border border-amber-200 bg-amber-50 px-3 py-2 text-xs font-bold text-amber-900 transition hover:bg-amber-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-500"
+          @click="emit('exploreStatus', { date: day.date, status: 'LATE' })"
+        >
+          Voir {{ day.statusTotals.LATE }} retard{{ day.statusTotals.LATE > 1 ? 's' : '' }} →
+        </button>
       </div>
 
       <p class="mt-5 rounded-xl bg-slate-50 px-3 py-2.5 text-xs leading-5 text-slate-600">

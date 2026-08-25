@@ -59,6 +59,8 @@ export interface AttendanceEmployeeListFilters {
   query: string;
   status: AttendanceEmployeeStatusFilter;
   issues: AttendanceEmployeeIssueFilter;
+  /** Date métier ciblée par un drill-down du graphique. null = filtre sur toute la période. */
+  date: BusinessDate | null;
 }
 
 export interface AttendanceEmployeeSort {

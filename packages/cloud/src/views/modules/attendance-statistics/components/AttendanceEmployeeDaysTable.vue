@@ -66,22 +66,10 @@ watch(
 );
 
 function focusVisibleDate(date: BusinessDate): void {
-  const candidates = sectionRef.value?.querySelectorAll<HTMLElement>(
-      `[data-attendance-date="${date}"]`
-  );
-
-  const visible = Array.from(candidates ?? []).find(
-      (element) => element.offsetParent !== null
-  );
-
+  const candidates = sectionRef.value?.querySelectorAll<HTMLElement>(`[data-attendance-date="${date}"]`);
+  const visible = candidates ? [...candidates].find((element) => element.offsetParent !== null) : null;
   visible?.focus();
 }
-
-// function focusVisibleDate(date: BusinessDate): void {
-//   const candidates = sectionRef.value?.querySelectorAll<HTMLElement>(`[data-attendance-date="${date}"]`);
-//   const visible = candidates ? [...candidates].find((element) => element.offsetParent !== null) : null;
-//   visible?.focus();
-// }
 
 function updatePageSize(event: Event): void {
   pageSize.value = Number((event.target as HTMLSelectElement).value);
