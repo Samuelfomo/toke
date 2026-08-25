@@ -66,8 +66,12 @@ watch(
 );
 
 function focusVisibleDate(date: BusinessDate): void {
-  const candidates = sectionRef.value?.querySelectorAll<HTMLElement>(`[data-attendance-date="${date}"]`);
-  const visible = candidates ? [...candidates].find((element) => element.offsetParent !== null) : null;
+  const visible = Array.from(
+      sectionRef.value?.querySelectorAll<HTMLElement>(
+          `[data-attendance-date="${date}"]`,
+      ) ?? [],
+  ).find((element) => element.offsetParent !== null);
+
   visible?.focus();
 }
 

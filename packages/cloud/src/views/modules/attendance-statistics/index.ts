@@ -50,3 +50,7 @@ export { default as AttendanceAttentionEmployees } from './components/Attendance
 export { default as AttendanceSecondaryInsights } from './components/AttendanceSecondaryInsights.vue';
 export * from './utils/attendance-analysis-context.js';
 export { default as AttendanceAnalysisContextBar } from './components/AttendanceAnalysisContextBar.vue';
+
+// Lot 6.1 — Contrat et architecture du système de reporting PDF.
+// Aucun renderer jsPDF n'est implémenté à ce stade.
+export * from './pdf/index.js';
