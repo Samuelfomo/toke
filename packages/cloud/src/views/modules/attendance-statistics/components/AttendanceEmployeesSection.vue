@@ -23,7 +23,7 @@ interface Props {
 }
 
 const props = defineProps<Props>();
-const emit = defineEmits<{ manualFilterChange: [] }>();
+const emit = defineEmits<{ manualFilterChange: []; exportEmployee: [employeeGuid: string] }>();
 
 const filters = ref<AttendanceEmployeeListFilters>({ ...DEFAULT_ATTENDANCE_EMPLOYEE_FILTERS });
 const sort = ref<AttendanceEmployeeSort>({ ...DEFAULT_ATTENDANCE_EMPLOYEE_SORT });
@@ -190,6 +190,7 @@ defineExpose({
       :employee="selectedEmployee"
       :focus-date="selectedFocusDate"
       @close="closeEmployee"
+      @export-employee="emit('exportEmployee', $event)"
     />
   </section>
 </template>

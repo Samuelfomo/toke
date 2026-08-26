@@ -32,6 +32,11 @@ export interface AttendancePdfCardOptions {
   borderRadius?: number;
   fillColor?: readonly [number, number, number];
   borderColor?: readonly [number, number, number];
+  /** Position/largeur optionnelles pour composer plusieurs cartes sur une même ligne. */
+  x?: number;
+  width?: number;
+  /** false permet au parent de piloter lui-même l'avancement vertical. */
+  moveCursor?: boolean;
 }
 
 export class AttendancePdfPrimitives {
@@ -94,7 +99,8 @@ export class AttendancePdfPrimitives {
   drawCard(options: AttendancePdfCardOptions): number {
     const padding = options.padding ?? 4;
     const borderRadius = options.borderRadius ?? 2;
-    const textWidth = this.pages.contentWidth - padding * 2;
+    const cardWidth = options.width ?? this.pages.contentWidth;
+    const textWidth = cardWidth - padding * 2;
     const titleLines = options.title ? wrapPdfText(this.document, options.title, textWidth) : [];
     const valueLines = options.value ? wrapPdfText(this.document, options.value, textWidth) : [];
     const bodyLines = options.body ? wrapPdfText(this.document, options.body, textWidth) : [];
@@ -110,12 +116,12 @@ export class AttendancePdfPrimitives {
       throw new RangeError('Card is taller than the complete printable page height.');
     }
 
-    const x = this.pages.contentLeft;
+    const x = options.x ?? this.pages.contentLeft;
     const y = this.pages.y;
     applyColor(this.document.setFillColor.bind(this.document), options.fillColor ?? this.theme.colors.surfaceMuted);
     applyColor(this.document.setDrawColor.bind(this.document), options.borderColor ?? this.theme.colors.border);
     this.document.setLineWidth(0.2);
-    this.document.roundedRect(x, y, this.pages.contentWidth, height, borderRadius, borderRadius, 'FD');
+    this.document.roundedRect(x, y, cardWidth, height, borderRadius, borderRadius, 'FD');
 
     let cursor = y + padding;
     if (titleLines.length > 0) {
@@ -139,7 +145,7 @@ export class AttendancePdfPrimitives {
       this.document.text(bodyLines, x + padding, cursor + lineHeight * 0.82);
     }
 
-    this.pages.moveCursor(height);
+    if (options.moveCursor !== false) this.pages.moveCursor(height);
     return height;
   }
 }

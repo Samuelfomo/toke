@@ -226,9 +226,9 @@
                       <p class="max-w-[230px] truncate text-sm font-semibold text-slate-800">
                         {{ row.person.name }}
                       </p>
-                      <p class="mt-0.5 text-xs text-slate-400">
-                        {{ row.person.employeeCode || 'Matricule non renseigné' }}
-                      </p>
+<!--                      <p class="mt-0.5 text-xs text-slate-400">-->
+<!--                        {{ row.person.employeeCode || 'Matricule non renseigné' }}-->
+<!--                      </p>-->
                     </div>
                   </div>
                 </td>
@@ -322,11 +322,11 @@
               <div class="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-blue-700 text-xs font-bold text-white">
                 {{ initials(row.person.name) }}
               </div>
-              <div class="min-w-0 flex-1">
-                <p class="truncate text-sm font-bold text-slate-900">{{ row.person.name }}</p>
-                <p class="mt-0.5 text-xs text-slate-400">
-                  {{ row.person.employeeCode || 'Matricule non renseigné' }}
-                </p>
+              <div class="min-w-0 h-full flex-1">
+                <p class="truncate text-base font-bold text-slate-900">{{ row.person.name }}</p>
+<!--                <p class="mt-0.5 text-xs text-slate-400">-->
+<!--                  {{ row.person.employeeCode || 'Matricule non renseigné' }}-->
+<!--                </p>-->
               </div>
               <span
                 class="rounded-full px-2 py-1 text-xs font-bold ring-1 ring-inset"

@@ -54,3 +54,4 @@ export { default as AttendanceAnalysisContextBar } from './components/Attendance
 // Lot 6.1 — Contrat et architecture du système de reporting PDF.
 // Aucun renderer jsPDF n'est implémenté à ce stade.
 export * from './pdf/index.js';
+export { default as AttendancePdfExportDialog } from './components/AttendancePdfExportDialog.vue';

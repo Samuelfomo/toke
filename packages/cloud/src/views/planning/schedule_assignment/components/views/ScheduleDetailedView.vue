@@ -108,7 +108,7 @@
                 </div>
                 <div class="min-w-0 flex-1">
                   <p class="max-w-[120px] truncate text-xs font-semibold leading-tight text-slate-800">{{ member.name }}</p>
-                  <p v-if="member.code" class="text-xs text-slate-400">{{ member.code }}</p>
+<!--                  <p v-if="member.code" class="text-xs text-slate-400">{{ member.code }}</p>-->
                 </div>
                 <span
                     v-if="canAdjust(section.day.iso)"

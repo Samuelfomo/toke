@@ -158,9 +158,9 @@
                   >
                     {{ employee.name }}
                   </p>
-                  <p class="mt-0.5 truncate text-xs text-slate-400">
-                    {{ employee.employeeCode ?? employee.guid }}
-                  </p>
+<!--                  <p class="mt-0.5 truncate text-xs text-slate-400">-->
+<!--                    {{ employee.employeeCode ?? employee.guid }}-->
+<!--                  </p>-->
                 </div>
               </div>
 
@@ -290,9 +290,9 @@
                     <p class="max-w-[150px] truncate text-xs font-bold text-slate-800">
                       {{ item.user.name }}
                     </p>
-                    <p class="mt-0.5 text-xs text-slate-400">
-                      {{ item.user.employee_code ?? 'Sans code' }}
-                    </p>
+<!--                    <p class="mt-0.5 text-xs text-slate-400">-->
+<!--                      {{ item.user.employee_code ?? 'Sans code' }}-->
+<!--                    </p>-->
                   </div>
                 </div>
               </td>

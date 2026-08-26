@@ -14,11 +14,13 @@ import AttendanceOverviewEmptyState from '../components/AttendanceOverviewEmptyS
 import AttendanceOverviewErrorState from '../components/AttendanceOverviewErrorState.vue';
 import AttendanceOverviewHeader from '../components/AttendanceOverviewHeader.vue';
 import AttendanceOverviewSkeleton from '../components/AttendanceOverviewSkeleton.vue';
+import AttendancePdfExportDialog from '../components/AttendancePdfExportDialog.vue';
 import AttendanceSecondaryInsights from '../components/AttendanceSecondaryInsights.vue';
 import AttendanceStatusDistribution from '../components/AttendanceStatusDistribution.vue';
 import AttendanceVisualizations from '../components/AttendanceVisualizations.vue';
 import type { AttendanceStatisticsService } from '../services/attendance-statistics.service.js';
 import type { AttendanceStatus, BusinessDate } from '../types/attendance-statistics.types.js';
+import type { AttendanceIssue } from '../types/attendance-statistics.types.js';
 import type { AttendanceIssueTarget } from '../utils/attendance-issues.js';
 import type { AttendanceDataQualityMetricId } from '../utils/attendance-data-quality.js';
 import { getAttendanceDataQualityNavigationTarget } from '../utils/attendance-data-quality.js';
@@ -35,6 +37,9 @@ import type { AttendanceFiltersSubmission, AttendancePeriodPreset, AttendanceSit
 import { useAttendanceOverviewPage } from '../composables/useAttendanceOverviewPage.js';
 import { getAttendancePeriodForPreset } from '../utils/attendance-period.js';
 import { getAttendanceDataQualityLevel } from '../utils/attendance-status.js';
+import type { AttendancePdfExportMode, AttendancePdfPresentationContext } from '../pdf/types/attendance-pdf.types.js';
+import type { AttendanceJsPdfLoader } from '../pdf/integration/attendance-pdf-runtime.js';
+import { buildAttendancePdfPresentationContext } from '../pdf/integration/attendance-pdf-ui.js';
 
 interface Props {
   service: AttendanceStatisticsService;
@@ -47,6 +52,8 @@ interface Props {
   initialEndDate?: BusinessDate;
   initialPreset?: AttendancePeriodPreset;
   title?: string;
+  pdfPresentationContext?: AttendancePdfPresentationContext;
+  loadJsPdf?: AttendanceJsPdfLoader;
 }
 
 const props = withDefaults(defineProps<Props>(), {
@@ -75,6 +82,11 @@ const issuesSectionRef = ref<InstanceType<typeof AttendanceIssuesSection> | null
 const selectedKpiId = ref<AttendancePrimaryKpiId | null>(null);
 const analysisContext = ref<AttendanceAnalysisContext | null>(null);
 const filtersOpen = ref(false);
+const pdfExportOpen = ref(false);
+const pdfExportMode = ref<AttendancePdfExportMode>('period_summary');
+const pdfExportEmployeeGuid = ref<string | null>(null);
+const pdfExportIssue = ref<AttendanceIssue | null>(null);
+const pdfExportFeedback = ref<string | null>(null);
 
 
 function handleDataQualityMetricExplore(metricId: AttendanceDataQualityMetricId): void {
@@ -204,6 +216,40 @@ function handleOverviewFiltersReset(): void {
   page.resetFilters();
 }
 
+function openPdfExport(
+  mode: AttendancePdfExportMode,
+  options: { employeeGuid?: string | null; issue?: AttendanceIssue | null } = {},
+): void {
+  if (!page.overview.value) return;
+  pdfExportMode.value = mode;
+  pdfExportEmployeeGuid.value = options.employeeGuid ?? null;
+  pdfExportIssue.value = options.issue ?? null;
+  pdfExportFeedback.value = null;
+  pdfExportOpen.value = true;
+}
+
+function openEmployeePdfExport(employeeGuid: string): void {
+  openPdfExport('employee_sheet', { employeeGuid });
+}
+
+function handlePdfPreviewed(filename: string): void {
+  pdfExportFeedback.value = `Aperçu PDF ouvert : ${filename}`;
+}
+
+const selectedSiteName = computed(() => {
+  const siteGuid = page.overview.value?.scope.siteGuid ?? null;
+  if (!siteGuid) return null;
+  return props.siteOptions.find((site) => site.guid === siteGuid)?.name ?? null;
+});
+
+const resolvedPdfPresentationContext = computed(() =>
+  buildAttendancePdfPresentationContext({
+    ...(props.pdfPresentationContext ? { base: props.pdfPresentationContext } : {}),
+    ...(props.managerName ? { managerName: props.managerName } : {}),
+    siteName: selectedSiteName.value,
+  }),
+);
+
 const analysisEmployeeCount = computed(() =>
   page.overview.value ? getAttendanceAnalysisEmployeeCount(page.overview.value, analysisContext.value) : 0,
 );
@@ -253,9 +299,15 @@ const liveMessage = computed(() => {
         :quality="page.overview.value?.dataQuality ?? null"
         :is-refreshing="page.isRefreshing.value"
         :filters-open="filtersOpen"
+        :can-export="page.pageState.value === 'ready' && page.overview.value !== null"
         @toggle-filters="filtersOpen = !filtersOpen"
         @refresh="page.refresh"
+        @export="openPdfExport('period_summary')"
       />
+
+      <p v-if="pdfExportFeedback" class="rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm font-semibold text-emerald-900" role="status">
+        {{ pdfExportFeedback }}
+      </p>
 
       <div id="attendance-filters-panel" v-show="filtersOpen">
         <AttendanceFilters
@@ -293,6 +345,7 @@ const liveMessage = computed(() => {
                 @clear="clearAnalysisContext"
                 @clear-date="clearAnalysisDate"
                 @clear-status="clearAnalysisStatus"
+                @export="openPdfExport('current_analysis')"
               />
 
               <AttendanceVisualizations
@@ -302,7 +355,7 @@ const liveMessage = computed(() => {
               />
 
               <div class="grid gap-5 2xl:grid-cols-[minmax(0,1.25fr)_minmax(360px,0.75fr)]">
-                <AttendanceIssuesSection ref="issuesSectionRef" :issues="page.overview.value.issues" @view-employee="openIssueTarget" />
+                <AttendanceIssuesSection ref="issuesSectionRef" :issues="page.overview.value.issues" @view-employee="openIssueTarget" @export="openPdfExport('issues_only')" />
                 <AttendanceStatusDistribution
                   :overview="page.overview.value"
                   :active-status="analysisContext?.status ?? null"
@@ -316,6 +369,7 @@ const liveMessage = computed(() => {
                 ref="employeesSectionRef"
                 :employees="page.overview.value.employees"
                 @manual-filter-change="handleManualEmployeeFilters"
+                @export-employee="openEmployeePdfExport"
               />
 
               <AttendanceSecondaryInsights :overview="page.overview.value" />
@@ -327,5 +381,18 @@ const liveMessage = computed(() => {
         </template>
       </main>
     </div>
+
+    <AttendancePdfExportDialog
+      :open="pdfExportOpen"
+      :overview="page.overview.value"
+      :analysis-context="analysisContext"
+      :presentation-context="resolvedPdfPresentationContext"
+      :initial-mode="pdfExportMode"
+      :initial-employee-guid="pdfExportEmployeeGuid"
+      :initial-issue="pdfExportIssue"
+      :load-js-pdf="loadJsPdf"
+      @close="pdfExportOpen = false"
+      @previewed="handlePdfPreviewed"
+    />
   </div>
 </template>

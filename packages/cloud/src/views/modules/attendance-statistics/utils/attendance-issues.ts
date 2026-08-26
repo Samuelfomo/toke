@@ -25,6 +25,7 @@ export interface AttendanceIssueTarget {
   employeeName: string;
   date: string;
   issue: AttendanceIssue;
+  status: AttendanceIssueOccurrence['status'];
 }
 
 export interface AttendanceIssueDashboardSummary {
@@ -155,6 +156,7 @@ export function toAttendanceIssueTarget(
     employeeName: occurrence.employeeName,
     date: occurrence.date,
     issue,
+    status: occurrence.status,
   };
 }
 

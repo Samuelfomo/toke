@@ -15,6 +15,7 @@ interface Props {
   quality?: AttendanceDataQuality | null;
   isRefreshing: boolean;
   filtersOpen?: boolean;
+  canExport?: boolean;
 }
 
 const props = withDefaults(defineProps<Props>(), {
@@ -22,13 +23,14 @@ const props = withDefaults(defineProps<Props>(), {
   managerName: '',
   quality: null,
   filtersOpen: false,
+  canExport: false,
 });
 
 const qualityPresentation = computed(() =>
   props.quality ? buildAttendanceDataQualityPresentation(props.quality) : null,
 );
 
-defineEmits<{ refresh: []; toggleFilters: [] }>();
+defineEmits<{ refresh: []; toggleFilters: []; export: [] }>();
 </script>
 
 <template>
@@ -58,6 +60,16 @@ defineEmits<{ refresh: []; toggleFilters: [] }>();
       </div>
 
       <div class="flex flex-wrap gap-2">
+        <button
+          type="button"
+          class="inline-flex min-h-11 shrink-0 items-center justify-center gap-2 rounded-xl bg-indigo-700 px-4 py-2.5 text-sm font-bold text-white transition hover:bg-indigo-800 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+          :disabled="!canExport"
+          @click="$emit('export')"
+        >
+          <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M12 3v12m0 0 4-4m-4 4-4-4"/><path d="M5 21h14"/></svg>
+          Exporter
+        </button>
+
         <button
           type="button"
           class="inline-flex min-h-11 shrink-0 items-center justify-center gap-2 rounded-xl border px-4 py-2.5 text-sm font-semibold transition focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2"

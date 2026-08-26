@@ -14,7 +14,7 @@ interface Props {
 }
 
 const props = defineProps<Props>();
-const emit = defineEmits<{ close: [] }>();
+const emit = defineEmits<{ close: []; exportEmployee: [employeeGuid: string] }>();
 const dialogRef = ref<HTMLElement | null>(null);
 const closeButtonRef = ref<HTMLElement | null>(null);
 const isOpen = computed(() => props.open && props.employee !== null);
@@ -62,15 +62,24 @@ const netDuration = computed(() => {
             </h2>
             <p class="mt-1 truncate text-sm text-slate-500">{{ employee.employeeGuid }}</p>
           </div>
-          <button
-            ref="closeButtonRef"
-            type="button"
-            class="inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-full border border-slate-300 text-xl text-slate-700 transition hover:bg-slate-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 focus-visible:ring-offset-2"
-            aria-label="Fermer le détail"
-            @click="emit('close')"
-          >
-            <span aria-hidden="true">×</span>
-          </button>
+          <div class="flex shrink-0 items-center gap-2">
+            <button
+              type="button"
+              class="inline-flex min-h-11 items-center justify-center rounded-xl bg-indigo-700 px-3 text-sm font-bold text-white hover:bg-indigo-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500"
+              @click="emit('exportEmployee', employee.employeeGuid)"
+            >
+              Exporter cette fiche
+            </button>
+            <button
+              ref="closeButtonRef"
+              type="button"
+              class="inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-full border border-slate-300 text-xl text-slate-700 transition hover:bg-slate-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 focus-visible:ring-offset-2"
+              aria-label="Fermer le détail"
+              @click="emit('close')"
+            >
+              <span aria-hidden="true">×</span>
+            </button>
+          </div>
         </header>
 
         <div class="flex-1 overscroll-contain overflow-y-auto px-4 py-5 pb-[max(1.25rem,env(safe-area-inset-bottom))] sm:px-6">

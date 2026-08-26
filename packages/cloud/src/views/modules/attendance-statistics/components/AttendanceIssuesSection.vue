@@ -19,7 +19,7 @@ interface Props {
 }
 
 const props = defineProps<Props>();
-const emit = defineEmits<{ viewEmployee: [target: AttendanceIssueTarget] }>();
+const emit = defineEmits<{ viewEmployee: [target: AttendanceIssueTarget]; export: [] }>();
 
 const filters = ref<AttendanceIssueListFilters>({ ...DEFAULT_ATTENDANCE_ISSUE_FILTERS });
 const model = computed(() => buildAttendanceIssueListModel({ issues: props.issues, filters: filters.value }));
@@ -60,9 +60,18 @@ defineExpose({ focusSection, focusIssue, focusFamily, reset });
           Les compteurs et occurrences viennent de l’API. L’ordre ci-dessous facilite le traitement opérationnel et ne constitue pas un niveau de gravité métier.
         </p>
       </div>
-      <span class="self-start rounded-full bg-orange-100 px-3 py-1.5 text-xs font-bold text-orange-800">
-        {{ model.summary.occurrenceCount }} occurrence{{ model.summary.occurrenceCount > 1 ? 's' : '' }}
-      </span>
+      <div class="flex flex-wrap items-center gap-2 self-start">
+        <span class="rounded-full bg-orange-100 px-3 py-1.5 text-xs font-bold text-orange-800">
+          {{ model.summary.occurrenceCount }} occurrence{{ model.summary.occurrenceCount > 1 ? 's' : '' }}
+        </span>
+        <button
+          type="button"
+          class="rounded-xl border border-orange-200 bg-white px-3 py-2 text-xs font-bold text-orange-800 hover:bg-orange-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-orange-500"
+          @click="emit('export')"
+        >
+          Exporter les éléments
+        </button>
+      </div>
     </div>
 
     <div v-if="issues.length === 0" class="px-5 py-10 text-center">

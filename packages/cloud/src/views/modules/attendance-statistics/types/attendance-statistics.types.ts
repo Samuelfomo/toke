@@ -88,6 +88,11 @@ export interface AttendanceDailyOverview {
   teamSize: number;
   statusTotals: AttendanceStatusTotals;
   rates: AttendanceRateMetrics;
+  /**
+   * Durées agrégées de la journée retournées par l'API.
+   * Optionnel uniquement pour permettre un déploiement frontend avant le backend enrichi.
+   */
+  durations?: AttendanceDurationMetrics;
   issueCount: number;
 }
 

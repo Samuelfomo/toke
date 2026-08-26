@@ -1,5 +1,9 @@
 import { isAttendanceAnalysisContextValid } from '../../utils/attendance-analysis-context.js';
 import { getAttendancePdfExportProfile } from '../config/attendance-pdf-profiles.js';
+import {
+  getAttendancePdfPresentationProfile,
+  resolveAttendancePdfPresentationLevel,
+} from '../config/attendance-pdf-presentation-levels.js';
 import type {
   AttendancePdfContractError,
   AttendancePdfContractWarning,
@@ -112,9 +116,15 @@ export function buildAttendancePdfReportContract(
     employeeGuid = request.employeeGuid;
   }
 
+  const presentationLevel = resolveAttendancePdfPresentationLevel({
+    mode: request.mode,
+    ...(request.presentationLevel ? { requestedLevel: request.presentationLevel } : {}),
+  });
+
   return {
     request,
     profile: getAttendancePdfExportProfile(request.mode),
+    presentationProfile: getAttendancePdfPresentationProfile(presentationLevel),
     validation,
     reportContext: {
       startDate: request.overview.period.startDate,

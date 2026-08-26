@@ -16,6 +16,7 @@ const emit = defineEmits<{
   clear: [];
   clearDate: [];
   clearStatus: [];
+  export: [];
 }>();
 
 const statusLabel = computed(() =>
@@ -74,13 +75,22 @@ const issueLabel = computed(() =>
         </div>
       </div>
 
-      <button
-        type="button"
-        class="shrink-0 self-start rounded-xl border border-indigo-200 bg-white px-3 py-2 text-sm font-bold text-indigo-700 hover:border-indigo-300 hover:bg-indigo-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 lg:self-center"
-        @click="emit('clear')"
-      >
-        Réinitialiser l’analyse
-      </button>
+      <div class="flex shrink-0 flex-wrap gap-2 self-start lg:self-center">
+        <button
+          type="button"
+          class="rounded-xl bg-indigo-700 px-3 py-2 text-sm font-bold text-white hover:bg-indigo-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500"
+          @click="emit('export')"
+        >
+          Exporter cette analyse
+        </button>
+        <button
+          type="button"
+          class="rounded-xl border border-indigo-200 bg-white px-3 py-2 text-sm font-bold text-indigo-700 hover:border-indigo-300 hover:bg-indigo-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500"
+          @click="emit('clear')"
+        >
+          Réinitialiser l’analyse
+        </button>
+      </div>
     </div>
   </aside>
 </template>
