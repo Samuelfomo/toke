@@ -72,6 +72,7 @@ export function buildAttendanceOverview(
       teamSize: input.employees.length,
       statusTotals: countStatuses(dateDays),
       rates: calculateRates(dateDays),
+      durations: calculateDurations(dateDays),
       issueCount: dateDays.reduce((total, day) => total + day.issues.length, 0),
     };
   });

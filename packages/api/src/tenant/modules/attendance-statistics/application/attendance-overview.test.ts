@@ -96,6 +96,8 @@ describe('buildAttendanceOverview', () => {
     assert.equal(overview.summary.rates.attendanceRate, 66.7);
     assert.equal(overview.summary.rates.punctualityRate, 50);
     assert.equal(overview.summary.statusTotals.PENDING, 1);
+    assert.equal(overview.daily[0]?.durations.netMinutes, 840);
+    assert.equal(overview.daily[0]?.durations.daysWithKnownNetDuration, 2);
   });
 
   it('sépare les anomalies de repos et les problèmes de planning', () => {
@@ -155,5 +157,8 @@ describe('buildAttendanceOverview', () => {
     assert.equal(overview.summary.durations.grossMinutes, 0);
     assert.equal(overview.summary.durations.daysWithKnownGrossDuration, 0);
     assert.equal(overview.summary.durations.daysWithMissingDuration, 1);
+    assert.equal(overview.daily[0]?.durations.netMinutes, 0);
+    assert.equal(overview.daily[0]?.durations.daysWithKnownNetDuration, 0);
+    assert.equal(overview.daily[0]?.durations.daysWithMissingDuration, 1);
   });
 });

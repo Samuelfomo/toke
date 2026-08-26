@@ -67,6 +67,8 @@ export interface AttendanceDailyOverview {
   teamSize: number;
   statusTotals: AttendanceStatusTotals;
   rates: AttendanceRateMetrics;
+  /** Durées agrégées de la journée sur le périmètre courant. */
+  durations: AttendanceDurationMetrics;
   issueCount: number;
 }
 
