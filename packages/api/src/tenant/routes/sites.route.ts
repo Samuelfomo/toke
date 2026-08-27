@@ -492,52 +492,6 @@ router.patch('/validate-qr', Ensure.patch(), async (req: Request, res: Response)
   }
 });
 
-// === GESTION GÉOSPATIALE ===
-
-// router.post('/:guid/expand-geofence', Ensure.post(), async (req: Request, res: Response) => {
-//   try {
-//     if (!SitesValidationUtils.validateGuid(req.params.guid)) {
-//       return R.handleError(res, HttpStatus.BAD_REQUEST, {
-//         code: SITES_CODES.INVALID_GUID,
-//         message: SITES_ERRORS.GUID_INVALID,
-//       });
-//     }
-//
-//     const siteObj = await Site._load(req.params.guid, true);
-//     if (!siteObj) {
-//       return R.handleError(res, HttpStatus.NOT_FOUND, {
-//         code: SITES_CODES.SITE_NOT_FOUND,
-//         message: SITES_ERRORS.NOT_FOUND,
-//       });
-//     }
-//
-//     const validatedData = validateGeofenceExpansion(req.body);
-//
-//     await siteObj.expandGeofence(
-//       validatedData.new_polygon,
-//       validatedData.reason || 'Geofence expansion',
-//     );
-//
-//     return R.handleSuccess(res, {
-//       message: 'Geofence expanded successfully',
-//       site: await siteObj.toJSON(),
-//     });
-//   } catch (error: any) {
-//     if (error.issues) {
-//       return R.handleError(res, HttpStatus.BAD_REQUEST, {
-//         code: SITES_CODES.VALIDATION_FAILED,
-//         message: SITES_ERRORS.VALIDATION_FAILED,
-//         details: error.issues,
-//       });
-//     } else {
-//       return R.handleError(res, HttpStatus.INTERNAL_ERROR, {
-//         code: SITES_CODES.GEOFENCE_EXPANSION_FAILED,
-//         message: error.message,
-//       });
-//     }
-//   }
-// });
-
 // === ROUTES PAR CRÉATEUR ===
 
 router.get('/creator/:guid/list', Ensure.get(), async (req: Request, res: Response) => {
