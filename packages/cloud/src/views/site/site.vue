@@ -332,11 +332,22 @@
                           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/>
                         </svg>
                       </button>
+
                       <button
-                          @click="toggleMenu(site.guid, $event)"
+                          data-menu-trigger
+                          @click.stop="toggleMenu(site.guid, $event)"
                           class="w-8 h-8 rounded-lg flex items-center justify-center text-gray-400 hover:bg-gray-100 transition-colors">
-                        <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 5v.01M12 12v.01M12 19v.01M12 6a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2z"/>
+                        <svg
+                            xmlns="http://www.w3.org/2000/svg"
+                            class="w-4 h-4"
+                            fill="none"
+                            viewBox="0 0 24 24"
+                            stroke="currentColor">
+                          <path
+                              stroke-linecap="round"
+                              stroke-linejoin="round"
+                              stroke-width="2"
+                              d="M12 5v.01M12 12v.01M12 19v.01M12 6a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2z"/>
                         </svg>
                       </button>
                     </div>
@@ -395,7 +406,10 @@
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/>
                       </svg>
                     </button>
-                    <button @click="toggleMenu(site.guid, $event)" class="w-7 h-7 rounded-lg bg-white/90 flex items-center justify-center text-gray-500 hover:bg-white shadow-sm">
+                    <button
+                        data-menu-trigger
+                        @click.stop="toggleMenu(site.guid, $event)"
+                        class="w-7 h-7 rounded-lg bg-white/90 flex items-center justify-center text-gray-500 hover:bg-white shadow-sm">
                       <svg xmlns="http://www.w3.org/2000/svg" class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 5v.01M12 12v.01M12 19v.01"/>
                       </svg>
@@ -519,6 +533,8 @@
       <Teleport to="body">
         <div
             v-if="activeMenu !== null"
+            data-menu-dropdown
+            @click.stop
             :style="menuPosition"
             class="fixed w-48 rounded-xl shadow-xl bg-white border border-gray-100 overflow-hidden"
             style="z-index: 9999;">
@@ -538,6 +554,16 @@
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/>
               </svg>
               Modifier
+            </button>
+            <button
+                @click="toggleSiteStatus(activeMenu!)"
+                class="flex items-center w-full px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 transition-colors gap-3">
+              <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4"
+                   :class="getSiteByGuid(activeMenu!)?.active ? 'text-amber-500' : 'text-emerald-500'"
+                   fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0l4 2m-4-2l-4 2m9.657-7.657a8 8 0 11-11.314 0"/>
+              </svg>
+              {{ getSiteByGuid(activeMenu!)?.active ? 'Désactiver' : 'Activer' }}
             </button>
             <div class="border-t border-gray-100 my-1"></div>
             <button
@@ -609,6 +635,7 @@ const menuPosition = ref<Record<string, string>>({});
 const toastRef = ref<HTMLElement | null>(null);
 const messageType = ref<'success' | 'error'>('success');
 const messageText = ref('');
+const isMutatingSite = ref(false);
 
 // ─── Options filtres ────────────────────────────────────────────────────────────
 
@@ -780,13 +807,18 @@ const viewSiteMap = (guid: string) => {
   router.push({ name: 'map', query: { guid } });
 };
 
+const getSiteByGuid = (guid: string) => sites.value.find(site => site.guid === guid);
+
+const getResponseErrorMessage = (response: any, fallback: string) =>
+    response?.message || response?.error?.message || response?.data?.message || fallback;
+
 // ─── Menu contextuel ───────────────────────────────────────────────────────────
 
 const toggleMenu = (guid: string, event: MouseEvent) => {
   if (activeMenu.value === guid) { activeMenu.value = null; return; }
   const rect = (event.currentTarget as HTMLElement).getBoundingClientRect();
   menuPosition.value = {
-    top:   `${rect.bottom + 6}px`,
+    top: `${rect.bottom + 6}px`,
     right: `${window.innerWidth - rect.right}px`,
   };
   activeMenu.value = guid;
@@ -800,20 +832,59 @@ const handleOutsideClick = (e: MouseEvent) => {
   }
 };
 
-// ─── Suppression ───────────────────────────────────────────────────────────────
+// ─── Actions serveur ───────────────────────────────────────────────────────────
+
+const toggleSiteStatus = async (guid: string) => {
+  if (isMutatingSite.value) return;
+
+  const site = getSiteByGuid(guid);
+  activeMenu.value = null;
+  if (!site) return;
+
+  const nextStatus = !site.active;
+  isMutatingSite.value = true;
+  try {
+    const response = await SiteService.setSiteStatus(guid, nextStatus);
+    if (!response?.success) {
+      throw new Error(getResponseErrorMessage(response, 'Impossible de modifier le statut du site'));
+    }
+
+    site.active = nextStatus;
+    messageType.value = 'success';
+    messageText.value = nextStatus ? 'Site activé avec succès' : 'Site désactivé avec succès';
+    showToast();
+  } catch (error: any) {
+    messageType.value = 'error';
+    messageText.value = getResponseErrorMessage(error, 'Erreur lors de la modification du statut');
+    showToast();
+  } finally {
+    isMutatingSite.value = false;
+  }
+};
 
 const deleteSite = async (guid: string) => {
+  if (isMutatingSite.value) return;
+
   activeMenu.value = null;
   if (!confirm('Êtes-vous sûr de vouloir supprimer ce site ?')) return;
+
+  isMutatingSite.value = true;
   try {
+    const response = await SiteService.deleteSite(guid);
+    if (!response?.success) {
+      throw new Error(getResponseErrorMessage(response, 'Impossible de supprimer le site'));
+    }
+
+    sites.value = sites.value.filter(site => site.guid !== guid);
     messageType.value = 'success';
     messageText.value = 'Site supprimé avec succès';
     showToast();
-    await loadSites();
-  } catch {
+  } catch (error: any) {
     messageType.value = 'error';
-    messageText.value = 'Erreur lors de la suppression';
+    messageText.value = getResponseErrorMessage(error, 'Erreur lors de la suppression');
     showToast();
+  } finally {
+    isMutatingSite.value = false;
   }
 };
 
