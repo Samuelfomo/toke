@@ -97,7 +97,7 @@ function statusClasses(status: AttendanceStatus): string {
     <div class="flex flex-col gap-3 border-y border-slate-200 py-4 lg:flex-row lg:items-end lg:justify-between">
       <div>
         <h3 id="attendance-employee-days-title" class="text-base font-bold text-slate-900">Détail journalier</h3>
-        <p class="mt-1 text-sm text-slate-500">Heures et durées affichées telles que retournées par l’API tenant.</p>
+        <p class="mt-1 text-sm text-slate-500">Les heures et durées affichées correspondent aux pointages enregistrés pour la période.</p>
       </div>
 
       <div class="grid gap-3 sm:grid-cols-3 sm:items-end">

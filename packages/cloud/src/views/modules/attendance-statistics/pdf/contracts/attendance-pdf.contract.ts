@@ -19,7 +19,7 @@ function collectWarnings(request: AttendancePdfExportRequest): AttendancePdfCont
   if (!presentation?.tenantName?.trim()) {
     warnings.push({
       code: 'tenant_display_name_missing',
-      message: "Le nom d'affichage du tenant n'est pas fourni. Le renderer ne doit pas l'inventer.",
+      message: "Le nom de l’organisation n’est pas disponible et ne sera pas affiché dans le rapport.",
     });
   }
   if (!presentation?.managerName?.trim()) {

@@ -4,7 +4,7 @@ import { createRouter, createWebHistory, RouteRecordRaw } from 'vue-router'
 // Views
 import Auth from './views/auth.vue'
 import Otp from './views/otp.vue'
-import DashboardMain from './views/dashboard/dashboardMain.vue'
+// import DashboardMain from './views/dashboard/dashboardMain.vue'
 import PointageMain from './views/pointages/pointagesMain.vue'
 import PointagesPrint from './views/pointages/pointagesPrint.vue'
 import Equipe from './views/equipe.vue'
@@ -47,7 +47,7 @@ const routes: RouteRecordRaw[] = [
   {
     path: '/dashboard',
     name: 'dashboard',
-    component: DashboardMain,
+    component: AttendanceStatisticsOverview,
     meta: { requiresAuth: true },
   },
     {
@@ -159,12 +159,6 @@ const routes: RouteRecordRaw[] = [
     path: '/employeeAttendanceView/:id',
     name: 'employeeAttendanceView',
     component: EmployeeAttendanceView,
-    meta: { requiresAuth: true },
-  },
-    {
-    path: '/at',
-    name: 'at',
-    component: AttendanceStatisticsOverview,
     meta: { requiresAuth: true },
   },
     planningRoutes,

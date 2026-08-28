@@ -324,7 +324,7 @@ const liveMessage = computed(() => {
 </script>
 
 <template>
-  <div class="min-w-0 px-4 py-5 sm:px-6 sm:py-7 lg:px-8">
+  <div class="min-h-screen bg-gradient-to-r from-[#d0e8f7] via-[#f0e4f5] to-[#d0e8f7] px-4 py-5 sm:px-6 sm:py-7 lg:px-8">
     <nav aria-label="Accès rapide au contenu" class="sr-only focus-within:not-sr-only">
       <div class="fixed left-4 top-4 z-[70] flex flex-wrap gap-2 rounded-xl bg-white p-2 shadow-xl">
         <a href="#attendance-main-content" class="rounded-lg bg-slate-950 px-3 py-2 text-sm font-bold text-white focus:outline-none focus:ring-2 focus:ring-indigo-500">Aller au contenu</a>

@@ -3,6 +3,7 @@ import type {
   AttendancePeriodPreset,
   AttendancePeriodRange,
 } from '../types/attendance-statistics.ui.types.js';
+
 import { isValidBusinessDate } from './business-date.js';
 
 const DAY_MS = 86_400_000;

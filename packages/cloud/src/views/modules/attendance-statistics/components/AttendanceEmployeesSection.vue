@@ -147,7 +147,7 @@ defineExpose({
 </script>
 
 <template>
-  <section id="attendance-employees" class="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm" aria-labelledby="attendance-employees-title">
+  <section id="attendance-employees" class="overflow-hidden rounded-lg border border-slate-200 bg-white shadow-md" aria-labelledby="attendance-employees-title">
     <div class="flex flex-col gap-2 px-4 pt-5 sm:flex-row sm:items-start sm:justify-between sm:px-5">
       <div>
         <p class="text-xs font-bold uppercase tracking-[0.14em] text-indigo-600">Analyse individuelle</p>

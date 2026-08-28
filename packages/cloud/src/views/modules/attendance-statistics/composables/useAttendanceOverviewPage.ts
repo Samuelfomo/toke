@@ -5,15 +5,17 @@ import type {
   AttendanceStatisticsFilters,
   BusinessDate,
 } from '../types/attendance-statistics.types.js';
+import type { AttendanceStatisticsServiceError } from '../services/attendance-statistics.service.js';
+import { describeAttendancePeriod } from '../utils/attendance-period.js';
+import { resolveAttendanceOverviewPageState } from '../utils/attendance-overview-state.js';
+
+import { useAttendanceStatistics } from './useAttendanceStatistics.js';
+
 import type {
   AttendanceFiltersSubmission,
   AttendanceOverviewPageState,
   AttendancePeriodPreset,
-} from '../types/attendance-statistics.ui.types.js';
-import type { AttendanceStatisticsServiceError } from '../services/attendance-statistics.service.js';
-import { useAttendanceStatistics } from './useAttendanceStatistics.js';
-import { describeAttendancePeriod } from '../utils/attendance-period.js';
-import { resolveAttendanceOverviewPageState } from '../utils/attendance-overview-state.js';
+} from '@/views/modules/attendance-statistics';
 
 export interface UseAttendanceOverviewPageOptions {
   service: import('../services/attendance-statistics.service.js').AttendanceStatisticsService;

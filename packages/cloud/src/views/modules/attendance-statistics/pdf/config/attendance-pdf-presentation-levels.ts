@@ -25,7 +25,7 @@ export const ATTENDANCE_PDF_PRESENTATION_PROFILES: Record<
   detailed: {
     level: 'detailed',
     label: 'Détaillé',
-    description: "Expose tout le détail disponible dans le snapshot API, sans inventer les occurrences absentes.",
+    description: "Affiche toutes les informations disponibles dans les données enregistrées pour cette période.",
     issueDetails: 'all',
     issueOccurrenceLimitPerType: null,
   },

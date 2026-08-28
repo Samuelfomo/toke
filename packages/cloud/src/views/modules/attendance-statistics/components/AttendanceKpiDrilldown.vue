@@ -57,51 +57,54 @@ const title = computed(() => {
     v-if="kpiId"
     ref="panelRef"
     tabindex="-1"
-    class="rounded-2xl border border-indigo-200 bg-indigo-50/60 p-5 outline-none ring-offset-2 focus-visible:ring-2 focus-visible:ring-indigo-500 sm:p-6"
+    class="rounded-lg border border-indigo-200 bg-indigo-50/60 p-5 outline-none ring-offset-2 focus-visible:ring-2 focus-visible:ring-indigo-500 sm:p-6"
     aria-live="polite"
     aria-labelledby="attendance-kpi-drilldown-title"
   >
     <div class="flex items-start justify-between gap-4">
       <div>
         <p class="text-xs font-bold uppercase tracking-[0.14em] text-indigo-700">Explication du signal</p>
-        <h3 id="attendance-kpi-drilldown-title" class="mt-1 text-lg font-bold text-slate-950">{{ title }}</h3>
+        <h3 id="attendance-kpi-drilldown-title" class="mt-0.5 text-lg font-bold text-slate-950">{{ title }}</h3>
       </div>
-      <button type="button" class="rounded-lg px-2 py-1 text-sm font-semibold text-slate-600 hover:bg-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500" @click="emit('close')">Fermer</button>
+      <button type="button" class="rounded-md px-2 py-1 text-sm font-semibold text-slate-600 bg-white/50 hover:bg-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500" @click="emit('close')">Fermer</button>
     </div>
 
     <div v-if="kpiId === 'attendance_rate'" class="mt-5 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-      <div class="rounded-xl bg-white p-4"><p class="text-xs font-bold uppercase text-slate-500">Taux API</p><p class="mt-1 text-2xl font-bold text-slate-950">{{ formatPercentage(overview.summary.rates.attendanceRate) }}</p></div>
-      <div class="rounded-xl bg-white p-4"><p class="text-xs font-bold uppercase text-slate-500">Journées suivies</p><p class="mt-1 text-2xl font-bold text-slate-950">{{ overview.summary.rates.attendedWorkingDays }}</p><p class="mt-1 text-xs text-slate-500">sur {{ overview.summary.rates.employeeWorkingDaysExpected }} attendues</p></div>
-      <div class="rounded-xl bg-white p-4"><p class="text-xs font-bold uppercase text-slate-500">À l’heure</p><p class="mt-1 text-2xl font-bold text-slate-950">{{ overview.summary.statusTotals.PRESENT }}</p></div>
-      <div class="rounded-xl bg-white p-4"><p class="text-xs font-bold uppercase text-slate-500">Absences finalisées</p><p class="mt-1 text-2xl font-bold text-rose-700">{{ overview.summary.statusTotals.ABSENT }}</p></div>
-      <p class="sm:col-span-2 lg:col-span-4 text-sm leading-6 text-slate-700">Le taux affiché reste celui calculé par l’API. Ce panneau expose simplement ses composantes déjà retournées afin d’expliquer le résultat sans le recalculer dans Vue.</p>
+      <div class="rounded-md bg-white p-4"><p class="text-xs font-bold uppercase text-slate-500">Taux calculé</p><p class="mt-1 text-2xl font-bold text-slate-950">{{ formatPercentage(overview.summary.rates.attendanceRate) }}</p></div>
+      <div class="rounded-md bg-white p-4"><p class="text-xs font-bold uppercase text-slate-500">Journées suivies</p><p class="mt-1 text-2xl font-bold text-slate-950">{{ overview.summary.rates.attendedWorkingDays }}</p><p class="mt-1 text-xs text-slate-500">sur {{ overview.summary.rates.employeeWorkingDaysExpected }} attendues</p></div>
+      <div class="rounded-md bg-white p-4"><p class="text-xs font-bold uppercase text-slate-500">À l’heure</p><p class="mt-1 text-2xl font-bold text-slate-950">{{ overview.summary.statusTotals.PRESENT }}</p></div>
+      <div class="rounded-md bg-white p-4"><p class="text-xs font-bold uppercase text-slate-500">Absences finalisées</p><p class="mt-1 text-2xl font-bold text-rose-700">{{ overview.summary.statusTotals.ABSENT }}</p></div>
+      <p class="sm:col-span-2 lg:col-span-4 text-sm leading-6 text-slate-700">Ce détail vous aide à comprendre comment le résultat affiché est constitué.</p>
     </div>
 
     <div v-else-if="kpiId === 'punctuality_rate'" class="mt-5 grid gap-3 sm:grid-cols-3">
-      <div class="rounded-xl bg-white p-4"><p class="text-xs font-bold uppercase text-slate-500">Ponctualité API</p><p class="mt-1 text-2xl font-bold text-slate-950">{{ formatPercentage(overview.summary.rates.punctualityRate) }}</p></div>
-      <div class="rounded-xl bg-white p-4"><p class="text-xs font-bold uppercase text-slate-500">À l’heure</p><p class="mt-1 text-2xl font-bold text-slate-950">{{ overview.summary.rates.onTimeWorkingDays }}</p></div>
-      <div class="rounded-xl bg-white p-4"><p class="text-xs font-bold uppercase text-slate-500">Retards</p><p class="mt-1 text-2xl font-bold text-amber-700">{{ overview.summary.rates.lateWorkingDays }}</p><p class="mt-1 text-xs text-slate-500">{{ employeesWithLate }} employé{{ employeesWithLate > 1 ? 's' : '' }} concerné{{ employeesWithLate > 1 ? 's' : '' }}</p></div>
+      <div class="rounded-md bg-white p-4"><p class="text-xs font-bold uppercase text-slate-500">Ponctualité API</p><p class="mt-1 text-2xl font-bold text-slate-950">{{ formatPercentage(overview.summary.rates.punctualityRate) }}</p></div>
+      <div class="rounded-md bg-white p-4"><p class="text-xs font-bold uppercase text-slate-500">À l’heure</p><p class="mt-1 text-2xl font-bold text-slate-950">{{ overview.summary.rates.onTimeWorkingDays }}</p></div>
+      <div class="rounded-md bg-white p-4"><p class="text-xs font-bold uppercase text-slate-500">Retards</p><p class="mt-1 text-2xl font-bold text-amber-700">{{ overview.summary.rates.lateWorkingDays }}</p><p class="mt-1 text-xs text-slate-500">{{ employeesWithLate }} employé{{ employeesWithLate > 1 ? 's' : '' }} concerné{{ employeesWithLate > 1 ? 's' : '' }}</p></div>
     </div>
 
     <div v-else-if="kpiId === 'absences'" class="mt-5 grid gap-3 sm:grid-cols-2">
-      <div class="rounded-xl bg-white p-4"><p class="text-xs font-bold uppercase text-slate-500">Journées ABSENT</p><p class="mt-1 text-3xl font-bold text-rose-700">{{ overview.summary.statusTotals.ABSENT }}</p></div>
-      <div class="rounded-xl bg-white p-4"><p class="text-xs font-bold uppercase text-slate-500">Employés concernés</p><p class="mt-1 text-3xl font-bold text-slate-950">{{ employeesWithAbsence }}</p><p class="mt-1 text-xs text-slate-500">PENDING, REST_DAY et UNDETERMINED ne sont pas inclus.</p></div>
+      <div class="rounded-md bg-white p-4"><p class="text-xs font-bold uppercase text-slate-500">Journées ABSENT</p><p class="mt-1 text-3xl font-bold text-rose-700">{{ overview.summary.statusTotals.ABSENT }}</p></div>
+      <div class="rounded-md bg-white p-4"><p class="text-xs font-bold uppercase text-slate-500">Employés concernés</p><p class="mt-1 text-3xl font-bold text-slate-950">{{ employeesWithAbsence }}</p><p class="mt-1 text-xs text-slate-500">PENDING, REST_DAY et UNDETERMINED ne sont pas inclus.</p></div>
     </div>
 
     <div v-else-if="kpiId === 'late_days'" class="mt-5 grid gap-3 sm:grid-cols-2">
-      <div class="rounded-xl bg-white p-4"><p class="text-xs font-bold uppercase text-slate-500">Journées LATE</p><p class="mt-1 text-3xl font-bold text-amber-700">{{ overview.summary.statusTotals.LATE }}</p></div>
-      <div class="rounded-xl bg-white p-4"><p class="text-xs font-bold uppercase text-slate-500">Employés concernés</p><p class="mt-1 text-3xl font-bold text-slate-950">{{ employeesWithLate }}</p><p class="mt-1 text-xs text-slate-500">Un retard reste une présence dans le taux de présence.</p></div>
+      <div class="rounded-md bg-white p-4"><p class="text-xs font-bold uppercase text-slate-500">Journées LATE</p><p class="mt-1 text-3xl font-bold text-amber-700">{{ overview.summary.statusTotals.LATE }}</p></div>
+      <div class="rounded-md bg-white p-4"><p class="text-xs font-bold uppercase text-slate-500">Employés concernés</p><p class="mt-1 text-3xl font-bold text-slate-950">{{ employeesWithLate }}</p><p class="mt-1 text-xs text-slate-500">Un retard reste une présence dans le taux de présence.</p></div>
     </div>
 
     <div v-else class="mt-5 grid gap-3 sm:grid-cols-3">
-      <div class="rounded-xl bg-white p-4"><p class="text-xs font-bold uppercase text-slate-500">Occurrences API</p><p class="mt-1 text-3xl font-bold text-orange-700">{{ overview.summary.issueCount }}</p></div>
-      <div class="rounded-xl bg-white p-4"><p class="text-xs font-bold uppercase text-slate-500">Types d’anomalies</p><p class="mt-1 text-3xl font-bold text-slate-950">{{ overview.issues.length }}</p></div>
-      <div class="rounded-xl bg-white p-4"><p class="text-xs font-bold uppercase text-slate-500">Employés concernés</p><p class="mt-1 text-3xl font-bold text-slate-950">{{ overview.employees.filter((employee) => employee.issueCount > 0).length }}</p></div>
+      <div class="rounded-md bg-white p-4"><p class="text-xs font-bold uppercase text-slate-500">Occurrences API</p><p class="mt-1 text-3xl font-bold text-orange-700">{{ overview.summary.issueCount }}</p></div>
+      <div class="rounded-md bg-white p-4"><p class="text-xs font-bold uppercase text-slate-500">Types d’anomalies</p><p class="mt-1 text-3xl font-bold text-slate-950">{{ overview.issues.length }}</p></div>
+      <div class="rounded-md bg-white p-4"><p class="text-xs font-bold uppercase text-slate-500">Employés concernés</p><p class="mt-1 text-3xl font-bold text-slate-950">{{ overview.employees.filter((employee) => employee.issueCount > 0).length }}</p></div>
     </div>
 
     <div v-if="action" class="mt-5 flex flex-wrap items-center gap-3 border-t border-indigo-200 pt-4">
-      <button type="button" class="inline-flex min-h-11 items-center rounded-xl bg-slate-950 px-4 py-2.5 text-sm font-bold text-white hover:bg-slate-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 focus-visible:ring-offset-2" @click="emit('action', action)">{{ action.label }} →</button>
-      <p class="text-xs text-slate-600">L’action conserve le même jeu de données déjà chargé ; aucun second appel API n’est nécessaire.</p>
+      <button type="button"
+              class="inline-flex min-h-11 items-center rounded-md bg-[#004aad] px-4 py-2.5 text-sm font-bold text-white hover:bg-[#004aad]/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 focus-visible:ring-offset-2"
+              @click="emit('action', action)">
+        {{ action.label }} →
+      </button>
     </div>
   </section>
 </template>

@@ -67,7 +67,7 @@ export function buildAttendancePdfExportPreflight(
     notices.push({
       code: 'issue_detail_limited',
       level: 'info',
-      message: `${issues.totalOmittedByPresentationCount} occurrence(s) disponible(s) dans l'API ne seront pas déroulées avec le niveau ${contract.presentationProfile.label.toLowerCase()}. Les compteurs restent affichés.`,
+      message: `${issues.totalOmittedByPresentationCount} élément(s) ne seront pas affiché(s) en détail avec le niveau ${contract.presentationProfile.label.toLowerCase()}, mais resteront pris en compte dans les totaux.`,
     });
   }
 
@@ -75,7 +75,7 @@ export function buildAttendancePdfExportPreflight(
     notices.push({
       code: 'api_issue_detail_incomplete',
       level: 'warning',
-      message: `${issues.totalHiddenApiOccurrenceCount} occurrence(s) sont comptées par l'API sans ligne détaillée correspondante. Le PDF conservera le compteur sans inventer les lignes absentes.`,
+      message: `${issues.totalHiddenApiOccurrenceCount} élément(s) sont comptabilisé(s) sans détail disponible. Le rapport affichera le total correspondant.`,
     });
   }
 

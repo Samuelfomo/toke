@@ -36,15 +36,12 @@ const netDuration = computed(() => {
 
 <template>
   <Teleport to="body">
-    <div v-if="open && employee" class="fixed inset-0 z-50" role="presentation">
+    <div v-if="open && employee" class="fixed inset-0 z-[120]" role="presentation">
       <button
         type="button"
         class="absolute inset-0 bg-slate-950/45 backdrop-blur-[1px]"
-        aria-label="Fermer le détail de l’employé"
-        tabindex="-1"
-        @click="emit('close')"
+        aria-hidden="true"
       />
-
       <aside
         ref="dialogRef"
         class="absolute inset-y-0 right-0 flex w-full max-w-5xl flex-col bg-white shadow-2xl outline-none sm:w-[min(100%,64rem)]"
@@ -87,7 +84,7 @@ const netDuration = computed(() => {
             id="attendance-employee-drawer-description"
             class="rounded-xl border border-indigo-100 bg-indigo-50 px-4 py-3 text-sm leading-6 text-indigo-900"
           >
-            Cette vue décrit les données de présence de la période. Elle ne constitue pas une évaluation globale de la performance de l’employé.
+            Cette vue présente les informations de présence de l’employé pour la période sélectionnée.
           </p>
 
           <dl class="mt-5 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
@@ -104,7 +101,8 @@ const netDuration = computed(() => {
             <div class="rounded-xl border border-slate-200 p-4">
               <dt class="text-xs font-bold uppercase tracking-wide text-slate-500">Absences finalisées</dt>
               <dd class="mt-2 text-2xl font-bold text-rose-700">{{ employee.statusTotals.ABSENT }}</dd>
-              <p class="mt-1 text-xs text-slate-500">PENDING exclu des absences</p>
+<!--              <p class="mt-1 text-xs text-slate-500">PENDING exclu des absences</p>-->
+              <p class="mt-1 text-xs text-slate-500">Journées en attente non comptées</p>
             </div>
             <div class="rounded-xl border border-slate-200 p-4">
               <dt class="text-xs font-bold uppercase tracking-wide text-slate-500">Durée nette</dt>

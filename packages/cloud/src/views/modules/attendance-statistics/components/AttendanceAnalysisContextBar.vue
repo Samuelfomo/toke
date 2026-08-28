@@ -31,7 +31,7 @@ const issueLabel = computed(() =>
   <aside
     v-if="context"
     id="attendance-analysis-context"
-    class="rounded-2xl border border-indigo-200 bg-indigo-50/70 px-4 py-3 shadow-sm sm:px-5"
+    class="rounded-lg border border-indigo-200 bg-indigo-50/70 px-4 py-3 shadow-sm sm:px-5"
     aria-labelledby="attendance-analysis-context-title"
   >
     <div class="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
@@ -78,14 +78,14 @@ const issueLabel = computed(() =>
       <div class="flex shrink-0 flex-wrap gap-2 self-start lg:self-center">
         <button
           type="button"
-          class="rounded-xl bg-indigo-700 px-3 py-2 text-sm font-bold text-white hover:bg-indigo-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500"
+          class="rounded-lg bg-indigo-700 px-3 py-2 text-sm font-bold text-white hover:bg-indigo-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500"
           @click="emit('export')"
         >
           Exporter cette analyse
         </button>
         <button
           type="button"
-          class="rounded-xl border border-indigo-200 bg-white px-3 py-2 text-sm font-bold text-indigo-700 hover:border-indigo-300 hover:bg-indigo-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500"
+          class="rounded-lg border border-indigo-200 bg-white px-3 py-2 text-sm font-bold text-indigo-700 hover:border-indigo-300 hover:bg-indigo-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500"
           @click="emit('clear')"
         >
           Réinitialiser l’analyse

@@ -1,80 +1,62 @@
 <template>
   <div
-      class="planning-shell flex h-screen min-h-0 flex-col overflow-hidden bg-gradient-to-r from-[#d0e8f7] via-[#f0e4f5] to-[#d0e8f7] text-slate-900"
+    class="flex min-h-screen flex-col bg-gradient-to-r from-[#d0e8f7] via-[#f0e4f5] to-[#d0e8f7] text-slate-900"
   >
-    <header class="relative z-50 shrink-0">
-      <Header />
-    </header>
+    <!-- Le chrome de l'application est toujours monté, indépendamment des appels réseau. -->
+    <Header />
 
-    <main
-        class="min-h-0 min-w-0 flex-1 overflow-y-auto overscroll-contain"
-    >
+    <main class="min-w-0 flex-1">
       <AttendanceStatisticsOverview
-          :service="attendanceService"
-          :manager-guid="managerGuid"
-          :manager-name="managerName"
-          :business-today="businessToday"
-          :site-options="siteOptions.sites.items"
+        :service="attendanceService"
+        :manager-guid="managerGuid"
+        :manager-name="managerName"
+        :business-today="businessToday"
+        :site-options="siteOptions"
       />
     </main>
+
+    <Footer />
   </div>
 </template>
 
 <script setup lang="ts">
-import { computed } from 'vue';
-import Header from '@/views/components/header.vue'
+import { computed, onMounted, ref } from 'vue';
+
+import Header from '@/views/components/header.vue';
+import Footer from '@/views/components/footer.vue';
 import AttendanceStatisticsOverview from '@/views/modules/attendance-statistics/views/AttendanceStatisticsOverview.vue';
 import { AttendanceStatisticsService } from '@/views/modules/attendance-statistics/services/attendance-statistics.service';
+import type { AttendanceSiteOption } from '@/views/modules/attendance-statistics/types/attendance-statistics.ui.types';
 import apiClient from '@/tools/Fetch.Client';
 import { useUserStore } from '@/stores/userStore';
 import SiteService from '@/service/SiteService';
 
 const userStore = useUserStore();
-
 const attendanceService = new AttendanceStatisticsService(apiClient);
 
 const managerGuid = computed(() => userStore.user?.guid ?? '');
 const managerName = computed(() => userStore.fullName ?? '');
 
-// ⚠️ temporaire : date client, à remplacer par une date métier serveur si possible
+// Temporaire : date client, à remplacer par une date métier serveur si possible.
 const businessToday = computed(() => new Date().toISOString().slice(0, 10));
 
-// top-level await : le composant devient async, vérifie que la route l'importe
-// dynamiquement (component: () => import('@/views/AttendanceStatisticsRouteView.vue'))
-const siteOptions = await SiteService.listSites().then(res => res.data);
+// Important : ne pas utiliser de top-level await ici.
+// Le Header et le Footer doivent être rendus immédiatement, même si le chargement des sites est lent.
+const siteOptions = ref<AttendanceSiteOption[]>([]);
 
+async function loadSiteOptions(): Promise<void> {
+  try {
+    const response = await SiteService.listSites();
+    siteOptions.value = response.data?.sites?.items ?? [];
+  } catch (error) {
+    // Les statistiques restent utilisables sans la liste des sites.
+    // Le filtre de site sera simplement vide si cet appel échoue.
+    console.error('Impossible de charger la liste des sites :', error);
+    siteOptions.value = [];
+  }
+}
+
+onMounted(() => {
+  void loadSiteOptions();
+});
 </script>
-
-
-<!--<script setup lang="ts">-->
-<!--import { computed } from 'vue';-->
-<!--import AttendanceStatisticsOverview from '@/views/modules/attendance-statistics/views/AttendanceStatisticsOverview.vue';-->
-<!--import { AttendanceStatisticsService } from '@/views/modules/attendance-statistics/services/attendance-statistics.service';-->
-<!--import apiClient from '@/tools/Fetch.Client';-->
-<!--import { useUserStore } from '@/stores/userStore';-->
-<!--import SiteService from '@/service/SiteService';-->
-
-<!--const userStore = useUserStore();-->
-
-<!--const attendanceService = new AttendanceStatisticsService(apiClient);-->
-
-<!--const managerGuid = computed(() => userStore.user?.guid ?? '');-->
-<!--const managerName = computed(() => userStore.fullName ?? '');-->
-
-<!--// ⚠️ temporaire : date client, à remplacer par une date métier serveur si possible-->
-<!--const businessToday = computed(() => new Date().toISOString().slice(0, 10));-->
-
-<!--// top-level await : le composant devient async, vérifie que la route l'importe-->
-<!--// dynamiquement (component: () => import('@/views/AttendanceStatisticsRouteView.vue'))-->
-<!--const siteOptions = await SiteService.listSites().then(res => res.data);-->
-
-<!--</script>-->
-<!--<template>-->
-<!--  <AttendanceStatisticsOverview-->
-<!--      :service="attendanceService"-->
-<!--      :manager-guid="managerGuid"-->
-<!--      :manager-name="managerName"-->
-<!--      :business-today="businessToday"-->
-<!--      :site-options="siteOptions.sites.items"-->
-<!--  />-->
-<!--</template>-->

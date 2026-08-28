@@ -27,31 +27,28 @@ const statusRows = computed(() => {
 </script>
 
 <template>
-  <aside
-    class="w-full min-w-0 max-w-full rounded-lg border border-slate-200 bg-white p-4 shadow-sm sm:p-6"
-    aria-labelledby="attendance-day-detail-title"
-  >
+  <aside class="rounded-lg border border-slate-200 bg-white p-5 shadow-sm sm:p-6" aria-labelledby="attendance-day-detail-title">
     <template v-if="day">
       <p class="text-xs font-bold uppercase tracking-[0.18em] text-indigo-600">Détail sélectionné</p>
-      <h2 id="attendance-day-detail-title" class="mt-1 break-words text-lg font-bold text-slate-950">
+      <h2 id="attendance-day-detail-title" class="mt-1 text-lg font-bold text-slate-950">
         {{ formatBusinessDate(day.date, 'fr-FR', { weekday: 'long', day: '2-digit', month: 'long', year: 'numeric' }) }}
       </h2>
-      <p class="mt-1 break-words text-sm text-slate-500">Équipe analysée : {{ day.teamSize }} employé{{ day.teamSize === 1 ? '' : 's' }}</p>
+      <p class="mt-1 text-sm text-slate-500">Équipe analysée : {{ day.teamSize }} employé{{ day.teamSize === 1 ? '' : 's' }}</p>
 
-      <dl class="mt-5 grid min-w-0 grid-cols-1 gap-3 min-[420px]:grid-cols-2">
-        <div class="min-w-0 rounded-xl bg-indigo-50 p-3">
+      <dl class="mt-5 grid grid-cols-2 gap-3">
+        <div class="rounded-xl bg-indigo-50 p-3">
           <dt class="text-xs font-semibold text-indigo-700">Taux de présence</dt>
           <dd class="mt-1 text-xl font-bold text-indigo-950">{{ formatPercentage(day.rates.attendanceRate) }}</dd>
         </div>
-        <div class="min-w-0 rounded-xl bg-sky-50 p-3">
+        <div class="rounded-xl bg-sky-50 p-3">
           <dt class="text-xs font-semibold text-sky-700">Ponctualité</dt>
           <dd class="mt-1 text-xl font-bold text-sky-950">{{ formatPercentage(day.rates.punctualityRate) }}</dd>
         </div>
-        <div class="min-w-0 rounded-xl bg-slate-50 p-3">
+        <div class="rounded-xl bg-slate-50 p-3">
           <dt class="text-xs font-semibold text-slate-600">Journées attendues</dt>
           <dd class="mt-1 text-xl font-bold text-slate-950">{{ day.rates.employeeWorkingDaysExpected }}</dd>
         </div>
-        <div class="min-w-0 rounded-xl bg-orange-50 p-3">
+        <div class="rounded-xl bg-orange-50 p-3">
           <dt class="text-xs font-semibold text-orange-700">Éléments à examiner</dt>
           <dd class="mt-1 text-xl font-bold text-orange-950">{{ day.issueCount }}</dd>
         </div>
@@ -60,18 +57,18 @@ const statusRows = computed(() => {
       <div class="mt-6">
         <h3 class="text-sm font-bold text-slate-900">Répartition du jour</h3>
         <ul class="mt-3 divide-y divide-slate-100 rounded-xl border border-slate-200 bg-slate-50/50 px-3">
-          <li v-for="row in statusRows" :key="row.status" class="flex min-w-0 items-center justify-between gap-3 py-2.5 text-sm">
-            <span class="min-w-0 break-words text-slate-600">{{ row.presentation.label }}</span>
+          <li v-for="row in statusRows" :key="row.status" class="flex items-center justify-between gap-3 py-2.5 text-sm">
+            <span class="text-slate-600">{{ row.presentation.label }}</span>
             <span class="font-bold tabular-nums text-slate-950">{{ row.count }}</span>
           </li>
         </ul>
       </div>
 
-      <div v-if="day.statusTotals.ABSENT > 0 || day.statusTotals.LATE > 0" class="mt-5 flex min-w-0 flex-col gap-2 min-[420px]:flex-row min-[420px]:flex-wrap">
+      <div v-if="day.statusTotals.ABSENT > 0 || day.statusTotals.LATE > 0" class="mt-5 flex flex-wrap gap-2">
         <button
           v-if="day.statusTotals.ABSENT > 0"
           type="button"
-          class="w-full rounded-xl border border-rose-200 bg-rose-50 px-3 py-2 text-xs font-bold text-rose-800 transition hover:bg-rose-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-500 min-[420px]:w-auto"
+          class="rounded-xl border border-rose-200 bg-rose-50 px-3 py-2 text-xs font-bold text-rose-800 transition hover:bg-rose-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-500"
           @click="emit('exploreStatus', { date: day.date, status: 'ABSENT' })"
         >
           Voir {{ day.statusTotals.ABSENT }} absence{{ day.statusTotals.ABSENT > 1 ? 's' : '' }} →
@@ -79,14 +76,14 @@ const statusRows = computed(() => {
         <button
           v-if="day.statusTotals.LATE > 0"
           type="button"
-          class="w-full rounded-xl border border-amber-200 bg-amber-50 px-3 py-2 text-xs font-bold text-amber-900 transition hover:bg-amber-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-500 min-[420px]:w-auto"
+          class="rounded-xl border border-amber-200 bg-amber-50 px-3 py-2 text-xs font-bold text-amber-900 transition hover:bg-amber-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-500"
           @click="emit('exploreStatus', { date: day.date, status: 'LATE' })"
         >
           Voir {{ day.statusTotals.LATE }} retard{{ day.statusTotals.LATE > 1 ? 's' : '' }} →
         </button>
       </div>
 
-      <p class="mt-5 break-words rounded-xl bg-slate-50 px-3 py-2.5 text-xs leading-5 text-slate-600">
+      <p class="mt-5 rounded-xl bg-slate-50 px-3 py-2.5 text-xs leading-5 text-slate-600">
         {{ day.rates.attendedWorkingDays }} journée{{ day.rates.attendedWorkingDays === 1 ? '' : 's' }} suivie{{ day.rates.attendedWorkingDays === 1 ? '' : 's' }} sur
         {{ day.rates.employeeWorkingDaysExpected }} attendue{{ day.rates.employeeWorkingDaysExpected === 1 ? '' : 's' }}.
       </p>
