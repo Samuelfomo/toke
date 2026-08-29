@@ -1,358 +1,362 @@
 <template>
-  <div class="settings-page">
-    <div class="settings-container">
-      <!-- Bouton de retour -->
-      <button @click="goBack" class="back-button">
-        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-          <path d="M19 12H5M12 19l-7-7 7-7"/>
-        </svg>
-        Retour
-      </button>
+  <div class="flex min-h-screen flex-col bg-gradient-to-r from-[#d0e8f7] via-[#f0e4f5] to-[#d0e8f7]">
+<!--  <div class="flex min-h-screen flex-col bg-slate-50">-->
+    <Header />
 
-      <!-- Contenu Mon Profil -->
-      <div v-if="activeTab === 'profile'" class="tab-content">
-        <div class="profile-section">
-          <div class="avatars-section">
-            <div class="avatar-container">
-              <div class="avatars" :style="avatarStyle">
-                <span v-if="!userAvatar">{{ userStore.userInitials }}</span>
-              </div>
-              <div class="avatar-overlay">
-                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                  <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/>
-                  <circle cx="12" cy="13" r="4"/>
-                </svg>
-              </div>
-            </div>
+    <main class="flex-1">
+      <div class="mx-auto w-full max-w-6xl px-4 py-6 sm:px-6 lg:px-8 lg:py-8">
+        <div class="mb-6 flex items-center justify-between gap-4">
+          <button
+            type="button"
+            class="inline-flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-3.5 py-2.5 text-sm font-semibold text-slate-700 shadow-sm transition hover:border-slate-300 hover:bg-slate-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 focus-visible:ring-offset-2"
+            @click="router.back()"
+          >
+            <IconArrowLeft :size="17" />
+            Retour
+          </button>
 
-            <div class="photo-actions">
-              <input
-                ref="fileInput"
-                type="file"
-                accept="image/*"
-                @change="handleFileUpload"
-                style="display: none"
-              />
-              <input
-                ref="cameraInput"
-                type="file"
-                accept="image/*"
-                capture="user"
-                @change="handleFileUpload"
-                style="display: none"
-              />
-              <button type="button" class="btn-secondary" @click="fileInput?.click()">
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                  <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
-                  <polyline points="17 8 12 3 7 8"/>
-                  <line x1="12" y1="3" x2="12" y2="15"/>
-                </svg>
-                Importer une photo
-              </button>
-              <button type="button" class="btn-secondary" @click="cameraInput?.click()">
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                  <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/>
-                  <circle cx="12" cy="13" r="4"/>
-                </svg>
-                Prendre une photo
-              </button>
-              <button
-                v-if="userAvatar"
-                type="button"
-                class="btn-danger"
-                @click="removePhoto"
-              >
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                  <polyline points="3 6 5 6 21 6"/>
-                  <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>
-                </svg>
-                Supprimer
-              </button>
+          <span
+            class="inline-flex items-center gap-2 rounded-full border px-3 py-1.5 text-xs font-bold"
+            :class="userStore.user?.active
+              ? 'border-emerald-200 bg-emerald-50 text-emerald-700'
+              : 'border-rose-200 bg-rose-50 text-rose-700'"
+          >
+            <span
+              class="h-2 w-2 rounded-full"
+              :class="userStore.user?.active ? 'bg-emerald-500' : 'bg-rose-500'"
+            />
+            {{ userStore.user?.active ? 'Compte actif' : 'Compte inactif' }}
+          </span>
+        </div>
+
+        <section class="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
+          <div class="border-b border-slate-100 p-5 sm:p-6">
+            <div class="flex flex-col gap-5 sm:flex-row sm:items-center">
+              <div class="flex h-24 w-24 shrink-0 items-center justify-center overflow-hidden rounded-3xl border border-slate-200 bg-slate-100 text-2xl font-bold text-slate-700 shadow-sm">
+                <img
+                  v-if="userStore.user?.avatar_url"
+                  :src="userStore.user.avatar_url"
+                  :alt="`Photo de ${userStore.fullName}`"
+                  class="h-full w-full object-cover"
+                />
+                <span v-else>{{ userStore.userInitials }}</span>
+              </div>
+
+              <div class="min-w-0 flex-1">
+                <p class="text-xs font-bold uppercase tracking-[0.18em] text-indigo-600">Mon profil</p>
+                <h1 class="mt-1 truncate text-2xl font-bold tracking-tight text-slate-950 sm:text-3xl">
+                  {{ userStore.fullName || 'Utilisateur Toké' }}
+                </h1>
+                <p class="mt-1 text-sm text-slate-500">{{ userStore.jobTitle || 'Poste non renseigné' }}</p>
+
+                <div class="mt-3 flex flex-wrap gap-2">
+                  <span
+                    v-for="role in userStore.userRoles"
+                    :key="role.guid"
+                    class="inline-flex items-center rounded-full border border-slate-200 bg-slate-50 px-2.5 py-1 text-[11px] font-bold text-slate-600"
+                  >
+                    {{ role.name || role.code }}
+                  </span>
+                </div>
+              </div>
             </div>
           </div>
 
-          <form @submit.prevent="saveManagerInfo" class="form">
-            <div class="form-row">
-              <div class="form-group">
-                <label>Prénom</label>
-                <input
-                  v-model="lastName"
-                  type="text"
-                  :disabled="!isEditingManager"
-                />
-              </div>
-              <div class="form-group">
-                <label>Nom</label>
-                <input
-                  v-model="userStore.user!.first_name"
-                  type="text"
-                  :disabled="!isEditingManager"
-                />
-              </div>
-            </div>
+          <div class="grid min-w-0 lg:grid-cols-[minmax(0,1.35fr)_minmax(280px,0.65fr)]">
+            <form class="min-w-0 p-5 sm:p-6 lg:border-r lg:border-slate-100" @submit.prevent="savePersonalInfo">
+              <div class="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+                <div>
+                  <h2 class="text-lg font-bold text-slate-950">Informations personnelles</h2>
+                  <p class="mt-1 text-sm leading-6 text-slate-500">
+                    Vous pouvez mettre à jour vos coordonnées personnelles. Les informations RH sont gérées séparément.
+                  </p>
+                </div>
 
-            <div class="form-row">
-              <div class="form-group">
-                <label>Email</label>
-                <input
-                  v-model="userStore.user!.email"
-                  type="email"
-                  :disabled="!isEditingManager"
-                />
-              </div>
-              <div class="form-group">
-                <label>Téléphone</label>
-                <input
-                  v-model="userStore.user!.phone_number"
-                  type="tel"
-                  :disabled="!isEditingManager"
-                />
-              </div>
-            </div>
-
-            <div class="form-row">
-              <div class="form-group">
-                <label>Poste</label>
-                <input
-                  v-model="userStore.jobTitle"
-                  type="text"
-                  :disabled="!isEditingManager"
-                />
-              </div>
-              <div class="form-group">
-                <label>Date d'embauche</label>
-                <input
-                  v-model="hireDate"
-                  type="date"
-                  :disabled="!isEditingManager"
-                />
-              </div>
-            </div>
-
-            <div class="form-row">
-              <div class="form-group">
-                <label>Matricule</label>
-                <input
-                  v-model="userStore.employeeCode"
-                  type="text"
-                  :disabled="!isEditingManager"
-                />
-              </div>
-              <div class="form-group">
-                <label>Département</label>
-                <input
-                  v-model="userStore.department"
-                  type="text"
-                  :disabled="!isEditingManager"
-                />
-              </div>
-            </div>
-
-            <div class="form-actions">
-              <button
-                v-if="!isEditingManager"
-                type="button"
-                class="btn-primary"
-                @click="isEditingManager = true"
-              >
-                Modifier
-              </button>
-              <template v-else>
-                <button type="submit" class="btn-primary">
-                  Enregistrer
+                <button
+                  v-if="!editing"
+                  type="button"
+                  class="inline-flex shrink-0 items-center justify-center gap-2 rounded-xl bg-indigo-600 px-4 py-2.5 text-sm font-bold text-white shadow-sm transition hover:bg-indigo-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 focus-visible:ring-offset-2"
+                  @click="startEdit"
+                >
+                  <IconPencil :size="16" />
+                  Modifier
                 </button>
+              </div>
+
+              <div
+                v-if="successMessage"
+                class="mt-5 flex items-start gap-3 rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-800"
+              >
+                <IconCircleCheck :size="18" class="mt-0.5 shrink-0" />
+                <span>{{ successMessage }}</span>
+              </div>
+
+              <div
+                v-if="errorMessage"
+                class="mt-5 flex items-start gap-3 rounded-xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-800"
+              >
+                <IconAlertCircle :size="18" class="mt-0.5 shrink-0" />
+                <span>{{ errorMessage }}</span>
+              </div>
+
+              <div class="mt-6 grid gap-5 sm:grid-cols-2">
+                <label class="block min-w-0">
+                  <span class="mb-1.5 block text-xs font-bold uppercase tracking-wide text-slate-500">Prénom</span>
+                  <input
+                    v-model="form.first_name"
+                    type="text"
+                    autocomplete="given-name"
+                    :disabled="!editing || saving"
+                    class="h-11 w-full rounded-xl border border-slate-300 bg-white px-3 text-sm text-slate-900 outline-none transition placeholder:text-slate-400 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200 disabled:cursor-default disabled:border-slate-200 disabled:bg-slate-50 disabled:text-slate-600"
+                  />
+                </label>
+
+                <label class="block min-w-0">
+                  <span class="mb-1.5 block text-xs font-bold uppercase tracking-wide text-slate-500">Nom</span>
+                  <input
+                    v-model="form.last_name"
+                    type="text"
+                    autocomplete="family-name"
+                    :disabled="!editing || saving"
+                    class="h-11 w-full rounded-xl border border-slate-300 bg-white px-3 text-sm text-slate-900 outline-none transition placeholder:text-slate-400 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200 disabled:cursor-default disabled:border-slate-200 disabled:bg-slate-50 disabled:text-slate-600"
+                  />
+                </label>
+
+                <label class="block min-w-0">
+                  <span class="mb-1.5 block text-xs font-bold uppercase tracking-wide text-slate-500">Email</span>
+                  <input
+                    v-model="form.email"
+                    type="email"
+                    autocomplete="email"
+                    :disabled="!editing || saving"
+                    class="h-11 w-full rounded-xl border border-slate-300 bg-white px-3 text-sm text-slate-900 outline-none transition placeholder:text-slate-400 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200 disabled:cursor-default disabled:border-slate-200 disabled:bg-slate-50 disabled:text-slate-600"
+                  />
+                </label>
+
+                <label class="block min-w-0">
+                  <span class="mb-1.5 block text-xs font-bold uppercase tracking-wide text-slate-500">Téléphone</span>
+                  <input
+                    v-model="form.phone_number"
+                    type="tel"
+                    autocomplete="tel"
+                    :disabled="!editing || saving"
+                    class="h-11 w-full rounded-xl border border-slate-300 bg-white px-3 text-sm text-slate-900 outline-none transition placeholder:text-slate-400 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200 disabled:cursor-default disabled:border-slate-200 disabled:bg-slate-50 disabled:text-slate-600"
+                  />
+                </label>
+              </div>
+
+              <div v-if="editing" class="mt-6 flex flex-col-reverse gap-3 border-t border-slate-100 pt-5 sm:flex-row sm:justify-end">
                 <button
                   type="button"
-                  class="btn-secondary"
-                  @click="cancelManagerEdit"
+                  class="inline-flex items-center justify-center rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm font-semibold text-slate-700 transition hover:bg-slate-50 disabled:opacity-50"
+                  :disabled="saving"
+                  @click="cancelEdit"
                 >
                   Annuler
                 </button>
-              </template>
-            </div>
-          </form>
-        </div>
+                <button
+                  type="submit"
+                  class="inline-flex items-center justify-center gap-2 rounded-xl bg-indigo-600 px-4 py-2.5 text-sm font-bold text-white shadow-sm transition hover:bg-indigo-700 disabled:cursor-not-allowed disabled:opacity-60"
+                  :disabled="saving || !hasPersonalChanges"
+                >
+                  <IconLoader2 v-if="saving" :size="16" class="animate-spin" />
+                  <IconDeviceFloppy v-else :size="16" />
+                  {{ saving ? 'Enregistrement…' : 'Enregistrer' }}
+                </button>
+              </div>
+            </form>
+
+            <aside class="min-w-0 bg-slate-50/50 p-5 sm:p-6">
+              <div class="flex items-start gap-3">
+                <span class="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-amber-50 text-amber-700">
+                  <IconLock :size="19" />
+                </span>
+                <div>
+                  <h2 class="text-base font-bold text-slate-950">Informations RH</h2>
+                  <p class="mt-1 text-sm leading-6 text-slate-600">
+                    Ces données décrivent votre rattachement dans l'organisation et sont modifiables uniquement par le service RH.
+                  </p>
+                </div>
+              </div>
+
+              <dl class="mt-5 space-y-3">
+                <div class="rounded-xl border border-slate-200 bg-white p-4">
+                  <dt class="text-[11px] font-bold uppercase tracking-wide text-slate-400">Poste</dt>
+                  <dd class="mt-1 text-sm font-semibold text-slate-800">{{ userStore.jobTitle || 'Non renseigné' }}</dd>
+                </div>
+                <div class="rounded-xl border border-slate-200 bg-white p-4">
+                  <dt class="text-[11px] font-bold uppercase tracking-wide text-slate-400">Département</dt>
+                  <dd class="mt-1 text-sm font-semibold text-slate-800">{{ userStore.department || 'Non renseigné' }}</dd>
+                </div>
+                <div class="rounded-xl border border-slate-200 bg-white p-4">
+                  <dt class="text-[11px] font-bold uppercase tracking-wide text-slate-400">Matricule</dt>
+                  <dd class="mt-1 text-sm font-semibold text-slate-800">{{ userStore.employeeCode || 'Non renseigné' }}</dd>
+                </div>
+                <div class="rounded-xl border border-slate-200 bg-white p-4">
+                  <dt class="text-[11px] font-bold uppercase tracking-wide text-slate-400">Date d'embauche</dt>
+                  <dd class="mt-1 text-sm font-semibold text-slate-800">{{ formattedHireDate }}</dd>
+                </div>
+              </dl>
+            </aside>
+          </div>
+        </section>
       </div>
-    </div>
+    </main>
+
     <Footer />
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted } from 'vue';
-import { useRouter } from 'vue-router';
-import { useUserStore } from '@/stores/userStore';
-import dashboardCss from "../assets/css/toke-dMain-04.css?url"
-import HeadBuilder from '@/utils/HeadBuilder';
-import UserService from '../service/UserService';
-import type { Status } from '@/utils/interfaces/team.interface';
-import profileCss from '../assets/css/toke-profile-16.css?url';
-import Footer from '@/views/components/footer.vue';
+import { computed, onMounted, reactive, ref } from 'vue'
+import { useRouter } from 'vue-router'
+import {
+  IconAlertCircle,
+  IconArrowLeft,
+  IconCircleCheck,
+  IconDeviceFloppy,
+  IconLoader2,
+  IconLock,
+  IconPencil,
+} from '@tabler/icons-vue'
 
-const router = useRouter();
-const userStore = useUserStore();
+import Header from '@/views/components/header.vue'
+import Footer from '@/views/components/footer.vue'
+import HeadBuilder from '@/utils/HeadBuilder'
+import UserService from '@/service/UserService'
+import { useUserStore } from '@/stores/userStore'
 
-const activeTab = ref('profile');
-const isEditingManager = ref(false);
-const editingMemberId = ref<string | null>(null);
-const activeEmployeeMenu = ref<number | null>(null);
-const userAvatar = ref<string | null>(null);
-const hireDate = ref('');
+const router = useRouter()
+const userStore = useUserStore()
 
-// Références pour les inputs file
-const fileInput = ref<HTMLInputElement | null>(null);
-const cameraInput = ref<HTMLInputElement | null>(null);
+const editing = ref(false)
+const saving = ref(false)
+const errorMessage = ref('')
+const successMessage = ref('')
 
-// Données de l'équipe depuis l'API
-const teamEmployees = ref<Status[]>([]);
-const teamBackup = ref<Record<string, any>>({});
+const form = reactive({
+  first_name: '',
+  last_name: '',
+  email: '',
+  phone_number: '',
+})
 
-const lastName = computed({
-  get: () => userStore.user?.last_name ?? '',
-  set: v => {
-    if (userStore.user) userStore.user.last_name = v
+const baseline = ref({
+  first_name: '',
+  last_name: '',
+  email: '',
+  phone_number: '',
+})
+
+const hasPersonalChanges = computed(() =>
+  form.first_name.trim() !== baseline.value.first_name ||
+  form.last_name.trim() !== baseline.value.last_name ||
+  form.email.trim().toLowerCase() !== baseline.value.email ||
+  form.phone_number.trim() !== baseline.value.phone_number,
+)
+
+const formattedHireDate = computed(() => {
+  const value = userStore.user?.hire_date
+  if (!value) return 'Non renseignée'
+
+  const date = new Date(`${value}T00:00:00`)
+  if (Number.isNaN(date.getTime())) return value
+
+  return new Intl.DateTimeFormat('fr-FR', { dateStyle: 'long' }).format(date)
+})
+
+function snapshotFromStore(): void {
+  const user = userStore.user
+  const next = {
+    first_name: user?.first_name ?? '',
+    last_name: user?.last_name ?? '',
+    email: user?.email ?? '',
+    phone_number: user?.phone_number ?? '',
   }
-});
 
-const avatarStyle = computed(() => {
-  if (userAvatar.value) {
-    return {
-      backgroundImage: `url(${userAvatar.value})`,
-      backgroundSize: 'cover',
-      backgroundPosition: 'center'
-    };
+  Object.assign(form, next)
+  baseline.value = {
+    first_name: next.first_name.trim(),
+    last_name: next.last_name.trim(),
+    email: next.email.trim().toLowerCase(),
+    phone_number: next.phone_number.trim(),
   }
-  return {};
-});
+}
 
-const currentUser = computed(() => ({
-  name: userStore.fullName || 'Manager',
-  company: userStore.tenantName || 'N/A'
-}));
+function startEdit(): void {
+  errorMessage.value = ''
+  successMessage.value = ''
+  snapshotFromStore()
+  editing.value = true
+}
 
-const notificationCount = ref(2);
+function cancelEdit(): void {
+  snapshotFromStore()
+  errorMessage.value = ''
+  editing.value = false
+}
 
-// Transformer les données des membres de l'équipe
-const teamMembers = computed(() => {
-  return teamEmployees.value.map(emp => {
-    const firstName = emp.employee.first_name || ''
-    const lastName = emp.employee.last_name || ''
-    const fullName = `${firstName} ${lastName}`.trim()
-    const initials = `${firstName.charAt(0)}${lastName.charAt(0)}`.toUpperCase()
+function validate(): string | null {
+  if (!form.first_name.trim()) return 'Le prénom est requis.'
+  if (!form.last_name.trim()) return 'Le nom est requis.'
 
-    return {
-      id: emp.employee.guid,
-      firstName: firstName,
-      lastName: lastName,
-      name: fullName,
-      initials: initials,
-      email: emp.employee.email || '',
-      phone: emp.employee.phone_number || 'Non renseigné',
-      position: emp.employee.job_title || 'Non renseigné',
-      department: emp.employee.department || ''
-    }
-  })
-});
+  const email = form.email.trim()
+  if (!email || !/^\S+@\S+\.\S+$/.test(email)) return 'Renseignez une adresse email valide.'
 
-const goBack = () => {
-  router.back();
-};
+  if (!form.phone_number.trim()) return 'Le numéro de téléphone est requis.'
+  return null
+}
 
-const handleFileUpload = (event: Event) => {
-  const target = event.target as HTMLInputElement;
-  const file = target.files?.[0];
-
-  if (file) {
-    const reader = new FileReader();
-    reader.onload = (e) => {
-      userAvatar.value = e.target?.result as string;
-    };
-    reader.readAsDataURL(file);
+async function savePersonalInfo(): Promise<void> {
+  const userGuid = userStore.user?.guid
+  if (!userGuid) {
+    errorMessage.value = 'Votre session ne permet pas d’identifier le compte à modifier.'
+    return
   }
-};
 
-const removePhoto = () => {
-  userAvatar.value = null;
-  if (fileInput.value) fileInput.value.value = '';
-  if (cameraInput.value) cameraInput.value.value = '';
-};
-
-const saveManagerInfo = () => {
-  console.log('Sauvegarde des informations du manager');
-  console.log('Date d\'embauche:', hireDate.value);
-  isEditingManager.value = false;
-  alert('Informations sauvegardées avec succès!');
-};
-
-const cancelManagerEdit = () => {
-  isEditingManager.value = false;
-};
-
-const addTeamMember = () => {
-  alert('Fonctionnalité d\'ajout de membre à implémenter');
-};
-
-const editTeamMember = (member: any) => {
-  teamBackup.value[member.id] = { ...member };
-  editingMemberId.value = member.id;
-};
-
-const saveTeamMember = async (memberId: string) => {
-  console.log('Sauvegarde du membre:', teamMembers.value.find(m => m.id === memberId));
-  editingMemberId.value = null;
-  delete teamBackup.value[memberId];
-  alert('Membre mis à jour avec succès!');
-};
-
-const cancelTeamMemberEdit = () => {
-  const member = teamMembers.value.find(m => m.id === editingMemberId.value);
-  if (member && editingMemberId.value && teamBackup.value[editingMemberId.value]) {
-    Object.assign(member, teamBackup.value[editingMemberId.value]);
+  const validationError = validate()
+  if (validationError) {
+    errorMessage.value = validationError
+    return
   }
-  editingMemberId.value = null;
-};
 
-const deleteTeamMember = async (memberId: string) => {
-  if (confirm('Êtes-vous sûr de vouloir supprimer ce membre?')) {
-    await loadTeamData();
-    alert('Membre supprimé avec succès!');
+  saving.value = true
+  errorMessage.value = ''
+  successMessage.value = ''
+
+  const payload = {
+    first_name: form.first_name.trim(),
+    last_name: form.last_name.trim(),
+    email: form.email.trim().toLowerCase(),
+    phone_number: form.phone_number.trim(),
   }
-};
 
-const closeMenuOnClickOutside = (event: MouseEvent) => {
-  if (activeEmployeeMenu.value !== null) {
-    const target = event.target as HTMLElement
-    if (!target.closest('.employee-menu')) {
-      activeEmployeeMenu.value = null
-    }
-  }
-};
-
-// Si vous devez transformer les données
-const loadTeamData = async () => {
   try {
-    // const response = await UserService.listAttendance(userStore.user?.guid!);
-    // if (response.data?.data) {
-    //   // // Adapter selon la structure réelle de EmployeeAttendance
-    //   // teamEmployees.value = response.data.data.employees.map(emp => ({
-    //   //   employee: emp.employee, // ou la structure appropriée
-    //   //   // autres propriétés si nécessaire
-    //   // })) || [];
-    // }
-  } catch (error) {
-    console.error('Erreur lors du chargement des données de l\'équipe:', error);
+    const response = await UserService.updateEmployee(userGuid, userGuid, payload)
+    if (!response.success) {
+      throw new Error('La mise à jour du profil a échoué.')
+    }
+
+    userStore.updateUserData(payload)
+    snapshotFromStore()
+    editing.value = false
+    successMessage.value = 'Vos informations personnelles ont été mises à jour.'
+  } catch (error: any) {
+    errorMessage.value =
+      error?.response?.data?.error?.message ||
+      error?.message ||
+      'Impossible de mettre à jour votre profil pour le moment.'
+  } finally {
+    saving.value = false
   }
-};
+}
 
-onMounted(async () => {
-  document.addEventListener('click', closeMenuOnClickOutside)
+onMounted(() => {
+  snapshotFromStore()
   HeadBuilder.apply({
-    title: 'Profile - Toké',
-    css: [dashboardCss, profileCss],
-    meta: { viewport: "width=device-width, initial-scale=1.0" }
+    title: 'Mon profil - Toké',
+    css: [],
+    meta: { viewport: 'width=device-width, initial-scale=1.0' },
   })
-
-  await loadTeamData();
-});
+})
 </script>
-

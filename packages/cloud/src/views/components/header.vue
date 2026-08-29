@@ -1,22 +1,26 @@
 <template>
   <!-- HEADER -->
-  <header class="bg-white border-b border-gray-200 h-16 sticky top-0 z-[100]">
-    <div class="max-w-[1600px] mx-auto px-6 h-full flex items-center justify-between">
+  <header class="sticky top-0 z-[110] h-16 w-full border-b border-gray-200 bg-white overflow-visible">
+    <div class="mx-auto flex h-full w-full max-w-[1600px] min-w-0 items-center justify-between px-3 sm:px-6">
 
       <!-- Logo -->
-      <div class="flex items-center gap-4">
-        <div class="w-[60px] h-[60px] rounded-lg flex items-center justify-center font-bold">
+      <div class="flex min-w-0 items-center gap-2 sm:gap-4">
+        <div class="flex h-12 w-12 shrink-0 items-center justify-center rounded-lg font-bold sm:h-[60px] sm:w-[60px]">
           <img :src="toke" alt="logo" class="w-full h-full object-contain" />
         </div>
       </div>
 
       <!-- Actions -->
-      <div class="flex items-center gap-6">
+      <div class="flex min-w-0 shrink-0 items-center gap-2 sm:gap-6">
 
         <!-- User Profile -->
         <div class="relative" ref="userMenuRef">
           <button
-              class="flex items-center gap-3 px-4 py-2 bg-white/15 border border-white/20 rounded-xl cursor-pointer transition-all duration-200 backdrop-blur-sm hover:bg-[rgba(198,207,223,0.82)] hover:-translate-y-0.5"
+              class="flex items-center gap-2 rounded-xl border border-white/20 bg-white/15 p-1.5 cursor-pointer backdrop-blur-sm transition-all duration-200 hover:bg-[rgba(198,207,223,0.82)] hover:-translate-y-0.5 sm:gap-3 sm:px-4 sm:py-2"
+              type="button"
+              aria-haspopup="menu"
+              :aria-expanded="showUserMenu"
+              aria-label="Ouvrir le menu du compte"
               @click.stop="toggleUserMenu"
           >
             <div class="flex items-center gap-3">
@@ -37,11 +41,12 @@
           >
             <div
                 v-if="showUserMenu"
-                class="absolute top-[calc(100%+0.5rem)] right-0 bg-white rounded-xl shadow-2xl overflow-hidden z-[60] border border-gray-200 min-w-[250px]"
+                role="menu"
+                class="absolute right-0 top-[calc(100%+0.5rem)] z-[120] w-[calc(100vw-1.5rem)] max-w-[280px] overflow-hidden rounded-xl border border-gray-200 bg-white shadow-2xl sm:w-[280px]"
                 v-click-outside="closeUserMenu"
                 @click.stop
             >
-              <div class="max-h-[400px] overflow-y-auto scrollbar-thin scrollbar-track-gray-50 scrollbar-thumb-gray-300">
+              <div class="max-h-[calc(100vh-5.5rem)] overflow-y-auto overscroll-contain">
 
                 <a href="/profile" class="flex items-center gap-3 px-4 py-3 text-sm text-gray-700 no-underline transition-all duration-150 cursor-pointer font-medium hover:bg-gray-50 hover:text-blue-400 hover:pl-5 group">
                   <svg class="w-5 h-5 text-gray-500 group-hover:text-blue-400 transition-colors duration-150 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -88,13 +93,19 @@
   </header>
 
   <!-- NAVIGATION -->
-  <nav class="bg-white border-b border-gray-200 sticky top-16 z-[99]">
-    <div class="max-w-full mx-auto container flex gap-6 relative" ref="navContainerRef">
+  <nav class="sticky top-16 z-[100] w-full max-w-full overflow-x-hidden border-b border-gray-200 bg-white">
+    <div
+        ref="navContainerRef"
+        class=" relative mx-auto flex w-full max-w-[1600px] min-w-0 items-stretch px-1 sm:px-2 md:px-3 lg:px-6 lg:items-center lg:justify-between "
+    >
       <RouterLink
           v-for="(module, index) in modules"
           :key="index"
           :to="module.path"
-          class="relative flex items-center gap-2 px-6 py-4 border-b-[3px] border-transparent text-gray-500 text-base font-medium cursor-pointer transition-all duration-200 no-underline hover:text-blue-600 hover:bg-blue-600/5"
+          class="relative flex min-w-0 flex-1 items-center justify-center gap-1 border-b-[3px]
+           border-transparent px-1 py-3.5 text-sm font-medium text-gray-500 no-underline
+           transition-all duration-200 hover:bg-blue-600/5 hover:text-blue-600 sm:gap-2
+            sm:px-2 sm:py-4 md:text-base lg:flex-none lg:px-3 xl:px-4"
           :class="[
       activeTab === module.path
         ? '!text-blue-600 !border-b-blue-500 bg-blue-600/5 font-semibold'
@@ -105,13 +116,13 @@
     ]"
           @click="setActiveTab(module.path)"
       >
-        <component :is="module.icon" class="tab-icon w-5 h-5" />
-        <span class="tab-label whitespace-nowrap max-md:hidden">{{ module.title }}</span>
+        <component :is="module.icon" class="tab-icon h-5 w-5 shrink-0" />
+        <span class="tab-label hidden whitespace-nowrap lg:inline">{{ module.title }}</span>
 
         <!-- Badge non lus -->
         <span
             v-if="module.path === '/memoList' && memoStore.hasUnreadMemos"
-            class="absolute top-0.5 right-0.5 min-w-[18px] h-[18px] px-1.5 bg-red-500 text-white text-[0.62rem] font-bold leading-[18px] text-center rounded-full whitespace-nowrap shadow-md shadow-red-400/45 pointer-events-none animate-[badge-pop_0.3s_cubic-bezier(0.34,1.56,0.64,1)]"
+            class="pointer-events-none absolute right-0 top-0.5 h-[18px] min-w-[18px] rounded-full bg-red-500 px-1 text-center text-[0.62rem] font-bold leading-[18px] text-white shadow-md shadow-red-400/45 whitespace-nowrap animate-pulse sm:right-0.5 sm:px-1.5"
             :title="`${memoStore.unreadMemosCount} mémo(s) non lu(s)`"
         >
           {{ memoStore.unreadMemosCount > 99 ? '99+' : memoStore.unreadMemosCount }}
@@ -267,10 +278,3 @@ onUnmounted(() => {
 })
 </script>
 
-<style>
-/* Badge pop — keyframe personnalisée non couverte par Tailwind de base */
-@keyframes badge-pop {
-  from { transform: scale(0); opacity: 0; }
-  to   { transform: scale(1); opacity: 1; }
-}
-</style>

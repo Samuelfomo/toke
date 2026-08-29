@@ -2,6 +2,16 @@
 ├── Project-structure.txt
 ├── README.md
 ├── docs
+│   ├── test
+│   │   ├── planning_standard_danielle_myrtille_20260601_20260607.csv
+│   │   ├── planning_standard_leatitia_hioby_20260601_20260607.csv
+│   │   ├── planning_standard_leatitia_hioby_20260601_20260607.xlsx
+│   │   ├── programme_standard_abdouraman_ali_avatar_20260608_20260614.pdf
+│   │   ├── programme_standard_danielle_myrtille_20260608_20260614.pdf
+│   │   ├── rotations_test_20260601_20260607 (1).csv
+│   │   ├── rotations_test_20260601_20260607.csv
+│   │   └── rotations_test_20260601_20260607.xlsx
+│   ├── toke-planning-generic-service-policies-step14.zip
 │   └── toke-web-design-system.md
 ├── eslint.config.cjs
 ├── package-lock.json
@@ -294,16 +304,17 @@
 │   │   ├── package.json
 │   │   ├── postcss.config.js
 │   │   ├── public
-│   │   │   └── images
-│   │   │       ├── apps_store.png
-│   │   │       ├── apps_stores.webp
-│   │   │       ├── img.png
-│   │   │       ├── play_store.png
-│   │   │       ├── reload.svg
-│   │   │       ├── toke-main-logo.svg
-│   │   │       ├── toke-white-logo.svg
-│   │   │       ├── toke-white.svg
-│   │   │       └── toke.svg
+│   │   │   ├── images
+│   │   │   │   ├── apps_store.png
+│   │   │   │   ├── apps_stores.webp
+│   │   │   │   ├── img.png
+│   │   │   │   ├── play_store.png
+│   │   │   │   ├── reload.svg
+│   │   │   │   ├── toke-main-logo.svg
+│   │   │   │   ├── toke-white-logo.svg
+│   │   │   │   ├── toke-white.svg
+│   │   │   │   └── toke.svg
+│   │   │   └── pointage.png
 │   │   ├── src
 │   │   │   ├── App.vue
 │   │   │   ├── assets
@@ -339,6 +350,9 @@
 │   │   │   │       ├── toke-setting-17.css
 │   │   │   │       ├── tokt-employeeC-06.css
 │   │   │   │       └── tokt-employeeS-05.css
+│   │   │   ├── composables
+│   │   │   │   └── site
+│   │   │   │       └── useSiteLocation.ts
 │   │   │   ├── ctrl
 │   │   │   │   ├── authCtrl.ts
 │   │   │   │   └── otpCtrl.ts
@@ -347,17 +361,28 @@
 │   │   │   ├── env.d.ts
 │   │   │   ├── main.ts
 │   │   │   ├── pinia.d.ts
+│   │   │   ├── router
+│   │   │   │   ├── planning-suggestion.ts
+│   │   │   │   └── planning.ts
 │   │   │   ├── router.ts
 │   │   │   ├── service
 │   │   │   │   ├── AuthService.ts
+│   │   │   │   ├── AuthService0.ts
+│   │   │   │   ├── EmployeeDetailsService.ts
+│   │   │   │   ├── EmployeePlanningProfileService.ts
 │   │   │   │   ├── EntriesService.ts
 │   │   │   │   ├── GroupService.ts
+│   │   │   │   ├── MemoRealtimeService.ts
 │   │   │   │   ├── MemoService.ts
+│   │   │   │   ├── PlanningSuggestionConfigService.ts
+│   │   │   │   ├── PlanningSuggestionRequirementService.ts
+│   │   │   │   ├── QrAuthService.ts
 │   │   │   │   ├── QrCodeAuthService.ts
 │   │   │   │   ├── RotationAssignment.ts
 │   │   │   │   ├── RotationGroup.ts
 │   │   │   │   ├── ScheduleAssignment.ts
 │   │   │   │   ├── ScheduleService.ts
+│   │   │   │   ├── ScheduleSuggestionService.ts
 │   │   │   │   ├── SessionModelService.ts
 │   │   │   │   ├── SessionTemplate.ts
 │   │   │   │   ├── SiteService.ts
@@ -365,13 +390,9 @@
 │   │   │   │   ├── rotationAssignmentService.ts
 │   │   │   │   ├── rotationservice.ts
 │   │   │   │   └── scheduleAssignmentService.ts
-│   │   │   ├── services
-│   │   │   │   ├── api.service.ts
-│   │   │   │   └── countries.service.ts
 │   │   │   ├── stores
 │   │   │   │   ├── memoStore.ts
 │   │   │   │   ├── teamStore.ts
-│   │   │   │   ├── useCountries.ts
 │   │   │   │   ├── useNotifications.ts
 │   │   │   │   ├── userAuthenticateFile.ts
 │   │   │   │   └── userStore.ts
@@ -380,30 +401,52 @@
 │   │   │   ├── utils
 │   │   │   │   ├── HeadBuilder.ts
 │   │   │   │   ├── TokenGenarate.ts
+│   │   │   │   ├── employeeColor.ts
+│   │   │   │   ├── exports
+│   │   │   │   │   ├── export.helpers.ts
+│   │   │   │   │   ├── exportPointagesPDF.ts
+│   │   │   │   │   ├── exportRotationPDF.ts
+│   │   │   │   │   ├── exportScheduleOptimizedPDF.ts
+│   │   │   │   │   ├── exportSchedulePDF.ts
+│   │   │   │   │   ├── exportScheduleSimplePDF.ts
+│   │   │   │   │   ├── exportStatistiquesPDF.ts
+│   │   │   │   │   ├── rotationAssignment.export.ts
+│   │   │   │   │   ├── scheduleAssignment.export.ts
+│   │   │   │   │   ├── scheduleAssignment.optimized.export.ts
+│   │   │   │   │   └── scheduleAssignment.simple.export.ts
+│   │   │   │   ├── geo
+│   │   │   │   │   ├── circleToPolygon.ts
+│   │   │   │   │   ├── polygon.ts
+│   │   │   │   │   ├── siteLocation.types.ts
+│   │   │   │   │   └── yandexAddressMapper.ts
 │   │   │   │   ├── interfaces
 │   │   │   │   │   ├── attendance.interface.ts
 │   │   │   │   │   ├── employeeAttendances.ts
 │   │   │   │   │   ├── equipe.interface.ts
 │   │   │   │   │   ├── schedule.interface.ts
+│   │   │   │   │   ├── scheduleSuggestion.interface.ts
 │   │   │   │   │   ├── site.interface.ts
 │   │   │   │   │   ├── stat.interface.ts
 │   │   │   │   │   └── team.interface.ts
+│   │   │   │   ├── reportUtils.ts
 │   │   │   │   ├── token.txt
 │   │   │   │   └── useEmployee.ts
 │   │   │   └── views
 │   │   │       ├── Attendancedaytimeline.vue
 │   │   │       ├── EmployeeDetails.vue
 │   │   │       ├── QrCodeAuth.vue
+│   │   │       ├── QrCodeAuth0.vue
 │   │   │       ├── auth.vue
+│   │   │       ├── auth0.vue
 │   │   │       ├── components
 │   │   │       │   ├── LazySvgImage.vue
 │   │   │       │   ├── auth
-│   │   │       │   │   └── authForm.vue
-│   │   │       │   ├── barChart.vue
-│   │   │       │   ├── employeeModal.vue
+│   │   │       │   │   ├── authForm.vue
+│   │   │       │   │   └── authForm0.vue
 │   │   │       │   ├── footer.vue
 │   │   │       │   └── header.vue
 │   │   │       ├── dashboard
+│   │   │       │   ├── AttendanceStatisticsRouteView.vue
 │   │   │       │   ├── attendanceTimeline.vue
 │   │   │       │   ├── dashboardHero.vue
 │   │   │       │   ├── dashboardMain.vue
@@ -421,18 +464,150 @@
 │   │   │       │   ├── memoDetailPanel.vue
 │   │   │       │   ├── memoSidebar.vue
 │   │   │       │   └── memosView.vue
+│   │   │       ├── modules
+│   │   │       │   └── attendance-statistics
+│   │   │       │       ├── components
+│   │   │       │       │   ├── AttendanceAnalysisContextBar.vue
+│   │   │       │       │   ├── AttendanceAttentionEmployees.vue
+│   │   │       │       │   ├── AttendanceCompactPagination.vue
+│   │   │       │       │   ├── AttendanceDailyTrend.vue
+│   │   │       │       │   ├── AttendanceDataQualityAlert.vue
+│   │   │       │       │   ├── AttendanceDayDetailsPanel.vue
+│   │   │       │       │   ├── AttendanceDayDetailsPanel0.vue
+│   │   │       │       │   ├── AttendanceEmployeeDaysTable.vue
+│   │   │       │       │   ├── AttendanceEmployeeDrawer.vue
+│   │   │       │       │   ├── AttendanceEmployeesPagination.vue
+│   │   │       │       │   ├── AttendanceEmployeesSection.vue
+│   │   │       │       │   ├── AttendanceEmployeesTable.vue
+│   │   │       │       │   ├── AttendanceEmployeesToolbar.vue
+│   │   │       │       │   ├── AttendanceFilters.vue
+│   │   │       │       │   ├── AttendanceIssueCard.vue
+│   │   │       │       │   ├── AttendanceIssuesSection.vue
+│   │   │       │       │   ├── AttendanceIssuesToolbar.vue
+│   │   │       │       │   ├── AttendanceKpiCard.vue
+│   │   │       │       │   ├── AttendanceKpiDrilldown.vue
+│   │   │       │       │   ├── AttendanceKpiGrid.vue
+│   │   │       │       │   ├── AttendanceLargeDatasetNotice.vue
+│   │   │       │       │   ├── AttendanceOverviewEmptyState.vue
+│   │   │       │       │   ├── AttendanceOverviewErrorState.vue
+│   │   │       │       │   ├── AttendanceOverviewHeader.vue
+│   │   │       │       │   ├── AttendanceOverviewScopeCard.vue
+│   │   │       │       │   ├── AttendanceOverviewSkeleton.vue
+│   │   │       │       │   ├── AttendancePdfExportDialog.vue
+│   │   │       │       │   ├── AttendanceSecondaryInsights.vue
+│   │   │       │       │   ├── AttendanceStatusDistribution.vue
+│   │   │       │       │   └── AttendanceVisualizations.vue
+│   │   │       │       ├── composables
+│   │   │       │       │   ├── useAccessibleDialog.ts
+│   │   │       │       │   ├── useAttendanceOverviewPage.ts
+│   │   │       │       │   └── useAttendanceStatistics.ts
+│   │   │       │       ├── index.ts
+│   │   │       │       ├── integration
+│   │   │       │       │   └── attendance-statistics.runtime.ts
+│   │   │       │       ├── pdf
+│   │   │       │       │   ├── components
+│   │   │       │       │   │   ├── attendance-pdf-primitives.ts
+│   │   │       │       │   │   └── attendance-pdf-table.ts
+│   │   │       │       │   ├── config
+│   │   │       │       │   │   ├── attendance-pdf-employee-day-columns.ts
+│   │   │       │       │   │   ├── attendance-pdf-layout.ts
+│   │   │       │       │   │   ├── attendance-pdf-presentation-levels.ts
+│   │   │       │       │   │   ├── attendance-pdf-profiles.ts
+│   │   │       │       │   │   └── attendance-pdf-team-columns.ts
+│   │   │       │       │   ├── contracts
+│   │   │       │       │   │   └── attendance-pdf.contract.ts
+│   │   │       │       │   ├── engine
+│   │   │       │       │   │   ├── attendance-pdf-engine.ts
+│   │   │       │       │   │   └── attendance-pdf-page-manager.ts
+│   │   │       │       │   ├── index.ts
+│   │   │       │       │   ├── integration
+│   │   │       │       │   │   ├── attendance-pdf-runtime.ts
+│   │   │       │       │   │   └── attendance-pdf-ui.ts
+│   │   │       │       │   ├── layout
+│   │   │       │       │   │   └── attendance-pdf-measure.ts
+│   │   │       │       │   ├── report
+│   │   │       │       │   │   ├── attendance-pdf-export.ts
+│   │   │       │       │   │   ├── attendance-pdf-preflight.ts
+│   │   │       │       │   │   ├── attendance-pdf-report-plan.ts
+│   │   │       │       │   │   └── attendance-pdf-report.ts
+│   │   │       │       │   ├── sections
+│   │   │       │       │   │   ├── attendance-pdf-analysis-context.model.ts
+│   │   │       │       │   │   ├── attendance-pdf-analysis-context.ts
+│   │   │       │       │   │   ├── attendance-pdf-employee-detail.model.ts
+│   │   │       │       │   │   ├── attendance-pdf-employee-detail.ts
+│   │   │       │       │   │   ├── attendance-pdf-executive-summary.model.ts
+│   │   │       │       │   │   ├── attendance-pdf-executive-summary.ts
+│   │   │       │       │   │   ├── attendance-pdf-issues.model.ts
+│   │   │       │       │   │   ├── attendance-pdf-issues.ts
+│   │   │       │       │   │   ├── attendance-pdf-team.model.ts
+│   │   │       │       │   │   ├── attendance-pdf-team.ts
+│   │   │       │       │   │   ├── attendance-pdf-trend.model.ts
+│   │   │       │       │   │   └── attendance-pdf-trend.ts
+│   │   │       │       │   ├── theme
+│   │   │       │       │   │   └── attendance-pdf-theme.ts
+│   │   │       │       │   └── types
+│   │   │       │       │       ├── attendance-pdf.types.ts
+│   │   │       │       │       └── jspdf.types.ts
+│   │   │       │       ├── services
+│   │   │       │       │   └── attendance-statistics.service.ts
+│   │   │       │       ├── types
+│   │   │       │       │   ├── attendance-statistics.types.ts
+│   │   │       │       │   └── attendance-statistics.ui.types.ts
+│   │   │       │       ├── utils
+│   │   │       │       │   ├── attendance-analysis-context.ts
+│   │   │       │       │   ├── attendance-dashboard-actions.ts
+│   │   │       │       │   ├── attendance-data-quality.ts
+│   │   │       │       │   ├── attendance-employees.ts
+│   │   │       │       │   ├── attendance-issues.ts
+│   │   │       │       │   ├── attendance-kpis.ts
+│   │   │       │       │   ├── attendance-overview-state.ts
+│   │   │       │       │   ├── attendance-period.ts
+│   │   │       │       │   ├── attendance-status.ts
+│   │   │       │       │   ├── attendance-visualizations.ts
+│   │   │       │       │   ├── attendance-volume.ts
+│   │   │       │       │   ├── business-date.ts
+│   │   │       │       │   ├── business-time.ts
+│   │   │       │       │   ├── duration.ts
+│   │   │       │       │   └── percentage.ts
+│   │   │       │       └── views
+│   │   │       │           ├── AttendanceStatisticsOverview.vue
+│   │   │       │           └── AttendanceStatisticsOverview0.vue
 │   │   │       ├── otp.vue
+│   │   │       ├── otp0.vue
 │   │   │       ├── planning
+│   │   │       │   ├── assignment_history
+│   │   │       │   │   └── AssignmentHistoryView.vue
+│   │   │       │   ├── components
+│   │   │       │   │   └── ui
+│   │   │       │   │       ├── PlanningAlert.vue
+│   │   │       │   │       ├── PlanningConfirmDialog.vue
+│   │   │       │   │       ├── PlanningDrawer.vue
+│   │   │       │   │       ├── PlanningFormActions.vue
+│   │   │       │   │       ├── PlanningFormField.vue
+│   │   │       │   │       ├── PlanningFormSection.vue
+│   │   │       │   │       ├── PlanningHelpTooltip.vue
+│   │   │       │   │       ├── PlanningModal.vue
+│   │   │       │   │       ├── PlanningNumberField.vue
+│   │   │       │   │       ├── PlanningSelect.vue
+│   │   │       │   │       ├── PlanningSwitch.vue
+│   │   │       │   │       ├── PlanningTextField.vue
+│   │   │       │   │       ├── PlanningTextarea.vue
+│   │   │       │   │       ├── PlanningToggleField.vue
+│   │   │       │   │       ├── UnsavedChangesDialog.vue
+│   │   │       │   │       └── index.ts
 │   │   │       │   ├── composables
-│   │   │       │   │   ├── Navigation.ts
-│   │   │       │   │   ├── navigation.type.ts
-│   │   │       │   │   └── useNavigation.ts
+│   │   │       │   │   ├── useBodyScrollLock.ts
+│   │   │       │   │   ├── useFocusTrap.ts
+│   │   │       │   │   ├── useFormDirty.ts
+│   │   │       │   │   └── useUnsavedChanges.ts
 │   │   │       │   ├── dashboard
-│   │   │       │   │   ├── appLayout.vue
-│   │   │       │   │   ├── appSidebar.vue
-│   │   │       │   │   ├── appSidebarHelpCard.vue
-│   │   │       │   │   └── appSidebarNavItem.vue
-│   │   │       │   ├── dashboard.vue
+│   │   │       │   │   ├── PlanningMobileBar.vue
+│   │   │       │   │   └── appLayout.vue
+│   │   │       │   ├── menu
+│   │   │       │   │   ├── PlanningMenuCard.vue
+│   │   │       │   │   ├── PlanningMenuView.vue
+│   │   │       │   │   ├── planningMenu.config.ts
+│   │   │       │   │   └── planningMenu.type.ts
 │   │   │       │   ├── rotation_assignment
 │   │   │       │   │   ├── rotationAssignment.vue
 │   │   │       │   │   ├── rotationAssignmentForm.vue
@@ -442,6 +617,16 @@
 │   │   │       │   │   ├── rotationGroupList.vue
 │   │   │       │   │   └── type.ts
 │   │   │       │   ├── schedule_assignment
+│   │   │       │   │   ├── components
+│   │   │       │   │   │   ├── ScheduleDayAdjustmentModal.vue
+│   │   │       │   │   │   ├── states
+│   │   │       │   │   │   │   └── PlanningLoadingState.vue
+│   │   │       │   │   │   └── views
+│   │   │       │   │   │       ├── OptimizedEmployeeAvatar.vue
+│   │   │       │   │   │       ├── ScheduleDetailedView.vue
+│   │   │       │   │   │       ├── ScheduleOptimizedView.vue
+│   │   │       │   │   │       ├── ScheduleSimpleView.vue
+│   │   │       │   │   │       └── schedulePlanningView.types.ts
 │   │   │       │   │   ├── scheduleAssignmentForm.vue
 │   │   │       │   │   ├── scheduleAssignmentList.vue
 │   │   │       │   │   └── type.ts
@@ -449,10 +634,66 @@
 │   │   │       │   │   ├── sessionModelForm.vue
 │   │   │       │   │   ├── sessionModelList.vue
 │   │   │       │   │   └── type.ts
-│   │   │       │   └── session_template
-│   │   │       │       ├── sessionTemplateForm.vue
-│   │   │       │       ├── sessionTemplateList.vue
-│   │   │       │       └── type.ts
+│   │   │       │   ├── session_template
+│   │   │       │   │   ├── sessionTemplateForm.vue
+│   │   │       │   │   ├── sessionTemplateList.vue
+│   │   │       │   │   └── type.ts
+│   │   │       │   ├── suggestion
+│   │   │       │   │   ├── PlanningSuggestionLayout.vue
+│   │   │       │   │   ├── components
+│   │   │       │   │   │   ├── NumberField.vue
+│   │   │       │   │   │   ├── PlanningConfirmDialog.vue
+│   │   │       │   │   │   ├── PlanningDrawer.vue
+│   │   │       │   │   │   ├── PlanningInfoPanel.vue
+│   │   │       │   │   │   ├── PlanningMetricCard.vue
+│   │   │       │   │   │   ├── PlanningPageHeader.vue
+│   │   │       │   │   │   ├── PlanningRuleCard.vue
+│   │   │       │   │   │   ├── PlanningToggle.vue
+│   │   │       │   │   │   └── ReadinessChecklist.vue
+│   │   │       │   │   ├── composables
+│   │   │       │   │   │   └── useGenerationReadiness.ts
+│   │   │       │   │   ├── configuration
+│   │   │       │   │   │   ├── PlanningConfigEditorView.vue
+│   │   │       │   │   │   ├── PlanningConfigForm.vue
+│   │   │       │   │   │   ├── PlanningConfigStepNavigation.vue
+│   │   │       │   │   │   ├── PlanningConfigSummary.vue
+│   │   │       │   │   │   ├── PlanningConfigView.vue
+│   │   │       │   │   │   └── planningConfig.steps.ts
+│   │   │       │   │   ├── dashboard
+│   │   │       │   │   │   └── SuggestionDashboard.vue
+│   │   │       │   │   ├── planningSuggestion.helpers.ts
+│   │   │       │   │   ├── planningSuggestion.type.ts
+│   │   │       │   │   ├── profiles
+│   │   │       │   │   │   ├── EmployeePlanningProfileForm.vue
+│   │   │       │   │   │   ├── EmployeePlanningProfileList.vue
+│   │   │       │   │   │   ├── EmployeeProfileBulkAction.vue
+│   │   │       │   │   │   ├── EmployeeProfileModeCard.vue
+│   │   │       │   │   │   ├── EmployeeProfileSearchSelect.vue
+│   │   │       │   │   │   ├── EmployeeProfileSummary.vue
+│   │   │       │   │   │   ├── employeePlanningProfile.helpers.ts
+│   │   │       │   │   │   └── employeePlanningProfile.type.ts
+│   │   │       │   │   ├── requirements
+│   │   │       │   │   │   ├── PlanningRequirementForm.vue
+│   │   │       │   │   │   ├── PlanningRequirementList.vue
+│   │   │       │   │   │   ├── RequirementDaySelector.vue
+│   │   │       │   │   │   ├── RequirementMatrixCell.vue
+│   │   │       │   │   │   ├── RequirementSummary.vue
+│   │   │       │   │   │   ├── WeeklyRequirementMatrix.vue
+│   │   │       │   │   │   └── requirementMatrix.helpers.ts
+│   │   │       │   │   ├── suggestions
+│   │   │       │   │   │   ├── GenerateSuggestionModal.vue
+│   │   │       │   │   │   ├── GenerationReadinessPanel.vue
+│   │   │       │   │   │   ├── ScheduleSuggestionList.vue
+│   │   │       │   │   │   ├── ScheduleSuggestionPreview.vue
+│   │   │       │   │   │   ├── SuggestionCellEditor.vue
+│   │   │       │   │   │   ├── SuggestionFilters.vue
+│   │   │       │   │   │   ├── SuggestionIssueSummary.vue
+│   │   │       │   │   │   └── SuggestionPublicationBar.vue
+│   │   │       │   │   └── teamWeeklyLeave.helpers.ts
+│   │   │       │   └── tf-tokens.css
+│   │   │       ├── pointages
+│   │   │       │   ├── pointagesMain.vue
+│   │   │       │   └── pointagesPrint.vue
 │   │   │       ├── profile.vue
 │   │   │       ├── profileCard.vue
 │   │   │       ├── schedule
@@ -505,4 +746,4 @@
 │   └── test.js
 └── tsconfig.json
 
-68 directories, 438 files
+109 directories, 638 files

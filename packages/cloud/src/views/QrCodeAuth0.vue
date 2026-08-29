@@ -1,100 +1,130 @@
-<script setup lang="ts">
-import { computed, onBeforeUnmount, onMounted, ref } from 'vue'
+<script setup>
+import { ref, onMounted, onBeforeUnmount, computed } from 'vue'
+import axios from 'axios'
 import QrcodeVue from 'qrcode.vue'
 import { useRouter } from 'vue-router'
-
-import QrAuthService from '@/service/QrAuthService'
+import { io } from 'socket.io-client'
 
 const router = useRouter()
 
 const qrData = ref('')
-const sessionId = ref<string | null>(null)
+const sessionId = ref(null)
 const loading = ref(true)
-const errorMessage = ref<string | null>(null)
+const errorMessage = ref(null)
 const isExpired = ref(false)
 
-let disconnectSocket: (() => void) | null = null
-let expirationTimer: number | null = null
+let socket = null
+let expirationTimer = null
 
 const currentYear = computed(() => new Date().getFullYear())
 
-async function initQR(): Promise<void> {
+const BASE_URL = 'https://my.toke.cm/local'
+
+async function initQR() {
   cleanup()
 
   try {
     loading.value = true
     isExpired.value = false
     errorMessage.value = null
-    qrData.value = ''
-    sessionId.value = null
 
-    const payload = await QrAuthService.initSession()
+
+    const { data } = await axios.get(`${BASE_URL}/auth/qr/init` )
+
+    if (!data.success) {
+      throw new Error('Initialisation échouée')
+    }
+
+    const payload = data.data
 
     sessionId.value = payload.sessionId
     qrData.value = payload.qr_data
 
     connectWebSocket(payload.sessionId)
 
-    expirationTimer = window.setTimeout(() => {
+    expirationTimer = setTimeout(() => {
       handleExpired()
     }, payload.expiresIn)
-  } catch (error) {
-    console.error('Erreur initialisation QR:', error)
-    errorMessage.value = 'Erreur lors de l’initialisation du QR Code.'
+
+  } catch (err) {
+    console.error(err)
+    errorMessage.value = 'Erreur lors de l’init QR'
   } finally {
     loading.value = false
   }
 }
 
-function connectWebSocket(id: string): void {
-  disconnectSocket = QrAuthService.connect(id, {
-    authenticated: handleAuthenticated,
-    rejected: handleRejected,
-    expired: handleExpired,
-    connectError: (error) => {
-      console.error('Socket error:', error)
+function connectWebSocket(id) {
+  socket = io(`https://my.toke.cm/qr-auth`, {
+    path: '/local/socket.io',
+    transports: ['websocket','polling'],
+    query: {
+      sessionId: id
     },
+  })
+
+  socket.on('connect', () => {
+    console.log('Socket connected')
+  })
+
+  socket.on('authenticated', () => {
+    handleAuthenticated()
+  })
+
+  socket.on('rejected', () => {
+    handleRejected()
+  })
+
+  socket.on('expired', () => {
+    handleExpired()
+  })
+
+  socket.on('connect_error', (err) => {
+    console.error('Socket error:', err)
   })
 }
 
-function handleAuthenticated(): void {
+function handleAuthenticated() {
+  console.log('Authenticated')
   cleanup()
-  void router.push({ name: 'otp' })
+
+  router.push({
+    name: 'otp'
+  })
 }
 
-function handleRejected(): void {
+function handleRejected() {
   cleanup()
   errorMessage.value = 'QR refusé par l’utilisateur'
 }
 
-function handleExpired(): void {
+function handleExpired() {
   cleanup()
   isExpired.value = true
 }
 
-function regenerate(): void {
-  void initQR()
+function regenerate() {
+  initQR()
 }
 
-function cleanup(): void {
-  disconnectSocket?.()
-  disconnectSocket = null
+function cleanup() {
+  if (socket) {
+    socket.disconnect()
+    socket = null
+  }
 
-  if (expirationTimer !== null) {
-    window.clearTimeout(expirationTimer)
+  if (expirationTimer) {
+    clearTimeout(expirationTimer)
     expirationTimer = null
   }
 }
 
-onMounted(() => {
-  void initQR()
-})
-
+onMounted(initQR)
 onBeforeUnmount(cleanup)
 </script>
-
 <template>
   <div class="min-h-screen flex bg-gray-50">
+
     <div
       class="hidden md:flex w-3/5 bg-gradient-to-br from-gray-100 to-gray-200 p-12 flex-col justify-between"
     >
@@ -116,6 +146,7 @@ onBeforeUnmount(cleanup)
     </div>
 
     <div class="w-full md:w-2/5 flex flex-col items-center justify-center p-8">
+
       <div class="w-full max-w-md">
         <h1 class="text-3xl font-semibold tracking-wide">
           Bienvenue sur le portail de Toké Manager
@@ -128,11 +159,13 @@ onBeforeUnmount(cleanup)
         <div class="my-8 border-t border-gray-200"></div>
 
         <div class="bg-white shadow-lg rounded-2xl p-8 text-center">
+
           <p class="text-gray-700 font-medium mb-4">
             Scanner avec l'application mobile
           </p>
 
           <div class="flex justify-center">
+
             <QrcodeVue
               v-if="!loading && !isExpired && qrData"
               :value="qrData"
@@ -140,14 +173,15 @@ onBeforeUnmount(cleanup)
               level="H"
             />
 
-            <button
+
+            <div
               v-else-if="isExpired"
-              type="button"
-              class="w-[260px] h-[260px] flex items-center justify-center font-medium cursor-pointer bg-gray-100 rounded-xl text-gray-500 hover:bg-gray-200 transition"
               @click="regenerate"
+              class="w-[260px] h-[260px] flex items-center justify-center font-medium cursor-pointer bg-gray-100 rounded-xl text-gray-500 hover:bg-gray-200 transition"
             >
               QR expiré – Cliquer pour régénérer
-            </button>
+            </div>
+
 
             <div
               v-else
@@ -164,19 +198,7 @@ onBeforeUnmount(cleanup)
           <p v-if="errorMessage" class="mt-4 text-red-500 text-sm">
             {{ errorMessage }}
           </p>
-        </div>
 
-        <!-- Alternative volontairement discrète pour préserver le design historique. -->
-        <div class="mt-5 text-center">
-          <p class="text-sm text-gray-500">
-            Vous ne pouvez pas scanner le QR Code ?
-          </p>
-          <RouterLink
-            to="/auth"
-            class="mt-1 inline-flex items-center justify-center text-sm font-medium text-blue-600 no-underline transition hover:text-blue-700 hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2 rounded"
-          >
-            Se connecter autrement
-          </RouterLink>
         </div>
 
         <p class="mt-4 text-gray-500 text-sm font-light">

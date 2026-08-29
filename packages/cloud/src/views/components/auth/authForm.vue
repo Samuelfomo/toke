@@ -1,116 +1,134 @@
 <template>
-  <div class="auth-page">
-    <div class="auth-container">
-      <!-- Logo centré au-dessus -->
-      <div class="auth-logo">
+  <main class="relative flex min-h-screen items-center justify-center overflow-hidden bg-gradient-to-br from-[#004aad]/80 via-[#004aad]/60 to-[#004aad]/80 px-4 py-8 sm:px-6">
+    <div class="pointer-events-none absolute inset-0" aria-hidden="true">
+      <div class="absolute -left-24 top-1/4 h-72 w-72 rounded-full bg-white/10 blur-3xl" />
+      <div class="absolute -right-24 top-10 h-80 w-80 rounded-full bg-cyan-200/10 blur-3xl" />
+      <div class="absolute bottom-0 left-1/3 h-64 w-64 rounded-full bg-white/5 blur-3xl" />
+    </div>
+
+    <section class="relative z-10 w-full max-w-[520px]">
+      <div class="mx-auto mb-7 flex w-28 items-center justify-center sm:w-32">
         <LazySvgImage :src="logoSrc" :alt="logoAlt" />
       </div>
 
-      <!-- Carte du formulaire -->
-      <div class="auth-form-card-test">
-        <div v-if="loading" :class="skeletonContainerClass">
-          <div class="skeleton-welcome-message"></div>
-
-          <!-- Skeleton adaptatif selon le type -->
-          <div v-if="skeletonType === 'otp'" class="skeleton-otp-fields">
-            <div v-for="i in 6" :key="i" class="skeleton-otp-input"></div>
-          </div>
-          <div v-else class="skeleton-default-fields">
-            <div class="skeleton-field"></div>
-            <div class="skeleton-field"></div>
-          </div>
-
-          <div class="skeleton-actions"></div>
-          <div class="skeleton-button"></div>
-          <div class="skeleton-footer"></div>
-        </div>
-        <div v-else class="auth-form-card">
-          <slot name="welcome">
-            <p class="auth-welcome-message">
+      <div class="rounded-3xl border border-white/50 bg-white/95 p-5 shadow-2xl shadow-blue-950/20 backdrop-blur sm:p-8">
+        <slot name="welcome">
+          <div class="text-center">
+            <h1 class="text-2xl font-bold tracking-tight text-slate-950 sm:text-3xl">
               {{ welcomeMessage }}
-            </p>
-            <p v-if="welcomeSubtitle" class="auth-welcome-message-subtitle">
+            </h1>
+            <p v-if="welcomeSubtitle" class="mx-auto mt-3 max-w-sm text-sm leading-6 text-slate-600 sm:text-base">
               {{ welcomeSubtitle }}
             </p>
-          </slot>
-
-          <!-- Message d'erreur global -->
-          <div v-if="globalError" class="auth-global-error">
-            {{ globalError }}
           </div>
+        </slot>
 
-          <!-- Message de succès global -->
-          <div v-if="globalSuccess" class="auth-global-success">
-            {{ globalSuccess }}
-          </div>
+        <div
+          v-if="globalError"
+          class="mt-6 flex items-start gap-3 rounded-xl border border-rose-200 bg-rose-50 px-4 py-3 text-left text-sm leading-5 text-rose-700"
+          role="alert"
+        >
+          <svg class="mt-0.5 h-5 w-5 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+            <circle cx="12" cy="12" r="9" />
+            <path d="M12 8v5M12 17h.01" />
+          </svg>
+          <span>{{ globalError }}</span>
+        </div>
 
-          <form @submit.prevent="handleSubmit">
-            <slot name="fields" :formData="localFormData" :updateField="updateField" :errors="fieldErrors">
-              <div v-for="field in defaultFields" :key="field.name" class="auth-field">
-                <label v-if="field.label" :for="field.id" class="auth-field-label">
+        <div
+          v-if="globalSuccess"
+          class="mt-6 flex items-start gap-3 rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-left text-sm leading-5 text-emerald-700"
+          role="status"
+        >
+          <svg class="mt-0.5 h-5 w-5 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+            <circle cx="12" cy="12" r="9" />
+            <path d="m8.5 12 2.25 2.25L15.5 9.5" />
+          </svg>
+          <span>{{ globalSuccess }}</span>
+        </div>
+
+        <form class="mt-7" @submit.prevent="handleSubmit">
+          <slot name="fields" :formData="localFormData" :updateField="updateField" :errors="fieldErrors">
+            <div class="space-y-5">
+              <div v-for="field in fieldsWithIds" :key="field.name" class="text-left">
+                <label v-if="field.label" :for="field.id" class="mb-2 block text-sm font-semibold text-slate-700">
                   {{ field.label }}
                 </label>
                 <input
                   :id="field.id"
-                  v-model="localFormData[field.name]"
-                  :type="field.type"
+                  :value="localFormData[field.name] ?? ''"
+                  :type="field.type || 'text'"
                   :placeholder="field.placeholder"
                   :required="field.required"
-                  class="auth-input"
-                  :class="{ 'error': fieldErrors[field.name] }"
+                  class="min-h-12 w-full rounded-xl border bg-white px-4 py-3 text-sm text-slate-900 outline-none transition placeholder:text-slate-400 focus:ring-4"
+                  :class="fieldErrors[field.name]
+                    ? 'border-rose-400 focus:border-rose-500 focus:ring-rose-100'
+                    : 'border-slate-300 hover:border-slate-400 focus:border-blue-500 focus:ring-blue-100'"
+                  @input="updateField(field.name, ($event.target as HTMLInputElement).value)"
                 />
-                <span v-if="fieldErrors[field.name]" class="error-message">
+                <p v-if="fieldErrors[field.name]" class="mt-1.5 text-xs font-medium text-rose-600">
                   {{ fieldErrors[field.name] }}
-                </span>
+                </p>
               </div>
-            </slot>
-            <slot name="actions" :formData="localFormData">
-              <div v-if="secondaryActionLink" class="auth-otp-container">
-                <router-link :to="secondaryActionLink.url" class="otp-link">
-                  {{ secondaryActionLink.text }}
-                </router-link>
-              </div>
-            </slot>
-
-            <button
-              type="submit"
-              :disabled="isSubmitting || isSuccess || !isFormValid"
-              class="auth-submit-btn"
-              :class="{
-                'is-loading': isSubmitting,
-                'is-success': isSuccess
-              }"
-            >
-              <span v-if="!isSubmitting && !isSuccess">{{ submitButtonText }}</span>
-              <span v-else-if="isSubmitting">{{ loadingText }}</span>
-              <span v-else-if="isSuccess">{{ successText }}</span>
-            </button>
-          </form>
-          <slot name="footer">
-            <small class="text-black-50 text-center font-primary lead-0-75">
-              {{ footerText }}
-            </small>
+            </div>
           </slot>
-        </div>
+
+          <slot name="actions" :formData="localFormData">
+            <div v-if="secondaryActionLink" class="mt-4 flex justify-end">
+              <RouterLink :to="secondaryActionLink.url" class="text-sm font-semibold text-blue-700 no-underline hover:text-blue-800 hover:underline">
+                {{ secondaryActionLink.text }}
+              </RouterLink>
+            </div>
+          </slot>
+
+          <button
+            type="submit"
+            :disabled="isSubmitting || isSuccess || !isFormValid"
+            class="mt-7 inline-flex min-h-12 w-full items-center justify-center gap-2 rounded-xl bg-blue-700 px-5 py-3 text-sm font-semibold text-white shadow-lg shadow-blue-700/20 transition hover:bg-blue-800 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-blue-200 disabled:cursor-not-allowed disabled:bg-slate-300 disabled:shadow-none"
+          >
+            <svg v-if="isSubmitting" class="h-5 w-5 animate-spin" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+              <circle class="opacity-25" cx="12" cy="12" r="9" stroke="currentColor" stroke-width="3" />
+              <path class="opacity-90" fill="currentColor" d="M21 12a9 9 0 0 0-9-9v3a6 6 0 0 1 6 6h3Z" />
+            </svg>
+            <svg v-else-if="isSuccess" class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+              <path d="m5 12 4 4L19 6" />
+            </svg>
+            <span>{{ buttonText }}</span>
+          </button>
+        </form>
+
+        <slot name="footer">
+          <p class="mt-7 text-center text-xs leading-5 text-slate-500">
+            {{ footerText }}
+          </p>
+        </slot>
       </div>
-    </div>
-  </div>
+
+      <div v-if="backLink" class="mt-5 text-center">
+        <RouterLink
+          :to="backLink.url"
+          class="inline-flex items-center gap-2 rounded-xl border border-white/20 bg-white/10 px-4 py-2.5 text-sm font-semibold text-white no-underline backdrop-blur transition hover:bg-white/20 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white"
+        >
+          <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+            <path d="m15 18-6-6 6-6" />
+          </svg>
+          {{ backLink.text }}
+        </RouterLink>
+      </div>
+    </section>
+  </main>
 </template>
 
 <script setup lang="ts">
-import { ref, computed, watch, onMounted } from 'vue';
-import { useRouter } from 'vue-router'
+import { computed, onMounted, ref, watch } from 'vue'
 import HeadBuilder from '../../../utils/HeadBuilder'
-import LazySvgImage from '../LazySvgImage.vue';
-const router = useRouter()
-const loading = ref(true);
-import toke1 from '../../../../public/images/toke-white-logo.svg'
+import LazySvgImage from '../LazySvgImage.vue'
+import tokeLogo from '../../../../public/images/toke-white-logo.svg'
 
-// Interface pour les champs
 interface FormField {
   name: string
-  type: string
-  placeholder: string
+  type?: string
+  placeholder?: string
   label?: string
   required?: boolean
   id?: string
@@ -126,283 +144,170 @@ interface BackLink {
   text: string
 }
 
-// Props du template
-const props = defineProps({
-  // Configuration de la page
-  pageTitle: {
-    type: String,
-    default: 'Authentification'
-  },
-  cssFile: {
-    type: String,
-    required: true
-  },
+interface SubmitHelpers {
+  setFieldError: (fieldName: string, message: string) => void
+  setGlobalError: (message: string) => void
+  setGlobalSuccess: (message: string) => void
+}
 
-  // Type de skeleton
-  skeletonType: {
-    type: String,
-    default: 'default',
-    validator: (value: string) => ['default', 'otp'].includes(value)
-  },
+type SubmitHandler = (formData: Record<string, any>, helpers: SubmitHelpers) => Promise<void> | void
 
-  // Logo
-  logoSrc: {
-    type: String,
-    default: toke1
-  },
-  logoAlt: {
-    type: String,
-    default: 'Logo'
-  },
-
-  // Messages
-  welcomeMessage: {
-    type: String,
-    default: 'Bienvenue sur votre espace de connexion'
-  },
-  welcomeSubtitle: {
-    type: String,
-    default: ''
-  },
-
-  // Bouton de soumission
-  submitButtonText: {
-    type: String,
-    default: 'Envoyer'
-  },
-  loadingText: {
-    type: String,
-    default: 'Chargement...'
-  },
-  successText: {
-    type: String,
-    default: 'Connexion réussie !'
-  },
-
-  // Footer
-  footerText: {
-    type: String,
-    default: 'Copyright Imediatis 2025-2025'
-  },
-
-  // Champs par défaut
-  defaultFields: {
-    type: Array as () => FormField[],
-    default: () => [
-      {
-        name: 'email',
-        type: 'email',
-        placeholder: 'Renseigner votre email',
-        required: true
-      }
-    ]
-  },
-
-  // Données initiales du formulaire
-  initialData: {
-    type: Object,
-    default: () => ({})
-  },
-
-  // Validation personnalisée
-  validation: {
-    type: Function,
-    default: null
-  },
-
-  // Remember me
-  showRememberMe: {
-    type: Boolean,
-    default: false
-  },
-
-  // Action secondaire
-  secondaryActionLink: {
-    type: Object as () => SecondaryAction | null,
-    default: null
-  },
-
-  // Lien retour
-  backLink: {
-    type: Object as () => BackLink | null,
-    default: null
-  },
-
-  // Redirection après soumission
-  redirectTo: {
-    type: String,
-    default: ''
-  }
+const props = withDefaults(defineProps<{
+  pageTitle?: string
+  logoSrc?: string
+  logoAlt?: string
+  welcomeMessage?: string
+  welcomeSubtitle?: string
+  submitButtonText?: string
+  loadingText?: string
+  successText?: string
+  footerText?: string
+  defaultFields?: FormField[]
+  initialData?: Record<string, any>
+  validation?: ((data: Record<string, any>) => boolean) | null
+  secondaryActionLink?: SecondaryAction | null
+  backLink?: BackLink | null
+  redirectTo?: string
+  submitHandler?: SubmitHandler | null
+}>(), {
+  pageTitle: 'Authentification',
+  logoSrc: tokeLogo,
+  logoAlt: 'Toké',
+  welcomeMessage: 'Bienvenue sur votre espace de connexion',
+  welcomeSubtitle: '',
+  submitButtonText: 'Envoyer',
+  loadingText: 'Chargement…',
+  successText: 'Connexion réussie !',
+  footerText: 'Copyright Imediatis 2025 - Tous droits réservés',
+  defaultFields: () => [],
+  initialData: () => ({}),
+  validation: null,
+  secondaryActionLink: null,
+  backLink: null,
+  redirectTo: '',
+  submitHandler: null,
 })
 
-// Émissions
-const emit = defineEmits(['submit', 'field-change', 'loading-complete'])
+const emit = defineEmits<{
+  submit: [data: Record<string, any>]
+  'field-change': [fieldName: string, value: any]
+}>()
 
-// État local
 const isSubmitting = ref(false)
 const isSuccess = ref(false)
-const localFormData = ref({ ...props.initialData })
+const localFormData = ref<Record<string, any>>({ ...props.initialData })
 const fieldErrors = ref<Record<string, string>>({})
 const globalError = ref('')
 const globalSuccess = ref('')
 
-// Texte du bouton dynamique
+const fieldsWithIds = computed(() =>
+  props.defaultFields.map((field, index) => ({
+    ...field,
+    id: field.id || `${field.name}-${index}`,
+  })),
+)
+
 const buttonText = computed(() => {
   if (isSuccess.value) return props.successText
   if (isSubmitting.value) return props.loadingText
   return props.submitButtonText
 })
 
-// Computed pour la classe CSS du skeleton
-const skeletonContainerClass = computed(() => {
-  return `skeleton-form-card skeleton-${props.skeletonType}`
-})
-
-// Génération d'IDs uniques pour les champs
-const generateFieldIds = () => {
-  return props.defaultFields.map(field => ({
-    ...field,
-    id: field.id || `${field.name}-${Math.random().toString(36).substr(2, 9)}`
-  }))
-}
-
-// Validation du formulaire
 const isFormValid = computed(() => {
-  if (props.validation) {
-    return props.validation(localFormData.value)
-  }
+  if (props.validation) return props.validation(localFormData.value)
 
-  const requiredFields = props.defaultFields.filter(field => field.required)
-  return requiredFields.every(field => {
-    const value = localFormData.value[field.name]
-    return value && value.toString().trim() !== ''
-  })
+  return props.defaultFields
+    .filter((field) => field.required)
+    .every((field) => String(localFormData.value[field.name] ?? '').trim() !== '')
 })
 
-// Fonction pour mettre à jour un champ
-const updateField = (fieldName: string, value: any) => {
+function updateField(fieldName: string, value: any): void {
   localFormData.value[fieldName] = value
-  // Nettoyer l'erreur du champ quand l'utilisateur tape
-  if (fieldErrors.value[fieldName]) {
-    fieldErrors.value[fieldName] = ''
-  }
-  // Nettoyer les messages globaux
+  if (fieldErrors.value[fieldName]) fieldErrors.value[fieldName] = ''
   globalError.value = ''
   globalSuccess.value = ''
-
+  isSuccess.value = false
   emit('field-change', fieldName, value)
 }
 
-// Fonction pour définir une erreur de champ
-const setFieldError = (fieldName: string, errorMessage: string) => {
+function setFieldError(fieldName: string, errorMessage: string): void {
   fieldErrors.value[fieldName] = errorMessage
 }
 
-// Fonction pour nettoyer toutes les erreurs
-const clearErrors = () => {
+function setGlobalError(message: string): void {
+  globalError.value = message
+  if (message) {
+    globalSuccess.value = ''
+    isSuccess.value = false
+  }
+}
+
+function setGlobalSuccess(message: string): void {
+  globalSuccess.value = message
+  if (message) globalError.value = ''
+}
+
+function setSuccess(value = true): void {
+  isSuccess.value = value
+}
+
+function clearErrors(): void {
   fieldErrors.value = {}
   globalError.value = ''
   globalSuccess.value = ''
+  isSuccess.value = false
 }
 
-// Watch pour les changements de données initiales
-watch(() => props.initialData, (newData) => {
-  localFormData.value = { ...newData }
-}, { deep: true })
+async function handleSubmit(): Promise<void> {
+  if (!isFormValid.value || isSubmitting.value) return
 
-// Gestion de la soumission - Loader longue durée puis message de succès
-const handleSubmit = async () => {
-  if (!isFormValid.value) {
-    console.log('❌ Formulaire invalide, soumission bloquée')
-    return
-  }
-
-  console.log('🚀 Début de la soumission...')
-
-  // Nettoyer les erreurs précédentes et réinitialiser l'état de succès
   clearErrors()
-  isSuccess.value = false
-
-  // ÉTAPE 1 : Activer le loader (spinner)
   isSubmitting.value = true
-  console.log('⏳ Loader activé - Spinner visible...')
 
   try {
-    console.log('📤 Émission de l\'événement submit...')
+    const data = { ...localFormData.value }
+    const helpers: SubmitHelpers = { setFieldError, setGlobalError, setGlobalSuccess }
 
-    // Émettre l'événement au parent
-    emit('submit', { ...localFormData.value })
-
-    // Attendre un délai pour le traitement de l'API
-    await new Promise(resolve => setTimeout(resolve, 2000))
-
-    // Vérifier si une erreur a été définie pendant le traitement
-    if (globalError.value) {
-      console.log('❌ Erreur détectée, arrêt du processus')
-      throw new Error(globalError.value)
+    if (props.submitHandler) {
+      await props.submitHandler(data, helpers)
+    } else {
+      emit('submit', data)
     }
 
-    console.log('✅ Traitement terminé avec succès')
-
-    // ÉTAPE 2 : Arrêter le loader et afficher "Connexion réussie"
-    isSubmitting.value = false
-    isSuccess.value = true
-    console.log('🎉 Affichage "Connexion réussie"')
-
-    // Garder le message de succès visible pendant 2 secondes
-    await new Promise(resolve => setTimeout(resolve, 2000))
-
-    console.log('🚀 Redirection...')
-
-    // Si une redirection est spécifiée
-    if (props.redirectTo) {
-      await router.push(props.redirectTo)
+    if (!globalError.value) {
+      isSuccess.value = true
     }
   } catch (error: any) {
-    console.error('❌ Erreur lors de la soumission:', error)
-
-    // Réinitialiser les états en cas d'erreur
     isSuccess.value = false
-    isSubmitting.value = false
-
-    // Gestion des erreurs
-    if (error.field) {
-      setFieldError(error.field, error.message)
-    } else if (!globalError.value) {
-      // Ne définir l'erreur que si elle n'est pas déjà définie
-      globalError.value = error.message || 'Une erreur est survenue lors de la soumission du formulaire'
+    if (!globalError.value) {
+      globalError.value = error?.message || 'Une erreur est survenue. Veuillez réessayer.'
     }
+  } finally {
+    isSubmitting.value = false
   }
 }
 
-// Configuration de la page au montage
-onMounted(async () => {
-  // Configuration HeadBuilder
+watch(
+  () => props.initialData,
+  (newData) => {
+    localFormData.value = { ...newData }
+  },
+  { deep: true },
+)
+
+onMounted(() => {
   HeadBuilder.apply({
     title: props.pageTitle,
-    css: [props.cssFile],
-    meta: { viewport: "width=device-width, initial-scale=1.0" }
+    css: [],
+    meta: { viewport: 'width=device-width, initial-scale=1.0' },
   })
-
-  // Simulation du chargement
-  await new Promise(resolve => setTimeout(resolve, 1500))
-
-  // Fin du chargement
-  loading.value = false
-
-  // Émettre l'événement de fin de chargement
-  emit('loading-complete')
 })
 
-// Exposer les méthodes pour utilisation externe
 defineExpose({
   setFieldError,
+  setGlobalError,
+  setGlobalSuccess,
+  setSuccess,
   clearErrors,
-  setGlobalError: (msg: string) => { globalError.value = msg },
-  setGlobalSuccess: (msg: string) => { globalSuccess.value = msg }
 })
 </script>
-
-<style scoped>
-
-</style>

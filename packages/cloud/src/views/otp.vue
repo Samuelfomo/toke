@@ -2,23 +2,33 @@
   <AuthForm
     ref="authFormRef"
     page-title="Vérification OTP - Toké"
-    :css-file="authCss"
-    welcome-message=""
-    welcome-subtitle="Saisir le code de vérification envoyé à votre adresse email"
-    submit-button-text="Vérifier"
-    loading-text="Vérification..."
-    success-text="Code vérifié !"
+    welcome-message="Vérification de votre identité"
+    welcome-subtitle="Saisissez le code à 6 chiffres envoyé à votre adresse email."
+    submit-button-text="Vérifier le code"
+    loading-text="Vérification…"
+    success-text="Code vérifié"
     :default-fields="[]"
     :validation="validateOtp"
-    :back-link="{ url: '/', text: 'Réessayer' }"
-    @submit="handleOtpVerification"
+    :submit-handler="handleOtpVerification"
+    :back-link="{ url: '/auth', text: 'Retour à la connexion' }"
   >
-    <!-- Champs OTP personnalisés -->
-    <template #fields="{ formData, updateField }">
-      <div class="otp-container">
-        <div class="otp-inputs">
+    <template #fields="{ updateField }">
+      <div>
+        <div class="mb-4 flex items-center justify-between gap-3 rounded-xl bg-slate-50 px-3 py-2.5 text-xs text-slate-600">
+          <span class="min-w-0 truncate">
+            Code envoyé à <strong class="font-semibold text-slate-800">{{ maskedEmail }}</strong>
+          </span>
+          <span
+            class="shrink-0 rounded-full px-2.5 py-1 font-semibold tabular-nums"
+            :class="timeRemaining <= 60 ? 'bg-amber-100 text-amber-700' : 'bg-blue-50 text-blue-700'"
+          >
+            {{ formattedTime }}
+          </span>
+        </div>
+
+        <div class="grid grid-cols-6 gap-1.5 sm:gap-2" aria-label="Code de vérification à 6 chiffres">
           <input
-            v-for="(digit, index) in otpDigits"
+            v-for="(_, index) in otpDigits"
             :key="index"
             :ref="(el) => setInputRef(el as HTMLInputElement | null, index)"
             v-model="otpDigits[index]"
@@ -26,80 +36,85 @@
             inputmode="numeric"
             pattern="[0-9]*"
             maxlength="1"
-            class="otp-input"
-            placeholder="•"
-            :class="{
-            filled: !!otpDigits[index],
-            error: hasError,
-            success: isVerified
-  }"
-            @input="(e) => handleInput(index, e, updateField)"
-            @keydown="(e) => handleKeydown(index, e)"
-            @paste="(e) => handlePaste(e, updateField)"
-            @focus="() => handleFocus(index)"
             autocomplete="one-time-code"
+            :aria-label="`Chiffre ${index + 1} du code`"
+            class="aspect-square min-w-0 rounded-xl border bg-white text-center text-lg font-bold tabular-nums text-slate-900 outline-none transition focus:ring-4 sm:text-xl"
+            :class="hasError
+              ? 'border-rose-400 focus:border-rose-500 focus:ring-rose-100'
+              : isVerified
+                ? 'border-emerald-400 bg-emerald-50 text-emerald-700 focus:ring-emerald-100'
+                : otpDigits[index]
+                  ? 'border-blue-400 bg-blue-50/50 text-blue-700 focus:border-blue-500 focus:ring-blue-100'
+                  : 'border-slate-300 hover:border-slate-400 focus:border-blue-500 focus:ring-blue-100'"
+            @input="(event) => handleInput(index, event, updateField)"
+            @keydown="(event) => handleKeydown(index, event, updateField)"
+            @paste="(event) => handlePaste(event, updateField)"
+            @focus="handleFocus(index)"
           />
         </div>
 
-        <!-- Message d'erreur -->
-        <transition name="fade">
-          <div v-if="errorMessage" class="error-message">
-            <span class="error-icon">⚠️</span>
-            <span>{{ errorMessage }}</span>
-          </div>
-        </transition>
+        <div v-if="errorMessage" class="mt-4 flex items-start gap-2 rounded-xl border border-rose-200 bg-rose-50 px-3 py-2.5 text-left text-xs leading-5 text-rose-700" role="alert">
+          <svg class="mt-0.5 h-4 w-4 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+            <circle cx="12" cy="12" r="9" />
+            <path d="M12 8v5M12 17h.01" />
+          </svg>
+          <span>{{ errorMessage }}</span>
+        </div>
 
-        <!-- Message de succès -->
-        <transition name="fade">
-          <div v-if="successMessage" class="success-message">
-            <span class="success-icon"></span>
-            <span>{{ successMessage }}</span>
-          </div>
-        </transition>
+        <div v-if="successMessage" class="mt-4 flex items-start gap-2 rounded-xl border border-emerald-200 bg-emerald-50 px-3 py-2.5 text-left text-xs leading-5 text-emerald-700" role="status">
+          <svg class="mt-0.5 h-4 w-4 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+            <circle cx="12" cy="12" r="9" />
+            <path d="m8.5 12 2.25 2.25L15.5 9.5" />
+          </svg>
+          <span>{{ successMessage }}</span>
+        </div>
       </div>
     </template>
 
     <template #footer>
-      <div class="otp-footer">
-        <p class="request-again">
-          Vous n'avez pas reçu de code ?
-          <button
-            @click="handleResendOtp"
-            :disabled="resendCooldown > 0 || isResending"
-            class="request-link"
-            :class="{ 'disabled': resendCooldown > 0 || isResending }"
-            type="button"
-          >
-            <span v-if="isResending">⏳ Envoi en cours...</span>
-            <span v-else-if="resendCooldown > 0">⏳ Renvoyer ({{ resendCooldown }}s)</span>
-            <span v-else>Renvoyer le code</span>
-          </button>
+      <div class="mt-7 border-t border-slate-100 pt-5 text-center">
+        <p class="text-sm text-slate-600">
+          Vous n'avez pas reçu le code ?
         </p>
-        <small class="text-black-50 text-center font-primary lead-0-75">
-          Copyright Imediatis 2025
-        </small>
+
+        <button
+          type="button"
+          :disabled="resendCooldown > 0 || isResending"
+          class="mt-2 inline-flex items-center justify-center gap-2 rounded-lg px-3 py-2 text-sm font-semibold text-blue-700 transition hover:bg-blue-50 hover:text-blue-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 disabled:cursor-not-allowed disabled:text-slate-400"
+          @click="handleResendOtp"
+        >
+          <svg v-if="isResending" class="h-4 w-4 animate-spin" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+            <circle class="opacity-25" cx="12" cy="12" r="9" stroke="currentColor" stroke-width="3" />
+            <path class="opacity-90" fill="currentColor" d="M21 12a9 9 0 0 0-9-9v3a6 6 0 0 1 6 6h3Z" />
+          </svg>
+          <svg v-else class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+            <path d="M20 11a8 8 0 1 0-2.34 5.66" />
+            <path d="M20 4v7h-7" />
+          </svg>
+
+          <span v-if="isResending">Envoi en cours…</span>
+          <span v-else-if="resendCooldown > 0">Renvoyer dans {{ resendCooldown }}s</span>
+          <span v-else>Renvoyer le code</span>
+        </button>
+
+        <p class="mt-4 text-[11px] text-slate-400">Copyright Imediatis 2025</p>
       </div>
     </template>
-
   </AuthForm>
-
 </template>
 
 <script setup lang="ts">
-import { ref, nextTick, onMounted, onUnmounted, computed } from 'vue'
-import otpCss from '../assets/css/toke-otp-02.css?url'
-import authCss from '../assets/css/toke-auth-01.css?url'
+import { computed, nextTick, onMounted, onUnmounted, ref } from 'vue'
+import { useRoute, useRouter } from 'vue-router'
+
 import AuthForm from './components/auth/authForm.vue'
-import HeadBuilder from './../utils/HeadBuilder'
-import { useRouter, useRoute } from 'vue-router'
 import otpCtrl from '../ctrl/otpCtrl'
-import AuthService from '@/service/AuthService';
+import AuthService from '@/service/AuthService'
 
 const router = useRouter()
-const authFormRef = ref<any>(null)
 const route = useRoute()
+const authFormRef = ref<any>(null)
 
-// État des champs OTP
 const otpDigits = ref(['', '', '', '', '', ''])
 const inputRefs = ref<(HTMLInputElement | null)[]>([])
 const hasError = ref(false)
@@ -107,344 +122,287 @@ const errorMessage = ref('')
 const successMessage = ref('')
 const isVerified = ref(false)
 const isResending = ref(false)
-const showHelp = ref(false)
-const email = ref<string>('')
+const email = ref('')
 
-// Gestion du timer de l'OTP (5 minutes par défaut)
 const OTP_VALIDITY_DURATION = 5 * 60
-const timeRemaining = ref(OTP_VALIDITY_DURATION)
-let otpTimer: number | null = null
-
-// Gestion du cooldown de renvoi (60 secondes)
-const RESEND_COOLDOWN = 1000
-const resendCooldown = ref(0)
-let resendTimer: number | null = null
-
-// Compteur de tentatives échouées
-const failedAttempts = ref(0)
+const RESEND_COOLDOWN_SECONDS = 60
 const MAX_ATTEMPTS = 5
 
-// Computed
-const isOtpComplete = computed(() => otpDigits.value.every(digit => digit !== ''))
-const canSubmit = computed(() => isOtpComplete.value && !hasError.value && timeRemaining.value > 0)
+const timeRemaining = ref(OTP_VALIDITY_DURATION)
+const resendCooldown = ref(0)
+const failedAttempts = ref(0)
 
-// Validation OTP avec messages d'erreur
-const validateOtp = () => {
-  errorMessage.value = ''
-  successMessage.value = ''
-  hasError.value = false
+let otpTimer: number | null = null
+let resendTimer: number | null = null
 
-  if (timeRemaining.value <= 0) {
-    errorMessage.value = '⏰ Code expiré. Demandez un nouveau code.'
-    hasError.value = true
-    return false
-  }
-  return true
+const otpCode = computed(() => otpDigits.value.join(''))
+const isOtpComplete = computed(() => /^\d{6}$/.test(otpCode.value))
+const formattedTime = computed(() => {
+  const minutes = Math.floor(timeRemaining.value / 60)
+  const seconds = timeRemaining.value % 60
+  return `${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`
+})
+
+const maskedEmail = computed(() => {
+  const value = email.value.trim()
+  const [name, domain] = value.split('@')
+  if (!name || !domain) return value || 'votre adresse email'
+  const visible = name.slice(0, Math.min(2, name.length))
+  return `${visible}${'*'.repeat(Math.max(2, name.length - visible.length))}@${domain}`
+})
+
+function validateOtp(): boolean {
+  return isOtpComplete.value && timeRemaining.value > 0 && !hasError.value
 }
 
-// Gestion des références d'inputs
-const setInputRef = (el: HTMLInputElement | null, index: number) => {
-  if (el) {
-    inputRefs.value[index] = el
-  }
+function setInputRef(el: HTMLInputElement | null, index: number): void {
+  if (el) inputRefs.value[index] = el
 }
 
-const stopOtpTimer = () => {
-  if (otpTimer) {
-    clearInterval(otpTimer)
+function stopOtpTimer(): void {
+  if (otpTimer !== null) {
+    window.clearInterval(otpTimer)
     otpTimer = null
   }
 }
 
-const startResendCooldown = () => {
-  stopResendCooldown()
-  resendCooldown.value = RESEND_COOLDOWN
+function startOtpTimer(): void {
+  stopOtpTimer()
+  timeRemaining.value = OTP_VALIDITY_DURATION
 
-  resendTimer = window.setInterval(() => {
-    resendCooldown.value--
+  otpTimer = window.setInterval(() => {
+    timeRemaining.value = Math.max(0, timeRemaining.value - 1)
 
-    if (resendCooldown.value <= 0) {
-      stopResendCooldown()
+    if (timeRemaining.value === 0) {
+      stopOtpTimer()
+      hasError.value = true
+      errorMessage.value = 'Le code a expiré. Demandez un nouveau code pour continuer.'
+      authFormRef.value?.setGlobalError(errorMessage.value)
     }
   }, 1000)
 }
 
-const stopResendCooldown = () => {
-  if (resendTimer) {
-    clearInterval(resendTimer)
+function stopResendCooldown(): void {
+  if (resendTimer !== null) {
+    window.clearInterval(resendTimer)
     resendTimer = null
   }
 }
 
-onMounted(() => {
-  email.value = route.query.email?.toString() || ''
-  HeadBuilder.apply({
-    title: 'Vérification OTP - Toké',
-    css: [authCss, otpCss],
-    meta: { viewport: "width=device-width, initial-scale=1.0" }
-  })
+function startResendCooldown(): void {
+  stopResendCooldown()
+  resendCooldown.value = RESEND_COOLDOWN_SECONDS
 
-  nextTick(() => {
+  resendTimer = window.setInterval(() => {
+    resendCooldown.value = Math.max(0, resendCooldown.value - 1)
+    if (resendCooldown.value === 0) stopResendCooldown()
+  }, 1000)
+}
+
+function clearInlineMessages(): void {
+  if (timeRemaining.value <= 0) return
+  hasError.value = false
+  errorMessage.value = ''
+  successMessage.value = ''
+}
+
+function syncOtp(updateField: Function): void {
+  updateField('otp', otpCode.value)
+}
+
+function handleFocus(index: number): void {
+  void nextTick(() => inputRefs.value[index]?.select())
+  clearInlineMessages()
+}
+
+async function handleInput(index: number, event: Event, updateField: Function): Promise<void> {
+  const target = event.target as HTMLInputElement
+  const numeric = target.value.replace(/\D/g, '').slice(-1)
+
+  otpDigits.value[index] = numeric
+  target.value = numeric
+  syncOtp(updateField)
+  clearInlineMessages()
+
+  if (numeric && index < otpDigits.value.length - 1) {
+    await nextTick()
+    inputRefs.value[index + 1]?.focus()
+  }
+}
+
+async function handleKeydown(index: number, event: KeyboardEvent, updateField: Function): Promise<void> {
+  if (event.key === 'Backspace') {
+    event.preventDefault()
+
+    if (otpDigits.value[index]) {
+      otpDigits.value[index] = ''
+    } else if (index > 0) {
+      otpDigits.value[index - 1] = ''
+      await nextTick()
+      inputRefs.value[index - 1]?.focus()
+    }
+
+    syncOtp(updateField)
+    clearInlineMessages()
+    return
+  }
+
+  if (event.key === 'ArrowLeft' && index > 0) {
+    event.preventDefault()
+    inputRefs.value[index - 1]?.focus()
+  }
+
+  if (event.key === 'ArrowRight' && index < otpDigits.value.length - 1) {
+    event.preventDefault()
+    inputRefs.value[index + 1]?.focus()
+  }
+}
+
+async function handlePaste(event: ClipboardEvent, updateField: Function): Promise<void> {
+  event.preventDefault()
+  const pastedData = (event.clipboardData?.getData('text') || '').replace(/\D/g, '').slice(0, 6)
+
+  if (!pastedData) {
+    hasError.value = true
+    errorMessage.value = 'Aucun chiffre valide n’a été détecté dans le contenu collé.'
+    return
+  }
+
+  for (let index = 0; index < 6; index += 1) {
+    otpDigits.value[index] = pastedData[index] || ''
+  }
+
+  syncOtp(updateField)
+  clearInlineMessages()
+
+  await nextTick()
+  inputRefs.value[Math.min(pastedData.length, 6) - 1]?.focus()
+}
+
+async function handleOtpVerification(): Promise<void> {
+  if (timeRemaining.value <= 0) {
+    const message = 'Le code a expiré. Demandez un nouveau code.'
+    hasError.value = true
+    errorMessage.value = message
+    authFormRef.value?.setGlobalError(message)
+    throw new Error(message)
+  }
+
+  if (!isOtpComplete.value) {
+    const message = 'Saisissez les 6 chiffres du code de vérification.'
+    hasError.value = true
+    errorMessage.value = message
+    authFormRef.value?.setGlobalError(message)
+    throw new Error(message)
+  }
+
+  try {
+    const result = await otpCtrl.verifyOtp(otpCode.value)
+
+    if (!result.success) {
+      failedAttempts.value += 1
+      hasError.value = true
+      isVerified.value = false
+
+      const attemptsLeft = Math.max(0, MAX_ATTEMPTS - failedAttempts.value)
+      let message = result.message || 'Code incorrect. Veuillez réessayer.'
+
+      if (attemptsLeft > 0 && attemptsLeft <= 2) {
+        message += ` (${attemptsLeft} tentative${attemptsLeft > 1 ? 's' : ''} restante${attemptsLeft > 1 ? 's' : ''})`
+      }
+
+      if (failedAttempts.value >= MAX_ATTEMPTS) {
+        message = 'Trop de tentatives échouées. Demandez un nouveau code avant de réessayer.'
+      }
+
+      errorMessage.value = message
+      authFormRef.value?.setGlobalError(message)
+      otpDigits.value = ['', '', '', '', '', '']
+      await nextTick()
+      inputRefs.value[0]?.focus()
+      throw new Error(message)
+    }
+
+    isVerified.value = true
+    hasError.value = false
+    errorMessage.value = ''
+    successMessage.value = result.message || 'Code vérifié avec succès.'
+    failedAttempts.value = 0
+    stopOtpTimer()
+
+    authFormRef.value?.setGlobalSuccess(successMessage.value)
+
+    window.setTimeout(() => {
+      void router.push('/dashboard')
+    }, 900)
+  } catch (error: any) {
+    if (!errorMessage.value) {
+      const message = 'Impossible de vérifier le code pour le moment. Vérifiez votre connexion et réessayez.'
+      hasError.value = true
+      errorMessage.value = message
+      authFormRef.value?.setGlobalError(message)
+    }
+    throw error
+  }
+}
+
+async function handleResendOtp(): Promise<void> {
+  if (resendCooldown.value > 0 || isResending.value) return
+
+  if (!email.value) {
+    const message = 'Adresse email introuvable. Revenez à la connexion pour demander un nouveau code.'
+    hasError.value = true
+    errorMessage.value = message
+    authFormRef.value?.setGlobalError(message)
+    return
+  }
+
+  try {
+    isResending.value = true
+    clearInlineMessages()
+
+    const response = await AuthService.retry(email.value)
+
+    if (!response.success) {
+      const message = response.message || 'Impossible de renvoyer le code.'
+      hasError.value = true
+      errorMessage.value = message
+      authFormRef.value?.setGlobalError(message)
+      return
+    }
+
+    otpDigits.value = ['', '', '', '', '', '']
+    failedAttempts.value = 0
+    hasError.value = false
+    errorMessage.value = ''
+    isVerified.value = false
+    successMessage.value = 'Un nouveau code vient d’être envoyé.'
+    authFormRef.value?.setGlobalSuccess(successMessage.value)
+
+    startOtpTimer()
+    startResendCooldown()
+
+    await nextTick()
     inputRefs.value[0]?.focus()
-  })
+  } catch (error) {
+    console.error('Erreur lors du renvoi de l’OTP:', error)
+    const message = 'Impossible de renvoyer le code. Vérifiez votre connexion et réessayez.'
+    hasError.value = true
+    errorMessage.value = message
+    authFormRef.value?.setGlobalError(message)
+  } finally {
+    isResending.value = false
+  }
+}
+
+onMounted(() => {
+  email.value = String(route.query.email || '')
+  startOtpTimer()
+  void nextTick(() => inputRefs.value[0]?.focus())
 })
 
 onUnmounted(() => {
   stopOtpTimer()
   stopResendCooldown()
 })
-
-const handleFocus = (index: number) => {
-  nextTick(() => {
-    inputRefs.value[index]?.select()
-  })
-
-  if (hasError.value && timeRemaining.value > 0) {
-    hasError.value = false
-    errorMessage.value = ''
-    successMessage.value = ''
-  }
-}
-
-const handleInput = async (index: number, event: Event, updateField: Function) => {
-  const target = event.target as HTMLInputElement
-  const value = target.value
-
-  if (!/^\d*$/.test(value)) {
-    otpDigits.value[index] = ''
-    errorMessage.value = '⚠️ Veuillez saisir uniquement des chiffres'
-    hasError.value = true
-    setTimeout(() => {
-      if (errorMessage.value.includes('chiffres')) {
-        errorMessage.value = ''
-        hasError.value = false
-      }
-    }, 2000)
-    return
-  }
-
-  otpDigits.value[index] = value
-  updateField('otp', otpDigits.value.join(''))
-
-  hasError.value = false
-  errorMessage.value = ''
-  successMessage.value = ''
-
-  if (value && index < 5) {
-    await nextTick()
-    inputRefs.value[index + 1]?.focus()
-  }
-
-  if (isOtpComplete.value && !hasError.value) {
-    successMessage.value = '"Code complet"'
-  }
-}
-
-const handleKeydown = async (index: number, event: KeyboardEvent) => {
-  if (event.key === 'Backspace') {
-    event.preventDefault()
-    if (otpDigits.value[index]) {
-      otpDigits.value[index] = ''
-      successMessage.value = ''
-    } else if (index > 0) {
-      otpDigits.value[index - 1] = ''
-      await nextTick()
-      inputRefs.value[index - 1]?.focus()
-      successMessage.value = ''
-    }
-  } else if (event.key === 'ArrowLeft' && index > 0) {
-    event.preventDefault()
-    inputRefs.value[index - 1]?.focus()
-  } else if (event.key === 'ArrowRight' && index < 5) {
-    event.preventDefault()
-    inputRefs.value[index + 1]?.focus()
-  } else if (event.key === 'Enter' && isOtpComplete.value) {
-    event.preventDefault()
-    handleOtpVerification({ otp: otpDigits.value.join('') })
-  }
-}
-
-const handlePaste = async (event: ClipboardEvent, updateField: Function) => {
-  event.preventDefault()
-  const pastedData = event.clipboardData?.getData('text').replace(/\D/g, '') || ''
-
-  if (pastedData.length === 0) {
-    errorMessage.value = '⚠️ Aucun chiffre détecté dans le presse-papier'
-    hasError.value = true
-    setTimeout(() => {
-      errorMessage.value = ''
-      hasError.value = false
-    }, 5000)
-    return
-  }
-
-  if (pastedData.length > 6) {
-    errorMessage.value = '⚠️ Le code ne peut pas dépasser 6 chiffres'
-    hasError.value = true
-    setTimeout(() => {
-      errorMessage.value = ''
-      hasError.value = false
-    }, 5000)
-    return
-  }
-
-  for (let i = 0; i < 6; i++) {
-    otpDigits.value[i] = pastedData[i] || ''
-  }
-
-  updateField('otp', otpDigits.value.join(''))
-
-  await nextTick()
-  const nextEmptyIndex = pastedData.length < 6 ? pastedData.length : 5
-  inputRefs.value[nextEmptyIndex]?.focus()
-}
-
-// ✅ MODIFICATION IMPORTANTE : Retourner une promesse
-const handleOtpVerification = (formData: any): Promise<void> => {
-  return new Promise(async (resolve, reject) => {
-    const code = otpDigits.value.join('')
-
-    // Validation avant soumission
-    if (!validateOtp()) {
-      reject(new Error('Code invalide'))
-      return
-    }
-
-    try {
-      console.log('🔐 Vérification du code OTP...')
-
-      // Appel du contrôleur pour vérifier l'OTP
-      const result = await otpCtrl.verifyOtp(code)
-
-      if (result.success) {
-        console.log('✅ Code vérifié avec succès')
-
-        // Afficher message de succès dans AuthForm
-        isVerified.value = true
-        if (authFormRef.value) {
-          authFormRef.value.setGlobalSuccess(result.message || '🎉 Code vérifié avec succès !')
-        }
-
-        // Arrêter le timer
-        stopOtpTimer()
-
-        // Stocker les infos utilisateur si nécessaire
-        if (result.user) {
-          localStorage.setItem('user', JSON.stringify(result.user))
-        }
-
-        // Réinitialiser le compteur de tentatives
-        failedAttempts.value = 0
-
-        // Attendre avant la redirection (AuthForm gère l'affichage du succès)
-        setTimeout(() => {
-          router.push('/dashboard')
-        }, 3500) // Temps total pour voir le loader + le message de succès
-
-        // Résoudre la promesse pour signaler le succès
-        resolve()
-
-      } else {
-        // Incrémenter le compteur de tentatives échouées
-        failedAttempts.value++
-
-        // Afficher les erreurs
-        hasError.value = true
-        isVerified.value = false
-        const errorMsg = result.message || '❌ Code incorrect. Veuillez réessayer.'
-
-        if (authFormRef.value) {
-          authFormRef.value.setGlobalError(errorMsg)
-        }
-
-        // Ajouter info sur les tentatives restantes
-        const attemptsLeft = MAX_ATTEMPTS - failedAttempts.value
-        if (attemptsLeft > 0 && attemptsLeft <= 2) {
-          const attemptsMsg = ` (${attemptsLeft} tentative${attemptsLeft > 1 ? 's' : ''} restante${attemptsLeft > 1 ? 's' : ''})`
-          if (authFormRef.value) {
-            authFormRef.value.setGlobalError(errorMsg + attemptsMsg)
-          }
-        }
-
-        // Si trop de tentatives, bloquer
-        if (failedAttempts.value >= MAX_ATTEMPTS) {
-          if (authFormRef.value) {
-            authFormRef.value.setGlobalError('🚫 Trop de tentatives échouées. Attendez 15 minutes ou demandez un nouveau code.')
-          }
-          showHelp.value = true
-        }
-
-        // Vider les champs et refocus
-        otpDigits.value = ['', '', '', '', '', '']
-        await nextTick()
-        inputRefs.value[0]?.focus()
-
-        reject(new Error(errorMsg))
-      }
-    } catch (error: any) {
-      hasError.value = true
-      isVerified.value = false
-      const errorMsg = '⚠️ Erreur lors de la vérification. Vérifiez votre connexion et réessayez.'
-
-      if (authFormRef.value) {
-        authFormRef.value.setGlobalError(errorMsg)
-      }
-
-      console.error('Erreur lors de la vérification OTP:', error)
-
-      // Vider les champs en cas d'erreur
-      otpDigits.value = ['', '', '', '', '', '']
-      await nextTick()
-      inputRefs.value[0]?.focus()
-
-      reject(error)
-    }
-  })
-}
-
-// Gestion du renvoi de l'OTP (reste identique)
-const handleResendOtp = async () => {
-  if (resendCooldown.value > 0 || isResending.value) return
-
-  try {
-    isResending.value = true
-    errorMessage.value = ''
-    successMessage.value = '📧 Envoi en cours...'
-
-    const response = await AuthService.retry(email.value)
-
-    await new Promise(resolve => setTimeout(resolve, 1000))
-
-    if (response.success) {
-      successMessage.value = '📧 Nouveau code envoyé ! Consultez votre boîte email.'
-      errorMessage.value = ''
-      hasError.value = false
-
-      otpDigits.value = ['', '', '', '', '', '']
-      failedAttempts.value = 0
-
-      startResendCooldown()
-
-      await nextTick()
-      inputRefs.value[0]?.focus()
-
-      setTimeout(() => {
-        if (successMessage.value.includes('Nouveau code')) {
-          successMessage.value = ''
-        }
-      }, 4000)
-    } else {
-      errorMessage.value = '⚠️ Impossible de renvoyer le code. Vérifiez votre connexion et réessayez.'
-      successMessage.value = ''
-      hasError.value = true
-    }
-  } catch (error) {
-    errorMessage.value = '⚠️ Impossible de renvoyer le code. Vérifiez votre connexion et réessayez.'
-    successMessage.value = ''
-    hasError.value = true
-    console.error('Erreur lors du renvoi de l\'OTP:', error)
-  } finally {
-    isResending.value = false
-  }
-}
 </script>

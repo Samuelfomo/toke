@@ -62,7 +62,7 @@ defineEmits<{ refresh: []; toggleFilters: []; toggleQuality: []; export: [] }>()
         <h1 class="text-2xl font-bold tracking-tight text-slate-950 sm:text-3xl">{{ title }}</h1>
         <div class="mt-1 flex flex-wrap items-center gap-x-3 gap-y-2 text-xs text-slate-600">
           <span v-if="managerName" class="inline-flex items-center gap-2"><span class="h-2 w-2 rounded-full bg-indigo-500" aria-hidden="true" />{{ managerName }}</span>
-          <span>{{ periodLabel }}</span>
+          <span class="font-bold text-[#004aad]">{{ periodLabel }}</span>
           <span v-if="overview" class="font-medium text-slate-800">{{ overview.scope.teamSize }} collaborateur{{ overview.scope.teamSize > 1 ? 's' : '' }}</span>
           <span v-if="overview" class="text-slate-500">{{ overview.scope.siteGuid ? 'Site filtré' : 'Tous les sites' }}</span>
 
