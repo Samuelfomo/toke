@@ -87,52 +87,6 @@ router.get(
   },
 );
 
-router.get(
-  '/attendance/employee/:guid/daily',
-  TenantConfig.authenticate,
-  Ensure.get(),
-  async (req: Request, res: Response) => {
-    try {
-      const { guid } = req.params;
-      const { manager, date, include_history = 'true' } = req.query;
-
-      if (!UsersValidationUtils.validateGuid(guid)) {
-        return R.handleError(res, HttpStatus.BAD_REQUEST, {
-          code: 'guid_invalid',
-          message: 'GUID is invalid',
-        });
-      }
-
-      if (!manager || !UsersValidationUtils.validateGuid(String(manager))) {
-        return R.handleError(res, HttpStatus.BAD_REQUEST, {
-          code: 'manager_guid_invalid',
-          message: 'Manager GUID is invalid',
-        });
-      }
-
-      const client = (req as any).client.reference;
-      const result = await UserService.getEmployeeAttendanceDaily(
-        client,
-        guid as string,
-        String(manager),
-        date ? String(date) : undefined,
-        String(include_history) !== 'false',
-      );
-
-      if (result.status !== HttpStatus.SUCCESS) {
-        return R.handleError(res, result.status, result.response);
-      }
-
-      return R.handleSuccess(res, result.response);
-    } catch (error: any) {
-      return R.handleError(res, HttpStatus.INTERNAL_ERROR, {
-        code: 'employee_daily_attendance_failed',
-        message: error.message,
-      });
-    }
-  },
-);
-
 router.post('/', Ensure.post(), TenantConfig.authenticate, async (req: Request, res: Response) => {
   try {
     const client = (req as any).client.reference;

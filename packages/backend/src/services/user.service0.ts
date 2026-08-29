@@ -80,46 +80,6 @@ export class UserService {
     }
   }
 
-  static async getEmployeeAttendanceDaily(
-    reference: string,
-    employeeGuid: string,
-    managerGuid: string,
-    date?: string,
-    includeHistory: boolean = true,
-  ): Promise<{ status: number; response: any }> {
-    try {
-      const api = await getApiClient(reference);
-      const response = await api.get(`${userBaseUrl}/attendance/daily`, {
-        params: {
-          manager: managerGuid,
-          employee: employeeGuid,
-          ...(date ? { date } : {}),
-          include_history: includeHistory ? 'true' : 'false',
-        },
-      });
-
-      return {
-        status: response.status,
-        response: response.data.data,
-      };
-    } catch (error: any) {
-      if (error.response) {
-        return {
-          status: error.response.status,
-          response: error.response.data,
-        };
-      }
-
-      return {
-        status: HttpStatus.INTERNAL_ERROR,
-        response: {
-          message: error.request ? 'No response from server' : 'Unexpected error',
-          details: error.message,
-        },
-      };
-    }
-  }
-
   static async loadFiles(reference: string, data: string) {
     const api = await getApiClient(reference);
 
