@@ -9,9 +9,9 @@
           role="dialog"
           aria-modal="true"
           :aria-labelledby="titleId"
-          class="flex w-full max-w-3xl flex-col overflow-hidden rounded-2xl bg-white shadow-2xl"
+          class="flex max-h-[94vh] w-full max-w-3xl flex-col overflow-hidden rounded-2xl bg-white shadow-2xl"
         >
-          <header class="relative overflow-hidden bg-blue-700 px-5 py-4 text-white sm:px-6 sm:py-5">
+          <header class="relative overflow-hidden bg-blue-700 px-5 py-5 text-white sm:px-6 sm:py-6">
             <div class="absolute -right-10 -top-12 h-36 w-36 rounded-full bg-blue-500/25 blur-3xl" />
             <div class="relative flex items-start justify-between gap-4">
               <div>
@@ -19,14 +19,11 @@
                   <IconSparkles :size="16" />
                   Nouvelle proposition
                 </div>
-                <h2 :id="titleId" class="mt-1.5 text-xl font-bold">
-                  Générer une proposition de planning
-                </h2>
-                <p class="mt-1.5 max-w-xl text-xs leading-5 text-blue-100/80">
-                  {{ currentStepMeta.description }}
+                <h2 :id="titleId" class="mt-2 text-xl font-bold">Générer une proposition de planning</h2>
+                <p class="mt-2 max-w-xl text-xs leading-5 text-blue-100/80">
+                  Vérifiez les prérequis, choisissez une période, puis lancez le calcul. Le résultat restera un brouillon jusqu’à votre publication explicite.
                 </p>
               </div>
-
               <button
                 type="button"
                 class="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-white/10 text-white hover:bg-white/20 disabled:cursor-not-allowed disabled:opacity-50"
@@ -39,71 +36,28 @@
             </div>
           </header>
 
-          <div class="border-b border-slate-100 bg-white px-5 py-4 sm:px-6">
-            <ol class="grid grid-cols-3 gap-2" aria-label="Étapes de génération">
-              <li
-                v-for="step in steps"
-                :key="step.id"
-                class="relative"
-              >
-                <div class="flex items-center gap-2.5">
-                  <span
-                    class="flex h-8 w-8 shrink-0 items-center justify-center rounded-full border text-xs font-bold transition"
-                    :class="stepCircleClass(step.id)"
-                  >
-                    <IconCheck v-if="step.id < currentStep" :size="15" stroke-width="2.5" />
-                    <span v-else>{{ step.id }}</span>
-                  </span>
+          <div class="flex-1 space-y-5 overflow-y-auto px-5 py-5 sm:px-6 sm:py-6">
+            <div
+              v-if="readiness.errorMessage.value"
+              class="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-xs leading-5 text-amber-800"
+            >
+              {{ readiness.errorMessage.value }}
+              <button type="button" class="ml-2 font-bold underline" @click="readiness.load">Réessayer</button>
+            </div>
 
-                  <div class="min-w-0">
-                    <p
-                      class="truncate text-xs font-bold"
-                      :class="step.id === currentStep ? 'text-blue-700' : step.id < currentStep ? 'text-slate-700' : 'text-slate-400'"
-                    >
-                      {{ step.label }}
-                    </p>
-                    <p class="hidden truncate text-[10px] text-slate-400 sm:block">
-                      {{ step.shortDescription }}
-                    </p>
-                  </div>
-                </div>
+            <GenerationReadinessPanel
+              :items="readiness.readinessItems.value"
+              :loading="readiness.loading.value"
+              :percent="readiness.readinessPercent.value"
+              @open="openCorrection"
+            />
 
-              </li>
-            </ol>
-          </div>
-
-          <main class="px-5 py-5 sm:px-6 sm:py-6">
-            <!-- ÉTAPE 1 : PRÉREQUIS -->
-            <section v-if="currentStep === 1" class="space-y-4">
-              <div
-                v-if="readiness.errorMessage.value"
-                class="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-xs leading-5 text-amber-800"
-              >
-                {{ readiness.errorMessage.value }}
-                <button
-                  type="button"
-                  class="ml-2 font-bold underline"
-                  @click="readiness.load"
-                >
-                  Réessayer
-                </button>
-              </div>
-
-              <GenerationReadinessPanel
-                :items="readiness.readinessItems.value"
-                :loading="readiness.loading.value"
-                :percent="readiness.readinessPercent.value"
-                @open="openCorrection"
-              />
-            </section>
-
-            <!-- ÉTAPE 2 : PÉRIODE -->
-            <section v-else-if="currentStep === 2" class="rounded-2xl border border-slate-200 bg-white p-4 sm:p-5">
+            <section class="rounded-2xl border border-slate-200 bg-white p-4 sm:p-5">
               <div class="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
                 <div>
                   <h3 class="text-sm font-bold text-slate-900">Période à planifier</h3>
                   <p class="mt-1 text-xs leading-5 text-slate-500">
-                    Choisissez une durée rapide ou définissez vos propres dates.
+                    Les raccourcis calculent automatiquement la date de fin à partir du prochain lundi.
                   </p>
                 </div>
                 <span class="w-fit rounded-full bg-slate-100 px-3 py-1 text-xs font-bold text-slate-600">
@@ -128,9 +82,7 @@
 
               <div class="mt-4 grid gap-4 sm:grid-cols-2">
                 <div>
-                  <label for="suggestion-period-from" class="text-xs font-bold text-slate-700">
-                    Date de début
-                  </label>
+                  <label for="suggestion-period-from" class="text-xs font-bold text-slate-700">Date de début</label>
                   <input
                     id="suggestion-period-from"
                     v-model="periodFrom"
@@ -140,11 +92,8 @@
                     @input="activePreset = 'custom'"
                   />
                 </div>
-
                 <div>
-                  <label for="suggestion-period-to" class="text-xs font-bold text-slate-700">
-                    Date de fin
-                  </label>
+                  <label for="suggestion-period-to" class="text-xs font-bold text-slate-700">Date de fin</label>
                   <input
                     id="suggestion-period-to"
                     v-model="periodTo"
@@ -167,63 +116,22 @@
               </div>
             </section>
 
-            <!-- ÉTAPE 3 : CONFIRMATION -->
-            <section v-else class="space-y-4">
-              <div class="rounded-2xl border border-slate-200 bg-white p-5">
-                <div class="flex items-start gap-3">
-                  <span class="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-blue-50 text-blue-700">
-                    <IconClipboardCheck :size="20" />
-                  </span>
-                  <div>
-                    <h3 class="text-sm font-bold text-slate-900">Vérifiez avant de lancer le calcul</h3>
-                    <p class="mt-1 text-xs leading-5 text-slate-500">
-                      Le solveur créera uniquement une proposition. Aucun planning ne sera publié automatiquement.
-                    </p>
-                  </div>
-                </div>
+            <div
+              v-if="errorMessage"
+              class="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-xs leading-5 text-red-700"
+            >
+              {{ errorMessage }}
+            </div>
+          </div>
 
-                <dl class="mt-5 grid gap-3 sm:grid-cols-3">
-                  <div class="rounded-xl bg-slate-50 p-3.5">
-                    <dt class="text-[10px] font-bold uppercase tracking-[0.12em] text-slate-400">Prérequis</dt>
-                    <dd class="mt-1 flex items-center gap-1.5 text-xs font-bold text-emerald-700">
-                      <IconCheck :size="14" />
-                      Validés
-                    </dd>
-                  </div>
-
-                  <div class="rounded-xl bg-slate-50 p-3.5">
-                    <dt class="text-[10px] font-bold uppercase tracking-[0.12em] text-slate-400">Période</dt>
-                    <dd class="mt-1 text-xs font-bold text-slate-800">{{ periodLabel }}</dd>
-                  </div>
-
-                  <div class="rounded-xl bg-slate-50 p-3.5">
-                    <dt class="text-[10px] font-bold uppercase tracking-[0.12em] text-slate-400">Durée</dt>
-                    <dd class="mt-1 text-xs font-bold text-slate-800">{{ durationDays }} jour(s)</dd>
-                  </div>
-                </dl>
-              </div>
-
-              <div class="rounded-xl border border-blue-100 bg-blue-50 px-4 py-3 text-xs leading-5 text-blue-800">
-                Après génération, vous pourrez contrôler et ajuster la proposition avant de la valider et de la publier.
-              </div>
-
-              <div
-                v-if="errorMessage"
-                class="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-xs leading-5 text-red-700"
-              >
-                {{ errorMessage }}
-              </div>
-            </section>
-          </main>
-
-          <footer class="flex flex-col-reverse gap-3 border-t border-slate-100 bg-slate-50 px-5 py-4 sm:flex-row sm:items-center sm:justify-between sm:px-6">
+          <footer class="flex flex-col-reverse gap-2 border-t border-slate-100 bg-slate-50 px-5 py-4 sm:flex-row sm:items-center sm:justify-between sm:px-6">
             <p class="text-xs leading-5 text-slate-500">
-              {{ footerMessage }}
+              <template v-if="readiness.loading.value">Vérification des prérequis en cours…</template>
+              <template v-else-if="readiness.ready.value">Tous les prérequis sont validés.</template>
+              <template v-else>{{ readiness.blockerCount.value }} blocage(s) à corriger avant le calcul.</template>
             </p>
-
             <div class="flex items-center justify-end gap-2">
               <button
-                v-if="currentStep === 1"
                 type="button"
                 class="rounded-lg border border-slate-200 bg-white px-4 py-2.5 text-xs font-semibold text-slate-600 hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50"
                 :disabled="saving"
@@ -231,32 +139,7 @@
               >
                 Annuler
               </button>
-
               <button
-                v-else
-                type="button"
-                class="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-4 py-2.5 text-xs font-semibold text-slate-600 hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50"
-                :disabled="saving"
-                @click="goPrevious"
-              >
-                <IconChevronLeft :size="15" />
-                Précédent
-              </button>
-
-              <button
-                v-if="currentStep < 3"
-                type="button"
-                class="inline-flex items-center gap-1.5 rounded-lg bg-blue-700 px-5 py-2.5 text-xs font-bold text-white hover:bg-blue-800 disabled:cursor-not-allowed disabled:bg-slate-300"
-                :disabled="!canGoNext"
-                :title="nextBlocker"
-                @click="goNext"
-              >
-                Suivant
-                <IconChevronRight :size="15" />
-              </button>
-
-              <button
-                v-else
                 type="button"
                 class="inline-flex items-center gap-2 rounded-lg bg-blue-700 px-5 py-2.5 text-xs font-bold text-white hover:bg-blue-800 disabled:cursor-not-allowed disabled:bg-slate-300"
                 :disabled="saving || !validPeriod || !readiness.ready.value || readiness.loading.value"
@@ -278,15 +161,7 @@
 <script setup lang="ts">
 import { computed, ref, watch } from 'vue'
 import { useRouter } from 'vue-router'
-import {
-  IconCheck,
-  IconChevronLeft,
-  IconChevronRight,
-  IconClipboardCheck,
-  IconLoader2,
-  IconSparkles,
-  IconX,
-} from '@tabler/icons-vue'
+import { IconLoader2, IconSparkles, IconX } from '@tabler/icons-vue'
 import ScheduleSuggestionService from '@/service/ScheduleSuggestionService'
 import { useBodyScrollLock } from '@/views/planning/composables/useBodyScrollLock'
 import { formatDate, responseError } from '../planningSuggestion.helpers'
@@ -303,31 +178,9 @@ const errorMessage = ref('')
 const periodFrom = ref('')
 const periodTo = ref('')
 const activePreset = ref('14-days')
-const currentStep = ref<1 | 2 | 3>(1)
 const today = new Date().toISOString().slice(0, 10)
 const managerGuidRef = computed(() => props.managerGuid)
 const readiness = useGenerationReadiness(managerGuidRef)
-
-const steps = [
-  {
-    id: 1 as const,
-    label: 'Prérequis',
-    shortDescription: 'Vérifier la configuration',
-    description: 'Vérifiez que les profils, besoins et règles nécessaires sont prêts avant de poursuivre.',
-  },
-  {
-    id: 2 as const,
-    label: 'Période',
-    shortDescription: 'Définir les dates',
-    description: 'Choisissez précisément la période sur laquelle Toké doit construire la proposition.',
-  },
-  {
-    id: 3 as const,
-    label: 'Confirmation',
-    shortDescription: 'Contrôler et lancer',
-    description: 'Contrôlez les paramètres retenus avant de lancer le calcul du planning.',
-  },
-]
 
 const presets = [
   { id: '7-days', label: '7 jours' },
@@ -336,8 +189,6 @@ const presets = [
   { id: 'next-month', label: 'Mois prochain' },
 ]
 
-const currentStepMeta = computed(() => steps[currentStep.value - 1]!)
-
 useBodyScrollLock(computed(() => props.open))
 
 watch(
@@ -345,7 +196,6 @@ watch(
   async (open) => {
     if (!open) return
     errorMessage.value = ''
-    currentStep.value = 1
     applyPreset('14-days')
     await readiness.load()
   },
@@ -411,49 +261,6 @@ const periodLabel = computed(() =>
     : 'Période invalide',
 )
 
-const canGoNext = computed(() => {
-  if (saving.value) return false
-
-  if (currentStep.value === 1) {
-    return !readiness.loading.value && readiness.ready.value
-  }
-
-  if (currentStep.value === 2) {
-    return validPeriod.value
-  }
-
-  return false
-})
-
-const nextBlocker = computed(() => {
-  if (currentStep.value === 1) {
-    if (readiness.loading.value) return 'Vérification des prérequis en cours.'
-    if (!readiness.ready.value) return 'Corrigez les prérequis signalés avant de poursuivre.'
-  }
-
-  if (currentStep.value === 2 && !validPeriod.value) {
-    return 'Choisissez une période valide avant de poursuivre.'
-  }
-
-  return 'Passer à l’étape suivante.'
-})
-
-const footerMessage = computed(() => {
-  if (currentStep.value === 1) {
-    if (readiness.loading.value) return 'Vérification des prérequis en cours…'
-    if (readiness.ready.value) return 'Tous les prérequis sont validés.'
-    return `${readiness.blockerCount.value} blocage(s) à corriger avant de poursuivre.`
-  }
-
-  if (currentStep.value === 2) {
-    return validPeriod.value
-      ? `${durationDays.value} jour(s) sélectionné(s).`
-      : 'Choisissez une période valide.'
-  }
-
-  return 'La proposition restera un brouillon jusqu’à votre validation explicite.'
-})
-
 const generateBlocker = computed(() => {
   if (saving.value) return 'Calcul en cours.'
   if (readiness.loading.value) return 'Vérification des prérequis en cours.'
@@ -461,28 +268,6 @@ const generateBlocker = computed(() => {
   if (!validPeriod.value) return 'Choisissez une période valide.'
   return 'Générer une proposition de planning.'
 })
-
-function stepCircleClass(stepId: number): string {
-  if (stepId < currentStep.value) {
-    return 'border-emerald-200 bg-emerald-50 text-emerald-700'
-  }
-
-  if (stepId === currentStep.value) {
-    return 'border-blue-700 bg-blue-700 text-white'
-  }
-
-  return 'border-slate-200 bg-white text-slate-400'
-}
-
-function goNext(): void {
-  if (!canGoNext.value || currentStep.value >= 3) return
-  currentStep.value = (currentStep.value + 1) as 1 | 2 | 3
-}
-
-function goPrevious(): void {
-  if (saving.value || currentStep.value <= 1) return
-  currentStep.value = (currentStep.value - 1) as 1 | 2 | 3
-}
 
 async function openCorrection(routeName: string): Promise<void> {
   if (saving.value) return
@@ -492,7 +277,6 @@ async function openCorrection(routeName: string): Promise<void> {
 
 async function generate(): Promise<void> {
   if (
-    currentStep.value !== 3 ||
     !validPeriod.value ||
     !props.managerGuid ||
     saving.value ||

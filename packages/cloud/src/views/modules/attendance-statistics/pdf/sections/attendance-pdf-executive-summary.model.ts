@@ -45,6 +45,11 @@ export interface AttendancePdfExecutiveAttentionItem {
 export interface AttendancePdfExecutiveSummaryModel {
   title: string;
   scopeLine: string;
+  isSingleDay: boolean;
+  statusPanelTitle: string;
+  eligibleGroupLabel: string;
+  excludedGroupLabel: string;
+  attentionEmptyLabel: string;
   quality: AttendancePdfExecutiveQuality;
   kpis: AttendancePdfExecutiveKpi[];
   statusRows: AttendancePdfExecutiveStatusRow[];
@@ -56,95 +61,76 @@ function plural(value: number, singular: string, pluralValue: string = `${singul
   return value === 1 ? singular : pluralValue;
 }
 
-function countEmployeesWithStatus(overview: AttendanceOverview, status: AttendanceStatus): number {
-  // Agrégat de présentation uniquement : on compte les employés dont le backend
-  // a déjà retourné un total > 0 pour le statut. Ce nombre n'entre dans aucune
-  // formule de présence/ponctualité et ne remplace aucun KPI backend.
-  return overview.employees.filter((employee) => employee.statusTotals[status] > 0).length;
-}
-
 function buildKpis(overview: AttendanceOverview): AttendancePdfExecutiveKpi[] {
-  const cards = buildPrimaryAttendanceKpis(overview);
-  return cards.map((card) => {
+  return buildPrimaryAttendanceKpis(overview).map((card) => {
     switch (card.id) {
       case 'attendance_rate':
-        return {
-          id: card.id,
-          label: card.label,
-          value: card.value,
-          explanation:
-            overview.summary.rates.attendanceRate === null
-              ? 'Aucune journée éligible au taux sur la période.'
-              : `${overview.summary.rates.attendedWorkingDays} journée${overview.summary.rates.attendedWorkingDays === 1 ? '' : 's'} suivie${overview.summary.rates.attendedWorkingDays === 1 ? '' : 's'} / ${overview.summary.rates.employeeWorkingDaysExpected} attendue${overview.summary.rates.employeeWorkingDaysExpected === 1 ? '' : 's'}`,
-          accent: 'accent',
-        };
+        return { id: card.id, label: card.label, value: card.value, explanation: card.helper, accent: 'accent' };
       case 'punctuality_rate':
-        return {
-          id: card.id,
-          label: card.label,
-          value: card.value,
-          explanation:
-            overview.summary.rates.punctualityRate === null
-              ? 'Aucune présence éligible à la ponctualité.'
-              : `${overview.summary.rates.onTimeWorkingDays} à l'heure / ${overview.summary.rates.attendedWorkingDays} présence${overview.summary.rates.attendedWorkingDays === 1 ? '' : 's'}`,
-          accent: 'success',
-        };
-      case 'absences': {
-        const employees = countEmployeesWithStatus(overview, 'ABSENT');
-        return {
-          id: card.id,
-          label: card.label,
-          value: card.value,
-          explanation: `${employees} ${plural(employees, 'collaborateur', 'collaborateurs')} concerné${employees === 1 ? '' : 's'}`,
-          accent: 'danger',
-        };
-      }
-      case 'late_days': {
-        const employees = countEmployeesWithStatus(overview, 'LATE');
-        return {
-          id: card.id,
-          label: card.label,
-          value: card.value,
-          explanation: `${employees} ${plural(employees, 'collaborateur', 'collaborateurs')} concerné${employees === 1 ? '' : 's'}`,
-          accent: 'warning',
-        };
-      }
+        return { id: card.id, label: card.label, value: card.value, explanation: card.helper, accent: 'success' };
+      case 'absences':
+        return { id: card.id, label: card.label, value: card.value, explanation: card.helper, accent: 'danger' };
+      case 'late_days':
+        return { id: card.id, label: card.label, value: card.value, explanation: card.helper, accent: 'warning' };
       case 'issues':
-        return {
-          id: card.id,
-          label: card.label,
-          value: card.value,
-          explanation:
-            overview.summary.issueCount === 0
-              ? 'Aucun élément signalé par l’API.'
-              : `${overview.issues.length} ${plural(overview.issues.length, 'type', 'types')} d'anomalie`,
-          accent: 'warning',
-        };
+        return { id: card.id, label: card.label, value: card.value, explanation: card.helper, accent: 'warning' };
       case 'net_duration':
-        throw new Error('La durée nette ne fait pas partie des 5 KPI décisionnels de la synthèse.');
+        throw new Error('La durée nette ne fait pas partie des KPI décisionnels de la synthèse PDF.');
     }
   });
 }
 
-export function buildAttendancePdfExecutiveSummaryModel(
-  overview: AttendanceOverview,
-): AttendancePdfExecutiveSummaryModel {
-  const qualityPresentation = buildAttendanceDataQualityPresentation(overview.dataQuality);
-  const nonZeroQualitySignals = qualityPresentation.metrics
-    .filter((metric) => metric.value > 0)
-    .map((metric) => ({ label: metric.label, value: metric.value }));
+function buildStatusRows(overview: AttendanceOverview): AttendancePdfExecutiveStatusRow[] {
+  const statuses = (Object.keys(ATTENDANCE_STATUS_PRESENTATION) as AttendanceStatus[]).sort(
+    (left, right) =>
+      ATTENDANCE_STATUS_PRESENTATION[left].order - ATTENDANCE_STATUS_PRESENTATION[right].order,
+  );
 
-  const orderedStatuses = (Object.keys(ATTENDANCE_STATUS_PRESENTATION) as AttendanceStatus[])
-    .sort(
-      (left, right) =>
-        ATTENDANCE_STATUS_PRESENTATION[left].order - ATTENDANCE_STATUS_PRESENTATION[right].order,
-    )
-    .map((status) => ({
+  const allDays = overview.employees.flatMap((employee) => employee.days);
+
+  // Fallback de compatibilité si un snapshot ancien ne transporte pas le détail journalier.
+  if (allDays.length === 0) {
+    return statuses.map((status) => ({
       status,
       label: ATTENDANCE_STATUS_PRESENTATION[status].label,
       count: overview.summary.statusTotals[status],
       group: ATTENDANCE_STATUS_PRESENTATION[status].rateCategory,
     }));
+  }
+
+  const rows: AttendancePdfExecutiveStatusRow[] = [];
+  statuses.forEach((status) => {
+    const eligibleCount = allDays.filter((day) => day.status === status && day.rateEligible).length;
+    const excludedCount = allDays.filter((day) => day.status === status && !day.rateEligible).length;
+
+    if (eligibleCount > 0) {
+      rows.push({
+        status,
+        label: ATTENDANCE_STATUS_PRESENTATION[status].label,
+        count: eligibleCount,
+        group: 'eligible',
+      });
+    }
+    if (excludedCount > 0) {
+      rows.push({
+        status,
+        label: ATTENDANCE_STATUS_PRESENTATION[status].label,
+        count: excludedCount,
+        group: 'excluded',
+      });
+    }
+  });
+  return rows;
+}
+
+export function buildAttendancePdfExecutiveSummaryModel(
+  overview: AttendanceOverview,
+): AttendancePdfExecutiveSummaryModel {
+  const isSingleDay = overview.period.dayCount === 1;
+  const qualityPresentation = buildAttendanceDataQualityPresentation(overview.dataQuality);
+  const nonZeroQualitySignals = qualityPresentation.metrics
+    .filter((metric) => metric.value > 0)
+    .map((metric) => ({ label: metric.label, value: metric.value }));
 
   const sortedIssues = sortAttendanceIssues(overview.issues);
   const attentionItems = sortedIssues
@@ -158,7 +144,20 @@ export function buildAttendancePdfExecutiveSummaryModel(
 
   return {
     title: 'Synthèse décisionnelle',
-    scopeLine: `${overview.scope.teamSize} ${plural(overview.scope.teamSize, 'collaborateur', 'collaborateurs')} · ${overview.period.dayCount} ${plural(overview.period.dayCount, 'jour', 'jours')} analysé${overview.period.dayCount === 1 ? '' : 's'}`,
+    scopeLine: isSingleDay
+      ? `${overview.scope.teamSize} ${plural(overview.scope.teamSize, 'collaborateur', 'collaborateurs')} · situation du jour`
+      : `${overview.scope.teamSize} ${plural(overview.scope.teamSize, 'collaborateur', 'collaborateurs')} · ${overview.period.dayCount} ${plural(overview.period.dayCount, 'jour', 'jours')} analysé${overview.period.dayCount === 1 ? '' : 's'}`,
+    isSingleDay,
+    statusPanelTitle: isSingleDay ? 'Répartition des situations du jour' : 'Répartition des journées de travail',
+    eligibleGroupLabel: isSingleDay
+      ? 'Situations finalisées · prises en compte'
+      : 'Journées finalisées · prises en compte',
+    excludedGroupLabel: isSingleDay
+      ? 'Situations hors calcul ou encore en cours'
+      : 'Journées hors calcul ou non encore finalisées',
+    attentionEmptyLabel: isSingleDay
+      ? 'Aucun élément à examiner aujourd’hui.'
+      : 'Aucun élément à examiner sur la période.',
     quality: {
       level: qualityPresentation.level,
       label:
@@ -171,7 +170,7 @@ export function buildAttendancePdfExecutiveSummaryModel(
       signals: nonZeroQualitySignals,
     },
     kpis: buildKpis(overview),
-    statusRows: orderedStatuses,
+    statusRows: buildStatusRows(overview),
     attentionItems,
     hiddenAttentionTypeCount: Math.max(0, sortedIssues.length - attentionItems.length),
   };

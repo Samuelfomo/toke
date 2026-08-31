@@ -28,9 +28,9 @@ function drawMetrics(engine: AttendancePdfEngine, employee: AttendancePdfEmploye
   const gap = 3;
   const width = (engine.pages.contentWidth - gap * 4) / 5;
   const cards = [
-    ['Présence', employee.attendanceRate, `${employee.attendedDays} / ${employee.expectedDays} journées suivies`],
-    ['Ponctualité', employee.punctualityRate, `${employee.lateDays} retard${employee.lateDays > 1 ? 's' : ''}`],
-    ['Absences', String(employee.absentDays), 'journées finalisées'],
+    ['Présence', employee.attendanceRate, `${employee.attendedDays} / ${employee.expectedDays} journées finalisées avec présence`],
+    ['Ponctualité', employee.punctualityRate, `${employee.lateDays} retard${employee.lateDays > 1 ? 's' : ''} observé${employee.lateDays > 1 ? 's' : ''}`],
+    ['Absences confirmées', String(employee.absentDays), 'journées finalisées'],
     ['En attente', String(employee.pendingDays), `${employee.undeterminedDays} indéterminée${employee.undeterminedDays > 1 ? 's' : ''}`],
     ['À examiner', String(employee.issueCount), `${employee.issueTypeCount} type${employee.issueTypeCount > 1 ? 's' : ''}`],
   ] as const;

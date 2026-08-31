@@ -17,11 +17,11 @@ const emit = defineEmits<{
 
 const columns: Array<{ key: AttendanceEmployeeSortKey; label: string; align?: 'left' | 'right' }> = [
   { key: 'employee_name', label: 'Employé', align: 'left' },
-  { key: 'expected_days', label: 'Attendus' },
+  { key: 'expected_days', label: 'Jours finalisés' },
   { key: 'attendance_rate', label: 'Présence' },
   { key: 'punctuality_rate', label: 'Ponctualité' },
-  { key: 'late_days', label: 'Retards' },
-  { key: 'absence_days', label: 'Absences' },
+  { key: 'late_days', label: 'Retards observés' },
+  { key: 'absence_days', label: 'Absences confirmées' },
   { key: 'issue_count', label: 'À examiner' },
   { key: 'net_minutes', label: 'Durée nette' },
 ];
@@ -136,8 +136,8 @@ function sortAria(key: AttendanceEmployeeSortKey): 'ascending' | 'descending' | 
         <dl class="mt-4 grid grid-cols-2 gap-x-3 gap-y-3 text-sm">
           <div><dt class="text-xs text-slate-500">Présence</dt><dd class="font-bold text-slate-900">{{ formatPercentage(employee.rates.attendanceRate) }}</dd></div>
           <div><dt class="text-xs text-slate-500">Ponctualité</dt><dd class="font-semibold text-slate-800">{{ formatPercentage(employee.rates.punctualityRate) }}</dd></div>
-          <div><dt class="text-xs text-slate-500">Retards</dt><dd class="font-semibold text-amber-700">{{ employee.statusTotals.LATE }}</dd></div>
-          <div><dt class="text-xs text-slate-500">Absences</dt><dd class="font-semibold text-rose-700">{{ employee.statusTotals.ABSENT }}</dd></div>
+          <div><dt class="text-xs text-slate-500">Retards observés</dt><dd class="font-semibold text-amber-700">{{ employee.statusTotals.LATE }}</dd></div>
+          <div><dt class="text-xs text-slate-500">Absences confirmées</dt><dd class="font-semibold text-rose-700">{{ employee.statusTotals.ABSENT }}</dd></div>
           <div class="col-span-2"><dt class="text-xs text-slate-500">Durée nette</dt><dd class="font-semibold text-slate-800">{{ netDuration(employee) }}</dd></div>
         </dl>
 

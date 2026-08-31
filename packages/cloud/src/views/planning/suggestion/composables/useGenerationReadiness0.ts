@@ -15,12 +15,8 @@ import type {
 import EmployeePlanningProfileService from "../../../../service/EmployeePlanningProfileService";
 
 type MaybeGuidRef = Ref<string> | ComputedRef<string>
-type MaybeGuidListRef = Ref<string[]> | ComputedRef<string[]>
 
-export function useGenerationReadiness(
-  managerGuid: MaybeGuidRef,
-  temporarilyExcludedEmployeeGuids?: MaybeGuidListRef,
-) {
+export function useGenerationReadiness(managerGuid: MaybeGuidRef) {
   const teamStore = useTeamStore()
   const loading = ref(false)
   const loaded = ref(false)
@@ -34,53 +30,31 @@ export function useGenerationReadiness(
     employees.value.filter((employee) => employee.isActive !== false),
   )
 
-  const temporarilyExcludedGuidSet = computed(
-    () => new Set(temporarilyExcludedEmployeeGuids ? unref(temporarilyExcludedEmployeeGuids) : []),
-  )
-
-  const includedActiveEmployees = computed(() =>
-    activeEmployees.value.filter(
-      (employee) => !temporarilyExcludedGuidSet.value.has(employee.guid),
-    ),
-  )
-
-  const effectiveProfiles = computed(() =>
-    profiles.value.filter(
-      (profile) =>
-        !profile.user?.guid ||
-        !temporarilyExcludedGuidSet.value.has(profile.user.guid),
-    ),
-  )
-
   const configuredGuids = computed(
     () =>
       new Set(
-        effectiveProfiles.value
+        profiles.value
           .filter((profile) => profile.active && profile.user?.guid)
           .map((profile) => profile.user!.guid),
       ),
   )
 
-  const baseProfilesReady = computed(() => {
-    if (activeEmployees.value.length > 0 && includedActiveEmployees.value.length === 0) {
-      return false
-    }
-
-    return includedActiveEmployees.value.length
-      ? includedActiveEmployees.value.every((employee) =>
+  const baseProfilesReady = computed(() =>
+    activeEmployees.value.length
+      ? activeEmployees.value.every((employee) =>
           configuredGuids.value.has(employee.guid),
         )
-      : effectiveProfiles.value.some((profile) => profile.active)
-  })
+      : profiles.value.some((profile) => profile.active),
+  )
 
   const missingProfileCount = computed(() =>
-    includedActiveEmployees.value.filter(
+    activeEmployees.value.filter(
       (employee) => !configuredGuids.value.has(employee.guid),
     ).length,
   )
 
   const rotationReadiness = computed(() =>
-    validateTeamRotationReadiness(effectiveProfiles.value, activeConfig.value),
+    validateTeamRotationReadiness(profiles.value, activeConfig.value),
   )
 
   const requirementSummary = computed(() =>
@@ -97,16 +71,12 @@ export function useGenerationReadiness(
     const result: PlanningReadinessItem[] = [
       {
         id: 'profiles',
-        label: includedActiveEmployees.value.length === 0
-          ? 'Aucun collaborateur inclus dans cette génération'
-          : baseProfilesReady.value
-            ? 'Tous les collaborateurs inclus ont un profil'
-            : `${missingProfileCount.value || 'Des'} profil(s) employé(s) manquant(s)`,
-        description: includedActiveEmployees.value.length === 0
-          ? 'Réincluez au moins un collaborateur avant de lancer le calcul.'
-          : baseProfilesReady.value
-            ? 'Le moteur connaît le mode de participation de chaque collaborateur inclus.'
-            : 'Configurez les membres inclus ou excluez-les temporairement de cette génération.',
+        label: baseProfilesReady.value
+          ? 'Tous les collaborateurs actifs ont un profil'
+          : `${missingProfileCount.value || 'Des'} profil(s) employé(s) manquant(s)`,
+        description: baseProfilesReady.value
+          ? 'Le moteur connaît le mode de participation de chaque collaborateur.'
+          : 'Configurez chaque membre actif de l’équipe avant de lancer le calcul.',
         ready: baseProfilesReady.value,
         routeName: 'planning-suggestion-profiles',
         actionLabel: 'Corriger',
@@ -238,8 +208,6 @@ export function useGenerationReadiness(
     loaded,
     errorMessage,
     profiles,
-    teamEmployees: activeEmployees,
-    includedEmployees: includedActiveEmployees,
     requirements,
     activeConfig,
     readinessItems,

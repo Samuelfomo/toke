@@ -40,6 +40,7 @@ export interface AttendancePdfTrendModel {
   segments: AttendancePdfTrendSegment[];
   totalDays: number;
   maxDaysPerSegment: number;
+  isSingleDay: boolean;
 }
 
 function toRow(day: AttendanceDailyOverview): AttendancePdfTrendRow {
@@ -127,12 +128,15 @@ export function buildAttendancePdfTrendModel(overview: AttendanceOverview): Atte
     });
   }
 
+  const isSingleDay = overview.period.dayCount === 1;
   return {
-    title: 'Évolution de la période',
-    description:
-      'Lecture quotidienne des journées attendues, journées suivies, absences et retards. Le tableau ajoute la durée nette enregistrée de chaque journée, fournie par l’API.',
+    title: isSingleDay ? 'Situation du jour' : 'Évolution de la période',
+    description: isSingleDay
+      ? 'Lecture opérationnelle du jour : travail prévu, présences observées, retards observés et absences confirmées. Les taux restent calculés uniquement avec les situations déjà finalisées.'
+      : 'Lecture quotidienne du travail prévu, des présences observées, des retards observés et des absences confirmées. Les taux reposent uniquement sur les journées finalisées prises en compte.',
     segments,
     totalDays: rows.length,
     maxDaysPerSegment: maxDays,
+    isSingleDay,
   };
 }

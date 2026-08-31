@@ -17,6 +17,7 @@ import AttendanceOverviewSkeleton from '../components/AttendanceOverviewSkeleton
 import AttendancePdfExportDialog from '../components/AttendancePdfExportDialog.vue';
 import AttendanceSecondaryInsights from '../components/AttendanceSecondaryInsights.vue';
 import AttendanceStatusDistribution from '../components/AttendanceStatusDistribution.vue';
+import AttendanceTodayOperationalSummary from '../components/AttendanceTodayOperationalSummary.vue';
 import AttendanceVisualizations from '../components/AttendanceVisualizations.vue';
 import type { AttendanceStatisticsService } from '../services/attendance-statistics.service.js';
 import type { AttendanceStatus, BusinessDate } from '../types/attendance-statistics.types.js';
@@ -27,6 +28,7 @@ import { getAttendanceDataQualityNavigationTarget } from '../utils/attendance-da
 import type { AttendanceDashboardAction, AttendancePrimaryKpiId } from '../utils/attendance-dashboard-actions.js';
 import {
   clearAttendanceAnalysisDate,
+  clearAttendanceAnalysisRateEligibility,
   clearAttendanceAnalysisStatus,
   createAttendanceAnalysisContext,
   getAttendanceAnalysisEmployeeCount,
@@ -37,6 +39,7 @@ import type { AttendanceFiltersSubmission, AttendancePeriodPreset, AttendanceSit
 import { useAttendanceOverviewPage } from '../composables/useAttendanceOverviewPage.js';
 import { getAttendancePeriodForPreset } from '../utils/attendance-period.js';
 import { getAttendanceDataQualityLevel } from '../utils/attendance-status.js';
+import { isAttendanceTodayOnly } from '../utils/attendance-today.js';
 import type { AttendancePdfExportMode, AttendancePdfPresentationContext } from '../pdf/types/attendance-pdf.types.js';
 import type { AttendanceJsPdfLoader } from '../pdf/integration/attendance-pdf-runtime.js';
 import { buildAttendancePdfPresentationContext } from '../pdf/integration/attendance-pdf-ui.js';
@@ -94,6 +97,9 @@ const pdfExportFeedback = ref<string | null>(null);
 
 const userStore = useUserStore();
 
+const isTodayOperationalView = computed(() =>
+  page.overview.value ? isAttendanceTodayOnly(page.overview.value, props.businessToday) : false,
+);
 
 function handleDataQualityMetricExplore(metricId: AttendanceDataQualityMetricId): void {
   const target = getAttendanceDataQualityNavigationTarget(metricId);
@@ -124,12 +130,42 @@ function handleDayStatusExplore(payload: { date: BusinessDate; status: 'ABSENT' 
   employeesSectionRef.value?.applyDayStatusFilter(payload.date, payload.status);
 }
 
-function handlePeriodStatusExplore(status: AttendanceStatus): void {
+function handleTodayStatusExplore(status: Extract<AttendanceStatus, 'PENDING' | 'LATE' | 'ABSENT'>): void {
   analysisContext.value = createAttendanceAnalysisContext({
-    source: 'status_distribution',
+    source: 'today',
+    date: props.businessToday,
     status,
   });
-  employeesSectionRef.value?.applyStatusFilter(status);
+  employeesSectionRef.value?.applyDayStatusFilter(props.businessToday, status);
+}
+
+function handleTodayIssueExplore(
+  issue: Extract<AttendanceIssue, 'PRESENCE_ON_REST_DAY' | 'OPEN_SESSION'>,
+): void {
+  analysisContext.value = createAttendanceAnalysisContext({
+    source: 'today',
+    date: props.businessToday,
+    issue,
+  });
+  issuesSectionRef.value?.focusIssue(issue);
+}
+
+function handleTodayIssuesExplore(): void {
+  analysisContext.value = createAttendanceAnalysisContext({
+    source: 'today',
+    date: props.businessToday,
+    label: 'Éléments à examiner aujourd’hui',
+  });
+  issuesSectionRef.value?.focusSection();
+}
+
+function handlePeriodStatusExplore(payload: { status: AttendanceStatus; rateEligible: boolean }): void {
+  analysisContext.value = createAttendanceAnalysisContext({
+    source: 'status_distribution',
+    status: payload.status,
+    rateEligible: payload.rateEligible,
+  });
+  employeesSectionRef.value?.applyStatusEligibilityFilter(payload.status, payload.rateEligible);
 }
 
 function openIssueTarget(target: AttendanceIssueTarget): void {
@@ -171,9 +207,14 @@ function handleDashboardAction(action: AttendanceDashboardAction): void {
     analysisContext.value = createAttendanceAnalysisContext({
       source: 'kpi',
       status: action.status,
+      rateEligible: action.rateEligible,
       label: action.label,
     });
-    employeesSectionRef.value?.applyStatusFilter(action.status);
+    if (action.rateEligible === null) {
+      employeesSectionRef.value?.applyStatusFilter(action.status);
+    } else {
+      employeesSectionRef.value?.applyStatusEligibilityFilter(action.status, action.rateEligible);
+    }
     return;
   }
   if (action.type === 'show_all_employees_with_issues') {
@@ -200,6 +241,13 @@ function clearAnalysisStatus(): void {
   if (!analysisContext.value) return;
   analysisContext.value = clearAttendanceAnalysisStatus(analysisContext.value);
   employeesSectionRef.value?.clearStatusFilter();
+}
+
+
+function clearAnalysisRateEligibility(): void {
+  if (!analysisContext.value) return;
+  analysisContext.value = clearAttendanceAnalysisRateEligibility(analysisContext.value);
+  employeesSectionRef.value?.clearRateEligibilityFilter();
 }
 
 function handleManualEmployeeFilters(): void {
@@ -398,7 +446,25 @@ const liveMessage = computed(() => {
                 </div>
               </Transition>
 
-              <AttendanceKpiGrid :overview="page.overview.value" :selected-kpi-id="selectedKpiId" @select="handleKpiSelect" />
+              <AttendanceTodayOperationalSummary
+                v-if="isTodayOperationalView"
+                :overview="page.overview.value"
+                :business-today="businessToday"
+                @explore-status="handleTodayStatusExplore"
+                @explore-issue="handleTodayIssueExplore"
+                @explore-issues="handleTodayIssuesExplore"
+              />
+
+              <AttendanceKpiGrid
+                :overview="page.overview.value"
+                :selected-kpi-id="selectedKpiId"
+                :eyebrow="isTodayOperationalView ? 'Indicateurs consolidés' : 'Vue décisionnelle'"
+                :title="isTodayOperationalView ? 'Résultats finalisés' : 'Ce qu’il faut comprendre maintenant'"
+                :description="isTodayOperationalView
+                  ? 'Les taux ci-dessous sont calculés uniquement à partir des collaborateurs dont la plage de travail prévue est déjà terminée. Les situations encore en cours restent visibles dans le suivi du jour, mais ne modifient pas encore ces taux.'
+                  : 'Cliquez sur une carte pour comprendre la valeur puis accéder aux personnes ou anomalies concernées.'"
+                @select="handleKpiSelect"
+              />
               <AttendanceKpiDrilldown :overview="page.overview.value" :kpi-id="selectedKpiId" @action="handleDashboardAction" @close="selectedKpiId = null" />
 
               <AttendanceAnalysisContextBar
@@ -407,6 +473,7 @@ const liveMessage = computed(() => {
                 @clear="clearAnalysisContext"
                 @clear-date="clearAnalysisDate"
                 @clear-status="clearAnalysisStatus"
+                @clear-eligibility="clearAnalysisRateEligibility"
                 @export="openPdfExport('current_analysis')"
               />
 
@@ -421,6 +488,7 @@ const liveMessage = computed(() => {
                 <AttendanceStatusDistribution
                   :overview="page.overview.value"
                   :active-status="analysisContext?.status ?? null"
+                  :active-rate-eligible="analysisContext?.rateEligible ?? null"
                   @explore-status="handlePeriodStatusExplore"
                 />
               </div>

@@ -7,17 +7,19 @@ import { buildAttendanceStatusDistribution } from '../utils/attendance-visualiza
 interface Props {
   overview: AttendanceOverview;
   activeStatus?: AttendanceStatus | null;
+  activeRateEligible?: boolean | null;
 }
 
 const props = defineProps<Props>();
 const emit = defineEmits<{
-  exploreStatus: [status: AttendanceStatus];
+  exploreStatus: [payload: { status: AttendanceStatus; rateEligible: boolean }];
 }>();
 const groups = computed(() => buildAttendanceStatusDistribution(props.overview));
+const isSingleDay = computed(() => props.overview.period.dayCount === 1);
 
-function exploreStatus(status: AttendanceStatus, count: number): void {
+function exploreStatus(status: AttendanceStatus, count: number, rateEligible: boolean): void {
   if (count <= 0) return;
-  emit('exploreStatus', status);
+  emit('exploreStatus', { status, rateEligible });
 }
 </script>
 
@@ -26,10 +28,12 @@ function exploreStatus(status: AttendanceStatus, count: number): void {
     <div class="max-w-3xl">
       <p class="text-xs font-bold uppercase tracking-[0.18em] text-indigo-600">Lecture journalière</p>
       <h2 id="attendance-status-title" class="mt-1 text-lg font-bold text-slate-950 sm:text-xl">
-        Répartition des journées de travail
+        {{ isSingleDay ? 'Répartition des situations du jour' : 'Répartition des journées de travail' }}
       </h2>
       <p class="mt-1 text-sm leading-6 text-slate-600">
-        Visualisez la répartition des journées selon leur situation. Sélectionnez un statut pour voir immédiatement les collaborateurs concernés.
+        {{ isSingleDay
+          ? 'Visualisez la situation de chaque collaborateur aujourd’hui. Sélectionnez un statut pour voir immédiatement les personnes concernées.'
+          : 'Visualisez la répartition des journées selon leur situation. Sélectionnez un statut pour voir immédiatement les collaborateurs concernés.' }}
       </p>
     </div>
 
@@ -51,7 +55,23 @@ function exploreStatus(status: AttendanceStatus, count: number): void {
         </div>
 
 
-        <div class="mt-5 space-y-3">
+        <div
+          v-if="group.total === 0"
+          class="mt-5 rounded-xl border border-dashed border-slate-200 bg-slate-50 px-4 py-6 text-center"
+        >
+          <p class="text-sm font-semibold text-slate-700">{{ isSingleDay ? 'Aucune situation dans cette catégorie' : 'Aucune journée dans cette catégorie' }}</p>
+          <p class="mt-1 text-xs leading-5 text-slate-500">
+            {{ group.id === 'rate_eligible'
+              ? (isSingleDay
+                  ? 'Aucune situation du jour n’est encore finalisée et prise en compte dans les taux.'
+                  : 'Aucune journée n’est encore finalisée et prise en compte dans les taux pour ce périmètre.')
+              : (isSingleDay
+                  ? 'Toutes les situations du jour sont déjà finalisées pour les taux.'
+                  : 'Toutes les journées de ce périmètre sont déjà prises en compte dans les taux.') }}
+          </p>
+        </div>
+
+        <div v-else class="mt-5 space-y-3">
           <button
               v-for="item in group.items"
               :key="item.status"
@@ -76,7 +96,7 @@ function exploreStatus(status: AttendanceStatus, count: number): void {
                 item.tone === 'info'
                   ? 'border-sky-200 hover:border-sky-400 focus-visible:ring-sky-200'
                   : '',
-                activeStatus === item.status
+                activeStatus === item.status && activeRateEligible === (group.id === 'rate_eligible')
                   ? {
                       'border-emerald-500 ring-2 ring-emerald-300':
                         item.tone === 'positive',
@@ -96,9 +116,9 @@ function exploreStatus(status: AttendanceStatus, count: number): void {
                   : '',
               ]"
               :disabled="item.count <= 0"
-              :aria-pressed="activeStatus === item.status"
-              :aria-label="`${item.label} : ${item.count} journée${item.count > 1 ? 's' : ''}, ${item.employeesConcerned} employé${item.employeesConcerned > 1 ? 's' : ''} concerné${item.employeesConcerned > 1 ? 's' : ''}. ${item.count > 0 ? item.actionLabel : 'Aucune occurrence.'}`"
-              @click="exploreStatus(item.status, item.count)"
+              :aria-pressed="activeStatus === item.status && activeRateEligible === (group.id === 'rate_eligible')"
+              :aria-label="`${item.label} : ${item.count} ${isSingleDay ? `collaborateur${item.count > 1 ? 's' : ''}` : `journée${item.count > 1 ? 's' : ''}`}, ${item.employeesConcerned} employé${item.employeesConcerned > 1 ? 's' : ''} concerné${item.employeesConcerned > 1 ? 's' : ''}. ${item.count > 0 ? item.actionLabel : 'Aucune occurrence.'}`"
+              @click="exploreStatus(item.status, item.count, group.id === 'rate_eligible')"
           >
             <div class="flex items-center justify-between gap-3 text-sm">
               <div class="flex min-w-0 items-center gap-2">
@@ -144,7 +164,7 @@ function exploreStatus(status: AttendanceStatus, count: number): void {
                     <path d="M22 21v-2a4 4 0 0 0-3-3.87" />
                     <path d="M16 3.13a4 4 0 0 1 0 7.75" />
                   </svg>
-                  {{ item.employeesConcerned }}employé{{ item.employeesConcerned > 1 ? 's' : '' }}concerné{{ item.employeesConcerned > 1 ? 's' : '' }}
+                  {{ item.employeesConcerned }} employé{{ item.employeesConcerned > 1 ? 's' : '' }} concerné{{ item.employeesConcerned > 1 ? 's' : '' }}
                 </span>
 <!--                <span class="inline-flex items-center gap-1 text-xs font-bold text-indigo-700 transition-colors group-hover/status:text-indigo-800">-->
 <!--                  {{ item.actionLabel }}-->

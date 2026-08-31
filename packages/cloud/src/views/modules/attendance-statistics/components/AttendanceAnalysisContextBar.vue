@@ -2,7 +2,7 @@
 import { computed } from 'vue';
 
 import type { AttendanceAnalysisContext } from '../utils/attendance-analysis-context.js';
-import { getAttendanceAnalysisSourceLabel } from '../utils/attendance-analysis-context.js';
+import { getAttendanceAnalysisSourceLabel, getAttendanceRateEligibilityLabel } from '../utils/attendance-analysis-context.js';
 import { ATTENDANCE_ISSUE_PRESENTATION, ATTENDANCE_STATUS_PRESENTATION } from '../utils/attendance-status.js';
 import { formatBusinessDate } from '../utils/business-date.js';
 
@@ -16,6 +16,7 @@ const emit = defineEmits<{
   clear: [];
   clearDate: [];
   clearStatus: [];
+  clearEligibility: [];
   export: [];
 }>();
 
@@ -65,6 +66,14 @@ const issueLabel = computed(() =>
             @click="emit('clearStatus')"
           >
             {{ statusLabel }} · Retirer le statut ×
+          </button>
+          <button
+            v-if="context.rateEligible !== null"
+            type="button"
+            class="rounded-full bg-white px-3 py-1.5 font-semibold text-slate-700 ring-1 ring-slate-200 hover:ring-indigo-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500"
+            @click="emit('clearEligibility')"
+          >
+            {{ getAttendanceRateEligibilityLabel(context.rateEligible) }} · Retirer ×
           </button>
           <span v-if="issueLabel" class="rounded-full bg-white px-3 py-1.5 font-semibold text-slate-700 ring-1 ring-slate-200">
             {{ issueLabel }}

@@ -7,6 +7,8 @@ export type AttendanceDashboardAction =
   | {
       type: 'filter_employees';
       status: Extract<AttendanceStatus, 'ABSENT' | 'LATE'>;
+      /** null = tous les statuts observés ; true/false = filtre exact sur day.rateEligible. */
+      rateEligible: boolean | null;
       label: string;
     }
   | {
@@ -27,13 +29,33 @@ export function getAttendanceKpiPrimaryAction(
 ): AttendanceDashboardAction | null {
   switch (id) {
     case 'attendance_rate':
-      return { type: 'filter_employees', status: 'ABSENT', label: 'Voir les absences' };
+      return {
+        type: 'filter_employees',
+        status: 'ABSENT',
+        rateEligible: true,
+        label: 'Voir les absences prises en compte',
+      };
     case 'punctuality_rate':
-      return { type: 'filter_employees', status: 'LATE', label: 'Voir les retards' };
+      return {
+        type: 'filter_employees',
+        status: 'LATE',
+        rateEligible: true,
+        label: 'Voir les retards pris en compte',
+      };
     case 'absences':
-      return { type: 'filter_employees', status: 'ABSENT', label: 'Voir les employés absents' };
+      return {
+        type: 'filter_employees',
+        status: 'ABSENT',
+        rateEligible: true,
+        label: 'Voir les employés absents',
+      };
     case 'late_days':
-      return { type: 'filter_employees', status: 'LATE', label: 'Voir les employés en retard' };
+      return {
+        type: 'filter_employees',
+        status: 'LATE',
+        rateEligible: null,
+        label: 'Voir tous les retards observés',
+      };
     case 'issues':
       return { type: 'show_issues', label: 'Examiner les éléments' };
   }

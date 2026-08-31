@@ -351,24 +351,11 @@ export interface SuggestionWeeklyLeaveGroup {
     }
 }
 
-
-export interface SuggestionGenerationScope {
-    teamEmployeeCount: number
-    includedEmployeeCount: number
-    temporaryExcludedEmployeeCount: number
-    temporaryExcludedEmployeeGuids: string[]
-    temporaryExcludedEmployees: Array<{
-        guid: string
-        name: string
-    }>
-}
-
 export interface SuggestionDiagnostics {
     violations: SuggestionViolation[]
     coverage: SuggestionCoverage[]
     guardPools?: SuggestionGuardPool[]
     weeklyLeaveGroups?: SuggestionWeeklyLeaveGroup[]
-    generationScope?: SuggestionGenerationScope
     fairnessScore: number
     coverageScore: number
     solver?: {
@@ -412,8 +399,6 @@ export interface GenerateSuggestionPayload {
     period_from: string
     period_to: string
     employee_guids?: string[]
-    /** Exclusion temporaire pour cette génération uniquement. */
-    excluded_employee_guids?: string[]
 }
 
 export interface PlanningReadinessItem {

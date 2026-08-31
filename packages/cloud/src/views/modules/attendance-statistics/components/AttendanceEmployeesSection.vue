@@ -88,7 +88,7 @@ function closeEmployee(): void {
 }
 
 function applyStatusFilter(status: AttendanceEmployeeListFilters['status']): void {
-  filters.value = { ...filters.value, status, date: null };
+  filters.value = { ...filters.value, status, rateEligibility: 'all', date: null };
   page.value = 1;
   document.getElementById('attendance-employees')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
 }
@@ -96,9 +96,22 @@ function applyStatusFilter(status: AttendanceEmployeeListFilters['status']): voi
 
 function applyDayStatusFilter(
   date: BusinessDate,
-  status: Extract<AttendanceEmployeeListFilters['status'], 'ABSENT' | 'LATE'>,
+  status: Exclude<AttendanceEmployeeListFilters['status'], 'ALL'>,
 ): void {
-  filters.value = { query: '', status, issues: 'all', date };
+  filters.value = { query: '', status, issues: 'all', rateEligibility: 'all', date };
+  page.value = 1;
+  document.getElementById('attendance-employees')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+
+
+function applyStatusEligibilityFilter(status: AttendanceEmployeeListFilters['status'], rateEligible: boolean): void {
+  filters.value = {
+    query: '',
+    status,
+    issues: 'all',
+    rateEligibility: rateEligible ? 'eligible' : 'not_eligible',
+    date: null,
+  };
   page.value = 1;
   document.getElementById('attendance-employees')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
 }
@@ -124,11 +137,18 @@ function clearStatusFilter(): void {
   page.value = 1;
 }
 
+
+function clearRateEligibilityFilter(): void {
+  filters.value = { ...filters.value, rateEligibility: 'all' };
+  page.value = 1;
+}
+
 function resetAnalysisFilters(): void {
   filters.value = {
     ...filters.value,
     status: 'ALL',
     issues: 'all',
+    rateEligibility: 'all',
     date: null,
   };
   page.value = 1;
@@ -138,10 +158,12 @@ defineExpose({
   openEmployee,
   applyStatusFilter,
   applyDayStatusFilter,
+  applyStatusEligibilityFilter,
   applyIssuesFilter,
   focusSection,
   clearDateFilter,
   clearStatusFilter,
+  clearRateEligibilityFilter,
   resetAnalysisFilters,
 });
 </script>

@@ -79,14 +79,6 @@
         </div>
       </section>
 
-      <PlanningInfoPanel
-          v-if="generationScope?.temporaryExcludedEmployeeCount"
-          tone="info"
-          title="Exclusions temporaires appliquées"
-          :description="`${generationScope.temporaryExcludedEmployeeCount} collaborateur(s) ont été retirés de cette génération avant l’appel au solveur.`"
-          :important="temporaryExcludedNames"
-      />
-
       <section
           v-if="guardPools.length"
           class="rounded-2xl border border-violet-100 bg-violet-50/30 p-5 shadow-sm"
@@ -570,21 +562,6 @@ const solverLabel = computed(() => {
   return solver
       ? `${solver.usedSolver}${solver.fallbackUsed ? ' · fallback' : ''}`
       : '—'
-})
-
-
-const generationScope = computed(
-  () => suggestion.value?.diagnostics.generationScope ?? null,
-)
-
-const temporaryExcludedNames = computed(() => {
-  const names = generationScope.value?.temporaryExcludedEmployees
-    ?.map((employee) => employee.name)
-    .filter(Boolean) ?? []
-
-  return names.length
-    ? `Exclus pour cette suggestion : ${names.join(', ')}.`
-    : 'Ces exclusions sont ponctuelles et ne modifient pas les profils employés.'
 })
 
 type GuardPoolView = SuggestionGuardPool & {

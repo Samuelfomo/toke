@@ -1,4 +1,8 @@
-import { getAttendanceAnalysisEmployeeCount, getAttendanceAnalysisSourceLabel } from '../../utils/attendance-analysis-context.js';
+import {
+  getAttendanceAnalysisEmployeeCount,
+  getAttendanceAnalysisSourceLabel,
+  getAttendanceRateEligibilityLabel,
+} from '../../utils/attendance-analysis-context.js';
 import { buildAttendanceDataQualityPresentation } from '../../utils/attendance-data-quality.js';
 import { ATTENDANCE_ISSUE_PRESENTATION, ATTENDANCE_STATUS_PRESENTATION } from '../../utils/attendance-status.js';
 import { formatBusinessDate } from '../../utils/business-date.js';
@@ -10,6 +14,7 @@ export interface AttendancePdfAnalysisContextModel {
   analysisLabel: string;
   dateLabel: string | null;
   statusLabel: string | null;
+  rateEligibilityLabel: string | null;
   issueLabel: string | null;
   employeeLabel: string | null;
   employeeCount: number;
@@ -32,6 +37,14 @@ export function buildAttendancePdfAnalysisContextModel(
     analysisLabel: context.label,
     dateLabel: context.date ? formatBusinessDate(context.date, 'fr-FR', { day: '2-digit', month: '2-digit', year: 'numeric' }) : null,
     statusLabel: context.status ? ATTENDANCE_STATUS_PRESENTATION[context.status].label : null,
+    rateEligibilityLabel:
+      context.rateEligible === null
+        ? null
+        : contract.request.overview.period.dayCount === 1
+          ? context.rateEligible
+            ? 'Situation du jour finalisée'
+            : 'Situation du jour non encore finalisée'
+          : getAttendanceRateEligibilityLabel(context.rateEligible),
     issueLabel: context.issue ? ATTENDANCE_ISSUE_PRESENTATION[context.issue].label : null,
     employeeLabel: context.employeeName,
     employeeCount: getAttendanceAnalysisEmployeeCount(contract.request.overview, context),

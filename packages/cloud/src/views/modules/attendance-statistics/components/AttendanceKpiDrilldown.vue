@@ -20,6 +20,7 @@ const emit = defineEmits<{
   close: [];
 }>();
 const panelRef = ref<HTMLElement | null>(null);
+const isSingleDay = computed(() => props.overview.period.dayCount === 1);
 
 watch(
   () => props.kpiId,
@@ -33,12 +34,24 @@ watch(
 const action = computed(() => {
   if (!props.kpiId) return null;
   if ((props.kpiId === 'attendance_rate' || props.kpiId === 'absences') && props.overview.summary.statusTotals.ABSENT === 0) return null;
-  if ((props.kpiId === 'punctuality_rate' || props.kpiId === 'late_days') && props.overview.summary.statusTotals.LATE === 0) return null;
+  if (props.kpiId === 'punctuality_rate' && props.overview.summary.rates.lateWorkingDays === 0) return null;
+  if (props.kpiId === 'late_days' && props.overview.summary.statusTotals.LATE === 0) return null;
   if (props.kpiId === 'issues' && props.overview.summary.issueCount === 0) return null;
   return getAttendanceKpiPrimaryAction(props.kpiId);
 });
-const employeesWithAbsence = computed(() => props.overview.employees.filter((employee) => employee.statusTotals.ABSENT > 0).length);
-const employeesWithLate = computed(() => props.overview.employees.filter((employee) => employee.statusTotals.LATE > 0).length);
+const employeesWithAbsence = computed(() =>
+  props.overview.employees.filter((employee) =>
+    employee.days.some((day) => day.status === 'ABSENT' && day.rateEligible),
+  ).length,
+);
+const employeesWithObservedLate = computed(() =>
+  props.overview.employees.filter((employee) => employee.days.some((day) => day.status === 'LATE')).length,
+);
+const employeesWithConsolidatedLate = computed(() =>
+  props.overview.employees.filter((employee) =>
+    employee.days.some((day) => day.status === 'LATE' && day.rateEligible),
+  ).length,
+);
 
 const title = computed(() => {
   switch (props.kpiId) {
@@ -70,27 +83,28 @@ const title = computed(() => {
     </div>
 
     <div v-if="kpiId === 'attendance_rate'" class="mt-5 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-      <div class="rounded-md bg-white p-4"><p class="text-xs font-bold uppercase text-slate-500">Taux calculé</p><p class="mt-1 text-2xl font-bold text-slate-950">{{ formatPercentage(overview.summary.rates.attendanceRate) }}</p></div>
-      <div class="rounded-md bg-white p-4"><p class="text-xs font-bold uppercase text-slate-500">Journées suivies</p><p class="mt-1 text-2xl font-bold text-slate-950">{{ overview.summary.rates.attendedWorkingDays }}</p><p class="mt-1 text-xs text-slate-500">sur {{ overview.summary.rates.employeeWorkingDaysExpected }} attendues</p></div>
-      <div class="rounded-md bg-white p-4"><p class="text-xs font-bold uppercase text-slate-500">À l’heure</p><p class="mt-1 text-2xl font-bold text-slate-950">{{ overview.summary.statusTotals.PRESENT }}</p></div>
+      <div class="rounded-md bg-white p-4"><p class="text-xs font-bold uppercase text-slate-500">Taux consolidé</p><p class="mt-1 text-2xl font-bold text-slate-950">{{ formatPercentage(overview.summary.rates.attendanceRate) }}</p></div>
+      <div class="rounded-md bg-white p-4"><p class="text-xs font-bold uppercase text-slate-500">{{ isSingleDay ? 'Collaborateurs avec présence' : 'Présences consolidées' }}</p><p class="mt-1 text-2xl font-bold text-slate-950">{{ overview.summary.rates.attendedWorkingDays }}</p><p class="mt-1 text-xs text-slate-500">{{ isSingleDay ? `sur ${overview.summary.rates.employeeWorkingDaysExpected} situations du jour finalisées` : `sur ${overview.summary.rates.employeeWorkingDaysExpected} journées finalisées` }}</p></div>
+      <div class="rounded-md bg-white p-4"><p class="text-xs font-bold uppercase text-slate-500">{{ isSingleDay ? 'Arrivées à l’heure' : 'À l’heure consolidées' }}</p><p class="mt-1 text-2xl font-bold text-slate-950">{{ overview.summary.rates.onTimeWorkingDays }}</p></div>
       <div class="rounded-md bg-white p-4"><p class="text-xs font-bold uppercase text-slate-500">Absences finalisées</p><p class="mt-1 text-2xl font-bold text-rose-700">{{ overview.summary.statusTotals.ABSENT }}</p></div>
       <p class="sm:col-span-2 lg:col-span-4 text-sm leading-6 text-slate-700">Ce détail vous aide à comprendre comment le résultat affiché est constitué.</p>
     </div>
 
     <div v-else-if="kpiId === 'punctuality_rate'" class="mt-5 grid gap-3 sm:grid-cols-3">
-      <div class="rounded-md bg-white p-4"><p class="text-xs font-bold uppercase text-slate-500">Ponctualité API</p><p class="mt-1 text-2xl font-bold text-slate-950">{{ formatPercentage(overview.summary.rates.punctualityRate) }}</p></div>
-      <div class="rounded-md bg-white p-4"><p class="text-xs font-bold uppercase text-slate-500">À l’heure</p><p class="mt-1 text-2xl font-bold text-slate-950">{{ overview.summary.rates.onTimeWorkingDays }}</p></div>
-      <div class="rounded-md bg-white p-4"><p class="text-xs font-bold uppercase text-slate-500">Retards</p><p class="mt-1 text-2xl font-bold text-amber-700">{{ overview.summary.rates.lateWorkingDays }}</p><p class="mt-1 text-xs text-slate-500">{{ employeesWithLate }} employé{{ employeesWithLate > 1 ? 's' : '' }} concerné{{ employeesWithLate > 1 ? 's' : '' }}</p></div>
+      <div class="rounded-md bg-white p-4"><p class="text-xs font-bold uppercase text-slate-500">Taux consolidé</p><p class="mt-1 text-2xl font-bold text-slate-950">{{ formatPercentage(overview.summary.rates.punctualityRate) }}</p></div>
+      <div class="rounded-md bg-white p-4"><p class="text-xs font-bold uppercase text-slate-500">{{ isSingleDay ? 'Arrivées à l’heure' : 'Journées à l’heure' }}</p><p class="mt-1 text-2xl font-bold text-slate-950">{{ overview.summary.rates.onTimeWorkingDays }}</p><p v-if="isSingleDay" class="mt-1 text-xs text-slate-500">sur {{ overview.summary.rates.attendedWorkingDays }} présences finalisées</p></div>
+      <div class="rounded-md bg-white p-4"><p class="text-xs font-bold uppercase text-slate-500">{{ isSingleDay ? 'Retards finalisés' : 'Retards consolidés' }}</p><p class="mt-1 text-2xl font-bold text-amber-700">{{ overview.summary.rates.lateWorkingDays }}</p><p class="mt-1 text-xs text-slate-500">{{ employeesWithConsolidatedLate }} employé{{ employeesWithConsolidatedLate > 1 ? 's' : '' }} concerné{{ employeesWithConsolidatedLate > 1 ? 's' : '' }}</p></div>
     </div>
 
     <div v-else-if="kpiId === 'absences'" class="mt-5 grid gap-3 sm:grid-cols-2">
-      <div class="rounded-md bg-white p-4"><p class="text-xs font-bold uppercase text-slate-500">Journées ABSENT</p><p class="mt-1 text-3xl font-bold text-rose-700">{{ overview.summary.statusTotals.ABSENT }}</p></div>
+      <div class="rounded-md bg-white p-4"><p class="text-xs font-bold uppercase text-slate-500">Absences confirmées</p><p class="mt-1 text-3xl font-bold text-rose-700">{{ overview.summary.statusTotals.ABSENT }}</p></div>
       <div class="rounded-md bg-white p-4"><p class="text-xs font-bold uppercase text-slate-500">Employés concernés</p><p class="mt-1 text-3xl font-bold text-slate-950">{{ employeesWithAbsence }}</p><p class="mt-1 text-xs text-slate-500">PENDING, REST_DAY et UNDETERMINED ne sont pas inclus.</p></div>
     </div>
 
-    <div v-else-if="kpiId === 'late_days'" class="mt-5 grid gap-3 sm:grid-cols-2">
-      <div class="rounded-md bg-white p-4"><p class="text-xs font-bold uppercase text-slate-500">Journées LATE</p><p class="mt-1 text-3xl font-bold text-amber-700">{{ overview.summary.statusTotals.LATE }}</p></div>
-      <div class="rounded-md bg-white p-4"><p class="text-xs font-bold uppercase text-slate-500">Employés concernés</p><p class="mt-1 text-3xl font-bold text-slate-950">{{ employeesWithLate }}</p><p class="mt-1 text-xs text-slate-500">Un retard reste une présence dans le taux de présence.</p></div>
+    <div v-else-if="kpiId === 'late_days'" class="mt-5 grid gap-3 sm:grid-cols-3">
+      <div class="rounded-md bg-white p-4"><p class="text-xs font-bold uppercase text-slate-500">Retards observés</p><p class="mt-1 text-3xl font-bold text-amber-700">{{ overview.summary.statusTotals.LATE }}</p><p class="mt-1 text-xs text-slate-500">{{ isSingleDay ? 'Inclut les situations du jour encore en cours.' : 'Inclut les journées encore en cours.' }}</p></div>
+      <div class="rounded-md bg-white p-4"><p class="text-xs font-bold uppercase text-slate-500">Retards consolidés</p><p class="mt-1 text-3xl font-bold text-slate-950">{{ overview.summary.rates.lateWorkingDays }}</p><p class="mt-1 text-xs text-slate-500">Pris en compte dans les taux.</p></div>
+      <div class="rounded-md bg-white p-4"><p class="text-xs font-bold uppercase text-slate-500">Employés concernés</p><p class="mt-1 text-3xl font-bold text-slate-950">{{ employeesWithObservedLate }}</p><p class="mt-1 text-xs text-slate-500">Un retard observé reste une présence opérationnelle.</p></div>
     </div>
 
     <div v-else class="mt-5 grid gap-3 sm:grid-cols-3">

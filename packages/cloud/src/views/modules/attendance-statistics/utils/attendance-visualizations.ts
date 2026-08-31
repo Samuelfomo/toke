@@ -88,29 +88,40 @@ export interface AttendanceDailyChartModel {
   xLabels: Array<{ date: string; label: string; x: number }>;
 }
 
-const ELIGIBLE_STATUSES: readonly AttendanceStatus[] = ['PRESENT', 'LATE', 'ABSENT'];
-const EXCLUDED_STATUSES: readonly AttendanceStatus[] = ['PENDING', 'REST_DAY', 'UNDETERMINED'];
+const DEFAULT_ELIGIBLE_STATUSES: readonly AttendanceStatus[] = ['PRESENT', 'LATE', 'ABSENT'];
+const DEFAULT_EXCLUDED_STATUSES: readonly AttendanceStatus[] = ['PENDING', 'REST_DAY', 'UNDETERMINED'];
 
 /**
- * Regroupe les totaux déjà calculés par l'API selon leur éligibilité au taux.
- * visualSharePercent sert uniquement à dimensionner une barre dans son propre groupe.
+ * Regroupe les journées selon le booléen rateEligible fourni par l'API.
+ *
+ * Important : un statut LATE/PRESENT/ABSENT peut être observé alors que la
+ * journée n'est pas encore finalisée. Il ne faut donc pas déduire
+ * l'éligibilité à partir du statut seul.
  */
 export function buildAttendanceStatusDistribution(
   overview: AttendanceOverview,
 ): AttendanceStatusDistributionGroup[] {
+  const isSingleDay = overview.period.dayCount === 1;
+
   return [
-    buildDistributionGroup(
+    buildDistributionGroupByEligibility(
       'rate_eligible',
-      'Journées éligibles au taux',
-      'Présences, retards et absences finalisées composant le dénominateur métier.',
-      ELIGIBLE_STATUSES,
+      isSingleDay ? 'Situations du jour finalisées' : 'Journées finalisées prises en compte',
+      isSingleDay
+        ? 'Collaborateurs dont la situation de travail du jour est finalisée et déjà utilisée dans les taux.'
+        : 'Journées explicitement marquées comme éligibles par l’API et utilisées dans les taux consolidés.',
+      true,
+      DEFAULT_ELIGIBLE_STATUSES,
       overview,
     ),
-    buildDistributionGroup(
+    buildDistributionGroupByEligibility(
       'rate_excluded',
-      'Journées non éligibles',
-      'Journées en attente, de repos ou indéterminées, présentées séparément.',
-      EXCLUDED_STATUSES,
+      isSingleDay ? 'Situations du jour non encore finalisées' : 'Journées non encore prises en compte',
+      isSingleDay
+        ? 'Collaborateurs dont la situation du jour est encore en cours, en repos, indéterminée ou non finalisée pour les taux.'
+        : 'Journées en cours, de repos, indéterminées ou encore non finalisées pour le calcul des taux.',
+      false,
+      DEFAULT_EXCLUDED_STATUSES,
       overview,
     ),
   ];
@@ -131,8 +142,14 @@ export function buildAttendanceDailyTrendPoints(
         day: '2-digit',
         month: 'short',
       }),
-      expected: day.rates.employeeWorkingDaysExpected,
-      attended: day.rates.attendedWorkingDays,
+      // Lecture opérationnelle : les taux restent consolidés dans day.rates,
+      // tandis que la courbe montre aussi la journée en cours.
+      expected:
+        day.statusTotals.PRESENT +
+        day.statusTotals.LATE +
+        day.statusTotals.ABSENT +
+        day.statusTotals.PENDING,
+      attended: day.statusTotals.PRESENT + day.statusTotals.LATE,
       present: day.statusTotals.PRESENT,
       absent: day.statusTotals.ABSENT,
       late: day.statusTotals.LATE,
@@ -173,8 +190,8 @@ export function buildAttendanceDailyChartModel(
     tone: AttendanceDailyTrendSeries['tone'];
     dashed: boolean;
   }> = [
-    { id: 'expected', label: 'Journées attendues', tone: 'slate', dashed: true },
-    { id: 'attended', label: 'Journées suivies', tone: 'indigo', dashed: false },
+    { id: 'expected', label: 'Journées de travail', tone: 'slate', dashed: true },
+    { id: 'attended', label: 'Présences observées', tone: 'indigo', dashed: false },
     { id: 'absent', label: 'Absences', tone: 'rose', dashed: false },
     { id: 'late', label: 'Retards', tone: 'amber', dashed: false },
   ];
@@ -281,33 +298,59 @@ export function findAttendanceDailyOverview(
   return daily[daily.length - 1] ?? null;
 }
 
-function buildDistributionGroup(
+function buildDistributionGroupByEligibility(
   id: AttendanceStatusDistributionGroupId,
   label: string,
   description: string,
-  statuses: readonly AttendanceStatus[],
+  eligible: boolean,
+  defaultStatuses: readonly AttendanceStatus[],
   overview: AttendanceOverview,
 ): AttendanceStatusDistributionGroup {
-  const total = statuses.reduce((sum, status) => sum + overview.summary.statusTotals[status], 0);
-  const items = statuses
-    .map((status) => {
-      const presentation = ATTENDANCE_STATUS_PRESENTATION[status];
-      const count = overview.summary.statusTotals[status];
-      return {
-        status,
-        label: presentation.label,
-        description: presentation.description,
-        count,
-        employeesConcerned: overview.employees.filter((employee) => employee.statusTotals[status] > 0).length,
-        visualSharePercent: total > 0 ? round((count / total) * 100) : 0,
-        tone: presentation.tone,
-        actionLabel: getAttendanceStatusExploreLabel(status),
-        intent: getAttendanceStatusExploreIntent(status),
-        order: presentation.order,
-      };
-    })
-    .sort((left, right) => left.order - right.order)
-    .map(({ order: _order, ...item }) => item);
+  const counts = new Map<AttendanceStatus, number>();
+  const employeesByStatus = new Map<AttendanceStatus, Set<string>>();
+
+  for (const employee of overview.employees) {
+    for (const day of employee.days) {
+      if (day.rateEligible !== eligible) continue;
+
+      counts.set(day.status, (counts.get(day.status) ?? 0) + 1);
+      const employees = employeesByStatus.get(day.status) ?? new Set<string>();
+      employees.add(employee.employeeGuid);
+      employeesByStatus.set(day.status, employees);
+    }
+  }
+
+  const dynamicStatuses = [...counts.entries()]
+    .filter(([, count]) => count > 0)
+    .map(([status]) => status);
+
+  const statuses = [...new Set<AttendanceStatus>([...defaultStatuses, ...dynamicStatuses])]
+    .sort(
+      (left, right) =>
+        ATTENDANCE_STATUS_PRESENTATION[left].order - ATTENDANCE_STATUS_PRESENTATION[right].order,
+    );
+
+  const total = [...counts.values()].reduce((sum, count) => sum + count, 0);
+  const items = statuses.map((status) => {
+    const presentation = ATTENDANCE_STATUS_PRESENTATION[status];
+    const count = counts.get(status) ?? 0;
+    const isObservedButNotConsolidated =
+      !eligible && (status === 'PRESENT' || status === 'LATE' || status === 'ABSENT');
+
+    return {
+      status,
+      label: presentation.label,
+      description: isObservedButNotConsolidated
+        ? `${presentation.description} ${overview.period.dayCount === 1 ? 'Situation observée aujourd’hui mais encore non finalisée pour les taux.' : 'Situation observée mais journée encore non finalisée pour les taux.'}`
+        : presentation.description,
+      count,
+      employeesConcerned: employeesByStatus.get(status)?.size ?? 0,
+      visualSharePercent: total > 0 ? round((count / total) * 100) : 0,
+      tone: presentation.tone,
+      actionLabel: getAttendanceStatusExploreLabel(status),
+      intent: getAttendanceStatusExploreIntent(status),
+    } satisfies AttendanceStatusDistributionItem;
+  });
 
   return { id, label, description, total, items };
 }

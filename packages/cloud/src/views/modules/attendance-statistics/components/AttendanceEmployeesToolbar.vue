@@ -5,6 +5,7 @@ import type {
   AttendanceEmployeeSortKey,
   AttendanceEmployeeStatusFilter,
   AttendanceEmployeeIssueFilter,
+  AttendanceEmployeeRateEligibilityFilter,
 } from '../types/attendance-statistics.ui.types.js';
 import { ATTENDANCE_STATUS_PRESENTATION } from '../utils/attendance-status.js';
 import { ATTENDANCE_STATUSES } from '../types/attendance-statistics.types.js';
@@ -51,8 +52,19 @@ function updateIssueFilter(event: Event): void {
 }
 
 
+
+function updateRateEligibility(event: Event): void {
+  const rateEligibility = (event.target as HTMLSelectElement).value as AttendanceEmployeeRateEligibilityFilter;
+  emit('update:filters', { ...props.filters, rateEligibility });
+}
+
 function clearContextDate(): void {
   emit('update:filters', { ...props.filters, date: null });
+}
+
+
+function clearContextRateEligibility(): void {
+  emit('update:filters', { ...props.filters, rateEligibility: 'all' });
 }
 
 function updateSortKey(event: Event): void {
@@ -74,7 +86,7 @@ function toggleDirection(): void {
 <template>
   <div class="border-b border-slate-200 px-4 py-4 sm:px-5">
     <div class="flex flex-col gap-4 xl:flex-row xl:items-end xl:justify-between">
-      <div class="grid min-w-0 flex-1 gap-3 sm:grid-cols-2 xl:grid-cols-[minmax(260px,1.5fr)_minmax(170px,1fr)_minmax(190px,1fr)]">
+      <div class="grid min-w-0 flex-1 gap-3 sm:grid-cols-2 xl:grid-cols-[minmax(240px,1.4fr)_minmax(160px,0.9fr)_minmax(180px,1fr)_minmax(190px,1fr)]">
         <label class="block">
           <span class="mb-1.5 block text-xs font-bold uppercase tracking-wide text-slate-500">Rechercher</span>
           <div class="relative">
@@ -103,6 +115,19 @@ function toggleDirection(): void {
             <option v-for="status in ATTENDANCE_STATUSES" :key="status" :value="status">
               {{ ATTENDANCE_STATUS_PRESENTATION[status].label }}
             </option>
+          </select>
+        </label>
+
+        <label class="block">
+          <span class="mb-1.5 block text-xs font-bold uppercase tracking-wide text-slate-500">Prise en compte</span>
+          <select
+            :value="filters.rateEligibility"
+            class="h-11 w-full rounded-xl border border-slate-300 bg-white px-3 text-sm text-slate-900 outline-none focus:border-indigo-500 focus:ring-4 focus:ring-indigo-100"
+            @change="updateRateEligibility"
+          >
+            <option value="all">Toutes les journées</option>
+            <option value="eligible">Finalisées · dans les taux</option>
+            <option value="not_eligible">Non encore finalisées</option>
           </select>
         </label>
 
@@ -157,11 +182,19 @@ function toggleDirection(): void {
       </div>
     </div>
 
-    <div v-if="filters.date" class="mt-3 flex flex-wrap items-center gap-2 rounded-xl border border-indigo-100 bg-indigo-50 px-3 py-2 text-xs text-indigo-900">
+    <div v-if="filters.date || filters.rateEligibility !== 'all'" class="mt-3 flex flex-wrap items-center gap-2 rounded-xl border border-indigo-100 bg-indigo-50 px-3 py-2 text-xs text-indigo-900">
       <span class="font-bold">Contexte du graphique :</span>
-      <span>{{ formatBusinessDate(filters.date, 'fr-FR', { weekday: 'long', day: '2-digit', month: 'long' }) }}</span>
+      <span v-if="filters.date">{{ formatBusinessDate(filters.date, 'fr-FR', { weekday: 'long', day: '2-digit', month: 'long' }) }}</span>
       <span v-if="filters.status !== 'ALL'" class="rounded-full bg-white px-2 py-0.5 font-bold">{{ ATTENDANCE_STATUS_PRESENTATION[filters.status].label }}</span>
-      <button type="button" class="ml-auto font-bold underline underline-offset-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500" @click="clearContextDate">Retirer la date</button>
+      <button
+        v-if="filters.rateEligibility !== 'all'"
+        type="button"
+        class="rounded-full bg-white px-2 py-0.5 font-bold ring-1 ring-indigo-100 hover:ring-indigo-300"
+        @click="clearContextRateEligibility"
+      >
+        {{ filters.rateEligibility === 'eligible' ? 'Finalisées · dans les taux' : 'Non encore finalisées' }} ×
+      </button>
+      <button v-if="filters.date" type="button" class="ml-auto font-bold underline underline-offset-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500" @click="clearContextDate">Retirer la date</button>
     </div>
 
     <p class="mt-3 text-xs text-slate-500">

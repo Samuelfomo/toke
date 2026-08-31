@@ -40,7 +40,7 @@ export const ATTENDANCE_STATUS_PRESENTATION: Record<
   },
   PENDING: {
     label: 'En attente',
-    description: 'Journée travaillée encore en cours, non finalisée.',
+    description: 'Journée de travail encore en cours ou non finalisée pour les taux.',
     rateCategory: 'excluded',
     tone: 'info',
     order: 4,

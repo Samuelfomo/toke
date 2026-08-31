@@ -7,6 +7,7 @@ import type {
   AttendanceEmployeeIssueFilter,
   AttendanceEmployeeListFilters,
   AttendanceEmployeePagination,
+  AttendanceEmployeeRateEligibilityFilter,
   AttendanceEmployeeSort,
   AttendanceEmployeeSortKey,
   AttendanceEmployeeStatusFilter,
@@ -28,6 +29,7 @@ export const DEFAULT_ATTENDANCE_EMPLOYEE_FILTERS: AttendanceEmployeeListFilters 
   query: '',
   status: 'ALL',
   issues: 'all',
+  rateEligibility: 'all',
   date: null,
 };
 
@@ -62,16 +64,26 @@ export function employeeHasStatus(
 }
 
 
-export function employeeMatchesDateStatus(
+export function employeeMatchesDaySelection(
   employee: AttendanceEmployeeOverview,
   date: BusinessDate | null,
   status: AttendanceEmployeeStatusFilter,
+  rateEligibility: AttendanceEmployeeRateEligibilityFilter,
 ): boolean {
-  if (!date) return employeeHasStatus(employee, status);
+  const matchesDay = (day: AttendanceEmployeeOverview['days'][number]): boolean => {
+    if (status !== 'ALL' && day.status !== status) return false;
+    if (rateEligibility === 'eligible' && !day.rateEligible) return false;
+    if (rateEligibility === 'not_eligible' && day.rateEligible) return false;
+    return true;
+  };
 
-  const day = employee.days.find((item) => item.date === date);
-  if (!day) return false;
-  return status === 'ALL' || day.status === status;
+  if (date) {
+    const day = employee.days.find((item) => item.date === date);
+    return day ? matchesDay(day) : false;
+  }
+
+  if (status === 'ALL' && rateEligibility === 'all') return true;
+  return employee.days.some(matchesDay);
 }
 
 export function employeeMatchesIssueFilter(
@@ -97,7 +109,12 @@ export function filterAttendanceEmployees(
     }
 
     return (
-      employeeMatchesDateStatus(employee, filters.date, filters.status) &&
+      employeeMatchesDaySelection(
+        employee,
+        filters.date,
+        filters.status,
+        filters.rateEligibility,
+      ) &&
       employeeMatchesIssueFilter(employee, filters.issues)
     );
   });

@@ -102,12 +102,14 @@ export function buildAttendancePdfReportContract(
 
   let status = null;
   let date = null;
+  let rateEligible = null;
   let issue = null;
   let employeeGuid = null;
 
   if (request.mode === 'current_analysis') {
     status = request.analysisContext.status;
     date = request.analysisContext.date;
+    rateEligible = request.analysisContext.rateEligible;
     issue = request.analysisContext.issue;
     employeeGuid = request.analysisContext.employeeGuid;
   } else if (request.mode === 'issues_only') {
@@ -140,6 +142,7 @@ export function buildAttendancePdfReportContract(
     selection: {
       status,
       date,
+      rateEligible,
       issue,
       employeeGuid,
     },

@@ -185,7 +185,7 @@ function drawBottomPanels(engine: AttendancePdfEngine, model: AttendancePdfExecu
     document.line(x + 4, y + 8.3, x + panelWidth - 4, y + 8.3);
   };
 
-  panel(leftX, 'Répartition des statuts');
+  panel(leftX, model.statusPanelTitle);
   panel(rightX, 'Principaux éléments à examiner');
 
   const eligible = model.statusRows.filter((row) => row.group === 'eligible');
@@ -193,7 +193,7 @@ function drawBottomPanels(engine: AttendancePdfEngine, model: AttendancePdfExecu
   let rowY = y + 13;
   document.setFont(theme.fontFamily, 'bold').setFontSize(7.8);
   setColor(document.setTextColor.bind(document), theme.colors.mutedText);
-  document.text('Journées éligibles au taux', leftX + 4, rowY);
+  document.text(model.eligibleGroupLabel, leftX + 4, rowY);
   rowY += 4.8;
 
   const drawStatusRows = (rows: typeof model.statusRows): void => {
@@ -211,14 +211,14 @@ function drawBottomPanels(engine: AttendancePdfEngine, model: AttendancePdfExecu
   rowY += 1.3;
   document.setFont(theme.fontFamily, 'bold').setFontSize(7.8);
   setColor(document.setTextColor.bind(document), theme.colors.mutedText);
-  document.text('Journées hors taux', leftX + 4, rowY);
+  document.text(model.excludedGroupLabel, leftX + 4, rowY);
   rowY += 4.8;
   drawStatusRows(excluded);
 
   if (model.attentionItems.length === 0) {
     document.setFont(theme.fontFamily, 'normal').setFontSize(8.5);
     setColor(document.setTextColor.bind(document), theme.colors.success);
-    document.text('Aucun élément à examiner sur la période.', rightX + 4, y + 15);
+    document.text(model.attentionEmptyLabel, rightX + 4, y + 15);
   } else {
     let attentionY = y + 14;
     model.attentionItems.forEach((item, index) => {

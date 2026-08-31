@@ -8,22 +8,25 @@ import {
   type AttendancePdfTeamRow,
 } from './attendance-pdf-team.model.js';
 
-function columnFor(key: AttendancePdfTeamColumnKey): AttendancePdfTableColumn<AttendancePdfTeamRow> {
+function columnFor(
+  key: AttendancePdfTeamColumnKey,
+  isSingleDay: boolean,
+): AttendancePdfTableColumn<AttendancePdfTeamRow> {
   switch (key) {
     case 'employee':
       return { key, title: 'Employé', weight: 2.3, value: (row) => row.employeeName };
     case 'expected':
-      return { key, title: 'Attendues', width: 19, align: 'right', value: (row) => String(row.expected) };
+      return { key, title: isSingleDay ? 'Finalisés' : 'Jours fin.', width: 19, align: 'right', value: (row) => String(row.expected) };
     case 'attended':
-      return { key, title: 'Suivies', width: 18, align: 'right', value: (row) => String(row.attended) };
+      return { key, title: isSingleDay ? 'Prés. fin.' : 'Présences', width: 18, align: 'right', value: (row) => String(row.attended) };
     case 'attendance_rate':
       return { key, title: 'Présence', width: 24, align: 'right', value: (row) => row.attendanceRate };
     case 'punctuality_rate':
       return { key, title: 'Ponctualité', width: 25, align: 'right', value: (row) => row.punctualityRate };
     case 'late':
-      return { key, title: 'Retards', width: 17, align: 'right', value: (row) => String(row.late) };
+      return { key, title: 'Retards obs.', width: 20, align: 'right', value: (row) => String(row.late) };
     case 'absent':
-      return { key, title: 'Absences', width: 19, align: 'right', value: (row) => String(row.absent) };
+      return { key, title: 'Abs. conf.', width: 19, align: 'right', value: (row) => String(row.absent) };
     case 'pending':
       return { key, title: 'En attente', width: 19, align: 'right', value: (row) => String(row.pending) };
     case 'undetermined':
@@ -94,12 +97,14 @@ export function renderAttendancePdfTeam(engine: AttendancePdfEngine): Attendance
     verticalPadding: 1,
     repeatHeader: true,
     spacingAfter: 2.5,
-    columns: model.columns.map(columnFor),
+    columns: model.columns.map((key) => columnFor(key, model.isSingleDay)),
     rows: model.rows,
   });
 
   engine.primitives.drawTextBlock(
-    "Lecture : les valeurs décrivent la présence enregistrée sur la période. Elles ne mesurent ni la productivité ni la qualité du travail du collaborateur.",
+    model.isSingleDay
+      ? "Lecture : « Finalisés » désigne les collaborateurs dont la plage de travail prévue est déjà terminée et dont la situation entre dans les taux. Les retards affichés sont les retards observés, y compris ceux encore en cours."
+      : "Lecture : « Jours fin. » désigne les journées-employés finalisées prises en compte dans les taux. Les retards affichés correspondent aux retards observés sur toute la période.",
     {
       fontSizePt: 7.7,
       color: engine.theme.colors.mutedText,

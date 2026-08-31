@@ -39,6 +39,7 @@ export interface AttendancePdfTeamModel {
   filteredByAnalysis: boolean;
   analysisLabel: string | null;
   empty: boolean;
+  isSingleDay: boolean;
 }
 
 function matchesCurrentAnalysis(
@@ -50,12 +51,16 @@ function matchesCurrentAnalysis(
 
   if (context.employeeGuid && employee.employeeGuid !== context.employeeGuid) return false;
 
-  if (context.date) {
-    const day = employee.days.find((item) => item.date === context.date);
-    if (!day) return false;
-    if (context.status && day.status !== context.status) return false;
-  } else if (context.status && employee.statusTotals[context.status] <= 0) {
-    return false;
+  if (context.date || context.status || context.rateEligible !== null) {
+    const candidateDays = context.date
+      ? employee.days.filter((item) => item.date === context.date)
+      : employee.days;
+    const matchesDay = candidateDays.some((day) => {
+      if (context.status && day.status !== context.status) return false;
+      if (context.rateEligible !== null && day.rateEligible !== context.rateEligible) return false;
+      return true;
+    });
+    if (!matchesDay) return false;
   }
 
   if (context.issue && !employee.days.some((day) => day.issues.includes(context.issue!))) {
@@ -120,14 +125,17 @@ export function buildAttendancePdfTeamModel(
 
   const filteredByAnalysis = contract.request.mode === 'current_analysis';
   const analysisLabel = describeSelection(contract);
+  const isSingleDay = contract.request.overview.period.dayCount === 1;
 
   return {
     title: filteredByAnalysis ? 'Collaborateurs concernés' : "Vue d'ensemble de l'équipe",
     description: filteredByAnalysis
-      ? `Cette vue contient uniquement les collaborateurs correspondant au contexte d'analyse courant. Elle ne constitue pas un classement de performance.`
-      : contract.request.mode === 'full_report' && contract.presentationProfile.level === 'simplified'
-        ? `Comparaison descriptive de l'équipe sur la période. La durée nette enregistrée aide au contrôle de paie mais ne constitue pas encore une durée payable.`
-        : `Comparaison descriptive de l'équipe sur la période. L'ordre alphabétique évite de présenter les taux ou anomalies comme un classement de performance.`,
+      ? `Cette vue contient uniquement les collaborateurs correspondant au contexte d’analyse courant.`
+      : isSingleDay
+        ? `Lecture synthétique de la situation du jour.`
+        : contract.request.mode === 'full_report' && contract.presentationProfile.level === 'simplified'
+          ? `Comparaison descriptive de l'équipe sur la période. La durée nette enregistrée aide au contrôle de paie mais ne constitue pas encore une durée payable.`
+          : `Comparaison descriptive de l'équipe sur la période. L'ordre alphabétique évite de présenter les taux ou éléments à examiner comme un classement de performance.`,
     presentationLabel: contract.presentationProfile.label,
     columns:
       contract.request.mode === 'full_report' && contract.presentationProfile.level === 'simplified'
@@ -139,5 +147,6 @@ export function buildAttendancePdfTeamModel(
     filteredByAnalysis,
     analysisLabel,
     empty: employees.length === 0,
+    isSingleDay,
   };
 }

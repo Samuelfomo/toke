@@ -202,6 +202,7 @@ export interface AttendancePdfReportContract {
   selection: {
     status: AttendanceStatus | null;
     date: BusinessDate | null;
+    rateEligible: boolean | null;
     issue: AttendanceIssue | null;
     employeeGuid: string | null;
   };

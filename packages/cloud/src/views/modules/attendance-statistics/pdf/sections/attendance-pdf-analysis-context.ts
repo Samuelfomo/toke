@@ -29,6 +29,7 @@ export function renderAttendancePdfAnalysisContext(
   const filters = [
     model.dateLabel ? `Date : ${model.dateLabel}` : null,
     model.statusLabel ? `Statut : ${model.statusLabel}` : null,
+    model.rateEligibilityLabel ? `Prise en compte : ${model.rateEligibilityLabel}` : null,
     model.issueLabel ? `Élément : ${model.issueLabel}` : null,
     model.employeeLabel ? `Collaborateur : ${model.employeeLabel}` : null,
   ].filter((item): item is string => Boolean(item));
@@ -47,7 +48,7 @@ export function renderAttendancePdfAnalysisContext(
   });
 
   engine.primitives.drawTextBlock(
-    "Cette exportation conserve le contexte d'analyse sélectionné. Elle ne remplace pas les KPI globaux de la période et ne modifie aucune statistique calculée.",
+    "Cette exportation conserve le contexte d’analyse sélectionné et les filtres appliqués. Elle ne recalcule aucune statistique.",
     { fontSizePt: 7.8, color: engine.theme.colors.mutedText, spacingAfter: 2 },
   );
 

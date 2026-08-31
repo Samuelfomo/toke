@@ -243,7 +243,7 @@ function interactionHint(seriesId: AttendanceDailyTrendSeries['id'], date: Busin
       <div class="min-w-0 max-w-3xl">
         <p class="text-xs font-bold uppercase tracking-[0.18em] text-indigo-600">Évolution quotidienne</p>
         <h2 id="attendance-trend-title" class="mt-1 text-lg font-bold sm:font-semibold text-slate-950 sm:text-xl">
-          Journées attendues et statuts observés
+          Journées de travail et statuts observés
         </h2>
         <p class="mt-1 text-sm leading-6 font-light text-slate-600">
           Survolez ou focalisez un point pour comprendre la journée. Cliquez sur une absence ou un retard pour afficher directement les employés concernés ce jour-là.
@@ -319,7 +319,7 @@ function interactionHint(seriesId: AttendanceDailyTrendSeries['id'], date: Busin
           >
             <title id="attendance-trend-svg-title">Évolution quotidienne des statistiques de présence</title>
             <desc id="attendance-trend-svg-description">
-              Séries des journées attendues, suivies, absentes et en retard pour chaque date de la période.
+              Séries des journées de travail, présences observées, absences confirmées et retards observés pour chaque date de la période.
               Chaque point peut être focalisé au clavier et activé pour explorer la journée. Un tableau de données
               accessible est disponible après le graphique.
             </desc>
@@ -481,11 +481,11 @@ function interactionHint(seriesId: AttendanceDailyTrendSeries['id'], date: Busin
 
         <dl class="mt-3 grid grid-cols-3 gap-2 text-xs">
           <div class="rounded-lg bg-slate-50 p-2">
-            <dt class="text-slate-500">Attendues</dt>
+            <dt class="text-slate-500">Journées de travail</dt>
             <dd class="mt-0.5 font-bold tabular-nums text-slate-900">{{ tooltip.point.expected }}</dd>
           </div>
           <div class="rounded-lg bg-indigo-50 p-2">
-            <dt class="text-indigo-600">Suivies</dt>
+            <dt class="text-indigo-600">Présences observées</dt>
             <dd class="mt-0.5 font-bold tabular-nums text-indigo-950">{{ tooltip.point.attended }}</dd>
           </div>
           <div class="rounded-lg bg-rose-50 p-2">
@@ -554,8 +554,8 @@ function interactionHint(seriesId: AttendanceDailyTrendSeries['id'], date: Busin
             <thead class="bg-white text-xs uppercase tracking-wide text-slate-500">
               <tr>
                 <th scope="col" class="px-3 py-3 text-left">Date</th>
-                <th scope="col" class="px-3 py-3 text-right">Attendues</th>
-                <th scope="col" class="px-3 py-3 text-right">Suivies</th>
+                <th scope="col" class="px-3 py-3 text-right">Journées de travail</th>
+                <th scope="col" class="px-3 py-3 text-right">Présences observées</th>
                 <th scope="col" class="px-3 py-3 text-right">Absences</th>
                 <th scope="col" class="px-3 py-3 text-right">Retards</th>
                 <th scope="col" class="px-3 py-3 text-right">Anomalies</th>
