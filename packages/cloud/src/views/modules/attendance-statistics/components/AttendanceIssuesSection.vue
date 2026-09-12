@@ -47,7 +47,12 @@ function focusFamily(family: Exclude<AttendanceIssueFamilyFilter, 'all'>): void 
   scrollToSection();
 }
 
-defineExpose({ focusSection, focusIssue, focusFamily, reset });
+function focusDate(date: string): void {
+  filters.value = { query: date, family: 'all' };
+  scrollToSection();
+}
+
+defineExpose({ focusSection, focusIssue, focusFamily, focusDate, reset });
 </script>
 
 <template>

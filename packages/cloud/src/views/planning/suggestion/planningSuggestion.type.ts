@@ -275,11 +275,15 @@ export interface PlanningRequirementPayload {
 }
 
 export interface SuggestionDayReason {
-    source?: SuggestionReasonSource
+    source?: SuggestionReasonSource | 'MANUAL'
     factors: string[]
     confidence: number
     templateGuid: string | null
     templateName: string
+    manualLock?: boolean
+    manualDerived?: boolean
+    manualOriginDate?: string | null
+    requirementGuid?: string | null
 }
 
 export interface SuggestionEmployee {
@@ -352,6 +356,63 @@ export interface SuggestionWeeklyLeaveGroup {
 }
 
 
+
+export interface PlanningHistoryAdjustment {
+    date: string
+    template_guid: string
+    included_employee_guids: string[]
+}
+
+export interface PlanningHistoryAnomaly {
+    key: string
+    code: 'HISTORY_DUPLICATE_EMPLOYEE_DAY' | 'HISTORY_COVERAGE_ABOVE_EXPECTATION' | 'HISTORY_COVERAGE_BELOW_EXPECTATION'
+    severity: 'WARNING'
+    date: string
+    templateGuid: string | null
+    templateName: string
+    serviceType: 'STANDARD' | 'GUARD' | 'GUARD_CONTINUATION' | 'REST' | 'UNKNOWN'
+    message: string
+    observedCount: number
+    expectedMin: number | null
+    expectedTarget: number | null
+    expectedMax: number | null
+    employees: Array<{ guid: string; name: string }>
+    affectsFairness: boolean
+    selectedEmployeeGuids: string[]
+    resolution: 'AUTO_ACCEPTED' | 'IGNORED_UNTIL_REVIEW' | 'MANAGER_ADJUSTED'
+    suggestedActions: string[]
+}
+
+export interface PlanningHistoryReview {
+    available: boolean
+    historyFrom: string
+    historyTo: string
+    anomalies: PlanningHistoryAnomaly[]
+    fairness: Array<{
+        employeeGuid: string
+        workedDays: number
+        guardDays: number
+        weekendWorkedDays: number
+        workedMinutes: number
+        restDays: number
+        templateCounts: Record<string, number>
+    }>
+    boundaryGuardFacts: Array<{
+        employeeGuid: string
+        guardDate: string
+        templateGuid: string
+    }>
+    summary: {
+        employeeCount: number
+        acceptedWorkRecords: number
+        acceptedRestRecords: number
+        ignoredAmbiguousRecords: number
+        warningCount: number
+        adjustedAnomalyCount: number
+    }
+    warning?: { code: string; message: string } | null
+}
+
 export interface SuggestionGenerationScope {
     teamEmployeeCount: number
     includedEmployeeCount: number
@@ -361,6 +422,41 @@ export interface SuggestionGenerationScope {
         guid: string
         name: string
     }>
+    configGuid?: string | null
+    configVersion?: number | null
+    lockedAssignmentCount?: number
+    historyAdjustments?: PlanningHistoryAdjustment[]
+}
+
+
+export interface SuggestionRollingHorizonChunk {
+    index: number
+    solveFrom: string
+    solveTo: string
+    commitFrom: string
+    commitTo: string
+    overlapFrom: string | null
+    overlapTo: string | null
+    lookaheadFrom: string | null
+    lookaheadTo: string | null
+    durationMs: number
+    solverVersion: string
+    committedDays: number
+    lockedCarryCount: number
+    managerLockCount: number
+    boundaryContinuationCount: number
+}
+
+export interface SuggestionRollingHorizon {
+    enabled: boolean
+    thresholdDays: number
+    commitDays: number
+    overlapDays: number
+    lookaheadDays: number
+    totalSolveDays: number
+    chunkCount: number
+    totalSolverDurationMs: number
+    chunks: SuggestionRollingHorizonChunk[]
 }
 
 export interface SuggestionDiagnostics {
@@ -369,6 +465,37 @@ export interface SuggestionDiagnostics {
     guardPools?: SuggestionGuardPool[]
     weeklyLeaveGroups?: SuggestionWeeklyLeaveGroup[]
     generationScope?: SuggestionGenerationScope
+    historyReview?: PlanningHistoryReview & { boundaryRelaxedForFeasibility?: boolean }
+    rollingHorizon?: SuggestionRollingHorizon
+    lastManualBulkEdit?: {
+        at: string
+        action: 'ASSIGN_SERVICE' | 'REST'
+        periodFrom: string
+        periodTo: string
+        dates?: string[]
+        weekdays: PlanningDayKey[]
+        templateGuid: string | null
+        selectedItemCount: number
+        affectedCellCount: number
+        reason: string | null
+    }
+    regeneration?: {
+        at: string
+        mode: 'PRESERVE_MANUAL'
+        lockedCellCount: number
+        regeneratedCellCount: number
+        previousConformityScore: number | null
+        configGuid: string
+        configVersion: number
+        solverVersion: string
+        warningCount?: number
+        warnings?: Array<{
+            code: string
+            message: string
+            details?: Record<string, unknown>
+            suggested_actions?: string[]
+        }>
+    }
     fairnessScore: number
     coverageScore: number
     solver?: {
@@ -414,6 +541,8 @@ export interface GenerateSuggestionPayload {
     employee_guids?: string[]
     /** Exclusion temporaire pour cette génération uniquement. */
     excluded_employee_guids?: string[]
+    /** Corrections ponctuelles des anomalies historiques utilisées uniquement pour l'équité. */
+    history_adjustments?: PlanningHistoryAdjustment[]
 }
 
 export interface PlanningReadinessItem {
@@ -428,4 +557,72 @@ export interface PlanningReadinessItem {
     ready: boolean
     routeName: string
     actionLabel: string
+}
+// ─────────────────────────────────────────────────────────────────────────────
+// LOT 3 — modification en masse d'une suggestion
+// ─────────────────────────────────────────────────────────────────────────────
+
+export type SuggestionBulkEditAction = 'ASSIGN_SERVICE' | 'REST'
+
+export interface SuggestionRegenerationResult {
+    suggestion_guid: string
+    locked_cell_count: number
+    regenerated_cell_count: number
+    employee_count: number
+    conformity_score: number
+    previous_conformity_score: number | null
+    warnings?: Array<{
+        code: string
+        message: string
+        details?: Record<string, unknown>
+        suggested_actions?: string[]
+    }>
+}
+
+export interface SuggestionBulkEditPayload {
+    item_guids: string[]
+    period_from: string
+    period_to: string
+    /** Dates explicites pour le mode « jours précis ». */
+    dates?: string[]
+    weekdays?: PlanningDayKey[]
+    action: SuggestionBulkEditAction
+    template_guid?: string | null
+    reason?: string | null
+}
+
+export interface SuggestionBulkEditIssue {
+    code: string
+    message: string
+    severity: 'BLOCKER' | 'WARNING'
+    details?: Record<string, unknown>
+    suggested_actions?: string[]
+}
+
+export interface SuggestionBulkEditChange {
+    item_guid: string
+    employee_guid: string
+    employee_name: string
+    date: string
+    kind:
+        | 'DIRECT'
+        | 'GUARD_CONTINUATION'
+        | 'POST_GUARD_REST'
+        | 'GUARD_TAIL_CLEAR'
+    before_template_guid: string | null
+    after_template_guid: string | null
+    after_label: string
+}
+
+export interface SuggestionBulkEditPreview {
+    suggestion_guid: string
+    affected_items: number
+    affected_cells: number
+    direct_dates: string[]
+    changes: SuggestionBulkEditChange[]
+    blockers: SuggestionBulkEditIssue[]
+    warnings: SuggestionBulkEditIssue[]
+    diagnostics: SuggestionDiagnostics
+    conformity_score: number
+    applied: boolean
 }

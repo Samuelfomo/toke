@@ -130,6 +130,16 @@ function handleDayStatusExplore(payload: { date: BusinessDate; status: 'ABSENT' 
   employeesSectionRef.value?.applyDayStatusFilter(payload.date, payload.status);
 }
 
+
+function handleDayIssuesExplore(date: BusinessDate): void {
+  analysisContext.value = createAttendanceAnalysisContext({
+    source: 'trend',
+    date,
+    label: `Éléments à examiner du ${date}`,
+  });
+  issuesSectionRef.value?.focusDate(date);
+}
+
 function handleTodayStatusExplore(status: Extract<AttendanceStatus, 'PENDING' | 'LATE' | 'ABSENT'>): void {
   analysisContext.value = createAttendanceAnalysisContext({
     source: 'today',
@@ -481,6 +491,7 @@ const liveMessage = computed(() => {
                 :overview="page.overview.value"
                 :active-date="analysisContext?.date ?? null"
                 @explore-day-status="handleDayStatusExplore"
+                @explore-day-issues="handleDayIssuesExplore"
               />
 
               <div class="grid gap-5 2xl:grid-cols-[minmax(0,1.25fr)_minmax(360px,0.75fr)]">

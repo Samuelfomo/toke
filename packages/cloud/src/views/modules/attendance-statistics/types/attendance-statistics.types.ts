@@ -59,6 +59,21 @@ export interface AttendanceRateMetrics {
   punctualityRate: number | null;
 }
 
+/**
+ * Part de l'effectif concernée au moins une fois sur la période.
+ *
+ * Ces indicateurs sont calculés par l'API à partir des employés distincts :
+ * un employé est compté une seule fois même s'il possède plusieurs occurrences.
+ */
+export interface AttendanceEmployeeImpactMetrics {
+  employeesWithAbsence: number;
+  absenceEmployeeRate: number | null;
+  employeesWithLate: number;
+  lateEmployeeRate: number | null;
+  employeesWithIssues: number;
+  issueEmployeeRate: number | null;
+}
+
 export interface AttendanceDurationMetrics {
   grossMinutes: number;
   pauseMinutes: number;
@@ -138,6 +153,7 @@ export interface AttendanceOverview {
   summary: {
     statusTotals: AttendanceStatusTotals;
     rates: AttendanceRateMetrics;
+    employeeImpact: AttendanceEmployeeImpactMetrics;
     durations: AttendanceDurationMetrics;
     issueCount: number;
   };

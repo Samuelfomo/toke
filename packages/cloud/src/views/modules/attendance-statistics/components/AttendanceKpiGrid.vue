@@ -20,7 +20,7 @@ const props = withDefaults(defineProps<Props>(), {
   selectedKpiId: null,
   eyebrow: 'Vue décisionnelle',
   title: 'Ce qu’il faut comprendre maintenant',
-  description: 'Cliquez sur une carte pour comprendre la valeur puis accéder aux personnes ou anomalies concernées.',
+  description: 'Cliquez sur une carte pour comprendre la valeur puis accéder aux employés ou situations concernés.',
 });
 const emit = defineEmits<{ select: [id: AttendancePrimaryKpiId] }>();
 const cards = computed(() => buildPrimaryAttendanceKpis(props.overview));

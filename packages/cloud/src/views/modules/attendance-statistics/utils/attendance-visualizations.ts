@@ -31,10 +31,10 @@ export interface AttendanceStatusDistributionGroup {
 }
 
 export const ATTENDANCE_DAILY_TREND_SERIES = [
-  'expected',
-  'attended',
-  'absent',
+  'present',
   'late',
+  'absent',
+  'issues',
 ] as const;
 
 export type AttendanceDailyTrendSeriesId = (typeof ATTENDANCE_DAILY_TREND_SERIES)[number];
@@ -55,7 +55,7 @@ export interface AttendanceDailyTrendPoint {
 export interface AttendanceDailyTrendSeries {
   id: AttendanceDailyTrendSeriesId;
   label: string;
-  tone: 'slate' | 'indigo' | 'rose' | 'amber';
+  tone: 'slate' | 'indigo' | 'rose' | 'amber' | 'orange';
   dashed: boolean;
   points: string;
   values: Array<{ date: string; x: number; y: number; value: number }>;
@@ -69,7 +69,7 @@ export interface AttendanceDailyTrendTick {
 export interface AttendanceDailyTrendInteraction {
   date: BusinessDate;
   seriesId: AttendanceDailyTrendSeriesId;
-  mode: 'select_day' | 'filter_day_status';
+  mode: 'select_day' | 'filter_day_status' | 'filter_day_issues';
   status: Extract<AttendanceStatus, 'ABSENT' | 'LATE'> | null;
   label: string;
 }
@@ -179,7 +179,7 @@ export function buildAttendanceDailyChartModel(
 
   const maxObserved = Math.max(
     0,
-    ...points.flatMap((point) => [point.expected, point.attended, point.absent, point.late]),
+    ...points.flatMap((point) => [point.present, point.late, point.absent, point.issues]),
   );
   const maxValue = Math.max(1, maxObserved);
   const stepX = points.length > 1 ? plotWidth / (points.length - 1) : 0;
@@ -190,10 +190,10 @@ export function buildAttendanceDailyChartModel(
     tone: AttendanceDailyTrendSeries['tone'];
     dashed: boolean;
   }> = [
-    { id: 'expected', label: 'Journées de travail', tone: 'slate', dashed: true },
-    { id: 'attended', label: 'Présences observées', tone: 'indigo', dashed: false },
-    { id: 'absent', label: 'Absences', tone: 'rose', dashed: false },
+    { id: 'present', label: 'Présents à l’heure', tone: 'indigo', dashed: false },
     { id: 'late', label: 'Retards', tone: 'amber', dashed: false },
+    { id: 'absent', label: 'Absences', tone: 'rose', dashed: false },
+    { id: 'issues', label: 'Éléments à examiner', tone: 'orange', dashed: true },
   ];
 
   const series = seriesDefinitions.map((definition) => {
@@ -274,6 +274,16 @@ export function buildAttendanceDailyTrendInteraction(
       mode: 'filter_day_status',
       status: 'LATE',
       label: 'Voir les employés en retard ce jour',
+    };
+  }
+
+  if (seriesId === 'issues') {
+    return {
+      date,
+      seriesId,
+      mode: 'filter_day_issues',
+      status: null,
+      label: 'Voir les éléments à examiner ce jour',
     };
   }
 

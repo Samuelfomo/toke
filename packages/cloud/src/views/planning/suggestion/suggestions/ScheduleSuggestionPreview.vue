@@ -16,6 +16,25 @@
           Retour
         </button>
 
+        <button
+            v-if="suggestion?.status === 'draft'"
+            class="primary-button"
+            @click="openBulkEditor"
+        >
+          <IconEdit :size="16" />
+          Ajuster le planning
+        </button>
+
+        <button
+            v-if="suggestion?.status === 'draft'"
+            class="secondary-button"
+            :disabled="actionLoading"
+            @click="confirmAction = 'regenerate'"
+        >
+          <IconRefresh :size="16" />
+          Régénérer autour des décisions
+        </button>
+
       </template>
     </PlanningPageHeader>
 
@@ -27,11 +46,19 @@
     />
 
     <PlanningInfoPanel
-        v-if="suggestion?.status === 'draft' && approveBlocker"
+        v-if="suggestion?.status === 'draft' && publicationWarning"
         tone="warning"
-        title="Publication bloquée"
-        :description="approveBlocker"
-        important="Corrigez les violations dures ou les minimums de couverture avant de publier."
+        title="Alertes à confirmer avant publication"
+        :description="publicationWarning"
+        important="Ces écarts décrivent les attentes du moteur. Ils n’empêchent pas le manager de publier un planning qui correspond à la situation réelle de l’entreprise."
+    />
+
+    <PlanningInfoPanel
+        v-if="suggestion?.diagnostics.regeneration?.warningCount"
+        tone="info"
+        title="Régénération avec décisions managériales"
+        :description="`${suggestion.diagnostics.regeneration.warningCount} avertissement(s) ont été conservés pendant la dernière régénération.`"
+        important="Les décisions manuelles restent prioritaires. Ces avertissements décrivent seulement les écarts avec les règles du moteur."
     />
 
     <div v-if="loading" class="space-y-4">
@@ -85,6 +112,30 @@
           title="Exclusions temporaires appliquées"
           :description="`${generationScope.temporaryExcludedEmployeeCount} collaborateur(s) ont été retirés de cette génération avant l’appel au solveur.`"
           :important="temporaryExcludedNames"
+      />
+
+      <PlanningInfoPanel
+          v-if="rollingHorizon?.enabled"
+          tone="info"
+          title="Génération optimisée par fenêtres"
+          :description="`${rollingHorizon.chunkCount} fenêtre(s) de calcul ont été utilisées au lieu d’un calcul monolithique sur ${rollingHorizon.totalSolveDays} jours.`"
+          :important="`Temps solveur cumulé : ${formatDuration(rollingHorizon.totalSolverDurationMs)} · ${rollingHorizon.commitDays} jour(s) engagés par fenêtre · ${rollingHorizon.lookaheadDays} jour(s) d’anticipation.`"
+      />
+
+      <PlanningInfoPanel
+          v-if="historyReview?.warning"
+          tone="warning"
+          title="Historique d’équité indisponible"
+          :description="historyReview.warning.message"
+          important="La suggestion a été générée sans historique. Aucun problème historique n’a bloqué le calcul."
+      />
+
+      <PlanningInfoPanel
+          v-if="historyReview?.anomalies?.length"
+          tone="warning"
+          title="Alertes sur l’historique d’équité"
+          :description="`${historyReview.anomalies.length} anomalie(s) ont été détectées dans les plannings précédents.`"
+          :important="historyReviewMessage"
       />
 
       <section
@@ -452,20 +503,20 @@
     <SuggestionPublicationBar
         v-if="suggestion?.status === 'draft'"
         :can-approve="canApprove"
-        :blocker="approveBlocker"
+        :warning="publicationWarning"
         :loading="actionLoading"
         @approve="confirmAction = 'approve'"
         @reject="confirmAction = 'reject'"
     />
 
-    <SuggestionCellEditor
-        :open="cellEditorOpen"
-        :suggestion-guid="suggestion?.guid ?? ''"
-        :item="selectedItem"
-        :iso="selectedIso"
+    <SuggestionBulkEditor
+        :open="bulkEditorOpen"
+        :suggestion="suggestion"
         :templates="templates"
-        @close="cellEditorOpen = false"
-        @saved="onCellSaved"
+        :initial-item-guid="editorInitialItemGuid"
+        :initial-iso="editorInitialIso"
+        @close="closePlanningEditor"
+        @saved="onBulkSaved"
     />
 
     <PlanningConfirmDialog
@@ -474,16 +525,24 @@
         :loading="actionLoading"
         :title="confirmAction === 'approve'
                 ? 'Valider et publier ce planning ?'
-                : 'Rejeter cette suggestion ?'"
+                : confirmAction === 'regenerate'
+                    ? 'Régénérer autour des décisions du manager ?'
+                    : 'Rejeter cette suggestion ?'"
         :description="confirmAction === 'approve'
                 ? 'Les affectations officielles seront créées pour les collaborateurs et remplaceront les affectations qui chevauchent la période.'
-                : 'Cette proposition ne sera pas publiée et quittera la liste principale.'"
+                : confirmAction === 'regenerate'
+                    ? 'Toké conservera les cellules modifiées manuellement et demandera à OR-Tools de recalculer uniquement les cellules encore automatiques.'
+                    : 'Cette proposition ne sera pas publiée et quittera la liste principale.'"
         :important="confirmAction === 'approve'
-                ? 'Vérifiez les gardes, les congés hebdomadaires, les repos post-garde et les cellules modifiées manuellement.'
-                : 'Le rejet ne modifie aucun planning déjà publié.'"
+                ? (publicationWarning || 'Vérifiez les gardes, les congés hebdomadaires, les repos post-garde et les cellules modifiées manuellement.')
+                : confirmAction === 'regenerate'
+                    ? `${manualCellCount} décision(s) manuelle(s) resteront prioritaires. Les écarts avec les règles du moteur resteront des avertissements et ne seront pas annulés par le solveur.`
+                    : 'Le rejet ne modifie aucun planning déjà publié.'"
         :confirm-label="confirmAction === 'approve'
                 ? 'Publier le planning'
-                : 'Rejeter la suggestion'"
+                : confirmAction === 'regenerate'
+                    ? 'Régénérer le reste'
+                    : 'Rejeter la suggestion'"
         @cancel="confirmAction = null"
         @confirm="resolveAction"
     />
@@ -502,6 +561,8 @@ import { useRoute, useRouter } from 'vue-router'
 import {
   IconAlertTriangle,
   IconArrowLeft,
+  IconEdit,
+  IconRefresh,
   IconUsersGroup,
 } from '@tabler/icons-vue'
 
@@ -511,7 +572,7 @@ import ScheduleSuggestionService from '@/service/ScheduleSuggestionService'
 import PlanningConfirmDialog from '../components/PlanningConfirmDialog.vue'
 import PlanningInfoPanel from '../components/PlanningInfoPanel.vue'
 import PlanningPageHeader from '../components/PlanningPageHeader.vue'
-import SuggestionCellEditor from './SuggestionCellEditor.vue'
+import SuggestionBulkEditor from './SuggestionBulkEditor.vue'
 import SuggestionFilters from './SuggestionFilters.vue'
 import SuggestionIssueSummary from './SuggestionIssueSummary.vue'
 import SuggestionPublicationBar from './SuggestionPublicationBar.vue'
@@ -540,10 +601,10 @@ const errorMessage = ref('')
 const suggestion = ref<ScheduleSuggestion | null>(null)
 const templates = ref<PlanningTemplateMini[]>([])
 const activeTab = ref<'planning' | 'coverage' | 'issues'>('planning')
-const cellEditorOpen = ref(false)
-const selectedItem = ref<ScheduleSuggestionItem | null>(null)
-const selectedIso = ref('')
-const confirmAction = ref<'approve' | 'reject' | null>(null)
+const bulkEditorOpen = ref(false)
+const editorInitialItemGuid = ref<string | null>(null)
+const editorInitialIso = ref<string | null>(null)
+const confirmAction = ref<'approve' | 'reject' | 'regenerate' | null>(null)
 const actionLoading = ref(false)
 const employeeSearch = ref('')
 const manualOnly = ref(false)
@@ -566,16 +627,43 @@ const templateMap = computed(
 
 const solverLabel = computed(() => {
   const solver = suggestion.value?.diagnostics.solver
+  const rolling = suggestion.value?.diagnostics.rollingHorizon
 
-  return solver
-      ? `${solver.usedSolver}${solver.fallbackUsed ? ' · fallback' : ''}`
-      : '—'
+  if (!solver) return '—'
+  const rollingLabel = rolling?.enabled ? ` · ${rolling.chunkCount} fenêtres` : ''
+  return `${solver.usedSolver}${solver.fallbackUsed ? ' · fallback' : ''}${rollingLabel}`
 })
 
+const formatDuration = (durationMs: number) => {
+  if (durationMs < 1000) return `${durationMs} ms`
+  if (durationMs < 60_000) return `${(durationMs / 1000).toFixed(1)} s`
+  const minutes = Math.floor(durationMs / 60_000)
+  const seconds = Math.round((durationMs % 60_000) / 1000)
+  return `${minutes} min ${seconds} s`
+}
+
+const rollingHorizon = computed(
+  () => suggestion.value?.diagnostics.rollingHorizon ?? null,
+)
 
 const generationScope = computed(
   () => suggestion.value?.diagnostics.generationScope ?? null,
 )
+
+const historyReview = computed(
+  () => suggestion.value?.diagnostics.historyReview ?? null,
+)
+
+const historyReviewMessage = computed(() => {
+  const review = historyReview.value
+  if (!review) return ''
+  const ignored = review.summary?.ignoredAmbiguousRecords ?? 0
+  const adjusted = review.summary?.adjustedAnomalyCount ?? 0
+  const boundary = review.boundaryRelaxedForFeasibility
+    ? ' Une continuité historique a aussi été relâchée pour ne pas rendre la suggestion impossible.'
+    : ''
+  return `${ignored} entrée(s) ambiguë(s) neutralisée(s) · ${adjusted} anomalie(s) ajustée(s) par le manager.${boundary}`
+})
 
 const temporaryExcludedNames = computed(() => {
   const names = generationScope.value?.temporaryExcludedEmployees
@@ -673,23 +761,28 @@ const sortedViolations = computed(() =>
     }),
 )
 
-const canApprove = computed(
-    () =>
-        Boolean(suggestion.value) &&
-        hardViolations.value.length === 0 &&
-        belowMinimumCoverage.value.length === 0,
-)
+// Les diagnostics du moteur informent le manager mais ne prennent pas la décision
+// à sa place. Les blocages techniques restent contrôlés par l'API de publication.
+const canApprove = computed(() => Boolean(suggestion.value))
 
-const approveBlocker = computed(() => {
+const publicationWarning = computed(() => {
+  const parts: string[] = []
+
   if (hardViolations.value.length > 0) {
-    return `${hardViolations.value.length} violation(s) dure(s) empêchent la publication.`
+    parts.push(`${hardViolations.value.length} alerte(s) forte(s) issue(s) des règles du moteur`)
   }
 
   if (belowMinimumCoverage.value.length > 0) {
-    return `${belowMinimumCoverage.value.length} besoin(s) sont sous le minimum obligatoire.`
+    parts.push(`${belowMinimumCoverage.value.length} besoin(s) sous le minimum configuré`)
   }
 
-  return ''
+  if (warningViolations.value.length > 0) {
+    parts.push(`${warningViolations.value.length} avertissement(s)`)
+  }
+
+  return parts.length
+    ? `${parts.join(' · ')}. La publication reste possible après confirmation du manager.`
+    : ''
 })
 
 const calendarDays = computed(() => {
@@ -964,30 +1057,39 @@ function activateUnassignedFilter(): void {
   guardOnly.value = false
 }
 
+function openBulkEditor(): void {
+  editorInitialItemGuid.value = null
+  editorInitialIso.value = null
+  bulkEditorOpen.value = true
+}
+
 function openCell(
     item: ScheduleSuggestionItem,
     iso: string,
 ): void {
   if (!(iso in item.schedule)) return
 
-  selectedItem.value = item
-  selectedIso.value = iso
-  cellEditorOpen.value = true
+  // Un clic cellule ouvre le même éditeur que « Modifier en masse »,
+  // prérempli sur 1 collaborateur × 1 jour. Le manager peut ensuite élargir
+  // librement à plusieurs dates ou à une période.
+  editorInitialItemGuid.value = item.guid
+  editorInitialIso.value = iso
+  bulkEditorOpen.value = true
 }
 
-async function onCellSaved(): Promise<void> {
-  cellEditorOpen.value = false
+function closePlanningEditor(): void {
+  bulkEditorOpen.value = false
+  editorInitialItemGuid.value = null
+  editorInitialIso.value = null
+}
+
+async function onBulkSaved(): Promise<void> {
+  closePlanningEditor()
   await load()
 }
 
 async function resolveAction(): Promise<void> {
   if (!suggestion.value || !confirmAction.value) return
-
-  if (confirmAction.value === 'approve' && !canApprove.value) {
-    errorMessage.value = approveBlocker.value
-    confirmAction.value = null
-    return
-  }
 
   const action = confirmAction.value
   actionLoading.value = true
@@ -998,13 +1100,22 @@ async function resolveAction(): Promise<void> {
             ? await ScheduleSuggestionService.approve(
                 suggestion.value.guid,
             )
-            : await ScheduleSuggestionService.reject(
-                suggestion.value.guid,
-            )
+            : action === 'regenerate'
+                ? await ScheduleSuggestionService.regenerate(
+                    suggestion.value.guid,
+                )
+                : await ScheduleSuggestionService.reject(
+                    suggestion.value.guid,
+                )
 
     if (!response?.success) throw response
 
     confirmAction.value = null
+
+    if (action === 'regenerate') {
+      await load()
+      return
+    }
 
     await router.push({
       name:
@@ -1013,10 +1124,32 @@ async function resolveAction(): Promise<void> {
               : 'planning-suggestion-list',
     })
   } catch (error: any) {
-    errorMessage.value = responseError(
-        error,
-        'Cette action n’a pas pu être exécutée.',
-    )
+    if (action === 'regenerate') {
+      const details =
+          error?.details ??
+          error?.error?.details ??
+          error?.data?.details ??
+          error?.data?.error?.details ??
+          error?.response?.data?.error?.details
+      const firstBlocker = Array.isArray(details?.blockers)
+          ? details.blockers[0]
+          : null
+      const suggestedAction = Array.isArray(firstBlocker?.suggested_actions)
+          ? firstBlocker.suggested_actions[0]
+          : null
+
+      errorMessage.value = firstBlocker?.message
+          ? `${firstBlocker.message}${suggestedAction ? ` — ${suggestedAction}` : ''}`
+          : responseError(
+              error,
+              'La régénération n’a pas pu être exécutée.',
+          )
+    } else {
+      errorMessage.value = responseError(
+          error,
+          'Cette action n’a pas pu être exécutée.',
+      )
+    }
     confirmAction.value = null
   } finally {
     actionLoading.value = false
@@ -1042,7 +1175,7 @@ function coverageClass(status: string): string {
 }
 
 function severityLabel(severity: 'HARD' | 'WARNING'): string {
-  return severity === 'HARD' ? 'Bloquant' : 'Avertissement'
+  return severity === 'HARD' ? 'Écart fort' : 'Avertissement'
 }
 
 const Score = defineComponent({

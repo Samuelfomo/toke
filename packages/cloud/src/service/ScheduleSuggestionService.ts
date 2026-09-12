@@ -3,6 +3,7 @@ import type { ApiResponse } from '@toke/shared'
 import { apiRequest } from '@/tools/Fetch.Client'
 import type {
     GenerateSuggestionPayload,
+    SuggestionBulkEditPayload,
 } from '@/views/planning/suggestion/planningSuggestion.type'
 
 const baseUrl = '/schedule-suggestion'
@@ -30,6 +31,30 @@ export default class ScheduleSuggestionService {
         }
     }
 
+
+    static async reviewHistory(
+        managerGuid: string,
+        payload: {
+            period_from: string
+            excluded_employee_guids?: string[]
+            history_adjustments?: Array<{
+                date: string
+                template_guid: string
+                included_employee_guids: string[]
+            }>
+        },
+    ): Promise<ApiResponse> {
+        try {
+            return await apiRequest<any>({
+                path: `${baseUrl}/${managerGuid}/history-review`,
+                method: 'POST',
+                data: payload,
+            })
+        } catch (error: any) {
+            console.error('ScheduleSuggestionService.reviewHistory', error)
+            return error
+        }
+    }
 
     static async list(
         managerGuid: string,
@@ -90,6 +115,50 @@ export default class ScheduleSuggestionService {
             })
         } catch (error: any) {
             console.error('ScheduleSuggestionService.patchCell', error)
+            return error
+        }
+    }
+
+    static async previewBulkEdit(
+        guid: string,
+        payload: SuggestionBulkEditPayload,
+    ): Promise<ApiResponse> {
+        try {
+            return await apiRequest<any>({
+                path: `${baseUrl}/${guid}/bulk-edit/preview`,
+                method: 'POST',
+                data: payload,
+            })
+        } catch (error: any) {
+            console.error('ScheduleSuggestionService.previewBulkEdit', error)
+            return error
+        }
+    }
+
+    static async applyBulkEdit(
+        guid: string,
+        payload: SuggestionBulkEditPayload,
+    ): Promise<ApiResponse> {
+        try {
+            return await apiRequest<any>({
+                path: `${baseUrl}/${guid}/bulk-edit`,
+                method: 'PATCH',
+                data: payload,
+            })
+        } catch (error: any) {
+            console.error('ScheduleSuggestionService.applyBulkEdit', error)
+            return error
+        }
+    }
+
+    static async regenerate(guid: string): Promise<ApiResponse> {
+        try {
+            return await apiRequest<any>({
+                path: `${baseUrl}/${guid}/regenerate`,
+                method: 'POST',
+            })
+        } catch (error: any) {
+            console.error('ScheduleSuggestionService.regenerate', error)
             return error
         }
     }

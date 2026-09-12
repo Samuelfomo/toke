@@ -16,7 +16,7 @@
       <div class="grid grid-cols-2 gap-2 sm:grid-cols-4">
         <button type="button" class="metric" @click="$emit('open', 'issues')">
           <span class="metric-value text-red-700">{{ hardCount }}</span>
-          <span class="metric-label">Violations dures</span>
+          <span class="metric-label">Écarts forts</span>
         </button>
         <button type="button" class="metric" @click="$emit('open', 'coverage')">
           <span class="metric-value text-amber-700">{{ belowMinimumCount }}</span>
@@ -54,25 +54,25 @@ defineEmits<{
 }>()
 
 const title = computed(() => {
-  if (props.hardCount > 0) return `${props.hardCount} violation(s) dure(s) à corriger`
+  if (props.hardCount > 0) return `${props.hardCount} écart(s) fort(s) à examiner`
   if (props.belowMinimumCount > 0) return `${props.belowMinimumCount} minimum(s) de couverture non atteint(s)`
-  if (props.warningCount > 0) return `Proposition publiable avec ${props.warningCount} avertissement(s)`
-  return 'Aucun blocage majeur détecté'
+  if (props.warningCount > 0) return `Planning avec ${props.warningCount} avertissement(s)`
+  return 'Aucune alerte majeure détectée'
 })
 
 const description = computed(() => {
   if (props.hardCount > 0 || props.belowMinimumCount > 0) {
-    return 'La publication est désactivée jusqu’à la correction des points bloquants. Consultez les alertes et la couverture avant de modifier la grille.'
+    return 'Ces écarts décrivent les attentes configurées pour le moteur. Ils doivent être examinés, mais le manager peut confirmer un planning différent si la réalité opérationnelle l’exige.'
   }
-  return 'Les contrôles bloquants sont validés. Vérifiez encore les modifications manuelles, les gardes et les repos avant publication.'
+  return 'Vérifiez les modifications manuelles, les gardes et les repos avant publication.'
 })
 
 const summaryTone = computed(() =>
-  props.hardCount > 0 || props.belowMinimumCount > 0
-    ? { border: 'border-red-200', icon: 'bg-red-50 text-red-700' }
-    : props.warningCount > 0
-      ? { border: 'border-amber-200', icon: 'bg-amber-50 text-amber-700' }
-      : { border: 'border-emerald-200', icon: 'bg-emerald-50 text-emerald-700' },
+    props.hardCount > 0 || props.belowMinimumCount > 0
+        ? { border: 'border-red-200', icon: 'bg-red-50 text-red-700' }
+        : props.warningCount > 0
+            ? { border: 'border-amber-200', icon: 'bg-amber-50 text-amber-700' }
+            : { border: 'border-emerald-200', icon: 'bg-emerald-50 text-emerald-700' },
 )
 </script>
 

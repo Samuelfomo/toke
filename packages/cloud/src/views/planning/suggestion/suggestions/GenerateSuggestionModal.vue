@@ -9,7 +9,7 @@
           role="dialog"
           aria-modal="true"
           :aria-labelledby="titleId"
-          class="flex w-full max-w-3xl flex-col overflow-hidden rounded-2xl bg-white shadow-2xl"
+          class="flex max-h-[94vh] w-full max-w-4xl flex-col overflow-hidden rounded-2xl bg-white shadow-2xl"
         >
           <header class="relative overflow-hidden bg-blue-700 px-5 py-4 text-white sm:px-6 sm:py-5">
             <div class="absolute -right-10 -top-12 h-36 w-36 rounded-full bg-blue-500/25 blur-3xl" />
@@ -22,7 +22,7 @@
                 <h2 :id="titleId" class="mt-1.5 text-xl font-bold">
                   Générer une proposition de planning
                 </h2>
-                <p class="mt-1.5 max-w-xl text-xs leading-5 text-blue-100/80">
+                <p class="mt-1.5 max-w-2xl text-xs leading-5 text-blue-100/80">
                   {{ currentStepMeta.description }}
                 </p>
               </div>
@@ -40,12 +40,8 @@
           </header>
 
           <div class="border-b border-slate-100 bg-white px-5 py-4 sm:px-6">
-            <ol class="grid grid-cols-3 gap-2" aria-label="Étapes de génération">
-              <li
-                v-for="step in steps"
-                :key="step.id"
-                class="relative"
-              >
+            <ol class="grid grid-cols-5 gap-2" aria-label="Étapes de génération">
+              <li v-for="step in steps" :key="step.id" class="relative">
                 <div class="flex items-center gap-2.5">
                   <span
                     class="flex h-8 w-8 shrink-0 items-center justify-center rounded-full border text-xs font-bold transition"
@@ -67,13 +63,12 @@
                     </p>
                   </div>
                 </div>
-
               </li>
             </ol>
           </div>
 
-          <main class="px-5 py-5 sm:px-6 sm:py-6">
-            <!-- ÉTAPE 1 : PRÉREQUIS -->
+          <main class="min-h-[360px] px-5 py-5 sm:px-6 sm:py-6">
+            <!-- ÉTAPE 1 : COLLABORATEURS -->
             <section v-if="currentStep === 1" class="space-y-4">
               <div
                 v-if="readiness.errorMessage.value"
@@ -89,16 +84,43 @@
                 </button>
               </div>
 
+              <div
+                v-if="readiness.loading.value"
+                class="flex min-h-[260px] items-center justify-center rounded-2xl border border-slate-200 bg-slate-50"
+              >
+                <div class="text-center">
+                  <IconLoader2 :size="24" class="mx-auto animate-spin text-blue-700" />
+                  <p class="mt-2 text-xs font-semibold text-slate-600">Chargement de l’équipe…</p>
+                </div>
+              </div>
+
+              <TemporaryEmployeeExclusionPicker
+                v-else
+                v-model="excludedEmployeeGuids"
+                :employees="readiness.teamEmployees.value"
+                :profiles="readiness.profiles.value"
+                :disabled="saving"
+              />
+            </section>
+
+            <!-- ÉTAPE 2 : PRÉREQUIS -->
+            <section v-else-if="currentStep === 2" class="space-y-4">
               <GenerationReadinessPanel
                 :items="readiness.readinessItems.value"
                 :loading="readiness.loading.value"
                 :percent="readiness.readinessPercent.value"
                 @open="openCorrection"
               />
+
+              <div class="rounded-xl border border-blue-100 bg-blue-50 px-4 py-3 text-xs leading-5 text-blue-800">
+                Les prérequis sont vérifiés uniquement sur les
+                <strong>{{ readiness.includedEmployees.value.length }} collaborateur(s) inclus</strong>
+                dans cette génération.
+              </div>
             </section>
 
-            <!-- ÉTAPE 2 : PÉRIODE -->
-            <section v-else-if="currentStep === 2" class="rounded-2xl border border-slate-200 bg-white p-4 sm:p-5">
+            <!-- ÉTAPE 3 : PÉRIODE -->
+            <section v-else-if="currentStep === 3" class="rounded-2xl border border-slate-200 bg-white p-4 sm:p-5">
               <div class="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
                 <div>
                   <h3 class="text-sm font-bold text-slate-900">Période à planifier</h3>
@@ -167,7 +189,24 @@
               </div>
             </section>
 
-            <!-- ÉTAPE 3 : CONFIRMATION -->
+            <!-- ÉTAPE 4 : HISTORIQUE D’ÉQUITÉ -->
+            <section v-else-if="currentStep === 4" class="space-y-4">
+              <div
+                v-if="historyError"
+                class="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-xs leading-5 text-amber-800"
+              >
+                {{ historyError }} La génération reste possible sans historique.
+              </div>
+
+              <HistoryFairnessReview
+                :review="historyReview"
+                :adjustments="historyAdjustments"
+                :loading="historyLoading"
+                @update:adjustments="historyAdjustments = $event"
+              />
+            </section>
+
+            <!-- ÉTAPE 5 : CONFIRMATION -->
             <section v-else class="space-y-4">
               <div class="rounded-2xl border border-slate-200 bg-white p-5">
                 <div class="flex items-start gap-3">
@@ -177,17 +216,23 @@
                   <div>
                     <h3 class="text-sm font-bold text-slate-900">Vérifiez avant de lancer le calcul</h3>
                     <p class="mt-1 text-xs leading-5 text-slate-500">
-                      Le solveur créera uniquement une proposition. Aucun planning ne sera publié automatiquement.
+                      Le solveur recevra uniquement les collaborateurs inclus. Aucun planning ne sera publié automatiquement.
                     </p>
                   </div>
                 </div>
 
-                <dl class="mt-5 grid gap-3 sm:grid-cols-3">
+                <dl class="mt-5 grid gap-3 sm:grid-cols-5">
                   <div class="rounded-xl bg-slate-50 p-3.5">
-                    <dt class="text-[10px] font-bold uppercase tracking-[0.12em] text-slate-400">Prérequis</dt>
-                    <dd class="mt-1 flex items-center gap-1.5 text-xs font-bold text-emerald-700">
-                      <IconCheck :size="14" />
-                      Validés
+                    <dt class="text-[10px] font-bold uppercase tracking-[0.12em] text-slate-400">Inclus</dt>
+                    <dd class="mt-1 text-xs font-bold text-emerald-700">
+                      {{ readiness.includedEmployees.value.length }} collaborateur(s)
+                    </dd>
+                  </div>
+
+                  <div class="rounded-xl bg-slate-50 p-3.5">
+                    <dt class="text-[10px] font-bold uppercase tracking-[0.12em] text-slate-400">Exclus temporairement</dt>
+                    <dd class="mt-1 text-xs font-bold" :class="excludedEmployeeGuids.length ? 'text-amber-700' : 'text-slate-700'">
+                      {{ excludedEmployeeGuids.length }} collaborateur(s)
                     </dd>
                   </div>
 
@@ -200,11 +245,21 @@
                     <dt class="text-[10px] font-bold uppercase tracking-[0.12em] text-slate-400">Durée</dt>
                     <dd class="mt-1 text-xs font-bold text-slate-800">{{ durationDays }} jour(s)</dd>
                   </div>
+
+                  <div class="rounded-xl bg-slate-50 p-3.5">
+                    <dt class="text-[10px] font-bold uppercase tracking-[0.12em] text-slate-400">Historique</dt>
+                    <dd class="mt-1 text-xs font-bold" :class="historyWarningCount ? 'text-amber-700' : 'text-emerald-700'">
+                      {{ historyWarningCount }} alerte(s)
+                    </dd>
+                  </div>
                 </dl>
               </div>
 
-              <div class="rounded-xl border border-blue-100 bg-blue-50 px-4 py-3 text-xs leading-5 text-blue-800">
-                Après génération, vous pourrez contrôler et ajuster la proposition avant de la valider et de la publier.
+              <div
+                v-if="excludedEmployeeGuids.length"
+                class="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-xs leading-5 text-amber-800"
+              >
+                Les exclusions sont limitées à cette génération : elles ne modifient ni les profils permanents, ni les plannings déjà publiés, et ne seront pas converties en jours de repos.
               </div>
 
               <div
@@ -244,7 +299,7 @@
               </button>
 
               <button
-                v-if="currentStep < 3"
+                v-if="currentStep < 5"
                 type="button"
                 class="inline-flex items-center gap-1.5 rounded-lg bg-blue-700 px-5 py-2.5 text-xs font-bold text-white hover:bg-blue-800 disabled:cursor-not-allowed disabled:bg-slate-300"
                 :disabled="!canGoNext"
@@ -259,7 +314,7 @@
                 v-else
                 type="button"
                 class="inline-flex items-center gap-2 rounded-lg bg-blue-700 px-5 py-2.5 text-xs font-bold text-white hover:bg-blue-800 disabled:cursor-not-allowed disabled:bg-slate-300"
-                :disabled="saving || !validPeriod || !readiness.ready.value || readiness.loading.value"
+                :disabled="saving || !validPeriod || !readiness.ready.value || readiness.loading.value || readiness.includedEmployees.value.length === 0"
                 :title="generateBlocker"
                 @click="generate"
               >
@@ -291,8 +346,10 @@ import ScheduleSuggestionService from '@/service/ScheduleSuggestionService'
 import { useBodyScrollLock } from '@/views/planning/composables/useBodyScrollLock'
 import { formatDate, responseError } from '../planningSuggestion.helpers'
 import { useGenerationReadiness } from '../composables/useGenerationReadiness'
-import type { ScheduleSuggestion } from '../planningSuggestion.type'
+import type { PlanningHistoryAdjustment, PlanningHistoryReview, ScheduleSuggestion } from '../planningSuggestion.type'
 import GenerationReadinessPanel from './GenerationReadinessPanel.vue'
+import HistoryFairnessReview from './HistoryFairnessReview.vue'
+import TemporaryEmployeeExclusionPicker from './TemporaryEmployeeExclusionPicker.vue'
 
 const props = defineProps<{ open: boolean; managerGuid: string }>()
 const emit = defineEmits<{ close: []; generated: [suggestion: ScheduleSuggestion] }>()
@@ -303,26 +360,43 @@ const errorMessage = ref('')
 const periodFrom = ref('')
 const periodTo = ref('')
 const activePreset = ref('14-days')
-const currentStep = ref<1 | 2 | 3>(1)
+const excludedEmployeeGuids = ref<string[]>([])
+const currentStep = ref<1 | 2 | 3 | 4 | 5>(1)
+const historyReview = ref<PlanningHistoryReview | null>(null)
+const historyAdjustments = ref<PlanningHistoryAdjustment[]>([])
+const historyLoading = ref(false)
+const historyError = ref('')
 const today = new Date().toISOString().slice(0, 10)
 const managerGuidRef = computed(() => props.managerGuid)
-const readiness = useGenerationReadiness(managerGuidRef)
+const readiness = useGenerationReadiness(managerGuidRef, excludedEmployeeGuids)
 
 const steps = [
   {
     id: 1 as const,
-    label: 'Prérequis',
-    shortDescription: 'Vérifier la configuration',
-    description: 'Vérifiez que les profils, besoins et règles nécessaires sont prêts avant de poursuivre.',
+    label: 'Collaborateurs',
+    shortDescription: 'Définir le périmètre',
+    description: 'Choisissez l’équipe concernée et retirez ponctuellement les collaborateurs qui ne doivent pas participer à cette génération.',
   },
   {
     id: 2 as const,
+    label: 'Prérequis',
+    shortDescription: 'Vérifier la configuration',
+    description: 'Toké vérifie les profils, besoins et règles uniquement sur le périmètre de collaborateurs retenu.',
+  },
+  {
+    id: 3 as const,
     label: 'Période',
     shortDescription: 'Définir les dates',
     description: 'Choisissez précisément la période sur laquelle Toké doit construire la proposition.',
   },
   {
-    id: 3 as const,
+    id: 4 as const,
+    label: 'Historique',
+    shortDescription: 'Équité et alertes',
+    description: 'Toké analyse les charges passées. Les anomalies sont des avertissements et ne bloquent jamais la génération.',
+  },
+  {
+    id: 5 as const,
     label: 'Confirmation',
     shortDescription: 'Contrôler et lancer',
     description: 'Contrôlez les paramètres retenus avant de lancer le calcul du planning.',
@@ -345,9 +419,23 @@ watch(
   async (open) => {
     if (!open) return
     errorMessage.value = ''
+    historyError.value = ''
+    historyReview.value = null
+    historyAdjustments.value = []
+    excludedEmployeeGuids.value = []
     currentStep.value = 1
     applyPreset('14-days')
     await readiness.load()
+  },
+)
+
+watch(
+  [periodFrom, periodTo, () => excludedEmployeeGuids.value.join('|')],
+  () => {
+    // Any scope/date change invalidates the previous historical review.
+    historyReview.value = null
+    historyAdjustments.value = []
+    historyError.value = ''
   },
 )
 
@@ -411,15 +499,31 @@ const periodLabel = computed(() =>
     : 'Période invalide',
 )
 
+const historyWarningCount = computed(() =>
+  historyReview.value?.anomalies?.length ?? (historyError.value ? 1 : 0),
+)
+
 const canGoNext = computed(() => {
   if (saving.value) return false
 
   if (currentStep.value === 1) {
-    return !readiness.loading.value && readiness.ready.value
+    return (
+      readiness.loaded.value &&
+      !readiness.loading.value &&
+      readiness.includedEmployees.value.length > 0
+    )
   }
 
   if (currentStep.value === 2) {
+    return !readiness.loading.value && readiness.ready.value
+  }
+
+  if (currentStep.value === 3) {
     return validPeriod.value
+  }
+
+  if (currentStep.value === 4) {
+    return !historyLoading.value
   }
 
   return false
@@ -427,12 +531,24 @@ const canGoNext = computed(() => {
 
 const nextBlocker = computed(() => {
   if (currentStep.value === 1) {
+    if (readiness.loading.value) return 'Chargement de l’équipe en cours.'
+    if (!readiness.loaded.value) return 'Impossible de vérifier l’équipe.'
+    if (readiness.includedEmployees.value.length === 0) {
+      return 'Réincluez au moins un collaborateur avant de poursuivre.'
+    }
+  }
+
+  if (currentStep.value === 2) {
     if (readiness.loading.value) return 'Vérification des prérequis en cours.'
     if (!readiness.ready.value) return 'Corrigez les prérequis signalés avant de poursuivre.'
   }
 
-  if (currentStep.value === 2 && !validPeriod.value) {
+  if (currentStep.value === 3 && !validPeriod.value) {
     return 'Choisissez une période valide avant de poursuivre.'
+  }
+
+  if (currentStep.value === 4 && historyLoading.value) {
+    return 'Analyse de l’historique en cours.'
   }
 
   return 'Passer à l’étape suivante.'
@@ -440,15 +556,26 @@ const nextBlocker = computed(() => {
 
 const footerMessage = computed(() => {
   if (currentStep.value === 1) {
-    if (readiness.loading.value) return 'Vérification des prérequis en cours…'
-    if (readiness.ready.value) return 'Tous les prérequis sont validés.'
-    return `${readiness.blockerCount.value} blocage(s) à corriger avant de poursuivre.`
+    if (readiness.loading.value) return 'Chargement de l’équipe en cours…'
+    return `${readiness.includedEmployees.value.length} collaborateur(s) inclus · ${excludedEmployeeGuids.value.length} exclusion(s) temporaire(s).`
   }
 
   if (currentStep.value === 2) {
+    if (readiness.loading.value) return 'Vérification des prérequis en cours…'
+    if (readiness.ready.value) return 'Tous les prérequis du périmètre retenu sont validés.'
+    return `${readiness.blockerCount.value} blocage(s) à corriger avant de poursuivre.`
+  }
+
+  if (currentStep.value === 3) {
     return validPeriod.value
       ? `${durationDays.value} jour(s) sélectionné(s).`
       : 'Choisissez une période valide.'
+  }
+
+  if (currentStep.value === 4) {
+    if (historyLoading.value) return 'Analyse de l’historique en cours…'
+    if (historyError.value) return 'Historique indisponible : la génération continuera sans équité historique.'
+    return `${historyWarningCount.value} alerte(s) historique(s) · aucune n’est bloquante.`
   }
 
   return 'La proposition restera un brouillon jusqu’à votre validation explicite.'
@@ -456,6 +583,7 @@ const footerMessage = computed(() => {
 
 const generateBlocker = computed(() => {
   if (saving.value) return 'Calcul en cours.'
+  if (readiness.includedEmployees.value.length === 0) return 'Aucun collaborateur inclus.'
   if (readiness.loading.value) return 'Vérification des prérequis en cours.'
   if (!readiness.ready.value) return 'Corrigez les prérequis signalés avant de générer.'
   if (!validPeriod.value) return 'Choisissez une période valide.'
@@ -474,14 +602,51 @@ function stepCircleClass(stepId: number): string {
   return 'border-slate-200 bg-white text-slate-400'
 }
 
-function goNext(): void {
-  if (!canGoNext.value || currentStep.value >= 3) return
-  currentStep.value = (currentStep.value + 1) as 1 | 2 | 3
+async function loadHistoryReview(): Promise<void> {
+  if (!validPeriod.value || !props.managerGuid) return
+
+  historyLoading.value = true
+  historyError.value = ''
+
+  try {
+    const response = await ScheduleSuggestionService.reviewHistory(props.managerGuid, {
+      period_from: periodFrom.value,
+      ...(excludedEmployeeGuids.value.length
+        ? { excluded_employee_guids: excludedEmployeeGuids.value }
+        : {}),
+      ...(historyAdjustments.value.length
+        ? { history_adjustments: historyAdjustments.value }
+        : {}),
+    })
+
+    if (!response?.success) throw response
+    historyReview.value = response.data.history_review ?? null
+  } catch (error: any) {
+    historyReview.value = null
+    historyError.value = responseError(
+      error,
+      'Impossible d’analyser l’historique d’équité.',
+    )
+  } finally {
+    historyLoading.value = false
+  }
+}
+
+async function goNext(): Promise<void> {
+  if (!canGoNext.value || currentStep.value >= 5) return
+
+  if (currentStep.value === 3) {
+    currentStep.value = 4
+    await loadHistoryReview()
+    return
+  }
+
+  currentStep.value = (currentStep.value + 1) as 1 | 2 | 3 | 4 | 5
 }
 
 function goPrevious(): void {
   if (saving.value || currentStep.value <= 1) return
-  currentStep.value = (currentStep.value - 1) as 1 | 2 | 3
+  currentStep.value = (currentStep.value - 1) as 1 | 2 | 3 | 4 | 5
 }
 
 async function openCorrection(routeName: string): Promise<void> {
@@ -492,11 +657,12 @@ async function openCorrection(routeName: string): Promise<void> {
 
 async function generate(): Promise<void> {
   if (
-    currentStep.value !== 3 ||
+    currentStep.value !== 5 ||
     !validPeriod.value ||
     !props.managerGuid ||
     saving.value ||
-    !readiness.ready.value
+    !readiness.ready.value ||
+    readiness.includedEmployees.value.length === 0
   ) {
     return
   }
@@ -508,6 +674,12 @@ async function generate(): Promise<void> {
     const response = await ScheduleSuggestionService.generate(props.managerGuid, {
       period_from: periodFrom.value,
       period_to: periodTo.value,
+      ...(excludedEmployeeGuids.value.length
+        ? { excluded_employee_guids: excludedEmployeeGuids.value }
+        : {}),
+      ...(historyAdjustments.value.length
+        ? { history_adjustments: historyAdjustments.value }
+        : {}),
     })
 
     if (!response?.success) throw response
@@ -515,7 +687,7 @@ async function generate(): Promise<void> {
   } catch (error: any) {
     errorMessage.value = responseError(
       error,
-      'La génération du planning a échoué. Vérifiez les contraintes signalées par le moteur.',
+      'La génération du planning a échoué. Vérifiez les contraintes courantes signalées par Toké.',
     )
   } finally {
     saving.value = false

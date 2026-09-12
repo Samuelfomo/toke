@@ -34,15 +34,6 @@
           <div class="grid grid-cols-1 gap-3 sm:grid-cols-2 sm:flex">
             <div class="rounded-2xl border border-white/15 bg-white/10 px-4 py-3 backdrop-blur">
               <p class="text-xs font-bold uppercase tracking-wide text-blue-100">
-                Moteur
-              </p>
-              <p class="mt-1 flex items-center gap-2 text-sm font-semibold">
-                <span class="h-2 w-2 rounded-full bg-emerald-400"/>
-                OR-Tools
-              </p>
-            </div>
-            <div class="rounded-2xl border border-white/15 bg-white/10 px-4 py-3 backdrop-blur">
-              <p class="text-xs font-bold uppercase tracking-wide text-blue-100">
                 Parcours
               </p>
               <p class="mt-1 text-sm font-semibold">Configurer → Vérifier</p>

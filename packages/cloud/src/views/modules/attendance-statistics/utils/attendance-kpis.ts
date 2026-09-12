@@ -1,4 +1,5 @@
 import type { AttendanceOverview } from '../types/attendance-statistics.types.js';
+
 import { formatDurationMinutes } from './duration.js';
 import { formatPercentage } from './percentage.js';
 
@@ -42,6 +43,9 @@ export function buildAttendanceKpis(overview: AttendanceOverview): AttendanceKpi
   const attendanceRateAvailable = summary.rates.attendanceRate !== null;
   const punctualityRateAvailable = summary.rates.punctualityRate !== null;
   const netDurationAvailable = summary.durations.daysWithKnownNetDuration > 0;
+  const absenceEmployeeRateAvailable = summary.employeeImpact.absenceEmployeeRate !== null;
+  const lateEmployeeRateAvailable = summary.employeeImpact.lateEmployeeRate !== null;
+  const issueEmployeeRateAvailable = summary.employeeImpact.issueEmployeeRate !== null;
 
   const observedOnTime = summary.statusTotals.PRESENT;
   const observedLate = summary.statusTotals.LATE;
@@ -104,53 +108,56 @@ export function buildAttendanceKpis(overview: AttendanceOverview): AttendanceKpi
 
     {
       id: 'absences',
-      label: 'Absences confirmées',
-      value: formatCount(summary.statusTotals.ABSENT),
-      helper:
-        summary.statusTotals.ABSENT === 0
-          ? pending > 0
-            ? `Aucune absence n’est encore confirmée. ${pending} situation${plural(pending)} reste${pending === 1 ? '' : 'nt'} en attente de finalisation.`
-            : 'Aucune absence confirmée sur cette période.'
-          : isSingleDay
-            ? buildSingleDayAbsenceHelper(summary.statusTotals.ABSENT)
-            : `${summary.statusTotals.ABSENT} journée${plural(summary.statusTotals.ABSENT)} d’absence confirmée${plural(summary.statusTotals.ABSENT)}`,
+      label: `Taux d'absence`,
+      // label: 'Employés concernés par une absence',
+      value: formatPercentage(summary.employeeImpact.absenceEmployeeRate),
+      helper: buildEmployeeImpactHelper(
+        summary.employeeImpact.employeesWithAbsence,
+        overview.scope.teamSize,
+        summary.statusTotals.ABSENT,
+        'absence',
+      ),
       detail:
-        'Une absence est comptée uniquement lorsqu’une journée de travail valide est terminée et qu’aucune présence exploitable n’a été enregistrée.',
+        'Cet indicateur mesure la part des employés ayant au moins une absence confirmée sur la période. Un même employé n’est compté qu’une seule fois dans le pourcentage.',
       tone: 'rose',
       icon: 'absence',
-      available: true,
+      available: absenceEmployeeRateAvailable,
     },
 
     {
       id: 'late_days',
-      label: 'Retards observés',
-      value: formatCount(observedLate),
-      helper: buildLateHelper(observedLate, consolidatedLate, nonConsolidatedLate, isSingleDay),
-      detail: isSingleDay
-        ? 'Le total comprend tous les retards déjà observés aujourd’hui. Seuls ceux dont la plage de travail prévue est terminée sont déjà intégrés au taux de ponctualité.'
-        : 'Le total affiché correspond aux retards déjà observés. Les taux n’intègrent que les retards des journées devenues éligibles.',
+      label: 'Taux de retard',
+      // label: 'Employés concernés par un retard',
+      value: formatPercentage(summary.employeeImpact.lateEmployeeRate),
+      helper: buildEmployeeImpactHelper(
+        summary.employeeImpact.employeesWithLate,
+        overview.scope.teamSize,
+        observedLate,
+        'late',
+      ),
+      detail:
+        'Cet indicateur mesure la part des employés ayant au moins un retard observé sur la période. Le nombre de journées avec retard reste disponible comme information de détail.',
       tone: 'amber',
       icon: 'late',
-      available: true,
+      available: lateEmployeeRateAvailable,
     },
 
     {
       id: 'issues',
-      label: 'Éléments à examiner',
-      value: formatCount(summary.issueCount),
-      helper:
-        summary.issueCount === 0
-          ? isSingleDay
-            ? 'Aucune situation particulière ne nécessite de vérification aujourd’hui.'
-            : 'Aucun élément particulier à examiner sur cette période.'
-          : isSingleDay
-            ? `${summary.issueCount} situation${plural(summary.issueCount)} nécessite${summary.issueCount === 1 ? '' : 'nt'} une vérification dans les pointages, sessions ou plannings.`
-            : `${summary.issueCount} élément${plural(summary.issueCount)} nécessite${summary.issueCount === 1 ? '' : 'nt'} votre attention`,
+      label: `Taux d'anomalie`,
+      // label: 'Employés avec des éléments à examiner',
+      value: formatPercentage(summary.employeeImpact.issueEmployeeRate),
+      helper: buildEmployeeImpactHelper(
+        summary.employeeImpact.employeesWithIssues,
+        overview.scope.teamSize,
+        summary.issueCount,
+        'issue',
+      ),
       detail:
-        'Consultez ces éléments pour vérifier les situations qui peuvent nécessiter une analyse ou une correction.',
+        'Cet indicateur mesure la part des employés ayant au moins une situation signalée à vérifier sur la période. Les occurrences restent accessibles dans le détail.',
       tone: 'orange',
       icon: 'issue',
-      available: true,
+      available: issueEmployeeRateAvailable,
     },
 
     {
@@ -193,41 +200,6 @@ export function buildAttendanceDurationInsight(
   return duration;
 }
 
-function buildLateHelper(
-  observed: number,
-  consolidated: number,
-  pending: number,
-  isSingleDay: boolean,
-): string {
-  if (observed === 0) {
-    return isSingleDay ? 'Aucun retard observé aujourd’hui.' : 'Aucun retard observé sur cette période.';
-  }
-
-  if (!isSingleDay) {
-    if (pending <= 0) {
-      return `${observed} journée${plural(observed)} avec une arrivée après l’heure prévue.`;
-    }
-
-    if (consolidated === 0) {
-      return `${observed} retard${plural(observed)} déjà observé${plural(observed)} sur ${observed === 1 ? 'une journée encore en cours' : 'des journées encore en cours'}.`;
-    }
-
-    return `${observed} retard${plural(observed)} observé${plural(observed)} : ${consolidated} consolidé${plural(consolidated)} et ${pending} encore en cours.`;
-  }
-
-  const subject = `${observed} collaborateur${plural(observed)} ${observed === 1 ? 'est arrivé' : 'sont arrivés'} en retard aujourd’hui`;
-
-  if (pending <= 0) {
-    return `${subject}. ${observed === 1 ? 'Sa situation est déjà finalisée et prise' : 'Toutes ces situations sont déjà finalisées et prises'} en compte dans la ponctualité.`;
-  }
-
-  if (consolidated === 0) {
-    return `${subject}. ${observed === 1 ? 'Sa situation est encore en cours' : 'Ces situations sont encore en cours'} et ${observed === 1 ? 'ne modifie' : 'ne modifient'} pas encore le taux de ponctualité.`;
-  }
-
-  return `${subject} : ${consolidated} situation${plural(consolidated)} ${consolidated === 1 ? 'est déjà finalisée et prise' : 'sont déjà finalisées et prises'} en compte dans la ponctualité, ${pending} ${pending === 1 ? 'est encore en cours' : 'sont encore en cours'}.`;
-}
-
 function buildSingleDayAttendanceHelper(
   attended: number,
   expected: number,
@@ -259,18 +231,27 @@ function buildSingleDayPunctualityHelper(onTime: number, attended: number): stri
   return `Parmi les ${attended} présence${plural(attended)} déjà finalisée${plural(attended)}, ${onTime} arrivée${plural(onTime)} ${onTime === 1 ? 'a' : 'ont'} respecté l’horaire prévu ou la tolérance autorisée.`;
 }
 
-function buildSingleDayAbsenceHelper(absent: number): string {
-  if (absent === 1) {
-    return '1 collaborateur n’a enregistré aucune présence alors que sa plage de travail prévue est terminée.';
+function buildEmployeeImpactHelper(
+  employeesConcerned: number,
+  teamSize: number,
+  occurrenceCount: number,
+  kind: 'absence' | 'late' | 'issue',
+): string {
+  if (teamSize <= 0) {
+    return 'Aucun employé dans le périmètre analysé.';
   }
 
-  return `${absent} collaborateurs n’ont enregistré aucune présence alors que leurs plages de travail prévues sont terminées.`;
-}
+  const employeePart = `${employeesConcerned} employé${plural(employeesConcerned)} sur ${teamSize} concerné${plural(employeesConcerned)}`;
 
-function formatCount(value: number): string {
-  return new Intl.NumberFormat('fr-FR', {
-    maximumFractionDigits: 0,
-  }).format(value);
+  if (kind === 'absence') {
+    return `${employeePart} · ${occurrenceCount} journée${plural(occurrenceCount)} d’absence confirmée${plural(occurrenceCount)}`;
+  }
+
+  if (kind === 'late') {
+    return `${employeePart} · ${occurrenceCount} journée${plural(occurrenceCount)} avec retard`;
+  }
+
+  return `${employeePart} · ${occurrenceCount} élément${plural(occurrenceCount)} à examiner`;
 }
 
 function plural(value: number): string {

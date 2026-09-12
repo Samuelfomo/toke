@@ -901,7 +901,7 @@
       <!-- Toast -->
       <div
           ref="toastRef"
-          class="fixed right-6 top-6 flex items-center gap-3 px-5 py-3.5 rounded-xl shadow-xl text-white text-sm font-medium z-[100]
+          class="fixed right-6 top-6 flex items-center gap-3 px-5 py-3.5 rounded-xl shadow-xl text-white text-sm font-medium z-[120]
                opacity-0 translate-y-2 transition-all duration-300 pointer-events-none"
           :class="messageType === 'success' ? 'bg-emerald-500' : 'bg-red-500'">
         <svg class="w-5 h-5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">

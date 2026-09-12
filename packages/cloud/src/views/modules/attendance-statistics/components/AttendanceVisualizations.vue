@@ -14,6 +14,7 @@ interface Props {
 const props = defineProps<Props>();
 const emit = defineEmits<{
   exploreDayStatus: [payload: { date: BusinessDate; status: Extract<AttendanceStatus, 'ABSENT' | 'LATE'> }];
+  exploreDayIssues: [date: BusinessDate];
 }>();
 const selectedDate = ref<string | null>(null);
 
@@ -39,6 +40,11 @@ function handleTrendExplore(interaction: AttendanceDailyTrendInteraction): void 
   selectedDate.value = interaction.date;
   if (interaction.mode === 'filter_day_status' && interaction.status) {
     emit('exploreDayStatus', {date: interaction.date, status: interaction.status});
+    return;
+  }
+
+  if (interaction.mode === 'filter_day_issues') {
+    emit('exploreDayIssues', interaction.date);
   }
 }
 
@@ -54,8 +60,8 @@ function handleTrendExplore(interaction: AttendanceDailyTrendInteraction): void 
         </h2>
       </div>
       <p class="max-w-2xl text-sm text-slate-500">
-        Survolez les points pour comprendre la journée, puis cliquez sur une
-        absence ou un retard pour atteindre directement les employés concernés.
+        Survolez les points pour comprendre la journée, puis cliquez sur un retard,
+        une absence ou un élément à examiner pour accéder aux situations concernées.
       </p>
     </div>
     <div class="grid gap-5 2xl:grid-cols-[minmax(0,1.65fr)_minmax(320px,0.75fr)]">
