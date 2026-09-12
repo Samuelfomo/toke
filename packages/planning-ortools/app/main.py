@@ -10,12 +10,12 @@ from app.schemas import PlanningSolverInput, SolverResponse
 from app.solver import solve_planning
 
 
-SOLVER_VERSION = "ortools-cp-sat-v1.6-continuation-workday"
+SOLVER_VERSION = "ortools-cp-sat-v1.10-history-fairness"
 logger = logging.getLogger("uvicorn.error")
 
 app = FastAPI(
     title="Toké Planning OR-Tools",
-    version="1.6.0",
+    version="1.10.0",
 )
 
 
@@ -51,6 +51,8 @@ def solve(request: PlanningSolverInput):
 
     try:
         response = solve_planning(request)
+        # Keep /solve protocol version aligned with /health even if the schema default drifts.
+        response.solverVersion = SOLVER_VERSION
     except ValueError as error:
         logger.warning(
             "planning.solve.invalid requested=%s..%s solve=%s..%s message=%s",

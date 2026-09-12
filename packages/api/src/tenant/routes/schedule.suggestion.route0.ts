@@ -5,6 +5,7 @@ import Ensure from '../../middle/ensured-routes.js';
 import R from '../../tools/response.js';
 import ScheduleSuggestion from '../class/ScheduleSuggestion.js';
 import ScheduleSuggestionItem from '../class/ScheduleSuggestionItem.js';
+import SessionTemplate from '../class/SessionTemplates.js';
 import User from '../class/User.js';
 import {
   generateConfiguredSuggestion,
@@ -15,19 +16,6 @@ import {
   approveScheduleSuggestion,
   SuggestionApprovalError,
 } from '../../tools/schedule.suggestion.approval.service.js';
-import {
-  applyScheduleSuggestionBulkEdit,
-  previewScheduleSuggestionBulkEdit,
-  SuggestionBulkEditError,
-} from '../../utils/schedule.suggestion.bulk-edit.service.js';
-import {
-  regenerateScheduleSuggestion,
-  SuggestionRegenerationError,
-} from '../../utils/schedule.suggestion.regeneration.service.js';
-import {
-  PlanningHistoryReviewError,
-  reviewPlanningHistoryForManager,
-} from '../../utils/planning.history.review.service.js';
 
 const router = Router();
 
@@ -48,8 +36,6 @@ const CODES = {
   APPROVAL_FAILED: 'SUGGESTION_APPROVAL_FAILED',
   REJECTION_FAILED: 'SUGGESTION_REJECTION_FAILED',
   PATCH_FAILED: 'SUGGESTION_PATCH_FAILED',
-  BULK_EDIT_FAILED: 'SUGGESTION_BULK_EDIT_FAILED',
-  REGENERATION_FAILED: 'SUGGESTION_REGENERATION_FAILED',
   LISTING_FAILED: 'SUGGESTION_LISTING_FAILED',
   DELETION_FAILED: 'SUGGESTION_DELETION_FAILED',
 } as const;
@@ -67,8 +53,6 @@ const ERRORS = {
   APPROVAL_FAILED: 'Suggestion approval failed.',
   REJECTION_FAILED: 'Suggestion rejection failed.',
   PATCH_FAILED: 'Suggestion item patch failed.',
-  BULK_EDIT_FAILED: 'Suggestion bulk edit failed.',
-  REGENERATION_FAILED: 'Suggestion regeneration failed.',
   LISTING_FAILED: 'Failed to list suggestions.',
   DELETION_FAILED: 'Failed to delete suggestion.',
 } as const;
@@ -80,116 +64,18 @@ function isValidDate(v: any): v is string {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// POST /api/schedule-suggestions/:manager/history-review
-//
-// Analyse la fenêtre historique utilisée pour l'équité. Les anomalies sont des
-// warnings : elles ne bloquent jamais la génération. Le manager peut choisir
-// quels collaborateurs doivent réellement compter sur une journée ambiguë.
-// ─────────────────────────────────────────────────────────────────────────────
-
-router.post('/:manager/history-review', Ensure.post(), async (req: Request, res: Response) => {
-  try {
-    const { manager } = req.params;
-    const { period_from, excluded_employee_guids, history_adjustments } = req.body ?? {};
-
-    if (!isValidDate(period_from)) {
-      return R.handleError(res, HttpStatus.BAD_REQUEST, {
-        code: CODES.INVALID_PAYLOAD,
-        message: 'period_from is required (YYYY-MM-DD).',
-      });
-    }
-
-    if (
-      excluded_employee_guids !== undefined &&
-      (!Array.isArray(excluded_employee_guids) ||
-        excluded_employee_guids.some(
-          (guid: unknown) => typeof guid !== 'string' || !UsersValidationUtils.validateGuid(guid),
-        ))
-    ) {
-      return R.handleError(res, HttpStatus.BAD_REQUEST, {
-        code: CODES.INVALID_PAYLOAD,
-        message: 'excluded_employee_guids must be an array of valid employee GUIDs.',
-      });
-    }
-
-    if (
-      history_adjustments !== undefined &&
-      (!Array.isArray(history_adjustments) ||
-        history_adjustments.some(
-          (adjustment: any) =>
-            !adjustment ||
-            !isValidDate(adjustment.date) ||
-            typeof adjustment.template_guid !== 'string' ||
-            !UsersValidationUtils.validateGuid(adjustment.template_guid) ||
-            !Array.isArray(adjustment.included_employee_guids) ||
-            adjustment.included_employee_guids.some(
-              (guid: unknown) =>
-                typeof guid !== 'string' || !UsersValidationUtils.validateGuid(guid),
-            ),
-        ))
-    ) {
-      return R.handleError(res, HttpStatus.BAD_REQUEST, {
-        code: CODES.INVALID_PAYLOAD,
-        message: 'history_adjustments is invalid.',
-      });
-    }
-
-    const review = await reviewPlanningHistoryForManager(
-      manager as string,
-      period_from,
-      excluded_employee_guids ?? [],
-      history_adjustments ?? [],
-    );
-
-    return R.handleSuccess(res, { history_review: review });
-  } catch (error: any) {
-    if (error instanceof PlanningHistoryReviewError) {
-      return R.handleError(res, error.status as any, {
-        code: error.code,
-        message: error.message,
-        details: error.details,
-      });
-    }
-
-    // Even the review endpoint describes history as advisory. A technical read
-    // problem is exposed as a warning-shaped successful response so the UI can
-    // still let the manager continue to generation without historical fairness.
-    return R.handleSuccess(res, {
-      history_review: {
-        available: false,
-        anomalies: [],
-        fairness: [],
-        boundaryGuardFacts: [],
-        summary: {
-          employeeCount: 0,
-          acceptedWorkRecords: 0,
-          acceptedRestRecords: 0,
-          ignoredAmbiguousRecords: 0,
-          warningCount: 1,
-          adjustedAnomalyCount: 0,
-        },
-        warning: {
-          code: 'PLANNING_HISTORY_ANALYSIS_UNAVAILABLE',
-          message: error?.message ?? 'Historical fairness could not be analysed.',
-        },
-      },
-    });
-  }
-});
-
-// ─────────────────────────────────────────────────────────────────────────────
 // POST /api/schedule-suggestions/:manager/generate
 //
 // Génère une nouvelle suggestion (status: draft) pour un manager.
-// Body : { period_from, period_to, excluded_employee_guids?: string[] }
-//   excluded_employee_guids : collaborateurs temporairement exclus de cette
-//                             génération uniquement. Ils ne sont pas envoyés au solveur.
+// Body : { period_from, period_to, employee_guids?: string[] }
+//   employee_guids : liste des GUIDs des employés ciblés.
+//                   Si absent → tous les employés de l'équipe du manager.
 // ─────────────────────────────────────────────────────────────────────────────
 
 router.post('/:manager/generate', Ensure.post(), async (req: Request, res: Response) => {
   try {
     const { manager } = req.params;
-    const { period_from, period_to, excluded_employee_guids, history_adjustments } = req.body ?? {};
+    const { period_from, period_to } = req.body ?? {};
 
     if (!isValidDate(period_from) || !isValidDate(period_to) || period_from > period_to) {
       return R.handleError(res, HttpStatus.BAD_REQUEST, {
@@ -199,57 +85,13 @@ router.post('/:manager/generate', Ensure.post(), async (req: Request, res: Respo
       });
     }
 
-    if (
-      excluded_employee_guids !== undefined &&
-      (!Array.isArray(excluded_employee_guids) ||
-        excluded_employee_guids.some(
-          (guid: unknown) => typeof guid !== 'string' || !UsersValidationUtils.validateGuid(guid),
-        ))
-    ) {
-      return R.handleError(res, HttpStatus.BAD_REQUEST, {
-        code: CODES.INVALID_PAYLOAD,
-        message: 'excluded_employee_guids must be an array of valid employee GUIDs.',
-      });
-    }
-
-    if (
-      history_adjustments !== undefined &&
-      (!Array.isArray(history_adjustments) ||
-        history_adjustments.some(
-          (adjustment: any) =>
-            !adjustment ||
-            !isValidDate(adjustment.date) ||
-            typeof adjustment.template_guid !== 'string' ||
-            !UsersValidationUtils.validateGuid(adjustment.template_guid) ||
-            !Array.isArray(adjustment.included_employee_guids) ||
-            adjustment.included_employee_guids.some(
-              (guid: unknown) =>
-                typeof guid !== 'string' || !UsersValidationUtils.validateGuid(guid),
-            ),
-        ))
-    ) {
-      return R.handleError(res, HttpStatus.BAD_REQUEST, {
-        code: CODES.INVALID_PAYLOAD,
-        message:
-          'history_adjustments must contain valid date, template_guid and included_employee_guids values.',
-      });
-    }
-
-    const result = await generateConfiguredSuggestion(
-      manager as string,
-      period_from,
-      period_to,
-      excluded_employee_guids ?? [],
-      history_adjustments ?? [],
-    );
+    const result = await generateConfiguredSuggestion(manager as string, period_from, period_to);
 
     return R.handleCreated(res, {
       suggestion: await result.suggestion.toJSON(responseValue.FULL, true),
       conformity_score: result.engineResult.conformityScore,
       planning_quality_score: result.engineResult.conformityScore,
       employee_count: result.employeeCount,
-      excluded_employee_count: result.excludedEmployeeCount,
-      excluded_employees: result.excludedEmployees,
       configuration: {
         guid: result.configGuid,
         version: result.configVersion,
@@ -267,127 +109,6 @@ router.post('/:manager/generate', Ensure.post(), async (req: Request, res: Respo
 
     return R.handleError(res, HttpStatus.INTERNAL_ERROR, {
       code: CODES.GENERATION_FAILED,
-      message: error.message,
-    });
-  }
-});
-
-// ─────────────────────────────────────────────────────────────────────────────
-// POST /api/schedule-suggestions/:guid/bulk-edit/preview
-//
-// Simule une modification en masse sans écrire. Le manager voit les cellules
-// directement touchées, les suites de garde et tous les blocages déterministes.
-// ─────────────────────────────────────────────────────────────────────────────
-
-router.post('/:guid/bulk-edit/preview', Ensure.post(), async (req: Request, res: Response) => {
-  try {
-    const { guid } = req.params;
-
-    if (!UsersValidationUtils.validateGuid(guid)) {
-      return R.handleError(res, HttpStatus.BAD_REQUEST, {
-        code: CODES.INVALID_GUID,
-        message: ERRORS.INVALID_GUID,
-      });
-    }
-
-    const result = await previewScheduleSuggestionBulkEdit(guid as string, req.body);
-
-    return R.handleSuccess(res, {
-      bulk_edit: result,
-    });
-  } catch (error: any) {
-    if (error instanceof SuggestionBulkEditError) {
-      return R.handleError(res, error.status as any, {
-        code: error.code,
-        message: error.message,
-        details: error.details,
-      });
-    }
-
-    return R.handleError(res, HttpStatus.INTERNAL_ERROR, {
-      code: CODES.BULK_EDIT_FAILED,
-      message: error.message,
-    });
-  }
-});
-
-// ─────────────────────────────────────────────────────────────────────────────
-// PATCH /api/schedule-suggestions/:guid/bulk-edit
-//
-// Relance tous les contrôles dans une transaction SERIALIZABLE puis applique
-// l'ensemble des modifications uniquement si aucun blocage n'est détecté.
-// ─────────────────────────────────────────────────────────────────────────────
-
-router.patch('/:guid/bulk-edit', Ensure.patch(), async (req: Request, res: Response) => {
-  try {
-    const { guid } = req.params;
-
-    if (!UsersValidationUtils.validateGuid(guid)) {
-      return R.handleError(res, HttpStatus.BAD_REQUEST, {
-        code: CODES.INVALID_GUID,
-        message: ERRORS.INVALID_GUID,
-      });
-    }
-
-    const result = await applyScheduleSuggestionBulkEdit(guid as string, req.body);
-
-    return R.handleSuccess(res, {
-      bulk_edit: result,
-    });
-  } catch (error: any) {
-    if (error instanceof SuggestionBulkEditError) {
-      return R.handleError(res, error.status as any, {
-        code: error.code,
-        message: error.message,
-        details: error.details,
-      });
-    }
-
-    return R.handleError(res, HttpStatus.INTERNAL_ERROR, {
-      code: CODES.BULK_EDIT_FAILED,
-      message: error.message,
-    });
-  }
-});
-
-// ─────────────────────────────────────────────────────────────────────────────
-// POST /api/schedule-suggestions/:guid/regenerate
-//
-// Régénère le draft courant en conservant toutes les décisions manuelles
-// directes comme contraintes du solveur. Les cellules non verrouillées peuvent
-// être redistribuées par OR-Tools autour de ces décisions.
-// ─────────────────────────────────────────────────────────────────────────────
-
-router.post('/:guid/regenerate', Ensure.post(), async (req: Request, res: Response) => {
-  try {
-    const { guid } = req.params;
-
-    if (!UsersValidationUtils.validateGuid(guid)) {
-      return R.handleError(res, HttpStatus.BAD_REQUEST, {
-        code: CODES.INVALID_GUID,
-        message: ERRORS.INVALID_GUID,
-      });
-    }
-
-    const result = await regenerateScheduleSuggestion(guid as string);
-
-    const suggestion = await ScheduleSuggestion._load(guid as string);
-
-    return R.handleSuccess(res, {
-      regeneration: result,
-      suggestion: suggestion ? await suggestion.toJSON(responseValue.FULL, true) : null,
-    });
-  } catch (error: any) {
-    if (error instanceof SuggestionRegenerationError) {
-      return R.handleError(res, error.status as any, {
-        code: error.code,
-        message: error.message,
-        details: error.details,
-      });
-    }
-
-    return R.handleError(res, HttpStatus.INTERNAL_ERROR, {
-      code: CODES.REGENERATION_FAILED,
       message: error.message,
     });
   }
@@ -512,33 +233,100 @@ router.patch('/:guid/item/:itemGuid', Ensure.patch(), async (req: Request, res: 
       });
     }
 
-    // Une modification ponctuelle est désormais le cas particulier d'une
-    // modification en masse sur 1 collaborateur × 1 date. Elle bénéficie donc
-    // exactement des mêmes contrôles de couverture, d'éligibilité et de garde.
-    const result = await applyScheduleSuggestionBulkEdit(guid as string, {
-      item_guids: [itemGuid as string],
-      period_from: iso,
-      period_to: iso,
-      action: template_guid === null ? 'REST' : 'ASSIGN_SERVICE',
-      template_guid,
-      reason: 'Modification ponctuelle depuis la grille',
-    });
+    // Vér R.handleError(res, HttpStatus.BAD_REQUEST, {
+    // code: CODESifier que la suggestion existe
+    const suggestion = await ScheduleSuggestion._load(guid as string);
 
-    const item = await ScheduleSuggestionItem._load(itemGuid as string);
-
-    return R.handleSuccess(res, {
-      item: item ? await item.toJSON() : null,
-      bulk_edit: result,
-    });
-  } catch (error: any) {
-    if (error instanceof SuggestionBulkEditError) {
-      return R.handleError(res, error.status as any, {
-        code: error.code,
-        message: error.message,
-        details: error.details,
+    if (!suggestion) {
+      return R.handleError(res, HttpStatus.NOT_FOUND, {
+        code: CODES.NOT_FOUND,
+        message: ERRORS.NOT_FOUND,
       });
     }
 
+    // Une suggestion résolue ne peut plus être modifiée
+    if (!suggestion.isDraft()) {
+      return R.handleError(res, HttpStatus.CONFLICT, {
+        code: CODES.ALREADY_RESOLVED,
+        message: ERRORS.ALREADY_RESOLVED,
+      });
+    }
+
+    // Charger l'item
+    const item = await ScheduleSuggestionItem._load(itemGuid as string);
+
+    if (!item) {
+      return R.handleError(res, HttpStatus.NOT_FOUND, {
+        code: CODES.ITEM_NOT_FOUND,
+        message: ERRORS.ITEM_NOT_FOUND,
+      });
+    }
+
+    // L'item doit obligatoirement appartenir à la suggestion demandée
+    if (item.getSuggestion() !== suggestion.getId()) {
+      return R.handleError(res, HttpStatus.NOT_FOUND, {
+        code: CODES.ITEM_NOT_FOUND,
+        message: ERRORS.ITEM_NOT_FOUND,
+      });
+    }
+
+    // La date modifiée doit appartenir à la période de la suggestion
+    if (iso < suggestion.getPeriodFrom()! || iso > suggestion.getPeriodTo()!) {
+      return R.handleError(res, HttpStatus.UNPROCESSABLE_ENTITY, {
+        code: CODES.INVALID_PAYLOAD,
+        message: 'The modified date is outside the suggestion period.',
+      });
+    }
+
+    let reason: Record<string, any>;
+
+    if (template_guid !== null) {
+      const tpl = await SessionTemplate._load(template_guid, true);
+
+      // Le template doit exister et être encore courant
+      if (!tpl || !tpl.isCurrent()) {
+        return R.handleError(res, HttpStatus.NOT_FOUND, {
+          code: CODES.TEMPLATE_NOT_FOUND,
+          message: 'Session template not found or no longer current.',
+        });
+      }
+
+      // Vérifier que le template contient des blocs pour le jour modifié
+      const days = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+      const day = days[new Date(`${iso}T00:00:00.000Z`).getUTCDay()]!;
+
+      const blocks = tpl.getDefinition()?.[day];
+
+      if (!Array.isArray(blocks) || blocks.length === 0) {
+        return R.handleError(res, HttpStatus.UNPROCESSABLE_ENTITY, {
+          code: CODES.TEMPLATE_DAY_INVALID,
+          message: `The selected template contains no work block for ${day}.`,
+        });
+      }
+
+      reason = {
+        source: 'MANUAL',
+        templateGuid: template_guid,
+        templateName: tpl.getName() ?? '—',
+        confidence: 100,
+        factors: ['Modifié manuellement par le manager'],
+      };
+    } else {
+      reason = {
+        source: 'MANUAL',
+        templateGuid: null,
+        templateName: 'Repos',
+        confidence: 100,
+        factors: ['Repos défini manuellement par le manager'],
+      };
+    }
+
+    await item.patchScheduleDay(iso, template_guid, reason);
+
+    return R.handleSuccess(res, {
+      item: await item.toJSON(),
+    });
+  } catch (error: any) {
     return R.handleError(res, HttpStatus.INTERNAL_ERROR, {
       code: CODES.PATCH_FAILED,
       message: error.message,

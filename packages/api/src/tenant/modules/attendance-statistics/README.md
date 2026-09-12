@@ -25,6 +25,7 @@ HTTP query
 - Une durée inconnue reste `null` dans le détail.
 - Le périmètre organisationnel est l’équipe actuelle du manager, sans sous-équipe ajoutée implicitement.
 - Le contrôleur ne réalise aucun calcul métier.
+- Les indicateurs décisionnels de part d'équipe concernée sont calculés dans l'agrégateur backend, jamais dans le frontend.
 
 ## Endpoint
 

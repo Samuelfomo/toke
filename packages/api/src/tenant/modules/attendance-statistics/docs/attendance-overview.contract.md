@@ -61,6 +61,23 @@ punctualityRate = PRESENT éligibles
 
 Valeur `null` si aucune présence éligible n’existe.
 
+### Part de l'équipe concernée
+
+Ces indicateurs répondent à une question différente des volumes de journées : **combien d'employés distincts ont été concernés au moins une fois sur la période ?**
+
+```text
+employeesWithAbsence = nombre d'employés avec au moins une journée ABSENT
+absenceEmployeeRate  = employeesWithAbsence / teamSize × 100
+
+employeesWithLate   = nombre d'employés avec au moins une journée LATE
+lateEmployeeRate      = employeesWithLate / teamSize × 100
+
+employeesWithIssues = nombre d'employés avec au moins une issue
+issueEmployeeRate     = employeesWithIssues / teamSize × 100
+```
+
+Les taux valent `null` lorsque `teamSize = 0`. Un employé n'est compté qu'une seule fois par indicateur, même s'il a plusieurs absences, retards ou issues sur la période. Les volumes détaillés restent disponibles dans `statusTotals` et `issueCount`.
+
 ### Durées
 
 ```text
@@ -90,6 +107,7 @@ interface AttendanceOverview {
   summary: {
     statusTotals: Record<AttendanceStatus, number>;
     rates: AttendanceRateMetrics;
+    employeeImpact: AttendanceEmployeeImpactMetrics;
     durations: AttendanceDurationMetrics;
     issueCount: number;
   };
@@ -111,3 +129,5 @@ Les occurrences détaillées d’une issue sont limitées aux 100 premières ent
 5. Le filtre site porte sur les sessions observées ; il ne modifie pas le planning attendu de l’employé.
 6. La réponse décrit l’équipe actuelle, pas une reconstitution historique du périmètre d’équipe.
 7. Les sessions traversant minuit sont rattachées à la journée de démarrage tant qu’aucune règle métier différente n’est validée.
+
+8. Les taux `employeeImpact` décrivent la part des employés concernés au moins une fois ; ils ne mesurent pas la fréquence des événements.

@@ -1,8 +1,9 @@
 import assert from 'node:assert/strict';
 import { describe, it } from 'node:test';
 
-import { buildAttendanceOverview } from './attendance-overview.js';
 import type { AttendanceDay } from '../domain/attendance-day.types.js';
+
+import { buildAttendanceOverview } from './attendance-overview.js';
 
 function makeDay(
   employeeId: number,
@@ -44,9 +45,7 @@ function makeDay(
           : {
               state: 'WORK_DAY',
               source: 'DIRECT',
-              expectedBlocks: [
-                { startTime: '08:00', endTime: '17:00', toleranceMinutes: 10 },
-              ],
+              expectedBlocks: [{ startTime: '08:00', endTime: '17:00', toleranceMinutes: 10 }],
             },
     activity: {
       sessionCount: status === 'PRESENT' || status === 'LATE' ? 1 : 0,
@@ -63,8 +62,7 @@ function makeDay(
     result: {
       status,
       delayMinutes: options.delayMinutes ?? null,
-      rateEligible:
-        options.rateEligible ?? ['PRESENT', 'LATE', 'ABSENT'].includes(status),
+      rateEligible: options.rateEligible ?? ['PRESENT', 'LATE', 'ABSENT'].includes(status),
     },
     issues: options.issues ?? [],
   };
@@ -95,6 +93,12 @@ describe('buildAttendanceOverview', () => {
     assert.equal(overview.summary.rates.attendedWorkingDays, 2);
     assert.equal(overview.summary.rates.attendanceRate, 66.7);
     assert.equal(overview.summary.rates.punctualityRate, 50);
+    assert.equal(overview.summary.employeeImpact.employeesWithAbsence, 1);
+    assert.equal(overview.summary.employeeImpact.absenceEmployeeRate, 50);
+    assert.equal(overview.summary.employeeImpact.employeesWithLate, 1);
+    assert.equal(overview.summary.employeeImpact.lateEmployeeRate, 50);
+    assert.equal(overview.summary.employeeImpact.employeesWithIssues, 0);
+    assert.equal(overview.summary.employeeImpact.issueEmployeeRate, 0);
     assert.equal(overview.summary.statusTotals.PENDING, 1);
     assert.equal(overview.daily[0]?.durations.netMinutes, 840);
     assert.equal(overview.daily[0]?.durations.daysWithKnownNetDuration, 2);
@@ -130,10 +134,9 @@ describe('buildAttendanceOverview', () => {
     assert.equal(overview.dataQuality.unresolvedScheduleDays, 1);
     assert.equal(overview.dataQuality.presenceWithoutScheduleDays, 1);
     assert.equal(overview.dataQuality.reliableForAttendanceRate, false);
-    assert.equal(
-      overview.issues.find((issue) => issue.issue === 'PRESENCE_ON_REST_DAY')?.count,
-      1,
-    );
+    assert.equal(overview.summary.employeeImpact.employeesWithIssues, 2);
+    assert.equal(overview.summary.employeeImpact.issueEmployeeRate, 100);
+    assert.equal(overview.issues.find((issue) => issue.issue === 'PRESENCE_ON_REST_DAY')?.count, 1);
   });
 
   it('ne remplace pas une durée manquante par zéro', () => {
@@ -161,4 +164,24 @@ describe('buildAttendanceOverview', () => {
     assert.equal(overview.daily[0]?.durations.daysWithKnownNetDuration, 0);
     assert.equal(overview.daily[0]?.durations.daysWithMissingDuration, 1);
   });
+  it('retourne des taux employés null lorsque le périmètre est vide', () => {
+    const overview = buildAttendanceOverview({
+      generatedAt: '2026-07-22T10:00:00.000Z',
+      managerGuid: 'manager-1',
+      siteGuid: null,
+      startDate: '2026-07-20',
+      endDate: '2026-07-20',
+      dates: ['2026-07-20'],
+      employees: [],
+      days: [],
+    });
+
+    assert.equal(overview.summary.employeeImpact.employeesWithAbsence, 0);
+    assert.equal(overview.summary.employeeImpact.absenceEmployeeRate, null);
+    assert.equal(overview.summary.employeeImpact.employeesWithLate, 0);
+    assert.equal(overview.summary.employeeImpact.lateEmployeeRate, null);
+    assert.equal(overview.summary.employeeImpact.employeesWithIssues, 0);
+    assert.equal(overview.summary.employeeImpact.issueEmployeeRate, null);
+  });
+
 });

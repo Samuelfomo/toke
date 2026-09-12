@@ -30,8 +30,8 @@ from app.schemas import (
 
 
 DAY_KEYS = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"]
-PLANNING_SOLVER_MAX_SECONDS = 30 * 60
 logger = logging.getLogger("uvicorn.error")
+
 
 @dataclass(frozen=True)
 class RequirementSlot:
@@ -161,9 +161,35 @@ class OrToolsPlanner:
             request.config.guardTeamPolicy.mode == "WEEKLY_POOL"
         )
 
+        self.locked_assignments = {
+            (item.employeeGuid, item.date): item
+            for item in request.lockedAssignments
+        }
+        self.locked_requirement_assignments = {
+            (item.employeeGuid, item.date, item.requirementGuid): item
+            for item in request.lockedAssignments
+            if item.templateGuid is not None and item.requirementGuid is not None
+        }
+        self.locked_occupancy_assignments = {
+            (item.employeeGuid, item.date): item
+            for item in request.lockedAssignments
+            if item.templateGuid is not None and item.requirementGuid is None
+        }
+        self.locked_fixed_guids = {
+            item.employeeGuid
+            for item in request.lockedAssignments
+            if any(
+                employee.guid == item.employeeGuid and employee.mode == "FIXED"
+                for employee in self.fixed
+            )
+        }
+
         # In TEAM_ROTATION mode every included FIXED employee needs a work
         # variable so CP-SAT can remove exactly the selected weekly leave day.
-        variable_fixed_guids = {
+        # A fixed employee may also become variable only because one or more
+        # manager decisions are locked; in that case every non-locked date is
+        # pinned back to the normal fixed-template behaviour.
+        self.fixed_policy_variable_guids = {
             employee.guid
             for employee in self.fixed
             if employee.fixedRestDayMode == "ROTATING"
@@ -173,6 +199,9 @@ class OrToolsPlanner:
                 and employee.mode in request.config.weeklyLeavePolicy.selector.planningModes
             )
         }
+        variable_fixed_guids = (
+            self.fixed_policy_variable_guids | self.locked_fixed_guids
+        )
         self.fixed_rotating_rest = [
             employee
             for employee in self.fixed
@@ -223,6 +252,7 @@ class OrToolsPlanner:
         self.history_guard_count: dict[str, int] = defaultdict(int)
         self.history_weekend_count: dict[str, int] = defaultdict(int)
         self.history_minutes: dict[str, int] = defaultdict(int)
+        self.history_rest_count: dict[str, int] = defaultdict(int)
         self.history_template_count: dict[tuple[str, str], int] = defaultdict(int)
 
         self.under_target_vars: list[cp_model.IntVar] = []
@@ -240,6 +270,7 @@ class OrToolsPlanner:
         self._build_fixed_counts()
         self._build_variables()
         self._build_fixed_work_variables()
+        self._apply_locked_assignments()
         self._build_guard_continuation_days()
         self._build_post_guard_rest_days()
         self._apply_one_assignment_per_day()
@@ -551,6 +582,27 @@ class OrToolsPlanner:
     def _build_history(self) -> None:
         employee_guids = {employee.guid for employee in self.rotating}
 
+        # Lot 5.1: API-normalised counters are preferred. They are descriptive
+        # fairness baselines only; they never add feasibility constraints.
+        if self.request.historicalFairness:
+            for baseline in self.request.historicalFairness:
+                if baseline.employeeGuid not in employee_guids:
+                    continue
+
+                self.history_shift_count[baseline.employeeGuid] = baseline.workedDays
+                self.history_guard_count[baseline.employeeGuid] = baseline.guardDays
+                self.history_weekend_count[baseline.employeeGuid] = baseline.weekendWorkedDays
+                self.history_minutes[baseline.employeeGuid] = baseline.workedMinutes
+                self.history_rest_count[baseline.employeeGuid] = baseline.restDays
+
+                for template_guid, count in baseline.templateCounts.items():
+                    self.history_template_count[
+                        (baseline.employeeGuid, template_guid)
+                    ] = count
+            return
+
+        # Legacy fallback for old API clients. Raw history is still interpreted
+        # only as fairness data; it is not used to pin current assignments.
         for assignment in self.request.historicalAssignments:
             if assignment.userGuid not in employee_guids:
                 continue
@@ -613,8 +665,92 @@ class OrToolsPlanner:
                     f"fixed_work_{employee.guid}_{iso}"
                 )
                 self.fixed_work[(employee.guid, iso)] = variable
-                if not template_has_work(employee.fixedTemplate, iso):
+                normal_work = template_has_work(employee.fixedTemplate, iso)
+                if not normal_work:
                     self.model.Add(variable == 0)
+                elif (
+                    employee.guid not in self.fixed_policy_variable_guids
+                    and (employee.guid, iso) not in self.locked_assignments
+                ):
+                    self.model.Add(variable == 1)
+
+    def _apply_locked_assignments(self) -> None:
+        rotating_by_guid = {employee.guid: employee for employee in self.rotating}
+        fixed_by_guid = {employee.guid: employee for employee in self.fixed}
+        slots_by_key = {
+            (slot.iso, slot.requirement.guid): slot
+            for slot in self.slots
+        }
+
+        for lock in self.request.lockedAssignments:
+            if lock.employeeGuid in rotating_by_guid:
+                daily_slots = self._daily_slots(lock.date)
+
+                # REST and external manager services occupy the day outside the
+                # requirement variable system. No generated service may be added.
+                if lock.requirementGuid is None:
+                    for slot in daily_slots:
+                        self.model.Add(
+                            self._slot_var(lock.employeeGuid, slot) == 0
+                        )
+                else:
+                    slot = slots_by_key.get((lock.date, lock.requirementGuid))
+                    if slot is None:
+                        raise ValueError(
+                            f"Locked requirement {lock.requirementGuid} is not available on {lock.date}"
+                        )
+                    self.model.Add(
+                        self._slot_var(lock.employeeGuid, slot) == 1
+                    )
+
+                # An automatically generated guard before a manager-locked day
+                # must not create a continuation/recovery conflict. If the guard
+                # itself is also manually locked, both manager decisions remain
+                # authoritative and the normal spill-over constraint is relaxed
+                # on the later locked day.
+                spill_days = 1 + (
+                    self.request.config.postGuardRestDays
+                    if self.request.config.restAfterGuardRequired
+                    else 0
+                )
+                for distance in range(1, spill_days + 1):
+                    guard_date = add_days(lock.date, -distance)
+                    for guard_slot in self._guard_slots(guard_date):
+                        previous_key = (
+                            lock.employeeGuid,
+                            guard_date,
+                            guard_slot.requirement.guid,
+                        )
+                        if previous_key in self.locked_requirement_assignments:
+                            continue
+                        self.model.Add(
+                            self._slot_var(lock.employeeGuid, guard_slot) == 0
+                        )
+                continue
+
+            employee = fixed_by_guid.get(lock.employeeGuid)
+            if employee is None:
+                raise ValueError(
+                    f"Locked employee {lock.employeeGuid} is not included"
+                )
+
+            variable = self.fixed_work.get((lock.employeeGuid, lock.date))
+            if variable is None:
+                raise ValueError(
+                    f"FIXED employee {lock.employeeGuid} has no lockable work variable on {lock.date}"
+                )
+
+            # Same fixed template => normal fixed work is kept. A manual rest or
+            # another service suppresses the configured fixed template for the
+            # day; the external service itself is preserved by the API overlay.
+            if (
+                lock.templateGuid is not None
+                and employee.fixedTemplate is not None
+                and lock.templateGuid == employee.fixedTemplate.guid
+            ):
+                self.model.Add(variable == 1)
+            else:
+                self.model.Add(variable == 0)
 
     def _fixed_work_term(self, employee, iso: str):
         variable = self.fixed_work.get((employee.guid, iso))
@@ -710,6 +846,10 @@ class OrToolsPlanner:
         # a continuation imported from the planning immediately before solveFrom.
         for employee in self.rotating:
             for iso in self.dates:
+                if (employee.guid, iso) in self.locked_assignments:
+                    # A direct manager decision on this calendar day overrides
+                    # automatic spill-over from an earlier guard.
+                    continue
                 assignments = [
                     self._slot_var(employee.guid, slot)
                     for slot in self._daily_slots(iso)
@@ -731,7 +871,14 @@ class OrToolsPlanner:
                     f"work_day_{employee.guid}_{iso}"
                 )
                 self.work_day[(employee.guid, iso)] = variable
-                self.model.Add(variable == sum(current_assignments) + continuation)
+
+                direct_lock = self.locked_assignments.get((employee.guid, iso))
+                if direct_lock is not None:
+                    self.model.Add(
+                        variable == (1 if direct_lock.templateGuid is not None else 0)
+                    )
+                else:
+                    self.model.Add(variable == sum(current_assignments) + continuation)
 
                 guard_terms = [
                     self._slot_var(employee.guid, slot)
@@ -741,15 +888,35 @@ class OrToolsPlanner:
                     f"guard_day_{employee.guid}_{iso}"
                 )
                 self.guard_day[(employee.guid, iso)] = guard_variable
-                if guard_terms:
+                if direct_lock is not None:
+                    locked_guard = any(
+                        direct_lock.requirementGuid == slot.requirement.guid
+                        for slot in self._guard_slots(iso)
+                    )
+                    self.model.Add(guard_variable == (1 if locked_guard else 0))
+                elif guard_terms:
                     self.model.Add(guard_variable == sum(guard_terms))
                 else:
                     self.model.Add(guard_variable == 0)
 
         for employee in self.fixed_rotating_rest:
             for iso in self.dates:
-                variable = self.fixed_work[(employee.guid, iso)]
-                self.work_day[(employee.guid, iso)] = variable
+                fixed_variable = self.fixed_work[(employee.guid, iso)]
+                direct_lock = self.locked_assignments.get((employee.guid, iso))
+                if (
+                    direct_lock is not None
+                    and direct_lock.templateGuid is not None
+                    and employee.fixedTemplate is not None
+                    and direct_lock.templateGuid != employee.fixedTemplate.guid
+                ):
+                    variable = self.model.NewBoolVar(
+                        f"manager_external_work_day_{employee.guid}_{iso}"
+                    )
+                    self.model.Add(variable == 1)
+                    self.work_day[(employee.guid, iso)] = variable
+                else:
+                    self.work_day[(employee.guid, iso)] = fixed_variable
+
                 guard_variable = self.model.NewBoolVar(
                     f"guard_day_{employee.guid}_{iso}"
                 )
@@ -909,6 +1076,8 @@ class OrToolsPlanner:
             for employee in self.fixed_rotating_rest:
                 assert employee.fixedTemplate is not None
                 for iso in self.dates:
+                    if (employee.guid, iso) in self.locked_assignments:
+                        continue
                     if not template_has_work(employee.fixedTemplate, iso):
                         continue
                     self.model.Add(
@@ -971,6 +1140,10 @@ class OrToolsPlanner:
 
                 if policy.requireWorkOnOtherDays:
                     for iso in dates:
+                        if (employee.guid, iso) in self.locked_assignments:
+                            # Manager decision overrides the engine expectation
+                            # to work on every non-leave day.
+                            continue
                         # A FIXED profile may already have a template-defined
                         # rest day. "Work on other days" only applies to dates
                         # where that fixed template normally contains work.
@@ -1002,14 +1175,21 @@ class OrToolsPlanner:
 
                         if policy.serviceScope.exclusive:
                             if employee.mode == "ROTATING":
-                                outside_terms = [
-                                    self._slot_var(employee.guid, slot)
+                                outside_slots = [
+                                    slot
                                     for slot in self._daily_slots(iso)
                                     if not self._slot_matches_scope(
                                         slot, policy.serviceScope
                                     )
                                 ]
-                                for outside in outside_terms:
+                                for outside_slot in outside_slots:
+                                    if (
+                                        employee.guid,
+                                        outside_slot.iso,
+                                        outside_slot.requirement.guid,
+                                    ) in self.locked_requirement_assignments:
+                                        continue
+                                    outside = self._slot_var(employee.guid, outside_slot)
                                     self.model.Add(outside + eligible <= 1)
 
             if policy.maxEmployeesPerDay is not None:
@@ -1091,7 +1271,14 @@ class OrToolsPlanner:
                     for slot in week_guard_slots
                 ]
 
-                for guard_term in employee_guard_terms:
+                for guard_slot in week_guard_slots:
+                    guard_term = self._slot_var(employee.guid, guard_slot)
+                    if (
+                        employee.guid,
+                        guard_slot.iso,
+                        guard_slot.requirement.guid,
+                    ) in self.locked_requirement_assignments:
+                        continue
                     self.model.Add(guard_term <= pool)
 
                 if policy.requireParticipation and employee.guid in eligible_guids:
@@ -1101,6 +1288,12 @@ class OrToolsPlanner:
                     for iso in dates:
                         for slot in self._daily_slots(iso):
                             if slot.requirement.serviceType == "STANDARD":
+                                if (
+                                    employee.guid,
+                                    slot.iso,
+                                    slot.requirement.guid,
+                                ) in self.locked_requirement_assignments:
+                                    continue
                                 self.model.Add(
                                     self._slot_var(employee.guid, slot) + pool <= 1
                                 )
@@ -1174,6 +1367,11 @@ class OrToolsPlanner:
                 selector = slot.requirement.eligibility
                 variable = self._slot_var(employee.guid, slot)
 
+                if (employee.guid, slot.iso, slot.requirement.guid) in self.locked_requirement_assignments:
+                    # A direct manager decision is authoritative even when the
+                    # employee does not match the engine population selector.
+                    continue
+
                 if employee.mode not in selector.planningModes:
                     self.model.Add(variable == 0)
                     continue
@@ -1195,10 +1393,19 @@ class OrToolsPlanner:
     def _apply_coverage(self) -> None:
         for slot in self.slots:
             requirement = slot.requirement
-            variables = [
+
+            locked_rotating_guids = {
+                lock.employeeGuid
+                for lock in self.request.lockedAssignments
+                if lock.date == slot.iso
+                and lock.requirementGuid == requirement.guid
+            }
+            free_variables = [
                 self._slot_var(employee.guid, slot)
                 for employee in self.rotating
+                if employee.guid not in locked_rotating_guids
             ]
+
             fixed_eligible = (
                 "FIXED" in requirement.eligibility.planningModes
                 and requirement.eligibility.guardPoolRelation != "MEMBER"
@@ -1208,37 +1415,55 @@ class OrToolsPlanner:
                 if fixed_eligible
                 else 0
             )
-            variable_fixed_terms = [
-                self.fixed_work[(employee.guid, slot.iso)]
-                for employee in self.fixed_rotating_rest
-                if fixed_eligible
-                and employee.fixedTemplate is not None
-                and employee.fixedTemplate.guid == requirement.template.guid
-            ]
-            total = sum(variables) + sum(variable_fixed_terms) + fixed_count
+
+            locked_fixed_count = 0
+            variable_fixed_terms = []
+            for employee in self.fixed_rotating_rest:
+                if (
+                    not fixed_eligible
+                    or employee.fixedTemplate is None
+                    or employee.fixedTemplate.guid != requirement.template.guid
+                ):
+                    continue
+
+                lock = self.locked_assignments.get((employee.guid, slot.iso))
+                if lock is not None and lock.templateGuid == requirement.template.guid:
+                    locked_fixed_count += 1
+                    continue
+                variable_fixed_terms.append(
+                    self.fixed_work[(employee.guid, slot.iso)]
+                )
+
+            immutable_count = (
+                fixed_count
+                + locked_fixed_count
+                + len(locked_rotating_guids)
+            )
+            decision_total = sum(free_variables) + sum(variable_fixed_terms)
 
             if requirement.allocationMode == "EXACT":
-                self.model.Add(total == requirement.targetEmployees)
+                remaining = max(0, requirement.targetEmployees - immutable_count)
+                self.model.Add(decision_total == remaining)
                 continue
 
-            self.model.Add(total >= requirement.minEmployees)
+            minimum_remaining = max(0, requirement.minEmployees - immutable_count)
+            self.model.Add(decision_total >= minimum_remaining)
             if requirement.maxEmployees is not None:
-                self.model.Add(total <= requirement.maxEmployees)
+                maximum_remaining = max(0, requirement.maxEmployees - immutable_count)
+                self.model.Add(decision_total <= maximum_remaining)
 
             if requirement.allocationMode == "RANGE":
+                target_remaining = max(0, requirement.targetEmployees - immutable_count)
                 under_target = self.model.NewIntVar(
                     0,
-                    max(0, requirement.targetEmployees),
+                    target_remaining,
                     f"under_target_{slot.iso}_{requirement.guid}",
                 )
-                self.model.Add(
-                    under_target
-                    >= requirement.targetEmployees - total
-                )
+                self.model.Add(under_target >= target_remaining - decision_total)
                 self.under_target_vars.append(under_target)
 
             if requirement.allocationMode == "FILL_REMAINING":
-                self.fill_vars.extend(variables)
+                self.fill_vars.extend(free_variables)
 
     def _week_groups(self) -> dict[str, list[str]]:
         result: dict[str, list[str]] = defaultdict(list)
@@ -1331,12 +1556,18 @@ class OrToolsPlanner:
         for employee in self.rotating + self.fixed_rotating_rest:
             for index in range(0, len(self.dates) - size + 1):
                 window = self.dates[index : index + size]
+                manual_work_count = sum(
+                    1
+                    for iso in window
+                    if (employee.guid, iso) in self.locked_assignments
+                    and self.locked_assignments[(employee.guid, iso)].templateGuid is not None
+                )
                 self.model.Add(
                     sum(
                         self.work_day[(employee.guid, iso)]
                         for iso in window
                     )
-                    <= maximum
+                    <= max(maximum, manual_work_count)
                 )
 
     def _credited_minutes_by_date(
@@ -1426,8 +1657,47 @@ class OrToolsPlanner:
                         f"Boundary guard continuation exceeds weekly minute limit for {employee.guid}"
                     )
 
-                if terms:
-                    self.model.Add(sum(terms) + boundary_minutes <= maximum)
+                locked_minutes = 0
+                for lock in self.request.lockedAssignments:
+                    if (
+                        lock.employeeGuid != employee.guid
+                        or lock.date not in date_set
+                        or lock.requirementGuid is None
+                    ):
+                        continue
+                    locked_slot = next(
+                        (
+                            slot
+                            for slot in self.slots
+                            if slot.iso == lock.date
+                            and slot.requirement.guid == lock.requirementGuid
+                        ),
+                        None,
+                    )
+                    if locked_slot is not None:
+                        locked_minutes += self._slot_minutes_in_dates(
+                            locked_slot,
+                            date_set,
+                        )
+
+                external_minutes = sum(
+                    template_minutes(lock.template, lock.date)
+                    for lock in self.request.lockedAssignments
+                    if lock.employeeGuid == employee.guid
+                    and lock.date in date_set
+                    and lock.requirementGuid is None
+                    and lock.templateGuid is not None
+                    and lock.template is not None
+                )
+                effective_maximum = max(
+                    maximum,
+                    locked_minutes + external_minutes + boundary_minutes,
+                )
+                if terms or external_minutes or boundary_minutes:
+                    self.model.Add(
+                        sum(terms) + external_minutes + boundary_minutes
+                        <= effective_maximum
+                    )
 
         for employee in self.fixed_rotating_rest:
             assert employee.fixedTemplate is not None
@@ -1446,8 +1716,23 @@ class OrToolsPlanner:
                     for iso in dates
                     if template_has_work(employee.fixedTemplate, iso)
                 ]
-                if terms:
-                    self.model.Add(sum(terms) <= maximum)
+                external_minutes = sum(
+                    template_minutes(lock.template, lock.date)
+                    for lock in self.request.lockedAssignments
+                    if lock.employeeGuid == employee.guid
+                    and lock.date in set(dates)
+                    and lock.templateGuid is not None
+                    and lock.template is not None
+                    and (
+                        employee.fixedTemplate is None
+                        or lock.templateGuid != employee.fixedTemplate.guid
+                    )
+                )
+                effective_maximum = max(maximum, external_minutes)
+                if terms or external_minutes:
+                    self.model.Add(
+                        sum(terms) + external_minutes <= effective_maximum
+                    )
 
     def _apply_max_consecutive_guards(self) -> None:
         size = self.request.config.maxConsecutiveGuards + 1
@@ -1457,12 +1742,22 @@ class OrToolsPlanner:
         for employee in self.rotating:
             for index in range(0, len(self.dates) - size + 1):
                 window = self.dates[index : index + size]
+                locked_guard_count = sum(
+                    1
+                    for iso in window
+                    for slot in self._guard_slots(iso)
+                    if (employee.guid, iso, slot.requirement.guid)
+                    in self.locked_requirement_assignments
+                )
                 self.model.Add(
                     sum(
                         self.guard_day[(employee.guid, iso)]
                         for iso in window
                     )
-                    <= self.request.config.maxConsecutiveGuards
+                    <= max(
+                        self.request.config.maxConsecutiveGuards,
+                        locked_guard_count,
+                    )
                 )
 
     def _apply_rest_between_shifts(self) -> None:
@@ -1474,6 +1769,12 @@ class OrToolsPlanner:
             for index in range(len(self.dates) - 1):
                 current_date = self.dates[index]
                 next_date = self.dates[index + 1]
+                current_external = self.locked_occupancy_assignments.get(
+                    (employee.guid, current_date)
+                )
+                next_external = self.locked_occupancy_assignments.get(
+                    (employee.guid, next_date)
+                )
 
                 for first_slot in self._daily_slots(current_date):
                     first_end = last_end(
@@ -1481,8 +1782,6 @@ class OrToolsPlanner:
                     )
                     if first_end is None:
                         continue
-
-                    # Guard continuation is handled separately and blocks next day.
                     if first_slot.requirement.serviceType == "GUARD":
                         continue
 
@@ -1494,12 +1793,66 @@ class OrToolsPlanner:
                             continue
 
                         gap = (24 * 60 - first_end) + second_start
-                        if gap < minimum:
-                            self.model.Add(
-                                self._slot_var(employee.guid, first_slot)
-                                + self._slot_var(employee.guid, second_slot)
-                                <= 1
+                        if gap >= minimum:
+                            continue
+
+                        first_locked = (
+                            employee.guid,
+                            current_date,
+                            first_slot.requirement.guid,
+                        ) in self.locked_requirement_assignments
+                        second_locked = (
+                            employee.guid,
+                            next_date,
+                            second_slot.requirement.guid,
+                        ) in self.locked_requirement_assignments
+
+                        # Two direct manager decisions may deliberately violate
+                        # the engine rest expectation. Keep them and let the UI
+                        # expose the deviation as a warning.
+                        if first_locked and second_locked:
+                            continue
+
+                        self.model.Add(
+                            self._slot_var(employee.guid, first_slot)
+                            + self._slot_var(employee.guid, second_slot)
+                            <= 1
+                        )
+
+                # External services have no requirement variable, but they still
+                # prevent the solver from placing an adjacent generated shift
+                # that would violate minimum rest.
+                if current_external is not None and current_external.template is not None:
+                    external_end = last_end(current_external.template, current_date)
+                    if external_end is not None:
+                        for second_slot in self._daily_slots(next_date):
+                            second_start = first_start(
+                                second_slot.requirement.template, next_date
                             )
+                            if second_start is None:
+                                continue
+                            gap = (24 * 60 - external_end) + second_start
+                            if gap < minimum:
+                                self.model.Add(
+                                    self._slot_var(employee.guid, second_slot) == 0
+                                )
+
+                if next_external is not None and next_external.template is not None:
+                    external_start = first_start(next_external.template, next_date)
+                    if external_start is not None:
+                        for first_slot in self._daily_slots(current_date):
+                            if first_slot.requirement.serviceType == "GUARD":
+                                continue
+                            first_end = last_end(
+                                first_slot.requirement.template, current_date
+                            )
+                            if first_end is None:
+                                continue
+                            gap = (24 * 60 - first_end) + external_start
+                            if gap < minimum:
+                                self.model.Add(
+                                    self._slot_var(employee.guid, first_slot) == 0
+                                )
 
     def _build_objective(self) -> None:
         # Hard coverage is already constrained. RANGE shortfalls remain costly.
@@ -1561,6 +1914,35 @@ class OrToolsPlanner:
                 "min_planned_guards",
             )
 
+            maximum_historical_weekends = max(
+                (self.history_weekend_count[employee.guid] for employee in self.rotating),
+                default=0,
+            )
+            maximum_historical_rests = max(
+                (self.history_rest_count[employee.guid] for employee in self.rotating),
+                default=0,
+            )
+            max_weekends = self.model.NewIntVar(
+                0,
+                len(self.dates) + maximum_historical_weekends,
+                "max_total_fairness_weekends",
+            )
+            min_weekends = self.model.NewIntVar(
+                0,
+                len(self.dates) + maximum_historical_weekends,
+                "min_total_fairness_weekends",
+            )
+            max_rests = self.model.NewIntVar(
+                0,
+                len(self.dates) + maximum_historical_rests,
+                "max_total_fairness_rests",
+            )
+            min_rests = self.model.NewIntVar(
+                0,
+                len(self.dates) + maximum_historical_rests,
+                "min_total_fairness_rests",
+            )
+
             for employee in self.rotating:
                 shifts = sum(
                     self.work_day[(employee.guid, iso)]
@@ -1574,11 +1956,23 @@ class OrToolsPlanner:
                 # Include historical loads so a heavily used employee is penalized.
                 historical_shifts = self.history_shift_count[employee.guid]
                 historical_guards = self.history_guard_count[employee.guid]
+                historical_weekends = self.history_weekend_count[employee.guid]
+                historical_rests = self.history_rest_count[employee.guid]
+                weekends = sum(
+                    self.work_day[(employee.guid, iso)]
+                    for iso in self.dates
+                    if is_weekend(iso)
+                )
+                rests = len(self.dates) - shifts
 
                 self.model.Add(shifts + historical_shifts <= max_shifts)
                 self.model.Add(shifts + historical_shifts >= min_shifts)
                 self.model.Add(guards + historical_guards <= max_guards)
                 self.model.Add(guards + historical_guards >= min_guards)
+                self.model.Add(weekends + historical_weekends <= max_weekends)
+                self.model.Add(weekends + historical_weekends >= min_weekends)
+                self.model.Add(rests + historical_rests <= max_rests)
+                self.model.Add(rests + historical_rests >= min_rests)
 
                 for slot in self.slots:
                     history_cost = self.history_template_count[
@@ -1591,8 +1985,67 @@ class OrToolsPlanner:
                             * self._slot_var(employee.guid, slot)
                         )
 
+            maximum_historical_minutes = max(
+                (self.history_minutes[employee.guid] for employee in self.rotating),
+                default=0,
+            )
+            # Generous safe bound: this variable is an objective envelope, not a
+            # work-limit constraint. Current weekly-minute rules remain elsewhere.
+            minutes_upper_bound = max(
+                1_000_000,
+                maximum_historical_minutes + len(self.dates) * 24 * 60 * 4,
+            )
+            max_minutes = self.model.NewIntVar(
+                0,
+                minutes_upper_bound,
+                "max_total_fairness_minutes",
+            )
+            min_minutes = self.model.NewIntVar(
+                0,
+                minutes_upper_bound,
+                "min_total_fairness_minutes",
+            )
+            all_dates = set(self.dates)
+
+            for employee in self.rotating:
+                minute_terms = []
+                for slot in self.slots:
+                    credited = self._slot_minutes_in_dates(slot, all_dates)
+                    if credited > 0:
+                        minute_terms.append(
+                            credited * self._slot_var(employee.guid, slot)
+                        )
+
+                external_minutes = sum(
+                    template_minutes(lock.template, lock.date)
+                    for lock in self.request.lockedAssignments
+                    if lock.employeeGuid == employee.guid
+                    and lock.requirementGuid is None
+                    and lock.templateGuid is not None
+                    and lock.template is not None
+                    and lock.date in all_dates
+                )
+                boundary_minutes = sum(
+                    boundary.creditedMinutes
+                    for boundary in self.request.boundaryState.guardContinuations
+                    if boundary.employeeGuid == employee.guid
+                    and boundary.continuationDate in all_dates
+                )
+                historical_minutes = self.history_minutes[employee.guid]
+                total_minutes = (
+                    sum(minute_terms)
+                    + external_minutes
+                    + boundary_minutes
+                    + historical_minutes
+                )
+                self.model.Add(total_minutes <= max_minutes)
+                self.model.Add(total_minutes >= min_minutes)
+
             objective.append(100 * (max_guards - min_guards))
+            objective.append(40 * (max_weekends - min_weekends))
+            objective.append(20 * (max_rests - min_rests))
             objective.append(10 * (max_shifts - min_shifts))
+            objective.append(max_minutes - min_minutes)
 
         self.model.Minimize(sum(objective) if objective else 0)
 
@@ -1709,13 +2162,11 @@ class OrToolsPlanner:
         self.build()
         self._log_pre_solve_diagnostics()
 
-#         self.solver.parameters.max_time_in_seconds = max(
-#             1.0,
-#             float(self.request.solverTimeoutSeconds) - 1.0,
-#         )
-        self.solver.parameters.max_time_in_seconds = PLANNING_SOLVER_MAX_SECONDS
-        self.solver.parameters.num_search_workers = 4
-#         self.solver.parameters.num_search_workers = 8
+        self.solver.parameters.max_time_in_seconds = max(
+            1.0,
+            float(self.request.solverTimeoutSeconds) - 1.0,
+        )
+        self.solver.parameters.num_search_workers = 8
         self.solver.parameters.random_seed = 42
 
         status = self.solver.Solve(self.model)
@@ -2215,7 +2666,8 @@ class OrToolsPlanner:
         if len(self.rotating) <= 1:
             return 100
 
-        loads = []
+        loads: list[float] = []
+        all_dates = set(self.dates)
         for employee in self.rotating:
             shifts = sum(
                 self.solver.Value(self.work_day[(employee.guid, iso)])
@@ -2230,10 +2682,48 @@ class OrToolsPlanner:
                 for iso in self.dates
                 if is_weekend(iso)
             )
-            loads.append(shifts + guards * 2 + weekends)
 
+            planned_minutes = 0
+            for slot in self.slots:
+                if self.solver.Value(self._slot_var(employee.guid, slot)):
+                    planned_minutes += self._slot_minutes_in_dates(slot, all_dates)
+            planned_minutes += sum(
+                template_minutes(lock.template, lock.date)
+                for lock in self.request.lockedAssignments
+                if lock.employeeGuid == employee.guid
+                and lock.requirementGuid is None
+                and lock.templateGuid is not None
+                and lock.template is not None
+                and lock.date in all_dates
+            )
+            planned_minutes += sum(
+                boundary.creditedMinutes
+                for boundary in self.request.boundaryState.guardContinuations
+                if boundary.employeeGuid == employee.guid
+                and boundary.continuationDate in all_dates
+            )
+
+            total_minutes = self.history_minutes[employee.guid] + planned_minutes
+            total_guards = self.history_guard_count[employee.guid] + guards
+            total_weekends = self.history_weekend_count[employee.guid] + weekends
+            total_days = self.history_shift_count[employee.guid] + shifts
+
+            # Work minutes are the main workload unit. Guards and weekends get
+            # an additional burden premium so equal hours do not hide difficult
+            # assignments.
+            load = (
+                total_minutes / 480.0
+                + total_days * 0.25
+                + total_guards * 1.5
+                + total_weekends * 0.5
+            )
+            loads.append(load)
+
+        average = sum(loads) / len(loads)
+        if average <= 0:
+            return 100
         spread = max(loads) - min(loads)
-        return max(0, round(100 - spread * 12.5))
+        return max(0, round(100 - min(100.0, (spread / average) * 100.0)))
 
 
 def solve_planning(request: PlanningSolverInput) -> SolverResponse:

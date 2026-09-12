@@ -3,6 +3,18 @@ import { tenantApiRequest, type TenantApiResult } from './tenant.api.proxy.servi
 const baseUrl = '/schedule-suggestion';
 
 export class ScheduleSuggestionService {
+  static async historyReview(
+    reference: string,
+    managerGuid: string,
+    payload: unknown,
+  ): Promise<TenantApiResult> {
+    return await tenantApiRequest(reference, {
+      method: 'POST',
+      url: `${baseUrl}/${managerGuid}/history-review`,
+      data: payload,
+    });
+  }
+
   static async generate(
     reference: string,
     managerGuid: string,
@@ -12,6 +24,25 @@ export class ScheduleSuggestionService {
       method: 'POST',
       url: `${baseUrl}/${managerGuid}/generate`,
       data: payload,
+    });
+  }
+
+  static async previewBulkEdit(
+    reference: string,
+    suggestionGuid: string,
+    payload: unknown,
+  ): Promise<TenantApiResult> {
+    return await tenantApiRequest(reference, {
+      method: 'POST',
+      url: `${baseUrl}/${suggestionGuid}/bulk-edit/preview`,
+      data: payload,
+    });
+  }
+
+  static async regenerate(reference: string, suggestionGuid: string): Promise<TenantApiResult> {
+    return await tenantApiRequest(reference, {
+      method: 'POST',
+      url: `${baseUrl}/${suggestionGuid}/regenerate`,
     });
   }
 
@@ -43,6 +74,18 @@ export class ScheduleSuggestionService {
     return await tenantApiRequest(reference, {
       method: 'PATCH',
       url: `${baseUrl}/${suggestionGuid}/item/${itemGuid}`,
+      data: payload,
+    });
+  }
+
+  static async applyBulkEdit(
+    reference: string,
+    suggestionGuid: string,
+    payload: unknown,
+  ): Promise<TenantApiResult> {
+    return await tenantApiRequest(reference, {
+      method: 'PATCH',
+      url: `${baseUrl}/${suggestionGuid}/bulk-edit`,
       data: payload,
     });
   }

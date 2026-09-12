@@ -6,6 +6,7 @@ import type {
 import type {
   AttendanceDataQuality,
   AttendanceDurationMetrics,
+  AttendanceEmployeeImpactMetrics,
   AttendanceEmployeeOverview,
   AttendanceIssueOccurrence,
   AttendanceIssueSummary,
@@ -62,6 +63,7 @@ export function buildAttendanceOverview(
 
   const statusTotals = countStatuses(input.days);
   const rates = calculateRates(input.days);
+  const employeeImpact = calculateEmployeeImpact(employees);
   const durations = calculateDurations(input.days);
   const issues = buildIssueSummaries(input.days, employeeById);
 
@@ -96,6 +98,7 @@ export function buildAttendanceOverview(
     summary: {
       statusTotals,
       rates,
+      employeeImpact,
       durations,
       issueCount: input.days.reduce((total, day) => total + day.issues.length, 0),
     },
@@ -149,6 +152,31 @@ function calculateRates(days: readonly AttendanceDay[]): AttendanceRateMetrics {
     lateWorkingDays: lateDays,
     attendanceRate: expected > 0 ? roundOne((attended / expected) * 100) : null,
     punctualityRate: attended > 0 ? roundOne((presentDays / attended) * 100) : null,
+  };
+}
+
+function calculateEmployeeImpact(
+  employees: readonly AttendanceEmployeeOverview[],
+): AttendanceEmployeeImpactMetrics {
+  const teamSize = employees.length;
+  const employeesWithAbsence = employees.filter(
+    (employee) => employee.statusTotals.ABSENT > 0,
+  ).length;
+  const employeesWithLate = employees.filter(
+    (employee) => employee.statusTotals.LATE > 0,
+  ).length;
+  const employeesWithIssues = employees.filter((employee) => employee.issueCount > 0).length;
+
+  return {
+    employeesWithAbsence,
+    absenceEmployeeRate:
+      teamSize > 0 ? roundOne((employeesWithAbsence / teamSize) * 100) : null,
+    employeesWithLate,
+    lateEmployeeRate:
+      teamSize > 0 ? roundOne((employeesWithLate / teamSize) * 100) : null,
+    employeesWithIssues,
+    issueEmployeeRate:
+      teamSize > 0 ? roundOne((employeesWithIssues / teamSize) * 100) : null,
   };
 }
 

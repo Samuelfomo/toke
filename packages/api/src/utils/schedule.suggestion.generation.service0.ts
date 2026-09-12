@@ -1,9 +1,11 @@
-import { UsersValidationUtils } from '@toke/shared';
+import { SAFamily, UsersValidationUtils } from '@toke/shared';
 
 import EmployeePlanningProfile from '../tenant/class/EmployeePlanningProfile.js';
+import Groups from '../tenant/class/Groups.js';
 import OrgHierarchy from '../tenant/class/OrgHierarchy.js';
 import PlanningSuggestionConfig from '../tenant/class/PlanningSuggestionConfig.js';
 import PlanningSuggestionRequirement from '../tenant/class/PlanningSuggestionRequirement.js';
+import ScheduleAssignments from '../tenant/class/ScheduleAssignments.js';
 import ScheduleSuggestion from '../tenant/class/ScheduleSuggestion.js';
 import ScheduleSuggestionItem from '../tenant/class/ScheduleSuggestionItem.js';
 import User from '../tenant/class/User.js';
@@ -12,33 +14,14 @@ import {
   EngineConfig,
   EngineResult,
   EngineTemplate,
+  HistoricalAssignment,
+  HistoricalServiceType,
   PlanningEmployeeInput,
   PlanningInfeasibleError,
   PlanningRequirementInput,
 } from './suggestion.engine.js';
 import PlanningSolverFactory from './solver/planning.solver.factory.js';
-import { validatePlanningPreflight } from './planning.preflight.validation.service.js';
-import {
-  analyzePlanningHistory,
-  emptyPlanningHistoryAnalysis,
-  HistoryAdjustment,
-  HistoryRequirementDescriptor,
-  PlanningHistoryAnalysis,
-} from './planning.history.analysis.service.js';
 import { normalizePlanningHorizon, projectEngineResultToRequestedPeriod, } from './planning.horizon.js';
-import {
-  ROLLING_HORIZON_DEFAULTS,
-  buildMergedRollingResult,
-  buildRollingBoundaryState,
-  buildRollingFairnessBaseline,
-  buildRollingWindowLocks,
-  buildRollingWindows,
-  buildTemplateCatalog,
-  commitEngineWindow,
-  createCommittedState,
-  rollingDayCount,
-  RollingChunkMetadata,
-} from './planning.rolling.horizon.js';
 import {
   PlanningSolverExecutionMetadata,
   PlanningSolverInput,
@@ -117,44 +100,20 @@ export class SuggestionGenerationError extends Error {
   }
 }
 
-export interface TemporarilyExcludedEmployee {
-  guid: string;
-  name: string;
-}
-
 export interface GeneratedSuggestionPayload {
   suggestion: ScheduleSuggestion;
   engineResult: EngineResult;
   employeeCount: number;
-  excludedEmployeeCount: number;
-  excludedEmployees: TemporarilyExcludedEmployee[];
   configGuid: string;
   configVersion: number;
   solver: PlanningSolverExecutionMetadata;
 }
 
-export interface ConfiguredSuggestionSolvePayload {
-  manager: User;
-  config: PlanningSuggestionConfig;
-  engineResult: EngineResult;
-  employeeCount: number;
-  excludedEmployeeCount: number;
-  excludedEmployees: TemporarilyExcludedEmployee[];
-  configGuid: string;
-  configVersion: number;
-  solver: PlanningSolverExecutionMetadata;
-  persistedDiagnostics: Record<string, any>;
-  historyWeeks: number;
-}
-
-export async function solveConfiguredSuggestion(
+export async function generateConfiguredSuggestion(
   managerGuid: string,
   periodFrom: string,
   periodTo: string,
-  excludedEmployeeGuids: string[] = [],
-  lockedAssignments: NonNullable<PlanningSolverInput['lockedAssignments']> = [],
-  historyAdjustments: HistoryAdjustment[] = [],
-): Promise<ConfiguredSuggestionSolvePayload> {
+): Promise<GeneratedSuggestionPayload> {
   if (!UsersValidationUtils.validateGuid(managerGuid)) {
     throw new SuggestionGenerationError('Invalid manager GUID', 'SUGGESTION_INVALID_GUID', 400);
   }
@@ -194,86 +153,17 @@ export async function solveConfiguredSuggestion(
 
   const teamResult = await OrgHierarchy.getAllTeamMembers(manager.getId()!, false);
   const activeTeam = teamResult.all_employees_flat;
-
-  if (activeTeam.length === 0) {
-    throw new SuggestionGenerationError(
-      'No active employee in the manager team',
-      'SUGGESTION_NO_EMPLOYEES',
-      422,
-    );
-  }
-
-  const normalizedExcludedEmployeeGuids = [
-    ...new Set(
-      excludedEmployeeGuids
-        .map((guid) => guid.trim())
-        .filter(Boolean),
-    ),
-  ];
-
-  const invalidExcludedEmployeeGuids = normalizedExcludedEmployeeGuids.filter(
-    (guid) => !UsersValidationUtils.validateGuid(guid),
-  );
-
-  if (invalidExcludedEmployeeGuids.length > 0) {
-    throw new SuggestionGenerationError(
-      'One or more temporarily excluded employee GUIDs are invalid',
-      'SUGGESTION_INVALID_EXCLUDED_EMPLOYEE_GUID',
-      400,
-      { employee_guids: invalidExcludedEmployeeGuids },
-    );
-  }
-
-  const activeTeamByGuid = new Map(
-    activeTeam.flatMap((employee) => {
-      const guid = employee.getGuid();
-      return guid ? [[guid, employee] as const] : [];
-    }),
-  );
-
-  const outOfScopeExcludedEmployeeGuids = normalizedExcludedEmployeeGuids.filter(
-    (guid) => !activeTeamByGuid.has(guid),
-  );
-
-  if (outOfScopeExcludedEmployeeGuids.length > 0) {
-    throw new SuggestionGenerationError(
-      'A temporarily excluded employee is not part of the manager active team',
-      'SUGGESTION_EXCLUDED_EMPLOYEE_OUT_OF_SCOPE',
-      422,
-      { employee_guids: outOfScopeExcludedEmployeeGuids },
-    );
-  }
-
-  const excludedEmployeeGuidSet = new Set(normalizedExcludedEmployeeGuids);
-  const excludedEmployees: TemporarilyExcludedEmployee[] =
-    normalizedExcludedEmployeeGuids.map((guid) => {
-      const employee = activeTeamByGuid.get(guid)!;
-      return {
-        guid,
-        name: employee.getFullName(),
-      };
-    });
-
-  // Important : l'exclusion ponctuelle est appliquée AVANT la validation des
-  // profils et AVANT la construction du payload OR-Tools. Elle ne crée donc
-  // jamais un faux repos dans la suggestion.
-  const generationTeam = activeTeam.filter((employee) => {
-    const guid = employee.getGuid();
-    return !guid || !excludedEmployeeGuidSet.has(guid);
-  });
-
   const activeTeamIds = new Set(
-    generationTeam
+    activeTeam
       .map((employee) => employee.getId())
       .filter((id): id is number => typeof id === 'number'),
   );
 
   if (activeTeamIds.size === 0) {
     throw new SuggestionGenerationError(
-      'No employee remains in scope after temporary exclusions',
+      'No active employee in the manager team',
       'SUGGESTION_NO_EMPLOYEES',
       422,
-      { excluded_employees: excludedEmployees },
     );
   }
 
@@ -289,7 +179,7 @@ export async function solveConfiguredSuggestion(
       .filter((id): id is number => typeof id === 'number'),
   );
 
-  const unconfiguredEmployees = generationTeam.filter(
+  const unconfiguredEmployees = activeTeam.filter(
     (employee) => !configuredUserIds.has(employee.getId()!),
   );
 
@@ -478,6 +368,7 @@ export async function solveConfiguredSuggestion(
   }
 
   const engineRequirements: PlanningRequirementInput[] = [];
+  const serviceTypeByTemplateGuid = new Map<string, HistoricalServiceType>();
 
   for (const requirement of requirements) {
     const template = await requirement.getSessionTemplateObj();
@@ -490,6 +381,7 @@ export async function solveConfiguredSuggestion(
     }
 
     const templateGuid = template.getGuid()!;
+    serviceTypeByTemplateGuid.set(templateGuid, requirement.getServiceType());
 
     const continuationTemplate = requirement.isGuard()
       ? await requirement.getContinuationTemplateObj()
@@ -504,6 +396,7 @@ export async function solveConfiguredSuggestion(
     }
 
     if (continuationTemplate) {
+      serviceTypeByTemplateGuid.set(continuationTemplate.getGuid()!, 'GUARD_CONTINUATION');
     }
 
     engineRequirements.push({
@@ -659,66 +552,57 @@ export async function solveConfiguredSuggestion(
     }
   }
 
-  // API preflight: reject deterministic impossibilities before any history load
-  // and before the OR-Tools HTTP request. This is intentionally conservative:
-  // only mathematically certain failures are blocking here.
-  const preflight = validatePlanningPreflight({
-    employees,
-    requirements: engineRequirements,
-    config: engineConfig,
-    periodFrom: horizon.solveFrom,
-    periodTo: horizon.solveTo,
-  });
-
-  if (!preflight.valid) {
-    throw new SuggestionGenerationError(
-      'Planning input failed API feasibility pre-checks',
-      'PLANNING_PREFLIGHT_INFEASIBLE',
-      422,
-      preflight,
-    );
-  }
-
   const historyTo = addDays(horizon.solveFrom, -1);
-  const historyEmployees = employees.map((employee) => ({
-    guid: employee.guid,
-    name: employee.name,
-  }));
-  const historyRequirements: HistoryRequirementDescriptor[] = engineRequirements.map(
-    (requirement) => ({
-      guid: requirement.guid,
-      dayOfWeek: requirement.dayOfWeek,
-      serviceType: requirement.serviceType,
-      templateGuid: requirement.template.guid,
-      templateName: requirement.template.name,
-      minEmployees: requirement.minEmployees,
-      targetEmployees: requirement.targetEmployees,
-      maxEmployees: requirement.maxEmployees,
-      continuationTemplateGuid: requirement.continuationTemplate?.guid ?? null,
-      continuationDayOffset: requirement.continuationDayOffset,
-    }),
-  );
+  const historicalRaw = await ScheduleAssignments._listByDateRange(historyFrom, historyTo);
 
-  let historyAnalysis: PlanningHistoryAnalysis;
-  try {
-    historyAnalysis = await analyzePlanningHistory({
-      employees: historyEmployees,
-      requirements: historyRequirements,
-      historyFrom,
-      historyTo,
-      solveFrom: horizon.solveFrom,
-      postGuardRestDays: engineConfig.postGuardRestDays,
-      adjustments: historyAdjustments,
-    });
-  } catch (error: any) {
-    // Historical data is advisory for fairness. It must never prevent the
-    // manager from obtaining a new suggestion.
-    historyAnalysis = emptyPlanningHistoryAnalysis({
-      employees: historyEmployees,
-      historyFrom,
-      historyTo,
-      message: error?.message ?? 'Historical fairness could not be analysed.',
-    });
+  const employeeGuids = new Set(employees.map((employee) => employee.guid));
+  const historicalAssignments: HistoricalAssignment[] = [];
+
+  if (historicalRaw) {
+    for (const assignment of historicalRaw) {
+      const snapshot = assignment.getSessionTemplate();
+      if (!snapshot?.guid || !snapshot?.definition) continue;
+
+      const historicalBase = {
+        startDate: assignment.getStartDate()!,
+        endDate: assignment.getEndDate() ?? historyTo,
+        templateGuid: snapshot.guid,
+        templateName: snapshot.name ?? '—',
+        definition: snapshot.definition,
+        serviceType: serviceTypeByTemplateGuid.get(snapshot.guid) ?? 'STANDARD',
+      } as const;
+
+      if (assignment.getFamily() === SAFamily.USER) {
+        const userGuid = assignment.getRelated();
+        if (!userGuid || !employeeGuids.has(userGuid)) continue;
+
+        historicalAssignments.push({
+          userGuid,
+          ...historicalBase,
+        });
+        continue;
+      }
+
+      if (assignment.getFamily() === SAFamily.GROUP) {
+        const groupGuid = assignment.getRelated();
+        if (!groupGuid) continue;
+
+        const group = await Groups._load(groupGuid, true);
+        if (!group) continue;
+
+        const activeMembers = await group.getDirectMembers(true);
+
+        for (const member of activeMembers) {
+          const userGuid = member.getGuid();
+          if (!userGuid || !employeeGuids.has(userGuid)) continue;
+
+          historicalAssignments.push({
+            userGuid,
+            ...historicalBase,
+          });
+        }
+      }
+    }
   }
 
   const boundaryGuardDate = addDays(horizon.solveFrom, -1);
@@ -727,28 +611,90 @@ export async function solveConfiguredSuggestion(
     NonNullable<PlanningSolverInput['boundaryState']>['guardContinuations'][number]
   >();
 
-  for (const fact of historyAnalysis.boundaryGuardFacts) {
-    if (fact.guardDate !== boundaryGuardDate) continue;
+  const planningDiagnosticsEnabled =
+    (globalThis as any).process?.env?.PLANNING_DIAGNOSTICS === 'true';
+
+  if (planningDiagnosticsEnabled) {
+    const boundaryCandidates = historicalAssignments
+      .filter((assignment) => assignment.serviceType === 'GUARD')
+      .filter((assignment) => assignment.startDate === boundaryGuardDate)
+      .map((assignment) => ({
+        employeeGuid: assignment.userGuid,
+        startDate: assignment.startDate,
+        endDate: assignment.endDate,
+        templateGuid: assignment.templateGuid,
+        templateName: assignment.templateName,
+        serviceType: assignment.serviceType,
+      }));
+
+    console.info('[PLANNING_DIAG][BOUNDARY_GUARD_CANDIDATES]', {
+      solveFrom: horizon.solveFrom,
+      boundaryGuardDate,
+      candidateCount: boundaryCandidates.length,
+      candidates: boundaryCandidates,
+    });
+
+    console.info('[PLANNING_DIAG][CONFIG_PAYLOAD]', {
+      // policySchemaVersion: engineConfig.policySchemaVersion,
+      weeklyLeavePolicy: engineConfig.weeklyLeavePolicy,
+      guardTeamPolicy: engineConfig.guardTeamPolicy,
+      minRestMinutesBetweenShifts: engineConfig.minRestMinutesBetweenShifts,
+      maxConsecutiveGuards: engineConfig.maxConsecutiveGuards,
+      restAfterGuardRequired: engineConfig.restAfterGuardRequired,
+      postGuardRestDays: engineConfig.postGuardRestDays,
+    });
+
+    console.info(
+      '[PLANNING_DIAG][REQUIREMENTS]',
+      engineRequirements.map((requirement) => ({
+        guid: requirement.guid,
+        serviceType: requirement.serviceType,
+        templateGuid: requirement.template.guid,
+        minEmployees: requirement.minEmployees,
+        targetEmployees: requirement.targetEmployees,
+        maxEmployees: requirement.maxEmployees,
+        guardPoolRelation: requirement.eligibility.guardPoolRelation,
+      })),
+    );
+  }
+
+  for (const assignment of historicalAssignments) {
+    if (assignment.serviceType !== 'GUARD') continue;
+
+    // LOT 16.1: only a guard assignment that actually STARTS on the day
+    // immediately before solveFrom can create a boundary continuation.
+    // A historical fragment merely covering that date must not be promoted
+    // to a new guard start.
+    if (assignment.startDate !== boundaryGuardDate) continue;
 
     const guardRequirement = engineRequirements.find(
       (requirement) =>
         requirement.serviceType === 'GUARD' &&
-        requirement.template.guid === fact.templateGuid &&
+        requirement.template.guid === assignment.templateGuid &&
         requirement.continuationDayOffset === 1 &&
         requirement.continuationTemplate !== null,
     );
 
     if (!guardRequirement?.continuationTemplate) continue;
-    if (!templateHasWork(guardRequirement.continuationTemplate, horizon.solveFrom)) continue;
 
-    boundaryContinuationsByEmployee.set(fact.employeeGuid, {
-      employeeGuid: fact.employeeGuid,
-      guardDate: fact.guardDate,
+    const historicalTemplate: EngineTemplate = {
+      guid: assignment.templateGuid,
+      name: assignment.templateName,
+      definition: assignment.definition,
+    };
+    if (!templateHasWork(historicalTemplate, boundaryGuardDate)) continue;
+    if (!templateHasWork(guardRequirement.continuationTemplate, horizon.solveFrom)) {
+      continue;
+    }
+
+    boundaryContinuationsByEmployee.set(assignment.userGuid, {
+      employeeGuid: assignment.userGuid,
+      guardDate: boundaryGuardDate,
       continuationDate: horizon.solveFrom,
       continuationTemplate: guardRequirement.continuationTemplate,
       creditedMinutes: continuationCreditedMinutes(
         guardRequirement,
-        fact.guardDate,
+        boundaryGuardDate,
         horizon.solveFrom,
       ),
     });
@@ -758,19 +704,7 @@ export async function solveConfiguredSuggestion(
     guardContinuations: [...boundaryContinuationsByEmployee.values()],
   };
 
-  const planningDiagnosticsEnabled =
-    (globalThis as any).process?.env?.PLANNING_DIAGNOSTICS === 'true';
-
   if (planningDiagnosticsEnabled) {
-    console.info('[PLANNING_DIAG][HISTORY_FAIRNESS]', {
-      historyFrom,
-      historyTo,
-      available: historyAnalysis.available,
-      summary: historyAnalysis.summary,
-      anomalyCount: historyAnalysis.anomalies.length,
-      boundaryGuardFactCount: historyAnalysis.boundaryGuardFacts.length,
-    });
-
     console.info('[PLANNING_DIAG][BOUNDARY_STATE_FINAL]', {
       continuationCount: boundaryState.guardContinuations.length,
       continuations: boundaryState.guardContinuations.map((item) => ({
@@ -783,228 +717,34 @@ export async function solveConfiguredSuggestion(
     });
   }
 
-  const requestedSolverType = lockedAssignments.length > 0
-    ? 'ORTOOLS' as const
-    : config.getSolverType();
-  const totalSolveDays = rollingDayCount(horizon.solveFrom, horizon.solveTo);
-  const rollingEnabled =
-    requestedSolverType === 'ORTOOLS' &&
-    totalSolveDays > ROLLING_HORIZON_DEFAULTS.thresholdDays;
+  const solverInput: PlanningSolverInput = {
+    employees,
+    requirements: engineRequirements,
+    historicalAssignments: [],
+    boundaryState: {
+      guardContinuations: [],
+    },
+    periodFrom: horizon.solveFrom,
+    periodTo: horizon.solveTo,
+    requestedPeriodFrom: periodFrom,
+    requestedPeriodTo: periodTo,
+    config: engineConfig,
+    // solverTimeoutSeconds: config.getSolverTimeoutSeconds(),
+  };
 
   let engineResult: EngineResult;
   let solverMetadata: PlanningSolverExecutionMetadata;
-  let historyBoundaryRelaxed = false;
-  let rollingMetadata: Record<string, any> = {
-    enabled: false,
-    thresholdDays: ROLLING_HORIZON_DEFAULTS.thresholdDays,
-    commitDays: ROLLING_HORIZON_DEFAULTS.commitDays,
-    overlapDays: ROLLING_HORIZON_DEFAULTS.overlapDays,
-    lookaheadDays: ROLLING_HORIZON_DEFAULTS.lookaheadDays,
-    totalSolveDays,
-    chunkCount: 1,
-    totalSolverDurationMs: 0,
-    chunks: [],
-  };
-
-  const baseSolveOptions = {
-    solverType: requestedSolverType,
-    // A rolling plan cannot safely fall back to GREEDY after the first chunk,
-    // because subsequent windows contain overlap locks. Keep one solver model
-    // for the complete suggestion.
-    fallbackToGreedy: rollingEnabled
-      ? false
-      : (lockedAssignments.length > 0 ? false : config.shouldFallbackToGreedy()),
-    ortoolsEndpoint: (globalThis as any).process?.env?.PLANNING_ORTOOLS_URL,
-  };
-
-  const solveOneWindow = async (
-    input: PlanningSolverInput,
-    allowBoundaryRelaxation: boolean,
-  ): Promise<{
-    result: EngineResult;
-    metadata: PlanningSolverExecutionMetadata;
-    boundaryRelaxed: boolean;
-  }> => {
-    try {
-      const execution = await PlanningSolverFactory.solve(input, baseSolveOptions);
-      return { result: execution.result, metadata: execution.metadata, boundaryRelaxed: false };
-    } catch (error) {
-      if (
-        allowBoundaryRelaxation &&
-        (input.boundaryState?.guardContinuations.length ?? 0) > 0 &&
-        (
-          error instanceof PlanningInfeasibleError ||
-          (
-            error instanceof PlanningSolverTechnicalError &&
-            error.code === 'PLANNING_SOLVER_INVALID_INPUT'
-          )
-        )
-      ) {
-        const retry = await PlanningSolverFactory.solve(
-          {
-            ...input,
-            boundaryState: { guardContinuations: [] },
-          },
-          baseSolveOptions,
-        );
-        return { result: retry.result, metadata: retry.metadata, boundaryRelaxed: true };
-      }
-      throw error;
-    }
-  };
 
   try {
-    if (!rollingEnabled) {
-      const solverInput: PlanningSolverInput = {
-        employees,
-        requirements: engineRequirements,
-        historicalAssignments: [],
-        historicalFairness: historyAnalysis.fairness,
-        boundaryState,
-        lockedAssignments,
-        periodFrom: horizon.solveFrom,
-        periodTo: horizon.solveTo,
-        requestedPeriodFrom: periodFrom,
-        requestedPeriodTo: periodTo,
-        config: engineConfig,
-      };
+    const execution = await PlanningSolverFactory.solve(solverInput, {
+      solverType: config.getSolverType(),
+      // timeoutSeconds: config.getSolverTimeoutSeconds(),
+      fallbackToGreedy: config.shouldFallbackToGreedy(),
+      ortoolsEndpoint: (globalThis as any).process?.env?.PLANNING_ORTOOLS_URL,
+    });
 
-      const solvedWindow = await solveOneWindow(solverInput, true);
-      engineResult = solvedWindow.result;
-      solverMetadata = solvedWindow.metadata;
-      historyBoundaryRelaxed = solvedWindow.boundaryRelaxed;
-      rollingMetadata.totalSolverDurationMs = solverMetadata.durationMs;
-    } else {
-      const windows = buildRollingWindows(horizon.solveFrom, horizon.solveTo);
-      const committedState = createCommittedState(employees);
-      const templates = buildTemplateCatalog(employees, engineRequirements, lockedAssignments);
-      const solvedChunks: Array<{ result: EngineResult; window: ReturnType<typeof buildRollingWindows>[number] }> = [];
-      const chunkMetadata: RollingChunkMetadata[] = [];
-      let totalDurationMs = 0;
-      let lastMetadata: PlanningSolverExecutionMetadata | null = null;
-
-      if (planningDiagnosticsEnabled) {
-        console.info('[PLANNING_DIAG][ROLLING_HORIZON_START]', {
-          requestedPeriodFrom: periodFrom,
-          requestedPeriodTo: periodTo,
-          solveFrom: horizon.solveFrom,
-          solveTo: horizon.solveTo,
-          totalSolveDays,
-          chunks: windows.length,
-          commitDays: ROLLING_HORIZON_DEFAULTS.commitDays,
-          overlapDays: ROLLING_HORIZON_DEFAULTS.overlapDays,
-          lookaheadDays: ROLLING_HORIZON_DEFAULTS.lookaheadDays,
-        });
-      }
-
-      for (const window of windows) {
-        const windowLocks = buildRollingWindowLocks(
-          committedState,
-          window,
-          lockedAssignments,
-          engineRequirements,
-          templates,
-        );
-        const windowFairness = buildRollingFairnessBaseline(
-          historyAnalysis.fairness,
-          committedState,
-          window.solveFrom,
-          engineRequirements,
-          templates,
-        );
-        const windowBoundary = window.solveFrom === horizon.solveFrom
-          ? boundaryState
-          : buildRollingBoundaryState(committedState, window.solveFrom, engineRequirements);
-
-        const input: PlanningSolverInput = {
-          employees,
-          requirements: engineRequirements,
-          historicalAssignments: [],
-          historicalFairness: windowFairness,
-          boundaryState: windowBoundary,
-          lockedAssignments: windowLocks.locks,
-          periodFrom: window.solveFrom,
-          periodTo: window.solveTo,
-          requestedPeriodFrom: window.commitFrom,
-          requestedPeriodTo: window.commitTo,
-          config: engineConfig,
-        };
-
-        // Only a boundary coming from real pre-existing history is advisory.
-        // Boundaries derived from already committed rolling chunks must remain
-        // hard; otherwise a later chunk could contradict an earlier one.
-        const canRelaxHistoricalBoundary =
-          window.solveFrom === horizon.solveFrom && window.index <= 1;
-        const solvedWindow = await solveOneWindow(input, canRelaxHistoricalBoundary);
-        historyBoundaryRelaxed = historyBoundaryRelaxed || solvedWindow.boundaryRelaxed;
-        lastMetadata = solvedWindow.metadata;
-        totalDurationMs += solvedWindow.metadata.durationMs;
-
-        commitEngineWindow(
-          committedState,
-          solvedWindow.result,
-          window.commitFrom,
-          window.commitTo,
-        );
-        solvedChunks.push({ result: solvedWindow.result, window });
-        chunkMetadata.push({
-          ...window,
-          durationMs: solvedWindow.metadata.durationMs,
-          solverVersion: solvedWindow.metadata.solverVersion,
-          committedDays: rollingDayCount(window.commitFrom, window.commitTo),
-          lockedCarryCount: windowLocks.carryCount,
-          managerLockCount: windowLocks.managerCount,
-          boundaryContinuationCount: windowBoundary.guardContinuations.length,
-        });
-
-        if (planningDiagnosticsEnabled) {
-          console.info('[PLANNING_DIAG][ROLLING_HORIZON_CHUNK]', chunkMetadata.at(-1));
-        }
-      }
-
-      if (!lastMetadata) {
-        throw new PlanningSolverTechnicalError(
-          'Rolling horizon did not execute any solver window',
-          'PLANNING_SOLVER_PROTOCOL_ERROR',
-        );
-      }
-
-      engineResult = buildMergedRollingResult(
-        employees,
-        committedState,
-        solvedChunks,
-        historyAnalysis.fairness,
-        engineRequirements,
-        templates,
-      );
-      solverMetadata = {
-        ...lastMetadata,
-        durationMs: totalDurationMs,
-        fallbackUsed: false,
-        warning: windows.length > 1
-          ? `Rolling horizon: ${windows.length} solver windows`
-          : lastMetadata.warning,
-      };
-      rollingMetadata = {
-        enabled: true,
-        thresholdDays: ROLLING_HORIZON_DEFAULTS.thresholdDays,
-        commitDays: ROLLING_HORIZON_DEFAULTS.commitDays,
-        overlapDays: ROLLING_HORIZON_DEFAULTS.overlapDays,
-        lookaheadDays: ROLLING_HORIZON_DEFAULTS.lookaheadDays,
-        totalSolveDays,
-        chunkCount: windows.length,
-        totalSolverDurationMs: totalDurationMs,
-        chunks: chunkMetadata,
-      };
-
-      if (planningDiagnosticsEnabled) {
-        console.info('[PLANNING_DIAG][ROLLING_HORIZON_DONE]', {
-          chunkCount: windows.length,
-          totalSolverDurationMs: totalDurationMs,
-          conformityScore: engineResult.conformityScore,
-        });
-      }
-    }
+    engineResult = execution.result;
+    solverMetadata = execution.metadata;
   } catch (error) {
     if (error instanceof PlanningInfeasibleError) {
       throw new SuggestionGenerationError(error.message, error.code, 422, error.diagnostics);
@@ -1028,85 +768,22 @@ export async function solveConfiguredSuggestion(
     horizon,
   };
 
-  const persistedDiagnostics = {
-    ...withSolverDiagnostics(engineResult.diagnostics, solverMetadata),
-    generationScope: {
-      teamEmployeeCount: activeTeam.length,
-      includedEmployeeCount: engineResult.items.length,
-      temporaryExcludedEmployeeCount: excludedEmployees.length,
-      temporaryExcludedEmployeeGuids: excludedEmployees.map((employee) => employee.guid),
-      temporaryExcludedEmployees: excludedEmployees,
-      configGuid: config.getGuid(),
-      configVersion: config.getVersion(),
-      lockedAssignmentCount: lockedAssignments.length,
-      historyAdjustments,
-    },
-    historyReview: {
-      available: historyAnalysis.available,
-      historyFrom: historyAnalysis.historyFrom,
-      historyTo: historyAnalysis.historyTo,
-      summary: historyAnalysis.summary,
-      anomalies: historyAnalysis.anomalies,
-      fairness: historyAnalysis.fairness,
-      boundaryGuardFacts: historyAnalysis.boundaryGuardFacts,
-      boundaryRelaxedForFeasibility: historyBoundaryRelaxed,
-      warning: historyAnalysis.warning ?? null,
-    },
-    rollingHorizon: rollingMetadata,
-    apiPreflight: {
-      valid: preflight.valid,
-      checkedDates: preflight.checkedDates,
-      checkedRequirements: preflight.checkedRequirements,
-      warningCount: preflight.warningCount,
-      warnings: preflight.warnings,
-    },
-  };
-
-  return {
-    manager,
-    config,
-    engineResult,
-    employeeCount: engineResult.items.length,
-    excludedEmployeeCount: excludedEmployees.length,
-    excludedEmployees,
-    configGuid: config.getGuid()!,
-    configVersion: config.getVersion(),
-    solver: solverMetadata,
-    persistedDiagnostics,
-    historyWeeks,
-  };
-}
-
-export async function generateConfiguredSuggestion(
-  managerGuid: string,
-  periodFrom: string,
-  periodTo: string,
-  excludedEmployeeGuids: string[] = [],
-  historyAdjustments: HistoryAdjustment[] = [],
-): Promise<GeneratedSuggestionPayload> {
-  const solved = await solveConfiguredSuggestion(
-    managerGuid,
-    periodFrom,
-    periodTo,
-    excludedEmployeeGuids,
-    [],
-    historyAdjustments,
-  );
+  const persistedDiagnostics = withSolverDiagnostics(engineResult.diagnostics, solverMetadata);
 
   const suggestion = new ScheduleSuggestion()
-    .setTenant(solved.manager.getTenant?.() ?? '')
-    .setManager(solved.manager.getId()!)
+    .setTenant(manager.getTenant?.() ?? '')
+    .setManager(manager.getId()!)
     .setPeriodFrom(periodFrom)
     .setPeriodTo(periodTo)
-    .setHistoryWeeks(solved.historyWeeks)
-    .setConformityScore(solved.engineResult.conformityScore)
-    .setConfig(solved.config.getId()!)
-    .setEngineVersion(solved.solver.solverVersion)
-    .setDiagnostics(solved.persistedDiagnostics);
+    .setHistoryWeeks(historyWeeks)
+    .setConformityScore(engineResult.conformityScore)
+    .setConfig(config.getId()!)
+    .setEngineVersion(solverMetadata.solverVersion)
+    .setDiagnostics(persistedDiagnostics);
 
   await suggestion.save();
 
-  for (const employeeResult of solved.engineResult.items) {
+  for (const employeeResult of engineResult.items) {
     const user = await User._load(employeeResult.userGuid, true);
     if (!user) continue;
 
@@ -1121,13 +798,11 @@ export async function generateConfiguredSuggestion(
 
   return {
     suggestion,
-    engineResult: solved.engineResult,
-    employeeCount: solved.employeeCount,
-    excludedEmployeeCount: solved.excludedEmployeeCount,
-    excludedEmployees: solved.excludedEmployees,
-    configGuid: solved.configGuid,
-    configVersion: solved.configVersion,
-    solver: solved.solver,
+    engineResult,
+    employeeCount: engineResult.items.length,
+    configGuid: config.getGuid()!,
+    configVersion: config.getVersion(),
+    solver: solverMetadata,
   };
 }
 

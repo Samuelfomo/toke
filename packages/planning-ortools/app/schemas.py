@@ -181,6 +181,24 @@ class HistoricalAssignment(BaseModel):
     serviceType: HistoricalServiceType
 
 
+class HistoricalFairnessBaseline(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    employeeGuid: str
+    workedDays: int = Field(default=0, ge=0)
+    guardDays: int = Field(default=0, ge=0)
+    weekendWorkedDays: int = Field(default=0, ge=0)
+    workedMinutes: int = Field(default=0, ge=0)
+    restDays: int = Field(default=0, ge=0)
+    templateCounts: dict[str, int] = Field(default_factory=dict)
+
+    @model_validator(mode="after")
+    def validate_template_counts(self) -> "HistoricalFairnessBaseline":
+        if any(value < 0 for value in self.templateCounts.values()):
+            raise ValueError("historicalFairness.templateCounts cannot contain negative values")
+        return self
+
+
 class BoundaryGuardContinuation(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
@@ -365,19 +383,133 @@ class EngineConfig(BaseModel):
     resilientAssistantMode: bool = True
 
 
+class PlanningLockedAssignment(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    employeeGuid: str = Field(min_length=1)
+    date: str
+    templateGuid: str | None = None
+    requirementGuid: str | None = None
+    # For a manager service that is not represented by a configured
+    # requirement. It is treated as an authoritative occupied day.
+    template: EngineTemplate | None = None
+
+    @model_validator(mode="after")
+    def validate_locked_assignment(self) -> "PlanningLockedAssignment":
+        try:
+            date.fromisoformat(self.date)
+        except ValueError as error:
+            raise ValueError("lockedAssignments.date must be YYYY-MM-DD") from error
+
+        if self.templateGuid is None:
+            if self.requirementGuid is not None:
+                raise ValueError("A locked rest cannot reference requirementGuid")
+            if self.template is not None:
+                raise ValueError("A locked rest cannot carry a template snapshot")
+            return self
+
+        if self.template is not None and self.template.guid != self.templateGuid:
+            raise ValueError("lockedAssignments.template must match templateGuid")
+
+        if self.requirementGuid is None and self.template is None:
+            raise ValueError(
+                "A manager service outside requirements requires a template snapshot"
+            )
+
+        return self
+
+
 class PlanningSolverInput(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
     employees: list[PlanningEmployeeInput]
     requirements: list[PlanningRequirementInput]
-    historicalAssignments: list[HistoricalAssignment]
+    # Raw assignments are retained for wire compatibility only. Lot 5.1 sends
+    # aggregated historicalFairness so history can influence objectives without
+    # becoming a hard feasibility constraint.
+    historicalAssignments: list[HistoricalAssignment] = Field(default_factory=list)
+    historicalFairness: list[HistoricalFairnessBaseline] = Field(default_factory=list)
     boundaryState: PlanningBoundaryState = Field(default_factory=PlanningBoundaryState)
+    lockedAssignments: list[PlanningLockedAssignment] = Field(default_factory=list)
     periodFrom: str
     periodTo: str
     requestedPeriodFrom: str | None = None
     requestedPeriodTo: str | None = None
     config: EngineConfig
     solverTimeoutSeconds: int = Field(default=20, ge=1, le=300)
+
+
+    @model_validator(mode="after")
+    def validate_locked_assignments(self) -> "PlanningSolverInput":
+        employee_by_guid = {employee.guid: employee for employee in self.employees}
+
+        fairness_guids = [entry.employeeGuid for entry in self.historicalFairness]
+        if len(fairness_guids) != len(set(fairness_guids)):
+            raise ValueError("historicalFairness contains duplicate employeeGuid entries")
+        unknown_fairness = [guid for guid in fairness_guids if guid not in employee_by_guid]
+        if unknown_fairness:
+            raise ValueError(
+                f"historicalFairness references unknown employees: {unknown_fairness}"
+            )
+        requirement_by_guid = {requirement.guid: requirement for requirement in self.requirements}
+        seen: set[tuple[str, str]] = set()
+
+        period_from = date.fromisoformat(self.periodFrom)
+        period_to = date.fromisoformat(self.periodTo)
+        day_keys = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"]
+
+        for lock in self.lockedAssignments:
+            key = (lock.employeeGuid, lock.date)
+            if key in seen:
+                raise ValueError(
+                    "lockedAssignments contains duplicate employee/date entries"
+                )
+            seen.add(key)
+
+            employee = employee_by_guid.get(lock.employeeGuid)
+            if employee is None or employee.mode == "EXCLUDED":
+                raise ValueError(
+                    f"Locked employee {lock.employeeGuid} is not planifiable"
+                )
+
+            lock_date = date.fromisoformat(lock.date)
+            if lock_date < period_from or lock_date > period_to:
+                raise ValueError(
+                    "lockedAssignments dates must stay inside the technical solve horizon"
+                )
+
+            if lock.templateGuid is None:
+                continue
+
+            # A configured service lock may deliberately violate employee
+            # eligibility: that is a manager override, not invalid solver input.
+            if lock.requirementGuid:
+                requirement = requirement_by_guid.get(lock.requirementGuid)
+                if requirement is None:
+                    raise ValueError(
+                        f"Locked requirement {lock.requirementGuid} does not exist"
+                    )
+                if requirement.template.guid != lock.templateGuid:
+                    raise ValueError(
+                        "Locked templateGuid does not match requirement template"
+                    )
+                if requirement.dayOfWeek != day_keys[lock_date.weekday()]:
+                    raise ValueError(
+                        "Locked requirement does not apply on the locked date"
+                    )
+                continue
+
+            # External manager service: it only needs to be a real work template
+            # for that date. It occupies the employee but does not invent engine
+            # coverage or eligibility semantics.
+            assert lock.template is not None
+            blocks = lock.template.definition.get(day_keys[lock_date.weekday()])
+            if not blocks:
+                raise ValueError(
+                    f"Locked external template {lock.templateGuid} has no work block on {lock.date}"
+                )
+
+        return self
 
 
 class DayReason(BaseModel):
@@ -478,7 +610,7 @@ class SolverStats(BaseModel):
 class SolverResponse(BaseModel):
     success: bool
     status: Literal["OPTIMAL", "FEASIBLE", "INFEASIBLE", "UNKNOWN"]
-    solverVersion: str = "ortools-cp-sat-v1.7-resilient-assistant"
+    solverVersion: str = "ortools-cp-sat-v1.10-history-fairness"
     solverStats: SolverStats | None = None
     result: EngineResult | None = None
     diagnostics: EngineDiagnostics | None = None

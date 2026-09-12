@@ -48,7 +48,15 @@
         "daysWithKnownNetDuration": 3,
         "daysWithMissingDuration": 0
       },
-      "issueCount": 1
+      "issueCount": 1,
+      "employeeImpact": {
+        "employeesWithAbsence": 0,
+        "absenceEmployeeRate": 0.0,
+        "employeesWithLate": 1,
+        "lateEmployeeRate": 50.0,
+        "employeesWithIssues": 1,
+        "issueEmployeeRate": 50.0
+      }
     },
     "daily": [
       {

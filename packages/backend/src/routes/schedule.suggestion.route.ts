@@ -2,14 +2,29 @@ import { Request, Response, Router } from 'express';
 import Ensure from '@toke/api/dist/middle/ensured-routes.js';
 
 import { TenantConfig } from '../tools/tenant.config.js';
-import {
-  handleBffRouteError,
-  relayTenantApiResponse,
-  tenantReference,
-} from '../tools/bff.proxy.response.js';
+import { handleBffRouteError, relayTenantApiResponse, tenantReference, } from '../tools/bff.proxy.response.js';
 import { ScheduleSuggestionService } from '../services/schedule.suggestion.service.js';
 
 const router = Router();
+
+router.post(
+  '/:manager/history-review',
+  TenantConfig.authenticate,
+  Ensure.post(),
+  async (req: Request, res: Response): Promise<void> => {
+    try {
+      const result = await ScheduleSuggestionService.historyReview(
+        tenantReference(req),
+        req.params.manager as string,
+        req.body,
+      );
+
+      relayTenantApiResponse(res, result);
+    } catch (error: unknown) {
+      handleBffRouteError(res, error, 'BFF_SUGGESTION_HISTORY_REVIEW_FAILED');
+    }
+  },
+);
 
 router.post(
   '/:manager/generate',
@@ -26,6 +41,43 @@ router.post(
       relayTenantApiResponse(res, result);
     } catch (error: unknown) {
       handleBffRouteError(res, error, 'BFF_SUGGESTION_GENERATE_FAILED');
+    }
+  },
+);
+
+router.post(
+  '/:guid/bulk-edit/preview',
+  TenantConfig.authenticate,
+  Ensure.post(),
+  async (req: Request, res: Response): Promise<void> => {
+    try {
+      const result = await ScheduleSuggestionService.previewBulkEdit(
+        tenantReference(req),
+        req.params.guid as string,
+        req.body,
+      );
+
+      relayTenantApiResponse(res, result);
+    } catch (error: unknown) {
+      handleBffRouteError(res, error, 'BFF_PREVIEW_BULK_EDIT_POST_FAILED');
+    }
+  },
+);
+
+router.post(
+  '/:guid/regenerate',
+  TenantConfig.authenticate,
+  Ensure.post(),
+  async (req: Request, res: Response): Promise<void> => {
+    try {
+      const result = await ScheduleSuggestionService.regenerate(
+        tenantReference(req),
+        req.params.guid as string,
+      );
+
+      relayTenantApiResponse(res, result);
+    } catch (error: unknown) {
+      handleBffRouteError(res, error, 'BFF_SUGGESTION_REGENERATE_FAILED');
     }
   },
 );
@@ -83,6 +135,25 @@ router.patch(
       relayTenantApiResponse(res, result);
     } catch (error: unknown) {
       handleBffRouteError(res, error, 'BFF_SUGGESTION_ITEM_PATCH_FAILED');
+    }
+  },
+);
+
+router.patch(
+  '/:guid/bulk-edit',
+  TenantConfig.authenticate,
+  Ensure.patch(),
+  async (req: Request, res: Response): Promise<void> => {
+    try {
+      const result = await ScheduleSuggestionService.applyBulkEdit(
+        tenantReference(req),
+        req.params.guid as string,
+        req.body,
+      );
+
+      relayTenantApiResponse(res, result);
+    } catch (error: unknown) {
+      handleBffRouteError(res, error, 'BFF_APPLY_BULK_EDIT_PATCH_FAILED');
     }
   },
 );

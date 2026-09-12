@@ -48,6 +48,19 @@ export interface AttendanceDurationMetrics {
   daysWithMissingDuration: number;
 }
 
+/**
+ * Part de l'équipe concernée au moins une fois sur la période.
+ * Ces indicateurs portent sur des employés distincts, et non sur des journées.
+ */
+export interface AttendanceEmployeeImpactMetrics {
+  employeesWithAbsence: number;
+  absenceEmployeeRate: number | null;
+  employeesWithLate: number;
+  lateEmployeeRate: number | null;
+  employeesWithIssues: number;
+  issueEmployeeRate: number | null;
+}
+
 export interface AttendanceIssueOccurrence {
   employeeGuid: string;
   employeeName: string;
@@ -112,6 +125,7 @@ export interface AttendanceOverview {
   summary: {
     statusTotals: AttendanceStatusTotals;
     rates: AttendanceRateMetrics;
+    employeeImpact: AttendanceEmployeeImpactMetrics;
     durations: AttendanceDurationMetrics;
     issueCount: number;
   };
