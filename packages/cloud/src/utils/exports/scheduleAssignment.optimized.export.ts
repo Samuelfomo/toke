@@ -25,7 +25,7 @@ export interface OptimizedScheduleMember {
     restByDate?: Record<string, boolean>
 }
 
-export type OptimizedPdfMode = 'personalized' | 'generalized'
+export type OptimizedPdfMode = 'personalized' | 'personalized-color' | 'generalized'
 
 export type OptimizedMonthsPerPage = 1 | 2 | 3 | 4 | 6
 
@@ -38,8 +38,9 @@ export interface OptimizedScheduleExportOptions {
     generatedBy: string
     tenantName?: string
     /**
-     * personalized : le rond porte employee_color (identité employé).
-     * generalized  : le rond porte la couleur du service (08h / 10h30 / 16h / repos).
+     * personalized       : cercle + initiales + employee_color (lisible aussi en N&B).
+     * personalized-color : carré coloré sans initiales (écran / impression couleur).
+     * generalized        : cercle + initiales, couleur du service (08h / 10h30 / 16h / repos).
      */
     pdfMode?: OptimizedPdfMode
     /** Nombre maximal de calendriers mensuels affichés sur une page optimisée. */
@@ -382,7 +383,7 @@ export function buildOptimizedDays(
 //     restByDate?: Record<string, boolean>
 // }
 //
-// export type OptimizedPdfMode = 'personalized' | 'generalized'
+// export type OptimizedPdfMode = 'personalized' | 'personalized-color' | 'generalized'
 //
 // export interface OptimizedScheduleExportOptions {
 //     members: OptimizedScheduleMember[]

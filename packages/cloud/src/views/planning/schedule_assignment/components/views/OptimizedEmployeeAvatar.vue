@@ -1,11 +1,14 @@
 <template>
   <span
-      class="inline-flex h-[18px] w-[18px] flex-none items-center justify-center rounded-full border text-[6px] font-extrabold leading-none tracking-[-0.02em] shadow-sm"
+      class="inline-flex h-[20px] w-[20px] flex-none items-center justify-center border font-extrabold leading-none shadow-sm"
+      :class="mode === 'personalized-color'
+        ? 'rounded-[4px] text-transparent'
+        : 'rounded-full text-[8px] tracking-[-0.02em]'"
       :style="avatarStyle"
       :title="title || code"
       :aria-label="title || code"
   >
-    {{ code }}
+    <span v-if="mode !== 'personalized-color'">{{ code }}</span>
   </span>
 </template>
 

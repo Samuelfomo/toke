@@ -71,42 +71,53 @@ function drawEmployeeAvatar(
     employeeColor: string | null,
     kind: OptimizedShiftKind,
     pdfMode: OptimizedPdfMode,
-    diameter = 2.35,
+    diameter = 2.8,
 ): void {
     const radius = diameter / 2
     const centerX = x + radius
     const centerY = y + radius
 
-    // Deux lectures possibles du même planning :
-    // - personnalisé : le rond identifie durablement l'employé via employee_color ;
-    // - généralisé  : le rond identifie le service via sa couleur historique.
-    const isPersonalized = pdfMode === 'personalized'
-    const fillRgb = isPersonalized
+    // Trois lectures possibles du même planning :
+    // - personalized       : cercle + initiales + couleur employé ;
+    // - personalized-color : carré coloré sans initiales ;
+    // - generalized        : cercle + initiales + couleur du service.
+    const usesEmployeeColor = pdfMode === 'personalized' || pdfMode === 'personalized-color'
+    const colorOnly = pdfMode === 'personalized-color'
+    const fillRgb = usesEmployeeColor
         ? (employeeColorRgb(employeeColor) ?? C.rest)
         : backgroundForKind(kind)
-    const borderRgb = isPersonalized
+    const borderRgb = usesEmployeeColor
         ? (employeeColorRgb(employeeColor) ?? C.rest)
         : colorForKind(kind)
-    const textRgb = isPersonalized
+    const textRgb = pdfMode === 'personalized'
         ? (employeeColorRgb(employeeColorText(employeeColor)) ?? C.white)
         : colorForKind(kind)
 
     doc.setFillColor(...fillRgb)
     doc.setDrawColor(...borderRgb)
-    doc.setLineWidth(Math.max(0.10, Math.min(0.16, diameter * 0.08)))
+    doc.setLineWidth(Math.max(0.12, Math.min(0.18, diameter * 0.07)))
+
+    if (colorOnly) {
+        const corner = Math.max(0.25, diameter * 0.16)
+        doc.roundedRect(x, y, diameter, diameter, corner, corner, 'FD')
+        return
+    }
+
     doc.circle(centerX, centerY, radius, 'FD')
 
+    // La police conserve une taille minimale réellement imprimable. On préfère
+    // réduire légèrement le code plutôt que descendre vers des tailles illisibles.
     doc.setFont('helvetica', 'bold')
-    let fontSize = Math.max(1.45, Math.min(
-        code.length > 2 ? diameter * 1.20 : diameter * 1.48,
-        code.length > 2 ? 2.35 : 2.75,
+    let fontSize = Math.max(2.05, Math.min(
+        code.length > 2 ? diameter * 1.28 : diameter * 1.58,
+        code.length > 2 ? 3.15 : 3.55,
     ))
     doc.setFontSize(fontSize)
 
-    const maxTextWidth = diameter * 0.62
+    const maxTextWidth = diameter * 0.70
     const measuredWidth = doc.getTextWidth(code)
     if (measuredWidth > maxTextWidth && measuredWidth > 0) {
-        fontSize = Math.max(1.30, fontSize * (maxTextWidth / measuredWidth))
+        fontSize = Math.max(1.90, fontSize * (maxTextWidth / measuredWidth))
         doc.setFontSize(fontSize)
     }
 
@@ -114,7 +125,6 @@ function drawEmployeeAvatar(
     doc.setTextColor(...textRgb)
     doc.text(code, centerX, centerY + textHeight * 0.30, { align: 'center' })
 }
-
 function isoForDay(year: number, month: number, day: number): string {
     return `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`
 }
@@ -243,8 +253,8 @@ function drawMonth(
         // 4 lignes -> avatar compact mais toutes les informations restent visibles
         // Respiration visuelle : on réserve une petite marge verticale autour
         // de chaque avatar et une vraie séparation horizontale entre employés.
-        const avatarD = Math.max(1.00 * contentScale, Math.min(1.68 * contentScale, rowH - 0.28 * contentScale))
-        const avatarGap = Math.max(0.22 * contentScale, Math.min(0.30 * contentScale, avatarD * 0.20))
+        const avatarD = Math.max(1.35 * contentScale, Math.min(2.15 * contentScale, rowH - 0.18 * contentScale))
+        const avatarGap = Math.max(0.20 * contentScale, Math.min(0.34 * contentScale, avatarD * 0.16))
         const labelWidth = 2.15 * contentScale
         const avatarStartX = cx + labelWidth + 0.52 * contentScale
         const availableAvatarW = cellW - labelWidth - 1.02 * contentScale
@@ -349,8 +359,10 @@ function drawEmployeeLegend(
     const columns = sorted.length > 24 ? 5 : sorted.length > 16 ? 4 : 3
     const rows = Math.ceil(sorted.length / columns)
     const colW = width / columns
-    const rowH = rows > 7 ? 2.7 : 3.15
-    const fontSize = rows > 7 ? 4.0 : 4.35
+    // Le marqueur de légende a été agrandi pour rester lisible après impression.
+    // La hauteur de ligne suit afin d'éviter le chevauchement entre employés.
+    const rowH = rows > 7 ? 3.25 : 3.65
+    const fontSize = rows > 7 ? 4.15 : 4.55
 
     sorted.forEach((member, index) => {
         const col = Math.floor(index / rows)
@@ -361,40 +373,40 @@ function drawEmployeeLegend(
         const itemX = x + col * colW
         const itemY = y + 4 + row * rowH
 
-        if (pdfMode === 'personalized') {
+        if (pdfMode === 'personalized' || pdfMode === 'personalized-color') {
             drawEmployeeAvatar(
                 doc,
                 itemX + 0.05,
-                itemY - 1.9,
+                itemY - 2.35,
                 code,
                 member.employeeColor,
                 'other',
-                'personalized',
-                2.4,
+                pdfMode,
+                pdfMode === 'personalized-color' ? 2.8 : 3.0,
             )
         } else {
             // Dans le PDF généralisé, la légende employé reste neutre :
             // aucune couleur ne doit laisser croire qu'elle appartient à l'employé.
-            const diameter = 2.4
+            const diameter = 3.0
             const radius = diameter / 2
             const centerX = itemX + 0.05 + radius
-            const centerY = itemY - 1.9 + radius
+            const centerY = itemY - 2.35 + radius
 
             doc.setFillColor(...C.white)
             doc.setDrawColor(...C.primary)
             doc.setLineWidth(0.13)
             doc.circle(centerX, centerY, radius, 'FD')
             doc.setFont('helvetica', 'bold')
-            doc.setFontSize(code.length > 2 ? 2.15 : 2.55)
+            doc.setFontSize(code.length > 2 ? 2.55 : 3.05)
             doc.setTextColor(...C.primary)
-            doc.text(code, centerX, centerY + 0.42, { align: 'center' })
+            doc.text(code, centerX, centerY + 0.50, { align: 'center' })
         }
 
         doc.setFont('helvetica', 'normal')
         doc.setFontSize(fontSize)
         doc.setTextColor(...C.dark)
         const clipped = doc.splitTextToSize(text, colW - 5)[0] ?? text
-        doc.text(clipped, itemX + 3.5, itemY)
+        doc.text(clipped, itemX + 4.2, itemY)
     })
 }
 
@@ -449,8 +461,10 @@ export function exportScheduleOptimizedPDF(options: OptimizedScheduleExportOptio
         doc.setFontSize(5.2)
         doc.setTextColor(...C.muted)
         const modeLabel = pdfMode === 'personalized'
-            ? 'PDF personnalisé · couleurs = employés'
-            : 'PDF généralisé · couleurs = services'
+            ? 'PDF personnalisé · lisible · initiales + couleurs employés'
+            : pdfMode === 'personalized-color'
+                ? 'PDF personnalisé · couleurs uniquement · employés'
+                : 'PDF généralisé · couleurs = services'
 
         doc.text(
             `${modeLabel} · ${monthsPerPage} mois/page · 00h00 masqué : continuité technique de la garde commencée à 16h00`,
@@ -870,7 +884,7 @@ export function exportScheduleOptimizedPDF(options: OptimizedScheduleExportOptio
 //             drawEmployeeAvatar(
 //                 doc,
 //                 itemX + 0.05,
-//                 itemY - 1.9,
+//                 itemY - 2.35,
 //                 code,
 //                 member.employeeColor,
 //                 'other',
@@ -880,26 +894,26 @@ export function exportScheduleOptimizedPDF(options: OptimizedScheduleExportOptio
 //         } else {
 //             // Dans le PDF généralisé, la légende employé reste neutre :
 //             // aucune couleur ne doit laisser croire qu'elle appartient à l'employé.
-//             const diameter = 2.4
+//             const diameter = 3.0
 //             const radius = diameter / 2
 //             const centerX = itemX + 0.05 + radius
-//             const centerY = itemY - 1.9 + radius
+//             const centerY = itemY - 2.35 + radius
 //
 //             doc.setFillColor(...C.white)
 //             doc.setDrawColor(...C.primary)
 //             doc.setLineWidth(0.13)
 //             doc.circle(centerX, centerY, radius, 'FD')
 //             doc.setFont('helvetica', 'bold')
-//             doc.setFontSize(code.length > 2 ? 2.15 : 2.55)
+//             doc.setFontSize(code.length > 2 ? 2.55 : 3.05)
 //             doc.setTextColor(...C.primary)
-//             doc.text(code, centerX, centerY + 0.42, { align: 'center' })
+//             doc.text(code, centerX, centerY + 0.50, { align: 'center' })
 //         }
 //
 //         doc.setFont('helvetica', 'normal')
 //         doc.setFontSize(fontSize)
 //         doc.setTextColor(...C.dark)
 //         const clipped = doc.splitTextToSize(text, colW - 5)[0] ?? text
-//         doc.text(clipped, itemX + 3.5, itemY)
+//         doc.text(clipped, itemX + 4.2, itemY)
 //     })
 // }
 //

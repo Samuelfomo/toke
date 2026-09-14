@@ -6,11 +6,15 @@
           <p class="text-sm font-bold text-indigo-800">Vue optimisée longue période</p>
           <span
               class="rounded-full border px-2 py-0.5 text-[10px] font-bold"
-              :class="visualMode === 'personalized'
-                ? 'border-indigo-200 bg-white text-indigo-700'
-                : 'border-slate-200 bg-white text-slate-600'"
+              :class="visualMode === 'generalized'
+                ? 'border-slate-200 bg-white text-slate-600'
+                : 'border-indigo-200 bg-white text-indigo-700'"
           >
-            {{ visualMode === 'personalized' ? 'Personnalisé' : 'Généralisé · services' }}
+            {{ visualMode === 'personalized'
+              ? 'Personnalisé · lisible'
+              : visualMode === 'personalized-color'
+                ? 'Personnalisé · couleurs'
+                : 'Généralisé · services' }}
           </span>
           <span class="rounded-full border border-indigo-200 bg-white px-2 py-0.5 text-[10px] font-bold text-indigo-700">
             {{ monthsPerPage }} mois/page
@@ -18,7 +22,10 @@
         </div>
         <p class="mt-0.5 text-xs text-indigo-700/80">
           <template v-if="visualMode === 'personalized'">
-            {{ monthsPerPage }} mois maximum par bloc. La couleur du mini-avatar identifie l'employé ; le repère horaire identifie le service.
+            {{ monthsPerPage }} mois maximum par bloc. Cercle agrandi + initiales + couleur employé, conçu pour rester lisible après impression, y compris en noir et blanc.
+          </template>
+          <template v-else-if="visualMode === 'personalized-color'">
+            {{ monthsPerPage }} mois maximum par bloc. Les carrés utilisent uniquement la couleur de l'employé ; recommandé pour écran et impression couleur.
           </template>
           <template v-else>
             {{ monthsPerPage }} mois maximum par bloc. La couleur du mini-avatar représente le service ; les employés restent identifiés par leurs initiales.
@@ -345,7 +352,11 @@ function formatRange(from: string, to: string): string {
 <!--                ? 'border-indigo-200 bg-white text-indigo-700'-->
 <!--                : 'border-slate-200 bg-white text-slate-600'"-->
 <!--          >-->
-<!--            {{ visualMode === 'personalized' ? 'Personnalisé' : 'Généralisé · services' }}-->
+<!--            {{ visualMode === 'personalized'
+              ? 'Personnalisé · lisible'
+              : visualMode === 'personalized-color'
+                ? 'Personnalisé · couleurs'
+                : 'Généralisé · services' }}-->
 <!--          </span>-->
 <!--        </div>-->
 <!--        <p class="mt-0.5 text-xs text-indigo-700/80">-->

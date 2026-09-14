@@ -96,7 +96,8 @@
                 class="w-full min-w-0 sm:w-auto sm:min-w-[180px] bg-white px-3 py-2.5 text-xs font-semibold text-slate-700 outline-none border-r border-indigo-100 disabled:opacity-50"
                 title="Choisir le mode de visualisation et d'export du planning optimisé"
             >
-              <option value="personalized">PDF personnalisé</option>
+              <option value="personalized">PDF personnalisé · Lisible</option>
+              <option value="personalized-color">PDF personnalisé · Couleurs</option>
               <option value="generalized">PDF généralisé · services</option>
             </select>
 
@@ -122,8 +123,10 @@
                 :disabled="!canExport || optimizedExportLoading"
                 class="flex items-center gap-2 px-4 py-2.5 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 text-sm font-semibold transition disabled:opacity-40 disabled:cursor-not-allowed"
                 :title="optimizedPdfMode === 'personalized'
-                  ? 'Les couleurs représentent les employés'
-                  : 'Les couleurs représentent les services'"
+                  ? 'Cercle, initiales et couleur employé · adapté aussi au noir et blanc'
+                  : optimizedPdfMode === 'personalized-color'
+                    ? 'Carrés colorés sans initiales · recommandé pour écran et impression couleur'
+                    : 'Les couleurs représentent les services'"
             >
               <IconLoader2 v-if="optimizedExportLoading" :size="14" class="animate-spin"/>
               <IconCalendarStats v-else :size="14"/>
