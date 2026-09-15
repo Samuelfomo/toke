@@ -34,11 +34,18 @@ export interface AttendanceRateMetrics {
   attendedWorkingDays: number;
   onTimeWorkingDays: number;
   lateWorkingDays: number;
+  absentWorkingDays: number;
   attendanceRate: number | null;
   punctualityRate: number | null;
+  absenceRate: number | null;
+  lateRate: number | null;
+  employeeDaysAnalyzed: number;
+  employeeDaysWithIssues: number;
+  issueRate: number | null;
 }
 
 export interface AttendanceDurationMetrics {
+  expectedWorkMinutes: number;
   grossMinutes: number;
   pauseMinutes: number;
   netMinutes: number;
@@ -46,19 +53,7 @@ export interface AttendanceDurationMetrics {
   daysWithKnownPauseDuration: number;
   daysWithKnownNetDuration: number;
   daysWithMissingDuration: number;
-}
-
-/**
- * Part de l'équipe concernée au moins une fois sur la période.
- * Ces indicateurs portent sur des employés distincts, et non sur des journées.
- */
-export interface AttendanceEmployeeImpactMetrics {
-  employeesWithAbsence: number;
-  absenceEmployeeRate: number | null;
-  employeesWithLate: number;
-  lateEmployeeRate: number | null;
-  employeesWithIssues: number;
-  issueEmployeeRate: number | null;
+  daysWithKnownExpectedWorkDuration: number;
 }
 
 export interface AttendanceIssueOccurrence {
@@ -90,8 +85,13 @@ export interface AttendanceEmployeeDayOverview {
   status: AttendanceStatus;
   rateEligible: boolean;
   delayMinutes: number | null;
+  arrivalDelayMinutes: number | null;
+  toleranceMinutes: number | null;
+  expectedWorkMinutes: number | null;
   firstClockIn: string | null;
+  firstClockInDate: BusinessDate | null;
   lastClockOut: string | null;
+  lastClockOutDate: BusinessDate | null;
   grossMinutes: number | null;
   pauseMinutes: number | null;
   netMinutes: number | null;
@@ -125,7 +125,6 @@ export interface AttendanceOverview {
   summary: {
     statusTotals: AttendanceStatusTotals;
     rates: AttendanceRateMetrics;
-    employeeImpact: AttendanceEmployeeImpactMetrics;
     durations: AttendanceDurationMetrics;
     issueCount: number;
   };

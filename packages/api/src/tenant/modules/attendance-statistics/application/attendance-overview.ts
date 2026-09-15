@@ -6,7 +6,6 @@ import type {
 import type {
   AttendanceDataQuality,
   AttendanceDurationMetrics,
-  AttendanceEmployeeImpactMetrics,
   AttendanceEmployeeOverview,
   AttendanceIssueOccurrence,
   AttendanceIssueSummary,
@@ -63,7 +62,6 @@ export function buildAttendanceOverview(
 
   const statusTotals = countStatuses(input.days);
   const rates = calculateRates(input.days);
-  const employeeImpact = calculateEmployeeImpact(employees);
   const durations = calculateDurations(input.days);
   const issues = buildIssueSummaries(input.days, employeeById);
 
@@ -98,7 +96,6 @@ export function buildAttendanceOverview(
     summary: {
       statusTotals,
       rates,
-      employeeImpact,
       durations,
       issueCount: input.days.reduce((total, day) => total + day.issues.length, 0),
     },
@@ -127,8 +124,13 @@ function buildEmployeeOverview(
       status: day.result.status,
       rateEligible: day.result.rateEligible,
       delayMinutes: day.result.delayMinutes,
+      arrivalDelayMinutes: day.result.arrivalDelayMinutes,
+      toleranceMinutes: day.result.toleranceMinutes,
+      expectedWorkMinutes: day.result.expectedWorkMinutes,
       firstClockIn: day.activity.firstClockIn,
+      firstClockInDate: day.activity.firstClockInDate,
       lastClockOut: day.activity.lastClockOut,
+      lastClockOutDate: day.activity.lastClockOutDate,
       grossMinutes: day.activity.grossMinutes,
       pauseMinutes: day.activity.pauseMinutes,
       netMinutes: day.activity.netMinutes,
@@ -145,42 +147,31 @@ function calculateRates(days: readonly AttendanceDay[]): AttendanceRateMetrics {
   const expected = presentDays + lateDays + absentDays;
   const attended = presentDays + lateDays;
 
+  const employeeDaysAnalyzed = days.length;
+  const employeeDaysWithIssues = days.filter((day) => day.issues.length > 0).length;
+
   return {
     employeeWorkingDaysExpected: expected,
     attendedWorkingDays: attended,
     onTimeWorkingDays: presentDays,
     lateWorkingDays: lateDays,
+    absentWorkingDays: absentDays,
     attendanceRate: expected > 0 ? roundOne((attended / expected) * 100) : null,
     punctualityRate: attended > 0 ? roundOne((presentDays / attended) * 100) : null,
-  };
-}
-
-function calculateEmployeeImpact(
-  employees: readonly AttendanceEmployeeOverview[],
-): AttendanceEmployeeImpactMetrics {
-  const teamSize = employees.length;
-  const employeesWithAbsence = employees.filter(
-    (employee) => employee.statusTotals.ABSENT > 0,
-  ).length;
-  const employeesWithLate = employees.filter(
-    (employee) => employee.statusTotals.LATE > 0,
-  ).length;
-  const employeesWithIssues = employees.filter((employee) => employee.issueCount > 0).length;
-
-  return {
-    employeesWithAbsence,
-    absenceEmployeeRate:
-      teamSize > 0 ? roundOne((employeesWithAbsence / teamSize) * 100) : null,
-    employeesWithLate,
-    lateEmployeeRate:
-      teamSize > 0 ? roundOne((employeesWithLate / teamSize) * 100) : null,
-    employeesWithIssues,
-    issueEmployeeRate:
-      teamSize > 0 ? roundOne((employeesWithIssues / teamSize) * 100) : null,
+    absenceRate: expected > 0 ? roundOne((absentDays / expected) * 100) : null,
+    lateRate: attended > 0 ? roundOne((lateDays / attended) * 100) : null,
+    employeeDaysAnalyzed,
+    employeeDaysWithIssues,
+    issueRate:
+      employeeDaysAnalyzed > 0
+        ? roundOne((employeeDaysWithIssues / employeeDaysAnalyzed) * 100)
+        : null,
   };
 }
 
 function calculateDurations(days: readonly AttendanceDay[]): AttendanceDurationMetrics {
+  let expectedWorkMinutes = 0;
+  let knownExpectedWork = 0;
   let grossMinutes = 0;
   let pauseMinutes = 0;
   let netMinutes = 0;
@@ -190,6 +181,11 @@ function calculateDurations(days: readonly AttendanceDay[]): AttendanceDurationM
   let missing = 0;
 
   for (const day of days) {
+    if (day.result.expectedWorkMinutes !== null) {
+      expectedWorkMinutes += day.result.expectedWorkMinutes;
+      knownExpectedWork++;
+    }
+
     if (!day.activity.hasActivity) continue;
 
     const hasCompleteDuration =
@@ -216,6 +212,7 @@ function calculateDurations(days: readonly AttendanceDay[]): AttendanceDurationM
   }
 
   return {
+    expectedWorkMinutes,
     grossMinutes,
     pauseMinutes,
     netMinutes,
@@ -223,6 +220,7 @@ function calculateDurations(days: readonly AttendanceDay[]): AttendanceDurationM
     daysWithKnownPauseDuration: knownPause,
     daysWithKnownNetDuration: knownNet,
     daysWithMissingDuration: missing,
+    daysWithKnownExpectedWorkDuration: knownExpectedWork,
   };
 }
 

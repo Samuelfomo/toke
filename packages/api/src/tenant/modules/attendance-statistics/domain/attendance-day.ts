@@ -4,7 +4,9 @@ import type {
   AttendanceDayActivityInput,
   AttendanceDayResult,
   AttendanceIssue,
+  BusinessDate,
   BusinessTime,
+  ExpectedWorkBlock,
   CreateAttendanceDayInput,
   AttendanceDaySchedule,
 } from './attendance-day.types.js';
@@ -56,6 +58,9 @@ function classifyAttendanceDay(
       result: {
         status: 'UNDETERMINED',
         delayMinutes: null,
+        arrivalDelayMinutes: null,
+        toleranceMinutes: null,
+        expectedWorkMinutes: null,
         rateEligible: false,
       },
       issues: activity.hasActivity
@@ -69,6 +74,9 @@ function classifyAttendanceDay(
       result: {
         status: 'REST_DAY',
         delayMinutes: null,
+        arrivalDelayMinutes: null,
+        toleranceMinutes: null,
+        expectedWorkMinutes: null,
         rateEligible: false,
       },
       issues: activity.hasActivity ? ['PRESENCE_ON_REST_DAY'] : [],
@@ -87,6 +95,9 @@ function classifyAttendanceDay(
       result: {
         status: hasExpectedWorkDayEnded ? 'ABSENT' : 'PENDING',
         delayMinutes: null,
+        arrivalDelayMinutes: null,
+        toleranceMinutes: firstExpectedBlock.toleranceMinutes,
+        expectedWorkMinutes: calculateExpectedWorkMinutes(schedule.expectedBlocks),
         rateEligible: hasExpectedWorkDayEnded,
       },
       issues: [],
@@ -95,13 +106,17 @@ function classifyAttendanceDay(
 
   const expectedStartMinutes = parseBusinessTime(firstExpectedBlock.startTime);
   const clockInMinutes = parseRequiredClockIn(activity.firstClockIn);
-  const delayMinutes = Math.max(0, clockInMinutes - expectedStartMinutes);
+  const arrivalDelayMinutes = Math.max(0, clockInMinutes - expectedStartMinutes);
   const toleranceMinutes = firstExpectedBlock.toleranceMinutes;
+  const delayMinutes = Math.max(0, arrivalDelayMinutes - toleranceMinutes);
 
   return {
     result: {
-      status: delayMinutes > toleranceMinutes ? 'LATE' : 'PRESENT',
+      status: delayMinutes > 0 ? 'LATE' : 'PRESENT',
       delayMinutes,
+      arrivalDelayMinutes,
+      toleranceMinutes,
+      expectedWorkMinutes: calculateExpectedWorkMinutes(schedule.expectedBlocks),
       // Une présence en cours de journée est visible, mais n'entre pas encore
       // dans un taux fondé uniquement sur les journées finalisées.
       rateEligible: hasExpectedWorkDayEnded,
@@ -129,13 +144,19 @@ function normalizeActivity(input: AttendanceDayActivityInput): AttendanceDayActi
         'Une journée sans session ne peut contenir de session ouverte ou incomplète',
       );
     }
-    if (input.firstClockIn !== null || input.lastClockOut !== null) {
+    if (
+      input.firstClockIn !== null ||
+      input.firstClockInDate !== null ||
+      input.lastClockOut !== null ||
+      input.lastClockOutDate !== null
+    ) {
       throw new AttendanceDayInvariantError(
-        'Une journée sans session ne peut contenir une heure d’entrée ou de sortie',
+        'Une journée sans session ne peut contenir une date/heure d’entrée ou de sortie',
       );
     }
   } else {
     parseRequiredClockIn(input.firstClockIn);
+    validateActivityDate('firstClockInDate', input.firstClockInDate);
   }
 
   validateNullableMinutes('grossMinutes', input.grossMinutes);
@@ -153,6 +174,11 @@ function normalizeActivity(input: AttendanceDayActivityInput): AttendanceDayActi
 
   if (input.lastClockOut !== null) {
     parseBusinessTime(input.lastClockOut);
+    validateActivityDate('lastClockOutDate', input.lastClockOutDate);
+  } else if (input.lastClockOutDate !== null) {
+    throw new AttendanceDayInvariantError(
+      'lastClockOutDate doit être null lorsque lastClockOut est null',
+    );
   }
 
   return {
@@ -215,7 +241,10 @@ function normalizeSchedule(schedule: AttendanceDaySchedule): AttendanceDaySchedu
         isBusinessTime(block.startTime) &&
         isBusinessTime(block.endTime) &&
         Number.isInteger(block.toleranceMinutes) &&
-        block.toleranceMinutes >= 0,
+        block.toleranceMinutes >= 0 &&
+        isOptionalBusinessTime(block.pauseStartTime) &&
+        isOptionalBusinessTime(block.pauseEndTime) &&
+        ((block.pauseStartTime == null) === (block.pauseEndTime == null)),
     );
 
   if (isValid) return schedule;
@@ -250,6 +279,44 @@ function parseBusinessTime(value: BusinessTime): number {
 
 function isBusinessTime(value: BusinessTime): boolean {
   return BUSINESS_TIME_PATTERN.test(value);
+}
+
+function validateActivityDate(field: string, value: BusinessDate | null): void {
+  if (value === null || !BUSINESS_DATE_PATTERN.test(value)) {
+    throw new AttendanceDayInvariantError(`${field} doit respecter le format YYYY-MM-DD`);
+  }
+}
+
+function isOptionalBusinessTime(value: BusinessTime | null | undefined): boolean {
+  return value == null || isBusinessTime(value);
+}
+
+function calculateExpectedWorkMinutes(
+  blocks: readonly ExpectedWorkBlock[],
+): number {
+  return blocks.reduce((total, block) => {
+    const workMinutes = calculateBusinessDuration(block.startTime, block.endTime);
+    const pauseMinutes =
+      block.pauseStartTime != null && block.pauseEndTime != null
+        ? calculateBusinessDuration(block.pauseStartTime, block.pauseEndTime)
+        : 0;
+
+    if (pauseMinutes > workMinutes) {
+      throw new AttendanceDayInvariantError(
+        'La pause planifiée ne peut pas dépasser la durée du bloc de travail',
+      );
+    }
+
+    return total + workMinutes - pauseMinutes;
+  }, 0);
+}
+
+function calculateBusinessDuration(start: BusinessTime, end: BusinessTime): number {
+  const startMinutes = parseBusinessTime(start);
+  const endMinutes = parseBusinessTime(end);
+  return endMinutes >= startMinutes
+    ? endMinutes - startMinutes
+    : 24 * 60 - startMinutes + endMinutes;
 }
 
 function validateCount(field: string, value: number): void {

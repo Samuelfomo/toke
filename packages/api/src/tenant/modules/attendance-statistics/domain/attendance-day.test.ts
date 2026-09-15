@@ -13,7 +13,9 @@ const finalizedActivity: AttendanceDayActivityInput = {
   openSessionCount: 0,
   incompleteSessionCount: 0,
   firstClockIn: '08:05:42',
+  firstClockInDate: '2026-07-21',
   lastClockOut: '17:00:00',
+  lastClockOutDate: '2026-07-21',
   grossMinutes: 540,
   pauseMinutes: 60,
 };
@@ -23,7 +25,9 @@ const noActivity: AttendanceDayActivityInput = {
   openSessionCount: 0,
   incompleteSessionCount: 0,
   firstClockIn: null,
+  firstClockInDate: null,
   lastClockOut: null,
+  lastClockOutDate: null,
   grossMinutes: null,
   pauseMinutes: null,
 };
@@ -57,7 +61,8 @@ describe('createAttendanceDay', () => {
     const day = createAttendanceDay(makeInput());
 
     assert.equal(day.result.status, 'PRESENT');
-    assert.equal(day.result.delayMinutes, 5);
+    assert.equal(day.result.arrivalDelayMinutes, 5);
+    assert.equal(day.result.delayMinutes, 0);
     assert.equal(day.result.rateEligible, true);
     assert.equal(day.activity.hasActivity, true);
     assert.equal(day.activity.netMinutes, 480);
@@ -69,7 +74,8 @@ describe('createAttendanceDay', () => {
       makeInput({ activity: { ...finalizedActivity, firstClockIn: '08:10' } }),
     );
     assert.equal(day.result.status, 'PRESENT');
-    assert.equal(day.result.delayMinutes, 10);
+    assert.equal(day.result.arrivalDelayMinutes, 10);
+    assert.equal(day.result.delayMinutes, 0);
   });
 
   it('classe LATE uniquement au-delà de la tolérance', () => {
@@ -77,7 +83,8 @@ describe('createAttendanceDay', () => {
       makeInput({ activity: { ...finalizedActivity, firstClockIn: '08:11' } }),
     );
     assert.equal(day.result.status, 'LATE');
-    assert.equal(day.result.delayMinutes, 11);
+    assert.equal(day.result.arrivalDelayMinutes, 11);
+    assert.equal(day.result.delayMinutes, 1);
     assert.equal(day.result.rateEligible, true);
   });
 
@@ -96,6 +103,9 @@ describe('createAttendanceDay', () => {
     assert.deepEqual(day.result, {
       status: 'PENDING',
       delayMinutes: null,
+      arrivalDelayMinutes: null,
+      toleranceMinutes: 10,
+      expectedWorkMinutes: 540,
       rateEligible: false,
     });
   });
@@ -105,6 +115,9 @@ describe('createAttendanceDay', () => {
     assert.deepEqual(day.result, {
       status: 'ABSENT',
       delayMinutes: null,
+      arrivalDelayMinutes: null,
+      toleranceMinutes: 10,
+      expectedWorkMinutes: 540,
       rateEligible: true,
     });
   });
@@ -209,7 +222,9 @@ describe('createAttendanceDay', () => {
           openSessionCount: 1,
           incompleteSessionCount: 0,
           firstClockIn: '08:02',
+          firstClockInDate: '2026-07-21',
           lastClockOut: null,
+          lastClockOutDate: null,
           grossMinutes: null,
           pauseMinutes: null,
         },
@@ -239,4 +254,34 @@ describe('createAttendanceDay', () => {
       AttendanceDayInvariantError,
     );
   });
+  it('calcule le retard métier uniquement au-delà de la tolérance', () => {
+    const day = createAttendanceDay(
+      makeInput({ activity: { ...finalizedActivity, firstClockIn: '08:15' }, schedule: {
+        state: 'WORK_DAY',
+        source: 'DIRECT',
+        expectedBlocks: [{ startTime: '08:00', endTime: '17:00', toleranceMinutes: 15 }],
+      } }),
+    );
+    assert.equal(day.result.status, 'PRESENT');
+    assert.equal(day.result.arrivalDelayMinutes, 15);
+    assert.equal(day.result.delayMinutes, 0);
+  });
+
+  it('calcule la durée attendue en déduisant la pause planifiée', () => {
+    const day = createAttendanceDay(
+      makeInput({ schedule: {
+        state: 'WORK_DAY',
+        source: 'DIRECT',
+        expectedBlocks: [{
+          startTime: '08:00',
+          endTime: '17:00',
+          toleranceMinutes: 15,
+          pauseStartTime: '12:00',
+          pauseEndTime: '13:00',
+        }],
+      } }),
+    );
+    assert.equal(day.result.expectedWorkMinutes, 480);
+  });
+
 });

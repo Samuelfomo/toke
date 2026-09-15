@@ -61,22 +61,33 @@ punctualityRate = PRESENT éligibles
 
 Valeur `null` si aucune présence éligible n’existe.
 
-### Part de l'équipe concernée
-
-Ces indicateurs répondent à une question différente des volumes de journées : **combien d'employés distincts ont été concernés au moins une fois sur la période ?**
+### Taux d’absence
 
 ```text
-employeesWithAbsence = nombre d'employés avec au moins une journée ABSENT
-absenceEmployeeRate  = employeesWithAbsence / teamSize × 100
-
-employeesWithLate   = nombre d'employés avec au moins une journée LATE
-lateEmployeeRate      = employeesWithLate / teamSize × 100
-
-employeesWithIssues = nombre d'employés avec au moins une issue
-issueEmployeeRate     = employeesWithIssues / teamSize × 100
+absenceRate = ABSENT éligibles
+              / employeeWorkingDaysExpected × 100
 ```
 
-Les taux valent `null` lorsque `teamSize = 0`. Un employé n'est compté qu'une seule fois par indicateur, même s'il a plusieurs absences, retards ou issues sur la période. Les volumes détaillés restent disponibles dans `statusTotals` et `issueCount`.
+Le dénominateur est identique à celui du taux de présence. Ainsi, lorsque toutes les journées éligibles sont classées PRESENT, LATE ou ABSENT : `attendanceRate + absenceRate = 100`.
+
+### Taux de retard
+
+```text
+lateRate = LATE éligibles
+           / (PRESENT éligibles + LATE éligibles) × 100
+```
+
+Le dénominateur est identique à celui de la ponctualité. Ainsi, lorsqu’une présence éligible est classée PRESENT ou LATE : `punctualityRate + lateRate = 100`.
+
+### Taux de journées à examiner
+
+```text
+employeeDaysAnalyzed   = nombre total de journées-employé analysées
+employeeDaysWithIssues = nombre de journées-employé avec au moins une issue
+issueRate              = employeeDaysWithIssues / employeeDaysAnalyzed × 100
+```
+
+Une journée-employé ne compte qu’une seule fois au numérateur, même si plusieurs issues sont détectées le même jour. `issueCount` reste le volume total des issues et peut donc être supérieur à `employeeDaysWithIssues`.
 
 ### Durées
 
@@ -107,7 +118,6 @@ interface AttendanceOverview {
   summary: {
     statusTotals: Record<AttendanceStatus, number>;
     rates: AttendanceRateMetrics;
-    employeeImpact: AttendanceEmployeeImpactMetrics;
     durations: AttendanceDurationMetrics;
     issueCount: number;
   };
@@ -130,4 +140,4 @@ Les occurrences détaillées d’une issue sont limitées aux 100 premières ent
 6. La réponse décrit l’équipe actuelle, pas une reconstitution historique du périmètre d’équipe.
 7. Les sessions traversant minuit sont rattachées à la journée de démarrage tant qu’aucune règle métier différente n’est validée.
 
-8. Les taux `employeeImpact` décrivent la part des employés concernés au moins une fois ; ils ne mesurent pas la fréquence des événements.
+8. Les taux d'absence et de retard portent sur des journées-éligibles ; le taux d'éléments à examiner porte sur les journées-employé analysées, et non sur les employés distincts.

@@ -36,6 +36,8 @@ export interface ExpectedWorkBlock {
   startTime: BusinessTime;
   endTime: BusinessTime;
   toleranceMinutes: number;
+  pauseStartTime?: BusinessTime | null;
+  pauseEndTime?: BusinessTime | null;
 }
 
 export interface WorkDaySchedule {
@@ -71,7 +73,9 @@ export interface AttendanceDayActivityInput {
   openSessionCount: number;
   incompleteSessionCount: number;
   firstClockIn: BusinessTime | null;
+  firstClockInDate: BusinessDate | null;
   lastClockOut: BusinessTime | null;
+  lastClockOutDate: BusinessDate | null;
   grossMinutes: number | null;
   pauseMinutes: number | null;
 }
@@ -83,7 +87,13 @@ export interface AttendanceDayActivity extends AttendanceDayActivityInput {
 
 export interface AttendanceDayResult {
   status: AttendanceStatus;
+  /** Retard métier réel, après déduction de la tolérance du planning. */
   delayMinutes: number | null;
+  /** Écart positif entre l'heure d'arrivée et l'heure théorique, avant tolérance. */
+  arrivalDelayMinutes: number | null;
+  toleranceMinutes: number | null;
+  /** Durée nette attendue d'après les blocs du planning, pauses planifiées déduites. */
+  expectedWorkMinutes: number | null;
 
   /**
    * Indique si cette journée entre dans le dénominateur

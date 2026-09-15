@@ -52,7 +52,9 @@ function makeDay(
       openSessionCount: 0,
       incompleteSessionCount: 0,
       firstClockIn: status === 'PRESENT' || status === 'LATE' ? '08:05' : null,
+      firstClockInDate: status === 'PRESENT' || status === 'LATE' ? date : null,
       lastClockOut: status === 'PRESENT' || status === 'LATE' ? '17:00' : null,
+      lastClockOutDate: status === 'PRESENT' || status === 'LATE' ? date : null,
       grossMinutes,
       pauseMinutes,
       hasActivity: status === 'PRESENT' || status === 'LATE',
@@ -62,6 +64,9 @@ function makeDay(
     result: {
       status,
       delayMinutes: options.delayMinutes ?? null,
+      arrivalDelayMinutes: options.delayMinutes ?? null,
+      toleranceMinutes: ['PRESENT', 'LATE', 'ABSENT', 'PENDING'].includes(status) ? 10 : null,
+      expectedWorkMinutes: ['PRESENT', 'LATE', 'ABSENT', 'PENDING'].includes(status) ? 540 : null,
       rateEligible: options.rateEligible ?? ['PRESENT', 'LATE', 'ABSENT'].includes(status),
     },
     issues: options.issues ?? [],
@@ -93,12 +98,14 @@ describe('buildAttendanceOverview', () => {
     assert.equal(overview.summary.rates.attendedWorkingDays, 2);
     assert.equal(overview.summary.rates.attendanceRate, 66.7);
     assert.equal(overview.summary.rates.punctualityRate, 50);
-    assert.equal(overview.summary.employeeImpact.employeesWithAbsence, 1);
-    assert.equal(overview.summary.employeeImpact.absenceEmployeeRate, 50);
-    assert.equal(overview.summary.employeeImpact.employeesWithLate, 1);
-    assert.equal(overview.summary.employeeImpact.lateEmployeeRate, 50);
-    assert.equal(overview.summary.employeeImpact.employeesWithIssues, 0);
-    assert.equal(overview.summary.employeeImpact.issueEmployeeRate, 0);
+    assert.equal(overview.summary.rates.absentWorkingDays, 1);
+    assert.equal(overview.summary.rates.absenceRate, 33.3);
+    assert.equal(overview.summary.rates.lateRate, 50);
+    assert.equal(overview.summary.rates.employeeDaysAnalyzed, 4);
+    assert.equal(overview.summary.rates.employeeDaysWithIssues, 0);
+    assert.equal(overview.summary.rates.issueRate, 0);
+    assert.equal(overview.summary.rates.attendanceRate! + overview.summary.rates.absenceRate!, 100);
+    assert.equal(overview.summary.rates.punctualityRate! + overview.summary.rates.lateRate!, 100);
     assert.equal(overview.summary.statusTotals.PENDING, 1);
     assert.equal(overview.daily[0]?.durations.netMinutes, 840);
     assert.equal(overview.daily[0]?.durations.daysWithKnownNetDuration, 2);
@@ -134,8 +141,9 @@ describe('buildAttendanceOverview', () => {
     assert.equal(overview.dataQuality.unresolvedScheduleDays, 1);
     assert.equal(overview.dataQuality.presenceWithoutScheduleDays, 1);
     assert.equal(overview.dataQuality.reliableForAttendanceRate, false);
-    assert.equal(overview.summary.employeeImpact.employeesWithIssues, 2);
-    assert.equal(overview.summary.employeeImpact.issueEmployeeRate, 100);
+    assert.equal(overview.summary.rates.employeeDaysAnalyzed, 2);
+    assert.equal(overview.summary.rates.employeeDaysWithIssues, 2);
+    assert.equal(overview.summary.rates.issueRate, 100);
     assert.equal(overview.issues.find((issue) => issue.issue === 'PRESENCE_ON_REST_DAY')?.count, 1);
   });
 
@@ -164,7 +172,7 @@ describe('buildAttendanceOverview', () => {
     assert.equal(overview.daily[0]?.durations.daysWithKnownNetDuration, 0);
     assert.equal(overview.daily[0]?.durations.daysWithMissingDuration, 1);
   });
-  it('retourne des taux employés null lorsque le périmètre est vide', () => {
+  it('retourne des taux null lorsque le périmètre est vide', () => {
     const overview = buildAttendanceOverview({
       generatedAt: '2026-07-22T10:00:00.000Z',
       managerGuid: 'manager-1',
@@ -176,12 +184,38 @@ describe('buildAttendanceOverview', () => {
       days: [],
     });
 
-    assert.equal(overview.summary.employeeImpact.employeesWithAbsence, 0);
-    assert.equal(overview.summary.employeeImpact.absenceEmployeeRate, null);
-    assert.equal(overview.summary.employeeImpact.employeesWithLate, 0);
-    assert.equal(overview.summary.employeeImpact.lateEmployeeRate, null);
-    assert.equal(overview.summary.employeeImpact.employeesWithIssues, 0);
-    assert.equal(overview.summary.employeeImpact.issueEmployeeRate, null);
+    assert.equal(overview.summary.rates.absentWorkingDays, 0);
+    assert.equal(overview.summary.rates.absenceRate, null);
+    assert.equal(overview.summary.rates.lateRate, null);
+    assert.equal(overview.summary.rates.employeeDaysAnalyzed, 0);
+    assert.equal(overview.summary.rates.employeeDaysWithIssues, 0);
+    assert.equal(overview.summary.rates.issueRate, null);
+  });
+
+  it('calcule le taux des journées à examiner sans compter plusieurs fois une même journée', () => {
+    const overview = buildAttendanceOverview({
+      generatedAt: '2026-07-22T10:00:00.000Z',
+      managerGuid: 'manager-1',
+      siteGuid: null,
+      startDate: '2026-07-20',
+      endDate: '2026-07-20',
+      dates: ['2026-07-20'],
+      employees: [
+        { id: 1, guid: 'e1', name: 'Employé 1' },
+        { id: 2, guid: 'e2', name: 'Employé 2' },
+      ],
+      days: [
+        makeDay(1, 'e1', '2026-07-20', 'PRESENT', {
+          issues: ['OPEN_SESSION', 'MISSING_DURATION'],
+        }),
+        makeDay(2, 'e2', '2026-07-20', 'PRESENT'),
+      ],
+    });
+
+    assert.equal(overview.summary.issueCount, 2);
+    assert.equal(overview.summary.rates.employeeDaysAnalyzed, 2);
+    assert.equal(overview.summary.rates.employeeDaysWithIssues, 1);
+    assert.equal(overview.summary.rates.issueRate, 50);
   });
 
 });

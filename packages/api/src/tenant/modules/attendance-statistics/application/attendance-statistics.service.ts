@@ -18,7 +18,9 @@ const EMPTY_ACTIVITY: AttendanceDayActivityInput = {
   openSessionCount: 0,
   incompleteSessionCount: 0,
   firstClockIn: null,
+  firstClockInDate: null,
   lastClockOut: null,
+  lastClockOutDate: null,
   grossMinutes: null,
   pauseMinutes: null,
 };
@@ -151,19 +153,20 @@ export function hasExpectedWorkDayEnded(
   nowDate: BusinessDate,
   nowTime: string,
 ): boolean {
-  if (date < nowDate) return true;
-  if (date > nowDate) return false;
   if (expectedBlocks.length === 0) return false;
 
-  // Un bloc qui traverse minuit n'est pas terminé le jour de son démarrage.
-  if (expectedBlocks.some((block) => block.endTime < block.startTime)) return false;
+  const scheduleStartDay = parseBusinessDate(date);
+  const latestExpectedEnd = Math.max(
+    ...expectedBlocks.map((block) => {
+      const startMinutes = parseBusinessTimeMinutes(block.startTime);
+      const endMinutes = parseBusinessTimeMinutes(block.endTime);
+      const dayOffset = endMinutes < startMinutes ? 1 : 0;
+      return scheduleStartDay + dayOffset * 86_400_000 + endMinutes * 60_000;
+    }),
+  );
 
-  const latestEnd = expectedBlocks
-    .map((block) => block.endTime.slice(0, 5))
-    .sort()
-    .at(-1);
-
-  return latestEnd ? nowTime.slice(0, 5) >= latestEnd : false;
+  const nowTimestamp = parseBusinessDate(nowDate) + parseBusinessTimeMinutes(nowTime) * 60_000;
+  return nowTimestamp >= latestExpectedEnd;
 }
 
 async function runWithConcurrency<T>(
@@ -193,6 +196,12 @@ function parseBusinessDate(value: BusinessDate): number {
   const match = /^(\d{4})-(\d{2})-(\d{2})$/.exec(value);
   if (!match) throw new Error(`Date métier invalide : ${value}`);
   return Date.UTC(Number(match[1]), Number(match[2]) - 1, Number(match[3]));
+}
+
+function parseBusinessTimeMinutes(value: string): number {
+  const match = /^([01]\d|2[0-3]):([0-5]\d)(?::[0-5]\d)?$/.exec(value);
+  if (!match) throw new Error(`Heure métier invalide : ${value}`);
+  return Number(match[1]) * 60 + Number(match[2]);
 }
 
 function formatUtcBusinessDate(timestamp: number): BusinessDate {

@@ -37,7 +37,13 @@
         "onTimeWorkingDays": 1,
         "lateWorkingDays": 1,
         "attendanceRate": 100,
-        "punctualityRate": 50
+        "punctualityRate": 50,
+        "absentWorkingDays": 0,
+        "absenceRate": 0.0,
+        "lateRate": 50.0,
+        "employeeDaysAnalyzed": 4,
+        "employeeDaysWithIssues": 1,
+        "issueRate": 25.0
       },
       "durations": {
         "grossMinutes": 1135,
@@ -48,15 +54,7 @@
         "daysWithKnownNetDuration": 3,
         "daysWithMissingDuration": 0
       },
-      "issueCount": 1,
-      "employeeImpact": {
-        "employeesWithAbsence": 0,
-        "absenceEmployeeRate": 0.0,
-        "employeesWithLate": 1,
-        "lateEmployeeRate": 50.0,
-        "employeesWithIssues": 1,
-        "issueEmployeeRate": 50.0
-      }
+      "issueCount": 1
     },
     "daily": [
       {
@@ -76,7 +74,13 @@
           "onTimeWorkingDays": 1,
           "lateWorkingDays": 1,
           "attendanceRate": 100,
-          "punctualityRate": 50
+          "punctualityRate": 50,
+          "absentWorkingDays": 0,
+          "absenceRate": 0.0,
+          "lateRate": 50.0,
+          "employeeDaysAnalyzed": 2,
+          "employeeDaysWithIssues": 0,
+          "issueRate": 0.0
         },
         "issueCount": 0
       },
@@ -97,7 +101,13 @@
           "onTimeWorkingDays": 0,
           "lateWorkingDays": 0,
           "attendanceRate": null,
-          "punctualityRate": null
+          "punctualityRate": null,
+          "absentWorkingDays": 0,
+          "absenceRate": null,
+          "lateRate": null,
+          "employeeDaysAnalyzed": 2,
+          "employeeDaysWithIssues": 1,
+          "issueRate": 50.0
         },
         "issueCount": 1
       }
@@ -120,7 +130,13 @@
           "onTimeWorkingDays": 1,
           "lateWorkingDays": 0,
           "attendanceRate": 100,
-          "punctualityRate": 100
+          "punctualityRate": 100,
+          "absentWorkingDays": 0,
+          "absenceRate": 0.0,
+          "lateRate": 0.0,
+          "employeeDaysAnalyzed": 2,
+          "employeeDaysWithIssues": 0,
+          "issueRate": 0.0
         },
         "durations": {
           "grossMinutes": 535,
@@ -176,7 +192,13 @@
           "onTimeWorkingDays": 0,
           "lateWorkingDays": 1,
           "attendanceRate": 100,
-          "punctualityRate": 0
+          "punctualityRate": 0,
+          "absentWorkingDays": 0,
+          "absenceRate": 0.0,
+          "lateRate": 100.0,
+          "employeeDaysAnalyzed": 2,
+          "employeeDaysWithIssues": 1,
+          "issueRate": 50.0
         },
         "durations": {
           "grossMinutes": 600,

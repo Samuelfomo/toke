@@ -76,6 +76,20 @@ class FakePort implements AttendanceStatisticsPort {
   }
 }
 
+describe('hasExpectedWorkDayEnded', () => {
+  it('ne finalise pas une garde traversant minuit avant son heure de fin', () => {
+    const blocks = [{ startTime: '16:00', endTime: '08:00', toleranceMinutes: 15 }];
+    assert.equal(
+      hasExpectedWorkDayEnded('2026-09-14', blocks, '2026-09-15', '07:59:00'),
+      false,
+    );
+    assert.equal(
+      hasExpectedWorkDayEnded('2026-09-14', blocks, '2026-09-15', '08:00:00'),
+      true,
+    );
+  });
+});
+
 describe('AttendanceStatisticsService', () => {
   it('utilise exclusivement l’équipe actuelle retournée par le port', async () => {
     const port = new FakePort();
@@ -85,7 +99,9 @@ describe('AttendanceStatisticsService', () => {
       openSessionCount: 0,
       incompleteSessionCount: 0,
       firstClockIn: '08:05',
+      firstClockInDate: '2026-07-21',
       lastClockOut: '17:00',
+      lastClockOutDate: '2026-07-21',
       grossMinutes: 535,
       pauseMinutes: 60,
     });

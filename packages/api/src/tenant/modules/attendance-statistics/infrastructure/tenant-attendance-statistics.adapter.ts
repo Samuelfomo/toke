@@ -194,7 +194,9 @@ export class TenantAttendanceStatisticsAdapter implements AttendanceStatisticsPo
         openSessionCount: group.filter((session) => session.open).length,
         incompleteSessionCount: group.filter((session) => session.incomplete).length,
         firstClockIn: formatBusinessTime(group[0]!.startAt),
+        firstClockInDate: formatBusinessDate(group[0]!.startAt),
         lastClockOut: lastEnd ? formatBusinessTime(lastEnd) : null,
+        lastClockOutDate: lastEnd ? formatBusinessDate(lastEnd) : null,
         grossMinutes: knownGross
           ? group.reduce((total, session) => total + session.grossMinutes!, 0)
           : null,
@@ -235,6 +237,8 @@ export class TenantAttendanceStatisticsAdapter implements AttendanceStatisticsPo
         startTime: block.work[0],
         endTime: block.work[1],
         toleranceMinutes: Number.isInteger(block.tolerance) ? block.tolerance : 0,
+        pauseStartTime: Array.isArray(block.pause) ? block.pause[0] : null,
+        pauseEndTime: Array.isArray(block.pause) ? block.pause[1] : null,
       })),
     };
   }

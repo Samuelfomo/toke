@@ -383,12 +383,12 @@ export default class User extends UserModel {
   }
 
   setFirstName(firstName: string): User {
-    this.first_name = firstName;
+    this.first_name = firstName.trim().toUpperCase();
     return this;
   }
 
   setLastName(lastName: string): User {
-    this.last_name = lastName;
+    this.last_name = lastName.trim().toUpperCase();
     return this;
   }
 
@@ -881,8 +881,10 @@ export default class User extends UserModel {
     this.guid = data.guid;
     this.tenant = data.tenant;
     this.email = data.email;
-    this.first_name = data.first_name;
-    this.last_name = data.last_name;
+    // this.first_name = data.first_name;
+    // this.last_name = data.last_name;
+    this.first_name = data.first_name?.trim().toUpperCase();
+    this.last_name = data.last_name?.trim().toUpperCase();
     this.phone_number = data.phone_number;
     this.country = data.country;
     this.employee_code = data.employee_code;
