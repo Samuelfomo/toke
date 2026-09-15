@@ -18,8 +18,7 @@ const duration = computed(() => buildAttendanceDurationInsight(props.overview));
     <div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
       <div>
         <p class="text-xs font-bold uppercase tracking-[0.14em] text-slate-500">Information descriptive</p>
-        <h2 id="attendance-secondary-insights-title" class="mt-1 text-base font-bold text-slate-950">Durée nette
-          enregistrée</h2>
+        <h2 id="attendance-secondary-insights-title" class="mt-1 text-base font-bold text-slate-950">Durée nette enregistrée / prévue</h2>
         <p class="mt-1 text-sm text-slate-500">Cette durée décrit l’activité enregistrée ; elle n’est pas présentée
           comme un indicateur de performance.</p>
       </div>

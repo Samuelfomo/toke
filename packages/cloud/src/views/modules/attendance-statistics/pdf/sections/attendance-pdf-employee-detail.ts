@@ -15,7 +15,8 @@ function dayColumn(key: AttendancePdfEmployeeDayColumnKey): AttendancePdfTableCo
     case 'status': return { key, title: 'Statut', weight: 1.7, value: (row) => row.status };
     case 'clock_in': return { key, title: 'Entrée', width: 18, align: 'center', value: (row) => row.clockIn };
     case 'clock_out': return { key, title: 'Sortie', width: 18, align: 'center', value: (row) => row.clockOut };
-    case 'delay': return { key, title: 'Retard', width: 20, align: 'right', value: (row) => row.delay };
+    case 'delay': return { key, title: 'Retard réel', width: 21, align: 'right', value: (row) => row.delay };
+    case 'expected_duration': return { key, title: 'Prévue', width: 22, align: 'right', value: (row) => row.expectedDuration };
     case 'gross_duration': return { key, title: 'Durée brute', width: 24, align: 'right', value: (row) => row.grossDuration };
     case 'pause_duration': return { key, title: 'Pause', width: 22, align: 'right', value: (row) => row.pauseDuration };
     case 'net_duration': return { key, title: 'Durée nette', width: 24, align: 'right', value: (row) => row.netDuration };
@@ -45,7 +46,7 @@ function drawMetrics(engine: AttendancePdfEngine, employee: AttendancePdfEmploye
 function drawSecondarySummary(engine: AttendancePdfEngine, employee: AttendancePdfEmployeeDetailModel): void {
   const details = [
     `Jours de repos : ${employee.restDays}`,
-    `Durée nette enregistrée : ${employee.netDuration}`,
+    `Durée nette enregistrée / durée prévue : ${employee.netVsExpected}`,
   ];
   if (employee.issueLabels.length > 0) details.push(`Types à examiner : ${employee.issueLabels.join(', ')}`);
   engine.primitives.drawTextBlock(details.join(' · '), {

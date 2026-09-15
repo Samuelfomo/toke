@@ -26,11 +26,15 @@ useAccessibleDialog({
   close: () => emit('close'),
 });
 
-const netDuration = computed(() => {
+const netVsExpectedDuration = computed(() => {
   if (!props.employee || props.employee.durations.daysWithKnownNetDuration === 0) {
     return 'Non disponible';
   }
-  return formatDurationMinutes(props.employee.durations.netMinutes);
+  const net = formatDurationMinutes(props.employee.durations.netMinutes);
+  const expected = props.employee.durations.daysWithKnownExpectedWorkDuration > 0
+    ? formatDurationMinutes(props.employee.durations.expectedWorkMinutes)
+    : '—';
+  return `${net} / ${expected}`;
 });
 </script>
 
@@ -105,8 +109,8 @@ const netDuration = computed(() => {
               <p class="mt-1 text-xs text-slate-500">Journées en attente non comptées</p>
             </div>
             <div class="rounded-xl border border-slate-200 p-4">
-              <dt class="text-xs font-bold uppercase tracking-wide text-slate-500">Durée nette</dt>
-              <dd class="mt-2 text-2xl font-bold text-slate-950">{{ netDuration }}</dd>
+              <dt class="text-xs font-bold uppercase tracking-wide text-slate-500">Durée nette / prévue</dt>
+              <dd class="mt-2 text-2xl font-bold text-slate-950">{{ netVsExpectedDuration }}</dd>
               <p class="mt-1 text-xs text-slate-500">{{ employee.durations.daysWithMissingDuration }} journée{{ employee.durations.daysWithMissingDuration > 1 ? 's' : '' }} avec durée manquante</p>
             </div>
           </dl>

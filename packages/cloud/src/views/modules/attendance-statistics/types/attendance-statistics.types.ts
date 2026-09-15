@@ -66,6 +66,7 @@ export interface AttendanceRateMetrics {
 }
 
 export interface AttendanceDurationMetrics {
+  expectedWorkMinutes: number;
   grossMinutes: number;
   pauseMinutes: number;
   netMinutes: number;
@@ -73,6 +74,7 @@ export interface AttendanceDurationMetrics {
   daysWithKnownPauseDuration: number;
   daysWithKnownNetDuration: number;
   daysWithMissingDuration: number;
+  daysWithKnownExpectedWorkDuration: number;
 }
 
 export interface AttendanceIssueOccurrence {
@@ -106,11 +108,22 @@ export interface AttendanceEmployeeDayOverview {
   date: BusinessDate;
   status: AttendanceStatus;
   rateEligible: boolean;
+  /** Retard réel après déduction de la tolérance du planning. */
   delayMinutes: number | null;
+  /** Écart brut entre l'heure d'arrivée et l'heure théorique. */
+  arrivalDelayMinutes: number | null;
+  /** Tolérance de retard autorisée par le planning du jour. */
+  toleranceMinutes: number | null;
+  /** Durée de travail attendue pour la journée, calculée par le backend. */
+  expectedWorkMinutes: number | null;
   /** Heure métier déjà préparée par le serveur : HH:mm ou HH:mm:ss. */
   firstClockIn: string | null;
+  /** Date métier correspondant à la première entrée. */
+  firstClockInDate: BusinessDate | null;
   /** Heure métier déjà préparée par le serveur : HH:mm ou HH:mm:ss. */
   lastClockOut: string | null;
+  /** Date métier correspondant à la dernière sortie. */
+  lastClockOutDate: BusinessDate | null;
   grossMinutes: number | null;
   pauseMinutes: number | null;
   netMinutes: number | null;

@@ -30,6 +30,8 @@ export interface AttendancePdfTeamRow {
   undetermined: number;
   restDay: number;
   netDuration: string;
+  expectedDuration: string;
+  netVsExpected: string;
   issueRate: string;
   issues: number;
 }
@@ -97,6 +99,16 @@ function toRow(employee: AttendanceEmployeeOverview): AttendancePdfTeamRow {
       employee.durations.daysWithKnownNetDuration > 0
         ? formatDurationMinutes(employee.durations.netMinutes, { emptyLabel: '—' })
         : '—',
+    expectedDuration:
+      employee.durations.daysWithKnownExpectedWorkDuration > 0
+        ? formatDurationMinutes(employee.durations.expectedWorkMinutes, { emptyLabel: '—' })
+        : '—',
+    netVsExpected:
+      employee.durations.daysWithKnownNetDuration > 0 && employee.durations.daysWithKnownExpectedWorkDuration > 0
+        ? `${formatDurationMinutes(employee.durations.netMinutes, { emptyLabel: '—' })} / ${formatDurationMinutes(employee.durations.expectedWorkMinutes, { emptyLabel: '—' })}`
+        : employee.durations.daysWithKnownNetDuration > 0
+          ? `${formatDurationMinutes(employee.durations.netMinutes, { emptyLabel: '—' })} / —`
+          : '—',
     issueRate: formatPercentage(employee.rates.issueRate),
     issues: employee.issueCount,
   };

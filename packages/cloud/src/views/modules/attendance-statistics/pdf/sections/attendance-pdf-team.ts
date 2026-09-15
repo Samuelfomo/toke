@@ -41,6 +41,8 @@ function columnFor(
       return { key, title: 'Repos', width: 16, align: 'right', value: (row) => String(row.restDay) };
     case 'net_duration':
       return { key, title: 'Durée nette', width: 27, align: 'right', value: (row) => row.netDuration };
+    case 'net_vs_expected':
+      return { key, title: 'Durée nette / prévue', width: 34, align: 'right', value: (row) => row.netVsExpected };
     case 'issue_rate':
       return { key, title: 'À examiner', width: 23, align: 'right', value: (row) => row.issueRate };
     case 'issues':

@@ -15,6 +15,7 @@ export const ATTENDANCE_PDF_TEAM_COLUMN_KEYS = [
   'undetermined',
   'rest_day',
   'net_duration',
+  'net_vs_expected',
   'issue_rate',
   'issues',
 ] as const;
@@ -59,7 +60,7 @@ export const ATTENDANCE_PDF_DIRECTION_TEAM_COLUMNS: readonly AttendancePdfTeamCo
   'attendance_rate',
   'late_rate',
   'attended_vs_expected',
-  'net_duration',
+  'net_vs_expected',
   'issue_rate',
 ];
 
@@ -69,7 +70,7 @@ export const ATTENDANCE_PDF_PILOTAGE_TEAM_COLUMNS: readonly AttendancePdfTeamCol
   'attendance_rate',
   'late_rate',
   'attended_vs_expected',
-  'net_duration',
+  'net_vs_expected',
   'issue_rate',
   'issues',
 ];
@@ -82,7 +83,7 @@ export const ATTENDANCE_PDF_HR_TEAM_COLUMNS: readonly AttendancePdfTeamColumnKey
   'absence_rate',
   'late_rate',
   'attended_vs_expected',
-  'net_duration',
+  'net_vs_expected',
   'issue_rate',
   'issues',
 ];

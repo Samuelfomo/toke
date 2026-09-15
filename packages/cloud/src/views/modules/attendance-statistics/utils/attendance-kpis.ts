@@ -42,6 +42,7 @@ export function buildAttendanceKpis(overview: AttendanceOverview): AttendanceKpi
   const attendanceRateAvailable = summary.rates.attendanceRate !== null;
   const punctualityRateAvailable = summary.rates.punctualityRate !== null;
   const netDurationAvailable = summary.durations.daysWithKnownNetDuration > 0;
+  const expectedDurationAvailable = summary.durations.daysWithKnownExpectedWorkDuration > 0;
   const absenceRateAvailable = summary.rates.absenceRate !== null;
   const lateRateAvailable = summary.rates.lateRate !== null;
   const issueRateAvailable = summary.rates.issueRate !== null;
@@ -156,7 +157,9 @@ export function buildAttendanceKpis(overview: AttendanceOverview): AttendanceKpi
           })
         : 'Non disponible',
       helper: netDurationAvailable
-        ? `${summary.durations.daysWithKnownNetDuration} journée${plural(summary.durations.daysWithKnownNetDuration)} avec un temps de travail calculable`
+        ? expectedDurationAvailable
+          ? `sur ${formatDurationMinutes(summary.durations.expectedWorkMinutes, { emptyLabel: 'Non disponible' })} prévues sur la période`
+          : `${summary.durations.daysWithKnownNetDuration} journée${plural(summary.durations.daysWithKnownNetDuration)} avec un temps de travail calculable`
         : 'Le temps de travail ne peut pas être calculé pour cette période',
       detail:
         summary.durations.daysWithMissingDuration > 0

@@ -5,7 +5,7 @@ import type {
 } from '../../types/attendance-statistics.types.js';
 import { ATTENDANCE_ISSUE_PRESENTATION, ATTENDANCE_STATUS_PRESENTATION } from '../../utils/attendance-status.js';
 import { formatBusinessDate } from '../../utils/business-date.js';
-import { formatBusinessTime } from '../../utils/business-time.js';
+import { formatBusinessTimeWithDate } from '../../utils/business-time.js';
 import { formatDelayMinutes, formatDurationMinutes } from '../../utils/duration.js';
 import { formatPercentage } from '../../utils/percentage.js';
 import {
@@ -24,6 +24,7 @@ export interface AttendancePdfEmployeeDayRow {
   clockIn: string;
   clockOut: string;
   delay: string;
+  expectedDuration: string;
   grossDuration: string;
   pauseDuration: string;
   netDuration: string;
@@ -49,6 +50,8 @@ export interface AttendancePdfEmployeeDetailModel {
   restDays: number;
   undeterminedDays: number;
   netDuration: string;
+  expectedDuration: string;
+  netVsExpected: string;
   issueCount: number;
   issueTypeCount: number;
   issueLabels: string[];
@@ -95,9 +98,10 @@ function toDayRow(
     date: formatBusinessDate(day.date, 'fr-FR', { day: '2-digit', month: '2-digit', year: 'numeric' }),
     businessDate: day.date,
     status: ATTENDANCE_STATUS_PRESENTATION[day.status].label,
-    clockIn: formatBusinessTime(day.firstClockIn, '—'),
-    clockOut: formatBusinessTime(day.lastClockOut, '—'),
+    clockIn: formatBusinessTimeWithDate(day.firstClockIn, day.firstClockInDate, day.date),
+    clockOut: formatBusinessTimeWithDate(day.lastClockOut, day.lastClockOutDate, day.date),
     delay: formatDelayMinutes(day.delayMinutes),
+    expectedDuration: formatDurationMinutes(day.expectedWorkMinutes, { emptyLabel: 'Non disponible' }),
     grossDuration: formatDurationMinutes(day.grossMinutes, { emptyLabel: 'Non disponible' }),
     pauseDuration: formatDurationMinutes(day.pauseMinutes, { emptyLabel: 'Non disponible' }),
     netDuration: formatDurationMinutes(day.netMinutes, { emptyLabel: 'Non disponible' }),
@@ -134,6 +138,13 @@ function toEmployeeModel(
     netDuration: employee.durations.daysWithKnownNetDuration > 0
       ? formatDurationMinutes(employee.durations.netMinutes, { emptyLabel: 'Non disponible' })
       : 'Non disponible',
+    expectedDuration: employee.durations.daysWithKnownExpectedWorkDuration > 0
+      ? formatDurationMinutes(employee.durations.expectedWorkMinutes, { emptyLabel: 'Non disponible' })
+      : 'Non disponible',
+    netVsExpected:
+      employee.durations.daysWithKnownNetDuration > 0 && employee.durations.daysWithKnownExpectedWorkDuration > 0
+        ? `${formatDurationMinutes(employee.durations.netMinutes, { emptyLabel: 'Non disponible' })} / ${formatDurationMinutes(employee.durations.expectedWorkMinutes, { emptyLabel: 'Non disponible' })}`
+        : 'Non disponible',
     issueCount: employee.issueCount,
     issueTypeCount: issueLabels.length,
     issueLabels,

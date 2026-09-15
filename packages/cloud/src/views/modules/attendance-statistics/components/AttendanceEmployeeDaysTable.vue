@@ -15,7 +15,7 @@ import {
   findAttendanceEmployeeDayPage,
 } from '../utils/attendance-volume.js';
 import { formatBusinessDate } from '../utils/business-date.js';
-import { formatBusinessTime } from '../utils/business-time.js';
+import { formatBusinessTimeWithDate } from '../utils/business-time.js';
 import { formatDelayMinutes, formatDurationMinutes } from '../utils/duration.js';
 import AttendanceCompactPagination from './AttendanceCompactPagination.vue';
 
@@ -160,7 +160,8 @@ function statusClasses(status: AttendanceStatus): string {
               <th scope="col" class="px-3 py-3 text-center font-bold">Taux</th>
               <th scope="col" class="px-3 py-3 text-right font-bold">Entrée</th>
               <th scope="col" class="px-3 py-3 text-right font-bold">Sortie</th>
-              <th scope="col" class="px-3 py-3 text-right font-bold">Retard</th>
+              <th scope="col" class="px-3 py-3 text-right font-bold">Retard réel</th>
+              <th scope="col" class="px-3 py-3 text-right font-bold">Prévue</th>
               <th scope="col" class="px-3 py-3 text-right font-bold">Brut</th>
               <th scope="col" class="px-3 py-3 text-right font-bold">Pause</th>
               <th scope="col" class="px-3 py-3 text-right font-bold">Net</th>
@@ -187,9 +188,10 @@ function statusClasses(status: AttendanceStatus): string {
                   {{ day.rateEligible ? 'Éligible' : 'Exclu' }}
                 </span>
               </td>
-              <td class="whitespace-nowrap px-3 py-3 text-right text-slate-700">{{ formatBusinessTime(day.firstClockIn) }}</td>
-              <td class="whitespace-nowrap px-3 py-3 text-right text-slate-700">{{ formatBusinessTime(day.lastClockOut) }}</td>
+              <td class="whitespace-nowrap px-3 py-3 text-right text-slate-700">{{ formatBusinessTimeWithDate(day.firstClockIn, day.firstClockInDate, day.date) }}</td>
+              <td class="whitespace-nowrap px-3 py-3 text-right text-slate-700">{{ formatBusinessTimeWithDate(day.lastClockOut, day.lastClockOutDate, day.date) }}</td>
               <td class="whitespace-nowrap px-3 py-3 text-right text-slate-700">{{ formatDelayMinutes(day.delayMinutes) }}</td>
+              <td class="whitespace-nowrap px-3 py-3 text-right text-slate-700">{{ formatDurationMinutes(day.expectedWorkMinutes) }}</td>
               <td class="whitespace-nowrap px-3 py-3 text-right text-slate-700">{{ formatDurationMinutes(day.grossMinutes) }}</td>
               <td class="whitespace-nowrap px-3 py-3 text-right text-slate-700">{{ formatDurationMinutes(day.pauseMinutes) }}</td>
               <td class="whitespace-nowrap px-3 py-3 text-right font-semibold text-slate-900">{{ formatDurationMinutes(day.netMinutes) }}</td>
@@ -222,9 +224,10 @@ function statusClasses(status: AttendanceStatus): string {
             </span>
           </div>
           <dl class="mt-4 grid grid-cols-2 gap-3 text-sm">
-            <div><dt class="text-xs text-slate-500">Entrée</dt><dd class="font-semibold text-slate-800">{{ formatBusinessTime(day.firstClockIn) }}</dd></div>
-            <div><dt class="text-xs text-slate-500">Sortie</dt><dd class="font-semibold text-slate-800">{{ formatBusinessTime(day.lastClockOut) }}</dd></div>
-            <div><dt class="text-xs text-slate-500">Retard</dt><dd class="font-semibold text-slate-800">{{ formatDelayMinutes(day.delayMinutes) }}</dd></div>
+            <div><dt class="text-xs text-slate-500">Entrée</dt><dd class="font-semibold text-slate-800">{{ formatBusinessTimeWithDate(day.firstClockIn, day.firstClockInDate, day.date) }}</dd></div>
+            <div><dt class="text-xs text-slate-500">Sortie</dt><dd class="font-semibold text-slate-800">{{ formatBusinessTimeWithDate(day.lastClockOut, day.lastClockOutDate, day.date) }}</dd></div>
+            <div><dt class="text-xs text-slate-500">Retard réel</dt><dd class="font-semibold text-slate-800">{{ formatDelayMinutes(day.delayMinutes) }}</dd></div>
+            <div><dt class="text-xs text-slate-500">Durée prévue</dt><dd class="font-semibold text-slate-800">{{ formatDurationMinutes(day.expectedWorkMinutes) }}</dd></div>
             <div><dt class="text-xs text-slate-500">Durée nette</dt><dd class="font-semibold text-slate-800">{{ formatDurationMinutes(day.netMinutes) }}</dd></div>
           </dl>
           <div v-if="day.issues.length > 0" class="mt-4 flex flex-wrap gap-1.5">

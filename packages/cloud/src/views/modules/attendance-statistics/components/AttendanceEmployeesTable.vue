@@ -23,13 +23,16 @@ const columns: Array<{ key: AttendanceEmployeeSortKey; label: string; align?: 'l
   { key: 'late_days', label: 'Retards observés' },
   { key: 'absence_days', label: 'Absences confirmées' },
   { key: 'issue_count', label: 'À examiner' },
-  { key: 'net_minutes', label: 'Durée nette' },
+  { key: 'net_minutes', label: 'Durée nette / prévue' },
 ];
 
-function netDuration(employee: AttendanceEmployeeOverview): string {
-  return employee.durations.daysWithKnownNetDuration > 0
-    ? formatDurationMinutes(employee.durations.netMinutes)
-    : 'Non disponible';
+function netVsExpectedDuration(employee: AttendanceEmployeeOverview): string {
+  if (employee.durations.daysWithKnownNetDuration === 0) return 'Non disponible';
+  const net = formatDurationMinutes(employee.durations.netMinutes);
+  const expected = employee.durations.daysWithKnownExpectedWorkDuration > 0
+    ? formatDurationMinutes(employee.durations.expectedWorkMinutes)
+    : '—';
+  return `${net} / ${expected}`;
 }
 
 function sortIndicator(key: AttendanceEmployeeSortKey): string {
@@ -103,7 +106,7 @@ function sortAria(key: AttendanceEmployeeSortKey): 'ascending' | 'descending' | 
                 {{ employee.issueCount }}
               </span>
             </td>
-            <td class="border-b border-slate-100 px-4 py-4 text-right text-slate-700">{{ netDuration(employee) }}</td>
+            <td class="border-b border-slate-100 px-4 py-4 text-right text-slate-700">{{ netVsExpectedDuration(employee) }}</td>
             <td class="border-b border-slate-100 px-4 py-4 text-right">
               <button
                 type="button"
@@ -138,7 +141,7 @@ function sortAria(key: AttendanceEmployeeSortKey): 'ascending' | 'descending' | 
           <div><dt class="text-xs text-slate-500">Ponctualité</dt><dd class="font-semibold text-slate-800">{{ formatPercentage(employee.rates.punctualityRate) }}</dd></div>
           <div><dt class="text-xs text-slate-500">Retards observés</dt><dd class="font-semibold text-amber-700">{{ employee.statusTotals.LATE }}</dd></div>
           <div><dt class="text-xs text-slate-500">Absences confirmées</dt><dd class="font-semibold text-rose-700">{{ employee.statusTotals.ABSENT }}</dd></div>
-          <div class="col-span-2"><dt class="text-xs text-slate-500">Durée nette</dt><dd class="font-semibold text-slate-800">{{ netDuration(employee) }}</dd></div>
+          <div class="col-span-2"><dt class="text-xs text-slate-500">Durée nette / prévue</dt><dd class="font-semibold text-slate-800">{{ netVsExpectedDuration(employee) }}</dd></div>
         </dl>
 
         <button type="button" class="mt-4 w-full rounded-lg bg-indigo-600 px-3 py-2.5 text-sm font-bold text-white hover:bg-indigo-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 focus-visible:ring-offset-2" @click="emit('view', employee)">
