@@ -79,19 +79,20 @@ function drawIssueOccurrences(
   });
 
   if (issueType.omittedByPresentationCount > 0) {
-    engine.primitives.drawTextBlock(
-      `${issueType.omittedByPresentationCount} ${plural(issueType.omittedByPresentationCount, 'occurrence détaillée')} supplémentaire${issueType.omittedByPresentationCount > 1 ? 's' : ''} masquée${issueType.omittedByPresentationCount > 1 ? 's' : ''} par le profil ${engine.contract.presentationProfile.label.toLowerCase()}. Utiliser le niveau détaillé pour les afficher.`,
-      {
-        fontSizePt: 7.8,
-        color: engine.theme.colors.mutedText,
-        spacingAfter: 1.5,
-      },
-    );
+    const primaryReport = engine.contract.request.mode === 'full_report' || engine.contract.request.mode === 'hr_complete';
+    const message = primaryReport
+      ? `${issueType.omittedByPresentationCount} ${plural(issueType.omittedByPresentationCount, 'occurrence')} supplémentaire${issueType.omittedByPresentationCount > 1 ? 's' : ''} non affichée${issueType.omittedByPresentationCount > 1 ? 's' : ''} dans ce rapport. Consulter un rapport plus détaillé pour l’investigation.`
+      : `${issueType.omittedByPresentationCount} ${plural(issueType.omittedByPresentationCount, 'occurrence')} supplémentaire${issueType.omittedByPresentationCount > 1 ? 's' : ''} non affichée${issueType.omittedByPresentationCount > 1 ? 's' : ''} avec le niveau ${engine.contract.presentationProfile.label.toLowerCase()}.`;
+    engine.primitives.drawTextBlock(message, {
+      fontSizePt: 7.8,
+      color: engine.theme.colors.mutedText,
+      spacingAfter: 1.5,
+    });
   }
 
   if (issueType.hiddenApiOccurrenceCount > 0) {
     engine.primitives.drawTextBlock(
-      `${issueType.hiddenApiOccurrenceCount} ${plural(issueType.hiddenApiOccurrenceCount, 'occurrence')} comptée${issueType.hiddenApiOccurrenceCount > 1 ? 's' : ''} par l'API mais non incluse${issueType.hiddenApiOccurrenceCount > 1 ? 's' : ''} dans son détail. Le PDF ne peut pas inventer ces lignes.`,
+      `${issueType.hiddenApiOccurrenceCount} ${plural(issueType.hiddenApiOccurrenceCount, 'occurrence')} comptabilisée${issueType.hiddenApiOccurrenceCount > 1 ? 's' : ''} sans détail individuel disponible dans les données du rapport.`,
       {
         fontSizePt: 7.8,
         color: engine.theme.colors.warning,
@@ -126,12 +127,15 @@ export function renderAttendancePdfIssues(engine: AttendancePdfEngine): Attendan
     color: engine.theme.colors.mutedText,
     spacingAfter: 2,
   });
-  engine.primitives.drawTextBlock(`Niveau de présentation : ${model.presentationLabel}`, {
-    fontSizePt: 8,
-    fontStyle: 'bold',
-    color: engine.theme.colors.accent,
-    spacingAfter: 3,
-  });
+  const primaryReport = engine.contract.request.mode === 'full_report' || engine.contract.request.mode === 'hr_complete';
+  if (!primaryReport) {
+    engine.primitives.drawTextBlock(`Niveau de présentation : ${model.presentationLabel}`, {
+      fontSizePt: 8,
+      fontStyle: 'bold',
+      color: engine.theme.colors.accent,
+      spacingAfter: 3,
+    });
+  }
 
   if (model.empty) {
     engine.primitives.drawCard({
@@ -156,7 +160,7 @@ export function renderAttendancePdfIssues(engine: AttendancePdfEngine): Attendan
 
   if (model.totalHiddenApiOccurrenceCount > 0) {
     engine.primitives.drawTextBlock(
-      `Couverture du détail API : ${model.totalDetailedOccurrenceCount} occurrence${model.totalDetailedOccurrenceCount > 1 ? 's' : ''} détaillée${model.totalDetailedOccurrenceCount > 1 ? 's' : ''} disponible${model.totalDetailedOccurrenceCount > 1 ? 's' : ''} pour ${model.totalOccurrenceCount} occurrence${model.totalOccurrenceCount > 1 ? 's' : ''} comptée${model.totalOccurrenceCount > 1 ? 's' : ''}.`,
+      `Détail disponible : ${model.totalDetailedOccurrenceCount} occurrence${model.totalDetailedOccurrenceCount > 1 ? 's' : ''} individualisée${model.totalDetailedOccurrenceCount > 1 ? 's' : ''} sur ${model.totalOccurrenceCount} occurrence${model.totalOccurrenceCount > 1 ? 's' : ''} comptabilisée${model.totalOccurrenceCount > 1 ? 's' : ''}.`,
       {
         fontSizePt: 8,
         color: engine.theme.colors.warning,
@@ -164,15 +168,6 @@ export function renderAttendancePdfIssues(engine: AttendancePdfEngine): Attendan
       },
     );
   }
-
-  engine.primitives.drawTextBlock(
-    "Traçabilité prévue : chaque ligne détaillée transporte l'employé, la date, le statut et le type d'élément nécessaires pour retrouver plus tard le pointage source dans l'interface. Le traitement/correction du pointage n'est pas implémenté dans ce lot.",
-    {
-      fontSizePt: 7.8,
-      color: engine.theme.colors.mutedText,
-      spacingAfter: 2,
-    },
-  );
 
   return { startPage, endPage: engine.pages.currentPage, model };
 }

@@ -35,11 +35,12 @@ export const DEFAULT_ATTENDANCE_PDF_PRESENTATION_LEVEL_BY_MODE: Record<
   AttendancePdfExportMode,
   AttendancePdfPresentationLevel
 > = {
-  period_summary: 'optimized',
+  period_summary: 'simplified',
   full_report: 'optimized',
+  hr_complete: 'detailed',
   current_analysis: 'optimized',
   issues_only: 'optimized',
-  employee_sheet: 'optimized',
+  employee_sheet: 'detailed',
 };
 
 export function getAttendancePdfPresentationProfile(

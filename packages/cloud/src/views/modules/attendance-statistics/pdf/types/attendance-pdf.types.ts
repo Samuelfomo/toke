@@ -7,12 +7,13 @@ import type {
 import type { AttendanceAnalysisContext } from '../../utils/attendance-analysis-context.js';
 
 /**
- * Les cinq périmètres d'export officiels du module de statistiques.
+ * Les rapports principaux et exports spécialisés officiels du module de statistiques.
  * Ils décrivent CE QUE l'on exporte, pas le niveau de détail visuel.
  */
 export const ATTENDANCE_PDF_EXPORT_MODES = [
   'period_summary',
   'full_report',
+  'hr_complete',
   'current_analysis',
   'issues_only',
   'employee_sheet',
@@ -86,6 +87,13 @@ export interface AttendancePdfFullReportRequest extends AttendancePdfBaseOptions
   employeeDetails?: AttendancePdfEmployeeDetailMode;
 }
 
+export interface AttendancePdfHrCompleteRequest extends AttendancePdfBaseOptions {
+  mode: 'hr_complete';
+  overview: AttendanceOverview;
+  /** Détails individuels uniquement lorsqu'ils sont demandés explicitement. */
+  employeeDetails?: AttendancePdfEmployeeDetailMode;
+}
+
 export interface AttendancePdfCurrentAnalysisRequest extends AttendancePdfBaseOptions {
   mode: 'current_analysis';
   overview: AttendanceOverview;
@@ -107,6 +115,7 @@ export interface AttendancePdfEmployeeSheetRequest extends AttendancePdfBaseOpti
 export type AttendancePdfExportRequest =
   | AttendancePdfPeriodSummaryRequest
   | AttendancePdfFullReportRequest
+  | AttendancePdfHrCompleteRequest
   | AttendancePdfCurrentAnalysisRequest
   | AttendancePdfIssuesOnlyRequest
   | AttendancePdfEmployeeSheetRequest;

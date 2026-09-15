@@ -69,11 +69,17 @@ const modeAvailability = computed(() =>
         : [],
 );
 
+const selectedModeChoice = computed(() =>
+    modeAvailability.value.find((item) => item.choice.mode === draft.value.mode)?.choice ?? null,
+);
+
 const presentationLevels = computed(() =>
-    (['simplified', 'optimized', 'detailed'] as const).map(
+    (selectedModeChoice.value?.availablePresentationLevels ?? []).map(
         (level) => ATTENDANCE_PDF_PRESENTATION_PROFILES[level],
     ),
 );
+
+const showPresentationLevelChoice = computed(() => presentationLevels.value.length > 1);
 
 const employees = computed(() =>
     [...(props.overview?.employees ?? [])].sort((a, b) =>
@@ -116,15 +122,7 @@ function selectPresentationLevel(level: AttendancePdfPresentationLevel): void {
   draft.value = {
     ...draft.value,
     presentationLevel: level,
-    ...(draft.value.mode === 'full_report'
-        ? {
-          employeeDetails: level === 'simplified'
-              ? 'none' as const
-              : level === 'optimized'
-                  ? 'attention_only' as const
-                  : 'all' as const,
-        }
-        : {}),
+    employeeDetails: draft.value.employeeDetails,
   };
 }
 
@@ -209,7 +207,7 @@ async function previewPdf(): Promise<void> {
             <h2 id="attendance-pdf-export-title" class="mt-1 text-xl font-bold text-slate-950 sm:text-2xl">Exporter les
               statistiques</h2>
             <p id="attendance-pdf-export-description" class="mt-1 max-w-3xl text-sm text-slate-500">
-              Choisissez le contenu du rapport et le niveau de détail souhaité. Les données affichées correspondent à la période sélectionnée.
+              Choisissez le rapport adapté à votre besoin. Les données affichées correspondent à la période sélectionnée.
             </p>
           </div>
           <button
@@ -223,7 +221,7 @@ async function previewPdf(): Promise<void> {
 
         <div class="flex-1 overflow-y-auto px-5 py-5 sm:px-6">
           <fieldset>
-            <legend class="text-sm font-bold text-slate-950">1. Périmètre d’export</legend>
+            <legend class="text-sm font-bold text-slate-950">1. Type de rapport</legend>
             <div class="mt-3 grid gap-3 md:grid-cols-2 xl:grid-cols-3">
               <button
                   v-for="item in modeAvailability"
@@ -247,7 +245,7 @@ async function previewPdf(): Promise<void> {
             </div>
           </fieldset>
 
-          <fieldset class="mt-6 border-t border-slate-100 pt-5">
+          <fieldset v-if="showPresentationLevelChoice" class="mt-6 border-t border-slate-100 pt-5">
             <legend class="text-sm font-bold text-slate-950">2. Niveau de présentation</legend>
             <div class="mt-3 grid gap-3 sm:grid-cols-3">
               <button
@@ -265,15 +263,40 @@ async function previewPdf(): Promise<void> {
             </div>
           </fieldset>
 
-          <div v-if="draft.mode === 'full_report'" class="mt-5 rounded-xl border border-slate-200 bg-slate-50 p-4">
-            <label for="attendance-pdf-employee-details" class="text-sm font-bold text-slate-900">Fiches individuelles
-              dans le rapport complet</label>
-            <select id="attendance-pdf-employee-details" v-model="draft.employeeDetails"
-                    class="mt-2 min-h-11 w-full rounded-lg border border-slate-300 bg-white px-3 text-sm focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-200">
-              <option value="none">Aucune fiche individuelle</option>
-              <option value="attention_only">Uniquement les collaborateurs avec éléments à examiner</option>
-              <option value="all">Tous les collaborateurs</option>
-            </select>
+          <div v-if="draft.mode === 'hr_complete'" class="mt-5 rounded-xl border border-slate-200 bg-slate-50 p-4">
+            <p class="text-sm font-bold text-slate-900">Synthèses individuelles (optionnel)</p>
+            <p class="mt-1 text-xs leading-5 text-slate-500">
+              Le rapport RH reste synthétique par défaut. Ajoutez des synthèses individuelles uniquement si elles sont utiles à l’analyse.
+            </p>
+            <div class="mt-3 grid gap-2 sm:grid-cols-3">
+              <button
+                  type="button"
+                  class="rounded-lg border px-3 py-3 text-left text-sm transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500"
+                  :class="draft.employeeDetails === 'none' ? 'border-indigo-500 bg-indigo-50 ring-1 ring-indigo-500' : 'border-slate-200 bg-white hover:border-indigo-300'"
+                  @click="draft.employeeDetails = 'none'"
+              >
+                <span class="block font-bold text-slate-900">Aucune</span>
+                <span class="mt-1 block text-xs text-slate-500">Rapport RH global uniquement.</span>
+              </button>
+              <button
+                  type="button"
+                  class="rounded-lg border px-3 py-3 text-left text-sm transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500"
+                  :class="draft.employeeDetails === 'attention_only' ? 'border-indigo-500 bg-indigo-50 ring-1 ring-indigo-500' : 'border-slate-200 bg-white hover:border-indigo-300'"
+                  @click="draft.employeeDetails = 'attention_only'"
+              >
+                <span class="block font-bold text-slate-900">À examiner</span>
+                <span class="mt-1 block text-xs text-slate-500">Synthèse des collaborateurs ayant au moins un élément signalé.</span>
+              </button>
+              <button
+                  type="button"
+                  class="rounded-lg border px-3 py-3 text-left text-sm transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500"
+                  :class="draft.employeeDetails === 'all' ? 'border-indigo-500 bg-indigo-50 ring-1 ring-indigo-500' : 'border-slate-200 bg-white hover:border-indigo-300'"
+                  @click="draft.employeeDetails = 'all'"
+              >
+                <span class="block font-bold text-slate-900">Toute l’équipe</span>
+                <span class="mt-1 block text-xs text-slate-500">Ajoute une synthèse de chaque collaborateur et augmente la longueur du PDF.</span>
+              </button>
+            </div>
           </div>
 
           <div v-if="draft.mode === 'employee_sheet'" class="mt-5 rounded-xl border border-slate-200 bg-slate-50 p-4">
@@ -308,7 +331,7 @@ async function previewPdf(): Promise<void> {
                   prévu</h3>
               </div>
               <span class="rounded-full bg-white px-3 py-1 text-xs font-bold text-indigo-700 ring-1 ring-indigo-200">{{
-                  preflight.plan.presentationLabel
+                  preflight.plan.modeLabel
                 }}</span>
             </div>
             <dl class="mt-4 grid gap-2 text-sm sm:grid-cols-2 lg:grid-cols-4">

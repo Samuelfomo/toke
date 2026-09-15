@@ -107,22 +107,35 @@ function toOccurrenceRow(
 function resolveRows(
   summary: AttendanceIssueSummary,
   presentation: AttendancePdfPresentationProfile,
+  contract: AttendancePdfReportContract,
 ): AttendancePdfIssueOccurrenceRow[] {
   if (presentation.issueDetails === 'none') return [];
-  const occurrences =
-    presentation.issueDetails === 'all'
-      ? summary.occurrences
-      : summary.occurrences.slice(0, presentation.issueOccurrenceLimitPerType ?? 0);
+  if (presentation.issueDetails === 'all' && contract.request.mode !== 'hr_complete') {
+    return summary.occurrences.map((occurrence) => toOccurrenceRow(summary.issue, occurrence));
+  }
 
-  return occurrences.map((occurrence) => toOccurrenceRow(summary.issue, occurrence));
+  // Les rapports principaux limitent volontairement les occurrences visibles :
+  // - Pilotage : quelques exemples seulement ;
+  // - RH complet : profondeur supérieure, sans transformer le rapport en journal exhaustif.
+  // Les exports spécialisés conservent leur comportement configuré.
+  const configuredLimit = presentation.issueOccurrenceLimitPerType ?? 0;
+  const limit = contract.request.mode === 'full_report'
+    ? Math.min(configuredLimit, 3)
+    : contract.request.mode === 'hr_complete'
+      ? 10
+      : configuredLimit;
+  return summary.occurrences
+    .slice(0, limit)
+    .map((occurrence) => toOccurrenceRow(summary.issue, occurrence));
 }
 
 function toIssueType(
   summary: AttendanceIssueSummary,
   presentation: AttendancePdfPresentationProfile,
+  contract: AttendancePdfReportContract,
 ): AttendancePdfIssueTypeModel {
   const issuePresentation = ATTENDANCE_ISSUE_PRESENTATION[summary.issue];
-  const rows = resolveRows(summary, presentation);
+  const rows = resolveRows(summary, presentation, contract);
   const hiddenApiOccurrenceCount = Math.max(0, summary.count - summary.occurrences.length);
   const omittedByPresentationCount = Math.max(0, summary.occurrences.length - rows.length);
 
@@ -154,7 +167,7 @@ export function buildAttendancePdfIssuesModel(
     : contract.request.overview.issues;
 
   const issueTypes = sortAttendanceIssues(source).map((summary) =>
-    toIssueType(summary, contract.presentationProfile),
+    toIssueType(summary, contract.presentationProfile, contract),
   );
 
   const families = FAMILY_ORDER.map((family) => {

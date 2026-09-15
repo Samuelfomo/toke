@@ -24,121 +24,14 @@
           <p class="text-slate-400 text-sm mt-0.5">Visualisez le planning par blocs horaires sur la période
             sélectionnée.</p>
         </div>
-        <div class="flex w-full min-w-0 flex-wrap items-center gap-2 lg:gap-5 xl:flex-1 xl:justify-end">
-          <div class="relative" ref="exportDropdownRef">
-            <button @click="exportDropdownOpen = !exportDropdownOpen"
-                    class="flex items-center gap-2 px-4 py-2.5 border border-slate-200 bg-white hover:bg-slate-50 text-slate-700 text-sm font-semibold rounded-xl transition">
-              <IconUpload :size="14"/>
-              Exporter
-              <IconChevronDown :size="13" class="text-slate-400"/>
-            </button>
-            <Transition name="dropdown">
-              <div v-if="exportDropdownOpen"
-                   class="absolute right-0 top-full mt-1.5 w-48 bg-white border border-slate-200 rounded-xl shadow-lg z-20 overflow-hidden">
-                <button @click="handleExportCSV" :disabled="!canExport || exportLoading === 'csv'"
-                        class="w-full flex items-center gap-2.5 px-4 py-2.5 text-sm text-slate-700 hover:bg-slate-50 transition disabled:opacity-40 disabled:cursor-not-allowed">
-                  <IconFileText :size="15" class="text-green-500"/>
-                  <span>Exporter CSV</span>
-                  <IconLoader2 v-if="exportLoading === 'csv'" :size="12" class="ml-auto animate-spin text-slate-400"/>
-                </button>
-                <button @click="handleExportPDF" :disabled="!canExport || exportLoading === 'pdf'"
-                        class="w-full flex items-center gap-2.5 px-4 py-2.5 text-sm text-slate-700 hover:bg-slate-50 transition disabled:opacity-40 disabled:cursor-not-allowed">
-                  <IconFile :size="15" class="text-red-500"/>
-                  <span>Aperçu PDF</span>
-                  <IconLoader2 v-if="exportLoading === 'pdf'" :size="12" class="ml-auto animate-spin text-slate-400"/>
-                </button>
-              </div>
-            </Transition>
-          </div>
-
-          <!-- Export simplifié : format mural inspiré du planning manuel du client -->
-          <div class="relative" ref="simpleExportDropdownRef">
-            <button @click="simpleExportDropdownOpen = !simpleExportDropdownOpen"
-                    class="flex items-center gap-2 px-4 py-2.5 border border-emerald-200 bg-emerald-50 hover:bg-emerald-100 text-emerald-700 text-sm font-semibold rounded-xl transition">
-              <IconFileText :size="14"/>
-              Export simplifié
-              <IconChevronDown :size="13" class="text-emerald-500"/>
-            </button>
-            <Transition name="dropdown">
-              <div v-if="simpleExportDropdownOpen"
-                   class="absolute right-0 top-full mt-1.5 w-52 bg-white border border-slate-200 rounded-xl shadow-lg z-20 overflow-hidden">
-                <button @click="handleSimpleExportPDF" :disabled="!canExport || simpleExportLoading === 'pdf'"
-                        class="w-full flex items-center gap-2.5 px-4 py-2.5 text-sm text-slate-700 hover:bg-slate-50 transition disabled:opacity-40 disabled:cursor-not-allowed">
-                  <IconFile :size="15" class="text-red-500"/>
-                  <span>PDF pour affichage</span>
-                  <IconLoader2 v-if="simpleExportLoading === 'pdf'" :size="12" class="ml-auto animate-spin text-slate-400"/>
-                </button>
-                <button @click="handleSimpleExportExcel" :disabled="!canExport || simpleExportLoading === 'excel'"
-                        class="w-full flex items-center gap-2.5 px-4 py-2.5 text-sm text-slate-700 hover:bg-slate-50 transition disabled:opacity-40 disabled:cursor-not-allowed">
-                  <IconTable :size="15" class="text-blue-500"/>
-                  <span>Excel simplifié</span>
-                  <IconLoader2 v-if="simpleExportLoading === 'excel'" :size="12" class="ml-auto animate-spin text-slate-400"/>
-                </button>
-                <button @click="handleSimpleExportCSV" :disabled="!canExport || simpleExportLoading === 'csv'"
-                        class="w-full flex items-center gap-2.5 px-4 py-2.5 text-sm text-slate-700 hover:bg-slate-50 transition disabled:opacity-40 disabled:cursor-not-allowed">
-                  <IconFileText :size="15" class="text-green-500"/>
-                  <span>CSV simplifié</span>
-                  <IconLoader2 v-if="simpleExportLoading === 'csv'" :size="12" class="ml-auto animate-spin text-slate-400"/>
-                </button>
-              </div>
-            </Transition>
-          </div>
-
-          <!-- Planning optimisé : choix explicite de la stratégie de couleur du PDF -->
-          <div class="flex w-full max-w-full flex-col overflow-hidden rounded-xl border border-indigo-200 bg-white sm:w-auto sm:flex-row">
-            <label class="sr-only" for="optimized-pdf-mode">Type de PDF optimisé</label>
-            <select
-                id="optimized-pdf-mode"
-                v-model="optimizedPdfMode"
-                :disabled="optimizedExportLoading"
-                @focus="showOptimizedPreview"
-                @change="showOptimizedPreview"
-                class="w-full min-w-0 sm:w-auto sm:min-w-[180px] bg-white px-3 py-2.5 text-xs font-semibold text-slate-700 outline-none border-r border-indigo-100 disabled:opacity-50"
-                title="Choisir le mode de visualisation et d'export du planning optimisé"
-            >
-              <option value="personalized">PDF personnalisé · Lisible</option>
-              <option value="personalized-color">PDF personnalisé · Couleurs</option>
-              <option value="generalized">PDF généralisé · services</option>
-            </select>
-
-            <label class="sr-only" for="optimized-months-per-page">Nombre de mois par page</label>
-            <select
-                id="optimized-months-per-page"
-                v-model.number="optimizedMonthsPerPage"
-                :disabled="optimizedExportLoading"
-                @focus="showOptimizedPreview"
-                @change="showOptimizedPreview"
-                class="w-full min-w-0 sm:w-auto sm:min-w-[125px] bg-white px-3 py-2.5 text-xs font-semibold text-slate-700 outline-none border-r border-indigo-100 disabled:opacity-50"
-                title="Choisir le nombre de calendriers mensuels par page optimisée"
-            >
-              <option :value="1">1 mois / page</option>
-              <option :value="2">2 mois / page</option>
-              <option :value="3">3 mois / page</option>
-              <option :value="4">4 mois / page</option>
-              <option :value="6">6 mois / page</option>
-            </select>
-
-            <button
-                @click="handleOptimizedExportPDF"
-                :disabled="!canExport || optimizedExportLoading"
-                class="flex items-center gap-2 px-4 py-2.5 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 text-sm font-semibold transition disabled:opacity-40 disabled:cursor-not-allowed"
-                :title="optimizedPdfMode === 'personalized'
-                  ? 'Cercle, initiales et couleur employé · adapté aussi au noir et blanc'
-                  : optimizedPdfMode === 'personalized-color'
-                    ? 'Carrés colorés sans initiales · recommandé pour écran et impression couleur'
-                    : 'Les couleurs représentent les services'"
-            >
-              <IconLoader2 v-if="optimizedExportLoading" :size="14" class="animate-spin"/>
-              <IconCalendarStats v-else :size="14"/>
-              Générer PDF
-            </button>
-          </div>
-
-          <button @click="handleExportExcel" :disabled="!canExport || exportLoading === 'excel'"
-                  class="flex items-center gap-2 px-4 py-2.5 bg-blue-600 hover:bg-blue-700 text-white text-sm font-bold rounded-xl shadow-sm shadow-blue-200 transition disabled:opacity-40 disabled:cursor-not-allowed">
-            <IconLoader2 v-if="exportLoading === 'excel'" :size="14" class="animate-spin"/>
-            <IconTable v-else :size="14"/>
-            Générer Excel
+        <div class="flex w-full min-w-0 flex-wrap items-center gap-2 lg:gap-3 xl:flex-1 xl:justify-end">
+          <button
+              @click="openExportCenter"
+              :disabled="!canExport"
+              class="flex items-center gap-2 px-4 py-2.5 border border-slate-200 bg-white hover:bg-slate-50 text-slate-700 text-sm font-semibold rounded-xl transition disabled:opacity-40 disabled:cursor-not-allowed"
+          >
+            <IconUpload :size="14"/>
+            Exporter
           </button>
 
           <button @click="openPlanningSuggestionModule"
@@ -402,6 +295,19 @@
         </div>
       </Teleport>
 
+      <PlanningExportPanel
+          v-model:open="exportPanelOpen"
+          v-model:presentation="exportPresentation"
+          v-model:format="exportFormat"
+          v-model:optimizedPdfMode="optimizedPdfMode"
+          v-model:optimizedMonthsPerPage="optimizedMonthsPerPage"
+          :period-from="periodFrom"
+          :period-to="periodTo"
+          :loading="exportCenterLoading"
+          :can-export="canExport"
+          @submit="handleExportCenterSubmit"
+      />
+
       <ScheduleDayAdjustmentModal
           v-if="adjustmentTarget && userStore.user?.guid"
           :employee="adjustmentTarget.member"
@@ -423,14 +329,13 @@
 
 </template>
 <script setup lang="ts">
-import {ref, computed, onMounted, onBeforeUnmount} from 'vue'
+import {ref, computed, onMounted} from 'vue'
 import {useRouter} from 'vue-router'
 import {
   IconCalendarStats, IconChevronRight, IconPlus, IconLoader2,
   IconUser, IconUsers, IconFilter, IconSearch, IconArrowRight,
   IconPower, IconAlertTriangle, IconSparkles,
-  IconUpload, IconChevronDown, IconTable,
-  IconFile, IconFileText, IconArrowLeft,
+  IconUpload, IconArrowLeft,
 } from '@tabler/icons-vue'
 
 import ScheduleAssignmentService from '@/service/ScheduleAssignment'
@@ -441,6 +346,8 @@ import ScheduleDetailedView from './components/views/ScheduleDetailedView.vue'
 import ScheduleSimpleView from './components/views/ScheduleSimpleView.vue'
 import ScheduleOptimizedView from './components/views/ScheduleOptimizedView.vue'
 import PlanningLoadingState from './components/states/PlanningLoadingState.vue'
+import PlanningExportPanel from './components/PlanningExportPanel.vue'
+import type {ExportFormat, ExportPresentation} from './components/PlanningExportPanel.vue'
 import type {
   PlanningDisplayMode,
   ScheduleDayAdjustmentTarget,
@@ -503,13 +410,10 @@ const displayMode = ref<PlanningDisplayMode>('detailed')
 const advancedFiltersOpen = ref(false)
 const filterStatus = ref('active')
 const searchQuery = ref('')
-const exportDropdownOpen = ref(false)
-const exportDropdownRef = ref<HTMLElement | null>(null)
-const exportLoading = ref<'pdf' | 'excel' | 'csv' | null>(null)
-const simpleExportDropdownOpen = ref(false)
-const simpleExportDropdownRef = ref<HTMLElement | null>(null)
-const simpleExportLoading = ref<'pdf' | 'excel' | 'csv' | null>(null)
-const optimizedExportLoading = ref(false)
+const exportPanelOpen = ref(false)
+const exportPresentation = ref<ExportPresentation>('optimized')
+const exportFormat = ref<ExportFormat>('pdf')
+const exportCenterLoading = ref(false)
 const optimizedPdfMode = ref<OptimizedPdfMode>('personalized')
 const optimizedMonthsPerPage = ref<OptimizedMonthsPerPage>(6)
 const employeesPerPage = ref<number>(10)
@@ -555,7 +459,7 @@ const adjustmentTarget = ref<ScheduleDayAdjustmentTarget | null>(null)
 const actionLoading = ref(false)
 
 const modalOpen = computed(() =>
-    Boolean(deactivateTarget.value || adjustmentTarget.value),
+    Boolean(deactivateTarget.value || adjustmentTarget.value || exportPanelOpen.value),
 )
 useBodyScrollLock(modalOpen)
 
@@ -1061,14 +965,11 @@ const visibleMembers = computed(() => allFlatMembers.value.slice(0, employeesPer
 const hiddenCount = computed(() => Math.max(0, allFlatMembers.value.length - employeesPerPage.value))
 const canExport = computed(() => allFlatMembers.value.length > 0)
 
-/**
- * Le mode choisi dans le sélecteur est aussi le mode d'aperçu.
- * Aucun appel API : on ne fait que changer le composant/rendu local.
- */
-function showOptimizedPreview(): void {
-  displayMode.value = 'optimized'
+function openExportCenter(): void {
+  exportPresentation.value = 'optimized'
+  exportFormat.value = 'pdf'
+  exportPanelOpen.value = true
 }
-
 
 function openDayAdjustment(target: ScheduleDayAdjustmentTarget): void {
   const todayIso = new Date().toISOString().slice(0, 10)
@@ -1257,7 +1158,7 @@ function onSaved() {
   load()
 }
 
-function simpleExportOptions() {
+function commonExportOptions() {
   return {
     members: allFlatMembers.value,
     periodFrom: periodFrom.value,
@@ -1267,102 +1168,37 @@ function simpleExportOptions() {
   }
 }
 
-async function handleSimpleExportPDF() {
-  if (!canExport.value) return
-  simpleExportLoading.value = 'pdf'
-  simpleExportDropdownOpen.value = false
+async function handleExportCenterSubmit(): Promise<void> {
+  if (!canExport.value || exportCenterLoading.value) return
+
+  exportCenterLoading.value = true
   try {
-    exportScheduleSimplePDF(simpleExportOptions())
+    const options = commonExportOptions()
+
+    if (exportPresentation.value === 'optimized') {
+      exportScheduleOptimizedPDF({
+        ...options,
+        pdfMode: optimizedPdfMode.value,
+        monthsPerPage: optimizedMonthsPerPage.value,
+      })
+      exportPanelOpen.value = false
+      return
+    }
+
+    if (exportPresentation.value === 'wall') {
+      if (exportFormat.value === 'pdf') exportScheduleSimplePDF(options)
+      if (exportFormat.value === 'excel') exportScheduleSimpleExcel(options)
+      if (exportFormat.value === 'csv') exportScheduleSimpleCSV(options)
+      exportPanelOpen.value = false
+      return
+    }
+
+    if (exportFormat.value === 'pdf') exportSchedulePDF(options)
+    if (exportFormat.value === 'excel') exportScheduleExcel(options)
+    if (exportFormat.value === 'csv') exportScheduleCSV(options)
+    exportPanelOpen.value = false
   } finally {
-    simpleExportLoading.value = null
-  }
-}
-
-async function handleSimpleExportExcel() {
-  if (!canExport.value) return
-  simpleExportLoading.value = 'excel'
-  simpleExportDropdownOpen.value = false
-  try {
-    exportScheduleSimpleExcel(simpleExportOptions())
-  } finally {
-    simpleExportLoading.value = null
-  }
-}
-
-async function handleSimpleExportCSV() {
-  if (!canExport.value) return
-  simpleExportLoading.value = 'csv'
-  simpleExportDropdownOpen.value = false
-  try {
-    exportScheduleSimpleCSV(simpleExportOptions())
-  } finally {
-    simpleExportLoading.value = null
-  }
-}
-
-function optimizedExportOptions() {
-  return {
-    members: allFlatMembers.value,
-    periodFrom: periodFrom.value,
-    periodTo: periodTo.value,
-    generatedBy: `${userStore.user?.first_name} ${userStore.user?.last_name}`.trim(),
-    tenantName: userStore.tenant?.name,
-    pdfMode: optimizedPdfMode.value,
-    monthsPerPage: optimizedMonthsPerPage.value,
-  }
-}
-
-async function handleOptimizedExportPDF() {
-  if (!canExport.value) return
-  optimizedExportLoading.value = true
-  try {
-    exportScheduleOptimizedPDF(optimizedExportOptions())
-  } finally {
-    optimizedExportLoading.value = false
-  }
-}
-
-async function handleExportPDF() {
-  if (!canExport.value) return
-  exportLoading.value = 'pdf';
-  exportDropdownOpen.value = false
-  try {
-    exportSchedulePDF({
-      members: allFlatMembers.value,
-      periodFrom: periodFrom.value,
-      periodTo: periodTo.value,
-      generatedBy: `${userStore.user?.first_name} ${userStore.user?.last_name}`.trim(),
-      tenantName: userStore.tenant?.name,
-    })
-  } finally {
-    exportLoading.value = null
-  }
-}
-
-async function handleExportExcel() {
-  exportScheduleExcel({
-    members: allFlatMembers.value,
-    periodFrom: periodFrom.value, periodTo: periodTo.value,
-    generatedBy: `${userStore.user?.first_name} ${userStore.user?.last_name}`.trim(),
-    tenantName: userStore.tenant?.name,
-  })
-}
-
-async function handleExportCSV() {
-  exportScheduleCSV({
-    members: allFlatMembers.value,
-    periodFrom: periodFrom.value, periodTo: periodTo.value,
-    generatedBy: `${userStore.user?.first_name} ${userStore.user?.last_name}`.trim(),
-    tenantName: userStore.tenant?.name,
-  })
-}
-
-function onDocumentClick(e: MouseEvent) {
-  if (exportDropdownRef.value && !exportDropdownRef.value.contains(e.target as Node)) {
-    exportDropdownOpen.value = false
-  }
-  if (simpleExportDropdownRef.value && !simpleExportDropdownRef.value.contains(e.target as Node)) {
-    simpleExportDropdownOpen.value = false
+    exportCenterLoading.value = false
   }
 }
 
@@ -1371,11 +1207,7 @@ function openPlanningSuggestionModule(): void {
 }
 
 onMounted(() => {
-  load();
-  document.addEventListener('click', onDocumentClick)
-})
-onBeforeUnmount(() => {
-  document.removeEventListener('click', onDocumentClick)
+  load()
 })
 </script>
 <style scoped>
@@ -1403,4 +1235,5 @@ onBeforeUnmount(() => {
   max-height: 0;
   opacity: 0;
 }
+
 </style>

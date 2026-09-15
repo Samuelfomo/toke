@@ -161,6 +161,53 @@ function drawKpiGrid(engine: AttendancePdfEngine, model: AttendancePdfExecutiveS
   return totalHeight + 5;
 }
 
+
+function drawDirectionKpiGrid(engine: AttendancePdfEngine, model: AttendancePdfExecutiveSummaryModel): number {
+  const { document, pages, theme } = engine;
+  const gap = 3;
+  const cardHeight = 23;
+  const kpis = model.kpis.slice(0, 5);
+  const cardWidth = (pages.contentWidth - gap * (kpis.length - 1)) / kpis.length;
+  const decision = pages.ensureSpace(cardHeight);
+  if (!decision.fitsOnFreshPage) throw new RangeError('Direction KPI grid is taller than a printable page.');
+
+  kpis.forEach((kpi, index) => {
+    const x = pages.contentLeft + index * (cardWidth + gap);
+    const y = pages.y;
+
+    setColor(document.setFillColor.bind(document), theme.colors.surface);
+    setColor(document.setDrawColor.bind(document), theme.colors.border);
+    document.setLineWidth(0.2);
+    document.roundedRect(x, y, cardWidth, cardHeight, 2, 2, 'FD');
+
+    const accent = accentForKpi(engine, kpi);
+    setColor(document.setFillColor.bind(document), accent);
+    document.rect(x, y, 1.5, cardHeight, 'F');
+
+    document.setFont(theme.fontFamily, 'bold').setFontSize(7.4);
+    setColor(document.setTextColor.bind(document), theme.colors.mutedText);
+    document.text(kpi.label, x + 4, y + 5.3, { maxWidth: cardWidth - 8 });
+
+    document.setFont(theme.fontFamily, 'bold').setFontSize(16);
+    setColor(document.setTextColor.bind(document), theme.colors.text);
+    document.text(kpi.value, x + 4, y + 13.1);
+
+    drawWrappedText({
+      document,
+      text: kpi.explanation,
+      x: x + 4,
+      y: y + 18.2,
+      width: cardWidth - 8,
+      fontSize: 6.4,
+      color: theme.colors.mutedText,
+      fontFamily: theme.fontFamily,
+    });
+  });
+
+  pages.moveCursor(cardHeight + 4);
+  return cardHeight + 4;
+}
+
 function drawBottomPanels(engine: AttendancePdfEngine, model: AttendancePdfExecutiveSummaryModel): number {
   const { document, pages, theme } = engine;
   const gap = 6;
@@ -276,23 +323,25 @@ export function renderAttendancePdfExecutiveSummary(
   const startPage = engine.pages.currentPage;
   const startY = engine.pages.y;
 
-  engine.primitives.drawSectionTitle(model.title, 1.5);
+  const compactDirectionSummary = engine.contract.request.mode === 'period_summary';
+
+  engine.primitives.drawSectionTitle(model.title, compactDirectionSummary ? 1 : 1.5);
   engine.primitives.drawTextBlock(model.scopeLine, {
     fontSizePt: 8.5,
     color: engine.theme.colors.mutedText,
-    spacingAfter: 3,
+    spacingAfter: compactDirectionSummary ? 2 : 3,
   });
-  drawQualityStrip(engine, model);
-  drawKpiGrid(engine, model);
 
-  const compactFullReportSummary =
-    engine.contract.request.mode === 'full_report' &&
-    engine.contract.presentationProfile.level === 'simplified';
+  // En Direction, la qualité n'occupe de place que lorsqu'elle change réellement
+  // l'interprétation du rapport. Un état fiable n'a pas besoin d'un bandeau dédié.
+  if (!compactDirectionSummary || model.quality.level !== 'reliable') {
+    drawQualityStrip(engine, model);
+  }
 
-  // Dans le rapport complet simplifié, la page 1 reste une synthèse KPI.
-  // La répartition des statuts et le résumé des anomalies ne sont pas dupliqués :
-  // la vue équipe suit directement, puis la tendance, puis les éléments à examiner.
-  if (!compactFullReportSummary) {
+  if (compactDirectionSummary) {
+    drawDirectionKpiGrid(engine, model);
+  } else {
+    drawKpiGrid(engine, model);
     drawBottomPanels(engine, model);
   }
 

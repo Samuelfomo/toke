@@ -10,7 +10,7 @@ import {
 } from './attendance-pdf-trend.model.js';
 
 interface TrendSeriesDefinition {
-  key: 'expected' | 'attended' | 'absent' | 'late';
+  key: 'present' | 'late' | 'absent' | 'issueCount';
   label: string;
   color: AttendancePdfColor;
   lineWidth: number;
@@ -27,31 +27,31 @@ function setColor(
 function seriesDefinitions(engine: AttendancePdfEngine): TrendSeriesDefinition[] {
   return [
     {
-      key: 'expected',
-      label: 'Travail prévu',
-      color: engine.theme.colors.mutedText,
-      lineWidth: 0.25,
-      marker: 'outline',
-    },
-    {
-      key: 'attended',
-      label: 'Présences observées',
+      key: 'present',
+      label: 'Présents à l’heure',
       color: engine.theme.colors.accent,
       lineWidth: 0.6,
       marker: 'filled',
     },
     {
+      key: 'late',
+      label: 'Retards',
+      color: engine.theme.colors.warning,
+      lineWidth: 0.45,
+      marker: 'outline',
+    },
+    {
       key: 'absent',
-      label: 'Absences confirmées',
+      label: 'Absences',
       color: engine.theme.colors.danger,
       lineWidth: 0.45,
       marker: 'filled',
     },
     {
-      key: 'late',
-      label: 'Retards observés',
-      color: engine.theme.colors.warning,
-      lineWidth: 0.35,
+      key: 'issueCount',
+      label: 'À examiner',
+      color: engine.theme.colors.mutedText,
+      lineWidth: 0.3,
       marker: 'outline',
     },
   ];
@@ -60,7 +60,7 @@ function seriesDefinitions(engine: AttendancePdfEngine): TrendSeriesDefinition[]
 function maxObserved(rows: AttendancePdfTrendRow[]): number {
   return Math.max(
     1,
-    ...rows.flatMap((row) => [row.expected, row.attended, row.absent, row.late]),
+    ...rows.flatMap((row) => [row.present, row.late, row.absent, row.issueCount]),
   );
 }
 
@@ -241,7 +241,12 @@ export function renderAttendancePdfTrend(engine: AttendancePdfEngine): Attendanc
     }
     segmentStartPages.push(engine.pages.currentPage);
     drawChart(engine, segment);
-    drawDailyTable(engine, segment.rows);
+
+    // Le rapport Pilotage privilégie la lecture visuelle : le grand tableau quotidien
+    // est réservé au rapport RH, où la précision ligne par ligne apporte une vraie valeur.
+    if (engine.contract.request.mode !== 'full_report') {
+      drawDailyTable(engine, segment.rows);
+    }
   });
 
   return {

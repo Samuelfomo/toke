@@ -132,8 +132,8 @@ export function buildAttendancePdfTrendModel(overview: AttendanceOverview): Atte
   return {
     title: isSingleDay ? 'Situation du jour' : 'Évolution de la période',
     description: isSingleDay
-      ? 'Lecture opérationnelle du jour : travail prévu, présences observées, retards observés et absences confirmées. Les taux restent calculés uniquement avec les situations déjà finalisées.'
-      : 'Lecture quotidienne du travail prévu, des présences observées, des retards observés et des absences confirmées. Les taux reposent uniquement sur les journées finalisées prises en compte.',
+      ? 'Lecture opérationnelle du jour : présents à l’heure, retards, absences et éléments à examiner.'
+      : 'Lecture quotidienne des présents à l’heure, retards, absences et éléments à examiner afin de repérer rapidement les jours qui nécessitent une attention particulière.',
     segments,
     totalDays: rows.length,
     maxDaysPerSegment: maxDays,

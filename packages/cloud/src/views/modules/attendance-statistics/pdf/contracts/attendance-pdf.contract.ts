@@ -41,7 +41,7 @@ function collectWarnings(request: AttendancePdfExportRequest): AttendancePdfCont
     });
   }
   if (
-    request.mode === 'full_report' &&
+    (request.mode === 'full_report' || request.mode === 'hr_complete') &&
     request.employeeDetails === 'attention_only' &&
     !request.overview.employees.some((employee) => employee.issueCount > 0)
   ) {

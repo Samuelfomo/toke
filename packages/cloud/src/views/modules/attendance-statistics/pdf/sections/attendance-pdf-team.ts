@@ -18,11 +18,17 @@ function columnFor(
     case 'expected':
       return { key, title: isSingleDay ? 'Finalisés' : 'Jours fin.', width: 19, align: 'right', value: (row) => String(row.expected) };
     case 'attended':
-      return { key, title: isSingleDay ? 'Prés. fin.' : 'Présences', width: 18, align: 'right', value: (row) => String(row.attended) };
+      return { key, title: 'Présences', width: 18, align: 'right', value: (row) => String(row.attended) };
+    case 'attended_vs_expected':
+      return { key, title: 'Présence / prévu', width: 26, align: 'right', value: (row) => row.attendedVsExpected };
     case 'attendance_rate':
       return { key, title: 'Présence', width: 24, align: 'right', value: (row) => row.attendanceRate };
     case 'punctuality_rate':
-      return { key, title: 'Ponctualité', width: 25, align: 'right', value: (row) => row.punctualityRate };
+      return { key, title: 'Ponctualité', width: 24, align: 'right', value: (row) => row.punctualityRate };
+    case 'absence_rate':
+      return { key, title: 'Absence', width: 21, align: 'right', value: (row) => row.absenceRate };
+    case 'late_rate':
+      return { key, title: 'Retard', width: 21, align: 'right', value: (row) => row.lateRate };
     case 'late':
       return { key, title: 'Retards obs.', width: 20, align: 'right', value: (row) => String(row.late) };
     case 'absent':
@@ -35,8 +41,10 @@ function columnFor(
       return { key, title: 'Repos', width: 16, align: 'right', value: (row) => String(row.restDay) };
     case 'net_duration':
       return { key, title: 'Durée nette', width: 27, align: 'right', value: (row) => row.netDuration };
+    case 'issue_rate':
+      return { key, title: 'À examiner', width: 23, align: 'right', value: (row) => row.issueRate };
     case 'issues':
-      return { key, title: 'À examiner', width: 22, align: 'right', value: (row) => String(row.issues) };
+      return { key, title: 'Éléments', width: 20, align: 'right', value: (row) => String(row.issues) };
   }
 }
 
@@ -53,25 +61,33 @@ export interface AttendancePdfTeamResult {
 export function renderAttendancePdfTeam(engine: AttendancePdfEngine): AttendancePdfTeamResult {
   const model = buildAttendancePdfTeamModel(engine.contract);
 
-  if (engine.pages.y > engine.pages.contentTop) engine.pages.addPage();
+  const isDirectionReport = engine.contract.request.mode === 'period_summary';
+
+  // Le rapport Direction est volontairement composé comme une seule lecture continue :
+  // synthèse globale puis tableau équipe. Les autres profils commencent leur vue équipe
+  // sur une nouvelle page afin de préserver leur rythme de lecture.
+  if (!isDirectionReport && engine.pages.y > engine.pages.contentTop) engine.pages.addPage();
   engine.pages.markSectionStart('team');
   const startPage = engine.pages.currentPage;
 
-  engine.primitives.drawSectionTitle(model.title, 1.5);
-  engine.primitives.drawTextBlock(model.description, {
-    fontSizePt: 8.3,
-    color: engine.theme.colors.mutedText,
-    spacingAfter: 1.5,
-  });
-  engine.primitives.drawTextBlock(
-    `Niveau de présentation : ${model.presentationLabel} · ${model.displayedEmployeeCount} collaborateur${model.displayedEmployeeCount > 1 ? 's' : ''}${model.filteredByAnalysis ? ` sur ${model.totalTeamSize}` : ''}`,
-    {
-      fontSizePt: 8,
-      fontStyle: 'bold',
-      color: engine.theme.colors.accent,
-      spacingAfter: model.analysisLabel ? 1 : 3,
-    },
-  );
+  engine.primitives.drawSectionTitle(model.title, isDirectionReport ? 1 : 1.5);
+
+  if (!isDirectionReport) {
+    engine.primitives.drawTextBlock(model.description, {
+      fontSizePt: 8.3,
+      color: engine.theme.colors.mutedText,
+      spacingAfter: 1.5,
+    });
+    engine.primitives.drawTextBlock(
+      `${model.showPresentationLabel ? `Niveau de présentation : ${model.presentationLabel} · ` : ''}${model.displayedEmployeeCount} collaborateur${model.displayedEmployeeCount > 1 ? 's' : ''}${model.filteredByAnalysis ? ` sur ${model.totalTeamSize}` : ''}`,
+      {
+        fontSizePt: 8,
+        fontStyle: 'bold',
+        color: engine.theme.colors.accent,
+        spacingAfter: model.analysisLabel ? 1 : 3,
+      },
+    );
+  }
 
   if (model.analysisLabel) {
     engine.primitives.drawTextBlock(`Contexte : ${model.analysisLabel}`, {
@@ -93,24 +109,26 @@ export function renderAttendancePdfTeam(engine: AttendancePdfEngine): Attendance
   engine.table.draw({
     fontSizePt: ATTENDANCE_PDF_TYPOGRAPHY.minimumTablePt,
     headerFontSizePt: ATTENDANCE_PDF_TYPOGRAPHY.minimumTablePt,
-    horizontalPadding: 1.2,
-    verticalPadding: 1,
+    horizontalPadding: isDirectionReport ? 1 : 1.2,
+    verticalPadding: isDirectionReport ? 0.75 : 1,
     repeatHeader: true,
-    spacingAfter: 2.5,
+    spacingAfter: isDirectionReport ? 1.5 : 2.5,
     columns: model.columns.map((key) => columnFor(key, model.isSingleDay)),
     rows: model.rows,
   });
 
-  engine.primitives.drawTextBlock(
-    model.isSingleDay
-      ? "Lecture : « Finalisés » désigne les collaborateurs dont la plage de travail prévue est déjà terminée et dont la situation entre dans les taux. Les retards affichés sont les retards observés, y compris ceux encore en cours."
-      : "Lecture : « Jours fin. » désigne les journées-employés finalisées prises en compte dans les taux. Les retards affichés correspondent aux retards observés sur toute la période.",
-    {
-      fontSizePt: 7.7,
-      color: engine.theme.colors.mutedText,
-      spacingAfter: 2,
-    },
-  );
+  if (!['period_summary', 'full_report', 'hr_complete'].includes(engine.contract.request.mode)) {
+    engine.primitives.drawTextBlock(
+      model.isSingleDay
+        ? "Lecture : les valeurs correspondent aux données disponibles pour la journée sélectionnée."
+        : "Lecture : les valeurs correspondent aux données disponibles sur la période sélectionnée.",
+      {
+        fontSizePt: 7.7,
+        color: engine.theme.colors.mutedText,
+        spacingAfter: 2,
+      },
+    );
+  }
 
   return { startPage, endPage: engine.pages.currentPage, model };
 }

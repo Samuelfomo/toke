@@ -1,5 +1,4 @@
 import type { AttendanceOverview } from '../types/attendance-statistics.types.js';
-
 import { formatDurationMinutes } from './duration.js';
 import { formatPercentage } from './percentage.js';
 
@@ -43,9 +42,9 @@ export function buildAttendanceKpis(overview: AttendanceOverview): AttendanceKpi
   const attendanceRateAvailable = summary.rates.attendanceRate !== null;
   const punctualityRateAvailable = summary.rates.punctualityRate !== null;
   const netDurationAvailable = summary.durations.daysWithKnownNetDuration > 0;
-  const absenceEmployeeRateAvailable = summary.employeeImpact.absenceEmployeeRate !== null;
-  const lateEmployeeRateAvailable = summary.employeeImpact.lateEmployeeRate !== null;
-  const issueEmployeeRateAvailable = summary.employeeImpact.issueEmployeeRate !== null;
+  const absenceRateAvailable = summary.rates.absenceRate !== null;
+  const lateRateAvailable = summary.rates.lateRate !== null;
+  const issueRateAvailable = summary.rates.issueRate !== null;
 
   const observedOnTime = summary.statusTotals.PRESENT;
   const observedLate = summary.statusTotals.LATE;
@@ -108,56 +107,44 @@ export function buildAttendanceKpis(overview: AttendanceOverview): AttendanceKpi
 
     {
       id: 'absences',
-      label: `Taux d'absence`,
-      // label: 'Employés concernés par une absence',
-      value: formatPercentage(summary.employeeImpact.absenceEmployeeRate),
-      helper: buildEmployeeImpactHelper(
-        summary.employeeImpact.employeesWithAbsence,
-        overview.scope.teamSize,
-        summary.statusTotals.ABSENT,
-        'absence',
-      ),
+      label: 'Taux d’absence',
+      value: formatPercentage(summary.rates.absenceRate),
+      helper: summary.rates.absenceRate !== null
+        ? `${summary.rates.absentWorkingDays} journée${plural(summary.rates.absentWorkingDays)} d’absence sur ${summary.rates.employeeWorkingDaysExpected} journée${plural(summary.rates.employeeWorkingDaysExpected)} de travail finalisée${plural(summary.rates.employeeWorkingDaysExpected)} prise${plural(summary.rates.employeeWorkingDaysExpected)} en compte`
+        : 'Aucune journée de travail finalisée n’est actuellement éligible au calcul du taux d’absence.',
       detail:
-        'Cet indicateur mesure la part des employés ayant au moins une absence confirmée sur la période. Un même employé n’est compté qu’une seule fois dans le pourcentage.',
+        'Le taux d’absence utilise le même périmètre que le taux de présence : journées d’absence divisées par les journées de travail finalisées prises en compte.',
       tone: 'rose',
       icon: 'absence',
-      available: absenceEmployeeRateAvailable,
+      available: absenceRateAvailable,
     },
 
     {
       id: 'late_days',
       label: 'Taux de retard',
-      // label: 'Employés concernés par un retard',
-      value: formatPercentage(summary.employeeImpact.lateEmployeeRate),
-      helper: buildEmployeeImpactHelper(
-        summary.employeeImpact.employeesWithLate,
-        overview.scope.teamSize,
-        observedLate,
-        'late',
-      ),
+      value: formatPercentage(summary.rates.lateRate),
+      helper: summary.rates.lateRate !== null
+        ? `${summary.rates.lateWorkingDays} journée${plural(summary.rates.lateWorkingDays)} avec retard sur ${summary.rates.attendedWorkingDays} journée${plural(summary.rates.attendedWorkingDays)} finalisée${plural(summary.rates.attendedWorkingDays)} avec présence`
+        : 'Aucune journée avec présence finalisée n’est disponible pour calculer le taux de retard.',
       detail:
-        'Cet indicateur mesure la part des employés ayant au moins un retard observé sur la période. Le nombre de journées avec retard reste disponible comme information de détail.',
+        'Le taux de retard utilise le même périmètre que la ponctualité : journées avec retard divisées par les journées finalisées avec présence.',
       tone: 'amber',
       icon: 'late',
-      available: lateEmployeeRateAvailable,
+      available: lateRateAvailable,
     },
 
     {
       id: 'issues',
-      label: `Taux d'anomalie`,
-      // label: 'Employés avec des éléments à examiner',
-      value: formatPercentage(summary.employeeImpact.issueEmployeeRate),
-      helper: buildEmployeeImpactHelper(
-        summary.employeeImpact.employeesWithIssues,
-        overview.scope.teamSize,
-        summary.issueCount,
-        'issue',
-      ),
+      label: 'Journées à examiner',
+      value: formatPercentage(summary.rates.issueRate),
+      helper: summary.rates.issueRate !== null
+        ? `${summary.rates.employeeDaysWithIssues} journée${plural(summary.rates.employeeDaysWithIssues)} avec au moins un élément à examiner sur ${summary.rates.employeeDaysAnalyzed} journée${plural(summary.rates.employeeDaysAnalyzed)} analysée${plural(summary.rates.employeeDaysAnalyzed)} pour l’ensemble de l’équipe`
+        : 'Aucune journée n’est disponible pour calculer cette proportion.',
       detail:
-        'Cet indicateur mesure la part des employés ayant au moins une situation signalée à vérifier sur la période. Les occurrences restent accessibles dans le détail.',
+        `${summary.issueCount} élément${plural(summary.issueCount)} à examiner au total. Une journée n’est comptée qu’une fois dans le pourcentage, même si plusieurs éléments y sont signalés.`,
       tone: 'orange',
       icon: 'issue',
-      available: issueEmployeeRateAvailable,
+      available: issueRateAvailable,
     },
 
     {
@@ -229,29 +216,6 @@ function buildSingleDayPunctualityHelper(onTime: number, attended: number): stri
   }
 
   return `Parmi les ${attended} présence${plural(attended)} déjà finalisée${plural(attended)}, ${onTime} arrivée${plural(onTime)} ${onTime === 1 ? 'a' : 'ont'} respecté l’horaire prévu ou la tolérance autorisée.`;
-}
-
-function buildEmployeeImpactHelper(
-  employeesConcerned: number,
-  teamSize: number,
-  occurrenceCount: number,
-  kind: 'absence' | 'late' | 'issue',
-): string {
-  if (teamSize <= 0) {
-    return 'Aucun employé dans le périmètre analysé.';
-  }
-
-  const employeePart = `${employeesConcerned} employé${plural(employeesConcerned)} sur ${teamSize} concerné${plural(employeesConcerned)}`;
-
-  if (kind === 'absence') {
-    return `${employeePart} · ${occurrenceCount} journée${plural(occurrenceCount)} d’absence confirmée${plural(occurrenceCount)}`;
-  }
-
-  if (kind === 'late') {
-    return `${employeePart} · ${occurrenceCount} journée${plural(occurrenceCount)} avec retard`;
-  }
-
-  return `${employeePart} · ${occurrenceCount} élément${plural(occurrenceCount)} à examiner`;
 }
 
 function plural(value: number): string {

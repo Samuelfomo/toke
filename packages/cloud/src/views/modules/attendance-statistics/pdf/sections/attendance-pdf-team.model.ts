@@ -6,7 +6,9 @@ import { formatDurationMinutes } from '../../utils/duration.js';
 import { formatPercentage } from '../../utils/percentage.js';
 import { ATTENDANCE_STATUS_PRESENTATION } from '../../utils/attendance-status.js';
 import {
-  ATTENDANCE_PDF_SIMPLIFIED_PAYROLL_TEAM_COLUMNS,
+  ATTENDANCE_PDF_DIRECTION_TEAM_COLUMNS,
+  ATTENDANCE_PDF_HR_TEAM_COLUMNS,
+  ATTENDANCE_PDF_PILOTAGE_TEAM_COLUMNS,
   ATTENDANCE_PDF_TEAM_COLUMNS_BY_PRESENTATION,
   type AttendancePdfTeamColumnKey,
 } from '../config/attendance-pdf-team-columns.js';
@@ -17,14 +19,18 @@ export interface AttendancePdfTeamRow {
   employeeName: string;
   expected: number;
   attended: number;
+  attendedVsExpected: string;
   attendanceRate: string;
   punctualityRate: string;
+  absenceRate: string;
+  lateRate: string;
   late: number;
   absent: number;
   pending: number;
   undetermined: number;
   restDay: number;
   netDuration: string;
+  issueRate: string;
   issues: number;
 }
 
@@ -32,6 +38,7 @@ export interface AttendancePdfTeamModel {
   title: string;
   description: string;
   presentationLabel: string;
+  showPresentationLabel: boolean;
   columns: readonly AttendancePdfTeamColumnKey[];
   rows: AttendancePdfTeamRow[];
   totalTeamSize: number;
@@ -76,8 +83,11 @@ function toRow(employee: AttendanceEmployeeOverview): AttendancePdfTeamRow {
     employeeName: employee.employeeName,
     expected: employee.rates.employeeWorkingDaysExpected,
     attended: employee.rates.attendedWorkingDays,
+    attendedVsExpected: `${employee.rates.attendedWorkingDays} / ${employee.rates.employeeWorkingDaysExpected}`,
     attendanceRate: formatPercentage(employee.rates.attendanceRate),
     punctualityRate: formatPercentage(employee.rates.punctualityRate),
+    absenceRate: formatPercentage(employee.rates.absenceRate),
+    lateRate: formatPercentage(employee.rates.lateRate),
     late: employee.statusTotals.LATE,
     absent: employee.statusTotals.ABSENT,
     pending: employee.statusTotals.PENDING,
@@ -85,8 +95,9 @@ function toRow(employee: AttendanceEmployeeOverview): AttendancePdfTeamRow {
     restDay: employee.statusTotals.REST_DAY,
     netDuration:
       employee.durations.daysWithKnownNetDuration > 0
-        ? formatDurationMinutes(employee.durations.netMinutes, { emptyLabel: 'Non disponible' })
-        : 'Non disponible',
+        ? formatDurationMinutes(employee.durations.netMinutes, { emptyLabel: '—' })
+        : '—',
+    issueRate: formatPercentage(employee.rates.issueRate),
     issues: employee.issueCount,
   };
 }
@@ -100,6 +111,37 @@ function describeSelection(contract: AttendancePdfReportContract): string | null
   if (context.issue) parts.push('élément à examiner ciblé');
   if (context.employeeName) parts.push(context.employeeName);
   return parts.length > 0 ? parts.join(' · ') : context.label;
+}
+
+function resolveColumns(contract: AttendancePdfReportContract): readonly AttendancePdfTeamColumnKey[] {
+  switch (contract.request.mode) {
+    case 'period_summary':
+      return ATTENDANCE_PDF_DIRECTION_TEAM_COLUMNS;
+    case 'full_report':
+      return ATTENDANCE_PDF_PILOTAGE_TEAM_COLUMNS;
+    case 'hr_complete':
+      return ATTENDANCE_PDF_HR_TEAM_COLUMNS;
+    default:
+      return ATTENDANCE_PDF_TEAM_COLUMNS_BY_PRESENTATION[contract.presentationProfile.level];
+  }
+}
+
+function resolveDescription(contract: AttendancePdfReportContract, filteredByAnalysis: boolean, isSingleDay: boolean): string {
+  if (filteredByAnalysis) {
+    return `Cette vue contient uniquement les collaborateurs correspondant au contexte d’analyse courant.`;
+  }
+  if (isSingleDay) return `Lecture synthétique de la situation du jour.`;
+
+  switch (contract.request.mode) {
+    case 'period_summary':
+      return `Lecture décisionnelle de l'équipe : présence, retard, volume de présence enregistré, durée nette et journées à examiner.`;
+    case 'full_report':
+      return `Vue de pilotage de l'équipe. Les pourcentages permettent d'identifier les écarts avant d'analyser leur évolution dans la période.`;
+    case 'hr_complete':
+      return `Vue RH enrichie de l'équipe. Les taux et volumes restent descriptifs et ne constituent pas un classement de performance.`;
+    default:
+      return `Comparaison descriptive de l'équipe sur la période. L'ordre alphabétique évite de présenter les taux ou éléments à examiner comme un classement de performance.`;
+  }
 }
 
 /**
@@ -126,21 +168,14 @@ export function buildAttendancePdfTeamModel(
   const filteredByAnalysis = contract.request.mode === 'current_analysis';
   const analysisLabel = describeSelection(contract);
   const isSingleDay = contract.request.overview.period.dayCount === 1;
+  const primaryReport = ['period_summary', 'full_report', 'hr_complete'].includes(contract.request.mode);
 
   return {
     title: filteredByAnalysis ? 'Collaborateurs concernés' : "Vue d'ensemble de l'équipe",
-    description: filteredByAnalysis
-      ? `Cette vue contient uniquement les collaborateurs correspondant au contexte d’analyse courant.`
-      : isSingleDay
-        ? `Lecture synthétique de la situation du jour.`
-        : contract.request.mode === 'full_report' && contract.presentationProfile.level === 'simplified'
-          ? `Comparaison descriptive de l'équipe sur la période. La durée nette enregistrée aide au contrôle de paie mais ne constitue pas encore une durée payable.`
-          : `Comparaison descriptive de l'équipe sur la période. L'ordre alphabétique évite de présenter les taux ou éléments à examiner comme un classement de performance.`,
+    description: resolveDescription(contract, filteredByAnalysis, isSingleDay),
     presentationLabel: contract.presentationProfile.label,
-    columns:
-      contract.request.mode === 'full_report' && contract.presentationProfile.level === 'simplified'
-        ? ATTENDANCE_PDF_SIMPLIFIED_PAYROLL_TEAM_COLUMNS
-        : ATTENDANCE_PDF_TEAM_COLUMNS_BY_PRESENTATION[contract.presentationProfile.level],
+    showPresentationLabel: !primaryReport,
+    columns: resolveColumns(contract),
     rows: employees.map(toRow),
     totalTeamSize: allEmployees.length,
     displayedEmployeeCount: employees.length,

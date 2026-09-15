@@ -49,9 +49,9 @@ const title = computed(() => {
   switch (props.kpiId) {
     case 'attendance_rate': return 'Pourquoi ce taux de présence ?';
     case 'punctuality_rate': return 'Pourquoi ce taux de ponctualité ?';
-    case 'absences': return 'Qui est concerné par les absences ?';
-    case 'late_days': return 'Qui est concerné par les retards ?';
-    case 'issues': return 'Qui est concerné par les éléments à examiner ?';
+    case 'absences': return 'Comment est calculé le taux d’absence ?';
+    case 'late_days': return 'Comment est calculé le taux de retard ?';
+    case 'issues': return 'Comment est calculée la part des journées à examiner ?';
     default: return '';
   }
 });
@@ -89,21 +89,22 @@ const title = computed(() => {
     </div>
 
     <div v-else-if="kpiId === 'absences'" class="mt-5 grid gap-3 sm:grid-cols-3">
-      <div class="rounded-md bg-white p-4"><p class="text-xs font-bold uppercase text-slate-500">Part de l’équipe concernée</p><p class="mt-1 text-3xl font-bold text-rose-700">{{ formatPercentage(overview.summary.employeeImpact.absenceEmployeeRate) }}</p></div>
-      <div class="rounded-md bg-white p-4"><p class="text-xs font-bold uppercase text-slate-500">Employés concernés</p><p class="mt-1 text-3xl font-bold text-slate-950">{{ overview.summary.employeeImpact.employeesWithAbsence }}</p><p class="mt-1 text-xs text-slate-500">sur {{ overview.scope.teamSize }} employés dans le périmètre</p></div>
-      <div class="rounded-md bg-white p-4"><p class="text-xs font-bold uppercase text-slate-500">Journées d’absence</p><p class="mt-1 text-3xl font-bold text-slate-950">{{ overview.summary.statusTotals.ABSENT }}</p><p class="mt-1 text-xs text-slate-500">Nombre total de journées concernées sur la période</p></div>
+      <div class="rounded-md bg-white p-4"><p class="text-xs font-bold uppercase text-slate-500">Taux d’absence</p><p class="mt-1 text-3xl font-bold text-rose-700">{{ formatPercentage(overview.summary.rates.absenceRate) }}</p></div>
+      <div class="rounded-md bg-white p-4"><p class="text-xs font-bold uppercase text-slate-500">Journées d’absence</p><p class="mt-1 text-3xl font-bold text-slate-950">{{ overview.summary.rates.absentWorkingDays }}</p></div>
+      <div class="rounded-md bg-white p-4"><p class="text-xs font-bold uppercase text-slate-500">Journées de travail prises en compte</p><p class="mt-1 text-3xl font-bold text-slate-950">{{ overview.summary.rates.employeeWorkingDaysExpected }}</p></div>
     </div>
 
     <div v-else-if="kpiId === 'late_days'" class="mt-5 grid gap-3 sm:grid-cols-3">
-      <div class="rounded-md bg-white p-4"><p class="text-xs font-bold uppercase text-slate-500">Part de l’équipe concernée</p><p class="mt-1 text-3xl font-bold text-amber-700">{{ formatPercentage(overview.summary.employeeImpact.lateEmployeeRate) }}</p></div>
-      <div class="rounded-md bg-white p-4"><p class="text-xs font-bold uppercase text-slate-500">Employés concernés</p><p class="mt-1 text-3xl font-bold text-slate-950">{{ overview.summary.employeeImpact.employeesWithLate }}</p><p class="mt-1 text-xs text-slate-500">sur {{ overview.scope.teamSize }} employés dans le périmètre</p></div>
-      <div class="rounded-md bg-white p-4"><p class="text-xs font-bold uppercase text-slate-500">Journées avec retard</p><p class="mt-1 text-3xl font-bold text-slate-950">{{ overview.summary.statusTotals.LATE }}</p><p class="mt-1 text-xs text-slate-500">Nombre total de journées concernées sur la période</p></div>
+      <div class="rounded-md bg-white p-4"><p class="text-xs font-bold uppercase text-slate-500">Taux de retard</p><p class="mt-1 text-3xl font-bold text-amber-700">{{ formatPercentage(overview.summary.rates.lateRate) }}</p></div>
+      <div class="rounded-md bg-white p-4"><p class="text-xs font-bold uppercase text-slate-500">Journées avec retard</p><p class="mt-1 text-3xl font-bold text-slate-950">{{ overview.summary.rates.lateWorkingDays }}</p></div>
+      <div class="rounded-md bg-white p-4"><p class="text-xs font-bold uppercase text-slate-500">Journées avec présence prises en compte</p><p class="mt-1 text-3xl font-bold text-slate-950">{{ overview.summary.rates.attendedWorkingDays }}</p></div>
     </div>
 
-    <div v-else class="mt-5 grid gap-3 sm:grid-cols-3">
-      <div class="rounded-md bg-white p-4"><p class="text-xs font-bold uppercase text-slate-500">Part de l’équipe concernée</p><p class="mt-1 text-3xl font-bold text-orange-700">{{ formatPercentage(overview.summary.employeeImpact.issueEmployeeRate) }}</p></div>
-      <div class="rounded-md bg-white p-4"><p class="text-xs font-bold uppercase text-slate-500">Employés concernés</p><p class="mt-1 text-3xl font-bold text-slate-950">{{ overview.summary.employeeImpact.employeesWithIssues }}</p><p class="mt-1 text-xs text-slate-500">sur {{ overview.scope.teamSize }} employés dans le périmètre</p></div>
-      <div class="rounded-md bg-white p-4"><p class="text-xs font-bold uppercase text-slate-500">Éléments à examiner</p><p class="mt-1 text-3xl font-bold text-slate-950">{{ overview.summary.issueCount }}</p><p class="mt-1 text-xs text-slate-500">Nombre total de situations signalées sur la période</p></div>
+    <div v-else class="mt-5 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+      <div class="rounded-md bg-white p-4"><p class="text-xs font-bold uppercase text-slate-500">Journées à examiner</p><p class="mt-1 text-3xl font-bold text-orange-700">{{ formatPercentage(overview.summary.rates.issueRate) }}</p></div>
+      <div class="rounded-md bg-white p-4"><p class="text-xs font-bold uppercase text-slate-500">Journées avec signalement</p><p class="mt-1 text-3xl font-bold text-slate-950">{{ overview.summary.rates.employeeDaysWithIssues }}</p></div>
+      <div class="rounded-md bg-white p-4"><p class="text-xs font-bold uppercase text-slate-500">Journées analysées</p><p class="mt-1 text-3xl font-bold text-slate-950">{{ overview.summary.rates.employeeDaysAnalyzed }}</p></div>
+      <div class="rounded-md bg-white p-4"><p class="text-xs font-bold uppercase text-slate-500">Éléments détectés</p><p class="mt-1 text-3xl font-bold text-slate-950">{{ overview.summary.issueCount }}</p><p class="mt-1 text-xs text-slate-500">Une journée peut contenir plusieurs éléments à examiner.</p></div>
     </div>
 
     <div v-if="action" class="mt-5 flex flex-wrap items-center gap-3 border-t border-indigo-200 pt-4">

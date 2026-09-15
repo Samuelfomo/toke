@@ -11,34 +11,28 @@ import {
 import { DEFAULT_ATTENDANCE_PDF_PRESENTATION_LEVEL_BY_MODE } from '../config/attendance-pdf-presentation-levels.js';
 import { getAttendancePdfExportProfile } from '../config/attendance-pdf-profiles.js';
 
-function section(section: AttendancePdfReportPlanSection['section'], reason: string): AttendancePdfReportPlanSection {
-  return { section, reason };
+function section(sectionId: AttendancePdfReportPlanSection['section'], reason: string): AttendancePdfReportPlanSection {
+  return { section: sectionId, reason };
 }
 
 export function resolveAttendancePdfEmployeeDetailsMode(input: {
   request: AttendancePdfExportRequest;
   presentationLevel: AttendancePdfPresentationLevel;
 }): AttendancePdfEmployeeDetailMode {
-  const { request, presentationLevel } = input;
-  if (request.mode !== 'full_report') return 'none';
-  if (request.employeeDetails) return request.employeeDetails;
-  if (presentationLevel === 'simplified') return 'none';
-  if (presentationLevel === 'optimized') return 'attention_only';
-  return 'all';
+  const { request } = input;
+  if (request.mode !== 'full_report' && request.mode !== 'hr_complete') return 'none';
+  return request.employeeDetails ?? 'none';
 }
 
 /**
- * Normalise uniquement les options de rendu. Les données statistiques restent les mêmes.
- * Pour un rapport complet, le niveau de présentation fournit un comportement par défaut
- * pour les fiches individuelles, que le manager peut toujours surcharger explicitement.
+ * Normalise uniquement les options de rendu. Les profils principaux ne déclenchent
+ * plus automatiquement de fiches individuelles : celles-ci restent un choix explicite.
  */
 export function normalizeAttendancePdfExportRequest(
   request: AttendancePdfExportRequest,
 ): AttendancePdfExportRequest {
-  if (request.mode !== 'full_report') return request;
-  const presentationLevel = request.presentationLevel ?? DEFAULT_ATTENDANCE_PDF_PRESENTATION_LEVEL_BY_MODE.full_report;
-  const employeeDetails = resolveAttendancePdfEmployeeDetailsMode({ request, presentationLevel });
-  return { ...request, employeeDetails };
+  if (request.mode !== 'full_report' && request.mode !== 'hr_complete') return request;
+  return { ...request, employeeDetails: request.employeeDetails ?? 'none' };
 }
 
 export function buildAttendancePdfReportPlan(contract: AttendancePdfReportContract): AttendancePdfReportPlan {
@@ -53,43 +47,37 @@ export function buildAttendancePdfReportPlan(contract: AttendancePdfReportContra
 
   switch (mode) {
     case 'period_summary': {
-      sections.push(section('executive_summary', 'Donne immédiatement le contexte, la qualité, les 5 KPI et les principaux éléments à examiner.'));
-      if (level !== 'simplified') {
-        sections.push(section('trend', "Ajoute l'évolution quotidienne et les valeurs exactes sans dépendre d'un tooltip."));
-        sections.push(section('issues', "Ajoute les éléments à examiner selon le niveau de détail choisi."));
-      }
-      notes.push(level === 'simplified'
-        ? 'La synthèse simplifiée tient volontairement sur le premier niveau de lecture et n’imprime pas le détail des occurrences.'
-        : 'La synthèse de période reste sans vue équipe exhaustive ; utiliser Rapport complet pour obtenir le tableau des collaborateurs.');
+      sections = [
+        section('executive_summary', "Donne en quelques secondes l'état global de l'équipe avec les KPI décisionnels."),
+        section('team', 'Présente ensuite une ligne compacte par collaborateur pour identifier rapidement les situations qui méritent une attention.'),
+      ];
+      notes.push('Profil Direction : aucune courbe, aucune occurrence détaillée et aucune fiche individuelle. La cible est une lecture en 2 à 5 minutes.');
       break;
     }
     case 'full_report': {
-      if (level === 'simplified') {
-        sections = [
-          section('executive_summary', 'Ouvre le rapport par la synthèse KPI sans dupliquer la répartition ni les principaux éléments à examiner.'),
-          section('team', "Présente immédiatement l'équipe et sa durée nette enregistrée, sans classement de performance."),
-          section('trend', "Documente ensuite l'évolution de la période et la durée nette enregistrée de chaque journée."),
-        ];
-        if (effectiveEmployeeDetails !== 'none') {
-          sections.push(section('employee_details', effectiveEmployeeDetails === 'all'
-            ? 'Ajoute les fiches de tous les collaborateurs demandées explicitement.'
-            : 'Ajoute les fiches des collaborateurs ayant des éléments à examiner demandées explicitement.'));
-        }
-        sections.push(section('issues', 'Termine le rapport par les éléments à examiner.'));
-      } else {
-        sections = [
-          section('executive_summary', 'Ouvre le rapport de référence par la lecture décisionnelle globale.'),
-          section('trend', "Documente l'évolution de la période."),
-          section('issues', 'Documente les éléments à examiner et leur détail disponible.'),
-          section('team', "Présente l'ensemble de l'équipe sans classement de performance."),
-        ];
-        if (effectiveEmployeeDetails !== 'none') {
-          sections.push(section('employee_details', effectiveEmployeeDetails === 'all'
-            ? 'Ajoute les fiches de tous les collaborateurs car le rapport détaillé les demande.'
-            : 'Ajoute uniquement les fiches des collaborateurs ayant des éléments à examiner.'));
-        }
+      sections = [
+        section('executive_summary', 'Pose la situation globale avant toute analyse opérationnelle.'),
+        section('team', "Compare l'équipe sur les indicateurs nécessaires au pilotage sans classement de performance."),
+        section('trend', "Montre quand les écarts apparaissent et comment ils évoluent sur la période."),
+        section('issues', 'Présente les catégories et occurrences limitées utiles au suivi du manager.'),
+      ];
+      if (effectiveEmployeeDetails !== 'none') {
+        sections.push(section('employee_details', 'Ajoute uniquement les fiches individuelles explicitement demandées.'));
       }
-      notes.push(`Détails individuels résolus : ${effectiveEmployeeDetails}.`);
+      notes.push('Profil Pilotage : l’objectif est de localiser et suivre les écarts, sans transformer le rapport en investigation exhaustive.');
+      break;
+    }
+    case 'hr_complete': {
+      sections = [
+        section('executive_summary', 'Donne les indicateurs de référence nécessaires pour situer les constats RH.'),
+        section('team', "Présente une vue équipe enrichie pour comparer les résultats et leurs volumes sous-jacents."),
+        section('trend', "Documente l'évolution de la période afin de replacer les écarts dans le temps."),
+        section('issues', 'Décrit les éléments à examiner avec une profondeur supérieure au rapport de pilotage.'),
+      ];
+      if (effectiveEmployeeDetails !== 'none') {
+        sections.push(section('employee_details', 'Ajoute les fiches ciblées demandées explicitement pour approfondir certains collaborateurs.'));
+      }
+      notes.push('Profil RH complet : explique les résultats et les situations à examiner, sans concaténer automatiquement toutes les fiches individuelles.');
       break;
     }
     case 'current_analysis': {
@@ -107,8 +95,8 @@ export function buildAttendancePdfReportPlan(contract: AttendancePdfReportContra
       break;
     }
     case 'employee_sheet': {
-      sections.push(section('employee_details', "La fiche individuelle se suffit à elle-même et n'affiche pas les KPI de toute l'équipe."));
-      notes.push('Le profil de présentation choisit la profondeur de la fiche sans changer les valeurs métier du collaborateur.');
+      sections.push(section('employee_details', "L'investigation individuelle se suffit à elle-même et n'affiche pas les KPI de toute l'équipe."));
+      notes.push("Profil Investigation : détail journalier complet du collaborateur sélectionné à partir des seules données disponibles dans le snapshot API.");
       break;
     }
   }
@@ -125,17 +113,20 @@ export function buildAttendancePdfReportPlan(contract: AttendancePdfReportContra
 }
 
 export function getAttendancePdfExportChoices(): AttendancePdfExportChoice[] {
-  return (['period_summary', 'full_report', 'current_analysis', 'issues_only', 'employee_sheet'] as const).map((mode) => {
+  return (['period_summary', 'full_report', 'hr_complete', 'current_analysis', 'issues_only', 'employee_sheet'] as const).map((mode) => {
     const profile = getAttendancePdfExportProfile(mode);
+    const isPrimaryReport = mode === 'period_summary' || mode === 'full_report' || mode === 'hr_complete';
     return {
       mode,
       label: profile.label,
       description: profile.description,
       defaultPresentationLevel: DEFAULT_ATTENDANCE_PDF_PRESENTATION_LEVEL_BY_MODE[mode],
-      availablePresentationLevels: ATTENDANCE_PDF_PRESENTATION_LEVELS,
+      availablePresentationLevels: isPrimaryReport || mode === 'employee_sheet'
+        ? [DEFAULT_ATTENDANCE_PDF_PRESENTATION_LEVEL_BY_MODE[mode]]
+        : ATTENDANCE_PDF_PRESENTATION_LEVELS,
       requiresAnalysisContext: mode === 'current_analysis',
       requiresEmployeeGuid: mode === 'employee_sheet',
-      supportsEmployeeDetailSelection: mode === 'full_report',
+      supportsEmployeeDetailSelection: mode === 'hr_complete',
     };
   });
 }

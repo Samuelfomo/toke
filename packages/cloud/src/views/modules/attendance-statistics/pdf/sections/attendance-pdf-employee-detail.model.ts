@@ -38,6 +38,9 @@ export interface AttendancePdfEmployeeDetailModel {
   presentationLabel: string;
   attendanceRate: string;
   punctualityRate: string;
+  absenceRate: string;
+  lateRate: string;
+  issueRate: string;
   expectedDays: number;
   attendedDays: number;
   lateDays: number;
@@ -118,6 +121,9 @@ function toEmployeeModel(
     presentationLabel: contract.presentationProfile.label,
     attendanceRate: formatPercentage(employee.rates.attendanceRate),
     punctualityRate: formatPercentage(employee.rates.punctualityRate),
+    absenceRate: formatPercentage(employee.rates.absenceRate),
+    lateRate: formatPercentage(employee.rates.lateRate),
+    issueRate: formatPercentage(employee.rates.issueRate),
     expectedDays: employee.rates.employeeWorkingDaysExpected,
     attendedDays: employee.rates.attendedWorkingDays,
     lateDays: employee.statusTotals.LATE,
@@ -133,7 +139,11 @@ function toEmployeeModel(
     issueLabels,
     columns: ATTENDANCE_PDF_EMPLOYEE_DAY_COLUMNS_BY_PRESENTATION[level],
     days: employee.days.slice().sort((left, right) => left.date.localeCompare(right.date)).map((day) => toDayRow(employee, day)),
-    showDailyTable: level !== 'simplified',
+    // Le rapport RH conserve des synthèses individuelles ciblées.
+    // La fiche employé / investigation affiche toujours le détail journalier.
+    showDailyTable: contract.request.mode === 'employee_sheet'
+      ? true
+      : contract.request.mode !== 'hr_complete' && level !== 'simplified',
   };
 }
 
@@ -143,14 +153,8 @@ function selectEmployees(contract: AttendancePdfReportContract): AttendanceEmplo
     const employeeGuid = contract.request.employeeGuid;
     return all.filter((employee) => employee.employeeGuid === employeeGuid);
   }
-  if (contract.request.mode === 'full_report') {
-    const mode = contract.request.employeeDetails ?? (
-      contract.presentationProfile.level === 'simplified'
-        ? 'none'
-        : contract.presentationProfile.level === 'optimized'
-          ? 'attention_only'
-          : 'all'
-    );
+  if (contract.request.mode === 'full_report' || contract.request.mode === 'hr_complete') {
+    const mode = contract.request.employeeDetails ?? 'none';
     if (mode === 'all') return all;
     if (mode === 'attention_only') return all.filter((employee) => employee.issueCount > 0);
   }
@@ -171,27 +175,27 @@ export function buildAttendancePdfEmployeeDetailsModel(
 
   let emptyReason: string | null = null;
   if (selected.length === 0) {
-    const fullReportDetailMode = contract.request.mode === 'full_report'
-      ? contract.request.employeeDetails ?? (
-          contract.presentationProfile.level === 'simplified'
-            ? 'none'
-            : contract.presentationProfile.level === 'optimized'
-              ? 'attention_only'
-              : 'all'
-        )
+    const reportDetailMode = contract.request.mode === 'full_report' || contract.request.mode === 'hr_complete'
+      ? contract.request.employeeDetails ?? 'none'
       : null;
-    if (contract.request.mode === 'full_report' && fullReportDetailMode === 'none') {
-      emptyReason = "Les détails individuels ne sont pas demandés pour ce rapport complet.";
-    } else if (contract.request.mode === 'full_report' && fullReportDetailMode === 'attention_only') {
+    if ((contract.request.mode === 'full_report' || contract.request.mode === 'hr_complete') && reportDetailMode === 'none') {
+      emptyReason = "Les détails individuels ne sont pas demandés pour ce rapport.";
+    } else if ((contract.request.mode === 'full_report' || contract.request.mode === 'hr_complete') && reportDetailMode === 'attention_only') {
       emptyReason = "Aucun collaborateur avec élément à examiner n'est présent dans le snapshot.";
     } else {
       emptyReason = "Aucun collaborateur ne correspond au périmètre de la fiche.";
     }
   }
 
+  const isHrComplete = contract.request.mode === 'hr_complete';
+
   return {
-    title: selected.length === 1 ? 'Fiche individuelle' : 'Détails des collaborateurs',
-    description: "Les valeurs ci-dessous décrivent les données de présence connues de Toké sur la période. Elles ne constituent pas une évaluation de performance et ne remplacent pas la vérification d'un élément signalé.",
+    title: isHrComplete
+      ? 'Synthèses individuelles ciblées'
+      : selected.length === 1 ? 'Fiche individuelle' : 'Détails des collaborateurs',
+    description: isHrComplete
+      ? "Ces synthèses permettent d'approfondir les collaborateurs sélectionnés sans reproduire leur journal complet. Le détail quotidien reste disponible dans la fiche employé dédiée."
+      : "Les valeurs ci-dessous décrivent les données de présence connues de Toké sur la période. Elles ne constituent pas une évaluation de performance et ne remplacent pas la vérification d'un élément signalé.",
     employees: selected.map((employee) => toEmployeeModel(employee, contract)),
     emptyReason,
   };

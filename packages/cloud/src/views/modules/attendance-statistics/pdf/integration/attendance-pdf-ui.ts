@@ -81,13 +81,7 @@ export function createAttendancePdfExportDraft(input: {
   if (!choice) throw new Error(`Mode d'export PDF inconnu : ${input.mode}`);
 
   const presentationLevel = input.presentationLevel ?? choice.defaultPresentationLevel;
-  const employeeDetails: AttendancePdfEmployeeDetailMode = input.mode === 'full_report'
-    ? presentationLevel === 'simplified'
-      ? 'none'
-      : presentationLevel === 'optimized'
-        ? 'attention_only'
-        : 'all'
-    : 'none';
+  const employeeDetails: AttendancePdfEmployeeDetailMode = 'none';
 
   return {
     mode: input.mode,
@@ -116,6 +110,12 @@ export function buildAttendancePdfExportRequestFromDraft(input: {
     case 'full_report':
       return {
         mode: 'full_report',
+        ...base,
+        employeeDetails: input.draft.employeeDetails,
+      };
+    case 'hr_complete':
+      return {
+        mode: 'hr_complete',
         ...base,
         employeeDetails: input.draft.employeeDetails,
       };

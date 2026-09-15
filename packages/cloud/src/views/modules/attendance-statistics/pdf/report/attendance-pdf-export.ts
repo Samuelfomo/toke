@@ -5,7 +5,8 @@ import { createAttendancePdfReport, type AttendancePdfCreatedReport } from './at
 
 const MODE_SLUG: Record<AttendancePdfExportRequest['mode'], string> = {
   period_summary: 'synthese-periode',
-  full_report: 'rapport-complet',
+  full_report: 'rapport-pilotage',
+  hr_complete: 'rapport-rh-complet',
   current_analysis: 'analyse-en-cours',
   issues_only: 'elements-a-examiner',
   employee_sheet: 'fiche-employe',

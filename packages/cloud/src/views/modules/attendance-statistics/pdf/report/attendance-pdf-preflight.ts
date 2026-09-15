@@ -67,7 +67,9 @@ export function buildAttendancePdfExportPreflight(
     notices.push({
       code: 'issue_detail_limited',
       level: 'info',
-      message: `${issues.totalOmittedByPresentationCount} élément(s) ne seront pas affiché(s) en détail avec le niveau ${contract.presentationProfile.label.toLowerCase()}, mais resteront pris en compte dans les totaux.`,
+      message: contract.request.mode === 'hr_complete'
+        ? `${issues.totalOmittedByPresentationCount} occurrence(s) supplémentaire(s) ne seront pas détaillée(s) dans le rapport RH, mais resteront prises en compte dans les totaux. Utilisez une fiche employé pour l'investigation jour par jour.`
+        : `${issues.totalOmittedByPresentationCount} élément(s) ne seront pas affiché(s) en détail avec le niveau ${contract.presentationProfile.label.toLowerCase()}, mais resteront pris en compte dans les totaux.`,
     });
   }
 

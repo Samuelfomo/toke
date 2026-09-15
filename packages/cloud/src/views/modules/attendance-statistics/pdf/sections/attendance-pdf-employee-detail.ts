@@ -16,9 +16,9 @@ function dayColumn(key: AttendancePdfEmployeeDayColumnKey): AttendancePdfTableCo
     case 'clock_in': return { key, title: 'Entrée', width: 18, align: 'center', value: (row) => row.clockIn };
     case 'clock_out': return { key, title: 'Sortie', width: 18, align: 'center', value: (row) => row.clockOut };
     case 'delay': return { key, title: 'Retard', width: 20, align: 'right', value: (row) => row.delay };
-    case 'gross_duration': return { key, title: 'Brut', width: 22, align: 'right', value: (row) => row.grossDuration };
+    case 'gross_duration': return { key, title: 'Durée brute', width: 24, align: 'right', value: (row) => row.grossDuration };
     case 'pause_duration': return { key, title: 'Pause', width: 22, align: 'right', value: (row) => row.pauseDuration };
-    case 'net_duration': return { key, title: 'Net', width: 22, align: 'right', value: (row) => row.netDuration };
+    case 'net_duration': return { key, title: 'Durée nette', width: 24, align: 'right', value: (row) => row.netDuration };
     case 'issues': return { key, title: 'À examiner', weight: 2.3, value: (row) => row.issues };
   }
 }
@@ -28,11 +28,11 @@ function drawMetrics(engine: AttendancePdfEngine, employee: AttendancePdfEmploye
   const gap = 3;
   const width = (engine.pages.contentWidth - gap * 4) / 5;
   const cards = [
-    ['Présence', employee.attendanceRate, `${employee.attendedDays} / ${employee.expectedDays} journées finalisées avec présence`],
+    ['Présence', employee.attendanceRate, `${employee.attendedDays} / ${employee.expectedDays} journées prévues`],
     ['Ponctualité', employee.punctualityRate, `${employee.lateDays} retard${employee.lateDays > 1 ? 's' : ''} observé${employee.lateDays > 1 ? 's' : ''}`],
-    ['Absences confirmées', String(employee.absentDays), 'journées finalisées'],
-    ['En attente', String(employee.pendingDays), `${employee.undeterminedDays} indéterminée${employee.undeterminedDays > 1 ? 's' : ''}`],
-    ['À examiner', String(employee.issueCount), `${employee.issueTypeCount} type${employee.issueTypeCount > 1 ? 's' : ''}`],
+    ['Absence', employee.absenceRate, `${employee.absentDays} journée${employee.absentDays > 1 ? 's' : ''} d'absence`],
+    ['Retard', employee.lateRate, `${employee.lateDays} journée${employee.lateDays > 1 ? 's' : ''} avec retard`],
+    ['À examiner', employee.issueRate, `${employee.issueCount} élément${employee.issueCount > 1 ? 's' : ''} signalé${employee.issueCount > 1 ? 's' : ''}`],
   ] as const;
   const height = 25;
   engine.pages.ensureSpace(height + 3);
@@ -59,19 +59,16 @@ function renderOne(engine: AttendancePdfEngine, employee: AttendancePdfEmployeeD
   if (!isFirst || engine.pages.y > engine.pages.contentTop) engine.pages.addPage();
   if (isFirst) engine.pages.markSectionStart('employee_details');
   engine.primitives.drawSectionTitle(employee.employeeName, 1.5);
-  engine.primitives.drawTextBlock(`Niveau de présentation : ${employee.presentationLabel}`, {
-    fontSizePt: 8,
-    fontStyle: 'bold',
-    color: engine.theme.colors.accent,
-    spacingAfter: 2,
-  });
   drawMetrics(engine, employee);
   drawSecondarySummary(engine, employee);
 
   if (!employee.showDailyTable) {
+    const isHrComplete = engine.contract.request.mode === 'hr_complete';
     engine.primitives.drawCard({
-      title: 'Lecture simplifiée',
-      body: "Cette version s'arrête aux indicateurs personnels et aux éléments à examiner. Utiliser le niveau Optimisé ou Détaillé pour imprimer les journées de la période.",
+      title: isHrComplete ? 'Synthèse individuelle ciblée' : 'Lecture simplifiée',
+      body: isHrComplete
+        ? "Le rapport RH s'arrête ici à la synthèse individuelle. Pour vérifier les journées, horaires et durées, utiliser la fiche employé dédiée."
+        : "Cette version s'arrête aux indicateurs personnels et aux éléments à examiner. Utiliser le niveau Optimisé ou Détaillé pour imprimer les journées de la période.",
       height: 24,
     });
     return;
@@ -100,7 +97,7 @@ function renderOne(engine: AttendancePdfEngine, employee: AttendancePdfEmployeeD
   });
 
   engine.primitives.drawTextBlock(
-    "Les heures affichées sont celles fournies par le serveur. Toké n'applique ici aucune reconversion de fuseau. Les éléments signalés restent à examiner ; leur correction future doit agir sur la donnée source puis provoquer un recalcul des statistiques.",
+    "Les heures affichées sont celles fournies par le serveur. Les éléments à examiner sont des signaux de vérification et ne constituent pas automatiquement des erreurs de pointage.",
     { fontSizePt: 7.5, color: engine.theme.colors.mutedText, spacingAfter: 2 },
   );
 }
