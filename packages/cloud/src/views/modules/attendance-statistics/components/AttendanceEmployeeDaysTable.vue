@@ -127,7 +127,7 @@ function statusClasses(status: AttendanceStatus): string {
 
         <label class="inline-flex h-11 items-center gap-2 rounded-lg border border-slate-300 bg-white px-3 text-sm font-medium text-slate-700">
           <input v-model="issuesOnly" type="checkbox" class="h-4 w-4 rounded border-slate-300 text-indigo-600 focus:ring-indigo-500" />
-          Avec anomalie uniquement
+          Avec élément à examiner uniquement
         </label>
       </div>
     </div>
@@ -137,7 +137,7 @@ function statusClasses(status: AttendanceStatus): string {
       class="mt-4 rounded-xl border border-indigo-200 bg-indigo-50 px-4 py-3 text-sm text-indigo-900"
       role="status"
     >
-      Journée ciblée depuis le panneau des anomalies : <strong>{{ formatBusinessDate(focusDate) }}</strong>.
+      Journée ciblée depuis les éléments à examiner : <strong>{{ formatBusinessDate(focusDate) }}</strong>.
     </div>
 
     <p class="mt-3 text-xs text-slate-500" aria-live="polite">
@@ -165,7 +165,7 @@ function statusClasses(status: AttendanceStatus): string {
               <th scope="col" class="px-3 py-3 text-right font-bold">Brut</th>
               <th scope="col" class="px-3 py-3 text-right font-bold">Pause</th>
               <th scope="col" class="px-3 py-3 text-right font-bold">Net</th>
-              <th scope="col" class="px-3 py-3 text-left font-bold">Anomalies</th>
+              <th scope="col" class="px-3 py-3 text-left font-bold">À examiner</th>
             </tr>
           </thead>
           <tbody>

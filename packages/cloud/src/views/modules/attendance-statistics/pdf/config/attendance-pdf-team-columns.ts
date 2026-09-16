@@ -15,9 +15,12 @@ export const ATTENDANCE_PDF_TEAM_COLUMN_KEYS = [
   'undetermined',
   'rest_day',
   'net_duration',
+  'expected_duration',
   'net_vs_expected',
   'issue_rate',
   'issues',
+  'duration_delta',
+  'alerts',
 ] as const;
 
 export type AttendancePdfTeamColumnKey = (typeof ATTENDANCE_PDF_TEAM_COLUMN_KEYS)[number];
@@ -60,8 +63,10 @@ export const ATTENDANCE_PDF_DIRECTION_TEAM_COLUMNS: readonly AttendancePdfTeamCo
   'attendance_rate',
   'late_rate',
   'attended_vs_expected',
-  'net_vs_expected',
-  'issue_rate',
+  'net_duration',
+  'expected_duration',
+  'duration_delta',
+  'alerts',
 ];
 
 /** Rapport Pilotage : même lecture rapide, avec le volume d'éléments à examiner. */

@@ -132,7 +132,7 @@ function toggleDirection(): void {
         </label>
 
         <label class="block">
-          <span class="mb-1.5 block text-xs font-bold uppercase tracking-wide text-slate-500">Anomalies</span>
+          <span class="mb-1.5 block text-xs font-bold uppercase tracking-wide text-slate-500">À examiner</span>
           <select
             :value="filters.issues"
             class="h-11 w-full rounded-xl border border-slate-300 bg-white px-3 text-sm text-slate-900 outline-none focus:border-indigo-500 focus:ring-4 focus:ring-indigo-100"

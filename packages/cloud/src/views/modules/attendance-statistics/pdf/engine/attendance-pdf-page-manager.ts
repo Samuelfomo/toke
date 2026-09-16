@@ -26,6 +26,11 @@ function setColor(
   setter(color[0], color[1], color[2]);
 }
 
+function formatBusinessDate(value: string): string {
+  const match = /^(\d{4})-(\d{2})-(\d{2})$/.exec(value);
+  return match ? `${match[3]}/${match[2]}/${match[1]}` : value;
+}
+
 export class AttendancePdfPageManager {
   private cursorY: number;
   private readonly contentBox = getAttendancePdfContentBox();
@@ -145,18 +150,17 @@ export class AttendancePdfPageManager {
     const left = ATTENDANCE_PDF_MARGINS.left;
     const right = ATTENDANCE_PDF_PAGE.width - ATTENDANCE_PDF_MARGINS.right;
 
-    this.document.setFont(fontFamily, 'bold').setFontSize(9.5);
+    this.document.setFont(fontFamily, 'bold').setFontSize(8.5);
     setColor(this.document.setTextColor.bind(this.document), colors.text);
-    const tenant = this.contract.reportContext.tenantName;
-    const title = tenant ? `${tenant} - Statistiques de presence` : 'Statistiques de presence';
-    this.document.text(title, left, topY);
+    const tenant = this.contract.reportContext.tenantName?.trim();
+    this.document.text(tenant || 'Statistiques de pointage', left, topY);
 
-    const period = `${this.contract.reportContext.startDate} - ${this.contract.reportContext.endDate}`;
+    const period = `${formatBusinessDate(this.contract.reportContext.startDate)} — ${formatBusinessDate(this.contract.reportContext.endDate)}`;
     this.document.setFont(fontFamily, 'normal').setFontSize(8);
     setColor(this.document.setTextColor.bind(this.document), colors.mutedText);
     this.document.text(period, right, topY, { align: 'right' });
 
-    const contextParts: string[] = [];
+    const contextParts: string[] = [this.contract.profile.label];
     if (this.contract.reportContext.managerName) contextParts.push(this.contract.reportContext.managerName);
     if (this.contract.reportContext.siteName) contextParts.push(this.contract.reportContext.siteName);
     if (contextParts.length > 0) {

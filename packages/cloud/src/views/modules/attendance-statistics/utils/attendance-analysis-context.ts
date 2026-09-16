@@ -169,7 +169,7 @@ export function getAttendanceAnalysisSourceLabel(source: AttendanceAnalysisSourc
     kpi: 'KPI',
     trend: 'Graphique',
     status_distribution: 'Répartition',
-    issues: 'Anomalie',
+    issues: 'Élément à examiner',
     attention: 'À examiner',
     quality: 'Qualité',
     today: 'Aujourd’hui',

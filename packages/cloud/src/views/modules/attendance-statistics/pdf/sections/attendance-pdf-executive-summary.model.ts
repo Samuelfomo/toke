@@ -5,16 +5,20 @@ import type {
   AttendanceStatus,
 } from '../../types/attendance-statistics.types.js';
 import { buildAttendanceDataQualityPresentation } from '../../utils/attendance-data-quality.js';
-import { buildPrimaryAttendanceKpis } from '../../utils/attendance-kpis.js';
+import {
+  buildAttendanceDurationInsight,
+  buildPrimaryAttendanceKpis,
+} from '../../utils/attendance-kpis.js';
 import { sortAttendanceIssues } from '../../utils/attendance-issues.js';
 import {
   ATTENDANCE_ISSUE_PRESENTATION,
   ATTENDANCE_STATUS_PRESENTATION,
 } from '../../utils/attendance-status.js';
 import { ATTENDANCE_PDF_PAGINATION_TARGETS } from '../config/attendance-pdf-layout.js';
+import type { AttendancePdfExportMode } from '../types/attendance-pdf.types.js';
 
 export interface AttendancePdfExecutiveKpi {
-  id: 'attendance_rate' | 'punctuality_rate' | 'absences' | 'late_days' | 'issues';
+  id: 'attendance_rate' | 'punctuality_rate' | 'absences' | 'late_days' | 'issues' | 'alerts';
   label: string;
   value: string;
   explanation: string;
@@ -26,6 +30,14 @@ export interface AttendancePdfExecutiveQuality {
   label: string;
   message: string;
   signals: Array<{ label: string; value: number }>;
+}
+
+export interface AttendancePdfExecutiveDurationInsight {
+  label: string;
+  value: string;
+  helper: string;
+  detail: string;
+  available: boolean;
 }
 
 export interface AttendancePdfExecutiveStatusRow {
@@ -52,6 +64,7 @@ export interface AttendancePdfExecutiveSummaryModel {
   attentionEmptyLabel: string;
   quality: AttendancePdfExecutiveQuality;
   kpis: AttendancePdfExecutiveKpi[];
+  durationInsight: AttendancePdfExecutiveDurationInsight;
   statusRows: AttendancePdfExecutiveStatusRow[];
   attentionItems: AttendancePdfExecutiveAttentionItem[];
   hiddenAttentionTypeCount: number;
@@ -59,6 +72,60 @@ export interface AttendancePdfExecutiveSummaryModel {
 
 function plural(value: number, singular: string, pluralValue: string = `${singular}s`): string {
   return value === 1 ? singular : pluralValue;
+}
+
+function buildDirectionKpis(overview: AttendanceOverview): AttendancePdfExecutiveKpi[] {
+  const { rates } = overview.summary;
+  const showLateRate = rates.lateRate !== null && rates.lateRate > 50;
+  const punctualityOrLate: AttendancePdfExecutiveKpi = !showLateRate
+    ? {
+        id: 'punctuality_rate',
+        label: 'Ponctualité',
+        value: rates.punctualityRate === null ? '—' : `${rates.punctualityRate.toFixed(1).replace('.0', '')} %`,
+        explanation: `${rates.onTimeWorkingDays} arrivées à l’heure sur ${rates.attendedWorkingDays} planifications couvertes`,
+        accent: rates.punctualityRate !== null && rates.punctualityRate > 60 ? 'success' : 'warning',
+      }
+    : {
+        id: 'late_days',
+        label: 'Taux de retard',
+        value: rates.lateRate === null ? '—' : `${rates.lateRate.toFixed(1).replace('.0', '')} %`,
+        explanation: `${rates.lateWorkingDays} retards sur ${rates.attendedWorkingDays} planifications couvertes`,
+        accent: 'warning',
+      };
+
+  return [
+    {
+      id: 'attendance_rate',
+      label: 'Taux de présence',
+      value: rates.attendanceRate === null ? '—' : `${rates.attendanceRate.toFixed(1).replace('.0', '')} %`,
+      explanation: `${rates.attendedWorkingDays} planifications couvertes sur ${rates.employeeWorkingDaysExpected} planifications de travail finalisées`,
+      accent:
+        rates.attendanceRate === null
+          ? 'accent'
+          : rates.attendanceRate > 60
+            ? 'success'
+            : rates.absenceRate !== null && rates.absenceRate > 50
+              ? 'danger'
+              : 'warning',
+    },
+    punctualityOrLate,
+    {
+      id: 'absences',
+      label: 'Taux d’absence',
+      value: rates.absenceRate === null ? '—' : `${rates.absenceRate.toFixed(1).replace('.0', '')} %`,
+      explanation: `${rates.absentWorkingDays} planifications non couvertes sur ${rates.employeeWorkingDaysExpected} finalisées`,
+      accent: 'danger',
+    },
+    {
+      id: 'alerts',
+      label: 'Alerte',
+      value: rates.issueRate === null ? '—' : `${rates.issueRate.toFixed(1).replace('.0', '')} %`,
+      explanation: rates.issueRate === null
+        ? 'Aucune base suffisante pour calculer le taux d’alerte'
+        : `${rates.employeeDaysWithIssues} situations avec alerte sur ${rates.employeeDaysAnalyzed} situations analysées`,
+      accent: rates.issueRate !== null && rates.issueRate > 0 ? 'warning' : 'success',
+    },
+  ];
 }
 
 function buildKpis(overview: AttendanceOverview): AttendancePdfExecutiveKpi[] {
@@ -123,8 +190,14 @@ function buildStatusRows(overview: AttendanceOverview): AttendancePdfExecutiveSt
   return rows;
 }
 
+function formatBusinessDate(value: string): string {
+  const match = /^(\d{4})-(\d{2})-(\d{2})$/.exec(value);
+  return match ? `${match[3]}/${match[2]}/${match[1]}` : value;
+}
+
 export function buildAttendancePdfExecutiveSummaryModel(
   overview: AttendanceOverview,
+  mode?: AttendancePdfExportMode,
 ): AttendancePdfExecutiveSummaryModel {
   const isSingleDay = overview.period.dayCount === 1;
   const qualityPresentation = buildAttendanceDataQualityPresentation(overview.dataQuality);
@@ -132,6 +205,7 @@ export function buildAttendancePdfExecutiveSummaryModel(
     .filter((metric) => metric.value > 0)
     .map((metric) => ({ label: metric.label, value: metric.value }));
 
+  const durationInsight = buildAttendanceDurationInsight(overview);
   const sortedIssues = sortAttendanceIssues(overview.issues);
   const attentionItems = sortedIssues
     .slice(0, ATTENDANCE_PDF_PAGINATION_TARGETS.executiveAttentionItemsMax)
@@ -145,8 +219,8 @@ export function buildAttendancePdfExecutiveSummaryModel(
   return {
     title: 'Synthèse décisionnelle',
     scopeLine: isSingleDay
-      ? `${overview.scope.teamSize} ${plural(overview.scope.teamSize, 'collaborateur', 'collaborateurs')} · situation du jour`
-      : `${overview.scope.teamSize} ${plural(overview.scope.teamSize, 'collaborateur', 'collaborateurs')} · ${overview.period.dayCount} ${plural(overview.period.dayCount, 'jour', 'jours')} analysé${overview.period.dayCount === 1 ? '' : 's'}`,
+        ? `${overview.scope.teamSize} ${plural(overview.scope.teamSize, 'collaborateur', 'collaborateurs')} · situation du jour`
+        : `${overview.scope.teamSize} ${plural(overview.scope.teamSize, 'collaborateur', 'collaborateurs')} · ${overview.period.dayCount} ${plural(overview.period.dayCount, 'jour', 'jours')} analysé${overview.period.dayCount === 1 ? '' : 's'}`,
     isSingleDay,
     statusPanelTitle: isSingleDay ? 'Répartition des situations du jour' : 'Répartition des journées de travail',
     eligibleGroupLabel: isSingleDay
@@ -161,15 +235,24 @@ export function buildAttendancePdfExecutiveSummaryModel(
     quality: {
       level: qualityPresentation.level,
       label:
-        qualityPresentation.level === 'reliable'
-          ? 'Qualité des données : fiable'
-          : qualityPresentation.level === 'warning'
-            ? 'Qualité des données : à surveiller'
-            : 'Qualité des données : non fiable',
+        mode === 'period_summary' && qualityPresentation.level !== 'reliable'
+          ? 'Anomalie détectée'
+          : qualityPresentation.level === 'reliable'
+            ? 'Qualité des données : fiable'
+            : qualityPresentation.level === 'warning'
+              ? 'Qualité des données : à surveiller'
+              : 'Qualité des données : non fiable',
       message: qualityPresentation.message,
       signals: nonZeroQualitySignals,
     },
-    kpis: buildKpis(overview),
+    kpis: mode === 'period_summary' ? buildDirectionKpis(overview) : buildKpis(overview),
+    durationInsight: {
+      label: 'Durée nette enregistrée',
+      value: durationInsight.value,
+      helper: durationInsight.helper,
+      detail: durationInsight.detail,
+      available: durationInsight.available,
+    },
     statusRows: buildStatusRows(overview),
     attentionItems,
     hiddenAttentionTypeCount: Math.max(0, sortedIssues.length - attentionItems.length),

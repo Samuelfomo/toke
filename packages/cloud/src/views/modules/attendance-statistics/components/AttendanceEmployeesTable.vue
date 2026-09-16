@@ -132,7 +132,7 @@ function sortAria(key: AttendanceEmployeeSortKey): 'ascending' | 'descending' | 
             class="rounded-full px-2 py-1 text-xs font-bold"
             :class="employee.issueCount > 0 ? 'bg-orange-100 text-orange-800' : 'bg-emerald-100 text-emerald-800'"
           >
-            {{ employee.issueCount }} anomalie{{ employee.issueCount > 1 ? 's' : '' }}
+            {{ employee.issueCount }} à examiner
           </span>
         </div>
 

@@ -34,6 +34,8 @@ export interface AttendancePdfTeamRow {
   netVsExpected: string;
   issueRate: string;
   issues: number;
+  durationDelta: string;
+  alerts: string;
 }
 
 export interface AttendancePdfTeamModel {
@@ -111,7 +113,26 @@ function toRow(employee: AttendanceEmployeeOverview): AttendancePdfTeamRow {
           : '—',
     issueRate: formatPercentage(employee.rates.issueRate),
     issues: employee.issueCount,
+    durationDelta:
+      employee.durations.daysWithKnownNetDuration > 0 &&
+      employee.durations.daysWithKnownExpectedWorkDuration > 0 &&
+      employee.durations.daysWithMissingDuration === 0
+        ? formatDurationDelta(employee.durations.netMinutes - employee.durations.expectedWorkMinutes)
+        : 'Non calculable',
+    alerts: formatPercentage(employee.rates.issueRate),
   };
+}
+
+function formatDurationDelta(minutes: number): string {
+  if (minutes === 0) return '0 min';
+  const sign = minutes > 0 ? '+' : '-';
+  const absolute = Math.abs(minutes);
+  const hours = Math.floor(absolute / 60);
+  const remaining = absolute % 60;
+  const duration = hours > 0
+    ? `${hours} h${remaining > 0 ? ` ${String(remaining).padStart(2, '0')} min` : ''}`
+    : `${remaining} min`;
+  return `${sign}${duration}`;
 }
 
 function describeSelection(contract: AttendancePdfReportContract): string | null {
@@ -146,7 +167,7 @@ function resolveDescription(contract: AttendancePdfReportContract, filteredByAna
 
   switch (contract.request.mode) {
     case 'period_summary':
-      return `Lecture décisionnelle de l'équipe : présence, retard, volume de présence enregistré, durée nette et journées à examiner.`;
+      return `Lecture décisionnelle de l'équipe : présence, retard, écart d'heures enregistré et alertes nécessitant un suivi par les équipes concernées.`;
     case 'full_report':
       return `Vue de pilotage de l'équipe. Les pourcentages permettent d'identifier les écarts avant d'analyser leur évolution dans la période.`;
     case 'hr_complete':

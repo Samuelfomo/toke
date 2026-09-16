@@ -11,7 +11,7 @@ export const ATTENDANCE_PDF_EXPORT_PROFILES: Record<
   period_summary: {
     mode: 'period_summary',
     label: 'Rapport Direction',
-    description: "Lecture décisionnelle courte : état global de l'équipe et situation de chaque collaborateur en quelques minutes.",
+    description: "Lecture décisionnelle courte : état global, écarts d'heures et alertes de pilotage en quelques minutes.",
     sections: ['executive_summary', 'team'],
     tocWhenPageCountAtLeast: null,
     targetPageRange: { min: 1, max: 2 },
@@ -19,7 +19,7 @@ export const ATTENDANCE_PDF_EXPORT_PROFILES: Record<
   full_report: {
     mode: 'full_report',
     label: 'Rapport Pilotage',
-    description: "Rapport manager : synthèse, vue équipe, évolution de la période et éléments à examiner.",
+    description: "Rapport manager : synthèse, durée nette, vue équipe, évolution de la période et éléments à examiner.",
     sections: ['executive_summary', 'team', 'trend', 'issues'],
     tocWhenPageCountAtLeast: null,
     targetPageRange: { min: 2, max: 4 },
@@ -27,7 +27,7 @@ export const ATTENDANCE_PDF_EXPORT_PROFILES: Record<
   hr_complete: {
     mode: 'hr_complete',
     label: 'Rapport RH complet',
-    description: "Rapport d'analyse RH : synthèse, équipe, évolution et éléments à examiner avec une profondeur supérieure au pilotage.",
+    description: "Rapport d'analyse RH : synthèse, durées, équipe, évolution et éléments à examiner avec une profondeur supérieure au pilotage.",
     sections: ['executive_summary', 'team', 'trend', 'issues', 'employee_details'],
     tocWhenPageCountAtLeast: ATTENDANCE_PDF_PAGINATION_TARGETS.tocThresholdPages,
     targetPageRange: { min: 3, max: null },

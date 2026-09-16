@@ -48,7 +48,7 @@ export function buildAttendancePdfReportPlan(contract: AttendancePdfReportContra
   switch (mode) {
     case 'period_summary': {
       sections = [
-        section('executive_summary', "Donne en quelques secondes l'état global de l'équipe avec les KPI décisionnels."),
+        section('executive_summary', "Donne en quelques secondes l'état global de l'équipe avec les KPI décisionnels et la durée nette enregistrée."),
         section('team', 'Présente ensuite une ligne compacte par collaborateur pour identifier rapidement les situations qui méritent une attention.'),
       ];
       notes.push('Profil Direction : aucune courbe, aucune occurrence détaillée et aucune fiche individuelle. La cible est une lecture en 2 à 5 minutes.');
@@ -56,7 +56,7 @@ export function buildAttendancePdfReportPlan(contract: AttendancePdfReportContra
     }
     case 'full_report': {
       sections = [
-        section('executive_summary', 'Pose la situation globale avant toute analyse opérationnelle.'),
+        section('executive_summary', 'Pose la situation globale et la durée nette enregistrée avant toute analyse opérationnelle.'),
         section('team', "Compare l'équipe sur les indicateurs nécessaires au pilotage sans classement de performance."),
         section('trend', "Montre quand les écarts apparaissent et comment ils évoluent sur la période."),
         section('issues', 'Présente les catégories et occurrences limitées utiles au suivi du manager.'),
@@ -69,7 +69,7 @@ export function buildAttendancePdfReportPlan(contract: AttendancePdfReportContra
     }
     case 'hr_complete': {
       sections = [
-        section('executive_summary', 'Donne les indicateurs de référence nécessaires pour situer les constats RH.'),
+        section('executive_summary', 'Donne les indicateurs de référence et les durées nécessaires pour situer les constats RH.'),
         section('team', "Présente une vue équipe enrichie pour comparer les résultats et leurs volumes sous-jacents."),
         section('trend', "Documente l'évolution de la période afin de replacer les écarts dans le temps."),
         section('issues', 'Décrit les éléments à examiner avec une profondeur supérieure au rapport de pilotage.'),

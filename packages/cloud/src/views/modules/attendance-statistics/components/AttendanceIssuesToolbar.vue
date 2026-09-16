@@ -30,7 +30,7 @@ function updateFamily(family: AttendanceIssueListFilters['family']): void {
         <input
           :value="filters.query"
           type="search"
-          placeholder="Employé, date, GUID ou anomalie"
+          placeholder="Employé, date, GUID ou élément"
           class="h-11 w-full rounded-xl border border-slate-300 bg-white px-3 text-sm text-slate-800 outline-none ring-indigo-500 transition focus:ring-2"
           @input="updateQuery(($event.target as HTMLInputElement).value)"
         />

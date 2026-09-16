@@ -71,15 +71,15 @@ export function buildAttendanceKpis(overview: AttendanceOverview): AttendanceKpi
       helper: attendanceRateAvailable
         ? isSingleDay
           ? buildSingleDayAttendanceHelper(finalizedPresence, finalizedExpected, finalizedAbsence)
-          : `${summary.rates.attendedWorkingDays} journée${plural(summary.rates.attendedWorkingDays)} avec présence sur ${summary.rates.employeeWorkingDaysExpected} journée${plural(summary.rates.employeeWorkingDaysExpected)} de travail finalisée${plural(summary.rates.employeeWorkingDaysExpected)} prise${plural(summary.rates.employeeWorkingDaysExpected)} en compte`
+          : `${summary.rates.attendedWorkingDays} planification${plural(summary.rates.attendedWorkingDays)} couverte${plural(summary.rates.attendedWorkingDays)} sur ${summary.rates.employeeWorkingDaysExpected} planification${plural(summary.rates.employeeWorkingDaysExpected)} de travail finalisée${plural(summary.rates.employeeWorkingDaysExpected)}`
         : operationalWorkingDays > 0
           ? `${observedPresence} présence${plural(observedPresence)} déjà observée${plural(observedPresence)}${pending > 0 ? ` et ${pending} situation${plural(pending)} encore en attente` : ''}. Le taux sera consolidé après finalisation.`
           : isSingleDay
             ? 'Aucune situation du jour n’est encore finalisée pour calculer ce taux.'
-            : 'Aucune journée finalisée n’est actuellement éligible au calcul du taux.',
+            : 'Aucune planification de travail finalisée n’est actuellement éligible au calcul du taux.',
       detail: isSingleDay
         ? 'Le taux est calculé uniquement avec les collaborateurs dont la plage de travail prévue est terminée. Les situations encore en cours n’entrent pas encore dans le calcul.'
-        : 'Le taux utilise uniquement les journées de travail finalisées et éligibles. Les situations encore en cours restent visibles séparément.',
+        : 'Le taux compare les planifications de travail finalisées couvertes par une présence aux planifications finalisées prises en compte. Les situations encore en cours restent visibles séparément.',
       tone: 'indigo',
       icon: 'attendance',
       available: attendanceRateAvailable,
@@ -92,15 +92,15 @@ export function buildAttendanceKpis(overview: AttendanceOverview): AttendanceKpi
       helper: punctualityRateAvailable
         ? isSingleDay
           ? buildSingleDayPunctualityHelper(summary.rates.onTimeWorkingDays, finalizedPresence)
-          : `${summary.rates.onTimeWorkingDays} journée${plural(summary.rates.onTimeWorkingDays)} à l’heure sur ${summary.rates.attendedWorkingDays} journée${plural(summary.rates.attendedWorkingDays)} finalisée${plural(summary.rates.attendedWorkingDays)} avec présence`
+          : `${summary.rates.onTimeWorkingDays} arrivée${plural(summary.rates.onTimeWorkingDays)} à l’heure sur ${summary.rates.attendedWorkingDays} planification${plural(summary.rates.attendedWorkingDays)} couverte${plural(summary.rates.attendedWorkingDays)}`
         : observedPresence > 0
           ? `${observedPresence} présence${plural(observedPresence)} déjà observée${plural(observedPresence)}, dont ${observedLate} retard${plural(observedLate)}. La ponctualité sera consolidée après finalisation.`
           : isSingleDay
             ? 'Aucune présence du jour n’est encore finalisée pour calculer la ponctualité.'
-            : 'Aucune journée avec présence finalisée n’est encore disponible pour calculer la ponctualité.',
+            : 'Aucune planification couverte et finalisée n’est encore disponible pour calculer la ponctualité.',
       detail: isSingleDay
         ? 'La ponctualité est calculée uniquement sur les présences dont la plage de travail prévue est terminée. Les arrivées observées pendant une plage encore en cours restent hors du taux pour le moment.'
-        : 'La ponctualité consolidée est calculée uniquement sur les journées avec présence devenues éligibles au taux.',
+        : 'La ponctualité mesure la part des planifications couvertes dont l’arrivée respecte l’horaire prévu ou la tolérance autorisée.',
       tone: 'sky',
       icon: 'punctuality',
       available: punctualityRateAvailable,
@@ -111,10 +111,10 @@ export function buildAttendanceKpis(overview: AttendanceOverview): AttendanceKpi
       label: 'Taux d’absence',
       value: formatPercentage(summary.rates.absenceRate),
       helper: summary.rates.absenceRate !== null
-        ? `${summary.rates.absentWorkingDays} journée${plural(summary.rates.absentWorkingDays)} d’absence sur ${summary.rates.employeeWorkingDaysExpected} journée${plural(summary.rates.employeeWorkingDaysExpected)} de travail finalisée${plural(summary.rates.employeeWorkingDaysExpected)} prise${plural(summary.rates.employeeWorkingDaysExpected)} en compte`
-        : 'Aucune journée de travail finalisée n’est actuellement éligible au calcul du taux d’absence.',
+        ? `${summary.rates.absentWorkingDays} planification${plural(summary.rates.absentWorkingDays)} non couverte${plural(summary.rates.absentWorkingDays)} sur ${summary.rates.employeeWorkingDaysExpected} planification${plural(summary.rates.employeeWorkingDaysExpected)} finalisée${plural(summary.rates.employeeWorkingDaysExpected)}`
+        : 'Aucune planification de travail finalisée n’est actuellement éligible au calcul du taux d’absence.',
       detail:
-        'Le taux d’absence utilise le même périmètre que le taux de présence : journées d’absence divisées par les journées de travail finalisées prises en compte.',
+        'Le taux d’absence correspond à la part des planifications de travail finalisées qui ne sont pas couvertes par une présence.',
       tone: 'rose',
       icon: 'absence',
       available: absenceRateAvailable,
@@ -125,10 +125,10 @@ export function buildAttendanceKpis(overview: AttendanceOverview): AttendanceKpi
       label: 'Taux de retard',
       value: formatPercentage(summary.rates.lateRate),
       helper: summary.rates.lateRate !== null
-        ? `${summary.rates.lateWorkingDays} journée${plural(summary.rates.lateWorkingDays)} avec retard sur ${summary.rates.attendedWorkingDays} journée${plural(summary.rates.attendedWorkingDays)} finalisée${plural(summary.rates.attendedWorkingDays)} avec présence`
-        : 'Aucune journée avec présence finalisée n’est disponible pour calculer le taux de retard.',
+        ? `${summary.rates.lateWorkingDays} retard${plural(summary.rates.lateWorkingDays)} sur ${summary.rates.attendedWorkingDays} planification${plural(summary.rates.attendedWorkingDays)} couverte${plural(summary.rates.attendedWorkingDays)}`
+        : 'Aucune planification couverte et finalisée n’est disponible pour calculer le taux de retard.',
       detail:
-        'Le taux de retard utilise le même périmètre que la ponctualité : journées avec retard divisées par les journées finalisées avec présence.',
+        'Le taux de retard correspond à la part des planifications couvertes dont l’arrivée dépasse l’horaire prévu après application de la tolérance autorisée.',
       tone: 'amber',
       icon: 'late',
       available: lateRateAvailable,
@@ -139,10 +139,10 @@ export function buildAttendanceKpis(overview: AttendanceOverview): AttendanceKpi
       label: 'Journées à examiner',
       value: formatPercentage(summary.rates.issueRate),
       helper: summary.rates.issueRate !== null
-        ? `${summary.rates.employeeDaysWithIssues} journée${plural(summary.rates.employeeDaysWithIssues)} avec au moins un élément à examiner sur ${summary.rates.employeeDaysAnalyzed} journée${plural(summary.rates.employeeDaysAnalyzed)} analysée${plural(summary.rates.employeeDaysAnalyzed)} pour l’ensemble de l’équipe`
-        : 'Aucune journée n’est disponible pour calculer cette proportion.',
+        ? `${summary.rates.employeeDaysWithIssues} situation${plural(summary.rates.employeeDaysWithIssues)} avec au moins un élément à examiner sur ${summary.rates.employeeDaysAnalyzed} situation${plural(summary.rates.employeeDaysAnalyzed)} analysée${plural(summary.rates.employeeDaysAnalyzed)} pour l’ensemble de l’équipe`
+        : 'Aucune situation n’est disponible pour calculer cette proportion.',
       detail:
-        `${summary.issueCount} élément${plural(summary.issueCount)} à examiner au total. Une journée n’est comptée qu’une fois dans le pourcentage, même si plusieurs éléments y sont signalés.`,
+        `${summary.issueCount} élément${plural(summary.issueCount)} à examiner au total. Une situation n’est comptée qu’une fois dans le pourcentage, même si plusieurs éléments y sont signalés.`,
       tone: 'orange',
       icon: 'issue',
       available: issueRateAvailable,

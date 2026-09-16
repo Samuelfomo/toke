@@ -33,7 +33,7 @@ export const ATTENDANCE_STATUS_PRESENTATION: Record<
   },
   ABSENT: {
     label: 'Absent',
-    description: 'Aucune activité sur une journée travaillée valide et terminée.',
+    description: 'Le ou les blocs de travail attendus n’ont pas été couverts sur une journée finalisée. Une activité peut néanmoins exister en dehors des plages prévues.',
     rateCategory: 'eligible',
     tone: 'danger',
     order: 3,
@@ -105,6 +105,11 @@ export const ATTENDANCE_ISSUE_PRESENTATION: Record<
     label: 'Durée inexploitable',
     actionLabel: 'Vérifier la durée',
     family: 'duration',
+  },
+  ACTIVITY_OUTSIDE_EXPECTED_BLOCK: {
+    label: 'Activité hors plage prévue',
+    actionLabel: 'Vérifier le planning et le pointage',
+    family: 'planning',
   },
 };
 

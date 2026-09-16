@@ -26,6 +26,7 @@ export const ATTENDANCE_ISSUES = [
   'OPEN_SESSION',
   'INCOMPLETE_SESSION',
   'MISSING_DURATION',
+  'ACTIVITY_OUTSIDE_EXPECTED_BLOCK',
 ] as const;
 
 export type AttendanceIssue = (typeof ATTENDANCE_ISSUES)[number];

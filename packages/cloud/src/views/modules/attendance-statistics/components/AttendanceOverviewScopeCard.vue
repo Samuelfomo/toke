@@ -35,7 +35,7 @@ defineProps<Props>();
           <p class="mt-1 text-sm font-bold text-slate-900">{{ overview.period.dayCount }}</p>
         </div>
         <div class="col-span-2 rounded-xl bg-slate-50 px-4 py-3 sm:col-span-1">
-          <p class="text-xs font-medium text-slate-500">Anomalies</p>
+          <p class="text-xs font-medium text-slate-500">À examiner</p>
           <p class="mt-1 text-sm font-bold text-slate-900">{{ overview.summary.issueCount }}</p>
         </div>
       </div>

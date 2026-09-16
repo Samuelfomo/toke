@@ -40,13 +40,19 @@ function columnFor(
     case 'rest_day':
       return { key, title: 'Repos', width: 16, align: 'right', value: (row) => String(row.restDay) };
     case 'net_duration':
-      return { key, title: 'Durée nette', width: 27, align: 'right', value: (row) => row.netDuration };
+      return { key, title: 'Durée nette', width: 24, align: 'right', value: (row) => row.netDuration };
+    case 'expected_duration':
+      return { key, title: 'Durée prévue', width: 24, align: 'right', value: (row) => row.expectedDuration };
     case 'net_vs_expected':
       return { key, title: 'Durée nette / prévue', width: 34, align: 'right', value: (row) => row.netVsExpected };
     case 'issue_rate':
       return { key, title: 'À examiner', width: 23, align: 'right', value: (row) => row.issueRate };
     case 'issues':
       return { key, title: 'Éléments', width: 20, align: 'right', value: (row) => String(row.issues) };
+    case 'duration_delta':
+      return { key, title: 'Écart heures (+/-)', width: 30, align: 'right', value: (row) => row.durationDelta };
+    case 'alerts':
+      return { key, title: 'Alerte', width: 19, align: 'right', value: (row) => row.alerts };
   }
 }
 

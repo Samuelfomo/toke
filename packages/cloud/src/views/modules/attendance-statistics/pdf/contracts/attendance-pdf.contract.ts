@@ -47,7 +47,7 @@ function collectWarnings(request: AttendancePdfExportRequest): AttendancePdfCont
   ) {
     warnings.push({
       code: 'employee_details_empty',
-      message: "Aucun employé avec anomalie : la section de détails ciblés pourra être omise.",
+      message: "Aucun employé avec élément à examiner : la section de détails ciblés pourra être omise.",
     });
   }
 

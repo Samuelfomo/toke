@@ -204,10 +204,9 @@ async function previewPdf(): Promise<void> {
         <header class="flex items-start justify-between gap-4 border-b border-slate-200 px-5 py-4 sm:px-6">
           <div>
             <p class="text-xs font-bold uppercase tracking-[0.14em] text-indigo-600">Reporting PDF</p>
-            <h2 id="attendance-pdf-export-title" class="mt-1 text-xl font-bold text-slate-950 sm:text-2xl">Exporter les
-              statistiques</h2>
+            <h2 id="attendance-pdf-export-title" class="mt-1 text-xl font-bold text-slate-950 sm:text-2xl">Préparer l’aperçu PDF</h2>
             <p id="attendance-pdf-export-description" class="mt-1 max-w-3xl text-sm text-slate-500">
-              Choisissez le rapport adapté à votre besoin. Les données affichées correspondent à la période sélectionnée.
+              Choisissez le rapport adapté à votre besoin. L’aperçu reprend les données calculées par l’API pour la période sélectionnée.
             </p>
           </div>
           <button
@@ -326,9 +325,8 @@ async function previewPdf(): Promise<void> {
                    aria-labelledby="attendance-pdf-preflight-title">
             <div class="flex flex-wrap items-start justify-between gap-3">
               <div>
-                <p class="text-xs font-bold uppercase tracking-[0.13em] text-indigo-700">Pré-contrôle</p>
-                <h3 id="attendance-pdf-preflight-title" class="mt-1 font-bold text-slate-950">Contenu réellement
-                  prévu</h3>
+                <p class="text-xs font-bold uppercase tracking-[0.13em] text-indigo-700">Aperçu du contenu</p>
+                <h3 id="attendance-pdf-preflight-title" class="mt-1 font-bold text-slate-950">Contenu du rapport</h3>
               </div>
               <span class="rounded-full bg-white px-3 py-1 text-xs font-bold text-indigo-700 ring-1 ring-indigo-200">{{
                   preflight.plan.modeLabel

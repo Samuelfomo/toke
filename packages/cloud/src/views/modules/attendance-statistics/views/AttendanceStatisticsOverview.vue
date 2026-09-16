@@ -386,7 +386,7 @@ const liveMessage = computed(() => {
     <nav aria-label="Accès rapide au contenu" class="sr-only focus-within:not-sr-only">
       <div class="fixed left-4 top-4 z-[70] flex flex-wrap gap-2 rounded-xl bg-white p-2 shadow-xl">
         <a href="#attendance-main-content" class="rounded-lg bg-slate-950 px-3 py-2 text-sm font-bold text-white focus:outline-none focus:ring-2 focus:ring-indigo-500">Aller au contenu</a>
-        <a href="#attendance-issues" class="rounded-lg bg-white px-3 py-2 text-sm font-bold text-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500">Aller aux anomalies</a>
+        <a href="#attendance-issues" class="rounded-lg bg-white px-3 py-2 text-sm font-bold text-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500">Aller aux éléments à examiner</a>
         <a href="#attendance-employees" class="rounded-lg bg-white px-3 py-2 text-sm font-bold text-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500">Aller aux employés</a>
       </div>
     </nav>
@@ -472,7 +472,7 @@ const liveMessage = computed(() => {
                 :title="isTodayOperationalView ? 'Résultats finalisés' : 'Ce qu’il faut comprendre maintenant'"
                 :description="isTodayOperationalView
                   ? 'Les taux ci-dessous sont calculés uniquement à partir des collaborateurs dont la plage de travail prévue est déjà terminée. Les situations encore en cours restent visibles dans le suivi du jour, mais ne modifient pas encore ces taux.'
-                  : 'Cliquez sur une carte pour comprendre la valeur puis accéder aux personnes ou anomalies concernées.'"
+                  : 'Cliquez sur une carte pour comprendre la valeur puis accéder aux personnes ou éléments à examiner concernés.'"
                 @select="handleKpiSelect"
               />
               <AttendanceKpiDrilldown :overview="page.overview.value" :kpi-id="selectedKpiId" @action="handleDashboardAction" @close="selectedKpiId = null" />

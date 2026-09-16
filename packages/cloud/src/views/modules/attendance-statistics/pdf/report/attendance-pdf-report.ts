@@ -13,6 +13,7 @@ import { renderAttendancePdfIssues } from '../sections/attendance-pdf-issues.js'
 import { renderAttendancePdfTeam } from '../sections/attendance-pdf-team.js';
 import { renderAttendancePdfEmployeeDetails } from '../sections/attendance-pdf-employee-detail.js';
 import { buildAttendancePdfReportPlan, normalizeAttendancePdfExportRequest } from './attendance-pdf-report-plan.js';
+import { renderAttendancePdfReportHeading } from '../components/attendance-pdf-report-heading.js';
 
 function addRenderedSection(
   output: AttendancePdfRenderedSection[],
@@ -30,6 +31,8 @@ function addRenderedSection(
 export function renderAttendancePdfReport(engine: AttendancePdfEngine): AttendancePdfReportRenderResult {
   const plan = buildAttendancePdfReportPlan(engine.contract);
   const renderedSections: AttendancePdfRenderedSection[] = [];
+
+  renderAttendancePdfReportHeading(engine);
 
   for (const planned of plan.sections) {
     switch (planned.section) {

@@ -59,6 +59,15 @@ function accentForKpi(engine: AttendancePdfEngine, kpi: AttendancePdfExecutiveKp
   }
 }
 
+function lightTone(color: AttendancePdfColor): AttendancePdfColor {
+  const ratio = 0.78;
+  return [
+    Math.round(color[0] + (255 - color[0]) * ratio),
+    Math.round(color[1] + (255 - color[1]) * ratio),
+    Math.round(color[2] + (255 - color[2]) * ratio),
+  ];
+}
+
 function drawQualityStrip(engine: AttendancePdfEngine, model: AttendancePdfExecutiveSummaryModel): number {
   const { document, pages, theme } = engine;
   const quality = model.quality;
@@ -175,12 +184,11 @@ function drawDirectionKpiGrid(engine: AttendancePdfEngine, model: AttendancePdfE
     const x = pages.contentLeft + index * (cardWidth + gap);
     const y = pages.y;
 
-    setColor(document.setFillColor.bind(document), theme.colors.surface);
-    setColor(document.setDrawColor.bind(document), theme.colors.border);
-    document.setLineWidth(0.2);
-    document.roundedRect(x, y, cardWidth, cardHeight, 2, 2, 'FD');
-
     const accent = accentForKpi(engine, kpi);
+    setColor(document.setFillColor.bind(document), lightTone(accent));
+    setColor(document.setDrawColor.bind(document), accent);
+    document.setLineWidth(0.25);
+    document.roundedRect(x, y, cardWidth, cardHeight, 2, 2, 'FD');
     setColor(document.setFillColor.bind(document), accent);
     document.rect(x, y, 1.5, cardHeight, 'F');
 
@@ -206,6 +214,59 @@ function drawDirectionKpiGrid(engine: AttendancePdfEngine, model: AttendancePdfE
 
   pages.moveCursor(cardHeight + 4);
   return cardHeight + 4;
+}
+
+
+function drawDurationInsight(engine: AttendancePdfEngine, model: AttendancePdfExecutiveSummaryModel, compact: boolean): number {
+  const { document, pages, theme } = engine;
+  const insight = model.durationInsight;
+  const height = compact ? 16 : 19;
+  const decision = pages.ensureSpace(height);
+  if (!decision.fitsOnFreshPage) throw new RangeError('Duration insight is taller than a printable page.');
+
+  const x = pages.contentLeft;
+  const y = pages.y;
+  const width = pages.contentWidth;
+
+  setColor(document.setFillColor.bind(document), theme.colors.surfaceMuted);
+  setColor(document.setDrawColor.bind(document), theme.colors.border);
+  document.setLineWidth(0.2);
+  document.roundedRect(x, y, width, height, 2, 2, 'FD');
+
+  document.setFont(theme.fontFamily, 'bold').setFontSize(compact ? 7.8 : 8.5);
+  setColor(document.setTextColor.bind(document), theme.colors.mutedText);
+  document.text(insight.label, x + 4, y + (compact ? 5 : 5.5));
+
+  document.setFont(theme.fontFamily, 'bold').setFontSize(compact ? 12.5 : 14);
+  setColor(document.setTextColor.bind(document), theme.colors.text);
+  document.text(insight.value, x + 4, y + (compact ? 11.3 : 13));
+
+  drawWrappedText({
+    document,
+    text: insight.helper,
+    x: x + (compact ? 47 : 55),
+    y: y + (compact ? 7.1 : 7.7),
+    width: width - (compact ? 51 : 59),
+    fontSize: compact ? 7 : 7.6,
+    color: theme.colors.mutedText,
+    fontFamily: theme.fontFamily,
+  });
+
+  if (!compact && insight.detail) {
+    drawWrappedText({
+      document,
+      text: insight.detail,
+      x: x + 55,
+      y: y + 13.2,
+      width: width - 59,
+      fontSize: 6.8,
+      color: theme.colors.mutedText,
+      fontFamily: theme.fontFamily,
+    });
+  }
+
+  pages.moveCursor(height + 4);
+  return height + 4;
 }
 
 function drawBottomPanels(engine: AttendancePdfEngine, model: AttendancePdfExecutiveSummaryModel): number {
@@ -312,25 +373,30 @@ export interface AttendancePdfExecutiveSummaryResult {
 
 /**
  * Rend la première page métier du rapport.
- * Cette section ne calcule aucun statut, taux ou anomalie : elle présente les
+ * Cette section ne calcule aucun statut, taux ou élément à examiner : elle présente les
  * agrégats déjà présents dans AttendanceOverview.
  */
 export function renderAttendancePdfExecutiveSummary(
   engine: AttendancePdfEngine,
 ): AttendancePdfExecutiveSummaryResult {
-  const model = buildAttendancePdfExecutiveSummaryModel(engine.contract.request.overview);
+  const model = buildAttendancePdfExecutiveSummaryModel(
+    engine.contract.request.overview,
+    engine.contract.request.mode,
+  );
   engine.pages.markSectionStart('executive_summary');
   const startPage = engine.pages.currentPage;
   const startY = engine.pages.y;
 
   const compactDirectionSummary = engine.contract.request.mode === 'period_summary';
 
-  engine.primitives.drawSectionTitle(model.title, compactDirectionSummary ? 1 : 1.5);
-  engine.primitives.drawTextBlock(model.scopeLine, {
-    fontSizePt: 8.5,
-    color: engine.theme.colors.mutedText,
-    spacingAfter: compactDirectionSummary ? 2 : 3,
-  });
+  if (!compactDirectionSummary) {
+    engine.primitives.drawSectionTitle(model.title, 1.5);
+    engine.primitives.drawTextBlock(model.scopeLine, {
+      fontSizePt: 8.5,
+      color: engine.theme.colors.mutedText,
+      spacingAfter: 3,
+    });
+  }
 
   // En Direction, la qualité n'occupe de place que lorsqu'elle change réellement
   // l'interprétation du rapport. Un état fiable n'a pas besoin d'un bandeau dédié.
@@ -342,6 +408,7 @@ export function renderAttendancePdfExecutiveSummary(
     drawDirectionKpiGrid(engine, model);
   } else {
     drawKpiGrid(engine, model);
+    drawDurationInsight(engine, model, false);
     drawBottomPanels(engine, model);
   }
 
