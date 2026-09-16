@@ -214,15 +214,19 @@ describe('outils de période métier', () => {
     );
   });
 
-  it('ne clôture pas un bloc traversant minuit le jour de son démarrage', () => {
+  it('utilise la fin du dernier bloc quand une journée contient plusieurs plages', () => {
+    const blocks = [
+      { startTime: '08:00', endTime: '12:00', toleranceMinutes: 15 },
+      { startTime: '14:00', endTime: '18:00', toleranceMinutes: 15 },
+    ];
+
     assert.equal(
-      hasExpectedWorkDayEnded(
-        '2026-07-22',
-        [{ startTime: '16:00', endTime: '08:00', toleranceMinutes: 0 }],
-        '2026-07-22',
-        '23:30',
-      ),
+      hasExpectedWorkDayEnded('2026-07-22', blocks, '2026-07-22', '17:59'),
       false,
+    );
+    assert.equal(
+      hasExpectedWorkDayEnded('2026-07-22', blocks, '2026-07-22', '18:00'),
+      true,
     );
   });
 

@@ -86,14 +86,18 @@ export class TenantAttendanceStatisticsAdapter implements AttendanceStatisticsPo
   ): Promise<ReadonlyMap<string, AttendanceDayActivityInput>> {
     if (query.employeeIds.length === 0) return new Map();
 
-    const conditions: Record<string, unknown> = {
+    const periodStart = createBusinessBoundary(query.startDate, false);
+    const periodEnd = createBusinessBoundary(query.endDate, true);
+
+    // Une session qui commence avant la période mais se termine pendant celle-ci
+    // doit être chargée (cas typique d'une garde qui traverse minuit).
+    const conditions: Record<string | symbol, unknown> = {
       user: { [Op.in]: [...query.employeeIds] },
-      session_start_at: {
-        [Op.between]: [
-          createBusinessBoundary(query.startDate, false),
-          createBusinessBoundary(query.endDate, true),
-        ],
-      },
+      session_start_at: { [Op.lte]: periodEnd },
+      [Op.or]: [
+        { session_end_at: { [Op.gte]: periodStart } },
+        { session_end_at: { [Op.is]: null } },
+      ],
     };
     if (query.siteId !== null) conditions.site = query.siteId;
 
@@ -114,41 +118,13 @@ export class TenantAttendanceStatisticsAdapter implements AttendanceStatisticsPo
         let pauseMinutes: number | null = null;
         try {
           const rawPauseMinutes = await session.getTotalPauseTime();
-
-          if (rawPauseMinutes === null || rawPauseMinutes === undefined) {
-            pauseMinutes = null;
-          } else if (!Number.isFinite(rawPauseMinutes)) {
-            console.warn('[AttendanceStatistics] Invalid pause duration', {
-              sessionId: session.getId(),
-              rawPauseMinutes,
-            });
-
-            pauseMinutes = null;
-          } else if (rawPauseMinutes < 0) {
-            console.warn('[AttendanceStatistics] Negative pause duration normalized', {
-              sessionId: session.getId(),
-              sessionGuid: session.getGuid(),
-              rawPauseMinutes,
-            });
-
-            pauseMinutes = null;
-          } else {
-            pauseMinutes = rawPauseMinutes;
-          }
-
-          // pauseMinutes = await session.getTotalPauseTime();
-          //
-          // console.log('[AttendanceStatistics] pause:', {
-          //   sessionId: session.getId(),
-          //   sessionGuid: session.getGuid(),
-          //   employeeId,
-          //   startAt,
-          //   endAt,
-          //   status: normalizedStatus,
-          //   open,
-          //   incomplete,
-          //   pauseMinutes,
-          // });
+          pauseMinutes =
+            rawPauseMinutes !== null &&
+            rawPauseMinutes !== undefined &&
+            Number.isFinite(rawPauseMinutes) &&
+            rawPauseMinutes >= 0
+              ? rawPauseMinutes
+              : null;
         } catch (error) {
           console.error(
             `[AttendanceStatistics] Pause illisible pour session ${session.getGuid() ?? session.getId()}`,
@@ -169,40 +145,64 @@ export class TenantAttendanceStatisticsAdapter implements AttendanceStatisticsPo
       },
     );
 
-    const grouped = new Map<string, SessionSnapshot[]>();
+    const grouped = new Map<string, Array<{ snapshot: SessionSnapshot; date: BusinessDate }>>();
+    const businessNow = TimezoneConfigUtils.getCurrentTime();
+
     for (const snapshot of snapshots) {
       if (!snapshot) continue;
-      const key = attendanceActivityKey(snapshot.employeeId, snapshot.date);
-      const group = grouped.get(key) ?? [];
-      group.push(snapshot);
-      grouped.set(key, group);
+
+      for (const date of listOverlappedBusinessDates(
+        snapshot,
+        query.startDate,
+        query.endDate,
+        businessNow,
+      )) {
+        const key = attendanceActivityKey(snapshot.employeeId, date);
+        const group = grouped.get(key) ?? [];
+        group.push({ snapshot, date });
+        grouped.set(key, group);
+      }
     }
 
     const result = new Map<string, AttendanceDayActivityInput>();
-    for (const [key, group] of grouped.entries()) {
-      group.sort((a, b) => a.startAt.getTime() - b.startAt.getTime());
-      const knownGross = group.every((session) => session.grossMinutes !== null);
-      const knownPause = group.every((session) => session.pauseMinutes !== null);
+    for (const [key, entries] of grouped.entries()) {
+      entries.sort((a, b) => a.snapshot.startAt.getTime() - b.snapshot.startAt.getTime());
+      const date = entries[0]!.date;
+      const group = entries.map((entry) => entry.snapshot);
+
+      const firstSession = group[0]!;
       const lastEnd = group
         .map((session) => session.endAt)
         .filter((value): value is Date => value !== null)
         .sort((a, b) => a.getTime() - b.getTime())
         .at(-1);
 
+      const dailyDurations = entries.map(({ snapshot }) =>
+        calculateSessionDurationForBusinessDate(snapshot, date),
+      );
+      const knownGross = dailyDurations.every((duration) => duration.grossMinutes !== null);
+      const knownPause = dailyDurations.every((duration) => duration.pauseMinutes !== null);
+
       result.set(key, {
         sessionCount: group.length,
         openSessionCount: group.filter((session) => session.open).length,
         incompleteSessionCount: group.filter((session) => session.incomplete).length,
-        firstClockIn: formatBusinessTime(group[0]!.startAt),
-        firstClockInDate: formatBusinessDate(group[0]!.startAt),
+        firstClockIn: formatBusinessTime(firstSession.startAt),
+        firstClockInDate: formatBusinessDate(firstSession.startAt),
         lastClockOut: lastEnd ? formatBusinessTime(lastEnd) : null,
         lastClockOutDate: lastEnd ? formatBusinessDate(lastEnd) : null,
         grossMinutes: knownGross
-          ? group.reduce((total, session) => total + session.grossMinutes!, 0)
+          ? dailyDurations.reduce((total, duration) => total + duration.grossMinutes!, 0)
           : null,
         pauseMinutes: knownPause
-          ? group.reduce((total, session) => total + session.pauseMinutes!, 0)
+          ? dailyDurations.reduce((total, duration) => total + duration.pauseMinutes!, 0)
           : null,
+        intervals: group.map((session) => ({
+          startDate: formatBusinessDate(session.startAt),
+          startTime: formatBusinessTime(session.startAt),
+          endDate: session.endAt ? formatBusinessDate(session.endAt) : null,
+          endTime: session.endAt ? formatBusinessTime(session.endAt) : null,
+        })),
       });
     }
 
@@ -251,6 +251,156 @@ export class TenantAttendanceStatisticsAdapter implements AttendanceStatisticsPo
       iso: now.toISOString(),
     };
   }
+}
+
+function listOverlappedBusinessDates(
+  snapshot: SessionSnapshot,
+  periodStart: BusinessDate,
+  periodEnd: BusinessDate,
+  businessNow: Date,
+): BusinessDate[] {
+  // Une session reste une donnée valide quelle que soit sa durée.
+  // En revanche, elle ne doit pas fabriquer une présence sur chaque journée
+  // civile comprise entre son entrée et sa sortie.
+  //
+  // Règle de projection statistique :
+  // - toujours la journée de démarrage ;
+  // - éventuellement le lendemain immédiat si la session traverse exactement
+  //   un seul minuit (cas de garde 16:00 -> 08:00) ;
+  // - jamais J+2, J+3, ... uniquement parce que session_end_at est éloigné.
+  //
+  // Pour une session OPEN, businessNow sert uniquement à savoir si le lendemain
+  // immédiat a réellement commencé. OPEN_SESSION reste exposé par le domaine.
+  const effectiveEnd = snapshot.endAt ?? businessNow;
+  if (effectiveEnd <= snapshot.startAt) return [];
+
+  const startDate = formatBusinessDate(snapshot.startAt);
+  const endDate = formatBusinessDate(effectiveEnd);
+  const nextDate = addBusinessDays(startDate, 1);
+  const dates: BusinessDate[] = [];
+
+  if (isBusinessDateWithinPeriod(startDate, periodStart, periodEnd)) {
+    dates.push(startDate);
+  }
+
+  // Le lendemain n'est projeté que si la session se termine ce lendemain.
+  // Une session qui reste ouverte/fermée au-delà n'est pas interprétée comme
+  // une présence continue. Sa durée totale reste conservée sur sa journée de
+  // démarrage par calculateSessionDurationForBusinessDate().
+  if (endDate === nextDate && isBusinessDateWithinPeriod(nextDate, periodStart, periodEnd)) {
+    const nextDayStart = createBusinessBoundary(nextDate, false);
+    if (snapshot.startAt < nextDayStart && effectiveEnd > nextDayStart) {
+      dates.push(nextDate);
+    }
+  }
+
+  return dates;
+}
+
+function calculateSessionDurationForBusinessDate(
+  snapshot: SessionSnapshot,
+  date: BusinessDate,
+): { grossMinutes: number | null; pauseMinutes: number | null } {
+  if (!snapshot.endAt) {
+    return { grossMinutes: null, pauseMinutes: null };
+  }
+
+  const startDate = formatBusinessDate(snapshot.startAt);
+  const endDate = formatBusinessDate(snapshot.endAt);
+  const nextDate = addBusinessDays(startDate, 1);
+  const isSingleBusinessDay = startDate === endDate && startDate === date;
+
+  if (isSingleBusinessDay) {
+    return {
+      grossMinutes: snapshot.grossMinutes,
+      pauseMinutes: snapshot.pauseMinutes,
+    };
+  }
+
+  const isSimpleOvernightSession = endDate === nextDate;
+
+  // Une session qui couvre plus d'un minuit n'est pas ventilée artificiellement
+  // en journées de 1440 min. On conserve sa durée calculable complète sur sa
+  // journée de démarrage, sans la déclarer invalide.
+  if (!isSimpleOvernightSession) {
+    return date === startDate
+      ? { grossMinutes: snapshot.grossMinutes, pauseMinutes: snapshot.pauseMinutes }
+      : { grossMinutes: null, pauseMinutes: null };
+  }
+
+  const dayStart = createBusinessBoundary(date, false);
+  const nextDayStart = createNextBusinessDayBoundary(date);
+  const clippedStart = snapshot.startAt > dayStart ? snapshot.startAt : dayStart;
+  const clippedEnd = snapshot.endAt < nextDayStart ? snapshot.endAt : nextDayStart;
+  const rawSegmentMinutes = Math.max(
+    0,
+    (clippedEnd.getTime() - clippedStart.getTime()) / 60_000,
+  );
+
+  let grossMinutes: number;
+  if (snapshot.grossMinutes !== null) {
+    // Pour une garde simple J -> J+1, la somme des deux segments doit rester
+    // exactement égale à la durée de référence de la WorkSession. On évite
+    // ainsi de perdre une minute en tronquant indépendamment les deux côtés
+    // de minuit (ex. 464.7 + 560.5 => 1025, pas 1024).
+    if (date === startDate) {
+      grossMinutes = Math.min(snapshot.grossMinutes, Math.floor(rawSegmentMinutes));
+    } else {
+      const firstDayStart = snapshot.startAt;
+      const midnight = createNextBusinessDayBoundary(startDate);
+      const firstDayRawMinutes = Math.max(
+        0,
+        (midnight.getTime() - firstDayStart.getTime()) / 60_000,
+      );
+      const firstDayMinutes = Math.min(
+        snapshot.grossMinutes,
+        Math.floor(firstDayRawMinutes),
+      );
+      grossMinutes = Math.max(0, snapshot.grossMinutes - firstDayMinutes);
+    }
+  } else {
+    grossMinutes = Math.floor(rawSegmentMinutes);
+  }
+
+  // Sans horodatage précis des pauses, une pause non nulle ne peut pas être
+  // répartie honnêtement entre les deux journées d'une garde.
+  const pauseMinutes = snapshot.pauseMinutes === 0 ? 0 : null;
+  return { grossMinutes, pauseMinutes };
+}
+
+function createNextBusinessDayBoundary(date: BusinessDate): Date {
+  const result = createBusinessBoundary(date, false);
+  result.setDate(result.getDate() + 1);
+  return result;
+}
+
+function addBusinessDays(date: BusinessDate, days: number): BusinessDate {
+  const timestamp = businessDateToUtcDay(date) + days * 86_400_000;
+  return formatUtcBusinessDate(timestamp);
+}
+
+function isBusinessDateWithinPeriod(
+  date: BusinessDate,
+  periodStart: BusinessDate,
+  periodEnd: BusinessDate,
+): boolean {
+  return date >= periodStart && date <= periodEnd;
+}
+
+
+
+function businessDateToUtcDay(value: BusinessDate): number {
+  const [year, month, day] = value.split('-').map(Number);
+  return Date.UTC(year!, month! - 1, day!);
+}
+
+function formatUtcBusinessDate(timestamp: number): BusinessDate {
+  const date = new Date(timestamp);
+  return [
+    date.getUTCFullYear(),
+    String(date.getUTCMonth() + 1).padStart(2, '0'),
+    String(date.getUTCDate()).padStart(2, '0'),
+  ].join('-');
 }
 
 async function mapWithConcurrency<TInput, TOutput>(

@@ -147,6 +147,53 @@ describe('buildAttendanceOverview', () => {
     assert.equal(overview.issues.find((issue) => issue.issue === 'PRESENCE_ON_REST_DAY')?.count, 1);
   });
 
+  it('agrège ACTIVITY_OUTSIDE_EXPECTED_BLOCK dans la synthèse des issues', () => {
+    const overview = buildAttendanceOverview({
+      generatedAt: '2026-09-16T15:11:48.000Z',
+      managerGuid: 'manager-1',
+      siteGuid: null,
+      startDate: '2026-09-02',
+      endDate: '2026-09-02',
+      dates: ['2026-09-02'],
+      employees: [
+        { id: 1, guid: 'e1', name: 'Employé 1' },
+        { id: 2, guid: 'e2', name: 'Employé 2' },
+      ],
+      days: [
+        makeDay(1, 'e1', '2026-09-02', 'ABSENT', {
+          issues: ['ACTIVITY_OUTSIDE_EXPECTED_BLOCK'],
+          grossMinutes: 497,
+          pauseMinutes: 0,
+        }),
+        makeDay(2, 'e2', '2026-09-02', 'ABSENT', {
+          issues: ['ACTIVITY_OUTSIDE_EXPECTED_BLOCK', 'MISSING_DURATION'],
+          grossMinutes: null,
+          pauseMinutes: null,
+        }),
+      ],
+    });
+
+    const issue = overview.issues.find(
+      (item) => item.issue === 'ACTIVITY_OUTSIDE_EXPECTED_BLOCK',
+    );
+
+    assert.ok(issue);
+    assert.equal(issue.count, 2);
+    assert.equal(issue.employeesConcerned, 2);
+    assert.equal(issue.occurrences.length, 2);
+    assert.deepEqual(
+      issue.occurrences.map((occurrence) => ({
+        employeeGuid: occurrence.employeeGuid,
+        date: occurrence.date,
+        status: occurrence.status,
+      })),
+      [
+        { employeeGuid: 'e1', date: '2026-09-02', status: 'ABSENT' },
+        { employeeGuid: 'e2', date: '2026-09-02', status: 'ABSENT' },
+      ],
+    );
+  });
+
   it('ne remplace pas une durée manquante par zéro', () => {
     const day = makeDay(1, 'e1', '2026-07-20', 'PRESENT', {
       grossMinutes: null,

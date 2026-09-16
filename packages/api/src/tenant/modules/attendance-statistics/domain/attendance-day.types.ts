@@ -15,6 +15,7 @@ export type ScheduleResolutionIssue = 'MISSING_SCHEDULE' | 'INVALID_SCHEDULE';
 export type AttendanceIssue =
   | 'PRESENCE_ON_REST_DAY'
   | 'PRESENCE_WITHOUT_SCHEDULE'
+  | 'ACTIVITY_OUTSIDE_EXPECTED_BLOCK'
   | ScheduleResolutionIssue
   | 'OPEN_SESSION'
   | 'INCOMPLETE_SESSION'
@@ -68,6 +69,13 @@ export type AttendanceDaySchedule =
  * Activité déjà agrégée pour un seul couple employé × journée métier.
  * incompleteSessionCount exclut les sessions OPEN afin de ne pas les compter deux fois.
  */
+export interface AttendanceActivityInterval {
+  startDate: BusinessDate;
+  startTime: BusinessTime;
+  endDate: BusinessDate | null;
+  endTime: BusinessTime | null;
+}
+
 export interface AttendanceDayActivityInput {
   sessionCount: number;
   openSessionCount: number;
@@ -78,6 +86,8 @@ export interface AttendanceDayActivityInput {
   lastClockOutDate: BusinessDate | null;
   grossMinutes: number | null;
   pauseMinutes: number | null;
+  /** Intervalles réels touchant la journée, y compris une session commencée la veille. */
+  intervals?: readonly AttendanceActivityInterval[];
 }
 
 export interface AttendanceDayActivity extends AttendanceDayActivityInput {

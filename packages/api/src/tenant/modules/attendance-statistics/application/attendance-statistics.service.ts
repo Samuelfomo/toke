@@ -23,6 +23,7 @@ const EMPTY_ACTIVITY: AttendanceDayActivityInput = {
   lastClockOutDate: null,
   grossMinutes: null,
   pauseMinutes: null,
+  intervals: [],
 };
 
 export type AttendanceStatisticsErrorCode = 'MANAGER_NOT_FOUND' | 'SITE_NOT_FOUND';
