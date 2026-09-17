@@ -276,9 +276,14 @@ router.get('/unassigned-employees', Ensure.get(), async (req: Request, res: Resp
     }
 
     // ============================================
-    // 2️⃣ RÉCUPÉRER TOUS LES EMPLOYÉS ACTIFS
+    // 2️⃣ RÉCUPÉRER TOUS LES MEMBRES ACTIFS DE L'EFFECTIF
     // ============================================
-    const allActiveUsers = await User._listByActiveStatus(true);
+    // const allActiveUsers = await User._listByActiveStatus(true);
+    const allActiveUsers = await User._list({
+      active: true,
+      deleted_at: null,
+      is_workforce_member: true,
+    });
     if (!allActiveUsers || allActiveUsers.length === 0) {
       return R.handleSuccess(res, {
         manager: await managerObj.toJSON(responseValue.MINIMAL),
@@ -286,6 +291,8 @@ router.get('/unassigned-employees', Ensure.get(), async (req: Request, res: Resp
         unassigned_employees: [],
         metadata: {
           total_active_users: 0,
+          // total_active_workforce_users doit replacer total_active_users car plus coherent sémantiquement
+          total_active_workforce_users: 0,
           total_in_groups: 0,
           filtered_count: 0,
         },
@@ -391,6 +398,8 @@ router.get('/unassigned-employees', Ensure.get(), async (req: Request, res: Resp
       unassigned_employees: enrichedEmployees,
       metadata: {
         total_active_users: allActiveUsers.length,
+        // total_active_workforce_users doit replacer total_active_users car plus coherent sémantiquement
+        total_active_workforce_users: allActiveUsers.length,
         total_in_groups: activeGroupMemberIds.length,
         filtered_count: unassignedEmployees.length,
       },
@@ -1538,6 +1547,100 @@ router.patch('/verify-pin', Ensure.patch(), async (req: Request, res: Response) 
   } catch (error: any) {
     return R.handleError(res, HttpStatus.INTERNAL_ERROR, {
       code: USERS_CODES.CREATION_FAILED,
+      message: error.message,
+    });
+  }
+});
+
+router.patch('/:guid/workforce-status', Ensure.patch(), async (req: Request, res: Response) => {
+  try {
+    const { guid } = req.params;
+    const { supervisor } = req.query;
+    const { is_workforce_member } = req.body;
+
+    // ============================================
+    // 1️⃣ VALIDATION GUID USER
+    // ============================================
+    if (!UsersValidationUtils.validateGuid(guid)) {
+      return R.handleError(res, HttpStatus.BAD_REQUEST, {
+        code: USERS_CODES.INVALID_GUID,
+        message: USERS_ERRORS.GUID_INVALID,
+      });
+    }
+
+    // ============================================
+    // 2️⃣ VALIDATION VALEUR
+    // ============================================
+    if (typeof is_workforce_member !== 'boolean') {
+      return R.handleError(res, HttpStatus.BAD_REQUEST, {
+        code: USERS_CODES.VALIDATION_FAILED,
+        message: 'is_workforce_member must be a boolean',
+      });
+    }
+
+    // ============================================
+    // 3️⃣ VALIDATION SUPERVISEUR
+    // ============================================
+    if (!supervisor || !UsersValidationUtils.validateGuid(String(supervisor))) {
+      return R.handleError(res, HttpStatus.BAD_REQUEST, {
+        code: USERS_CODES.INVALID_GUID,
+        message: USERS_ERRORS.SUPERVISOR_NOT_FOUND,
+      });
+    }
+
+    // ============================================
+    // 4️⃣ CHARGEMENT DU USER
+    // ============================================
+    const userObj = await User._load(guid, true);
+
+    if (!userObj) {
+      return R.handleError(res, HttpStatus.NOT_FOUND, {
+        code: USERS_CODES.USER_NOT_FOUND,
+        message: USERS_ERRORS.NOT_FOUND,
+      });
+    }
+
+    // ============================================
+    // 5️⃣ CHARGEMENT DU RESPONSABLE
+    // ============================================
+    const supervisorObj = await User._load(String(supervisor), true);
+
+    if (!supervisorObj) {
+      return R.handleError(res, HttpStatus.NOT_FOUND, {
+        code: USERS_CODES.SUPERVISOR_NOT_FOUND,
+        message: USERS_ERRORS.SUPERVISOR_NOT_FOUND,
+      });
+    }
+
+    // ============================================
+    // 6️⃣ AUTORISATION
+    // ============================================
+    const isSupervisor = await UserRole.isManager(supervisorObj.getId()!);
+
+    if (!isSupervisor) {
+      return R.handleError(res, HttpStatus.FORBIDDEN, {
+        code: USERS_CODES.AUTHORIZATION_FAILED,
+        message: USERS_ERRORS.AUTHORIZATION_FAILED,
+      });
+    }
+
+    // ============================================
+    // 7️⃣ MISE À JOUR
+    // ============================================
+    userObj.setWorkforceMember(is_workforce_member);
+
+    await userObj.save();
+
+    // ============================================
+    // 8️⃣ RÉPONSE
+    // ============================================
+    return R.handleSuccess(res, {
+      message: 'User workforce status updated successfully',
+      user: await userObj.toJSON(),
+    });
+  } catch (error: any) {
+    return R.handleError(res, HttpStatus.INTERNAL_ERROR, {
+      code: USERS_CODES.UPDATE_FAILED,
       message: error.message,
     });
   }

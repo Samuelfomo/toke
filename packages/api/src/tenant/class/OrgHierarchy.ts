@@ -249,6 +249,9 @@ export default class OrgHierarchy extends OrgHierarchyModel {
       const userObj = await User._load(userId);
       if (!userObj) continue;
 
+      // Compte fonctionnel/technique : ne fait pas partie de l'effectif du tenant
+      if (!userObj.isWorkforceMember()) continue;
+
       // Conflit de groupe
       const otherGroupConflict = await this._checkGroupConflict(userId!, managerId);
       if (otherGroupConflict) {
@@ -291,6 +294,9 @@ export default class OrgHierarchy extends OrgHierarchyModel {
 
       const userObj = await User._load(userId);
       if (!userObj) continue;
+
+      // Compte fonctionnel/technique : ne fait pas partie de l'effectif du tenant
+      if (!userObj.isWorkforceMember()) continue;
 
       // Conflit d'assignation
       const assignedByAnother = await this._checkAssignedByConflict(userId, managerId);

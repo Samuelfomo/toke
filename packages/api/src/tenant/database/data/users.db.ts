@@ -255,6 +255,15 @@ export const UsersDbStructure = {
       },
       comment: 'User device token',
     },
+    is_workforce_member: {
+      type: DataTypes.BOOLEAN,
+      allowNull: false,
+      defaultValue: true,
+      validate: {
+        isBoolean: true,
+      },
+      comment: 'Whether the user belongs to the tenant workforce',
+    },
   } as ModelAttributes,
   options: {
     tableName: tableName.USERS,

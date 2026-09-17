@@ -211,6 +211,10 @@ export default class User extends UserModel {
     return this.job_title;
   }
 
+  isWorkforceMember(): boolean {
+    return this.is_workforce_member ?? true;
+  }
+
   isActive(): boolean | undefined {
     return this.active;
   }
@@ -439,6 +443,11 @@ export default class User extends UserModel {
 
   setJobTitle(jobTitle: string): User {
     this.job_title = jobTitle;
+    return this;
+  }
+
+  setWorkforceMember(isWorkforceMember: boolean): User {
+    this.is_workforce_member = isWorkforceMember;
     return this;
   }
 
@@ -824,6 +833,7 @@ export default class User extends UserModel {
       [RS.HIRE_DATE]: this.hire_date,
       [RS.DEPARTMENT]: this.department,
       [RS.JOB_TITLE]: this.job_title,
+      [RS.IS_WORKFORCE_MEMBER]: this.isWorkforceMember(),
       [RS.ACTIVE]: this.active,
       [RS.LAST_LOGIN_AT]: this.last_login_at,
     };
@@ -862,6 +872,7 @@ export default class User extends UserModel {
       [RS.AVATAR_URL]: this.avatar_url,
       [RS.DEPARTMENT]: this.department,
       [RS.JOB_TITLE]: this.job_title,
+      [RS.IS_WORKFORCE_MEMBER]: this.isWorkforceMember(),
       [RS.ACTIVE]: this.active,
       [RS.EMAIL]: this.email,
       [RS.PHONE_NUMBER]: this.phone_number,
@@ -899,6 +910,7 @@ export default class User extends UserModel {
     this.hire_date = data.hire_date;
     this.department = data.department;
     this.job_title = data.job_title;
+    this.is_workforce_member = data.is_workforce_member ?? true;
     this.active = data.active;
     this.last_login_at = data.last_login_at;
     this.device_token = data.device_token;

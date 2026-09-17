@@ -201,6 +201,13 @@ router.post('/', Ensure.post(), async (req: Request, res: Response) => {
       });
     }
 
+    if (!subordinateObj.isWorkforceMember()) {
+      return R.handleError(res, HttpStatus.BAD_REQUEST, {
+        code: 'user_not_workforce_member',
+        message: 'This user does not belong to the tenant workforce.',
+      });
+    }
+
     // verifier que l'utilisateur n'ai pas l'admin du systeme (root)
     const userRole = await UserRole._load({}, false, false, true);
     if (userRole?.getUser() === subordinateObj.getId()) {
@@ -326,6 +333,14 @@ router.put('/:guid', Ensure.put(), async (req: Request, res: Response) => {
           message: 'Subordinate user not found',
         });
       }
+
+      if (!subordinateObj.isWorkforceMember()) {
+        return R.handleError(res, HttpStatus.BAD_REQUEST, {
+          code: 'USER_NOT_WORKFORCE_MEMBER',
+          message: 'This user does not belong to the tenant workforce.',
+        });
+      }
+
       hierarchyObj.setSubordinate(subordinateObj.getId()!);
     }
 

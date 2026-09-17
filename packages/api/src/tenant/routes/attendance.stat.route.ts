@@ -1477,7 +1477,7 @@ router.get('/dashboard/hr-analytics', Ensure.get(), async (req: Request, res: Re
     } else {
       // Si aucun manager spécifié, on prend toute l'équipe du tenant
       // (à adapter selon votre contexte — peut être un filtre par Site Admin)
-      const allUsers = await User._list({ deleted_at: null });
+      const allUsers = await User._list({ deleted_at: null, is_workforce_member: true });
       teamMembers = (allUsers ?? []).map((u) => u.getId()!);
     }
 

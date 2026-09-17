@@ -50,6 +50,7 @@ export default class UserModel extends BaseModel {
     job_title: 'job_title',
 
     // Statut
+    is_workforce_member: 'is_workforce_member',
     active: 'active',
     deleted_at: 'deleted_at',
     last_login_at: 'last_login_at',
@@ -89,6 +90,7 @@ export default class UserModel extends BaseModel {
   protected hire_date?: Date;
   protected department?: string;
   protected job_title?: string;
+  protected is_workforce_member?: boolean;
   protected active?: boolean;
   protected deleted_at?: Date;
   protected last_login_at?: Date;
@@ -671,6 +673,7 @@ export default class UserModel extends BaseModel {
       [this.db.hire_date]: this.hire_date,
       [this.db.department]: this.department,
       [this.db.job_title]: this.job_title,
+      [this.db.is_workforce_member]: this.is_workforce_member ?? true,
       [this.db.active]: this.active ?? USERS_DEFAULTS.ACTIVE,
       // [this.db.session_template]: this.session_template || null,
       // [this.db.device_token]: this.device_token ? this.device_token : null,
@@ -759,6 +762,9 @@ export default class UserModel extends BaseModel {
     }
     if (this.job_title !== undefined) {
       updateData[this.db.job_title] = this.job_title;
+    }
+    if (this.is_workforce_member !== undefined) {
+      updateData[this.db.is_workforce_member] = this.is_workforce_member;
     }
     if (this.active !== undefined) {
       updateData[this.db.active] = this.active;

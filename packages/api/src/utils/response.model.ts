@@ -86,6 +86,7 @@ export const responseStructure = {
   EMPLOYEE: 'employee',
   EMPLOYEE_CODE: 'employee_code',
   EMPLOYEE_COLOR: 'employee_color',
+  IS_WORKFORCE_MEMBER: 'is_workforce_member',
   ACTIVATION_DATE: 'activation_date',
   DEACTIVATION_DATE: 'deactivation_date',
   LAST_ACTIVITY_DATE: 'last_activity_date',

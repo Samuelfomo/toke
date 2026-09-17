@@ -285,6 +285,13 @@ router.post('/', Ensure.post(), async (req: Request, res: Response) => {
           });
         }
 
+        if (!userObj.isWorkforceMember()) {
+          return R.handleError(res, HttpStatus.BAD_REQUEST, {
+            code: 'USER_NOT_WORKFORCE_MEMBER',
+            message: `User ${member.user} does not belong to the tenant workforce.`,
+          });
+        }
+
         groupsObj.addMember(userObj.getId()!, member.joined_at, member.active);
       }
     }
@@ -408,6 +415,14 @@ router.put('/:guid', Ensure.put(), async (req: Request, res: Response) => {
             message: `${GROUPS_ERRORS.MEMBER_USER_NOT_FOUND}: ${member.user}`,
           });
         }
+
+        if (!userObj.isWorkforceMember()) {
+          return R.handleError(res, HttpStatus.BAD_REQUEST, {
+            code: 'USER_NOT_WORKFORCE_MEMBER',
+            message: `User ${member.user} does not belong to the tenant workforce.`,
+          });
+        }
+
         membersData.push({
           user: userObj.getId()!,
           joined_at: member.joined_at,
@@ -463,94 +478,6 @@ router.put('/:guid', Ensure.put(), async (req: Request, res: Response) => {
 // GESTION DES MEMBRES
 // ============================================
 
-// /**
-//  * PATCH /:guid/members - Ajouter un membre
-//  */
-// router.patch('/:guid/members', Ensure.patch(), async (req: Request, res: Response) => {
-//   try {
-//     const { guid } = req.params;
-//
-//     if (!GroupsValidationUtils.validateGuid(guid)) {
-//       return R.handleError(res, HttpStatus.BAD_REQUEST, {
-//         code: GROUPS_CODES.INVALID_GUID,
-//         message: GROUPS_ERRORS.GUID_INVALID,
-//       });
-//     }
-//
-//     const groupsObj = await Groups._load(guid, true);
-//     if (!groupsObj) {
-//       return R.handleError(res, HttpStatus.NOT_FOUND, {
-//         code: GROUPS_CODES.GROUPS_NOT_FOUND,
-//         message: GROUPS_ERRORS.NOT_FOUND,
-//       });
-//     }
-//
-//     const validatedMember = validateMemberAddition(req.body);
-//
-//     // Vérifier que l'utilisateur existe
-//     const userObj = await User._load(validatedMember.user, true);
-//     if (!userObj) {
-//       return R.handleError(res, HttpStatus.NOT_FOUND, {
-//         code: GROUPS_CODES.MEMBER_USER_NOT_FOUND,
-//         message: GROUPS_ERRORS.MEMBER_USER_NOT_FOUND,
-//       });
-//     }
-//
-//     // Vérifier si l'utilisateur existe déjà dans la groups
-//     const existingMember = groupsObj.getMembers().find((m) => m.user === userObj.getId());
-//     if (existingMember) {
-//       return R.handleError(res, HttpStatus.CONFLICT, {
-//         code: GROUPS_CODES.MEMBER_DUPLICATE,
-//         message: GROUPS_ERRORS.MEMBER_DUPLICATE,
-//       });
-//     }
-//
-//     // ✅ NOUVELLE VALIDATION : Si le membre est actif, vérifier qu'il n'est pas dans une autre groups
-//     if (validatedMember.active) {
-//       // Chercher si l'utilisateur est déjà membre actif d'une autre équipe
-//       const allGroups = await Groups._list({});
-//
-//       if (allGroups) {
-//         for (const group of allGroups) {
-//           if (group.getId() === groupsObj.getId()) continue; // Ignorer l'équipe actuelle
-//
-//           const existingActiveMember = group
-//             .getMembers()
-//             .find((m) => m.user === userObj.getId() && m.active !== false);
-//
-//           if (existingActiveMember) {
-//             return R.handleError(res, HttpStatus.CONFLICT, {
-//               code: GROUPS_CODES.MEMBER_ALREADY_ACTIVE_IN_ANOTHER_GROUPS,
-//               message:
-//                 `User is already an active member of group "${group.getName()}". ` +
-//                 `A user can only be active in one group at a time.`,
-//             });
-//           }
-//         }
-//       }
-//     }
-//
-//     groupsObj.addMember(userObj.getId()!, validatedMember.joined_at, validatedMember.active);
-//     await groupsObj.save();
-//
-//     return R.handleSuccess(res, {
-//       message: 'Member added successfully',
-//       groups: await groupsObj.toJSON(),
-//     });
-//   } catch (error: any) {
-//     if (error.code === GROUPS_CODES.MEMBER_DUPLICATE) {
-//       return R.handleError(res, HttpStatus.CONFLICT, {
-//         code: error.code,
-//         message: error.message,
-//       });
-//     }
-//     return R.handleError(res, HttpStatus.INTERNAL_ERROR, {
-//       code: GROUPS_CODES.UPDATE_FAILED,
-//       message: error.message,
-//     });
-//   }
-// });
-
 /**
  * PATCH /:guid/members - Ajouter plusieurs membres
  */
@@ -588,6 +515,13 @@ router.patch('/:guid/members', Ensure.patch(), async (req: Request, res: Respons
         return R.handleError(res, HttpStatus.NOT_FOUND, {
           code: GROUPS_CODES.MEMBER_USER_NOT_FOUND,
           message: `User ${member.user} not found`,
+        });
+      }
+
+      if (!userObj.isWorkforceMember()) {
+        return R.handleError(res, HttpStatus.BAD_REQUEST, {
+          code: 'user_not_workforce_member',
+          message: `User ${member.user} does not belong to the tenant workforce.`,
         });
       }
 
