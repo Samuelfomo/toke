@@ -109,7 +109,7 @@ export function buildAttendanceStatusDistribution(
       isSingleDay ? 'Situations du jour finalisées' : 'Journées finalisées prises en compte',
       isSingleDay
         ? 'Collaborateurs dont la situation de travail du jour est finalisée et déjà utilisée dans les taux.'
-        : 'Journées explicitement marquées comme éligibles par l’API et utilisées dans les taux consolidés.',
+        : 'Journées explicitement marquées comme éligibles par le système et utilisées dans les taux consolidés.',
       true,
       DEFAULT_ELIGIBLE_STATUSES,
       overview,

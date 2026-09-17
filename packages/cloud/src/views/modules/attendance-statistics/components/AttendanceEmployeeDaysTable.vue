@@ -125,7 +125,7 @@ function statusClasses(status: AttendanceStatus): string {
           </select>
         </label>
 
-        <label class="inline-flex h-11 items-center gap-2 rounded-lg border border-slate-300 bg-white px-3 text-sm font-medium text-slate-700">
+        <label class="inline-flex h-11 items-center gap-2 rounded-lg border border-slate-300 bg-white px-3 text-xs font-medium text-slate-700">
           <input v-model="issuesOnly" type="checkbox" class="h-4 w-4 rounded border-slate-300 text-indigo-600 focus:ring-indigo-500" />
           Avec élément à examiner uniquement
         </label>

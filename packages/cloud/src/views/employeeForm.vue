@@ -194,7 +194,7 @@
                       type="text"
                       placeholder="Ex: Steve Jordan"
                       :class="errors.first_name ? 'border-rose-400 focus:border-rose-500 focus:ring-rose-500/10' : 'border-slate-200 focus:border-[#004AAD] focus:ring-[#004AAD]/10'"
-                      class="w-full pl-9 pr-4 py-2.5 text-sm bg-white border rounded-xl outline-none focus:ring-2 transition-all placeholder:text-slate-300"
+                      class="w-full pl-9 pr-4 py-2.5 text-sm uppercase bg-white border rounded-xl outline-none focus:ring-2 transition-all placeholder:text-slate-300"
                   />
                 </div>
                 <p v-if="errors.first_name" class="text-xs text-rose-500">{{ errors.first_name }}</p>
@@ -217,7 +217,7 @@
                       type="text"
                       placeholder="Ex: NONGNING LELE"
                       :class="errors.last_name ? 'border-rose-400 focus:border-rose-500 focus:ring-rose-500/10' : 'border-slate-200 focus:border-[#004AAD] focus:ring-[#004AAD]/10'"
-                      class="w-full pl-9 pr-4 py-2.5 text-sm bg-white border rounded-xl outline-none focus:ring-2 transition-all placeholder:text-slate-300"
+                      class="w-full pl-9 pr-4 py-2.5 text-sm uppercase bg-white border rounded-xl outline-none focus:ring-2 transition-all placeholder:text-slate-300"
                   />
                 </div>
                 <p v-if="errors.last_name" class="text-xs text-rose-500">{{ errors.last_name }}</p>
@@ -336,7 +336,7 @@
                       v-model="form.employee_code"
                       type="text"
                       placeholder="Ex: EMP-2024-001"
-                      class="w-full pl-9 pr-4 py-2.5 text-sm bg-white border border-slate-200 rounded-xl outline-none focus:border-[#004AAD] focus:ring-2 focus:ring-[#004AAD]/10 transition-all placeholder:text-slate-300"
+                      class="w-full pl-9 pr-4 py-2.5 text-sm uppercase bg-white border border-slate-200 rounded-xl outline-none focus:border-[#004AAD] focus:ring-2 focus:ring-[#004AAD]/10 transition-all placeholder:text-slate-300"
                   />
                 </div>
               </div>
@@ -804,7 +804,7 @@ const creationChecklist = [
 // ── Preview ───────────────────────────────────────────────────────────
 const previewName = computed(() => {
   const parts = [form.first_name, form.last_name].filter(Boolean)
-  return parts.join(' ')
+  return parts.join(' ').toUpperCase()
 })
 
 const previewInitials = computed(() => {
@@ -1011,10 +1011,10 @@ const handleSubmit = async () => {
 
     const payload = {
       supervisor: supervisorGuid,
-      last_name: form.last_name.trim(),
+      last_name: form.last_name.trim().toUpperCase(),
       phone_number: `${selectedCountry.value.dialCode}${form.phone_number.trim()}`,
       country: form.country.trim().toUpperCase(),
-      ...(form.first_name.trim() && {first_name: form.first_name.trim()}),
+      ...(form.first_name.trim() && {first_name: form.first_name.trim().toUpperCase()}),
       ...(form.email.trim() && {email: form.email.trim().toLowerCase()}),
       ...(form.employee_code.trim() && {employee_code: form.employee_code.trim().toUpperCase()}),
       ...(normalizedFormEmployeeColor.value && {employee_color: normalizedFormEmployeeColor.value}),

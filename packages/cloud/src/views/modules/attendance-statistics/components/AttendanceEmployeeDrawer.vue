@@ -46,9 +46,12 @@ const netVsExpectedDuration = computed(() => {
         class="absolute inset-0 bg-slate-950/45 backdrop-blur-[1px]"
         aria-hidden="true"
       />
+<!--      <aside-->
+<!--        ref="dialogRef"-->
+<!--        class="absolute inset-y-0 right-0 flex w-full max-w-5xl flex-col bg-white shadow-2xl outline-none sm:w-[min(100%,64rem)]"-->
       <aside
-        ref="dialogRef"
-        class="absolute inset-y-0 right-0 flex w-full max-w-5xl flex-col bg-white shadow-2xl outline-none sm:w-[min(100%,64rem)]"
+          ref="dialogRef"
+          class="absolute inset-y-0 right-0 flex w-full flex-col bg-white shadow-2xl outline-none lg:w-[58vw] lg:max-w-[1500px]"
         role="dialog"
         aria-modal="true"
         aria-labelledby="attendance-employee-drawer-title"
