@@ -17,7 +17,7 @@ function formatBusinessDate(value: string): string {
 function getHeading(mode: AttendancePdfExportMode): { title: string; subtitle: string } {
   switch (mode) {
     case 'period_summary':
-      return { title: 'SYNTHÈSE DÉCISIONNELLE', subtitle: 'Direction' };
+      return { title: 'SYNTHÈSE DU SUIVI DES PRÉSENCES', subtitle: 'Direction' };
     case 'full_report':
       return { title: 'RAPPORT DE STATISTIQUES DE POINTAGE', subtitle: 'Pilotage' };
     case 'hr_complete':
