@@ -54,6 +54,19 @@ export interface AttendanceDurationMetrics {
   daysWithKnownNetDuration: number;
   daysWithMissingDuration: number;
   daysWithKnownExpectedWorkDuration: number;
+  attributedWorkMinutes: number;
+  rawDeltaMinutes: number;
+  creditedExtraMinutes: number;
+  excessBeyondExtraMinutes: number;
+  deficitMinutes: number;
+  occurrencesWithKnownAttributedWorkDuration: number;
+  occurrencesWithKnownDelta: number;
+  occurrencesWithResolvedExtraPolicy: number;
+}
+
+export interface AttendanceSourceContext {
+  sessionGuids: string[];
+  clockInEntryGuids: string[];
 }
 
 export interface AttendanceIssueOccurrence {
@@ -61,6 +74,7 @@ export interface AttendanceIssueOccurrence {
   employeeName: string;
   date: BusinessDate;
   status: AttendanceStatus;
+  sourceContext: AttendanceSourceContext;
 }
 
 export interface AttendanceIssueSummary {
@@ -88,6 +102,13 @@ export interface AttendanceEmployeeDayOverview {
   arrivalDelayMinutes: number | null;
   toleranceMinutes: number | null;
   expectedWorkMinutes: number | null;
+  attributedWorkMinutes: number | null;
+  rawDeltaMinutes: number | null;
+  deficitMinutes: number | null;
+  creditedExtraMinutes: number | null;
+  excessBeyondExtraMinutes: number | null;
+  extraAllowed: boolean | null;
+  extraMaxMinutes: number | null;
   firstClockIn: string | null;
   firstClockInDate: BusinessDate | null;
   lastClockOut: string | null;
@@ -96,6 +117,7 @@ export interface AttendanceEmployeeDayOverview {
   pauseMinutes: number | null;
   netMinutes: number | null;
   issues: AttendanceIssue[];
+  sourceContext: AttendanceSourceContext;
 }
 
 export interface AttendanceEmployeeOverview {
@@ -114,6 +136,7 @@ export interface AttendanceDataQuality {
   openSessionDays: number;
   incompleteSessionDays: number;
   missingDurationDays: number;
+  correctedPresenceDays: number;
   reliableForAttendanceRate: boolean;
   notes: string[];
 }

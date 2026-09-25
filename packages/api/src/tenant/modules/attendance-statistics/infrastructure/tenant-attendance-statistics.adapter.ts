@@ -1,16 +1,20 @@
-import { TimezoneConfigUtils } from '@toke/shared';
+import { PointageStatus, PointageType, TimezoneConfigUtils } from '@toke/shared';
 import { Op } from 'sequelize';
 
 import User from '../../../class/User.js';
 import OrgHierarchy from '../../../class/OrgHierarchy.js';
 import Site from '../../../class/Site.js';
 import WorkSessions from '../../../class/WorkSessions.js';
+import TimeEntries from '../../../class/TimeEntries.js';
+import SessionTemplate from '../../../class/SessionTemplates.js';
 import ScheduleResolutionService from '../../../../tools/schedule.resolution.service.js';
 import type {
   AttendanceDayActivityInput,
   AttendanceDaySchedule,
   BusinessDate,
   ScheduleSource,
+  AttendanceExtraPolicy,
+  AttendancePresenceEvidence,
 } from '../domain/attendance-day.types.js';
 import {
   attendanceActivityKey,
@@ -24,12 +28,15 @@ import {
 import { parsePostgresIntervalMinutes } from './postgres-interval.js';
 
 interface SessionSnapshot {
+  sessionId: number;
+  sessionGuid: string | null;
   employeeId: number;
   date: BusinessDate;
   startAt: Date;
   endAt: Date | null;
   open: boolean;
   incomplete: boolean;
+  corrected: boolean;
   grossMinutes: number | null;
   pauseMinutes: number | null;
 }
@@ -40,6 +47,7 @@ interface SessionSnapshot {
  * WorkSessions, Site, Sequelize et ScheduleResolutionService.
  */
 export class TenantAttendanceStatisticsAdapter implements AttendanceStatisticsPort {
+  private readonly extraPolicyByTemplateId = new Map<number, Promise<AttendanceExtraPolicy>>();
   async loadCurrentManagerTeam(managerGuid: string): Promise<ManagerTeamScope | null> {
     const manager = await User._load(managerGuid, true);
     const managerId = manager?.getId();
@@ -102,17 +110,42 @@ export class TenantAttendanceStatisticsAdapter implements AttendanceStatisticsPo
     if (query.siteId !== null) conditions.site = query.siteId;
 
     const sessions = (await WorkSessions._list(conditions)) ?? [];
+
+    const sessionIds = sessions
+      .map((session) => session.getId())
+      .filter((id): id is number => typeof id === 'number' && Number.isInteger(id) && id > 0);
+    const clockIns =
+      sessionIds.length > 0
+        ? ((await TimeEntries._list({
+            session: { [Op.in]: sessionIds },
+            pointage_type: PointageType.CLOCK_IN,
+            pointage_status: {
+              [Op.in]: [PointageStatus.ACCEPTED, PointageStatus.ACCOUNTED],
+            },
+          })) ?? [])
+        : [];
+    const clockInsBySession = new Map<number, typeof clockIns>();
+    for (const entry of clockIns) {
+      const sessionId = entry.getSession();
+      if (!sessionId) continue;
+      const entries = clockInsBySession.get(sessionId) ?? [];
+      entries.push(entry);
+      clockInsBySession.set(sessionId, entries);
+    }
+
     const snapshots = await mapWithConcurrency(
       sessions,
       8,
       async (session): Promise<SessionSnapshot | null> => {
+        const sessionId = session.getId();
         const employeeId = session.getUser();
         const startAt = session.getSessionStartAt();
-        if (!employeeId || !startAt) return null;
+        if (!sessionId || !employeeId || !startAt) return null;
 
         const endAt = session.getSessionEndAt() ?? null;
         const normalizedStatus = String(session.getSessionStatus() ?? '').toLowerCase();
         const open = normalizedStatus === 'open';
+        const corrected = normalizedStatus === 'corrected';
         const incomplete = !open && endAt === null;
 
         let pauseMinutes: number | null = null;
@@ -133,19 +166,36 @@ export class TenantAttendanceStatisticsAdapter implements AttendanceStatisticsPo
         }
 
         return {
+          sessionId,
+          sessionGuid: session.getGuid() ?? null,
           employeeId,
           date: formatBusinessDate(startAt),
           startAt,
           endAt,
           open,
           incomplete,
+          corrected,
           grossMinutes: parsePostgresIntervalMinutes(session.getTotalWorkDuration()),
           pauseMinutes,
         };
       },
     );
 
-    const grouped = new Map<string, Array<{ snapshot: SessionSnapshot; date: BusinessDate }>>();
+    const grouped = new Map<
+      string,
+      Array<{
+        snapshot: SessionSnapshot;
+        date: BusinessDate;
+        duration: { grossMinutes: number | null; pauseMinutes: number | null };
+        interval: {
+          startDate: BusinessDate;
+          startTime: string;
+          endDate: BusinessDate | null;
+          endTime: string | null;
+          attributableNetMinutes: number | null;
+        };
+      }>
+    >();
     const businessNow = TimezoneConfigUtils.getCurrentTime();
 
     for (const snapshot of snapshots) {
@@ -157,9 +207,11 @@ export class TenantAttendanceStatisticsAdapter implements AttendanceStatisticsPo
         query.endDate,
         businessNow,
       )) {
+        const duration = calculateSessionDurationForBusinessDate(snapshot, date);
+        const interval = projectSessionIntervalForBusinessDate(snapshot, date, duration);
         const key = attendanceActivityKey(snapshot.employeeId, date);
         const group = grouped.get(key) ?? [];
-        group.push({ snapshot, date });
+        group.push({ snapshot, date, duration, interval });
         grouped.set(key, group);
       }
     }
@@ -177,14 +229,23 @@ export class TenantAttendanceStatisticsAdapter implements AttendanceStatisticsPo
         .sort((a, b) => a.getTime() - b.getTime())
         .at(-1);
 
-      const dailyDurations = entries.map(({ snapshot }) =>
-        calculateSessionDurationForBusinessDate(snapshot, date),
-      );
+      const dailyDurations = entries.map(({ duration }) => duration);
       const knownGross = dailyDurations.every((duration) => duration.grossMinutes !== null);
       const knownPause = dailyDurations.every((duration) => duration.pauseMinutes !== null);
+      const presenceEvidence = resolvePresenceEvidence(group, clockInsBySession);
+      const sourceSessionGuids = uniqueStrings(
+        group.map((session) => session.sessionGuid),
+      );
+      const sourceClockInEntryGuids = uniqueStrings(
+        group.flatMap((session) =>
+          (clockInsBySession.get(session.sessionId) ?? []).map((entry) => entry.getGuid() ?? null),
+        ),
+      );
 
       result.set(key, {
         sessionCount: group.length,
+        sourceSessionGuids,
+        sourceClockInEntryGuids,
         openSessionCount: group.filter((session) => session.open).length,
         incompleteSessionCount: group.filter((session) => session.incomplete).length,
         firstClockIn: formatBusinessTime(firstSession.startAt),
@@ -197,12 +258,8 @@ export class TenantAttendanceStatisticsAdapter implements AttendanceStatisticsPo
         pauseMinutes: knownPause
           ? dailyDurations.reduce((total, duration) => total + duration.pauseMinutes!, 0)
           : null,
-        intervals: group.map((session) => ({
-          startDate: formatBusinessDate(session.startAt),
-          startTime: formatBusinessTime(session.startAt),
-          endDate: session.endAt ? formatBusinessDate(session.endAt) : null,
-          endTime: session.endAt ? formatBusinessTime(session.endAt) : null,
-        })),
+        presenceEvidence,
+        intervals: entries.map(({ interval }) => interval),
       });
     }
 
@@ -230,9 +287,12 @@ export class TenantAttendanceStatisticsAdapter implements AttendanceStatisticsPo
       return { state: 'REST_DAY', source, expectedBlocks: [] };
     }
 
+    const extraPolicy = await this.resolveExtraPolicy(schedule.template_id);
+
     return {
       state: 'WORK_DAY',
       source,
+      extraPolicy,
       expectedBlocks: schedule.expected_blocks.map((block) => ({
         startTime: block.work[0],
         endTime: block.work[1],
@@ -243,6 +303,42 @@ export class TenantAttendanceStatisticsAdapter implements AttendanceStatisticsPo
     };
   }
 
+  private resolveExtraPolicy(templateId: number): Promise<AttendanceExtraPolicy> {
+    const cached = this.extraPolicyByTemplateId.get(templateId);
+    if (cached) return cached;
+
+    const policyPromise = this.loadExtraPolicy(templateId);
+    this.extraPolicyByTemplateId.set(templateId, policyPromise);
+    return policyPromise;
+  }
+
+  private async loadExtraPolicy(templateId: number): Promise<AttendanceExtraPolicy> {
+    if (!Number.isInteger(templateId) || templateId <= 0) {
+      return { resolved: false, allowed: null, maxMinutes: null };
+    }
+
+    const template = await SessionTemplate._load(templateId);
+    const sessionModel = await template?.getSessionModelObj();
+    if (!sessionModel) {
+      return { resolved: false, allowed: null, maxMinutes: null };
+    }
+
+    const allowed = sessionModel.isExtraAllowed();
+    if (allowed === false) {
+      return { resolved: true, allowed: false, maxMinutes: null };
+    }
+    if (allowed !== true) {
+      return { resolved: false, allowed: null, maxMinutes: null };
+    }
+
+    const maxMinutes = sessionModel.getExtraMax();
+    if (!Number.isInteger(maxMinutes) || maxMinutes! < 0) {
+      return { resolved: false, allowed: null, maxMinutes: null };
+    }
+
+    return { resolved: true, allowed: true, maxMinutes: maxMinutes! };
+  }
+
   getBusinessNow(): AttendanceBusinessNow {
     const now = TimezoneConfigUtils.getCurrentTime();
     return {
@@ -251,6 +347,43 @@ export class TenantAttendanceStatisticsAdapter implements AttendanceStatisticsPo
       iso: now.toISOString(),
     };
   }
+}
+
+function resolvePresenceEvidence(
+  sessions: readonly SessionSnapshot[],
+  clockInsBySession: ReadonlyMap<number, readonly TimeEntries[]>,
+): AttendancePresenceEvidence | null {
+  const candidates = sessions
+    .flatMap((session) =>
+      (clockInsBySession.get(session.sessionId) ?? []).map((entry) => ({ session, entry })),
+    )
+    .filter(({ entry }) => entry.getClockedAt() instanceof Date)
+    .sort(
+      (left, right) =>
+        left.entry.getClockedAt()!.getTime() - right.entry.getClockedAt()!.getTime(),
+    );
+
+  const first = candidates[0];
+  if (first) {
+    const clockedAt = first.entry.getClockedAt()!;
+    const autoGenerated = first.entry.getDeviceInfo()?.auto_generated === true;
+    const corrected = autoGenerated || first.session.corrected;
+    return {
+      kind: corrected ? 'CORRECTED' : 'DIRECT',
+      occurredAt: formatBusinessTime(clockedAt),
+      occurredDate: formatBusinessDate(clockedAt),
+      autoGenerated,
+    };
+  }
+
+  // Une WorkSession, même CORRECTED, ne constitue pas à elle seule une preuve
+  // de présence. La présence statistique exige désormais un CLOCK_IN exploitable
+  // dont le cycle de validation est finalisé (ACCEPTED ou ACCOUNTED).
+  //
+  // Les CLOCK_IN auto-générés par les corrections métier restent traçables :
+  // une fois acceptés, ils sont chargés ci-dessus et leur device_info.auto_generated
+  // permet de retourner une preuve CORRECTED plutôt qu'une preuve DIRECT.
+  return null;
 }
 
 function listOverlappedBusinessDates(
@@ -368,6 +501,42 @@ function calculateSessionDurationForBusinessDate(
   return { grossMinutes, pauseMinutes };
 }
 
+function projectSessionIntervalForBusinessDate(
+  snapshot: SessionSnapshot,
+  date: BusinessDate,
+  duration: { grossMinutes: number | null; pauseMinutes: number | null },
+): {
+  startDate: BusinessDate;
+  startTime: string;
+  endDate: BusinessDate | null;
+  endTime: string | null;
+  attributableNetMinutes: number | null;
+} {
+  const sessionStartDate = formatBusinessDate(snapshot.startAt);
+  const sessionEndDate = snapshot.endAt ? formatBusinessDate(snapshot.endAt) : null;
+  const simpleOrSameDay =
+    sessionEndDate !== null &&
+    (sessionEndDate === sessionStartDate ||
+      sessionEndDate === addBusinessDays(sessionStartDate, 1));
+
+  // L'intervalle conserve les bornes réelles de la WorkSession. La durée
+  // attribuable, elle, correspond uniquement au segment projeté sur `date`.
+  // Cela permet de distinguer une vraie continuité de garde (entrée la veille)
+  // d'une nouvelle prise de service le jour même.
+  const attributableNetMinutes =
+    simpleOrSameDay && duration.grossMinutes !== null && duration.pauseMinutes !== null
+      ? duration.grossMinutes - duration.pauseMinutes
+      : null;
+
+  return {
+    startDate: sessionStartDate,
+    startTime: formatBusinessTime(snapshot.startAt),
+    endDate: snapshot.endAt ? formatBusinessDate(snapshot.endAt) : null,
+    endTime: snapshot.endAt ? formatBusinessTime(snapshot.endAt) : null,
+    attributableNetMinutes,
+  };
+}
+
 function createNextBusinessDayBoundary(date: BusinessDate): Date {
   const result = createBusinessBoundary(date, false);
   result.setDate(result.getDate() + 1);
@@ -426,6 +595,10 @@ async function mapWithConcurrency<TInput, TOutput>(
 
   await Promise.all(workers);
   return output;
+}
+
+function uniqueStrings(values: readonly (string | null | undefined)[]): string[] {
+  return [...new Set(values.filter((value): value is string => typeof value === 'string' && value.length > 0))];
 }
 
 function mapScheduleSource(source: string): ScheduleSource {

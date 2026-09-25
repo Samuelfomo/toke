@@ -240,6 +240,13 @@ router.post('/', Ensure.post(), async (req: Request, res: Response) => {
         });
       }
 
+      if (!userObj.isWorkforceMember()) {
+        return R.handleError(res, HttpStatus.BAD_REQUEST, {
+          code: 'user_not_workforce_member',
+          message: 'This user does not belong to the tenant workforce.',
+        });
+      }
+
       // Vérifier si déjà assigné à ce groupe de rotation
       const existing = await RotationAssignment._load(
         { family: RAFamily.USER, related: userObj.getGuid()!, rotationGroup: groupObj.getId()! },
@@ -563,6 +570,14 @@ router.put('/:guid', Ensure.put(), async (req: Request, res: Response) => {
             message: ROTATION_ASSIGNMENT_ERRORS.USER_NOT_FOUND,
           });
         }
+
+        if (!userObj.isWorkforceMember()) {
+          return R.handleError(res, HttpStatus.BAD_REQUEST, {
+            code: 'user_not_workforce_member',
+            message: 'This user does not belong to the tenant workforce.',
+          });
+        }
+
         assignmentObj.setFamily(RAFamily.USER).setRelated(userObj.getGuid()!);
       } else {
         const groupsObj = await Groups._load(validatedData.related, true);

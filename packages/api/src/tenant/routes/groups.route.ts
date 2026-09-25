@@ -287,7 +287,7 @@ router.post('/', Ensure.post(), async (req: Request, res: Response) => {
 
         if (!userObj.isWorkforceMember()) {
           return R.handleError(res, HttpStatus.BAD_REQUEST, {
-            code: 'USER_NOT_WORKFORCE_MEMBER',
+            code: 'user_not_workforce_member',
             message: `User ${member.user} does not belong to the tenant workforce.`,
           });
         }

@@ -283,6 +283,14 @@ router.post('/', Ensure.post(), async (req: Request, res: Response) => {
           message: USERS_ERRORS.NOT_FOUND,
         });
       }
+
+      if (!userObj.isWorkforceMember()) {
+        return R.handleError(res, HttpStatus.BAD_REQUEST, {
+          code: 'user_not_workforce_member',
+          message: 'This user does not belong to the tenant workforce.',
+        });
+      }
+
       assignmentObj.setFamily(SAFamily.USER).setRelated(userObj.getGuid()!);
     } else {
       const groupsObj = await Groups._load(relatedGuid, true);
@@ -839,6 +847,14 @@ router.put('/:guid', Ensure.put(), async (req: Request, res: Response) => {
             message: USERS_ERRORS.NOT_FOUND,
           });
         }
+
+        if (!userObj.isWorkforceMember()) {
+          return R.handleError(res, HttpStatus.BAD_REQUEST, {
+            code: 'user_not_workforce_member',
+            message: 'This user does not belong to the tenant workforce.',
+          });
+        }
+
         assignmentObj.setFamily(SAFamily.USER).setRelated(userObj.getGuid()!);
       } else {
         const groupsObj = await Groups._load(validatedData.related, true);

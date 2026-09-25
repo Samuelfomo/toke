@@ -1,6 +1,6 @@
 import { PointageStatus, PointageType, TimezoneConfigUtils } from '@toke/shared';
 
-import TimeEntriesModel from '../model/TimeEntriesModel.js';
+import TimeEntriesModel, { TimeEntriesListByUserOptions } from '../model/TimeEntriesModel.js';
 import W from '../../tools/watcher.js';
 import G from '../../tools/glossary.js';
 import {
@@ -67,16 +67,16 @@ export default class TimeEntries extends TimeEntriesModel {
 
   static _listByUser(
     user: number,
-    paginationOptions: { offset?: number; limit?: number } = {},
+    options: TimeEntriesListByUserOptions = {},
   ): Promise<TimeEntries[] | null> {
-    return new TimeEntries().listByUser(user, paginationOptions);
+    return new TimeEntries().listByUser(user, options);
   }
 
   static _listByDevice(
     device: number,
-    paginationOptions: { offset?: number; limit?: number } = {},
+    options: TimeEntriesListByUserOptions = {},
   ): Promise<TimeEntries[] | null> {
-    return new TimeEntries().listByDevice(device, paginationOptions);
+    return new TimeEntries().listByDevice(device, options);
   }
 
   static _listBySite(
@@ -889,18 +889,18 @@ export default class TimeEntries extends TimeEntriesModel {
 
   async listByUser(
     user: number,
-    paginationOptions: { offset?: number; limit?: number } = {},
+    options: TimeEntriesListByUserOptions = {},
   ): Promise<TimeEntries[] | null> {
-    const dataset = await this.listAllByUser(user, paginationOptions);
+    const dataset = await this.listAllByUser(user, options);
     if (!dataset || dataset.length === 0) return null;
     return dataset.map((data) => new TimeEntries().hydrate(data));
   }
 
   async listByDevice(
     device: number,
-    paginationOptions: { offset?: number; limit?: number } = {},
+    options: TimeEntriesListByUserOptions = {},
   ): Promise<TimeEntries[] | null> {
-    const dataset = await this.listAllByDevice(device, paginationOptions);
+    const dataset = await this.listAllByDevice(device, options);
     if (!dataset || dataset.length === 0) return null;
     return dataset.map((data) => new TimeEntries().hydrate(data));
   }

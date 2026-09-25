@@ -1177,6 +1177,10 @@ router.get('/user/:userGuid/list', Ensure.get(), async (req: Request, res: Respo
 
     const views = ValidationUtils.validateView(req.query.view, responseValue.FULL);
 
+    const startDate = typeof req.query.startDate === 'string' ? req.query.startDate : undefined;
+
+    const endDate = typeof req.query.endDate === 'string' ? req.query.endDate : undefined;
+
     const userObj = await User._load(req.params.userGuid, true);
     if (!userObj) {
       return R.handleError(res, HttpStatus.NOT_FOUND, {
@@ -1185,9 +1189,21 @@ router.get('/user/:userGuid/list', Ensure.get(), async (req: Request, res: Respo
       });
     }
 
-    const entryList = await TimeEntries._listByUser(userObj.getId()!);
+    const entryList = await TimeEntries._listByUser(userObj.getId()!, {
+      startDate,
+      endDate,
+    });
+
     const entries = {
       // user: userObj.toPublicJSON(),
+      ...(startDate || endDate
+        ? {
+            period: {
+              start_date: startDate,
+              end_date: endDate,
+            },
+          }
+        : {}),
       items: entryList
         ? await Promise.all(entryList.map(async (entry) => await entry.toJSON(views)))
         : [],

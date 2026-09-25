@@ -9,8 +9,18 @@ import {
 import { Op } from 'sequelize';
 
 import BaseModel from '../database/db.base.js';
-import { resolveTimeEntryExternalId, type TimeEntryExternalIdContext, } from '../../utils/time.entry.external-id.js';
+import {
+  resolveTimeEntryExternalId,
+  type TimeEntryExternalIdContext,
+} from '../../utils/time.entry.external-id.js';
 import { tableName } from '../../utils/response.model.js';
+
+export type TimeEntriesListByUserOptions = {
+  offset?: number;
+  limit?: number;
+  startDate?: string;
+  endDate?: string;
+};
 
 export default class TimeEntriesModel extends BaseModel {
   public readonly db = {
@@ -129,9 +139,37 @@ export default class TimeEntriesModel extends BaseModel {
 
   protected async listAllByUser(
     user: number,
-    paginationOptions: { offset?: number; limit?: number } = {},
+    options: TimeEntriesListByUserOptions = {},
   ): Promise<any[]> {
-    return await this.listAll({ [this.db.user]: user }, paginationOptions);
+    const conditions: Record<string, any> = {
+      [this.db.user]: user,
+    };
+
+    if (options.startDate || options.endDate) {
+      const dateConditions: Record<symbol, Date> = {};
+
+      if (options.startDate) {
+        const startDate = new Date(options.startDate);
+        startDate.setHours(0, 0, 0, 0);
+
+        dateConditions[Op.gte] = startDate;
+      }
+
+      if (options.endDate) {
+        const endExclusive = new Date(options.endDate);
+        endExclusive.setHours(0, 0, 0, 0);
+        endExclusive.setDate(endExclusive.getDate() + 1);
+
+        dateConditions[Op.lt] = endExclusive;
+      }
+
+      conditions[this.db.clocked_at] = dateConditions;
+    }
+
+    return await this.listAll(conditions, {
+      offset: options.offset,
+      limit: options.limit,
+    });
   }
 
   protected async listAllByDevice(

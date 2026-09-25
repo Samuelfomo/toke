@@ -34,6 +34,7 @@ const ATTENDANCE_ISSUES: readonly AttendanceIssue[] = [
   'OPEN_SESSION',
   'INCOMPLETE_SESSION',
   'MISSING_DURATION',
+  'CORRECTED_PRESENCE',
 ];
 
 export class AttendanceOverviewInvariantError extends Error {
@@ -128,6 +129,13 @@ function buildEmployeeOverview(
       arrivalDelayMinutes: day.result.arrivalDelayMinutes,
       toleranceMinutes: day.result.toleranceMinutes,
       expectedWorkMinutes: day.result.expectedWorkMinutes,
+      attributedWorkMinutes: day.result.attributedWorkMinutes,
+      rawDeltaMinutes: day.result.rawDeltaMinutes,
+      deficitMinutes: day.result.deficitMinutes,
+      creditedExtraMinutes: day.result.creditedExtraMinutes,
+      excessBeyondExtraMinutes: day.result.excessBeyondExtraMinutes,
+      extraAllowed: day.result.extraAllowed,
+      extraMaxMinutes: day.result.extraMaxMinutes,
       firstClockIn: day.activity.firstClockIn,
       firstClockInDate: day.activity.firstClockInDate,
       lastClockOut: day.activity.lastClockOut,
@@ -136,6 +144,7 @@ function buildEmployeeOverview(
       pauseMinutes: day.activity.pauseMinutes,
       netMinutes: day.activity.netMinutes,
       issues: [...day.issues],
+      sourceContext: buildSourceContext(day),
     })),
   };
 }
@@ -180,11 +189,41 @@ function calculateDurations(days: readonly AttendanceDay[]): AttendanceDurationM
   let knownPause = 0;
   let knownNet = 0;
   let missing = 0;
+  let attributedWorkMinutes = 0;
+  let rawDeltaMinutes = 0;
+  let creditedExtraMinutes = 0;
+  let excessBeyondExtraMinutes = 0;
+  let deficitMinutes = 0;
+  let occurrencesWithKnownAttributedWorkDuration = 0;
+  let occurrencesWithKnownDelta = 0;
+  let occurrencesWithResolvedExtraPolicy = 0;
 
   for (const day of days) {
     if (day.result.expectedWorkMinutes !== null) {
       expectedWorkMinutes += day.result.expectedWorkMinutes;
       knownExpectedWork++;
+    }
+
+    if (day.result.attributedWorkMinutes !== null) {
+      attributedWorkMinutes += day.result.attributedWorkMinutes;
+      occurrencesWithKnownAttributedWorkDuration++;
+    }
+
+    if (day.result.rawDeltaMinutes !== null) {
+      rawDeltaMinutes += day.result.rawDeltaMinutes;
+      occurrencesWithKnownDelta++;
+    }
+    if (day.result.creditedExtraMinutes !== null) {
+      creditedExtraMinutes += day.result.creditedExtraMinutes;
+    }
+    if (day.result.excessBeyondExtraMinutes !== null) {
+      excessBeyondExtraMinutes += day.result.excessBeyondExtraMinutes;
+    }
+    if (day.result.deficitMinutes !== null) {
+      deficitMinutes += day.result.deficitMinutes;
+    }
+    if (day.result.extraAllowed !== null) {
+      occurrencesWithResolvedExtraPolicy++;
     }
 
     if (!day.activity.hasActivity) continue;
@@ -222,6 +261,14 @@ function calculateDurations(days: readonly AttendanceDay[]): AttendanceDurationM
     daysWithKnownNetDuration: knownNet,
     daysWithMissingDuration: missing,
     daysWithKnownExpectedWorkDuration: knownExpectedWork,
+    attributedWorkMinutes,
+    rawDeltaMinutes,
+    creditedExtraMinutes,
+    excessBeyondExtraMinutes,
+    deficitMinutes,
+    occurrencesWithKnownAttributedWorkDuration,
+    occurrencesWithKnownDelta,
+    occurrencesWithResolvedExtraPolicy,
   };
 }
 
@@ -262,6 +309,7 @@ function buildIssueSummaries(
           employeeName: employee.name,
           date: day.date,
           status: day.result.status,
+          sourceContext: buildSourceContext(day),
         });
       }
     }
@@ -278,6 +326,16 @@ function buildIssueSummaries(
   }).filter((summary) => summary.count > 0);
 }
 
+function buildSourceContext(day: AttendanceDay): {
+  sessionGuids: string[];
+  clockInEntryGuids: string[];
+} {
+  return {
+    sessionGuids: [...new Set(day.activity.sourceSessionGuids ?? [])],
+    clockInEntryGuids: [...new Set(day.activity.sourceClockInEntryGuids ?? [])],
+  };
+}
+
 function buildDataQuality(days: readonly AttendanceDay[]): AttendanceDataQuality {
   const countIssue = (issue: AttendanceIssue): number =>
     days.reduce((total, day) => total + (day.issues.includes(issue) ? 1 : 0), 0);
@@ -288,6 +346,7 @@ function buildDataQuality(days: readonly AttendanceDay[]): AttendanceDataQuality
   const openSessionDays = countIssue('OPEN_SESSION');
   const incompleteSessionDays = countIssue('INCOMPLETE_SESSION');
   const missingDurationDays = countIssue('MISSING_DURATION');
+  const correctedPresenceDays = countIssue('CORRECTED_PRESENCE');
 
   const notes: string[] = [];
   if (unresolvedScheduleDays > 0) {
@@ -305,6 +364,11 @@ function buildDataQuality(days: readonly AttendanceDay[]): AttendanceDataQuality
       `${missingDurationDays} journée(s) avec présence n'ont pas de durée complète et ne doivent pas être interprétées comme 0 minute.`,
     );
   }
+  if (correctedPresenceDays > 0) {
+    notes.push(
+      `${correctedPresenceDays} journée(s) reposent sur une présence corrigée ou reconstruite et doivent rester traçables.`,
+    );
+  }
 
   return {
     unresolvedScheduleDays,
@@ -312,6 +376,7 @@ function buildDataQuality(days: readonly AttendanceDay[]): AttendanceDataQuality
     openSessionDays,
     incompleteSessionDays,
     missingDurationDays,
+    correctedPresenceDays,
     reliableForAttendanceRate: unresolvedScheduleDays === 0,
     notes,
   };

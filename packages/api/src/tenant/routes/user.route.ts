@@ -48,6 +48,7 @@ import SessionTemplate from '../class/SessionTemplates.js';
 import ScheduleAssignments from '../class/ScheduleAssignments.js';
 import TimeEntries from '../class/TimeEntries.js';
 import OtpDeliveryService from '../../tools/otp.delivery.service.js';
+import { ValidationUtils } from '../../utils/view.validator.js';
 
 const router = Router();
 
@@ -102,6 +103,8 @@ router.get('/list', Ensure.get(), async (req: Request, res: Response) => {
     const paginationOptions = paginationSchema.parse(req.query);
     const conditions: Record<string, any> = {};
 
+    const views = ValidationUtils.validateView(view, responseValue.FULL);
+
     if (filters.department) {
       conditions.department = filters.department;
     }
@@ -122,7 +125,9 @@ router.get('/list', Ensure.get(), async (req: Request, res: Response) => {
         limit: paginationOptions.limit || userEntries?.length || 0,
         count: userEntries?.length || 0,
       },
-      items: userEntries?.length ? await Promise.all(userEntries.map((user) => user.toJSON())) : [],
+      items: userEntries?.length
+        ? await Promise.all(userEntries.map((user) => user.toJSON(views)))
+        : [],
     };
 
     return R.handleSuccess(res, { users });
@@ -1624,9 +1629,29 @@ router.patch('/:guid/workforce-status', Ensure.patch(), async (req: Request, res
       });
     }
 
+    if (userObj.getId() === supervisorObj.getId()) {
+      return R.handleError(res, HttpStatus.FORBIDDEN, {
+        code: USERS_CODES.AUTHORIZATION_FAILED,
+        message: 'A user cannot change their own workforce status.',
+      });
+    }
+
     // ============================================
     // 7️⃣ MISE À JOUR
     // ============================================
+    const previousValue = userObj.isWorkforceMember();
+
+    if (previousValue === is_workforce_member) {
+      return R.handleSuccess(res, {
+        message: 'User workforce status already has the requested value',
+        workforce_status: {
+          previous: previousValue,
+          current: previousValue,
+        },
+        user: await userObj.toJSON(),
+      });
+    }
+
     userObj.setWorkforceMember(is_workforce_member);
 
     await userObj.save();
@@ -1636,6 +1661,10 @@ router.patch('/:guid/workforce-status', Ensure.patch(), async (req: Request, res
     // ============================================
     return R.handleSuccess(res, {
       message: 'User workforce status updated successfully',
+      workforce_status: {
+        previous: previousValue,
+        current: userObj.isWorkforceMember(),
+      },
       user: await userObj.toJSON(),
     });
   } catch (error: any) {

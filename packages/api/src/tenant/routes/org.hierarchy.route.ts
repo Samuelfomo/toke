@@ -336,7 +336,7 @@ router.put('/:guid', Ensure.put(), async (req: Request, res: Response) => {
 
       if (!subordinateObj.isWorkforceMember()) {
         return R.handleError(res, HttpStatus.BAD_REQUEST, {
-          code: 'USER_NOT_WORKFORCE_MEMBER',
+          code: 'user_not_workforce_member',
           message: 'This user does not belong to the tenant workforce.',
         });
       }
