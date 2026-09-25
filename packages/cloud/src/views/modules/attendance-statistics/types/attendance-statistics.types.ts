@@ -32,6 +32,11 @@ export const ATTENDANCE_ISSUES = [
 
 export type AttendanceIssue = (typeof ATTENDANCE_ISSUES)[number];
 
+export interface AttendanceSourceContext {
+    sessionGuids: string[];
+    clockInEntryGuids: string[];
+}
+
 export interface AttendanceOverviewPeriod {
   startDate: BusinessDate;
   endDate: BusinessDate;
@@ -100,6 +105,7 @@ export interface AttendanceIssueOccurrence {
   employeeName: string;
   date: BusinessDate;
   status: AttendanceStatus;
+  sourceContext: AttendanceSourceContext;
 }
 
 export interface AttendanceIssueSummary {
@@ -160,6 +166,8 @@ export interface AttendanceEmployeeDayOverview {
   pauseMinutes: number | null;
   netMinutes: number | null;
   issues: AttendanceIssue[];
+
+  sourceContext: AttendanceSourceContext;
 }
 
 export interface AttendanceEmployeeOverview {
