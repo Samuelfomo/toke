@@ -140,14 +140,75 @@ function isAttendanceOverview(value: unknown): value is AttendanceOverview {
     return false;
   }
   if (!isRecord(value.dataQuality)) return false;
+  if (!isRecord(value.summary.durations) || !isAttendanceDurationMetrics(value.summary.durations)) {
+    return false;
+  }
+
   return (
     typeof value.period.startDate === 'string' &&
     typeof value.period.endDate === 'string' &&
     typeof value.period.dayCount === 'number' &&
     typeof value.scope.managerGuid === 'string' &&
     typeof value.scope.teamSize === 'number' &&
-    typeof value.dataQuality.reliableForAttendanceRate === 'boolean'
+    typeof value.dataQuality.correctedPresenceDays === 'number' &&
+    typeof value.dataQuality.reliableForAttendanceRate === 'boolean' &&
+    value.employees.every(isAttendanceEmployeeOverview)
   );
+}
+
+function isAttendanceEmployeeOverview(value: unknown): boolean {
+  if (!isRecord(value) || !isRecord(value.durations) || !Array.isArray(value.days)) return false;
+  if (!isAttendanceDurationMetrics(value.durations)) return false;
+  return value.days.every(isAttendanceEmployeeDayOverview);
+}
+
+function isAttendanceEmployeeDayOverview(value: unknown): boolean {
+  if (!isRecord(value)) return false;
+  return (
+    typeof value.date === 'string' &&
+    typeof value.status === 'string' &&
+    isNullableFiniteNumber(value.expectedWorkMinutes) &&
+    isNullableFiniteNumber(value.attributedWorkMinutes) &&
+    isNullableFiniteNumber(value.rawDeltaMinutes) &&
+    isNullableFiniteNumber(value.deficitMinutes) &&
+    isNullableFiniteNumber(value.creditedExtraMinutes) &&
+    isNullableFiniteNumber(value.excessBeyondExtraMinutes) &&
+    (typeof value.extraAllowed === 'boolean' || value.extraAllowed === null) &&
+    isNullableFiniteNumber(value.extraMaxMinutes)
+  );
+}
+
+function isAttendanceDurationMetrics(value: unknown): boolean {
+  if (!isRecord(value)) return false;
+  const numericFields = [
+    'expectedWorkMinutes',
+    'grossMinutes',
+    'pauseMinutes',
+    'netMinutes',
+    'daysWithKnownGrossDuration',
+    'daysWithKnownPauseDuration',
+    'daysWithKnownNetDuration',
+    'daysWithMissingDuration',
+    'daysWithKnownExpectedWorkDuration',
+    'attributedWorkMinutes',
+    'rawDeltaMinutes',
+    'creditedExtraMinutes',
+    'excessBeyondExtraMinutes',
+    'deficitMinutes',
+    'occurrencesWithKnownAttributedWorkDuration',
+    'occurrencesWithKnownDelta',
+    'occurrencesWithResolvedExtraPolicy',
+  ] as const;
+
+  return numericFields.every((field) => isFiniteNumber(value[field]));
+}
+
+function isNullableFiniteNumber(value: unknown): boolean {
+  return value === null || isFiniteNumber(value);
+}
+
+function isFiniteNumber(value: unknown): value is number {
+  return typeof value === 'number' && Number.isFinite(value);
 }
 
 function readHttpError(error: unknown): { status: number | null; payload: ApiErrorPayload } | null {

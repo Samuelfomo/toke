@@ -23,6 +23,8 @@ export { default as AttendanceOverviewScopeCard } from './components/AttendanceO
 export { default as AttendanceDataQualityAlert } from './components/AttendanceDataQualityAlert.vue';
 export { default as AttendanceKpiGrid } from './components/AttendanceKpiGrid.vue';
 export { default as AttendanceKpiCard } from './components/AttendanceKpiCard.vue';
+export { default as AttendanceDecisionKpiCard } from './components/AttendanceDecisionKpiCard.vue';
+export { default as AttendanceKpiDetailModal } from './components/AttendanceKpiDetailModal.vue';
 export * from './utils/attendance-visualizations.js';
 export { default as AttendanceStatusDistribution } from './components/AttendanceStatusDistribution.vue';
 export { default as AttendanceDailyTrend } from './components/AttendanceDailyTrend.vue';
@@ -30,6 +32,7 @@ export { default as AttendanceDayDetailsPanel } from './components/AttendanceDay
 export { default as AttendanceVisualizations } from './components/AttendanceVisualizations.vue';
 export * from './utils/attendance-employees.js';
 export * from './utils/attendance-issues.js';
+export * from './utils/attendance-pointage-source.js';
 export { default as AttendanceEmployeesToolbar } from './components/AttendanceEmployeesToolbar.vue';
 export { default as AttendanceEmployeesTable } from './components/AttendanceEmployeesTable.vue';
 export { default as AttendanceEmployeesPagination } from './components/AttendanceEmployeesPagination.vue';

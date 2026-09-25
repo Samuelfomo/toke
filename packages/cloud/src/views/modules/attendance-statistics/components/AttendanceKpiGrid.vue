@@ -2,51 +2,51 @@
 import { computed } from 'vue';
 
 import type { AttendanceOverview } from '../types/attendance-statistics.types.js';
-import type { AttendancePrimaryKpiId } from '../utils/attendance-dashboard-actions.js';
-import { isPrimaryAttendanceKpiId } from '../utils/attendance-dashboard-actions.js';
-import type { AttendanceKpiId } from '../utils/attendance-kpis.js';
+import type { AttendanceDecisionKpiId, AttendanceDecisionKpiSegment } from '../utils/attendance-kpis.js';
 import { buildPrimaryAttendanceKpis } from '../utils/attendance-kpis.js';
-import AttendanceKpiCard from './AttendanceKpiCard.vue';
+import AttendanceDecisionKpiCard from './AttendanceDecisionKpiCard.vue';
 
 interface Props {
   overview: AttendanceOverview;
-  selectedKpiId?: AttendancePrimaryKpiId | null;
   eyebrow?: string;
   title?: string;
   description?: string;
 }
 
 const props = withDefaults(defineProps<Props>(), {
-  selectedKpiId: null,
   eyebrow: 'Vue décisionnelle',
   title: 'Ce qu’il faut comprendre maintenant',
-  description: 'Cliquez sur une carte pour comprendre la valeur puis accéder aux employés ou situations concernés.',
+  description: 'Cliquez sur un graphique pour voir le détail et accéder aux personnes ou éléments concernés.',
 });
-const emit = defineEmits<{ select: [id: AttendancePrimaryKpiId] }>();
-const cards = computed(() => buildPrimaryAttendanceKpis(props.overview));
 
-function onActivate(id: AttendanceKpiId): void {
-  if (isPrimaryAttendanceKpiId(id)) emit('select', id);
-}
+const emit = defineEmits<{
+  detail: [payload: { id: AttendanceDecisionKpiId; segment: AttendanceDecisionKpiSegment }];
+}>();
+
+/**
+ * Les KPI non calculables ne sont pas promus dans la vue décisionnelle.
+ * Ils restent disponibles dans les modèles secondaires tant que leur règle métier
+ * n'est pas validée, mais on évite d'encombrer le tableau de bord avec des N/D.
+ */
+const cards = computed(() => buildPrimaryAttendanceKpis(props.overview).filter((card) => card.available));
 </script>
 
 <template>
   <section id="attendance-kpis" aria-labelledby="attendance-kpis-title">
-    <div class="mb-3 flex flex-col gap-1 sm:flex-row sm:items-end sm:justify-between">
+    <div class="mb-4 flex flex-col gap-2 xl:flex-row xl:items-end xl:justify-between">
       <div>
-        <p class="text-xs font-semibold uppercase tracking-[0.14em] text-indigo-600">{{ eyebrow }}</p>
-        <h2 id="attendance-kpis-title" class="mt-1 text-lg font-bold text-slate-950">{{ title }}</h2>
+        <p class="text-xs font-extrabold uppercase tracking-[0.17em] text-indigo-600">{{ eyebrow }}</p>
+        <h2 id="attendance-kpis-title" class="mt-1 text-2xl font-extrabold tracking-tight text-slate-950">{{ title }}</h2>
       </div>
-      <p class="max-w-2xl text-sm text-slate-500">{{ description }}</p>
+      <p class="max-w-xl text-sm leading-5 text-slate-500">{{ description }}</p>
     </div>
 
-    <div class="grid gap-4 sm:grid-cols-2 xl:grid-cols-5">
-      <AttendanceKpiCard
+    <div class="grid gap-4 xl:grid-cols-2">
+      <AttendanceDecisionKpiCard
         v-for="card in cards"
         :key="card.id"
         :card="card"
-        :selected="selectedKpiId === card.id"
-        @activate="onActivate"
+        @detail="emit('detail', $event)"
       />
     </div>
   </section>

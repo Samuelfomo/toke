@@ -1,7 +1,7 @@
 /**
  * Contrat frontend de GET /attendance/statistics/overview.
  *
- * IMPORTANT : ce fichier reflète le contrat backend des lots 1 à 4.
+ * IMPORTANT : ce fichier reflète le contrat backend v2.3 (preuve de présence + E+/E-).
  * Il ne doit contenir aucun recalcul métier des statuts ou des taux.
  */
 
@@ -27,6 +27,7 @@ export const ATTENDANCE_ISSUES = [
   'INCOMPLETE_SESSION',
   'MISSING_DURATION',
   'ACTIVITY_OUTSIDE_EXPECTED_BLOCK',
+  'CORRECTED_PRESENCE',
 ] as const;
 
 export type AttendanceIssue = (typeof ATTENDANCE_ISSUES)[number];
@@ -76,6 +77,22 @@ export interface AttendanceDurationMetrics {
   daysWithKnownNetDuration: number;
   daysWithMissingDuration: number;
   daysWithKnownExpectedWorkDuration: number;
+  /** Durée réellement attribuée aux occurrences de planning comparables. */
+  attributedWorkMinutes: number;
+  /** Somme signée des écarts occurrence par occurrence. */
+  rawDeltaMinutes: number;
+  /** E+ retenu selon la politique de planification. */
+  creditedExtraMinutes: number;
+  /** Surplus réel au-delà du plafond E+ autorisé. */
+  excessBeyondExtraMinutes: number;
+  /** Déficit cumulé sur les occurrences comparables. */
+  deficitMinutes: number;
+  /** Nombre d'occurrences disposant d'une durée attribuée calculable. */
+  occurrencesWithKnownAttributedWorkDuration: number;
+  /** Nombre d'occurrences disposant d'un écart E+/E- calculable. */
+  occurrencesWithKnownDelta: number;
+  /** Nombre d'occurrences pour lesquelles la politique E+ est résolue. */
+  occurrencesWithResolvedExtraPolicy: number;
 }
 
 export interface AttendanceIssueOccurrence {
@@ -115,8 +132,22 @@ export interface AttendanceEmployeeDayOverview {
   arrivalDelayMinutes: number | null;
   /** Tolérance de retard autorisée par le planning du jour. */
   toleranceMinutes: number | null;
-  /** Durée de travail attendue pour la journée, calculée par le backend. */
+  /** Durée de travail attendue pour l'occurrence, calculée par le backend. */
   expectedWorkMinutes: number | null;
+  /** Portion de la durée réellement enregistrée que le backend rattache à cette occurrence. */
+  attributedWorkMinutes: number | null;
+  /** Écart signé : attributedWorkMinutes - expectedWorkMinutes. */
+  rawDeltaMinutes: number | null;
+  /** Déficit de durée pour cette occurrence. */
+  deficitMinutes: number | null;
+  /** E+ retenu après application de la politique de planification. */
+  creditedExtraMinutes: number | null;
+  /** Surplus réel au-delà du plafond E+ autorisé. */
+  excessBeyondExtraMinutes: number | null;
+  /** Politique E+ résolue pour cette occurrence. */
+  extraAllowed: boolean | null;
+  /** Plafond E+ de l'occurrence, en minutes. */
+  extraMaxMinutes: number | null;
   /** Heure métier déjà préparée par le serveur : HH:mm ou HH:mm:ss. */
   firstClockIn: string | null;
   /** Date métier correspondant à la première entrée. */
@@ -147,6 +178,7 @@ export interface AttendanceDataQuality {
   openSessionDays: number;
   incompleteSessionDays: number;
   missingDurationDays: number;
+  correctedPresenceDays: number;
   reliableForAttendanceRate: boolean;
   notes: string[];
 }

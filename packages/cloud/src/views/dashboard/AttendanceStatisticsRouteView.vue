@@ -12,6 +12,7 @@
         :manager-name="managerName"
         :business-today="businessToday"
         :site-options="siteOptions"
+        pointages-path="/pointages"
       />
     </main>
 

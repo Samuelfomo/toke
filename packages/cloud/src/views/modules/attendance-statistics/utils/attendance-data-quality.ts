@@ -68,9 +68,9 @@ export function buildAttendanceDataQualityPresentation(
     },
     warning: {
       eyebrow: 'Qualité des données · À surveiller',
-      title: 'Données exploitables avec corrections à prévoir',
+      title: 'Données exploitables avec éléments à examiner',
       message:
-        'Le taux de présence reste interprétable, mais certaines sessions ou durées nécessitent une vérification.',
+        'Le taux de présence reste interprétable, mais certaines données de planning, de session ou de durée nécessitent un examen.',
     },
     unreliable: {
       eyebrow: 'Qualité des données · Non fiable',
@@ -95,27 +95,27 @@ export function buildAttendanceDataQualityPresentation(
       },
       {
         id: 'presence_without_schedule',
-        label: 'Présences sans planning',
+        label: 'Activités avec planning non exploitable',
         value: quality.presenceWithoutScheduleDays,
-        description: 'Activités enregistrées sans planning exploitable.',
+        description: 'Activités enregistrées alors que le planning applicable est absent ou invalide.',
       },
       {
         id: 'open_session',
         label: 'Sessions ouvertes',
         value: quality.openSessionDays,
-        description: 'Sessions encore ouvertes dans la période analysée.',
+        description: 'Sessions encore ouvertes dans la période analysée. Une session ouverte peut être normale tant que la journée est en cours.',
       },
       {
         id: 'incomplete_session',
         label: 'Sessions incomplètes',
         value: quality.incompleteSessionDays,
-        description: 'Sessions dont les événements ne permettent pas un calcul complet.',
+        description: 'Sessions dont les informations disponibles ne permettent pas encore un traitement complet.',
       },
       {
         id: 'missing_duration',
         label: 'Durées manquantes',
         value: quality.missingDurationDays,
-        description: 'Journées pour lesquelles la durée ne peut pas être exploitée.',
+        description: 'Journées finalisées dont la durée ne peut pas être calculée à partir des données disponibles.',
       },
     ],
     notes: [...quality.notes],

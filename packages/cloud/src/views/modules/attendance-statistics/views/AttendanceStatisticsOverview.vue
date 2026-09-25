@@ -1,12 +1,13 @@
 <script setup lang="ts">
 import { computed, ref, watch } from 'vue';
+import { useRouter } from 'vue-router';
 
 import AttendanceAnalysisContextBar from '../components/AttendanceAnalysisContextBar.vue';
 import AttendanceAttentionEmployees from '../components/AttendanceAttentionEmployees.vue';
 import AttendanceDataQualityAlert from '../components/AttendanceDataQualityAlert.vue';
 import AttendanceFilters from '../components/AttendanceFilters.vue';
 import AttendanceEmployeesSection from '../components/AttendanceEmployeesSection.vue';
-import AttendanceKpiDrilldown from '../components/AttendanceKpiDrilldown.vue';
+import AttendanceKpiDetailModal from '../components/AttendanceKpiDetailModal.vue';
 import AttendanceKpiGrid from '../components/AttendanceKpiGrid.vue';
 import AttendanceIssuesSection from '../components/AttendanceIssuesSection.vue';
 import AttendanceLargeDatasetNotice from '../components/AttendanceLargeDatasetNotice.vue';
@@ -25,7 +26,6 @@ import type { AttendanceIssue } from '../types/attendance-statistics.types.js';
 import type { AttendanceIssueTarget } from '../utils/attendance-issues.js';
 import type { AttendanceDataQualityMetricId } from '../utils/attendance-data-quality.js';
 import { getAttendanceDataQualityNavigationTarget } from '../utils/attendance-data-quality.js';
-import type { AttendanceDashboardAction, AttendancePrimaryKpiId } from '../utils/attendance-dashboard-actions.js';
 import {
   clearAttendanceAnalysisDate,
   clearAttendanceAnalysisRateEligibility,
@@ -39,10 +39,12 @@ import type { AttendanceFiltersSubmission, AttendancePeriodPreset, AttendanceSit
 import { useAttendanceOverviewPage } from '../composables/useAttendanceOverviewPage.js';
 import { getAttendancePeriodForPreset } from '../utils/attendance-period.js';
 import { getAttendanceDataQualityLevel } from '../utils/attendance-status.js';
+import type { AttendanceDecisionKpiId, AttendanceDecisionKpiSegment } from '../utils/attendance-kpis.js';
 import { isAttendanceTodayOnly } from '../utils/attendance-today.js';
 import type { AttendancePdfExportMode, AttendancePdfPresentationContext } from '../pdf/types/attendance-pdf.types.js';
 import type { AttendanceJsPdfLoader } from '../pdf/integration/attendance-pdf-runtime.js';
 import { buildAttendancePdfPresentationContext } from '../pdf/integration/attendance-pdf-ui.js';
+import type { AttendancePointageSourceTarget } from '../utils/attendance-pointage-source.js';
 
 import { useUserStore } from '@/stores/userStore';
 
@@ -59,6 +61,8 @@ interface Props {
   title?: string;
   pdfPresentationContext?: AttendancePdfPresentationContext;
   loadJsPdf?: AttendanceJsPdfLoader;
+  /** Route réelle de la page de gestion des pointages. Si absente, l'événement openPointageSource est seulement émis. */
+  pointagesPath?: string | null;
 }
 
 const props = withDefaults(defineProps<Props>(), {
@@ -67,7 +71,11 @@ const props = withDefaults(defineProps<Props>(), {
   initialSiteGuid: null,
   initialPreset: 'current_month',
   title: 'Statistiques de présence',
+  pointagesPath: null,
 });
+
+const emit = defineEmits<{ openPointageSource: [target: AttendancePointageSourceTarget] }>();
+const router = useRouter();
 
 const defaultPeriod = getAttendancePeriodForPreset(props.initialPreset, props.businessToday);
 const page = useAttendanceOverviewPage({
@@ -84,7 +92,7 @@ const page = useAttendanceOverviewPage({
 
 const employeesSectionRef = ref<InstanceType<typeof AttendanceEmployeesSection> | null>(null);
 const issuesSectionRef = ref<InstanceType<typeof AttendanceIssuesSection> | null>(null);
-const selectedKpiId = ref<AttendancePrimaryKpiId | null>(null);
+const kpiDetailSelection = ref<{ id: AttendanceDecisionKpiId; segment: AttendanceDecisionKpiSegment } | null>(null);
 const analysisContext = ref<AttendanceAnalysisContext | null>(null);
 const filtersOpen = ref(false);
 const dataQualityOpen = ref(false);
@@ -178,6 +186,18 @@ function handlePeriodStatusExplore(payload: { status: AttendanceStatus; rateElig
   employeesSectionRef.value?.applyStatusEligibilityFilter(payload.status, payload.rateEligible);
 }
 
+async function handlePointageSource(target: AttendancePointageSourceTarget): Promise<void> {
+  emit('openPointageSource', target);
+
+  const path = props.pointagesPath?.trim();
+  if (!path) return;
+
+  await router.push({
+    path,
+    query: target.query,
+  });
+}
+
 function openIssueTarget(target: AttendanceIssueTarget): void {
   analysisContext.value = createAttendanceAnalysisContext({
     source: 'issues',
@@ -186,7 +206,11 @@ function openIssueTarget(target: AttendanceIssueTarget): void {
     employeeName: target.employeeName,
     issue: target.issue,
   });
-  employeesSectionRef.value?.openEmployee(target.employeeGuid, target.date as BusinessDate);
+  employeesSectionRef.value?.openEmployee(
+    target.employeeGuid,
+    target.date as BusinessDate,
+    target.issue,
+  );
 }
 
 function openAttentionEmployee(employeeGuid: string): void {
@@ -208,32 +232,25 @@ function showAllAttentionEmployees(): void {
   employeesSectionRef.value?.applyIssuesFilter('with_issues');
 }
 
-function handleKpiSelect(id: AttendancePrimaryKpiId): void {
-  selectedKpiId.value = selectedKpiId.value === id ? null : id;
+function openKpiDetail(payload: { id: AttendanceDecisionKpiId; segment: AttendanceDecisionKpiSegment }): void {
+  kpiDetailSelection.value = payload;
 }
 
-function handleDashboardAction(action: AttendanceDashboardAction): void {
-  if (action.type === 'filter_employees') {
-    analysisContext.value = createAttendanceAnalysisContext({
-      source: 'kpi',
-      status: action.status,
-      rateEligible: action.rateEligible,
-      label: action.label,
-    });
-    if (action.rateEligible === null) {
-      employeesSectionRef.value?.applyStatusFilter(action.status);
-    } else {
-      employeesSectionRef.value?.applyStatusEligibilityFilter(action.status, action.rateEligible);
-    }
-    return;
-  }
-  if (action.type === 'show_all_employees_with_issues') {
-    analysisContext.value = createAttendanceAnalysisContext({ source: 'kpi', label: action.label });
-    employeesSectionRef.value?.applyIssuesFilter('with_issues');
-    return;
-  }
-  analysisContext.value = createAttendanceAnalysisContext({ source: 'kpi', label: action.label });
-  issuesSectionRef.value?.focusSection();
+function closeKpiDetail(): void {
+  kpiDetailSelection.value = null;
+}
+
+function openKpiDetailEmployee(payload: { employeeGuid: string; date: string }): void {
+  closeKpiDetail();
+  const employee = page.overview.value?.employees.find((item) => item.employeeGuid === payload.employeeGuid) ?? null;
+  analysisContext.value = createAttendanceAnalysisContext({
+    source: 'kpi',
+    date: payload.date as BusinessDate,
+    employeeGuid: payload.employeeGuid,
+    employeeName: employee?.employeeName ?? null,
+    label: employee ? `${employee.employeeName} · ${payload.date}` : payload.date,
+  });
+  employeesSectionRef.value?.openEmployee(payload.employeeGuid, payload.date as BusinessDate);
 }
 
 function clearAnalysisContext(): void {
@@ -266,7 +283,7 @@ function handleManualEmployeeFilters(): void {
 
 function handleOverviewFiltersApply(submission: AttendanceFiltersSubmission): void {
   analysisContext.value = null;
-  selectedKpiId.value = null;
+  kpiDetailSelection.value = null;
   dataQualityOpen.value = false;
   dataQualityAcknowledged.value = false;
   employeesSectionRef.value?.resetAnalysisFilters();
@@ -276,7 +293,7 @@ function handleOverviewFiltersApply(submission: AttendanceFiltersSubmission): vo
 
 function handleOverviewFiltersReset(): void {
   analysisContext.value = null;
-  selectedKpiId.value = null;
+  kpiDetailSelection.value = null;
   dataQualityOpen.value = false;
   dataQualityAcknowledged.value = false;
   employeesSectionRef.value?.resetAnalysisFilters();
@@ -467,15 +484,13 @@ const liveMessage = computed(() => {
 
               <AttendanceKpiGrid
                 :overview="page.overview.value"
-                :selected-kpi-id="selectedKpiId"
                 :eyebrow="isTodayOperationalView ? 'Indicateurs consolidés' : 'Vue décisionnelle'"
                 :title="isTodayOperationalView ? 'Résultats finalisés' : 'Ce qu’il faut comprendre maintenant'"
                 :description="isTodayOperationalView
-                  ? 'Les taux ci-dessous sont calculés uniquement à partir des collaborateurs dont la plage de travail prévue est déjà terminée. Les situations encore en cours restent visibles dans le suivi du jour, mais ne modifient pas encore ces taux.'
-                  : 'Cliquez sur une carte pour comprendre la valeur puis accéder aux personnes ou éléments à examiner concernés.'"
-                @select="handleKpiSelect"
+                  ? 'Les taux ci-dessous sont calculés uniquement à partir des collaborateurs dont la plage de travail prévue est déjà terminée.'
+                  : 'Cliquez sur un graphique pour voir le détail et accéder aux personnes ou éléments concernés.'"
+                @detail="openKpiDetail"
               />
-              <AttendanceKpiDrilldown :overview="page.overview.value" :kpi-id="selectedKpiId" @action="handleDashboardAction" @close="selectedKpiId = null" />
 
               <AttendanceAnalysisContextBar
                 :context="analysisContext"
@@ -494,8 +509,20 @@ const liveMessage = computed(() => {
                 @explore-day-issues="handleDayIssuesExplore"
               />
 
-              <div class="grid gap-5 2xl:grid-cols-[minmax(0,1.25fr)_minmax(360px,0.75fr)]">
-                <AttendanceIssuesSection ref="issuesSectionRef" :issues="page.overview.value.issues" @view-employee="openIssueTarget" @export="openPdfExport('issues_only')" />
+              <AttendanceAttentionEmployees
+                :employees="page.overview.value.employees"
+                @view-employee="openAttentionEmployee"
+                @view-all="showAllAttentionEmployees"
+              />
+
+              <div class="grid gap-5 2xl:grid-cols-[minmax(0,1.35fr)_minmax(340px,0.65fr)]">
+                <AttendanceIssuesSection
+                  ref="issuesSectionRef"
+                  :issues="page.overview.value.issues"
+                  @view-employee="openIssueTarget"
+                  @view-source="handlePointageSource"
+                  @export="openPdfExport('issues_only')"
+                />
                 <AttendanceStatusDistribution
                   :overview="page.overview.value"
                   :active-status="analysisContext?.status ?? null"
@@ -504,13 +531,12 @@ const liveMessage = computed(() => {
                 />
               </div>
 
-              <AttendanceAttentionEmployees :employees="page.overview.value.employees" @view-employee="openAttentionEmployee" @view-all="showAllAttentionEmployees" />
-
               <AttendanceEmployeesSection
                 ref="employeesSectionRef"
                 :employees="page.overview.value.employees"
                 @manual-filter-change="handleManualEmployeeFilters"
                 @export-employee="openEmployeePdfExport"
+                @view-source="handlePointageSource"
               />
 
               <AttendanceSecondaryInsights :overview="page.overview.value" />
@@ -522,6 +548,15 @@ const liveMessage = computed(() => {
         </template>
       </main>
     </div>
+
+    <AttendanceKpiDetailModal
+      v-if="page.overview.value"
+      :open="kpiDetailSelection !== null"
+      :overview="page.overview.value"
+      :selection="kpiDetailSelection"
+      @close="closeKpiDetail"
+      @open-employee="openKpiDetailEmployee"
+    />
 
     <AttendancePdfExportDialog
       :open="pdfExportOpen"

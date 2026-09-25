@@ -28,3 +28,22 @@ export function formatDelayMinutes(minutes: number | null): string {
   if (minutes <= 0) return 'À l’heure';
   return `${Math.round(minutes)} min`;
 }
+
+
+/**
+ * Formate un écart signé déjà calculé par le backend.
+ * La valeur nulle reste inconnue et n'est jamais assimilée à zéro.
+ */
+export function formatSignedDurationMinutes(
+  minutes: number | null,
+  options: DurationFormatOptions = {},
+): string {
+  const emptyLabel = options.emptyLabel ?? '—';
+  if (minutes === null || !Number.isFinite(minutes)) return emptyLabel;
+
+  const rounded = Math.round(minutes);
+  if (rounded === 0) return '0 min';
+
+  const sign = rounded > 0 ? '+' : '−';
+  return `${sign}${formatDurationMinutes(Math.abs(rounded), options)}`;
+}

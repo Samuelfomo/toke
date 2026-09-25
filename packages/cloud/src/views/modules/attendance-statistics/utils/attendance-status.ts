@@ -72,44 +72,49 @@ export const ATTENDANCE_ISSUE_PRESENTATION: Record<
   AttendanceIssuePresentation
 > = {
   PRESENCE_ON_REST_DAY: {
-    label: 'Présence un jour de repos',
-    actionLabel: 'Examiner',
+    label: 'Activité enregistrée un jour de repos',
+    actionLabel: 'Comparer planning et pointage',
     family: 'planning',
   },
   PRESENCE_WITHOUT_SCHEDULE: {
-    label: 'Présence sans planning',
-    actionLabel: 'Corriger le planning',
+    label: 'Activité avec planning non exploitable',
+    actionLabel: 'Examiner le planning et l’activité',
     family: 'planning',
   },
   MISSING_SCHEDULE: {
     label: 'Planning manquant',
-    actionLabel: 'Configurer',
+    actionLabel: 'Examiner le planning',
     family: 'planning',
   },
   INVALID_SCHEDULE: {
     label: 'Planning invalide',
-    actionLabel: 'Corriger',
+    actionLabel: 'Examiner le planning',
     family: 'planning',
   },
   OPEN_SESSION: {
     label: 'Session ouverte',
-    actionLabel: 'Vérifier la session',
+    actionLabel: 'Examiner la session',
     family: 'session',
   },
   INCOMPLETE_SESSION: {
     label: 'Session incomplète',
-    actionLabel: 'Corriger la session',
+    actionLabel: 'Examiner la session',
     family: 'session',
   },
   MISSING_DURATION: {
-    label: 'Durée inexploitable',
-    actionLabel: 'Vérifier la durée',
+    label: 'Durée non calculable',
+    actionLabel: 'Examiner les données de durée',
     family: 'duration',
   },
   ACTIVITY_OUTSIDE_EXPECTED_BLOCK: {
-    label: 'Activité hors plage prévue',
-    actionLabel: 'Vérifier le planning et le pointage',
+    label: 'Écart activité / plage prévue',
+    actionLabel: 'Comparer planning et pointage',
     family: 'planning',
+  },
+  CORRECTED_PRESENCE: {
+    label: 'Présence corrigée ou reconstruite',
+    actionLabel: 'Consulter la traçabilité',
+    family: 'session',
   },
 };
 

@@ -3,6 +3,7 @@ import { computed, nextTick, ref, watch } from 'vue';
 
 import type {
   AttendanceEmployeeOverview,
+  AttendanceIssue,
   AttendanceStatus,
   BusinessDate,
 } from '../types/attendance-statistics.types.js';
@@ -16,15 +17,22 @@ import {
 } from '../utils/attendance-volume.js';
 import { formatBusinessDate } from '../utils/business-date.js';
 import { formatBusinessTimeWithDate } from '../utils/business-time.js';
-import { formatDelayMinutes, formatDurationMinutes } from '../utils/duration.js';
+import { formatDelayMinutes, formatDurationMinutes, formatSignedDurationMinutes } from '../utils/duration.js';
+import {
+  buildAttendancePointageSourceTarget,
+  hasAttendancePointageSource,
+  type AttendancePointageSourceTarget,
+} from '../utils/attendance-pointage-source.js';
 import AttendanceCompactPagination from './AttendanceCompactPagination.vue';
 
 interface Props {
   employee: AttendanceEmployeeOverview;
   focusDate?: BusinessDate | null;
+  focusIssue?: AttendanceIssue | null;
 }
 
 const props = defineProps<Props>();
+const emit = defineEmits<{ viewSource: [target: AttendancePointageSourceTarget] }>();
 const sectionRef = ref<HTMLElement | null>(null);
 const statusFilter = ref<'ALL' | AttendanceStatus>('ALL');
 const issuesOnly = ref(false);
@@ -137,7 +145,8 @@ function statusClasses(status: AttendanceStatus): string {
       class="mt-4 rounded-xl border border-indigo-200 bg-indigo-50 px-4 py-3 text-sm text-indigo-900"
       role="status"
     >
-      Journée ciblée depuis les éléments à examiner : <strong>{{ formatBusinessDate(focusDate) }}</strong>.
+      Journée ciblée depuis les éléments à examiner : <strong>{{ formatBusinessDate(focusDate) }}</strong>
+      <template v-if="focusIssue"> · <strong>{{ ATTENDANCE_ISSUE_PRESENTATION[focusIssue].label }}</strong></template>.
     </div>
 
     <p class="mt-3 text-xs text-slate-500" aria-live="polite">
@@ -161,7 +170,8 @@ function statusClasses(status: AttendanceStatus): string {
               <th scope="col" class="px-3 py-3 text-right font-bold">Entrée</th>
               <th scope="col" class="px-3 py-3 text-right font-bold">Sortie</th>
               <th scope="col" class="px-3 py-3 text-right font-bold">Retard réel</th>
-              <th scope="col" class="px-3 py-3 text-right font-bold">Prévue</th>
+              <th scope="col" class="min-w-[190px] px-3 py-3 text-left font-bold">Comparaison durée</th>
+              <th scope="col" class="min-w-[160px] px-3 py-3 text-left font-bold">E+</th>
               <th scope="col" class="px-3 py-3 text-right font-bold">Brut</th>
               <th scope="col" class="px-3 py-3 text-right font-bold">Pause</th>
               <th scope="col" class="px-3 py-3 text-right font-bold">Net</th>
@@ -191,17 +201,46 @@ function statusClasses(status: AttendanceStatus): string {
               <td class="whitespace-nowrap px-3 py-3 text-right text-slate-700">{{ formatBusinessTimeWithDate(day.firstClockIn, day.firstClockInDate, day.date) }}</td>
               <td class="whitespace-nowrap px-3 py-3 text-right text-slate-700">{{ formatBusinessTimeWithDate(day.lastClockOut, day.lastClockOutDate, day.date) }}</td>
               <td class="whitespace-nowrap px-3 py-3 text-right text-slate-700">{{ formatDelayMinutes(day.delayMinutes) }}</td>
-              <td class="whitespace-nowrap px-3 py-3 text-right text-slate-700">{{ formatDurationMinutes(day.expectedWorkMinutes) }}</td>
+              <td class="px-3 py-3 text-left text-xs leading-5 text-slate-700">
+                <div><span class="text-slate-500">Prévue :</span> <strong class="font-semibold text-slate-900">{{ formatDurationMinutes(day.expectedWorkMinutes) }}</strong></div>
+                <div><span class="text-slate-500">Attribuée :</span> <strong class="font-semibold text-slate-900">{{ formatDurationMinutes(day.attributedWorkMinutes) }}</strong></div>
+                <div><span class="text-slate-500">Écart :</span> <strong class="font-semibold text-slate-900">{{ formatSignedDurationMinutes(day.rawDeltaMinutes) }}</strong></div>
+              </td>
+              <td class="px-3 py-3 text-left text-xs leading-5 text-slate-700">
+                <div><span class="text-slate-500">Retenu :</span> <strong class="font-semibold text-emerald-700">{{ formatDurationMinutes(day.creditedExtraMinutes) }}</strong></div>
+                <div v-if="day.excessBeyondExtraMinutes !== null && day.excessBeyondExtraMinutes > 0"><span class="text-slate-500">Hors plafond :</span> <strong class="font-semibold text-amber-700">{{ formatDurationMinutes(day.excessBeyondExtraMinutes) }}</strong></div>
+                <div v-if="day.deficitMinutes !== null && day.deficitMinutes > 0"><span class="text-slate-500">Déficit :</span> <strong class="font-semibold text-rose-700">{{ formatDurationMinutes(day.deficitMinutes) }}</strong></div>
+                <div v-if="day.creditedExtraMinutes === null && day.deficitMinutes === null" class="text-slate-400">Non calculable</div>
+              </td>
               <td class="whitespace-nowrap px-3 py-3 text-right text-slate-700">{{ formatDurationMinutes(day.grossMinutes) }}</td>
               <td class="whitespace-nowrap px-3 py-3 text-right text-slate-700">{{ formatDurationMinutes(day.pauseMinutes) }}</td>
               <td class="whitespace-nowrap px-3 py-3 text-right font-semibold text-slate-900">{{ formatDurationMinutes(day.netMinutes) }}</td>
               <td class="min-w-[190px] px-3 py-3">
                 <span v-if="day.issues.length === 0" class="text-slate-500">Aucune</span>
                 <div v-else class="flex flex-wrap gap-1.5">
-                  <span v-for="issue in day.issues" :key="issue" class="rounded-md bg-orange-100 px-2 py-1 text-xs font-semibold text-orange-800">
+                  <span
+                    v-for="issue in day.issues"
+                    :key="issue"
+                    class="rounded-md bg-orange-100 px-2 py-1 text-xs font-semibold text-orange-800"
+                    :class="focusDate === day.date && focusIssue === issue ? 'ring-2 ring-orange-500 ring-offset-1' : ''"
+                  >
                     {{ ATTENDANCE_ISSUE_PRESENTATION[issue].label }}
                   </span>
                 </div>
+                <button
+                  v-if="hasAttendancePointageSource(day.sourceContext)"
+                  type="button"
+                  class="mt-2 inline-flex min-h-9 items-center justify-center rounded-lg border border-indigo-200 bg-white px-2.5 text-xs font-bold text-indigo-700 hover:bg-indigo-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500"
+                  @click="emit('viewSource', buildAttendancePointageSourceTarget({
+                    employeeGuid: employee.employeeGuid,
+                    employeeName: employee.employeeName,
+                    date: day.date,
+                    issue: focusDate === day.date ? (focusIssue ?? null) : null,
+                    sourceContext: day.sourceContext,
+                  }))"
+                >
+                  Voir le pointage
+                </button>
               </td>
             </tr>
           </tbody>
@@ -228,13 +267,37 @@ function statusClasses(status: AttendanceStatus): string {
             <div><dt class="text-xs text-slate-500">Sortie</dt><dd class="font-semibold text-slate-800">{{ formatBusinessTimeWithDate(day.lastClockOut, day.lastClockOutDate, day.date) }}</dd></div>
             <div><dt class="text-xs text-slate-500">Retard réel</dt><dd class="font-semibold text-slate-800">{{ formatDelayMinutes(day.delayMinutes) }}</dd></div>
             <div><dt class="text-xs text-slate-500">Durée prévue</dt><dd class="font-semibold text-slate-800">{{ formatDurationMinutes(day.expectedWorkMinutes) }}</dd></div>
-            <div><dt class="text-xs text-slate-500">Durée nette</dt><dd class="font-semibold text-slate-800">{{ formatDurationMinutes(day.netMinutes) }}</dd></div>
+            <div><dt class="text-xs text-slate-500">Durée enregistrée</dt><dd class="font-semibold text-slate-800">{{ formatDurationMinutes(day.netMinutes) }}</dd></div>
+            <div><dt class="text-xs text-slate-500">Durée attribuée</dt><dd class="font-semibold text-slate-800">{{ formatDurationMinutes(day.attributedWorkMinutes) }}</dd></div>
+            <div><dt class="text-xs text-slate-500">Écart</dt><dd class="font-semibold text-slate-800">{{ formatSignedDurationMinutes(day.rawDeltaMinutes) }}</dd></div>
+            <div><dt class="text-xs text-slate-500">E+ retenu</dt><dd class="font-semibold text-emerald-700">{{ formatDurationMinutes(day.creditedExtraMinutes) }}</dd></div>
+            <div v-if="day.excessBeyondExtraMinutes !== null && day.excessBeyondExtraMinutes > 0"><dt class="text-xs text-slate-500">Surplus hors E+</dt><dd class="font-semibold text-amber-700">{{ formatDurationMinutes(day.excessBeyondExtraMinutes) }}</dd></div>
+            <div v-if="day.deficitMinutes !== null && day.deficitMinutes > 0"><dt class="text-xs text-slate-500">Déficit</dt><dd class="font-semibold text-rose-700">{{ formatDurationMinutes(day.deficitMinutes) }}</dd></div>
           </dl>
           <div v-if="day.issues.length > 0" class="mt-4 flex flex-wrap gap-1.5">
-            <span v-for="issue in day.issues" :key="issue" class="rounded-md bg-orange-100 px-2 py-1 text-xs font-semibold text-orange-800">
+            <span
+              v-for="issue in day.issues"
+              :key="issue"
+              class="rounded-md bg-orange-100 px-2 py-1 text-xs font-semibold text-orange-800"
+              :class="focusDate === day.date && focusIssue === issue ? 'ring-2 ring-orange-500 ring-offset-1' : ''"
+            >
               {{ ATTENDANCE_ISSUE_PRESENTATION[issue].label }}
             </span>
           </div>
+          <button
+            v-if="hasAttendancePointageSource(day.sourceContext)"
+            type="button"
+            class="mt-4 inline-flex min-h-10 w-full items-center justify-center rounded-lg border border-indigo-200 bg-white px-3 text-sm font-bold text-indigo-700 hover:bg-indigo-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500"
+            @click="emit('viewSource', buildAttendancePointageSourceTarget({
+              employeeGuid: employee.employeeGuid,
+              employeeName: employee.employeeName,
+              date: day.date,
+              issue: focusDate === day.date ? (focusIssue ?? null) : null,
+              sourceContext: day.sourceContext,
+            }))"
+          >
+            Voir le pointage source
+          </button>
         </article>
       </div>
 

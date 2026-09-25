@@ -2,6 +2,7 @@
 import { computed, ref } from 'vue';
 
 import type { AttendanceIssue, AttendanceIssueSummary } from '../types/attendance-statistics.types.js';
+import type { AttendancePointageSourceTarget } from '../utils/attendance-pointage-source.js';
 import type {
   AttendanceIssueFamilyFilter,
   AttendanceIssueListFilters,
@@ -19,7 +20,11 @@ interface Props {
 }
 
 const props = defineProps<Props>();
-const emit = defineEmits<{ viewEmployee: [target: AttendanceIssueTarget]; export: [] }>();
+const emit = defineEmits<{
+  viewEmployee: [target: AttendanceIssueTarget];
+  viewSource: [target: AttendancePointageSourceTarget];
+  export: [];
+}>();
 
 const filters = ref<AttendanceIssueListFilters>({ ...DEFAULT_ATTENDANCE_ISSUE_FILTERS });
 const model = computed(() => buildAttendanceIssueListModel({ issues: props.issues, filters: filters.value }));
@@ -122,6 +127,7 @@ defineExpose({ focusSection, focusIssue, focusFamily, focusDate, reset });
           :key="summary.issue"
           :summary="summary"
           @view-employee="emit('viewEmployee', $event)"
+          @view-source="emit('viewSource', $event)"
         />
       </div>
     </template>

@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue';
 
-import type { AttendanceEmployeeOverview, BusinessDate } from '../types/attendance-statistics.types.js';
+import type { AttendanceEmployeeOverview, AttendanceIssue, BusinessDate } from '../types/attendance-statistics.types.js';
 import type {
   AttendanceEmployeeListFilters,
   AttendanceEmployeeSort,
@@ -13,6 +13,7 @@ import {
   DEFAULT_ATTENDANCE_EMPLOYEE_SORT,
   toggleAttendanceEmployeeSort,
 } from '../utils/attendance-employees.js';
+import type { AttendancePointageSourceTarget } from '../utils/attendance-pointage-source.js';
 import AttendanceEmployeeDrawer from './AttendanceEmployeeDrawer.vue';
 import AttendanceEmployeesPagination from './AttendanceEmployeesPagination.vue';
 import AttendanceEmployeesTable from './AttendanceEmployeesTable.vue';
@@ -23,7 +24,11 @@ interface Props {
 }
 
 const props = defineProps<Props>();
-const emit = defineEmits<{ manualFilterChange: []; exportEmployee: [employeeGuid: string] }>();
+const emit = defineEmits<{
+  manualFilterChange: [];
+  exportEmployee: [employeeGuid: string];
+  viewSource: [target: AttendancePointageSourceTarget];
+}>();
 
 const filters = ref<AttendanceEmployeeListFilters>({ ...DEFAULT_ATTENDANCE_EMPLOYEE_FILTERS });
 const sort = ref<AttendanceEmployeeSort>({ ...DEFAULT_ATTENDANCE_EMPLOYEE_SORT });
@@ -31,6 +36,7 @@ const page = ref(1);
 const pageSize = ref(10);
 const selectedEmployee = ref<AttendanceEmployeeOverview | null>(null);
 const selectedFocusDate = ref<BusinessDate | null>(null);
+const selectedFocusIssue = ref<AttendanceIssue | null>(null);
 
 const list = computed(() =>
   buildAttendanceEmployeeListModel({
@@ -69,22 +75,29 @@ function updatePageSize(value: number): void {
   page.value = 1;
 }
 
-function openEmployee(employeeGuid: string, focusDate: BusinessDate | null = null): boolean {
+function openEmployee(
+  employeeGuid: string,
+  focusDate: BusinessDate | null = null,
+  focusIssue: AttendanceIssue | null = null,
+): boolean {
   const employee = props.employees.find((item) => item.employeeGuid === employeeGuid) ?? null;
   if (!employee) return false;
   selectedEmployee.value = employee;
   selectedFocusDate.value = focusDate;
+  selectedFocusIssue.value = focusIssue;
   return true;
 }
 
 function openEmployeeFromTable(employee: AttendanceEmployeeOverview): void {
   selectedEmployee.value = employee;
   selectedFocusDate.value = null;
+  selectedFocusIssue.value = null;
 }
 
 function closeEmployee(): void {
   selectedEmployee.value = null;
   selectedFocusDate.value = null;
+  selectedFocusIssue.value = null;
 }
 
 function applyStatusFilter(status: AttendanceEmployeeListFilters['status']): void {
@@ -211,8 +224,10 @@ defineExpose({
       :open="selectedEmployee !== null"
       :employee="selectedEmployee"
       :focus-date="selectedFocusDate"
+      :focus-issue="selectedFocusIssue"
       @close="closeEmployee"
       @export-employee="emit('exportEmployee', $event)"
+      @view-source="emit('viewSource', $event)"
     />
   </section>
 </template>

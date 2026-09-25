@@ -1,7 +1,12 @@
 import type { AttendanceStatus } from '../types/attendance-statistics.types.js';
-import type { AttendanceKpiId } from './attendance-kpis.js';
 
-export type AttendancePrimaryKpiId = Exclude<AttendanceKpiId, 'net_duration'>;
+export const ATTENDANCE_PRIMARY_KPI_IDS = [
+  'attendance_rate',
+  'punctuality_rate',
+  'adoption_rate',
+] as const;
+
+export type AttendancePrimaryKpiId = (typeof ATTENDANCE_PRIMARY_KPI_IDS)[number];
 
 export type AttendanceDashboardAction =
   | {
@@ -20,8 +25,8 @@ export type AttendanceDashboardAction =
       label: string;
     };
 
-export function isPrimaryAttendanceKpiId(id: AttendanceKpiId): id is AttendancePrimaryKpiId {
-  return id !== 'net_duration';
+export function isPrimaryAttendanceKpiId(id: string): id is AttendancePrimaryKpiId {
+  return (ATTENDANCE_PRIMARY_KPI_IDS as readonly string[]).includes(id);
 }
 
 export function getAttendanceKpiPrimaryAction(
@@ -33,30 +38,16 @@ export function getAttendanceKpiPrimaryAction(
         type: 'filter_employees',
         status: 'ABSENT',
         rateEligible: true,
-        label: 'Voir les absences prises en compte',
+        label: 'Voir les rotations non couvertes',
       };
     case 'punctuality_rate':
       return {
         type: 'filter_employees',
         status: 'LATE',
         rateEligible: true,
-        label: 'Voir les retards pris en compte',
+        label: 'Voir les rotations commencées en retard',
       };
-    case 'absences':
-      return {
-        type: 'filter_employees',
-        status: 'ABSENT',
-        rateEligible: true,
-        label: 'Voir les employés absents',
-      };
-    case 'late_days':
-      return {
-        type: 'filter_employees',
-        status: 'LATE',
-        rateEligible: null,
-        label: 'Voir tous les retards observés',
-      };
-    case 'issues':
-      return { type: 'show_issues', label: 'Examiner les éléments' };
+    case 'adoption_rate':
+      return null;
   }
 }

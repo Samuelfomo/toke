@@ -317,6 +317,7 @@
                   v-for="entry in paginatedEntries"
                   :key="entry.guid"
                   class="hover:bg-slate-50 transition-colors group"
+                  :class="entry.guid === resolvedSourceEntryGuid ? 'bg-indigo-50 ring-1 ring-inset ring-indigo-200' : ''"
               >
                 <!-- Date & heure -->
                 <td class="px-5 py-3.5 whitespace-nowrap">
@@ -709,6 +710,18 @@ interface PointageEntry {
 const userStore = useUserStore()
 const route     = useRoute()
 
+const readQueryString = (value: unknown): string | null => {
+  if (typeof value === 'string') return value.trim() || null
+  if (Array.isArray(value)) {
+    const first = value.find((item) => typeof item === 'string' && item.trim().length > 0)
+    return typeof first === 'string' ? first.trim() : null
+  }
+  return null
+}
+
+const isBusinessDate = (value: string | null): value is string =>
+    value !== null && /^\d{4}-\d{2}-\d{2}$/.test(value)
+
 // ─── State ───────────────────────────────────────────────────────────────────
 const allEntries    = ref<PointageEntry[]>([])
 const loading       = ref(false)
@@ -717,7 +730,7 @@ const selectedEntry = ref<PointageEntry | null>(null)
 
 // ─── Filtres ─────────────────────────────────────────────────────────────────
 const filterEmployee     = ref('')
-const filterEmployeeGuid = ref('')
+const filterEmployeeGuid = ref(readQueryString(route.query.employee) ?? '')
 const filterNature    = ref('')
 const filterType      = ref('')
 const filterPhoto     = ref('')
@@ -725,8 +738,24 @@ const filterStatus    = ref('')
 
 const today = new Date().toISOString().split('T')[0]
 const monthStart = new Date(new Date().getFullYear(), new Date().getMonth(), 1).toISOString().split('T')[0]
-const filterStartDate = ref(monthStart)
-const filterEndDate   = ref(today)
+const queryStartDate = readQueryString(route.query.start_date) ?? readQueryString(route.query.start)
+const queryEndDate = readQueryString(route.query.end_date) ?? readQueryString(route.query.end)
+const initialStartDate = isBusinessDate(queryStartDate)
+    ? queryStartDate
+    : isBusinessDate(queryEndDate)
+      ? queryEndDate
+      : monthStart
+const initialEndDate = isBusinessDate(queryEndDate)
+    ? queryEndDate
+    : isBusinessDate(queryStartDate)
+      ? queryStartDate
+      : today
+const filterStartDate = ref(initialStartDate <= initialEndDate ? initialStartDate : initialEndDate)
+const filterEndDate   = ref(initialStartDate <= initialEndDate ? initialEndDate : initialStartDate)
+
+const sourceEntryGuid = ref(readQueryString(route.query.entry))
+const sourceSessionGuid = ref(readQueryString(route.query.session))
+const resolvedSourceEntryGuid = ref<string | null>(null)
 
 // ─── Pagination ───────────────────────────────────────────────────────────────
 const currentPage = ref(1)
@@ -831,8 +860,11 @@ const getFraudScoreClass = (score: number) => {
 }
 
 // ─── Helpers : formatage ─────────────────────────────────────────────────────
-const formatDate = (iso: string) =>
-    new Date(iso).toLocaleDateString('fr-FR', { day: '2-digit', month: '2-digit', year: 'numeric' })
+const formatDate = (iso: string) => {
+  const businessDate = iso.slice(0, 10)
+  const match = /^(\d{4})-(\d{2})-(\d{2})$/.exec(businessDate)
+  return match ? `${match[3]}/${match[2]}/${match[1]}` : businessDate
+}
 
 // const formatTime = (iso: string) =>
 //      new Date(iso).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })
@@ -949,6 +981,39 @@ const openDetail = (entry: PointageEntry) => {
   selectedEntry.value = entry
 }
 
+const openRequestedSourceEntry = () => {
+  if (!sourceEntryGuid.value && !sourceSessionGuid.value) {
+    resolvedSourceEntryGuid.value = null
+    return
+  }
+
+  let target: PointageEntry | undefined
+
+  if (sourceEntryGuid.value) {
+    target = allEntries.value.find(entry => entry.guid === sourceEntryGuid.value)
+  }
+
+  if (!target && sourceSessionGuid.value) {
+    const sessionEntries = allEntries.value.filter(
+        entry => entry.session?.guid === sourceSessionGuid.value,
+    )
+    target = sessionEntries.find(entry => entry.pointage_type === 'clock_in') ?? sessionEntries[0]
+  }
+
+  if (!target) {
+    resolvedSourceEntryGuid.value = null
+    return
+  }
+
+  resolvedSourceEntryGuid.value = target.guid
+  selectedEntry.value = target
+
+  const filteredIndex = filteredEntries.value.findIndex(entry => entry.guid === target?.guid)
+  if (filteredIndex >= 0) {
+    currentPage.value = Math.floor(filteredIndex / pageSize.value) + 1
+  }
+}
+
 // ─── Chargement des données ───────────────────────────────────────────────────
 const loadEntries = async () => {
   try {
@@ -966,6 +1031,7 @@ const loadEntries = async () => {
 
     const data = response as PeriodAttendanceResponse
     allEntries.value = (data.data?.data?.entries || []) as PointageEntry[]
+    openRequestedSourceEntry()
   } catch (err) {
     error.value = err instanceof Error ? err.message : 'Erreur lors du chargement'
   } finally {
@@ -1008,11 +1074,6 @@ watch([filterStartDate, filterEndDate], () => {
 })
 
 onMounted(async () => {
-  // Pré-filtrer par employé si ?employee=GUID dans l'URL
-  const guidFromUrl = route.query.employee as string | undefined
-  if (guidFromUrl) {
-    filterEmployeeGuid.value = guidFromUrl
-  }
   await loadEntries()
 })
 </script>

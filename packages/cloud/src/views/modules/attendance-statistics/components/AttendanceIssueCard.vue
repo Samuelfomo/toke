@@ -4,6 +4,11 @@ import { computed, ref, watch } from 'vue';
 import type { AttendanceIssueSummary } from '../types/attendance-statistics.types.js';
 import type { AttendanceIssueTarget } from '../utils/attendance-issues.js';
 import {
+  buildAttendancePointageSourceTarget,
+  hasAttendancePointageSource,
+  type AttendancePointageSourceTarget,
+} from '../utils/attendance-pointage-source.js';
+import {
   getHiddenAttendanceOccurrenceCount,
   toAttendanceIssueTarget,
 } from '../utils/attendance-issues.js';
@@ -16,7 +21,10 @@ interface Props {
 }
 
 const props = defineProps<Props>();
-const emit = defineEmits<{ viewEmployee: [target: AttendanceIssueTarget] }>();
+const emit = defineEmits<{
+  viewEmployee: [target: AttendanceIssueTarget];
+  viewSource: [target: AttendancePointageSourceTarget];
+}>();
 const visibleCount = ref(10);
 const visibleOccurrences = computed(() => props.summary.occurrences.slice(0, visibleCount.value));
 const remainingDetailedCount = computed(() =>
@@ -110,13 +118,29 @@ function familyClasses(): string {
             </div>
           </div>
 
-          <button
-            type="button"
-            class="inline-flex min-h-10 shrink-0 items-center justify-center rounded-lg bg-indigo-600 px-3 text-sm font-bold text-white transition hover:bg-indigo-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 focus-visible:ring-offset-2"
-            @click="emit('viewEmployee', toAttendanceIssueTarget(summary.issue, occurrence))"
-          >
-            Ouvrir le détail
-          </button>
+          <div class="flex shrink-0 flex-wrap items-center gap-2">
+            <button
+              v-if="hasAttendancePointageSource(occurrence.sourceContext)"
+              type="button"
+              class="inline-flex min-h-10 items-center justify-center rounded-lg border border-indigo-200 bg-white px-3 text-sm font-bold text-indigo-700 transition hover:bg-indigo-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 focus-visible:ring-offset-2"
+              @click="emit('viewSource', buildAttendancePointageSourceTarget({
+                employeeGuid: occurrence.employeeGuid,
+                employeeName: occurrence.employeeName,
+                date: occurrence.date,
+                issue: summary.issue,
+                sourceContext: occurrence.sourceContext,
+              }))"
+            >
+              Voir le pointage
+            </button>
+            <button
+              type="button"
+              class="inline-flex min-h-10 items-center justify-center rounded-lg bg-indigo-600 px-3 text-sm font-bold text-white transition hover:bg-indigo-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 focus-visible:ring-offset-2"
+              @click="emit('viewEmployee', toAttendanceIssueTarget(summary.issue, occurrence))"
+            >
+              Ouvrir le détail
+            </button>
+          </div>
         </li>
       </ul>
 

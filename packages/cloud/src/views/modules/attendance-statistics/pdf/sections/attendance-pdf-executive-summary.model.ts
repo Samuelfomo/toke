@@ -130,22 +130,41 @@ function buildDirectionKpis(overview: AttendanceOverview): AttendancePdfExecutiv
 }
 
 function buildKpis(overview: AttendanceOverview): AttendancePdfExecutiveKpi[] {
-    return buildPrimaryAttendanceKpis(overview).map((card) => {
-        switch (card.id) {
-            case 'attendance_rate':
-                return { id: card.id, label: card.label, value: card.value, explanation: card.helper, accent: 'accent' };
-            case 'punctuality_rate':
-                return { id: card.id, label: card.label, value: card.value, explanation: card.helper, accent: 'success' };
-            case 'absences':
-                return { id: card.id, label: card.label, value: card.value, explanation: card.helper, accent: 'danger' };
-            case 'late_days':
-                return { id: card.id, label: card.label, value: card.value, explanation: card.helper, accent: 'warning' };
-            case 'issues':
-                return { id: card.id, label: card.label, value: card.value, explanation: card.helper, accent: 'warning' };
-            case 'net_duration':
-                throw new Error('La durée nette ne fait pas partie des KPI décisionnels de la synthèse PDF.');
+    const result: AttendancePdfExecutiveKpi[] = [];
+
+    for (const card of buildPrimaryAttendanceKpis(overview)) {
+        if (card.id === 'attendance_rate') {
+            result.push({
+                id: 'attendance_rate',
+                label: card.title,
+                value:
+                    card.primaryRate === null
+                        ? 'N/D'
+                        : `${card.primaryRate.toFixed(1)} %`,
+                explanation: card.explanation,
+                accent: 'accent',
+            });
+            continue;
         }
-    });
+
+        if (card.id === 'punctuality_rate') {
+            result.push({
+                id: 'punctuality_rate',
+                label: card.title,
+                value:
+                    card.primaryRate === null
+                        ? 'N/D'
+                        : `${card.primaryRate.toFixed(1)} %`,
+                explanation: card.explanation,
+                accent: 'success',
+            });
+        }
+
+        // adoption_rate reste volontairement hors de cette synthèse tant que
+        // sa règle métier n'est pas validée. Aucun KPI PDF n'est fabriqué ici.
+    }
+
+    return result;
 }
 
 function buildStatusRows(overview: AttendanceOverview): AttendancePdfExecutiveStatusRow[] {
@@ -252,9 +271,7 @@ export function buildAttendancePdfExecutiveSummaryModel(
             value: overview.summary.durations.daysWithKnownNetDuration > 0
                 ? formatAttendancePdfDuration(overview.summary.durations.netMinutes, { emptyLabel: 'Non disponible' })
                 : 'Non disponible',
-            helper: overview.summary.durations.daysWithKnownExpectedWorkDuration > 0
-                ? `sur ${formatAttendancePdfDuration(overview.summary.durations.expectedWorkMinutes, { emptyLabel: 'Non disponible' })} prévues sur la période`
-                : durationInsight.helper,
+            helper: durationInsight.helper,
             detail: durationInsight.detail,
             available: durationInsight.available,
         },
