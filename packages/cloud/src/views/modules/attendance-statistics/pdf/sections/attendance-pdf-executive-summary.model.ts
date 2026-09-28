@@ -8,7 +8,6 @@ import type {
 import { buildAttendanceDataQualityPresentation } from '../../utils/attendance-data-quality.js';
 import {
     buildAttendanceDurationInsight,
-    buildPrimaryAttendanceKpis,
 } from '../../utils/attendance-kpis.js';
 import { sortAttendanceIssues } from '../../utils/attendance-issues.js';
 import {
@@ -19,11 +18,19 @@ import { ATTENDANCE_PDF_PAGINATION_TARGETS } from '../config/attendance-pdf-layo
 import type { AttendancePdfExportMode } from '../types/attendance-pdf.types.js';
 
 export interface AttendancePdfExecutiveKpi {
-    id: 'attendance_rate' | 'punctuality_rate' | 'absences' | 'late_days' | 'issues' | 'alerts';
+    id: 'attendance_rate' | 'punctuality_rate' | 'adoption_rate' | 'issue_rate' | 'absences' | 'late_days' | 'issues' | 'alerts';
     label: string;
     value: string;
     explanation: string;
     accent: 'accent' | 'success' | 'danger' | 'warning';
+    segments?: {
+        primaryRate: number | null;
+        secondaryRate: number | null;
+        primaryLabel: string;
+        secondaryLabel: string;
+        primaryCount: number;
+        secondaryCount: number;
+    };
 }
 
 export interface AttendancePdfExecutiveQuality {
@@ -77,94 +84,76 @@ function plural(value: number, singular: string, pluralValue: string = `${singul
 
 function buildDirectionKpis(overview: AttendanceOverview): AttendancePdfExecutiveKpi[] {
     const { rates } = overview.summary;
-    const showLateRate = rates.lateRate !== null && rates.lateRate > 50;
-    const punctualityOrLate: AttendancePdfExecutiveKpi = !showLateRate
-        ? {
-            id: 'punctuality_rate',
-            label: 'Ponctualité',
-            value: rates.punctualityRate === null ? '—' : `${rates.punctualityRate.toFixed(1).replace('.0', '')} %`,
-            explanation: `${rates.onTimeWorkingDays} arrivées à l’heure sur ${rates.attendedWorkingDays} planifications couvertes`,
-            accent: rates.punctualityRate !== null && rates.punctualityRate > 60 ? 'success' : 'warning',
-        }
-        : {
-            id: 'late_days',
-            label: 'Taux de retard',
-            value: rates.lateRate === null ? '—' : `${rates.lateRate.toFixed(1).replace('.0', '')} %`,
-            explanation: `${rates.lateWorkingDays} retards sur ${rates.attendedWorkingDays} planifications couvertes`,
-            accent: 'warning',
-        };
-
     return [
         {
             id: 'attendance_rate',
-            label: 'Taux de présence',
-            value: rates.attendanceRate === null ? '—' : `${rates.attendanceRate.toFixed(1).replace('.0', '')} %`,
-            explanation: `${rates.attendedWorkingDays} planifications couvertes sur ${rates.employeeWorkingDaysExpected} planifications de travail finalisées`,
-            accent:
-                rates.attendanceRate === null
-                    ? 'accent'
-                    : rates.attendanceRate > 60
-                        ? 'success'
-                        : rates.absenceRate !== null && rates.absenceRate > 50
-                            ? 'danger'
-                            : 'warning',
-        },
-        punctualityOrLate,
-        {
-            id: 'absences',
-            label: 'Taux d’absence',
-            value: rates.absenceRate === null ? '—' : `${rates.absenceRate.toFixed(1).replace('.0', '')} %`,
-            explanation: `${rates.absentWorkingDays} planifications non couvertes sur ${rates.employeeWorkingDaysExpected} finalisées`,
-            accent: 'danger',
+            label: 'Présence / absence',
+            value: rates.attendanceRate === null ? 'N/D' : `${rates.attendanceRate.toFixed(1).replace('.0', '')} %`,
+            explanation: rates.attendanceRate === null
+                ? 'Aucune rotation finalisée éligible à ce taux.'
+                : `Sur ${rates.employeeWorkingDaysExpected} rotations attendues, ${rates.attendedWorkingDays} couvertes et ${rates.absentWorkingDays} non couvertes${rates.absenceRate === null ? '' : ` (${rates.absenceRate.toFixed(1).replace('.0', '')} %)`}. Situations à vérifier avec le planning.`,
+            accent: 'accent',
+            segments: {
+                primaryRate: rates.attendanceRate,
+                secondaryRate: rates.absenceRate,
+                primaryLabel: 'Présence',
+                secondaryLabel: 'Absence',
+                primaryCount: rates.attendedWorkingDays,
+                secondaryCount: rates.absentWorkingDays,
+            },
         },
         {
-            id: 'alerts',
-            label: 'Alerte',
-            value: rates.issueRate === null ? '—' : `${rates.issueRate.toFixed(1).replace('.0', '')} %`,
-            explanation: rates.issueRate === null
-                ? 'Aucune base suffisante pour calculer le taux d’alerte'
-                : `${rates.employeeDaysWithIssues} situations avec alerte sur ${rates.employeeDaysAnalyzed} situations analysées`,
-            accent: rates.issueRate !== null && rates.issueRate > 0 ? 'warning' : 'success',
+            id: 'punctuality_rate',
+            label: 'Ponctualité / retard',
+            value: rates.punctualityRate === null ? 'N/D' : `${rates.punctualityRate.toFixed(1).replace('.0', '')} %`,
+            explanation: rates.punctualityRate === null
+                ? 'Aucune rotation couverte éligible à ce taux.'
+                : `Parmi ${rates.attendedWorkingDays} rotations couvertes, ${rates.onTimeWorkingDays} à l’heure et ${rates.lateWorkingDays} en retard${rates.lateRate === null ? '' : ` (${rates.lateRate.toFixed(1).replace('.0', '')} %)`}, tolérance comprise.`,
+            accent: 'success',
+            segments: {
+                primaryRate: rates.punctualityRate,
+                secondaryRate: rates.lateRate,
+                primaryLabel: 'À l’heure',
+                secondaryLabel: 'Retard',
+                primaryCount: rates.onTimeWorkingDays,
+                secondaryCount: rates.lateWorkingDays,
+            },
+        },
+        {
+            id: 'adoption_rate',
+            label: 'Adoption du pointage',
+            value: overview.summary.adoption?.adoptionRate == null ? 'N/D' : `${overview.summary.adoption.adoptionRate.toFixed(1).replace('.0', '')} %`,
+            explanation: overview.summary.adoption ? `${overview.summary.adoption.completeOperations} opérations complètes et ${overview.summary.adoption.incompleteOperations} incomplètes sur ${overview.summary.adoption.evaluatedOperations} évaluables. ${overview.summary.adoption.undeterminedOperations} indéterminée(s) exclue(s).` : 'Données d’adoption indisponibles.',
+            accent: 'accent',
+            segments: overview.summary.adoption?.adoptionRate == null ? undefined : {
+                primaryRate: overview.summary.adoption.adoptionRate,
+                secondaryRate: Math.round((100 - overview.summary.adoption.adoptionRate) * 10) / 10,
+                primaryLabel: 'Complets', secondaryLabel: 'Incomplets',
+                primaryCount: overview.summary.adoption.completeOperations,
+                secondaryCount: overview.summary.adoption.incompleteOperations,
+            },
         },
     ];
 }
 
 function buildKpis(overview: AttendanceOverview): AttendancePdfExecutiveKpi[] {
-    const result: AttendancePdfExecutiveKpi[] = [];
-
-    for (const card of buildPrimaryAttendanceKpis(overview)) {
-        if (card.id === 'attendance_rate') {
-            result.push({
-                id: 'attendance_rate',
-                label: card.title,
-                value:
-                    card.primaryRate === null
-                        ? 'N/D'
-                        : `${card.primaryRate.toFixed(1)} %`,
-                explanation: card.explanation,
-                accent: 'accent',
-            });
-            continue;
-        }
-
-        if (card.id === 'punctuality_rate') {
-            result.push({
-                id: 'punctuality_rate',
-                label: card.title,
-                value:
-                    card.primaryRate === null
-                        ? 'N/D'
-                        : `${card.primaryRate.toFixed(1)} %`,
-                explanation: card.explanation,
-                accent: 'success',
-            });
-        }
-
-        // adoption_rate reste volontairement hors de cette synthèse tant que
-        // sa règle métier n'est pas validée. Aucun KPI PDF n'est fabriqué ici.
-    }
-
-    return result;
+    const kpis = buildDirectionKpis(overview);
+    const rates = overview.summary.rates;
+    kpis.push({
+        id: 'issue_rate',
+        label: 'Éléments à examiner',
+        value: rates.issueRate == null ? 'N/D' : `${rates.issueRate.toFixed(1).replace('.0', '')} %`,
+        explanation: `${rates.employeeDaysWithIssues} journées avec au moins un élément à examiner sur ${rates.employeeDaysAnalyzed} journées analysées. Une journée compte une seule fois.`,
+        accent: 'warning',
+        segments: rates.issueRate == null ? undefined : {
+            primaryRate: Math.round((100 - rates.issueRate) * 10) / 10,
+            secondaryRate: rates.issueRate,
+            primaryLabel: 'Sans signal', secondaryLabel: 'À examiner',
+            primaryCount: rates.employeeDaysAnalyzed - rates.employeeDaysWithIssues,
+            secondaryCount: rates.employeeDaysWithIssues,
+        },
+    });
+    return kpis;
 }
 
 function buildStatusRows(overview: AttendanceOverview): AttendancePdfExecutiveStatusRow[] {
@@ -210,11 +199,6 @@ function buildStatusRows(overview: AttendanceOverview): AttendancePdfExecutiveSt
     return rows;
 }
 
-function formatBusinessDate(value: string): string {
-    const match = /^(\d{4})-(\d{2})-(\d{2})$/.exec(value);
-    return match ? `${match[3]}/${match[2]}/${match[1]}` : value;
-}
-
 export function buildAttendancePdfExecutiveSummaryModel(
     overview: AttendanceOverview,
     mode?: AttendancePdfExportMode,
@@ -237,7 +221,7 @@ export function buildAttendancePdfExecutiveSummaryModel(
         }));
 
     return {
-        title: 'Synthèse décisionnelle',
+        title: 'Situation des pointages',
         scopeLine: isSingleDay
             ? `${overview.scope.teamSize} ${plural(overview.scope.teamSize, 'collaborateur', 'collaborateurs')} · situation du jour`
             : `${overview.scope.teamSize} ${plural(overview.scope.teamSize, 'collaborateur', 'collaborateurs')} · ${overview.period.dayCount} ${plural(overview.period.dayCount, 'jour', 'jours')} analysé${overview.period.dayCount === 1 ? '' : 's'}`,
@@ -254,14 +238,11 @@ export function buildAttendancePdfExecutiveSummaryModel(
             : 'Aucun élément à examiner sur la période.',
         quality: {
             level: qualityPresentation.level,
-            label:
-                mode === 'period_summary' && qualityPresentation.level !== 'reliable'
-                    ? 'Anomalie détectée'
-                    : qualityPresentation.level === 'reliable'
-                        ? 'Qualité des données : fiable'
-                        : qualityPresentation.level === 'warning'
-                            ? 'Qualité des données : à surveiller'
-                            : 'Qualité des données : non fiable',
+            label: qualityPresentation.level === 'reliable'
+                ? 'Qualité des données : fiable'
+                : qualityPresentation.level === 'warning'
+                    ? 'Qualité des données : à surveiller'
+                    : 'Qualité des données : non fiable',
             message: qualityPresentation.message,
             signals: nonZeroQualitySignals,
         },

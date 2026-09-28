@@ -23,12 +23,8 @@ const emit = defineEmits<{
   detail: [payload: { id: AttendanceDecisionKpiId; segment: AttendanceDecisionKpiSegment }];
 }>();
 
-/**
- * Les KPI non calculables ne sont pas promus dans la vue décisionnelle.
- * Ils restent disponibles dans les modèles secondaires tant que leur règle métier
- * n'est pas validée, mais on évite d'encombrer le tableau de bord avec des N/D.
- */
-const cards = computed(() => buildPrimaryAttendanceKpis(props.overview).filter((card) => card.available));
+// Les quatre cartes présentent des périmètres de mesure distincts fournis par l’API.
+const cards = computed(() => buildPrimaryAttendanceKpis(props.overview));
 </script>
 
 <template>
@@ -41,7 +37,7 @@ const cards = computed(() => buildPrimaryAttendanceKpis(props.overview).filter((
       <p class="max-w-xl text-sm leading-5 text-slate-500">{{ description }}</p>
     </div>
 
-    <div class="grid gap-4 xl:grid-cols-2">
+    <div class="grid gap-4 md:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-4">
       <AttendanceDecisionKpiCard
         v-for="card in cards"
         :key="card.id"

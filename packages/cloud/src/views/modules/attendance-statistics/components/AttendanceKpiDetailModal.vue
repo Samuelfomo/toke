@@ -71,12 +71,16 @@ function matchesSelection(status: AttendanceStatus, rateEligible: boolean): bool
 }
 
 const rows = computed<DetailRow[]>(() => {
-  if (!props.selection || props.selection.id === 'adoption_rate') return [];
+  if (!props.selection) return [];
 
   const result: DetailRow[] = [];
   for (const employee of props.overview.employees) {
     for (const day of employee.days) {
-      if (!matchesSelection(day.status, day.rateEligible)) continue;
+      if (props.selection.id === 'adoption_rate') {
+        if (day.adoption !== (props.selection.segment === 'primary' ? 'COMPLETE' : 'INCOMPLETE')) continue;
+      } else if (props.selection.id === 'issue_rate') {
+        if ((day.issues.length === 0) !== (props.selection.segment === 'primary')) continue;
+      } else if (!matchesSelection(day.status, day.rateEligible)) continue;
       result.push({
         key: `${employee.employeeGuid}:${day.date}`,
         employeeGuid: employee.employeeGuid,
@@ -108,7 +112,9 @@ const title = computed(() => {
       ? 'Détail des rotations à l’heure'
       : 'Détail des rotations en retard';
   }
-  return 'Adoption du pointage';
+  if (props.selection.id === 'issue_rate') return props.selection.segment === 'primary'
+    ? 'Journées sans élément signalé' : 'Journées avec éléments à examiner';
+  return props.selection.segment === 'primary' ? 'Opérations de pointage complètes' : 'Opérations de pointage incomplètes';
 });
 
 const summary = computed(() => {
@@ -128,19 +134,23 @@ const summary = computed(() => {
     }
     return `${rates.lateWorkingDays} rotations en retard sur ${rates.attendedWorkingDays} couvertes (${formatPercentage(rates.lateRate)}).`;
   }
+  if (props.selection.id === 'issue_rate') return `${rates.employeeDaysWithIssues} journées avec au moins un élément à examiner sur ${rates.employeeDaysAnalyzed} analysées (${formatPercentage(rates.issueRate)}). Plusieurs éléments sur une journée comptent une seule fois.`;
 
-  return 'La règle métier et les données nécessaires au calcul de l’adoption ne sont pas encore disponibles.';
+  const adoption = props.overview.summary.adoption;
+  return adoption ? `${adoption.completeOperations} complètes et ${adoption.incompleteOperations} incomplètes sur ${adoption.evaluatedOperations} opérations évaluables (${formatPercentage(adoption.adoptionRate)}). ${adoption.undeterminedOperations} indéterminée(s) exclue(s).` : 'Données d’adoption indisponibles.';
 });
 
 const statusLabel = computed(() => {
   if (!props.selection) return '';
   if (props.selection.id === 'attendance_rate') return props.selection.segment === 'primary' ? 'Couverte' : 'Non couverte';
   if (props.selection.id === 'punctuality_rate') return props.selection.segment === 'primary' ? 'À l’heure' : 'En retard';
-  return 'N/D';
+  if (props.selection.id === 'issue_rate') return props.selection.segment === 'primary' ? 'Sans signal' : 'À examiner';
+  return props.selection.segment === 'primary' ? 'Complet' : 'Incomplet';
 });
 
 const statusClass = computed(() => {
   if (!props.selection) return 'bg-slate-100 text-slate-700';
+  if (props.selection.id === 'issue_rate') return props.selection.segment === 'primary' ? 'bg-emerald-50 text-emerald-700' : 'bg-red-50 text-red-700';
 
   if (props.selection.id === 'attendance_rate') {
     return props.selection.segment === 'primary'
@@ -148,6 +158,7 @@ const statusClass = computed(() => {
       : 'bg-red-50 text-red-700';
   }
 
+  if (props.selection.id === 'adoption_rate') return props.selection.segment === 'primary' ? 'bg-indigo-50 text-indigo-700' : 'bg-amber-50 text-amber-800';
   return props.selection.segment === 'primary'
     ? 'bg-emerald-50 text-emerald-700'
     : 'bg-orange-50 text-orange-700';
@@ -160,6 +171,8 @@ const statusDotClass = computed(() => {
     return props.selection.segment === 'primary' ? 'bg-blue-600' : 'bg-red-500';
   }
 
+  if (props.selection.id === 'adoption_rate') return props.selection.segment === 'primary' ? 'bg-indigo-600' : 'bg-amber-500';
+  if (props.selection.id === 'issue_rate') return props.selection.segment === 'primary' ? 'bg-emerald-500' : 'bg-red-500';
   return props.selection.segment === 'primary' ? 'bg-emerald-500' : 'bg-orange-500';
 });
 
@@ -170,8 +183,7 @@ const iconClass = computed(() => {
     return props.selection.segment === 'primary' ? 'bg-blue-600' : 'bg-red-500';
   }
 
-  if (props.selection.id === 'adoption_rate') return 'bg-indigo-500';
-
+  if (props.selection.id === 'adoption_rate') return props.selection.segment === 'primary' ? 'bg-indigo-600' : 'bg-amber-500';
   return props.selection.segment === 'primary' ? 'bg-emerald-500' : 'bg-orange-500';
 });
 
@@ -219,26 +231,18 @@ function nextPage(): void {
           <button ref="closeButtonRef" type="button" class="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-slate-100 text-xl text-slate-600 transition hover:bg-slate-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500" aria-label="Fermer" @click="emit('close')">×</button>
         </header>
 
-        <div v-if="selection.id === 'adoption_rate'" class="overflow-y-auto p-6 sm:p-8">
-          <div class="rounded-2xl border border-indigo-100 bg-indigo-50 p-5">
-            <p class="font-bold text-indigo-950">Données backend en attente</p>
-            <p class="mt-2 text-sm leading-6 text-indigo-900/80">
-              Aucun taux n’est affiché tant que les événements de pointage obligatoires, le traitement des pauses et celui des sessions incomplètes ne sont pas validés côté métier et exposés par l’API.
-            </p>
-          </div>
-        </div>
-
-        <div v-else class="min-h-0 flex-1 overflow-y-auto px-5 py-4 sm:px-7">
+        <div class="min-h-0 flex-1 overflow-y-auto px-5 py-4 sm:px-7">
           <div v-if="rows.length === 0" class="py-12 text-center text-sm text-slate-500">Aucune rotation ne correspond à ce détail.</div>
 
-          <div v-else class="overflow-x-auto">
+          <p v-if="selection.id === 'adoption_rate'" class="mb-4 text-xs text-slate-500">Une garde liée apparaît une seule fois, à sa date de début. Consultez la journée pour examiner les pointages sources.</p>
+          <div v-if="rows.length > 0" class="overflow-x-auto">
             <table class="min-w-full text-sm">
               <thead>
                 <tr class="bg-slate-50 text-left text-xs font-bold text-slate-500">
                   <th class="rounded-l-xl px-3 py-3">Collaborateur</th>
                   <th class="px-3 py-3">Date</th>
                   <th class="px-3 py-3">Entrée</th>
-                  <th class="px-3 py-3">Retard réel</th>
+                  <th class="px-3 py-3">{{ selection.id === 'adoption_rate' ? 'Sortie' : selection.id === 'issue_rate' ? 'Éléments signalés' : 'Retard réel' }}</th>
                   <th class="rounded-r-xl px-3 py-3">Statut</th>
                 </tr>
               </thead>
@@ -252,7 +256,7 @@ function nextPage(): void {
                   </td>
                   <td class="whitespace-nowrap px-3 py-3 text-slate-600">{{ formatBusinessDate(row.day.date) }}</td>
                   <td class="whitespace-nowrap px-3 py-3 font-medium text-slate-700">{{ formatBusinessTime(row.day.firstClockIn) }}</td>
-                  <td class="whitespace-nowrap px-3 py-3 text-slate-600">{{ formatDelayMinutes(row.day.delayMinutes) }}</td>
+                  <td class="whitespace-nowrap px-3 py-3 text-slate-600">{{ selection.id === 'adoption_rate' ? formatBusinessTime(row.day.lastClockOut) : selection.id === 'issue_rate' ? row.day.issues.length : formatDelayMinutes(row.day.delayMinutes) }}</td>
                   <td class="px-3 py-3">
                     <span class="inline-flex items-center gap-2 whitespace-nowrap rounded-full px-2.5 py-1 text-xs font-bold" :class="statusClass">
                       <span class="h-2 w-2 rounded-full" :class="statusDotClass" />
@@ -265,7 +269,7 @@ function nextPage(): void {
           </div>
         </div>
 
-        <footer v-if="selection.id !== 'adoption_rate' && rows.length > 0" class="flex flex-col gap-3 border-t border-slate-100 px-5 py-4 sm:flex-row sm:items-center sm:justify-between sm:px-7">
+        <footer v-if="rows.length > 0" class="flex flex-col gap-3 border-t border-slate-100 px-5 py-4 sm:flex-row sm:items-center sm:justify-between sm:px-7">
           <p class="text-sm text-slate-500">Affichage de {{ pagedRows.length }} résultat{{ pagedRows.length > 1 ? 's' : '' }} sur {{ rows.length }}</p>
           <div class="flex items-center gap-2">
             <button type="button" class="rounded-lg border border-slate-200 px-3 py-2 text-sm font-bold text-slate-600 disabled:opacity-40" :disabled="page <= 1" @click="previousPage">‹</button>

@@ -32,11 +32,6 @@ export const ATTENDANCE_ISSUES = [
 
 export type AttendanceIssue = (typeof ATTENDANCE_ISSUES)[number];
 
-export interface AttendanceSourceContext {
-    sessionGuids: string[];
-    clockInEntryGuids: string[];
-}
-
 export interface AttendanceOverviewPeriod {
   startDate: BusinessDate;
   endDate: BusinessDate;
@@ -71,6 +66,17 @@ export interface AttendanceRateMetrics {
   employeeDaysWithIssues: number;
   issueRate: number | null;
 }
+
+export interface AttendanceAdoptionMetrics {
+  coveredFinalizedOperations: number;
+  completeOperations: number;
+  incompleteOperations: number;
+  undeterminedOperations: number;
+  evaluatedOperations: number;
+  adoptionRate: number | null;
+}
+
+export type AttendanceAdoptionState = 'COMPLETE' | 'INCOMPLETE' | 'UNDETERMINED' | 'NOT_ELIGIBLE' | 'CONTINUATION';
 
 export interface AttendanceDurationMetrics {
   expectedWorkMinutes: number;
@@ -108,6 +114,11 @@ export interface AttendanceIssueOccurrence {
   sourceContext: AttendanceSourceContext;
 }
 
+export interface AttendanceSourceContext {
+  sessionGuids: string[];
+  clockInEntryGuids: string[];
+}
+
 export interface AttendanceIssueSummary {
   issue: AttendanceIssue;
   count: number;
@@ -125,6 +136,7 @@ export interface AttendanceDailyOverview {
    * Optionnel uniquement pour permettre un déploiement frontend avant le backend enrichi.
    */
   durations?: AttendanceDurationMetrics;
+  adoption?: AttendanceAdoptionMetrics;
   issueCount: number;
 }
 
@@ -132,6 +144,9 @@ export interface AttendanceEmployeeDayOverview {
   date: BusinessDate;
   status: AttendanceStatus;
   rateEligible: boolean;
+  adoption?: AttendanceAdoptionState;
+  adoptionOperationId?: string | null;
+  adoptionSessionGuid?: string | null;
   /** Retard réel après déduction de la tolérance du planning. */
   delayMinutes: number | null;
   /** Écart brut entre l'heure d'arrivée et l'heure théorique. */
@@ -166,7 +181,6 @@ export interface AttendanceEmployeeDayOverview {
   pauseMinutes: number | null;
   netMinutes: number | null;
   issues: AttendanceIssue[];
-
   sourceContext: AttendanceSourceContext;
 }
 
@@ -175,6 +189,7 @@ export interface AttendanceEmployeeOverview {
   employeeName: string;
   statusTotals: AttendanceStatusTotals;
   rates: AttendanceRateMetrics;
+  adoption?: AttendanceAdoptionMetrics;
   durations: AttendanceDurationMetrics;
   issueCount: number;
   days: AttendanceEmployeeDayOverview[];
@@ -198,6 +213,7 @@ export interface AttendanceOverview {
   summary: {
     statusTotals: AttendanceStatusTotals;
     rates: AttendanceRateMetrics;
+    adoption?: AttendanceAdoptionMetrics;
     durations: AttendanceDurationMetrics;
     issueCount: number;
   };

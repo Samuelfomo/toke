@@ -93,6 +93,7 @@ function resetDraft(): void {
   draft.value = createAttendancePdfExportDraft({
     mode: props.initialMode,
     ...(props.initialEmployeeGuid ? {employeeGuid: props.initialEmployeeGuid} : {}),
+    useCurrentContext: props.initialMode === 'current_analysis' && props.analysisContext !== null,
     ...(props.initialIssue ? {issue: props.initialIssue} : {}),
   });
   exportError.value = null;
@@ -110,6 +111,7 @@ function selectMode(mode: AttendancePdfExportMode): void {
   if (availability?.disabled) return;
   draft.value = createAttendancePdfExportDraft({
     mode,
+    useCurrentContext: mode === 'current_analysis' && props.analysisContext !== null,
     ...(mode === 'employee_sheet' && props.initialEmployeeGuid
         ? {employeeGuid: props.initialEmployeeGuid}
         : {}),
@@ -307,6 +309,34 @@ async function previewPdf(): Promise<void> {
                 {{ employee.employeeName }}
               </option>
             </select>
+          </div>
+
+          <div v-if="draft.mode === 'current_analysis'" class="mt-5 grid gap-4 rounded-xl border border-slate-200 bg-slate-50 p-4 sm:grid-cols-2">
+            <p v-if="draft.useCurrentContext && analysisContext" class="sm:col-span-2 text-sm text-slate-700">
+              Sélection actuelle : {{ analysisContext.label }}.
+              <button type="button" class="font-bold text-indigo-700 underline" @click="draft.useCurrentContext = false">Choisir un autre filtre</button>
+            </p>
+            <template v-else>
+              <label class="text-sm font-bold text-slate-900">Collaborateur
+                <select v-model="draft.employeeGuid" class="mt-2 min-h-11 w-full rounded-lg border border-slate-300 bg-white px-3 text-sm font-normal">
+                  <option :value="null">Toute l’équipe</option>
+                  <option v-for="employee in employees" :key="employee.employeeGuid" :value="employee.employeeGuid">{{ employee.employeeName }}</option>
+                </select>
+              </label>
+              <label class="text-sm font-bold text-slate-900">Situation sur la période
+                <select v-model="draft.statusSelection" class="mt-2 min-h-11 w-full rounded-lg border border-slate-300 bg-white px-3 text-sm font-normal">
+                  <option :value="null">Toutes les journées</option>
+                  <option value="COVERED">Présences constatées</option>
+                  <option value="PRESENT">Arrivées à l’heure</option>
+                  <option value="LATE">Retards</option>
+                  <option value="ABSENT">Rotations non couvertes</option>
+                  <option value="REST_DAY">Jours de repos</option>
+                  <option value="PENDING">Journées en cours</option>
+                  <option value="UNDETERMINED">Situations indéterminées</option>
+                </select>
+              </label>
+            </template>
+            <p class="sm:col-span-2 text-xs text-slate-600">Le rapport liste seulement les journées correspondantes. La période est celle choisie dans le tableau de bord.</p>
           </div>
 
           <div v-if="draft.mode === 'issues_only'" class="mt-5 rounded-xl border border-slate-200 bg-slate-50 p-4">

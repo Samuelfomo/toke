@@ -14,7 +14,7 @@ export function renderAttendancePdfAnalysisContext(
   engine: AttendancePdfEngine,
 ): AttendancePdfAnalysisContextResult {
   const model = buildAttendancePdfAnalysisContextModel(engine.contract);
-  if (engine.pages.y > engine.pages.contentTop) engine.pages.addPage();
+  engine.pages.ensureSpace(46);
   engine.pages.markSectionStart('analysis_context');
   const startPage = engine.pages.currentPage;
 
@@ -37,20 +37,13 @@ export function renderAttendancePdfAnalysisContext(
   engine.primitives.drawCard({
     title: 'Périmètre de cette analyse',
     value: `${model.employeeCount} collaborateur${model.employeeCount > 1 ? 's' : ''}`,
-    body: filters.length > 0 ? filters.join(' · ') : 'Contexte courant du dashboard',
+    body: filters.length > 0 ? filters.join(' · ') : 'Période sélectionnée',
     height: 28,
   });
 
-  engine.primitives.drawCard({
-    title: model.qualityLabel,
-    body: model.qualityMessage,
-    height: 22,
+  engine.primitives.drawTextBlock('Les journées ci-dessous correspondent à cette sélection sur la période du rapport.', {
+    fontSizePt: 7.8, color: engine.theme.colors.mutedText, spacingAfter: 2,
   });
-
-  engine.primitives.drawTextBlock(
-    "Cette exportation conserve le contexte d’analyse sélectionné et les filtres appliqués. Elle ne recalcule aucune statistique.",
-    { fontSizePt: 7.8, color: engine.theme.colors.mutedText, spacingAfter: 2 },
-  );
 
   return { startPage, endPage: engine.pages.currentPage, model };
 }

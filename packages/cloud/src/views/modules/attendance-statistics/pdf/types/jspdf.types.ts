@@ -47,6 +47,8 @@ export interface JsPdfLike {
   text(text: string | string[], x: number, y: number, options?: JsPdfTextOptions): this;
   line(x1: number, y1: number, x2: number, y2: number): this;
   rect(x: number, y: number, width: number, height: number, style?: PdfRectStyle): this;
+  circle(x: number, y: number, radius: number, style?: PdfRectStyle): this;
+  triangle(x1: number, y1: number, x2: number, y2: number, x3: number, y3: number, style?: PdfRectStyle): this;
   roundedRect(
     x: number,
     y: number,

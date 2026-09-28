@@ -1,5 +1,4 @@
 import {
-  getAttendanceAnalysisEmployeeCount,
   getAttendanceAnalysisSourceLabel,
   getAttendanceRateEligibilityLabel,
 } from '../../utils/attendance-analysis-context.js';
@@ -7,6 +6,7 @@ import { buildAttendanceDataQualityPresentation } from '../../utils/attendance-d
 import { ATTENDANCE_ISSUE_PRESENTATION, ATTENDANCE_STATUS_PRESENTATION } from '../../utils/attendance-status.js';
 import { formatBusinessDate } from '../../utils/business-date.js';
 import type { AttendancePdfReportContract } from '../types/attendance-pdf.types.js';
+import { buildAttendancePdfEmployeeDetailsModel } from './attendance-pdf-employee-detail.model.js';
 
 export interface AttendancePdfAnalysisContextModel {
   title: string;
@@ -36,7 +36,9 @@ export function buildAttendancePdfAnalysisContextModel(
     sourceLabel: getAttendanceAnalysisSourceLabel(context.source),
     analysisLabel: context.label,
     dateLabel: context.date ? formatBusinessDate(context.date, 'fr-FR', { day: '2-digit', month: '2-digit', year: 'numeric' }) : null,
-    statusLabel: context.status ? ATTENDANCE_STATUS_PRESENTATION[context.status].label : null,
+    statusLabel: contract.request.statusSelection === 'COVERED'
+      ? 'Rotations couvertes (à l’heure et en retard)'
+      : context.status ? ATTENDANCE_STATUS_PRESENTATION[context.status].label : null,
     rateEligibilityLabel:
       context.rateEligible === null
         ? null
@@ -47,7 +49,7 @@ export function buildAttendancePdfAnalysisContextModel(
           : getAttendanceRateEligibilityLabel(context.rateEligible),
     issueLabel: context.issue ? ATTENDANCE_ISSUE_PRESENTATION[context.issue].label : null,
     employeeLabel: context.employeeName,
-    employeeCount: getAttendanceAnalysisEmployeeCount(contract.request.overview, context),
+    employeeCount: buildAttendancePdfEmployeeDetailsModel(contract).employees.length,
     qualityLabel:
       quality.level === 'reliable'
         ? 'Données fiables pour le taux de présence'

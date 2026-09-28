@@ -139,6 +139,7 @@ function isAttendanceOverview(value: unknown): value is AttendanceOverview {
   if (!Array.isArray(value.daily) || !Array.isArray(value.employees) || !Array.isArray(value.issues)) {
     return false;
   }
+  if (!value.issues.every(isAttendanceIssueSummary)) return false;
   if (!isRecord(value.dataQuality)) return false;
   if (!isRecord(value.summary.durations) || !isAttendanceDurationMetrics(value.summary.durations)) {
     return false;
@@ -174,8 +175,29 @@ function isAttendanceEmployeeDayOverview(value: unknown): boolean {
     isNullableFiniteNumber(value.creditedExtraMinutes) &&
     isNullableFiniteNumber(value.excessBeyondExtraMinutes) &&
     (typeof value.extraAllowed === 'boolean' || value.extraAllowed === null) &&
-    isNullableFiniteNumber(value.extraMaxMinutes)
+    isNullableFiniteNumber(value.extraMaxMinutes) &&
+    isAttendanceSourceContext(value.sourceContext)
   );
+}
+
+function isAttendanceIssueSummary(value: unknown): boolean {
+  if (!isRecord(value) || !Array.isArray(value.occurrences)) return false;
+  return value.occurrences.every((occurrence) =>
+    isRecord(occurrence) &&
+    typeof occurrence.employeeGuid === 'string' &&
+    typeof occurrence.employeeName === 'string' &&
+    typeof occurrence.date === 'string' &&
+    typeof occurrence.status === 'string' &&
+    isAttendanceSourceContext(occurrence.sourceContext),
+  );
+}
+
+function isAttendanceSourceContext(value: unknown): boolean {
+  return isRecord(value) &&
+    Array.isArray(value.sessionGuids) &&
+    value.sessionGuids.every((guid: unknown) => typeof guid === 'string') &&
+    Array.isArray(value.clockInEntryGuids) &&
+    value.clockInEntryGuids.every((guid: unknown) => typeof guid === 'string');
 }
 
 function isAttendanceDurationMetrics(value: unknown): boolean {

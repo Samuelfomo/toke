@@ -17,11 +17,15 @@ function columnFor(
         case 'employee':
             return { key, title: 'Employé', weight: 2.3, value: (row) => row.employeeName };
         case 'expected':
-            return { key, title: isSingleDay ? 'Finalisés' : 'Jours fin.', width: 19, align: 'right', value: (row) => String(row.expected) };
+            return { key, title: isSingleDay ? 'Finalisées' : 'Rot. attendues', width: 25, align: 'right', value: (row) => String(row.expected) };
         case 'attended':
-            return { key, title: 'Présences', width: 18, align: 'right', value: (row) => String(row.attended) };
+            return { key, title: 'Rot. couvertes', width: 25, align: 'right', value: (row) => String(row.attended) };
         case 'attended_vs_expected':
             return { key, title: 'Présence / prévu', width: 26, align: 'right', value: (row) => row.attendedVsExpected };
+        case 'on_time_late':
+            return { key, title: 'À l’heure / retard', width: 31, align: 'right', value: (row) => row.onTimeLate };
+        case 'adoption_rate':
+            return { key, title: 'Adoption', width: 21, align: 'right', value: (row) => row.adoptionRate };
         case 'attendance_rate':
             return { key, title: 'Présence', width: 24, align: 'right', value: (row) => row.attendanceRate };
         case 'punctuality_rate':
@@ -33,7 +37,7 @@ function columnFor(
         case 'late':
             return { key, title: 'Retards obs.', width: 20, align: 'right', value: (row) => String(row.late) };
         case 'absent':
-            return { key, title: 'Abs. conf.', width: 19, align: 'right', value: (row) => String(row.absent) };
+            return { key, title: 'Absences', width: 19, align: 'right', value: (row) => String(row.absent) };
         case 'pending':
             return { key, title: 'En attente', width: 19, align: 'right', value: (row) => String(row.pending) };
         case 'undetermined':
@@ -44,14 +48,12 @@ function columnFor(
             return { key, title: 'Durée nette (h)', width: 24, align: 'right', value: (row) => row.netDuration };
         case 'expected_duration':
             return { key, title: 'Durée prévue (h)', width: 24, align: 'right', value: (row) => row.expectedDuration };
-        case 'net_vs_expected':
-            return { key, title: 'Durée nette / prévue (h)', width: 34, align: 'right', value: (row) => row.netVsExpected };
         case 'issue_rate':
             return { key, title: 'À examiner', width: 23, align: 'right', value: (row) => row.issueRate };
         case 'issues':
-            return { key, title: 'Éléments', width: 20, align: 'right', value: (row) => String(row.issues) };
+            return { key, title: 'Éléments signalés', width: 24, align: 'right', value: (row) => String(row.issues) };
         case 'duration_delta':
-            return { key, title: 'Écart (h) +/-', width: 30, align: 'right', value: (row) => row.durationDelta };
+            return { key, title: 'Écart occurrences (h)', width: 30, align: 'right', value: (row) => row.durationDelta };
         case 'alerts':
             return { key, title: 'Alerte', width: 19, align: 'right', value: (row) => row.alerts };
     }
@@ -72,10 +74,8 @@ export function renderAttendancePdfTeam(engine: AttendancePdfEngine): Attendance
 
     const isDirectionReport = engine.contract.request.mode === 'period_summary';
 
-    // Le rapport Direction est volontairement composé comme une seule lecture continue :
-    // synthèse globale puis tableau équipe. Les autres profils commencent leur vue équipe
-    // sur une nouvelle page afin de préserver leur rythme de lecture.
-    if (!isDirectionReport && engine.pages.y > engine.pages.contentTop) engine.pages.addPage();
+    // Garder le début de la table avec son titre ; la table pagine ensuite selon sa hauteur.
+    engine.pages.ensureSpace(isDirectionReport ? 16 : 30);
     engine.pages.markSectionStart('team');
     const startPage = engine.pages.currentPage;
 
@@ -119,12 +119,26 @@ export function renderAttendancePdfTeam(engine: AttendancePdfEngine): Attendance
         fontSizePt: ATTENDANCE_PDF_TYPOGRAPHY.minimumTablePt,
         headerFontSizePt: ATTENDANCE_PDF_TYPOGRAPHY.minimumTablePt,
         horizontalPadding: isDirectionReport ? 1 : 1.2,
-        verticalPadding: isDirectionReport ? 0.75 : 1,
+        verticalPadding: isDirectionReport ? 0.5 : 1,
         repeatHeader: true,
         spacingAfter: isDirectionReport ? 1.5 : 2.5,
         columns: model.columns.map((key) => columnFor(key, model.isSingleDay)),
         rows: model.rows,
     });
+
+    if (isDirectionReport) {
+        engine.primitives.drawTextBlock(
+            "Lecture : la présence porte sur les rotations attendues finalisées ; la ponctualité, uniquement sur les rotations couvertes. À l’heure / retard indique des nombres de rotations. Les éléments signalés sont à examiner, sans conclure à une erreur humaine. Adoption : entrée et sortie valides sur les opérations évaluables ; les indéterminées sont exclues du taux.",
+            { fontSizePt: 7.7, color: engine.theme.colors.mutedText, spacingAfter: 2 },
+        );
+    }
+
+    if (model.columns.includes('duration_delta')) {
+        engine.primitives.drawTextBlock(
+            "L'écart cumule les résultats calculables par occurrence de planning. Les durées nettes enregistrées et prévues couvrent parfois des journées différentes et ne sont pas soustraites entre elles.",
+            { fontSizePt: 7.7, color: engine.theme.colors.mutedText, spacingAfter: 2 },
+        );
+    }
 
     if (!['period_summary', 'full_report', 'hr_complete'].includes(engine.contract.request.mode)) {
         engine.primitives.drawTextBlock(

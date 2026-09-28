@@ -61,7 +61,7 @@ interface Props {
   title?: string;
   pdfPresentationContext?: AttendancePdfPresentationContext;
   loadJsPdf?: AttendanceJsPdfLoader;
-  /** Route réelle de la page de gestion des pointages. Si absente, l'événement openPointageSource est seulement émis. */
+  /** Route de gestion des pointages ; l'application peut la remplacer si nécessaire. */
   pointagesPath?: string | null;
 }
 
@@ -71,7 +71,7 @@ const props = withDefaults(defineProps<Props>(), {
   initialSiteGuid: null,
   initialPreset: 'current_month',
   title: 'Statistiques de présence',
-  pointagesPath: null,
+  pointagesPath: '/pointages',
 });
 
 const emit = defineEmits<{ openPointageSource: [target: AttendancePointageSourceTarget] }>();

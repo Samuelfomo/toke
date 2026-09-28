@@ -17,17 +17,17 @@ function formatBusinessDate(value: string): string {
 function getHeading(mode: AttendancePdfExportMode): { title: string; subtitle: string } {
   switch (mode) {
     case 'period_summary':
-      return { title: 'SYNTHÈSE DU SUIVI DES PRÉSENCES', subtitle: 'Direction' };
+      return { title: 'RAPPORT DE LA SITUATION DES POINTAGES', subtitle: 'Direction' };
     case 'full_report':
       return { title: 'RAPPORT DE STATISTIQUES DE POINTAGE', subtitle: 'Pilotage' };
     case 'hr_complete':
       return { title: 'RAPPORT DE STATISTIQUES DE POINTAGE', subtitle: 'Ressources humaines' };
     case 'issues_only':
-      return { title: 'RAPPORT DES ALERTES DE POINTAGE', subtitle: 'Suivi opérationnel' };
+      return { title: 'RAPPORT DES ÉLÉMENTS À EXAMINER', subtitle: 'Suivi opérationnel' };
     case 'employee_sheet':
-      return { title: 'FICHE INDIVIDUELLE DE POINTAGE', subtitle: 'Investigation' };
+      return { title: 'FICHE INDIVIDUELLE DE POINTAGE', subtitle: 'Suivi individuel' };
     case 'current_analysis':
-      return { title: 'ANALYSE DE POINTAGE', subtitle: 'Contexte sélectionné' };
+      return { title: 'RAPPORT DES POINTAGES', subtitle: 'Situation ciblée' };
   }
 }
 
@@ -39,27 +39,32 @@ function getHeading(mode: AttendancePdfExportMode): { title: string; subtitle: s
 export function renderAttendancePdfReportHeading(engine: AttendancePdfEngine): void {
   const { document, contract, pages, theme } = engine;
   const { title, subtitle } = getHeading(contract.request.mode);
+  const compactDirection = contract.request.mode === 'period_summary';
+  const compactFocused = contract.request.mode === 'current_analysis' || contract.request.mode === 'employee_sheet';
+  const compactHeading = compactDirection || compactFocused;
   const centerX = pages.contentLeft + pages.contentWidth / 2;
 
-  pages.ensureSpace(28);
+  pages.ensureSpace(compactHeading ? 20 : 28);
 
   const tenant = contract.reportContext.tenantName?.trim();
-  if (tenant && contract.request.mode !== 'period_summary') {
+  if (tenant && !compactHeading) {
     document.setFont(theme.fontFamily, 'bold').setFontSize(9);
     setColor(document.setTextColor.bind(document), theme.colors.mutedText);
     document.text(tenant.toUpperCase(), centerX, pages.y + 3, { align: 'center' });
     pages.moveCursor(5);
   }
 
-  document.setFont(theme.fontFamily, 'bold').setFontSize(ATTENDANCE_PDF_TYPOGRAPHY.reportTitlePt);
+  document.setFont(theme.fontFamily, 'bold').setFontSize(compactHeading ? 15 : ATTENDANCE_PDF_TYPOGRAPHY.reportTitlePt);
   setColor(document.setTextColor.bind(document), theme.colors.text);
-  document.text(title, centerX, pages.y + 6.2, { align: 'center' });
-  pages.moveCursor(9);
+  document.text(title, centerX, pages.y + (compactHeading ? 5.2 : 6.2), { align: 'center' });
+  pages.moveCursor(compactHeading ? 7 : 9);
 
-  document.setFont(theme.fontFamily, 'bold').setFontSize(10.5);
-  setColor(document.setTextColor.bind(document), theme.colors.accent);
-  document.text(subtitle, centerX, pages.y + 3.7, { align: 'center' });
-  pages.moveCursor(6);
+  if (!compactHeading) {
+    document.setFont(theme.fontFamily, 'bold').setFontSize(10.5);
+    setColor(document.setTextColor.bind(document), theme.colors.accent);
+    document.text(subtitle, centerX, pages.y + 3.7, { align: 'center' });
+    pages.moveCursor(6);
+  }
 
   const teamSize = contract.request.overview.scope.teamSize;
   const teamLabel = `${teamSize} collaborateur${teamSize > 1 ? 's' : ''}`;
@@ -67,10 +72,10 @@ export function renderAttendancePdfReportHeading(engine: AttendancePdfEngine): v
   document.setFont(theme.fontFamily, 'normal').setFontSize(9.5);
   setColor(document.setTextColor.bind(document), theme.colors.mutedText);
   document.text(period, centerX, pages.y + 3.4, { align: 'center' });
-  pages.moveCursor(6);
+  pages.moveCursor(compactHeading ? 5 : 6);
 
   setColor(document.setDrawColor.bind(document), theme.colors.headerRule);
   document.setLineWidth(0.25);
   document.line(pages.contentLeft, pages.y, pages.contentLeft + pages.contentWidth, pages.y);
-  pages.moveCursor(5);
+  pages.moveCursor(compactHeading ? 2 : 5);
 }

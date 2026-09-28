@@ -5,6 +5,8 @@ export const ATTENDANCE_PDF_TEAM_COLUMN_KEYS = [
   'expected',
   'attended',
   'attended_vs_expected',
+  'on_time_late',
+  'adoption_rate',
   'attendance_rate',
   'punctuality_rate',
   'absence_rate',
@@ -16,7 +18,6 @@ export const ATTENDANCE_PDF_TEAM_COLUMN_KEYS = [
   'rest_day',
   'net_duration',
   'expected_duration',
-  'net_vs_expected',
   'issue_rate',
   'issues',
   'duration_delta',
@@ -60,13 +61,13 @@ export const ATTENDANCE_PDF_TEAM_COLUMNS_BY_PRESENTATION: Record<
 /** Rapport Direction : lecture en quelques minutes, sans colonne redondante. */
 export const ATTENDANCE_PDF_DIRECTION_TEAM_COLUMNS: readonly AttendancePdfTeamColumnKey[] = [
   'employee',
+  'expected',
+  'attended',
+  'absent',
   'attendance_rate',
-  'late_rate',
-  'attended_vs_expected',
-  'net_duration',
-  'expected_duration',
-  'duration_delta',
-  'alerts',
+  'on_time_late',
+  'punctuality_rate',
+  'issues',
 ];
 
 /** Rapport Pilotage : même lecture rapide, avec le volume d'éléments à examiner. */
@@ -75,7 +76,7 @@ export const ATTENDANCE_PDF_PILOTAGE_TEAM_COLUMNS: readonly AttendancePdfTeamCol
   'attendance_rate',
   'late_rate',
   'attended_vs_expected',
-  'net_vs_expected',
+  'net_duration',
   'issue_rate',
   'issues',
 ];
@@ -88,7 +89,7 @@ export const ATTENDANCE_PDF_HR_TEAM_COLUMNS: readonly AttendancePdfTeamColumnKey
   'absence_rate',
   'late_rate',
   'attended_vs_expected',
-  'net_vs_expected',
+  'net_duration',
   'issue_rate',
   'issues',
 ];

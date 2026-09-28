@@ -152,13 +152,12 @@ export function buildAttendanceKpis(overview: AttendanceOverview): AttendanceKpi
     {
       id: 'adoption_rate',
       label: 'Adoption du pointage',
-      value: 'N/D',
-      helper: 'La règle métier de cet indicateur doit encore être validée avant calcul.',
-      detail:
-        'Aucun taux n’est calculé tant que les événements de pointage obligatoires et le traitement des sessions incomplètes ne sont pas définis.',
+      value: formatPercentage(summary.adoption?.adoptionRate ?? null),
+      helper: summary.adoption ? `${summary.adoption.completeOperations} opérations complètes sur ${summary.adoption.evaluatedOperations} évaluables` : 'Données d’adoption indisponibles',
+      detail: summary.adoption ? `${summary.adoption.incompleteOperations} opérations incomplètes ; ${summary.adoption.undeterminedOperations} indéterminées exclues du taux.` : 'Aucune opération évaluable.',
       tone: 'slate',
       icon: 'adoption',
-      available: false,
+      available: summary.adoption?.adoptionRate != null,
     },
 
     {
@@ -185,7 +184,7 @@ export function buildAttendanceKpis(overview: AttendanceOverview): AttendanceKpi
   ];
 }
 
-export type AttendanceDecisionKpiId = 'attendance_rate' | 'punctuality_rate' | 'adoption_rate';
+export type AttendanceDecisionKpiId = 'attendance_rate' | 'punctuality_rate' | 'adoption_rate' | 'issue_rate';
 export type AttendanceDecisionKpiSegment = 'primary' | 'secondary';
 
 export interface AttendanceDecisionKpiTrendPoint {
@@ -284,20 +283,49 @@ export function buildPrimaryAttendanceKpis(
       id: 'adoption_rate',
       eyebrow: '03 — Utilisation du dispositif',
       title: 'Adoption du pointage',
-      primaryLabel: 'Pointages effectués',
-      primaryRate: null,
-      primaryCount: null,
-      secondaryLabel: 'Pointages manquants',
-      secondaryRate: null,
-      secondaryCount: null,
-      denominatorLabel: 'base de calcul',
-      denominatorCount: null,
-      explanation:
-        'La règle métier de l’adoption doit encore être validée : événements obligatoires, pauses et traitement des sessions incomplètes.',
+      primaryLabel: 'Complets',
+      primaryRate: overview.summary.adoption?.adoptionRate ?? null,
+      primaryCount: overview.summary.adoption?.completeOperations ?? null,
+      secondaryLabel: 'Incomplets',
+      secondaryRate: overview.summary.adoption?.adoptionRate === null || overview.summary.adoption?.adoptionRate === undefined ? null : Math.round((100 - overview.summary.adoption.adoptionRate) * 10) / 10,
+      secondaryCount: overview.summary.adoption?.incompleteOperations ?? null,
+      denominatorLabel: 'opérations évaluables',
+      denominatorCount: overview.summary.adoption?.evaluatedOperations ?? null,
+      explanation: overview.summary.adoption?.adoptionRate === null || overview.summary.adoption === undefined
+        ? 'Aucune opération de pointage évaluable sur les rotations couvertes et finalisées.'
+        : `Sur ${overview.summary.adoption.evaluatedOperations} opérations évaluables, ${overview.summary.adoption.completeOperations} ont une entrée et une sortie valides et ${overview.summary.adoption.incompleteOperations} sont incomplètes. ${overview.summary.adoption.undeterminedOperations} indéterminée(s) exclue(s) du taux.`,
       attention: null,
       tone: 'slate',
-      available: false,
-      trend: [],
+      available: overview.summary.adoption?.adoptionRate !== null && overview.summary.adoption?.adoptionRate !== undefined,
+      trend: overview.daily.map((day) => ({
+        date: day.date,
+        primary: day.adoption?.completeOperations ?? 0,
+        secondary: day.adoption?.incompleteOperations ?? 0,
+      })),
+    },
+    {
+      id: 'issue_rate',
+      eyebrow: '04 — Situations à examiner',
+      title: 'Éléments à examiner',
+      primaryLabel: 'Sans signal',
+      primaryRate: rates.issueRate === null ? null : Math.round((100 - rates.issueRate) * 10) / 10,
+      primaryCount: rates.employeeDaysAnalyzed - rates.employeeDaysWithIssues,
+      secondaryLabel: 'À examiner',
+      secondaryRate: rates.issueRate,
+      secondaryCount: rates.employeeDaysWithIssues,
+      denominatorLabel: 'journées analysées',
+      denominatorCount: rates.employeeDaysAnalyzed,
+      explanation: rates.issueRate === null
+        ? 'Aucune journée analysée sur cette période.'
+        : `Sur ${rates.employeeDaysAnalyzed} journées analysées, ${rates.employeeDaysWithIssues} comportent au moins un élément à examiner. Plusieurs signaux le même jour comptent une seule fois dans ce taux.`,
+      attention: null,
+      tone: 'slate',
+      available: rates.issueRate !== null,
+      trend: overview.daily.map((day) => ({
+        date: day.date,
+        primary: day.rates.employeeDaysAnalyzed - day.rates.employeeDaysWithIssues,
+        secondary: day.rates.employeeDaysWithIssues,
+      })),
     },
   ];
 }

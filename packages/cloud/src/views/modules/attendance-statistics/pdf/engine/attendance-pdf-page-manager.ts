@@ -161,7 +161,11 @@ export class AttendancePdfPageManager {
     this.document.text(period, right, topY, { align: 'right' });
 
     const contextParts: string[] = [this.contract.profile.label];
-    if (this.contract.reportContext.managerName) contextParts.push(this.contract.reportContext.managerName);
+    if (this.contract.reportContext.managerName) contextParts.push(
+      this.contract.request.mode === 'current_analysis' || this.contract.request.mode === 'employee_sheet'
+        ? `Établi par : ${this.contract.reportContext.managerName}`
+        : this.contract.reportContext.managerName,
+    );
     if (this.contract.reportContext.siteName) contextParts.push(this.contract.reportContext.siteName);
     if (contextParts.length > 0) {
       this.document.text(contextParts.join(' | '), left, topY + 4.1);

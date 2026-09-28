@@ -215,9 +215,8 @@ export interface AttendancePdfTrendResult {
 export function renderAttendancePdfTrend(engine: AttendancePdfEngine): AttendancePdfTrendResult {
     const model = buildAttendancePdfTrendModel(engine.contract.request.overview);
 
-    // Une section graphique commence toujours sur une page fraîche : cela évite de
-    // compresser arbitrairement le graphique sous la synthèse exécutive.
-    if (engine.pages.y > engine.pages.contentTop) engine.pages.addPage();
+    // Garder le titre et le premier graphique ensemble sans imposer une page neuve.
+    engine.pages.ensureSpace(model.segments.length > 0 ? 76 : 20);
     engine.pages.markSectionStart('trend');
     const startPage = engine.pages.currentPage;
     const segmentStartPages: number[] = [];
@@ -236,7 +235,7 @@ export function renderAttendancePdfTrend(engine: AttendancePdfEngine): Attendanc
 
     model.segments.forEach((segment, index) => {
         if (index > 0) {
-            engine.pages.addPage();
+            engine.pages.ensureSpace(72);
             engine.primitives.drawSectionTitle(`${model.title} - suite`, 1.2);
         }
         segmentStartPages.push(engine.pages.currentPage);

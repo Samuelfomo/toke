@@ -42,7 +42,7 @@ const title = computed(() => {
   switch (props.kpiId) {
     case 'attendance_rate': return 'Comprendre la présence et l’absence';
     case 'punctuality_rate': return 'Comprendre la ponctualité et le retard';
-    case 'adoption_rate': return 'Adoption du pointage : règle à finaliser';
+    case 'adoption_rate': return 'Adoption du pointage';
     default: return '';
   }
 });
@@ -118,11 +118,14 @@ const title = computed(() => {
     </div>
 
     <div v-else class="mt-5 rounded-xl border border-slate-200 bg-white p-5">
-      <p class="text-sm font-bold text-slate-900">Indicateur volontairement non chiffré</p>
+      <p class="text-sm font-bold text-slate-900">{{ formatPercentage(overview.summary.adoption?.adoptionRate ?? null) }} d’adoption</p>
       <p class="mt-2 text-sm leading-6 text-slate-600">
-        La formule d’adoption n’est pas encore validée. Il reste à définir les événements obligatoires de pointage, le rôle des pauses et le traitement d’une rotation avec entrée enregistrée mais sortie manquante.
+        {{ overview.summary.adoption?.completeOperations ?? 0 }} opérations complètes et
+        {{ overview.summary.adoption?.incompleteOperations ?? 0 }} incomplètes sur
+        {{ overview.summary.adoption?.evaluatedOperations ?? 0 }} évaluables.
+        {{ overview.summary.adoption?.undeterminedOperations ?? 0 }} indéterminée(s) exclue(s) du taux.
+        Une garde continue liée compte comme une seule opération.
       </p>
-      <p class="mt-3 text-sm font-semibold text-slate-700">Aucun pourcentage ne doit être inventé avant cette décision métier.</p>
     </div>
 
     <div v-if="action" class="mt-5 border-t border-indigo-200 pt-4">

@@ -25,30 +25,61 @@ function dayColumn(key: AttendancePdfEmployeeDayColumnKey): AttendancePdfTableCo
 }
 
 function drawMetrics(engine: AttendancePdfEngine, employee: AttendancePdfEmployeeDetailModel): void {
-    const left = engine.pages.contentLeft;
-    const compactInvestigation = engine.contract.request.mode === 'employee_sheet';
-    const gap = compactInvestigation ? 2.2 : 3;
-    const width = (engine.pages.contentWidth - gap * 4) / 5;
-    const cards = [
-        ['Présence', employee.attendanceRate, `${employee.attendedDays} / ${employee.expectedDays} journées prévues`],
-        ['Ponctualité', employee.punctualityRate, `${employee.lateDays} retard${employee.lateDays > 1 ? 's' : ''} observé${employee.lateDays > 1 ? 's' : ''}`],
-        ['Absence', employee.absenceRate, `${employee.absentDays} journée${employee.absentDays > 1 ? 's' : ''} d'absence`],
-        ['Retard', employee.lateRate, `${employee.lateDays} journée${employee.lateDays > 1 ? 's' : ''} avec retard`],
-        ['À examiner', employee.issueRate, `${employee.issueCount} élément${employee.issueCount > 1 ? 's' : ''} signalé${employee.issueCount > 1 ? 's' : ''}`],
-    ] as const;
-    const height = compactInvestigation ? 22 : 25;
-    const spacingAfter = compactInvestigation ? 2 : 3;
-    engine.pages.ensureSpace(height + spacingAfter);
-    cards.forEach(([title, value, body], index) => {
-        engine.primitives.drawCard({ title, value, body, x: left + index * (width + gap), width, height, moveCursor: false });
+    const { document, pages, theme } = engine;
+    const gap = 3;
+    const width = (pages.contentWidth - 3 * gap) / 4;
+    const height = 43;
+    pages.ensureSpace(height + 3);
+    const items = [
+        { title: 'Présence / absence', rate: employee.attendancePercent, good: employee.attendedDays, bad: employee.absentDays, goodLabel: 'Présents', badLabel: 'Absents' },
+        { title: 'Ponctualité / retard', rate: employee.punctualityPercent, good: employee.onTimeDays, bad: employee.lateDays, goodLabel: 'À l’heure', badLabel: 'Retards' },
+        { title: 'Adoption du pointage', rate: employee.adoptionRate, good: employee.adoptionComplete, bad: employee.adoptionIncomplete, goodLabel: 'Complets', badLabel: 'Incomplets' },
+        { title: 'Éléments à examiner', rate: employee.issuePercent === null ? null : 100 - employee.issuePercent, good: employee.analyzedDays - employee.daysWithIssues, bad: employee.daysWithIssues, goodLabel: 'Sans signal', badLabel: 'À examiner' },
+    ];
+    const green = [22, 163, 74] as const;
+    const red = [220, 38, 38] as const;
+    const drawArc = (cx: number, cy: number, radius: number, start: number, end: number, color: readonly [number, number, number]): void => {
+        document.setDrawColor(...color).setLineWidth(2.6);
+        for (let angle = start; angle < end; angle += 3) {
+            const point = (degrees: number): [number, number] => {
+                const radians = ((degrees - 90) * Math.PI) / 180;
+                return [cx + radius * Math.cos(radians), cy + radius * Math.sin(radians)];
+            };
+            document.line(...point(angle), ...point(Math.min(end, angle + 3)));
+        }
+        document.setLineWidth(0.2);
+    };
+    items.forEach((item, index) => {
+        const x = pages.contentLeft + index * (width + gap);
+        const y = pages.y;
+        const cx = x + width / 2;
+        const cy = y + 17;
+        document.setDrawColor(...theme.colors.border).roundedRect(x, y, width, height, 2, 2, 'S');
+        document.setFont(theme.fontFamily, 'bold').setFontSize(8.1);
+        document.setTextColor(...theme.colors.text).text(item.title, cx, y + 5.5, { align: 'center' });
+        if (item.rate !== null) {
+            const angle = Math.max(0, Math.min(360, item.rate * 3.6));
+            if (angle > 0) drawArc(cx, cy, 8.4, 0, angle, green);
+            if (angle < 360) drawArc(cx, cy, 8.4, angle, 360, red);
+            document.setFont(theme.fontFamily, 'bold').setFontSize(9.5);
+            document.setTextColor(...theme.colors.text).text(`${item.rate.toFixed(1).replace('.0', '')}%`, cx, cy + 1.2, { align: 'center' });
+        } else {
+            document.setDrawColor(...theme.colors.border).setLineWidth(2.5).circle(cx, cy, 8.4, 'S').setLineWidth(0.2);
+            document.setFont(theme.fontFamily, 'bold').setFontSize(9);
+            document.setTextColor(...theme.colors.mutedText).text('N/D', cx, cy + 1.2, { align: 'center' });
+        }
+        document.setFont(theme.fontFamily, 'normal').setFontSize(6.7);
+        document.setTextColor(...green).text(`${item.goodLabel} : ${item.good}`, cx, y + 31, { align: 'center' });
+        document.setTextColor(...red).text(`${item.badLabel} : ${item.bad}`, cx, y + 36, { align: 'center' });
     });
-    engine.pages.moveCursor(height + spacingAfter);
+    pages.moveCursor(height + 3);
 }
 
 function drawSecondarySummary(engine: AttendancePdfEngine, employee: AttendancePdfEmployeeDetailModel): void {
     const details = [
         `Jours de repos : ${employee.restDays}`,
-        `Durée nette / prévue (h) : ${employee.netVsExpected}`,
+        `Durée nette enregistrée (h) : ${employee.netDuration}`,
+        `Durée prévue (h) : ${employee.expectedDuration}`,
     ];
     if (employee.issueLabels.length > 0) details.push(`Types à examiner : ${employee.issueLabels.join(', ')}`);
     engine.primitives.drawTextBlock(details.join(' · '), {
@@ -59,13 +90,16 @@ function drawSecondarySummary(engine: AttendancePdfEngine, employee: AttendanceP
 }
 
 function renderOne(engine: AttendancePdfEngine, employee: AttendancePdfEmployeeDetailModel, isFirst: boolean): void {
-    const isStandaloneInvestigation = engine.contract.request.mode === 'employee_sheet';
+    const focused = engine.contract.request.mode === 'current_analysis';
+    const isStandaloneInvestigation = engine.contract.request.mode === 'employee_sheet' || focused;
     const mustStartFreshPage = !isFirst || (!isStandaloneInvestigation && engine.pages.y > engine.pages.contentTop);
     if (mustStartFreshPage) engine.pages.addPage();
     if (isFirst) engine.pages.markSectionStart('employee_details');
     engine.primitives.drawSectionTitle(employee.employeeName, isStandaloneInvestigation ? 0.8 : 1.5);
-    drawMetrics(engine, employee);
-    drawSecondarySummary(engine, employee);
+    if (!focused) {
+        drawMetrics(engine, employee);
+        drawSecondarySummary(engine, employee);
+    }
 
     if (!employee.showDailyTable) {
         const isHrComplete = engine.contract.request.mode === 'hr_complete';
@@ -115,7 +149,8 @@ export interface AttendancePdfEmployeeDetailsResult {
 
 export function renderAttendancePdfEmployeeDetails(engine: AttendancePdfEngine): AttendancePdfEmployeeDetailsResult {
     const model = buildAttendancePdfEmployeeDetailsModel(engine.contract);
-    if (engine.pages.y > engine.pages.contentTop) engine.pages.addPage();
+    if (engine.contract.request.mode === 'employee_sheet') engine.pages.ensureSpace(56);
+    else if (engine.contract.request.mode !== 'current_analysis' && engine.pages.y > engine.pages.contentTop) engine.pages.addPage();
     const startPage = engine.pages.currentPage;
 
     if (model.employees.length === 0) {

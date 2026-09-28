@@ -43,6 +43,15 @@ export interface AttendancePdfEmployeeDetailModel {
     absenceRate: string;
     lateRate: string;
     issueRate: string;
+    adoptionRate: number | null;
+    adoptionComplete: number;
+    adoptionIncomplete: number;
+    attendancePercent: number | null;
+    punctualityPercent: number | null;
+    issuePercent: number | null;
+    onTimeDays: number;
+    analyzedDays: number;
+    daysWithIssues: number;
     expectedDays: number;
     attendedDays: number;
     lateDays: number;
@@ -52,7 +61,6 @@ export interface AttendancePdfEmployeeDetailModel {
     undeterminedDays: number;
     netDuration: string;
     expectedDuration: string;
-    netVsExpected: string;
     issueCount: number;
     issueTypeCount: number;
     issueLabels: string[];
@@ -119,6 +127,16 @@ function toEmployeeModel(
 ): AttendancePdfEmployeeDetailModel {
     const level = contract.presentationProfile.level;
     const issueLabels = issueLabelsForEmployee(employee, contract);
+    const focused = contract.request.mode === 'current_analysis' ? contract.request : null;
+    const selectedDays = focused ? employee.days.filter((day) => {
+        const context = focused.analysisContext;
+        if (context.date && day.date !== context.date) return false;
+        if (focused.statusSelection === 'COVERED' && day.status !== 'PRESENT' && day.status !== 'LATE') return false;
+        if (context.status && day.status !== context.status) return false;
+        if (context.rateEligible !== null && day.rateEligible !== context.rateEligible) return false;
+        if (context.issue && !day.issues.includes(context.issue)) return false;
+        return true;
+    }) : employee.days;
     return {
         employeeGuid: employee.employeeGuid,
         employeeName: employee.employeeName,
@@ -129,6 +147,15 @@ function toEmployeeModel(
         absenceRate: formatPercentage(employee.rates.absenceRate),
         lateRate: formatPercentage(employee.rates.lateRate),
         issueRate: formatPercentage(employee.rates.issueRate),
+        adoptionRate: employee.adoption?.adoptionRate ?? null,
+        adoptionComplete: employee.adoption?.completeOperations ?? 0,
+        adoptionIncomplete: employee.adoption?.incompleteOperations ?? 0,
+        attendancePercent: employee.rates.attendanceRate,
+        punctualityPercent: employee.rates.punctualityRate,
+        issuePercent: employee.rates.issueRate,
+        onTimeDays: employee.rates.onTimeWorkingDays,
+        analyzedDays: employee.rates.employeeDaysAnalyzed,
+        daysWithIssues: employee.rates.employeeDaysWithIssues,
         expectedDays: employee.rates.employeeWorkingDaysExpected,
         attendedDays: employee.rates.attendedWorkingDays,
         lateDays: employee.statusTotals.LATE,
@@ -142,18 +169,14 @@ function toEmployeeModel(
         expectedDuration: employee.durations.daysWithKnownExpectedWorkDuration > 0
             ? formatAttendancePdfDuration(employee.durations.expectedWorkMinutes, { emptyLabel: 'Non disponible' })
             : 'Non disponible',
-        netVsExpected:
-            employee.durations.daysWithKnownNetDuration > 0 && employee.durations.daysWithKnownExpectedWorkDuration > 0
-                ? `${formatAttendancePdfDuration(employee.durations.netMinutes, { emptyLabel: 'Non disponible' })} / ${formatAttendancePdfDuration(employee.durations.expectedWorkMinutes, { emptyLabel: 'Non disponible' })}`
-                : 'Non disponible',
         issueCount: employee.issueCount,
         issueTypeCount: issueLabels.length,
         issueLabels,
         columns: ATTENDANCE_PDF_EMPLOYEE_DAY_COLUMNS_BY_PRESENTATION[level],
-        days: employee.days.slice().sort((left, right) => left.date.localeCompare(right.date)).map((day) => toDayRow(employee, day)),
+        days: selectedDays.slice().sort((left, right) => left.date.localeCompare(right.date)).map((day) => toDayRow(employee, day)),
         // Le rapport RH conserve des synthèses individuelles ciblées.
         // La fiche employé / investigation affiche toujours le détail journalier.
-        showDailyTable: contract.request.mode === 'employee_sheet'
+        showDailyTable: contract.request.mode === 'current_analysis' || contract.request.mode === 'employee_sheet'
             ? true
             : contract.request.mode !== 'hr_complete' && level !== 'simplified',
     };
@@ -161,6 +184,19 @@ function toEmployeeModel(
 
 function selectEmployees(contract: AttendancePdfReportContract): AttendanceEmployeeOverview[] {
     const all = contract.request.overview.employees;
+    if (contract.request.mode === 'current_analysis') {
+        const request = contract.request;
+        const context = request.analysisContext;
+        return all.filter((employee) => {
+            if (context.employeeGuid && employee.employeeGuid !== context.employeeGuid) return false;
+            return employee.days.some((day) =>
+                (!context.date || day.date === context.date) &&
+                (!context.status || day.status === context.status) &&
+                (request.statusSelection !== 'COVERED' || day.status === 'PRESENT' || day.status === 'LATE') &&
+                (context.rateEligible === null || day.rateEligible === context.rateEligible) &&
+                (!context.issue || day.issues.includes(context.issue)));
+        });
+    }
     if (contract.request.mode === 'employee_sheet') {
         const employeeGuid = contract.request.employeeGuid;
         return all.filter((employee) => employee.employeeGuid === employeeGuid);
@@ -193,7 +229,7 @@ export function buildAttendancePdfEmployeeDetailsModel(
         if ((contract.request.mode === 'full_report' || contract.request.mode === 'hr_complete') && reportDetailMode === 'none') {
             emptyReason = "Les détails individuels ne sont pas demandés pour ce rapport.";
         } else if ((contract.request.mode === 'full_report' || contract.request.mode === 'hr_complete') && reportDetailMode === 'attention_only') {
-            emptyReason = "Aucun collaborateur avec élément à examiner n'est présent dans le snapshot.";
+            emptyReason = "Aucun collaborateur avec élément à examiner sur la période.";
         } else {
             emptyReason = "Aucun collaborateur ne correspond au périmètre de la fiche.";
         }
@@ -409,7 +445,7 @@ export function buildAttendancePdfEmployeeDetailsModel(
 //     if ((contract.request.mode === 'full_report' || contract.request.mode === 'hr_complete') && reportDetailMode === 'none') {
 //       emptyReason = "Les détails individuels ne sont pas demandés pour ce rapport.";
 //     } else if ((contract.request.mode === 'full_report' || contract.request.mode === 'hr_complete') && reportDetailMode === 'attention_only') {
-//       emptyReason = "Aucun collaborateur avec élément à examiner n'est présent dans le snapshot.";
+//       emptyReason = "Aucun collaborateur avec élément à examiner sur la période.";
 //     } else {
 //       emptyReason = "Aucun collaborateur ne correspond au périmètre de la fiche.";
 //     }

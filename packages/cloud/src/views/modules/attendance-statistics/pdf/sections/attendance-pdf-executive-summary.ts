@@ -1,5 +1,4 @@
 import type { AttendancePdfEngine } from '../engine/attendance-pdf-engine.js';
-import { ATTENDANCE_PDF_TYPOGRAPHY } from '../config/attendance-pdf-layout.js';
 import type { AttendancePdfColor } from '../theme/attendance-pdf-theme.js';
 import type { JsPdfLike } from '../types/jspdf.types.js';
 import {
@@ -45,175 +44,212 @@ function drawWrappedText(input: {
   document.text(lines, x, y, { maxWidth: width, align });
 }
 
-function accentForKpi(engine: AttendancePdfEngine, kpi: AttendancePdfExecutiveKpi): AttendancePdfColor {
-  switch (kpi.accent) {
-    case 'danger':
-      return engine.theme.colors.danger;
-    case 'warning':
-      return engine.theme.colors.warning;
-    case 'success':
-      return engine.theme.colors.success;
-    case 'accent':
-    default:
-      return engine.theme.colors.accent;
+function pointOnRing(cx: number, cy: number, radius: number, angle: number): [number, number] {
+  const radians = ((angle - 90) * Math.PI) / 180;
+  return [cx + radius * Math.cos(radians), cy + radius * Math.sin(radians)];
+}
+
+function drawRingArc(document: JsPdfLike, cx: number, cy: number, radius: number, from: number, to: number, color: AttendancePdfColor): void {
+  setColor(document.setDrawColor.bind(document), color);
+  document.setLineWidth(3.5);
+  for (let angle = from; angle < to; angle += 2) {
+    const [x1, y1] = pointOnRing(cx, cy, radius, angle);
+    const [x2, y2] = pointOnRing(cx, cy, radius, Math.min(to, angle + 2));
+    document.line(x1, y1, x2, y2);
   }
+  document.setLineWidth(0.2);
 }
-
-function lightTone(color: AttendancePdfColor): AttendancePdfColor {
-  const ratio = 0.78;
-  return [
-    Math.round(color[0] + (255 - color[0]) * ratio),
-    Math.round(color[1] + (255 - color[1]) * ratio),
-    Math.round(color[2] + (255 - color[2]) * ratio),
-  ];
-}
-
-function drawQualityStrip(engine: AttendancePdfEngine, model: AttendancePdfExecutiveSummaryModel): number {
-  const { document, pages, theme } = engine;
-  const quality = model.quality;
-  const height = quality.level === 'reliable' ? 12 : 19;
-  pages.ensureSpace(height);
-  const x = pages.contentLeft;
-  const y = pages.y;
-  const width = pages.contentWidth;
-  const tone =
-    quality.level === 'reliable'
-      ? theme.colors.success
-      : quality.level === 'warning'
-        ? theme.colors.warning
-        : theme.colors.danger;
-
-  setColor(document.setFillColor.bind(document), theme.colors.surfaceMuted);
-  setColor(document.setDrawColor.bind(document), tone);
-  document.setLineWidth(0.5);
-  document.roundedRect(x, y, width, height, 2, 2, 'FD');
-
-  document.setFont(theme.fontFamily, 'bold').setFontSize(9.5);
-  setColor(document.setTextColor.bind(document), tone);
-  document.text(quality.label, x + 4, y + 5.2);
-
-  document.setFont(theme.fontFamily, 'normal').setFontSize(8.2);
-  setColor(document.setTextColor.bind(document), theme.colors.text);
-  const message =
-    quality.level === 'reliable'
-      ? 'Le taux de présence peut être interprété sur ce périmètre.'
-      : quality.message;
-  document.text(document.splitTextToSize(message, width - 8), x + 4, y + 9.2, {
-    maxWidth: width - 8,
-  });
-
-  if (quality.level !== 'reliable' && quality.signals.length > 0) {
-    const signalText = quality.signals
-      .slice(0, 5)
-      .map((signal) => `${signal.label}: ${signal.value}`)
-      .join(' · ');
-    document.setFont(theme.fontFamily, 'bold').setFontSize(7.8);
-    setColor(document.setTextColor.bind(document), theme.colors.mutedText);
-    document.text(document.splitTextToSize(signalText, width - 8), x + 4, y + 15.1, {
-      maxWidth: width - 8,
-    });
-  }
-
-  pages.moveCursor(height + 4);
-  return height + 4;
-}
-
-function drawKpiGrid(engine: AttendancePdfEngine, model: AttendancePdfExecutiveSummaryModel): number {
-  const { document, pages, theme } = engine;
-  const gap = 4;
-  const cardHeight = 27;
-  const rowGap = 4;
-  const cardWidth = (pages.contentWidth - gap * 2) / 3;
-  const secondRowWidth = (pages.contentWidth - gap) / 2;
-  const totalHeight = cardHeight * 2 + rowGap;
-  const decision = pages.ensureSpace(totalHeight);
-  if (!decision.fitsOnFreshPage) throw new RangeError('Executive KPI grid is taller than a printable page.');
-
-  const drawCard = (kpi: AttendancePdfExecutiveKpi, x: number, y: number, width: number): void => {
-    setColor(document.setFillColor.bind(document), theme.colors.surface);
-    setColor(document.setDrawColor.bind(document), theme.colors.border);
-    document.setLineWidth(0.2);
-    document.roundedRect(x, y, width, cardHeight, 2, 2, 'FD');
-
-    const accent = accentForKpi(engine, kpi);
-    setColor(document.setFillColor.bind(document), accent);
-    document.rect(x, y, 1.8, cardHeight, 'F');
-
-    document.setFont(theme.fontFamily, 'bold').setFontSize(8.5);
-    setColor(document.setTextColor.bind(document), theme.colors.mutedText);
-    document.text(kpi.label, x + 5, y + 6);
-
-    document.setFont(theme.fontFamily, 'bold').setFontSize(ATTENDANCE_PDF_TYPOGRAPHY.kpiValuePt);
-    setColor(document.setTextColor.bind(document), theme.colors.text);
-    document.text(kpi.value, x + 5, y + 15.1);
-
-    drawWrappedText({
-      document,
-      text: kpi.explanation,
-      x: x + 5,
-      y: y + 21.1,
-      width: width - 10,
-      fontSize: 7.7,
-      color: theme.colors.mutedText,
-      fontFamily: theme.fontFamily,
-    });
-  };
-
-  model.kpis.slice(0, 3).forEach((kpi, index) => {
-    drawCard(kpi, pages.contentLeft + index * (cardWidth + gap), pages.y, cardWidth);
-  });
-  model.kpis.slice(3, 5).forEach((kpi, index) => {
-    drawCard(kpi, pages.contentLeft + index * (secondRowWidth + gap), pages.y + cardHeight + rowGap, secondRowWidth);
-  });
-
-  pages.moveCursor(totalHeight + 5);
-  return totalHeight + 5;
-}
-
 
 function drawDirectionKpiGrid(engine: AttendancePdfEngine, model: AttendancePdfExecutiveSummaryModel): number {
   const { document, pages, theme } = engine;
-  const gap = 3;
-  const cardHeight = 23;
-  const kpis = model.kpis.slice(0, 5);
-  const cardWidth = (pages.contentWidth - gap * (kpis.length - 1)) / kpis.length;
+  const gap = 4;
+  const cardHeight = 55;
+  const kpis = model.kpis.slice(0, 3);
+  const cardWidth = (pages.contentWidth - gap * 2) / 3;
   const decision = pages.ensureSpace(cardHeight);
   if (!decision.fitsOnFreshPage) throw new RangeError('Direction KPI grid is taller than a printable page.');
 
   kpis.forEach((kpi, index) => {
     const x = pages.contentLeft + index * (cardWidth + gap);
     const y = pages.y;
+    const centerX = x + cardWidth / 2;
+    const centerY = y + 21;
+    const radius = 12;
+    const primaryColor: AttendancePdfColor = [22, 163, 74];
+    const secondaryColor: AttendancePdfColor = [220, 38, 38];
 
-    const accent = accentForKpi(engine, kpi);
-    setColor(document.setFillColor.bind(document), lightTone(accent));
-    setColor(document.setDrawColor.bind(document), accent);
-    document.setLineWidth(0.25);
+    setColor(document.setFillColor.bind(document), theme.colors.surface);
+    setColor(document.setDrawColor.bind(document), theme.colors.border);
+    document.setLineWidth(0.2);
     document.roundedRect(x, y, cardWidth, cardHeight, 2, 2, 'FD');
-    setColor(document.setFillColor.bind(document), accent);
-    document.rect(x, y, 1.5, cardHeight, 'F');
 
-    document.setFont(theme.fontFamily, 'bold').setFontSize(7.4);
-    setColor(document.setTextColor.bind(document), theme.colors.mutedText);
-    document.text(kpi.label, x + 4, y + 5.3, { maxWidth: cardWidth - 8 });
-
-    document.setFont(theme.fontFamily, 'bold').setFontSize(16);
+    document.setFont(theme.fontFamily, 'bold').setFontSize(9);
     setColor(document.setTextColor.bind(document), theme.colors.text);
-    document.text(kpi.value, x + 4, y + 13.1);
+    document.text(kpi.label, centerX, y + 5.5, { align: 'center' });
+
+    const segments = kpi.segments;
+    if (segments?.primaryRate !== null && segments?.primaryRate !== undefined && segments.secondaryRate !== null) {
+      const firstAngle = Math.max(0, Math.min(360, segments.primaryRate * 3.6));
+      if (firstAngle > 0) drawRingArc(document, centerX, centerY, radius, 0, firstAngle, primaryColor);
+      if (firstAngle < 360) drawRingArc(document, centerX, centerY, radius, firstAngle, 360, secondaryColor);
+
+      // Deux repères blancs sur le trait conservent les pourcentages lisibles,
+      // y compris quand une composante occupe un arc très court.
+      const drawRingPercentage = (value: number, angle: number, color: AttendancePdfColor): void => {
+        const [labelX, labelY] = pointOnRing(centerX, centerY, radius, angle);
+        const label = `${value.toFixed(1).replace('.0', '')}%`;
+        document.setFont(theme.fontFamily, 'bold').setFontSize(6.3);
+        const width = document.getTextWidth(label) + 2;
+        setColor(document.setFillColor.bind(document), theme.colors.surface);
+        document.rect(labelX - width / 2, labelY - 2.1, width, 4.1, 'F');
+        setColor(document.setTextColor.bind(document), color);
+        document.text(label, labelX, labelY + 0.6, { align: 'center' });
+      };
+      if (firstAngle > 0) drawRingPercentage(segments.primaryRate, firstAngle / 2, primaryColor);
+      if (firstAngle < 360) drawRingPercentage(segments.secondaryRate, firstAngle + (360 - firstAngle) / 2, secondaryColor);
+
+      document.setFont(theme.fontFamily, 'bold').setFontSize(11);
+      setColor(document.setTextColor.bind(document), theme.colors.text);
+      document.text(String(segments.primaryCount), centerX, centerY + 0.3, { align: 'center' });
+      document.setFont(theme.fontFamily, 'normal').setFontSize(5.8);
+      setColor(document.setTextColor.bind(document), theme.colors.mutedText);
+      document.text(`sur ${segments.primaryCount + segments.secondaryCount}`, centerX, centerY + 3.5, { align: 'center' });
+    } else {
+      setColor(document.setDrawColor.bind(document), theme.colors.border);
+      document.setLineWidth(2.5);
+      document.circle(centerX, centerY, radius - 1.2, 'S');
+      document.setFont(theme.fontFamily, 'bold').setFontSize(15);
+      setColor(document.setTextColor.bind(document), theme.colors.mutedText);
+      document.text('N/D', centerX, centerY + 1.8, { align: 'center' });
+    }
+
+    if (segments) {
+      const legendY = y + 37;
+      setColor(document.setFillColor.bind(document), primaryColor);
+      document.circle(x + 5.5, legendY - 0.9, 1.3, 'F');
+      document.setFont(theme.fontFamily, 'normal').setFontSize(7.5);
+      setColor(document.setTextColor.bind(document), theme.colors.text);
+      document.text(`${segments.primaryLabel} : ${segments.primaryCount}`, x + 8.3, legendY);
+      setColor(document.setFillColor.bind(document), secondaryColor);
+      document.circle(x + cardWidth / 2 + 3, legendY - 0.9, 1.3, 'F');
+      document.text(`${segments.secondaryLabel} : ${segments.secondaryCount}`, x + cardWidth / 2 + 5.8, legendY);
+    } else {
+      document.setFont(theme.fontFamily, 'normal').setFontSize(7.5);
+      setColor(document.setTextColor.bind(document), theme.colors.mutedText);
+      document.text('Règle métier en attente', centerX, y + 37, { align: 'center' });
+    }
 
     drawWrappedText({
       document,
       text: kpi.explanation,
       x: x + 4,
-      y: y + 18.2,
+      y: y + 43,
       width: cardWidth - 8,
-      fontSize: 6.4,
+      fontSize: 7.4,
       color: theme.colors.mutedText,
       fontFamily: theme.fontFamily,
     });
   });
 
-  pages.moveCursor(cardHeight + 4);
-  return cardHeight + 4;
+  pages.moveCursor(cardHeight + 3);
+  return cardHeight + 3;
+}
+
+
+function drawOtherKpiGrid(engine: AttendancePdfEngine, model: AttendancePdfExecutiveSummaryModel): number {
+  const { document, pages, theme } = engine;
+  const gap = 4;
+  const cardHeight = 55;
+  const kpis = model.kpis.slice(0, 4);
+  const cardWidth = (pages.contentWidth - gap * 3) / 4;
+  const totalHeight = cardHeight;
+  const decision = pages.ensureSpace(totalHeight);
+  if (!decision.fitsOnFreshPage) throw new RangeError('Direction KPI grid is taller than a printable page.');
+
+  kpis.forEach((kpi, index) => {
+    const x = pages.contentLeft + index * (cardWidth + gap);
+    const y = pages.y;
+    const centerX = x + cardWidth / 2;
+    const centerY = y + 20;
+    const radius = 11;
+    const primaryColor: AttendancePdfColor = [22, 163, 74];
+    const secondaryColor: AttendancePdfColor = [220, 38, 38];
+
+    setColor(document.setFillColor.bind(document), theme.colors.surface);
+    setColor(document.setDrawColor.bind(document), theme.colors.border);
+    document.setLineWidth(0.2);
+    document.roundedRect(x, y, cardWidth, cardHeight, 2, 2, 'FD');
+
+    document.setFont(theme.fontFamily, 'bold').setFontSize(9);
+    setColor(document.setTextColor.bind(document), theme.colors.text);
+    document.text(kpi.label, centerX, y + 5.5, { align: 'center' });
+
+    const segments = kpi.segments;
+    if (segments?.primaryRate !== null && segments?.primaryRate !== undefined && segments.secondaryRate !== null) {
+      const firstAngle = Math.max(0, Math.min(360, segments.primaryRate * 3.6));
+      if (firstAngle > 0) drawRingArc(document, centerX, centerY, radius, 0, firstAngle, primaryColor);
+      if (firstAngle < 360) drawRingArc(document, centerX, centerY, radius, firstAngle, 360, secondaryColor);
+
+      // Deux repères blancs sur le trait conservent les pourcentages lisibles,
+      // y compris quand une composante occupe un arc très court.
+      const drawRingPercentage = (value: number, angle: number, color: AttendancePdfColor): void => {
+        const [labelX, labelY] = pointOnRing(centerX, centerY, radius, angle);
+        const label = `${value.toFixed(1).replace('.0', '')}%`;
+        document.setFont(theme.fontFamily, 'bold').setFontSize(6.3);
+        const width = document.getTextWidth(label) + 2;
+        setColor(document.setFillColor.bind(document), theme.colors.surface);
+        document.rect(labelX - width / 2, labelY - 2.1, width, 4.1, 'F');
+        setColor(document.setTextColor.bind(document), color);
+        document.text(label, labelX, labelY + 0.6, { align: 'center' });
+      };
+      if (firstAngle > 0) drawRingPercentage(segments.primaryRate, firstAngle / 2, primaryColor);
+      if (firstAngle < 360) drawRingPercentage(segments.secondaryRate, firstAngle + (360 - firstAngle) / 2, secondaryColor);
+
+      document.setFont(theme.fontFamily, 'bold').setFontSize(11);
+      setColor(document.setTextColor.bind(document), theme.colors.text);
+      document.text(String(segments.primaryCount), centerX, centerY + 0.3, { align: 'center' });
+      document.setFont(theme.fontFamily, 'normal').setFontSize(5.8);
+      setColor(document.setTextColor.bind(document), theme.colors.mutedText);
+      document.text(`sur ${segments.primaryCount + segments.secondaryCount}`, centerX, centerY + 3.5, { align: 'center' });
+    } else {
+      setColor(document.setDrawColor.bind(document), theme.colors.border);
+      document.setLineWidth(2.5);
+      document.circle(centerX, centerY, radius - 1.2, 'S');
+      document.setFont(theme.fontFamily, 'bold').setFontSize(15);
+      setColor(document.setTextColor.bind(document), theme.colors.mutedText);
+      document.text('N/D', centerX, centerY + 1.8, { align: 'center' });
+    }
+
+    if (segments) {
+      const legendY = y + 37;
+      setColor(document.setFillColor.bind(document), primaryColor);
+      document.circle(x + 5.5, legendY - 0.9, 1.3, 'F');
+      document.setFont(theme.fontFamily, 'normal').setFontSize(7.5);
+      setColor(document.setTextColor.bind(document), theme.colors.text);
+      document.text(`${segments.primaryLabel} : ${segments.primaryCount}`, x + 8.3, legendY);
+      setColor(document.setFillColor.bind(document), secondaryColor);
+      document.circle(x + cardWidth / 2 + 3, legendY - 0.9, 1.3, 'F');
+      document.text(`${segments.secondaryLabel} : ${segments.secondaryCount}`, x + cardWidth / 2 + 5.8, legendY);
+    } else {
+      document.setFont(theme.fontFamily, 'normal').setFontSize(7.5);
+      setColor(document.setTextColor.bind(document), theme.colors.mutedText);
+      document.text('Données non disponibles', centerX, y + 37, { align: 'center' });
+    }
+
+    drawWrappedText({
+      document,
+      text: kpi.explanation,
+      x: x + 4,
+      y: y + 43,
+      width: cardWidth - 8,
+      fontSize: 6.8,
+      color: theme.colors.mutedText,
+      fontFamily: theme.fontFamily,
+    });
+  });
+
+  pages.moveCursor(totalHeight + 3);
+  return totalHeight + 3;
 }
 
 
@@ -269,102 +305,6 @@ function drawDurationInsight(engine: AttendancePdfEngine, model: AttendancePdfEx
   return height + 4;
 }
 
-function drawBottomPanels(engine: AttendancePdfEngine, model: AttendancePdfExecutiveSummaryModel): number {
-  const { document, pages, theme } = engine;
-  const gap = 6;
-  const panelWidth = (pages.contentWidth - gap) / 2;
-  const height = 48;
-  const decision = pages.ensureSpace(height);
-  if (!decision.fitsOnFreshPage) throw new RangeError('Executive summary panels are taller than a printable page.');
-
-  const y = pages.y;
-  const leftX = pages.contentLeft;
-  const rightX = leftX + panelWidth + gap;
-
-  const panel = (x: number, title: string): void => {
-    setColor(document.setFillColor.bind(document), theme.colors.surface);
-    setColor(document.setDrawColor.bind(document), theme.colors.border);
-    document.setLineWidth(0.2);
-    document.roundedRect(x, y, panelWidth, height, 2, 2, 'FD');
-    document.setFont(theme.fontFamily, 'bold').setFontSize(9.5);
-    setColor(document.setTextColor.bind(document), theme.colors.text);
-    document.text(title, x + 4, y + 6);
-    setColor(document.setDrawColor.bind(document), theme.colors.headerRule);
-    document.line(x + 4, y + 8.3, x + panelWidth - 4, y + 8.3);
-  };
-
-  panel(leftX, model.statusPanelTitle);
-  panel(rightX, 'Principaux éléments à examiner');
-
-  const eligible = model.statusRows.filter((row) => row.group === 'eligible');
-  const excluded = model.statusRows.filter((row) => row.group === 'excluded');
-  let rowY = y + 13;
-  document.setFont(theme.fontFamily, 'bold').setFontSize(7.8);
-  setColor(document.setTextColor.bind(document), theme.colors.mutedText);
-  document.text(model.eligibleGroupLabel, leftX + 4, rowY);
-  rowY += 4.8;
-
-  const drawStatusRows = (rows: typeof model.statusRows): void => {
-    for (const row of rows) {
-      document.setFont(theme.fontFamily, 'normal').setFontSize(8);
-      setColor(document.setTextColor.bind(document), theme.colors.text);
-      document.text(row.label, leftX + 4, rowY);
-      document.setFont(theme.fontFamily, 'bold');
-      document.text(String(row.count), leftX + panelWidth - 4, rowY, { align: 'right' });
-      rowY += 4.5;
-    }
-  };
-
-  drawStatusRows(eligible);
-  rowY += 1.3;
-  document.setFont(theme.fontFamily, 'bold').setFontSize(7.8);
-  setColor(document.setTextColor.bind(document), theme.colors.mutedText);
-  document.text(model.excludedGroupLabel, leftX + 4, rowY);
-  rowY += 4.8;
-  drawStatusRows(excluded);
-
-  if (model.attentionItems.length === 0) {
-    document.setFont(theme.fontFamily, 'normal').setFontSize(8.5);
-    setColor(document.setTextColor.bind(document), theme.colors.success);
-    document.text(model.attentionEmptyLabel, rightX + 4, y + 15);
-  } else {
-    let attentionY = y + 14;
-    model.attentionItems.forEach((item, index) => {
-      const marker = `${index + 1}.`;
-      document.setFont(theme.fontFamily, 'bold').setFontSize(8.2);
-      setColor(document.setTextColor.bind(document), theme.colors.warning);
-      document.text(marker, rightX + 4, attentionY);
-      document.setFont(theme.fontFamily, 'normal').setFontSize(8.2);
-      setColor(document.setTextColor.bind(document), theme.colors.text);
-      document.text(item.label, rightX + 10, attentionY);
-      document.setFont(theme.fontFamily, 'normal').setFontSize(7.2);
-      setColor(document.setTextColor.bind(document), theme.colors.mutedText);
-      document.text(
-        `${item.employeesConcerned} collab.`,
-        rightX + panelWidth - 14,
-        attentionY,
-        { align: 'right' },
-      );
-      document.setFont(theme.fontFamily, 'bold').setFontSize(8.2);
-      setColor(document.setTextColor.bind(document), theme.colors.text);
-      document.text(String(item.count), rightX + panelWidth - 4, attentionY, { align: 'right' });
-      attentionY += 5.8;
-    });
-    if (model.hiddenAttentionTypeCount > 0) {
-      document.setFont(theme.fontFamily, 'italic').setFontSize(7.4);
-      setColor(document.setTextColor.bind(document), theme.colors.mutedText);
-      document.text(
-        `+ ${model.hiddenAttentionTypeCount} autre${model.hiddenAttentionTypeCount === 1 ? '' : 's'} type${model.hiddenAttentionTypeCount === 1 ? '' : 's'} détaillé${model.hiddenAttentionTypeCount === 1 ? '' : 's'} plus loin`,
-        rightX + 4,
-        y + height - 4,
-      );
-    }
-  }
-
-  pages.moveCursor(height);
-  return height;
-}
-
 export interface AttendancePdfExecutiveSummaryResult {
   page: number;
   model: AttendancePdfExecutiveSummaryModel;
@@ -398,18 +338,11 @@ export function renderAttendancePdfExecutiveSummary(
     });
   }
 
-  // En Direction, la qualité n'occupe de place que lorsqu'elle change réellement
-  // l'interprétation du rapport. Un état fiable n'a pas besoin d'un bandeau dédié.
-  if (!compactDirectionSummary || model.quality.level !== 'reliable') {
-    drawQualityStrip(engine, model);
-  }
-
   if (compactDirectionSummary) {
     drawDirectionKpiGrid(engine, model);
   } else {
-    drawKpiGrid(engine, model);
-    drawDurationInsight(engine, model, false);
-    drawBottomPanels(engine, model);
+    drawOtherKpiGrid(engine, model);
+    drawDurationInsight(engine, model, true);
   }
 
   return {

@@ -20,6 +20,8 @@ export interface AttendancePdfTeamRow {
     expected: number;
     attended: number;
     attendedVsExpected: string;
+    onTimeLate: string;
+    adoptionRate: string;
     attendanceRate: string;
     punctualityRate: string;
     absenceRate: string;
@@ -31,7 +33,6 @@ export interface AttendancePdfTeamRow {
     restDay: number;
     netDuration: string;
     expectedDuration: string;
-    netVsExpected: string;
     issueRate: string;
     issues: number;
     durationDelta: string;
@@ -88,12 +89,14 @@ function toRow(employee: AttendanceEmployeeOverview): AttendancePdfTeamRow {
         expected: employee.rates.employeeWorkingDaysExpected,
         attended: employee.rates.attendedWorkingDays,
         attendedVsExpected: `${employee.rates.attendedWorkingDays} / ${employee.rates.employeeWorkingDaysExpected}`,
+        onTimeLate: `${employee.rates.onTimeWorkingDays} / ${employee.rates.lateWorkingDays}`,
+        adoptionRate: formatPercentage(employee.adoption?.adoptionRate ?? null),
         attendanceRate: formatPercentage(employee.rates.attendanceRate),
         punctualityRate: formatPercentage(employee.rates.punctualityRate),
         absenceRate: formatPercentage(employee.rates.absenceRate),
         lateRate: formatPercentage(employee.rates.lateRate),
         late: employee.statusTotals.LATE,
-        absent: employee.statusTotals.ABSENT,
+        absent: employee.rates.absentWorkingDays,
         pending: employee.statusTotals.PENDING,
         undetermined: employee.statusTotals.UNDETERMINED,
         restDay: employee.statusTotals.REST_DAY,
@@ -105,20 +108,13 @@ function toRow(employee: AttendanceEmployeeOverview): AttendancePdfTeamRow {
             employee.durations.daysWithKnownExpectedWorkDuration > 0
                 ? formatAttendancePdfDuration(employee.durations.expectedWorkMinutes, { emptyLabel: '—' })
                 : '—',
-        netVsExpected:
-            employee.durations.daysWithKnownNetDuration > 0 && employee.durations.daysWithKnownExpectedWorkDuration > 0
-                ? `${formatAttendancePdfDuration(employee.durations.netMinutes, { emptyLabel: '—' })} / ${formatAttendancePdfDuration(employee.durations.expectedWorkMinutes, { emptyLabel: '—' })}`
-                : employee.durations.daysWithKnownNetDuration > 0
-                    ? `${formatAttendancePdfDuration(employee.durations.netMinutes, { emptyLabel: '—' })} / —`
-                    : '—',
         issueRate: formatPercentage(employee.rates.issueRate),
         issues: employee.issueCount,
-        durationDelta:
-            employee.durations.daysWithKnownNetDuration > 0 &&
-            employee.durations.daysWithKnownExpectedWorkDuration > 0 &&
-            employee.durations.daysWithMissingDuration === 0
-                ? formatAttendancePdfDurationDelta(employee.durations.netMinutes - employee.durations.expectedWorkMinutes)
-                : 'Non calculable',
+        // Écart déjà calculé par occurrence côté API ; ne jamais soustraire
+        // deux agrégats nets/prévus dont les périmètres peuvent différer.
+        durationDelta: employee.durations.occurrencesWithKnownDelta > 0
+            ? formatAttendancePdfDurationDelta(employee.durations.rawDeltaMinutes)
+            : 'Non calculable',
         alerts: formatPercentage(employee.rates.issueRate),
     };
 }
@@ -155,7 +151,7 @@ function resolveDescription(contract: AttendancePdfReportContract, filteredByAna
 
     switch (contract.request.mode) {
         case 'period_summary':
-            return `Lecture décisionnelle de l'équipe : présence, retard, écart d'heures enregistré et alertes nécessitant un suivi par les équipes concernées.`;
+            return `Rotations attendues et couvertes, absences, arrivées à l'heure et retards par collaborateur. L'adoption porte sur les opérations de pointage évaluables ; les éléments signalés appellent une vérification.`;
         case 'full_report':
             return `Vue de pilotage de l'équipe. Les pourcentages permettent d'identifier les écarts avant d'analyser leur évolution dans la période.`;
         case 'hr_complete':

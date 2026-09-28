@@ -108,7 +108,7 @@ function situationLabel(employee: AttendanceEmployeeOverview): string {
               <span class="font-semibold text-amber-700">{{ employee.rates.lateWorkingDays }}</span>
             </td>
             <td class="border-b border-slate-100 px-3 py-4 text-right font-semibold text-slate-800">{{ formatPercentage(employee.rates.punctualityRate) }}</td>
-            <td class="border-b border-slate-100 px-3 py-4 text-right text-slate-500">N/D</td>
+            <td class="border-b border-slate-100 px-3 py-4 text-right text-slate-700">{{ formatPercentage(employee.adoption?.adoptionRate ?? null) }}</td>
             <td class="border-b border-slate-100 px-3 py-4 text-right">
               <span
                 class="inline-flex rounded-full px-2.5 py-1 text-xs font-bold"
@@ -153,7 +153,7 @@ function situationLabel(employee: AttendanceEmployeeOverview): string {
           <div><dt class="text-xs text-slate-500">Absences</dt><dd class="font-semibold text-rose-700">{{ employee.rates.absentWorkingDays }}</dd></div>
           <div><dt class="text-xs text-slate-500">À l’heure / retards</dt><dd class="font-semibold text-slate-800"><span class="text-emerald-700">{{ employee.rates.onTimeWorkingDays }}</span> / <span class="text-amber-700">{{ employee.rates.lateWorkingDays }}</span></dd></div>
           <div><dt class="text-xs text-slate-500">Ponctualité</dt><dd class="font-semibold text-slate-800">{{ formatPercentage(employee.rates.punctualityRate) }}</dd></div>
-          <div><dt class="text-xs text-slate-500">Adoption</dt><dd class="font-semibold text-slate-500">N/D</dd></div>
+          <div><dt class="text-xs text-slate-500">Adoption</dt><dd class="font-semibold text-slate-700">{{ formatPercentage(employee.adoption?.adoptionRate ?? null) }}</dd></div>
           <div><dt class="text-xs text-slate-500">Situation</dt><dd class="font-semibold text-slate-800">{{ situationLabel(employee) }}</dd></div>
         </dl>
 

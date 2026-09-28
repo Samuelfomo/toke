@@ -81,9 +81,9 @@ export function buildAttendancePdfReportPlan(contract: AttendancePdfReportContra
       break;
     }
     case 'current_analysis': {
-      sections.push(section('analysis_context', "Explique précisément le contexte sélectionné dans le dashboard sans réafficher les KPI globaux de toute l'équipe."));
-      sections.push(section('team', 'Liste uniquement les collaborateurs correspondant au contexte d’analyse courant.'));
-      notes.push("La synthèse globale de période est volontairement exclue afin de ne pas mélanger le périmètre analysé avec les chiffres de toute l'équipe.");
+      sections.push(section('analysis_context', 'Précise le collaborateur et la situation recherchés.'));
+      sections.push(section('employee_details', 'Affiche seulement les journées et pointages correspondant à la sélection.'));
+      notes.push('Les taux globaux de période ne sont pas présentés comme des résultats filtrés.');
       if (contract.selection.issue) {
         notes.push("Le type d'élément sélectionné reste affiché dans le contexte ; le détail global du type n'est pas dupliqué si d'autres filtres de date/statut sont actifs.");
       }

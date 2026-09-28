@@ -98,6 +98,8 @@ export interface AttendancePdfCurrentAnalysisRequest extends AttendancePdfBaseOp
   mode: 'current_analysis';
   overview: AttendanceOverview;
   analysisContext: AttendanceAnalysisContext;
+  /** Sélection combinée des deux statuts couverts, sans recalcul de KPI. */
+  statusSelection?: 'COVERED' | null;
 }
 
 export interface AttendancePdfIssuesOnlyRequest extends AttendancePdfBaseOptions {

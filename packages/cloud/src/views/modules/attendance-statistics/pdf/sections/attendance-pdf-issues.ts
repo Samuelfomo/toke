@@ -24,7 +24,7 @@ function drawFamilySummary(
   });
 
   engine.primitives.drawTextBlock(
-    `${family.occurrenceCount} ${plural(family.occurrenceCount, 'occurrence')} - ${family.issueTypeCount} ${plural(family.issueTypeCount, "type d'élément", "types d'éléments")}`,
+    `${family.occurrenceCount} ${plural(family.occurrenceCount, 'situation')} - ${family.issueTypeCount} ${plural(family.issueTypeCount, "type d'élément", "types d'éléments")}`,
     {
       fontSizePt: 8,
       color: engine.theme.colors.mutedText,
@@ -81,8 +81,8 @@ function drawIssueOccurrences(
   if (issueType.omittedByPresentationCount > 0) {
     const primaryReport = engine.contract.request.mode === 'full_report' || engine.contract.request.mode === 'hr_complete';
     const message = primaryReport
-      ? `${issueType.omittedByPresentationCount} ${plural(issueType.omittedByPresentationCount, 'occurrence')} supplémentaire${issueType.omittedByPresentationCount > 1 ? 's' : ''} non affichée${issueType.omittedByPresentationCount > 1 ? 's' : ''} dans ce rapport. Consulter un rapport plus détaillé pour l’investigation.`
-      : `${issueType.omittedByPresentationCount} ${plural(issueType.omittedByPresentationCount, 'occurrence')} supplémentaire${issueType.omittedByPresentationCount > 1 ? 's' : ''} non affichée${issueType.omittedByPresentationCount > 1 ? 's' : ''} avec le niveau ${engine.contract.presentationProfile.label.toLowerCase()}.`;
+      ? `${issueType.omittedByPresentationCount} ${plural(issueType.omittedByPresentationCount, 'situation')} supplémentaire${issueType.omittedByPresentationCount > 1 ? 's' : ''} non affichée${issueType.omittedByPresentationCount > 1 ? 's' : ''} dans ce rapport. Consulter un rapport plus détaillé pour l’investigation.`
+      : `${issueType.omittedByPresentationCount} ${plural(issueType.omittedByPresentationCount, 'situation')} supplémentaire${issueType.omittedByPresentationCount > 1 ? 's' : ''} non affichée${issueType.omittedByPresentationCount > 1 ? 's' : ''} avec le niveau ${engine.contract.presentationProfile.label.toLowerCase()}.`;
     engine.primitives.drawTextBlock(message, {
       fontSizePt: 7.8,
       color: engine.theme.colors.mutedText,
@@ -92,7 +92,7 @@ function drawIssueOccurrences(
 
   if (issueType.hiddenApiOccurrenceCount > 0) {
     engine.primitives.drawTextBlock(
-      `${issueType.hiddenApiOccurrenceCount} ${plural(issueType.hiddenApiOccurrenceCount, 'occurrence')} comptabilisée${issueType.hiddenApiOccurrenceCount > 1 ? 's' : ''} sans détail individuel disponible dans les données du rapport.`,
+      `${issueType.hiddenApiOccurrenceCount} ${plural(issueType.hiddenApiOccurrenceCount, 'situation')} comptabilisée${issueType.hiddenApiOccurrenceCount > 1 ? 's' : ''} sans détail individuel disponible dans les données du rapport.`,
       {
         fontSizePt: 7.8,
         color: engine.theme.colors.warning,
@@ -117,7 +117,7 @@ export interface AttendancePdfIssuesResult {
 export function renderAttendancePdfIssues(engine: AttendancePdfEngine): AttendancePdfIssuesResult {
   const model = buildAttendancePdfIssuesModel(engine.contract);
 
-  if (engine.pages.y > engine.pages.contentTop) engine.pages.addPage();
+  engine.pages.ensureSpace(model.empty ? 35 : 46);
   engine.pages.markSectionStart('issues');
   const startPage = engine.pages.currentPage;
 
@@ -140,7 +140,7 @@ export function renderAttendancePdfIssues(engine: AttendancePdfEngine): Attendan
   if (model.empty) {
     engine.primitives.drawCard({
       title: 'Aucun élément à examiner',
-      body: "Le snapshot fourni ne contient aucun élément correspondant à ce périmètre.",
+      body: "Aucun élément ne correspond à la sélection.",
       height: 24,
     });
     return { startPage, endPage: engine.pages.currentPage, model };
@@ -160,7 +160,7 @@ export function renderAttendancePdfIssues(engine: AttendancePdfEngine): Attendan
 
   if (model.totalHiddenApiOccurrenceCount > 0) {
     engine.primitives.drawTextBlock(
-      `Détail disponible : ${model.totalDetailedOccurrenceCount} occurrence${model.totalDetailedOccurrenceCount > 1 ? 's' : ''} individualisée${model.totalDetailedOccurrenceCount > 1 ? 's' : ''} sur ${model.totalOccurrenceCount} occurrence${model.totalOccurrenceCount > 1 ? 's' : ''} comptabilisée${model.totalOccurrenceCount > 1 ? 's' : ''}.`,
+      `Détail disponible : ${model.totalDetailedOccurrenceCount} situation${model.totalDetailedOccurrenceCount > 1 ? 's' : ''} individualisée${model.totalDetailedOccurrenceCount > 1 ? 's' : ''} sur ${model.totalOccurrenceCount} situation${model.totalOccurrenceCount > 1 ? 's' : ''} comptabilisée${model.totalOccurrenceCount > 1 ? 's' : ''}.`,
       {
         fontSizePt: 8,
         color: engine.theme.colors.warning,
