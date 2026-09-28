@@ -73,6 +73,14 @@ export interface WorkDaySchedule {
   state: 'WORK_DAY';
   source: ScheduleSource;
   expectedBlocks: readonly ExpectedWorkBlock[];
+  assignmentGuid?: string | null;
+  /** Même identifiant sur les deux jours d'une garde déclarée dans le planning. */
+  attendanceOperation?: {
+    id: string;
+    kind: 'GUARD';
+    role: 'START' | 'CONTINUATION';
+    startDate: BusinessDate;
+  } | null;
   /** Politique E+ issue du SessionModel du template applicable. */
   extraPolicy?: AttendanceExtraPolicy;
 }
@@ -112,6 +120,19 @@ export interface AttendanceActivityInterval {
   attributableNetMinutes?: number | null;
 }
 
+export interface AttendanceAdoptionSession {
+  sessionGuid: string;
+  startDate: BusinessDate;
+  startTime: BusinessTime;
+  endDate: BusinessDate | null;
+  endTime: BusinessTime | null;
+  /** Pointages humains, acceptés ou comptabilisés, rattachés à cette session. */
+  clockInGuids: readonly string[];
+  clockOutGuids: readonly string[];
+  clockInAt: string | null;
+  clockOutAt: string | null;
+}
+
 export interface AttendanceDayActivityInput {
   sessionCount: number;
   /** GUIDs des WorkSessions qui contribuent à cette journée métier. */
@@ -133,6 +154,7 @@ export interface AttendanceDayActivityInput {
   presenceEvidence?: AttendancePresenceEvidence | null;
   /** Intervalles réels touchant la journée, y compris une session commencée la veille. */
   intervals?: readonly AttendanceActivityInterval[];
+  adoptionSessions?: readonly AttendanceAdoptionSession[];
 }
 
 export interface AttendanceDayActivity extends AttendanceDayActivityInput {

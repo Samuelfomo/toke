@@ -4,6 +4,7 @@ import type {
   AttendanceStatus,
   BusinessDate,
 } from '../domain/attendance-day.types.js';
+import type { AdoptionMetrics, AdoptionState } from './attendance-adoption.js';
 
 export interface AttendanceOverviewEmployeeIdentity {
   id: number;
@@ -89,6 +90,7 @@ export interface AttendanceDailyOverview {
   teamSize: number;
   statusTotals: AttendanceStatusTotals;
   rates: AttendanceRateMetrics;
+  adoption: AdoptionMetrics;
   /** Durées agrégées de la journée sur le périmètre courant. */
   durations: AttendanceDurationMetrics;
   issueCount: number;
@@ -98,6 +100,9 @@ export interface AttendanceEmployeeDayOverview {
   date: BusinessDate;
   status: AttendanceStatus;
   rateEligible: boolean;
+  adoption: AdoptionState;
+  adoptionOperationId: string | null;
+  adoptionSessionGuid: string | null;
   delayMinutes: number | null;
   arrivalDelayMinutes: number | null;
   toleranceMinutes: number | null;
@@ -125,6 +130,7 @@ export interface AttendanceEmployeeOverview {
   employeeName: string;
   statusTotals: AttendanceStatusTotals;
   rates: AttendanceRateMetrics;
+  adoption: AdoptionMetrics;
   durations: AttendanceDurationMetrics;
   issueCount: number;
   days: AttendanceEmployeeDayOverview[];
@@ -148,6 +154,7 @@ export interface AttendanceOverview {
   summary: {
     statusTotals: AttendanceStatusTotals;
     rates: AttendanceRateMetrics;
+    adoption: AdoptionMetrics;
     durations: AttendanceDurationMetrics;
     issueCount: number;
   };

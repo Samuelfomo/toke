@@ -141,3 +141,15 @@ Les occurrences détaillées d’une issue sont limitées aux 100 premières ent
 7. Les sessions traversant minuit sont rattachées à la journée de démarrage tant qu’aucune règle métier différente n’est validée.
 
 8. Les taux d'absence et de retard portent sur des journées-éligibles ; le taux d'éléments à examiner porte sur les journées-employé analysées, et non sur les employés distincts.
+# Adoption du pointage
+
+`summary.adoption`, `daily[].adoption` et `employees[].adoption` exposent :
+
+- `coveredFinalizedOperations` : opérations couvertes candidates, y compris les rattachements indéterminés ;
+- `completeOperations` : une même session possède un `CLOCK_IN` et un `CLOCK_OUT` humains en `ACCEPTED` ou `ACCOUNTED` et chevauche les blocs attendus ;
+- `incompleteOperations` : opération couverte sans paire humaine complète ;
+- `undeterminedOperations` : continuité partiellement hors période ou session candidate partagée entre des rotations distinctes ;
+- `evaluatedOperations` : complètes + incomplètes ;
+- `adoptionRate` : complètes / évaluées × 100, ou `null` sans opération évaluable.
+
+La garde marquée par `continuation_of_guid` regroupe deux blocs civils dans une seule opération sur la date de départ. Le jour suivant porte `employees[].days[].adoption = CONTINUATION`. Les pauses restent hors du taux standard. Le taux ne qualifie jamais à lui seul les anomalies de planning.

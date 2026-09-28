@@ -435,14 +435,30 @@ function calculateOccurrenceNetMinutes(
 
   // Une seule durée non attribuable suffit à rendre le calcul E+/E- ambigu.
   // La durée réelle globale reste conservée dans activity.netMinutes.
-  if (matched.some((interval) => interval.attributableNetMinutes == null)) {
+  if (matched.some((interval) =>
+    interval.attributableNetMinutes == null ||
+    (interval.startDate < date && (interval.endDate === null || interval.endTime === null))
+  )) {
     return null;
   }
 
-  return matched.reduce(
-    (total, interval) => total + (interval.attributableNetMinutes ?? 0),
-    0,
-  );
+  return matched.reduce((total, interval) => {
+    // Le segment projeté sur cette journée peut dépasser largement la rotation
+    // lorsque la session a commencé la veille. Seul son chevauchement avec les
+    // blocs de cette occurrence est alors attribuable. Une pause non répartissable
+    // donne déjà attributableNetMinutes=null dans l'adaptateur.
+    if (interval.startDate < date) {
+      const start = businessDateTimeToMinutes(interval.startDate, interval.startTime);
+      const end = businessDateTimeToMinutes(interval.endDate!, interval.endTime!);
+      const overlap = blocks.reduce((minutes, block) => {
+        const blockStart = businessDateTimeToMinutes(date, block.startTime);
+        const blockEnd = businessDateTimeToMinutes(date, block.endTime);
+        return minutes + Math.max(0, Math.min(end, blockEnd) - Math.max(start, blockStart));
+      }, 0);
+      return total + Math.min(interval.attributableNetMinutes!, overlap);
+    }
+    return total + interval.attributableNetMinutes!;
+  }, 0);
 }
 
 function intervalMatchesExpectedBlocks(

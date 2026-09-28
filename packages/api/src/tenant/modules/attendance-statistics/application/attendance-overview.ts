@@ -15,6 +15,7 @@ import type {
   AttendanceStatusTotals,
   BuildAttendanceOverviewInput,
 } from './attendance-overview.types.js';
+import { assessAttendanceAdoption, calculateAdoptionMetrics, type AdoptionAssessment } from './attendance-adoption.js';
 
 const ATTENDANCE_STATUSES: readonly AttendanceStatus[] = [
   'PRESENT',
@@ -57,9 +58,10 @@ export function buildAttendanceOverview(
     input.employees.map((employee) => [employee.id, employee]),
   );
   const daysByEmployee = groupDaysByEmployee(input.days, employeeById);
+  const adoptionAssessments = assessAttendanceAdoption(input.days);
 
   const employees = input.employees.map((employee) =>
-    buildEmployeeOverview(employee, daysByEmployee.get(employee.id) ?? []),
+    buildEmployeeOverview(employee, daysByEmployee.get(employee.id) ?? [], adoptionAssessments),
   );
 
   const statusTotals = countStatuses(input.days);
@@ -74,6 +76,7 @@ export function buildAttendanceOverview(
       teamSize: input.employees.length,
       statusTotals: countStatuses(dateDays),
       rates: calculateRates(dateDays),
+      adoption: calculateAdoptionMetrics(adoptionAssessments.filter((item) => item.date === date)),
       durations: calculateDurations(dateDays),
       issueCount: dateDays.reduce((total, day) => total + day.issues.length, 0),
     };
@@ -98,6 +101,7 @@ export function buildAttendanceOverview(
     summary: {
       statusTotals,
       rates,
+      adoption: calculateAdoptionMetrics(adoptionAssessments),
       durations,
       issueCount: input.days.reduce((total, day) => total + day.issues.length, 0),
     },
@@ -111,20 +115,27 @@ export function buildAttendanceOverview(
 function buildEmployeeOverview(
   employee: AttendanceOverviewEmployeeIdentity,
   days: readonly AttendanceDay[],
+  adoptionAssessments: readonly AdoptionAssessment[],
 ): AttendanceEmployeeOverview {
   const sortedDays = [...days].sort((a, b) => a.date.localeCompare(b.date));
+  const adoption = adoptionAssessments.filter((item) => item.employeeId === employee.id);
+  const adoptionByDate = new Map(adoption.map((item) => [item.date, item]));
 
   return {
     employeeGuid: employee.guid,
     employeeName: employee.name,
     statusTotals: countStatuses(sortedDays),
     rates: calculateRates(sortedDays),
+    adoption: calculateAdoptionMetrics(adoption),
     durations: calculateDurations(sortedDays),
     issueCount: sortedDays.reduce((total, day) => total + day.issues.length, 0),
     days: sortedDays.map((day) => ({
       date: day.date,
       status: day.result.status,
       rateEligible: day.result.rateEligible,
+      adoption: adoptionByDate.get(day.date)?.state ?? 'NOT_ELIGIBLE',
+      adoptionOperationId: adoptionByDate.get(day.date)?.operationId ?? null,
+      adoptionSessionGuid: adoptionByDate.get(day.date)?.sessionGuid ?? null,
       delayMinutes: day.result.delayMinutes,
       arrivalDelayMinutes: day.result.arrivalDelayMinutes,
       toleranceMinutes: day.result.toleranceMinutes,

@@ -132,6 +132,21 @@ export class TenantAttendanceStatisticsAdapter implements AttendanceStatisticsPo
       entries.push(entry);
       clockInsBySession.set(sessionId, entries);
     }
+    const clockOuts = sessionIds.length > 0
+      ? ((await TimeEntries._list({
+          session: { [Op.in]: sessionIds },
+          pointage_type: PointageType.CLOCK_OUT,
+          pointage_status: { [Op.in]: [PointageStatus.ACCEPTED, PointageStatus.ACCOUNTED] },
+        })) ?? [])
+      : [];
+    const clockOutsBySession = new Map<number, typeof clockOuts>();
+    for (const entry of clockOuts) {
+      const sessionId = entry.getSession();
+      if (!sessionId) continue;
+      const entries = clockOutsBySession.get(sessionId) ?? [];
+      entries.push(entry);
+      clockOutsBySession.set(sessionId, entries);
+    }
 
     const snapshots = await mapWithConcurrency(
       sessions,
@@ -260,6 +275,29 @@ export class TenantAttendanceStatisticsAdapter implements AttendanceStatisticsPo
           : null,
         presenceEvidence,
         intervals: entries.map(({ interval }) => interval),
+        adoptionSessions: group.map((session) => {
+          const manual = (items: readonly TimeEntries[]) => items
+            .filter((entry) => entry.getDeviceInfo()?.auto_generated !== true &&
+              entry.getClockedAt() instanceof Date)
+            .sort((a, b) => a.getClockedAt()!.getTime() - b.getClockedAt()!.getTime());
+          const ins = manual(clockInsBySession.get(session.sessionId) ?? []);
+          const outs = manual(clockOutsBySession.get(session.sessionId) ?? []);
+          const inAt = ins[0]?.getClockedAt();
+          const outAt = outs.at(-1)?.getClockedAt();
+          const timestamp = (date: Date | undefined) => date
+            ? `${formatBusinessDate(date)}T${formatBusinessTime(date)}` : null;
+          return {
+            sessionGuid: session.sessionGuid ?? `session:${session.sessionId}`,
+            startDate: formatBusinessDate(session.startAt),
+            startTime: formatBusinessTime(session.startAt),
+            endDate: session.endAt ? formatBusinessDate(session.endAt) : null,
+            endTime: session.endAt ? formatBusinessTime(session.endAt) : null,
+            clockInGuids: uniqueStrings(ins.map((entry) => entry.getGuid() ?? null)),
+            clockOutGuids: uniqueStrings(outs.map((entry) => entry.getGuid() ?? null)),
+            clockInAt: timestamp(inAt),
+            clockOutAt: timestamp(outAt),
+          };
+        }),
       });
     }
 
@@ -293,6 +331,13 @@ export class TenantAttendanceStatisticsAdapter implements AttendanceStatisticsPo
       state: 'WORK_DAY',
       source,
       extraPolicy,
+      assignmentGuid: schedule.assignment_guid ?? null,
+      attendanceOperation: schedule.attendance_operation ? {
+        id: schedule.attendance_operation.id,
+        kind: schedule.attendance_operation.kind,
+        role: schedule.attendance_operation.role,
+        startDate: schedule.attendance_operation.start_date,
+      } : null,
       expectedBlocks: schedule.expected_blocks.map((block) => ({
         startTime: block.work[0],
         endTime: block.work[1],

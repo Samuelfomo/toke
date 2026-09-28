@@ -845,6 +845,31 @@ describe('createAttendanceDay', () => {
     assert.equal(day.result.excessBeyondExtraMinutes, 0);
   });
 
+  it('attribue uniquement le chevauchement du bloc pour une session commencée la veille', () => {
+    const day = createAttendanceDay(makeInput({
+      date: '2026-07-22',
+      schedule: {
+        state: 'WORK_DAY', source: 'ROTATION',
+        extraPolicy: { resolved: true, allowed: true, maxMinutes: 300 },
+        expectedBlocks: [{ startTime: '08:00', endTime: '16:00', toleranceMinutes: 15 }],
+      },
+      activity: {
+        sessionCount: 1, openSessionCount: 0, incompleteSessionCount: 0,
+        firstClockIn: '16:00', firstClockInDate: '2026-07-21',
+        lastClockOut: '18:00', lastClockOutDate: '2026-07-22',
+        grossMinutes: 1080, pauseMinutes: 0,
+        intervals: [{ startDate: '2026-07-21', startTime: '16:00',
+          endDate: '2026-07-22', endTime: '18:00', attributableNetMinutes: 1080 }],
+      },
+    }));
+
+    assert.equal(day.result.status, 'PRESENT');
+    assert.equal(day.result.attributedWorkMinutes, 480);
+    assert.equal(day.result.rawDeltaMinutes, 0);
+    assert.equal(day.result.creditedExtraMinutes, 0);
+    assert.equal(day.result.excessBeyondExtraMinutes, 0);
+  });
+
   it('conserve une longue activité réelle sans fabriquer E+ si sa durée n’est pas attribuable', () => {
     const day = createAttendanceDay(
       makeInput({

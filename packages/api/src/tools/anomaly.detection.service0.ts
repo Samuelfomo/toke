@@ -1072,22 +1072,17 @@ class AnomalyDetectionService {
     }
 
     const schedule = scheduleResult.applicable_schedule;
-    const guard = await this.resolveLinkedGuard(userId, schedule);
     const isWorkDay = schedule.is_work_day;
     const expectedBlocks = schedule.expected_blocks;
 
     // 🔍 ANALYSE SELON TYPE DE POINTAGE
     switch (pointageType) {
       case PointageType.CLOCK_IN:
-        anomalies.push(
-          ...this.analyzeClockInSchedule(clockedAt, guard?.start ?? schedule, Boolean(guard)),
-        );
+        anomalies.push(...this.analyzeClockInSchedule(clockedAt, schedule));
         break;
 
       case PointageType.CLOCK_OUT:
-        anomalies.push(
-          ...this.analyzeClockOutSchedule(clockedAt, guard?.end ?? schedule, sessionObj, guard),
-        );
+        anomalies.push(...this.analyzeClockOutSchedule(clockedAt, schedule, sessionObj));
         break;
 
       case PointageType.PAUSE_START:
@@ -1115,42 +1110,6 @@ class AnomalyDetectionService {
    */
   public formatTime(date: Date): string {
     return date.toTimeString().slice(0, 5);
-  }
-
-  /** Les deux affectations doivent déclarer la même opération; les horaires seuls ne suffisent pas. */
-  private async resolveLinkedGuard(
-    userId: number,
-    schedule: ApplicableSchedule,
-  ): Promise<{
-    start: ApplicableSchedule;
-    end: ApplicableSchedule;
-  } | null> {
-    const operation = schedule.attendance_operation;
-    if (operation?.kind !== 'GUARD') return null;
-    const neighborDate = new Date(`${schedule.schedule_date}T12:00:00Z`);
-    neighborDate.setUTCDate(neighborDate.getUTCDate() + (operation.role === 'START' ? 1 : -1));
-    const result = await ScheduleResolutionService.getApplicableSchedule(userId, neighborDate);
-    const neighbor = result.success ? result.applicable_schedule : null;
-    if (
-      !neighbor?.is_work_day ||
-      !schedule.is_work_day ||
-      !neighbor.expected_blocks.length ||
-      !schedule.expected_blocks.length ||
-      neighbor.attendance_operation?.id !== operation.id ||
-      neighbor.attendance_operation?.kind !== 'GUARD' ||
-      neighbor.attendance_operation.role === operation.role
-    )
-      return null;
-    return operation.role === 'START'
-      ? { start: schedule, end: neighbor }
-      : { start: neighbor, end: schedule };
-  }
-
-  private businessMinutesFrom(date: Date, startDate: string): number {
-    const actualDate = date.toISOString().slice(0, 10);
-    const dayOffset =
-      (Date.parse(`${actualDate}T00:00:00Z`) - Date.parse(`${startDate}T00:00:00Z`)) / 86_400_000;
-    return dayOffset * 1440 + ScheduleResolutionService.parseTimeToMinutes(this.formatTime(date));
   }
 
   private calculateGlobalSeverity(anomalies: Anomaly[]): AlertSeverity {
@@ -1399,11 +1358,7 @@ ${
   /**
    * 🆕 Analyse CLOCK_IN par rapport à l'horaire
    */
-  private analyzeClockInSchedule(
-    clockedAt: Date,
-    schedule: ApplicableSchedule,
-    linkedGuard = false,
-  ): Anomaly[] {
+  private analyzeClockInSchedule(clockedAt: Date, schedule: ApplicableSchedule): Anomaly[] {
     const anomalies: Anomaly[] = [];
 
     // Cas 1 : Pointage un jour de repos
@@ -1433,9 +1388,7 @@ ${
     const clockedMinutes = ScheduleResolutionService.parseTimeToMinutes(clockedTime);
     const expectedMinutes = ScheduleResolutionService.parseTimeToMinutes(expectedStartTime);
 
-    const diffMinutes =
-      (linkedGuard ? this.businessMinutesFrom(clockedAt, schedule.schedule_date) : clockedMinutes) -
-      expectedMinutes;
+    const diffMinutes = clockedMinutes - expectedMinutes;
 
     // Retard détecté
     if (diffMinutes > tolerance) {
@@ -1466,7 +1419,6 @@ ${
     clockedAt: Date,
     schedule: ApplicableSchedule,
     sessionObj?: WorkSessions,
-    linkedGuard?: { start: ApplicableSchedule; end: ApplicableSchedule } | null,
   ): Anomaly[] {
     const anomalies: Anomaly[] = [];
 
@@ -1482,11 +1434,7 @@ ${
     const clockedMinutes = ScheduleResolutionService.parseTimeToMinutes(clockedTime);
     const expectedMinutes = ScheduleResolutionService.parseTimeToMinutes(expectedEndTime);
 
-    const diffMinutes = linkedGuard
-      ? 1440 +
-        expectedMinutes -
-        this.businessMinutesFrom(clockedAt, linkedGuard.start.schedule_date)
-      : expectedMinutes - clockedMinutes;
+    const diffMinutes = expectedMinutes - clockedMinutes;
 
     // Départ anticipé
     if (diffMinutes > 0) {
@@ -1509,10 +1457,7 @@ ${
     if (sessionObj) {
       const sessionStart = sessionObj.getSessionStartAt()!;
       const totalWorkedMinutes = this.calculateDurationMinutes(sessionStart, clockedAt);
-      const expectedTotalMinutes = linkedGuard
-        ? this.calculateExpectedWorkMinutes(linkedGuard.start) +
-          this.calculateExpectedWorkMinutes(linkedGuard.end)
-        : this.calculateExpectedWorkMinutes(schedule);
+      const expectedTotalMinutes = this.calculateExpectedWorkMinutes(schedule);
 
       const durationDiff = expectedTotalMinutes - totalWorkedMinutes;
 
