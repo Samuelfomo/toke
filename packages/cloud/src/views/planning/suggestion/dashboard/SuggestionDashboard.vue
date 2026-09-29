@@ -37,7 +37,7 @@
         tone="warning"
         title="Certaines informations n’ont pas pu être chargées"
         :description="loadError"
-        important="Actualisez la page, puis vérifiez les routes de configuration si le problème persiste."
+        important="Actualisez la page. Si le problème persiste, réessayez plus tard ou contactez votre administrateur."
     />
 
     <section
@@ -103,7 +103,7 @@
         :tone="rotationReadiness.ready ? 'success' : 'warning'"
         title="Rotation des congés au niveau de l’équipe"
         :description="rotationReadiness.ready
-                ? 'Tous les collaborateurs inclus possèdent un ordre unique. Le cycle peut être calculé par OR-Tools.'
+                ? 'Tous les collaborateurs inclus possèdent un ordre unique. La rotation peut être calculée automatiquement.'
                 : rotationReadiness.blockers.join(' ')"
         :important="rotationReadiness.ready
                 ? `${rotationReadiness.includedProfiles.length} collaborateur(s) participent au cycle.`
@@ -133,9 +133,9 @@
       />
 
       <PlanningMetricCard
-          label="Configuration moteur"
-          :value="activeConfig ? `Version ${activeConfig.version}` : 'Absente'"
-          description="Centralise les congés, gardes, limites et le solveur utilisé."
+          label="Règles de planification"
+          :value="activeConfig ? 'Configurées' : 'À compléter'"
+          description="Regroupe les règles de congés, gardes et limites utilisées pour préparer le planning."
           :progress="activeConfig ? 100 : 0"
           :status-ready="Boolean(activeConfig)"
           :icon="IconSettings"
@@ -349,8 +349,8 @@ const readinessItems = computed<PlanningReadinessItem[]>(() => {
           ? 'Tous les collaborateurs ont un profil'
           : 'Des profils employés sont manquants',
       description: baseProfilesReady.value
-          ? 'Le moteur connaît le mode de participation de chaque collaborateur.'
-          : 'Chaque collaborateur actif doit être FIXED, ROTATING ou EXCLUDED.',
+          ? 'Le mode de participation de chaque collaborateur est défini.'
+          : 'Chaque collaborateur actif doit être défini comme fixe, rotatif ou exclu.',
       ready: baseProfilesReady.value,
       routeName: 'planning-suggestion-profiles',
       actionLabel: 'Configurer',
@@ -380,7 +380,7 @@ const readinessItems = computed<PlanningReadinessItem[]>(() => {
         id: 'configuration',
         label: activeConfig.value
             ? `Configuration « ${activeConfig.value.name} » active`
-            : 'Aucune configuration moteur active',
+            : 'Aucune règle de planification active',
         description: activeConfig.value
             ? 'Les règles globales seront appliquées.'
             : 'Activez les règles de congé, garde, durée et équité.',
@@ -404,10 +404,10 @@ const readinessItems = computed<PlanningReadinessItem[]>(() => {
         id: 'manager',
         label: managerGuid.value
             ? 'Responsable identifié'
-            : 'Utilisateur manager non identifié',
+            : 'Responsable non identifié',
         description: managerGuid.value
             ? 'Les suggestions seront rattachées à votre compte.'
-            : 'La session doit fournir un GUID valide.',
+            : 'Reconnectez-vous pour permettre à Toké d’identifier le responsable.',
         ready: Boolean(managerGuid.value),
         routeName: 'planning-suggestion-dashboard',
         actionLabel: 'Vérifier',
@@ -450,7 +450,7 @@ const journey = [
   {
     title: 'Valider les règles de planification',
     description:
-        'Contrôler congés, gardes, limites et solveur.',
+        'Contrôler les congés, gardes, limites et règles de couverture.',
     routeName: 'planning-suggestion-configuration',
   },
   {

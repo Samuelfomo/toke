@@ -25,7 +25,7 @@
         'Approuvé : validé puis publié sous forme d’affectations.',
         'Rejeté : conservé uniquement dans les archives pour la traçabilité.',
       ]"
-      important="Les suggestions présentant des violations dures ou une couverture sous le minimum ne peuvent pas être publiées."
+      important="Une suggestion comportant un blocage ou une couverture insuffisante doit être corrigée avant publication."
     />
 
     <div class="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
@@ -88,7 +88,7 @@
           <input
             v-model="search"
             type="search"
-            placeholder="Période, configuration, état…"
+            placeholder="Période ou état…"
             class="search-control"
           />
         </div>
@@ -155,8 +155,7 @@
                 </span>
               </div>
               <p class="mt-1.5 truncate text-xs text-slate-500">
-                {{ suggestion.configuration?.name ?? 'Configuration non renseignée' }}
-                <span v-if="suggestion.configuration"> · version {{ suggestion.configuration.version }}</span>
+                {{ suggestion.configuration?.name ? `Règles : ${suggestion.configuration.name}` : 'Règles de planification non renseignées' }}
               </p>
               <div class="mt-2 flex flex-wrap gap-x-4 gap-y-1 text-xs text-slate-400">
                 <span>{{ suggestion.items?.length ?? '—' }} collaborateur(s)</span>
@@ -277,7 +276,8 @@ const emptyDescription = computed(() => {
 
 async function loadSuggestions(): Promise<void> {
   if (!managerGuid.value) {
-    errorMessage.value = 'Le compte connecté ne fournit pas de GUID manager.'
+    console.error('[PlanningSuggestion] Responsable introuvable dans la session', userStore.user)
+    errorMessage.value = 'Toké ne parvient pas à identifier le responsable connecté. Reconnectez-vous puis réessayez.'
     return
   }
 

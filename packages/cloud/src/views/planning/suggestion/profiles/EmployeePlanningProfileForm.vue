@@ -18,7 +18,7 @@
               Choisissez d’abord le mode de participation
             </p>
             <p class="mt-1 text-xs leading-5 text-blue-800/80">
-              Un profil fixe exige un horaire type. Un profil en rotation laisse le moteur répartir les services. Un profil exclu ne participe à aucune génération.
+              Un profil fixe suit un horaire type. Un profil en rotation laisse Toké répartir les services. Un profil exclu ne participe à aucune génération.
             </p>
           </div>
         </div>
@@ -68,7 +68,7 @@
             Mode de planification <span class="text-red-500">*</span>
           </label>
           <p class="mt-1 text-xs leading-5 text-slate-500">
-            Le mode détermine ce que le moteur a le droit de faire pour ce collaborateur.
+            Le mode détermine comment Toké peut planifier ce collaborateur.
           </p>
         </div>
 
@@ -116,7 +116,7 @@
             {{ errors.fixed_session_template }}
           </p>
           <p class="field-help">
-            Le moteur conservera cet horaire pour les jours travaillés.
+            Toké conservera cet horaire pour les jours travaillés.
           </p>
         </div>
 
@@ -147,7 +147,7 @@
                 : 'border-slate-200 bg-white hover:bg-slate-50'"
               @click="form.fixed_rest_day_mode = 'ROTATING'"
             >
-              <p class="text-sm font-bold text-slate-800">Choisi par le moteur</p>
+              <p class="text-sm font-bold text-slate-800">Choisi automatiquement</p>
               <p class="mt-1 text-xs leading-5 text-slate-500">
                 L’horaire reste fixe, mais le jour de repos peut varier.
               </p>
@@ -213,7 +213,7 @@
         <div>
           <p class="text-sm font-bold text-slate-800">Profil actif</p>
           <p class="mt-1 text-xs leading-5 text-slate-500">
-            Un profil désactivé reste conservé, mais il n’est pas utilisé par le moteur.
+            Un profil désactivé reste conservé, mais il n’est pas utilisé pour les nouvelles suggestions.
           </p>
         </div>
         <PlanningToggle v-model="form.active" />
@@ -358,7 +358,7 @@ const modes = [
   {
     value: 'ROTATING' as const,
     label: 'Rotation automatique',
-    description: 'Le moteur répartit les services selon les besoins.',
+    description: 'Toké répartit les services selon les besoins.',
     consequence: 'Le collaborateur peut recevoir différents horaires et gardes selon les règles.',
     icon: IconRefresh,
     activeClass: 'border-emerald-300 bg-emerald-50 text-emerald-800 ring-2 ring-emerald-100',

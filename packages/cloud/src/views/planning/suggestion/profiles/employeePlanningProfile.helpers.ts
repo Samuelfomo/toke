@@ -115,7 +115,7 @@ export function profileReadiness(
       status: 'INACTIVE',
       label: 'Désactivé',
       issues: [
-        'Le profil existe, mais il ne peut pas être utilisé par le moteur tant qu’il reste désactivé.',
+        'Le profil existe, mais il ne sera pas utilisé pour les nouvelles suggestions tant qu’il reste désactivé.',
       ],
     }
   }

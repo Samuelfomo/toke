@@ -125,7 +125,7 @@ export function useGenerationReadiness(
                 description: includedActiveEmployees.value.length === 0
                     ? 'Réincluez au moins un collaborateur avant de lancer le calcul.'
                     : baseProfilesReady.value
-                        ? 'Le moteur connaît le mode de participation de chaque collaborateur inclus.'
+                        ? 'Le mode de participation de chaque collaborateur inclus est défini.'
                         : 'Configurez les membres inclus ou excluez-les temporairement de cette génération.',
                 ready: baseProfilesReady.value,
                 routeName: 'planning-suggestion-profiles',
@@ -186,7 +186,7 @@ export function useGenerationReadiness(
                     : 'Compte manager non identifié',
                 description: unref(managerGuid)
                     ? 'La proposition sera rattachée au compte actuellement connecté.'
-                    : 'La session doit fournir un GUID manager valide.',
+                    : 'Toké ne parvient pas à identifier le responsable connecté.',
                 ready: Boolean(unref(managerGuid)),
                 routeName: 'planning-suggestion-dashboard',
                 actionLabel: 'Vérifier',
@@ -379,7 +379,7 @@ export function useGenerationReadiness(
 //         description: includedActiveEmployees.value.length === 0
 //           ? 'Réincluez au moins un collaborateur avant de lancer le calcul.'
 //           : baseProfilesReady.value
-//             ? 'Le moteur connaît le mode de participation de chaque collaborateur inclus.'
+//             ? 'Le mode de participation de chaque collaborateur inclus est défini.'
 //             : 'Configurez les membres inclus ou excluez-les temporairement de cette génération.',
 //         ready: baseProfilesReady.value,
 //         routeName: 'planning-suggestion-profiles',
@@ -440,7 +440,7 @@ export function useGenerationReadiness(
 //           : 'Compte manager non identifié',
 //         description: unref(managerGuid)
 //           ? 'La proposition sera rattachée au compte actuellement connecté.'
-//           : 'La session doit fournir un GUID manager valide.',
+//           : 'Toké ne parvient pas à identifier le responsable connecté.',
 //         ready: Boolean(unref(managerGuid)),
 //         routeName: 'planning-suggestion-dashboard',
 //         actionLabel: 'Vérifier',

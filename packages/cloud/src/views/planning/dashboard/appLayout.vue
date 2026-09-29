@@ -15,12 +15,14 @@
         class="min-h-0 min-w-0 flex-1 overflow-y-auto overscroll-contain focus:outline-none"
     >
       <RouterView />
+      <Footer />
     </main>
   </div>
 </template>
 
 <script setup lang="ts">
 import Header from '@/views/components/header.vue'
+import Footer from '@/views/components/footer.vue'
 import PlanningMobileBar from './PlanningMobileBar.vue'
 </script>
 

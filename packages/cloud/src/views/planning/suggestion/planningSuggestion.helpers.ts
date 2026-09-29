@@ -58,8 +58,16 @@ export function responseData(response: any): any {
 }
 
 export function responseError(response: any, fallback: string): string {
-    return response?.error?.message
+    const candidate = response?.error?.message
         ?? response?.message
         ?? response?.response?.data?.error?.message
-        ?? fallback
+        ?? ''
+
+    // Les détails techniques restent disponibles pour le diagnostic sans être exposés à l’utilisateur.
+    console.error('[PlanningSuggestion]', fallback, response)
+
+    if (!candidate || typeof candidate !== 'string') return fallback
+
+    const technicalPattern = /(guid|uuid|endpoint|route|payload|json|schema|stack|solver|or-tools|cp-sat|exception|status\s*code|http\s*\d{3}|database|sql|sequelize|prisma)/i
+    return technicalPattern.test(candidate) ? fallback : candidate
 }

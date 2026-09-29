@@ -268,7 +268,7 @@
                 <div>
                   <h3 class="text-sm font-bold text-slate-900">Quelle affectation appliquer ?</h3>
                   <p class="mt-1 text-xs text-slate-500">
-                    Le manager peut utiliser tout modèle horaire courant. Les écarts par rapport aux règles du moteur seront signalés, pas bloqués.
+                    Le responsable peut utiliser tout modèle horaire courant. Les écarts par rapport aux règles définies seront signalés sans bloquer la modification.
                   </p>
                 </div>
 
@@ -328,7 +328,7 @@
                 <div>
                   <h3 class="text-sm font-bold text-slate-900">Vérification avant application</h3>
                   <p class="mt-1 text-xs text-slate-500">
-                    Les blocages ci-dessous sont uniquement techniques. Les règles métier du moteur apparaissent comme avertissements et n’empêchent pas la décision du manager.
+                    Les blocages ci-dessous empêchent l’enregistrement de la modification. Les autres écarts apparaissent comme avertissements et restent à l’appréciation du responsable.
                   </p>
                 </div>
 

@@ -65,7 +65,7 @@
           <div>
             <p class="text-xs font-bold text-amber-900">Journées sans couverture active</p>
             <p class="mt-1 text-xs leading-4 text-amber-700">
-              {{ uncoveredDaysLabel }}. Le moteur ne pourra garantir aucun effectif sur ces journées.
+              {{ uncoveredDaysLabel }}. Toké ne pourra garantir aucun effectif sur ces journées.
             </p>
           </div>
         </div>

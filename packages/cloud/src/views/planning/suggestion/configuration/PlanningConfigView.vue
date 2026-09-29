@@ -94,21 +94,17 @@
                                 </span>
               </div>
               <p class="mt-1 text-xs text-emerald-800/70">
-                Version {{ config.version }} · moteur
-                {{ config.solver.type }}
+                Règles actuellement utilisées pour les nouvelles suggestions
               </p>
             </div>
           </div>
 
           <div class="rounded-xl border border-emerald-200 bg-white/70 px-4 py-3">
             <p class="text-xs font-bold uppercase text-emerald-500">
-              Solveur
+              État
             </p>
-            <p class="mt-1 text-sm font-bold text-slate-900">
-              {{ config.solver.type }}
-            </p>
-            <p class="text-xs text-slate-500">
-              Timeout {{ config.solver.timeout_seconds }} s
+            <p class="mt-1 text-sm font-bold text-emerald-800">
+              Prête à être utilisée
             </p>
           </div>
         </div>
@@ -207,8 +203,8 @@
         >
           <ConfigValue
               label="Collaborateurs autorisés"
-              :value="`${guardTeamPolicy.employees_per_week} collaborateur(s) ROTATING par semaine`"
-              help="Nombre de collaborateurs ROTATING autorisés à prendre les gardes sur la semaine."
+              :value="`${guardTeamPolicy.employees_per_week} collaborateur(s) rotatif(s) par semaine`"
+              help="Nombre de collaborateurs en rotation autorisés à prendre les gardes sur la semaine."
           />
           <ConfigValue
               label="Mode de sélection"
@@ -302,8 +298,8 @@
                         : 'Couverture souple'"
             :description="config.rules.strict_coverage
                         ? 'Les minimums deviennent des contraintes obligatoires.'
-                        : 'Le moteur peut retourner une suggestion incomplète avec des alertes.'"
-            example="Les besoins EXACT restent toujours contraignants."
+                        : 'Toké peut proposer un planning incomplet accompagné d’alertes.'"
+            example="Les besoins à effectif exact restent toujours obligatoires."
             :icon="IconTargetArrow"
             accent="indigo"
         />
@@ -311,34 +307,27 @@
 
       <section class="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
         <h2 class="text-sm font-bold text-slate-900">
-          Paramètres techniques et qualité
+          Équité et repos
         </h2>
         <p class="mt-1 text-xs leading-5 text-slate-500">
-          Ces options déterminent l’historique d’équité et le comportement du solveur.
+          Ces réglages permettent de mieux répartir la charge et les jours de repos entre collaborateurs.
         </p>
 
-        <div class="mt-5 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+        <div class="mt-5 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
           <ConfigValue
-              label="Fenêtre d’équité"
+              label="Historique pris en compte"
               :value="`${config.rules.fairness_window_weeks} semaine(s)`"
-              help="Historique utilisé pour équilibrer les charges."
-          />
-          <ConfigValue
-              label="Fallback Greedy"
-              :value="config.solver.fallback_to_greedy
-                            ? 'Autorisé'
-                            : 'Désactivé'"
-              help="TEAM_ROTATION exige sa désactivation."
+              help="Période utilisée pour équilibrer les charges."
           />
           <ConfigValue
               label="Repos simultanés"
               :value="config.rules.max_resting_employees_per_day ?? 'Non limité'"
-              help="Maximum de collaborateurs non travaillés le même jour."
+              help="Maximum de collaborateurs en repos le même jour."
           />
           <ConfigValue
-              label="Mode de congé"
+              label="Organisation des repos"
               :value="WEEKLY_LEAVE_MODE_LABELS[policy.mode]"
-              help="Politique utilisée par les prochaines générations."
+              help="Règle utilisée pour les prochaines suggestions."
           />
         </div>
       </section>
@@ -431,7 +420,7 @@ const guardTeamPolicyDescription = computed(() => {
     return 'Les collaborateurs autorisés peuvent être affectés aux gardes au fil des journées, selon les besoins du planning.'
   }
 
-  return 'Un pool de collaborateurs ROTATING est constitué pour prendre les gardes sur chaque semaine.'
+  return 'Une équipe de collaborateurs en rotation est constituée pour prendre les gardes chaque semaine.'
 })
 
 const guardSelectionModeLabel = computed(() => {
@@ -567,7 +556,7 @@ const weeklyLeaveDescription = computed(() => {
     return 'Le repos est appliqué à une population ciblée selon le mode de planning, la relation au pool de garde et le périmètre de service.'
   }
 
-  return 'Le moteur ne force aucun congé hebdomadaire. Les jours non travaillés peuvent toutefois provenir des templates ou des gardes.'
+  return 'Toké n’impose aucun repos hebdomadaire. Les jours non travaillés peuvent toutefois provenir des horaires types ou des gardes.'
 })
 
 const allowedDaysLabel = computed(() =>

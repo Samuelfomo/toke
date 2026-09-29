@@ -5,7 +5,7 @@
         :title="suggestion
                 ? `Suggestion du ${formatDate(suggestion.period_from)} au ${formatDate(suggestion.period_to)}`
                 : 'Aperçu de la suggestion'"
-        description="Contrôlez les scores, les gardes, les congés et chaque affectation avant de publier le planning officiel."
+        description="Vérifiez la couverture, l’équité, les gardes, les congés et les affectations avant de publier le planning officiel."
     >
       <template #actions>
         <button
@@ -50,7 +50,7 @@
         tone="warning"
         title="Alertes à confirmer avant publication"
         :description="publicationWarning"
-        important="Ces écarts décrivent les attentes du moteur. Ils n’empêchent pas le manager de publier un planning qui correspond à la situation réelle de l’entreprise."
+        important="Ces écarts signalent ce qui mérite votre attention. Vous gardez la décision finale lorsque la publication reste autorisée."
     />
 
     <PlanningInfoPanel
@@ -58,7 +58,7 @@
         tone="info"
         title="Régénération avec décisions managériales"
         :description="`${suggestion.diagnostics.regeneration.warningCount} avertissement(s) ont été conservés pendant la dernière régénération.`"
-        important="Les décisions manuelles restent prioritaires. Ces avertissements décrivent seulement les écarts avec les règles du moteur."
+        important="Les décisions manuelles restent prioritaires. Les avertissements indiquent seulement les écarts avec les règles définies."
     />
 
     <div v-if="loading" class="space-y-4">
@@ -79,7 +79,7 @@
       />
 
       <section class="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
-        <div class="grid gap-px bg-slate-100 sm:grid-cols-2 xl:grid-cols-5">
+        <div class="grid gap-px bg-slate-100 sm:grid-cols-2 xl:grid-cols-4">
           <Score
               label="Conformité globale"
               description="Synthèse des objectifs et contraintes respectés."
@@ -99,10 +99,6 @@
               label="Collaborateurs"
               :value="String(suggestion.items.length)"
           />
-          <Info
-              label="Solveur"
-              :value="solverLabel"
-          />
         </div>
       </section>
 
@@ -110,16 +106,8 @@
           v-if="generationScope?.temporaryExcludedEmployeeCount"
           tone="info"
           title="Exclusions temporaires appliquées"
-          :description="`${generationScope.temporaryExcludedEmployeeCount} collaborateur(s) ont été retirés de cette génération avant l’appel au solveur.`"
+          :description="`${generationScope.temporaryExcludedEmployeeCount} collaborateur(s) ne participent pas à cette proposition.`"
           :important="temporaryExcludedNames"
-      />
-
-      <PlanningInfoPanel
-          v-if="rollingHorizon?.enabled"
-          tone="info"
-          title="Génération optimisée par fenêtres"
-          :description="`${rollingHorizon.chunkCount} fenêtre(s) de calcul ont été utilisées au lieu d’un calcul monolithique sur ${rollingHorizon.totalSolveDays} jours.`"
-          :important="`Temps solveur cumulé : ${formatDuration(rollingHorizon.totalSolverDurationMs)} · ${rollingHorizon.commitDays} jour(s) engagés par fenêtre · ${rollingHorizon.lookaheadDays} jour(s) d’anticipation.`"
       />
 
       <PlanningInfoPanel
@@ -155,8 +143,7 @@
                 Équipes de garde par semaine
               </h2>
               <p class="mt-1 max-w-2xl text-xs leading-5 text-slate-600">
-                Composition informative calculée par le moteur. Les contraintes
-                correspondantes ont déjà été appliquées par OR-Tools.
+                Répartition proposée automatiquement à partir des règles de garde définies pour cette période.
               </p>
             </div>
           </div>
@@ -185,7 +172,7 @@
 
               <div class="flex flex-wrap gap-2">
                 <span class="rounded-full bg-violet-50 px-2.5 py-1 text-xs font-bold text-violet-700">
-                  Pool hebdomadaire
+                  Équipe de la semaine
                 </span>
                 <span class="rounded-full bg-slate-100 px-2.5 py-1 text-xs font-bold text-slate-600">
                   {{ pool.selectionModeLabel }}
@@ -453,7 +440,7 @@
             v-if="!suggestion.diagnostics.violations.length"
             tone="success"
             title="Aucune violation détectée"
-            description="Le moteur n’a retourné aucune contrainte dure ou alerte sur cette suggestion."
+            description="Aucun blocage ni avertissement n’a été détecté sur cette suggestion."
         />
 
         <article
@@ -474,7 +461,7 @@
             <div>
               <div class="flex gap-2">
                 <p class="text-xs font-bold text-slate-900">
-                  {{ violation.code }}
+                  {{ violation.severity === 'HARD' ? 'Blocage' : 'À vérifier' }}
                 </p>
                 <span
                     class="text-xs font-bold uppercase"
@@ -531,12 +518,12 @@
         :description="confirmAction === 'approve'
                 ? 'Les affectations officielles seront créées pour les collaborateurs et remplaceront les affectations qui chevauchent la période.'
                 : confirmAction === 'regenerate'
-                    ? 'Toké conservera les cellules modifiées manuellement et demandera à OR-Tools de recalculer uniquement les cellules encore automatiques.'
+                    ? 'Toké conservera les cellules modifiées manuellement et recalculera uniquement les cellules encore automatiques.'
                     : 'Cette proposition ne sera pas publiée et quittera la liste principale.'"
         :important="confirmAction === 'approve'
                 ? (publicationWarning || 'Vérifiez les gardes, les congés hebdomadaires, les repos post-garde et les cellules modifiées manuellement.')
                 : confirmAction === 'regenerate'
-                    ? `${manualCellCount} décision(s) manuelle(s) resteront prioritaires. Les écarts avec les règles du moteur resteront des avertissements et ne seront pas annulés par le solveur.`
+                    ? `${manualCellCount} décision(s) manuelle(s) resteront prioritaires. Les écarts avec les règles resteront signalés pour contrôle.`
                     : 'Le rejet ne modifie aucun planning déjà publié.'"
         :confirm-label="confirmAction === 'approve'
                 ? 'Publier le planning'
@@ -623,31 +610,6 @@ const dayKeys: PlanningDayKey[] = [
 
 const templateMap = computed(
     () => new Map(templates.value.map((template) => [template.guid, template])),
-)
-
-const solverLabel = computed(() => {
-  const solver = suggestion.value?.diagnostics.solver
-  const rolling = suggestion.value?.diagnostics.rollingHorizon
-
-  if (!solver) return '—'
-  const rollingLabel = rolling?.enabled ? ` · ${rolling.chunkCount} fenêtres` : ''
-  return `${solver.usedSolver}${solver.fallbackUsed ? ' · fallback' : ''}${rollingLabel}`
-})
-
-const formatDuration = (durationMs: number) => {
-  if (durationMs < 1000) return `${durationMs} ms`
-  if (durationMs < 60_000) return `${(durationMs / 1000).toFixed(1)} s`
-  const minutes = Math.floor(durationMs / 60_000)
-  const seconds = Math.round((durationMs % 60_000) / 1000)
-  return `${minutes} min ${seconds} s`
-}
-
-const rollingHorizon = computed(
-  () => suggestion.value?.diagnostics.rollingHorizon ?? null,
-)
-
-const generationScope = computed(
-  () => suggestion.value?.diagnostics.generationScope ?? null,
 )
 
 const historyReview = computed(
@@ -769,7 +731,7 @@ const publicationWarning = computed(() => {
   const parts: string[] = []
 
   if (hardViolations.value.length > 0) {
-    parts.push(`${hardViolations.value.length} alerte(s) forte(s) issue(s) des règles du moteur`)
+    parts.push(`${hardViolations.value.length} blocage(s) à examiner`)
   }
 
   if (belowMinimumCoverage.value.length > 0) {

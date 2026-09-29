@@ -27,7 +27,7 @@
       title="Une vue centrée sur l’équipe actuelle"
       description="Chaque collaborateur de l’équipe apparaît, même lorsqu’aucun profil n’a encore été créé."
       :examples="[
-        'Prêt : le profil peut être utilisé par le moteur.',
+        'Prêt : le profil peut être utilisé dans les nouvelles suggestions.',
         'À configurer : aucun profil n’existe encore.',
         'À corriger : une règle obligatoire manque ou un ordre est dupliqué.',
       ]"
@@ -666,7 +666,7 @@ function restManagement(row: EmployeePlanningProfileRow): string {
   if (profile.planning_mode === 'EXCLUDED') return 'Non applicable'
   if (profile.planning_mode === 'ROTATING') return 'Selon les règles globales'
   return profile.fixed_rest_day_mode === 'ROTATING'
-    ? 'Jour choisi par le moteur'
+    ? 'Jour choisi automatiquement'
     : 'Repos défini dans l’horaire type'
 }
 

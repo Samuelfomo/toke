@@ -30,105 +30,158 @@ function exploreMetric(metricId: AttendanceDataQualityMetricId): void {
     }"
     role="region"
   >
-    <div class="flex flex-col gap-5 xl:flex-row xl:items-start xl:justify-between">
+
+    <div class="grid gap-5 xl:grid-cols-[280px_minmax(0,1fr)] xl:gap-6">
+
+      <!-- DIAGNOSTIC GLOBAL -->
       <div class="flex min-w-0 gap-3.5">
         <div
-          class="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl shadow-sm"
-          :class="{
-            'bg-emerald-100 text-emerald-700': presentation.level === 'reliable',
-            'bg-amber-100 text-amber-800': presentation.level === 'warning',
-            'bg-rose-100 text-rose-700': presentation.level === 'unreliable',
-          }"
-          aria-hidden="true"
+            class="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl shadow-sm"
+            :class="{
+        'bg-emerald-100 text-emerald-700': presentation.level === 'reliable',
+        'bg-amber-100 text-amber-800': presentation.level === 'warning',
+        'bg-rose-100 text-rose-700': presentation.level === 'unreliable',
+      }"
+            aria-hidden="true"
         >
-          <svg v-if="presentation.level === 'reliable'" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="h-5 w-5">
-            <path d="m5 12 4 4L19 6" />
+          <svg
+              v-if="presentation.level === 'reliable'"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+              class="h-5 w-5"
+          >
+            <path d="m5 12 4 4L19 6"/>
           </svg>
-          <svg v-else viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="h-5 w-5">
-            <circle cx="12" cy="12" r="9" />
-            <path d="M12 8v5M12 16h.01" />
+
+          <svg
+              v-else
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+              class="h-5 w-5"
+          >
+            <circle cx="12" cy="12" r="9"/>
+            <path d="M12 8v5M12 16h.01"/>
           </svg>
         </div>
 
         <div class="min-w-0">
           <p
-            class="text-xs font-semibold uppercase tracking-[0.14em]"
-            :class="{
-              'text-emerald-700': presentation.level === 'reliable',
-              'text-amber-700': presentation.level === 'warning',
-              'text-rose-700': presentation.level === 'unreliable',
-            }"
+              class="text-xs font-semibold uppercase tracking-[0.14em]"
+              :class="{
+          'text-emerald-700': presentation.level === 'reliable',
+          'text-amber-700': presentation.level === 'warning',
+          'text-rose-700': presentation.level === 'unreliable',
+        }"
           >
             {{ presentation.eyebrow }}
           </p>
-          <h2 id="attendance-data-quality-title" class="mt-1 text-xl font-semibold text-slate-950">
+
+          <h2
+              id="attendance-data-quality-title"
+              class="mt-1 text-xl font-semibold leading-8 text-slate-950"
+          >
             {{ presentation.title }}
           </h2>
-          <p class="max-w-3xl text-xs leading-6 text-slate-700">
+
+          <p class="mt-1 text-xs leading-6 text-slate-700">
             {{ presentation.message }}
           </p>
         </div>
       </div>
 
-      <div class="grid shrink-0 grid-cols-2 gap-2 sm:grid-cols-3 xl:grid-cols-5">
-        <button
-          v-for="metric in presentation.metrics"
-          :key="metric.id"
-          type="button"
-          class="group/quality relative min-w-[118px] overflow-hidden rounded-lg border bg-white/80 px-3 py-2.5 text-left transition duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 focus-visible:ring-offset-2"
-          :class="metric.value > 0
+
+      <!-- MÉTRIQUES + INFORMATIONS -->
+      <div class="min-w-0">
+
+        <!-- MÉTRIQUES -->
+        <div class="grid grid-cols-2 gap-2 sm:grid-cols-3 xl:grid-cols-5">
+          <button
+              v-for="metric in presentation.metrics"
+              :key="metric.id"
+              type="button"
+              class="group/quality relative min-w-0 overflow-hidden rounded-lg border bg-white/80 px-3 py-2.5 text-left transition duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 focus-visible:ring-offset-2"
+              :class="
+          metric.value > 0
             ? 'cursor-pointer border-slate-300 hover:-translate-y-0.5 hover:border-indigo-300 hover:bg-white hover:shadow-md'
-            : 'cursor-default border-white/90 opacity-75'"
-          :disabled="metric.value <= 0"
-          :aria-label="metric.value > 0
+            : 'cursor-default border-white/90 opacity-75'
+        "
+              :disabled="metric.value <= 0"
+              :aria-label="
+          metric.value > 0
             ? `${metric.label} : ${metric.value}. Examiner les éléments concernés.`
-            : `${metric.label} : aucune occurrence.`"
-          @click="metric.value > 0 && exploreMetric(metric.id)"
-        >
-          <span
+            : `${metric.label} : aucune occurrence.`
+        "
+              @click="metric.value > 0 && exploreMetric(metric.id)"
+          >
+        <span
             v-if="metric.value > 0"
             class="absolute right-2.5 top-2.5 h-2 w-2 rounded-full bg-indigo-600"
             aria-hidden="true"
+        />
+
+            <p class="pr-4 text-[11px] font-medium leading-4 text-slate-500">
+              {{ metric.label }}
+            </p>
+
+            <p
+                class="mt-1 text-lg font-bold tabular-nums"
+                :class="metric.value > 0 ? 'text-slate-950' : 'text-slate-400'"
+            >
+              {{ metric.value }}
+            </p>
+
+            <span
+                v-if="metric.value <= 0"
+                class="mt-1 inline-flex text-[11px] font-medium text-slate-400"
+            >
+          Aucun signal
+        </span>
+
+            <span
+                v-if="metric.value > 0"
+                aria-hidden="true"
+                class="pointer-events-none absolute inset-0 flex items-center justify-center bg-white/55 opacity-0 backdrop-blur-[1px] transition-all duration-200 group-hover/quality:opacity-100 group-focus-visible/quality:opacity-100"
+            >
+          <span
+              class="translate-y-1 rounded-full border border-slate-200 bg-white px-4 py-2 text-[11px] font-extrabold uppercase tracking-[0.08em] text-indigo-700 shadow-lg transition-transform duration-200 group-hover/quality:translate-y-0 group-focus-visible/quality:translate-y-0"
+          >
+            Examiner
+          </span>
+        </span>
+          </button>
+        </div>
+
+
+        <!-- INFORMATIONS -->
+        <div
+            v-if="presentation.notes.length > 0"
+            class="mt-4 border-t border-slate-900/10 pt-4"
+        >
+          <p class="text-xs font-bold uppercase tracking-[0.12em] text-slate-700">
+            Informations sur les données
+          </p>
+
+          <ul class="mt-2 space-y-1.5 text-xs leading-5 text-slate-700">
+            <li
+                v-for="note in presentation.notes"
+                :key="note"
+                class="flex gap-2"
+            >
+          <span
+              class="mt-2 h-1.5 w-1.5 shrink-0 rounded-full bg-current"
+              aria-hidden="true"
           />
 
-          <p class="pr-4 text-[11px] font-medium leading-4 text-slate-500">
-            {{ metric.label }}
-          </p>
-          <p
-            class="mt-1 text-lg font-bold"
-            :class="metric.value > 0 ? 'text-slate-950' : 'text-slate-400'"
-          >
-            {{ metric.value }}
-          </p>
-          <span v-if="metric.value <= 0" class="mt-1 inline-flex text-[11px] font-medium text-slate-400">
-            Aucun signal
-          </span>
-          <span
-            v-if="metric.value > 0"
-            aria-hidden="true"
-            class="pointer-events-none absolute inset-0 flex items-center justify-center bg-white/55 opacity-0 backdrop-blur-[1px] transition-all duration-200 group-hover/quality:opacity-100 group-focus-visible/quality:opacity-100"
-          >
-            <span
-              class="translate-y-1 rounded-full border border-slate-200 bg-white px-4 py-2 text-[11px] font-extrabold uppercase tracking-[0.08em] text-indigo-700 shadow-lg transition-transform duration-200 group-hover/quality:translate-y-0 group-focus-visible/quality:translate-y-0"
-            >
-              Examiner
-            </span>
-          </span>
-        </button>
-      </div>
-    </div>
+              <span>{{ note }}</span>
+            </li>
+          </ul>
+        </div>
 
-    <div
-      v-if="presentation.notes.length > 0"
-      class="mt-2 border-t border-slate-900/10 pt-4"
-    >
-      <p class="text-xs font-bold uppercase tracking-[0.12em] text-slate-700">Informations sur les données</p>
-      <ul class="mt-2 space-y-1.5 text-xs leading-5 text-slate-700">
-        <li v-for="note in presentation.notes" :key="note" class="flex gap-2">
-          <span class="mt-2 h-1.5 w-1.5 shrink-0 rounded-full bg-current" aria-hidden="true" />
-          <span>{{ note }}</span>
-        </li>
-      </ul>
+      </div>
     </div>
   </section>
 </template>

@@ -111,13 +111,13 @@ export function validateTeamRotationReadiness(
 
     if (config.solver.type !== 'ORTOOLS') {
         blockers.push(
-            'La rotation d’équipe exige le solveur OR-Tools.',
+            'La rotation d’équipe nécessite la méthode d’optimisation approfondie.',
         )
     }
 
     if (config.solver.fallback_to_greedy) {
         blockers.push(
-            'Le fallback Greedy doit être désactivé pour garantir la rotation.',
+            'La solution de secours doit être désactivée pour garantir cette rotation.',
         )
     }
 

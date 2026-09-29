@@ -216,7 +216,7 @@
                   <div>
                     <h3 class="text-sm font-bold text-slate-900">Vérifiez avant de lancer le calcul</h3>
                     <p class="mt-1 text-xs leading-5 text-slate-500">
-                      Le solveur recevra uniquement les collaborateurs inclus. Aucun planning ne sera publié automatiquement.
+                      Toké prendra uniquement en compte les collaborateurs inclus. Aucun planning ne sera publié automatiquement.
                     </p>
                   </div>
                 </div>

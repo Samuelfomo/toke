@@ -160,7 +160,7 @@
             <div class="rounded-xl border border-rose-100 bg-rose-50/60 px-4 py-3">
               <p class="text-xs font-bold text-rose-900">Quota tournant historique</p>
               <p class="mt-1 text-xs leading-5 text-rose-800/80">
-                Un nombre exact de bénéficiaires est choisi chaque semaine selon rotation_order.
+                Un nombre exact de bénéficiaires est choisi chaque semaine selon l’ordre de rotation défini.
               </p>
             </div>
 
@@ -511,7 +511,7 @@
                 : 'border-slate-200 bg-white hover:border-slate-300'"
                 @click="selectGuardTeamMode('WEEKLY_POOL')"
             >
-              <p class="text-xs font-bold text-slate-900">Pool hebdomadaire de garde</p>
+              <p class="text-xs font-bold text-slate-900">Équipe de garde hebdomadaire</p>
               <p class="mt-1 text-xs leading-4 text-slate-500">
                 Seuls les membres du groupe de la semaine peuvent démarrer une garde.
               </p>
@@ -525,7 +525,7 @@
             <div class="grid gap-4 sm:grid-cols-2">
               <NumberField
                   v-model="form.guard_team_employees_per_week"
-                  label="Taille du pool hebdomadaire"
+                  label="Taille de l’équipe de garde"
                   help="Effectif exact du groupe autorisé à commencer les gardes."
                   suffix="employé(s)"
                   :min="1"
@@ -536,8 +536,8 @@
               <div>
                 <label class="text-xs font-bold text-slate-700">Méthode de sélection</label>
                 <select v-model="form.guard_team_selection_mode" class="field-control mt-2">
-                  <option value="ROTATION_ORDER">Ordre de rotation déterministe</option>
-                  <option value="OPTIMIZED">Choix optimisé par OR-Tools</option>
+                  <option value="ROTATION_ORDER">Rotation dans l’ordre défini</option>
+                  <option value="OPTIMIZED">Répartition automatique optimisée</option>
                 </select>
               </div>
 
@@ -566,12 +566,12 @@
             </div>
 
             <div class="rounded-xl border border-slate-200 p-4">
-              <p class="text-xs font-bold text-slate-800">Population candidate au pool</p>
+              <p class="text-xs font-bold text-slate-800">Collaborateurs pouvant intégrer l’équipe</p>
               <PolicyModeCheckbox
                   class="mt-3"
                   :checked="form.guard_team_eligible_planning_modes.includes('ROTATING')"
                   label="Profils rotatifs"
-                  description="Le moteur actuel constitue les pools à partir des profils ROTATING."
+                  description="Toké constitue l’équipe de garde à partir des profils rotatifs."
                   @toggle="toggleGuardEligiblePlanningMode('ROTATING')"
               />
               <p v-if="errors.guard_team_eligible_planning_modes" class="field-error-text">
@@ -580,7 +580,7 @@
             </div>
 
             <div class="rounded-xl border border-slate-200 p-4">
-              <p class="text-xs font-bold text-slate-800">Équilibrage des appartenances au pool</p>
+              <p class="text-xs font-bold text-slate-800">Équilibrage des participations à l’équipe</p>
               <select v-model="form.guard_team_balance_mode" class="field-control mt-3">
                 <option value="NONE">Aucune règle supplémentaire</option>
                 <option value="SOFT">Équilibrage souple dans l’objectif</option>
@@ -668,7 +668,7 @@
         <section v-show="currentStepId === 'solver'" class="rounded-2xl border border-slate-200 p-4">
           <div class="flex items-center gap-2">
             <IconCpu2 :size="18" class="text-blue-600" />
-            <h3 class="text-sm font-bold text-slate-900">Solveur et niveau d’exigence</h3>
+            <h3 class="text-sm font-bold text-slate-900">Méthode de génération</h3>
           </div>
 
           <div class="mt-4 grid gap-3 sm:grid-cols-2">
@@ -680,9 +680,9 @@
                 : 'border-slate-200'"
                 @click="form.solver_type = 'ORTOOLS'"
             >
-              <p class="text-xs font-bold text-slate-800">OR-Tools CP-SAT</p>
+              <p class="text-xs font-bold text-slate-800">Optimisation approfondie</p>
               <p class="mt-1 text-xs leading-4 text-slate-500">
-                Requis pour les groupes dynamiques et politiques ciblées.
+                Recommandée lorsque les règles de planification sont nombreuses ou complexes.
               </p>
             </button>
 
@@ -698,9 +698,9 @@
                 :disabled="requiresOrTools"
                 @click="form.solver_type = 'GREEDY'"
             >
-              <p class="text-xs font-bold text-slate-800">Greedy</p>
+              <p class="text-xs font-bold text-slate-800">Calcul rapide</p>
               <p class="mt-1 text-xs leading-4 text-slate-500">
-                Disponible uniquement pour les règles simples historiques.
+                Disponible pour les configurations simples.
               </p>
             </button>
           </div>
@@ -708,8 +708,8 @@
           <div class="mt-4 grid gap-4 sm:grid-cols-2">
             <NumberField
                 v-model="form.solver_timeout_seconds"
-                label="Temps maximum de résolution"
-                help="Le moteur retourne la meilleure solution trouvée avant cette limite."
+                label="Temps maximum de calcul"
+                help="Toké conserve la meilleure proposition trouvée avant cette limite."
                 suffix="secondes"
                 :min="1"
                 :max="300"
@@ -717,9 +717,9 @@
 
             <div class="flex items-center justify-between rounded-xl border border-slate-200 bg-slate-50 p-4">
               <div>
-                <p class="text-xs font-bold text-slate-800">Fallback Greedy</p>
+                <p class="text-xs font-bold text-slate-800">Solution de secours</p>
                 <p class="mt-1 text-xs leading-4 text-slate-500">
-                  Désactivé automatiquement lorsque la configuration exige OR-Tools.
+                  Utilisée seulement si la méthode principale ne peut pas produire de proposition.
                 </p>
               </div>
               <PlanningToggle
@@ -1152,7 +1152,7 @@ const summaryItems = computed(() => [
   },
   {
     label: 'Méthode de génération',
-    value: form.solver_type === 'ORTOOLS' ? 'Optimisation OR-Tools' : 'Méthode rapide Greedy',
+    value: form.solver_type === 'ORTOOLS' ? 'Optimisation approfondie' : 'Calcul rapide',
   },
   {
     label: 'Couverture',
@@ -1168,12 +1168,12 @@ const policyPlanningModeOptions: Array<{
   {
     value: 'FIXED',
     label: 'Profils fixes',
-    description: 'Collaborateurs pilotés par un template fixe.',
+    description: 'Collaborateurs qui suivent un horaire type fixe.',
   },
   {
     value: 'ROTATING',
     label: 'Profils rotatifs',
-    description: 'Collaborateurs affectés dynamiquement par le solveur.',
+    description: 'Collaborateurs dont les services sont répartis automatiquement par Toké.',
   },
 ]
 
@@ -1181,7 +1181,7 @@ const policyOptions = [
   {
     value: 'NONE' as const,
     label: 'Aucune règle automatique',
-    description: 'Le moteur n’attribue aucun repos hebdomadaire métier.',
+    description: 'Toké n’attribue aucun repos hebdomadaire automatiquement.',
     activeClass: 'border-slate-400 bg-slate-100 ring-2 ring-slate-100',
   },
   {
@@ -1517,7 +1517,7 @@ function validate(): boolean {
     }
     if (!form.guard_team_eligible_planning_modes.includes('ROTATING')) {
       errors.guard_team_eligible_planning_modes =
-          'Le moteur actuel exige les profils ROTATING pour constituer un pool.'
+          'Cette organisation nécessite des profils rotatifs.'
     }
     if (
         form.guard_team_selection_mode === 'ROTATION_ORDER' &&
@@ -1540,10 +1540,10 @@ function validate(): boolean {
   }
 
   if (requiresOrTools.value && form.solver_type !== 'ORTOOLS') {
-    globalError.value = 'Cette configuration exige le solveur OR-Tools.'
+    globalError.value = 'Cette configuration nécessite la méthode d’optimisation approfondie.'
   }
   if (requiresOrTools.value && form.fallback_to_greedy) {
-    globalError.value = 'Le fallback Greedy doit être désactivé pour ces politiques.'
+    globalError.value = 'La solution de secours doit être désactivée avec ces règles.'
   }
 
   return Object.keys(errors).length === 0 && !globalError.value
@@ -1721,7 +1721,7 @@ const AllowedDaysEditor = defineComponent({
           h('div', { class: 'flex flex-wrap items-center justify-between gap-2' }, [
             h('div', {}, [
               h('p', { class: 'text-xs font-bold text-slate-700' }, 'Jours autorisés'),
-              h('p', { class: 'mt-1 text-xs text-slate-500' }, 'Le moteur choisit uniquement parmi ces jours.'),
+              h('p', { class: 'mt-1 text-xs text-slate-500' }, 'Toké choisit uniquement parmi ces jours.'),
             ]),
             h('div', { class: 'flex gap-2' }, [
               h('button', { type: 'button', class: 'mini-action', onClick: () => emit('set', [...DAY_ORDER]) }, 'Tous'),
@@ -2014,7 +2014,7 @@ const CommonLeaveToggles = defineComponent({
 <!--          <div class="rounded-xl border border-rose-100 bg-rose-50/60 px-4 py-3">-->
 <!--            <p class="text-xs font-bold text-rose-900">Quota tournant historique</p>-->
 <!--            <p class="mt-1 text-xs leading-5 text-rose-800/80">-->
-<!--              Un nombre exact de bénéficiaires est choisi chaque semaine selon rotation_order.-->
+<!--              Un nombre exact de bénéficiaires est choisi chaque semaine selon l’ordre de rotation défini.-->
 <!--            </p>-->
 <!--          </div>-->
 
@@ -2365,7 +2365,7 @@ const CommonLeaveToggles = defineComponent({
 <!--                : 'border-slate-200 bg-white hover:border-slate-300'"-->
 <!--              @click="selectGuardTeamMode('WEEKLY_POOL')"-->
 <!--          >-->
-<!--            <p class="text-xs font-bold text-slate-900">Pool hebdomadaire de garde</p>-->
+<!--            <p class="text-xs font-bold text-slate-900">Équipe de garde hebdomadaire</p>-->
 <!--            <p class="mt-1 text-xs leading-4 text-slate-500">-->
 <!--              Seuls les membres du groupe de la semaine peuvent démarrer une garde.-->
 <!--            </p>-->
@@ -2379,7 +2379,7 @@ const CommonLeaveToggles = defineComponent({
 <!--          <div class="grid gap-4 sm:grid-cols-2">-->
 <!--            <NumberField-->
 <!--                v-model="form.guard_team_employees_per_week"-->
-<!--                label="Taille du pool hebdomadaire"-->
+<!--                label="Taille de l’équipe de garde"-->
 <!--                help="Effectif exact du groupe autorisé à commencer les gardes."-->
 <!--                suffix="employé(s)"-->
 <!--                :min="1"-->
@@ -2390,8 +2390,8 @@ const CommonLeaveToggles = defineComponent({
 <!--            <div>-->
 <!--              <label class="text-xs font-bold text-slate-700">Méthode de sélection</label>-->
 <!--              <select v-model="form.guard_team_selection_mode" class="field-control mt-2">-->
-<!--                <option value="ROTATION_ORDER">Ordre de rotation déterministe</option>-->
-<!--                <option value="OPTIMIZED">Choix optimisé par OR-Tools</option>-->
+<!--                <option value="ROTATION_ORDER">Rotation dans l’ordre défini</option>-->
+<!--                <option value="OPTIMIZED">Répartition automatique optimisée</option>-->
 <!--              </select>-->
 <!--            </div>-->
 
@@ -2420,12 +2420,12 @@ const CommonLeaveToggles = defineComponent({
 <!--          </div>-->
 
 <!--          <div class="rounded-xl border border-slate-200 p-4">-->
-<!--            <p class="text-xs font-bold text-slate-800">Population candidate au pool</p>-->
+<!--            <p class="text-xs font-bold text-slate-800">Collaborateurs pouvant intégrer l’équipe</p>-->
 <!--            <PolicyModeCheckbox-->
 <!--                class="mt-3"-->
 <!--                :checked="form.guard_team_eligible_planning_modes.includes('ROTATING')"-->
 <!--                label="Profils rotatifs"-->
-<!--                description="Le moteur actuel constitue les pools à partir des profils ROTATING."-->
+<!--                description="Toké constitue l’équipe de garde à partir des profils rotatifs."-->
 <!--                @toggle="toggleGuardEligiblePlanningMode('ROTATING')"-->
 <!--            />-->
 <!--            <p v-if="errors.guard_team_eligible_planning_modes" class="field-error-text">-->
@@ -2434,7 +2434,7 @@ const CommonLeaveToggles = defineComponent({
 <!--          </div>-->
 
 <!--          <div class="rounded-xl border border-slate-200 p-4">-->
-<!--            <p class="text-xs font-bold text-slate-800">Équilibrage des appartenances au pool</p>-->
+<!--            <p class="text-xs font-bold text-slate-800">Équilibrage des participations à l’équipe</p>-->
 <!--            <select v-model="form.guard_team_balance_mode" class="field-control mt-3">-->
 <!--              <option value="NONE">Aucune règle supplémentaire</option>-->
 <!--              <option value="SOFT">Équilibrage souple dans l’objectif</option>-->
@@ -2522,7 +2522,7 @@ const CommonLeaveToggles = defineComponent({
 <!--      <section v-show="currentStepId === 'solver'" class="rounded-2xl border border-slate-200 p-4">-->
 <!--        <div class="flex items-center gap-2">-->
 <!--          <IconCpu2 :size="18" class="text-blue-600" />-->
-<!--          <h3 class="text-sm font-bold text-slate-900">Solveur et niveau d’exigence</h3>-->
+<!--          <h3 class="text-sm font-bold text-slate-900">Méthode de génération</h3>-->
 <!--        </div>-->
 
 <!--        <div class="mt-4 grid gap-3 sm:grid-cols-2">-->
@@ -2534,9 +2534,9 @@ const CommonLeaveToggles = defineComponent({
 <!--                : 'border-slate-200'"-->
 <!--              @click="form.solver_type = 'ORTOOLS'"-->
 <!--          >-->
-<!--            <p class="text-xs font-bold text-slate-800">OR-Tools CP-SAT</p>-->
+<!--            <p class="text-xs font-bold text-slate-800">Optimisation approfondie</p>-->
 <!--            <p class="mt-1 text-xs leading-4 text-slate-500">-->
-<!--              Requis pour les groupes dynamiques et politiques ciblées.-->
+<!--              Recommandée lorsque les règles de planification sont nombreuses ou complexes.-->
 <!--            </p>-->
 <!--          </button>-->
 
@@ -2552,9 +2552,9 @@ const CommonLeaveToggles = defineComponent({
 <!--              :disabled="requiresOrTools"-->
 <!--              @click="form.solver_type = 'GREEDY'"-->
 <!--          >-->
-<!--            <p class="text-xs font-bold text-slate-800">Greedy</p>-->
+<!--            <p class="text-xs font-bold text-slate-800">Calcul rapide</p>-->
 <!--            <p class="mt-1 text-xs leading-4 text-slate-500">-->
-<!--              Disponible uniquement pour les règles simples historiques.-->
+<!--              Disponible pour les configurations simples.-->
 <!--            </p>-->
 <!--          </button>-->
 <!--        </div>-->
@@ -2562,8 +2562,8 @@ const CommonLeaveToggles = defineComponent({
 <!--        <div class="mt-4 grid gap-4 sm:grid-cols-2">-->
 <!--          <NumberField-->
 <!--              v-model="form.solver_timeout_seconds"-->
-<!--              label="Temps maximum de résolution"-->
-<!--              help="Le moteur retourne la meilleure solution trouvée avant cette limite."-->
+<!--              label="Temps maximum de calcul"-->
+<!--              help="Toké conserve la meilleure proposition trouvée avant cette limite."-->
 <!--              suffix="secondes"-->
 <!--              :min="1"-->
 <!--              :max="300"-->
@@ -2571,9 +2571,9 @@ const CommonLeaveToggles = defineComponent({
 
 <!--          <div class="flex items-center justify-between rounded-xl border border-slate-200 bg-slate-50 p-4">-->
 <!--            <div>-->
-<!--              <p class="text-xs font-bold text-slate-800">Fallback Greedy</p>-->
+<!--              <p class="text-xs font-bold text-slate-800">Solution de secours</p>-->
 <!--              <p class="mt-1 text-xs leading-4 text-slate-500">-->
-<!--                Désactivé automatiquement lorsque la configuration exige OR-Tools.-->
+<!--                Utilisée seulement si la méthode principale ne peut pas produire de proposition.-->
 <!--              </p>-->
 <!--            </div>-->
 <!--            <PlanningToggle-->
@@ -3006,7 +3006,7 @@ const CommonLeaveToggles = defineComponent({
 <!--  },-->
 <!--  {-->
 <!--    label: 'Méthode de génération',-->
-<!--    value: form.solver_type === 'ORTOOLS' ? 'Optimisation OR-Tools' : 'Méthode rapide Greedy',-->
+<!--    value: form.solver_type === 'ORTOOLS' ? 'Optimisation approfondie' : 'Calcul rapide',-->
 <!--  },-->
 <!--  {-->
 <!--    label: 'Couverture',-->
@@ -3022,12 +3022,12 @@ const CommonLeaveToggles = defineComponent({
 <!--  {-->
 <!--    value: 'FIXED',-->
 <!--    label: 'Profils fixes',-->
-<!--    description: 'Collaborateurs pilotés par un template fixe.',-->
+<!--    description: 'Collaborateurs qui suivent un horaire type fixe.',-->
 <!--  },-->
 <!--  {-->
 <!--    value: 'ROTATING',-->
 <!--    label: 'Profils rotatifs',-->
-<!--    description: 'Collaborateurs affectés dynamiquement par le solveur.',-->
+<!--    description: 'Collaborateurs dont les services sont répartis automatiquement par Toké.',-->
 <!--  },-->
 <!--]-->
 
@@ -3035,7 +3035,7 @@ const CommonLeaveToggles = defineComponent({
 <!--  {-->
 <!--    value: 'NONE' as const,-->
 <!--    label: 'Aucune règle automatique',-->
-<!--    description: 'Le moteur n’attribue aucun repos hebdomadaire métier.',-->
+<!--    description: 'Toké n’attribue aucun repos hebdomadaire automatiquement.',-->
 <!--    activeClass: 'border-slate-400 bg-slate-100 ring-2 ring-slate-100',-->
 <!--  },-->
 <!--  {-->
@@ -3371,7 +3371,7 @@ const CommonLeaveToggles = defineComponent({
 <!--    }-->
 <!--    if (!form.guard_team_eligible_planning_modes.includes('ROTATING')) {-->
 <!--      errors.guard_team_eligible_planning_modes =-->
-<!--          'Le moteur actuel exige les profils ROTATING pour constituer un pool.'-->
+<!--          'Cette organisation nécessite des profils rotatifs.'-->
 <!--    }-->
 <!--    if (-->
 <!--        form.guard_team_selection_mode === 'ROTATION_ORDER' &&-->
@@ -3394,10 +3394,10 @@ const CommonLeaveToggles = defineComponent({
 <!--  }-->
 
 <!--  if (requiresOrTools.value && form.solver_type !== 'ORTOOLS') {-->
-<!--    globalError.value = 'Cette configuration exige le solveur OR-Tools.'-->
+<!--    globalError.value = 'Cette configuration nécessite la méthode d’optimisation approfondie.'-->
 <!--  }-->
 <!--  if (requiresOrTools.value && form.fallback_to_greedy) {-->
-<!--    globalError.value = 'Le fallback Greedy doit être désactivé pour ces politiques.'-->
+<!--    globalError.value = 'La solution de secours doit être désactivée avec ces règles.'-->
 <!--  }-->
 
 <!--  return Object.keys(errors).length === 0 && !globalError.value-->
@@ -3575,7 +3575,7 @@ const CommonLeaveToggles = defineComponent({
 <!--          h('div', { class: 'flex flex-wrap items-center justify-between gap-2' }, [-->
 <!--            h('div', {}, [-->
 <!--              h('p', { class: 'text-xs font-bold text-slate-700' }, 'Jours autorisés'),-->
-<!--              h('p', { class: 'mt-1 text-xs text-slate-500' }, 'Le moteur choisit uniquement parmi ces jours.'),-->
+<!--              h('p', { class: 'mt-1 text-xs text-slate-500' }, 'Toké choisit uniquement parmi ces jours.'),-->
 <!--            ]),-->
 <!--            h('div', { class: 'flex gap-2' }, [-->
 <!--              h('button', { type: 'button', class: 'mini-action', onClick: () => emit('set', [...DAY_ORDER]) }, 'Tous'),-->

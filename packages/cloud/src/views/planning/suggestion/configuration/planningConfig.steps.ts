@@ -66,7 +66,7 @@ export const PLANNING_CONFIG_STEPS: PlanningConfigStep[] = [
     number: 4,
     label: 'Gardes et récupération',
     shortLabel: 'Gardes',
-    description: 'Pools, participation et repos après garde.',
+    description: 'Équipe de garde, participation et repos après garde.',
     icon: IconMoonStars,
     errorKeys: [
       'guard_team_employees_per_week',
@@ -78,9 +78,9 @@ export const PLANNING_CONFIG_STEPS: PlanningConfigStep[] = [
   {
     id: 'solver',
     number: 5,
-    label: 'Calcul et exigences',
+    label: 'Génération et couverture',
     shortLabel: 'Calcul',
-    description: 'Méthode de génération et contraintes strictes.',
+    description: 'Qualité de génération et niveau de couverture attendu.',
     icon: IconCpu2,
     errorKeys: [],
   },

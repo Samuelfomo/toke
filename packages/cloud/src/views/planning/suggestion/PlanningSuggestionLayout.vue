@@ -20,13 +20,13 @@
           <div class="max-w-3xl">
             <div class="flex items-center gap-2 text-xs font-semibold uppercase tracking-wide text-blue-100">
               <IconSparkles :size="17"/>
-              <span>Planification intelligente sous contraintes</span>
+              <span>Préparation assistée du planning</span>
             </div>
             <h1 class="mt-3 text-2xl font-bold tracking-tight sm:text-3xl">
               Planification assistée
             </h1>
             <p class="mt-2 max-w-2xl text-sm leading-6 text-blue-100 sm:text-base sm:leading-7">
-              Configurez les collaborateurs, les besoins et les règles, puis générez un brouillon contrôlable avant
+              Préparez les collaborateurs, les besoins et les règles, puis générez une proposition à vérifier avant
               publication.
             </p>
           </div>
@@ -36,7 +36,7 @@
               <p class="text-xs font-bold uppercase tracking-wide text-blue-100">
                 Parcours
               </p>
-              <p class="mt-1 text-sm font-semibold">Configurer → Vérifier</p>
+              <p class="mt-1 text-sm font-semibold">Préparer → Vérifier</p>
             </div>
           </div>
         </div>

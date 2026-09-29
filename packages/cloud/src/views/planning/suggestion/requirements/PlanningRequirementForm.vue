@@ -60,7 +60,7 @@
           <div>
             <h3 class="text-sm font-bold text-slate-900">Population éligible</h3>
             <p class="mt-1 text-xs leading-4 text-slate-500">
-              Limitez ce besoin selon le mode de planning et l’appartenance au pool hebdomadaire de garde.
+              Limitez ce besoin selon le mode de planning et l’appartenance à l’équipe de garde de la semaine.
             </p>
           </div>
         </div>
@@ -96,15 +96,15 @@
 
           <div>
             <label class="text-xs font-bold text-slate-700">
-              Relation avec le pool de garde
+              Relation avec l’équipe de garde
             </label>
             <select v-model="form.eligibility_guard_pool_relation" class="field-control mt-2">
-              <option value="ANY">Tous, indépendamment du pool</option>
-              <option value="MEMBER">Uniquement les membres du pool</option>
-              <option value="NON_MEMBER">Uniquement les employés hors pool</option>
+              <option value="ANY">Tous les collaborateurs éligibles</option>
+              <option value="MEMBER">Uniquement les membres de l’équipe de garde</option>
+              <option value="NON_MEMBER">Uniquement les collaborateurs hors équipe de garde</option>
             </select>
             <p class="field-help">
-              MEMBER et NON_MEMBER sont actifs lorsqu’une politique de pool hebdomadaire est configurée.
+              Ces choix sont disponibles lorsqu’une équipe de garde hebdomadaire est utilisée.
             </p>
           </div>
         </div>
@@ -113,7 +113,7 @@
       <div class="grid gap-4 sm:grid-cols-2">
         <div class="sm:col-span-2">
           <label class="text-xs font-bold text-slate-700">
-            Session Template principal <span class="text-red-500">*</span>
+            Service principal <span class="text-red-500">*</span>
           </label>
           <select
               v-model="form.session_template"
@@ -254,7 +254,7 @@
       <div class="flex items-center justify-between rounded-2xl border border-slate-200 bg-slate-50 p-4">
         <div>
           <p class="text-xs font-bold text-slate-800">Besoin actif</p>
-          <p class="mt-1 text-xs text-slate-500">Un besoin désactivé n’est pas envoyé au moteur.</p>
+          <p class="mt-1 text-xs text-slate-500">Un besoin désactivé n’est pas pris en compte dans les nouvelles suggestions.</p>
         </div>
         <PlanningToggle v-model="form.active" />
       </div>
@@ -449,7 +449,7 @@ const planningModeOptions: Array<{
   {
     value: 'ROTATING',
     label: 'Profils rotatifs',
-    description: 'Autorise les affectations calculées dynamiquement par le solveur.',
+    description: 'Autorise Toké à répartir automatiquement les services selon les besoins.',
   },
 ]
 
@@ -507,7 +507,7 @@ const allocationModes = [
   {
     value: 'EXACT' as const,
     label: 'Effectif exact',
-    description: 'Le moteur doit affecter exactement le nombre indiqué.',
+    description: 'Toké doit affecter exactement le nombre indiqué.',
   },
   {
     value: 'RANGE' as const,
@@ -909,7 +909,7 @@ function templateSummary(
 <!--          <div>-->
 <!--            <h3 class="text-sm font-bold text-slate-900">Population éligible</h3>-->
 <!--            <p class="mt-1 text-xs leading-4 text-slate-500">-->
-<!--              Limitez ce besoin selon le mode de planning et l’appartenance au pool hebdomadaire de garde.-->
+<!--              Limitez ce besoin selon le mode de planning et l’appartenance à l’équipe de garde de la semaine.-->
 <!--            </p>-->
 <!--          </div>-->
 <!--        </div>-->
@@ -945,15 +945,15 @@ function templateSummary(
 
 <!--          <div>-->
 <!--            <label class="text-xs font-bold text-slate-700">-->
-<!--              Relation avec le pool de garde-->
+<!--              Relation avec l’équipe de garde-->
 <!--            </label>-->
 <!--            <select v-model="form.eligibility_guard_pool_relation" class="field-control mt-2">-->
-<!--              <option value="ANY">Tous, indépendamment du pool</option>-->
-<!--              <option value="MEMBER">Uniquement les membres du pool</option>-->
-<!--              <option value="NON_MEMBER">Uniquement les employés hors pool</option>-->
+<!--              <option value="ANY">Tous les collaborateurs éligibles</option>-->
+<!--              <option value="MEMBER">Uniquement les membres de l’équipe de garde</option>-->
+<!--              <option value="NON_MEMBER">Uniquement les collaborateurs hors équipe de garde</option>-->
 <!--            </select>-->
 <!--            <p class="field-help">-->
-<!--              MEMBER et NON_MEMBER sont actifs lorsqu’une politique de pool hebdomadaire est configurée.-->
+<!--              Ces choix sont disponibles lorsqu’une équipe de garde hebdomadaire est utilisée.-->
 <!--            </p>-->
 <!--          </div>-->
 <!--        </div>-->
@@ -962,7 +962,7 @@ function templateSummary(
 <!--      <div class="grid gap-4 sm:grid-cols-2">-->
 <!--        <div class="sm:col-span-2">-->
 <!--          <label class="text-xs font-bold text-slate-700">-->
-<!--            Session Template principal <span class="text-red-500">*</span>-->
+<!--            Service principal <span class="text-red-500">*</span>-->
 <!--          </label>-->
 <!--          <select-->
 <!--              v-model="form.session_template"-->
@@ -1103,7 +1103,7 @@ function templateSummary(
 <!--      <div class="flex items-center justify-between rounded-2xl border border-slate-200 bg-slate-50 p-4">-->
 <!--        <div>-->
 <!--          <p class="text-xs font-bold text-slate-800">Besoin actif</p>-->
-<!--          <p class="mt-1 text-xs text-slate-500">Un besoin désactivé n’est pas envoyé au moteur.</p>-->
+<!--          <p class="mt-1 text-xs text-slate-500">Un besoin désactivé n’est pas pris en compte dans les nouvelles suggestions.</p>-->
 <!--        </div>-->
 <!--        <PlanningToggle v-model="form.active" />-->
 <!--      </div>-->
@@ -1298,7 +1298,7 @@ function templateSummary(
 <!--  {-->
 <!--    value: 'ROTATING',-->
 <!--    label: 'Profils rotatifs',-->
-<!--    description: 'Autorise les affectations calculées dynamiquement par le solveur.',-->
+<!--    description: 'Autorise Toké à répartir automatiquement les services selon les besoins.',-->
 <!--  },-->
 <!--]-->
 
@@ -1356,7 +1356,7 @@ function templateSummary(
 <!--  {-->
 <!--    value: 'EXACT' as const,-->
 <!--    label: 'Effectif exact',-->
-<!--    description: 'Le moteur doit affecter exactement le nombre indiqué.',-->
+<!--    description: 'Toké doit affecter exactement le nombre indiqué.',-->
 <!--  },-->
 <!--  {-->
 <!--    value: 'RANGE' as const,-->

@@ -56,7 +56,7 @@ function exploreStatus(status: AttendanceStatus, count: number): void {
       </p>
     </div>
 
-    <div v-else class="mt-5 grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
+    <div v-else class="mt-5 grid gap-3 sm:grid-cols-2">
       <button
         v-for="item in group.items"
         :key="item.status"
@@ -78,25 +78,36 @@ function exploreStatus(status: AttendanceStatus, count: number): void {
         :aria-label="`${item.label} : ${item.count} occurrence${item.count > 1 ? 's' : ''}, ${item.employeesConcerned} employé${item.employeesConcerned > 1 ? 's' : ''} concerné${item.employeesConcerned > 1 ? 's' : ''}.`"
         @click="exploreStatus(item.status, item.count)"
       >
-        <div class="flex items-start justify-between gap-3">
-          <div class="flex min-w-0 items-center gap-2">
-            <span
-              class="mt-1 h-2.5 w-2.5 shrink-0 rounded-full"
-              :class="{
-                'bg-emerald-500': item.tone === 'positive',
-                'bg-amber-500': item.tone === 'warning',
-                'bg-rose-500': item.tone === 'danger',
-                'bg-slate-400': item.tone === 'neutral',
-                'bg-sky-500': item.tone === 'info',
-              }"
-              aria-hidden="true"
-            />
-            <div class="min-w-0">
-              <p class="font-semibold text-slate-900">{{ item.label }}</p>
-              <p class="mt-1 text-xs leading-5 text-slate-500">{{ item.description }}</p>
+        <div>
+          <div class="flex items-center justify-between gap-3">
+            <div class="flex min-w-0 items-center gap-2">
+      <span
+          class="h-3.5 w-3.5 shrink-0 rounded-full"
+          :class="{
+          'bg-emerald-500': item.tone === 'positive',
+          'bg-amber-500': item.tone === 'warning',
+          'bg-rose-500': item.tone === 'danger',
+          'bg-slate-400': item.tone === 'neutral',
+          'bg-sky-500': item.tone === 'info',
+        }"
+          aria-hidden="true"
+      />
+
+              <p class="min-w-0 truncate font-semibold text-slate-900">
+                {{ item.label }}
+              </p>
             </div>
+
+            <span
+                class="shrink-0 text-xl font-bold tabular-nums text-slate-950"
+            >
+      {{ item.count }}
+    </span>
           </div>
-          <span class="shrink-0 text-xl font-bold tabular-nums text-slate-950">{{ item.count }}</span>
+
+          <p class="mt-2 text-xs leading-5 text-slate-500">
+            {{ item.description }}
+          </p>
         </div>
 
         <div v-if="item.count > 0" class="mt-3 border-t border-slate-100 pt-3">

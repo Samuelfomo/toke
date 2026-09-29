@@ -62,7 +62,7 @@ const title = computed(() => {
 
 const description = computed(() => {
   if (props.hardCount > 0 || props.belowMinimumCount > 0) {
-    return 'Ces écarts décrivent les attentes configurées pour le moteur. Ils doivent être examinés, mais le manager peut confirmer un planning différent si la réalité opérationnelle l’exige.'
+    return 'Ces écarts indiquent les règles qui méritent votre attention. Ils doivent être examinés, mais le responsable garde la décision finale lorsque la publication reste autorisée.'
   }
   return 'Vérifiez les modifications manuelles, les gardes et les repos avant publication.'
 })
