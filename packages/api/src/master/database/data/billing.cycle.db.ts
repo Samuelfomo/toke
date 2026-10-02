@@ -291,9 +291,9 @@ export const BillingCycleDbStructure = {
       allowNull: false,
       validate: {
         isDate: true,
-        isAfterPeriodEnd(value: Date) {
-          if (this.period_end && value <= this.period_end) {
-            throw new Error('Payment due date must be after period end');
+        isAfterPeriodStart(value: Date) {
+          if (this.period_start && value < this.period_start) {
+            throw new Error('Payment due date must be on or after period start');
           }
         },
       },

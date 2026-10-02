@@ -53,7 +53,7 @@ export const ActivityMonitoringDbStructure = {
     },
     last_punch_date: {
       type: DataTypes.DATE,
-      allowNull: false,
+      allowNull: true,
       validate: {
         isDate: true,
       },
@@ -68,7 +68,7 @@ export const ActivityMonitoringDbStructure = {
         min: 0,
         max: 2147483647,
       },
-      comment: 'Number of punches in the last 7 days',
+      comment: 'Number of observed activity days in the last 7 calendar days',
     },
     punch_count_30_days: {
       type: DataTypes.INTEGER,
@@ -79,7 +79,7 @@ export const ActivityMonitoringDbStructure = {
         min: 0,
         max: 2147483647,
       },
-      comment: 'Number of punches in the last 30 days',
+      comment: 'Number of observed activity days in the last 30 calendar days',
     },
     consecutive_absent_days: {
       type: DataTypes.INTEGER,

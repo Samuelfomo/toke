@@ -214,6 +214,7 @@ export default class App {
           revision: {
             site: await TenantRevision.getRevision(tableName.SITES),
           },
+          version: process.env.APP_VERSION,
         });
       }),
     );

@@ -519,6 +519,11 @@ router.post('/', Ensure.post(), async (req: Request, res: Response) => {
       return R.handleError(res, serviceEmployee.status, serviceEmployee.response);
     }
 
+    const data: any = serviceEmployee.response;
+
+    userObj.setEmployeeLicense(data.data.guid);
+    await userObj.changeEmployeeLicense();
+
     const userRoleObj = new UserRole()
       .setRole(existingDefaultRole.getId()!)
       .setUser(userObj.getId()!)
@@ -701,6 +706,11 @@ router.post('/manager', Ensure.post(), async (req: Request, res: Response) => {
     if (serviceEmployee.status !== HttpStatus.CREATED) {
       return R.handleError(res, serviceEmployee.status, serviceEmployee.response);
     }
+
+    const data: any = serviceEmployee.response;
+
+    userObj.setEmployeeLicense(data.data.guid);
+    await userObj.changeEmployeeLicense();
 
     // === 5️⃣ Attribution des rôles ===
     if (isFirstUser) {
@@ -1283,6 +1293,49 @@ router.patch('/:guid/change-pin', Ensure.patch(), async (req: Request, res: Resp
   } catch (error: any) {
     return R.handleError(res, HttpStatus.INTERNAL_ERROR, {
       code: USERS_CODES.PIN_UPDATE_FAILED,
+      message: error.message,
+    });
+  }
+});
+
+// === MODIFICATION MANUELLE DE LA LICENCE DE L'UTILISATEUR === CE ENDPOINT EST TEMPORAIRE
+router.patch('/:guid/change-licence', Ensure.patch(), async (req: Request, res: Response) => {
+  try {
+    const { guid } = req.params;
+    if (!UsersValidationUtils.validateGuid(guid)) {
+      return R.handleError(res, HttpStatus.BAD_REQUEST, {
+        code: USERS_CODES.INVALID_GUID,
+        message: USERS_ERRORS.GUID_INVALID,
+      });
+    }
+    const userObj = await User._load(guid, true);
+    if (!userObj) {
+      return R.handleError(res, HttpStatus.NOT_FOUND, {
+        code: USERS_CODES.USER_NOT_FOUND,
+        message: USERS_ERRORS.NOT_FOUND,
+      });
+    }
+
+    const { employee_license } = req.body;
+
+    if (!employee_license || typeof employee_license !== 'string') {
+      return R.handleError(res, HttpStatus.BAD_REQUEST, {
+        code: USERS_CODES.VALIDATION_FAILED,
+        message: 'New User employee license is required',
+      });
+    }
+
+    // TODO Vérification de la licence de l'utilisateur auprès du master
+
+    userObj.setEmployeeLicense(employee_license);
+    await userObj.changeEmployeeLicense();
+
+    return R.handleSuccess(res, {
+      message: 'Employee License updated successfully',
+    });
+  } catch (error: any) {
+    return R.handleError(res, HttpStatus.INTERNAL_ERROR, {
+      code: 'employee_license_update_failed',
       message: error.message,
     });
   }

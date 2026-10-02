@@ -20,6 +20,7 @@ export default class UserModel extends BaseModel {
     id: 'id',
     guid: 'guid',
     tenant: 'tenant',
+    employee_license: 'employee_license',
 
     // Informations personnelles
     email: 'email',
@@ -67,6 +68,7 @@ export default class UserModel extends BaseModel {
   protected id?: number;
   protected guid?: string;
   protected tenant?: string;
+  protected employee_license?: string;
   protected email?: string;
   protected first_name?: string;
   protected last_name?: string;
@@ -126,6 +128,17 @@ export default class UserModel extends BaseModel {
       conditions[this.db.deleted_at] = null;
     }
 
+    return await this.findOne(this.db.tableName, conditions);
+  }
+
+  protected async findByEmployeeLicense(
+    employee_license: string,
+    includeDeleted: boolean = false,
+  ): Promise<any> {
+    const conditions: any = { [this.db.employee_license]: employee_license };
+    if (!includeDeleted) {
+      conditions[this.db.deleted_at] = null;
+    }
     return await this.findOne(this.db.tableName, conditions);
   }
 
@@ -468,6 +481,24 @@ export default class UserModel extends BaseModel {
 
     if (!affected) {
       throw new Error(USERS_ERRORS.OTP_DEFINITION_FAILED);
+    }
+  }
+
+  /**
+   * Met à jour la licence employee de l'utilisateur
+   */
+  protected async updateEmployeeLicense(): Promise<void> {
+    if (this.id == null) {
+      throw new Error(USERS_ERRORS.ID_REQUIRED);
+    }
+
+    const updateData: Record<string, any> = {
+      [this.db.employee_license]: this.employee_license,
+    };
+
+    const affected = await this.updateOne(this.db.tableName, updateData, { [this.db.id]: this.id });
+    if (!affected) {
+      throw new Error('Failed to define the user’s active employee licence');
     }
   }
 

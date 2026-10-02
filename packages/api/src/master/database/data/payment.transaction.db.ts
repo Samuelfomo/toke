@@ -1,3 +1,4 @@
+import { paymentAmountsConsistent } from '../../services/payment-money.js';
 import { DataTypes, ModelAttributes, ModelOptions } from 'sequelize';
 import { PaymentTransactionStatus } from '@toke/shared';
 
@@ -31,9 +32,13 @@ export const PaymentTransactionDbStructure = {
       },
       comment: 'Unique, automatically generated digital GUID',
     },
+    source_type: {
+      type: DataTypes.STRING(16), allowNull: false,
+      validate: { isIn: [['CYCLE', 'ADJUSTMENT', 'LEGACY']] },
+    },
     billing_cycle: {
       type: DataTypes.INTEGER,
-      allowNull: false,
+      allowNull: true,
       references: {
         model: tableName.BILLING_CYCLE,
         key: 'id',
@@ -49,7 +54,7 @@ export const PaymentTransactionDbStructure = {
     },
     adjustment: {
       type: DataTypes.INTEGER,
-      allowNull: false,
+      allowNull: true,
       references: {
         model: tableName.LICENSE_ADJUSTMENT,
         key: 'id',
@@ -306,11 +311,7 @@ export const PaymentTransactionDbStructure = {
       amount_usd: number;
       exchange_rate_used: number;
       amount_local: number;
-    }): boolean => {
-      const calculatedLocal = data.amount_usd * data.exchange_rate_used;
-      const tolerance = 0.01; // Tolérance de 1 centime
-      return Math.abs(calculatedLocal - data.amount_local) <= tolerance;
-    },
+    }): boolean => paymentAmountsConsistent(data.amount_usd, data.amount_local, data.exchange_rate_used),
 
     validateCompletedAtAfterInitiated: (
       initiated_at: Date,
@@ -341,26 +342,15 @@ export const PaymentTransactionDbStructure = {
     // Validation globale du modèle
     validateTransactionModel: (data: any): { isValid: boolean; errors: string[] } => {
       const errors: string[] = [];
+      const cycle = data.billing_cycle != null;
+      const adjustment = data.adjustment != null;
+      if (data.source_type === 'CYCLE' && (!cycle || adjustment)) errors.push('CYCLE requires only billing_cycle');
+      else if (data.source_type === 'ADJUSTMENT' && (!adjustment || cycle)) errors.push('ADJUSTMENT requires only adjustment');
+      else if (data.source_type === 'LEGACY' && (!cycle || !adjustment)) errors.push('LEGACY requires both historical references');
+      else if (!['CYCLE', 'ADJUSTMENT', 'LEGACY'].includes(data.source_type)) errors.push('Invalid payment source');
 
-      // // Vérification cohérence montants
-      // if (data.amount_usd && data.exchange_rate_used && data.amount_local) {
-      //   const calculatedLocal = data.amount_usd * data.exchange_rate_used;
-      //   const tolerance = 0.01;
-      //   if (Math.abs(calculatedLocal - data.amount_local) > tolerance) {
-      //     errors.push(
-      //       'Amount inconsistency: amount_usd * exchange_rate_used must equal amount_local (±0.01)',
-      //     );
-      //   }
-      // }
-      // Vérification cohérence montants
-      if (data.amount_usd && data.exchange_rate_used && data.amount_local) {
-        const calculatedLocal = Number((data.amount_usd * data.exchange_rate_used).toFixed(2));
-        const tolerance = 0.01;
-        if (Math.abs(calculatedLocal - Number(data.amount_local)) > tolerance) {
-          errors.push(
-            'Amount inconsistency: amount_usd * exchange_rate_used must equal amount_local (±0.01)',
-          );
-        }
+      if (!paymentAmountsConsistent(data.amount_usd, data.amount_local, data.exchange_rate_used)) {
+        errors.push('Invalid amounts or conversion inconsistent with independent decimal rounding');
       }
 
       // Vérification dates

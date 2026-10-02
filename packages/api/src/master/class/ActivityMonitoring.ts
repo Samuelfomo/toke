@@ -1,5 +1,6 @@
 import { ActivityStatus, TimezoneConfigUtils } from '@toke/shared';
 
+import ActivityMonitoringDb from '../database/base_model/db.activity-monitoring.js';
 import ActivityMonitoringModel from '../model/ActivityMonitoringModel.js';
 import {
   responseStructure as RS,
@@ -9,13 +10,19 @@ import {
 } from '../../utils/response.model.js';
 import Revision from '../../tools/revision.js';
 
+import {
+  activityDate,
+  activityGuid,
+  ActivityMonitoringInputError,
+  summarizeMonthlyMonitoring,
+} from './activity-monitoring-input.js';
 import EmployeeLicense from './EmployeeLicense.js';
 
 export default class ActivityMonitoring extends ActivityMonitoringModel {
   private employeeLicenseObj?: EmployeeLicense;
 
-  constructor() {
-    super();
+  constructor(activityData?: ActivityMonitoringDb) {
+    super(activityData);
   }
 
   /**
@@ -246,6 +253,25 @@ export default class ActivityMonitoring extends ActivityMonitoringModel {
    */
   static _toObject(data: any): ActivityMonitoring {
     return new ActivityMonitoring().hydrate(data);
+  }
+
+  async recordUsageSignal(employeeGuid: unknown, input: any): Promise<Record<string, any>> {
+    if (!input) throw new ActivityMonitoringInputError('Signal body required');
+    return this.recordDailyActivity({
+      tenantGuid: activityGuid(input.tenant_guid),
+      employeeGuid: activityGuid(employeeGuid),
+      occurredAt: activityDate(input.occurred_at),
+    });
+  }
+
+  async monthlyUsage(licenseGuid: unknown, input: any): Promise<Record<string, any>> {
+    const start = activityDate(input?.period_from),
+      end = activityDate(input?.period_until);
+    if (Date.parse(start) >= Date.parse(end))
+      throw new ActivityMonitoringInputError('Invalid period');
+    return summarizeMonthlyMonitoring(
+      await this.readMonthlyMonitoring(activityGuid(licenseGuid), start, end),
+    );
   }
 
   // === SETTERS FLUENT (usage très limité car données calculées automatiquement) ===

@@ -412,7 +412,7 @@ export default class RotationAssignment extends RotationAssignmentModel {
       [RS.FAMILY]: this.family,
       [RS.OFFSET]: this.offset,
       [RS.ASSIGNED_AT]: this.assigned_at,
-      [RS.ASSIGNED_BY]: assignedByObj ? await assignedByObj.toJSON() : null,
+      [RS.ASSIGNED_BY]: assignedByObj ? await assignedByObj.toJSON(responseValue.MINIMAL) : null,
       [RS.ROTATION_GROUP]: rotationGroupObj ? await rotationGroupObj.toJSON() : null,
     };
   }

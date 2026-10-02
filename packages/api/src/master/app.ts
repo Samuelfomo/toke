@@ -29,6 +29,13 @@ import LexiconRoute from './routes/lexicon.route.js';
 import PaymentMethodRoute from './routes/payment.method.route.js';
 import LicenseAdjustmentRoute from './routes/license.adjustment.route.js';
 import PaymentTransactionRoute from './routes/payment.transaction.route.js';
+import CashInstallmentRoute from './routes/cash.installment.route.js';
+import CashPaymentRoute from './routes/cash.payment.route.js';
+import LicenseCapacityRoute from './routes/license.capacity.route.js';
+import SeatAssignmentRoute from './routes/seat.assignment.route.js';
+import EmployeeLeaveRoute from './routes/employee.leave.route.js';
+import RenewalRoute from './routes/renewal.route.js';
+import { startScheduledActivationJob } from './jobs/scheduled-license-activation.js';
 import EmployeeLicenseRoute from './routes/employee.license.route.js';
 import BillingCycleRoute from './routes/billing.cycle.route.js';
 import FraudDetectionLogRoute from './routes/fraud.detection.log.route.js';
@@ -50,6 +57,7 @@ export default class App {
   private readonly app: express.Application;
   private config: AppConfig;
   private isShuttingDown = false;
+  private stopScheduledActivationJob: (() => Promise<void>) | null = null;
 
   constructor(config: Partial<AppConfig> = {}) {
     this.config = {
@@ -73,6 +81,11 @@ export default class App {
 
       // Initialiser l'application
       await this.initializeApp();
+      if (process.env.TOKE_SCHEDULED_ACTIVATION_ENABLED === 'true') {
+        const db = TableInitializer.getModel(tableName.GLOBAL_LICENSE).sequelize;
+        if (!db) throw new Error('Master database connection unavailable');
+        this.stopScheduledActivationJob = startScheduledActivationJob(db);
+      }
 
       // Démarrer le serveur HTTP
       console.log(`🚀 Démarrage serveur sur ${this.config.host}:${this.config.port}...`);
@@ -274,6 +287,12 @@ export default class App {
     this.app.use(`/payment-method`, PaymentMethodRoute);
     this.app.use(`/license-adjustment`, LicenseAdjustmentRoute);
     this.app.use(`/payment-transaction`, PaymentTransactionRoute);
+    this.app.use(`/cash-payments`, CashPaymentRoute);
+    this.app.use(`/cash-installments`, CashInstallmentRoute);
+    this.app.use(`/license-capacity`, LicenseCapacityRoute);
+    this.app.use(`/seat-assignments`, SeatAssignmentRoute);
+    this.app.use(`/employee-leaves`, EmployeeLeaveRoute);
+    this.app.use(`/license-renewals`, RenewalRoute);
     this.app.use(`/billing-cycle`, BillingCycleRoute);
     this.app.use(`/fraud-detection-log`, FraudDetectionLogRoute);
     this.app.use(`/activity-monitoring`, ActivityMonitoringRoute);
@@ -431,6 +450,10 @@ export default class App {
   private async cleanup(): Promise<void> {
     try {
       console.log('🧹 Nettoyage des ressources...');
+      if (this.stopScheduledActivationJob) {
+        await this.stopScheduledActivationJob();
+        this.stopScheduledActivationJob = null;
+      }
 
       // Nettoyer l'initialisateur de tables (statique)
       TableInitializer.cleanup();

@@ -277,18 +277,6 @@ export const EmployeeLicenseDbStructure = {
     ],
     // Validation au niveau du modèle pour reproduire les contraintes PostgreSQL
     validate: {
-      // Contrainte anti-fraude : pas de congé déclaré avec activité récente
-      noLongLeaveWithRecentActivity() {
-        if (this.declared_long_leave && this.last_activity_date) {
-          const sevenDaysAgo = TimezoneConfigUtils.getCurrentTime();
-          sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
-
-          if (this.last_activity_date >= sevenDaysAgo) {
-            throw new Error('Cannot declare long leave with recent activity (within 7 days)');
-          }
-        }
-      },
-
       // Contrainte : données de congé valides
       validLongLeaveData() {
         if (this.declared_long_leave) {

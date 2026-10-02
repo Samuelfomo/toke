@@ -10,6 +10,7 @@ import {
 import R from '../tools/response.js';
 import G from '../tools/glossary.js';
 import User from '../tenant/class/User.js';
+import EmployeeLicenseService from '../tools/employee.license.service.js';
 
 export class UserAuth {
   static async timeEntriesAuthenticate(
@@ -42,6 +43,14 @@ export class UserAuth {
         return;
       }
 
+      // TODO temporaire juste pour la recuperation des licences employees
+      const employeeLic = await EmployeeLicenseService.getEmployeeLicense(userObj.getGuid()!);
+      if (employeeLic.status === HttpStatus.SUCCESS) {
+        const licence: any = employeeLic.response;
+        userObj.setEmployeeLicense(licence.data.guid);
+        await userObj.changeEmployeeLicense();
+      }
+
       if (!userObj.isActive()) {
         R.handleError(res, HttpStatus.UNAUTHORIZED, {
           code: USERS_CODES.ACCOUNT_INACTIVE,
@@ -62,6 +71,8 @@ export class UserAuth {
 
       // ✅ Ajouter l'ID utilisateur dans la requête
       (req as any).userId = userObj.getId()!;
+      (req as any).userGuid = userObj.getGuid()!;
+      (req as any).employeeLicense = userObj.getEmployeeLicense()!;
 
       // 5. Authentification réussie → continuer
       next();

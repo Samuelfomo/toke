@@ -8,6 +8,8 @@ import {
   TimezoneConfigUtils,
 } from '@toke/shared';
 
+import { ActivityMonitoringInputError } from '../class/activity-monitoring-input.js';
+import { ActivityMonitoringDataError } from '../database/base_model/db.activity-monitoring.js';
 import ActivityMonitoring from '../class/ActivityMonitoring.js';
 import Ensure from '../../middle/ensured-routes.js';
 import Revision from '../../tools/revision.js';
@@ -15,6 +17,36 @@ import { tableName } from '../../utils/response.model.js';
 import R from '../../tools/response.js';
 
 const router = Router();
+async function handleUsage(req: Request, res: Response, action: 'RECORD' | 'USAGE') {
+  try {
+    const monitoring = new ActivityMonitoring();
+    const data =
+      action === 'RECORD'
+        ? await monitoring.recordUsageSignal(req.params.employeeGuid, req.body)
+        : await monitoring.monthlyUsage(req.params.licenseGuid, req.query);
+    return R.handleSuccess(res, data);
+  } catch (error: any) {
+    if (
+      error instanceof ActivityMonitoringInputError ||
+      error instanceof ActivityMonitoringDataError
+    )
+      return R.handleError(res, HttpStatus.BAD_REQUEST, {
+        code: 'activity_monitoring_input_invalid',
+        message: error.message,
+      });
+    console.error('Activity monitoring operation failed:', error);
+    return R.handleError(res, HttpStatus.INTERNAL_ERROR, {
+      code: 'activity_monitoring_failed',
+      message: 'Activity monitoring operation failed',
+    });
+  }
+}
+router.post('/employees/:employeeGuid/signals', Ensure.post(), (req, res) =>
+  handleUsage(req, res, 'RECORD'),
+);
+router.get('/licenses/:licenseGuid/monthly-usage', Ensure.get(), (req, res) =>
+  handleUsage(req, res, 'USAGE'),
+);
 
 // ==================== UTILITY ENDPOINTS ====================
 

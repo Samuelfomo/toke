@@ -21,7 +21,6 @@ import {
   PaymentMethodValidationUtils,
   PaymentTransactionStatus,
   PaymentTransactionValidationUtils,
-  PT,
   TENANT_CODES,
   TENANT_ERRORS,
   TenantValidationUtils,
@@ -39,6 +38,7 @@ import ExchangeRate from '../../class/ExchangeRate.js';
 import PaymentTransaction from '../../class/PaymentTransaction.js';
 import BillingCycle from '../../class/BillingCycle.js';
 import PaymentMethod from '../../class/PaymentMethod.js';
+import { buildPaymentDraft, readPaymentRequest, PaymentDraftError } from '../../services/payment-draft.js';
 
 const router = Router();
 
@@ -450,13 +450,13 @@ router.patch('/adjustment/confirm', Ensure.patch(), async (req: Request, res: Re
       });
     }
 
-    // Marquer comme confirmé et générer la facture
+    // Confirmer commercialement sans déclarer un encaissement
     adjustmentObj.setInvoiceSentAt(TimezoneConfigUtils.getCurrentTime());
-    adjustmentObj.setPaymentStatus(PaymentTransactionStatus.COMPLETED);
+    // Confirmation commerciale uniquement : aucun paiement confirmé ici.
     await adjustmentObj.save();
 
     return R.handleSuccess(res, {
-      message: 'License adjustment confirmed and invoice generated',
+      message: 'License adjustment confirmed; payment remains pending',
       adjustment: await adjustmentObj.toJSON(),
     });
   } catch (error: any) {
@@ -514,22 +514,14 @@ router.get('/adjustment/:guid', Ensure.get(), async (req: Request, res: Response
 // 📱 Start payment process using MTN MoMo or Orange Money for master fees
 router.post('/payment/initiate', Ensure.post(), async (req: Request, res: Response) => {
   try {
-    const validatedData = PT.validatePaymentTransactionCreation(req.body);
+    const validatedData = readPaymentRequest(req.body);
 
-    const licenceAdjObj = await LicenseAdjustment._load(validatedData.adjustment, true);
-    if (!licenceAdjObj) {
-      return R.handleError(res, HttpStatus.NOT_FOUND, {
-        code: LICENSE_ADJUSTMENT_CODES.LICENSE_ADJUSTMENT_NOT_FOUND,
-        message: LICENSE_ADJUSTMENT_ERRORS.NOT_FOUND,
-      });
-    }
-
-    const billingObj = await BillingCycle._load(validatedData.billing_cycle, true);
-    if (!billingObj) {
-      return R.handleError(res, HttpStatus.NOT_FOUND, {
-        code: BILLING_CYCLE_CODES.BILLING_CYCLE_NOT_FOUND,
-        message: BILLING_CYCLE_ERRORS.NOT_FOUND,
-      });
+    const billingObj = validatedData.payment_for === 'CYCLE'
+      ? await BillingCycle._load(validatedData.billing_cycle!, true) : null;
+    const licenceAdjObj = validatedData.payment_for === 'ADJUSTMENT'
+      ? await LicenseAdjustment._load(validatedData.adjustment!, true) : null;
+    if (!billingObj && !licenceAdjObj) {
+      return R.handleError(res, HttpStatus.NOT_FOUND, { code: 'payment_source_not_found', message: 'Payment source not found' });
     }
 
     const paymentMethodObj = await PaymentMethod._load(validatedData.payment_method, true);
@@ -540,56 +532,44 @@ router.post('/payment/initiate', Ensure.post(), async (req: Request, res: Respon
       });
     }
 
-    const transactionObj = PaymentTransaction.createNew({
-      billing_cycle: billingObj.getId()!,
-      adjustment: licenceAdjObj.getId()!,
-      amount_usd: validatedData.amount_usd,
-      amount_local: validatedData.amount_local!,
-      currency_code: validatedData.currency_code,
-      exchange_rate_used: validatedData.exchange_rate_used,
-      payment_method: paymentMethodObj.getId()!,
-      // payment_reference: validatedData.payment_reference,
+    const debt = billingObj || licenceAdjObj!;
+    const amounts = buildPaymentDraft(validatedData.payment_for, {
+      licenseId: debt.getGlobalLicense(),
+      status: billingObj ? billingObj.getBillingStatus() : licenceAdjObj!.getPaymentStatus(),
+      amountUsd: debt.getTotalAmountUsd(), amountLocal: debt.getTotalAmountLocal(),
+      currency: debt.getBillingCurrencyCode(), exchangeRate: debt.getExchangeRateUsed(),
     });
 
-    if (validatedData.transaction_status) {
-      transactionObj.setTransactionStatus(validatedData.transaction_status);
-    }
+    const transactionObj = PaymentTransaction.createNew({
+      billing_cycle: billingObj?.getId(),
+      adjustment: licenceAdjObj?.getId(),
+      amount_usd: amounts.amount_usd,
+      amount_local: amounts.amount_local,
+      currency_code: amounts.currency_code,
+      exchange_rate_used: amounts.exchange_rate_used,
+      payment_method: paymentMethodObj.getId()!,
+    });
+
+    transactionObj.setTransactionStatus(PaymentTransactionStatus.PENDING);
 
     await transactionObj.save();
 
     console.log(
-      `✅ Transaction de paiement créée: GUID ${transactionObj.getGuid()}, Référence: ${validatedData.payment_reference}`,
+      `✅ Transaction de paiement créée: GUID ${transactionObj.getGuid()}, Référence: ${transactionObj.getPaymentReference()}`,
     );
     return R.handleCreated(res, await transactionObj.toJSON());
   } catch (error: any) {
     console.error('⚠️ Erreur création transaction de paiement:', error.message);
 
-    if (error.issues) {
-      // Erreur Zod
+    if (error instanceof PaymentDraftError) {
       return R.handleError(res, HttpStatus.BAD_REQUEST, {
-        code: PAYMENT_TRANSACTION_CODES.VALIDATION_FAILED,
-        message: PAYMENT_TRANSACTION_ERRORS.VALIDATION_FAILED,
-        details: error.issues,
-      });
-    } else if (error.message.includes('required')) {
-      return R.handleError(res, HttpStatus.BAD_REQUEST, {
-        code: PAYMENT_TRANSACTION_CODES.VALIDATION_FAILED,
-        message: error.message,
-      });
-    } else {
-      // return R.handleError(res, HttpStatus.BAD_REQUEST, {
-      //   code: PAYMENT_TRANSACTION_CODES.CREATION_FAILED,
-      //   message: error.message,
-      // }
-      R.handleError(res, HttpStatus.INTERNAL_ERROR, {
-        code: 'DEBUG_ERROR',
-        message: error.message || error.toString(),
-        details: {
-          original_error: error,
-          stack: error.stack,
-        },
+        code: PAYMENT_TRANSACTION_CODES.VALIDATION_FAILED, message: error.message,
       });
     }
+    return R.handleError(res, HttpStatus.INTERNAL_ERROR, {
+      code: PAYMENT_TRANSACTION_CODES.CREATION_FAILED,
+      message: PAYMENT_TRANSACTION_ERRORS.CREATION_FAILED,
+    });
   }
 });
 
@@ -725,6 +705,7 @@ router.post('/payment/retry', Ensure.post(), async (req: Request, res: Response)
       newTransaction.setPaymentMethod(originalTransaction.getPaymentMethodId()!);
     }
 
+    if (originalTransaction.getSourceType() === 'LEGACY') newTransaction.preserveLegacySourceForRetry();
     await newTransaction.save();
 
     // const newPaymentReference = `TOKE_${newTransaction.getGuid()}_${Date.now()}_RETRY`;
@@ -779,12 +760,6 @@ router.get('/payment-history/:tenant', Ensure.get(), async (req: Request, res: R
     // Récupérer tous les avenants pour cette licence globale
     const adjustmentObj = await LicenseAdjustment._listByGlobalLicense(globalId);
     const adjustmentIds = adjustmentObj?.map((adj) => adj.getId()) ?? [];
-    if (adjustmentIds.length === 0) {
-      return R.handleError(res, HttpStatus.NOT_FOUND, {
-        code: LICENSE_ADJUSTMENT_CODES.LICENSE_ADJUSTMENT_NOT_FOUND,
-        message: LICENSE_ADJUSTMENT_ERRORS.NOT_FOUND,
-      });
-    }
 
     // Récupérer toutes les transactions pour tous les avenants en parallèle
     const transactionsArrays = await Promise.all(
@@ -804,7 +779,13 @@ router.get('/payment-history/:tenant', Ensure.get(), async (req: Request, res: R
     );
 
     // Aplatir le tableau
-    const paymentHistory = transactionsArrays.flat();
+    const cycles = await BillingCycle._listByGlobalLicense(globalId);
+    const cycleTransactions = await Promise.all((cycles || []).map(async cycle => {
+      const entries = await PaymentTransaction._listByBillingCycle(cycle.getId()!);
+      return Promise.all((entries || []).map(entry => entry.toJSON()));
+    }));
+    const merged = [...transactionsArrays.flat(), ...cycleTransactions.flat()];
+    const paymentHistory = [...new Map(merged.map((entry: any) => [entry.guid, entry])).values()];
     return R.handleSuccess(res, {
       payment_transactions: paymentHistory,
       pagination: {

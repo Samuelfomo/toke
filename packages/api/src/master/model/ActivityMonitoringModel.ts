@@ -1,6 +1,8 @@
 import { Op } from 'sequelize';
 import { ActivityStatus, TimezoneConfigUtils } from '@toke/shared';
 
+import type { MonitoringSignal } from '../database/base_model/db.activity-monitoring.js';
+import ActivityMonitoringDb from '../database/base_model/db.activity-monitoring.js';
 import BaseModel from '../database/db.base.js';
 import { tableName } from '../../utils/response.model.js';
 
@@ -30,8 +32,16 @@ export default class ActivityMonitoringModel extends BaseModel {
   protected created_at?: Date;
   protected updated_at?: Date;
 
-  protected constructor() {
+  protected readonly activityData: ActivityMonitoringDb;
+  protected constructor(activityData: ActivityMonitoringDb = new ActivityMonitoringDb()) {
     super();
+    this.activityData = activityData;
+  }
+  protected recordDailyActivity(input: MonitoringSignal) {
+    return this.activityData.record(input);
+  }
+  protected readMonthlyMonitoring(licenseGuid: number, start: string, end: string) {
+    return this.activityData.monthlyUsage(licenseGuid, start, end);
   }
 
   /**

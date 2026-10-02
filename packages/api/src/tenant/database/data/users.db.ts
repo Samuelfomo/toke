@@ -255,6 +255,15 @@ export const UsersDbStructure = {
       },
       comment: 'User device token',
     },
+    employee_license: {
+      type: DataTypes.STRING(255),
+      allowNull: true,
+      unique: {
+        name: 'unique_employee_license',
+        msg: 'This Employee license must be unique.',
+      },
+      comment: 'Active Employee license guid',
+    },
     is_workforce_member: {
       type: DataTypes.BOOLEAN,
       allowNull: false,

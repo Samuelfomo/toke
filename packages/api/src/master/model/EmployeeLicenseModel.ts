@@ -1,4 +1,4 @@
-import { Op } from 'sequelize';
+import { Op, QueryTypes } from 'sequelize';
 import {
   BillingStatusComputed,
   ContractualStatus,
@@ -66,22 +66,14 @@ export default class EmployeeLicenseModel extends BaseModel {
    */
   protected async loadGeneratedColumns(): Promise<void> {
     if (!this.guid) return;
-
-    try {
-      const model = TableInitializer.getModel(this.db.tableName);
-
-      const result = await model.findOne({
-        where: { [this.db.guid]: this.guid },
-        attributes: ['computed_billing_status'],
-      });
-
-      if (result) {
-        const data = result.get() as any;
-        this._computed_billing_status = data.computed_billing_status;
-      }
-    } catch (error) {
-      console.error('⚠️ Erreur chargement colonne générée:', error);
-    }
+    const connection = TableInitializer.getModel(this.db.tableName).sequelize;
+    if (!connection) throw new Error('License database connection is unavailable');
+    const rows = await connection.query<any>(
+      'SELECT computed_billing_status FROM xa_employee_license_with_billing_status WHERE guid = :guid',
+      { replacements: { guid: this.guid }, type: QueryTypes.SELECT },
+    );
+    if (!rows.length) throw new Error('License calculated data was not found');
+    this._computed_billing_status = rows[0].computed_billing_status;
   }
 
   /**
@@ -175,58 +167,24 @@ export default class EmployeeLicenseModel extends BaseModel {
     billing_status: BillingStatusComputed,
     paginationOptions: { offset?: number; limit?: number } = {},
   ): Promise<any[]> {
-    // ✅ BILLABLE = ACTIVE + pas de congé prolongé
-    if (billing_status === BillingStatusComputed.BILLABLE) {
-      return await this.findAll(
-        this.db.tableName,
-        {
-          [this.db.contractual_status]: ContractualStatus.ACTIVE,
-          [Op.or]: [
-            { [this.db.declared_long_leave]: false },
-            { [this.db.declared_long_leave]: null },
-          ],
-        },
-        {
-          ...paginationOptions,
-          exclude: EmployeeLicenseModel.GENERATED_COLUMNS,
-        },
-      );
+    const connection = TableInitializer.getModel(this.db.tableName).sequelize;
+    if (!connection) throw new Error('License database connection is unavailable');
+    const { offset, limit } = paginationOptions;
+    const clauses: string[] = [];
+    const replacements: Record<string, any> = { billing_status };
+    if (typeof limit === 'number' && Number.isInteger(limit) && limit > 0) {
+      clauses.push('LIMIT :limit');
+      replacements.limit = limit;
     }
-
-    // ✅ NON_BILLABLE = tous les autres cas
-    if (billing_status === BillingStatusComputed.NON_BILLABLE) {
-      return await this.findAll(
-        this.db.tableName,
-        {
-          [Op.or]: [
-            { [this.db.contractual_status]: { [Op.ne]: ContractualStatus.ACTIVE } },
-            { [this.db.declared_long_leave]: true },
-          ],
-        },
-        {
-          ...paginationOptions,
-          exclude: EmployeeLicenseModel.GENERATED_COLUMNS,
-        },
-      );
+    if (typeof offset === 'number' && Number.isInteger(offset) && offset >= 0) {
+      clauses.push('OFFSET :offset');
+      replacements.offset = offset;
     }
-
-    // ✅ GRACE_PERIOD = période de grâce active
-    if (billing_status === BillingStatusComputed.GRACE_PERIOD) {
-      const now = TimezoneConfigUtils.getCurrentTime();
-      return await this.findAll(
-        this.db.tableName,
-        {
-          [this.db.grace_period_start]: { [Op.lte]: now },
-          [this.db.grace_period_end]: { [Op.gte]: now },
-        },
-        {
-          ...paginationOptions,
-          exclude: EmployeeLicenseModel.GENERATED_COLUMNS,
-        },
-      );
-    }
-
-    return [];
+    return await connection.query<any>(
+      `SELECT * FROM xa_employee_license_with_billing_status
+       WHERE computed_billing_status = :billing_status ORDER BY id ${clauses.join(' ')}`,
+      { replacements, type: QueryTypes.SELECT },
+    );
   }
 
   /**
@@ -282,28 +240,24 @@ export default class EmployeeLicenseModel extends BaseModel {
    * ✅ CORRIGÉ: Compte les employés facturables pour une global_license spécifique
    * Filtre sur les conditions au lieu de la colonne générée
    */
-  protected async countBillableForLicense(globalLicenseId: number): Promise<number> {
-    // ✅ BILLABLE = ACTIVE + (pas de congé OU période de grâce)
-    const now = TimezoneConfigUtils.getCurrentTime();
+  private async countBillingStatuses(
+    statuses: BillingStatusComputed[],
+    globalLicenseId?: number,
+  ): Promise<number> {
+    const connection = TableInitializer.getModel(this.db.tableName).sequelize;
+    if (!connection) throw new Error('License database connection is unavailable');
+    const rows = await connection.query<any>(
+      `SELECT COUNT(*) AS count FROM xa_employee_license_with_billing_status
+       WHERE computed_billing_status IN (:statuses)
+       ${globalLicenseId === undefined ? '' : 'AND global_license = :globalLicenseId'}`,
+      { replacements: { statuses, ...(globalLicenseId === undefined ? {} : { globalLicenseId }) },
+        type: QueryTypes.SELECT },
+    );
+    return Number(rows[0].count);
+  }
 
-    return await this.count(this.db.tableName, {
-      [this.db.global_license]: globalLicenseId,
-      [Op.or]: [
-        // Cas 1: ACTIVE sans congé
-        {
-          [this.db.contractual_status]: ContractualStatus.ACTIVE,
-          [Op.or]: [
-            { [this.db.declared_long_leave]: false },
-            { [this.db.declared_long_leave]: null },
-          ],
-        },
-        // Cas 2: En période de grâce (aussi facturable)
-        {
-          [this.db.grace_period_start]: { [Op.lte]: now },
-          [this.db.grace_period_end]: { [Op.gte]: now },
-        },
-      ],
-    });
+  protected async countBillableForLicense(globalLicenseId: number): Promise<number> {
+    return this.countBillingStatuses([BillingStatusComputed.BILLABLE], globalLicenseId);
   }
 
   /**
@@ -421,25 +375,7 @@ export default class EmployeeLicenseModel extends BaseModel {
    * Filtre sur les conditions au lieu de la colonne générée
    */
   protected async countBillable(): Promise<number> {
-    const now = TimezoneConfigUtils.getCurrentTime();
-
-    return await this.count(this.db.tableName, {
-      [Op.or]: [
-        // Cas 1: ACTIVE sans congé
-        {
-          [this.db.contractual_status]: ContractualStatus.ACTIVE,
-          [Op.or]: [
-            { [this.db.declared_long_leave]: false },
-            { [this.db.declared_long_leave]: null },
-          ],
-        },
-        // Cas 2: En période de grâce
-        {
-          [this.db.grace_period_start]: { [Op.lte]: now },
-          [this.db.grace_period_end]: { [Op.gte]: now },
-        },
-      ],
-    });
+    return this.countBillingStatuses([BillingStatusComputed.BILLABLE]);
   }
 
   /**
@@ -447,12 +383,7 @@ export default class EmployeeLicenseModel extends BaseModel {
    * Filtre sur les conditions au lieu de la colonne générée
    */
   protected async countNonBillable(): Promise<number> {
-    return await this.count(this.db.tableName, {
-      [Op.or]: [
-        { [this.db.contractual_status]: { [Op.ne]: ContractualStatus.ACTIVE } },
-        { [this.db.declared_long_leave]: true },
-      ],
-    });
+    return this.countBillingStatuses([BillingStatusComputed.NON_BILLABLE]);
   }
 
   /**
@@ -699,39 +630,22 @@ export default class EmployeeLicenseModel extends BaseModel {
   protected async getBillingStatusCountByGlobalLicense(
     global_license: number,
   ): Promise<Record<string, number>> {
-    // Récupérer tous les employés de cette licence
-    const results = await this.findAll(
-      this.db.tableName,
-      { [this.db.global_license]: global_license },
-      { exclude: EmployeeLicenseModel.GENERATED_COLUMNS },
+    const connection = TableInitializer.getModel(this.db.tableName).sequelize;
+    if (!connection) throw new Error('License database connection is unavailable');
+    const rows = await connection.query<any>(
+      `SELECT computed_billing_status, COUNT(*) AS count
+       FROM xa_employee_license_with_billing_status
+       WHERE global_license = :global_license GROUP BY computed_billing_status`,
+      { replacements: { global_license }, type: QueryTypes.SELECT },
     );
-
-    // Initialiser les compteurs
     const counts: Record<string, number> = {};
-    Object.values(BillingStatusComputed).forEach((status) => {
-      counts[status] = 0;
-    });
-
-    // ✅ Pour chaque résultat, on doit charger computed_billing_status séparément
-    for (const result of results) {
-      try {
-        const model = TableInitializer.getModel(this.db.tableName);
-        const statusData = await model.findOne({
-          where: { [this.db.guid]: result.guid },
-          attributes: ['computed_billing_status'],
-        });
-
-        if (statusData) {
-          const data = statusData.get() as any;
-          if (data.computed_billing_status) {
-            counts[data.computed_billing_status]++;
-          }
-        }
-      } catch (error) {
-        console.error('⚠️ Erreur chargement status pour guid:', result.guid, error);
+    for (const status of Object.values(BillingStatusComputed)) counts[status] = 0;
+    for (const row of rows) {
+      if (!(row.computed_billing_status in counts)) {
+        throw new Error('Unknown employee billing status');
       }
+      counts[row.computed_billing_status] = Number(row.count);
     }
-
     return counts;
   }
 
@@ -823,15 +737,8 @@ export default class EmployeeLicenseModel extends BaseModel {
         throw new Error('Long leave requires declared_by and declared_at fields');
       }
 
-      // Validation anti-fraude : pas de congé déclaré avec activité récente
-      if (this.last_activity_date) {
-        const sevenDaysAgo = TimezoneConfigUtils.getCurrentTime();
-        sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
+      // Une activité récente ne bloque pas une déclaration de congé.
 
-        if (this.last_activity_date >= sevenDaysAgo) {
-          throw new Error('Cannot declare long leave with recent activity (within 7 days)');
-        }
-      }
     }
 
     // Validation de la période de grâce
@@ -851,7 +758,7 @@ export default class EmployeeLicenseModel extends BaseModel {
   }
 }
 
-// import { Op } from 'sequelize';
+// import { Op, QueryTypes } from 'sequelize';
 // import { BillingStatusComputed, ContractualStatus, LeaveType } from '@toke/shared';
 //
 // import BaseModel from '../database/db.base.js';

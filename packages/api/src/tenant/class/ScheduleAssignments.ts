@@ -3,12 +3,7 @@ import { SAFamily, SCHEDULE_ASSIGNMENTS_DEFAULTS, TimezoneConfigUtils } from '@t
 import ScheduleAssignmentsModel from '../model/ScheduleAssignmentsModel.js';
 import W from '../../tools/watcher.js';
 import G from '../../tools/glossary.js';
-import {
-  responseStructure as RS,
-  responseValue,
-  tableName,
-  ViewMode,
-} from '../../utils/response.model.js';
+import { responseStructure as RS, responseValue, tableName, ViewMode, } from '../../utils/response.model.js';
 import { TenantRevision } from '../../tools/revision.js';
 
 import SessionTemplate from './SessionTemplates.js';
@@ -624,7 +619,7 @@ export default class ScheduleAssignments extends ScheduleAssignmentsModel {
           : await sessionTemplateObj.toJSON(responseValue.FULL)
         : null,
       adjustment: this.session_template?.adjustment ?? null,
-      [RS.CREATED_BY]: createdByObj ? await createdByObj.toJSON() : null,
+      [RS.CREATED_BY]: createdByObj ? await createdByObj.toJSON(responseValue.MINIMAL) : null,
     };
   }
 

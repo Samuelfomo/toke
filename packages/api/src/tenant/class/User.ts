@@ -243,6 +243,10 @@ export default class User extends UserModel {
     return this.device_token;
   }
 
+  getEmployeeLicense(): string | undefined {
+    return this.employee_license;
+  }
+
   // ============================================
   // MÉTHODES DE RÉSOLUTION DES ASSIGNATIONS
   // ============================================
@@ -486,6 +490,11 @@ export default class User extends UserModel {
     return this;
   }
 
+  setEmployeeLicense(employeeLicense: string): User {
+    this.employee_license = employeeLicense;
+    return this;
+  }
+
   // ============================================
   // MÉTHODES DE GESTION DES TOKENS
   // ============================================
@@ -668,6 +677,15 @@ export default class User extends UserModel {
     }
   }
 
+  async changeEmployeeLicense(): Promise<void> {
+    try {
+      await this.updateEmployeeLicense();
+    } catch (error: any) {
+      console.error('⚠️ Error whilst updating the employee licence:', error.message);
+      throw new Error(error);
+    }
+  }
+
   async defineOtpToken(): Promise<void> {
     try {
       await this.defineOtpDb();
@@ -829,6 +847,7 @@ export default class User extends UserModel {
       [RS.COUNTRY]: this.country,
       [RS.EMPLOYEE_CODE]: this.employee_code,
       [RS.EMPLOYEE_COLOR]: this.employee_color,
+      [RS.EMPLOYEE_LICENSE]: this.employee_license,
       [RS.AVATAR_URL]: this.avatar_url,
       [RS.HIRE_DATE]: this.hire_date,
       [RS.DEPARTMENT]: this.department,
@@ -879,6 +898,7 @@ export default class User extends UserModel {
       [RS.COUNTRY]: this.country,
       [RS.EMPLOYEE_CODE]: this.employee_code,
       [RS.EMPLOYEE_COLOR]: this.employee_color,
+      [RS.EMPLOYEE_LICENSE]: this.employee_license,
       [RS.HIRE_DATE]: this.hire_date,
     };
   }
@@ -916,6 +936,7 @@ export default class User extends UserModel {
     this.device_token = data.device_token;
     this.created_at = data.created_at;
     this.updated_at = data.updated_at;
+    this.employee_license = data.employee_license;
     // this.assigned_sessions = data.assigned_sessions || [];
     return this;
   }

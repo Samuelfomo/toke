@@ -24,6 +24,7 @@ import { tableName } from '../../utils/response.model.js';
 import LicenseAdjustment from '../class/LicenseAdjustment.js';
 import BillingCycle from '../class/BillingCycle.js';
 import PaymentMethod from '../class/PaymentMethod.js';
+import { buildPaymentDraft, readPaymentRequest, PaymentDraftError } from '../services/payment-draft.js';
 
 const router = Router();
 
@@ -627,22 +628,14 @@ router.get('/statistics', Ensure.get(), async (req: Request, res: Response) => {
  */
 router.post('/', Ensure.post(), async (req: Request, res: Response) => {
   try {
-    const validatedData = PT.validatePaymentTransactionCreation(req.body);
+    const validatedData = readPaymentRequest(req.body);
 
-    const licenceAdjObj = await LicenseAdjustment._load(validatedData.adjustment, true);
-    if (!licenceAdjObj) {
-      return R.handleError(res, HttpStatus.NOT_FOUND, {
-        code: LICENSE_ADJUSTMENT_CODES.LICENSE_ADJUSTMENT_NOT_FOUND,
-        message: LICENSE_ADJUSTMENT_ERRORS.NOT_FOUND,
-      });
-    }
-
-    const billingObj = await BillingCycle._load(validatedData.billing_cycle, true);
-    if (!billingObj) {
-      return R.handleError(res, HttpStatus.NOT_FOUND, {
-        code: BILLING_CYCLE_CODES.BILLING_CYCLE_NOT_FOUND,
-        message: BILLING_CYCLE_ERRORS.NOT_FOUND,
-      });
+    const billingObj = validatedData.payment_for === 'CYCLE'
+      ? await BillingCycle._load(validatedData.billing_cycle!, true) : null;
+    const licenceAdjObj = validatedData.payment_for === 'ADJUSTMENT'
+      ? await LicenseAdjustment._load(validatedData.adjustment!, true) : null;
+    if (!billingObj && !licenceAdjObj) {
+      return R.handleError(res, HttpStatus.NOT_FOUND, { code: 'payment_source_not_found', message: 'Payment source not found' });
     }
 
     const paymentMethodObj = await PaymentMethod._load(validatedData.payment_method, true);
@@ -653,58 +646,47 @@ router.post('/', Ensure.post(), async (req: Request, res: Response) => {
       });
     }
 
-    const transactionObj = PaymentTransaction.createNew({
-      billing_cycle: billingObj.getId()!,
-      adjustment: licenceAdjObj.getId()!,
-      amount_usd: validatedData.amount_usd,
-      amount_local: validatedData.amount_local!,
-      currency_code: validatedData.currency_code,
-      exchange_rate_used: validatedData.exchange_rate_used,
-      payment_method: paymentMethodObj.getId()!,
-      // payment_reference: validatedData.payment_reference,
+    const debt = billingObj || licenceAdjObj!;
+    const amounts = buildPaymentDraft(validatedData.payment_for, {
+      licenseId: debt.getGlobalLicense(),
+      status: billingObj ? billingObj.getBillingStatus() : licenceAdjObj!.getPaymentStatus(),
+      amountUsd: debt.getTotalAmountUsd(), amountLocal: debt.getTotalAmountLocal(),
+      currency: debt.getBillingCurrencyCode(), exchangeRate: debt.getExchangeRateUsed(),
     });
 
-    if (validatedData.transaction_status) {
-      transactionObj.setTransactionStatus(validatedData.transaction_status);
-    }
+    const transactionObj = PaymentTransaction.createNew({
+      billing_cycle: billingObj?.getId(),
+      adjustment: licenceAdjObj?.getId(),
+      amount_usd: amounts.amount_usd,
+      amount_local: amounts.amount_local,
+      currency_code: amounts.currency_code,
+      exchange_rate_used: amounts.exchange_rate_used,
+      payment_method: paymentMethodObj.getId()!,
+    });
+
+    transactionObj.setTransactionStatus(PaymentTransactionStatus.PENDING);
 
     await transactionObj.save();
 
     console.log(
-      `✅ Transaction de paiement créée: GUID ${transactionObj.getGuid()}, Référence: ${validatedData.payment_reference}`,
+      `✅ Transaction de paiement créée: GUID ${transactionObj.getGuid()}, Référence: ${transactionObj.getPaymentReference()}`,
     );
     return R.handleCreated(res, await transactionObj.toJSON());
   } catch (error: any) {
     console.error('⚠️ Erreur création transaction de paiement:', error.message);
 
-    if (error.issues) {
-      // Erreur Zod
+    if (error instanceof PaymentDraftError) {
       return R.handleError(res, HttpStatus.BAD_REQUEST, {
-        code: PAYMENT_TRANSACTION_CODES.VALIDATION_FAILED,
-        message: PAYMENT_TRANSACTION_ERRORS.VALIDATION_FAILED,
-        details: error.issues,
-      });
-    } else if (error.message.includes('required')) {
-      return R.handleError(res, HttpStatus.BAD_REQUEST, {
-        code: PAYMENT_TRANSACTION_CODES.VALIDATION_FAILED,
-        message: error.message,
-      });
-    } else {
-      // return R.handleError(res, HttpStatus.BAD_REQUEST, {
-      //   code: PAYMENT_TRANSACTION_CODES.CREATION_FAILED,
-      //   message: error.message,
-      // }
-      R.handleError(res, HttpStatus.INTERNAL_ERROR, {
-        code: 'DEBUG_ERROR',
-        message: error.message || error.toString(),
-        details: {
-          original_error: error,
-          stack: error.stack,
-        },
+        code: PAYMENT_TRANSACTION_CODES.VALIDATION_FAILED, message: error.message,
       });
     }
+    return R.handleError(res, HttpStatus.INTERNAL_ERROR, {
+      code: PAYMENT_TRANSACTION_CODES.CREATION_FAILED,
+      message: PAYMENT_TRANSACTION_ERRORS.CREATION_FAILED,
+    });
   }
 });
+
 
 /**
  * PUT /:guid - Modifier une transaction de paiement par GUID
@@ -724,26 +706,13 @@ router.put('/:guid', Ensure.put(), async (req: Request, res: Response) => {
 
     const validateData = PT.validatePaymentTransactionUpdate(req.body);
 
-    // Mise à jour des champs fournis
-    if (validateData.billing_cycle !== undefined)
-      transactionObj.setBillingCycle(validateData.billing_cycle);
-    if (validateData.adjustment !== undefined)
-      transactionObj.setAdjustment(validateData.adjustment);
-    if (validateData.amount_usd !== undefined) transactionObj.setAmountUsd(validateData.amount_usd);
-    if (validateData.amount_local !== undefined)
-      transactionObj.setAmountLocal(validateData.amount_local);
-    if (validateData.currency_code !== undefined)
-      transactionObj.setCurrencyCode(validateData.currency_code);
-    if (validateData.exchange_rate_used !== undefined)
-      transactionObj.setExchangeRate(validateData.exchange_rate_used);
-    if (validateData.payment_method !== undefined)
-      transactionObj.setPaymentMethod(validateData.payment_method);
-    if (validateData.payment_reference !== undefined)
-      transactionObj.setPaymentReference(validateData.payment_reference);
-    if (validateData.transaction_status !== undefined)
-      transactionObj.setTransactionStatus(validateData.transaction_status);
-    if (validateData.failure_reason != null)
-      transactionObj.setFailureReason(validateData.failure_reason);
+    if (transactionObj.getTransactionStatus() !== PaymentTransactionStatus.FAILED) {
+      return R.handleError(res, HttpStatus.BAD_REQUEST, {
+        code: PAYMENT_TRANSACTION_CODES.UPDATE_FAILED,
+        message: 'Only the failure reason of a failed transaction may be edited',
+      });
+    }
+    transactionObj.setFailureReason(validateData.failure_reason);
 
     await transactionObj.save();
 

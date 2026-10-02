@@ -41,6 +41,7 @@ import QrCodeGeneration from '../class/QrCodeGeneration.js';
 import Device from '../class/Device.js';
 import { findTimeEntryIdempotentReplay } from '../../utils/time.entry.idempotency.js';
 import { respondToTimeEntryIdempotentReplay } from '../../utils/time.entry.idempotency.response.js';
+import ActivityService from '../../tools/activity.sevice.js';
 
 const router = Router();
 
@@ -296,6 +297,10 @@ router.post(
         siteObj,
       );
 
+      const tenant = req.tenant;
+
+      const employeeLicense = (req as any).employeeLicense;
+
       // === LOGIQUE SELON TYPE DE POINTAGE (NON-BLOQUANTE) ===
 
       switch (validatedData.pointage_type) {
@@ -345,6 +350,12 @@ router.post(
           await entryObj.save();
           await entryObj.accept(); // ✅ Toujours accepté
 
+          const activitySend = await ActivityService.sendEmployeeLastActivity({
+            tenant: tenant.config.reference,
+            employee_license: employeeLicense,
+            occurred_at: validatedData.clocked_at,
+          });
+
           // ✅ GÉNÉRER MÉMO AUTO SI ANOMALIES
           let autoMemo = null;
           if (allAnomalies.length > 0) {
@@ -388,6 +399,8 @@ router.post(
             }
           }
 
+          console.log('test activitySend ', activitySend);
+
           return R.handleCreated(res, {
             message,
             // message:
@@ -406,6 +419,7 @@ router.post(
               severity: a.severity,
               description: a.description,
             })),
+            last_activity_send: activitySend,
           });
         }
 
@@ -467,6 +481,12 @@ router.post(
           await tempEntry.save();
           await tempEntry.accept();
 
+          const activitySend = await ActivityService.sendEmployeeLastActivity({
+            tenant: tenant.config.reference,
+            employee_license: employeeLicense,
+            occurred_at: validatedData.clocked_at,
+          });
+
           // ✅ GÉNÉRER MÉMO AUTO SI ANOMALIES
           let autoMemo = null;
           if (allAnomalies.length > 0) {
@@ -503,6 +523,7 @@ router.post(
               severity: a.severity,
               description: a.description,
             })),
+            last_activity_send: activitySend,
           });
         }
 
@@ -560,6 +581,12 @@ router.post(
           await tempEntry.save();
           await tempEntry.accept();
 
+          const activitySend = await ActivityService.sendEmployeeLastActivity({
+            tenant: tenant.config.reference,
+            employee_license: employeeLicense,
+            occurred_at: validatedData.clocked_at,
+          });
+
           // ✅ MÉMO AUTO
           let autoMemo = null;
           if (anomalies.length > 0) {
@@ -595,6 +622,7 @@ router.post(
               severity: a.severity,
               description: a.description,
             })),
+            last_activity_send: activitySend,
           });
         }
 
@@ -645,6 +673,12 @@ router.post(
 
           await entryObj.save();
           await entryObj.accept();
+
+          const activitySend = await ActivityService.sendEmployeeLastActivity({
+            tenant: tenant.config.reference,
+            employee_license: employeeLicense,
+            occurred_at: validatedData.clocked_at,
+          });
 
           // ✅ FERMER SESSION SI EXISTE
           let durations = null;
@@ -730,6 +764,7 @@ router.post(
               severity: a.severity,
               description: a.description,
             })),
+            last_activity_send: activitySend,
           });
         }
 
@@ -770,6 +805,12 @@ router.post(
           await entryObj.save();
           await entryObj.accept();
 
+          const activitySend = await ActivityService.sendEmployeeLastActivity({
+            tenant: tenant.config.reference,
+            employee_license: employeeLicense,
+            occurred_at: validatedData.clocked_at,
+          });
+
           let autoMemo = null;
           if (allAnomalies.length > 0) {
             autoMemo = await AnomalyDetectionService.generateAutoMemo(
@@ -803,6 +844,7 @@ router.post(
             auto_created_session: autoCreatedSession,
             auto_memo_created: autoMemo !== null,
             corrections_applied: allCorrections.length,
+            last_activity_send: activitySend,
           });
         }
 
@@ -848,6 +890,12 @@ router.post(
           await entryObj.save();
           await entryObj.accept();
 
+          const activitySend = await ActivityService.sendEmployeeLastActivity({
+            tenant: tenant.config.reference,
+            employee_license: employeeLicense,
+            occurred_at: validatedData.clocked_at,
+          });
+
           let autoMemo = null;
           if (allAnomalies.length > 0) {
             autoMemo = await AnomalyDetectionService.generateAutoMemo(
@@ -883,6 +931,7 @@ router.post(
             auto_created_session: autoCreatedSession,
             auto_created_mission_start: autoCreatedMissionStart,
             corrections_applied: allCorrections.length,
+            last_activity_send: activitySend,
           });
         }
 
@@ -1060,9 +1109,20 @@ router.post(
 
       await entryObj.save();
 
+      const tenant = req.tenant;
+
+      const employeeLicense = (req as any).employeeLicense;
+
+      const activitySend = await ActivityService.sendEmployeeLastActivity({
+        tenant: tenant.config.reference,
+        employee_license: employeeLicense,
+        occurred_at: validatedData.clocked_at,
+      });
+
       return R.handleCreated(res, {
         message: 'Waypoint recorded — pending manager validation',
         entry: await entryObj.toJSON(),
+        last_activity_send: activitySend,
       });
     } catch (error: any) {
       if (error?.name === 'SequelizeUniqueConstraintError') {

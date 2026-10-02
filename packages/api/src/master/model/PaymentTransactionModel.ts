@@ -9,6 +9,7 @@ export default class PaymentTransactionModel extends BaseModel {
     tableName: tableName.PAYMENT_TRANSACTION,
     id: 'id',
     guid: 'guid',
+    source_type: 'source_type',
     billing_cycle: 'billing_cycle',
     adjustment: 'adjustment',
     amount_usd: 'amount_usd',
@@ -26,6 +27,7 @@ export default class PaymentTransactionModel extends BaseModel {
 
   protected id?: number;
   protected guid?: number;
+  protected source_type?: 'CYCLE' | 'ADJUSTMENT' | 'LEGACY';
   protected billing_cycle?: number;
   protected adjustment?: number;
   protected amount_usd?: number;
@@ -146,6 +148,10 @@ export default class PaymentTransactionModel extends BaseModel {
   // === MÉTHODES DE MODIFICATION ===
 
   protected async create(): Promise<void> {
+    if (!this.source_type) {
+      if (this.billing_cycle && this.adjustment) throw new Error('New payments require one source');
+      this.source_type = this.billing_cycle ? 'CYCLE' : 'ADJUSTMENT';
+    }
     await this.validate();
     const guid = await this.guidGenerator(this.db.tableName, 6);
     if (!guid) {
@@ -159,8 +165,9 @@ export default class PaymentTransactionModel extends BaseModel {
 
     const insertData: Record<string, any> = {
       [this.db.guid]: guid,
-      [this.db.billing_cycle]: this.billing_cycle,
-      [this.db.adjustment]: this.adjustment,
+      [this.db.source_type]: this.source_type,
+      [this.db.billing_cycle]: this.billing_cycle ?? null,
+      [this.db.adjustment]: this.adjustment ?? null,
       [this.db.amount_usd]: this.amount_usd,
       [this.db.amount_local]: this.amount_local,
       [this.db.currency_code]: this.currency_code,
@@ -254,6 +261,7 @@ export default class PaymentTransactionModel extends BaseModel {
 
   private async validate(): Promise<void> {
     const validationResult = PaymentTransactionDbStructure.validation.validateTransactionModel({
+      source_type: this.source_type,
       billing_cycle: this.billing_cycle,
       adjustment: this.adjustment,
       amount_usd: this.amount_usd,

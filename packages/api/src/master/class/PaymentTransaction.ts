@@ -1,3 +1,4 @@
+import { paymentAmountsConsistent } from '../services/payment-money.js';
 import { PaymentTransactionStatus, TimezoneConfigUtils } from '@toke/shared';
 
 import PaymentTransactionModel from '../model/PaymentTransactionModel.js';
@@ -191,8 +192,8 @@ export default class PaymentTransaction extends PaymentTransactionModel {
    * Crée une nouvelle transaction avec les paramètres de base
    */
   static createNew(data: {
-    billing_cycle: number;
-    adjustment: number;
+    billing_cycle?: number;
+    adjustment?: number;
     amount_usd: number;
     amount_local: number;
     currency_code: string;
@@ -200,10 +201,12 @@ export default class PaymentTransaction extends PaymentTransactionModel {
     payment_method: number;
     // payment_reference: string;
   }): PaymentTransaction {
+    if (!!data.billing_cycle === !!data.adjustment) throw new Error('Payment requires exactly one source');
+    const transaction = new PaymentTransaction();
+    if (data.billing_cycle) transaction.setBillingCycle(data.billing_cycle);
+    if (data.adjustment) transaction.setAdjustment(data.adjustment);
     return (
-      new PaymentTransaction()
-        .setBillingCycle(data.billing_cycle)
-        .setAdjustment(data.adjustment)
+      transaction
         .setAmountUsd(data.amount_usd)
         .setAmountLocal(data.amount_local)
         .setCurrencyCode(data.currency_code)
@@ -336,6 +339,13 @@ export default class PaymentTransaction extends PaymentTransactionModel {
     this.billing_cycle = billing_cycle;
     return this;
   }
+
+  preserveLegacySourceForRetry(): PaymentTransaction {
+    this.source_type = 'LEGACY';
+    return this;
+  }
+
+  getSourceType(): 'CYCLE' | 'ADJUSTMENT' | 'LEGACY' | undefined { return this.source_type; }
 
   setAdjustment(adjustment: number): PaymentTransaction {
     this.adjustment = adjustment;
@@ -587,13 +597,7 @@ export default class PaymentTransaction extends PaymentTransactionModel {
    * Vérifie la cohérence des montants avec le taux de change
    */
   isAmountConsistent(): boolean {
-    if (!this.amount_usd || !this.amount_local || !this.exchange_rate_used) {
-      return false;
-    }
-
-    const calculatedLocal = this.amount_usd * this.exchange_rate_used;
-    const tolerance = 0.01;
-    return Math.abs(calculatedLocal - this.amount_local) <= tolerance;
+    return paymentAmountsConsistent(this.amount_usd, this.amount_local, this.exchange_rate_used);
   }
 
   /**
@@ -803,6 +807,7 @@ export default class PaymentTransaction extends PaymentTransactionModel {
     const paymentMethod = await this.getPaymentMethod();
     const baseData = {
       [RS.GUID]: this.guid,
+      source_type: this.source_type,
       [RS.AMOUNT_USD]: this.amount_usd,
       [RS.AMOUNT_LOCAL]: this.amount_local,
       [RS.CURRENCY_CODE]: this.currency_code,
@@ -923,8 +928,9 @@ export default class PaymentTransaction extends PaymentTransactionModel {
   private hydrate(data: any): PaymentTransaction {
     this.id = data.id;
     this.guid = data.guid;
-    this.billing_cycle = data.billing_cycle;
-    this.adjustment = data.adjustment;
+    this.source_type = data.source_type;
+    this.billing_cycle = data.billing_cycle ?? undefined;
+    this.adjustment = data.adjustment ?? undefined;
     this.amount_usd = data.amount_usd;
     this.amount_local = data.amount_local;
     this.currency_code = data.currency_code;
