@@ -45,6 +45,8 @@ import FraudRoute from './routes/manager/fraud.route.js';
 import SponsorRoute from './routes/sponsor.route.js';
 import AppConfigRoute from './routes/app.config.route.js';
 import authRoute from './routes/auth.route.js';
+import LicenseRecordsRoute from './routes/license.records.route.js';
+import MonthlyBillingPreviewRoute from './routes/monthly.billing.preview.route.js';
 
 interface AppConfig {
   port: number;
@@ -301,6 +303,8 @@ export default class App {
     this.app.use('/sponsors', SponsorRoute);
     this.app.use('/app', AppConfigRoute);
     this.app.use('/auth', authRoute);
+    this.app.use('/license-records', LicenseRecordsRoute);
+    this.app.use('/license-billing', MonthlyBillingPreviewRoute);
 
     // *** Manager Route ***//
     this.app.use(`/billing`, BillingRoute);

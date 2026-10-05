@@ -4,7 +4,6 @@ import EmployeeLicenseService, { Activity } from './employee.license.service.js'
 
 export default class ActivityService {
   static async sendEmployeeLastActivity(data: Activity): Promise<boolean> {
-    console.log('Sending employee last activity:', data);
     if (!data.employee_license) {
       return false;
     }

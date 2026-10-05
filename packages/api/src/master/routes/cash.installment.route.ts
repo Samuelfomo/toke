@@ -3,10 +3,9 @@ import { HttpStatus } from '@toke/shared';
 
 import Ensure from '../../middle/ensured-routes.js';
 import R from '../../tools/response.js';
-import { TableInitializer } from '../database/db.initializer.js';
-import { tableName } from '../../utils/response.model.js';
-import { CashInstallmentError, recordCashInstallment } from '../services/cash-installment.js';
+import { CashInstallmentError } from '../services/cash-installment.js';
 import { EmployeeLeaveError, leaveDate } from '../services/employee-leave.js';
+import CashPayment from '../class/CashPayment.js';
 
 const router = Router();
 router.post('/:transactionGuid/record', Ensure.post(), async (req: Request, res: Response) => {
@@ -27,11 +26,9 @@ router.post('/:transactionGuid/record', Ensure.post(), async (req: Request, res:
     )
       throw new CashInstallmentError('Required installment fields missing');
     const received = new Date(leaveDate(b.received_at));
-    const db = TableInitializer.getModel(tableName.PAYMENT_TRANSACTION).sequelize;
-    if (!db) throw new Error('Database unavailable');
     return R.handleSuccess(
       res,
-      await recordCashInstallment(db, {
+      await new CashPayment().record({
         transactionGuid: Number(req.params.transactionGuid),
         actorUserGuid: b.actor_user_guid,
         amountLocal: b.amount_local,
@@ -61,26 +58,13 @@ router.get('/:transactionGuid/balance', Ensure.get(), async (req: Request, res: 
         code: 'invalid_guid',
         message: 'Invalid transaction GUID',
       });
-    const db = TableInitializer.getModel(tableName.PAYMENT_TRANSACTION).sequelize;
-    if (!db) throw new Error('Database unavailable');
-    const [raw] = await db.query('SELECT * FROM xa_payment_balance WHERE guid = :guid', {
-      replacements: { guid: Number(req.params.transactionGuid) },
-    });
-    const b = (raw as any[])[0];
+    const b = await new CashPayment().balance(Number(req.params.transactionGuid));
     if (!b)
       return R.handleError(res, HttpStatus.NOT_FOUND, {
         code: 'payment_not_found',
         message: 'Payment not found',
       });
-    return R.handleSuccess(res, {
-      ...b,
-      billing_state:
-        Number(b.outstanding_local) === 0
-          ? 'PAID'
-          : Number(b.received_local) > 0
-            ? 'PARTIALLY_PAID'
-            : 'UNPAID',
-    });
+    return R.handleSuccess(res, b);
   } catch (e) {
     console.error(e);
     return R.handleError(res, HttpStatus.INTERNAL_ERROR, {

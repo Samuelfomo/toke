@@ -94,37 +94,36 @@ export default class ActivityMonitoringDb {
     licenseGuid: number,
     start: string,
     end: string,
+    sharedTransaction?: Transaction,
   ): Promise<Record<string, any>> {
     const db = this.database();
-    return db.transaction<Record<string, any>>(
-      { isolationLevel: Transaction.ISOLATION_LEVELS.REPEATABLE_READ },
-      async (transaction) => {
-        const rows = async (sql: string, replacements: Record<string, any> = {}) => {
-          const [result] = await db.query(sql, { transaction, replacements });
-          return result as any[];
-        };
-        const license = (
-          await rows(
-            `SELECT gl.*,t.guid AS tenant_guid,t.timezone FROM xa_global_license gl
+    const read = async (transaction: Transaction): Promise<Record<string, any>> => {
+      const rows = async (sql: string, replacements: Record<string, any> = {}) => {
+        const [result] = await db.query(sql, { transaction, replacements });
+        return result as any[];
+      };
+      const license = (
+        await rows(
+          `SELECT gl.*,t.guid AS tenant_guid,t.timezone FROM xa_global_license gl
         JOIN xa_tenant t ON t.id=gl.tenant WHERE gl.guid = :guid`,
-            { guid: licenseGuid },
-          )
-        )[0];
-        if (!license) throw new ActivityMonitoringDataError('License not found');
-        const period = (
-          await rows(
-            `SELECT
+          { guid: licenseGuid },
+        )
+      )[0];
+      if (!license) throw new ActivityMonitoringDataError('License not found');
+      const period = (
+        await rows(
+          `SELECT
         CAST(:start AS timestamptz) AT TIME ZONE :zone AS local_start,
         (CAST(:start AS timestamptz) AT TIME ZONE :zone)=date_trunc('month',CAST(:start AS timestamptz) AT TIME ZONE :zone)
         AND CAST(:end AS timestamptz)=((CAST(:start AS timestamptz) AT TIME ZONE :zone)+INTERVAL '1 month') AT TIME ZONE :zone AS valid,
         CAST(:end AS timestamptz)<=NOW() AS closed, CAST(:start AS timestamptz)<=NOW() AS started`,
-            { start, end, zone: license.timezone || 'UTC' },
-          )
-        )[0];
-        if (!period?.valid || !period.started)
-          throw new ActivityMonitoringDataError('Full calendar month in tenant timezone required');
-        const employees = await rows(
-          `SELECT el.guid AS employee_license_guid,el.contractual_status,
+          { start, end, zone: license.timezone || 'UTC' },
+        )
+      )[0];
+      if (!period?.valid || !period.started)
+        throw new ActivityMonitoringDataError('Full calendar month in tenant timezone required');
+      const employees = await rows(
+        `SELECT el.guid AS employee_license_guid,el.contractual_status,
         COUNT(a.id)::integer AS active_days,MAX(a.last_punch_date) AS last_activity,
         COUNT(a.id) FILTER (WHERE a.last_punch_date>=LEAST(CAST(:end AS timestamptz),CURRENT_TIMESTAMP)-INTERVAL '7 days')::integer AS active_days_last_7_days,
         COUNT(a.id) FILTER (WHERE EXISTS(SELECT 1 FROM xa_employee_leave lv WHERE lv.employee_license=el.id
@@ -134,22 +133,27 @@ export default class ActivityMonitoringDb {
         WHERE el.global_license = :license AND el.activation_date<CAST(:end AS timestamptz)
           AND (el.deactivation_date IS NULL OR el.deactivation_date>CAST(:start AS timestamptz))
         GROUP BY el.id,el.guid,el.contractual_status ORDER BY el.guid`,
-          { license: license.id, start, end, zone: license.timezone || 'UTC' },
+        { license: license.id, start, end, zone: license.timezone || 'UTC' },
+      );
+      // Signal réel pendant le mois : le congé ultérieur ou le statut actuel ne l'efface pas.
+      return {
+        license_guid: licenseGuid,
+        tenant_guid: Number(license.tenant_guid),
+        timezone: license.timezone || 'UTC',
+        period_start: start,
+        period_end: end,
+        period_closed: !!period.closed,
+        minimum_seats: Number(license.minimum_seats),
+        unit_price_usd: String(license.base_price_usd),
+        employees,
+      };
+    };
+    return sharedTransaction
+      ? read(sharedTransaction)
+      : db.transaction<Record<string, any>>(
+          { isolationLevel: Transaction.ISOLATION_LEVELS.REPEATABLE_READ },
+          read,
         );
-        // Signal réel pendant le mois : le congé ultérieur ou le statut actuel ne l'efface pas.
-        return {
-          license_guid: licenseGuid,
-          tenant_guid: Number(license.tenant_guid),
-          timezone: license.timezone || 'UTC',
-          period_start: start,
-          period_end: end,
-          period_closed: !!period.closed,
-          minimum_seats: Number(license.minimum_seats),
-          unit_price_usd: String(license.base_price_usd),
-          employees,
-        };
-      },
-    );
   }
 
   private database(): Sequelize {

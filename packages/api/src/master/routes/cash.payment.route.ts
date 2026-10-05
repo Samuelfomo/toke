@@ -3,12 +3,8 @@ import { HttpStatus } from '@toke/shared';
 
 import Ensure from '../../middle/ensured-routes.js';
 import R from '../../tools/response.js';
-import { tableName } from '../../utils/response.model.js';
-import { TableInitializer } from '../database/db.initializer.js';
-import {
-  CashConfirmationError,
-  confirmCashPayment,
-} from '../services/cash-payment-confirmation.js';
+import { CashConfirmationError } from '../services/cash-payment-confirmation.js';
+import CashPayment from '../class/CashPayment.js';
 
 const router = Router();
 // User authorization belongs to the integrating application.
@@ -34,10 +30,7 @@ router.post('/:transactionGuid/confirm', Ensure.post(), async (req: Request, res
     ) {
       throw new CashConfirmationError('received_at must be an ISO timestamp with timezone');
     }
-    const db = TableInitializer.getModel(tableName.PAYMENT_TRANSACTION).sequelize;
-    if (!db) throw new Error('Master database connection is unavailable');
-    const result = await confirmCashPayment(
-      db,
+    const result = await new CashPayment().confirm(
       {
         transactionGuid: Number(guid),
         billingCycleGuid: body.billing_cycle_guid,
