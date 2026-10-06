@@ -13,16 +13,21 @@ const assert = require('node:assert/strict'),
       'renewal-preview',
       'renewal-amounts',
       'payment-money',
-    ])
-      fs.writeFileSync(
-        path.join(folder, name + '.js'),
-        stripTypeScriptTypes(
-          fs.readFileSync(path.join(__dirname, '../master/services', name + '.ts'), 'utf8'),
-        ).replace(
+    ]) {
+      const file =
+        name.startsWith('renewal-') && name !== 'renewal-amounts'
+          ? path.join(__dirname, '../master/database', 'db.' + name + '.ts')
+          : path.join(__dirname, 'fixtures', name + '.ts');
+      let source = stripTypeScriptTypes(fs.readFileSync(file, 'utf8'))
+        .replace(
           "import { Transaction } from 'sequelize';",
           "const Transaction={ISOLATION_LEVELS:{REPEATABLE_READ:'REPEATABLE READ'}};",
-        ),
-      );
+        )
+        .replace("'./db.renewal-preview.js'", "'./renewal-preview.js'")
+        .replace("'../services/renewal-amounts.js'", "'./renewal-amounts.js'")
+        .replace("'../services/payment-money.js'", "'./payment-money.js'");
+      fs.writeFileSync(path.join(folder, name + '.js'), source);
+    }
     const { prepareRenewal } = await import(
       'file://' + path.join(folder, 'renewal-preparation.js')
     );

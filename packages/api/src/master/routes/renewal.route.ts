@@ -3,19 +3,14 @@ import { HttpStatus } from '@toke/shared';
 
 import Ensure from '../../middle/ensured-routes.js';
 import R from '../../tools/response.js';
-import { TableInitializer } from '../database/db.initializer.js';
-import { tableName } from '../../utils/response.model.js';
-import { previewRenewal, RenewalPreviewError } from '../services/renewal-preview.js';
-import { prepareRenewal, RenewalPreparationError } from '../services/renewal-preparation.js';
+import Renewal from '../class/Renewal.js';
+import { RenewalPreviewError } from '../services/renewal-preview.js';
+import { RenewalPreparationError } from '../services/renewal-preparation.js';
 
 const router = Router();
 router.get('/:licenseGuid/preview', Ensure.get(), async (req: Request, res: Response) => {
   try {
-    const guid = String(req.params.licenseGuid);
-    if (!/^[1-9][0-9]{5}$/.test(guid)) throw new RenewalPreviewError('Invalid license GUID');
-    const db = TableInitializer.getModel(tableName.GLOBAL_LICENSE).sequelize;
-    if (!db) throw new Error('Master database connection unavailable');
-    return R.handleSuccess(res, await previewRenewal(db, Number(guid)));
+    return R.handleSuccess(res, await new Renewal().preview(req.params.licenseGuid));
   } catch (error: any) {
     if (error instanceof RenewalPreviewError)
       return R.handleError(res, HttpStatus.BAD_REQUEST, {
@@ -31,11 +26,10 @@ router.get('/:licenseGuid/preview', Ensure.get(), async (req: Request, res: Resp
 });
 router.post('/:licenseGuid/prepare', Ensure.post(), async (req: Request, res: Response) => {
   try {
-    const guid = String(req.params.licenseGuid);
-    if (!/^[1-9][0-9]{5}$/.test(guid)) throw new RenewalPreparationError('Invalid license GUID');
-    const db = TableInitializer.getModel(tableName.GLOBAL_LICENSE).sequelize;
-    if (!db) throw new Error('Master database connection unavailable');
-    return R.handleSuccess(res, await prepareRenewal(db, Number(guid), req.body ?? {}));
+    return R.handleSuccess(
+      res,
+      await new Renewal().prepare(req.params.licenseGuid, req.body ?? {}),
+    );
   } catch (error: any) {
     if (error instanceof RenewalPreparationError)
       return R.handleError(res, HttpStatus.BAD_REQUEST, {

@@ -5,7 +5,7 @@ import {
   TimezoneConfigUtils,
   Type,
 } from '@toke/shared';
-import { Op, QueryTypes } from 'sequelize';
+import { Op } from 'sequelize';
 
 import BaseModel from '../database/db.base.js';
 import { tableName } from '../../utils/response.model.js';
@@ -56,14 +56,25 @@ export default class GlobalLicenseModel extends BaseModel {
    */
   protected async loadGeneratedColumns(): Promise<void> {
     if (!this.guid) return;
-    const connection = TableInitializer.getModel(this.db.tableName).sequelize;
-    if (!connection) throw new Error('License database connection is unavailable');
-    const rows = await connection.query<any>(
-      'SELECT total_seats_purchased FROM xa_global_license_with_seat_count WHERE guid = :guid',
-      { replacements: { guid: this.guid }, type: QueryTypes.SELECT },
-    );
-    if (!rows.length) throw new Error('License calculated data was not found');
-    this._total_seats_purchased = Number(rows[0].total_seats_purchased);
+
+    try {
+      const model = TableInitializer.getModel(this.db.tableName);
+
+      // ✅ Utiliser Sequelize attributes pour sélectionner UNIQUEMENT les colonnes générées
+      const result = await model.findOne({
+        where: { [this.db.guid]: this.guid },
+        attributes: ['total_seats_purchased', 'billing_status'], // Sélectionner uniquement ces colonnes
+      });
+
+      if (result) {
+        const data = result.get() as any;
+        this._total_seats_purchased = data.total_seats_purchased;
+        this._billing_status = data.billing_status;
+      }
+    } catch (error) {
+      console.error('⚠️ Erreur chargement colonnes générées:', error);
+      // Ne pas throw pour ne pas bloquer le reste
+    }
   }
 
   /**
@@ -348,7 +359,7 @@ export default class GlobalLicenseModel extends BaseModel {
 }
 
 // import { BillingCycle, LicenseStatus, Type } from '@toke/shared';
-// import { Op, QueryTypes } from 'sequelize';
+// import { Op } from 'sequelize';
 //
 // import BaseModel from '../database/db.base.js';
 // import { tableName } from '../../utils/response.model.js';

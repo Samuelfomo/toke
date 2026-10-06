@@ -286,89 +286,26 @@ const paymentTransactionWithValidations = basePaymentTransactionSchema
   );
 
 // Puis appliquer les règles métier sur ce sous-schéma
-export const createPaymentTransactionSchema = basePaymentTransactionSchema.omit({
-  completed_at: true,
-  failed_at: true,
-  failure_reason: true,
-});
-// .refine(
-//   (data) => {
-//     const calculatedLocal = Math.round(data.amount_usd * data.exchange_rate_used * 100) / 100; // 2 décimales
-//     const tolerance = PAYMENT_TRANSACTION_VALIDATION.AMOUNT_CONSISTENCY_TOLERANCE;
-//     return Math.abs(calculatedLocal - data.amount_local) <= tolerance;
-//   },
-//   {
-//     message: PAYMENT_TRANSACTION_ERRORS.AMOUNT_CONSISTENCY_INVALID,
-//     path: ['amount_local'],
-//   },
-// );
+const paymentSourceGuidSchema = z.number().int().min(100000).max(999999);
 
-// Schema for updates - most fields optional
-export const updatePaymentTransactionSchema = basePaymentTransactionSchema
-  .partial()
-  // .refine(
-  //   (data) => {
-  //     // Amount consistency validation (only if all three values are present)
-  //     if (
-  //       data.amount_usd !== undefined &&
-  //       data.exchange_rate_used !== undefined &&
-  //       data.amount_local !== undefined
-  //     ) {
-  //       const calculatedLocal = data.amount_usd * data.exchange_rate_used;
-  //       const tolerance = PAYMENT_TRANSACTION_VALIDATION.AMOUNT_CONSISTENCY_TOLERANCE;
-  //       return Math.abs(calculatedLocal - data.amount_local) <= tolerance;
-  //     }
-  //     return true;
-  //   },
-  //   {
-  //     message: PAYMENT_TRANSACTION_ERRORS.AMOUNT_CONSISTENCY_INVALID,
-  //     path: ['amount_local'],
-  //   },
-  // )
-  .refine(
-    (data) => {
-      if (
-        data.amount_usd !== undefined &&
-        data.exchange_rate_used !== undefined &&
-        data.amount_local !== undefined
-      ) {
-        const calculatedLocal = Math.round(data.amount_usd * data.exchange_rate_used * 100) / 100;
-        const tolerance = PAYMENT_TRANSACTION_VALIDATION.AMOUNT_CONSISTENCY_TOLERANCE;
-        return Math.abs(calculatedLocal - data.amount_local) <= tolerance;
-      }
-      return true;
-    },
-    {
-      message: PAYMENT_TRANSACTION_ERRORS.AMOUNT_CONSISTENCY_INVALID,
-      path: ['amount_local'],
-    },
-  )
-  .refine(
-    (data) => {
-      // Date validation only if both dates are present
-      if (data.completed_at && data.initiated_at) {
-        return data.completed_at.getTime() >= data.initiated_at.getTime();
-      }
-      return true;
-    },
-    {
-      message: PAYMENT_TRANSACTION_ERRORS.DATE_SEQUENCE_INVALID,
-      path: ['completed_at'],
-    },
-  )
-  .refine(
-    (data) => {
-      // Failure reason validation for FAILED status
-      if (data.transaction_status === PaymentTransactionStatus.FAILED) {
-        return data.failure_reason && data.failure_reason.trim().length > 0;
-      }
-      return true;
-    },
-    {
-      message: PAYMENT_TRANSACTION_ERRORS.FAILURE_REASON_REQUIRED,
-      path: ['failure_reason'],
-    },
-  );
+// Contrat client : les montants et le statut sont déterminés par le serveur.
+export const createPaymentTransactionSchema = z.object({
+  payment_for: z.enum(['CYCLE', 'ADJUSTMENT']),
+  billing_cycle: paymentSourceGuidSchema.optional(),
+  adjustment: paymentSourceGuidSchema.optional(),
+  payment_method: paymentSourceGuidSchema,
+}).superRefine((data, ctx) => {
+  const valid = data.payment_for === 'CYCLE'
+    ? data.billing_cycle !== undefined && data.adjustment === undefined
+    : data.adjustment !== undefined && data.billing_cycle === undefined;
+  if (!valid) ctx.addIssue({ code: z.ZodIssueCode.custom,
+    message: 'Exactly one reference matching payment_for is required', path: ['payment_for'] });
+});
+
+// Les champs financiers, sources et transitions ne sont pas modifiables par PUT.
+export const updatePaymentTransactionSchema = z.object({
+  failure_reason: z.string().trim().min(1).max(500),
+}).strict();
 
 // Schema for filters
 export const paymentTransactionFiltersSchema = z
@@ -500,9 +437,6 @@ export const paymentTransactionSearchSchema = z
 // Validation functions with error handling
 export const validatePaymentTransactionCreation = (data: any) => {
   try {
-    if (typeof data.amount_usd === 'number' && typeof data.exchange_rate_used === 'number') {
-      data.amount_local = Math.round(data.amount_usd * data.exchange_rate_used * 100) / 100;
-    }
     return createPaymentTransactionSchema.parse(data);
   } catch (error) {
     if (error instanceof z.ZodError) {
@@ -514,9 +448,6 @@ export const validatePaymentTransactionCreation = (data: any) => {
 
 export const validatePaymentTransactionUpdate = (data: any) => {
   try {
-    if (typeof data.amount_usd === 'number' && typeof data.exchange_rate_used === 'number') {
-      data.amount_local = Math.round(data.amount_usd * data.exchange_rate_used * 100) / 100;
-    }
     return updatePaymentTransactionSchema.parse(data);
   } catch (error) {
     if (error instanceof z.ZodError) {
@@ -598,6 +529,9 @@ export const validatePaymentTransactionSearch = (data: any) => {
 
 // Complete schema for responses (with metadata)
 export const paymentTransaction = basePaymentTransactionSchema.extend({
+  billing_cycle: z.number().int().positive().nullable().optional(),
+  adjustment: z.number().int().positive().nullable().optional(),
+  source_type: z.enum(['CYCLE', 'ADJUSTMENT', 'LEGACY']),
   id: z.number().int().positive(),
   guid: z
     .number()

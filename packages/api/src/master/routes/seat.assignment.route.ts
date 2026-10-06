@@ -3,9 +3,7 @@ import { HttpStatus } from '@toke/shared';
 
 import Ensure from '../../middle/ensured-routes.js';
 import R from '../../tools/response.js';
-import { TableInitializer } from '../database/db.initializer.js';
-import { tableName } from '../../utils/response.model.js';
-import { changeSeatAssignment, SeatAssignmentError } from '../services/seat-assignment.js';
+import SeatAssignment, { SeatAssignmentError } from '../class/SeatAssignment.js';
 
 const router = Router();
 for (const action of ['ASSIGN', 'RELEASE'] as const) {
@@ -14,19 +12,9 @@ for (const action of ['ASSIGN', 'RELEASE'] as const) {
     Ensure.post(),
     async (req: Request, res: Response) => {
       try {
-        const license = String(req.params.licenseGuid),
-          employee = String(req.body?.employee_license_guid ?? '');
-        if (!/^[1-9][0-9]{5}$/.test(license) || !/^[1-9][0-9]{5}$/.test(employee))
-          throw new SeatAssignmentError('Invalid GUID');
-        const db = TableInitializer.getModel(tableName.GLOBAL_LICENSE).sequelize;
-        if (!db) throw new Error('Master database connection unavailable');
-        const result = await changeSeatAssignment(
-          db,
-          {
-            licenseGuid: Number(license),
-            employeeLicenseGuid: Number(employee),
-            actorUserGuid: req.body?.actor_user_guid,
-          },
+        const result = await new SeatAssignment().change(
+          req.params.licenseGuid,
+          req.body ?? {},
           action,
         );
         return R.handleSuccess(res, result);
