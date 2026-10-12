@@ -67,7 +67,7 @@
             </ol>
           </div>
 
-          <main class="min-h-[360px] px-5 py-5 sm:px-6 sm:py-6">
+          <main class="min-h-[360px] flex-1 overflow-y-auto px-5 py-5 sm:px-6 sm:py-6">
             <!-- ÉTAPE 1 : COLLABORATEURS -->
             <section v-if="currentStep === 1" class="space-y-4">
               <div

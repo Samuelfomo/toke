@@ -294,7 +294,7 @@ function manageSchedule(): void {
 
 function managePunches(): void {
   if (!employee.value) return
-  router.push({ name: 'employeeAttendanceView', params: { id: employee.value.guid } })
+  router.push({ name: 'Pointages', query: { employee: employee.value.guid } })
 }
 
 function manageMemos(): void {

@@ -616,6 +616,10 @@ const historyReview = computed(
   () => suggestion.value?.diagnostics.historyReview ?? null,
 )
 
+const generationScope = computed(
+  () => suggestion.value?.diagnostics.generationScope ?? null,
+)
+
 const historyReviewMessage = computed(() => {
   const review = historyReview.value
   if (!review) return ''

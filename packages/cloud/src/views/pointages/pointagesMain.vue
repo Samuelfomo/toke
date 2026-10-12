@@ -2,23 +2,23 @@
   <div class="min-h-screen flex flex-col bg-gradient-to-br from-[#9cbdf6] via-[#f5f9ff] to-[#dbcdef]">
     <Header />
 
-    <main class="flex-1 max-w-screen-2xl mx-auto px-4 sm:px-6 py-6 space-y-4 w-full">
+    <main class="flex-1 min-w-0 max-w-screen-2xl mx-auto px-4 sm:px-6 py-6 space-y-4 w-full">
 
       <!-- ══════════════════ PAGE TITLE ══════════════════ -->
-      <div class="flex items-center justify-between">
+      <div class="flex flex-col xl:flex-row xl:items-center justify-between gap-4">
         <div>
           <h1 class="text-2xl font-bold text-slate-800">Gestion des pointages</h1>
           <p class="text-sm text-slate-500 mt-0.5">Consultez et gérez les pointages de votre équipe en temps réel.</p>
         </div>
-        <div class="flex items-center gap-3">
+        <div class="grid grid-cols-2 sm:flex sm:flex-wrap sm:items-center gap-2 sm:gap-3 w-full xl:w-auto min-w-0">
           <!-- Sélecteur de période -->
-          <div class="flex items-center gap-2 bg-white border border-slate-200 rounded-lg px-3 py-2 shadow-sm">
+          <div class="col-span-2 flex items-center gap-2 min-w-0 bg-white border border-slate-200 rounded-lg px-3 py-2 shadow-sm">
             <input
                 type="date"
                 v-model="filterStartDate"
-                class="text-sm font-semibold text-slate-800 border-none outline-none bg-transparent cursor-pointer"
+                class="w-full sm:w-auto min-w-0 flex-1 text-sm font-semibold text-slate-800 border-none outline-none bg-transparent cursor-pointer"
             />
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="w-4 h-4 text-slate-400">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="w-4 h-4 shrink-0 text-slate-400">
               <line x1="5" y1="12" x2="19" y2="12"/>
               <polyline points="12 5 19 12 12 19"/>
             </svg>
@@ -26,14 +26,21 @@
                 type="date"
                 v-model="filterEndDate"
                 :min="filterStartDate"
-                class="text-sm font-semibold text-slate-800 border-none outline-none bg-transparent cursor-pointer"
+                class="w-full sm:w-auto min-w-0 flex-1 text-sm font-semibold text-slate-800 border-none outline-none bg-transparent cursor-pointer"
             />
           </div>
+          <button
+              @click="loadEntries"
+              :disabled="loading || !filterStartDate || !filterEndDate || filterStartDate > filterEndDate"
+              class="whitespace-nowrap px-4 py-2.5 bg-slate-800 hover:bg-slate-900 disabled:opacity-50 text-white text-sm font-semibold rounded-lg transition-colors"
+          >
+            {{ loading ? 'Recherche...' : 'Rechercher' }}
+          </button>
           <!-- Export -->
           <button
               @click="handleExportPDF"
               :disabled="exportLoading || filteredEntries.length === 0"
-              class="flex items-center gap-2 px-4 py-2.5 bg-blue-600 hover:bg-blue-700 disabled:opacity-50 text-white text-sm font-semibold rounded-lg transition-colors shadow-sm"
+              class="flex items-center justify-center gap-2 px-3 sm:px-4 py-2.5 bg-blue-600 hover:bg-blue-700 disabled:opacity-50 text-white text-sm font-semibold rounded-lg transition-colors shadow-sm"
           >
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="w-4 h-4">
               <polyline points="6 9 6 2 18 2 18 9"/>
@@ -68,12 +75,12 @@
       <template v-else>
 
         <!-- ══════════════════ FILTRES ══════════════════ -->
-        <div class="bg-white border border-slate-200 shadow-sm px-5 py-4">
+        <div class="bg-white min-w-0 border border-slate-200 shadow-sm px-3 sm:px-5 py-4">
           <p class="text-xs font-bold text-slate-400 uppercase tracking-wider mb-3">Filtres</p>
-          <div class="flex flex-wrap items-center gap-3">
+          <div class="grid grid-cols-1 sm:flex sm:flex-wrap sm:items-center gap-3">
 
             <!--            &lt;!&ndash; Recherche employé &ndash;&gt;-->
-            <!--            <div class="relative flex-1 min-w-[180px]">-->
+            <!--            <div class="relative flex-1 w-full sm:w-auto min-w-0 sm:min-w-[180px]">-->
             <!--              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2">-->
             <!--                <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>-->
             <!--              </svg>-->
@@ -86,11 +93,11 @@
             <!--            </div>-->
 
             <!-- Filtre employé : select + recherche texte combinés -->
-            <div class="flex items-center gap-2 flex-1 min-w-[280px]">
+            <div class="flex flex-col sm:flex-row sm:items-center gap-2 min-w-0 w-full sm:flex-1 sm:min-w-[280px]">
               <!-- Select employé -->
               <select
                   v-model="filterEmployeeGuid"
-                  class="text-sm border border-slate-200 rounded-lg px-3 py-2 bg-white text-slate-700 focus:outline-none focus:ring-2 focus:ring-blue-500 min-w-[200px]"
+                  class="text-sm border border-slate-200 rounded-lg px-3 py-2 bg-white text-slate-700 focus:outline-none focus:ring-2 focus:ring-blue-500 w-full sm:w-auto sm:max-w-[16rem] min-w-0 sm:min-w-[200px]"
                   @change="filterEmployee = ''"
               >
                 <option value="">Tous les employés</option>
@@ -100,7 +107,7 @@
               </select>
 
               <!-- Recherche texte libre (désactivée si guid sélectionné) -->
-              <div class="relative flex-1">
+              <div class="relative w-full min-w-0 sm:flex-1">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2">
                   <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
                 </svg>
@@ -115,8 +122,14 @@
               </div>
             </div>
 
+            <select v-model="filterSiteGuid" aria-label="Filtrer par site" class="text-sm border border-slate-200 rounded-lg px-3 py-2 bg-white text-slate-700 focus:outline-none focus:ring-2 focus:ring-blue-500 w-full sm:w-auto min-w-0 sm:min-w-[180px]">
+              <option value="">Tous les sites</option>
+              <option v-for="site in uniqueSites" :key="site.guid" :value="site.guid">{{ site.name }}</option>
+              <option v-if="filterSiteGuid && !uniqueSites.some(site => site.guid === filterSiteGuid)" :value="filterSiteGuid">Site sélectionné</option>
+            </select>
+
             <!-- Nature du pointage -->
-            <select v-model="filterNature" class="text-sm border border-slate-200 rounded-lg px-3 py-2 bg-white text-slate-700 focus:outline-none focus:border-none focus:ring-2 focus:ring-blue-500 min-w-[170px]">
+            <select v-model="filterNature" class="text-sm border border-slate-200 rounded-lg px-3 py-2 bg-white text-slate-700 focus:outline-none focus:border-none focus:ring-2 focus:ring-blue-500 w-full sm:w-auto min-w-0 sm:min-w-[170px]">
               <option value="">Toutes les natures</option>
               <option value="standard">Standard (site connu)</option>
               <option value="libre">Libre (waypoint)</option>
@@ -124,7 +137,7 @@
             </select>
 
             <!-- Type de pointage -->
-            <select v-model="filterType" class="text-sm border border-slate-200 rounded-lg px-3 py-2 bg-white text-slate-700 focus:outline-none focus:border-none focus:ring-2 focus:ring-blue-500 min-w-[160px]">
+            <select v-model="filterType" class="text-sm border border-slate-200 rounded-lg px-3 py-2 bg-white text-slate-700 focus:outline-none focus:border-none focus:ring-2 focus:ring-blue-500 w-full sm:w-auto min-w-0 sm:min-w-[160px]">
               <option value="">Tous les types</option>
               <option value="clock_in">Entrée</option>
               <option value="clock_out">Sortie</option>
@@ -135,14 +148,14 @@
             </select>
 
             <!-- Photo -->
-            <select v-model="filterPhoto" class="text-sm border border-slate-200 rounded-lg px-3 py-2 bg-white text-slate-700 focus:outline-none focus:border-none focus:ring-2 focus:ring-blue-500">
+            <select v-model="filterPhoto" class="w-full sm:w-auto min-w-0 text-sm border border-slate-200 rounded-lg px-3 py-2 bg-white text-slate-700 focus:outline-none focus:border-none focus:ring-2 focus:ring-blue-500">
               <option value="">Photo : toutes</option>
               <option value="with">Avec photo</option>
               <option value="without">Sans photo</option>
             </select>
 
             <!-- Statut -->
-            <select v-model="filterStatus" class="text-sm border border-slate-200 rounded-lg px-3 py-2 bg-white text-slate-700 focus:outline-none focus:border-none focus:ring-2 focus:ring-blue-500">
+            <select v-model="filterStatus" class="w-full sm:w-auto min-w-0 text-sm border border-slate-200 rounded-lg px-3 py-2 bg-white text-slate-700 focus:outline-none focus:border-none focus:ring-2 focus:ring-blue-500">
               <option value="">Tous les statuts</option>
               <option value="accepted">Accepté</option>
               <option value="pending">En attente</option>
@@ -172,7 +185,7 @@
         <div class="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-5 gap-3">
 
           <!-- Total -->
-          <div class="bg-white rounded-lg border border-slate-200 shadow-sm px-5 py-4 flex flex-col gap-2">
+          <div class="bg-white rounded-lg border border-slate-200 shadow-sm min-w-0 px-3 sm:px-5 py-4 flex flex-col gap-2">
             <div class="flex items-center justify-between">
               <span class="text-xs font-semibold text-slate-500 uppercase tracking-wide">Total</span>
               <div class="w-8 h-8 rounded-lg bg-slate-100 flex items-center justify-center">
@@ -187,7 +200,7 @@
           </div>
 
           <!-- Standard -->
-          <div class="bg-white rounded-lg border border-blue-100 shadow-sm px-5 py-4 flex flex-col gap-2">
+          <div class="bg-white rounded-lg border border-blue-100 shadow-sm min-w-0 px-3 sm:px-5 py-4 flex flex-col gap-2">
             <div class="flex items-center justify-between">
               <span class="text-xs font-semibold text-blue-500 uppercase tracking-wide">Standard</span>
               <div class="w-8 h-8 rounded-lg bg-blue-50 flex items-center justify-center">
@@ -202,7 +215,7 @@
           </div>
 
           <!-- Libre / Waypoint -->
-          <div class="bg-white rounded-lg border border-purple-100 shadow-sm px-5 py-4 flex flex-col gap-2">
+          <div class="bg-white rounded-lg border border-purple-100 shadow-sm min-w-0 px-3 sm:px-5 py-4 flex flex-col gap-2">
             <div class="flex items-center justify-between">
               <span class="text-xs font-semibold text-purple-500 uppercase tracking-wide">Libre</span>
               <div class="w-8 h-8 rounded-lg bg-purple-50 flex items-center justify-center">
@@ -218,7 +231,7 @@
           </div>
 
           <!-- Fallback -->
-          <div class="bg-white rounded-lg border border-amber-100 shadow-sm px-5 py-4 flex flex-col gap-2">
+          <div class="bg-white rounded-lg border border-amber-100 shadow-sm min-w-0 px-3 sm:px-5 py-4 flex flex-col gap-2">
             <div class="flex items-center justify-between">
               <span class="text-xs font-semibold text-amber-600 uppercase tracking-wide">Partagé</span>
               <div class="w-8 h-8 rounded-lg bg-amber-50 flex items-center justify-center">
@@ -232,7 +245,7 @@
           </div>
 
           <!--          &lt;!&ndash; Avec photo &ndash;&gt;-->
-          <!--          <div class="bg-white rounded-2xl border border-emerald-100 shadow-sm px-5 py-4 flex flex-col gap-2">-->
+          <!--          <div class="bg-white min-w-0 rounded-2xl border border-emerald-100 shadow-sm min-w-0 px-3 sm:px-5 py-4 flex flex-col gap-2">-->
           <!--            <div class="flex items-center justify-between">-->
           <!--              <span class="text-xs font-semibold text-emerald-600 uppercase tracking-wide">Avec photo</span>-->
           <!--              <div class="w-8 h-8 rounded-lg bg-emerald-50 flex items-center justify-center">-->
@@ -247,7 +260,7 @@
           <!--          </div>-->
 
           <!-- Employés distincts -->
-          <div class="bg-white rounded-lg border border-slate-200 shadow-sm px-5 py-4 flex flex-col gap-2">
+          <div class="bg-white rounded-lg border border-slate-200 shadow-sm min-w-0 px-3 sm:px-5 py-4 flex flex-col gap-2">
             <div class="flex items-center justify-between">
               <span class="text-xs font-semibold text-slate-500 uppercase tracking-wide">Employés</span>
               <div class="w-8 h-8 rounded-lg bg-slate-100 flex items-center justify-center">
@@ -266,7 +279,7 @@
         <div class="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
 
           <!-- En-tête tableau -->
-          <div class="flex items-center justify-between px-5 py-4 border-b border-slate-100">
+          <div class="flex flex-wrap items-center justify-between gap-3 px-3 sm:px-5 py-4 border-b border-slate-100">
             <h2 class="text-sm font-bold text-slate-700">
               Pointages <span class="text-slate-400 font-medium">({{ filteredEntries.length }})</span>
             </h2>
@@ -278,9 +291,10 @@
             </div>
           </div>
 
+          <p class="sm:hidden px-3 pb-3 text-xs text-slate-500">Faites défiler le tableau horizontalement pour voir toutes les informations.</p>
           <!-- Table -->
-          <div class="overflow-x-auto">
-            <table class="w-full text-sm">
+          <div class="w-full max-w-full overflow-x-auto" tabindex="0" role="region" aria-label="Tableau des pointages à défilement horizontal">
+            <table class="w-full min-w-[960px] text-sm">
               <thead>
               <tr class="bg-slate-50 border-b border-slate-100">
                 <th class="text-left text-xs font-bold text-slate-500 uppercase tracking-wide px-5 py-3">Date & heure</th>
@@ -439,7 +453,7 @@
           </div>
 
           <!-- Pagination -->
-          <div v-if="totalPages > 1" class="flex items-center justify-between px-5 py-3.5 border-t border-slate-100 bg-slate-50">
+          <div v-if="totalPages > 1" class="flex flex-col sm:flex-row items-center justify-between gap-3 px-3 sm:px-5 py-3.5 border-t border-slate-100 bg-slate-50">
             <span class="text-xs text-slate-400">
               {{ (currentPage - 1) * pageSize + 1 }}–{{ Math.min(currentPage * pageSize, filteredEntries.length) }} sur {{ filteredEntries.length }}
             </span>
@@ -484,7 +498,7 @@
     >
       <div
           v-if="selectedEntry"
-          class="fixed top-0 right-0 h-full w-[380px] bg-white shadow-2xl border-l border-slate-200 z-[200] flex flex-col overflow-y-auto"
+          class="fixed top-0 right-0 h-full w-full sm:w-[380px] max-w-full bg-white shadow-2xl border-l border-slate-200 z-[200] flex flex-col overflow-y-auto"
       >
         <!-- Header drawer -->
         <div class="flex items-center justify-between px-5 py-4 border-b border-slate-100 bg-slate-50">
@@ -731,6 +745,7 @@ const selectedEntry = ref<PointageEntry | null>(null)
 // ─── Filtres ─────────────────────────────────────────────────────────────────
 const filterEmployee     = ref('')
 const filterEmployeeGuid = ref(readQueryString(route.query.employee) ?? '')
+const filterSiteGuid = ref(readQueryString(route.query.site) ?? '')
 const filterNature    = ref('')
 const filterType      = ref('')
 const filterPhoto     = ref('')
@@ -752,6 +767,8 @@ const initialEndDate = isBusinessDate(queryEndDate)
         : today
 const filterStartDate = ref(initialStartDate <= initialEndDate ? initialStartDate : initialEndDate)
 const filterEndDate   = ref(initialStartDate <= initialEndDate ? initialEndDate : initialStartDate)
+const loadedStartDate = ref(filterStartDate.value)
+const loadedEndDate = ref(filterEndDate.value)
 
 const sourceEntryGuid = ref(readQueryString(route.query.entry))
 const sourceSessionGuid = ref(readQueryString(route.query.session))
@@ -772,6 +789,14 @@ const uniqueEmployees = computed(() => {
   return Array.from(map.entries())
       .map(([guid, name]) => ({ guid, name }))
       .sort((a, b) => a.name.localeCompare(b.name))
+})
+
+const uniqueSites = computed(() => {
+  const sites = new Map<string, string>()
+  for (const entry of allEntries.value) {
+    if (entry.site?.guid) sites.set(entry.site.guid, entry.site.name || entry.site.guid)
+  }
+  return Array.from(sites, ([guid, name]) => ({ guid, name })).sort((a, b) => a.name.localeCompare(b.name))
 })
 
 // ─── Helpers : détermination de la nature ────────────────────────────────────
@@ -879,6 +904,8 @@ const getInitials = (name?: string) => {
 // ─── Filtres computés ─────────────────────────────────────────────────────────
 const hasActiveFilters = computed(() =>
     filterEmployee.value !== '' ||
+    filterEmployeeGuid.value !== '' ||
+    filterSiteGuid.value !== '' ||
     filterNature.value !== '' ||
     filterType.value !== '' ||
     filterPhoto.value !== '' ||
@@ -887,6 +914,7 @@ const hasActiveFilters = computed(() =>
 
 const filteredEntries = computed(() => {
   let entries = [...allEntries.value]
+  if (filterSiteGuid.value) entries = entries.filter(entry => entry.site?.guid === filterSiteGuid.value)
 
   // // Filtre période
   // if (filterStartDate.value) {
@@ -968,6 +996,7 @@ const visiblePages = computed(() => {
 
 // ─── Actions ──────────────────────────────────────────────────────────────────
 const resetFilters = () => {
+  filterSiteGuid.value     = ''
   filterEmployee.value     = ''
   filterEmployeeGuid.value = ''
   filterNature.value       = ''
@@ -1016,6 +1045,9 @@ const openRequestedSourceEntry = () => {
 
 // ─── Chargement des données ───────────────────────────────────────────────────
 const loadEntries = async () => {
+  if (loading.value || !filterStartDate.value || !filterEndDate.value || filterStartDate.value > filterEndDate.value) return
+  const requestedStartDate = filterStartDate.value
+  const requestedEndDate = filterEndDate.value
   try {
     loading.value = true
     error.value   = null
@@ -1024,13 +1056,16 @@ const loadEntries = async () => {
     if (!managerGuid) throw new Error('Utilisateur non connecté')
 
     const response = await EntriesService.listEntries(managerGuid, {
-      startDate: filterStartDate.value || undefined,
-      endDate  : filterEndDate.value   || undefined,
+      startDate: requestedStartDate,
+      endDate  : requestedEndDate,
     })
     if (!response?.success) throw new Error('Erreur API')
 
     const data = response as PeriodAttendanceResponse
     allEntries.value = (data.data?.data?.entries || []) as PointageEntry[]
+    loadedStartDate.value = requestedStartDate
+    loadedEndDate.value = requestedEndDate
+    currentPage.value = 1
     openRequestedSourceEntry()
   } catch (err) {
     error.value = err instanceof Error ? err.message : 'Erreur lors du chargement'
@@ -1048,13 +1083,14 @@ const handleExportPDF = () => {
   try {
     const options: PointagesExportOptions = {
       entries      : filteredEntries.value,
-      periodFrom   : filterStartDate.value,
-      periodTo     : filterEndDate.value,
+      periodFrom   : loadedStartDate.value,
+      periodTo     : loadedEndDate.value,
       generatedBy  : userStore.fullName ?? 'Manager',
       tenantName   : (userStore).tenantName ?? undefined,
       reportRef    : `ATT-${new Date().toISOString().slice(0,10).replace(/-/g,'')}` +
           `-${String(Math.floor(Math.random()*999999)).padStart(6,'0')}`,
       activeFilters: [
+        filterSiteGuid.value ? `Site : ${uniqueSites.value.find(site => site.guid === filterSiteGuid.value)?.name || filterSiteGuid.value}` : '',
         filterNature.value   ? `Nature : ${filterNature.value}`   : '',
         filterType.value     ? `Type : ${filterType.value}`       : '',
         filterPhoto.value    ? `Photo : ${filterPhoto.value}`     : '',
@@ -1067,11 +1103,7 @@ const handleExportPDF = () => {
   }
 }
 
-// Recharger depuis l'API quand la période change
-watch([filterStartDate, filterEndDate], () => {
-  currentPage.value = 1
-  loadEntries()
-})
+watch(filterSiteGuid, () => { currentPage.value = 1 })
 
 onMounted(async () => {
   await loadEntries()

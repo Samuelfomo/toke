@@ -3,7 +3,7 @@
     <PlanningPageHeader
       eyebrow="Étape 4"
       title="Suggestions de planning"
-      description="Générez un brouillon, contrôlez ses alertes puis publiez-le uniquement après validation explicite."
+      description="Retrouvez les propositions de planning à vérifier, celles déjà publiées et les archives."
     >
       <template #actions>
         <button class="secondary-button" :disabled="loading" @click="loadSuggestions">
@@ -12,47 +12,29 @@
         </button>
         <button class="primary-button" :disabled="!managerGuid" @click="showGenerate = true">
           <IconSparkles :size="16" />
-          Nouvelle génération
+          Créer une suggestion
         </button>
       </template>
     </PlanningPageHeader>
 
-    <PlanningInfoPanel
-      title="Cycle de vie d’une suggestion"
-      description="La génération ne publie jamais directement un planning."
-      :examples="[
-        'Brouillon : modifiable et invisible dans les affectations officielles.',
-        'Approuvé : validé puis publié sous forme d’affectations.',
-        'Rejeté : conservé uniquement dans les archives pour la traçabilité.',
-      ]"
-      important="Une suggestion comportant un blocage ou une couverture insuffisante doit être corrigée avant publication."
-    />
-
-    <div class="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+    <div class="grid gap-4 sm:grid-cols-3">
       <SuggestionListMetric
-        label="Brouillons"
+        label="À vérifier"
         :value="draftSuggestions.length"
-        description="À vérifier avant publication"
+        description="Suggestions encore en attente de validation"
         tone="amber"
       />
       <SuggestionListMetric
         label="Publiés"
         :value="approvedSuggestions.length"
-        description="Affectations officielles créées"
+        description="Plannings validés et rendus officiels"
         tone="emerald"
       />
       <SuggestionListMetric
         label="Rejetés"
         :value="rejectedSuggestions.length"
-        description="Conservés dans les archives"
+        description="Suggestions écartées et conservées dans les archives"
         tone="slate"
-      />
-      <SuggestionListMetric
-        label="Conformité moyenne"
-        :value="averageConformity"
-        suffix="%"
-        description="Sur les suggestions chargées"
-        tone="blue"
       />
     </div>
 
@@ -63,7 +45,7 @@
           :class="activeTab === 'active' ? 'active' : ''"
           @click="activeTab = 'active'"
         >
-          Suggestions utiles
+          Suggestions
           <span class="ml-1 rounded-full bg-white/15 px-1.5 py-0.5 text-xs">{{ activeSuggestions.length }}</span>
         </button>
         <button
@@ -71,24 +53,23 @@
           :class="activeTab === 'archives' ? 'active' : ''"
           @click="activeTab = 'archives'"
         >
-          Archives rejetées
+          Archives
           <span class="ml-1 rounded-full bg-white/15 px-1.5 py-0.5 text-xs">{{ rejectedSuggestions.length }}</span>
         </button>
       </div>
 
       <div class="flex w-full flex-col gap-2 sm:flex-row lg:w-auto">
-        <select v-model="statusFilter" class="filter-control sm:w-44">
-          <option value="ALL">Tous les états</option>
-          <option value="draft">Brouillons</option>
+        <select v-if="activeTab === 'active'" v-model="statusFilter" class="filter-control sm:w-44">
+          <option value="ALL">Tous</option>
+          <option value="draft">À vérifier</option>
           <option value="approved">Publiés</option>
-          <option value="rejected">Rejetés</option>
         </select>
         <div class="relative w-full sm:w-72">
           <IconSearch :size="16" class="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
           <input
             v-model="search"
             type="search"
-            placeholder="Période ou état…"
+            placeholder="Rechercher une période…"
             class="search-control"
           />
         </div>
@@ -110,7 +91,7 @@
       <div v-else-if="filteredSuggestions.length === 0" class="px-6 py-16 text-center">
         <IconFileDescription :size="30" class="mx-auto text-slate-300" />
         <p class="mt-3 text-sm font-bold text-slate-800">
-          {{ activeTab === 'archives' ? 'Aucune suggestion rejetée' : 'Aucune suggestion disponible' }}
+          {{ activeTab === 'archives' ? 'Aucune archive' : 'Aucune suggestion disponible' }}
         </p>
         <p class="mx-auto mt-1 max-w-md text-xs leading-5 text-slate-500">
           {{ emptyDescription }}
@@ -122,7 +103,7 @@
           @click="showGenerate = true"
         >
           <IconSparkles :size="16" />
-          Générer une première proposition
+          Créer une première suggestion
         </button>
       </div>
 
@@ -151,30 +132,21 @@
                   class="rounded-full px-2.5 py-1 text-xs font-bold"
                   :class="statusClass(suggestion.status).badge"
                 >
-                  {{ STATUS_LABELS[suggestion.status] }}
+                  {{ statusLabel(suggestion.status) }}
                 </span>
               </div>
-              <p class="mt-1.5 truncate text-xs text-slate-500">
-                {{ suggestion.configuration?.name ? `Règles : ${suggestion.configuration.name}` : 'Règles de planification non renseignées' }}
+              <p class="mt-1.5 text-xs font-semibold" :class="summaryClass(suggestion)">
+                {{ suggestionSummary(suggestion) }}
               </p>
               <div class="mt-2 flex flex-wrap gap-x-4 gap-y-1 text-xs text-slate-400">
                 <span>{{ suggestion.items?.length ?? '—' }} collaborateur(s)</span>
-                <span v-if="suggestion.created_at">Créé le {{ formatDateTime(suggestion.created_at) }}</span>
+                <span v-if="suggestion.status === 'approved' && suggestion.approved_at">Publié le {{ formatDateTime(suggestion.approved_at) }}</span>
+                <span v-else-if="suggestion.created_at">Créée le {{ formatDateTime(suggestion.created_at) }}</span>
               </div>
             </div>
           </div>
 
-          <div class="flex items-center justify-between gap-5 sm:justify-end">
-            <div class="text-left sm:text-right">
-              <p class="text-xs font-bold uppercase tracking-[0.1em] text-slate-400">Conformité</p>
-              <p
-                class="mt-0.5 text-xl font-bold"
-                :class="conformityClass(suggestion.conformity_score)"
-              >
-                {{ suggestion.conformity_score ?? '—' }}
-                <span v-if="suggestion.conformity_score !== null" class="text-xs text-slate-400">%</span>
-              </p>
-            </div>
+          <div class="flex items-center justify-end">
             <IconChevronRight :size="19" class="text-slate-300 transition group-hover:translate-x-0.5 group-hover:text-slate-600" />
           </div>
         </button>
@@ -209,7 +181,6 @@ import {
   formatDate,
   responseData,
   responseError,
-  STATUS_LABELS,
 } from '../planningSuggestion.helpers'
 import type {
   ScheduleSuggestion,
@@ -232,20 +203,11 @@ const draftSuggestions = computed(() => suggestions.value.filter((item) => item.
 const approvedSuggestions = computed(() => suggestions.value.filter((item) => item.status === 'approved'))
 const rejectedSuggestions = computed(() => suggestions.value.filter((item) => item.status === 'rejected'))
 const activeSuggestions = computed(() => suggestions.value.filter((item) => item.status !== 'rejected'))
-const averageConformity = computed(() => {
-  const values = suggestions.value
-    .map((item) => item.conformity_score)
-    .filter((value): value is number => typeof value === 'number')
-  return values.length
-    ? Math.round(values.reduce((sum, value) => sum + value, 0) / values.length)
-    : 0
-})
-
 const filteredSuggestions = computed(() => {
   const byTab = suggestions.value.filter((item) =>
     activeTab.value === 'archives' ? item.status === 'rejected' : item.status !== 'rejected',
   )
-  const byStatus = statusFilter.value === 'ALL'
+  const byStatus = activeTab.value === 'archives' || statusFilter.value === 'ALL'
     ? byTab
     : byTab.filter((item) => item.status === statusFilter.value)
   const query = search.value.trim().toLocaleLowerCase('fr')
@@ -255,10 +217,7 @@ const filteredSuggestions = computed(() => {
     [
       item.period_from,
       item.period_to,
-      STATUS_LABELS[item.status],
-      item.configuration?.name,
-      item.configuration?.version,
-      item.conformity_score,
+      statusLabel(item.status),
     ]
       .filter((value) => value !== null && value !== undefined)
       .some((value) => String(value).toLocaleLowerCase('fr').includes(query)),
@@ -270,8 +229,8 @@ const emptyDescription = computed(() => {
     return 'Aucune suggestion ne correspond aux filtres actuels.'
   }
   return activeTab.value === 'archives'
-    ? 'Les propositions rejetées apparaîtront ici pour assurer la traçabilité.'
-    : 'Lancez une génération après avoir validé les profils, les besoins et la configuration.'
+    ? 'Les suggestions rejetées apparaîtront ici afin de conserver leur historique.'
+    : 'Créez une suggestion lorsque vous souhaitez préparer un nouveau planning.'
 })
 
 async function loadSuggestions(): Promise<void> {
@@ -287,12 +246,13 @@ async function loadSuggestions(): Promise<void> {
   try {
     const response = await ScheduleSuggestionService.list(managerGuid.value, {
       offset: 0,
-      limit: 100,
+      limit: 50,
     })
     const data = responseData(response)
     suggestions.value =
       data.schedule_suggestions?.items ?? data.suggestions?.items ?? []
   } catch (error: any) {
+    console.error('[PlanningSuggestion] Échec du chargement des suggestions', error)
     errorMessage.value = responseError(
       error,
       'Impossible de charger les suggestions.',
@@ -328,11 +288,26 @@ function statusClass(status: SuggestionStatus) {
   }[status]
 }
 
-function conformityClass(value: number | null): string {
-  if (value === null) return 'text-slate-500'
-  if (value >= 90) return 'text-emerald-700'
-  if (value >= 75) return 'text-amber-700'
-  return 'text-red-700'
+function statusLabel(status: SuggestionStatus): string {
+  return { draft: 'À vérifier', approved: 'Publié', rejected: 'Rejeté' }[status]
+}
+
+function issueCount(suggestion: ScheduleSuggestionListItem): number {
+  return suggestion.diagnostics?.violations?.length ?? 0
+}
+
+function suggestionSummary(suggestion: ScheduleSuggestionListItem): string {
+  if (suggestion.status === 'approved') return 'Planning publié'
+  if (suggestion.status === 'rejected') return 'Suggestion archivée'
+  const count = issueCount(suggestion)
+  if (count === 0) return 'Aucun point bloquant détecté · prêt à être vérifié'
+  return `${count} point${count > 1 ? 's' : ''} à vérifier`
+}
+
+function summaryClass(suggestion: ScheduleSuggestionListItem): string {
+  if (suggestion.status === 'approved') return 'text-emerald-700'
+  if (suggestion.status === 'rejected') return 'text-slate-500'
+  return issueCount(suggestion) > 0 ? 'text-amber-700' : 'text-emerald-700'
 }
 
 function formatDateTime(value: string): string {

@@ -20,6 +20,11 @@
         <div class="action-bar-right">
           <span v-if="loading" class="loading-label">Chargement des données…</span>
           <span v-else class="entries-count">{{ entries.length }} pointage(s) chargé(s)</span>
+          <select v-model="filters.siteGuid" aria-label="Filtrer par site" :disabled="loading" class="site-filter">
+            <option value="">Tous les sites</option>
+            <option v-for="site in uniqueSites" :key="site.guid" :value="site.guid">{{ site.name }}</option>
+            <option v-if="filters.siteGuid && !uniqueSites.some(site => site.guid === filters.siteGuid)" :value="filters.siteGuid">Site sélectionné</option>
+          </select>
           <button class="btn-print" :disabled="loading" @click="handlePrint">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16">
               <polyline points="6 9 6 2 18 2 18 9"/>
@@ -252,7 +257,17 @@ const router    = useRouter()
 const userStore = useUserStore()
 
 // ─── État ────────────────────────────────────────────────────────────────────
-const entries   = ref<PointageEntry[]>([])
+const reportEntries = ref<PointageEntry[]>([])
+const entries = computed(() => filters.value.siteGuid
+  ? reportEntries.value.filter(entry => entry.site?.guid === filters.value.siteGuid)
+  : reportEntries.value)
+const uniqueSites = computed(() => {
+  const sites = new Map<string, string>()
+  for (const entry of reportEntries.value) {
+    if (entry.site?.guid) sites.set(entry.site.guid, entry.site.name || entry.site.guid)
+  }
+  return Array.from(sites, ([guid, name]) => ({ guid, name })).sort((a, b) => a.name.localeCompare(b.name))
+})
 const loading   = ref(true)
 const error     = ref<string | null>(null)
 const reportRef = ref(generateReportRef())
@@ -267,7 +282,8 @@ const timezone = Intl.DateTimeFormat().resolvedOptions().timeZone
 
 // ─── Filtres depuis l'URL ─────────────────────────────────────────────────────
 const q = route.query
-const filters = ref<ReportFilters>({
+const filters = ref<ReportFilters & { siteGuid: string }>({
+  siteGuid        : typeof q.site === 'string' ? q.site : '',
   startDate       : (q.start       as string) || '',
   endDate         : (q.end         as string) || '',
   nature          : (q.nature      as string) || '',
@@ -295,7 +311,12 @@ const orgInitials = computed(() => {
 const stats = computed<ReportStats>(() => computeStats(entries.value))
 
 // ─── Filtres actifs (label) ───────────────────────────────────────────────────
-const activeFiltersLabel = computed(() => buildActiveFiltersLabel(filters.value))
+const activeFiltersLabel = computed(() => {
+  const base = buildActiveFiltersLabel(filters.value)
+  if (!filters.value.siteGuid) return base
+  const site = uniqueSites.value.find(site => site.guid === filters.value.siteGuid)
+  return `Site : ${site?.name || filters.value.siteGuid} · ${base}`
+})
 
 // ─── Chargement + filtrage client ─────────────────────────────────────────────
 const loadData = async () => {
@@ -338,7 +359,7 @@ const loadData = async () => {
     }
 
     // Tri chronologique
-    entries.value = data.sort(
+    reportEntries.value = data.sort(
         (a, b) => new Date(a.clocked_at).getTime() - new Date(b.clocked_at).getTime()
     )
 
@@ -355,6 +376,7 @@ onMounted(loadData)
 </script>
 
 <style scoped>
+.site-filter { padding: 8px 12px; border: 1px solid #cbd5e1; border-radius: 6px; background: white; color: #334155; max-width: 240px; }
 /* ══════════════════════════════════════════════════════════════════════════════
    STYLES — optimisés écran + impression
 ══════════════════════════════════════════════════════════════════════════════ */

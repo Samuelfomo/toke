@@ -22,7 +22,6 @@ import MapVue from './views/site/map.vue';
 
 import { useUserStore } from '@/stores/userStore'
 import EmployeeSchedulesView from "@/views/schedule/employeeSchedulesView.vue";
-import EmployeeAttendanceView from "@/views/employeeAttendanceView.vue";
 import QrCodeAuth from "@/views/QrCodeAuth.vue";
 import { planningRoutes } from '@/router/planning'
 import  AttendanceStatisticsOverview from '@/views/dashboard/AttendanceStatisticsRouteView.vue'
@@ -153,12 +152,6 @@ const routes: RouteRecordRaw[] = [
     path: '/employeeSchedulesView/:id',
     name: 'employeeSchedulesView',
     component: EmployeeSchedulesView,
-    meta: { requiresAuth: true },
-  },
-  {
-    path: '/employeeAttendanceView/:id',
-    name: 'employeeAttendanceView',
-    component: EmployeeAttendanceView,
     meta: { requiresAuth: true },
   },
     planningRoutes,

@@ -252,9 +252,9 @@
               <section class="rounded-2xl border border-slate-200 bg-white shadow-sm">
                 <div class="border-b border-slate-100 px-5 py-5 sm:px-6">
                   <p class="text-xs font-bold uppercase tracking-[0.16em] text-indigo-600">Accès Toké</p>
-                  <h2 class="mt-1 text-xl font-bold text-slate-950">État de votre accès</h2>
+                  <h2 class="mt-1 text-xl font-bold text-slate-950">Ma licence</h2>
                   <p class="mt-1 text-sm leading-6 text-slate-500">
-                    Cette vue présente uniquement les informations utiles à votre utilisation de Toké.
+                    Consultez les informations de licence associées à votre compte. Les montants et la facturation globale de l'organisation ne sont pas affichés dans cette vue personnelle.
                   </p>
                 </div>
 
@@ -293,17 +293,225 @@
                 </div>
 
                 <div class="border-t border-slate-100 px-5 py-5 sm:px-6">
-                  <div class="flex items-start gap-3 rounded-xl border border-sky-200 bg-sky-50/60 p-4">
-                    <IconInfoCircle :size="19" class="mt-0.5 shrink-0 text-sky-700" />
+                  <div class="mb-4 flex items-start justify-between gap-4">
                     <div>
-                      <p class="text-sm font-bold text-sky-950">Licence et facturation</p>
-                      <p class="mt-1 text-sm leading-6 text-sky-900">
-                        Les informations administratives de licence, de facturation et de paiement sont gérées au niveau de l'administration Toké et ne sont pas exposées ici sous forme de ressources techniques.
+                      <p class="text-sm font-bold text-slate-950">Licence individuelle</p>
+                      <p class="mt-1 text-sm leading-6 text-slate-500">
+                        État contractuel de la licence liée à votre identifiant collaborateur.
+                      </p>
+                    </div>
+                    <span class="inline-flex shrink-0 items-center rounded-full border border-slate-200 bg-slate-50 px-2.5 py-1 text-[11px] font-bold text-slate-600">
+                      Personnel
+                    </span>
+                  </div>
+
+                  <div v-if="licenseStore.myLicenseLoading" class="grid gap-4 sm:grid-cols-2 xl:grid-cols-4" aria-live="polite">
+                    <div v-for="index in 4" :key="`my-license-${index}`" class="h-24 animate-pulse rounded-xl border border-slate-200 bg-slate-50" />
+                  </div>
+
+                  <div v-else-if="licenseStore.myLicenseError" class="flex flex-col gap-4 rounded-xl border border-rose-200 bg-rose-50/60 p-4 sm:flex-row sm:items-center sm:justify-between">
+                    <div class="flex min-w-0 items-start gap-3">
+                      <IconInfoCircle :size="19" class="mt-0.5 shrink-0 text-rose-700" />
+                      <div>
+                        <p class="text-sm font-bold text-rose-950">Licence individuelle indisponible</p>
+                        <p class="mt-1 text-sm leading-6 text-rose-800">{{ licenseStore.myLicenseError }}</p>
+                      </div>
+                    </div>
+                    <button
+                      type="button"
+                      class="inline-flex shrink-0 items-center justify-center rounded-xl border border-rose-300 bg-white px-4 py-2 text-sm font-bold text-rose-700 transition hover:bg-rose-50"
+                      @click="loadMyLicense(true)"
+                    >
+                      Réessayer
+                    </button>
+                  </div>
+
+                  <div v-else-if="myLicense" class="space-y-4">
+                    <div class="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+                      <div class="rounded-xl border border-slate-200 bg-slate-50/60 p-4">
+                        <p class="text-[11px] font-bold uppercase tracking-wide text-slate-400">État contractuel</p>
+                        <p class="mt-1.5 text-sm font-bold text-slate-900">{{ personalContractStatus }}</p>
+                        <p class="mt-1 text-xs text-slate-500">Code : {{ myLicense.employee_code || 'Non disponible' }}</p>
+                      </div>
+
+                      <div class="rounded-xl border border-slate-200 bg-slate-50/60 p-4">
+                        <p class="text-[11px] font-bold uppercase tracking-wide text-slate-400">État de facturation</p>
+                        <p class="mt-1.5 text-sm font-bold text-slate-900">{{ personalBillingStatus }}</p>
+                        <p class="mt-1 text-xs text-slate-500">Information individuelle retournée par le serveur.</p>
+                      </div>
+
+                      <div class="rounded-xl border border-slate-200 bg-slate-50/60 p-4">
+                        <p class="text-[11px] font-bold uppercase tracking-wide text-slate-400">Activation</p>
+                        <p class="mt-1.5 text-sm font-bold text-slate-900">{{ formatDate(myLicense.activation_date) }}</p>
+                        <p class="mt-1 text-xs text-slate-500">Désactivation : {{ formatDate(myLicense.deactivation_date) }}</p>
+                      </div>
+
+                      <div class="rounded-xl border border-slate-200 bg-slate-50/60 p-4">
+                        <p class="text-[11px] font-bold uppercase tracking-wide text-slate-400">Dernière activité</p>
+                        <p class="mt-1.5 text-sm font-bold text-slate-900">{{ formatDate(myLicense.last_activity_date) }}</p>
+                        <p class="mt-1 text-xs text-slate-500">Cette date ne remplace pas la décision d'accès du serveur.</p>
+                      </div>
+                    </div>
+
+                    <div class="grid gap-4 lg:grid-cols-2">
+                      <div class="rounded-xl border border-slate-200 p-4">
+                        <div class="flex items-start gap-3">
+                          <span class="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-indigo-50 text-indigo-600">
+                            <IconClock :size="18" />
+                          </span>
+                          <div>
+                            <p class="text-sm font-bold text-slate-950">Licence globale associée</p>
+                            <p class="mt-1 text-sm leading-6 text-slate-600">
+                              {{ personalGlobalLicenseLabel }}
+                            </p>
+                            <p class="mt-1 text-xs text-slate-500">
+                              Période : {{ formatDate(personalGlobalLicense?.current_period_start) }} — {{ formatDate(personalGlobalLicense?.current_period_end) }}
+                            </p>
+                          </div>
+                        </div>
+                      </div>
+
+                      <div class="rounded-xl border border-slate-200 p-4">
+                        <div class="flex items-start gap-3">
+                          <span class="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-sky-50 text-sky-700">
+                            <IconShieldCheck :size="18" />
+                          </span>
+                          <div>
+                            <p class="text-sm font-bold text-slate-950">Période de grâce individuelle</p>
+                            <p class="mt-1 text-sm leading-6 text-slate-600">
+                              Du {{ formatDate(myLicense.grace_period_start) }} au {{ formatDate(myLicense.grace_period_end) }}.
+                            </p>
+                            <p class="mt-1 text-xs text-slate-500">
+                              L'absence de période de grâce ne signifie pas automatiquement que l'accès est refusé.
+                            </p>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div class="flex items-start gap-3 rounded-xl border border-amber-200 bg-amber-50/60 p-4">
+                      <IconInfoCircle :size="19" class="mt-0.5 shrink-0 text-amber-700" />
+                      <div>
+                        <p class="text-sm font-bold text-amber-950">Décision d'accès</p>
+                        <p class="mt-1 text-sm leading-6 text-amber-900">
+                          L'endpoint individuel actuel ne retourne pas encore une décision canonique <code>access.allowed</code>. Le frontend n'en déduit donc pas une à partir des statuts contractuels ou de facturation.
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div v-else class="flex items-start gap-3 rounded-xl border border-amber-200 bg-amber-50/60 p-4">
+                    <IconInfoCircle :size="19" class="mt-0.5 shrink-0 text-amber-700" />
+                    <div>
+                      <p class="text-sm font-bold text-amber-950">Aucune licence individuelle retournée</p>
+                      <p class="mt-1 text-sm leading-6 text-amber-900">
+                        Le frontend ne déduit aucun droit d'accès en l'absence de données serveur.
+                      </p>
+                    </div>
+                  </div>
+                </div>
+
+                <div v-if="canViewOrganizationLicense" class="border-t border-slate-100 px-5 py-5 sm:px-6">
+                  <div class="mb-4">
+                    <p class="text-sm font-bold text-slate-950">Licence de l'organisation</p>
+                    <p class="mt-1 text-sm leading-6 text-slate-500">
+                      Vue complémentaire réservée aux rôles autorisés à consulter l'état global du tenant.
+                    </p>
+                  </div>
+
+                  <div v-if="licenseStore.loading" class="grid gap-4 sm:grid-cols-2 xl:grid-cols-4" aria-live="polite">
+                    <div v-for="index in 4" :key="`tenant-license-${index}`" class="h-24 animate-pulse rounded-xl border border-slate-200 bg-slate-50" />
+                  </div>
+
+                  <div v-else-if="licenseStore.error" class="flex flex-col gap-4 rounded-xl border border-rose-200 bg-rose-50/60 p-4 sm:flex-row sm:items-center sm:justify-between">
+                    <div class="flex min-w-0 items-start gap-3">
+                      <IconInfoCircle :size="19" class="mt-0.5 shrink-0 text-rose-700" />
+                      <div>
+                        <p class="text-sm font-bold text-rose-950">État de licence indisponible</p>
+                        <p class="mt-1 text-sm leading-6 text-rose-800">
+                          {{ licenseStore.error }} Aucun montant n'est supposé tant que l'API n'a pas répondu.
+                        </p>
+                      </div>
+                    </div>
+                    <button
+                      type="button"
+                      class="inline-flex shrink-0 items-center justify-center rounded-xl border border-rose-300 bg-white px-4 py-2 text-sm font-bold text-rose-700 transition hover:bg-rose-50"
+                      @click="loadLicenseStatus(true)"
+                    >
+                      Réessayer
+                    </button>
+                  </div>
+
+                  <div v-else-if="primaryLicense" class="space-y-4">
+                    <div class="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+                      <div class="rounded-xl border border-slate-200 bg-slate-50/60 p-4">
+                        <p class="text-[11px] font-bold uppercase tracking-wide text-slate-400">Licence</p>
+                        <p class="mt-1.5 text-sm font-bold text-slate-900">{{ primaryLicense.license_type || 'Toké' }}</p>
+                        <p class="mt-1 text-xs text-slate-500">{{ primaryLicense.license_status }}</p>
+                      </div>
+
+                      <div class="rounded-xl border border-slate-200 bg-slate-50/60 p-4">
+                        <p class="text-[11px] font-bold uppercase tracking-wide text-slate-400">Accès</p>
+                        <p class="mt-1.5 text-sm font-bold" :class="primaryLicense.access?.allowed ? 'text-emerald-700' : 'text-rose-700'">
+                          {{ accessLabel }}
+                        </p>
+                        <p class="mt-1 text-xs text-slate-500">{{ primaryLicense.access?.basis || 'Motif non disponible' }}</p>
+                      </div>
+
+                      <div class="rounded-xl border border-slate-200 bg-slate-50/60 p-4">
+                        <p class="text-[11px] font-bold uppercase tracking-wide text-slate-400">Facturation</p>
+                        <p class="mt-1.5 text-sm font-bold text-slate-900">{{ billingModeLabel }}</p>
+                        <p class="mt-1 text-xs text-slate-500">Le serveur reste l'autorité du mode appliqué.</p>
+                      </div>
+
+                      <div class="rounded-xl border border-slate-200 bg-slate-50/60 p-4">
+                        <p class="text-[11px] font-bold uppercase tracking-wide text-slate-400">Fin de période</p>
+                        <p class="mt-1.5 text-sm font-bold text-slate-900">{{ formatDate(primaryLicense.current_period_end) }}</p>
+                        <p class="mt-1 text-xs text-slate-500">Accès jusqu'au {{ formatDate(primaryLicense.access?.access_until) }}</p>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div v-else class="flex items-start gap-3 rounded-xl border border-amber-200 bg-amber-50/60 p-4">
+                    <IconInfoCircle :size="19" class="mt-0.5 shrink-0 text-amber-700" />
+                    <div>
+                      <p class="text-sm font-bold text-amber-950">Aucune licence globale exploitable retournée</p>
+                      <p class="mt-1 text-sm leading-6 text-amber-900">
+                        L'interface ne déduit ni dette ni droit d'accès en l'absence de données serveur.
                       </p>
                     </div>
                   </div>
                 </div>
               </section>
+
+              <LicensePaymentsOverview
+                v-if="canViewOrganizationLicense && primaryLicense"
+                :payments="primaryLicense.payments"
+                :billing-mode="primaryLicense.billing_mode"
+              />
+
+              <LicenseRenewalPanel
+                v-if="canViewOrganizationLicense && primaryLicense?.license_guid && primaryLicense.billing_mode === 'PREPAID'"
+                :preview="licenseStore.renewalPreview"
+                :payment-methods="licenseStore.paymentMethods"
+                :tenant-currency="tenant?.currency"
+                :preview-loading="licenseStore.renewalPreviewLoading || licenseStore.paymentMethodsLoading"
+                :prepare-loading="licenseStore.renewalPrepareLoading"
+                :error="licenseStore.renewalError"
+                :prepare-error="licenseStore.renewalPrepareError"
+                :prepared="Boolean(licenseStore.renewalPrepareResult)"
+                @refresh="loadRenewal(true)"
+                @prepare="prepareRenewal"
+              />
+
+              <OrganizationEmployeeLicenses
+                v-if="canViewOrganizationLicense && primaryLicense?.license_guid"
+                :licenses="licenseStore.organizationLicenses"
+                :count="licenseStore.organizationLicenseCount"
+                :loading="licenseStore.organizationLicensesLoading"
+                :error="licenseStore.organizationLicensesError"
+                @refresh="loadOrganizationLicenses(true)"
+              />
             </template>
 
             <template v-else>
@@ -377,9 +585,11 @@ import {
   IconBuildingCommunity,
   IconCircleCheck,
   IconCircleX,
+  IconClock,
   IconCreditCard,
   IconHierarchy3,
   IconInfoCircle,
+  IconReceipt,
   IconKey,
   IconLock,
   IconLogout,
@@ -393,11 +603,16 @@ import {
 
 import Header from '@/views/components/header.vue'
 import Footer from '@/views/components/footer.vue'
+import OrganizationEmployeeLicenses from '@/views/components/license/OrganizationEmployeeLicenses.vue'
+import LicensePaymentsOverview from '@/views/components/license/LicensePaymentsOverview.vue'
+import LicenseRenewalPanel from '@/views/components/license/LicenseRenewalPanel.vue'
 import HeadBuilder from '@/utils/HeadBuilder'
 import { useUserStore } from '@/stores/userStore'
+import { useLicenseStore } from '@/stores/licenseStore'
 
 const router = useRouter()
 const userStore = useUserStore()
+const licenseStore = useLicenseStore()
 
 const activeTab = ref<'account' | 'organization' | 'access' | 'security'>('account')
 
@@ -426,6 +641,118 @@ const normalizedRoleCodes = computed(() =>
     .map((role) => String(role.code || role.name || '').trim().toUpperCase())
     .filter(Boolean),
 )
+
+const canViewOrganizationLicense = computed(() => {
+  const roleCodes = normalizedRoleCodes.value
+  return roleCodes.some((code) =>
+    code === 'RH' ||
+    code === 'HR' ||
+    code.includes('HUMAN_RESOURCES') ||
+    code.includes('RESSOURCES_HUMAINES') ||
+    code.includes('ADMIN')
+  )
+})
+
+const primaryLicense = computed(() => licenseStore.primaryLicense)
+
+const myLicense = computed(() => licenseStore.myLicense)
+
+const personalGlobalLicense = computed(() => {
+  const value = myLicense.value?.global_license
+  return value && typeof value === 'object' ? value : null
+})
+
+const personalGlobalLicenseLabel = computed(() => {
+  const global = personalGlobalLicense.value
+  if (!global) return 'Licence globale non détaillée'
+  return [global.license_type, global.license_status].filter(Boolean).join(' · ') || 'Licence globale associée'
+})
+
+const personalContractStatus = computed(() => myLicense.value?.contractual_status || 'Non disponible')
+const personalBillingStatus = computed(() => myLicense.value?.computed_billing_status || 'Non disponible')
+
+
+const accessLabel = computed(() => {
+  if (!primaryLicense.value?.access) return 'Non disponible'
+  return primaryLicense.value.access.allowed ? 'Autorisé' : 'Refusé'
+})
+
+const billingModeLabel = computed(() => {
+  const mode = primaryLicense.value?.billing_mode
+  if (mode === 'PREPAID') return 'Prépayé'
+  if (mode === 'POSTPAID') return 'Postpayé'
+  return mode || 'Non disponible'
+})
+
+function formatDate(value?: string | null): string {
+  if (!value) return 'Non disponible'
+  const date = new Date(value)
+  if (Number.isNaN(date.getTime())) return 'Non disponible'
+  return new Intl.DateTimeFormat('fr-FR', { dateStyle: 'medium' }).format(date)
+}
+
+async function loadLicenseStatus(force = false): Promise<void> {
+  const tenantGuid = userStore.tenant?.guid
+  if (!tenantGuid || !canViewOrganizationLicense.value) return
+
+  try {
+    await licenseStore.loadTenantLicenseStatus(tenantGuid, force)
+    await loadOrganizationLicenses(force)
+    await loadRenewal(force)
+  } catch (error) {
+    console.error('❌ Chargement licence impossible:', error)
+  }
+}
+
+async function loadRenewal(force = false): Promise<void> {
+  if (!canViewOrganizationLicense.value) return
+  const license = primaryLicense.value
+  if (!license?.license_guid || license.billing_mode !== 'PREPAID') return
+
+  try {
+    await Promise.all([
+      licenseStore.loadRenewalPreview(license.license_guid, force),
+      licenseStore.loadPaymentMethods(force),
+    ])
+  } catch (error) {
+    console.error('❌ Chargement renouvellement impossible:', error)
+  }
+}
+
+async function prepareRenewal(paymentMethodGuid: string): Promise<void> {
+  const licenseGuid = primaryLicense.value?.license_guid
+  if (!licenseGuid) return
+
+  try {
+    await licenseStore.prepareRenewal(licenseGuid, paymentMethodGuid)
+    await licenseStore.loadTenantLicenseStatus(userStore.tenant?.guid as string | number, true)
+  } catch (error) {
+    console.error('❌ Préparation renouvellement impossible:', error)
+  }
+}
+
+async function loadOrganizationLicenses(force = false): Promise<void> {
+  if (!canViewOrganizationLicense.value) return
+  const globalLicenseGuid = primaryLicense.value?.license_guid
+  if (!globalLicenseGuid) return
+
+  try {
+    await licenseStore.loadOrganizationLicenses(globalLicenseGuid, { force, offset: 0, limit: 50 })
+  } catch (error) {
+    console.error('❌ Chargement licences organisation impossible:', error)
+  }
+}
+
+async function loadMyLicense(force = false): Promise<void> {
+  const employeeGuid = userStore.user?.guid
+  if (!employeeGuid) return
+
+  try {
+    await licenseStore.loadMyLicense(employeeGuid, force)
+  } catch (error) {
+    console.error('❌ Chargement licence individuelle impossible:', error)
+  }
+}
 
 const isHumanResources = computed(() => {
   const acceptedCodes = new Set([
@@ -473,6 +800,9 @@ async function logout(): Promise<void> {
 }
 
 onMounted(() => {
+  void loadMyLicense()
+  void loadLicenseStatus()
+
   HeadBuilder.apply({
     title: 'Paramètres - Toké',
     css: [],
