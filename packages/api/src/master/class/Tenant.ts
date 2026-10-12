@@ -540,6 +540,58 @@ export default class Tenant extends TenantModel {
     return dataset.map((data) => new Tenant().hydrate(data));
   }
 
+  async getLicenseStatus(): Promise<object> {
+    if (!this.getGuid()) throw new Error('Tenant GUID required');
+    const raw = await this.licenseStatusData(this.getGuid()!);
+    if (!raw) throw new Error('Tenant not found');
+    return {
+      tenant_guid: Number(raw.tenant.guid),
+      name: raw.tenant.name,
+      tenant_status: raw.tenant.status,
+      licenses: raw.licenses.map((license: any) => ({
+        license_guid: Number(license.guid),
+        license_status: license.license_status,
+        billing_mode: license.billing_mode,
+        period_start: license.current_period_start,
+        period_end: license.current_period_end,
+        next_renewal_date: license.next_renewal_date,
+        minimum_seats: Number(license.minimum_seats),
+        paid_seats: Number(license.paid_seats),
+        access: {
+          allowed: raw.tenant.status === 'ACTIVE' && license.allowed === true,
+          basis:
+            raw.tenant.status === 'ACTIVE' ? (license.basis ?? 'UNAVAILABLE') : 'TENANT_INACTIVE',
+          access_until: license.access_until ?? null,
+        },
+        payments: license.payments.map((p: any) => ({
+          payment_transaction_guid: Number(p.payment_transaction_guid),
+          billing_cycle_guid: Number(p.billing_cycle_guid),
+          period_start: p.period_start,
+          period_end: p.period_end,
+          payment_due_date: p.payment_due_date,
+          billing_status: p.billing_status,
+          transaction_status: p.transaction_status,
+          currency_code: p.currency_code,
+          invoice_amount_local: String(p.invoice_amount_local),
+          received_local: p.received_local == null ? null : String(p.received_local),
+          amount_to_pay_local: p.outstanding_local == null ? null : String(p.outstanding_local),
+          payment_method_guid: Number(p.payment_method_guid),
+          payment_method_code: p.payment_method_code,
+          payment_reference: p.payment_reference,
+          can_confirm_cash:
+            Number(p.pending_payment_count) === 1 &&
+            p.method_type === 'CASH' &&
+            p.method_available === true &&
+            p.transaction_status === 'PENDING' &&
+            p.billing_status === 'PENDING' &&
+            p.received_local != null &&
+            Number(p.received_local) === 0 &&
+            Number(p.outstanding_local) > 0,
+        })),
+      })),
+    };
+  }
+
   /**
    * Vérifie si le tenant est nouveau
    */

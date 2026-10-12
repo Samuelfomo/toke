@@ -47,6 +47,10 @@ import AppConfigRoute from './routes/app.config.route.js';
 import authRoute from './routes/auth.route.js';
 import LicenseRecordsRoute from './routes/license.records.route.js';
 import MonthlyBillingPreviewRoute from './routes/monthly.billing.preview.route.js';
+import postpaidClosureRouter from './routes/postpaid.closure.route.js';
+import postpaidCashRouter from './routes/postpaid.cash.route.js';
+import postpaidTransitionRouter from './routes/postpaid.transition.route.js';
+import licenseReleaseRouter from './routes/license.release.route.js';
 
 interface AppConfig {
   port: number;
@@ -305,6 +309,10 @@ export default class App {
     this.app.use('/auth', authRoute);
     this.app.use('/license-records', LicenseRecordsRoute);
     this.app.use('/license-billing', MonthlyBillingPreviewRoute);
+    this.app.use('/license-billing', postpaidClosureRouter);
+    this.app.use('/license-billing', postpaidCashRouter);
+    this.app.use('/license-admin', postpaidTransitionRouter);
+    this.app.use('/license-admin', licenseReleaseRouter);
 
     // *** Manager Route ***//
     this.app.use(`/billing`, BillingRoute);

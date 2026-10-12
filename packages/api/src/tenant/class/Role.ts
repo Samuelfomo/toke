@@ -6,6 +6,39 @@ import G from '../../tools/glossary.js';
 import { responseStructure as RS, tableName } from '../../utils/response.model.js';
 import { TenantRevision } from '../../tools/revision.js';
 
+export const BASE_SYSTEM_ROLES = [
+  {
+    code: 'ADMIN-RH',
+    name: 'ADMIN RH',
+    description: 'Administrateur des ressources humaines du tenant',
+    permissions: {
+      memos: 'Valider les memos de son equipe',
+      pointage: 'Gerer les pointages de son equipe',
+    },
+    system_role: true,
+  },
+  {
+    code: 'MANAGER',
+    name: 'MANAGER',
+    description: 'Manager responsable de la gestion de son equipe',
+    permissions: {
+      memos: 'Valider les memos de son equipe',
+      pointage: 'Gerer les pointages de son equipe',
+    },
+    system_role: true,
+  },
+  {
+    code: 'EMPLOYEE',
+    name: 'EMPLOYEE',
+    description: 'Employe standard du tenant',
+    permissions: {
+      memos: 'Creer les memos',
+      pointage: 'Effectuer des pointages',
+    },
+    system_role: true,
+  },
+] as const;
+
 export default class Role extends RoleModel {
   constructor() {
     super();

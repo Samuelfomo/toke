@@ -494,6 +494,28 @@ router.post(
   },
 );
 
+// Insert before GET /:identifier in the existing tenant router.
+router.get('/:guid/license-status', Ensure.get(), async (req: Request, res: Response) => {
+  try {
+    const guid = String(req.params.guid);
+    if (!/^[1-9][0-9]{5}$/.test(guid))
+      return R.handleError(res, 400, {
+        code: 'invalid_tenant_guid',
+        message: 'Public tenant GUID required',
+      });
+    const tenant = await Tenant._load(Number(guid), true);
+    if (!tenant)
+      return R.handleError(res, 404, { code: 'tenant_not_found', message: 'Tenant not found' });
+    return R.handleSuccess(res, await tenant.getLicenseStatus());
+  } catch (error) {
+    console.error('Tenant license status failed:', error);
+    return R.handleError(res, 500, {
+      code: 'tenant_license_status_failed',
+      message: 'License status unavailable',
+    });
+  }
+});
+
 /**
  * PUT /:guid - Modifier un tenant par GUID
  */

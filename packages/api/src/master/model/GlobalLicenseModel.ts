@@ -5,11 +5,16 @@ import {
   TimezoneConfigUtils,
   Type,
 } from '@toke/shared';
-import { Op } from 'sequelize';
+import { Op, QueryTypes } from 'sequelize';
 
 import BaseModel from '../database/db.base.js';
 import { tableName } from '../../utils/response.model.js';
 import { TableInitializer } from '../database/db.initializer.js';
+import LicenseSubscriptionDb from '../database/base_model/db.license-subscription.js';
+import { SubscriptionInput, SubscriptionOffer } from '../class/license-subscription-input.js';
+import InitialExpiryRepairDb, {
+  InitialExpiryRepairError,
+} from '../database/base_model/db.initial-expiry-repair.js';
 
 export default class GlobalLicenseModel extends BaseModel {
   // ✅ Liste des colonnes générées à exclure de Sequelize
@@ -57,24 +62,22 @@ export default class GlobalLicenseModel extends BaseModel {
   protected async loadGeneratedColumns(): Promise<void> {
     if (!this.guid) return;
 
-    try {
-      const model = TableInitializer.getModel(this.db.tableName);
+    const connection = TableInitializer.getModel(this.db.tableName).sequelize;
+    if (!connection) throw new Error('License database connection is unavailable');
 
-      // ✅ Utiliser Sequelize attributes pour sélectionner UNIQUEMENT les colonnes générées
-      const result = await model.findOne({
-        where: { [this.db.guid]: this.guid },
-        attributes: ['total_seats_purchased', 'billing_status'], // Sélectionner uniquement ces colonnes
-      });
+    const rows = await connection.query<any>(
+      `SELECT total_seats_purchased
+     FROM public.xa_global_license_with_seat_count
+     WHERE guid = :guid`,
+      {
+        replacements: { guid: this.guid },
+        type: QueryTypes.SELECT,
+      },
+    );
 
-      if (result) {
-        const data = result.get() as any;
-        this._total_seats_purchased = data.total_seats_purchased;
-        this._billing_status = data.billing_status;
-      }
-    } catch (error) {
-      console.error('⚠️ Erreur chargement colonnes générées:', error);
-      // Ne pas throw pour ne pas bloquer le reste
-    }
+    if (!rows.length) throw new Error('License calculated data was not found');
+
+    this._total_seats_purchased = Number(rows[0].total_seats_purchased);
   }
 
   /**
@@ -254,6 +257,24 @@ export default class GlobalLicenseModel extends BaseModel {
     await this.loadGeneratedColumns();
 
     console.log('✅ Licence globale créée avec ID:', this.id);
+  }
+
+  protected async createSubscriptionData(
+    input: SubscriptionInput,
+    offer: () => SubscriptionOffer | undefined,
+  ) {
+    return new LicenseSubscriptionDb().create(input, offer);
+  }
+  protected async subscriptionMethodsData(tenantGuid: number) {
+    return new LicenseSubscriptionDb().methods(tenantGuid);
+  }
+
+  protected initialExpiryRepairData(preview: boolean, key: string) {
+    if (!this.guid) throw new InitialExpiryRepairError('License GUID required', 400);
+    return new InitialExpiryRepairDb().repair(this.guid, preview, key);
+  }
+  protected initialExpiryCandidatesData() {
+    return new InitialExpiryRepairDb().candidates();
   }
 
   /**

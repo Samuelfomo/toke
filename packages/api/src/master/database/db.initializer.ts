@@ -23,6 +23,7 @@ import { AppConfigDBStructure } from './data/app.config.db.js';
 import { EndpointDbStructure } from './data/endpoint.db.js';
 import { PermissionDbStructure } from './data/permission.db.js';
 import { FeatureDbStructure } from './data/feature.db.js';
+import { LicenseEventDbStructure } from './data/license.event.db.js';
 
 /**
  * Gestionnaire STATIQUE d'initialisation des tables
@@ -152,6 +153,8 @@ export class TableInitializer {
     this.definePermissionModel();
     this.defineFeatureModel();
 
+    this.defineLicenseEventModel();
+
     console.log(`✅ ${this.models.size} modèle(s) défini(s) 2025-01-01`);
   }
 
@@ -196,6 +199,15 @@ export class TableInitializer {
 
     this.models.set(FeatureDbStructure.tableName, model);
     console.log(`✅ Modèle Feature défini (${FeatureDbStructure.tableName})`);
+  }
+
+  private static defineLicenseEventModel(): void {
+    const model = this.sequelize.define(
+      LicenseEventDbStructure.tableName,
+      LicenseEventDbStructure.attributes,
+      LicenseEventDbStructure.options,
+    );
+    this.models.set(LicenseEventDbStructure.tableName, model);
   }
 
   private static defineAppConfigModel(): void {

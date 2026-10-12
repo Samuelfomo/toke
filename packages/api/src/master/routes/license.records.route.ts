@@ -45,4 +45,5 @@ router.get('/payments/:transactionGuid/cash', Ensure.get(), (req: Request, res: 
 router.get('/licenses/:licenseGuid/events', Ensure.get(), (req: Request, res: Response) =>
   read(req, res, 'events'),
 );
+
 export default router;

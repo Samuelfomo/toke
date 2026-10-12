@@ -15,7 +15,7 @@ import {
 
 import Ensure from '../../middle/ensured-routes.js';
 import R from '../../tools/response.js';
-import Role from '../class/Role.js';
+import Role, { BASE_SYSTEM_ROLES } from '../class/Role.js';
 import { TenantRevision } from '../../tools/revision.js';
 import { tableName } from '../../utils/response.model.js';
 
@@ -276,6 +276,72 @@ router.delete('/:guid', Ensure.delete(), async (req: Request, res: Response) => 
     return R.handleError(res, HttpStatus.INTERNAL_ERROR, {
       code: ROLES_CODES.DELETE_FAILED,
       message: error.message,
+    });
+  }
+});
+
+/**
+ * GET /roles/bootstrap
+ *
+ * Initialise automatiquement les rôles système obligatoires.
+ *
+ * Aucun body.
+ * Aucun paramètre.
+ *
+ * Peut être appelé plusieurs fois sans créer de doublons.
+ */
+router.get('/bootstrap', Ensure.get(), async (_req: Request, res: Response) => {
+  try {
+    const roles: object[] = [];
+    let createdCount = 0;
+
+    for (const baseRole of BASE_SYSTEM_ROLES) {
+      /**
+       * Recherche d'abord le rôle par son code.
+       */
+      let role = await Role._load(baseRole.code, false, true);
+
+      /**
+       * S'il n'existe pas, on le crée.
+       */
+      if (!role) {
+        role = new Role()
+          .setCode(baseRole.code)
+          .setName(baseRole.name)
+          .setDescription(baseRole.description)
+          .setPermission({ ...baseRole.permissions })
+          .setSystemRole(baseRole.system_role);
+
+        await role.save();
+
+        createdCount++;
+      }
+
+      /**
+       * Qu'il existait déjà ou qu'il vienne d'être créé,
+       * on l'ajoute à la réponse.
+       */
+      roles.push(role.toJSON());
+    }
+
+    return R.handleSuccess(res, {
+      message:
+        createdCount === 0
+          ? 'Les rôles de base existent déjà.'
+          : 'Les rôles de base ont été initialisés avec succès.',
+
+      created: createdCount,
+
+      existing: BASE_SYSTEM_ROLES.length - createdCount,
+
+      roles,
+    });
+  } catch (error: any) {
+    console.error('[BASE_ROLES_INITIALIZATION_FAILED]', error);
+
+    return R.handleError(res, HttpStatus.INTERNAL_ERROR, {
+      code: 'BASE_ROLES_INITIALIZATION_FAILED',
+      message: error?.message || 'Erreur lors de l’initialisation des rôles de base.',
     });
   }
 });

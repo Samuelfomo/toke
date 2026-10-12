@@ -16,15 +16,34 @@ import {
 } from '@toke/shared';
 import { Op } from 'sequelize';
 
-import GlobalLicense from '../class/GlobalLicense.js';
+import GlobalLicense, { InitialExpiryRepairError } from '../class/GlobalLicense.js';
 import Tenant from '../class/Tenant.js';
 import R from '../../tools/response.js';
 import G from '../../tools/glossary.js';
 import Ensure from '../../middle/ensured-routes.js';
 import Revision from '../../tools/revision.js';
 import { tableName } from '../../utils/response.model.js';
+import { LicenseSubscriptionInputError } from '../class/license-subscription-input.js';
+import { LicenseSubscriptionError } from '../database/base_model/db.license-subscription.js';
 
 const router = Router();
+
+function subscriptionFailure(res: Response, error: unknown): void {
+  const status =
+    error instanceof LicenseSubscriptionInputError
+      ? 400
+      : error instanceof LicenseSubscriptionError
+        ? error.status
+        : 500;
+
+  R.handleError(res, status, {
+    code: 'license_subscription_failed',
+    message:
+      error instanceof LicenseSubscriptionInputError || error instanceof LicenseSubscriptionError
+        ? error.message
+        : 'Impossible de terminer la souscription',
+  });
+}
 
 // region ROUTES D'EXPORT
 
@@ -74,6 +93,73 @@ router.get('/revision', Ensure.get(), async (_req: Request, res: Response) => {
     });
   }
 });
+
+router.get('/offers', Ensure.get(), async (_req: Request, res: Response) => {
+  try {
+    return R.handleSuccess(res, GlobalLicense.doSubscriptionOffers());
+  } catch (e) {
+    console.error(e);
+    return subscriptionFailure(res, e);
+  }
+});
+
+router.get('/payment-methods', Ensure.get(), async (req: Request, res: Response) => {
+  try {
+    return R.handleSuccess(
+      res,
+      await GlobalLicense.subscriptionPaymentMethods(req.query.tenant_guid),
+    );
+  } catch (e) {
+    console.error(e);
+    return subscriptionFailure(res, e);
+  }
+});
+
+// Put these routes before GET /:identifier. Existing ServerAuth permissions apply.
+router.get('/initial-expiry-repairs', Ensure.get(), async (_req: Request, res: Response) => {
+  try {
+    return R.handleSuccess(res, await GlobalLicense.initialExpiryRepairCandidates());
+  } catch (error) {
+    console.error(error);
+    return R.handleError(res, 500, {
+      code: 'repair_candidates_failed',
+      message: 'Candidates unavailable',
+    });
+  }
+});
+
+for (const action of ['preview', 'apply'] as const) {
+  router.post(
+    '/:guid/initial-expiry-repair/' + action,
+    Ensure.post(),
+    async (req: Request, res: Response) => {
+      try {
+        const value = String(req.params.guid);
+        if (!/^[1-9][0-9]{5}$/.test(value))
+          throw new InitialExpiryRepairError('Public license GUID required', 400);
+        const license = await GlobalLicense._load(Number(value), true);
+        if (!license)
+          return R.handleError(res, 404, {
+            code: 'license_not_found',
+            message: 'License not found',
+          });
+        return R.handleSuccess(
+          res,
+          await license.repairInitialExpiry(req.body, action === 'preview'),
+        );
+      } catch (error) {
+        console.error(error);
+        return R.handleError(res, error instanceof InitialExpiryRepairError ? error.status : 500, {
+          code: 'initial_expiry_repair_failed',
+          message:
+            error instanceof InitialExpiryRepairError
+              ? error.message
+              : 'Repair failed; no partial changes committed',
+        });
+      }
+    },
+  );
+}
 
 /**
  * GET /tenant/:tenant - Lister les licences par tenant
@@ -359,62 +445,74 @@ router.get('/expired', Ensure.get(), async (req: Request, res: Response) => {
 /**
  * POST / - Créer une nouvelle licence globale
  */
+// router.post('/', Ensure.post(), async (req: Request, res: Response) => {
+//   try {
+//     const validatedData = GL.validateGlobalLicenseCreation(req.body);
+//
+//     const tenantObj = await Tenant._load(validatedData.tenant, true);
+//     if (!tenantObj) {
+//       return R.handleError(res, HttpStatus.NOT_FOUND, {
+//         code: TENANT_CODES.TENANT_NOT_FOUND,
+//         message: TENANT_ERRORS.NOT_FOUND,
+//       });
+//     }
+//
+//     const licenseObj = new GlobalLicense()
+//       .setTenant(tenantObj.getId()!)
+//       .setLicenseType(validatedData.license_type)
+//       .setBillingCycleMonths(validatedData.billing_cycle_months as BillingCycle)
+//       .setCurrentPeriodStart(validatedData.current_period_start)
+//       .setCurrentPeriodEnd(validatedData.current_period_end)
+//       .setNextRenewalDate(validatedData.next_renewal_date);
+//
+//     if (validatedData.base_price_usd !== undefined)
+//       licenseObj.setBasePriceUsd(validatedData.base_price_usd);
+//     if (validatedData.minimum_seats !== undefined)
+//       licenseObj.setMinimumSeats(validatedData.minimum_seats);
+//     // if (validatedData.total_seats_purchased !== undefined)
+//     //   licenseObj.setTotalSeatsPurchased(validatedData.total_seats_purchased);
+//     if (validatedData.license_status !== undefined)
+//       licenseObj.setLicenseStatus(validatedData.license_status as LicenseStatus);
+//
+//     await licenseObj.save();
+//
+//     console.log(
+//       `✅ Licence globale créée: Tenant ${validatedData.tenant} - ${validatedData.license_type} (GUID: ${licenseObj.getGuid()})`,
+//     );
+//     return R.handleCreated(res, await licenseObj.toJSON());
+//   } catch (error: any) {
+//     console.error('⚠️ Erreur création licence globale:', error.message);
+//
+//     if (error.issues) {
+//       // Erreur Zod
+//       return R.handleError(res, HttpStatus.BAD_REQUEST, {
+//         code: GLOBAL_LICENSE_CODES.VALIDATION_FAILED,
+//         message: GLOBAL_LICENSE_ERRORS.VALIDATION_FAILED,
+//         details: error.issues,
+//       });
+//     } else if (error.message.includes('required')) {
+//       return R.handleError(res, HttpStatus.BAD_REQUEST, {
+//         code: GLOBAL_LICENSE_CODES.VALIDATION_FAILED,
+//         message: error.message,
+//       });
+//     } else {
+//       return R.handleError(res, HttpStatus.INTERNAL_ERROR, {
+//         code: GLOBAL_LICENSE_CODES.CREATION_FAILED,
+//         message: error.message,
+//       });
+//     }
+//   }
+// });
+
 router.post('/', Ensure.post(), async (req: Request, res: Response) => {
   try {
-    const validatedData = GL.validateGlobalLicenseCreation(req.body);
-
-    const tenantObj = await Tenant._load(validatedData.tenant, true);
-    if (!tenantObj) {
-      return R.handleError(res, HttpStatus.NOT_FOUND, {
-        code: TENANT_CODES.TENANT_NOT_FOUND,
-        message: TENANT_ERRORS.NOT_FOUND,
-      });
-    }
-
-    const licenseObj = new GlobalLicense()
-      .setTenant(tenantObj.getId()!)
-      .setLicenseType(validatedData.license_type)
-      .setBillingCycleMonths(validatedData.billing_cycle_months as BillingCycle)
-      .setCurrentPeriodStart(validatedData.current_period_start)
-      .setCurrentPeriodEnd(validatedData.current_period_end)
-      .setNextRenewalDate(validatedData.next_renewal_date);
-
-    if (validatedData.base_price_usd !== undefined)
-      licenseObj.setBasePriceUsd(validatedData.base_price_usd);
-    if (validatedData.minimum_seats !== undefined)
-      licenseObj.setMinimumSeats(validatedData.minimum_seats);
-    // if (validatedData.total_seats_purchased !== undefined)
-    //   licenseObj.setTotalSeatsPurchased(validatedData.total_seats_purchased);
-    if (validatedData.license_status !== undefined)
-      licenseObj.setLicenseStatus(validatedData.license_status as LicenseStatus);
-
-    await licenseObj.save();
-
-    console.log(
-      `✅ Licence globale créée: Tenant ${validatedData.tenant} - ${validatedData.license_type} (GUID: ${licenseObj.getGuid()})`,
-    );
-    return R.handleCreated(res, await licenseObj.toJSON());
-  } catch (error: any) {
-    console.error('⚠️ Erreur création licence globale:', error.message);
-
-    if (error.issues) {
-      // Erreur Zod
-      return R.handleError(res, HttpStatus.BAD_REQUEST, {
-        code: GLOBAL_LICENSE_CODES.VALIDATION_FAILED,
-        message: GLOBAL_LICENSE_ERRORS.VALIDATION_FAILED,
-        details: error.issues,
-      });
-    } else if (error.message.includes('required')) {
-      return R.handleError(res, HttpStatus.BAD_REQUEST, {
-        code: GLOBAL_LICENSE_CODES.VALIDATION_FAILED,
-        message: error.message,
-      });
-    } else {
-      return R.handleError(res, HttpStatus.INTERNAL_ERROR, {
-        code: GLOBAL_LICENSE_CODES.CREATION_FAILED,
-        message: error.message,
-      });
-    }
+    const license = new GlobalLicense().setSubscriptionRequest(req.body ?? {});
+    await license.subscribe();
+    const data = await license.toJSON();
+    return license.isSubscriptionReplay() ? R.handleSuccess(res, data) : R.handleCreated(res, data);
+  } catch (error) {
+    console.error(error);
+    return subscriptionFailure(res, error);
   }
 });
 
@@ -621,14 +719,7 @@ router.get('/:identifier', Ensure.get(), async (req: Request, res: Response) => 
     // Essayer différentes méthodes de recherche selon le format
     if (/^\d+$/.test(identifier as string)) {
       const numericId = parseInt(identifier as string);
-
-      // Essayer par ID d'abord
-      license = await GlobalLicense._load(numericId);
-
-      // Si pas trouvé, essayer par GUID
-      if (!license) {
-        license = await GlobalLicense._load(numericId, true);
-      }
+      license = await GlobalLicense._load(numericId, true);
     }
 
     if (!license) {
@@ -638,7 +729,7 @@ router.get('/:identifier', Ensure.get(), async (req: Request, res: Response) => 
       });
     }
 
-    R.handleSuccess(res, license.toJSON());
+    R.handleSuccess(res, await license.toJSON());
   } catch (error: any) {
     console.error('⚠️ Erreur recherche licence globale:', error);
     R.handleError(res, HttpStatus.INTERNAL_ERROR, {

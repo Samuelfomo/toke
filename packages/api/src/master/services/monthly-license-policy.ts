@@ -99,7 +99,8 @@ export async function reconcileMonthlyAccess(db: Sequelize): Promise<number> {
     );
     let count = 0;
     for (const l of raw as any[]) {
-      if (!['ACTIVE', 'PENDING_PAYMENT', 'EXPIRED'].includes(l.license_status)) continue;
+      // if (!['ACTIVE', 'PENDING_PAYMENT', 'EXPIRED'].includes(l.license_status)) continue;
+      if (l.license_status !== 'ACTIVE') continue;
       const [decision] = await db.query('SELECT * FROM monthly_license_access(:id)', {
         transaction,
         replacements: { id: l.id },

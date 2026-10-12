@@ -1,10 +1,6 @@
 import { Request, Response, Router } from 'express';
 import {
-  BILLING_CYCLE_CODES,
-  BILLING_CYCLE_ERRORS,
   HttpStatus,
-  LICENSE_ADJUSTMENT_CODES,
-  LICENSE_ADJUSTMENT_ERRORS,
   paginationSchema,
   PAYMENT_METHOD_CODES,
   PAYMENT_METHOD_ERRORS,
@@ -24,7 +20,7 @@ import { tableName } from '../../utils/response.model.js';
 import LicenseAdjustment from '../class/LicenseAdjustment.js';
 import BillingCycle from '../class/BillingCycle.js';
 import PaymentMethod from '../class/PaymentMethod.js';
-import { buildPaymentDraft, readPaymentRequest, PaymentDraftError } from '../services/payment-draft.js';
+import { buildPaymentDraft, PaymentDraftError, readPaymentRequest, } from '../services/payment-draft.js';
 
 const router = Router();
 
@@ -630,12 +626,19 @@ router.post('/', Ensure.post(), async (req: Request, res: Response) => {
   try {
     const validatedData = readPaymentRequest(req.body);
 
-    const billingObj = validatedData.payment_for === 'CYCLE'
-      ? await BillingCycle._load(validatedData.billing_cycle!, true) : null;
-    const licenceAdjObj = validatedData.payment_for === 'ADJUSTMENT'
-      ? await LicenseAdjustment._load(validatedData.adjustment!, true) : null;
+    const billingObj =
+      validatedData.payment_for === 'CYCLE'
+        ? await BillingCycle._load(validatedData.billing_cycle!, true)
+        : null;
+    const licenceAdjObj =
+      validatedData.payment_for === 'ADJUSTMENT'
+        ? await LicenseAdjustment._load(validatedData.adjustment!, true)
+        : null;
     if (!billingObj && !licenceAdjObj) {
-      return R.handleError(res, HttpStatus.NOT_FOUND, { code: 'payment_source_not_found', message: 'Payment source not found' });
+      return R.handleError(res, HttpStatus.NOT_FOUND, {
+        code: 'payment_source_not_found',
+        message: 'Payment source not found',
+      });
     }
 
     const paymentMethodObj = await PaymentMethod._load(validatedData.payment_method, true);
@@ -650,8 +653,10 @@ router.post('/', Ensure.post(), async (req: Request, res: Response) => {
     const amounts = buildPaymentDraft(validatedData.payment_for, {
       licenseId: debt.getGlobalLicense(),
       status: billingObj ? billingObj.getBillingStatus() : licenceAdjObj!.getPaymentStatus(),
-      amountUsd: debt.getTotalAmountUsd(), amountLocal: debt.getTotalAmountLocal(),
-      currency: debt.getBillingCurrencyCode(), exchangeRate: debt.getExchangeRateUsed(),
+      amountUsd: debt.getTotalAmountUsd(),
+      amountLocal: debt.getTotalAmountLocal(),
+      currency: debt.getBillingCurrencyCode(),
+      exchangeRate: debt.getExchangeRateUsed(),
     });
 
     const transactionObj = PaymentTransaction.createNew({
@@ -677,7 +682,8 @@ router.post('/', Ensure.post(), async (req: Request, res: Response) => {
 
     if (error instanceof PaymentDraftError) {
       return R.handleError(res, HttpStatus.BAD_REQUEST, {
-        code: PAYMENT_TRANSACTION_CODES.VALIDATION_FAILED, message: error.message,
+        code: PAYMENT_TRANSACTION_CODES.VALIDATION_FAILED,
+        message: error.message,
       });
     }
     return R.handleError(res, HttpStatus.INTERNAL_ERROR, {
@@ -686,7 +692,6 @@ router.post('/', Ensure.post(), async (req: Request, res: Response) => {
     });
   }
 });
-
 
 /**
  * PUT /:guid - Modifier une transaction de paiement par GUID

@@ -711,7 +711,7 @@ export default class BillingCycle extends BillingCycleModel {
 
     return {
       ...baseData,
-      [RS.GLOBAL_LICENSE]: globalLicense?.toJSON(responseValue.MINIMAL),
+      [RS.GLOBAL_LICENSE]: await globalLicense?.toJSON(responseValue.MINIMAL),
       [RS.CURRENCY]: currency?.toJSON(),
     };
   }

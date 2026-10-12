@@ -4,6 +4,7 @@ import BaseModel from '../database/db.base.js';
 import { tableName } from '../../utils/response.model.js';
 import { DatabaseEncryption } from '../../utils/encryption.js';
 import CountryPhoneValidation from '../../tools/country.phone.validation.js';
+import TenantLicenseStatusDb from '../database/base_model/db.tenant-license-status.js';
 
 export default class TenantModel extends BaseModel {
   public readonly db = {
@@ -97,6 +98,10 @@ export default class TenantModel extends BaseModel {
     return await this.findOne(this.db.tableName, {
       [this.db.billing_email]: billingEmail.toLowerCase(),
     });
+  }
+
+  protected licenseStatusData(tenantGuid: number) {
+    return new TenantLicenseStatusDb().load(tenantGuid);
   }
 
   /**
