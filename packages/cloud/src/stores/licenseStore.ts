@@ -13,6 +13,9 @@ import { ApiClientError } from '@/tools/Fetch.Client'
 export const useLicenseStore = defineStore('license', () => {
   const status = ref<TenantLicenseStatusData | null>(null)
   const myLicense = ref<EmployeeLicenseData | null>(null)
+  const teamLicenses = ref<Record<string, EmployeeLicenseData | null>>({})
+  const teamLicenseLoading = ref<Record<string, boolean>>({})
+  const teamLicenseErrors = ref<Record<string, string | null>>({})
   const organizationLicenses = ref<EmployeeLicenseData[]>([])
   const organizationLicenseCount = ref(0)
   const renewalPreview = ref<RenewalPreviewData | null>(null)
@@ -103,6 +106,82 @@ export const useLicenseStore = defineStore('license', () => {
     }
   }
 
+  async function loadTeamEmployeeLicense(employeeGuid: string | number, force = false) {
+    const key = String(employeeGuid)
+
+    if (!force && Object.prototype.hasOwnProperty.call(teamLicenses.value, key)) {
+      return teamLicenses.value[key]
+    }
+
+    teamLicenseLoading.value = {
+      ...teamLicenseLoading.value,
+      [key]: true,
+    }
+    teamLicenseErrors.value = {
+      ...teamLicenseErrors.value,
+      [key]: null,
+    }
+
+    try {
+      const response = await LicenseService.getEmployeeLicense(employeeGuid)
+      const value = response?.data ?? null
+      teamLicenses.value = {
+        ...teamLicenses.value,
+        [key]: value,
+      }
+      return value
+    } catch (cause) {
+      if (cause instanceof ApiClientError && cause.status === 404) {
+        teamLicenses.value = {
+          ...teamLicenses.value,
+          [key]: null,
+        }
+        teamLicenseErrors.value = {
+          ...teamLicenseErrors.value,
+          [key]: null,
+        }
+        return null
+      }
+
+      const message = cause instanceof ApiClientError
+        ? cause.message
+        : cause instanceof Error
+          ? cause.message
+          : 'Impossible de charger la licence de ce collaborateur.'
+
+      teamLicenseErrors.value = {
+        ...teamLicenseErrors.value,
+        [key]: message,
+      }
+      throw cause
+    } finally {
+      teamLicenseLoading.value = {
+        ...teamLicenseLoading.value,
+        [key]: false,
+      }
+    }
+  }
+
+  function clearTeamLicense(employeeGuid?: string | number) {
+    if (employeeGuid === undefined) {
+      teamLicenses.value = {}
+      teamLicenseLoading.value = {}
+      teamLicenseErrors.value = {}
+      return
+    }
+
+    const key = String(employeeGuid)
+    const licensesState = { ...teamLicenses.value }
+    const loadingState = { ...teamLicenseLoading.value }
+    const errorsState = { ...teamLicenseErrors.value }
+    delete licensesState[key]
+    delete loadingState[key]
+    delete errorsState[key]
+    teamLicenses.value = licensesState
+    teamLicenseLoading.value = loadingState
+    teamLicenseErrors.value = errorsState
+  }
+
   async function loadOrganizationLicenses(
     globalLicenseGuid: string | number,
     options: { offset?: number; limit?: number; force?: boolean } = {},
@@ -122,9 +201,6 @@ export const useLicenseStore = defineStore('license', () => {
     organizationLicensesLoading.value = true
     organizationLicensesError.value = null
     organizationLicensesErrorCode.value = null
-    renewalError.value = null
-    renewalErrorCode.value = null
-    renewalPrepareError.value = null
 
     try {
       const response = await LicenseService.getOrganizationEmployeeLicenses(globalLicenseGuid, offset, limit)
@@ -235,6 +311,7 @@ export const useLicenseStore = defineStore('license', () => {
   function clear() {
     status.value = null
     myLicense.value = null
+    clearTeamLicense()
     organizationLicenses.value = []
     organizationLicenseCount.value = 0
     renewalPreview.value = null
@@ -269,6 +346,9 @@ export const useLicenseStore = defineStore('license', () => {
   return {
     status,
     myLicense,
+    teamLicenses,
+    teamLicenseLoading,
+    teamLicenseErrors,
     organizationLicenses,
     organizationLicenseCount,
     loading,
@@ -294,6 +374,8 @@ export const useLicenseStore = defineStore('license', () => {
     accessAllowed,
     loadTenantLicenseStatus,
     loadMyLicense,
+    loadTeamEmployeeLicense,
+    clearTeamLicense,
     loadOrganizationLicenses,
     loadRenewalPreview,
     loadPaymentMethods,

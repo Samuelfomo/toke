@@ -15,7 +15,9 @@
         class="min-h-0 min-w-0 flex-1 overflow-y-auto overscroll-contain focus:outline-none"
     >
       <RouterView />
-      <Footer />
+      <footer class="mt-auto pt-10" >
+        <Footer />
+      </footer>
     </main>
   </div>
 </template>

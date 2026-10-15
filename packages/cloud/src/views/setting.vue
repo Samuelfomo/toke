@@ -16,7 +16,7 @@
 
           <button
             type="button"
-            class="inline-flex shrink-0 items-center justify-center gap-2 rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm font-semibold text-slate-700 shadow-sm transition hover:border-slate-300 hover:bg-slate-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 focus-visible:ring-offset-2"
+            class="inline-flex shrink-0 items-center justify-center gap-2 rounded-full md:rounded-l-full md:rounded-r-none border border-slate-200 bg-white px-4 py-2.5 text-sm font-semibold text-slate-700 shadow-sm transition hover:border-slate-300 hover:bg-slate-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 focus-visible:ring-offset-2"
             @click="goBack"
           >
             <IconArrowLeft :size="17" />
@@ -27,7 +27,7 @@
         <div class="grid min-w-0 gap-6 lg:grid-cols-[240px_minmax(0,1fr)]">
           <aside class="min-w-0">
             <nav
-              class="flex gap-2 overflow-x-auto rounded-2xl border border-slate-200 bg-white p-2 shadow-sm lg:sticky lg:top-4 lg:flex-col lg:overflow-visible"
+              class="flex gap-2 overflow-x-auto rounded-xl border border-slate-200 bg-white p-2 shadow-sm lg:sticky lg:top-4 lg:flex-col lg:overflow-visible"
               aria-label="Sections des paramètres"
             >
               <button
