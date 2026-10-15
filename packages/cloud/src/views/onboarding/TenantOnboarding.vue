@@ -4,12 +4,9 @@
       <div class="header-inner">
         <a class="brand" href="/" aria-label="Toké">
           <span class="brand-mark">T</span>
-          <span class="brand-copy">
-            <strong>Toké</strong>
-            <small>Gestion intelligente du temps de travail</small>
-          </span>
+          <span class="brand-copy"><strong>Toké</strong><small>Gestion intelligente du temps de travail</small></span>
         </a>
-        <div class="secure-pill" title="Ce parcours utilise le lien sécurisé reçu par email">
+        <div class="secure-pill">
           <svg viewBox="0 0 24 24" aria-hidden="true">
             <path d="M7 10V7a5 5 0 0 1 10 0v3M6 10h12v10H6z"/>
           </svg>
@@ -19,297 +16,188 @@
     </header>
 
     <section v-if="initialLoading" class="state-page" aria-live="polite">
-      <div class="spinner" aria-hidden="true"></div>
+      <div class="spinner"></div>
       <h1>Vérification de votre invitation</h1>
-      <p>Toké vérifie le lien et récupère l’état de votre organisation.</p>
+      <p>Nous préparons les informations de votre organisation.</p>
     </section>
 
     <section v-else-if="showResend" class="state-page state-page--card">
-      <div class="state-icon state-icon--warning">
-        <svg viewBox="0 0 24 24" aria-hidden="true">
-          <path d="M12 9v4m0 4h.01M10.3 4.5 3.5 17a2 2 0 0 0 1.8 3h13.4a2 2 0 0 0 1.8-3L13.7 4.5a2 2 0 0 0-3.4 0Z"/>
-        </svg>
-      </div>
       <span class="eyebrow">Lien indisponible</span>
-      <h1>Recevoir un nouveau lien d’activation</h1>
+      <h1>Recevoir un nouveau lien</h1>
       <p>Utilisez l’adresse email communiquée lors de la création de votre organisation.</p>
-
       <form class="resend-form" @submit.prevent="submitResend">
         <label for="resend-email">Adresse email</label>
-        <input id="resend-email" v-model.trim="resendEmail" type="email" autocomplete="email" required
-               placeholder="vous@entreprise.com"/>
+        <input id="resend-email" v-model.trim="resendEmail" type="email" autocomplete="email" required/>
         <button class="btn btn-primary" type="submit" :disabled="store.resending || !resendEmail">
           {{ store.resending ? 'Envoi en cours…' : 'Recevoir un nouveau lien' }}
         </button>
       </form>
-
-      <p v-if="store.resendSuccess" class="message message--success" role="status">La demande a été envoyée. Consultez
-        votre boîte mail.</p>
-      <p v-if="store.error" class="message message--error" role="alert">{{ customerErrorMessage }}</p>
+      <p v-if="store.resendSuccess" class="message message--success">Si cette adresse correspond à une organisation
+        éligible, un lien sera envoyé.</p>
+      <p v-if="store.error" class="message message--error">{{ customerErrorMessage }}</p>
     </section>
 
     <template v-else>
       <section class="hero-band">
         <div class="hero-inner">
-          <div>
-            <span class="eyebrow eyebrow--light">Première licence Toké</span>
+          <div><span class="eyebrow eyebrow--light">Première licence Toké</span>
             <h1>Activez {{ tenantTitle }}</h1>
-            <p>
-              Votre première souscription crée la licence globale de l’organisation. Elle détermine la capacité initiale
-              de licences employés avant l’activation de votre espace Toké.
-            </p>
-          </div>
-          <div class="organization-card">
-            <span>Organisation</span>
-            <strong>{{ tenantTitle }}</strong>
-          </div>
+            <p>Vérifiez votre offre, choisissez votre capacité et consultez le montant estimé avant de confirmer votre
+              première licence.</p></div>
+          <div class="organization-card"><span>Organisation</span><strong>{{ tenantTitle }}</strong></div>
         </div>
       </section>
 
-      <nav class="steps" aria-label="Progression de l’activation">
+      <nav class="steps">
         <div class="steps-inner">
-          <div class="step" :class="{ 'step--active': currentStep === 1, 'step--done': currentStep > 1 }">
-            <span>1</span>
-            <div><strong>Licence</strong><small>Définir votre capacité</small></div>
+          <div class="step" :class="{ 'step--active': currentStep === 1, 'step--done': currentStep > 1 }"><span>1</span>
+            <div><strong>Licence</strong><small>Choisir la capacité</small></div>
           </div>
           <div class="step-line"></div>
-          <div class="step" :class="{ 'step--active': currentStep === 2, 'step--done': currentStep > 2 }">
-            <span>2</span>
-            <div><strong>Paiement</strong><small>Régler la première période</small></div>
+          <div class="step" :class="{ 'step--active': currentStep === 2, 'step--done': currentStep > 2 }"><span>2</span>
+            <div><strong>Paiement</strong><small>Régler la facture</small></div>
           </div>
           <div class="step-line"></div>
-          <div class="step" :class="{ 'step--active': currentStep === 3 }">
-            <span>3</span>
-            <div><strong>Activation</strong><small>Préparation de votre espace</small></div>
+          <div class="step" :class="{ 'step--active': currentStep === 3 }"><span>3</span>
+            <div><strong>Activation</strong><small>Préparation de l’espace</small></div>
           </div>
         </div>
       </nav>
 
       <section class="content-shell">
         <div class="main-column">
-          <section class="status-banner" :class="statusBannerClass" aria-live="polite">
+          <section class="status-banner" :class="statusBannerClass">
             <div class="status-dot"></div>
-            <div>
-              <span>État actuel</span>
-              <strong>{{ displayState }}</strong>
-              <small>{{ statusExplanation }}</small>
-            </div>
+            <div><span>État actuel</span><strong>{{ displayState }}</strong><small>{{ statusExplanation }}</small></div>
             <button class="btn btn-ghost" type="button" :disabled="store.loadingStatus" @click="refreshStatus">
               {{ store.loadingStatus ? 'Actualisation…' : 'Actualiser' }}
             </button>
           </section>
 
-          <section class="section-card explainer-card">
-            <div class="section-heading">
-              <div>
-                <span class="eyebrow">Comprendre votre souscription</span>
-                <h2>Ce que vous achetez avec Toké</h2>
-              </div>
-            </div>
+          <TenantActivationProgress v-if="store.status && subscriptionAlreadyCreated" :status="store.status"/>
 
-            <div class="explain-grid">
-              <article>
-                <div class="explain-icon">
-                  <svg viewBox="0 0 24 24" aria-hidden="true">
-                    <path d="M3 21h18M5 21V7l7-4 7 4v14M9 10h2m2 0h2M9 14h2m2 0h2M9 18h2m2 0h2"/>
-                  </svg>
-                </div>
-                <h3>1 licence globale</h3>
-                <p>Elle porte le contrat de votre organisation et centralise la facturation Toké.</p>
-              </article>
-              <article>
-                <div class="explain-icon">
-                  <svg viewBox="0 0 24 24" aria-hidden="true">
-                    <path
-                        d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2M9 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8Zm13 10v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75"/>
-                  </svg>
-                </div>
-                <h3>Des licences employés</h3>
-                <p>La capacité achetée correspond au nombre de collaborateurs que votre organisation pourra couvrir
-                  selon son mode de facturation.</p>
-              </article>
-              <article>
-                <div class="explain-icon">
-                  <svg viewBox="0 0 24 24" aria-hidden="true">
-                    <circle cx="12" cy="12" r="9"/>
-                    <path d="M12 7v5l3 2"/>
-                  </svg>
-                </div>
-                <h3>Une période clairement définie</h3>
-                <p>La règle de démarrage de votre période est présentée avant validation. Les dates exactes sont fixées
-                  lors de la souscription.</p>
-              </article>
-            </div>
-          </section>
-
-          <TenantActivationProgress
-              v-if="store.status && (subscriptionAlreadyCreated || store.status.isReady)"
-              :status="store.status"
+          <MobileMoneyPaymentPanel
+              v-if="phase === 'PAYMENT_PENDING' && activePayment"
+              :payment="activePayment"
           />
+
+          <section v-else-if="phase === 'PAYMENT_PENDING' && !activePayment" class="section-card contract-warning">
+            <strong>Nous ne pouvons pas ouvrir le paiement pour le moment.</strong>
+            <p>Votre facture existe, mais les informations nécessaires pour reprendre le règlement ne sont pas encore
+              disponibles. Actualisez la page ou réessayez plus tard.</p>
+          </section>
 
           <section v-else class="section-card subscription-card">
             <div class="section-heading section-heading--split">
-              <div>
-                <span class="eyebrow">Configuration</span>
-                <h2>Votre première licence globale</h2>
-                <p>Vérifiez les conditions de votre première licence, puis choisissez le nombre de collaborateurs et
-                  votre moyen de paiement.</p>
-              </div>
-              <span class="offer-badge">{{ licenseDisplayName }}</span>
-            </div>
+              <div><span class="eyebrow">Votre offre</span>
+                <h2>{{ licenseDisplayName }}</h2>
+                <p>Ces conditions sont celles actuellement proposées à votre organisation.</p></div>
+              <span class="offer-badge">{{ billingModeLabel }}</span></div>
 
             <div class="facts-grid">
-              <div class="fact" :class="{ 'fact--missing': !store.status?.licenseType }">
-                <span>Offre</span>
-                <strong>{{ licenseDisplayName }}</strong>
-                <small>Licence globale prévue pour votre organisation.</small>
-              </div>
-              <div class="fact" :class="{ 'fact--missing': !store.status?.billingMode }">
-                <span>Mode de facturation</span>
-                <strong>{{ billingModeLabel }}</strong>
-                <small>{{ billingModeDetail }}</small>
-              </div>
-              <div class="fact" :class="{ 'fact--missing': !store.status?.billingCycleMonths }">
-                <span>Cycle</span>
-                <strong>{{ billingLabel }}</strong>
-                <small>{{ billingCycleDetail }}</small>
-              </div>
-              <div class="fact" :class="{ 'fact--missing': minimumSeats == null }">
-                <span>Capacité minimale</span>
-                <strong>{{
-                    minimumSeats == null ? 'Information momentanément indisponible' : `${minimumSeats} collaborateurs`
-                  }}</strong>
-                <small>Votre première licence doit couvrir au moins ce nombre de collaborateurs.</small>
-              </div>
-              <div class="fact fact--highlight" :class="{ 'fact--missing': !hasUnitPrice }">
-                <span>Tarif de référence</span>
-                <strong>{{
-                    hasUnitPrice ? `${formatMoney(store.status?.unitPrice, store.status?.unitPriceCurrency)} / collaborateur${pricingPeriodSuffix}` : 'Information momentanément indisponible'
-                  }}</strong>
-                <small>Tarif de référence appliqué à chaque licence employé.</small>
-              </div>
-              <div class="fact" :class="{ 'fact--missing': !store.status?.billingCurrencyCode }">
-                <span>Devise de facturation</span>
-                <strong>{{ store.status?.billingCurrencyCode || 'Information momentanément indisponible' }}</strong>
-                <small>Le montant final de votre facture sera communiqué dans cette devise.</small>
-              </div>
-            </div>
-
-            <div v-if="hasPeriod" class="period-panel">
-              <div>
-                <span>Début de période</span>
-                <strong>{{ formatDate(store.status?.periodStart) }}</strong>
-              </div>
-              <div class="period-arrow" aria-hidden="true">→</div>
-              <div>
-                <span>Fin de période</span>
-                <strong>{{ formatDate(store.status?.periodEnd) }}</strong>
-              </div>
+              <div class="fact"><span>Facturation</span><strong>{{ billingLabel }}</strong><small>{{
+                  billingModeDetail
+                }}</small></div>
+              <div class="fact"><span>Minimum</span><strong>{{
+                  minimumSeats == null ? 'Indisponible' : `${minimumSeats} collaborateurs`
+                }}</strong><small>Capacité minimale de la première licence.</small></div>
+              <div class="fact fact--highlight"><span>Tarif de référence</span><strong>{{
+                  unitPriceLabel
+                }}</strong><small>Prix unitaire hors taxes.</small></div>
+              <div class="fact"><span>Devise de règlement</span><strong>{{
+                  store.status?.billingCurrencyCode || 'Indisponible'
+                }}</strong><small>Le montant final de la facture est établi dans cette devise.</small></div>
             </div>
 
             <div v-if="store.status?.periodNotice" class="period-notice">
-              <svg viewBox="0 0 24 24" aria-hidden="true">
+              <svg viewBox="0 0 24 24">
                 <path d="M12 8v4m0 4h.01M12 3a9 9 0 1 0 0 18 9 9 0 0 0 0-18Z"/>
               </svg>
-              <div>
-                <strong>À savoir sur votre période</strong>
-                <p>{{ store.status.periodNotice }}</p>
-              </div>
+              <div><strong>À savoir sur votre période</strong>
+                <p>{{ store.status.periodNotice }}</p></div>
             </div>
 
-            <div v-if="!commercialTermsComplete" class="contract-warning" role="alert">
-              <strong>Souscription temporairement indisponible.</strong>
-              <p>Certaines informations nécessaires à votre souscription ne sont pas disponibles pour le moment.
-                Veuillez réessayer dans quelques instants.</p>
-            </div>
+            <div v-if="!commercialTermsComplete" class="contract-warning"><strong>Souscription temporairement
+              indisponible.</strong>
+              <p>Certaines informations nécessaires ne sont pas disponibles pour le moment.</p></div>
 
             <form class="subscription-form" @submit.prevent="submitSubscription">
               <fieldset>
-                <legend>Combien de collaborateurs souhaitez-vous couvrir au démarrage ?</legend>
+                <legend>Combien de collaborateurs souhaitez-vous couvrir ?</legend>
                 <p class="field-help">Chaque place correspond à une licence employé rattachée à la licence globale de
                   {{ tenantTitle }}.</p>
-
                 <div class="seat-control">
-                  <button type="button"
-                          :disabled="minimumSeats == null || requestedSeats == null || requestedSeats <= minimumSeats"
-                          aria-label="Retirer une place" @click="decreaseSeats">−
-                  </button>
-                  <div>
-                    <input
-                        v-model.number="requestedSeats"
-                        type="number"
-                        :min="minimumSeats ?? undefined"
-                        :max="maximumSeats ?? undefined"
-                        step="1"
-                        inputmode="numeric"
-                        :disabled="minimumSeats == null"
-                        required
-                        aria-label="Nombre de collaborateurs"
-                        @blur="enforceMinimumSeats"
-                    />
-                    <span>collaborateurs</span>
-                  </div>
-                  <button type="button"
-                          :disabled="maximumSeats != null && requestedSeats != null && requestedSeats >= maximumSeats"
-                          aria-label="Ajouter une place" @click="increaseSeats">+
-                  </button>
+                  <button type="button" :disabled="!canDecrease" @click="decreaseSeats">−</button>
+                  <div><input v-model.number="requestedSeats" type="number" :min="minimumSeats ?? undefined"
+                              :max="maximumSeats ?? undefined" step="1"
+                              @blur="enforceSeats"/><span>collaborateurs</span></div>
+                  <button type="button" :disabled="!canIncrease" @click="increaseSeats">+</button>
                 </div>
-                <div class="minimum-rule">
-                  <svg viewBox="0 0 24 24" aria-hidden="true">
-                    <path d="M12 8v4m0 4h.01M12 3a9 9 0 1 0 0 18 9 9 0 0 0 0-18Z"/>
-                  </svg>
-                  <span v-if="minimumSeats != null">Minimum requis : <strong>{{ minimumSeats }}</strong> collaborateurs.</span>
-                  <span v-else>Capacité momentanément indisponible.</span>
-                </div>
+                <div class="minimum-rule"><span v-if="minimumSeats != null">Minimum requis : <strong>{{
+                    minimumSeats
+                  }}</strong> collaborateurs.</span></div>
               </fieldset>
 
               <fieldset>
-                <legend>Comment souhaitez-vous régler cette première licence ?</legend>
-                <p class="field-help">Choisissez le moyen de paiement que vous souhaitez utiliser pour cette
-                  souscription.</p>
-
-                <div v-if="store.loadingPaymentMethods" class="payment-loading">Chargement des moyens de paiement…</div>
+                <legend>Choisissez votre moyen de paiement</legend>
+                <div v-if="store.loadingPaymentMethods" class="payment-loading">Chargement…</div>
                 <div v-else-if="store.paymentMethods.length" class="payment-grid">
-                  <label
-                      v-for="method in store.paymentMethods"
-                      :key="String(method.guid)"
-                      class="payment-option"
-                      :class="{ 'payment-option--selected': selectedPaymentMethod === String(method.guid) }"
-                  >
+                  <label v-for="method in store.paymentMethods" :key="String(method.guid)" class="payment-option"
+                         :class="{ 'payment-option--selected': selectedPaymentMethod === String(method.guid) }">
                     <input v-model="selectedPaymentMethod" type="radio" name="payment-method"
                            :value="String(method.guid)"/>
-                    <span class="payment-radio"></span>
-                    <span class="payment-copy">
-                      <strong>{{ method.name }}</strong>
-                      <small v-if="method.currency || method.supportedCurrencies.length">
-                        {{ paymentCurrencyLabel(method) }}
-                      </small>
-                    </span>
+                    <span class="payment-radio"></span><span class="payment-copy"><strong>{{
+                      method.name
+                    }}</strong><small>{{ paymentMethodDetail(method) }}</small></span>
                   </label>
                 </div>
                 <p v-else class="message message--warning">Aucun moyen de paiement n’est disponible pour cette
-                  souscription pour le moment.</p>
+                  souscription.</p>
               </fieldset>
+
+              <section class="section-card" v-if="canEstimate || store.estimating || store.estimate">
+                <div class="section-heading">
+                  <div><span class="eyebrow">Estimation</span>
+                    <h2>Votre récapitulatif avant validation</h2>
+                    <p>Cette estimation n’est pas encore une facture. La facture enregistrée après souscription devient
+                      la référence.</p></div>
+                </div>
+                <div v-if="store.estimating" class="payment-loading">Mise à jour de l’estimation…</div>
+                <div v-else-if="store.estimate" class="facts-grid">
+                  <div class="fact">
+                    <span>Collaborateurs</span><strong>{{ store.estimate.requestedSeats ?? requestedSeats }}</strong>
+                  </div>
+                  <div class="fact"><span>Montant HT</span><strong>{{
+                      formatMoney(store.estimate.subtotalLocal, store.estimate.billingCurrencyCode)
+                    }}</strong></div>
+                  <div class="fact"><span>Taxes</span><strong>{{
+                      formatMoney(store.estimate.taxAmountLocal, store.estimate.billingCurrencyCode)
+                    }}</strong></div>
+                  <div class="fact fact--highlight"><span>Total TTC estimé</span><strong>{{
+                      formatMoney(store.estimate.totalAmountLocal, store.estimate.billingCurrencyCode)
+                    }}</strong></div>
+                </div>
+                <div v-if="store.estimate?.notice" class="period-notice">
+                  <div><strong>Information</strong>
+                    <p>{{ store.estimate.notice }}</p></div>
+                </div>
+              </section>
 
               <div class="form-actions-mobile">
                 <button class="btn btn-primary btn-large" type="submit"
                         :disabled="!canSubmitSubscription || store.subscribing">
-                  {{ store.subscribing ? 'Enregistrement de la souscription…' : 'Valider ma première licence' }}
+                  {{ store.subscribing ? 'Enregistrement…' : 'Confirmer ma première licence' }}
                 </button>
               </div>
             </form>
           </section>
-
-          <p v-if="store.error" class="message message--error" role="alert">{{ customerErrorMessage }}</p>
+          <p v-if="store.error" class="message message--error">{{ customerErrorMessage }}</p>
         </div>
 
         <aside class="summary-column">
           <div class="summary-card">
-            <div class="summary-header">
-              <span class="eyebrow">Résumé</span>
-              <h2>Votre souscription</h2>
-            </div>
-
+            <div class="summary-header"><span class="eyebrow">Résumé</span>
+              <h2>Votre souscription</h2></div>
             <dl class="summary-list">
               <div>
                 <dt>Organisation</dt>
@@ -320,430 +208,215 @@
                 <dd>{{ licenseDisplayName }}</dd>
               </div>
               <div>
-                <dt>Mode</dt>
-                <dd>{{ billingModeLabel }}</dd>
-              </div>
-              <div>
                 <dt>Cycle</dt>
                 <dd>{{ billingLabel }}</dd>
               </div>
               <div>
-                <dt>Capacité choisie</dt>
+                <dt>Capacité</dt>
                 <dd>{{ requestedSeats == null ? 'À définir' : `${requestedSeats} collaborateurs` }}</dd>
               </div>
               <div>
-                <dt>Tarif de référence</dt>
-                <dd>{{
-                    hasUnitPrice ? `${formatMoney(store.status?.unitPrice, store.status?.unitPriceCurrency)} / collaborateur${pricingPeriodSuffix}` : 'À confirmer'
-                  }}
-                </dd>
+                <dt>Tarif unitaire</dt>
+                <dd>{{ unitPriceLabel }}</dd>
               </div>
-              <div v-if="store.status?.billingCurrencyCode">
-                <dt>Devise de facturation</dt>
-                <dd>{{ store.status.billingCurrencyCode }}</dd>
-              </div>
-              <div v-if="store.status?.taxesAmount != null">
-                <dt>Taxes</dt>
-                <dd>{{ formatMoney(store.status?.taxesAmount, store.status?.currencyCode) }}</dd>
-              </div>
-              <div v-if="store.status?.invoiceAmount != null">
-                <dt>Montant facturé</dt>
-                <dd>{{ formatMoney(store.status?.invoiceAmount, store.status?.currencyCode) }}</dd>
-              </div>
-              <div v-if="store.status?.amountReceived != null">
-                <dt>Déjà reçu</dt>
-                <dd>{{ formatMoney(store.status?.amountReceived, store.status?.currencyCode) }}</dd>
-              </div>
+              <template v-if="store.estimate">
+                <div>
+                  <dt>HT estimé</dt>
+                  <dd>{{ formatMoney(store.estimate.subtotalLocal, store.estimate.billingCurrencyCode) }}</dd>
+                </div>
+                <div>
+                  <dt>Taxes estimées</dt>
+                  <dd>{{ formatMoney(store.estimate.taxAmountLocal, store.estimate.billingCurrencyCode) }}</dd>
+                </div>
+              </template>
             </dl>
-
-            <div v-if="store.status?.amountDue != null" class="total-box">
-              <span>Reste à payer</span>
-              <strong>{{ formatMoney(store.status?.amountDue, store.status?.currencyCode) }}</strong>
-              <small>Montant restant pour cette souscription</small>
-            </div>
-            <div v-else class="total-box total-box--pending">
-              <span>Montant final</span>
-              <strong>À confirmer</strong>
-              <small>Le montant final apparaîtra avant toute étape de paiement.</small>
-            </div>
-
-            <button
-                v-if="!subscriptionAlreadyCreated && !store.status?.isReady"
-                class="btn btn-primary btn-large summary-submit"
-                type="button"
-                :disabled="!canSubmitSubscription || store.subscribing"
-                @click="submitSubscription"
-            >
-              {{ store.subscribing ? 'Enregistrement…' : 'Valider ma première licence' }}
+            <div class="total-box" :class="{ 'total-box--pending': !store.estimate }">
+              <span>Total TTC estimé</span><strong>{{
+                store.estimate ? formatMoney(store.estimate.totalAmountLocal, store.estimate.billingCurrencyCode) : 'À calculer'
+              }}</strong><small>{{
+                store.estimate ? 'Estimation actuelle avant souscription' : 'Choisissez une capacité et un moyen de paiement.'
+              }}</small></div>
+            <button v-if="!subscriptionAlreadyCreated" class="btn btn-primary btn-large summary-submit" type="button"
+                    :disabled="!canSubmitSubscription || store.subscribing" @click="submitSubscription">Confirmer ma
+              première licence
             </button>
-
-            <div class="summary-assurance">
-              <svg viewBox="0 0 24 24" aria-hidden="true">
-                <path d="M12 3 5 6v5c0 4.6 2.9 8 7 10 4.1-2 7-5.4 7-10V6l-7-3Z"/>
-                <path d="m9 12 2 2 4-4"/>
-              </svg>
-              <p><strong>Des conditions claires avant paiement.</strong><br/>Vous pouvez vérifier l’offre, le tarif de
-                référence, la capacité et les règles de période avant de poursuivre.</p>
-            </div>
           </div>
-
-          <a class="learn-more" href="#" aria-disabled="true" @click.prevent>
-            <span>
-              <strong>Comprendre les licences Toké</strong>
-              <small>Retrouvez prochainement le guide complet sur le fonctionnement des licences.</small>
-            </span>
-            <span aria-hidden="true">→</span>
-          </a>
         </aside>
       </section>
-
-      <footer class="public-footer">
-        <p>Ce portail vous permet de finaliser la première souscription et de suivre l’activation de votre espace
-          Toké.</p>
-        <span>Toké · Imediatis</span>
-      </footer>
+      <footer class="public-footer"><p>Ce portail permet de finaliser votre première licence et de suivre l’activation
+        de votre espace Toké.</p><span>Toké · Imediatis</span></footer>
     </template>
   </main>
 </template>
 
 <script setup lang="ts">
-import {computed, onBeforeUnmount, onMounted, ref} from 'vue'
+import {computed, onBeforeUnmount, onMounted, ref, watch} from 'vue'
 import {useTenantOnboardingStore} from '@/stores/tenantOnboardingStore'
-import type {OnboardingPaymentMethod} from '@/service/TenantOnboardingService'
+import type {OnboardingPaymentMethod, OnboardingPaymentView} from '@/service/TenantOnboardingService'
 import TenantActivationProgress from '@/views/onboarding/components/TenantActivationProgress.vue'
+import MobileMoneyPaymentPanel from '@/views/onboarding/components/MobileMoneyPaymentPanel.vue'
 
 const store = useTenantOnboardingStore()
 const requestedSeats = ref<number | null>(null)
 const selectedPaymentMethod = ref('')
 const resendEmail = ref('')
-let pollTimer: number | null = null
+let estimateTimer: number | null = null
+let statusTimer: number | null = null
 
-const customerErrorMessage = computed(() =>
-    showResend.value
-        ? 'Nous ne pouvons pas utiliser ce lien pour le moment. Vous pouvez demander un nouveau lien ci-dessous.'
-        : 'Une erreur est survenue. Veuillez réessayer dans quelques instants.',
-)
-
-function audit(event: string, details: Record<string, unknown> = {}) {
-  if (!import.meta.env.DEV) return
-  console.debug(`[Toké onboarding] ${event}`, details)
-}
-
-function auditStatus(context: string) {
-  if (!store.status) return
-  audit(context, {
-    tenantGuid: store.status.tenantGuid,
-    phase: store.status.phase,
-    state: store.status.state,
-    provisioningStatus: store.status.provisioningStatus,
-    tenantStatus: store.status.tenantStatus,
-    licenseGuid: store.status.licenseGuid,
-    licenseType: store.status.licenseType,
-    billingMode: store.status.billingMode,
-    billingCycleMonths: store.status.billingCycleMonths,
-    minimumSeats: store.status.minimumSeats,
-    maximumSeats: store.status.maximumSeats,
-    requestedSeats: store.status.requestedSeats,
-    unitPrice: store.status.unitPrice,
-    pricingCurrencyCode: store.status.unitPriceCurrency,
-    billingCurrencyCode: store.status.billingCurrencyCode,
-    periodPolicy: store.status.periodPolicy,
-    periodNotice: store.status.periodNotice,
-    paymentStatus: store.status.paymentStatus,
-    invoiceAmount: store.status.invoiceAmount,
-    amountReceived: store.status.amountReceived,
-    amountDue: store.status.amountDue,
-    isReady: store.status.isReady,
-  })
-}
-
-const initialLoading = computed(() => store.loadingStatus && !store.status && !store.tokenInvalidOrExpired)
+const initialLoading = computed(() => store.loadingStatus && !store.status)
 const showResend = computed(() => store.tokenInvalidOrExpired || (!store.hasToken && !store.loadingStatus))
 const tenantTitle = computed(() => store.status?.tenantName || 'Votre organisation')
-const minimumSeats = computed(() => {
-  const value = store.status?.minimumSeats
-  return Number.isInteger(value) && Number(value) > 0 ? Number(value) : null
+const minimumSeats = computed(() => store.status?.minimumSeats ?? null)
+const maximumSeats = computed(() => store.status?.maximumSeats ?? null)
+const phase = computed(() => String(store.status?.phase || '').toUpperCase())
+const activePayment = computed<OnboardingPaymentView | null>(() => {
+  const payments = store.status?.payments ?? []
+  if (payments.length === 1) return payments[0]
+  const outstanding = payments.filter((payment) => {
+    const due = Number(payment.amountToPayLocal)
+    const status = String(payment.transactionStatus || '').toUpperCase()
+    return status !== 'COMPLETED' && (!Number.isFinite(due) || due > 0)
+  })
+  if (outstanding.length === 1) return outstanding[0]
+  if (import.meta.env.DEV && phase.value === 'PAYMENT_PENDING') {
+    console.debug('[Toké onboarding] payment:ambiguous', {
+      licenseGuid: store.status?.licenseGuid,
+      payments: payments.map((payment) => ({
+        paymentTransactionGuid: payment.paymentTransactionGuid,
+        transactionStatus: payment.transactionStatus,
+        amountToPayLocal: payment.amountToPayLocal,
+      })),
+    })
+  }
+  return null
 })
-
-const maximumSeats = computed(() => {
-  const value = store.status?.maximumSeats
-  return Number.isInteger(value) && Number(value) > 0 ? Number(value) : null
-})
-
-const displayState = computed(() => {
-  const phase = String(store.status?.phase || store.status?.state || '').toUpperCase()
-  if (store.status?.isReady || phase === 'READY') return 'Espace prêt'
-  if (['PROVISIONING', 'ACTIVATION_PENDING', 'ACTIVATING'].includes(phase)) return 'Activation en cours'
-  if (['PAYMENT_CONFIRMED', 'PAID'].includes(phase) || paymentConfirmed.value) return 'Paiement confirmé'
-  if (['PAYMENT_REQUIRED', 'PAYMENT_PENDING', 'PENDING_PAYMENT'].includes(phase)) return 'Paiement en attente'
-  if (phase === 'SUBSCRIPTION_REQUIRED') return 'Première licence à souscrire'
-  return 'Souscription en cours'
-})
-
-const licenseDisplayName = computed(() => store.status?.licenseLabel || store.status?.licenseType || 'Information momentanément indisponible')
-
-const billingModeLabel = computed(() => {
-  const mode = String(store.status?.billingMode || '').toUpperCase()
-  if (mode === 'PREPAID') return 'Prépayée'
-  if (mode === 'POSTPAID') return 'Postpayée'
-  return 'Information momentanément indisponible'
-})
-
-const billingModeDetail = computed(() => {
-  const mode = String(store.status?.billingMode || '').toUpperCase()
-  if (mode === 'PREPAID') return 'La capacité est souscrite avant son utilisation.'
-  if (mode === 'POSTPAID') return 'La facturation intervient après la période consommée.'
-  return 'Information momentanément indisponible.'
-})
-
-
-const billingLabel = computed(() => {
-  const months = store.status?.billingCycleMonths
-  if (!months) return 'Information momentanément indisponible'
-  return months === 1 ? 'Mensuelle' : `${months} mois`
-})
-
-const pricingPeriodSuffix = computed(() => {
-  const months = store.status?.billingCycleMonths
-  if (!months) return ''
-  return months === 1 ? ' / mois' : ` / ${months} mois`
-})
-
-const billingCycleDetail = computed(() => {
-  const months = store.status?.billingCycleMonths
-  if (!months) return 'Information momentanément indisponible.'
-  return months === 1 ? 'Renouvellement par cycle d’un mois' : `Cycle de ${months} mois`
-})
-
-const normalizedSignals = computed(() => [
-  store.status?.phase,
-  store.status?.state,
-  store.status?.paymentStatus,
-  store.status?.provisioningStatus,
-].filter(Boolean).join(' ').toUpperCase())
-
-const subscriptionAlreadyCreated = computed(() => {
-  if (!store.status) return false
-  if (store.status.isReady) return true
-  if (store.status.licenseGuid) return true
-  return /PENDING_PAYMENT|PAYMENT_REQUIRED|PAYMENT_PENDING|PAID|PAYMENT_CONFIRMED|ACTIVATION|PROVISION|READY/.test(normalizedSignals.value)
-})
-
-const paymentConfirmed = computed(() => {
-  const payment = String(store.status?.paymentStatus || '').toUpperCase()
-  const phase = String(store.status?.phase || store.status?.state || '').toUpperCase()
-  const provisioning = String(store.status?.provisioningStatus || '').toUpperCase()
-  return ['PAID', 'COMPLETED', 'CONFIRMED', 'PAYMENT_CONFIRMED', 'PAYMENT_COMPLETED'].includes(payment)
-      || ['ACTIVATION_PENDING', 'ACTIVATING', 'PROVISIONING', 'READY'].includes(phase)
-      || ['IN_PROGRESS', 'PROVISIONING', 'READY'].includes(provisioning)
-})
-
-const currentStep = computed(() => {
-  if (store.status?.isReady || /ACTIVATION|PROVISION|READY/.test(normalizedSignals.value)) return 3
-  if (subscriptionAlreadyCreated.value) return 2
-  return 1
-})
-
-const statusExplanation = computed(() => {
-  const phase = String(store.status?.phase || '').toUpperCase()
-  if (phase === 'SUBSCRIPTION_REQUIRED') return 'Votre organisation existe. La première licence doit encore être souscrite.'
-  if (store.status?.isReady) return 'Votre espace Toké est prêt. Nous finalisons les dernières étapes avant votre première connexion.'
-  if (paymentConfirmed.value) return 'Votre paiement a été confirmé. Votre espace Toké est maintenant en cours de préparation.'
-  if (subscriptionAlreadyCreated.value) return 'Votre souscription a bien été enregistrée. Vous pouvez suivre son avancement ici.'
-  return 'Suivez ici l’avancement de votre première souscription.'
-})
-
+const subscriptionAlreadyCreated = computed(() => ['PAYMENT_PENDING', 'ACTIVATION_PENDING', 'READY', 'RESTRICTED'].includes(phase.value))
+const currentStep = computed(() => phase.value === 'SUBSCRIPTION_REQUIRED' ? 1 : phase.value === 'PAYMENT_PENDING' ? 2 : 3)
+const displayState = computed(() => ({
+  SUBSCRIPTION_REQUIRED: 'Première licence à souscrire',
+  PAYMENT_PENDING: 'Paiement en attente',
+  ACTIVATION_PENDING: 'Paiement confirmé',
+  READY: 'Espace prêt',
+  RESTRICTED: 'Accès restreint'
+}[phase.value] || 'Suivi en cours'))
+const statusExplanation = computed(() => ({
+  SUBSCRIPTION_REQUIRED: 'Choisissez votre capacité et consultez l’estimation avant de confirmer.',
+  PAYMENT_PENDING: 'Votre facture existe. Le paiement reste à finaliser.',
+  ACTIVATION_PENDING: 'Votre paiement est confirmé. Votre espace est en cours de préparation.',
+  READY: 'Votre espace Toké est prêt.',
+  RESTRICTED: 'Votre espace nécessite une vérification avant de poursuivre.'
+}[phase.value] || 'Suivez ici l’avancement de votre demande.'))
 const statusBannerClass = computed(() => ({
-  'status-banner--success': store.status?.isReady,
-  'status-banner--waiting': subscriptionAlreadyCreated.value && !store.status?.isReady,
+  'status-banner--success': phase.value === 'READY',
+  'status-banner--waiting': phase.value !== 'SUBSCRIPTION_REQUIRED' && phase.value !== 'READY'
 }))
+const licenseDisplayName = computed(() => store.status?.licenseLabel || store.status?.licenseType || 'Information indisponible')
+const billingModeLabel = computed(() => store.status?.billingMode === 'PREPAID' ? 'Prépayée' : store.status?.billingMode || 'Indisponible')
+const billingModeDetail = computed(() => store.status?.billingMode === 'PREPAID' ? 'La première période est réglée avant utilisation.' : 'Conditions de facturation communiquées par Toké.')
+const billingLabel = computed(() => store.status?.billingCycleMonths === 1 ? 'Mensuelle' : store.status?.billingCycleMonths ? `${store.status.billingCycleMonths} mois` : 'Indisponible')
+const unitPriceLabel = computed(() => store.status?.unitPriceUsd && store.status?.pricingCurrencyCode ? `${formatMoney(store.status.unitPriceUsd, store.status.pricingCurrencyCode)} / collaborateur / mois HT` : 'Indisponible')
+const commercialTermsComplete = computed(() => Boolean(store.status?.licenseType && store.status?.billingCycleMonths && minimumSeats.value && maximumSeats.value && store.status?.unitPriceUsd && store.status?.pricingCurrencyCode && store.status?.billingCurrencyCode && store.status?.periodNotice && store.status?.canSubscribe))
+const canEstimate = computed(() => Boolean(commercialTermsComplete.value && validSeats.value && selectedPaymentMethod.value))
+const validSeats = computed(() => requestedSeats.value != null && minimumSeats.value != null && Number.isInteger(requestedSeats.value) && requestedSeats.value >= minimumSeats.value && (maximumSeats.value == null || requestedSeats.value <= maximumSeats.value))
+const canSubmitSubscription = computed(() => Boolean(canEstimate.value && store.estimate && !store.estimating && !subscriptionAlreadyCreated.value))
+const canDecrease = computed(() => requestedSeats.value != null && minimumSeats.value != null && requestedSeats.value > minimumSeats.value)
+const canIncrease = computed(() => requestedSeats.value != null && (maximumSeats.value == null || requestedSeats.value < maximumSeats.value))
+const customerErrorMessage = computed(() => showResend.value ? 'Nous ne pouvons pas utiliser ce lien. Vous pouvez demander un nouveau lien.' : 'Une erreur est survenue. Veuillez réessayer dans quelques instants.')
 
-const hasUnitPrice = computed(() => store.status?.unitPrice !== null && store.status?.unitPrice !== undefined)
-
-const missingCommercialTerms = computed(() => {
-  const missing: string[] = []
-  if (!store.status?.licenseType) missing.push('Type de licence')
-  if (!store.status?.billingMode) missing.push('Mode de facturation')
-  if (!store.status?.billingCycleMonths) missing.push('Cycle de facturation')
-  if (minimumSeats.value == null) missing.push('Minimum de licences employés')
-  if (maximumSeats.value == null) missing.push('Maximum de licences employés')
-  if (!hasUnitPrice.value) missing.push('Tarif unitaire par licence employé')
-  if (!store.status?.unitPriceCurrency) missing.push('Devise du tarif')
-  if (!store.status?.billingCurrencyCode) missing.push('Devise de facturation')
-  if (!store.status?.periodNotice) missing.push('Règle de début de période')
-  if (store.status?.canSubscribe !== true) missing.push('Autorisation de souscription')
-  return missing
-})
-
-const commercialTermsComplete = computed(() => missingCommercialTerms.value.length === 0)
-
-const canSubmitSubscription = computed(() => {
-  if (subscriptionAlreadyCreated.value || !commercialTermsComplete.value) return false
-  if (requestedSeats.value == null || minimumSeats.value == null) return false
-  if (!Number.isInteger(requestedSeats.value) || requestedSeats.value < minimumSeats.value) return false
-  if (maximumSeats.value != null && requestedSeats.value > maximumSeats.value) return false
-  if (!selectedPaymentMethod.value) return false
-  return store.paymentMethods.length > 0
-})
-const hasPeriod = computed(() => Boolean(store.status?.periodStart || store.status?.periodEnd))
+function audit(event: string, details: Record<string, unknown> = {}) {
+  if (import.meta.env.DEV) console.debug(`[Toké onboarding] ${event}`, details)
+}
 
 function paymentMethodGuid() {
-  const selected = store.paymentMethods.find((method) => String(method.guid) === selectedPaymentMethod.value)
-  return selected?.guid ?? selectedPaymentMethod.value
+  return store.paymentMethods.find(m => String(m.guid) === selectedPaymentMethod.value)?.guid ?? selectedPaymentMethod.value
+}
+
+function enforceSeats() {
+  if (minimumSeats.value == null) return;
+  let n = Math.floor(Number(requestedSeats.value));
+  if (!Number.isFinite(n)) n = minimumSeats.value;
+  n = Math.max(minimumSeats.value, n);
+  if (maximumSeats.value != null) n = Math.min(maximumSeats.value, n);
+  requestedSeats.value = n
 }
 
 function increaseSeats() {
-  if (minimumSeats.value == null) return
-  const current = requestedSeats.value ?? minimumSeats.value
-  const next = Math.max(minimumSeats.value, current) + 1
-  requestedSeats.value = maximumSeats.value == null ? next : Math.min(maximumSeats.value, next)
+  if (requestedSeats.value == null || minimumSeats.value == null) requestedSeats.value = minimumSeats.value; else if (canIncrease.value) requestedSeats.value++
 }
 
 function decreaseSeats() {
-  if (minimumSeats.value == null) return
-  const current = requestedSeats.value ?? minimumSeats.value
-  requestedSeats.value = Math.max(minimumSeats.value, current - 1)
+  if (canDecrease.value && requestedSeats.value != null) requestedSeats.value--
 }
 
-function enforceMinimumSeats() {
-  if (minimumSeats.value == null) {
-    requestedSeats.value = null
-    return
-  }
-  const parsed = Math.floor(Number(requestedSeats.value))
-  if (!Number.isFinite(parsed)) {
-    requestedSeats.value = minimumSeats.value
-    return
-  }
-  const bounded = Math.max(minimumSeats.value, parsed)
-  requestedSeats.value = maximumSeats.value == null ? bounded : Math.min(maximumSeats.value, bounded)
+function paymentMethodDetail(method: OnboardingPaymentMethod) {
+  return method.supportedCurrencies.length ? `Règlement en ${method.supportedCurrencies.join(', ')}` : method.methodType === 'MOBILE_MONEY' ? 'Paiement Mobile Money' : ''
 }
 
 function formatMoney(value: string | number | null | undefined, currency?: string | null) {
-  if (value === null || value === undefined || value === '') return '—'
-  const number = Number(value)
-  if (!Number.isFinite(number)) return `${value}${currency ? ` ${currency}` : ''}`
-
-  if (currency && /^[A-Z]{3}$/.test(currency)) {
-    try {
-      return new Intl.NumberFormat('fr-FR', {style: 'currency', currency, maximumFractionDigits: 2}).format(number)
-    } catch {
-      // Fallback ci-dessous.
-    }
+  if (value == null || value === '') return '—';
+  const n = Number(value);
+  if (!Number.isFinite(n)) return `${value}${currency ? ` ${currency}` : ''}`;
+  try {
+    if (currency && /^[A-Z]{3}$/.test(currency)) return new Intl.NumberFormat('fr-FR', {
+      style: 'currency',
+      currency,
+      maximumFractionDigits: 2
+    }).format(n)
+  } catch {
   }
-
-  return `${new Intl.NumberFormat('fr-FR', {maximumFractionDigits: 2}).format(number)}${currency ? ` ${currency}` : ''}`
+  return `${new Intl.NumberFormat('fr-FR', {maximumFractionDigits: 2}).format(n)}${currency ? ` ${currency}` : ''}`
 }
 
-function formatDate(value?: string | null) {
-  if (!value) return 'À confirmer'
-  const date = new Date(value)
-  if (Number.isNaN(date.getTime())) return value
-  return new Intl.DateTimeFormat('fr-FR', {dateStyle: 'long', timeZone: 'Africa/Douala'}).format(date)
+function scheduleEstimate() {
+  store.invalidateEstimate();
+  if (estimateTimer) window.clearTimeout(estimateTimer);
+  if (!canEstimate.value) return;
+  estimateTimer = window.setTimeout(async () => {
+    audit('estimate:request', {requestedSeats: requestedSeats.value, paymentMethodGuid: paymentMethodGuid()});
+    await store.loadEstimate(requestedSeats.value!, paymentMethodGuid())
+  }, 350)
 }
 
-function paymentCurrencyLabel(method: OnboardingPaymentMethod) {
-  if (method.supportedCurrencies.length) return `Devises : ${method.supportedCurrencies.join(', ')}`
-  if (method.currency) return `Devise : ${method.currency}`
-  return ''
+watch([requestedSeats, selectedPaymentMethod], scheduleEstimate)
+
+async function refreshStatus() {
+  await store.loadStatus();
+  if (store.status?.phase === 'SUBSCRIPTION_REQUIRED') await store.loadPaymentMethods()
 }
 
 async function submitSubscription() {
-  enforceMinimumSeats()
-  if (!canSubmitSubscription.value) return
-  if (requestedSeats.value == null) return
-  audit('subscription:submit', {
-    requestedSeats: requestedSeats.value,
-    paymentMethodGuid: paymentMethodGuid(),
-    missingCommercialTerms: missingCommercialTerms.value,
-  })
-  const ok = await store.subscribe(requestedSeats.value, paymentMethodGuid())
-  audit('subscription:result', {ok, error: store.error || null})
-  if (ok) {
-    auditStatus('subscription:status-after-submit')
-    startPolling()
-  }
+  enforceSeats();
+  if (!canSubmitSubscription.value) return;
+  const ok = await store.subscribe(requestedSeats.value!, paymentMethodGuid());
+  audit('subscription:result', {ok, phase: store.status?.phase});
+  if (ok) startStatusPolling()
 }
 
 async function submitResend() {
-  if (!resendEmail.value) return
-  await store.resend(resendEmail.value)
-  audit('invitation:resend', {success: store.resendSuccess, error: store.error || null})
+  if (resendEmail.value) await store.resend(resendEmail.value)
 }
 
-async function refreshStatus() {
-  await store.loadStatus()
-  auditStatus('status:manual-refresh')
-  syncFormFromStatus()
-  syncPolling()
-}
-
-function syncFormFromStatus() {
-  if (minimumSeats.value == null) {
-    requestedSeats.value = null
-    return
-  }
-  const serverRequested = store.status?.requestedSeats
-  const initial = serverRequested == null ? minimumSeats.value : Math.max(minimumSeats.value, serverRequested)
-  requestedSeats.value = maximumSeats.value == null ? initial : Math.min(maximumSeats.value, initial)
-}
-
-function startPolling() {
-  stopPolling()
-  if (!store.hasToken || store.status?.isReady) return
-
-  pollTimer = window.setInterval(async () => {
-    await store.loadStatus()
-    auditStatus('status:poll')
-    if (store.status?.isReady || store.tokenInvalidOrExpired) stopPolling()
-  }, 15000)
-}
-
-function stopPolling() {
-  if (pollTimer !== null) {
-    window.clearInterval(pollTimer)
-    pollTimer = null
-  }
-}
-
-function syncPolling() {
-  if (subscriptionAlreadyCreated.value && !store.status?.isReady) startPolling()
-  else stopPolling()
+function startStatusPolling() {
+  if (statusTimer) window.clearInterval(statusTimer);
+  if (['PAYMENT_PENDING', 'ACTIVATION_PENDING'].includes(phase.value)) statusTimer = window.setInterval(() => store.loadStatus(), 20000)
 }
 
 onMounted(async () => {
-  store.bootstrapTokenFromFragment()
-  if (!store.hasToken) return
-
-  await store.loadStatus()
-  auditStatus('status:initial')
-  syncFormFromStatus()
-
-  if (!store.tokenInvalidOrExpired && !subscriptionAlreadyCreated.value) {
+  store.bootstrapTokenFromFragment();
+  if (!store.hasToken) return;
+  await store.loadStatus();
+  if (store.status?.phase === 'SUBSCRIPTION_REQUIRED') {
+    requestedSeats.value = store.status.minimumSeats;
     await store.loadPaymentMethods()
-    audit('payment-methods:loaded', {
-      count: store.paymentMethods.length,
-      methods: store.paymentMethods.map((method) => ({
-        guid: method.guid,
-        code: method.code,
-        name: method.name,
-        currency: method.currency,
-        supportedCurrencies: method.supportedCurrencies,
-      })),
-      error: store.error || null,
-    })
   }
-
-  if (missingCommercialTerms.value.length) {
-    audit('commercial-terms:missing', {missing: missingCommercialTerms.value})
-  }
-
-  syncPolling()
+  startStatusPolling()
 })
-
-onBeforeUnmount(stopPolling)
+onBeforeUnmount(() => {
+  if (estimateTimer) window.clearTimeout(estimateTimer);
+  if (statusTimer) window.clearInterval(statusTimer)
+})
+watch(phase, startStatusPolling)
 </script>
-
 <style scoped>
 .onboarding-page {
   min-height: 100vh;

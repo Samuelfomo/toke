@@ -69,17 +69,17 @@
     </div>
 
     <div v-if="hasFinancialSummary" class="financial-summary">
-      <div v-if="status.invoiceAmount != null">
+      <div v-if="currentPayment?.invoiceAmountLocal != null">
         <span>Montant facturé</span>
-        <strong>{{ formatMoney(status.invoiceAmount, status.currencyCode) }}</strong>
+        <strong>{{ formatMoney(currentPayment?.invoiceAmountLocal ?? null, currentPayment?.currencyCode) }}</strong>
       </div>
-      <div v-if="status.amountReceived != null">
+      <div v-if="currentPayment?.receivedLocal != null">
         <span>Montant reçu</span>
-        <strong>{{ formatMoney(status.amountReceived, status.currencyCode) }}</strong>
+        <strong>{{ formatMoney(currentPayment?.receivedLocal ?? null, currentPayment?.currencyCode) }}</strong>
       </div>
-      <div v-if="status.amountDue != null">
+      <div v-if="currentPayment?.amountToPayLocal != null">
         <span>Reste à payer</span>
-        <strong>{{ formatMoney(status.amountDue, status.currencyCode) }}</strong>
+        <strong>{{ formatMoney(currentPayment?.amountToPayLocal ?? null, currentPayment?.currencyCode) }}</strong>
       </div>
     </div>
 
@@ -112,62 +112,37 @@ import type {OnboardingStatusView} from '@/service/TenantOnboardingService'
 
 const props = defineProps<{ status: OnboardingStatusView }>()
 
-const signals = computed(() => [
-  props.status.phase,
-  props.status.state,
-  props.status.paymentStatus,
-  props.status.provisioningStatus,
-].filter(Boolean).join(' ').toUpperCase())
+const phase = computed(() => String(props.status.phase || '').toUpperCase())
+const subscriptionCreated = computed(() => ['PAYMENT_PENDING', 'ACTIVATION_PENDING', 'READY', 'RESTRICTED'].includes(phase.value))
+const paymentConfirmed = computed(() => ['ACTIVATION_PENDING', 'READY'].includes(phase.value))
+const provisioningStarted = computed(() => phase.value === 'ACTIVATION_PENDING' || phase.value === 'READY')
 
-const subscriptionCreated = computed(() =>
-    Boolean(props.status.licenseGuid) || /PENDING_PAYMENT|SUBSCRIB|PAID|PAYMENT|PROVISION|READY/.test(signals.value),
-)
-
-const paymentConfirmed = computed(() => {
-  const payment = String(props.status.paymentStatus || '').toUpperCase()
-  const phase = String(props.status.phase || props.status.state || '').toUpperCase()
-  const provisioning = String(props.status.provisioningStatus || '').toUpperCase()
-  return ['PAID', 'COMPLETED', 'CONFIRMED', 'PAYMENT_CONFIRMED', 'PAYMENT_COMPLETED'].includes(payment)
-      || ['ACTIVATION_PENDING', 'ACTIVATING', 'PROVISIONING', 'READY'].includes(phase)
-      || ['IN_PROGRESS', 'PROVISIONING', 'READY'].includes(provisioning)
-})
-
-const provisioningStarted = computed(() => {
-  const phase = String(props.status.phase || props.status.state || '').toUpperCase()
-  const provisioning = String(props.status.provisioningStatus || '').toUpperCase()
-  return ['ACTIVATION_PENDING', 'ACTIVATING', 'PROVISIONING', 'READY'].includes(phase)
-      || ['IN_PROGRESS', 'PROVISIONING', 'READY'].includes(provisioning)
-})
-
-const customerStateLabel = computed(() => {
-  if (props.status.isReady) return 'Espace prêt'
-  if (provisioningStarted.value) return 'Activation en cours'
-  if (paymentConfirmed.value) return 'Paiement confirmé'
-  if (subscriptionCreated.value) return 'Paiement en attente'
-  return 'Souscription en attente'
-})
+const customerStateLabel = computed(() => ({
+  SUBSCRIPTION_REQUIRED: 'Première licence à souscrire',
+  PAYMENT_PENDING: 'Paiement en attente',
+  ACTIVATION_PENDING: 'Paiement confirmé',
+  READY: 'Espace prêt',
+  RESTRICTED: 'Accès restreint',
+}[phase.value] || 'Suivi en cours'))
 
 const subscriptionLabel = computed(() => subscriptionCreated.value ? 'Enregistrée' : 'À valider')
 const paymentLabel = computed(() => paymentConfirmed.value ? 'Confirmé' : subscriptionCreated.value ? 'En attente' : 'À venir')
 const activationLabel = computed(() => props.status.isReady ? 'Terminée' : provisioningStarted.value ? 'En cours' : 'À venir')
 
-const hasFinancialSummary = computed(() =>
-    props.status.invoiceAmount != null || props.status.amountReceived != null || props.status.amountDue != null,
-)
+const currentPayment = computed(() => props.status.payments[0] ?? null)
+const hasFinancialSummary = computed(() => Boolean(currentPayment.value && (
+    currentPayment.value.invoiceAmountLocal != null || currentPayment.value.receivedLocal != null || currentPayment.value.amountToPayLocal != null
+)))
 
 function audit() {
   if (!import.meta.env.DEV) return
   console.debug('[Toké onboarding] activation-progress', {
     tenantGuid: props.status.tenantGuid,
     phase: props.status.phase,
-    state: props.status.state,
-    paymentStatus: props.status.paymentStatus,
-    provisioningStatus: props.status.provisioningStatus,
+    provisioning: props.status.provisioningStatus,
     tenantStatus: props.status.tenantStatus,
     licenseGuid: props.status.licenseGuid,
-    invoiceAmount: props.status.invoiceAmount,
-    amountReceived: props.status.amountReceived,
-    amountDue: props.status.amountDue,
+    paymentCount: props.status.payments.length,
     isReady: props.status.isReady,
   })
 }
@@ -176,22 +151,17 @@ watch(() => props.status, audit, {immediate: true, deep: true})
 
 function formatMoney(value: string | number | null, currency?: string | null) {
   if (value === null || value === undefined || value === '') return '—'
-  const numeric = Number(value)
-  if (!Number.isFinite(numeric)) return `${value}${currency ? ` ${currency}` : ''}`
-
-  if (currency && /^[A-Z]{3}$/.test(currency)) {
-    try {
-      return new Intl.NumberFormat('fr-FR', {
-        style: 'currency',
-        currency,
-        maximumFractionDigits: 2,
-      }).format(numeric)
-    } catch {
-      // Fallback texte ci-dessous.
-    }
+  const number = Number(value)
+  if (!Number.isFinite(number)) return `${value}${currency ? ` ${currency}` : ''}`
+  try {
+    if (currency && /^[A-Z]{3}$/.test(currency)) return new Intl.NumberFormat('fr-FR', {
+      style: 'currency',
+      currency,
+      maximumFractionDigits: 2
+    }).format(number)
+  } catch {
   }
-
-  return `${new Intl.NumberFormat('fr-FR', {maximumFractionDigits: 2}).format(numeric)}${currency ? ` ${currency}` : ''}`
+  return `${new Intl.NumberFormat('fr-FR', {maximumFractionDigits: 2}).format(number)}${currency ? ` ${currency}` : ''}`
 }
 </script>
 

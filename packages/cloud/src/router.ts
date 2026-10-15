@@ -1,4 +1,4 @@
-import {createRouter, createWebHistory, RouteRecordRaw} from 'vue-router'
+import { createRouter, createWebHistory, RouteRecordRaw } from 'vue-router'
 
 
 // Views
@@ -21,18 +21,19 @@ import Site from './views/site/site.vue';
 import Edit from './views/site/siteForm.vue';
 import MapVue from './views/site/map.vue';
 
-import {useUserStore} from '@/stores/userStore'
+import { useUserStore } from '@/stores/userStore'
 import EmployeeSchedulesView from "@/views/schedule/employeeSchedulesView.vue";
 import QrCodeAuth from "@/views/QrCodeAuth.vue";
-import {planningRoutes} from '@/router/planning'
-import AttendanceStatisticsOverview from '@/views/dashboard/AttendanceStatisticsRouteView.vue'
+import { planningRoutes } from '@/router/planning'
+import  AttendanceStatisticsOverview from '@/views/dashboard/AttendanceStatisticsRouteView.vue'
 
 const routes: RouteRecordRaw[] = [
     {
-        path: '/tenant-onboarding',
-        name: 'tenant-onboarding',
+        path: '/premiere-licence',
+        name: 'premiere-licence',
         component: TenantOnboarding,
-        meta: {requiresAuth: false},
+        alias: '/tenant-onboarding',
+        meta: { requiresAuth: false },
     },
     {
         path: '/auth',
@@ -54,112 +55,112 @@ const routes: RouteRecordRaw[] = [
         path: '/dashboard',
         name: 'dashboard',
         component: AttendanceStatisticsOverview,
-        meta: {requiresAuth: true},
+        meta: { requiresAuth: true },
     },
     {
         path: '/pointages',
         name: 'Pointages',
         component: PointageMain,
-        meta: {requiresAuth: true},
+        meta: { requiresAuth: true },
     },
     {
         path: '/pointages/print',
         name: 'PointagesPrint',
         component: PointagesPrint,
-        meta: {requiresAuth: true},
+        meta: { requiresAuth: true },
     },
     {
         path: '/equipe',
         name: 'equipe',
         component: Equipe,
-        meta: {requiresAuth: true},
+        meta: { requiresAuth: true },
     },
     {
         path: '/employeeCreate',
         name: 'employeeCreate',
         component: EmployeeForm,
-        meta: {requiresAuth: true},
+        meta: { requiresAuth: true },
     },
     {
         path: '/employeeEdit/:id',
         name: 'employeeEdit',
         component: EmployeeForm,
-        meta: {requiresAuth: true},
+        meta: { requiresAuth: true },
     },
     {
         path: '/memoList',
         name: 'memoList',
         component: MemoList,
-        meta: {requiresAuth: true},
+        meta: { requiresAuth: true },
     },
     {
         path: '/MemoCreated',
         name: 'MemoCreated',
         component: MemoCreated,
-        meta: {requiresAuth: true},
+        meta: { requiresAuth: true },
     },
     {
         path: '/schedule',
         name: 'schedule',
         component: Schedule,
-        meta: {requiresAuth: true},
+        meta: { requiresAuth: true },
     },
     {
         path: '/employeeDetails/:id',
         name: 'employeeDetails',
         component: EmployeeDetails,
-        meta: {requiresAuth: true},
+        meta: { requiresAuth: true },
     },
     {
         path: '/profile',
         name: 'profile',
         component: Profile,
-        meta: {requiresAuth: true},
+        meta: { requiresAuth: true },
 
     },
     {
         path: '/setting',
         name: 'setting',
         component: Setting,
-        meta: {requiresAuth: true},
+        meta: { requiresAuth: true },
 
     },
     {
         path: '/profileCard/:id',
         name: 'profileCard',
         component: ProfileCard,
-        meta: {requiresAuth: true},
+        meta: { requiresAuth: true },
 
     },
     {
         path: '/sites',
         name: 'sites',
         component: Site,
-        meta: {requiresAuth: true},
+        meta: { requiresAuth: true },
     },
     {
         path: '/sites/edit',
         name: 'edit',
         component: Edit,
-        meta: {requiresAuth: false},
+        meta: { requiresAuth: false },
     },
     {
         path: '/sites/add',
         name: 'add',
         component: Edit,
-        meta: {requiresAuth: true},
+        meta: { requiresAuth: true },
     },
     {
         path: '/sites/map',
         name: 'map',
         component: MapVue,
-        meta: {requiresAuth: true},
+        meta: { requiresAuth: true },
     },
     {
         path: '/employeeSchedulesView/:id',
         name: 'employeeSchedulesView',
         component: EmployeeSchedulesView,
-        meta: {requiresAuth: true},
+        meta: { requiresAuth: true },
     },
     planningRoutes,
 ]
@@ -195,9 +196,11 @@ router.beforeEach((to, from, next) => {
     next()
 })
 
+
 export default router
 
-// import { createRouter, createWebHistory, RouteRecordRaw } from 'vue-router'
+
+// import {createRouter, createWebHistory, RouteRecordRaw} from 'vue-router'
 //
 //
 // // Views
@@ -214,178 +217,184 @@ export default router
 // import Schedule from './views/schedule/schedule.vue'
 // import Profile from './views/profile.vue'
 // import Setting from './views/setting.vue'
+// import TenantOnboarding from './views/onboarding/TenantOnboarding.vue'
 // import ProfileCard from './views/profileCard.vue';
 // import Site from './views/site/site.vue';
 // import Edit from './views/site/siteForm.vue';
 // import MapVue from './views/site/map.vue';
 //
-// import { useUserStore } from '@/stores/userStore'
+// import {useUserStore} from '@/stores/userStore'
 // import EmployeeSchedulesView from "@/views/schedule/employeeSchedulesView.vue";
 // import QrCodeAuth from "@/views/QrCodeAuth.vue";
-// import { planningRoutes } from '@/router/planning'
-// import  AttendanceStatisticsOverview from '@/views/dashboard/AttendanceStatisticsRouteView.vue'
+// import {planningRoutes} from '@/router/planning'
+// import AttendanceStatisticsOverview from '@/views/dashboard/AttendanceStatisticsRouteView.vue'
 //
 // const routes: RouteRecordRaw[] = [
-//   {
-//     path: '/auth',
-//     name: 'auth',
-//     component: Auth,
-//   },
-//   {
-//     path: '/',
-//     name: 'linked',
-//     component: QrCodeAuth,
-//   },
-//   {
-//     path: '/otp',
-//     name: 'otp',
-//     component: Otp,
-//   },
-//
-//   {
-//     path: '/dashboard',
-//     name: 'dashboard',
-//     component: AttendanceStatisticsOverview,
-//     meta: { requiresAuth: true },
-//   },
 //     {
-//     path: '/pointages',
-//     name: 'Pointages',
-//     component: PointageMain,
-//     meta: { requiresAuth: true },
-//   },
+//         path: '/tenant-onboarding',
+//         name: 'tenant-onboarding',
+//         component: TenantOnboarding,
+//         meta: {requiresAuth: false},
+//     },
+//     {
+//         path: '/auth',
+//         name: 'auth',
+//         component: Auth,
+//     },
+//     {
+//         path: '/',
+//         name: 'linked',
+//         component: QrCodeAuth,
+//     },
+//     {
+//         path: '/otp',
+//         name: 'otp',
+//         component: Otp,
+//     },
+//
+//     {
+//         path: '/dashboard',
+//         name: 'dashboard',
+//         component: AttendanceStatisticsOverview,
+//         meta: {requiresAuth: true},
+//     },
+//     {
+//         path: '/pointages',
+//         name: 'Pointages',
+//         component: PointageMain,
+//         meta: {requiresAuth: true},
+//     },
 //     {
 //         path: '/pointages/print',
 //         name: 'PointagesPrint',
 //         component: PointagesPrint,
-//         meta: { requiresAuth: true },
+//         meta: {requiresAuth: true},
 //     },
-//   {
-//     path: '/equipe',
-//     name: 'equipe',
-//     component: Equipe,
-//     meta: { requiresAuth: true },
-//   },
 //     {
-//     path: '/employeeCreate',
-//     name: 'employeeCreate',
-//     component: EmployeeForm,
-//     meta: { requiresAuth: true },
-//   },
+//         path: '/equipe',
+//         name: 'equipe',
+//         component: Equipe,
+//         meta: {requiresAuth: true},
+//     },
+//     {
+//         path: '/employeeCreate',
+//         name: 'employeeCreate',
+//         component: EmployeeForm,
+//         meta: {requiresAuth: true},
+//     },
 //     {
 //         path: '/employeeEdit/:id',
 //         name: 'employeeEdit',
 //         component: EmployeeForm,
-//         meta: { requiresAuth: true },
+//         meta: {requiresAuth: true},
 //     },
-//   {
-//     path: '/memoList',
-//     name: 'memoList',
-//     component: MemoList,
-//     meta: { requiresAuth: true },
-//   },
 //     {
-//     path: '/MemoCreated',
-//     name: 'MemoCreated',
-//     component: MemoCreated,
-//     meta: { requiresAuth: true },
-//   },
-//   {
-//     path: '/schedule',
-//     name: 'schedule',
-//     component: Schedule,
-//     meta: { requiresAuth: true },
-//   },
-//   {
-//     path: '/employeeDetails/:id',
-//     name: 'employeeDetails',
-//     component: EmployeeDetails,
-//     meta: { requiresAuth: true },
-//   },
-//   {
-//     path: '/profile',
-//     name: 'profile',
-//     component: Profile,
-//     meta: { requiresAuth: true },
+//         path: '/memoList',
+//         name: 'memoList',
+//         component: MemoList,
+//         meta: {requiresAuth: true},
+//     },
+//     {
+//         path: '/MemoCreated',
+//         name: 'MemoCreated',
+//         component: MemoCreated,
+//         meta: {requiresAuth: true},
+//     },
+//     {
+//         path: '/schedule',
+//         name: 'schedule',
+//         component: Schedule,
+//         meta: {requiresAuth: true},
+//     },
+//     {
+//         path: '/employeeDetails/:id',
+//         name: 'employeeDetails',
+//         component: EmployeeDetails,
+//         meta: {requiresAuth: true},
+//     },
+//     {
+//         path: '/profile',
+//         name: 'profile',
+//         component: Profile,
+//         meta: {requiresAuth: true},
 //
-//   },
-//   {
-//     path: '/setting',
-//     name: 'setting',
-//     component: Setting,
-//     meta: { requiresAuth: true },
+//     },
+//     {
+//         path: '/setting',
+//         name: 'setting',
+//         component: Setting,
+//         meta: {requiresAuth: true},
 //
-//   },
-//   {
-//     path: '/profileCard/:id',
-//     name: 'profileCard',
-//     component: ProfileCard,
-//     meta: { requiresAuth: true },
+//     },
+//     {
+//         path: '/profileCard/:id',
+//         name: 'profileCard',
+//         component: ProfileCard,
+//         meta: {requiresAuth: true},
 //
-//   },
-//   {
-//     path: '/sites',
-//     name: 'sites',
-//     component: Site,
-//     meta: { requiresAuth: true },
-//   },
-//   {
-//     path: '/sites/edit',
-//     name: 'edit',
-//     component: Edit,
-//     meta: { requiresAuth: false },
-//   },
-//   {
-//     path: '/sites/add',
-//     name: 'add',
-//     component: Edit,
-//     meta: { requiresAuth: true },
-//   },
-//   {
-//     path: '/sites/map',
-//     name: 'map',
-//     component: MapVue,
-//     meta: { requiresAuth: true },
-//   },
-//   {
-//     path: '/employeeSchedulesView/:id',
-//     name: 'employeeSchedulesView',
-//     component: EmployeeSchedulesView,
-//     meta: { requiresAuth: true },
-//   },
+//     },
+//     {
+//         path: '/sites',
+//         name: 'sites',
+//         component: Site,
+//         meta: {requiresAuth: true},
+//     },
+//     {
+//         path: '/sites/edit',
+//         name: 'edit',
+//         component: Edit,
+//         meta: {requiresAuth: false},
+//     },
+//     {
+//         path: '/sites/add',
+//         name: 'add',
+//         component: Edit,
+//         meta: {requiresAuth: true},
+//     },
+//     {
+//         path: '/sites/map',
+//         name: 'map',
+//         component: MapVue,
+//         meta: {requiresAuth: true},
+//     },
+//     {
+//         path: '/employeeSchedulesView/:id',
+//         name: 'employeeSchedulesView',
+//         component: EmployeeSchedulesView,
+//         meta: {requiresAuth: true},
+//     },
 //     planningRoutes,
 // ]
 //
 // export const router = createRouter({
-//   history: createWebHistory(),
-//   routes,
+//     history: createWebHistory(),
+//     routes,
 // })
 //
 // /* ✅✅✅ GARDE D'ACCÈS GLOBALE ET LOGIQUE DE REDIRECTION (24h) ✅✅✅ */
 // router.beforeEach((to, from, next) => {
 //
-//   const userStore = useUserStore() // À supprimer ou commenter
+//     const userStore = useUserStore() // À supprimer ou commenter
 //
-//   const isAuthenticated = userStore.checkSession() // 🟢 Vérification 24h
+//     const isAuthenticated = userStore.checkSession() // 🟢 Vérification 24h
 //
-//   // 1. 🛑 GARDE INVERSE : BLOCAGE DES PAGES PUBLIC/LOGIN (Correction pour la flèche retour)
-//   // Si l'utilisateur est connecté ET essaie d'accéder aux pages publiques
-//   if (isAuthenticated && (to.path === '/' || to.path === '/otp' || to.path === '/country')) {
-//     console.warn('⛔ Manager connecté. Redirection vers le tableau de bord.')
-//     // L'utilisation de 'return next("/dashboard")' FORCE la navigation.
-//     return next('/dashboard')
-//   }
+//     // 1. 🛑 GARDE INVERSE : BLOCAGE DES PAGES PUBLIC/LOGIN (Correction pour la flèche retour)
+//     // Si l'utilisateur est connecté ET essaie d'accéder aux pages publiques
+//     if (isAuthenticated && (to.path === '/' || to.path === '/otp' || to.path === '/country')) {
+//         console.warn('⛔ Manager connecté. Redirection vers le tableau de bord.')
+//         // L'utilisation de 'return next("/dashboard")' FORCE la navigation.
+//         return next('/dashboard')
+//     }
 //
-//   // 2. 🔒 PROTECTION DES PAGES PRIVÉES (requiresAuth)
-//   // Si la route nécessite une authentification ET l'utilisateur n'est PAS connecté
-//   if (to.meta.requiresAuth && !isAuthenticated) {
-//     console.warn('⛔ Accès refusé (Non connecté ou Token expiré). Redirection login')
-//     return next('/')
-//   }
+//     // 2. 🔒 PROTECTION DES PAGES PRIVÉES (requiresAuth)
+//     // Si la route nécessite une authentification ET l'utilisateur n'est PAS connecté
+//     if (to.meta.requiresAuth && !isAuthenticated) {
+//         console.warn('⛔ Accès refusé (Non connecté ou Token expiré). Redirection login')
+//         return next('/')
+//     }
 //
-//   // 3. ✅ LAISSER PASSER
-//   next()
+//     // 3. ✅ LAISSER PASSER
+//     next()
 // })
-//
 //
 // export default router
