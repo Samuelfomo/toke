@@ -20,7 +20,7 @@ import R from '../../tools/response.js';
 import G from '../../tools/glossary.js';
 import Ensure from '../../middle/ensured-routes.js';
 import Revision from '../../tools/revision.js';
-import { responseStructure, tableName } from '../../utils/response.model.js';
+import { tableName } from '../../utils/response.model.js';
 import GlobalLicense from '../class/GlobalLicense.js';
 import TenantConfig from '../../utils/generate.tenant.config.js';
 import ManageTenantDatabase from '../../utils/generate.database.js';
@@ -33,10 +33,10 @@ import WapService from '../../tools/send.otp.service.js';
 import EmailSender from '../../tools/send.email.service.js';
 import { Contact } from '../class/Contact.js';
 import CountryPhoneValidation from '../../tools/country.phone.validation.js';
-import AppConfig from '../class/AppConfig.js';
 import { UserAuthenticationService } from '../../tools/user.authentication.service.js';
 import GenerateOtp from '../../utils/generate.otp.js';
 import GenericCacheService from '../../tools/cache.data.service.js';
+import TenantOnboarding from '../class/TenantOnboarding.js';
 
 const router = Router();
 
@@ -439,31 +439,26 @@ router.post(
 
       await tenantObj.save();
 
-      // const site = await AppConfig._load(responseStructure.APP_WEB, true);
-      // if (!site) {
-      //   return R.handleError(res, HttpStatus.NOT_FOUND, {
-      //     code: 'url_not_found',
-      //     message: 'Site url not found',
-      //   });
-      // }
-      // try {
-      //   await EmailSender.licensePayment(
-      //     tenantObj.getName()!,
-      //     tenantObj.getBillingEmail()!,
-      //     tenantObj.getGuid()!.toString(),
-      //     site.getLink()!,
-      //   );
-      // } catch (err) {
-      //   return R.handleError(res, HttpStatus.INTERNAL_ERROR, {
-      //     code: 'EMAIL_SENDING_FAILED',
-      //     message: (err as Error).message,
-      //   });
-      // }
+      let onboardingEmailSent = false;
+      try {
+        await new TenantOnboarding().invite(tenantObj.getGuid()!);
+        onboardingEmailSent = true;
+      } catch (error: unknown) {
+        console.error(
+          'Tenant created; onboarding invitation failed:',
+          error instanceof Error ? error.message : 'Unknown error',
+        );
+      }
+      // Remplacer seulement le return final du POST :
+      return R.handleCreated(res, {
+        ...tenantObj.toJSON(),
+        onboarding_email_sent: onboardingEmailSent,
+      });
 
-      console.log(
-        `✅ Tenant créé: ${validatedData.country_code} - ${validatedData.name} (GUID: ${tenantObj.getGuid()})`,
-      );
-      return R.handleCreated(res, tenantObj.toJSON());
+      // console.log(
+      //   `✅ Tenant créé: ${validatedData.country_code} - ${validatedData.name} (GUID: ${tenantObj.getGuid()})`,
+      // );
+      // return R.handleCreated(res, tenantObj.toJSON());
     } catch (error: any) {
       console.error('⚠️ Erreur création tenant:', error.message);
 
@@ -593,57 +588,198 @@ router.put('/:guid', Ensure.put(), async (req: Request, res: Response) => {
 /**
  * PATCH /:guid/subdomain - Définir la configuration de base de données ET le sous-domaine d'un tenant
  */
+// router.patch('/:guid/subdomain', Ensure.patch(), async (req: Request, res: Response) => {
+//   try {
+//     const validGuid = TN.validateTenantGuid(req.params.guid);
+//
+//     // ========== ÉTAPE 1: Charger le tenant ==========
+//     const tenantObj = await Tenant._load(validGuid, true);
+//     if (!tenantObj) {
+//       return R.handleError(res, HttpStatus.NOT_FOUND, {
+//         code: TENANT_CODES.TENANT_NOT_FOUND,
+//         message: TENANT_ERRORS.NOT_FOUND,
+//       });
+//     }
+//
+//     // ========== ÉTAPE 2: Vérifier la licence globale ==========
+//     const validGlobalLicense = await GlobalLicense._load(tenantObj.getId()!, false, true);
+//
+//     if (!validGlobalLicense || validGlobalLicense.getLicenseStatus() !== LicenseStatus.ACTIVE) {
+//       return R.handleError(res, HttpStatus.NOT_FOUND, {
+//         code: GLOBAL_LICENSE_CODES.GLOBAL_LICENSE_NOT_FOUND,
+//         message: GLOBAL_LICENSE_ERRORS.NOT_FOUND,
+//       });
+//     }
+//
+//     const { subdomain } = req.body;
+//
+//     if (!TenantValidationUtils.validateSubdomain(subdomain)) {
+//       return R.handleError(res, HttpStatus.BAD_REQUEST, {
+//         code: TENANT_CODES.SUBDOMAIN_INVALID,
+//         message: TENANT_ERRORS.SUBDOMAIN_INVALID,
+//       });
+//     }
+//
+//     tenantObj.setSubdomain(subdomain);
+//     await tenantObj.defineDbSubdomain();
+//
+//     // ========== ÉTAPE 3: Configuration de la base de données (si pas déjà fait) ==========
+//     if (!tenantObj.getDatabaseName()) {
+//       const tenantConfig = await TenantConfig.generateTenantConfig(
+//         tenantObj.getName()!,
+//         tenantObj.getGuid()!,
+//       );
+//
+//       // Définir la configuration
+//       tenantObj.setDatabaseConfig(
+//         tenantConfig.database_name,
+//         tenantConfig.database_username,
+//         tenantConfig.database_password,
+//       );
+//       await tenantObj.defineDatabaseConfig();
+//
+//       // Créer la base de données
+//       const createDb = await ManageTenantDatabase.createDatabase(
+//         tenantObj.getDatabaseName()!,
+//         tenantObj.getDatabaseUsername()!,
+//         tenantObj.getDatabasePassword()!,
+//       );
+//
+//       if (!createDb.success) {
+//         return R.handleError(res, HttpStatus.INTERNAL_ERROR, {
+//           code: 'db_creation_failed',
+//           message: createDb.error,
+//         });
+//       }
+//
+//       console.log(`✅ Configuration DB définie pour tenant GUID: ${validGuid}`);
+//     }
+//
+//     // ========== ÉTAPE 5: Mise en cache de la configuration du tenant ==========
+//     await TenantCacheService.setTenantConfig(tenantObj.getSubdomain()!, {
+//       host: process.env.DB_HOST || tenantObj.getSubdomain()!,
+//       port: parseInt(process.env.DB_PORT ? process.env.DB_PORT : '5432'),
+//       username: tenantObj.getDatabaseUsername()!,
+//       password: tenantObj.getDatabasePassword()!,
+//       database: tenantObj.getDatabaseName()!,
+//       active: tenantObj.isActive(),
+//       reference: tenantObj.getGuid()!.toString(),
+//       name: tenantObj.getName()!,
+//       address: tenantObj.getBillingAddress()!,
+//       country: tenantObj.getCountryCode()!,
+//       email: tenantObj.getBillingEmail()!,
+//       phone: tenantObj.getBillingPhone()!,
+//       global_license: validGlobalLicense.getGuid()!.toString(),
+//     });
+//
+//     // ========== ÉTAPE 6: Récupérer la configuration du tenant depuis le cache ==========
+//     const tenantConfig = await TenantCacheService.getTenantConfig(subdomain);
+//     if (!tenantConfig) {
+//       return R.handleError(res, HttpStatus.NOT_FOUND, {
+//         code: 'tenant_not_found',
+//         message: `Tenant parameter system not found`,
+//       });
+//     }
+//
+//     // ========== ÉTAPE 7: Initialiser la connexion et les tables ==========
+//     TenantManager.setCurrentTenant(subdomain);
+//
+//     const connection = await TenantManager.getConnectionForTenant(subdomain, {
+//       host: tenantConfig.host,
+//       port: tenantConfig.port,
+//       username: tenantConfig.username,
+//       password: tenantConfig.password,
+//       database: tenantConfig.database,
+//     });
+//
+//     await TableInitializer.initialize(connection);
+//
+//     console.log(`✅ Sous-domaine "${subdomain}" défini pour tenant GUID: ${validGuid}`);
+//
+//     return R.handleSuccess(res, {
+//       message: 'Tenant database and subdomain configured successfully',
+//       tenant_guid: validGuid,
+//     });
+//   } catch (error: any) {
+//     console.error('⚠️ Erreur configuration tenant:', error);
+//
+//     if (error.issues) {
+//       return R.handleError(res, HttpStatus.BAD_REQUEST, {
+//         code: TENANT_CODES.INVALID_GUID,
+//         message: TENANT_ERRORS.GUID_INVALID,
+//       });
+//     } else if (error.message.includes('already exists')) {
+//       return R.handleError(res, HttpStatus.CONFLICT, {
+//         code: TENANT_CODES.SUBDOMAIN_INVALID,
+//         message: error.message,
+//       });
+//     } else {
+//       return R.handleError(res, HttpStatus.INTERNAL_ERROR, {
+//         code: TENANT_CODES.UPDATE_FAILED,
+//         message: error.message,
+//         details: error,
+//       });
+//     }
+//   }
+// });
+
 router.patch('/:guid/subdomain', Ensure.patch(), async (req: Request, res: Response) => {
   try {
     const validGuid = TN.validateTenantGuid(req.params.guid);
+    return await new TenantOnboarding().provision(validGuid, async () => {
+      // ========== ÉTAPE 1: Charger le tenant ==========
+      const tenantObj = await Tenant._load(validGuid, true);
+      if (!tenantObj) {
+        return R.handleError(res, HttpStatus.NOT_FOUND, {
+          code: TENANT_CODES.TENANT_NOT_FOUND,
+          message: TENANT_ERRORS.NOT_FOUND,
+        });
+      }
 
-    // ========== ÉTAPE 1: Charger le tenant ==========
-    const tenantObj = await Tenant._load(validGuid, true);
-    if (!tenantObj) {
-      return R.handleError(res, HttpStatus.NOT_FOUND, {
-        code: TENANT_CODES.TENANT_NOT_FOUND,
-        message: TENANT_ERRORS.NOT_FOUND,
-      });
-    }
+      if (!tenantObj.isActive())
+        return R.handleError(res, HttpStatus.FORBIDDEN, {
+          code: 'tenant_inactive',
+          message: 'Tenant inactive',
+        });
+      // ========== ÉTAPE 2: Vérifier la licence globale ==========
+      const validGlobalLicense = await GlobalLicense._load(tenantObj.getId()!, false, true);
 
-    // ========== ÉTAPE 2: Vérifier la licence globale ==========
-    const validGlobalLicense = await GlobalLicense._load(tenantObj.getId()!, false, true);
+      if (!validGlobalLicense || validGlobalLicense.getLicenseStatus() !== LicenseStatus.ACTIVE) {
+        return R.handleError(res, HttpStatus.NOT_FOUND, {
+          code: GLOBAL_LICENSE_CODES.GLOBAL_LICENSE_NOT_FOUND,
+          message: GLOBAL_LICENSE_ERRORS.NOT_FOUND,
+        });
+      }
 
-    if (!validGlobalLicense || validGlobalLicense.getLicenseStatus() !== LicenseStatus.ACTIVE) {
-      return R.handleError(res, HttpStatus.NOT_FOUND, {
-        code: GLOBAL_LICENSE_CODES.GLOBAL_LICENSE_NOT_FOUND,
-        message: GLOBAL_LICENSE_ERRORS.NOT_FOUND,
-      });
-    }
+      const { subdomain } = req.body;
 
-    const { subdomain } = req.body;
+      if (!TenantValidationUtils.validateSubdomain(subdomain)) {
+        return R.handleError(res, HttpStatus.BAD_REQUEST, {
+          code: TENANT_CODES.SUBDOMAIN_INVALID,
+          message: TENANT_ERRORS.SUBDOMAIN_INVALID,
+        });
+      }
 
-    if (!TenantValidationUtils.validateSubdomain(subdomain)) {
-      return R.handleError(res, HttpStatus.BAD_REQUEST, {
-        code: TENANT_CODES.SUBDOMAIN_INVALID,
-        message: TENANT_ERRORS.SUBDOMAIN_INVALID,
-      });
-    }
+      tenantObj.setSubdomain(subdomain);
+      await tenantObj.defineDbSubdomain();
 
-    tenantObj.setSubdomain(subdomain);
-    await tenantObj.defineDbSubdomain();
+      // ========== ÉTAPE 3: Configuration de la base de données (si pas déjà fait) ==========
+      if (!tenantObj.getDatabaseName()) {
+        const tenantConfig = await TenantConfig.generateTenantConfig(
+          tenantObj.getName()!,
+          tenantObj.getGuid()!,
+        );
 
-    // ========== ÉTAPE 3: Configuration de la base de données (si pas déjà fait) ==========
-    if (!tenantObj.getDatabaseName()) {
-      const tenantConfig = await TenantConfig.generateTenantConfig(
-        tenantObj.getName()!,
-        tenantObj.getGuid()!,
-      );
+        // Définir la configuration
+        tenantObj.setDatabaseConfig(
+          tenantConfig.database_name,
+          tenantConfig.database_username,
+          tenantConfig.database_password,
+        );
+        await tenantObj.defineDatabaseConfig();
+      }
 
-      // Définir la configuration
-      tenantObj.setDatabaseConfig(
-        tenantConfig.database_name,
-        tenantConfig.database_username,
-        tenantConfig.database_password,
-      );
-      await tenantObj.defineDatabaseConfig();
-
-      // Créer la base de données
+      // Reprendre aussi lorsque la configuration a été persistée avant un échec.
       const createDb = await ManageTenantDatabase.createDatabase(
         tenantObj.getDatabaseName()!,
         tenantObj.getDatabaseUsername()!,
@@ -657,53 +793,53 @@ router.patch('/:guid/subdomain', Ensure.patch(), async (req: Request, res: Respo
         });
       }
 
-      console.log(`✅ Configuration DB définie pour tenant GUID: ${validGuid}`);
-    }
+      console.log(`✅ Configuration DB vérifiée pour tenant GUID: ${validGuid}`);
 
-    // ========== ÉTAPE 5: Mise en cache de la configuration du tenant ==========
-    await TenantCacheService.setTenantConfig(tenantObj.getSubdomain()!, {
-      host: process.env.DB_HOST || tenantObj.getSubdomain()!,
-      port: parseInt(process.env.DB_PORT ? process.env.DB_PORT : '5432'),
-      username: tenantObj.getDatabaseUsername()!,
-      password: tenantObj.getDatabasePassword()!,
-      database: tenantObj.getDatabaseName()!,
-      active: tenantObj.isActive(),
-      reference: tenantObj.getGuid()!.toString(),
-      name: tenantObj.getName()!,
-      address: tenantObj.getBillingAddress()!,
-      country: tenantObj.getCountryCode()!,
-      email: tenantObj.getBillingEmail()!,
-      phone: tenantObj.getBillingPhone()!,
-      global_license: validGlobalLicense.getGuid()!.toString(),
-    });
-
-    // ========== ÉTAPE 6: Récupérer la configuration du tenant depuis le cache ==========
-    const tenantConfig = await TenantCacheService.getTenantConfig(subdomain);
-    if (!tenantConfig) {
-      return R.handleError(res, HttpStatus.NOT_FOUND, {
-        code: 'tenant_not_found',
-        message: `Tenant parameter system not found`,
+      // ========== ÉTAPE 5: Mise en cache de la configuration du tenant ==========
+      await TenantCacheService.setTenantConfig(tenantObj.getSubdomain()!, {
+        host: process.env.DB_HOST || tenantObj.getSubdomain()!,
+        port: parseInt(process.env.DB_PORT ? process.env.DB_PORT : '5432'),
+        username: tenantObj.getDatabaseUsername()!,
+        password: tenantObj.getDatabasePassword()!,
+        database: tenantObj.getDatabaseName()!,
+        active: tenantObj.isActive(),
+        reference: tenantObj.getGuid()!.toString(),
+        name: tenantObj.getName()!,
+        address: tenantObj.getBillingAddress()!,
+        country: tenantObj.getCountryCode()!,
+        email: tenantObj.getBillingEmail()!,
+        phone: tenantObj.getBillingPhone()!,
+        global_license: validGlobalLicense.getGuid()!.toString(),
       });
-    }
 
-    // ========== ÉTAPE 7: Initialiser la connexion et les tables ==========
-    TenantManager.setCurrentTenant(subdomain);
+      // ========== ÉTAPE 6: Récupérer la configuration du tenant depuis le cache ==========
+      const tenantConfig = await TenantCacheService.getTenantConfig(subdomain);
+      if (!tenantConfig) {
+        return R.handleError(res, HttpStatus.NOT_FOUND, {
+          code: 'tenant_not_found',
+          message: `Tenant parameter system not found`,
+        });
+      }
 
-    const connection = await TenantManager.getConnectionForTenant(subdomain, {
-      host: tenantConfig.host,
-      port: tenantConfig.port,
-      username: tenantConfig.username,
-      password: tenantConfig.password,
-      database: tenantConfig.database,
-    });
+      // ========== ÉTAPE 7: Initialiser la connexion et les tables ==========
+      TenantManager.setCurrentTenant(subdomain);
 
-    await TableInitializer.initialize(connection);
+      const connection = await TenantManager.getConnectionForTenant(subdomain, {
+        host: tenantConfig.host,
+        port: tenantConfig.port,
+        username: tenantConfig.username,
+        password: tenantConfig.password,
+        database: tenantConfig.database,
+      });
 
-    console.log(`✅ Sous-domaine "${subdomain}" défini pour tenant GUID: ${validGuid}`);
+      await TableInitializer.initialize(connection);
 
-    return R.handleSuccess(res, {
-      message: 'Tenant database and subdomain configured successfully',
-      tenant_guid: validGuid,
+      console.log(`✅ Sous-domaine "${subdomain}" défini pour tenant GUID: ${validGuid}`);
+
+      return R.handleSuccess(res, {
+        message: 'Tenant database and subdomain configured successfully',
+        tenant_guid: validGuid,
+      });
     });
   } catch (error: any) {
     console.error('⚠️ Erreur configuration tenant:', error);
@@ -970,28 +1106,28 @@ router.get('/:identifier', Ensure.get(), async (req: Request, res: Response) => 
       });
     }
 
-    if (!tenant.getSubdomain()) {
-      const site = await AppConfig._load(responseStructure.APP_WEB, true);
-      if (!site) {
-        return R.handleError(res, HttpStatus.NOT_FOUND, {
-          code: 'url_not_found',
-          message: 'Site url not found',
-        });
-      }
-      try {
-        await EmailSender.licensePayment(
-          tenant.getName()!,
-          tenant.getBillingEmail()!,
-          tenant.getGuid()!.toString(),
-          site.getLink()!,
-        );
-      } catch (err) {
-        return R.handleError(res, HttpStatus.INTERNAL_ERROR, {
-          code: 'EMAIL_SENDING_FAILED',
-          message: (err as Error).message,
-        });
-      }
-    }
+    // if (!tenant.getSubdomain()) {
+    //   const site = await AppConfig._load(responseStructure.APP_WEB, true);
+    //   if (!site) {
+    //     return R.handleError(res, HttpStatus.NOT_FOUND, {
+    //       code: 'url_not_found',
+    //       message: 'Site url not found',
+    //     });
+    //   }
+    //   try {
+    //     await EmailSender.licensePayment(
+    //       tenant.getName()!,
+    //       tenant.getBillingEmail()!,
+    //       tenant.getGuid()!.toString(),
+    //       site.getLink()!,
+    //     );
+    //   } catch (err) {
+    //     return R.handleError(res, HttpStatus.INTERNAL_ERROR, {
+    //       code: 'EMAIL_SENDING_FAILED',
+    //       message: (err as Error).message,
+    //     });
+    //   }
+    // }
 
     return R.handleSuccess(res, { ...tenant.toJSON(), subdomain: tenant?.getSubdomain() || null });
   } catch (error: any) {

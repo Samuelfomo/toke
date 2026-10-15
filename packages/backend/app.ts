@@ -6,6 +6,7 @@ import cors from 'cors';
 import { TimezoneConfigUtils } from '@toke/shared';
 import { Server as IOServer } from 'socket.io';
 
+import kpayWebhookRoute from './src/routes/kpay.webhook.route.js';
 import tenantRoute from './src/routes/tenant.route.js';
 import userRoute from './src/routes/user.route.js';
 import timeEntriesRoute from './src/routes/time.entries.route.js';
@@ -26,6 +27,8 @@ import planningSuggestionConfigRoute from './src/routes/planning.suggestion.conf
 import planningSuggestionRequirementRoute from './src/routes/planning.suggestion.requirement.route.js';
 import attendanceRoute from './src/routes/attendance.route.js';
 import licenseRoute from './src/routes/license.route.js';
+import tenantOnboardingRoute from './src/routes/tenant.onboarding.route.js';
+import onboardingResendRoute from './src/routes/tenant.onboarding.resend.route.js';
 
 dotenv.config();
 
@@ -124,6 +127,7 @@ export default class App {
     }
 
     // Body parsing
+    this.app.use('/kpay', kpayWebhookRoute); // Raw signed callback before JSON parser.
     this.app.use(express.json({ limit: '50mb' }));
     this.app.use(express.urlencoded({ extended: true }));
 
@@ -198,6 +202,8 @@ export default class App {
     this.app.use('/planning-requirement', planningSuggestionRequirementRoute);
     this.app.use('/attendance', attendanceRoute);
     this.app.use('/', licenseRoute);
+    this.app.use('/tenant-onboarding', tenantOnboardingRoute);
+    this.app.use('/tenant-onboarding', onboardingResendRoute);
 
     this.app.use('/auth', authRoute);
 
@@ -289,7 +295,7 @@ export default class App {
       shutdown('UNHANDLED_REJECTION');
     });
   }
-}
+} 
 
 // import http, { Server } from 'http';
 //
@@ -318,6 +324,9 @@ export default class App {
 // import planningSuggestionConfigRoute from './src/routes/planning.suggestion.config.route.js';
 // import planningSuggestionRequirementRoute from './src/routes/planning.suggestion.requirement.route.js';
 // import attendanceRoute from './src/routes/attendance.route.js';
+// import licenseRoute from './src/routes/license.route.js';
+// import tenantOnboardingRoute from './src/routes/tenant.onboarding.route.js';
+// import onboardingResendRoute from './src/routes/tenant.onboarding.resend.route.js';
 //
 // dotenv.config();
 //
@@ -489,6 +498,9 @@ export default class App {
 //     this.app.use('/planning-config', planningSuggestionConfigRoute);
 //     this.app.use('/planning-requirement', planningSuggestionRequirementRoute);
 //     this.app.use('/attendance', attendanceRoute);
+//     this.app.use('/', licenseRoute);
+//     this.app.use('/tenant-onboarding', tenantOnboardingRoute);
+//     this.app.use('/tenant-onboarding', onboardingResendRoute);
 //
 //     this.app.use('/auth', authRoute);
 //

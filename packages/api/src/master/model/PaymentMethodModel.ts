@@ -65,14 +65,38 @@ export default class PaymentMethodModel extends BaseModel {
     return await this.findAll(this.db.tableName, conditions, paginationOptions);
   }
 
+  // /**
+  //  * Liste tous les moyens de paiement par statut actif
+  //  */
+  // protected async listAllByActiveStatus(
+  //   active: boolean,
+  //   paginationOptions: { offset?: number; limit?: number } = {},
+  // ): Promise<any[]> {
+  //   return await this.listAll({ [this.db.active]: active }, paginationOptions);
+  // }
+
   /**
    * Liste tous les moyens de paiement par statut actif
+   * en excluant CASH / ESPECE
    */
   protected async listAllByActiveStatus(
     active: boolean,
     paginationOptions: { offset?: number; limit?: number } = {},
   ): Promise<any[]> {
-    return await this.listAll({ [this.db.active]: active }, paginationOptions);
+    return await this.listAll(
+      {
+        [this.db.active]: active,
+
+        [this.db.code]: {
+          [Op.notIn]: ['CASH'],
+        },
+
+        [this.db.method_type]: {
+          [Op.notIn]: ['CASH'],
+        },
+      },
+      paginationOptions,
+    );
   }
 
   /**

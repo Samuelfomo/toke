@@ -24,6 +24,7 @@ import { EndpointDbStructure } from './data/endpoint.db.js';
 import { PermissionDbStructure } from './data/permission.db.js';
 import { FeatureDbStructure } from './data/feature.db.js';
 import { LicenseEventDbStructure } from './data/license.event.db.js';
+import { PaymentAttemptDbStructure } from './data/payment.attempt.db.js';
 
 /**
  * Gestionnaire STATIQUE d'initialisation des tables
@@ -144,6 +145,7 @@ export class TableInitializer {
     this.definePaymentMethodModel();
     this.defineLicenseAdjustmentModel();
     this.definePaymentTransactionModel();
+    this.definePaymentAttemptModel();
     // Les deux peuvent coexister sans problème. Le modèle Sequelize ne va pas recréer la table (elle existe déjà), il va juste la mapper pour l'utilisation applicative.
     this.defineFraudDetectionLogModel();
     this.defineActivityMonitoringModel();
@@ -406,6 +408,16 @@ export class TableInitializer {
 
     this.models.set(PaymentTransactionDbStructure.tableName, model);
     console.log(`✅ Modèl payment transaction défini (${PaymentTransactionDbStructure.tableName})`);
+  }
+  private static definePaymentAttemptModel(): void {
+    const model = this.sequelize.define(
+      PaymentAttemptDbStructure.tableName,
+      PaymentAttemptDbStructure.attributes,
+      PaymentAttemptDbStructure.options,
+    );
+
+    this.models.set(PaymentAttemptDbStructure.tableName, model);
+    console.log(`✅ Modèl Payment Attempt défini (${PaymentAttemptDbStructure.tableName})`);
   }
 
   private static defineFraudDetectionLogModel(): void {

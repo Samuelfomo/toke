@@ -60,6 +60,7 @@ export default class ManageTenantDatabase {
       const result = await ManageTenantDatabase.activateExtensions(database_name);
       if (!result.success) {
         console.warn('⚠️ Les extensions n’ont pas pu être activées:', result.error);
+        return { success: false, error: 'Tenant database extensions could not be initialized' };
       }
 
       return { success: true };
