@@ -42,7 +42,11 @@
       </div>
     </template>
 
-    <form v-if="showPaymentForm" class="payment-form" @submit.prevent="submitPayment">
+    <div v-if="!isOnline" class="message message--warning">Connexion interrompue. Votre paiement n’est pas relancé. Le
+      suivi reprendra automatiquement dès que la connexion sera disponible.
+    </div>
+
+    <form v-if="showPaymentForm" class="payment-form" @submit.prevent="openPaymentConfirmation">
       <label for="payment-phone">Numéro Mobile Money du payeur</label>
       <div class="phone-control">
         <span>+237</span>
@@ -69,15 +73,25 @@
       </div>
 
       <button class="btn btn-primary btn-large" type="submit" :disabled="!canInitiate || store.initiatingPayment">
-        {{
-          store.initiatingPayment ? 'Envoi de la demande…' : actionKey ? 'Réessayer la même demande' : 'Envoyer la demande de paiement'
-        }}
+        {{ store.initiatingPayment ? 'Envoi de la demande…' : actionKey ? 'Vérifier et réessayer' : 'Continuer' }}
       </button>
       <p class="security-note">Après l’envoi, validez la demande directement sur votre téléphone. Ne fermez pas la page
         tant que l’état du paiement n’est pas clarifié.</p>
     </form>
 
-    <p v-if="customerMessage" class="message message--warning">{{ customerMessage }}</p>
+    <PaymentConfirmationDialog
+        v-if="confirmingPayment"
+        :amount="payment.amountToPayLocal ?? payment.invoiceAmountLocal"
+        :currency="payment.currencyCode"
+        :phone="normalizedPhoneDisplay"
+        :submitting="store.initiatingPayment"
+        @cancel="confirmingPayment = false"
+        @confirm="confirmAndSubmitPayment"
+    />
+
+    <p v-if="customerMessage" class="message message--warning" role="status" aria-live="polite">{{
+        customerMessage
+      }}</p>
   </section>
 </template>
 
@@ -85,6 +99,7 @@
 import {computed, onBeforeUnmount, onMounted, ref, watch} from 'vue'
 import {useTenantOnboardingStore} from '@/stores/tenantOnboardingStore'
 import type {OnboardingPaymentAttemptView, OnboardingPaymentView} from '@/service/TenantOnboardingService'
+import PaymentConfirmationDialog from './PaymentConfirmationDialog.vue'
 
 const props = defineProps<{ payment: OnboardingPaymentView }>()
 const store = useTenantOnboardingStore()
@@ -93,6 +108,9 @@ const phoneConfirmed = ref(false)
 const actionKey = ref<string | null>(null)
 const actionPhone = ref<string | null>(null)
 const customerMessage = ref('')
+const confirmingPayment = ref(false)
+const isOnline = ref(typeof navigator === 'undefined' ? true : navigator.onLine)
+const recovering = ref(false)
 let pollTimer: number | null = null
 
 const currentAttempt = computed<OnboardingPaymentAttemptView | null>(() => store.paymentAttempts[0] ?? null)
@@ -197,6 +215,18 @@ async function loadAttempts() {
   schedulePolling()
 }
 
+function openPaymentConfirmation() {
+  customerMessage.value = ''
+  if (!canInitiate.value) return
+  confirmingPayment.value = true
+}
+
+async function confirmAndSubmitPayment() {
+  if (!canInitiate.value || store.initiatingPayment) return
+  confirmingPayment.value = false
+  await submitPayment()
+}
+
 async function submitPayment() {
   customerMessage.value = ''
   if (!canInitiate.value || !props.payment.paymentTransactionGuid) return
@@ -240,6 +270,7 @@ async function refreshNow() {
 }
 
 function prepareNewAttempt() {
+  confirmingPayment.value = false
   actionKey.value = null
   actionPhone.value = null
   phoneConfirmed.value = false
@@ -255,15 +286,47 @@ function stopPolling() {
 function schedulePolling() {
   stopPolling()
   const attempt = currentAttempt.value
-  if (!attempt) return
+  if (!attempt || !isOnline.value) return
   const status = String(attempt.status || '').toUpperCase()
   if (['FAILED', 'CANCELLED'].includes(status)) return
   const delay = status === 'COMPLETED' ? 15000 : 5000
   pollTimer = window.setTimeout(async () => {
+    if (!isOnline.value) return
     if (status === 'COMPLETED') await store.loadStatus()
     else if (attempt.guid) await store.refreshPaymentAttempt(attempt.guid)
     schedulePolling()
   }, delay)
+}
+
+async function recoverPaymentState() {
+  if (!isOnline.value || recovering.value || !props.payment.paymentTransactionGuid) return
+  recovering.value = true
+  try {
+    // Reprendre l'état existant : jamais réémettre payment-initiate automatiquement.
+    await store.loadPaymentAttempts(props.payment.paymentTransactionGuid)
+    const attempt = currentAttempt.value
+    const status = String(attempt?.status || '').toUpperCase()
+    if (attempt?.guid && ['CREATED', 'UNKNOWN', 'PENDING', 'PROCESSING'].includes(status)) {
+      await store.refreshPaymentAttempt(attempt.guid)
+    }
+    if (String(currentAttempt.value?.status || '').toUpperCase() === 'COMPLETED') await store.loadStatus()
+    audit('connection:payment-recovered', {latestStatus: currentAttempt.value?.status})
+  } finally {
+    recovering.value = false
+    schedulePolling()
+  }
+}
+
+function handleOnline() {
+  isOnline.value = true;
+  void recoverPaymentState()
+}
+
+function handleOffline() {
+  isOnline.value = false;
+  confirmingPayment.value = false;
+  stopPolling();
+  audit('connection:offline')
 }
 
 watch(() => props.payment.paymentTransactionGuid, async () => {
@@ -272,8 +335,16 @@ watch(() => props.payment.paymentTransactionGuid, async () => {
   await loadAttempts()
 })
 watch(() => currentAttempt.value?.status, schedulePolling)
-onMounted(loadAttempts)
-onBeforeUnmount(stopPolling)
+onMounted(async () => {
+  window.addEventListener('online', handleOnline);
+  window.addEventListener('offline', handleOffline);
+  await loadAttempts()
+})
+onBeforeUnmount(() => {
+  window.removeEventListener('online', handleOnline);
+  window.removeEventListener('offline', handleOffline);
+  stopPolling()
+})
 </script>
 
 <style scoped>

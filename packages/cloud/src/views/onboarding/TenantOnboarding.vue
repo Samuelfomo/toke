@@ -15,6 +15,8 @@
       </div>
     </header>
 
+    <ConnectivityBanner :online="isOnline" :recovering="recovering" @retry="recoverAfterConnection"/>
+
     <section v-if="initialLoading" class="state-page" aria-live="polite">
       <div class="spinner"></div>
       <h1>Vérification de votre invitation</h1>
@@ -74,10 +76,14 @@
             </button>
           </section>
 
-          <TenantActivationProgress v-if="store.status && subscriptionAlreadyCreated" :status="store.status"/>
+          <ActivationAccessPanel
+              v-if="store.status && ['ACTIVATION_PENDING', 'READY', 'RESTRICTED'].includes(phase)"
+              :status="store.status"
+              @refresh="refreshStatus"
+          />
 
           <MobileMoneyPaymentPanel
-              v-if="phase === 'PAYMENT_PENDING' && activePayment"
+              v-else-if="phase === 'PAYMENT_PENDING' && activePayment"
               :payment="activePayment"
           />
 
@@ -87,7 +93,7 @@
               disponibles. Actualisez la page ou réessayez plus tard.</p>
           </section>
 
-          <section v-else class="section-card subscription-card">
+          <section v-else-if="phase === 'SUBSCRIPTION_REQUIRED'" class="section-card subscription-card">
             <div class="section-heading section-heading--split">
               <div><span class="eyebrow">Votre offre</span>
                 <h2>{{ licenseDisplayName }}</h2>
@@ -173,9 +179,6 @@
                   <div class="fact"><span>Taxes</span><strong>{{
                       formatMoney(store.estimate.taxAmountLocal, store.estimate.billingCurrencyCode)
                     }}</strong></div>
-                  <div class="fact fact--highlight"><span>Total TTC estimé</span><strong>{{
-                      formatMoney(store.estimate.totalAmountLocal, store.estimate.billingCurrencyCode)
-                    }}</strong></div>
                 </div>
                 <div v-if="store.estimate?.notice" class="period-notice">
                   <div><strong>Information</strong>
@@ -190,6 +193,15 @@
                 </button>
               </div>
             </form>
+          </section>
+
+          <section v-else class="section-card contract-warning">
+            <strong>Nous vérifions l’état de votre espace.</strong>
+            <p>Les informations actuelles ne permettent pas encore d’afficher l’étape suivante. Actualisez dans quelques
+              instants.</p>
+            <button class="btn btn-ghost" type="button" :disabled="store.loadingStatus" @click="refreshStatus">
+              {{ store.loadingStatus ? 'Actualisation…' : 'Actualiser' }}
+            </button>
           </section>
           <p v-if="store.error" class="message message--error">{{ customerErrorMessage }}</p>
         </div>
@@ -231,10 +243,10 @@
               </template>
             </dl>
             <div class="total-box" :class="{ 'total-box--pending': !store.estimate }">
-              <span>Total TTC estimé</span><strong>{{
+              <span>Total TTC à régler</span><strong>{{
                 store.estimate ? formatMoney(store.estimate.totalAmountLocal, store.estimate.billingCurrencyCode) : 'À calculer'
               }}</strong><small>{{
-                store.estimate ? 'Estimation actuelle avant souscription' : 'Choisissez une capacité et un moyen de paiement.'
+                store.estimate ? 'Montant fourni par Toké pour cette estimation.' : 'Choisissez une capacité et un moyen de paiement.'
               }}</small></div>
             <button v-if="!subscriptionAlreadyCreated" class="btn btn-primary btn-large summary-submit" type="button"
                     :disabled="!canSubmitSubscription || store.subscribing" @click="submitSubscription">Confirmer ma
@@ -253,13 +265,16 @@
 import {computed, onBeforeUnmount, onMounted, ref, watch} from 'vue'
 import {useTenantOnboardingStore} from '@/stores/tenantOnboardingStore'
 import type {OnboardingPaymentMethod, OnboardingPaymentView} from '@/service/TenantOnboardingService'
-import TenantActivationProgress from '@/views/onboarding/components/TenantActivationProgress.vue'
+import ActivationAccessPanel from '@/views/onboarding/components/ActivationAccessPanel.vue'
 import MobileMoneyPaymentPanel from '@/views/onboarding/components/MobileMoneyPaymentPanel.vue'
+import ConnectivityBanner from '@/views/onboarding/components/ConnectivityBanner.vue'
 
 const store = useTenantOnboardingStore()
 const requestedSeats = ref<number | null>(null)
 const selectedPaymentMethod = ref('')
 const resendEmail = ref('')
+const isOnline = ref(typeof navigator === 'undefined' ? true : navigator.onLine)
+const recovering = ref(false)
 let estimateTimer: number | null = null
 let statusTimer: number | null = null
 
@@ -397,11 +412,43 @@ async function submitResend() {
 }
 
 function startStatusPolling() {
+  if (statusTimer) window.clearInterval(statusTimer)
+  if (!isOnline.value) return
+  if (['PAYMENT_PENDING', 'ACTIVATION_PENDING'].includes(phase.value)) {
+    statusTimer = window.setInterval(() => {
+      if (isOnline.value) void store.loadStatus()
+    }, 20000)
+  }
+}
+
+async function recoverAfterConnection() {
+  if (!store.hasToken || !isOnline.value || recovering.value) return
+  recovering.value = true
+  try {
+    await store.loadStatus()
+    if (store.status?.phase === 'SUBSCRIPTION_REQUIRED') await store.loadPaymentMethods()
+    audit('connection:recovered', {phase: store.status?.phase})
+  } finally {
+    recovering.value = false
+    startStatusPolling()
+  }
+}
+
+function handleOnline() {
+  isOnline.value = true;
+  void recoverAfterConnection()
+}
+
+function handleOffline() {
+  isOnline.value = false;
   if (statusTimer) window.clearInterval(statusTimer);
-  if (['PAYMENT_PENDING', 'ACTIVATION_PENDING'].includes(phase.value)) statusTimer = window.setInterval(() => store.loadStatus(), 20000)
+  statusTimer = null;
+  audit('connection:offline')
 }
 
 onMounted(async () => {
+  window.addEventListener('online', handleOnline);
+  window.addEventListener('offline', handleOffline);
   store.bootstrapTokenFromFragment();
   if (!store.hasToken) return;
   await store.loadStatus();
@@ -412,6 +459,8 @@ onMounted(async () => {
   startStatusPolling()
 })
 onBeforeUnmount(() => {
+  window.removeEventListener('online', handleOnline);
+  window.removeEventListener('offline', handleOffline);
   if (estimateTimer) window.clearTimeout(estimateTimer);
   if (statusTimer) window.clearInterval(statusTimer)
 })
