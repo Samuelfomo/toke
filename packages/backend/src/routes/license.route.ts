@@ -124,7 +124,10 @@ router.get(
       const scope = await resolveScope(req);
       const globalLicenseGuid = requireGlobalLicenseGuid(scope);
       if (String(req.params.licenseGuid) !== globalLicenseGuid) {
-        rejectScope(res, 'The requested global license does not belong to the authenticated tenant.');
+        rejectScope(
+          res,
+          'The requested global license does not belong to the authenticated tenant.',
+        );
         return;
       }
 
@@ -186,11 +189,20 @@ router.get(
       const scope = await resolveScope(req);
       const globalLicenseGuid = requireGlobalLicenseGuid(scope);
       if (String(req.params.licenseGuid) !== globalLicenseGuid) {
-        rejectScope(res, 'The requested global license does not belong to the authenticated tenant.');
+        rejectScope(
+          res,
+          'The requested global license does not belong to the authenticated tenant.',
+        );
         return;
       }
 
-      relayTenantApiResponse(res, await LicenseService.previewRenewal(globalLicenseGuid));
+      relayTenantApiResponse(
+        res,
+        await LicenseService.previewRenewal(globalLicenseGuid, {
+          billing_cycle_months: req.query.billing_cycle_months,
+          requested_seats: req.query.requested_seats,
+        }),
+      );
     } catch (error: unknown) {
       handleBffRouteError(res, error, 'BFF_LICENSE_RENEWAL_PREVIEW_FAILED');
     }
@@ -206,14 +218,14 @@ router.post(
       const scope = await resolveScope(req);
       const globalLicenseGuid = requireGlobalLicenseGuid(scope);
       if (String(req.params.licenseGuid) !== globalLicenseGuid) {
-        rejectScope(res, 'The requested global license does not belong to the authenticated tenant.');
+        rejectScope(
+          res,
+          'The requested global license does not belong to the authenticated tenant.',
+        );
         return;
       }
 
-      relayTenantApiResponse(
-        res,
-        await LicenseService.prepareRenewal(globalLicenseGuid, req.body),
-      );
+      relayTenantApiResponse(res, await LicenseService.prepareRenewal(globalLicenseGuid, req.body));
     } catch (error: unknown) {
       handleBffRouteError(res, error, 'BFF_LICENSE_RENEWAL_PREPARE_FAILED');
     }
@@ -250,7 +262,10 @@ router.get(
       const scope = await resolveScope(req);
       const globalLicenseGuid = requireGlobalLicenseGuid(scope);
       if (String(req.params.licenseGuid) !== globalLicenseGuid) {
-        rejectScope(res, 'The requested global license does not belong to the authenticated tenant.');
+        rejectScope(
+          res,
+          'The requested global license does not belong to the authenticated tenant.',
+        );
         return;
       }
 
@@ -273,7 +288,10 @@ router.get(
       const scope = await resolveScope(req);
       const globalLicenseGuid = requireGlobalLicenseGuid(scope);
       if (String(req.params.licenseGuid) !== globalLicenseGuid) {
-        rejectScope(res, 'The requested global license does not belong to the authenticated tenant.');
+        rejectScope(
+          res,
+          'The requested global license does not belong to the authenticated tenant.',
+        );
         return;
       }
 
@@ -296,7 +314,10 @@ router.get(
       const scope = await resolveScope(req);
       const globalLicenseGuid = requireGlobalLicenseGuid(scope);
       if (String(req.params.licenseGuid) !== globalLicenseGuid) {
-        rejectScope(res, 'The requested global license does not belong to the authenticated tenant.');
+        rejectScope(
+          res,
+          'The requested global license does not belong to the authenticated tenant.',
+        );
         return;
       }
 
@@ -323,7 +344,10 @@ router.get(
       const scope = await resolveScope(req);
       const globalLicenseGuid = requireGlobalLicenseGuid(scope);
       if (String(req.params.licenseGuid) !== globalLicenseGuid) {
-        rejectScope(res, 'The requested global license does not belong to the authenticated tenant.');
+        rejectScope(
+          res,
+          'The requested global license does not belong to the authenticated tenant.',
+        );
         return;
       }
 

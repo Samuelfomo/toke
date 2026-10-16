@@ -1,3 +1,5 @@
+import { monthlySeatCount } from '../services/monthly-usage.js';
+
 export class ActivityMonitoringInputError extends Error {}
 export function activityGuid(value: unknown): number {
   if (!/^[1-9][0-9]{5}$/.test(String(value)))
@@ -36,13 +38,15 @@ export function summarizeMonthlyMonitoring(result: Record<string, any>): Record<
     billing_status: Number(e.active_days) > 0 ? 'BILLABLE' : 'NON_BILLABLE',
     activity_basis: Number(e.active_days) > 0 ? 'OBSERVED_DAILY_USAGE' : 'NO_DAILY_TRACE_RECEIVED',
   }));
-  const count = employees.filter((e: any) => e.billing_status === 'BILLABLE').length;
+  const { count, seats } = monthlySeatCount(Number(result.minimum_seats), employees);
   return {
     ...result,
     employees,
     billable_employees: count,
-    billed_seats: Math.max(result.minimum_seats, count),
+    billed_seats: seats,
     basis: 'MONTHLY_OBSERVED_USAGE',
+    billing_activity_rule: 'AT_LEAST_ONE_SIGNAL_IN_CYCLE',
+    period_boundary: '[start,end)',
     recent_activity_window_days: 7,
     is_estimate: true,
     taxes_included: false,

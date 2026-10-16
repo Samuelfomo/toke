@@ -311,7 +311,8 @@ export const PaymentTransactionDbStructure = {
       amount_usd: number;
       exchange_rate_used: number;
       amount_local: number;
-    }): boolean => paymentAmountsConsistent(data.amount_usd, data.amount_local, data.exchange_rate_used),
+      currency_code?:string;
+    }): boolean => paymentAmountsConsistent(data.amount_usd, data.amount_local, data.exchange_rate_used, data.currency_code),
 
     validateCompletedAtAfterInitiated: (
       initiated_at: Date,
@@ -349,7 +350,7 @@ export const PaymentTransactionDbStructure = {
       else if (data.source_type === 'LEGACY' && (!cycle || !adjustment)) errors.push('LEGACY requires both historical references');
       else if (!['CYCLE', 'ADJUSTMENT', 'LEGACY'].includes(data.source_type)) errors.push('Invalid payment source');
 
-      if (!paymentAmountsConsistent(data.amount_usd, data.amount_local, data.exchange_rate_used)) {
+      if (!paymentAmountsConsistent(data.amount_usd, data.amount_local, data.exchange_rate_used, data.currency_code)) {
         errors.push('Invalid amounts or conversion inconsistent with independent decimal rounding');
       }
 

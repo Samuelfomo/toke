@@ -597,7 +597,7 @@ export default class PaymentTransaction extends PaymentTransactionModel {
    * Vérifie la cohérence des montants avec le taux de change
    */
   isAmountConsistent(): boolean {
-    return paymentAmountsConsistent(this.amount_usd, this.amount_local, this.exchange_rate_used);
+    return paymentAmountsConsistent(this.amount_usd, this.amount_local, this.exchange_rate_used, this.currency_code);
   }
 
   /**

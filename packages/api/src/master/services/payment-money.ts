@@ -16,6 +16,7 @@ export function paymentAmountsConsistent(
   amountUsd: unknown,
   amountLocal: unknown,
   exchangeRate: unknown,
+  currency?: string,
 ): boolean {
   const usd = scaledDecimal(amountUsd, 2);
   const local = scaledDecimal(amountLocal, 2);
@@ -25,5 +26,7 @@ export function paymentAmountsConsistent(
   const difference = usd * rate - local * 1000000n;
   const absolute = difference < 0n ? -difference : difference;
   // Demi-cent USD converti + demi-cent local : bornes des arrondis indépendants.
-  return 2n * absolute <= rate + 1000000n;
+  const displacement = currency === 'XAF' && local % 100n === 0n ? 50n : 0n;
+  const bound = displacement < 0n ? -displacement : displacement;
+  return 2n * absolute <= rate + 1000000n + 2n * bound * 1000000n;
 }

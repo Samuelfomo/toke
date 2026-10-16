@@ -49,11 +49,8 @@ export class LicenseService {
     });
   }
 
-  static async createSubscription(
-    tenantGuid: string,
-    payload: unknown,
-  ): Promise<TenantApiResult> {
-    const body = payload && typeof payload === 'object' ? payload as Record<string, unknown> : {};
+  static async createSubscription(tenantGuid: string, payload: unknown): Promise<TenantApiResult> {
+    const body = payload && typeof payload === 'object' ? (payload as Record<string, unknown>) : {};
 
     return await masterApiRequest({
       method: 'POST',
@@ -65,10 +62,7 @@ export class LicenseService {
     });
   }
 
-  static async provisionSubdomain(
-    tenantGuid: string,
-    payload: unknown,
-  ): Promise<TenantApiResult> {
+  static async provisionSubdomain(tenantGuid: string, payload: unknown): Promise<TenantApiResult> {
     return await masterApiRequest({
       method: 'PATCH',
       url: `/tenant/${tenantGuid}/subdomain`,
@@ -109,7 +103,9 @@ export class LicenseService {
     if (result.status >= 200 && result.status < 300) {
       const actual = globalLicenseFromEmployeePayload(result.response);
       if (!actual || actual !== expectedGlobalLicenseGuid) {
-        return forbidden('The requested employee license does not belong to the authenticated tenant.');
+        return forbidden(
+          'The requested employee license does not belong to the authenticated tenant.',
+        );
       }
     }
 
@@ -128,17 +124,23 @@ export class LicenseService {
     if (result.status >= 200 && result.status < 300) {
       const actual = globalLicenseFromEmployeePayload(result.response);
       if (!actual || actual !== expectedGlobalLicenseGuid) {
-        return forbidden('The requested employee does not belong to the authenticated license scope.');
+        return forbidden(
+          'The requested employee does not belong to the authenticated license scope.',
+        );
       }
     }
 
     return result;
   }
 
-  static async previewRenewal(globalLicenseGuid: string): Promise<TenantApiResult> {
+  static async previewRenewal(
+    globalLicenseGuid: string,
+    selection: Record<string, unknown> = {},
+  ): Promise<TenantApiResult> {
     return await masterApiRequest({
       method: 'GET',
       url: `/license-renewals/${globalLicenseGuid}/preview`,
+      params: selection,
     });
   }
 
@@ -169,7 +171,9 @@ export class LicenseService {
 
     const actual = globalLicenseFromTransactionPayload(transaction.response);
     if (!actual || actual !== expectedGlobalLicenseGuid) {
-      return forbidden('The requested payment transaction does not belong to the authenticated tenant.');
+      return forbidden(
+        'The requested payment transaction does not belong to the authenticated tenant.',
+      );
     }
 
     return await masterApiRequest({

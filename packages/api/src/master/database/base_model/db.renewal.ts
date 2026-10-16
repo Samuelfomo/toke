@@ -9,8 +9,8 @@ import { prepareRenewal } from './db.renewal-preparation.js';
 export default class RenewalDb {
   constructor(private readonly connection?: Sequelize) {}
 
-  preview(licenseGuid: number) {
-    return previewRenewal(this.database(), licenseGuid);
+  preview(licenseGuid: number, selection: Record<string, any> = {}) {
+    return previewRenewal(this.database(), licenseGuid, selection);
   }
 
   prepare(licenseGuid: number, input: Record<string, any>) {

@@ -10,7 +10,7 @@ import { RenewalPreparationError } from '../services/renewal-preparation.js';
 const router = Router();
 router.get('/:licenseGuid/preview', Ensure.get(), async (req: Request, res: Response) => {
   try {
-    return R.handleSuccess(res, await new Renewal().preview(req.params.licenseGuid));
+    return R.handleSuccess(res, await new Renewal().preview(req.params.licenseGuid, req.query));
   } catch (error: any) {
     if (error instanceof RenewalPreviewError)
       return R.handleError(res, HttpStatus.BAD_REQUEST, {

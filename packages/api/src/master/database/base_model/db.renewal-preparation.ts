@@ -1,9 +1,10 @@
 import type { Sequelize } from 'sequelize';
 import { Transaction } from 'sequelize';
 
-import { renewalAmounts } from '../../services/renewal-amounts.js';
+import { renewalRequest, renewalSelection } from '../../services/renewal-selection.js';
 import { paymentAmountsConsistent } from '../../services/payment-money.js';
 
+import { loadRenewalPricing } from './db.renewal-pricing.js';
 import { calculateRenewalPreview, RenewalPreviewError } from './db.renewal-preview.js';
 
 export class RenewalPreparationError extends Error {}
@@ -12,6 +13,13 @@ export async function prepareRenewal(
   licenseGuid: number,
   input: any,
 ): Promise<Record<string, any>> {
+  let selection;
+  try {
+    selection = renewalSelection(input);
+  } catch (error: any) {
+    throw new RenewalPreparationError(error.message);
+  }
+  const request = renewalRequest(selection);
   const actor = typeof input.actor_user_guid === 'string' ? input.actor_user_guid.trim() : '';
   const key = typeof input.idempotency_key === 'string' ? input.idempotency_key.trim() : '';
   const method = String(input.payment_method_guid ?? '');
@@ -48,17 +56,30 @@ export async function prepareRenewal(
       if (prior) {
         if (prior.actor_user_guid !== actor || Number(prior.payment_method_guid) !== Number(method))
           throw new RenewalPreparationError('Idempotency key conflict');
+        const saved = prior.snapshot?.renewal_request;
+        if (
+          saved
+            ? saved.billing_cycle_months !== request.billing_cycle_months ||
+              saved.requested_seats !== request.requested_seats
+            : (selection.billing_cycle_months !== undefined &&
+                selection.billing_cycle_months !== Number(prior.snapshot?.billing_cycle_months)) ||
+              (selection.requested_seats !== undefined &&
+                selection.requested_seats !== Number(prior.snapshot?.billed_seats))
+        )
+          throw new RenewalPreparationError('Idempotency key conflict: renewal selection changed');
         return { ...prior, replayed: true };
       }
       let preview;
       try {
-        preview = await calculateRenewalPreview(db, licenseGuid, transaction);
+        preview = await calculateRenewalPreview(db, licenseGuid, transaction, selection);
       } catch (error) {
         if (error instanceof RenewalPreviewError) throw new RenewalPreparationError(error.message);
         throw error;
       }
-      if (preview.reconciliation_required)
-        throw new RenewalPreparationError('Undated leaves require reconciliation');
+      if (preview.suggested_seats_provisional && selection.requested_seats === undefined)
+        throw new RenewalPreparationError(
+          'Explicit requested_seats required before the first closed monthly cycle',
+        );
       if (
         (
           await rows(
@@ -70,12 +91,14 @@ export async function prepareRenewal(
         throw new RenewalPreparationError('Renewal already prepared; use its existing payment');
       const window = (
         await rows(
-          `SELECT CAST(:start AS timestamptz)>CURRENT_TIMESTAMP AND CAST(:start AS timestamptz)<=CURRENT_TIMESTAMP+INTERVAL '30 days' AS allowed`,
-          { start: preview.period_start },
+          `SELECT CAST(:start AS timestamptz)<=CURRENT_TIMESTAMP+INTERVAL '30 days' AND CURRENT_TIMESTAMP<CAST(:end AS timestamptz) AS allowed`,
+          { start: preview.period_start, end: preview.period_end },
         )
       )[0];
       if (!window?.allowed)
-        throw new RenewalPreparationError('Preparation requires a future renewal within 30 days');
+        throw new RenewalPreparationError(
+          'Renewal must begin within 30 days and still have a future coverage end; expired terms require reconciliation',
+        );
       const base = await rows(
         `SELECT g.id FROM xa_paid_seat_grant g JOIN xa_billing_cycle c ON c.id=g.billing_cycle
    WHERE g.global_license= :id AND g.source_type='CYCLE' AND c.billing_status='COMPLETED'
@@ -87,7 +110,7 @@ export async function prepareRenewal(
           base.length === 0
             ? await rows(
                 `SELECT id FROM xa_commercial_transition WHERE global_license= :id
-    AND valid_from= :start AND valid_until= :end AND NOW()<valid_until`,
+    AND valid_from= :start AND valid_until= :end`,
                 {
                   id: license.id,
                   start: license.current_period_start,
@@ -110,11 +133,13 @@ export async function prepareRenewal(
         ).length
       )
         throw new RenewalPreparationError('Overlapping billing cycle exists');
-      const tenant = (
-        await rows('SELECT * FROM xa_tenant WHERE id= :id', { id: license.tenant })
-      )[0];
-      if (!tenant || !tenant.country_code || !/^[A-Z]{3}$/.test(tenant.primary_currency_code))
-        throw new RenewalPreparationError('Billing profile incomplete');
+      let pricing;
+      try {
+        pricing = await loadRenewalPricing(rows, license.tenant, preview.subtotal_usd);
+      } catch (error: any) {
+        throw new RenewalPreparationError(error.message);
+      }
+      const { tenant, rate, taxes: applied, amounts } = pricing;
       const paymentMethod = (
         await rows('SELECT * FROM xa_payment_method WHERE guid= :guid AND active=true', {
           guid: Number(method),
@@ -126,39 +151,14 @@ export async function prepareRenewal(
         !paymentMethod.supported_currencies.includes(tenant.primary_currency_code)
       )
         throw new RenewalPreparationError('Payment method does not support billing currency');
-      const rates =
-        tenant.primary_currency_code === 'USD'
-          ? []
-          : await rows(
-              `SELECT * FROM xf_exchange_rate WHERE from_currency_code='USD' AND to_currency_code= :currency AND current=true`,
-              { currency: tenant.primary_currency_code },
-            );
-      if (tenant.primary_currency_code !== 'USD' && rates.length !== 1)
-        throw new RenewalPreparationError('Exactly one current exchange rate required');
-      const rate =
-        tenant.primary_currency_code === 'USD' ? '1.000000' : String(rates[0].exchange_rate);
-      const taxes = await rows(
-        `SELECT * FROM xf_tax_rule WHERE country_code= :country AND active=true
-   AND effective_date<=CURRENT_TIMESTAMP AND (expiry_date IS NULL OR CURRENT_TIMESTAMP<expiry_date)
-   AND applies_to='license_fee' ORDER BY id`,
-        { country: tenant.country_code },
-      );
-      if (!tenant.tax_exempt && taxes.length === 0)
-        throw new RenewalPreparationError('Tax configuration requires review');
-      if (!tenant.tax_exempt && taxes.some((t) => t.required_tax_number && !tenant.tax_number))
-        throw new RenewalPreparationError('Required tax number is missing');
-      const applied = tenant.tax_exempt ? [] : taxes;
-      let amounts;
-      try {
-        amounts = renewalAmounts(
-          preview.subtotal_usd,
+      if (
+        !paymentAmountsConsistent(
+          amounts.totalUsd,
+          amounts.totalLocal,
           rate,
-          applied.map((t) => t.tax_rate),
-        );
-      } catch (error: any) {
-        throw new RenewalPreparationError(error.message);
-      }
-      if (!paymentAmountsConsistent(amounts.totalUsd, amounts.totalLocal, rate))
+          tenant.primary_currency_code,
+        )
+      )
         throw new RenewalPreparationError('Currency rounding requires review');
       if (
         Number(amounts.totalUsd) < Number(paymentMethod.min_amount_usd) ||
@@ -186,6 +186,7 @@ export async function prepareRenewal(
         license: license.id,
         start: preview.period_start,
         end: preview.period_end,
+        due: preview.payment_due_date,
         seats: preview.billed_seats,
         currency: tenant.primary_currency_code,
         rate,
@@ -196,8 +197,8 @@ export async function prepareRenewal(
         await rows(
           `INSERT INTO xa_billing_cycle(guid,global_license,period_start,period_end,base_employee_count,final_employee_count,
    base_amount_usd,adjustments_amount_usd,subtotal_usd,tax_amount_usd,total_amount_usd,billing_currency_code,exchange_rate_used,
-   base_amount_local,adjustments_amount_local,subtotal_local,tax_amount_local,total_amount_local,tax_rules_applied,billing_status,payment_due_date,created_at,updated_at)
-   VALUES(:guid,:license,:start,:end,:seats,:seats,:baseUsd,0,:baseUsd,:taxUsd,:totalUsd,:currency,:rate,:baseLocal,0,:baseLocal,:taxLocal,:totalLocal,CAST(:taxes AS jsonb),'PENDING',:start,NOW(),NOW()) RETURNING id,guid`,
+   base_amount_local,adjustments_amount_local,subtotal_local,tax_amount_local,total_amount_local,tax_rules_applied,billing_mode,billing_status,payment_due_date,created_at,updated_at)
+   VALUES(:guid,:license,:start,:end,:seats,:seats,:baseUsd,0,:baseUsd,:taxUsd,:totalUsd,:currency,:rate,:baseLocal,0,:baseLocal,:taxLocal,:totalLocal,CAST(:taxes AS jsonb),'PREPAID','PENDING',:due,NOW(),NOW()) RETURNING id,guid`,
           { ...common, guid: cycleGuid },
         )
       )[0];
@@ -217,10 +218,18 @@ export async function prepareRenewal(
       )[0];
       const snapshot = {
         ...preview,
+        operation: 'PREPAID_RENEWAL_V2',
+        renewal_request: request,
+        billing_mode: 'PREPAID',
         amounts,
         exchange_rate: rate,
-        exchange_rate_id: rates[0]?.id ?? null,
-        tax_rules: applied,
+        exchange_rate_guid: pricing.exchange_rate_guid,
+        tax_rules: applied.map((t) => ({
+          guid: t.guid,
+          tax_type: t.tax_type,
+          tax_name: t.tax_name,
+          tax_rate: String(t.tax_rate),
+        })),
         tenant_tax_exempt: tenant.tax_exempt,
         country_code: tenant.country_code,
         currency: tenant.primary_currency_code,

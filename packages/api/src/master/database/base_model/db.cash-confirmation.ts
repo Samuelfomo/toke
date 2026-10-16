@@ -1,5 +1,7 @@
 import type { Sequelize } from 'sequelize';
 
+import { renewalCycleMonths } from './db.renewal-activation.js';
+
 export interface CashConfirmation {
   transactionGuid: number;
   billingCycleGuid?: number;
@@ -117,6 +119,10 @@ export async function confirmCashPayment(db: Sequelize, input: CashConfirmation,
     const sourceId = cycle ? payment.billing_cycle : payment.adjustment;
     const debts = await rows(`SELECT * FROM ${table} WHERE id = :id FOR UPDATE`, { id: sourceId });
     const debt = debts[0];
+    if (!cycle && debt && debt.adjustment_kind && debt.adjustment_kind !== 'LEGACY')
+      throw new CashConfirmationError(
+        'Structured adjustment settlement is not enabled; do not issue prepaid rights for a consumed-month debt',
+      );
     const status = cycle ? debt?.billing_status : debt?.payment_status;
     if (!debt || !['PENDING', 'PROCESSING', 'FAILED', 'OVERDUE'].includes(status))
       throw new CashConfirmationError('Debt is not payable');
@@ -168,6 +174,8 @@ export async function confirmCashPayment(db: Sequelize, input: CashConfirmation,
     });
     const license = licenses[0];
     if (!license) throw new CashConfirmationError('License not found');
+    if (license.billing_mode === 'POSTPAID' || debt.billing_mode === 'POSTPAID')
+      throw new CashConfirmationError('Use postpaid settlement; prepaid rights must not be issued');
     if (cycle) {
       const overlap = await rows(
         `SELECT id FROM xa_paid_seat_grant WHERE global_license= :license
@@ -202,10 +210,15 @@ export async function confirmCashPayment(db: Sequelize, input: CashConfirmation,
         if (!samePeriod && !nextPeriod)
           throw new CashConfirmationError('Period requires reconciliation');
         if (['ACTIVE', 'PENDING_PAYMENT', 'EXPIRED'].includes(license.license_status)) {
+          const renewalMonths = await renewalCycleMonths(
+            rows,
+            debt.id,
+            Number(license.billing_cycle_months),
+          );
           await rows(
             `UPDATE xa_global_license SET current_period_start = :start, current_period_end = :end,
-            next_renewal_date = :end, license_status = 'ACTIVE', updated_at = :now WHERE id = :id RETURNING id`,
-            { start, end, now, id: license.id },
+            next_renewal_date = :end, billing_cycle_months = :months, license_status = 'ACTIVE', updated_at = :now WHERE id = :id RETURNING id`,
+            { start, end, now, id: license.id, months: renewalMonths },
           );
           accessAction = 'ACTIVE';
         } else accessAction = 'MANUAL_REVIEW';

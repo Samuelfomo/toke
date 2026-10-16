@@ -95,6 +95,7 @@ export default class ActivityMonitoringDb {
     start: string,
     end: string,
     sharedTransaction?: Transaction,
+    billingWindow?: { anchor: Date | string; end: Date | string },
   ): Promise<Record<string, any>> {
     const db = this.database();
     const read = async (transaction: Transaction): Promise<Record<string, any>> => {
@@ -114,14 +115,32 @@ export default class ActivityMonitoringDb {
         await rows(
           `SELECT
         CAST(:start AS timestamptz) AT TIME ZONE :zone AS local_start,
-        (CAST(:start AS timestamptz) AT TIME ZONE :zone)=date_trunc('month',CAST(:start AS timestamptz) AT TIME ZONE :zone)
-        AND CAST(:end AS timestamptz)=((CAST(:start AS timestamptz) AT TIME ZONE :zone)+INTERVAL '1 month') AT TIME ZONE :zone AS valid,
+        (CAST(:start AS timestamptz) AT TIME ZONE :zone)=date_trunc('day',CAST(:start AS timestamptz) AT TIME ZONE :zone)
+        AND (
+          CAST(:end AS timestamptz)=((CAST(:start AS timestamptz) AT TIME ZONE :zone)+INTERVAL '1 month') AT TIME ZONE :zone
+          OR EXISTS (
+            SELECT 1 FROM generate_series(0,11) AS month_index(n)
+            WHERE CAST(:start AS timestamptz)=
+              ((CAST(:anchor AS timestamptz) AT TIME ZONE :zone)+make_interval(months => n)) AT TIME ZONE :zone
+            AND CAST(:end AS timestamptz)=
+              ((CAST(:anchor AS timestamptz) AT TIME ZONE :zone)+make_interval(months => n+1)) AT TIME ZONE :zone
+            AND CAST(:end AS timestamptz)<=CAST(:term_end AS timestamptz)
+          )
+        ) AS valid,
         CAST(:end AS timestamptz)<=NOW() AS closed, CAST(:start AS timestamptz)<=NOW() AS started`,
-          { start, end, zone: license.timezone || 'UTC' },
+          {
+            start,
+            end,
+            zone: license.timezone || 'UTC',
+            anchor: billingWindow?.anchor ?? license.current_period_start,
+            term_end: billingWindow?.end ?? license.current_period_end,
+          },
         )
       )[0];
       if (!period?.valid || !period.started)
-        throw new ActivityMonitoringDataError('Full calendar month in tenant timezone required');
+        throw new ActivityMonitoringDataError(
+          'Full monthly cycle at local midnight in tenant timezone required',
+        );
       const employees = await rows(
         `SELECT el.guid AS employee_license_guid,el.contractual_status,
         COUNT(a.id)::integer AS active_days,MAX(a.last_punch_date) AS last_activity,
@@ -143,6 +162,8 @@ export default class ActivityMonitoringDb {
         period_start: start,
         period_end: end,
         period_closed: !!period.closed,
+        billing_activity_rule: 'AT_LEAST_ONE_SIGNAL_IN_CYCLE',
+        period_boundary: '[start,end)',
         minimum_seats: Number(license.minimum_seats),
         unit_price_usd: String(license.base_price_usd),
         employees,

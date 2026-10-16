@@ -1,16 +1,14 @@
 import { PaymentTransactionStatus, TimezoneConfigUtils } from '@toke/shared';
 
+import { centsText, decimalUnits, renewalAmounts } from '../services/renewal-amounts.js';
+import { monthlySeatCount } from '../services/monthly-usage.js';
 import LicenseAdjustmentModel from '../model/LicenseAdjustmentModel.js';
 import W from '../../tools/watcher.js';
 import G from '../../tools/glossary.js';
-import {
-  responseStructure as RS,
-  responseValue,
-  tableName,
-  ViewMode,
-} from '../../utils/response.model.js';
+import { responseStructure as RS, responseValue, tableName, ViewMode, } from '../../utils/response.model.js';
 import Revision from '../../tools/revision.js';
 
+import { activityDate, activityGuid, ActivityMonitoringInputError, } from './activity-monitoring-input.js';
 import GlobalLicense from './GlobalLicense.js';
 
 export default class LicenseAdjustment extends LicenseAdjustmentModel {
@@ -18,6 +16,72 @@ export default class LicenseAdjustment extends LicenseAdjustmentModel {
 
   constructor() {
     super();
+  }
+
+  static async previewMonthly(license: unknown, query: Record<string, any>) {
+    const input = {
+      license: activityGuid(license),
+      tenant: activityGuid(query.tenant_guid),
+      cycle: activityGuid(query.billing_cycle_guid),
+      start: activityDate(query.period_start),
+      end: activityDate(query.period_end),
+    };
+    if (Date.parse(input.end) <= Date.parse(input.start))
+      throw new ActivityMonitoringInputError('Period end must follow start');
+    const raw = await new LicenseAdjustment().loadMonthlyAdjustmentPreview(input);
+    const { count } = monthlySeatCount(raw.minimum_seats, raw.employees);
+    const paid = raw.full_period_capacity;
+    const surplus = Math.max(0, count - paid);
+    const canCalculate =
+      raw.period_closed &&
+      raw.base_paid &&
+      !raw.coverage_requires_review &&
+      !raw.offered &&
+      !raw.existing_adjustment_guid;
+    const amounts =
+      canCalculate && surplus > 0
+        ? renewalAmounts(
+            centsText(decimalUnits(raw.unit_price_usd, 2) * BigInt(surplus)),
+            raw.rate,
+            raw.taxes.map((t: any) => t.tax_rate),
+            raw.currency,
+          )
+        : null;
+    return {
+      tenant_guid: input.tenant,
+      license_guid: input.license,
+      billing_cycle_guid: input.cycle,
+      adjustment_kind: 'USAGE_REGULARIZATION',
+      period_start: input.start,
+      period_end: input.end,
+      period_closed: raw.period_closed,
+      billable_employees: count,
+      paid_seats: paid,
+      surplus_seats: raw.offered ? 0 : surplus,
+      minimum_seats: raw.minimum_seats,
+      unit_price_usd: raw.unit_price_usd,
+      billing_currency_code: raw.currency,
+      exchange_rate_used: raw.rate,
+      subtotal_local: amounts?.baseLocal ?? null,
+      tax_amount_local: amounts?.taxLocal ?? null,
+      total_amount_local: amounts?.totalLocal ?? null,
+      subtotal_usd: amounts?.baseUsd ?? null,
+      tax_amount_usd: amounts?.taxUsd ?? null,
+      total_amount_usd: amounts?.totalUsd ?? null,
+      existing_adjustment_guid: raw.existing_adjustment_guid,
+      coverage_requires_review: raw.coverage_requires_review || (!raw.base_paid && !raw.offered),
+      commercial_transition: raw.offered,
+      calculation_available: canCalculate,
+      requires_regularization: canCalculate && surplus > 0,
+      grace_days: 7,
+      payment_due_date: null,
+      can_issue: false,
+      creates_debt: false,
+      mutates_access: false,
+      data_completeness: 'NOT_ATTESTED',
+      warning:
+        'Preview only. Signal completeness must be attested before invoice issuance. Future capacity is separate and optional.',
+    };
   }
 
   /**
@@ -223,6 +287,55 @@ export default class LicenseAdjustment extends LicenseAdjustmentModel {
     };
   }
 
+  getBillingCycle(): number | null | undefined {
+    return this.billing_cycle;
+  }
+
+  setBillingCycle(id: number | null): this {
+    if (id !== null && (!Number.isSafeInteger(id) || id < 1))
+      throw new Error('Invalid internal cycle ID');
+    this.billing_cycle = id;
+    return this;
+  }
+
+  getAdjustmentKind() {
+    return this.adjustment_kind ?? 'LEGACY';
+  }
+
+  setAdjustmentKind(kind: 'LEGACY' | 'USAGE_REGULARIZATION' | 'FUTURE_CAPACITY'): this {
+    if (!['LEGACY', 'USAGE_REGULARIZATION', 'FUTURE_CAPACITY'].includes(kind))
+      throw new Error('Invalid adjustment kind');
+    this.adjustment_kind = kind;
+    return this;
+  }
+
+  getPeriodStart() {
+    return this.period_start;
+  }
+
+  setPeriodStart(value: Date | null): this {
+    this.period_start = this.validAdjustmentDate(value);
+    return this;
+  }
+
+  getPeriodEnd() {
+    return this.period_end;
+  }
+
+  setPeriodEnd(value: Date | null): this {
+    this.period_end = this.validAdjustmentDate(value);
+    return this;
+  }
+
+  getPaymentDueDate() {
+    return this.payment_due_date;
+  }
+
+  setPaymentDueDate(value: Date | null): this {
+    this.payment_due_date = this.validAdjustmentDate(value);
+    return this;
+  }
+
   // === SETTERS FLUENT ===
   setGlobalLicense(global_license: number): LicenseAdjustment {
     this.global_license = global_license;
@@ -410,14 +523,14 @@ export default class LicenseAdjustment extends LicenseAdjustmentModel {
     return this.guid?.toString() || 'Unknown';
   }
 
-  // === MÉTHODES MÉTIER ===
-
   /**
    * Vérifie si l'avenant est en attente de paiement
    */
   isPendingPayment(): boolean {
     return this.payment_status === PaymentTransactionStatus.PENDING;
   }
+
+  // === MÉTHODES MÉTIER ===
 
   /**
    * Vérifie si l'avenant est en cours de traitement
@@ -721,6 +834,11 @@ export default class LicenseAdjustment extends LicenseAdjustmentModel {
     const baseData = {
       [RS.GUID]: this.guid,
       [RS.ADJUSTMENT_DATE]: this.adjustment_date,
+      billing_cycle_guid: await this.getBillingCycleGuid(),
+      adjustment_kind: this.getAdjustmentKind(),
+      period_start: this.period_start ?? null,
+      period_end: this.period_end ?? null,
+      payment_due_date: this.payment_due_date ?? null,
       [RS.EMPLOYEES_ADDED_COUNT]: this.employees_added_count,
       [RS.MONTHS_REMAINING]: this.months_remaining,
       [RS.PRICE_PER_EMPLOYEE_USD]: this.price_per_employee_usd,
@@ -759,6 +877,12 @@ export default class LicenseAdjustment extends LicenseAdjustmentModel {
     return `LicenseAdjustment { ${RS.ID}: ${this.id}, ${RS.GUID}: ${this.guid}, ${RS.GLOBAL_LICENSE}: ${this.global_license}, ${RS.EMPLOYEES_ADDED_COUNT}: ${this.employees_added_count}, ${RS.PAYMENT_STATUS}: "${this.payment_status}", ${RS.TOTAL_AMOUNT_USD}: ${this.total_amount_usd} }`;
   }
 
+  private validAdjustmentDate(value: Date | null) {
+    if (value !== null && (!(value instanceof Date) || !Number.isFinite(value.getTime())))
+      throw new Error('Invalid adjustment date');
+    return value;
+  }
+
   /**
    * Hydrate l'instance avec les données
    */
@@ -767,6 +891,11 @@ export default class LicenseAdjustment extends LicenseAdjustmentModel {
     this.guid = data.guid;
     this.global_license = data.global_license;
     this.adjustment_date = data.adjustment_date;
+    this.billing_cycle = data.billing_cycle ?? null;
+    this.adjustment_kind = data.adjustment_kind ?? 'LEGACY';
+    this.period_start = data.period_start ? new Date(data.period_start) : null;
+    this.period_end = data.period_end ? new Date(data.period_end) : null;
+    this.payment_due_date = data.payment_due_date ? new Date(data.payment_due_date) : null;
     this.employees_added_count = data.employees_added_count;
     this.months_remaining = data.months_remaining;
     this.price_per_employee_usd = data.price_per_employee_usd;

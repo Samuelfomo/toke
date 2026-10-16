@@ -1,5 +1,6 @@
 import type { Sequelize } from 'sequelize';
 
+import { normalizationTrace } from '../../services/payable-amount.js';
 import { TableInitializer } from '../db.initializer.js';
 import type {
   SubscriptionInput,
@@ -143,6 +144,7 @@ export default class LicenseSubscriptionDb {
         centsText(decimalUnits(o.price, 2) * BigInt(i.seats) * BigInt(i.months)),
         rates[0].exchange_rate,
         taxes.map((x) => x.tax_rate),
+        t.primary_currency_code,
       );
       if (
         decimalUnits(a.totalUsd, 2) < decimalUnits(method.min_amount_usd, 2) ||
@@ -255,7 +257,16 @@ export default class LicenseSubscriptionDb {
               billing_mode: 'PREPAID',
               license_status: 'PENDING_PAYMENT',
             }),
-            metadata: JSON.stringify({ request: i, snapshot }),
+            metadata: JSON.stringify({
+              request: i,
+              snapshot,
+              monetary_normalization: normalizationTrace(
+                a.baseLocal,
+                a.taxLocal,
+                a.totalLocal,
+                t.primary_currency_code,
+              ),
+            }),
           },
         )
       )[0];

@@ -1,3 +1,4 @@
+import { monthlySeatCount } from '../../services/monthly-usage.js';
 import type { Sequelize } from 'sequelize';
 import { Transaction } from 'sequelize';
 
@@ -26,9 +27,8 @@ export function closureAmounts(
 ) {
   if (!Number.isSafeInteger(minimum) || minimum < 5)
     throw new PostpaidClosureError('Invalid minimum seats');
-  const count = employees.filter((e) => Number(e.active_days) > 0).length;
-  const seats = Math.max(minimum, count),
-    units = decimalUnits(price, 2);
+  const { count, seats } = monthlySeatCount(minimum, employees);
+  const units = decimalUnits(price, 2);
   if (units <= 0n) throw new PostpaidClosureError('Positive price required');
   return {
     count,

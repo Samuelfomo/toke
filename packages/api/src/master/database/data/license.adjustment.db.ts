@@ -47,6 +47,22 @@ export const LicenseAdjustmentDbStructure = {
       },
       comment: 'Global Licence',
     },
+    billing_cycle: {
+      type: DataTypes.INTEGER,
+      allowNull: true,
+      references: { model: tableName.BILLING_CYCLE, key: 'id' },
+      onDelete: 'RESTRICT',
+      onUpdate: 'CASCADE',
+    },
+    adjustment_kind: {
+      type: DataTypes.STRING(32),
+      allowNull: false,
+      defaultValue: 'LEGACY',
+      validate: { isIn: [['LEGACY', 'USAGE_REGULARIZATION', 'FUTURE_CAPACITY']] },
+    },
+    period_start: { type: DataTypes.DATE, allowNull: true },
+    period_end: { type: DataTypes.DATE, allowNull: true },
+    payment_due_date: { type: DataTypes.DATE, allowNull: true },
     adjustment_date: {
       type: DataTypes.DATE,
       allowNull: false,
@@ -271,6 +287,12 @@ export const LicenseAdjustmentDbStructure = {
     freezeTableName: true,
     comment: 'License adjustment table with validation information',
     indexes: [
+      {
+        name: 'uq_adjustment_monthly_regularization',
+        unique: true,
+        fields: ['global_license', 'period_start'],
+        where: { adjustment_kind: 'USAGE_REGULARIZATION' },
+      },
       {
         fields: ['guid'],
         name: 'idx_license_adjustment_guid',

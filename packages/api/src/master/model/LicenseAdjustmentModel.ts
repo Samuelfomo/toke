@@ -1,6 +1,7 @@
 import { Op } from 'sequelize';
 import { PaymentTransactionStatus, TimezoneConfigUtils } from '@toke/shared';
 
+import AdjustmentPreviewDb from '../database/base_model/db.adjustment-preview.js';
 import BaseModel from '../database/db.base.js';
 import { tableName } from '../../utils/response.model.js';
 import { LicenseAdjustmentDbStructure } from '../database/data/license.adjustment.db.js';
@@ -12,6 +13,11 @@ export default class LicenseAdjustmentModel extends BaseModel {
     guid: 'guid',
     global_license: 'global_license',
     adjustment_date: 'adjustment_date',
+    billing_cycle: 'billing_cycle',
+    adjustment_kind: 'adjustment_kind',
+    period_start: 'period_start',
+    period_end: 'period_end',
+    payment_due_date: 'payment_due_date',
     employees_added_count: 'employees_added_count',
     months_remaining: 'months_remaining',
     price_per_employee_usd: 'price_per_employee_usd',
@@ -34,6 +40,11 @@ export default class LicenseAdjustmentModel extends BaseModel {
   protected guid?: number;
   protected global_license?: number;
   protected adjustment_date?: Date;
+  protected billing_cycle?: number | null;
+  protected adjustment_kind?: 'LEGACY' | 'USAGE_REGULARIZATION' | 'FUTURE_CAPACITY';
+  protected period_start?: Date | null;
+  protected period_end?: Date | null;
+  protected payment_due_date?: Date | null;
   protected employees_added_count?: number;
   protected months_remaining?: number;
   protected price_per_employee_usd?: number;
@@ -53,6 +64,23 @@ export default class LicenseAdjustmentModel extends BaseModel {
 
   protected constructor() {
     super();
+  }
+
+  protected loadMonthlyAdjustmentPreview(input: {
+    tenant: number;
+    license: number;
+    cycle: number;
+    start: string;
+    end: string;
+  }) {
+    return new AdjustmentPreviewDb().load(input);
+  }
+  protected async getBillingCycleGuid(): Promise<number | null> {
+    if (!this.billing_cycle) return null;
+    const cycle = await this.findOne(tableName.BILLING_CYCLE, { id: this.billing_cycle });
+    if (!cycle || Number(cycle.global_license) !== Number(this.global_license))
+      throw new Error('Adjustment cycle does not belong to global license');
+    return Number(cycle.guid);
   }
 
   /**
@@ -323,6 +351,11 @@ export default class LicenseAdjustmentModel extends BaseModel {
     const lastID = await this.insertOne(this.db.tableName, {
       [this.db.guid]: guid,
       [this.db.global_license]: this.global_license,
+      [this.db.billing_cycle]: this.billing_cycle ?? null,
+      [this.db.adjustment_kind]: this.adjustment_kind ?? 'LEGACY',
+      [this.db.period_start]: this.period_start ?? null,
+      [this.db.period_end]: this.period_end ?? null,
+      [this.db.payment_due_date]: this.payment_due_date ?? null,
       [this.db.adjustment_date]: this.adjustment_date || TimezoneConfigUtils.getCurrentTime(),
       [this.db.employees_added_count]: this.employees_added_count,
       [this.db.months_remaining]: this.months_remaining,
@@ -367,6 +400,13 @@ export default class LicenseAdjustmentModel extends BaseModel {
     }
 
     const updateData: Record<string, any> = {};
+    if (this.billing_cycle !== undefined) updateData[this.db.billing_cycle] = this.billing_cycle;
+    if (this.adjustment_kind !== undefined)
+      updateData[this.db.adjustment_kind] = this.adjustment_kind;
+    if (this.period_start !== undefined) updateData[this.db.period_start] = this.period_start;
+    if (this.period_end !== undefined) updateData[this.db.period_end] = this.period_end;
+    if (this.payment_due_date !== undefined)
+      updateData[this.db.payment_due_date] = this.payment_due_date;
     if (this.global_license !== undefined) updateData[this.db.global_license] = this.global_license;
     if (this.adjustment_date !== undefined)
       updateData[this.db.adjustment_date] = this.adjustment_date;
@@ -416,6 +456,10 @@ export default class LicenseAdjustmentModel extends BaseModel {
    * Valide les données avant création/mise à jour
    */
   private async validate(): Promise<void> {
+    if (this.adjustment_kind && this.adjustment_kind !== 'LEGACY')
+      throw new Error(
+        'Structured adjustment issuance is not enabled; use monthly preview until the transactional issuance lot is installed',
+      );
     // Nettoyer les données
     LicenseAdjustmentDbStructure.validation.cleanData(this);
 

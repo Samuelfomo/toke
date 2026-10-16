@@ -11,6 +11,8 @@ import {
   TimezoneConfigUtils,
 } from '@toke/shared';
 
+import { AdjustmentPreviewDataError } from '../database/base_model/db.adjustment-preview.js';
+import { ActivityMonitoringInputError } from '../class/activity-monitoring-input.js';
 import LicenseAdjustment from '../class/LicenseAdjustment.js';
 import R from '../../tools/response.js';
 import G from '../../tools/glossary.js';
@@ -20,6 +22,34 @@ import { tableName } from '../../utils/response.model.js';
 import GlobalLicense from '../class/GlobalLicense.js';
 
 const router = Router();
+
+// Lecture serveur authentifiée, tenant_guid ne remplace pas les permissions utilisateur.
+router.get(
+  '/global-license/:licenseGuid/monthly-preview',
+  Ensure.get(),
+  async (req: Request, res: Response) => {
+    try {
+      return R.handleSuccess(
+        res,
+        await LicenseAdjustment.previewMonthly(req.params.licenseGuid, req.query),
+      );
+    } catch (error: any) {
+      if (
+        error instanceof AdjustmentPreviewDataError ||
+        error instanceof ActivityMonitoringInputError
+      )
+        return R.handleError(res, HttpStatus.BAD_REQUEST, {
+          code: 'adjustment_monthly_preview_invalid',
+          message: error.message,
+        });
+      console.error('Adjustment monthly preview failed:', error.message);
+      return R.handleError(res, HttpStatus.INTERNAL_ERROR, {
+        code: 'adjustment_monthly_preview_failed',
+        message: 'Adjustment preview unavailable',
+      });
+    }
+  },
+);
 
 // region ROUTES D'EXPORT
 

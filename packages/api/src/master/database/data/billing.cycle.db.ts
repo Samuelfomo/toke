@@ -1,6 +1,7 @@
 import { DataTypes, ModelAttributes, ModelOptions } from 'sequelize';
 import { BillingStatus, TimezoneConfigUtils } from '@toke/shared';
 
+import { payableTotalMatches } from '../../services/payable-amount.js';
 import { tableName } from '../../../utils/response.model.js';
 
 export const BillingCycleDbStructure = {
@@ -228,11 +229,18 @@ export const BillingCycleDbStructure = {
         min: 0,
         max: 9999999999.99,
         isCorrectTotalLocal() {
-          const subtotal = parseFloat(this.subtotal_local?.toString() || '0');
-          const tax = parseFloat(this.tax_amount_local?.toString() || '0');
-          const total = parseFloat(this.total_amount_local?.toString() || '0');
+          if (typeof this.billing_currency_code !== 'string') {
+            throw new Error('Billing currency code is required for local total amount');
+          }
 
-          if (Math.abs(total - (subtotal + tax)) > 0.01) {
+          if (
+            !payableTotalMatches(
+              this.subtotal_local,
+              this.tax_amount_local,
+              this.total_amount_local,
+              this.billing_currency_code,
+            )
+          ) {
             throw new Error('Local total amount must equal subtotal + tax amount');
           }
         },
