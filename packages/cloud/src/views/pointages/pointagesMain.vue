@@ -161,6 +161,20 @@
               <option value="pending">En attente</option>
               <option value="rejected">Rejeté</option>
             </select>
+            <select v-model="filterControl" aria-label="Filtrer les situations à contrôler"
+                    class="w-full sm:w-auto min-w-0 text-sm border border-slate-200 rounded-lg px-3 py-2 bg-white text-slate-700 focus:outline-none focus:ring-2 focus:ring-blue-500">
+              <option value="">Tous les contrôles</option>
+              <option value="invalid">Pointages non valides</option>
+              <option value="validation">Validation demandée</option>
+              <option value="outside">Hors zone autorisée</option>
+              <option value="anomaly">Anomalie signalée</option>
+            </select>
+            <select v-model="filterMemo" aria-label="Filtrer les mémos associés"
+                    class="w-full sm:w-auto min-w-0 text-sm border border-slate-200 rounded-lg px-3 py-2 bg-white text-slate-700 focus:outline-none focus:ring-2 focus:ring-blue-500">
+              <option value="">Tous les pointages</option>
+              <option value="with">Avec mémo associé</option>
+              <option value="without">Sans mémo associé</option>
+            </select>
 
             <!-- Reset -->
             <button
@@ -181,98 +195,28 @@
           </div>
         </div>
 
-        <!-- ══════════════════ STATS CARDS ══════════════════ -->
-        <div class="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-5 gap-3">
-
-          <!-- Total -->
-          <div class="bg-white rounded-lg border border-slate-200 shadow-sm min-w-0 px-3 sm:px-5 py-4 flex flex-col gap-2">
-            <div class="flex items-center justify-between">
-              <span class="text-xs font-semibold text-slate-500 uppercase tracking-wide">Total</span>
-              <div class="w-8 h-8 rounded-lg bg-slate-100 flex items-center justify-center">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="w-4 h-4 text-slate-600">
-                  <rect x="3" y="4" width="18" height="18" rx="2"/>
-                  <line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/>
-                </svg>
-              </div>
-            </div>
-            <div class="text-3xl font-bold text-slate-800">{{ stats.total }}</div>
-            <p class="text-xs text-slate-400">pointages</p>
+        <!-- Indicateurs pour la période chargée et les filtres actifs -->
+        <div class="grid grid-cols-2 lg:grid-cols-5 gap-3" aria-label="Synthèse des pointages affichés">
+          <div class="rounded-xl bg-white border border-slate-200 px-4 py-3">
+            <div class="text-xs font-medium text-slate-500">Pointages</div>
+            <div class="mt-1 text-2xl font-bold text-slate-900">{{ stats.total }}</div>
           </div>
-
-          <!-- Standard -->
-          <div class="bg-white rounded-lg border border-blue-100 shadow-sm min-w-0 px-3 sm:px-5 py-4 flex flex-col gap-2">
-            <div class="flex items-center justify-between">
-              <span class="text-xs font-semibold text-blue-500 uppercase tracking-wide">Standard</span>
-              <div class="w-8 h-8 rounded-lg bg-blue-50 flex items-center justify-center">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="w-4 h-4 text-blue-500">
-                  <path stroke-linecap="round" stroke-linejoin="round" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"/>
-                  <path stroke-linecap="round" stroke-linejoin="round" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"/>
-                </svg>
-              </div>
-            </div>
-            <div class="text-3xl font-bold text-blue-700">{{ stats.standard }}</div>
-            <p class="text-xs text-blue-400">site connu</p>
+          <div class="rounded-xl bg-white border border-amber-200 px-4 py-3">
+            <div class="text-xs font-medium text-slate-600">À examiner</div>
+            <div class="mt-1 text-2xl font-bold text-amber-700">{{ stats.attention }}</div>
           </div>
-
-          <!-- Libre / Waypoint -->
-          <div class="bg-white rounded-lg border border-purple-100 shadow-sm min-w-0 px-3 sm:px-5 py-4 flex flex-col gap-2">
-            <div class="flex items-center justify-between">
-              <span class="text-xs font-semibold text-purple-500 uppercase tracking-wide">Libre</span>
-              <div class="w-8 h-8 rounded-lg bg-purple-50 flex items-center justify-center">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="w-4 h-4 text-purple-500">
-                  <circle cx="12" cy="12" r="10"/>
-                  <line x1="2" y1="12" x2="22" y2="12"/>
-                  <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/>
-                </svg>
-              </div>
-            </div>
-            <div class="text-3xl font-bold text-purple-700">{{ stats.libre }}</div>
-            <p class="text-xs text-purple-400">site inconnu</p>
+          <div class="rounded-xl bg-white border border-red-200 px-4 py-3">
+            <div class="text-xs font-medium text-slate-600">Hors zone</div>
+            <div class="mt-1 text-2xl font-bold text-red-700">{{ stats.outside }}</div>
           </div>
-
-          <!-- Fallback -->
-          <div class="bg-white rounded-lg border border-amber-100 shadow-sm min-w-0 px-3 sm:px-5 py-4 flex flex-col gap-2">
-            <div class="flex items-center justify-between">
-              <span class="text-xs font-semibold text-amber-600 uppercase tracking-wide">Partagé</span>
-              <div class="w-8 h-8 rounded-lg bg-amber-50 flex items-center justify-center">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="w-4 h-4 text-amber-500">
-                  <path stroke-linecap="round" stroke-linejoin="round" d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/>
-                </svg>
-              </div>
-            </div>
-            <div class="text-3xl font-bold text-amber-700">{{ stats.fallback }}</div>
-            <p class="text-xs text-amber-400">terminal partagé</p>
+          <div class="rounded-xl bg-white border border-blue-200 px-4 py-3">
+            <div class="text-xs font-medium text-slate-600">Avec mémo</div>
+            <div class="mt-1 text-2xl font-bold text-[#004AAD]">{{ stats.withMemo }}</div>
           </div>
-
-          <!--          &lt;!&ndash; Avec photo &ndash;&gt;-->
-          <!--          <div class="bg-white min-w-0 rounded-2xl border border-emerald-100 shadow-sm min-w-0 px-3 sm:px-5 py-4 flex flex-col gap-2">-->
-          <!--            <div class="flex items-center justify-between">-->
-          <!--              <span class="text-xs font-semibold text-emerald-600 uppercase tracking-wide">Avec photo</span>-->
-          <!--              <div class="w-8 h-8 rounded-lg bg-emerald-50 flex items-center justify-center">-->
-          <!--                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="w-4 h-4 text-emerald-500">-->
-          <!--                  <path stroke-linecap="round" stroke-linejoin="round" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z"/>-->
-          <!--                  <path stroke-linecap="round" stroke-linejoin="round" d="M15 13a3 3 0 11-6 0 3 3 0 016 0z"/>-->
-          <!--                </svg>-->
-          <!--              </div>-->
-          <!--            </div>-->
-          <!--            <div class="text-3xl font-bold text-emerald-700">{{ stats.avecPhoto }}</div>-->
-          <!--            <p class="text-xs text-emerald-400">{{ stats.total > 0 ? Math.round((stats.avecPhoto / stats.total) * 100) : 0 }}% du total</p>-->
-          <!--          </div>-->
-
-          <!-- Employés distincts -->
-          <div class="bg-white rounded-lg border border-slate-200 shadow-sm min-w-0 px-3 sm:px-5 py-4 flex flex-col gap-2">
-            <div class="flex items-center justify-between">
-              <span class="text-xs font-semibold text-slate-500 uppercase tracking-wide">Employés</span>
-              <div class="w-8 h-8 rounded-lg bg-slate-100 flex items-center justify-center">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="w-4 h-4 text-slate-600">
-                  <path stroke-linecap="round" stroke-linejoin="round" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z"/>
-                </svg>
-              </div>
-            </div>
-            <div class="text-3xl font-bold text-slate-800">{{ stats.employes }}</div>
-            <p class="text-xs text-slate-400">ayant pointé</p>
+          <div class="rounded-xl bg-white border border-slate-200 px-4 py-3">
+            <div class="text-xs font-medium text-slate-500">Employés concernés</div>
+            <div class="mt-1 text-2xl font-bold text-slate-900">{{ stats.employes }}</div>
           </div>
-
         </div>
 
         <!-- ══════════════════ TABLEAU ══════════════════ -->
@@ -283,7 +227,19 @@
             <h2 class="text-sm font-bold text-slate-700">
               Pointages <span class="text-slate-400 font-medium">({{ filteredEntries.length }})</span>
             </h2>
-            <div class="flex items-center gap-2 text-xs text-slate-400">
+            <div class="flex flex-wrap items-center gap-2 text-xs text-slate-400">
+              <button type="button" @click="filterMemo = filterMemo === 'with' ? '' : 'with'; currentPage = 1"
+                      :aria-pressed="filterMemo === 'with'"
+                      :class="filterMemo === 'with' ? 'bg-blue-100 border-blue-300 text-blue-900' : 'bg-white border-slate-200 text-slate-700'"
+                      class="rounded-lg border px-3 py-1.5 font-semibold hover:bg-blue-50">
+                Avec mémo ({{ memoCount }})
+              </button>
+              <button type="button" @click="attentionOnly = !attentionOnly; currentPage = 1"
+                      :aria-pressed="attentionOnly"
+                      :class="attentionOnly ? 'bg-amber-100 border-amber-300 text-amber-900' : 'bg-white border-slate-200 text-slate-700'"
+                      class="rounded-lg border px-3 py-1.5 font-semibold hover:bg-amber-50">
+                À examiner ({{ attentionCount }})
+              </button>
               <span>Lignes par page</span>
               <select v-model="pageSize" class="border border-slate-200 rounded-lg px-2 py-1 text-xs text-slate-600 bg-white outline-none">
                 <option v-for="n in [10, 25, 50, 100]" :key="n" :value="n">{{ n }}</option>
@@ -380,7 +336,7 @@
                       <circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/>
                       <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/>
                     </svg>
-                    <span class="text-xs text-purple-600 font-medium font-mono">{{ entry.coordinates }}</span>
+                    <span class="text-xs text-purple-600 font-medium">Position enregistrée</span>
                   </div>
                   <span v-else class="text-xs text-slate-300">—</span>
                 </td>
@@ -390,8 +346,8 @@
                     <span :class="getStatusBadgeClass(entry.pointage_status)" class="px-2.5 py-1 rounded-full text-xs font-semibold">
                       {{ getStatusLabel(entry.pointage_status) }}
                     </span>
-                  <!-- Indicateur anomalie -->
-                  <span v-if="entry.has_anomalies" class="ml-1 inline-block w-2 h-2 rounded-full bg-red-500" title="Anomalie détectée"></span>
+                  <div class="mt-1 text-xs font-semibold" :class="getPointageOverview(entry).tone === 'warning' ? 'text-amber-700' : getPointageOverview(entry).tone === 'danger' ? 'text-red-700' : getPointageOverview(entry).tone === 'success' ? 'text-emerald-700' : 'text-slate-500'">{{ getPointageOverview(entry).label }}</div>
+                  <div v-if="getMemoReference(entry)" class="text-xs text-blue-700">Mémo associé</div>
                 </td>
 
                 <!-- Photo -->
@@ -435,7 +391,12 @@
                       </svg>
                     </button>
                     <button
-                        class="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-slate-100 text-slate-400 hover:text-slate-600 transition-colors"
+                        type="button"
+                        @click.stop="toggleActionMenu(entry, $event)"
+                        :aria-expanded="actionMenuEntry?.guid === entry.guid"
+                        aria-haspopup="menu"
+                        :aria-label="`Actions pour ${entry.user?.name || 'ce pointage'}`"
+                        class="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-slate-100 text-slate-500 hover:text-[#004AAD] transition-colors"
                         title="Plus d'options"
                     >
                       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="w-4 h-4">
@@ -451,6 +412,17 @@
               </tbody>
             </table>
           </div>
+
+          <Teleport to="body">
+            <div v-if="actionMenuEntry" class="fixed inset-0 z-[95]" @click="closeActionMenu" @keydown.esc="closeActionMenu"></div>
+            <div v-if="actionMenuEntry" role="menu" aria-label="Actions du pointage" :style="actionMenuStyle"
+                 class="fixed z-[96] w-60 overflow-hidden rounded-xl border border-slate-200 bg-white p-1 shadow-xl">
+              <button role="menuitem" type="button" @click="menuViewDetail" class="w-full rounded-lg px-3 py-2.5 text-left text-sm text-slate-700 hover:bg-slate-50">Consulter le pointage</button>
+              <button v-if="parsePointageCoordinates(actionMenuEntry.coordinates)" role="menuitem" type="button" @click="menuLocate" class="w-full rounded-lg px-3 py-2.5 text-left text-sm text-slate-700 hover:bg-slate-50">Localiser sur la carte</button>
+              <button v-if="getMemoReference(actionMenuEntry)" role="menuitem" type="button" @click="menuOpenMemo" class="w-full rounded-lg px-3 py-2.5 text-left text-sm text-slate-700 hover:bg-slate-50">Consulter le mémo</button>
+              <button v-if="actionMenuEntry.user?.guid" role="menuitem" type="button" @click="menuShowEmployeeDay" class="w-full rounded-lg px-3 py-2.5 text-left text-sm text-slate-700 hover:bg-slate-50">Voir la journée de l'employé</button>
+            </div>
+          </Teleport>
 
           <!-- Pagination -->
           <div v-if="totalPages > 1" class="flex flex-col sm:flex-row items-center justify-between gap-3 px-3 sm:px-5 py-3.5 border-t border-slate-100 bg-slate-50">
@@ -498,7 +470,7 @@
     >
       <div
           v-if="selectedEntry"
-          class="fixed top-0 right-0 h-full w-full sm:w-[380px] max-w-full bg-white shadow-2xl border-l border-slate-200 z-[200] flex flex-col overflow-y-auto"
+          class="fixed top-0 right-0 h-full w-full sm:w-[590px] max-w-full bg-white shadow-2xl border-l border-slate-200 z-[200] flex flex-col overflow-y-auto"
       >
         <!-- Header drawer -->
         <div class="flex items-center justify-between px-5 py-4 border-b border-slate-100 bg-slate-50">
@@ -513,10 +485,15 @@
         <!-- Contenu drawer -->
         <div class="flex-1 px-5 py-4 space-y-5">
 
-          <!-- Badge statut -->
-          <span :class="getStatusBadgeClass(selectedEntry.pointage_status)" class="px-3 py-1.5 rounded-full text-xs font-bold">
-            {{ getStatusLabel(selectedEntry.pointage_status) }}
-          </span>
+          <!-- Synthèse accessible au manager ; le statut d'enregistrement reste distinct. -->
+          <div class="rounded-xl border border-slate-200 bg-slate-50 p-3 space-y-2">
+            <span class="inline-flex rounded-full px-3 py-1 text-xs font-bold"
+                  :class="getPointageOverview(selectedEntry).tone === 'success' ? 'bg-emerald-100 text-emerald-800' : getPointageOverview(selectedEntry).tone === 'danger' ? 'bg-red-100 text-red-800' : getPointageOverview(selectedEntry).tone === 'warning' ? 'bg-amber-100 text-amber-800' : 'bg-slate-200 text-slate-700'">
+              {{ getPointageOverview(selectedEntry).label }}
+            </span>
+            <p class="text-xs text-slate-600">{{ getPointageOverview(selectedEntry).explanation }}</p>
+            <p class="text-xs text-slate-500">Enregistrement : {{ getStatusLabel(selectedEntry.pointage_status) }}</p>
+          </div>
 
           <!-- Type + Date -->
           <div class="flex items-start gap-3">
@@ -580,7 +557,18 @@
                   </svg>
                   Localisation
                 </span>
-                <span class="text-xs font-mono text-slate-600">{{ selectedEntry.coordinates || '—' }}</span>
+                <span class="text-xs font-semibold text-slate-700 text-right max-w-[210px]">{{ getLocationSummary(selectedEntry) }}</span>
+              </div>
+
+              <div id="pointage-location-map">
+              <PointageLocationMap
+                  :key="selectedEntry.guid"
+                  :coordinates="selectedEntry.coordinates"
+                  :site-guid="selectedEntry.site?.guid"
+                  :site-name="selectedEntry.site?.name || selectedEntry.site_name"
+                  :within-geofence="selectedEntry.within_geofence"
+                  :gps-accuracy="selectedEntry.gps_accuracy"
+              />
               </div>
 
               <!-- Géofence -->
@@ -591,8 +579,8 @@
                   </svg>
                   Zone autorisée
                 </span>
-                <span :class="selectedEntry.within_geofence ? 'text-emerald-600' : 'text-red-500'" class="text-xs font-bold">
-                  {{ selectedEntry.within_geofence ? 'Dans la zone' : 'Hors zone' }}
+                <span :class="selectedEntry.within_geofence === true ? 'text-emerald-600' : selectedEntry.within_geofence === false ? 'text-red-500' : 'text-slate-500'" class="text-xs font-bold">
+                  {{ selectedEntry.within_geofence === true ? 'Dans la zone' : selectedEntry.within_geofence === false ? 'Hors zone' : 'Non déterminé' }}
                 </span>
               </div>
 
@@ -607,17 +595,10 @@
                 <span class="text-xs font-semibold text-slate-700 text-right max-w-[180px] truncate">{{ selectedEntry.device?.name || '—' }}</span>
               </div>
 
-              <!-- Score fraude -->
-              <div class="flex items-center justify-between py-2 border-b border-slate-50">
-                <span class="text-xs text-slate-500 flex items-center gap-1.5">
-                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="w-3.5 h-3.5">
-                    <path stroke-linecap="round" stroke-linejoin="round" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"/>
-                  </svg>
-                  Score fraude
-                </span>
-                <span :class="getFraudScoreClass(selectedEntry.fraud_score)" class="text-xs font-bold">
-                  {{ selectedEntry.fraud_score }}/100
-                </span>
+              <!-- La précision 0 n'est pas une mesure fiable à afficher comme ±0 m. -->
+              <div class="flex items-center justify-between py-2 border-b border-slate-50 gap-3">
+                <span class="text-xs text-slate-500">Localisation GPS</span>
+                <span class="text-xs font-semibold text-slate-700 text-right">{{ getGpsAccuracyLabel(selectedEntry.gps_accuracy) }}</span>
               </div>
 
               <!-- Synchronisation -->
@@ -636,11 +617,21 @@
             </div>
           </div>
 
-          <!-- Memo -->
-          <div v-if="selectedEntry.memo" class="bg-amber-50 border border-amber-100 rounded-xl px-4 py-3">
-            <p class="text-xs font-bold text-amber-700 mb-1">Mémo</p>
-            <p class="text-xs text-amber-600">{{ selectedEntry.memo }}</p>
-          </div>
+          <!-- Mémo existant : lecture contextualisée, sans dupliquer sa gestion. -->
+          <PointageMemoInvestigation
+              v-if="getMemoReference(selectedEntry)"
+              :key="getMemoReference(selectedEntry)?.guid"
+              :entry-guid="selectedEntry.guid"
+              :memo-guid="getMemoReference(selectedEntry)?.guid ?? null"
+              :title="getMemoReference(selectedEntry)?.title"
+          />
+
+          <section v-if="selectedEntry.server_received_at" class="rounded-xl border border-slate-200 p-4 space-y-2">
+            <h4 class="text-sm font-semibold text-slate-800">Historique de l'enregistrement</h4>
+            <div class="flex justify-between gap-4 text-sm"><span class="text-slate-500">Heure du pointage</span><span class="font-medium text-slate-800">{{ formatDate(selectedEntry.clocked_at) }} à {{ formatTime(selectedEntry.clocked_at) }}</span></div>
+            <div class="flex justify-between gap-4 text-sm"><span class="text-slate-500">Reçu par Toké</span><span class="font-medium text-slate-800">{{ formatDate(selectedEntry.server_received_at) }} à {{ formatTime(selectedEntry.server_received_at) }}</span></div>
+            <p v-if="selectedEntry.created_offline" class="text-xs text-amber-700">Pointage réalisé hors connexion, puis synchronisé.</p>
+          </section>
 
           <!-- Photo -->
           <div v-if="selectedEntry.image_url">
@@ -665,10 +656,13 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted, watch } from 'vue'
-import { useRoute } from 'vue-router'
+import { ref, computed, onMounted, watch, nextTick, onBeforeUnmount } from 'vue'
+import { useRoute, useRouter } from 'vue-router'
 import { useUserStore } from '@/stores/userStore'
 import EntriesService from '@/service/EntriesService'
+import { getMemoReference, getPointageOverview, getLocationSummary, getGpsAccuracyLabel, parsePointageCoordinates, type PointageMemoReference } from './utils/pointagePresentation'
+import PointageLocationMap from './components/PointageLocationMap.vue'
+import PointageMemoInvestigation from './components/PointageMemoInvestigation.vue'
 import Header from "@/views/components/header.vue";
 import Footer from "@/views/components/footer.vue";
 
@@ -700,7 +694,7 @@ interface PointageEntry {
   real_clocked_at    : string | null
   created_offline    : boolean
   coordinates        : string | null
-  gps_accuracy       : number
+  gps_accuracy       : number | null
   site_name          : string | null
   correction_reason  : string | null
   is_fallback_checkin: boolean
@@ -709,12 +703,12 @@ interface PointageEntry {
   device             : { guid: string; name: string } | null
   site               : { guid: string; name: string } | null
   session            : { guid: string; duration: string } | null
-  memo               : string | null
+  memo               : PointageMemoReference | string | null
   device_info        : Record<string, any> | null
   ip_address         : string | null
   is_valid           : boolean
   requires_validation: boolean
-  within_geofence    : boolean
+  within_geofence    : boolean | null
   has_anomalies      : boolean
   fraud_score        : number
   updated_at         : string
@@ -723,6 +717,7 @@ interface PointageEntry {
 // ─── Store ───────────────────────────────────────────────────────────────────
 const userStore = useUserStore()
 const route     = useRoute()
+const router = useRouter()
 
 const readQueryString = (value: unknown): string | null => {
   if (typeof value === 'string') return value.trim() || null
@@ -750,6 +745,7 @@ const filterNature    = ref('')
 const filterType      = ref('')
 const filterPhoto     = ref('')
 const filterStatus    = ref('')
+const filterControl = ref<'' | 'invalid' | 'validation' | 'outside' | 'anomaly'>('')
 
 const today = new Date().toISOString().split('T')[0]
 const monthStart = new Date(new Date().getFullYear(), new Date().getMonth(), 1).toISOString().split('T')[0]
@@ -909,9 +905,20 @@ const hasActiveFilters = computed(() =>
     filterNature.value !== '' ||
     filterType.value !== '' ||
     filterPhoto.value !== '' ||
-    filterStatus.value !== ''
+    filterStatus.value !== '' ||
+    filterControl.value !== '' ||
+    attentionOnly.value ||
+    filterMemo.value !== ''
 )
 
+const attentionOnly = ref(false)
+const filterMemo = ref<'with' | 'without' | ''>('')
+const memoCount = computed(() => allEntries.value.filter(entry => Boolean(getMemoReference(entry))).length)
+const needsAttention = (entry: PointageEntry) => {
+  const tone = getPointageOverview(entry).tone
+  return tone === 'warning' || tone === 'danger'
+}
+const attentionCount = computed(() => allEntries.value.filter(needsAttention).length)
 const filteredEntries = computed(() => {
   let entries = [...allEntries.value]
   if (filterSiteGuid.value) entries = entries.filter(entry => entry.site?.guid === filterSiteGuid.value)
@@ -955,6 +962,15 @@ const filteredEntries = computed(() => {
     entries = entries.filter(e => e.pointage_status === filterStatus.value)
   }
 
+  if (filterControl.value === 'invalid') entries = entries.filter(e => e.is_valid === false)
+  if (filterControl.value === 'validation') entries = entries.filter(e => e.requires_validation === true)
+  if (filterControl.value === 'outside') entries = entries.filter(e => e.within_geofence === false)
+  if (filterControl.value === 'anomaly') entries = entries.filter(e => e.has_anomalies === true)
+
+  if (filterMemo.value === 'with') entries = entries.filter(e => Boolean(getMemoReference(e)))
+  if (filterMemo.value === 'without') entries = entries.filter(e => !getMemoReference(e))
+  if (attentionOnly.value) entries = entries.filter(needsAttention)
+
   // Tri chronologique décroissant
   return entries.sort((a, b) => new Date(b.clocked_at).getTime() - new Date(a.clocked_at).getTime())
 })
@@ -962,15 +978,15 @@ const filteredEntries = computed(() => {
 // ─── Stats ────────────────────────────────────────────────────────────────────
 const stats = computed(() => {
   const entries = filteredEntries.value
-  const standard  = entries.filter(e => getEntryNature(e) === 'standard').length
-  const libre     = entries.filter(e => getEntryNature(e) === 'libre').length
-  const fallback  = entries.filter(e => getEntryNature(e) === 'fallback').length
-  const avecPhoto = entries.filter(e => !!e.image_url).length
-  const employes  = new Set(entries.map(e => e.user?.guid).filter(Boolean)).size
-  return { total: entries.length, standard, libre, fallback, avecPhoto, employes }
+  return {
+    total: entries.length,
+    attention: entries.filter(needsAttention).length,
+    outside: entries.filter(entry => entry.within_geofence === false).length,
+    withMemo: entries.filter(entry => Boolean(getMemoReference(entry))).length,
+    employes: new Set(entries.map(entry => entry.user?.guid).filter(Boolean)).size,
+  }
 })
 
-// ─── Pagination ───────────────────────────────────────────────────────────────
 const totalPages = computed(() => Math.ceil(filteredEntries.value.length / pageSize.value) || 1)
 
 const paginatedEntries = computed(() => {
@@ -1003,12 +1019,67 @@ const resetFilters = () => {
   filterType.value         = ''
   filterPhoto.value        = ''
   filterStatus.value       = ''
+  filterControl.value      = ''
+  attentionOnly.value = false
+  filterMemo.value = ''
   currentPage.value        = 1
 }
 
 const openDetail = (entry: PointageEntry) => {
   selectedEntry.value = entry
 }
+
+// Menu contextuel ancré au bouton, sans découpe par le défilement horizontal du tableau.
+const actionMenuEntry = ref<PointageEntry | null>(null)
+const actionMenuStyle = ref<Record<string, string>>({})
+const closeActionMenu = () => { actionMenuEntry.value = null }
+function toggleActionMenu(entry: PointageEntry, event: MouseEvent) {
+  if (actionMenuEntry.value?.guid === entry.guid) { closeActionMenu(); return }
+  const button = event.currentTarget as HTMLElement
+  const rect = button.getBoundingClientRect()
+  const estimatedHeight = 184
+  actionMenuStyle.value = {
+    left: `${Math.max(8, Math.min(rect.right - 240, window.innerWidth - 248))}px`,
+    top: `${rect.bottom + estimatedHeight > window.innerHeight ? Math.max(8, rect.top - estimatedHeight) : rect.bottom + 4}px`,
+  }
+  actionMenuEntry.value = entry
+}
+function menuViewDetail() {
+  const entry = actionMenuEntry.value
+  closeActionMenu()
+  if (entry) openDetail(entry)
+}
+async function menuLocate() {
+  const entry = actionMenuEntry.value
+  closeActionMenu()
+  if (!entry || !parsePointageCoordinates(entry.coordinates)) return
+  openDetail(entry)
+  await nextTick()
+  document.getElementById('pointage-location-map')?.scrollIntoView({behavior: 'smooth', block: 'center'})
+}
+function menuOpenMemo() {
+  const entry = actionMenuEntry.value
+  closeActionMenu()
+  const memo = entry && getMemoReference(entry)
+  if (memo && entry) void router.push({ name: 'memoList', query: {memoGuid: memo.guid, entryGuid: entry.guid} })
+}
+function menuShowEmployeeDay() {
+  const entry = actionMenuEntry.value
+  closeActionMenu()
+  if (!entry?.user?.guid) return
+  selectedEntry.value = null
+  filterEmployee.value = ''
+  filterEmployeeGuid.value = entry.user.guid
+  const day = entry.clocked_at.slice(0, 10)
+  filterStartDate.value = day
+  filterEndDate.value = day
+  currentPage.value = 1
+  void loadEntries()
+}
+function handleMenuEscape(event: KeyboardEvent) { if (event.key === 'Escape') closeActionMenu() }
+function closeMenuOnScroll() { closeActionMenu() }
+onMounted(() => { window.addEventListener('keydown', handleMenuEscape); window.addEventListener('scroll', closeMenuOnScroll, true) })
+onBeforeUnmount(() => { window.removeEventListener('keydown', handleMenuEscape); window.removeEventListener('scroll', closeMenuOnScroll, true) })
 
 const openRequestedSourceEntry = () => {
   if (!sourceEntryGuid.value && !sourceSessionGuid.value) {
@@ -1103,7 +1174,7 @@ const handleExportPDF = () => {
   }
 }
 
-watch(filterSiteGuid, () => { currentPage.value = 1 })
+watch([filterSiteGuid, filterStatus, filterControl, filterMemo, filterNature, filterType, filterPhoto, filterEmployee, filterEmployeeGuid, attentionOnly], () => { currentPage.value = 1 })
 
 onMounted(async () => {
   await loadEntries()

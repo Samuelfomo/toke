@@ -42,6 +42,18 @@
       </div>
     </div>
 
+    <!-- Pointages directement concernés par ce mémo -->
+    <section v-if="linkedEntryGuids.length" class="bg-white shadow-sm p-4 flex-shrink-0" aria-label="Pointages concernés">
+      <h3 class="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2">Pointages concernés</h3>
+      <p class="text-xs text-gray-600 mb-3">{{ linkedEntryGuids.length }} pointage{{ linkedEntryGuids.length > 1 ? 's' : '' }} associé{{ linkedEntryGuids.length > 1 ? 's' : '' }} à ce mémo.</p>
+      <div class="flex flex-col gap-2">
+        <button v-for="(guid, index) in linkedEntryGuids" :key="guid" type="button" @click="openLinkedEntry(guid)"
+          class="w-full text-left rounded-lg border border-blue-100 bg-blue-50 px-3 py-2 text-sm text-[#004AAD] hover:bg-blue-100 focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#004AAD]">
+          Voir le pointage {{ linkedEntryGuids.length > 1 ? index + 1 : '' }}
+        </button>
+      </div>
+    </section>
+
     <!-- Actions -->
     <div v-if="showActionsPanel" class="bg-white shadow-sm p-4 flex-shrink-0">
       <h3 class="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-3">Actions</h3>
@@ -152,7 +164,10 @@
 
 <script setup lang="ts">
 import { computed } from 'vue';
+import { useRouter } from 'vue-router';
 import type { Memo } from '@/stores/memoStore';
+
+const router = useRouter();
 
 const props = defineProps<{
   memo: Memo;
@@ -171,6 +186,27 @@ defineEmits<{
 // pending + au moins un message de l'employé (target_user) → Approuver + Rejeter + Révoquer
 // pending seulement → Révoquer uniquement
 // submitted → Approuver + Rejeter
+
+// Les GUID servent uniquement à la navigation ; ils ne sont jamais affichés.
+const linkedEntryGuids = computed(() => Array.from(new Set(
+  (props.memo.entriesAffectees ?? []).map((value: unknown) => {
+    if (typeof value === 'string') return value;
+    if (value && typeof value === 'object' && 'guid' in value) return String((value as {guid: unknown}).guid ?? '');
+    return '';
+  }).filter((guid: string) => guid.length > 0)
+)));
+
+function openLinkedEntry(guid: string) {
+  const date = props.memo.dateIncident;
+  const isValidDate = date instanceof Date && !Number.isNaN(date.getTime());
+  const localDate = isValidDate
+    ? `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`
+    : null;
+  void router.push({ name: 'Pointages', query: {
+    entry: guid,
+    ...(localDate ? { start_date: localDate, end_date: localDate } : {}),
+  }});
+}
 
 const isPending = computed(() =>
   props.memo.statut === 'pending' || props.memo.statut === 'submitted'

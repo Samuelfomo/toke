@@ -340,6 +340,13 @@ onMounted(async () => {
   });
   await chargerMemos();
 
+  // Ouverture directe d'un mémo depuis le contrôle des pointages.
+  const requestedMemoGuid = getQueryString(route.query.memoGuid)
+  if (requestedMemoGuid && memoStore.getMemoByGuid(requestedMemoGuid)) {
+    memoSelectionneGuid.value = requestedMemoGuid
+    mode.value = 'detail'
+  }
+
   // Ajouter dans onMounted, après chargerMemos()
   const { action, employeeGuid, employeeName, entryGuid, date } = route.query
   if (action === 'create') {
