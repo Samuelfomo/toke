@@ -174,6 +174,7 @@
               <option value="">Tous les pointages</option>
               <option value="with">Avec mémo associé</option>
               <option value="without">Sans mémo associé</option>
+              <option value="pending" :disabled="!memoStatusReady">Mémo en attente de décision</option>
             </select>
 
             <!-- Reset -->
@@ -219,6 +220,11 @@
           </div>
         </div>
 
+        <div v-if="memoSyncLoading" class="text-xs text-slate-500" role="status">Actualisation des justifications…</div>
+        <div v-else-if="memoSyncError || !memoStatusReady" class="flex items-center gap-3 text-xs text-slate-600" role="status">
+          <span>Le suivi des décisions n'est pas disponible pour tous les pointages.</span>
+          <button type="button" class="text-[#004AAD] font-semibold hover:underline" @click="refreshMemos">Réessayer</button>
+        </div>
         <!-- ══════════════════ TABLEAU ══════════════════ -->
         <div class="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
 
@@ -233,6 +239,12 @@
                       :class="filterMemo === 'with' ? 'bg-blue-100 border-blue-300 text-blue-900' : 'bg-white border-slate-200 text-slate-700'"
                       class="rounded-lg border px-3 py-1.5 font-semibold hover:bg-blue-50">
                 Avec mémo ({{ memoCount }})
+              </button>
+              <button v-if="memoStatusReady" type="button" @click="filterMemo = filterMemo === 'pending' ? '' : 'pending'; currentPage = 1"
+                      :aria-pressed="filterMemo === 'pending'"
+                      :class="filterMemo === 'pending' ? 'bg-amber-100 border-amber-300 text-amber-900' : 'bg-white border-slate-200 text-slate-700'"
+                      class="rounded-lg border px-3 py-1.5 font-semibold hover:bg-amber-50">
+                Mémos en attente ({{ pendingMemoCount }})
               </button>
               <button type="button" @click="attentionOnly = !attentionOnly; currentPage = 1"
                       :aria-pressed="attentionOnly"
@@ -347,7 +359,9 @@
                       {{ getStatusLabel(entry.pointage_status) }}
                     </span>
                   <div class="mt-1 text-xs font-semibold" :class="getPointageOverview(entry).tone === 'warning' ? 'text-amber-700' : getPointageOverview(entry).tone === 'danger' ? 'text-red-700' : getPointageOverview(entry).tone === 'success' ? 'text-emerald-700' : 'text-slate-500'">{{ getPointageOverview(entry).label }}</div>
-                  <div v-if="getMemoReference(entry)" class="text-xs text-blue-700">Mémo associé</div>
+                  <div v-if="getMemoReference(entry) || linkedMemos(entry).length" class="text-xs text-blue-700">
+                    {{ memoRowLabel(entry) }}
+                  </div>
                 </td>
 
                 <!-- Photo -->
@@ -660,6 +674,7 @@ import { ref, computed, onMounted, watch, nextTick, onBeforeUnmount } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useUserStore } from '@/stores/userStore'
 import EntriesService from '@/service/EntriesService'
+import MemoService from '@/service/MemoService'
 import { getMemoReference, getPointageOverview, getLocationSummary, getGpsAccuracyLabel, parsePointageCoordinates, type PointageMemoReference } from './utils/pointagePresentation'
 import PointageLocationMap from './components/PointageLocationMap.vue'
 import PointageMemoInvestigation from './components/PointageMemoInvestigation.vue'
@@ -912,11 +927,84 @@ const hasActiveFilters = computed(() =>
 )
 
 const attentionOnly = ref(false)
-const filterMemo = ref<'with' | 'without' | ''>('')
-const memoCount = computed(() => allEntries.value.filter(entry => Boolean(getMemoReference(entry))).length)
+const filterMemo = ref<'with' | 'without' | 'pending' | ''>('')
+type MemoIndexItem = { guid: string; memo_status?: string; affected_entries?: string[] }
+const memosByGuid = ref<Record<string, MemoIndexItem>>({})
+const memosByEntry = ref<Record<string, string[]>>({})
+const memoSyncLoading = ref(false)
+const memoSyncError = ref(false)
+const memoStatusReady = ref(false)
+let memoRequest = 0
+
+function linkedMemos(entry: PointageEntry): MemoIndexItem[] {
+  const ids = new Set<string>(memosByEntry.value[entry.guid] ?? [])
+  const direct = getMemoReference(entry)?.guid
+  if (direct) ids.add(direct)
+  return [...ids].map(guid => memosByGuid.value[guid]).filter((memo): memo is MemoIndexItem => Boolean(memo))
+}
+function hasLinkedMemo(entry: PointageEntry): boolean {
+  return Boolean(getMemoReference(entry)) || (memosByEntry.value[entry.guid]?.length ?? 0) > 0
+}
+function hasPendingMemo(entry: PointageEntry): boolean {
+  return linkedMemos(entry).some(memo => memo.memo_status === 'pending')
+}
+function memoRowLabel(entry: PointageEntry): string {
+  if (hasPendingMemo(entry)) return 'Mémo en attente'
+  if (hasLinkedMemo(entry)) return 'Mémo associé'
+  return ''
+}
+const memoCount = computed(() => allEntries.value.filter(hasLinkedMemo).length)
+const pendingMemoCount = computed(() => allEntries.value.filter(hasPendingMemo).length)
+async function refreshMemos(): Promise<void> {
+  const request = ++memoRequest
+  const managerGuid = userStore.user?.guid
+  memoStatusReady.value = false
+  memoSyncError.value = false
+  memosByGuid.value = {}
+  memosByEntry.value = {}
+  if (!managerGuid) return
+  memoSyncLoading.value = true
+  try {
+    const response: any = await MemoService.listMemo(managerGuid)
+    if (request !== memoRequest) return
+    const payload = response?.data?.memos ?? response?.data?.data?.memos ?? response?.data?.data ?? response?.data
+    const items: unknown = Array.isArray(payload) ? payload : payload?.items
+    if (response?.success === false || !Array.isArray(items)) throw new Error('Liste des mémos indisponible')
+    const byGuid: Record<string, MemoIndexItem> = {}
+    const byEntry: Record<string, string[]> = {}
+    for (const raw of items) {
+      if (!raw || typeof raw !== 'object') continue
+      const memo = raw as MemoIndexItem
+      if (typeof memo.guid !== 'string') continue
+      byGuid[memo.guid] = memo
+      if (!Array.isArray(memo.affected_entries)) continue
+      for (const id of memo.affected_entries) {
+        if (typeof id !== 'string') continue
+        ;(byEntry[id] ??= []).push(memo.guid)
+      }
+    }
+    memosByGuid.value = byGuid
+    memosByEntry.value = byEntry
+    // La liste peut être paginée : ne pas présenter un statut global comme exhaustif.
+    const pagination = payload?.pagination
+    const limit = Number(pagination?.limit)
+    const count = Number(pagination?.count)
+    memoStatusReady.value = Number.isFinite(limit) && Number.isFinite(count)
+      ? count < limit && Number(pagination?.offset ?? 0) === 0
+      : Array.isArray(payload)
+    if (!memoStatusReady.value && filterMemo.value === 'pending') filterMemo.value = ''
+  } catch (cause) {
+    if (request !== memoRequest) return
+    console.warn('[Pointages] Chargement du suivi des mémos impossible', cause)
+    memoSyncError.value = true
+    if (filterMemo.value === 'pending') filterMemo.value = ''
+  } finally {
+    if (request === memoRequest) memoSyncLoading.value = false
+  }
+}
 const needsAttention = (entry: PointageEntry) => {
   const tone = getPointageOverview(entry).tone
-  return tone === 'warning' || tone === 'danger'
+  return tone === 'warning' || tone === 'danger' || hasPendingMemo(entry)
 }
 const attentionCount = computed(() => allEntries.value.filter(needsAttention).length)
 const filteredEntries = computed(() => {
@@ -967,8 +1055,9 @@ const filteredEntries = computed(() => {
   if (filterControl.value === 'outside') entries = entries.filter(e => e.within_geofence === false)
   if (filterControl.value === 'anomaly') entries = entries.filter(e => e.has_anomalies === true)
 
-  if (filterMemo.value === 'with') entries = entries.filter(e => Boolean(getMemoReference(e)))
-  if (filterMemo.value === 'without') entries = entries.filter(e => !getMemoReference(e))
+  if (filterMemo.value === 'with') entries = entries.filter(hasLinkedMemo)
+  if (filterMemo.value === 'without') entries = entries.filter(e => !hasLinkedMemo(e))
+  if (filterMemo.value === 'pending' && memoStatusReady.value) entries = entries.filter(hasPendingMemo)
   if (attentionOnly.value) entries = entries.filter(needsAttention)
 
   // Tri chronologique décroissant
@@ -982,11 +1071,10 @@ const stats = computed(() => {
     total: entries.length,
     attention: entries.filter(needsAttention).length,
     outside: entries.filter(entry => entry.within_geofence === false).length,
-    withMemo: entries.filter(entry => Boolean(getMemoReference(entry))).length,
+    withMemo: entries.filter(hasLinkedMemo).length,
     employes: new Set(entries.map(entry => entry.user?.guid).filter(Boolean)).size,
   }
 })
-
 const totalPages = computed(() => Math.ceil(filteredEntries.value.length / pageSize.value) || 1)
 
 const paginatedEntries = computed(() => {
@@ -1138,6 +1226,7 @@ const loadEntries = async () => {
     loadedEndDate.value = requestedEndDate
     currentPage.value = 1
     openRequestedSourceEntry()
+    void refreshMemos()
   } catch (err) {
     error.value = err instanceof Error ? err.message : 'Erreur lors du chargement'
   } finally {
