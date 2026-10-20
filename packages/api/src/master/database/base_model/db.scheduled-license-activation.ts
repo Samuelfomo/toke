@@ -1,3 +1,4 @@
+import { reconcileAccessAfterFinancialChange } from './db.usage-regularization-access.js';
 import type { Sequelize } from 'sequelize';
 
 import { renewalCycleMonths } from './db.renewal-activation.js';
@@ -113,7 +114,10 @@ export async function activateScheduledCycle(db: Sequelize, cycleId: number) {
         next: JSON.stringify(updated),
       },
     );
-    return { cycleId, status: 'ACTIVATED', rollover };
+    await reconcileAccessAfterFinancialChange(db, license.id, transaction);
+    const finalAccess = (await rows('SELECT * FROM public.monthly_license_access(:id)', {id:license.id}))[0];
+    const finalLicense = (await rows('SELECT license_status FROM xa_global_license WHERE id=:id', {id:license.id}))[0];
+    return { cycleId, status: finalAccess?.allowed && finalLicense?.license_status === 'ACTIVE' ? 'ACTIVATED' : 'RECONCILIATION_REQUIRED', rollover };
   });
 }
 export async function runScheduledActivations(db: Sequelize, limit = 100) {

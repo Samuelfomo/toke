@@ -4,6 +4,7 @@ import { renewalCycleMonths } from './db.renewal-activation.js';
 
 export interface CashConfirmation {
   transactionGuid: number;
+  tenantGuid?: number;
   billingCycleGuid?: number;
   amountLocal: string;
   currency: string;
@@ -61,6 +62,193 @@ export async function confirmCashPayment(db: Sequelize, input: CashConfirmation,
     );
     const payment = payments[0];
     if (!payment) throw new CashConfirmationError('Transaction not found');
+    // Le paiement est verrouillé avant la dette : même ordre que les autres confirmations.
+    const regularization =
+      payment.source_type === 'ADJUSTMENT'
+        ? (
+            await rows(
+              "SELECT * FROM public.xa_license_adjustment WHERE id=:id AND adjustment_kind='USAGE_REGULARIZATION' FOR UPDATE",
+              { id: payment.adjustment },
+            )
+          )[0]
+        : null;
+    if (regularization) {
+      const debt = regularization;
+      const license = (
+        await rows('SELECT * FROM public.xa_global_license WHERE id=:id FOR UPDATE', {
+          id: debt.global_license,
+        })
+      )[0];
+      const tenant = license
+        ? (await rows('SELECT guid FROM public.xa_tenant WHERE id=:id', { id: license.tenant }))[0]
+        : null;
+      if (
+        !Number.isInteger(input.tenantGuid) ||
+        !tenant ||
+        Number(tenant.guid) !== input.tenantGuid
+      )
+        throw new CashConfirmationError(
+          'tenant_guid must identify the owner of this regularization',
+        );
+      if (input.billingCycleGuid !== undefined)
+        throw new CashConfirmationError(
+          'Do not select a coverage cycle for consumed-month settlement',
+        );
+      if (
+        payment.billing_cycle != null ||
+        payment.currency_code !== debt.billing_currency_code ||
+        cents(payment.amount_local) !== cents(debt.total_amount_local) ||
+        cents(payment.amount_usd) !== cents(debt.total_amount_usd) ||
+        String(payment.exchange_rate_used) !== String(debt.exchange_rate_used) ||
+        input.currency !== payment.currency_code ||
+        cents(input.amountLocal) !== cents(payment.amount_local)
+      )
+        throw new CashConfirmationError('Cash must match the issued regularization exactly');
+      const previous = await rows(
+        'SELECT * FROM xa_cash_receipt WHERE idempotency_key = :key OR payment_transaction = :id',
+        { key: input.idempotencyKey, id: payment.id },
+      );
+      const projection = (eventGuid: number, replayed: boolean) => ({
+        tenant_guid: Number(tenant.guid),
+        license_guid: Number(license.guid),
+        adjustment_guid: Number(debt.guid),
+        payment_transaction_guid: Number(payment.guid),
+        event_guid: Number(eventGuid),
+        receipt_reference: input.receiptReference,
+        currency_code: input.currency,
+        invoice_amount_local: String(payment.amount_local),
+        received_local: String(payment.amount_local),
+        amount_to_pay_local: '0.00',
+        transaction_status: 'COMPLETED',
+        payment_status: 'COMPLETED',
+        accessAction: 'DEBT_SETTLED_NO_NEW_RIGHTS',
+        future_rights_created: false,
+        replayed,
+      });
+      if (previous.length) {
+        const receipt = previous[0];
+        const audit = (
+          await rows(
+            "SELECT guid,operation_key,actor_user_guid FROM public.xa_license_event WHERE global_license=:license AND event_type='USAGE_REGULARIZATION_SETTLED' AND new_payload->>'payment_transaction_guid'=:payment",
+            { license: license.id, payment: String(payment.guid) },
+          )
+        )[0];
+        if (
+          previous.length !== 1 ||
+          receipt.payment_transaction !== payment.id ||
+          receipt.actor_user_guid !== actor.actorUserGuid ||
+          receipt.idempotency_key !== input.idempotencyKey ||
+          receipt.receipt_reference !== input.receiptReference ||
+          receipt.currency_code !== input.currency ||
+          cents(receipt.amount_local) !== cents(input.amountLocal) ||
+          new Date(receipt.received_at).getTime() !== input.receivedAt.getTime() ||
+          receipt.access_action !== 'DEBT_SETTLED_NO_NEW_RIGHTS' ||
+          !audit ||
+          audit.operation_key !== input.idempotencyKey ||
+          audit.actor_user_guid !== actor.actorUserGuid ||
+          payment.transaction_status !== 'COMPLETED' ||
+          debt.payment_status !== 'COMPLETED'
+        )
+          throw new CashConfirmationError('Conflicting or incomplete regularization settlement');
+        return projection(audit.guid, true);
+      }
+      const method = (
+        await rows('SELECT * FROM xa_payment_method WHERE id = :id', { id: payment.payment_method })
+      )[0];
+      if (
+        !method ||
+        method.method_type !== 'CASH' ||
+        !method.active ||
+        !method.supported_currencies?.includes(input.currency)
+      )
+        throw new CashConfirmationError(
+          'Issued transaction must use an active compatible cash method',
+        );
+      if (
+        license.billing_mode !== 'PREPAID' ||
+        !['PENDING', 'PROCESSING', 'FAILED'].includes(payment.transaction_status) ||
+        !['PENDING', 'PROCESSING', 'FAILED', 'OVERDUE'].includes(debt.payment_status)
+      )
+        throw new CashConfirmationError('Regularization is not payable');
+      if (
+        (
+          await rows(
+            `SELECT 1 FROM public.xa_payment_attempt WHERE payment_transaction=:id
+         UNION ALL SELECT 1 FROM public.xa_cash_installment WHERE payment_transaction=:id
+         UNION ALL SELECT 1 FROM public.xa_cash_installment_settlement WHERE payment_transaction=:id`,
+            { id: payment.id },
+          )
+        ).length
+      )
+        throw new CashConfirmationError('Another payment history requires reconciliation');
+      if (
+        (
+          await rows(
+            "SELECT guid FROM public.xa_license_event WHERE global_license=:license AND event_type='USAGE_REGULARIZATION_ISSUED' AND new_payload->>'payment_transaction_guid'=:payment AND new_payload->>'adjustment_guid'=:adjustment",
+            { license: license.id, payment: String(payment.guid), adjustment: String(debt.guid) },
+          )
+        ).length !== 1
+      )
+        throw new CashConfirmationError('Regularization issuance audit required');
+      const now = new Date();
+      // Preuve insérée avant les états : les triggers 42.4 vérifient sa présence.
+      await rows(
+        `INSERT INTO xa_cash_receipt(payment_transaction,tenant,actor_user_guid,receipt_reference,idempotency_key,
+         amount_local,currency_code,received_at,confirmed_at,access_action)
+         VALUES(:payment,:tenant,:actor,:reference,:key,:amount,:currency,:received,:now,'DEBT_SETTLED_NO_NEW_RIGHTS') RETURNING id`,
+        {
+          payment: payment.id,
+          tenant: license.tenant,
+          actor: actor.actorUserGuid,
+          reference: input.receiptReference,
+          key: input.idempotencyKey,
+          amount: input.amountLocal,
+          currency: input.currency,
+          received: input.receivedAt,
+          now,
+        },
+      );
+      await rows(
+        "UPDATE xa_payment_transaction SET transaction_status='COMPLETED',completed_at=:now,failed_at=NULL,failure_reason=NULL,updated_at=:now WHERE id=:id RETURNING id",
+        { id: payment.id, now },
+      );
+      await rows(
+        "UPDATE xa_license_adjustment SET payment_status='COMPLETED',payment_completed_at=:now,updated_at=:now WHERE id=:id RETURNING id",
+        { id: debt.id, now },
+      );
+      const payload = {
+        adjustment_guid: Number(debt.guid),
+        payment_transaction_guid: Number(payment.guid),
+        payment_status: 'COMPLETED',
+        transaction_status: 'COMPLETED',
+        amount_local: String(payment.amount_local),
+        currency_code: input.currency,
+        receipt_reference: input.receiptReference,
+        received_at: input.receivedAt.toISOString(),
+        access_action: 'DEBT_SETTLED_NO_NEW_RIGHTS',
+      };
+      const audit = (
+        await rows(
+          `INSERT INTO public.xa_license_event(tenant,global_license,event_type,operation_key,actor_type,actor_user_guid,
+         effective_at,previous_payload,new_payload,reason,metadata)
+         VALUES(:tenant,:license,'USAGE_REGULARIZATION_SETTLED',:key,'USER',:actor,:now,CAST(:previous AS jsonb),
+         CAST(:payload AS jsonb),'Cash settlement of consumed-month debt; no future rights','{}') RETURNING guid`,
+          {
+            tenant: license.tenant,
+            license: license.id,
+            key: input.idempotencyKey,
+            actor: actor.actorUserGuid,
+            now,
+            previous: JSON.stringify({
+              payment_status: debt.payment_status,
+              transaction_status: payment.transaction_status,
+            }),
+            payload: JSON.stringify(payload),
+          },
+        )
+      )[0];
+      return projection(audit.guid, false);
+    }
     const previous = await rows(
       'SELECT * FROM xa_cash_receipt WHERE idempotency_key = :key OR payment_transaction = :id',
       { key: input.idempotencyKey, id: payment.id },

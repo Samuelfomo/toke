@@ -1,6 +1,7 @@
 import { Op } from 'sequelize';
 import { PaymentTransactionStatus, TimezoneConfigUtils } from '@toke/shared';
 
+import AdjustmentIssuanceDb, { type AdjustmentIssuanceInput, } from '../database/base_model/db.adjustment-issuance.js';
 import AdjustmentPreviewDb from '../database/base_model/db.adjustment-preview.js';
 import BaseModel from '../database/db.base.js';
 import { tableName } from '../../utils/response.model.js';
@@ -74,6 +75,12 @@ export default class LicenseAdjustmentModel extends BaseModel {
     end: string;
   }) {
     return new AdjustmentPreviewDb().load(input);
+  }
+  protected issueMonthlyData(
+    input: AdjustmentIssuanceInput,
+    calculate: (raw: any) => Record<string, any>,
+  ) {
+    return new AdjustmentIssuanceDb().issue(input, calculate);
   }
   protected async getBillingCycleGuid(): Promise<number | null> {
     if (!this.billing_cycle) return null;
@@ -458,7 +465,7 @@ export default class LicenseAdjustmentModel extends BaseModel {
   private async validate(): Promise<void> {
     if (this.adjustment_kind && this.adjustment_kind !== 'LEGACY')
       throw new Error(
-        'Structured adjustment issuance is not enabled; use monthly preview until the transactional issuance lot is installed',
+        'Structured adjustments require transactional issuance; direct save is forbidden',
       );
     // Nettoyer les données
     LicenseAdjustmentDbStructure.validation.cleanData(this);

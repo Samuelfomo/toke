@@ -29,58 +29,78 @@ export default class LicenseAdjustment extends LicenseAdjustmentModel {
     if (Date.parse(input.end) <= Date.parse(input.start))
       throw new ActivityMonitoringInputError('Period end must follow start');
     const raw = await new LicenseAdjustment().loadMonthlyAdjustmentPreview(input);
-    const { count } = monthlySeatCount(raw.minimum_seats, raw.employees);
-    const paid = raw.full_period_capacity;
-    const surplus = Math.max(0, count - paid);
-    const canCalculate =
-      raw.period_closed &&
-      raw.base_paid &&
-      !raw.coverage_requires_review &&
-      !raw.offered &&
-      !raw.existing_adjustment_guid;
-    const amounts =
-      canCalculate && surplus > 0
-        ? renewalAmounts(
-            centsText(decimalUnits(raw.unit_price_usd, 2) * BigInt(surplus)),
-            raw.rate,
-            raw.taxes.map((t: any) => t.tax_rate),
-            raw.currency,
-          )
-        : null;
+    return this.monthlyQuote(input, raw);
+  }
+
+  static async issueMonthly(license: unknown, body: Record<string, any>) {
+    if (!body || typeof body !== 'object' || Array.isArray(body))
+      throw new ActivityMonitoringInputError('Object body required');
+    const allowed = new Set([
+      'tenant_guid',
+      'billing_cycle_guid',
+      'period_start',
+      'period_end',
+      'payment_method_guid',
+      'actor_user_guid',
+      'idempotency_key',
+      'coverage_reference',
+    ]);
+    if (Object.keys(body).some((key) => !allowed.has(key)))
+      throw new ActivityMonitoringInputError('Unsupported monthly adjustment input field');
+    const input = {
+      license: activityGuid(license),
+      tenant: activityGuid(body.tenant_guid),
+      cycle: activityGuid(body.billing_cycle_guid),
+      start: activityDate(body.period_start),
+      end: activityDate(body.period_end),
+      method: activityGuid(body.payment_method_guid),
+      actor: String(body.actor_user_guid ?? '').trim(),
+      key: String(body.idempotency_key ?? '').trim(),
+      coverageReference: String(body.coverage_reference ?? '').trim(),
+    };
+    if (Date.parse(input.end) <= Date.parse(input.start))
+      throw new ActivityMonitoringInputError('Period end must follow start');
+    for (const value of [body.actor_user_guid, body.idempotency_key, body.coverage_reference])
+      if (typeof value !== 'string' || !value.trim() || value.length > 128)
+        throw new ActivityMonitoringInputError(
+          'Author, idempotency key and coverage attestation reference are required',
+        );
+    const result = await new LicenseAdjustment().issueMonthlyData(input, (raw) =>
+      this.monthlyQuote(input, raw),
+    );
+    const snapshot = result.snapshot;
     return {
       tenant_guid: input.tenant,
       license_guid: input.license,
       billing_cycle_guid: input.cycle,
+      adjustment_guid: Number(result.adjustment_guid),
+      payment_transaction_guid: Number(result.payment_transaction_guid),
+      event_guid: Number(result.event_guid),
+      payment_method_guid: input.method,
+      payment_reference: 'TOKE_USAGE_' + Number(result.payment_transaction_guid),
       adjustment_kind: 'USAGE_REGULARIZATION',
-      period_start: input.start,
-      period_end: input.end,
-      period_closed: raw.period_closed,
-      billable_employees: count,
-      paid_seats: paid,
-      surplus_seats: raw.offered ? 0 : surplus,
-      minimum_seats: raw.minimum_seats,
-      unit_price_usd: raw.unit_price_usd,
-      billing_currency_code: raw.currency,
-      exchange_rate_used: raw.rate,
-      subtotal_local: amounts?.baseLocal ?? null,
-      tax_amount_local: amounts?.taxLocal ?? null,
-      total_amount_local: amounts?.totalLocal ?? null,
-      subtotal_usd: amounts?.baseUsd ?? null,
-      tax_amount_usd: amounts?.taxUsd ?? null,
-      total_amount_usd: amounts?.totalUsd ?? null,
-      existing_adjustment_guid: raw.existing_adjustment_guid,
-      coverage_requires_review: raw.coverage_requires_review || (!raw.base_paid && !raw.offered),
-      commercial_transition: raw.offered,
-      calculation_available: canCalculate,
-      requires_regularization: canCalculate && surplus > 0,
+      period_start: snapshot.period_start,
+      period_end: snapshot.period_end,
+      billable_employees: snapshot.billable_employees,
+      paid_seats: snapshot.paid_seats,
+      surplus_seats: snapshot.surplus_seats,
+      unit_price_usd: snapshot.unit_price_usd,
+      billing_currency_code: snapshot.billing_currency_code,
+      exchange_rate_used: snapshot.exchange_rate_used,
+      subtotal_local: snapshot.subtotal_local,
+      tax_amount_local: snapshot.tax_amount_local,
+      total_amount_local: snapshot.total_amount_local,
+      subtotal_usd: snapshot.subtotal_usd,
+      tax_amount_usd: snapshot.tax_amount_usd,
+      total_amount_usd: snapshot.total_amount_usd,
+      issued_at: result.issued_at,
+      payment_due_date: result.payment_due_date,
       grace_days: 7,
-      payment_due_date: null,
-      can_issue: false,
-      creates_debt: false,
-      mutates_access: false,
-      data_completeness: 'NOT_ATTESTED',
-      warning:
-        'Preview only. Signal completeness must be attested before invoice issuance. Future capacity is separate and optional.',
+      payment_status: result.payment_status,
+      transaction_status: result.transaction_status,
+      replayed: !!result.replayed,
+      is_estimate: false,
+      future_rights_created: false,
     };
   }
 
@@ -284,6 +304,65 @@ export default class LicenseAdjustment extends LicenseAdjustmentModel {
       subtotal_local,
       tax_amount_local,
       total_amount_local,
+    };
+  }
+
+  private static monthlyQuote(
+    input: { tenant: number; license: number; cycle: number; start: string; end: string },
+    raw: any,
+  ) {
+    const { count } = monthlySeatCount(raw.minimum_seats, raw.employees);
+    const paid = raw.full_period_capacity;
+    const surplus = Math.max(0, count - paid);
+    const canCalculate =
+      raw.period_closed &&
+      raw.base_paid &&
+      !raw.coverage_requires_review &&
+      !raw.offered &&
+      !raw.existing_adjustment_guid;
+    const amounts =
+      canCalculate && surplus > 0
+        ? renewalAmounts(
+            centsText(decimalUnits(raw.unit_price_usd, 2) * BigInt(surplus)),
+            raw.rate,
+            raw.taxes.map((t: any) => t.tax_rate),
+            raw.currency,
+          )
+        : null;
+    return {
+      tenant_guid: input.tenant,
+      license_guid: input.license,
+      billing_cycle_guid: input.cycle,
+      adjustment_kind: 'USAGE_REGULARIZATION',
+      period_start: input.start,
+      period_end: input.end,
+      period_closed: raw.period_closed,
+      billable_employees: count,
+      paid_seats: paid,
+      surplus_seats: raw.offered ? 0 : surplus,
+      minimum_seats: raw.minimum_seats,
+      unit_price_usd: raw.unit_price_usd,
+      billing_currency_code: raw.currency,
+      exchange_rate_used: raw.rate,
+      subtotal_local: amounts?.baseLocal ?? null,
+      tax_amount_local: amounts?.taxLocal ?? null,
+      total_amount_local: amounts?.totalLocal ?? null,
+      subtotal_usd: amounts?.baseUsd ?? null,
+      tax_amount_usd: amounts?.taxUsd ?? null,
+      total_amount_usd: amounts?.totalUsd ?? null,
+      existing_adjustment_guid: raw.existing_adjustment_guid,
+      coverage_requires_review: raw.coverage_requires_review || (!raw.base_paid && !raw.offered),
+      commercial_transition: raw.offered,
+      calculation_available: canCalculate,
+      requires_regularization: canCalculate && surplus > 0,
+      grace_days: 7,
+      payment_due_date: null,
+      can_issue: false,
+      creates_debt: false,
+      mutates_access: false,
+      data_completeness: 'NOT_ATTESTED',
+      warning:
+        'Preview only. Signal completeness must be attested before invoice issuance. Future capacity is separate and optional.',
     };
   }
 

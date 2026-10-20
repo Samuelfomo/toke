@@ -1,3 +1,4 @@
+import { reconcileAccessAfterFinancialChange } from './db.usage-regularization-access.js';
 import type { Sequelize, Transaction } from 'sequelize';
 
 import { TableInitializer } from '../db.initializer.js';
@@ -264,6 +265,12 @@ export default class KpaySettlementDb {
           );
           accessAction = 'ACTIVE';
         }
+      }
+      if (accessAction === 'ACTIVE') {
+        await reconcileAccessAfterFinancialChange(this.db(), l.id, tx);
+        const updated = (await this.rows('SELECT license_status FROM public.xa_global_license WHERE id=:id', {id:l.id}, tx))[0];
+        const decision = (await this.rows('SELECT * FROM public.monthly_license_access(:id)', {id:l.id}, tx))[0];
+        if (updated?.license_status !== 'ACTIVE' || decision?.allowed !== true) accessAction = 'MANUAL_REVIEW';
       }
       return {
         status: 'COMPLETED',

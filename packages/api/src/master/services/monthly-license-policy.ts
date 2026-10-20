@@ -94,7 +94,8 @@ export async function reconcileMonthlyAccess(db: Sequelize): Promise<number> {
   return db.transaction<number>(async (transaction) => {
     const [raw] = await db.query(
       `SELECT gl.id,gl.license_status FROM xa_global_license gl
-   JOIN xa_monthly_license_policy p ON p.global_license=gl.id ORDER BY gl.id FOR UPDATE OF gl`,
+   JOIN xa_monthly_license_policy p ON p.global_license=gl.id
+   ORDER BY gl.id FOR UPDATE OF gl`,
       { transaction },
     );
     let count = 0;
@@ -107,6 +108,8 @@ export async function reconcileMonthlyAccess(db: Sequelize): Promise<number> {
       });
       const access = (decision as any[])[0];
       if (!access) throw new Error('Monthly access decision missing');
+      // The 42.6 reconciler owns regularization-specific blocks and LicenseEvent audit.
+      if (access.basis === 'USAGE_REGULARIZATION_OVERDUE') continue;
       const status = access.allowed ? 'ACTIVE' : 'EXPIRED';
       if (status === l.license_status) continue;
       await db.query(

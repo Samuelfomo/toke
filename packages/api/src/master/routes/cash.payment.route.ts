@@ -33,6 +33,7 @@ router.post('/:transactionGuid/confirm', Ensure.post(), async (req: Request, res
     const result = await new CashPayment().confirm(
       {
         transactionGuid: Number(guid),
+        tenantGuid: body.tenant_guid,
         billingCycleGuid: body.billing_cycle_guid,
         amountLocal: body.amount_local,
         currency: body.currency_code,

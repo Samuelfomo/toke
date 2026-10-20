@@ -11,6 +11,7 @@ import {
   TimezoneConfigUtils,
 } from '@toke/shared';
 
+import { AdjustmentIssuanceConflict, AdjustmentIssuanceError, } from '../database/base_model/db.adjustment-issuance.js';
 import { AdjustmentPreviewDataError } from '../database/base_model/db.adjustment-preview.js';
 import { ActivityMonitoringInputError } from '../class/activity-monitoring-input.js';
 import LicenseAdjustment from '../class/LicenseAdjustment.js';
@@ -46,6 +47,40 @@ router.get(
       return R.handleError(res, HttpStatus.INTERNAL_ERROR, {
         code: 'adjustment_monthly_preview_failed',
         message: 'Adjustment preview unavailable',
+      });
+    }
+  },
+);
+
+// Écriture réservée à l'appelant serveur habilité ; pas de souscription publique par token.
+router.post(
+  '/global-license/:licenseGuid/monthly-issue',
+  Ensure.post(),
+  async (req: Request, res: Response) => {
+    try {
+      return R.handleSuccess(
+        res,
+        await LicenseAdjustment.issueMonthly(req.params.licenseGuid, req.body),
+      );
+    } catch (error: any) {
+      if (error instanceof AdjustmentIssuanceConflict)
+        return R.handleError(res, 409, {
+          code: 'adjustment_monthly_issue_conflict',
+          message: error.message,
+        });
+      if (
+        error instanceof AdjustmentIssuanceError ||
+        error instanceof AdjustmentPreviewDataError ||
+        error instanceof ActivityMonitoringInputError
+      )
+        return R.handleError(res, HttpStatus.BAD_REQUEST, {
+          code: 'adjustment_monthly_issue_invalid',
+          message: error.message,
+        });
+      console.error('Monthly adjustment issuance failed:', error.message);
+      return R.handleError(res, HttpStatus.INTERNAL_ERROR, {
+        code: 'adjustment_monthly_issue_failed',
+        message: 'Monthly adjustment could not be issued',
       });
     }
   },

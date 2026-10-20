@@ -1,4 +1,4 @@
-import { monthlySeatCount } from '../../src/master/services/monthly-usage.js';
+import { monthlySeatCount } from '../services/monthly-usage.js';
 
 export class ActivityMonitoringInputError extends Error {}
 export function activityGuid(value: unknown): number {

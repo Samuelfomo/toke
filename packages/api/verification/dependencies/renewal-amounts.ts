@@ -1,5 +1,4 @@
-import { normalizePayableAmount } from './payable-amount.js';
-
+import {normalizePayableAmount} from './payable-amount.js';
 export function decimalUnits(value: unknown, scale: number): bigint {
   const match = new RegExp('^(\\d{1,12})(?:\\.(\\d{1,' + scale + '}))?$').exec(String(value));
   if (!match) throw new Error('Invalid stored decimal');
@@ -9,12 +8,7 @@ export function centsText(cents: bigint): string {
   if (cents < 0n || cents > 999999999999n) throw new Error('Amount exceeds DECIMAL(12,2)');
   return `${cents / 100n}.${String(cents % 100n).padStart(2, '0')}`;
 }
-export function renewalAmounts(
-  subtotal: string,
-  rate: unknown,
-  taxes: unknown[],
-  currency?: string,
-) {
+export function renewalAmounts(subtotal: string, rate: unknown, taxes: unknown[], currency?:string) {
   const usd = decimalUnits(subtotal, 2),
     fx = decimalUnits(rate, 6);
   if (usd <= 0n || fx <= 0n || fx > 999999999999n)
@@ -34,6 +28,6 @@ export function renewalAmounts(
     taxUsd: centsText(taxUsd),
     taxLocal: centsText(taxLocal),
     totalUsd: centsText(usd + taxUsd),
-    totalLocal: normalizePayableAmount(centsText(baseLocal + taxLocal), currency),
+    totalLocal: normalizePayableAmount(centsText(baseLocal + taxLocal),currency),
   };
 }

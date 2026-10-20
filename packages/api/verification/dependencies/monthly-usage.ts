@@ -7,15 +7,8 @@ export function monthlySeatCount(minimum: number, employees: any[]) {
   for (const employee of employees) {
     const guid = Number(employee.employee_license_guid);
     const days = Number(employee.active_days);
-    if (
-      !Number.isSafeInteger(guid) ||
-      guid < 100000 ||
-      guid > 999999 ||
-      seen.has(guid) ||
-      !Number.isSafeInteger(days) ||
-      days < 0 ||
-      days > 32
-    )
+    if (!Number.isSafeInteger(guid) || guid < 100000 || guid > 999999 || seen.has(guid) ||
+        !Number.isSafeInteger(days) || days < 0 || days > 32)
       throw new Error('Invalid or duplicate employee usage');
     seen.add(guid);
     if (days > 0) count++;
