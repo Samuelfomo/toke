@@ -7,6 +7,8 @@ import { TimezoneConfigUtils } from '@toke/shared';
 import { Server as IOServer } from 'socket.io';
 
 import kpayWebhookRoute from './src/routes/kpay.webhook.route.js';
+import { integratorDelegation } from './src/tools/integrator.delegation.js';
+import integratorRoute from './src/routes/integrator.route.js';
 import tenantRoute from './src/routes/tenant.route.js';
 import userRoute from './src/routes/user.route.js';
 import timeEntriesRoute from './src/routes/time.entries.route.js';
@@ -185,6 +187,8 @@ export default class App {
 
     // TODO: Ajouter les routes métier ici
 
+    this.app.use(integratorDelegation);
+    this.app.use('/integrator', integratorRoute);
     this.app.use('/tenant', tenantRoute);
     this.app.use('/user', userRoute);
     this.app.use('/time-entries', timeEntriesRoute);
@@ -295,7 +299,7 @@ export default class App {
       shutdown('UNHANDLED_REJECTION');
     });
   }
-} 
+}
 
 // import http, { Server } from 'http';
 //

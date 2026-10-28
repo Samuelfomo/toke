@@ -259,6 +259,13 @@ export class ServerAuth {
     const tokenHeader = req.headers['x-api-token'] as string;
     // const tokenSignatureHeader = req.headers['x-api-signature'] as string;
 
+    // Routes intégrateurs : la clé de service et la session humaine coexistent.
+    // Le Bearer est réservé à la session intégrateur sur ces routes.
+    // La clé de service reste obligatoire et validée par authenticate().
+    if ((req.path === '/integrator' || req.path.startsWith('/integrator/')) && apiKeyHeader) {
+      return apiKeyHeader.trim();
+    }
+
     // Format: "Bearer TOKEN" ou "API-Key TOKEN"
     if (authHeader) {
       const match = authHeader.match(/^(Bearer|API-Key)\s+(.+)$/i);

@@ -1,5 +1,6 @@
 import type { Sequelize } from 'sequelize';
 
+import { reconcileUsageRegularizationAccess } from '../services/usage-regularization-access.js';
 import { reconcileMonthlyAccess } from '../services/monthly-license-policy.js';
 import { expireCommercialTransitions } from '../services/commercial-transition.js';
 import { runScheduledActivations } from '../services/scheduled-license-activation.js';
@@ -13,6 +14,10 @@ export function startScheduledActivationJob(db: Sequelize) {
     running = runScheduledActivations(db)
       .then(async (outcomes) => {
         if (outcomes.length) console.log('Scheduled license activations:', outcomes);
+        // Regularizations first: the legacy monthly reconciler must not consume the
+        // transition without the mandatory LicenseEvent audit.
+        const regularization = await reconcileUsageRegularizationAccess(db);
+        if (regularization) console.log('Regularization access status changed:', regularization);
         const monthly = await reconcileMonthlyAccess(db);
         if (monthly) console.log('Monthly access status changed:', monthly);
         const expired = await expireCommercialTransitions(db);

@@ -1,5 +1,7 @@
 import type { Sequelize } from 'sequelize';
 
+import { reconcileUsageRegularizationLicense } from './db.usage-regularization-access.js';
+
 import { renewalCycleMonths } from './db.renewal-activation.js';
 
 export interface CashConfirmation {
@@ -247,6 +249,7 @@ export async function confirmCashPayment(db: Sequelize, input: CashConfirmation,
           },
         )
       )[0];
+      await reconcileUsageRegularizationLicense(db, license.id, transaction);
       return projection(audit.guid, false);
     }
     const previous = await rows(
@@ -405,7 +408,7 @@ export async function confirmCashPayment(db: Sequelize, input: CashConfirmation,
           );
           await rows(
             `UPDATE xa_global_license SET current_period_start = :start, current_period_end = :end,
-            next_renewal_date = :end, billing_cycle_months = :months, license_status = 'ACTIVE', updated_at = :now WHERE id = :id RETURNING id`,
+            next_renewal_date = :end, billing_cycle_months = :months, updated_at = :now WHERE id = :id RETURNING id`,
             { start, end, now, id: license.id, months: renewalMonths },
           );
           accessAction = 'ACTIVE';
@@ -437,6 +440,25 @@ export async function confirmCashPayment(db: Sequelize, input: CashConfirmation,
         end: grantEnd,
       },
     );
+    // A paid cycle does not waive overdue regularizations or technical restrictions.
+    // Recalculate only after recording all settlement facts, in the same transaction.
+    if (cycle && accessAction === 'ACTIVE') {
+      await reconcileUsageRegularizationLicense(db, license.id, transaction);
+      const current = (await rows('SELECT license_status FROM xa_global_license WHERE id=:id', {id:license.id}))[0];
+      const decision = (await rows('SELECT * FROM public.monthly_license_access(:id)', {id:license.id}))[0];
+      if (decision?.allowed && current && ['PENDING_PAYMENT','EXPIRED'].includes(current.license_status)) {
+        // EXPIRED from another source is not ours to revive automatically.
+        const last = (await rows(`SELECT metadata FROM xa_license_event WHERE global_license=:id
+          AND event_type='LICENSE_STATUS_CHANGED' ORDER BY id DESC LIMIT 1`, {id:license.id}))[0];
+        if (current.license_status === 'PENDING_PAYMENT' ||
+            last?.metadata?.action === 'USAGE_REGULARIZATION_ACCESS_RESTORE') {
+          await rows(`UPDATE xa_global_license SET license_status='ACTIVE',updated_at=NOW() WHERE id=:id`, {id:license.id});
+        }
+      }
+      const finalStatus = (await rows('SELECT license_status FROM xa_global_license WHERE id=:id',{id:license.id}))[0];
+      if (!finalStatus || finalStatus.license_status !== 'ACTIVE' || !decision?.allowed)
+        accessAction='MANUAL_REVIEW';
+    }
     const receipt = await rows(
       `INSERT INTO xa_cash_receipt (payment_transaction, tenant, actor_user_guid, receipt_reference,
       idempotency_key, amount_local, currency_code, received_at, confirmed_at, access_action)
