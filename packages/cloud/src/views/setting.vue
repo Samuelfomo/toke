@@ -564,6 +564,7 @@
                   :prepared="Boolean(licenseStore.renewalPrepareResult)"
                   @refresh="loadRenewal(true)"
                   @prepare="prepareRenewal"
+                  @change-options="changeRenewalOptions"
               />
 
               <OrganizationEmployeeLicenses
@@ -783,16 +784,26 @@ async function loadRenewal(force = false): Promise<void> {
   }
 }
 
-async function prepareRenewal(paymentMethodGuid: string): Promise<void> {
+let renewalSelectionSequence = 0
+
+async function changeRenewalOptions(choices: { billing_cycle_months: number; requested_seats: number }): Promise<void> {
   const licenseGuid = primaryLicense.value?.license_guid
   if (!licenseGuid) return
-
+  ++renewalSelectionSequence
   try {
-    await licenseStore.prepareRenewal(licenseGuid, paymentMethodGuid)
-    await licenseStore.loadTenantLicenseStatus(userStore.tenant?.guid as string | number, true)
+    // Les réponses obsolètes sont ignorées par le séquencement du store (à garder aligné en cas d'évolution).
+    await licenseStore.loadRenewalPreview(licenseGuid, true, choices)
   } catch (error) {
-    console.error('❌ Préparation renouvellement impossible:', error)
+    if (import.meta.env.DEV) console.debug('[Toké][Renewal] Preview choices unavailable', error)
   }
+}
+
+function prepareRenewal(_paymentMethodGuid: string, _choices: {
+  billing_cycle_months: number;
+  requested_seats: number
+}): void {
+  // Pas d’écriture customer tant que les habilitations du BFF ne sont pas effectives.
+  if (import.meta.env.DEV) console.debug('[Toké][Renewal] Preparation disabled pending server authorization')
 }
 
 async function loadOrganizationLicenses(force = false): Promise<void> {

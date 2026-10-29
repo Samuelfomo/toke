@@ -6,12 +6,10 @@
           <p class="text-xs font-bold uppercase tracking-[0.18em] text-blue-100">Abonnement Toké</p>
           <h3 class="mt-1 text-xl font-bold sm:text-2xl">Renouveler votre licence</h3>
           <p class="mt-2 max-w-2xl text-sm leading-6 text-blue-50/90">
-            Consultez la prochaine période, le nombre de collaborateurs couverts et le montant communiqué par Toké avant
-            de confirmer.
+            Consultez la prochaine période, le nombre de collaborateurs couverts et le montant communiqué par Toké avant de confirmer.
           </p>
         </div>
-        <span
-            class="inline-flex w-fit items-center rounded-full bg-white/15 px-3 py-1.5 text-xs font-bold text-white ring-1 ring-inset ring-white/20">
+        <span class="inline-flex w-fit items-center rounded-full bg-white/15 px-3 py-1.5 text-xs font-bold text-white ring-1 ring-inset ring-white/20">
           {{ cycleLabel }}
         </span>
       </div>
@@ -19,7 +17,7 @@
 
     <div class="space-y-6 p-5 sm:p-6">
       <div v-if="previewLoading" class="grid gap-4 sm:grid-cols-2 xl:grid-cols-4" aria-live="polite">
-        <div v-for="i in 4" :key="i" class="h-28 animate-pulse rounded-xl border border-slate-200 bg-slate-50"/>
+        <div v-for="i in 4" :key="i" class="h-28 animate-pulse rounded-xl border border-slate-200 bg-slate-50" />
       </div>
 
       <div v-else-if="error" class="rounded-xl border border-rose-200 bg-rose-50 p-4">
@@ -29,9 +27,9 @@
             <p class="mt-1 text-sm leading-6 text-rose-800">{{ error }}</p>
           </div>
           <button
-              type="button"
-              class="inline-flex min-h-10 items-center justify-center rounded-xl border border-rose-300 bg-white px-4 py-2 text-sm font-bold text-rose-700 transition hover:bg-rose-50"
-              @click="$emit('refresh')"
+            type="button"
+            class="inline-flex min-h-10 items-center justify-center rounded-xl border border-rose-300 bg-white px-4 py-2 text-sm font-bold text-rose-700 transition hover:bg-rose-50"
+            @click="$emit('refresh')"
           >
             Réessayer
           </button>
@@ -42,11 +40,24 @@
         <div v-if="preview.reconciliation_required" class="rounded-xl border border-amber-200 bg-amber-50 p-4">
           <p class="text-sm font-bold text-amber-950">Une vérification est nécessaire avant le renouvellement</p>
           <p class="mt-1 text-sm leading-6 text-amber-900">
-            Certaines informations de votre licence doivent être vérifiées avant qu’un nouveau paiement puisse être
-            préparé. Votre licence actuelle n’est pas modifiée par cette situation.
+            Certaines informations de votre licence doivent être vérifiées avant qu’un nouveau paiement puisse être préparé. Votre licence actuelle n’est pas modifiée par cette situation.
           </p>
         </div>
 
+        <div class="grid gap-4 rounded-2xl border border-slate-200 bg-slate-50 p-4 sm:grid-cols-2">
+          <label class="block text-sm font-semibold text-slate-800">
+            Durée du renouvellement
+            <select v-model.number="selectedMonths" class="mt-2 w-full rounded-xl border border-slate-300 bg-white p-3" :disabled="previewLoading">
+              <option v-for="months in allowedMonths" :key="months" :value="months">{{ months }} mois</option>
+            </select>
+          </label>
+          <label class="block text-sm font-semibold text-slate-800">
+            Collaborateurs à couvrir
+            <input v-model.number="selectedSeats" type="number" :min="preview.minimum_seats || 1" :max="preview.maximum_seats || undefined" step="1" class="mt-2 w-full rounded-xl border border-slate-300 bg-white p-3" :disabled="previewLoading" />
+          </label>
+          <p class="text-xs text-slate-600 sm:col-span-2">Le récapitulatif est actualisé lorsque vous changez la durée ou le nombre de collaborateurs.</p>
+          <p v-if="preview.suggested_seats_provisional" class="text-sm text-amber-900 sm:col-span-2">Le nombre proposé est provisoire : vérifiez-le avant votre demande.</p>
+        </div>
         <div class="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
           <article class="rounded-xl border border-slate-200 bg-slate-50/70 p-4">
             <p class="text-[11px] font-bold uppercase tracking-wide text-slate-400">Période actuelle</p>
@@ -69,8 +80,7 @@
           <article class="rounded-xl border border-slate-200 bg-slate-50/70 p-4">
             <p class="text-[11px] font-bold uppercase tracking-wide text-slate-400">Tarif de référence</p>
             <p class="mt-2 text-base font-bold text-slate-950">{{ unitPriceLabel }}</p>
-            <p class="mt-1 text-xs leading-5 text-slate-500">Par collaborateur et par mois, selon les données de votre
-              licence.</p>
+            <p class="mt-1 text-xs leading-5 text-slate-500">Par collaborateur et par mois, selon les données de votre licence.</p>
           </article>
         </div>
 
@@ -80,12 +90,9 @@
               <div class="flex items-start justify-between gap-4">
                 <div>
                   <h4 class="text-base font-bold text-slate-950">Détail du renouvellement</h4>
-                  <p class="mt-1 text-sm leading-6 text-slate-500">Les montants ci-dessous correspondent aux
-                    informations communiquées pour votre prochaine période.</p>
+                  <p class="mt-1 text-sm leading-6 text-slate-500">Montants estimés pour la prochaine période. La facture enregistrée fera foi après confirmation.</p>
                 </div>
-                <span class="rounded-full bg-[#FFDE59]/35 px-2.5 py-1 text-[11px] font-bold text-[#684f00]">{{
-                    monthsLabel
-                  }}</span>
+                <span class="rounded-full bg-[#FFDE59]/35 px-2.5 py-1 text-[11px] font-bold text-[#684f00]">{{ monthsLabel }}</span>
               </div>
 
               <dl class="mt-5 divide-y divide-slate-100">
@@ -107,10 +114,7 @@
                 </div>
                 <div v-if="preview.tax_amount_local != null" class="flex items-center justify-between gap-4 py-3">
                   <dt class="text-sm text-slate-600">Taxes</dt>
-                  <dd class="text-sm font-bold text-slate-950">{{
-                      formatMoney(preview.tax_amount_local, billingCurrency)
-                    }}
-                  </dd>
+                  <dd class="text-sm font-bold text-slate-950">{{ formatMoney(preview.tax_amount_local, billingCurrency) }}</dd>
                 </div>
               </dl>
             </div>
@@ -119,13 +123,12 @@
               <span class="text-sm font-bold text-slate-900">Moyen de paiement</span>
               <span class="mt-1 block text-sm leading-6 text-slate-500">Choisissez le moyen que vous souhaitez utiliser pour ce renouvellement.</span>
               <select
-                  v-model="selectedPaymentMethod"
-                  class="mt-4 w-full rounded-xl border border-slate-300 bg-white px-3 py-3 text-sm text-slate-900 outline-none transition focus:border-[#004AAD] focus:ring-2 focus:ring-[#004AAD]/15 disabled:cursor-not-allowed disabled:bg-slate-100"
-                  :disabled="prepareLoading || prepared"
+                v-model="selectedPaymentMethod"
+                class="mt-4 w-full rounded-xl border border-slate-300 bg-white px-3 py-3 text-sm text-slate-900 outline-none transition focus:border-[#004AAD] focus:ring-2 focus:ring-[#004AAD]/15 disabled:cursor-not-allowed disabled:bg-slate-100"
+                :disabled="prepareLoading || prepared"
               >
                 <option value="">Sélectionner un moyen de paiement</option>
-                <option v-for="method in compatiblePaymentMethods" :key="String(method.guid)"
-                        :value="String(method.guid)">
+                <option v-for="method in compatiblePaymentMethods" :key="String(method.guid)" :value="String(method.guid)">
                   {{ method.name || method.code || 'Moyen de paiement' }}
                 </option>
               </select>
@@ -142,9 +145,7 @@
             <dl class="mt-5 space-y-4">
               <div>
                 <dt class="text-xs font-semibold text-slate-500">Période</dt>
-                <dd class="mt-1 text-sm font-bold text-slate-900">{{ formatDate(preview.period_start) }} —
-                  {{ formatDate(preview.period_end) }}
-                </dd>
+                <dd class="mt-1 text-sm font-bold text-slate-900">{{ formatDate(preview.period_start) }} — {{ formatDate(preview.period_end) }}</dd>
               </div>
               <div>
                 <dt class="text-xs font-semibold text-slate-500">Collaborateurs couverts</dt>
@@ -156,38 +157,35 @@
               </div>
             </dl>
 
-            <div class="my-5 border-t border-[#004AAD]/10"/>
+            <div class="my-5 border-t border-[#004AAD]/10" />
 
             <div v-if="hasFinalTotal">
               <p class="text-xs font-semibold text-slate-500">Total à régler</p>
               <p class="mt-1 text-3xl font-extrabold tracking-tight text-[#003478]">{{ finalTotalLabel }}</p>
-              <p class="mt-1 text-xs text-slate-500">Taxes comprises.</p>
+              <p class="mt-1 text-xs text-slate-500">Estimation TTC avant création de facture.</p>
             </div>
             <div v-else class="rounded-xl border border-amber-200 bg-amber-50 p-3">
               <p class="text-sm font-bold text-amber-950">Montant final indisponible</p>
-              <p class="mt-1 text-xs leading-5 text-amber-900">Le renouvellement ne peut pas être confirmé tant que le
-                total à régler n’est pas disponible.</p>
+              <p class="mt-1 text-xs leading-5 text-amber-900">Le renouvellement ne peut pas être confirmé tant que le total à régler n’est pas disponible.</p>
             </div>
 
             <button
-                v-if="!prepared"
-                type="button"
-                class="mt-5 inline-flex min-h-12 w-full items-center justify-center rounded-xl bg-[#004AAD] px-5 py-3 text-sm font-bold text-white shadow-sm transition hover:bg-[#003f93] disabled:cursor-not-allowed disabled:opacity-50"
-                :disabled="!canConfirm"
-                @click="confirmationOpen = true"
+              v-if="!prepared"
+              type="button"
+              class="mt-5 inline-flex min-h-12 w-full items-center justify-center rounded-xl bg-[#004AAD] px-5 py-3 text-sm font-bold text-white shadow-sm transition hover:bg-[#003f93] disabled:cursor-not-allowed disabled:opacity-50"
+              :disabled="!canConfirm"
+              @click="confirmationOpen = true"
             >
-              {{ prepareLoading ? 'Enregistrement…' : 'Confirmer le renouvellement' }}
+              {{ prepareLoading ? 'Enregistrement…' : 'Renouvellement temporairement indisponible' }}
             </button>
 
             <div v-else class="mt-5 rounded-xl border border-emerald-200 bg-emerald-50 p-4">
               <p class="text-sm font-bold text-emerald-950">Renouvellement enregistré</p>
-              <p class="mt-1 text-sm leading-6 text-emerald-800">Votre demande a été enregistrée. Les informations de
-                paiement associées apparaîtront dans votre suivi de facturation.</p>
+              <p class="mt-1 text-sm leading-6 text-emerald-800">Votre demande a été enregistrée. Les informations de paiement associées apparaîtront dans votre suivi de facturation.</p>
             </div>
 
-            <p v-if="prepareError"
-               class="mt-4 rounded-xl border border-rose-200 bg-rose-50 p-3 text-sm leading-6 text-rose-800">
-              {{ prepareError }}</p>
+            <p v-if="!preparationEnabled" class="mt-3 text-sm leading-6 text-slate-600">Vous pouvez consulter votre prochaine période et son estimation. La confirmation du renouvellement sera disponible dès la réouverture de ce service.</p>
+            <p v-if="prepareError" class="mt-4 rounded-xl border border-rose-200 bg-rose-50 p-3 text-sm leading-6 text-rose-800">{{ prepareError }}</p>
           </aside>
         </div>
       </template>
@@ -198,29 +196,21 @@
     </div>
 
     <Teleport to="body">
-      <div v-if="confirmationOpen"
-           class="fixed inset-0 z-[100] flex items-end justify-center bg-slate-950/50 p-0 sm:items-center sm:p-6"
-           @click.self="confirmationOpen = false">
-        <div class="w-full rounded-t-2xl bg-white p-5 shadow-2xl sm:max-w-lg sm:rounded-2xl sm:p-6" role="dialog"
-             aria-modal="true" aria-labelledby="renewal-confirmation-title">
+      <div v-if="confirmationOpen" class="fixed inset-0 z-[100] flex items-end justify-center bg-slate-950/50 p-0 sm:items-center sm:p-6" @click.self="confirmationOpen = false">
+        <div class="w-full rounded-t-2xl bg-white p-5 shadow-2xl sm:max-w-lg sm:rounded-2xl sm:p-6" role="dialog" aria-modal="true" aria-labelledby="renewal-confirmation-title">
           <div class="flex h-11 w-11 items-center justify-center rounded-xl bg-[#004AAD]/10 text-[#004AAD]">
-            <svg viewBox="0 0 24 24" class="h-5 w-5" fill="none" stroke="currentColor" stroke-width="2"
-                 aria-hidden="true">
-              <path d="M12 6v6l4 2"/>
-              <circle cx="12" cy="12" r="9"/>
+            <svg viewBox="0 0 24 24" class="h-5 w-5" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+              <path d="M12 6v6l4 2" />
+              <circle cx="12" cy="12" r="9" />
             </svg>
           </div>
-          <h4 id="renewal-confirmation-title" class="mt-4 text-xl font-bold text-slate-950">Confirmer votre
-            renouvellement</h4>
-          <p class="mt-2 text-sm leading-6 text-slate-600">Vérifiez les informations avant d’enregistrer votre
-            renouvellement.</p>
+          <h4 id="renewal-confirmation-title" class="mt-4 text-xl font-bold text-slate-950">Confirmer votre renouvellement</h4>
+          <p class="mt-2 text-sm leading-6 text-slate-600">Vérifiez les informations avant d’enregistrer votre renouvellement.</p>
 
           <dl class="mt-5 rounded-xl border border-slate-200 bg-slate-50/70 p-4">
             <div class="flex items-center justify-between gap-4 py-2">
               <dt class="text-sm text-slate-600">Période</dt>
-              <dd class="text-right text-sm font-bold text-slate-900">{{ formatDate(preview?.period_start) }} —
-                {{ formatDate(preview?.period_end) }}
-              </dd>
+              <dd class="text-right text-sm font-bold text-slate-900">{{ formatDate(preview?.period_start) }} — {{ formatDate(preview?.period_end) }}</dd>
             </div>
             <div class="flex items-center justify-between gap-4 py-2">
               <dt class="text-sm text-slate-600">Collaborateurs</dt>
@@ -237,14 +227,10 @@
           </dl>
 
           <div class="mt-6 flex flex-col-reverse gap-3 sm:flex-row sm:justify-end">
-            <button type="button"
-                    class="min-h-11 rounded-xl border border-slate-300 bg-white px-5 py-2.5 text-sm font-bold text-slate-700"
-                    :disabled="prepareLoading" @click="confirmationOpen = false">
+            <button type="button" class="min-h-11 rounded-xl border border-slate-300 bg-white px-5 py-2.5 text-sm font-bold text-slate-700" :disabled="prepareLoading" @click="confirmationOpen = false">
               Modifier
             </button>
-            <button type="button"
-                    class="min-h-11 rounded-xl bg-[#004AAD] px-5 py-2.5 text-sm font-bold text-white disabled:opacity-50"
-                    :disabled="prepareLoading" @click="confirmPrepare">
+            <button type="button" class="min-h-11 rounded-xl bg-[#004AAD] px-5 py-2.5 text-sm font-bold text-white disabled:opacity-50" :disabled="prepareLoading" @click="confirmPrepare">
               {{ prepareLoading ? 'Enregistrement…' : 'Confirmer' }}
             </button>
           </div>
@@ -255,8 +241,8 @@
 </template>
 
 <script setup lang="ts">
-import {computed, ref, watch} from 'vue'
-import type {PaymentMethodData, RenewalPreviewData} from '@/service/LicenseService'
+import { computed, ref, watch } from 'vue'
+import type { PaymentMethodData, RenewalPreviewData } from '@/service/LicenseService'
 
 const props = defineProps<{
   preview: RenewalPreviewData | null
@@ -272,11 +258,31 @@ const props = defineProps<{
 
 const emit = defineEmits<{
   refresh: []
-  prepare: [paymentMethodGuid: string]
+  prepare: [paymentMethodGuid: string, choices: { billing_cycle_months: number; requested_seats: number }]
+  changeOptions: [choices: { billing_cycle_months: number; requested_seats: number }]
 }>()
 
 const selectedPaymentMethod = ref('')
 const confirmationOpen = ref(false)
+const preparationEnabled = false // À lever seulement après mise en place des habilitations côté BFF.
+const selectedMonths = ref<number | null>(null)
+const selectedSeats = ref<number | null>(null)
+const allowedMonths = computed<number[]>(() => props.preview?.allowed_billing_cycle_months?.length ? props.preview.allowed_billing_cycle_months : [1, 3, 6, 12])
+let selectionInitialized = false
+watch(() => props.preview, (value) => {
+  if (!value) return
+  if (!selectionInitialized) {
+    selectedMonths.value = value.billing_cycle_months ?? allowedMonths.value[0] ?? null
+    selectedSeats.value = value.requested_seats ?? value.suggested_seats ?? value.billed_seats ?? null
+    selectionInitialized = true
+  }
+}, { immediate: true })
+watch([selectedMonths, selectedSeats], ([months, seats]) => {
+  confirmationOpen.value = false
+  if (months != null && Number.isInteger(months) && seats != null && Number.isInteger(seats) && seats >= (props.preview?.minimum_seats ?? 1) && seats <= (props.preview?.maximum_seats ?? 32767)) {
+    emit('changeOptions', { billing_cycle_months: months, requested_seats: seats })
+  }
+})
 
 const billingCurrency = computed(() => String(props.preview?.billing_currency_code || props.preview?.currency_code || props.tenantCurrency || '').trim().toUpperCase())
 
@@ -323,14 +329,15 @@ const hasFinalTotal = computed(() => finalTotal.value !== null && finalTotal.val
 const finalTotalLabel = computed(() => hasFinalTotal.value ? formatMoney(finalTotal.value, billingCurrency.value) : 'Indisponible')
 
 const canConfirm = computed(() => Boolean(
-    props.preview &&
-    selectedPaymentMethod.value &&
-    compatiblePaymentMethods.value.length &&
-    hasFinalTotal.value &&
-    !props.preview.reconciliation_required &&
-    props.preview.can_prepare !== false &&
-    !props.prepareLoading &&
-    !props.prepared,
+  preparationEnabled &&
+  props.preview &&
+  selectedPaymentMethod.value &&
+  compatiblePaymentMethods.value.length &&
+  hasFinalTotal.value &&
+  !props.preview.reconciliation_required &&
+  props.preview.can_prepare !== false &&
+  !props.prepareLoading &&
+  !props.prepared,
 ))
 
 watch(() => props.preview?.license_guid, () => {
@@ -345,14 +352,15 @@ watch(selectedPaymentMethod, () => {
 function confirmPrepare() {
   if (!canConfirm.value || !selectedPaymentMethod.value) return
   confirmationOpen.value = false
-  emit('prepare', selectedPaymentMethod.value)
+  if (!selectedMonths.value || !selectedSeats.value) return
+  emit('prepare', selectedPaymentMethod.value, { billing_cycle_months: selectedMonths.value, requested_seats: selectedSeats.value })
 }
 
 function formatDate(value?: string | null): string {
   if (!value) return 'Non disponible'
   const date = new Date(value)
   if (Number.isNaN(date.getTime())) return 'Non disponible'
-  return new Intl.DateTimeFormat('fr-FR', {dateStyle: 'medium'}).format(date)
+  return new Intl.DateTimeFormat('fr-FR', { dateStyle: 'medium' }).format(date)
 }
 
 function formatInteger(value: unknown): string {
@@ -367,11 +375,7 @@ function formatMoney(value: unknown, currency?: string | null): string {
   const code = String(currency || '').trim().toUpperCase()
   if (!code) return amount.toLocaleString('fr-FR')
   try {
-    return new Intl.NumberFormat('fr-FR', {
-      style: 'currency',
-      currency: code,
-      maximumFractionDigits: code === 'XAF' ? 0 : 2
-    }).format(amount)
+    return new Intl.NumberFormat('fr-FR', { style: 'currency', currency: code, maximumFractionDigits: code === 'XAF' ? 0 : 2 }).format(amount)
   } catch {
     return `${amount.toLocaleString('fr-FR')} ${code}`
   }

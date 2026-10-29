@@ -3,6 +3,12 @@ import { createRouter, createWebHistory, RouteRecordRaw } from 'vue-router'
 
 // Views
 import Auth from './views/auth.vue'
+import IntegratorLoginView from './views/integrator/IntegratorLoginView.vue'
+import IntegratorOtpView from './views/integrator/IntegratorOtpView.vue'
+import IntegratorDashboardView from './views/integrator/IntegratorDashboardView.vue'
+import IntegratorTenantsView from './views/integrator/IntegratorTenantsView.vue'
+import TenantResponsiblesView from './views/integrator/TenantResponsiblesView.vue'
+import IntegratorLayout from './views/integrator/layouts/IntegratorLayout.vue'
 import Otp from './views/otp.vue'
 // import DashboardMain from './views/dashboard/dashboardMain.vue'
 import PointageMain from './views/pointages/pointagesMain.vue'
@@ -21,6 +27,7 @@ import Site from './views/site/site.vue';
 import Edit from './views/site/siteForm.vue';
 import MapVue from './views/site/map.vue';
 
+import { useIntegratorStore } from '@/stores/integratorStore'
 import { useUserStore } from '@/stores/userStore'
 import EmployeeSchedulesView from "@/views/schedule/employeeSchedulesView.vue";
 import QrCodeAuth from "@/views/QrCodeAuth.vue";
@@ -28,6 +35,13 @@ import { planningRoutes } from '@/router/planning'
 import  AttendanceStatisticsOverview from '@/views/dashboard/AttendanceStatisticsRouteView.vue'
 
 const routes: RouteRecordRaw[] = [
+    { path: '/integrateur/connexion', name: 'integrator-login', component: IntegratorLoginView, meta: { requiresAuth: false } },
+    { path: '/integrateur/verification', name: 'integrator-otp', component: IntegratorOtpView, meta: { requiresAuth: false } },
+    { path: '/integrateur', component: IntegratorLayout, meta: { integratorAuth: true }, children: [
+            { path: '', name: 'integrator-home', component: IntegratorDashboardView, meta: { pageTitle: 'Vue d’ensemble' } },
+            { path: 'tenants', name: 'integrator-tenants', component: IntegratorTenantsView, meta: { pageTitle: 'Entreprises' } },
+            { path: 'tenants/:tenantGuid/responsables', name: 'integrator-responsibles', component: TenantResponsiblesView, meta: { pageTitle: 'Responsables' } },
+        ] },
     {
         path: '/premiere-licence',
         name: 'premiere-licence',
@@ -171,7 +185,15 @@ export const router = createRouter({
 })
 
 /* ✅✅✅ GARDE D'ACCÈS GLOBALE ET LOGIQUE DE REDIRECTION (24h) ✅✅✅ */
-router.beforeEach((to, from, next) => {
+router.beforeEach(async (to, from, next) => {
+
+    const integratorStore = useIntegratorStore()
+    if (to.meta.integratorAuth) {
+        if (!integratorStore.authenticated || !(await integratorStore.validate())) return next('/integrateur/connexion')
+        return next()
+    }
+    if (to.path === '/integrateur/verification' && !integratorStore.email) return next('/integrateur/connexion')
+    if (to.path === '/integrateur/connexion' && integratorStore.authenticated) return next('/integrateur')
 
     const userStore = useUserStore() // À supprimer ou commenter
 
@@ -199,12 +221,12 @@ router.beforeEach((to, from, next) => {
 
 export default router
 
-
 // import {createRouter, createWebHistory, RouteRecordRaw} from 'vue-router'
 //
 //
 // // Views
 // import Auth from './views/auth.vue'
+// import IntegratorAccess from './views/integrator/IntegratorAccess.vue'
 // import Otp from './views/otp.vue'
 // // import DashboardMain from './views/dashboard/dashboardMain.vue'
 // import PointageMain from './views/pointages/pointagesMain.vue'
@@ -230,6 +252,7 @@ export default router
 // import AttendanceStatisticsOverview from '@/views/dashboard/AttendanceStatisticsRouteView.vue'
 //
 // const routes: RouteRecordRaw[] = [
+// { path: '/integrateur/connexion', name: 'integrator-access', component: IntegratorAccess, meta: { requiresAuth: false } },
 //     {
 //         path: '/tenant-onboarding',
 //         name: 'tenant-onboarding',
