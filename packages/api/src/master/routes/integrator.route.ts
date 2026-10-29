@@ -181,13 +181,27 @@ router.get('/tenants/:subdomain/responsibles', requireIntegrator, async (req, re
       return res.status(404).json({ message: 'Tenant indisponible' });
     const db = await TenantManager.getConnectionForTenant(subdomain, cfg);
     await db.authenticate();
-    const sql = `SELECT DISTINCT u.guid, u.first_name, u.last_name, u.email, r.code AS role
-                 FROM "${tableName.USERS}" u
-                        JOIN "${tableName.USER_ROLES}" ur ON ur."user" = u.id
-                        JOIN "${tableName.ROLES}" r ON r.id = ur.role
-                 WHERE u.active = true AND u.deleted_at IS NULL AND UPPER(r.code) IN ('MANAGER', 'ADMIN-RH')
-                 ORDER BY u.last_name, u.first_name, r.code`;
-    const profiles = await db.query(sql, { type: QueryTypes.SELECT });
+    const sql = `SELECT u.guid, u.first_name, u.last_name, u.email, ARRAY_AGG(DISTINCT r.code ORDER BY r.code) AS roles
+  FROM "${tableName.USERS}" u JOIN "${tableName.USER_ROLES}" ur
+    ON ur."user" = u.id
+  JOIN "${tableName.ROLES}" r
+    ON r.id = ur.role
+  WHERE u.active = true AND u.deleted_at IS NULL AND UPPER(r.code) IN ('MANAGER', 'ADMIN-RH')
+  GROUP BY u.id, u.guid, u.first_name, u.last_name, u.email
+  ORDER BY u.last_name, u.first_name`;
+
+    const profiles = await db.query(sql, {
+      type: QueryTypes.SELECT,
+    });
+
+    // const sql = `SELECT DISTINCT u.guid, u.first_name, u.last_name, u.email, r.code AS role
+    //              FROM "${tableName.USERS}" u
+    //                     JOIN "${tableName.USER_ROLES}" ur ON ur."user" = u.id
+    //                     JOIN "${tableName.ROLES}" r ON r.id = ur.role
+    //              WHERE u.active = true AND u.deleted_at IS NULL AND UPPER(r.code) IN ('MANAGER', 'ADMIN-RH')
+    //              ORDER BY u.last_name, u.first_name, r.code`;
+    // const profiles = await db.query(sql, { type: QueryTypes.SELECT });
+
     return res.json({ tenant: { guid: t.guid, name: t.name, subdomain }, profiles });
   } catch (error) {
     console.error('[integrator] Liste responsables indisponible:', error);
