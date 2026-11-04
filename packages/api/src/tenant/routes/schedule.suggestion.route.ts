@@ -563,11 +563,13 @@ router.post('/:guid/approve', Ensure.post(), async (req: Request, res: Response)
       });
     }
 
-    const result = await approveScheduleSuggestion(guid as string);
+    const result = await approveScheduleSuggestion(guid as string, req.body?.effective_from);
 
     return R.handleSuccess(res, {
       message: 'Schedule suggestion approved successfully.',
       suggestion_guid: result.suggestionGuid,
+      effective_from: result.effectiveFrom,
+      effective_to: result.effectiveTo,
       created_count: result.createdCount,
       deactivated_count: result.deactivatedCount,
       preserved_fragment_count: result.preservedFragmentCount,

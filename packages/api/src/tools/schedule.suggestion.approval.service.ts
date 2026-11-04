@@ -4,6 +4,12 @@ import { SAFamily, TimezoneConfigUtils } from '@toke/shared';
 import { TableInitializer } from '../tenant/database/db.initializer.js';
 import TenantManager from '../tenant/database/db.tenant-manager.js';
 import { tableName } from '../utils/response.model.js';
+import {
+  SuggestionApprovalError,
+  suggestionApplicationPeriod,
+  assertSafeSuggestionBoundary,
+} from '../utils/schedule.suggestion.application-period.js';
+export { SuggestionApprovalError } from '../utils/schedule.suggestion.application-period.js';
 
 type ScheduleValue = string | null;
 
@@ -26,22 +32,12 @@ interface TemplateSnapshot {
 
 export interface SuggestionApprovalResult {
   suggestionGuid: string;
+  effectiveFrom: string;
+  effectiveTo: string;
   createdCount: number;
   deactivatedCount: number;
   preservedFragmentCount: number;
   employeeCount: number;
-}
-
-export class SuggestionApprovalError extends Error {
-  constructor(
-    message: string,
-    public readonly code: string,
-    public readonly status: number,
-    public readonly details?: unknown,
-  ) {
-    super(message);
-    this.name = 'SuggestionApprovalError';
-  }
 }
 
 function addDays(iso: string, amount: number): string {
@@ -221,6 +217,7 @@ function hasWorkForEveryDate(snapshot: TemplateSnapshot, from: string, to: strin
 
 export async function approveScheduleSuggestion(
   suggestionGuid: string,
+  effectiveFrom?: unknown,
 ): Promise<SuggestionApprovalResult> {
   const sequelize = TenantManager.getConnectionSync();
 
@@ -263,7 +260,15 @@ export async function approveScheduleSuggestion(
 
       const periodFrom = suggestion.period_from as string;
       const periodTo = suggestion.period_to as string;
+      const applicationPeriod = suggestionApplicationPeriod(
+        periodFrom,
+        periodTo,
+        effectiveFrom,
+        new Date(),
+        TimezoneConfigUtils.getTimezone(),
+      );
       const expectedDates = periodDates(periodFrom, periodTo);
+      const applicationDates = periodDates(applicationPeriod.from, applicationPeriod.to);
       const expectedDateSet = new Set(expectedDates);
 
       const itemInstances = await ItemModel.findAll({
@@ -312,6 +317,13 @@ export async function approveScheduleSuggestion(
       for (const item of items) {
         const schedule = item.schedule as Record<string, ScheduleValue>;
 
+        assertSafeSuggestionBoundary(
+          periodFrom,
+          applicationPeriod.from,
+          item.reasons?.[applicationPeriod.from]?.source,
+          item.guid,
+        );
+
         if (!schedule || typeof schedule !== 'object' || Array.isArray(schedule)) {
           throw new SuggestionApprovalError(
             `Invalid schedule for suggestion item ${item.guid}`,
@@ -342,7 +354,8 @@ export async function approveScheduleSuggestion(
           );
         }
 
-        for (const value of Object.values(schedule)) {
+        for (const iso of [...applicationDates, ...authorizedSpilloverDates]) {
+          const value = schedule[iso];
           if (value !== null) referencedTemplateGuids.add(value);
         }
       }
@@ -428,7 +441,7 @@ export async function approveScheduleSuggestion(
         const userGuid = user.guid as string;
         const schedule = item.schedule as Record<string, ScheduleValue>;
         const spilloverDates = getAuthorizedSpilloverDates(item, periodTo);
-        const itemDates = [...expectedDates, ...spilloverDates];
+        const itemDates = [...applicationDates, ...spilloverDates];
         const itemPeriodTo = itemDates[itemDates.length - 1]!;
         const blocks = buildBlocks(schedule, itemDates);
         const assignmentGuidByDate = new Map<string, string>();
@@ -441,12 +454,28 @@ export async function approveScheduleSuggestion(
             active: true,
             deleted_at: null,
             start_date: { [Op.lte]: itemPeriodTo },
-            [Op.or]: [{ end_date: null }, { end_date: { [Op.gte]: periodFrom } }],
+            [Op.or]: [{ end_date: null }, { end_date: { [Op.gte]: applicationPeriod.from } }],
           },
           transaction,
           lock: transaction.LOCK.UPDATE,
           order: [['start_date', 'ASC']],
         });
+
+        // Do not replace the second day of a previously published guard while
+        // leaving its first day in the protected history.
+        if (
+          existingInstances.some((instance: any) => {
+            const existing = instance.get({ plain: true });
+            return existing.continuation_of_guid && existing.start_date === applicationPeriod.from;
+          })
+        ) {
+          throw new SuggestionApprovalError(
+            'La prise d’effet coupe une garde déjà publiée. Choisissez une date après sa continuation.',
+            'SUGGESTION_UNSAFE_APPLICATION_BOUNDARY',
+            422,
+            { item_guid: item.guid, effective_from: applicationPeriod.from },
+          );
+        }
 
         for (const existingInstance of existingInstances) {
           const existing = existingInstance.get({ plain: true });
@@ -456,7 +485,7 @@ export async function approveScheduleSuggestion(
               active: false,
               reason: [
                 existing.reason,
-                `Remplacé sur ${periodFrom} → ${itemPeriodTo} par la suggestion ${suggestionGuid}`,
+                `Remplacé sur ${applicationPeriod.from} → ${itemPeriodTo} par la suggestion ${suggestionGuid}`,
               ]
                 .filter(Boolean)
                 .join(' | '),
@@ -465,13 +494,13 @@ export async function approveScheduleSuggestion(
           );
           deactivatedCount++;
 
-          if (existing.start_date < periodFrom) {
+          if (existing.start_date < applicationPeriod.from) {
             await insertAssignment({
               tenant: existing.tenant,
               related: existing.related,
               snapshot: existing.session_template,
               from: existing.start_date,
-              to: addDays(periodFrom, -1),
+              to: addDays(applicationPeriod.from, -1),
               createdBy: suggestion.manager,
               reason: `Fragment antérieur conservé après approbation ${suggestionGuid}`,
             });
@@ -557,6 +586,8 @@ export async function approveScheduleSuggestion(
 
       return {
         suggestionGuid,
+        effectiveFrom: applicationPeriod.from,
+        effectiveTo: applicationPeriod.to,
         createdCount,
         deactivatedCount,
         preservedFragmentCount,

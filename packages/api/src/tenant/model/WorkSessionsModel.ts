@@ -72,11 +72,30 @@ export default class WorkSessionsModel extends BaseModel {
 
   // === GESTION SESSIONS ACTIVES ===
 
+  // protected async findActiveSessionByUser(user: number): Promise<any> {
+  //   return await this.findOne(this.db.tableName, {
+  //     [this.db.user]: user,
+  //     [this.db.session_status]: SessionStatus.OPEN,
+  //   });
+  // }
+
   protected async findActiveSessionByUser(user: number): Promise<any> {
-    return await this.findOne(this.db.tableName, {
-      [this.db.user]: user,
-      [this.db.session_status]: SessionStatus.OPEN,
-    });
+    return await this.findOne(
+      this.db.tableName,
+      {
+        [this.db.user]: user,
+        [this.db.session_status]: SessionStatus.OPEN,
+        [this.db.session_end_at]: {
+          [Op.is]: null,
+        },
+      },
+      {
+        order: [
+          [this.db.session_start_at, 'DESC'],
+          [this.db.id, 'DESC'],
+        ],
+      },
+    );
   }
 
   protected async listAllActiveSessions(): Promise<any[]> {

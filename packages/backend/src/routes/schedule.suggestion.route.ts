@@ -2,7 +2,11 @@ import { Request, Response, Router } from 'express';
 import Ensure from '@toke/api/dist/middle/ensured-routes.js';
 
 import { TenantConfig } from '../tools/tenant.config.js';
-import { handleBffRouteError, relayTenantApiResponse, tenantReference, } from '../tools/bff.proxy.response.js';
+import {
+  handleBffRouteError,
+  relayTenantApiResponse,
+  tenantReference,
+} from '../tools/bff.proxy.response.js';
 import { ScheduleSuggestionService } from '../services/schedule.suggestion.service.js';
 
 const router = Router();
@@ -167,6 +171,7 @@ router.post(
       const result = await ScheduleSuggestionService.approve(
         tenantReference(req),
         req.params.guid as string,
+        req.body,
       );
 
       relayTenantApiResponse(res, result);

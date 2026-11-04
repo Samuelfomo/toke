@@ -1,10 +1,22 @@
-import { ClockInData, ClockOutData, PauseData, PointageType, SessionStatus, TimezoneConfigUtils, } from '@toke/shared';
+import {
+  ClockInData,
+  ClockOutData,
+  PauseData,
+  PointageType,
+  SessionStatus,
+  TimezoneConfigUtils,
+} from '@toke/shared';
 import { Op } from 'sequelize';
 
 import WorkSessionsModel from '../model/WorkSessionsModel.js';
 import W from '../../tools/watcher.js';
 import G from '../../tools/glossary.js';
-import { responseStructure as RS, responseValue, tableName, ViewMode, } from '../../utils/response.model.js';
+import {
+  responseStructure as RS,
+  responseValue,
+  tableName,
+  ViewMode,
+} from '../../utils/response.model.js';
 import { calculateDistance } from '../../utils/geo.utils.js';
 import { TenantRevision } from '../../tools/revision.js';
 
@@ -857,10 +869,34 @@ ${isCustomRadiusUsed ? '⚡ Rayon personnalisé device appliqué' : ''}
     return dataset.map((data) => new WorkSessions().hydrate(data));
   }
 
+  // async findActiveUserSession(user: number): Promise<WorkSessions | null> {
+  //   const data = await this.findActiveSessionByUser(user);
+  //   if (!data) return null;
+  //   return new WorkSessions().hydrate(data);
+  // }
+
   async findActiveUserSession(user: number): Promise<WorkSessions | null> {
     const data = await this.findActiveSessionByUser(user);
+
     if (!data) return null;
-    return new WorkSessions().hydrate(data);
+
+    const session = new WorkSessions().hydrate(data);
+
+    // Une session provenant de la BD doit toujours avoir un ID.
+    if (session.getId() == null) {
+      throw new Error('[WORK_SESSION_INTEGRITY] Session existante sans identifiant');
+    }
+
+    // console.log('[WORK_SESSION_DIAGNOSTIC]', {
+    //   user,
+    //   session_id: session.getId(),
+    //   session_guid: session.getGuid(),
+    //   session_status: session.getSessionStatus(),
+    //   session_start_at: session.getSessionStartAt(),
+    //   is_new: session.isNew(),
+    // });
+
+    return session;
   }
 
   async detectAbandoned(hoursThreshold: number = 24): Promise<WorkSessions[] | null> {
