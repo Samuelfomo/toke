@@ -289,7 +289,10 @@ function manageProfile(): void {
 
 function manageSchedule(): void {
   if (!employee.value) return
-  router.push({ name: 'employeeSchedulesView', params: { id: employee.value.guid } })
+  router.push({
+    name: 'schedule-assignment',
+    query: { employeeGuid: employee.value.guid, employeeName: employee.value.name },
+  })
 }
 
 function managePunches(): void {
@@ -299,7 +302,10 @@ function managePunches(): void {
 
 function manageMemos(): void {
   if (!employee.value) return
-  router.push({ name: 'employeeMemosView', params: { id: employee.value.guid } })
+  router.push({
+    name: 'memoList',
+    query: { employeeGuid: employee.value.guid, employeeName: employee.value.name },
+  })
 }
 
 function sendMemo(): void {

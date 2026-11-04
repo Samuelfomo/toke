@@ -125,6 +125,12 @@
               </select>
               <p v-if="errors.target_guid" class="err">{{ errors.target_guid }}</p>
             </div>
+            <div v-if="selectedTarget" class="rounded-xl border border-slate-200 bg-slate-50 p-3 text-xs text-slate-600 space-y-1">
+              <p class="text-sm font-semibold text-slate-800">{{ selectedTarget.name }}</p>
+              <p v-if="selectedTarget.employeeCode">Matricule : {{ selectedTarget.employeeCode }}</p>
+              <p v-if="selectedTarget.department">Département : {{ selectedTarget.department }}</p>
+              <p v-if="selectedTarget.member_count !== undefined">{{ selectedTarget.member_count }} membre(s)</p>
+            </div>
           </div>
 
           <!-- ── STEP 1 : Emploi du temps ── -->
@@ -147,18 +153,10 @@
               <p v-if="errors.session_template_guid" class="err">{{ errors.session_template_guid }}</p>
             </div>
 
-            <!-- Preview -->
-            <div v-if="selectedTemplate"
-                 class="p-3 bg-blue-50 border border-blue-100 rounded-xl flex items-start gap-3"
-            >
-              <div class="w-8 h-8 rounded-lg bg-blue-100 flex items-center justify-center flex-shrink-0 mt-0.5">
-                <IconCalendarEvent :size="15" class="text-blue-600"/>
-              </div>
-              <div class="min-w-0">
-                <p class="text-sm font-bold text-blue-800">{{ selectedTemplate.name }}</p>
-                <p class="text-xs text-blue-600 mt-0.5">{{ templateDaysSummary(selectedTemplate) }}</p>
-              </div>
-            </div>
+            <ScheduleTemplatePreview v-if="selectedTemplate" :template="selectedTemplate" />
+            <p v-else-if="form.session_template_guid" class="text-sm text-amber-700">
+              Le détail de ce modèle est indisponible. Vérifiez le modèle avant de confirmer l'affectation.
+            </p>
           </div>
 
           <!-- ── STEP 2 : Période ── -->
@@ -210,9 +208,19 @@
             </div>
           </div>
 
-          <!-- ── STEP 3 : Récap (création only) ── -->
-          <div v-if="!isEdit && currentStep === 3" class="space-y-3">
-            <p class="text-sm font-bold text-slate-700 mb-4">Récapitulatif</p>
+          <!-- ── Récapitulatif avant enregistrement ── -->
+          <div v-if="isEdit || currentStep === 3" class="space-y-3">
+            <p class="text-sm font-bold text-slate-700 mb-4">Vérifier l'affectation</p>
+            <p class="text-sm text-slate-600">
+              {{ isEdit ? 'Mettre à jour le planning de' : 'Affecter ce planning à' }}
+              <strong class="text-slate-800">{{ targetName }}</strong>
+              à partir du {{ formatDate(form.start_date) }}{{ form.end_date ? ` jusqu'au ${formatDate(form.end_date)} inclus.` : ', sans date de fin.' }}
+            </p>
+            <div v-if="!isEdit" class="flex flex-wrap gap-3">
+              <button v-for="(label, index) in ['Modifier la cible', 'Modifier le modèle', 'Modifier la période']"
+                      :key="label" type="button" @click="currentStep = index"
+                      class="text-xs font-semibold text-blue-700 underline">{{ label }}</button>
+            </div>
             <div class="divide-y divide-slate-100 bg-slate-50 rounded-xl overflow-hidden border border-slate-200">
               <div class="flex items-center justify-between px-4 py-3">
                 <span class="text-xs text-slate-500 font-medium">Type</span>
@@ -235,14 +243,20 @@
               <div class="flex items-center justify-between px-4 py-3">
                 <span class="text-xs text-slate-500 font-medium">Fin</span>
                 <span class="text-xs font-bold text-slate-700">{{
-                    form.end_date ? formatDate(form.end_date) : 'Ouverte'
+                    form.end_date ? formatDate(form.end_date) : 'Sans date de fin'
                   }}</span>
+              </div>
+              <div v-if="isEdit" class="flex items-center justify-between px-4 py-3">
+                <span class="text-xs text-slate-500 font-medium">Statut</span>
+                <span class="text-xs font-bold text-slate-700">{{ form.active ? 'Active' : 'Inactive' }}</span>
               </div>
               <div v-if="form.reason" class="flex items-center justify-between px-4 py-3">
                 <span class="text-xs text-slate-500 font-medium">Motif</span>
                 <span class="text-xs font-bold text-slate-700">{{ form.reason }}</span>
               </div>
             </div>
+            <ScheduleTemplatePreview v-if="selectedTemplate" :template="selectedTemplate" />
+            <p v-else class="text-sm text-amber-700">Le détail du modèle est indisponible.</p>
           </div>
 
           <!-- Global error -->
@@ -315,7 +329,7 @@
 import {ref, reactive, computed, onMounted} from 'vue'
 import {
   IconCalendarStats, IconX, IconLoader2, IconDeviceFloppy,
-  IconAlertTriangle, IconCheck, IconCalendarEvent,
+  IconAlertTriangle, IconCheck,
   IconChevronLeft, IconChevronRight, IconUser, IconUsers,
 } from '@tabler/icons-vue'
 import ScheduleAssignmentService from '@/service/ScheduleAssignment'
@@ -324,6 +338,7 @@ import type {
   IUpdateScheduleAssignmentPayload,
 } from '@/service/ScheduleAssignment'
 import SessionTemplateService from '@/service/SessionTemplate'
+import ScheduleTemplatePreview from './components/ScheduleTemplatePreview.vue'
 import type {IScheduleAssignment} from './type'
 import type {ISessionTemplate} from '../session_template/type'
 import {isGroupAssignment, getTargetName} from './type'
@@ -357,15 +372,10 @@ const TARGET_TYPES = [
   {value: 'group', label: 'Groupe', description: 'Affecter à un groupe d\'employés', icon: IconUsers},
 ]
 
-const DAY_ORDER = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']
-const DAY_FR: Record<string, string> = {
-  Mon: 'Lun', Tue: 'Mar', Wed: 'Mer', Thu: 'Jeu', Fri: 'Ven', Sat: 'Sam', Sun: 'Dim',
-}
-
 // ── State ──────────────────────────────────────────────────────────────────
 const currentStep = ref(0)
 const sessionTemplates = ref<ISessionTemplate[]>([])
-const availableTargets = ref<{ guid: string; name: string; type: string; member_count?: number }[]>([])
+const availableTargets = ref<{ guid: string; name: string; type: string; member_count?: number; employeeCode?: string; department?: string }[]>([])
 
 const form = reactive({
   target_type: (props.assignment?.family ?? 'user') as 'user' | 'group',
@@ -392,8 +402,11 @@ const selectedTemplate = computed(() =>
     sessionTemplates.value.find((t) => t.guid === form.session_template_guid) ?? null
 )
 
+const selectedTarget = computed(() =>
+    availableTargets.value.find(t => t.guid === form.target_guid && t.type === form.target_type) ?? null
+)
 const targetName = computed(() =>
-    availableTargets.value.find((t) => t.guid === form.target_guid)?.name ?? '—'
+    selectedTarget.value?.name ?? (props.assignment ? getTargetName(props.assignment) : '—')
 )
 
 // ── Helpers ────────────────────────────────────────────────────────────────
@@ -405,23 +418,6 @@ function initials(name?: string): string {
 function formatDate(d?: string): string {
   if (!d) return '—'
   return new Date(d).toLocaleDateString('fr-FR', {day: '2-digit', month: 'short', year: 'numeric'})
-}
-
-function templateDaysSummary(tpl: ISessionTemplate): string {
-  const days = DAY_ORDER.filter((d) => {
-    const v = tpl.definition?.[d]
-    return Array.isArray(v) && v.length > 0
-  }).map((d) => DAY_FR[d])
-
-  if (!days.length) return '—'
-
-  for (const d of DAY_ORDER) {
-    const blocks = tpl.definition?.[d]
-    if (blocks && Array.isArray(blocks) && blocks.length > 0) {
-      return `${days.join(', ')} · ${blocks[0].work[0]}–${blocks[0].work[1]}`
-    }
-  }
-  return days.join(', ')
 }
 
 // ── Load data ──────────────────────────────────────────────────────────────
@@ -466,6 +462,8 @@ async function loadTargets() {
         guid: user.guid,
         name: user.name,
         type: 'user',
+        employeeCode: user.employeeCode !== 'N/A' ? user.employeeCode : undefined,
+        department: user.department !== 'N/A' ? user.department : undefined,
       })
     })
 
@@ -501,6 +499,10 @@ function validateStep(step: number): boolean {
   }
   if (step === 2 && !form.start_date) {
     errors.start_date = 'Date de début requise';
+    return false
+  }
+  if (step === 2 && form.end_date && form.end_date < form.start_date) {
+    errors.end_date = 'La date de fin doit être postérieure ou égale à la date de début'
     return false
   }
   return true

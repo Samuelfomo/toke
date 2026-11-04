@@ -102,7 +102,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted } from 'vue';
+import { ref, computed, onMounted, watch } from 'vue';
 import { useRouter } from 'vue-router';
 import { useUserStore } from '@/stores/userStore';
 import { useMemoStore, type Memo } from '@/stores/memoStore';
@@ -173,6 +173,10 @@ const employesFiltreOptions = computed(() => {
     if (memo.destinataireId && memo.destinataireId !== managerGuid.value && memo.destinataireNom && memo.destinataireNom !== 'N/A') {
       map.set(memo.destinataireId, { guid: memo.destinataireId, nom: memo.destinataireNom });
     }
+  }
+  const employeeGuid = getQueryString(route.query.employeeGuid);
+  if (employeeGuid && route.query.action !== 'create' && !map.has(employeeGuid)) {
+    map.set(employeeGuid, { guid: employeeGuid, nom: getQueryString(route.query.employeeName) || employeeGuid });
   }
   return Array.from(map.values()).sort((a, b) => a.nom.localeCompare(b.nom));
 });
@@ -330,6 +334,15 @@ const getQueryString = (value: unknown): string => {
   if (Array.isArray(value)) return value[0] || ''
   return ''
 }
+
+// Applique le filtre lors d'une arrivée depuis la fiche employé, y compris si la vue est réutilisée.
+watch(
+    () => [route.query.employeeGuid, route.query.action],
+    () => {
+      filtres.value.employeId = route.query.action === 'create' ? '' : getQueryString(route.query.employeeGuid);
+    },
+    { immediate: true },
+);
 
 // ── Lifecycle ──────────────────────────────────
 onMounted(async () => {

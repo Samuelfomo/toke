@@ -328,8 +328,8 @@
   </div>
 </template>
 <script setup lang="ts">
-import {ref, computed, onMounted} from 'vue'
-import {useRouter} from 'vue-router'
+import {ref, computed, onMounted, watch} from 'vue'
+import {useRoute, useRouter} from 'vue-router'
 import {
   IconCalendarStats, IconChevronRight, IconPlus, IconLoader2,
   IconUser, IconUsers, IconFilter, IconSearch, IconArrowRight,
@@ -387,6 +387,7 @@ import type {
 const userStore = useUserStore()
 const teamStore = useTeamStore()
 const router = useRouter()
+const route = useRoute()
 
 // ── Constants ──────────────────────────────────────────────────────────────
 const DAY_FR: Record<string, string> = {
@@ -405,6 +406,22 @@ let loadRequestSequence = 0
 
 const filterType = ref<'user' | 'group'>('user')
 const selectedTargetGuid = ref('')
+const getQueryString = (value: unknown): string => {
+  if (typeof value === 'string') return value
+  if (Array.isArray(value) && typeof value[0] === 'string') return value[0]
+  return ''
+}
+
+// La fiche employé fournit uniquement le filtre ; le chargement du planning reste inchangé.
+watch(
+    () => getQueryString(route.query.employeeGuid),
+    employeeGuid => {
+      filterType.value = 'user'
+      selectedTargetGuid.value = employeeGuid
+    },
+    {immediate: true},
+)
+
 const displayMode = ref<PlanningDisplayMode>('detailed')
 const advancedFiltersOpen = ref(false)
 const filterStatus = ref('active')
@@ -515,6 +532,11 @@ const availableTargets = computed(() => {
             map.set(m.user.guid, `${m.user.first_name} ${m.user.last_name}`.trim())
         }
       }
+    }
+    // Conserver l'employé de la fiche dans le sélecteur même sans affectation sur la période.
+    const employeeGuid = getQueryString(route.query.employeeGuid)
+    if (employeeGuid && selectedTargetGuid.value === employeeGuid && !map.has(employeeGuid)) {
+      map.set(employeeGuid, getQueryString(route.query.employeeName) || employeeGuid)
     }
     return Array.from(map.entries())
         .map(([guid, name]) => ({guid, name}))

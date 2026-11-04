@@ -164,14 +164,14 @@
 
           <div class="flex flex-wrap items-center gap-3 px-5 py-4 border-b border-slate-100">
             <!-- Search -->
-            <div class="relative flex-1 min-w-[200px] max-w-xs">
+            <div class="relative flex-1 min-w-[200px] max-w-sm">
               <svg class="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" width="15" height="15" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
               </svg>
               <input
                   type="text"
                   v-model="searchTerm"
-                  placeholder="Rechercher une équipe…"
+                  placeholder="Rechercher une équipe ou un employé…"
                   class="w-full pl-9 pr-4 py-2 text-sm bg-white border border-slate-200 rounded-xl focus:outline-none focus:border-[#004AAD] focus:ring-2 focus:ring-[#004AAD]/30 transition-all placeholder:text-slate-400"
               />
             </div>
@@ -961,17 +961,13 @@ const availableDepartments = computed(() => {
 })
 
 // ── Filtering ─────────────────────────────────────────────────────────
+const normalizeSearch = (value: string = ''): string =>
+    value.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().trim().replace(/\s+/g, ' ')
+
+const searchQuery = computed(() => normalizeSearch(searchTerm.value))
+
 const filteredRows = computed(() => {
   let rows = allRows.value
-
-  if (searchTerm.value.trim()) {
-    const q = searchTerm.value.toLowerCase()
-    rows = rows.filter(r =>
-        r.name.toLowerCase().includes(q) ||
-        r.managerName?.toLowerCase().includes(q) ||
-        r.subtitle?.toLowerCase().includes(q)
-    )
-  }
 
   if (filterStatus.value === 'active') rows = rows.filter(r => r.active !== false)
   if (filterStatus.value === 'inactive') rows = rows.filter(r => r.active === false)
@@ -981,6 +977,22 @@ const filteredRows = computed(() => {
         r.department?.toLowerCase() === filterDepartment.value.toLowerCase() ||
         r.members?.some(m => m.department?.toLowerCase() === filterDepartment.value.toLowerCase())
     )
+  }
+
+  const query = searchQuery.value
+  if (query) {
+    rows = rows.flatMap(row => {
+      const teamMatches = [row.name, row.subtitle].some(value => normalizeSearch(value).includes(query))
+      const members = (row.members ?? []).filter(member =>
+          normalizeSearch(`${member.first_name ?? ''} ${member.last_name ?? ''}`).includes(query) ||
+          normalizeSearch(`${member.last_name ?? ''} ${member.first_name ?? ''}`).includes(query)
+      )
+      const managerMatches = normalizeSearch(row.managerName).includes(query)
+
+      if (!teamMatches && !managerMatches && members.length === 0) return []
+      // Une équipe trouvée conserve tous ses membres ; un nom d'employé ne montre que les correspondances.
+      return [{ ...row, members: teamMatches ? row.members : members }]
+    })
   }
 
   return rows
@@ -1004,7 +1016,20 @@ const changePage = (page: number) => {
   if (page >= 1 && page <= totalPages.value) currentPage.value = page
 }
 
-watch(filteredRows, () => { currentPage.value = 1 })
+let expandedBeforeSearch: Set<string> | null = null
+
+watch(filteredRows, rows => {
+  currentPage.value = 1
+  groupPages.value = new Map()
+
+  if (searchQuery.value) {
+    if (expandedBeforeSearch === null) expandedBeforeSearch = new Set(expandedRows.value)
+    expandedRows.value = new Set(rows.filter(row => row.isExpandable && row.members?.length).map(row => row.key))
+  } else if (expandedBeforeSearch !== null) {
+    expandedRows.value = expandedBeforeSearch
+    expandedBeforeSearch = null
+  }
+})
 
 // ── Context menu ──────────────────────────────────────────────────────
 const toggleRowMenu = (key: string, event: MouseEvent) => {
