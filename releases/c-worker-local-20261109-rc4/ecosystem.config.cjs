@@ -1,0 +1,1 @@
+module.exports={apps:[{name:'toke-rotation',cwd:__dirname,script:'run.mjs',instances:1,exec_mode:'fork',autorestart:false,kill_timeout:45000,env_production:{NODE_ENV:'production',TZ:'Africa/Douala',C_WORKER_TENANT_CACHE_FILE:process.env.C_WORKER_TENANT_CACHE_FILE}}]};

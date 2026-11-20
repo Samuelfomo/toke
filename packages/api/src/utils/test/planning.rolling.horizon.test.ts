@@ -141,3 +141,28 @@ test('a committed guard creates a boundary continuation for a later rolling wind
   assert.equal(boundary.guardContinuations[0]?.continuationDate, '2026-09-21');
   assert.equal(boundary.guardContinuations[0]?.continuationTemplate.guid, 'continuation');
 });
+
+test('fixed alternation observations are kept only for committed and requested dates', async () => {
+  const { mergeRollingDiagnostics } = await import('../planning.rolling.horizon.js');
+  const { projectEngineResultToRequestedPeriod } = await import('../planning.horizon.js');
+  const windows = buildRollingWindows('2026-12-28', '2027-01-10');
+  const chunks = windows.map(window => {
+    const result = fakeResult(window.solveFrom, window.solveTo);
+    result.diagnostics.fixedAlternationEvaluation = {
+      contractVersion: 1, employeeGuids: ['e1', 'e2'],
+      checks: Object.keys(result.items[0]!.schedule).map(date => ({
+        date, kind: 'SHIFT', expected: ['late', 'early'], actual: ['late', 'early'], lockedEmployeeGuids: [],
+      })),
+    };
+    return { result, window };
+  });
+  const diagnostics = mergeRollingDiagnostics(chunks);
+  const checks = diagnostics.fixedAlternationEvaluation!.checks;
+  assert.equal(checks.length, 14);
+  assert.equal(new Set(checks.map(check => check.date)).size, checks.length);
+  const projected = projectEngineResultToRequestedPeriod({ ...fakeResult('2026-12-28', '2027-01-10'), diagnostics }, {
+    solveFrom: '2026-12-28', solveTo: '2027-01-10', requestedFrom: '2026-12-30', requestedTo: '2027-01-05',
+    expandedBeforeDays: 2, expandedAfterDays: 5, completeWeekExpansionApplied: true,
+  });
+  assert.equal(projected.diagnostics.fixedAlternationEvaluation!.checks.length, 7);
+});

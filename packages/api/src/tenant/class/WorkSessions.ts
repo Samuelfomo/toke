@@ -1,3 +1,4 @@
+import type { ClockInOptions } from '../database/clock-in.options.js';
 import {
   ClockInData,
   ClockOutData,
@@ -56,8 +57,8 @@ export default class WorkSessions extends WorkSessionsModel {
     return new WorkSessions().listBySite(site_id);
   }
 
-  static async _findActiveSessionByUser(user: number): Promise<WorkSessions | null> {
-    return new WorkSessions().findActiveUserSession(user);
+  static async _findActiveSessionByUser(user: number, clockOptions: ClockInOptions = {}): Promise<WorkSessions | null> {
+    return new WorkSessions().findActiveUserSession(user, clockOptions);
   }
 
   static async _detectAbandonedSessions(
@@ -149,7 +150,7 @@ export default class WorkSessions extends WorkSessionsModel {
     latitude: number,
     longitude: number,
     gps_accuracy?: number,
-    device?: number,
+    device?: number, clockOptions: ClockInOptions = {},
   ): Promise<{
     access_granted: boolean;
     distance_from_center: number;
@@ -163,7 +164,7 @@ export default class WorkSessions extends WorkSessionsModel {
   }> {
     try {
       // 1. Récupérer site avec données géospatiales
-      const siteObj = await Site._load(site);
+      const siteObj = await Site._load(site, undefined, clockOptions);
       if (!siteObj) {
         console.error(`❌ Site ${site} introuvable pour validation géofencing`);
         return {
@@ -197,7 +198,7 @@ export default class WorkSessions extends WorkSessionsModel {
       let deviceObj: Device | null = null;
 
       if (device) {
-        deviceObj = await Device._load(device);
+        deviceObj = await Device._load(device, undefined, clockOptions);
         if (deviceObj && deviceObj.getCustomGeofenceRadius()) {
           customDeviceRadius = deviceObj.getCustomGeofenceRadius();
           console.log(`📱 Device ${device} a un rayon personnalisé: ${customDeviceRadius}m`);
@@ -596,7 +597,7 @@ ${isCustomRadiusUsed ? '⚡ Rayon personnalisé device appliqué' : ''}
 
   // === MÉTHODES MÉTIER - CROSS-DAY ===
 
-  async calculateDurations(): Promise<{
+  async calculateDurations(clockOptions: ClockInOptions = {}): Promise<{
     total_work_duration: string | null;
     total_pause_duration: string | null;
     net_work_time: string | null;
@@ -605,7 +606,7 @@ ${isCustomRadiusUsed ? '⚡ Rayon personnalisé device appliqué' : ''}
       throw new Error('Session must be saved before calculating durations');
     }
 
-    return await this.calculateSessionDuration(this.id);
+    return await this.calculateSessionDuration(this.id, clockOptions);
   }
 
   async getOvertimeHours(): Promise<number> {
@@ -703,9 +704,9 @@ ${isCustomRadiusUsed ? '⚡ Rayon personnalisé device appliqué' : ''}
     return pauses.reduce((total, pause) => total + pause.duration_minutes, 0);
   }
 
-  async isOnPause(): Promise<boolean> {
+  async isOnPause(clockOptions: ClockInOptions = {}): Promise<boolean> {
     if (!this.id) return false;
-    return await this.hasActivePause(this.id);
+    return await this.hasActivePause(this.id, clockOptions);
   }
 
   async LastEntry(): Promise<any> {
@@ -713,9 +714,9 @@ ${isCustomRadiusUsed ? '⚡ Rayon personnalisé device appliqué' : ''}
     return await this.getLastEntry(this.id);
   }
 
-  async activeMission(): Promise<boolean> {
+  async activeMission(clockOptions: ClockInOptions = {}): Promise<boolean> {
     if (!this.id) return false;
-    return await this.hasActiveMission(this.id);
+    return await this.hasActiveMission(this.id, clockOptions);
   }
 
   async getPauseStatusDetailed(): Promise<{
@@ -813,12 +814,12 @@ ${isCustomRadiusUsed ? '⚡ Rayon personnalisé device appliqué' : ''}
     return this.id === undefined;
   }
 
-  async save(): Promise<void> {
+  async save(clockOptions: ClockInOptions = {}): Promise<void> {
     try {
       if (this.isNew()) {
-        await this.create();
+        await this.create(clockOptions);
       } else {
-        await this.update();
+        await this.update(clockOptions);
       }
     } catch (error: any) {
       throw new Error(error.message || error);
@@ -875,8 +876,8 @@ ${isCustomRadiusUsed ? '⚡ Rayon personnalisé device appliqué' : ''}
   //   return new WorkSessions().hydrate(data);
   // }
 
-  async findActiveUserSession(user: number): Promise<WorkSessions | null> {
-    const data = await this.findActiveSessionByUser(user);
+  async findActiveUserSession(user: number, clockOptions: ClockInOptions = {}): Promise<WorkSessions | null> {
+    const data = await this.findActiveSessionByUser(user, clockOptions);
 
     if (!data) return null;
 

@@ -1,3 +1,4 @@
+import type { ClockInOptions } from '../database/clock-in.options.js';
 // src/api/class/FraudAlerts.ts
 
 import { TimezoneConfigUtils } from '@toke/shared';
@@ -231,12 +232,12 @@ export default class FraudAlerts extends FraudAlertsModel {
     return this.id === undefined;
   }
 
-  async save(): Promise<void> {
+  async save(clockOptions: ClockInOptions = {}): Promise<void> {
     try {
       if (this.isNew()) {
-        await this.create();
+        await this.create(clockOptions);
       } else {
-        await this.update();
+        await this.update(clockOptions);
       }
     } catch (error: any) {
       throw new Error(error.message || error);

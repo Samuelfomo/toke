@@ -1,3 +1,4 @@
+import type { ClockInOptions } from '../tenant/database/clock-in.options.js';
 import { RAFamily, ROTATION_GROUP_DEFAULTS, SAFamily } from '@toke/shared';
 
 import SessionTemplate from '../tenant/class/SessionTemplates.js';
@@ -54,18 +55,18 @@ class ScheduleResolutionService {
    * Point d'entrée principal - Résout l'horaire applicable pour un utilisateur à une date donnée
    * Ordre de priorité: exception → rotation → template direct → défaut entreprise
    */
-  async getApplicableSchedule(userId: number, targetDate: Date): Promise<ScheduleResolutionResult> {
+  async getApplicableSchedule(userId: number, targetDate: Date, clockOptions: ClockInOptions = {}): Promise<ScheduleResolutionResult> {
     const resolutionPath: string[] = [];
     const dateStr = this.formatDate(targetDate);
 
     try {
       // 1️⃣ Récupérer l'utilisateur et son groupe actif
-      const userObj = await User._load(userId);
+      const userObj = await User._load(userId, undefined, undefined, undefined, undefined, undefined, clockOptions);
       if (!userObj) {
         throw new Error('User not found');
       }
 
-      const activeGroup = await Groups._load(userId, false, true);
+      const activeGroup = await Groups._load(userId, false, true, undefined, clockOptions);
 
       // 2️⃣ Récupérer toutes les assignations applicables
       // à la date demandée.
@@ -92,7 +93,7 @@ class ScheduleResolutionService {
       const userSchedules = await ScheduleAssignments._listForRelatedOnDate(
         SAFamily.USER,
         userGuid,
-        dateStr,
+        dateStr, undefined, clockOptions,
       );
 
       for (const schedule of userSchedules ?? []) {
@@ -114,7 +115,7 @@ class ScheduleResolutionService {
 
       resolutionPath.push('Checking user rotation assignments');
 
-      const userRotations = await RotationAssignment._listByRelated(RAFamily.USER, userGuid);
+      const userRotations = await RotationAssignment._listByRelated(RAFamily.USER, userGuid, undefined, clockOptions);
 
       for (const rotation of userRotations ?? []) {
         candidates.push({
@@ -145,7 +146,7 @@ class ScheduleResolutionService {
         const groupSchedules = await ScheduleAssignments._listForRelatedOnDate(
           SAFamily.GROUP,
           groupGuid,
-          dateStr,
+          dateStr, undefined, clockOptions,
         );
 
         for (const schedule of groupSchedules ?? []) {
@@ -163,7 +164,7 @@ class ScheduleResolutionService {
         // Rotation de groupe : priorité 100
         resolutionPath.push('Checking group rotation assignments');
 
-        const groupRotations = await RotationAssignment._listByRelated(RAFamily.GROUP, groupGuid);
+        const groupRotations = await RotationAssignment._listByRelated(RAFamily.GROUP, groupGuid, undefined, clockOptions);
 
         for (const rotation of groupRotations ?? []) {
           candidates.push({
@@ -192,20 +193,20 @@ class ScheduleResolutionService {
         );
 
         if (winner.type === 'schedule') {
-          return await this.buildFromScheduleAssignment(winner.data, dateStr, resolutionPath);
+          return await this.buildFromScheduleAssignment(winner.data, dateStr, resolutionPath, clockOptions);
         } else {
           return await this.buildFromRotationAssignment(
             winner.data,
             targetDate,
             dateStr,
-            resolutionPath,
+            resolutionPath, clockOptions,
           );
         }
       }
 
       // 5️⃣ Fallback: Template par défaut du tenant
       resolutionPath.push('⚠️ No assignments found, using tenant default');
-      const defaultSchedule = await this.resolveFromDefault(userId, this.getDayOfWeek(targetDate));
+      const defaultSchedule = await this.resolveFromDefault(userId, this.getDayOfWeek(targetDate), clockOptions);
 
       if (defaultSchedule) {
         resolutionPath.push(`✅ Default template applied`);
@@ -253,11 +254,11 @@ class ScheduleResolutionService {
    */
   private async resolveFromDefault(
     userId: number,
-    dayOfWeek: string,
+    dayOfWeek: string, clockOptions: ClockInOptions = {},
   ): Promise<ApplicableSchedule | null> {
     // TODO: Implémenter récupération du template par défaut de l'entreprise
 
-    const defaultSessionTemplate = await SessionTemplate._load({}, false, true);
+    const defaultSessionTemplate = await SessionTemplate._load({}, false, true, clockOptions);
     if (defaultSessionTemplate) {
       return await this.buildScheduleFromTemplate(defaultSessionTemplate, dayOfWeek, 'default', {
         session_guid: defaultSessionTemplate.getGuid(),
@@ -277,7 +278,7 @@ class ScheduleResolutionService {
   private async buildFromScheduleAssignment(
     assignment: ScheduleAssignments,
     dateStr: string,
-    resolutionPath: string[],
+    resolutionPath: string[], clockOptions: ClockInOptions = {},
   ): Promise<ScheduleResolutionResult> {
     const snapshot = assignment.getSessionTemplate();
     const template = SessionTemplate.toObject(snapshot);
@@ -308,7 +309,7 @@ class ScheduleResolutionService {
       const parentGuid = assignment.getContinuationOfGuid();
 
       if (parentGuid) {
-        const parent = await ScheduleAssignments._load(parentGuid, true);
+        const parent = await ScheduleAssignments._load(parentGuid, true, clockOptions);
         if (
           parent?.isActive() &&
           !parent.getDeletedAt() &&
@@ -342,7 +343,7 @@ class ScheduleResolutionService {
           start_date: nextDateStr,
           end_date: nextDateStr,
           active: true,
-        });
+        }, undefined, clockOptions);
         const valid = (children ?? []).filter(
           (child) => child.getTenant() === assignment.getTenant() && !child.getDeletedAt(),
         );
@@ -371,9 +372,9 @@ class ScheduleResolutionService {
     assignment: RotationAssignment,
     targetDate: Date,
     dateStr: string,
-    resolutionPath: string[],
+    resolutionPath: string[], clockOptions: ClockInOptions = {},
   ): Promise<ScheduleResolutionResult> {
-    const rotationGroup = await assignment.getRotationGroupObj();
+    const rotationGroup = await assignment.getRotationGroupObj(clockOptions);
 
     if (!rotationGroup) {
       resolutionPath.push('❌ Rotation group not found');
@@ -386,8 +387,8 @@ class ScheduleResolutionService {
     }
 
     const offset = assignment.getOffset() || 0;
-    const templateId = await this.calculateRotationTemplateId(rotationGroup, targetDate, offset);
-    const template = await SessionTemplate._load(templateId);
+    const templateId = await this.calculateRotationTemplateId(rotationGroup, targetDate, offset, clockOptions);
+    const template = await SessionTemplate._load(templateId, undefined, undefined, clockOptions);
 
     if (!templateId) {
       resolutionPath.push('❌ Could not calculate rotation template');
@@ -435,7 +436,7 @@ class ScheduleResolutionService {
   private async calculateRotationTemplateId(
     rotationGroup: RotationGroup,
     targetDate: Date,
-    offset: number,
+    offset: number, clockOptions: ClockInOptions = {},
   ): Promise<number | null> {
     const startDateStr = new Date(rotationGroup.getStartDate()!);
     const rotationStep = rotationGroup.getRotationStep() ?? ROTATION_GROUP_DEFAULTS.ROTATION_STEP;
@@ -445,7 +446,7 @@ class ScheduleResolutionService {
 
     const startDate = new Date(startDateStr);
 
-    const slots = await rotationGroup.getCycleSlots();
+    const slots = await rotationGroup.getCycleSlots(clockOptions);
 
     // const cycleTemplates = slots.find((s) => s.getId());
     const templateIds = slots.map((slot) => slot.getId()).filter((id): id is number => Boolean(id));

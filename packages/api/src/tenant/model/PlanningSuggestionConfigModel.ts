@@ -1,5 +1,7 @@
 import { TimezoneConfigUtils } from '@toke/shared';
 
+import type { FixedAlternationPolicy } from '../../utils/planning.fixed.alternation.js';
+
 import BaseModel from '../database/db.base.js';
 import { tableName } from '../../utils/response.model.js';
 
@@ -58,6 +60,7 @@ export default class PlanningSuggestionConfigModel extends BaseModel {
     weekly_leave_complete_weeks_only: 'weekly_leave_complete_weeks_only',
     post_guard_rest_counts_as_weekly_leave: 'post_guard_rest_counts_as_weekly_leave',
     policy_schema_version: 'policy_schema_version',
+    fixed_alternation_policy: 'fixed_alternation_policy',
     weekly_leave_selector: 'weekly_leave_selector',
     weekly_leave_days_per_employee: 'weekly_leave_days_per_employee',
     weekly_leave_count_mode: 'weekly_leave_count_mode',
@@ -106,6 +109,7 @@ export default class PlanningSuggestionConfigModel extends BaseModel {
   protected weekly_leave_complete_weeks_only: boolean = true;
   protected post_guard_rest_counts_as_weekly_leave: boolean = false;
   protected policy_schema_version: number = 2;
+  protected fixed_alternation_policy: FixedAlternationPolicy | null = null;
   protected weekly_leave_selector: PlanningEmployeePolicySelector = {
     planning_modes: ['ROTATING'],
     guard_pool_relation: 'ANY',
@@ -210,6 +214,7 @@ export default class PlanningSuggestionConfigModel extends BaseModel {
       [this.db.weekly_leave_complete_weeks_only]: this.weekly_leave_complete_weeks_only,
       [this.db.post_guard_rest_counts_as_weekly_leave]: this.post_guard_rest_counts_as_weekly_leave,
       [this.db.policy_schema_version]: this.policy_schema_version,
+      [this.db.fixed_alternation_policy]: this.fixed_alternation_policy,
       [this.db.weekly_leave_selector]: this.weekly_leave_selector,
       [this.db.weekly_leave_days_per_employee]: this.weekly_leave_days_per_employee,
       [this.db.weekly_leave_count_mode]: this.weekly_leave_count_mode,
@@ -281,6 +286,7 @@ export default class PlanningSuggestionConfigModel extends BaseModel {
         [this.db.post_guard_rest_counts_as_weekly_leave]:
           this.post_guard_rest_counts_as_weekly_leave,
         [this.db.policy_schema_version]: this.policy_schema_version,
+        [this.db.fixed_alternation_policy]: this.fixed_alternation_policy,
         [this.db.weekly_leave_selector]: this.weekly_leave_selector,
         [this.db.weekly_leave_days_per_employee]: this.weekly_leave_days_per_employee,
         [this.db.weekly_leave_count_mode]: this.weekly_leave_count_mode,

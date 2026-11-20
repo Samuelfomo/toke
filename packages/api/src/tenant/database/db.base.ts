@@ -1,19 +1,30 @@
-import { QueryTypes, Sequelize } from 'sequelize';
+import { QueryTypes, Sequelize, Transaction } from 'sequelize';
 
 import { TableInitializer } from './db.initializer.js';
 import TenantManager from './db.tenant-manager.js';
+import { rethrowTenantError, TenantContextError } from './tenant.context.js';
 
 /**
  * Classe de base simple pour les modèles avec support multi-tenant
  */
 export default abstract class BaseModel {
-  protected sequelize!: Sequelize;
+  private readonly tenantConnection: Sequelize;
+  protected get sequelize(): Sequelize {
+    TenantManager.assertConnection(this.tenantConnection);
+    return this.tenantConnection;
+  }
+  private model(tableName: string) {
+    TenantManager.assertConnection(this.tenantConnection);
+    const model = TableInitializer.getModel(tableName);
+    if (model.sequelize !== this.tenantConnection) throw new TenantContextError('TENANT_MODEL_MISMATCH');
+    return model;
+  }
 
   // protected constructor() {}
 
   protected constructor() {
     // Init immédiate, pas d'async
-    this.sequelize = TenantManager.getConnectionSync();
+    this.tenantConnection = TenantManager.getConnectionSync();
   }
 
   // // Initialiser la connexion avec le tenant actuel
@@ -27,10 +38,14 @@ export default abstract class BaseModel {
   /**
    * Créer un enregistrement
    */
-  protected async insertOne(tableName: string, data: any): Promise<any> {
+  protected async insertOne(
+    tableName: string,
+    data: any,
+    options: { transaction?: Transaction } = {},
+  ): Promise<any> {
     // await this.ensureInitialized();
-    const model = TableInitializer.getModel(tableName);
-    const result = await model.create(data);
+    const model = this.model(tableName);
+    const result = await model.create(data, options);
     return result.get();
   }
 
@@ -44,7 +59,7 @@ export default abstract class BaseModel {
     options: any = {}, // ✅ Ajouter support des options (order, etc.)
   ): Promise<any> {
     // await this.ensureInitialized();
-    const model = TableInitializer.getModel(tableName);
+    const model = this.model(tableName);
     const result = await model.findOne({ where, ...options });
     return result ? result.get() : null;
   }
@@ -59,7 +74,7 @@ export default abstract class BaseModel {
     options: any = {}, // ✅ options Sequelize (paranoid, order, include…),
   ): Promise<any[]> {
     // await this.ensureInitialized();
-    const model = TableInitializer.getModel(tableName);
+    const model = this.model(tableName);
 
     // ✅ ORDER BY default : created_at DESC (sauf si options.order déjà fourni)
     if (!options.order) {
@@ -90,7 +105,7 @@ export default abstract class BaseModel {
     options: any = {},
   ): Promise<number> {
     // await this.ensureInitialized();
-    const model = TableInitializer.getModel(tableName);
+    const model = this.model(tableName);
     const [affectedCount] = await model.update(data, { where, ...options });
     return affectedCount;
   }
@@ -100,7 +115,7 @@ export default abstract class BaseModel {
    */
   protected async deleteOne(tableName: string, where: any): Promise<boolean> {
     // await this.ensureInitialized();
-    const model = TableInitializer.getModel(tableName);
+    const model = this.model(tableName);
     const deletedCount = await model.destroy({ where });
     return deletedCount > 0;
   }
@@ -110,7 +125,7 @@ export default abstract class BaseModel {
    */
   protected async count(tableName: string, where: any = {}): Promise<number> {
     // await this.ensureInitialized();
-    const model = TableInitializer.getModel(tableName);
+    const model = this.model(tableName);
     return await model.count({ where });
   }
 
@@ -131,7 +146,7 @@ export default abstract class BaseModel {
     where: Record<string, any> = {},
   ): Promise<Record<string, number>> {
     // await this.ensureInitialized();
-    const model = TableInitializer.getModel(tableName);
+    const model = this.model(tableName);
 
     const options: any = {
       where,
@@ -177,7 +192,7 @@ export default abstract class BaseModel {
   protected async findLastModification(tableName: string): Promise<Date | null> {
     try {
       // await this.ensureInitialized();
-      const model = TableInitializer.getModel(tableName);
+      const model = this.model(tableName);
 
       // if (!model) {
       //   console.error(`❌ Modèle '${tableName}' non trouvé pour génération GUID`);
@@ -188,6 +203,7 @@ export default abstract class BaseModel {
 
       return maxUpdatedAt || null;
     } catch (error) {
+      rethrowTenantError(error);
       console.error('❌ Erreur récupération dernière modification:', error);
       return null;
     }
@@ -199,7 +215,7 @@ export default abstract class BaseModel {
   protected async guidGenerator(tableName: string, length: number = 6): Promise<number | null> {
     try {
       // await this.ensureInitialized();
-      const model = TableInitializer.getModel(tableName);
+      const model = this.model(tableName);
 
       if (!model) {
         console.error(`❌ Modèle '${tableName}' non trouvé pour génération GUID`);
@@ -223,6 +239,7 @@ export default abstract class BaseModel {
 
       return guid;
     } catch (error: any) {
+      rethrowTenantError(error);
       console.error(`❌ Erreur génération GUID pour '${tableName}':`, error.message);
       return null;
     }
@@ -235,10 +252,11 @@ export default abstract class BaseModel {
   protected async randomGuidGenerator(
     tableName: string,
     size: number = 16,
+    options: { transaction?: Transaction } = {},
   ): Promise<string | null> {
     try {
       // await this.ensureInitialized();
-      const model = TableInitializer.getModel(tableName);
+      const model = this.model(tableName);
 
       if (!model) {
         console.error(`❌ Modèle '${tableName}' non trouvé pour génération GUID`);
@@ -250,7 +268,7 @@ export default abstract class BaseModel {
         return null;
       }
 
-      const maxId = ((await model.max('id')) as number) || 0;
+      const maxId = ((await model.max('id', options)) as number) || 0;
       const nextId = (maxId + 1).toString();
 
       // Taille du préfixe = taille totale - taille du nextId
@@ -277,6 +295,7 @@ export default abstract class BaseModel {
 
       return guid;
     } catch (error: any) {
+      rethrowTenantError(error);
       console.error(`❌ Erreur génération GUID pour '${tableName}':`, error.message);
       return null;
     }
@@ -291,7 +310,7 @@ export default abstract class BaseModel {
   ): Promise<string | null> {
     try {
       // await this.ensureInitialized();
-      const model = TableInitializer.getModel(tableName);
+      const model = this.model(tableName);
       if (!model) {
         console.error(`❌ Modèle '${tableName}' non trouvé pour génération token temporel`);
         return null;
@@ -301,6 +320,7 @@ export default abstract class BaseModel {
 
       return null; // placeholder
     } catch (error: any) {
+      rethrowTenantError(error);
       console.error(`❌ Erreur génération token temporel pour '${tableName}':`, error.message);
       return null;
     }
@@ -330,6 +350,7 @@ export default abstract class BaseModel {
       );
       return uuid;
     } catch (error: any) {
+      rethrowTenantError(error);
       console.error(`❌ Erreur génération UUID PostgreSQL pour '${tableName}':`, error.message);
       return null;
     }

@@ -196,23 +196,53 @@ export class UserService {
     }
   }
 
-  static async listByManager(reference: string, manager: string) {
+  static async listByManager(
+    reference: string,
+    manager: string,
+    params: Record<string, unknown> = {},
+  ) {
     try {
       const api = await getApiClient(reference);
-      return await api.get(`${memoBaseUrl}/list?supervisor=${encodeURIComponent(manager)}`);
+      return await api.get(`${memoBaseUrl}/list`, {
+        params: { ...params, supervisor: manager },
+      });
     } catch (error: any) {
       return (
         error.response ?? {
           status: HttpStatus.INTERNAL_ERROR,
           data: {
-            success: false,
-            error: {
-              code: 'memo_list_proxy_failed',
-              message: error.message,
+            data: {
+              error: {
+                code: 'memo_list_proxy_failed',
+                message: error.message,
+              },
             },
           },
         }
       );
+    }
+  }
+
+  static async markMemoAsRead(reference: string, memoGuid: string, userGuid: string) {
+    try {
+      const api = await getApiClient(reference);
+
+      return await api.patch(`${memoBaseUrl}/${encodeURIComponent(memoGuid)}/read`, {
+        user_guid: userGuid,
+      });
+    } catch (error: any) {
+      if (error.response) return error.response;
+
+      return {
+        status: HttpStatus.INTERNAL_ERROR,
+        data: {
+          success: false,
+          error: {
+            code: 'memo_read_proxy_failed',
+            message: 'Unable to update memo read status',
+          },
+        },
+      };
     }
   }
 

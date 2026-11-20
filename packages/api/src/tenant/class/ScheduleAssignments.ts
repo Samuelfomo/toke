@@ -1,3 +1,4 @@
+import type { ClockInOptions } from '../database/clock-in.options.js';
 import { SAFamily, SCHEDULE_ASSIGNMENTS_DEFAULTS, TimezoneConfigUtils } from '@toke/shared';
 
 import ScheduleAssignmentsModel from '../model/ScheduleAssignmentsModel.js';
@@ -25,15 +26,15 @@ export default class ScheduleAssignments extends ScheduleAssignmentsModel {
   // MÉTHODES STATIQUES DE CHARGEMENT
   // ============================================
 
-  static _load(identifier: any, byGuid: boolean = false): Promise<ScheduleAssignments | null> {
-    return new ScheduleAssignments().load(identifier, byGuid);
+  static _load(identifier: any, byGuid: boolean = false, clockOptions: ClockInOptions = {}): Promise<ScheduleAssignments | null> {
+    return new ScheduleAssignments().load(identifier, byGuid, clockOptions);
   }
 
   static _list(
     conditions: Record<string, any> = {},
-    paginationOptions: { offset?: number; limit?: number } = {},
+    paginationOptions: { offset?: number; limit?: number } = {}, clockOptions: ClockInOptions = {},
   ): Promise<ScheduleAssignments[] | null> {
-    return new ScheduleAssignments().list(conditions, paginationOptions);
+    return new ScheduleAssignments().list(conditions, paginationOptions, clockOptions);
   }
 
   static _listByRelated(
@@ -70,9 +71,9 @@ export default class ScheduleAssignments extends ScheduleAssignmentsModel {
     family: SAFamily,
     related: string,
     date: string,
-    paginationOptions: { offset?: number; limit?: number } = {},
+    paginationOptions: { offset?: number; limit?: number } = {}, clockOptions: ClockInOptions = {},
   ): Promise<ScheduleAssignments[] | null> {
-    return new ScheduleAssignments().listForRelatedOnDate(family, related, date, paginationOptions);
+    return new ScheduleAssignments().listForRelatedOnDate(family, related, date, paginationOptions, clockOptions);
   }
 
   static _listForRelatedOnPeriod(
@@ -454,13 +455,13 @@ export default class ScheduleAssignments extends ScheduleAssignmentsModel {
   // CHARGEMENT ET LISTING
   // ============================================
 
-  async load(identifier: any, byGuid: boolean = false): Promise<ScheduleAssignments | null> {
+  async load(identifier: any, byGuid: boolean = false, clockOptions: ClockInOptions = {}): Promise<ScheduleAssignments | null> {
     let data = null;
 
     if (byGuid) {
-      data = await this.findByGuid(identifier);
+      data = await this.findByGuid(identifier, undefined, clockOptions);
     } else {
-      data = await this.find(Number(identifier));
+      data = await this.find(Number(identifier), undefined, clockOptions);
     }
 
     if (!data) return null;
@@ -469,9 +470,9 @@ export default class ScheduleAssignments extends ScheduleAssignmentsModel {
 
   async list(
     conditions: Record<string, any> = {},
-    paginationOptions: { offset?: number; limit?: number } = {},
+    paginationOptions: { offset?: number; limit?: number } = {}, clockOptions: ClockInOptions = {},
   ): Promise<ScheduleAssignments[] | null> {
-    const dataset = await this.listAll(conditions, paginationOptions);
+    const dataset = await this.listAll(conditions, paginationOptions, clockOptions);
     if (!dataset || dataset.length === 0) return null;
     return dataset.map((data) => new ScheduleAssignments().hydrate(data));
   }
@@ -518,9 +519,9 @@ export default class ScheduleAssignments extends ScheduleAssignmentsModel {
     family: SAFamily,
     related: string,
     date: string,
-    paginationOptions: { offset?: number; limit?: number } = {},
+    paginationOptions: { offset?: number; limit?: number } = {}, clockOptions: ClockInOptions = {},
   ): Promise<ScheduleAssignments[] | null> {
-    const dataset = await this.listAllForRelatedOnDate(family, related, date, paginationOptions);
+    const dataset = await this.listAllForRelatedOnDate(family, related, date, paginationOptions, clockOptions);
     if (!dataset || dataset.length === 0) return null;
     return dataset.map((data) => new ScheduleAssignments().hydrate(data));
   }

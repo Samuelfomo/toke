@@ -1,3 +1,4 @@
+import type { ClockInOptions } from '../database/clock-in.options.js';
 import {
   PointageType,
   SessionStatus,
@@ -54,8 +55,8 @@ export default class WorkSessionsModel extends BaseModel {
 
   // === RECHERCHES DE BASE ===
 
-  protected async find(id: number): Promise<any> {
-    return await this.findOne(this.db.tableName, { [this.db.id]: id });
+  protected async find(id: number, clockOptions: ClockInOptions = {}): Promise<any> {
+    return await this.findOne(this.db.tableName, { [this.db.id]: id }, { transaction: clockOptions.transaction });
   }
 
   protected async findByGuid(guid: string): Promise<any> {
@@ -79,7 +80,7 @@ export default class WorkSessionsModel extends BaseModel {
   //   });
   // }
 
-  protected async findActiveSessionByUser(user: number): Promise<any> {
+  protected async findActiveSessionByUser(user: number, clockOptions: ClockInOptions = {}): Promise<any> {
     return await this.findOne(
       this.db.tableName,
       {
@@ -89,12 +90,12 @@ export default class WorkSessionsModel extends BaseModel {
           [Op.is]: null,
         },
       },
-      {
+      { ...({
         order: [
           [this.db.session_start_at, 'DESC'],
           [this.db.id, 'DESC'],
         ],
-      },
+      }), ...(clockOptions.transaction ? { transaction: clockOptions.transaction } : {}) },
     );
   }
 
@@ -190,12 +191,12 @@ export default class WorkSessionsModel extends BaseModel {
 
   // === CALCULS DURÉES ===
 
-  protected async calculateSessionDuration(session: number): Promise<{
+  protected async calculateSessionDuration(session: number, clockOptions: ClockInOptions = {}): Promise<{
     total_work_duration: string | null;
     total_pause_duration: string | null;
     net_work_time: string | null;
   }> {
-    const sessionData = await this.find(session);
+    const sessionData = await this.find(session, clockOptions);
 
     if (!sessionData || !sessionData.session_start_at) {
       return {
@@ -214,7 +215,7 @@ export default class WorkSessionsModel extends BaseModel {
     const totalMs = endTime.getTime() - startTime.getTime();
 
     // Récupérer les pauses
-    const pauses = await this.getPausesHistory(session);
+    const pauses = await this.getPausesHistory(session, clockOptions);
 
     // Calculer durée totale des pauses
     let totalPauseMinutes = 0;
@@ -303,7 +304,7 @@ export default class WorkSessionsModel extends BaseModel {
   //   return pausePairs;
   // }
 
-  protected async getPausesHistory(session: number): Promise<any[]> {
+  protected async getPausesHistory(session: number, clockOptions: ClockInOptions = {}): Promise<any[]> {
     const pauses = await this.findAll(
       tableName.TIME_ENTRIES,
       {
@@ -314,6 +315,7 @@ export default class WorkSessionsModel extends BaseModel {
       },
       {},
       {
+        transaction: clockOptions.transaction,
         order: [['clocked_at', 'ASC']],
       },
     );
@@ -356,7 +358,7 @@ export default class WorkSessionsModel extends BaseModel {
   //   return lastPauseEntry?.pointage_type === PointageType.PAUSE_START;
   // }
 
-  protected async hasActivePause(session: number): Promise<boolean> {
+  protected async hasActivePause(session: number, clockOptions: ClockInOptions = {}): Promise<boolean> {
     const lastPauseEntry = await this.findOne(
       tableName.TIME_ENTRIES,
       {
@@ -366,7 +368,7 @@ export default class WorkSessionsModel extends BaseModel {
         },
       },
       {
-        order: [['server_received_at', 'DESC']], // ✅ Récupérer la plus récente
+        transaction: clockOptions.transaction, order: [['server_received_at', 'DESC']], // ✅ Récupérer la plus récente
       },
     );
 
@@ -411,14 +413,14 @@ export default class WorkSessionsModel extends BaseModel {
   //   return lastEntry?.pointage_type === PointageType.EXTERNAL_MISSION;
   // }
 
-  protected async hasActiveMission(session: number): Promise<boolean> {
+  protected async hasActiveMission(session: number, clockOptions: ClockInOptions = {}): Promise<boolean> {
     if (!session) return false;
 
     // ✅ Une seule requête optimisée
     const lastEntry = await this.findOne(
       tableName.TIME_ENTRIES,
       { session: session },
-      { order: [['server_received_at', 'DESC']] },
+      { transaction: clockOptions.transaction, order: [['server_received_at', 'DESC']] },
     );
 
     // Mission active si le dernier pointage est EXTERNAL_MISSION
@@ -470,10 +472,10 @@ export default class WorkSessionsModel extends BaseModel {
 
   // === CRUD OPERATIONS ===
 
-  protected async create(): Promise<void> {
+  protected async create(clockOptions: ClockInOptions = {}): Promise<void> {
     await this.validate();
 
-    const guid = await this.randomGuidGenerator(this.db.tableName);
+    const guid = await this.randomGuidGenerator(this.db.tableName, undefined, { ...(clockOptions.transaction ? { transaction: clockOptions.transaction } : {}) });
     if (!guid) {
       throw new Error(WORK_SESSIONS_ERRORS?.GUID_GENERATION_FAILED);
     }
@@ -492,7 +494,7 @@ export default class WorkSessionsModel extends BaseModel {
       [this.db.end_latitude]: this.end_latitude,
       [this.db.end_longitude]: this.end_longitude,
       // [this.db.memo]: this.memo,
-    });
+    }, { ...(clockOptions.transaction ? { transaction: clockOptions.transaction } : {}) });
 
     if (!lastID) {
       throw new Error(WORK_SESSIONS_ERRORS?.CREATION_FAILED);
@@ -502,7 +504,7 @@ export default class WorkSessionsModel extends BaseModel {
     this.guid = guid;
   }
 
-  protected async update(): Promise<void> {
+  protected async update(clockOptions: ClockInOptions = {}): Promise<void> {
     await this.validate();
 
     if (!this.id) {
@@ -521,7 +523,7 @@ export default class WorkSessionsModel extends BaseModel {
     if (this.end_longitude !== undefined) updateData[this.db.end_longitude] = this.end_longitude;
     // if (this.memo !== undefined) updateData[this.db.memo] = this.memo;
 
-    const updated = await this.updateOne(this.db.tableName, updateData, { [this.db.id]: this.id });
+    const updated = await this.updateOne(this.db.tableName, updateData, { [this.db.id]: this.id }, { ...(clockOptions.transaction ? { transaction: clockOptions.transaction } : {}) });
 
     if (!updated) {
       throw new Error(WORK_SESSIONS_ERRORS?.UPDATE_FAILED || 'Session update failed');

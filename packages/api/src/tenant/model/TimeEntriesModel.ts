@@ -1,3 +1,4 @@
+import type { ClockInOptions } from '../database/clock-in.options.js';
 import {
   PointageStatus,
   PointageType,
@@ -107,34 +108,34 @@ export default class TimeEntriesModel extends BaseModel {
 
   // === 1. RECHERCHES DE BASE ===
 
-  protected async find(id: number): Promise<any> {
-    return await this.findOne(this.db.tableName, { [this.db.id]: id });
+  protected async find(id: number, clockOptions: ClockInOptions = {}): Promise<any> {
+    return await this.findOne(this.db.tableName, { [this.db.id]: id }, { ...(clockOptions.transaction ? { transaction: clockOptions.transaction } : {}) });
   }
 
-  protected async findByGuid(guid: string): Promise<any> {
-    return await this.findOne(this.db.tableName, { [this.db.guid]: guid });
+  protected async findByGuid(guid: string, clockOptions: ClockInOptions = {}): Promise<any> {
+    return await this.findOne(this.db.tableName, { [this.db.guid]: guid }, { ...(clockOptions.transaction ? { transaction: clockOptions.transaction } : {}) });
   }
 
-  protected async findByExternalId(user: number, external_id: string): Promise<any> {
+  protected async findByExternalId(user: number, external_id: string, clockOptions: ClockInOptions = {}): Promise<any> {
     return await this.findOne(this.db.tableName, {
       [this.db.user]: user,
       [this.db.external_id]: external_id,
-    });
+    }, { ...(clockOptions.transaction ? { transaction: clockOptions.transaction } : {}) });
   }
 
   protected async listAll(
     conditions: Record<string, any> = {},
     paginationOptions: { offset?: number; limit?: number } = {},
-    options: any = {},
+    options: any = {}, clockOptions: ClockInOptions = {},
   ): Promise<any[]> {
-    return await this.findAll(this.db.tableName, conditions, paginationOptions, options);
+    return await this.findAll(this.db.tableName, conditions, paginationOptions, { ...(options), ...(clockOptions.transaction ? { transaction: clockOptions.transaction } : {}) });
   }
 
   protected async listAllBySession(
     session: number,
-    paginationOptions: { offset?: number; limit?: number } = {},
+    paginationOptions: { offset?: number; limit?: number } = {}, clockOptions: ClockInOptions = {},
   ): Promise<any[]> {
-    return await this.listAll({ [this.db.session]: session }, paginationOptions);
+    return await this.listAll({ [this.db.session]: session }, paginationOptions, undefined, clockOptions);
   }
 
   protected async listAllByUser(
@@ -738,10 +739,10 @@ export default class TimeEntriesModel extends BaseModel {
 
   // === 9. CRUD OPERATIONS ===
 
-  protected async create(): Promise<void> {
+  protected async create(clockOptions: ClockInOptions = {}): Promise<void> {
     await this.validate();
 
-    const guid = await this.randomGuidGenerator(this.db.tableName);
+    const guid = await this.randomGuidGenerator(this.db.tableName, undefined, { ...(clockOptions.transaction ? { transaction: clockOptions.transaction } : {}) });
     if (!guid) {
       throw new Error(TIME_ENTRIES_ERRORS?.GUID_GENERATION_FAILED);
     }
@@ -776,7 +777,7 @@ export default class TimeEntriesModel extends BaseModel {
       [this.db.correction_reason]: this.correction_reason,
       [this.db.is_fallback_checkin]: this.is_fallback_checkin,
       [this.db.image_url]: this.image_url,
-    });
+    }, { ...(clockOptions.transaction ? { transaction: clockOptions.transaction } : {}) });
 
     if (!lastID) {
       throw new Error(TIME_ENTRIES_ERRORS?.CREATION_FAILED);
@@ -786,7 +787,7 @@ export default class TimeEntriesModel extends BaseModel {
     this.guid = guid;
   }
 
-  protected async update(): Promise<void> {
+  protected async update(clockOptions: ClockInOptions = {}): Promise<void> {
     await this.validate();
 
     if (!this.id) {
@@ -806,7 +807,7 @@ export default class TimeEntriesModel extends BaseModel {
     if (this.correction_reason !== undefined)
       updateData[this.db.correction_reason] = this.correction_reason;
 
-    const updated = await this.updateOne(this.db.tableName, updateData, { [this.db.id]: this.id });
+    const updated = await this.updateOne(this.db.tableName, updateData, { [this.db.id]: this.id }, { ...(clockOptions.transaction ? { transaction: clockOptions.transaction } : {}) });
 
     if (!updated) {
       throw new Error(TIME_ENTRIES_ERRORS?.UPDATE_FAILED || 'Time entry update failed');
@@ -817,10 +818,10 @@ export default class TimeEntriesModel extends BaseModel {
     return await this.deleteOne(this.db.tableName, { [this.db.id]: id });
   }
 
-  protected async createWaypoint(): Promise<void> {
+  protected async createWaypoint(clockOptions: ClockInOptions = {}): Promise<void> {
     this.validateExternalIdForCreation();
 
-    const guid = await this.randomGuidGenerator(this.db.tableName);
+    const guid = await this.randomGuidGenerator(this.db.tableName, undefined, { ...(clockOptions.transaction ? { transaction: clockOptions.transaction } : {}) });
     if (!guid) {
       throw Error(TIME_ENTRIES_ERRORS?.GUID_GENERATION_FAILED);
     }
@@ -852,7 +853,7 @@ export default class TimeEntriesModel extends BaseModel {
       [this.db.correction_reason]: this.correction_reason,
       [this.db.is_fallback_checkin]: this.is_fallback_checkin,
       [this.db.image_url]: this.image_url,
-    });
+    }, { ...(clockOptions.transaction ? { transaction: clockOptions.transaction } : {}) });
 
     this.id = typeof lastID === 'object' ? lastID.id : lastID;
     this.guid = guid;
@@ -917,14 +918,14 @@ export default class TimeEntriesModel extends BaseModel {
     }
 
     // Validation GPS
-    if (!this.latitude) {
+    if (this.latitude === undefined || this.latitude === null) {
       throw new Error(TIME_ENTRIES_ERRORS.LATITUDE_REQUIRED);
     }
     if (!TimeEntriesValidationUtils.validateLatitude(this.latitude)) {
       throw new Error(TIME_ENTRIES_ERRORS.LATITUDE_INVALID);
     }
 
-    if (!this.longitude) {
+    if (this.longitude === undefined || this.longitude === null) {
       throw new Error(TIME_ENTRIES_ERRORS.LONGITUDE_REQUIRED);
     }
     if (!TimeEntriesValidationUtils.validateLongitude(this.longitude)) {

@@ -11,6 +11,7 @@ import { TimezoneConfigUtils } from '@toke/shared';
 
 import { SocketServer } from '../realtime/SocketServer.js';
 import AuthCacheService from '../tools/auth.cache.service.js';
+import TenantManager from '../tenant/database/db.tenant-manager.js';
 // import dotenv from 'dotenv';
 //
 // dotenv.config();
@@ -50,6 +51,7 @@ import FraudRoute from './routes/manager/fraud.route.js';
 import SponsorRoute from './routes/sponsor.route.js';
 import AppConfigRoute from './routes/app.config.route.js';
 import authRoute from './routes/auth.route.js';
+import userSessionRoute from './routes/user-session.route.js';
 import integratorRoute from './routes/integrator.route.js';
 import LicenseRecordsRoute from './routes/license.records.route.js';
 import MonthlyBillingPreviewRoute from './routes/monthly.billing.preview.route.js';
@@ -316,6 +318,7 @@ export default class App {
     this.app.use(`/profile`, ProfileRoutes);
     this.app.use('/sponsors', SponsorRoute);
     this.app.use('/app', AppConfigRoute);
+    this.app.use('/auth/session', userSessionRoute);
     this.app.use('/auth', authRoute);
     this.app.use('/integrator', integratorRoute);
     this.app.use('/license-records', LicenseRecordsRoute);
@@ -489,6 +492,7 @@ export default class App {
 
       // Fermer la connexion DB
       await Db.close();
+      await TenantManager.closeAllConnections();
 
       console.log('✅ Nettoyage terminé');
     } catch (error) {

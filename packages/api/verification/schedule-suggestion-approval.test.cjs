@@ -157,12 +157,18 @@ function fixture({
     schedule,
     reasons: { '2026-11-11': { source: boundarySource } },
   };
+  let readOnly = false;
   const wrap = (value) => ({
-    get: () => value,
-    update: async (data) => Object.assign(value, data),
+    get: (key) => typeof key === 'string' ? value[key] : value,
+    update: async (data) => {
+      assert.equal(readOnly, false);
+      Object.assign(value, data);
+    },
   });
   const models = {
-    SCHEDULE_SUGGESTION: { findOne: async () => wrap(state.suggestion) },
+    SCHEDULE_SUGGESTION: {
+      findOne: async ({ where }) => where.guid === state.suggestion.guid ? wrap(state.suggestion) : null,
+    },
     SCHEDULE_SUGGESTION_ITEM: { findAll: async () => [wrap(item)] },
     USERS: { findAll: async () => [wrap({ id: 3, guid: 'employee' })] },
     SESSION_TEMPLATES: {
@@ -193,20 +199,28 @@ function fixture({
           )
           .map(wrap),
       create: async (data) => {
+        assert.equal(readOnly, false);
         if (failInsert) throw new Error('insertion failed');
         state.assignments.push(data);
       },
     },
   };
   const sequelize = {
-    query: async () => {},
-    transaction: async (_, callback) => {
+    query: async (sql) => {
+      if (sql === 'SET TRANSACTION READ ONLY') readOnly = true;
+      else assert.equal(readOnly, false);
+    },
+    transaction: async (options, callback) => {
       const before = structuredClone(state);
       try {
-        return await callback({ LOCK: { UPDATE: 'UPDATE', SHARE: 'SHARE' } });
+        const result = await callback({ LOCK: { UPDATE: 'UPDATE', SHARE: 'SHARE' } });
+        assert.equal(readOnly, Boolean(options.readOnly));
+        return result;
       } catch (error) {
         state = before;
         throw error;
+      } finally {
+        readOnly = false;
       }
     },
   };
@@ -233,6 +247,7 @@ function fixture({
   );
   return {
     approve: (date) => service.approveScheduleSuggestion('suggestion', date),
+    preview: (date, guid = 'suggestion') => service.previewScheduleSuggestionApproval(guid, date),
     state: () => state,
     item,
   };
@@ -357,4 +372,119 @@ test('an insertion failure rolls back history and suggestion approval', async ()
   const before = structuredClone(db.state());
   await assert.rejects(db.approve(), /insertion failed/);
   assert.deepEqual(db.state(), before);
+});
+
+test('approval preview is read-only for a valid date, an invalid date and an approved draft', async () => {
+  const db = fixture();
+  const before = structuredClone(db.state());
+  const ready = await db.preview();
+  assert.equal(ready.can_publish, true);
+  assert.equal(ready.effective_from, '2026-11-11');
+  assert.equal(ready.alerts.length, 0);
+  const invalid = await db.preview('2026-02-30');
+  assert.equal(invalid.can_publish, false);
+  assert.equal(invalid.alerts[0].code, 'SUGGESTION_EFFECTIVE_FROM_INVALID');
+  assert.equal(invalid.alerts[0].severity, 'BLOCKING');
+  assert.deepEqual(db.state(), before);
+  await db.approve();
+  assert.equal((await db.preview()).alerts[0].code, 'SUGGESTION_ALREADY_RESOLVED');
+});
+
+test('preview reports a published continuation, skips a suggested rest and proposes the first valid date', async () => {
+  const db = fixture({ existingContinuation: true });
+  db.item.reasons['2026-11-12'] = { source: 'POST_GUARD_REST' };
+  const before = structuredClone(db.state());
+  const result = await db.preview();
+  assert.equal(result.can_publish, false);
+  assert.equal(result.effective_from, '2026-11-11');
+  assert.equal(result.alerts[0].code, 'SUGGESTION_UNSAFE_APPLICATION_BOUNDARY');
+  assert.equal(result.alerts[0].details.conflicts[0].guard_assignment_guid, 'previous-day');
+  assert.equal(result.earliest_valid_date, '2026-11-13');
+  assert.equal(result.suggested_actions[0].effective_from, '2026-11-13');
+  assert.deepEqual(db.state(), before);
+  assert.equal((await db.approve(result.earliest_valid_date)).effectiveFrom, '2026-11-13');
+});
+
+test('preview reports when there is no compatible date within the suggestion', async () => {
+  const db = fixture({ to: '2026-11-11', existingContinuation: true });
+  const result = await db.preview('2026-11-11');
+  assert.equal(result.can_publish, false);
+  assert.equal(result.earliest_valid_date, undefined);
+  assert.equal(result.alerts[1].code, 'SUGGESTION_NO_COMPATIBLE_EFFECTIVE_DATE');
+});
+
+test('approval checks the latest published assignments after a successful preview', async () => {
+  const db = fixture();
+  assert.equal((await db.preview()).can_publish, true);
+  db.state().assignments.push({
+    ...db.state().assignments[0],
+    guid: 'new-continuation',
+    start_date: '2026-11-11',
+    end_date: '2026-11-11',
+    continuation_of_guid: 'new-guard',
+  });
+  const before = structuredClone(db.state());
+  await assert.rejects(db.approve(), errorCode('SUGGESTION_UNSAFE_APPLICATION_BOUNDARY'));
+  assert.deepEqual(db.state(), before);
+});
+
+test('BFF preview uses the same authorization middleware as approval and only the authenticated tenant', async () => {
+  const tenantA = fixture();
+  const tenantB = fixture();
+  tenantB.state().suggestion.guid = 'other-tenant-suggestion';
+  const routes = new Map();
+  const router = {
+    post: (route, ...handlers) => routes.set(route, handlers),
+    get() {},
+    patch() {},
+    delete() {},
+  };
+  const authenticate = (req, res, next) => req.organization ? next() : (res.status = 401);
+  const method = (_req, _res, next) => next();
+  load('../../backend/src/routes/schedule.suggestion.route.ts', {
+    express: { Router: () => router },
+    '@toke/api/dist/middle/ensured-routes.js': { default: { post: () => method, get: () => method, patch: () => method, delete: () => method } },
+    '../tools/tenant.config.js': { TenantConfig: { authenticate } },
+    '../tools/bff.proxy.response.js': {
+      tenantReference: (req) => req.organization,
+      relayTenantApiResponse: (res, result) => { res.data = result; },
+      handleBffRouteError: (res, error) => { res.status = error.status; },
+    },
+    '../services/schedule.suggestion.service.js': {
+      ScheduleSuggestionService: {
+        previewApproval: (tenant, guid, body) =>
+          (tenant === 'A' ? tenantA : tenantB).preview(body.effective_from, guid),
+      },
+    },
+  }, now.toISOString());
+
+  const handlers = routes.get('/:guid/approval-preview');
+  assert.equal(handlers[0], routes.get('/:guid/approve')[0]);
+  async function request(organization, guid) {
+    const req = { organization, params: { guid }, body: { tenant: 'B' } };
+    const res = {};
+    await handlers[0](req, res, () => handlers[1](req, res, () => handlers[2](req, res)));
+    return res;
+  }
+  assert.equal((await request(undefined, 'suggestion')).status, 401);
+  assert.equal((await request('A', 'other-tenant-suggestion')).status, 404);
+  assert.equal((await request('A', 'suggestion')).data.can_publish, true);
+  assert.equal((await request('B', 'other-tenant-suggestion')).data.can_publish, true);
+});
+
+test('preview warns when a published guard continuation remains beyond the replacement period', async () => {
+  const db = fixture();
+  db.state().assignments.push({
+    ...db.state().assignments[0],
+    guid: 'retained-continuation',
+    start_date: '2027-01-01',
+    end_date: '2027-01-01',
+    continuation_of_guid: 'old',
+  });
+  const result = await db.preview();
+  assert.equal(result.can_publish, true);
+  assert.equal(result.alerts[0].severity, 'WARNING');
+  assert.equal(result.alerts[0].details.affected_guards[0].continuation_date, '2027-01-01');
+  await db.approve();
+  assert.equal(db.state().assignments.find((a) => a.guid === 'retained-continuation').active, true);
 });

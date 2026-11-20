@@ -123,15 +123,9 @@ export class MemoEventsService {
    * Aucun memo_content ni pièce jointe n'est poussé dans le socket.
    */
   static emitMemoChanged(clientId: number, payload: MemoRealtimePayload): void {
-    if (!this.io) return;
-
-    const uniqueUsers = [...new Set(payload.affectedUserGuids.filter(Boolean))];
-    for (const userGuid of uniqueUsers) {
-      this.emitToUser(clientId, userGuid, 'memo:changed', {
-        ...payload,
-        affectedUserGuids: uniqueUsers,
-      });
-    }
+    // Stage A: no memo event delivery until session-bound tickets and ACL are implemented.
+    // Keep generic/QR Socket.IO behavior unchanged.
+    return;
   }
 
   static emitToSocket(socketId: string, event: string, payload: any) {

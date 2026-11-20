@@ -1,3 +1,4 @@
+import type { ClockInOptions } from '../database/clock-in.options.js';
 import { RAFamily, SAFamily, TimezoneConfigUtils, USERS_DEFAULTS } from '@toke/shared';
 
 import UserModel from '../model/UserModel.js';
@@ -30,9 +31,9 @@ export default class User extends UserModel {
     byEmail: boolean = false,
     byEmployeeCode: boolean = false,
     byPhoneNumber: boolean = false,
-    byOtp: boolean = false,
+    byOtp: boolean = false, clockOptions: ClockInOptions = {},
   ): Promise<User | null> {
-    return new User().load(identifier, byGuid, byEmail, byEmployeeCode, byPhoneNumber, byOtp);
+    return new User().load(identifier, byGuid, byEmail, byEmployeeCode, byPhoneNumber, byOtp, clockOptions);
   }
   static _loadForRestore(identifier: string): Promise<User | null> {
     return new User().loadForRestore(identifier);
@@ -677,9 +678,9 @@ export default class User extends UserModel {
     }
   }
 
-  async changeEmployeeLicense(): Promise<void> {
+  async changeEmployeeLicense(clockOptions: ClockInOptions = {}): Promise<void> {
     try {
-      await this.updateEmployeeLicense();
+      await this.updateEmployeeLicense(clockOptions);
     } catch (error: any) {
       console.error('⚠️ Error whilst updating the employee licence:', error.message);
       throw new Error(error);
@@ -732,22 +733,22 @@ export default class User extends UserModel {
     byEmail: boolean = false,
     byEmployeeCode: boolean = false,
     byPhoneNumber: boolean = false,
-    byOtp: boolean = false,
+    byOtp: boolean = false, clockOptions: ClockInOptions = {},
   ): Promise<User | null> {
     let data = null;
 
     if (byGuid) {
-      data = await this.findByGuid(identifier);
+      data = await this.findByGuid(identifier, undefined, clockOptions);
     } else if (byEmail) {
-      data = await this.findByEmail(identifier);
+      data = await this.findByEmail(identifier, undefined, clockOptions);
     } else if (byEmployeeCode) {
-      data = await this.findByEmployeeCode(identifier);
+      data = await this.findByEmployeeCode(identifier, undefined, clockOptions);
     } else if (byPhoneNumber) {
-      data = await this.findByPhoneNumber(identifier);
+      data = await this.findByPhoneNumber(identifier, undefined, clockOptions);
     } else if (byOtp) {
-      data = await this.findByAttribut(this.db.otp_token, identifier);
+      data = await this.findByAttribut(this.db.otp_token, identifier, clockOptions);
     } else {
-      data = await this.find(Number(identifier));
+      data = await this.find(Number(identifier), undefined, clockOptions);
     }
 
     if (!data) return null;

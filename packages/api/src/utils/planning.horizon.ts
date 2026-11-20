@@ -62,6 +62,7 @@ export interface ProjectableEngineResult {
   conformityScore: number;
   diagnostics: {
     violations: ProjectableViolation[];
+    fixedAlternationEvaluation?: import('./planning.fixed.alternation.js').FixedAlternationEvaluation;
     coverage: ProjectableCoverage[];
     guardPools: ProjectableGuardPool[];
     weeklyLeaveGroups: ProjectableWeeklyLeaveGroup[];
@@ -249,6 +250,14 @@ export function projectEngineResultToRequestedPeriod<T extends ProjectableEngine
     conformityScore: Math.round(projectedCoverageScore * 0.75 + fairnessScore * 0.25),
     diagnostics: {
       ...result.diagnostics,
+      ...(result.diagnostics.fixedAlternationEvaluation && {
+        fixedAlternationEvaluation: {
+          ...result.diagnostics.fixedAlternationEvaluation,
+          checks: result.diagnostics.fixedAlternationEvaluation.checks.filter(
+            check => inRange(check.date, horizon.requestedFrom, horizon.requestedTo),
+          ),
+        },
+      }),
       violations: result.diagnostics.violations.filter(
         (violation) =>
           !violation.date || inRange(violation.date, horizon.requestedFrom, horizon.requestedTo),

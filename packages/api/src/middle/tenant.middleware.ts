@@ -12,6 +12,7 @@ import TenantCacheService from '../tools/tenant-cache.service.js';
 import CredentialExtractorService from '../tools/credential-extractor.service.js';
 import R from '../tools/response.js';
 import { TableInitializer } from '../tenant/database/db.initializer.js';
+import { createTenantLifetime } from '../tenant/database/tenant.context.js';
 
 declare global {
   namespace Express {
@@ -71,28 +72,45 @@ export const tenantMiddleware = async (
     }
 
     // 4. Définir le tenant actuel dans TenantManager
-    TenantManager.setCurrentTenant(subdomain);
-
-    // 5. Initialiser la connexion DB pour ce tenant
-    const connection = await TenantManager.getConnectionForTenant(subdomain, {
-      host: tenantConfig.host,
-      port: tenantConfig.port,
-      username: tenantConfig.username,
-      password: tenantConfig.password,
-      database: tenantConfig.database,
-    });
-
-    await TableInitializer.initialize(connection);
-
-    // 6. Ajouter les informations à la requête
-    req.tenant = {
-      subdomain,
-      config: tenantConfig,
-      connection,
+    if (res.destroyed || res.writableEnded) return;
+    const operation = createTenantLifetime();
+    const finish = () => {
+      operation.close();
+      res.off('finish', finish);
+      res.off('close', finish);
     };
+    res.once('finish', finish);
+    res.once('close', finish);
+    return TenantManager.runWithTenant(subdomain, () => (async () => {
 
-    console.log(`✅ Tenant '${subdomain}' configuré avec succès`);
-    return next();
+      // 5. Initialiser la connexion DB pour ce tenant
+      const connection = await TenantManager.getConnectionForTenant(subdomain, {
+        host: tenantConfig.host,
+        port: tenantConfig.port,
+        username: tenantConfig.username,
+        password: tenantConfig.password,
+        database: tenantConfig.database,
+      });
+
+      await TableInitializer.initialize(connection);
+
+      // 6. Ajouter les informations à la requête
+      req.tenant = {
+        subdomain,
+        config: tenantConfig,
+        connection,
+      };
+
+      console.log(`✅ Tenant '${subdomain}' configuré avec succès`);
+      return next();
+    })().catch(error => {
+      // Register the rejection handler inside ALS, not in the outer Router.
+      if (res.destroyed || res.writableEnded) {
+        console.error('Tenant operation ended after response close:', error.code || error.name);
+        return;
+      }
+      next(error);
+    }), { lifetime: operation.lifetime });
   } catch (error: any) {
     console.error('❌ Erreur middleware tenant:', error.message);
     return R.handleError(res, HttpStatus.INTERNAL_ERROR, {

@@ -154,8 +154,10 @@ router.get('/tenants', requireIntegrator, async (_req, res) => {
       try {
         const cfg = await TenantCacheService.getTenantConfig(subdomain);
         if (!cfg || cfg.database !== databaseName) continue;
-        const db = await TenantManager.getConnectionForTenant(subdomain, cfg);
-        await db.authenticate();
+        await TenantManager.runTenantOperation(subdomain, async () => {
+          const db = await TenantManager.getConnectionForTenant(subdomain, cfg);
+          await db.authenticate();
+        });
         results.push({ guid: t.guid, name: t.name, subdomain });
       } catch (error) {
         console.warn('[integrator] Tenant non disponible:', subdomain);
@@ -179,19 +181,21 @@ router.get('/tenants/:subdomain/responsibles', requireIntegrator, async (req, re
     const cfg = await TenantCacheService.getTenantConfig(subdomain);
     if (!cfg || cfg.database !== databaseName)
       return res.status(404).json({ message: 'Tenant indisponible' });
-    const db = await TenantManager.getConnectionForTenant(subdomain, cfg);
-    await db.authenticate();
-    const sql = `SELECT u.guid, u.first_name, u.last_name, u.email, ARRAY_AGG(DISTINCT r.code ORDER BY r.code) AS roles
-  FROM "${tableName.USERS}" u JOIN "${tableName.USER_ROLES}" ur
-    ON ur."user" = u.id
-  JOIN "${tableName.ROLES}" r
-    ON r.id = ur.role
-  WHERE u.active = true AND u.deleted_at IS NULL AND UPPER(r.code) IN ('MANAGER', 'ADMIN-RH')
-  GROUP BY u.id, u.guid, u.first_name, u.last_name, u.email
-  ORDER BY u.last_name, u.first_name`;
+    const profiles = await TenantManager.runTenantOperation(subdomain, async () => {
+      const db = await TenantManager.getConnectionForTenant(subdomain, cfg);
+      await db.authenticate();
+      const sql = `SELECT u.guid, u.first_name, u.last_name, u.email, ARRAY_AGG(DISTINCT r.code ORDER BY r.code) AS roles
+    FROM "${tableName.USERS}" u JOIN "${tableName.USER_ROLES}" ur
+      ON ur."user" = u.id
+    JOIN "${tableName.ROLES}" r
+      ON r.id = ur.role
+    WHERE u.active = true AND u.deleted_at IS NULL AND UPPER(r.code) IN ('MANAGER', 'ADMIN-RH')
+    GROUP BY u.id, u.guid, u.first_name, u.last_name, u.email
+    ORDER BY u.last_name, u.first_name`;
 
-    const profiles = await db.query(sql, {
-      type: QueryTypes.SELECT,
+      return await db.query(sql, {
+        type: QueryTypes.SELECT,
+    });
     });
 
     // const sql = `SELECT DISTINCT u.guid, u.first_name, u.last_name, u.email, r.code AS role
@@ -243,23 +247,25 @@ router.post('/context/select', requireIntegrator, async (req: Request, res: Resp
     const cfg = await TenantCacheService.getTenantConfig(subdomain);
     if (!cfg || cfg.database !== databaseName)
       return res.status(404).json({ message: 'Tenant indisponible' });
-    const db = await TenantManager.getConnectionForTenant(subdomain, cfg);
-    await db.authenticate();
-    const sql = `SELECT DISTINCT u.guid, u.email FROM "${tableName.USERS}" u
-                                                          JOIN "${tableName.USER_ROLES}" ur ON ur."user" = u.id
-                                                          JOIN "${tableName.ROLES}" r ON r.id = ur.role
-                 WHERE u.guid = :userGuid
-                   AND u.active = true
-                   AND u.deleted_at IS NULL
-                   AND UPPER(r.code) IN ('MANAGER', 'ADMIN-RH')
-                     LIMIT 1`;
+    const profiles = await TenantManager.runTenantOperation(subdomain, async () => {
+      const db = await TenantManager.getConnectionForTenant(subdomain, cfg);
+      await db.authenticate();
+      const sql = `SELECT DISTINCT u.guid, u.email FROM "${tableName.USERS}" u
+                                                            JOIN "${tableName.USER_ROLES}" ur ON ur."user" = u.id
+                                                            JOIN "${tableName.ROLES}" r ON r.id = ur.role
+                   WHERE u.guid = :userGuid
+                     AND u.active = true
+                     AND u.deleted_at IS NULL
+                     AND UPPER(r.code) IN ('MANAGER', 'ADMIN-RH')
+                       LIMIT 1`;
 
-    const profiles = (await db.query(sql, {
-      replacements: {
-        userGuid: String(userGuid),
-      },
-      type: QueryTypes.SELECT,
-    })) as Array<{ guid: string; email: string }>;
+      return (await db.query(sql, {
+        replacements: {
+          userGuid: String(userGuid),
+        },
+        type: QueryTypes.SELECT,
+      })) as Array<{ guid: string; email: string }>;
+    });
 
     if (!profiles.length) return res.status(403).json({ message: 'Responsable non autorisé' });
 

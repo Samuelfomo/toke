@@ -11,6 +11,12 @@ import Ensure from '../../middle/ensured-routes.js';
 import R from '../../tools/response.js';
 import PlanningSuggestionConfig from '../class/PlanningSuggestionConfig.js';
 import User from '../class/User.js';
+import EmployeePlanningProfile from '../class/EmployeePlanningProfile.js';
+import {
+  FixedAlternationConfigError,
+  matchesFixedReferenceTemplates,
+  parseFixedAlternationPolicy,
+} from '../../utils/planning.fixed.alternation.js';
 
 const router = Router();
 
@@ -22,6 +28,24 @@ const CODES = {
   DELETION_FAILED: 'PLANNING_SUGGESTION_CONFIG_DELETION_FAILED',
   MANAGER_NOT_FOUND: 'PLANNING_SUGGESTION_CONFIG_MANAGER_NOT_FOUND',
 } as const;
+
+async function readFixedAlternation(raw: unknown) {
+  const policy = parseFixedAlternationPolicy(raw);
+  if (!policy?.enabled) return policy;
+
+  const references = await Promise.all(policy.employee_guids.map(async guid => {
+    const user = await User._load(guid, true);
+    const profile = user ? await EmployeePlanningProfile._loadByUser(user.getId()!) : null;
+    if (!profile?.isActive() || !profile.isFixed()) {
+      throw new FixedAlternationConfigError('Les deux collaborateurs doivent avoir un profil FIXED actif dans cette organisation.');
+    }
+    return (await profile.getFixedSessionTemplateObj())?.getGuid();
+  }));
+  if (!matchesFixedReferenceTemplates(policy, references)) {
+    throw new FixedAlternationConfigError('Les deux modèles autorisés doivent correspondre aux modèles fixes des collaborateurs.');
+  }
+  return policy;
+}
 
 router.get('/', Ensure.get(), async (_req: Request, res: Response) => {
   try {
@@ -99,9 +123,13 @@ router.post('/:manager', Ensure.post(), async (req: Request, res: Response) => {
     }
 
     const data = validatePlanningSuggestionConfigCreation(req.body);
+    const fixedAlternation = req.body?.fixed_alternation_policy === undefined
+      ? null
+      : await readFixedAlternation(req.body.fixed_alternation_policy);
 
     const config = new PlanningSuggestionConfig()
       .setName(data.name)
+      .setFixedAlternationPolicy(fixedAlternation)
       .setActive(data.active)
       .setMinRestDaysPerWeek(data.min_rest_days_per_week)
       .setMaxConsecutiveWorkDays(data.max_consecutive_work_days)
@@ -170,6 +198,9 @@ router.put('/:guid', Ensure.put(), async (req: Request, res: Response) => {
       });
     }
 
+    if (req.body?.fixed_alternation_policy !== undefined) {
+      config.setFixedAlternationPolicy(await readFixedAlternation(req.body.fixed_alternation_policy));
+    }
     if (data.name !== undefined) config.setName(data.name);
     if (data.active !== undefined) config.setActive(data.active);
     if (data.min_rest_days_per_week !== undefined) {

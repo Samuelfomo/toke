@@ -1,3 +1,4 @@
+import type { ClockInOptions } from '../tenant/database/clock-in.options.js';
 import { PointageType } from '@toke/shared';
 
 import TimeEntries from '../tenant/class/TimeEntries.js';
@@ -50,8 +51,9 @@ export const findTimeEntryIdempotentReplay = async (
   userId: number,
   externalId: string,
   request: TimeEntryIdempotentRequest,
+  clockOptions: ClockInOptions = {},
 ): Promise<TimeEntryIdempotentReplay | null> => {
-  const existingEntry = await TimeEntries._loadByExternalId(userId, externalId);
+  const existingEntry = await TimeEntries._loadByExternalId(userId, externalId, clockOptions);
 
   if (!existingEntry) {
     return null;

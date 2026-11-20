@@ -1,3 +1,4 @@
+import type { ClockInOptions } from '../database/clock-in.options.js';
 import {
   TimezoneConfigUtils,
   USERS_DEFAULTS,
@@ -111,24 +112,24 @@ export default class UserModel extends BaseModel {
   /**
    * ✅ Exclure les utilisateurs supprimés par défaut
    */
-  protected async find(id: number, includeDeleted: boolean = false): Promise<any> {
+  protected async find(id: number, includeDeleted: boolean = false, clockOptions: ClockInOptions = {}): Promise<any> {
     const conditions: any = { [this.db.id]: id };
 
     if (!includeDeleted) {
       conditions[this.db.deleted_at] = null;
     }
 
-    return await this.findOne(this.db.tableName, conditions);
+    return await this.findOne(this.db.tableName, conditions, { ...(clockOptions.transaction ? { transaction: clockOptions.transaction } : {}) });
   }
 
-  protected async findByGuid(guid: string, includeDeleted: boolean = false): Promise<any> {
+  protected async findByGuid(guid: string, includeDeleted: boolean = false, clockOptions: ClockInOptions = {}): Promise<any> {
     const conditions: any = { [this.db.guid]: guid };
 
     if (!includeDeleted) {
       conditions[this.db.deleted_at] = null;
     }
 
-    return await this.findOne(this.db.tableName, conditions);
+    return await this.findOne(this.db.tableName, conditions, { ...(clockOptions.transaction ? { transaction: clockOptions.transaction } : {}) });
   }
 
   protected async findByEmployeeLicense(
@@ -150,19 +151,19 @@ export default class UserModel extends BaseModel {
     );
   }
 
-  protected async findByEmail(email: string, includeDeleted: boolean = false): Promise<any> {
+  protected async findByEmail(email: string, includeDeleted: boolean = false, clockOptions: ClockInOptions = {}): Promise<any> {
     const conditions: any = { [this.db.email]: email.toLowerCase() };
 
     if (!includeDeleted) {
       conditions[this.db.deleted_at] = null;
     }
 
-    return await this.findOne(this.db.tableName, conditions);
+    return await this.findOne(this.db.tableName, conditions, { ...(clockOptions.transaction ? { transaction: clockOptions.transaction } : {}) });
   }
 
   protected async findByPhoneNumber(
     phone_number: string,
-    includeDeleted: boolean = false,
+    includeDeleted: boolean = false, clockOptions: ClockInOptions = {},
   ): Promise<any> {
     const conditions: any = { [this.db.phone_number]: phone_number };
 
@@ -170,12 +171,12 @@ export default class UserModel extends BaseModel {
       conditions[this.db.deleted_at] = null;
     }
 
-    return await this.findOne(this.db.tableName, conditions);
+    return await this.findOne(this.db.tableName, conditions, { ...(clockOptions.transaction ? { transaction: clockOptions.transaction } : {}) });
   }
 
   protected async findByEmployeeCode(
     employee_code: string,
-    includeDeleted: boolean = false,
+    includeDeleted: boolean = false, clockOptions: ClockInOptions = {},
   ): Promise<any> {
     const conditions: any = { [this.db.employee_code]: employee_code };
 
@@ -183,7 +184,7 @@ export default class UserModel extends BaseModel {
       conditions[this.db.deleted_at] = null;
     }
 
-    return await this.findOne(this.db.tableName, conditions);
+    return await this.findOne(this.db.tableName, conditions, { ...(clockOptions.transaction ? { transaction: clockOptions.transaction } : {}) });
   }
 
   protected async findByEmployeeColor(
@@ -244,11 +245,11 @@ export default class UserModel extends BaseModel {
     });
   }
 
-  protected async findByAttribut(attribute: string, value: any): Promise<any> {
+  protected async findByAttribut(attribute: string, value: any, clockOptions: ClockInOptions = {}): Promise<any> {
     return await this.findOne(this.db.tableName, {
       [attribute]: value,
       [this.db.deleted_at]: null,
-    });
+    }, { ...(clockOptions.transaction ? { transaction: clockOptions.transaction } : {}) });
   }
 
   /**
@@ -487,7 +488,7 @@ export default class UserModel extends BaseModel {
   /**
    * Met à jour la licence employee de l'utilisateur
    */
-  protected async updateEmployeeLicense(): Promise<void> {
+  protected async updateEmployeeLicense(clockOptions: ClockInOptions = {}): Promise<void> {
     if (this.id == null) {
       throw new Error(USERS_ERRORS.ID_REQUIRED);
     }
@@ -496,7 +497,7 @@ export default class UserModel extends BaseModel {
       [this.db.employee_license]: this.employee_license,
     };
 
-    const affected = await this.updateOne(this.db.tableName, updateData, { [this.db.id]: this.id });
+    const affected = await this.updateOne(this.db.tableName, updateData, { [this.db.id]: this.id }, { transaction: clockOptions.transaction });
     if (!affected) {
       throw new Error('Failed to define the user’s active employee licence');
     }

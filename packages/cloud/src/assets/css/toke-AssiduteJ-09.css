@@ -1,0 +1,353 @@
+/*
+ * Style Optimisé pour AttendanceQuickDetailCard (Modal)
+ * Noms de classes redéfinis avec le préfixe 'modal-' pour éviter les conflits.
+ */
+
+/* ========================================
+   CONTENEUR PRINCIPAL DU MODAL
+   ======================================== */
+.modal-attendance-card {
+    background: var(--bg-card);
+    border-radius: var(--border-radius-lg);
+    box-shadow: var(--shadow-lg);
+    padding: var(--space-xl) var(--space-2xl);
+    max-width: 700px;
+    margin: 0 auto;
+    animation: slideIn 0.3s ease-out;
+}
+
+@keyframes slideIn {
+    from {
+        opacity: 0;
+        transform: translateY(-20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* ========================================
+   HEADER - Avatar + Nom + Badge Statut
+   ======================================== */
+.modal-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: var(--space-xl);
+    padding-bottom: var(--space-lg);
+    border-bottom: 2px solid var(--border-light);
+}
+
+.modal-profile-summary {
+    display: flex;
+    align-items: center;
+    gap: var(--space-md);
+}
+
+.modal-avatar {
+    width: 80px;
+    height: 80px;
+    border-radius: var(--border-radius);
+    background: var(--color-primary);
+    color: white;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: var(--font-size-h4);
+    font-weight: var(--font-weight-bold);
+    text-transform: uppercase;
+    box-shadow: var(--shadow);
+    flex-shrink: 0;
+}
+
+.modal-employee-name {
+    font-size: var(--font-size-h5);
+    font-weight: var(--font-weight-bold);
+    color: var(--text-primary);
+    margin: 10px;
+}
+
+.modal-status-badge {
+    padding: 8px 16px;
+    border-radius: var(--border-radius-sm);
+    font-size: var(--font-size-body-sm);
+    font-weight: var(--font-weight-semibold);
+    color: white;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    white-space: nowrap;
+    box-shadow: var(--shadow);
+
+}
+
+.modal-status-badge.status-present {
+    background-color: var(--color-success);
+}
+
+.modal-status-badge.status-late {
+    background-color: var(--color-warning);
+}
+
+.modal-status-badge.status-absent {
+    background-color: var(--color-error);
+}
+
+.modal-status-badge.status-info {
+    background-color: var(--color-info);
+}
+
+/* ========================================
+   GRILLE D'INFORMATIONS QUOTIDIENNES
+   ======================================== */
+.modal-info-grid {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-md);
+    margin-bottom: var(--space-xl);
+}
+
+.modal-info-item {
+    display: flex;
+    align-items: flex-start;
+    gap: var(--space-md);
+    padding: var(--space-md);
+    background: var(--bg-secondary);
+    border-radius: var(--border-radius);
+    transition: transform var(--transition-fast), box-shadow var(--transition-fast);
+}
+
+.modal-info-item:hover {
+    transform: translateX(4px);
+    box-shadow: var(--shadow);
+}
+
+.modal-info-icon {
+    width: 24px;
+    height: 24px;
+    color: var(--color-primary);
+    flex-shrink: 0;
+    margin-top: 2px;
+}
+
+.modal-info-item.modal-late-detail .modal-info-icon {
+    color: var(--color-warning);
+}
+
+.modal-info-item.modal-absence-detail .modal-info-icon {
+    color: var(--color-error);
+}
+
+.modal-info-label {
+    display: block;
+    font-size: var(--font-size-body-sm);
+    color: var(--text-secondary);
+    text-transform: uppercase;
+    font-weight: var(--font-weight-medium);
+    margin-bottom: 4px;
+    letter-spacing: 0.5px;
+}
+
+.modal-overlay-wrapper {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.5);
+    z-index: 1000;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    overflow-y: auto;
+    padding: 20px;
+}
+
+.modal-attendance-card {
+    margin: 0;
+    position: relative;
+}
+
+.modal-info-value {
+    display: block;
+    font-size: var(--font-size-body);
+    color: var(--text-primary);
+    font-weight: var(--font-weight-semibold);
+}
+
+.modal-info-value-warning {
+    color: var(--color-warning);
+}
+
+.modal-info-value-critical {
+    color: var(--color-error);
+}
+
+.back-arrow-link {
+    position: absolute;
+    color: var(--color-primary);
+}
+
+/* ========================================
+   SÉPARATEUR
+   ======================================== */
+.modal-separator {
+    border: none;
+    border-top: 2px solid var(--border-light);
+    margin: var(--space-xl) 0;
+}
+
+/* ========================================
+   ACTIONS RAPIDES (BOUTONS) - TOUS SUR UNE LIGNE
+   ======================================== */
+.modal-quick-actions {
+    display: flex;
+    flex-direction: row;
+    gap: var(--space-sm);
+    margin-bottom: var(--space-lg);
+}
+
+.modal-action-btn {
+    flex: 1;
+    height: 50px;
+    padding: 0 var(--space-md);
+    border: none;
+    border-radius: var(--border-radius-sm);
+    cursor: pointer;
+    font-weight: var(--font-weight-semibold);
+    font-size: var(--font-size-body-sm);
+    transition: all var(--transition-fast);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    color: white;
+    box-shadow: var(--shadow);
+    white-space: nowrap;
+}
+
+.modal-action-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-lg);
+}
+
+.modal-action-btn:active {
+    transform: scale(0.98);
+}
+
+.modal-btn-icon {
+    width: 20px;
+    height: 20px;
+}
+
+/* Couleurs spécifiques des boutons */
+.modal-action-validate {
+    background-color: var(--color-success);
+}
+
+.modal-action-validate:hover {
+    background-color: #218838;
+}
+
+.modal-action-justify {
+    background-color: var(--color-info);
+}
+
+.modal-action-justify:hover {
+    background-color: #117a8b;
+}
+
+.modal-action-memo {
+    background-color: var(--color-primary);
+}
+
+.modal-action-memo:hover {
+    background-color: var(--color-primary);
+}
+
+.modal-action-warn {
+    background-color: var(--color-warning);
+}
+
+.modal-action-warn:hover {
+    background-color: var(--color-warning);
+}
+
+/* ========================================
+   LIEN PROFIL COMPLET
+   ======================================== */
+.modal-full-profile-link {
+    width: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: var(--space-sm);
+    padding: var(--space-md);
+    background: transparent;
+    border: 2px solid var(--color-primary);
+    border-radius: var(--border-radius-sm);
+    color: var(--color-primary);
+    font-weight: var(--font-weight-semibold);
+    font-size: var(--font-size-body);
+    cursor: pointer;
+    transition: all var(--transition-fast);
+}
+
+.modal-full-profile-link:hover {
+    background-color: var(--color-primary);
+    color: white;
+    transform: translateY(-2px);
+    box-shadow: var(--shadow);
+}
+
+.modal-link-icon {
+    width: 20px;
+    height: 20px;
+}
+
+/* ========================================
+   RESPONSIVE (MOBILE)
+   ======================================== */
+@media (max-width: 768px) {
+    .modal-attendance-card {
+        padding: var(--space-xl);
+        max-width: 100%;
+    }
+
+    .modal-header {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: var(--space-md);
+    }
+
+    .modal-avatar {
+        width: 30px;
+        height: 30px;
+        font-size: var(--font-size-h5);
+    }
+
+    .modal-employee-name {
+        font-size: var(--font-size-body);
+    }
+
+    .modal-status-badge {
+        align-self: flex-start;
+    }
+
+    /* Sur mobile, les boutons restent horizontaux mais plus compacts */
+    .modal-quick-actions {
+        gap: 6px;
+    }
+
+    .modal-action-btn {
+        height: 45px;
+        padding: 0 8px;
+        font-size: 11px;
+        gap: 4px;
+    }
+
+    .modal-btn-icon {
+        width: 16px;
+        height: 16px;
+    }
+}

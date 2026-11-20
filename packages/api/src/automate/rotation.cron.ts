@@ -1,4 +1,6 @@
 import { CycleUnit, Direction, TimezoneConfigUtils } from '@toke/shared';
+import { Op, Transaction } from 'sequelize';
+import TenantManager from '../tenant/database/db.tenant-manager.js';
 
 import RotationAssignment from '../tenant/class/RotationAssignments.js';
 import RotationAssignmentLog from '../tenant/class/RotationAssignmentLog.js';
@@ -49,16 +51,10 @@ import RotationGroup from '../tenant/class/RotationGroups.js';
 //   C'est la SEULE borne valide pour le modulo.
 //   cycle_length est décoratif/informatif — il n'est PAS utilisé ici.
 //
-// ORDRE DES GARDE-FOUS (du moins coûteux au plus coûteux en DB) :
-//   1. last_advanced_date = today  → skip (lecture mémoire, zéro DB)
-//   2. auto_advance = false        → skip (déjà en mémoire via groupMap)
-//   3. start_date + rotation_step  → skip (calcul arithmétique pur)
-//   4. templateCount < 1           → skip (requête DB — en dernier)
-//
-// OPTIMISATION N+1 :
-//   Les groupes sont préchargés en une seule requête avant la boucle.
-//   groupMap<groupId, RotationGroup> permet un lookup O(1) par assignation.
-//   Coût : 2 requêtes fixes (assignations + groupes) au lieu de 1 + N.
+// Chaque assignation est relue FOR UPDATE dans sa propre transaction.
+// Les règles d'éligibilité et le modulo restent inchangés. Les lectures du
+// groupe/slots, l'UPDATE et le journal utilisent explicitement cette transaction.
+// Les résultats ne sont publiés qu'après commit ; aucun retry automatique.
 // ============================================================
 
 export interface RotationCronResult {
@@ -97,191 +93,85 @@ export async function runRotationCron(): Promise<RotationCronResult> {
 
   console.log(`[RotationCron] Processing ${activeAssignments.length} active assignment(s)…`);
 
-  // ── 2. Préchargement des groupes (fix N+1) ───────────────────────────────
-  // Collecte les groupIds distincts depuis les assignations en mémoire.
-  // Une seule requête DB pour tous les groupes nécessaires.
-  // Résultat : 2 requêtes fixes (assignations + groupes) au lieu de 1 + N.
-  //
-  // Pourquoi filter sur null : getRotationGroupId() peut retourner undefined
-  // si l'assignation est orpheline — on exclut ces IDs invalides avant
-  // de construire la Map pour éviter une clé `undefined` silencieuse.
+  // Keep the existing initial missing-group check; transaction decisions below
+  // always use fresh rows, never these preloaded objects.
   const groupIds = [
     ...new Set(
-      activeAssignments.map((a) => a.getRotationGroup()).filter((id): id is number => id != null),
+      activeAssignments
+        .map((assignment) => assignment.getRotationGroup())
+        .filter((id): id is number => id != null),
     ),
   ];
-
-  const groupMap = new Map<number, InstanceType<typeof RotationGroup>>();
-
   if (groupIds.length > 0) {
-    const groups = await RotationGroup._list({ ids: groupIds });
+    const groups = await RotationGroup._list({ id: { [Op.in]: groupIds } });
     if (!groups) throw new Error('Failed to load rotation groups');
-    for (const g of groups) {
-      const gId = g.getId();
-      if (gId != null) groupMap.set(gId, g);
-    }
   }
 
-  console.log(
-    `[RotationCron] Loaded ${groupMap.size} rotation group(s) for ${activeAssignments.length} assignment(s).`,
-  );
-
-  // ── 3. Itère sur chaque assignation ─────────────────────────────────────
-  for (const assignment of activeAssignments) {
-    const assignmentId = assignment.getId();
-
+  const sequelize = TenantManager.getConnectionSync();
+  for (const candidate of activeAssignments) {
+    const assignmentId = candidate.getId();
     if (!assignmentId) {
       result.skipped++;
       continue;
     }
-
     try {
-      // ── Garde-fou 1 : idempotence ────────────────────────────────────
-      // Comparaison en mémoire, zéro requête DB.
-      // Protège contre le double avancement si PM2 redémarre le worker
-      // après minuit le même jour (la valeur vient de l'hydratation
-      // initiale — pas de re-fetch nécessaire).
-      const lastAdvancedDate = assignment.getLastAdvancedDate();
-      if (lastAdvancedDate === todayStr) {
-        console.log(
-          `[RotationCron] Assignment #${assignmentId}: ` +
-            `already advanced today (${todayStr}). Skipping.`,
-        );
-        result.skipped++;
-        continue;
-      }
+      const publications: Array<() => void> = [];
+      const publishAfterCommit = (publish: () => void) => {
+        publications.push(publish);
+      };
+      const advanced = await sequelize.transaction(
+        { isolationLevel: Transaction.ISOLATION_LEVELS.READ_COMMITTED },
+        async (transaction) => {
+          // A concurrent worker may have committed since the initial list.
+          const assignment = await RotationAssignment._loadForRotation(assignmentId, transaction);
+          if (!assignment || assignment.getLastAdvancedDate() === todayStr) return false;
+          const groupId = assignment.getRotationGroup();
+          const rotationGroup =
+            groupId != null ? await RotationGroup._loadForRotation(groupId, transaction) : null;
+          if (!rotationGroup || !rotationGroup.getAutoAdvance()) return false;
 
-      // ── Lookup du groupe (O(1), zéro DB) ─────────────────────────────
-      // Remplace l'ancien assignment.getRotationGroupObj() (1 requête/iter).
-      // Si le groupId est manquant ou absent de la Map, l'assignation est
-      // orpheline — on skip avec un warning explicite.
-      const groupId = assignment.getRotationGroup();
-      const rotationGroup = groupId != null ? groupMap.get(groupId) : undefined;
-
-      if (!rotationGroup) {
-        console.warn(
-          `[RotationCron] Assignment #${assignmentId}: no rotation group found (groupId=${groupId}). Skipping.`,
-        );
-        result.skipped++;
-        continue;
-      }
-
-      // ── Garde-fou 2 : auto_advance ───────────────────────────────────
-      // Si le manager a désactivé l'avancement automatique sur ce groupe,
-      // le cron ne doit PAS intervenir — contrôle 100% manuel.
-      if (!rotationGroup.getAutoAdvance()) {
-        console.log(
-          `[RotationCron] Assignment #${assignmentId}: ` +
-            `auto_advance=false on group "${rotationGroup.getName()}". Skipping.`,
-        );
-        result.skipped++;
-        continue;
-      }
-
-      // ── Récupération des paramètres du cycle ─────────────────────────
-      const cycleUnit = rotationGroup.getCycleUnit();
-      const direction = rotationGroup.getDirection() ?? Direction.FORWARD;
-
-      // rotation_step = FRÉQUENCE uniquement.
-      // Répond à "tous les combien d'unités on avance".
-      // Ne répond PAS à "de combien de slots on saute" (toujours 1).
-      // getRotationStep() retourne toujours >= 1 (défaut garanti par le getter).
-      const rotationStep = rotationGroup.getRotationStep();
-
-      if (!cycleUnit) {
-        console.warn(`[RotationCron] Assignment #${assignmentId}: missing cycleUnit. Skipping.`);
-        result.skipped++;
-        continue;
-      }
-
-      if (!rotationStep) {
-        console.warn(`[RotationCron] Assignment #${assignmentId}: missing rotationStep. Skipping.`);
-        result.skipped++;
-        continue;
-      }
-
-      // ── Garde-fou 3 : start_date + rotation_step ─────────────────────
-      // shouldAdvanceToday() réunit les deux conditions en un seul calcul
-      // car elles partagent le même diffDays :
-      //   A. diffDays > 0       → le cycle a commencé
-      //   B. diffDays % step === 0 → c'est le bon intervalle
-      // Aucune requête DB — calcul arithmétique pur.
-      if (!shouldAdvanceToday(cycleUnit, rotationStep, rotationGroup.getStartDate(), executedAt)) {
-        console.log(
-          `[RotationCron] Assignment #${assignmentId}: not time to advance ` +
-            `(unit=${cycleUnit}, step=${rotationStep}, ` +
-            `start=${rotationGroup.getStartDate()}). Skipping.`,
-        );
-        result.skipped++;
-        continue;
-      }
-
-      // ── Garde-fou 4 : cycle non vide ─────────────────────────────────
-      // Requête DB placée en dernier, après tous les checks sans coût DB,
-      // pour minimiser les accès inutiles.
-      // templateCount est la borne réelle du modulo d'offset.
-      // cycle_length n'est PAS utilisé ici — il est décoratif/informatif.
-      const slots = await rotationGroup.getCycleSlots();
-      const templateCount = slots.length;
-
-      if (templateCount < 1) {
-        console.warn(
-          `[RotationCron] Assignment #${assignmentId}: ` + `no templates in cycle. Skipping.`,
-        );
-        result.skipped++;
-        continue;
-      }
-
-      // ── Calcul du nouvel offset ───────────────────────────────────────
-      // Séparation claire des responsabilités :
-      //   shouldAdvanceToday  → QUAND avancer  (fréquence via rotation_step)
-      //   computeNextOffset   → OÙ atterrir    (déplacement = 1, sens = direction)
-      //
-      // rotation_step n'a AUCUN rôle ici — il a déjà été consommé
-      // par shouldAdvanceToday(). Le déplacement est toujours de 1 slot.
-      //
-      // Illustrations avec templateCount=3 :
-      //   FORWARD  : 0→1, 1→2, 2→0  (boucle avant)
-      //   BACKWARD : 0→2, 2→1, 1→0  (boucle arrière)
-      const previousOffset = assignment.getOffset() ?? 0;
-      const newOffset = computeNextOffset(previousOffset, templateCount, direction);
-
-      // ── Application atomique ──────────────────────────────────────────
-      // Une seule requête UPDATE : offset + last_advanced_date ensemble.
-      // Bypass de validate() intentionnel — le cron modifie uniquement
-      // la position dans le cycle, jamais la configuration de l'assignation.
-      const updated = await assignment.applyRotationOffset(newOffset, todayStr);
-      if (!updated) {
-        throw new Error(`Failed to apply rotation offset for assignment #${assignmentId}`);
-      }
-
-      // ── Log immuable ──────────────────────────────────────────────────
-      // setTemplateCount reçoit templateCount (borne réelle des slots),
-      // PAS cycle_length qui est décoratif et peut être null.
-      const log = new RotationAssignmentLog();
-      log
-        .setRotationAssignment(assignmentId)
-        .setPreviousOffset(previousOffset)
-        .setNewOffset(newOffset)
-        // .setTemplateCount(templateCount) // borne réelle du cycle, ≠ cycle_length
-        .setExecutedAt(executedAt);
-
-      await log.save();
-
-      console.log(
-        `[RotationCron] Assignment #${assignmentId}: ` +
-          `offset ${previousOffset} → ${newOffset} ` +
-          `(templates=${templateCount}, unit=${cycleUnit}, ` +
-          `step=${rotationStep}, direction=${direction})`,
+          const cycleUnit = rotationGroup.getCycleUnit();
+          const direction = rotationGroup.getDirection() ?? Direction.FORWARD;
+          const rotationStep = rotationGroup.getRotationStep();
+          if (
+            !cycleUnit ||
+            !rotationStep ||
+            !shouldAdvanceToday(cycleUnit, rotationStep, rotationGroup.getStartDate(), executedAt)
+          )
+            return false;
+          const templateCount = await rotationGroup.getCycleSlotCountForRotation(transaction);
+          if (templateCount < 1) return false;
+          const previousOffset = assignment.getOffset() ?? 0;
+          const newOffset = computeNextOffset(previousOffset, templateCount, direction);
+          const updated = await assignment.applyRotationOffset(
+            newOffset,
+            todayStr,
+            transaction,
+            publishAfterCommit,
+          );
+          if (!updated)
+            throw new Error(`Failed to apply rotation offset for assignment #${assignmentId}`);
+          await new RotationAssignmentLog()
+            .setRotationAssignment(assignmentId)
+            .setPreviousOffset(previousOffset)
+            .setNewOffset(newOffset)
+            .setCycleLength(templateCount)
+            .setExecutedAt(executedAt)
+            .save(transaction, publishAfterCommit);
+          return true;
+        },
       );
-
-      result.processed++;
+      // Only a confirmed managed commit permits memory/counter publication.
+      if (advanced) {
+        publications.forEach((publish) => publish());
+        result.processed++;
+      } else result.skipped++;
     } catch (error: any) {
+      // Includes commit-acknowledgement failures: report, never replay here.
       const reason = error?.message ?? String(error);
       console.error(`[RotationCron] Assignment #${assignmentId} failed: ${reason}`);
       result.failed++;
       result.errors.push({ assignmentId, reason });
-      // Une erreur sur une assignation ne bloque PAS les suivantes.
     }
   }
 

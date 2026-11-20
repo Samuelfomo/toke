@@ -90,6 +90,18 @@ export class ScheduleSuggestionService {
     });
   }
 
+  static async previewApproval(
+    reference: string,
+    guid: string,
+    payload?: { effective_from?: string },
+  ): Promise<TenantApiResult> {
+    return await tenantApiRequest(reference, {
+      method: 'POST',
+      url: `${baseUrl}/${guid}/approval-preview`,
+      data: payload,
+    });
+  }
+
   static async approve(
     reference: string,
     guid: string,

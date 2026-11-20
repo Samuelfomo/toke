@@ -13,6 +13,7 @@ import {
 import { responseValue } from '../../utils/response.model.js';
 import {
   approveScheduleSuggestion,
+  previewScheduleSuggestionApproval,
   SuggestionApprovalError,
 } from '../../tools/schedule.suggestion.approval.service.js';
 import {
@@ -547,11 +548,32 @@ router.patch('/:guid/item/:itemGuid', Ensure.patch(), async (req: Request, res: 
 });
 
 // ─────────────────────────────────────────────────────────────────────────────
-// POST /api/schedule-suggestions/:guid/approve
-//
-// Valide la suggestion → bulk-create des ScheduleAssignments.
-// Un assignment par employé par bloc continu de même template.
+// Prévalidation en lecture seule de la publication.
 // ─────────────────────────────────────────────────────────────────────────────
+router.post('/:guid/approval-preview', Ensure.post(), async (req: Request, res: Response) => {
+  const { guid } = req.params;
+  if (!UsersValidationUtils.validateGuid(guid)) {
+    return R.handleError(res, HttpStatus.BAD_REQUEST, {
+      code: CODES.INVALID_GUID,
+      message: 'L’identifiant de la suggestion est invalide.',
+    });
+  }
+
+  try {
+    const result = await previewScheduleSuggestionApproval(guid as string, req.body?.effective_from);
+    return R.handleSuccess(res, result);
+  } catch (error: unknown) {
+    if (error instanceof SuggestionApprovalError && error.status === 404) {
+      return R.handleError(res, HttpStatus.NOT_FOUND, { code: error.code, message: error.message });
+    }
+    return R.handleError(res, HttpStatus.INTERNAL_ERROR, {
+      code: CODES.APPROVAL_FAILED,
+      message: 'Impossible de vérifier la publication de la suggestion.',
+    });
+  }
+});
+
+// La publication revérifie les contraintes dans sa transaction.
 router.post('/:guid/approve', Ensure.post(), async (req: Request, res: Response) => {
   try {
     const { guid } = req.params;
@@ -576,7 +598,7 @@ router.post('/:guid/approve', Ensure.post(), async (req: Request, res: Response)
       employee_count: result.employeeCount,
     });
   } catch (error: any) {
-    if (error instanceof SuggestionApprovalError) {
+    if (error instanceof SuggestionApprovalError && error.status < 500) {
       return R.handleError(res, error.status as any, {
         code: error.code,
         message: error.message,
@@ -585,8 +607,8 @@ router.post('/:guid/approve', Ensure.post(), async (req: Request, res: Response)
     }
 
     return R.handleError(res, HttpStatus.INTERNAL_ERROR, {
-      code: CODES.APPROVAL_FAILED,
-      message: error.message,
+      code: error instanceof SuggestionApprovalError ? error.code : CODES.APPROVAL_FAILED,
+      message: 'Impossible de publier la suggestion.',
     });
   }
 });

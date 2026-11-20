@@ -1,0 +1,2363 @@
+--- a/packages/api/src/tenant/class/Device.ts
++++ b/packages/api/src/tenant/class/Device.ts
+@@ -1,3 +1,4 @@
++import type { ClockInOptions } from '../database/clock-in.options.js';
+ import { DeviceType, TimezoneConfigUtils } from '@toke/shared';
+ 
+ import DeviceModel from '../model/DeviceModel.js';
+@@ -23,8 +24,8 @@
+ 
+   // === MÉTHODES STATIQUES DE CHARGEMENT ===
+ 
+-  static _load(identifier: any, byGuid: boolean = false): Promise<Device | null> {
+-    return new Device().load(identifier, byGuid);
++  static _load(identifier: any, byGuid: boolean = false, clockOptions: ClockInOptions = {}): Promise<Device | null> {
++    return new Device().load(identifier, byGuid, clockOptions);
+   }
+ 
+   static _list(
+@@ -273,13 +274,13 @@
+     }
+   }
+ 
+-  async load(identifier: any, byGuid: boolean = false): Promise<Device | null> {
++  async load(identifier: any, byGuid: boolean = false, clockOptions: ClockInOptions = {}): Promise<Device | null> {
+     let data = null;
+ 
+     if (byGuid) {
+-      data = await this.findByGuid(identifier);
++      data = await this.findByGuid(identifier, clockOptions);
+     } else {
+-      data = await this.find(Number(identifier));
++      data = await this.find(Number(identifier), clockOptions);
+     }
+ 
+     if (!data) return null;
+--- a/packages/api/src/tenant/class/FraudAlerts.ts
++++ b/packages/api/src/tenant/class/FraudAlerts.ts
+@@ -1,3 +1,4 @@
++import type { ClockInOptions } from '../database/clock-in.options.js';
+ // src/api/class/FraudAlerts.ts
+ 
+ import { TimezoneConfigUtils } from '@toke/shared';
+@@ -231,12 +232,12 @@
+     return this.id === undefined;
+   }
+ 
+-  async save(): Promise<void> {
++  async save(clockOptions: ClockInOptions = {}): Promise<void> {
+     try {
+       if (this.isNew()) {
+-        await this.create();
++        await this.create(clockOptions);
+       } else {
+-        await this.update();
++        await this.update(clockOptions);
+       }
+     } catch (error: any) {
+       throw new Error(error.message || error);
+--- a/packages/api/src/tenant/class/Groups.ts
++++ b/packages/api/src/tenant/class/Groups.ts
+@@ -1,3 +1,4 @@
++import type { ClockInOptions } from '../database/clock-in.options.js';
+ import { GroupsValidationUtils, RAFamily, SAFamily, TI, TimezoneConfigUtils } from '@toke/shared';
+ 
+ import GroupsModel from '../model/GroupsModel.js';
+@@ -34,9 +35,9 @@
+     identifier: any,
+     byGuid: boolean = false,
+     byUser: boolean = false,
+-    excludeInactive: boolean = true,
++    excludeInactive: boolean = true, clockOptions: ClockInOptions = {},
+   ): Promise<Groups | null> {
+-    return new Groups().load(identifier, byGuid, byUser, excludeInactive);
++    return new Groups().load(identifier, byGuid, byUser, excludeInactive, clockOptions);
+   }
+ 
+   static _list(
+@@ -621,16 +622,16 @@
+     identifier: any,
+     byGuid: boolean = false,
+     byUser: boolean = false,
+-    excludeInactive: boolean = true,
++    excludeInactive: boolean = true, clockOptions: ClockInOptions = {},
+   ): Promise<Groups | null> {
+     let data = null;
+ 
+     if (byGuid) {
+-      data = await this.findByGuid(identifier, false, excludeInactive);
++      data = await this.findByGuid(identifier, false, excludeInactive, clockOptions);
+     } else if (byUser) {
+-      data = await this.findActiveGroupsByUser(Number(identifier));
++      data = await this.findActiveGroupsByUser(Number(identifier), clockOptions);
+     } else {
+-      data = await this.find(Number(identifier), false, excludeInactive);
++      data = await this.find(Number(identifier), false, excludeInactive, clockOptions);
+     }
+ 
+     if (!data) return null;
+--- a/packages/api/src/tenant/class/Memos.ts
++++ b/packages/api/src/tenant/class/Memos.ts
+@@ -1,3 +1,4 @@
++import type { ClockInOptions } from '../database/clock-in.options.js';
+ import { MemoContent, MemoStatus, MemoType, Message, TimezoneConfigUtils } from '@toke/shared';
+ 
+ import MemosModel from '../model/MemosModel.js';
+@@ -749,12 +750,12 @@
+     return this.id === undefined;
+   }
+ 
+-  async save(): Promise<void> {
++  async save(clockOptions: ClockInOptions = {}): Promise<void> {
+     try {
+       if (this.isNew()) {
+-        await this.create();
++        await this.create(clockOptions);
+       } else {
+-        await this.update();
++        await this.update(clockOptions);
+       }
+     } catch (error: any) {
+       throw new Error(error.message || error);
+--- a/packages/api/src/tenant/class/OrgHierarchy.ts
++++ b/packages/api/src/tenant/class/OrgHierarchy.ts
+@@ -1,3 +1,4 @@
++import type { ClockInOptions } from '../database/clock-in.options.js';
+ import { RelationshipType, TimezoneConfigUtils } from '@toke/shared';
+ 
+ import OrgHierarchyModel from '../model/OrgHierarchyModel.js';
+@@ -135,17 +136,17 @@
+    */
+   static async getAllDescendantUserIds(
+     supervisor_id: number,
+-    includeIndirect: boolean = true,
++    includeIndirect: boolean = true, clockOptions: ClockInOptions = {},
+   ): Promise<number[]> {
+     const org = new OrgHierarchy();
+     const visited = new Set<number>();
+ 
+     if (includeIndirect) {
+       // Récursif : tous les niveaux
+-      return await org._recursiveFetchSubordinateIds(supervisor_id, visited);
++      return await org._recursiveFetchSubordinateIds(supervisor_id, visited, clockOptions);
+     } else {
+       // Direct seulement
+-      const directRelations = await org.listAllActiveSubordinates(supervisor_id);
++      const directRelations = await org.listAllActiveSubordinates(supervisor_id, undefined, undefined, clockOptions);
+       if (!directRelations || directRelations.length === 0) return [];
+       return directRelations.map((relation) => relation[org.db.subordinate]);
+     }
+@@ -157,8 +158,8 @@
+    * @param supervisorId ID du superviseur
+    * @returns true si l'utilisateur est un descendant du superviseur
+    */
+-  static async isUserInHierarchy(userId: number, supervisorId: number): Promise<boolean> {
+-    const descendants = await this.getAllDescendantUserIds(supervisorId);
++  static async isUserInHierarchy(userId: number, supervisorId: number, clockOptions: ClockInOptions = {}): Promise<boolean> {
++    const descendants = await this.getAllDescendantUserIds(supervisorId, undefined, clockOptions);
+     return descendants.includes(userId);
+   }
+ 
+@@ -895,12 +896,12 @@
+    */
+   private async _recursiveFetchSubordinateIds(
+     supervisor_id: number,
+-    visited: Set<number>,
++    visited: Set<number>, clockOptions: ClockInOptions = {},
+   ): Promise<number[]> {
+     if (visited.has(supervisor_id)) return [];
+     visited.add(supervisor_id);
+ 
+-    const directRelations = await this.listAllActiveSubordinates(supervisor_id);
++    const directRelations = await this.listAllActiveSubordinates(supervisor_id, undefined, undefined, clockOptions);
+     if (!directRelations || directRelations.length === 0) return [];
+ 
+     const allSubordinateIds: number[] = [];
+@@ -910,7 +911,7 @@
+       allSubordinateIds.push(subordinateId);
+ 
+       // Récursivité : chercher les subordonnés du subordonné
+-      const subIds = await this._recursiveFetchSubordinateIds(subordinateId, visited);
++      const subIds = await this._recursiveFetchSubordinateIds(subordinateId, visited, clockOptions);
+       allSubordinateIds.push(...subIds);
+     }
+ 
+--- a/packages/api/src/tenant/class/QrCodeGeneration.ts
++++ b/packages/api/src/tenant/class/QrCodeGeneration.ts
+@@ -1,3 +1,4 @@
++import type { ClockInOptions } from '../database/clock-in.options.js';
+ import { QR_CODE_DEFAULTS, TimezoneConfigUtils } from '@toke/shared';
+ 
+ import QrCodeGenerationModel from '../model/QrCodeGenerationModel.js';
+@@ -103,10 +104,10 @@
+     return this.name;
+   }
+ 
+-  async getManagerObj(): Promise<User | null> {
++  async getManagerObj(clockOptions: ClockInOptions = {}): Promise<User | null> {
+     if (!this.manager) return null;
+     if (!this.managerObj) {
+-      this.managerObj = (await User._load(this.manager)) || undefined;
++      this.managerObj = (await User._load(this.manager, undefined, undefined, undefined, undefined, undefined, clockOptions)) || undefined;
+     }
+     return this.managerObj || null;
+   }
+--- a/packages/api/src/tenant/class/Role.ts
++++ b/packages/api/src/tenant/class/Role.ts
+@@ -1,3 +1,4 @@
++import type { ClockInOptions } from '../database/clock-in.options.js';
+ import { ROLES_DEFAULTS } from '@toke/shared';
+ 
+ import RoleModel from '../model/RoleModel.js';
+@@ -47,9 +48,9 @@
+   static _load(
+     identifier: any,
+     byGuid: boolean = false,
+-    byCode: boolean = false,
++    byCode: boolean = false, clockOptions: ClockInOptions = {},
+   ): Promise<Role | null> {
+-    return new Role().load(identifier, byGuid, byCode);
++    return new Role().load(identifier, byGuid, byCode, clockOptions);
+   }
+ 
+   // static _loadDefaultRole(): Promise<Role | null> {
+@@ -196,13 +197,13 @@
+   async load(
+     identifier: any,
+     byGuid: boolean = false,
+-    byCode: boolean = false,
++    byCode: boolean = false, clockOptions: ClockInOptions = {},
+   ): Promise<Role | null> {
+     const data = byGuid
+-      ? await this.findByGuid(identifier)
++      ? await this.findByGuid(identifier, clockOptions)
+       : byCode
+-        ? await this.findByCode(identifier)
+-        : await this.find(Number(identifier));
++        ? await this.findByCode(identifier, clockOptions)
++        : await this.find(Number(identifier), clockOptions);
+     if (!data) return null;
+     return this.hydrate(data);
+   }
+--- a/packages/api/src/tenant/class/RotationAssignments.ts
++++ b/packages/api/src/tenant/class/RotationAssignments.ts
+@@ -1,3 +1,4 @@
++import type { ClockInOptions } from '../database/clock-in.options.js';
+ import { RAFamily, TimezoneConfigUtils } from '@toke/shared';
+ import type { Transaction } from 'sequelize';
+ 
+@@ -62,9 +63,9 @@
+   static _listByRelated(
+     family: RAFamily,
+     related: string,
+-    paginationOptions: { offset?: number; limit?: number } = {},
+-  ): Promise<RotationAssignment[] | null> {
+-    return new RotationAssignment().listByRelated(family, related, paginationOptions);
++    paginationOptions: { offset?: number; limit?: number } = {}, clockOptions: ClockInOptions = {},
++  ): Promise<RotationAssignment[] | null> {
++    return new RotationAssignment().listByRelated(family, related, paginationOptions, clockOptions);
+   }
+ 
+   static _listByAssignedBy(
+@@ -159,10 +160,10 @@
+     return this.rotation_group;
+   }
+ 
+-  async getRotationGroupObj(): Promise<RotationGroup | null> {
++  async getRotationGroupObj(clockOptions: ClockInOptions = {}): Promise<RotationGroup | null> {
+     if (!this.rotation_group) return null;
+     if (!this.rotationGroupObj) {
+-      this.rotationGroupObj = (await RotationGroup._load(this.rotation_group)) || undefined;
++      this.rotationGroupObj = (await RotationGroup._load(this.rotation_group, undefined, clockOptions)) || undefined;
+     }
+     return this.rotationGroupObj || null;
+   }
+@@ -354,9 +355,9 @@
+   async listByRelated(
+     family: RAFamily,
+     related: string,
+-    paginationOptions: { offset?: number; limit?: number } = {},
+-  ): Promise<RotationAssignment[] | null> {
+-    const dataset = await this.listAllByRelated(family, related, paginationOptions);
++    paginationOptions: { offset?: number; limit?: number } = {}, clockOptions: ClockInOptions = {},
++  ): Promise<RotationAssignment[] | null> {
++    const dataset = await this.listAllByRelated(family, related, paginationOptions, clockOptions);
+     if (!dataset || dataset.length === 0) return null;
+     return dataset.map((data) => new RotationAssignment().hydrate(data));
+   }
+--- a/packages/api/src/tenant/class/RotationGroupTemplate.ts
++++ b/packages/api/src/tenant/class/RotationGroupTemplate.ts
+@@ -1,3 +1,4 @@
++import type { ClockInOptions } from '../database/clock-in.options.js';
+ import { TimezoneConfigUtils } from '@toke/shared';
+ 
+ import RotationGroupTemplateModel, {
+@@ -47,9 +48,9 @@
+ 
+   static _listByRotationGroup(
+     rotationGroupId: number,
+-    paginationOptions: { offset?: number; limit?: number } = {},
++    paginationOptions: { offset?: number; limit?: number } = {}, clockOptions: ClockInOptions = {},
+   ): Promise<RotationGroupTemplate[] | null> {
+-    return new RotationGroupTemplate().listByRotationGroup(rotationGroupId, paginationOptions);
++    return new RotationGroupTemplate().listByRotationGroup(rotationGroupId, paginationOptions, clockOptions);
+   }
+ 
+   // ============================================
+@@ -200,9 +201,9 @@
+ 
+   async listByRotationGroup(
+     rotationGroupId: number,
+-    paginationOptions: { offset?: number; limit?: number } = {},
++    paginationOptions: { offset?: number; limit?: number } = {}, clockOptions: ClockInOptions = {},
+   ): Promise<RotationGroupTemplate[] | null> {
+-    const dataset = await this.listAllByRotationGroup(rotationGroupId, paginationOptions);
++    const dataset = await this.listAllByRotationGroup(rotationGroupId, paginationOptions, clockOptions);
+     if (!dataset || dataset.length === 0) return null;
+     return dataset.map((data) => new RotationGroupTemplate().hydrate(data));
+   }
+--- a/packages/api/src/tenant/class/RotationGroups.ts
++++ b/packages/api/src/tenant/class/RotationGroups.ts
+@@ -1,3 +1,4 @@
++import type { ClockInOptions } from '../database/clock-in.options.js';
+ import type { Transaction } from 'sequelize';
+ import { CycleUnit, Direction, ROTATION_GROUP_DEFAULTS, TimezoneConfigUtils } from '@toke/shared';
+ 
+@@ -28,8 +29,8 @@
+   // MÉTHODES STATIQUES DE CHARGEMENT
+   // ============================================
+ 
+-  static _load(identifier: any, byGuid: boolean = false): Promise<RotationGroup | null> {
+-    return new RotationGroup().load(identifier, byGuid);
++  static _load(identifier: any, byGuid: boolean = false, clockOptions: ClockInOptions = {}): Promise<RotationGroup | null> {
++    return new RotationGroup().load(identifier, byGuid, clockOptions);
+   }
+ 
+   /** Worker read without the instance cache, on its owned transaction. */
+@@ -148,10 +149,10 @@
+    * Les snapshots JSONB sont embarqués dans chaque slot.
+    * Résultat mis en cache pour la durée de vie de l'instance.
+    */
+-  async getCycleSlots(): Promise<RotationGroupTemplate[]> {
++  async getCycleSlots(clockOptions: ClockInOptions = {}): Promise<RotationGroupTemplate[]> {
+     if (!this.id) return [];
+     if (!this.cycleTemplatesObjs) {
+-      this.cycleTemplatesObjs = (await RotationGroupTemplate._listByRotationGroup(this.id)) ?? [];
++      this.cycleTemplatesObjs = (await RotationGroupTemplate._listByRotationGroup(this.id, undefined, clockOptions)) ?? [];
+     }
+     return this.cycleTemplatesObjs;
+   }
+@@ -412,8 +413,8 @@
+   // CHARGEMENT ET LISTING
+   // ============================================
+ 
+-  async load(identifier: any, byGuid: boolean = false): Promise<RotationGroup | null> {
+-    const data = byGuid ? await this.findByGuid(identifier) : await this.find(Number(identifier));
++  async load(identifier: any, byGuid: boolean = false, clockOptions: ClockInOptions = {}): Promise<RotationGroup | null> {
++    const data = byGuid ? await this.findByGuid(identifier, undefined, clockOptions) : await this.find(Number(identifier), undefined, clockOptions);
+ 
+     if (!data) return null;
+     return this.hydrate(data);
+--- a/packages/api/src/tenant/class/ScheduleAssignments.ts
++++ b/packages/api/src/tenant/class/ScheduleAssignments.ts
+@@ -1,3 +1,4 @@
++import type { ClockInOptions } from '../database/clock-in.options.js';
+ import { SAFamily, SCHEDULE_ASSIGNMENTS_DEFAULTS, TimezoneConfigUtils } from '@toke/shared';
+ 
+ import ScheduleAssignmentsModel from '../model/ScheduleAssignmentsModel.js';
+@@ -25,15 +26,15 @@
+   // MÉTHODES STATIQUES DE CHARGEMENT
+   // ============================================
+ 
+-  static _load(identifier: any, byGuid: boolean = false): Promise<ScheduleAssignments | null> {
+-    return new ScheduleAssignments().load(identifier, byGuid);
++  static _load(identifier: any, byGuid: boolean = false, clockOptions: ClockInOptions = {}): Promise<ScheduleAssignments | null> {
++    return new ScheduleAssignments().load(identifier, byGuid, clockOptions);
+   }
+ 
+   static _list(
+     conditions: Record<string, any> = {},
+-    paginationOptions: { offset?: number; limit?: number } = {},
++    paginationOptions: { offset?: number; limit?: number } = {}, clockOptions: ClockInOptions = {},
+   ): Promise<ScheduleAssignments[] | null> {
+-    return new ScheduleAssignments().list(conditions, paginationOptions);
++    return new ScheduleAssignments().list(conditions, paginationOptions, clockOptions);
+   }
+ 
+   static _listByRelated(
+@@ -70,9 +71,9 @@
+     family: SAFamily,
+     related: string,
+     date: string,
+-    paginationOptions: { offset?: number; limit?: number } = {},
++    paginationOptions: { offset?: number; limit?: number } = {}, clockOptions: ClockInOptions = {},
+   ): Promise<ScheduleAssignments[] | null> {
+-    return new ScheduleAssignments().listForRelatedOnDate(family, related, date, paginationOptions);
++    return new ScheduleAssignments().listForRelatedOnDate(family, related, date, paginationOptions, clockOptions);
+   }
+ 
+   static _listForRelatedOnPeriod(
+@@ -454,13 +455,13 @@
+   // CHARGEMENT ET LISTING
+   // ============================================
+ 
+-  async load(identifier: any, byGuid: boolean = false): Promise<ScheduleAssignments | null> {
++  async load(identifier: any, byGuid: boolean = false, clockOptions: ClockInOptions = {}): Promise<ScheduleAssignments | null> {
+     let data = null;
+ 
+     if (byGuid) {
+-      data = await this.findByGuid(identifier);
++      data = await this.findByGuid(identifier, undefined, clockOptions);
+     } else {
+-      data = await this.find(Number(identifier));
++      data = await this.find(Number(identifier), undefined, clockOptions);
+     }
+ 
+     if (!data) return null;
+@@ -469,9 +470,9 @@
+ 
+   async list(
+     conditions: Record<string, any> = {},
+-    paginationOptions: { offset?: number; limit?: number } = {},
++    paginationOptions: { offset?: number; limit?: number } = {}, clockOptions: ClockInOptions = {},
+   ): Promise<ScheduleAssignments[] | null> {
+-    const dataset = await this.listAll(conditions, paginationOptions);
++    const dataset = await this.listAll(conditions, paginationOptions, clockOptions);
+     if (!dataset || dataset.length === 0) return null;
+     return dataset.map((data) => new ScheduleAssignments().hydrate(data));
+   }
+@@ -518,9 +519,9 @@
+     family: SAFamily,
+     related: string,
+     date: string,
+-    paginationOptions: { offset?: number; limit?: number } = {},
++    paginationOptions: { offset?: number; limit?: number } = {}, clockOptions: ClockInOptions = {},
+   ): Promise<ScheduleAssignments[] | null> {
+-    const dataset = await this.listAllForRelatedOnDate(family, related, date, paginationOptions);
++    const dataset = await this.listAllForRelatedOnDate(family, related, date, paginationOptions, clockOptions);
+     if (!dataset || dataset.length === 0) return null;
+     return dataset.map((data) => new ScheduleAssignments().hydrate(data));
+   }
+--- a/packages/api/src/tenant/class/SessionTemplates.ts
++++ b/packages/api/src/tenant/class/SessionTemplates.ts
+@@ -1,3 +1,4 @@
++import type { ClockInOptions } from '../database/clock-in.options.js';
+ import { SESSION_TEMPLATE_DEFAULTS, VALID_DAYS } from '@toke/shared';
+ 
+ import SessionTemplateModel from '../model/SessionTemplatesModel.js';
+@@ -26,9 +27,9 @@
+   static _load(
+     identifier: any,
+     byGuid: boolean = false,
+-    defaults: boolean = false,
++    defaults: boolean = false, clockOptions: ClockInOptions = {},
+   ): Promise<SessionTemplate | null> {
+-    return new SessionTemplate().load(identifier, byGuid, defaults);
++    return new SessionTemplate().load(identifier, byGuid, defaults, clockOptions);
+   }
+ 
+   static _list(
+@@ -379,13 +380,13 @@
+   async load(
+     identifier: any,
+     byGuid: boolean = false,
+-    defaults: boolean = false,
++    defaults: boolean = false, clockOptions: ClockInOptions = {},
+   ): Promise<SessionTemplate | null> {
+     let data = byGuid
+-      ? await this.findByGuid(identifier)
++      ? await this.findByGuid(identifier, undefined, clockOptions)
+       : defaults
+-        ? await this.findDefault()
+-        : await this.find(Number(identifier));
++        ? await this.findDefault(undefined, clockOptions)
++        : await this.find(Number(identifier), undefined, clockOptions);
+     if (!data) return null;
+     return this.hydrate(data);
+   }
+--- a/packages/api/src/tenant/class/Site.ts
++++ b/packages/api/src/tenant/class/Site.ts
+@@ -1,3 +1,4 @@
++import type { ClockInOptions } from '../database/clock-in.options.js';
+ import { SiteType, TimezoneConfigUtils } from '@toke/shared';
+ 
+ import SiteModel from '../model/SiteModel.js';
+@@ -23,8 +24,8 @@
+ 
+   // === MÉTHODES STATIQUES DE CHARGEMENT ===
+ 
+-  static _load(identifier: any, byGuid: boolean = false): Promise<Site | null> {
+-    return new Site().load(identifier, byGuid);
++  static _load(identifier: any, byGuid: boolean = false, clockOptions: ClockInOptions = {}): Promise<Site | null> {
++    return new Site().load(identifier, byGuid, clockOptions);
+   }
+ 
+   static _list(
+@@ -407,13 +408,13 @@
+     }
+   }
+ 
+-  async load(identifier: any, byGuid: boolean = false): Promise<Site | null> {
++  async load(identifier: any, byGuid: boolean = false, clockOptions: ClockInOptions = {}): Promise<Site | null> {
+     let data = null;
+ 
+     if (byGuid) {
+-      data = await this.findByGuid(identifier);
++      data = await this.findByGuid(identifier, clockOptions);
+     } else {
+-      data = await this.find(Number(identifier));
++      data = await this.find(Number(identifier), clockOptions);
+     }
+ 
+     if (!data) return null;
+--- a/packages/api/src/tenant/class/TimeEntries.ts
++++ b/packages/api/src/tenant/class/TimeEntries.ts
+@@ -1,3 +1,4 @@
++import type { ClockInOptions } from '../database/clock-in.options.js';
+ import { PointageStatus, PointageType, TimezoneConfigUtils } from '@toke/shared';
+ 
+ import TimeEntriesModel, { TimeEntriesListByUserOptions } from '../model/TimeEntriesModel.js';
+@@ -32,12 +33,12 @@
+ 
+   // === MÉTHODES STATIQUES DE CHARGEMENT ===
+ 
+-  static _load(identifier: any, byGuid: boolean = false): Promise<TimeEntries | null> {
+-    return new TimeEntries().load(identifier, byGuid);
+-  }
+-
+-  static async _loadByExternalId(user: number, external_id: string): Promise<TimeEntries | null> {
+-    const data = await new TimeEntries().findByExternalId(user, external_id.trim().toUpperCase());
++  static _load(identifier: any, byGuid: boolean = false, clockOptions: ClockInOptions = {}): Promise<TimeEntries | null> {
++    return new TimeEntries().load(identifier, byGuid, clockOptions);
++  }
++
++  static async _loadByExternalId(user: number, external_id: string, clockOptions: ClockInOptions = {}): Promise<TimeEntries | null> {
++    const data = await new TimeEntries().findByExternalId(user, external_id.trim().toUpperCase(), clockOptions);
+     return data ? TimeEntries._toObject(data) : null;
+   }
+ 
+@@ -60,9 +61,9 @@
+ 
+   static _listBySession(
+     session: number,
+-    paginationOptions: { offset?: number; limit?: number } = {},
+-  ): Promise<TimeEntries[] | null> {
+-    return new TimeEntries().listBySession(session, paginationOptions);
++    paginationOptions: { offset?: number; limit?: number } = {}, clockOptions: ClockInOptions = {},
++  ): Promise<TimeEntries[] | null> {
++    return new TimeEntries().listBySession(session, paginationOptions, clockOptions);
+   }
+ 
+   static _listByUser(
+@@ -214,10 +215,10 @@
+     return this.site;
+   }
+ 
+-  async getSiteObj(): Promise<Site | null> {
++  async getSiteObj(clockOptions: ClockInOptions = {}): Promise<Site | null> {
+     if (!this.site) return null;
+     if (!this.siteObj) {
+-      this.siteObj = (await Site._load(this.site)) || undefined;
++      this.siteObj = (await Site._load(this.site, undefined, clockOptions)) || undefined;
+     }
+     return this.siteObj || null;
+   }
+@@ -494,9 +495,9 @@
+     return await this.validateSequence(this.session, this.pointage_type);
+   }
+ 
+-  async accept(): Promise<void> {
++  async accept(clockOptions: ClockInOptions = {}): Promise<void> {
+     this.pointage_status = PointageStatus.ACCEPTED;
+-    await this.save();
++    await this.save(clockOptions);
+   }
+ 
+   async reject(reason: string): Promise<void> {
+@@ -814,19 +815,19 @@
+     return false;
+   }
+ 
+-  async save(): Promise<void> {
++  async save(clockOptions: ClockInOptions = {}): Promise<void> {
+     try {
+       if (this.pointage_type === PointageType.WAYPOINT) {
+         if (this.isNew()) {
+-          await this.createWaypoint();
++          await this.createWaypoint(clockOptions);
+         } else {
+-          await this.update();
++          await this.update(clockOptions);
+         }
+       } else {
+         if (this.isNew()) {
+-          await this.create();
++          await this.create(clockOptions);
+         } else {
+-          await this.update();
++          await this.update(clockOptions);
+         }
+       }
+     } catch (error: any) {
+@@ -844,13 +845,13 @@
+     return false;
+   }
+ 
+-  async load(identifier: any, byGuid: boolean = false): Promise<TimeEntries | null> {
++  async load(identifier: any, byGuid: boolean = false, clockOptions: ClockInOptions = {}): Promise<TimeEntries | null> {
+     let data = null;
+ 
+     if (byGuid) {
+-      data = await this.findByGuid(identifier);
++      data = await this.findByGuid(identifier, clockOptions);
+     } else {
+-      data = await this.find(Number(identifier));
++      data = await this.find(Number(identifier), clockOptions);
+     }
+ 
+     if (!data) return null;
+@@ -880,9 +881,9 @@
+ 
+   async listBySession(
+     session: number,
+-    paginationOptions: { offset?: number; limit?: number } = {},
+-  ): Promise<TimeEntries[] | null> {
+-    const dataset = await this.listAllBySession(session, paginationOptions);
++    paginationOptions: { offset?: number; limit?: number } = {}, clockOptions: ClockInOptions = {},
++  ): Promise<TimeEntries[] | null> {
++    const dataset = await this.listAllBySession(session, paginationOptions, clockOptions);
+     if (!dataset || dataset.length === 0) return null;
+     return dataset.map((data) => new TimeEntries().hydrate(data));
+   }
+--- a/packages/api/src/tenant/class/User.ts
++++ b/packages/api/src/tenant/class/User.ts
+@@ -1,3 +1,4 @@
++import type { ClockInOptions } from '../database/clock-in.options.js';
+ import { RAFamily, SAFamily, TimezoneConfigUtils, USERS_DEFAULTS } from '@toke/shared';
+ 
+ import UserModel from '../model/UserModel.js';
+@@ -30,9 +31,9 @@
+     byEmail: boolean = false,
+     byEmployeeCode: boolean = false,
+     byPhoneNumber: boolean = false,
+-    byOtp: boolean = false,
++    byOtp: boolean = false, clockOptions: ClockInOptions = {},
+   ): Promise<User | null> {
+-    return new User().load(identifier, byGuid, byEmail, byEmployeeCode, byPhoneNumber, byOtp);
++    return new User().load(identifier, byGuid, byEmail, byEmployeeCode, byPhoneNumber, byOtp, clockOptions);
+   }
+   static _loadForRestore(identifier: string): Promise<User | null> {
+     return new User().loadForRestore(identifier);
+@@ -732,22 +733,22 @@
+     byEmail: boolean = false,
+     byEmployeeCode: boolean = false,
+     byPhoneNumber: boolean = false,
+-    byOtp: boolean = false,
++    byOtp: boolean = false, clockOptions: ClockInOptions = {},
+   ): Promise<User | null> {
+     let data = null;
+ 
+     if (byGuid) {
+-      data = await this.findByGuid(identifier);
++      data = await this.findByGuid(identifier, undefined, clockOptions);
+     } else if (byEmail) {
+-      data = await this.findByEmail(identifier);
++      data = await this.findByEmail(identifier, undefined, clockOptions);
+     } else if (byEmployeeCode) {
+-      data = await this.findByEmployeeCode(identifier);
++      data = await this.findByEmployeeCode(identifier, undefined, clockOptions);
+     } else if (byPhoneNumber) {
+-      data = await this.findByPhoneNumber(identifier);
++      data = await this.findByPhoneNumber(identifier, undefined, clockOptions);
+     } else if (byOtp) {
+-      data = await this.findByAttribut(this.db.otp_token, identifier);
++      data = await this.findByAttribut(this.db.otp_token, identifier, clockOptions);
+     } else {
+-      data = await this.find(Number(identifier));
++      data = await this.find(Number(identifier), undefined, clockOptions);
+     }
+ 
+     if (!data) return null;
+--- a/packages/api/src/tenant/class/UserRole.ts
++++ b/packages/api/src/tenant/class/UserRole.ts
+@@ -1,3 +1,4 @@
++import type { ClockInOptions } from '../database/clock-in.options.js';
+ import UserRoleModel from '../model/UserRoleModel.js';
+ import W from '../../tools/watcher.js';
+ import G from '../../tools/glossary.js';
+@@ -27,9 +28,9 @@
+     identifier: any,
+     byGuid: boolean = false,
+     byUserRole: boolean = false,
+-    adminSup: boolean = false,
++    adminSup: boolean = false, clockOptions: ClockInOptions = {},
+   ): Promise<UserRole | null> {
+-    return new UserRole().load(identifier, byGuid, byUserRole, adminSup);
++    return new UserRole().load(identifier, byGuid, byUserRole, adminSup, clockOptions);
+   }
+ 
+   static _list(
+@@ -188,12 +189,12 @@
+ 
+   // === MÉTHODES MÉTIER ===
+ 
+-  async getAssignedByObject(): Promise<User | null> {
++  async getAssignedByObject(clockOptions: ClockInOptions = {}): Promise<User | null> {
+     if (!this.assigned_by) {
+       return null;
+     }
+     if (!this.assignedByObject) {
+-      this.assignedByObject = (await User._load(this.assigned_by)) || undefined;
++      this.assignedByObject = (await User._load(this.assigned_by, undefined, undefined, undefined, undefined, undefined, clockOptions)) || undefined;
+     }
+     return this.assignedByObject || null;
+   }
+@@ -239,18 +240,18 @@
+     identifier: any,
+     byGuid: boolean = false,
+     byUserRole: boolean = false,
+-    adminSup: boolean = false,
++    adminSup: boolean = false, clockOptions: ClockInOptions = {},
+   ): Promise<UserRole | null> {
+     let data = null;
+ 
+     if (byGuid) {
+-      data = await this.findByGuid(identifier);
++      data = await this.findByGuid(identifier, clockOptions);
+     } else if (byUserRole) {
+-      data = await this.findByUserRole(identifier.user, identifier.role);
++      data = await this.findByUserRole(identifier.user, identifier.role, clockOptions);
+     } else if (adminSup) {
+-      data = await this.findAdminSupervisor();
++      data = await this.findAdminSupervisor(clockOptions);
+     } else {
+-      data = await this.find(Number(identifier));
++      data = await this.find(Number(identifier), clockOptions);
+     }
+ 
+     if (!data) return null;
+--- a/packages/api/src/tenant/class/WorkSessions.ts
++++ b/packages/api/src/tenant/class/WorkSessions.ts
+@@ -1,3 +1,4 @@
++import type { ClockInOptions } from '../database/clock-in.options.js';
+ import {
+   ClockInData,
+   ClockOutData,
+@@ -56,8 +57,8 @@
+     return new WorkSessions().listBySite(site_id);
+   }
+ 
+-  static async _findActiveSessionByUser(user: number): Promise<WorkSessions | null> {
+-    return new WorkSessions().findActiveUserSession(user);
++  static async _findActiveSessionByUser(user: number, clockOptions: ClockInOptions = {}): Promise<WorkSessions | null> {
++    return new WorkSessions().findActiveUserSession(user, clockOptions);
+   }
+ 
+   static async _detectAbandonedSessions(
+@@ -149,7 +150,7 @@
+     latitude: number,
+     longitude: number,
+     gps_accuracy?: number,
+-    device?: number,
++    device?: number, clockOptions: ClockInOptions = {},
+   ): Promise<{
+     access_granted: boolean;
+     distance_from_center: number;
+@@ -163,7 +164,7 @@
+   }> {
+     try {
+       // 1. Récupérer site avec données géospatiales
+-      const siteObj = await Site._load(site);
++      const siteObj = await Site._load(site, undefined, clockOptions);
+       if (!siteObj) {
+         console.error(`❌ Site ${site} introuvable pour validation géofencing`);
+         return {
+@@ -197,7 +198,7 @@
+       let deviceObj: Device | null = null;
+ 
+       if (device) {
+-        deviceObj = await Device._load(device);
++        deviceObj = await Device._load(device, undefined, clockOptions);
+         if (deviceObj && deviceObj.getCustomGeofenceRadius()) {
+           customDeviceRadius = deviceObj.getCustomGeofenceRadius();
+           console.log(`📱 Device ${device} a un rayon personnalisé: ${customDeviceRadius}m`);
+@@ -813,12 +814,12 @@
+     return this.id === undefined;
+   }
+ 
+-  async save(): Promise<void> {
++  async save(clockOptions: ClockInOptions = {}): Promise<void> {
+     try {
+       if (this.isNew()) {
+-        await this.create();
++        await this.create(clockOptions);
+       } else {
+-        await this.update();
++        await this.update(clockOptions);
+       }
+     } catch (error: any) {
+       throw new Error(error.message || error);
+@@ -875,8 +876,8 @@
+   //   return new WorkSessions().hydrate(data);
+   // }
+ 
+-  async findActiveUserSession(user: number): Promise<WorkSessions | null> {
+-    const data = await this.findActiveSessionByUser(user);
++  async findActiveUserSession(user: number, clockOptions: ClockInOptions = {}): Promise<WorkSessions | null> {
++    const data = await this.findActiveSessionByUser(user, clockOptions);
+ 
+     if (!data) return null;
+ 
+--- a/packages/api/src/tenant/model/DeviceModel.ts
++++ b/packages/api/src/tenant/model/DeviceModel.ts
+@@ -1,3 +1,4 @@
++import type { ClockInOptions } from '../database/clock-in.options.js';
+ import {
+   DEVICES_DEFAULTS,
+   DEVICES_ERRORS,
+@@ -48,12 +49,12 @@
+ 
+   // === RECHERCHES DE BASE ===
+ 
+-  protected async find(id: number): Promise<any> {
+-    return await this.findOne(this.db.tableName, { [this.db.id]: id });
+-  }
+-
+-  protected async findByGuid(guid: string): Promise<any> {
+-    return await this.findOne(this.db.tableName, { [this.db.guid]: guid });
++  protected async find(id: number, clockOptions: ClockInOptions = {}): Promise<any> {
++    return await this.findOne(this.db.tableName, { [this.db.id]: id }, { ...(clockOptions.transaction ? { transaction: clockOptions.transaction } : {}) });
++  }
++
++  protected async findByGuid(guid: string, clockOptions: ClockInOptions = {}): Promise<any> {
++    return await this.findOne(this.db.tableName, { [this.db.guid]: guid }, { ...(clockOptions.transaction ? { transaction: clockOptions.transaction } : {}) });
+   }
+ 
+   // protected async findByIdentified(identified: string): Promise<any> {
+--- a/packages/api/src/tenant/model/FraudAlertsModel.ts
++++ b/packages/api/src/tenant/model/FraudAlertsModel.ts
+@@ -1,3 +1,4 @@
++import type { ClockInOptions } from '../database/clock-in.options.js';
+ // src/api/model/FraudAlertsModel.ts
+ 
+ import { FRAUD_ALERTS_ERRORS, FraudAlertsValidationUtils, TimezoneConfigUtils } from '@toke/shared';
+@@ -440,10 +441,10 @@
+ 
+   // === CRUD OPERATIONS ===
+ 
+-  protected async create(): Promise<void> {
++  protected async create(clockOptions: ClockInOptions = {}): Promise<void> {
+     await this.validate();
+ 
+-    const guid = await this.randomGuidGenerator(this.db.tableName);
++    const guid = await this.randomGuidGenerator(this.db.tableName, undefined, { ...(clockOptions.transaction ? { transaction: clockOptions.transaction } : {}) });
+     if (!guid) {
+       throw new Error(FRAUD_ALERTS_ERRORS.GUID_GENERATION_FAILED);
+     }
+@@ -460,7 +461,7 @@
+       [this.db.investigation_notes]: this.investigation_notes,
+       [this.db.false_positive]: this.false_positive || false,
+       [this.db.investigated_at]: this.investigated_at,
+-    });
++    }, { ...(clockOptions.transaction ? { transaction: clockOptions.transaction } : {}) });
+ 
+     if (!lastID) {
+       throw new Error(FRAUD_ALERTS_ERRORS.CREATION_FAILED);
+@@ -470,7 +471,7 @@
+     this.guid = guid;
+   }
+ 
+-  protected async update(): Promise<void> {
++  protected async update(clockOptions: ClockInOptions = {}): Promise<void> {
+     await this.validate();
+     if (!this.id) {
+       throw new Error(FRAUD_ALERTS_ERRORS.ID_REQUIRED);
+@@ -485,7 +486,7 @@
+     if (this.investigated_at !== undefined)
+       updateData[this.db.investigated_at] = this.investigated_at;
+ 
+-    const updated = await this.updateOne(this.db.tableName, updateData, { [this.db.id]: this.id });
++    const updated = await this.updateOne(this.db.tableName, updateData, { [this.db.id]: this.id }, { ...(clockOptions.transaction ? { transaction: clockOptions.transaction } : {}) });
+ 
+     if (!updated) {
+       throw new Error(FRAUD_ALERTS_ERRORS.UPDATE_FAILED);
+--- a/packages/api/src/tenant/model/GroupsModel.ts
++++ b/packages/api/src/tenant/model/GroupsModel.ts
+@@ -1,3 +1,4 @@
++import type { ClockInOptions } from '../database/clock-in.options.js';
+ import { Op } from 'sequelize';
+ import { GROUPS_ERRORS, GroupsValidationUtils, TI, TimezoneConfigUtils } from '@toke/shared';
+ 
+@@ -44,7 +45,7 @@
+   protected async find(
+     id: number,
+     includeDeleted: boolean = false,
+-    excludeInactive: boolean = true,
++    excludeInactive: boolean = true, clockOptions: ClockInOptions = {},
+   ): Promise<any> {
+     const conditions: any = { [this.db.id]: id };
+ 
+@@ -52,14 +53,14 @@
+       conditions[this.db.deleted_at] = null;
+     }
+ 
+-    const group = await this.findOne(this.db.tableName, conditions);
++    const group = await this.findOne(this.db.tableName, conditions, { ...(clockOptions.transaction ? { transaction: clockOptions.transaction } : {}) });
+     return this.applyMembersFilter(group, excludeInactive);
+   }
+ 
+   protected async findByGuid(
+     guid: string,
+     includeDeleted: boolean = false,
+-    excludeInactive: boolean = true,
++    excludeInactive: boolean = true, clockOptions: ClockInOptions = {},
+   ): Promise<any> {
+     const conditions: any = { [this.db.guid]: guid };
+ 
+@@ -67,7 +68,7 @@
+       conditions[this.db.deleted_at] = null;
+     }
+ 
+-    const group = await this.findOne(this.db.tableName, conditions);
++    const group = await this.findOne(this.db.tableName, conditions, { ...(clockOptions.transaction ? { transaction: clockOptions.transaction } : {}) });
+     return this.applyMembersFilter(group, excludeInactive);
+   }
+ 
+@@ -103,8 +104,8 @@
+   /**
+    * Retourne l'équipe dans laquelle l'utilisateur est actuellement actif
+    */
+-  protected async findActiveGroupsByUser(userId: number): Promise<any | null> {
+-    const allGroups = await this.listAll(); // deleted_at = null par défaut
++  protected async findActiveGroupsByUser(userId: number, clockOptions: ClockInOptions = {}): Promise<any | null> {
++    const allGroups = await this.listAll(undefined, undefined, undefined, clockOptions); // deleted_at = null par défaut
+ 
+     for (const group of allGroups) {
+       const members = group.members || [];
+@@ -128,13 +129,13 @@
+   protected async listAll(
+     conditions: Record<string, any> = {},
+     paginationOptions: { offset?: number; limit?: number } = {},
+-    excludeInactive: boolean = true,
++    excludeInactive: boolean = true, clockOptions: ClockInOptions = {},
+   ): Promise<any[]> {
+     if (conditions[this.db.deleted_at] === undefined) {
+       conditions[this.db.deleted_at] = null;
+     }
+ 
+-    const groups = await this.findAll(this.db.tableName, conditions, paginationOptions);
++    const groups = await this.findAll(this.db.tableName, conditions, paginationOptions, { ...(clockOptions.transaction ? { transaction: clockOptions.transaction } : {}) });
+     return this.applyMembersFilterToList(groups, excludeInactive);
+   }
+ 
+--- a/packages/api/src/tenant/model/MemosModel.ts
++++ b/packages/api/src/tenant/model/MemosModel.ts
+@@ -1,3 +1,4 @@
++import type { ClockInOptions } from '../database/clock-in.options.js';
+ import {
+   MemoContent,
+   MEMOS_DEFAULTS,
+@@ -792,8 +793,8 @@
+   // ============================================================================
+   // 8. CRUD OPERATIONS
+   // ============================================================================
+-  protected async create(): Promise<void> {
+-    const guid = await this.randomGuidGenerator(this.db.tableName);
++  protected async create(clockOptions: ClockInOptions = {}): Promise<void> {
++    const guid = await this.randomGuidGenerator(this.db.tableName, undefined, { ...(clockOptions.transaction ? { transaction: clockOptions.transaction } : {}) });
+     if (!guid) {
+       throw new Error(MEMOS_ERRORS.GUID_GENERATION_FAILED);
+     }
+@@ -828,7 +829,7 @@
+       [this.db.affected_entries]: this.affected_entries,
+       [this.db.memo_content]: this.memo_content, // ✅ NOUVEAU
+       [this.db.manager]: this.manager || MEMOS_DEFAULTS.IS_MANAGER,
+-    });
++    }, { ...(clockOptions.transaction ? { transaction: clockOptions.transaction } : {}) });
+ 
+     if (!lastID) {
+       throw new Error(MEMOS_ERRORS?.CREATION_FAILED);
+@@ -840,7 +841,7 @@
+     this.updated_at = TimezoneConfigUtils.getCurrentTime();
+   }
+ 
+-  protected async update(): Promise<void> {
++  protected async update(clockOptions: ClockInOptions = {}): Promise<void> {
+     if (!this.id) {
+       throw new Error(MEMOS_ERRORS?.ID_REQUIRED);
+     }
+@@ -853,7 +854,7 @@
+     if (this.details !== undefined) updateData[this.db.details] = this.details;
+     if (this.validator_user !== undefined) updateData[this.db.validator_user] = this.validator_user;
+ 
+-    const updated = await this.updateOne(this.db.tableName, updateData, { [this.db.id]: this.id });
++    const updated = await this.updateOne(this.db.tableName, updateData, { [this.db.id]: this.id }, { ...(clockOptions.transaction ? { transaction: clockOptions.transaction } : {}) });
+ 
+     if (!updated) {
+       throw new Error(MEMOS_ERRORS?.UPDATE_FAILED || 'Memo update failed');
+--- a/packages/api/src/tenant/model/OrgHierarchyModel.ts
++++ b/packages/api/src/tenant/model/OrgHierarchyModel.ts
+@@ -1,3 +1,4 @@
++import type { ClockInOptions } from '../database/clock-in.options.js';
+ import {
+   ORG_HIERARCHY_DEFAULTS,
+   ORG_HIERARCHY_ERRORS,
+@@ -107,7 +108,7 @@
+   protected async listAllActiveSubordinates(
+     supervisor_id: number,
+     date?: Date,
+-    paginationOptions: { offset?: number; limit?: number } = {},
++    paginationOptions: { offset?: number; limit?: number } = {}, clockOptions: ClockInOptions = {},
+   ): Promise<any[]> {
+     const currentDate = date || TimezoneConfigUtils.getCurrentTime();
+     const dateStr = currentDate.toISOString().slice(0, 10);
+@@ -121,7 +122,7 @@
+       ],
+     };
+ 
+-    return await this.findAll(this.db.tableName, conditions, paginationOptions);
++    return await this.findAll(this.db.tableName, conditions, paginationOptions, { ...(clockOptions.transaction ? { transaction: clockOptions.transaction } : {}) });
+   }
+ 
+   // === RECHERCHES PAR CRITÈRES ===
+--- a/packages/api/src/tenant/model/RoleModel.ts
++++ b/packages/api/src/tenant/model/RoleModel.ts
+@@ -1,3 +1,4 @@
++import type { ClockInOptions } from '../database/clock-in.options.js';
+ import { ROLES_DEFAULTS, ROLES_ERRORS, RolesValidationUtils } from '@toke/shared';
+ 
+ import BaseModel from '../database/db.base.js';
+@@ -35,16 +36,16 @@
+     super();
+   }
+ 
+-  protected async find(id: number): Promise<any> {
+-    return await this.findOne(this.db.tableName, { [this.db.id]: id });
++  protected async find(id: number, clockOptions: ClockInOptions = {}): Promise<any> {
++    return await this.findOne(this.db.tableName, { [this.db.id]: id }, { ...(clockOptions.transaction ? { transaction: clockOptions.transaction } : {}) });
+   }
+ 
+-  protected async findByGuid(guid: string): Promise<any> {
+-    return await this.findOne(this.db.tableName, { [this.db.guid]: guid });
++  protected async findByGuid(guid: string, clockOptions: ClockInOptions = {}): Promise<any> {
++    return await this.findOne(this.db.tableName, { [this.db.guid]: guid }, { ...(clockOptions.transaction ? { transaction: clockOptions.transaction } : {}) });
+   }
+ 
+-  protected async findByCode(code: string): Promise<any> {
+-    return await this.findOne(this.db.tableName, { [this.db.code]: code.toUpperCase() });
++  protected async findByCode(code: string, clockOptions: ClockInOptions = {}): Promise<any> {
++    return await this.findOne(this.db.tableName, { [this.db.code]: code.toUpperCase() }, { ...(clockOptions.transaction ? { transaction: clockOptions.transaction } : {}) });
+   }
+ 
+   // protected async findExistingDefaultRole(): Promise<any> {
+--- a/packages/api/src/tenant/model/RotationAssignmentsModel.ts
++++ b/packages/api/src/tenant/model/RotationAssignmentsModel.ts
+@@ -1,3 +1,4 @@
++import type { ClockInOptions } from '../database/clock-in.options.js';
+ import {
+   RAFamily,
+   ROTATION_ASSIGNMENT_DEFAULTS,
+@@ -91,22 +92,22 @@
+ 
+   protected async listAll(
+     conditions: Record<string, any> = {},
+-    paginationOptions: { offset?: number; limit?: number } = {},
++    paginationOptions: { offset?: number; limit?: number } = {}, clockOptions: ClockInOptions = {},
+   ): Promise<any[]> {
+     if (conditions[this.db.deleted_at] === undefined) {
+       conditions[this.db.deleted_at] = null;
+     }
+-    return await this.findAll(this.db.tableName, conditions, paginationOptions);
++    return await this.findAll(this.db.tableName, conditions, paginationOptions, { ...(clockOptions.transaction ? { transaction: clockOptions.transaction } : {}) });
+   }
+ 
+   protected async listAllByRelated(
+     family: RAFamily,
+     related: string,
+-    paginationOptions: { offset?: number; limit?: number } = {},
++    paginationOptions: { offset?: number; limit?: number } = {}, clockOptions: ClockInOptions = {},
+   ): Promise<any[]> {
+     return await this.listAll(
+       { [this.db.family]: family, [this.db.related]: related },
+-      paginationOptions,
++      paginationOptions, clockOptions,
+     );
+   }
+ 
+--- a/packages/api/src/tenant/model/RotationGroupTemplateModel.ts
++++ b/packages/api/src/tenant/model/RotationGroupTemplateModel.ts
+@@ -1,3 +1,4 @@
++import type { ClockInOptions } from '../database/clock-in.options.js';
+ import { ROTATION_GROUP_ERRORS, TimezoneConfigUtils } from '@toke/shared';
+ 
+ import BaseModel from '../database/db.base.js';
+@@ -87,12 +88,12 @@
+ 
+   protected async listAll(
+     conditions: Record<string, any> = {},
+-    paginationOptions: { offset?: number; limit?: number } = {},
++    paginationOptions: { offset?: number; limit?: number } = {}, clockOptions: ClockInOptions = {},
+   ): Promise<any[]> {
+     if (conditions[this.db.deleted_at] === undefined) {
+       conditions[this.db.deleted_at] = null;
+     }
+-    return await this.findAll(this.db.tableName, conditions, paginationOptions);
++    return await this.findAll(this.db.tableName, conditions, paginationOptions, { ...(clockOptions.transaction ? { transaction: clockOptions.transaction } : {}) });
+   }
+ 
+   /**
+@@ -101,11 +102,11 @@
+    */
+   protected async listAllByRotationGroup(
+     rotationGroupId: number,
+-    paginationOptions: { offset?: number; limit?: number } = {},
++    paginationOptions: { offset?: number; limit?: number } = {}, clockOptions: ClockInOptions = {},
+   ): Promise<any[]> {
+     const rows = await this.listAll(
+       { [this.db.rotation_group]: rotationGroupId },
+-      paginationOptions,
++      paginationOptions, clockOptions,
+     );
+     // Tri défensif côté applicatif — l'index DB garantit l'ordre mais on
+     // s'assure d'un résultat déterministe quelles que soient les options de pagination.
+--- a/packages/api/src/tenant/model/RotationGroupsModel.ts
++++ b/packages/api/src/tenant/model/RotationGroupsModel.ts
+@@ -1,3 +1,4 @@
++import type { ClockInOptions } from '../database/clock-in.options.js';
+ import {
+   CycleUnit,
+   Direction,
+@@ -55,24 +56,24 @@
+   // MÉTHODES DE RECHERCHE
+   // ============================================
+ 
+-  protected async find(id: number, includeDeleted: boolean = false): Promise<any> {
++  protected async find(id: number, includeDeleted: boolean = false, clockOptions: ClockInOptions = {}): Promise<any> {
+     const conditions: any = { [this.db.id]: id };
+ 
+     if (!includeDeleted) {
+       conditions[this.db.deleted_at] = null;
+     }
+ 
+-    return await this.findOne(this.db.tableName, conditions);
+-  }
+-
+-  protected async findByGuid(guid: string, includeDeleted: boolean = false): Promise<any> {
++    return await this.findOne(this.db.tableName, conditions, { ...(clockOptions.transaction ? { transaction: clockOptions.transaction } : {}) });
++  }
++
++  protected async findByGuid(guid: string, includeDeleted: boolean = false, clockOptions: ClockInOptions = {}): Promise<any> {
+     const conditions: any = { [this.db.guid]: guid };
+ 
+     if (!includeDeleted) {
+       conditions[this.db.deleted_at] = null;
+     }
+ 
+-    return await this.findOne(this.db.tableName, conditions);
++    return await this.findOne(this.db.tableName, conditions, { ...(clockOptions.transaction ? { transaction: clockOptions.transaction } : {}) });
+   }
+ 
+   // ============================================
+--- a/packages/api/src/tenant/model/ScheduleAssignmentsModel.ts
++++ b/packages/api/src/tenant/model/ScheduleAssignmentsModel.ts
+@@ -1,3 +1,4 @@
++import type { ClockInOptions } from '../database/clock-in.options.js';
+ import {
+   SAFamily,
+   SCHEDULE_ASSIGNMENTS_DEFAULTS,
+@@ -62,24 +63,24 @@
+   // MÉTHODES DE RECHERCHE
+   // ============================================
+ 
+-  protected async find(id: number, includeDeleted: boolean = false): Promise<any> {
++  protected async find(id: number, includeDeleted: boolean = false, clockOptions: ClockInOptions = {}): Promise<any> {
+     const conditions: any = { [this.db.id]: id };
+ 
+     if (!includeDeleted) {
+       conditions[this.db.deleted_at] = null;
+     }
+ 
+-    return await this.findOne(this.db.tableName, conditions);
+-  }
+-
+-  protected async findByGuid(guid: string, includeDeleted: boolean = false): Promise<any> {
++    return await this.findOne(this.db.tableName, conditions, { ...(clockOptions.transaction ? { transaction: clockOptions.transaction } : {}) });
++  }
++
++  protected async findByGuid(guid: string, includeDeleted: boolean = false, clockOptions: ClockInOptions = {}): Promise<any> {
+     const conditions: any = { [this.db.guid]: guid };
+ 
+     if (!includeDeleted) {
+       conditions[this.db.deleted_at] = null;
+     }
+ 
+-    return await this.findOne(this.db.tableName, conditions);
++    return await this.findOne(this.db.tableName, conditions, { ...(clockOptions.transaction ? { transaction: clockOptions.transaction } : {}) });
+   }
+ 
+   /**
+@@ -123,13 +124,13 @@
+ 
+   protected async listAll(
+     conditions: Record<string, any> = {},
+-    paginationOptions: { offset?: number; limit?: number } = {},
++    paginationOptions: { offset?: number; limit?: number } = {}, clockOptions: ClockInOptions = {},
+   ): Promise<any[]> {
+     if (conditions[this.db.deleted_at] === undefined) {
+       conditions[this.db.deleted_at] = null;
+     }
+ 
+-    return await this.findAll(this.db.tableName, conditions, paginationOptions);
++    return await this.findAll(this.db.tableName, conditions, paginationOptions, { ...(clockOptions.transaction ? { transaction: clockOptions.transaction } : {}) });
+   }
+ 
+   protected async listAllByRelated(
+@@ -186,7 +187,7 @@
+     family: SAFamily,
+     related: string,
+     date: string,
+-    paginationOptions: { offset?: number; limit?: number } = {},
++    paginationOptions: { offset?: number; limit?: number } = {}, clockOptions: ClockInOptions = {},
+   ): Promise<any[]> {
+     const conditions = {
+       [this.db.family]: family,
+@@ -199,7 +200,7 @@
+       [this.db.active]: true,
+     };
+ 
+-    return await this.listAll(conditions, paginationOptions);
++    return await this.listAll(conditions, paginationOptions, clockOptions);
+   }
+ 
+   protected async listAllByRelatedOnPeriod(
+--- a/packages/api/src/tenant/model/SessionTemplatesModel.ts
++++ b/packages/api/src/tenant/model/SessionTemplatesModel.ts
+@@ -1,3 +1,4 @@
++import type { ClockInOptions } from '../database/clock-in.options.js';
+ import {
+   SESSION_TEMPLATE_DEFAULTS,
+   SESSION_TEMPLATE_ERRORS,
+@@ -50,34 +51,34 @@
+   // MÉTHODES DE RECHERCHE
+   // ============================================
+ 
+-  protected async find(id: number, includeDeleted: boolean = false): Promise<any> {
++  protected async find(id: number, includeDeleted: boolean = false, clockOptions: ClockInOptions = {}): Promise<any> {
+     const conditions: any = { [this.db.id]: id };
+ 
+     if (!includeDeleted) {
+       conditions[this.db.deleted_at] = null;
+     }
+ 
+-    return await this.findOne(this.db.tableName, conditions);
+-  }
+-
+-  protected async findByGuid(guid: string, includeDeleted: boolean = false): Promise<any> {
++    return await this.findOne(this.db.tableName, conditions, { ...(clockOptions.transaction ? { transaction: clockOptions.transaction } : {}) });
++  }
++
++  protected async findByGuid(guid: string, includeDeleted: boolean = false, clockOptions: ClockInOptions = {}): Promise<any> {
+     const conditions: any = { [this.db.guid]: guid };
+ 
+     if (!includeDeleted) {
+       conditions[this.db.deleted_at] = null;
+     }
+ 
+-    return await this.findOne(this.db.tableName, conditions);
+-  }
+-
+-  protected async findDefault(includeDeleted: boolean = false): Promise<any> {
++    return await this.findOne(this.db.tableName, conditions, { ...(clockOptions.transaction ? { transaction: clockOptions.transaction } : {}) });
++  }
++
++  protected async findDefault(includeDeleted: boolean = false, clockOptions: ClockInOptions = {}): Promise<any> {
+     const conditions: any = {
+       [this.db.defaults]: !SESSION_TEMPLATE_DEFAULTS.IS_DEFAULT,
+     };
+     if (!includeDeleted) {
+       conditions[this.db.deleted_at] = null;
+     }
+-    return await this.findOne(this.db.tableName, conditions);
++    return await this.findOne(this.db.tableName, conditions, { ...(clockOptions.transaction ? { transaction: clockOptions.transaction } : {}) });
+   }
+ 
+   // ============================================
+--- a/packages/api/src/tenant/model/SiteModel.ts
++++ b/packages/api/src/tenant/model/SiteModel.ts
+@@ -1,3 +1,4 @@
++import type { ClockInOptions } from '../database/clock-in.options.js';
+ import {
+   SITES_DEFAULTS,
+   SITES_ERRORS,
+@@ -54,12 +55,12 @@
+ 
+   // === RECHERCHES DE BASE ===
+ 
+-  protected async find(id: number): Promise<any> {
+-    return await this.findOne(this.db.tableName, { [this.db.id]: id });
+-  }
+-
+-  protected async findByGuid(guid: string): Promise<any> {
+-    return await this.findOne(this.db.tableName, { [this.db.guid]: guid });
++  protected async find(id: number, clockOptions: ClockInOptions = {}): Promise<any> {
++    return await this.findOne(this.db.tableName, { [this.db.id]: id }, { ...(clockOptions.transaction ? { transaction: clockOptions.transaction } : {}) });
++  }
++
++  protected async findByGuid(guid: string, clockOptions: ClockInOptions = {}): Promise<any> {
++    return await this.findOne(this.db.tableName, { [this.db.guid]: guid }, { ...(clockOptions.transaction ? { transaction: clockOptions.transaction } : {}) });
+   }
+ 
+   // === RECHERCHES PAR CRITÈRES ===
+--- a/packages/api/src/tenant/model/TimeEntriesModel.ts
++++ b/packages/api/src/tenant/model/TimeEntriesModel.ts
+@@ -1,3 +1,4 @@
++import type { ClockInOptions } from '../database/clock-in.options.js';
+ import {
+   PointageStatus,
+   PointageType,
+@@ -107,34 +108,34 @@
+ 
+   // === 1. RECHERCHES DE BASE ===
+ 
+-  protected async find(id: number): Promise<any> {
+-    return await this.findOne(this.db.tableName, { [this.db.id]: id });
+-  }
+-
+-  protected async findByGuid(guid: string): Promise<any> {
+-    return await this.findOne(this.db.tableName, { [this.db.guid]: guid });
+-  }
+-
+-  protected async findByExternalId(user: number, external_id: string): Promise<any> {
++  protected async find(id: number, clockOptions: ClockInOptions = {}): Promise<any> {
++    return await this.findOne(this.db.tableName, { [this.db.id]: id }, { ...(clockOptions.transaction ? { transaction: clockOptions.transaction } : {}) });
++  }
++
++  protected async findByGuid(guid: string, clockOptions: ClockInOptions = {}): Promise<any> {
++    return await this.findOne(this.db.tableName, { [this.db.guid]: guid }, { ...(clockOptions.transaction ? { transaction: clockOptions.transaction } : {}) });
++  }
++
++  protected async findByExternalId(user: number, external_id: string, clockOptions: ClockInOptions = {}): Promise<any> {
+     return await this.findOne(this.db.tableName, {
+       [this.db.user]: user,
+       [this.db.external_id]: external_id,
+-    });
++    }, { ...(clockOptions.transaction ? { transaction: clockOptions.transaction } : {}) });
+   }
+ 
+   protected async listAll(
+     conditions: Record<string, any> = {},
+     paginationOptions: { offset?: number; limit?: number } = {},
+-    options: any = {},
+-  ): Promise<any[]> {
+-    return await this.findAll(this.db.tableName, conditions, paginationOptions, options);
++    options: any = {}, clockOptions: ClockInOptions = {},
++  ): Promise<any[]> {
++    return await this.findAll(this.db.tableName, conditions, paginationOptions, { ...(options), ...(clockOptions.transaction ? { transaction: clockOptions.transaction } : {}) });
+   }
+ 
+   protected async listAllBySession(
+     session: number,
+-    paginationOptions: { offset?: number; limit?: number } = {},
+-  ): Promise<any[]> {
+-    return await this.listAll({ [this.db.session]: session }, paginationOptions);
++    paginationOptions: { offset?: number; limit?: number } = {}, clockOptions: ClockInOptions = {},
++  ): Promise<any[]> {
++    return await this.listAll({ [this.db.session]: session }, paginationOptions, undefined, clockOptions);
+   }
+ 
+   protected async listAllByUser(
+@@ -738,10 +739,10 @@
+ 
+   // === 9. CRUD OPERATIONS ===
+ 
+-  protected async create(): Promise<void> {
++  protected async create(clockOptions: ClockInOptions = {}): Promise<void> {
+     await this.validate();
+ 
+-    const guid = await this.randomGuidGenerator(this.db.tableName);
++    const guid = await this.randomGuidGenerator(this.db.tableName, undefined, { ...(clockOptions.transaction ? { transaction: clockOptions.transaction } : {}) });
+     if (!guid) {
+       throw new Error(TIME_ENTRIES_ERRORS?.GUID_GENERATION_FAILED);
+     }
+@@ -776,7 +777,7 @@
+       [this.db.correction_reason]: this.correction_reason,
+       [this.db.is_fallback_checkin]: this.is_fallback_checkin,
+       [this.db.image_url]: this.image_url,
+-    });
++    }, { ...(clockOptions.transaction ? { transaction: clockOptions.transaction } : {}) });
+ 
+     if (!lastID) {
+       throw new Error(TIME_ENTRIES_ERRORS?.CREATION_FAILED);
+@@ -786,7 +787,7 @@
+     this.guid = guid;
+   }
+ 
+-  protected async update(): Promise<void> {
++  protected async update(clockOptions: ClockInOptions = {}): Promise<void> {
+     await this.validate();
+ 
+     if (!this.id) {
+@@ -806,7 +807,7 @@
+     if (this.correction_reason !== undefined)
+       updateData[this.db.correction_reason] = this.correction_reason;
+ 
+-    const updated = await this.updateOne(this.db.tableName, updateData, { [this.db.id]: this.id });
++    const updated = await this.updateOne(this.db.tableName, updateData, { [this.db.id]: this.id }, { ...(clockOptions.transaction ? { transaction: clockOptions.transaction } : {}) });
+ 
+     if (!updated) {
+       throw new Error(TIME_ENTRIES_ERRORS?.UPDATE_FAILED || 'Time entry update failed');
+@@ -817,10 +818,10 @@
+     return await this.deleteOne(this.db.tableName, { [this.db.id]: id });
+   }
+ 
+-  protected async createWaypoint(): Promise<void> {
++  protected async createWaypoint(clockOptions: ClockInOptions = {}): Promise<void> {
+     this.validateExternalIdForCreation();
+ 
+-    const guid = await this.randomGuidGenerator(this.db.tableName);
++    const guid = await this.randomGuidGenerator(this.db.tableName, undefined, { ...(clockOptions.transaction ? { transaction: clockOptions.transaction } : {}) });
+     if (!guid) {
+       throw Error(TIME_ENTRIES_ERRORS?.GUID_GENERATION_FAILED);
+     }
+@@ -852,7 +853,7 @@
+       [this.db.correction_reason]: this.correction_reason,
+       [this.db.is_fallback_checkin]: this.is_fallback_checkin,
+       [this.db.image_url]: this.image_url,
+-    });
++    }, { ...(clockOptions.transaction ? { transaction: clockOptions.transaction } : {}) });
+ 
+     this.id = typeof lastID === 'object' ? lastID.id : lastID;
+     this.guid = guid;
+--- a/packages/api/src/tenant/model/UserModel.ts
++++ b/packages/api/src/tenant/model/UserModel.ts
+@@ -1,3 +1,4 @@
++import type { ClockInOptions } from '../database/clock-in.options.js';
+ import {
+   TimezoneConfigUtils,
+   USERS_DEFAULTS,
+@@ -111,24 +112,24 @@
+   /**
+    * ✅ Exclure les utilisateurs supprimés par défaut
+    */
+-  protected async find(id: number, includeDeleted: boolean = false): Promise<any> {
++  protected async find(id: number, includeDeleted: boolean = false, clockOptions: ClockInOptions = {}): Promise<any> {
+     const conditions: any = { [this.db.id]: id };
+ 
+     if (!includeDeleted) {
+       conditions[this.db.deleted_at] = null;
+     }
+ 
+-    return await this.findOne(this.db.tableName, conditions);
+-  }
+-
+-  protected async findByGuid(guid: string, includeDeleted: boolean = false): Promise<any> {
++    return await this.findOne(this.db.tableName, conditions, { ...(clockOptions.transaction ? { transaction: clockOptions.transaction } : {}) });
++  }
++
++  protected async findByGuid(guid: string, includeDeleted: boolean = false, clockOptions: ClockInOptions = {}): Promise<any> {
+     const conditions: any = { [this.db.guid]: guid };
+ 
+     if (!includeDeleted) {
+       conditions[this.db.deleted_at] = null;
+     }
+ 
+-    return await this.findOne(this.db.tableName, conditions);
++    return await this.findOne(this.db.tableName, conditions, { ...(clockOptions.transaction ? { transaction: clockOptions.transaction } : {}) });
+   }
+ 
+   protected async findByEmployeeLicense(
+@@ -150,19 +151,19 @@
+     );
+   }
+ 
+-  protected async findByEmail(email: string, includeDeleted: boolean = false): Promise<any> {
++  protected async findByEmail(email: string, includeDeleted: boolean = false, clockOptions: ClockInOptions = {}): Promise<any> {
+     const conditions: any = { [this.db.email]: email.toLowerCase() };
+ 
+     if (!includeDeleted) {
+       conditions[this.db.deleted_at] = null;
+     }
+ 
+-    return await this.findOne(this.db.tableName, conditions);
++    return await this.findOne(this.db.tableName, conditions, { ...(clockOptions.transaction ? { transaction: clockOptions.transaction } : {}) });
+   }
+ 
+   protected async findByPhoneNumber(
+     phone_number: string,
+-    includeDeleted: boolean = false,
++    includeDeleted: boolean = false, clockOptions: ClockInOptions = {},
+   ): Promise<any> {
+     const conditions: any = { [this.db.phone_number]: phone_number };
+ 
+@@ -170,12 +171,12 @@
+       conditions[this.db.deleted_at] = null;
+     }
+ 
+-    return await this.findOne(this.db.tableName, conditions);
++    return await this.findOne(this.db.tableName, conditions, { ...(clockOptions.transaction ? { transaction: clockOptions.transaction } : {}) });
+   }
+ 
+   protected async findByEmployeeCode(
+     employee_code: string,
+-    includeDeleted: boolean = false,
++    includeDeleted: boolean = false, clockOptions: ClockInOptions = {},
+   ): Promise<any> {
+     const conditions: any = { [this.db.employee_code]: employee_code };
+ 
+@@ -183,7 +184,7 @@
+       conditions[this.db.deleted_at] = null;
+     }
+ 
+-    return await this.findOne(this.db.tableName, conditions);
++    return await this.findOne(this.db.tableName, conditions, { ...(clockOptions.transaction ? { transaction: clockOptions.transaction } : {}) });
+   }
+ 
+   protected async findByEmployeeColor(
+@@ -244,11 +245,11 @@
+     });
+   }
+ 
+-  protected async findByAttribut(attribute: string, value: any): Promise<any> {
++  protected async findByAttribut(attribute: string, value: any, clockOptions: ClockInOptions = {}): Promise<any> {
+     return await this.findOne(this.db.tableName, {
+       [attribute]: value,
+       [this.db.deleted_at]: null,
+-    });
++    }, { ...(clockOptions.transaction ? { transaction: clockOptions.transaction } : {}) });
+   }
+ 
+   /**
+--- a/packages/api/src/tenant/model/UserRoleModel.ts
++++ b/packages/api/src/tenant/model/UserRoleModel.ts
+@@ -1,3 +1,4 @@
++import type { ClockInOptions } from '../database/clock-in.options.js';
+ import { USER_ROLES_ERRORS, UserRolesValidationUtils } from '@toke/shared';
+ 
+ import BaseModel from '../database/db.base.js';
+@@ -26,20 +27,20 @@
+     super();
+   }
+ 
+-  protected async find(id: number): Promise<any> {
+-    return await this.findOne(this.db.tableName, { [this.db.id]: id });
++  protected async find(id: number, clockOptions: ClockInOptions = {}): Promise<any> {
++    return await this.findOne(this.db.tableName, { [this.db.id]: id }, { ...(clockOptions.transaction ? { transaction: clockOptions.transaction } : {}) });
+   }
+ 
+-  protected async findByGuid(guid: string): Promise<any> {
+-    return await this.findOne(this.db.tableName, { [this.db.guid]: guid });
++  protected async findByGuid(guid: string, clockOptions: ClockInOptions = {}): Promise<any> {
++    return await this.findOne(this.db.tableName, { [this.db.guid]: guid }, { ...(clockOptions.transaction ? { transaction: clockOptions.transaction } : {}) });
+   }
+ 
+-  protected async findByUserRole(user: number, role: number): Promise<any> {
+-    return await this.findOne(this.db.tableName, { [this.db.user]: user, [this.db.role]: role });
++  protected async findByUserRole(user: number, role: number, clockOptions: ClockInOptions = {}): Promise<any> {
++    return await this.findOne(this.db.tableName, { [this.db.user]: user, [this.db.role]: role }, { ...(clockOptions.transaction ? { transaction: clockOptions.transaction } : {}) });
+   }
+ 
+-  protected async findAdminSupervisor(): Promise<any> {
+-    return await this.findOne(this.db.tableName, { [this.db.assigned_by]: null });
++  protected async findAdminSupervisor(clockOptions: ClockInOptions = {}): Promise<any> {
++    return await this.findOne(this.db.tableName, { [this.db.assigned_by]: null }, { ...(clockOptions.transaction ? { transaction: clockOptions.transaction } : {}) });
+   }
+ 
+   protected async findByAttribute(attribute: string, value: any): Promise<any> {
+--- a/packages/api/src/tenant/model/WorkSessionsModel.ts
++++ b/packages/api/src/tenant/model/WorkSessionsModel.ts
+@@ -1,3 +1,4 @@
++import type { ClockInOptions } from '../database/clock-in.options.js';
+ import {
+   PointageType,
+   SessionStatus,
+@@ -79,7 +80,7 @@
+   //   });
+   // }
+ 
+-  protected async findActiveSessionByUser(user: number): Promise<any> {
++  protected async findActiveSessionByUser(user: number, clockOptions: ClockInOptions = {}): Promise<any> {
+     return await this.findOne(
+       this.db.tableName,
+       {
+@@ -89,12 +90,12 @@
+           [Op.is]: null,
+         },
+       },
+-      {
++      { ...({
+         order: [
+           [this.db.session_start_at, 'DESC'],
+           [this.db.id, 'DESC'],
+         ],
+-      },
++      }), ...(clockOptions.transaction ? { transaction: clockOptions.transaction } : {}) },
+     );
+   }
+ 
+@@ -470,10 +471,10 @@
+ 
+   // === CRUD OPERATIONS ===
+ 
+-  protected async create(): Promise<void> {
++  protected async create(clockOptions: ClockInOptions = {}): Promise<void> {
+     await this.validate();
+ 
+-    const guid = await this.randomGuidGenerator(this.db.tableName);
++    const guid = await this.randomGuidGenerator(this.db.tableName, undefined, { ...(clockOptions.transaction ? { transaction: clockOptions.transaction } : {}) });
+     if (!guid) {
+       throw new Error(WORK_SESSIONS_ERRORS?.GUID_GENERATION_FAILED);
+     }
+@@ -492,7 +493,7 @@
+       [this.db.end_latitude]: this.end_latitude,
+       [this.db.end_longitude]: this.end_longitude,
+       // [this.db.memo]: this.memo,
+-    });
++    }, { ...(clockOptions.transaction ? { transaction: clockOptions.transaction } : {}) });
+ 
+     if (!lastID) {
+       throw new Error(WORK_SESSIONS_ERRORS?.CREATION_FAILED);
+@@ -502,7 +503,7 @@
+     this.guid = guid;
+   }
+ 
+-  protected async update(): Promise<void> {
++  protected async update(clockOptions: ClockInOptions = {}): Promise<void> {
+     await this.validate();
+ 
+     if (!this.id) {
+@@ -521,7 +522,7 @@
+     if (this.end_longitude !== undefined) updateData[this.db.end_longitude] = this.end_longitude;
+     // if (this.memo !== undefined) updateData[this.db.memo] = this.memo;
+ 
+-    const updated = await this.updateOne(this.db.tableName, updateData, { [this.db.id]: this.id });
++    const updated = await this.updateOne(this.db.tableName, updateData, { [this.db.id]: this.id }, { ...(clockOptions.transaction ? { transaction: clockOptions.transaction } : {}) });
+ 
+     if (!updated) {
+       throw new Error(WORK_SESSIONS_ERRORS?.UPDATE_FAILED || 'Session update failed');
+--- a/packages/api/src/tenant/routes/time.entries.route.ts
++++ b/packages/api/src/tenant/routes/time.entries.route.ts
+@@ -22,7 +22,10 @@
+   WORK_SESSIONS_ERRORS,
+   WorkSessionsValidationUtils,
+ } from '@toke/shared';
+-import { Op } from 'sequelize';
++import { Op, Transaction } from 'sequelize';
++import TenantManager from '../database/db.tenant-manager.js';
++import { TableInitializer } from '../database/db.initializer.js';
++import type { ClockInOptions } from '../database/clock-in.options.js';
+ 
+ import Ensure from '../../middle/ensured-routes.js';
+ import R from '../../tools/response.js';
+@@ -267,7 +270,7 @@
+       }
+ 
+       // === ⚠️ GÉOFENCING VERIFICATION ===
+-      const geofenceCheck = await WorkSessions.validateGeofencing(
++      const geofenceCheck = validatedData.pointage_type === PointageType.CLOCK_IN ? null : await WorkSessions.validateGeofencing(
+         siteObj.getId()!,
+         validatedData.latitude,
+         validatedData.longitude,
+@@ -289,13 +292,15 @@
+       // }
+ 
+       const { anomalies: qrAnomalies, corrections: qrCorrections } =
+-        await AnomalyDetectionService.detectAccessAnomalies(userId, qrCodeObj);
++        validatedData.pointage_type === PointageType.CLOCK_IN
++          ? { anomalies: [], corrections: [] }
++          : await AnomalyDetectionService.detectAccessAnomalies(userId, qrCodeObj);
+ 
+       // ✅ AJOUTER ICI
+-      const geofenceAnomalies = await AnomalyDetectionService.detectGeofenceAnomaly(
++      const geofenceAnomalies = geofenceCheck ? await AnomalyDetectionService.detectGeofenceAnomaly(
+         geofenceCheck,
+         siteObj,
+-      );
++      ) : [];
+ 
+       const tenant = req.tenant;
+ 
+@@ -305,100 +310,133 @@
+ 
+       switch (validatedData.pointage_type) {
+         case PointageType.CLOCK_IN: {
+-          // 🔍 DÉTECTION ANOMALIES
+-          const { anomalies, corrections, scheduleContext } =
+-            await AnomalyDetectionService.detectClockInAnomalies(userId, validatedData);
+-
+-          // Fusionner avec anomalies QR
+-          const allAnomalies = [...qrAnomalies, ...geofenceAnomalies, ...anomalies];
+-          const allCorrections = [...qrCorrections, ...corrections];
+-
+-          // ✅ CRÉER SESSION QUOI QU'IL ARRIVE
+-          const sessionObj = new WorkSessions()
+-            .setUser(userId)
+-            .setSite(siteObj.getId()!)
+-            .setSessionStartAt(new Date(validatedData.clocked_at))
+-            .setStartCoordinates(validatedData.latitude, validatedData.longitude);
+-
+-          // 🆕 AJOUTER CONTEXTE HORAIRE (si colonnes existent)
+-          if (scheduleContext?.expectedSchedule) {
+-            // sessionObj.setExpectedSchedule(scheduleContext.expectedSchedule);
+-            // sessionObj.setApplicableTemplate(scheduleContext.expectedSchedule.template_id);
+-            // Note: Ces setters nécessitent l'ajout des colonnes dans work_sessions
+-          }
+-          await sessionObj.save();
+-
+-          // ✅ CRÉER TIME_ENTRY
+-          const entryObj = new TimeEntries()
+-            .setSession(sessionObj.getId()!)
+-            .setUser(userId)
+-            .setExternalId(externalId)
+-            .setDevice(deviceObj.getId()!)
+-            .setSite(siteObj.getId()!)
+-            .setQrCode(qrCodeObj.getId()!)
+-            .setPointageType(PointageType.CLOCK_IN)
+-            .setClockedAt(new Date(validatedData.clocked_at))
+-            .setFallbackCheckIn(validatedData.is_fallback_checkin)
+-            .setCoordinates(validatedData.latitude, validatedData.longitude);
+-
+-          if (validatedData.device_info) {
+-            entryObj.setDeviceInfo(validatedData.device_info);
+-          }
+-          if (validatedData.image_url) {
+-            entryObj.setImageUrl(validatedData.image_url);
+-          }
+-          await entryObj.save();
+-          await entryObj.accept(); // ✅ Toujours accepté
+-
++          const effects: Array<() => Promise<unknown>> = [];
++          const result = await TenantManager.getConnectionSync().transaction({
++            isolationLevel: Transaction.ISOLATION_LEVELS.READ_COMMITTED,
++          }, async transaction => {
++            const clockOptions: ClockInOptions = { transaction, onCommit: effect => effects.push(effect) };
++            // Stable per-user lock also covers the no-open-session case.
++            const lockedUser = await TableInitializer.getModel(tableName.USERS).findByPk(userId, {
++              transaction, lock: transaction.LOCK.UPDATE,
++            });
++            if (!lockedUser) throw new Error(USERS_ERRORS.NOT_FOUND);
++            // Recheck after the lock: another simultaneous request may have committed.
++            const lockedReplay = await findTimeEntryIdempotentReplay(userId, externalId, {
++              pointage_type: validatedData.pointage_type,
++              clocked_at: new Date(validatedData.clocked_at),
++              latitude: validatedData.latitude, longitude: validatedData.longitude,
++              site_id: siteObj.getId() ?? null, device_id: deviceObj.getId()!, qr_code_id: qrCodeObj.getId() ?? null,
++            }, clockOptions);
++            if (lockedReplay) return { replay: lockedReplay };
++            const geofenceCheck = await WorkSessions.validateGeofencing(
++              siteObj.getId()!, validatedData.latitude, validatedData.longitude,
++              validatedData.gps_accuracy || deviceObj.getGpsAccuracy(), deviceObj.getId(), clockOptions,
++            );
++            const { anomalies: qrAnomalies, corrections: qrCorrections } =
++              await AnomalyDetectionService.detectAccessAnomalies(userId, qrCodeObj, clockOptions);
++            const geofenceAnomalies = await AnomalyDetectionService.detectGeofenceAnomaly(geofenceCheck, siteObj);
++
++            // 🔍 DÉTECTION ANOMALIES
++            const { anomalies, corrections, scheduleContext } =
++              await AnomalyDetectionService.detectClockInAnomalies(userId, validatedData, clockOptions);
++
++            // Fusionner avec anomalies QR
++            const allAnomalies = [...qrAnomalies, ...geofenceAnomalies, ...anomalies];
++            const allCorrections = [...qrCorrections, ...corrections];
++
++            // ✅ CRÉER SESSION QUOI QU'IL ARRIVE
++            const sessionObj = new WorkSessions()
++              .setUser(userId)
++              .setSite(siteObj.getId()!)
++              .setSessionStartAt(new Date(validatedData.clocked_at))
++              .setStartCoordinates(validatedData.latitude, validatedData.longitude);
++
++            // 🆕 AJOUTER CONTEXTE HORAIRE (si colonnes existent)
++            if (scheduleContext?.expectedSchedule) {
++              // sessionObj.setExpectedSchedule(scheduleContext.expectedSchedule);
++              // sessionObj.setApplicableTemplate(scheduleContext.expectedSchedule.template_id);
++              // Note: Ces setters nécessitent l'ajout des colonnes dans work_sessions
++            }
++            await sessionObj.save(clockOptions);
++
++            // ✅ CRÉER TIME_ENTRY
++            const entryObj = new TimeEntries()
++              .setSession(sessionObj.getId()!)
++              .setUser(userId)
++              .setExternalId(externalId)
++              .setDevice(deviceObj.getId()!)
++              .setSite(siteObj.getId()!)
++              .setQrCode(qrCodeObj.getId()!)
++              .setPointageType(PointageType.CLOCK_IN)
++              .setClockedAt(new Date(validatedData.clocked_at))
++              .setFallbackCheckIn(validatedData.is_fallback_checkin)
++              .setCoordinates(validatedData.latitude, validatedData.longitude);
++
++            if (validatedData.device_info) {
++              entryObj.setDeviceInfo(validatedData.device_info);
++            }
++            if (validatedData.image_url) {
++              entryObj.setImageUrl(validatedData.image_url);
++            }
++            await entryObj.save(clockOptions);
++            await entryObj.accept(clockOptions); // ✅ Toujours accepté
++
++
++            // ✅ GÉNÉRER MÉMO AUTO SI ANOMALIES
++            let autoMemo = null;
++            if (allAnomalies.length > 0) {
++              autoMemo = await AnomalyDetectionService.generateAutoMemo(
++                allAnomalies,
++                entryObj,
++                userId,
++                allCorrections,
++                scheduleContext, clockOptions,
++              );
++
++              // Lier mémo à l'entry
++              if (autoMemo) {
++                entryObj.setMemo(autoMemo.getId()!);
++                await entryObj.save(clockOptions);
++              }
++
++              // ✅ CRÉER FRAUD ALERTS
++              await AnomalyDetectionService.createFraudAlertsForAnomalies(
++                allAnomalies,
++                entryObj,
++                userId, clockOptions,
++              );
++            }
++
++            // 🆕 MESSAGE ENRICHI AVEC CONTEXTE HORAIRE
++            let message = TIME_ENTRIES_MESSAGES.CLOCK_IN_SUCCESS;
++            if (allAnomalies.length > 0) {
++              const hasLateArrival = allAnomalies.some((a) => a.type === AnomalyType.LATE_ARRIVAL);
++              const hasWorkOnRestDay = allAnomalies.some(
++                (a) => a.type === AnomalyType.WORK_ON_REST_DAY,
++              );
++
++              if (hasLateArrival) {
++                const lateAnomaly = allAnomalies.find((a) => a.type === AnomalyType.LATE_ARRIVAL);
++                message = `⚠️ Retard détecté: ${lateAnomaly?.technical_details?.minutes_late} minutes (tolérance: ${lateAnomaly?.technical_details?.tolerance} min)`;
++              } else if (hasWorkOnRestDay) {
++                message = `⚠️ Pointage effectué un jour de repos`;
++              } else {
++                message = 'Clock-in accepté avec anomalies détectées';
++              }
++            }
++
++            // Objects above are private working copies, not published/cached.
++            return { sessionObj, entryObj, scheduleContext, allAnomalies, allCorrections, autoMemo, message };
++          });
++          // Managed transaction resolved: no hook-afterCommit assumption and no retry.
++          if (result.replay) return respondToTimeEntryIdempotentReplay(res, result.replay);
+           const activitySend = await ActivityService.sendEmployeeLastActivity({
+             tenant: tenant.config.reference,
+             employee_license: employeeLicense,
+             occurred_at: validatedData.clocked_at,
+           });
+-
+-          // ✅ GÉNÉRER MÉMO AUTO SI ANOMALIES
+-          let autoMemo = null;
+-          if (allAnomalies.length > 0) {
+-            autoMemo = await AnomalyDetectionService.generateAutoMemo(
+-              allAnomalies,
+-              entryObj,
+-              userId,
+-              allCorrections,
+-              scheduleContext,
+-            );
+-
+-            // Lier mémo à l'entry
+-            if (autoMemo) {
+-              entryObj.setMemo(autoMemo.getId()!);
+-              await entryObj.save();
+-            }
+-
+-            // ✅ CRÉER FRAUD ALERTS
+-            await AnomalyDetectionService.createFraudAlertsForAnomalies(
+-              allAnomalies,
+-              entryObj,
+-              userId,
+-            );
+-          }
+-
+-          // 🆕 MESSAGE ENRICHI AVEC CONTEXTE HORAIRE
+-          let message = TIME_ENTRIES_MESSAGES.CLOCK_IN_SUCCESS;
+-          if (allAnomalies.length > 0) {
+-            const hasLateArrival = allAnomalies.some((a) => a.type === AnomalyType.LATE_ARRIVAL);
+-            const hasWorkOnRestDay = allAnomalies.some(
+-              (a) => a.type === AnomalyType.WORK_ON_REST_DAY,
+-            );
+-
+-            if (hasLateArrival) {
+-              const lateAnomaly = allAnomalies.find((a) => a.type === AnomalyType.LATE_ARRIVAL);
+-              message = `⚠️ Retard détecté: ${lateAnomaly?.technical_details?.minutes_late} minutes (tolérance: ${lateAnomaly?.technical_details?.tolerance} min)`;
+-            } else if (hasWorkOnRestDay) {
+-              message = `⚠️ Pointage effectué un jour de repos`;
+-            } else {
+-              message = 'Clock-in accepté avec anomalies détectées';
+-            }
+-          }
+-
++          for (const effect of effects) await effect();
++          const { sessionObj, entryObj, scheduleContext, allAnomalies, allCorrections, autoMemo, message } = result;
+           console.log('test activitySend ', activitySend);
+ 
+           return R.handleCreated(res, {
+--- a/packages/api/src/tools/anomaly.detection.service.ts
++++ b/packages/api/src/tools/anomaly.detection.service.ts
+@@ -1,3 +1,4 @@
++import type { ClockInOptions } from '../tenant/database/clock-in.options.js';
+ import {
+   AlertSeverity,
+   AlertType,
+@@ -89,7 +90,7 @@
+ 
+   async detectAccessAnomalies(
+     userId: number,
+-    qrCodeObj: QrCodeGeneration,
++    qrCodeObj: QrCodeGeneration, clockOptions: ClockInOptions = {},
+   ): Promise<{
+     anomalies: Anomaly[];
+     corrections: any[];
+@@ -135,12 +136,12 @@
+     }
+ 
+     // 3. Récupérer le manager de l'utilisateur
+-    const roleObj = await Role._load(RoleValues.EMPLOYEE, false, true);
++    const roleObj = await Role._load(RoleValues.EMPLOYEE, false, true, clockOptions);
+     const identifier = {
+       user: userId,
+       role: roleObj?.getId()!,
+     };
+-    const userRole = await UserRole._load(identifier, false, true);
++    const userRole = await UserRole._load(identifier, false, true, undefined, clockOptions);
+     const userManager = userRole?.getAssignedBy();
+ 
+     // 4. Vérifier si c'est le manager direct
+@@ -149,7 +150,7 @@
+     }
+ 
+     // 5. ⭐ Vérifier l'héritage hiérarchique
+-    const isInHierarchy = await OrgHierarchy.isUserInHierarchy(userId, qrCodeManager);
++    const isInHierarchy = await OrgHierarchy.isUserInHierarchy(userId, qrCodeManager, clockOptions);
+ 
+     if (isInHierarchy) {
+       return { anomalies, corrections }; // ✅ Autorisé - héritage hiérarchique
+@@ -161,8 +162,8 @@
+       severity: AlertSeverity.HIGH,
+       description: `Use of an unauthorized QR code - The employee clocked in using another manager's QR code.`,
+       technical_details: {
+-        user_manager: (await userRole?.getAssignedByObject())!.getGuid(),
+-        qr_code_manager: (await qrCodeObj.getManagerObj())!.getGuid(),
++        user_manager: (await userRole?.getAssignedByObject(clockOptions))!.getGuid(),
++        qr_code_manager: (await qrCodeObj.getManagerObj(clockOptions))!.getGuid(),
+         qr_code_guid: qrCodeObj.getGuid(),
+       },
+       auto_correctable: false, // Nécessite validation manager
+@@ -176,7 +177,7 @@
+    */
+   async detectClockInAnomalies(
+     userId: number,
+-    validatedData: any,
++    validatedData: any, clockOptions: ClockInOptions = {},
+   ): Promise<{
+     anomalies: Anomaly[];
+     corrections: any[];
+@@ -186,7 +187,7 @@
+     const corrections: any[] = [];
+ 
+     // 1️⃣ Session déjà ouverte
+-    const activeSession = await WorkSessions._findActiveSessionByUser(userId);
++    const activeSession = await WorkSessions._findActiveSessionByUser(userId, clockOptions);
+     if (activeSession) {
+       anomalies.push({
+         type: AnomalyType.SESSION_ALREADY_OPEN,
+@@ -215,7 +216,7 @@
+       // estimatedEnd.setMinutes(estimatedEnd.getMinutes() - 1);
+ 
+       activeSession.setSessionEndAt(estimatedEnd).setSessionStatus(SessionStatus.ABANDONED);
+-      await activeSession.save();
++      await activeSession.save(clockOptions);
+ 
+       corrections.push({
+         action: 'auto_close_previous_session',
+@@ -259,7 +260,7 @@
+     const { anomalies: scheduleAnomalies, scheduleContext } = await this.detectScheduleViolations(
+       userId,
+       PointageType.CLOCK_IN,
+-      new Date(validatedData.clocked_at),
++      new Date(validatedData.clocked_at), undefined, clockOptions,
+     );
+ 
+     // Fusionner les anomalies d'horaire
+@@ -843,7 +844,7 @@
+     entryObj: TimeEntries,
+     userId: number,
+     corrections: any[] = [],
+-    scheduleContext?: any,
++    scheduleContext?: any, clockOptions: ClockInOptions = {},
+   ): Promise<Memos | null> {
+     if (anomalies.length === 0) return null;
+ 
+@@ -857,14 +858,14 @@
+     // Type de mémo selon anomalies
+     const memoType = this.mapAnomalyToMemoType(anomalies);
+ 
+-    const roleObj = await Role._load(RoleValues.EMPLOYEE, false, true);
++    const roleObj = await Role._load(RoleValues.EMPLOYEE, false, true, clockOptions);
+ 
+     const identifier = {
+       user: userId,
+       role: roleObj?.getId()!,
+     };
+ 
+-    const userAuthor = await UserRole._load(identifier, false, true);
++    const userAuthor = await UserRole._load(identifier, false, true, undefined, clockOptions);
+ 
+     const memo = new Memos()
+       .setAuthorUser(userAuthor?.getAssignedBy()!)
+@@ -880,7 +881,7 @@
+         [
+           {
+             created_at: TimezoneConfigUtils.getCurrentTime().toISOString(),
+-            user: (await userAuthor?.getAssignedByObject())?.getGuid()!,
++            user: (await userAuthor?.getAssignedByObject(clockOptions))?.getGuid()!,
+             message: anomalies.map((a) => ({
+               type: MessageType.TEXT,
+               content: a.type,
+@@ -892,20 +893,22 @@
+       .setAutoGenerated(!MEMOS_DEFAULTS.AUTO_GENERATED); // true
+     // .setAutoReason(`${anomalies.length} anomalie(s): ${anomalies.map((a) => a.type).join(', ')}`);
+ 
+-    await memo.save();
++    await memo.save(clockOptions);
+ 
+     // Notification manager si high/critical
+     if ([AlertSeverity.HIGH, AlertSeverity.CRITICAL].includes(severity)) {
+       console.log(`🔔 Notification manager ${validatorId} - Mémo ${memo.getGuid()}`);
+     }
+ 
+-    const supervisorData = await User._load(userAuthor?.getAssignedBy());
++    const supervisorData = await User._load(userAuthor?.getAssignedBy(), undefined, undefined, undefined, undefined, undefined, clockOptions);
+     if (supervisorData?.getDeviceToken()) {
+-      try {
+-        await FCMService.sendToToken(supervisorData?.getDeviceToken()!);
+-      } catch (error: any) {
+-        console.error('FCM notification error:', error);
+-      }
++      const token = supervisorData.getDeviceToken()!;
++      const notify = async () => {
++        try { await FCMService.sendToToken(token); }
++        catch (error: any) { console.error('FCM notification error:', error); }
++      };
++      if (clockOptions.onCommit) clockOptions.onCommit(notify);
++      else await notify();
+     }
+ 
+     return memo;
+@@ -921,7 +924,7 @@
+   async createFraudAlert(
+     anomaly: Anomaly,
+     entryObj: TimeEntries,
+-    userId: number,
++    userId: number, clockOptions: ClockInOptions = {},
+   ): Promise<FraudAlerts | null> {
+     // Seulement créer alert si sévérité >= medium
+     if (
+@@ -942,12 +945,12 @@
+         technical_details: anomaly.technical_details,
+         pointage_type: entryObj.getPointageType(),
+         clocked_at: entryObj.getClockedAt(),
+-        site: (await entryObj.getSiteObj())?.getGuid(),
++        site: (await entryObj.getSiteObj(clockOptions))?.getGuid(),
+         auto_correctable: anomaly.auto_correctable,
+         auto_correction_applied: anomaly.auto_correction_applied,
+       });
+ 
+-    await alert.save();
++    await alert.save(clockOptions);
+ 
+     console.log(`🚨 FraudAlert créée: ${alert.getGuid()} - ${anomaly.severity} - ${anomaly.type}`);
+ 
+@@ -960,12 +963,12 @@
+   async createFraudAlertsForAnomalies(
+     anomalies: Anomaly[],
+     entryObj: TimeEntries,
+-    userId: number,
++    userId: number, clockOptions: ClockInOptions = {},
+   ): Promise<FraudAlerts[]> {
+     const alerts: FraudAlerts[] = [];
+ 
+     for (const anomaly of anomalies) {
+-      const alert = await this.createFraudAlert(anomaly, entryObj, userId);
++      const alert = await this.createFraudAlert(anomaly, entryObj, userId, clockOptions);
+       if (alert) {
+         alerts.push(alert);
+       }
+@@ -1044,7 +1047,7 @@
+     userId: number,
+     pointageType: PointageType,
+     clockedAt: Date,
+-    sessionObj?: WorkSessions,
++    sessionObj?: WorkSessions, clockOptions: ClockInOptions = {},
+   ): Promise<{
+     anomalies: Anomaly[];
+     scheduleContext: {
+@@ -1057,7 +1060,7 @@
+     const anomalies: Anomaly[] = [];
+ 
+     // Résoudre l'horaire applicable
+-    const scheduleResult = await ScheduleResolutionService.getApplicableSchedule(userId, clockedAt);
++    const scheduleResult = await ScheduleResolutionService.getApplicableSchedule(userId, clockedAt, clockOptions);
+ 
+     if (!scheduleResult.success || !scheduleResult.applicable_schedule) {
+       return {
+@@ -1072,7 +1075,7 @@
+     }
+ 
+     const schedule = scheduleResult.applicable_schedule;
+-    const guard = await this.resolveLinkedGuard(userId, schedule);
++    const guard = await this.resolveLinkedGuard(userId, schedule, clockOptions);
+     const isWorkDay = schedule.is_work_day;
+     const expectedBlocks = schedule.expected_blocks;
+ 
+@@ -1095,7 +1098,7 @@
+         break;
+ 
+       case PointageType.PAUSE_END:
+-        anomalies.push(...(await this.analyzePauseEndSchedule(clockedAt, schedule, sessionObj)));
++        anomalies.push(...(await this.analyzePauseEndSchedule(clockedAt, schedule, sessionObj, clockOptions)));
+         break;
+     }
+ 
+@@ -1120,7 +1123,7 @@
+   /** Les deux affectations doivent déclarer la même opération; les horaires seuls ne suffisent pas. */
+   private async resolveLinkedGuard(
+     userId: number,
+-    schedule: ApplicableSchedule,
++    schedule: ApplicableSchedule, clockOptions: ClockInOptions = {},
+   ): Promise<{
+     start: ApplicableSchedule;
+     end: ApplicableSchedule;
+@@ -1129,7 +1132,7 @@
+     if (operation?.kind !== 'GUARD') return null;
+     const neighborDate = new Date(`${schedule.schedule_date}T12:00:00Z`);
+     neighborDate.setUTCDate(neighborDate.getUTCDate() + (operation.role === 'START' ? 1 : -1));
+-    const result = await ScheduleResolutionService.getApplicableSchedule(userId, neighborDate);
++    const result = await ScheduleResolutionService.getApplicableSchedule(userId, neighborDate, clockOptions);
+     const neighbor = result.success ? result.applicable_schedule : null;
+     if (
+       !neighbor?.is_work_day ||
+@@ -1583,14 +1586,14 @@
+   private async analyzePauseEndSchedule(
+     clockedAt: Date,
+     schedule: ApplicableSchedule,
+-    sessionObj?: WorkSessions,
++    sessionObj?: WorkSessions, clockOptions: ClockInOptions = {},
+   ): Promise<Anomaly[]> {
+     const anomalies: Anomaly[] = [];
+ 
+     if (!sessionObj) return anomalies;
+ 
+     // Récupérer le dernier PAUSE_START
+-    const entries = await TimeEntries._listBySession(sessionObj.getId()!);
++    const entries = await TimeEntries._listBySession(sessionObj.getId()!, undefined, clockOptions);
+     const lastPauseStart = entries
+       ?.reverse()
+       .find((e) => e.getPointageType() === PointageType.PAUSE_START);
+--- a/packages/api/src/tools/schedule.resolution.service.ts
++++ b/packages/api/src/tools/schedule.resolution.service.ts
+@@ -1,3 +1,4 @@
++import type { ClockInOptions } from '../tenant/database/clock-in.options.js';
+ import { RAFamily, ROTATION_GROUP_DEFAULTS, SAFamily } from '@toke/shared';
+ 
+ import SessionTemplate from '../tenant/class/SessionTemplates.js';
+@@ -54,18 +55,18 @@
+    * Point d'entrée principal - Résout l'horaire applicable pour un utilisateur à une date donnée
+    * Ordre de priorité: exception → rotation → template direct → défaut entreprise
+    */
+-  async getApplicableSchedule(userId: number, targetDate: Date): Promise<ScheduleResolutionResult> {
++  async getApplicableSchedule(userId: number, targetDate: Date, clockOptions: ClockInOptions = {}): Promise<ScheduleResolutionResult> {
+     const resolutionPath: string[] = [];
+     const dateStr = this.formatDate(targetDate);
+ 
+     try {
+       // 1️⃣ Récupérer l'utilisateur et son groupe actif
+-      const userObj = await User._load(userId);
++      const userObj = await User._load(userId, undefined, undefined, undefined, undefined, undefined, clockOptions);
+       if (!userObj) {
+         throw new Error('User not found');
+       }
+ 
+-      const activeGroup = await Groups._load(userId, false, true);
++      const activeGroup = await Groups._load(userId, false, true, undefined, clockOptions);
+ 
+       // 2️⃣ Récupérer toutes les assignations applicables
+       // à la date demandée.
+@@ -92,7 +93,7 @@
+       const userSchedules = await ScheduleAssignments._listForRelatedOnDate(
+         SAFamily.USER,
+         userGuid,
+-        dateStr,
++        dateStr, undefined, clockOptions,
+       );
+ 
+       for (const schedule of userSchedules ?? []) {
+@@ -114,7 +115,7 @@
+ 
+       resolutionPath.push('Checking user rotation assignments');
+ 
+-      const userRotations = await RotationAssignment._listByRelated(RAFamily.USER, userGuid);
++      const userRotations = await RotationAssignment._listByRelated(RAFamily.USER, userGuid, undefined, clockOptions);
+ 
+       for (const rotation of userRotations ?? []) {
+         candidates.push({
+@@ -145,7 +146,7 @@
+         const groupSchedules = await ScheduleAssignments._listForRelatedOnDate(
+           SAFamily.GROUP,
+           groupGuid,
+-          dateStr,
++          dateStr, undefined, clockOptions,
+         );
+ 
+         for (const schedule of groupSchedules ?? []) {
+@@ -163,7 +164,7 @@
+         // Rotation de groupe : priorité 100
+         resolutionPath.push('Checking group rotation assignments');
+ 
+-        const groupRotations = await RotationAssignment._listByRelated(RAFamily.GROUP, groupGuid);
++        const groupRotations = await RotationAssignment._listByRelated(RAFamily.GROUP, groupGuid, undefined, clockOptions);
+ 
+         for (const rotation of groupRotations ?? []) {
+           candidates.push({
+@@ -192,20 +193,20 @@
+         );
+ 
+         if (winner.type === 'schedule') {
+-          return await this.buildFromScheduleAssignment(winner.data, dateStr, resolutionPath);
++          return await this.buildFromScheduleAssignment(winner.data, dateStr, resolutionPath, clockOptions);
+         } else {
+           return await this.buildFromRotationAssignment(
+             winner.data,
+             targetDate,
+             dateStr,
+-            resolutionPath,
++            resolutionPath, clockOptions,
+           );
+         }
+       }
+ 
+       // 5️⃣ Fallback: Template par défaut du tenant
+       resolutionPath.push('⚠️ No assignments found, using tenant default');
+-      const defaultSchedule = await this.resolveFromDefault(userId, this.getDayOfWeek(targetDate));
++      const defaultSchedule = await this.resolveFromDefault(userId, this.getDayOfWeek(targetDate), clockOptions);
+ 
+       if (defaultSchedule) {
+         resolutionPath.push(`✅ Default template applied`);
+@@ -253,11 +254,11 @@
+    */
+   private async resolveFromDefault(
+     userId: number,
+-    dayOfWeek: string,
++    dayOfWeek: string, clockOptions: ClockInOptions = {},
+   ): Promise<ApplicableSchedule | null> {
+     // TODO: Implémenter récupération du template par défaut de l'entreprise
+ 
+-    const defaultSessionTemplate = await SessionTemplate._load({}, false, true);
++    const defaultSessionTemplate = await SessionTemplate._load({}, false, true, clockOptions);
+     if (defaultSessionTemplate) {
+       return await this.buildScheduleFromTemplate(defaultSessionTemplate, dayOfWeek, 'default', {
+         session_guid: defaultSessionTemplate.getGuid(),
+@@ -277,7 +278,7 @@
+   private async buildFromScheduleAssignment(
+     assignment: ScheduleAssignments,
+     dateStr: string,
+-    resolutionPath: string[],
++    resolutionPath: string[], clockOptions: ClockInOptions = {},
+   ): Promise<ScheduleResolutionResult> {
+     const snapshot = assignment.getSessionTemplate();
+     const template = SessionTemplate.toObject(snapshot);
+@@ -308,7 +309,7 @@
+       const parentGuid = assignment.getContinuationOfGuid();
+ 
+       if (parentGuid) {
+-        const parent = await ScheduleAssignments._load(parentGuid, true);
++        const parent = await ScheduleAssignments._load(parentGuid, true, clockOptions);
+         if (
+           parent?.isActive() &&
+           !parent.getDeletedAt() &&
+@@ -342,7 +343,7 @@
+           start_date: nextDateStr,
+           end_date: nextDateStr,
+           active: true,
+-        });
++        }, undefined, clockOptions);
+         const valid = (children ?? []).filter(
+           (child) => child.getTenant() === assignment.getTenant() && !child.getDeletedAt(),
+         );
+@@ -371,9 +372,9 @@
+     assignment: RotationAssignment,
+     targetDate: Date,
+     dateStr: string,
+-    resolutionPath: string[],
++    resolutionPath: string[], clockOptions: ClockInOptions = {},
+   ): Promise<ScheduleResolutionResult> {
+-    const rotationGroup = await assignment.getRotationGroupObj();
++    const rotationGroup = await assignment.getRotationGroupObj(clockOptions);
+ 
+     if (!rotationGroup) {
+       resolutionPath.push('❌ Rotation group not found');
+@@ -386,8 +387,8 @@
+     }
+ 
+     const offset = assignment.getOffset() || 0;
+-    const templateId = await this.calculateRotationTemplateId(rotationGroup, targetDate, offset);
+-    const template = await SessionTemplate._load(templateId);
++    const templateId = await this.calculateRotationTemplateId(rotationGroup, targetDate, offset, clockOptions);
++    const template = await SessionTemplate._load(templateId, undefined, undefined, clockOptions);
+ 
+     if (!templateId) {
+       resolutionPath.push('❌ Could not calculate rotation template');
+@@ -435,7 +436,7 @@
+   private async calculateRotationTemplateId(
+     rotationGroup: RotationGroup,
+     targetDate: Date,
+-    offset: number,
++    offset: number, clockOptions: ClockInOptions = {},
+   ): Promise<number | null> {
+     const startDateStr = new Date(rotationGroup.getStartDate()!);
+     const rotationStep = rotationGroup.getRotationStep() ?? ROTATION_GROUP_DEFAULTS.ROTATION_STEP;
+@@ -445,7 +446,7 @@
+ 
+     const startDate = new Date(startDateStr);
+ 
+-    const slots = await rotationGroup.getCycleSlots();
++    const slots = await rotationGroup.getCycleSlots(clockOptions);
+ 
+     // const cycleTemplates = slots.find((s) => s.getId());
+     const templateIds = slots.map((slot) => slot.getId()).filter((id): id is number => Boolean(id));
+--- a/packages/api/src/utils/time.entry.idempotency.ts
++++ b/packages/api/src/utils/time.entry.idempotency.ts
+@@ -1,3 +1,4 @@
++import type { ClockInOptions } from '../tenant/database/clock-in.options.js';
+ import { PointageType } from '@toke/shared';
+ 
+ import TimeEntries from '../tenant/class/TimeEntries.js';
+@@ -50,8 +51,9 @@
+   userId: number,
+   externalId: string,
+   request: TimeEntryIdempotentRequest,
++  clockOptions: ClockInOptions = {},
+ ): Promise<TimeEntryIdempotentReplay | null> => {
+-  const existingEntry = await TimeEntries._loadByExternalId(userId, externalId);
++  const existingEntry = await TimeEntries._loadByExternalId(userId, externalId, clockOptions);
+ 
+   if (!existingEntry) {
+     return null;
+--- /dev/null
++++ b/packages/api/src/tenant/database/clock-in.options.ts
+@@ -0,0 +1,8 @@
++import type { Transaction } from 'sequelize';
++
++/** Explicit arguments only: no ambient/CLS transaction and no global defaults. */
++export interface ClockInOptions {
++  transaction?: Transaction;
++  /** Queue external effects; the owner runs them only after managed commit resolves. */
++  onCommit?: (effect: () => Promise<unknown>) => void;
++}

@@ -1,0 +1,19 @@
+diff --git a/packages/api/src/automate/rotation.cron.ts b/packages/api/src/automate/rotation.cron.ts
+index 2c6573d..c574f29 100644
+--- a/packages/api/src/automate/rotation.cron.ts
++++ b/packages/api/src/automate/rotation.cron.ts
+@@ -1,4 +1,5 @@
+ import { CycleUnit, Direction, TimezoneConfigUtils } from '@toke/shared';
++import { Op } from 'sequelize';
+ 
+ import RotationAssignment from '../tenant/class/RotationAssignments.js';
+ import RotationAssignmentLog from '../tenant/class/RotationAssignmentLog.js';
+@@ -114,7 +115,7 @@ export async function runRotationCron(): Promise<RotationCronResult> {
+   const groupMap = new Map<number, InstanceType<typeof RotationGroup>>();
+ 
+   if (groupIds.length > 0) {
+-    const groups = await RotationGroup._list({ ids: groupIds });
++    const groups = await RotationGroup._list({ id: { [Op.in]: groupIds } });
+     if (!groups) throw new Error('Failed to load rotation groups');
+     for (const g of groups) {
+       const gId = g.getId();

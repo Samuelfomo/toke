@@ -1,3 +1,4 @@
+import type { ClockInOptions } from '../database/clock-in.options.js';
 import { USER_ROLES_ERRORS, UserRolesValidationUtils } from '@toke/shared';
 
 import BaseModel from '../database/db.base.js';
@@ -26,20 +27,20 @@ export default class UserRoleModel extends BaseModel {
     super();
   }
 
-  protected async find(id: number): Promise<any> {
-    return await this.findOne(this.db.tableName, { [this.db.id]: id });
+  protected async find(id: number, clockOptions: ClockInOptions = {}): Promise<any> {
+    return await this.findOne(this.db.tableName, { [this.db.id]: id }, { ...(clockOptions.transaction ? { transaction: clockOptions.transaction } : {}) });
   }
 
-  protected async findByGuid(guid: string): Promise<any> {
-    return await this.findOne(this.db.tableName, { [this.db.guid]: guid });
+  protected async findByGuid(guid: string, clockOptions: ClockInOptions = {}): Promise<any> {
+    return await this.findOne(this.db.tableName, { [this.db.guid]: guid }, { ...(clockOptions.transaction ? { transaction: clockOptions.transaction } : {}) });
   }
 
-  protected async findByUserRole(user: number, role: number): Promise<any> {
-    return await this.findOne(this.db.tableName, { [this.db.user]: user, [this.db.role]: role });
+  protected async findByUserRole(user: number, role: number, clockOptions: ClockInOptions = {}): Promise<any> {
+    return await this.findOne(this.db.tableName, { [this.db.user]: user, [this.db.role]: role }, { ...(clockOptions.transaction ? { transaction: clockOptions.transaction } : {}) });
   }
 
-  protected async findAdminSupervisor(): Promise<any> {
-    return await this.findOne(this.db.tableName, { [this.db.assigned_by]: null });
+  protected async findAdminSupervisor(clockOptions: ClockInOptions = {}): Promise<any> {
+    return await this.findOne(this.db.tableName, { [this.db.assigned_by]: null }, { ...(clockOptions.transaction ? { transaction: clockOptions.transaction } : {}) });
   }
 
   protected async findByAttribute(attribute: string, value: any): Promise<any> {

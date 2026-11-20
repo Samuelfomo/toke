@@ -2,13 +2,21 @@ import { fileURLToPath, URL } from 'node:url';
 import { resolve } from 'path'; // https://vitejs.dev/config/
 
 import { defineConfig } from 'vite';
+
+//@ts-ignore
 import vue from '@vitejs/plugin-vue';
+// import { createHtmlPlugin } from 'vite-plugin-html'
+// import vueDevTools from 'vite-plugin-vue-devtools'
 
 // https://vitejs.dev/config/
-module.exports = defineConfig({
-  plugins: [vue()],
+export default defineConfig({
+  plugins: [vue(),
+    // vueDevTools(),
+    // createHtmlPlugin({})
+    ],
   resolve: {
     alias: {
+      //@ts-ignore
       '@': fileURLToPath(new URL('./src', import.meta.url)),
       // '@': resolve(__dirname, 'src'),
       '@toke/shared': resolve(__dirname, '../shared/dist'),
@@ -22,6 +30,10 @@ module.exports = defineConfig({
         resolve(__dirname, 'public'),
         resolve(__dirname, 'node_modules'),
         // resolve(__dirname, '../../shared/src'), // <-- autoriser l'accès à shared
+        // 🧩 ajoute la racine du projet cloud
+        __dirname,
+        // 🧩 et la racine du monorepo si nécessaire
+        resolve(__dirname, '../..'),
       ],
     },
     open: true, // Ouvre automatiquement le navigateur

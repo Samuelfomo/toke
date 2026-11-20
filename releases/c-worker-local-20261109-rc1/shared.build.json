@@ -1,0 +1,12 @@
+{
+  "sourceConfig": "packages/shared/tsconfig.json",
+  "compiler": "typescript@5.9.3",
+  "files": "shared tsconfig include",
+  "options": {
+    "target": "ES2022/ES2020",
+    "module": "ESNext",
+    "declaration": true,
+    "sourceMap": false,
+    "removeComments": true
+  }
+}

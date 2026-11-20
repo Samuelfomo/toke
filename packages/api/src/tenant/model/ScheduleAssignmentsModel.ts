@@ -1,3 +1,4 @@
+import type { ClockInOptions } from '../database/clock-in.options.js';
 import {
   SAFamily,
   SCHEDULE_ASSIGNMENTS_DEFAULTS,
@@ -62,24 +63,24 @@ export default class ScheduleAssignmentsModel extends BaseModel {
   // MÉTHODES DE RECHERCHE
   // ============================================
 
-  protected async find(id: number, includeDeleted: boolean = false): Promise<any> {
+  protected async find(id: number, includeDeleted: boolean = false, clockOptions: ClockInOptions = {}): Promise<any> {
     const conditions: any = { [this.db.id]: id };
 
     if (!includeDeleted) {
       conditions[this.db.deleted_at] = null;
     }
 
-    return await this.findOne(this.db.tableName, conditions);
+    return await this.findOne(this.db.tableName, conditions, { ...(clockOptions.transaction ? { transaction: clockOptions.transaction } : {}) });
   }
 
-  protected async findByGuid(guid: string, includeDeleted: boolean = false): Promise<any> {
+  protected async findByGuid(guid: string, includeDeleted: boolean = false, clockOptions: ClockInOptions = {}): Promise<any> {
     const conditions: any = { [this.db.guid]: guid };
 
     if (!includeDeleted) {
       conditions[this.db.deleted_at] = null;
     }
 
-    return await this.findOne(this.db.tableName, conditions);
+    return await this.findOne(this.db.tableName, conditions, { ...(clockOptions.transaction ? { transaction: clockOptions.transaction } : {}) });
   }
 
   /**
@@ -123,13 +124,13 @@ export default class ScheduleAssignmentsModel extends BaseModel {
 
   protected async listAll(
     conditions: Record<string, any> = {},
-    paginationOptions: { offset?: number; limit?: number } = {},
+    paginationOptions: { offset?: number; limit?: number } = {}, clockOptions: ClockInOptions = {},
   ): Promise<any[]> {
     if (conditions[this.db.deleted_at] === undefined) {
       conditions[this.db.deleted_at] = null;
     }
 
-    return await this.findAll(this.db.tableName, conditions, paginationOptions);
+    return await this.findAll(this.db.tableName, conditions, paginationOptions, { ...(clockOptions.transaction ? { transaction: clockOptions.transaction } : {}) });
   }
 
   protected async listAllByRelated(
@@ -186,7 +187,7 @@ export default class ScheduleAssignmentsModel extends BaseModel {
     family: SAFamily,
     related: string,
     date: string,
-    paginationOptions: { offset?: number; limit?: number } = {},
+    paginationOptions: { offset?: number; limit?: number } = {}, clockOptions: ClockInOptions = {},
   ): Promise<any[]> {
     const conditions = {
       [this.db.family]: family,
@@ -199,7 +200,7 @@ export default class ScheduleAssignmentsModel extends BaseModel {
       [this.db.active]: true,
     };
 
-    return await this.listAll(conditions, paginationOptions);
+    return await this.listAll(conditions, paginationOptions, clockOptions);
   }
 
   protected async listAllByRelatedOnPeriod(

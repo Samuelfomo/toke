@@ -1,4 +1,6 @@
 .
+├── AUDIT_SYSTEME_2026-11-04.md
+├── AUDIT_SYSTEME_2026-11-05.md
 ├── Project-structure.txt
 ├── README.md
 ├── ecosystem.config.cjs
@@ -7,6 +9,7 @@
 ├── package.json
 ├── packages
 │   ├── api
+│   │   ├── Project-structure.txt
 │   │   ├── README.md
 │   │   ├── cache
 │   │   │   ├── auth-qr-cache.json
@@ -40,6 +43,10 @@
 │   │   │   │   │   ├── BillingCycle.d.ts.map
 │   │   │   │   │   ├── BillingCycle.js
 │   │   │   │   │   ├── BillingCycle.js.map
+│   │   │   │   │   ├── CashPayment.d.ts
+│   │   │   │   │   ├── CashPayment.d.ts.map
+│   │   │   │   │   ├── CashPayment.js
+│   │   │   │   │   ├── CashPayment.js.map
 │   │   │   │   │   ├── Client.d.ts
 │   │   │   │   │   ├── Client.d.ts.map
 │   │   │   │   │   ├── Client.js
@@ -80,6 +87,14 @@
 │   │   │   │   │   ├── GlobalLicense.d.ts.map
 │   │   │   │   │   ├── GlobalLicense.js
 │   │   │   │   │   ├── GlobalLicense.js.map
+│   │   │   │   │   ├── KpaySettlement.d.ts
+│   │   │   │   │   ├── KpaySettlement.d.ts.map
+│   │   │   │   │   ├── KpaySettlement.js
+│   │   │   │   │   ├── KpaySettlement.js.map
+│   │   │   │   │   ├── KpayWebhook.d.ts
+│   │   │   │   │   ├── KpayWebhook.d.ts.map
+│   │   │   │   │   ├── KpayWebhook.js
+│   │   │   │   │   ├── KpayWebhook.js.map
 │   │   │   │   │   ├── Language.d.ts
 │   │   │   │   │   ├── Language.d.ts.map
 │   │   │   │   │   ├── Language.js
@@ -92,6 +107,30 @@
 │   │   │   │   │   ├── LicenseAdjustment.d.ts.map
 │   │   │   │   │   ├── LicenseAdjustment.js
 │   │   │   │   │   ├── LicenseAdjustment.js.map
+│   │   │   │   │   ├── LicenseRecords.d.ts
+│   │   │   │   │   ├── LicenseRecords.d.ts.map
+│   │   │   │   │   ├── LicenseRecords.js
+│   │   │   │   │   ├── LicenseRecords.js.map
+│   │   │   │   │   ├── LicenseRelease.d.ts
+│   │   │   │   │   ├── LicenseRelease.d.ts.map
+│   │   │   │   │   ├── LicenseRelease.js
+│   │   │   │   │   ├── LicenseRelease.js.map
+│   │   │   │   │   ├── MonthlyBillingPreview.d.ts
+│   │   │   │   │   ├── MonthlyBillingPreview.d.ts.map
+│   │   │   │   │   ├── MonthlyBillingPreview.js
+│   │   │   │   │   ├── MonthlyBillingPreview.js.map
+│   │   │   │   │   ├── NormalizeInitialXaf.d.ts
+│   │   │   │   │   ├── NormalizeInitialXaf.d.ts.map
+│   │   │   │   │   ├── NormalizeInitialXaf.js
+│   │   │   │   │   ├── NormalizeInitialXaf.js.map
+│   │   │   │   │   ├── OnboardingPayment.d.ts
+│   │   │   │   │   ├── OnboardingPayment.d.ts.map
+│   │   │   │   │   ├── OnboardingPayment.js
+│   │   │   │   │   ├── OnboardingPayment.js.map
+│   │   │   │   │   ├── PaymentAttempt.d.ts
+│   │   │   │   │   ├── PaymentAttempt.d.ts.map
+│   │   │   │   │   ├── PaymentAttempt.js
+│   │   │   │   │   ├── PaymentAttempt.js.map
 │   │   │   │   │   ├── PaymentMethod.d.ts
 │   │   │   │   │   ├── PaymentMethod.d.ts.map
 │   │   │   │   │   ├── PaymentMethod.js
@@ -104,6 +143,26 @@
 │   │   │   │   │   ├── Permission.d.ts.map
 │   │   │   │   │   ├── Permission.js
 │   │   │   │   │   ├── Permission.js.map
+│   │   │   │   │   ├── PostpaidCash.d.ts
+│   │   │   │   │   ├── PostpaidCash.d.ts.map
+│   │   │   │   │   ├── PostpaidCash.js
+│   │   │   │   │   ├── PostpaidCash.js.map
+│   │   │   │   │   ├── PostpaidClosure.d.ts
+│   │   │   │   │   ├── PostpaidClosure.d.ts.map
+│   │   │   │   │   ├── PostpaidClosure.js
+│   │   │   │   │   ├── PostpaidClosure.js.map
+│   │   │   │   │   ├── PostpaidTransition.d.ts
+│   │   │   │   │   ├── PostpaidTransition.d.ts.map
+│   │   │   │   │   ├── PostpaidTransition.js
+│   │   │   │   │   ├── PostpaidTransition.js.map
+│   │   │   │   │   ├── Renewal.d.ts
+│   │   │   │   │   ├── Renewal.d.ts.map
+│   │   │   │   │   ├── Renewal.js
+│   │   │   │   │   ├── Renewal.js.map
+│   │   │   │   │   ├── SeatAssignment.d.ts
+│   │   │   │   │   ├── SeatAssignment.d.ts.map
+│   │   │   │   │   ├── SeatAssignment.js
+│   │   │   │   │   ├── SeatAssignment.js.map
 │   │   │   │   │   ├── Sponsor.d.ts
 │   │   │   │   │   ├── Sponsor.d.ts.map
 │   │   │   │   │   ├── Sponsor.js
@@ -115,8 +174,153 @@
 │   │   │   │   │   ├── Tenant.d.ts
 │   │   │   │   │   ├── Tenant.d.ts.map
 │   │   │   │   │   ├── Tenant.js
-│   │   │   │   │   └── Tenant.js.map
+│   │   │   │   │   ├── Tenant.js.map
+│   │   │   │   │   ├── TenantOnboarding.d.ts
+│   │   │   │   │   ├── TenantOnboarding.d.ts.map
+│   │   │   │   │   ├── TenantOnboarding.js
+│   │   │   │   │   ├── TenantOnboarding.js.map
+│   │   │   │   │   ├── TenantOnboardingResend.d.ts
+│   │   │   │   │   ├── TenantOnboardingResend.d.ts.map
+│   │   │   │   │   ├── TenantOnboardingResend.js
+│   │   │   │   │   ├── TenantOnboardingResend.js.map
+│   │   │   │   │   ├── activity-monitoring-input.d.ts
+│   │   │   │   │   ├── activity-monitoring-input.d.ts.map
+│   │   │   │   │   ├── activity-monitoring-input.js
+│   │   │   │   │   ├── activity-monitoring-input.js.map
+│   │   │   │   │   ├── license-subscription-input.d.ts
+│   │   │   │   │   ├── license-subscription-input.d.ts.map
+│   │   │   │   │   ├── license-subscription-input.js
+│   │   │   │   │   ├── license-subscription-input.js.map
+│   │   │   │   │   ├── onboarding-commercial.d.ts
+│   │   │   │   │   ├── onboarding-commercial.d.ts.map
+│   │   │   │   │   ├── onboarding-commercial.js
+│   │   │   │   │   ├── onboarding-commercial.js.map
+│   │   │   │   │   ├── onboarding-subscription-input.d.ts
+│   │   │   │   │   ├── onboarding-subscription-input.d.ts.map
+│   │   │   │   │   ├── onboarding-subscription-input.js
+│   │   │   │   │   ├── onboarding-subscription-input.js.map
+│   │   │   │   │   ├── payment-attempt-contract.d.ts
+│   │   │   │   │   ├── payment-attempt-contract.d.ts.map
+│   │   │   │   │   ├── payment-attempt-contract.js
+│   │   │   │   │   └── payment-attempt-contract.js.map
 │   │   │   │   ├── database
+│   │   │   │   │   ├── base_model
+│   │   │   │   │   │   ├── db.activity-monitoring.d.ts
+│   │   │   │   │   │   ├── db.activity-monitoring.d.ts.map
+│   │   │   │   │   │   ├── db.activity-monitoring.js
+│   │   │   │   │   │   ├── db.activity-monitoring.js.map
+│   │   │   │   │   │   ├── db.adjustment-issuance.d.ts
+│   │   │   │   │   │   ├── db.adjustment-issuance.d.ts.map
+│   │   │   │   │   │   ├── db.adjustment-issuance.js
+│   │   │   │   │   │   ├── db.adjustment-issuance.js.map
+│   │   │   │   │   │   ├── db.adjustment-preview.d.ts
+│   │   │   │   │   │   ├── db.adjustment-preview.d.ts.map
+│   │   │   │   │   │   ├── db.adjustment-preview.js
+│   │   │   │   │   │   ├── db.adjustment-preview.js.map
+│   │   │   │   │   │   ├── db.cash-confirmation.d.ts
+│   │   │   │   │   │   ├── db.cash-confirmation.d.ts.map
+│   │   │   │   │   │   ├── db.cash-confirmation.js
+│   │   │   │   │   │   ├── db.cash-confirmation.js.map
+│   │   │   │   │   │   ├── db.cash-installment.d.ts
+│   │   │   │   │   │   ├── db.cash-installment.d.ts.map
+│   │   │   │   │   │   ├── db.cash-installment.js
+│   │   │   │   │   │   ├── db.cash-installment.js.map
+│   │   │   │   │   │   ├── db.cash-payment.d.ts
+│   │   │   │   │   │   ├── db.cash-payment.d.ts.map
+│   │   │   │   │   │   ├── db.cash-payment.js
+│   │   │   │   │   │   ├── db.cash-payment.js.map
+│   │   │   │   │   │   ├── db.initial-expiry-repair.d.ts
+│   │   │   │   │   │   ├── db.initial-expiry-repair.d.ts.map
+│   │   │   │   │   │   ├── db.initial-expiry-repair.js
+│   │   │   │   │   │   ├── db.initial-expiry-repair.js.map
+│   │   │   │   │   │   ├── db.kpay-settlement.d.ts
+│   │   │   │   │   │   ├── db.kpay-settlement.d.ts.map
+│   │   │   │   │   │   ├── db.kpay-settlement.js
+│   │   │   │   │   │   ├── db.kpay-settlement.js.map
+│   │   │   │   │   │   ├── db.license-records.d.ts
+│   │   │   │   │   │   ├── db.license-records.d.ts.map
+│   │   │   │   │   │   ├── db.license-records.js
+│   │   │   │   │   │   ├── db.license-records.js.map
+│   │   │   │   │   │   ├── db.license-release.d.ts
+│   │   │   │   │   │   ├── db.license-release.d.ts.map
+│   │   │   │   │   │   ├── db.license-release.js
+│   │   │   │   │   │   ├── db.license-release.js.map
+│   │   │   │   │   │   ├── db.license-subscription.d.ts
+│   │   │   │   │   │   ├── db.license-subscription.d.ts.map
+│   │   │   │   │   │   ├── db.license-subscription.js
+│   │   │   │   │   │   ├── db.license-subscription.js.map
+│   │   │   │   │   │   ├── db.monthly-billing-preview.d.ts
+│   │   │   │   │   │   ├── db.monthly-billing-preview.d.ts.map
+│   │   │   │   │   │   ├── db.monthly-billing-preview.js
+│   │   │   │   │   │   ├── db.monthly-billing-preview.js.map
+│   │   │   │   │   │   ├── db.normalize-initial-xaf.d.ts
+│   │   │   │   │   │   ├── db.normalize-initial-xaf.d.ts.map
+│   │   │   │   │   │   ├── db.normalize-initial-xaf.js
+│   │   │   │   │   │   ├── db.normalize-initial-xaf.js.map
+│   │   │   │   │   │   ├── db.onboarding-subscription.d.ts
+│   │   │   │   │   │   ├── db.onboarding-subscription.d.ts.map
+│   │   │   │   │   │   ├── db.onboarding-subscription.js
+│   │   │   │   │   │   ├── db.onboarding-subscription.js.map
+│   │   │   │   │   │   ├── db.payment-attempt.d.ts
+│   │   │   │   │   │   ├── db.payment-attempt.d.ts.map
+│   │   │   │   │   │   ├── db.payment-attempt.js
+│   │   │   │   │   │   ├── db.payment-attempt.js.map
+│   │   │   │   │   │   ├── db.postpaid-cash.d.ts
+│   │   │   │   │   │   ├── db.postpaid-cash.d.ts.map
+│   │   │   │   │   │   ├── db.postpaid-cash.js
+│   │   │   │   │   │   ├── db.postpaid-cash.js.map
+│   │   │   │   │   │   ├── db.postpaid-closure.d.ts
+│   │   │   │   │   │   ├── db.postpaid-closure.d.ts.map
+│   │   │   │   │   │   ├── db.postpaid-closure.js
+│   │   │   │   │   │   ├── db.postpaid-closure.js.map
+│   │   │   │   │   │   ├── db.postpaid-transition.d.ts
+│   │   │   │   │   │   ├── db.postpaid-transition.d.ts.map
+│   │   │   │   │   │   ├── db.postpaid-transition.js
+│   │   │   │   │   │   ├── db.postpaid-transition.js.map
+│   │   │   │   │   │   ├── db.renewal-activation.d.ts
+│   │   │   │   │   │   ├── db.renewal-activation.d.ts.map
+│   │   │   │   │   │   ├── db.renewal-activation.js
+│   │   │   │   │   │   ├── db.renewal-activation.js.map
+│   │   │   │   │   │   ├── db.renewal-preparation.d.ts
+│   │   │   │   │   │   ├── db.renewal-preparation.d.ts.map
+│   │   │   │   │   │   ├── db.renewal-preparation.js
+│   │   │   │   │   │   ├── db.renewal-preparation.js.map
+│   │   │   │   │   │   ├── db.renewal-preview.d.ts
+│   │   │   │   │   │   ├── db.renewal-preview.d.ts.map
+│   │   │   │   │   │   ├── db.renewal-preview.js
+│   │   │   │   │   │   ├── db.renewal-preview.js.map
+│   │   │   │   │   │   ├── db.renewal-pricing.d.ts
+│   │   │   │   │   │   ├── db.renewal-pricing.d.ts.map
+│   │   │   │   │   │   ├── db.renewal-pricing.js
+│   │   │   │   │   │   ├── db.renewal-pricing.js.map
+│   │   │   │   │   │   ├── db.renewal.d.ts
+│   │   │   │   │   │   ├── db.renewal.d.ts.map
+│   │   │   │   │   │   ├── db.renewal.js
+│   │   │   │   │   │   ├── db.renewal.js.map
+│   │   │   │   │   │   ├── db.scheduled-license-activation.d.ts
+│   │   │   │   │   │   ├── db.scheduled-license-activation.d.ts.map
+│   │   │   │   │   │   ├── db.scheduled-license-activation.js
+│   │   │   │   │   │   ├── db.scheduled-license-activation.js.map
+│   │   │   │   │   │   ├── db.seat-assignment.d.ts
+│   │   │   │   │   │   ├── db.seat-assignment.d.ts.map
+│   │   │   │   │   │   ├── db.seat-assignment.js
+│   │   │   │   │   │   ├── db.seat-assignment.js.map
+│   │   │   │   │   │   ├── db.seat.d.ts
+│   │   │   │   │   │   ├── db.seat.d.ts.map
+│   │   │   │   │   │   ├── db.seat.js
+│   │   │   │   │   │   ├── db.seat.js.map
+│   │   │   │   │   │   ├── db.tenant-license-status.d.ts
+│   │   │   │   │   │   ├── db.tenant-license-status.d.ts.map
+│   │   │   │   │   │   ├── db.tenant-license-status.js
+│   │   │   │   │   │   ├── db.tenant-license-status.js.map
+│   │   │   │   │   │   ├── db.tenant-onboarding.d.ts
+│   │   │   │   │   │   ├── db.tenant-onboarding.d.ts.map
+│   │   │   │   │   │   ├── db.tenant-onboarding.js
+│   │   │   │   │   │   ├── db.tenant-onboarding.js.map
+│   │   │   │   │   │   ├── db.usage-regularization-access.d.ts
+│   │   │   │   │   │   ├── db.usage-regularization-access.d.ts.map
+│   │   │   │   │   │   ├── db.usage-regularization-access.js
+│   │   │   │   │   │   └── db.usage-regularization-access.js.map
 │   │   │   │   │   ├── data
 │   │   │   │   │   │   ├── activity.monitoring.db.d.ts
 │   │   │   │   │   │   ├── activity.monitoring.db.d.ts.map
@@ -186,6 +390,14 @@
 │   │   │   │   │   │   ├── license.adjustment.db.d.ts.map
 │   │   │   │   │   │   ├── license.adjustment.db.js
 │   │   │   │   │   │   ├── license.adjustment.db.js.map
+│   │   │   │   │   │   ├── license.event.db.d.ts
+│   │   │   │   │   │   ├── license.event.db.d.ts.map
+│   │   │   │   │   │   ├── license.event.db.js
+│   │   │   │   │   │   ├── license.event.db.js.map
+│   │   │   │   │   │   ├── payment.attempt.db.d.ts
+│   │   │   │   │   │   ├── payment.attempt.db.d.ts.map
+│   │   │   │   │   │   ├── payment.attempt.db.js
+│   │   │   │   │   │   ├── payment.attempt.db.js.map
 │   │   │   │   │   │   ├── payment.method.db.d.ts
 │   │   │   │   │   │   ├── payment.method.db.d.ts.map
 │   │   │   │   │   │   ├── payment.method.db.js
@@ -222,6 +434,11 @@
 │   │   │   │   │   ├── db.initializer.d.ts.map
 │   │   │   │   │   ├── db.initializer.js
 │   │   │   │   │   └── db.initializer.js.map
+│   │   │   │   ├── jobs
+│   │   │   │   │   ├── scheduled-license-activation.d.ts
+│   │   │   │   │   ├── scheduled-license-activation.d.ts.map
+│   │   │   │   │   ├── scheduled-license-activation.js
+│   │   │   │   │   └── scheduled-license-activation.js.map
 │   │   │   │   ├── model
 │   │   │   │   │   ├── ActivityMonitoringModel.d.ts
 │   │   │   │   │   ├── ActivityMonitoringModel.d.ts.map
@@ -235,6 +452,10 @@
 │   │   │   │   │   ├── BillingCycleModel.d.ts.map
 │   │   │   │   │   ├── BillingCycleModel.js
 │   │   │   │   │   ├── BillingCycleModel.js.map
+│   │   │   │   │   ├── CashPaymentModel.d.ts
+│   │   │   │   │   ├── CashPaymentModel.d.ts.map
+│   │   │   │   │   ├── CashPaymentModel.js
+│   │   │   │   │   ├── CashPaymentModel.js.map
 │   │   │   │   │   ├── ClientModel.d.ts
 │   │   │   │   │   ├── ClientModel.d.ts.map
 │   │   │   │   │   ├── ClientModel.js
@@ -279,6 +500,14 @@
 │   │   │   │   │   ├── GlobalLicenseModel.d.ts.map
 │   │   │   │   │   ├── GlobalLicenseModel.js
 │   │   │   │   │   ├── GlobalLicenseModel.js.map
+│   │   │   │   │   ├── KpaySettlementModel.d.ts
+│   │   │   │   │   ├── KpaySettlementModel.d.ts.map
+│   │   │   │   │   ├── KpaySettlementModel.js
+│   │   │   │   │   ├── KpaySettlementModel.js.map
+│   │   │   │   │   ├── KpayWebhookModel.d.ts
+│   │   │   │   │   ├── KpayWebhookModel.d.ts.map
+│   │   │   │   │   ├── KpayWebhookModel.js
+│   │   │   │   │   ├── KpayWebhookModel.js.map
 │   │   │   │   │   ├── LanguageModel.d.ts
 │   │   │   │   │   ├── LanguageModel.d.ts.map
 │   │   │   │   │   ├── LanguageModel.js
@@ -291,6 +520,26 @@
 │   │   │   │   │   ├── LicenseAdjustmentModel.d.ts.map
 │   │   │   │   │   ├── LicenseAdjustmentModel.js
 │   │   │   │   │   ├── LicenseAdjustmentModel.js.map
+│   │   │   │   │   ├── LicenseRecordsModel.d.ts
+│   │   │   │   │   ├── LicenseRecordsModel.d.ts.map
+│   │   │   │   │   ├── LicenseRecordsModel.js
+│   │   │   │   │   ├── LicenseRecordsModel.js.map
+│   │   │   │   │   ├── LicenseReleaseModel.d.ts
+│   │   │   │   │   ├── LicenseReleaseModel.d.ts.map
+│   │   │   │   │   ├── LicenseReleaseModel.js
+│   │   │   │   │   ├── LicenseReleaseModel.js.map
+│   │   │   │   │   ├── MonthlyBillingPreviewModel.d.ts
+│   │   │   │   │   ├── MonthlyBillingPreviewModel.d.ts.map
+│   │   │   │   │   ├── MonthlyBillingPreviewModel.js
+│   │   │   │   │   ├── MonthlyBillingPreviewModel.js.map
+│   │   │   │   │   ├── NormalizeInitialXafModel.d.ts
+│   │   │   │   │   ├── NormalizeInitialXafModel.d.ts.map
+│   │   │   │   │   ├── NormalizeInitialXafModel.js
+│   │   │   │   │   ├── NormalizeInitialXafModel.js.map
+│   │   │   │   │   ├── PaymentAttemptModel.d.ts
+│   │   │   │   │   ├── PaymentAttemptModel.d.ts.map
+│   │   │   │   │   ├── PaymentAttemptModel.js
+│   │   │   │   │   ├── PaymentAttemptModel.js.map
 │   │   │   │   │   ├── PaymentMethodModel.d.ts
 │   │   │   │   │   ├── PaymentMethodModel.d.ts.map
 │   │   │   │   │   ├── PaymentMethodModel.js
@@ -303,6 +552,26 @@
 │   │   │   │   │   ├── PermissionModel.d.ts.map
 │   │   │   │   │   ├── PermissionModel.js
 │   │   │   │   │   ├── PermissionModel.js.map
+│   │   │   │   │   ├── PostpaidCashModel.d.ts
+│   │   │   │   │   ├── PostpaidCashModel.d.ts.map
+│   │   │   │   │   ├── PostpaidCashModel.js
+│   │   │   │   │   ├── PostpaidCashModel.js.map
+│   │   │   │   │   ├── PostpaidClosureModel.d.ts
+│   │   │   │   │   ├── PostpaidClosureModel.d.ts.map
+│   │   │   │   │   ├── PostpaidClosureModel.js
+│   │   │   │   │   ├── PostpaidClosureModel.js.map
+│   │   │   │   │   ├── PostpaidTransitionModel.d.ts
+│   │   │   │   │   ├── PostpaidTransitionModel.d.ts.map
+│   │   │   │   │   ├── PostpaidTransitionModel.js
+│   │   │   │   │   ├── PostpaidTransitionModel.js.map
+│   │   │   │   │   ├── RenewalModel.d.ts
+│   │   │   │   │   ├── RenewalModel.d.ts.map
+│   │   │   │   │   ├── RenewalModel.js
+│   │   │   │   │   ├── RenewalModel.js.map
+│   │   │   │   │   ├── SeatAssignmentModel.d.ts
+│   │   │   │   │   ├── SeatAssignmentModel.d.ts.map
+│   │   │   │   │   ├── SeatAssignmentModel.js
+│   │   │   │   │   ├── SeatAssignmentModel.js.map
 │   │   │   │   │   ├── SponsorModel.d.ts
 │   │   │   │   │   ├── SponsorModel.d.ts.map
 │   │   │   │   │   ├── SponsorModel.js
@@ -314,7 +583,15 @@
 │   │   │   │   │   ├── TenantModel.d.ts
 │   │   │   │   │   ├── TenantModel.d.ts.map
 │   │   │   │   │   ├── TenantModel.js
-│   │   │   │   │   └── TenantModel.js.map
+│   │   │   │   │   ├── TenantModel.js.map
+│   │   │   │   │   ├── TenantOnboardingModel.d.ts
+│   │   │   │   │   ├── TenantOnboardingModel.d.ts.map
+│   │   │   │   │   ├── TenantOnboardingModel.js
+│   │   │   │   │   ├── TenantOnboardingModel.js.map
+│   │   │   │   │   ├── TenantOnboardingResendModel.d.ts
+│   │   │   │   │   ├── TenantOnboardingResendModel.d.ts.map
+│   │   │   │   │   ├── TenantOnboardingResendModel.js
+│   │   │   │   │   └── TenantOnboardingResendModel.js.map
 │   │   │   │   ├── routes
 │   │   │   │   │   ├── activity.monitoring.route.d.ts
 │   │   │   │   │   ├── activity.monitoring.route.d.ts.map
@@ -332,6 +609,14 @@
 │   │   │   │   │   ├── billing.cycle.route.d.ts.map
 │   │   │   │   │   ├── billing.cycle.route.js
 │   │   │   │   │   ├── billing.cycle.route.js.map
+│   │   │   │   │   ├── cash.installment.route.d.ts
+│   │   │   │   │   ├── cash.installment.route.d.ts.map
+│   │   │   │   │   ├── cash.installment.route.js
+│   │   │   │   │   ├── cash.installment.route.js.map
+│   │   │   │   │   ├── cash.payment.route.d.ts
+│   │   │   │   │   ├── cash.payment.route.d.ts.map
+│   │   │   │   │   ├── cash.payment.route.js
+│   │   │   │   │   ├── cash.payment.route.js.map
 │   │   │   │   │   ├── contact.route.d.ts
 │   │   │   │   │   ├── contact.route.d.ts.map
 │   │   │   │   │   ├── contact.route.js
@@ -344,6 +629,10 @@
 │   │   │   │   │   ├── currency.route.d.ts.map
 │   │   │   │   │   ├── currency.route.js
 │   │   │   │   │   ├── currency.route.js.map
+│   │   │   │   │   ├── employee.leave.route.d.ts
+│   │   │   │   │   ├── employee.leave.route.d.ts.map
+│   │   │   │   │   ├── employee.leave.route.js
+│   │   │   │   │   ├── employee.leave.route.js.map
 │   │   │   │   │   ├── employee.license.route.d.ts
 │   │   │   │   │   ├── employee.license.route.d.ts.map
 │   │   │   │   │   ├── employee.license.route.js
@@ -364,6 +653,14 @@
 │   │   │   │   │   ├── global.license.route.d.ts.map
 │   │   │   │   │   ├── global.license.route.js
 │   │   │   │   │   ├── global.license.route.js.map
+│   │   │   │   │   ├── integrator.route.d.ts
+│   │   │   │   │   ├── integrator.route.d.ts.map
+│   │   │   │   │   ├── integrator.route.js
+│   │   │   │   │   ├── integrator.route.js.map
+│   │   │   │   │   ├── kpay.webhook.route.d.ts
+│   │   │   │   │   ├── kpay.webhook.route.d.ts.map
+│   │   │   │   │   ├── kpay.webhook.route.js
+│   │   │   │   │   ├── kpay.webhook.route.js.map
 │   │   │   │   │   ├── language.route.d.ts
 │   │   │   │   │   ├── language.route.d.ts.map
 │   │   │   │   │   ├── language.route.js
@@ -376,6 +673,18 @@
 │   │   │   │   │   ├── license.adjustment.route.d.ts.map
 │   │   │   │   │   ├── license.adjustment.route.js
 │   │   │   │   │   ├── license.adjustment.route.js.map
+│   │   │   │   │   ├── license.capacity.route.d.ts
+│   │   │   │   │   ├── license.capacity.route.d.ts.map
+│   │   │   │   │   ├── license.capacity.route.js
+│   │   │   │   │   ├── license.capacity.route.js.map
+│   │   │   │   │   ├── license.records.route.d.ts
+│   │   │   │   │   ├── license.records.route.d.ts.map
+│   │   │   │   │   ├── license.records.route.js
+│   │   │   │   │   ├── license.records.route.js.map
+│   │   │   │   │   ├── license.release.route.d.ts
+│   │   │   │   │   ├── license.release.route.d.ts.map
+│   │   │   │   │   ├── license.release.route.js
+│   │   │   │   │   ├── license.release.route.js.map
 │   │   │   │   │   ├── manager
 │   │   │   │   │   │   ├── billing.route.d.ts
 │   │   │   │   │   │   ├── billing.route.d.ts.map
@@ -385,6 +694,10 @@
 │   │   │   │   │   │   ├── fraud.route.d.ts.map
 │   │   │   │   │   │   ├── fraud.route.js
 │   │   │   │   │   │   └── fraud.route.js.map
+│   │   │   │   │   ├── monthly.billing.preview.route.d.ts
+│   │   │   │   │   ├── monthly.billing.preview.route.d.ts.map
+│   │   │   │   │   ├── monthly.billing.preview.route.js
+│   │   │   │   │   ├── monthly.billing.preview.route.js.map
 │   │   │   │   │   ├── payment.method.route.d.ts
 │   │   │   │   │   ├── payment.method.route.d.ts.map
 │   │   │   │   │   ├── payment.method.route.js
@@ -397,6 +710,26 @@
 │   │   │   │   │   ├── permission.route.d.ts.map
 │   │   │   │   │   ├── permission.route.js
 │   │   │   │   │   ├── permission.route.js.map
+│   │   │   │   │   ├── postpaid.cash.route.d.ts
+│   │   │   │   │   ├── postpaid.cash.route.d.ts.map
+│   │   │   │   │   ├── postpaid.cash.route.js
+│   │   │   │   │   ├── postpaid.cash.route.js.map
+│   │   │   │   │   ├── postpaid.closure.route.d.ts
+│   │   │   │   │   ├── postpaid.closure.route.d.ts.map
+│   │   │   │   │   ├── postpaid.closure.route.js
+│   │   │   │   │   ├── postpaid.closure.route.js.map
+│   │   │   │   │   ├── postpaid.transition.route.d.ts
+│   │   │   │   │   ├── postpaid.transition.route.d.ts.map
+│   │   │   │   │   ├── postpaid.transition.route.js
+│   │   │   │   │   ├── postpaid.transition.route.js.map
+│   │   │   │   │   ├── renewal.route.d.ts
+│   │   │   │   │   ├── renewal.route.d.ts.map
+│   │   │   │   │   ├── renewal.route.js
+│   │   │   │   │   ├── renewal.route.js.map
+│   │   │   │   │   ├── seat.assignment.route.d.ts
+│   │   │   │   │   ├── seat.assignment.route.d.ts.map
+│   │   │   │   │   ├── seat.assignment.route.js
+│   │   │   │   │   ├── seat.assignment.route.js.map
 │   │   │   │   │   ├── sponsor.route.d.ts
 │   │   │   │   │   ├── sponsor.route.d.ts.map
 │   │   │   │   │   ├── sponsor.route.js
@@ -405,6 +738,18 @@
 │   │   │   │   │   ├── tax.rule.route.d.ts.map
 │   │   │   │   │   ├── tax.rule.route.js
 │   │   │   │   │   ├── tax.rule.route.js.map
+│   │   │   │   │   ├── tenant.onboarding.admin.route.d.ts
+│   │   │   │   │   ├── tenant.onboarding.admin.route.d.ts.map
+│   │   │   │   │   ├── tenant.onboarding.admin.route.js
+│   │   │   │   │   ├── tenant.onboarding.admin.route.js.map
+│   │   │   │   │   ├── tenant.onboarding.resend.route.d.ts
+│   │   │   │   │   ├── tenant.onboarding.resend.route.d.ts.map
+│   │   │   │   │   ├── tenant.onboarding.resend.route.js
+│   │   │   │   │   ├── tenant.onboarding.resend.route.js.map
+│   │   │   │   │   ├── tenant.onboarding.route.d.ts
+│   │   │   │   │   ├── tenant.onboarding.route.d.ts.map
+│   │   │   │   │   ├── tenant.onboarding.route.js
+│   │   │   │   │   ├── tenant.onboarding.route.js.map
 │   │   │   │   │   ├── tenant.route.d.ts
 │   │   │   │   │   ├── tenant.route.d.ts.map
 │   │   │   │   │   ├── tenant.route.js
@@ -412,7 +757,84 @@
 │   │   │   │   ├── server.d.ts
 │   │   │   │   ├── server.d.ts.map
 │   │   │   │   ├── server.js
-│   │   │   │   └── server.js.map
+│   │   │   │   ├── server.js.map
+│   │   │   │   └── services
+│   │   │   │       ├── cash-installment.d.ts
+│   │   │   │       ├── cash-installment.d.ts.map
+│   │   │   │       ├── cash-installment.js
+│   │   │   │       ├── cash-installment.js.map
+│   │   │   │       ├── cash-payment-confirmation.d.ts
+│   │   │   │       ├── cash-payment-confirmation.d.ts.map
+│   │   │   │       ├── cash-payment-confirmation.js
+│   │   │   │       ├── cash-payment-confirmation.js.map
+│   │   │   │       ├── commercial-transition.d.ts
+│   │   │   │       ├── commercial-transition.d.ts.map
+│   │   │   │       ├── commercial-transition.js
+│   │   │   │       ├── commercial-transition.js.map
+│   │   │   │       ├── employee-leave.d.ts
+│   │   │   │       ├── employee-leave.d.ts.map
+│   │   │   │       ├── employee-leave.js
+│   │   │   │       ├── employee-leave.js.map
+│   │   │   │       ├── kpay-client.d.ts
+│   │   │   │       ├── kpay-client.d.ts.map
+│   │   │   │       ├── kpay-client.js
+│   │   │   │       ├── kpay-client.js.map
+│   │   │   │       ├── kpay-reconciliation-job.d.ts
+│   │   │   │       ├── kpay-reconciliation-job.d.ts.map
+│   │   │   │       ├── kpay-reconciliation-job.js
+│   │   │   │       ├── kpay-reconciliation-job.js.map
+│   │   │   │       ├── kpay-webhook-signature.d.ts
+│   │   │   │       ├── kpay-webhook-signature.d.ts.map
+│   │   │   │       ├── kpay-webhook-signature.js
+│   │   │   │       ├── kpay-webhook-signature.js.map
+│   │   │   │       ├── monthly-license-policy.d.ts
+│   │   │   │       ├── monthly-license-policy.d.ts.map
+│   │   │   │       ├── monthly-license-policy.js
+│   │   │   │       ├── monthly-license-policy.js.map
+│   │   │   │       ├── monthly-usage.d.ts
+│   │   │   │       ├── monthly-usage.d.ts.map
+│   │   │   │       ├── monthly-usage.js
+│   │   │   │       ├── monthly-usage.js.map
+│   │   │   │       ├── payable-amount.d.ts
+│   │   │   │       ├── payable-amount.d.ts.map
+│   │   │   │       ├── payable-amount.js
+│   │   │   │       ├── payable-amount.js.map
+│   │   │   │       ├── payment-draft.d.ts
+│   │   │   │       ├── payment-draft.d.ts.map
+│   │   │   │       ├── payment-draft.js
+│   │   │   │       ├── payment-draft.js.map
+│   │   │   │       ├── payment-money.d.ts
+│   │   │   │       ├── payment-money.d.ts.map
+│   │   │   │       ├── payment-money.js
+│   │   │   │       ├── payment-money.js.map
+│   │   │   │       ├── renewal-amounts.d.ts
+│   │   │   │       ├── renewal-amounts.d.ts.map
+│   │   │   │       ├── renewal-amounts.js
+│   │   │   │       ├── renewal-amounts.js.map
+│   │   │   │       ├── renewal-preparation.d.ts
+│   │   │   │       ├── renewal-preparation.d.ts.map
+│   │   │   │       ├── renewal-preparation.js
+│   │   │   │       ├── renewal-preparation.js.map
+│   │   │   │       ├── renewal-preview.d.ts
+│   │   │   │       ├── renewal-preview.d.ts.map
+│   │   │   │       ├── renewal-preview.js
+│   │   │   │       ├── renewal-preview.js.map
+│   │   │   │       ├── renewal-selection.d.ts
+│   │   │   │       ├── renewal-selection.d.ts.map
+│   │   │   │       ├── renewal-selection.js
+│   │   │   │       ├── renewal-selection.js.map
+│   │   │   │       ├── scheduled-license-activation.d.ts
+│   │   │   │       ├── scheduled-license-activation.d.ts.map
+│   │   │   │       ├── scheduled-license-activation.js
+│   │   │   │       ├── scheduled-license-activation.js.map
+│   │   │   │       ├── seat-assignment.d.ts
+│   │   │   │       ├── seat-assignment.d.ts.map
+│   │   │   │       ├── seat-assignment.js
+│   │   │   │       ├── seat-assignment.js.map
+│   │   │   │       ├── usage-regularization-access.d.ts
+│   │   │   │       ├── usage-regularization-access.d.ts.map
+│   │   │   │       ├── usage-regularization-access.js
+│   │   │   │       └── usage-regularization-access.js.map
 │   │   │   ├── middle
 │   │   │   │   ├── ensured-routes.d.ts
 │   │   │   │   ├── ensured-routes.d.ts.map
@@ -842,6 +1264,84 @@
 │   │   │   │   │   ├── WorkSessionsModel.d.ts.map
 │   │   │   │   │   ├── WorkSessionsModel.js
 │   │   │   │   │   └── WorkSessionsModel.js.map
+│   │   │   │   ├── modules
+│   │   │   │   │   └── attendance-statistics
+│   │   │   │   │       ├── application
+│   │   │   │   │       │   ├── attendance-adoption.d.ts
+│   │   │   │   │       │   ├── attendance-adoption.d.ts.map
+│   │   │   │   │       │   ├── attendance-adoption.js
+│   │   │   │   │       │   ├── attendance-adoption.js.map
+│   │   │   │   │       │   ├── attendance-adoption.test.d.ts
+│   │   │   │   │       │   ├── attendance-adoption.test.d.ts.map
+│   │   │   │   │       │   ├── attendance-adoption.test.js
+│   │   │   │   │       │   ├── attendance-adoption.test.js.map
+│   │   │   │   │       │   ├── attendance-overview.d.ts
+│   │   │   │   │       │   ├── attendance-overview.d.ts.map
+│   │   │   │   │       │   ├── attendance-overview.js
+│   │   │   │   │       │   ├── attendance-overview.js.map
+│   │   │   │   │       │   ├── attendance-overview.test.d.ts
+│   │   │   │   │       │   ├── attendance-overview.test.d.ts.map
+│   │   │   │   │       │   ├── attendance-overview.test.js
+│   │   │   │   │       │   ├── attendance-overview.test.js.map
+│   │   │   │   │       │   ├── attendance-overview.types.d.ts
+│   │   │   │   │       │   ├── attendance-overview.types.d.ts.map
+│   │   │   │   │       │   ├── attendance-overview.types.js
+│   │   │   │   │       │   ├── attendance-overview.types.js.map
+│   │   │   │   │       │   ├── attendance-statistics.ports.d.ts
+│   │   │   │   │       │   ├── attendance-statistics.ports.d.ts.map
+│   │   │   │   │       │   ├── attendance-statistics.ports.js
+│   │   │   │   │       │   ├── attendance-statistics.ports.js.map
+│   │   │   │   │       │   ├── attendance-statistics.service.d.ts
+│   │   │   │   │       │   ├── attendance-statistics.service.d.ts.map
+│   │   │   │   │       │   ├── attendance-statistics.service.js
+│   │   │   │   │       │   ├── attendance-statistics.service.js.map
+│   │   │   │   │       │   ├── attendance-statistics.service.test.d.ts
+│   │   │   │   │       │   ├── attendance-statistics.service.test.d.ts.map
+│   │   │   │   │       │   ├── attendance-statistics.service.test.js
+│   │   │   │   │       │   └── attendance-statistics.service.test.js.map
+│   │   │   │   │       ├── domain
+│   │   │   │   │       │   ├── attendance-day.d.ts
+│   │   │   │   │       │   ├── attendance-day.d.ts.map
+│   │   │   │   │       │   ├── attendance-day.js
+│   │   │   │   │       │   ├── attendance-day.js.map
+│   │   │   │   │       │   ├── attendance-day.test.d.ts
+│   │   │   │   │       │   ├── attendance-day.test.d.ts.map
+│   │   │   │   │       │   ├── attendance-day.test.js
+│   │   │   │   │       │   ├── attendance-day.test.js.map
+│   │   │   │   │       │   ├── attendance-day.types.d.ts
+│   │   │   │   │       │   ├── attendance-day.types.d.ts.map
+│   │   │   │   │       │   ├── attendance-day.types.js
+│   │   │   │   │       │   └── attendance-day.types.js.map
+│   │   │   │   │       ├── http
+│   │   │   │   │       │   ├── attendance-statistics.controller.d.ts
+│   │   │   │   │       │   ├── attendance-statistics.controller.d.ts.map
+│   │   │   │   │       │   ├── attendance-statistics.controller.js
+│   │   │   │   │       │   ├── attendance-statistics.controller.js.map
+│   │   │   │   │       │   ├── attendance-statistics.query.d.ts
+│   │   │   │   │       │   ├── attendance-statistics.query.d.ts.map
+│   │   │   │   │       │   ├── attendance-statistics.query.js
+│   │   │   │   │       │   ├── attendance-statistics.query.js.map
+│   │   │   │   │       │   ├── attendance-statistics.query.test.d.ts
+│   │   │   │   │       │   ├── attendance-statistics.query.test.d.ts.map
+│   │   │   │   │       │   ├── attendance-statistics.query.test.js
+│   │   │   │   │       │   └── attendance-statistics.query.test.js.map
+│   │   │   │   │       ├── index.d.ts
+│   │   │   │   │       ├── index.d.ts.map
+│   │   │   │   │       ├── index.js
+│   │   │   │   │       ├── index.js.map
+│   │   │   │   │       └── infrastructure
+│   │   │   │   │           ├── postgres-interval.d.ts
+│   │   │   │   │           ├── postgres-interval.d.ts.map
+│   │   │   │   │           ├── postgres-interval.js
+│   │   │   │   │           ├── postgres-interval.js.map
+│   │   │   │   │           ├── postgres-interval.test.d.ts
+│   │   │   │   │           ├── postgres-interval.test.d.ts.map
+│   │   │   │   │           ├── postgres-interval.test.js
+│   │   │   │   │           ├── postgres-interval.test.js.map
+│   │   │   │   │           ├── tenant-attendance-statistics.adapter.d.ts
+│   │   │   │   │           ├── tenant-attendance-statistics.adapter.d.ts.map
+│   │   │   │   │           ├── tenant-attendance-statistics.adapter.js
+│   │   │   │   │           └── tenant-attendance-statistics.adapter.js.map
 │   │   │   │   ├── routes
 │   │   │   │   │   ├── attendance.stat.route.d.ts
 │   │   │   │   │   ├── attendance.stat.route.d.ts.map
@@ -923,6 +1423,10 @@
 │   │   │   │   │   ├── schedule.suggestion.route.d.ts.map
 │   │   │   │   │   ├── schedule.suggestion.route.js
 │   │   │   │   │   ├── schedule.suggestion.route.js.map
+│   │   │   │   │   ├── schedule.suggestion.route0.d.ts
+│   │   │   │   │   ├── schedule.suggestion.route0.d.ts.map
+│   │   │   │   │   ├── schedule.suggestion.route0.js
+│   │   │   │   │   ├── schedule.suggestion.route0.js.map
 │   │   │   │   │   ├── session.model.route.d.ts
 │   │   │   │   │   ├── session.model.route.d.ts.map
 │   │   │   │   │   ├── session.model.route.js
@@ -968,10 +1472,18 @@
 │   │   │   │   ├── absence.detection.service.d.ts.map
 │   │   │   │   ├── absence.detection.service.js
 │   │   │   │   ├── absence.detection.service.js.map
+│   │   │   │   ├── activity.sevice.d.ts
+│   │   │   │   ├── activity.sevice.d.ts.map
+│   │   │   │   ├── activity.sevice.js
+│   │   │   │   ├── activity.sevice.js.map
 │   │   │   │   ├── anomaly.detection.service.d.ts
 │   │   │   │   ├── anomaly.detection.service.d.ts.map
 │   │   │   │   ├── anomaly.detection.service.js
 │   │   │   │   ├── anomaly.detection.service.js.map
+│   │   │   │   ├── anomaly.detection.service0.d.ts
+│   │   │   │   ├── anomaly.detection.service0.d.ts.map
+│   │   │   │   ├── anomaly.detection.service0.js
+│   │   │   │   ├── anomaly.detection.service0.js.map
 │   │   │   │   ├── api-key-manager.d.ts
 │   │   │   │   ├── api-key-manager.d.ts.map
 │   │   │   │   ├── api-key-manager.js
@@ -1016,10 +1528,18 @@
 │   │   │   │   ├── notification.service.d.ts.map
 │   │   │   │   ├── notification.service.js
 │   │   │   │   ├── notification.service.js.map
+│   │   │   │   ├── onboarding-resend-limit.d.ts
+│   │   │   │   ├── onboarding-resend-limit.d.ts.map
+│   │   │   │   ├── onboarding-resend-limit.js
+│   │   │   │   ├── onboarding-resend-limit.js.map
 │   │   │   │   ├── otp-cache.service.d.ts
 │   │   │   │   ├── otp-cache.service.d.ts.map
 │   │   │   │   ├── otp-cache.service.js
 │   │   │   │   ├── otp-cache.service.js.map
+│   │   │   │   ├── otp.delivery.service.d.ts
+│   │   │   │   ├── otp.delivery.service.d.ts.map
+│   │   │   │   ├── otp.delivery.service.js
+│   │   │   │   ├── otp.delivery.service.js.map
 │   │   │   │   ├── pdf
 │   │   │   │   │   ├── rotationAssignment.d.ts
 │   │   │   │   │   ├── rotationAssignment.d.ts.map
@@ -1041,6 +1561,10 @@
 │   │   │   │   ├── revision.d.ts.map
 │   │   │   │   ├── revision.js
 │   │   │   │   ├── revision.js.map
+│   │   │   │   ├── schedule.assignment.adjustment.service.d.ts
+│   │   │   │   ├── schedule.assignment.adjustment.service.d.ts.map
+│   │   │   │   ├── schedule.assignment.adjustment.service.js
+│   │   │   │   ├── schedule.assignment.adjustment.service.js.map
 │   │   │   │   ├── schedule.resolution.service.d.ts
 │   │   │   │   ├── schedule.resolution.service.d.ts.map
 │   │   │   │   ├── schedule.resolution.service.js
@@ -1065,6 +1589,10 @@
 │   │   │   │   ├── tenant-cache.service.d.ts.map
 │   │   │   │   ├── tenant-cache.service.js
 │   │   │   │   ├── tenant-cache.service.js.map
+│   │   │   │   ├── tenant-onboarding-token.d.ts
+│   │   │   │   ├── tenant-onboarding-token.d.ts.map
+│   │   │   │   ├── tenant-onboarding-token.js
+│   │   │   │   ├── tenant-onboarding-token.js.map
 │   │   │   │   ├── tenant.otp.manager.d.ts
 │   │   │   │   ├── tenant.otp.manager.d.ts.map
 │   │   │   │   ├── tenant.otp.manager.js
@@ -1082,6 +1610,10 @@
 │   │   │       ├── axios.config.d.ts.map
 │   │   │       ├── axios.config.js
 │   │   │       ├── axios.config.js.map
+│   │   │       ├── employee.color.d.ts
+│   │   │       ├── employee.color.d.ts.map
+│   │   │       ├── employee.color.js
+│   │   │       ├── employee.color.js.map
 │   │   │       ├── encryption.d.ts
 │   │   │       ├── encryption.d.ts.map
 │   │   │       ├── encryption.js
@@ -1110,6 +1642,26 @@
 │   │   │       ├── geo.utils.d.ts.map
 │   │   │       ├── geo.utils.js
 │   │   │       ├── geo.utils.js.map
+│   │   │       ├── planning.history.analysis.service.d.ts
+│   │   │       ├── planning.history.analysis.service.d.ts.map
+│   │   │       ├── planning.history.analysis.service.js
+│   │   │       ├── planning.history.analysis.service.js.map
+│   │   │       ├── planning.history.review.service.d.ts
+│   │   │       ├── planning.history.review.service.d.ts.map
+│   │   │       ├── planning.history.review.service.js
+│   │   │       ├── planning.history.review.service.js.map
+│   │   │       ├── planning.horizon.d.ts
+│   │   │       ├── planning.horizon.d.ts.map
+│   │   │       ├── planning.horizon.js
+│   │   │       ├── planning.horizon.js.map
+│   │   │       ├── planning.preflight.validation.service.d.ts
+│   │   │       ├── planning.preflight.validation.service.d.ts.map
+│   │   │       ├── planning.preflight.validation.service.js
+│   │   │       ├── planning.preflight.validation.service.js.map
+│   │   │       ├── planning.rolling.horizon.d.ts
+│   │   │       ├── planning.rolling.horizon.d.ts.map
+│   │   │       ├── planning.rolling.horizon.js
+│   │   │       ├── planning.rolling.horizon.js.map
 │   │   │       ├── prive
 │   │   │       │   ├── GoogleService-Info.plist
 │   │   │       │   ├── google-services.json
@@ -1122,10 +1674,26 @@
 │   │   │       ├── response.model.d.ts.map
 │   │   │       ├── response.model.js
 │   │   │       ├── response.model.js.map
+│   │   │       ├── schedule.suggestion.application-period.d.ts
+│   │   │       ├── schedule.suggestion.application-period.d.ts.map
+│   │   │       ├── schedule.suggestion.application-period.js
+│   │   │       ├── schedule.suggestion.application-period.js.map
+│   │   │       ├── schedule.suggestion.bulk-edit.service.d.ts
+│   │   │       ├── schedule.suggestion.bulk-edit.service.d.ts.map
+│   │   │       ├── schedule.suggestion.bulk-edit.service.js
+│   │   │       ├── schedule.suggestion.bulk-edit.service.js.map
 │   │   │       ├── schedule.suggestion.generation.service.d.ts
 │   │   │       ├── schedule.suggestion.generation.service.d.ts.map
 │   │   │       ├── schedule.suggestion.generation.service.js
 │   │   │       ├── schedule.suggestion.generation.service.js.map
+│   │   │       ├── schedule.suggestion.generation.service0.d.ts
+│   │   │       ├── schedule.suggestion.generation.service0.d.ts.map
+│   │   │       ├── schedule.suggestion.generation.service0.js
+│   │   │       ├── schedule.suggestion.generation.service0.js.map
+│   │   │       ├── schedule.suggestion.regeneration.service.d.ts
+│   │   │       ├── schedule.suggestion.regeneration.service.d.ts.map
+│   │   │       ├── schedule.suggestion.regeneration.service.js
+│   │   │       ├── schedule.suggestion.regeneration.service.js.map
 │   │   │       ├── session.model.validation.d.ts
 │   │   │       ├── session.model.validation.d.ts.map
 │   │   │       ├── session.model.validation.js
@@ -1139,6 +1707,10 @@
 │   │   │       │   ├── ortools.planning.solver.d.ts.map
 │   │   │       │   ├── ortools.planning.solver.js
 │   │   │       │   ├── ortools.planning.solver.js.map
+│   │   │       │   ├── planning.solver.constants.d.ts
+│   │   │       │   ├── planning.solver.constants.d.ts.map
+│   │   │       │   ├── planning.solver.constants.js
+│   │   │       │   ├── planning.solver.constants.js.map
 │   │   │       │   ├── planning.solver.d.ts
 │   │   │       │   ├── planning.solver.d.ts.map
 │   │   │       │   ├── planning.solver.factory.d.ts
@@ -1151,6 +1723,31 @@
 │   │   │       ├── suggestion.engine.d.ts.map
 │   │   │       ├── suggestion.engine.js
 │   │   │       ├── suggestion.engine.js.map
+│   │   │       ├── test
+│   │   │       │   ├── planning.horizon.test.d.ts
+│   │   │       │   ├── planning.horizon.test.d.ts.map
+│   │   │       │   ├── planning.horizon.test.js
+│   │   │       │   ├── planning.horizon.test.js.map
+│   │   │       │   ├── planning.preflight.validation.service.test.d.ts
+│   │   │       │   ├── planning.preflight.validation.service.test.d.ts.map
+│   │   │       │   ├── planning.preflight.validation.service.test.js
+│   │   │       │   ├── planning.preflight.validation.service.test.js.map
+│   │   │       │   ├── planning.rolling.horizon.test.d.ts
+│   │   │       │   ├── planning.rolling.horizon.test.d.ts.map
+│   │   │       │   ├── planning.rolling.horizon.test.js
+│   │   │       │   └── planning.rolling.horizon.test.js.map
+│   │   │       ├── time.entry.external-id.d.ts
+│   │   │       ├── time.entry.external-id.d.ts.map
+│   │   │       ├── time.entry.external-id.js
+│   │   │       ├── time.entry.external-id.js.map
+│   │   │       ├── time.entry.idempotency.d.ts
+│   │   │       ├── time.entry.idempotency.d.ts.map
+│   │   │       ├── time.entry.idempotency.js
+│   │   │       ├── time.entry.idempotency.js.map
+│   │   │       ├── time.entry.idempotency.response.d.ts
+│   │   │       ├── time.entry.idempotency.response.d.ts.map
+│   │   │       ├── time.entry.idempotency.response.js
+│   │   │       ├── time.entry.idempotency.response.js.map
 │   │   │       ├── token.generator.d.ts
 │   │   │       ├── token.generator.d.ts.map
 │   │   │       ├── token.generator.js
@@ -1178,9 +1775,16 @@
 │   │   │   │   └── 📘 TOKÉ API - TENANTS.md2.html
 │   │   │   ├── automatique migration avis .pdf
 │   │   │   ├── client
+│   │   │   │   ├── Guide_utilisation_module_suggestion_planning_Toke.pdf
+│   │   │   │   ├── Guide_visuel_Toke_Generer_une_suggestion_V1.pdf
 │   │   │   │   ├── TOKE_INTEGRATION_REFERENCE.md
 │   │   │   │   ├── TOKE_SPEC_PLANNING_CC_v1.html
 │   │   │   │   ├── TOKE_Section0_Existant.docx
+│   │   │   │   ├── Toke_Guide_Planning_Modele_Canva.pdf
+│   │   │   │   ├── Toke_Guide_Planning_Modele_Canva.pptx
+│   │   │   │   ├── Toke_Pages_Introduction_A_Ajouter_Canva.pptx
+│   │   │   │   ├── Toke_Planning_Corrections_Publication_MAJ_Canva.pptx
+│   │   │   │   ├── Toke_Suggestion_Puis_Affectations_Corrige_Canva.pptx
 │   │   │   │   └── lmt
 │   │   │   │       ├── PLANNINGS AE_DA_BO_S20_2026.xlsm
 │   │   │   │       ├── Plannings_LMT_S20_2026.xlsx
@@ -1209,6 +1813,8 @@
 │   │   │   │   │   └── test_guide_after_fix.md
 │   │   │   │   └── files.zip
 │   │   │   ├── mise en place de pgBouncer outils postgrsql d'optimisation des pools de connexion.md
+│   │   │   ├── modifications-planning
+│   │   │   │   └── 2026-11-04-application-suggestion-sans-retroactivite.md
 │   │   │   ├── rapport
 │   │   │   │   └── 02_Toke_App_Manager.docx
 │   │   │   ├── rotation_assignments_versioning_doc.docx
@@ -1223,6 +1829,14 @@
 │   │   │   ├── toke API.postman_collection.json
 │   │   │   ├── toke-app-manager-api-guide.html
 │   │   │   ├── toke-fiche-collecte-glt.pdf
+│   │   │   ├── toke-planning-final-recipe-step11
+│   │   │   │   ├── 01-full-week-session-templates.json
+│   │   │   │   ├── 02-missing-requirements-thu-sun.json
+│   │   │   │   ├── 03-employee-profile-examples.json
+│   │   │   │   ├── 04-validate-final-suggestion.py
+│   │   │   │   └── README.md
+│   │   │   ├── toke-planning-final-recipe-step11.zip
+│   │   │   ├── toke-planning-final-step10.zip
 │   │   │   ├── toke-pointage-employee-doc.html
 │   │   │   ├── toke-pointage-employee-doc.md
 │   │   │   ├── toke-syst-gestion-licences.html
@@ -1239,30 +1853,59 @@
 │   │   │   ├── 20250912113219-create-fraud-detection-log.cjs
 │   │   │   ├── 20250912113257-add-fraud-detection-triggers.cjs
 │   │   │   ├── 20250912163734-create-activity-monitoring.cjs
-│   │   │   └── 20250912164045-add-activity-monitoring-triggers.cjs
+│   │   │   ├── 20250912164045-add-activity-monitoring-triggers.cjs
+│   │   │   ├── 20260930150000-align-employee-billing-status.cjs
+│   │   │   ├── 20260930160000-separate-payment-sources.cjs
+│   │   │   ├── 20260930170000-cash-receipts.cjs
+│   │   │   ├── 20260930171000-cash-actor-user-guid.cjs
+│   │   │   ├── 20260930172000-paid-seat-grants.cjs
+│   │   │   ├── 20260930173000-seat-assignments.cjs
+│   │   │   ├── 20260930195000-repair-master-license-triggers.cjs
+│   │   │   ├── 20260930200000-group-license-fraud-alerts.cjs
+│   │   │   ├── 20260930201000-dated-employee-leaves.cjs
+│   │   │   ├── 20260930202500-renewal-preparations.cjs
+│   │   │   ├── 20260930203500-scheduled-license-activations.cjs
+│   │   │   ├── 20260930205500-seat-cycle-rollovers.cjs
+│   │   │   ├── 20261001110000-commercial-transition.cjs
+│   │   │   ├── 20261001150000-monthly-installments.cjs
+│   │   │   ├── 20261002100000-reuse-activity-monitoring.cjs
+│   │   │   ├── 20261006180000-postpaid-mode-foundation.cjs
+│   │   │   ├── 20261007080000-freeze-postpaid-invoices.cjs
+│   │   │   ├── 20261007090000-postpaid-access-cash.cjs
+│   │   │   ├── 20261007100000-license-events.cjs
+│   │   │   ├── 20261009120000-license-created-event.cjs
+│   │   │   ├── 20261009160000-initial-policy-system-actor.cjs
+│   │   │   ├── 20261015170000-payment-attempt-constraints.cjs
+│   │   │   ├── 20261015210000-invoice-payable-normalized-event.cjs
+│   │   │   ├── 20261016170000-prepaid-renewal-grace.cjs
+│   │   │   ├── 20261016190000-adjustment-cycle-foundation.cjs
+│   │   │   ├── 20261020170000-usage-regularization-issuance.cjs
+│   │   │   ├── 20261020180000-usage-regularization-settlement.cjs
+│   │   │   ├── 20261020190000-usage-regularization-access.cjs
+│   │   │   ├── 20261020220000-usage-regularization-missing-transaction.cjs
+│   │   │   └── 20261020223000-usage-regularization-valid-settlement.cjs
 │   │   ├── package.json
 │   │   ├── scripts
-│   │   │   ├── appConfigManager.js
 │   │   │   ├── appConfigManager.ts
-│   │   │   ├── countryManager.js
+│   │   │   ├── apply-activity-monitoring-update.cjs
+│   │   │   ├── apply-commercial-transition.cjs
+│   │   │   ├── apply-initial-policy-migration.cjs
+│   │   │   ├── apply-monthly-license-policy.cjs
 │   │   │   ├── countryManager.ts
-│   │   │   ├── currencyManager.js
 │   │   │   ├── currencyManager.ts
+│   │   │   ├── install-lot34.cjs
 │   │   │   ├── kill.js
-│   │   │   ├── manageClient.js
 │   │   │   ├── manageClient.ts
-│   │   │   ├── manageEndpoint.js
 │   │   │   ├── manageEndpoint.ts
-│   │   │   ├── managePermission.js
 │   │   │   ├── managePermission.ts
-│   │   │   ├── manageProfile.js
 │   │   │   ├── manageProfile.ts
+│   │   │   ├── normalize-initial-xaf.cjs
 │   │   │   ├── nuclear-cleanup.js
+│   │   │   ├── patch-postpaid-closure-exclusions.cjs
+│   │   │   ├── patch-postpaid-foundation.cjs
 │   │   │   ├── status.js
 │   │   │   ├── stop.js
-│   │   │   ├── test.js
 │   │   │   ├── test.ts
-│   │   │   ├── testTokenGeneration.js
 │   │   │   └── testTokenGeneration.ts
 │   │   ├── src
 │   │   │   ├── automate
@@ -1275,6 +1918,7 @@
 │   │   │   │   │   ├── ActivityMonitoring.ts
 │   │   │   │   │   ├── AppConfig.ts
 │   │   │   │   │   ├── BillingCycle.ts
+│   │   │   │   │   ├── CashPayment.ts
 │   │   │   │   │   ├── Client.ts
 │   │   │   │   │   ├── ClientProfile.ts
 │   │   │   │   │   ├── Contact.ts
@@ -1285,16 +1929,66 @@
 │   │   │   │   │   ├── ExchangeRate.ts
 │   │   │   │   │   ├── FraudDetectionLog.ts
 │   │   │   │   │   ├── GlobalLicense.ts
+│   │   │   │   │   ├── KpaySettlement.ts
+│   │   │   │   │   ├── KpayWebhook.ts
 │   │   │   │   │   ├── Language.ts
 │   │   │   │   │   ├── Lexicon.ts
 │   │   │   │   │   ├── LicenseAdjustment.ts
+│   │   │   │   │   ├── LicenseRecords.ts
+│   │   │   │   │   ├── LicenseRelease.ts
+│   │   │   │   │   ├── MonthlyBillingPreview.ts
+│   │   │   │   │   ├── NormalizeInitialXaf.ts
+│   │   │   │   │   ├── OnboardingPayment.ts
+│   │   │   │   │   ├── PaymentAttempt.ts
 │   │   │   │   │   ├── PaymentMethod.ts
 │   │   │   │   │   ├── PaymentTransaction.ts
 │   │   │   │   │   ├── Permission.ts
+│   │   │   │   │   ├── PostpaidCash.ts
+│   │   │   │   │   ├── PostpaidClosure.ts
+│   │   │   │   │   ├── PostpaidTransition.ts
+│   │   │   │   │   ├── Renewal.ts
+│   │   │   │   │   ├── SeatAssignment.ts
 │   │   │   │   │   ├── Sponsor.ts
 │   │   │   │   │   ├── TaxRule.ts
-│   │   │   │   │   └── Tenant.ts
+│   │   │   │   │   ├── Tenant.ts
+│   │   │   │   │   ├── TenantOnboarding.ts
+│   │   │   │   │   ├── TenantOnboardingResend.ts
+│   │   │   │   │   ├── activity-monitoring-input.ts
+│   │   │   │   │   ├── license-subscription-input.ts
+│   │   │   │   │   ├── onboarding-commercial.ts
+│   │   │   │   │   ├── onboarding-subscription-input.ts
+│   │   │   │   │   └── payment-attempt-contract.ts
 │   │   │   │   ├── database
+│   │   │   │   │   ├── base_model
+│   │   │   │   │   │   ├── db.activity-monitoring.ts
+│   │   │   │   │   │   ├── db.adjustment-issuance.ts
+│   │   │   │   │   │   ├── db.adjustment-preview.ts
+│   │   │   │   │   │   ├── db.cash-confirmation.ts
+│   │   │   │   │   │   ├── db.cash-installment.ts
+│   │   │   │   │   │   ├── db.cash-payment.ts
+│   │   │   │   │   │   ├── db.initial-expiry-repair.ts
+│   │   │   │   │   │   ├── db.kpay-settlement.ts
+│   │   │   │   │   │   ├── db.license-records.ts
+│   │   │   │   │   │   ├── db.license-release.ts
+│   │   │   │   │   │   ├── db.license-subscription.ts
+│   │   │   │   │   │   ├── db.monthly-billing-preview.ts
+│   │   │   │   │   │   ├── db.normalize-initial-xaf.ts
+│   │   │   │   │   │   ├── db.onboarding-subscription.ts
+│   │   │   │   │   │   ├── db.payment-attempt.ts
+│   │   │   │   │   │   ├── db.postpaid-cash.ts
+│   │   │   │   │   │   ├── db.postpaid-closure.ts
+│   │   │   │   │   │   ├── db.postpaid-transition.ts
+│   │   │   │   │   │   ├── db.renewal-activation.ts
+│   │   │   │   │   │   ├── db.renewal-preparation.ts
+│   │   │   │   │   │   ├── db.renewal-preview.ts
+│   │   │   │   │   │   ├── db.renewal-pricing.ts
+│   │   │   │   │   │   ├── db.renewal.ts
+│   │   │   │   │   │   ├── db.scheduled-license-activation.ts
+│   │   │   │   │   │   ├── db.seat-assignment.ts
+│   │   │   │   │   │   ├── db.seat.ts
+│   │   │   │   │   │   ├── db.tenant-license-status.ts
+│   │   │   │   │   │   ├── db.tenant-onboarding.ts
+│   │   │   │   │   │   └── db.usage-regularization-access.ts
 │   │   │   │   │   ├── data
 │   │   │   │   │   │   ├── activity.monitoring.db.ts
 │   │   │   │   │   │   ├── app.config.db.ts
@@ -1313,6 +2007,8 @@
 │   │   │   │   │   │   ├── language.db.ts
 │   │   │   │   │   │   ├── lexicon.db.ts
 │   │   │   │   │   │   ├── license.adjustment.db.ts
+│   │   │   │   │   │   ├── license.event.db.ts
+│   │   │   │   │   │   ├── payment.attempt.db.ts
 │   │   │   │   │   │   ├── payment.method.db.ts
 │   │   │   │   │   │   ├── payment.transaction.db.ts
 │   │   │   │   │   │   ├── permission.db.ts
@@ -1323,10 +2019,13 @@
 │   │   │   │   │   ├── db.config.ts
 │   │   │   │   │   ├── db.initializer.ts
 │   │   │   │   │   └── migration.config.cjs
+│   │   │   │   ├── jobs
+│   │   │   │   │   └── scheduled-license-activation.ts
 │   │   │   │   ├── model
 │   │   │   │   │   ├── ActivityMonitoringModel.ts
 │   │   │   │   │   ├── AppConfigModel.ts
 │   │   │   │   │   ├── BillingCycleModel.ts
+│   │   │   │   │   ├── CashPaymentModel.ts
 │   │   │   │   │   ├── ClientModel.ts
 │   │   │   │   │   ├── ClientProfileModel.ts
 │   │   │   │   │   ├── ContactModel.ts
@@ -1338,41 +2037,92 @@
 │   │   │   │   │   ├── FeatureModel.ts
 │   │   │   │   │   ├── FraudDetectionLogModel.ts
 │   │   │   │   │   ├── GlobalLicenseModel.ts
+│   │   │   │   │   ├── KpaySettlementModel.ts
+│   │   │   │   │   ├── KpayWebhookModel.ts
 │   │   │   │   │   ├── LanguageModel.ts
 │   │   │   │   │   ├── LexiconModel.ts
 │   │   │   │   │   ├── LicenseAdjustmentModel.ts
+│   │   │   │   │   ├── LicenseRecordsModel.ts
+│   │   │   │   │   ├── LicenseReleaseModel.ts
+│   │   │   │   │   ├── MonthlyBillingPreviewModel.ts
+│   │   │   │   │   ├── NormalizeInitialXafModel.ts
+│   │   │   │   │   ├── PaymentAttemptModel.ts
 │   │   │   │   │   ├── PaymentMethodModel.ts
 │   │   │   │   │   ├── PaymentTransactionModel.ts
 │   │   │   │   │   ├── PermissionModel.ts
+│   │   │   │   │   ├── PostpaidCashModel.ts
+│   │   │   │   │   ├── PostpaidClosureModel.ts
+│   │   │   │   │   ├── PostpaidTransitionModel.ts
+│   │   │   │   │   ├── RenewalModel.ts
+│   │   │   │   │   ├── SeatAssignmentModel.ts
 │   │   │   │   │   ├── SponsorModel.ts
 │   │   │   │   │   ├── TaxRuleModel.ts
-│   │   │   │   │   └── TenantModel.ts
+│   │   │   │   │   ├── TenantModel.ts
+│   │   │   │   │   ├── TenantOnboardingModel.ts
+│   │   │   │   │   └── TenantOnboardingResendModel.ts
 │   │   │   │   ├── routes
 │   │   │   │   │   ├── activity.monitoring.route.ts
 │   │   │   │   │   ├── app.config.route.ts
 │   │   │   │   │   ├── auth.route.ts
 │   │   │   │   │   ├── billing.cycle.route.ts
+│   │   │   │   │   ├── cash.installment.route.ts
+│   │   │   │   │   ├── cash.payment.route.ts
 │   │   │   │   │   ├── contact.route.ts
 │   │   │   │   │   ├── country.route.ts
 │   │   │   │   │   ├── currency.route.ts
+│   │   │   │   │   ├── employee.leave.route.ts
 │   │   │   │   │   ├── employee.license.route.ts
 │   │   │   │   │   ├── endpoint.route.ts
 │   │   │   │   │   ├── exchange.rate.route.ts
 │   │   │   │   │   ├── fraud.detection.log.route.ts
 │   │   │   │   │   ├── global.license.route.ts
+│   │   │   │   │   ├── integrator.route.ts
+│   │   │   │   │   ├── kpay.webhook.route.ts
 │   │   │   │   │   ├── language.route.ts
 │   │   │   │   │   ├── lexicon.route.ts
 │   │   │   │   │   ├── license.adjustment.route.ts
+│   │   │   │   │   ├── license.capacity.route.ts
+│   │   │   │   │   ├── license.records.route.ts
+│   │   │   │   │   ├── license.release.route.ts
 │   │   │   │   │   ├── manager
 │   │   │   │   │   │   ├── billing.route.ts
 │   │   │   │   │   │   └── fraud.route.ts
+│   │   │   │   │   ├── monthly.billing.preview.route.ts
 │   │   │   │   │   ├── payment.method.route.ts
 │   │   │   │   │   ├── payment.transaction.route.ts
 │   │   │   │   │   ├── permission.route.ts
+│   │   │   │   │   ├── postpaid.cash.route.ts
+│   │   │   │   │   ├── postpaid.closure.route.ts
+│   │   │   │   │   ├── postpaid.transition.route.ts
+│   │   │   │   │   ├── renewal.route.ts
+│   │   │   │   │   ├── seat.assignment.route.ts
 │   │   │   │   │   ├── sponsor.route.ts
 │   │   │   │   │   ├── tax.rule.route.ts
+│   │   │   │   │   ├── tenant.onboarding.admin.route.ts
+│   │   │   │   │   ├── tenant.onboarding.resend.route.ts
+│   │   │   │   │   ├── tenant.onboarding.route.ts
 │   │   │   │   │   └── tenant.route.ts
-│   │   │   │   └── server.ts
+│   │   │   │   ├── server.ts
+│   │   │   │   └── services
+│   │   │   │       ├── cash-installment.ts
+│   │   │   │       ├── cash-payment-confirmation.ts
+│   │   │   │       ├── commercial-transition.ts
+│   │   │   │       ├── employee-leave.ts
+│   │   │   │       ├── kpay-client.ts
+│   │   │   │       ├── kpay-reconciliation-job.ts
+│   │   │   │       ├── kpay-webhook-signature.ts
+│   │   │   │       ├── monthly-license-policy.ts
+│   │   │   │       ├── monthly-usage.ts
+│   │   │   │       ├── payable-amount.ts
+│   │   │   │       ├── payment-draft.ts
+│   │   │   │       ├── payment-money.ts
+│   │   │   │       ├── renewal-amounts.ts
+│   │   │   │       ├── renewal-preparation.ts
+│   │   │   │       ├── renewal-preview.ts
+│   │   │   │       ├── renewal-selection.ts
+│   │   │   │       ├── scheduled-license-activation.ts
+│   │   │   │       ├── seat-assignment.ts
+│   │   │   │       └── usage-regularization-access.ts
 │   │   │   ├── middle
 │   │   │   │   ├── ensured-routes.ts
 │   │   │   │   ├── server-auth.ts
@@ -1487,6 +2237,35 @@
 │   │   │   │   │   ├── UserModel.ts
 │   │   │   │   │   ├── UserRoleModel.ts
 │   │   │   │   │   └── WorkSessionsModel.ts
+│   │   │   │   ├── modules
+│   │   │   │   │   └── attendance-statistics
+│   │   │   │   │       ├── README.md
+│   │   │   │   │       ├── application
+│   │   │   │   │       │   ├── attendance-adoption.test.ts
+│   │   │   │   │       │   ├── attendance-adoption.ts
+│   │   │   │   │       │   ├── attendance-overview.test.ts
+│   │   │   │   │       │   ├── attendance-overview.ts
+│   │   │   │   │       │   ├── attendance-overview.types.ts
+│   │   │   │   │       │   ├── attendance-statistics.ports.ts
+│   │   │   │   │       │   ├── attendance-statistics.service.test.ts
+│   │   │   │   │       │   └── attendance-statistics.service.ts
+│   │   │   │   │       ├── docs
+│   │   │   │   │       │   └── attendance-overview.contract.md
+│   │   │   │   │       ├── domain
+│   │   │   │   │       │   ├── attendance-day.test.ts
+│   │   │   │   │       │   ├── attendance-day.ts
+│   │   │   │   │       │   └── attendance-day.types.ts
+│   │   │   │   │       ├── examples
+│   │   │   │   │       │   └── attendance-overview.response.json
+│   │   │   │   │       ├── http
+│   │   │   │   │       │   ├── attendance-statistics.controller.ts
+│   │   │   │   │       │   ├── attendance-statistics.query.test.ts
+│   │   │   │   │       │   └── attendance-statistics.query.ts
+│   │   │   │   │       ├── index.ts
+│   │   │   │   │       └── infrastructure
+│   │   │   │   │           ├── postgres-interval.test.ts
+│   │   │   │   │           ├── postgres-interval.ts
+│   │   │   │   │           └── tenant-attendance-statistics.adapter.ts
 │   │   │   │   ├── routes
 │   │   │   │   │   ├── attendance.stat.route.ts
 │   │   │   │   │   ├── audit.logs.route.ts
@@ -1508,6 +2287,7 @@
 │   │   │   │   │   ├── rotation.groups.route.ts
 │   │   │   │   │   ├── schedule.assignments.route.ts
 │   │   │   │   │   ├── schedule.suggestion.route.ts
+│   │   │   │   │   ├── schedule.suggestion.route0.ts
 │   │   │   │   │   ├── session.model.route.ts
 │   │   │   │   │   ├── session.templates.route.ts
 │   │   │   │   │   ├── sites.route.ts
@@ -1520,7 +2300,9 @@
 │   │   │   │   └── server.ts
 │   │   │   ├── tools
 │   │   │   │   ├── absence.detection.service.ts
+│   │   │   │   ├── activity.sevice.ts
 │   │   │   │   ├── anomaly.detection.service.ts
+│   │   │   │   ├── anomaly.detection.service0.ts
 │   │   │   │   ├── api-key-manager.ts
 │   │   │   │   ├── auth.cache.service.ts
 │   │   │   │   ├── cache.data.service.ts
@@ -1532,19 +2314,23 @@
 │   │   │   │   ├── http-status.ts
 │   │   │   │   ├── memo.correction.service.ts
 │   │   │   │   ├── notification.service.ts
+│   │   │   │   ├── onboarding-resend-limit.ts
 │   │   │   │   ├── otp-cache.service.ts
+│   │   │   │   ├── otp.delivery.service.ts
 │   │   │   │   ├── pdf
 │   │   │   │   │   ├── rotationAssignment.ts
 │   │   │   │   │   ├── scheduleAssignment.ts
 │   │   │   │   │   └── service.ts
 │   │   │   │   ├── response.ts
 │   │   │   │   ├── revision.ts
+│   │   │   │   ├── schedule.assignment.adjustment.service.ts
 │   │   │   │   ├── schedule.resolution.service.ts
 │   │   │   │   ├── schedule.suggestion.approval.service.ts
 │   │   │   │   ├── send.email.service.ts
 │   │   │   │   ├── send.otp.service.ts
 │   │   │   │   ├── spondor.service.ts
 │   │   │   │   ├── tenant-cache.service.ts
+│   │   │   │   ├── tenant-onboarding-token.ts
 │   │   │   │   ├── tenant.otp.manager.ts
 │   │   │   │   ├── user.authentication.service.ts
 │   │   │   │   └── watcher.ts
@@ -1552,6 +2338,7 @@
 │   │   │       ├── axios.config.ts
 │   │   │       ├── docs
 │   │   │       │   └── Liste des Fonctionnalités à Implémenter.odt
+│   │   │       ├── employee.color.ts
 │   │   │       ├── encryption.ts
 │   │   │       ├── extract.query.params.ts
 │   │   │       ├── firebase.config.ts
@@ -1559,32 +2346,107 @@
 │   │   │       ├── generate.otp.ts
 │   │   │       ├── generate.tenant.config.ts
 │   │   │       ├── geo.utils.ts
+│   │   │       ├── planning.history.analysis.service.ts
+│   │   │       ├── planning.history.review.service.ts
+│   │   │       ├── planning.horizon.ts
+│   │   │       ├── planning.preflight.validation.service.ts
+│   │   │       ├── planning.rolling.horizon.ts
 │   │   │       ├── prive
 │   │   │       │   ├── GoogleService-Info.plist
 │   │   │       │   ├── google-services.json
 │   │   │       │   └── tokenotification-firebase-adminsdk-fbsvc-6b764c3800.json
 │   │   │       ├── regex.validator.ts
 │   │   │       ├── response.model.ts
+│   │   │       ├── schedule.suggestion.application-period.ts
+│   │   │       ├── schedule.suggestion.bulk-edit.service.ts
 │   │   │       ├── schedule.suggestion.generation.service.ts
+│   │   │       ├── schedule.suggestion.generation.service0.ts
+│   │   │       ├── schedule.suggestion.regeneration.service.ts
 │   │   │       ├── session.model.validation.ts
 │   │   │       ├── solver
 │   │   │       │   ├── greedy.planning.solver.ts
 │   │   │       │   ├── ortools.planning.solver.ts
+│   │   │       │   ├── planning.solver.constants.ts
 │   │   │       │   ├── planning.solver.factory.ts
 │   │   │       │   └── planning.solver.ts
 │   │   │       ├── suggestion.engine.ts
 │   │   │       ├── test
+│   │   │       │   ├── planning.horizon.test.ts
+│   │   │       │   ├── planning.preflight.validation.service.test.ts
+│   │   │       │   ├── planning.rolling.horizon.test.ts
 │   │   │       │   ├── test-qr.html
 │   │   │       │   └── test.html
+│   │   │       ├── time.entry.external-id.ts
+│   │   │       ├── time.entry.idempotency.response.ts
+│   │   │       ├── time.entry.idempotency.ts
 │   │   │       ├── token.generator.ts
 │   │   │       ├── upload.ts
 │   │   │       └── view.validator.ts
 │   │   ├── tsconfig.json
-│   │   └── uploads
-│   │       └── attachments
-│   │           ├── 1760353177410-995450632.mp4
-│   │           ├── 1760354160498-653431053.mp4
-│   │           └── 1760354337659-848553890.png
+│   │   ├── uploads
+│   │   │   └── attachments
+│   │   │       ├── 1760353177410-995450632.mp4
+│   │   │       ├── 1760354160498-653431053.mp4
+│   │   │       └── 1760354337659-848553890.png
+│   │   └── verification
+│   │       ├── activity-monitoring-usage.test.cjs
+│   │       ├── adjustments.test.cjs
+│   │       ├── cash-architecture.test.cjs
+│   │       ├── cash-confirmation.test.cjs
+│   │       ├── cash-installment.test.cjs
+│   │       ├── commercial-transition.test.cjs
+│   │       ├── contract.test.cjs
+│   │       ├── dependencies
+│   │       │   ├── activity-monitoring-input.ts
+│   │       │   ├── monthly-usage.ts
+│   │       │   ├── payable-amount.ts
+│   │       │   └── renewal-amounts.ts
+│   │       ├── fixtures
+│   │       │   ├── activity-monitoring-input.js
+│   │       │   ├── activity-monitoring-input.ts
+│   │       │   ├── payment-money.js
+│   │       │   ├── payment-money.ts
+│   │       │   ├── renewal-amounts.js
+│   │       │   └── renewal-amounts.ts
+│   │       ├── foundation.test.cjs
+│   │       ├── helpers
+│   │       │   ├── renewal-amounts.js
+│   │       │   └── renewal-amounts.ts
+│   │       ├── issuance.test.cjs
+│   │       ├── kpay-client.test.cjs
+│   │       ├── kpay-settlement.test.cjs
+│   │       ├── kpay-webhook.test.cjs
+│   │       ├── license-records.test.cjs
+│   │       ├── license-release.test.cjs
+│   │       ├── lot34.test.cjs
+│   │       ├── lot42-6-financial-proof.test.cjs
+│   │       ├── lot42-6-review.test.cjs
+│   │       ├── monthly-boundaries.sql
+│   │       ├── monthly-preview.test.cjs
+│   │       ├── monthly-usage.test.cjs
+│   │       ├── onboarding-payment.test.cjs
+│   │       ├── onboarding.test.cjs
+│   │       ├── payment-attempt-contract.fixture.ts
+│   │       ├── payment-attempt.test.cjs
+│   │       ├── postpaid-cash.test.cjs
+│   │       ├── postpaid-closure.test.cjs
+│   │       ├── postpaid-transition.test.cjs
+│   │       ├── renewal-amounts.fixture.ts
+│   │       ├── renewal-architecture.test.cjs
+│   │       ├── renewal-preparation.test.cjs
+│   │       ├── renewal-preview.test.cjs
+│   │       ├── renewal.test.cjs
+│   │       ├── resend.test.cjs
+│   │       ├── run-tests.cjs
+│   │       ├── schedule-suggestion-approval.test.cjs
+│   │       ├── scheduled-activation.test.cjs
+│   │       ├── seat.test.cjs
+│   │       ├── settlement.test.cjs
+│   │       ├── status.test.cjs
+│   │       ├── subscribe.test.cjs
+│   │       ├── tenant-license-status.test.cjs
+│   │       ├── usage-regularization-access.test.cjs
+│   │       └── xaf.test.cjs
 │   ├── backend
 │   │   ├── app.ts
 │   │   ├── dist
@@ -1598,18 +2460,46 @@
 │   │   │   ├── server.js.map
 │   │   │   └── src
 │   │   │       ├── routes
+│   │   │       │   ├── attendance.route.d.ts
+│   │   │       │   ├── attendance.route.d.ts.map
+│   │   │       │   ├── attendance.route.js
+│   │   │       │   ├── attendance.route.js.map
 │   │   │       │   ├── auth.route.d.ts
 │   │   │       │   ├── auth.route.d.ts.map
 │   │   │       │   ├── auth.route.js
 │   │   │       │   ├── auth.route.js.map
+│   │   │       │   ├── employee.planning.profile.route.d.ts
+│   │   │       │   ├── employee.planning.profile.route.d.ts.map
+│   │   │       │   ├── employee.planning.profile.route.js
+│   │   │       │   ├── employee.planning.profile.route.js.map
 │   │   │       │   ├── groups.route.d.ts
 │   │   │       │   ├── groups.route.d.ts.map
 │   │   │       │   ├── groups.route.js
 │   │   │       │   ├── groups.route.js.map
+│   │   │       │   ├── integrator.route.d.ts
+│   │   │       │   ├── integrator.route.d.ts.map
+│   │   │       │   ├── integrator.route.js
+│   │   │       │   ├── integrator.route.js.map
+│   │   │       │   ├── kpay.webhook.route.d.ts
+│   │   │       │   ├── kpay.webhook.route.d.ts.map
+│   │   │       │   ├── kpay.webhook.route.js
+│   │   │       │   ├── kpay.webhook.route.js.map
+│   │   │       │   ├── license.route.d.ts
+│   │   │       │   ├── license.route.d.ts.map
+│   │   │       │   ├── license.route.js
+│   │   │       │   ├── license.route.js.map
 │   │   │       │   ├── memos.route.d.ts
 │   │   │       │   ├── memos.route.d.ts.map
 │   │   │       │   ├── memos.route.js
 │   │   │       │   ├── memos.route.js.map
+│   │   │       │   ├── planning.suggestion.config.route.d.ts
+│   │   │       │   ├── planning.suggestion.config.route.d.ts.map
+│   │   │       │   ├── planning.suggestion.config.route.js
+│   │   │       │   ├── planning.suggestion.config.route.js.map
+│   │   │       │   ├── planning.suggestion.requirement.route.d.ts
+│   │   │       │   ├── planning.suggestion.requirement.route.d.ts.map
+│   │   │       │   ├── planning.suggestion.requirement.route.js
+│   │   │       │   ├── planning.suggestion.requirement.route.js.map
 │   │   │       │   ├── rotation.assignments.route.d.ts
 │   │   │       │   ├── rotation.assignments.route.d.ts.map
 │   │   │       │   ├── rotation.assignments.route.js
@@ -1638,6 +2528,14 @@
 │   │   │       │   ├── site.route.d.ts.map
 │   │   │       │   ├── site.route.js
 │   │   │       │   ├── site.route.js.map
+│   │   │       │   ├── tenant.onboarding.resend.route.d.ts
+│   │   │       │   ├── tenant.onboarding.resend.route.d.ts.map
+│   │   │       │   ├── tenant.onboarding.resend.route.js
+│   │   │       │   ├── tenant.onboarding.resend.route.js.map
+│   │   │       │   ├── tenant.onboarding.route.d.ts
+│   │   │       │   ├── tenant.onboarding.route.d.ts.map
+│   │   │       │   ├── tenant.onboarding.route.js
+│   │   │       │   ├── tenant.onboarding.route.js.map
 │   │   │       │   ├── tenant.route.d.ts
 │   │   │       │   ├── tenant.route.d.ts.map
 │   │   │       │   ├── tenant.route.js
@@ -1651,14 +2549,50 @@
 │   │   │       │   ├── user.route.js
 │   │   │       │   └── user.route.js.map
 │   │   │       ├── services
+│   │   │       │   ├── attendance.service.d.ts
+│   │   │       │   ├── attendance.service.d.ts.map
+│   │   │       │   ├── attendance.service.js
+│   │   │       │   ├── attendance.service.js.map
 │   │   │       │   ├── auth.service.d.ts
 │   │   │       │   ├── auth.service.d.ts.map
 │   │   │       │   ├── auth.service.js
 │   │   │       │   ├── auth.service.js.map
+│   │   │       │   ├── employee.planning.profile.service.d.ts
+│   │   │       │   ├── employee.planning.profile.service.d.ts.map
+│   │   │       │   ├── employee.planning.profile.service.js
+│   │   │       │   ├── employee.planning.profile.service.js.map
 │   │   │       │   ├── groups.service.d.ts
 │   │   │       │   ├── groups.service.d.ts.map
 │   │   │       │   ├── groups.service.js
 │   │   │       │   ├── groups.service.js.map
+│   │   │       │   ├── integrator.service.d.ts
+│   │   │       │   ├── integrator.service.d.ts.map
+│   │   │       │   ├── integrator.service.js
+│   │   │       │   ├── integrator.service.js.map
+│   │   │       │   ├── kpay.webhook.service.d.ts
+│   │   │       │   ├── kpay.webhook.service.d.ts.map
+│   │   │       │   ├── kpay.webhook.service.js
+│   │   │       │   ├── kpay.webhook.service.js.map
+│   │   │       │   ├── license.service.d.ts
+│   │   │       │   ├── license.service.d.ts.map
+│   │   │       │   ├── license.service.js
+│   │   │       │   ├── license.service.js.map
+│   │   │       │   ├── master.api.proxy.service.d.ts
+│   │   │       │   ├── master.api.proxy.service.d.ts.map
+│   │   │       │   ├── master.api.proxy.service.js
+│   │   │       │   ├── master.api.proxy.service.js.map
+│   │   │       │   ├── memo.socket.bridge.service.d.ts
+│   │   │       │   ├── memo.socket.bridge.service.d.ts.map
+│   │   │       │   ├── memo.socket.bridge.service.js
+│   │   │       │   ├── memo.socket.bridge.service.js.map
+│   │   │       │   ├── planning.suggestion.config.service.d.ts
+│   │   │       │   ├── planning.suggestion.config.service.d.ts.map
+│   │   │       │   ├── planning.suggestion.config.service.js
+│   │   │       │   ├── planning.suggestion.config.service.js.map
+│   │   │       │   ├── planning.suggestion.requirement.service.d.ts
+│   │   │       │   ├── planning.suggestion.requirement.service.d.ts.map
+│   │   │       │   ├── planning.suggestion.requirement.service.js
+│   │   │       │   ├── planning.suggestion.requirement.service.js.map
 │   │   │       │   ├── qr.socket.bridge.service.d.ts
 │   │   │       │   ├── qr.socket.bridge.service.d.ts.map
 │   │   │       │   ├── qr.socket.bridge.service.js
@@ -1691,6 +2625,18 @@
 │   │   │       │   ├── site.service.d.ts.map
 │   │   │       │   ├── site.service.js
 │   │   │       │   ├── site.service.js.map
+│   │   │       │   ├── tenant.api.proxy.service.d.ts
+│   │   │       │   ├── tenant.api.proxy.service.d.ts.map
+│   │   │       │   ├── tenant.api.proxy.service.js
+│   │   │       │   ├── tenant.api.proxy.service.js.map
+│   │   │       │   ├── tenant.onboarding.resend.service.d.ts
+│   │   │       │   ├── tenant.onboarding.resend.service.d.ts.map
+│   │   │       │   ├── tenant.onboarding.resend.service.js
+│   │   │       │   ├── tenant.onboarding.resend.service.js.map
+│   │   │       │   ├── tenant.onboarding.service.d.ts
+│   │   │       │   ├── tenant.onboarding.service.d.ts.map
+│   │   │       │   ├── tenant.onboarding.service.js
+│   │   │       │   ├── tenant.onboarding.service.js.map
 │   │   │       │   ├── tenant.service.d.ts
 │   │   │       │   ├── tenant.service.d.ts.map
 │   │   │       │   ├── tenant.service.js
@@ -1702,12 +2648,28 @@
 │   │   │       │   ├── user.service.d.ts
 │   │   │       │   ├── user.service.d.ts.map
 │   │   │       │   ├── user.service.js
-│   │   │       │   └── user.service.js.map
+│   │   │       │   ├── user.service.js.map
+│   │   │       │   ├── user.service0.d.ts
+│   │   │       │   ├── user.service0.d.ts.map
+│   │   │       │   ├── user.service0.js
+│   │   │       │   └── user.service0.js.map
 │   │   │       └── tools
 │   │   │           ├── api.factory.d.ts
 │   │   │           ├── api.factory.d.ts.map
 │   │   │           ├── api.factory.js
 │   │   │           ├── api.factory.js.map
+│   │   │           ├── bff.proxy.response.d.ts
+│   │   │           ├── bff.proxy.response.d.ts.map
+│   │   │           ├── bff.proxy.response.js
+│   │   │           ├── bff.proxy.response.js.map
+│   │   │           ├── integrator.delegation.d.ts
+│   │   │           ├── integrator.delegation.d.ts.map
+│   │   │           ├── integrator.delegation.js
+│   │   │           ├── integrator.delegation.js.map
+│   │   │           ├── license.tenant.context.d.ts
+│   │   │           ├── license.tenant.context.d.ts.map
+│   │   │           ├── license.tenant.context.js
+│   │   │           ├── license.tenant.context.js.map
 │   │   │           ├── tenant.config.d.ts
 │   │   │           ├── tenant.config.d.ts.map
 │   │   │           ├── tenant.config.js
@@ -1716,9 +2678,16 @@
 │   │   ├── server.ts
 │   │   ├── src
 │   │   │   ├── routes
+│   │   │   │   ├── attendance.route.ts
 │   │   │   │   ├── auth.route.ts
+│   │   │   │   ├── employee.planning.profile.route.ts
 │   │   │   │   ├── groups.route.ts
+│   │   │   │   ├── integrator.route.ts
+│   │   │   │   ├── kpay.webhook.route.ts
+│   │   │   │   ├── license.route.ts
 │   │   │   │   ├── memos.route.ts
+│   │   │   │   ├── planning.suggestion.config.route.ts
+│   │   │   │   ├── planning.suggestion.requirement.route.ts
 │   │   │   │   ├── rotation.assignments.route.ts
 │   │   │   │   ├── rotation.groups.route.ts
 │   │   │   │   ├── schedule.assignments.route.ts
@@ -1726,12 +2695,23 @@
 │   │   │   │   ├── schedule.suggestion.route.ts
 │   │   │   │   ├── session.model.route.ts
 │   │   │   │   ├── site.route.ts
+│   │   │   │   ├── tenant.onboarding.resend.route.ts
+│   │   │   │   ├── tenant.onboarding.route.ts
 │   │   │   │   ├── tenant.route.ts
 │   │   │   │   ├── time.entries.route.ts
 │   │   │   │   └── user.route.ts
 │   │   │   ├── services
+│   │   │   │   ├── attendance.service.ts
 │   │   │   │   ├── auth.service.ts
+│   │   │   │   ├── employee.planning.profile.service.ts
 │   │   │   │   ├── groups.service.ts
+│   │   │   │   ├── integrator.service.ts
+│   │   │   │   ├── kpay.webhook.service.ts
+│   │   │   │   ├── license.service.ts
+│   │   │   │   ├── master.api.proxy.service.ts
+│   │   │   │   ├── memo.socket.bridge.service.ts
+│   │   │   │   ├── planning.suggestion.config.service.ts
+│   │   │   │   ├── planning.suggestion.requirement.service.ts
 │   │   │   │   ├── qr.socket.bridge.service.ts
 │   │   │   │   ├── rotation.assignment.service.ts
 │   │   │   │   ├── rotation.group.service.ts
@@ -1740,68 +2720,570 @@
 │   │   │   │   ├── schedule.suggestion.service.ts
 │   │   │   │   ├── session.model.ts
 │   │   │   │   ├── site.service.ts
+│   │   │   │   ├── tenant.api.proxy.service.ts
+│   │   │   │   ├── tenant.onboarding.resend.service.ts
+│   │   │   │   ├── tenant.onboarding.service.ts
 │   │   │   │   ├── tenant.service.ts
 │   │   │   │   ├── time.entries.service.ts
-│   │   │   │   └── user.service.ts
+│   │   │   │   ├── user.service.ts
+│   │   │   │   └── user.service0.ts
 │   │   │   └── tools
 │   │   │       ├── api.factory.ts
+│   │   │       ├── bff.proxy.response.ts
+│   │   │       ├── integrator.delegation.ts
+│   │   │       ├── license.tenant.context.ts
 │   │   │       └── tenant.config.ts
 │   │   └── tsconfig.json
 │   ├── cloud
 │   │   ├── README.md
 │   │   ├── dist
 │   │   │   ├── assets
-│   │   │   │   ├── index-D7YK0NIY.css
-│   │   │   │   ├── index-V4IfGCSI.js
-│   │   │   │   ├── toké-icon-01-9OJIrXWU.svg
-│   │   │   │   └── vendor-oNUdUsqO.js
-│   │   │   └── index.html
+│   │   │   │   ├── EmployeePlanningProfileList-BF2Im4Hy.css
+│   │   │   │   ├── EmployeePlanningProfileList-BFvR8eKb.js
+│   │   │   │   ├── EmployeePlanningProfileService-CaORXbHo.js
+│   │   │   │   ├── GenerateSuggestionModal-58cne4rT.css
+│   │   │   │   ├── GenerateSuggestionModal-s769PnRg.js
+│   │   │   │   ├── PlanningConfigEditorView-BGEiLfjh.js
+│   │   │   │   ├── PlanningConfigEditorView-C2l0jat_.css
+│   │   │   │   ├── PlanningConfigView-DGEjEKer.js
+│   │   │   │   ├── PlanningConfirmDialog-DVB-fGGs.css
+│   │   │   │   ├── PlanningConfirmDialog.vue_vue_type_style_index_0_scoped_e84ed4e0_lang-NU-exNBu.js
+│   │   │   │   ├── PlanningDrawer-yMX7p3kf.js
+│   │   │   │   ├── PlanningPageHeader-MorCt7HX.js
+│   │   │   │   ├── PlanningRequirementList-5sxGbvo5.css
+│   │   │   │   ├── PlanningRequirementList-gJ8IBWpb.js
+│   │   │   │   ├── PlanningSuggestionConfigService-BI7zuZad.js
+│   │   │   │   ├── PlanningSuggestionLayout-BBrlZ3U_.js
+│   │   │   │   ├── PlanningToggle-BRf1SQsx.js
+│   │   │   │   ├── PlanningToggle-BU0QPoG3.css
+│   │   │   │   ├── ScheduleSuggestionList-Bac8NFPz.css
+│   │   │   │   ├── ScheduleSuggestionList-CyD4Oz1j.js
+│   │   │   │   ├── ScheduleSuggestionPreview-Bp9p-xco.js
+│   │   │   │   ├── ScheduleSuggestionPreview-DjHWd-Qz.css
+│   │   │   │   ├── ScheduleSuggestionService-B7qVml_z.js
+│   │   │   │   ├── SuggestionDashboard-DSUisSU1.js
+│   │   │   │   ├── index-AxY6a2P3.css
+│   │   │   │   ├── index-Dt1Zgkz6.js
+│   │   │   │   ├── planningSuggestion.helpers-BmVeb9rm.js
+│   │   │   │   ├── requirementMatrix.helpers-BbxYxzVc.js
+│   │   │   │   ├── teamWeeklyLeave.helpers-SDln5sBM.js
+│   │   │   │   ├── toke-9OJIrXWU.svg
+│   │   │   │   ├── toke-dMain-04-bo7bOKzD.css
+│   │   │   │   ├── toke-footer-24-C9nOIFOQ.css
+│   │   │   │   ├── toke-schedule-21-e1aRp3Lz.css
+│   │   │   │   └── vendor-CvB15fP-.js
+│   │   │   ├── images
+│   │   │   │   ├── apps_store.png
+│   │   │   │   ├── apps_stores.webp
+│   │   │   │   ├── img.png
+│   │   │   │   ├── play_store.png
+│   │   │   │   ├── reload.svg
+│   │   │   │   ├── toke-main-logo.svg
+│   │   │   │   ├── toke-white-logo.svg
+│   │   │   │   ├── toke-white.svg
+│   │   │   │   └── toke.svg
+│   │   │   ├── index.html
+│   │   │   └── pointage.png
 │   │   ├── index.html
 │   │   ├── package.json
 │   │   ├── postcss.config.js
+│   │   ├── public
+│   │   │   ├── images
+│   │   │   │   ├── apps_store.png
+│   │   │   │   ├── apps_stores.webp
+│   │   │   │   ├── img.png
+│   │   │   │   ├── play_store.png
+│   │   │   │   ├── reload.svg
+│   │   │   │   ├── toke-main-logo.svg
+│   │   │   │   ├── toke-white-logo.svg
+│   │   │   │   ├── toke-white.svg
+│   │   │   │   └── toke.svg
+│   │   │   └── pointage.png
 │   │   ├── src
 │   │   │   ├── App.vue
 │   │   │   ├── assets
-│   │   │   │   ├── images
-│   │   │   │   │   └── toké-icon-01.svg
-│   │   │   │   └── main.css
+│   │   │   │   └── css
+│   │   │   │       ├── employeeForm-toke-15.css
+│   │   │   │       ├── main.css
+│   │   │   │       ├── planning-toke-14.css
+│   │   │   │       ├── profileCard-toke-20.css
+│   │   │   │       ├── toke-AssiduteJ-09.css
+│   │   │   │       ├── toke-AttendanceDetails-26.css
+│   │   │   │       ├── toke-AttendanceEvolution-27.css
+│   │   │   │       ├── toke-EViewPointage-28.css
+│   │   │   │       ├── toke-assignmentForm-24.css
+│   │   │   │       ├── toke-assignmentList-25.css
+│   │   │   │       ├── toke-auth-01.css
+│   │   │   │       ├── toke-dHero-03.css
+│   │   │   │       ├── toke-dMain-04.css
+│   │   │   │       ├── toke-employee-detail13.css
+│   │   │   │       ├── toke-employeeList-28.css
+│   │   │   │       ├── toke-employeeModal-12.css
+│   │   │   │       ├── toke-equipe-09.css
+│   │   │   │       ├── toke-footer-24.css
+│   │   │   │       ├── toke-groupForm-23.css
+│   │   │   │       ├── toke-groupList-22.css
+│   │   │   │       ├── toke-memo-08.css
+│   │   │   │       ├── toke-memoDetails-19.css
+│   │   │   │       ├── toke-memoList-18.css
+│   │   │   │       ├── toke-memoValidate-20.css
+│   │   │   │       ├── toke-module-07.css
+│   │   │   │       ├── toke-otp-02.css
+│   │   │   │       ├── toke-profile-16.css
+│   │   │   │       ├── toke-schedule-21.css
+│   │   │   │       ├── toke-setting-17.css
+│   │   │   │       ├── tokt-employeeC-06.css
+│   │   │   │       └── tokt-employeeS-05.css
 │   │   │   ├── composables
-│   │   │   │   ├── useCountries.js
-│   │   │   │   ├── useCountries.ts
-│   │   │   │   └── useNotifications.ts
+│   │   │   │   └── site
+│   │   │   │       └── useSiteLocation.ts
+│   │   │   ├── ctrl
+│   │   │   │   ├── authCtrl.ts
+│   │   │   │   └── otpCtrl.ts
+│   │   │   ├── directives
+│   │   │   │   └── clickOutside.ts
 │   │   │   ├── env.d.ts
 │   │   │   ├── main.ts
-│   │   │   ├── router.js
+│   │   │   ├── pinia.d.ts
+│   │   │   ├── router
+│   │   │   │   ├── planning-suggestion.ts
+│   │   │   │   └── planning.ts
 │   │   │   ├── router.ts
-│   │   │   ├── services
-│   │   │   │   ├── api.service.js
-│   │   │   │   ├── api.service.ts
-│   │   │   │   └── countries.service.ts
+│   │   │   ├── service
+│   │   │   │   ├── AuthService.ts
+│   │   │   │   ├── AuthService0.ts
+│   │   │   │   ├── EmployeeDetailsService.ts
+│   │   │   │   ├── EmployeePlanningProfileService.ts
+│   │   │   │   ├── EntriesService.ts
+│   │   │   │   ├── GroupService.ts
+│   │   │   │   ├── IntegratorService.ts
+│   │   │   │   ├── LicenseService.ts
+│   │   │   │   ├── MemoRealtimeService.ts
+│   │   │   │   ├── MemoService.ts
+│   │   │   │   ├── PlanningSuggestionConfigService.ts
+│   │   │   │   ├── PlanningSuggestionRequirementService.ts
+│   │   │   │   ├── QrAuthService.ts
+│   │   │   │   ├── QrCodeAuthService.ts
+│   │   │   │   ├── RotationAssignment.ts
+│   │   │   │   ├── RotationGroup.ts
+│   │   │   │   ├── ScheduleAssignment.ts
+│   │   │   │   ├── ScheduleService.ts
+│   │   │   │   ├── ScheduleSuggestionService.ts
+│   │   │   │   ├── SessionModelService.ts
+│   │   │   │   ├── SessionTemplate.ts
+│   │   │   │   ├── SiteService.ts
+│   │   │   │   ├── TenantOnboardingService.ts
+│   │   │   │   ├── UserService.ts
+│   │   │   │   ├── rotationAssignmentService.ts
+│   │   │   │   ├── rotationservice.ts
+│   │   │   │   └── scheduleAssignmentService.ts
+│   │   │   ├── stores
+│   │   │   │   ├── integratorStore.ts
+│   │   │   │   ├── licenseStore.ts
+│   │   │   │   ├── memoStore.ts
+│   │   │   │   ├── teamStore.ts
+│   │   │   │   ├── tenantOnboardingStore.ts
+│   │   │   │   ├── useNotifications.ts
+│   │   │   │   ├── userAuthenticateFile.ts
+│   │   │   │   └── userStore.ts
+│   │   │   ├── tools
+│   │   │   │   └── Fetch.Client.ts
+│   │   │   ├── utils
+│   │   │   │   ├── HeadBuilder.ts
+│   │   │   │   ├── TokenGenarate.ts
+│   │   │   │   ├── employeeColor.ts
+│   │   │   │   ├── exports
+│   │   │   │   │   ├── export.helpers.ts
+│   │   │   │   │   ├── exportPointagesPDF.ts
+│   │   │   │   │   ├── exportRotationPDF.ts
+│   │   │   │   │   ├── exportScheduleOptimizedPDF.ts
+│   │   │   │   │   ├── exportSchedulePDF.ts
+│   │   │   │   │   ├── exportScheduleSimplePDF.ts
+│   │   │   │   │   ├── exportStatistiquesPDF.ts
+│   │   │   │   │   ├── rotationAssignment.export.ts
+│   │   │   │   │   ├── scheduleAssignment.export.ts
+│   │   │   │   │   ├── scheduleAssignment.optimized.export.ts
+│   │   │   │   │   └── scheduleAssignment.simple.export.ts
+│   │   │   │   ├── geo
+│   │   │   │   │   ├── circleToPolygon.ts
+│   │   │   │   │   ├── polygon.ts
+│   │   │   │   │   ├── siteLocation.types.ts
+│   │   │   │   │   └── yandexAddressMapper.ts
+│   │   │   │   ├── interfaces
+│   │   │   │   │   ├── attendance.interface.ts
+│   │   │   │   │   ├── employeeAttendances.ts
+│   │   │   │   │   ├── equipe.interface.ts
+│   │   │   │   │   ├── schedule.interface.ts
+│   │   │   │   │   ├── scheduleSuggestion.interface.ts
+│   │   │   │   │   ├── site.interface.ts
+│   │   │   │   │   ├── stat.interface.ts
+│   │   │   │   │   └── team.interface.ts
+│   │   │   │   ├── reportUtils.ts
+│   │   │   │   ├── token.txt
+│   │   │   │   └── useEmployee.ts
 │   │   │   └── views
+│   │   │       ├── Attendancedaytimeline.vue
+│   │   │       ├── EmployeeDetails.vue
+│   │   │       ├── QrCodeAuth.vue
+│   │   │       ├── auth.vue
 │   │   │       ├── components
-│   │   │       │   ├── country
-│   │   │       │   │   ├── confirmDeleteModal.vue
-│   │   │       │   │   └── countryFormModal.vue
+│   │   │       │   ├── LazySvgImage.vue
+│   │   │       │   ├── auth
+│   │   │       │   │   ├── authForm.vue
+│   │   │       │   │   └── authForm0.vue
+│   │   │       │   ├── footer.vue
+│   │   │       │   ├── header.vue
+│   │   │       │   └── license
+│   │   │       │       ├── LicensePaymentsOverview.vue
+│   │   │       │       ├── LicenseRenewalPanel.vue
+│   │   │       │       ├── OrganizationEmployeeLicenses.vue
+│   │   │       │       └── TeamEmployeeLicenseDrawer.vue
+│   │   │       ├── dashboard
+│   │   │       │   ├── AttendanceStatisticsRouteView.vue
+│   │   │       │   ├── attendanceTimeline.vue
+│   │   │       │   ├── dashboardHero.vue
+│   │   │       │   ├── dashboardMain.vue
+│   │   │       │   ├── dashboardStats.vue
+│   │   │       │   ├── employeeList.vue
+│   │   │       │   └── employeeViewPointage.vue
+│   │   │       ├── employeeForm.vue
+│   │   │       ├── equipe.vue
+│   │   │       ├── integrator
+│   │   │       │   ├── IntegratorDashboardView.vue
+│   │   │       │   ├── IntegratorLoginView.vue
+│   │   │       │   ├── IntegratorOtpView.vue
+│   │   │       │   ├── IntegratorTenantsView.vue
+│   │   │       │   ├── TenantResponsiblesView.vue
+│   │   │       │   ├── components
+│   │   │       │   │   ├── ActiveContextBar.vue
+│   │   │       │   │   ├── IntegratorHeader.vue
+│   │   │       │   │   ├── IntegratorSidebar.vue
+│   │   │       │   │   ├── ResponsibleRow.vue
+│   │   │       │   │   └── TenantCard.vue
 │   │   │       │   └── layouts
-│   │   │       │       ├── dashboard.vue
-│   │   │       │       ├── footer.vue
-│   │   │       │       └── header.vue
-│   │   │       ├── country.vue
-│   │   │       └── home.vue
+│   │   │       │       ├── IntegratorAuthLayout.vue
+│   │   │       │       └── IntegratorLayout.vue
+│   │   │       ├── memo
+│   │   │       │   ├── AuthenticatedMedia.vue
+│   │   │       │   ├── memoChat.vue
+│   │   │       │   ├── memoCreateChat.vue
+│   │   │       │   ├── memoDetailChat.vue
+│   │   │       │   ├── memoDetailPanel.vue
+│   │   │       │   ├── memoSidebar.vue
+│   │   │       │   └── memosView.vue
+│   │   │       ├── modules
+│   │   │       │   └── attendance-statistics
+│   │   │       │       ├── FRONTEND_CONTRACT_V23.md
+│   │   │       │       ├── components
+│   │   │       │       │   ├── AttendanceAnalysisContextBar.vue
+│   │   │       │       │   ├── AttendanceAttentionEmployees.vue
+│   │   │       │       │   ├── AttendanceCompactPagination.vue
+│   │   │       │       │   ├── AttendanceDailyTrend.vue
+│   │   │       │       │   ├── AttendanceDataQualityAlert.vue
+│   │   │       │       │   ├── AttendanceDayDetailsPanel.vue
+│   │   │       │       │   ├── AttendanceDecisionKpiCard.vue
+│   │   │       │       │   ├── AttendanceEmployeeDaysTable.vue
+│   │   │       │       │   ├── AttendanceEmployeeDrawer.vue
+│   │   │       │       │   ├── AttendanceEmployeesPagination.vue
+│   │   │       │       │   ├── AttendanceEmployeesSection.vue
+│   │   │       │       │   ├── AttendanceEmployeesTable.vue
+│   │   │       │       │   ├── AttendanceEmployeesToolbar.vue
+│   │   │       │       │   ├── AttendanceFilters.vue
+│   │   │       │       │   ├── AttendanceIssueCard.vue
+│   │   │       │       │   ├── AttendanceIssuesSection.vue
+│   │   │       │       │   ├── AttendanceIssuesToolbar.vue
+│   │   │       │       │   ├── AttendanceKpiCard.vue
+│   │   │       │       │   ├── AttendanceKpiDetailModal.vue
+│   │   │       │       │   ├── AttendanceKpiDrilldown.vue
+│   │   │       │       │   ├── AttendanceKpiGrid.vue
+│   │   │       │       │   ├── AttendanceLargeDatasetNotice.vue
+│   │   │       │       │   ├── AttendanceOverviewEmptyState.vue
+│   │   │       │       │   ├── AttendanceOverviewErrorState.vue
+│   │   │       │       │   ├── AttendanceOverviewHeader.vue
+│   │   │       │       │   ├── AttendanceOverviewScopeCard.vue
+│   │   │       │       │   ├── AttendanceOverviewSkeleton.vue
+│   │   │       │       │   ├── AttendancePdfExportDialog.vue
+│   │   │       │       │   ├── AttendanceSecondaryInsights.vue
+│   │   │       │       │   ├── AttendanceStatusDistribution.vue
+│   │   │       │       │   ├── AttendanceTodayOperationalSummary.vue
+│   │   │       │       │   └── AttendanceVisualizations.vue
+│   │   │       │       ├── composables
+│   │   │       │       │   ├── useAccessibleDialog.ts
+│   │   │       │       │   ├── useAttendanceOverviewPage.ts
+│   │   │       │       │   └── useAttendanceStatistics.ts
+│   │   │       │       ├── index.ts
+│   │   │       │       ├── integration
+│   │   │       │       │   └── attendance-statistics.runtime.ts
+│   │   │       │       ├── pdf
+│   │   │       │       │   ├── components
+│   │   │       │       │   │   ├── attendance-pdf-primitives.ts
+│   │   │       │       │   │   ├── attendance-pdf-report-heading.ts
+│   │   │       │       │   │   └── attendance-pdf-table.ts
+│   │   │       │       │   ├── config
+│   │   │       │       │   │   ├── attendance-pdf-employee-day-columns.ts
+│   │   │       │       │   │   ├── attendance-pdf-layout.ts
+│   │   │       │       │   │   ├── attendance-pdf-presentation-levels.ts
+│   │   │       │       │   │   ├── attendance-pdf-profiles.ts
+│   │   │       │       │   │   └── attendance-pdf-team-columns.ts
+│   │   │       │       │   ├── contracts
+│   │   │       │       │   │   └── attendance-pdf.contract.ts
+│   │   │       │       │   ├── engine
+│   │   │       │       │   │   ├── attendance-pdf-engine.ts
+│   │   │       │       │   │   └── attendance-pdf-page-manager.ts
+│   │   │       │       │   ├── formatters
+│   │   │       │       │   │   └── attendance-pdf-duration.ts
+│   │   │       │       │   ├── index.ts
+│   │   │       │       │   ├── integration
+│   │   │       │       │   │   ├── attendance-pdf-runtime.ts
+│   │   │       │       │   │   └── attendance-pdf-ui.ts
+│   │   │       │       │   ├── layout
+│   │   │       │       │   │   └── attendance-pdf-measure.ts
+│   │   │       │       │   ├── report
+│   │   │       │       │   │   ├── attendance-pdf-export.ts
+│   │   │       │       │   │   ├── attendance-pdf-preflight.ts
+│   │   │       │       │   │   ├── attendance-pdf-report-plan.ts
+│   │   │       │       │   │   └── attendance-pdf-report.ts
+│   │   │       │       │   ├── sections
+│   │   │       │       │   │   ├── attendance-pdf-analysis-context.model.ts
+│   │   │       │       │   │   ├── attendance-pdf-analysis-context.ts
+│   │   │       │       │   │   ├── attendance-pdf-employee-detail.model.ts
+│   │   │       │       │   │   ├── attendance-pdf-employee-detail.ts
+│   │   │       │       │   │   ├── attendance-pdf-executive-summary.model.ts
+│   │   │       │       │   │   ├── attendance-pdf-executive-summary.ts
+│   │   │       │       │   │   ├── attendance-pdf-issues.model.ts
+│   │   │       │       │   │   ├── attendance-pdf-issues.ts
+│   │   │       │       │   │   ├── attendance-pdf-team.model.ts
+│   │   │       │       │   │   ├── attendance-pdf-team.ts
+│   │   │       │       │   │   ├── attendance-pdf-trend.model.ts
+│   │   │       │       │   │   └── attendance-pdf-trend.ts
+│   │   │       │       │   ├── theme
+│   │   │       │       │   │   └── attendance-pdf-theme.ts
+│   │   │       │       │   └── types
+│   │   │       │       │       ├── attendance-pdf.types.ts
+│   │   │       │       │       └── jspdf.types.ts
+│   │   │       │       ├── services
+│   │   │       │       │   └── attendance-statistics.service.ts
+│   │   │       │       ├── types
+│   │   │       │       │   ├── attendance-statistics.types.ts
+│   │   │       │       │   └── attendance-statistics.ui.types.ts
+│   │   │       │       ├── utils
+│   │   │       │       │   ├── attendance-analysis-context.ts
+│   │   │       │       │   ├── attendance-dashboard-actions.ts
+│   │   │       │       │   ├── attendance-data-quality.ts
+│   │   │       │       │   ├── attendance-employees.ts
+│   │   │       │       │   ├── attendance-issues.ts
+│   │   │       │       │   ├── attendance-kpis.ts
+│   │   │       │       │   ├── attendance-overview-state.ts
+│   │   │       │       │   ├── attendance-period.ts
+│   │   │       │       │   ├── attendance-pointage-source.ts
+│   │   │       │       │   ├── attendance-status.ts
+│   │   │       │       │   ├── attendance-today.ts
+│   │   │       │       │   ├── attendance-visualizations.ts
+│   │   │       │       │   ├── attendance-volume.ts
+│   │   │       │       │   ├── business-date.ts
+│   │   │       │       │   ├── business-time.ts
+│   │   │       │       │   ├── duration.ts
+│   │   │       │       │   └── percentage.ts
+│   │   │       │       └── views
+│   │   │       │           └── AttendanceStatisticsOverview.vue
+│   │   │       ├── onboarding
+│   │   │       │   ├── TenantOnboarding.vue
+│   │   │       │   └── components
+│   │   │       │       ├── ActivationAccessPanel.vue
+│   │   │       │       ├── ConnectivityBanner.vue
+│   │   │       │       ├── MobileMoneyPaymentPanel.vue
+│   │   │       │       ├── PaymentConfirmationDialog.vue
+│   │   │       │       └── TenantActivationProgress.vue
+│   │   │       ├── otp.vue
+│   │   │       ├── planning
+│   │   │       │   ├── assignment_history
+│   │   │       │   │   └── AssignmentHistoryView.vue
+│   │   │       │   ├── components
+│   │   │       │   │   └── ui
+│   │   │       │   │       ├── PlanningAlert.vue
+│   │   │       │   │       ├── PlanningConfirmDialog.vue
+│   │   │       │   │       ├── PlanningDrawer.vue
+│   │   │       │   │       ├── PlanningFormActions.vue
+│   │   │       │   │       ├── PlanningFormField.vue
+│   │   │       │   │       ├── PlanningFormSection.vue
+│   │   │       │   │       ├── PlanningHelpTooltip.vue
+│   │   │       │   │       ├── PlanningModal.vue
+│   │   │       │   │       ├── PlanningNumberField.vue
+│   │   │       │   │       ├── PlanningSelect.vue
+│   │   │       │   │       ├── PlanningSwitch.vue
+│   │   │       │   │       ├── PlanningTextField.vue
+│   │   │       │   │       ├── PlanningTextarea.vue
+│   │   │       │   │       ├── PlanningToggleField.vue
+│   │   │       │   │       ├── UnsavedChangesDialog.vue
+│   │   │       │   │       └── index.ts
+│   │   │       │   ├── composables
+│   │   │       │   │   ├── useBodyScrollLock.ts
+│   │   │       │   │   ├── useFocusTrap.ts
+│   │   │       │   │   ├── useFormDirty.ts
+│   │   │       │   │   └── useUnsavedChanges.ts
+│   │   │       │   ├── dashboard
+│   │   │       │   │   ├── PlanningMobileBar.vue
+│   │   │       │   │   └── appLayout.vue
+│   │   │       │   ├── menu
+│   │   │       │   │   ├── PlanningMenuCard.vue
+│   │   │       │   │   ├── PlanningMenuView.vue
+│   │   │       │   │   ├── planningMenu.config.ts
+│   │   │       │   │   └── planningMenu.type.ts
+│   │   │       │   ├── rotation_assignment
+│   │   │       │   │   ├── rotationAssignment.vue
+│   │   │       │   │   ├── rotationAssignmentForm.vue
+│   │   │       │   │   └── type.ts
+│   │   │       │   ├── rotation_group
+│   │   │       │   │   ├── rotationGroupForm.vue
+│   │   │       │   │   ├── rotationGroupList.vue
+│   │   │       │   │   └── type.ts
+│   │   │       │   ├── schedule_assignment
+│   │   │       │   │   ├── components
+│   │   │       │   │   │   ├── PlanningExportPanel.vue
+│   │   │       │   │   │   ├── ScheduleDayAdjustmentModal.vue
+│   │   │       │   │   │   ├── ScheduleTemplatePreview.vue
+│   │   │       │   │   │   ├── states
+│   │   │       │   │   │   │   └── PlanningLoadingState.vue
+│   │   │       │   │   │   └── views
+│   │   │       │   │   │       ├── OptimizedEmployeeAvatar.vue
+│   │   │       │   │   │       ├── ScheduleDetailedView.vue
+│   │   │       │   │   │       ├── ScheduleOptimizedView.vue
+│   │   │       │   │   │       ├── ScheduleSimpleView.vue
+│   │   │       │   │   │       └── schedulePlanningView.types.ts
+│   │   │       │   │   ├── scheduleAssignmentForm.vue
+│   │   │       │   │   ├── scheduleAssignmentList.vue
+│   │   │       │   │   └── type.ts
+│   │   │       │   ├── session_model
+│   │   │       │   │   ├── sessionModelForm.vue
+│   │   │       │   │   ├── sessionModelList.vue
+│   │   │       │   │   └── type.ts
+│   │   │       │   ├── session_template
+│   │   │       │   │   ├── sessionTemplateForm.vue
+│   │   │       │   │   ├── sessionTemplateList.vue
+│   │   │       │   │   └── type.ts
+│   │   │       │   ├── suggestion
+│   │   │       │   │   ├── PlanningSuggestionLayout.vue
+│   │   │       │   │   ├── components
+│   │   │       │   │   │   ├── NumberField.vue
+│   │   │       │   │   │   ├── PlanningConfirmDialog.vue
+│   │   │       │   │   │   ├── PlanningDrawer.vue
+│   │   │       │   │   │   ├── PlanningInfoPanel.vue
+│   │   │       │   │   │   ├── PlanningMetricCard.vue
+│   │   │       │   │   │   ├── PlanningPageHeader.vue
+│   │   │       │   │   │   ├── PlanningRuleCard.vue
+│   │   │       │   │   │   ├── PlanningToggle.vue
+│   │   │       │   │   │   └── ReadinessChecklist.vue
+│   │   │       │   │   ├── composables
+│   │   │       │   │   │   ├── useGenerationReadiness.ts
+│   │   │       │   │   │   └── useGenerationReadiness0.ts
+│   │   │       │   │   ├── configuration
+│   │   │       │   │   │   ├── PlanningConfigEditorView.vue
+│   │   │       │   │   │   ├── PlanningConfigForm.vue
+│   │   │       │   │   │   ├── PlanningConfigStepNavigation.vue
+│   │   │       │   │   │   ├── PlanningConfigSummary.vue
+│   │   │       │   │   │   ├── PlanningConfigView.vue
+│   │   │       │   │   │   └── planningConfig.steps.ts
+│   │   │       │   │   ├── dashboard
+│   │   │       │   │   │   └── SuggestionDashboard.vue
+│   │   │       │   │   ├── planningSuggestion.helpers.ts
+│   │   │       │   │   ├── planningSuggestion.type.ts
+│   │   │       │   │   ├── planningSuggestion.type0.ts
+│   │   │       │   │   ├── profiles
+│   │   │       │   │   │   ├── EmployeePlanningProfileForm.vue
+│   │   │       │   │   │   ├── EmployeePlanningProfileList.vue
+│   │   │       │   │   │   ├── EmployeeProfileBulkAction.vue
+│   │   │       │   │   │   ├── EmployeeProfileModeCard.vue
+│   │   │       │   │   │   ├── EmployeeProfileSearchSelect.vue
+│   │   │       │   │   │   ├── EmployeeProfileSummary.vue
+│   │   │       │   │   │   ├── employeePlanningProfile.helpers.ts
+│   │   │       │   │   │   └── employeePlanningProfile.type.ts
+│   │   │       │   │   ├── requirements
+│   │   │       │   │   │   ├── PlanningRequirementForm.vue
+│   │   │       │   │   │   ├── PlanningRequirementList.vue
+│   │   │       │   │   │   ├── RequirementDaySelector.vue
+│   │   │       │   │   │   ├── RequirementMatrixCell.vue
+│   │   │       │   │   │   ├── RequirementSummary.vue
+│   │   │       │   │   │   ├── WeeklyRequirementMatrix.vue
+│   │   │       │   │   │   └── requirementMatrix.helpers.ts
+│   │   │       │   │   ├── suggestions
+│   │   │       │   │   │   ├── GenerateSuggestionModal.vue
+│   │   │       │   │   │   ├── GenerateSuggestionModal0.vue
+│   │   │       │   │   │   ├── GenerationReadinessPanel.vue
+│   │   │       │   │   │   ├── HistoryFairnessReview.vue
+│   │   │       │   │   │   ├── ScheduleSuggestionList.vue
+│   │   │       │   │   │   ├── ScheduleSuggestionPreview.vue
+│   │   │       │   │   │   ├── ScheduleSuggestionPreview0.vue
+│   │   │       │   │   │   ├── SuggestionBulkEditor.vue
+│   │   │       │   │   │   ├── SuggestionCellEditor.vue
+│   │   │       │   │   │   ├── SuggestionFilters.vue
+│   │   │       │   │   │   ├── SuggestionIssueSummary.vue
+│   │   │       │   │   │   ├── SuggestionPublicationBar.vue
+│   │   │       │   │   │   └── TemporaryEmployeeExclusionPicker.vue
+│   │   │       │   │   └── teamWeeklyLeave.helpers.ts
+│   │   │       │   └── tf-tokens.css
+│   │   │       ├── pointages
+│   │   │       │   ├── components
+│   │   │       │   │   ├── PointageLocationMap.vue
+│   │   │       │   │   └── PointageMemoInvestigation.vue
+│   │   │       │   ├── pointagesMain.vue
+│   │   │       │   ├── pointagesPrint.vue
+│   │   │       │   └── utils
+│   │   │       │       └── pointagePresentation.ts
+│   │   │       ├── profile.vue
+│   │   │       ├── profileCard.vue
+│   │   │       ├── schedule
+│   │   │       │   ├── assignmentForm.vue
+│   │   │       │   ├── assignmentList.vue
+│   │   │       │   ├── employeeSchedulesView.vue
+│   │   │       │   ├── groupForm.vue
+│   │   │       │   ├── groupList.vue
+│   │   │       │   ├── rotationAssignForm.vue
+│   │   │       │   ├── rotationAssignList.vue
+│   │   │       │   ├── rotationForm.vue
+│   │   │       │   ├── rotationList.vue
+│   │   │       │   ├── schedule.vue
+│   │   │       │   ├── scheduleAssignForm.vue
+│   │   │       │   ├── scheduleAssignList.vue
+│   │   │       │   ├── scheduleCalendar.vue
+│   │   │       │   ├── scheduleForm.vue
+│   │   │       │   └── scheduleList.vue
+│   │   │       ├── setting.vue
+│   │   │       └── site
+│   │   │           ├── map.vue
+│   │   │           ├── site.vue
+│   │   │           ├── siteForm.vue
+│   │   │           └── ymaps.d.ts
 │   │   ├── tailwind.config.js
 │   │   ├── tsconfig.json
-│   │   ├── vite.config.js
 │   │   └── vite.config.ts
 │   ├── planning-ortools
 │   │   ├── AUDIT.md
 │   │   ├── README.md
 │   │   ├── app
-│   │   │   ├── __init__.py
 │   │   │   ├── main.py
 │   │   │   ├── schemas.py
-│   │   │   └── solver.py
+│   │   │   ├── solver.py
+│   │   │   ├── weekly_guard_pool.py
+│   │   │   └── weekly_leave.py
 │   │   ├── ecosystem.ortools.config.cjs
-│   │   └── requirements.txt
+│   │   ├── logs
+│   │   ├── requirements.txt
+│   │   └── tests
+│   │       ├── test_arbitrary_horizon_schema.py
+│   │       ├── test_boundary_continuation_schema.py
+│   │       ├── test_continuation_satisfies_scoped_work.py
+│   │       ├── test_history_fairness_schema.py
+│   │       ├── test_history_fairness_solver.py
+│   │       ├── test_locked_assignments_schema.py
+│   │       ├── test_locked_assignments_solver.py
+│   │       ├── test_long_horizon_continuity.py
+│   │       ├── test_policy_schema_v2.py
+│   │       ├── test_rotation_order_cycle.py
+│   │       ├── test_service_scoped_weekly_leave.py
+│   │       ├── test_step17_contract.py
+│   │       ├── test_team_rotation_pool_selector_rejected.py
+│   │       ├── test_team_weekly_leave_rotation.py
+│   │       └── test_weekly_guard_pool.py
 │   ├── shared
 │   │   ├── README.md
 │   │   ├── dist
@@ -2341,11 +3823,13 @@
 │   │   ├── src
 │   │   │   ├── constants
 │   │   │   │   ├── activity.monitoring.ts
+│   │   │   │   ├── api.js
 │   │   │   │   ├── api.ts
 │   │   │   │   ├── app.config.ts
 │   │   │   │   ├── billing.cycle.ts
 │   │   │   │   ├── country.ts
 │   │   │   │   ├── currency.ts
+│   │   │   │   ├── employee.license.js
 │   │   │   │   ├── employee.license.ts
 │   │   │   │   ├── exchange.rate.ts
 │   │   │   │   ├── fraud.detection.log.ts
@@ -2374,6 +3858,7 @@
 │   │   │   │   │   ├── schedule.assignments.ts
 │   │   │   │   │   ├── session.model.ts
 │   │   │   │   │   ├── session.templates.ts
+│   │   │   │   │   ├── sites.js
 │   │   │   │   │   ├── sites.ts
 │   │   │   │   │   ├── time.entries.ts
 │   │   │   │   │   ├── user.roles.ts
@@ -2386,12 +3871,16 @@
 │   │   │   │   ├── app.config.ts
 │   │   │   │   ├── billing.cycle.ts
 │   │   │   │   ├── country.ts
+│   │   │   │   ├── currency.js
 │   │   │   │   ├── currency.ts
 │   │   │   │   ├── employee.license.ts
 │   │   │   │   ├── exchange.rate.ts
+│   │   │   │   ├── fraud.detection.log.js
 │   │   │   │   ├── fraud.detection.log.ts
+│   │   │   │   ├── global.license.js
 │   │   │   │   ├── global.license.ts
 │   │   │   │   ├── index.ts
+│   │   │   │   ├── language.js
 │   │   │   │   ├── language.ts
 │   │   │   │   ├── lexicon.ts
 │   │   │   │   ├── license.adjustment.ts
@@ -2403,10 +3892,13 @@
 │   │   │   │   │   ├── department.ts
 │   │   │   │   │   ├── device.ts
 │   │   │   │   │   ├── employee.planning.profile.ts
+│   │   │   │   │   ├── fraud.alerts.js
 │   │   │   │   │   ├── fraud.alerts.ts
 │   │   │   │   │   ├── groups.ts
 │   │   │   │   │   ├── memos.ts
+│   │   │   │   │   ├── org.hierarchy.js
 │   │   │   │   │   ├── org.hierarchy.ts
+│   │   │   │   │   ├── planning.suggestion.config.js
 │   │   │   │   │   ├── planning.suggestion.config.ts
 │   │   │   │   │   ├── planning.suggestion.requirement.ts
 │   │   │   │   │   ├── poste.ts
@@ -2416,6 +3908,7 @@
 │   │   │   │   │   ├── rotation.groups.ts
 │   │   │   │   │   ├── schedule.assignments.ts
 │   │   │   │   │   ├── session.model.ts
+│   │   │   │   │   ├── session.templates.js
 │   │   │   │   │   ├── session.templates.ts
 │   │   │   │   │   ├── sites.ts
 │   │   │   │   │   ├── time.entries.ts
@@ -2427,6 +3920,7 @@
 │   │   │   │   ├── common.ts
 │   │   │   │   ├── country.ts
 │   │   │   │   ├── currency.ts
+│   │   │   │   ├── exchange.rate.js
 │   │   │   │   ├── exchange.rate.ts
 │   │   │   │   ├── global.license.ts
 │   │   │   │   ├── index.js.ts
@@ -2444,6 +3938,7 @@
 │   │   │       ├── billing.cycle.validation.ts
 │   │   │       ├── country.formatting.ts
 │   │   │       ├── country.validation.ts
+│   │   │       ├── currency.validation.js
 │   │   │       ├── currency.validation.ts
 │   │   │       ├── employee.license.validation.ts
 │   │   │       ├── exchange.rate.validation.ts
@@ -2454,6 +3949,7 @@
 │   │   │       ├── lexicon.validation.ts
 │   │   │       ├── license.adjustment.validation.ts
 │   │   │       ├── payment.method.validation.ts
+│   │   │       ├── payment.transaction.validation.js
 │   │   │       ├── payment.transaction.validation.ts
 │   │   │       ├── tax.rule.validation.ts
 │   │   │       ├── tenant
@@ -2462,6 +3958,7 @@
 │   │   │       │   ├── device.validation.ts
 │   │   │       │   ├── fraud.alerts.validation.ts
 │   │   │       │   ├── groups.validation.ts
+│   │   │       │   ├── memos.validation.js
 │   │   │       │   ├── memos.validation.ts
 │   │   │       │   ├── org.hierarchy.validation.ts
 │   │   │       │   ├── poste.validation.ts
@@ -2469,18 +3966,20 @@
 │   │   │       │   ├── rotation.assignments.validation.ts
 │   │   │       │   ├── rotation.groups.validation.ts
 │   │   │       │   ├── schedule.assignments.validation.ts
+│   │   │       │   ├── session.model.validation.js
 │   │   │       │   ├── session.model.validation.ts
 │   │   │       │   ├── session.templates.validation.ts
 │   │   │       │   ├── sites.validation.ts
+│   │   │       │   ├── time.entries.validation.js
 │   │   │       │   ├── time.entries.validation.ts
 │   │   │       │   ├── user.roles.validation.ts
 │   │   │       │   ├── users.validation.ts
 │   │   │       │   └── work.sessions.validation.ts
+│   │   │       ├── tenant.validation.js
 │   │   │       ├── tenant.validation.ts
 │   │   │       └── timezone.config.validation.ts
 │   │   └── tsconfig.json
-│   ├── test.js
-│   └── toke-planning-ortools-step9.zip
+│   └── test.js
 └── tsconfig.json
 
-111 directories, 2373 files
+209 directories, 3774 files

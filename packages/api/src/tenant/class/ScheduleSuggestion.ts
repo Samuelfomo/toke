@@ -1,3 +1,4 @@
+import type { Transaction } from 'sequelize';
 import ScheduleSuggestionModel, { SuggestionStatus } from '../model/ScheduleSuggestionModel.js';
 import { responseStructure as RS, responseValue, ViewMode } from '../../utils/response.model.js';
 
@@ -179,8 +180,8 @@ export default class ScheduleSuggestion extends ScheduleSuggestionModel {
     return this.itemsCache;
   }
 
-  async save(): Promise<void> {
-    await this.create();
+  async save(transaction?: Transaction): Promise<void> {
+    await this.create(transaction);
   }
 
   async approve(): Promise<void> {

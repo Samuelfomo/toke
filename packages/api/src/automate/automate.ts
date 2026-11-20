@@ -28,7 +28,16 @@ interface AutomateRunSummary {
 
 // ─── Exécution du cron pour UN tenant ─────────────────────────────────────────
 
+const tenantRuns = new Map<string, Promise<RotationCronResult>>();
 async function runForTenant(subdomain: string): Promise<RotationCronResult> {
+  const existing = tenantRuns.get(subdomain);
+  if (existing) return existing;
+  const pending = Promise.resolve().then(() => runForTenantOnce(subdomain));
+  tenantRuns.set(subdomain, pending);
+  try { return await pending; } finally { if (tenantRuns.get(subdomain) === pending) tenantRuns.delete(subdomain); }
+}
+
+async function runForTenantOnce(subdomain: string): Promise<RotationCronResult> {
   // 1. Récupérer la config depuis le cache fichier
   const tenantConfig = await TenantCacheService.getTenantConfig(subdomain);
   if (!tenantConfig) {
@@ -36,15 +45,15 @@ async function runForTenant(subdomain: string): Promise<RotationCronResult> {
   }
 
   // 2. Positionner le tenant courant (requis par getConnectionSync dans les classes)
-  TenantManager.setCurrentTenant(subdomain);
+  return TenantManager.runWithTenant(subdomain, async () => {
 
-  // 3. Initialiser la connexion DB (réutilisée si déjà ouverte)
-  const connection = await TenantManager.getConnectionForTenant(subdomain, {
-    host: tenantConfig.host,
-    port: tenantConfig.port,
-    username: tenantConfig.username,
-    password: tenantConfig.password,
-    database: tenantConfig.database,
+    // 3. Initialiser la connexion DB (réutilisée si déjà ouverte)
+    const connection = await TenantManager.getConnectionForTenant(subdomain, {
+      host: tenantConfig.host,
+      port: tenantConfig.port,
+      username: tenantConfig.username,
+      password: tenantConfig.password,
+      database: tenantConfig.database,
   });
 
   // 4. Initialiser les modèles Sequelize sur cette connexion
@@ -52,6 +61,7 @@ async function runForTenant(subdomain: string): Promise<RotationCronResult> {
 
   // 5. Lancer le cron métier — c'est getCyclesElapsed() qui décide si on avance
   return runRotationCron();
+  });
 }
 
 // ─── Exécution sur tous les tenants actifs ────────────────────────────────────
@@ -69,8 +79,7 @@ async function runForAllTenants(): Promise<AutomateRunSummary> {
 
   console.log(`[Automate] Lancement rotation pour ${subdomains.length} tenant(s)…`);
 
-  // Séquentiel : évite les conflits sur TenantManager.currentTenant (variable statique)
-  // Pour du parallèle un jour → migrer vers AsyncLocalStorage
+  // Preserve the existing sequential business schedule; each tenant has its own ALS scope.
   for (const subdomain of subdomains) {
     try {
       const result = await runForTenant(subdomain);

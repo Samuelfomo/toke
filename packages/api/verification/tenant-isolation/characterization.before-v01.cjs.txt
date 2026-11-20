@@ -1,0 +1,176 @@
+'use strict';
+const { test: nodeTest } = require('node:test');
+const test = (name, callback) => nodeTest(name, { timeout: 5000 }, callback);
+const assert = require('node:assert/strict');
+const { createHarness, deferred, config, load, loadMasterRoute } = require('./harness.cjs');
+const A = 'a.v01.invalid', B = 'b.v01.invalid';
+
+test('safety: native network, drivers and unapproved source are unreachable from module loader', () => {
+  assert.throws(() => load('master/server.ts', {}), /not allowlisted/);
+  assert.throws(() => load('tenant/database/db.tenant-manager.ts', {}), /DEPENDENCY_DENIED: sequelize/);
+  const h = createHarness();
+  assert.throws(() => new h.FakeSequelize('production', '', '', {}), /NON_FIXTURE/);
+  assert.equal(h.scheduled.length, 1); // Registration only: cron is an inert mock.
+  assert.equal(h.calls.length, 0);
+});
+
+test('baseline: CRUD signatures and return values are preserved in a sequential tenant flow', async () => {
+  const h = createHarness();
+  await h.boot(A);
+  const crud = new h.Crud();
+  assert.equal((await crud.insert({ marker: 'A' })).database, 'v01_fake_a');
+  assert.equal((await crud.read()).marker, 'A');
+  assert.equal((await crud.list()).length, 1);
+  assert.equal(await crud.size(), 1);
+  assert.equal(await crud.present(), true);
+  assert.equal(await crud.update({ marker: 'changed' }), 1);
+  assert.equal(await crud.remove(), true);
+  assert.equal(await crud.size(), 0);
+});
+
+test('baseline: no tenant at process start rejects implicit connection and BaseModel before SQL', () => {
+  const h = createHarness();
+  assert.throws(() => h.Manager.getConnectionSync(), /tenant/i);
+  assert.throws(() => new h.Crud(), /tenant/i);
+  assert.equal(h.calls.length, 0);
+});
+
+test('V01 reproduced: controlled async interleaving sends A read and write to B', async () => {
+  const h = createHarness(); await h.boot(A); await h.boot(B);
+  const ready = deferred(), resume = deferred();
+  const first = (async () => {
+    h.Manager.setCurrentTenant(A); const crud = new h.Crud(); ready.resolve();
+    await resume.promise;
+    return { captured: crud.connection.database, read: await crud.read(), write: await crud.insert({ actor: 'A' }) };
+  })();
+  await ready.promise; h.Manager.setCurrentTenant(B); resume.resolve();
+  const result = await first;
+  assert.equal(result.captured, 'v01_fake_a');
+  assert.equal(result.read.database, 'v01_fake_b');
+  assert.equal(result.write.database, 'v01_fake_b');
+});
+
+test('V01 reproduced: delayed HTTP connection registers A models under B', async () => {
+  const h = createHarness(), entered = deferred(), resume = deferred();
+  h.hooks.authenticate = async db => { if (db.database === 'v01_fake_a') { entered.resolve(); await resume.promise; } };
+  const responseA = {}, responseB = {};
+  const requestA = { fixtureTenant: A, method: 'GET', path: '/fixture' };
+  const requestB = { fixtureTenant: B, method: 'GET', path: '/fixture' };
+  const first = h.middleware(requestA, responseA, () => {});
+  await entered.promise;
+  await h.middleware(requestB, responseB, () => {});
+  resume.resolve(); await first;
+  assert.equal(requestA.tenant.connection.database, 'v01_fake_a');
+  assert.equal(h.Initializer.isInitializedForTenant(A), false);
+  assert.equal(h.Initializer.isInitializedForTenant(B), true);
+  assert.equal(responseA.error, undefined);
+});
+
+test('V01 reproduced: concurrent creation for same tenant opens two pools', async () => {
+  const h = createHarness(), resume = deferred();
+  h.hooks.authenticate = () => resume.promise;
+  const first = h.Manager.getConnectionForTenant(A, config(A));
+  const second = h.Manager.getConnectionForTenant(A, config(A));
+  assert.equal(h.connections.length, 2); resume.resolve();
+  const [one, two] = await Promise.all([first, second]);
+  assert.notEqual(one, two);
+});
+
+test('V01 reproduced: concurrent initialization defines and syncs each model twice', async () => {
+  const h = createHarness(); h.Manager.setCurrentTenant(A);
+  const db = await h.Manager.getConnectionForTenant(A, config(A));
+  const resume = deferred(); h.hooks.sync = () => resume.promise;
+  const first = h.Initializer.initialize(db), second = h.Initializer.initialize(db);
+  assert.equal(h.calls.filter(call => call.kind === 'define' && call.table === 'users').length, 2);
+  resume.resolve(); await Promise.all([first, second]);
+});
+
+test('baseline: mock managed transactions commit and roll back staged writes', async () => {
+  const h = createHarness(); const db = await h.boot(A);
+  const model = h.Initializer.getModel('users');
+  await db.transaction(async transaction => model.create({ marker: 'committed' }, { transaction }));
+  await assert.rejects(db.transaction(async transaction => {
+    await model.create({ marker: 'rolled-back' }, { transaction }); throw Error('fixture rollback');
+  }), /fixture rollback/);
+  assert.equal(await model.count(), 1);
+  assert.equal(h.calls.filter(call => call.kind === 'rollback').length, 1);
+});
+
+test('V01 reproduced: global model selection accepts transaction A with model B', async () => {
+  const h = createHarness(); const db = await h.boot(A); await h.boot(B);
+  h.Manager.setCurrentTenant(A); const crud = new h.Crud();
+  await db.transaction(async transaction => {
+    h.Manager.setCurrentTenant(B);
+    await crud.read({ transaction });
+    await crud.update({ actor: 'A' }, { transaction });
+  });
+  assert.ok(h.calls.some(call => call.kind === 'read' && call.database === 'v01_fake_b' && call.transactionDatabase === 'v01_fake_a'));
+  // The mock records the inconsistency; it does not claim how PostgreSQL or a
+  // particular Sequelize dialect executes a cross-instance transaction.
+});
+
+test('baseline: actual worker entrypoints execute both fixture tenants, scheduler inert', async () => {
+  const h = createHarness(); const summary = await h.worker.runForAllTenants();
+  assert.equal(summary.tenants.length, 2);
+  assert.ok(summary.tenants.every(tenant => tenant.status === 'ok'));
+  assert.deepEqual(h.calls.filter(call => call.kind === 'insert').map(call => call.database), ['v01_fake_a', 'v01_fake_b']);
+});
+
+test('V01 reproduced: tenant remains usable outside a completed HTTP request', async () => {
+  const h = createHarness();
+  await h.middleware({ fixtureTenant: A, method: 'GET', path: '/fixture' }, {}, () => {});
+  assert.equal(h.Manager.getConnectionSync().database, 'v01_fake_a');
+  assert.equal((await new h.Crud().read()).database, 'v01_fake_a');
+});
+
+test('baseline: explicit Master database wrapper does not require TenantManager context', async () => {
+  const h = createHarness();
+  const master = { query: async () => [{ fixture: 'master' }] };
+  const exports = load('master/database/db.base.ts', {
+    sequelize: h.sequelize,
+    './db.config': { default: { getInstance: async () => master } },
+    './db.initializer.js': { TableInitializer: { getModel: () => ({ create: async value => ({ get: () => value }) }) } },
+  });
+  class MasterCrud extends exports.default {
+    write(value) { return this.insertOne('master-fixture', value); }
+    async query() { await this.init(); return this.sequelize.query('SELECT fixture'); }
+  }
+  const crud = new MasterCrud();
+  assert.equal((await crud.write({ fixture: 'master' })).fixture, 'master');
+  assert.equal((await crud.query())[0].fixture, 'master');
+  assert.equal(h.calls.length, 0);
+});
+
+test('baseline: actual Master provisioning handler initializes fixture tenant models without real provisioning', async () => {
+  const h = createHarness(); const { handler } = loadMasterRoute(h); const response = {};
+  await handler({ params: { guid: '100001' }, body: { subdomain: A } }, response);
+  assert.equal(response.status, 200);
+  assert.equal(h.Initializer.isInitializedForTenant(A), true);
+  assert.equal(h.connections.length, 1);
+});
+
+test('V01 reproduced: initializeDatabase utility does not establish its explicit tenant context', async () => {
+  const h = createHarness();
+  const Utility = load('utils/generate.database.ts', {
+    sequelize: h.sequelize,
+    '../tenant/database/db.initializer.js': { TableInitializer: h.Initializer },
+    '../tenant/database/db.tenant-manager.js': { default: h.Manager },
+  }).default;
+  await assert.rejects(Utility.initializeDatabase(A, 1, 'never-connect.v01.invalid', 'v01_fake_a', 'fixture', 'NOT_A_SECRET'), /tenant/i);
+});
+
+test('baseline: failed authentication can be retried with a new connection', async () => {
+  const h = createHarness(); h.hooks.authenticate = async () => { throw Error('fixture auth failure'); };
+  await assert.rejects(h.Manager.getConnectionForTenant(A, config(A)), /fixture auth failure/);
+  h.hooks.authenticate = null;
+  const db = await h.Manager.getConnectionForTenant(A, config(A));
+  assert.equal(db.database, 'v01_fake_a');
+});
+
+test('V01 reproduced: initializer accepts a connection owned by a different tenant', async () => {
+  const h = createHarness();
+  const a = await h.boot(A); h.Manager.setCurrentTenant(B);
+  await h.Initializer.initialize(a);
+  assert.equal(h.Initializer.getModel('users').sequelize.database, 'v01_fake_a');
+  assert.equal(h.Manager.getCurrentTenant(), B);
+});

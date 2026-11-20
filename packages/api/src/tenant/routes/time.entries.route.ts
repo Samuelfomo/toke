@@ -22,7 +22,10 @@ import {
   WORK_SESSIONS_ERRORS,
   WorkSessionsValidationUtils,
 } from '@toke/shared';
-import { Op } from 'sequelize';
+import { Op, Transaction } from 'sequelize';
+import TenantManager from '../database/db.tenant-manager.js';
+import { TableInitializer } from '../database/db.initializer.js';
+import type { ClockInOptions } from '../database/clock-in.options.js';
 
 import Ensure from '../../middle/ensured-routes.js';
 import R from '../../tools/response.js';
@@ -251,696 +254,669 @@ router.post(
         externalIdWasProvided ? 'client' : 'server-compatibility',
       );
 
-      // Check idempotency before geofencing, anomaly detection or session mutation.
-      const replay = await findTimeEntryIdempotentReplay(userId, externalId, {
-        pointage_type: validatedData.pointage_type,
-        clocked_at: new Date(validatedData.clocked_at),
-        latitude: validatedData.latitude,
-        longitude: validatedData.longitude,
-        site_id: siteObj.getId() ?? null,
-        device_id: deviceObj.getId()!,
-        qr_code_id: qrCodeObj.getId() ?? null,
-      });
+      const effects: Array<() => Promise<unknown>> = [];
+      const result = await TenantManager.getConnectionSync().transaction({
+        isolationLevel: Transaction.ISOLATION_LEVELS.READ_COMMITTED,
+      }, async transaction => {
+        const clockOptions: ClockInOptions = { transaction, onCommit: effect => effects.push(effect) };
+        // Serialize pointages for the same user, even when there is no open session.
+        const lockedUser = await TableInitializer.getModel(tableName.USERS).findByPk(userId, {
+          transaction, lock: transaction.LOCK.UPDATE,
+        });
+        if (!lockedUser) throw new Error(USERS_ERRORS.NOT_FOUND);
 
-      if (replay) {
-        return respondToTimeEntryIdempotentReplay(res, replay);
-      }
+        const replay = await findTimeEntryIdempotentReplay(userId, externalId, {
+          pointage_type: validatedData.pointage_type,
+          clocked_at: new Date(validatedData.clocked_at),
+          latitude: validatedData.latitude,
+          longitude: validatedData.longitude,
+          site_id: siteObj.getId() ?? null,
+          device_id: deviceObj.getId()!,
+          qr_code_id: qrCodeObj.getId() ?? null,
+        }, clockOptions);
+        if (replay) return { replay };
 
-      // === ⚠️ GÉOFENCING VERIFICATION ===
-      const geofenceCheck = await WorkSessions.validateGeofencing(
-        siteObj.getId()!,
-        validatedData.latitude,
-        validatedData.longitude,
-        validatedData.gps_accuracy || deviceObj.getGpsAccuracy(),
-        deviceObj.getId(),
-      );
+        const geofenceCheck = await WorkSessions.validateGeofencing(
+          siteObj.getId()!, validatedData.latitude, validatedData.longitude,
+          validatedData.gps_accuracy || deviceObj.getGpsAccuracy(), deviceObj.getId(), clockOptions,
+        );
+        const { anomalies: qrAnomalies, corrections: qrCorrections } =
+          await AnomalyDetectionService.detectAccessAnomalies(userId, qrCodeObj, clockOptions);
+        const geofenceAnomalies = await AnomalyDetectionService.detectGeofenceAnomaly(geofenceCheck, siteObj);
 
-      // // 🆕 Log détaillé si rayon personnalisé utilisé
-      // if (geofenceCheck.custom_device_radius_applied) {
-      //           console.log(`
-      //   ⚡ RAYON PERSONNALISÉ DEVICE APPLIQUÉ
-      //   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-      //   Device: ${deviceObj?.getName()}
-      //   Rayon Site: ${geofenceCheck.site_radius}m
-      //   Rayon Device: ${geofenceCheck.device_radius}m
-      //   Rayon Effectif: ${geofenceCheck.effective_radius}m
-      //   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-      //           `);
-      // }
+        await req.persistPointageLicense?.(clockOptions);
 
-      const { anomalies: qrAnomalies, corrections: qrCorrections } =
-        await AnomalyDetectionService.detectAccessAnomalies(userId, qrCodeObj);
+        switch (validatedData.pointage_type) {
+          case PointageType.CLOCK_IN: {
+            // 🔍 DÉTECTION ANOMALIES
+            const { anomalies, corrections, scheduleContext } =
+              await AnomalyDetectionService.detectClockInAnomalies(userId, validatedData, clockOptions);
 
-      // ✅ AJOUTER ICI
-      const geofenceAnomalies = await AnomalyDetectionService.detectGeofenceAnomaly(
-        geofenceCheck,
-        siteObj,
-      );
+            // Fusionner avec anomalies QR
+            const allAnomalies = [...qrAnomalies, ...geofenceAnomalies, ...anomalies];
+            const allCorrections = [...qrCorrections, ...corrections];
 
-      const tenant = req.tenant;
+            // ✅ CRÉER SESSION QUOI QU'IL ARRIVE
+            const sessionObj = new WorkSessions()
+              .setUser(userId)
+              .setSite(siteObj.getId()!)
+              .setSessionStartAt(new Date(validatedData.clocked_at))
+              .setStartCoordinates(validatedData.latitude, validatedData.longitude);
 
-      const employeeLicense = (req as any).employeeLicense;
-
-      // === LOGIQUE SELON TYPE DE POINTAGE (NON-BLOQUANTE) ===
-
-      switch (validatedData.pointage_type) {
-        case PointageType.CLOCK_IN: {
-          // 🔍 DÉTECTION ANOMALIES
-          const { anomalies, corrections, scheduleContext } =
-            await AnomalyDetectionService.detectClockInAnomalies(userId, validatedData);
-
-          // Fusionner avec anomalies QR
-          const allAnomalies = [...qrAnomalies, ...geofenceAnomalies, ...anomalies];
-          const allCorrections = [...qrCorrections, ...corrections];
-
-          // ✅ CRÉER SESSION QUOI QU'IL ARRIVE
-          const sessionObj = new WorkSessions()
-            .setUser(userId)
-            .setSite(siteObj.getId()!)
-            .setSessionStartAt(new Date(validatedData.clocked_at))
-            .setStartCoordinates(validatedData.latitude, validatedData.longitude);
-
-          // 🆕 AJOUTER CONTEXTE HORAIRE (si colonnes existent)
-          if (scheduleContext?.expectedSchedule) {
-            // sessionObj.setExpectedSchedule(scheduleContext.expectedSchedule);
-            // sessionObj.setApplicableTemplate(scheduleContext.expectedSchedule.template_id);
-            // Note: Ces setters nécessitent l'ajout des colonnes dans work_sessions
-          }
-          await sessionObj.save();
-
-          // ✅ CRÉER TIME_ENTRY
-          const entryObj = new TimeEntries()
-            .setSession(sessionObj.getId()!)
-            .setUser(userId)
-            .setExternalId(externalId)
-            .setDevice(deviceObj.getId()!)
-            .setSite(siteObj.getId()!)
-            .setQrCode(qrCodeObj.getId()!)
-            .setPointageType(PointageType.CLOCK_IN)
-            .setClockedAt(new Date(validatedData.clocked_at))
-            .setFallbackCheckIn(validatedData.is_fallback_checkin)
-            .setCoordinates(validatedData.latitude, validatedData.longitude);
-
-          if (validatedData.device_info) {
-            entryObj.setDeviceInfo(validatedData.device_info);
-          }
-          if (validatedData.image_url) {
-            entryObj.setImageUrl(validatedData.image_url);
-          }
-          await entryObj.save();
-          await entryObj.accept(); // ✅ Toujours accepté
-
-          const activitySend = await ActivityService.sendEmployeeLastActivity({
-            tenant: tenant.config.reference,
-            employee_license: employeeLicense,
-            occurred_at: validatedData.clocked_at,
-          });
-
-          // ✅ GÉNÉRER MÉMO AUTO SI ANOMALIES
-          let autoMemo = null;
-          if (allAnomalies.length > 0) {
-            autoMemo = await AnomalyDetectionService.generateAutoMemo(
-              allAnomalies,
-              entryObj,
-              userId,
-              allCorrections,
-              scheduleContext,
-            );
-
-            // Lier mémo à l'entry
-            if (autoMemo) {
-              entryObj.setMemo(autoMemo.getId()!);
-              await entryObj.save();
+            // 🆕 AJOUTER CONTEXTE HORAIRE (si colonnes existent)
+            if (scheduleContext?.expectedSchedule) {
+              // sessionObj.setExpectedSchedule(scheduleContext.expectedSchedule);
+              // sessionObj.setApplicableTemplate(scheduleContext.expectedSchedule.template_id);
+              // Note: Ces setters nécessitent l'ajout des colonnes dans work_sessions
             }
+            await sessionObj.save(clockOptions);
 
-            // ✅ CRÉER FRAUD ALERTS
-            await AnomalyDetectionService.createFraudAlertsForAnomalies(
-              allAnomalies,
-              entryObj,
-              userId,
-            );
-          }
+            // ✅ CRÉER TIME_ENTRY
+            const entryObj = new TimeEntries()
+              .setSession(sessionObj.getId()!)
+              .setUser(userId)
+              .setExternalId(externalId)
+              .setDevice(deviceObj.getId()!)
+              .setSite(siteObj.getId()!)
+              .setQrCode(qrCodeObj.getId()!)
+              .setPointageType(PointageType.CLOCK_IN)
+              .setClockedAt(new Date(validatedData.clocked_at))
+              .setFallbackCheckIn(validatedData.is_fallback_checkin)
+              .setCoordinates(validatedData.latitude, validatedData.longitude);
 
-          // 🆕 MESSAGE ENRICHI AVEC CONTEXTE HORAIRE
-          let message = TIME_ENTRIES_MESSAGES.CLOCK_IN_SUCCESS;
-          if (allAnomalies.length > 0) {
-            const hasLateArrival = allAnomalies.some((a) => a.type === AnomalyType.LATE_ARRIVAL);
-            const hasWorkOnRestDay = allAnomalies.some(
-              (a) => a.type === AnomalyType.WORK_ON_REST_DAY,
-            );
-
-            if (hasLateArrival) {
-              const lateAnomaly = allAnomalies.find((a) => a.type === AnomalyType.LATE_ARRIVAL);
-              message = `⚠️ Retard détecté: ${lateAnomaly?.technical_details?.minutes_late} minutes (tolérance: ${lateAnomaly?.technical_details?.tolerance} min)`;
-            } else if (hasWorkOnRestDay) {
-              message = `⚠️ Pointage effectué un jour de repos`;
-            } else {
-              message = 'Clock-in accepté avec anomalies détectées';
+            if (validatedData.device_info) {
+              entryObj.setDeviceInfo(validatedData.device_info);
             }
-          }
-
-          console.log('test activitySend ', activitySend);
-
-          return R.handleCreated(res, {
-            message,
-            // message:
-            //   anomalies.length > 0
-            //     ? 'Clock-in accepté avec anomalies détectées'
-            //     : TIME_ENTRIES_MESSAGES.CLOCK_IN_SUCCESS,
-            session: await sessionObj.toJSON(),
-            entry: await entryObj.toJSON(),
-            schedule_context: scheduleContext,
-            anomalies_detected: allAnomalies.length,
-            auto_memo_created: autoMemo !== null,
-            auto_memo_guid: autoMemo?.getGuid(),
-            corrections_applied: allCorrections.length,
-            anomaly_details: allAnomalies.map((a) => ({
-              type: a.type,
-              severity: a.severity,
-              description: a.description,
-            })),
-            last_activity_send: activitySend,
-          });
-        }
-
-        case PointageType.PAUSE_START: {
-          // 🔍 DÉTECTION ANOMALIES
-          const { anomalies, corrections, activeSession } =
-            await AnomalyDetectionService.detectPauseStartAnomalies(
-              userId,
-              validatedData,
-              deviceObj.getId()!,
-            );
-
-          // 🆕 Vérification horaire pause
-          const { anomalies: scheduleAnomalies, scheduleContext } =
-            await AnomalyDetectionService.detectScheduleViolations(
-              userId,
-              PointageType.PAUSE_START,
-              new Date(validatedData.clocked_at),
-              activeSession || undefined,
-            );
-
-          // Fusionner avec anomalies QR
-          const allAnomalies = [
-            ...qrAnomalies,
-            ...geofenceAnomalies,
-            ...anomalies,
-            ...scheduleAnomalies,
-          ];
-          const allCorrections = [...qrCorrections, ...corrections];
-
-          // ✅ CRÉER SESSION RÉTROACTIVE SI NÉCESSAIRE
-          let sessionToUse = activeSession;
-
-          const tempEntry = new TimeEntries()
-            .setUser(userId)
-            .setExternalId(externalId)
-            .setDevice(deviceObj.getId()!)
-            .setSite(siteObj.getId()!)
-            .setQrCode(qrCodeObj.getId()!)
-            .setPointageType(PointageType.PAUSE_START)
-            .setClockedAt(new Date(validatedData.clocked_at))
-            .setFallbackCheckIn(validatedData.is_fallback_checkin)
-            .setCoordinates(validatedData.latitude, validatedData.longitude);
-
-          if (validatedData.image_url) {
-            tempEntry.setImageUrl(validatedData.image_url);
-          }
-
-          if (!activeSession && allAnomalies.some((a) => a.auto_correctable)) {
-            sessionToUse = await AnomalyDetectionService.createRetroactiveSession(
-              userId,
-              siteObj.getId()!,
-              tempEntry,
-            );
-          }
-
-          // ✅ CRÉER TIME_ENTRY
-          tempEntry.setSession(sessionToUse?.getId()!);
-          await tempEntry.save();
-          await tempEntry.accept();
-
-          const activitySend = await ActivityService.sendEmployeeLastActivity({
-            tenant: tenant.config.reference,
-            employee_license: employeeLicense,
-            occurred_at: validatedData.clocked_at,
-          });
-
-          // ✅ GÉNÉRER MÉMO AUTO SI ANOMALIES
-          let autoMemo = null;
-          if (allAnomalies.length > 0) {
-            autoMemo = await AnomalyDetectionService.generateAutoMemo(
-              allAnomalies,
-              tempEntry,
-              userId,
-              allCorrections,
-            );
-
-            if (autoMemo) {
-              tempEntry.setMemo(autoMemo.getId()!);
-              await tempEntry.save();
+            if (validatedData.image_url) {
+              entryObj.setImageUrl(validatedData.image_url);
             }
+            await entryObj.save(clockOptions);
+            await entryObj.accept(clockOptions); // ✅ Toujours accepté
 
-            await AnomalyDetectionService.createFraudAlertsForAnomalies(
-              allAnomalies,
-              tempEntry,
-              userId,
-            );
-          }
 
-          return R.handleCreated(res, {
-            message:
-              allAnomalies.length > 0 ? 'Pause acceptée avec anomalies détectées' : 'Pause started',
-            entry: await tempEntry.toJSON(),
-            session: sessionToUse ? await sessionToUse.toJSON() : null,
-            anomalies_detected: allAnomalies.length,
-            auto_memo_created: autoMemo !== null,
-            corrections_applied: allCorrections.length,
-            schedule_context: scheduleContext, // 🆕
-            anomaly_details: allAnomalies.map((a) => ({
-              type: a.type,
-              severity: a.severity,
-              description: a.description,
-            })),
-            last_activity_send: activitySend,
-          });
-        }
-
-        case PointageType.PAUSE_END: {
-          // 🔍 DÉTECTION ANOMALIES
-          const { anomalies, corrections, activeSession } =
-            await AnomalyDetectionService.detectPauseEndAnomalies(userId, validatedData);
-
-          // 🆕 Vérification horaire pause
-          const { anomalies: scheduleAnomalies, scheduleContext } =
-            await AnomalyDetectionService.detectScheduleViolations(
-              userId,
-              PointageType.PAUSE_END,
-              new Date(validatedData.clocked_at),
-              activeSession || undefined,
-            );
-
-          // Fusionner avec anomalies QR
-          const allAnomalies = [
-            ...qrAnomalies,
-            ...geofenceAnomalies,
-            ...anomalies,
-            ...scheduleAnomalies,
-          ];
-          const allCorrections = [...qrCorrections, ...corrections];
-
-          const tempEntry = new TimeEntries()
-            .setUser(userId)
-            .setExternalId(externalId)
-            .setDevice(deviceObj.getId()!)
-            .setSite(siteObj.getId()!)
-            .setQrCode(qrCodeObj.getId()!)
-            .setPointageType(PointageType.PAUSE_END)
-            .setClockedAt(new Date(validatedData.clocked_at))
-            .setFallbackCheckIn(validatedData.is_fallback_checkin)
-            .setCoordinates(validatedData.latitude, validatedData.longitude);
-
-          if (validatedData.image_url) {
-            tempEntry.setImageUrl(validatedData.image_url);
-          }
-
-          // ✅ CRÉER SESSION RÉTROACTIVE SI NÉCESSAIRE
-          let sessionToUse = activeSession;
-          if (!activeSession && allAnomalies.some((a) => a.auto_correctable)) {
-            sessionToUse = await AnomalyDetectionService.createRetroactiveSession(
-              userId,
-              siteObj.getId()!,
-              tempEntry,
-            );
-          }
-
-          // const entryObj = new TimeEntries()
-          tempEntry.setSession(sessionToUse?.getId()!);
-
-          await tempEntry.save();
-          await tempEntry.accept();
-
-          const activitySend = await ActivityService.sendEmployeeLastActivity({
-            tenant: tenant.config.reference,
-            employee_license: employeeLicense,
-            occurred_at: validatedData.clocked_at,
-          });
-
-          // ✅ MÉMO AUTO
-          let autoMemo = null;
-          if (anomalies.length > 0) {
-            autoMemo = await AnomalyDetectionService.generateAutoMemo(
-              allAnomalies,
-              tempEntry,
-              userId,
-              allCorrections,
-            );
-
-            if (autoMemo) {
-              tempEntry.setMemo(autoMemo.getId()!);
-              await tempEntry.save();
-            }
-
-            await AnomalyDetectionService.createFraudAlertsForAnomalies(
-              allAnomalies,
-              tempEntry,
-              userId,
-            );
-          }
-
-          console.log('test1 pause end', tempEntry.getPointageType());
-
-          return R.handleCreated(res, {
-            message: allAnomalies.length > 0 ? 'Pause terminée avec anomalies' : 'Pause ended',
-            entry: await tempEntry.toJSON(),
-            anomalies_detected: allAnomalies.length,
-            auto_memo_created: autoMemo !== null,
-            schedule_context: scheduleContext, // 🆕
-            anomaly_details: allAnomalies.map((a) => ({
-              type: a.type,
-              severity: a.severity,
-              description: a.description,
-            })),
-            last_activity_send: activitySend,
-          });
-        }
-
-        case PointageType.CLOCK_OUT: {
-          // 🔍 DÉTECTION ANOMALIES
-          const { anomalies, corrections, activeSession, autoCreatedSession } =
-            await AnomalyDetectionService.detectAndCorrectClockOutWithoutSession(
-              userId,
-              validatedData,
-              siteObj,
-              deviceObj.getId()!,
-            );
-
-          // 🆕 AJOUTER VÉRIFICATION HORAIRE
-          const { anomalies: scheduleAnomalies, scheduleContext } =
-            await AnomalyDetectionService.detectScheduleViolations(
-              userId,
-              PointageType.CLOCK_OUT,
-              new Date(validatedData.clocked_at),
-              activeSession || undefined,
-            );
-
-          // Fusionner avec anomalies QR
-          const allAnomalies = [
-            ...qrAnomalies,
-            ...geofenceAnomalies,
-            ...anomalies,
-            ...scheduleAnomalies,
-          ];
-          const allCorrections = [...qrCorrections, ...corrections];
-
-          // ✅ CRÉER ENTRY (même sans session)
-          const entryObj = new TimeEntries()
-            .setSession(activeSession?.getId()!)
-            .setUser(userId)
-            .setExternalId(externalId)
-            .setDevice(deviceObj.getId()!)
-            .setSite(siteObj.getId()!)
-            .setQrCode(qrCodeObj.getId()!)
-            .setPointageType(PointageType.CLOCK_OUT)
-            .setClockedAt(new Date(validatedData.clocked_at))
-            .setFallbackCheckIn(validatedData.is_fallback_checkin)
-            .setCoordinates(validatedData.latitude, validatedData.longitude);
-
-          if (validatedData.image_url) {
-            entryObj.setImageUrl(validatedData.image_url);
-          }
-
-          await entryObj.save();
-          await entryObj.accept();
-
-          const activitySend = await ActivityService.sendEmployeeLastActivity({
-            tenant: tenant.config.reference,
-            employee_license: employeeLicense,
-            occurred_at: validatedData.clocked_at,
-          });
-
-          // ✅ FERMER SESSION SI EXISTE
-          let durations = null;
-          if (activeSession) {
-            activeSession
-              .setSessionEndAt(new Date(validatedData.clocked_at))
-              .setEndCoordinates(validatedData.latitude, validatedData.longitude)
-              .setSessionStatus(
-                anomalies.length > 0 ? SessionStatus.CORRECTED : SessionStatus.CLOSED,
+            // ✅ GÉNÉRER MÉMO AUTO SI ANOMALIES
+            let autoMemo = null;
+            if (allAnomalies.length > 0) {
+              autoMemo = await AnomalyDetectionService.generateAutoMemo(
+                allAnomalies,
+                entryObj,
+                userId,
+                allCorrections,
+                scheduleContext, clockOptions,
               );
 
-            durations = await activeSession.calculateDurations();
+              // Lier mémo à l'entry
+              if (autoMemo) {
+                entryObj.setMemo(autoMemo.getId()!);
+                await entryObj.save(clockOptions);
+              }
 
-            console.log('test2 durations', durations);
+              // ✅ CRÉER FRAUD ALERTS
+              await AnomalyDetectionService.createFraudAlertsForAnomalies(
+                allAnomalies,
+                entryObj,
+                userId, clockOptions,
+              );
+            }
 
-            if (durations.total_work_duration) {
-              activeSession.setTotalWorkDuration(durations.total_work_duration);
+            // 🆕 MESSAGE ENRICHI AVEC CONTEXTE HORAIRE
+            let message = TIME_ENTRIES_MESSAGES.CLOCK_IN_SUCCESS;
+            if (allAnomalies.length > 0) {
+              const hasLateArrival = allAnomalies.some((a) => a.type === AnomalyType.LATE_ARRIVAL);
+              const hasWorkOnRestDay = allAnomalies.some(
+                (a) => a.type === AnomalyType.WORK_ON_REST_DAY,
+              );
+
+              if (hasLateArrival) {
+                const lateAnomaly = allAnomalies.find((a) => a.type === AnomalyType.LATE_ARRIVAL);
+                message = `⚠️ Retard détecté: ${lateAnomaly?.technical_details?.minutes_late} minutes (tolérance: ${lateAnomaly?.technical_details?.tolerance} min)`;
+              } else if (hasWorkOnRestDay) {
+                message = `⚠️ Pointage effectué un jour de repos`;
+              } else {
+                message = 'Clock-in accepté avec anomalies détectées';
+              }
             }
-            if (durations.total_pause_duration) {
-              activeSession.setTotalPauseDuration(durations.total_pause_duration);
-            }
-            await activeSession.save();
+
+            return { buildResponse: async () => ({
+              message,
+              // message:
+              //   anomalies.length > 0
+              //     ? 'Clock-in accepté avec anomalies détectées'
+              //     : TIME_ENTRIES_MESSAGES.CLOCK_IN_SUCCESS,
+              session: await sessionObj.toJSON(),
+              entry: await entryObj.toJSON(),
+              schedule_context: scheduleContext,
+              anomalies_detected: allAnomalies.length,
+              auto_memo_created: autoMemo !== null,
+              auto_memo_guid: autoMemo?.getGuid(),
+              corrections_applied: allCorrections.length,
+              anomaly_details: allAnomalies.map((a) => ({
+                type: a.type,
+                severity: a.severity,
+                description: a.description,
+              })),
+            }) };
           }
 
-          // ✅ MÉMO AUTO
-          let autoMemo = null;
-          if (allAnomalies.length > 0) {
-            autoMemo = await AnomalyDetectionService.generateAutoMemo(
-              allAnomalies,
-              entryObj,
-              userId,
-              allCorrections,
-              scheduleContext,
-            );
+          case PointageType.PAUSE_START: {
+            // 🔍 DÉTECTION ANOMALIES
+            const { anomalies, corrections, activeSession } =
+              await AnomalyDetectionService.detectPauseStartAnomalies(
+                userId,
+                validatedData,
+                deviceObj.getId()!,
+                clockOptions,
+              );
 
-            if (autoMemo) {
-              entryObj.setMemo(autoMemo.getId()!);
-              await entryObj.save();
+            // 🆕 Vérification horaire pause
+            const { anomalies: scheduleAnomalies, scheduleContext } =
+              await AnomalyDetectionService.detectScheduleViolations(
+                userId,
+                PointageType.PAUSE_START,
+                new Date(validatedData.clocked_at),
+                activeSession || undefined,
+                clockOptions,
+              );
+
+            // Fusionner avec anomalies QR
+            const allAnomalies = [
+              ...qrAnomalies,
+              ...geofenceAnomalies,
+              ...anomalies,
+              ...scheduleAnomalies,
+            ];
+            const allCorrections = [...qrCorrections, ...corrections];
+
+            // ✅ CRÉER SESSION RÉTROACTIVE SI NÉCESSAIRE
+            let sessionToUse = activeSession;
+
+            const tempEntry = new TimeEntries()
+              .setUser(userId)
+              .setExternalId(externalId)
+              .setDevice(deviceObj.getId()!)
+              .setSite(siteObj.getId()!)
+              .setQrCode(qrCodeObj.getId()!)
+              .setPointageType(PointageType.PAUSE_START)
+              .setClockedAt(new Date(validatedData.clocked_at))
+              .setFallbackCheckIn(validatedData.is_fallback_checkin)
+              .setCoordinates(validatedData.latitude, validatedData.longitude);
+
+            if (validatedData.image_url) {
+              tempEntry.setImageUrl(validatedData.image_url);
             }
 
-            // ✅ FRAUD ALERTS
-            await AnomalyDetectionService.createFraudAlertsForAnomalies(
-              allAnomalies,
-              entryObj,
-              userId,
-            );
-          }
-
-          // 🆕 MESSAGE ENRICHI
-          let message = 'Clock-out successful';
-          if (autoCreatedSession) {
-            message = `⚠️ Clock-out accepté - Session d'entrée créée automatiquement`;
-          } else {
-            const hasEarlyDeparture = allAnomalies.some(
-              (a) => a.type === AnomalyType.EARLY_DEPARTURE,
-            );
-            if (hasEarlyDeparture) {
-              const earlyAnomaly = allAnomalies.find((a) => a.type === AnomalyType.EARLY_DEPARTURE);
-              message = `⚠️ Départ anticipé: ${earlyAnomaly?.technical_details?.minutes_early} minutes avant la fin prévue`;
-            } else if (allAnomalies.length > 0) {
-              message = 'Clock-out accepté avec anomalies';
+            if (!activeSession && allAnomalies.some((a) => a.auto_correctable)) {
+              sessionToUse = await AnomalyDetectionService.createRetroactiveSession(
+                userId,
+                siteObj.getId()!,
+                tempEntry,
+                clockOptions,
+              );
             }
+
+            // ✅ CRÉER TIME_ENTRY
+            tempEntry.setSession(sessionToUse?.getId()!);
+            await tempEntry.save(clockOptions);
+            await tempEntry.accept(clockOptions);
+
+            // ✅ GÉNÉRER MÉMO AUTO SI ANOMALIES
+            let autoMemo = null;
+            if (allAnomalies.length > 0) {
+              autoMemo = await AnomalyDetectionService.generateAutoMemo(
+                allAnomalies,
+                tempEntry,
+                userId,
+                allCorrections,
+                undefined,
+                clockOptions,
+              );
+
+              if (autoMemo) {
+                tempEntry.setMemo(autoMemo.getId()!);
+                await tempEntry.save(clockOptions);
+              }
+
+              await AnomalyDetectionService.createFraudAlertsForAnomalies(
+                allAnomalies,
+                tempEntry,
+                userId,
+                clockOptions,
+              );
+            }
+
+            return { buildResponse: async () => ({
+              message:
+                allAnomalies.length > 0 ? 'Pause acceptée avec anomalies détectées' : 'Pause started',
+              entry: await tempEntry.toJSON(),
+              session: sessionToUse ? await sessionToUse.toJSON() : null,
+              anomalies_detected: allAnomalies.length,
+              auto_memo_created: autoMemo !== null,
+              corrections_applied: allCorrections.length,
+              schedule_context: scheduleContext, // 🆕
+              anomaly_details: allAnomalies.map((a) => ({
+                type: a.type,
+                severity: a.severity,
+                description: a.description,
+              })),
+            }) };
           }
 
-          return R.handleCreated(res, {
-            message,
-            // message: autoCreatedSession
-            //   ? `⚠️ Clock-out accepté - Session d'entrée créée automatiquement`
-            //   : allAnomalies.length > 0
-            //     ? 'Clock-out accepté avec anomalies'
-            //     : 'Clock-out successful',
-            session: activeSession ? await activeSession.toJSON() : null,
-            entry: await entryObj.toJSON(),
-            durations,
-            anomalies_detected: allAnomalies.length,
-            auto_memo_created: autoMemo !== null,
-            auto_memo_guid: autoMemo?.getGuid(),
-            corrections_applied: allCorrections.length,
-            auto_created_session: autoCreatedSession, // ✅ Flag important
-            schedule_context: scheduleContext,
-            anomaly_details: allAnomalies.map((a) => ({
-              type: a.type,
-              severity: a.severity,
-              description: a.description,
-            })),
-            last_activity_send: activitySend,
-          });
-        }
+          case PointageType.PAUSE_END: {
+            // 🔍 DÉTECTION ANOMALIES
+            const { anomalies, corrections, activeSession } =
+              await AnomalyDetectionService.detectPauseEndAnomalies(userId, validatedData, clockOptions);
 
-        case PointageType.EXTERNAL_MISSION: {
-          // 🔍 DÉTECTION ANOMALIES
-          const { anomalies, corrections, activeSession, autoCreatedSession } =
-            await AnomalyDetectionService.detectMissionStartAnomalies(
+            // 🆕 Vérification horaire pause
+            const { anomalies: scheduleAnomalies, scheduleContext } =
+              await AnomalyDetectionService.detectScheduleViolations(
+                userId,
+                PointageType.PAUSE_END,
+                new Date(validatedData.clocked_at),
+                activeSession || undefined,
+                clockOptions,
+              );
+
+            // Fusionner avec anomalies QR
+            const allAnomalies = [
+              ...qrAnomalies,
+              ...geofenceAnomalies,
+              ...anomalies,
+              ...scheduleAnomalies,
+            ];
+            const allCorrections = [...qrCorrections, ...corrections];
+
+            const tempEntry = new TimeEntries()
+              .setUser(userId)
+              .setExternalId(externalId)
+              .setDevice(deviceObj.getId()!)
+              .setSite(siteObj.getId()!)
+              .setQrCode(qrCodeObj.getId()!)
+              .setPointageType(PointageType.PAUSE_END)
+              .setClockedAt(new Date(validatedData.clocked_at))
+              .setFallbackCheckIn(validatedData.is_fallback_checkin)
+              .setCoordinates(validatedData.latitude, validatedData.longitude);
+
+            if (validatedData.image_url) {
+              tempEntry.setImageUrl(validatedData.image_url);
+            }
+
+            // ✅ CRÉER SESSION RÉTROACTIVE SI NÉCESSAIRE
+            let sessionToUse = activeSession;
+            if (!activeSession && allAnomalies.some((a) => a.auto_correctable)) {
+              sessionToUse = await AnomalyDetectionService.createRetroactiveSession(
+                userId,
+                siteObj.getId()!,
+                tempEntry,
+                clockOptions,
+              );
+            }
+
+            // const entryObj = new TimeEntries()
+            tempEntry.setSession(sessionToUse?.getId()!);
+
+            await tempEntry.save(clockOptions);
+            await tempEntry.accept(clockOptions);
+
+            // ✅ MÉMO AUTO
+            let autoMemo = null;
+            if (anomalies.length > 0) {
+              autoMemo = await AnomalyDetectionService.generateAutoMemo(
+                allAnomalies,
+                tempEntry,
+                userId,
+                allCorrections,
+                undefined,
+                clockOptions,
+              );
+
+              if (autoMemo) {
+                tempEntry.setMemo(autoMemo.getId()!);
+                await tempEntry.save(clockOptions);
+              }
+
+              await AnomalyDetectionService.createFraudAlertsForAnomalies(
+                allAnomalies,
+                tempEntry,
+                userId,
+                clockOptions,
+              );
+            }
+
+            console.log('test1 pause end', tempEntry.getPointageType());
+
+            return { buildResponse: async () => ({
+              message: allAnomalies.length > 0 ? 'Pause terminée avec anomalies' : 'Pause ended',
+              entry: await tempEntry.toJSON(),
+              anomalies_detected: allAnomalies.length,
+              auto_memo_created: autoMemo !== null,
+              schedule_context: scheduleContext, // 🆕
+              anomaly_details: allAnomalies.map((a) => ({
+                type: a.type,
+                severity: a.severity,
+                description: a.description,
+              })),
+            }) };
+          }
+
+          case PointageType.CLOCK_OUT: {
+            // 🔍 DÉTECTION ANOMALIES
+            const { anomalies, corrections, activeSession, autoCreatedSession } =
+              await AnomalyDetectionService.detectAndCorrectClockOutWithoutSession(
+                userId,
+                validatedData,
+                siteObj,
+                deviceObj.getId()!,
+                clockOptions,
+              );
+
+            // 🆕 AJOUTER VÉRIFICATION HORAIRE
+            const { anomalies: scheduleAnomalies, scheduleContext } =
+              await AnomalyDetectionService.detectScheduleViolations(
+                userId,
+                PointageType.CLOCK_OUT,
+                new Date(validatedData.clocked_at),
+                activeSession || undefined,
+                clockOptions,
+              );
+
+            // Fusionner avec anomalies QR
+            const allAnomalies = [
+              ...qrAnomalies,
+              ...geofenceAnomalies,
+              ...anomalies,
+              ...scheduleAnomalies,
+            ];
+            const allCorrections = [...qrCorrections, ...corrections];
+
+            // ✅ CRÉER ENTRY (même sans session)
+            const entryObj = new TimeEntries()
+              .setSession(activeSession?.getId()!)
+              .setUser(userId)
+              .setExternalId(externalId)
+              .setDevice(deviceObj.getId()!)
+              .setSite(siteObj.getId()!)
+              .setQrCode(qrCodeObj.getId()!)
+              .setPointageType(PointageType.CLOCK_OUT)
+              .setClockedAt(new Date(validatedData.clocked_at))
+              .setFallbackCheckIn(validatedData.is_fallback_checkin)
+              .setCoordinates(validatedData.latitude, validatedData.longitude);
+
+            if (validatedData.image_url) {
+              entryObj.setImageUrl(validatedData.image_url);
+            }
+
+            await entryObj.save(clockOptions);
+            await entryObj.accept(clockOptions);
+
+            // ✅ FERMER SESSION SI EXISTE
+            let durations = null;
+            if (activeSession) {
+              activeSession
+                .setSessionEndAt(new Date(validatedData.clocked_at))
+                .setEndCoordinates(validatedData.latitude, validatedData.longitude)
+                .setSessionStatus(
+                  anomalies.length > 0 ? SessionStatus.CORRECTED : SessionStatus.CLOSED,
+                );
+
+              await activeSession.save(clockOptions);
+              durations = await activeSession.calculateDurations(clockOptions);
+
+              console.log('test2 durations', durations);
+
+              if (durations.total_work_duration) {
+                activeSession.setTotalWorkDuration(durations.total_work_duration);
+              }
+              if (durations.total_pause_duration) {
+                activeSession.setTotalPauseDuration(durations.total_pause_duration);
+              }
+              await activeSession.save(clockOptions);
+            }
+
+            // ✅ MÉMO AUTO
+            let autoMemo = null;
+            if (allAnomalies.length > 0) {
+              autoMemo = await AnomalyDetectionService.generateAutoMemo(
+                allAnomalies,
+                entryObj,
+                userId,
+                allCorrections,
+                scheduleContext,
+                clockOptions,
+              );
+
+              if (autoMemo) {
+                entryObj.setMemo(autoMemo.getId()!);
+                await entryObj.save(clockOptions);
+              }
+
+              // ✅ FRAUD ALERTS
+              await AnomalyDetectionService.createFraudAlertsForAnomalies(
+                allAnomalies,
+                entryObj,
+                userId,
+                clockOptions,
+              );
+            }
+
+            // 🆕 MESSAGE ENRICHI
+            let message = 'Clock-out successful';
+            if (autoCreatedSession) {
+              message = `⚠️ Clock-out accepté - Session d'entrée créée automatiquement`;
+            } else {
+              const hasEarlyDeparture = allAnomalies.some(
+                (a) => a.type === AnomalyType.EARLY_DEPARTURE,
+              );
+              if (hasEarlyDeparture) {
+                const earlyAnomaly = allAnomalies.find((a) => a.type === AnomalyType.EARLY_DEPARTURE);
+                message = `⚠️ Départ anticipé: ${earlyAnomaly?.technical_details?.minutes_early} minutes avant la fin prévue`;
+              } else if (allAnomalies.length > 0) {
+                message = 'Clock-out accepté avec anomalies';
+              }
+            }
+
+            return { buildResponse: async () => ({
+              message,
+              // message: autoCreatedSession
+              //   ? `⚠️ Clock-out accepté - Session d'entrée créée automatiquement`
+              //   : allAnomalies.length > 0
+              //     ? 'Clock-out accepté avec anomalies'
+              //     : 'Clock-out successful',
+              session: activeSession ? await activeSession.toJSON() : null,
+              entry: await entryObj.toJSON(),
+              durations,
+              anomalies_detected: allAnomalies.length,
+              auto_memo_created: autoMemo !== null,
+              auto_memo_guid: autoMemo?.getGuid(),
+              corrections_applied: allCorrections.length,
+              auto_created_session: autoCreatedSession, // ✅ Flag important
+              schedule_context: scheduleContext,
+              anomaly_details: allAnomalies.map((a) => ({
+                type: a.type,
+                severity: a.severity,
+                description: a.description,
+              })),
+            }) };
+          }
+
+          case PointageType.EXTERNAL_MISSION: {
+            // 🔍 DÉTECTION ANOMALIES
+            const { anomalies, corrections, activeSession, autoCreatedSession } =
+              await AnomalyDetectionService.detectMissionStartAnomalies(
+                userId,
+                validatedData,
+                siteObj,
+                deviceObj.getId()!,
+                clockOptions,
+              );
+
+            // Fusionner avec anomalies QR
+            const allAnomalies = [...qrAnomalies, ...geofenceAnomalies, ...anomalies];
+            const allCorrections = [...qrCorrections, ...corrections];
+
+            const entryObj = new TimeEntries()
+              .setSession(activeSession?.getId()!)
+              .setUser(userId)
+              .setExternalId(externalId)
+              .setDevice(deviceObj.getId()!)
+              .setSite(siteObj.getId()!)
+              .setQrCode(qrCodeObj.getId()!)
+              .setPointageType(PointageType.EXTERNAL_MISSION)
+              .setClockedAt(new Date(validatedData.clocked_at))
+              .setFallbackCheckIn(validatedData.is_fallback_checkin)
+              .setCoordinates(validatedData.latitude, validatedData.longitude);
+
+            if (validatedData.device_info) {
+              entryObj.setDeviceInfo(validatedData.device_info);
+            }
+
+            if (validatedData.image_url) {
+              entryObj.setImageUrl(validatedData.image_url);
+            }
+
+            await entryObj.save(clockOptions);
+            await entryObj.accept(clockOptions);
+
+            let autoMemo = null;
+            if (allAnomalies.length > 0) {
+              autoMemo = await AnomalyDetectionService.generateAutoMemo(
+                allAnomalies,
+                entryObj,
+                userId,
+                allCorrections,
+                undefined,
+                clockOptions,
+              );
+
+              if (autoMemo) {
+                entryObj.setMemo(autoMemo.getId()!);
+                await entryObj.save(clockOptions);
+              }
+
+              await AnomalyDetectionService.createFraudAlertsForAnomalies(
+                allAnomalies,
+                entryObj,
+                userId,
+                clockOptions,
+              );
+            }
+
+            return { buildResponse: async () => ({
+              message: autoCreatedSession
+                ? '⚠️ Mission démarrée - Session créée automatiquement'
+                : allAnomalies.length > 0
+                  ? 'Mission acceptée avec anomalies'
+                  : 'External mission started',
+              entry: await entryObj.toJSON(),
+              session: activeSession ? await activeSession.toJSON() : null,
+              anomalies_detected: allAnomalies.length,
+              auto_created_session: autoCreatedSession,
+              auto_memo_created: autoMemo !== null,
+              corrections_applied: allCorrections.length,
+            }) };
+          }
+
+          case PointageType.EXTERNAL_MISSION_END: {
+            // 🔍 DÉTECTION ANOMALIES
+            const {
+              anomalies,
+              corrections,
+              activeSession,
+              autoCreatedSession,
+              autoCreatedMissionStart,
+            } = await AnomalyDetectionService.detectMissionEndAnomalies(
               userId,
               validatedData,
               siteObj,
               deviceObj.getId()!,
+              clockOptions,
             );
 
-          // Fusionner avec anomalies QR
-          const allAnomalies = [...qrAnomalies, ...geofenceAnomalies, ...anomalies];
-          const allCorrections = [...qrCorrections, ...corrections];
+            // Fusionner avec anomalies QR
+            const allAnomalies = [...qrAnomalies, ...geofenceAnomalies, ...anomalies];
+            const allCorrections = [...qrCorrections, ...corrections];
 
-          const entryObj = new TimeEntries()
-            .setSession(activeSession?.getId()!)
-            .setUser(userId)
-            .setExternalId(externalId)
-            .setDevice(deviceObj.getId()!)
-            .setSite(siteObj.getId()!)
-            .setQrCode(qrCodeObj.getId()!)
-            .setPointageType(PointageType.EXTERNAL_MISSION)
-            .setClockedAt(new Date(validatedData.clocked_at))
-            .setFallbackCheckIn(validatedData.is_fallback_checkin)
-            .setCoordinates(validatedData.latitude, validatedData.longitude);
+            const entryObj = new TimeEntries()
+              .setSession(activeSession?.getId()!)
+              .setUser(userId)
+              .setExternalId(externalId)
+              .setDevice(deviceObj.getId()!)
+              .setSite(siteObj.getId()!)
+              .setQrCode(qrCodeObj.getId()!)
+              .setPointageType(PointageType.EXTERNAL_MISSION_END)
+              .setClockedAt(new Date(validatedData.clocked_at))
+              .setFallbackCheckIn(validatedData.is_fallback_checkin)
+              .setCoordinates(validatedData.latitude, validatedData.longitude);
 
-          if (validatedData.device_info) {
-            entryObj.setDeviceInfo(validatedData.device_info);
-          }
-
-          if (validatedData.image_url) {
-            entryObj.setImageUrl(validatedData.image_url);
-          }
-
-          await entryObj.save();
-          await entryObj.accept();
-
-          const activitySend = await ActivityService.sendEmployeeLastActivity({
-            tenant: tenant.config.reference,
-            employee_license: employeeLicense,
-            occurred_at: validatedData.clocked_at,
-          });
-
-          let autoMemo = null;
-          if (allAnomalies.length > 0) {
-            autoMemo = await AnomalyDetectionService.generateAutoMemo(
-              allAnomalies,
-              entryObj,
-              userId,
-              allCorrections,
-            );
-
-            if (autoMemo) {
-              entryObj.setMemo(autoMemo.getId()!);
-              await entryObj.save();
+            if (validatedData.device_info) {
+              entryObj.setDeviceInfo(validatedData.device_info);
             }
 
-            await AnomalyDetectionService.createFraudAlertsForAnomalies(
-              allAnomalies,
-              entryObj,
-              userId,
-            );
-          }
-
-          return R.handleCreated(res, {
-            message: autoCreatedSession
-              ? '⚠️ Mission démarrée - Session créée automatiquement'
-              : allAnomalies.length > 0
-                ? 'Mission acceptée avec anomalies'
-                : 'External mission started',
-            entry: await entryObj.toJSON(),
-            session: activeSession ? await activeSession.toJSON() : null,
-            anomalies_detected: allAnomalies.length,
-            auto_created_session: autoCreatedSession,
-            auto_memo_created: autoMemo !== null,
-            corrections_applied: allCorrections.length,
-            last_activity_send: activitySend,
-          });
-        }
-
-        case PointageType.EXTERNAL_MISSION_END: {
-          // 🔍 DÉTECTION ANOMALIES
-          const {
-            anomalies,
-            corrections,
-            activeSession,
-            autoCreatedSession,
-            autoCreatedMissionStart,
-          } = await AnomalyDetectionService.detectMissionEndAnomalies(
-            userId,
-            validatedData,
-            siteObj,
-            deviceObj.getId()!,
-          );
-
-          // Fusionner avec anomalies QR
-          const allAnomalies = [...qrAnomalies, ...geofenceAnomalies, ...anomalies];
-          const allCorrections = [...qrCorrections, ...corrections];
-
-          const entryObj = new TimeEntries()
-            .setSession(activeSession?.getId()!)
-            .setUser(userId)
-            .setExternalId(externalId)
-            .setDevice(deviceObj.getId()!)
-            .setSite(siteObj.getId()!)
-            .setQrCode(qrCodeObj.getId()!)
-            .setPointageType(PointageType.EXTERNAL_MISSION_END)
-            .setClockedAt(new Date(validatedData.clocked_at))
-            .setFallbackCheckIn(validatedData.is_fallback_checkin)
-            .setCoordinates(validatedData.latitude, validatedData.longitude);
-
-          if (validatedData.device_info) {
-            entryObj.setDeviceInfo(validatedData.device_info);
-          }
-
-          if (validatedData.image_url) {
-            entryObj.setImageUrl(validatedData.image_url);
-          }
-
-          await entryObj.save();
-          await entryObj.accept();
-
-          const activitySend = await ActivityService.sendEmployeeLastActivity({
-            tenant: tenant.config.reference,
-            employee_license: employeeLicense,
-            occurred_at: validatedData.clocked_at,
-          });
-
-          let autoMemo = null;
-          if (allAnomalies.length > 0) {
-            autoMemo = await AnomalyDetectionService.generateAutoMemo(
-              allAnomalies,
-              entryObj,
-              userId,
-              allCorrections,
-            );
-
-            if (autoMemo) {
-              entryObj.setMemo(autoMemo.getId()!);
-              await entryObj.save();
+            if (validatedData.image_url) {
+              entryObj.setImageUrl(validatedData.image_url);
             }
 
-            await AnomalyDetectionService.createFraudAlertsForAnomalies(
-              allAnomalies,
-              entryObj,
-              userId,
-            );
+            await entryObj.save(clockOptions);
+            await entryObj.accept(clockOptions);
+
+            let autoMemo = null;
+            if (allAnomalies.length > 0) {
+              autoMemo = await AnomalyDetectionService.generateAutoMemo(
+                allAnomalies,
+                entryObj,
+                userId,
+                allCorrections,
+                undefined,
+                clockOptions,
+              );
+
+              if (autoMemo) {
+                entryObj.setMemo(autoMemo.getId()!);
+                await entryObj.save(clockOptions);
+              }
+
+              await AnomalyDetectionService.createFraudAlertsForAnomalies(
+                allAnomalies,
+                entryObj,
+                userId,
+                clockOptions,
+              );
+            }
+
+            return { buildResponse: async () => ({
+              message:
+                autoCreatedSession || autoCreatedMissionStart
+                  ? '⚠️ Mission terminée - Corrections automatiques appliquées'
+                  : allAnomalies.length > 0
+                    ? 'Mission terminée avec anomalies'
+                    : 'External mission ended',
+              entry: await entryObj.toJSON(),
+              session: activeSession ? await activeSession.toJSON() : null,
+              anomalies_detected: allAnomalies.length,
+              auto_memo_created: autoMemo !== null,
+              auto_created_session: autoCreatedSession,
+              auto_created_mission_start: autoCreatedMissionStart,
+              corrections_applied: allCorrections.length,
+            }) };
           }
 
-          return R.handleCreated(res, {
-            message:
-              autoCreatedSession || autoCreatedMissionStart
-                ? '⚠️ Mission terminée - Corrections automatiques appliquées'
-                : allAnomalies.length > 0
-                  ? 'Mission terminée avec anomalies'
-                  : 'External mission ended',
-            entry: await entryObj.toJSON(),
-            session: activeSession ? await activeSession.toJSON() : null,
-            anomalies_detected: allAnomalies.length,
-            auto_memo_created: autoMemo !== null,
-            auto_created_session: autoCreatedSession,
-            auto_created_mission_start: autoCreatedMissionStart,
-            corrections_applied: allCorrections.length,
-            last_activity_send: activitySend,
-          });
+          default:
+            throw Object.assign(new Error(TIME_ENTRIES_ERRORS.POINTAGE_TYPE_INVALID), {
+              code: TIME_ENTRIES_CODES.INVALID_POINTAGE_TYPE,
+            });
         }
+      });
 
-        default:
-          return R.handleError(res, HttpStatus.BAD_REQUEST, {
-            code: TIME_ENTRIES_CODES.INVALID_POINTAGE_TYPE,
-            message: TIME_ENTRIES_ERRORS.POINTAGE_TYPE_INVALID,
-          });
-      }
+      if (result.replay) return respondToTimeEntryIdempotentReplay(res, result.replay);
+      const activitySend = await ActivityService.sendEmployeeLastActivity({
+        tenant: req.tenant.config.reference,
+        employee_license: (req as any).employeeLicense,
+        occurred_at: validatedData.clocked_at,
+      });
+      for (const effect of effects) await effect();
+      return R.handleCreated(res, {
+        ...await result.buildResponse(),
+        last_activity_send: activitySend,
+      });
     } catch (error: any) {
       if (error?.name === 'SequelizeUniqueConstraintError') {
         const userId = (req as any).userId;
@@ -1107,7 +1083,11 @@ router.post(
         entryObj.setOfflineData(validatedData.local_id);
       }
 
-      await entryObj.save();
+      await TenantManager.getConnectionSync().transaction(async transaction => {
+        const clockOptions = { transaction };
+        await req.persistPointageLicense?.(clockOptions);
+        await entryObj.save(clockOptions);
+      });
 
       const tenant = req.tenant;
 

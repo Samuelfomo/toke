@@ -1,0 +1,223 @@
+import type { ApiResponse } from '@toke/shared'
+
+import { apiRequest } from '@/tools/Fetch.Client'
+import type {
+    GenerateSuggestionPayload,
+    SuggestionBulkEditPayload,
+} from '@/views/planning/suggestion/planningSuggestion.type'
+
+const baseUrl = '/schedule-suggestion'
+
+type ScheduleSuggestionFilters = {
+    offset?: number
+    limit?: number
+    status?: string[]
+}
+
+export interface ApprovalPreview {
+    can_publish: boolean
+    effective_from: string | null
+    earliest_valid_date?: string
+    alerts: Array<{
+        severity: 'INFO' | 'WARNING' | 'CONFIRMATION_REQUIRED' | 'BLOCKING'
+        code: string
+        message: string
+        details?: { conflicts?: Array<{ conflict_type?: string; item_guid?: string; continuation_date?: string }> }
+    }>
+    suggested_actions: Array<{ code: string; message: string; effective_from?: string }>
+}
+
+export default class ScheduleSuggestionService {
+    static async generate(
+        managerGuid: string,
+        payload: GenerateSuggestionPayload,
+    ): Promise<ApiResponse> {
+        try {
+            return await apiRequest<any>({
+                path: `${baseUrl}/${managerGuid}/generate`,
+                method: 'POST',
+                data: payload,
+            })
+        } catch (error: any) {
+            console.error('ScheduleSuggestionService.generate', error)
+            return error
+        }
+    }
+
+
+    static async reviewHistory(
+        managerGuid: string,
+        payload: {
+            period_from: string
+            excluded_employee_guids?: string[]
+            history_adjustments?: Array<{
+                date: string
+                template_guid: string
+                included_employee_guids: string[]
+            }>
+        },
+    ): Promise<ApiResponse> {
+        try {
+            return await apiRequest<any>({
+                path: `${baseUrl}/${managerGuid}/history-review`,
+                method: 'POST',
+                data: payload,
+            })
+        } catch (error: any) {
+            console.error('ScheduleSuggestionService.reviewHistory', error)
+            return error
+        }
+    }
+
+    static async list(
+        managerGuid: string,
+        filters: ScheduleSuggestionFilters = {},
+    ): Promise<ApiResponse> {
+        try {
+            const params = new URLSearchParams()
+
+            if (filters.offset !== undefined) {
+                params.set('offset', String(filters.offset))
+            }
+
+            if (filters.limit !== undefined) {
+                params.set('limit', String(filters.limit))
+            }
+
+            filters.status?.forEach(status => {
+                params.append('status', status)
+            })
+            // if (filters.status?.length) {
+            //     params.set('status', filters.status.join(','))
+            // }
+
+            const query = params.toString()
+
+            return await apiRequest<any>({
+                path: `${baseUrl}/${managerGuid}/list${query ? `?${query}` : ''}`,
+                method: 'GET',
+            })
+        } catch (error: any) {
+            console.error('ScheduleSuggestionService.list', error)
+            throw error
+        }
+    }
+
+    static async getByGuid(guid: string): Promise<ApiResponse> {
+        try {
+            return await apiRequest<any>({
+                path: `${baseUrl}/${guid}`,
+                method: 'GET',
+            })
+        } catch (error: any) {
+            console.error('ScheduleSuggestionService.getByGuid', error)
+            return error
+        }
+    }
+
+    static async patchCell(
+        suggestionGuid: string,
+        itemGuid: string,
+        payload: { iso: string; template_guid: string | null },
+    ): Promise<ApiResponse> {
+        try {
+            return await apiRequest<any>({
+                path: `${baseUrl}/${suggestionGuid}/item/${itemGuid}`,
+                method: 'PATCH',
+                data: payload,
+            })
+        } catch (error: any) {
+            console.error('ScheduleSuggestionService.patchCell', error)
+            return error
+        }
+    }
+
+    static async previewBulkEdit(
+        guid: string,
+        payload: SuggestionBulkEditPayload,
+    ): Promise<ApiResponse> {
+        try {
+            return await apiRequest<any>({
+                path: `${baseUrl}/${guid}/bulk-edit/preview`,
+                method: 'POST',
+                data: payload,
+            })
+        } catch (error: any) {
+            console.error('ScheduleSuggestionService.previewBulkEdit', error)
+            return error
+        }
+    }
+
+    static async applyBulkEdit(
+        guid: string,
+        payload: SuggestionBulkEditPayload,
+    ): Promise<ApiResponse> {
+        try {
+            return await apiRequest<any>({
+                path: `${baseUrl}/${guid}/bulk-edit`,
+                method: 'PATCH',
+                data: payload,
+            })
+        } catch (error: any) {
+            console.error('ScheduleSuggestionService.applyBulkEdit', error)
+            return error
+        }
+    }
+
+    static async regenerate(guid: string): Promise<ApiResponse> {
+        try {
+            return await apiRequest<any>({
+                path: `${baseUrl}/${guid}/regenerate`,
+                method: 'POST',
+            })
+        } catch (error: any) {
+            console.error('ScheduleSuggestionService.regenerate', error)
+            return error
+        }
+    }
+
+    static async previewApproval(guid: string, effectiveFrom?: string): Promise<ApiResponse<ApprovalPreview>> {
+        return apiRequest<ApiResponse<ApprovalPreview>>({
+            path: `${baseUrl}/${guid}/approval-preview`,
+            method: 'POST',
+            data: effectiveFrom ? { effective_from: effectiveFrom } : undefined,
+        })
+    }
+
+    static async approve(guid: string, effectiveFrom?: string): Promise<ApiResponse> {
+        try {
+            return await apiRequest<any>({
+                path: `${baseUrl}/${guid}/approve`,
+                method: 'POST',
+                data: effectiveFrom ? { effective_from: effectiveFrom } : undefined,
+            })
+        } catch (error: any) {
+            console.error('ScheduleSuggestionService.approve', error)
+            return error
+        }
+    }
+
+    static async reject(guid: string): Promise<ApiResponse> {
+        try {
+            return await apiRequest<any>({
+                path: `${baseUrl}/${guid}/reject`,
+                method: 'POST',
+            })
+        } catch (error: any) {
+            console.error('ScheduleSuggestionService.reject', error)
+            return error
+        }
+    }
+
+    static async delete(guid: string): Promise<ApiResponse> {
+        try {
+            return await apiRequest<any>({
+                path: `${baseUrl}/${guid}`,
+                method: 'DELETE',
+            })
+        } catch (error: any) {
+            console.error('ScheduleSuggestionService.delete', error)
+            return error
+        }
+    }
+}

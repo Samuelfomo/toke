@@ -7,8 +7,10 @@ import {
   PLANNING_SOLVER_MAX_SECONDS,
 } from './planning.solver.constants.js';
 import {
+  FixedAlternationAcknowledgementError,
   PlanningSolver,
   PlanningSolverInput,
+  planningSolverPayload,
   PlanningSolverTechnicalError,
 } from './planning.solver.js';
 
@@ -34,6 +36,7 @@ interface OrToolsApiResponse {
 
 export interface OrToolsPlanningSolverOptions {
   endpoint: string;
+  fixedAlternationSupported?: boolean;
   // timeoutSeconds: number;
 }
 
@@ -45,6 +48,7 @@ function normalizeDiagnostics(diagnostics?: Partial<EngineDiagnostics> | null): 
     weeklyLeaveGroups: diagnostics?.weeklyLeaveGroups ?? [],
     fairnessScore: diagnostics?.fairnessScore ?? 0,
     coverageScore: diagnostics?.coverageScore ?? 0,
+    ...(diagnostics?.fixedAlternationEvaluation && { fixedAlternationEvaluation: diagnostics.fixedAlternationEvaluation }),
   };
 }
 
@@ -53,6 +57,26 @@ const solverDispatcher = new Agent({
   bodyTimeout: 0,
   connectTimeout: 10_000,
 });
+
+/** Probe once per generation. Older or unavailable endpoints keep the legacy payload. */
+export async function supportsOrToolsFixedAlternation(endpoint: string | undefined, minimumVersion: 1 | 2 = 1): Promise<boolean> {
+  if (!endpoint?.trim()) return false;
+  try {
+    const response = await fetch(`${endpoint.replace(/\/+$/, '')}/health`, {
+      signal: AbortSignal.timeout(2_000), dispatcher: solverDispatcher,
+    });
+    if (!response.ok) {
+      await response.body?.cancel();
+      return false;
+    }
+    const health = await response.json() as { capabilities?: { fixedAlternation?: number; fixedAlternationMandatoryWeekendRest?: number } };
+    return minimumVersion === 2
+      ? health.capabilities?.fixedAlternationMandatoryWeekendRest === 2
+      : health.capabilities?.fixedAlternation === 1;
+  } catch {
+    return false;
+  }
+}
 
 export default class OrToolsPlanningSolver implements PlanningSolver {
   readonly type = 'ORTOOLS' as const;
@@ -100,7 +124,7 @@ export default class OrToolsPlanningSolver implements PlanningSolver {
         headers: {
           'content-type': 'application/json',
         },
-        body: JSON.stringify(input),
+        body: JSON.stringify(planningSolverPayload(input, this.options.fixedAlternationSupported === true)),
         signal: controller.signal,
         dispatcher: solverDispatcher,
       });
@@ -228,9 +252,37 @@ export default class OrToolsPlanningSolver implements PlanningSolver {
       );
     }
 
-    return {
-      ...payload.result,
-      diagnostics: normalizeDiagnostics(payload.result.diagnostics),
-    };
+    const requestedPolicy = this.options.fixedAlternationSupported ? input.fixedAlternationPolicy : undefined;
+    if (requestedPolicy) {
+      const evaluation = payload.result.diagnostics.fixedAlternationEvaluation;
+      const details = {
+        solver_version: payload.solverVersion,
+        expected_contract_version: requestedPolicy.weekendRest === 'ALTERNATE_SAT_SUN' ? 2 : 1,
+        received_contract_version: evaluation?.contractVersion,
+        period_from: input.periodFrom,
+        period_to: input.periodTo,
+      };
+      if (evaluation == null) throw new FixedAlternationAcknowledgementError(details);
+      if (evaluation.contractVersion !== details.expected_contract_version || !Array.isArray(evaluation.checks) ||
+          !Array.isArray(evaluation.employeeGuids) || evaluation.employeeGuids.length !== 2 ||
+          evaluation.employeeGuids.some((guid, index) => guid !== requestedPolicy.employeeGuids[index]) ||
+          evaluation.checks.some(check =>
+            !check || typeof check.date !== 'string' || check.date < input.periodFrom || check.date > input.periodTo ||
+            !['SHIFT', 'WEEKEND_REST'].includes(check.kind) ||
+            ![check.expected, check.actual].every(pair => Array.isArray(pair) && pair.length === 2 &&
+              pair.every(value => value === null || typeof value === 'string')) ||
+            !Array.isArray(check.lockedEmployeeGuids),
+          )) {
+        throw new PlanningSolverTechnicalError(
+          'OR-Tools a renvoyé une évaluation d’alternance fixe incompatible.',
+          'PLANNING_SOLVER_PROTOCOL_ERROR',
+          details,
+        );
+      }
+    }
+
+    const diagnostics = normalizeDiagnostics(payload.result.diagnostics);
+    if (!requestedPolicy) delete diagnostics.fixedAlternationEvaluation;
+    return { ...payload.result, diagnostics };
   }
 }

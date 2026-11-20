@@ -1,4 +1,6 @@
+import type { ClockInOptions } from '../database/clock-in.options.js';
 import { RAFamily, TimezoneConfigUtils } from '@toke/shared';
+import type { Transaction } from 'sequelize';
 
 import RotationAssignmentModel from '../model/RotationAssignmentsModel.js';
 import { RotationTemplateSnapshot } from '../model/RotationGroupTemplateModel.js';
@@ -37,6 +39,20 @@ export default class RotationAssignment extends RotationAssignmentModel {
     return new RotationAssignment().load(identifier, byGuid, byRelatedAndGroup);
   }
 
+  /** Authoritative worker read; the lock is held until its transaction ends. */
+  static async _loadForRotation(
+    id: number,
+    transaction: Transaction,
+  ): Promise<RotationAssignment | null> {
+    const instance = new RotationAssignment();
+    const data = await instance.findOne(
+      instance.db.tableName,
+      { id, active: true, deleted_at: null },
+      { transaction, lock: transaction.LOCK.UPDATE },
+    );
+    return data ? instance.hydrate(data) : null;
+  }
+
   static _list(
     conditions: Record<string, any> = {},
     paginationOptions: { offset?: number; limit?: number } = {},
@@ -47,9 +63,9 @@ export default class RotationAssignment extends RotationAssignmentModel {
   static _listByRelated(
     family: RAFamily,
     related: string,
-    paginationOptions: { offset?: number; limit?: number } = {},
+    paginationOptions: { offset?: number; limit?: number } = {}, clockOptions: ClockInOptions = {},
   ): Promise<RotationAssignment[] | null> {
-    return new RotationAssignment().listByRelated(family, related, paginationOptions);
+    return new RotationAssignment().listByRelated(family, related, paginationOptions, clockOptions);
   }
 
   static _listByAssignedBy(
@@ -144,10 +160,10 @@ export default class RotationAssignment extends RotationAssignmentModel {
     return this.rotation_group;
   }
 
-  async getRotationGroupObj(): Promise<RotationGroup | null> {
+  async getRotationGroupObj(clockOptions: ClockInOptions = {}): Promise<RotationGroup | null> {
     if (!this.rotation_group) return null;
     if (!this.rotationGroupObj) {
-      this.rotationGroupObj = (await RotationGroup._load(this.rotation_group)) || undefined;
+      this.rotationGroupObj = (await RotationGroup._load(this.rotation_group, undefined, clockOptions)) || undefined;
     }
     return this.rotationGroupObj || null;
   }
@@ -253,13 +269,23 @@ export default class RotationAssignment extends RotationAssignmentModel {
    *   - l'offset (nouvelle position dans le cycle de templates)
    *   - last_advanced_date (garde-fou anti-double avancement)
    */
-  async applyRotationOffset(newOffset: number, advancedDate: string): Promise<boolean> {
+  async applyRotationOffset(
+    newOffset: number,
+    advancedDate: string,
+    transaction?: Transaction,
+    publishAfterCommit?: (publish: () => void) => void,
+  ): Promise<boolean> {
     if (!this.id) throw new Error('Cannot update offset on unsaved assignment');
+    if (transaction && !publishAfterCommit) throw new Error('Rotation transaction requires explicit commit publication');
 
-    const updated = await this.updateOffsetOnly(this.id, newOffset, advancedDate);
+    const updated = await this.updateOffsetOnly(this.id, newOffset, advancedDate, transaction);
     if (updated) {
-      this.offset = newOffset;
-      this.last_advanced_date = advancedDate;
+      const publish = () => {
+        this.offset = newOffset;
+        this.last_advanced_date = advancedDate;
+      };
+      if (transaction) publishAfterCommit!(publish);
+      else publish();
     }
     return updated;
   }
@@ -329,9 +355,9 @@ export default class RotationAssignment extends RotationAssignmentModel {
   async listByRelated(
     family: RAFamily,
     related: string,
-    paginationOptions: { offset?: number; limit?: number } = {},
+    paginationOptions: { offset?: number; limit?: number } = {}, clockOptions: ClockInOptions = {},
   ): Promise<RotationAssignment[] | null> {
-    const dataset = await this.listAllByRelated(family, related, paginationOptions);
+    const dataset = await this.listAllByRelated(family, related, paginationOptions, clockOptions);
     if (!dataset || dataset.length === 0) return null;
     return dataset.map((data) => new RotationAssignment().hydrate(data));
   }

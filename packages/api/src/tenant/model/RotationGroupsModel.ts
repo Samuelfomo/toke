@@ -1,3 +1,4 @@
+import type { ClockInOptions } from '../database/clock-in.options.js';
 import {
   CycleUnit,
   Direction,
@@ -55,24 +56,24 @@ export default class RotationGroupModel extends BaseModel {
   // MÉTHODES DE RECHERCHE
   // ============================================
 
-  protected async find(id: number, includeDeleted: boolean = false): Promise<any> {
+  protected async find(id: number, includeDeleted: boolean = false, clockOptions: ClockInOptions = {}): Promise<any> {
     const conditions: any = { [this.db.id]: id };
 
     if (!includeDeleted) {
       conditions[this.db.deleted_at] = null;
     }
 
-    return await this.findOne(this.db.tableName, conditions);
+    return await this.findOne(this.db.tableName, conditions, { ...(clockOptions.transaction ? { transaction: clockOptions.transaction } : {}) });
   }
 
-  protected async findByGuid(guid: string, includeDeleted: boolean = false): Promise<any> {
+  protected async findByGuid(guid: string, includeDeleted: boolean = false, clockOptions: ClockInOptions = {}): Promise<any> {
     const conditions: any = { [this.db.guid]: guid };
 
     if (!includeDeleted) {
       conditions[this.db.deleted_at] = null;
     }
 
-    return await this.findOne(this.db.tableName, conditions);
+    return await this.findOne(this.db.tableName, conditions, { ...(clockOptions.transaction ? { transaction: clockOptions.transaction } : {}) });
   }
 
   // ============================================

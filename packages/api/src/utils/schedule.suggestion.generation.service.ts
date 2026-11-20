@@ -1,5 +1,7 @@
+import { UniqueConstraintError, ValidationError } from 'sequelize';
 import { UsersValidationUtils } from '@toke/shared';
 
+import TenantManager from '../tenant/database/db.tenant-manager.js';
 import EmployeePlanningProfile from '../tenant/class/EmployeePlanningProfile.js';
 import OrgHierarchy from '../tenant/class/OrgHierarchy.js';
 import PlanningSuggestionConfig from '../tenant/class/PlanningSuggestionConfig.js';
@@ -16,8 +18,10 @@ import {
   PlanningInfeasibleError,
   PlanningRequirementInput,
 } from './suggestion.engine.js';
+import { supportsOrToolsFixedAlternation } from './solver/ortools.planning.solver.js';
 import PlanningSolverFactory from './solver/planning.solver.factory.js';
-import { validatePlanningPreflight } from './planning.preflight.validation.service.js';
+import { FIXED_ALTERNATION_MESSAGES, validatePlanningPreflight } from './planning.preflight.validation.service.js';
+import { prepareFixedAlternation, summarizeFixedAlternation } from './planning.fixed.alternation.js';
 import {
   analyzePlanningHistory,
   emptyPlanningHistoryAnalysis,
@@ -40,6 +44,7 @@ import {
   RollingChunkMetadata,
 } from './planning.rolling.horizon.js';
 import {
+  FixedAlternationAcknowledgementError,
   PlanningSolverExecutionMetadata,
   PlanningSolverInput,
   PlanningSolverTechnicalError,
@@ -154,6 +159,7 @@ export async function solveConfiguredSuggestion(
   excludedEmployeeGuids: string[] = [],
   lockedAssignments: NonNullable<PlanningSolverInput['lockedAssignments']> = [],
   historyAdjustments: HistoryAdjustment[] = [],
+  legacyAfterMissingAcknowledgement = false,
 ): Promise<ConfiguredSuggestionSolvePayload> {
   if (!UsersValidationUtils.validateGuid(managerGuid)) {
     throw new SuggestionGenerationError('Invalid manager GUID', 'SUGGESTION_INVALID_GUID', 400);
@@ -662,12 +668,35 @@ export async function solveConfiguredSuggestion(
   // API preflight: reject deterministic impossibilities before any history load
   // and before the OR-Tools HTTP request. This is intentionally conservative:
   // only mathematically certain failures are blocking here.
-  const preflight = validatePlanningPreflight({
+  const requestedSolverType = lockedAssignments.length > 0
+    ? 'ORTOOLS' as const
+    : config.getSolverType();
+  const ortoolsEndpoint = process.env.PLANNING_ORTOOLS_URL;
+  const fixedAlternation = prepareFixedAlternation(config.getFixedAlternationPolicy(), employees, excludedEmployeeGuids);
+  const alternatingPolicy = fixedAlternation?.policy;
+  const mandatoryWeekendRest = alternatingPolicy?.weekendRest === 'ALTERNATE_SAT_SUN';
+  const fixedAlternationSupported = Boolean(!legacyAfterMissingAcknowledgement && alternatingPolicy && requestedSolverType === 'ORTOOLS' &&
+    await supportsOrToolsFixedAlternation(ortoolsEndpoint, mandatoryWeekendRest ? 2 : 1));
+  if (mandatoryWeekendRest && !fixedAlternationSupported) {
+    throw new SuggestionGenerationError(
+      'Le moteur configuré ne peut pas garantir les repos alternés du week-end.',
+      'FIXED_ALTERNATION_WEEKEND_REST_UNSUPPORTED',
+      503,
+    );
+  }
+  const solverPolicy = fixedAlternationSupported ? alternatingPolicy : undefined;
+  const preflightInput = {
     employees,
     requirements: engineRequirements,
     config: engineConfig,
     periodFrom: horizon.solveFrom,
     periodTo: horizon.solveTo,
+    lockedAssignments,
+  };
+  const preflight = validatePlanningPreflight({
+    ...preflightInput,
+    fixedAlternationStatus: fixedAlternationSupported ? undefined : fixedAlternation?.status,
+    fixedAlternationPolicy: solverPolicy,
   });
 
   if (!preflight.valid) {
@@ -783,9 +812,6 @@ export async function solveConfiguredSuggestion(
     });
   }
 
-  const requestedSolverType = lockedAssignments.length > 0
-    ? 'ORTOOLS' as const
-    : config.getSolverType();
   const totalSolveDays = rollingDayCount(horizon.solveFrom, horizon.solveTo);
   const rollingEnabled =
     requestedSolverType === 'ORTOOLS' &&
@@ -811,10 +837,11 @@ export async function solveConfiguredSuggestion(
     // A rolling plan cannot safely fall back to GREEDY after the first chunk,
     // because subsequent windows contain overlap locks. Keep one solver model
     // for the complete suggestion.
-    fallbackToGreedy: rollingEnabled
+    fallbackToGreedy: rollingEnabled || mandatoryWeekendRest
       ? false
       : (lockedAssignments.length > 0 ? false : config.shouldFallbackToGreedy()),
-    ortoolsEndpoint: (globalThis as any).process?.env?.PLANNING_ORTOOLS_URL,
+    ortoolsEndpoint,
+    fixedAlternationSupported,
   };
 
   const solveOneWindow = async (
@@ -830,7 +857,7 @@ export async function solveConfiguredSuggestion(
       return { result: execution.result, metadata: execution.metadata, boundaryRelaxed: false };
     } catch (error) {
       if (
-        allowBoundaryRelaxation &&
+        allowBoundaryRelaxation && !mandatoryWeekendRest &&
         (input.boundaryState?.guardContinuations.length ?? 0) > 0 &&
         (
           error instanceof PlanningInfeasibleError ||
@@ -856,6 +883,7 @@ export async function solveConfiguredSuggestion(
   try {
     if (!rollingEnabled) {
       const solverInput: PlanningSolverInput = {
+        ...(solverPolicy && { fixedAlternationPolicy: solverPolicy }),
         employees,
         requirements: engineRequirements,
         historicalAssignments: [],
@@ -917,6 +945,7 @@ export async function solveConfiguredSuggestion(
           : buildRollingBoundaryState(committedState, window.solveFrom, engineRequirements);
 
         const input: PlanningSolverInput = {
+          ...(solverPolicy && { fixedAlternationPolicy: solverPolicy }),
           employees,
           requirements: engineRequirements,
           historicalAssignments: [],
@@ -1006,6 +1035,14 @@ export async function solveConfiguredSuggestion(
       }
     }
   } catch (error) {
+    if (error instanceof FixedAlternationAcknowledgementError && solverPolicy && !mandatoryWeekendRest) {
+      // Discard all calculated windows and rerun the historical preflight before accepting a legacy result.
+      console.warn('[PLANNING_FIXED_ALTERNATION_ACK_MISSING]', error.details);
+      return solveConfiguredSuggestion(
+        managerGuid, periodFrom, periodTo, excludedEmployeeGuids, lockedAssignments, historyAdjustments, true,
+      );
+    }
+
     if (error instanceof PlanningInfeasibleError) {
       throw new SuggestionGenerationError(error.message, error.code, 422, error.diagnostics);
     }
@@ -1022,7 +1059,39 @@ export async function solveConfiguredSuggestion(
     throw error;
   }
 
+  if (solverPolicy && solverMetadata.fallbackUsed) {
+    const legacyPreflight = validatePlanningPreflight({
+      ...preflightInput,
+      fixedAlternationStatus: 'PENDING_SOLVER_SUPPORT',
+    });
+    if (!legacyPreflight.valid) {
+      throw new SuggestionGenerationError(
+        'Le moteur de repli ne peut pas satisfaire les contrôles de capacité des profils fixes.',
+        'PLANNING_PREFLIGHT_INFEASIBLE',
+        422,
+        legacyPreflight,
+      );
+    }
+  }
   engineResult = projectEngineResultToRequestedPeriod(engineResult, horizon);
+  const alternationEvaluation = engineResult.diagnostics.fixedAlternationEvaluation;
+  if (solverPolicy && alternationEvaluation) {
+    engineResult.diagnostics.fixedAlternation = summarizeFixedAlternation(alternationEvaluation);
+    delete engineResult.diagnostics.fixedAlternationEvaluation;
+  } else if (fixedAlternation) {
+    engineResult.diagnostics.fixedAlternation = {
+      status: fixedAlternation.status,
+      applied: false,
+      message: legacyAfterMissingAcknowledgement
+        ? 'Le moteur n’a pas confirmé la prise en charge. Le planning a été recalculé sans alternance.'
+        : fixedAlternation.reason === 'EMPLOYEE_EXCLUDED'
+          ? 'L’alternance ne s’applique pas car au moins un membre de la paire a été exclu.'
+          : FIXED_ALTERNATION_MESSAGES[fixedAlternation.status],
+      ...(fixedAlternation.reason && { reason: fixedAlternation.reason }),
+      ...(fixedAlternation.missingEmployeeGuids && { missingEmployeeGuids: fixedAlternation.missingEmployeeGuids }),
+      ...(legacyAfterMissingAcknowledgement && { reason: 'SOLVER_ACK_MISSING' as const }),
+    };
+  }
   solverMetadata = {
     ...solverMetadata,
     horizon,
@@ -1093,31 +1162,7 @@ export async function generateConfiguredSuggestion(
     historyAdjustments,
   );
 
-  const suggestion = new ScheduleSuggestion()
-    .setTenant(solved.manager.getTenant?.() ?? '')
-    .setManager(solved.manager.getId()!)
-    .setPeriodFrom(periodFrom)
-    .setPeriodTo(periodTo)
-    .setHistoryWeeks(solved.historyWeeks)
-    .setConformityScore(solved.engineResult.conformityScore)
-    .setConfig(solved.config.getId()!)
-    .setEngineVersion(solved.solver.solverVersion)
-    .setDiagnostics(solved.persistedDiagnostics);
-
-  await suggestion.save();
-
-  for (const employeeResult of solved.engineResult.items) {
-    const user = await User._load(employeeResult.userGuid, true);
-    if (!user) continue;
-
-    const item = new ScheduleSuggestionItem()
-      .setSuggestion(suggestion.getId()!)
-      .setUser(user.getId()!)
-      .setSchedule(employeeResult.schedule)
-      .setReasons(employeeResult.reasons);
-
-    await item.save();
-  }
+  const suggestion = await persistConfiguredSuggestion(solved, periodFrom, periodTo);
 
   return {
     suggestion,
@@ -1130,6 +1175,73 @@ export async function generateConfiguredSuggestion(
     solver: solved.solver,
   };
 }
+
+export async function persistConfiguredSuggestion(
+  solved: ConfiguredSuggestionSolvePayload,
+  periodFrom: string,
+  periodTo: string,
+): Promise<ScheduleSuggestion> {
+  const suggestion = new ScheduleSuggestion()
+    .setTenant(solved.manager.getTenant()?.trim() || TenantManager.getCurrentTenant())
+    .setManager(solved.manager.getId()!)
+    .setPeriodFrom(periodFrom)
+    .setPeriodTo(periodTo)
+    .setHistoryWeeks(solved.historyWeeks)
+    .setConformityScore(solved.engineResult.conformityScore)
+    .setConfig(solved.config.getId()!)
+    .setEngineVersion(solved.solver.solverVersion)
+    .setDiagnostics(solved.persistedDiagnostics);
+
+  const items = await Promise.all(solved.engineResult.items.map(async employeeResult => {
+    const user = await User._load(employeeResult.userGuid, true);
+    if (!user) {
+      throw new SuggestionGenerationError(
+        'Un collaborateur du planning est devenu indisponible. Relancez la génération.',
+        'SUGGESTION_EMPLOYEE_NOT_FOUND',
+        422,
+      );
+    }
+    return new ScheduleSuggestionItem()
+      .setUser(user.getId()!)
+      .setSchedule(employeeResult.schedule)
+      .setReasons(employeeResult.reasons);
+  }));
+
+  let stage: 'suggestion' | 'item' = 'suggestion';
+  try {
+    await TenantManager.getConnectionSync().transaction(async transaction => {
+      await suggestion.save(transaction);
+      stage = 'item';
+      for (const item of items) {
+        await item.setSuggestion(suggestion.getId()!).save(transaction);
+      }
+    });
+  } catch (error) {
+    if (error instanceof UniqueConstraintError && stage === 'suggestion' &&
+        (error.parent as { constraint?: string }).constraint === 'unique_manager_draft_suggestion_period') {
+      throw new SuggestionGenerationError(
+        'Un brouillon existe déjà pour cette période. Consultez, régénérez ou rejetez ce brouillon avant de relancer la génération.',
+        'SUGGESTION_DRAFT_ALREADY_EXISTS',
+        409,
+        { period_from: periodFrom, period_to: periodTo },
+      );
+    }
+    if (error instanceof ValidationError) {
+      const fields = [...new Set(error.errors.flatMap(issue => issue.path ? [issue.path] : []))];
+      console.warn('[PLANNING_SUGGESTION_PERSISTENCE_VALIDATION]', { stage, fields, name: error.name });
+      throw new SuggestionGenerationError(
+        'La suggestion a été calculée mais son enregistrement a échoué.',
+        'SUGGESTION_PERSISTENCE_VALIDATION_FAILED',
+        500,
+        { stage, fields },
+      );
+    }
+    throw error;
+  }
+
+  return suggestion;
+}
+
 
 // import { SAFamily, UsersValidationUtils } from '@toke/shared';
 //

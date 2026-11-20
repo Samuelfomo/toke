@@ -3,7 +3,7 @@ from __future__ import annotations
 from datetime import date, timedelta
 from typing import Literal
 
-from pydantic import BaseModel, ConfigDict, Field, model_validator
+from pydantic import BaseModel, ConfigDict, Field, field_validator, model_serializer, model_validator
 
 
 DayKey = Literal["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"]
@@ -419,6 +419,32 @@ class PlanningLockedAssignment(BaseModel):
         return self
 
 
+class FixedAlternationPolicy(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    contract_version: int = Field(strict=True, ge=1, le=2)
+    enabled: bool = Field(strict=True)
+    employee_guids: tuple[str, str]
+    template_guids: tuple[str, str]
+    anchor_date: date
+    shift_cadence_days: int = Field(strict=True, ge=1, le=366)
+    weekend_rest: Literal["KEEP_PROFILE", "ALTERNATE_SAT_SUN"]
+
+    @field_validator("anchor_date", mode="before")
+    @classmethod
+    def validate_anchor_date(cls, value):
+        if type(value) is not str or len(value) != 10 or date.fromisoformat(value).isoformat() != value:
+            raise ValueError("anchor_date must be a calendar date in YYYY-MM-DD format")
+        return value
+
+    @model_validator(mode="after")
+    def validate_pairs(self) -> "FixedAlternationPolicy":
+        for pair in (self.employee_guids, self.template_guids):
+            if not all(pair) or pair[0] == pair[1]:
+                raise ValueError("fixed_alternation_policy requires distinct nonempty GUIDs")
+        return self
+
+
 class PlanningSolverInput(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
@@ -431,6 +457,7 @@ class PlanningSolverInput(BaseModel):
     historicalFairness: list[HistoricalFairnessBaseline] = Field(default_factory=list)
     boundaryState: PlanningBoundaryState = Field(default_factory=PlanningBoundaryState)
     lockedAssignments: list[PlanningLockedAssignment] = Field(default_factory=list)
+    fixed_alternation_policy: FixedAlternationPolicy | None = None
     periodFrom: str
     periodTo: str
     requestedPeriodFrom: str | None = None
@@ -442,6 +469,15 @@ class PlanningSolverInput(BaseModel):
     @model_validator(mode="after")
     def validate_locked_assignments(self) -> "PlanningSolverInput":
         employee_by_guid = {employee.guid: employee for employee in self.employees}
+        policy = self.fixed_alternation_policy
+        if policy and policy.enabled:
+            pair = [employee_by_guid.get(guid) for guid in policy.employee_guids]
+            if any(employee is None or employee.mode != "FIXED" for employee in pair):
+                raise ValueError("fixed_alternation_policy requires two included FIXED employees")
+            references = {employee.fixedTemplate.guid for employee in pair if employee and employee.fixedTemplate}
+            if references != set(policy.template_guids):
+                raise ValueError("fixed_alternation_policy templates must match the FIXED references")
+
 
         fairness_guids = [entry.employeeGuid for entry in self.historicalFairness]
         if len(fairness_guids) != len(set(fairness_guids)):
@@ -583,6 +619,21 @@ class WeeklyLeaveGroupResult(BaseModel):
     serviceScope: ServiceScope
 
 
+class FixedAlternationCheck(BaseModel):
+    date: str
+    kind: Literal["SHIFT", "WEEKEND_REST"]
+    expected: tuple[str | None, str | None]
+    actual: tuple[str | None, str | None]
+    lockedEmployeeGuids: list[str]
+    reason: Literal["LOCKED_ASSIGNMENT", "PROFILE_REST", "TEMPLATE_UNAVAILABLE", "OTHER_SOLVER_PRIORITIES"] | None = None
+
+
+class FixedAlternationDiagnostics(BaseModel):
+    contractVersion: Literal[1, 2] = 1
+    employeeGuids: tuple[str, str]
+    checks: list[FixedAlternationCheck]
+
+
 class EngineDiagnostics(BaseModel):
     violations: list[PlanningViolation]
     coverage: list[CoverageResult]
@@ -591,6 +642,15 @@ class EngineDiagnostics(BaseModel):
     fairnessScore: int
     coverageScore: int
     relaxationsApplied: list[str] = Field(default_factory=list)
+    fixedAlternationEvaluation: FixedAlternationDiagnostics | None = None
+
+
+    @model_serializer(mode="wrap")
+    def serialize_diagnostics(self, handler):
+        data = handler(self)
+        if self.fixedAlternationEvaluation is None:
+            data.pop("fixedAlternationEvaluation", None)
+        return data
 
 
 class EngineResult(BaseModel):

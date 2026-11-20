@@ -1,3 +1,4 @@
+import type { ClockInOptions } from '../database/clock-in.options.js';
 import {
   MemoContent,
   MEMOS_DEFAULTS,
@@ -143,6 +144,10 @@ export default class MemosModel extends BaseModel {
         { [this.db.validator_user]: user_id },
       ],
     });
+  }
+
+  protected async countAll(conditions: Record<string, any> = {}): Promise<number> {
+    return this.count(this.db.tableName, conditions);
   }
 
   // ============================================================================
@@ -788,8 +793,8 @@ export default class MemosModel extends BaseModel {
   // ============================================================================
   // 8. CRUD OPERATIONS
   // ============================================================================
-  protected async create(): Promise<void> {
-    const guid = await this.randomGuidGenerator(this.db.tableName);
+  protected async create(clockOptions: ClockInOptions = {}): Promise<void> {
+    const guid = await this.randomGuidGenerator(this.db.tableName, undefined, { ...(clockOptions.transaction ? { transaction: clockOptions.transaction } : {}) });
     if (!guid) {
       throw new Error(MEMOS_ERRORS.GUID_GENERATION_FAILED);
     }
@@ -824,7 +829,7 @@ export default class MemosModel extends BaseModel {
       [this.db.affected_entries]: this.affected_entries,
       [this.db.memo_content]: this.memo_content, // ✅ NOUVEAU
       [this.db.manager]: this.manager || MEMOS_DEFAULTS.IS_MANAGER,
-    });
+    }, { ...(clockOptions.transaction ? { transaction: clockOptions.transaction } : {}) });
 
     if (!lastID) {
       throw new Error(MEMOS_ERRORS?.CREATION_FAILED);
@@ -836,7 +841,7 @@ export default class MemosModel extends BaseModel {
     this.updated_at = TimezoneConfigUtils.getCurrentTime();
   }
 
-  protected async update(): Promise<void> {
+  protected async update(clockOptions: ClockInOptions = {}): Promise<void> {
     if (!this.id) {
       throw new Error(MEMOS_ERRORS?.ID_REQUIRED);
     }
@@ -849,7 +854,7 @@ export default class MemosModel extends BaseModel {
     if (this.details !== undefined) updateData[this.db.details] = this.details;
     if (this.validator_user !== undefined) updateData[this.db.validator_user] = this.validator_user;
 
-    const updated = await this.updateOne(this.db.tableName, updateData, { [this.db.id]: this.id });
+    const updated = await this.updateOne(this.db.tableName, updateData, { [this.db.id]: this.id }, { ...(clockOptions.transaction ? { transaction: clockOptions.transaction } : {}) });
 
     if (!updated) {
       throw new Error(MEMOS_ERRORS?.UPDATE_FAILED || 'Memo update failed');
@@ -864,9 +869,15 @@ export default class MemosModel extends BaseModel {
 
   protected async listAll(
     conditions: Record<string, any> = {},
-    paginationOptions: { offset?: number; limit?: number } = {},
+    paginationOptions: { offset?: number; limit?: number; sortOrder?: 'ASC' | 'DESC' } = {},
   ): Promise<any[]> {
-    return await this.findAll(this.db.tableName, conditions, paginationOptions);
+    const { sortOrder = 'DESC', ...page } = paginationOptions;
+    return this.findAll(this.db.tableName, conditions, page, {
+      order: [
+        ['created_at', sortOrder],
+        ['id', sortOrder],
+      ],
+    });
   }
 
   /**

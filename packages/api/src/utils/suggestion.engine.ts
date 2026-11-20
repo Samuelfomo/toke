@@ -1,3 +1,4 @@
+import type { FixedAlternationEvaluation, FixedAlternationStatus, summarizeFixedAlternation } from './planning.fixed.alternation.js';
 // ─────────────────────────────────────────────────────────────────────────────
 // suggestion.engine.ts — V2.4 politiques génériques par population et service
 //
@@ -239,6 +240,13 @@ export interface WeeklyLeaveGroupResult {
 }
 
 export interface EngineDiagnostics {
+  fixedAlternation?: ReturnType<typeof summarizeFixedAlternation> |
+    {
+      status: FixedAlternationStatus; applied: false; message: string;
+      reason?: 'EMPLOYEE_EXCLUDED' | 'PAIR_OUT_OF_SCOPE' | 'SOLVER_ACK_MISSING';
+      missingEmployeeGuids?: string[];
+    };
+  fixedAlternationEvaluation?: FixedAlternationEvaluation;
   violations: PlanningViolation[];
   coverage: CoverageResult[];
   guardPools: GuardPoolResult[];

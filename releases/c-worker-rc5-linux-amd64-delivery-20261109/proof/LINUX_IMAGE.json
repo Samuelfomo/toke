@@ -1,0 +1,13 @@
+{
+  "Id": "sha256:6645b9fbe6de927eabc2199822e780dab092d86ded107c252f000d29e7cd39f2",
+  "RepoDigests": [
+    "toke-cworker-linux-fixture@sha256:6645b9fbe6de927eabc2199822e780dab092d86ded107c252f000d29e7cd39f2"
+  ],
+  "Os": "linux",
+  "Architecture": "amd64",
+  "imageUser": "10001:10001",
+  "labels": {
+    "org.opencontainers.image.version": "24.04",
+    "toke.purpose": "c-worker-disposable-linux-fixture"
+  }
+}

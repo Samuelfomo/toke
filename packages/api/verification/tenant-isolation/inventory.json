@@ -1,0 +1,2112 @@
+{
+  "scope": "Active AST nodes in packages, excluding dependencies/build output/tests/assets; comments excluded. Import closure is an overapproximation, not a runtime call graph; unresolved aliases/dynamic access require manual review.",
+  "counts": {
+    "files": 857,
+    "direct": 32,
+    "dependencies": 103,
+    "asyncSites": 186,
+    "affectedFiles": 168
+  },
+  "direct": [
+    {
+      "file": "packages/api/src/automate/automate.ts",
+      "line": 39,
+      "kind": "direct-reference",
+      "code": "TenantManager.setCurrentTenant(subdomain)"
+    },
+    {
+      "file": "packages/api/src/automate/automate.ts",
+      "line": 42,
+      "kind": "direct-reference",
+      "code": "TenantManager.getConnectionForTenant(subdomain, { host: tenantConfig.host, port: tenantConfig.port, username: tenantConfig.username, password: tenantConfig.password, database: tenantConfig.database, })"
+    },
+    {
+      "file": "packages/api/src/master/routes/integrator.route.ts",
+      "line": 157,
+      "kind": "direct-reference",
+      "code": "TenantManager.getConnectionForTenant(subdomain, cfg)"
+    },
+    {
+      "file": "packages/api/src/master/routes/integrator.route.ts",
+      "line": 182,
+      "kind": "direct-reference",
+      "code": "TenantManager.getConnectionForTenant(subdomain, cfg)"
+    },
+    {
+      "file": "packages/api/src/master/routes/integrator.route.ts",
+      "line": 246,
+      "kind": "direct-reference",
+      "code": "TenantManager.getConnectionForTenant(subdomain, cfg)"
+    },
+    {
+      "file": "packages/api/src/master/routes/tenant.route.ts",
+      "line": 825,
+      "kind": "direct-reference",
+      "code": "TenantManager.setCurrentTenant(subdomain)"
+    },
+    {
+      "file": "packages/api/src/master/routes/tenant.route.ts",
+      "line": 827,
+      "kind": "direct-reference",
+      "code": "TenantManager.getConnectionForTenant(subdomain, { host: tenantConfig.host, port: tenantConfig.port, username: tenantConfig.username, password: tenantConfig.password, database: tenantConfig.database, })"
+    },
+    {
+      "file": "packages/api/src/middle/tenant.middleware.ts",
+      "line": 74,
+      "kind": "direct-reference",
+      "code": "TenantManager.setCurrentTenant(subdomain)"
+    },
+    {
+      "file": "packages/api/src/middle/tenant.middleware.ts",
+      "line": 77,
+      "kind": "direct-reference",
+      "code": "TenantManager.getConnectionForTenant(subdomain, { host: tenantConfig.host, port: tenantConfig.port, username: tenantConfig.username, password: tenantConfig.password, database: tenantConfig.database, })"
+    },
+    {
+      "file": "packages/api/src/tenant/database/db.base.ts",
+      "line": 16,
+      "kind": "direct-reference",
+      "code": "TenantManager.getConnectionSync()"
+    },
+    {
+      "file": "packages/api/src/tenant/database/db.base.ts",
+      "line": 219,
+      "kind": "direct-reference",
+      "code": "TenantManager.getCurrentTenant()"
+    },
+    {
+      "file": "packages/api/src/tenant/database/db.base.ts",
+      "line": 273,
+      "kind": "direct-reference",
+      "code": "TenantManager.getCurrentTenant()"
+    },
+    {
+      "file": "packages/api/src/tenant/database/db.base.ts",
+      "line": 319,
+      "kind": "direct-reference",
+      "code": "TenantManager.getCurrentTenant()"
+    },
+    {
+      "file": "packages/api/src/tenant/database/db.config.ts",
+      "line": 14,
+      "kind": "direct-reference",
+      "code": "TenantManager.getConnection()"
+    },
+    {
+      "file": "packages/api/src/tenant/database/db.config.ts",
+      "line": 19,
+      "kind": "direct-reference",
+      "code": "TenantManager.closeAllConnections()"
+    },
+    {
+      "file": "packages/api/src/tenant/database/db.initializer.ts",
+      "line": 51,
+      "kind": "direct-reference",
+      "code": "TenantManager.getCurrentTenant()"
+    },
+    {
+      "file": "packages/api/src/tenant/database/db.initializer.ts",
+      "line": 88,
+      "kind": "direct-reference",
+      "code": "TenantManager.getCurrentTenant()"
+    },
+    {
+      "file": "packages/api/src/tenant/database/db.initializer.ts",
+      "line": 111,
+      "kind": "direct-reference",
+      "code": "TenantManager.getCurrentTenant()"
+    },
+    {
+      "file": "packages/api/src/tenant/database/db.initializer.ts",
+      "line": 126,
+      "kind": "direct-reference",
+      "code": "TenantManager.getCurrentTenant()"
+    },
+    {
+      "file": "packages/api/src/tenant/database/db.initializer.ts",
+      "line": 153,
+      "kind": "direct-reference",
+      "code": "TenantManager.getCurrentTenant()"
+    },
+    {
+      "file": "packages/api/src/tenant/database/db.tenant-manager.ts",
+      "line": 19,
+      "kind": "field",
+      "code": "private static currentTenant: string | null = null;"
+    },
+    {
+      "file": "packages/api/src/tenant/database/db.tenant-manager.ts",
+      "line": 25,
+      "kind": "direct-reference",
+      "code": "TenantManager.currentTenant"
+    },
+    {
+      "file": "packages/api/src/tenant/database/db.tenant-manager.ts",
+      "line": 30,
+      "kind": "direct-reference",
+      "code": "TenantManager.currentTenant"
+    },
+    {
+      "file": "packages/api/src/tenant/database/db.tenant-manager.ts",
+      "line": 33,
+      "kind": "direct-reference",
+      "code": "TenantManager.currentTenant"
+    },
+    {
+      "file": "packages/api/src/tenant/database/db.tenant-manager.ts",
+      "line": 99,
+      "kind": "direct-reference",
+      "code": "TenantManager.getCurrentTenant()"
+    },
+    {
+      "file": "packages/api/src/tenant/database/db.tenant-manager.ts",
+      "line": 112,
+      "kind": "direct-reference",
+      "code": "this.getCurrentTenant()"
+    },
+    {
+      "file": "packages/api/src/tenant/database/db.tenant-manager.ts",
+      "line": 146,
+      "kind": "direct-reference",
+      "code": "TenantManager.currentTenant"
+    },
+    {
+      "file": "packages/api/src/tools/schedule.assignment.adjustment.service.ts",
+      "line": 528,
+      "kind": "direct-reference",
+      "code": "TenantManager.getConnectionSync()"
+    },
+    {
+      "file": "packages/api/src/tools/schedule.suggestion.approval.service.ts",
+      "line": 222,
+      "kind": "direct-reference",
+      "code": "TenantManager.getConnectionSync()"
+    },
+    {
+      "file": "packages/api/src/utils/generate.database.ts",
+      "line": 158,
+      "kind": "direct-reference",
+      "code": "TenantManager.getConnectionForTenant(subdomain, { host: host, port: port, username: database_username, password: database_password, database: database_name, })"
+    },
+    {
+      "file": "packages/api/src/utils/schedule.suggestion.bulk-edit.service.ts",
+      "line": 1563,
+      "kind": "direct-reference",
+      "code": "TenantManager.getConnectionSync()"
+    },
+    {
+      "file": "packages/api/src/utils/schedule.suggestion.regeneration.service.ts",
+      "line": 395,
+      "kind": "direct-reference",
+      "code": "TenantManager.getConnectionSync()"
+    }
+  ],
+  "dependencies": [
+    {
+      "file": "packages/api/src/automate/automate.ts",
+      "line": 12,
+      "kind": "tenant-import",
+      "code": "import TenantManager from '../tenant/database/db.tenant-manager.js';"
+    },
+    {
+      "file": "packages/api/src/automate/automate.ts",
+      "line": 13,
+      "kind": "tenant-import",
+      "code": "import { TableInitializer } from '../tenant/database/db.initializer.js';"
+    },
+    {
+      "file": "packages/api/src/automate/automate.ts",
+      "line": 51,
+      "kind": "indirect-access",
+      "code": "TableInitializer.initialize(connection)"
+    },
+    {
+      "file": "packages/api/src/master/routes/integrator.route.ts",
+      "line": 12,
+      "kind": "tenant-import",
+      "code": "import TenantManager from '../../tenant/database/db.tenant-manager.js';"
+    },
+    {
+      "file": "packages/api/src/master/routes/integrator.route.ts",
+      "line": 193,
+      "kind": "indirect-access",
+      "code": "db.query(sql, { type: QueryTypes.SELECT, })"
+    },
+    {
+      "file": "packages/api/src/master/routes/integrator.route.ts",
+      "line": 257,
+      "kind": "indirect-access",
+      "code": "db.query(sql, { replacements: { userGuid: String(userGuid), }, type: QueryTypes.SELECT, })"
+    },
+    {
+      "file": "packages/api/src/master/routes/tenant.route.ts",
+      "line": 28,
+      "kind": "tenant-import",
+      "code": "import TenantManager from '../../tenant/database/db.tenant-manager.js';"
+    },
+    {
+      "file": "packages/api/src/master/routes/tenant.route.ts",
+      "line": 29,
+      "kind": "tenant-import",
+      "code": "import { TableInitializer } from '../../tenant/database/db.initializer.js';"
+    },
+    {
+      "file": "packages/api/src/master/routes/tenant.route.ts",
+      "line": 835,
+      "kind": "indirect-access",
+      "code": "TableInitializer.initialize(connection)"
+    },
+    {
+      "file": "packages/api/src/middle/tenant.middleware.ts",
+      "line": 10,
+      "kind": "tenant-import",
+      "code": "import TenantManager from '../tenant/database/db.tenant-manager.js';"
+    },
+    {
+      "file": "packages/api/src/middle/tenant.middleware.ts",
+      "line": 14,
+      "kind": "tenant-import",
+      "code": "import { TableInitializer } from '../tenant/database/db.initializer.js';"
+    },
+    {
+      "file": "packages/api/src/middle/tenant.middleware.ts",
+      "line": 85,
+      "kind": "indirect-access",
+      "code": "TableInitializer.initialize(connection)"
+    },
+    {
+      "file": "packages/api/src/tenant/app.ts",
+      "line": 189,
+      "kind": "indirect-access",
+      "code": "AuthCacheService.initialize()"
+    },
+    {
+      "file": "packages/api/src/tenant/database/db.base.ts",
+      "line": 4,
+      "kind": "tenant-import",
+      "code": "import TenantManager from './db.tenant-manager.js';"
+    },
+    {
+      "file": "packages/api/src/tenant/database/db.base.ts",
+      "line": 32,
+      "kind": "indirect-access",
+      "code": "TableInitializer.getModel(tableName)"
+    },
+    {
+      "file": "packages/api/src/tenant/database/db.base.ts",
+      "line": 47,
+      "kind": "indirect-access",
+      "code": "TableInitializer.getModel(tableName)"
+    },
+    {
+      "file": "packages/api/src/tenant/database/db.base.ts",
+      "line": 62,
+      "kind": "indirect-access",
+      "code": "TableInitializer.getModel(tableName)"
+    },
+    {
+      "file": "packages/api/src/tenant/database/db.base.ts",
+      "line": 93,
+      "kind": "indirect-access",
+      "code": "TableInitializer.getModel(tableName)"
+    },
+    {
+      "file": "packages/api/src/tenant/database/db.base.ts",
+      "line": 103,
+      "kind": "indirect-access",
+      "code": "TableInitializer.getModel(tableName)"
+    },
+    {
+      "file": "packages/api/src/tenant/database/db.base.ts",
+      "line": 113,
+      "kind": "indirect-access",
+      "code": "TableInitializer.getModel(tableName)"
+    },
+    {
+      "file": "packages/api/src/tenant/database/db.base.ts",
+      "line": 134,
+      "kind": "indirect-access",
+      "code": "TableInitializer.getModel(tableName)"
+    },
+    {
+      "file": "packages/api/src/tenant/database/db.base.ts",
+      "line": 180,
+      "kind": "indirect-access",
+      "code": "TableInitializer.getModel(tableName)"
+    },
+    {
+      "file": "packages/api/src/tenant/database/db.base.ts",
+      "line": 202,
+      "kind": "indirect-access",
+      "code": "TableInitializer.getModel(tableName)"
+    },
+    {
+      "file": "packages/api/src/tenant/database/db.base.ts",
+      "line": 241,
+      "kind": "indirect-access",
+      "code": "TableInitializer.getModel(tableName)"
+    },
+    {
+      "file": "packages/api/src/tenant/database/db.base.ts",
+      "line": 294,
+      "kind": "indirect-access",
+      "code": "TableInitializer.getModel(tableName)"
+    },
+    {
+      "file": "packages/api/src/tenant/database/db.base.ts",
+      "line": 314,
+      "kind": "indirect-access",
+      "code": "this.sequelize.query(query, { type: QueryTypes.SELECT, })"
+    },
+    {
+      "file": "packages/api/src/tenant/database/db.config.ts",
+      "line": 3,
+      "kind": "tenant-import",
+      "code": "import TenantManager from './db.tenant-manager.js';"
+    },
+    {
+      "file": "packages/api/src/tenant/database/db.config.ts",
+      "line": 14,
+      "kind": "indirect-access",
+      "code": "TenantManager.getConnection()"
+    },
+    {
+      "file": "packages/api/src/tenant/database/db.initializer.ts",
+      "line": 13,
+      "kind": "tenant-import",
+      "code": "import TenantManager from './db.tenant-manager.js';"
+    },
+    {
+      "file": "packages/api/src/tenant/model/AuditLogsModel.ts",
+      "line": 4,
+      "kind": "tenant-import",
+      "code": "import BaseModel from '../database/db.base.js';"
+    },
+    {
+      "file": "packages/api/src/tenant/model/AuditLogsModel.ts",
+      "line": 394,
+      "kind": "indirect-access",
+      "code": "this.sequelize.query( ` SELECT operation, COUNT(*) as count, COUNT(DISTINCT changed_by_user) as unique_users, AVG(EXTRACT(EPOCH FROM (updated_at - created_at))) as avg_processing_time FROM ${this.db.tableName} WHERE tabl"
+    },
+    {
+      "file": "packages/api/src/tenant/model/DepartmentModel.ts",
+      "line": 9,
+      "kind": "tenant-import",
+      "code": "import BaseModel from '../database/db.base.js';"
+    },
+    {
+      "file": "packages/api/src/tenant/model/DeviceModel.ts",
+      "line": 10,
+      "kind": "tenant-import",
+      "code": "import BaseModel from '../database/db.base.js';"
+    },
+    {
+      "file": "packages/api/src/tenant/model/EmployeePlanningProfileModel.ts",
+      "line": 3,
+      "kind": "tenant-import",
+      "code": "import BaseModel from '../database/db.base.js';"
+    },
+    {
+      "file": "packages/api/src/tenant/model/EventLogModel.ts",
+      "line": 3,
+      "kind": "tenant-import",
+      "code": "import BaseModel from '../database/db.base.js';"
+    },
+    {
+      "file": "packages/api/src/tenant/model/FraudAlertsModel.ts",
+      "line": 6,
+      "kind": "tenant-import",
+      "code": "import BaseModel from '../database/db.base.js';"
+    },
+    {
+      "file": "packages/api/src/tenant/model/GroupsModel.ts",
+      "line": 4,
+      "kind": "tenant-import",
+      "code": "import BaseModel from '../database/db.base.js';"
+    },
+    {
+      "file": "packages/api/src/tenant/model/MemosModel.ts",
+      "line": 13,
+      "kind": "tenant-import",
+      "code": "import BaseModel from '../database/db.base.js';"
+    },
+    {
+      "file": "packages/api/src/tenant/model/OrgHierarchyModel.ts",
+      "line": 10,
+      "kind": "tenant-import",
+      "code": "import BaseModel from '../database/db.base.js';"
+    },
+    {
+      "file": "packages/api/src/tenant/model/PlanningSuggestionConfigModel.ts",
+      "line": 3,
+      "kind": "tenant-import",
+      "code": "import BaseModel from '../database/db.base.js';"
+    },
+    {
+      "file": "packages/api/src/tenant/model/PlanningSuggestionRequirementModel.ts",
+      "line": 3,
+      "kind": "tenant-import",
+      "code": "import BaseModel from '../database/db.base.js';"
+    },
+    {
+      "file": "packages/api/src/tenant/model/PosteModel.ts",
+      "line": 10,
+      "kind": "tenant-import",
+      "code": "import BaseModel from '../database/db.base.js';"
+    },
+    {
+      "file": "packages/api/src/tenant/model/QrCodeGenerationModel.ts",
+      "line": 4,
+      "kind": "tenant-import",
+      "code": "import BaseModel from '../database/db.base.js';"
+    },
+    {
+      "file": "packages/api/src/tenant/model/RoleModel.ts",
+      "line": 3,
+      "kind": "tenant-import",
+      "code": "import BaseModel from '../database/db.base.js';"
+    },
+    {
+      "file": "packages/api/src/tenant/model/RotationAssignmentLogModel.ts",
+      "line": 3,
+      "kind": "tenant-import",
+      "code": "import BaseModel from '../database/db.base.js';"
+    },
+    {
+      "file": "packages/api/src/tenant/model/RotationAssignmentsModel.ts",
+      "line": 10,
+      "kind": "tenant-import",
+      "code": "import BaseModel from '../database/db.base.js';"
+    },
+    {
+      "file": "packages/api/src/tenant/model/RotationGroupTemplateLogModel.ts",
+      "line": 3,
+      "kind": "tenant-import",
+      "code": "import BaseModel from '../database/db.base.js';"
+    },
+    {
+      "file": "packages/api/src/tenant/model/RotationGroupTemplateModel.ts",
+      "line": 3,
+      "kind": "tenant-import",
+      "code": "import BaseModel from '../database/db.base.js';"
+    },
+    {
+      "file": "packages/api/src/tenant/model/RotationGroupsModel.ts",
+      "line": 11,
+      "kind": "tenant-import",
+      "code": "import BaseModel from '../database/db.base.js';"
+    },
+    {
+      "file": "packages/api/src/tenant/model/ScheduleAssignmentsLogModel.ts",
+      "line": 3,
+      "kind": "tenant-import",
+      "code": "import BaseModel from '../database/db.base.js';"
+    },
+    {
+      "file": "packages/api/src/tenant/model/ScheduleAssignmentsModel.ts",
+      "line": 10,
+      "kind": "tenant-import",
+      "code": "import BaseModel from '../database/db.base.js';"
+    },
+    {
+      "file": "packages/api/src/tenant/model/ScheduleSuggestionItemModel.ts",
+      "line": 3,
+      "kind": "tenant-import",
+      "code": "import BaseModel from '../database/db.base.js';"
+    },
+    {
+      "file": "packages/api/src/tenant/model/ScheduleSuggestionModel.ts",
+      "line": 3,
+      "kind": "tenant-import",
+      "code": "import BaseModel from '../database/db.base.js';"
+    },
+    {
+      "file": "packages/api/src/tenant/model/SessionModelModel.ts",
+      "line": 3,
+      "kind": "tenant-import",
+      "code": "import BaseModel from '../database/db.base.js';"
+    },
+    {
+      "file": "packages/api/src/tenant/model/SessionTemplatesModel.ts",
+      "line": 8,
+      "kind": "tenant-import",
+      "code": "import BaseModel from '../database/db.base.js';"
+    },
+    {
+      "file": "packages/api/src/tenant/model/SiteModel.ts",
+      "line": 10,
+      "kind": "tenant-import",
+      "code": "import BaseModel from '../database/db.base.js';"
+    },
+    {
+      "file": "packages/api/src/tenant/model/TimeEntriesModel.ts",
+      "line": 11,
+      "kind": "tenant-import",
+      "code": "import BaseModel from '../database/db.base.js';"
+    },
+    {
+      "file": "packages/api/src/tenant/model/UserModel.ts",
+      "line": 10,
+      "kind": "tenant-import",
+      "code": "import BaseModel from '../database/db.base.js';"
+    },
+    {
+      "file": "packages/api/src/tenant/model/UserRoleModel.ts",
+      "line": 3,
+      "kind": "tenant-import",
+      "code": "import BaseModel from '../database/db.base.js';"
+    },
+    {
+      "file": "packages/api/src/tenant/model/WorkSessionsModel.ts",
+      "line": 10,
+      "kind": "tenant-import",
+      "code": "import BaseModel from '../database/db.base.js';"
+    },
+    {
+      "file": "packages/api/src/tools/revision.ts",
+      "line": 6,
+      "kind": "tenant-import",
+      "code": "import TenantBaseModel from '../tenant/database/db.base.js';"
+    },
+    {
+      "file": "packages/api/src/tools/schedule.assignment.adjustment.service.ts",
+      "line": 6,
+      "kind": "tenant-import",
+      "code": "import { TableInitializer } from '../tenant/database/db.initializer.js';"
+    },
+    {
+      "file": "packages/api/src/tools/schedule.assignment.adjustment.service.ts",
+      "line": 7,
+      "kind": "tenant-import",
+      "code": "import TenantManager from '../tenant/database/db.tenant-manager.js';"
+    },
+    {
+      "file": "packages/api/src/tools/schedule.assignment.adjustment.service.ts",
+      "line": 232,
+      "kind": "indirect-access",
+      "code": "TableInitializer.getModel(tableName.SESSION_TEMPLATES)"
+    },
+    {
+      "file": "packages/api/src/tools/schedule.assignment.adjustment.service.ts",
+      "line": 529,
+      "kind": "indirect-access",
+      "code": "TableInitializer.getModel(tableName.SCHEDULE_ASSIGNMENTS)"
+    },
+    {
+      "file": "packages/api/src/tools/schedule.assignment.adjustment.service.ts",
+      "line": 540,
+      "kind": "indirect-access",
+      "code": "sequelize.transaction( { isolationLevel: Transaction.ISOLATION_LEVELS.SERIALIZABLE }, async (transaction) => { const templates = await loadCurrentTemplates(transaction); const catalog = buildServiceCatalogFromTemplates(t"
+    },
+    {
+      "file": "packages/api/src/tools/schedule.suggestion.approval.service.ts",
+      "line": 4,
+      "kind": "tenant-import",
+      "code": "import { TableInitializer } from '../tenant/database/db.initializer.js';"
+    },
+    {
+      "file": "packages/api/src/tools/schedule.suggestion.approval.service.ts",
+      "line": 5,
+      "kind": "tenant-import",
+      "code": "import TenantManager from '../tenant/database/db.tenant-manager.js';"
+    },
+    {
+      "file": "packages/api/src/tools/schedule.suggestion.approval.service.ts",
+      "line": 224,
+      "kind": "indirect-access",
+      "code": "TableInitializer.getModel(tableName.SCHEDULE_SUGGESTION)"
+    },
+    {
+      "file": "packages/api/src/tools/schedule.suggestion.approval.service.ts",
+      "line": 225,
+      "kind": "indirect-access",
+      "code": "TableInitializer.getModel(tableName.SCHEDULE_SUGGESTION_ITEM)"
+    },
+    {
+      "file": "packages/api/src/tools/schedule.suggestion.approval.service.ts",
+      "line": 226,
+      "kind": "indirect-access",
+      "code": "TableInitializer.getModel(tableName.SCHEDULE_ASSIGNMENTS)"
+    },
+    {
+      "file": "packages/api/src/tools/schedule.suggestion.approval.service.ts",
+      "line": 227,
+      "kind": "indirect-access",
+      "code": "TableInitializer.getModel(tableName.SESSION_TEMPLATES)"
+    },
+    {
+      "file": "packages/api/src/tools/schedule.suggestion.approval.service.ts",
+      "line": 228,
+      "kind": "indirect-access",
+      "code": "TableInitializer.getModel(tableName.USERS)"
+    },
+    {
+      "file": "packages/api/src/tools/schedule.suggestion.approval.service.ts",
+      "line": 238,
+      "kind": "indirect-access",
+      "code": "sequelize.transaction( { isolationLevel: Transaction.ISOLATION_LEVELS.SERIALIZABLE }, async (transaction) => { const suggestionInstance = await SuggestionModel.findOne({ where: { guid: suggestionGuid, deleted_at: null },"
+    },
+    {
+      "file": "packages/api/src/tools/schedule.suggestion.approval.service.ts",
+      "line": 396,
+      "kind": "indirect-access",
+      "code": "sequelize.query( `LOCK TABLE \"${tableName.SCHEDULE_ASSIGNMENTS}\" IN SHARE ROW EXCLUSIVE MODE`, { transaction }, )"
+    },
+    {
+      "file": "packages/api/src/utils/generate.database.ts",
+      "line": 3,
+      "kind": "tenant-import",
+      "code": "import { TableInitializer } from '../tenant/database/db.initializer.js';"
+    },
+    {
+      "file": "packages/api/src/utils/generate.database.ts",
+      "line": 4,
+      "kind": "tenant-import",
+      "code": "import TenantManager from '../tenant/database/db.tenant-manager.js';"
+    },
+    {
+      "file": "packages/api/src/utils/generate.database.ts",
+      "line": 28,
+      "kind": "indirect-access",
+      "code": "sequelize.query(` DO $$ BEGIN IF NOT EXISTS (SELECT FROM pg_roles WHERE rolname = '${database_username}') THEN EXECUTE format('CREATE ROLE %I WITH LOGIN PASSWORD %L', '${database_username}', '${database_password}'); END "
+    },
+    {
+      "file": "packages/api/src/utils/generate.database.ts",
+      "line": 39,
+      "kind": "indirect-access",
+      "code": "sequelize.query( `SELECT 1 FROM pg_database WHERE datname = '${database_name}'`, )"
+    },
+    {
+      "file": "packages/api/src/utils/generate.database.ts",
+      "line": 44,
+      "kind": "indirect-access",
+      "code": "sequelize.query(` CREATE DATABASE \"${database_name}\" OWNER \"${database_username}\" ENCODING 'UTF8' CONNECTION LIMIT -1; `)"
+    },
+    {
+      "file": "packages/api/src/utils/generate.database.ts",
+      "line": 53,
+      "kind": "indirect-access",
+      "code": "sequelize.query( `GRANT ALL PRIVILEGES ON DATABASE \"${database_name}\" TO \"${database_username}\";`, )"
+    },
+    {
+      "file": "packages/api/src/utils/generate.database.ts",
+      "line": 170,
+      "kind": "indirect-access",
+      "code": "TableInitializer.initialize(connection)"
+    },
+    {
+      "file": "packages/api/src/utils/generate.database.ts",
+      "line": 244,
+      "kind": "indirect-access",
+      "code": "sequelizeDb.query(`CREATE EXTENSION IF NOT EXISTS ${ext};`)"
+    },
+    {
+      "file": "packages/api/src/utils/schedule.suggestion.bulk-edit.service.ts",
+      "line": 3,
+      "kind": "tenant-import",
+      "code": "import { TableInitializer } from '../tenant/database/db.initializer.js';"
+    },
+    {
+      "file": "packages/api/src/utils/schedule.suggestion.bulk-edit.service.ts",
+      "line": 4,
+      "kind": "tenant-import",
+      "code": "import TenantManager from '../tenant/database/db.tenant-manager.js';"
+    },
+    {
+      "file": "packages/api/src/utils/schedule.suggestion.bulk-edit.service.ts",
+      "line": 555,
+      "kind": "indirect-access",
+      "code": "TableInitializer.getModel(tableName.SCHEDULE_SUGGESTION)"
+    },
+    {
+      "file": "packages/api/src/utils/schedule.suggestion.bulk-edit.service.ts",
+      "line": 556,
+      "kind": "indirect-access",
+      "code": "TableInitializer.getModel(tableName.SCHEDULE_SUGGESTION_ITEM)"
+    },
+    {
+      "file": "packages/api/src/utils/schedule.suggestion.bulk-edit.service.ts",
+      "line": 557,
+      "kind": "indirect-access",
+      "code": "TableInitializer.getModel(tableName.PLANNING_SUGGESTION_REQUIREMENT)"
+    },
+    {
+      "file": "packages/api/src/utils/schedule.suggestion.bulk-edit.service.ts",
+      "line": 558,
+      "kind": "indirect-access",
+      "code": "TableInitializer.getModel(tableName.SESSION_TEMPLATES)"
+    },
+    {
+      "file": "packages/api/src/utils/schedule.suggestion.bulk-edit.service.ts",
+      "line": 559,
+      "kind": "indirect-access",
+      "code": "TableInitializer.getModel(tableName.EMPLOYEE_PLANNING_PROFILE)"
+    },
+    {
+      "file": "packages/api/src/utils/schedule.suggestion.bulk-edit.service.ts",
+      "line": 560,
+      "kind": "indirect-access",
+      "code": "TableInitializer.getModel(tableName.PLANNING_SUGGESTION_CONFIG)"
+    },
+    {
+      "file": "packages/api/src/utils/schedule.suggestion.bulk-edit.service.ts",
+      "line": 561,
+      "kind": "indirect-access",
+      "code": "TableInitializer.getModel(tableName.USERS)"
+    },
+    {
+      "file": "packages/api/src/utils/schedule.suggestion.bulk-edit.service.ts",
+      "line": 1566,
+      "kind": "indirect-access",
+      "code": "sequelize.transaction( { isolationLevel: Transaction.ISOLATION_LEVELS.SERIALIZABLE }, async (transaction) => { const plan = await buildPlan(suggestionGuid, payload, transaction, true); if (plan.result.blockers.length > 0"
+    },
+    {
+      "file": "packages/api/src/utils/schedule.suggestion.regeneration.service.ts",
+      "line": 3,
+      "kind": "tenant-import",
+      "code": "import { TableInitializer } from '../tenant/database/db.initializer.js';"
+    },
+    {
+      "file": "packages/api/src/utils/schedule.suggestion.regeneration.service.ts",
+      "line": 4,
+      "kind": "tenant-import",
+      "code": "import TenantManager from '../tenant/database/db.tenant-manager.js';"
+    },
+    {
+      "file": "packages/api/src/utils/schedule.suggestion.regeneration.service.ts",
+      "line": 142,
+      "kind": "indirect-access",
+      "code": "TableInitializer.getModel(tableName.SCHEDULE_SUGGESTION)"
+    },
+    {
+      "file": "packages/api/src/utils/schedule.suggestion.regeneration.service.ts",
+      "line": 143,
+      "kind": "indirect-access",
+      "code": "TableInitializer.getModel(tableName.SCHEDULE_SUGGESTION_ITEM)"
+    },
+    {
+      "file": "packages/api/src/utils/schedule.suggestion.regeneration.service.ts",
+      "line": 144,
+      "kind": "indirect-access",
+      "code": "TableInitializer.getModel(tableName.USERS)"
+    },
+    {
+      "file": "packages/api/src/utils/schedule.suggestion.regeneration.service.ts",
+      "line": 145,
+      "kind": "indirect-access",
+      "code": "TableInitializer.getModel(tableName.EMPLOYEE_PLANNING_PROFILE)"
+    },
+    {
+      "file": "packages/api/src/utils/schedule.suggestion.regeneration.service.ts",
+      "line": 146,
+      "kind": "indirect-access",
+      "code": "TableInitializer.getModel(tableName.PLANNING_SUGGESTION_REQUIREMENT)"
+    },
+    {
+      "file": "packages/api/src/utils/schedule.suggestion.regeneration.service.ts",
+      "line": 147,
+      "kind": "indirect-access",
+      "code": "TableInitializer.getModel(tableName.SESSION_TEMPLATES)"
+    },
+    {
+      "file": "packages/api/src/utils/schedule.suggestion.regeneration.service.ts",
+      "line": 148,
+      "kind": "indirect-access",
+      "code": "TableInitializer.getModel(tableName.PLANNING_SUGGESTION_CONFIG)"
+    },
+    {
+      "file": "packages/api/src/utils/schedule.suggestion.regeneration.service.ts",
+      "line": 669,
+      "kind": "indirect-access",
+      "code": "sequelize.transaction( { isolationLevel: Transaction.ISOLATION_LEVELS.SERIALIZABLE }, async (transaction) => { const currentSuggestionInstance = await SuggestionModel.findOne({ where: { id: suggestion.id, deleted_at: nul"
+    }
+  ],
+  "asyncSites": [
+    {
+      "file": "packages/api/src/automate/automate.ts",
+      "line": 109,
+      "kind": "async-boundary",
+      "code": "cron.schedule( '0 0 * * *', async () => { console.log('[Automate] ⏰ Déclenchement rotation'); await runForAllTenants(); }, { timezone: 'Africa/Douala' }, )"
+    },
+    {
+      "file": "packages/api/src/master/routes/integrator.route.ts",
+      "line": 22,
+      "kind": "async-boundary",
+      "code": "redis.on('error', (err) => console.error('[integrator] Redis indisponible:', err.message))"
+    },
+    {
+      "file": "packages/api/src/tenant/app.ts",
+      "line": 99,
+      "kind": "async-boundary",
+      "code": "this.httpServer.on('error', (error: any) => { if (error.code === 'EADDRINUSE') { reject(new Error(`Port ${this.config.port} déjà utilisé`)); } else { reject(error); } })"
+    },
+    {
+      "file": "packages/api/src/tenant/app.ts",
+      "line": 341,
+      "kind": "async-boundary",
+      "code": "process.on('SIGTERM', () => shutdown('SIGTERM'))"
+    },
+    {
+      "file": "packages/api/src/tenant/app.ts",
+      "line": 342,
+      "kind": "async-boundary",
+      "code": "process.on('SIGINT', () => shutdown('SIGINT'))"
+    },
+    {
+      "file": "packages/api/src/tenant/app.ts",
+      "line": 345,
+      "kind": "async-boundary",
+      "code": "process.on('uncaughtException', (error) => { console.error('❌ Exception non gérée:', error); shutdown('UNCAUGHT_EXCEPTION'); })"
+    },
+    {
+      "file": "packages/api/src/tenant/app.ts",
+      "line": 350,
+      "kind": "async-boundary",
+      "code": "process.on('unhandledRejection', (reason) => { console.error('❌ Promise rejetée:', reason); shutdown('UNHANDLED_REJECTION'); })"
+    },
+    {
+      "file": "packages/api/src/tenant/class/AuditLogs.ts",
+      "line": 115,
+      "kind": "async-boundary",
+      "code": "Promise.all( tables.map(async (table) => { const stats = await model.getTableModificationStats(table, start_date, end_date); const count = await model.countLogsByPeriod(table, start_date, end_date); return { table_name: "
+    },
+    {
+      "file": "packages/api/src/tenant/class/Device.ts",
+      "line": 68,
+      "kind": "async-boundary",
+      "code": "Promise.all( devices.map(async (device) => await device.toJSON(responseValue.MINIMAL)), )"
+    },
+    {
+      "file": "packages/api/src/tenant/class/EventLog.ts",
+      "line": 64,
+      "kind": "async-boundary",
+      "code": "Promise.all(logs.map(async (log) => log.toJSON()))"
+    },
+    {
+      "file": "packages/api/src/tenant/class/Groups.ts",
+      "line": 120,
+      "kind": "async-boundary",
+      "code": "Promise.all(groups.map(async (group) => await group.toJSON()))"
+    },
+    {
+      "file": "packages/api/src/tenant/class/Groups.ts",
+      "line": 566,
+      "kind": "async-boundary",
+      "code": "Promise.all( memberObjs.map(async (member) => ({ id: member.getGuid(), name: member.getFullName(), })), )"
+    },
+    {
+      "file": "packages/api/src/tenant/class/Groups.ts",
+      "line": 732,
+      "kind": "async-boundary",
+      "code": "Promise.all( this.members.map(async (member) => { const userObj = await this.getMemberObj(member.user); return { user: userObj ? userObj.toPublicJSON() : null, joined_at: member.joined_at, active: member.active !== false"
+    },
+    {
+      "file": "packages/api/src/tenant/class/Groups.ts",
+      "line": 789,
+      "kind": "async-boundary",
+      "code": "Promise.all( this.members.map(async (member) => { const userObj = await this.getMemberObj(member.user); return { user: userObj ? userObj.toPublicJSON() : null, joined_at: member.joined_at, active: member.active !== false"
+    },
+    {
+      "file": "packages/api/src/tenant/class/Memos.ts",
+      "line": 137,
+      "kind": "async-boundary",
+      "code": "Promise.all(memos.map(async (memo) => await memo.toJSON(view)))"
+    },
+    {
+      "file": "packages/api/src/tenant/class/Memos.ts",
+      "line": 754,
+      "kind": "async-boundary",
+      "code": "Promise.all(entries.map(async (entry) => entry.getGuid()))"
+    },
+    {
+      "file": "packages/api/src/tenant/class/OrgHierarchy.ts",
+      "line": 115,
+      "kind": "async-boundary",
+      "code": "Promise.all( hierarchies.map(async (hierarchy) => await hierarchy.toJSON(responseValue.MINIMAL)), )"
+    },
+    {
+      "file": "packages/api/src/tenant/class/OrgHierarchy.ts",
+      "line": 391,
+      "kind": "async-boundary",
+      "code": "Promise.all( Array.from(employeesByGroup.entries()).map(async ([groups, employees]) => ({ group: groups, count: employees.length, employees: await Promise.all(employees.map(buildEmployee)), })), )"
+    },
+    {
+      "file": "packages/api/src/tenant/class/OrgHierarchy.ts",
+      "line": 395,
+      "kind": "async-boundary",
+      "code": "Promise.all(employees.map(buildEmployee))"
+    },
+    {
+      "file": "packages/api/src/tenant/class/OrgHierarchy.ts",
+      "line": 399,
+      "kind": "async-boundary",
+      "code": "Promise.all(employeesWithoutGroup.map(buildEmployee))"
+    },
+    {
+      "file": "packages/api/src/tenant/class/OrgHierarchy.ts",
+      "line": 401,
+      "kind": "async-boundary",
+      "code": "Promise.all( teamData.sub_managers.map(async (sub: any) => { return await this.normalizeTeam(sub.team, sub.manager); }), )"
+    },
+    {
+      "file": "packages/api/src/tenant/class/OrgHierarchy.ts",
+      "line": 974,
+      "kind": "async-boundary",
+      "code": "Promise.all(roles.map(async (r) => await r.toJSON(responseValue.MINIMAL)))"
+    },
+    {
+      "file": "packages/api/src/tenant/class/QrCodeGeneration.ts",
+      "line": 70,
+      "kind": "async-boundary",
+      "code": "Promise.all(qrCodes.map((qrCode) => qrCode.toJSON()))"
+    },
+    {
+      "file": "packages/api/src/tenant/class/RotationAssignments.ts",
+      "line": 87,
+      "kind": "async-boundary",
+      "code": "Promise.all(assignments.map(async (a) => await a.toJSON()))"
+    },
+    {
+      "file": "packages/api/src/tenant/class/RotationGroups.ts",
+      "line": 68,
+      "kind": "async-boundary",
+      "code": "Promise.all(groups.map(async (group) => await group.toJSON()))"
+    },
+    {
+      "file": "packages/api/src/tenant/class/ScheduleAssignments.ts",
+      "line": 100,
+      "kind": "async-boundary",
+      "code": "Promise.all(exceptions.map(async (exception) => await exception.toJSON()))"
+    },
+    {
+      "file": "packages/api/src/tenant/class/ScheduleAssignmentsLog.ts",
+      "line": 55,
+      "kind": "async-boundary",
+      "code": "Promise.all(logs.map(async (log) => log.toJSON()))"
+    },
+    {
+      "file": "packages/api/src/tenant/class/ScheduleSuggestion.ts",
+      "line": 238,
+      "kind": "async-boundary",
+      "code": "Promise.all(items.map((item) => item.toJSON()))"
+    },
+    {
+      "file": "packages/api/src/tenant/class/SessionModel.ts",
+      "line": 72,
+      "kind": "async-boundary",
+      "code": "Promise.all(models.map(async (model) => model.toJSON()))"
+    },
+    {
+      "file": "packages/api/src/tenant/class/SessionTemplates.ts",
+      "line": 59,
+      "kind": "async-boundary",
+      "code": "Promise.all(templates.map(async (template) => template.toJSON()))"
+    },
+    {
+      "file": "packages/api/src/tenant/class/Site.ts",
+      "line": 86,
+      "kind": "async-boundary",
+      "code": "Promise.all(sites.map((site) => site.toJSON(responseValue.MINIMAL)))"
+    },
+    {
+      "file": "packages/api/src/tenant/class/TimeEntries.ts",
+      "line": 122,
+      "kind": "async-boundary",
+      "code": "Promise.all(entries.map(async (entry) => await entry.toJSON()))"
+    },
+    {
+      "file": "packages/api/src/tenant/class/User.ts",
+      "line": 90,
+      "kind": "async-boundary",
+      "code": "Promise.all(users.map(async (user) => await user.toJSON()))"
+    },
+    {
+      "file": "packages/api/src/tenant/class/UserRole.ts",
+      "line": 82,
+      "kind": "async-boundary",
+      "code": "Promise.all(userRoles.map(async (userRole) => await userRole.toJSON()))"
+    },
+    {
+      "file": "packages/api/src/tenant/class/WorkSessions.ts",
+      "line": 80,
+      "kind": "async-boundary",
+      "code": "Promise.all(sessions.map(async (session) => await session.toJSON()))"
+    },
+    {
+      "file": "packages/api/src/tenant/class/WorkSessions.ts",
+      "line": 658,
+      "kind": "async-boundary",
+      "code": "Promise.all([ this.detectSpeedAnomalies(this.id), this.detectDurationAnomalies(), ])"
+    },
+    {
+      "file": "packages/api/src/tenant/model/DeviceModel.ts",
+      "line": 138,
+      "kind": "async-boundary",
+      "code": "Promise.all([ this.count(this.db.tableName, {}), this.count(this.db.tableName, { [this.db.active]: true }), this.countByGroup(this.db.tableName, this.db.device_type, { [this.db.active]: true }), this.countByGroup(this.db"
+    },
+    {
+      "file": "packages/api/src/tenant/model/FraudAlertsModel.ts",
+      "line": 180,
+      "kind": "async-boundary",
+      "code": "Promise.all([ this.count(this.db.tableName, conditions), this.countByGroup(this.db.tableName, this.db.alert_severity, conditions), this.countByGroup(this.db.tableName, this.db.alert_type, conditions), this.count(this.db."
+    },
+    {
+      "file": "packages/api/src/tenant/model/MemosModel.ts",
+      "line": 746,
+      "kind": "async-boundary",
+      "code": "Promise.all([ this.count(this.db.tableName, filters), this.count(this.db.tableName, { ...filters, [this.db.memo_status]: MemoStatus.PENDING, }), this.count(this.db.tableName, { ...filters, [this.db.memo_status]: MemoStat"
+    },
+    {
+      "file": "packages/api/src/tenant/model/OrgHierarchyModel.ts",
+      "line": 211,
+      "kind": "async-boundary",
+      "code": "Promise.all([ this.count(this.db.tableName, {}), this.count(this.db.tableName, { [this.db.effective_from]: { [Op.lte]: currentDate }, [Op.or]: [ { [this.db.effective_to]: null }, { [this.db.effective_to]: { [Op.gte]: cur"
+    },
+    {
+      "file": "packages/api/src/tenant/model/QrCodeGenerationModel.ts",
+      "line": 212,
+      "kind": "async-boundary",
+      "code": "Promise.all([ // Total de tous les QR codes this.count(this.db.tableName, filters), // QR codes actifs : valid_from <= now ET (valid_to >= now ou null) this.count(this.db.tableName, { ...filters, [Op.and]: [ { [Op.or]: ["
+    },
+    {
+      "file": "packages/api/src/tenant/model/SiteModel.ts",
+      "line": 285,
+      "kind": "async-boundary",
+      "code": "Promise.all([ this.count(this.db.tableName, {}), this.count(this.db.tableName, { [this.db.active]: true }), this.countByGroup(this.db.tableName, this.db.site_type, { [this.db.active]: true }), this.countByGroup(this.db.t"
+    },
+    {
+      "file": "packages/api/src/tenant/model/TimeEntriesModel.ts",
+      "line": 564,
+      "kind": "async-boundary",
+      "code": "Promise.all([ this.count(this.db.tableName, filters), this.count(this.db.tableName, { ...filters, [this.db.created_offline]: true }), this.count(this.db.tableName, { ...filters, [this.db.pointage_status]: PointageStatus."
+    },
+    {
+      "file": "packages/api/src/tenant/model/WorkSessionsModel.ts",
+      "line": 246,
+      "kind": "async-boundary",
+      "code": "Promise.all([ this.count(this.db.tableName, filters), this.count(this.db.tableName, { ...filters, [this.db.session_status]: SessionStatus.OPEN }), this.countByGroup(this.db.tableName, this.db.session_status, filters), th"
+    },
+    {
+      "file": "packages/api/src/tenant/modules/attendance-statistics/application/attendance-statistics.service.ts",
+      "line": 198,
+      "kind": "async-boundary",
+      "code": "Promise.all(workers)"
+    },
+    {
+      "file": "packages/api/src/tenant/modules/attendance-statistics/infrastructure/tenant-attendance-statistics.adapter.ts",
+      "line": 641,
+      "kind": "async-boundary",
+      "code": "Promise.all(workers)"
+    },
+    {
+      "file": "packages/api/src/tenant/routes/attendance.stat.route.ts",
+      "line": 175,
+      "kind": "async-boundary",
+      "code": "Promise.all( teamMembers.map(async (userId) => { const userCache: ScheduleCache = new Map(); for (const d of periodDates) { const dateKey = d.toISOString().split('T')[0]; const result = await ScheduleResolutionService.ge"
+    },
+    {
+      "file": "packages/api/src/tenant/routes/attendance.stat.route.ts",
+      "line": 192,
+      "kind": "async-boundary",
+      "code": "Promise.all( periodSessions.map(async (session) => { const pauseMin = await session.getTotalPauseTime(); sessionPauseMinutes.set(session.getId()!, pauseMin); }), )"
+    },
+    {
+      "file": "packages/api/src/tenant/routes/attendance.stat.route.ts",
+      "line": 1534,
+      "kind": "async-boundary",
+      "code": "Promise.all( teamMembers.map(async (userId) => { const userCache: ScheduleCache = new Map(); for (const d of periodDates) { const dateKey = d.toISOString().split('T')[0]; const result = await ScheduleResolutionService.ge"
+    },
+    {
+      "file": "packages/api/src/tenant/routes/attendance.stat.route.ts",
+      "line": 1548,
+      "kind": "async-boundary",
+      "code": "Promise.all( periodSessions.map(async (session) => { const pauseMin = await session.getTotalPauseTime(); sessionPauseMinutes.set(session.getId()!, pauseMin); }), )"
+    },
+    {
+      "file": "packages/api/src/tenant/routes/audit.logs.route.ts",
+      "line": 29,
+      "kind": "async-boundary",
+      "code": "Promise.all(logs.map(async (log) => await log.toJSON()))"
+    },
+    {
+      "file": "packages/api/src/tenant/routes/audit.logs.route.ts",
+      "line": 83,
+      "kind": "async-boundary",
+      "code": "Promise.all(logs.map(async (log) => await log.toJSON()))"
+    },
+    {
+      "file": "packages/api/src/tenant/routes/audit.logs.route.ts",
+      "line": 150,
+      "kind": "async-boundary",
+      "code": "Promise.all(paginatedLogs.map(async (log) => await log.toJSON()))"
+    },
+    {
+      "file": "packages/api/src/tenant/routes/audit.logs.route.ts",
+      "line": 198,
+      "kind": "async-boundary",
+      "code": "Promise.all(paginatedLogs.map(async (log) => await log.toJSON()))"
+    },
+    {
+      "file": "packages/api/src/tenant/routes/audit.logs.route.ts",
+      "line": 242,
+      "kind": "async-boundary",
+      "code": "Promise.all(logs.map(async (log) => await log.toJSON()))"
+    },
+    {
+      "file": "packages/api/src/tenant/routes/audit.logs.route.ts",
+      "line": 425,
+      "kind": "async-boundary",
+      "code": "Promise.all(logs.map(async (log) => await log.toJSON()))"
+    },
+    {
+      "file": "packages/api/src/tenant/routes/auth.route.ts",
+      "line": 223,
+      "kind": "async-boundary",
+      "code": "Promise.all([ Role._load(RoleValues.ADMIN, false, true), Role._load(RoleValues.MANAGER, false, true), ])"
+    },
+    {
+      "file": "packages/api/src/tenant/routes/device.route.ts",
+      "line": 98,
+      "kind": "async-boundary",
+      "code": "Promise.all(deviceEntries.map(async (device) => await device.toJSON()))"
+    },
+    {
+      "file": "packages/api/src/tenant/routes/device.route.ts",
+      "line": 136,
+      "kind": "async-boundary",
+      "code": "Promise.all( deviceEntries.map(async (device) => await device.toJSON(responseValue.MINIMAL)), )"
+    },
+    {
+      "file": "packages/api/src/tenant/routes/device.route.ts",
+      "line": 173,
+      "kind": "async-boundary",
+      "code": "Promise.all( paginatedItems.map(async (device) => await device.toJSON(responseValue.MINIMAL)), )"
+    },
+    {
+      "file": "packages/api/src/tenant/routes/device.route.ts",
+      "line": 470,
+      "kind": "async-boundary",
+      "code": "Promise.all( deviceEntries.map(async (device) => await device.toJSON(responseValue.MINIMAL)), )"
+    },
+    {
+      "file": "packages/api/src/tenant/routes/device.route.ts",
+      "line": 514,
+      "kind": "async-boundary",
+      "code": "Promise.all( deviceEntries.map(async (device) => await device.toJSON(responseValue.MINIMAL)), )"
+    },
+    {
+      "file": "packages/api/src/tenant/routes/employee.planning.profile.route.ts",
+      "line": 35,
+      "kind": "async-boundary",
+      "code": "Promise.all(profiles.map((profile) => profile.toJSON()))"
+    },
+    {
+      "file": "packages/api/src/tenant/routes/fraud.alerts.route.ts",
+      "line": 34,
+      "kind": "async-boundary",
+      "code": "Promise.all(alerts.map(async (alert) => await alert.toJSON(views)))"
+    },
+    {
+      "file": "packages/api/src/tenant/routes/fraud.alerts.route.ts",
+      "line": 84,
+      "kind": "async-boundary",
+      "code": "Promise.all(paginatedAlerts.map(async (alert) => await alert.toJSON(views)))"
+    },
+    {
+      "file": "packages/api/src/tenant/routes/fraud.alerts.route.ts",
+      "line": 114,
+      "kind": "async-boundary",
+      "code": "Promise.all(alerts.map(async (alert) => await alert.toJSON(views)))"
+    },
+    {
+      "file": "packages/api/src/tenant/routes/fraud.alerts.route.ts",
+      "line": 191,
+      "kind": "async-boundary",
+      "code": "Promise.all(paginatedAlerts.map(async (alert) => await alert.toJSON(views)))"
+    },
+    {
+      "file": "packages/api/src/tenant/routes/fraud.alerts.route.ts",
+      "line": 235,
+      "kind": "async-boundary",
+      "code": "Promise.all(alerts.map(async (alert) => await alert.toJSON(views)))"
+    },
+    {
+      "file": "packages/api/src/tenant/routes/groups.route.ts",
+      "line": 144,
+      "kind": "async-boundary",
+      "code": "Promise.all(groupsEntries.map((group) => group.toJSON()))"
+    },
+    {
+      "file": "packages/api/src/tenant/routes/groups.route.ts",
+      "line": 195,
+      "kind": "async-boundary",
+      "code": "Promise.all(groupsEntries.map((group) => group.toJSON()))"
+    },
+    {
+      "file": "packages/api/src/tenant/routes/groups.route.ts",
+      "line": 240,
+      "kind": "async-boundary",
+      "code": "Promise.all(groupsEntries.map((group) => group.toJSON()))"
+    },
+    {
+      "file": "packages/api/src/tenant/routes/groups.route.ts",
+      "line": 974,
+      "kind": "async-boundary",
+      "code": "Promise.all( uniqueMembers.map(async (member) => await member.toJSON(responseValue.MINIMAL)), )"
+    },
+    {
+      "file": "packages/api/src/tenant/routes/groups.route.ts",
+      "line": 1165,
+      "kind": "async-boundary",
+      "code": "Promise.all( directMembers.map(async (member) => await member.toJSON(responseValue.MINIMAL)), )"
+    },
+    {
+      "file": "packages/api/src/tenant/routes/groups.route.ts",
+      "line": 1225,
+      "kind": "async-boundary",
+      "code": "Promise.all( allMembers.map(async (member) => await member.toJSON(responseValue.MINIMAL)), )"
+    },
+    {
+      "file": "packages/api/src/tenant/routes/groups.route.ts",
+      "line": 1342,
+      "kind": "async-boundary",
+      "code": "Promise.all( directMembers.map(async (member) => await member.toJSON(responseValue.MINIMAL)), )"
+    },
+    {
+      "file": "packages/api/src/tenant/routes/groups.route.ts",
+      "line": 1421,
+      "kind": "async-boundary",
+      "code": "Promise.all(allSchedules.map((s) => s.toJSON(responseValue.MINIMAL)))"
+    },
+    {
+      "file": "packages/api/src/tenant/routes/groups.route.ts",
+      "line": 1425,
+      "kind": "async-boundary",
+      "code": "Promise.all(allRotations.map((r) => r.toJSON(responseValue.MINIMAL)))"
+    },
+    {
+      "file": "packages/api/src/tenant/routes/memos.route.ts",
+      "line": 53,
+      "kind": "async-boundary",
+      "code": "Promise.all([ memoObj.getAuthorObj(), memoObj.getTargetObj(), memoObj.getValidatorObj(), ])"
+    },
+    {
+      "file": "packages/api/src/tenant/routes/memos.route.ts",
+      "line": 268,
+      "kind": "async-boundary",
+      "code": "Promise.all(memoEntries.map(async (memo) => await memo.toJSON(views)))"
+    },
+    {
+      "file": "packages/api/src/tenant/routes/memos.route.ts",
+      "line": 308,
+      "kind": "async-boundary",
+      "code": "Promise.all(memoEntries.map(async (memo) => await memo.toJSON(views)))"
+    },
+    {
+      "file": "packages/api/src/tenant/routes/memos.route.ts",
+      "line": 341,
+      "kind": "async-boundary",
+      "code": "Promise.all(memoEntries.map(async (memo) => await memo.toJSON(views)))"
+    },
+    {
+      "file": "packages/api/src/tenant/routes/memos.route.ts",
+      "line": 378,
+      "kind": "async-boundary",
+      "code": "Promise.all(paginatedItems.map(async (memo) => await memo.toJSON(views)))"
+    },
+    {
+      "file": "packages/api/src/tenant/routes/memos.route.ts",
+      "line": 438,
+      "kind": "async-boundary",
+      "code": "Promise.all(memoEntries.map(async (memo) => await memo.toJSON(views)))"
+    },
+    {
+      "file": "packages/api/src/tenant/routes/memos.route.ts",
+      "line": 488,
+      "kind": "async-boundary",
+      "code": "Promise.all( memoEntries // .filter((m) => m.getValidatorComments()?.includes('Escaladed:')) .map(async (memo) => await memo.toJSON(views)), )"
+    },
+    {
+      "file": "packages/api/src/tenant/routes/memos.route.ts",
+      "line": 516,
+      "kind": "async-boundary",
+      "code": "Promise.all(memoEntries.map(async (memo) => await memo.toJSON(views)))"
+    },
+    {
+      "file": "packages/api/src/tenant/routes/memos.route.ts",
+      "line": 538,
+      "kind": "async-boundary",
+      "code": "Promise.all( memoEntries.map(async (memo) => ({ ...(await memo.toJSON(views)), is_urgent: memo.isUrgent(), incident_datetime: memo.getIncidentDatetime(), })), )"
+    },
+    {
+      "file": "packages/api/src/tenant/routes/memos.route.ts",
+      "line": 827,
+      "kind": "async-boundary",
+      "code": "Promise.all( memoData.affected_entries.map(async (entry) => { const sessionObj = await TimeEntries._load(entry, true); return sessionObj?.getId() ?? null; }), )"
+    },
+    {
+      "file": "packages/api/src/tenant/routes/memos.route.ts",
+      "line": 914,
+      "kind": "async-boundary",
+      "code": "Promise.all(memoEntries.map(async (memo) => await memo.toJSON(views)))"
+    },
+    {
+      "file": "packages/api/src/tenant/routes/memos.route.ts",
+      "line": 973,
+      "kind": "async-boundary",
+      "code": "Promise.all(memoEntries.map(async (memo) => await memo.toJSON(views)))"
+    },
+    {
+      "file": "packages/api/src/tenant/routes/memos.route.ts",
+      "line": 976,
+      "kind": "async-boundary",
+      "code": "Promise.all(targetMemoEntries.map(async (memo) => await memo.toJSON(views)))"
+    },
+    {
+      "file": "packages/api/src/tenant/routes/memos.route.ts",
+      "line": 1527,
+      "kind": "async-boundary",
+      "code": "Promise.all( guids.map(async (guid) => { const memoObj = await Memos._load(guid, true); if (!memoObj) { return R.handleError(res, HttpStatus.NOT_FOUND, { code: MEMOS_CODES.MEMO_NOT_FOUND, message: `${MEMOS_ERRORS.NOT_FOU"
+    },
+    {
+      "file": "packages/api/src/tenant/routes/memos.route.ts",
+      "line": 1939,
+      "kind": "async-boundary",
+      "code": "Promise.all(memoEntries.map(async (memo) => await memo.toJSON(views)))"
+    },
+    {
+      "file": "packages/api/src/tenant/routes/memos.route.ts",
+      "line": 1977,
+      "kind": "async-boundary",
+      "code": "Promise.all(memoEntries.map(async (memo) => await memo.toJSON(views)))"
+    },
+    {
+      "file": "packages/api/src/tenant/routes/memos.route.ts",
+      "line": 2014,
+      "kind": "async-boundary",
+      "code": "Promise.all(memoEntries.map(async (memo) => await memo.toJSON(responseValue.FULL)))"
+    },
+    {
+      "file": "packages/api/src/tenant/routes/memos.route.ts",
+      "line": 2058,
+      "kind": "async-boundary",
+      "code": "Promise.all(memoEntries.map(async (memo) => await memo.toJSON(responseValue.FULL)))"
+    },
+    {
+      "file": "packages/api/src/tenant/routes/memos.route.ts",
+      "line": 2096,
+      "kind": "async-boundary",
+      "code": "Promise.all( memoEntries.map(async (memo) => ({ ...(await memo.toJSON(responseValue.FULL)), is_preventive: memo.isPreventive(), })), )"
+    },
+    {
+      "file": "packages/api/src/tenant/routes/memos.route.ts",
+      "line": 2139,
+      "kind": "async-boundary",
+      "code": "Promise.all( memoEntries.map(async (memo) => ({ ...(await memo.toJSON(responseValue.FULL)), is_corrective: memo.isCorrective(), })), )"
+    },
+    {
+      "file": "packages/api/src/tenant/routes/org.hierarchy.route.ts",
+      "line": 98,
+      "kind": "async-boundary",
+      "code": "Promise.all(hierarchyEntries.map(async (hierarchy) => await hierarchy.toJSON()))"
+    },
+    {
+      "file": "packages/api/src/tenant/routes/org.hierarchy.route.ts",
+      "line": 141,
+      "kind": "async-boundary",
+      "code": "Promise.all(paginatedItems.map(async (hierarchy) => await hierarchy.toJSON()))"
+    },
+    {
+      "file": "packages/api/src/tenant/routes/org.hierarchy.route.ts",
+      "line": 465,
+      "kind": "async-boundary",
+      "code": "Promise.all( hierarchyEntries.map( async (hierarchy) => await hierarchy.toJSON(responseValue.MINIMAL), ), )"
+    },
+    {
+      "file": "packages/api/src/tenant/routes/org.hierarchy.route.ts",
+      "line": 533,
+      "kind": "async-boundary",
+      "code": "Promise.all( teamData.direct_employees.map(async (e) => ({ user: await e.user.toJSON(responseValue.FULL), in_group: e.in_group, groups: e.groups, })), )"
+    },
+    {
+      "file": "packages/api/src/tenant/routes/org.hierarchy.route.ts",
+      "line": 540,
+      "kind": "async-boundary",
+      "code": "Promise.all( teamData.sub_managers.map(async (m) => await m.manager.toJSON(responseValue.FULL)), )"
+    },
+    {
+      "file": "packages/api/src/tenant/routes/org.hierarchy.route.ts",
+      "line": 665,
+      "kind": "async-boundary",
+      "code": "Promise.all( activeEmployees.map(async (e) => ({ user: await e.user.toJSON(responseValue.FULL), in_group: e.in_group, group: e.groups, })), )"
+    },
+    {
+      "file": "packages/api/src/tenant/routes/org.hierarchy.route.ts",
+      "line": 781,
+      "kind": "async-boundary",
+      "code": "Promise.all(paginatedItems.map(async (hierarchy) => await hierarchy.toJSON()))"
+    },
+    {
+      "file": "packages/api/src/tenant/routes/org.hierarchy.route.ts",
+      "line": 862,
+      "kind": "async-boundary",
+      "code": "Promise.all( peers.map(async (peer: any) => { const roles = await UserRole.getUserRoles(peer.id); return { ...peer.toJSON(), roles: { count: roles.length, items: roles ? roles.map((r) => r.toJSON()) : [], }, }; }), )"
+    },
+    {
+      "file": "packages/api/src/tenant/routes/planning.suggestion.config.route.ts",
+      "line": 33,
+      "kind": "async-boundary",
+      "code": "Promise.all(configs.map((config) => config.toJSON()))"
+    },
+    {
+      "file": "packages/api/src/tenant/routes/planning.suggestion.requirement.route.ts",
+      "line": 131,
+      "kind": "async-boundary",
+      "code": "Promise.all(requirements.map((requirement) => requirement.toJSON()))"
+    },
+    {
+      "file": "packages/api/src/tenant/routes/qr.code.route.ts",
+      "line": 333,
+      "kind": "async-boundary",
+      "code": "Promise.all((qrCodeEntries ?? []).map((qrCode) => qrCode.toJSON()))"
+    },
+    {
+      "file": "packages/api/src/tenant/routes/qr.code.route.ts",
+      "line": 374,
+      "kind": "async-boundary",
+      "code": "Promise.all((qrCodeEntries ?? []).map((qrCode) => qrCode.toJSON()))"
+    },
+    {
+      "file": "packages/api/src/tenant/routes/qr.code.route.ts",
+      "line": 418,
+      "kind": "async-boundary",
+      "code": "Promise.all((qrCodeEntries ?? []).map((qrCode) => qrCode.toJSON()))"
+    },
+    {
+      "file": "packages/api/src/tenant/routes/rotation.assignments.route.ts",
+      "line": 125,
+      "kind": "async-boundary",
+      "code": "Promise.all(assignmentList.map(async (a) => await a.toJSON(views)))"
+    },
+    {
+      "file": "packages/api/src/tenant/routes/rotation.assignments.route.ts",
+      "line": 181,
+      "kind": "async-boundary",
+      "code": "Promise.all(rotationAssignments.map(async (a) => await a.toJSON()))"
+    },
+    {
+      "file": "packages/api/src/tenant/routes/rotation.assignments.route.ts",
+      "line": 389,
+      "kind": "async-boundary",
+      "code": "Promise.all(assignmentList.map(async (a) => await a.toJSON(views)))"
+    },
+    {
+      "file": "packages/api/src/tenant/routes/rotation.assignments.route.ts",
+      "line": 508,
+      "kind": "async-boundary",
+      "code": "Promise.all(assignmentList.map(async (a) => await a.toJSON(views)))"
+    },
+    {
+      "file": "packages/api/src/tenant/routes/rotation.groups.route.ts",
+      "line": 118,
+      "kind": "async-boundary",
+      "code": "Promise.all(groupList.map(async (g) => await g.toJSON(views)))"
+    },
+    {
+      "file": "packages/api/src/tenant/routes/rotation.groups.route.ts",
+      "line": 580,
+      "kind": "async-boundary",
+      "code": "Promise.all(assignments.map(async (a) => await a.toJSON(views)))"
+    },
+    {
+      "file": "packages/api/src/tenant/routes/rotation.groups.route.ts",
+      "line": 620,
+      "kind": "async-boundary",
+      "code": "Promise.all([ RotationAssignment._listByRotationGroup(groupObj.getId()!), groupObj.getCycleSlots(), ])"
+    },
+    {
+      "file": "packages/api/src/tenant/routes/schedule.assignments.route.ts",
+      "line": 156,
+      "kind": "async-boundary",
+      "code": "Promise.all(assignmentList.map(async (e) => await e.toJSON(views)))"
+    },
+    {
+      "file": "packages/api/src/tenant/routes/schedule.assignments.route.ts",
+      "line": 215,
+      "kind": "async-boundary",
+      "code": "Promise.all(scheduleAssignments.map(async (a) => await a.toJSON()))"
+    },
+    {
+      "file": "packages/api/src/tenant/routes/schedule.assignments.route.ts",
+      "line": 578,
+      "kind": "async-boundary",
+      "code": "Promise.all(assignmentList.map(async (e) => await e.toJSON(views)))"
+    },
+    {
+      "file": "packages/api/src/tenant/routes/schedule.assignments.route.ts",
+      "line": 635,
+      "kind": "async-boundary",
+      "code": "Promise.all(assignmentList.map(async (e) => await e.toJSON(views)))"
+    },
+    {
+      "file": "packages/api/src/tenant/routes/schedule.assignments.route.ts",
+      "line": 691,
+      "kind": "async-boundary",
+      "code": "Promise.all(assignmentList.map(async (e) => await e.toJSON(views)))"
+    },
+    {
+      "file": "packages/api/src/tenant/routes/schedule.assignments.route.ts",
+      "line": 743,
+      "kind": "async-boundary",
+      "code": "Promise.all(assignmentList.map(async (e) => await e.toJSON(views)))"
+    },
+    {
+      "file": "packages/api/src/tenant/routes/schedule.assignments.route.ts",
+      "line": 786,
+      "kind": "async-boundary",
+      "code": "Promise.all(activeAssignments.map(async (e) => await e.toJSON(views)))"
+    },
+    {
+      "file": "packages/api/src/tenant/routes/schedule.suggestion.route.ts",
+      "line": 434,
+      "kind": "async-boundary",
+      "code": "Promise.all(suggestions.map((s) => s.toJSON(responseValue.FULL, false)))"
+    },
+    {
+      "file": "packages/api/src/tenant/routes/schedule.suggestion.route0.ts",
+      "line": 155,
+      "kind": "async-boundary",
+      "code": "Promise.all(suggestions.map((s) => s.toJSON(responseValue.FULL, false)))"
+    },
+    {
+      "file": "packages/api/src/tenant/routes/session.model.route.ts",
+      "line": 133,
+      "kind": "async-boundary",
+      "code": "Promise.all(modelList.map(async (m) => m.toJSON(views)))"
+    },
+    {
+      "file": "packages/api/src/tenant/routes/session.model.route.ts",
+      "line": 170,
+      "kind": "async-boundary",
+      "code": "Promise.all(modelList.map(async (m) => m.toJSON(views)))"
+    },
+    {
+      "file": "packages/api/src/tenant/routes/session.model.route.ts",
+      "line": 201,
+      "kind": "async-boundary",
+      "code": "Promise.all(modelList.map(async (m) => m.toJSON(views)))"
+    },
+    {
+      "file": "packages/api/src/tenant/routes/session.model.route.ts",
+      "line": 238,
+      "kind": "async-boundary",
+      "code": "Promise.all(modelList.map(async (m) => m.toJSON(views)))"
+    },
+    {
+      "file": "packages/api/src/tenant/routes/session.templates.route.ts",
+      "line": 118,
+      "kind": "async-boundary",
+      "code": "Promise.all(templateList.map(async (t) => t.toJSON(views)))"
+    },
+    {
+      "file": "packages/api/src/tenant/routes/session.templates.route.ts",
+      "line": 160,
+      "kind": "async-boundary",
+      "code": "Promise.all(templateList.map(async (t) => t.toJSON(views)))"
+    },
+    {
+      "file": "packages/api/src/tenant/routes/sites.route.ts",
+      "line": 106,
+      "kind": "async-boundary",
+      "code": "Promise.all( siteEntries.map(async (site) => await site.toJSON(responseValue.MINIMAL)), )"
+    },
+    {
+      "file": "packages/api/src/tenant/routes/sites.route.ts",
+      "line": 146,
+      "kind": "async-boundary",
+      "code": "Promise.all( siteEntries.map(async (site) => await site.toJSON(responseValue.MINIMAL)), )"
+    },
+    {
+      "file": "packages/api/src/tenant/routes/sites.route.ts",
+      "line": 184,
+      "kind": "async-boundary",
+      "code": "Promise.all( paginatedItems.map(async (site) => await site.toJSON(responseValue.MINIMAL)), )"
+    },
+    {
+      "file": "packages/api/src/tenant/routes/sites.route.ts",
+      "line": 204,
+      "kind": "async-boundary",
+      "code": "Promise.all( siteEntries.map(async (site) => await site.toJSON(responseValue.MINIMAL)), )"
+    },
+    {
+      "file": "packages/api/src/tenant/routes/sites.route.ts",
+      "line": 519,
+      "kind": "async-boundary",
+      "code": "Promise.all( siteEntries.map(async (site) => await site.toJSON(responseValue.MINIMAL)), )"
+    },
+    {
+      "file": "packages/api/src/tenant/routes/sites.route.ts",
+      "line": 562,
+      "kind": "async-boundary",
+      "code": "Promise.all( siteEntries.map(async (site) => await site.toJSON(responseValue.MINIMAL)), )"
+    },
+    {
+      "file": "packages/api/src/tenant/routes/sites.route.ts",
+      "line": 692,
+      "kind": "async-boundary",
+      "code": "Promise.all( expiringSites.map(async (site) => ({ ...(await site.toJSON(responseValue.MINIMAL)), days_until_expiration: site.getDaysUntilExpiration(), })), )"
+    },
+    {
+      "file": "packages/api/src/tenant/routes/time.entries.route.ts",
+      "line": 153,
+      "kind": "async-boundary",
+      "code": "Promise.all(entryList.map(async (entry) => await entry.toJSON(views)))"
+    },
+    {
+      "file": "packages/api/src/tenant/routes/time.entries.route.ts",
+      "line": 1209,
+      "kind": "async-boundary",
+      "code": "Promise.all( entryList.map(async (entry) => await entry.toJSON(responseValue.MINIMAL)), )"
+    },
+    {
+      "file": "packages/api/src/tenant/routes/time.entries.route.ts",
+      "line": 1268,
+      "kind": "async-boundary",
+      "code": "Promise.all(entryList.map(async (entry) => await entry.toJSON(views)))"
+    },
+    {
+      "file": "packages/api/src/tenant/routes/time.entries.route.ts",
+      "line": 1312,
+      "kind": "async-boundary",
+      "code": "Promise.all(offlineEntries.map(async (entry) => await entry.toJSON(views)))"
+    },
+    {
+      "file": "packages/api/src/tenant/routes/time.entries.route.ts",
+      "line": 1365,
+      "kind": "async-boundary",
+      "code": "Promise.all(fallbackCheckin.map(async (entry) => await entry.toJSON(views)))"
+    },
+    {
+      "file": "packages/api/src/tenant/routes/time.entries.route.ts",
+      "line": 1390,
+      "kind": "async-boundary",
+      "code": "Promise.all(pendingEntries.map(async (entry) => await entry.toJSON(views)))"
+    },
+    {
+      "file": "packages/api/src/tenant/routes/time.entries.route.ts",
+      "line": 1490,
+      "kind": "async-boundary",
+      "code": "Promise.all( guids.map(async (guid) => { const timeEntriesObj = await TimeEntries._load(guid, true); if (!timeEntriesObj) { return R.handleError(res, HttpStatus.NOT_FOUND, { code: TIME_ENTRIES_CODES.TIME_ENTRY_NOT_FOUND,"
+    },
+    {
+      "file": "packages/api/src/tenant/routes/time.entries.route.ts",
+      "line": 1910,
+      "kind": "async-boundary",
+      "code": "Promise.all( sessions.map(async (session) => { const empId = session.getUser()!; const emp = await User._load(empId); const sessionSite = await Site._load(session.getSite()!); const sessionData = await session.toJSON(res"
+    },
+    {
+      "file": "packages/api/src/tenant/routes/time.entries.route.ts",
+      "line": 2055,
+      "kind": "async-boundary",
+      "code": "Promise.all( sessions.map(async (session) => { totalSessions++; const sessionSite = await Site._load(session.getSite()!); const sessionData = await session.toJSON(responseValue.MINIMAL); // Stats par site const siteId = "
+    },
+    {
+      "file": "packages/api/src/tenant/routes/time.entries.route.ts",
+      "line": 2107,
+      "kind": "async-boundary",
+      "code": "Promise.all(entries.map(async (e) => await e.toJSON(views)))"
+    },
+    {
+      "file": "packages/api/src/tenant/routes/time.entries.route.ts",
+      "line": 2129,
+      "kind": "async-boundary",
+      "code": "Promise.all( Object.entries(sessionsBySite) .sort(([, a], [, b]) => b - a) .slice(0, 3) .map(async ([siteId, count]) => { const site = await Site._load(Number(siteId)); return { site: site ? await site.toJSON(responseVal"
+    },
+    {
+      "file": "packages/api/src/tenant/routes/time.entries.route.ts",
+      "line": 2253,
+      "kind": "async-boundary",
+      "code": "Promise.all( entries.map(async (entry) => { statistics.total++; const type = entry.getPointageType()!; const status = entry.getPointageStatus()!; statistics.by_type[type] = (statistics.by_type[type] || 0) + 1; statistics"
+    },
+    {
+      "file": "packages/api/src/tenant/routes/time.entries.route.ts",
+      "line": 2561,
+      "kind": "async-boundary",
+      "code": "Promise.all( entries.map(async (entry) => { enrichedEntries.push(await entry.toJSON(responseValue.FULL)); }), )"
+    },
+    {
+      "file": "packages/api/src/tenant/routes/time.entries.route.ts",
+      "line": 2701,
+      "kind": "async-boundary",
+      "code": "Promise.all( entries.map(async (entry) => { enrichedEntries.push(await entry.toJSONMIN(responseValue.FULL)); }), )"
+    },
+    {
+      "file": "packages/api/src/tenant/routes/user.role.route.ts",
+      "line": 97,
+      "kind": "async-boundary",
+      "code": "Promise.all(userRoleEntries.map(async (userRole) => await userRole.toJSON()))"
+    },
+    {
+      "file": "packages/api/src/tenant/routes/user.role.route.ts",
+      "line": 240,
+      "kind": "async-boundary",
+      "code": "Promise.all(userRoleEntries.map(async (userRole) => await userRole.toJSON()))"
+    },
+    {
+      "file": "packages/api/src/tenant/routes/user.role.route.ts",
+      "line": 320,
+      "kind": "async-boundary",
+      "code": "Promise.all([ Role._load(RoleValues.MANAGER, false, true), Role._load(RoleValues.EMPLOYEE, false, true), ])"
+    },
+    {
+      "file": "packages/api/src/tenant/routes/user.role.route.ts",
+      "line": 335,
+      "kind": "async-boundary",
+      "code": "Promise.all([ UserRole._load(identified1, false, true), UserRole._load(identified2, false, true), ])"
+    },
+    {
+      "file": "packages/api/src/tenant/routes/user.route.ts",
+      "line": 129,
+      "kind": "async-boundary",
+      "code": "Promise.all(userEntries.map((user) => user.toJSON(views)))"
+    },
+    {
+      "file": "packages/api/src/tenant/routes/user.route.ts",
+      "line": 155,
+      "kind": "async-boundary",
+      "code": "Promise.all(userEntries.map((user) => user.toJSON()))"
+    },
+    {
+      "file": "packages/api/src/tenant/routes/user.route.ts",
+      "line": 189,
+      "kind": "async-boundary",
+      "code": "Promise.all(userEntries.map((user) => user.toJSON()))"
+    },
+    {
+      "file": "packages/api/src/tenant/routes/user.route.ts",
+      "line": 217,
+      "kind": "async-boundary",
+      "code": "Promise.all(userEntries.map(async (user) => await user.toJSON()))"
+    },
+    {
+      "file": "packages/api/src/tenant/routes/user.route.ts",
+      "line": 382,
+      "kind": "async-boundary",
+      "code": "Promise.all( unassignedEmployees.map(async (employee) => { const roles = await UserRole._listByUser(employee.getId()!); return { ...(await employee.toJSON(responseValue.FULL)), roles: { count: roles?.length, items: roles"
+    },
+    {
+      "file": "packages/api/src/tenant/routes/user.route.ts",
+      "line": 390,
+      "kind": "async-boundary",
+      "code": "Promise.all(roles.map((r) => r.toJSON(responseValue.MINIMAL)))"
+    },
+    {
+      "file": "packages/api/src/tenant/routes/user.route.ts",
+      "line": 587,
+      "kind": "async-boundary",
+      "code": "Promise.all([ Role._load(RoleValues.ADMIN, false, true), Role._load(RoleValues.MANAGER, false, true), Role._load(RoleValues.EMPLOYEE, false, true), ])"
+    },
+    {
+      "file": "packages/api/src/tenant/routes/user.route.ts",
+      "line": 625,
+      "kind": "async-boundary",
+      "code": "Promise.all([ User._load(affiliate, true), User._load(validatedData.supervisor, true), ])"
+    },
+    {
+      "file": "packages/api/src/tenant/routes/user.route.ts",
+      "line": 827,
+      "kind": "async-boundary",
+      "code": "Promise.all([ Role._load(RoleValues.ADMIN, false, true), Role._load(RoleValues.MANAGER, false, true), ])"
+    },
+    {
+      "file": "packages/api/src/tenant/routes/user.route.ts",
+      "line": 1530,
+      "kind": "async-boundary",
+      "code": "Promise.all(isManager.map(async (role) => await role.getRoleObject()))"
+    },
+    {
+      "file": "packages/api/src/tenant/routes/user.route.ts",
+      "line": 1901,
+      "kind": "async-boundary",
+      "code": "Promise.all( subordinateIds.map(async (userId) => { const activeSession = await WorkSessions._findActiveSessionByUser(userId); if (activeSession) { // Enrichir avec les informations de l'employé const employee = await Us"
+    },
+    {
+      "file": "packages/api/src/tenant/routes/user.route.ts",
+      "line": 3334,
+      "kind": "async-boundary",
+      "code": "Promise.all( activeSessions.map(async (session) => { const employee = await User._load(session.getUser()!); const sessionData = await session.toJSON(responseValue.MINIMAL); const pauseStatus = await session.getPauseStatu"
+    },
+    {
+      "file": "packages/api/src/tenant/routes/user.route.ts",
+      "line": 3413,
+      "kind": "async-boundary",
+      "code": "Promise.all( currentPresence.map(async (presence) => { const employeeId = presence.employee?.id; if (employeeId) { const userRoles = await UserRole._listByUser(employeeId); if (userRoles && userRoles.length > 0) { const "
+    },
+    {
+      "file": "packages/api/src/tenant/routes/user.route.ts",
+      "line": 3719,
+      "kind": "async-boundary",
+      "code": "Promise.all(allSchedules.map((s) => s.toJSON(responseValue.MINIMAL)))"
+    },
+    {
+      "file": "packages/api/src/tenant/routes/user.route.ts",
+      "line": 3723,
+      "kind": "async-boundary",
+      "code": "Promise.all(allRotations.map((r) => r.toJSON(responseValue.MINIMAL)))"
+    },
+    {
+      "file": "packages/api/src/tenant/routes/work.sessions.route.ts",
+      "line": 104,
+      "kind": "async-boundary",
+      "code": "Promise.all( sessionEntries.map(async (session) => await session.toJSON(responseValue.MINIMAL)), )"
+    },
+    {
+      "file": "packages/api/src/tenant/routes/work.sessions.route.ts",
+      "line": 180,
+      "kind": "async-boundary",
+      "code": "Promise.all( sessionEntries.map(async (session) => await session.toJSON(responseValue.MINIMAL)), )"
+    },
+    {
+      "file": "packages/api/src/tenant/routes/work.sessions.route.ts",
+      "line": 258,
+      "kind": "async-boundary",
+      "code": "Promise.all( sessionEntries.map(async (session) => await session.toJSON(responseValue.MINIMAL)), )"
+    },
+    {
+      "file": "packages/api/src/tenant/routes/work.sessions.route.ts",
+      "line": 286,
+      "kind": "async-boundary",
+      "code": "Promise.all( abandonedSessions.map(async (session) => ({ ...(await session.toJSON(responseValue.MINIMAL)), hours_abandoned: Math.floor( (TimezoneConfigUtils.getCurrentTime().getTime() - session.getSessionStartAt()!.getTi"
+    },
+    {
+      "file": "packages/api/src/tenant/server.ts",
+      "line": 88,
+      "kind": "async-boundary",
+      "code": "process.on('SIGTERM', () => gracefulShutdown('SIGTERM'))"
+    },
+    {
+      "file": "packages/api/src/tenant/server.ts",
+      "line": 89,
+      "kind": "async-boundary",
+      "code": "process.on('SIGINT', () => gracefulShutdown('SIGINT'))"
+    },
+    {
+      "file": "packages/api/src/tenant/server.ts",
+      "line": 90,
+      "kind": "async-boundary",
+      "code": "process.on('SIGUSR2', () => gracefulShutdown('SIGUSR2'))"
+    },
+    {
+      "file": "packages/api/src/tenant/server.ts",
+      "line": 93,
+      "kind": "async-boundary",
+      "code": "process.on('uncaughtException', (error) => { console.error('❌ Exception non capturée:', error); gracefulShutdown('UNCAUGHT_EXCEPTION'); })"
+    },
+    {
+      "file": "packages/api/src/tenant/server.ts",
+      "line": 98,
+      "kind": "async-boundary",
+      "code": "process.on('unhandledRejection', (reason, promise) => { console.error('❌ Promise rejetée non gérée:', reason); console.error('📍 Promise:', promise); gracefulShutdown('UNHANDLED_REJECTION'); })"
+    },
+    {
+      "file": "packages/api/src/tenant/server.ts",
+      "line": 105,
+      "kind": "async-boundary",
+      "code": "process.on('exit', (code) => { if (existsSync(PID_FILE)) { try { unlinkSync(PID_FILE); } catch (error) { // Ignorer les erreurs de suppression console.log('🚨 Erreur lors du nettoyage:', error); } } console.log(`👋 Proce"
+    },
+    {
+      "file": "packages/api/src/tools/schedule.assignment.adjustment.service.ts",
+      "line": 540,
+      "kind": "async-boundary",
+      "code": "sequelize.transaction( { isolationLevel: Transaction.ISOLATION_LEVELS.SERIALIZABLE }, async (transaction) => { const templates = await loadCurrentTemplates(transaction); const catalog = buildServiceCatalogFromTemplates(t"
+    },
+    {
+      "file": "packages/api/src/tools/schedule.suggestion.approval.service.ts",
+      "line": 238,
+      "kind": "async-boundary",
+      "code": "sequelize.transaction( { isolationLevel: Transaction.ISOLATION_LEVELS.SERIALIZABLE }, async (transaction) => { const suggestionInstance = await SuggestionModel.findOne({ where: { guid: suggestionGuid, deleted_at: null },"
+    },
+    {
+      "file": "packages/api/src/utils/schedule.suggestion.bulk-edit.service.ts",
+      "line": 1566,
+      "kind": "async-boundary",
+      "code": "sequelize.transaction( { isolationLevel: Transaction.ISOLATION_LEVELS.SERIALIZABLE }, async (transaction) => { const plan = await buildPlan(suggestionGuid, payload, transaction, true); if (plan.result.blockers.length > 0"
+    },
+    {
+      "file": "packages/api/src/utils/schedule.suggestion.regeneration.service.ts",
+      "line": 669,
+      "kind": "async-boundary",
+      "code": "sequelize.transaction( { isolationLevel: Transaction.ISOLATION_LEVELS.SERIALIZABLE }, async (transaction) => { const currentSuggestionInstance = await SuggestionModel.findOne({ where: { id: suggestion.id, deleted_at: nul"
+    }
+  ],
+  "affectedFiles": [
+    "packages/api/scripts/countryManager.ts",
+    "packages/api/scripts/currencyManager.ts",
+    "packages/api/scripts/test.ts",
+    "packages/api/src/automate/automate.ts",
+    "packages/api/src/automate/rotation.cron.ts",
+    "packages/api/src/master/app.ts",
+    "packages/api/src/master/class/ActivityMonitoring.ts",
+    "packages/api/src/master/class/BillingCycle.ts",
+    "packages/api/src/master/class/Country.ts",
+    "packages/api/src/master/class/Currency.ts",
+    "packages/api/src/master/class/EmployeeLicense.ts",
+    "packages/api/src/master/class/ExchangeRate.ts",
+    "packages/api/src/master/class/FraudDetectionLog.ts",
+    "packages/api/src/master/class/GlobalLicense.ts",
+    "packages/api/src/master/class/Language.ts",
+    "packages/api/src/master/class/Lexicon.ts",
+    "packages/api/src/master/class/LicenseAdjustment.ts",
+    "packages/api/src/master/class/PaymentMethod.ts",
+    "packages/api/src/master/class/PaymentTransaction.ts",
+    "packages/api/src/master/class/TaxRule.ts",
+    "packages/api/src/master/class/Tenant.ts",
+    "packages/api/src/master/class/TenantOnboarding.ts",
+    "packages/api/src/master/class/TenantOnboardingResend.ts",
+    "packages/api/src/master/model/TenantOnboardingResendModel.ts",
+    "packages/api/src/master/routes/activity.monitoring.route.ts",
+    "packages/api/src/master/routes/app.config.route.ts",
+    "packages/api/src/master/routes/auth.route.ts",
+    "packages/api/src/master/routes/billing.cycle.route.ts",
+    "packages/api/src/master/routes/contact.route.ts",
+    "packages/api/src/master/routes/country.route.ts",
+    "packages/api/src/master/routes/currency.route.ts",
+    "packages/api/src/master/routes/employee.license.route.ts",
+    "packages/api/src/master/routes/exchange.rate.route.ts",
+    "packages/api/src/master/routes/fraud.detection.log.route.ts",
+    "packages/api/src/master/routes/global.license.route.ts",
+    "packages/api/src/master/routes/integrator.route.ts",
+    "packages/api/src/master/routes/language.route.ts",
+    "packages/api/src/master/routes/lexicon.route.ts",
+    "packages/api/src/master/routes/license.adjustment.route.ts",
+    "packages/api/src/master/routes/manager/billing.route.ts",
+    "packages/api/src/master/routes/manager/fraud.route.ts",
+    "packages/api/src/master/routes/payment.method.route.ts",
+    "packages/api/src/master/routes/payment.transaction.route.ts",
+    "packages/api/src/master/routes/tax.rule.route.ts",
+    "packages/api/src/master/routes/tenant.onboarding.admin.route.ts",
+    "packages/api/src/master/routes/tenant.onboarding.resend.route.ts",
+    "packages/api/src/master/routes/tenant.onboarding.route.ts",
+    "packages/api/src/master/routes/tenant.route.ts",
+    "packages/api/src/master/server.ts",
+    "packages/api/src/middle/tenant.middleware.ts",
+    "packages/api/src/middle/user-auth.ts",
+    "packages/api/src/realtime/SocketServer.ts",
+    "packages/api/src/realtime/services/qr-socket.service.ts",
+    "packages/api/src/tenant/app.ts",
+    "packages/api/src/tenant/class/AuditLogs.ts",
+    "packages/api/src/tenant/class/Department.ts",
+    "packages/api/src/tenant/class/Device.ts",
+    "packages/api/src/tenant/class/EmployeePlanningProfile.ts",
+    "packages/api/src/tenant/class/EventLog.ts",
+    "packages/api/src/tenant/class/FraudAlerts.ts",
+    "packages/api/src/tenant/class/Groups.ts",
+    "packages/api/src/tenant/class/Memos.ts",
+    "packages/api/src/tenant/class/OrgHierarchy.ts",
+    "packages/api/src/tenant/class/PlanningSuggestionConfig.ts",
+    "packages/api/src/tenant/class/PlanningSuggestionRequirement.ts",
+    "packages/api/src/tenant/class/Poste.ts",
+    "packages/api/src/tenant/class/QrCodeGeneration.ts",
+    "packages/api/src/tenant/class/Role.ts",
+    "packages/api/src/tenant/class/RotationAssignmentLog.ts",
+    "packages/api/src/tenant/class/RotationAssignments.ts",
+    "packages/api/src/tenant/class/RotationGroupTemplate.ts",
+    "packages/api/src/tenant/class/RotationGroupTemplateLog.ts",
+    "packages/api/src/tenant/class/RotationGroups.ts",
+    "packages/api/src/tenant/class/ScheduleAssignments.ts",
+    "packages/api/src/tenant/class/ScheduleAssignmentsLog.ts",
+    "packages/api/src/tenant/class/ScheduleSuggestion.ts",
+    "packages/api/src/tenant/class/ScheduleSuggestionItem.ts",
+    "packages/api/src/tenant/class/SessionModel.ts",
+    "packages/api/src/tenant/class/SessionTemplates.ts",
+    "packages/api/src/tenant/class/Site.ts",
+    "packages/api/src/tenant/class/TimeEntries.ts",
+    "packages/api/src/tenant/class/User.ts",
+    "packages/api/src/tenant/class/UserRole.ts",
+    "packages/api/src/tenant/class/WorkSessions.ts",
+    "packages/api/src/tenant/database/db.base.ts",
+    "packages/api/src/tenant/database/db.config.ts",
+    "packages/api/src/tenant/database/db.initializer.ts",
+    "packages/api/src/tenant/database/db.tenant-manager.ts",
+    "packages/api/src/tenant/model/AuditLogsModel.ts",
+    "packages/api/src/tenant/model/DepartmentModel.ts",
+    "packages/api/src/tenant/model/DeviceModel.ts",
+    "packages/api/src/tenant/model/EmployeePlanningProfileModel.ts",
+    "packages/api/src/tenant/model/EventLogModel.ts",
+    "packages/api/src/tenant/model/FraudAlertsModel.ts",
+    "packages/api/src/tenant/model/GroupsModel.ts",
+    "packages/api/src/tenant/model/MemosModel.ts",
+    "packages/api/src/tenant/model/OrgHierarchyModel.ts",
+    "packages/api/src/tenant/model/PlanningSuggestionConfigModel.ts",
+    "packages/api/src/tenant/model/PlanningSuggestionRequirementModel.ts",
+    "packages/api/src/tenant/model/PosteModel.ts",
+    "packages/api/src/tenant/model/QrCodeGenerationModel.ts",
+    "packages/api/src/tenant/model/RoleModel.ts",
+    "packages/api/src/tenant/model/RotationAssignmentLogModel.ts",
+    "packages/api/src/tenant/model/RotationAssignmentsModel.ts",
+    "packages/api/src/tenant/model/RotationGroupTemplateLogModel.ts",
+    "packages/api/src/tenant/model/RotationGroupTemplateModel.ts",
+    "packages/api/src/tenant/model/RotationGroupsModel.ts",
+    "packages/api/src/tenant/model/ScheduleAssignmentsLogModel.ts",
+    "packages/api/src/tenant/model/ScheduleAssignmentsModel.ts",
+    "packages/api/src/tenant/model/ScheduleSuggestionItemModel.ts",
+    "packages/api/src/tenant/model/ScheduleSuggestionModel.ts",
+    "packages/api/src/tenant/model/SessionModelModel.ts",
+    "packages/api/src/tenant/model/SessionTemplatesModel.ts",
+    "packages/api/src/tenant/model/SiteModel.ts",
+    "packages/api/src/tenant/model/TimeEntriesModel.ts",
+    "packages/api/src/tenant/model/UserModel.ts",
+    "packages/api/src/tenant/model/UserRoleModel.ts",
+    "packages/api/src/tenant/model/WorkSessionsModel.ts",
+    "packages/api/src/tenant/modules/attendance-statistics/http/attendance-statistics.controller.ts",
+    "packages/api/src/tenant/modules/attendance-statistics/infrastructure/tenant-attendance-statistics.adapter.ts",
+    "packages/api/src/tenant/routes/attendance.stat.route.ts",
+    "packages/api/src/tenant/routes/audit.logs.route.ts",
+    "packages/api/src/tenant/routes/auth.route.ts",
+    "packages/api/src/tenant/routes/department.route.ts",
+    "packages/api/src/tenant/routes/device.route.ts",
+    "packages/api/src/tenant/routes/employee.planning.profile.route.ts",
+    "packages/api/src/tenant/routes/fraud.alerts.route.ts",
+    "packages/api/src/tenant/routes/groups.route.ts",
+    "packages/api/src/tenant/routes/memos.route.ts",
+    "packages/api/src/tenant/routes/org.hierarchy.route.ts",
+    "packages/api/src/tenant/routes/planning.suggestion.config.route.ts",
+    "packages/api/src/tenant/routes/planning.suggestion.requirement.route.ts",
+    "packages/api/src/tenant/routes/poste.route.ts",
+    "packages/api/src/tenant/routes/qr.code.route.ts",
+    "packages/api/src/tenant/routes/roles.route.ts",
+    "packages/api/src/tenant/routes/rotation.assignments.route.ts",
+    "packages/api/src/tenant/routes/rotation.groups.route.ts",
+    "packages/api/src/tenant/routes/schedule.assignments.route.ts",
+    "packages/api/src/tenant/routes/schedule.suggestion.route.ts",
+    "packages/api/src/tenant/routes/schedule.suggestion.route0.ts",
+    "packages/api/src/tenant/routes/session.model.route.ts",
+    "packages/api/src/tenant/routes/session.templates.route.ts",
+    "packages/api/src/tenant/routes/sites.route.ts",
+    "packages/api/src/tenant/routes/statistique.interface.ts",
+    "packages/api/src/tenant/routes/time.entries.route.ts",
+    "packages/api/src/tenant/routes/user.role.route.ts",
+    "packages/api/src/tenant/routes/user.route.ts",
+    "packages/api/src/tenant/routes/work.sessions.route.ts",
+    "packages/api/src/tenant/server.ts",
+    "packages/api/src/tools/absence.detection.service.ts",
+    "packages/api/src/tools/anomaly.detection.service.ts",
+    "packages/api/src/tools/anomaly.detection.service0.ts",
+    "packages/api/src/tools/auth.cache.service.ts",
+    "packages/api/src/tools/memo.correction.service.ts",
+    "packages/api/src/tools/revision.ts",
+    "packages/api/src/tools/schedule.assignment.adjustment.service.ts",
+    "packages/api/src/tools/schedule.resolution.service.ts",
+    "packages/api/src/tools/schedule.suggestion.approval.service.ts",
+    "packages/api/src/utils/generate.database.ts",
+    "packages/api/src/utils/planning.history.analysis.service.ts",
+    "packages/api/src/utils/planning.history.review.service.ts",
+    "packages/api/src/utils/schedule.suggestion.bulk-edit.service.ts",
+    "packages/api/src/utils/schedule.suggestion.generation.service.ts",
+    "packages/api/src/utils/schedule.suggestion.generation.service0.ts",
+    "packages/api/src/utils/schedule.suggestion.regeneration.service.ts",
+    "packages/api/src/utils/session.model.validation.ts",
+    "packages/api/src/utils/time.entry.idempotency.response.ts",
+    "packages/api/src/utils/time.entry.idempotency.ts"
+  ]
+}

@@ -1,3 +1,4 @@
+import type { ClockInOptions } from '../database/clock-in.options.js';
 import {
   RAFamily,
   ROTATION_ASSIGNMENT_DEFAULTS,
@@ -5,7 +6,7 @@ import {
   RotationAssignmentValidationUtils,
   TimezoneConfigUtils,
 } from '@toke/shared';
-import { Op } from 'sequelize';
+import { Op, Transaction } from 'sequelize';
 
 import BaseModel from '../database/db.base.js';
 import { tableName } from '../../utils/response.model.js';
@@ -91,22 +92,22 @@ export default class RotationAssignmentModel extends BaseModel {
 
   protected async listAll(
     conditions: Record<string, any> = {},
-    paginationOptions: { offset?: number; limit?: number } = {},
+    paginationOptions: { offset?: number; limit?: number } = {}, clockOptions: ClockInOptions = {},
   ): Promise<any[]> {
     if (conditions[this.db.deleted_at] === undefined) {
       conditions[this.db.deleted_at] = null;
     }
-    return await this.findAll(this.db.tableName, conditions, paginationOptions);
+    return await this.findAll(this.db.tableName, conditions, paginationOptions, { ...(clockOptions.transaction ? { transaction: clockOptions.transaction } : {}) });
   }
 
   protected async listAllByRelated(
     family: RAFamily,
     related: string,
-    paginationOptions: { offset?: number; limit?: number } = {},
+    paginationOptions: { offset?: number; limit?: number } = {}, clockOptions: ClockInOptions = {},
   ): Promise<any[]> {
     return await this.listAll(
       { [this.db.family]: family, [this.db.related]: related },
-      paginationOptions,
+      paginationOptions, clockOptions,
     );
   }
 
@@ -226,6 +227,7 @@ export default class RotationAssignmentModel extends BaseModel {
     id: number,
     newOffset: number,
     advancedDate: string, // 'YYYY-MM-DD'
+    transaction?: Transaction,
   ): Promise<boolean> {
     const affected = await this.updateOne(
       this.db.tableName,
@@ -234,6 +236,7 @@ export default class RotationAssignmentModel extends BaseModel {
         [this.db.last_advanced_date]: advancedDate,
       },
       { [this.db.id]: id },
+      { transaction },
     );
     return affected > 0;
   }

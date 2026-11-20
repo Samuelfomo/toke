@@ -1,3 +1,4 @@
+import type { ClockInOptions } from '../database/clock-in.options.js';
 import { QR_CODE_DEFAULTS, TimezoneConfigUtils } from '@toke/shared';
 
 import QrCodeGenerationModel from '../model/QrCodeGenerationModel.js';
@@ -103,10 +104,10 @@ export default class QrCodeGeneration extends QrCodeGenerationModel {
     return this.name;
   }
 
-  async getManagerObj(): Promise<User | null> {
+  async getManagerObj(clockOptions: ClockInOptions = {}): Promise<User | null> {
     if (!this.manager) return null;
     if (!this.managerObj) {
-      this.managerObj = (await User._load(this.manager)) || undefined;
+      this.managerObj = (await User._load(this.manager, undefined, undefined, undefined, undefined, undefined, clockOptions)) || undefined;
     }
     return this.managerObj || null;
   }

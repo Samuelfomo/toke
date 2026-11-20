@@ -1,3 +1,4 @@
+import type { ClockInOptions } from '../database/clock-in.options.js';
 import { Op } from 'sequelize';
 import { GROUPS_ERRORS, GroupsValidationUtils, TI, TimezoneConfigUtils } from '@toke/shared';
 
@@ -44,7 +45,7 @@ export default class GroupsModel extends BaseModel {
   protected async find(
     id: number,
     includeDeleted: boolean = false,
-    excludeInactive: boolean = true,
+    excludeInactive: boolean = true, clockOptions: ClockInOptions = {},
   ): Promise<any> {
     const conditions: any = { [this.db.id]: id };
 
@@ -52,14 +53,14 @@ export default class GroupsModel extends BaseModel {
       conditions[this.db.deleted_at] = null;
     }
 
-    const group = await this.findOne(this.db.tableName, conditions);
+    const group = await this.findOne(this.db.tableName, conditions, { ...(clockOptions.transaction ? { transaction: clockOptions.transaction } : {}) });
     return this.applyMembersFilter(group, excludeInactive);
   }
 
   protected async findByGuid(
     guid: string,
     includeDeleted: boolean = false,
-    excludeInactive: boolean = true,
+    excludeInactive: boolean = true, clockOptions: ClockInOptions = {},
   ): Promise<any> {
     const conditions: any = { [this.db.guid]: guid };
 
@@ -67,7 +68,7 @@ export default class GroupsModel extends BaseModel {
       conditions[this.db.deleted_at] = null;
     }
 
-    const group = await this.findOne(this.db.tableName, conditions);
+    const group = await this.findOne(this.db.tableName, conditions, { ...(clockOptions.transaction ? { transaction: clockOptions.transaction } : {}) });
     return this.applyMembersFilter(group, excludeInactive);
   }
 
@@ -103,8 +104,8 @@ export default class GroupsModel extends BaseModel {
   /**
    * Retourne l'équipe dans laquelle l'utilisateur est actuellement actif
    */
-  protected async findActiveGroupsByUser(userId: number): Promise<any | null> {
-    const allGroups = await this.listAll(); // deleted_at = null par défaut
+  protected async findActiveGroupsByUser(userId: number, clockOptions: ClockInOptions = {}): Promise<any | null> {
+    const allGroups = await this.listAll(undefined, undefined, undefined, clockOptions); // deleted_at = null par défaut
 
     for (const group of allGroups) {
       const members = group.members || [];
@@ -128,13 +129,13 @@ export default class GroupsModel extends BaseModel {
   protected async listAll(
     conditions: Record<string, any> = {},
     paginationOptions: { offset?: number; limit?: number } = {},
-    excludeInactive: boolean = true,
+    excludeInactive: boolean = true, clockOptions: ClockInOptions = {},
   ): Promise<any[]> {
     if (conditions[this.db.deleted_at] === undefined) {
       conditions[this.db.deleted_at] = null;
     }
 
-    const groups = await this.findAll(this.db.tableName, conditions, paginationOptions);
+    const groups = await this.findAll(this.db.tableName, conditions, paginationOptions, { ...(clockOptions.transaction ? { transaction: clockOptions.transaction } : {}) });
     return this.applyMembersFilterToList(groups, excludeInactive);
   }
 

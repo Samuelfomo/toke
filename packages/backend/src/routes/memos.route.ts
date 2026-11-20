@@ -13,10 +13,15 @@ import multer from 'multer';
 import FormData from 'form-data';
 
 import { TenantConfig } from '../tools/tenant.config.js';
+import { memoManagerReads } from '../tools/memo-manager-reads.js';
 import { UserService } from '../services/user.service.js';
 import { MemoSocketBridgeService } from '../services/memo.socket.bridge.service.js';
 
 const router = Router();
+// Step A: authenticate all memo paths, then remain closed until D1–D7 are approved.
+router.use(TenantConfig.authenticate, TenantConfig.authenticateUser, memoManagerReads, (_req, res) => {
+  res.status(503).json({ success: false, error: { code: 'memo_permissions_pending' } });
+});
 const upload = multer();
 
 router.get('/', TenantConfig.authenticate, Ensure.get(), async (req: Request, res: Response) => {
@@ -298,7 +303,17 @@ router.get(
         });
       }
 
-      const response = await UserService.listByManager(client, supervisor);
+      const response = await UserService.listByManager(client, supervisor, {
+        offset: req.query.offset,
+        limit: req.query.limit,
+        memo_type: req.query.memo_type,
+        memo_status: req.query.memo_status,
+        target_user: req.query.target_user,
+        auto_generated: req.query.auto_generated,
+        search: req.query.search,
+        sort: req.query.sort,
+      });
+
       if (response.status !== HttpStatus.SUCCESS) {
         return R.handleError(res, response.status, response.data.data.error);
       }
@@ -413,6 +428,36 @@ router.get(
     } catch (error: any) {
       return R.handleError(res, HttpStatus.INTERNAL_ERROR, {
         code: 'validation_failed',
+        message: error.message,
+      });
+    }
+  },
+);
+
+router.patch(
+  '/:guid/read',
+  TenantConfig.authenticate,
+  TenantConfig.authenticateUser,
+  Ensure.patch(),
+  async (req: Request, res: Response) => {
+    try {
+      const reference = (req as any).client.reference;
+      const userGuid = (req as any).authenticatedUserGuid;
+      const memoGuid = String(req.params.guid || '');
+
+      if (!MemosValidationUtils.validateGuid(memoGuid)) {
+        return R.handleError(res, HttpStatus.BAD_REQUEST, {
+          code: MEMOS_CODES.INVALID_GUID,
+          message: MEMOS_ERRORS.GUID_INVALID,
+        });
+      }
+
+      const response = await UserService.markMemoAsRead(reference, memoGuid, userGuid);
+
+      return res.status(response.status).json(response.data);
+    } catch (error: any) {
+      return R.handleError(res, HttpStatus.INTERNAL_ERROR, {
+        code: 'memo_read_failed',
         message: error.message,
       });
     }

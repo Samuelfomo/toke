@@ -1,0 +1,21 @@
+{
+  "os": "Ubuntu 24.04.5 LTS",
+  "kernel": "6.10.14-linuxkit",
+  "architecture": "x64",
+  "node": "v20.18.0",
+  "nodeABI": "115",
+  "napi": "9",
+  "libc": "glibc 2.39",
+  "postgresql": "postgres (PostgreSQL) 16.15 (Ubuntu 16.15-0ubuntu0.24.04.1)",
+  "uid": 10001,
+  "interfaces": [
+    "lo"
+  ],
+  "originalManifestSHA256": "139115cf53b1cdd42f9c0d65db3a05b7badf48b8dc8d3a1dae2b60ce129db536",
+  "candidateFilesVerified": 5233,
+  "bcryptVersion": "6.0.0",
+  "nativeBinary": "node_modules/bcrypt/prebuilds/linux-x64/bcrypt.glibc.node",
+  "nativeSHA256": "d640649833b5f0504096b747ae1a66e0780291edc5c33b541696b2cf2aabb5e3",
+  "nativeHashAndCompare": "PASS",
+  "candidateUnmodified": true
+}

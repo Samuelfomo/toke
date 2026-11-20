@@ -1,0 +1,38 @@
+postgres (PostgreSQL) 16.15 (Postgres.app)
+PASS ISOLATION: new private data_directory, Unix socket only, owner nonce checked
+PASS PG a.v01.invalid: manager direct unique
+PASS PG a.v01.invalid: groupe seul
+PASS PG a.v01.invalid: direct prioritaire sur groupe divergent
+PASS PG a.v01.invalid: directs contradictoires
+PASS PG a.v01.invalid: groupes concurrents
+PASS PG a.v01.invalid: membre inactif
+PASS PG a.v01.invalid: direct expiré et non DIRECT_REPORT
+PASS PG a.v01.invalid: cycle
+PASS PG a.v01.invalid: manager inactif
+PASS PG a.v01.invalid: groupes multiples même manager
+PASS PG a.v01.invalid: adhésion future
+PASS PG a.v01.invalid: rôle manager retiré
+PASS PG a.v01.invalid: intervalle incohérent
+PASS PG a.v01.invalid: central ACL, author/target/responsible/superior, history, no validator fallback, pagination/statistics, inactive/deleted/expired relation, changed group, zero writes
+PASS PG b.v01.invalid: manager direct unique
+PASS PG b.v01.invalid: groupe seul
+PASS PG b.v01.invalid: direct prioritaire sur groupe divergent
+PASS PG b.v01.invalid: directs contradictoires
+PASS PG b.v01.invalid: groupes concurrents
+PASS PG b.v01.invalid: membre inactif
+PASS PG b.v01.invalid: direct expiré et non DIRECT_REPORT
+PASS PG b.v01.invalid: cycle
+PASS PG b.v01.invalid: manager inactif
+PASS PG b.v01.invalid: groupes multiples même manager
+PASS PG b.v01.invalid: adhésion future
+PASS PG b.v01.invalid: rôle manager retiré
+PASS PG b.v01.invalid: intervalle incohérent
+PASS PG b.v01.invalid: central ACL, author/target/responsible/superior, history, no validator fallback, pagination/statistics, inactive/deleted/expired relation, changed group, zero writes
+Thu, 12 Nov 2026 15:15:33 GMT router deprecated handlers that are Promise-like are deprecated, use a native Promise instead at node_modules/router/index.js:342:13
+Thu, 12 Nov 2026 15:15:33 GMT router deprecated handlers that are Promise-like are deprecated, use a native Promise instead at node_modules/router/lib/route.js:157:13
+PASS HTTP a.v01.invalid: real A/Redis verification, independent Tenant auth, direct API proof, scoped reads, opaque404, forged GUID, bad tenant, closed mutations/media
+PASS HTTP b.v01.invalid: real A/Redis verification, independent Tenant auth, direct API proof, scoped reads, opaque404, forged GUID, bad tenant, closed mutations/media
+PASS BFF+API+PG a.v01.invalid: author, target, certified responsible, current superior, outsider, opaque404, cross-tenant, no session, filters, pagination, proof relay, closed other GETs
+PASS BFF+API+PG b.v01.invalid: author, target, certified responsible, current superior, outsider, opaque404, cross-tenant, no session, filters, pagination, proof relay, closed other GETs
+PASS BFF+API+PG: independent production locks preserved
+PASS B2: actual PostgreSQL A/B, private Redis and signed Master/API HTTP; B1 remains immutable; no backfill, no business mutation, no public unlock

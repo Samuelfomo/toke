@@ -1,3 +1,4 @@
+import type { ClockInOptions } from '../database/clock-in.options.js';
 import { TimezoneConfigUtils } from '@toke/shared';
 
 import RotationGroupTemplateModel, {
@@ -47,9 +48,9 @@ export default class RotationGroupTemplate extends RotationGroupTemplateModel {
 
   static _listByRotationGroup(
     rotationGroupId: number,
-    paginationOptions: { offset?: number; limit?: number } = {},
+    paginationOptions: { offset?: number; limit?: number } = {}, clockOptions: ClockInOptions = {},
   ): Promise<RotationGroupTemplate[] | null> {
-    return new RotationGroupTemplate().listByRotationGroup(rotationGroupId, paginationOptions);
+    return new RotationGroupTemplate().listByRotationGroup(rotationGroupId, paginationOptions, clockOptions);
   }
 
   // ============================================
@@ -200,9 +201,9 @@ export default class RotationGroupTemplate extends RotationGroupTemplateModel {
 
   async listByRotationGroup(
     rotationGroupId: number,
-    paginationOptions: { offset?: number; limit?: number } = {},
+    paginationOptions: { offset?: number; limit?: number } = {}, clockOptions: ClockInOptions = {},
   ): Promise<RotationGroupTemplate[] | null> {
-    const dataset = await this.listAllByRotationGroup(rotationGroupId, paginationOptions);
+    const dataset = await this.listAllByRotationGroup(rotationGroupId, paginationOptions, clockOptions);
     if (!dataset || dataset.length === 0) return null;
     return dataset.map((data) => new RotationGroupTemplate().hydrate(data));
   }

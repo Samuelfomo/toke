@@ -163,6 +163,25 @@ router.patch(
 );
 
 router.post(
+  '/:guid/approval-preview',
+  TenantConfig.authenticate,
+  Ensure.post(),
+  async (req: Request, res: Response): Promise<void> => {
+    try {
+      const result = await ScheduleSuggestionService.previewApproval(
+        tenantReference(req),
+        req.params.guid as string,
+        req.body,
+      );
+
+      relayTenantApiResponse(res, result);
+    } catch (error: unknown) {
+      handleBffRouteError(res, error, 'BFF_SUGGESTION_APPROVAL_PREVIEW_FAILED');
+    }
+  },
+);
+
+router.post(
   '/:guid/approve',
   TenantConfig.authenticate,
   Ensure.post(),

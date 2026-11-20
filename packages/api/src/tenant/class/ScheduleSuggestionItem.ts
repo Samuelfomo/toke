@@ -1,3 +1,4 @@
+import type { Transaction } from 'sequelize';
 import ScheduleSuggestionItemModel from '../model/ScheduleSuggestionItemModel.js';
 import { responseStructure as RS, responseValue, ViewMode } from '../../utils/response.model.js';
 
@@ -83,8 +84,8 @@ export default class ScheduleSuggestionItem extends ScheduleSuggestionItemModel 
 
   // ── Cycle de vie ─────────────────────────────────────────────────────────
 
-  async save(): Promise<void> {
-    await this.create();
+  async save(transaction?: Transaction): Promise<void> {
+    await this.create(transaction);
   }
 
   async patchScheduleDay(

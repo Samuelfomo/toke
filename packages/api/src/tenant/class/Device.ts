@@ -1,3 +1,4 @@
+import type { ClockInOptions } from '../database/clock-in.options.js';
 import { DeviceType, TimezoneConfigUtils } from '@toke/shared';
 
 import DeviceModel from '../model/DeviceModel.js';
@@ -23,8 +24,8 @@ export default class Device extends DeviceModel {
 
   // === MÉTHODES STATIQUES DE CHARGEMENT ===
 
-  static _load(identifier: any, byGuid: boolean = false): Promise<Device | null> {
-    return new Device().load(identifier, byGuid);
+  static _load(identifier: any, byGuid: boolean = false, clockOptions: ClockInOptions = {}): Promise<Device | null> {
+    return new Device().load(identifier, byGuid, clockOptions);
   }
 
   static _list(
@@ -273,13 +274,13 @@ export default class Device extends DeviceModel {
     }
   }
 
-  async load(identifier: any, byGuid: boolean = false): Promise<Device | null> {
+  async load(identifier: any, byGuid: boolean = false, clockOptions: ClockInOptions = {}): Promise<Device | null> {
     let data = null;
 
     if (byGuid) {
-      data = await this.findByGuid(identifier);
+      data = await this.findByGuid(identifier, clockOptions);
     } else {
-      data = await this.find(Number(identifier));
+      data = await this.find(Number(identifier), clockOptions);
     }
 
     if (!data) return null;

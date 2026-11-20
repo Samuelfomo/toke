@@ -1,3 +1,4 @@
+import type { Transaction } from 'sequelize';
 import { TimezoneConfigUtils } from '@toke/shared';
 
 import BaseModel from '../database/db.base.js';
@@ -83,7 +84,11 @@ export default class RotationAssignmentLogModel extends BaseModel {
   // CRUD (création uniquement — log immuable)
   // ============================================
 
-  protected async create(): Promise<void> {
+  protected async create(
+    transaction?: Transaction,
+    publishAfterCommit?: (publish: () => void) => void,
+  ): Promise<void> {
+    if (transaction && !publishAfterCommit) throw new Error('Rotation transaction requires explicit commit publication');
     if (this.previous_offset === undefined) {
       throw new Error('previous_offset is required to create a RotationAssignmentLog');
     }
@@ -97,7 +102,7 @@ export default class RotationAssignmentLogModel extends BaseModel {
       throw new Error('cycle_length is required to create a RotationAssignmentLog');
     }
 
-    const guid = await this.randomGuidGenerator(this.db.tableName);
+    const guid = await this.randomGuidGenerator(this.db.tableName, 16, { transaction });
     if (!guid) {
       throw new Error('Failed to generate GUID for RotationAssignmentLog');
     }
@@ -109,13 +114,17 @@ export default class RotationAssignmentLogModel extends BaseModel {
       [this.db.new_offset]: this.new_offset,
       [this.db.cycle_length]: this.cycle_length,
       [this.db.executed_at]: this.executed_at ?? TimezoneConfigUtils.getCurrentTime(),
-    });
+    }, { transaction });
 
     if (!lastID) {
       throw new Error('Failed to create RotationAssignmentLog');
     }
 
-    this.id = typeof lastID === 'object' ? lastID.id : lastID;
-    this.guid = guid;
+    const publish = () => {
+      this.id = typeof lastID === 'object' ? lastID.id : lastID;
+      this.guid = guid;
+    };
+    if (transaction) publishAfterCommit!(publish);
+    else publish();
   }
 }

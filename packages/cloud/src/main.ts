@@ -1,13 +1,19 @@
-import { createApp } from 'vue';
-import { createPinia } from 'pinia';
+import { createApp } from 'vue'
+import { createPinia } from 'pinia'
+import piniaPluginPersistedstate from 'pinia-plugin-persistedstate'
 
-import App from './App.vue';
-import './assets/main.css';
-import { router } from './router'; // <-- en TypeScript, ça va chercher router.ts
+import App from './App.vue'
+import './assets/css/main.css'
+import { router } from './router'
 
-const app = createApp(App);
+import { clickOutside } from './directives/clickOutside'
 
-app.use(createPinia());
-app.use(router);
+const app = createApp(App)
+const pinia = createPinia()
+pinia.use(piniaPluginPersistedstate)
 
-app.mount('#app');
+app.use(pinia)
+app.use(router)
+
+app.directive('click-outside', clickOutside)
+app.mount('#app')

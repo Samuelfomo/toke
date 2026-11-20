@@ -1,3 +1,4 @@
+import type { Transaction } from 'sequelize';
 import { TimezoneConfigUtils } from '@toke/shared';
 
 import BaseModel from '../database/db.base.js';
@@ -87,8 +88,8 @@ export default class ScheduleSuggestionModel extends BaseModel {
     return await this.listAll({ [this.db.status]: status }, paginationOptions);
   }
 
-  protected async create(): Promise<void> {
-    const guid = await this.randomGuidGenerator(this.db.tableName);
+  protected async create(transaction?: Transaction): Promise<void> {
+    const guid = await this.randomGuidGenerator(this.db.tableName, 16, { transaction });
     if (!guid) {
       throw new Error('GUID generation failed for ScheduleSuggestion');
     }
@@ -107,7 +108,7 @@ export default class ScheduleSuggestionModel extends BaseModel {
       [this.db.status]: this.status,
       [this.db.approved_at]: null,
       [this.db.rejected_at]: null,
-    });
+    }, { transaction });
 
     if (!lastID) throw new Error('ScheduleSuggestion creation failed');
 

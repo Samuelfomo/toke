@@ -1,3 +1,4 @@
+import type { FixedAlternationPolicy } from '../../utils/planning.fixed.alternation.js';
 import PlanningSuggestionConfigModel, {
   PlanningEmployeePolicySelector,
   PlanningGuardMemberServiceAccess,
@@ -112,6 +113,15 @@ export default class PlanningSuggestionConfig extends PlanningSuggestionConfigMo
 
   doesPostGuardRestCountAsWeeklyLeave(): boolean {
     return this.post_guard_rest_counts_as_weekly_leave;
+  }
+
+  getFixedAlternationPolicy(): FixedAlternationPolicy | null {
+    return structuredClone(this.fixed_alternation_policy);
+  }
+
+  setFixedAlternationPolicy(value: FixedAlternationPolicy | null): this {
+    this.fixed_alternation_policy = structuredClone(value);
+    return this;
   }
 
   getPolicySchemaVersion(): number {
@@ -452,6 +462,7 @@ export default class PlanningSuggestionConfig extends PlanningSuggestionConfigMo
       active: this.active,
       rules: {
         policy_schema_version: this.policy_schema_version,
+        ...(this.fixed_alternation_policy && { fixed_alternation_policy: this.getFixedAlternationPolicy() }),
         min_rest_days_per_week: this.min_rest_days_per_week,
         max_consecutive_work_days: this.max_consecutive_work_days,
         max_weekly_minutes: this.max_weekly_minutes ?? null,
@@ -534,6 +545,7 @@ export default class PlanningSuggestionConfig extends PlanningSuggestionConfigMo
     this.post_guard_rest_counts_as_weekly_leave =
       data.post_guard_rest_counts_as_weekly_leave ?? false;
     this.policy_schema_version = data.policy_schema_version ?? 2;
+    this.fixed_alternation_policy = data.fixed_alternation_policy ?? null;
     this.weekly_leave_selector = data.weekly_leave_selector ?? {
       planning_modes: ['ROTATING'],
       guard_pool_relation: 'ANY',

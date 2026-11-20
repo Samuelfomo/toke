@@ -210,3 +210,45 @@ function guardRequirement(day: 'Mon' | 'Tue', min: number): PlanningRequirementI
 }
 
 console.log('planning.preflight.validation.service.test.ts: OK');
+
+{
+  const args = {
+    employees: [employee(1), employee(2)],
+    requirements: [standardRequirement(1)],
+    config: config(),
+    periodFrom: '2026-12-07',
+    periodTo: '2026-12-13',
+  };
+  const baseline = validatePlanningPreflight(args);
+  for (const status of ['PENDING_SOLVER_SUPPORT', 'NOT_APPLICABLE', 'INCOMPATIBLE_PROFILES'] as const) {
+    const report = validatePlanningPreflight({ ...args, fixedAlternationStatus: status });
+    assert.equal(report.valid, baseline.valid);
+    assert.deepEqual(report.issues, baseline.issues);
+    assert.equal(report.warningCount, baseline.warningCount + 1);
+    assert.equal(report.warnings[0]?.details?.status, status);
+  }
+}
+
+{
+  const base = standardRequirement(2);
+  const requirement: PlanningRequirementInput = {
+    ...base, eligibility: { planningModes: ['FIXED'], guardPoolRelation: 'ANY' },
+  };
+  const other = { ...base.template, guid: 'ALTERNATE' };
+  const employees: PlanningEmployeeInput[] = [
+    { ...employee(1), mode: 'FIXED', fixedTemplate: base.template },
+    { ...employee(2), mode: 'FIXED', fixedTemplate: other },
+  ];
+  const args = { employees, requirements: [requirement], config: config(), periodFrom: '2026-12-07', periodTo: '2026-12-07' };
+  assert.equal(validatePlanningPreflight(args).valid, false);
+  const policy = {
+    employeeGuids: ['E1', 'E2'] as [string, string],
+    templates: [base.template, other] as [typeof other, typeof other],
+    anchorDate: '2026-12-07', shiftCadenceDays: 1, weekendRest: 'KEEP_PROFILE' as const,
+  };
+  assert.equal(validatePlanningPreflight({ ...args, fixedAlternationPolicy: policy }).valid, true);
+  assert.equal(validatePlanningPreflight({
+    ...args, fixedAlternationPolicy: policy,
+    lockedAssignments: [{ employeeGuid: 'E2', date: '2026-12-07', templateGuid: null, requirementGuid: null }],
+  }).valid, false);
+}

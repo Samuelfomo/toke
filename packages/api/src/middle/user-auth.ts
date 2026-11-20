@@ -1,3 +1,7 @@
+import type { ClockInOptions } from '../tenant/database/clock-in.options.js';
+import Role from '../tenant/class/Role.js';
+import UserRole from '../tenant/class/UserRole.js';
+import { RoleValues } from '../utils/response.model.js';
 import { NextFunction, Request, Response } from 'express';
 import {
   HttpStatus,
@@ -11,6 +15,14 @@ import R from '../tools/response.js';
 import G from '../tools/glossary.js';
 import User from '../tenant/class/User.js';
 import EmployeeLicenseService from '../tools/employee.license.service.js';
+
+declare global {
+  namespace Express {
+    interface Request {
+      persistPointageLicense?: (options: ClockInOptions) => Promise<void>;
+    }
+  }
+}
 
 export class UserAuth {
   static async timeEntriesAuthenticate(
@@ -43,14 +55,6 @@ export class UserAuth {
         return;
       }
 
-      // TODO temporaire juste pour la recuperation des licences employees
-      const employeeLic = await EmployeeLicenseService.getEmployeeLicense(userObj.getGuid()!);
-      if (employeeLic.status === HttpStatus.SUCCESS) {
-        const licence: any = employeeLic.response;
-        userObj.setEmployeeLicense(licence.data.guid);
-        await userObj.changeEmployeeLicense();
-      }
-
       if (!userObj.isActive()) {
         R.handleError(res, HttpStatus.UNAUTHORIZED, {
           code: USERS_CODES.ACCOUNT_INACTIVE,
@@ -67,6 +71,23 @@ export class UserAuth {
           message: USERS_ERRORS.PIN_VERIFICATION_FAILED,
         });
         return;
+      }
+
+      const adminRole = await Role._load(RoleValues.ADMIN, false, true);
+      if (adminRole && await UserRole._load({ user: userObj.getId(), role: adminRole.getId() }, false, true)) {
+        R.handleError(res, HttpStatus.FORBIDDEN, {
+          code: 'pointage_role_forbidden',
+          message: 'Le rôle Admin-RH ne permet pas de pointer.',
+        });
+        return;
+      }
+
+      // TODO temporaire juste pour la recuperation des licences employees
+      const employeeLic = await EmployeeLicenseService.getEmployeeLicense(userObj.getGuid()!);
+      if (employeeLic.status === HttpStatus.SUCCESS) {
+        const licence: any = employeeLic.response;
+        userObj.setEmployeeLicense(licence.data.guid);
+        req.persistPointageLicense = options => userObj.changeEmployeeLicense(options);
       }
 
       // ✅ Ajouter l'ID utilisateur dans la requête

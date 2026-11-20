@@ -1,3 +1,4 @@
+import type { ClockInOptions } from '../database/clock-in.options.js';
 import { GroupsValidationUtils, RAFamily, SAFamily, TI, TimezoneConfigUtils } from '@toke/shared';
 
 import GroupsModel from '../model/GroupsModel.js';
@@ -34,9 +35,9 @@ export default class Groups extends GroupsModel {
     identifier: any,
     byGuid: boolean = false,
     byUser: boolean = false,
-    excludeInactive: boolean = true,
+    excludeInactive: boolean = true, clockOptions: ClockInOptions = {},
   ): Promise<Groups | null> {
-    return new Groups().load(identifier, byGuid, byUser, excludeInactive);
+    return new Groups().load(identifier, byGuid, byUser, excludeInactive, clockOptions);
   }
 
   static _list(
@@ -621,16 +622,16 @@ export default class Groups extends GroupsModel {
     identifier: any,
     byGuid: boolean = false,
     byUser: boolean = false,
-    excludeInactive: boolean = true,
+    excludeInactive: boolean = true, clockOptions: ClockInOptions = {},
   ): Promise<Groups | null> {
     let data = null;
 
     if (byGuid) {
-      data = await this.findByGuid(identifier, false, excludeInactive);
+      data = await this.findByGuid(identifier, false, excludeInactive, clockOptions);
     } else if (byUser) {
-      data = await this.findActiveGroupsByUser(Number(identifier));
+      data = await this.findActiveGroupsByUser(Number(identifier), clockOptions);
     } else {
-      data = await this.find(Number(identifier), false, excludeInactive);
+      data = await this.find(Number(identifier), false, excludeInactive, clockOptions);
     }
 
     if (!data) return null;

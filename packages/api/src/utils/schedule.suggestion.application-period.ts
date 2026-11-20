@@ -79,7 +79,7 @@ export function assertSafeSuggestionBoundary(
       'La prise d’effet coupe une garde ou son repos. Choisissez une autre date ou régénérez la suggestion sur la période future.',
       'SUGGESTION_UNSAFE_APPLICATION_BOUNDARY',
       422,
-      { item_guid: itemGuid, effective_from: applicationFrom },
+      { item_guid: itemGuid, effective_from: applicationFrom, conflict_type: source },
     );
   }
 }

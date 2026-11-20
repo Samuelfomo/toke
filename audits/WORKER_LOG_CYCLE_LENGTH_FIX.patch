@@ -1,0 +1,20 @@
+--- a/packages/api/src/automate/rotation.cron.ts
++++ b/packages/api/src/automate/rotation.cron.ts
+@@ -257,14 +257,14 @@
+       }
+ 
+       // ── Log immuable ──────────────────────────────────────────────────
+-      // setTemplateCount reçoit templateCount (borne réelle des slots),
+-      // PAS cycle_length qui est décoratif et peut être null.
++      // Le journal conserve la cardinalité réelle utilisée par le modulo,
++      // distincte du cycle_length informatif du groupe, qui peut être null.
+       const log = new RotationAssignmentLog();
+       log
+         .setRotationAssignment(assignmentId)
+         .setPreviousOffset(previousOffset)
+         .setNewOffset(newOffset)
+-        // .setTemplateCount(templateCount) // borne réelle du cycle, ≠ cycle_length
++        .setCycleLength(templateCount)
+         .setExecutedAt(executedAt);
+ 
+       await log.save();

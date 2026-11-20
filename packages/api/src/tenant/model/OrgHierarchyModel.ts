@@ -1,3 +1,4 @@
+import type { ClockInOptions } from '../database/clock-in.options.js';
 import {
   ORG_HIERARCHY_DEFAULTS,
   ORG_HIERARCHY_ERRORS,
@@ -107,7 +108,7 @@ export default class OrgHierarchyModel extends BaseModel {
   protected async listAllActiveSubordinates(
     supervisor_id: number,
     date?: Date,
-    paginationOptions: { offset?: number; limit?: number } = {},
+    paginationOptions: { offset?: number; limit?: number } = {}, clockOptions: ClockInOptions = {},
   ): Promise<any[]> {
     const currentDate = date || TimezoneConfigUtils.getCurrentTime();
     const dateStr = currentDate.toISOString().slice(0, 10);
@@ -121,7 +122,7 @@ export default class OrgHierarchyModel extends BaseModel {
       ],
     };
 
-    return await this.findAll(this.db.tableName, conditions, paginationOptions);
+    return await this.findAll(this.db.tableName, conditions, paginationOptions, { ...(clockOptions.transaction ? { transaction: clockOptions.transaction } : {}) });
   }
 
   // === RECHERCHES PAR CRITÈRES ===

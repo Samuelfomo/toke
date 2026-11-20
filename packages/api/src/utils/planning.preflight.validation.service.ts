@@ -1,3 +1,5 @@
+import type { PlanningSolverLockedAssignment } from './solver/planning.solver.js';
+import type { FixedAlternationSolverPolicy, FixedAlternationStatus } from './planning.fixed.alternation.js';
 import type {
   DayKey,
   EngineConfig,
@@ -27,7 +29,8 @@ export type PlanningPreflightIssueCode =
 
 export type PlanningPreflightWarningCode =
   | 'PREFLIGHT_TARGET_ABOVE_STATIC_CAPACITY'
-  | 'PREFLIGHT_NEAR_DAILY_CAPACITY';
+  | 'PREFLIGHT_NEAR_DAILY_CAPACITY'
+  | 'PREFLIGHT_FIXED_ALTERNATION_NOT_APPLIED';
 
 export interface PlanningPreflightIssue {
   code: PlanningPreflightIssueCode;
@@ -63,7 +66,16 @@ export interface PlanningPreflightInput {
   config: EngineConfig;
   periodFrom: string;
   periodTo: string;
+  fixedAlternationStatus?: FixedAlternationStatus;
+  fixedAlternationPolicy?: FixedAlternationSolverPolicy;
+  lockedAssignments?: PlanningSolverLockedAssignment[];
 }
+
+export const FIXED_ALTERNATION_MESSAGES: Record<FixedAlternationStatus, string> = {
+  PENDING_SOLVER_SUPPORT: 'L’alternance fixe est configurée. Le moteur actuel ne l’applique pas encore.',
+  NOT_APPLICABLE: 'La paire d’alternance fixe est incomplète dans cette génération.',
+  INCOMPATIBLE_PROFILES: 'Les profils ou les horaires actuels ne correspondent plus à la politique d’alternance fixe.',
+};
 
 const DAY_KEYS: DayKey[] = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
 
@@ -330,9 +342,40 @@ export function validatePlanningPreflight(input: PlanningPreflightInput): Planni
   const dates = periodDates(input.periodFrom, input.periodTo);
   const issues: PlanningPreflightIssue[] = [];
   const warnings: PlanningPreflightWarning[] = [];
+  if (input.fixedAlternationStatus) {
+    warnings.push({
+      code: 'PREFLIGHT_FIXED_ALTERNATION_NOT_APPLIED',
+      message: FIXED_ALTERNATION_MESSAGES[input.fixedAlternationStatus],
+      details: { status: input.fixedAlternationStatus },
+    });
+  }
   const rotating = input.employees.filter((employee) => employee.mode === 'ROTATING');
   const fixed = input.employees.filter((employee) => employee.mode === 'FIXED');
   const poolWeeks = activePoolWeeks(dates, input.requirements, input.config);
+
+  const alternating = input.fixedAlternationPolicy;
+  const capacityEmployees = alternating
+    ? input.employees.filter(employee => !alternating.employeeGuids.includes(employee.guid))
+    : input.employees;
+  const alternatingEmployees = alternating
+    ? fixed.filter(employee => alternating.employeeGuids.includes(employee.guid))
+    : [];
+  const locks = new Map((input.lockedAssignments ?? []).map(lock => [`${lock.employeeGuid}|${lock.date}`, lock]));
+  const alternatingCapacity = (requirement: PlanningRequirementInput, iso: string, mandatory: boolean) => {
+    if (!requirement.eligibility.planningModes.includes('FIXED') ||
+        requirement.eligibility.guardPoolRelation === 'MEMBER') return 0;
+    const target = alternating?.templates.find(template => template.guid === requirement.template.guid);
+    if (!target) return 0;
+    return alternatingEmployees.filter(employee => {
+      const lock = locks.get(`${employee.guid}|${iso}`);
+      if (lock) return lock.templateGuid === target.guid;
+      return !mandatory && templateHasWork(employee.fixedTemplate, iso) && templateHasWork(target, iso);
+    }).length;
+  };
+  const mandatoryCapacity = (requirement: PlanningRequirementInput, iso: string) =>
+    fixedMandatoryCapacity(capacityEmployees, requirement, iso) + alternatingCapacity(requirement, iso, true);
+  const maximumCapacity = (requirement: PlanningRequirementInput, iso: string) =>
+    fixedMaximumCapacity(capacityEmployees, requirement, iso) + alternatingCapacity(requirement, iso, false);
 
   const leavePolicy = input.config.weeklyLeavePolicy;
   const guardPolicy = input.config.guardTeamPolicy;
@@ -469,8 +512,8 @@ export function validatePlanningPreflight(input: PlanningPreflightInput): Planni
     for (const requirement of dayRequirements) {
       const required = hardMinimum(requirement);
       const maximum = hardMaximum(requirement);
-      const mandatoryFixed = fixedMandatoryCapacity(input.employees, requirement, iso);
-      const maximumFixed = fixedMaximumCapacity(input.employees, requirement, iso);
+      const mandatoryFixed = mandatoryCapacity(requirement, iso);
+      const maximumFixed = maximumCapacity(requirement, iso);
       const rotatingMax = rotatingCapacity(
         input.employees,
         requirement,
@@ -611,7 +654,7 @@ export function validatePlanningPreflight(input: PlanningPreflightInput): Planni
           }
 
           const max = hardMaximum(requirement);
-          const mandatoryFixed = fixedMandatoryCapacity(input.employees, requirement, iso);
+          const mandatoryFixed = mandatoryCapacity(requirement, iso);
           const rotatingMax = rotatingCapacity(
             input.employees,
             requirement,
@@ -656,7 +699,7 @@ export function validatePlanningPreflight(input: PlanningPreflightInput): Planni
             continue;
           }
           const required = hardMinimum(requirement);
-          const fixedMax = fixedMaximumCapacity(input.employees, requirement, iso);
+          const fixedMax = maximumCapacity(requirement, iso);
           requiredRotatingGuards += Math.max(0, required - fixedMax);
         }
       }

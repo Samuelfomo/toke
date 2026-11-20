@@ -1,3 +1,4 @@
+import type { ClockInOptions } from '../database/clock-in.options.js';
 import { ROLES_DEFAULTS, ROLES_ERRORS, RolesValidationUtils } from '@toke/shared';
 
 import BaseModel from '../database/db.base.js';
@@ -35,16 +36,16 @@ export default class RoleModel extends BaseModel {
     super();
   }
 
-  protected async find(id: number): Promise<any> {
-    return await this.findOne(this.db.tableName, { [this.db.id]: id });
+  protected async find(id: number, clockOptions: ClockInOptions = {}): Promise<any> {
+    return await this.findOne(this.db.tableName, { [this.db.id]: id }, { ...(clockOptions.transaction ? { transaction: clockOptions.transaction } : {}) });
   }
 
-  protected async findByGuid(guid: string): Promise<any> {
-    return await this.findOne(this.db.tableName, { [this.db.guid]: guid });
+  protected async findByGuid(guid: string, clockOptions: ClockInOptions = {}): Promise<any> {
+    return await this.findOne(this.db.tableName, { [this.db.guid]: guid }, { ...(clockOptions.transaction ? { transaction: clockOptions.transaction } : {}) });
   }
 
-  protected async findByCode(code: string): Promise<any> {
-    return await this.findOne(this.db.tableName, { [this.db.code]: code.toUpperCase() });
+  protected async findByCode(code: string, clockOptions: ClockInOptions = {}): Promise<any> {
+    return await this.findOne(this.db.tableName, { [this.db.code]: code.toUpperCase() }, { ...(clockOptions.transaction ? { transaction: clockOptions.transaction } : {}) });
   }
 
   // protected async findExistingDefaultRole(): Promise<any> {

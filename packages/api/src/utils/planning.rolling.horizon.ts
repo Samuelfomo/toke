@@ -424,7 +424,18 @@ export function mergeRollingDiagnostics(
         }, 0) / coverageValues.length * 100,
       );
 
+  const evaluations = chunks.flatMap(({ result, window }) => {
+    const evaluation = result.diagnostics.fixedAlternationEvaluation;
+    return evaluation ? [{
+      ...evaluation,
+      checks: evaluation.checks.filter(check => dateInRange(check.date, window.commitFrom, window.commitTo)),
+    }] : [];
+  });
+  const evaluation = evaluations[0];
   return {
+    ...(evaluation && evaluations.length === chunks.length && {
+      fixedAlternationEvaluation: { ...evaluation, checks: evaluations.flatMap(value => value.checks) },
+    }),
     violations: [...violations.values()],
     coverage: coverageValues.sort((a, b) => a.date.localeCompare(b.date) || a.requirementGuid.localeCompare(b.requirementGuid)),
     guardPools: [...guardPools.values()].sort((a, b) => a.weekFrom.localeCompare(b.weekFrom)),

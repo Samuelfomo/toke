@@ -215,12 +215,7 @@ function hasWorkForEveryDate(snapshot: TemplateSnapshot, from: string, to: strin
   return true;
 }
 
-export async function approveScheduleSuggestion(
-  suggestionGuid: string,
-  effectiveFrom?: unknown,
-): Promise<SuggestionApprovalResult> {
-  const sequelize = TenantManager.getConnectionSync();
-
+function approvalModels() {
   const SuggestionModel = TableInitializer.getModel(tableName.SCHEDULE_SUGGESTION);
   const ItemModel = TableInitializer.getModel(tableName.SCHEDULE_SUGGESTION_ITEM);
   const AssignmentModel = TableInitializer.getModel(tableName.SCHEDULE_ASSIGNMENTS);
@@ -235,169 +230,418 @@ export async function approveScheduleSuggestion(
     );
   }
 
+  return { SuggestionModel, ItemModel, AssignmentModel, SessionTemplateModel, UserModel };
+}
+
+interface PublishedGuardImpact {
+  item_guid: string;
+  effective_from: string;
+  continuation_date: string;
+  continuation_end: string | null;
+  guard_assignment_guid: string;
+  continuation_assignment_guid: string;
+  impact: 'CONTINUATION_REPLACED' | 'CONTINUATION_OUTSIDE_APPLICATION';
+}
+
+async function validateApproval(
+  models: ReturnType<typeof approvalModels>,
+  suggestionGuid: string,
+  effectiveFrom: unknown,
+  transaction: Transaction,
+  forUpdate: boolean,
+  now: Date,
+) {
+  const { SuggestionModel, ItemModel, UserModel, SessionTemplateModel, AssignmentModel } = models;
+  const suggestionInstance = await SuggestionModel.findOne({
+    where: { guid: suggestionGuid, deleted_at: null },
+    transaction,
+    ...(forUpdate ? { lock: transaction.LOCK.UPDATE } : {}),
+  });
+
+  if (!suggestionInstance) {
+    throw new SuggestionApprovalError('Suggestion introuvable.', 'SUGGESTION_NOT_FOUND', 404);
+  }
+
+  const suggestion = suggestionInstance.get({ plain: true });
+
+  if (suggestion.status !== 'draft') {
+    throw new SuggestionApprovalError(
+      'Seule une suggestion en brouillon peut être publiée.',
+      'SUGGESTION_ALREADY_RESOLVED',
+      409,
+    );
+  }
+
+  const periodFrom = suggestion.period_from as string;
+  const periodTo = suggestion.period_to as string;
+  const applicationPeriod = suggestionApplicationPeriod(
+    periodFrom,
+    periodTo,
+    effectiveFrom,
+    now,
+    TimezoneConfigUtils.getTimezone(),
+  );
+  const expectedDates = periodDates(periodFrom, periodTo);
+  const applicationDates = periodDates(applicationPeriod.from, applicationPeriod.to);
+  const expectedDateSet = new Set(expectedDates);
+
+  const itemInstances = await ItemModel.findAll({
+    where: { suggestion: suggestion.id, deleted_at: null },
+    transaction,
+    ...(forUpdate ? { lock: transaction.LOCK.UPDATE } : {}),
+    order: [['id', 'ASC']],
+  });
+
+  if (itemInstances.length === 0) {
+    throw new SuggestionApprovalError(
+      'La suggestion ne contient aucun planning collaborateur.',
+      'SUGGESTION_EMPTY',
+      422,
+    );
+  }
+
+  const items = itemInstances.map((instance: any) => instance.get({ plain: true }));
+  const userIds = [...new Set(items.map((item: any) => item.user))];
+
+  const userInstances = await UserModel.findAll({
+    where: { id: { [Op.in]: userIds } },
+    transaction,
+    ...(forUpdate ? { lock: transaction.LOCK.SHARE } : {}),
+  });
+
+  const usersById = new Map<number, any>(
+    userInstances.map((instance: any) => {
+      const user = instance.get({ plain: true });
+      return [user.id, user];
+    }),
+  );
+
+  if (usersById.size !== userIds.length) {
+    const missing = userIds.filter((id) => !usersById.has(id));
+    throw new SuggestionApprovalError(
+      'Un ou plusieurs collaborateurs de la suggestion ne sont plus disponibles.',
+      'SUGGESTION_EMPLOYEE_NOT_FOUND',
+      422,
+      { missing_employee_count: missing.length },
+    );
+  }
+
+  const referencedTemplateGuids = new Set<string>();
+
+  for (const item of items) {
+    const schedule = item.schedule as Record<string, ScheduleValue>;
+
+    if (!schedule || typeof schedule !== 'object' || Array.isArray(schedule)) {
+      throw new SuggestionApprovalError(
+        `Le planning d’un collaborateur est invalide.`,
+        'SUGGESTION_SCHEDULE_INVALID',
+        422,
+      );
+    }
+
+    const scheduleDates = Object.keys(schedule);
+    const missingDates = expectedDates.filter((iso) => !(iso in schedule));
+    const extraDates = scheduleDates.filter((iso) => !expectedDateSet.has(iso));
+    const authorizedSpilloverDates = getAuthorizedSpilloverDates(item, periodTo);
+    const authorizedSpilloverSet = new Set(authorizedSpilloverDates);
+    const invalidExtraDates = extraDates.filter((iso) => !authorizedSpilloverSet.has(iso));
+
+    if (missingDates.length > 0 || invalidExtraDates.length > 0) {
+      throw new SuggestionApprovalError(
+        `Le planning d’un collaborateur ne couvre pas correctement la période de la suggestion.`,
+        'SUGGESTION_SCHEDULE_PERIOD_MISMATCH',
+        422,
+        {
+          item_guid: item.guid,
+          missing_dates: missingDates,
+          extra_dates: extraDates,
+          invalid_extra_dates: invalidExtraDates,
+          authorized_spillover_dates: authorizedSpilloverDates,
+        },
+      );
+    }
+
+    for (const iso of [...applicationDates, ...authorizedSpilloverDates]) {
+      const value = schedule[iso];
+      if (value !== null) referencedTemplateGuids.add(value);
+    }
+  }
+
+  const templateInstances =
+    referencedTemplateGuids.size > 0
+      ? await SessionTemplateModel.findAll({
+          where: {
+            guid: { [Op.in]: [...referencedTemplateGuids] },
+            current: true,
+            deleted_at: null,
+          },
+          transaction,
+          ...(forUpdate ? { lock: transaction.LOCK.SHARE } : {}),
+        })
+      : [];
+
+  const templatesByGuid = new Map<string, TemplateSnapshot>(
+    templateInstances.map((instance: any) => {
+      const template = instance.get({ plain: true });
+      return [template.guid, makeTemplateSnapshot(template)];
+    }),
+  );
+
+  const missingTemplateGuids = [...referencedTemplateGuids].filter(
+    (guid) => !templatesByGuid.has(guid),
+  );
+
+  if (missingTemplateGuids.length > 0) {
+    throw new SuggestionApprovalError(
+      'Un ou plusieurs modèles horaires de la suggestion ne sont plus disponibles.',
+      'SUGGESTION_TEMPLATE_NOT_FOUND',
+      422,
+      { template_guids: missingTemplateGuids },
+    );
+  }
+
+  const boundaryConflicts: SuggestionApprovalError[] = [];
+  const affectedGuards: PublishedGuardImpact[] = [];
+  const plans = [];
+  for (const item of items) {
+    const user = usersById.get(item.user);
+    const userGuid = user.guid as string;
+    const schedule = item.schedule as Record<string, ScheduleValue>;
+    const spilloverDates = getAuthorizedSpilloverDates(item, periodTo);
+    const itemDates = [...applicationDates, ...spilloverDates];
+    const itemPeriodTo = itemDates[itemDates.length - 1]!;
+    const blocks = buildBlocks(schedule, itemDates);
+    const reasons = (item.reasons ?? {}) as Record<string, ScheduleReason | null>;
+
+    const nextDate = addDays(itemPeriodTo, 1);
+    const nearbyInstances = await AssignmentModel.findAll({
+      where: {
+        family: SAFamily.USER,
+        related: userGuid,
+        active: true,
+        deleted_at: null,
+        start_date: { [Op.lte]: nextDate },
+        [Op.or]: [{ end_date: null }, { end_date: { [Op.gte]: applicationPeriod.from } }],
+      },
+      transaction,
+      ...(forUpdate ? { lock: transaction.LOCK.UPDATE } : {}),
+      order: [['start_date', 'ASC']],
+    });
+
+    const existingInstances = nearbyInstances.filter(
+      (instance) => (instance.get('start_date') as string) <= itemPeriodTo,
+    );
+    const replacedGuids = new Set(existingInstances.map((instance) => instance.get('guid')));
+
+    try {
+      assertSafeSuggestionBoundary(
+        periodFrom, applicationPeriod.from, reasons[applicationPeriod.from]?.source, item.guid,
+      );
+    } catch (error) {
+      if (!(error instanceof SuggestionApprovalError)) throw error;
+      boundaryConflicts.push(error);
+    }
+
+    for (const instance of nearbyInstances) {
+      const existing = instance.get({ plain: true });
+      if (!existing.continuation_of_guid) continue;
+      const outsideApplication = existing.start_date > itemPeriodTo;
+      if (outsideApplication && !replacedGuids.has(existing.continuation_of_guid)) continue;
+      const affected: PublishedGuardImpact = {
+        item_guid: item.guid,
+        effective_from: applicationPeriod.from,
+        continuation_date: existing.start_date,
+        continuation_end: existing.end_date,
+        guard_assignment_guid: existing.continuation_of_guid,
+        continuation_assignment_guid: existing.guid,
+        impact: outsideApplication ? 'CONTINUATION_OUTSIDE_APPLICATION' : 'CONTINUATION_REPLACED',
+      };
+      affectedGuards.push(affected);
+      if (existing.start_date === applicationPeriod.from) {
+        const date = applicationPeriod.from.split('-').reverse().join('/');
+        boundaryConflicts.push(new SuggestionApprovalError(
+          `La publication ne peut pas commencer le ${date} : une garde déjà publiée se poursuit à cette date.`,
+          'SUGGESTION_UNSAFE_APPLICATION_BOUNDARY',
+          422,
+          { ...affected, conflict_type: 'PUBLISHED_GUARD_CONTINUATION' },
+        ));
+      }
+    }
+
+    const validatedBlocks = blocks.map((block) => {
+      const snapshot =
+        block.templateGuid === null
+          ? makeRestSnapshot()
+          : templatesByGuid.get(block.templateGuid);
+
+      if (!snapshot) {
+        throw new SuggestionApprovalError(
+          'Un modèle horaire de la suggestion est introuvable.',
+          'SUGGESTION_TEMPLATE_NOT_FOUND',
+          422,
+        );
+      }
+
+      if (block.templateGuid !== null && !hasWorkForEveryDate(snapshot, block.from, block.to)) {
+        throw new SuggestionApprovalError(
+          `Le modèle horaire « ${snapshot.name} » ne prévoit pas de travail à toutes les dates de cette affectation.`,
+          'SUGGESTION_TEMPLATE_DAY_INVALID',
+          422,
+          {
+            template_guid: snapshot.guid,
+            period_from: block.from,
+            period_to: block.to,
+          },
+        );
+      }
+
+      return { ...block, snapshot };
+    });
+    plans.push({ userGuid, itemPeriodTo, reasons, existingInstances, blocks: validatedBlocks });
+  }
+  if (boundaryConflicts.length > 0) {
+    const first = boundaryConflicts.find((conflict) => 'guard_assignment_guid' in (conflict.details as object))
+      ?? boundaryConflicts[0]!;
+    throw new SuggestionApprovalError(first.message, first.code, first.status, {
+      ...(first.details as object),
+      conflicts: boundaryConflicts.map((conflict) => conflict.details),
+      affected_guards: affectedGuards,
+      period_to: applicationPeriod.to,
+      consequence: 'La garde ou le repos serait interrompu et la suggestion reste en brouillon.',
+    });
+  }
+  return { suggestionInstance, suggestion, applicationPeriod, plans, affectedGuards };
+}
+
+interface ApprovalAlert {
+  severity: 'INFO' | 'WARNING' | 'CONFIRMATION_REQUIRED' | 'BLOCKING';
+  code: string;
+  message: string;
+  details?: unknown;
+}
+
+export async function previewScheduleSuggestionApproval(
+  suggestionGuid: string,
+  effectiveFrom?: unknown,
+) {
+  const sequelize = TenantManager.getConnectionSync();
+  const models = approvalModels();
+
+  return sequelize.transaction(
+    { isolationLevel: Transaction.ISOLATION_LEVELS.REPEATABLE_READ, readOnly: true },
+    async (transaction) => {
+      // Sequelize v6 uses readOnly for routing. Enforce it in PostgreSQL as well.
+      await sequelize.query('SET TRANSACTION READ ONLY', { transaction });
+      const now = new Date();
+      const validate = (date: unknown) =>
+        validateApproval(models, suggestionGuid, date, transaction, false, now);
+
+      try {
+        const { applicationPeriod, affectedGuards } = await validate(effectiveFrom);
+        const alerts: ApprovalAlert[] = [];
+        const replaced = affectedGuards.filter((guard) => guard.impact === 'CONTINUATION_REPLACED');
+        const outside = affectedGuards.filter((guard) => guard.impact === 'CONTINUATION_OUTSIDE_APPLICATION');
+        if (replaced.length > 0) {
+          alerts.push({
+            severity: 'INFO',
+            code: 'SUGGESTION_PUBLISHED_GUARDS_AFFECTED',
+            message: 'La période de publication recouvre des gardes déjà publiées.',
+            details: { affected_guards: replaced },
+          });
+        }
+        if (outside.length > 0) {
+          alerts.push({
+            severity: 'WARNING',
+            code: 'SUGGESTION_PUBLISHED_GUARD_CONTINUATION_OUTSIDE_APPLICATION',
+            message: 'La publication remplace le début d’une garde dont la continuation reste après la période appliquée.',
+            details: { affected_guards: outside },
+          });
+        }
+        return {
+          can_publish: true,
+          effective_from: applicationPeriod.from,
+          alerts,
+          suggested_actions: [],
+        };
+      } catch (error) {
+        if (!(error instanceof SuggestionApprovalError) || error.status >= 500 || error.status === 404) {
+          throw error;
+        }
+        const details = error.details as { effective_from?: string; period_to?: string } | undefined;
+        const from = details?.effective_from ??
+          (error.code !== 'SUGGESTION_EFFECTIVE_FROM_INVALID' && typeof effectiveFrom === 'string'
+            ? effectiveFrom
+            : null);
+        const alerts: ApprovalAlert[] = [{
+          severity: 'BLOCKING', code: error.code, message: error.message, details: error.details,
+        }];
+        const suggested_actions: Array<{ code: string; message: string; effective_from?: string }> = [];
+
+        if (error.code === 'SUGGESTION_UNSAFE_APPLICATION_BOUNDARY' && from && details?.period_to) {
+          for (let date = addDays(from, 1); date <= details.period_to; date = addDays(date, 1)) {
+            try {
+              await validate(date);
+              suggested_actions.push({
+                code: 'CHOOSE_EFFECTIVE_FROM',
+                message: 'Choisissez cette date pour préserver la garde ou le repos en cours.',
+                effective_from: date,
+              });
+              return { can_publish: false, effective_from: from, alerts, suggested_actions, earliest_valid_date: date };
+            } catch (candidateError) {
+              if (!(candidateError instanceof SuggestionApprovalError) || ![
+                'SUGGESTION_UNSAFE_APPLICATION_BOUNDARY',
+                'SUGGESTION_TEMPLATE_NOT_FOUND',
+                'SUGGESTION_TEMPLATE_DAY_INVALID',
+              ].includes(candidateError.code)) throw candidateError;
+            }
+          }
+          alerts.push({
+            severity: 'BLOCKING',
+            code: 'SUGGESTION_NO_COMPATIBLE_EFFECTIVE_DATE',
+            message: 'Aucune date ultérieure de cette suggestion ne permet sa publication.',
+          });
+          suggested_actions.push({
+            code: 'REGENERATE_SUGGESTION',
+            message: 'Générez une nouvelle suggestion pour une période compatible.',
+          });
+        } else if (error.code.startsWith('SUGGESTION_EFFECTIVE_FROM_')) {
+          suggested_actions.push({
+            code: 'CHOOSE_EFFECTIVE_FROM',
+            message: 'Saisissez une date valide, à partir de demain et dans la période de la suggestion.',
+          });
+        } else if (error.code !== 'SUGGESTION_ALREADY_RESOLVED') {
+          suggested_actions.push({
+            code: 'REGENERATE_SUGGESTION',
+            message: 'Vérifiez les données du planning, puis générez une nouvelle suggestion.',
+          });
+        }
+
+        return { can_publish: false, effective_from: from, alerts, suggested_actions };
+      }
+    },
+  );
+}
+
+export async function approveScheduleSuggestion(
+  suggestionGuid: string,
+  effectiveFrom?: unknown,
+): Promise<SuggestionApprovalResult> {
+  const sequelize = TenantManager.getConnectionSync();
+
+  const models = approvalModels();
+  const { AssignmentModel } = models;
+
   return await sequelize.transaction(
     { isolationLevel: Transaction.ISOLATION_LEVELS.SERIALIZABLE },
     async (transaction) => {
-      const suggestionInstance = await SuggestionModel.findOne({
-        where: { guid: suggestionGuid, deleted_at: null },
-        transaction,
-        lock: transaction.LOCK.UPDATE,
-      });
-
-      if (!suggestionInstance) {
-        throw new SuggestionApprovalError('Suggestion not found', 'SUGGESTION_NOT_FOUND', 404);
-      }
-
-      const suggestion = suggestionInstance.get({ plain: true });
-
-      if (suggestion.status !== 'draft') {
-        throw new SuggestionApprovalError(
-          'Only a draft suggestion can be approved',
-          'SUGGESTION_ALREADY_RESOLVED',
-          409,
-        );
-      }
-
-      const periodFrom = suggestion.period_from as string;
-      const periodTo = suggestion.period_to as string;
-      const applicationPeriod = suggestionApplicationPeriod(
-        periodFrom,
-        periodTo,
-        effectiveFrom,
-        new Date(),
-        TimezoneConfigUtils.getTimezone(),
-      );
-      const expectedDates = periodDates(periodFrom, periodTo);
-      const applicationDates = periodDates(applicationPeriod.from, applicationPeriod.to);
-      const expectedDateSet = new Set(expectedDates);
-
-      const itemInstances = await ItemModel.findAll({
-        where: { suggestion: suggestion.id, deleted_at: null },
-        transaction,
-        lock: transaction.LOCK.UPDATE,
-        order: [['id', 'ASC']],
-      });
-
-      if (itemInstances.length === 0) {
-        throw new SuggestionApprovalError(
-          'The suggestion contains no employee item',
-          'SUGGESTION_EMPTY',
-          422,
-        );
-      }
-
-      const items = itemInstances.map((instance: any) => instance.get({ plain: true }));
-      const userIds = [...new Set(items.map((item: any) => item.user))];
-
-      const userInstances = await UserModel.findAll({
-        where: { id: { [Op.in]: userIds } },
-        transaction,
-        lock: transaction.LOCK.SHARE,
-      });
-
-      const usersById = new Map<number, any>(
-        userInstances.map((instance: any) => {
-          const user = instance.get({ plain: true });
-          return [user.id, user];
-        }),
-      );
-
-      if (usersById.size !== userIds.length) {
-        const missing = userIds.filter((id) => !usersById.has(id));
-        throw new SuggestionApprovalError(
-          'One or more suggestion employees no longer exist',
-          'SUGGESTION_EMPLOYEE_NOT_FOUND',
-          422,
-          { user_ids: missing },
-        );
-      }
-
-      const referencedTemplateGuids = new Set<string>();
-
-      for (const item of items) {
-        const schedule = item.schedule as Record<string, ScheduleValue>;
-
-        assertSafeSuggestionBoundary(
-          periodFrom,
-          applicationPeriod.from,
-          item.reasons?.[applicationPeriod.from]?.source,
-          item.guid,
-        );
-
-        if (!schedule || typeof schedule !== 'object' || Array.isArray(schedule)) {
-          throw new SuggestionApprovalError(
-            `Invalid schedule for suggestion item ${item.guid}`,
-            'SUGGESTION_SCHEDULE_INVALID',
-            422,
-          );
-        }
-
-        const scheduleDates = Object.keys(schedule);
-        const missingDates = expectedDates.filter((iso) => !(iso in schedule));
-        const extraDates = scheduleDates.filter((iso) => !expectedDateSet.has(iso));
-        const authorizedSpilloverDates = getAuthorizedSpilloverDates(item, periodTo);
-        const authorizedSpilloverSet = new Set(authorizedSpilloverDates);
-        const invalidExtraDates = extraDates.filter((iso) => !authorizedSpilloverSet.has(iso));
-
-        if (missingDates.length > 0 || invalidExtraDates.length > 0) {
-          throw new SuggestionApprovalError(
-            `Suggestion item ${item.guid} does not correctly cover the suggestion period`,
-            'SUGGESTION_SCHEDULE_PERIOD_MISMATCH',
-            422,
-            {
-              item_guid: item.guid,
-              missing_dates: missingDates,
-              extra_dates: extraDates,
-              invalid_extra_dates: invalidExtraDates,
-              authorized_spillover_dates: authorizedSpilloverDates,
-            },
-          );
-        }
-
-        for (const iso of [...applicationDates, ...authorizedSpilloverDates]) {
-          const value = schedule[iso];
-          if (value !== null) referencedTemplateGuids.add(value);
-        }
-      }
-
-      const templateInstances =
-        referencedTemplateGuids.size > 0
-          ? await SessionTemplateModel.findAll({
-              where: {
-                guid: { [Op.in]: [...referencedTemplateGuids] },
-                current: true,
-                deleted_at: null,
-              },
-              transaction,
-              lock: transaction.LOCK.SHARE,
-            })
-          : [];
-
-      const templatesByGuid = new Map<string, TemplateSnapshot>(
-        templateInstances.map((instance: any) => {
-          const template = instance.get({ plain: true });
-          return [template.guid, makeTemplateSnapshot(template)];
-        }),
-      );
-
-      const missingTemplateGuids = [...referencedTemplateGuids].filter(
-        (guid) => !templatesByGuid.has(guid),
-      );
-
-      if (missingTemplateGuids.length > 0) {
-        throw new SuggestionApprovalError(
-          'One or more session templates are unavailable or no longer current',
-          'SUGGESTION_TEMPLATE_NOT_FOUND',
-          422,
-          { template_guids: missingTemplateGuids },
-        );
-      }
-
       await sequelize.query(
         `LOCK TABLE "${tableName.SCHEDULE_ASSIGNMENTS}" IN SHARE ROW EXCLUSIVE MODE`,
         { transaction },
       );
 
+      const { suggestionInstance, suggestion, applicationPeriod, plans } = await validateApproval(
+        models, suggestionGuid, effectiveFrom, transaction, true, new Date(),
+      );
       const maximumId = Number((await AssignmentModel.max('id', { transaction })) ?? 0);
       let nextAssignmentId = maximumId + 1;
 
@@ -436,46 +680,8 @@ export async function approveScheduleSuggestion(
         return guid;
       };
 
-      for (const item of items) {
-        const user = usersById.get(item.user);
-        const userGuid = user.guid as string;
-        const schedule = item.schedule as Record<string, ScheduleValue>;
-        const spilloverDates = getAuthorizedSpilloverDates(item, periodTo);
-        const itemDates = [...applicationDates, ...spilloverDates];
-        const itemPeriodTo = itemDates[itemDates.length - 1]!;
-        const blocks = buildBlocks(schedule, itemDates);
+      for (const { userGuid, itemPeriodTo, reasons, existingInstances, blocks } of plans) {
         const assignmentGuidByDate = new Map<string, string>();
-        const reasons = (item.reasons ?? {}) as Record<string, ScheduleReason | null>;
-
-        const existingInstances = await AssignmentModel.findAll({
-          where: {
-            family: SAFamily.USER,
-            related: userGuid,
-            active: true,
-            deleted_at: null,
-            start_date: { [Op.lte]: itemPeriodTo },
-            [Op.or]: [{ end_date: null }, { end_date: { [Op.gte]: applicationPeriod.from } }],
-          },
-          transaction,
-          lock: transaction.LOCK.UPDATE,
-          order: [['start_date', 'ASC']],
-        });
-
-        // Do not replace the second day of a previously published guard while
-        // leaving its first day in the protected history.
-        if (
-          existingInstances.some((instance: any) => {
-            const existing = instance.get({ plain: true });
-            return existing.continuation_of_guid && existing.start_date === applicationPeriod.from;
-          })
-        ) {
-          throw new SuggestionApprovalError(
-            'La prise d’effet coupe une garde déjà publiée. Choisissez une date après sa continuation.',
-            'SUGGESTION_UNSAFE_APPLICATION_BOUNDARY',
-            422,
-            { item_guid: item.guid, effective_from: applicationPeriod.from },
-          );
-        }
 
         for (const existingInstance of existingInstances) {
           const existing = existingInstance.get({ plain: true });
@@ -522,32 +728,7 @@ export async function approveScheduleSuggestion(
         }
 
         for (const block of blocks) {
-          const snapshot =
-            block.templateGuid === null
-              ? makeRestSnapshot()
-              : templatesByGuid.get(block.templateGuid);
-
-          if (!snapshot) {
-            throw new SuggestionApprovalError(
-              `Template ${block.templateGuid} not found during approval`,
-              'SUGGESTION_TEMPLATE_NOT_FOUND',
-              422,
-            );
-          }
-
-          if (block.templateGuid !== null && !hasWorkForEveryDate(snapshot, block.from, block.to)) {
-            throw new SuggestionApprovalError(
-              `Template ${snapshot.name} does not define work for every date in ${block.from} → ${block.to}`,
-              'SUGGESTION_TEMPLATE_DAY_INVALID',
-              422,
-              {
-                template_guid: snapshot.guid,
-                period_from: block.from,
-                period_to: block.to,
-              },
-            );
-          }
-
+          const { snapshot } = block;
           const continuationDate = addDays(block.from, -1);
           const explicitContinuation =
             block.from === block.to &&
@@ -591,7 +772,7 @@ export async function approveScheduleSuggestion(
         createdCount,
         deactivatedCount,
         preservedFragmentCount,
-        employeeCount: items.length,
+        employeeCount: plans.length,
       };
     },
   );

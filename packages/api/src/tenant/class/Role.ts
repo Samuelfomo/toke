@@ -1,3 +1,4 @@
+import type { ClockInOptions } from '../database/clock-in.options.js';
 import { ROLES_DEFAULTS } from '@toke/shared';
 
 import RoleModel from '../model/RoleModel.js';
@@ -47,9 +48,9 @@ export default class Role extends RoleModel {
   static _load(
     identifier: any,
     byGuid: boolean = false,
-    byCode: boolean = false,
+    byCode: boolean = false, clockOptions: ClockInOptions = {},
   ): Promise<Role | null> {
-    return new Role().load(identifier, byGuid, byCode);
+    return new Role().load(identifier, byGuid, byCode, clockOptions);
   }
 
   // static _loadDefaultRole(): Promise<Role | null> {
@@ -196,13 +197,13 @@ export default class Role extends RoleModel {
   async load(
     identifier: any,
     byGuid: boolean = false,
-    byCode: boolean = false,
+    byCode: boolean = false, clockOptions: ClockInOptions = {},
   ): Promise<Role | null> {
     const data = byGuid
-      ? await this.findByGuid(identifier)
+      ? await this.findByGuid(identifier, clockOptions)
       : byCode
-        ? await this.findByCode(identifier)
-        : await this.find(Number(identifier));
+        ? await this.findByCode(identifier, clockOptions)
+        : await this.find(Number(identifier), clockOptions);
     if (!data) return null;
     return this.hydrate(data);
   }

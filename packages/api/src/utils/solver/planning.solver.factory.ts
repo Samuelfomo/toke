@@ -13,6 +13,7 @@ export interface PlanningSolverFactoryOptions {
   // timeoutSeconds: number;
   fallbackToGreedy: boolean;
   ortoolsEndpoint?: string;
+  fixedAlternationSupported?: boolean;
 }
 
 export default class PlanningSolverFactory {
@@ -42,7 +43,8 @@ export default class PlanningSolverFactory {
         options.solverType === 'ORTOOLS' &&
         options.fallbackToGreedy &&
         error instanceof PlanningSolverTechnicalError &&
-        error.code !== 'PLANNING_SOLVER_INVALID_INPUT';
+        error.code !== 'PLANNING_SOLVER_INVALID_INPUT' &&
+        error.code !== 'PLANNING_SOLVER_PROTOCOL_ERROR';
 
       if (!mayFallback) {
         throw error;
@@ -74,6 +76,7 @@ export default class PlanningSolverFactory {
     return new OrToolsPlanningSolver({
       endpoint:
         options.ortoolsEndpoint ?? (globalThis as any).process?.env?.PLANNING_ORTOOLS_URL ?? '',
+      fixedAlternationSupported: options.fixedAlternationSupported,
       // timeoutSeconds: options.timeoutSeconds,
     });
   }

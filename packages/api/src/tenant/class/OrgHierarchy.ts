@@ -1,3 +1,4 @@
+import type { ClockInOptions } from '../database/clock-in.options.js';
 import { RelationshipType, TimezoneConfigUtils } from '@toke/shared';
 
 import OrgHierarchyModel from '../model/OrgHierarchyModel.js';
@@ -135,17 +136,17 @@ export default class OrgHierarchy extends OrgHierarchyModel {
    */
   static async getAllDescendantUserIds(
     supervisor_id: number,
-    includeIndirect: boolean = true,
+    includeIndirect: boolean = true, clockOptions: ClockInOptions = {},
   ): Promise<number[]> {
     const org = new OrgHierarchy();
     const visited = new Set<number>();
 
     if (includeIndirect) {
       // Récursif : tous les niveaux
-      return await org._recursiveFetchSubordinateIds(supervisor_id, visited);
+      return await org._recursiveFetchSubordinateIds(supervisor_id, visited, clockOptions);
     } else {
       // Direct seulement
-      const directRelations = await org.listAllActiveSubordinates(supervisor_id);
+      const directRelations = await org.listAllActiveSubordinates(supervisor_id, undefined, undefined, clockOptions);
       if (!directRelations || directRelations.length === 0) return [];
       return directRelations.map((relation) => relation[org.db.subordinate]);
     }
@@ -157,8 +158,8 @@ export default class OrgHierarchy extends OrgHierarchyModel {
    * @param supervisorId ID du superviseur
    * @returns true si l'utilisateur est un descendant du superviseur
    */
-  static async isUserInHierarchy(userId: number, supervisorId: number): Promise<boolean> {
-    const descendants = await this.getAllDescendantUserIds(supervisorId);
+  static async isUserInHierarchy(userId: number, supervisorId: number, clockOptions: ClockInOptions = {}): Promise<boolean> {
+    const descendants = await this.getAllDescendantUserIds(supervisorId, undefined, clockOptions);
     return descendants.includes(userId);
   }
 
@@ -895,12 +896,12 @@ export default class OrgHierarchy extends OrgHierarchyModel {
    */
   private async _recursiveFetchSubordinateIds(
     supervisor_id: number,
-    visited: Set<number>,
+    visited: Set<number>, clockOptions: ClockInOptions = {},
   ): Promise<number[]> {
     if (visited.has(supervisor_id)) return [];
     visited.add(supervisor_id);
 
-    const directRelations = await this.listAllActiveSubordinates(supervisor_id);
+    const directRelations = await this.listAllActiveSubordinates(supervisor_id, undefined, undefined, clockOptions);
     if (!directRelations || directRelations.length === 0) return [];
 
     const allSubordinateIds: number[] = [];
@@ -910,7 +911,7 @@ export default class OrgHierarchy extends OrgHierarchyModel {
       allSubordinateIds.push(subordinateId);
 
       // Récursivité : chercher les subordonnés du subordonné
-      const subIds = await this._recursiveFetchSubordinateIds(subordinateId, visited);
+      const subIds = await this._recursiveFetchSubordinateIds(subordinateId, visited, clockOptions);
       allSubordinateIds.push(...subIds);
     }
 

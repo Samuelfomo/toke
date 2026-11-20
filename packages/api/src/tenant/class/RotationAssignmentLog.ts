@@ -1,3 +1,4 @@
+import type { Transaction } from 'sequelize';
 import RotationAssignmentLogModel from '../model/RotationAssignmentLogModel.js';
 import { responseStructure as RS, responseValue, ViewMode } from '../../utils/response.model.js';
 
@@ -122,11 +123,14 @@ export default class RotationAssignmentLog extends RotationAssignmentLogModel {
   /**
    * Enregistre ce log. Les logs sont immuables : une fois créés, ils ne peuvent plus être modifiés.
    */
-  async save(): Promise<void> {
+  async save(
+    transaction?: Transaction,
+    publishAfterCommit?: (publish: () => void) => void,
+  ): Promise<void> {
     if (!this.isNew()) {
       throw new Error('RotationAssignmentLog is immutable: cannot update an existing log entry.');
     }
-    await this.create();
+    await this.create(transaction, publishAfterCommit);
   }
 
   // ============================================

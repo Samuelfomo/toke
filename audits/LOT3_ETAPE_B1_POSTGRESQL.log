@@ -1,0 +1,6 @@
+Commande : PATH="/Applications/Postgres.app/Contents/Versions/16/bin:$PATH" node packages/api/verification/tenant-isolation/postgres-memo-b1.cjs --create-disposable-cluster
+postgres (PostgreSQL) 16.15 (Postgres.app)
+v01_test_a: positive correction graph (rollback), composite target FK/provenance/decision references, one decision per cycle, install/rerun, incompatible schema, no backfill, immutability, FK, rollback, command replay/conflict, concurrency, existing no DDL PASS
+v01_test_b: positive correction graph (rollback), composite target FK/provenance/decision references, one decision per cycle, install/rerun, incompatible schema, no backfill, immutability, FK, rollback, command replay/conflict, concurrency, existing no DDL PASS
+PASS B1: A/B isolated, dedicated NOLOGIN migration owners / restricted LOGIN runtime, original V01 existing initialization unchanged; no production, no HTTP, no worker
+Code de sortie : 0

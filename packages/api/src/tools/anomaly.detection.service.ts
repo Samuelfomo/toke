@@ -1,3 +1,4 @@
+import type { ClockInOptions } from '../tenant/database/clock-in.options.js';
 import {
   AlertSeverity,
   AlertType,
@@ -89,7 +90,7 @@ class AnomalyDetectionService {
 
   async detectAccessAnomalies(
     userId: number,
-    qrCodeObj: QrCodeGeneration,
+    qrCodeObj: QrCodeGeneration, clockOptions: ClockInOptions = {},
   ): Promise<{
     anomalies: Anomaly[];
     corrections: any[];
@@ -135,12 +136,12 @@ class AnomalyDetectionService {
     }
 
     // 3. Récupérer le manager de l'utilisateur
-    const roleObj = await Role._load(RoleValues.EMPLOYEE, false, true);
+    const roleObj = await Role._load(RoleValues.EMPLOYEE, false, true, clockOptions);
     const identifier = {
       user: userId,
       role: roleObj?.getId()!,
     };
-    const userRole = await UserRole._load(identifier, false, true);
+    const userRole = await UserRole._load(identifier, false, true, undefined, clockOptions);
     const userManager = userRole?.getAssignedBy();
 
     // 4. Vérifier si c'est le manager direct
@@ -149,7 +150,7 @@ class AnomalyDetectionService {
     }
 
     // 5. ⭐ Vérifier l'héritage hiérarchique
-    const isInHierarchy = await OrgHierarchy.isUserInHierarchy(userId, qrCodeManager);
+    const isInHierarchy = await OrgHierarchy.isUserInHierarchy(userId, qrCodeManager, clockOptions);
 
     if (isInHierarchy) {
       return { anomalies, corrections }; // ✅ Autorisé - héritage hiérarchique
@@ -161,8 +162,8 @@ class AnomalyDetectionService {
       severity: AlertSeverity.HIGH,
       description: `Use of an unauthorized QR code - The employee clocked in using another manager's QR code.`,
       technical_details: {
-        user_manager: (await userRole?.getAssignedByObject())!.getGuid(),
-        qr_code_manager: (await qrCodeObj.getManagerObj())!.getGuid(),
+        user_manager: (await userRole?.getAssignedByObject(clockOptions))!.getGuid(),
+        qr_code_manager: (await qrCodeObj.getManagerObj(clockOptions))!.getGuid(),
         qr_code_guid: qrCodeObj.getGuid(),
       },
       auto_correctable: false, // Nécessite validation manager
@@ -176,7 +177,7 @@ class AnomalyDetectionService {
    */
   async detectClockInAnomalies(
     userId: number,
-    validatedData: any,
+    validatedData: any, clockOptions: ClockInOptions = {},
   ): Promise<{
     anomalies: Anomaly[];
     corrections: any[];
@@ -186,7 +187,7 @@ class AnomalyDetectionService {
     const corrections: any[] = [];
 
     // 1️⃣ Session déjà ouverte
-    const activeSession = await WorkSessions._findActiveSessionByUser(userId);
+    const activeSession = await WorkSessions._findActiveSessionByUser(userId, clockOptions);
     if (activeSession) {
       anomalies.push({
         type: AnomalyType.SESSION_ALREADY_OPEN,
@@ -215,7 +216,7 @@ class AnomalyDetectionService {
       // estimatedEnd.setMinutes(estimatedEnd.getMinutes() - 1);
 
       activeSession.setSessionEndAt(estimatedEnd).setSessionStatus(SessionStatus.ABANDONED);
-      await activeSession.save();
+      await activeSession.save(clockOptions);
 
       corrections.push({
         action: 'auto_close_previous_session',
@@ -259,7 +260,7 @@ class AnomalyDetectionService {
     const { anomalies: scheduleAnomalies, scheduleContext } = await this.detectScheduleViolations(
       userId,
       PointageType.CLOCK_IN,
-      new Date(validatedData.clocked_at),
+      new Date(validatedData.clocked_at), undefined, clockOptions,
     );
 
     // Fusionner les anomalies d'horaire
@@ -275,6 +276,7 @@ class AnomalyDetectionService {
     userId: number,
     validatedData: any,
     device: number,
+    clockOptions: ClockInOptions = {},
   ): Promise<{
     anomalies: Anomaly[];
     corrections: any[];
@@ -284,7 +286,7 @@ class AnomalyDetectionService {
     const corrections: any[] = [];
 
     // 1. Vérifier session active
-    const activeSession = await WorkSessions._findActiveSessionByUser(userId);
+    const activeSession = await WorkSessions._findActiveSessionByUser(userId, clockOptions);
     if (!activeSession) {
       anomalies.push({
         type: AnomalyType.SESSION_NOT_FOUND,
@@ -301,7 +303,7 @@ class AnomalyDetectionService {
     }
 
     // 2. Pause déjà active
-    const hasActivePause = await activeSession.isOnPause();
+    const hasActivePause = await activeSession.isOnPause(clockOptions);
     if (hasActivePause) {
       anomalies.push({
         type: AnomalyType.PAUSE_ALREADY_ACTIVE,
@@ -311,7 +313,7 @@ class AnomalyDetectionService {
       });
 
       // ✅ CORRECTION AUTO : Fermer pause précédente
-      const entries = await TimeEntries._listBySession(activeSession.getId()!);
+      const entries = await TimeEntries._listBySession(activeSession.getId()!, undefined, clockOptions);
       const lastPause = entries
         ?.reverse()
         .find((e) => e.getPointageType() === PointageType.PAUSE_START);
@@ -327,8 +329,8 @@ class AnomalyDetectionService {
           .setCoordinates(validatedData.latitude, validatedData.longitude)
           .setPointageStatus(PointageStatus.CORRECTED);
 
-        await autoPauseEnd.save();
-        await autoPauseEnd.accept();
+        await autoPauseEnd.save(clockOptions);
+        await autoPauseEnd.accept(clockOptions);
 
         corrections.push({
           action: 'auto_close_previous_pause',
@@ -340,7 +342,7 @@ class AnomalyDetectionService {
     }
 
     // 3. Fréquence suspecte (>3 pauses/jour)
-    const todayPauses = await this.getTodayPausesCount(userId);
+    const todayPauses = await this.getTodayPausesCount(userId, clockOptions);
     if (todayPauses >= 3) {
       console.log('je suis ici 🔴');
       anomalies.push({
@@ -364,6 +366,7 @@ class AnomalyDetectionService {
   async detectPauseEndAnomalies(
     userId: number,
     validatedData: any,
+    clockOptions: ClockInOptions = {},
   ): Promise<{
     anomalies: Anomaly[];
     corrections: any[];
@@ -372,7 +375,7 @@ class AnomalyDetectionService {
     const anomalies: Anomaly[] = [];
     const corrections: any[] = [];
 
-    const activeSession = await WorkSessions._findActiveSessionByUser(userId);
+    const activeSession = await WorkSessions._findActiveSessionByUser(userId, clockOptions);
     if (!activeSession) {
       anomalies.push({
         type: AnomalyType.SESSION_NOT_FOUND,
@@ -384,7 +387,7 @@ class AnomalyDetectionService {
     }
 
     // Pause non active
-    const hasActivePause = await activeSession.isOnPause();
+    const hasActivePause = await activeSession.isOnPause(clockOptions);
     if (!hasActivePause) {
       anomalies.push({
         type: AnomalyType.PAUSE_NOT_ACTIVE,
@@ -396,7 +399,7 @@ class AnomalyDetectionService {
 
     // Durée pause anormale (>2h)
     if (hasActivePause) {
-      const entries = await TimeEntries._listBySession(activeSession.getId()!);
+      const entries = await TimeEntries._listBySession(activeSession.getId()!, undefined, clockOptions);
       const lastPause = entries
         ?.reverse()
         .find((e) => e.getPointageType() === PointageType.PAUSE_START);
@@ -434,6 +437,7 @@ class AnomalyDetectionService {
     validatedData: any,
     siteObj: Site,
     device: number,
+    clockOptions: ClockInOptions = {},
   ): Promise<{
     anomalies: Anomaly[];
     corrections: any[];
@@ -444,7 +448,7 @@ class AnomalyDetectionService {
     const corrections: any[] = [];
     let autoCreatedSession = false;
 
-    let activeSession = await WorkSessions._findActiveSessionByUser(userId);
+    let activeSession = await WorkSessions._findActiveSessionByUser(userId, clockOptions);
 
     // ✅ CAS SPÉCIAL : CLOCK_OUT sans session active
     if (!activeSession) {
@@ -477,7 +481,7 @@ class AnomalyDetectionService {
         .setStartCoordinates(validatedData.latitude, validatedData.longitude)
         .setSessionStatus(SessionStatus.CORRECTED);
 
-      await activeSession.save();
+      await activeSession.save(clockOptions);
 
       // Créer entry d'entrée artificielle
       const artificialEntry = new TimeEntries()
@@ -495,8 +499,8 @@ class AnomalyDetectionService {
           reason: 'missing_clock_in',
         });
 
-      await artificialEntry.save();
-      await artificialEntry.accept();
+      await artificialEntry.save(clockOptions);
+      await artificialEntry.accept(clockOptions);
 
       corrections.push({
         action: 'auto_create_missing_session',
@@ -514,7 +518,7 @@ class AnomalyDetectionService {
     }
 
     // Vérifier pause non fermée (logique existante)
-    const hasActivePause = await activeSession.isOnPause();
+    const hasActivePause = await activeSession.isOnPause(clockOptions);
     if (hasActivePause) {
       anomalies.push({
         type: AnomalyType.PAUSE_NOT_ACTIVE,
@@ -533,8 +537,8 @@ class AnomalyDetectionService {
         .setCoordinates(validatedData.latitude, validatedData.longitude)
         .setPointageStatus(PointageStatus.CORRECTED);
 
-      await autoPauseEnd.save();
-      await autoPauseEnd.accept();
+      await autoPauseEnd.save(clockOptions);
+      await autoPauseEnd.accept(clockOptions);
 
       corrections.push({
         action: 'auto_close_active_pause',
@@ -574,6 +578,7 @@ class AnomalyDetectionService {
     validatedData: any,
     siteObj: Site,
     device: number,
+    clockOptions: ClockInOptions = {},
   ): Promise<{
     anomalies: Anomaly[];
     corrections: any[];
@@ -584,7 +589,7 @@ class AnomalyDetectionService {
     const corrections: any[] = [];
     let autoCreatedSession = false;
 
-    let activeSession = await WorkSessions._findActiveSessionByUser(userId);
+    let activeSession = await WorkSessions._findActiveSessionByUser(userId, clockOptions);
 
     // ✅ CAS 1 : Pas de session active → Créer session auto
     if (!activeSession) {
@@ -616,7 +621,7 @@ class AnomalyDetectionService {
         .setStartCoordinates(validatedData.latitude, validatedData.longitude)
         .setSessionStatus(SessionStatus.CORRECTED);
 
-      await activeSession.save();
+      await activeSession.save(clockOptions);
 
       // Créer entry CLOCK_IN artificielle
       const artificialEntry = new TimeEntries()
@@ -634,8 +639,8 @@ class AnomalyDetectionService {
           reason: 'missing_clock_in_before_mission',
         });
 
-      await artificialEntry.save();
-      await artificialEntry.accept();
+      await artificialEntry.save(clockOptions);
+      await artificialEntry.accept(clockOptions);
 
       corrections.push({
         action: 'auto_create_session_for_mission',
@@ -651,7 +656,7 @@ class AnomalyDetectionService {
     }
 
     // ✅ CAS 2 : Mission déjà active
-    const hasActiveMission = await activeSession.activeMission();
+    const hasActiveMission = await activeSession.activeMission(clockOptions);
     if (hasActiveMission) {
       anomalies.push({
         type: AnomalyType.MISSION_ALREADY_ACTIVE,
@@ -675,6 +680,7 @@ class AnomalyDetectionService {
     validatedData: any,
     siteObj: Site,
     device: number,
+    clockOptions: ClockInOptions = {},
   ): Promise<{
     anomalies: Anomaly[];
     corrections: any[];
@@ -687,7 +693,7 @@ class AnomalyDetectionService {
     let autoCreatedSession = false;
     let autoCreatedMissionStart = false;
 
-    let activeSession = await WorkSessions._findActiveSessionByUser(userId);
+    let activeSession = await WorkSessions._findActiveSessionByUser(userId, clockOptions);
 
     // ✅ CAS 1 : Pas de session active → Créer session + mission start auto
     if (!activeSession) {
@@ -717,7 +723,7 @@ class AnomalyDetectionService {
         .setStartCoordinates(validatedData.latitude, validatedData.longitude)
         .setSessionStatus(SessionStatus.CORRECTED);
 
-      await activeSession.save();
+      await activeSession.save(clockOptions);
 
       // Créer CLOCK_IN artificiel
       const artificialClockIn = new TimeEntries()
@@ -735,8 +741,8 @@ class AnomalyDetectionService {
           reason: 'missing_clock_in_before_mission_end',
         });
 
-      await artificialClockIn.save();
-      await artificialClockIn.accept();
+      await artificialClockIn.save(clockOptions);
+      await artificialClockIn.accept(clockOptions);
 
       // Créer MISSION_START artificiel
       const artificialMissionStart = new TimeEntries()
@@ -754,8 +760,8 @@ class AnomalyDetectionService {
           reason: 'missing_mission_start',
         });
 
-      await artificialMissionStart.save();
-      await artificialMissionStart.accept();
+      await artificialMissionStart.save(clockOptions);
+      await artificialMissionStart.accept(clockOptions);
 
       corrections.push({
         action: 'auto_create_session_and_mission_for_mission_end',
@@ -773,7 +779,7 @@ class AnomalyDetectionService {
     }
     // ✅ CAS 2 : Session active mais pas de mission active
     else {
-      const hasActiveMission = await activeSession.activeMission();
+      const hasActiveMission = await activeSession.activeMission(clockOptions);
 
       if (!hasActiveMission) {
         anomalies.push({
@@ -806,8 +812,8 @@ class AnomalyDetectionService {
             reason: 'missing_mission_start_before_end',
           });
 
-        await artificialMissionStart.save();
-        await artificialMissionStart.accept();
+        await artificialMissionStart.save(clockOptions);
+        await artificialMissionStart.accept(clockOptions);
 
         corrections.push({
           action: 'auto_create_mission_start',
@@ -843,7 +849,7 @@ class AnomalyDetectionService {
     entryObj: TimeEntries,
     userId: number,
     corrections: any[] = [],
-    scheduleContext?: any,
+    scheduleContext?: any, clockOptions: ClockInOptions = {},
   ): Promise<Memos | null> {
     if (anomalies.length === 0) return null;
 
@@ -857,14 +863,14 @@ class AnomalyDetectionService {
     // Type de mémo selon anomalies
     const memoType = this.mapAnomalyToMemoType(anomalies);
 
-    const roleObj = await Role._load(RoleValues.EMPLOYEE, false, true);
+    const roleObj = await Role._load(RoleValues.EMPLOYEE, false, true, clockOptions);
 
     const identifier = {
       user: userId,
       role: roleObj?.getId()!,
     };
 
-    const userAuthor = await UserRole._load(identifier, false, true);
+    const userAuthor = await UserRole._load(identifier, false, true, undefined, clockOptions);
 
     const memo = new Memos()
       .setAuthorUser(userAuthor?.getAssignedBy()!)
@@ -880,7 +886,7 @@ class AnomalyDetectionService {
         [
           {
             created_at: TimezoneConfigUtils.getCurrentTime().toISOString(),
-            user: (await userAuthor?.getAssignedByObject())?.getGuid()!,
+            user: (await userAuthor?.getAssignedByObject(clockOptions))?.getGuid()!,
             message: anomalies.map((a) => ({
               type: MessageType.TEXT,
               content: a.type,
@@ -892,20 +898,22 @@ class AnomalyDetectionService {
       .setAutoGenerated(!MEMOS_DEFAULTS.AUTO_GENERATED); // true
     // .setAutoReason(`${anomalies.length} anomalie(s): ${anomalies.map((a) => a.type).join(', ')}`);
 
-    await memo.save();
+    await memo.save(clockOptions);
 
     // Notification manager si high/critical
     if ([AlertSeverity.HIGH, AlertSeverity.CRITICAL].includes(severity)) {
       console.log(`🔔 Notification manager ${validatorId} - Mémo ${memo.getGuid()}`);
     }
 
-    const supervisorData = await User._load(userAuthor?.getAssignedBy());
+    const supervisorData = await User._load(userAuthor?.getAssignedBy(), undefined, undefined, undefined, undefined, undefined, clockOptions);
     if (supervisorData?.getDeviceToken()) {
-      try {
-        await FCMService.sendToToken(supervisorData?.getDeviceToken()!);
-      } catch (error: any) {
-        console.error('FCM notification error:', error);
-      }
+      const token = supervisorData.getDeviceToken()!;
+      const notify = async () => {
+        try { await FCMService.sendToToken(token); }
+        catch (error: any) { console.error('FCM notification error:', error); }
+      };
+      if (clockOptions.onCommit) clockOptions.onCommit(notify);
+      else await notify();
     }
 
     return memo;
@@ -921,7 +929,7 @@ class AnomalyDetectionService {
   async createFraudAlert(
     anomaly: Anomaly,
     entryObj: TimeEntries,
-    userId: number,
+    userId: number, clockOptions: ClockInOptions = {},
   ): Promise<FraudAlerts | null> {
     // Seulement créer alert si sévérité >= medium
     if (
@@ -942,12 +950,12 @@ class AnomalyDetectionService {
         technical_details: anomaly.technical_details,
         pointage_type: entryObj.getPointageType(),
         clocked_at: entryObj.getClockedAt(),
-        site: (await entryObj.getSiteObj())?.getGuid(),
+        site: (await entryObj.getSiteObj(clockOptions))?.getGuid(),
         auto_correctable: anomaly.auto_correctable,
         auto_correction_applied: anomaly.auto_correction_applied,
       });
 
-    await alert.save();
+    await alert.save(clockOptions);
 
     console.log(`🚨 FraudAlert créée: ${alert.getGuid()} - ${anomaly.severity} - ${anomaly.type}`);
 
@@ -960,12 +968,12 @@ class AnomalyDetectionService {
   async createFraudAlertsForAnomalies(
     anomalies: Anomaly[],
     entryObj: TimeEntries,
-    userId: number,
+    userId: number, clockOptions: ClockInOptions = {},
   ): Promise<FraudAlerts[]> {
     const alerts: FraudAlerts[] = [];
 
     for (const anomaly of anomalies) {
-      const alert = await this.createFraudAlert(anomaly, entryObj, userId);
+      const alert = await this.createFraudAlert(anomaly, entryObj, userId, clockOptions);
       if (alert) {
         alerts.push(alert);
       }
@@ -985,6 +993,7 @@ class AnomalyDetectionService {
     userId: number,
     siteId: number,
     entryObj: TimeEntries,
+    clockOptions: ClockInOptions = {},
   ): Promise<WorkSessions> {
     // Estimer heure de début (8h du matin)
     const estimatedStart = new Date(entryObj.getClockedAt()!);
@@ -997,7 +1006,7 @@ class AnomalyDetectionService {
       .setStartCoordinates(entryObj.getLatitude()!, entryObj.getLongitude()!)
       .setSessionStatus(SessionStatus.CORRECTED as any);
 
-    await session.save();
+    await session.save(clockOptions);
 
     // set la session crée
     entryObj.setSession(session.getId()!);
@@ -1044,7 +1053,7 @@ class AnomalyDetectionService {
     userId: number,
     pointageType: PointageType,
     clockedAt: Date,
-    sessionObj?: WorkSessions,
+    sessionObj?: WorkSessions, clockOptions: ClockInOptions = {},
   ): Promise<{
     anomalies: Anomaly[];
     scheduleContext: {
@@ -1057,7 +1066,7 @@ class AnomalyDetectionService {
     const anomalies: Anomaly[] = [];
 
     // Résoudre l'horaire applicable
-    const scheduleResult = await ScheduleResolutionService.getApplicableSchedule(userId, clockedAt);
+    const scheduleResult = await ScheduleResolutionService.getApplicableSchedule(userId, clockedAt, clockOptions);
 
     if (!scheduleResult.success || !scheduleResult.applicable_schedule) {
       return {
@@ -1072,7 +1081,7 @@ class AnomalyDetectionService {
     }
 
     const schedule = scheduleResult.applicable_schedule;
-    const guard = await this.resolveLinkedGuard(userId, schedule);
+    const guard = await this.resolveLinkedGuard(userId, schedule, clockOptions);
     const isWorkDay = schedule.is_work_day;
     const expectedBlocks = schedule.expected_blocks;
 
@@ -1095,7 +1104,7 @@ class AnomalyDetectionService {
         break;
 
       case PointageType.PAUSE_END:
-        anomalies.push(...(await this.analyzePauseEndSchedule(clockedAt, schedule, sessionObj)));
+        anomalies.push(...(await this.analyzePauseEndSchedule(clockedAt, schedule, sessionObj, clockOptions)));
         break;
     }
 
@@ -1120,7 +1129,7 @@ class AnomalyDetectionService {
   /** Les deux affectations doivent déclarer la même opération; les horaires seuls ne suffisent pas. */
   private async resolveLinkedGuard(
     userId: number,
-    schedule: ApplicableSchedule,
+    schedule: ApplicableSchedule, clockOptions: ClockInOptions = {},
   ): Promise<{
     start: ApplicableSchedule;
     end: ApplicableSchedule;
@@ -1129,7 +1138,7 @@ class AnomalyDetectionService {
     if (operation?.kind !== 'GUARD') return null;
     const neighborDate = new Date(`${schedule.schedule_date}T12:00:00Z`);
     neighborDate.setUTCDate(neighborDate.getUTCDate() + (operation.role === 'START' ? 1 : -1));
-    const result = await ScheduleResolutionService.getApplicableSchedule(userId, neighborDate);
+    const result = await ScheduleResolutionService.getApplicableSchedule(userId, neighborDate, clockOptions);
     const neighbor = result.success ? result.applicable_schedule : null;
     if (
       !neighbor?.is_work_day ||
@@ -1329,7 +1338,7 @@ ${
     return userId;
   }
 
-  private async getTodayPausesCount(userId: number): Promise<number> {
+  private async getTodayPausesCount(userId: number, clockOptions: ClockInOptions): Promise<number> {
     const today = TimezoneConfigUtils.getCurrentTime();
     today.setHours(0, 0, 0, 0);
 
@@ -1337,7 +1346,7 @@ ${
       user: userId,
       pointage_type: PointageType.PAUSE_START,
       clocked_at: { [Op.gte]: today },
-    });
+    }, undefined, { transaction: clockOptions.transaction });
 
     return pauses?.length || 0;
   }
@@ -1583,14 +1592,14 @@ ${
   private async analyzePauseEndSchedule(
     clockedAt: Date,
     schedule: ApplicableSchedule,
-    sessionObj?: WorkSessions,
+    sessionObj?: WorkSessions, clockOptions: ClockInOptions = {},
   ): Promise<Anomaly[]> {
     const anomalies: Anomaly[] = [];
 
     if (!sessionObj) return anomalies;
 
     // Récupérer le dernier PAUSE_START
-    const entries = await TimeEntries._listBySession(sessionObj.getId()!);
+    const entries = await TimeEntries._listBySession(sessionObj.getId()!, undefined, clockOptions);
     const lastPauseStart = entries
       ?.reverse()
       .find((e) => e.getPointageType() === PointageType.PAUSE_START);

@@ -4,6 +4,7 @@ import R from '@toke/api/dist/tools/response.js';
 import { HttpStatus, TENANT_CODES, TENANT_ERRORS, TenantValidationUtils } from '@toke/shared';
 
 import { TenantService } from '../services/tenant.service.js';
+import { UserSessionService } from '../tools/user.session.js';
 
 const router = Router();
 
@@ -91,6 +92,7 @@ router.post('/retry', Ensure.post(), async (req: Request, res: Response) => {
 });
 
 router.get('/verify-otp/:otp', Ensure.get(), async (req: Request, res: Response) => {
+  res.setHeader('Cache-Control', 'no-store');
   try {
     const { otp } = req.params;
 
@@ -114,12 +116,50 @@ router.get('/verify-otp/:otp', Ensure.get(), async (req: Request, res: Response)
     if (result.status !== HttpStatus.SUCCESS) {
       return R.handleError(res, result.status, result.response.error);
     }
-    return R.handleSuccess(res, result.response);
-  } catch (error: any) {
-    return R.handleError(res, HttpStatus.INTERNAL_ERROR, {
-      code: 'verification_failed',
-      message: error.message,
+    // return R.handleSuccess(res, result.response);
+    const authData = result.response as {
+      user?: { guid?: string };
+      tenant?: { guid?: string };
+      [key: string]: any;
+    };
+
+    if (!authData.user?.guid || !authData.tenant?.guid) {
+      return R.handleError(res, HttpStatus.INTERNAL_ERROR, {
+        code: 'invalid_auth_response',
+        message: 'Authenticated user or tenant is missing',
+      });
+    }
+
+    if (typeof authData.access_token !== 'string' || authData.token_type !== 'Bearer' || authData.expires_in !== 86400) {
+      return R.handleError(res, HttpStatus.UNAUTHORIZED, { code: 'invalid_auth_response', message: 'Registered session required' });
+    }
+    // BFF independently checks the proof issued by Master; it cannot mint from a GUID.
+    await UserSessionService.verify(authData.access_token, String(authData.tenant.guid));
+
+    return R.handleSuccess(res, {
+      ...authData,
+      access_token: authData.access_token,
+      token_type: 'Bearer',
+      expires_in: 86400,
     });
+  } catch (error: any) {
+    return R.handleError(res, (error.status === 401 || error.status === 403) ? error.status : 503, {
+      code: 'verification_failed',
+      message: 'Session verification failed',
+    });
+  }
+});
+
+router.post('/session/logout', async (req: Request, res: Response) => {
+  res.setHeader('Cache-Control', 'no-store');
+  const token = /^Bearer ([A-Za-z0-9_-]+\.[A-Za-z0-9_-]+)$/.exec(req.header('authorization') || '')?.[1];
+  if (!token) return R.handleError(res, 401, { code: 'user_token_required' });
+  try {
+    await UserSessionService.logout(token);
+    res.setHeader('Cache-Control', 'no-store');
+    return R.handleSuccess(res, { revoked: true });
+  } catch (error: any) {
+    return R.handleError(res, error.status === 401 ? 401 : 503, { code: 'session_revocation_unconfirmed' });
   }
 });
 

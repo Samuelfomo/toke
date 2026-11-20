@@ -36,6 +36,9 @@ import CountryPhoneValidation from '../../tools/country.phone.validation.js';
 import { UserAuthenticationService } from '../../tools/user.authentication.service.js';
 import GenerateOtp from '../../utils/generate.otp.js';
 import GenericCacheService from '../../tools/cache.data.service.js';
+import { managerSessionAuthority } from '../../tools/user-session.runtime.js';
+import { SessionError } from '../../tools/user-session.authority.js';
+import { sessionFailure } from './user-session.route.js';
 import TenantOnboarding from '../class/TenantOnboarding.js';
 
 const router = Router();
@@ -822,17 +825,18 @@ router.patch('/:guid/subdomain', Ensure.patch(), async (req: Request, res: Respo
       }
 
       // ========== ÉTAPE 7: Initialiser la connexion et les tables ==========
-      TenantManager.setCurrentTenant(subdomain);
+      await TenantManager.runTenantOperation(subdomain, async () => {
 
-      const connection = await TenantManager.getConnectionForTenant(subdomain, {
-        host: tenantConfig.host,
-        port: tenantConfig.port,
-        username: tenantConfig.username,
-        password: tenantConfig.password,
-        database: tenantConfig.database,
+        const connection = await TenantManager.getConnectionForTenant(subdomain, {
+          host: tenantConfig.host,
+          port: tenantConfig.port,
+          username: tenantConfig.username,
+          password: tenantConfig.password,
+          database: tenantConfig.database,
       });
 
-      await TableInitializer.initialize(connection);
+      await TableInitializer.initialize(connection, { mode: createDb.created ? 'bootstrap' : 'existing' });
+      });
 
       console.log(`✅ Sous-domaine "${subdomain}" défini pour tenant GUID: ${validGuid}`);
 
@@ -1569,72 +1573,23 @@ router.post('/auth', Ensure.post(), async (req: Request, res: Response) => {
       // return R.handleError(res, result.status, result.response);
     }
 
-    // 🆕 VÉRIFIER SI L'EMAIL A DÉJÀ UN OTP EN CACHE
-    const existingOtpRef = GenericCacheService.findByData((data) => {
-      return data.user?.email === email || data.user?.billingEmail === email;
+    const authority = await managerSessionAuthority();
+    await authority.limit('send:' + String(tenantObj.getGuid()) + ':' + email.toLowerCase(), 5, 900);
+    const otp = await authority.issueChallenge(email, {
+      user: result.response as any,
+      tenant: { ...tenantObj.toJSON(), guid: tenantObj.getGuid()!, subdomain: tenantObj.getSubdomain()! },
     });
-
-    if (existingOtpRef) {
-      // Supprimer l'ancien OTP pour cet email
-      await GenericCacheService.delete(existingOtpRef);
-      console.log(`🔄 Ancien OTP supprimé pour l'email ${email}`);
-    }
-
-    // Générer un OTP unique
-    let otp: string;
-    let isUnique = false;
-    let attempts = 0;
-    const maxAttempts = 10;
-
-    do {
-      otp = GenerateOtp.generateOTP(6);
-      // Vérifier si l'OTP existe déjà dans le cache
-      isUnique = !GenericCacheService.exists(otp);
-      attempts++;
-
-      if (attempts >= maxAttempts) {
-        return R.handleError(res, HttpStatus.INTERNAL_ERROR, {
-          code: 'otp_generation_failed',
-          message: 'Unable to generate unique OTP',
-        });
-      }
-    } while (!isUnique);
-
-    // Stocker les données dans le cache avec l'OTP comme référence
-    const dataToStore = {
-      user: result.response,
-      tenant: { ...tenantObj.toJSON(), subdomain: tenantObj.getSubdomain() },
-    };
-
-    const stored = await GenericCacheService.store(otp, dataToStore);
-
-    if (!stored) {
-      return R.handleError(res, HttpStatus.INTERNAL_ERROR, {
-        code: 'cache_storage_failed',
-        message: 'Failed to store OTP in cache',
-      });
-    }
-
-    // Envoie d'otp via email de l'utilisateur
-    console.log(`📧 OTP à envoyer à ${email}: ${otp}`);
-    try {
-      await EmailSender.sender(otp, email);
-    } catch (err) {
-      await GenericCacheService.delete(otp);
-      return R.handleError(res, HttpStatus.INTERNAL_ERROR, {
-        code: 'email_sending_failed',
-        message: (err as Error).message,
-      });
+    try { await EmailSender.sender(otp, email); }
+    catch {
+      await authority.cancelChallenge(otp);
+      throw new SessionError(503, 'email_sending_failed');
     }
 
     return R.handleCreated(res, {
       message: 'OTP generated and sent successfully via email',
     });
   } catch (error: any) {
-    return R.handleError(res, HttpStatus.INTERNAL_ERROR, {
-      code: TENANT_CODES.SEARCH_FAILED,
-      message: error.message,
-    });
+    return sessionFailure(res, error);
   }
 });
 
@@ -1660,33 +1615,13 @@ router.get('/verify-otp/:otp', Ensure.get(), async (req: Request, res: Response)
       });
     }
 
-    // Récupérer les données depuis le cache
-    const cachedData = await GenericCacheService.retrieve<{
-      email: string;
-      user: any;
-      tenant: string;
-    }>(otp as string);
-
-    if (!cachedData) {
-      return R.handleError(res, HttpStatus.UNAUTHORIZED, {
-        code: 'otp_invalid_or_expired',
-        message: 'OTP is invalid or has expired',
-      });
-    }
-
-    // Supprimer l'OTP du cache après utilisation (usage unique)
-    await GenericCacheService.delete(otp as string);
-
-    return R.handleSuccess(res, {
-      message: 'Authentication successful',
-      user: cachedData.user,
-      tenant: cachedData.tenant,
-    });
+    const authority = await managerSessionAuthority();
+    await authority.limit('verify:' + req.ip, 30, 300);
+    const authData = await authority.consume(otp as string);
+    res.setHeader('Cache-Control', 'no-store');
+    return R.handleSuccess(res, { message: 'Authentication successful', ...authData });
   } catch (error: any) {
-    return R.handleError(res, HttpStatus.INTERNAL_ERROR, {
-      code: 'verification_failed',
-      message: error.message,
-    });
+    return sessionFailure(res, error);
   }
 });
 
@@ -1709,93 +1644,19 @@ router.post('/retry', Ensure.post(), async (req: Request, res: Response) => {
       });
     }
 
-    // 🆕 VÉRIFIER SI L'EMAIL A DÉJÀ UN OTP EN CACHE
-    const existingOtpRef = GenericCacheService.findByEmail((data) => {
-      return data.user?.email === email || data.user?.billingEmail === email;
-    });
-    if (!existingOtpRef) {
-      return R.handleError(res, HttpStatus.NOT_FOUND, {
-        code: 'email_not_found',
-        message: 'Email not found',
-      });
+    const authority = await managerSessionAuthority();
+    await authority.limit('retry:' + email.toLowerCase(), 5, 900);
+    const pending = await authority.pendingChallenge(email);
+    if (!pending) throw new SessionError(401, 'otp_invalid_or_expired');
+    const otp = await authority.issueChallenge(email, pending);
+    try { await EmailSender.sender(otp, email); }
+    catch {
+      await authority.cancelChallenge(otp);
+      throw new SessionError(503, 'email_sending_failed');
     }
-
-    const now = GenericCacheService.getCameroonTime();
-    const expiresAt = new Date(existingOtpRef.expiresAt);
-    if (now <= expiresAt) {
-      // return R.handleError(res, HttpStatus.BAD_REQUEST, {
-      //   code: 'retry_failed',
-      //   message: 'OTP has not expired yet',
-      // });
-
-      try {
-        await EmailSender.sender(existingOtpRef.reference, email);
-      } catch (err) {
-        await GenericCacheService.delete(existingOtpRef.reference);
-        return R.handleError(res, HttpStatus.INTERNAL_ERROR, {
-          code: 'email_sending_failed',
-          message: (err as Error).message,
-        });
-      }
-
-      return R.handleCreated(res, {
-        message: 'OTP generated and sent successfully via email',
-      });
-    }
-
-    await GenericCacheService.delete(existingOtpRef.reference);
-
-    // Générer un OTP unique
-    let otp: string;
-    let isUnique = false;
-    let attempts = 0;
-    const maxAttempts = 10;
-
-    do {
-      otp = GenerateOtp.generateOTP(6);
-      // Vérifier si l'OTP existe déjà dans le cache
-      isUnique = !GenericCacheService.exists(otp);
-      attempts++;
-
-      if (attempts >= maxAttempts) {
-        return R.handleError(res, HttpStatus.INTERNAL_ERROR, {
-          code: 'otp_generation_failed',
-          message: 'Unable to generate unique OTP',
-        });
-      }
-    } while (!isUnique);
-
-    // Stocker les données dans le cache avec l'OTP comme référence
-    const stored = await GenericCacheService.store(otp, existingOtpRef.data);
-
-    if (!stored) {
-      return R.handleError(res, HttpStatus.INTERNAL_ERROR, {
-        code: 'cache_storage_failed',
-        message: 'Failed to store OTP in cache',
-      });
-    }
-
-    // Envoie d'otp via email de l'utilisateur
-    console.log(`📧 OTP à envoyer à ${email}: ${otp}`);
-
-    try {
-      await EmailSender.sender(otp, email);
-    } catch (err) {
-      await GenericCacheService.delete(otp);
-      return R.handleError(res, HttpStatus.INTERNAL_ERROR, {
-        code: 'email_sending_failed',
-        message: (err as Error).message,
-      });
-    }
-
-    return R.handleCreated(res, {
-      message: 'OTP sent successfully via email',
-    });
+    return R.handleCreated(res, { message: 'OTP generated and sent successfully via email' });
   } catch (error: any) {
-    return R.handleError(res, HttpStatus.INTERNAL_ERROR, {
-      code: 'verification_failed',
-      message: error.message,
-    });
+    return sessionFailure(res, error);
   }
 });
 
@@ -1805,11 +1666,9 @@ router.post('/retry', Ensure.post(), async (req: Request, res: Response) => {
 router.get('/cache/stats', Ensure.get(), async (req: Request, res: Response) => {
   try {
     const stats = GenericCacheService.getStats();
-    const activeEntries = GenericCacheService.listActive();
 
     return R.handleSuccess(res, {
       stats,
-      activeEntries,
     });
   } catch (error: any) {
     return R.handleError(res, HttpStatus.INTERNAL_ERROR, {

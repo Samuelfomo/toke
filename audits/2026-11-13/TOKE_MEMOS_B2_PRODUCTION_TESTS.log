@@ -1,0 +1,394 @@
+TAP version 13
+# Subtest: verified BFF list -> API gateway -> B2 contract, Cloud pagination preserved
+ok 1 - verified BFF list -> API gateway -> B2 contract, Cloud pagination preserved
+  ---
+  duration_ms: 52.895967
+  type: 'test'
+  ...
+# Subtest: detail uses B2 and preserves memo envelope and capabilities
+ok 2 - detail uses B2 and preserves memo envelope and capabilities
+  ---
+  duration_ms: 30.589519
+  type: 'test'
+  ...
+# Subtest: ACL denial remains a nondisclosing 404
+ok 3 - ACL denial remains a nondisclosing 404
+  ---
+  duration_ms: 26.846431
+  type: 'test'
+  ...
+# Subtest: no session rejected before read
+ok 4 - no session rejected before read
+  ---
+  duration_ms: 28.233972
+  type: 'test'
+  ...
+# Subtest: BFF tenant mismatch rejected before API
+ok 5 - BFF tenant mismatch rejected before API
+  ---
+  duration_ms: 33.209626
+  type: 'test'
+  ...
+# Subtest: API tenant mismatch rejected independently
+ok 6 - API tenant mismatch rejected independently
+  ---
+  duration_ms: 31.648717
+  type: 'test'
+  ...
+# Subtest: integrator context remains forbidden
+ok 7 - integrator context remains forbidden
+  ---
+  duration_ms: 34.762759
+  type: 'test'
+  ...
+# Subtest: spoofed internal header not forwarded; actor query cannot impersonate
+ok 8 - spoofed internal header not forwarded; actor query cannot impersonate
+  ---
+  duration_ms: 19.951791
+  type: 'test'
+  ...
+# Subtest: GET /summary stays locked
+ok 9 - GET /summary stays locked
+  ---
+  duration_ms: 24.685225
+  type: 'test'
+  ...
+# Subtest: GET /9/events stays locked
+ok 10 - GET /9/events stays locked
+  ---
+  duration_ms: 22.157203
+  type: 'test'
+  ...
+# Subtest: POST /attachments stays locked
+ok 11 - POST /attachments stays locked
+  ---
+  duration_ms: 23.946769
+  type: 'test'
+  ...
+# Subtest: PATCH /9/read stays locked
+ok 12 - PATCH /9/read stays locked
+  ---
+  duration_ms: 42.277101
+  type: 'test'
+  ...
+# Subtest: POST /realtime-ticket stays locked
+ok 13 - POST /realtime-ticket stays locked
+  ---
+  duration_ms: 18.031023
+  type: 'test'
+  ...
+# Subtest: GET / stays locked
+ok 14 - GET / stays locked
+  ---
+  duration_ms: 15.602116
+  type: 'test'
+  ...
+# Subtest: opening disabled without both controlled environment and flag {"NODE_ENV":"production","MEMO_B2_MANAGER_READS":"1"}
+ok 15 - opening disabled without both controlled environment and flag {"NODE_ENV":"production","MEMO_B2_MANAGER_READS":"1"}
+  ---
+  duration_ms: 16.287452
+  type: 'test'
+  ...
+# Subtest: opening disabled without both controlled environment and flag {"NODE_ENV":"test"}
+ok 16 - opening disabled without both controlled environment and flag {"NODE_ENV":"test"}
+  ---
+  duration_ms: 21.803632
+  type: 'test'
+  ...
+# Subtest: missing B1 fails closed; no legacy fallback
+ok 17 - missing B1 fails closed; no legacy fallback
+  ---
+  duration_ms: 41.481035
+  type: 'test'
+  ...
+# Subtest: real B2 repository refuses absent B1 function without DDL
+ok 18 - real B2 repository refuses absent B1 function without DDL
+  ---
+  duration_ms: 125.991381
+  type: 'test'
+  ...
+# Subtest: real B2 service list has no MemoReads table dependency and rejects actor impersonation
+ok 19 - real B2 service list has no MemoReads table dependency and rejects actor impersonation
+  ---
+  duration_ms: 16.422821
+  type: 'test'
+  ...
+# Subtest: BFF enabled but API disabled preserves memo_permissions_pending without legacy fallback
+ok 20 - BFF enabled but API disabled preserves memo_permissions_pending without legacy fallback
+  ---
+  duration_ms: 27.423535
+  type: 'test'
+  ...
+# Subtest: API enabled but BFF disabled preserves memo_permissions_pending without upstream call
+ok 21 - API enabled but BFF disabled preserves memo_permissions_pending without upstream call
+  ---
+  duration_ms: 29.09735
+  type: 'test'
+  ...
+# Subtest: detail is also unavailable in production even with local flags
+ok 22 - detail is also unavailable in production even with local flags
+  ---
+  duration_ms: 22.984058
+  type: 'test'
+  ...
+# Subtest: production explicit enable: /list
+ok 23 - production explicit enable: /list
+  ---
+  duration_ms: 18.14344
+  type: 'test'
+  ...
+# Subtest: production explicit enable: /9
+ok 24 - production explicit enable: /9
+  ---
+  duration_ms: 30.87775
+  type: 'test'
+  ...
+# Subtest: production stays closed for non-exact flag undefined
+ok 25 - production stays closed for non-exact flag undefined
+  ---
+  duration_ms: 21.391599
+  type: 'test'
+  ...
+# Subtest: production stays closed for non-exact flag ""
+ok 26 - production stays closed for non-exact flag ""
+  ---
+  duration_ms: 35.139485
+  type: 'test'
+  ...
+# Subtest: production stays closed for non-exact flag "0"
+ok 27 - production stays closed for non-exact flag "0"
+  ---
+  duration_ms: 37.99912
+  type: 'test'
+  ...
+# Subtest: production stays closed for non-exact flag "true"
+ok 28 - production stays closed for non-exact flag "true"
+  ---
+  duration_ms: 17.73759
+  type: 'test'
+  ...
+# Subtest: production stays closed for non-exact flag "yes"
+ok 29 - production stays closed for non-exact flag "yes"
+  ---
+  duration_ms: 15.293173
+  type: 'test'
+  ...
+# Subtest: production stays closed for non-exact flag " 1"
+ok 30 - production stays closed for non-exact flag " 1"
+  ---
+  duration_ms: 26.888854
+  type: 'test'
+  ...
+# Subtest: production stays closed for non-exact flag "1 "
+ok 31 - production stays closed for non-exact flag "1 "
+  ---
+  duration_ms: 16.627522
+  type: 'test'
+  ...
+# Subtest: unknown environment fails closed undefined
+ok 32 - unknown environment fails closed undefined
+  ---
+  duration_ms: 13.527648
+  type: 'test'
+  ...
+# Subtest: unknown environment fails closed staging
+ok 33 - unknown environment fails closed staging
+  ---
+  duration_ms: 14.934652
+  type: 'test'
+  ...
+# Subtest: unknown environment fails closed Production
+ok 34 - unknown environment fails closed Production
+  ---
+  duration_ms: 21.863408
+  type: 'test'
+  ...
+# Subtest: partial production enable fails closed {"NODE_ENV":"production","MEMO_B2_PRODUCTION_MANAGER_READS":"1"}
+ok 35 - partial production enable fails closed {"NODE_ENV":"production","MEMO_B2_PRODUCTION_MANAGER_READS":"1"}
+  ---
+  duration_ms: 11.645315
+  type: 'test'
+  ...
+# Subtest: partial production enable fails closed {"NODE_ENV":"production"}
+ok 36 - partial production enable fails closed {"NODE_ENV":"production"}
+  ---
+  duration_ms: 11.246969
+  type: 'test'
+  ...
+# Subtest: production BFF and independent API retain lock GET /
+ok 37 - production BFF and independent API retain lock GET /
+  ---
+  duration_ms: 17.375698
+  type: 'test'
+  ...
+# Subtest: production BFF and independent API retain lock GET /summary
+ok 38 - production BFF and independent API retain lock GET /summary
+  ---
+  duration_ms: 13.580303
+  type: 'test'
+  ...
+# Subtest: production BFF and independent API retain lock GET /statistics/overview
+ok 39 - production BFF and independent API retain lock GET /statistics/overview
+  ---
+  duration_ms: 10.725983
+  type: 'test'
+  ...
+# Subtest: production BFF and independent API retain lock GET /9/events
+ok 40 - production BFF and independent API retain lock GET /9/events
+  ---
+  duration_ms: 10.607276
+  type: 'test'
+  ...
+# Subtest: production BFF and independent API retain lock GET /my-created
+ok 41 - production BFF and independent API retain lock GET /my-created
+  ---
+  duration_ms: 16.663218
+  type: 'test'
+  ...
+# Subtest: production BFF and independent API retain lock GET /my-memos
+ok 42 - production BFF and independent API retain lock GET /my-memos
+  ---
+  duration_ms: 12.899359
+  type: 'test'
+  ...
+# Subtest: production BFF and independent API retain lock GET /pending
+ok 43 - production BFF and independent API retain lock GET /pending
+  ---
+  duration_ms: 14.495019
+  type: 'test'
+  ...
+# Subtest: production BFF and independent API retain lock GET /pending-validation
+ok 44 - production BFF and independent API retain lock GET /pending-validation
+  ---
+  duration_ms: 17.488694
+  type: 'test'
+  ...
+# Subtest: production BFF and independent API retain lock GET /auto-generated
+ok 45 - production BFF and independent API retain lock GET /auto-generated
+  ---
+  duration_ms: 10.410395
+  type: 'test'
+  ...
+# Subtest: production BFF and independent API retain lock GET /type/other/list
+ok 46 - production BFF and independent API retain lock GET /type/other/list
+  ---
+  duration_ms: 11.838379
+  type: 'test'
+  ...
+# Subtest: production BFF and independent API retain lock GET /target/7/list
+ok 47 - production BFF and independent API retain lock GET /target/7/list
+  ---
+  duration_ms: 12.685831
+  type: 'test'
+  ...
+# Subtest: production BFF and independent API retain lock GET /9/attachments
+ok 48 - production BFF and independent API retain lock GET /9/attachments
+  ---
+  duration_ms: 15.265959
+  type: 'test'
+  ...
+# Subtest: production BFF and independent API retain lock POST /attachments
+ok 49 - production BFF and independent API retain lock POST /attachments
+  ---
+  duration_ms: 11.617671
+  type: 'test'
+  ...
+# Subtest: production BFF and independent API retain lock PATCH /9/read
+ok 50 - production BFF and independent API retain lock PATCH /9/read
+  ---
+  duration_ms: 15.755128
+  type: 'test'
+  ...
+# Subtest: production BFF and independent API retain lock POST /realtime-ticket
+ok 51 - production BFF and independent API retain lock POST /realtime-ticket
+  ---
+  duration_ms: 20.230987
+  type: 'test'
+  ...
+# Subtest: production BFF and independent API retain lock HEAD /9
+ok 52 - production BFF and independent API retain lock HEAD /9
+  ---
+  duration_ms: 19.283453
+  type: 'test'
+  ...
+# Subtest: production BFF and independent API retain lock PUT /9
+ok 53 - production BFF and independent API retain lock PUT /9
+  ---
+  duration_ms: 15.922557
+  type: 'test'
+  ...
+# Subtest: production BFF and independent API retain lock DELETE /9
+ok 54 - production BFF and independent API retain lock DELETE /9
+  ---
+  duration_ms: 14.983578
+  type: 'test'
+  ...
+# Subtest: production BFF and independent API retain lock GET /list/
+ok 55 - production BFF and independent API retain lock GET /list/
+  ---
+  duration_ms: 11.585486
+  type: 'test'
+  ...
+# Subtest: production BFF and independent API retain lock GET /LIST
+ok 56 - production BFF and independent API retain lock GET /LIST
+  ---
+  duration_ms: 13.505316
+  type: 'test'
+  ...
+# Subtest: production fails closed: no manager proof
+ok 57 - production fails closed: no manager proof
+  ---
+  duration_ms: 10.998086
+  type: 'test'
+  ...
+# Subtest: production fails closed: invalid manager proof
+ok 58 - production fails closed: invalid manager proof
+  ---
+  duration_ms: 17.718277
+  type: 'test'
+  ...
+# Subtest: production fails closed: integrator
+ok 59 - production fails closed: integrator
+  ---
+  duration_ms: 10.572069
+  type: 'test'
+  ...
+# Subtest: production fails closed: tenant mismatch
+ok 60 - production fails closed: tenant mismatch
+  ---
+  duration_ms: 10.697145
+  type: 'test'
+  ...
+# Subtest: production fails closed: API tenant mismatch
+ok 61 - production fails closed: API tenant mismatch
+  ---
+  duration_ms: 16.150031
+  type: 'test'
+  ...
+# Subtest: production fails closed: missing B1
+ok 62 - production fails closed: missing B1
+  ---
+  duration_ms: 10.303608
+  type: 'test'
+  ...
+# Subtest: production fails closed: session configuration absent
+ok 63 - production fails closed: session configuration absent
+  ---
+  duration_ms: 10.937278
+  type: 'test'
+  ...
+# Subtest: production fails closed: ACL denied
+ok 64 - production fails closed: ACL denied
+  ---
+  duration_ms: 10.510067
+  type: 'test'
+  ...
+1..64
+# tests 64
+# suites 0
+# pass 64
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 1434.441297

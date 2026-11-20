@@ -1,0 +1,4 @@
+PASS TYPE BUILD shared
+PASS TYPE BUILD api
+PASS TYPE BUILD backend
+LOCAL_ONLY_TYPE_ARTIFACTS /var/folders/q2/j5pdncpx5tg50hs64gt9g6f40000gn/T/toke-types-build-ATI908

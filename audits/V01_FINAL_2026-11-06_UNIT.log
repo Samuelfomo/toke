@@ -1,0 +1,300 @@
+TAP version 13
+# Subtest: effective period protects today and the past; future suggestion keeps its start
+ok 1 - effective period protects today and the past; future suggestion keeps its start
+  ---
+  duration_ms: 107.183218
+  ...
+# Subtest: Douala midnight and year changes are independent of server timezone
+ok 2 - Douala midnight and year changes are independent of server timezone
+  ---
+  duration_ms: 0.825212
+  ...
+# Subtest: invalid, retroactive and outside dates are refused
+ok 3 - invalid, retroactive and outside dates are refused
+  ---
+  duration_ms: 7.897442
+  ...
+# Subtest: October suggestion applied in November preserves history and the future suffix
+ok 4 - October suggestion applied in November preserves history and the future suffix
+  ---
+  duration_ms: 193.232643
+  ...
+# Subtest: explicit future date is used for both replacement and preservation
+ok 5 - explicit future date is used for both replacement and preservation
+  ---
+  duration_ms: 138.248063
+  ...
+# Subtest: open-ended existing assignment resumes after the suggestion period
+ok 6 - open-ended existing assignment resumes after the suggestion period
+  ---
+  duration_ms: 142.416501
+  ...
+# Subtest: rest days replace only future dates and authorized guard spillover is retained
+ok 7 - rest days replace only future dates and authorized guard spillover is retained
+  ---
+  duration_ms: 102.088797
+  ...
+# Subtest: expired suggestion leaves all assignments and status intact
+ok 8 - expired suggestion leaves all assignments and status intact
+  ---
+  duration_ms: 82.68857
+  ...
+# Subtest: cutting suggested guards, recovery or a published continuation is refused
+ok 9 - cutting suggested guards, recovery or a published continuation is refused
+  ---
+  duration_ms: 200.972509
+  ...
+# Subtest: an insertion failure rolls back history and suggestion approval
+ok 10 - an insertion failure rolls back history and suggestion approval
+  ---
+  duration_ms: 56.405289
+  ...
+# Subtest: AC01: parallel async scopes retain tenant A and tenant B for reads and writes
+ok 11 - AC01: parallel async scopes retain tenant A and tenant B for reads and writes
+  ---
+  duration_ms: 731.812538
+  ...
+# Subtest: AC02: actual simultaneous HTTP middlewares register each connection under its own tenant
+ok 12 - AC02: actual simultaneous HTTP middlewares register each connection under its own tenant
+  ---
+  duration_ms: 457.330639
+  ...
+# Subtest: AC03: concurrent connection requests share a single in-flight pool
+ok 13 - AC03: concurrent connection requests share a single in-flight pool
+  ---
+  duration_ms: 294.324109
+  ...
+# Subtest: AC04: concurrent existing initialization defines once without DDL
+ok 14 - AC04: concurrent existing initialization defines once without DDL
+  ---
+  duration_ms: 214.33702
+  ...
+# Subtest: AC05: no implicit tenant remains after an HTTP request has completed
+ok 15 - AC05: no implicit tenant remains after an HTTP request has completed
+  ---
+  duration_ms: 265.382089
+  ...
+# Subtest: AC06: connection A cannot be registered as tenant B, before define or sync
+ok 16 - AC06: connection A cannot be registered as tenant B, before define or sync
+  ---
+  duration_ms: 221.41014
+  ...
+# Subtest: AC07: a BaseModel captured in A cannot execute raw SQL from B
+ok 17 - AC07: a BaseModel captured in A cannot execute raw SQL from B
+  ---
+  duration_ms: 151.429395
+  ...
+# Subtest: AC08: transaction A cannot be supplied to CRUD in tenant B before model operation
+ok 18 - AC08: transaction A cannot be supplied to CRUD in tenant B before model operation
+  ---
+  duration_ms: 150.520872
+  ...
+# Subtest: AC09: actual worker scopes end at completion and do not leave a tenant active
+ok 19 - AC09: actual worker scopes end at completion and do not leave a tenant active
+  ---
+  duration_ms: 125.05578
+  ...
+# Subtest: AC10: actual Master tenant provisioning restores the caller context
+ok 20 - AC10: actual Master tenant provisioning restores the caller context
+  ---
+  duration_ms: 175.211524
+  ...
+# Subtest: AC11: parallel commit A and rollback B never mix transaction/model identities
+ok 21 - AC11: parallel commit A and rollback B never mix transaction/model identities
+  ---
+  duration_ms: 265.973555
+  ...
+# Subtest: AC12: explicit initialization utility establishes its tenant and restores the outer scope
+ok 22 - AC12: explicit initialization utility establishes its tenant and restores the outer scope
+  ---
+  duration_ms: 141.342112
+  ...
+# Subtest: AC13: failed connection is closed and a retry can succeed
+ok 23 - AC13: failed connection is closed and a retry can succeed
+  ---
+  duration_ms: 67.686779
+  ...
+# Subtest: AC14: same tenant with conflicting connection configuration is rejected, not silently reused
+ok 24 - AC14: same tenant with conflicting connection configuration is rejected, not silently reused
+  ---
+  duration_ms: 73.066078
+  ...
+# Subtest: AC15: overlapping actual worker calls never write tenant A work into B
+ok 25 - AC15: overlapping actual worker calls never write tenant A work into B
+  ---
+  duration_ms: 87.93211
+  ...
+# Subtest: AC16: nested scopes restore the parent even after a failure
+ok 26 - AC16: nested scopes restore the parent even after a failure
+  ---
+  duration_ms: 84.743913
+  ...
+# Subtest: AC33: real Express dispatch + actual middleware preserves A/B and error handler context through await
+ok 27 - AC33: real Express dispatch + actual middleware preserves A/B and error handler context through await
+  ---
+  duration_ms: 727.638828
+  ...
+# Subtest: AC33: actual setup rejection reaches the Express error handler inside its tenant scope
+ok 28 - AC33: actual setup rejection reaches the Express error handler inside its tenant scope
+  ---
+  duration_ms: 432.600873
+  ...
+# Subtest: AC25/38: Master CRUD remains independent while tenant CRUD keeps existing return shapes
+ok 29 - AC25/38: Master CRUD remains independent while tenant CRUD keeps existing return shapes
+  ---
+  duration_ms: 834.544754
+  ...
+# Subtest: AC38: actual pointage PIN middleware keeps request identity and tenant-owned license writes
+ok 30 - AC38: actual pointage PIN middleware keeps request identity and tenant-owned license writes
+  ---
+  duration_ms: 525.512711
+  ...
+# Subtest: AC24: all three actual integrator DB sections restore context and preserve responses
+ok 31 - AC24: all three actual integrator DB sections restore context and preserve responses
+  ---
+  duration_ms: 300.240112
+  ...
+# Subtest: AC37: overlapping worker triggers coalesce by tenant in the same process
+ok 32 - AC37: overlapping worker triggers coalesce by tenant in the same process
+  ---
+  duration_ms: 307.734286
+  ...
+# Subtest: AC37/38: actual rotation business logic advances once, keeps logs tenant-owned, and then skips the same day
+ok 33 - AC37/38: actual rotation business logic advances once, keeps logs tenant-owned, and then skips the same day
+  ---
+  duration_ms: 472.638499
+  ...
+# Subtest: AC40: active sources have no mutable global tenant or autonomous setter callers
+ok 34 - AC40: active sources have no mutable global tenant or autonomous setter callers
+  ---
+  duration_ms: 3428.320911
+  ...
+# Subtest: AC17/19: guarded real ORM cold start, version probe, SET/OIDs and pool reuse stay in A
+ok 35 - AC17/19: guarded real ORM cold start, version probe, SET/OIDs and pool reuse stay in A
+  ---
+  duration_ms: 718.501168
+  ...
+# Subtest: AC18/20: captured native Client, raw SQL, hooks:false and foreign transaction cannot escape ownership
+ok 36 - AC18/20: captured native Client, raw SQL, hooks:false and foreign transaction cannot escape ownership
+  ---
+  duration_ms: 110.067636
+  ...
+# Subtest: AC21/22: actual managed transaction rolls back under a revoked lifetime without permitting business SQL
+ok 37 - AC21/22: actual managed transaction rolls back under a revoked lifetime without permitting business SQL
+  ---
+  duration_ms: 120.611674
+  ...
+# Subtest: AC21: unmanaged transactions cannot migrate between operations of the same tenant
+ok 38 - AC21: unmanaged transactions cannot migrate between operations of the same tenant
+  ---
+  duration_ms: 213.479169
+  ...
+# Subtest: AC23: afterCommit rejection is not misreported as an automatic rollback
+ok 39 - AC23: afterCommit rejection is not misreported as an automatic rollback
+  ---
+  duration_ms: 100.85686
+  ...
+# Subtest: AC35/39: a captured model uses real ORM with replacements and cannot cross tenants or generations
+ok 40 - AC35/39: a captured model uses real ORM with replacements and cannot cross tenants or generations
+  ---
+  duration_ms: 85.297673
+  ...
+# Subtest: AC21/22: nested real savepoints roll back safely even when the HTTP lifetime has expired
+ok 41 - AC21/22: nested real savepoints roll back safely even when the HTTP lifetime has expired
+  ---
+  duration_ms: 53.85276
+  ...
+# Subtest: AC39: injected guarded pg Client preserves callback and query-object invocation shapes
+ok 42 - AC39: injected guarded pg Client preserves callback and query-object invocation shapes
+  ---
+  duration_ms: 47.296277
+  ...
+# Subtest: AC17/19/26: QueryInterface and pool entry require a context; denied setup SQL closes the unpooled client
+ok 43 - AC17/19/26: QueryInterface and pool entry require a context; denied setup SQL closes the unpooled client
+  ---
+  duration_ms: 46.479724
+  ...
+# Subtest: AC21/35: changing the physical connection of an owned transaction is rejected before SQL
+ok 44 - AC21/35: changing the physical connection of an owned transaction is rejected before SQL
+  ---
+  duration_ms: 42.72392
+  ...
+# Subtest: AC21: successful savepoint restores the parent and completed transactions cannot use completesTransaction as a bypass
+ok 45 - AC21: successful savepoint restores the parent and completed transactions cannot use completesTransaction as a bypass
+  ---
+  duration_ms: 66.064989
+  ...
+# Subtest: AC26: pool creation from a revoked scope rejects asynchronously without opening a client
+ok 46 - AC26: pool creation from a revoked scope rejects asynchronously without opening a client
+  ---
+  duration_ms: 53.324693
+  ...
+# Subtest: AC26: close during authentication never publishes its late result and retry gets a new generation
+ok 47 - AC26: close during authentication never publishes its late result and retry gets a new generation
+  ---
+  duration_ms: 734.632737
+  ...
+# Subtest: AC27: closing during model validation invalidates the unpublished registry
+ok 48 - AC27: closing during model validation invalidates the unpublished registry
+  ---
+  duration_ms: 411.02388
+  ...
+# Subtest: AC28/29: closes are single-flight, reject new work, drain admitted scopes, and permit explicit reconfiguration
+ok 49 - AC28/29: closes are single-flight, reject new work, drain admitted scopes, and permit explicit reconfiguration
+  ---
+  duration_ms: 342.901796
+  ...
+# Subtest: AC30/35: credential change is rejected, and stale captured objects cannot use a replacement generation
+ok 50 - AC30/35: credential change is rejected, and stale captured objects cannot use a replacement generation
+  ---
+  duration_ms: 238.221056
+  ...
+# Subtest: AC31: incompatible existing schema fails without sync or writes and poisons no other tenant
+ok 51 - AC31: incompatible existing schema fails without sync or writes and poisons no other tenant
+  ---
+  duration_ms: 270.607172
+  ...
+# Subtest: AC32: bootstrap synchronizes only a verified empty fixture and rejects a partial existing DB
+ok 52 - AC32: bootstrap synchronizes only a verified empty fixture and rejects a partial existing DB
+  ---
+  duration_ms: 346.021243
+  ...
+# Subtest: AC33/34: actual HTTP scope survives awaited handlers but rejects detached work after response finish
+ok 53 - AC33/34: actual HTTP scope survives awaited handlers but rejects detached work after response finish
+  ---
+  duration_ms: 165.287419
+  ...
+# Subtest: AC36: helpers rethrow typed context errors rather than returning a business null
+ok 54 - AC36: helpers rethrow typed context errors rather than returning a business null
+  ---
+  duration_ms: 114.512052
+  ...
+# Subtest: AC28: model cleanup is refused while a connection or initialization is live
+ok 55 - AC28: model cleanup is refused while a connection or initialization is live
+  ---
+  duration_ms: 100.048367
+  ...
+# Subtest: AC34: deliberate detached operation has a distinct lifetime from its parent HTTP request
+ok 56 - AC34: deliberate detached operation has a distinct lifetime from its parent HTTP request
+  ---
+  duration_ms: 100.783577
+  ...
+# Subtest: AC31: missing optional model is diagnosed and blocked without disabling compatible tables
+ok 57 - AC31: missing optional model is diagnosed and blocked without disabling compatible tables
+  ---
+  duration_ms: 257.484988
+  ...
+# Subtest: AC33: HTTP close during shared initialization never calls the handler or poisons the ready generation
+ok 58 - AC33: HTTP close during shared initialization never calls the handler or poisons the ready generation
+  ---
+  duration_ms: 100.101213
+  ...
+1..58
+# tests 58
+# suites 0
+# pass 58
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 6761.663495

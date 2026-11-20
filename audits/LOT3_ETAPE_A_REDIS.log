@@ -1,0 +1,24 @@
+PASS OTP correct, issued v2 registered, contract preserved
+PASS valid DNS tenant with consecutive hyphens remains compatible
+PASS OTP incorrect and malformed
+PASS OTP genuinely expired in Redis
+PASS two processes consume one OTP, exactly one session
+PASS Redis SET denied inside creation: no session, OTP not consumed
+PASS Redis DEL denied: preflight prevents orphan session and leaves OTP usable
+PASS v2 proof without registry entry refused despite correct HMAC
+PASS logout while active-account check awaits: introspection cannot publish stale admission
+PASS session altered, old unregistered proof, raw GUID rejected
+PASS wrong tenant and contradictory registry rejected
+PASS inactive user and expired session rejected
+Fri, 06 Nov 2026 08:53:09 GMT router deprecated handlers that are Promise-like are deprecated, use a native Promise instead at node_modules/router/index.js:342:13
+Fri, 06 Nov 2026 08:53:09 GMT router deprecated handlers that are Promise-like are deprecated, use a native Promise instead at node_modules/router/lib/route.js:157:13
+PASS Master introspection reserved to allowlisted signed service, root no bypass
+PASS invalid application proof is 503 to consumer, not a user-session expiry
+PASS actual OTP/retry/logout HTTP handlers preserve envelope through BFF and Master
+PASS two independent BFF HTTP instances verify same registry, no GUID fallback
+PASS A/B simultaneous identities stay distinct
+PASS logout via one BFF facade, reuse rejected by both instances; idempotent
+PASS API independent proof verification, memo routes remain closed, no tenant SQL
+PASS owned Redis server stopped: authority and both BFFs fail closed with 503
+RESULT 20 scenarios passed; real Redis/HTTP, active-account resolver fixture (no PostgreSQL claim)
+CLEANUP: owned Redis stopped; private cluster removed; no TCP listener

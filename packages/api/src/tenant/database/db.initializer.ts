@@ -8,9 +8,12 @@ import { SitesDbStructure } from './data/sites.db.js';
 import { WorkSessionsDbStructure } from './data/work.sessions.db.js';
 import { TimeEntriesDbStructure } from './data/time.entries.db.js';
 import { MemosDbStructure } from './data/memos.db.js';
+import { MemoReadsDbStructure } from './data/memo.reads.db.js';
 import { AuditLogsDbStructure } from './data/audit.logs.db.js';
 import { FraudAlertsDbStructure } from './data/fraud.alerts.db.js';
 import TenantManager from './db.tenant-manager.js';
+import { runTenantInitialization, TenantContextError } from './tenant.context.js';
+import { assertModelAvailable, markModelUnavailable } from './tenant.ownership.js';
 import { QrCodeGenerationDbStructure } from './data/qr.code.generation.db.js';
 import { SessionTemplatesDbStructure } from './data/session.templates.db.js';
 import { RotationGroupsDbStructure } from './data/rotation.groups.db.js';
@@ -47,37 +50,112 @@ export class TableInitializer {
   /**
    * Initialise toutes les tables pour un tenant spécifique
    */
-  static async initialize(sequelize: Sequelize): Promise<void> {
-    const tenant = TenantManager.getCurrentTenant();
+  private static pending = new WeakMap<Sequelize, Promise<void>>();
 
-    if (this.instances.has(tenant)) {
-      console.log(`⚠️ Tables déjà initialisées pour tenant: ${tenant}`);
+  static async initialize(
+    sequelize: Sequelize,
+    options: { mode?: 'existing' | 'bootstrap' } = {},
+  ): Promise<void> {
+    TenantManager.assertConnection(sequelize);
+    const tenant = TenantManager.getCurrentTenant();
+    const existing = this.instances.get(tenant);
+    if (existing?.initialized && existing.sequelize === sequelize) return;
+    const flight = this.pending.get(sequelize);
+    if (flight) {
+      await flight;
+      TenantManager.assertConnection(sequelize);
       return;
     }
-
-    const instance: TenantInstance = {
-      sequelize,
-      models: new Map<string, ModelStatic<Model>>(),
-      initialized: false,
-    };
-
+    const work = Promise.resolve().then(() =>
+      runTenantInitialization(tenant, async () => {
+        TenantManager.assertConnection(sequelize);
+        const instance: TenantInstance = { sequelize, models: new Map(), initialized: false };
+        this.defineAllModelsForInstance(instance);
+        const qi = sequelize.getQueryInterface();
+        if (options.mode === 'bootstrap') {
+          // Only called by the Master provisioning path after a newly-created DB.
+          // PostGIS may already own tables (e.g. spatial_ref_sys). These are not
+          // tenant business tables and must not make a newly-created DB nonempty.
+          const [rows] = await sequelize.query(
+            "SELECT c.relname FROM pg_catalog.pg_class c JOIN pg_catalog.pg_namespace n ON n.oid = c.relnamespace WHERE n.nspname = 'public' AND c.relkind IN ('r', 'p') AND NOT EXISTS (SELECT 1 FROM pg_catalog.pg_depend d WHERE d.classid = 'pg_catalog.pg_class'::regclass AND d.objid = c.oid AND d.deptype = 'e')",
+          );
+          if ((rows as any[]).length) throw new TenantContextError('TENANT_BOOTSTRAP_NOT_EMPTY');
+          await this.syncAllModelsForInstance(instance);
+        } else {
+          for (const model of instance.models.values()) {
+            const table = model.getTableName();
+            if (!(await qi.tableExists(table))) {
+              console.error('TENANT_SCHEMA_NOT_READY', { tenant, table, reason: 'missing-table' });
+              markModelUnavailable(model);
+              continue;
+            }
+            const columns = await qi.describeTable(table);
+            for (const [name, attribute] of Object.entries(model.getAttributes())) {
+              if ((attribute.type as any).key === 'VIRTUAL') continue;
+              const column = columns[attribute.field || name];
+              if (!column) {
+                console.error('TENANT_SCHEMA_NOT_READY', {
+                  tenant,
+                  table,
+                  column: attribute.field || name,
+                });
+                markModelUnavailable(model);
+                break;
+              }
+              const expected = (attribute.type as any).values;
+              const actual = (column as any).special;
+              if (
+                Array.isArray(expected) &&
+                Array.isArray(actual) &&
+                expected.some((value) => !actual.includes(value))
+              ) {
+                console.error('TENANT_SCHEMA_NOT_READY', {
+                  tenant,
+                  table,
+                  column: attribute.field || name,
+                  reason: 'enum-values',
+                });
+                markModelUnavailable(model);
+                break;
+              }
+            }
+          }
+        }
+        // A partially historical schema must not disable unrelated, compatible
+        // modules. Each missing/incompatible model is refused at access/query.
+        // A completely empty/wrong existing schema is never declared usable.
+        if (options.mode !== 'bootstrap') {
+          let available = 0;
+          for (const model of instance.models.values()) {
+            try {
+              assertModelAvailable(model);
+              available++;
+            } catch {
+              /* diagnostic already emitted */
+            }
+          }
+          if (!available) throw new TenantContextError('TENANT_SCHEMA_NOT_READY');
+        }
+        TenantManager.assertReadyForModels(sequelize);
+        instance.initialized = true;
+        this.instances.set(tenant, instance);
+      }),
+    );
+    this.pending.set(sequelize, work);
     try {
-      console.log(`🗄️ Début initialisation des tables pour tenant: ${tenant}...`);
-
-      // 1. Définir tous les modèles pour cette instance
-      this.defineAllModelsForInstance(instance);
-
-      // 2. Synchroniser avec la base de données pour cette instance
-      await this.syncAllModelsForInstance(instance);
-
-      instance.initialized = true;
-      this.instances.set(tenant, instance);
-
-      console.log(`✅ Toutes les tables initialisées avec succès pour tenant: ${tenant}`);
-      console.log(`📊 ${instance.models.size} table(s) créée(s) pour tenant: ${tenant}`);
+      await work;
+      TenantManager.assertConnection(sequelize);
     } catch (error) {
-      console.error(`❌ Erreur lors de l'initialisation des tables pour tenant ${tenant}:`, error);
+      // A partial registry is never reused. Explicit close/retry creates a new generation.
+      // A caller whose HTTP lifetime expired does not poison a successful shared flight.
+      if (
+        !this.instances.get(tenant)?.initialized ||
+        this.instances.get(tenant)?.sequelize !== sequelize
+      )
+        TenantManager.invalidateModels(sequelize);
       throw error;
+    } finally {
+      if (this.pending.get(sequelize) === work) this.pending.delete(sequelize);
     }
   }
 
@@ -94,6 +172,7 @@ export class TableInitializer {
       );
     }
 
+    TenantManager.assertConnection(instance.sequelize);
     const model = instance.models.get(tableName);
     if (!model) {
       const available = Array.from(instance.models.keys()).join(', ');
@@ -101,6 +180,7 @@ export class TableInitializer {
         `Modèle '${tableName}' non trouvé pour tenant ${tenant}. Disponibles: ${available}`,
       );
     }
+    assertModelAvailable(model);
     return model;
   }
 
@@ -115,6 +195,8 @@ export class TableInitializer {
       throw new Error(`TableInitializer non initialisé pour le tenant ${tenant}`);
     }
 
+    TenantManager.assertConnection(instance.sequelize);
+    for (const model of instance.models.values()) assertModelAvailable(model);
     return new Map(instance.models);
   }
 
@@ -125,6 +207,7 @@ export class TableInitializer {
     try {
       const tenant = TenantManager.getCurrentTenant();
       const instance = this.instances.get(tenant);
+      if (instance?.initialized) TenantManager.assertConnection(instance.sequelize);
       return instance?.initialized || false;
     } catch {
       return false;
@@ -136,7 +219,7 @@ export class TableInitializer {
    */
   static isInitializedForTenant(tenant: string): boolean {
     const instance = this.instances.get(tenant);
-    return instance?.initialized || false;
+    return !!instance?.initialized && TenantManager.connectionOwner(instance.sequelize).usable();
   }
 
   // === MÉTHODES D'ACCÈS PUBLIQUES ===
@@ -185,6 +268,8 @@ export class TableInitializer {
    * Nettoyage des ressources pour un tenant spécifique
    */
   static cleanupTenant(tenant: string): void {
+    if (TenantManager.hasLiveConnections(tenant))
+      throw new TenantContextError('TENANT_MODELS_IN_USE');
     if (this.instances.has(tenant)) {
       this.instances.delete(tenant);
       console.log(`🧹 TableInitializer nettoyé pour tenant: ${tenant}`);
@@ -195,6 +280,7 @@ export class TableInitializer {
    * Nettoyage complet de toutes les ressources
    */
   static cleanup(): void {
+    if (TenantManager.hasLiveConnections()) throw new TenantContextError('TENANT_MODELS_IN_USE');
     this.instances.clear();
     console.log('🧹 TableInitializer complètement nettoyé');
   }
@@ -213,6 +299,7 @@ export class TableInitializer {
     this.defineSitesModelForInstance(instance);
     this.defineWorkSessionsModelForInstance(instance);
     this.defineMemosModelForInstance(instance);
+    this.defineMemoReadsModelForInstance(instance);
     this.defineGroupsModelForInstance(instance);
     this.defineQrCodeModelForInstance(instance);
     this.defineDeviceModelForInstance(instance);
@@ -358,6 +445,15 @@ export class TableInitializer {
 
     instance.models.set(MemosDbStructure.tableName, model);
     console.log(`✅ Modèle Memos défini (${MemosDbStructure.tableName})`);
+  }
+
+  private static defineMemoReadsModelForInstance(instance: TenantInstance): void {
+    const model = instance.sequelize.define(
+      MemoReadsDbStructure.tableName,
+      MemoReadsDbStructure.attributes,
+      MemoReadsDbStructure.options,
+    );
+    instance.models.set(MemoReadsDbStructure.tableName, model);
   }
 
   private static defineAuditLogsModelForInstance(instance: TenantInstance): void {
@@ -587,8 +683,8 @@ export class TableInitializer {
   private static async syncAllModelsForInstance(instance: TenantInstance): Promise<void> {
     console.log('🔄 Synchronisation avec la base de données...');
 
-    const isDevelopment = process.env.NODE_ENV !== 'production';
-    const syncOptions = isDevelopment ? {} : {};
+    // Bootstrap only; never repair or drop an existing business schema.
+    const syncOptions = { force: false, alter: false, hooks: false };
 
     console.log(`🆘 Current Mode: ${process.env.NODE_ENV || 'development'}`);
 

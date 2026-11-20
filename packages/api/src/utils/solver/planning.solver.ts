@@ -1,3 +1,4 @@
+import type { FixedAlternationSolverPolicy } from '../planning.fixed.alternation.js';
 import {
   EngineConfig,
   EngineDiagnostics,
@@ -51,12 +52,37 @@ export interface PlanningSolverInput {
   historicalFairness?: PlanningHistoricalFairnessBaseline[];
   boundaryState?: PlanningSolverBoundaryState;
   lockedAssignments?: PlanningSolverLockedAssignment[];
+  /** Advisory extension enabled only for a compatible worker. */
+  fixedAlternationPolicy?: FixedAlternationSolverPolicy;
   periodFrom: string;
   periodTo: string;
   requestedPeriodFrom?: string;
   requestedPeriodTo?: string;
   config: EngineConfig;
   solverTimeoutSeconds?: number;
+}
+
+export function legacyPlanningSolverPayload(input: PlanningSolverInput): Omit<PlanningSolverInput, 'fixedAlternationPolicy'> {
+  const { fixedAlternationPolicy: _pendingPolicy, ...payload } = input;
+  return payload;
+}
+
+export function planningSolverPayload(input: PlanningSolverInput, supportsFixedAlternation: boolean) {
+  const legacy = legacyPlanningSolverPayload(input);
+  const policy = input.fixedAlternationPolicy;
+  if (!supportsFixedAlternation || !policy) return legacy;
+  return {
+    ...legacy,
+    fixed_alternation_policy: {
+      contract_version: policy.weekendRest === 'ALTERNATE_SAT_SUN' ? 2 : 1,
+      enabled: true,
+      employee_guids: policy.employeeGuids,
+      template_guids: policy.templates.map(template => template.guid),
+      anchor_date: policy.anchorDate,
+      shift_cadence_days: policy.shiftCadenceDays,
+      weekend_rest: policy.weekendRest,
+    },
+  };
 }
 
 export interface PlanningSolverHorizonMetadata {
@@ -103,6 +129,13 @@ export class PlanningSolverTechnicalError extends Error {
   ) {
     super(message);
     this.name = 'PlanningSolverTechnicalError';
+  }
+}
+
+/** A compatible /health replied, but /solve returned a valid legacy result without an acknowledgement. */
+export class FixedAlternationAcknowledgementError extends PlanningSolverTechnicalError {
+  constructor(details: unknown) {
+    super('OR-Tools n’a pas confirmé l’évaluation de l’alternance fixe.', 'PLANNING_SOLVER_PROTOCOL_ERROR', details);
   }
 }
 

@@ -18,6 +18,8 @@ from app.schemas import (
     EngineDiagnostics,
     EngineResult,
     EngineTemplate,
+    FixedAlternationCheck,
+    FixedAlternationDiagnostics,
     GuardPoolResult,
     WeeklyLeaveGroupResult,
     EmployeeSuggestionResult,
@@ -199,8 +201,22 @@ class OrToolsPlanner:
                 and employee.mode in request.config.weeklyLeavePolicy.selector.planningModes
             )
         }
+        policy = request.fixed_alternation_policy
+        self.fixed_alternation = policy if policy and policy.enabled else None
+        self.alternating_guids = set(self.fixed_alternation.employee_guids) if self.fixed_alternation else set()
+        self.alternating_references = {
+            employee.guid: employee.fixedTemplate for employee in self.fixed
+            if employee.guid in self.alternating_guids
+        }
+        self.alternating_templates = {
+            employee.fixedTemplate.guid: employee.fixedTemplate
+            for employee in self.fixed
+            if employee.guid in self.alternating_guids and employee.fixedTemplate
+        }
+        self.alternating_work = {}
+
         variable_fixed_guids = (
-            self.fixed_policy_variable_guids | self.locked_fixed_guids
+            self.fixed_policy_variable_guids | self.locked_fixed_guids | self.alternating_guids
         )
         self.fixed_rotating_rest = [
             employee
@@ -276,6 +292,7 @@ class OrToolsPlanner:
         self._apply_one_assignment_per_day()
         self._apply_guard_continuations()
         self._build_work_days()
+        self._apply_fixed_alternation_rest()
         self._build_weekly_leave_variables()
         self._apply_guard_team_policy()
         self._apply_weekly_leave_policy()
@@ -287,6 +304,7 @@ class OrToolsPlanner:
         self._apply_weekly_minutes()
         self._apply_max_consecutive_guards()
         self._apply_rest_between_shifts()
+        self._apply_alternating_shift_limits()
         self._build_objective()
 
     def _validate_templates(self) -> None:
@@ -666,7 +684,23 @@ class OrToolsPlanner:
                 )
                 self.fixed_work[(employee.guid, iso)] = variable
                 normal_work = template_has_work(employee.fixedTemplate, iso)
-                if not normal_work:
+                if employee.guid in self.alternating_guids:
+                    lock = self.locked_assignments.get((employee.guid, iso))
+                    choices = []
+                    for guid, template in self.alternating_templates.items():
+                        if lock is not None:
+                            allowed = lock.templateGuid == guid
+                        else:
+                            allowed = normal_work and template_has_work(template, iso)
+                        if allowed:
+                            choice = self.model.NewBoolVar(f"fixed_alternation_{employee.guid}_{iso}_{guid}")
+                            self.alternating_work[(employee.guid, iso, guid)] = choice
+                            choices.append(choice)
+                    self.model.Add(variable == sum(choices))
+                    if (lock is None and normal_work and employee.guid not in self.fixed_policy_variable_guids
+                        and not self._mandatory_fixed_alternation_rest()):
+                        self.model.Add(variable == 1)
+                elif not normal_work:
                     self.model.Add(variable == 0)
                 elif (
                     employee.guid not in self.fixed_policy_variable_guids
@@ -739,6 +773,10 @@ class OrToolsPlanner:
                 raise ValueError(
                     f"FIXED employee {lock.employeeGuid} has no lockable work variable on {lock.date}"
                 )
+
+            if employee.guid in self.alternating_guids:
+                self.model.Add(variable == int(lock.templateGuid in self.alternating_templates))
+                continue
 
             # Same fixed template => normal fixed work is kept. A manual rest or
             # another service suppresses the configured fixed template for the
@@ -908,6 +946,7 @@ class OrToolsPlanner:
                     and direct_lock.templateGuid is not None
                     and employee.fixedTemplate is not None
                     and direct_lock.templateGuid != employee.fixedTemplate.guid
+                    and not (employee.guid in self.alternating_guids and direct_lock.templateGuid in self.alternating_templates)
                 ):
                     variable = self.model.NewBoolVar(
                         f"manager_external_work_day_{employee.guid}_{iso}"
@@ -1025,6 +1064,20 @@ class OrToolsPlanner:
         assert employee.fixedTemplate is not None
         if scope.mode == "ANY":
             return [self._fixed_work_term(employee, iso)]
+        if employee.guid in self.alternating_guids:
+            allowed = (
+                set(scope.templateGuids)
+                if scope.mode == "TEMPLATE"
+                else {
+                    slot.requirement.template.guid for slot in self._daily_slots(iso)
+                    if self._slot_matches_scope(slot, scope)
+                }
+            )
+            return [
+                self.alternating_work[(employee.guid, iso, guid)]
+                for guid in self.alternating_templates
+                if guid in allowed and (employee.guid, iso, guid) in self.alternating_work
+            ]
         if scope.mode == "TEMPLATE":
             if employee.fixedTemplate.guid in scope.templateGuids:
                 return [self._fixed_work_term(employee, iso)]
@@ -1419,6 +1472,15 @@ class OrToolsPlanner:
             locked_fixed_count = 0
             variable_fixed_terms = []
             for employee in self.fixed_rotating_rest:
+                if fixed_eligible and employee.guid in self.alternating_guids:
+                    key = (employee.guid, slot.iso, requirement.template.guid)
+                    choice = self.alternating_work.get(key)
+                    if choice is not None:
+                        if (employee.guid, slot.iso) in self.locked_assignments:
+                            locked_fixed_count += 1
+                        else:
+                            variable_fixed_terms.append(choice)
+                    continue
                 if (
                     not fixed_eligible
                     or employee.fixedTemplate is None
@@ -1495,6 +1557,8 @@ class OrToolsPlanner:
                 )
 
         for employee in self.fixed_rotating_rest:
+            if employee.guid in self.alternating_guids and employee.guid not in self.fixed_policy_variable_guids:
+                continue
             assert employee.fixedTemplate is not None
             for _, dates in self._week_groups().items():
                 if len(dates) < 7:
@@ -1509,6 +1573,22 @@ class OrToolsPlanner:
                     len(potential_dates),
                 )
                 required_work = len(potential_dates) - required_rest
+                if employee.guid in self.alternating_guids:
+                    available = [
+                        iso for iso in potential_dates
+                        if (employee.guid, iso) not in self.locked_assignments
+                    ]
+                    locked_work = sum(
+                        lock.templateGuid is not None for iso in dates
+                        if (lock := self.locked_assignments.get((employee.guid, iso))) is not None
+                    )
+                    required_work = min(len(available), max(0, required_work - locked_work))
+                    work_count = sum(self.fixed_work[(employee.guid, iso)] for iso in available)
+                    if self._mandatory_fixed_alternation_rest():
+                        self.model.Add(work_count <= required_work)
+                    else:
+                        self.model.Add(work_count == required_work)
+                    continue
                 self.model.Add(
                     sum(
                         self.fixed_work[(employee.guid, iso)]
@@ -1554,6 +1634,10 @@ class OrToolsPlanner:
             return
 
         for employee in self.rotating + self.fixed_rotating_rest:
+            if (employee.guid in self.alternating_guids
+                and employee.guid not in self.fixed_policy_variable_guids
+                and employee.guid not in self.locked_fixed_guids):
+                continue
             for index in range(0, len(self.dates) - size + 1):
                 window = self.dates[index : index + size]
                 manual_work_count = sum(
@@ -1710,6 +1794,27 @@ class OrToolsPlanner:
                 continue
 
             for _, dates in self._week_groups().items():
+                if employee.guid in self.alternating_guids:
+                    terms = []
+                    locked_minutes = 0
+                    for iso in dates:
+                        lock = self.locked_assignments.get((employee.guid, iso))
+                        if lock is not None:
+                            template = self._alternating_locked_template(lock)
+                            if template is not None:
+                                locked_minutes += template_minutes(template, iso)
+                            continue
+                        for guid, template in self.alternating_templates.items():
+                            choice = self.alternating_work.get((employee.guid, iso, guid))
+                            if choice is not None:
+                                terms.append(template_minutes(template, iso) * choice)
+                    baseline_minutes = (
+                        sum(template_minutes(employee.fixedTemplate, iso) for iso in dates
+                            if (employee.guid, iso) not in self.locked_assignments)
+                        if employee.guid not in self.fixed_policy_variable_guids else 0
+                    )
+                    self.model.Add(sum(terms) + locked_minutes <= max(maximum, locked_minutes + baseline_minutes))
+                    continue
                 terms = [
                     template_minutes(employee.fixedTemplate, iso)
                     * self.fixed_work[(employee.guid, iso)]
@@ -1853,6 +1958,194 @@ class OrToolsPlanner:
                                 self.model.Add(
                                     self._slot_var(employee.guid, first_slot) == 0
                                 )
+
+    def _alternating_locked_template(self, lock):
+        if lock.templateGuid is None:
+            return None
+        return lock.template or self.alternating_templates.get(lock.templateGuid) or next(
+            (requirement.template for requirement in self.request.requirements
+             if requirement.guid == lock.requirementGuid),
+            None,
+        )
+
+    def _apply_alternating_shift_limits(self) -> None:
+        minimum = self.request.config.minRestMinutesBetweenShifts
+        if not self.fixed_alternation or minimum <= 0:
+            return
+
+        for employee in self.fixed:
+            if employee.guid not in self.alternating_guids:
+                continue
+
+            def choices(iso):
+                lock = self.locked_assignments.get((employee.guid, iso))
+                if lock is not None:
+                    template = self._alternating_locked_template(lock)
+                    return [(template, 1)] if template is not None else []
+                return [
+                    (template, self.alternating_work[(employee.guid, iso, guid)])
+                    for guid, template in self.alternating_templates.items()
+                    if (employee.guid, iso, guid) in self.alternating_work
+                ]
+
+            for first_date, second_date in zip(self.dates, self.dates[1:]):
+                first_lock = self.locked_assignments.get((employee.guid, first_date))
+                second_lock = self.locked_assignments.get((employee.guid, second_date))
+                if first_lock is not None and second_lock is not None:
+                    continue
+                reference = employee.fixedTemplate.guid
+                for first_template, first in choices(first_date):
+                    for second_template, second in choices(second_date):
+                        # Keep an existing reference-to-reference transition admissible.
+                        if ((first_lock is not None or first_template.guid == reference)
+                            and (second_lock is not None or second_template.guid == reference)):
+                            continue
+                        end = last_end(first_template, first_date)
+                        start = first_start(second_template, second_date)
+                        if end is not None and start is not None and 24 * 60 - end + start < minimum:
+                            self.model.Add(first + second <= 1)
+
+    def _fixed_alternation_expected(self, iso: str):
+        policy = self.fixed_alternation
+        assert policy is not None
+        phase = ((parse_iso(iso) - policy.anchor_date).days // policy.shift_cadence_days) % 2
+        return policy.template_guids if phase == 0 else tuple(reversed(policy.template_guids))
+
+    def _fixed_alternation_weekend_worker(self, iso: str) -> int | None:
+        policy = self.fixed_alternation
+        assert policy is not None
+        current = parse_iso(iso)
+        if policy.weekend_rest != "ALTERNATE_SAT_SUN" or current.weekday() < 5:
+            return None
+        anchor_monday = policy.anchor_date - timedelta(days=policy.anchor_date.weekday())
+        phase = ((current - anchor_monday).days // 7) % 2
+        return (1 - (current.weekday() - 5) + phase) % 2
+
+    def _mandatory_fixed_alternation_rest(self) -> bool:
+        policy = self.fixed_alternation
+        return bool(policy and policy.contract_version == 2 and policy.weekend_rest == "ALTERNATE_SAT_SUN")
+
+    def _apply_fixed_alternation_rest(self) -> None:
+        self.fixed_rest_assumptions = {}
+        if not self._mandatory_fixed_alternation_rest():
+            return
+        for iso in self.dates:
+            worker = self._fixed_alternation_weekend_worker(iso)
+            for index, guid in enumerate(self.fixed_alternation.employee_guids):
+                expected_work = worker is None or index == worker
+                lock = self.locked_assignments.get((guid, iso))
+                reference = self.alternating_references[guid]
+                reason = "HARD_CONSTRAINT_CONFLICT"
+                if lock is not None and (lock.templateGuid is not None) != expected_work:
+                    reason = "LOCKED_ASSIGNMENT"
+                elif lock is None and expected_work and not template_has_work(reference, iso):
+                    reason = "TEMPLATE_REST"
+                assumption = self.model.NewBoolVar(f"fixed_weekend_rest_{guid}_{iso}")
+                self.model.Add(self.work_day[(guid, iso)] == int(expected_work)).OnlyEnforceIf(assumption)
+                self.model.AddAssumption(assumption)
+                self.fixed_rest_assumptions[assumption.Index()] = {
+                    "employeeGuid": guid, "date": iso,
+                    "expected": "WORK" if expected_work else "REST", "reason": reason,
+                }
+
+    def _fixed_alternation_penalties(self):
+        policy = self.fixed_alternation
+        if not policy:
+            return []
+        penalties = []
+        for iso in self.dates:
+            expected = self._fixed_alternation_expected(iso)
+            works = [self.work_day[(guid, iso)] for guid in policy.employee_guids]
+            weekend_worker = self._fixed_alternation_weekend_worker(iso)
+            selected_by_template = {guid: [] for guid in policy.template_guids}
+            for index, guid in enumerate(policy.employee_guids):
+                reference = self.alternating_references[guid]
+                lock = self.locked_assignments.get((guid, iso))
+                choices = {
+                    template_guid: (
+                        self.alternating_work.get((guid, iso, template_guid), 0)
+                        if lock is None else int(lock.templateGuid == template_guid)
+                    )
+                    for template_guid in policy.template_guids
+                }
+                for template_guid, choice in choices.items():
+                    selected_by_template[template_guid].append(choice)
+                selected = choices[expected[index]]
+                if lock is None:
+                    # Avoid dropping an admissible workday just to evade a shift mismatch.
+                    if weekend_worker is None and template_has_work(reference, iso):
+                        penalties.extend([1 - works[index]] * 6)
+                    alternative = next(guid_ for guid_ in policy.template_guids if guid_ != reference.guid)
+                    changed = self.alternating_work.get((guid, iso, alternative))
+                    if changed is not None:
+                        solo_change = self.model.NewBoolVar(f"fixed_alternation_solo_deviation_{guid}_{iso}")
+                        self.model.AddMaxEquality(solo_change, [0, changed - works[1 - index]])
+                        penalties.append(solo_change)
+                miss = self.model.NewBoolVar(f"fixed_alternation_shift_deviation_{guid}_{iso}")
+                self.model.AddMaxEquality(miss, [0, sum(works) - 1 - selected])
+                penalties.append(miss)
+
+            # Keep opposite shifts preferable even when a lock prevents the anchored orientation.
+            for template_guid, chosen in selected_by_template.items():
+                same_shift = self.model.NewBoolVar(f"fixed_alternation_same_shift_{iso}_{template_guid}")
+                self.model.AddMaxEquality(same_shift, [0, sum(chosen) - 1])
+                penalties.extend([same_shift] * 3)
+
+            if weekend_worker is not None and not self._mandatory_fixed_alternation_rest():
+                penalties.extend([1 - works[weekend_worker], works[1 - weekend_worker]] * 6)
+        return penalties
+
+    def _fixed_alternation_check(self, iso, kind, expected, actual, locked):
+        policy = self.fixed_alternation
+        assert policy is not None
+        reason = None
+        if expected != actual:
+            differences = [
+                (guid, wanted) for guid, wanted, got in zip(policy.employee_guids, expected, actual)
+                if wanted != got
+            ]
+            if any(guid in locked for guid, _ in differences):
+                reason = "LOCKED_ASSIGNMENT"
+            elif kind == "WEEKEND_REST" and any(
+                not template_has_work(self.alternating_references[guid], iso)
+                for guid, wanted in differences if wanted == "WORK"
+            ):
+                reason = "PROFILE_REST"
+            elif kind == "SHIFT" and any(
+                not template_has_work(self.alternating_templates[wanted], iso)
+                for _, wanted in differences
+            ):
+                reason = "TEMPLATE_UNAVAILABLE"
+            else:
+                reason = "OTHER_SOLVER_PRIORITIES"
+        return FixedAlternationCheck(
+            date=iso, kind=kind, expected=expected, actual=actual,
+            lockedEmployeeGuids=locked, reason=reason,
+        )
+
+    def _fixed_alternation_diagnostics(self, schedules):
+        policy = self.fixed_alternation
+        if not policy:
+            return None
+        checks = []
+        for iso in self.dates:
+            actual = tuple(schedules[guid][iso] for guid in policy.employee_guids)
+            locked = [guid for guid in policy.employee_guids if (guid, iso) in self.locked_assignments]
+            if all(value is not None for value in actual):
+                checks.append(self._fixed_alternation_check(
+                    iso, "SHIFT", self._fixed_alternation_expected(iso), actual, locked,
+                ))
+            weekend_worker = self._fixed_alternation_weekend_worker(iso)
+            if weekend_worker is not None:
+                checks.append(self._fixed_alternation_check(
+                    iso, "WEEKEND_REST",
+                    tuple("WORK" if index == weekend_worker else None for index in range(2)),
+                    tuple("WORK" if self.solver.Value(self.work_day[(guid, iso)]) else None
+                          for guid in policy.employee_guids) if self._mandatory_fixed_alternation_rest()
+                    else tuple("WORK" if value is not None else None for value in actual),
+                    locked,
+                ))
+        return FixedAlternationDiagnostics(contractVersion=policy.contract_version, employeeGuids=policy.employee_guids, checks=checks)
 
     def _build_objective(self) -> None:
         # Hard coverage is already constrained. RANGE shortfalls remain costly.
@@ -2047,7 +2340,8 @@ class OrToolsPlanner:
             objective.append(10 * (max_shifts - min_shifts))
             objective.append(max_minutes - min_minutes)
 
-        self.model.Minimize(sum(objective) if objective else 0)
+        penalties = self._fixed_alternation_penalties()
+        self.model.Minimize((len(penalties) + 1) * sum(objective) + sum(penalties))
 
     def _log_pre_solve_diagnostics(self) -> None:
         """Temporary Step-16 diagnostic trace. Does not add or alter constraints."""
@@ -2180,13 +2474,25 @@ class OrToolsPlanner:
         )
 
         if status == cp_model.INFEASIBLE:
+            conflicts = [
+                self.fixed_rest_assumptions[index]
+                for index in self.solver.SufficientAssumptionsForInfeasibility()
+                if index in self.fixed_rest_assumptions
+            ] if self.fixed_rest_assumptions else []
+            conflict_message = "Le repos alterné obligatoire est incompatible avec les horaires, la couverture ou les décisions verrouillées."
             diagnostics = EngineDiagnostics(
                 violations=[
                     PlanningViolation(
                         severity="HARD",
                         code="PLANNING_INFEASIBLE",
                         message="CP-SAT proved that no planning satisfies all hard constraints",
-                    )
+                    ),
+                    *([PlanningViolation(
+                        severity="HARD",
+                        code="FIXED_ALTERNATION_WEEKEND_REST_CONFLICT",
+                        message=conflict_message,
+                        details={"conflicts": conflicts},
+                    )] if conflicts else []),
                 ],
                 coverage=[],
                 guardPools=[],
@@ -2199,7 +2505,7 @@ class OrToolsPlanner:
                 status="INFEASIBLE",
                 solverStats=stats,
                 diagnostics=diagnostics,
-                message="No feasible planning satisfies every hard constraint",
+                message=conflict_message if conflicts else "No feasible planning satisfies every hard constraint",
             )
 
         if status not in (cp_model.OPTIMAL, cp_model.FEASIBLE):
@@ -2286,7 +2592,25 @@ class OrToolsPlanner:
                     else template_has_work(employee.fixedTemplate, iso)
                 )
 
-                if is_weekly_leave:
+                selected_template = employee.fixedTemplate
+                if employee.guid in self.alternating_guids:
+                    lock = self.locked_assignments.get((employee.guid, iso))
+                    if lock is not None:
+                        selected_template = self._alternating_locked_template(lock)
+                        works = lock.templateGuid is not None
+                    elif works:
+                        selected_template = next(
+                            template for guid, template in self.alternating_templates.items()
+                            if (choice := self.alternating_work.get((employee.guid, iso, guid))) is not None
+                            and self.solver.Value(choice)
+                        )
+
+                weekend_worker = self._fixed_alternation_weekend_worker(iso) if self._mandatory_fixed_alternation_rest() else None
+                is_alternated_rest = (
+                    weekend_worker is not None
+                    and employee.guid == self.fixed_alternation.employee_guids[1 - weekend_worker]
+                )
+                if is_weekly_leave or is_alternated_rest:
                     schedules[employee.guid][iso] = None
                     reasons[employee.guid][iso] = DayReason(
                         templateName="Congé hebdomadaire",
@@ -2294,20 +2618,36 @@ class OrToolsPlanner:
                         confidence=100,
                         source="WEEKLY_LEAVE",
                         factors=[
-                            "Congé attribué selon l’ordre de rotation de l’équipe",
+                            "Repos samedi/dimanche attribué par l’alternance des horaires fixes"
+                            if is_alternated_rest else "Congé attribué selon l’ordre de rotation de l’équipe",
                             "Jour autorisé par la politique de congé hebdomadaire",
                         ],
                     )
                 elif works:
-                    schedules[employee.guid][iso] = employee.fixedTemplate.guid
+                    assert selected_template is not None
+                    schedules[employee.guid][iso] = selected_template.guid
                     reasons[employee.guid][iso] = DayReason(
-                        templateName=employee.fixedTemplate.name,
-                        templateGuid=employee.fixedTemplate.guid,
+                        templateName=selected_template.name,
+                        templateGuid=selected_template.guid,
                         confidence=100,
                         source="FIXED",
                         factors=[
-                            "Horaire fixe défini dans le profil de l’employé"
+                            "Horaire choisi parmi les modèles fixes coordonnés"
+                            if employee.guid in self.alternating_guids
+                            else "Horaire fixe défini dans le profil de l’employé"
                         ],
+                    )
+                elif employee.guid in self.alternating_guids and (
+                    (employee.guid, iso) in self.locked_assignments
+                    or template_has_work(employee.fixedTemplate, iso)
+                ):
+                    schedules[employee.guid][iso] = None
+                    reasons[employee.guid][iso] = DayReason(
+                        templateName="Repos planifié",
+                        templateGuid=None,
+                        confidence=100,
+                        source="REST",
+                        factors=["Repos retenu selon les règles du profil et les décisions verrouillées"],
                     )
                 else:
                     schedules[employee.guid][iso] = None
@@ -2451,9 +2791,17 @@ class OrToolsPlanner:
                 )
                 for employee in self.fixed_rotating_rest
                 if fixed_eligible
+                and employee.guid not in self.alternating_guids
                 and employee.fixedTemplate is not None
                 and employee.fixedTemplate.guid == requirement.template.guid
             )
+
+            if fixed_eligible:
+                assigned += sum(
+                    self.solver.Value(choice)
+                    for guid in self.alternating_guids
+                    if (choice := self.alternating_work.get((guid, slot.iso, requirement.template.guid))) is not None
+                )
 
             status = "COVERED"
             if assigned < requirement.minEmployees:
@@ -2634,6 +2982,7 @@ class OrToolsPlanner:
             fairnessScore=fairness_score,
             coverageScore=coverage_score,
             relaxationsApplied=relaxations_applied,
+            fixedAlternationEvaluation=self._fixed_alternation_diagnostics(schedules),
         )
 
         return EngineResult(

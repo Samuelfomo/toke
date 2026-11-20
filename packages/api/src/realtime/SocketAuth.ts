@@ -4,7 +4,6 @@ import ClientCacheService from '../tools/client.cache.service.js';
 import { ApiKeyManager } from '../tools/api-key-manager.js';
 import { TableInitializer } from '../master/database/db.initializer.js';
 
-import { MemoEventsService } from './MemoEventsService.js';
 
 export class SocketAuth {
   static async authenticate(socket: Socket, next: (err?: Error) => void) {
@@ -12,12 +11,7 @@ export class SocketAuth {
       // Flux navigateur recommandé : ticket court obtenu via REST déjà authentifié.
       const realtimeTicket = socket.handshake.auth?.realtimeTicket;
       if (typeof realtimeTicket === 'string' && realtimeTicket.length > 0) {
-        const ticket = MemoEventsService.validateRealtimeTicket(realtimeTicket);
-        if (!ticket) return next(new Error('realtime_ticket_invalid'));
-
-        socket.data.client = ticket.client;
-        socket.data.userGuid = ticket.userGuid;
-        return next();
+        return next(new Error('memo_permissions_pending'));
       }
 
       // Compatibilité avec les anciens clients Socket utilisant l'API key en headers.

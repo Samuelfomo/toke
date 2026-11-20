@@ -1,3 +1,4 @@
+import type { ClockInOptions } from '../database/clock-in.options.js';
 import {
   DEVICES_DEFAULTS,
   DEVICES_ERRORS,
@@ -48,12 +49,12 @@ export default class DeviceModel extends BaseModel {
 
   // === RECHERCHES DE BASE ===
 
-  protected async find(id: number): Promise<any> {
-    return await this.findOne(this.db.tableName, { [this.db.id]: id });
+  protected async find(id: number, clockOptions: ClockInOptions = {}): Promise<any> {
+    return await this.findOne(this.db.tableName, { [this.db.id]: id }, { ...(clockOptions.transaction ? { transaction: clockOptions.transaction } : {}) });
   }
 
-  protected async findByGuid(guid: string): Promise<any> {
-    return await this.findOne(this.db.tableName, { [this.db.guid]: guid });
+  protected async findByGuid(guid: string, clockOptions: ClockInOptions = {}): Promise<any> {
+    return await this.findOne(this.db.tableName, { [this.db.guid]: guid }, { ...(clockOptions.transaction ? { transaction: clockOptions.transaction } : {}) });
   }
 
   // protected async findByIdentified(identified: string): Promise<any> {

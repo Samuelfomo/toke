@@ -1,0 +1,181 @@
+/* src/assets/css/tokt-employeeS-05.css */
+.employee-status-list {
+    background: var(--bg-primary);
+    border-radius: 12px;
+    overflow: hidden;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+}
+
+.status-filters {
+    display: flex;
+    background: var(--bg-secondary);
+    border-bottom: 1px solid var(--border-light);
+    padding: var(--space-md);
+    gap: var(--space-sm);
+    overflow-x: auto;
+}
+
+.filter-btn {
+    display: flex;
+    align-items: center;
+    gap: var(--space-sm);
+    padding: var(--space-sm) var(--space-md);
+    background: var(--bg-primary);
+    border: 1px solid var(--border-light);
+    border-radius: 8px;
+    color: var(--text-secondary);
+    font-size: 14px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s;
+    white-space: nowrap;
+    min-height: 40px;
+    text-decoration: none;
+}
+
+.filter-btn:hover {
+    border-color: var( --color-primary);
+    color: var( --color-primary);
+}
+
+.filter-btn.active {
+    background: var( --color-primary);
+    border-color: var( --color-primary);
+    color: white;
+}
+
+.filter-count {
+    background: rgba(255, 255, 255, 0.2);
+    color: inherit;
+    padding: 2px 6px;
+    border-radius: 12px;
+    font-size: 12px;
+    font-weight: 600;
+    min-width: 20px;
+    text-align: center;
+}
+
+.filter-btn:not(.active) .filter-count {
+    background: var(  --color-secondary);
+    color: var( --color-primary);
+}
+
+.employee-section {
+    border-bottom: 1px solid var(--border-light);
+}
+
+.employee-section:last-child {
+    border-bottom: none;
+}
+
+.section-title {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: var(--space-md) var(--space-lg);
+    margin: 0;
+    font-size: 16px;
+    font-weight: 600;
+    border: none;
+    background: none;
+    width: 100%;
+    text-align: left;
+    cursor: pointer;
+    transition: background-color 0.2s;
+}
+
+.section-title:hover {
+    background: var( --bg-secondary);
+}
+
+.section-problems {
+    color: var(--color-error);
+    background: rgba(220, 53, 69, 0.05);
+}
+
+.section-info {
+    color: var( --color-primary);
+    background: rgba(0, 74, 173, 0.05);
+}
+
+.section-present {
+    color: var(--color-success);
+}
+
+.chevron-icon {
+    width: 16px;
+    height: 16px;
+    margin-left: auto;
+    transition: transform 0.2s;
+    transform: rotate(180deg);
+}
+
+.employee-list {
+    padding: 0 var(--space-lg) var(--space-md) var(--space-lg);
+}
+
+.employees-grid {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-sm);
+}
+
+/* Add this to your tokt-employeeS-05.css file */
+
+/* Basic styling for all icons */
+.icon {
+    display: inline-block;
+    width: 20px;
+    height: 20px;
+    background-repeat: no-repeat;
+    background-position: center;
+    background-size: contain;
+    /* You can also use a font-family if you have an icon font */
+    /* font-family: 'Your-Icon-Font-Name'; */
+    /* text-align: center; */
+    /* line-height: 1; */
+}
+
+/* Icons using SVG backgrounds - recommended for simplicity */
+.icon-users {
+    background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h-5v-5a2 2 0 012-2h2a2 2 0 012 2v5z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 20h5m-5 0v-5a2 2 0 012-2h2a2 2 0 012 2v5zM5 16h5v-5a2 2 0 012-2h2a2 2 0 012 2v5z"/></svg>');
+}
+
+.icon-alert {
+    background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.5-1.748 1.638-3.085L13.638 3.54a2.955 2.955 0 00-5.276 0L3.3 15.915C2.438 17.252 3.4 19 4.94 19z"/></svg>');
+}
+
+.icon-check {
+    background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>');
+}
+
+.icon-x {
+    background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>');
+}
+
+.icon-clock {
+    background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>');
+}
+
+/* Style for active icons to change color */
+.filter-btn.active .icon {
+    filter: invert(100%) brightness(120%);
+}
+
+/* RESPONSIVE */
+@media (max-width: 768px) {
+    .status-filters {
+        padding: 12px var(--space-md);
+    }
+    .employee-list {
+        padding: 0 var(--space-md) 12px var(--space-md);
+    }
+    .filter-btn {
+        padding: 12px var(--space-md);
+    }
+}
+@media (max-width: 480px) {
+    .filter-btn span:not(.filter-count) {
+        display: none;
+    }
+}

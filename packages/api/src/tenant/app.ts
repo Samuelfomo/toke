@@ -11,6 +11,9 @@ import { SocketServer } from '../realtime/SocketServer.js';
 // dotenv.config();
 // Importation des modules simplifiés
 import { tenantMiddleware } from '../middle/tenant.middleware.js';
+import { managerSessionBoundary } from '../middle/manager-session.js';
+import { memoB2ReadGateway } from '../middle/memo-b2-reads.js';
+import TenantManager from './database/db.tenant-manager.js';
 import { ServerAuth } from '../middle/server-auth.js';
 import { TenantRevision } from '../tools/revision.js';
 import { tableName } from '../utils/response.model.js';
@@ -123,6 +126,7 @@ export default class App {
         this.server?.close(() => resolve());
       });
     }
+    await TenantManager.closeAllConnections();
   }
 
   /**
@@ -156,6 +160,8 @@ export default class App {
     // 🔐 MIDDLEWARE D'AUTHENTIFICATION GLOBAL
     // ⚠️ INTERCEPTE TOUTES LES REQUÊTES (même /health)
     this.app.use(ServerAuth.authenticate);
+    this.app.use(memoB2ReadGateway);
+    this.app.use(managerSessionBoundary);
 
     // // Appliquer le middleware tenant sur toutes les routes API (sauf health)
     // this.app.use(tenantMiddleware);
@@ -280,6 +286,9 @@ export default class App {
 
         const isDev = process.env.NODE_ENV !== 'production';
 
+        if (res.destroyed || res.writableEnded) return;
+        if (res.headersSent) { next(error); return; }
+
         res.status(error.status || 500).json({
           success: false,
           error: {
@@ -329,6 +338,7 @@ export default class App {
           });
         }
 
+        await TenantManager.closeAllConnections();
         console.log('✅ Arrêt gracieux terminé');
         process.exit(0);
       } catch (error) {

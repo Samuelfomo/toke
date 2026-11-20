@@ -1,0 +1,43 @@
+{
+  "recorded_utc": "2026-11-06T08:54:18.752378+00:00",
+  "files_sha256": {
+    "audits/LOT3_ETAPE_A_FRAMEWORK.log": "ebe3b67ef523c988fbe0c667e04640da1e418eda543d48db7d4d23af83504806",
+    "audits/LOT3_ETAPE_A_POSTGRESQL.log": "b9b4f2222eb398f9d319b8b89ce5dadcd8ea6ed76c9e70eb1d74b99362b4749d",
+    "audits/LOT3_ETAPE_A_REDIS.log": "32f6a24ab53902afc9bf4a1ac3cac742d379433969c0be6b3fa86b70e681c9de",
+    "audits/LOT3_ETAPE_A_TYPES.log": "b5a24b5e1ee75fe5adf5d9ee1498f2f0eefeaac3925b31017bedf2599b0f70ab",
+    "audits/LOT3_ETAPE_A_V01.log": "56e37294502fa8163a54e781b4d40c27bfd6157eb1f6476d51c711e316ea198f",
+    "audits/LOT3_ETAPE_A_VALIDATION.md": "67db8a1640438d64972f0e3c0ac48f41883e5dca827e906c5322a332bf7c2945",
+    "packages/api/src/master/app.ts": "62242c9309bd2fb8ccba5fe4b540e8c7f6927f7dcfa22171540fcc310ebb6301",
+    "packages/api/src/master/routes/tenant.route.ts": "5258b78366f77df8b17ee17fbf95c9541b0961d0dff34d81a89db3dbd0cf64fc",
+    "packages/api/src/master/routes/user-session.route.ts": "f526efbd6b3724e9702618b8b1e6c1c5947216f5580239fcdd323d036db9d99d",
+    "packages/api/src/middle/manager-session.ts": "a5268f24411624c63af708eb6c0c3ab4c350cb875d44a4a08a06ac5274d4cabc",
+    "packages/api/src/realtime/MemoEventsService.ts": "9359643dd1f3ecff7fc61377d0fede1bde78a59ea395ca1df4bd9501d2d1cd9a",
+    "packages/api/src/realtime/SocketAuth.ts": "c1515e67974106ca2bca29bcc4d72ec07b7fe07322d93c258401e24e8084b940",
+    "packages/api/src/tenant/app.ts": "5ce81059a22e06e4f09c8e33a82997c03ef4163b5a18b0c1672ef42b1617afcb",
+    "packages/api/src/tools/user-session.authority.ts": "6f93e565c47fa905d9ce045864d351fe139c024da00ebece2c98de899ad0b36c",
+    "packages/api/src/tools/user-session.client.ts": "bc29f5c931be9fdae0d469aff3340534d4fca2dec23219062d96b78f24c365b1",
+    "packages/api/src/tools/user-session.runtime.ts": "43a10e34d5ead701af97111d7c4c184d1ce47d5a405a30d55ed158fdc7cd3714",
+    "packages/api/verification/tenant-isolation/postgres-integration.cjs": "73910bc1d246996bed3355cc2a59927c2825c6263b4da1fbdd7c9d9831f7c1ba",
+    "packages/api/verification/tenant-isolation/postgres-user-session.cjs": "5596ce47300705718961e203db5042b2e576b0704c65f9b6852dbd62a08e8c7c",
+    "packages/api/verification/tenant-isolation/provisioning-http-fixture.cjs": "ba14b5ab3d5b3d27f50ebfeacd7c8146db5630008c46320d97e691757086e63a",
+    "packages/api/verification/user-sessions/child.cjs": "de2178e5f98ffe84640df31e89481ce521d7b6d05fabdf7d42cc2e14121386af",
+    "packages/api/verification/user-sessions/load.cjs": "d71492780647214f1c80c2e50fe66454839973c01443d2785776fac40d7e9525",
+    "packages/api/verification/user-sessions/otp-http.cjs": "f42e18a00e2418d007ff9292b96102edcbbc7d440ecc2540a213379b1b88982c",
+    "packages/api/verification/user-sessions/run.cjs": "167b4576362770f450e1153ac832212704584befc7147cf4770bcc9053332a91",
+    "packages/api/verification/user-sessions/scenarios.cjs": "f2d4ec7074d67ec3e76b37b6864975d167d4ea140e53e967f0d4890d8ff4bb39",
+    "packages/backend/src/routes/memos.route.ts": "82e195f0235a7eaaf8c1e99d7b8ad92a380a5ca5436711dde87a6fd0af932fbf",
+    "packages/backend/src/routes/tenant.route.ts": "791a4914a38ce5f66b74b4b345ec8764e2245083a1e9101a1a05749a0d873526",
+    "packages/backend/src/tools/tenant.config.ts": "064198fa237c710a5d2920ccb2fc8760b8ad78309cf6b2cd4eb0271c8b84bfb5",
+    "packages/backend/src/tools/user.session.ts": "c045376310873765da0c3221921bba08b7d2650cfae73e9969adc787226555ad"
+  },
+  "v01_identical_to_closed_candidate": {
+    "packages/api/src/tenant/database/tenant.context.ts": true,
+    "packages/api/src/tenant/database/tenant.ownership.ts": true,
+    "packages/api/src/tenant/database/tenant.sql-guard.ts": true,
+    "packages/api/src/tenant/database/db.tenant-manager.ts": true,
+    "packages/api/src/tenant/database/db.initializer.ts": true,
+    "packages/api/src/tenant/database/db.base.ts": true,
+    "packages/api/src/tenant/database/db.config.ts": true,
+    "packages/api/src/middle/tenant.middleware.ts": true
+  }
+}

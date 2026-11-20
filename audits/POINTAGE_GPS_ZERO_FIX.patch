@@ -1,0 +1,19 @@
+--- a/packages/api/src/tenant/model/TimeEntriesModel.ts
++++ b/packages/api/src/tenant/model/TimeEntriesModel.ts
+@@ -917,14 +917,14 @@
+     }
+ 
+     // Validation GPS
+-    if (!this.latitude) {
++    if (this.latitude === undefined || this.latitude === null) {
+       throw new Error(TIME_ENTRIES_ERRORS.LATITUDE_REQUIRED);
+     }
+     if (!TimeEntriesValidationUtils.validateLatitude(this.latitude)) {
+       throw new Error(TIME_ENTRIES_ERRORS.LATITUDE_INVALID);
+     }
+ 
+-    if (!this.longitude) {
++    if (this.longitude === undefined || this.longitude === null) {
+       throw new Error(TIME_ENTRIES_ERRORS.LONGITUDE_REQUIRED);
+     }
+     if (!TimeEntriesValidationUtils.validateLongitude(this.longitude)) {

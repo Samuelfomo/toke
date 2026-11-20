@@ -1,3 +1,4 @@
+import type { ClockInOptions } from '../database/clock-in.options.js';
 import UserRoleModel from '../model/UserRoleModel.js';
 import W from '../../tools/watcher.js';
 import G from '../../tools/glossary.js';
@@ -27,9 +28,9 @@ export default class UserRole extends UserRoleModel {
     identifier: any,
     byGuid: boolean = false,
     byUserRole: boolean = false,
-    adminSup: boolean = false,
+    adminSup: boolean = false, clockOptions: ClockInOptions = {},
   ): Promise<UserRole | null> {
-    return new UserRole().load(identifier, byGuid, byUserRole, adminSup);
+    return new UserRole().load(identifier, byGuid, byUserRole, adminSup, clockOptions);
   }
 
   static _list(
@@ -188,12 +189,12 @@ export default class UserRole extends UserRoleModel {
 
   // === MÉTHODES MÉTIER ===
 
-  async getAssignedByObject(): Promise<User | null> {
+  async getAssignedByObject(clockOptions: ClockInOptions = {}): Promise<User | null> {
     if (!this.assigned_by) {
       return null;
     }
     if (!this.assignedByObject) {
-      this.assignedByObject = (await User._load(this.assigned_by)) || undefined;
+      this.assignedByObject = (await User._load(this.assigned_by, undefined, undefined, undefined, undefined, undefined, clockOptions)) || undefined;
     }
     return this.assignedByObject || null;
   }
@@ -239,18 +240,18 @@ export default class UserRole extends UserRoleModel {
     identifier: any,
     byGuid: boolean = false,
     byUserRole: boolean = false,
-    adminSup: boolean = false,
+    adminSup: boolean = false, clockOptions: ClockInOptions = {},
   ): Promise<UserRole | null> {
     let data = null;
 
     if (byGuid) {
-      data = await this.findByGuid(identifier);
+      data = await this.findByGuid(identifier, clockOptions);
     } else if (byUserRole) {
-      data = await this.findByUserRole(identifier.user, identifier.role);
+      data = await this.findByUserRole(identifier.user, identifier.role, clockOptions);
     } else if (adminSup) {
-      data = await this.findAdminSupervisor();
+      data = await this.findAdminSupervisor(clockOptions);
     } else {
-      data = await this.find(Number(identifier));
+      data = await this.find(Number(identifier), clockOptions);
     }
 
     if (!data) return null;

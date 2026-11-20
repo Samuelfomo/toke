@@ -1,0 +1,58 @@
+PASS: PostGIS installed only in disposable v01_test_a
+PASS: PostGIS installed only in disposable v01_test_b
+PASS: 30 real application schemas bootstrapped A/B, four concurrent connection/model callers per tenant
+PASS BUSINESS: PIN real User/bcrypt + sessions/pauses A/B
+PASS BUSINESS: planning bulk-edit + publication + adjustment A/B
+PASS BUSINESS: planning regeneration real GREEDY A/B
+PASS BUSINESS: planning real SQL failure rolls back bulk-edit A/B
+PASS BUSINESS: publication/adjustment/regeneration rollback after real SQL failure A/B
+PASS WORKER-IDS: real class/model/BaseModel/Op.in selects exact groups A/B, excludes other groups, empty list and empty worker are safe
+PASS BUSINESS: WORKER-IDS separate regression
+PASS BUSINESS: worker real rotation A/B, coalescing, failure then next tenant
+PASS WORKER ATOMICITY: INSERT/UPDATE failures roll back offset/date/log and leave memory unpublished A/B; same physical transaction for locked read, UPDATE, GUID and INSERT; other tenant succeeds
+PASS BUSINESS: WORKER atomicity required after PostgreSQL journal failure
+PASS WORKER CONCURRENCY: independent invocations wait on FOR UPDATE, then one advance/log per tenant; not relying on process coalescing
+PASS WORKER CONCURRENCY: two Node processes race the same assignments A/B; one advance/log after locked recheck
+PASS WORKER ABANDONMENT: owned UPDATE/log both rolled back, no memory publication, pool closed
+Committing transaction 44117ca9-81da-4bcf-ace0-3e37d9d7a31b failed with error "V01_COMMIT_OUTCOME_UNKNOWN". We are killing its connection as it is now in an undetermined state.
+PASS WORKER COMMIT OUTCOME: simulated post-COMMIT error reports failure, no automatic replay or memory publication; real committed state retained
+PASS BUSINESS: WORKER concurrent row lock, abandonment and uncertain commit
+Fri, 06 Nov 2026 07:13:58 GMT router deprecated handlers that are Promise-like are deprecated, use a native Promise instead at node_modules/router/lib/route.js:157:13
+PASS POINTAGE HTTP: real routes/PIN/geofencing/session/pauses/closure/anomaly memos+alerts A/B; outbound activity/license/notifications inert
+PASS POINTAGE GPS ZERO: latitude=0 A, longitude=0 B persist accurately with geofence anomalies; invalid/null coordinates rejected before any session/entry/memo/alert write
+PASS CLOCK_IN ATOMICITY: session/entry/memo/alert INSERT and previous-session UPDATE failures restore full A/B snapshots, one physical transaction for all SQL, zero external effects
+PASS CLOCK_IN CONCURRENCY: real HTTP row-lock waiters, same external id commits once then verified replay; simultaneous A/B writes stay isolated
+Committing transaction 398a8565-6176-41d7-8534-6d8301d64a27 failed with error "V01_CLOCKIN_COMMIT_UNKNOWN". We are killing its connection as it is now in an undetermined state.
+PASS CLOCK_IN COMMIT OUTCOME: actual commit plus simulated acknowledgement error, no automatic replay or external publication; durable state identified honestly
+PASS BUSINESS: pointage complete HTTP routes A/B
+PASS HTTP: real Express/Unix transport + middleware + PostgreSQL A/B, streams, bound shared events, late SQL refusal, error handlers, response finish, detached tasks and aborted transaction rollback
+PASS BUSINESS: HTTP real transport A/B and interruption
+PASS BUSINESS: Master real SQL/CRUD independent of tenant context
+PASS BUSINESS: integrator three real handlers SQL A/B and errors
+PASS BUSINESS: controlled new fictitious tenant provisioning + utility existing
+PASS BUSINESS: all named scenarios completed; external license/activity/revision/notifications remain inert
+PASS RESILIENCE: native callback/pg.Query, raw/QueryInterface, foreign BaseModel/model/transaction and stale generation checks on real PG
+PASS RESILIENCE: expired pool creation rejects through Sequelize pool promise contract with zero native SQL
+PASS RESILIENCE: actual PostgreSQL error/rollback/reuse; closeAll during real authenticated acquisition prevents late publication
+PASS RESILIENCE: real historical-style column drift is blocked without repair, compatible tables survive, restored fixture gets fresh models; enum rejection/timezone preserved
+PASS RESILIENCE: real SCRAM auth failure/retry, credential rotation after drain and stale pool refusal
+PASS RESILIENCE: two child Node processes initialize existing A/B concurrently and keep writes separated; pools closed before child exit
+PASS MEMOS PG: actual classes/raw upsert concurrent A/B, unique read row, outsider refused, captured wrong-context SQL refused; missing table fails SQL without losing memo rows; fixture DROP rolled back
+NOT_EXECUTED: manual MemoReads migration retained; previous validation unchanged
+PASS MASTER HTTP: actual provisioning route, actual onboarding advisory transaction, role/database/extensions/bootstrap and scoped tenant; catalogue/license fixtures explicit
+PASS PROVISIONING MULTIPROCESS: two real HTTP processes wait on existing advisory lock; one creates/bootstrap, second reopens existing complete schema
+OBSERVED PROVISIONING RECOVERY GAP: HTTP failure retains Master configuration/database/cache; retry treats empty new DB as existing and fails read-only compatibility
+FAIL SUITE: postgres-provisioning-http — PROVISIONING_HTTP_FAILURES: PROVISIONING_RECOVERY_REQUIRED: interrupted new provisioning cannot resume empty database; no distributed rollback
+PASS HANDSHAKE: real SCRAM challenge socket interruption sends zero SQL; retry succeeds; close during password exchange publishes no invalid generation
+PASS BOOTSTRAP LIFECYCLE: close during actual CREATE TABLE prevents late model publication and closes pool; DDL is not claimed rollbackable as a whole
+PASS: existing real 30-model schemas A/B, concurrent initializations, server DDL prohibition and identical column/index/constraint/enum snapshots
+PASS: real application Roles CRUD A/B, JSONB, unique constraints and PostGIS SQL when available
+PASS: missing/foreign context rejected before native SQL send (wire counter unchanged)
+PASS: real savepoints, parent continuation, durable afterCommit outcome and cleanup rollback after revoked context
+PASS: inherited detached task sends no SQL after scope closure, fresh operation succeeds, abandoned unmanaged transaction rolls back and pool closes
+PASS: configuration mismatch refusal, coalesced close, new pool/generation and stale connection rejection (local trust: not a password-authentication test)
+PASS: close during real catalog initialization prevents publication and drains pool
+PASS: bootstrap refuses populated disposable schema without repair
+PASS: disposable PostgreSQL A/B identity, concurrent SQL writes, commits, rollback, real ORM models, wrong transaction/context, cross-role denial.
+Other AC integration scenarios remain mandatory; this is not a production certification.
+INTEGRATION_FAILURES: PROVISIONING_HTTP_FAILURES: PROVISIONING_RECOVERY_REQUIRED: interrupted new provisioning cannot resume empty database; no distributed rollback

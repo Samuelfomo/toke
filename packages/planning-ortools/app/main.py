@@ -25,6 +25,7 @@ def health():
         "success": True,
         "service": "toke-planning-ortools",
         "solverVersion": SOLVER_VERSION,
+        "capabilities": {"fixedAlternation": 1, "fixedAlternationMandatoryWeekendRest": 2},
     }
 
 

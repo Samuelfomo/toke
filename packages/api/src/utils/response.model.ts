@@ -437,6 +437,7 @@ export const tableName = {
   FRAUD_ALERTS: `${G.tableAp}_fraud_alerts`,
 
   MEMOS: `${G.tableOp}_memos`,
+  MEMO_READS: `${G.tableOp}_memo_reads`,
   TIME_ENTRIES: `${G.tableOp}_time_entries`,
 
   CONTACT: `${G.tableAp}_contact`,

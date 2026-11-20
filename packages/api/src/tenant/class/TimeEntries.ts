@@ -1,3 +1,4 @@
+import type { ClockInOptions } from '../database/clock-in.options.js';
 import { PointageStatus, PointageType, TimezoneConfigUtils } from '@toke/shared';
 
 import TimeEntriesModel, { TimeEntriesListByUserOptions } from '../model/TimeEntriesModel.js';
@@ -32,12 +33,12 @@ export default class TimeEntries extends TimeEntriesModel {
 
   // === MÉTHODES STATIQUES DE CHARGEMENT ===
 
-  static _load(identifier: any, byGuid: boolean = false): Promise<TimeEntries | null> {
-    return new TimeEntries().load(identifier, byGuid);
+  static _load(identifier: any, byGuid: boolean = false, clockOptions: ClockInOptions = {}): Promise<TimeEntries | null> {
+    return new TimeEntries().load(identifier, byGuid, clockOptions);
   }
 
-  static async _loadByExternalId(user: number, external_id: string): Promise<TimeEntries | null> {
-    const data = await new TimeEntries().findByExternalId(user, external_id.trim().toUpperCase());
+  static async _loadByExternalId(user: number, external_id: string, clockOptions: ClockInOptions = {}): Promise<TimeEntries | null> {
+    const data = await new TimeEntries().findByExternalId(user, external_id.trim().toUpperCase(), clockOptions);
     return data ? TimeEntries._toObject(data) : null;
   }
 
@@ -60,9 +61,9 @@ export default class TimeEntries extends TimeEntriesModel {
 
   static _listBySession(
     session: number,
-    paginationOptions: { offset?: number; limit?: number } = {},
+    paginationOptions: { offset?: number; limit?: number } = {}, clockOptions: ClockInOptions = {},
   ): Promise<TimeEntries[] | null> {
-    return new TimeEntries().listBySession(session, paginationOptions);
+    return new TimeEntries().listBySession(session, paginationOptions, clockOptions);
   }
 
   static _listByUser(
@@ -214,10 +215,10 @@ export default class TimeEntries extends TimeEntriesModel {
     return this.site;
   }
 
-  async getSiteObj(): Promise<Site | null> {
+  async getSiteObj(clockOptions: ClockInOptions = {}): Promise<Site | null> {
     if (!this.site) return null;
     if (!this.siteObj) {
-      this.siteObj = (await Site._load(this.site)) || undefined;
+      this.siteObj = (await Site._load(this.site, undefined, clockOptions)) || undefined;
     }
     return this.siteObj || null;
   }
@@ -494,9 +495,9 @@ export default class TimeEntries extends TimeEntriesModel {
     return await this.validateSequence(this.session, this.pointage_type);
   }
 
-  async accept(): Promise<void> {
+  async accept(clockOptions: ClockInOptions = {}): Promise<void> {
     this.pointage_status = PointageStatus.ACCEPTED;
-    await this.save();
+    await this.save(clockOptions);
   }
 
   async reject(reason: string): Promise<void> {
@@ -814,19 +815,19 @@ export default class TimeEntries extends TimeEntriesModel {
     return false;
   }
 
-  async save(): Promise<void> {
+  async save(clockOptions: ClockInOptions = {}): Promise<void> {
     try {
       if (this.pointage_type === PointageType.WAYPOINT) {
         if (this.isNew()) {
-          await this.createWaypoint();
+          await this.createWaypoint(clockOptions);
         } else {
-          await this.update();
+          await this.update(clockOptions);
         }
       } else {
         if (this.isNew()) {
-          await this.create();
+          await this.create(clockOptions);
         } else {
-          await this.update();
+          await this.update(clockOptions);
         }
       }
     } catch (error: any) {
@@ -844,13 +845,13 @@ export default class TimeEntries extends TimeEntriesModel {
     return false;
   }
 
-  async load(identifier: any, byGuid: boolean = false): Promise<TimeEntries | null> {
+  async load(identifier: any, byGuid: boolean = false, clockOptions: ClockInOptions = {}): Promise<TimeEntries | null> {
     let data = null;
 
     if (byGuid) {
-      data = await this.findByGuid(identifier);
+      data = await this.findByGuid(identifier, clockOptions);
     } else {
-      data = await this.find(Number(identifier));
+      data = await this.find(Number(identifier), clockOptions);
     }
 
     if (!data) return null;
@@ -880,9 +881,9 @@ export default class TimeEntries extends TimeEntriesModel {
 
   async listBySession(
     session: number,
-    paginationOptions: { offset?: number; limit?: number } = {},
+    paginationOptions: { offset?: number; limit?: number } = {}, clockOptions: ClockInOptions = {},
   ): Promise<TimeEntries[] | null> {
-    const dataset = await this.listAllBySession(session, paginationOptions);
+    const dataset = await this.listAllBySession(session, paginationOptions, clockOptions);
     if (!dataset || dataset.length === 0) return null;
     return dataset.map((data) => new TimeEntries().hydrate(data));
   }

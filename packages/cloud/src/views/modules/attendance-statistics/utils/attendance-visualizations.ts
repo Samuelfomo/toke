@@ -1,0 +1,397 @@
+import type {
+  AttendanceDailyOverview,
+  AttendanceOverview,
+  AttendanceStatus,
+  BusinessDate,
+} from '../types/attendance-statistics.types.js';
+import { ATTENDANCE_STATUS_PRESENTATION } from './attendance-status.js';
+import { formatBusinessDate } from './business-date.js';
+import { getAttendanceDailyChartPointSpacing } from './attendance-volume.js';
+
+export type AttendanceStatusDistributionGroupId = 'rate_eligible' | 'rate_excluded';
+
+export interface AttendanceStatusDistributionItem {
+  status: AttendanceStatus;
+  label: string;
+  description: string;
+  count: number;
+  employeesConcerned: number;
+  visualSharePercent: number;
+  tone: 'positive' | 'warning' | 'danger' | 'neutral' | 'info';
+  actionLabel: string;
+  intent: 'explain' | 'investigate';
+}
+
+export interface AttendanceStatusDistributionGroup {
+  id: AttendanceStatusDistributionGroupId;
+  label: string;
+  description: string;
+  total: number;
+  items: AttendanceStatusDistributionItem[];
+}
+
+export const ATTENDANCE_DAILY_TREND_SERIES = [
+  'present',
+  'late',
+  'absent',
+  'issues',
+] as const;
+
+export type AttendanceDailyTrendSeriesId = (typeof ATTENDANCE_DAILY_TREND_SERIES)[number];
+
+export interface AttendanceDailyTrendPoint {
+  date: BusinessDate;
+  dateLabel: string;
+  expected: number;
+  attended: number;
+  present: number;
+  absent: number;
+  late: number;
+  issues: number;
+  attendanceRate: number | null;
+  punctualityRate: number | null;
+}
+
+export interface AttendanceDailyTrendSeries {
+  id: AttendanceDailyTrendSeriesId;
+  label: string;
+  tone: 'slate' | 'indigo' | 'rose' | 'amber' | 'orange';
+  dashed: boolean;
+  points: string;
+  values: Array<{ date: string; x: number; y: number; value: number }>;
+}
+
+export interface AttendanceDailyTrendTick {
+  value: number;
+  y: number;
+}
+
+export interface AttendanceDailyTrendInteraction {
+  date: BusinessDate;
+  seriesId: AttendanceDailyTrendSeriesId;
+  mode: 'select_day' | 'filter_day_status' | 'filter_day_issues';
+  status: Extract<AttendanceStatus, 'ABSENT' | 'LATE'> | null;
+  label: string;
+}
+
+export interface AttendanceDailyChartModel {
+  width: number;
+  height: number;
+  plotLeft: number;
+  plotRight: number;
+  plotTop: number;
+  plotBottom: number;
+  maxValue: number;
+  points: AttendanceDailyTrendPoint[];
+  series: AttendanceDailyTrendSeries[];
+  yTicks: AttendanceDailyTrendTick[];
+  xLabels: Array<{ date: string; label: string; x: number }>;
+}
+
+const DEFAULT_ELIGIBLE_STATUSES: readonly AttendanceStatus[] = ['PRESENT', 'LATE', 'ABSENT'];
+const DEFAULT_EXCLUDED_STATUSES: readonly AttendanceStatus[] = ['PENDING', 'REST_DAY', 'UNDETERMINED'];
+
+/**
+ * Regroupe les journées selon le booléen rateEligible fourni par l'API.
+ *
+ * Important : un statut LATE/PRESENT/ABSENT peut être observé alors que la
+ * journée n'est pas encore finalisée. Il ne faut donc pas déduire
+ * l'éligibilité à partir du statut seul.
+ */
+export function buildAttendanceStatusDistribution(
+  overview: AttendanceOverview,
+): AttendanceStatusDistributionGroup[] {
+  const isSingleDay = overview.period.dayCount === 1;
+
+  return [
+    buildDistributionGroupByEligibility(
+      'rate_eligible',
+      isSingleDay ? 'Situations du jour finalisées' : 'Journées finalisées prises en compte',
+      isSingleDay
+        ? 'Collaborateurs dont la situation de travail du jour est finalisée et déjà utilisée dans les taux.'
+        : 'Journées explicitement marquées comme éligibles par le système et utilisées dans les taux consolidés.',
+      true,
+      DEFAULT_ELIGIBLE_STATUSES,
+      overview,
+    ),
+    buildDistributionGroupByEligibility(
+      'rate_excluded',
+      isSingleDay ? 'Situations du jour non encore finalisées' : 'Journées non encore prises en compte',
+      isSingleDay
+        ? 'Collaborateurs dont la situation du jour est encore en cours, en repos, indéterminée ou non finalisée pour les taux.'
+        : 'Journées en cours, de repos, indéterminées ou encore non finalisées pour le calcul des taux.',
+      false,
+      DEFAULT_EXCLUDED_STATUSES,
+      overview,
+    ),
+  ];
+}
+
+/**
+ * Extrait les séries quotidiennes directement depuis daily[].
+ * Aucun taux ou statut n'est reclassé dans cette fonction.
+ */
+export function buildAttendanceDailyTrendPoints(
+  daily: readonly AttendanceDailyOverview[],
+): AttendanceDailyTrendPoint[] {
+  return [...daily]
+    .sort((left, right) => left.date.localeCompare(right.date))
+    .map((day) => ({
+      date: day.date,
+      dateLabel: formatBusinessDate(day.date, 'fr-FR', {
+        day: '2-digit',
+        month: 'short',
+      }),
+      // Lecture opérationnelle : les taux restent consolidés dans day.rates,
+      // tandis que la courbe montre aussi la journée en cours.
+      expected:
+        day.statusTotals.PRESENT +
+        day.statusTotals.LATE +
+        day.statusTotals.ABSENT +
+        day.statusTotals.PENDING,
+      attended: day.statusTotals.PRESENT + day.statusTotals.LATE,
+      present: day.statusTotals.PRESENT,
+      absent: day.statusTotals.ABSENT,
+      late: day.statusTotals.LATE,
+      issues: day.issueCount,
+      attendanceRate: day.rates.attendanceRate,
+      punctualityRate: day.rates.punctualityRate,
+    }));
+}
+
+/**
+ * Construit uniquement la géométrie SVG de la courbe.
+ * Les valeurs métier restent celles retournées dans daily[].
+ */
+export function buildAttendanceDailyChartModel(
+  daily: readonly AttendanceDailyOverview[],
+): AttendanceDailyChartModel {
+  const points = buildAttendanceDailyTrendPoints(daily);
+  const pointSpacing = getAttendanceDailyChartPointSpacing(points.length);
+  const width = Math.max(760, Math.min(4800, 92 + Math.max(0, points.length - 1) * pointSpacing));
+  const height = 260;
+  const plotLeft = 52;
+  const plotRight = width - 24;
+  const plotTop = 22;
+  const plotBottom = 204;
+  const plotWidth = Math.max(1, plotRight - plotLeft);
+  const plotHeight = plotBottom - plotTop;
+
+  const maxObserved = Math.max(
+    0,
+    ...points.flatMap((point) => [point.present, point.late, point.absent, point.issues]),
+  );
+  const maxValue = Math.max(1, maxObserved);
+  const stepX = points.length > 1 ? plotWidth / (points.length - 1) : 0;
+
+  const seriesDefinitions: ReadonlyArray<{
+    id: AttendanceDailyTrendSeriesId;
+    label: string;
+    tone: AttendanceDailyTrendSeries['tone'];
+    dashed: boolean;
+  }> = [
+    { id: 'present', label: 'Présents à l’heure', tone: 'indigo', dashed: false },
+    { id: 'late', label: 'Retards', tone: 'amber', dashed: false },
+    { id: 'absent', label: 'Absences', tone: 'rose', dashed: false },
+    { id: 'issues', label: 'Éléments à examiner', tone: 'orange', dashed: true },
+  ];
+
+  const series = seriesDefinitions.map((definition) => {
+    const values = points.map((point, index) => {
+      const value = point[definition.id];
+      return {
+        date: point.date,
+        x: plotLeft + index * stepX,
+        y: plotBottom - (value / maxValue) * plotHeight,
+        value,
+      };
+    });
+
+    return {
+      ...definition,
+      values,
+      points: values.map((value) => `${round(value.x)},${round(value.y)}`).join(' '),
+    };
+  });
+
+  const yTickValues = uniqueSortedNumbers([
+    0,
+    Math.round(maxValue * 0.25),
+    Math.round(maxValue * 0.5),
+    Math.round(maxValue * 0.75),
+    maxValue,
+  ]);
+
+  const yTicks = yTickValues.map((value) => ({
+    value,
+    y: plotBottom - (value / maxValue) * plotHeight,
+  }));
+
+  const labelFrequency = Math.max(1, Math.ceil(points.length / 12));
+  const xLabels = points
+    .map((point, index) => ({
+      date: point.date,
+      label: point.dateLabel,
+      x: plotLeft + index * stepX,
+      index,
+    }))
+    .filter(({ index }) => index % labelFrequency === 0 || index === points.length - 1)
+    .map(({ date, label, x }) => ({ date, label, x }));
+
+  return {
+    width,
+    height,
+    plotLeft,
+    plotRight,
+    plotTop,
+    plotBottom,
+    maxValue,
+    points,
+    series,
+    yTicks,
+    xLabels,
+  };
+}
+
+export function buildAttendanceDailyTrendInteraction(
+  date: BusinessDate,
+  seriesId: AttendanceDailyTrendSeriesId,
+): AttendanceDailyTrendInteraction {
+  if (seriesId === 'absent') {
+    return {
+      date,
+      seriesId,
+      mode: 'filter_day_status',
+      status: 'ABSENT',
+      label: 'Voir les employés absents ce jour',
+    };
+  }
+
+  if (seriesId === 'late') {
+    return {
+      date,
+      seriesId,
+      mode: 'filter_day_status',
+      status: 'LATE',
+      label: 'Voir les employés en retard ce jour',
+    };
+  }
+
+  if (seriesId === 'issues') {
+    return {
+      date,
+      seriesId,
+      mode: 'filter_day_issues',
+      status: null,
+      label: 'Voir les éléments à examiner ce jour',
+    };
+  }
+
+  return {
+    date,
+    seriesId,
+    mode: 'select_day',
+    status: null,
+    label: 'Sélectionner cette journée',
+  };
+}
+
+export function findAttendanceDailyOverview(
+  daily: readonly AttendanceDailyOverview[],
+  date: string | null,
+): AttendanceDailyOverview | null {
+  if (daily.length === 0) return null;
+  if (date) {
+    const found = daily.find((day) => day.date === date);
+    if (found) return found;
+  }
+  return daily[daily.length - 1] ?? null;
+}
+
+function buildDistributionGroupByEligibility(
+  id: AttendanceStatusDistributionGroupId,
+  label: string,
+  description: string,
+  eligible: boolean,
+  defaultStatuses: readonly AttendanceStatus[],
+  overview: AttendanceOverview,
+): AttendanceStatusDistributionGroup {
+  const counts = new Map<AttendanceStatus, number>();
+  const employeesByStatus = new Map<AttendanceStatus, Set<string>>();
+
+  for (const employee of overview.employees) {
+    for (const day of employee.days) {
+      if (day.rateEligible !== eligible) continue;
+
+      counts.set(day.status, (counts.get(day.status) ?? 0) + 1);
+      const employees = employeesByStatus.get(day.status) ?? new Set<string>();
+      employees.add(employee.employeeGuid);
+      employeesByStatus.set(day.status, employees);
+    }
+  }
+
+  const dynamicStatuses = [...counts.entries()]
+    .filter(([, count]) => count > 0)
+    .map(([status]) => status);
+
+  const statuses = [...new Set<AttendanceStatus>([...defaultStatuses, ...dynamicStatuses])]
+    .sort(
+      (left, right) =>
+        ATTENDANCE_STATUS_PRESENTATION[left].order - ATTENDANCE_STATUS_PRESENTATION[right].order,
+    );
+
+  const total = [...counts.values()].reduce((sum, count) => sum + count, 0);
+  const items = statuses.map((status) => {
+    const presentation = ATTENDANCE_STATUS_PRESENTATION[status];
+    const count = counts.get(status) ?? 0;
+    const isObservedButNotConsolidated =
+      !eligible && (status === 'PRESENT' || status === 'LATE' || status === 'ABSENT');
+
+    return {
+      status,
+      label: presentation.label,
+      description: isObservedButNotConsolidated
+        ? `${presentation.description} ${overview.period.dayCount === 1 ? 'Situation observée aujourd’hui mais encore non finalisée pour les taux.' : 'Situation observée mais journée encore non finalisée pour les taux.'}`
+        : presentation.description,
+      count,
+      employeesConcerned: employeesByStatus.get(status)?.size ?? 0,
+      visualSharePercent: total > 0 ? round((count / total) * 100) : 0,
+      tone: presentation.tone,
+      actionLabel: getAttendanceStatusExploreLabel(status),
+      intent: getAttendanceStatusExploreIntent(status),
+    } satisfies AttendanceStatusDistributionItem;
+  });
+
+  return { id, label, description, total, items };
+}
+
+export function getAttendanceStatusExploreIntent(
+  status: AttendanceStatus,
+): AttendanceStatusDistributionItem['intent'] {
+  return status === 'PRESENT' || status === 'REST_DAY' ? 'explain' : 'investigate';
+}
+
+export function getAttendanceStatusExploreLabel(status: AttendanceStatus): string {
+  switch (status) {
+    case 'PRESENT':
+      return 'Voir les employés présents';
+    case 'LATE':
+      return 'Voir les employés en retard';
+    case 'ABSENT':
+      return 'Voir les employés absents';
+    case 'PENDING':
+      return 'Voir les journées en attente';
+    case 'REST_DAY':
+      return 'Voir les jours de repos';
+    case 'UNDETERMINED':
+      return 'Voir les cas indéterminés';
+  }
+}
+
+function uniqueSortedNumbers(values: readonly number[]): number[] {
+  return [...new Set(values)].sort((left, right) => left - right);
+}
+
+function round(value: number): number {
+  return Math.round(value * 100) / 100;
+}

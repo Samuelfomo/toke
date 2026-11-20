@@ -1,3 +1,5 @@
+import type { ClockInOptions } from '../database/clock-in.options.js';
+import type { Transaction } from 'sequelize';
 import { CycleUnit, Direction, ROTATION_GROUP_DEFAULTS, TimezoneConfigUtils } from '@toke/shared';
 
 import RotationGroupModel from '../model/RotationGroupsModel.js';
@@ -27,8 +29,31 @@ export default class RotationGroup extends RotationGroupModel {
   // MÉTHODES STATIQUES DE CHARGEMENT
   // ============================================
 
-  static _load(identifier: any, byGuid: boolean = false): Promise<RotationGroup | null> {
-    return new RotationGroup().load(identifier, byGuid);
+  static _load(identifier: any, byGuid: boolean = false, clockOptions: ClockInOptions = {}): Promise<RotationGroup | null> {
+    return new RotationGroup().load(identifier, byGuid, clockOptions);
+  }
+
+  /** Worker read without the instance cache, on its owned transaction. */
+  static async _loadForRotation(
+    id: number,
+    transaction: Transaction,
+  ): Promise<RotationGroup | null> {
+    const instance = new RotationGroup();
+    const data = await instance.findOne(
+      instance.db.tableName, { id, deleted_at: null }, { transaction },
+    );
+    return data ? instance.hydrate(data) : null;
+  }
+
+  async getCycleSlotCountForRotation(transaction: Transaction): Promise<number> {
+    if (!this.id) return 0;
+    const slots = await this.findAll(
+      tableName.ROTATION_GROUP_TEMPLATE,
+      { rotation_group: this.id, deleted_at: null },
+      {},
+      { transaction, attributes: ['id'] },
+    );
+    return slots.length;
   }
 
   static _list(
@@ -124,10 +149,10 @@ export default class RotationGroup extends RotationGroupModel {
    * Les snapshots JSONB sont embarqués dans chaque slot.
    * Résultat mis en cache pour la durée de vie de l'instance.
    */
-  async getCycleSlots(): Promise<RotationGroupTemplate[]> {
+  async getCycleSlots(clockOptions: ClockInOptions = {}): Promise<RotationGroupTemplate[]> {
     if (!this.id) return [];
     if (!this.cycleTemplatesObjs) {
-      this.cycleTemplatesObjs = (await RotationGroupTemplate._listByRotationGroup(this.id)) ?? [];
+      this.cycleTemplatesObjs = (await RotationGroupTemplate._listByRotationGroup(this.id, undefined, clockOptions)) ?? [];
     }
     return this.cycleTemplatesObjs;
   }
@@ -388,8 +413,8 @@ export default class RotationGroup extends RotationGroupModel {
   // CHARGEMENT ET LISTING
   // ============================================
 
-  async load(identifier: any, byGuid: boolean = false): Promise<RotationGroup | null> {
-    const data = byGuid ? await this.findByGuid(identifier) : await this.find(Number(identifier));
+  async load(identifier: any, byGuid: boolean = false, clockOptions: ClockInOptions = {}): Promise<RotationGroup | null> {
+    const data = byGuid ? await this.findByGuid(identifier, undefined, clockOptions) : await this.find(Number(identifier), undefined, clockOptions);
 
     if (!data) return null;
     return this.hydrate(data);

@@ -8,7 +8,7 @@ export default class ManageTenantDatabase {
     database_name: string,
     database_username: string,
     database_password: string,
-  ): Promise<{ success: boolean; error?: string }> {
+  ): Promise<{ success: boolean; error?: string; created?: boolean }> {
     const sequelize = new Sequelize(
       'postgres',
       process.env.DB_SUPERUSER!,
@@ -63,7 +63,7 @@ export default class ManageTenantDatabase {
         return { success: false, error: 'Tenant database extensions could not be initialized' };
       }
 
-      return { success: true };
+      return { success: true, created: (results as any[]).length === 0 };
     } catch (error: any) {
       console.error(`❌ Erreur création DB:`, error);
       return {
@@ -152,28 +152,30 @@ export default class ManageTenantDatabase {
     database_username: string,
     database_password: string,
   ): Promise<void> {
-    try {
-      console.log('🗄️ Initialisation de la base de données...');
+    return TenantManager.runTenantOperation(subdomain, async () => {
+      try {
+        console.log('🗄️ Initialisation de la base de données...');
 
-      const connection = await TenantManager.getConnectionForTenant(subdomain, {
-        host: host,
-        port: port,
-        username: database_username,
-        password: database_password,
-        database: database_name,
-      });
+        const connection = await TenantManager.getConnectionForTenant(subdomain, {
+          host: host,
+          port: port,
+          username: database_username,
+          password: database_password,
+          database: database_name,
+        });
 
-      // // 1. Obtenir la connexion Sequelize
-      // const sequelize = await TenantManager.getConnection();
-      //
-      // // 2. Initialiser toutes les tables (statique)
-      await TableInitializer.initialize(connection); // ou sequelize
+        // // 1. Obtenir la connexion Sequelize
+        // const sequelize = await TenantManager.getConnection();
+        //
+        // // 2. Initialiser toutes les tables (statique)
+        await TableInitializer.initialize(connection); // ou sequelize
 
-      console.log('✅ Base de données initialisée');
-    } catch (error) {
-      console.error('❌ Erreur initialisation DB:', error);
-      throw error;
-    }
+        console.log('✅ Base de données initialisée');
+      } catch (error) {
+        console.error('❌ Erreur initialisation DB:', error);
+        throw error;
+      }
+    });
   }
 
   // static async activateExtensions(

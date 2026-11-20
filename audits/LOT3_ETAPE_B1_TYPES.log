@@ -1,0 +1,5 @@
+node node_modules/typescript/bin/tsc --noEmit -p packages/api/tsconfig.json
+Code de sortie : 0 ; aucun diagnostic ; aucune émission.
+node --check packages/api/verification/tenant-isolation/postgres-memo-b1.cjs
+Code de sortie : 0.
+Contrôle du garde sans --create-disposable-cluster : sortie 1 attendue, refus avant connexion.

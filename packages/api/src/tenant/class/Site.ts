@@ -1,3 +1,4 @@
+import type { ClockInOptions } from '../database/clock-in.options.js';
 import { SiteType, TimezoneConfigUtils } from '@toke/shared';
 
 import SiteModel from '../model/SiteModel.js';
@@ -23,8 +24,8 @@ export default class Site extends SiteModel {
 
   // === MÉTHODES STATIQUES DE CHARGEMENT ===
 
-  static _load(identifier: any, byGuid: boolean = false): Promise<Site | null> {
-    return new Site().load(identifier, byGuid);
+  static _load(identifier: any, byGuid: boolean = false, clockOptions: ClockInOptions = {}): Promise<Site | null> {
+    return new Site().load(identifier, byGuid, clockOptions);
   }
 
   static _list(
@@ -407,13 +408,13 @@ export default class Site extends SiteModel {
     }
   }
 
-  async load(identifier: any, byGuid: boolean = false): Promise<Site | null> {
+  async load(identifier: any, byGuid: boolean = false, clockOptions: ClockInOptions = {}): Promise<Site | null> {
     let data = null;
 
     if (byGuid) {
-      data = await this.findByGuid(identifier);
+      data = await this.findByGuid(identifier, clockOptions);
     } else {
-      data = await this.find(Number(identifier));
+      data = await this.find(Number(identifier), clockOptions);
     }
 
     if (!data) return null;

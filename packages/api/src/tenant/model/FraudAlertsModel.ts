@@ -1,3 +1,4 @@
+import type { ClockInOptions } from '../database/clock-in.options.js';
 // src/api/model/FraudAlertsModel.ts
 
 import { FRAUD_ALERTS_ERRORS, FraudAlertsValidationUtils, TimezoneConfigUtils } from '@toke/shared';
@@ -440,10 +441,10 @@ export default class FraudAlertsModel extends BaseModel {
 
   // === CRUD OPERATIONS ===
 
-  protected async create(): Promise<void> {
+  protected async create(clockOptions: ClockInOptions = {}): Promise<void> {
     await this.validate();
 
-    const guid = await this.randomGuidGenerator(this.db.tableName);
+    const guid = await this.randomGuidGenerator(this.db.tableName, undefined, { ...(clockOptions.transaction ? { transaction: clockOptions.transaction } : {}) });
     if (!guid) {
       throw new Error(FRAUD_ALERTS_ERRORS.GUID_GENERATION_FAILED);
     }
@@ -460,7 +461,7 @@ export default class FraudAlertsModel extends BaseModel {
       [this.db.investigation_notes]: this.investigation_notes,
       [this.db.false_positive]: this.false_positive || false,
       [this.db.investigated_at]: this.investigated_at,
-    });
+    }, { ...(clockOptions.transaction ? { transaction: clockOptions.transaction } : {}) });
 
     if (!lastID) {
       throw new Error(FRAUD_ALERTS_ERRORS.CREATION_FAILED);
@@ -470,7 +471,7 @@ export default class FraudAlertsModel extends BaseModel {
     this.guid = guid;
   }
 
-  protected async update(): Promise<void> {
+  protected async update(clockOptions: ClockInOptions = {}): Promise<void> {
     await this.validate();
     if (!this.id) {
       throw new Error(FRAUD_ALERTS_ERRORS.ID_REQUIRED);
@@ -485,7 +486,7 @@ export default class FraudAlertsModel extends BaseModel {
     if (this.investigated_at !== undefined)
       updateData[this.db.investigated_at] = this.investigated_at;
 
-    const updated = await this.updateOne(this.db.tableName, updateData, { [this.db.id]: this.id });
+    const updated = await this.updateOne(this.db.tableName, updateData, { [this.db.id]: this.id }, { ...(clockOptions.transaction ? { transaction: clockOptions.transaction } : {}) });
 
     if (!updated) {
       throw new Error(FRAUD_ALERTS_ERRORS.UPDATE_FAILED);

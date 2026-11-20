@@ -1,3 +1,4 @@
+import type { ClockInOptions } from '../database/clock-in.options.js';
 import { ROTATION_GROUP_ERRORS, TimezoneConfigUtils } from '@toke/shared';
 
 import BaseModel from '../database/db.base.js';
@@ -87,12 +88,12 @@ export default class RotationGroupTemplateModel extends BaseModel {
 
   protected async listAll(
     conditions: Record<string, any> = {},
-    paginationOptions: { offset?: number; limit?: number } = {},
+    paginationOptions: { offset?: number; limit?: number } = {}, clockOptions: ClockInOptions = {},
   ): Promise<any[]> {
     if (conditions[this.db.deleted_at] === undefined) {
       conditions[this.db.deleted_at] = null;
     }
-    return await this.findAll(this.db.tableName, conditions, paginationOptions);
+    return await this.findAll(this.db.tableName, conditions, paginationOptions, { ...(clockOptions.transaction ? { transaction: clockOptions.transaction } : {}) });
   }
 
   /**
@@ -101,11 +102,11 @@ export default class RotationGroupTemplateModel extends BaseModel {
    */
   protected async listAllByRotationGroup(
     rotationGroupId: number,
-    paginationOptions: { offset?: number; limit?: number } = {},
+    paginationOptions: { offset?: number; limit?: number } = {}, clockOptions: ClockInOptions = {},
   ): Promise<any[]> {
     const rows = await this.listAll(
       { [this.db.rotation_group]: rotationGroupId },
-      paginationOptions,
+      paginationOptions, clockOptions,
     );
     // Tri défensif côté applicatif — l'index DB garantit l'ordre mais on
     // s'assure d'un résultat déterministe quelles que soient les options de pagination.

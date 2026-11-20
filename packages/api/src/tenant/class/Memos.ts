@@ -1,3 +1,4 @@
+import type { ClockInOptions } from '../database/clock-in.options.js';
 import { MemoContent, MemoStatus, MemoType, Message, TimezoneConfigUtils } from '@toke/shared';
 
 import MemosModel from '../model/MemosModel.js';
@@ -14,6 +15,7 @@ import { TenantRevision } from '../../tools/revision.js';
 import User from './User.js';
 import WorkSessions from './WorkSessions.js';
 import TimeEntries from './TimeEntries.js';
+import MemoReads from './MemoReads.js';
 
 export default class Memos extends MemosModel {
   private authorObj?: User;
@@ -33,7 +35,7 @@ export default class Memos extends MemosModel {
 
   static _list(
     conditions: Record<string, any> = {},
-    paginationOptions: { offset?: number; limit?: number } = {},
+    paginationOptions: { offset?: number; limit?: number; sortOrder?: 'ASC' | 'DESC' } = {},
   ): Promise<Memos[] | null> {
     return new Memos().list(conditions, paginationOptions);
   }
@@ -120,6 +122,41 @@ export default class Memos extends MemosModel {
 
   static _findUrgentMemos(): Promise<Memos[] | null> {
     return new Memos().listUrgentMemos();
+  }
+
+  static _count(conditions: Record<string, any> = {}): Promise<number> {
+    return new Memos().countAll(conditions);
+  }
+
+  static async _readStatuses(memos: Memos[], readerId: number, readerGuid: string) {
+    const ids = memos.map((m) => m.getId()!).filter(Boolean);
+    const reads = await MemoReads._getReads(ids, readerId);
+    return new Map(
+      memos.map((m) => {
+        const readAt = reads.get(m.getId()!);
+        const lastRead = readAt?.getTime() ?? 0;
+        const unread = m
+          .getTimeline()
+          .some(
+            (entry) =>
+              entry.user !== readerGuid &&
+              (!readAt ||
+                !Number.isFinite(Date.parse(entry.created_at as string)) ||
+                Date.parse(entry.created_at as string) > lastRead),
+          );
+        return [m.getId()!, { is_read: Boolean(readAt) && !unread, read_at: readAt ?? null }];
+      }),
+    );
+  }
+
+  static async _markAsRead(memoGuid: string, readerId: number, readerGuid: string) {
+    const memo = await Memos._load(memoGuid, true);
+    if (!memo) return null;
+    const participants = [memo.getAuthorUser(), memo.getTargetUser(), memo.getValidatorUser()];
+    if (!participants.includes(readerId)) throw new Error('MEMO_ACCESS_DENIED');
+    // Marquer le dernier état réellement chargé, pas un autre mémo.
+    const readAt = await MemoReads._markRead(memo.getId()!, readerId, new Date());
+    return { memo_guid: memoGuid, is_read: true, read_at: readAt };
   }
 
   static async exportable(
@@ -588,7 +625,7 @@ export default class Memos extends MemosModel {
 
   async list(
     conditions: Record<string, any> = {},
-    paginationOptions: { offset?: number; limit?: number } = {},
+    paginationOptions: { offset?: number; limit?: number; sortOrder?: 'ASC' | 'DESC' } = {},
   ): Promise<Memos[] | null> {
     const dataset = await this.listAll(conditions, paginationOptions);
     if (!dataset || dataset.length === 0) return null;
@@ -713,12 +750,12 @@ export default class Memos extends MemosModel {
     return this.id === undefined;
   }
 
-  async save(): Promise<void> {
+  async save(clockOptions: ClockInOptions = {}): Promise<void> {
     try {
       if (this.isNew()) {
-        await this.create();
+        await this.create(clockOptions);
       } else {
-        await this.update();
+        await this.update(clockOptions);
       }
     } catch (error: any) {
       throw new Error(error.message || error);

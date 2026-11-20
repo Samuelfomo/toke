@@ -1,3 +1,4 @@
+import type { ClockInOptions } from '../database/clock-in.options.js';
 import { SESSION_TEMPLATE_DEFAULTS, VALID_DAYS } from '@toke/shared';
 
 import SessionTemplateModel from '../model/SessionTemplatesModel.js';
@@ -26,9 +27,9 @@ export default class SessionTemplate extends SessionTemplateModel {
   static _load(
     identifier: any,
     byGuid: boolean = false,
-    defaults: boolean = false,
+    defaults: boolean = false, clockOptions: ClockInOptions = {},
   ): Promise<SessionTemplate | null> {
-    return new SessionTemplate().load(identifier, byGuid, defaults);
+    return new SessionTemplate().load(identifier, byGuid, defaults, clockOptions);
   }
 
   static _list(
@@ -379,13 +380,13 @@ export default class SessionTemplate extends SessionTemplateModel {
   async load(
     identifier: any,
     byGuid: boolean = false,
-    defaults: boolean = false,
+    defaults: boolean = false, clockOptions: ClockInOptions = {},
   ): Promise<SessionTemplate | null> {
     let data = byGuid
-      ? await this.findByGuid(identifier)
+      ? await this.findByGuid(identifier, undefined, clockOptions)
       : defaults
-        ? await this.findDefault()
-        : await this.find(Number(identifier));
+        ? await this.findDefault(undefined, clockOptions)
+        : await this.find(Number(identifier), undefined, clockOptions);
     if (!data) return null;
     return this.hydrate(data);
   }
