@@ -155,6 +155,7 @@ export interface FixedAlternationPolicy {
     template_guids: [string, string]
     anchor_date: string
     shift_cadence_days: number
+    limited_service_template_guid?: string | null
     weekend_rest: 'KEEP_PROFILE' | 'ALTERNATE_SAT_SUN'
 }
 

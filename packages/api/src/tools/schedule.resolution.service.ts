@@ -347,7 +347,9 @@ class ScheduleResolutionService {
         const valid = (children ?? []).filter(
           (child) => child.getTenant() === assignment.getTenant() && !child.getDeletedAt(),
         );
-        if (valid.length === 1) {
+        const historicalStart = assignment.getSessionTemplate()?.publication_guard_start;
+        if (valid.length === 1 || (valid.length === 0 && historicalStart?.date === dateStr &&
+          typeof historicalStart.former_continuation_guid === 'string')) {
           applicableSchedule.attendance_operation = {
             id: assignment.getGuid()!,
             kind: 'GUARD',

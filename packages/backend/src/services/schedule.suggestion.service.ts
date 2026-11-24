@@ -93,24 +93,28 @@ export class ScheduleSuggestionService {
   static async previewApproval(
     reference: string,
     guid: string,
-    payload?: { effective_from?: string },
+    payload: { effective_from?: string; confirmation_token?: string; confirmation_reason?: string } | undefined,
+    credentials: Record<string, string>,
   ): Promise<TenantApiResult> {
     return await tenantApiRequest(reference, {
       method: 'POST',
       url: `${baseUrl}/${guid}/approval-preview`,
       data: payload,
+      headers: credentials,
     });
   }
 
   static async approve(
     reference: string,
     guid: string,
-    payload?: { effective_from?: string },
+    payload: { effective_from?: string; confirmation_token?: string; confirmation_reason?: string } | undefined,
+    credentials: Record<string, string>,
   ): Promise<TenantApiResult> {
     return await tenantApiRequest(reference, {
       method: 'POST',
       url: `${baseUrl}/${guid}/approve`,
       data: payload,
+      headers: credentials,
     });
   }
 

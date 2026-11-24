@@ -16,6 +16,7 @@ import {
   FixedAlternationConfigError,
   matchesFixedReferenceTemplates,
   parseFixedAlternationPolicy,
+  validateLimitedServiceTemplates,
 } from '../../utils/planning.fixed.alternation.js';
 
 const router = Router();
@@ -39,11 +40,14 @@ async function readFixedAlternation(raw: unknown) {
     if (!profile?.isActive() || !profile.isFixed()) {
       throw new FixedAlternationConfigError('Les deux collaborateurs doivent avoir un profil FIXED actif dans cette organisation.');
     }
-    return (await profile.getFixedSessionTemplateObj())?.getGuid();
+    const template = await profile.getFixedSessionTemplateObj();
+    const templateGuid = template?.getGuid();
+    return template && templateGuid ? { guid: templateGuid, definition: template.getDefinition() } : undefined;
   }));
-  if (!matchesFixedReferenceTemplates(policy, references)) {
+  if (!matchesFixedReferenceTemplates(policy, references.map(reference => reference?.guid))) {
     throw new FixedAlternationConfigError('Les deux modèles autorisés doivent correspondre aux modèles fixes des collaborateurs.');
   }
+  validateLimitedServiceTemplates(policy, references);
   return policy;
 }
 
@@ -199,7 +203,12 @@ router.put('/:guid', Ensure.put(), async (req: Request, res: Response) => {
     }
 
     if (req.body?.fixed_alternation_policy !== undefined) {
-      config.setFixedAlternationPolicy(await readFixedAlternation(req.body.fixed_alternation_policy));
+      const requested = req.body.fixed_alternation_policy;
+      const existing = config.getFixedAlternationPolicy()?.limited_service_template_guid;
+      const policy = existing && requested && typeof requested === 'object' && !Array.isArray(requested)
+        ? { limited_service_template_guid: existing, ...requested }
+        : requested;
+      config.setFixedAlternationPolicy(await readFixedAlternation(policy));
     }
     if (data.name !== undefined) config.setName(data.name);
     if (data.active !== undefined) config.setActive(data.active);

@@ -130,6 +130,89 @@ class FixedAlternationTests(unittest.TestCase):
                     reason = "LOCKED_ASSIGNMENT" if case.startswith("manual") else "TEMPLATE_REST"
                     self.assertIn(reason, {entry["reason"] for entry in conflict.details["conflicts"]})
 
+    def limited_service_request(self):
+        data = deepcopy(self.mandatory_request())
+        data["fixed_alternation_policy"].update(contract_version=3, limited_service_template_guid="late")
+        data["employees"][0]["fixedTemplate"] = template("late", "10:30", "18:00")
+        data["employees"].append({"guid": "rotating", "name": "Rotating", "mode": "ROTATING"})
+        data["employees"].append({"guid": "third", "name": "Third", "mode": "FIXED", "fixedTemplate": OTHER})
+        for day in ["Mon", "Tue"]:
+            slot = requirement(f"limited-{day}", day, data["employees"][0]["fixedTemplate"], 1)
+            slot["eligibility"]["planningModes"] = ["FIXED", "ROTATING"]
+            data["requirements"].append(slot)
+        return data
+
+    def test_limited_service_four_weeks_for_both_modes(self):
+        data = self.limited_service_request()
+        late = data["employees"][0]["fixedTemplate"]
+        data["lockedAssignments"] = [
+            lock("aicha", "2026-12-28", late),
+            lock("rotating", "2026-12-29", late) | {"requirementGuid": "limited-Tue"},
+        ]
+        schedules, diagnostics = self.solve(data)
+        self.assertEqual(diagnostics.fixedAlternationEvaluation.contractVersion, 3)
+        self.assertTrue(all(check.kind == "WEEKEND_REST" for check in diagnostics.fixedAlternationEvaluation.checks))
+        self.assertEqual(schedules["aicha"]["2026-12-28"], "late")
+        self.assertEqual(schedules["rotating"]["2026-12-29"], "late")
+        self.assertEqual(schedules["aicha"]["2026-12-29"], "morning")
+        self.assertTrue(all(value == "other" for value in schedules["third"].values()))
+        for iso in schedules["aicha"]:
+            self.assertLessEqual(sum(days[iso] == "late" for days in schedules.values()), 1)
+        for days in schedules.values():
+            dates = list(days)
+            for start in range(0, len(dates), 7):
+                self.assertLessEqual(sum(days[iso] == "late" for iso in dates[start:start + 7]), 1)
+        for week, saturday in enumerate(["2027-01-02", "2027-01-09", "2027-01-16", "2027-01-23"]):
+            sunday = str(date.fromordinal(date.fromisoformat(saturday).toordinal() + 1))
+            resting, working = ("aicha", "camille") if week % 2 == 0 else ("camille", "aicha")
+            self.assertEqual((schedules[resting][saturday], schedules[working][saturday]), (None, "morning"))
+            self.assertEqual((schedules[resting][sunday], schedules[working][sunday]), ("morning", None))
+
+    def test_limited_service_weekend_uses_target_blocks_without_reference_blocks(self):
+        data = self.limited_service_request()
+        data["periodTo"] = "2027-01-10"
+        del data["employees"][0]["fixedTemplate"]["definition"]["Sun"]
+        schedules, _ = self.solve(data)
+        self.assertEqual(
+            [(schedules["aicha"][day], schedules["camille"][day])
+             for day in ("2027-01-02", "2027-01-03", "2027-01-09", "2027-01-10")],
+            [(None, "morning"), ("morning", None), ("morning", None), (None, "morning")],
+        )
+        for day in schedules["aicha"]:
+            self.assertLessEqual(sum(days[day] == "late" for days in schedules.values()), 1)
+        for days in schedules.values():
+            shifts = list(days.values())
+            self.assertLessEqual(shifts[:7].count("late"), 1)
+            self.assertLessEqual(shifts[7:].count("late"), 1)
+
+    def test_limited_service_weekend_without_target_block_remains_infeasible(self):
+        data = self.limited_service_request()
+        data["periodTo"] = "2027-01-03"
+        data["employees"][1]["fixedTemplate"] = template("morning", "08:00", "16:00", DAYS[:-1])
+        response = solve_planning(PlanningSolverInput.model_validate(data))
+        self.assertEqual(response.status, "INFEASIBLE")
+        violation = next(v for v in response.diagnostics.violations
+                         if v.code == "FIXED_ALTERNATION_LIMITED_SERVICE_CONFLICT")
+        self.assertTrue(any(entry["rule"] == "WEEKEND_EARLY_SERVICE" and
+                            entry["employeeGuid"] == "aicha" and entry["date"] == "2027-01-03"
+                            for entry in violation.details["conflicts"]))
+
+    def test_limited_service_lock_conflicts(self):
+        for rule, entries in [
+            ("DAILY_LIMIT", [("aicha", "2026-12-28"), ("rotating", "2026-12-28")]),
+            ("EMPLOYEE_WEEKLY_LIMIT", [("rotating", "2026-12-28"), ("rotating", "2026-12-29")]),
+            ("WEEKEND_EARLY_SERVICE", [("camille", "2027-01-02")]),
+        ]:
+            with self.subTest(rule=rule):
+                data = self.limited_service_request()
+                late = data["employees"][0]["fixedTemplate"]
+                data["lockedAssignments"] = [lock(guid, day, late) for guid, day in entries]
+                response = solve_planning(PlanningSolverInput.model_validate(data))
+                self.assertEqual(response.status, "INFEASIBLE")
+                violation = next(v for v in response.diagnostics.violations
+                                 if v.code == "FIXED_ALTERNATION_LIMITED_SERVICE_CONFLICT")
+                self.assertIn(rule, {entry["rule"] for entry in violation.details["conflicts"]})
+
     def test_daily_swap_distinct_rests_and_inversion_over_new_year(self):
         schedules, diagnostics = self.solve(request())
         self.assert_joint_phase(schedules)
@@ -221,7 +304,7 @@ class FixedAlternationTests(unittest.TestCase):
         self.assertTrue(any(check.reason == "OTHER_SOLVER_PRIORITIES" for check in diagnostics.fixedAlternationEvaluation.checks))
 
     def test_contract_rejects_unrecognized_version_and_invalid_anchor(self):
-        for changes in [{"contract_version": 3}, {"anchor_date": "2026-02-30"}, {"anchor_date": 1234}]:
+        for changes in [{"contract_version": 4}, {"anchor_date": "2026-02-30"}, {"anchor_date": 1234}]:
             data = request()
             data["fixed_alternation_policy"].update(changes)
             with self.assertRaises(ValueError):

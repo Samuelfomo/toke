@@ -422,12 +422,13 @@ class PlanningLockedAssignment(BaseModel):
 class FixedAlternationPolicy(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
-    contract_version: int = Field(strict=True, ge=1, le=2)
+    contract_version: int = Field(strict=True, ge=1, le=3)
     enabled: bool = Field(strict=True)
     employee_guids: tuple[str, str]
     template_guids: tuple[str, str]
     anchor_date: date
     shift_cadence_days: int = Field(strict=True, ge=1, le=366)
+    limited_service_template_guid: str | None = None
     weekend_rest: Literal["KEEP_PROFILE", "ALTERNATE_SAT_SUN"]
 
     @field_validator("anchor_date", mode="before")
@@ -442,6 +443,11 @@ class FixedAlternationPolicy(BaseModel):
         for pair in (self.employee_guids, self.template_guids):
             if not all(pair) or pair[0] == pair[1]:
                 raise ValueError("fixed_alternation_policy requires distinct nonempty GUIDs")
+        if self.contract_version == 3:
+            if self.limited_service_template_guid not in self.template_guids or self.weekend_rest != "ALTERNATE_SAT_SUN":
+                raise ValueError("contract v3 requires a limited template and alternating weekend rest")
+        elif self.limited_service_template_guid is not None:
+            raise ValueError("the limited service requires contract v3")
         return self
 
 
@@ -477,6 +483,14 @@ class PlanningSolverInput(BaseModel):
             references = {employee.fixedTemplate.guid for employee in pair if employee and employee.fixedTemplate}
             if references != set(policy.template_guids):
                 raise ValueError("fixed_alternation_policy templates must match the FIXED references")
+            if policy.limited_service_template_guid:
+                for employee in pair:
+                    template = employee.fixedTemplate
+                    expected = "10:30" if template.guid == policy.limited_service_template_guid else "08:00"
+                    starts = {min(block.work[0] for block in blocks)
+                              for blocks in template.definition.values() if blocks}
+                    if starts != {expected}:
+                        raise ValueError(f"Template {template.guid} must start at {expected} on each working day")
 
 
         fairness_guids = [entry.employeeGuid for entry in self.historicalFairness]
@@ -629,7 +643,7 @@ class FixedAlternationCheck(BaseModel):
 
 
 class FixedAlternationDiagnostics(BaseModel):
-    contractVersion: Literal[1, 2] = 1
+    contractVersion: Literal[1, 2, 3] = 1
     employeeGuids: tuple[str, str]
     checks: list[FixedAlternationCheck]
 

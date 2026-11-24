@@ -162,6 +162,18 @@ router.patch(
   },
 );
 
+function publicationCredentials(req: Request, res: Response): Record<string, string> {
+  const auth = req.header('authorization') ?? '';
+  const context = req.header('x-integrator-context');
+  if (context) {
+    const integrator = /^Bearer ([A-Za-z0-9_-]+)$/.exec(auth)?.[1];
+    return integrator && res.locals.integratorDelegation
+      ? { 'x-toke-integrator-session': integrator, 'x-integrator-context': context } : {};
+  }
+  const manager = /^Bearer ([A-Za-z0-9_-]+\.[A-Za-z0-9_-]+)$/.exec(auth)?.[1];
+  return manager ? { 'x-toke-user-session': manager } : {};
+}
+
 router.post(
   '/:guid/approval-preview',
   TenantConfig.authenticate,
@@ -172,6 +184,7 @@ router.post(
         tenantReference(req),
         req.params.guid as string,
         req.body,
+        publicationCredentials(req, res),
       );
 
       relayTenantApiResponse(res, result);
@@ -191,6 +204,7 @@ router.post(
         tenantReference(req),
         req.params.guid as string,
         req.body,
+        publicationCredentials(req, res),
       );
 
       relayTenantApiResponse(res, result);

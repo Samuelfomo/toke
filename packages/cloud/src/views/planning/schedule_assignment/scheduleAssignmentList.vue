@@ -89,7 +89,7 @@
 
         <div class="flex flex-col gap-1">
           <span class="text-xs text-slate-400 font-bold uppercase tracking-wide">Période</span>
-          <div class="flex items-center gap-1.5">
+          <div class="flex flex-wrap items-center gap-1.5">
             <input
                 type="date"
                 v-model="draftPeriodFrom"
@@ -175,18 +175,28 @@
 
         <div class="flex-1"/>
 
-        <button @click="advancedFiltersOpen = !advancedFiltersOpen"
-                class="flex items-center gap-1.5 px-3 py-1.5 border border-slate-200 rounded-lg text-xs font-semibold text-slate-500 hover:bg-slate-50 transition"
-                :class="advancedFiltersOpen ? 'bg-slate-50 border-blue-300 text-blue-600' : ''">
-          <IconFilter :size="12"/>
-          Filtres avancés
-        </button>
+        <div class="flex flex-wrap items-center gap-2">
+          <button @click="advancedFiltersOpen = !advancedFiltersOpen"
+                  class="flex items-center gap-1.5 px-3 py-1.5 border border-slate-200 rounded-lg text-xs font-semibold text-slate-500 hover:bg-slate-50 transition"
+                  :class="advancedFiltersOpen ? 'bg-slate-50 border-blue-300 text-blue-600' : ''">
+            <IconFilter :size="12"/>
+            Filtres avancés
+          </button>
+          <button type="button" :aria-expanded="hoursSummaryOpen"
+                  aria-controls="schedule-hours-summary"
+                  class="flex items-center gap-1.5 rounded-lg border border-slate-200 px-3 py-1.5 text-xs font-semibold text-slate-500 transition hover:bg-slate-50"
+                  :class="hoursSummaryOpen ? 'border-blue-300 bg-blue-50 text-blue-700' : ''"
+                  @click="hoursSummaryOpen = !hoursSummaryOpen">
+            <IconClock :size="12"/>
+            Synthèse horaire
+          </button>
+        </div>
       </div>
 
       <!-- ── Filtres avancés ── -->
       <Transition name="slide-down">
         <div v-if="advancedFiltersOpen"
-             class="bg-white border border-slate-100 px-2 py-3 flex items-center gap-3 flex-shrink-0">
+             class="bg-white border border-slate-100 px-2 py-3 flex flex-wrap items-center gap-3 flex-shrink-0">
           <div class="flex items-center gap-2">
             <span class="text-xs text-slate-500 font-medium">Statut :</span>
             <select v-model="filterStatus" class="filter-input text-xs py-1.5 cursor-pointer">
@@ -209,6 +219,15 @@
           </button>
         </div>
       </Transition>
+
+      <PlanningHoursSummary
+          v-show="hoursSummaryOpen"
+          :from="periodFrom"
+          :to="periodTo"
+          :loading="loading || !hasLoadedOnce"
+          :unavailable="assignmentLoadFailed || hasUnresolvedHoursTemplates"
+          :members="hoursSummaryMembers"
+      />
 
       <!-- ── Contenu principal ── -->
       <div class="flex-1 overflow-y-auto py-6">
@@ -334,7 +353,7 @@ import {
   IconCalendarStats, IconChevronRight, IconPlus, IconLoader2,
   IconUser, IconUsers, IconFilter, IconSearch, IconArrowRight,
   IconPower, IconAlertTriangle, IconSparkles,
-  IconUpload, IconArrowLeft,
+  IconUpload, IconArrowLeft, IconClock,
 } from '@tabler/icons-vue'
 
 import ScheduleAssignmentService from '@/service/ScheduleAssignment'
@@ -346,6 +365,8 @@ import ScheduleSimpleView from './components/views/ScheduleSimpleView.vue'
 import ScheduleOptimizedView from './components/views/ScheduleOptimizedView.vue'
 import PlanningLoadingState from './components/states/PlanningLoadingState.vue'
 import PlanningExportPanel from './components/PlanningExportPanel.vue'
+import PlanningHoursSummary from './components/PlanningHoursSummary.vue'
+import {plannedMinutes, previousPlanningDate} from './plannedHours'
 import type {ExportFormat, ExportPresentation} from './components/PlanningExportPanel.vue'
 import type {
   PlanningDisplayMode,
@@ -402,6 +423,7 @@ const allAssignments = ref<IScheduleAssignment[]>([])
 const sessionTemplates = ref<ISessionTemplateInline[]>([])
 const loading = ref(false)
 const hasLoadedOnce = ref(false)
+const assignmentLoadFailed = ref(false)
 let loadRequestSequence = 0
 
 const filterType = ref<'user' | 'group'>('user')
@@ -424,6 +446,7 @@ watch(
 
 const displayMode = ref<PlanningDisplayMode>('detailed')
 const advancedFiltersOpen = ref(false)
+const hoursSummaryOpen = ref(false)
 const filterStatus = ref('active')
 const searchQuery = ref('')
 const exportPanelOpen = ref(false)
@@ -443,6 +466,7 @@ sunday.setDate(monday.getDate() + 6)
 // Période appliquée : seule source utilisée par la grille et les appels API.
 const periodFrom = ref(monday.toISOString().split('T')[0])
 const periodTo = ref(sunday.toISOString().split('T')[0])
+const previousIso = computed(() => previousPlanningDate(periodFrom.value))
 
 // Période en cours de saisie : modifier ces valeurs ne déclenche aucun appel API.
 const draftPeriodFrom = ref(periodFrom.value)
@@ -496,17 +520,17 @@ const calendarDays = computed(() => {
   const todayIso = new Date().toISOString().split('T')[0]
   while (cursor <= end) {
     const iso = cursor.toISOString().split('T')[0]
-    const jsDay = cursor.getDay()
+    const jsDay = cursor.getUTCDay()
     days.push({
       iso,
       dayLabel: DAY_FR[JS_DAY_TO_KEY[jsDay]] ?? '',
-      dayNum: String(cursor.getDate()).padStart(2, '0'),
-      monthNum: String(cursor.getMonth() + 1).padStart(2, '0'),
+      dayNum: String(cursor.getUTCDate()).padStart(2, '0'),
+      monthNum: String(cursor.getUTCMonth() + 1).padStart(2, '0'),
       isWeekend: jsDay === 0 || jsDay === 6,
       isToday: iso === todayIso,
       jsDay,
     })
-    cursor.setDate(cursor.getDate() + 1)
+    cursor.setUTCDate(cursor.getUTCDate() + 1)
   }
   return days
 })
@@ -520,27 +544,37 @@ function isInActivePeriod(a: IScheduleAssignment): boolean {
 const availableTargets = computed(() => {
   // Mode Employé : tous les individus — directs (family:'user') ET membres de groupes (family:'group')
   if (filterType.value === 'user') {
-    const map = new Map<string, string>()
+    const map = new Map<string, {guid: string; name: string; code: string}>()
+    const addTarget = (user: {guid: string; first_name: string; last_name: string; employee_code: string}) => {
+      if (!map.has(user.guid)) {
+        map.set(user.guid, {
+          guid: user.guid,
+          name: `${user.first_name} ${user.last_name}`.trim(),
+          code: user.employee_code ?? '',
+        })
+      }
+    }
     for (const a of allAssignments.value) {
       if (!isInActivePeriod(a)) continue
       if (isUserAssignment(a)) {
-        if (!map.has(a.related.guid))
-          map.set(a.related.guid, `${a.related.first_name} ${a.related.last_name}`.trim())
+        addTarget(a.related)
       } else if (isGroupAssignment(a)) {
         for (const m of a.related.members.items) {
-          if (!map.has(m.user.guid))
-            map.set(m.user.guid, `${m.user.first_name} ${m.user.last_name}`.trim())
+          addTarget(m.user)
         }
       }
     }
     // Conserver l'employé de la fiche dans le sélecteur même sans affectation sur la période.
     const employeeGuid = getQueryString(route.query.employeeGuid)
     if (employeeGuid && selectedTargetGuid.value === employeeGuid && !map.has(employeeGuid)) {
-      map.set(employeeGuid, getQueryString(route.query.employeeName) || employeeGuid)
+      map.set(employeeGuid, {
+        guid: employeeGuid,
+        name: getQueryString(route.query.employeeName) || employeeGuid,
+        code: '',
+      })
     }
-    return Array.from(map.entries())
-        .map(([guid, name]) => ({guid, name}))
-        .filter((t) => !searchQuery.value || t.name.toLowerCase().includes(searchQuery.value.toLowerCase()))
+    return Array.from(map.values())
+        .filter(({guid, name, code}) => guid === selectedTargetGuid.value || matchesPlanningSearch(name, code))
         .sort((a, b) => a.name.localeCompare(b.name, 'fr'))
   }
 
@@ -563,7 +597,7 @@ const availableTargets = computed(() => {
 
   if (hasDirect) result.push({guid: '__no_group__', name: 'Sans groupe'})
 
-  return result.filter((t) => !searchQuery.value || t.name.toLowerCase().includes(searchQuery.value.toLowerCase()))
+  return result.filter(({guid, name}) => guid === selectedTargetGuid.value || matchesPlanningSearch(name))
 })
 
 // ── Affectations filtrées ──────────────────────────────────────────────────
@@ -574,7 +608,11 @@ const filteredAssignments = computed(() => {
     if (filterStatus.value === 'inactive' && a.active) return false
 
     // Filtre période
-    if (!isInActivePeriod(a)) return false
+    if (a.start_date > periodTo.value || (a.end_date !== null && a.end_date < previousIso.value)) return false
+
+    if (filterType.value === 'group' && !matchesPlanningSearch(
+        isGroupAssignment(a) ? a.related.name : 'Sans groupe',
+    )) return false
 
     // Mode EMPLOYÉ — filtre individuel optionnel
     if (filterType.value === 'user') {
@@ -600,7 +638,7 @@ const unresolvedTemplateGuids = computed(() => {
   const guids = new Set<string>()
 
   for (const assignment of filteredAssignments.value) {
-    if (isPlannedRestAssignment(assignment)) continue
+    if (!isInActivePeriod(assignment) || isPlannedRestAssignment(assignment)) continue
     if (resolveFullTemplate(assignment, templatesByGuid.value)) continue
     guids.add(assignment.session_template.guid)
   }
@@ -821,7 +859,12 @@ function resolveEmployeeColor(
   )
 }
 
-const allFlatMembers = computed<FlatMember[]>(() => {
+function matchesPlanningSearch(...values: string[]): boolean {
+  const query = searchQuery.value.trim().toLocaleLowerCase('fr')
+  return !query || values.some(value => value.toLocaleLowerCase('fr').includes(query))
+}
+
+const planningMembers = computed(() => {
   const members = new Map<string, MemberAccumulator>()
 
   const ensureMember = (
@@ -899,85 +942,118 @@ const allFlatMembers = computed<FlatMember[]>(() => {
     }
   }
 
-  const result: FlatMember[] = []
+  return Array.from(members.values()).filter(member =>
+      filterType.value !== 'user' || matchesPlanningSearch(member.name, member.code))
+})
 
-  for (const member of members.values()) {
-    const scheduleByDate: Record<string, ScheduleSlot[]> = {}
-    const restByDate: Record<string, boolean> = {}
-    const legacySchedule: Record<string, ScheduleSlot[]> = {}
+function resolveMemberSchedule(member: MemberAccumulator) {
+  const scheduleByDate: Record<string, ScheduleSlot[]> = {}
+  const restByDate: Record<string, boolean> = {}
+  const legacySchedule: Record<string, ScheduleSlot[]> = {}
 
-    const previousIso = (() => {
-      const previous = new Date(`${periodFrom.value}T00:00:00.000Z`)
-      previous.setUTCDate(previous.getUTCDate() - 1)
-      return previous.toISOString().slice(0, 10)
-    })()
+  const previousResolution = baseAssignmentForDate(member, previousIso.value)
+  const previousSlots = previousResolution.winner
+      ? assignmentSlotsForIso(previousResolution.winner, previousIso.value)
+      : []
+  let previousEffectiveGuard = slotsStartGuard(previousSlots)
+  let previousDayHadManualOverride = Boolean(previousResolution.manualOverride)
 
-    const previousResolution = baseAssignmentForDate(member, previousIso)
-    let previousEffectiveGuard = previousResolution.winner
-        ? slotsStartGuard(assignmentSlotsForIso(previousResolution.winner, previousIso))
-        : false
-    let previousDayHadManualOverride = Boolean(previousResolution.manualOverride)
+  for (const day of calendarDays.value) {
+    const resolution = baseAssignmentForDate(member, day.iso)
+    const baseWinner = resolution.winner
+    const baseSlots = baseWinner
+        ? assignmentSlotsForIso(baseWinner, day.iso)
+        : []
 
-    for (const day of calendarDays.value) {
-      const resolution = baseAssignmentForDate(member, day.iso)
-      const baseWinner = resolution.winner
-      const baseSlots = baseWinner
-          ? assignmentSlotsForIso(baseWinner, day.iso)
-          : []
+    const continuationSlots = continuationAssignmentsForDate(
+        member,
+        day.iso,
+        previousEffectiveGuard,
+        previousDayHadManualOverride,
+    ).flatMap((assignment) => assignmentSlotsForIso(assignment, day.iso))
 
-      const continuationSlots = continuationAssignmentsForDate(
-          member,
-          day.iso,
-          previousEffectiveGuard,
-          previousDayHadManualOverride,
-      ).flatMap((assignment) => assignmentSlotsForIso(assignment, day.iso))
+    const slots = deduplicateSlots([
+      ...continuationSlots,
+      ...baseSlots,
+    ])
 
-      const slots = deduplicateSlots([
-        ...continuationSlots,
-        ...baseSlots,
-      ])
-
-      if (slots.length > 0 || baseWinner) {
-        scheduleByDate[day.iso] = slots
-      }
-
-      restByDate[day.iso] = Boolean(
-          baseWinner
-          && isPlannedRestAssignment(baseWinner),
-      )
-
-      const key = dayKeyFromIso(day.iso)
-      if (!(key in legacySchedule) && slots.length > 0) {
-        legacySchedule[key] = slots
-      }
-
-      previousEffectiveGuard = slotsStartGuard(baseSlots)
-      previousDayHadManualOverride = Boolean(resolution.manualOverride)
+    if (slots.length > 0 || baseWinner) {
+      scheduleByDate[day.iso] = slots
     }
 
-    result.push({
-      guid: member.guid,
-      name: member.name,
-      firstName: member.firstName,
-      lastName: member.lastName,
-      code: member.code,
-      employeeColor: member.employeeColor,
-      groupName: member.groupName,
-      scheduleByDate,
-      restByDate,
-      schedule: legacySchedule,
-    })
+    restByDate[day.iso] = Boolean(
+        baseWinner
+        && isPlannedRestAssignment(baseWinner),
+    )
+
+    const key = dayKeyFromIso(day.iso)
+    if (!(key in legacySchedule) && slots.length > 0) {
+      legacySchedule[key] = slots
+    }
+
+    previousEffectiveGuard = slotsStartGuard(baseSlots)
+    previousDayHadManualOverride = Boolean(resolution.manualOverride)
+  }
+
+  return {scheduleByDate, restByDate, schedule: legacySchedule, previousSlots}
+}
+
+const resolvedMembers = computed(() => {
+  const result: Array<{ member: MemberAccumulator; view: FlatMember; previousSlots: ScheduleSlot[] }> = []
+  for (const member of planningMembers.value) {
+    const {directAssignments, groupAssignments, ...identity} = member
+    const {previousSlots, ...schedule} = resolveMemberSchedule(member)
+    if (![...directAssignments, ...groupAssignments].some(isInActivePeriod)
+        && !plannedMinutes({[previousIso.value]: previousSlots}, periodFrom.value, periodTo.value)) continue
+
+    result.push({member, view: {...identity, ...schedule}, previousSlots})
   }
 
   if (filterType.value === 'user') {
-    return result.sort((a, b) => a.name.localeCompare(b.name, 'fr'))
+    return result.sort((a, b) => a.view.name.localeCompare(b.view.name, 'fr'))
   }
 
   return result.sort((a, b) => {
-    const groupA = a.groupName ?? '\uFFFF'
-    const groupB = b.groupName ?? '\uFFFF'
+    const groupA = a.view.groupName ?? '\uFFFF'
+    const groupB = b.view.groupName ?? '\uFFFF'
     if (groupA !== groupB) return groupA.localeCompare(groupB, 'fr')
-    return a.name.localeCompare(b.name, 'fr')
+    return a.view.name.localeCompare(b.view.name, 'fr')
+  })
+})
+
+const allFlatMembers = computed(() => resolvedMembers.value.map(({view}) => view))
+
+const hasUnresolvedHoursTemplates = computed(() => hoursSummaryOpen.value && planningMembers.value.some(
+    ({directAssignments, groupAssignments}) => [...directAssignments, ...groupAssignments].some(
+        assignment => assignment.active
+            && !isPlannedRestAssignment(assignment)
+            && !resolveFullTemplate(assignment, templatesByGuid.value),
+    ),
+))
+
+const hoursSummaryMembers = computed(() => {
+  if (!hoursSummaryOpen.value || loading.value || assignmentLoadFailed.value || hasUnresolvedHoursTemplates.value) return []
+
+  return resolvedMembers.value.map(({member, view, previousSlots}) => {
+    if (filterStatus.value === 'inactive') return {...view, minutes: 0}
+
+    // La vue « Tous » affiche aussi des archives. Seules les affectations actives
+    // participent à la résolution des heures planifiées.
+    const effective = filterStatus.value === 'active'
+        ? {scheduleByDate: view.scheduleByDate, previousSlots}
+        : resolveMemberSchedule({
+          ...member,
+          directAssignments: member.directAssignments.filter(assignment => assignment.active),
+          groupAssignments: member.groupAssignments.filter(assignment => assignment.active),
+        })
+    return {
+      ...view,
+      minutes: plannedMinutes(
+          {...effective.scheduleByDate, [previousIso.value]: effective.previousSlots},
+          periodFrom.value,
+          periodTo.value,
+      ),
+    }
   })
 })
 
@@ -1046,6 +1122,7 @@ async function load() {
   // Cela évite qu'un changement rapide de période affiche une ancienne réponse.
   const requestId = ++loadRequestSequence
   loading.value = true
+  assignmentLoadFailed.value = false
 
   try {
     // Les templates sont structurels et ne dépendent pas de la période.
@@ -1064,7 +1141,7 @@ async function load() {
     const [assignmentResponse, templateResponse] = await Promise.all([
       ScheduleAssignmentService.list(userStore.user.guid, {
         limit: 200,
-        date_from: periodFrom.value,
+        date_from: previousIso.value,
         date_to: periodTo.value,
       }),
       shouldLoadTemplates
@@ -1079,6 +1156,7 @@ async function load() {
 
     if (requestId !== loadRequestSequence) return
 
+    assignmentLoadFailed.value = !assignmentResponse?.success
     allAssignments.value = assignmentResponse?.success
         ? assignmentResponse.data?.schedule_assignments?.items ?? []
         : []
@@ -1095,6 +1173,7 @@ async function load() {
   } catch (error: unknown) {
     if (requestId !== loadRequestSequence) return
 
+    assignmentLoadFailed.value = true
     console.error('Impossible de charger le planning standard', error)
     allAssignments.value = []
     sessionTemplates.value = []

@@ -72,6 +72,7 @@ import ScheduleSuggestionService from '@/service/ScheduleSuggestionService'
 import {useFormDirty} from '@/views/planning/composables/useFormDirty'
 import PlanningDrawer from '../components/PlanningDrawer.vue'
 import {responseError} from '../planningSuggestion.helpers'
+import { templateWorksOn } from './suggestionServiceCells'
 import type {PlanningDayKey, PlanningTemplateMini, ScheduleSuggestionItem} from '../planningSuggestion.type'
 
 const props = withDefaults(defineProps<{
@@ -92,10 +93,7 @@ const {isDirty, markPristine} = useFormDirty(
 const errorMessage = ref('');
 const dayMap: PlanningDayKey[] = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
 const dayKey = computed(() => dayMap[new Date(`${props.iso}T12:00:00`).getDay()]);
-const compatibleTemplates = computed(() => props.templates.filter(t => {
-  const b = t.definition?.[dayKey.value];
-  return Array.isArray(b) && b.length > 0
-}));
+const compatibleTemplates = computed(() => props.templates.filter(template => templateWorksOn(template, props.iso)));
 const employeeName = computed(() => props.item?.user.name ?? 'Collaborateur');
 const formattedDate = computed(() => props.iso ? new Intl.DateTimeFormat('fr-FR', {
   weekday: 'long',

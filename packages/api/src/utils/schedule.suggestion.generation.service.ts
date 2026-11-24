@@ -44,6 +44,7 @@ import {
   RollingChunkMetadata,
 } from './planning.rolling.horizon.js';
 import {
+  fixedAlternationContractVersion,
   FixedAlternationAcknowledgementError,
   PlanningSolverExecutionMetadata,
   PlanningSolverInput,
@@ -593,8 +594,11 @@ export async function solveConfiguredSuggestion(
     },
   };
 
+  const configuredAlternation = config.getFixedAlternationPolicy();
+  const limitedServiceConfigured = Boolean(configuredAlternation?.enabled && configuredAlternation.limited_service_template_guid);
   const horizon = normalizePlanningHorizon(periodFrom, periodTo, {
     config: engineConfig,
+    requiresCalendarWeeks: limitedServiceConfigured,
     hasEmployeeWeeklyMinuteLimits: employees.some((employee) => employee.maxWeeklyMinutes !== null),
   });
 
@@ -672,15 +676,22 @@ export async function solveConfiguredSuggestion(
     ? 'ORTOOLS' as const
     : config.getSolverType();
   const ortoolsEndpoint = process.env.PLANNING_ORTOOLS_URL;
-  const fixedAlternation = prepareFixedAlternation(config.getFixedAlternationPolicy(), employees, excludedEmployeeGuids);
+  const fixedAlternation = prepareFixedAlternation(configuredAlternation, employees, excludedEmployeeGuids);
   const alternatingPolicy = fixedAlternation?.policy;
+  if (limitedServiceConfigured && !alternatingPolicy) {
+    throw new SuggestionGenerationError(
+      'La règle du service de 10 h 30 nécessite les deux profils fixes configurés.',
+      'FIXED_ALTERNATION_LIMITED_SERVICE_PAIR_REQUIRED', 422, { reason: fixedAlternation?.reason },
+    );
+  }
   const mandatoryWeekendRest = alternatingPolicy?.weekendRest === 'ALTERNATE_SAT_SUN';
   const fixedAlternationSupported = Boolean(!legacyAfterMissingAcknowledgement && alternatingPolicy && requestedSolverType === 'ORTOOLS' &&
-    await supportsOrToolsFixedAlternation(ortoolsEndpoint, mandatoryWeekendRest ? 2 : 1));
+    await supportsOrToolsFixedAlternation(ortoolsEndpoint, fixedAlternationContractVersion(alternatingPolicy)));
   if (mandatoryWeekendRest && !fixedAlternationSupported) {
     throw new SuggestionGenerationError(
-      'Le moteur configuré ne peut pas garantir les repos alternés du week-end.',
-      'FIXED_ALTERNATION_WEEKEND_REST_UNSUPPORTED',
+      limitedServiceConfigured ? 'Le moteur configuré ne prend pas en charge la règle du service de 10 h 30.'
+        : 'Le moteur configuré ne peut pas garantir les repos alternés du week-end.',
+      limitedServiceConfigured ? 'FIXED_ALTERNATION_LIMITED_SERVICE_UNSUPPORTED' : 'FIXED_ALTERNATION_WEEKEND_REST_UNSUPPORTED',
       503,
     );
   }

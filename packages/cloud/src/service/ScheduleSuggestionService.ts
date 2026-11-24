@@ -14,15 +14,45 @@ type ScheduleSuggestionFilters = {
     status?: string[]
 }
 
+export interface ApprovalGuardAssignment {
+    guid: string
+    date: string
+    end_date?: string | null
+    template_name?: string
+    hours?: string[][]
+}
+
+export interface ApprovalAlertDetails {
+    action?: 'PUBLISHED_GUARD' | 'EDIT_ASSIGNMENT' | 'COVERAGE' | 'CONFIGURATION'
+    date?: string
+    consequence?: string
+    hours?: string[][]
+    item_guid?: string
+    employee_guid?: string
+    employee_name?: string
+    requirement_guid?: string
+    guard?: ApprovalGuardAssignment
+    continuation?: ApprovalGuardAssignment
+}
+
 export interface ApprovalPreview {
     can_publish: boolean
     effective_from: string | null
+    timezone?: string
     earliest_valid_date?: string
+    confirmation_token?: string
+    impact?: {
+        replaced_assignments: number
+        adjusted_assignments?: number
+        preserved_employee_dates?: number
+        truncated_overnight_assignments?: number
+        detached_guard_continuations?: number
+    }
     alerts: Array<{
         severity: 'INFO' | 'WARNING' | 'CONFIRMATION_REQUIRED' | 'BLOCKING'
         code: string
         message: string
-        details?: { conflicts?: Array<{ conflict_type?: string; item_guid?: string; continuation_date?: string }> }
+        details?: ApprovalAlertDetails
     }>
     suggested_actions: Array<{ code: string; message: string; effective_from?: string }>
 }
@@ -184,12 +214,15 @@ export default class ScheduleSuggestionService {
         })
     }
 
-    static async approve(guid: string, effectiveFrom?: string): Promise<ApiResponse> {
+    static async approve(guid: string, effectiveFrom?: string, confirmation?: { token: string; reason?: string }): Promise<ApiResponse> {
         try {
             return await apiRequest<any>({
                 path: `${baseUrl}/${guid}/approve`,
                 method: 'POST',
-                data: effectiveFrom ? { effective_from: effectiveFrom } : undefined,
+                data: effectiveFrom ? {
+                    effective_from: effectiveFrom,
+                    ...(confirmation && { confirmation_token: confirmation.token, confirmation_reason: confirmation.reason }),
+                } : undefined,
             })
         } catch (error: any) {
             console.error('ScheduleSuggestionService.approve', error)

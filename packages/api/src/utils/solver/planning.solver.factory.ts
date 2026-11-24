@@ -44,7 +44,8 @@ export default class PlanningSolverFactory {
         options.fallbackToGreedy &&
         error instanceof PlanningSolverTechnicalError &&
         error.code !== 'PLANNING_SOLVER_INVALID_INPUT' &&
-        error.code !== 'PLANNING_SOLVER_PROTOCOL_ERROR';
+        error.code !== 'PLANNING_SOLVER_PROTOCOL_ERROR' &&
+        error.code !== 'PLANNING_SOLVER_NO_FEASIBLE_SOLUTION';
 
       if (!mayFallback) {
         throw error;

@@ -24,6 +24,7 @@ export interface PlanningHorizonConfig {
 export interface PlanningHorizonOptions {
   config: PlanningHorizonConfig;
   hasEmployeeWeeklyMinuteLimits?: boolean;
+  requiresCalendarWeeks?: boolean;
 }
 
 interface ProjectableDayReason {
@@ -120,6 +121,7 @@ export function normalizePlanningHorizon(
   options: PlanningHorizonOptions,
 ): PlanningHorizon {
   const needsCompleteWeeks =
+    options.requiresCalendarWeeks === true ||
     hasCompleteWeekPolicy(options.config) ||
     options.config.minRestDaysPerWeek > 0 ||
     options.config.maxWeeklyMinutes !== null ||

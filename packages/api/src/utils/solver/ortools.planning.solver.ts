@@ -7,6 +7,7 @@ import {
   PLANNING_SOLVER_MAX_SECONDS,
 } from './planning.solver.constants.js';
 import {
+  fixedAlternationContractVersion,
   FixedAlternationAcknowledgementError,
   PlanningSolver,
   PlanningSolverInput,
@@ -59,7 +60,7 @@ const solverDispatcher = new Agent({
 });
 
 /** Probe once per generation. Older or unavailable endpoints keep the legacy payload. */
-export async function supportsOrToolsFixedAlternation(endpoint: string | undefined, minimumVersion: 1 | 2 = 1): Promise<boolean> {
+export async function supportsOrToolsFixedAlternation(endpoint: string | undefined, minimumVersion: 1 | 2 | 3 = 1): Promise<boolean> {
   if (!endpoint?.trim()) return false;
   try {
     const response = await fetch(`${endpoint.replace(/\/+$/, '')}/health`, {
@@ -69,7 +70,8 @@ export async function supportsOrToolsFixedAlternation(endpoint: string | undefin
       await response.body?.cancel();
       return false;
     }
-    const health = await response.json() as { capabilities?: { fixedAlternation?: number; fixedAlternationMandatoryWeekendRest?: number } };
+    const health = await response.json() as { capabilities?: { fixedAlternation?: number; fixedAlternationMandatoryWeekendRest?: number; fixedAlternationLimitedService?: number } };
+    if (minimumVersion === 3) return health.capabilities?.fixedAlternationLimitedService === 3;
     return minimumVersion === 2
       ? health.capabilities?.fixedAlternationMandatoryWeekendRest === 2
       : health.capabilities?.fixedAlternation === 1;
@@ -104,6 +106,20 @@ export default class OrToolsPlanningSolver implements PlanningSolver {
     // const controller = new AbortController();
     // const timeout = setTimeout(() => controller.abort(), this.options.timeoutSeconds * 1000);
 
+    const configuredBudget = process.env.PLANNING_ORTOOLS_SEARCH_SECONDS;
+    let solverTimeoutSeconds = input.solverTimeoutSeconds;
+    if (configuredBudget !== undefined && solverTimeoutSeconds === undefined) {
+      const seconds = Number(configuredBudget);
+      if (!/^\d+$/.test(configuredBudget) || seconds < 1 || seconds > 299) {
+        throw new PlanningSolverTechnicalError(
+          'Le budget de recherche OR-Tools doit être un entier compris entre 1 et 299 secondes.',
+          'PLANNING_SOLVER_PROTOCOL_ERROR',
+        );
+      }
+      // The existing worker contract reserves one second outside CP-SAT.
+      solverTimeoutSeconds = seconds + 1;
+    }
+
     const controller = new AbortController();
 
     const timeout = setTimeout(() => controller.abort(), PLANNING_SOLVER_HTTP_TIMEOUT_MS);
@@ -124,7 +140,10 @@ export default class OrToolsPlanningSolver implements PlanningSolver {
         headers: {
           'content-type': 'application/json',
         },
-        body: JSON.stringify(planningSolverPayload(input, this.options.fixedAlternationSupported === true)),
+        body: JSON.stringify(planningSolverPayload({
+          ...input,
+          ...(solverTimeoutSeconds === undefined ? {} : { solverTimeoutSeconds }),
+        }, this.options.fixedAlternationSupported === true)),
         signal: controller.signal,
         dispatcher: solverDispatcher,
       });
@@ -234,6 +253,19 @@ export default class OrToolsPlanningSolver implements PlanningSolver {
       );
     }
 
+    if (payload.status === 'UNKNOWN' && payload.solverStats?.statusName === 'UNKNOWN') {
+      throw new PlanningSolverTechnicalError(
+        'Aucun planning faisable n’a été trouvé dans le temps imparti. Relancez avec un budget de calcul plus long.',
+        'PLANNING_SOLVER_NO_FEASIBLE_SOLUTION',
+        {
+          period_from: input.periodFrom,
+          period_to: input.periodTo,
+          search_seconds: Math.max(1, (solverTimeoutSeconds ?? 20) - 1),
+          solverStats: payload.solverStats,
+        },
+      );
+    }
+
     if (payload.status !== 'OPTIMAL' && payload.status !== 'FEASIBLE') {
       throw new PlanningSolverTechnicalError(
         payload.message ?? `Unexpected OR-Tools status: ${payload.status}`,
@@ -257,7 +289,7 @@ export default class OrToolsPlanningSolver implements PlanningSolver {
       const evaluation = payload.result.diagnostics.fixedAlternationEvaluation;
       const details = {
         solver_version: payload.solverVersion,
-        expected_contract_version: requestedPolicy.weekendRest === 'ALTERNATE_SAT_SUN' ? 2 : 1,
+        expected_contract_version: fixedAlternationContractVersion(requestedPolicy),
         received_contract_version: evaluation?.contractVersion,
         period_from: input.periodFrom,
         period_to: input.periodTo,

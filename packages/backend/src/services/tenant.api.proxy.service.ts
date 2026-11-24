@@ -18,6 +18,7 @@ export interface TenantApiRequestOptions {
   url: string;
   data?: unknown;
   params?: unknown;
+  headers?: Record<string, string>;
 }
 
 function normalizeUpstreamError(payload: unknown, fallbackMessage: string): ApiErrorPayload {
@@ -64,6 +65,7 @@ export async function tenantApiRequest<T = Record<string, unknown>>(
       url: request.url,
       data: request.data,
       params: request.params,
+      headers: request.headers,
     });
 
     return {

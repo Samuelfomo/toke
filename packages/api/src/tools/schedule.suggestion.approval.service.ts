@@ -1,13 +1,14 @@
-import { Op, Transaction } from 'sequelize';
+import { createHash } from 'node:crypto';
+import { Op, Transaction, type Model } from 'sequelize';
 import { SAFamily, TimezoneConfigUtils } from '@toke/shared';
 
 import { TableInitializer } from '../tenant/database/db.initializer.js';
 import TenantManager from '../tenant/database/db.tenant-manager.js';
 import { tableName } from '../utils/response.model.js';
+import { eligibilityForRequirement, restGapViolations } from '../utils/schedule.suggestion.bulk-edit.service.js';
 import {
   SuggestionApprovalError,
   suggestionApplicationPeriod,
-  assertSafeSuggestionBoundary,
 } from '../utils/schedule.suggestion.application-period.js';
 export { SuggestionApprovalError } from '../utils/schedule.suggestion.application-period.js';
 
@@ -62,6 +63,7 @@ function dayKey(iso: string): string {
 function buildBlocks(
   schedule: Record<string, ScheduleValue>,
   expectedDates: string[],
+  isolatedDates = new Set<string>(),
 ): ScheduleBlock[] {
   const blocks: ScheduleBlock[] = [];
   let currentValue: ScheduleValue | undefined;
@@ -91,7 +93,7 @@ function buildBlocks(
 
     const isConsecutive = previousDate === null || addDays(previousDate, 1) === iso;
 
-    if (currentValue === undefined || value !== currentValue || !isConsecutive) {
+    if (currentValue === undefined || value !== currentValue || !isConsecutive || isolatedDates.has(iso) || (previousDate !== null && isolatedDates.has(previousDate))) {
       closeCurrent();
       currentValue = value;
       currentStart = iso;
@@ -221,8 +223,11 @@ function approvalModels() {
   const AssignmentModel = TableInitializer.getModel(tableName.SCHEDULE_ASSIGNMENTS);
   const SessionTemplateModel = TableInitializer.getModel(tableName.SESSION_TEMPLATES);
   const UserModel = TableInitializer.getModel(tableName.USERS);
+  const RequirementModel = TableInitializer.getModel(tableName.PLANNING_SUGGESTION_REQUIREMENT);
+  const ProfileModel = TableInitializer.getModel(tableName.EMPLOYEE_PLANNING_PROFILE);
+  const ConfigModel = TableInitializer.getModel(tableName.PLANNING_SUGGESTION_CONFIG);
 
-  if (!SuggestionModel || !ItemModel || !AssignmentModel || !SessionTemplateModel || !UserModel) {
+  if (!SuggestionModel || !ItemModel || !AssignmentModel || !SessionTemplateModel || !UserModel || !RequirementModel || !ProfileModel || !ConfigModel) {
     throw new SuggestionApprovalError(
       'One or more required database models are not registered',
       'SUGGESTION_APPROVAL_MODEL_NOT_REGISTERED',
@@ -230,17 +235,83 @@ function approvalModels() {
     );
   }
 
-  return { SuggestionModel, ItemModel, AssignmentModel, SessionTemplateModel, UserModel };
+  return { SuggestionModel, ItemModel, AssignmentModel, SessionTemplateModel, UserModel, RequirementModel, ProfileModel, ConfigModel };
 }
 
-interface PublishedGuardImpact {
-  item_guid: string;
-  effective_from: string;
-  continuation_date: string;
-  continuation_end: string | null;
-  guard_assignment_guid: string;
-  continuation_assignment_guid: string;
-  impact: 'CONTINUATION_REPLACED' | 'CONTINUATION_OUTSIDE_APPLICATION';
+interface ApprovalAlert {
+  severity: 'INFO' | 'WARNING' | 'BLOCKING';
+  code: string;
+  message: string;
+  details?: unknown;
+}
+
+interface ApprovalActor { id: number; guid: string; kind: 'MANAGER_SESSION' | 'DELEGATED_INTEGRATOR'; timezone?: string }
+
+interface ApprovalPlan {
+  userGuid: string;
+  userId: number;
+  reasons: Record<string, ScheduleReason | null>;
+  existingInstances: Model[];
+  existingRows: Array<Record<string, any>>;
+  blocks: Array<ScheduleBlock & { snapshot: TemplateSnapshot }>;
+  appliedDates: string[];
+  detachedContinuations: Model[];
+  historicalCuts: Map<string, TemplateSnapshot>;
+  historicalContinuationParent?: string;
+  historicalGuardStarts: Array<{ instance: Model; continuationGuid: string }>;
+  finalSchedule: Record<string, ScheduleValue | undefined>;
+}
+
+const isGuardTail = (source?: string) => source === 'GUARD_CONTINUATION' || source === 'POST_GUARD_REST';
+
+function remainingAssignmentRanges(from: string, to: string | null, dates: string[]) {
+  const ranges: Array<{ from: string; to: string | null }> = [];
+  let start = from;
+  for (const date of dates) {
+    if (date < start || (to !== null && date > to)) continue;
+    if (start < date) ranges.push({ from: start, to: addDays(date, -1) });
+    start = addDays(date, 1);
+  }
+  if (to === null || start <= to) ranges.push({ from: start, to });
+  return ranges;
+}
+
+function timeMinutes(value: string): number {
+  const [hour, minute] = value.split(':').map(Number);
+  return hour! * 60 + minute!;
+}
+
+function workIntervals(snapshot: TemplateSnapshot | undefined, date: string, offset = 0) {
+  const blocks = snapshot?.definition?.[dayKey(date)];
+  if (!Array.isArray(blocks)) return [];
+  return blocks.flatMap(block => {
+    if (!Array.isArray(block?.work) || block.work.length !== 2 || block.work.some((value: unknown) => typeof value !== 'string')) return [];
+    const start = timeMinutes(block.work[0]);
+    const end = timeMinutes(block.work[1]);
+    return [{ start: start + offset, end: end + offset + (end <= start ? 1440 : 0), hours: block.work as string[] }];
+  });
+}
+
+function historicalSnapshotAtMidnight(snapshot: TemplateSnapshot, date: string): TemplateSnapshot {
+  const day = dayKey(date);
+  return {
+    ...snapshot,
+    definition: {
+      ...snapshot.definition,
+      [day]: snapshot.definition[day].map((block: any) => {
+        if (timeMinutes(block.work[1]) > timeMinutes(block.work[0]) || block.work[1] === '00:00') return block;
+        const clipped = { ...block, work: [block.work[0], '24:00'] };
+        if (Array.isArray(block.pause)) {
+          const start = timeMinutes(block.work[0]);
+          const pauseStart = timeMinutes(block.pause[0]);
+          const pauseEnd = timeMinutes(block.pause[1]);
+          if (pauseStart < start) delete clipped.pause;
+          else if (pauseEnd <= pauseStart) clipped.pause = [block.pause[0], '24:00'];
+        }
+        return clipped;
+      }),
+    },
+  };
 }
 
 async function validateApproval(
@@ -250,15 +321,16 @@ async function validateApproval(
   transaction: Transaction,
   forUpdate: boolean,
   now: Date,
+  actor: ApprovalActor,
 ) {
-  const { SuggestionModel, ItemModel, UserModel, SessionTemplateModel, AssignmentModel } = models;
+  const { SuggestionModel, ItemModel, UserModel, SessionTemplateModel, AssignmentModel, RequirementModel, ProfileModel, ConfigModel } = models;
   const suggestionInstance = await SuggestionModel.findOne({
     where: { guid: suggestionGuid, deleted_at: null },
     transaction,
     ...(forUpdate ? { lock: transaction.LOCK.UPDATE } : {}),
   });
 
-  if (!suggestionInstance) {
+  if (!suggestionInstance || (actor.kind !== 'DELEGATED_INTEGRATOR' && suggestionInstance.get('manager') !== actor.id)) {
     throw new SuggestionApprovalError('Suggestion introuvable.', 'SUGGESTION_NOT_FOUND', 404);
   }
 
@@ -279,7 +351,7 @@ async function validateApproval(
     periodTo,
     effectiveFrom,
     now,
-    TimezoneConfigUtils.getTimezone(),
+    actor.timezone ?? TimezoneConfigUtils.getTimezone(),
   );
   const expectedDates = periodDates(periodFrom, periodTo);
   const applicationDates = periodDates(applicationPeriod.from, applicationPeriod.to);
@@ -302,6 +374,10 @@ async function validateApproval(
 
   const items = itemInstances.map((instance: any) => instance.get({ plain: true }));
   const userIds = [...new Set(items.map((item: any) => item.user))];
+  if (userIds.length !== items.length) {
+    throw new SuggestionApprovalError('La suggestion contient plusieurs plannings pour un même collaborateur.',
+      'SUGGESTION_DUPLICATE_EMPLOYEE', 422);
+  }
 
   const userInstances = await UserModel.findAll({
     where: { id: { [Op.in]: userIds } },
@@ -400,9 +476,13 @@ async function validateApproval(
     );
   }
 
-  const boundaryConflicts: SuggestionApprovalError[] = [];
-  const affectedGuards: PublishedGuardImpact[] = [];
-  const plans = [];
+  const alerts: ApprovalAlert[] = [];
+  let boundaryUntil: string | undefined;
+  let replacedAssignments = 0;
+  let adjustedAssignments = 0;
+  let truncatedOvernightAssignments = 0;
+  let detachedGuardContinuations = 0;
+  const plans: ApprovalPlan[] = [];
   for (const item of items) {
     const user = usersById.get(item.user);
     const userGuid = user.guid as string;
@@ -410,7 +490,6 @@ async function validateApproval(
     const spilloverDates = getAuthorizedSpilloverDates(item, periodTo);
     const itemDates = [...applicationDates, ...spilloverDates];
     const itemPeriodTo = itemDates[itemDates.length - 1]!;
-    const blocks = buildBlocks(schedule, itemDates);
     const reasons = (item.reasons ?? {}) as Record<string, ScheduleReason | null>;
 
     const nextDate = addDays(itemPeriodTo, 1);
@@ -421,53 +500,151 @@ async function validateApproval(
         active: true,
         deleted_at: null,
         start_date: { [Op.lte]: nextDate },
-        [Op.or]: [{ end_date: null }, { end_date: { [Op.gte]: applicationPeriod.from } }],
+        [Op.or]: [{ end_date: null }, { end_date: { [Op.gte]: addDays(applicationPeriod.from, -1) } }],
       },
       transaction,
       ...(forUpdate ? { lock: transaction.LOCK.UPDATE } : {}),
       order: [['start_date', 'ASC']],
     });
 
-    const existingInstances = nearbyInstances.filter(
-      (instance) => (instance.get('start_date') as string) <= itemPeriodTo,
-    );
-    const replacedGuids = new Set(existingInstances.map((instance) => instance.get('guid')));
-
-    try {
-      assertSafeSuggestionBoundary(
-        periodFrom, applicationPeriod.from, reasons[applicationPeriod.from]?.source, item.guid,
-      );
-    } catch (error) {
-      if (!(error instanceof SuggestionApprovalError)) throw error;
-      boundaryConflicts.push(error);
+    const existingRows = nearbyInstances.map(instance => instance.get({ plain: true }));
+    const byGuid = new Map(existingRows.map(row => [row.guid, row]));
+    const covers = (row: any, date: string) => row.start_date <= date && (row.end_date === null || row.end_date >= date);
+    const affects = (row: any) => row.start_date <= itemPeriodTo &&
+      (row.end_date === null || row.end_date >= applicationPeriod.from);
+    const employeeName = [user.first_name, user.last_name].filter(Boolean).join(' ') || undefined;
+    const context = { item_guid: item.guid, employee_guid: userGuid, employee_name: employeeName };
+    const guardDetails = (row: any) => row && ({
+      guid: row.guid, date: row.start_date, end_date: row.end_date,
+      template_name: row.session_template?.name,
+      hours: workIntervals(row.session_template, row.start_date).map(interval => interval.hours),
+    });
+    const previousDate = addDays(applicationPeriod.from, -1);
+    const historicalCuts = new Map<string, TemplateSnapshot>();
+    for (const row of existingRows) {
+      if (!covers(row, previousDate)) continue;
+      const intervals = workIntervals(row.session_template, previousDate).filter(interval => interval.end > 1440);
+      if (!intervals.length) continue;
+      historicalCuts.set(row.guid, historicalSnapshotAtMidnight(row.session_template, previousDate));
+      if (!boundaryUntil || applicationPeriod.from > boundaryUntil) boundaryUntil = applicationPeriod.from;
+      alerts.push({
+        severity: 'WARNING', code: 'SUGGESTION_OVERNIGHT_ASSIGNMENT_TRUNCATED',
+        message: 'Le service publié qui traverse la prise d’effet sera arrêté à minuit. Le nouveau planning s’applique à partir de cette heure.',
+        details: { ...context, date: applicationPeriod.from, action: 'PUBLISHED_GUARD',
+          guard: { ...guardDetails(row), date: previousDate, hours: intervals.map(interval => interval.hours) },
+          consequence: `La partie avant minuit le ${applicationPeriod.from.split('-').reverse().join('/')} est conservée.`,
+        },
+      });
     }
 
+    const existingInstances = nearbyInstances.filter(instance => {
+      const row = instance.get({ plain: true });
+      return affects(row) || historicalCuts.has(row.guid);
+    });
+    const detachedContinuations: Model[] = [];
+    let historicalContinuationParent: string | undefined;
+    const historicalGuardStarts: ApprovalPlan['historicalGuardStarts'] = [];
     for (const instance of nearbyInstances) {
-      const existing = instance.get({ plain: true });
-      if (!existing.continuation_of_guid) continue;
-      const outsideApplication = existing.start_date > itemPeriodTo;
-      if (outsideApplication && !replacedGuids.has(existing.continuation_of_guid)) continue;
-      const affected: PublishedGuardImpact = {
-        item_guid: item.guid,
-        effective_from: applicationPeriod.from,
-        continuation_date: existing.start_date,
-        continuation_end: existing.end_date,
-        guard_assignment_guid: existing.continuation_of_guid,
-        continuation_assignment_guid: existing.guid,
-        impact: outsideApplication ? 'CONTINUATION_OUTSIDE_APPLICATION' : 'CONTINUATION_REPLACED',
-      };
-      affectedGuards.push(affected);
-      if (existing.start_date === applicationPeriod.from) {
-        const date = applicationPeriod.from.split('-').reverse().join('/');
-        boundaryConflicts.push(new SuggestionApprovalError(
-          `La publication ne peut pas commencer le ${date} : une garde déjà publiée se poursuit à cette date.`,
-          'SUGGESTION_UNSAFE_APPLICATION_BOUNDARY',
-          422,
-          { ...affected, conflict_type: 'PUBLISHED_GUARD_CONTINUATION' },
-        ));
+      const row = instance.get({ plain: true });
+      if (!row.continuation_of_guid) continue;
+      const parent = byGuid.get(row.continuation_of_guid);
+      const continuationReplaced = affects(row);
+      const parentReplaced = parent && affects(parent);
+      if (!continuationReplaced && !parentReplaced) continue;
+      const matchingHistoricalLink = continuationReplaced && row.start_date === applicationPeriod.from &&
+        row.end_date === applicationPeriod.from && parent?.start_date === previousDate && parent.end_date === previousDate &&
+        reasons[applicationPeriod.from]?.source === 'GUARD_CONTINUATION' &&
+        reasons[applicationPeriod.from]?.templateGuid === schedule[applicationPeriod.from] &&
+        schedule[applicationPeriod.from] != null &&
+        row.session_template?.guid === schedule[applicationPeriod.from] &&
+        workIntervals(parent.session_template, previousDate).length > 0 &&
+        JSON.stringify(workIntervals(row.session_template, applicationPeriod.from)) ===
+          JSON.stringify(workIntervals(templatesByGuid.get(schedule[applicationPeriod.from]!), applicationPeriod.from)) &&
+        (schedule[previousDate] === undefined || schedule[previousDate] === parent.session_template?.guid);
+      if (matchingHistoricalLink) historicalContinuationParent = parent.guid;
+      else if (continuationReplaced && row.start_date === applicationPeriod.from && row.end_date === applicationPeriod.from &&
+        parent?.start_date === previousDate && parent.end_date === previousDate) {
+        const instance = nearbyInstances.find(candidate => candidate.get('guid') === parent.guid);
+        if (instance) historicalGuardStarts.push({ instance, continuationGuid: row.guid });
+      }
+      if (!continuationReplaced && parentReplaced) detachedContinuations.push(instance);
+      if (continuationReplaced && row.start_date === applicationPeriod.from && !matchingHistoricalLink &&
+          (!boundaryUntil || row.start_date > boundaryUntil)) boundaryUntil = row.start_date;
+      alerts.push({
+        severity: 'WARNING', code: 'SUGGESTION_PUBLISHED_GUARD_IMPACT',
+        message: matchingHistoricalLink
+          ? 'La continuation future est remplacée par la suggestion et reste liée au début de garde historique.'
+          : !continuationReplaced
+            ? 'Le début de garde est remplacé. La continuation hors période reste en place et son lien est retiré.'
+            : parentReplaced
+              ? 'Le début de garde et la continuation publiés sont remplacés sur la période.'
+              : parent
+                ? 'La continuation publiée est remplacée. Le début de garde hors période reste en place.'
+                : 'La continuation publiée est remplacée. Son début de garde n’a pas pu être vérifié.',
+        details: { ...context, date: row.start_date, action: 'PUBLISHED_GUARD',
+          guard: guardDetails(parent), continuation: guardDetails(row),
+          impact: !continuationReplaced ? 'CONTINUATION_DETACHED' : 'REPLACED',
+        },
+      });
+    }
+
+    const appliedDates = itemDates;
+    for (const date of appliedDates) {
+      const source = reasons[date]?.source;
+      const prior = addDays(date, -1);
+      let hasStart = false;
+      if (source === 'GUARD_CONTINUATION') {
+        hasStart = reasons[date]?.templateGuid === schedule[date] && schedule[date] !== null &&
+          (date === applicationPeriod.from ? Boolean(historicalContinuationParent)
+            : Boolean(schedule[prior]) && !isGuardTail(reasons[prior]?.source));
+      } else if (source === 'POST_GUARD_REST') {
+        let start = prior;
+        while (start >= applicationPeriod.from && isGuardTail(reasons[start]?.source)) {
+          if (start === applicationPeriod.from && historicalContinuationParent) {
+            hasStart = true;
+            break;
+          }
+          start = addDays(start, -1);
+        }
+        hasStart ||= start >= applicationPeriod.from && Boolean(schedule[start]);
+      }
+      if (!isGuardTail(source) || hasStart) continue;
+      if (date === applicationPeriod.from && (!boundaryUntil || date > boundaryUntil)) boundaryUntil = date;
+      alerts.push({
+        severity: 'WARNING', code: 'SUGGESTION_GUARD_CONTINUITY_WARNING',
+        message: source === 'GUARD_CONTINUATION'
+          ? 'La plage prévue sera publiée sans lien de garde, car aucun début compatible ne peut lui être associé.'
+          : 'Le repos prévu sera publié même si le début de garde associé n’est pas appliqué.',
+        details: { ...context, date, action: 'EDIT_ASSIGNMENT' },
+      });
+    }
+    for (const date of appliedDates) {
+      const published = existingRows.filter(row => covers(row, date));
+      if (published.length < 2) continue;
+      const intervals = published.flatMap(row => workIntervals(row.session_template, date))
+        .sort((left, right) => left.start - right.start);
+      if (!intervals.some((interval, index) => intervals.slice(0, index).some(other => other.end > interval.start))) continue;
+      alerts.push({
+        severity: 'WARNING', code: 'SUGGESTION_PUBLISHED_HOURS_OVERLAP',
+        message: 'Des horaires déjà publiés se chevauchent. Ils seront remplacés sur cette journée.',
+        details: { ...context, date, action: 'EDIT_ASSIGNMENT', hours: intervals.map(interval => interval.hours) },
+      });
+    }
+    const isolatedDates = new Set<string>();
+    for (const date of appliedDates) {
+      if (reasons[date]?.source === 'GUARD_CONTINUATION') {
+        isolatedDates.add(date);
+        isolatedDates.add(addDays(date, -1));
       }
     }
-
+    const blocks = buildBlocks(schedule, appliedDates, isolatedDates);
+    for (const instance of existingInstances) {
+      const existing = instance.get({ plain: true });
+      if (remainingAssignmentRanges(existing.start_date, existing.end_date, appliedDates).length) adjustedAssignments++;
+      else replacedAssignments++;
+    }
+    truncatedOvernightAssignments += historicalCuts.size;
+    detachedGuardContinuations += detachedContinuations.length;
     const validatedBlocks = blocks.map((block) => {
       const snapshot =
         block.templateGuid === null
@@ -497,126 +674,235 @@ async function validateApproval(
 
       return { ...block, snapshot };
     });
-    plans.push({ userGuid, itemPeriodTo, reasons, existingInstances, blocks: validatedBlocks });
-  }
-  if (boundaryConflicts.length > 0) {
-    const first = boundaryConflicts.find((conflict) => 'guard_assignment_guid' in (conflict.details as object))
-      ?? boundaryConflicts[0]!;
-    throw new SuggestionApprovalError(first.message, first.code, first.status, {
-      ...(first.details as object),
-      conflicts: boundaryConflicts.map((conflict) => conflict.details),
-      affected_guards: affectedGuards,
-      period_to: applicationPeriod.to,
-      consequence: 'La garde ou le repos serait interrompu et la suggestion reste en brouillon.',
+    // Compare concrete time blocks on adjacent civil dates, including the
+    // first unaffected day after the application.
+    const after = addDays(itemPeriodTo, 1);
+    const actualIntervals = new Map<string, ReturnType<typeof workIntervals>>();
+    const dates = periodDates(previousDate, after);
+    for (const date of dates) {
+      const block = validatedBlocks.find(value => date >= value.from && date <= value.to);
+      const snapshots = block ? [block.snapshot] : existingRows.filter(row => covers(row, date))
+        .map(row => historicalCuts.get(row.guid) && date === previousDate ? historicalCuts.get(row.guid) : row.session_template);
+      const intervals = snapshots.flatMap(snapshot => workIntervals(snapshot, date))
+        .sort((left, right) => left.start - right.start);
+      actualIntervals.set(date, intervals);
+      if (date < applicationPeriod.from) continue;
+      const priorIntervals = actualIntervals.get(addDays(date, -1)) ?? [];
+      const overlap = intervals.some((interval, index) =>
+        (date <= itemPeriodTo && intervals.slice(0, index).some(other => other.end > interval.start)) ||
+        priorIntervals.some(other => other.end - 1440 > interval.start));
+      if (overlap) {
+        alerts.push({
+          severity: 'WARNING', code: 'SUGGESTION_PUBLICATION_HOURS_OVERLAP',
+          message: 'Les horaires se chevauchent. Les plages validées seront appliquées à leurs dates respectives.',
+          details: { ...context, date: date <= itemPeriodTo ? date : itemPeriodTo, action: 'EDIT_ASSIGNMENT',
+            consequence: `Chevauchement le ${date.split('-').reverse().join('/')}.`,
+            hours: [...priorIntervals, ...intervals].map(interval => interval.hours),
+          },
+        });
+      }
+    }
+    plans.push({
+      userGuid, userId: item.user as number, reasons, existingInstances, existingRows, blocks: validatedBlocks,
+      appliedDates, detachedContinuations, historicalCuts, historicalContinuationParent, historicalGuardStarts,
+      finalSchedule: Object.fromEntries(itemDates.map(date => [date, schedule[date]])),
     });
   }
-  return { suggestionInstance, suggestion, applicationPeriod, plans, affectedGuards };
-}
 
-interface ApprovalAlert {
-  severity: 'INFO' | 'WARNING' | 'CONFIRMATION_REQUIRED' | 'BLOCKING';
-  code: string;
-  message: string;
-  details?: unknown;
+  const diagnostic = suggestion.diagnostics ?? {};
+  const sharedLock = forUpdate ? { lock: transaction.LOCK.SHARE } : {};
+  const configRow = suggestion.config
+    ? await ConfigModel.findOne({ where: { id: suggestion.config, deleted_at: null }, transaction, ...sharedLock })
+    : null;
+  const minimumRestMinutes = Number(configRow?.get('min_rest_minutes_between_shifts') ?? 0);
+  if (minimumRestMinutes > 0) {
+    for (const plan of plans) {
+      // Published snapshots can differ from the current version of the same template.
+      const snapshots = new Map(plan.blocks.map(block => [block.snapshot.guid, block.snapshot]));
+      const schedule: Record<string, ScheduleValue> = {};
+      const reasons: Record<string, ScheduleReason | null> = {};
+      const from = addDays(applicationPeriod.from, -1);
+      const to = addDays(Object.keys(plan.finalSchedule).at(-1) ?? applicationPeriod.to, 1);
+      for (const date of periodDates(from, to)) {
+        if (plan.appliedDates.includes(date)) {
+          schedule[date] = plan.finalSchedule[date] ?? null;
+          reasons[date] = plan.reasons[date] ?? null;
+          continue;
+        }
+        const retained = plan.existingRows.find(row => row.start_date <= date &&
+          (row.end_date === null || row.end_date >= date));
+        if (!retained?.session_template) continue;
+        const key = 'published:' + retained.guid;
+        snapshots.set(key, plan.historicalCuts.get(retained.guid) && date === from
+          ? plan.historicalCuts.get(retained.guid)! : retained.session_template);
+        schedule[date] = key;
+        if (retained.continuation_of_guid && date === retained.start_date) reasons[date] = { source: 'GUARD_CONTINUATION' };
+      }
+      const employee = usersById.get(plan.userId);
+      for (const gap of restGapViolations(schedule, reasons, snapshots, from, to, minimumRestMinutes)) {
+        if (![gap.previousDate, gap.nextDate].some(date => plan.appliedDates.includes(date))) continue;
+        const editDate = plan.appliedDates.includes(gap.nextDate) ? gap.nextDate : gap.previousDate;
+        alerts.push({
+          severity: 'WARNING', code: 'SUGGESTION_PUBLICATION_REST_WARNING',
+          message: `Le repos entre le ${gap.previousDate.split('-').reverse().join('/')} et le ${gap.nextDate.split('-').reverse().join('/')} est de ${gap.gapMinutes} min pour un minimum de ${minimumRestMinutes} min.`,
+          details: {
+            action: 'EDIT_ASSIGNMENT', date: editDate, employee_guid: plan.userGuid,
+            employee_name: [employee.first_name, employee.last_name].filter(Boolean).join(' '),
+            item_guid: items.find(item => item.user === plan.userId)?.guid,
+            consequence: 'Décalez un service ou ajoutez un repos si nécessaire.',
+          },
+        });
+      }
+    }
+  }
+  let coverage = Array.isArray(diagnostic.coverage) ? diagnostic.coverage : [];
+  const liveCoverage = Boolean(suggestion.config);
+  if (liveCoverage) {
+    const requirements = (await RequirementModel.findAll({
+      where: { config: suggestion.config, active: true, deleted_at: null },
+      transaction, ...sharedLock, order: [['id', 'ASC']],
+    })).map(instance => instance.get({ plain: true }));
+    const profileRows = await ProfileModel.findAll({
+      where: { user: { [Op.in]: userIds }, active: true, deleted_at: null }, transaction, ...sharedLock,
+    });
+    const profiles = new Map(profileRows.map(instance => {
+      const profile = instance.get({ plain: true });
+      return [profile.user, profile];
+    }));
+    const requiredTemplateIds = [...new Set(requirements.map(requirement => requirement.session_template))];
+    const rows = requiredTemplateIds.length ? await SessionTemplateModel.findAll({
+      where: { id: { [Op.in]: requiredTemplateIds }, current: true, deleted_at: null }, transaction, ...sharedLock,
+    }) : [];
+    const requiredTemplates = new Map(rows.map(instance => {
+      const template = instance.get({ plain: true });
+      return [template.id, template];
+    }));
+    coverage = requirements.flatMap(requirement => {
+      const template = requiredTemplates.get(requirement.session_template);
+      if (!template) {
+        alerts.push({
+          severity: 'WARNING', code: 'SUGGESTION_COVERAGE_UNVERIFIED',
+          message: 'Le modèle associé à ce besoin est indisponible. Sa couverture n’a pas pu être vérifiée.',
+          details: { requirement_guid: requirement.guid, action: 'COVERAGE' },
+        });
+        return [];
+      }
+      return applicationDates.filter(date => dayKey(date) === requirement.day_of_week).map(date => {
+        const assigned = plans.filter(plan => plan.finalSchedule[date] === template.guid &&
+          eligibilityForRequirement(requirement, profiles.get(plan.userId), diagnostic, plan.userGuid, date)).length;
+        const target = Number(requirement.target_employees ?? requirement.min_employees ?? 0);
+        const exact = requirement.allocation_mode === 'EXACT';
+        const minimum = exact ? target : Number(requirement.min_employees ?? 0);
+        const maximum = exact ? target : requirement.max_employees;
+        const status = assigned < minimum ? 'BELOW_MINIMUM' : maximum != null && assigned > maximum ? 'ABOVE_MAXIMUM'
+          : assigned < target ? 'BELOW_TARGET' : 'COVERED';
+        return { date, assigned, minimum, target, maximum, status, templateName: template.name, requirementGuid: requirement.guid };
+      });
+    });
+  }
+  const violations = Array.isArray(diagnostic.violations) ? diagnostic.violations : [];
+  const inPeriod = (date?: string) => !date || (date >= applicationPeriod.from && date <= applicationPeriod.to);
+  const employeeDetails = (guid?: string) => {
+    const item = items.find(entry => usersById.get(entry.user)?.guid === guid);
+    const employee = item && usersById.get(item.user);
+    return {
+      item_guid: item?.guid, employee_guid: guid,
+      employee_name: employee && [employee.first_name, employee.last_name].filter(Boolean).join(' '),
+    };
+  };
+  for (const entry of coverage.filter((row: any) => inPeriod(row.date) &&
+    ['BELOW_MINIMUM', 'BELOW_TARGET', 'ABOVE_MAXIMUM'].includes(row.status))) {
+    alerts.push({
+      severity: 'WARNING', code: 'SUGGESTION_COVERAGE_WARNING',
+      message: `${entry.templateName ?? 'Service'} · ${entry.assigned} affectation(s), minimum ${entry.minimum}, cible ${entry.target}` +
+        (entry.maximum != null ? `, maximum ${entry.maximum}.` : '.'),
+      details: {
+        date: entry.date, requirement_guid: entry.requirementGuid, action: 'COVERAGE',
+        consequence: 'Le planning des collaborateurs concernés s’écarte du besoin enregistré pour cette date.',
+      },
+    });
+  }
+  const storedCoverageCodes = ['MIN_COVERAGE_NOT_REACHED', 'TARGET_COVERAGE_NOT_REACHED', 'MAX_COVERAGE_EXCEEDED'];
+  for (const issue of violations.filter((row: any) => inPeriod(row.date) &&
+    !(liveCoverage && storedCoverageCodes.includes(row.code)) &&
+    !coverage.some((entry: any) => entry.date === row.date && entry.requirementGuid &&
+      entry.requirementGuid === row.requirementGuid && ['BELOW_MINIMUM', 'BELOW_TARGET', 'ABOVE_MAXIMUM'].includes(entry.status)))) {
+    const employee = employeeDetails(issue.employeeGuid);
+    alerts.push({
+      severity: issue.severity === 'INFO' ? 'INFO' : 'WARNING', code: issue.code,
+      message: issue.message,
+      details: { date: issue.date, ...employee, requirement_guid: issue.requirementGuid,
+        action: issue.requirementGuid ? 'COVERAGE' : employee.item_guid && issue.date ? 'EDIT_ASSIGNMENT' : 'CONFIGURATION' },
+    });
+  }
+
+  const impact = {
+    replaced_assignments: replacedAssignments,
+    adjusted_assignments: adjustedAssignments,
+    preserved_employee_dates: 0,
+    truncated_overnight_assignments: truncatedOvernightAssignments,
+    detached_guard_continuations: detachedGuardContinuations,
+  };
+  // Include the actual write plan so an edit or a concurrent publication
+  // invalidates acceptance even when the alert text would remain identical.
+  const confirmationToken = alerts.some(alert => alert.severity === 'WARNING')
+    ? createHash('sha256').update(JSON.stringify({
+      suggestionGuid, applicationPeriod, timezone: actor.timezone ?? TimezoneConfigUtils.getTimezone(), alerts, impact,
+      plans: plans.map(plan => ({
+        user: plan.userGuid, reasons: plan.reasons, historicalContinuationParent: plan.historicalContinuationParent,
+        historicalCuts: [...plan.historicalCuts], detach: plan.detachedContinuations.map(row => row.get('guid')),
+        blocks: plan.blocks.map(({ snapshot: { snapshot_date: _date, ...snapshot }, ...block }) => ({ ...block, snapshot })),
+        existing: [...plan.existingRows].sort((left, right) => String(left.guid).localeCompare(String(right.guid))),
+      })),
+    })).digest('hex')
+    : undefined;
+  return { suggestionInstance, suggestion, applicationPeriod, plans, alerts, impact, confirmationToken, boundaryUntil };
 }
 
 export async function previewScheduleSuggestionApproval(
   suggestionGuid: string,
-  effectiveFrom?: unknown,
+  effectiveFrom: unknown,
+  actor: ApprovalActor,
 ) {
   const sequelize = TenantManager.getConnectionSync();
   const models = approvalModels();
-
   return sequelize.transaction(
     { isolationLevel: Transaction.ISOLATION_LEVELS.REPEATABLE_READ, readOnly: true },
     async (transaction) => {
-      // Sequelize v6 uses readOnly for routing. Enforce it in PostgreSQL as well.
       await sequelize.query('SET TRANSACTION READ ONLY', { transaction });
-      const now = new Date();
-      const validate = (date: unknown) =>
-        validateApproval(models, suggestionGuid, date, transaction, false, now);
-
       try {
-        const { applicationPeriod, affectedGuards } = await validate(effectiveFrom);
-        const alerts: ApprovalAlert[] = [];
-        const replaced = affectedGuards.filter((guard) => guard.impact === 'CONTINUATION_REPLACED');
-        const outside = affectedGuards.filter((guard) => guard.impact === 'CONTINUATION_OUTSIDE_APPLICATION');
-        if (replaced.length > 0) {
-          alerts.push({
-            severity: 'INFO',
-            code: 'SUGGESTION_PUBLISHED_GUARDS_AFFECTED',
-            message: 'La période de publication recouvre des gardes déjà publiées.',
-            details: { affected_guards: replaced },
-          });
-        }
-        if (outside.length > 0) {
-          alerts.push({
-            severity: 'WARNING',
-            code: 'SUGGESTION_PUBLISHED_GUARD_CONTINUATION_OUTSIDE_APPLICATION',
-            message: 'La publication remplace le début d’une garde dont la continuation reste après la période appliquée.',
-            details: { affected_guards: outside },
-          });
+        const now = new Date();
+        const result = await validateApproval(models, suggestionGuid, effectiveFrom, transaction, false, now, actor);
+        let candidate = result.boundaryUntil && addDays(result.boundaryUntil, 1);
+        while (candidate && candidate <= result.applicationPeriod.to) {
+          try {
+            const alternative = await validateApproval(models, suggestionGuid, candidate, transaction, false, now, actor);
+            if (!alternative.boundaryUntil) break;
+            candidate = addDays(alternative.boundaryUntil, 1);
+          } catch (error) {
+            if (!(error instanceof SuggestionApprovalError) || error.status >= 500) throw error;
+            candidate = addDays(candidate, 1);
+          }
         }
         return {
           can_publish: true,
-          effective_from: applicationPeriod.from,
-          alerts,
+          effective_from: result.applicationPeriod.from,
+          timezone: actor.timezone ?? TimezoneConfigUtils.getTimezone(),
+          alerts: result.alerts,
+          impact: result.impact,
+          confirmation_token: result.confirmationToken,
+          ...(candidate && candidate <= result.applicationPeriod.to && { earliest_valid_date: candidate }),
           suggested_actions: [],
         };
       } catch (error) {
-        if (!(error instanceof SuggestionApprovalError) || error.status >= 500 || error.status === 404) {
-          throw error;
-        }
-        const details = error.details as { effective_from?: string; period_to?: string } | undefined;
-        const from = details?.effective_from ??
-          (error.code !== 'SUGGESTION_EFFECTIVE_FROM_INVALID' && typeof effectiveFrom === 'string'
-            ? effectiveFrom
-            : null);
-        const alerts: ApprovalAlert[] = [{
-          severity: 'BLOCKING', code: error.code, message: error.message, details: error.details,
-        }];
-        const suggested_actions: Array<{ code: string; message: string; effective_from?: string }> = [];
-
-        if (error.code === 'SUGGESTION_UNSAFE_APPLICATION_BOUNDARY' && from && details?.period_to) {
-          for (let date = addDays(from, 1); date <= details.period_to; date = addDays(date, 1)) {
-            try {
-              await validate(date);
-              suggested_actions.push({
-                code: 'CHOOSE_EFFECTIVE_FROM',
-                message: 'Choisissez cette date pour préserver la garde ou le repos en cours.',
-                effective_from: date,
-              });
-              return { can_publish: false, effective_from: from, alerts, suggested_actions, earliest_valid_date: date };
-            } catch (candidateError) {
-              if (!(candidateError instanceof SuggestionApprovalError) || ![
-                'SUGGESTION_UNSAFE_APPLICATION_BOUNDARY',
-                'SUGGESTION_TEMPLATE_NOT_FOUND',
-                'SUGGESTION_TEMPLATE_DAY_INVALID',
-              ].includes(candidateError.code)) throw candidateError;
-            }
-          }
-          alerts.push({
-            severity: 'BLOCKING',
-            code: 'SUGGESTION_NO_COMPATIBLE_EFFECTIVE_DATE',
-            message: 'Aucune date ultérieure de cette suggestion ne permet sa publication.',
-          });
-          suggested_actions.push({
-            code: 'REGENERATE_SUGGESTION',
-            message: 'Générez une nouvelle suggestion pour une période compatible.',
-          });
-        } else if (error.code.startsWith('SUGGESTION_EFFECTIVE_FROM_')) {
-          suggested_actions.push({
-            code: 'CHOOSE_EFFECTIVE_FROM',
-            message: 'Saisissez une date valide, à partir de demain et dans la période de la suggestion.',
-          });
-        } else if (error.code !== 'SUGGESTION_ALREADY_RESOLVED') {
-          suggested_actions.push({
-            code: 'REGENERATE_SUGGESTION',
-            message: 'Vérifiez les données du planning, puis générez une nouvelle suggestion.',
-          });
-        }
-
-        return { can_publish: false, effective_from: from, alerts, suggested_actions };
+        if (!(error instanceof SuggestionApprovalError) || error.status >= 500 || error.status === 404) throw error;
+        return {
+          can_publish: false,
+          effective_from: typeof effectiveFrom === 'string' ? effectiveFrom : null,
+          alerts: [{ severity: 'BLOCKING', code: error.code, message: error.message, details: error.details }],
+          suggested_actions: error.code.startsWith('SUGGESTION_EFFECTIVE_FROM_')
+            ? [{ code: 'CHOOSE_EFFECTIVE_FROM', message: 'Choisissez une date à partir de demain et comprise dans la suggestion.' }] : [],
+        };
       }
     },
   );
@@ -625,7 +911,12 @@ export async function previewScheduleSuggestionApproval(
 export async function approveScheduleSuggestion(
   suggestionGuid: string,
   effectiveFrom?: unknown,
+  actor?: ApprovalActor,
+  confirmation?: { token?: unknown; reason?: unknown },
 ): Promise<SuggestionApprovalResult> {
+  if (!actor) {
+    throw new SuggestionApprovalError('Une session de responsable est requise.', 'SUGGESTION_APPROVAL_AUTH_REQUIRED', 401);
+  }
   const sequelize = TenantManager.getConnectionSync();
 
   const models = approvalModels();
@@ -639,9 +930,17 @@ export async function approveScheduleSuggestion(
         { transaction },
       );
 
-      const { suggestionInstance, suggestion, applicationPeriod, plans } = await validateApproval(
-        models, suggestionGuid, effectiveFrom, transaction, true, new Date(),
+      const { suggestionInstance, suggestion, applicationPeriod, plans, alerts, impact, confirmationToken } = await validateApproval(
+        models, suggestionGuid, effectiveFrom, transaction, true, new Date(), actor,
       );
+      if ((confirmationToken || confirmation?.token !== undefined) && confirmation?.token !== confirmationToken) {
+        throw new SuggestionApprovalError('Les avertissements doivent être revérifiés et confirmés avant publication.',
+          'SUGGESTION_APPROVAL_CONFIRMATION_REQUIRED', 409);
+      }
+      if (confirmation?.reason !== undefined && (typeof confirmation.reason !== 'string' || confirmation.reason.length > 1000)) {
+        throw new SuggestionApprovalError('Le motif doit contenir au maximum 1 000 caractères.', 'SUGGESTION_APPROVAL_REASON_INVALID', 400);
+      }
+      const publishedAt = new Date();
       const maximumId = Number((await AssignmentModel.max('id', { transaction })) ?? 0);
       let nextAssignmentId = maximumId + 1;
 
@@ -656,7 +955,9 @@ export async function approveScheduleSuggestion(
         from: string;
         to: string | null;
         createdBy: number;
-        reason: string;
+        reason: string | null;
+        createdAt?: Date;
+        version?: number;
         continuationOfGuid?: string | null;
       }): Promise<string> => {
         const guid = makeNumericGuid(nextAssignmentId++);
@@ -668,11 +969,12 @@ export async function approveScheduleSuggestion(
             related: data.related,
             session_template: data.snapshot,
             continuation_of_guid: data.continuationOfGuid ?? null,
-            version: 1,
+            version: data.version ?? 1,
             start_date: data.from,
             end_date: data.to,
             created_by: data.createdBy,
             reason: data.reason,
+            ...(data.createdAt && { created_at: data.createdAt }),
             active: true,
           },
           { transaction },
@@ -680,51 +982,59 @@ export async function approveScheduleSuggestion(
         return guid;
       };
 
-      for (const { userGuid, itemPeriodTo, reasons, existingInstances, blocks } of plans) {
+      for (const { userGuid, appliedDates, reasons, existingInstances, blocks, detachedContinuations,
+        historicalCuts, historicalContinuationParent, historicalGuardStarts } of plans) {
         const assignmentGuidByDate = new Map<string, string>();
 
+        for (const continuation of detachedContinuations) {
+          await continuation.update({ continuation_of_guid: null }, { transaction });
+        }
+        const previousDate = addDays(applicationPeriod.from, -1);
         for (const existingInstance of existingInstances) {
           const existing = existingInstance.get({ plain: true });
-
-          await existingInstance.update(
-            {
+          const fragments = remainingAssignmentRanges(existing.start_date, existing.end_date, appliedDates);
+          const prefix = fragments[0]?.from < applicationPeriod.from ? fragments.shift() : undefined;
+          const cut = historicalCuts.get(existing.guid);
+          const needsSplit = cut && prefix && prefix.from < previousDate;
+          if (prefix) {
+            await existingInstance.update({
+              end_date: needsSplit ? addDays(previousDate, -1) : prefix.to,
+              ...(cut && !needsSplit && { session_template: cut }),
+            }, { transaction });
+            preservedFragmentCount++;
+            if (needsSplit) {
+              await insertAssignment({
+                tenant: existing.tenant, related: existing.related, snapshot: cut,
+                from: previousDate, to: previousDate, createdBy: existing.created_by ?? actor.id,
+                reason: existing.reason ?? null, createdAt: existing.created_at, version: existing.version,
+              });
+              preservedFragmentCount++;
+            }
+          } else {
+            await existingInstance.update({
               active: false,
-              reason: [
-                existing.reason,
-                `Remplacé sur ${applicationPeriod.from} → ${itemPeriodTo} par la suggestion ${suggestionGuid}`,
-              ]
-                .filter(Boolean)
-                .join(' | '),
+              reason: [existing.reason, `Remplacé par la suggestion ${suggestionGuid}`].filter(Boolean).join(' | '),
+            }, { transaction });
+            deactivatedCount++;
+          }
+          for (const fragment of fragments) {
+            await insertAssignment({
+              tenant: existing.tenant, related: existing.related, snapshot: existing.session_template,
+              ...fragment, createdBy: existing.created_by ?? actor.id,
+              reason: existing.reason ?? null, createdAt: existing.created_at, version: existing.version,
+            });
+            preservedFragmentCount++;
+          }
+        }
+
+        for (const { instance, continuationGuid } of historicalGuardStarts) {
+          const snapshot = instance.get('session_template') as TemplateSnapshot;
+          await instance.update({
+            session_template: {
+              ...snapshot,
+              publication_guard_start: { date: previousDate, former_continuation_guid: continuationGuid },
             },
-            { transaction },
-          );
-          deactivatedCount++;
-
-          if (existing.start_date < applicationPeriod.from) {
-            await insertAssignment({
-              tenant: existing.tenant,
-              related: existing.related,
-              snapshot: existing.session_template,
-              from: existing.start_date,
-              to: addDays(applicationPeriod.from, -1),
-              createdBy: suggestion.manager,
-              reason: `Fragment antérieur conservé après approbation ${suggestionGuid}`,
-            });
-            preservedFragmentCount++;
-          }
-
-          if (existing.end_date === null || existing.end_date > itemPeriodTo) {
-            await insertAssignment({
-              tenant: existing.tenant,
-              related: existing.related,
-              snapshot: existing.session_template,
-              from: addDays(itemPeriodTo, 1),
-              to: existing.end_date,
-              createdBy: suggestion.manager,
-              reason: `Fragment postérieur conservé après approbation ${suggestionGuid}`,
-            });
-            preservedFragmentCount++;
-          }
+          }, { transaction });
         }
 
         for (const block of blocks) {
@@ -735,7 +1045,9 @@ export async function approveScheduleSuggestion(
             reasons[block.from]?.source === 'GUARD_CONTINUATION' &&
             reasons[block.from]?.templateGuid === block.templateGuid;
           const continuationOfGuid = explicitContinuation
-            ? (assignmentGuidByDate.get(continuationDate) ?? null)
+            ? (block.from === applicationPeriod.from ? historicalContinuationParent ?? null
+              : isGuardTail(reasons[continuationDate]?.source) ? null
+                : assignmentGuidByDate.get(continuationDate) ?? null)
             : null;
           const guid = await insertAssignment({
             tenant: suggestion.tenant,
@@ -743,7 +1055,7 @@ export async function approveScheduleSuggestion(
             snapshot,
             from: block.from,
             to: block.to,
-            createdBy: suggestion.manager,
+            createdBy: actor.id,
             continuationOfGuid,
             reason:
               block.templateGuid === null
@@ -760,7 +1072,17 @@ export async function approveScheduleSuggestion(
       await suggestionInstance.update(
         {
           status: 'approved',
-          approved_at: TimezoneConfigUtils.getCurrentTime(),
+          approved_at: publishedAt,
+          diagnostics: {
+            ...(suggestion.diagnostics ?? {}),
+            publication: {
+              actor_guid: actor.guid, actor_kind: actor.kind, at: publishedAt.toISOString(), effective_from: applicationPeriod.from,
+              effective_to: applicationPeriod.to, exceptional: Boolean(confirmationToken),
+              reason: typeof confirmation?.reason === 'string' ? confirmation.reason.trim() || null : null,
+              alerts, impact, timezone: actor.timezone ?? TimezoneConfigUtils.getTimezone(),
+              created_count: createdCount, deactivated_count: deactivatedCount, preserved_fragment_count: preservedFragmentCount,
+            },
+          },
         },
         { transaction },
       );

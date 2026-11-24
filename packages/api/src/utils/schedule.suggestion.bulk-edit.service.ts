@@ -206,7 +206,7 @@ function maximumConsecutiveWorkDays(
   return best;
 }
 
-function restGapViolations(
+export function restGapViolations(
   schedule: Record<string, ScheduleValue>,
   reasons: Record<string, any>,
   templates: Map<string, PlainTemplate>,
@@ -270,7 +270,7 @@ function guardPoolMembership(
   return Array.isArray(pool?.employeeGuids) && pool.employeeGuids.includes(employeeGuid);
 }
 
-function eligibilityForRequirement(
+export function eligibilityForRequirement(
   requirement: PlainRequirement,
   profile: PlainProfile | undefined,
   diagnostics: Record<string, any>,

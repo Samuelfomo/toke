@@ -56,6 +56,39 @@ test('real HTTP negotiation and CP-SAT solve for two representative weeks', { ti
     assert.equal(diagnostic.status, 'APPLIED');
     assert.deepEqual(diagnostic.deviations, []);
     const third = { ...input.employees[0], guid: 'third', rotationOrder: 13 };
+    const limitedEmployees = structuredClone(input.employees);
+    const limitedTemplate = limitedEmployees[0].fixedTemplate;
+    for (const blocks of Object.values(limitedTemplate.definition)) blocks[0].work[0] = '10:30';
+    const limitedPolicy = { ...wirePolicy, limited_service_template_guid: 'late' };
+    assert.equal(await supportsOrToolsFixedAlternation(endpoint, 3), true);
+    const generateLimited = persistence.loadGeneration(endpoint, { employees: limitedEmployees }, limitedPolicy);
+    const limited = await generateLimited('manager', '2026-12-30', '2027-01-24', [], [
+      { employeeGuid: 'aicha', date: '2027-01-04', templateGuid: 'late', template: limitedTemplate },
+      { employeeGuid: 'camille', date: '2027-01-11', templateGuid: 'late', template: limitedTemplate },
+    ]);
+    const limitedItems = limited.engineResult.items;
+    assert.equal(Object.keys(limitedItems[0].schedule)[0], '2026-12-30');
+    assert.equal(limitedItems[0].schedule['2027-01-02'], null);
+    assert.equal(limitedItems[1].schedule['2027-01-02'], 'morning');
+    assert.equal(limitedItems[1].schedule['2027-01-09'], null);
+    assert.equal(limitedItems[0].schedule['2027-01-09'], 'morning');
+    assert.equal(limitedItems[0].schedule['2027-01-04'], 'late');
+    assert.equal(limitedItems[1].schedule['2027-01-11'], 'late');
+    for (const day of Object.keys(limitedItems[0].schedule)) {
+      assert.ok(limitedItems.filter(item => item.schedule[day] === 'late').length <= 1);
+    }
+    for (const item of limitedItems) {
+      const weeks = new Set();
+      for (const [day, shift] of Object.entries(item.schedule)) {
+        if (shift !== 'late') continue;
+        const date = new Date(day + 'T00:00:00Z');
+        date.setUTCDate(date.getUTCDate() - (date.getUTCDay() + 6) % 7);
+        const week = date.toISOString().slice(0, 10);
+        assert.equal(weeks.has(week), false);
+        weeks.add(week);
+      }
+    }
+
     const generate = persistence.loadGeneration(endpoint, { employees: [...input.employees, third] }, wirePolicy);
     const complete = await generate('manager', '2026-11-23', '2026-12-06');
     assert.equal(complete.engineResult.diagnostics.fixedAlternation.status, 'APPLIED');
@@ -164,3 +197,47 @@ test('real HTTP negotiation and CP-SAT solve for two representative weeks', { ti
   }
 });
 
+
+test('OR-Tools search budget preserves FEASIBLE and reports UNKNOWN without fallback', async () => {
+  const { default: Factory } = await import('../src/utils/solver/planning.solver.factory.ts');
+  const setting = 'PLANNING_ORTOOLS_SEARCH_SECONDS';
+  const previous = process.env[setting];
+  const budgets = [];
+  let status = 'FEASIBLE';
+  const server = createServer(async (request, response) => {
+    let body = '';
+    for await (const chunk of request) body += chunk;
+    budgets.push(JSON.parse(body).solverTimeoutSeconds);
+    response.setHeader('Content-Type', 'application/json');
+    response.end(JSON.stringify({
+      status, solverStats: { statusName: status },
+      ...(status === 'FEASIBLE' && { result: { items: [], diagnostics: { coverageScore: 100 } } }),
+    }));
+  });
+  try {
+    await new Promise((resolve, reject) => {
+      server.once('error', reject);
+      server.listen(0, '127.0.0.1', resolve);
+    });
+    const ortoolsEndpoint = `http://127.0.0.1:${server.address().port}`;
+    const options = { solverType: 'ORTOOLS', fallbackToGreedy: true, ortoolsEndpoint };
+    const input = { periodFrom: '2026-12-28', periodTo: '2027-01-10' };
+    delete process.env[setting];
+    assert.equal((await Factory.solve(input, options)).result.diagnostics.coverageScore, 100);
+    process.env[setting] = '8';
+    await Factory.solve(input, options);
+    process.env[setting] = '12';
+    await Factory.solve(input, options);
+    status = 'UNKNOWN';
+    await assert.rejects(Factory.solve(input, options), error =>
+      error.code === 'PLANNING_SOLVER_NO_FEASIBLE_SOLUTION' && error.details.search_seconds === 12);
+    process.env[setting] = '0';
+    await assert.rejects(Factory.solve(input, options), { code: 'PLANNING_SOLVER_PROTOCOL_ERROR' });
+    assert.deepEqual(budgets, [undefined, 9, 13, 13]);
+  } finally {
+    if (previous === undefined) delete process.env[setting];
+    else process.env[setting] = previous;
+    server.closeAllConnections();
+    await new Promise(resolve => server.close(resolve));
+  }
+});

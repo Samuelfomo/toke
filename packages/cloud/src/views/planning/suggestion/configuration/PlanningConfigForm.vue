@@ -546,6 +546,29 @@
                 <option value="ALTERNATE_SAT_SUN">Garantir l’alternance des repos samedi / dimanche</option>
               </select>
             </label>
+            <div class="min-w-0 sm:col-span-2">
+              <label for="fixed-limited-service" class="text-xs font-bold text-slate-700">Service à limiter</label>
+              <select id="fixed-limited-service" v-model="alternation.limitedServiceGuid" class="field-control mt-1"
+                  :class="{ 'field-control-error': errors.fixed_limited_service }"
+                  :aria-invalid="Boolean(errors.fixed_limited_service)"
+                  :aria-describedby="errors.fixed_limited_service ? 'fixed-limited-help fixed-limited-error' : 'fixed-limited-help'">
+                <option value="">Aucun service limité</option>
+                <option v-if="alternation.limitedServiceGuid && !limitedServiceChoices.some(template => template.guid === alternation.limitedServiceGuid)"
+                    :value="alternation.limitedServiceGuid" disabled>
+                  {{ selectedLimitedTemplate?.name ?? 'Modèle enregistré indisponible' }}
+                </option>
+                <option v-for="template in limitedServiceChoices" :key="template.guid" :value="template.guid">{{ template.name }}</option>
+              </select>
+              <p id="fixed-limited-help" class="mt-1 text-xs text-slate-600">
+                Sélectionnez le modèle de 10 h 30 du binôme, avec un second modèle à 8 h et les repos alternés.
+                Limite d’une personne par jour et d’une affectation par personne par semaine. La cadence quotidienne ne s’applique pas à cette option.
+              </p>
+              <p v-if="selectedLimitedTemplate" class="mt-1 break-words text-xs text-slate-700">
+                <strong>{{ selectedLimitedTemplate.name }}</strong>
+                <template v-if="limitedServiceHours"> · {{ limitedServiceHours }}</template>
+              </p>
+              <p v-if="errors.fixed_limited_service" id="fixed-limited-error" class="field-error-text">{{ errors.fixed_limited_service }}</p>
+            </div>
           </fieldset>
         </section>
 
@@ -963,7 +986,7 @@ import NumberField from '../components/NumberField.vue'
 import PlanningConfigStepNavigation from './PlanningConfigStepNavigation.vue'
 import PlanningConfigSummary from './PlanningConfigSummary.vue'
 import {
-  eligibleFixedProfiles, fixedAlternationDraft, fixedAlternationProblems, fixedAlternationUpdate,
+  eligibleFixedProfiles, fixedAlternationDraft, fixedAlternationProblems, fixedAlternationUpdate, limitedServiceOptions,
 } from './fixedAlternationForm'
 import {
   PLANNING_CONFIG_STEPS,
@@ -1059,13 +1082,25 @@ const alternation = ref(fixedAlternationDraft())
 const selectedFixedProfiles = computed(() => alternation.value.employeeGuids.map(guid =>
   fixedProfiles.value.find(profile => profile.user.guid === guid),
 ))
+const limitedServiceChoices = computed(() => limitedServiceOptions(alternation.value, fixedProfiles.value, templates.value))
+const selectedLimitedTemplate = computed(() => {
+  const guid = alternation.value.limitedServiceGuid
+  return templates.value.find(template => template.guid === guid) ??
+    selectedFixedProfiles.value.find(profile => profile?.template?.guid === guid)?.template
+})
+const limitedServiceHours = computed(() => DAY_ORDER.flatMap(day => {
+  const blocks = selectedLimitedTemplate.value?.definition?.[day]
+  return blocks?.length
+    ? [`${DAY_LABELS[day]} ${blocks.map(block => block.work.join('–')).join(' / ')}`]
+    : []
+}).join(' · '))
 const alternationChanged = computed(() =>
   JSON.stringify(alternation.value) !== JSON.stringify(fixedAlternationDraft(storedAlternation.value)),
 )
 const fixedCompatibilityError = computed(() => {
   if (!alternation.value.enabled || loadingFixedProfiles.value || fixedProfilesError.value) return ''
   if (fixedProfiles.value.length < 2) return 'L’alternance nécessite deux profils fixes actifs.'
-  const problems = fixedAlternationProblems(alternation.value, fixedProfiles.value)
+  const problems = fixedAlternationProblems(alternation.value, fixedProfiles.value, templates.value)
   for (const index of [0, 1] as const) {
     if (alternation.value.employeeGuids[index] && problems[`fixed_employee_${index}`]) {
       return problems[`fixed_employee_${index}`]!
@@ -1606,7 +1641,7 @@ function validate(): boolean {
     if (loadingFixedProfiles.value || fixedProfilesError.value) {
       errors.fixed_employee_0 = 'Attendez le chargement des profils ou réessayez.'
     } else {
-      Object.assign(errors, fixedAlternationProblems(alternation.value, fixedProfiles.value))
+      Object.assign(errors, fixedAlternationProblems(alternation.value, fixedProfiles.value, templates.value))
     }
   }
 
@@ -1778,7 +1813,7 @@ async function save(): Promise<void> {
 
   try {
     const values = payload()
-    const policy = fixedAlternationUpdate(alternation.value, storedAlternation.value, fixedProfiles.value)
+    const policy = fixedAlternationUpdate(alternation.value, storedAlternation.value, fixedProfiles.value, templates.value)
     const policyField = policy ? { fixed_alternation_policy: policy } : {}
     const changedValues = Object.fromEntries(Object.entries(values).filter(([key, value]) =>
       JSON.stringify(value) !== JSON.stringify(initialPayload?.[key as keyof PlanningSuggestionConfigPayload]),

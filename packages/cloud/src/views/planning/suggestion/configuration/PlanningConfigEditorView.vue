@@ -61,7 +61,10 @@ async function load(): Promise<void> {
   loadError.value = ''
 
   try {
-    const response = await PlanningSuggestionConfigService.active()
+    const guid = route.query.config
+    const response = typeof guid === 'string' && guid
+      ? await PlanningSuggestionConfigService.getByGuid(guid)
+      : await PlanningSuggestionConfigService.active()
     if (!response?.success) throw response
     config.value = responseData(response).planning_suggestion_config ?? null
 

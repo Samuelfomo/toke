@@ -6,6 +6,11 @@ import R from '../../tools/response.js';
 import ScheduleSuggestion from '../class/ScheduleSuggestion.js';
 import ScheduleSuggestionItem from '../class/ScheduleSuggestionItem.js';
 import User from '../class/User.js';
+import OrgHierarchy from '../class/OrgHierarchy.js';
+import TenantManager from '../database/db.tenant-manager.js';
+import { createApiClient } from '../../utils/axios.config.js';
+import { sessionClientFromEnvironment } from '../../tools/user-session.client.js';
+import { SessionError } from '../../tools/user-session.authority.js';
 import {
   generateConfiguredSuggestion,
   SuggestionGenerationError,
@@ -550,6 +555,85 @@ router.patch('/:guid/item/:itemGuid', Ensure.patch(), async (req: Request, res: 
 // ─────────────────────────────────────────────────────────────────────────────
 // Prévalidation en lecture seule de la publication.
 // ─────────────────────────────────────────────────────────────────────────────
+function publicationMasterClient() {
+  const { USER_SESSION_MASTER_URL: url, USER_SESSION_SERVICE_KEY: key, USER_SESSION_SERVICE_SECRET: secret } = process.env;
+  if (!url || !key || !secret) {
+    throw new SuggestionApprovalError('La connexion à l’autorité de session est indisponible.',
+      'SUGGESTION_APPROVAL_SESSION_INVALID', 503);
+  }
+  return createApiClient(url, secret, key);
+}
+
+async function publicationTimezone(req: Request, subdomain: string): Promise<string> {
+  let timezone: unknown = req.tenant?.config?.timezone;
+  if (timezone == null) {
+    // Existing tenant caches may predate the timezone field. Read the
+    // authoritative tenant metadata before choosing the civil boundary.
+    const { data } = await publicationMasterClient().get(
+      `/tenant/search/subdomain/${encodeURIComponent(subdomain)}`, { timeout: 5000, maxRedirects: 0 },
+    ).catch(() => {
+      throw new SuggestionApprovalError('Le fuseau de l’organisation est indisponible.',
+        'SUGGESTION_APPROVAL_TIMEZONE_UNAVAILABLE', 503);
+    });
+    if (!data?.success || !data.data) {
+      throw new SuggestionApprovalError('Le fuseau de l’organisation est indisponible.',
+        'SUGGESTION_APPROVAL_TIMEZONE_UNAVAILABLE', 503);
+    }
+    timezone = data.data.timezone ?? TenantManager.getTimezone();
+  }
+  try {
+    if (typeof timezone !== 'string' || !timezone) throw new Error();
+    const offset = /^UTC([+-])(\d{1,2})(?::(\d{2}))?$/.exec(timezone);
+    const timeZone = offset ? `${offset[1]}${offset[2]!.padStart(2, '0')}:${offset[3] ?? '00'}` : timezone;
+    return new Intl.DateTimeFormat('fr', { timeZone }).resolvedOptions().timeZone;
+  } catch {
+    throw new SuggestionApprovalError('Le fuseau horaire de l’organisation est invalide.',
+      'SUGGESTION_APPROVAL_TIMEZONE_INVALID', 422);
+  }
+}
+
+async function publicationActor(req: Request) {
+  const subdomain = TenantManager.getCurrentTenant();
+  const sessionToken = req.header('x-toke-user-session');
+  const integratorToken = req.header('x-toke-integrator-session');
+  const context = req.header('x-integrator-context');
+  let guid: string;
+  let kind: 'MANAGER_SESSION' | 'DELEGATED_INTEGRATOR';
+  if (sessionToken && /^[A-Za-z0-9_-]+\.[A-Za-z0-9_-]{43}$/.test(sessionToken) && !context && !integratorToken) {
+    const session = await sessionClientFromEnvironment().verify(sessionToken, undefined, subdomain).catch(error => {
+      throw new SuggestionApprovalError('Impossible de vérifier la session de publication.',
+        'SUGGESTION_APPROVAL_SESSION_INVALID', error instanceof SessionError ? error.status : 503);
+    });
+    guid = session.userGuid;
+    kind = 'MANAGER_SESSION';
+  } else if (!sessionToken && integratorToken && /^[A-Za-z0-9_-]+$/.test(integratorToken) &&
+    context && /^[A-Za-z0-9_-]{32,128}$/.test(context)) {
+    const result = await publicationMasterClient().get(`/integrator/context/${encodeURIComponent(context)}`, {
+      headers: { Authorization: `Bearer ${integratorToken}` }, timeout: 5000, maxRedirects: 0,
+    }).catch(error => {
+      const status = error.response?.status;
+      throw new SuggestionApprovalError('Impossible de vérifier la délégation de publication.',
+        'SUGGESTION_APPROVAL_SESSION_INVALID', status === 401 || status === 403 ? status : 503);
+    });
+    guid = String(result.data?.userGuid ?? '');
+    const tenantReference = req.tenant?.config?.reference;
+    if (!tenantReference || String(result.data?.tenantGuid ?? '') !== String(tenantReference) ||
+      result.data?.subdomain !== subdomain || !UsersValidationUtils.validateGuid(guid)) {
+      throw new SuggestionApprovalError('Cette délégation ne correspond pas à l’organisation.',
+        'SUGGESTION_APPROVAL_FORBIDDEN', 403);
+    }
+    kind = 'DELEGATED_INTEGRATOR';
+  } else {
+    throw new SuggestionApprovalError('Une session de responsable est requise.', 'SUGGESTION_APPROVAL_AUTH_REQUIRED', 401);
+  }
+  const user = await User._load(guid, true);
+  const id = user?.getId();
+  if (!id || !user?.isActive() || (kind === 'MANAGER_SESSION' && !(await OrgHierarchy.hasManagerRole(id)))) {
+    throw new SuggestionApprovalError('Ce compte n’est pas habilité à publier.', 'SUGGESTION_APPROVAL_FORBIDDEN', 403);
+  }
+  return { id, guid, kind, timezone: await publicationTimezone(req, subdomain) };
+}
+
 router.post('/:guid/approval-preview', Ensure.post(), async (req: Request, res: Response) => {
   const { guid } = req.params;
   if (!UsersValidationUtils.validateGuid(guid)) {
@@ -560,11 +644,12 @@ router.post('/:guid/approval-preview', Ensure.post(), async (req: Request, res: 
   }
 
   try {
-    const result = await previewScheduleSuggestionApproval(guid as string, req.body?.effective_from);
+    const actor = await publicationActor(req);
+    const result = await previewScheduleSuggestionApproval(guid as string, req.body?.effective_from, actor);
     return R.handleSuccess(res, result);
   } catch (error: unknown) {
-    if (error instanceof SuggestionApprovalError && error.status === 404) {
-      return R.handleError(res, HttpStatus.NOT_FOUND, { code: error.code, message: error.message });
+    if (error instanceof SuggestionApprovalError) {
+      return R.handleError(res, error.status as any, { code: error.code, message: error.message });
     }
     return R.handleError(res, HttpStatus.INTERNAL_ERROR, {
       code: CODES.APPROVAL_FAILED,
@@ -585,7 +670,10 @@ router.post('/:guid/approve', Ensure.post(), async (req: Request, res: Response)
       });
     }
 
-    const result = await approveScheduleSuggestion(guid as string, req.body?.effective_from);
+    const actor = await publicationActor(req);
+    const result = await approveScheduleSuggestion(guid as string, req.body?.effective_from, actor, {
+      token: req.body?.confirmation_token, reason: req.body?.confirmation_reason,
+    });
 
     return R.handleSuccess(res, {
       message: 'Schedule suggestion approved successfully.',
@@ -598,7 +686,7 @@ router.post('/:guid/approve', Ensure.post(), async (req: Request, res: Response)
       employee_count: result.employeeCount,
     });
   } catch (error: any) {
-    if (error instanceof SuggestionApprovalError && error.status < 500) {
+    if (error instanceof SuggestionApprovalError && (error.status < 500 || error.status === 503)) {
       return R.handleError(res, error.status as any, {
         code: error.code,
         message: error.message,

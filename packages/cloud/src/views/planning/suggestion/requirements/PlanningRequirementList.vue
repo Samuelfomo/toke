@@ -114,6 +114,7 @@
 
 <script setup lang="ts">
 import { computed, onMounted, ref } from 'vue'
+import { useRoute } from 'vue-router'
 import {
   IconAlertTriangle,
   IconCalendarOff,
@@ -141,6 +142,7 @@ import {
   duplicateRequirementGuids,
 } from './requirementMatrix.helpers'
 
+const route = useRoute()
 const loading = ref(false)
 const errorMessage = ref('')
 const activeConfig = ref<PlanningSuggestionConfig | null>(null)
@@ -168,7 +170,10 @@ async function loadRequirements(): Promise<void> {
   errorMessage.value = ''
 
   try {
-    const configResponse = await PlanningSuggestionConfigService.active()
+    const configGuid = route.query.config
+    const configResponse = typeof configGuid === 'string' && configGuid
+      ? await PlanningSuggestionConfigService.getByGuid(configGuid)
+      : await PlanningSuggestionConfigService.active()
     activeConfig.value =
       responseData(configResponse).planning_suggestion_config ?? null
 
@@ -223,7 +228,12 @@ function onSaved(): void {
   void loadRequirements()
 }
 
-onMounted(loadRequirements)
+onMounted(async () => {
+  await loadRequirements()
+  const guid = route.query.requirement
+  const target = typeof guid === 'string' ? requirements.value.find(requirement => requirement.guid === guid) : undefined
+  if (target) openEdit(target)
+})
 </script>
 
 <style scoped>

@@ -67,6 +67,11 @@ export function legacyPlanningSolverPayload(input: PlanningSolverInput): Omit<Pl
   return payload;
 }
 
+export function fixedAlternationContractVersion(policy: NonNullable<PlanningSolverInput['fixedAlternationPolicy']>): 1 | 2 | 3 {
+  if (policy.limitedServiceTemplateGuid) return 3;
+  return policy.weekendRest === 'ALTERNATE_SAT_SUN' ? 2 : 1;
+}
+
 export function planningSolverPayload(input: PlanningSolverInput, supportsFixedAlternation: boolean) {
   const legacy = legacyPlanningSolverPayload(input);
   const policy = input.fixedAlternationPolicy;
@@ -74,7 +79,8 @@ export function planningSolverPayload(input: PlanningSolverInput, supportsFixedA
   return {
     ...legacy,
     fixed_alternation_policy: {
-      contract_version: policy.weekendRest === 'ALTERNATE_SAT_SUN' ? 2 : 1,
+      contract_version: fixedAlternationContractVersion(policy),
+      ...(policy.limitedServiceTemplateGuid && { limited_service_template_guid: policy.limitedServiceTemplateGuid }),
       enabled: true,
       employee_guids: policy.employeeGuids,
       template_guids: policy.templates.map(template => template.guid),
@@ -123,6 +129,7 @@ export class PlanningSolverTechnicalError extends Error {
     public readonly code:
       | 'PLANNING_SOLVER_UNAVAILABLE'
       | 'PLANNING_SOLVER_TIMEOUT'
+      | 'PLANNING_SOLVER_NO_FEASIBLE_SOLUTION'
       | 'PLANNING_SOLVER_PROTOCOL_ERROR'
       | 'PLANNING_SOLVER_INVALID_INPUT',
     public readonly details?: unknown,

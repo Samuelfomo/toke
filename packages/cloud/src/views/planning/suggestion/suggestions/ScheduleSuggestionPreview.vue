@@ -10,14 +10,14 @@
         </h1>
       </div>
       <div v-if="suggestion?.status === 'draft'" class="flex flex-wrap gap-2">
-        <button class="secondary-button" :disabled="loading || actionLoading" @click="openBulkEditor">
+        <button class="secondary-button" :disabled="loading || actionLoading || serviceSavePending" @click="openBulkEditor">
           <IconEdit :size="15" /> Modifier en groupe
         </button>
-        <button class="secondary-button" :disabled="loading || actionLoading" @click="confirmAction = 'regenerate'">
+        <button class="secondary-button" :disabled="loading || actionLoading || serviceSavePending" @click="confirmAction = 'regenerate'">
           <IconRefresh :size="15" /> Régénérer autour des décisions
         </button>
-        <button class="secondary-button" :disabled="loading || actionLoading" @click="confirmAction = 'reject'">Rejeter</button>
-        <button class="primary-button" :disabled="loading || actionLoading" @click="openPublication">Vérifier et publier</button>
+        <button class="secondary-button" :disabled="loading || actionLoading || serviceSavePending" @click="confirmAction = 'reject'">Rejeter</button>
+        <button class="primary-button" :disabled="loading || actionLoading || serviceSavePending" @click="openPublication">Vérifier et publier</button>
       </div>
     </header>
 
@@ -71,6 +71,11 @@
           />
         </div>
 
+        <div v-if="viewMode === 'services' && (serviceSavePending || serviceNotice)" class="border-b border-slate-200 px-3 py-2 text-xs">
+          <p v-if="serviceSavePending" role="status" class="text-blue-800">Enregistrement de l’affectation…</p>
+          <p v-else-if="serviceNotice?.error" role="alert" class="text-red-800">{{ serviceNotice.message }}</p>
+          <p v-else role="status" class="text-emerald-800">{{ serviceNotice?.message }}</p>
+        </div>
         <div class="table-scroll">
           <table class="week-table">
             <caption class="sr-only">Affectations de la semaine</caption>
@@ -111,15 +116,19 @@
             <tbody v-else>
               <tr v-for="service in serviceRows" :key="service.guid">
                 <th scope="row" class="row-heading service-name" :title="service.name">{{ service.name }}</th>
-                <td v-for="day in visibleDays" :id="serviceCellId(service.guid, day.iso)" :key="day.iso" tabindex="-1" :class="{ weekend: day.weekend }">
+                <td v-for="day in visibleDays" :id="serviceCellId(service.guid, day.iso)" :key="day.iso" tabindex="-1"
+                    :class="{ weekend: day.weekend, 'service-drop-ready': canDropOn(service, day), 'service-drop-active': hoveredServiceCell === serviceCellId(service.guid, day.iso) }"
+                    @dragover="overService($event, service, day)" @dragleave="leaveService($event, service.guid, day.iso)"
+                    @drop="dropOnService($event, service, day)">
                   <div class="service-cell">
                     <button v-for="item in service.members.get(day.iso)" :key="item.guid" type="button"
                         class="acronym" :class="cellClasses(item, day.iso)" :title="item.user.name"
                         :aria-label="`${item.user.name} · ${formatDate(day.iso)} · ${service.name}`"
-                        @click="suggestion.status === 'draft' ? openCell(item, day.iso) : selectedName = item.user.name">
+                        :draggable="canDragService(day)" @dragstart="startServiceDrag($event, item, day)" @dragend="clearServiceDrag"
+                        @click="openServiceCell(item, day)">
                       {{ acronyms.get(item.guid) }}
                     </button>
-                    <button v-if="suggestion.status === 'draft' && day.inPeriod && service.editableDates.has(day.iso)" type="button" class="acronym add-button"
+                    <button v-if="suggestion.status === 'draft' && day.inPeriod && service.editableDates.has(day.iso)" type="button" class="acronym add-button" :disabled="serviceSavePending"
                         :aria-label="`Choisir un collaborateur pour ${service.name} le ${formatDate(day.iso)}`"
                         @click="serviceSelection = { iso: day.iso, name: service.name, guid: service.guid }">+</button>
                     <span v-else-if="!service.members.get(day.iso)?.length" class="empty-cell">—</span>
@@ -127,6 +136,21 @@
                 </td>
               </tr>
               <tr v-if="!serviceRows.length"><td colspan="8" class="p-4 text-center text-slate-600">Aucun service pour cette semaine.</td></tr>
+              <tr v-for="group in serviceAbsenceRows" :key="group.kind">
+                <th scope="row" class="row-heading service-name">{{ group.label }}</th>
+                <td v-for="day in visibleDays" :key="day.iso" :class="{ weekend: day.weekend }">
+                  <div class="service-cell">
+                    <button v-for="item in group.members.get(day.iso)" :key="item.guid" type="button"
+                        class="acronym" :class="cellClasses(item, day.iso)" :title="item.user.name"
+                        :aria-label="`${item.user.name} · ${formatDate(day.iso)} · ${group.label}`"
+                        :draggable="canDragService(day)" @dragstart="startServiceDrag($event, item, day)" @dragend="clearServiceDrag"
+                        @click="openServiceCell(item, day)">
+                      {{ acronyms.get(item.guid) }}
+                    </button>
+                    <span v-if="!group.members.get(day.iso)?.length" class="empty-cell">—</span>
+                  </div>
+                </td>
+              </tr>
             </tbody>
           </table>
         </div>
@@ -231,17 +255,29 @@
           <label for="approval-date" class="grid gap-1 font-semibold">Date de prise d’effet
             <input id="approval-date" v-model="effectiveDate" :disabled="actionLoading" type="date" class="rounded-lg border border-slate-300 p-2" />
           </label>
-          <button class="secondary-button" :disabled="checkingPublication || actionLoading">Vérifier la date</button>
+          <button class="secondary-button" :disabled="checkingPublication || actionLoading">Revérifier</button>
         </div>
         <p v-if="checkingPublication" role="status">Vérification en cours…</p>
         <p v-if="publicationError" role="alert" class="text-red-800">{{ publicationError }}</p>
         <template v-if="approvalPreview">
           <p class="font-semibold" aria-live="polite">
             {{ approvalPreview.can_publish ? 'Publication possible' : 'Publication bloquée' }}
-            <template v-if="approvalPreview.effective_from"> · {{ formatDate(approvalPreview.effective_from) }}</template>
+            <template v-if="approvalPreview.effective_from"> · {{ formatDate(approvalPreview.effective_from) }}
+              <span v-if="approvalPreview.timezone" class="font-normal"> à minuit ({{ approvalPreview.timezone }})</span>
+            </template>
           </p>
-          <p v-if="approvalPreview.can_publish">La publication remplacera les affectations concernées à partir de cette date.</p>
-          <p v-else role="alert" class="text-red-800">
+          <p v-if="approvalPreview.impact" class="rounded-lg bg-slate-50 p-2 text-slate-700">
+            {{ approvalPreview.impact.replaced_assignments }} affectation(s) remplacée(s) ·
+            {{ approvalPreview.impact.adjusted_assignments ?? 0 }} ajustée(s).
+            Le nouveau planning s’applique à toutes les journées modifiables.
+            <span v-if="approvalPreview.impact.truncated_overnight_assignments" class="block">
+              {{ approvalPreview.impact.truncated_overnight_assignments }} service(s) de nuit arrêté(s) à minuit.
+            </span>
+            <span v-if="approvalPreview.impact.detached_guard_continuations" class="block">
+              {{ approvalPreview.impact.detached_guard_continuations }} continuation(s) hors période conservée(s) sans leur ancien lien.
+            </span>
+          </p>
+          <p v-if="!approvalPreview.can_publish" role="alert" class="text-red-800">
             {{ publicationBlocker ?? 'La date sélectionnée ne permet pas de publier cette suggestion.' }}
           </p>
           <details v-if="approvalPreview.alerts.length" class="rounded-lg border border-slate-200 p-2">
@@ -254,11 +290,30 @@
                   {{ alert.severity === 'BLOCKING' ? 'Blocage' : alert.severity === 'CONFIRMATION_REQUIRED' ? 'À confirmer' : 'Avertissement' }}
                 </strong>
                 {{ alert.message }}
-                <ul v-if="alert.details?.conflicts?.length" class="mt-1 list-disc pl-5">
-                  <li v-for="(conflict, conflictIndex) in alert.details.conflicts" :key="conflictIndex">
-                    {{ publicationConflictLabel(conflict) }}
-                  </li>
-                </ul>
+                <p v-if="alert.details?.consequence" class="mt-1 text-xs">{{ alert.details.consequence }}</p>
+                <p v-if="alert.details?.employee_name || alert.details?.date" class="mt-1 text-xs">
+                  {{ [alert.details.employee_name, alert.details.date && formatDate(alert.details.date)].filter(Boolean).join(' · ') }}
+                </p>
+                <p v-if="alert.details?.hours?.length" class="mt-1 text-xs">
+                  {{ alert.details.hours.map(hours => hours.join('–')).join(' · ') }}
+                </p>
+                <details v-if="alert.details?.continuation || alert.details?.guard" class="mt-1">
+                  <summary class="cursor-pointer font-semibold">Consulter la garde publiée</summary>
+                  <p v-for="assignment in [alert.details.guard, alert.details.continuation].filter(Boolean)" :key="assignment!.guid" class="mt-1 text-xs">
+                    {{ formatDate(assignment!.date) }} · {{ assignment!.template_name ?? 'Garde' }}
+                    <span v-for="hours in assignment!.hours" :key="hours.join('-')"> · {{ hours.join('–') }}</span>
+                  </p>
+                </details>
+                <div class="mt-1 flex flex-wrap gap-x-3">
+                  <button v-if="alert.details?.item_guid && alert.details.date" type="button" class="link-button"
+                      @click="openPublicationCorrection(alert.details)">Modifier l’affectation</button>
+                  <RouterLink v-if="alert.details?.employee_guid" class="link-button" target="_blank"
+                      :to="{ name: 'employeeDetails', params: { id: alert.details.employee_guid } }">Voir le collaborateur</RouterLink>
+                  <RouterLink v-if="alert.details?.action === 'COVERAGE'" class="link-button" target="_blank"
+                      :to="{ name: 'planning-suggestion-requirements', query: { requirement: alert.details.requirement_guid, config: suggestion?.configuration?.guid } }">Vérifier les besoins</RouterLink>
+                  <RouterLink v-if="alert.details?.action === 'CONFIGURATION'" class="link-button" target="_blank"
+                      :to="{ name: 'planning-suggestion-configuration-edit', query: { config: suggestion?.configuration?.guid } }">Vérifier les règles</RouterLink>
+                </div>
               </li>
             </ul>
           </details>
@@ -267,20 +322,30 @@
               @click="choosePublicationDate(approvalPreview.earliest_valid_date)">
             Choisir le {{ formatDate(approvalPreview.earliest_valid_date) }}
           </button>
+
+          <fieldset v-if="approvalPreview.confirmation_token" class="space-y-2 rounded-lg border border-amber-300 bg-amber-50 p-3">
+            <label class="flex items-start gap-2 font-semibold">
+              <input v-model="publicationAccepted" :disabled="actionLoading" type="checkbox" class="mt-1" />
+              J’ai vérifié les conséquences et je confirme la publication malgré les avertissements.
+            </label>
+            <label class="grid gap-1">Motif facultatif
+              <textarea v-model="publicationReason" :disabled="actionLoading" maxlength="1000" rows="2" class="rounded border border-slate-300 bg-white p-2" />
+            </label>
+          </fieldset>
         </template>
       </form>
       <template #footer>
         <button type="button" class="primary-button" :disabled="!canConfirmPublication" @click="confirmPublication">
-          Confirmer et publier
+          {{ approvalPreview?.confirmation_token ? 'Publier exceptionnellement' : 'Confirmer et publier' }}
         </button>
       </template>
     </PlanningDrawer>
 
     <SuggestionCellEditor v-if="suggestion" :open="Boolean(editorItem)" :suggestion-guid="suggestion.guid"
         :item="editorItem" :iso="editorIso" :templates="templates" :initial-template-guid="editorTemplate"
-        @close="closeCell" @saved="onCellSaved" @bulk="openBulkFromCell" />
+        @close="closeCellAndReturn" @saved="onCellSaved" @bulk="openBulkFromCell" />
     <SuggestionBulkEditor :open="bulkEditorOpen" :suggestion="suggestion" :templates="templates"
-        :initial-item-guid="bulkSeed?.guid" :initial-iso="bulkSeed?.iso" @close="bulkEditorOpen = false" @saved="onBulkSaved" />
+        :initial-item-guid="bulkSeed?.guid" :initial-iso="bulkSeed?.iso" @close="bulkEditorOpen = false; closeCellAndReturn()" @saved="onBulkSaved" />
     <PlanningConfirmDialog :open="confirmAction !== null" :danger="confirmAction === 'reject'" :loading="actionLoading"
         :title="confirmAction === 'regenerate' ? 'Régénérer autour des décisions du manager ?' : 'Rejeter cette suggestion ?'"
         :description="confirmAction === 'regenerate' ? 'Toké conservera les décisions manuelles et recalculera les cellules automatiques.' : 'Le rejet ne modifie aucun planning déjà publié.'"
@@ -306,13 +371,14 @@ import {
 } from '@tabler/icons-vue'
 
 import SessionTemplateService from '@/service/SessionTemplate'
-import ScheduleSuggestionService, { type ApprovalPreview } from '@/service/ScheduleSuggestionService'
+import ScheduleSuggestionService, { type ApprovalPreview, type ApprovalAlertDetails } from '@/service/ScheduleSuggestionService'
 
 import PlanningConfirmDialog from '../components/PlanningConfirmDialog.vue'
 import PlanningDrawer from '../components/PlanningDrawer.vue'
 import SuggestionBulkEditor from './SuggestionBulkEditor.vue'
 import SuggestionFilters from './SuggestionFilters.vue'
 import SuggestionCellEditor from './SuggestionCellEditor.vue'
+import { canMoveService, serviceAbsence } from './suggestionServiceCells'
 import { employeeAcronyms, suggestionWeeks } from './suggestionWeek'
 import { planningAlerts, planningAlertSummary, type AlertTarget } from './suggestionAlerts'
 import {
@@ -353,11 +419,18 @@ const editorItem = ref<ScheduleSuggestionItem | null>(null)
 const editorIso = ref('')
 const editorTemplate = ref<string>()
 const serviceSelection = ref<{ iso: string; name: string; guid: string } | null>(null)
+const draggedServiceMember = ref<{ item: ScheduleSuggestionItem; iso: string } | null>(null)
+const hoveredServiceCell = ref('')
+const serviceSavePending = ref(false)
+const serviceNotice = ref<{ message: string; error?: boolean } | null>(null)
 const confirmAction = ref<'reject' | 'regenerate' | null>(null)
 const publicationOpen = ref(false)
 const effectiveDate = ref('')
 const checkingPublication = ref(false)
 const publicationError = ref('')
+const publicationAccepted = ref(false)
+const publicationReason = ref('')
+const returnToPublication = ref(false)
 const approvalPreview = ref<ApprovalPreview | null>(null)
 let publicationRequest = 0
 const actionLoading = ref(false)
@@ -484,15 +557,11 @@ const publicationBlocker = computed(() =>
 )
 const publicationAlertLabel = computed(() => {
   const alerts = approvalPreview.value?.alerts ?? []
-  const blockers = alerts.filter(alert => alert.severity === 'BLOCKING').length
-  const warnings = alerts.filter(alert => alert.severity === 'WARNING').length
-  const confirmations = alerts.filter(alert => alert.severity === 'CONFIRMATION_REQUIRED').length
-  const parts = [
-    blockers ? `${blockers} blocage${blockers === 1 ? '' : 's'}` : '',
-    warnings ? `${warnings} avertissement${warnings === 1 ? '' : 's'}` : '',
-    confirmations ? `${confirmations} point${confirmations === 1 ? '' : 's'} à confirmer` : '',
-  ].filter(Boolean)
-  return parts.join(' · ') || 'Informations de publication'
+  return [
+    ['blocage(s)', alerts.filter(alert => alert.severity === 'BLOCKING').length],
+    ['avertissement(s)', alerts.filter(alert => alert.severity === 'WARNING' || alert.severity === 'CONFIRMATION_REQUIRED').length],
+    ['information(s)', alerts.filter(alert => alert.severity === 'INFO').length],
+  ].map(([label, count]) => `${count} ${label}`).join(' · ')
 })
 
 const weeks = computed(() => {
@@ -545,16 +614,35 @@ const serviceRows = computed(() => {
   }
   return [...services.values()].sort((a, b) => a.name.localeCompare(b.name, 'fr'))
 })
+const serviceAbsenceRows = computed(() => {
+  const rest = new Map<string, ScheduleSuggestionItem[]>()
+  const unassigned = new Map<string, ScheduleSuggestionItem[]>()
+  for (const day of visibleDays.value) {
+    if (!day.inPeriod) continue
+    rest.set(day.iso, [])
+    unassigned.set(day.iso, [])
+    for (const item of filteredItems.value) {
+      const kind = serviceAbsence(item, day.iso)
+      if (kind === 'rest') rest.get(day.iso)!.push(item)
+      if (kind === 'unassigned') unassigned.get(day.iso)!.push(item)
+    }
+  }
+  return [
+    { kind: 'rest', label: 'En repos', members: rest },
+    { kind: 'unassigned', label: 'Non programmé', members: unassigned },
+  ]
+})
 const serviceCandidates = computed(() => {
   const selection = serviceSelection.value
   if (!selection) return []
   return (suggestion.value?.items ?? []).filter(item =>
-    selection.iso in item.schedule && item.schedule[selection.iso] !== selection.guid)
+    item.schedule[selection.iso] !== selection.guid)
 })
 
 const canConfirmPublication = computed(() => Boolean(
   approvalPreview.value?.can_publish && approvalPreview.value.effective_from &&
-  !checkingPublication.value && !actionLoading.value,
+  !checkingPublication.value && !actionLoading.value &&
+  (!approvalPreview.value.confirmation_token || publicationAccepted.value),
 ))
 
 const manualCellCount = computed(() =>
@@ -793,8 +881,8 @@ function openBulkFromCell(): void {
   bulkEditorOpen.value = true
 }
 
-function openCell(item: ScheduleSuggestionItem, iso: string, template?: string): void {
-  if (suggestion.value?.status !== 'draft' || !(iso in item.schedule)) return
+function openCell(item: ScheduleSuggestionItem, iso: string, template?: string, allowMissing = false): void {
+  if (suggestion.value?.status !== 'draft' || serviceSavePending.value || (!allowMissing && !(iso in item.schedule))) return
   editorIso.value = iso
   editorTemplate.value = template
   editorItem.value = item
@@ -802,10 +890,82 @@ function openCell(item: ScheduleSuggestionItem, iso: string, template?: string):
 
 async function editServiceMember(item: ScheduleSuggestionItem): Promise<void> {
   const selection = serviceSelection.value
-  if (!selection) return
+  if (!selection || serviceSavePending.value) return
   serviceSelection.value = null
   await nextTick()
-  openCell(item, selection.iso, selection.guid)
+  openCell(item, selection.iso, selection.guid, true)
+}
+
+type ServiceDay = (typeof visibleDays.value)[number]
+type ServiceRow = (typeof serviceRows.value)[number]
+
+function openServiceCell(item: ScheduleSuggestionItem, day: ServiceDay): void {
+  if (suggestion.value?.status === 'draft') {
+    if (day.inPeriod) openCell(item, day.iso, undefined, true)
+  } else {
+    selectedName.value = item.user.name
+  }
+}
+
+function canDragService(day: ServiceDay): boolean {
+  return day.inPeriod && suggestion.value?.status === 'draft' &&
+    !loading.value && !actionLoading.value && !serviceSavePending.value
+}
+
+function startServiceDrag(event: DragEvent, item: ScheduleSuggestionItem, day: ServiceDay): void {
+  if (!event.dataTransfer || !canDragService(day)) {
+    event.preventDefault()
+    return
+  }
+  draggedServiceMember.value = { item, iso: day.iso }
+  serviceNotice.value = null
+  event.dataTransfer.effectAllowed = 'move'
+  event.dataTransfer.setData('application/x-toke-planning-member', item.guid)
+}
+
+function clearServiceDrag(): void {
+  draggedServiceMember.value = null
+  hoveredServiceCell.value = ''
+}
+
+function canDropOn(service: ServiceRow, day: ServiceDay): boolean {
+  const drag = draggedServiceMember.value
+  return Boolean(drag && canDragService(day) && service.editableDates.has(day.iso) &&
+    canMoveService(drag.item, drag.iso, day.iso, templateMap.value.get(service.guid)))
+}
+
+function overService(event: DragEvent, service: ServiceRow, day: ServiceDay): void {
+  if (!canDropOn(service, day)) return
+  event.preventDefault()
+  if (event.dataTransfer) event.dataTransfer.dropEffect = 'move'
+  hoveredServiceCell.value = serviceCellId(service.guid, day.iso)
+}
+
+function leaveService(event: DragEvent, guid: string, iso: string): void {
+  if (event.currentTarget instanceof HTMLElement && event.relatedTarget instanceof Node &&
+      event.currentTarget.contains(event.relatedTarget)) return
+  if (hoveredServiceCell.value === serviceCellId(guid, iso)) hoveredServiceCell.value = ''
+}
+
+async function dropOnService(event: DragEvent, service: ServiceRow, day: ServiceDay): Promise<void> {
+  const drag = draggedServiceMember.value
+  const current = suggestion.value
+  if (!drag || !current || !canDropOn(service, day)) return
+  event.preventDefault()
+  clearServiceDrag()
+  serviceSavePending.value = true
+  try {
+    const response = await ScheduleSuggestionService.patchCell(current.guid, drag.item.guid, {
+      iso: day.iso, template_guid: service.guid,
+    })
+    if (!response?.success) throw response
+    await onCellSaved(response.data.item)
+    serviceNotice.value = { message: `${drag.item.user.name} · Affectation enregistrée pour ${service.name}.` }
+  } catch (error) {
+    serviceNotice.value = { error: true, message: responseError(error, 'Impossible de modifier cette affectation.') }
+  } finally {
+    serviceSavePending.value = false
+  }
 }
 
 function closeCell(): void {
@@ -819,22 +979,26 @@ async function onCellSaved(item: ScheduleSuggestionItem | null): Promise<void> {
   }
   closeCell()
   await load()
+  closeCellAndReturn()
 }
 
 async function onBulkSaved(): Promise<void> {
   bulkEditorOpen.value = false
   await load()
+  closeCellAndReturn()
 }
 
 function openPublication(): void {
   publicationOpen.value = true
   effectiveDate.value = ''
+  publicationReason.value = ''
   void checkPublication()
 }
 
 function closePublication(): void {
   publicationOpen.value = false
   publicationRequest++
+  publicationAccepted.value = false
   checkingPublication.value = false
   approvalPreview.value = null
   publicationError.value = ''
@@ -842,6 +1006,7 @@ function closePublication(): void {
 
 watch(effectiveDate, () => {
   publicationRequest++
+  publicationAccepted.value = false
   checkingPublication.value = false
   approvalPreview.value = null
   publicationError.value = ''
@@ -852,6 +1017,7 @@ async function checkPublication(): Promise<void> {
   if (!current || !publicationOpen.value) return
   const request = ++publicationRequest
   checkingPublication.value = true
+  publicationAccepted.value = false
   approvalPreview.value = null
   publicationError.value = ''
   try {
@@ -873,11 +1039,24 @@ function choosePublicationDate(date: string): void {
   void checkPublication()
 }
 
-function publicationConflictLabel(conflict: { conflict_type?: string; continuation_date?: string; item_guid?: string }): string {
-  const name = suggestion.value?.items.find(item => item.guid === conflict.item_guid)?.user.name
-  const kind = conflict.conflict_type === 'POST_GUARD_REST' ? 'Repos après garde'
-    : conflict.conflict_type === 'PUBLISHED_GUARD_CONTINUATION' ? 'Garde déjà publiée' : 'Continuation de garde'
-  return [kind, name, conflict.continuation_date && formatDate(conflict.continuation_date)].filter(Boolean).join(' · ')
+async function openPublicationCorrection(details: ApprovalAlertDetails): Promise<void> {
+  const item = suggestion.value?.items.find(candidate => candidate.guid === details.item_guid)
+  if (!item || !details.date || !(details.date in item.schedule)) return
+  closePublication()
+  await nextTick()
+  openCell(item, details.date)
+  returnToPublication.value = Boolean(editorItem.value)
+}
+
+function closeCellAndReturn(): void {
+  closeCell()
+  if (returnToPublication.value) {
+    returnToPublication.value = false
+    void nextTick(() => {
+      publicationOpen.value = true
+      void checkPublication()
+    })
+  }
 }
 
 async function confirmPublication(): Promise<void> {
@@ -887,7 +1066,10 @@ async function confirmPublication(): Promise<void> {
   actionLoading.value = true
   publicationError.value = ''
   try {
-    const response = await ScheduleSuggestionService.approve(guid, date)
+    const token = approvalPreview.value?.confirmation_token
+    const response = await ScheduleSuggestionService.approve(guid, date, token ? {
+      token, reason: publicationReason.value.trim() || undefined,
+    } : undefined)
     if (!response.success) throw response
     closePublication()
     await router.push({ name: 'schedule-assignment' })
@@ -1054,6 +1236,9 @@ button:focus-visible, select:focus-visible, a:focus-visible, td:focus, [tabindex
 .employee-legend .acronym { flex-shrink: 0; min-width: 2.15rem; min-height: 1.45rem; }
 .cell-card { width: 100%; min-height: 2.5rem; border-width: 1px; border-radius: .4rem; padding: .25rem; overflow-wrap: anywhere; }
 .cell-card:not(:disabled):hover, .acronym:hover { box-shadow: inset 0 0 0 1px #2563eb; }
+.acronym[draggable="true"] { cursor: grab; }
+.week-table td.service-drop-ready { box-shadow: inset 0 0 0 1px #93c5fd; }
+.week-table td.service-drop-active { box-shadow: inset 0 0 0 2px #2563eb; background-color: #dbeafe; }
 .service-cell { display: flex; flex-wrap: wrap; justify-content: center; gap: .2rem; }
 .acronym { display: inline-flex; min-height: 1.8rem; align-items: center; justify-content: center; padding: .12rem .28rem; border-radius: .35rem; border-width: 1px; font-size: .71rem; font-weight: 800; }
 .row-heading .acronym { color: #0f172a; background: #fff; border-color: #cbd5e1; }

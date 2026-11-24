@@ -59,7 +59,7 @@ export const PLANNING_CONFIG_STEPS: PlanningConfigStep[] = [
     shortLabel: 'Charge',
     description: 'Limites, équité et alternance des horaires fixes.',
     icon: IconBeach,
-    errorKeys: ['max_consecutive_work_days', 'fixed_employee_0', 'fixed_employee_1', 'fixed_anchor_date', 'fixed_cadence'],
+    errorKeys: ['max_consecutive_work_days', 'fixed_employee_0', 'fixed_employee_1', 'fixed_anchor_date', 'fixed_cadence', 'fixed_limited_service'],
   },
   {
     id: 'guard',

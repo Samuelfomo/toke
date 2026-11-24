@@ -293,6 +293,7 @@ class OrToolsPlanner:
         self._apply_guard_continuations()
         self._build_work_days()
         self._apply_fixed_alternation_rest()
+        self._apply_limited_service()
         self._build_weekly_leave_variables()
         self._apply_guard_team_policy()
         self._apply_weekly_leave_policy()
@@ -686,12 +687,14 @@ class OrToolsPlanner:
                 normal_work = template_has_work(employee.fixedTemplate, iso)
                 if employee.guid in self.alternating_guids:
                     lock = self.locked_assignments.get((employee.guid, iso))
+                    weekend_template = self._limited_weekend_work_template(employee.guid, iso)
                     choices = []
                     for guid, template in self.alternating_templates.items():
                         if lock is not None:
                             allowed = lock.templateGuid == guid
                         else:
-                            allowed = normal_work and template_has_work(template, iso)
+                            is_weekend_target = weekend_template is not None and guid == weekend_template.guid
+                            allowed = (normal_work or is_weekend_target) and template_has_work(template, iso)
                         if allowed:
                             choice = self.model.NewBoolVar(f"fixed_alternation_{employee.guid}_{iso}_{guid}")
                             self.alternating_work[(employee.guid, iso, guid)] = choice
@@ -2021,9 +2024,19 @@ class OrToolsPlanner:
         phase = ((current - anchor_monday).days // 7) % 2
         return (1 - (current.weekday() - 5) + phase) % 2
 
+    def _limited_weekend_work_template(self, guid: str, iso: str) -> EngineTemplate | None:
+        policy = self.fixed_alternation
+        if not policy or not policy.limited_service_template_guid:
+            return None
+        worker = self._fixed_alternation_weekend_worker(iso)
+        if worker is None or guid != policy.employee_guids[worker]:
+            return None
+        early_guid = next(template for template in policy.template_guids if template != policy.limited_service_template_guid)
+        return self.alternating_templates[early_guid]
+
     def _mandatory_fixed_alternation_rest(self) -> bool:
         policy = self.fixed_alternation
-        return bool(policy and policy.contract_version == 2 and policy.weekend_rest == "ALTERNATE_SAT_SUN")
+        return bool(policy and policy.contract_version >= 2 and policy.weekend_rest == "ALTERNATE_SAT_SUN")
 
     def _apply_fixed_alternation_rest(self) -> None:
         self.fixed_rest_assumptions = {}
@@ -2034,11 +2047,11 @@ class OrToolsPlanner:
             for index, guid in enumerate(self.fixed_alternation.employee_guids):
                 expected_work = worker is None or index == worker
                 lock = self.locked_assignments.get((guid, iso))
-                reference = self.alternating_references[guid]
+                work_template = self._limited_weekend_work_template(guid, iso) or self.alternating_references[guid]
                 reason = "HARD_CONSTRAINT_CONFLICT"
                 if lock is not None and (lock.templateGuid is not None) != expected_work:
                     reason = "LOCKED_ASSIGNMENT"
-                elif lock is None and expected_work and not template_has_work(reference, iso):
+                elif lock is None and expected_work and not template_has_work(work_template, iso):
                     reason = "TEMPLATE_REST"
                 assumption = self.model.NewBoolVar(f"fixed_weekend_rest_{guid}_{iso}")
                 self.model.Add(self.work_day[(guid, iso)] == int(expected_work)).OnlyEnforceIf(assumption)
@@ -2048,9 +2061,65 @@ class OrToolsPlanner:
                     "expected": "WORK" if expected_work else "REST", "reason": reason,
                 }
 
+    def _apply_limited_service(self) -> None:
+        self.limited_service_assumptions = {}
+        policy = self.fixed_alternation
+        if not policy or not policy.limited_service_template_guid:
+            return
+
+        limited = policy.limited_service_template_guid
+        early = next(guid for guid in policy.template_guids if guid != limited)
+        day_terms = defaultdict(list)
+        week_terms = defaultdict(list)
+
+        def constrain(expression, details):
+            assumption = self.model.NewBoolVar(f"limited_service_{len(self.limited_service_assumptions)}")
+            self.model.Add(expression).OnlyEnforceIf(assumption)
+            self.model.AddAssumption(assumption)
+            self.limited_service_assumptions[assumption.Index()] = details
+
+        for employee in self.fixed + self.rotating:
+            for iso in self.dates:
+                guid = employee.guid
+                lock = self.locked_assignments.get((guid, iso))
+                if lock is not None:
+                    term = int(lock.templateGuid == limited)
+                elif guid in self.alternating_guids:
+                    term = self.alternating_work.get((guid, iso, limited), 0)
+                elif employee.mode == "FIXED":
+                    term = self._fixed_work_term(employee, iso) if employee.fixedTemplate.guid == limited else 0
+                else:
+                    term = sum(self._slot_var(guid, slot) for slot in self._daily_slots(iso)
+                               if slot.requirement.template.guid == limited)
+                day_terms[iso].append(term)
+                week_terms[(guid, monday_of_week(iso))].append(term)
+
+                worker = self._fixed_alternation_weekend_worker(iso)
+                if worker is not None and guid == policy.employee_guids[worker]:
+                    early_work = (int(lock.templateGuid == early) if lock is not None
+                                  else self.alternating_work.get((guid, iso, early), 0))
+                    constrain(early_work == 1, {
+                        "rule": "WEEKEND_EARLY_SERVICE", "employeeGuid": guid, "date": iso,
+                        "templateGuid": early, "lockedTemplateGuid": lock.templateGuid if lock else None,
+                    })
+
+        for iso, terms in day_terms.items():
+            constrain(sum(terms) <= 1, {
+                "rule": "DAILY_LIMIT", "date": iso, "templateGuid": limited,
+                "lockedEmployeeGuids": [lock.employeeGuid for lock in self.locked_assignments.values()
+                                        if lock.date == iso and lock.templateGuid == limited],
+            })
+        for (guid, monday), terms in week_terms.items():
+            constrain(sum(terms) <= 1, {
+                "rule": "EMPLOYEE_WEEKLY_LIMIT", "employeeGuid": guid, "weekFrom": monday, "templateGuid": limited,
+                "lockedDates": [lock.date for lock in self.locked_assignments.values()
+                                if lock.employeeGuid == guid and monday_of_week(lock.date) == monday
+                                and lock.templateGuid == limited],
+            })
+
     def _fixed_alternation_penalties(self):
         policy = self.fixed_alternation
-        if not policy:
+        if not policy or policy.limited_service_template_guid:
             return []
         penalties = []
         for iso in self.dates:
@@ -2131,7 +2200,7 @@ class OrToolsPlanner:
         for iso in self.dates:
             actual = tuple(schedules[guid][iso] for guid in policy.employee_guids)
             locked = [guid for guid in policy.employee_guids if (guid, iso) in self.locked_assignments]
-            if all(value is not None for value in actual):
+            if not policy.limited_service_template_guid and all(value is not None for value in actual):
                 checks.append(self._fixed_alternation_check(
                     iso, "SHIFT", self._fixed_alternation_expected(iso), actual, locked,
                 ))
@@ -2479,6 +2548,12 @@ class OrToolsPlanner:
                 for index in self.solver.SufficientAssumptionsForInfeasibility()
                 if index in self.fixed_rest_assumptions
             ] if self.fixed_rest_assumptions else []
+            service_conflicts = [
+                self.limited_service_assumptions[index]
+                for index in self.solver.SufficientAssumptionsForInfeasibility()
+                if index in self.limited_service_assumptions
+            ] if self.limited_service_assumptions else []
+            service_message = "Les limites du service de 10 h 30 ou le service de 8 h le week-end sont incompatibles avec la couverture, les profils ou les affectations verrouillées."
             conflict_message = "Le repos alterné obligatoire est incompatible avec les horaires, la couverture ou les décisions verrouillées."
             diagnostics = EngineDiagnostics(
                 violations=[
@@ -2487,6 +2562,12 @@ class OrToolsPlanner:
                         code="PLANNING_INFEASIBLE",
                         message="CP-SAT proved that no planning satisfies all hard constraints",
                     ),
+                    *([PlanningViolation(
+                        severity="HARD",
+                        code="FIXED_ALTERNATION_LIMITED_SERVICE_CONFLICT",
+                        message=service_message,
+                        details={"conflicts": service_conflicts},
+                    )] if service_conflicts else []),
                     *([PlanningViolation(
                         severity="HARD",
                         code="FIXED_ALTERNATION_WEEKEND_REST_CONFLICT",
@@ -2505,7 +2586,7 @@ class OrToolsPlanner:
                 status="INFEASIBLE",
                 solverStats=stats,
                 diagnostics=diagnostics,
-                message=conflict_message if conflicts else "No feasible planning satisfies every hard constraint",
+                message=service_message if service_conflicts else conflict_message if conflicts else "No feasible planning satisfies every hard constraint",
             )
 
         if status not in (cp_model.OPTIMAL, cp_model.FEASIBLE):
